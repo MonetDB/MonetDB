@@ -50,7 +50,7 @@ static int SQLinitialized = 0;
 static int SQLnewcatalog = 0;
 int SQLdebug = 0;
 static const char *sqlinit = NULL;
-MT_Lock sql_contextLock MT_LOCK_INITIALIZER("sql_contextLock");
+MT_Lock sql_contextLock = MT_LOCK_INITIALIZER("sql_contextLock");
 
 static void
 monet5_freestack(int clientid, backend_stack stk)
@@ -102,7 +102,7 @@ SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		logmsg = GDKgetenv("recovery");
 		if( logmsg== NULL && ++cnt  == 5)
 			throw(SQL,"SQLinit", "#WARNING server not ready, recovery in progress\n");
-    }while (logmsg == NULL);
+	} while (logmsg == NULL);
 	return msg;
 }
 
@@ -125,7 +125,7 @@ SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		logmsg = GDKgetenv("recovery");
 		if( logmsg== NULL && ++cnt  == 5)
 			throw(SQL,"SQLinit","#WARNING server not ready, recovery in progress\n");
-    }while (logmsg == NULL);
+	} while (logmsg == NULL);
 	return msg;
 }
 
@@ -145,33 +145,49 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!s)
 		throw(MAL, "sql.start", SQLSTATE(42000) "out of scenario slots");
 	sqlinit = GDKgetenv("sqlinit");
-	s->name = "S_Q_L";
-	s->language = "sql";
-	s->initSystem = NULL;
-	s->exitSystem = "SQLexit";
-	s->initClient = "SQLinitClient";
-	s->exitClient = "SQLexitClient";
-	s->reader = "SQLreader";
-	s->parser = "SQLparser";
-	s->engine = "SQLengine";
-	s->callback = "SQLcallback";
-
+	*s = (struct SCENARIO) {
+		.name = "S_Q_L",
+		.language = "sql",
+		.exitSystem = "SQLexit",
+		.exitSystemCmd = SQLexit,
+		.initClient = "SQLinitClient",
+		.initClientCmd = SQLinitClient,
+		.exitClient = "SQLexitClient",
+		.exitClientCmd = SQLexitClient,
+		.reader = "SQLreader",
+		.readerCmd = SQLreader,
+		.parser = "SQLparser",
+		.parserCmd = SQLparser,
+		.engine = "SQLengine",
+		.engineCmd = SQLengine,
+		.callback = "SQLcallback",
+		.callbackCmd = SQLcallback,
+	};
 	ms = getFreeScenario();
 	if (!ms)
 		throw(MAL, "sql.start", SQLSTATE(42000) "out of scenario slots");
 
-	ms->name = "M_S_Q_L";
-	ms->language = "msql";
-	ms->initSystem = NULL;
-	ms->exitSystem = "SQLexit";
-	ms->initClient = "SQLinitClient";
-	ms->exitClient = "SQLexitClient";
-	ms->reader = "MALreader";
-	ms->parser = "MALparser";
-	ms->optimizer = "MALoptimizer";
-	/* ms->tactics = .. */
-	ms->engine = "MALengine";
-	ms->callback = "MALcallback";
+	*ms = (struct SCENARIO) {
+		.name = "M_S_Q_L",
+		.language = "msql",
+		.exitSystem = "SQLexit",
+		.exitSystemCmd = SQLexit,
+		.initClient = "SQLinitClient",
+		.initClientCmd = SQLinitClient,
+		.exitClient = "SQLexitClient",
+		.exitClientCmd = SQLexitClient,
+		.reader = "MALreader",
+		.readerCmd = MALreader,
+		.parser = "MALparser",
+		.parserCmd = MALparser,
+		.optimizer = "MALoptimizer",
+		.optimizerCmd = MALoptimizer,
+		.engine = "MALengine",
+		.engineCmd = MALengine,
+		.callback = "MALcallback",
+		.callbackCmd = MALcallback,
+	};
+
 	tmp = SQLinit(cntxt);
 	if (tmp != MAL_SUCCEED) {
 		fprintf(stderr, "Fatal error during initialization:\n%s\n", tmp);
@@ -385,9 +401,6 @@ SQLinit(Client c)
 	if (SQLinitialized)
 		return MAL_SUCCEED;
 
-#ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&sql_contextLock, "sql_contextLock");
-#endif
 
 	MT_lock_set(&sql_contextLock);
 	be_funcs = (backend_functions) {
@@ -409,7 +422,7 @@ SQLinit(Client c)
 		SQLdebug |= 64;
 	if (readonly)
 		SQLdebug |= 32;
-	if ((SQLnewcatalog = mvc_init(SQLdebug, store_bat, readonly, single_user, 0)) < 0) {
+	if ((SQLnewcatalog = mvc_init(SQLdebug, GDKinmemory() ? store_mem : store_bat, readonly, single_user, 0)) < 0) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
 	}
@@ -500,7 +513,6 @@ SQLinit(Client c)
 		if (m->sa)
 			sa_destroy(m->sa);
 		m->sa = NULL;
-		m->sqs = NULL;
 
 #else
 		char path[FILENAME_MAX];
@@ -550,7 +562,6 @@ SQLinit(Client c)
 					if (m->sa)
 						sa_destroy(m->sa);
 					m->sa = NULL;
-					m->sqs = NULL;
 					if (newmsg){
 						fprintf(stderr,"%s",newmsg);
 						freeException(newmsg);
@@ -562,7 +573,6 @@ SQLinit(Client c)
 			fprintf(stderr, "!could not read createdb.sql\n");
 #endif
 	} else {		/* handle upgrades */
-		m->sqs = NULL;
 		if (!m->sa)
 			m->sa = sa_create();
 		if (!m->sa) {
@@ -586,6 +596,9 @@ SQLinit(Client c)
 	MT_lock_unset(&sql_contextLock);
 	if (msg != MAL_SUCCEED)
 		return msg;
+
+	if (GDKinmemory())
+		return MAL_SUCCEED;
 
 	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, NULL, MT_THR_JOINABLE, "logmanager")) == 0) {
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
@@ -817,7 +830,6 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (m->sa)
 		sa_destroy(m->sa);
 	m->sa = NULL;
-	m->sqs = NULL;
 	(void) mb;
 	return msg;
 }
@@ -1020,6 +1032,12 @@ SQLparser(Client c)
 	int oldvtop, oldstop;
 	int pstatus = 0;
 	int err = 0, opt = 0;
+	char *q = NULL;
+
+	/* clean up old stuff */
+	q = c->query;
+	c->query = NULL;
+	GDKfree(q);		/* may be NULL */
 
 	be = (backend *) c->sqlcontext;
 	if (be == 0) {
@@ -1054,7 +1072,6 @@ SQLparser(Client c)
 
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
 	 * this point if this is a recursive call. */
-	m->sqs = NULL;
 	if (!m->sa) 
 		m->sa = sa_create();
 	if (!m->sa) {
@@ -1166,7 +1183,13 @@ SQLparser(Client c)
 	 * produce code.
 	 */
 	be->q = NULL;
-	if (m->emode == m_execute) {
+	q = query_cleaned(QUERY(m->scanner));
+	c->query = q;
+
+	if (q == NULL) {
+		err = 1;
+		msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	} else if (m->emode == m_execute) {
 		assert(m->sym->data.lval->h->type == type_int);
 		be->q = qc_find(m->qc, m->sym->data.lval->h->data.i_val);
 		if (!be->q) {
@@ -1206,32 +1229,21 @@ SQLparser(Client c)
 		}
 
 		if ((!caching(m) || !cachable(m, r)) && m->emode != m_prepare) {
-			char *q = query_cleaned(QUERY(m->scanner));
-			if(!q) {
-				err = 1;
-				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			} else {
-				/* Query template should not be cached */
-				scanner_query_processed(&(m->scanner));
+			/* Query template should not be cached */
+			scanner_query_processed(&(m->scanner));
 
-				err = 0;
-				if (backend_callinline(be, c) < 0 ||
-					backend_dumpstmt(be, c->curprg->def, r, 1, 0, q) < 0)
-					err = 1;
-				else opt = 1;
-				GDKfree(q);
-			}
+			err = 0;
+			if (backend_callinline(be, c) < 0 ||
+			    backend_dumpstmt(be, c->curprg->def, r, 1, 0, q) < 0)
+				err = 1;
+			else opt = 1;
 		} else {
 			/* Add the query tree to the SQL query cache
 			 * and bake a MAL program for it.
 			 */
-			char *q = query_cleaned(QUERY(m->scanner)), *escaped_q;
+			char *escaped_q;
 			char qname[IDLENGTH];
 			be->q = NULL;
-			if(!q) {
-				err = 1;
-				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			}
 			(void) snprintf(qname, IDLENGTH, "%c%d_%d", (m->emode == m_prepare?'p':'s'), m->qc->id++, m->qc->clientid);
 			escaped_q = sql_escape_str(q);
 			if(!escaped_q) {
@@ -1252,7 +1264,6 @@ SQLparser(Client c)
 				err = 1;
 				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
-			GDKfree(q);
 			scanner_query_processed(&(m->scanner));
 			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, r);
 			if (!be->q->code)
@@ -1321,8 +1332,12 @@ SQLparser(Client c)
 		}
 	}
 finalize:
-	if (msg)
+	if (msg) {
 		sqlcleanup(m, 0);
+		q = c->query;
+		c->query = NULL;
+		GDKfree(q);
+	}
 	return msg;
 }
 

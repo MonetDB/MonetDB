@@ -19,7 +19,6 @@ stdout of test 'prepare_without_querycache.Bug-4047` in directory 'sql/test/BugT
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 12:52:08 >  
 # 12:52:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20726" "--port=34463"

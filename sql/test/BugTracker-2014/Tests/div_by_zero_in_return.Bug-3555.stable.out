@@ -19,7 +19,6 @@ stdout of test 'div_by_zero_in_return.Bug-3555` in directory 'sql/test/BugTracke
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 21:13:47 >  
 # 21:13:47 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27060" "--port=38269"

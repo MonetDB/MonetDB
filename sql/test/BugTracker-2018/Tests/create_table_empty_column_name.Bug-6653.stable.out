@@ -58,7 +58,6 @@ stdout of test 'create_table_empty_column_name.Bug-6653` in directory 'sql/test/
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:00:01 >  
 # 17:00:01 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26840" "--port=38434"

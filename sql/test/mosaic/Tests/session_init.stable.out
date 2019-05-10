@@ -23,11 +23,9 @@ stdout of test 'session_init` in directory 'sql/test/mosaic` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
-
-# 16:53:27 >  
-# 16:53:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27036" "--port=39906"
-# 16:53:27 >  
+# 12:26:08 >  
+# 12:26:08 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11941" "--port=39729"
+# 12:26:08 >  
 
 #set optimizer='mosaic_pipe';
 #create table tmp3( i integer, b boolean, f real,t timestamp);
@@ -137,14 +135,14 @@ Ready.
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
 #select sum(i) from tmp3;
-% sys.L1 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L3 # name
 % hugeint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3;
-% sys.L1 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L3 # name
 % real # type
 % 15 # length
 [ 27.104	]

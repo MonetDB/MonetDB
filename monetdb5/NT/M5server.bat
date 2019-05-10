@@ -43,8 +43,8 @@ set MONETDBPYTHONUDF=embedded_py=false
 
 if not exist "%MONETDB%\pyapi_locatepython3.bat" goto skippython3
 call "%MONETDB%\pyapi_locatepython3.bat"
-:skippython3
 if not "%MONETDBPYTHONUDF%" == "embedded_py=false" goto skippython2
+:skippython3
 if not exist "%MONETDB%\pyapi_locatepython2.bat" goto skippython2
 call "%MONETDB%\pyapi_locatepython2.bat"
 :skippython2

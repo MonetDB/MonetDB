@@ -17,7 +17,6 @@ stdout of test 'aggregate-in-subquery.Bug-2739` in directory 'sql/test/BugTracke
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 
 
@@ -29,8 +28,8 @@ Ready.
 #insert into bug2739 values (1), (2);
 [ 2	]
 #select avg(val - (select avg(val) from bug2739)) from bug2739;
-% sys.L10 # table_name
-% L7 # name
+% .L6 # table_name
+% L6 # name
 % double # type
 % 24 # length
 [ 0	]

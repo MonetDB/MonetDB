@@ -18,7 +18,6 @@ stdout of test 'drop_system_schema.Bug-6437` in directory 'sql/test/BugTracker-2
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:50:35 >  
 # 13:50:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25647" "--port=36212"

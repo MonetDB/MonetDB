@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-comparisons-between-floating-points-and-NULL.Bug
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:02:06 >  
 # 11:02:06 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5852" "--port=33095"

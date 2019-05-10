@@ -46,7 +46,7 @@ seqname = res[0][0]
 try:
   run(c1, 'drop sequence ' + seqname, False)
   run(c1, 'insert into t(val) values (30), (40)')
-except Exception, e:
+except Exception as e:
   print(e, file=sys.stderr)
 print(query(c1, 'select * from t'))
 run(c1, 'drop table t')
@@ -59,7 +59,7 @@ run(c1, 'insert into t2(val) values (10), (20)')
 try:
   run(c1, 'drop sequence myseq')
   run(c1, 'insert into t2(val) values (30), (40)')
-except Exception, e:
+except Exception as e:
   print(e, file=sys.stderr)
 print(query(c1, 'select * from t2'))
 run(c1, 'drop table t2')

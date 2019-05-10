@@ -19,7 +19,6 @@ stdout of test 'setreadonly_forgets_changes.Bug-3446` in directory 'sql/test/Bug
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:47:14 >  
 # 11:47:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9874" "--port=37218"

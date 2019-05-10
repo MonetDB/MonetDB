@@ -19,7 +19,9 @@ stdout of test 'mosaic_mix_select` in directory 'monetdb5/modules/mosaic` itself
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
+# 11:50:51 >  
+# 11:50:51 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-30332" "--port=39586"
+# 11:50:51 >  
 
 # 15:01:33 >  
 # 15:01:33 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15809" "--port=37660"

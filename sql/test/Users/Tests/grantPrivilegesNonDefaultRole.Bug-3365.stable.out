@@ -22,7 +22,6 @@ stdout of test 'grantPrivilegesNonDefaultRole.Bug-3365` in directory 'sql/test/U
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 17:10:02 >  
 # 17:10:02 >  "/usr/bin/python2" "grantPrivilegesNonDefaultRole.Bug-3365.SQL.py" "grantPrivilegesNonDefaultRole.Bug-3365"

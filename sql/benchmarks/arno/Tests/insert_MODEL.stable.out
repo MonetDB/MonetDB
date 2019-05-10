@@ -17,7 +17,6 @@ stdout of test 'insert_MODEL` in directory 'sql/benchmarks/arno` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:12:51 >  
 # 11:12:51 >  "mclient" "-lsql" "-ftest" "-i" "-e" "--host=ottar" "--port=34867"

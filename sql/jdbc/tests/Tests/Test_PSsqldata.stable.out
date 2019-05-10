@@ -17,7 +17,6 @@ stdout of test 'Test_PSsqldata` in directory 'sql/jdbc/tests` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

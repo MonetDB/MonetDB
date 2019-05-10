@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-groupby-having-not-null-not-in.Bug-6562` in dire
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:33:09 >  
 # 10:33:09 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16211" "--port=39440"

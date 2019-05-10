@@ -69,6 +69,7 @@ static struct PIPELINES {
 	 "optimizer.remap();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
+	 "optimizer.aliases();"
 	 "optimizer.evaluate();"
 	 "optimizer.emptybind();"
 	 "optimizer.pushselect();"
@@ -82,7 +83,6 @@ static struct PIPELINES {
 	 "optimizer.projectionpath();"
 	 "optimizer.deadcode();"
 	 "optimizer.reorder();"
-//	 "optimizer.reduce();" deprecated
 	 "optimizer.matpack();"
 	 "optimizer.dataflow();"
 	 "optimizer.querylog();"
@@ -94,11 +94,11 @@ static struct PIPELINES {
 	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-//	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
-/*	The mosaic pipeline is the only pipeline that uses the mosaic optimizer.
+/*
+ *	The mosaic pipeline is the only pipeline that uses the mosaic optimizer.
  *	It is based on the sequential pipeline.
 */
 	 {"mosaic_pipe",
@@ -135,9 +135,11 @@ static struct PIPELINES {
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 /*
- * Volcano style execution produces a sequence of blocks from the source relation
+ * Optimistic concurreny control in general leads to more transaction failures 
+ * in an OLTP setting. The partial solution provided is to give out 
+ * advisory locks and delay updates until they are released or timeout.
  */
-	{"volcano_pipe",
+	{"oltp_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
 	 "optimizer.costModel();"
@@ -155,7 +157,42 @@ static struct PIPELINES {
 	 "optimizer.projectionpath();"
 	 "optimizer.deadcode();"
 	 "optimizer.reorder();"
-//	 "optimizer.reduce();" deprecated
+	 "optimizer.matpack();"
+	 "optimizer.dataflow();"
+	 "optimizer.querylog();"
+	 "optimizer.multiplex();"
+	 "optimizer.generator();"
+	 "optimizer.profiler();"
+	 "optimizer.candidates();"
+	 "optimizer.postfix();"
+	 "optimizer.deadcode();"
+//	 "optimizer.jit();" awaiting the new batcalc api
+	 "optimizer.oltp();"
+	 "optimizer.wlc();"
+	 "optimizer.garbageCollector();",
+	 "stable", NULL, NULL, 1},
+/*
+ * Volcano style execution produces a sequence of blocks from the source relation
+ */
+	{"volcano_pipe",
+	 "optimizer.inline();"
+	 "optimizer.remap();"
+	 "optimizer.costModel();"
+	 "optimizer.coercions();"
+	 "optimizer.aliases();"
+	 "optimizer.evaluate();"
+	 "optimizer.emptybind();"
+	 "optimizer.pushselect();"
+	 "optimizer.aliases();"
+	 "optimizer.mitosis();"
+	 "optimizer.mergetable();"
+	 "optimizer.deadcode();"
+	 "optimizer.aliases();"
+	 "optimizer.constants();"
+	 "optimizer.commonTerms();"
+	 "optimizer.projectionpath();"
+	 "optimizer.deadcode();"
+	 "optimizer.reorder();"
 	 "optimizer.matpack();"
 	 "optimizer.dataflow();"
 	 "optimizer.querylog();"
@@ -168,7 +205,6 @@ static struct PIPELINES {
 	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-//	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
@@ -187,6 +223,7 @@ static struct PIPELINES {
 	 "optimizer.remap();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
+	 "optimizer.aliases();"
 	 "optimizer.evaluate();"
 	 "optimizer.emptybind();"
 	 "optimizer.pushselect();"
@@ -199,7 +236,6 @@ static struct PIPELINES {
 	 "optimizer.projectionpath();"
 	 "optimizer.deadcode();"
 	 "optimizer.reorder();"
-//	 "optimizer.reduce();" deprecated
 	 "optimizer.matpack();"
 	 "optimizer.dataflow();"
 	 "optimizer.querylog();"
@@ -210,7 +246,6 @@ static struct PIPELINES {
 	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-//	 "optimizer.oltp();"awaiting the autocommit front-end changes
 //	 "optimizer.mosaic();"
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
@@ -230,6 +265,7 @@ static struct PIPELINES {
 	 "optimizer.remap();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
+	 "optimizer.aliases();"
 	 "optimizer.evaluate();"
 	 "optimizer.emptybind();"
 	 "optimizer.pushselect();"
@@ -242,7 +278,6 @@ static struct PIPELINES {
 	 "optimizer.projectionpath();"
 	 "optimizer.deadcode();"
 	 "optimizer.reorder();"
-//	 "optimizer.reduce();" deprecated
 	 "optimizer.matpack();"
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
@@ -253,14 +288,13 @@ static struct PIPELINES {
 	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-//	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 /* Experimental pipelines stressing various components under
  * development.  Do not use any of these pipelines in production
  * settings!
-	 "optimizer.mosaic();"
+ *	 "optimizer.mosaic();"
  */
 /* sentinel */
 	{NULL, NULL, NULL, NULL, NULL, 0}
@@ -279,15 +313,7 @@ static struct PIPELINES {
 #include "opt_pipes.h"
 #include "optimizer_private.h"
 
-static MT_Lock pipeLock MT_LOCK_INITIALIZER("pipeLock");
-
-void
-optPipeInit(void)
-{
-#ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&pipeLock, "pipeLock");
-#endif
-}
+static MT_Lock pipeLock = MT_LOCK_INITIALIZER("pipeLock");
 
 /* the session_pipe is the one defined by the user */
 str

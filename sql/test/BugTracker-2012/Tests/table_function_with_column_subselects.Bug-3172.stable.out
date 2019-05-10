@@ -18,7 +18,6 @@ stdout of test 'table_function_with_column_subselects.Bug-3172` in directory 'sq
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:48:49 >  
 # 13:48:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=32735"

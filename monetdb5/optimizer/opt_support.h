@@ -28,7 +28,7 @@ mal_export int isUnsafeInstruction(InstrPtr q);
 mal_export int isUnsafeFunction(InstrPtr q);
 mal_export int isSealedFunction(InstrPtr q);
 mal_export int safetyBarrier(InstrPtr p, InstrPtr q);
-mal_export int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q, int stop);
+mal_export int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 mal_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 mal_export int hasCommonResults(InstrPtr p, InstrPtr q);
 mal_export int isUpdateInstruction(InstrPtr p);

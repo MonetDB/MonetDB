@@ -20,7 +20,6 @@ stdout of test 'inlineFunction1` in directory 'monetdb5/optimizer` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 06:40:55 >  
 # 06:40:55 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"
@@ -31,12 +30,10 @@ Ready.
 #mdb.list("user","tst");
 function user.tst():void;
     true:bit;
-    z := 0:int;
 end user.tst;
 #mdb.list("user","tst");
 function user.tst():void;
     true:bit;
-    z := 0:int;
 end user.tst;
 
 # 05:26:58 >  

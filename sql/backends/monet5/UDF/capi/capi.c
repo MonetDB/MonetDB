@@ -63,7 +63,7 @@ typedef struct _cached_functions {
 #define FUNCTION_CACHE_SIZE 128
 
 static cached_functions *function_cache[FUNCTION_CACHE_SIZE];
-static MT_Lock cache_lock;
+static MT_Lock cache_lock = MT_LOCK_INITIALIZER("cache_lock");
 static int cudf_initialized = 0;
 
 static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
@@ -83,7 +83,6 @@ str CUDFprelude(void *ret)
 {
 	(void)ret;
 	if (!cudf_initialized) {
-		MT_lock_init(&cache_lock, "cache_lock");
 		cudf_initialized = true;
 		option_enable_mprotect = GDKgetenv_istrue(mprotect_enableflag) || GDKgetenv_isyes(mprotect_enableflag);
 		option_enable_longjmp = GDKgetenv_istrue(longjmp_enableflag) || GDKgetenv_isyes(longjmp_enableflag);

@@ -23,11 +23,9 @@ stdout of test 'compressionRLE2` in directory 'sql/test/mosaic` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
-
-# 10:18:13 >  
-# 10:18:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10846" "--port=36017"
-# 10:18:13 >  
+# 12:26:07 >  
+# 12:26:07 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11941" "--port=39729"
+# 12:26:07 >  
 
 #set optimizer='mosaic_pipe';
 #select * from tmp3RLE;
@@ -122,7 +120,7 @@ Ready.
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
 #select count(*) from tmp3RLE;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length

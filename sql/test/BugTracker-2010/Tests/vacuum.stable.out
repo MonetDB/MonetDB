@@ -16,7 +16,6 @@ stdout of test 'vacuum` in directory 'sql/test/BugTracker-2010` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35108/
 # MonetDB/SQL module v2.41.0 loaded
 
-Ready.
 
 
 # 21:53:58 >  

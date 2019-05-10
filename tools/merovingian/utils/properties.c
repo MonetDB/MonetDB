@@ -25,19 +25,21 @@
 
 /* these are the properties used for starting an mserver */
 static const confkeyval _internal_prop_keys[PROPLENGTH] = {
-	{"type",     NULL, 0, STR},
-	{"shared",   NULL, 0, STR},
-	{"nthreads", NULL, 0, INT},
-	{"optpipe",  NULL, 0, STR},
-	{"readonly", NULL, 0, BOOLEAN},
-	{"embedr",   NULL, 0, BOOLEAN},
-	{"embedpy",  NULL, 0, BOOLEAN},
-	{"embedpy3", NULL, 0, BOOLEAN},
-	{"embedc",   NULL, 0, BOOLEAN},
-	{"nclients", NULL, 0, INT},
-	{"mfunnel",  NULL, 0, STR},
-	{"dbextra",  NULL, 0, STR},
-	{ NULL,      NULL, 0, INVALID}
+	{"type",       NULL, 0, STR},
+	{"shared",     NULL, 0, STR},
+	{"nthreads",   NULL, 0, INT},
+	{"optpipe",    NULL, 0, STR},
+	{"readonly",   NULL, 0, BOOLEAN},
+	{"embedr",     NULL, 0, BOOLEAN},
+	{"embedpy",    NULL, 0, BOOLEAN},
+	{"embedpy3",   NULL, 0, BOOLEAN},
+	{"embedc",     NULL, 0, BOOLEAN},
+	{"ipv6",       NULL, 0, BOOLEAN},
+	{"listenaddr", NULL, 0, STR},
+	{"nclients",   NULL, 0, INT},
+	{"mfunnel",    NULL, 0, STR},
+	{"dbextra",    NULL, 0, STR},
+	{ NULL,        NULL, 0, INVALID}
 };
 
 static pthread_mutex_t readprops_lock = PTHREAD_MUTEX_INITIALIZER;

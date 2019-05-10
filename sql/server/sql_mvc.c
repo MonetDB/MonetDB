@@ -18,6 +18,7 @@
 #include "sql_semantic.h"
 #include "sql_partition.h"
 #include "sql_privileges.h"
+#include "sql_querytype.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "gdk_logger.h"
@@ -287,6 +288,9 @@ mvc_trans(mvc *m)
 	assert(!m->session->active);	/* can only start a new transaction */
 
 	store_lock();
+	if (GDKverbose >= 1)
+		fprintf(stderr, "#%s: starting transaction\n",
+			MT_thread_getname());
 	schema_changed = sql_trans_begin(m->session);
 	if (m->qc && (schema_changed || m->qc->nr > m->cache || err)){
 		if (schema_changed || err) {
@@ -415,6 +419,9 @@ build up the hash (not copied in the trans dup)) */
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		if (mvc_debug)
 			fprintf(stderr, "#mvc_commit %s done\n", name);
+		if (GDKverbose >= 1)
+			fprintf(stderr, "#%s: savepoint commit %s done\n",
+				MT_thread_getname(), name);
 		return msg;
 	}
 
@@ -450,12 +457,15 @@ build up the hash (not copied in the trans dup)) */
 			return msg;
 		}
 		if (mvc_debug)
-			fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
+			fprintf(stderr, "#mvc_commit done\n");
+		if (GDKverbose >= 1)
+			fprintf(stderr, "#%s: commit done (no changes)\n",
+				MT_thread_getname());
 		return msg;
 	}
 
 	/*
-	while (tr->schema_updates && ATOMIC_GET(store_nr_active, store_nr_active_lock) > 1) {
+	while (tr->schema_updates && ATOMIC_GET(&store_nr_active) > 1) {
 		store_unlock();
 		MT_sleep_ms(100);
 		wait += 100;
@@ -494,7 +504,10 @@ build up the hash (not copied in the trans dup)) */
 	store_unlock();
 	m->type = Q_TRANS;
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
+		fprintf(stderr, "#mvc_commit done\n");
+	if (GDKverbose >= 1)
+		fprintf(stderr, "#%s: commit done\n",
+			MT_thread_getname());
 	return msg;
 }
 
@@ -557,6 +570,10 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	m->type = Q_TRANS;
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_rollback %s done\n", (name) ? name : "");
+	if (GDKverbose >= 1)
+		fprintf(stderr, "#%s: commit%s%s rolled back%s\n",
+			MT_thread_getname(), name ? " " : "", name ? name : "",
+			tr->wtime == 0 ? " (no changes)" : "");
 	return msg;
 }
 
@@ -790,7 +807,6 @@ mvc_destroy(mvc *m)
 	if (m->qc)
 		qc_destroy(m->qc);
 	m->qc = NULL;
-	m->sqs = NULL;
 
 	_DELETE(m->args);
 	m->args = NULL;
@@ -2004,65 +2020,6 @@ sql_part *
 mvc_copy_part(mvc *m, sql_table *t, sql_part *pt)
 {
 	return sql_trans_copy_part(m->session->tr, t, pt);
-}
-
-sql_subquery *
-mvc_push_subquery(mvc *m, const char *name, sql_rel *r)
-{
-	sql_subquery *res = NULL;
-
-	if (!m->sqs)
-		m->sqs = sa_list(m->sa);
-	if (m->sqs) {
-		sql_subquery *v = SA_NEW(m->sa, sql_subquery);
-
-		v->name = name;
-		v->rel = r;
-		v->s = NULL;
-		list_append(m->sqs, v);
-		res = v;
-	}
-	return res;
-}
-
-sql_subquery *
-mvc_find_subquery(mvc *m, const char *rname, const char *name) 
-{
-	node *n;
-
-	if (!m->sqs)
-		return NULL;
-	for (n = m->sqs->h; n; n = n->next) {
-		sql_subquery *v = n->data;
-
-		if (strcmp(v->name, rname) == 0) {
-			sql_exp *ne = exps_bind_column2(v->rel->exps, rname, name);
-
-			if (ne)
-				return v;
-		}
-	}
-	return NULL;
-}
-
-sql_exp *
-mvc_find_subexp(mvc *m, const char *rname, const char *name) 
-{
-	node *n;
-
-	if (!m->sqs)
-		return NULL;
-	for (n = m->sqs->h; n; n = n->next) {
-		sql_subquery *v = n->data;
-
-		if (strcmp(v->name, rname) == 0) {
-			sql_exp *ne = exps_bind_column2(v->rel->exps, rname, name);
-
-			if (ne)
-				return ne;
-		}
-	}
-	return NULL;
 }
 
 static inline int dlist_cmp(mvc *sql, dlist *l1, dlist *l2);

@@ -1,5 +1,3 @@
-mosaic_literal
-#mosaic_literal_inplace
 mosaic_runlength
 mosaic_mix
 mosaic_dictionary
@@ -9,9 +7,6 @@ mosaic_linear
 mosaic_frame
 mosaic_prefix
 
-mosaic_literal_double
-
-mosaic_literal_select
 mosaic_runlength_select
 mosaic_dictionary_select
 mosaic_zone_select
@@ -21,7 +16,6 @@ mosaic_prefix_select
 mosaic_frame_select
 mosaic_mix_select
 
-mosaic_literal_thetaselect
 mosaic_runlength_thetaselect
 mosaic_dictionary_thetaselect
 mosaic_zone_thetaselect
@@ -31,7 +25,6 @@ mosaic_prefix_thetaselect
 mosaic_frame_thetaselect
 mosaic_mix_thetaselect
 
-mosaic_literal_joins
 mosaic_runlength_joins
 mosaic_dictionary_joins
 mosaic_zone_joins

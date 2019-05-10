@@ -18,11 +18,9 @@ stdout of test 'mix` in directory 'sql/test/mosaic` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
-
-# 21:39:24 >  
-# 21:39:24 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2828" "--port=35648"
-# 21:39:24 >  
+# 12:26:08 >  
+# 12:26:08 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11941" "--port=39729"
+# 12:26:08 >  
 
 #create table mix0(i integer);
 #declare o integer;

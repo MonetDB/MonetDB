@@ -1,7 +1,9 @@
+column_aliases
 declared_tables
 #now
 trace_test
 simple_selects
 update_delete_aliases
 groupby_expressions
+values
 with_update_stmts

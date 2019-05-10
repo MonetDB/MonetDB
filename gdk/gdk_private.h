@@ -162,8 +162,6 @@ __hidden gdk_return GDKssort_rev(void *restrict h, void *restrict t, const void 
 __hidden gdk_return GDKssort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden void gdk_system_reset(void)
-	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
 __hidden void HASHfree(BAT *b)
@@ -321,7 +319,7 @@ typedef struct {
 } batlock_t;
 
 typedef struct {
-	MT_Lock alloc;
+	MT_Lock cache;
 	MT_Lock trim;
 	bat free;
 } bbplock_t;
@@ -336,7 +334,6 @@ extern struct BBPfarm_t {
 	FILE *lock_file;
 } BBPfarms[MAXFARMS];
 
-extern bool BBP_dirty;	/* BBP table dirty? */
 extern batlock_t GDKbatLock[BBP_BATMASK + 1];
 extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 extern size_t GDK_mmap_minsize_persistent; /* size after which we use memory mapped files for persistent heaps */
@@ -345,7 +342,6 @@ extern size_t GDK_mmap_pagesize; /* mmap granularity */
 extern MT_Lock GDKnameLock;
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
-extern MT_Lock MT_system_lock;
 
 #define BATcheck(tst, msg, err)						\
 	do {								\
@@ -376,7 +372,7 @@ extern MT_Lock MT_system_lock;
 #define threadmask(y)	((int) (mix_int(y) & BBP_THREADMASK))
 #endif
 #define GDKtrimLock(y)	GDKbbpLock[y].trim
-#define GDKcacheLock(y)	GDKbbpLock[y].alloc
+#define GDKcacheLock(y)	GDKbbpLock[y].cache
 #define BBP_free(y)	GDKbbpLock[y].free
 
 /* extra space in front of strings in string heaps when hashash is set

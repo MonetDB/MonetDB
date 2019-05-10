@@ -73,10 +73,6 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
      prologue for mserver5, i.e., a script that is executed by mserver5
      before (the first) mclient connects to mserver5
      (optional)                                             (TST.prologue5)(4,5)
-  + for mclient tests, a MAL script to be used as
-     epilogue for mserver5, i.e., a script that is executed by mserver5 after
-     (all) mclient(s) have finished
-     (optional)                                             (TST.epilogue5)(4,5)
   + a file that contains a list of modules (one per line)
      required by the test  (optional)                       (TST.modules)  (4,5)
   + a file that contains a list of tests (one per line) that must

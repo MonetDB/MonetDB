@@ -13,4 +13,3 @@
 #endif
 
 void optimizerInit(void);
-void optPipeInit(void);

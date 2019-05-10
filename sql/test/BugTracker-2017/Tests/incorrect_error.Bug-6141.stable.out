@@ -18,7 +18,6 @@ stdout of test 'incorrect_error.Bug-6141` in directory 'sql/test/BugTracker-2017
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:15:19 >  
 # 14:15:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7159" "--port=31566"

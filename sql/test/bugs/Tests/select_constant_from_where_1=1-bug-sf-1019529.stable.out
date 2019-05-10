@@ -13,7 +13,6 @@ stdout of test 'select_constant_from_where_1=1-bug-sf-1019529` in directory 'sql
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:30364/
 # MonetDB/SQL module v2.24.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -66,19 +65,19 @@ Ready.
 % 1 # length
 [ 1	]
 #select 1, count(*) from t1019529;
-% .L2,	sys.L6 # table_name
+% .L2,	.L5 # table_name
 % L2,	L5 # name
 % tinyint,	bigint # type
 % 1,	1 # length
 [ 1,	3	]
 #select 1, count(*) from t1019529 where 0=1;
-% .L2,	sys.L6 # table_name
+% .L2,	.L5 # table_name
 % L2,	L5 # name
 % tinyint,	bigint # type
 % 1,	1 # length
 [ 1,	0	]
 #select 1, count(*) where 0=1;
-% .L2,	.L6 # table_name
+% .L2,	.L5 # table_name
 % L2,	L5 # name
 % tinyint,	bigint # type
 % 1,	1 # length

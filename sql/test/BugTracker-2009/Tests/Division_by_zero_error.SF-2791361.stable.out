@@ -14,7 +14,6 @@ stdout of test 'Division_by_zero_error.SF-2791361` in directory 'sql/test/BugTra
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:30548/
 # MonetDB/SQL module v2.32.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

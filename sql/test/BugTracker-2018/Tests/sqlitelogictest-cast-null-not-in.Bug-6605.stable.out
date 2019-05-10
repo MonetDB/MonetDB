@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-cast-null-not-in.Bug-6605` in directory 'sql/tes
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:53:33 >  
 # 13:53:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31327" "--port=39693"
@@ -79,6 +78,11 @@ Ready.
 % col0,	col1,	col2 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
+#SELECT * FROM tab1, tab0 AS cor0 WHERE NULL NOT IN ( cor0.col2 ); --6 columns in the output
+% sys.tab1,	sys.tab1,	sys.tab1,	sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col0,	col1,	col2,	col0,	col1,	col2 # name
+% int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1 # length
 #ROLLBACK;
 
 # 13:53:34 >  

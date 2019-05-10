@@ -18,7 +18,6 @@ stdout of test 'bam_tables_checks` in directory 'sql/test/sys-schema` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:51:05 >  
 # 18:51:05 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29561" "--port=37311"
@@ -160,12 +159,12 @@ Ready.
 % bigint,	clob,	bigint,	int,	int,	clob,	clob,	clob # type
 % 1,	0,	1,	1,	1,	0,	0,	0 # length
 #SELECT '"bam"."files"."format_version"' as full_col_nm, 7 as max_allowed_length, length("format_version") as data_length, t."format_version" as data_value FROM "bam"."files" t WHERE "format_version" IS NOT NULL AND length("format_version") > (select type_digits from sys._columns where name = 'format_version' and table_id in (select id from tables where name = 'files' and schema_id in (select id from sys.schemas where name = 'bam')));
-% .L111,	.L113,	bam.L115,	bam.L117 # table_name
+% .L47,	.L51,	bam.L53,	bam.L55 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	tinyint,	int,	varchar # type
 % 30,	1,	1,	0 # length
 #SELECT '"bam"."files"."sorting_order"' as full_col_nm, 10 as max_allowed_length, length("sorting_order") as data_length, t."sorting_order" as data_value FROM "bam"."files" t WHERE "sorting_order" IS NOT NULL AND length("sorting_order") > (select type_digits from sys._columns where name = 'sorting_order' and table_id in (select id from tables where name = 'files' and schema_id in (select id from sys.schemas where name = 'bam')));
-% .L111,	.L113,	bam.L115,	bam.L117 # table_name
+% .L47,	.L51,	bam.L53,	bam.L55 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	tinyint,	int,	varchar # type
 % 29,	1,	1,	0 # length

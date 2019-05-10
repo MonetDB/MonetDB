@@ -17,14 +17,13 @@ stdout of test 'simple_select.Bug-2988` in directory 'sql/test/BugTracker-2012` 
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 21:38:00 >  
 # 21:38:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=36012"
 # 21:38:00 >  
 
 #select 1, (select 1) as x;
-% .L2,	.L6 # table_name
+% .L2,	.L7 # table_name
 % L2,	x # name
 % tinyint,	tinyint # type
 % 1,	1 # length

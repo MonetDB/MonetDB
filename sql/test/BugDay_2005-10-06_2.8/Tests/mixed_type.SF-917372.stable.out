@@ -14,7 +14,6 @@ stdout of test 'mixed_type.SF-917372` in directory 'sql/test/BugDay_2005-10-06_2
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38592/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

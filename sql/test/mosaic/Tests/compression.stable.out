@@ -19,11 +19,9 @@ stdout of test 'compression` in directory 'sql/test/mosaic` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
-
-# 14:00:27 >  
-# 14:00:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19726" "--port=38313"
-# 14:00:27 >  
+# 12:26:06 >  
+# 12:26:06 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11941" "--port=39729"
+# 12:26:06 >  
 
 #create table tmp3( i integer, b boolean, f real,t timestamp);
 #insert into tmp3 values
@@ -383,7 +381,7 @@ end user.s22_1;
 % 15 # length
 [ 27.104	]
 #select count(*) from tmp3;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length

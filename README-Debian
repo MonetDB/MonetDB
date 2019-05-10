@@ -16,7 +16,6 @@ pkg-config
 These packages are optional, but required when building the MonetDB
 .deb packages.
 
-libatomic-ops-dev	# optional, but recommended
 libbam-dev		# optional: read BAM and SAM files
 libbz2-dev		# optional: read and write .bz2 compressed files
 libcurl4-gnutls-dev	# optional: read remote files with sys.getcontent(url)

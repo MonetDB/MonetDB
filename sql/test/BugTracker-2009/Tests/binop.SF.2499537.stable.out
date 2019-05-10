@@ -14,7 +14,6 @@ stdout of test 'binop.SF.2499537` in directory 'sql/test/BugTracker-2009` itself
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:36434/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

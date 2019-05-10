@@ -12,6 +12,7 @@
 
 #include "monetdb_config.h"
 #include "opt_coercion.h"
+#include "opt_aliases.h"
 
 typedef struct{
 	int pc;
@@ -19,29 +20,6 @@ typedef struct{
 	int totype;
 	int src;
 } Coercion;
-
-static int
-coercionOptimizerStep(MalBlkPtr mb, int i, InstrPtr p)
-{
-	int t, k, a, b;
-
-	a = getArg(p, 0);
-	b = getArg(p, 1);
-	t = getVarType(mb, b);
-	if (getVarType(mb, a) != t)
-		return 0;
-	if (strcmp(getFunctionId(p), ATOMname(t)) == 0) {
-		removeInstruction(mb, p); /* dead code */
-		for (; i < mb->stop; i++) {
-			p = getInstrPtr(mb, i);
-			for (k = p->retc; k < p->argc; k++)
-				if (p->argv[k] == a)
-					p->argv[k] = b;
-		}
-		return 1;
-	}
-	return 0;
-}
 
 /* Check coercions for numeric types towards :hge that can be handled with smaller ones.
  * For now, limit to +,-,/,*,% hge expressions
@@ -120,7 +98,7 @@ coercionOptimizerAggrStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 str
 OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, k;
+	int i, k, t;
 	InstrPtr p;
 	int actions = 0;
 	str calcRef= putName("calc");
@@ -179,9 +157,12 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		coercionOptimizerAggrStep(cntxt,mb, i, coerce);
 		coercionOptimizerCalcStep(cntxt,mb, i, coerce);
 		if (getModuleId(p)==calcRef && p->argc == 2) {
-			k= coercionOptimizerStep(mb, i, p);
-			actions += k;
-			if( k) i--;
+			t = getVarType(mb, getArg(p,1));
+			if (getVarType(mb, getArg(p,0)) == t && strcmp(getFunctionId(p), ATOMname(t)) == 0) {
+				/* turn it into an assignment */
+				clrFunction(p);
+				actions ++;
+			}
 		}
 	}
 	/*
@@ -195,13 +176,14 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
         chkTypes(cntxt->usermodule, mb, FALSE);
         chkFlow(mb);
         chkDeclarations(mb);
-    }
+    } 
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","coercion",actions, usec);
     newComment(mb,buf);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
+	/* else we can also remove the request to apply the next alias optimizer */
 
 	return msg;
 }

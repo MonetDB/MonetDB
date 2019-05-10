@@ -59,7 +59,6 @@ stdout of test 'sqlitelogictest-groupby-coalesce-error-message.Bug-6608` in dire
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 09:40:19 >  
 # 09:40:19 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13348" "--port=34045"

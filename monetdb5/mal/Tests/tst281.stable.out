@@ -19,7 +19,6 @@ stdout of test 'tst281` in directory 'monetdb5/mal` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:04:32 >  
 # 15:04:32 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6764" "--port=38657"

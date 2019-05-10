@@ -23,7 +23,6 @@ stdout of test 'timestamp_convert.Bug-3815` in directory 'sql/test/BugTracker-20
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 19:04:38 >  
 # 19:04:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17747" "--port=33045"

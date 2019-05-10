@@ -18,7 +18,6 @@ stdout of test 'dumppoints` in directory 'geom/sql/pg_regression` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:11:12 >  
 # 15:11:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17878" "--port=39394"

@@ -20,7 +20,6 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-plan-0join-query` i
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 01:44:33 >  
 # 01:44:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6324" "--port=31552"
@@ -44,7 +43,9 @@ project (
 % clob # type
 % 69 # length
 project (
-| table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+| project (
+| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+| ) [ "fk"."id" NOT NULL HASHCOL  ]
 ) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 # 01:44:33 >  

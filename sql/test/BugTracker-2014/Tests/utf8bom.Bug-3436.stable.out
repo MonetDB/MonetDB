@@ -19,7 +19,6 @@ stdout of test 'utf8bom.Bug-3436` in directory 'sql/test/BugTracker-2014` itself
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:46:05 >  
 # 16:46:05 >  "/usr/bin/python2" "utf8bom.Bug-3436.SQL.py" "utf8bom.Bug-3436"

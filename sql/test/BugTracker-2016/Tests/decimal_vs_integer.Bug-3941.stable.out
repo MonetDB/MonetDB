@@ -23,7 +23,6 @@ stdout of test 'decimal_vs_integer.Bug-3941` in directory 'sql/test/BugTracker-2
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:01:30 >  
 # 15:01:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23330" "--port=37542"
@@ -38,8 +37,8 @@ Ready.
 % 120 # length
 function user.s4_1():void;
     X_2:void := querylog.define("explain select count(*) from tmp where i = 20160222;":str, "default_pipe":str, 13:int);
-    X_18:bat[:int] := bat.new(nil:int);
-    X_19:lng := aggr.count(X_18:bat[:int]);
+    X_16:bat[:oid] := bat.new(nil:oid);
+    X_19:lng := aggr.count(X_16:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_19:lng);
 end user.s4_1;
 # optimizer.mitosis()
@@ -51,8 +50,8 @@ end user.s4_1;
 % 126 # length
 function user.s6_1():void;
     X_2:void := querylog.define("explain select count(*) from tmp where i = \\'20160222\\';":str, "default_pipe":str, 13:int);
-    X_18:bat[:int] := bat.new(nil:int);
-    X_19:lng := aggr.count(X_18:bat[:int]);
+    X_16:bat[:oid] := bat.new(nil:oid);
+    X_19:lng := aggr.count(X_16:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_19:lng);
 end user.s6_1;
 # optimizer.mitosis()
@@ -64,8 +63,10 @@ end user.s6_1;
 % 121 # length
 function user.s8_1():void;
     X_2:void := querylog.define("explain select count(*) from tmp where i = 201602221;":str, "default_pipe":str, 14:int);
-    X_21:bat[:int] := bat.new(nil:int);
-    X_22:lng := aggr.count(X_21:bat[:int]);
+    X_12:bat[:int] := bat.new(nil:int);
+    X_13:bat[:int] := batcalc.int(0:int, X_12:bat[:int], 9:int, 0:int);
+    C_19:bat[:oid] := algebra.thetaselect(X_13:bat[:int], 201602221:int, "==":str);
+    X_22:lng := aggr.count(C_19:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_22:lng);
 end user.s8_1;
 # optimizer.mitosis()

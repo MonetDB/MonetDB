@@ -65,7 +65,7 @@ external name sql.querylog_empty;
 -- manipulate the query logger
 create procedure sys.querylog_enable()
 external name sql.querylog_enable;
-create procedure sys.querylog_enable(threshold smallint)
-external name sql.querylog_enable_threshold;
+create procedure sys.querylog_enable(threshold integer)
+external name sql.querylog_enable;
 create procedure sys.querylog_disable()
 external name sql.querylog_disable;

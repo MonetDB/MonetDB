@@ -17,6 +17,7 @@
 
 #define new_exp_list(sa) sa_list(sa)
 #define exp2list(sa,e)   append(sa_list(sa),e)
+#define new_compare_list(sa, l, r) exp2list(sa, exp_compare(sa, l, r, cmp_equal))
 
 extern comp_type swap_compare( comp_type t );
 extern comp_type range2lcompare( int r );
@@ -70,6 +71,7 @@ extern list * exp_types(sql_allocator *sa, list *exps);
 extern int have_nil(list *exps);
 
 extern sql_exp * exp_column(sql_allocator *sa, const char *rname, const char *name, sql_subtype *t, int card, int has_nils, int intern);
+#define exp_ref(sa, e) exp_column(sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e))
 extern sql_exp * exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, int card, int has_nils, int intern);
 extern sql_exp * exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel, sql_exp *old);
 extern sql_exp * exp_set(sql_allocator *sa, const char *name, sql_exp *val, int level);
@@ -88,6 +90,7 @@ extern void noninternexp_setname(sql_allocator *sa, sql_exp *e, const char *rnam
 extern char* make_label(sql_allocator *sa, int nr);
 extern sql_exp* exp_label(sql_allocator *sa, sql_exp *e, int nr);
 extern sql_exp* exp_label_table(sql_allocator *sa, sql_exp *e, int nr);
+extern list* exps_label(sql_allocator *sa, list *exps, int nr);
 
 extern sql_exp * exp_copy( sql_allocator *sa, sql_exp *e);
 extern list * exps_copy( sql_allocator *sa, list *exps);
@@ -133,6 +136,8 @@ extern int exp_has_sideeffect(sql_exp *e);
 extern int rel_has_exp(sql_rel *rel, sql_exp *e);
 /* return 0 when the relation contain atleast one of the passed expressions else < 0 */
 extern int rel_has_exps(sql_rel *rel, list *e);
+/* return 1 when the relation contains all of the passed expressions else 0 */
+extern int rel_has_all_exps(sql_rel *rel, list *e);
 
 extern sql_rel *find_rel(list *rels, sql_exp *e);
 extern sql_rel *find_one_rel(list *rels, sql_exp *e);
@@ -154,5 +159,9 @@ extern atom *exp_flatten(mvc *sql, sql_exp *e);
 extern void exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r);
 
 extern sql_exp *create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value);
+
+extern int exp_aggr_is_count(sql_exp *e);
+
+extern void exps_reset_freevar(list *exps);
 
 #endif /* _REL_EXP_H_ */

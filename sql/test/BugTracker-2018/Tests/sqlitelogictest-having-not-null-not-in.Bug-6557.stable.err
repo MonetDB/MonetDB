@@ -27,6 +27,10 @@ stderr of test 'sqlitelogictest-having-not-null-not-in.Bug-6557` in directory 's
 # 12:32:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25333" "--port=30615"
 # 12:32:58 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-5168/.s.monetdb.37758
+QUERY = SELECT DISTINCT tab0.col1 AS col2 FROM tab0 GROUP BY tab0.col1 HAVING NULL NOT IN ( col2 ); --error
+ERROR = !SELECT: cannot use non GROUP BY column 'col2' in query results without an aggregate function
+CODE  = 42000
 
 # 12:32:58 >  
 # 12:32:58 >  "Done."

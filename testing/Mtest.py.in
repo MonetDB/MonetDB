@@ -360,12 +360,12 @@ F_SKIP = -1
 F_OK = 0
 F_WARN = 1
 F_SOCK = 2
-F_ERROR = 3
-F_TIME = 4
-F_ABRT = 5
-F_RECU = 6
-F_SEGV = 7
-F_MISSING = 8
+F_MISSING = 3
+F_ERROR = 4
+F_TIME = 5
+F_ABRT = 6
+F_RECU = 7
+F_SEGV = 8
 
 FAILURES = {
     F_SKIP  : ("F_SKIP",  '-'),
@@ -439,6 +439,7 @@ CONDITIONALS = {
     'MERCURIAL'            : "",
     'RELEASERUN'           : "",
     'BAD_HOSTNAME'         : "",
+    'HAVE_IPV6'            : "",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -719,7 +720,7 @@ elif sys.version_info[0] == 3:
 
 def openutf8(file, mode='r'):
     try:
-        f = open(file, mode, encoding='utf-8') # Python 3
+        f = open(file, mode, encoding='utf-8', errors='replace') # Python 3
     except TypeError:
         f = open(file, mode)    # Python 2
     return f
@@ -1323,14 +1324,13 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     os.environ['TSTTRGDIR'] = TSTTRGDIR
     os.environ['RELSRCDIR'] = env['RELSRCDIR']
     os.environ['PYTHON2']   = '@QXPYTHON2@'
-    if 'PYTHON2PATH' not in os.environ: os.environ['PYTHON2PATH'] = ''
+    if 'PYTHON2PATH' not in os.environ:
+        os.environ['PYTHON2PATH'] = ''
     os.environ['PYTHON2PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
     os.environ['PYTHON3']   = '@QXPYTHON3@'
-    if 'PYTHON3PATH' not in os.environ: os.environ['PYTHON3PATH'] = ''
+    if 'PYTHON3PATH' not in os.environ:
+        os.environ['PYTHON3PATH'] = ''
     os.environ['PYTHON3PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', '@QXPYTHON3_LIBDIR@'))
-    if os.name == 'nt':
-        os.environ['PYTHON2PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', 'lib', 'python2'))
-        os.environ['PYTHON3PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', 'lib', 'python3'))
     if 'TSTDATAPATH' not in os.environ and TSTDATAPATH:
         env['TSTDATAPATH'] = TSTDATAPATH
         os.environ['TSTDATAPATH'] = TSTDATAPATH
@@ -1372,9 +1372,15 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         alllinks = []
         try:
             for TST,COND in testlist:
-                os.environ['TST'] = TST
-                tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests)
-                alllinks.extend(links)
+                if global_timeout and start_time + global_timeout < time.time():
+                    if not testweb:
+                        print('\nGlobal testing timeout reached\n')
+                        break
+                    tt, FtOut, FtErr, bodyline, reason = 0,F_SKIP,F_SKIP,None,"as the global timeout has been reached"
+                else:
+                    os.environ['TST'] = TST
+                    tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests)
+                    alllinks.extend(links)
                 if tt:
                     t = "%7.3f" % tt
                 else:
@@ -1390,9 +1396,6 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                         body_bad.append(bodyline)
                 if FtOut in (F_OK, F_WARN) and FtErr in (F_OK, F_WARN):
                     oktests.append(TST)
-                if global_timeout and start_time + global_timeout < time.time():
-                    print('\nGlobal testing timeout reached\n')
-                    break
         except KeyboardInterrupt:
             print('\nInterrupted')
             interrupted = True
@@ -1721,6 +1724,7 @@ def GetBitsAndModsAndThreads(env) :
     proc = process.Popen(cmd, stdin = process.PIPE, stdout = process.PIPE,
                          stderr = process.PIPE, universal_newlines = True)
     proc.killed = False
+    proc.onechild = True
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
     try:
         t.start()
@@ -2013,6 +2017,28 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             #elif os.name == "posix":
             else:
                 reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.R|.rb]`"
+            if quiet:
+                pass
+            elif verbose:
+                STDOUT.write('%s%s  ' %
+                             (prompt(), os.path.join(env['TSTDIR'], TST + EXT)))
+                prred('TEST MISSING')
+                STDOUT.write('\n')
+            else:
+                if ttywidth > 0 and length + 10 + 21 >= ttywidth:
+                    # 10 - length of prompt()
+                    # 21 - length of time plus result
+                    l = ttywidth - 10 - 21 - 1
+                    if len(TST) <= l:
+                        s = '%-*s ' % (l, TST)
+                    else:
+                        s = '%s...%s ' % (TST[:l//2 - 2], TST[l//2+1-l:])
+                else:
+                    s = '%-*s ' % (length, TST)
+                STDOUT.write('%s%s' % (prompt(), s))
+                prred('TEST MISSING')
+                STDOUT.write('\n')
+
             return TX,Failed,Failed,elem,reason,links
 
     MissingMods = CheckMods(env, TST, SERVER, CALL)
@@ -2399,6 +2425,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                                  stderr = process.PIPE,
                                  universal_newlines = True)
             proc.killed = False
+            proc.onechild = False
             t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
             try:
                 t.start()
@@ -2467,6 +2494,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                                  stderr = process.PIPE,
                                  universal_newlines = True)
             proc.killed = False
+            proc.onechild = False
             t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
             try:
                 t.start()
@@ -2715,6 +2743,7 @@ def getkids():
     return procs
 
 def killchildren(pid, procs = None):
+    # not called on Windows
     # kill the specified process ID and all its children
     if procs is None:
         try:
@@ -2740,6 +2769,7 @@ def killchildren(pid, procs = None):
             print('killing process %d failed' % pid)
 
 def reallyKill(proc):
+    # not called on Windows
     killchildren(proc.pid, getkids())
 
 def killProc(proc, outfile = None, cmd = None):
@@ -2794,10 +2824,11 @@ def killProc(proc, outfile = None, cmd = None):
             print('cannot write stack trace')
             print(out)
     proc.killed = True
-    try:
-        signal.SIGKILL          # Windows doesn't have this
-        os.kill
-    except AttributeError:
+    if proc.onechild:
+        if procdebug:
+            print('killProc: calling proc.kill() on PID %d' % proc.pid)
+        proc.kill()
+    elif os.name == 'nt':
         if procdebug:
             print('killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid))
         p = process.Popen(['taskkill','/F','/T','/PID',str(proc.pid)],
@@ -2806,10 +2837,11 @@ def killProc(proc, outfile = None, cmd = None):
         out, err = p.communicate()
         if procdebug:
             print('killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode))
+        proc.kill()
     else:
         killchildren(proc.pid)
 
-def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
+def LaunchIt(cmd, TestOut, TestErr, TimeOut, SrvrOut = None) :
     global setpgrp
     if not SrvrOut:
         SrvrOut = process.PIPE
@@ -2822,23 +2854,22 @@ def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
     if procdebug:
         print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd))
     setpgrp = True
-    proc = process.Popen(cmd, stdin = process.PIPE, stdout = SrvrOut,
-                         stderr = TestErr, universal_newlines = True)
+    if os.name == "nt":
+        proc = process.Popen(cmd, stdin=open(os.devnull), stdout=SrvrOut,
+                             stderr=TestErr, universal_newlines=True,
+                             creationflags=process.CREATE_NEW_PROCESS_GROUP)
+    else:
+        proc = process.Popen(cmd, stdin=open(os.devnull), stdout=SrvrOut,
+                             stderr=TestErr, universal_newlines=True)
     # maybe buffer output as it comes to avoid deadlock
     if SrvrOut == process.PIPE:
         proc.stdout = process._BufferedPipe(proc.stdout)
     if TestErr == process.PIPE:
         proc.stderr = process._BufferedPipe(proc.stderr)
     proc.killed = False
+    proc.onechild = True
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     t.start()
-
-    if TestInput:
-        try:
-            proc.stdin.write(TestInput)
-            proc.stdin.flush()
-        except IOError as err:
-            Warn("Flushing input pipe in LaunchIt failed with #%d: '%s'." % (err.errno, err.strerror))
 
     return proc, t
 ### LaunchIt(cmd, TestIn, TestOut, TestErr, TimeOut, SrvrOut) #
@@ -2852,7 +2883,7 @@ def CollectIt(pOut, TestOut) :
             TestOut.write(buf)
 ### CollectIt(pOut, pErr, TestOut, TestErr) #
 
-def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
+def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut) :
     global setpgrp
     if type(TestIn) is type(''):
         TestInput = TestIn
@@ -2869,6 +2900,7 @@ def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
     proc = process.Popen(cmd, stdin = TestIn, stdout = TestOut,
                          stderr = TestErr, universal_newlines = True)
     proc.killed = False
+    proc.onechild = onechild
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     try:
         t.start()
@@ -2888,7 +2920,7 @@ def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
     if rc == 'interrupt':
         raise KeyboardInterrupt
     return rc
-### RunIt(cmd, TestIn, TestOut, TestErr) #
+### RunIt(cmd, onechild, TestIn, TestOut, TestErr) #
 
 def Log() :
     time.strftime('%H:%M:%S> ',time.localtime(time.time()))
@@ -2965,6 +2997,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     pSrvrTimer = None
     try:
         if SERVER in ["MAL", "SQL"]:
+            ServerReady = False
             SrvrOutFile = TST+".server.out"
             SrvrErrFile = TST+".server.err"
             SrvrOut = openutf8(SrvrOutFile,"w")
@@ -2988,12 +3021,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     if Srvr[i].startswith('gdk_nr_threads='):
                         Srvr[i] = 'gdk_nr_threads=%s' % threads
                         break
-            Srvr.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB))
+            dbpath = os.path.join(env['GDK_DBFARM'], TSTDB)
+            Srvr.append('--dbpath=%s' % dbpath)
             if env.get('MULTIFARM'):
                 Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
                 shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
                               ignore_errors = True)
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
+            Srvr.extend(['--set', 'monet_daemon=yes'])
             if os.path.isfile(TST + '.options5'):
                 Srvr.extend(openutf8(TST + '.options5').read().split())
             lang=""
@@ -3052,8 +3087,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             # enable C integration in server
             Srvr.extend(['--set', 'embedded_c=true'])
 
+            try:
+                os.unlink(os.path.join(dbpath, '.started'))
+            except OSError:
+                pass
 
-            pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
+            pSrvr, pSrvrTimer = LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT)
             if savepath is not None:
                 os.environ['PATH'] = savepath
                 if savepypath:
@@ -3064,39 +3103,41 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     os.environ['PYTHONHOME'] = savepyhome
                 else:
                     del os.environ['PYTHONHOME']
-            ln="dummy"
-            while 0 < len(ln) and not ln.startswith('Ready.'):
-                ln=pSrvr.stdout.readline()
-                SrvrOut.write(ln)
-                SrvrOut.flush()
-            if not ln.startswith('Ready.'):
-                # If not ready, it may be that there are far too many
-                # network connections in use, all in TIME_WAIT status.
-                # We'll just wait a while for that to clear and try
-                # again.
-                pSrvr.stdin.close()
-                CollectIt(pSrvr.stdout, SrvrOut)
-                pSrvr.wait()
+            while True:
+                pSrvr.poll()
+                if pSrvr.returncode is not None:
+                    break
+                if os.path.exists(os.path.join(dbpath, '.started')):
+                    ServerReady = True
+                    break
+                time.sleep(0.001)
+            if not ServerReady:
+                # Process exited.
+                # It may be that there are far too many network
+                # connections in use, all in TIME_WAIT status.  We'll
+                # just wait a while for that to clear and try again.
                 pSrvrTimer.cancel()
+                CollectIt(pSrvr.stdout, SrvrOut)
                 if returnCode(pSrvr) == 'error' and sys.platform == 'linux2':
                     x = process.Popen(['netstat', '-an'], stdout = process.PIPE, stderr = process.PIPE, universal_newlines = True)
                     out, err = x.communicate()
                     if out.count('TIME_WAIT') > 100:
                         time.sleep(120)
-                        pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
-                        ln="dummy"
-                        while 0 < len(ln) and not ln.startswith('Ready.'):
-                            ln=pSrvr.stdout.readline()
-                            SrvrOut.write(ln)
-                            SrvrOut.flush()
-                if not ln.startswith('Ready.'):
-                    ServerReady = False
+                        pSrvr, pSrvrTimer = LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT)
+                        while True:
+                            pSrvr.poll()
+                            if pSrvr.returncode is not None:
+                                break
+                            if os.path.exists(os.path.join(dbpath, '.started')):
+                                ServerReady = True
+                                break
+                            time.sleep(0.001)
 
             if ServerReady:
                 port = int(env['MAPIPORT'])
                 ServerReady = mapi_ping(port, lang)
                 if not ServerReady:
-                    pSrvr.stdin.close()
+                    pSrvr.terminate()
                     CollectIt(pSrvr.stdout, SrvrOut)
                     pSrvr.wait()
                     pSrvrTimer.cancel()
@@ -3105,20 +3146,18 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                         out, err = x.communicate()
                         if out.count('TIME_WAIT') > 100:
                             time.sleep(120)
-                            ServerReady = True
-                            pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
-                            ln="dummy"
-                            while 0 < len(ln) and not ln.startswith('Ready.'):
-                                ln=pSrvr.stdout.readline()
-                                SrvrOut.write(ln)
-                                SrvrOut.flush()
-                    if not ln.startswith('Ready.'):
-                        ServerReady = False
-
-                    if ServerReady:
-                        port = int(env['MAPIPORT'])
-                        ServerReady = mapi_ping(port, lang)
-
+                            pSrvr, pSrvrTimer = LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT)
+                            while True:
+                                pSrvr.poll()
+                                if pSrvr.returncode is not None:
+                                    break
+                                if os.path.exists(os.path.join(dbpath, '.started')):
+                                    ServerReady = True
+                                    break
+                                time.sleep(0.001)
+                            if ServerReady:
+                                port = int(env['MAPIPORT'])
+                                ServerReady = mapi_ping(port, lang)
         else:
             ClntOut = openutf8(TestOutFile, 'a')
             ClntErr = openutf8(TestErrFile, 'a')
@@ -3126,10 +3165,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if ServerReady:
             if   CALL == "other":
                 cmd = [os.path.join(".", TST + EXT), TST] + PRELUDE
-                returncode = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
+                returncode = RunIt(cmd, False, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL == "python":
                 cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST] + PRELUDE
-                returncode = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
+                returncode = RunIt(cmd, False, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL in ["mal", "malXs"]:
                 cmd = splitcommand(exe['mserver5'][1]) + LOCAL_CONF + PRELUDE
                 cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB))
@@ -3148,7 +3187,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 for f in d:
                     if test.match(f):
                         cmd.append(f)
-                        returncode = RunIt(cmd, openutf8(os.devnull), ClntOut, ClntErr, TIMEOUT)
+                        returncode = RunIt(cmd, True, openutf8(os.devnull), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
                         break
             elif CALL in ["malC", "malCXs"]:
@@ -3169,7 +3208,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 else:
                     Clnt = []   # cannot happen
                 for f in TSTs:
-                    returncode = RunIt(Clnt, openutf8(f), ClntOut, ClntErr, TIMEOUT)
+                    returncode = RunIt(Clnt, True, openutf8(f), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
                         break
 
@@ -3192,19 +3231,19 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 if passwd:
                     Clnt.append('-P%s' % passwd)
                 for f in TSTs:
-                    returncode = RunIt(Clnt, openutf8(f), ClntOut, ClntErr, TIMEOUT)
+                    returncode = RunIt(Clnt, True, openutf8(f), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
                         break
             elif CALL == "R":
                 Clnt = splitcommand(exe['R_Client'][1])
-                RunIt(Clnt, openutf8(TST+EXT), ClntOut, ClntErr, TIMEOUT)
+                RunIt(Clnt, False, openutf8(TST+EXT), ClntOut, ClntErr, TIMEOUT)
             elif CALL == "ruby":
                 Clnt = splitcommand(exe['ruby_client'][1]) + [TST + EXT]
 
                 Clnt[2], Clnt[1] = Clnt[1], Clnt[2]
                 Clnt.append(env['TSTDB'])
 
-                RunIt(Clnt, "", ClntOut, ClntErr, TIMEOUT)
+                RunIt(Clnt, True, "", ClntOut, ClntErr, TIMEOUT)
         else:
             for fp in ClntOut,ClntErr:
                 fp.write('\n\n! Server not ready; skipping attempt to start client!\n\n')
@@ -3212,38 +3251,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         ClntErr.close()
 
         if SERVER in ["MAL", "SQL"]:
-            EPILOGUE = None
-            if os.path.isfile(TST+".epilogue5"):
-                EPILOGUE = openutf8(TST+".epilogue5",'r')
-            if EPILOGUE:
-                EpiFailed = ""
-                try:
-                    pSrvr.stdin.write(EPILOGUE.read())
-                    pSrvr.stdin.flush()
-                    pSrvr.stdin.write(';\nio.printf("\\nDone..\\n");\n')
-                    pSrvr.stdin.flush()
-                except IOError as err:
-                    EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(err.errno)+": '"+err.strerror+"'. !"
-                    EpiFailed = EpiFailed+"\n! Probably, mserver5 has died before or during. !\n"
-                ln="dummy"
-                while 0 < len(ln) and not ln.startswith('Done..'):
-                    ln=pSrvr.stdout.readline()
-                    SrvrOut.write(ln)
-                    SrvrOut.flush()
-                SrvrOut.write(EpiFailed)
-                SrvrOut.flush()
-                EPILOGUE.close()
-
             if ServerReady:
-                try:
-                    pSrvr.stdin.write('clients.quit();\n')
-                    pSrvr.stdin.flush()
-                except IOError:
-                    pass
-                try:
-                    pSrvr.stdin.close()
-                except IOError as err:
-                    Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (err.errno, err.strerror))
+                if os.name == "nt":
+                    pSrvr.send_signal(signal.CTRL_BREAK_EVENT)
+                else:
+                    pSrvr.terminate()
 
             CollectIt(pSrvr.stdout, SrvrOut)
             pSrvr.wait()
@@ -3343,6 +3355,7 @@ def Check(command, input) :
     proc = process.Popen(command, stdin = process.PIPE, stdout = process.PIPE,
                          stderr = process.PIPE, universal_newlines = True)
     proc.killed = False
+    proc.onechild = True
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
     try:
         t.start()
@@ -4089,6 +4102,16 @@ def main(argv) :
         except:
             CONDITIONALS['BAD_HOSTNAME'] = '#' # True
 
+    if THISFILE == "Mtest.py": # env['MAPIPORT'] not available on Mapprove.py
+        s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        try:
+            s.bind(('::1', int(env['MAPIPORT'])))
+        except socket.error as err:
+            CONDITIONALS['HAVE_IPV6'] = '' # False
+        else:
+            CONDITIONALS['HAVE_IPV6'] = '#' # True
+        s.close()
+
     # read '.Mapprove.rc'
     if THISFILE == 'Mapprove.py':
         f = os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc')
@@ -4133,6 +4156,8 @@ def main(argv) :
 
     env['BINDIR'] = _configure('@QXbindir@')
     vars_.append('BINDIR')
+    env['LIBDIR'] = _configure('@QXlibdir@')
+    vars_.append('LIBDIR')
 
     # export and display env
     STDERR.flush()
@@ -4493,10 +4518,10 @@ def main(argv) :
                             body_bad.append(elem)
                     if interrupted:
                         break
-                    if global_timeout and start_time + global_timeout < time.time():
-                        print('\nGlobal testing timeout reached\n')
-                        break
                     if not testweb:
+                        if global_timeout and start_time + global_timeout < time.time():
+                            print('\nGlobal testing timeout reached\n')
+                            break
                         # after a directory has been tested, create
                         # the index file so that we can look at test
                         # results while the tests are running

@@ -13,7 +13,6 @@ stdout of test 'outerref_in_selection` in directory 'sql/test` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31756/
 # MonetDB/SQL module v2.25.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -36,7 +35,7 @@ Ready.
 #        FROM capediff AS a
 #        WHERE a.cape_date <= b.cape_date) AS numppl
 #    FROM capediff AS b;
-% .b,	.L11 # table_name
+% sys.b,	.L6 # table_name
 % cape_date,	numppl # name
 % date,	bigint # type
 % 10,	1 # length

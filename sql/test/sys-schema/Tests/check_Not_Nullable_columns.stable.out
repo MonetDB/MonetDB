@@ -18,7 +18,6 @@ stdout of test 'check_Not_Nullable_columns` in directory 'sql/test/sys-schema` i
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:07:03 >  
 # 18:07:03 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25731" "--port=34464"
@@ -105,55 +104,55 @@ Ready.
 % varchar,	int,	varchar # type
 % 0,	1,	0 # length
 #SELECT "atomwidth", * FROM "sys"."storagemodelinput" WHERE "atomwidth" IS NULL;
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% atomwidth,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
-% int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
-% 1,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% atomwidth,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn,	compressed # name
+% int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 1,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	5 # length
 #SELECT "column", * FROM "sys"."storagemodelinput" WHERE "column" IS NULL;
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% column,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
-% varchar,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
-% 0,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% column,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn,	compressed # name
+% varchar,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 0,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	5 # length
 #SELECT "count", * FROM "sys"."storagemodelinput" WHERE "count" IS NULL;
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% count,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
-% bigint,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
-% 1,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% count,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn,	compressed # name
+% bigint,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 1,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	5 # length
 #SELECT "distinct", * FROM "sys"."storagemodelinput" WHERE "distinct" IS NULL;
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% distinct,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
-% bigint,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
-% 1,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% distinct,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn,	compressed # name
+% bigint,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 1,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	5 # length
 #SELECT "isacolumn", * FROM "sys"."storagemodelinput" WHERE "isacolumn" IS NULL;
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% isacolumn,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
-% boolean,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
-% 5,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% isacolumn,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn,	compressed # name
+% boolean,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 5,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	5 # length
 #SELECT "reference", * FROM "sys"."storagemodelinput" WHERE "reference" IS NULL;
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% reference,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
-% boolean,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
-% 5,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% reference,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn,	compressed # name
+% boolean,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 5,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	5 # length
 #SELECT "schema", * FROM "sys"."storagemodelinput" WHERE "schema" IS NULL;
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% schema,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
-% varchar,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
-% 0,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% schema,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn,	compressed # name
+% varchar,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 0,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	5 # length
 #SELECT "table", * FROM "sys"."storagemodelinput" WHERE "table" IS NULL;
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% table,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
-% varchar,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
-% 0,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% table,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn,	compressed # name
+% varchar,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 0,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	5 # length
 #SELECT "type", * FROM "sys"."storagemodelinput" WHERE "type" IS NULL;
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% type,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
-% varchar,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
-% 0,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% type,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn,	compressed # name
+% varchar,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 0,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	5 # length
 #SELECT "typewidth", * FROM "sys"."storagemodelinput" WHERE "typewidth" IS NULL;
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% typewidth,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
-% int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
-% 1,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% typewidth,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn,	compressed # name
+% int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 1,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	5 # length
 #SELECT "function_id", * FROM "sys"."systemfunctions" WHERE "function_id" IS NULL;
 % sys.systemfunctions,	sys.systemfunctions # table_name
 % function_id,	function_id # name
@@ -609,16 +608,6 @@ Ready.
 % nils,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
 % bigint,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
 % 1,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
-#SELECT "minval", * FROM "sys"."statistics" WHERE "minval" IS NULL;
-% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% minval,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% clob,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 0,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
-#SELECT "maxval", * FROM "sys"."statistics" WHERE "maxval" IS NULL;
-% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% maxval,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% clob,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 0,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
 #SELECT "sorted", * FROM "sys"."statistics" WHERE "sorted" IS NULL;
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % sorted,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
@@ -630,15 +619,15 @@ Ready.
 % boolean,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
 % 5,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
 #SELECT "sorted", * FROM "sys"."storagemodelinput" WHERE "sorted" IS NULL;
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% sorted,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
-% boolean,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
-% 5,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% sorted,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn,	compressed # name
+% boolean,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 5,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	5 # length
 #SELECT "unique", * FROM "sys"."storagemodelinput" WHERE "unique" IS NULL;
-% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
-% unique,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
-% boolean,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
-% 5,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% unique,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn,	compressed # name
+% boolean,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 5,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	5 # length
 #SELECT "id", * FROM "sys"."table_partitions" WHERE "id" IS NULL;
 % sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions # table_name
 % id,	id,	table_id,	column_id,	expression,	type # name

@@ -34,6 +34,7 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	char *n;
 	int len = _strlen(query);
 	sql_schema *c = cur_schema(m);
+	sql_query *qc = NULL;
 
 	m->qc = NULL;
 
@@ -79,7 +80,8 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		m->user_id = USER_MONETDB;
 
 	(void) sqlparse(m);     /* blindly ignore errors */
-	rel = rel_semantic(m, m->sym);
+	qc = query_create(m);
+	rel = rel_semantic(qc, m->sym);
 
 	GDKfree(query);
 	GDKfree(b);
@@ -96,14 +98,12 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		strcpy(m->errstr, errstr);
 	} else {
 		int label = m->label;
-		list *sqs = m->sqs;
 
 		while (m->topvars > o.topvars) {
 			if (m->vars[--m->topvars].name)
 				c_delete(m->vars[m->topvars].name);
 		}
 		*m = o;
-		m->sqs = sqs;
 		m->label = label;
 	}
 	m->session->schema = c;
@@ -111,8 +111,9 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 }
 
 sql_rel * 
-rel_semantic(mvc *sql, symbol *s)
+rel_semantic(sql_query *query, symbol *s)
 {
+	mvc *sql = query->sql;
 	if (!s)
 		return NULL;
 
@@ -124,7 +125,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case TR_ROLLBACK:
 	case TR_START:
 	case TR_MODE:
-		return rel_transactions(sql, s);
+		return rel_transactions(query, s);
 
 	case SQL_CREATE_SCHEMA:
 	case SQL_DROP_SCHEMA:
@@ -161,12 +162,12 @@ rel_semantic(mvc *sql, symbol *s)
 
 	case SQL_CREATE_TYPE:
 	case SQL_DROP_TYPE:
-		return rel_schemas(sql, s);
+		return rel_schemas(query, s);
 
 	case SQL_CREATE_SEQ:
 	case SQL_ALTER_SEQ:
 	case SQL_DROP_SEQ:
-		return rel_sequences(sql, s);
+		return rel_sequences(query, s);
 
 	case SQL_CREATE_FUNC:
 	case SQL_DROP_FUNC:
@@ -180,7 +181,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DROP_TRIGGER:
 
 	case SQL_ANALYZE:
-		return rel_psm(sql, s);
+		return rel_psm(query, s);
 
 	case SQL_INSERT:
 	case SQL_UPDATE:
@@ -191,10 +192,10 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_BINCOPYFROM:
 	case SQL_COPYLOADER:
 	case SQL_COPYTO:
-		return rel_updates(sql, s);
+		return rel_updates(query, s);
 
 	case SQL_WITH:
-		return rel_with_query(sql, s);
+		return rel_with_query(query, s);
 
 	case SQL_MULSTMT: {
 		dnode *d;
@@ -204,7 +205,7 @@ rel_semantic(mvc *sql, symbol *s)
 			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		for (d = s->data.lval->h; d; d = d->next) {
 			symbol *sym = d->data.sym;
-			sql_rel *nr = rel_semantic(sql, sym);
+			sql_rel *nr = rel_semantic(query, sym);
 			
 			if (!nr)
 				return NULL;
@@ -220,7 +221,7 @@ rel_semantic(mvc *sql, symbol *s)
 	{
 		dnode *d = s->data.lval->h;
 		symbol *sym = d->data.sym;
-		sql_rel *r = rel_semantic(sql, sym);
+		sql_rel *r = rel_semantic(query, sym);
 
 		if (!r) 
 			return NULL;
@@ -233,7 +234,8 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
-		return rel_selects(sql, s);
+	case SQL_VALUES:
+		return rel_selects(query, s);
 
 	default:
 		return sql_error(sql, 02, SQLSTATE(42000) "Symbol type not found");

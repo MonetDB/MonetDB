@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-groupby-having-in-cast.Bug-6561` in directory 's
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:15:03 >  
 # 16:15:03 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30178" "--port=35159"
@@ -35,6 +34,11 @@ Ready.
 [ 4316	]
 [ 1352	]
 [ 2236	]
+#SELECT col2 FROM tab0 AS cor0 WHERE NOT 49 + + col1 IS NULL GROUP BY col2, col1 HAVING NOT ( COUNT ( * ) ) BETWEEN + 76 - - col2 AND - CASE NULLIF ( - 39, CAST ( - col1 AS INTEGER ) ) WHEN + 67 * - 30 THEN CAST ( 1 AS INTEGER ) + + COUNT ( * ) * col2 ELSE NULL END; --79, 38, 24
+% sys.cor0 # table_name
+% col2 # name
+% int # type
+% 1 # length
 #DROP TABLE tab0;
 
 # 16:15:04 >  

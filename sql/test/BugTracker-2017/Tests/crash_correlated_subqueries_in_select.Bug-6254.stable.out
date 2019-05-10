@@ -20,7 +20,6 @@ stdout of test 'crash_correlated_subqueries_in_select.Bug-6254` in directory 'sq
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 
 # 10:01:40 >  

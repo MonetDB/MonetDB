@@ -19,7 +19,6 @@ stdout of test 'pgexample` in directory 'sql/test/json` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 02:53:37 >  
 # 02:53:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30874" "--port=37692"

@@ -21,7 +21,6 @@ stdout of test 'WHERE_IN_subquery_incorrect_results-JIRA-44` in directory 'sql/t
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

@@ -81,6 +81,14 @@ cs_del(changeset * cs, node *elm, int flags)
 	}
 }
 
+void
+cs_move(changeset *from, changeset *to, void *data)
+{
+	if (!to->set)
+		to->set = list_new(to->sa, to->destroy);
+	list_move_data(from->set, to->set, data);
+}
+
 int
 cs_size(changeset * cs)
 {

@@ -19,11 +19,9 @@ stdout of test 'xqueries_delta` in directory 'sql/test/mosaic` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
-
-# 21:39:36 >  
-# 21:39:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26302" "--port=38894"
-# 21:39:36 >  
+# 12:26:08 >  
+# 12:26:08 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11941" "--port=39729"
+# 12:26:08 >  
 
 #set optimizer='mosaic_pipe';
 #drop table tmp3;
@@ -54,8 +52,7 @@ function user.s10_1():void;
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "dtmp3":str);
     X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 4:int, "<":str);
-    X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
-    X_18:lng := aggr.count(X_17:bat[:int]);
+    X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s10_1;
 #inline               actions= 0 time=0 usec 
@@ -98,8 +95,7 @@ function user.s12_1():void;
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "dtmp3":str);
     X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 7:int, "==":str);
-    X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
-    X_18:lng := aggr.count(X_17:bat[:int]);
+    X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s12_1;
 #inline               actions= 0 time=1 usec 
@@ -157,7 +153,7 @@ end user.s12_1;
 #alter table dtmp3 alter column b set storage 'delta';
 #alter table dtmp3 alter column f set storage 'delta';
 #select count(*) from dtmp3;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -186,8 +182,7 @@ function user.s34_1():void;
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "dtmp3":str);
     X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 4:int, "<":str);
-    X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
-    X_18:lng := aggr.count(X_17:bat[:int]);
+    X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s34_1;
 #inline               actions= 0 time=0 usec 
@@ -229,8 +224,7 @@ function user.s36_1():void;
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "dtmp3":str);
     X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 7:int, "==":str);
-    X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
-    X_18:lng := aggr.count(X_17:bat[:int]);
+    X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s36_1;
 #inline               actions= 0 time=1 usec 
@@ -299,8 +293,7 @@ function user.s52_1():void;
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "dtmp3":str);
     X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 4:int, "<":str);
-    X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
-    X_18:lng := aggr.count(X_17:bat[:int]);
+    X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s52_1;
 #inline               actions= 0 time=0 usec 
@@ -342,8 +335,7 @@ function user.s54_1():void;
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "dtmp3":str);
     X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 7:int, "==":str);
-    X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
-    X_18:lng := aggr.count(X_17:bat[:int]);
+    X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s54_1;
 #inline               actions= 0 time=0 usec 

@@ -19,11 +19,9 @@ stdout of test 'compressionRLE` in directory 'sql/test/mosaic` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
-
-# 21:09:37 >  
-# 21:09:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28373" "--port=30051"
-# 21:09:37 >  
+# 12:26:07 >  
+# 12:26:07 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11941" "--port=39729"
+# 12:26:07 >  
 
 #set optimizer='mosaic_pipe';
 #drop table tmp3;

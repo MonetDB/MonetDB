@@ -290,7 +290,8 @@ convert_and_append(BAT* b, const char* text, bool force) {
 		size_t len = 0;
 		gdk_return ret;
 
-		BATatoms[b->ttype].atomFromStr(text, &len, &element, false);
+		if (BATatoms[b->ttype].atomFromStr(text, &len, &element, false) < 0)
+			return GDK_FAIL;
 		ret = BUNappend(b, element, force);
 		GDKfree(element);
 		return ret;

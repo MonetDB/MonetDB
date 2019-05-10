@@ -56,7 +56,6 @@ stdout of test 'storagemodel` in directory 'sql/test/BugTracker-2016` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 23:38:44 >  
 # 23:38:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21747" "--port=30783"

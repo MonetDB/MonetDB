@@ -18,7 +18,6 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 12:34:37 >  
 # 12:34:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4387" "--port=31305"
@@ -134,11 +133,6 @@ Ready.
 % id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % int,	varchar,	varchar,	int,	int,	int,	int,	int # type
 % 1,	0,	0,	1,	1,	1,	1,	1 # length
-#SELECT * FROM sys.objects WHERE id NOT IN (SELECT id FROM sys.ids);
-% sys.objects,	sys.objects,	sys.objects # table_name
-% id,	name,	nr # name
-% int,	varchar,	int # type
-% 1,	0,	1 # length
 #SELECT * FROM sys.objects WHERE id NOT IN (SELECT id FROM sys.ids);
 % sys.objects,	sys.objects,	sys.objects # table_name
 % id,	name,	nr # name

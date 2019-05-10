@@ -19,7 +19,6 @@ stdout of test 'groupby_on_value_view.Bug-3264` in directory 'sql/test/BugTracke
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 12:47:26 >  
 # 12:47:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23677" "--port=39993"

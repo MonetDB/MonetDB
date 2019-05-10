@@ -21,7 +21,6 @@ stdout of test 'color` in directory 'monetdb5/modules/atoms` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:05:30 >  
 # 10:05:30 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"

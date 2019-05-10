@@ -20,7 +20,6 @@ stdout of test 'wrong_aggregation_count.Bug-6257` in directory 'sql/test/BugTrac
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -73,7 +72,7 @@ Ready.
 #, (SELECT CAST(COUNT(*) as int) FROM sys.tables t WHERE t.schema_id = s.id AND NOT t.system AND t.query is NULL) AS "# user tables"
 #, (SELECT CAST(COUNT(*) as int) FROM sys.tables t WHERE t.schema_id = s.id AND t.system AND t.query is NOT NULL) AS "# system views"
 #SELECT * FROM sys.schema_stats;
-% .schema_stats,	.schema_stats,	.schema_stats,	.schema_stats,	.schema_stats,	.schema_stats,	.schema_stats,	.schema_stats,	.schema_stats # table_name
+% sys.schema_stats,	sys.schema_stats,	sys.schema_stats,	sys.schema_stats,	.schema_stats,	.schema_stats,	.schema_stats,	.schema_stats,	.schema_stats # table_name
 % name,	authorization,	owner,	system,	"# tables/views",	"# system tables",	"# user tables",	"# system views",	"# user views" # name
 % varchar,	int,	int,	boolean,	int,	int,	int,	int,	int # type
 % 8,	1,	1,	5,	1,	1,	1,	1,	1 # length

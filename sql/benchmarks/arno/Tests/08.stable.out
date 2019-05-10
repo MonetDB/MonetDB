@@ -13,7 +13,6 @@ stdout of test '08` in directory 'sql/benchmarks/arno` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34969/
 # MonetDB/SQL module v2.25.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

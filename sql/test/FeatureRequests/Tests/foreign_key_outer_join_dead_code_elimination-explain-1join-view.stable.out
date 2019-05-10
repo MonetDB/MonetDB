@@ -20,7 +20,6 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-explain-1join-view`
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 01:44:33 >  
 # 01:44:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6324" "--port=31552"
@@ -32,14 +31,13 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 123 # length
+% 103 # length
 function user.s4_1():void;
-    X_1:void := querylog.define("explain select count(*) from v1;":str, "sequential_pipe":str, 37:int);
+    X_1:void := querylog.define("explain select count(*) from v1;":str, "sequential_pipe":str, 12:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
-    X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "fk":str, "id":str, 0:int);
-    X_18:lng := aggr.count(X_8:bat[:int], C_5:bat[:oid]);
-    sql.resultSet("sys.L12":str, "L11":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    X_18:lng := aggr.count(C_5:bat[:oid]);
+    sql.resultSet(".L11":str, "L11":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s4_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
@@ -71,9 +69,9 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 123 # length
+% 118 # length
 function user.s6_1():void;
-    X_1:void := querylog.define("explain select id from v1 order by id;":str, "sequential_pipe":str, 48:int);
+    X_1:void := querylog.define("explain select id from v1 order by id;":str, "sequential_pipe":str, 23:int);
     X_25:bat[:str] := bat.new(nil:str);
     X_31:bat[:int] := bat.new(nil:int);
     X_29:bat[:int] := bat.new(nil:int);
@@ -139,7 +137,7 @@ function user.s8_1():void;
     X_17:bat[:int] := algebra.projection(C_5:bat[:oid], X_8:bat[:int]);
     X_42:bat[:int] := algebra.projection(X_34:bat[:oid], X_17:bat[:int]);
     C_40:bat[:oid] := bat.mirror(X_17:bat[:int]);
-    C_41:bat[:oid] := algebra.difference(C_40:bat[:oid], X_34:bat[:oid], nil:BAT, nil:BAT, false:bit, nil:lng);
+    C_41:bat[:oid] := algebra.difference(C_40:bat[:oid], X_34:bat[:oid], nil:BAT, nil:BAT, false:bit, false:bit, nil:lng);
     X_27:bat[:int] := sql.bind(X_4:int, "sys":str, "pk1":str, "v1":str, 0:int);
     X_45:bat[:int] := bat.append(X_43:bat[:int], X_42:bat[:int], true:bit);
     X_47:bat[:int] := algebra.projection(C_41:bat[:oid], X_17:bat[:int]);

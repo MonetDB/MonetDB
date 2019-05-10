@@ -16,12 +16,13 @@
 #include "bat/bat_storage.h"
 #include "bat/bat_table.h"
 #include "bat/bat_logger.h"
+#include "bat/nop_logger.h"
 
 /* version 05.22.03 of catalog */
 #define CATALOG_VERSION 52203
 int catalog_version = 0;
 
-static MT_Lock bs_lock MT_LOCK_INITIALIZER("bs_lock");
+static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");
 static sqlid store_oid = 0;
 static sqlid prev_oid = 0;
 static int nr_sessions = 0;
@@ -30,10 +31,7 @@ static sqlid *store_oids = NULL;
 static int nstore_oids = 0;
 sql_trans *gtrans = NULL;
 list *active_sessions = NULL;
-volatile ATOMIC_TYPE store_nr_active = 0;
-#ifdef ATOMIC_LOCK
-MT_Lock store_nr_active_lock MT_LOCK_INITIALIZER("store_nr_active_lock");
-#endif
+ATOMIC_TYPE store_nr_active = ATOMIC_VAR_INIT(0);
 store_type active_store_type = store_bat;
 int store_readonly = 0;
 int store_singleuser = 0;
@@ -1998,20 +1996,25 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 	store_readonly = readonly;
 	store_singleuser = singleuser;
 
-#ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&bs_lock, "SQL_bs_lock");
-#endif
 	MT_lock_set(&bs_lock);
 
 	/* initialize empty bats */
-	if (store == store_bat) {
-		if(bat_utils_init() == -1) {
+	switch (store) {
+	case store_bat:
+	case store_mem:
+		if (bat_utils_init() == -1) {
 			MT_lock_unset(&bs_lock);
 			return -1;
 		}
 		bat_storage_init(&store_funcs);
 		bat_table_init(&table_funcs);
-		bat_logger_init(&logger_funcs);
+		if (store == store_bat)
+			bat_logger_init(&logger_funcs);
+		else
+			nop_logger_init(&logger_funcs);
+		break;
+	default:
+		break;
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||
@@ -2143,6 +2146,7 @@ store_manager(void)
 	const int sleeptime = GDKdebug & FORCEMITOMASK ? 10 : 50;
 	const int timeout = GDKdebug & FORCEMITOMASK ? 500 : 50000;
 
+	MT_thread_setworking("sleeping");
 	while (!GDKexiting()) {
 		int res = LOG_OK;
 		int t;
@@ -2163,7 +2167,7 @@ store_manager(void)
 			continue;
 		}
 		need_flush = 0;
-		while (ATOMIC_GET(store_nr_active, store_nr_active_lock)) { /* find a moment to flush */
+		while (ATOMIC_GET(&store_nr_active)) { /* find a moment to flush */
 			MT_lock_unset(&bs_lock);
 			if (GDKexiting())
 				return;
@@ -2171,6 +2175,7 @@ store_manager(void)
 			MT_lock_set(&bs_lock);
 		}
 
+		MT_thread_setworking("flushing");
 		logging = 1;
 		/* make sure we reset all transactions on re-activation */
 		gtrans->wstime = timestamp();
@@ -2190,6 +2195,7 @@ store_manager(void)
 
 		if (res != LOG_OK)
 			GDKfatal("write-ahead logging failure, disk full?");
+		MT_thread_setworking("sleeping");
 	}
 }
 
@@ -2199,6 +2205,7 @@ idle_manager(void)
 	const int sleeptime = GDKdebug & FORCEMITOMASK ? 10 : 50;
 	const int timeout = GDKdebug & FORCEMITOMASK ? 50 : 5000;
 
+	MT_thread_setworking("sleeping");
 	while (!GDKexiting()) {
 		sql_session *s;
 		int t;
@@ -2209,7 +2216,7 @@ idle_manager(void)
 				return;
 		}
 		MT_lock_set(&bs_lock);
-		if (ATOMIC_GET(store_nr_active, store_nr_active_lock) || GDKexiting() || !store_needs_vacuum(gtrans)) {
+		if (ATOMIC_GET(&store_nr_active) || GDKexiting() || !store_needs_vacuum(gtrans)) {
 			MT_lock_unset(&bs_lock);
 			continue;
 		}
@@ -2219,6 +2226,7 @@ idle_manager(void)
 			MT_lock_unset(&bs_lock);
 			continue;
 		}
+		MT_thread_setworking("vacuuming");
 		sql_trans_begin(s);
 		if (store_vacuum( s->tr ) == 0)
 			sql_trans_commit(s->tr);
@@ -2226,6 +2234,7 @@ idle_manager(void)
 		sql_session_destroy(s);
 
 		MT_lock_unset(&bs_lock);
+		MT_thread_setworking("sleeping");
 	}
 }
 
@@ -2415,7 +2424,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k)
 }
 
 #define obj_ref(o,n,flags) 		\
- 	if (newFlagSet(flags)) { /* create new partent */		\
+ 	if (newFlagSet(flags)) { /* create new parent */		\
 		o->po = n;		\
 		n->base.refcnt++;	\
 	} else {			\
@@ -3148,7 +3157,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 			fs->dset = NULL;
 		}
 		/* only cleanup when alone */
-		if (apply && ts->dset && ATOMIC_GET(store_nr_active, store_nr_active_lock) == 1) {
+		if (apply && ts->dset && ATOMIC_GET(&store_nr_active) == 1) {
 			for (n = ts->dset->h; ok == LOG_OK && n; n = n->next) {
 				sql_base *tb = n->data;
 
@@ -3692,6 +3701,20 @@ rollforward_trans(sql_trans *tr, int mode)
 	if (mode == R_APPLY && tr->parent && tr->wtime > tr->parent->wtime) {
 		tr->parent->wtime = tr->wtime;
 		tr->parent->schema_updates = tr->schema_updates;
+	}
+
+	if (tr->moved_tables) {
+		for (node *n = tr->moved_tables->h ; n ; n = n->next) {
+			sql_moved_table *smt = (sql_moved_table*) n->data;
+			sql_schema *pfrom = find_sql_schema_id(tr->parent, smt->from->base.id);
+			sql_schema *pto = find_sql_schema_id(tr->parent, smt->to->base.id);
+			sql_table *pt = find_sql_table_id(pfrom, smt->t->base.id);
+
+			assert(pfrom && pto && pt);
+			cs_move(&pfrom->tables, &pto->tables, pt);
+			pt->s = pto;
+		}
+		tr->moved_tables = NULL;
 	}
 
 	if (ok == LOG_OK)
@@ -5202,6 +5225,35 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 	return t;
 }
 
+sql_table*
+sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *ns)
+{
+	sql_table *systable = find_sql_table(find_sql_schema(tr, "sys"), "_tables");
+	node *n = find_sql_table_node(os, id);
+	sql_table *t = n->data;
+	oid rid;
+	sql_moved_table *m;
+
+	rid = table_funcs.column_find_row(tr, find_sql_column(systable, "id"), &t->base.id, NULL);
+	assert(!is_oid_nil(rid));
+	table_funcs.column_update_value(tr, find_sql_column(systable, "schema_id"), rid, &(ns->base.id));
+
+	cs_move(&os->tables, &ns->tables, t);
+	t->s = ns;
+
+	if (!tr->moved_tables)
+		tr->moved_tables = sa_list(tr->sa);
+	m = SA_ZNEW(tr->sa, sql_moved_table); //add transaction log entry
+	m->from = os;
+	m->to = ns;
+	m->t = t;
+	list_append(tr->moved_tables, m);
+
+	tr->wtime = tr->wstime;
+	tr->schema_updates ++;
+	return t;
+}
+
 sql_table *
 sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action)
 {
@@ -5759,7 +5811,7 @@ sql_trans_dist_count( sql_trans *tr, sql_column *col )
 }
 
 int
-sql_trans_ranges( sql_trans *tr, sql_column *col, void **min, void **max )
+sql_trans_ranges( sql_trans *tr, sql_column *col, char **min, char **max )
 {
 	if (col && isTable(col->t)) {
 		/* get from statistics */
@@ -6501,13 +6553,20 @@ sql_trans_begin(sql_session *s)
 	fprintf(stderr,"#sql trans begin %d\n", snr);
 #endif
 	if (tr->stime < gtrans->wstime || tr->wtime || 
-			store_schema_number() != snr) 
-		reset_trans(tr, gtrans);
+			store_schema_number() != snr) {
+		if (!list_empty(tr->moved_tables)) {
+			tr->name = (char*)1; /* make sure it get destroyed properly */
+			sql_trans_destroy(tr);
+			s->tr = tr = sql_trans_create(s->stk, NULL, NULL);
+		} else {
+			reset_trans(tr, gtrans);
+		}
+	}
 	tr = trans_init(tr, tr->stk, tr->parent);
 	s->active = 1;
 	s->schema = find_sql_schema(tr, s->schema_name);
 	s->tr = tr;
-	(void) ATOMIC_INC(store_nr_active, store_nr_active_lock);
+	(void) ATOMIC_INC(&store_nr_active);
 	list_append(active_sessions, s); 
 	s->status = 0;
 #ifdef STORE_DEBUG
@@ -6525,8 +6584,8 @@ sql_trans_end(sql_session *s)
 	s->active = 0;
 	s->auto_commit = s->ac_on_commit;
 	list_remove_data(active_sessions, s);
-	(void) ATOMIC_DEC(store_nr_active, store_nr_active_lock);
-	assert((ATOMIC_TYPE) list_length(active_sessions) == ATOMIC_GET(store_nr_active, store_nr_active_lock));
+	(void) ATOMIC_DEC(&store_nr_active);
+	assert(list_length(active_sessions) == (int) ATOMIC_GET(&store_nr_active));
 }
 
 void

@@ -9,6 +9,7 @@
 /*#define DEBUG*/
 
 #include "monetdb_config.h"
+#include "sql_query.h"
 #include "rel_partition.h"
 #include "rel_optimizer.h"
 #include "rel_exp.h"
@@ -62,7 +63,6 @@ find_basetables( sql_rel *rel, list *tables )
 
 	case op_semi: 
 	case op_anti: 
-	case op_apply: 
 
 	case op_union: 
 	case op_inter: 

@@ -19,7 +19,6 @@ stdout of test 'outer_join_using_diff_types_using.Bug-3536` in directory 'sql/te
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:45:36 >  
 # 11:45:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13021" "--port=31021"

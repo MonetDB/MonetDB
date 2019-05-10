@@ -19,11 +19,9 @@ stdout of test 'mosaic_dictionary` in directory 'monetdb5/modules/mosaic` itself
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
-
-# 09:57:06 >  
-# 09:57:06 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-22640" "--port=37197"
-# 09:57:06 >  
+# 11:50:48 >  
+# 11:50:48 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-30332" "--port=39586"
+# 11:50:48 >  
 
 #--------------------------#
 # h	t  # name

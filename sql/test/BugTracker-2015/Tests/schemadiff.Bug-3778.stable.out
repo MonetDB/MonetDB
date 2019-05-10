@@ -21,7 +21,6 @@ stdout of test 'schemadiff.Bug-3778` in directory 'sql/test/BugTracker-2015` its
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 11:19:25 >  
 # 11:19:25 >  "/usr/bin/python2" "schemadiff.Bug-3778.SQL.py" "schemadiff.Bug-3778"

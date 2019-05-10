@@ -28,7 +28,7 @@ pattern optimizer.commonTerms():str
 address OPTwrapper;
 pattern optimizer.commonTerms(mod:any_1, fcn:any_2):str
 address OPTwrapper
-comment "Common sub-expression optimizer"
+comment "Common sub-expression optimizer";
 
 #opt_candidates
 pattern optimizer.candidates():str

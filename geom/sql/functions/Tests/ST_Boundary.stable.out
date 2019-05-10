@@ -18,7 +18,6 @@ stdout of test 'ST_Boundary` in directory 'geom/sql/functions` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:00:22 >  
 # 16:00:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17783" "--port=39071"

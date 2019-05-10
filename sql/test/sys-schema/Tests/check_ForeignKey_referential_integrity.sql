@@ -34,7 +34,6 @@ SELECT * FROM sys.types WHERE schema_id NOT IN (SELECT id FROM sys.schemas);
 SELECT * FROM sys.types WHERE schema_id NOT IN (SELECT id FROM sys.schemas) AND schema_id <> 0;
 
 SELECT * FROM sys.objects WHERE id NOT IN (SELECT id FROM sys.ids);
-SELECT * FROM sys.objects WHERE id NOT IN (SELECT id FROM sys.ids);
 SELECT * FROM sys.ids WHERE obj_type IN ('key', 'index') AND id NOT IN (SELECT id FROM sys.objects);
 
 SELECT * FROM sys.keys WHERE id NOT IN (SELECT id FROM sys.objects);

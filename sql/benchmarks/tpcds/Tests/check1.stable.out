@@ -18,7 +18,6 @@ stdout of test 'check1` in directory 'sql/benchmarks/tpcds` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:27:53 >  
 # 15:27:53 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15340" "--port=35386"
@@ -26,151 +25,151 @@ Ready.
 
 #start transaction;
 #select count(*) from dbgen_version;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) from customer_address;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 5 # length
 [ 50000	]
 #select count(*) from customer_demographics;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 7 # length
 [ 1920800	]
 #select count(*) from date_dim;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 5 # length
 [ 73049	]
 #select count(*) from warehouse;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 5	]
 #select count(*) from ship_mode;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 20	]
 #select count(*) from time_dim;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 5 # length
 [ 86400	]
 #select count(*) from reason;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 35	]
 #select count(*) from income_band;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 20	]
 #select count(*) from item;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 5 # length
 [ 18000	]
 #select count(*) from store;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 12	]
 #select count(*) from call_center;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from customer;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 6 # length
 [ 100000	]
 #select count(*) from web_site;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 30	]
 #select count(*) from store_returns;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 6 # length
 [ 287514	]
 #select count(*) from household_demographics;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 4 # length
 [ 7200	]
 #select count(*) from web_page;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 60	]
 #select count(*) from promotion;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 3 # length
 [ 300	]
 #select count(*) from catalog_page;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 5 # length
 [ 11718	]
 #select count(*) from inventory;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 8 # length
 [ 11745000	]
 #select count(*) from catalog_returns;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 6 # length
 [ 144067	]
 #select count(*) from web_returns;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 5 # length
 [ 71763	]
 #select count(*) from web_sales;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 6 # length
 [ 719384	]
 #select count(*) from catalog_sales;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 7 # length
 [ 1441548	]
 #select count(*) from store_sales;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 7 # length

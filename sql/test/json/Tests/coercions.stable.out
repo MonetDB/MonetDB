@@ -39,7 +39,6 @@ stdout of test 'coercions` in directory 'sql/test/json` itself:
 # loading sql script: 40_geom.sql
 # loading sql script: 40_json.sql
 
-Ready.
 
 # 10:31:00 >  
 # 10:31:00 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-627" "--port=34922"

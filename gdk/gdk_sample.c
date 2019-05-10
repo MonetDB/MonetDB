@@ -176,17 +176,8 @@ BAT *
 BATsample(BAT *b, BUN n)
 {
 	static random_state_engine rse;
-	static MT_Lock rse_lock MT_LOCK_INITIALIZER("rse_lock");
+	static MT_Lock rse_lock = MT_LOCK_INITIALIZER("rse_lock");
 
-#ifdef NEED_MT_LOCK_INIT
-	static bool rse_lock_initialized = false;
-	if (!rse_lock_initialized) {
-		MT_lock_init(&rse_lock, "rse_lock");
-		rse_lock_initialized = true;
-		if (b == NULL && n == 0)
-			return NULL;
-	}
-#endif
 	MT_lock_set(&rse_lock);
 	if (rse[0] == 0 && rse[1] == 0 && rse[2] == 0 && rse[3] == 0)
 		init_random_state_engine(rse, (uint64_t) GDKusec());

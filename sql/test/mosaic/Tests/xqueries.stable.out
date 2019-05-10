@@ -19,11 +19,9 @@ stdout of test 'xqueries` in directory 'sql/test/mosaic` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
-
-# 21:09:37 >  
-# 21:09:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28373" "--port=30051"
-# 21:09:37 >  
+# 12:26:07 >  
+# 12:26:07 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11941" "--port=39729"
+# 12:26:07 >  
 
 #set optimizer='mosaic_pipe';
 #drop table tmp3;
@@ -66,8 +64,7 @@ function user.s14_1():void;
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
     X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 4:int, "<":str);
-    X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
-    X_18:lng := aggr.count(X_17:bat[:int]);
+    X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s14_1;
 #inline               actions= 0 time=1 usec 
@@ -110,8 +107,7 @@ function user.s16_1():void;
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
     X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 7:int, "==":str);
-    X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
-    X_18:lng := aggr.count(X_17:bat[:int]);
+    X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s16_1;
 #inline               actions= 0 time=1 usec 
@@ -180,8 +176,7 @@ function user.s32_1():void;
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
     X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 4:int, "<":str);
-    X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
-    X_18:lng := aggr.count(X_17:bat[:int]);
+    X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s32_1;
 #inline               actions= 0 time=0 usec 
@@ -223,8 +218,7 @@ function user.s34_1():void;
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
     X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 7:int, "==":str);
-    X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
-    X_18:lng := aggr.count(X_17:bat[:int]);
+    X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s34_1;
 #inline               actions= 0 time=0 usec 
@@ -281,8 +275,7 @@ function user.s46_1():void;
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
     X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 4:int, "<":str);
-    X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
-    X_18:lng := aggr.count(X_17:bat[:int]);
+    X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s46_1;
 #inline               actions= 0 time=0 usec 
@@ -324,8 +317,7 @@ function user.s48_1():void;
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
     X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 7:int, "==":str);
-    X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
-    X_18:lng := aggr.count(X_17:bat[:int]);
+    X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s48_1;
 #inline               actions= 0 time=0 usec 

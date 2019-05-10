@@ -19,7 +19,6 @@ stdout of test 'simpleSQL` in directory 'sql/backends/monet5` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 13:03:24 >  
 # 13:03:24 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-21282" "--port=38130"

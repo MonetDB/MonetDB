@@ -17,8 +17,6 @@
 #ifndef _GDK_MASK_H_
 #define _GDK_MASK_H_
 
-#include <monet_options.h>
-
 typedef unsigned int *BitVector;
 
 gdk_export void initBitMasks(void);

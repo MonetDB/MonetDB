@@ -19,7 +19,6 @@ stdout of test 'querycache.Bug-3212` in directory 'sql/test/BugTracker-2012` its
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 04:47:43 >  
 # 04:47:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8953" "--port=38288"

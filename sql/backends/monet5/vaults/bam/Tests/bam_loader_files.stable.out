@@ -18,7 +18,6 @@ stdout of test 'bam_loader_files` in directory 'sql/backends/monet5/vaults/bam` 
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:49:55 >  
 # 10:49:55 >  "/usr/bin/python2" "bam_loader_files.SQL.py" "bam_loader_files"

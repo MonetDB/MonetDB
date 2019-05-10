@@ -16,7 +16,6 @@
  */
 
 #include "monetdb_config.h"
-#include "monet_options.h"
 #include "mapi.h"
 #include "stream.h"
 #include "stream_socket.h"

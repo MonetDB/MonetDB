@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-wrong-aggregation-count.Bug-6510` in directory '
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:35:40 >  
 # 11:35:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28694" "--port=31524"

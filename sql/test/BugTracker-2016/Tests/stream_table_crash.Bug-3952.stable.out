@@ -19,7 +19,6 @@ stdout of test 'stream_table_crash.Bug-3952` in directory 'sql/test/BugTracker-2
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 22:03:49 >  
 # 22:03:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8540" "--port=34898"

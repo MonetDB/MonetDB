@@ -50,7 +50,6 @@ stdout of test 'dropManyUsers.Bug-3764` in directory 'sql/test/Users` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:28:37 >  
 # 14:28:37 >  "/usr/bin/python2" "dropManyUsers.SQL.py" "dropManyUsers"

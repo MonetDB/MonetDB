@@ -866,12 +866,16 @@ CMDbatCMP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						 "batcalc.cmp");
 }
 
-static str
-callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
+mal_export str CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *bid;
 	BAT *bn, *b, *lo = NULL, *hi = NULL, *s = NULL;
 	int tp1, tp2, tp3;
+	int bc = 3;					/* number of BAT arguments */
+	bool symmetric, linc, hinc, nils_false;
 
 	(void) cntxt;
 	(void) mb;
@@ -879,11 +883,16 @@ callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
 	tp2 = stk->stk[getArg(pci, 2)].vtype;
 	tp3 = stk->stk[getArg(pci, 3)].vtype;
-	if (pci->argc == 5) {
+	if (pci->argc > bc + 1 && isaBatType(getArgType(mb, pci, 4))) {
 		bat *sid = getArgReference_bat(stk, pci, 4);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL)
 			throw(MAL, "batcalc.between", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		bc++;
 	}
+	symmetric = *getArgReference_bit(stk, pci, bc + 1);
+	linc = *getArgReference_bit(stk, pci, bc + 2);
+	hinc = *getArgReference_bit(stk, pci, bc + 3);
+	nils_false = *getArgReference_bit(stk, pci, bc + 4);
 
 	if (tp1 != TYPE_bat && !isaBatType(tp1)) {
 		if (s)
@@ -923,15 +932,18 @@ callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
 	if (lo == NULL) {
 		if (hi == NULL) {
 			bn = BATcalcbetweencstcst(b, &stk->stk[getArg(pci, 2)],
-									  &stk->stk[getArg(pci, 3)], s, sym);
+									  &stk->stk[getArg(pci, 3)], s,
+									  symmetric, linc, hinc, nils_false);
 		} else {
-			bn = BATcalcbetweencstbat(b, &stk->stk[getArg(pci, 2)], hi, s, sym);
+			bn = BATcalcbetweencstbat(b, &stk->stk[getArg(pci, 2)], hi, s,
+									  symmetric, linc, hinc, nils_false);
 		}
 	} else {
 		if (hi == NULL) {
-			bn = BATcalcbetweenbatcst(b, lo, &stk->stk[getArg(pci, 3)], s, sym);
+			bn = BATcalcbetweenbatcst(b, lo, &stk->stk[getArg(pci, 3)], s,
+									  symmetric, linc, hinc, nils_false);
 		} else {
-			bn = BATcalcbetween(b, lo, hi, s, sym);
+			bn = BATcalcbetween(b, lo, hi, s, symmetric, linc, hinc, nils_false);
 		}
 	}
 	BBPunfix(b->batCacheid);
@@ -947,22 +959,6 @@ callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
 	bid = getArgReference_bat(stk, pci, 0);
 	BBPkeepref(*bid = bn->batCacheid);
 	return MAL_SUCCEED;
-}
-
-mal_export str CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-str
-CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return callbatBETWEEN(cntxt, mb, stk, pci, 0);
-}
-
-mal_export str CMDbatBETWEENsymmetric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-str
-CMDbatBETWEENsymmetric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return callbatBETWEEN(cntxt, mb, stk, pci, 1);
 }
 
 mal_export str CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

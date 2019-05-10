@@ -18,7 +18,6 @@ stdout of test 'netcdf_tables_checks` in directory 'sql/test/sys-schema` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:07:50 >  
 # 16:07:50 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24395" "--port=30998"

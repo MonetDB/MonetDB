@@ -23,11 +23,9 @@ stdout of test 'session_exit` in directory 'sql/test/mosaic` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
-
-# 16:53:28 >  
-# 16:53:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27036" "--port=39906"
-# 16:53:28 >  
+# 12:26:08 >  
+# 12:26:08 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11941" "--port=39729"
+# 12:26:08 >  
 
 #set optimizer='mosaic_pipe';
 #explain select * from tmp3;
@@ -361,7 +359,7 @@ end user.s12_1;
 % 15 # length
 [ 27.104	]
 #select count(*) from tmp3;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length

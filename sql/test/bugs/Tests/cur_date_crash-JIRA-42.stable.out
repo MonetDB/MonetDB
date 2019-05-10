@@ -23,7 +23,6 @@ stdout of test 'cur_date_crash-JIRA-42` in directory 'sql/test/bugs` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 19:47:17 >  
 # 19:47:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30463" "--port=36422"

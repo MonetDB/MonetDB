@@ -17,7 +17,6 @@ stdout of test 'any_null.Bug-2594` in directory 'sql/test/BugTracker-2012` itsel
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 22:48:25 >  
 # 22:48:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=37764"

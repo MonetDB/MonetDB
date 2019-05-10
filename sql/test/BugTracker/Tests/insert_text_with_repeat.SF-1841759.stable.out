@@ -15,7 +15,6 @@ stdout of test 'insert_text_with_repeat.SF-1841759` in directory 'sql/test/BugTr
 # Listening for connection requests on mapi:monetdb://amelia.ins.cwi.nl:35931/
 # MonetDB/SQL module v2.20.3 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

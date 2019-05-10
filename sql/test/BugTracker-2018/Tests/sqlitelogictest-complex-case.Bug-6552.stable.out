@@ -17,7 +17,6 @@ stdout of test 'sqlitelogictest-complex-case.Bug-6552` in directory 'sql/test/Bu
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18037/.s.monetdb.36098
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 09:53:34 >  
 # 09:53:34 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18037" "--port=36098"

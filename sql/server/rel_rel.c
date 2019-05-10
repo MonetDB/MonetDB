@@ -14,6 +14,7 @@
 #include "sql_semantic.h"
 #include "sql_mvc.h"
 
+
 /* we don't name relations directly, but sometimes we need the relation
    name. So we look it up in the first expression
 
@@ -22,11 +23,8 @@
 const char *
 rel_name( sql_rel *r )
 {
-	if (!is_project(r->op) && !is_base(r->op) && r->l) {
-		if (is_apply(r->op))
-			return rel_name(r->r);
+	if (!is_project(r->op) && !is_base(r->op) && r->l) 
 		return rel_name(r->l);
-	}
 	if (r->exps && list_length(r->exps)) {
 		sql_exp *e = r->exps->h->data;
 		if (e->rname)
@@ -64,7 +62,6 @@ rel_destroy_(sql_rel *rel)
 	    is_select(rel->op) ||
 	    is_set(rel->op) ||
 	    rel->op == op_topn ||
-	    rel->op == op_apply ||
 		rel->op == op_sample) {
 		if (rel->l)
 			rel_destroy(rel->l);
@@ -103,6 +100,7 @@ rel_create( sql_allocator *sa )
 	r->flag = 0;
 	r->card = CARD_ATOM;
 	r->processed = 0;
+	r->dependent = 0;
 	r->subquery = 0;
 	r->p = NULL;
 	return r;
@@ -145,7 +143,6 @@ rel_copy( sql_allocator *sa, sql_rel *i, int deep )
 	case op_left:
 	case op_right:
 	case op_full:
-	case op_apply:
 	case op_semi:
 	case op_anti:
 	case op_project:
@@ -211,11 +208,15 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 		r = rel_bind_column_(sql, p, rel->r, cname);
 
 		if (!r || !rel_issubquery(right)) {
-			*p = rel;
-			l = rel_bind_column_(sql, p, rel->l, cname);
-			if (l && r && !rel_issubquery(r)) {
-				(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
-				return NULL;
+			sql_exp *e = r?exps_bind_column(r->exps, cname, &ambiguous):NULL;
+
+			if (!r || !e || !is_freevar(e)) {
+				*p = rel;
+				l = rel_bind_column_(sql, p, rel->l, cname);
+				if (l && r && !rel_issubquery(r)) {
+					(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
+					return NULL;
+				}
 			}
 		}
 		if (sql->session->status == -ERR_AMBIGUOUS)
@@ -243,7 +244,6 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 		if (rel->l && !(is_base(rel->op)))
 			return rel_bind_column_(sql, p, rel->l, cname );
 		break;
-	case op_apply:
 	case op_semi:
 	case op_anti:
 
@@ -265,7 +265,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f )
 {
 	sql_rel *p = NULL;
 
-	if (is_sql_sel(f) && rel && is_project(rel->op) && !is_processed(rel))
+	if (is_sql_sel(f) && rel && is_simple_project(rel->op) && !is_processed(rel))
 		rel = rel->l;
 
 	if (!rel || (rel = rel_bind_column_(sql, &p, rel, cname)) == NULL)
@@ -292,7 +292,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		if (e)
 			return exp_alias_or_copy(sql, tname, cname, rel, e);
 	}
-	if (is_project(rel->op) && rel->l) {
+	if (is_simple_project(rel->op) && rel->l) {
 		if (!is_processed(rel))
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
 	} else if (is_join(rel->op)) {
@@ -307,14 +307,6 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		   is_topn(rel->op)) {
 		if (rel->l)
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
-	} else if (is_apply(rel->op)) {
-		sql_exp *e = NULL;
-
-		if (!e && rel->l)
-			e = rel_bind_column2(sql, rel->l, tname, cname, f);
-		if (!e && rel->r && (rel->flag == APPLY_JOIN || rel->flag == APPLY_LOJ))
-			return rel_bind_column2(sql, rel->r, tname, cname, f);
-		return e;
 	}
 	return NULL;
 }
@@ -445,6 +437,23 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	return rel;
 }
 
+sql_exp *
+rel_is_constant(sql_rel **R, sql_exp *e)
+{
+	sql_rel *rel = *R;
+
+	if (rel && rel->op == op_project && list_length(rel->exps) == 1 && 
+	    !rel->l && !rel->r && !rel_is_ref(rel) && e->type == e_column) {
+		sql_exp *ne = rel_find_exp(rel, e);
+		if (ne) {
+			rel_destroy(rel);
+			*R = NULL;
+			return ne;
+		}
+	}
+	return e;
+}
+
 sql_rel *
 rel_topn(sql_allocator *sa, sql_rel *l, list *exps )
 {
@@ -494,11 +503,15 @@ rel_label( mvc *sql, sql_rel *r, int all)
 
 		r->exps->ht = NULL;
 		for (; ne; ne = ne->next) {
-			if (all) {
-				nr = ++sql->label;
-				cnme = number2name(cname, 16, nr);
+			sql_exp *e = ne->data;
+
+			if (!e->freevar) {
+				if (all) {
+					nr = ++sql->label;
+					cnme = number2name(cname, 16, nr);
+				}
+				exp_setname(sql->sa, e, tnme, cnme );
 			}
-			exp_setname(sql->sa, ne->data, tnme, cnme );
 		}
 	}
 	/* op_projects can have a order by list */
@@ -532,6 +545,7 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 		if (!rel->exps)
 			rel->exps = new_exp_list(sql->sa);
 		append(rel->exps, e);
+		rel->nrcols++;
 		if (e->card > rel->card)
 			rel->card = e->card;
 	} else if (rel->op == op_groupby) {
@@ -634,6 +648,7 @@ rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 			exp_setname(sql->sa, e, nme, nme);
 		}
 		append(rel->exps, e);
+		rel->nrcols++;
 		m = e;
 	}
 	ne = exp_column(sql->sa, exp_relname(m), exp_name(m), exp_subtype(m),
@@ -823,6 +838,14 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 	return rel;
 }
 
+sql_rel*
+rel_project_exp(sql_allocator *sa, sql_exp *e)
+{
+	sql_rel *rel = rel_project(sa, NULL, append(new_exp_list(sa), e));
+
+	return rel;
+}
+
 sql_rel *
 rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps)
 {
@@ -883,7 +906,7 @@ exps_has_nil(list *exps)
 }
 
 list *
-rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern )
+rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern)
 {
 	list *lexps, *rexps, *exps;
 	int include_subquery = (intern==2)?1:0;
@@ -899,16 +922,13 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 	case op_left:
 	case op_right:
 	case op_full:
-	case op_apply:
-		exps = rel_projections(sql, rel->l, tname, settname, intern );
+		exps = rel_projections(sql, rel->l, tname, settname, intern);
 		if (rel->op == op_full || rel->op == op_right)
 			exps_has_nil(exps);
-		if (rel->op != op_apply || (rel->flag  == APPLY_LOJ || rel->flag == APPLY_JOIN)) {
-			rexps = rel_projections(sql, rel->r, tname, settname, intern );
-			if (rel->op == op_full || rel->op == op_left)
-				exps_has_nil(rexps);
-			exps = list_merge( exps, rexps, (fdup)NULL);
-		}
+		rexps = rel_projections(sql, rel->r, tname, settname, intern);
+		if (rel->op == op_full || rel->op == op_left)
+			exps_has_nil(rexps);
+		exps = list_merge( exps, rexps, (fdup)NULL);
 		return exps;
 	case op_groupby:
 	case op_project:
@@ -934,8 +954,8 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 			}
 			return exps;
 		}
-		lexps = rel_projections(sql, rel->l, tname, settname, intern );
-		rexps = rel_projections(sql, rel->r, tname, settname, intern );
+		lexps = rel_projections(sql, rel->l, tname, settname, intern);
+		rexps = rel_projections(sql, rel->r, tname, settname, intern);
 		exps = sa_list(sql->sa);
 		if (lexps && rexps && exps) {
 			node *en, *ren;
@@ -956,7 +976,7 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 	case op_select:
 	case op_topn:
 	case op_sample:
-		return rel_projections(sql, rel->l, tname, settname, intern );
+		return rel_projections(sql, rel->l, tname, settname, intern);
 	default:
 		return NULL;
 	}
@@ -981,7 +1001,6 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 	case op_left:
 	case op_right:
 	case op_full:
-	case op_apply:
 		/* first right (possible subquery) */
 		found = rel_bind_path_(sql, rel->r, e, path);
 		if (!found)
@@ -1360,3 +1379,16 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 	return NULL;
 }
 
+int
+rel_in_rel(sql_rel *super, sql_rel *sub)
+{
+	if (!super)
+		return 0;
+	if (super == sub)
+		return 1;
+	if (is_join(super->op) || is_semi(super->op) || is_set(super->op) || is_modify(super->op) || is_ddl(super->op))
+		return rel_in_rel(super->l, sub) || rel_in_rel(super->r, sub);
+	if (is_select(super->op) || is_project(super->op) || is_topn(super->op) || is_sample(super->op))
+		return rel_in_rel(super->l, sub);
+	return 0;
+}

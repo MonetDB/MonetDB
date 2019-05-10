@@ -19,7 +19,6 @@ stdout of test 'crash_on_groupby_distinct_serial.Bug-3463` in directory 'sql/tes
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 12:20:39 >  
 # 12:20:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18464" "--port=38842"

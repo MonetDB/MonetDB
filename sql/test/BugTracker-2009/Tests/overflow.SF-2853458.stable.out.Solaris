@@ -14,7 +14,6 @@ stdout of test 'overflow.SF-2853458` in directory 'sql/test/BugTracker-2009` its
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35561/
 # MonetDB/SQL module v2.32.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

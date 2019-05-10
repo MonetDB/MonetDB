@@ -14,7 +14,6 @@ stdout of test 'group_by_in_subquery_fails.SF-2219131` in directory 'sql/test/Bu
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34683/
 # MonetDB/SQL module v2.26.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

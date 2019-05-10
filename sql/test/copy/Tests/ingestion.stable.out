@@ -52,7 +52,6 @@ stdout of test 'ingestion` in directory 'sql/test/copy` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:50:36 >  
 # 15:50:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22769" "--port=31743"

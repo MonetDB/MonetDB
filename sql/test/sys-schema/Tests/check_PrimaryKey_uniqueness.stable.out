@@ -18,7 +18,6 @@ stdout of test 'check_PrimaryKey_uniqueness` in directory 'sql/test/sys-schema` 
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:31:34 >  
 # 16:31:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10384" "--port=31486"
@@ -250,12 +249,12 @@ Ready.
 % bigint,	bigint # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, schema FROM sys.schemastorage GROUP BY schema HAVING COUNT(*) > 1;
-% .L141,	.schemastorage # table_name
+% .L101,	.schemastorage # table_name
 % duplicates,	schema # name
 % bigint,	varchar # type
 % 1,	0 # length
 #SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storage GROUP BY schema, table, column HAVING COUNT(*) > 1;
-% .L113,	.storage,	.storage,	.storage # table_name
+% .L53,	.storage,	.storage,	.storage # table_name
 % duplicates,	schema,	table,	column # name
 % bigint,	varchar,	varchar,	varchar # type
 % 1,	0,	0,	0 # length
@@ -270,7 +269,7 @@ Ready.
 % bigint,	varchar,	varchar,	varchar # type
 % 1,	0,	0,	0 # length
 #SELECT COUNT(*) AS duplicates, schema, table FROM sys.tablestorage GROUP BY schema, table HAVING COUNT(*) > 1;
-% .L145,	.tablestorage,	.tablestorage # table_name
+% .L105,	.tablestorage,	.tablestorage # table_name
 % duplicates,	schema,	table # name
 % bigint,	varchar,	varchar # type
 % 1,	0,	0 # length

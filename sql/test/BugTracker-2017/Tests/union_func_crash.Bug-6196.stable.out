@@ -18,7 +18,6 @@ stdout of test 'union_func_crash.Bug-6196` in directory 'sql/test/BugTracker-201
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:40:29 >  
 # 13:40:29 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19682" "--port=30973"

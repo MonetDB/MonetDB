@@ -11,8 +11,9 @@
 
 #include "sql_symbol.h"
 #include "store_sequence.h"
+#include "sql_query.h"
 
-extern sql_rel *rel_sequences(mvc *sql, symbol *s);
+extern sql_rel *rel_sequences(sql_query *query, symbol *s);
 extern char* sql_next_seq_name(mvc *sql);
 
 #endif /*_REL_SEQUENCE_H_*/

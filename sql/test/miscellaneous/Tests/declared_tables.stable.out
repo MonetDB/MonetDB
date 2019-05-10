@@ -58,7 +58,6 @@ stdout of test 'declared_tables` in directory 'sql/test/miscellaneous` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:29:32 >  
 # 14:29:32 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20678" "--port=39353"

@@ -19,7 +19,6 @@ stdout of test 'load` in directory 'sql/benchmarks/ATIS` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

@@ -17,7 +17,6 @@ stdout of test 'boolean_coersion.Bug-3012` in directory 'sql/test/BugTracker-201
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:35:38 >  
 # 14:35:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=32436"

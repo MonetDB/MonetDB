@@ -14,7 +14,6 @@ stdout of test 'bool_boolean.SF-935601` in directory 'sql/test/BugDay_2005-10-06
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:33615/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

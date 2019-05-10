@@ -1,9 +1,9 @@
 stdout of test 'mergepart13` in directory 'sql/test/merge-partitions` itself:
 
 
-# 16:26:03 >  
+# 16:26:03 >
 # 16:26:03 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37724" "--set" "mapi_usock=/var/tmp/mtest-11073/.s.monetdb.37724" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
-# 16:26:03 >  
+# 16:26:03 >
 
 # MonetDB 5 server v11.30.0
 # This is an unreleased version
@@ -18,22 +18,21 @@ stdout of test 'mergepart13` in directory 'sql/test/merge-partitions` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
-# 16:26:03 >  
+# 16:26:03 >
 # 16:26:03 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11073" "--port=37724"
-# 16:26:03 >  
+# 16:26:03 >
 
-#CREATE MERGE TABLE testtime (t timestamp, b int) PARTITION BY RANGE (t);
+#CREATE MERGE TABLE testtime (t timestamp, b int) PARTITION BY RANGE ON (t);
 #CREATE TABLE onedecade (t timestamp, b int);
 #CREATE TABLE twodecades (t timestamp, b int);
 #CREATE TABLE threedecades (t timestamp, b int);
 #CREATE TABLE fourdecades (t timestamp, b int);
-#ALTER TABLE testtime ADD TABLE onedecade AS PARTITION BETWEEN timestamp '2000-01-01 00:00:00' AND timestamp '2009-12-12 23:59:59';
-#ALTER TABLE testtime ADD TABLE twodecades AS PARTITION BETWEEN timestamp '2010-01-01 00:00:00' AND timestamp '2019-12-12 23:59:59';
-#ALTER TABLE testtime ADD TABLE threedecades AS PARTITION BETWEEN timestamp '2020-01-01 00:00:00' AND timestamp '2029-12-12 23:59:59' WITH NULL;
+#ALTER TABLE testtime ADD TABLE onedecade AS PARTITION FROM timestamp '2000-01-01 00:00:00' TO timestamp '2009-12-12 23:59:59';
+#ALTER TABLE testtime ADD TABLE twodecades AS PARTITION FROM timestamp '2010-01-01 00:00:00' TO timestamp '2019-12-12 23:59:59';
+#ALTER TABLE testtime ADD TABLE threedecades AS PARTITION FROM timestamp '2020-01-01 00:00:00' TO timestamp '2029-12-12 23:59:59' WITH NULL VALUES;
 #INSERT INTO testtime VALUES (timestamp '2000-01-01 00:00:00', 1), (timestamp '2002-12-03 20:00:00', 2),
-#(timestamp '2012-05-12 21:01:00', 3), (timestamp '2019-12-12 23:59:59', 4), (NULL, 5);
+#(timestamp '2012-05-12 21:01:00', 3), (timestamp '2019-12-12 23:59:58', 4), (NULL, 5);
 [ 5	]
 #SELECT t, b FROM testtime;
 % .testtime,	.testtime # table_name
@@ -43,7 +42,7 @@ Ready.
 [ 2000-01-01 00:00:00.000000,	1	]
 [ 2002-12-03 20:00:00.000000,	2	]
 [ 2012-05-12 21:01:00.000000,	3	]
-[ 2019-12-12 23:59:59.000000,	4	]
+[ 2019-12-12 23:59:58.000000,	4	]
 [ NULL,	5	]
 #SELECT t, b FROM onedecade;
 % sys.onedecade,	sys.onedecade # table_name
@@ -58,7 +57,7 @@ Ready.
 % timestamp,	int # type
 % 26,	1 # length
 [ 2012-05-12 21:01:00.000000,	3	]
-[ 2019-12-12 23:59:59.000000,	4	]
+[ 2019-12-12 23:59:58.000000,	4	]
 #SELECT t, b FROM threedecades;
 % sys.threedecades,	sys.threedecades # table_name
 % t,	b # name
@@ -76,7 +75,7 @@ Ready.
 [ 2002-12-03 20:00:00.000000,	2	]
 [ 2007-03-14 04:06:10.000000,	2000	]
 [ 2012-05-12 21:01:00.000000,	3	]
-[ 2019-12-12 23:59:59.000000,	4	]
+[ 2019-12-12 23:59:58.000000,	4	]
 [ NULL,	5	]
 #SELECT t, b FROM onedecade;
 % sys.onedecade,	sys.onedecade # table_name
@@ -92,14 +91,14 @@ Ready.
 % timestamp,	int # type
 % 26,	1 # length
 [ 2012-05-12 21:01:00.000000,	3	]
-[ 2019-12-12 23:59:59.000000,	4	]
+[ 2019-12-12 23:59:58.000000,	4	]
 #SELECT t, b FROM threedecades;
 % sys.threedecades,	sys.threedecades # table_name
 % t,	b # name
 % timestamp,	int # type
 % 26,	1 # length
 [ NULL,	5	]
-#ALTER TABLE testtime ADD TABLE fourdecades AS PARTITION BETWEEN timestamp '2030-01-01 00:00:00' AND MAXVALUE;
+#ALTER TABLE testtime ADD TABLE fourdecades AS PARTITION FROM timestamp '2030-01-01 00:00:00' TO RANGE MAXVALUE;
 #INSERT INTO testtime VALUES (timestamp '3300-10-10 22:12:00', 3300), (timestamp '2030-01-01 00:00:00', 2033),
 #(timestamp '2002-02-02 02:02:02', 2222);
 [ 3	]
@@ -115,7 +114,7 @@ Ready.
 [ 2007-03-14 04:06:10.000000,	2000	]
 [ 2002-02-02 02:02:02.000000,	2222	]
 [ 2012-05-12 21:01:00.000000,	3	]
-[ 2019-12-12 23:59:59.000000,	4	]
+[ 2019-12-12 23:59:58.000000,	4	]
 [ NULL,	5	]
 [ 3300-10-10 22:12:00.000000,	3300	]
 [ 2030-01-01 00:00:00.000000,	2033	]
@@ -135,7 +134,7 @@ Ready.
 % timestamp,	int # type
 % 26,	1 # length
 [ 2012-05-12 21:01:00.000000,	3	]
-[ 2019-12-12 23:59:59.000000,	4	]
+[ 2019-12-12 23:59:58.000000,	4	]
 #SELECT t, b FROM threedecades;
 % sys.threedecades,	sys.threedecades # table_name
 % t,	b # name
@@ -160,7 +159,7 @@ Ready.
 #DROP TABLE fourdecades;
 #DROP TABLE testtime;
 
-# 16:26:03 >  
+# 16:26:03 >
 # 16:26:03 >  "Done."
-# 16:26:03 >  
+# 16:26:03 >
 

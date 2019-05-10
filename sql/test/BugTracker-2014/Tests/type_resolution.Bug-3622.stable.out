@@ -19,7 +19,6 @@ stdout of test 'type_resolution.Bug-3622` in directory 'sql/test/BugTracker-2014
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 13:40:30 >  
 # 13:40:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18664" "--port=35697"

@@ -14,7 +14,6 @@ stdout of test 'old_views_incorrectly_reused.SF-2863804` in directory 'sql/test/
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:31419/
 # MonetDB/SQL module v2.32.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

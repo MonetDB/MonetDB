@@ -1626,7 +1626,7 @@ partition_list:
 
 opt_with_nulls:
     /* empty */		{ $$ = FALSE; }
- |  WITH sqlNULL	{ $$ = TRUE; }
+ |  WITH sqlNULL VALUES	{ $$ = TRUE; }
  ;
 
 opt_partition_spec:
@@ -1635,13 +1635,13 @@ opt_partition_spec:
       append_list(l, $3);
       append_int(l, $5);
       $$ = _symbol_create_list( SQL_PARTITION_LIST, l ); }
- | BETWEEN partition_range_from AND partition_range_to opt_with_nulls
+ | FROM partition_range_from TO partition_range_to opt_with_nulls
     { dlist *l = L();
       append_symbol(l, $2);
       append_symbol(l, $4);
       append_int(l, $5);
       $$ = _symbol_create_list( SQL_PARTITION_RANGE, l ); }
- | WITH sqlNULL
+ | FOR sqlNULL VALUES
     { dlist *l = L();
       append_symbol(l, NULL);
       append_symbol(l, NULL);
@@ -3223,8 +3223,6 @@ values_or_query_spec:
 		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
  |   DEFAULT VALUES
 		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
- |   VALUES row_commalist
-		{ $$ = _symbol_create_list( SQL_VALUES, $2); }
  |  query_expression
  ;
 
@@ -3437,11 +3435,9 @@ with_query_expression:
  | merge_stmt
  ;
 
-
 sql:
-    select_statement_single_row
-|
-    select_no_parens_orderby
+   select_statement_single_row
+ | select_no_parens_orderby
  ;
 
 simple_select:
@@ -3536,6 +3532,7 @@ select_no_parens:
 	  append_list(l, $4);
 	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_INTERSECT, l); }
+ |  VALUES row_commalist     { $$ = _symbol_create_list( SQL_VALUES, $2); }
  |  '(' select_no_parens ')' { $$ = $2; }
  |   simple_select
  ;
@@ -4018,21 +4015,14 @@ filter_exp:
 		  $$ = _symbol_create_list(SQL_FILTER, l ); }
  ;
 
-
 subquery_with_orderby:
     '(' select_no_parens_orderby ')'	{ $$ = $2; }
- |  '(' VALUES row_commalist ')'	
-				{ $$ = _symbol_create_list( SQL_VALUES, $3); }
- |  '(' with_query ')'	
-				{ $$ = $2; }
+ |  '(' with_query ')'			{ $$ = $2; }
  ;
 
 subquery:
     '(' select_no_parens ')'	{ $$ = $2; }
- |  '(' VALUES row_commalist ')'	
-				{ $$ = _symbol_create_list( SQL_VALUES, $3); }
- |  '(' with_query ')'	
-				{ $$ = $2; }
+ |  '(' with_query ')'		{ $$ = $2; }
  ;
 
 	/* simple_scalar expressions */
@@ -6744,9 +6734,9 @@ void *sql_error( mvc * sql, int error_code, char *format, ... )
 	va_list	ap;
 
 	va_start (ap,format);
-	if (sql->errstr[0] == '\0')
+	if (sql->errstr[0] == '\0' || error_code == 5)
 		vsnprintf(sql->errstr, ERRSIZE-1, _(format), ap);
-	if (!sql->session->status)
+	if (!sql->session->status || error_code == 5)
 		sql->session->status = -error_code;
 	va_end (ap);
 	return NULL;

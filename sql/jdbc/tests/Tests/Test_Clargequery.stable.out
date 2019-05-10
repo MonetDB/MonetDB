@@ -19,7 +19,6 @@ stdout of test 'Test_Clargequery` in directory 'sql/jdbc/tests` itself:
 # Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:37519/
 # MonetDB/SQL module v2.19.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

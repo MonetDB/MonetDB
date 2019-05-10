@@ -18,7 +18,6 @@ stdout of test 'caching_stats_bug.6374` in directory 'sql/test/BugTracker-2017` 
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 21:27:18 >  
 # 21:27:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8392" "--port=34552"

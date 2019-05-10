@@ -15,8 +15,8 @@ INCLUDES = .. \
 	../../../../../monetdb5/mal \
 	../../../../../monetdb5/modules/mal \
 	../../../../../monetdb5/optimizer \
-	../../../../../common/options \
 	../../../../../common/stream \
+	../../../../../common/utils \
 	../../../../../gdk \
 	../../../../../tools/merovingian \
 	../../../../../tools/merovingian/daemon \

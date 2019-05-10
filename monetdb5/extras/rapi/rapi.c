@@ -56,8 +56,8 @@ static bool RAPIEnabled(void) {
 }
 
 // The R-environment should be single threaded, calling for some protective measures.
-static MT_Lock rapiLock MT_LOCK_INITIALIZER("rapiLock");
-static int rapiInitialized = FALSE;
+static MT_Lock rapiLock = MT_LOCK_INITIALIZER("rapiLock");
+static bool rapiInitialized = false;
 static char* rtypenames[] = { "NIL", "SYM", "LIST", "CLO", "ENV", "PROM",
 		"LANG", "SPECIAL", "BUILTIN", "CHAR", "LGL", "unknown", "unknown",
 		"INT", "REAL", "CPLX", "STR", "DOT", "ANY", "VEC", "EXPR", "BCODE",
@@ -79,7 +79,7 @@ void writeConsoleEx(const char * buf, int buflen, int foo) {
 	(void) foo;
 	(void) buf; // silence compiler
 #ifdef _RAPI_DEBUG_
-	THRprintf(GDKout, "# %s", buf);
+	printf("# %s", buf);
 #endif
 }
 
@@ -155,7 +155,7 @@ static char *RAPIinitialize(void) {
 	// install.packages() uses system2 to call gcc etc., so we cannot disable it (perhaps store the pointer somewhere just for that?)
 	//SET_INTERNAL(install("system"), R_NilValue);
 
-	rapiInitialized++;
+	rapiInitialized = true;
 	return NULL;
 }
 #else
@@ -172,13 +172,15 @@ static char *RAPIinitialize(void) {
 static char *RAPIinstalladdons(void) {
 	int evalErr;
 	ParseStatus status;
-	char rlibs[BUFSIZ];
+	char rlibs[FILENAME_MAX];
 	char rapiinclude[BUFSIZ];
 	SEXP librisexp;
+	int len;
 
 	// r library folder, create if not exists
-	snprintf(rlibs, sizeof(rlibs), "%s%c%s", GDKgetenv("gdk_dbpath"), DIR_SEP,
-			 "rapi_packages");
+	len = snprintf(rlibs, sizeof(rlibs), "%s%c%s", GDKgetenv("gdk_dbpath"), DIR_SEP, "rapi_packages");
+	if (len == -1 || len >= FILENAME_MAX)
+		return "cannot create rapi_packages directory because the path is too large";
 
 	if (mkdir(rlibs, S_IRWXU) != 0 && errno != EEXIST) {
 		return "cannot create rapi_packages directory";
@@ -256,6 +258,10 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		throw(MAL, "rapi.eval",
 			  "Embedded R has not been enabled. Start server with --set %s=true",
 			  rapi_enableflag);
+	}
+	if (!rapiInitialized) {
+		throw(MAL, "rapi.eval",
+			  "Embedded R initialization has failed");
 	}
 
 	if (!grouped) {
@@ -512,13 +518,6 @@ void* RAPIloopback(void *query) {
 
 
 str RAPIprelude(void *ret) {
-#ifdef NEED_MT_LOCK_INIT
-	static int initialized = 0;
-	/* since we don't destroy the lock, only initialize it once */
-	if (!initialized)
-		MT_lock_init(&rapiLock, "rapi_lock");
-	initialized = 1;
-#endif
 	(void) ret;
 
 	if (RAPIEnabled()) {
@@ -528,8 +527,9 @@ str RAPIprelude(void *ret) {
 			char *initstatus;
 			initstatus = RAPIinitialize();
 			if (initstatus != 0) {
+				MT_lock_unset(&rapiLock);
 				throw(MAL, "rapi.eval",
-					  "failed to initialise R environment (%s)", initstatus);
+					  "failed to initialize R environment (%s)", initstatus);
 			}
 			Rf_defineVar(Rf_install("MONETDB_LIBDIR"), ScalarString(RSTR(LIBDIR)), R_GlobalEnv);
 

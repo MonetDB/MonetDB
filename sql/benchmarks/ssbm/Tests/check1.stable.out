@@ -16,7 +16,6 @@ stdout of test 'check1` in directory 'sql/benchmarks/ssbm` itself:
 # MonetDB/SQL module loaded
 # MonetDB/GIS module loaded
 
-Ready.
 
 
 # 17:32:49 >  
@@ -24,31 +23,31 @@ Ready.
 # 17:32:49 >  
 
 #select count(*) from DWDATE;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 4 # length
 [ 2556	]
 #select count(*) from SUPPLIER;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 3 # length
 [ 100	]
 #select count(*) from CUSTOMER;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 3 # length
 [ 300	]
 #select count(*) from PART;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 4 # length
 [ 2000	]
 #select count(*) from LINEORDER;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 5 # length

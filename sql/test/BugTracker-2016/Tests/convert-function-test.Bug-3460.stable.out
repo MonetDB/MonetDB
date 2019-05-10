@@ -8,18 +8,13 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 # MonetDB 5 server v11.23.0
 # This is an unreleased version
 # Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.589 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:37752/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10540/.s.monetdb.37752
-# MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/R   module loaded
-
-Ready.
+# Compiled for x86_64-pc-linux-gnu/64bit
+# Found 62.693 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30838/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26352/.s.monetdb.30838
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -55,6 +50,8 @@ Ready.
 # loading sql script: 85_bam.sql
 # loading sql script: 90_generator.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
 
 # 19:10:35 >  
 # 19:10:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10540" "--port=37752"
@@ -268,12 +265,12 @@ Ready.
 % v # name
 % blob # type
 % 0 # length
+[ NULL	]
 [ 	]
 [ 00	]
-[ 11	]
 [ 0123456789	]
+[ 11	]
 [ A0B2C3D4F5	]
-[ NULL	]
 #SELECT v, convert(v, varchar(16)) from T_blob;
 % sys.t_blob,	sys.L3 # table_name
 % v,	L3 # name
@@ -5862,8 +5859,8 @@ Ready.
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_char where v in ('0123456789');
-% sys.t_char,	sys.L4 # table_name
-% v,	L4 # name
+% sys.t_char,	sys.L3 # table_name
+% v,	L3 # name
 % char,	blob # type
 % 33,	0 # length
 [ "0123456789",	0123456789	]
@@ -6202,8 +6199,8 @@ Ready.
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_varchar where v in ('0123456789');
-% sys.t_varchar,	sys.L4 # table_name
-% v,	L4 # name
+% sys.t_varchar,	sys.L3 # table_name
+% v,	L3 # name
 % varchar,	blob # type
 % 10,	0 # length
 [ "0123456789",	0123456789	]
@@ -6542,8 +6539,8 @@ Ready.
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_clob where v in ('0123456789');
-% sys.t_clob,	sys.L4 # table_name
-% v,	L4 # name
+% sys.t_clob,	sys.L3 # table_name
+% v,	L3 # name
 % clob,	blob # type
 % 10,	0 # length
 [ "0123456789",	0123456789	]
@@ -6866,12 +6863,12 @@ Ready.
 #SELECT v, convert(v, timestamptz) from T_timestamp;
 % sys.t_timestamp,	sys.L3 # table_name
 % v,	L3 # name
-% timestamp,	timestamp # type
-% 26,	26 # length
-[ 1999-12-31 23:59:59.000000,	1999-12-31 23:59:59.000000	]
-[ 2016-01-01 00:00:00.000000,	2016-01-01 00:00:00.000000	]
-[ 2016-02-29 00:00:00.000000,	2016-02-29 00:00:00.000000	]
-[ 2016-12-31 23:59:58.000000,	2016-12-31 23:59:58.000000	]
+% timestamp,	timestamptz # type
+% 26,	32 # length
+[ 1999-12-31 23:59:59.000000,	2000-01-01 01:59:59.000000+02:00	]
+[ 2016-01-01 00:00:00.000000,	2016-01-01 02:00:00.000000+02:00	]
+[ 2016-02-29 00:00:00.000000,	2016-02-29 02:00:00.000000+02:00	]
+[ 2016-12-31 23:59:58.000000,	2017-01-01 01:59:58.000000+02:00	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as varchar(36)) from T_timestamp;
 % sys.t_timestamp,	sys.L3 # table_name
@@ -6946,12 +6943,12 @@ Ready.
 #SELECT v, cast(v as timestamptz) from T_timestamp;
 % sys.t_timestamp,	sys.L3 # table_name
 % v,	L3 # name
-% timestamp,	timestamp # type
-% 26,	26 # length
-[ 1999-12-31 23:59:59.000000,	1999-12-31 23:59:59.000000	]
-[ 2016-01-01 00:00:00.000000,	2016-01-01 00:00:00.000000	]
-[ 2016-02-29 00:00:00.000000,	2016-02-29 00:00:00.000000	]
-[ 2016-12-31 23:59:58.000000,	2016-12-31 23:59:58.000000	]
+% timestamp,	timestamptz # type
+% 26,	32 # length
+[ 1999-12-31 23:59:59.000000,	2000-01-01 01:59:59.000000+02:00	]
+[ 2016-01-01 00:00:00.000000,	2016-01-01 02:00:00.000000+02:00	]
+[ 2016-02-29 00:00:00.000000,	2016-02-29 02:00:00.000000+02:00	]
+[ 2016-12-31 23:59:58.000000,	2017-01-01 01:59:58.000000+02:00	]
 [ NULL,	NULL	]
 #DROP TABLE T_timestamp;
 #CREATE TABLE T_timetz (v TIMETZ);
@@ -7116,12 +7113,12 @@ Ready.
 #SELECT v, convert(v, timestamp) from T_timestamptz;
 % sys.t_timestamptz,	sys.L3 # table_name
 % v,	L3 # name
-% timestamptz,	timestamptz # type
-% 32,	32 # length
-[ 2000-01-01 01:59:59.000000+02:00,	2000-01-01 01:59:59.000000+02:00	]
-[ 2016-01-01 02:00:00.000000+02:00,	2016-01-01 02:00:00.000000+02:00	]
-[ 2016-02-29 02:00:00.000000+02:00,	2016-02-29 02:00:00.000000+02:00	]
-[ 2017-01-01 01:59:58.000000+02:00,	2017-01-01 01:59:58.000000+02:00	]
+% timestamptz,	timestamp # type
+% 32,	26 # length
+[ 2000-01-01 01:59:59.000000+02:00,	1999-12-31 23:59:59.000000	]
+[ 2016-01-01 02:00:00.000000+02:00,	2016-01-01 00:00:00.000000	]
+[ 2016-02-29 02:00:00.000000+02:00,	2016-02-29 00:00:00.000000	]
+[ 2017-01-01 01:59:58.000000+02:00,	2016-12-31 23:59:58.000000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, timetz) from T_timestamptz;
 % sys.t_timestamptz,	sys.L3 # table_name
@@ -7196,12 +7193,12 @@ Ready.
 #SELECT v, cast(v as timestamp) from T_timestamptz;
 % sys.t_timestamptz,	sys.L3 # table_name
 % v,	L3 # name
-% timestamptz,	timestamptz # type
-% 32,	32 # length
-[ 2000-01-01 01:59:59.000000+02:00,	2000-01-01 01:59:59.000000+02:00	]
-[ 2016-01-01 02:00:00.000000+02:00,	2016-01-01 02:00:00.000000+02:00	]
-[ 2016-02-29 02:00:00.000000+02:00,	2016-02-29 02:00:00.000000+02:00	]
-[ 2017-01-01 01:59:58.000000+02:00,	2017-01-01 01:59:58.000000+02:00	]
+% timestamptz,	timestamp # type
+% 32,	26 # length
+[ 2000-01-01 01:59:59.000000+02:00,	1999-12-31 23:59:59.000000	]
+[ 2016-01-01 02:00:00.000000+02:00,	2016-01-01 00:00:00.000000	]
+[ 2016-02-29 02:00:00.000000+02:00,	2016-02-29 00:00:00.000000	]
+[ 2017-01-01 01:59:58.000000+02:00,	2016-12-31 23:59:58.000000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as timetz) from T_timestamptz;
 % sys.t_timestamptz,	sys.L3 # table_name

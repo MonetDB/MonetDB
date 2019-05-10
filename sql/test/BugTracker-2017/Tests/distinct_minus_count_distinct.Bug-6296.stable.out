@@ -20,7 +20,6 @@ stdout of test 'distinct_minus_count_distinct.Bug-6296` in directory 'sql/test/B
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

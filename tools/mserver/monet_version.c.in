@@ -48,13 +48,14 @@ monet_version(void)
 	sz_mem_gb = (dbl)(MT_npages() * MT_pagesize()) / (1024.0 * 1024.0 * 1024.0);
 	cores = MT_check_nr_cores();
 
-	const char *rev = mercurial_revision();
 	printf("MonetDB 5 server %s", GDKversion());
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
-		printf(" (%s)", MONETDB_RELEASE);
-	else if (strcmp(rev, "Unknown") != 0)
+#ifdef MONETDB_RELEASE
+	printf(" (%s)", MONETDB_RELEASE);
+#else
+	const char *rev = mercurial_revision();
+	if (strcmp(rev, "Unknown") != 0)
 		printf(" (hg id: %s)", rev);
+#endif
 	printf(" (%zu-bit%s)\n",
 			(size_t) (sizeof(ptr) * 8),
 #ifdef HAVE_HGE
@@ -63,9 +64,9 @@ monet_version(void)
 			""
 #endif
 	);
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
-		printf("This is an unreleased version\n");
+#ifndef MONETDB_RELEASE
+	printf("This is an unreleased version\n");
+#endif
 	printf("Copyright (c) 1993 - July 2008 CWI\n"
 	       "Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved\n");
 	printf("Visit https://www.monetdb.org/ for further information\n");

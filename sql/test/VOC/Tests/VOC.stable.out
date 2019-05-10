@@ -37,7 +37,6 @@ stdout of test 'VOC` in directory 'sql/test/VOC` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:10:01 >  
 # 17:10:01 >  "/usr/bin/python" "VOC.SQL.py" "VOC"
@@ -68094,8 +68093,8 @@ Ready.
 #(select 1 from voyages v
 #where c.trip = v.trip and v.boatname = 'AMSTERDAM'
 #and v.departure_harbour ='Texel');
-% voc.L11 # table_name
-% L11 # name
+% voc.L5 # table_name
+% L5 # name
 % bigint # type
 % 7 # length
 [ 1305366	]
@@ -68107,7 +68106,7 @@ Ready.
 % 7 # length
 [ 1308285	]
 #select count(*) from craftsmen c ;
-% voc.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 4 # length
@@ -68150,7 +68149,7 @@ Ready.
 [ "soldiers",	4177	]
 [ "total",	2454	]
 #select count(*) from impotenten;
-% voc.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 3 # length

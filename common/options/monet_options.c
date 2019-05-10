@@ -230,10 +230,6 @@ mo_builtin_settings(opt **Set)
 			      "dbfarm" DIR_SEP_STR "demo");
 	i++;
 	set[i].kind = opt_builtin;
-	set[i].name = strdup("gdk_debug");
-	set[i].value = strdup("0");
-	i++;
-	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_prompt");
 	set[i].value = strdup(">");
 	i++;
@@ -247,6 +243,10 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("mapi_open");
+	set[i].value = strdup("false");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("mapi_ipv6");
 	set[i].value = strdup("false");
 	i++;
 	set[i].kind = opt_builtin;

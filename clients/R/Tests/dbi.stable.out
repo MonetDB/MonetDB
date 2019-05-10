@@ -16,7 +16,6 @@ stdout of test 'dbi` in directory 'clients/R` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-43570/.s.monetdb.31372
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

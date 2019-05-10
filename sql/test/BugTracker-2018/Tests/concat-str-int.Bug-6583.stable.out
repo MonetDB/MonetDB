@@ -18,7 +18,6 @@ stdout of test 'concat-str-int.Bug-6583` in directory 'sql/test/BugTracker-2018`
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:02:06 >  
 # 17:02:06 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25700" "--port=38716"

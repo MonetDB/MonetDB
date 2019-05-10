@@ -15,7 +15,6 @@ stdout of test 'overflow_error` in directory 'sql/test/copy` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:30332/
 # MonetDB/SQL module v2.36.4 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

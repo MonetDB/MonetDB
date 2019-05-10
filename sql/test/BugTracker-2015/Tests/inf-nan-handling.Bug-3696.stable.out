@@ -19,7 +19,6 @@ stdout of test 'inf-nan-handling.Bug-3696` in directory 'sql/test/BugTracker-201
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 13:40:22 >  
 # 13:40:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16694" "--port=35671"

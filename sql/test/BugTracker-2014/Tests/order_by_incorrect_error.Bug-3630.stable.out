@@ -19,7 +19,6 @@ stdout of test 'order_by_incorrect_error.Bug-3630` in directory 'sql/test/BugTra
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:51:46 >  
 # 15:51:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25544" "--port=30753"
@@ -38,6 +37,11 @@ Ready.
 #"blockref"               CHARACTER LARGE OBJECT,
 #"delay"                  INTEGER,
 #"lon"                    DOUBLE,
+#select a.recordedattime, a.monexpectedarr, a.monexpecteddep, a.monaimedarr, b.monaimeddep, a.delay, b.delay, (b.recordedattime - a.monaimedarr)/1000 as ourdelay,  b.recordedattime, b.monexpectedarr, b.monexpecteddep, monstopref from sirivm as a join sirivm as b using (vehiclenumber, lineref, datedvehiclejourneyref, monstopref) where a.monatstop = 'false' and b.monatstop = 'true' order by abs(ourdelay) desc limit 10;
+% sys.a,	sys.a,	sys.a,	sys.a,	sys.b,	sys.a,	sys.b,	sys.L14,	sys.b,	sys.b,	sys.b,	sys.L1 # table_name
+% recordedattime,	monexpectedarr,	monexpecteddep,	monaimedarr,	monaimeddep,	delay,	delay,	ourdelay,	recordedattime,	monexpectedarr,	monexpecteddep,	monstopref # name
+% timestamp,	timestamp,	timestamp,	timestamp,	timestamp,	int,	int,	sec_interval,	timestamp,	timestamp,	timestamp,	clob # type
+% 26,	26,	26,	26,	26,	1,	1,	5,	26,	26,	26,	0 # length
 #drop TABLE "sys"."sirivm";
 
 # 15:51:46 >  

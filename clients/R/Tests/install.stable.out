@@ -23,7 +23,6 @@ stdout of test 'install` in directory 'clients/R` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:11:08 >  
 # 15:11:08 >  "R" "--vanilla" "--slave" "--args" "32328"

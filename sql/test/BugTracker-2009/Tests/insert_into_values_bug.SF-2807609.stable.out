@@ -14,7 +14,6 @@ stdout of test 'insert_into_values_bug.SF-2807609` in directory 'sql/test/BugTra
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34561/
 # MonetDB/SQL module v2.32.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

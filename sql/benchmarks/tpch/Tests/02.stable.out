@@ -14,7 +14,6 @@ stdout of test '02` in directory 'sql/benchmarks/tpch` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31407/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

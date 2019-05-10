@@ -15,7 +15,6 @@ stdout of test 'geom_multi` in directory 'geom/sql` itself:
 # MonetDB/GIS module v0.10.1 loaded
 # MonetDB/SQL module v2.30.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

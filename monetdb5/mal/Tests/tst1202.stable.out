@@ -23,7 +23,6 @@ stdout of test 'tst1202` in directory 'monetdb5/mal` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:36:11 >  
 # 15:36:11 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16148" "--port=33827"
@@ -188,11 +187,11 @@ Ready.
 [ 0@0,	"GMT"	]
 [ 1@0,	"GMT+01:00"	]
 [ 2@0,	"GMT+01:00"	]
-[ 3@0,	"GMT+01:00-DST[october 31@01:15,first wednesday on or after march 26@01:15]"	]
-[ 4@0,	"GMT-DST[17th monday from start of january@01:15,31th sunday from start of august@01:15]"	]
-[ 5@0,	"GMT-01:37-DST[october 31@01:15,first thursday on or after april 31@01:15]"	]
-[ 6@0,	"GMT-01:37-DST[may 26@01:15,22th tuesday from start of september@01:15]"	]
-[ 7@0,	"GMT+23:00-DST[first thursday on or after april 31@01:15,first wednesday on or after november 22@01:15]"	]
+[ 3@0,	"GMT+01:00-DST[october 31@01:15,first wednesday on or after march 10@01:15]"	]
+[ 4@0,	"GMT-DST[first monday from start of january@01:15,first sunday from end of august@01:15]"	]
+[ 5@0,	"GMT-01:37-DST[october 31@01:15,last thursday on or before april 1@01:15]"	]
+[ 6@0,	"GMT-01:37-DST[may 26@01:15,10th tuesday from end of september@01:15]"	]
+[ 7@0,	"GMT+23:00-DST[last thursday on or before april 1@01:15,last wednesday on or before november 10@01:15]"	]
 [ 8@0,	"GMT-23:36"	]
 [ 9@0,	"GMT"	]
 [ 10@0,	"GMT-01:00"	]
@@ -208,11 +207,11 @@ Ready.
 [ 0@0,	  0,		  nil,						  nil						  ]
 [ 1@0,	  60,		  nil,						  nil						  ]
 [ 2@0,	  60,		  nil,						  nil						  ]
-[ 3@0,	  60,		  october 31@01:15,				  first wednesday on or after march 26@01:15	  ]
-[ 4@0,	  0,		  17th monday from start of january@01:15,	  31th sunday from start of august@01:15	  ]
-[ 5@0,	  -97,		  october 31@01:15,				  first thursday on or after april 31@01:15	  ]
-[ 6@0,	  -97,		  may 26@01:15,					  22th tuesday from start of september@01:15	  ]
-[ 7@0,	  1380,		  first thursday on or after april 31@01:15,	  first wednesday on or after november 22@01:15	  ]
+[ 3@0,	60,	october 31@01:15,	first wednesday on or after march 10@01:15	]
+[ 4@0,	0,	first monday from start of january@01:15,	first sunday from end of august@01:15	]
+[ 5@0,	-97,	october 31@01:15,	last thursday on or before april 1@01:15	]
+[ 6@0,	-97,	may 26@01:15,	10th tuesday from end of september@01:15	]
+[ 7@0,	1380,	last thursday on or before april 1@01:15,	last wednesday on or before november 10@01:15	]
 [ 8@0,	  -1416,	  nil,						  nil						  ]
 [ 9@0,	  0,		  nil,						  nil						  ]
 [ 10@0,	  -60,		  nil,						  nil						  ]

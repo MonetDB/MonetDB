@@ -465,37 +465,6 @@ echo
 
 for tp in hge; do
     cat <<EOF
-pattern between(b:bat[:$tp],lo:bat[:$tp],hi:bat[:$tp]) :bat[:bit]
-address CMDbatBETWEEN
-comment "B between LO and HI inclusive, nil border is (minus) infinity";
-pattern between(b:bat[:$tp],lo:bat[:$tp],hi:bat[:$tp],s:bat[:oid]) :bat[:bit]
-address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
-pattern between(b:bat[:$tp],lo:bat[:$tp],hi:$tp) :bat[:bit]
-address CMDbatBETWEEN
-comment "B between LO and HI inclusive, nil border is (minus) infinity";
-pattern between(b:bat[:$tp],lo:bat[:$tp],hi:$tp,s:bat[:oid]) :bat[:bit]
-address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
-pattern between(b:bat[:$tp],lo:$tp,hi:bat[:$tp]) :bat[:bit]
-address CMDbatBETWEEN
-comment "B between LO and HI inclusive, nil border is (minus) infinity";
-pattern between(b:bat[:$tp],lo:$tp,hi:bat[:$tp],s:bat[:oid]) :bat[:bit]
-address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
-pattern between(b:bat[:$tp],lo:$tp,hi:$tp) :bat[:bit]
-address CMDbatBETWEEN
-comment "B between LO and HI inclusive, nil border is (minus) infinity";
-pattern between(b:bat[:$tp],lo:$tp,hi:$tp,s:bat[:oid]) :bat[:bit]
-address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
-
-EOF
-done
-echo
-
-for tp in hge; do
-    cat <<EOF
 pattern avg(b:bat[:$tp]) :dbl
 address CMDcalcavg
 comment "average of non-nil values of B with candidates list";

@@ -19,7 +19,6 @@ stdout of test 'rapi03` in directory 'sql/backends/monet5` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:37:10 >  
 # 17:37:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20729" "--port=35474"

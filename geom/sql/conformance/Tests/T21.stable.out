@@ -18,7 +18,6 @@ stdout of test 'T21` in directory 'geom/sql/conformance` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:52:43 >  
 # 14:52:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26317" "--port=37260"

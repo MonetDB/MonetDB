@@ -19,7 +19,6 @@ stdout of test 'crash.Bug-6081` in directory 'sql/test/BugTracker-2016` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:17:32 >  
 # 10:17:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6720" "--port=36589"

@@ -30,3 +30,6 @@ create procedure sys.settimeout("query" bigint, "session" bigint)
 	external name clients.settimeout;
 create procedure sys.setsession("timeout" bigint)
 	external name clients.setsession;
+
+create procedure sys.setprinttimeout("timeout" integer)
+	external name clients.setprinttimeout;

@@ -21,7 +21,6 @@ stdout of test 'pyapi21` in directory 'sql/backends/monet5` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 <type 'int'>: 3
 <type 'str'>: hello
 <type 'list'>: [3, 37, 'hello']

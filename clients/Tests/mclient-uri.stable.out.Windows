@@ -18,7 +18,6 @@ stdout of test 'mclient-uri` in directory 'clients` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 
 % .L2 # table_name

@@ -51,7 +51,6 @@ stdout of test 'point` in directory 'sql/test/pg_regress` itself:
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-Ready.
 
 # 15:18:46 >  
 # 15:18:46 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13481" "--port=38041"

@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-aggregation-distinct.Bug-6411` in directory 'sql
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 21:11:10 >  
 # 21:11:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21483" "--port=36854"

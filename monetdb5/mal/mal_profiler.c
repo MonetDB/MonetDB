@@ -45,7 +45,7 @@ int malProfileMode = 0;     /* global flag to indicate profiling mode */
 
 static struct timeval startup_time;
 
-static volatile ATOMIC_TYPE hbdelay = 0;
+static ATOMIC_TYPE hbdelay = ATOMIC_VAR_INIT(0);
 
 #ifdef HAVE_SYS_RESOURCE_H
 struct rusage infoUsage;
@@ -59,9 +59,6 @@ static struct{
 
 
 /* the heartbeat process produces a ping event once every X milliseconds */
-//#ifdef ATOMIC_LOCK
-//static MT_Lock mal_beatLock MT_LOCK_INITIALIZER("beatLock");
-//#endif
 
 #define LOGLEN 8192
 #define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
@@ -449,7 +446,7 @@ profilerHeartbeatEvent(char *alter)
 	lng usec = GDKusec();
 	uint64_t microseconds = (uint64_t)startup_time.tv_sec*1000000 + (uint64_t)startup_time.tv_usec + (uint64_t)usec;
 
-	if (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream  == NULL)
+	if (ATOMIC_GET(&hbdelay) == 0 || eventstream  == NULL)
 		return;
 
 	/* get CPU load on beat boundaries only */
@@ -591,20 +588,29 @@ static int tracecounter = 0;
 str
 startTrace(str path)
 {
+	int len;
 	char buf[FILENAME_MAX];
 
-	if( path && eventstream == NULL){
+	if (path && eventstream == NULL){
 		// create a file to keep the events, unless we
 		// already have a profiler stream
 		MT_lock_set(&mal_profileLock );
 		if(eventstream == NULL && offlinestore ==0){
-			snprintf(buf,FILENAME_MAX,"%s%c%s",GDKgetenv("gdk_dbpath"), DIR_SEP, path);
+			len = snprintf(buf,FILENAME_MAX,"%s%c%s",GDKgetenv("gdk_dbpath"), DIR_SEP, path);
+			if (len == -1 || len >= FILENAME_MAX) {
+				MT_lock_unset(&mal_profileLock);
+				throw(MAL, "profiler.startTrace", SQLSTATE(HY001) "Profiler filename path is too large");
+			}
 			if (mkdir(buf, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
 				MT_lock_unset(&mal_profileLock);
 				throw(MAL, "profiler.startTrace", SQLSTATE(42000) "Failed to create directory %s", buf);
 			}
-			snprintf(buf,FILENAME_MAX,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbpath"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
-			if((eventstream = open_wastream(buf)) == NULL) {
+			len = snprintf(buf,FILENAME_MAX,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbpath"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
+			if (len == -1 || len >= FILENAME_MAX) {
+				MT_lock_unset(&mal_profileLock);
+				throw(MAL, "profiler.startTrace", SQLSTATE(HY001) "Profiler filename path is too large");
+			}
+			if ((eventstream = open_wastream(buf)) == NULL) {
 				MT_lock_unset(&mal_profileLock );
 				throw(MAL,"profiler.startTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
@@ -1031,7 +1037,7 @@ void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 }
 
 static MT_Id hbthread;
-static volatile ATOMIC_TYPE hbrunning;
+static ATOMIC_TYPE hbrunning = ATOMIC_VAR_INIT(0);
 
 static void profilerHeartbeat(void *dummy)
 {
@@ -1041,32 +1047,33 @@ static void profilerHeartbeat(void *dummy)
 	(void) dummy;
 	for (;;) {
 		/* wait until you need this info */
-		while (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream == NULL) {
-			if (GDKexiting() || !ATOMIC_GET(hbrunning, mal_beatLock))
+		MT_thread_setworking("sleeping");
+		while (ATOMIC_GET(&hbdelay) == 0 || eventstream == NULL) {
+			if (GDKexiting() || !ATOMIC_GET(&hbrunning))
 				return;
 			MT_sleep_ms(timeout);
 		}
-		for (t = (int) ATOMIC_GET(hbdelay, mal_beatLock); t > 0; t -= timeout) {
-			if (GDKexiting() || !ATOMIC_GET(hbrunning, mal_beatLock))
+		for (t = (int) ATOMIC_GET(&hbdelay); t > 0; t -= timeout) {
+			if (GDKexiting() || !ATOMIC_GET(&hbrunning))
 				return;
 			MT_sleep_ms(t > timeout ? timeout : t);
 		}
+		MT_thread_setworking("pinging");
 		profilerHeartbeatEvent("ping");
 	}
-	ATOMIC_SET(hbdelay, 0, mal_beatLock);
 }
 
 void setHeartbeat(int delay)
 {
 	if (delay < 0 ){
-		ATOMIC_SET(hbrunning, 0, mal_beatLock);
+		ATOMIC_SET(&hbrunning, 0);
 		if (hbthread)
 			MT_join_thread(hbthread);
 		return;
 	}
 	if ( delay > 0 &&  delay <= 10)
 		delay = 10;
-	ATOMIC_SET(hbdelay, (ATOMIC_TYPE) delay, mal_beatLock);
+	ATOMIC_SET(&hbdelay, delay);
 }
 
 void initProfiler(void)
@@ -1078,13 +1085,11 @@ void initProfiler(void)
 
 void initHeartbeat(void)
 {
-#ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(mal_beatLock, "beatLock");
-#endif
-	ATOMIC_SET(hbrunning, 1, mal_beatLock);
-	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE) < 0) {
+	ATOMIC_SET(&hbrunning, 1);
+	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE,
+						 "heartbeat") < 0) {
 		/* it didn't happen */
 		hbthread = 0;
-		ATOMIC_SET(hbrunning, 0, mal_beatLock);
+		ATOMIC_SET(&hbrunning, 0);
 	}
 }

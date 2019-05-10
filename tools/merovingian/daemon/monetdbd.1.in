@@ -169,6 +169,10 @@ This property specifies which TCP port
 .I monetdbd
 should listen to for connection requests.  Defaults to 50000.
 .TP
+.B ipv6
+This property forces monetdbd to bind connections on IPv6 addresses only.
+Defaults to false.
+.TP
 .B listenaddr
 This property specifies an address that is allowed to connect to the server.
 The user can specify one IP(v6) address, or use the 0.0.0.0 notation to allow

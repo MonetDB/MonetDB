@@ -13,6 +13,7 @@
 #include "sql_mvc.h"
 #include "sql_catalog.h"
 #include "sql_relation.h"
+#include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_updates.h"
 #include "mal_exception.h"
@@ -32,41 +33,50 @@ table_column_colnr(int *colnr)
 str
 sql_partition_validate_key(mvc *sql, sql_table *nt, sql_key *k, const char* op)
 {
-	if(isPartitionedByColumnTable(nt)) {
-		assert(nt->part.pcol);
-		if(list_length(k->columns) != 1) {
-			throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table the keys must match "
-									   "the columns used in the partition definition", op, nt->s->base.name, nt->base.name);
-		} else {
-			sql_kc *kcol = k->columns->h->data;
-			if(kcol->c->colnr != nt->part.pcol->colnr)
-				throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table the keys must "
-									   "match the columns used in the partition definition", op, nt->s->base.name, nt->base.name);
-		}
-	} else if(isPartitionedByExpressionTable(nt)) {
-		list *kcols, *pcols;
-		sql_allocator *p1, *p2;
+	if (k->type != fkey) {
+		const char *keys = (k->type == pkey) ? "primary" : "unique";
+		assert(k->type == pkey || k->type == ukey);
 
-		assert(nt->part.pexp->cols);
-		if(list_length(k->columns) != list_length(nt->part.pexp->cols))
-			throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table the keys must match "
-									   "the columns used in the partition definition", op, nt->s->base.name, nt->base.name);
+		if (isPartitionedByColumnTable(nt)) {
+			assert(nt->part.pcol);
+			if (list_length(k->columns) != 1) {
+				throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table, the %s key's "
+					  "columns must match the columns used in the partition definition", op, nt->s->base.name,
+					  nt->base.name, keys);
+			} else {
+				sql_kc *kcol = k->columns->h->data;
+				if (kcol->c->colnr != nt->part.pcol->colnr)
+					throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table, the %s key's "
+						  "columns must match the columns used in the partition definition", op, nt->s->base.name,
+						  nt->base.name, keys);
+			}
+		} else if (isPartitionedByExpressionTable(nt)) {
+			list *kcols, *pcols;
+			sql_allocator *p1, *p2;
 
-		p1 = k->columns->sa; /* save the original sql allocators */
-		p2 = nt->part.pexp->cols->sa;
-		k->columns->sa = sql->sa;
-		nt->part.pexp->cols->sa = sql->sa;
-		kcols = list_sort(k->columns, (fkeyvalue)&key_column_colnr, NULL);
-		pcols = list_sort(nt->part.pexp->cols, (fkeyvalue)&table_column_colnr, NULL);
-		k->columns->sa = p1;
-		nt->part.pexp->cols->sa = p2;
+			assert(nt->part.pexp->cols);
+			if (list_length(k->columns) != list_length(nt->part.pexp->cols))
+				throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table, the %s key's "
+					  "columns must match the columns used in the partition definition", op, nt->s->base.name,
+					  nt->base.name, keys);
 
-		for (node *nn = kcols->h, *mm = pcols->h; nn && mm; nn = nn->next, mm = mm->next) {
-			sql_kc *kcol = nn->data;
-			int *colnr = mm->data;
-			if (kcol->c->colnr != *colnr)
-				throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table the keys must match "
-									   "the columns used in the partition definition", op, nt->s->base.name, nt->base.name);
+			p1 = k->columns->sa; /* save the original sql allocators */
+			p2 = nt->part.pexp->cols->sa;
+			k->columns->sa = sql->sa;
+			nt->part.pexp->cols->sa = sql->sa;
+			kcols = list_sort(k->columns, (fkeyvalue)&key_column_colnr, NULL);
+			pcols = list_sort(nt->part.pexp->cols, (fkeyvalue)&table_column_colnr, NULL);
+			k->columns->sa = p1;
+			nt->part.pexp->cols->sa = p2;
+
+			for (node *nn = kcols->h, *mm = pcols->h; nn && mm; nn = nn->next, mm = mm->next) {
+				sql_kc *kcol = nn->data;
+				int *colnr = mm->data;
+				if (kcol->c->colnr != *colnr)
+					throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table, the %s key's "
+						  "columns must match the columns used in the partition definition", op, nt->s->base.name,
+						  nt->base.name, keys);
+			}
 		}
 	}
 	return NULL;
@@ -258,6 +268,8 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		list_append(r->exps, exp);
 
 		if (r)
+			r = rel_unnest(sql, r);
+		if (r)
 			r = rel_optimizer(sql, r, 0);
 		if (r) {
 			int i;
@@ -345,18 +357,34 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 				vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
 				ok = VALinit(&vmin, TYPE_str, next->part.range.minvalue);
 				if(ok)
-					ok = VALconvert(localtype, &vmin);
-				if(ok)
 					ok = VALinit(&vmax, TYPE_str, next->part.range.maxvalue);
-				if(ok)
-					ok = VALconvert(localtype, &vmax);
 				if(ok) {
-					p->part.range.minvalue = sa_alloc(sql->session->tr->sa, vmin.len);
-					p->part.range.maxvalue = sa_alloc(sql->session->tr->sa, vmax.len);
-					memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
-					memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
-					p->part.range.minlength = vmin.len;
-					p->part.range.maxlength = vmax.len;
+					if (strcmp((const char *)VALget(&vmin), str_nil) == 0 ||
+						strcmp((const char *)VALget(&vmax), str_nil) == 0) {
+						int tpe = found.type->localtype;
+						const void *nil_ptr = ATOMnilptr(tpe);
+						size_t nil_len = ATOMlen(tpe, nil_ptr);
+
+						assert(p->with_nills && next->with_nills);
+						p->part.range.minvalue = sa_alloc(sql->session->tr->sa, nil_len);
+						p->part.range.maxvalue = sa_alloc(sql->session->tr->sa, nil_len);
+						memcpy(p->part.range.minvalue, nil_ptr, nil_len);
+						memcpy(p->part.range.maxvalue, nil_ptr, nil_len);
+						p->part.range.minlength = nil_len;
+						p->part.range.maxlength = nil_len;
+					} else {
+						ok = VALconvert(localtype, &vmin);
+						if(ok)
+							ok = VALconvert(localtype, &vmax);
+						if(ok) {
+							p->part.range.minvalue = sa_alloc(sql->session->tr->sa, vmin.len);
+							p->part.range.maxvalue = sa_alloc(sql->session->tr->sa, vmax.len);
+							memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
+							memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
+							p->part.range.minlength = vmin.len;
+							p->part.range.maxlength = vmax.len;
+						}
+					}
 				}
 				VALclear(&vmin);
 				VALclear(&vmax);
