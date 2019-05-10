@@ -16,9 +16,6 @@ stdout of test 'convert-function-test-hge.Bug-3460` in directory 'sql/test/BugTr
 # Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:36439/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11655/.s.monetdb.36439
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/R   module loaded
-
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -58,6 +55,9 @@ stdout of test 'convert-function-test-hge.Bug-3460` in directory 'sql/test/BugTr
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 19:15:22 >  
 # 19:15:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11655" "--port=36439"
