@@ -6610,7 +6610,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-02-29,	2016-02-29 00:00:00.000000	]
 [ 2016-12-31,	2016-12-31 00:00:00.000000	]
 [ NULL,	NULL	]
-#SELECT v, convert(v, timestamptz) from T_date;
+#SELECT v, convert(v, timestamp with time zone) from T_date;
 % sys.t_date,	sys.L3 # table_name
 % v,	L3 # name
 % date,	timestamptz # type
@@ -6670,7 +6670,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-02-29,	2016-02-29 00:00:00.000000	]
 [ 2016-12-31,	2016-12-31 00:00:00.000000	]
 [ NULL,	NULL	]
-#SELECT v, cast(v as timestamptz) from T_date;
+#SELECT v, cast(v as timestamp with time zone) from T_date;
 % sys.t_date,	sys.L3 # table_name
 % v,	L3 # name
 % date,	timestamptz # type
@@ -6726,11 +6726,11 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 00:00:00,	00:00:00	]
 [ 23:59:58,	23:59:58	]
 [ NULL,	NULL	]
-#SELECT v, convert(v, timetz) from T_time;
+#SELECT v, convert(v, time with time zone) from T_time;
 % sys.t_time,	sys.L3 # table_name
 % v,	L3 # name
-% time,	time # type
-% 8,	8 # length
+% time,	timetz # type
+% 8,	14 # length
 [ 00:00:00,	02:00:00+02:00	]
 [ 23:59:58,	01:59:58+02:00	]
 [ NULL,	NULL	]
@@ -6766,11 +6766,11 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 00:00:00,	00:00:00	]
 [ 23:59:58,	23:59:58	]
 [ NULL,	NULL	]
-#SELECT v, cast(v as timetz) from T_time;
+#SELECT v, cast(v as time with time zone) from T_time;
 % sys.t_time,	sys.L3 # table_name
 % v,	L3 # name
-% time,	time # type
-% 8,	8 # length
+% time,	timetz # type
+% 8,	14 # length
 [ 00:00:00,	02:00:00+02:00	]
 [ 23:59:58,	01:59:58+02:00	]
 [ NULL,	NULL	]
@@ -6850,7 +6850,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-02-29 00:00:00.000000,	2016-02-29 00:00:00.000000	]
 [ 2016-12-31 23:59:58.000000,	2016-12-31 23:59:58.000000	]
 [ NULL,	NULL	]
-#SELECT v, convert(v, timetz) from T_timestamp;
+#SELECT v, convert(v, time with time zone) from T_timestamp;
 % sys.t_timestamp,	sys.L3 # table_name
 % v,	L3 # name
 % timestamp,	timetz # type
@@ -6930,7 +6930,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-02-29 00:00:00.000000,	2016-02-29 00:00:00.000000	]
 [ 2016-12-31 23:59:58.000000,	2016-12-31 23:59:58.000000	]
 [ NULL,	NULL	]
-#SELECT v, cast(v as timetz) from T_timestamp;
+#SELECT v, cast(v as time with time zone) from T_timestamp;
 % sys.t_timestamp,	sys.L3 # table_name
 % v,	L3 # name
 % timestamp,	timetz # type
@@ -6951,8 +6951,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	2017-01-01 01:59:58.000000+02:00	]
 [ NULL,	NULL	]
 #DROP TABLE T_timestamp;
-#CREATE TABLE T_timetz (v TIMETZ);
-#INSERT into T_timetz VALUES (timetz '00:00:00'), (timetz '23:59:58');
+#CREATE TABLE T_timetz (v TIME WITH TIME ZONE);
+#INSERT into T_timetz VALUES (time with time zone '00:00:00'), (time with time zone '23:59:58');
 [ 2	]
 #INSERT into T_timetz VALUES (null);
 [ 1	]
@@ -6991,12 +6991,12 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 #SELECT v, convert(v, time) from T_timetz;
 % sys.t_timetz,	sys.L3 # table_name
 % v,	L3 # name
-% timetz,	timetz # type
-% 14,	14 # length
+% timetz,	time # type
+% 14,	8 # length
 [ 02:00:00+02:00,	00:00:00	]
 [ 01:59:58+02:00,	23:59:58	]
 [ NULL,	NULL	]
-#SELECT v, convert(v, timetz) from T_timetz;
+#SELECT v, convert(v, time with time zone) from T_timetz;
 % sys.t_timetz,	sys.L3 # table_name
 % v,	L3 # name
 % timetz,	timetz # type
@@ -7031,12 +7031,12 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 #SELECT v, cast(v as time) from T_timetz;
 % sys.t_timetz,	sys.L3 # table_name
 % v,	L3 # name
-% timetz,	timetz # type
-% 14,	14 # length
+% timetz,	time # type
+% 14,	8 # length
 [ 02:00:00+02:00,	00:00:00	]
 [ 01:59:58+02:00,	23:59:58	]
 [ NULL,	NULL	]
-#SELECT v, cast(v as timetz) from T_timetz;
+#SELECT v, cast(v as time with time zone) from T_timetz;
 % sys.t_timetz,	sys.L3 # table_name
 % v,	L3 # name
 % timetz,	timetz # type
@@ -7045,8 +7045,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 01:59:58+02:00,	01:59:58+02:00	]
 [ NULL,	NULL	]
 #DROP TABLE T_timetz;
-#CREATE TABLE T_timestamptz (v TIMESTAMPTZ);
-#INSERT into T_timestamptz VALUES (timestamptz '1999-12-31 23:59:59'), (timestamptz '2016-01-01 00:00:00'), (timestamptz '2016-02-29 00:00:00'), (timestamptz '2016-12-31 23:59:58');
+#CREATE TABLE T_timestamptz (v TIMESTAMP WITH TIME ZONE);
+#INSERT into T_timestamptz VALUES (timestamp with time zone '1999-12-31 23:59:59'), (timestamp with time zone '2016-01-01 00:00:00'), (timestamp with time zone '2016-02-29 00:00:00'), (timestamp with time zone '2016-12-31 23:59:58');
 [ 4	]
 #INSERT into T_timestamptz VALUES (null);
 [ 1	]
@@ -7120,7 +7120,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-02-29 02:00:00.000000+02:00,	2016-02-29 00:00:00.000000	]
 [ 2017-01-01 01:59:58.000000+02:00,	2016-12-31 23:59:58.000000	]
 [ NULL,	NULL	]
-#SELECT v, convert(v, timetz) from T_timestamptz;
+#SELECT v, convert(v, time with time zone) from T_timestamptz;
 % sys.t_timestamptz,	sys.L3 # table_name
 % v,	L3 # name
 % timestamptz,	timetz # type
@@ -7200,7 +7200,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-02-29 02:00:00.000000+02:00,	2016-02-29 00:00:00.000000	]
 [ 2017-01-01 01:59:58.000000+02:00,	2016-12-31 23:59:58.000000	]
 [ NULL,	NULL	]
-#SELECT v, cast(v as timetz) from T_timestamptz;
+#SELECT v, cast(v as time with time zone) from T_timestamptz;
 % sys.t_timestamptz,	sys.L3 # table_name
 % v,	L3 # name
 % timestamptz,	timetz # type
