@@ -1507,7 +1507,7 @@ MTIMEdaytime_extract_minutes_bulk(bat *ret, bat *bid)
 str
 MTIMEdaytime_extract_sql_seconds(int *ret, const daytime *t)
 {
-	*ret = is_daytime_nil(*t) ? int_nil : (int) ((*t % 60000000) / 1000);
+	*ret = is_daytime_nil(*t) ? int_nil : (int) (*t % 60000000);
 	return MAL_SUCCEED;
 }
 
@@ -1534,7 +1534,7 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, bat *bid)
 			m[i] = int_nil;
 			bn->tnil = true;
 		} else {
-			m[i] = (int) ((d[i] % 60000000) / 1000);
+			m[i] = (int) (d[i] % 60000000);
 		}
 	}
 	bn->tnonil = !bn->tnil;
@@ -1678,7 +1678,7 @@ MTIMEtimestamp_minutes(int *ret, const timestamp *t)
 str
 MTIMEtimestamp_sql_seconds(int *ret, const timestamp *t)
 {
-	*ret = is_timestamp_nil(*t) ? int_nil : (int) ((ts_time(*t) % 60000000) / 1000);
+	*ret = is_timestamp_nil(*t) ? int_nil : (int) (ts_time(*t) % 60000000);
 	return MAL_SUCCEED;
 }
 
@@ -1705,7 +1705,7 @@ MTIMEtimestamp_sql_seconds_bulk(bat *ret, bat *bid)
 			m[i] = int_nil;
 			bn->tnil = true;
 		} else {
-			m[i] = (int) ((ts_time(t[i]) % 60000000) / 1000);
+			m[i] = (int) (ts_time(t[i]) % 60000000);
 		}
 	}
 	bn->tnonil = !bn->tnil;
