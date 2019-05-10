@@ -3127,8 +3127,7 @@ rel_unop_(mvc *sql, sql_exp *e, sql_schema *s, char *fname, int card)
 			f = NULL;
 	}
 	if (f && check_card(card, f)) {
-		sql_arg *ares = f->func->res?f->func->res->h->data:NULL;
-		if (ares && ares->type.scale == INOUT) {
+		if (f->func->fix_scale == INOUT) {
 			sql_subtype *res = f->res->h->data;
 			res->digits = t->digits;
 			res->scale = t->scale;
