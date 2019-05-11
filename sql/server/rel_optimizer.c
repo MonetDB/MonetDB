@@ -3087,7 +3087,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				atom *la = exp_flatten(sql, le);
 				atom *ra = exp_flatten(sql, re);
 
-				if (la && ra) {
+				/* TODO check if output type is larger then input */
+				if (la && ra && subtype_cmp(atom_type(la), atom_type(ra)) == 0 && subtype_cmp(atom_type(la), exp_subtype(e)) == 0) {
 					atom *a = atom_mul(la, ra);
 
 					if (a && atom_cast(sql->sa, a, exp_subtype(e))) {
@@ -6132,7 +6133,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 		for (n = rel->exps->h; n && !fnd; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (e->type != e_aggr && e->type != e_column) {
+			if (e->type != e_aggr && e->type != e_column && e->type != e_atom) {
 				fnd = 1;
 			}
 		}

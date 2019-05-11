@@ -647,7 +647,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if ( strcmp(oper,">") == 0){
 				lng one = 1;
 				low= *getArgReference_TYPE(stk,pci,idx, timestamp);
-				if ((msg = MTIMEtimestamp_add(&hgh, &hgh, &one)) != MAL_SUCCEED) {
+				if ((msg = MTIMEtimestamp_add(&low, &low, &one)) != MAL_SUCCEED) {
 					if (cand)
 						BBPunfix(cand->batCacheid);
 					return msg;

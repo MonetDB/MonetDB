@@ -42,6 +42,12 @@ stdout of test 'sqlitelogictest-mal-calc-undefined.Bug-6566` in directory 'sql/t
 [ NULL	]
 [ NULL	]
 [ NULL	]
+#SELECT ALL + CAST ( CAST ( NULL AS INTEGER ) / + COUNT ( DISTINCT - 55 ) * + MIN ( DISTINCT 0 ) AS BIGINT ) FROM tab0 AS cor0; -- NULL
+% .L6 # table_name
+% L6 # name
+% bigint # type
+% 1 # length
+[ NULL	]
 #DROP TABLE tab0;
 
 # 13:05:57 >  

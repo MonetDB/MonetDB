@@ -717,17 +717,17 @@ rel_values(sql_query *query, symbol *tableref)
 	dnode *o;
 	node *m;
 	list *exps = sa_list(sql->sa);
-
 	exp_kind ek = {type_value, card_value, TRUE};
-	if (!rowlist->h)
-		r = rel_project(sql->sa, NULL, NULL);
 
-	/* last element in the list is the table_name */
-	for (o = rowlist->h; o->next; o = o->next) {
+	for (o = rowlist->h; o; o = o->next) {
 		dlist *values = o->data.lval;
 
-		if (r && list_length(r->exps) != dlist_length(values)) {
-			return sql_error(sql, 02, SQLSTATE(42000) "VALUES: number of values doesn't match");
+		/* When performing sub-queries, the relation name appears under a SQL_NAME symbol at the end of the list */
+		if (o->type == type_symbol && o->data.sym->token == SQL_NAME)
+			break;
+
+		if (!list_empty(exps) && list_length(exps) != dlist_length(values)) {
+			return sql_error(sql, 02, SQLSTATE(42000) "VALUES: number of columns doesn't match between rows");
 		} else {
 			dnode *n;
 
@@ -2606,6 +2606,8 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			return rel_lastexp(sql, *rel);
 		return NULL;
 	}
+	case SQL_DEFAULT:
+		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
 	default: {
 		sql_exp *re, *le = rel_value_exp(query, rel, sc, f, ek);
 		sql_subtype bt;
@@ -2689,6 +2691,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 			r = rel_value_exp(query, &z, n->data.sym, f /* ie no result project */, ek);
 			if (!r) {
+				sql_rel *oleft = left;
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = 0;
@@ -2696,6 +2699,8 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 				r = rel_value_exp(query, &left, n->data.sym, f /* ie no result project */, ek);
 				if (r)
 					l_used = is_join(left->op);
+				if (oleft != left)
+					l_outer = 1;
 			}
 			if (!r) {
 				/* reset error */
@@ -2756,12 +2761,13 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 					}
 					if (rel_convert_types(sql, &l, &r, 1, type_equal_no_any) < 0) 
 						return NULL;
-					r = exp_compare(sql->sa, l, r, sc->token==SQL_IN?mark_in:mark_notin); 
+					r = exp_compare(sql->sa, l, r, (z||l_outer)?(sc->token==SQL_IN?mark_in:mark_notin):
+									 (sc->token==SQL_IN?cmp_equal:cmp_notequal)); 
 					if (z) {
 						left = rel_crossproduct(sql->sa, left, z, sc->token==SQL_IN?op_semi:op_anti);
 						if (rel_has_freevar(z))
 							set_dependent(left);
-					} else {
+					} else if (l_outer) {
 						left->op = sc->token==SQL_IN?op_semi:op_anti;
 					}
 					rel_join_add_exp(sql->sa, left, r);
@@ -3272,6 +3278,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
 		return rel_setquery(query, rel, sc);
+	case SQL_DEFAULT:
+		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
 	default: {
 		sql_exp *re, *le = rel_value_exp(query, &rel, sc, f, ek);
 
@@ -3329,8 +3337,7 @@ rel_unop_(sql_query *query, sql_exp *e, sql_schema *s, char *fname, int card)
 			f = NULL;
 	}
 	if (f && check_card(card, f)) {
-		sql_arg *ares = f->func->res?f->func->res->h->data:NULL;
-		if (ares && ares->type.scale == INOUT) {
+		if (f->func->fix_scale == INOUT) {
 			sql_subtype *res = f->res->h->data;
 			res->digits = t->digits;
 			res->scale = t->scale;
@@ -5814,6 +5821,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 	case SQL_COALESCE:
 	case SQL_NULLIF:
 		return rel_case_exp(query, rel, se, f);
+	case SQL_DEFAULT:
+		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
 	case SQL_XMLELEMENT:
 	case SQL_XMLFOREST:
 	case SQL_XMLCOMMENT:
@@ -6422,8 +6431,6 @@ rel_setquery(sql_query *query, sql_rel *rel, symbol *q)
 	return res;
 }
 
-
-
 static sql_rel *
 rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt jointype, symbol *tab2, symbol *js)
 {
@@ -6680,6 +6687,10 @@ rel_selects(sql_query *query, symbol *s)
 	switch (s->token) {
 	case SQL_WITH:
 		ret = rel_with_query(query, s);
+		sql->type = Q_TABLE;
+		break;
+	case SQL_VALUES:
+		ret = rel_values(query, s);
 		sql->type = Q_TABLE;
 		break;
 	case SQL_SELECT: {

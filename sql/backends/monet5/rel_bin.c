@@ -582,7 +582,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		list *l = sa_list(sql->sa), *exps = e->l;
 		sql_subfunc *f = e->f;
 		stmt *rows = NULL, *cond_execution = NULL;
-		char name[16], *nme;
+		char name[16], *nme = NULL;
 
 		if (f->func->side_effect && left) {
 			if (!exps || list_empty(exps))
