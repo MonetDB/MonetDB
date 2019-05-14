@@ -49,7 +49,8 @@
 						break;											\
 					if(is_##TPE1##_nil(bp[j]))							\
 						break;											\
-					if (bp[j] <= vmin || bp[j] >= vmax)					\
+					if ((!is_##TPE1##_nil(vmin) && bp[j] < vmin) ||		\
+						(!is_##TPE1##_nil(vmax) && bp[j] > vmax))		\
 						break;											\
 				}														\
 			}															\
@@ -76,7 +77,8 @@
 				for(j=k+1; j<i; j++) {									\
 					if(is_##TPE1##_nil(bp[j]))							\
 						break;											\
-					if (bp[j] <= vmin || bp[j] >= vmax)					\
+					if ((!is_##TPE1##_nil(vmin) && bp[j] < vmin) ||		\
+						(!is_##TPE1##_nil(vmax) && bp[j] > vmax))		\
 						break;											\
 				}														\
 			}															\
