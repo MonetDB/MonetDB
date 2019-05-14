@@ -4983,7 +4983,7 @@ insert into sys.functions values (1306, 'minute', 'minutes', 'mtime', 0, 1, fals
 insert into sys.args values (12025, 1306, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (12026, 1306, 'arg_1', 'time', 7, 0, 1, 1);
 insert into sys.functions values (1307, 'second', 'sql_seconds', 'mtime', 0, 1, false, false, false, 2000, true);
-insert into sys.args values (12027, 1307, 'res_0', 'decimal', 9, 3, 0, 0);
+insert into sys.args values (12027, 1307, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (12028, 1307, 'arg_1', 'time', 7, 0, 1, 1);
 insert into sys.functions values (1308, 'hour', 'hours', 'mtime', 0, 1, false, false, false, 2000, true);
 insert into sys.args values (12029, 1308, 'res_0', 'int', 32, 0, 0, 0);
@@ -4992,7 +4992,7 @@ insert into sys.functions values (1309, 'minute', 'minutes', 'mtime', 0, 1, fals
 insert into sys.args values (12031, 1309, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (12032, 1309, 'arg_1', 'timetz', 7, 0, 1, 1);
 insert into sys.functions values (1310, 'second', 'sql_seconds', 'mtime', 0, 1, false, false, false, 2000, true);
-insert into sys.args values (12033, 1310, 'res_0', 'decimal', 9, 3, 0, 0);
+insert into sys.args values (12033, 1310, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (12034, 1310, 'arg_1', 'timetz', 7, 0, 1, 1);
 insert into sys.functions values (1311, 'year', 'year', 'mtime', 0, 1, false, false, false, 2000, true);
 insert into sys.args values (12035, 1311, 'res_0', 'int', 32, 0, 0, 0);
@@ -5013,7 +5013,7 @@ insert into sys.functions values (1316, 'minute', 'minutes', 'mtime', 0, 1, fals
 insert into sys.args values (12045, 1316, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (12046, 1316, 'arg_1', 'timestamp', 7, 0, 1, 1);
 insert into sys.functions values (1317, 'second', 'sql_seconds', 'mtime', 0, 1, false, false, false, 2000, true);
-insert into sys.args values (12047, 1317, 'res_0', 'decimal', 9, 3, 0, 0);
+insert into sys.args values (12047, 1317, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (12048, 1317, 'arg_1', 'timestamp', 7, 0, 1, 1);
 insert into sys.functions values (1318, 'year', 'year', 'mtime', 0, 1, false, false, false, 2000, true);
 insert into sys.args values (12049, 1318, 'res_0', 'int', 32, 0, 0, 0);
@@ -5034,7 +5034,7 @@ insert into sys.functions values (1323, 'minute', 'minutes', 'mtime', 0, 1, fals
 insert into sys.args values (12059, 1323, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (12060, 1323, 'arg_1', 'timestamptz', 7, 0, 1, 1);
 insert into sys.functions values (1324, 'second', 'sql_seconds', 'mtime', 0, 1, false, false, false, 2000, true);
-insert into sys.args values (12061, 1324, 'res_0', 'decimal', 9, 3, 0, 0);
+insert into sys.args values (12061, 1324, 'res_0', 'decimal', 9, 6, 0, 0);
 insert into sys.args values (12062, 1324, 'arg_1', 'timestamptz', 7, 0, 1, 1);
 insert into sys.functions values (1325, 'year', 'year', 'mtime', 0, 1, false, false, false, 2000, true);
 insert into sys.args values (12063, 1325, 'res_0', 'int', 32, 0, 0, 0);
