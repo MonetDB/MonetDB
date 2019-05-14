@@ -419,8 +419,7 @@ snapshot_wal(stream *plan, const char *db_dir)
 	snprintf(log_file, sizeof(log_file), "%s/%s%s", db_dir, bat_logger->dir, LOGFILE);
 	snapshot_immediate_copy_file(plan, log_file, log_file + strlen(db_dir) + 1);
 
-	// TODO replace %lld by the proper macro
-	snprintf(log_file, sizeof(log_file), "%s%s.%lld", bat_logger->dir, LOGFILE, bat_logger->id);
+	snprintf(log_file, sizeof(log_file), "%s%s." LLFMT, bat_logger->dir, LOGFILE, bat_logger->id);
 	long pos = ftell(getFile(log));
 	if (pos < 0)
 		return strerror(errno);
