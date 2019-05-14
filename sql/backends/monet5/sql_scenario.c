@@ -92,7 +92,6 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str tmp;
 	Scenario ms, s = getFreeScenario();
 
-//	(void) ret;
 	(void) mb;
 	(void) stk;
 	(void) pci;
