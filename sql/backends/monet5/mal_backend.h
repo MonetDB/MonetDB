@@ -36,7 +36,6 @@ typedef enum output_format {
  * generated or not */
 
 typedef struct backend {
-	bool 	console;
 	char 	language;		/* 'S' or 's' or 'X' */
 	char 	depth;
 	bool 	first_statement_generated;

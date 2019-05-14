@@ -7,18 +7,6 @@
 module batsql;
 module sql;
 
-pattern start():void 
-address SQLsession
-comment "Switch to processing SQL statements";
-
-pattern start2():void
-address SQLsession2
-comment "Switch to processing precompiled sql statements";
-
-pattern init():void
-address SQLinitEnvironment
-comment "Initialize the environment for MAL";
-
 pattern shutdown(delay:bte, force:bit):str
 address SQLshutdown_wrap;
 pattern shutdown(delay:sht, force:bit):str
@@ -50,7 +38,6 @@ comment "Trigger the commit operation for a MAL block";
 pattern abort()
 address SQLabort
 comment "Trigger the abort operation for a MAL block";
-
 
 pattern eval(cmd:str):void 
 address SQLstatement

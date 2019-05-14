@@ -83,52 +83,6 @@ monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char
 #endif
 }
 
-str
-SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str msg = MAL_SUCCEED;
-	const char *logmsg;
-	int cnt=0;
-
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	if (SQLinitialized == 0)// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
-		return msg;
-	msg = setScenario(cntxt, "sql");
-	// Wait for any recovery process to be finished
-	do {
-		MT_sleep_ms(1000);
-		logmsg = GDKgetenv("recovery");
-		if( logmsg== NULL && ++cnt  == 5)
-			throw(SQL,"SQLinit", "#WARNING server not ready, recovery in progress\n");
-	} while (logmsg == NULL);
-	return msg;
-}
-
-str
-SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str msg = MAL_SUCCEED;
-	const char *logmsg;
-	int cnt=0;
-
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	if (SQLinitialized == 0)// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
-		return msg;
-	msg = setScenario(cntxt, "msql");
-	// Wait for any recovery process to be finished
-	do {
-		MT_sleep_ms(1000);
-		logmsg = GDKgetenv("recovery");
-		if( logmsg== NULL && ++cnt  == 5)
-			throw(SQL,"SQLinit","#WARNING server not ready, recovery in progress\n");
-	} while (logmsg == NULL);
-	return msg;
-}
-
 static str SQLinit(Client c);
 
 str
@@ -305,7 +259,7 @@ SQLprepareClient(Client c, int login)
 			mvc_destroy(m);
 			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		if (isAdministrator(c) || strcmp(c->scenario, "msql") == 0)	/* console should return everything */
+		if (strcmp(c->scenario, "msql") == 0)
 			m->reply_size = -1;
 		be = (void *) backend_create(m, c);
 		if( be == NULL) {
@@ -323,7 +277,6 @@ SQLprepareClient(Client c, int login)
 	if (m->session->tr)
 		reset_functions(m->session->tr);
 	if (login) {
-		/* pass through credentials of the user if not console */
 		schema = monet5_user_set_def_schema(m, c->user);
 		if (!schema) {
 			_DELETE(schema);
@@ -339,7 +292,6 @@ SQLprepareClient(Client c, int login)
 	c->state[MAL_SCENARIO_PARSER] = c;
 	c->state[MAL_SCENARIO_OPTIMIZE] = c;
 	c->sqlcontext = be;
-
 	return NULL;
 }
 
@@ -728,24 +680,6 @@ SQLexitClient(Client c)
 	return MAL_SUCCEED;
 }
 
-/*
- * A statement received internally is simply appended for
- * execution
- */
-str
-SQLinitEnvironment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str err;
-
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	if ((err = SQLinitClient(cntxt)) == MAL_SUCCEED)
-		cntxt->phase[MAL_SCENARIO_EXITCLIENT] = SQLexitClient;
-	return err;
-}
-
-
 str
 SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -866,7 +800,7 @@ SQLreader(Client c)
 		return MAL_SUCCEED;
 	}
 #ifdef _SQL_READER_DEBUG
-	fprintf(stderr, "#SQLparser: start reading SQL %s %s\n", (be->console ? " from console" : ""), (blocked ? "Blocked read" : ""));
+	fprintf(stderr, "#SQLparser: start reading SQL %s\n", (blocked ? "Blocked read" : ""));
 #endif
 	language = be->language;	/* 'S' for SQL, 'D' from debugger */
 	m = be->mvc;
@@ -878,9 +812,6 @@ SQLreader(Client c)
 #ifdef _SQL_READER_DEBUG
 	fprintf(stderr, "#pos %d len %d eof %d \n", in->pos, in->len, in->eof);
 #endif
-	/*
-	 * Distinguish between console reading and mclient connections.
-	 */
 	while (more) {
 		more = false;
 
@@ -912,7 +843,7 @@ SQLreader(Client c)
 				c->yycur = 0;
 			}
 			if (in->eof || !blocked) {
-				language = (be->console) ? 'S' : 0;
+				language = 0;
 
 				/* The rules of auto_commit require us to finish
 				   and start a transaction on the start of a new statement (s A;B; case) */
@@ -938,7 +869,7 @@ SQLreader(Client c)
 				if (be->language == 'D' && !in->eof)
 					return msg;
 
-				if (rd == 0 && language !=0 && in->eof && !be->console) {
+				if (rd == 0 && language !=0 && in->eof) {
 					/* we hadn't seen the EOF before, so just try again
 					   (this time with prompt) */
 					more = true;
@@ -946,7 +877,7 @@ SQLreader(Client c)
 				}
 				go = false;
 				break;
-			} else if (go && !be->console && language == 0) {
+			} else if (go && language == 0) {
 				if (in->buf[in->pos] == 's' && !in->eof) {
 					while ((rd = bstream_next(in)) > 0)
 						;

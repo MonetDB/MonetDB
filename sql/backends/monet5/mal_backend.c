@@ -34,7 +34,6 @@ backend_create(mvc *m, Client c)
 
 	if( b== NULL)
 		return NULL;
-	b->console = isAdministrator(c);
 	b->mvc = m;
 	b->client = c;
 	b->mvc_var = 0;
