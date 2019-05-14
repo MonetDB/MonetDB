@@ -86,6 +86,7 @@ monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char
 str
 SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
@@ -95,9 +96,10 @@ SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
-	(svoid) pci;
+	(void) pci;
 	throw(SQL,"SQLinit", "#ERROR Deprecated functionality\n");
 }
 
@@ -110,7 +112,6 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str tmp;
 	Scenario ms, s = getFreeScenario();
 
-//	(void) ret;
 	(void) mb;
 	(void) stk;
 	(void) pci;
