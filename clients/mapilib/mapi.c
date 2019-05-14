@@ -3649,7 +3649,7 @@ slice_row(const char *reply, char *null, char ***anchorsp, size_t **lensp, int l
 	i = 0;
 	anchors = length == 0 ? NULL : malloc(length * sizeof(*anchors));
 	lens = length == 0 ? NULL : malloc(length * sizeof(*lens));
-	do {
+	for (;;) {
 		if (i >= length) {
 			length = i + 1;
 			REALLOC(anchors, length);
@@ -3663,9 +3663,17 @@ slice_row(const char *reply, char *null, char ***anchorsp, size_t **lensp, int l
 		}
 		lens[i] = len;
 		anchors[i++] = start;
-		while (reply && *reply && isspace((unsigned char) *reply))
+		if (reply == NULL)
+			break;
+		while (*reply && isspace((unsigned char) *reply))
 			reply++;
-	} while (reply && *reply && *reply != endchar);
+		if (*reply == ',') {
+			reply++;
+			while (*reply && isspace((unsigned char) *reply))
+				reply++;
+		} else if (*reply == 0 || *reply == endchar)
+			break;
+	}
 	*anchorsp = anchors;
 	*lensp = lens;
 	return i;
@@ -4774,8 +4782,6 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 		/* skip over trailing junk (presumably white space) */
 		while (*p && *p != ',' && *p != endchar)
 			p++;
-		if (*p == ',')
-			p++;
 		if (next)
 			*next = p;
 		*str = start;
@@ -4797,8 +4803,7 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 			;
 		if (s < msg || !isspace((unsigned char) *s))	/* gone one too far */
 			s++;
-		if (*p == ',' || *p == '\t') {
-			/* there is more to come; skip over separator */
+		if (*p == '\t') {
 			p++;
 		}
 		len = s - msg;

@@ -43,7 +43,7 @@ stdout of test 'tst251` in directory 'monetdb5/mal` itself:
 [ 0,	"hello"	]
 [ 1,	"brave"	]
 [ 2,	"world"	]
-[ 3	]
+[ 3,	""	]
 [ 4,	nil	]
 [ 5,	"!"	]
 
