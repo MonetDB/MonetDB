@@ -21,6 +21,36 @@ mosaic.compress(b,"linear");
 b:= mosaic.decompress(b);
 io.print(b);
 
+s:= algebra.thetaselect(base,4,"<");
+io.print(s);
+xs:= mosaic.thetaselect(b,4,"<");
+io.print(xs);
+
+s:= algebra.thetaselect(base,4,"<=");
+io.print(s);
+xs:= mosaic.thetaselect(b,4,"<=");
+io.print(xs);
+
+s:= algebra.thetaselect(base,4,">");
+io.print(s);
+xs:= mosaic.thetaselect(b,4,">");
+io.print(xs);
+
+s:= algebra.thetaselect(base,4,">=");
+io.print(s);
+xs:= mosaic.thetaselect(b,4,">=");
+io.print(xs);
+
+s:= algebra.thetaselect(base,4,"==");
+io.print(s);
+xs:= mosaic.thetaselect(b,4,"==");
+io.print(xs);
+
+s:= algebra.thetaselect(base,4,"!=");
+io.print(s);
+xs:= mosaic.thetaselect(b,4,"!=");
+io.print(xs);
+
 c:= bat.new(:oid);
 bat.append(c,0@0);
 bat.append(c,3@0);

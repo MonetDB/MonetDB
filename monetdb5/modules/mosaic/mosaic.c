@@ -890,15 +890,17 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	cnt = (BUN) (task->lb - (oid*) Tloc(bn,0));
 	assert(bn->batCapacity >= cnt);
 	BATsetcount(bn,cnt);
-	bn->tnil = 0;
-	bn->tnonil = 1;
-	bn->tsorted = bn->trevsorted = cnt <=1;
+	bn->tnil = false;
+	bn->tnonil = true;
+	bn->tsorted = true;
+	bn->trevsorted = cnt <=1;
+	bn->tkey = true;
+
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 	GDKfree(task);
 	BBPkeepref(bn->batCacheid);
 	return msg;
 }
-
 
 str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1003,9 +1005,11 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(*cid);
 	if( bn){
 		BATsetcount(bn,cnt);
-		bn->tnil = 0;
-		bn->tnonil = 1;
-		bn->tsorted = bn->trevsorted = cnt <= 1;
+		bn->tnil = false;
+		bn->tnonil = true;
+		bn->tsorted = true;
+		bn->trevsorted = cnt <=1;
+		bn->tkey = true;
 		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 	}
 	GDKfree(task);
