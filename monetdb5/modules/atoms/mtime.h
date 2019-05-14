@@ -12,17 +12,17 @@
 #include "mal.h"
 #include <time.h>				/* for time_t */
 
-extern int TYPE_date;
+mal_export int TYPE_date;
 typedef int date;				/* we use 26 bits out of 32 */
 #define date_nil				((date) {int_nil})
 #define is_date_nil(x)			((x) == date_nil)
 
-extern int TYPE_daytime;
+mal_export int TYPE_daytime;
 typedef lng daytime;			/* we use 37 bits out of 64 */
 #define daytime_nil				((daytime) {lng_nil})
 #define is_daytime_nil(x)		((x) == daytime_nil)
 
-extern int TYPE_timestamp;
+mal_export int TYPE_timestamp;
 typedef lng timestamp;			/* we use 26+37=63 bits out of 64 */
 #define timestamp_nil			((timestamp) {lng_nil})
 #define is_timestamp_nil(x)		((x) == timestamp_nil)

@@ -29,6 +29,10 @@
 #include "mtime.h"
 #include "mal_exception.h"
 
+#ifndef HAVE_STRPTIME
+extern char *strptime(const char *, const char *, struct tm *);
+#endif
+
 #define YEAR_MIN		(-4712)	/* 4713 BC */
 #define YEAR_MAX		(YEAR_MIN+(1<<21)/12)
 
@@ -455,7 +459,7 @@ timestamp_diff(timestamp t1, timestamp t2)
 }
 
 /* GDK level atom functions with some helpers */
-static size_t
+static ssize_t
 fleximatch(const char *s, const char *pat, size_t min)
 {
 	size_t hit;
@@ -478,10 +482,10 @@ fleximatch(const char *s, const char *pat, size_t min)
 	return (hit >= min) ? hit : 0;
 }
 
-static int
+static ssize_t
 parse_substr(int *ret, const char *s, size_t min, const char *list[], int size)
 {
-	size_t j = 0;
+	ssize_t j = 0;
 	int i = 0;
 
 	*ret = int_nil;
@@ -1136,7 +1140,7 @@ MTIMEdate_sub_msec_interval(date *ret, const date *d, const lng *ms)
 	if (is_date_nil(*d) || is_lng_nil(*ms))
 		*ret = date_nil;
 	else {
-		*ret = date_add_day(*d, -*ms / (24*60*60*1000));
+		*ret = date_add_day(*d, (int) (-*ms / (24*60*60*1000)));
 		if (is_date_nil(*ret))
 			throw(MAL, "mtime.date_sub_msec_interval",
 				  SQLSTATE(22003) "overflow in calculation");
@@ -1150,7 +1154,7 @@ MTIMEdate_add_msec_interval(date *ret, const date *d, const lng *ms)
 	if (is_date_nil(*d) || is_lng_nil(*ms))
 		*ret = date_nil;
 	else {
-		*ret = date_add_day(*d, *ms / (24*60*60*1000));
+		*ret = date_add_day(*d, (int) (*ms / (24*60*60*1000)));
 		if (is_date_nil(*ret))
 			throw(MAL, "mtime.date_add_msec_interval",
 				  SQLSTATE(22003) "overflow in calculation");
@@ -2252,7 +2256,7 @@ MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format)
 	dt /= 60;
 	tm.tm_min = dt % 60;
 	dt /= 60;
-	tm.tm_hour = dt;
+	tm.tm_hour = (int) dt;
 	if (mktime(&tm) == (time_t) -1)
 		throw(MAL, "mtime.time_to_str", "cannot convert time");
 	if (strftime(buf, sizeof(buf), *format, &tm) == 0)
@@ -2314,7 +2318,7 @@ MTIMEtimestamp_to_str(str *ret, const timestamp *d, const char *const *format)
 	t /= 60;
 	tm.tm_min = t % 60;
 	t /= 60;
-	tm.tm_hour = t;
+	tm.tm_hour = (int) t;
 	if (mktime(&tm) == (time_t) -1)
 		throw(MAL, "mtime.timestamp_to_str", "cannot convert timestamp");
 	if (strftime(buf, sizeof(buf), *format, &tm) == 0)

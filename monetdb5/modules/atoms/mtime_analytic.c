@@ -23,8 +23,8 @@
 
 #define daytime_add_msec(D,M)		daytime_add_usec(D, 1000*(M))
 #define daytime_sub_msec(D,M)		daytime_add_usec(D, -1000*(M))
-#define date_add_msec(D,M)			date_add_day(D,(M)/(24*60*60*1000))
-#define date_sub_msec(D,M)			date_add_day(D,-(M)/(24*60*60*1000))
+#define date_add_msec(D,M)			date_add_day(D,(int) ((M)/(24*60*60*1000)))
+#define date_sub_msec(D,M)			date_add_day(D,(int) (-(M)/(24*60*60*1000)))
 #define timestamp_add_msec(T,M)		timestamp_add_usec(T, (M)*1000)
 #define timestamp_sub_msec(T,M)		timestamp_add_usec(T, -(M)*1000)
 
