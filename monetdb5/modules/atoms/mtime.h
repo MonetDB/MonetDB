@@ -38,6 +38,7 @@ mal_export date date_add_month(date dt, int months);
 mal_export int date_diff(date d1, date d2);
 mal_export int date_dayofweek(date dt); /* Monday=1, Sunday=7 */
 mal_export int date_weekofyear(date dt);
+mal_export int date_dayofyear(date dt);
 mal_export int date_year(date dt);
 mal_export int date_month(date dt);
 mal_export int date_day(date dt);

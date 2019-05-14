@@ -236,6 +236,15 @@ date_weekofyear(date dt)
 	return (cnt2 - cnt1) / 7 + 1;
 }
 
+int
+date_dayofyear(date dt)
+{
+	if (is_date_nil(dt))
+		return int_nil;
+	int m = date_extract_month(dt);
+	return date_extract_day(dt) + cumdays[m-1] + (m > 2 && isleapyear(date_extract_year(dt)));
+}
+
 daytime
 daytime_create(int hour, int min, int sec, int usec)
 {
@@ -1563,13 +1572,7 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, bat *bid)
 str
 MTIMEdate_extract_dayofyear(int *ret, const date *d)
 {
-	if (is_date_nil(*d))
-		*ret = int_nil;
-	else {
-		int y = date_extract_year(*d);
-		int m = date_extract_month(*d);
-		*ret = date_extract_day(*d) + cumdays[m-1] + (m > 2 && isleapyear(y));
-	}
+	*ret = date_dayofyear(*d);
 	return MAL_SUCCEED;
 }
 
