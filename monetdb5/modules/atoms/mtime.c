@@ -408,8 +408,9 @@ timestamp_add_usec(timestamp t, lng usec)
 
 	tm += usec;
 	if (tm < 0) {
-		dt = date_add_day(dt, -(int) ((DAY_USEC - tm) / DAY_USEC));
-		tm = DAY_USEC - -tm % DAY_USEC;
+		int add = (int) ((DAY_USEC - 1 - tm) / DAY_USEC);
+		tm += add * DAY_USEC;
+		dt = date_add_day(dt, -add);
 	} else if (tm >= DAY_USEC) {
 		dt = date_add_day(dt, (int) (tm / DAY_USEC));
 		tm %= DAY_USEC;
@@ -582,7 +583,7 @@ parse_date(const char *buf, date *d, bool external)
 		if (day > 31)
 			break;
 	}
-	if (yearlast && buf[pos] == ',') {
+	if (yearlast && (buf[pos] == ',' || buf[pos] == ' ')) {
 		while (buf[++pos] == ' ')
 			;
 		if (buf[pos] == '-') {
@@ -1592,9 +1593,13 @@ MTIMEtimestamp_diff_msec(lng *ret, const timestamp *t1, const timestamp *t2)
 	*ret = timestamp_diff(*t1, *t2);
 	if (!is_lng_nil(*ret)) {
 #ifndef TRUNCATE_NUMBERS
-		*ret += 500;
-#endif
+		if (*ret < 0)
+			*ret = -((-*ret + 500) / 1000);
+		else
+			*ret = (*ret + 500) / 1000;
+#else
 		*ret /= 1000;
+#endif
 	}
 	return MAL_SUCCEED;
 }
@@ -1637,9 +1642,13 @@ MTIMEtimestamp_diff_msec_bulk(bat *ret, bat *bid1, bat *bid2)
 			bn->tnil = true;
 		else {
 #ifndef TRUNCATE_NUMBERS
-			df[i] += 500;
-#endif
+			if (df[i] < 0)
+				df[i] = -((-df[i] + 500) / 1000);
+			else
+				df[i] = (df[i] + 500) / 1000;
+#else
 			df[i] /= 1000;
+#endif
 		}
 	}
 	bn->tnonil = !bn->tnil;

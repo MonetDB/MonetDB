@@ -106,11 +106,11 @@ stdout of test 'time` in directory 'sql/test/pg_regress` itself:
 % f1,	L3 # name
 % time,	decimal # type
 % 11,	11 # length
-[ 00:00:00.00,	0.000	]
-[ 01:00:00.00,	0.000	]
-[ 12:00:00.00,	0.000	]
-[ 12:01:00.00,	0.000	]
-[ 23:59:00.00,	0.000	]
+[ 00:00:00.00,	0.000000	]
+[ 01:00:00.00,	0.000000	]
+[ 12:00:00.00,	0.000000	]
+[ 12:01:00.00,	0.000000	]
+[ 23:59:00.00,	0.000000	]
 [ NULL,	NULL	]
 #SELECT f1, extract(hour from f1) FROM TIME_TBL;
 % sys.time_tbl,	sys.L3 # table_name
@@ -139,11 +139,11 @@ stdout of test 'time` in directory 'sql/test/pg_regress` itself:
 % f1,	L3 # name
 % time,	decimal # type
 % 11,	11 # length
-[ 00:00:00.00,	0.000	]
-[ 01:00:00.00,	0.000	]
-[ 12:00:00.00,	0.000	]
-[ 12:01:00.00,	0.000	]
-[ 23:59:00.00,	0.000	]
+[ 00:00:00.00,	0.000000	]
+[ 01:00:00.00,	0.000000	]
+[ 12:00:00.00,	0.000000	]
+[ 12:01:00.00,	0.000000	]
+[ 23:59:00.00,	0.000000	]
 [ NULL,	NULL	]
 #SELECT f1, sql_add(f1, 12*60*60.0 + 66) FROM TIME_TBL;
 % sys.time_tbl,	sys.L3 # table_name
