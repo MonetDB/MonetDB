@@ -106,6 +106,9 @@ date_add_day(date dt, int days)
 	if (is_date_nil(dt) || is_int_nil(days))
 		return date_nil;
 
+	if (abs(days) >= 1 << (DTDAY_WIDTH + DTMONTH_WIDTH))
+		return date_nil;		/* overflow for sure */
+
 	int y = date_extract_year(dt);
 	int m = date_extract_month(dt);
 	int d = date_extract_day(dt);
@@ -135,6 +138,9 @@ date_add_month(date dt, int months)
 {
 	if (is_date_nil(dt) || is_int_nil(months))
 		return date_nil;
+
+	if (abs(months) >= 1 << DTMONTH_WIDTH)
+		return date_nil;		/* overflow for sure */
 
 	int y = date_extract_year(dt);
 	int m = date_extract_month(dt);
@@ -277,6 +283,8 @@ daytime_add_usec(daytime t, lng usec)
 {
 	if (is_daytime_nil(t) || is_lng_nil(usec))
 		return daytime_nil;
+	if (llabs(usec) >= DAY_USEC)
+		return daytime_nil;		/* overflow for sure */
 	t += usec;
 	if (t < 0 || t >= DAY_USEC)
 		return daytime_nil;
@@ -1578,8 +1586,12 @@ str
 MTIMEtimestamp_diff_msec(lng *ret, const timestamp *t1, const timestamp *t2)
 {
 	*ret = timestamp_diff(*t1, *t2);
-	if (!is_lng_nil(*ret))
+	if (!is_lng_nil(*ret)) {
+#ifndef TRUNCATE_NUMBERS
+		*ret += 500;
+#endif
 		*ret /= 1000;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -1619,8 +1631,12 @@ MTIMEtimestamp_diff_msec_bulk(bat *ret, bat *bid1, bat *bid2)
 		df[i] = timestamp_diff(d1[i], d2[i]);
 		if (is_lng_nil(df[i]))
 			bn->tnil = true;
-		else
+		else {
+#ifndef TRUNCATE_NUMBERS
+			df[i] += 500;
+#endif
 			df[i] /= 1000;
+		}
 	}
 	bn->tnonil = !bn->tnil;
 	BATsetcount(bn, n);
@@ -1870,7 +1886,7 @@ MTIMEtimestamp_fromdate_bulk(bat *ret, bat *bid)
 
 str
 MTIMEseconds_since_epoch(int *ret, const timestamp *t)
-{	
+{
 	lng df = timestamp_diff(*t, unixepoch);
 	*ret = is_lng_nil(df) ? int_nil : (int) (df / 1000000);
 	return MAL_SUCCEED;
