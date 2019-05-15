@@ -56,8 +56,8 @@ extern char *strptime(const char *, const char *, struct tm *);
 #define TSTIME_SHIFT	0
 #define TSDATE_WIDTH	(DTDAY_WIDTH+DTMONTH_WIDTH)
 #define TSDATE_SHIFT	(TSTIME_SHIFT+TSTIME_WIDTH)
-#define ts_time(ts)		((daytime) (((ts) >> TSTIME_SHIFT) & ((LL_CONSTANT(1) << TSTIME_WIDTH) - 1)))
-#define ts_date(ts)		((date) (((ts) >> TSDATE_SHIFT) & ((1 << TSDATE_WIDTH) - 1)))
+#define ts_time(ts)		((daytime) (((uint64_t) (ts) >> TSTIME_SHIFT) & ((LL_CONSTANT(1) << TSTIME_WIDTH) - 1)))
+#define ts_date(ts)		((date) (((uint64_t) (ts) >> TSDATE_SHIFT) & ((1 << TSDATE_WIDTH) - 1)))
 #define mktimestamp(d, t)	((timestamp) (((uint64_t) (d) << TSDATE_SHIFT) | \
 										  ((uint64_t) (t) << TSTIME_SHIFT)))
 
