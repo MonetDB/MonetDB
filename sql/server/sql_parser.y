@@ -696,7 +696,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
-%token YEAR QUARTER MONTH WEEK DAY HOUR MINUTE SECOND ZONE
+%token YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND ZONE
 %token LIMIT OFFSET SAMPLE SEED
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
@@ -4691,6 +4691,10 @@ extract_datetime_field:
     datetime_field
  |  QUARTER		{ $$ = iquarter; }
  |  WEEK		{ $$ = iweek; }
+ |  DOW			{ $$ = idow; }
+ /* |  DAY OF WEEK		{ $$ = idow; } */
+ |  DOY			{ $$ = idoy; }
+ /* |  DAY OF YEAR		{ $$ = idoy; } */
  ;
 
 start_field:
@@ -5748,6 +5752,8 @@ non_reserved_word:
 | SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 | TYPE		{ $$ = sa_strdup(SA, "type"); }
 | WEEK 		{ $$ = sa_strdup(SA, "week"); }
+| DOW 		{ $$ = sa_strdup(SA, "dow"); }
+| DOY 		{ $$ = sa_strdup(SA, "doy"); }
 | ZONE		{ $$ = sa_strdup(SA, "zone"); }
 
 /* SQL/XML non reserved words */

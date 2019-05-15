@@ -295,6 +295,10 @@ datetime_field(itype f)
 		return "quarter";
 	case iweek:
 		return "week";
+	case idow:
+		return "dayofweek";
+	case idoy:
+		return "dayofyear";
 	}
 }
 
