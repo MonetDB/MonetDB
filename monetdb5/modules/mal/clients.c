@@ -631,7 +631,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     Client c;
 	timestamp ts, ret;
 	lng clk,timeout;
-	str msg;
+	str msg = NULL;
 
 	(void) cntxt;
 	(void) mb;
