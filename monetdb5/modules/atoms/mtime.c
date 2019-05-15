@@ -217,22 +217,26 @@ date_dayofweek(date dt)
 
 /* week 1 is the week (Monday to Sunday) in which January 4 falls; if
  * January 1 to 3 fall in the week before the 4th, they are in the
- * last week of the previous year */
+ * last week of the previous year; the last days of the year may fall
+ * in week 1 of the following year */
 int
 date_weekofyear(date dt)
 {
 	if (is_date_nil(dt))
 		return int_nil;
 	int y = date_extract_year(dt);
+	int m = date_extract_month(dt);
+	int d = date_extract_day(dt);
 	int cnt1 = date_countdays(mkdate(y, 1, 4));
 	int wd1 = (cnt1 + DOW_OFF) % 7 + 1; /* date_dayofweek(mkdate(y, 1, 4)) */
 	int cnt2 = date_countdays(dt);
 	int wd2 = (cnt2 + DOW_OFF) % 7 + 1; /* date_dayofweek(dt) */
-	if (wd2 > wd1 && date_extract_month(dt) == 1 && date_extract_day(dt) < 4) {
+	if (wd2 > wd1 && m == 1 && d < 4) {
 		/* last week of previous year */
 		cnt1 = date_countdays(mkdate(y - 1, 1, 4));
 		wd1 = (cnt1 + DOW_OFF) % 7 + 1; /* date_dayofweek(mkdate(y-1, 1, 4)) */
-	}
+	} else if (m == 12 && wd2 + 31 - d < 4)
+		return 1;
 	if (wd2 < wd1)
 		cnt2 += 6;
 	return (cnt2 - cnt1) / 7 + 1;
