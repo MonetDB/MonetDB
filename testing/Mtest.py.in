@@ -1712,7 +1712,13 @@ def GetBitsAndModsAndThreads(env) :
     global setpgrp
     rtrn = 0
     cmd = splitcommand(env['exe']['mserver5'][1])
-    cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
+    dbpath = os.path.join(env['GDK_DBFARM'], TSTPREF)
+    try:
+        os.unlink(os.path.join(dbpath, '.started'))
+    except OSError:
+        pass
+    cmd.append('--dbpath=%s' % dbpath)
+    cmd.extend(['--set', 'monet_daemon=yes'])
     if env.get('MULTIFARM'):
         cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
         shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
@@ -1728,7 +1734,20 @@ def GetBitsAndModsAndThreads(env) :
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
     try:
         t.start()
-        input = '''\
+        while True:
+            proc.poll()
+            if proc.returncode is not None:
+                break
+            if os.path.exists(os.path.join(dbpath, '.started')):
+                break
+            time.sleep(0.001)
+        if proc.returncode is None:
+            cmd = splitcommand(env['exe']['MAL_Client'][1])
+            if procdebug:
+                print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
+            clnt = process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
+                                 stderr=process.PIPE, universal_newlines=True)
+            input = '''\
                 c := mdb.modules();
                 modsid := algebra.unique(c);
                 mods := algebra.projection(modsid,c);
@@ -1744,10 +1763,15 @@ def GetBitsAndModsAndThreads(env) :
                 exit h;
                 s := s + "\\n";
                 io.printf(s);
-                clients.quit();
             '''
-        ##module("NoModule");
-        qOut, qErr = proc.communicate(input = input)
+            ##module("NoModule");
+            qOut, qErr = clnt.communicate(input=input)
+            proc.terminate()
+            sOut = proc.stdout.read()
+            sErr = proc.stderr.read()
+            proc.wait()
+            qOut = sOut + qOut
+            qErr = sErr + qErr
         t.cancel()
         if procdebug:
             print('GetBitsAndModsAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
@@ -1757,20 +1781,6 @@ def GetBitsAndModsAndThreads(env) :
         if procdebug:
             print('GetBitsAndModsAndThreads: process killed "%s"\n' % '" "'.join(cmd))
         raise
-    returncode = returnCode(proc)
-    if returncode is not None:
-        STDERR.write(' '.join(cmd) + "\n\n")
-        if input:
-            STDERR.write(input)
-            STDERR.write("\n")
-        if qOut:
-            STDERR.write(qOut)
-            STDERR.write("\n")
-        if qErr:
-            STDERR.write(qErr)
-            STDERR.write("\n")
-        STDERR.flush()
-        ErrExit('GetBitsAndModsAndThreads: subcommand failed: %s' % returncode)
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
     env['TST_INT128'] = ""
@@ -3347,63 +3357,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
 ### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito) #
 
-def Check(command, input) :
-    global setpgrp
-    if procdebug:
-        print('Check: starting process "%s" (inpipe,outpipe,errpipe)\n' % '" "'.join(command))
-    setpgrp = True
-    proc = process.Popen(command, stdin = process.PIPE, stdout = process.PIPE,
-                         stderr = process.PIPE, universal_newlines = True)
-    proc.killed = False
-    proc.onechild = True
-    t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
-    try:
-        t.start()
-        qOut, qErr = proc.communicate(input = input)
-        t.cancel()
-        if procdebug:
-            print('Check: process exited "%s" (%s)\n' % ('" "'.join(command), proc.returncode))
-    except KeyboardInterrupt:
-        t.cancel()
-        killProc(proc)
-        if procdebug:
-            print('Check: process killed "%s"\n' % '" "'.join(command))
-        raise
-    qOut = qOut.split('\n')
-    qErr = qErr.split('\n')
-    failed = False
-    if proc.returncode:
-        qOut.append('! Exit 1')
-        failed = True
-    test = re.compile( r"^!WARNING: BATpropcheck: "                                          "|"
-                       r"^!WARNING: monet_checkbat: "                                        "|"
-                       r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock."       "|"
-                       r"^!WARNING: BBPdir: initializing BBP.",
-                       re.MULTILINE)
-    noErr = []
-    for l in qOut+qErr:
-        if l.startswith("!"):
-            if test.match(l):
-                if not l.startswith("!WARNING: "):
-                    noErr.append(l+"\n")
-            else:
-                ErrMsg('"%s" failed:' % '" "'.join(command))
-                failed = True
-                if qOut and qOut[-1].startswith("! Exit 1"):
-                    qErr.append(qOut.pop())
-                for l in qOut+qErr:
-                    STDERR.write(l)
-                    STDERR.write("\n")
-                STDERR.write("\n")
-                STDERR.flush()
-                #sys.exit(1)
-    if noErr:
-        STDOUT.flush()
-        STDERR.writelines(noErr)
-        STDERR.flush()
-    return failed
-### Check(command, input) #
-
 def CheckClassPath() :
     if 'CLASSPATH' in os.environ:
         cp = os.environ['CLASSPATH']
@@ -4453,8 +4406,6 @@ def main(argv) :
                 shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
                               ignore_errors = True)
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-            if Check(cmd, 'clients.quit();\n'):
-                sys.exit(1)
             if GetBitsAndModsAndThreads(env):
                 sys.exit(1)
             STDERR.flush()
