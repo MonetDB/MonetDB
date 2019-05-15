@@ -18,12 +18,13 @@
  * Dates, both in the date and the timestamp types, are represented in
  * the so-called proleptic Gregorian calendar, that is to say, the
  * Gregorian calendar (which is in common use today) is extended
- * backwards.  See
- * e.g. <https://en.wikipedia.org/wiki/Proleptic_Gregorian_calendar>.
+ * backwards.  See e.g.
+ * <https://en.wikipedia.org/wiki/Proleptic_Gregorian_calendar>.
  *
  * Times, both in the daytime and the timestamp types, are recorded
  * with microsecond precision.
  */
+
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "mtime.h"
@@ -89,20 +90,21 @@ date_year(date dt)
 	return date_extract_year(dt);
 }
 
-int date_month(date dt)
+int
+date_month(date dt)
 {
 	if (is_date_nil(dt))
 		return int_nil;
 	return date_extract_month(dt);
 }
 
-int date_day(date dt)
+int
+date_day(date dt)
 {
 	if (is_date_nil(dt))
 		return int_nil;
 	return date_extract_day(dt);
 }
-
 
 date
 date_add_day(date dt, int days)
@@ -242,7 +244,8 @@ date_dayofyear(date dt)
 	if (is_date_nil(dt))
 		return int_nil;
 	int m = date_extract_month(dt);
-	return date_extract_day(dt) + cumdays[m-1] + (m > 2 && isleapyear(date_extract_year(dt)));
+	return date_extract_day(dt) + cumdays[m-1]
+		+ (m > 2 && isleapyear(date_extract_year(dt)));
 }
 
 daytime
@@ -474,7 +477,7 @@ fleximatch(const char *s, const char *pat, size_t min)
 {
 	size_t hit;
 	bool spacy = false;
- 
+
 	if (min == 0) {
 		min = (int) strlen(pat);	/* default minimum required hits */
 	}
