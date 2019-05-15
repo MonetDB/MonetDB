@@ -113,7 +113,6 @@ usage(char *prog, int xit)
 	fprintf(stderr, "     --algorithms\n");
 	fprintf(stderr, "     --performance\n");
 	fprintf(stderr, "     --optimizers\n");
-	fprintf(stderr, "     --trace\n");
 	fprintf(stderr, "     --forcemito\n");
 	fprintf(stderr, "     --debug=<bitmask>\n");
 
@@ -295,7 +294,6 @@ main(int argc, char **av)
 		{ "properties", no_argument, NULL, 0 },
 		{ "io", no_argument, NULL, 0 },
 		{ "transactions", no_argument, NULL, 0 },
-		{ "trace", optional_argument, NULL, 't' },
 		{ "modules", no_argument, NULL, 0 },
 		{ "algorithms", no_argument, NULL, 0 },
 		{ "optimizers", no_argument, NULL, 0 },
@@ -422,10 +420,6 @@ main(int argc, char **av)
 				grpdebug |= GRPthreads;
 				break;
 			}
-			if (strcmp(long_options[option_index].name, "trace") == 0) {
-				mal_trace = 1;
-				break;
-			}
 			if (strcmp(long_options[option_index].name, "heaps") == 0) {
 				grpdebug |= GRPheaps;
 				break;
@@ -463,9 +457,6 @@ main(int argc, char **av)
 			} else
 				fprintf(stderr, "ERROR: wrong format %s\n", optarg);
 			}
-			break;
-		case 't':
-			mal_trace = 1;
 			break;
 		case 'v':
 			if (optarg) {
@@ -719,13 +710,6 @@ main(int argc, char **av)
 		return 0;
 	}
 
-	if((err = MSinitClientPrg(mal_clients, "user", "main")) != MAL_SUCCEED) {
-		msab_registerStop();
-		fprintf(stderr, "%s\n", err);
-		freeException(err);
-		exit(1);
-	}
-
 	emergencyBreakpoint();
 	for (i = 0; monet_script[i]; i++) {
 		str msg = evalFile(monet_script[i], listing);
@@ -747,11 +731,7 @@ main(int argc, char **av)
 		free(err);
 	}
 
-#ifdef HAVE_CONSOLE
-	if (!monet_daemon) {
-		MSserveClient(mal_clients);
-	} else
-#endif
+	/* why busy wait ? */
 	while (!interrupted && !GDKexiting()) {
 		MT_sleep_ms(100);
 	}

@@ -424,6 +424,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	}
 	pushInstruction(curBlk, p);
 
+	str mal_session_uuid = "why";
 	if (mal_session_uuid) {
 		str rsupervisor_session = GDKstrdup(mal_session_uuid);
 		if (rsupervisor_session == NULL) {

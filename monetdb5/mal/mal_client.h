@@ -17,9 +17,6 @@
 
 #define SCENARIO_PROPERTIES 8
 
-#define CONSOLE     0
-#define isAdministrator(X) (X==mal_clients)
-
 enum clientmode {
 	FREECLIENT,
 	FINISHCLIENT,
@@ -31,9 +28,8 @@ enum clientmode {
 
 /*
  * The prompt structure is designed to simplify recognition of the
- * language framework for interaction. For direct console access it is a
- * short printable ASCII string. For access through an API we assume the
- * prompt is an ASCII string surrounded by a \001 character. This
+ * language framework for interaction. For access through an API we 
+ * assume the prompt is an ASCII string surrounded by a \001 character. This
  * simplifies recognition.  The information between the prompt brackets
  * can be used to pass the mode to the front-end. Moreover, the prompt
  * can be dropped if a single stream of information is expected from the
@@ -127,7 +123,6 @@ typedef struct CLIENT {
 	 */
 	int debug;
 	void  *mdb;            /* context upon suspend */
-	str    history;	       /* where to keep console history */
 	enum clientmode mode;  /* FREECLIENT..BLOCKED */
 	/*
 	 * Client records are organized into a two-level dependency tree,

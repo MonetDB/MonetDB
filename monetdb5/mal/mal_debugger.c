@@ -1051,7 +1051,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	if (stk->cmd == 0)
 		stk->cmd = 'n';
 	/* a trapped call leads to process suspension */
-	/* then the console can be used to attach a debugger */
+	/* which can be used to attach a debugger */
 	if (mb->trap) {
 		mdbTrap(cntxt, mb, stk, getInstrPtr(mb,pc));
 		return;
@@ -1405,7 +1405,7 @@ mdbHelp(stream *f)
 	mnstr_printf(f, "down             -- go down the stack\n");
 	mnstr_printf(f, "up               -- go up the stack\n");
 	mnstr_printf(f, "trace <var>      -- trace assignment to variables\n");
-	mnstr_printf(f, "trap <mod>.<fcn> -- catch MAL function call in console\n");
+	mnstr_printf(f, "trap <mod>.<fcn> -- catch MAL function call in debugger\n");
 	mnstr_printf(f, "help             -- this message\n");
 }
 

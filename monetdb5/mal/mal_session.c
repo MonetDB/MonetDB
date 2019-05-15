@@ -479,7 +479,7 @@ MSserveClient(Client c)
 	MalBlkPtr mb;
 	str msg = 0;
 
-	if (!isAdministrator(c) && MCinitClientThread(c) < 0) {
+	if (MCinitClientThread(c) < 0) {
 		MCcloseClient(c);
 		return MAL_SUCCEED;
 	}
@@ -536,8 +536,7 @@ MSserveClient(Client c)
 	}
 	*/
 
-	if (!isAdministrator(c))
-		MCcloseClient(c);
+	MCcloseClient(c);
 	if (c->usermodule /*&& strcmp(c->usermodule->name, "user") == 0*/) {
 		freeModule(c->usermodule);
 		c->usermodule = NULL;

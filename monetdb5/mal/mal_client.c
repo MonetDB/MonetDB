@@ -7,11 +7,10 @@
  */
 
 /*
- * Clients gain access to the Monet server through a internet connection
- * or through its server console.  Access through the internet requires
- * a client program at the source, which addresses the default port of a
- * running server.  The functionality of the server console is limited.
- * It is a textual interface for expert use.
+ * Clients gain access to the Monet server through a internet connection.  
+ * Access through the internet requires a client program at the source, 
+ * which addresses the default port of a running server. It is a textual 
+ * interface for expert use.
  *
  * At the server side, each client is represented by a session record
  * with the current status, such as name, file descriptors, namespace,
@@ -19,8 +18,7 @@
  * control.
  *
  * The number of clients permitted concurrent access is a run time
- * option. The console is the first and is always present.  It reads
- * from standard input and writes to standard output.
+ * option. 
  *
  * Client sessions remain in existence until the corresponding
  * communication channels break.
@@ -77,9 +75,7 @@ MCinit(void)
 		}
 	}
 
-	MAL_MAXCLIENTS =
-		/* console */ 1 +
-		/* client connections */ maxclients;
+	MAL_MAXCLIENTS = /* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 	if( mal_clients == NULL){
 		fprintf(stderr,"#MCinit:" MAL_MALLOC_FAIL);
@@ -138,11 +134,6 @@ MCnewClient(void)
 {
 	Client c;
 	MT_lock_set(&mal_contextLock);
-	if (mal_clients[CONSOLE].user && mal_clients[CONSOLE].mode == FINISHCLIENT) {
-		/*system shutdown in progress */
-		MT_lock_unset(&mal_contextLock);
-		return NULL;
-	}
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		if (c->mode == FREECLIENT) {
 			c->mode = RUNCLIENT;
@@ -227,7 +218,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->listing = 0;
 	c->fdout = fout ? fout : GDKstdout;
 	c->mdb = 0;
-	c->history = 0;
 	c->curprg = c->backup = 0;
 	c->glb = 0;
 
@@ -474,9 +464,9 @@ MCstopClients(Client cntxt)
 	Client c = mal_clients;
 
 	MT_lock_set(&mal_contextLock);
-	for(c= mal_clients +1;  c < mal_clients+MAL_MAXCLIENTS; c++)
-	if( cntxt != c){
-		if ( c->mode == RUNCLIENT)
+	for(c = mal_clients;  c < mal_clients+MAL_MAXCLIENTS; c++)
+	if (cntxt != c){
+		if (c->mode == RUNCLIENT)
 			c->mode = FINISHCLIENT; 
 		else if (c->mode == FREECLIENT)
 			c->mode = BLOCKCLIENT;
@@ -491,13 +481,13 @@ MCactiveClients(void)
 	int freeclient=0, finishing=0, running=0, blocked = 0;
 	Client cntxt = mal_clients;
 
-	for(cntxt= mal_clients+1;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
+	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
 		freeclient += (cntxt->mode == FREECLIENT);
 		finishing += (cntxt->mode == FINISHCLIENT);
 		running += (cntxt->mode == RUNCLIENT);
 		blocked += (cntxt->mode == BLOCKCLIENT);
 	}
-	return finishing+running +1 /* the admin */;
+	return finishing+running;
 }
 
 void
@@ -507,14 +497,7 @@ MCcloseClient(Client c)
 	fprintf(stderr,"closeClient %d " OIDFMT "\n", (int) (c - mal_clients), c->user);
 #endif
 	/* free resources of a single thread */
-	if (!isAdministrator(c)) {
-		MCfreeClient(c);
-		return;
-	}
-
-	/* adm is set to disallow new clients entering */
-	mal_clients[CONSOLE].mode = FINISHCLIENT;
-	mal_exit(0);
+	MCfreeClient(c);
 }
 
 str

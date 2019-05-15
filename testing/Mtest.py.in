@@ -3357,6 +3357,63 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
 ### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito) #
 
+def Check(command, input) :
+    global setpgrp
+    if procdebug:
+        print('Check: starting process "%s" (inpipe,outpipe,errpipe)\n' % '" "'.join(command))
+    setpgrp = True
+    proc = process.Popen(command, stdin = process.PIPE, stdout = process.PIPE,
+                         stderr = process.PIPE, universal_newlines = True)
+    proc.killed = False
+    proc.onechild = True
+    t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
+    try:
+        t.start()
+        qOut, qErr = proc.communicate(input = input)
+        t.cancel()
+        if procdebug:
+            print('Check: process exited "%s" (%s)\n' % ('" "'.join(command), proc.returncode))
+    except KeyboardInterrupt:
+        t.cancel()
+        killProc(proc)
+        if procdebug:
+            print('Check: process killed "%s"\n' % '" "'.join(command))
+        raise
+    qOut = qOut.split('\n')
+    qErr = qErr.split('\n')
+    failed = False
+    if proc.returncode:
+        qOut.append('! Exit 1')
+        failed = True
+    test = re.compile( r"^!WARNING: BATpropcheck: "                                          "|"
+                       r"^!WARNING: monet_checkbat: "                                        "|"
+                       r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock."       "|"
+                       r"^!WARNING: BBPdir: initializing BBP.",
+                       re.MULTILINE)
+    noErr = []
+    for l in qOut+qErr:
+        if l.startswith("!"):
+            if test.match(l):
+                if not l.startswith("!WARNING: "):
+                    noErr.append(l+"\n")
+            else:
+                ErrMsg('"%s" failed:' % '" "'.join(command))
+                failed = True
+                if qOut and qOut[-1].startswith("! Exit 1"):
+                    qErr.append(qOut.pop())
+                for l in qOut+qErr:
+                    STDERR.write(l)
+                    STDERR.write("\n")
+                STDERR.write("\n")
+                STDERR.flush()
+                #sys.exit(1)
+    if noErr:
+        STDOUT.flush()
+        STDERR.writelines(noErr)
+        STDERR.flush()
+    return failed
+### Check(command, input) #
+
 def CheckClassPath() :
     if 'CLASSPATH' in os.environ:
         cp = os.environ['CLASSPATH']
