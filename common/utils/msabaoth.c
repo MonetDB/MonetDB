@@ -45,7 +45,7 @@ char *_sabaoth_internal_dbfarm = NULL;
 /** the database which is "active" */
 char *_sabaoth_internal_dbname = NULL;
 /** identifier of the current process */
-char *_sabaoth_internal_uuid = NULL;
+static char *_sabaoth_internal_uuid = NULL;
 
 /**
  * Retrieves the dbfarm path plus an optional extra component added
@@ -240,6 +240,15 @@ msab_getDBname(char **ret)
 		return(strdup("sabaoth was not initialized as active database"));
 	*ret = strdup(_sabaoth_internal_dbname);
 	return(NULL);
+}
+
+char *
+msab_getUUID(char **ret)
+{
+	if (_sabaoth_internal_uuid == NULL)
+		return(strdup("sabaoth not initialized"));
+	*ret = strdup(_sabaoth_internal_uuid);
+	return NULL;
 }
 
 #define SCENARIOFILE ".scen"

@@ -16,6 +16,7 @@
  */
 #include "monetdb_config.h"
 #include "mutils.h"         /* mercurial_revision */
+#include "msabaoth.h"		/* msab_getUUID */
 #include "mal_function.h"
 #include "mal_listing.h"
 #include "mal_profiler.h"
@@ -167,6 +168,12 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	logadd("\"tag\":%d,%s", stk?stk->tag:0, prettify);
 	logadd("\"module\":\"%s\",%s", pci->modname ? pci->modname : "", prettify);
 	logadd("\"instruction\":\"%s\",%s", pci->fcnname ? pci->fcnname : "", prettify);
+	char *uuid;
+	if ((c = msab_getUUID(&uuid)) == NULL) {
+		logadd("\"session\":\"%s\",%s", uuid, prettify);
+		free(uuid);
+	} else
+		free(c);
 
 	if( start){
 		logadd("\"state\":\"start\",%s", prettify);
@@ -454,6 +461,12 @@ profilerHeartbeatEvent(char *alter)
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
 	logadd("\"source\":\"heartbeat\",%s", prettify);
+	char *uuid, *err;
+	if ((err = msab_getUUID(&uuid)) == NULL) {
+		logadd("\"session\":\"%s\",%s", uuid, prettify);
+		free(uuid);
+	} else
+		free(err);
 	logadd("\"clk\":"LLFMT",%s",usec,prettify);
 	logadd("\"ctime\":%"PRIu64",%s", microseconds, prettify);
 	logadd("\"rss\":%zu,%s", MT_getrss()/1024/1024, prettify);
