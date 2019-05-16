@@ -203,7 +203,7 @@ MALresourceFairness(lng usec)
 				break;
 		}
 		MT_sleep_ms(DELAYUNIT);
-		users= MCactiveClients(); // users excluding console
+		users= MCactiveClients();
 		rss = GDKmem_cursize();
 		clk -= DELAYUNIT;
 	}

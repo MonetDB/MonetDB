@@ -9,7 +9,6 @@ Usage: mserver5.exe [options] [scripts]
     --dbpath=<directory>      Specify database location
     --dbextra=<directory>     Directory for transient BATs
     --config=<config_file>    Use config_file to read options from
-    --daemon=yes|no           Do not read commands from standard input [no]
     --single-user             Allow only one user at a time
     --readonly                Safeguard database
     --set <option>=<value>    Set configuration option
@@ -27,7 +26,6 @@ The debug, testing & trace options:
      --algorithms
      --performance
      --optimizers
-     --trace
      --forcemito
      --debug=<bitmask>
 

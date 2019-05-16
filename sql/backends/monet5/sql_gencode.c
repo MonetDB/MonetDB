@@ -52,6 +52,7 @@
 #include "rel_dump.h"
 #include "rel_remote.h"
 
+#include "msabaoth.h"		/* msab_getUUID */
 #include "muuid.h"
 
 int
@@ -424,17 +425,21 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	}
 	pushInstruction(curBlk, p);
 
-	if (mal_session_uuid) {
+	char *mal_session_uuid, *err;
+	if ((err = msab_getUUID(&mal_session_uuid)) == NULL) {
 		str rsupervisor_session = GDKstrdup(mal_session_uuid);
 		if (rsupervisor_session == NULL) {
+			free(mal_session_uuid);
 			return -1;
 		}
 
 		str lsupervisor_session = GDKstrdup(mal_session_uuid);
 		if (lsupervisor_session == NULL) {
+			free(mal_session_uuid);
 			GDKfree(rsupervisor_session);
 			return -1;
 		}
+		free(mal_session_uuid);
 
 		str rworker_plan_uuid = generateUUID();
 		if (rworker_plan_uuid == NULL) {
@@ -486,7 +491,8 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		free(rworker_plan_uuid);   /* This was created with strdup */
 		GDKfree(lsupervisor_session);
 		GDKfree(rsupervisor_session);
-	}
+	} else
+		free(c);
 
 	/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
 	p = newInstruction(curBlk, remoteRef, execRef);

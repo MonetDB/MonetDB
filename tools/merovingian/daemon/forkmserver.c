@@ -602,9 +602,6 @@ forkMserver(char *database, sabdb** stats, int force)
 		list++;
 	}
 
-	/* keep this one last for easy copy/paste with gdb */
-	argv[c++] = "--set"; argv[c++] = "monet_daemon=yes";
-
 	argv[c++] = NULL;
 
 	freeConfFile(ckv);

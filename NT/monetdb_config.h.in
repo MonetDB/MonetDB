@@ -136,9 +136,6 @@
 /* Define if you have the CommonCrypto library */
 /* #undef HAVE_COMMONCRYPTO */
 
-/* If the console should be used */
-#define HAVE_CONSOLE 1
-
 /* Define to 1 if you have the `ctime_r' function. */
 #define HAVE_CTIME_R 1
 
