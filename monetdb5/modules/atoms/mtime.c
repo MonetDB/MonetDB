@@ -43,14 +43,21 @@ extern char *strptime(const char *, const char *, struct tm *);
 #define DTMONTH_WIDTH	21		/* enough for 174762 years */
 #define DTMONTH_SHIFT	(DTDAY_WIDTH+DTDAY_SHIFT)
 #define isdate(y, m, d)	((m) > 0 && (m) <= 12 && (d) > 0 && (y) >= YEAR_MIN && (y) <= YEAR_MAX && (d) <= monthdays(y, m))
-#define mkdate(y, m, d)	(((((y) + YEAR_OFFSET) * 12 + (m) - 1) << DTMONTH_SHIFT) \
-						 | ((d) << DTDAY_SHIFT))
-#define date_extract_day(dt)	(((dt) >> DTDAY_SHIFT) & ((1 << DTDAY_WIDTH) - 1))
-#define date_extract_month(dt)	((((dt) >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) % 12 + 1)
-#define date_extract_year(dt)	((((dt) >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) / 12 - YEAR_OFFSET)
+#define mkdate(y, m, d)	((date) (((uint32_t) (((y) + YEAR_OFFSET) * 12 + (m) - 1) << DTMONTH_SHIFT) \
+								 | ((uint32_t) (d) << DTDAY_SHIFT)))
+#define date_extract_day(dt)	((int) (((uint32_t) (dt) >> DTDAY_SHIFT) & ((1 << DTDAY_WIDTH) - 1)))
+#define date_extract_month(dt)	((int) ((((uint32_t) (dt) >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) % 12 + 1))
+#define date_extract_year(dt)	((int) ((((uint32_t) (dt) >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) / 12 - YEAR_OFFSET))
+#define date_extract_century(dt)	(date_extract_year(dt) > 0 ? (date_extract_year(dt) - 1) / 100 + 1 : -((-date_extract_year(dt) - 1) / 100 + 1))
+#define date_extract_decade(dt)		(date_extract_year(dt) / 10)
+#define date_extract_quarter(dt)	((date_extract_month(dt) - 1) / 3 + 1)
 
 #define istime(h,m,s,u)	((h) >= 0 && (h) < 24 && (m) >= 0 && (m) < 60 && (s) >= 0 && (s) <= 60 && (u) >= 0 && (u) < 1000000)
 #define mkdaytime(h,m,s,u)	(((((daytime) (h) * 60 + (m)) * 60) + (s)) * LL_CONSTANT(1000000) + (u))
+
+#define daytime_extract_hour(tm)	((int) (tm / HOUR_USEC))
+#define daytime_extract_minute(tm)	((int) ((tm / 60000000) % 60))
+#define daytime_extract_usecond(tm)	((int) (tm % 60000000)) /* includes seconds */
 
 #define TSTIME_WIDTH	37		/* [0..24*60*60*1000000) */
 #define TSTIME_SHIFT	0
@@ -263,7 +270,7 @@ daytime_hour(daytime tm)
 {
 	if (is_daytime_nil(tm))
 		return int_nil;
-	return (int) (tm / HOUR_USEC);
+	return daytime_extract_hour(tm);
 }
 
 int
@@ -271,7 +278,7 @@ daytime_min(daytime tm)
 {
 	if (is_daytime_nil(tm))
 		return int_nil;
-	return (int) ((tm / 60000000) % 60);
+	return daytime_extract_minute(tm);
 }
 
 int
@@ -295,7 +302,7 @@ daytime_sec_usec(daytime tm)
 {
 	if (is_daytime_nil(tm))
 		return int_nil;
-	return (int) (tm % 60000000);
+	return daytime_extract_usecond(tm);
 }
 
 daytime
@@ -991,8 +998,6 @@ mal_export str MTIMEprelude(void *ret);
 mal_export str MTIMEcurrent_date(date *ret);
 mal_export str MTIMEcurrent_time(daytime *ret);
 mal_export str MTIMEcurrent_timestamp(timestamp *ret);
-mal_export str MTIMEdate_diff(int *ret, const date *v1, const date *v2);
-mal_export str MTIMEdate_diff_bulk(bat *ret, bat *bid1, bat *bid2);
 mal_export str MTIMEdate_sub_msec_interval(date *ret, const date *d, const lng *ms);
 mal_export str MTIMEdate_add_msec_interval(date *ret, const date *d, const lng *ms);
 mal_export str MTIMEtimestamp_sub_msec_interval(timestamp *ret, const timestamp *t, const lng *ms);
@@ -1002,31 +1007,11 @@ mal_export str MTIMEtimestamp_add_month_interval(timestamp *ret, const timestamp
 mal_export str MTIMEtime_sub_msec_interval(daytime *ret, const daytime *t, const lng *ms);
 mal_export str MTIMEtime_add_msec_interval(daytime *ret, const daytime *t, const lng *ms);
 mal_export str MTIMEdaytime_diff_msec(lng *ret, const daytime *t1, const daytime *t2);
-mal_export str MTIMEtimestamp_diff_msec_bulk(bat *ret, bat *bid1, bat *bid2);
 mal_export str MTIMEdate_submonths(date *ret, const date *d, const int *m);
 mal_export str MTIMEdate_addmonths(date *ret, const date *d, const int *m);
-mal_export str MTIMEdate_extract_century(int *ret, const date *d);
-mal_export str MTIMEdate_extract_century_bulk(bat *ret, bat *bid);
-mal_export str MTIMEdate_extract_decade(int *ret, const date *d);
-mal_export str MTIMEdate_extract_decade_bulk(bat *ret, bat *bid);
-mal_export str MTIMEdate_extract_year(int *ret, const date *d);
-mal_export str MTIMEdate_extract_year_bulk(bat *ret, bat *bid);
-mal_export str MTIMEdate_extract_quarter(int *ret, const date *d);
-mal_export str MTIMEdate_extract_quarter_bulk(bat *ret, bat *bid);
-mal_export str MTIMEdate_extract_month(int *ret, const date *d);
-mal_export str MTIMEdate_extract_month_bulk(bat *ret, bat *bid);
-mal_export str MTIMEdate_extract_day(int *ret, const date *d);
-mal_export str MTIMEdate_extract_day_bulk(bat *ret, bat *bid);
-mal_export str MTIMEdaytime_extract_hours(int *ret, const daytime *t);
-mal_export str MTIMEdaytime_extract_hours_bulk(bat *ret, bat *bid);
-mal_export str MTIMEdaytime_extract_minutes(int *ret, const daytime *t);
-mal_export str MTIMEdaytime_extract_minutes_bulk(bat *ret, bat *bid);
-mal_export str MTIMEdaytime_extract_sql_seconds(int *ret, const daytime *t);
-mal_export str MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, bat *bid);
 mal_export str MTIMEdate_extract_dayofyear(int *ret, const date *d);
 mal_export str MTIMEdate_extract_weekofyear(int *ret, const date *d);
 mal_export str MTIMEdate_extract_dayofweek(int *ret, const date *d);
-mal_export str MTIMEtimestamp_diff_msec(lng *ret, const timestamp *t1, const timestamp *t2);
 mal_export str MTIMEtimestamp_century(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_decade(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_year(int *ret, const timestamp *t);
@@ -1035,8 +1020,6 @@ mal_export str MTIMEtimestamp_month(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_day(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_hours(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_minutes(int *ret, const timestamp *t);
-mal_export str MTIMEtimestamp_sql_seconds(int *ret, const timestamp *t);
-mal_export str MTIMEtimestamp_sql_seconds_bulk(bat *ret, bat *bid);
 mal_export str MTIMEsql_year(int *ret, const int *months);
 mal_export str MTIMEsql_month(int *ret, const int *months);
 mal_export str MTIMEsql_day(lng *ret, const lng *msecs);
@@ -1046,23 +1029,13 @@ mal_export str MTIMEsql_seconds(int *ret, const lng *msecs);
 
 mal_export str MTIMEdate_fromstr(date *ret, const char *const *s);
 mal_export str MTIMEdate_date(date *dst, const date *src);
-mal_export str MTIMEtimestamp_extract_date(date *ret, const timestamp *t);
-mal_export str MTIMEtimestamp_extract_date_bulk(bat *ret, bat *bid);
 mal_export str MTIMEtimestamp_fromstr(timestamp *ret, const char *const *s);
 mal_export str MTIMEtimestamp_timestamp(timestamp *dst, const timestamp *src);
-mal_export str MTIMEtimestamp_fromdate(timestamp *ret, const date *d);
-mal_export str MTIMEtimestamp_fromdate_bulk(bat *ret, bat *bid);
 mal_export str MTIMEseconds_since_epoch(int *ret, const timestamp *t);
-mal_export str MTIMEtimestamp_fromsecond(timestamp *ret, const int *secs);
-mal_export str MTIMEtimestamp_fromsecond_bulk(bat *ret, bat *bid);
-mal_export str MTIMEtimestamp_frommsec(timestamp *ret, const lng *msecs);
-mal_export str MTIMEtimestamp_frommsec_bulk(bat *ret, bat *bid);
 mal_export str MTIMEdaytime_fromstr(daytime *ret, const char *const *s);
 mal_export str MTIMEdaytime_daytime(daytime *dst, const daytime *src);
 mal_export str MTIMEdaytime_fromseconds(daytime *ret, const lng *secs);
 mal_export str MTIMEdaytime_fromseconds_bulk(bat *ret, bat *bid);
-mal_export str MTIMEtimestamp_extract_daytime(daytime *ret, const timestamp *t);
-mal_export str MTIMEtimestamp_extract_daytime_bulk(bat *ret, bat *bid);
 mal_export str MTIMElocal_timezone_msec(lng *ret);
 mal_export str MTIMEstr_to_date(date *ret, const char *const *s, const char *const *format);
 mal_export str MTIMEdate_to_str(str *ret, const date *d, const char *const *format);
@@ -1103,59 +1076,124 @@ MTIMEcurrent_timestamp(timestamp *ret)
 	return MAL_SUCCEED;
 }
 
-str
-MTIMEdate_diff(int *ret, const date *v1, const date *v2)
-{
-	*ret = date_diff(*v1, *v2);
-	return MAL_SUCCEED;
+#define COPYFLAGS	do { bn->tsorted = b->tsorted; bn->trevsorted = b->trevsorted; } while (0)
+#define SETFLAGS	do { bn->tsorted = bn->trevsorted = n < 2; } while (0)
+#define func1(NAME, NAMEBULK, MALFUNC, INTYPE, OUTYPE, FUNC, SETFLAGS)	\
+mal_export str NAME(OUTYPE *ret, const INTYPE *src);					\
+mal_export str NAMEBULK(bat *ret, const bat *bid);						\
+str																		\
+NAME(OUTYPE *ret, const INTYPE *src)									\
+{																		\
+	if (is_##INTYPE##_nil(*src)) {										\
+		*ret = OUTYPE##_nil;											\
+	} else {															\
+		*ret = FUNC(*src);												\
+	}																	\
+	return MAL_SUCCEED;													\
+}																		\
+str																		\
+NAMEBULK(bat *ret, const bat *bid)										\
+{																		\
+	BAT *b, *bn;														\
+	BUN n;																\
+	const INTYPE *src;													\
+	OUTYPE *dst;														\
+																		\
+	if ((b = BATdescriptor(*bid)) == NULL)								\
+		throw(MAL, "batmtime." MALFUNC,									\
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
+	n = BATcount(b);													\
+	if ((bn = COLnew(b->hseqbase, TYPE_##OUTYPE, n, TRANSIENT)) == NULL) { \
+		BBPunfix(b->batCacheid);										\
+		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+	}																	\
+	src = Tloc(b, 0);													\
+	dst = Tloc(bn, 0);													\
+	bn->tnil = false;													\
+	for (BUN i = 0; i < n; i++) {										\
+		if (is_##INTYPE##_nil(src[i])) {								\
+			dst[i] = OUTYPE##_nil;										\
+			bn->tnil = true;											\
+		} else {														\
+			dst[i] = FUNC(src[i]);										\
+		}																\
+	}																	\
+	bn->tnonil = !bn->tnil;												\
+	BATsetcount(bn, n);													\
+	SETFLAGS;															\
+	bn->tkey = false;													\
+	BBPunfix(b->batCacheid);											\
+	BBPkeepref(*ret = bn->batCacheid);									\
+	return MAL_SUCCEED;													\
 }
 
-str
-MTIMEdate_diff_bulk(bat *ret, bat *bid1, bat *bid2)
-{
-	BAT *b1, *b2, *bn;
-	BUN n;
-	const date *d1, *d2;
-	int *df;
-
-	b1 = BATdescriptor(*bid1);
-	b2 = BATdescriptor(*bid2);
-	if (b1 == NULL || b2 == NULL) {
-		if (b1)
-			BBPunfix(b1->batCacheid);
-		if (b2)
-			BBPunfix(b2->batCacheid);
-		throw(MAL, "batmtime.diff", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	n = BATcount(b1);
-	if (n != BATcount(b2)) {
-		BBPunfix(b1->batCacheid);
-		BBPunfix(b2->batCacheid);
-		throw(MAL, "batmtime.diff", "inputs not the same size");
-	}
-	if ((bn = COLnew(b1->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
-		BBPunfix(b1->batCacheid);
-		BBPunfix(b2->batCacheid);
-		throw(MAL, "batmtime.diff", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	d1 = Tloc(b1, 0);
-	d2 = Tloc(b2, 0);
-	df = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		df[i] = date_diff(d1[i], d2[i]);
-		bn->tnil |= is_int_nil(df[i]);
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = n < 2;
-	bn->trevsorted = n < 2;
-	bn->tkey = false;
-	BBPunfix(b1->batCacheid);
-	BBPunfix(b2->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
+#define func2(NAME, NAMEBULK, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC)	\
+mal_export str NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2); \
+mal_export str NAMEBULK(bat *ret, const bat *bid1, const bat *bid2);	\
+str																		\
+NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
+{																		\
+	if (is_##INTYPE1##_nil(*v1) || is_##INTYPE2##_nil(*v2))				\
+		*ret = OUTTYPE##_nil;											\
+	else																\
+		*ret = FUNC(*v1, *v2);											\
+	return MAL_SUCCEED;													\
+}																		\
+str																		\
+NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
+{																		\
+	BAT *b1, *b2, *bn;													\
+	BUN n;																\
+	const INTYPE1 *src1;												\
+	const INTYPE2 *src2;												\
+	OUTTYPE *dst;														\
+																		\
+	b1 = BATdescriptor(*bid1);											\
+	b2 = BATdescriptor(*bid2);											\
+	if (b1 == NULL || b2 == NULL) {										\
+		if (b1)															\
+			BBPunfix(b1->batCacheid);									\
+		if (b2)															\
+			BBPunfix(b2->batCacheid);									\
+		throw(MAL, "batmtime." MALFUNC,									\
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
+	}																	\
+	n = BATcount(b1);													\
+	if (n != BATcount(b2)) {											\
+		BBPunfix(b1->batCacheid);										\
+		BBPunfix(b2->batCacheid);										\
+		throw(MAL, "batmtime." MALFUNC, "inputs not the same size");	\
+	}																	\
+	if ((bn = COLnew(b1->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
+		BBPunfix(b1->batCacheid);										\
+		BBPunfix(b2->batCacheid);										\
+		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+	}																	\
+	src1 = Tloc(b1, 0);													\
+	src2 = Tloc(b2, 0);													\
+	dst = Tloc(bn, 0);													\
+	bn->tnil = false;													\
+	for (BUN i = 0; i < n; i++) {										\
+		if (is_##INTYPE1##_nil(src1[i]) || is_##INTYPE2##_nil(src2[i])) { \
+			dst[i] = OUTTYPE##_nil;										\
+			bn->tnil = true;											\
+		} else {														\
+			dst[i] = FUNC(src1[i], src2[i]);							\
+		}																\
+	}																	\
+	bn->tnonil = !bn->tnil;												\
+	BATsetcount(bn, n);													\
+	bn->tsorted = n < 2;												\
+	bn->trevsorted = n < 2;												\
+	bn->tkey = false;													\
+	BBPunfix(b1->batCacheid);											\
+	BBPunfix(b2->batCacheid);											\
+	BBPkeepref(*ret = bn->batCacheid);									\
+	return MAL_SUCCEED;													\
 }
+
+#define DATEDIFF(d1, d2)	(date_countdays(d1) - date_countdays(d2))
+func2(MTIMEdate_diff, MTIMEdate_diff_bulk, "diff", date, date, int, DATEDIFF)
 
 str
 MTIMEdate_sub_msec_interval(date *ret, const date *d, const lng *ms)
@@ -1301,388 +1339,15 @@ MTIMEdate_addmonths(date *ret, const date *d, const int *m)
 	return MAL_SUCCEED;
 }
 
-str
-MTIMEdate_extract_century(int *ret, const date *d)
-{
-	if (is_date_nil(*d)) {
-		*ret = int_nil;
-	} else {
-		int y = date_extract_year(*d);
-		if (y > 0)
-			*ret = (y - 1) / 100 + 1;
-		else
-			*ret = -((-y - 1) / 100 + 1);
-	}
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_extract_century_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const date *d;
-	int *y;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.century", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.century", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	d = Tloc(b, 0);
-	y = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		if (is_date_nil(d[i])) {
-			y[i] = int_nil;
-			bn->tnil |= is_int_nil(y[i]);
-		} else {
-			y[i] = date_extract_year(d[i]);
-			if (y[i] > 0)
-				y[i] = (y[i] - 1) / 100 + 1;
-			else
-				y[i] = -((-y[i] - 1) / 100 + 1);
-		}
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_extract_decade(int *ret, const date *d)
-{
-	if (is_date_nil(*d)) {
-		*ret = int_nil;
-	} else {
-		*ret = date_extract_year(*d) / 10;
-	}
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_extract_decade_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const date *d;
-	int *y;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.decade", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.decade", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	d = Tloc(b, 0);
-	y = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		if (is_date_nil(d[i])) {
-			y[i] = int_nil;
-			bn->tnil |= is_int_nil(y[i]);
-		} else {
-			y[i] = date_extract_year(d[i]) / 10;
-		}
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_extract_year(int *ret, const date *d)
-{
-	*ret = date_year(*d);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_extract_year_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const date *d;
-	int *y;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.year", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.year", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	d = Tloc(b, 0);
-	y = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		y[i] = date_year(d[i]);
-		bn->tnil |= is_int_nil(y[i]);
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_extract_quarter(int *ret, const date *d)
-{
-	*ret = is_date_nil(*d) ? int_nil : (date_extract_month(*d) - 1) / 3 + 1;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_extract_quarter_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const date *d;
-	int *q;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.quarter", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.quarter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	d = Tloc(b, 0);
-	q = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		if (is_date_nil(d[i])) {
-			bn->tnil = true;
-			q[i] = int_nil;
-		} else {
-			q[i] = (date_extract_month(d[i]) - 1) / 3 + 1;
-		}
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = n < 2;
-	bn->trevsorted = n < 2;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_extract_month(int *ret, const date *d)
-{
-	*ret = date_month(*d);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_extract_month_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const date *d;
-	int *m;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.month", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.month", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	d = Tloc(b, 0);
-	m = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		m[i] = date_month(d[i]);
-		bn->tnil |= is_int_nil(m[i]);
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = n < 2;
-	bn->trevsorted = n < 2;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_extract_day(int *ret, const date *d)
-{
-	*ret = date_day(*d);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_extract_day_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const date *d;
-	int *m;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.day", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.day", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	d = Tloc(b, 0);
-	m = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		m[i] = date_day(d[i]);
-		bn->tnil |= is_int_nil(m[i]);
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = n < 2;
-	bn->trevsorted = n < 2;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_extract_hours(int *ret, const daytime *t)
-{
-	*ret = daytime_hour(*t);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_extract_hours_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const daytime *d;
-	int *m;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.hours", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.hours", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	d = Tloc(b, 0);
-	m = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		m[i] = daytime_hour(d[i]);
-		bn->tnil |= is_int_nil(m[i]);
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_extract_minutes(int *ret, const daytime *t)
-{
-	*ret = daytime_min(*t);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_extract_minutes_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const daytime *d;
-	int *m;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.minutes", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.minutes", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	d = Tloc(b, 0);
-	m = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		m[i] = daytime_min(d[i]);
-		bn->tnil |= is_int_nil(m[i]);
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = n < 2;
-	bn->trevsorted = n < 2;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_extract_sql_seconds(int *ret, const daytime *t)
-{
-	*ret = is_daytime_nil(*t) ? int_nil : (int) (*t % 60000000);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const daytime *d;
-	int *m;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.sql_seconds", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.sql_seconds", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	d = Tloc(b, 0);
-	m = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		if (is_daytime_nil(d[i])) {
-			m[i] = int_nil;
-			bn->tnil = true;
-		} else {
-			m[i] = (int) (d[i] % 60000000);
-		}
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = n < 2;
-	bn->trevsorted = n < 2;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
+func1(MTIMEdate_extract_century, MTIMEdate_extract_century_bulk, "century", date, int, date_extract_century, COPYFLAGS)
+func1(MTIMEdate_extract_decade, MTIMEdate_extract_decade_bulk, "decade", date, int, date_extract_decade, COPYFLAGS)
+func1(MTIMEdate_extract_year, MTIMEdate_extract_year_bulk, "year", date, int, date_extract_year, COPYFLAGS)
+func1(MTIMEdate_extract_quarter, MTIMEdate_extract_quarter_bulk, "quarter", date, int, date_extract_quarter, SETFLAGS)
+func1(MTIMEdate_extract_month, MTIMEdate_extract_month_bulk, "month", date, int, date_extract_month, SETFLAGS)
+func1(MTIMEdate_extract_day, MTIMEdate_extract_day_bulk, "day", date, int, date_extract_day, SETFLAGS)
+func1(MTIMEdaytime_extract_hours, MTIMEdaytime_extract_hours_bulk, "hours", daytime, int, daytime_extract_hour, COPYFLAGS)
+func1(MTIMEdaytime_extract_minutes, MTIMEdaytime_extract_minutes_bulk, "minutes", daytime, int, daytime_extract_minute, SETFLAGS)
+func1(MTIMEdaytime_extract_sql_seconds, MTIMEdaytime_extract_sql_seconds_bulk, "seconds", daytime, int, daytime_extract_usecond, SETFLAGS)
 
 str
 MTIMEdate_extract_dayofyear(int *ret, const date *d)
@@ -1705,80 +1370,21 @@ MTIMEdate_extract_dayofweek(int *ret, const date *d)
 	return MAL_SUCCEED;
 }
 
-str
-MTIMEtimestamp_diff_msec(lng *ret, const timestamp *t1, const timestamp *t2)
+static inline lng
+TSDIFF(timestamp t1, timestamp t2)
 {
-	*ret = timestamp_diff(*t1, *t2);
-	if (!is_lng_nil(*ret)) {
+	lng diff = ts_time(t1) - ts_time(t2) + DAY_USEC * date_diff(ts_date(t1), ts_date(t2));
 #ifndef TRUNCATE_NUMBERS
-		if (*ret < 0)
-			*ret = -((-*ret + 500) / 1000);
-		else
-			*ret = (*ret + 500) / 1000;
+	if (diff < 0)
+		diff = -((-diff + 500) / 1000);
+	else
+		diff = (diff + 500) / 1000;
 #else
-		*ret /= 1000;
+	diff /= 1000;
 #endif
-	}
-	return MAL_SUCCEED;
+	return diff;
 }
-
-str
-MTIMEtimestamp_diff_msec_bulk(bat *ret, bat *bid1, bat *bid2)
-{
-	BAT *b1, *b2, *bn;
-	BUN n;
-	const timestamp *d1, *d2;
-	lng *df;
-
-	b1 = BATdescriptor(*bid1);
-	b2 = BATdescriptor(*bid2);
-	if (b1 == NULL || b2 == NULL) {
-		if (b1)
-			BBPunfix(b1->batCacheid);
-		if (b2)
-			BBPunfix(b2->batCacheid);
-		throw(MAL, "batmtime.diff", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	n = BATcount(b1);
-	if (n != BATcount(b2)) {
-		BBPunfix(b1->batCacheid);
-		BBPunfix(b2->batCacheid);
-		throw(MAL, "batmtime.diff", "inputs not the same size");
-	}
-	if ((bn = COLnew(b1->hseqbase, TYPE_lng, n, TRANSIENT)) == NULL) {
-		BBPunfix(b1->batCacheid);
-		BBPunfix(b2->batCacheid);
-		throw(MAL, "batmtime.diff", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	d1 = Tloc(b1, 0);
-	d2 = Tloc(b2, 0);
-	df = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		df[i] = timestamp_diff(d1[i], d2[i]);
-		if (is_lng_nil(df[i]))
-			bn->tnil = true;
-		else {
-#ifndef TRUNCATE_NUMBERS
-			if (df[i] < 0)
-				df[i] = -((-df[i] + 500) / 1000);
-			else
-				df[i] = (df[i] + 500) / 1000;
-#else
-			df[i] /= 1000;
-#endif
-		}
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = n < 2;
-	bn->trevsorted = n < 2;
-	bn->tkey = false;
-	BBPunfix(b1->batCacheid);
-	BBPunfix(b2->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
+func2(MTIMEtimestamp_diff_msec, MTIMEtimestamp_diff_msec_bulk, "diff", timestamp, timestamp, lng, TSDIFF)
 
 str
 MTIMEtimestamp_century(int *ret, const timestamp *t)
@@ -1848,48 +1454,8 @@ MTIMEtimestamp_minutes(int *ret, const timestamp *t)
 	return MAL_SUCCEED;
 }
 
-str
-MTIMEtimestamp_sql_seconds(int *ret, const timestamp *t)
-{
-	*ret = is_timestamp_nil(*t) ? int_nil : (int) (ts_time(*t) % 60000000);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_sql_seconds_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const timestamp *t;
-	int *m;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.sql_seconds", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.sql_seconds", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	t = Tloc(b, 0);
-	m = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		if (is_timestamp_nil(t[i])) {
-			m[i] = int_nil;
-			bn->tnil = true;
-		} else {
-			m[i] = (int) (ts_time(t[i]) % 60000000);
-		}
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = n < 2;
-	bn->trevsorted = n < 2;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
+#define timestamp_extract_usecond(ts)	daytime_extract_usecond(ts_time(ts))
+func1(MTIMEtimestamp_sql_seconds, MTIMEtimestamp_sql_seconds_bulk, "sql_seconds", timestamp, int, timestamp_extract_usecond, SETFLAGS)
 
 str
 MTIMEsql_year(int *ret, const int *months)
@@ -1948,44 +1514,7 @@ MTIMEdate_date(date *dst, const date *src)
 	return MAL_SUCCEED;
 }
 
-str
-MTIMEtimestamp_extract_date(date *ret, const timestamp *t)
-{
-	*ret = timestamp_date(*t);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_extract_date_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const timestamp *t;
-	date *d;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batcalc.date", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_date, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batcalc.date", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	t = Tloc(b, 0);
-	d = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		d[i] = timestamp_date(t[i]);
-		bn->tnil |= is_int_nil(d[i]);
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
+func1(MTIMEtimestamp_extract_date, MTIMEtimestamp_extract_date_bulk, "date", timestamp, date, ts_date, COPYFLAGS)
 
 str
 MTIMEtimestamp_fromstr(timestamp *ret, const char *const *s)
@@ -2002,44 +1531,8 @@ MTIMEtimestamp_timestamp(timestamp *dst, const timestamp *src)
 	return MAL_SUCCEED;
 }
 
-str
-MTIMEtimestamp_fromdate(timestamp *ret, const date *d)
-{
-	*ret = timestamp_fromdate(*d);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_fromdate_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const date *d;
-	timestamp *t;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batcalc.timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_timestamp, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batcalc.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	d = Tloc(b, 0);
-	t = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		t[i] = timestamp_fromdate(d[i]);
-		bn->tnil |= is_timestamp_nil(t[i]);
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
+#define mkts(dt)	mktimestamp(dt, mkdaytime(0, 0, 0, 0))
+func1(MTIMEtimestamp_fromdate, MTIMEtimestamp_fromdate_bulk, "timestamp", date, timestamp, mkts, COPYFLAGS)
 
 str
 MTIMEseconds_since_epoch(int *ret, const timestamp *t)
@@ -2049,91 +1542,10 @@ MTIMEseconds_since_epoch(int *ret, const timestamp *t)
 	return MAL_SUCCEED;
 }
 
-str
-MTIMEtimestamp_fromsecond(timestamp *ret, const int *secs)
-{
-	*ret = is_int_nil(*secs) ? timestamp_nil : timestamp_add_usec(unixepoch, *secs * LL_CONSTANT(1000000));
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_fromsecond_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const int *s;
-	timestamp *t;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batcalc.timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_timestamp, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batcalc.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	s = Tloc(b, 0);
-	t = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		if (is_int_nil(s[i])) {
-			t[i] = timestamp_nil;
-			bn->tnil = true;
-		} else {
-			t[i] = timestamp_add_usec(unixepoch, s[i] * LL_CONSTANT(1000000));
-		}
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_frommsec(timestamp *ret, const lng *msecs)
-{
-	*ret = is_lng_nil(*msecs) ? timestamp_nil : timestamp_add_usec(unixepoch, *msecs * 1000);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_frommsec_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const lng *ms;
-	timestamp *t;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batcalc.timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_timestamp, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batcalc.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	ms = Tloc(b, 0);
-	t = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		if (is_lng_nil(ms[i])) {
-			t[i] = timestamp_nil;
-			bn->tnil = true;
-		} else {
-			t[i] = timestamp_add_usec(unixepoch, ms[i] * 1000);
-		}
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
+#define mktsfromsec(sec)	timestamp_add_usec(unixepoch, sec * LL_CONSTANT(1000000))
+#define mktsfrommsec(msec)	timestamp_add_usec(unixepoch, msec * 1000)
+func1(MTIMEtimestamp_fromsecond, MTIMEtimestamp_fromsecond_bulk, "timestamp", int, timestamp, mktsfromsec, COPYFLAGS)
+func1(MTIMEtimestamp_frommsec, MTIMEtimestamp_frommsec_bulk, "timestamp", lng, timestamp, mktsfrommsec, COPYFLAGS)
 
 str
 MTIMEdaytime_fromstr(daytime *ret, const char *const *s)
@@ -2202,44 +1614,7 @@ MTIMEdaytime_fromseconds_bulk(bat *ret, bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
-MTIMEtimestamp_extract_daytime(daytime *ret, const timestamp *t)
-{
-	*ret = timestamp_daytime(*t);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_extract_daytime_bulk(bat *ret, bat *bid)
-{
-	BAT *b, *bn;
-	BUN n;
-	const timestamp *t;
-	daytime *d;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batcalc.daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_daytime, n, TRANSIENT)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "batcalc.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	t = Tloc(b, 0);
-	d = Tloc(bn, 0);
-	bn->tnil = false;
-	for (BUN i = 0; i < n; i++) {
-		d[i] = timestamp_daytime(t[i]);
-		bn->tnil |= is_int_nil(d[i]);
-	}
-	bn->tnonil = !bn->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
-	bn->tkey = false;
-	BBPunfix(b->batCacheid);
-	BBPkeepref(*ret = bn->batCacheid);
-	return MAL_SUCCEED;
-}
+func1(MTIMEtimestamp_extract_daytime, MTIMEtimestamp_extract_daytime_bulk, "daytime", timestamp, daytime, ts_time, SETFLAGS)
 
 str
 MTIMElocal_timezone_msec(lng *ret)
