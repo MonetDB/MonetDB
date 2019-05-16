@@ -49,10 +49,6 @@
 #define getcwd _getcwd
 #endif
 
-#ifdef HAVE_CONSOLE
-static bool monet_daemon;
-#endif
-
 /* NEEDED? */
 #if defined(_MSC_VER) && defined(__cplusplus)
 #include <eh.h>
@@ -94,7 +90,6 @@ usage(char *prog, int xit)
 	fprintf(stderr, "    --dbpath=<directory>      Specify database location\n");
 	fprintf(stderr, "    --dbextra=<directory>     Directory for transient BATs\n");
 	fprintf(stderr, "    --config=<config_file>    Use config_file to read options from\n");
-	fprintf(stderr, "    --daemon=yes|no           Do not read commands from standard input [no]\n");
 	fprintf(stderr, "    --single-user             Allow only one user at a time\n");
 	fprintf(stderr, "    --readonly                Safeguard database\n");
 	fprintf(stderr, "    --set <option>=<value>    Set configuration option\n");
@@ -216,14 +211,8 @@ monet_init(opt *set, int setlen)
 	if (GDKinit(set, setlen) != GDK_SUCCEED)
 		return 0;
 
-#ifdef HAVE_CONSOLE
-	monet_daemon = false;
-	if (GDKgetenv_isyes("monet_daemon")) {
-		monet_daemon = true;
 #ifdef HAVE_SETSID
-		setsid();
-#endif
-	}
+	setsid();
 #endif
 	monet_hello();
 	return 1;
@@ -241,12 +230,7 @@ static BOOL WINAPI
 winhandler(DWORD type)
 {
 	(void) type;
-#ifdef HAVE_CONSOLE
-	if (!monet_daemon)
-		_Exit(-1);
-	else
-#endif
-		interrupted = 1;
+	interrupted = 1;
 	return TRUE;
 }
 #else
@@ -254,12 +238,7 @@ static void
 handler(int sig)
 {
 	(void) sig;
-#ifdef HAVE_CONSOLE
-	if (!monet_daemon)
-		_Exit(-1);
-	else
-#endif
-		interrupted = 1;
+	interrupted = 1;
 }
 #endif
 
@@ -281,7 +260,6 @@ main(int argc, char **av)
 		{ "config", required_argument, NULL, 'c' },
 		{ "dbpath", required_argument, NULL, 0 },
 		{ "dbextra", required_argument, NULL, 0 },
-		{ "daemon", required_argument, NULL, 0 },
 		{ "debug", optional_argument, NULL, 'd' },
 		{ "help", no_argument, NULL, '?' },
 		{ "version", no_argument, NULL, 0 },
@@ -365,12 +343,6 @@ main(int argc, char **av)
 					dbextra = optarg;
 				break;
 			}
-#ifdef HAVE_CONSOLE
-			if (strcmp(long_options[option_index].name, "daemon") == 0) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "monet_daemon", optarg);
-				break;
-			}
-#endif
 			if (strcmp(long_options[option_index].name, "single-user") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_single_user", "yes");
 				break;

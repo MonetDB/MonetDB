@@ -219,7 +219,7 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	9	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	8	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
@@ -232,10 +232,6 @@ mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_prompt");
 	set[i].value = strdup(">");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("monet_daemon");
-	set[i].value = strdup("no");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("mapi_port");

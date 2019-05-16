@@ -651,39 +651,40 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ( active) BBPunfix(active->batCacheid);
 		throw(SQL,"sql.sessions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	
+
     MT_lock_set(&mal_contextLock);
-	
-    for (c = mal_clients + (GDKgetenv_isyes("monet_daemon") != 0); c < mal_clients + MAL_MAXCLIENTS; c++) 
-	if (c->mode == RUNCLIENT) {
-		if (BUNappend(user, c->username, false) != GDK_SUCCEED)
-			goto bailout;
-		msg = MTIMEunix_epoch(&ts);
-		if (msg)
-			goto bailout;
-		clk = c->login * 1000;
-		msg = MTIMEtimestamp_add(&ret,&ts, &clk);
-		if (msg)
-			goto bailout;
-		if (BUNappend(login, &ret, false) != GDK_SUCCEED)
-			goto bailout;
-		timeout = c->stimeout / 1000000;
-		if (BUNappend(stimeout, &timeout, false) != GDK_SUCCEED)
-			goto bailout;
-		msg = MTIMEunix_epoch(&ts);
-		if (msg)
-			goto bailout;
-		clk = c->lastcmd * 1000;
-		msg = MTIMEtimestamp_add(&ret,&ts, &clk);
-		if (msg)
-			goto bailout;
-		if (BUNappend(last, &ret, false) != GDK_SUCCEED)
-			goto bailout;
-		timeout = c->qtimeout / 1000000;
-		if (BUNappend(qtimeout, &timeout, false) != GDK_SUCCEED ||
-			BUNappend(active, &c->active, false) != GDK_SUCCEED)
-			goto bailout;
-    }
+
+    for (c = mal_clients + 1; c < mal_clients + MAL_MAXCLIENTS; c++) {
+		if (c->mode == RUNCLIENT) {
+			if (BUNappend(user, c->username, false) != GDK_SUCCEED)
+				goto bailout;
+			msg = MTIMEunix_epoch(&ts);
+			if (msg)
+				goto bailout;
+			clk = c->login * 1000;
+			msg = MTIMEtimestamp_add(&ret,&ts, &clk);
+			if (msg)
+				goto bailout;
+			if (BUNappend(login, &ret, false) != GDK_SUCCEED)
+				goto bailout;
+			timeout = c->stimeout / 1000000;
+			if (BUNappend(stimeout, &timeout, false) != GDK_SUCCEED)
+				goto bailout;
+			msg = MTIMEunix_epoch(&ts);
+			if (msg)
+				goto bailout;
+			clk = c->lastcmd * 1000;
+			msg = MTIMEtimestamp_add(&ret,&ts, &clk);
+			if (msg)
+				goto bailout;
+			if (BUNappend(last, &ret, false) != GDK_SUCCEED)
+				goto bailout;
+			timeout = c->qtimeout / 1000000;
+			if (BUNappend(qtimeout, &timeout, false) != GDK_SUCCEED ||
+				BUNappend(active, &c->active, false) != GDK_SUCCEED)
+				goto bailout;
+		}
+	}
     MT_lock_unset(&mal_contextLock);
 	BBPkeepref(*userId = user->batCacheid);
 	BBPkeepref(*loginId = login->batCacheid);

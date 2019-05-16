@@ -1718,7 +1718,6 @@ def GetBitsAndModsAndThreads(env) :
     except OSError:
         pass
     cmd.append('--dbpath=%s' % dbpath)
-    cmd.extend(['--set', 'monet_daemon=yes'])
     if env.get('MULTIFARM'):
         cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
         shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
@@ -3038,7 +3037,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
                               ignore_errors = True)
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
-            Srvr.extend(['--set', 'monet_daemon=yes'])
             if os.path.isfile(TST + '.options5'):
                 Srvr.extend(openutf8(TST + '.options5').read().split())
             lang=""
