@@ -1995,11 +1995,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             ('.py',           '.py',     'python', ''),
             ('.MAL.py',       '.MAL.py', 'python', 'MAL'),
             ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
-            ('.mal',          '.mal',    'mal',    ''),
-            ('_s00.mal',      '.mal',    'malXs',  ''),
-            ('.malC',         '.malC',   'malC',   'MAL'),
-            ('_s00.malC',     '.malC',   'malCXs', 'MAL'),
-            ('_p00.malC',     '.malC',   'malCXp', 'MAL'),
+            ('.mal',          '.mal',    'mal',    'MAL'),
+            ('_s00.mal',      '.mal',    'malXs',  'MAL'),
+            ('.malC',         '.malC',   'mal',    'MAL'),
+            ('_s00.malC',     '.malC',   'malXs',  'MAL'),
+            ('_p00.malC',     '.malC',   'malXp',  'MAL'),
             ('.sql',          '.sql',    'sql',    'SQL'),
             ('_s00.sql',      '.sql',    'sqlXs',  'SQL'),
             ('_p00.sql',      '.sql',    'sqlXp',  'SQL'),
@@ -2121,7 +2121,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
     elif MissingTests:
         reason = "as required test%s '%s' failed." % (len(MissingTests) != 1 and 's' or '', "', '".join(MissingTests))
         elem = SkipTest(env, TST, EXT, reason, length)
-    elif EXT == ".malC" and  not env['exe']['MAL_Client'][0]:
+    elif EXT in (".malC", ".mal") and  not env['exe']['MAL_Client'][0]:
         reason = "as %s is not available." % env['MALCLIENT'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
     elif EXT == ".sql" and  not env['exe']['SQL_Client'][0]:
@@ -2145,7 +2145,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
     elif MissingMods:
         reason = "as modules '%s` are missing." % str(MissingMods)
         elem = SkipTest(env, TST, EXT, reason, length)
-    elif CALL == "malCXp":
+    elif CALL == "malXp":
         reason = "as multiple MAL clients in parallel are currently not supported by %s." % THISFILE
         elem = SkipTest(env, TST, EXT, reason, length)
     elif CALL == "sqlXp":
@@ -2257,13 +2257,13 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
         if   CALL in ["other", "python", "ruby"]:
             if TIMEOUT > 0:
                 CTIMEOUT = CTIMEOUT + min(TIMEOUT, par['TIMEOUT'])
-        elif CALL in ["malXs", "sqlXs"]:
+        elif CALL == "sqlXs":
             test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$", re.MULTILINE)
             d = listdir(os.getcwd())
             for f in d:
                 if test.match(f):
                     CTIMEOUT = CTIMEOUT + TIMEOUT
-        elif CALL in ["mal", "malC", "sql"]:
+        elif CALL in ["mal", "sql"]:
             CTIMEOUT = CTIMEOUT + TIMEOUT
         if  CTIMEOUT < TIMEOUT:
             CTIMEOUT = TIMEOUT
@@ -3178,29 +3178,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST] + PRELUDE
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL in ["mal", "malXs"]:
-                cmd = splitcommand(exe['mserver5'][1]) + LOCAL_CONF + PRELUDE
-                cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB))
-                if env.get('MULTIFARM'):
-                    cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
-                    shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
-                                  ignore_errors = True)
-                    os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
-                if CALL == "mal":
-                    X=""
-                else:
-                    X="_s[0-9][0-9]"
-                test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-                d = listdir(os.getcwd())
-                d.sort()
-                for f in d:
-                    if test.match(f):
-                        cmd.append(f)
-                        returncode = RunIt(cmd, True, openutf8(os.devnull), ClntOut, ClntErr, TIMEOUT)
-                    if returncode:
-                        break
-            elif CALL in ["malC", "malCXs"]:
                 TSTs = []
-                if CALL == "malC":
+                if CALL == "mal":
                     X=""
                 else:
                     X="_s[0-9][0-9]"
