@@ -337,6 +337,19 @@ stdout of test 'timestamptz` in directory 'sql/test/pg_regress` itself:
 [ 2001-09-22 19:19:20.00+01:00,	2001	]
 [ 1997-02-11 02:32:01.00+01:00,	1997	]
 [ NULL,	NULL	]
+#SELECT d1, extract(century from d1) FROM TIMESTAMPTZ_TBL;
+% sys.timestamptz_tbl,	sys.L3 # table_name
+% d1,	L3 # name
+% timestamptz,	int # type
+% 28,	2 # length
+[ 1997-01-02 01:00:00.00+01:00,	20	]
+[ 1997-01-02 04:04:05.00+01:00,	20	]
+[ 1997-02-11 02:32:01.00+01:00,	20	]
+[ 1997-02-11 02:32:01.00+01:00,	20	]
+[ 1997-06-11 01:32:01.00+01:00,	20	]
+[ 2001-09-22 19:19:20.00+01:00,	21	]
+[ 1997-02-11 02:32:01.00+01:00,	20	]
+[ NULL,	NULL	]
 #SELECT d1, week(d1) FROM TIMESTAMPTZ_TBL;
 % sys.timestamptz_tbl,	sys.L3 # table_name
 % d1,	L3 # name

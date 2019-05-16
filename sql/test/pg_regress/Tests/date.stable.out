@@ -271,6 +271,27 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2039-04-09,	2039	]
 [ 2040-04-10,	2040	]
 [ NULL,	NULL	]
+#SELECT f1, extract(century from f1) FROM DATE_TBL;
+% sys.date_tbl,	sys.L3 # table_name
+% f1,	L3 # name
+% date,	int # type
+% 10,	2 # length
+[ 1957-04-09,	20	]
+[ 1957-06-13,	20	]
+[ 1996-02-28,	20	]
+[ 1996-02-29,	20	]
+[ 1996-03-01,	20	]
+[ 1996-03-02,	20	]
+[ 1997-02-28,	20	]
+[ 1997-03-01,	20	]
+[ 1997-03-02,	20	]
+[ 2000-04-01,	20	]
+[ 2000-04-02,	20	]
+[ 2000-04-03,	20	]
+[ 2038-04-08,	21	]
+[ 2039-04-09,	21	]
+[ 2040-04-10,	21	]
+[ NULL,	NULL	]
 #SELECT f1, week(f1) FROM DATE_TBL;
 % sys.date_tbl,	sys.L3 # table_name
 % f1,	L3 # name
@@ -1132,6 +1153,108 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 % int # type
 % 1 # length
 [ 2 ]
+#SELECT EXTRACT(CENTURY FROM DATE '0101-12-31 BC'); -- -2
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 2	]
+#SELECT EXTRACT(CENTURY FROM DATE '0100-12-31 BC'); -- -1
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT EXTRACT(CENTURY FROM DATE '0001-12-31 BC'); -- -1
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT EXTRACT(CENTURY FROM DATE '0001-01-01');    --  1
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT EXTRACT(CENTURY FROM DATE '0001-01-01 AD'); --  1
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT EXTRACT(CENTURY FROM DATE '1900-12-31');    -- 19
+% .L2 # table_name
+% L2 # name
+% int # type
+% 2 # length
+[ 19	]
+#SELECT EXTRACT(CENTURY FROM DATE '1901-01-01');    -- 20
+% .L2 # table_name
+% L2 # name
+% int # type
+% 2 # length
+[ 20	]
+#SELECT EXTRACT(CENTURY FROM DATE '2000-12-31');    -- 20
+% .L2 # table_name
+% L2 # name
+% int # type
+% 2 # length
+[ 20	]
+#SELECT EXTRACT(CENTURY FROM DATE '2001-01-01');    -- 21
+% .L2 # table_name
+% L2 # name
+% int # type
+% 2 # length
+[ 21	]
+#SELECT EXTRACT(DECADE FROM DATE '1994-12-25');    -- 199
+% .L2 # table_name
+% L2 # name
+% int # type
+% 3 # length
+[ 199	]
+#SELECT EXTRACT(DECADE FROM DATE '0010-01-01');    --   1
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT EXTRACT(DECADE FROM DATE '0009-12-31');    --   0
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 0	]
+#SELECT EXTRACT(DECADE FROM DATE '0001-01-01 BC'); --   0
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 0	]
+#SELECT EXTRACT(DECADE FROM DATE '0002-12-31 BC'); --  -1
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 0	]
+#SELECT EXTRACT(DECADE FROM DATE '0011-01-01 BC'); --  -1
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT EXTRACT(DECADE FROM DATE '0012-12-31 BC'); --  -2
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT EXTRACT(CENTURY FROM TIMESTAMP '1970-03-20 04:30:00.00000'); -- 20
+% .L2 # table_name
+% L2 # name
+% int # type
+% 2 # length
+[ 20	]
 #SELECT DATE_TRUNC('MILLENNIUM', TIMESTAMP '1970-03-20 04:30:00.00000'); -- 1001
 % .L2 # table_name
 % L2 # name

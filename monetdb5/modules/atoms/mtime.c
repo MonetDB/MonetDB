@@ -1005,6 +1005,10 @@ mal_export str MTIMEdaytime_diff_msec(lng *ret, const daytime *t1, const daytime
 mal_export str MTIMEtimestamp_diff_msec_bulk(bat *ret, bat *bid1, bat *bid2);
 mal_export str MTIMEdate_submonths(date *ret, const date *d, const int *m);
 mal_export str MTIMEdate_addmonths(date *ret, const date *d, const int *m);
+mal_export str MTIMEdate_extract_century(int *ret, const date *d);
+mal_export str MTIMEdate_extract_century_bulk(bat *ret, bat *bid);
+mal_export str MTIMEdate_extract_decade(int *ret, const date *d);
+mal_export str MTIMEdate_extract_decade_bulk(bat *ret, bat *bid);
 mal_export str MTIMEdate_extract_year(int *ret, const date *d);
 mal_export str MTIMEdate_extract_year_bulk(bat *ret, bat *bid);
 mal_export str MTIMEdate_extract_quarter(int *ret, const date *d);
@@ -1023,6 +1027,8 @@ mal_export str MTIMEdate_extract_dayofyear(int *ret, const date *d);
 mal_export str MTIMEdate_extract_weekofyear(int *ret, const date *d);
 mal_export str MTIMEdate_extract_dayofweek(int *ret, const date *d);
 mal_export str MTIMEtimestamp_diff_msec(lng *ret, const timestamp *t1, const timestamp *t2);
+mal_export str MTIMEtimestamp_century(int *ret, const timestamp *t);
+mal_export str MTIMEtimestamp_decade(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_year(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_quarter(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_month(int *ret, const timestamp *t);
@@ -1292,6 +1298,108 @@ MTIMEdate_addmonths(date *ret, const date *d, const int *m)
 			throw(MAL, "mtime.date_sub_month_interval",
 				  SQLSTATE(22003) "overflow in calculation");
 	}
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdate_extract_century(int *ret, const date *d)
+{
+	if (is_date_nil(*d)) {
+		*ret = int_nil;
+	} else {
+		int y = date_extract_year(*d);
+		if (y > 0)
+			*ret = (y - 1) / 100 + 1;
+		else
+			*ret = -((-y - 1) / 100 + 1);
+	}
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdate_extract_century_bulk(bat *ret, bat *bid)
+{
+	BAT *b, *bn;
+	BUN n;
+	const date *d;
+	int *y;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "batmtime.century", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	n = BATcount(b);
+	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "batmtime.century", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+	d = Tloc(b, 0);
+	y = Tloc(bn, 0);
+	bn->tnil = false;
+	for (BUN i = 0; i < n; i++) {
+		if (is_date_nil(d[i])) {
+			y[i] = int_nil;
+			bn->tnil |= is_int_nil(y[i]);
+		} else {
+			y[i] = date_extract_year(d[i]);
+			if (y[i] > 0)
+				y[i] = (y[i] - 1) / 100 + 1;
+			else
+				y[i] = -((-y[i] - 1) / 100 + 1);
+		}
+	}
+	bn->tnonil = !bn->tnil;
+	BATsetcount(bn, n);
+	bn->tsorted = b->tsorted;
+	bn->trevsorted = b->trevsorted;
+	bn->tkey = false;
+	BBPunfix(b->batCacheid);
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdate_extract_decade(int *ret, const date *d)
+{
+	if (is_date_nil(*d)) {
+		*ret = int_nil;
+	} else {
+		*ret = date_extract_year(*d) / 10;
+	}
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdate_extract_decade_bulk(bat *ret, bat *bid)
+{
+	BAT *b, *bn;
+	BUN n;
+	const date *d;
+	int *y;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "batmtime.decade", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	n = BATcount(b);
+	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "batmtime.decade", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+	d = Tloc(b, 0);
+	y = Tloc(bn, 0);
+	bn->tnil = false;
+	for (BUN i = 0; i < n; i++) {
+		if (is_date_nil(d[i])) {
+			y[i] = int_nil;
+			bn->tnil |= is_int_nil(y[i]);
+		} else {
+			y[i] = date_extract_year(d[i]) / 10;
+		}
+	}
+	bn->tnonil = !bn->tnil;
+	BATsetcount(bn, n);
+	bn->tsorted = b->tsorted;
+	bn->trevsorted = b->trevsorted;
+	bn->tkey = false;
+	BBPunfix(b->batCacheid);
+	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1669,6 +1777,32 @@ MTIMEtimestamp_diff_msec_bulk(bat *ret, bat *bid1, bat *bid2)
 	BBPunfix(b1->batCacheid);
 	BBPunfix(b2->batCacheid);
 	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_century(int *ret, const timestamp *t)
+{
+	if (is_timestamp_nil(*t)) {
+		*ret = int_nil;
+	} else {
+		int y = date_extract_year(ts_date(*t));
+		if (y > 0)
+			*ret = (y - 1) / 100 + 1;
+		else
+			*ret = -((-y - 1) / 100 + 1);
+	}
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_decade(int *ret, const timestamp *t)
+{
+	if (is_timestamp_nil(*t)) {
+		*ret = int_nil;
+	} else {
+		*ret = date_extract_year(ts_date(*t)) / 10;
+	}
 	return MAL_SUCCEED;
 }
 

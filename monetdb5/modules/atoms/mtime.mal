@@ -384,10 +384,21 @@ comment "get the local timezone in seconds";
 # For decomposing a timestamp, there are routines that decompose it in a date
 # and daytime. The bulk variants are also provided to simplify code
 # generation for SQL and to improve speed.
+command century(d:date) :int
+address MTIMEdate_extract_century
+comment "extracts century from date.";
+command batmtime.century(d:bat[:date]):bat[:int]
+address MTIMEdate_extract_century_bulk;
+
+command decade(d:date) :int
+address MTIMEdate_extract_decade
+comment "extracts decade from date.";
+command batmtime.decade(d:bat[:date]):bat[:int]
+address MTIMEdate_extract_decade_bulk;
+
 command year(d:date) :int
 address MTIMEdate_extract_year
-comment "extracts year from date (nonzero
-	value between -5867411 and +5867411).";
+comment "extracts year from date.";
 command batmtime.year(d:bat[:date]):bat[:int]
 address MTIMEdate_extract_year_bulk;
 
@@ -568,6 +579,10 @@ address MTIMEcurrent_date;
 command current_time():daytime
 address MTIMEcurrent_time;
 
+command century(t:timestamp):int
+address MTIMEtimestamp_century;
+command decade(t:timestamp):int
+address MTIMEtimestamp_decade;
 command year(t:timestamp):int
 address MTIMEtimestamp_year;
 command quarter(t:timestamp):int

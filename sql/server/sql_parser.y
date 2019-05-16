@@ -696,7 +696,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
-%token YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND ZONE
+%token CENTURY DECADE YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND ZONE
 %token LIMIT OFFSET SAMPLE SEED
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
@@ -4689,6 +4689,8 @@ datetime_field:
 
 extract_datetime_field:
     datetime_field
+ |  CENTURY		{ $$ = icentury; }
+ |  DECADE		{ $$ = idecade; }
  |  QUARTER		{ $$ = iquarter; }
  |  WEEK		{ $$ = iweek; }
  |  DOW			{ $$ = idow; }
@@ -5712,9 +5714,11 @@ non_reserved_word:
 | ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
 | AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
 | CACHE		{ $$ = sa_strdup(SA, "cache"); }
+| CENTURY	{ $$ = sa_strdup(SA, "century"); }
 | CLIENT	{ $$ = sa_strdup(SA, "client"); }
 | COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 | DATA 		{ $$ = sa_strdup(SA, "data"); }
+| DECADE	{ $$ = sa_strdup(SA, "decade"); }
 | SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 | DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
 | SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }

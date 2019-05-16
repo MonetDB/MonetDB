@@ -279,6 +279,10 @@ datetime_field(itype f)
 {
 	switch (f) {
 	default:
+	case icentury:
+		return "century";
+	case idecade:
+		return "decade";
 	case iyear:
 		return "year";
 	case imonth:
