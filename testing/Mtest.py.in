@@ -40,6 +40,7 @@ except ImportError:
     except ImportError:
         winreg = None           # not on Windows
 
+MonetDB_VERSION = '@VERSION@'.split('.')
 
 procdebug = False
 verbose = False
@@ -421,6 +422,7 @@ CONDITIONALS = {
     'PROFILING'            : "@PROFILING_FALSE@",
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
+    'KNOWNFAIL'            : "", # skip on release branch when not in testweb
     'HAVE_MONETDBJDBC_JAR' : "",
     'HAVE_JAVA'            : "",
     'HAVE_JAVAJDBC'        : "",
@@ -2229,6 +2231,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             openutf8(TST+STABLEerr,"w").close()
             ACCURACYerr = 0
             errmissing = True
+        if (outmissing or errmissing) and not CONDITIONALS['KNOWNFAIL']:
+            # no stable output, so known to fail
+            reason = "as conditional 'KNOWNFAIL' does not hold."
+            elem = SkipTest(env, TST, EXT, reason, length)
+            return TX,Failed,Failed,elem,reason,links
 
         PRELUDE = []
         if EXT !=  '.sql':
@@ -3823,6 +3830,8 @@ def main(argv) :
              'global timeout'),
             ('data_path', 'D', 'data_path', '<path>',
              "Path to the root directory of the data files needed for testing"),
+            ('alltests', None, 'alltests', None,
+             'also run tests that are known to fail'),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -3876,6 +3885,8 @@ def main(argv) :
     releaserun = opts.get('releaserun', releaserun)
     nomito = opts.get('nomito', False)
     CONDITIONALS['RELEASERUN'] = releaserun
+    if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.get('alltests', False):
+        CONDITIONALS['KNOWNFAIL'] = 'execute'
     jenkins = False
     addreqs = False
     all_tests = False

@@ -69,9 +69,9 @@ procedure-create-table.Bug-6604
 sqlitelogictest-cast-null-not-in.Bug-6605
 sqlitelogictest-groupby-coalesce-error-message.Bug-6608
 sqlitelogictest-algebra-rangejoin-undefined.Bug-6610
-lateral-join-crash.Bug-6613
+KNOWNFAIL?lateral-join-crash.Bug-6613
 dependency_column_on_sequence.Bug-6618
-local_replica_table_not_detected.Bug-6620
+KNOWNFAIL?local_replica_table_not_detected.Bug-6620
 remote-table-where-not-equal.Bug-6621
 groupby_having_orderby_count.Bug-6624
 or_in_subselect.Bug-6625
