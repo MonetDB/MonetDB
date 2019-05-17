@@ -98,7 +98,7 @@ AUTHrequireAdmin(Client cntxt) {
 		return(MAL_SUCCEED);
 	id = cntxt->user;
 
-	if (id != 0) {
+	if (id != MAL_ADMIN) {
 		str user = NULL;
 		str tmp;
 
@@ -122,8 +122,8 @@ AUTHrequireAdminOrUser(Client cntxt, const char *username) {
 	str user = NULL;
 	str tmp = MAL_SUCCEED;
 
-	/* root?  then all is well */
-	if (id == 0)
+	/* MAL_ADMIN then all is well */
+	if (id == MAL_ADMIN)
 		return(MAL_SUCCEED);
 
 	rethrow("requireAdminOrUser", tmp, AUTHresolveUser(&user, id));
@@ -393,7 +393,7 @@ AUTHinitTables(const char *passwd) {
 		free(pw);
 		if (msg)
 			return msg;
-		if (uid != 0)
+		if (uid != MAL_ADMIN)
 			throw(MAL, "initTables", INTERNAL_AUTHORIZATION " while they were just created!");
 		/* normally, we'd commit here, but it's done already in AUTHaddUser */
 	}

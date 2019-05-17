@@ -527,7 +527,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
 			break;
 		}
-		if (cntxt->itrace || mb->trap || stk->status) {
+		if (cntxt->itrace || stk->status) {
 			if (stk->status == 'p'){
 				// execution is paused
 				while ( stk->status == 'p')
@@ -703,7 +703,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				ret = createException(MAL,"mal.interpreter", "%s.%s[%d] reference to MAL function missing", getModuleId(pci), getFunctionId(pci), pci->pc);
 			else {
 				/* show call before entering the factory */
-				if (cntxt->itrace || mb->trap) {
+				if (cntxt->itrace) {
 					if (stk->cmd == 0)
 						stk->cmd = cntxt->itrace;
 					mdbStep(cntxt, pci->blk, stk, 0);
@@ -881,7 +881,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		if (ret != MAL_SUCCEED) {
 			str msg = 0;
 
-			if (stk->cmd || mb->trap) {
+			if (stk->cmd) {
 				mnstr_printf(cntxt->fdout, "!ERROR: %s\n", ret);
 				stk->cmd = '\n'; /* in debugging go to step mode */
 				mdbStep(cntxt, mb, stk, stkpc);
@@ -943,7 +943,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			/* position yourself at the catch instruction for further decisions */
 			/* skipToCatch(exceptionVar,@2,@3) */
-			if (stk->cmd == 'C' || mb->trap) {
+			if (stk->cmd == 'C') {
 				stk->cmd = 'n';
 				mdbStep(cntxt, mb, stk, stkpc);
 				if (stk->cmd == 'x' ) {
@@ -1127,7 +1127,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				ret = createException(MAL, nme, "%s", stk->stk[getDestVar(pci)].val.sval);
 			}
 			/* skipToCatch(exceptionVar, @2, stk) */
-			if (stk->cmd == 'C' || mb->trap) {
+			if (stk->cmd == 'C') {
 				stk->cmd = 'n';
 				mdbStep(cntxt, mb, stk, stkpc);
 				if (stk->cmd == 'x' ) {

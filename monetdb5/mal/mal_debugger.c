@@ -21,16 +21,15 @@
 #include "mal_namespace.h"
 #include "mal_private.h"
 
-int MDBdelay;			/* do not immediately react */
 typedef struct {
 	MalBlkPtr brkBlock[MAXBREAKS];
-	int		brkPc[MAXBREAKS];
-	int		brkVar[MAXBREAKS];
-	str		brkMod[MAXBREAKS];
-	str		brkFcn[MAXBREAKS];
-	char	brkCmd[MAXBREAKS];
-	str		brkRequest[MAXBREAKS];
-	int		brkTop;
+	int brkPc[MAXBREAKS];
+	int brkVar[MAXBREAKS];
+	str brkMod[MAXBREAKS];
+	str brkFcn[MAXBREAKS];
+	char brkCmd[MAXBREAKS];
+	str brkRequest[MAXBREAKS];
+	int brkTop;
 } mdbStateRecord, *mdbState;
 
 typedef struct MDBSTATE{
@@ -257,21 +256,6 @@ mdbClrBreakRequest(Client cntxt, str request)
 		}
 	}
 	mdb->brkTop = j;
-}
-
-int
-mdbSetTrap(Client cntxt, str modnme, str fcnnme, int flag)
-{
-	Symbol s;
-	s = findSymbol(cntxt->usermodule, putName(modnme),
-			putName(fcnnme));
-	if (s == NULL)
-		return -1;
-	while (s) {
-		s->def->trap = flag;
-		s = s->peer;
-	}
-	return 0;
 }
 
 /* utility to display an instruction being called and its stack position */
@@ -976,42 +960,16 @@ mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mdbBacktrace(cntxt, stk, i);
 	printStack(cntxt->fdout, mb, stk);
 }
-static int mdbSessionActive;
-int mdbSession(void)
-{
-	return mdbSessionActive;
-}
-static Client trapped_cntxt;
-static MalBlkPtr trapped_mb;
-static MalStkPtr trapped_stk;
-static int trapped_pc;
 
-str mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+static str 
+mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int cnt = 20;   /* total 10 sec delay */
 	int pc = getPC(mb,p);
 
 	mnstr_printf(cntxt->fdout, "#trapped %s.%s[%d]\n",
 			getModuleId(mb->stmt[0]), getFunctionId(mb->stmt[0]), pc);
 	printInstruction(cntxt->fdout, mb, stk, p, LIST_MAL_DEBUG);
 	cntxt->itrace = 'W';
-	MT_lock_set(&mal_contextLock);
-	if (trapped_mb) {
-		mnstr_printf(cntxt->fdout, "#registry not available\n");
-		mnstr_flush(cntxt->fdout);
-	}
-	while (trapped_mb && cnt-- > 0) {
-		MT_lock_unset(&mal_contextLock);
-		MT_sleep_ms(500);
-		MT_lock_set(&mal_contextLock);
-	}
-	if (cnt > 0) {
-		trapped_cntxt = cntxt;
-		trapped_mb = mb;
-		trapped_stk = stk;
-		trapped_pc = pc;
-	} /* else give up */
-	MT_lock_unset(&mal_contextLock);
 	return MAL_SUCCEED;
 }
 
@@ -1022,7 +980,6 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	char ch;
 	stream *out = cntxt->fdout;
 
-	mdbSessionActive = 1; /* for name completion */
 	/* mdbSanityCheck(cntxt, mb, stk, pc); expensive */
 	/* process should sleep */
 	if (cntxt->itrace == 'S') {
@@ -1042,12 +999,6 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 	if (stk->cmd == 0)
 		stk->cmd = 'n';
-	/* a trapped call leads to process suspension */
-	/* which can be used to attach a debugger */
-	if (mb->trap) {
-		mdbTrap(cntxt, mb, stk, getInstrPtr(mb,pc));
-		return;
-	}
 	p = getInstrPtr(mb, pc);
 	switch (stk->cmd) {
 	case 'c':
@@ -1067,8 +1018,6 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	case 't':
 		printTraceCall(out, mb, stk, pc, LIST_MAL_CALL);
 		break;
-	case 'C':
-		mdbSessionActive = 0; /* for name completion */
 	}
 	if (mb->errors != MAL_SUCCEED) {
 		MalStkPtr su;
@@ -1079,71 +1028,8 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		mnstr_printf(out, "mdb>#EOD\n");
 		stk->cmd = 'x'; /* will force a graceful termination */
 	}
-	if (mdbSessionActive == 0)
-		return;
-	mdbSessionActive = 0; /* for name completion */
 }
 
-/*
- * Grabbing the execution state of a running query can be
- * useful to inspect its runtime environment. Ideally, any
- * suspended running MAL block should be accessed this way.
- */
-str
-mdbGrab(Client cntxt, MalBlkPtr mb1, MalStkPtr stk1, InstrPtr pc1)
-{
-	Client c;
-	MalBlkPtr mb;
-	MalStkPtr stk;
-	int pc, sve;
-
-	(void) mb1;
-	(void) stk1;
-	(void) pc1;
-
-	/* get hold of a suspended plan and run debugger */
-	MT_lock_set(&mal_contextLock);
-	if (trapped_mb == 0) {
-		mnstr_printf(cntxt->fdout, "#no trapped function\n");
-		MT_lock_unset(&mal_contextLock);
-		return MAL_SUCCEED;
-	}
-	c = trapped_cntxt;
-	mb = trapped_mb;
-	stk = trapped_stk;
-	pc = trapped_pc;
-	trapped_cntxt = 0;
-	trapped_mb = 0;
-	trapped_stk = 0;
-	trapped_pc = 0;
-	MT_lock_unset(&mal_contextLock);
-	mnstr_printf(cntxt->fdout, "#Debugging trapped function\n");
-	mnstr_flush(cntxt->fdout);
-	sve = stk->cmd;
-	stk->cmd = 'n';
-	mdbCommand(cntxt, mb, stk, getInstrPtr(mb, pc), pc);
-	stk->cmd = sve;
-	c->itrace = 0; /* wakeup target */
-	return MAL_SUCCEED;
-}
-
-str
-mdbTrapClient(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	int id = *getArgReference_int(stk, p, 1);
-	Client c;
-
-	(void) cntxt;
-	(void) mb;
-	if (id < 0 || id >= MAL_MAXCLIENTS || mal_clients[id].mode == 0)
-		throw(INVCRED, "mdb.trap", INVCRED_WRONG_ID);
-	c = mal_clients + id;
-
-	c->itrace = 'S';
-	mnstr_printf(cntxt->fdout, "#process %d requested to suspend\n", id);
-	mnstr_flush(cntxt->fdout);
-	return MAL_SUCCEED;
-}
 /*
  * It would come in handy if at any time you could activate
  * the debugger on a specific function. This calls for the

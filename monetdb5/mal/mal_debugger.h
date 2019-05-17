@@ -17,14 +17,7 @@
 
 #define MAXBREAKS 32
 
-mal_export int MDBdelay;	/* do not immediately react */
-
 mal_export void mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd);
-mal_export int mdbSetTrap(Client cntxt, str modnme, str fcnnme, int flag);
-mal_export str mdbGrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str mdbTrapClient(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export int mdbSession(void);
 mal_export void mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 

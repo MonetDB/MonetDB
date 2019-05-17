@@ -144,14 +144,8 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (BUNappend(b, "user", false) != GDK_SUCCEED ||
 		BUNappend(bn, local_itoa((int)cntxt->user), false) != GDK_SUCCEED ||
 
-		BUNappend(b, "password", false) != GDK_SUCCEED || /* FIXME: get rid of this */
-		BUNappend(bn, "", false) != GDK_SUCCEED || /* FIXME: get rid of this */
-
 		BUNappend(b, "scenario", false) != GDK_SUCCEED ||
 		BUNappend(bn, cntxt->scenario, false) != GDK_SUCCEED ||
-
-		BUNappend(b, "trace", false) != GDK_SUCCEED ||
-		BUNappend(bn, local_itoa(cntxt->itrace), false) != GDK_SUCCEED ||
 
 		BUNappend(b, "listing", false) != GDK_SUCCEED ||
 		BUNappend(bn, local_itoa(cntxt->listing), false) != GDK_SUCCEED ||
@@ -305,14 +299,13 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int id=  *getArgReference_int(stk,pci,1);
+	int id = *getArgReference_int(stk,pci,1);
+
 	(void) mb;
-	if ( cntxt->user == mal_clients[id].user || 
-		mal_clients[0].user == cntxt->user){
-		mal_clients[id].itrace = 'x';
-	}
+	if (cntxt->user == mal_clients[id].user || cntxt->user == MAL_ADMIN)
+		mal_clients[id].qtimeout = 1; /* stop client in one microsecond */
 	/* this forces the designated client to stop at the next instruction */
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 str
