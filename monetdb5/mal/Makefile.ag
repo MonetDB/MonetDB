@@ -38,7 +38,6 @@ lib_mal = {
 		mal_namespace.c mal_namespace.h \
 		mal_parser.c mal_parser.h \
 		mal_profiler.c mal_profiler.h \
-		mal_readline.c mal_readline.h \
 		mal_resolve.c mal_resolve.h \
 		mal_sabaoth.c mal_sabaoth.h \
 		mal_scenario.c mal_scenario.h \

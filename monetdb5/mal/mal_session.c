@@ -14,17 +14,11 @@
 #include "mal_interpreter.h" /* for runMAL(), garbageElement() */
 #include "mal_parser.h"	     /* for parseMAL() */
 #include "mal_namespace.h"
-#include "mal_readline.h"
 #include "mal_authorize.h"
 #include "mal_builder.h"
 #include "mal_sabaoth.h"
 #include "mal_private.h"
 #include "gdk.h"	/* for opendir and friends */
-
-#ifdef HAVE_EMBEDDED
-// FIXME:
-//#include "mal_init_inline.h"
-#endif
 
 /*
  * The MonetDB server uses a startup script to boot the system.
@@ -586,16 +580,6 @@ MALexitClient(Client c)
 str
 MALreader(Client c)
 {
-#ifndef HAVE_EMBEDDED
-	int r = 1;
-	if (c == mal_clients) {
-		r = readConsole(c);
-		if (r < 0 && !c->fdin->eof)
-			r = MCreadClient(c);
-		if (r > 0)
-			return MAL_SUCCEED;
-	} else
-#endif
 	if (MCreadClient(c) > 0)
 		return MAL_SUCCEED;
 	MT_lock_set(&mal_contextLock);

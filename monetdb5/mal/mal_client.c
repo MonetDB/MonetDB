@@ -40,7 +40,6 @@
 /* (author) M.L. Kersten */
 #include "monetdb_config.h"
 #include "mal_client.h"
-#include "mal_readline.h"
 #include "mal_import.h"
 #include "mal_parser.h"
 #include "mal_namespace.h"
