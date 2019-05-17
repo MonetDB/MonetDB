@@ -127,8 +127,7 @@ tst2550
 tst256
 tst2570
 tst272
-# opens /tmp/MonetEvents, i.e. not on Windows:
-NOT_WIN32?tst275
+tst275
 tst280
 tst281
 tst292
