@@ -27,7 +27,7 @@ int have_hge;
 #include "mal_interpreter.h"
 #include "mal_namespace.h"  /* for initNamespace() */
 #include "mal_client.h"
-#include "mal_sabaoth.h"
+#include "msabaoth.h"
 #include "mal_dataflow.h"
 #include "mal_profiler.h"
 #include "mal_private.h"
