@@ -45,6 +45,7 @@ typedef struct logger {
 	lng id;
 	int tid;
 	bool with_ids;
+	bool inmemory;
 #ifdef GDKLIBRARY_NIL_NAN
 	/* convert old style floating point NIL values to NaN */
 	bool convert_nil_nan;
@@ -108,9 +109,7 @@ gdk_export gdk_return logger_restart(logger *lg);
 gdk_export gdk_return logger_cleanup(logger *lg);
 gdk_export void logger_with_ids(logger *lg);
 gdk_export lng logger_changes(logger *lg);
-gdk_export lng logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, role_t role);
 gdk_export int logger_sequence(logger *lg, int seq, lng *id);
-gdk_export gdk_return logger_reload(logger *lg);
 
 /* todo pass the transaction id */
 gdk_export gdk_return log_bat(logger *lg, BAT *b, const char *n, char tpe, oid id);

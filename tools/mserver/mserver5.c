@@ -256,6 +256,7 @@ main(int argc, char **av)
 	char *dbpath = NULL;
 	char *dbextra = NULL;
 	int verbosity = 0;
+	bool inmemory = false;
 	static struct option long_options[] = {
 		{ "config", required_argument, NULL, 'c' },
 		{ "dbpath", required_argument, NULL, 0 },
@@ -278,6 +279,7 @@ main(int argc, char **av)
 		{ "performance", no_argument, NULL, 0 },
 		{ "forcemito", no_argument, NULL, 0 },
 		{ "heaps", no_argument, NULL, 0 },
+		{ "in-memory", no_argument, NULL, 0 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -322,6 +324,10 @@ main(int argc, char **av)
 
 		switch (c) {
 		case 0:
+			if (strcmp(long_options[option_index].name, "in-memory") == 0) {
+				inmemory = true;
+				break;
+			}
 			if (strcmp(long_options[option_index].name, "dbpath") == 0) {
 				size_t optarglen = strlen(optarg);
 				/* remove trailing directory separator */
@@ -486,14 +492,21 @@ main(int argc, char **av)
 			exit(1);
 		}
 	}
-	if (BBPaddfarm(dbpath, 1 << PERSISTENT) != GDK_SUCCEED ||
-	    BBPaddfarm(dbextra ? dbextra : dbpath, 1 << TRANSIENT) != GDK_SUCCEED) {
-		fprintf(stderr, "!ERROR: cannot add farm\n");
-		exit(1);
-	}
-	if (GDKcreatedir(dbpath) != GDK_SUCCEED) {
-		fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbpath);
-		exit(1);
+	if (inmemory) {
+		if (BBPaddfarm(NULL, (1 << PERSISTENT) | (1 << TRANSIENT)) != GDK_SUCCEED) {
+			fprintf(stderr, "!ERROR: cannot add in-memory farm\n");
+			exit(1);
+		}
+	} else {
+		if (BBPaddfarm(dbpath, 1 << PERSISTENT) != GDK_SUCCEED ||
+		    BBPaddfarm(dbextra ? dbextra : dbpath, 1 << TRANSIENT) != GDK_SUCCEED) {
+			fprintf(stderr, "!ERROR: cannot add farm\n");
+			exit(1);
+		}
+		if (GDKcreatedir(dbpath) != GDK_SUCCEED) {
+			fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbpath);
+			exit(1);
+		}
 	}
 	GDKfree(dbpath);
 	if (monet_init(set, setlen) == 0) {
@@ -572,19 +585,21 @@ main(int argc, char **av)
 		}
 	}
 
-	/* configure sabaoth to use the right dbpath and active database */
-	msab_dbpathinit(GDKgetenv("gdk_dbpath"));
-	/* wipe out all cruft, if left over */
-	if ((err = msab_wildRetreat()) != NULL) {
-		/* just swallow the error */
-		free(err);
-	}
-	/* From this point, the server should exit cleanly.  Discussion:
-	 * even earlier?  Sabaoth here registers the server is starting up. */
-	if ((err = msab_registerStarting()) != NULL) {
-		/* throw the error at the user, but don't die */
-		fprintf(stderr, "!%s\n", err);
-		free(err);
+	if (!GDKinmemory()) {
+		/* configure sabaoth to use the right dbpath and active database */
+		msab_dbpathinit(GDKgetenv("gdk_dbpath"));
+		/* wipe out all cruft, if left over */
+		if ((err = msab_wildRetreat()) != NULL) {
+			/* just swallow the error */
+			free(err);
+		}
+		/* From this point, the server should exit cleanly.  Discussion:
+		 * even earlier?  Sabaoth here registers the server is starting up. */
+		if ((err = msab_registerStarting()) != NULL) {
+			/* throw the error at the user, but don't die */
+			fprintf(stderr, "!%s\n", err);
+			free(err);
+		}
 	}
 
 #ifdef HAVE_SIGACTION
@@ -616,7 +631,7 @@ main(int argc, char **av)
 #endif
 #endif
 
-	{
+	if (!GDKinmemory()) {
 		str lang = "mal";
 		/* we inited mal before, so publish its existence */
 		if ((err = msab_marchScenario(lang)) != NULL) {
@@ -634,7 +649,7 @@ main(int argc, char **av)
 		FILE *secretf;
 		size_t len;
 
-		if (GDKgetenv("monet_vault_key") == NULL) {
+		if (GDKinmemory() || GDKgetenv("monet_vault_key") == NULL) {
 			/* use a default (hard coded, non safe) key */
 			snprintf(secret, sizeof(secret), "%s", "Xas632jsi2whjds8");
 		} else {
@@ -662,7 +677,8 @@ main(int argc, char **av)
 		}
 		if ((err = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
-			msab_registerStop();
+			if (!GDKinmemory())
+				msab_registerStop();
 			fprintf(stderr, "%s\n", err);
 			freeException(err);
 			exit(1);
@@ -671,14 +687,16 @@ main(int argc, char **av)
 	/* make sure the authorisation BATs are loaded */
 	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
 		/* don't show this as a crash */
-		msab_registerStop();
+		if (!GDKinmemory())
+			msab_registerStop();
 		fprintf(stderr, "%s\n", err);
 		freeException(err);
 		exit(1);
 	}
 	if (mal_init()) {
 		/* don't show this as a crash */
-		msab_registerStop();
+		if (!GDKinmemory())
+			msab_registerStop();
 		return 0;
 	}
 
@@ -697,7 +715,7 @@ main(int argc, char **av)
 	}
 	free(monet_script);
 
-	if ((err = msab_registerStarted()) != NULL) {
+	if (!GDKinmemory() && (err = msab_registerStarted()) != NULL) {
 		/* throw the error at the user, but don't die */
 		fprintf(stderr, "!%s\n", err);
 		free(err);

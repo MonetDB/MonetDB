@@ -99,14 +99,16 @@ void mserver_reset(void)
 	MCstopClients(0);
 	setHeartbeat(-1);
 	stopProfiler();
-	AUTHreset(); 
-	if ((err = msab_wildRetreat()) != NULL) {
-		fprintf(stderr, "!%s", err);
-		free(err);
-	}
-	if ((err = msab_registerStop()) != NULL) {
-		fprintf(stderr, "!%s", err);
-		free(err);
+	AUTHreset();
+	if (!GDKinmemory()) {
+		if ((err = msab_wildRetreat()) != NULL) {
+			fprintf(stderr, "!%s", err);
+			free(err);
+		}
+		if ((err = msab_registerStop()) != NULL) {
+			fprintf(stderr, "!%s", err);
+			free(err);
+		}
 	}
 	mal_factory_reset();
 	mal_dataflow_reset();

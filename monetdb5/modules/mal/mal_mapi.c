@@ -978,7 +978,7 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 			}
 		}
 
-		if ((buf = msab_marchConnection(host, port)) != NULL)
+		if (!GDKinmemory() && (buf = msab_marchConnection(host, port)) != NULL)
 			free(buf);
 		else
 			/* announce that we're now reachable */
@@ -987,7 +987,7 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 	}
 	if (usockfile != NULL) {
 		port = 0;
-		if ((buf = msab_marchConnection(usockfile, port)) != NULL)
+		if (!GDKinmemory() && (buf = msab_marchConnection(usockfile, port)) != NULL)
 			free(buf);
 		else
 			/* announce that we're now reachable */

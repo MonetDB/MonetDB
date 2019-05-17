@@ -1043,6 +1043,13 @@ BBPaddfarm(const char *dirname, int rolemask)
 	struct stat st;
 	int i;
 
+	if (dirname == NULL) {
+		assert(BBPfarms[0].dirname == NULL);
+		assert(rolemask & 1);
+		assert(BBPfarms[0].roles == 0);
+		BBPfarms[0].roles = rolemask;
+		return GDK_SUCCEED;
+	}
 	if (strchr(dirname, '\n') != NULL) {
 		GDKerror("BBPaddfarm: no newline allowed in directory name\n");
 		return GDK_FAIL;
@@ -1118,12 +1125,7 @@ BBPinit(void)
 	unsigned bbpversion = 0;
 	int i;
 
-	if (GDKinmemory()) {
-		if (BBPaddfarm(".", 1 << PERSISTENT) != GDK_SUCCEED ||
-		    BBPaddfarm(".", 1 << TRANSIENT) != GDK_SUCCEED) {
-			return GDK_FAIL;
-		}
-	} else {
+	if (!GDKinmemory()) {
 		str bbpdirstr, backupbbpdirstr;
 
 		if (!(bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir"))) {
@@ -1195,7 +1197,9 @@ BBPinit(void)
 	memset(BBP, 0, sizeof(BBP));
 	ATOMIC_SET(&BBPsize, 1);
 
-	if (!GDKinmemory()) {
+	if (GDKinmemory()) {
+		bbpversion = GDKLIBRARY;
+	} else {
 		bbpversion = BBPheader(fp);
 		if (bbpversion == 0)
 			return GDK_FAIL;
@@ -2350,7 +2354,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	 * if they have been made cold or are not dirty */
 	if (BBP_refs(i) > 0 ||
 	    (BBP_lrefs(i) > 0 &&
-	     (b == NULL || BATdirty(b) || !(BBP_status(i) & BBPPERSISTENT)))) {
+	     (b == NULL || BATdirty(b) || !(BBP_status(i) & BBPPERSISTENT) || GDKinmemory()))) {
 		/* bat cannot be swapped out */
 	} else if (b ? b->batSharecnt == 0 : (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit

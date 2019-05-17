@@ -154,14 +154,27 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fprintf(stdout, "# MonetDB/SQL module loaded\n");
 	fflush(stdout);		/* make merovingian see this *now* */
 #endif
+	if (GDKinmemory()) {
+		s->name = "sql";
+		ms->name = "msql";
+		return MAL_SUCCEED;
+	}
 	/* only register availability of scenarios AFTER we are inited! */
 	s->name = "sql";
 	tmp = msab_marchScenario(s->name);
-	if (tmp != MAL_SUCCEED)
-		return (tmp);
+	if (tmp != NULL) {
+		char *err = createException(MAL, "sql.start", "%s", tmp);
+		free(tmp);
+		return err;
+	}
 	ms->name = "msql";
 	tmp = msab_marchScenario(ms->name);
-	return tmp;
+	if (tmp != NULL) {
+		char *err = createException(MAL, "sql.start", "%s", tmp);
+		free(tmp);
+		return err;
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -190,10 +203,17 @@ SQLepilogue(void *ret)
 	SQLexit(NULL);
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
-	res = msab_retreatScenario(m);
-	if (!res)
-		return msab_retreatScenario(s);
-	return res;
+	if (!GDKinmemory()) {
+		res = msab_retreatScenario(m);
+		if (!res)
+			res = msab_retreatScenario(s);
+		if (res != NULL) {
+			char *err = createException(MAL, "sql.start", "%s", res);
+			free(res);
+			return err;
+		}
+	}
+	return MAL_SUCCEED;
 }
 
 #define SQLglobal(name, val, failure)                                                                             \

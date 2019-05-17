@@ -443,7 +443,6 @@ gdk_return logger_del_bat(logger *lg, log_bid bid) __attribute__((__warn_unused_
 void logger_destroy(logger *lg);
 gdk_return logger_exit(logger *lg);
 log_bid logger_find_bat(logger *lg, const char *name, char tpe, oid id);
-lng logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, role_t role);
 gdk_return logger_reload(logger *lg);
 gdk_return logger_restart(logger *lg);
 int logger_sequence(logger *lg, int seq, lng *id);
@@ -2340,8 +2339,6 @@ str listRef;
 str loadLibrary(str modulename, int flag);
 char *locate_file(const char *basename, const char *ext, bit recurse);
 str lockRef;
-str logger_create_wrap(logger *L, int *debug, str *fn, str *dirname, int *version);
-str logger_destroy_wrap(void *ret, logger *L);
 str lookupRef;
 str mal2str(MalBlkPtr mb, int first, int last);
 int malAtomSize(int size, const char *name);
