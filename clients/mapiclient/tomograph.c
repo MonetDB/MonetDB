@@ -1440,7 +1440,7 @@ update(char *line, EventRecord *ev)
 	if (starttime == 0) {
 		if (ev->fcn == 0 ) {
 			if (debug)
-				fprintf(stderr, "Skip %s input %s\n",(ev->state>=0?statenames[ev->state]:"unknown"),ev->fcn);
+				fprintf(stderr, "Skip %s input\n",(ev->state>=0?statenames[ev->state]:"unknown"));
 			return;
 		}
 		if (debug)

@@ -700,8 +700,7 @@ TBL_getdir(void)
 				BBPreclaim(b);
 				return NULL;
 			}
-			strncpy(cur_dir, mod_path, l);
-			cur_dir[l] = 0;
+			strncpy(cur_dir, mod_path, l + 1); /* including NULL byte */
 			if ((mod_path = p) != NULL) {
 				while (*mod_path == PATH_SEP)
 					mod_path++;
