@@ -23,7 +23,6 @@ lib_kernel = {
 		batmmath.c batmmath.h \
 		batstr.c \
 		group.c group.h \
-		logger.c \
 		microbenchmark.c microbenchmark.h \
 		mmath.c mmath.h mmath_private.h \
 		status.c status.h 
@@ -36,7 +35,7 @@ headers_mal = {
 		mmath.mal alarm.mal batstr.mal \
 		batcolor.mal batmmath.mal \
 		group.mal aggr.mal \
-		logger.mal microbenchmark.mal
+		microbenchmark.mal
 }
 
 headers_hge = {

@@ -2340,8 +2340,6 @@ str listRef;
 str loadLibrary(str modulename, int flag);
 char *locate_file(const char *basename, const char *ext, bit recurse);
 str lockRef;
-str logger_create_wrap(logger *L, int *debug, str *fn, str *dirname, int *version);
-str logger_destroy_wrap(void *ret, logger *L);
 str lookupRef;
 str mal2str(MalBlkPtr mb, int first, int last);
 int malAtomSize(int size, const char *name);

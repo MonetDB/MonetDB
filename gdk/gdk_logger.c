@@ -2253,21 +2253,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	return NULL;
 }
 
-/* Reload logger
- * It will load any data in the logdir and persist it in the BATs */
-gdk_return
-logger_reload(logger *lg)
-{
-	char filename[FILENAME_MAX];
-
-	snprintf(filename, sizeof(filename), "%s", lg->dir);
-	if (lg->debug & 1) {
-		fprintf(stderr, "#logger_reload %s\n", filename);
-	}
-
-	return logger_load(lg->debug, lg->fn, filename, lg);
-}
-
 /* Create a new logger */
 logger *
 logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
