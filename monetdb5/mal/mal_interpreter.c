@@ -527,6 +527,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
 			break;
 		}
+#ifndef NDEBUG
 		if (cntxt->itrace || stk->status) {
 			if (stk->status == 'p'){
 				// execution is paused
@@ -546,6 +547,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				continue;
 			}
 		}
+#endif
 
 		//Ensure we spread system resources over multiple users as well.
 		runtimeProfileBegin(cntxt, mb, stk, pci, &runtimeProfile);
@@ -703,6 +705,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				ret = createException(MAL,"mal.interpreter", "%s.%s[%d] reference to MAL function missing", getModuleId(pci), getFunctionId(pci), pci->pc);
 			else {
 				/* show call before entering the factory */
+#ifndef NDEBUG
 				if (cntxt->itrace) {
 					if (stk->cmd == 0)
 						stk->cmd = cntxt->itrace;
@@ -712,6 +715,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						stkpc = mb->stop;
 					}
 				}
+#endif
 				ret = runFactory(cntxt, pci->blk, mb, stk, pci);
 			}
 			break;
@@ -881,6 +885,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		if (ret != MAL_SUCCEED) {
 			str msg = 0;
 
+#ifndef NDEBUG
 			if (stk->cmd) {
 				mnstr_printf(cntxt->fdout, "!ERROR: %s\n", ret);
 				stk->cmd = '\n'; /* in debugging go to step mode */
@@ -896,6 +901,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					continue;
 				}
 			}
+#endif
 			/* Detect any exception received from the implementation. */
 			/* The first identifier is an optional exception name */
 			if (strstr(ret, "!skip-to-end")) {
@@ -943,6 +949,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			/* position yourself at the catch instruction for further decisions */
 			/* skipToCatch(exceptionVar,@2,@3) */
+#ifndef NDEBUG
 			if (stk->cmd == 'C') {
 				stk->cmd = 'n';
 				mdbStep(cntxt, mb, stk, stkpc);
@@ -951,6 +958,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					continue;
 				}
 			}
+#endif
 			/* skip to catch block or end */
 			for (; stkpc < mb->stop; stkpc++) {
 				InstrPtr l = getInstrPtr(mb, stkpc);
@@ -1127,6 +1135,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				ret = createException(MAL, nme, "%s", stk->stk[getDestVar(pci)].val.sval);
 			}
 			/* skipToCatch(exceptionVar, @2, stk) */
+#ifndef NDEBUG
 			if (stk->cmd == 'C') {
 				stk->cmd = 'n';
 				mdbStep(cntxt, mb, stk, stkpc);
@@ -1135,6 +1144,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					continue;
 				}
 			}
+#endif
 			/* skip to catch block or end */
 			for (; stkpc < mb->stop; stkpc++) {
 				InstrPtr l = getInstrPtr(mb, stkpc);
