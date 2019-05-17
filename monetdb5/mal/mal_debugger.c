@@ -808,7 +808,6 @@ retryRead:
 				skipBlanc(cntxt, b);
 				if ((w = strchr(b, '\n')))
 					*w = 0;
-				traceFcnName = GDKstrdup(b);
 			}
 			break;
 		case 't':   /* trace a variable toggle */
