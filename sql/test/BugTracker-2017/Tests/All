@@ -3,7 +3,7 @@ drop_system_schema.Bug-6437
 check_system_schema.Bug-6437
 unknown_col_in_order_by.Bug-3535
 extract_quarter_week_from_date.Bug-3831
-insert_self_ref_FK.Bug-6131
+KNOWNFAIL?insert_self_ref_FK.Bug-6131
 shutdown.Bug-6182
 avggroupbysq.Bug-6178
 semijoinunion.Bug-6150
@@ -105,7 +105,7 @@ sqlitelogictest-cast-decimal.Bug-6445
 HAVE_LIBPY?table_returning_with.Bug-6444
 insert_into_multiple_subqueries.Bug-6448
 HAVE_SAMTOOLS?sqlsmith.Bug-6449
-HAVE_LIBPY?python_loader_clobbers_default_with_null.Bug-6464
+KNOWNFAIL&HAVE_LIBPY?python_loader_clobbers_default_with_null.Bug-6464
 skip_problem_best_effort.Bug-6442
 date_to_str.Bug-6467
 cleanup_statistics.Bug-6439
