@@ -504,7 +504,8 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 	p = AUTHfindUser(username);
 
 	/* make the stuff persistent */
-	AUTHcommit();
+	if (!GDKinmemory())
+		AUTHcommit();
 
 	*uid = p;
 	return(MAL_SUCCEED);
