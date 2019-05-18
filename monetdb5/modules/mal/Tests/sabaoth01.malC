@@ -1,4 +1,0 @@
-u := sabaoth.getLocalConnectionURI();
-# if all is well, we can make a connection to ourself
-c := remote.connect(u, "monetdb", "monetdb");
-remote.disconnect(c);
