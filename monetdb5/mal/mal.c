@@ -115,10 +115,6 @@ void mserver_reset(void)
 	}
 	mal_factory_reset();
 	mal_dataflow_reset();
-	/* are later destroyed by GDKreset */
-	mal_clients[0].fdout = 0;
-	mal_clients[0].fdin = 0;
-	MCcloseClient(mal_clients);
 	mal_client_reset();
   	mal_linker_reset();
 	mal_resource_reset();

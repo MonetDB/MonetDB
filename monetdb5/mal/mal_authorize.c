@@ -382,14 +382,13 @@ AUTHinitTables(const char *passwd) {
 		 * complete fresh and new auth tables system */
 		char *pw;
 		oid uid;
-		Client c = &mal_clients[0];
 
 		if (passwd == NULL)
 			passwd = "monetdb";	/* default password */
 		pw = mcrypt_BackendSum(passwd, strlen(passwd));
 		if(!pw)
 			throw(MAL, "initTables", SQLSTATE(42000) "Crypt backend hash not found");
-		msg = AUTHaddUser(&uid, c, "monetdb", pw);
+		msg = AUTHaddUser(&uid, NULL, "monetdb", pw);
 		free(pw);
 		if (msg)
 			return msg;
@@ -420,7 +419,8 @@ AUTHcheckCredentials(
 	BUN p;
 	BATiter passi;
 
-	rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(cntxt, username));
+	if (cntxt)
+		rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(cntxt, username));
 	assert(user);
 	assert(pass);
 
@@ -475,9 +475,10 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 	str tmp;
 	str hash = NULL;
 
-	rethrow("addUser", tmp, AUTHrequireAdmin(cntxt));
 	assert(user);
 	assert(pass);
+	if (BATcount(user))
+		rethrow("addUser", tmp, AUTHrequireAdmin(cntxt));
 
 	/* some pre-condition checks */
 	if (username == NULL || strNil(username))
