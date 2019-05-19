@@ -278,7 +278,7 @@ SQLprepareClient(Client c, int login)
 			mvc_destroy(m);
 			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		if (strcmp(c->scenario, "msql") == 0)
+		if (c->scenario && strcmp(c->scenario, "msql") == 0)
 			m->reply_size = -1;
 		be = (void *) backend_create(m, c);
 		if( be == NULL) {

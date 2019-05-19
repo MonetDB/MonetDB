@@ -47,10 +47,11 @@ static void* monetdb_connect(void) {
 	if (!monetdb_initialized) {
 		return NULL;
 	}
-	conn = MCforkClient(&mal_clients[0]);
+	conn = MCinitClient((oid) 0, bstream_create(GDKstdin, 0), GDKstdout);
 	if (!MCvalid(conn)) {
 		return NULL;
 	}
+	conn->curmodule = conn->usermodule = userModule();
 	if ((*SQLinitClient_ptr)(conn) != MAL_SUCCEED) {
 		return NULL;
 	}
