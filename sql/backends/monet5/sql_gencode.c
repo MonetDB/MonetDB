@@ -647,7 +647,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 
 	be->mvc_var = old_mv;
 	be->mb = old_mb;
-	if (top && c->clientid && !be->depth && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
+	if (top && !be->depth && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		q = newStmt(mb, sqlRef, exportOperationRef);
 		if (q == NULL)
 			return -1;
