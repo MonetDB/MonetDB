@@ -66,8 +66,7 @@ malBootstrap(void)
 		return msg;
 	}
 	msg = MALengine(c);
-//	if (msg != MAL_SUCCEED)
-		MCfreeClient(c);
+	MCfreeClient(c);
 	return msg;
 }
 
