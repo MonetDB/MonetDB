@@ -647,7 +647,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
     MT_lock_set(&mal_contextLock);
 
-    for (c = mal_clients + 1; c < mal_clients + MAL_MAXCLIENTS; c++) {
+    for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		if (c->mode == RUNCLIENT) {
 			if (BUNappend(user, c->username, false) != GDK_SUCCEED)
 				goto bailout;

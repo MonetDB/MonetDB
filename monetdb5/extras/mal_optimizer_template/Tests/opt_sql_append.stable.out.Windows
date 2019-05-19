@@ -80,7 +80,7 @@ function user.s10_1():void;
     X_38:int := sql.append(X_35:int, "sys":str, "ttt":str, "c":str, X_28:bat[:int]);
     X_40:lng := aggr.count(X_28:bat[:int]);
     sql.affectedRows(X_38:int, X_40:lng);
-end user.s10_1;
+end user.s10_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=1 usec 

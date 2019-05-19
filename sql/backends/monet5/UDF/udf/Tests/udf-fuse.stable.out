@@ -27,36 +27,36 @@ stdout of test 'udf-fuse` in directory 'sql/backends/monet5/UDF/udf` itself:
 % mal # name
 % clob # type
 % 95 # length
-function user.s4_1():void;
+function user.s4_0():void;
     X_3:void := querylog.define("explain select fuse(1,2);":str, "sequential_pipe":str, 8:int);
     X_9:sht := udf.fuse(1:bte, 2:bte);
     sql.resultSet(".L2":str, "L2":str, "smallint":str, 16:int, 0:int, 7:int, X_9:sht);
-end user.s4_1;
-#inline               actions= 0 time=2 usec 
-#candidates           actions= 1 time=12 usec 
-#remap                actions= 0 time=4 usec 
-#costModel            actions= 1 time=10 usec 
-#coercions            actions= 0 time=2 usec 
-#evaluate             actions= 2 time=26 usec 
-#emptybind            actions= 0 time=5 usec 
-#pushselect           actions= 0 time=4 usec 
-#aliases              actions= 2 time=14 usec 
-#mergetable           actions= 0 time=20 usec 
-#deadcode             actions= 1 time=14 usec 
-#aliases              actions= 0 time=4 usec 
-#constants            actions= 2 time=15 usec 
-#commonTerms          actions= 0 time=3 usec 
-#projectionpath       actions= 0 time=11 usec 
-#reorder              actions= 1 time=23 usec 
-#deadcode             actions= 0 time=6 usec 
-#reduce               actions=23 time=26 usec 
-#matpack              actions= 0 time=6 usec 
-#querylog             actions= 0 time=1 usec 
-#multiplex            actions= 0 time=4 usec 
-#generator            actions= 0 time=3 usec 
-#profiler             actions= 1 time=6 usec 
-#garbageCollector     actions= 1 time=12 usec 
-#total                actions= 1 time=335 usec 
+end user.s4_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=0 usec 
+#coercion             actions= 0 time=0 usec 
+#aliases              actions= 2 time=2 usec 
+#evaluate             actions= 0 time=2 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 0 time=2 usec 
+#aliases              actions= 0 time=0 usec 
+#mergetable           actions= 0 time=12 usec 
+#deadcode             actions= 1 time=3 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 0 time=1 usec 
+#commonTerms          actions= 0 time=1 usec 
+#projectionpath       actions= 0 time=1 usec 
+#deadcode             actions= 0 time=3 usec 
+#reorder              actions= 1 time=22 usec 
+#matpack              actions= 0 time=0 usec 
+#multiplex            actions= 0 time=0 usec 
+#profiler             actions= 1 time=0 usec 
+#candidates           actions= 1 time=0 usec 
+#deadcode             actions= 0 time=3 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=5 usec 
+#total                actions=27 time=117 usec 
 #select fuse(1,2);
 % .L2 # table_name
 % L2 # name
@@ -68,36 +68,36 @@ end user.s4_1;
 % mal # name
 % clob # type
 % 101 # length
-function user.s6_1():void;
+function user.s6_0():void;
     X_3:void := querylog.define("explain select fuse(1000,2000);":str, "sequential_pipe":str, 8:int);
     X_9:int := udf.fuse(1000:sht, 2000:sht);
     sql.resultSet(".L2":str, "L2":str, "int":str, 32:int, 0:int, 7:int, X_9:int);
-end user.s6_1;
-#inline               actions= 0 time=2 usec 
-#candidates           actions= 1 time=10 usec 
-#remap                actions= 0 time=4 usec 
-#costModel            actions= 1 time=10 usec 
-#coercions            actions= 0 time=2 usec 
-#evaluate             actions= 2 time=26 usec 
-#emptybind            actions= 0 time=4 usec 
-#pushselect           actions= 0 time=4 usec 
-#aliases              actions= 2 time=13 usec 
-#mergetable           actions= 0 time=20 usec 
-#deadcode             actions= 1 time=12 usec 
-#aliases              actions= 0 time=5 usec 
-#constants            actions= 2 time=10 usec 
-#commonTerms          actions= 0 time=5 usec 
-#projectionpath       actions= 0 time=4 usec 
-#reorder              actions= 1 time=21 usec 
-#deadcode             actions= 0 time=6 usec 
-#reduce               actions=23 time=25 usec 
-#matpack              actions= 0 time=6 usec 
-#querylog             actions= 0 time=1 usec 
-#multiplex            actions= 0 time=4 usec 
-#generator            actions= 0 time=2 usec 
-#profiler             actions= 1 time=5 usec 
-#garbageCollector     actions= 1 time=12 usec 
-#total                actions= 1 time=289 usec 
+end user.s6_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=0 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 2 time=3 usec 
+#evaluate             actions= 0 time=2 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 0 time=2 usec 
+#aliases              actions= 0 time=0 usec 
+#mergetable           actions= 0 time=11 usec 
+#deadcode             actions= 1 time=3 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 0 time=1 usec 
+#commonTerms          actions= 0 time=1 usec 
+#projectionpath       actions= 0 time=1 usec 
+#deadcode             actions= 0 time=2 usec 
+#reorder              actions= 1 time=7 usec 
+#matpack              actions= 0 time=0 usec 
+#multiplex            actions= 0 time=0 usec 
+#profiler             actions= 1 time=0 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=2 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=4 usec 
+#total                actions=27 time=85 usec 
 #select fuse(1000,2000);
 % .L2 # table_name
 % L2 # name
@@ -109,36 +109,36 @@ end user.s6_1;
 % mal # name
 % clob # type
 % 107 # length
-function user.s8_1():void;
+function user.s8_0():void;
     X_3:void := querylog.define("explain select fuse(1000000,2000000);":str, "sequential_pipe":str, 8:int);
     X_9:lng := udf.fuse(1000000:int, 2000000:int);
     sql.resultSet(".L2":str, "L2":str, "bigint":str, 64:int, 0:int, 7:int, X_9:lng);
-end user.s8_1;
-#inline               actions= 0 time=3 usec 
-#candidates           actions= 1 time=10 usec 
-#remap                actions= 0 time=4 usec 
-#costModel            actions= 1 time=9 usec 
-#coercions            actions= 0 time=2 usec 
-#evaluate             actions= 2 time=25 usec 
-#emptybind            actions= 0 time=4 usec 
-#pushselect           actions= 0 time=3 usec 
-#aliases              actions= 2 time=13 usec 
-#mergetable           actions= 0 time=19 usec 
-#deadcode             actions= 1 time=12 usec 
-#aliases              actions= 0 time=4 usec 
-#constants            actions= 2 time=10 usec 
-#commonTerms          actions= 0 time=5 usec 
-#projectionpath       actions= 0 time=4 usec 
-#reorder              actions= 1 time=21 usec 
-#deadcode             actions= 0 time=5 usec 
-#reduce               actions=23 time=24 usec 
-#matpack              actions= 0 time=5 usec 
-#querylog             actions= 0 time=1 usec 
-#multiplex            actions= 0 time=4 usec 
-#generator            actions= 0 time=3 usec 
-#profiler             actions= 1 time=6 usec 
-#garbageCollector     actions= 1 time=13 usec 
-#total                actions= 1 time=284 usec 
+end user.s8_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=0 usec 
+#costmodel            actions= 1 time=0 usec 
+#coercion             actions= 0 time=0 usec 
+#aliases              actions= 2 time=2 usec 
+#evaluate             actions= 0 time=2 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 0 time=2 usec 
+#aliases              actions= 0 time=0 usec 
+#mergetable           actions= 0 time=11 usec 
+#deadcode             actions= 1 time=3 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 0 time=2 usec 
+#commonTerms          actions= 0 time=1 usec 
+#projectionpath       actions= 0 time=1 usec 
+#deadcode             actions= 0 time=2 usec 
+#reorder              actions= 1 time=7 usec 
+#matpack              actions= 0 time=0 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=0 usec 
+#candidates           actions= 1 time=0 usec 
+#deadcode             actions= 0 time=2 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=4 usec 
+#total                actions=27 time=84 usec 
 #select fuse(1000000,2000000);
 % .L2 # table_name
 % L2 # name
@@ -168,7 +168,7 @@ end user.s8_1;
 % mal # name
 % clob # type
 % 114 # length
-function user.s16_1():void;
+function user.s16_0():void;
     X_1:void := querylog.define("explain select fuse(a,b) from udf_fuse;":str, "sequential_pipe":str, 27:int);
     X_29:bat[:str] := bat.new(nil:str);
     X_35:bat[:int] := bat.new(nil:int);
@@ -188,12 +188,12 @@ function user.s16_1():void;
     X_42:bat[:int] := bat.append(X_33:bat[:int], 16:int);
     X_44:bat[:int] := bat.append(X_35:bat[:int], 0:int);
     sql.resultSet(X_36:bat[:str], X_38:bat[:str], X_40:bat[:str], X_42:bat[:int], X_44:bat[:int], X_25:bat[:sht]);
-end user.s16_1;
-#inline               actions= 0 time=4 usec 
-#candidates           actions= 1 time=19 usec 
-#remap                actions= 1 time=35 usec 
-#costModel            actions= 1 time=16 usec 
-#coercions            actions= 0 time=2 usec 
+end user.s16_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 1 time=6 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 0 time=1 usec 
 #evaluate             actions= 0 time=4 usec 
 #emptybind            actions= 0 time=4 usec 
 #pushselect           actions= 0 time=4 usec 
@@ -219,7 +219,7 @@ end user.s16_1;
 % mal # name
 % clob # type
 % 114 # length
-function user.s18_1():void;
+function user.s18_0():void;
     X_1:void := querylog.define("explain select fuse(c,d) from udf_fuse;":str, "sequential_pipe":str, 27:int);
     X_29:bat[:str] := bat.new(nil:str);
     X_35:bat[:int] := bat.new(nil:int);
@@ -239,12 +239,12 @@ function user.s18_1():void;
     X_42:bat[:int] := bat.append(X_33:bat[:int], 32:int);
     X_44:bat[:int] := bat.append(X_35:bat[:int], 0:int);
     sql.resultSet(X_36:bat[:str], X_38:bat[:str], X_40:bat[:str], X_42:bat[:int], X_44:bat[:int], X_25:bat[:int]);
-end user.s18_1;
-#inline               actions= 0 time=2 usec 
-#candidates           actions= 1 time=19 usec 
-#remap                actions= 1 time=32 usec 
-#costModel            actions= 1 time=16 usec 
-#coercions            actions= 0 time=2 usec 
+end user.s18_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 1 time=4 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 0 time=1 usec 
 #evaluate             actions= 0 time=4 usec 
 #emptybind            actions= 0 time=4 usec 
 #pushselect           actions= 0 time=4 usec 
@@ -270,7 +270,7 @@ end user.s18_1;
 % mal # name
 % clob # type
 % 114 # length
-function user.s20_1():void;
+function user.s20_0():void;
     X_1:void := querylog.define("explain select fuse(e,f) from udf_fuse;":str, "sequential_pipe":str, 27:int);
     X_29:bat[:str] := bat.new(nil:str);
     X_35:bat[:int] := bat.new(nil:int);
@@ -290,32 +290,32 @@ function user.s20_1():void;
     X_42:bat[:int] := bat.append(X_33:bat[:int], 64:int);
     X_44:bat[:int] := bat.append(X_35:bat[:int], 0:int);
     sql.resultSet(X_36:bat[:str], X_38:bat[:str], X_40:bat[:str], X_42:bat[:int], X_44:bat[:int], X_25:bat[:lng]);
-end user.s20_1;
-#inline               actions= 0 time=2 usec 
-#candidates           actions= 1 time=18 usec 
-#remap                actions= 1 time=31 usec 
-#costModel            actions= 1 time=15 usec 
-#coercions            actions= 0 time=2 usec 
-#evaluate             actions= 0 time=3 usec 
-#emptybind            actions= 0 time=4 usec 
-#pushselect           actions= 0 time=4 usec 
-#aliases              actions= 2 time=20 usec 
-#mergetable           actions= 0 time=25 usec 
-#deadcode             actions= 4 time=18 usec 
-#aliases              actions= 0 time=5 usec 
-#constants            actions= 1 time=18 usec 
-#commonTerms          actions= 0 time=5 usec 
-#projectionpath       actions= 0 time=5 usec 
-#reorder              actions= 1 time=29 usec 
-#deadcode             actions= 0 time=6 usec 
-#reduce               actions=31 time=32 usec 
-#matpack              actions= 0 time=5 usec 
-#querylog             actions= 0 time=1 usec 
-#multiplex            actions= 0 time=3 usec 
-#generator            actions= 0 time=2 usec 
-#profiler             actions= 1 time=13 usec 
-#garbageCollector     actions= 1 time=19 usec 
-#total                actions= 1 time=348 usec 
+end user.s20_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 1 time=4 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 0 time=0 usec 
+#evaluate             actions= 0 time=4 usec 
+#emptybind            actions= 2 time=5 usec 
+#pushselect           actions= 0 time=3 usec 
+#aliases              actions= 2 time=4 usec 
+#mergetable           actions= 0 time=20 usec 
+#deadcode             actions= 4 time=6 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 1 time=4 usec 
+#commonTerms          actions= 0 time=3 usec 
+#projectionpath       actions= 0 time=1 usec 
+#deadcode             actions= 0 time=4 usec 
+#reorder              actions= 1 time=13 usec 
+#matpack              actions= 0 time=0 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=0 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=4 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=11 usec 
+#total                actions=27 time=149 usec 
 #select fuse(a,b) from udf_fuse;
 % sys.L2 # table_name
 % L2 # name

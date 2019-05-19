@@ -47,36 +47,36 @@ stdout of test 'udf-reverse` in directory 'sql/backends/monet5/UDF/udf` itself:
 % mal # name
 % clob # type
 % 108 # length
-function user.s4_1():void;
+function user.s4_0():void;
     X_2:void := querylog.define("explain select reverse(\\'MonetDB\\');":str, "sequential_pipe":str, 7:int);
     X_7:str := udf.reverse("MonetDB":str);
     sql.resultSet(".L2":str, "L2":str, "clob":str, 0:int, 0:int, 4:int, X_7:str);
-end user.s4_1;
-#inline               actions= 0 time=2 usec 
-#candidates           actions= 1 time=8 usec 
-#remap                actions= 0 time=3 usec 
-#costModel            actions= 1 time=7 usec 
-#coercions            actions= 0 time=2 usec 
-#evaluate             actions= 1 time=18 usec 
-#emptybind            actions= 0 time=3 usec 
-#pushselect           actions= 0 time=3 usec 
-#aliases              actions= 1 time=9 usec 
-#mergetable           actions= 0 time=14 usec 
-#deadcode             actions= 1 time=8 usec 
-#aliases              actions= 0 time=3 usec 
-#constants            actions= 2 time=7 usec 
-#commonTerms          actions= 0 time=3 usec 
-#projectionpath       actions= 0 time=3 usec 
-#reorder              actions= 1 time=15 usec 
-#deadcode             actions= 0 time=4 usec 
-#reduce               actions=22 time=18 usec 
-#matpack              actions= 0 time=4 usec 
-#querylog             actions= 0 time=1 usec 
-#multiplex            actions= 0 time=2 usec 
-#generator            actions= 0 time=2 usec 
-#profiler             actions= 1 time=4 usec 
-#garbageCollector     actions= 1 time=9 usec 
-#total                actions= 1 time=204 usec 
+end user.s4_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=0 usec 
+#costmodel            actions= 1 time=0 usec 
+#coercion             actions= 0 time=0 usec 
+#aliases              actions= 1 time=2 usec 
+#evaluate             actions= 0 time=2 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 0 time=1 usec 
+#aliases              actions= 0 time=0 usec 
+#mergetable           actions= 0 time=11 usec 
+#deadcode             actions= 1 time=2 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 1 time=2 usec 
+#commonTerms          actions= 0 time=1 usec 
+#projectionpath       actions= 0 time=1 usec 
+#deadcode             actions= 0 time=3 usec 
+#reorder              actions= 1 time=8 usec 
+#matpack              actions= 0 time=0 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=0 usec 
+#candidates           actions= 1 time=0 usec 
+#deadcode             actions= 0 time=2 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=5 usec 
+#total                actions=27 time=91 usec 
 #select reverse('MonetDB');
 % .L2 # table_name
 % L2 # name
@@ -106,7 +106,7 @@ end user.s4_1;
 % mal # name
 % clob # type
 % 114 # length
-function user.s16_1():void;
+function user.s16_0():void;
     X_1:void := querylog.define("explain select reverse(x) from udf_reverse;":str, "sequential_pipe":str, 22:int);
     X_22:bat[:str] := bat.new(nil:str);
     X_28:bat[:int] := bat.new(nil:int);
@@ -124,17 +124,18 @@ function user.s16_1():void;
     X_35:bat[:int] := bat.append(X_26:bat[:int], 0:int);
     X_36:bat[:int] := bat.append(X_28:bat[:int], 0:int);
     sql.resultSet(X_29:bat[:str], X_31:bat[:str], X_33:bat[:str], X_35:bat[:int], X_36:bat[:int], X_18:bat[:str]);
-end user.s16_1;
-#inline               actions= 0 time=3 usec 
-#remap                actions= 1 time=10 usec 
-#costmodel            actions= 1 time=2 usec 
-#coercion             actions= 0 time=2 usec 
-#evaluate             actions= 0 time=5 usec 
-#emptybind            actions= 3 time=18 usec 
-#pushselect           actions= 0 time=5 usec 
-#aliases              actions= 1 time=9 usec 
-#mergetable           actions= 0 time=46 usec 
-#deadcode             actions= 3 time=10 usec 
+end user.s16_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 1 time=5 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=0 usec 
+#aliases              actions= 0 time=0 usec 
+#evaluate             actions= 0 time=3 usec 
+#emptybind            actions= 1 time=4 usec 
+#pushselect           actions= 0 time=3 usec 
+#aliases              actions= 1 time=3 usec 
+#mergetable           actions= 0 time=20 usec 
+#deadcode             actions= 2 time=12 usec 
 #aliases              actions= 0 time=0 usec 
 #constants            actions= 2 time=10 usec 
 #commonTerms          actions= 0 time=6 usec 

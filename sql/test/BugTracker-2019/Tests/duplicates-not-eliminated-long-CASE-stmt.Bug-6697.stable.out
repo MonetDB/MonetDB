@@ -32,7 +32,7 @@ stdout of test 'duplicates-not-eliminated-long-CASE-stmt.Bug-6697` in directory 
 % mal # name
 % clob # type
 % 1023 # length
-function user.s4_1():void;
+function user.s4_0():void;
     X_142:void := querylog.define("explain select sys.timestamp_to_str(case when task0.\"sys_created_on\" >= \\'1999-10-31 09:00:00\\' and task0.\"sys_created_on\" < \\'2000-04-02 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2000-04-02 10:00:00\\' and task0.\"sys_created_on\" < \\'2000-10-29 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2000-10-29 09:00:00\\' and task0.\"sys_created_on\" < \\'2001-04-01 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2001-04-01 10:00:00\\' and task0.\"sys_created_on\" < \\'2001-10-28 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2001-10-28 09:00:00\\' and task0.\"sys_created_on\" < \\'2002-04-07 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2002-04-07 10:00:00\\' and
 barrier X_1678:bit := language.dataflow();
     X_1515:bat[:str] := bat.new(nil:str);
@@ -284,7 +284,7 @@ barrier X_1678:bit := language.dataflow();
     language.pass(X_1361:bat[:timestamp]);
 exit X_1678:bit;
     sql.resultSet(X_1522:bat[:str], X_1524:bat[:str], X_1526:bat[:str], X_1528:bat[:int], X_1530:bat[:int], X_1511:bat[:str]);
-end user.s4_1;
+end user.s4_0;
 #inline               actions= 0 time=24 usec 
 #remap                actions=230 time=419 usec 
 #costmodel            actions= 1 time=12 usec 

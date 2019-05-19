@@ -35,42 +35,114 @@ stdout of test 'decimal_vs_integer.Bug-3941` in directory 'sql/test/BugTracker-2
 % mal # name
 % clob # type
 % 120 # length
-function user.s4_1():void;
+function user.s4_0():void;
     X_2:void := querylog.define("explain select count(*) from tmp where i = 20160222;":str, "default_pipe":str, 13:int);
     X_16:bat[:oid] := bat.new(nil:oid);
     X_19:lng := aggr.count(X_16:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_19:lng);
-end user.s4_1;
-# optimizer.mitosis()
-# optimizer.dataflow()
+end user.s4_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=0 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 1 time=3 usec 
+#evaluate             actions= 1 time=11 usec 
+#emptybind            actions= 3 time=9 usec 
+#pushselect           actions= 0 time=2 usec 
+#aliases              actions= 1 time=3 usec 
+#mergetable           actions= 0 time=15 usec 
+#deadcode             actions= 5 time=5 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 1 time=4 usec 
+#commonTerms          actions= 0 time=1 usec 
+#projectionpath       actions= 0 time=1 usec 
+#deadcode             actions= 0 time=3 usec 
+#reorder              actions= 1 time=8 usec 
+#matpack              actions= 0 time=0 usec 
+#dataflow             actions= 0 time=4 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=0 usec 
+#candidates           actions= 1 time=0 usec 
+#deadcode             actions= 0 time=2 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=5 usec 
+#total                actions=29 time=155 usec 
 #explain select count(*) from tmp where i = '20160222';
 % .explain # table_name
 % mal # name
 % clob # type
 % 126 # length
-function user.s6_1():void;
+function user.s6_0():void;
     X_2:void := querylog.define("explain select count(*) from tmp where i = \\'20160222\\';":str, "default_pipe":str, 13:int);
     X_16:bat[:oid] := bat.new(nil:oid);
     X_19:lng := aggr.count(X_16:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_19:lng);
-end user.s6_1;
-# optimizer.mitosis()
-# optimizer.dataflow()
+end user.s6_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 1 time=3 usec 
+#evaluate             actions= 1 time=9 usec 
+#emptybind            actions= 3 time=6 usec 
+#pushselect           actions= 0 time=2 usec 
+#aliases              actions= 1 time=3 usec 
+#mergetable           actions= 0 time=15 usec 
+#deadcode             actions= 5 time=5 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 0 time=3 usec 
+#commonTerms          actions= 0 time=2 usec 
+#projectionpath       actions= 0 time=1 usec 
+#deadcode             actions= 0 time=3 usec 
+#reorder              actions= 1 time=9 usec 
+#matpack              actions= 0 time=0 usec 
+#dataflow             actions= 0 time=3 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=0 usec 
+#deadcode             actions= 0 time=3 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=5 usec 
+#total                actions=29 time=140 usec 
 #explain select count(*) from tmp where i = 201602221;
 % .explain # table_name
 % mal # name
 % clob # type
 % 121 # length
-function user.s8_1():void;
+function user.s8_0():void;
     X_2:void := querylog.define("explain select count(*) from tmp where i = 201602221;":str, "default_pipe":str, 14:int);
     X_12:bat[:int] := bat.new(nil:int);
     X_13:bat[:int] := batcalc.int(0:int, X_12:bat[:int], 9:int, 0:int);
     C_19:bat[:oid] := algebra.thetaselect(X_13:bat[:int], 201602221:int, "==":str);
     X_22:lng := aggr.count(C_19:bat[:oid]);
     sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_22:lng);
-end user.s8_1;
-# optimizer.mitosis()
-# optimizer.dataflow()
+end user.s8_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 1 time=6 usec 
+#costmodel            actions= 1 time=0 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 1 time=4 usec 
+#evaluate             actions= 1 time=8 usec 
+#emptybind            actions= 2 time=6 usec 
+#pushselect           actions= 0 time=3 usec 
+#aliases              actions= 1 time=3 usec 
+#mergetable           actions= 0 time=18 usec 
+#deadcode             actions= 4 time=5 usec 
+#aliases              actions= 0 time=1 usec 
+#constants            actions= 2 time=4 usec 
+#commonTerms          actions= 0 time=2 usec 
+#projectionpath       actions= 0 time=2 usec 
+#deadcode             actions= 0 time=3 usec 
+#reorder              actions= 1 time=10 usec 
+#matpack              actions= 0 time=0 usec 
+#dataflow             actions= 0 time=4 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=0 usec 
+#deadcode             actions= 0 time=3 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=6 usec 
+#total                actions=29 time=152 usec 
 
 # 15:01:30 >  
 # 15:01:30 >  "Done."

@@ -61,7 +61,7 @@ stdout of test 'manifold.Bug-3556` in directory 'sql/test/BugTracker-2014` itsel
 % mal # name
 % clob # type
 % 206 # length
-function user.s4_1():void;
+function user.s4_0():void;
     X_3:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id as id \n from sys.functions\n) as x;":str, "sequential_pipe":str, 34:int);
     X_33:bat[:str] := bat.new(nil:str);
     X_39:bat[:int] := bat.new(nil:int);
@@ -92,16 +92,16 @@ function user.s4_1():void;
     X_55:bat[:int] := bat.append(X_46:bat[:int], 32:int);
     X_57:bat[:int] := bat.append(X_48:bat[:int], 0:int);
     sql.resultSet(X_49:bat[:str], X_51:bat[:str], X_53:bat[:str], X_55:bat[:int], X_57:bat[:int], X_29:bat[:str], X_19:bat[:int]);
-end user.s4_1;
-#inline               actions= 0 time=3 usec 
-#candidates           actions= 1 time=21 usec 
-#remap                actions= 0 time=7 usec 
-#costModel            actions= 1 time=19 usec 
-#coercions            actions= 0 time=3 usec 
-#evaluate             actions= 2 time=35 usec 
-#emptybind            actions= 0 time=4 usec 
-#pushselect           actions= 0 time=5 usec 
-#aliases              actions= 4 time=28 usec 
+end user.s4_0;
+#inline               actions= 0 time=2 usec 
+#remap                actions= 0 time=3 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=2 usec 
+#aliases              actions= 2 time=5 usec 
+#evaluate             actions= 0 time=5 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 0 time=3 usec 
+#aliases              actions= 0 time=1 usec 
 #mergetable           actions= 0 time=27 usec 
 #deadcode             actions= 4 time=19 usec 
 #aliases              actions= 0 time=5 usec 
@@ -127,7 +127,7 @@ end user.s4_1;
 % mal # name
 % clob # type
 % 210 # length
-function user.s6_1():void;
+function user.s6_0():void;
     X_4:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n from sys.functions\n) as x;":str, "sequential_pipe":str, 41:int);
     X_43:bat[:str] := bat.new(nil:str);
     X_49:bat[:int] := bat.new(nil:int);
@@ -163,14 +163,14 @@ function user.s6_1():void;
     X_65:bat[:int] := bat.append(X_56:bat[:int], 64:int);
     X_67:bat[:int] := bat.append(X_58:bat[:int], 0:int);
     sql.resultSet(X_59:bat[:str], X_61:bat[:str], X_63:bat[:str], X_65:bat[:int], X_67:bat[:int], X_39:bat[:str], X_36:bat[:lng]);
-end user.s6_1;
-#inline               actions= 0 time=3 usec 
-#candidates           actions= 1 time=23 usec 
-#remap                actions= 1 time=78 usec 
-#costModel            actions= 1 time=26 usec 
-#coercions            actions= 0 time=2 usec 
-#evaluate             actions= 3 time=46 usec 
-#emptybind            actions= 0 time=4 usec 
+end user.s6_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 1 time=33 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 3 time=6 usec 
+#evaluate             actions= 1 time=13 usec 
+#emptybind            actions= 0 time=0 usec 
 #pushselect           actions= 0 time=4 usec 
 #aliases              actions= 5 time=30 usec 
 #mergetable           actions= 0 time=35 usec 
@@ -198,7 +198,7 @@ end user.s6_1;
 % mal # name
 % clob # type
 % 211 # length
-function user.s8_1():void;
+function user.s8_0():void;
     X_3:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, abs(id) as id \n from sys.functions\n) as x;":str, "sequential_pipe":str, 37:int);
     X_38:bat[:str] := bat.new(nil:str);
     X_44:bat[:int] := bat.new(nil:int);
@@ -232,23 +232,22 @@ function user.s8_1():void;
     X_60:bat[:int] := bat.append(X_51:bat[:int], 32:int);
     X_62:bat[:int] := bat.append(X_53:bat[:int], 0:int);
     sql.resultSet(X_54:bat[:str], X_56:bat[:str], X_58:bat[:str], X_60:bat[:int], X_62:bat[:int], X_34:bat[:str], X_31:bat[:int]);
-end user.s8_1;
-#inline               actions= 0 time=3 usec 
-#candidates           actions= 1 time=20 usec 
-#remap                actions= 1 time=40 usec 
-#costModel            actions= 1 time=18 usec 
-#coercions            actions= 0 time=3 usec 
-#evaluate             actions= 2 time=36 usec 
-#emptybind            actions= 0 time=5 usec 
-#pushselect           actions= 0 time=5 usec 
-#aliases              actions= 4 time=22 usec 
-#mergetable           actions= 0 time=27 usec 
-#deadcode             actions= 4 time=20 usec 
-#aliases              actions= 0 time=5 usec 
-#constants            actions= 4 time=24 usec 
-#commonTerms          actions= 0 time=12 usec 
-#projectionpath       actions= 0 time=5 usec 
-#reorder              actions= 1 time=33 usec 
+end user.s8_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 1 time=9 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 2 time=6 usec 
+#evaluate             actions= 0 time=5 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 0 time=3 usec 
+#aliases              actions= 0 time=0 usec 
+#mergetable           actions= 0 time=26 usec 
+#deadcode             actions= 0 time=7 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 2 time=7 usec 
+#commonTerms          actions= 0 time=9 usec 
+#projectionpath       actions= 0 time=3 usec 
 #deadcode             actions= 0 time=6 usec 
 #reduce               actions=36 time=35 usec 
 #matpack              actions= 0 time=4 usec 
