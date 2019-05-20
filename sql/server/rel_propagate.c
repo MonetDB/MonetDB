@@ -760,8 +760,8 @@ rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **ex
 
 	aggr = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card,
 					  has_nil(aggr), is_intern(aggr));
-	snprintf(buf, BUFSIZ, "%s: the %s violates the partition %s of values (NB lower limit inclusive, higher limit exclusive)", operation, desc,
-			 isRangePartitionTable(t) ? "range" : "list");
+	snprintf(buf, BUFSIZ, "%s: the %s violates the partition %s of values", operation, desc,
+			 isRangePartitionTable(t) ? "range (NB higher limit exclusive)" : "list");
 	*exception = exp_exception(sql->sa, aggr, buf);
 
 	return sel;
