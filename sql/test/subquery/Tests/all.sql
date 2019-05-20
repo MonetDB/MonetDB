@@ -62,15 +62,15 @@ SELECT i, i <> ANY(SELECT i FROM integers WHERE i>10) FROM integers ORDER BY i;
 	-- 3, false
 
 -- subqueries in GROUP BY clause
-SELECT i >= ALL(SELECT i FROM integers WHERE i IS NOT NULL) AS k, SUM(i) FROM integers GROUP BY k ORDER BY k;
+SELECT i >= ALL(SELECT i FROM integers WHERE i IS NOT NULL) AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k ORDER BY k;
 	-- null, null
 	-- false, 3
 	-- true, 3
-SELECT SUM(i) FROM integers GROUP BY (i >= ALL(SELECT i FROM integers WHERE i IS NOT NULL)) ORDER BY 1; -- NULL, 3, 3
-SELECT i >= ALL(SELECT MIN(i) FROM integers WHERE i IS NOT NULL) AS k, SUM(i) FROM integers GROUP BY k ORDER BY k; 
+SELECT CAST(SUM(i) AS BIGINT) FROM integers GROUP BY (i >= ALL(SELECT i FROM integers WHERE i IS NOT NULL)) ORDER BY 1; -- NULL, 3, 3
+SELECT i >= ALL(SELECT MIN(i) FROM integers WHERE i IS NOT NULL) AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k ORDER BY k;
 	-- NULL, NULL
 	-- true, 6
-SELECT i, SUM(CASE WHEN (i >= ALL(SELECT i FROM integers WHERE i=2)) THEN 1 ELSE 0 END) FROM integers GROUP BY i ORDER BY i;
+SELECT i, CAST(SUM(CASE WHEN (i >= ALL(SELECT i FROM integers WHERE i=2)) THEN 1 ELSE 0 END) AS BIGINT) FROM integers GROUP BY i ORDER BY i;
 	-- null, 0
 	-- 1, 0
 	-- 2, 1
