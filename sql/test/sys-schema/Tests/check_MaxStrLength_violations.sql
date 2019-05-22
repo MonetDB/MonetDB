@@ -2,14 +2,17 @@
 -- All queries should return NO rows (so no violations found).
 
 -- query used to synthesize bam specific SQLs for checking data length violations:
--- select s.name as sch_nm, t.name as tbl_nm, t.type, c.name as col_nm, c.type, c.type_digits
--- , 'SELECT ''"'||s.name||'"."'||t.name||'"."'||c.name||'"'' as full_col_nm, '||c.type_digits||' as max_allowed_length, length("'||c.name||'") as data_length, t."'||c.name||'" as data_value FROM "'||s.name||'"."'||t.name||'" t WHERE "'||c.name||'" IS NOT NULL AND length("'||c.name||'") > (select type_digits from sys._columns where name = '''||c.name||''' and table_id in (select id from tables where name = '''||t.name||''' and schema_id in (select id from sys.schemas where name = '''||s.name||''')));' as validation_qry
---  from sys._columns c join sys._tables t on (c.table_id = t.id) join sys.schemas s on (t.schema_id = s.id)
--- where c.type_digits >= 1
---   and c.type in ('varchar', 'char', 'clob', 'json', 'url')
--- --and t.type <> 1  -- exclude views
---   and s.name not in ('bam')
--- order by sch_nm, tbl_nm, col_nm, c.type, c.type_digits;
+/*
+select -- s.name as sch_nm, t.name as tbl_nm, t.type, c.name as col_nm, c.type, c.type_digits,
+   'SELECT ''"'||s.name||'"."'||t.name||'"."'||c.name||'"'' as full_col_nm, '||c.type_digits||' as max_allowed_length, length("'||c.name||'") as data_length, t."'||c.name||'" as data_value FROM "'||s.name||'"."'||t.name||'" t WHERE "'||c.name||'" IS NOT NULL AND length("'||c.name||'") > (select type_digits from sys._columns where name = '''||c.name||''' and table_id in (select id from tables where name = '''||t.name||''' and schema_id in (select id from sys.schemas where name = '''||s.name||''')));' as validation_qry
+  from sys._columns c join sys._tables t on (c.table_id = t.id) join sys.schemas s on (t.schema_id = s.id)
+ where c.type_digits >= 1
+   and c.type in ('varchar', 'char', 'clob', 'json', 'url')
+ --and t.type <> 1  -- exclude views
+   and s.name not in ('bam')
+ order by s.name, t.name, c.name, c.type, c.type_digits;
+-- 169 rows (in Apr2019)
+*/
 
 SELECT '"sys"."_columns"."default"' as full_col_nm, 2048 as max_allowed_length, length("default") as data_length, t."default" as data_value FROM "sys"."_columns" t WHERE "default" IS NOT NULL AND length("default") > (select type_digits from sys._columns where name = 'default' and table_id in (select id from tables where name = '_columns' and schema_id in (select id from sys.schemas where name = 'sys')));
 SELECT '"sys"."_columns"."name"' as full_col_nm, 1024 as max_allowed_length, length("name") as data_length, t."name" as data_value FROM "sys"."_columns" t WHERE "name" IS NOT NULL AND length("name") > (select type_digits from sys._columns where name = 'name' and table_id in (select id from tables where name = '_columns' and schema_id in (select id from sys.schemas where name = 'sys')));
@@ -108,7 +111,7 @@ SELECT '"sys"."index_types"."index_type_name"' as full_col_nm, 25 as max_allowed
 SELECT '"sys"."key_types"."key_type_name"' as full_col_nm, 15 as max_allowed_length, length("key_type_name") as data_length, t."key_type_name" as data_value FROM "sys"."key_types" t WHERE "key_type_name" IS NOT NULL AND length("key_type_name") > (select type_digits from sys._columns where name = 'key_type_name' and table_id in (select id from tables where name = 'key_types' and schema_id in (select id from sys.schemas where name = 'sys')));
 SELECT '"sys"."keys"."name"' as full_col_nm, 1024 as max_allowed_length, length("name") as data_length, t."name" as data_value FROM "sys"."keys" t WHERE "name" IS NOT NULL AND length("name") > (select type_digits from sys._columns where name = 'name' and table_id in (select id from tables where name = 'keys' and schema_id in (select id from sys.schemas where name = 'sys')));
 SELECT '"sys"."keywords"."keyword"' as full_col_nm, 40 as max_allowed_length, length("keyword") as data_length, t."keyword" as data_value FROM "sys"."keywords" t WHERE "keyword" IS NOT NULL AND length("keyword") > (select type_digits from sys._columns where name = 'keyword' and table_id in (select id from tables where name = 'keywords' and schema_id in (select id from sys.schemas where name = 'sys')));
--- moved queries on "sys"."netcdf_attrs" to netcdf_tables_checks.sql
+-- moved queries on "sys"."netcdf_attrs" and others to netcdf_tables_checks.sql
 SELECT '"sys"."objects"."name"' as full_col_nm, 1024 as max_allowed_length, length("name") as data_length, t."name" as data_value FROM "sys"."objects" t WHERE "name" IS NOT NULL AND length("name") > (select type_digits from sys._columns where name = 'name' and table_id in (select id from tables where name = 'objects' and schema_id in (select id from sys.schemas where name = 'sys')));
 SELECT '"sys"."privilege_codes"."privilege_code_name"' as full_col_nm, 40 as max_allowed_length, length("privilege_code_name") as data_length, t."privilege_code_name" as data_value FROM "sys"."privilege_codes" t WHERE "privilege_code_name" IS NOT NULL AND length("privilege_code_name") > (select type_digits from sys._columns where name = 'privilege_code_name' and table_id in (select id from tables where name = 'privilege_codes' and schema_id in (select id from sys.schemas where name = 'sys')));
 SELECT '"sys"."range_partitions"."maximum"' as full_col_nm, 2048 as max_allowed_length, length("maximum") as data_length, t."maximum" as data_value FROM "sys"."range_partitions" t WHERE "maximum" IS NOT NULL AND length("maximum") > (select type_digits from sys._columns where name = 'maximum' and table_id in (select id from tables where name = 'range_partitions' and schema_id in (select id from sys.schemas where name = 'sys')));

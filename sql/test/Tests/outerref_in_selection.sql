@@ -4,7 +4,7 @@ create table capediff (
 );
 
 SELECT cape_date,(
-    SELECT sum(a.num_at_cape)
+    SELECT cast(sum(a.num_at_cape) as bigint)
         FROM capediff AS a
         WHERE a.cape_date <= b.cape_date) AS numppl
     FROM capediff AS b;

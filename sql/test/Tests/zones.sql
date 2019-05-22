@@ -143,7 +143,7 @@ end;
 declare nearest bigint;
 set nearest=687726014001184891;
 
-select fGetNearestObjIdAllEq(193.75,1.48,0.1) - nearest;
+select cast(fGetNearestObjIdAllEq(193.75,1.48,0.1) - nearest as bigint);
 
 ---------------------------------------------
 drop function fGetNearestObjIdAllEq;

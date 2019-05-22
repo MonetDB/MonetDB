@@ -1,49 +1,68 @@
 stdout of test 'trace` in directory 'sql/test` itself:
 
 
-# 11:14:41 >  
-# 11:14:41 >   mserver5 "--config=/ufs/alink/opt/MonetDB-Nov2009/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/alink/opt/MonetDB-Nov2009/lib/MonetDB5:/ufs/alink/opt/MonetDB-Nov2009/lib/MonetDB5/lib:/ufs/alink/opt/MonetDB-Nov2009/lib/MonetDB5/bin" --set "gdk_dbfarm=/export/scratch0/roberto/wouter/dbfarm-MonetDB-Nov2009"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30924 --set xrpc_port=45771 --set monet_prompt= --trace  "--dbname=mTests_src_test" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 11:14:41 >  
+# 12:44:31 >  
+# 12:44:31 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33160" "--set" "mapi_usock=/var/tmp/mtest-9889/.s.monetdb.33160" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test" "--set" "embedded_r=yes" "--set" "embedded_py=2" "--set" "embedded_c=true"
+# 12:44:31 >  
 
-# MonetDB server v5.16.0, based on kernel v1.34.0
-# Serving database 'mTests_src_test', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Detected 7.753 GiB (8324390912 bytes) main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://loki.ins.cwi.nl:30924/
-# MonetDB/SQL module v2.34.0 loaded
+# MonetDB 5 server v11.34.0 (hg id: 8a60f0f74a17+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 31.305 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:33160/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9889/.s.monetdb.33160
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
 
-#function user.main():void;
-#    clients.quit();
-#end main;
-
-
-# 11:14:41 >  
-# 11:14:41 >  mclient -lsql -i -umonetdb -Pmonetdb --host=loki --port=30924 
-# 11:14:41 >  
-
-# 11:43:05 >  
-# 11:43:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
-# 11:43:05 >  
+# 12:44:32 >  
+# 12:44:32 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9889" "--port=33160"
+# 12:44:32 >  
 
 #set optimizer='sequential_pipe';
-#set trace = 'none'; -- non-documented feature to not get any trace output
-#TRACE SELECT count(*) FROM types;
-% sys.L1 # table_name
-% L1 # name
-% wrd # type
+#TRACE SELECT count(*) FROM types WHERE id < 30 AND systemname <> 'hge';
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
 % 2 # length
-[ 44	]
+[ 26	]
+#TRACE SELECT count(*) FROM types WHERE id < 30 AND systemname <> 'hge';
+% .trace,	.trace # table_name
+% usec,	statement # name
+% bigint,	clob # type
+% 2,	207 # length
+[ 71,	"X_3=0@0:void := querylog.define(\"trace select count(*) from types where id < 30 and systemname <> \\\\'hge\\\\';\":str, \"sequential_pipe\":str, 25:int);"	]
+[ 48,	"X_6=0:int := sql.mvc();"	]
+[ 80,	"X_20=<tmp_146>[35]:bat[:str] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"systemname\":str, 0:int);"	]
+[ 64,	"X_10=<tmp_224>[35]:bat[:int] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"id\":str, 0:int);"	]
+[ 59,	"C_7=<tmp_2340>[35]:bat[:oid] := sql.tid(X_6=0:int, \"sys\":str, \"types\":str);"	]
+[ 84,	"C_88=<tmp_3141>[28]:bat[:oid] := algebra.thetaselect(X_10=<tmp_224>[35]:bat[:int], C_7=<tmp_2340>[35]:bat[:oid], 30:int, \"<\":str);"	]
+[ 71,	"(X_15=<sql_empty_oid_bat>[0]:bat[:oid], X_16=<sql_empty_int_bat>[0]:bat[:int]) := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"id\":str, 2:int);"	]
+[ 73,	"C_89=<tmp_3052>[0]:bat[:oid] := algebra.thetaselect(X_16=<sql_empty_int_bat>[0]:bat[:int], nil:bat[:oid], 30:int, \"<\":str);"	]
+[ 65,	"X_13=<sql_empty_int_bat>[0]:bat[:int] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"id\":str, 1:int);"	]
+[ 74,	"C_91=<tmp_2767>[0]:bat[:oid] := algebra.thetaselect(X_13=<sql_empty_int_bat>[0]:bat[:int], C_7=<tmp_2340>[35]:bat[:oid], 30:int, \"<\":str);"	]
+[ 73,	"C_29=<tmp_3141>[28]:bat[:oid] := sql.subdelta(C_88=<tmp_3141>[28]:bat[:oid], C_7=<tmp_2340>[35]:bat[:oid], X_15=<sql_empty_oid_bat>[0]:bat[:oid], C_89=<tmp_3052>[0]:bat[:oid], C_91=<tmp_2767>[0]:bat[:oid]);"	]
+[ 70,	"C_92=<tmp_2767>[26]:bat[:oid] := algebra.thetaselect(X_20=<tmp_146>[35]:bat[:str], C_29=<tmp_3141>[28]:bat[:oid], \"hge\":str, \"!=\":str);"	]
+[ 74,	"(X_23=<sql_empty_oid_bat>[0]:bat[:oid], X_24=<sql_empty_str_bat>[0]:bat[:str]) := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"systemname\":str, 2:int);"	]
+[ 66,	"C_93=<tmp_3052>[0]:bat[:oid] := algebra.thetaselect(X_24=<sql_empty_str_bat>[0]:bat[:str], nil:bat[:oid], \"hge\":str, \"!=\":str);"	]
+[ 64,	"X_22=<sql_empty_str_bat>[0]:bat[:str] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"systemname\":str, 1:int);"	]
+[ 65,	"C_95=<tmp_2340>[0]:bat[:oid] := algebra.thetaselect(X_22=<sql_empty_str_bat>[0]:bat[:str], C_29=<tmp_3141>[28]:bat[:oid], \"hge\":str, \"!=\":str);"	]
+[ 77,	"C_36=<tmp_2767>[26]:bat[:oid] := sql.subdelta(C_92=<tmp_2767>[26]:bat[:oid], C_29=<tmp_3141>[28]:bat[:oid], X_23=<sql_empty_oid_bat>[0]:bat[:oid], C_93=<tmp_3052>[0]:bat[:oid], C_95=<tmp_2340>[0]:bat[:oid]);"	]
+[ 47,	"X_40=26:lng := aggr.count(C_36=<tmp_2767>[26]:bat[:oid]);"	]
+[ 90,	"sql.resultSet(\"sys.L3\":str, \"L3\":str, \"bigint\":str, 64:int, 0:int, 7:int, X_40=26:lng);"	]
 #SELECT COUNT(*) FROM tracelog();
-% .L1 # table_name
-% L1 # name
-% wrd # type
+% .L4 # table_name
+% L4 # name
+% bigint # type
 % 2 # length
-[ 16	]
+[ 19	]
 
-# 11:14:41 >  
-# 11:14:41 >  Done.
-# 11:14:41 >  
+# 12:44:32 >  
+# 12:44:32 >  "Done."
+# 12:44:32 >  
 
