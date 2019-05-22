@@ -21,8 +21,8 @@ insert into "t1" values
 -- Works
 select
     "c1",
-    sum("d1") as "d1",
-    sum("d2") as "d2"
+    cast(sum("d1") as bigint) as "d1",
+    cast(sum("d2") as bigint) as "d2"
 from "t1"
 group by "c1"
 having sum("d1") < case when 5 > 10 then 500 else 400 end;
@@ -30,18 +30,18 @@ having sum("d1") < case when 5 > 10 then 500 else 400 end;
 -- Works
 select
     "c1",
-    sum("d1")as "d1",
-    sum("d2") as "d2",
-    1.0 * sum("d1") / (1.0 * case when sum("d2") > 0 then sum("d2") else null end) as "formula"
+    cast(sum("d1")as bigint)as "d1",
+    cast(sum("d2") as bigint) as "d2",
+    cast(1.0 * sum("d1") / (1.0 * case when sum("d2") > 0 then sum("d2") else null end) as decimal(18,3)) as "formula"
 from "t1"
 group by "c1";
 
 -- Crashes
 select
     "c1",
-    sum("d1")as "d1",
-    sum("d2") as "d2",
-    1.0 * sum("d1") / (1.0 * case when sum("d2") > 0 then sum("d2") else null end) as "formula"
+    cast(sum("d1")as bigint)as "d1",
+    cast(sum("d2") as bigint) as "d2",
+    cast(1.0 * sum("d1") / (1.0 * case when sum("d2") > 0 then sum("d2") else null end) as decimal(18,3)) as "formula"
 from "t1"
 group by "c1"
 having (1.0 * sum("d1") / (1.0 * case when sum("d2") > 0 then sum("d2") else null end)) > 1;

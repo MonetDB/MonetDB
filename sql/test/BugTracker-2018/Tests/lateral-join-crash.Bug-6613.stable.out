@@ -29,7 +29,7 @@ stdout of test 'lateral-join-crash.Bug-6613` in directory 'sql/test/BugTracker-2
 #select t.* from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1) as t;
 % .t # table_name
 % value # name
-% bigint # type
+% int # type
 % 2 # length
 [ 1	]
 [ 2	]
@@ -58,7 +58,7 @@ stdout of test 'lateral-join-crash.Bug-6613` in directory 'sql/test/BugTracker-2
 #select t.value, s.distance, s.speed from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1) as t;
 % .t,	sys.s,	sys.s # table_name
 % value,	distance,	speed # name
-% bigint,	int,	int # type
+% int,	int,	int # type
 % 2,	1,	1 # length
 [ 1,	1,	1	]
 [ 2,	1,	1	]
@@ -87,7 +87,7 @@ stdout of test 'lateral-join-crash.Bug-6613` in directory 'sql/test/BugTracker-2
 #select * from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1);
 % sys.s,	sys.s,	sys.s,	.L2 # table_name
 % meter,	distance,	speed,	value # name
-% int,	int,	int,	bigint # type
+% int,	int,	int,	int # type
 % 1,	1,	1,	2 # length
 [ 1,	1,	1,	1	]
 [ 1,	1,	1,	2	]
@@ -116,7 +116,7 @@ stdout of test 'lateral-join-crash.Bug-6613` in directory 'sql/test/BugTracker-2
 #select t.*, s.distance, s.speed from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1) as t;
 % .t,	sys.s,	sys.s # table_name
 % value,	distance,	speed # name
-% bigint,	int,	int # type
+% int,	int,	int # type
 % 2,	1,	1 # length
 [ 1,	1,	1	]
 [ 2,	1,	1	]
@@ -145,7 +145,7 @@ stdout of test 'lateral-join-crash.Bug-6613` in directory 'sql/test/BugTracker-2
 #select t.meter, s.distance, s.speed from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1) as t(meter);
 % .t,	sys.s,	sys.s # table_name
 % meter,	distance,	speed # name
-% bigint,	int,	int # type
+% int,	int,	int # type
 % 2,	1,	1 # length
 [ 1,	1,	1	]
 [ 2,	1,	1	]
@@ -174,7 +174,7 @@ stdout of test 'lateral-join-crash.Bug-6613` in directory 'sql/test/BugTracker-2
 #select t.*, s.distance, s.speed from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1) as t(meter);
 % .t,	sys.s,	sys.s # table_name
 % meter,	distance,	speed # name
-% bigint,	int,	int # type
+% int,	int,	int # type
 % 2,	1,	1 # length
 [ 1,	1,	1	]
 [ 2,	1,	1	]
