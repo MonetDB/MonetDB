@@ -2539,9 +2539,6 @@ AS_CASE([$host],
 		ac_cv_func_fdatasync=no],
 	[
 		AC_CHECK_FUNCS([fdatasync])])
-
-
-
 AS_VAR_IF([ac_cv_func_fdatasync], [yes],
 	[AC_DEFINE([HAVE_FDATASYNC], 1, [If the system has a working fdatasync])])
 
