@@ -2528,14 +2528,20 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 		[Define if NAN cannot be used as static initializer])])
 
 #    checks for library functions
+dnl Luck has it that OSX 10.6 (Snow Leopard) corresponds with
+dnl darwin10.*.*.  That means that we can simply check for
+dnl darwin[0-9][0-9] to match 10.6 and later.
 AS_CASE([$host],
-	[*-darwin1[[012345678]]*], [
+	[*-darwin[[0-9]][[0-9]]*], [
 		# OSX 10.6 (Snow Leopard) and up somehow makes
 		# configure believe that fdatasync exists, in
 		# reality however, it does not on this platform.
 		ac_cv_func_fdatasync=no],
 	[
 		AC_CHECK_FUNCS([fdatasync])])
+
+
+
 AS_VAR_IF([ac_cv_func_fdatasync], [yes],
 	[AC_DEFINE([HAVE_FDATASYNC], 1, [If the system has a working fdatasync])])
 
