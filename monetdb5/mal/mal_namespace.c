@@ -18,21 +18,22 @@
 #define MAXIDENTIFIERS 4096
 #define HASHMASK  4095
 
+MT_Lock mal_namespaceLock = MT_LOCK_INITIALIZER("mal_namespaceLk");
+
 /* taken from gdk_atoms */
 #define NME_HASH(_key,y,K)								\
-    do {												\
-        size_t _i;										\
-        for (_i = y = 0; _i < K && _key[_i]; _i++) {	\
-            y += _key[_i];								\
-            y += (y << 10);								\
-            y ^= (y >> 6);								\
-        }												\
-        y += (y << 3);									\
-        y ^= (y >> 11);									\
-        y += (y << 15);									\
+	do {												\
+		size_t _i;										\
+		for (_i = y = 0; _i < K && _key[_i]; _i++) {	\
+			y += _key[_i];								\
+			y += (y << 10);								\
+			y ^= (y >> 6);								\
+		}												\
+		y += (y << 3);									\
+		y ^= (y >> 11);									\
+		y += (y << 15);									\
 		y = y & HASHMASK;								\
-    } while (0)
-
+	} while (0)
 
 typedef struct NAME{
 	struct NAME *next;
