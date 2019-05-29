@@ -23,7 +23,7 @@ stdout of test 'TribooleanFailureWithSubquery.SF-2679434` in directory 'sql/test
 # 11:47:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"
 # 11:47:36 >  
 
-#SELECT SUM(a) AS suma
+#SELECT cast( SUM(a) as bigint) AS suma
 #FROM ( 
 #  SELECT *
 #  FROM ( 
@@ -32,12 +32,13 @@ stdout of test 'TribooleanFailureWithSubquery.SF-2679434` in directory 'sql/test
 #  WHERE b IN ('y')
 #) sub2
 #;
-% .L12 # table_name
+% . # table_name
+# .L13 # table_name
 % suma # name
 % bigint # type
 % 1 # length
-[ NULL	]
-#SELECT SUM(a) AS suma
+[ NULL  ]
+#SELECT cast( SUM(a) as bigint) AS suma
 #FROM ( 
 #  SELECT *
 #  FROM ( 
@@ -47,12 +48,13 @@ stdout of test 'TribooleanFailureWithSubquery.SF-2679434` in directory 'sql/test
 #) sub2
 #HAVING SUM(a) IS NULL
 #;
-% .L11 # table_name
+% . # table_name
+# .L12 # table_name
 % suma # name
 % bigint # type
 % 1 # length
-[ NULL	]
-#SELECT SUM(a) AS suma
+[ NULL  ]
+#SELECT cast( SUM(a) as bigint) AS suma
 #FROM ( 
 #  SELECT *
 #  FROM ( 
@@ -62,11 +64,12 @@ stdout of test 'TribooleanFailureWithSubquery.SF-2679434` in directory 'sql/test
 #) sub2
 #HAVING SUM(a) IS NOT NULL
 #;
-% .L11 # table_name
+% . # table_name
+# .L12 # table_name
 % suma # name
 % bigint # type
 % 1 # length
-#SELECT SUM(a) AS suma
+#SELECT cast( SUM(a) as bigint) AS suma
 #FROM ( 
 #  SELECT *
 #  FROM ( 
@@ -76,66 +79,114 @@ stdout of test 'TribooleanFailureWithSubquery.SF-2679434` in directory 'sql/test
 #) sub2
 #HAVING SUM(a) > 0
 #;
-% .L11 # table_name
+% . # table_name
+# .L12 # table_name
 % suma # name
 % bigint # type
 % 1 # length
-
-% .sub3,	.sub3 # table_name
-% suma,	mynull # name
-% bigint,	char # type
-% 1,	0 # length
-
-% .sub3,	.sub3 # table_name
-% suma,	mynull # name
-% bigint,	char # type
-% 1,	0 # length
-
-% .sub,	.sub # table_name
-% a,	b # name
-% tinyint,	char # type
-% 1,	0 # length
-
-% .sub,	.sub # table_name
-% a,	b # name
-% tinyint,	char # type
-% 1,	0 # length
-[ 1	]
-
-% sys.dummy,	sys.dummy # table_name
-% a,	b # name
-% int,	int # type
-% 1,	1 # length
-[ 1,	NULL	]
-
-% sys.dummy,	sys.dummy # table_name
-% a,	b # name
-% int,	int # type
-% 1,	1 # length
-
-% sys.dummy,	sys.dummy # table_name
-% a,	b # name
-% int,	int # type
-% 1,	1 # length
-
-% sys.dummy,	sys.dummy # table_name
-% a,	b # name
-% int,	int # type
-% 1,	1 # length
-
-% sys.dummy,	sys.dummy # table_name
-% a,	b # name
-% int,	int # type
-% 1,	1 # length
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
+#SELECT * 
+#FROM (
+#  SELECT cast( SUM(a) as bigint) AS suma, NULL AS mynull
+#  FROM ( 
+#    SELECT *
+#    FROM ( 
+#      SELECT 1 AS a, 'x' AS b
+#      ) sub
+#    WHERE b IN ('y')
+#  ) sub2
+#) sub3
+#WHERE suma > 0
+#;
+% .sub3,        .sub3 # table_name
+% suma, mynull # name
+% bigint,       char # type
+% 1,    0 # length
+#SELECT *
+#FROM (
+#  SELECT cast( SUM(a) as bigint) AS suma, NULL AS mynull
+#  FROM ( 
+#    SELECT *
+#    FROM ( 
+#      SELECT 1 AS a, 'x' AS b
+#      ) sub
+#    WHERE b IN ('y')
+#  ) sub2
+#) sub3
+#WHERE mynull > 0
+#;
+% .sub3,        .sub3 # table_name
+% suma, mynull # name
+% bigint,       char # type
+% 1,    0 # length
+#SELECT * 
+#FROM (
+#  SELECT 1 AS a, NULL AS b
+#) sub
+#WHERE b>0
+#;
+% .sub, .sub # table_name
+% a,    b # name
+% tinyint,      char # type
+% 1,    0 # length
+#SELECT * 
+#FROM (
+#  SELECT 1 AS a, NULL AS b
+#) sub
+#WHERE NOT b<=0
+#;
+% .sub, .sub # table_name
+% a,    b # name
+% tinyint,      char # type
+% 1,    0 # length
+#CREATE TABLE dummy (a INTEGER, b INTEGER);
+#INSERT INTO dummy VALUES (1, NULL);
+[ 1     ]
+#SELECT * FROM dummy;
+% sys.dummy,    sys.dummy # table_name
+% a,    b # name
+% int,  int # type
+% 1,    1 # length
+[ 1,    NULL    ]
+#SELECT * FROM dummy WHERE b>0;
+% sys.dummy,    sys.dummy # table_name
+% a,    b # name
+% int,  int # type
+% 1,    1 # length
+#SELECT * FROM dummy WHERE NOT b<=0;
+% sys.dummy,    sys.dummy # table_name
+% a,    b # name
+% int,  int # type
+% 1,    1 # length
+#SELECT * FROM dummy WHERE NOT b>0;
+% sys.dummy,    sys.dummy # table_name
+% a,    b # name
+% int,  int # type
+% 1,    1 # length
+#SELECT * FROM dummy WHERE b<=0;
+% sys.dummy,    sys.dummy # table_name
+% a,    b # name
+% int,  int # type
+% 1,    1 # length
+#DROP table dummy;
+#CREATE TABLE dummy (a BOOLEAN, b BOOLEAN);
+#INSERT INTO dummy VALUES (TRUE, TRUE);
+[ 1     ]
+#INSERT INTO dummy VALUES (TRUE, FALSE);
+[ 1     ]
+#INSERT INTO dummy VALUES (TRUE, NULL);
+[ 1     ]
+#INSERT INTO dummy VALUES (FALSE, TRUE);
+[ 1     ]
+#INSERT INTO dummy VALUES (FALSE, FALSE);
+[ 1     ]
+#INSERT INTO dummy VALUES (FALSE, NULL);
+[ 1     ]
+#INSERT INTO dummy VALUES (NULL, TRUE);
+[ 1     ]
+#INSERT INTO dummy VALUES (NULL, FALSE);
+[ 1     ]
+#INSERT INTO dummy VALUES (NULL, NULL);
+[ 1     ]
 #SELECT 
 #  a
 #, b
@@ -150,19 +201,21 @@ stdout of test 'TribooleanFailureWithSubquery.SF-2679434` in directory 'sql/test
 #, a AND b AS "a_AND_b"
 #FROM dummy
 #;
-% sys.dummy,	sys.dummy,	sys.L4,	sys.L6,	sys.L10,	sys.L12,	sys.L14,	sys.L16,	sys.L20,	sys.L22,	sys.L24 # table_name
-% a,	b,	NOT_a,	a_EQ_b,	a_NE_b,	a_LT_b,	a_LE_b,	a_GT_b,	a_GE_b,	a_OR_b,	a_AND_b # name
-% boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
-% 5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length
-[ true,	true,	false,	true,	false,	false,	true,	false,	true,	true,	true	]
-[ true,	false,	false,	false,	true,	false,	false,	true,	true,	true,	false	]
-[ true,	NULL,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	true,	NULL	]
-[ false,	true,	true,	false,	true,	true,	true,	false,	false,	true,	false	]
-[ false,	false,	true,	true,	false,	false,	true,	false,	true,	false,	false	]
-[ false,	NULL,	true,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	false	]
-[ NULL,	true,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	true,	NULL	]
-[ NULL,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	false	]
-[ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+% sys.dummy,    sys.dummy,      sys.,   sys.,   sys.,   sys.,   sys.,   sys.,   sys.,   sys.,   sys. # table_name
+# sys.dummy,    sys.dummy,      sys.L4, sys.L6, sys.L10,        sys.L12,        sys.L14,        sys.L16,        sys.L20,        sys.L22,        sys.L24 # table_name
+% a,    b,      NOT_a,  a_EQ_b, a_NE_b, a_LT_b, a_LE_b, a_GT_b, a_GE_b, a_OR_b, a_AND_b # name
+% boolean,      boolean,        boolean,        boolean,        boolean,        boolean,        boolean,        boolean,        boolean,        boolean,        boolean # type
+% 5,    5,      5,      5,      5,      5,      5,      5,      5,      5,      5 # length
+[ true, true,   false,  true,   false,  false,  true,   false,  true,   true,   true    ]
+[ true, false,  false,  false,  true,   false,  false,  true,   true,   true,   false   ]
+[ true, NULL,   false,  NULL,   NULL,   NULL,   NULL,   NULL,   NULL,   true,   NULL    ]
+[ false,        true,   true,   false,  true,   true,   true,   false,  false,  true,   false   ]
+[ false,        false,  true,   true,   false,  false,  true,   false,  true,   false,  false   ]
+[ false,        NULL,   true,   NULL,   NULL,   NULL,   NULL,   NULL,   NULL,   NULL,   false   ]
+[ NULL, true,   NULL,   NULL,   NULL,   NULL,   NULL,   NULL,   NULL,   true,   NULL    ]
+[ NULL, false,  NULL,   NULL,   NULL,   NULL,   NULL,   NULL,   NULL,   NULL,   false   ]
+[ NULL, NULL,   NULL,   NULL,   NULL,   NULL,   NULL,   NULL,   NULL,   NULL,   NULL    ]
+#DROP table dummy;
 
 # 11:12:20 >  
 # 11:12:20 >  Done.
