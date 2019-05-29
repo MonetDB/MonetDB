@@ -566,7 +566,6 @@ MOSthetaselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 		MOSskipit();\
 		framedecompress(i);\
 		*v++ = frame + task->hdr->frame.val##TPE[j];\
-		task->n--;\
 		task->cnt++;\
 	}\
 }

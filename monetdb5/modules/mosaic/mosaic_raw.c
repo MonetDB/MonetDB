@@ -577,7 +577,6 @@ MOSthetaselect_raw(Client cntxt,  MOStask task, void *val, str oper)
 	for(; first < last; first++, val++){\
 		MOSskipit();\
 		*v++ = *val;\
-		task->n--;\
 		task->cnt++;\
 	}\
 	task->src = (char*) v;\
@@ -610,7 +609,6 @@ MOSprojection_raw(Client cntxt,  MOStask task)
 			for(; first < last; first++, val++){
 				MOSskipit();
 				*v++ = *val;
-				task->n--;
 				task->cnt++;
 			}
 			task->src = (char*) v;

@@ -178,7 +178,7 @@ if ( task->n && task->cl ){\
 	if (task->n <= 0 || *task->cl > (oid) first )\
 		continue;\
 	if ( *task->cl == (oid) first ){\
-		task->cl++; \
+		task->cl++; task->n--; \
 	}\
 } else if (task->cl) continue;
 

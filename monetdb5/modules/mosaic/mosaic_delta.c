@@ -643,7 +643,6 @@ MOSthetaselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 	for(; first < last; first++, val+= *delta,delta++){\
 		MOSskipit();\
 		*v++ = val;\
-		task->n--;\
 		task->cnt++;\
 	}\
 	task->src = (char*) v;\
@@ -677,7 +676,6 @@ MOSprojection_delta(Client cntxt,  MOStask task)
 			for(; first < last; first++, val+= *delta, delta++){
 				MOSskipit();
 				*v++ = val;
-				task->n--;
 				task->cnt++;
 			}
 			task->src = (char*) v;

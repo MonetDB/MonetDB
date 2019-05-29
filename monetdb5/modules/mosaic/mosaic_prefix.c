@@ -972,7 +972,6 @@ MOSthetaselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 		v = val | decompress(base,i,bits);\
 		value =  (TPE) ((TPE2)val |(TPE2) v);\
 		*r++ = value;\
-		task->n--;\
 		task->cnt++;\
 	}\
 	task->src = (char*) r;\
@@ -1010,7 +1009,6 @@ MOSprojection_prefix(Client cntxt,  MOStask task)
 		v = val | decompress(base,i,bits);
 		value =  (flt) ((unsigned int)val |(unsigned int) v);
 		*r++ = value;
-		task->n--;
 		task->cnt++;
 	}
 	task->src = (char*) r;

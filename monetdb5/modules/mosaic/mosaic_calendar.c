@@ -539,7 +539,6 @@ MOSthetaselect_calendar(Client cntxt,  MOStask task, void *val, str oper)
 		MOSskipit();\
 		j= getBitVector(base,i,(int) hdr->bits ); \
 		*v++ = task->hdr->dict.val##TPE[(j>>MASKBITS) & task->hdr->mask] | ( j & MASKDAY);\
-		task->n--;\
 		task->cnt++;\
 	}\
 	task->src = (char*) v;\

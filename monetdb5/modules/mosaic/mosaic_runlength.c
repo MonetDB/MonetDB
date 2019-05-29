@@ -621,7 +621,6 @@ MOSthetaselect_runlength(Client cntxt,  MOStask task, void *val, str oper)
 	for(; first < last; first++){\
 		MOSskipit();\
 		*v++ = val;\
-		task->n--;\
 		task->cnt++;\
 	}\
 	task->src = (char*) v;\
@@ -655,7 +654,6 @@ MOSprojection_runlength(Client cntxt,  MOStask task)
 			for(; first < last; first++){
 				MOSskipit();
 				*v++ = val;
-				task->n--;
 				task->cnt++;
 			}
 			task->src = (char*) v;

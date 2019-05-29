@@ -711,7 +711,6 @@ MOSthetaselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
 		MOSskipit();\
 		j= getBitVector(base,i,(int) hdr->bits); \
 		*v++ = task->hdr->dict.val##TPE[j];\
-		task->n--;\
 		task->cnt++;\
 	}\
 	task->src = (char*) v;\
@@ -747,7 +746,6 @@ MOSprojection_dictionary(Client cntxt,  MOStask task)
 				MOSskipit();
 				j= getBitVector(base,i,(int) hdr->bits); \
 				*v++ = task->hdr->dict.valint[j];
-				task->n--;
 				task->cnt++;
 			}
 			task->src = (char*) v;
