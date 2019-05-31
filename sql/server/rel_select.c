@@ -1157,7 +1157,7 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 static int
 rel_set_type_param(mvc *sql, sql_subtype *type, sql_exp *param, int upcast)
 {
-	if (!type || !param || param->type != e_atom)
+	if (!type || !param || (param->type != e_atom && param->type != e_column))
 		return -1;
 
 	/* use largest numeric types */

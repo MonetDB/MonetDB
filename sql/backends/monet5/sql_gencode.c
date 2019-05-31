@@ -638,11 +638,11 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 		return -1;
 	be->mvc_var = getDestVar(q);
 	be->mb = mb;
-       	s = sql_relation2stmt(be, r);
+	s = sql_relation2stmt(be, r);
 	if (!s) {
 		if (querylog)
 			(void) pushInt(mb, querylog, mb->stop);
-		return 0;
+		return (be->mvc->errstr[0] == '\0') ? 0 : -1;
 	}
 
 	be->mvc_var = old_mv;
@@ -741,8 +741,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 			sql_type *tpe = atom_type(a)->type;
 			int type, varid = 0;
 
-			if(!tpe) {
-				sql_error(m, 003, SQLSTATE(42000) "Could not determine type for argument %d\n", argc+1);
+			if (!tpe) {
+				sql_error(m, 003, SQLSTATE(42000) "Could not determine type for argument number %d\n", argc+1);
 				goto cleanup;
 			}
 			type = tpe->localtype;
@@ -762,8 +762,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 			sql_type *tpe = a->type.type;
 			int type, varid = 0;
 
-			if(!tpe) {
-				sql_error(m, 003, SQLSTATE(42000) "Could not determine type for argument %d\n", argc+1);
+			if (!tpe) {
+				sql_error(m, 003, SQLSTATE(42000) "Could not determine type for argument number %d\n", argc+1);
 				goto cleanup;
 			}
 			type = tpe->localtype;
