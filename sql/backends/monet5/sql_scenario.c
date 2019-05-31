@@ -636,32 +636,30 @@ SQLautocommit(mvc *m)
 	return msg;
 }
 
-void
+str
 SQLtrans(mvc *m)
 {
 	m->caching = m->cache;
 	if (!m->session->active) {
 		sql_session *s;
 
-		if(mvc_trans(m) < 0) {
-			(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure while starting the transaction");
-			return;
-		}
+		if (mvc_trans(m) < 0)
+			throw(SQL, "sql.trans", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		s = m->session;
 		if (!s->schema) {
 			if (s->schema_name)
 				GDKfree(s->schema_name);
 			s->schema_name = monet5_user_get_def_schema(m, m->user_id);
-			if(!s->schema_name) {
+			if (!s->schema_name) {
 				mvc_cancel_session(m);
-				(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure while starting the transaction");
-				return;
+				throw(SQL, "sql.trans", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			assert(s->schema_name);
 			s->schema = find_sql_schema(s->tr, s->schema_name);
 			assert(s->schema);
 		}
 	}
+	return MAL_SUCCEED;
 }
 
 #ifdef HAVE_EMBEDDED
@@ -1007,16 +1005,11 @@ SQLparser(Client c)
 #endif
 	m = be->mvc;
 	m->type = Q_PARSE;
-	if (be->language != 'X')
-		SQLtrans(m);
-	if(*m->errstr) {
-		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
-			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-		else
-			msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
-		*m->errstr=0;
-		c->mode = FINISHCLIENT;
-		return msg;
+	if (be->language != 'X') {
+		if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
+			c->mode = FINISHCLIENT;
+			return msg;
+		}
 	}
 	pstatus = m->session->status;
 
@@ -1038,7 +1031,8 @@ SQLparser(Client c)
 			n = sscanf(in->buf + in->pos + 7, "%d %d %d", &v, &off, &len);
 
 		if (n == 2 || n == 3) {
-			mvc_export_chunk(be, out, v, off, n == 3 ? len : m->reply_size);
+			if (mvc_export_chunk(be, out, v, off, n == 3 ? len : m->reply_size))
+				throw(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed");
 
 			in->pos = in->len;	/* HACK: should use parsed length */
 			return MAL_SUCCEED;

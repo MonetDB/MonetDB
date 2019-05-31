@@ -19,7 +19,7 @@ sql5_export str SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 sql5_export str SQLepilogue(void *ret);
 
 sql5_export str SQLautocommit(mvc *m);
-sql5_export void SQLtrans(mvc *m);
+sql5_export str SQLtrans(mvc *m);
 
 sql5_export str SQLexit(Client c);
 sql5_export str SQLexitClient(Client c);
