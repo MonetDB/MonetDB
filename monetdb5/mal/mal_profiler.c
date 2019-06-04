@@ -21,7 +21,7 @@
 #include "mal_listing.h"
 #include "mal_profiler.h"
 #include "mal_runtime.h"
-#include "mal_debugger.h"
+#include "mal_utils.h"
 #include "mal_resource.h"
 
 #ifdef HAVE_SYS_TIME_H
@@ -168,12 +168,14 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	logadd("\"tag\":%d,%s", stk?stk->tag:0, prettify);
 	logadd("\"module\":\"%s\",%s", pci->modname ? pci->modname : "", prettify);
 	logadd("\"instruction\":\"%s\",%s", pci->fcnname ? pci->fcnname : "", prettify);
-	char *uuid;
-	if ((c = msab_getUUID(&uuid)) == NULL) {
-		logadd("\"session\":\"%s\",%s", uuid, prettify);
-		free(uuid);
-	} else
-		free(c);
+	if (!GDKinmemory()) {
+		char *uuid;
+		if ((c = msab_getUUID(&uuid)) == NULL) {
+			logadd("\"session\":\"%s\",%s", uuid, prettify);
+			free(uuid);
+		} else
+			free(c);
+	}
 
 	if( start){
 		logadd("\"state\":\"start\",%s", prettify);
@@ -461,12 +463,14 @@ profilerHeartbeatEvent(char *alter)
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
 	logadd("\"source\":\"heartbeat\",%s", prettify);
-	char *uuid, *err;
-	if ((err = msab_getUUID(&uuid)) == NULL) {
-		logadd("\"session\":\"%s\",%s", uuid, prettify);
-		free(uuid);
-	} else
-		free(err);
+	if (GDKinmemory()) {
+		char *uuid, *err;
+		if ((err = msab_getUUID(&uuid)) == NULL) {
+			logadd("\"session\":\"%s\",%s", uuid, prettify);
+			free(uuid);
+		} else
+			free(err);
+	}
 	logadd("\"clk\":"LLFMT",%s",usec,prettify);
 	logadd("\"ctime\":%"PRIu64",%s", microseconds, prettify);
 	logadd("\"rss\":%zu,%s", MT_getrss()/1024/1024, prettify);

@@ -58,37 +58,6 @@ pseudo(bat *ret, BAT *b, const char *X1, const char *X2, const char *X3) {
 	BBPkeepref(*ret);
 	return 0;
 }
-#if 0
-str
-MDBtoggle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	int b = 0;
-
-	(void) mb;		/* still unused */
-	if (p->argc == 1) {
-		/* Toggle */
-		stk->cmd = stk->cmd ? 0 : 's';
-		cntxt->itrace = cntxt->itrace ? 0 : 's';
-		if (stk->cmd)
-			MDBdelay = 1;	/* wait for real command */
-		if (stk->up)
-			stk->up->cmd = 0;
-		return MAL_SUCCEED;
-	}
-	if (p->argc > 1) {
-		b = *getArgReference_int(stk, p, 1);
-	} else
-		b = stk->cmd;
-	if (b)
-		MDBdelay = 1;	/* wait for real command */
-	MDBstatus(b);
-	stk->cmd = b ? 'n' : 0;
-	if (stk->up)
-		stk->up->cmd = b ? 'n' : 0;
-	cntxt->itrace = b ? 'n' : 0;
-	return MAL_SUCCEED;
-}
-#endif
 
 str
 MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -700,8 +669,7 @@ TBL_getdir(void)
 				BBPreclaim(b);
 				return NULL;
 			}
-			strncpy(cur_dir, mod_path, l);
-			cur_dir[l] = 0;
+			strncpy(cur_dir, mod_path, l + 1); /* including NULL byte */
 			if ((mod_path = p) != NULL) {
 				while (*mod_path == PATH_SEP)
 					mod_path++;

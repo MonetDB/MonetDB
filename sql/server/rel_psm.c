@@ -856,7 +856,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 						arg_list = tpe;
 					}
 				}
-				(void)sql_error(sql, 02, SQLSTATE(42000) "CREATE %s%s: name '%s' (%s) already in use", KF, F, fname, arg_list);
+				(void)sql_error(sql, 02, SQLSTATE(42000) "CREATE %s%s: name '%s' (%s) already in use", KF, F, fname, arg_list ? arg_list : "");
 				_DELETE(arg_list);
 				list_destroy(type_list);
 				return NULL;

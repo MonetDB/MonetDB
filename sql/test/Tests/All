@@ -1,4 +1,3 @@
-
 # Run these first so comment-dump doesn't encounter
 # leftovers from other tests
 comment-dump
@@ -8,17 +7,10 @@ comment-auth
 bincopycollist-prepare
 bincopycollist
 
-HAVE_FITS&HAVE_GEOM&HAVE_LIDAR&HAVE_SHP&HAVE_NETCDF&HAVE_SAMTOOLS?systemfunctions
 example
 example-queries
 example-drop
-#
-##big-example
-#
-#example
-#example-queries
 #example-rangeselect
-#example-drop
 ##
 #example
 #example-delete1
@@ -108,7 +100,7 @@ ifexists
 ifexists-views
 subqueries
 
-#HAVE_GEOM?trace
+trace
 
 HAVE_JDBCCLIENT_JAR?bogus-auto-generated-keys
 

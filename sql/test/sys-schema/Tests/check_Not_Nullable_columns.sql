@@ -6,10 +6,12 @@
 --   where c."null" = false and t.type not in (1, 11) order by s.name, t.name, c.name;
 
 -- query used to synthesize SQLs (excluding bam schema) for checking where the NOT NULL column has a NULL value
--- select 'SELECT "'||c.name||'", * FROM "'||s.name||'"."'||t.name||'" WHERE "'||c.name||'" IS NULL;' AS qry
---   from columns c join tables t on c.table_id = t.id join schemas s on t.schema_id = s.id
---  where c."null" = false and t.type not in (1, 11) and s.name <> 'bam' order by s.name, t.name, c.name;
--- 20 rows:
+/*
+select 'SELECT "'||c.name||'", * FROM "'||s.name||'"."'||t.name||'" WHERE "'||c.name||'" IS NULL;' AS qry
+  from columns c join tables t on c.table_id = t.id join schemas s on t.schema_id = s.id
+ where c."null" = false and t.type not in (1, 11) and s.name <> 'bam' order by s.name, t.name, c.name;
+-- 29 rows (in Apr2019)
+*/
 -- all in sys schema
 SELECT "id", * FROM "sys"."comments" WHERE "id" IS NULL;
 SELECT "remark", * FROM "sys"."comments" WHERE "remark" IS NULL;
@@ -49,7 +51,7 @@ SELECT "table", * FROM "sys"."storagemodelinput" WHERE "table" IS NULL;
 SELECT "type", * FROM "sys"."storagemodelinput" WHERE "type" IS NULL;
 SELECT "typewidth", * FROM "sys"."storagemodelinput" WHERE "typewidth" IS NULL;
 
-SELECT "function_id", * FROM "sys"."systemfunctions" WHERE "function_id" IS NULL;
+SELECT "function_id", * FROM "sys"."systemfunctions" WHERE "function_id" IS NULL;   -- has become a view from Apr2019
 
 SELECT "table_type_id", * FROM "sys"."table_types" WHERE "table_type_id" IS NULL;
 SELECT "table_type_name", * FROM "sys"."table_types" WHERE "table_type_name" IS NULL;
@@ -58,13 +60,15 @@ SELECT "table_type_name", * FROM "sys"."table_types" WHERE "table_type_name" IS 
 -- However many columns -which shouldn't have nulls- are not created as NOT NULL in the SQL data dictionary!
 -- identify those columns (by generating their statistics and quering the statistics table on nils = 0 and no 'nil' as min or max value)
 -- queries used to synthesize SQLs for checking where the NOT NULL column has a NULL value
--- analyze sys;
--- analyze sys.statistics;
--- select 'SELECT "'||c.name||'", * FROM "'||s.name||'"."'||t.name||'" WHERE "'||c.name||'" IS NULL;' AS qry
---   from statistics st join columns c on st.column_id = c.id join tables t on c.table_id = t.id join schemas s on t.schema_id = s.id
---  where st.nils = 0 and st.minval <> 'nil' and st.maxval <> 'nil'
---    and "null" <> false and t.type not in (1, 11) and s.name <> 'bam' order by s.name, t.name, c.number, c.name;
--- 96 rows:
+/*
+analyze sys;
+analyze sys.statistics;
+select 'SELECT "'||c.name||'", * FROM "'||s.name||'"."'||t.name||'" WHERE "'||c.name||'" IS NULL;' AS qry
+  from statistics st join columns c on st.column_id = c.id join tables t on c.table_id = t.id join schemas s on t.schema_id = s.id
+ where st.nils = 0 and st.minval <> 'nil' and st.maxval <> 'nil'
+   and "null" <> false and t.type not in (1, 11) and s.name <> 'bam' order by s.name, t.name, c.number, c.name;
+-- 95 rows (in Apr2019):
+*/
 -- all in sys schema
 SELECT "id", * FROM "sys"."_columns" WHERE "id" IS NULL;
 SELECT "name", * FROM "sys"."_columns" WHERE "name" IS NULL;

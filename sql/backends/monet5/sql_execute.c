@@ -474,13 +474,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 
 	/* create private allocator */
 	m->sa = NULL;
-	SQLtrans(m);
-	if(*m->errstr) {
-		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
-			msg = createException(SQL, "sql.statement", "%s", m->errstr);
-		else
-			msg = createException(SQL, "sql.statement", SQLSTATE(42000) "%s", m->errstr);
-		*m->errstr=0;
+	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
 		if (inited)
 			SQLresetClient(c);
 		return msg;

@@ -12,15 +12,15 @@ stderr of test 'marcin3` in directory 'sql/test` itself:
 # 20:07:35 >  
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = select id, sum(val) AS valsum from nutki group by id having val>1;
+QUERY = select id, cast(sum(val) as bigint) AS valsum from nutki group by id having val>1;
 ERROR = !SELECT: cannot use non GROUP BY column 'val' in query results without an aggregate function
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-26937/.s.monetdb.35713
-QUERY = select id, sum(val) AS valsum from nutki group by id having val>2;
+QUERY = select id, cast(sum(val) as bigint) AS valsum from nutki group by id having val>2;
 ERROR = !SELECT: cannot use non GROUP BY column 'val' in query results without an aggregate function
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-26937/.s.monetdb.35713
-QUERY = select id, sum(val) AS valsum from nutki group by id having valsum>3;
+QUERY = select id, cast(sum(val) as bigint) AS valsum from nutki group by id having valsum>3;
 ERROR = !SELECT: cannot use non GROUP BY column 'valsum' in query results without an aggregate function
 CODE  = 42000
 

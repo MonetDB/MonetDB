@@ -36,6 +36,7 @@ stdout of test 'bit_and.SF-2850341` in directory 'sql/test/BugTracker-2009` itse
 % bigint # type
 % 19 # length
 [ 3749090034127126942	]
+
 #select bit_and(3749090034127126942, 0xffffffffffffffff);
 % .L2 # table_name
 % L2 # name

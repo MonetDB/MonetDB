@@ -19,7 +19,7 @@ sql5_export str SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 sql5_export str SQLepilogue(void *ret);
 
 sql5_export str SQLautocommit(mvc *m);
-sql5_export void SQLtrans(mvc *m);
+sql5_export str SQLtrans(mvc *m);
 
 sql5_export str SQLexit(Client c);
 sql5_export str SQLexitClient(Client c);
@@ -29,13 +29,7 @@ sql5_export str SQLreader(Client c);
 sql5_export str SQLparser(Client c);
 sql5_export str SQLengine(Client c);
 sql5_export str SQLcallback(Client c, str msg);
-sql5_export str SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str handle_error(mvc *m, int pstatus, str msg);
-#ifdef HAVE_HGE
-sql5_export str SQLassertHge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-#endif
 
 sql5_export str SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -46,5 +40,4 @@ sql5_export str SQLescapeString(str s);
 sql5_export str SYSupdate_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SYSupdate_schemas(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-sql5_export MT_Lock sql_contextLock;
 #endif /* _SQL_SCENARIO_H_ */

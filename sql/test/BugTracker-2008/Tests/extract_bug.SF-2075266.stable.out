@@ -26,8 +26,8 @@ stdout of test 'extract_bug.SF-2075266` in directory 'sql/test/BugTracker-2008` 
 # 13:27:40 >  
 
 [ 1	]
-#SELECT EXTRACT (SECOND FROM FIPS2)
-#* 1000000 - 999990 FROM A;
+#SELECT CAST( EXTRACT (SECOND FROM FIPS2)
+#* 1000000 - 999990 as decimal(18,6)) FROM A;
 % sys.L2 # table_name
 % L2 # name
 % decimal # type

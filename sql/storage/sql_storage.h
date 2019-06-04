@@ -299,8 +299,6 @@ typedef int (*logger_get_sequence_fptr) (int seq, lng *id);
 typedef lng (*logger_read_last_transaction_id_fptr)(void);
 typedef lng (*logger_get_transaction_drift_fptr)(void);
 
-typedef int (*logger_reload_fptr) (void);
-
 typedef int (*log_isnew_fptr)(void);
 typedef bool (*log_needs_update_fptr)(void);
 typedef int (*log_tstart_fptr) (void);
@@ -319,8 +317,6 @@ typedef struct logger_functions {
 	logger_get_sequence_fptr get_sequence;
 	logger_read_last_transaction_id_fptr read_last_transaction_id;
 	logger_get_transaction_drift_fptr get_transaction_drift;
-
-	logger_reload_fptr reload;
 
 	log_isnew_fptr log_isnew;
 	log_needs_update_fptr log_needs_update;

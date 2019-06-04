@@ -84,8 +84,6 @@ extern int is_subtype(sql_subtype *t1, sql_subtype *t2);
 extern char *subtype2string(sql_subtype *t);
 extern char *subtype2string2(sql_subtype *tpe);
 
-extern void type_destroy(sql_type *t);
-
 extern sql_arg *sql_create_arg(sql_allocator *sa, const char *name, sql_subtype *t, char inout);
 extern sql_arg *arg_dup(sql_allocator *sa, sql_arg *a);
 

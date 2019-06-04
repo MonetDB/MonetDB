@@ -32,14 +32,14 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-explain-2join-view`
 % mal # name
 % clob # type
 % 103 # length
-function user.s4_1():void;
+function user.s4_0():void;
     X_1:void := querylog.define("explain select count(*) from v2;":str, "sequential_pipe":str, 12:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
     X_18:lng := aggr.count(C_5:bat[:oid]);
     sql.resultSet(".L13":str, "L13":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
-end user.s4_1;
-#inline               actions= 0 time=0 usec 
+end user.s4_0;
+#inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=1 usec 
@@ -70,7 +70,7 @@ end user.s4_1;
 % mal # name
 % clob # type
 % 118 # length
-function user.s6_1():void;
+function user.s6_0():void;
     X_1:void := querylog.define("explain select id from v2 order by id;":str, "sequential_pipe":str, 23:int);
     X_25:bat[:str] := bat.new(nil:str);
     X_31:bat[:int] := bat.new(nil:int);
@@ -89,8 +89,8 @@ function user.s6_1():void;
     X_37:bat[:int] := bat.append(X_29:bat[:int], 32:int);
     X_39:bat[:int] := bat.append(X_31:bat[:int], 0:int);
     sql.resultSet(X_32:bat[:str], X_34:bat[:str], X_35:bat[:str], X_37:bat[:int], X_39:bat[:int], X_23:bat[:int]);
-end user.s6_1;
-#inline               actions= 0 time=0 usec 
+end user.s6_0;
+#inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=0 usec 
 #coercion             actions= 0 time=1 usec 
@@ -121,7 +121,7 @@ end user.s6_1;
 % mal # name
 % clob # type
 % 130 # length
-function user.s8_1():void;
+function user.s8_0():void;
     X_1:void := querylog.define("explain select id , v2 from v2 order by id;":str, "sequential_pipe":str, 65:int);
     X_43:bat[:int] := bat.new(nil:int);
     X_4:int := sql.mvc();
@@ -166,7 +166,7 @@ function user.s8_1():void;
     X_94:bat[:int] := bat.append(X_86:bat[:int], 32:int);
     X_95:bat[:int] := bat.append(X_88:bat[:int], 0:int);
     sql.resultSet(X_90:bat[:str], X_91:bat[:str], X_93:bat[:str], X_94:bat[:int], X_95:bat[:int], X_70:bat[:int], X_71:bat[:int]);
-end user.s8_1;
+end user.s8_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=1 usec 

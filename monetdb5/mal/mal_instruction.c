@@ -134,7 +134,6 @@ newMalBlk(int elements)
 	mb->unsafeProp = 0;
 	mb->sealedProp = 0;
 	mb->replica = NULL;
-	mb->trap = 0;
 	mb->starttime = 0;
 	mb->runtime = 0;
 	mb->calls = 0;
@@ -340,7 +339,6 @@ copyMalBlk(MalBlkPtr old)
 	strncpy(mb->binding,  old->binding, IDLENGTH);
 	mb->errors = old->errors? GDKstrdup(old->errors):0;
 	mb->tag = old->tag;
-	mb->trap = old->trap;
 	mb->runtime = old->runtime;
 	mb->calls = old->calls;
 	mb->optimize = old->optimize;

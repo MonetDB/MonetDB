@@ -24,9 +24,6 @@ mal_export int chkInstruction(Module s, MalBlkPtr mb, InstrPtr p);
 mal_export void chkTypes(Module s, MalBlkPtr mb, int silent);
 mal_export void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent);
 
-extern str traceFcnName;
-mal_export void expandMacro(MalBlkPtr mb, InstrPtr p, MalBlkPtr mc);
-
 /*
  * @- Type resolution algorithm.
  * Every actual argument of a function call should be type compatible

@@ -22,13 +22,9 @@ stdout of test 'clients01` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/R   module loaded
 
 
-# 11:44:18 >  
-# 11:44:18 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-17929" "--port=36836"
-# 11:44:18 >  
+[ 0	]
 
-[ 1	]
-
-# 11:44:19 >  
-# 11:44:19 >  "Done."
-# 11:44:19 >  
+# 19:52:04 >  
+# 19:52:04 >  "Done."
+# 19:52:04 >  
 

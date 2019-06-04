@@ -194,7 +194,6 @@ mal_export bool    MCinit(void);
 
 mal_export int MAL_MAXCLIENTS;
 mal_export ClientRec *mal_clients;
-mal_export int MCdefault;
 
 mal_export Client  MCgetClient(int id);
 mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);

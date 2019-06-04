@@ -118,8 +118,8 @@ stdout of test 'all` in directory 'sql/test/subquery` itself:
 [ 2	]
 [ 3	]
 #SELECT i, i <> ALL(SELECT i FROM integers WHERE i>10) FROM integers ORDER BY i; 
-% .integers,	.L11 # table_name
-% i,	L11 # name
+% .integers,	.L13 # table_name
+% i,	L13 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	true	]
@@ -136,8 +136,8 @@ stdout of test 'all` in directory 'sql/test/subquery` itself:
 [ 2,	false	]
 [ 3,	false	]
 #SELECT i, i = ANY(SELECT i FROM integers WHERE i>10) FROM integers ORDER BY i;
-% .integers,	.L11 # table_name
-% i,	L11 # name
+% .integers,	.L13 # table_name
+% i,	L13 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	false	]
@@ -180,33 +180,33 @@ stdout of test 'all` in directory 'sql/test/subquery` itself:
 [ 1,	false	]
 [ 2,	false	]
 [ 3,	false	]
-#SELECT i >= ALL(SELECT i FROM integers WHERE i IS NOT NULL) AS k, SUM(i) FROM integers GROUP BY k ORDER BY k;
-% sys.L6,	sys.L10 # table_name
-% k,	L10 # name
-% boolean,	hugeint # type
+#SELECT i >= ALL(SELECT i FROM integers WHERE i IS NOT NULL) AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k ORDER BY k;
+% sys.L6,	sys.L11 # table_name
+% k,	L11 # name
+% boolean,	bigint # type
 % 5,	1 # length
 [ NULL,	NULL	]
 [ false,	3	]
 [ true,	3	]
-#SELECT SUM(i) FROM integers GROUP BY (i >= ALL(SELECT i FROM integers WHERE i IS NOT NULL)) ORDER BY 1; -- NULL, 3, 3
-% sys.L7 # table_name
-% L7 # name
-% hugeint # type
+#SELECT CAST(SUM(i) AS BIGINT) FROM integers GROUP BY (i >= ALL(SELECT i FROM integers WHERE i IS NOT NULL)) ORDER BY 1; -- NULL, 3, 3
+% sys.L10 # table_name
+% L10 # name
+% bigint # type
 % 1 # length
 [ NULL	]
 [ 3	]
 [ 3	]
-#SELECT i >= ALL(SELECT MIN(i) FROM integers WHERE i IS NOT NULL) AS k, SUM(i) FROM integers GROUP BY k ORDER BY k; 
-% sys.L5,	sys.L7 # table_name
-% k,	L7 # name
-% boolean,	hugeint # type
+#SELECT i >= ALL(SELECT MIN(i) FROM integers WHERE i IS NOT NULL) AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k ORDER BY k;
+% sys.L5,	sys.L10 # table_name
+% k,	L10 # name
+% boolean,	bigint # type
 % 5,	1 # length
 [ NULL,	NULL	]
 [ true,	6	]
-#SELECT i, SUM(CASE WHEN (i >= ALL(SELECT i FROM integers WHERE i=2)) THEN 1 ELSE 0 END) FROM integers GROUP BY i ORDER BY i;
-% sys.integers,	sys.L7 # table_name
-% i,	L7 # name
-% int,	hugeint # type
+#SELECT i, CAST(SUM(CASE WHEN (i >= ALL(SELECT i FROM integers WHERE i=2)) THEN 1 ELSE 0 END) AS BIGINT) FROM integers GROUP BY i ORDER BY i;
+% sys.integers,	sys.L10 # table_name
+% i,	L10 # name
+% int,	bigint # type
 % 1,	1 # length
 [ NULL,	0	]
 [ 1,	0	]

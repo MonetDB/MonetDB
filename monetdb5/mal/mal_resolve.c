@@ -28,10 +28,6 @@ static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 /* #define DEBUG_MAL_RESOLVE*/
 #define MAXMALARG 256
 
-str traceFcnName = "____";
-int tracefcn;
-int polyVector[MAXTYPEVAR];
-
 /*
  * We found the proper function. Copy some properties. In particular,
  * determine the calling strategy, i.e. FCNcall, CMDcall, FACcall, PATcall
@@ -186,11 +182,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 				s = s->peer;
 				continue;
 			}
-/*  if(polyVector[0]==0) polyInit();
-    memcpy(polytype,polyVector, 2*sig->argc*sizeof(int)); */
-
 #ifdef DEBUG_MAL_RESOLVE
-		if (tracefcn && (sig->polymorphic || sig->retc == p->retc)) {
+		if (sig->polymorphic || sig->retc == p->retc) {
 			fprintf(stderr, "#resolving: ");
 			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
 			fprintf(stderr, "#against:");
@@ -280,7 +273,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 				continue;
 			}
 #ifdef DEBUG_MAL_RESOLVE
-		if (tracefcn && (sig->polymorphic || sig->retc == p->retc)) {
+		if (sig->polymorphic || sig->retc == p->retc) {
 			fprintf(stderr, "#resolving: ");
 			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
 			fprintf(stderr, "#against:");
@@ -313,7 +306,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		 * coercion requests.
 		 */
 #ifdef DEBUG_MAL_RESOLVE
-		if (tracefcn) {
+		{
 			char *tpe, *tpe2;
 			fprintf(stderr, "#finished %s.%s unmatched=%d polymorphic=%d %d",
 						 getModuleId(sig), getFunctionId(sig), unmatched,
@@ -486,7 +479,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	 */
   wrapup:
 #ifdef DEBUG_MAL_RESOLVE
-		if (tracefcn) {
+		{
 			fprintf(stderr, "#Wrapup matching returntype %d returns %d:",*returntype,*returns);
 			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
 		}
@@ -500,7 +493,7 @@ int
 resolveType(int dsttype, int srctype)
 {
 #ifdef DEBUG_MAL_RESOLVE
-	if (tracefcn) {
+	{
 		char *dtpe = getTypeName(dsttype);
 		char *stpe = getTypeName(srctype);
 		fprintf(stderr, "#resolveType dst %s (%d) %s(%d)\n",
@@ -534,13 +527,12 @@ resolveType(int dsttype, int srctype)
 			t3 = t1;
 		else {
 #ifdef DEBUG_MAL_RESOLVE
-			if (tracefcn)
-				fprintf(stderr, "#Tail can not be resolved \n");
+			fprintf(stderr, "#Tail can not be resolved \n");
 #endif
 			return -1;
 		}
 #ifdef DEBUG_MAL_RESOLVE
-		if (tracefcn) {
+		{
 			int i2 = getTypeIndex(dsttype);
 			char *tpe1, *tpe2, *tpe3; 
 			tpe1 = getTypeName(t1);
@@ -556,8 +548,7 @@ resolveType(int dsttype, int srctype)
 		return newBatType(t3);
 	}
 #ifdef DEBUG_MAL_RESOLVE
-	if (tracefcn)
-		fprintf(stderr, "#Can not be resolved \n");
+	fprintf(stderr, "#Can not be resolved \n");
 #endif
 	return -1;
 }
@@ -620,9 +611,6 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		return;
 	}
 	if (getFunctionId(p) && getModuleId(p)) {
-#ifdef DEBUG_MAL_RESOLVE
-		//tracefcn = idcmp(getFunctionId(p), traceFcnName) == 0;
-#endif
 		m = findModule(scope, getModuleId(p));
 		s1 = findFunctionType(m, mb, p, silent);
 #ifdef DEBUG_MAL_RESOLVE
@@ -858,7 +846,7 @@ updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 	if (formal == TYPE_bat && isaBatType(actual))
 		return 0;
 #ifdef DEBUG_MAL_RESOLVE
-	if(tracefcn){
+	{
 		char *tpe1 = getTypeName(formal), *tpe2 = getTypeName(actual);
 		fprintf(stderr, "#updateTypeMap:formal %s actual %s\n", tpe1, tpe2);
 		GDKfree(tpe1);

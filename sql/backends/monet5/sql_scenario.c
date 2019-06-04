@@ -50,7 +50,7 @@ static int SQLinitialized = 0;
 static int SQLnewcatalog = 0;
 int SQLdebug = 0;
 static const char *sqlinit = NULL;
-MT_Lock sql_contextLock = MT_LOCK_INITIALIZER("sql_contextLock");
+static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER("sql_contextLock");
 
 static void
 monet5_freestack(int clientid, backend_stack stk)
@@ -154,14 +154,27 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fprintf(stdout, "# MonetDB/SQL module loaded\n");
 	fflush(stdout);		/* make merovingian see this *now* */
 #endif
+	if (GDKinmemory()) {
+		s->name = "sql";
+		ms->name = "msql";
+		return MAL_SUCCEED;
+	}
 	/* only register availability of scenarios AFTER we are inited! */
 	s->name = "sql";
 	tmp = msab_marchScenario(s->name);
-	if (tmp != MAL_SUCCEED)
-		return (tmp);
+	if (tmp != NULL) {
+		char *err = createException(MAL, "sql.start", "%s", tmp);
+		free(tmp);
+		return err;
+	}
 	ms->name = "msql";
 	tmp = msab_marchScenario(ms->name);
-	return tmp;
+	if (tmp != NULL) {
+		char *err = createException(MAL, "sql.start", "%s", tmp);
+		free(tmp);
+		return err;
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -190,10 +203,17 @@ SQLepilogue(void *ret)
 	SQLexit(NULL);
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
-	res = msab_retreatScenario(m);
-	if (!res)
-		return msab_retreatScenario(s);
-	return res;
+	if (!GDKinmemory()) {
+		res = msab_retreatScenario(m);
+		if (!res)
+			res = msab_retreatScenario(s);
+		if (res != NULL) {
+			char *err = createException(MAL, "sql.start", "%s", res);
+			free(res);
+			return err;
+		}
+	}
+	return MAL_SUCCEED;
 }
 
 #define SQLglobal(name, val, failure)                                                                             \
@@ -258,7 +278,7 @@ SQLprepareClient(Client c, int login)
 			mvc_destroy(m);
 			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		if (strcmp(c->scenario, "msql") == 0)
+		if (c->scenario && strcmp(c->scenario, "msql") == 0)
 			m->reply_size = -1;
 		be = (void *) backend_create(m, c);
 		if( be == NULL) {
@@ -608,32 +628,30 @@ SQLautocommit(mvc *m)
 	return msg;
 }
 
-void
+str
 SQLtrans(mvc *m)
 {
 	m->caching = m->cache;
 	if (!m->session->active) {
 		sql_session *s;
 
-		if(mvc_trans(m) < 0) {
-			(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure while starting the transaction");
-			return;
-		}
+		if (mvc_trans(m) < 0)
+			throw(SQL, "sql.trans", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		s = m->session;
 		if (!s->schema) {
 			if (s->schema_name)
 				GDKfree(s->schema_name);
 			s->schema_name = monet5_user_get_def_schema(m, m->user_id);
-			if(!s->schema_name) {
+			if (!s->schema_name) {
 				mvc_cancel_session(m);
-				(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure while starting the transaction");
-				return;
+				throw(SQL, "sql.trans", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			assert(s->schema_name);
 			s->schema = find_sql_schema(s->tr, s->schema_name);
 			assert(s->schema);
 		}
 	}
+	return MAL_SUCCEED;
 }
 
 #ifdef HAVE_EMBEDDED
@@ -979,16 +997,11 @@ SQLparser(Client c)
 #endif
 	m = be->mvc;
 	m->type = Q_PARSE;
-	if (be->language != 'X')
-		SQLtrans(m);
-	if(*m->errstr) {
-		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
-			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-		else
-			msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
-		*m->errstr=0;
-		c->mode = FINISHCLIENT;
-		return msg;
+	if (be->language != 'X') {
+		if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
+			c->mode = FINISHCLIENT;
+			return msg;
+		}
 	}
 	pstatus = m->session->status;
 
@@ -1010,7 +1023,8 @@ SQLparser(Client c)
 			n = sscanf(in->buf + in->pos + 7, "%d %d %d", &v, &off, &len);
 
 		if (n == 2 || n == 3) {
-			mvc_export_chunk(be, out, v, off, n == 3 ? len : m->reply_size);
+			if (mvc_export_chunk(be, out, v, off, n == 3 ? len : m->reply_size))
+				throw(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed");
 
 			in->pos = in->len;	/* HACK: should use parsed length */
 			return MAL_SUCCEED;

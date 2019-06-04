@@ -40,6 +40,7 @@ except ImportError:
     except ImportError:
         winreg = None           # not on Windows
 
+MonetDB_VERSION = '@VERSION@'.split('.')
 
 procdebug = False
 verbose = False
@@ -421,6 +422,7 @@ CONDITIONALS = {
     'PROFILING'            : "@PROFILING_FALSE@",
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
+    'KNOWNFAIL'            : "", # skip on release branch when not in testweb
     'HAVE_MONETDBJDBC_JAR' : "",
     'HAVE_JAVA'            : "",
     'HAVE_JAVAJDBC'        : "",
@@ -2239,6 +2241,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             openutf8(TST+STABLEerr,"w").close()
             ACCURACYerr = 0
             errmissing = True
+        if (outmissing or errmissing) and not CONDITIONALS['KNOWNFAIL']:
+            # no stable output, so known to fail
+            reason = "as conditional 'KNOWNFAIL' does not hold."
+            elem = SkipTest(env, TST, EXT, reason, length)
+            return TX,Failed,Failed,elem,reason,links
 
         PRELUDE = []
         if EXT !=  '.sql':
@@ -2850,47 +2857,99 @@ def killProc(proc, outfile = None, cmd = None):
     else:
         killchildren(proc.pid)
 
-def LaunchIt(cmd, TestOut, TestErr, TimeOut, SrvrOut = None) :
-    global setpgrp
-    if not SrvrOut:
-        SrvrOut = process.PIPE
+class ServerClass:
+    def __init__(self):
+        self.proc = None
+        self.timer = None
+        self.errfile = None
+        self.code = None
+        self.started = False
 
-    TestOut.write(Prompt(cmd))
-    TestOut.flush()
-    TestErr.write(Prompt(cmd))
-    TestErr.flush()
+    def terminate(self):
+        if os.name == 'nt':
+            self.proc.send_signal(signal.CTRL_BREAK_EVENT)
+        else:
+            self.proc.terminate()
+        self.proc.wait()
+        self.timer.cancel()
+        self.code = returnCode(self.proc, self.errfile)
 
-    if procdebug:
-        print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd))
-    setpgrp = True
-    if os.name == "nt":
-        proc = process.Popen(cmd, stdin=open(os.devnull), stdout=SrvrOut,
-                             stderr=TestErr, universal_newlines=True,
-                             creationflags=process.CREATE_NEW_PROCESS_GROUP)
-    else:
-        proc = process.Popen(cmd, stdin=open(os.devnull), stdout=SrvrOut,
-                             stderr=TestErr, universal_newlines=True)
-    # maybe buffer output as it comes to avoid deadlock
-    if SrvrOut == process.PIPE:
-        proc.stdout = process._BufferedPipe(proc.stdout)
-    if TestErr == process.PIPE:
-        proc.stderr = process._BufferedPipe(proc.stderr)
-    proc.killed = False
-    proc.onechild = True
-    t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
-    t.start()
+    def kill(self, outfile=None, cmd=None):
+        self.timer.cancel()
+        killProc(self.proc, outfile, cmd)
 
-    return proc, t
-### LaunchIt(cmd, TestIn, TestOut, TestErr, TimeOut, SrvrOut) #
+    def LaunchIt(self, cmd, TestOut, TestErr, TimeOut, pollfile, port) :
+        global setpgrp
 
-def CollectIt(pOut, TestOut) :
-    if pOut:
-        while True:
-            buf = pOut.read(8192)
-            if not buf:
-                break
-            TestOut.write(buf)
-### CollectIt(pOut, pErr, TestOut, TestErr) #
+        TestOut.write(Prompt(cmd))
+        TestOut.flush()
+        TestErr.write(Prompt(cmd))
+        TestErr.flush()
+
+        self.errfile = TestErr
+
+        if procdebug:
+            print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd))
+        setpgrp = True
+        if pollfile:
+            try:
+                os.unlink(pollfile)
+            except OSError:
+                pass
+        if os.name == "nt":
+            proc = process.Popen(cmd, stdin=open(os.devnull), stdout=TestOut,
+                                 stderr=TestErr, universal_newlines=True,
+                                 creationflags=process.CREATE_NEW_PROCESS_GROUP)
+        else:
+            proc = process.Popen(cmd, stdin=open(os.devnull), stdout=TestOut,
+                                 stderr=TestErr, universal_newlines=True)
+        # maybe buffer output as it comes to avoid deadlock
+        if TestOut == process.PIPE:
+            proc.stdout = process._BufferedPipe(proc.stdout)
+        if TestErr == process.PIPE:
+            proc.stderr = process._BufferedPipe(proc.stderr)
+        proc.killed = False
+        proc.onechild = True
+        t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
+        t.start()
+        self.proc = proc
+        self.timer = t
+
+        if pollfile:
+            while True:
+                proc.poll()
+                if proc.returncode is not None:
+                    # exited
+                    proc.wait()
+                    t.cancel()
+                    return
+                if os.path.exists(pollfile):
+                    break
+                time.sleep(0.001)
+        elif port is not None:
+            while True:
+                proc.poll()
+                if proc.returncode is not None:
+                    # exited
+                    proc.wait()
+                    t.cancel()
+                    return
+                if mapi_ping(port):
+                    break
+                time.sleep(0.1)
+            port = None         # don't try again
+        if port is not None and not mapi_ping(port):
+            # check whether we can connect
+            if os.name == "nt":
+                proc.send_signal(signal.CTRL_BREAK_EVENT)
+            else:
+                proc.terminate()
+            proc.wait()
+            t.cancel()
+            return
+        self.started = True
+
+### LaunchIt(cmd, TestIn, TestOut, TestErr, TimeOut, pollfile, port) #
 
 def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut) :
     global setpgrp
@@ -2935,7 +2994,7 @@ def Log() :
     time.strftime('%H:%M:%S> ',time.localtime(time.time()))
 ### Log() #
 
-def mapi_ping(port,lang) :
+def mapi_ping(port) :
     retry = 0
     wait = 1
     host = 'localhost'
@@ -3000,13 +3059,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     MAPIsockets[1].close()
 
     returncode = None
-    pSrvrCode = None
-    ServerReady = True
-    pSrvr = None
-    pSrvrTimer = None
+    pSrvr = ServerClass()
     try:
         if SERVER in ["MAL", "SQL"]:
-            ServerReady = False
             SrvrOutFile = TST+".server.out"
             SrvrErrFile = TST+".server.err"
             SrvrOut = openutf8(SrvrOutFile,"w")
@@ -3095,12 +3150,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             # enable C integration in server
             Srvr.extend(['--set', 'embedded_c=true'])
 
-            try:
-                os.unlink(os.path.join(dbpath, '.started'))
-            except OSError:
-                pass
-
-            pSrvr, pSrvrTimer = LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT)
+            pSrvr.LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), int(env['MAPIPORT']))
             if savepath is not None:
                 os.environ['PATH'] = savepath
                 if savepypath:
@@ -3111,66 +3161,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     os.environ['PYTHONHOME'] = savepyhome
                 else:
                     del os.environ['PYTHONHOME']
-            while True:
-                pSrvr.poll()
-                if pSrvr.returncode is not None:
-                    break
-                if os.path.exists(os.path.join(dbpath, '.started')):
-                    ServerReady = True
-                    break
-                time.sleep(0.001)
-            if not ServerReady:
-                # Process exited.
-                # It may be that there are far too many network
-                # connections in use, all in TIME_WAIT status.  We'll
-                # just wait a while for that to clear and try again.
-                pSrvrTimer.cancel()
-                CollectIt(pSrvr.stdout, SrvrOut)
-                if returnCode(pSrvr) == 'error' and sys.platform == 'linux2':
-                    x = process.Popen(['netstat', '-an'], stdout = process.PIPE, stderr = process.PIPE, universal_newlines = True)
-                    out, err = x.communicate()
-                    if out.count('TIME_WAIT') > 100:
-                        time.sleep(120)
-                        pSrvr, pSrvrTimer = LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT)
-                        while True:
-                            pSrvr.poll()
-                            if pSrvr.returncode is not None:
-                                break
-                            if os.path.exists(os.path.join(dbpath, '.started')):
-                                ServerReady = True
-                                break
-                            time.sleep(0.001)
-
-            if ServerReady:
-                port = int(env['MAPIPORT'])
-                ServerReady = mapi_ping(port, lang)
-                if not ServerReady:
-                    pSrvr.terminate()
-                    CollectIt(pSrvr.stdout, SrvrOut)
-                    pSrvr.wait()
-                    pSrvrTimer.cancel()
-                    if returnCode(pSrvr) == 'error' and sys.platform == 'linux2':
-                        x = process.Popen(['netstat', '-an'], stdout = process.PIPE, stderr = process.PIPE, universal_newlines = True)
-                        out, err = x.communicate()
-                        if out.count('TIME_WAIT') > 100:
-                            time.sleep(120)
-                            pSrvr, pSrvrTimer = LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT)
-                            while True:
-                                pSrvr.poll()
-                                if pSrvr.returncode is not None:
-                                    break
-                                if os.path.exists(os.path.join(dbpath, '.started')):
-                                    ServerReady = True
-                                    break
-                                time.sleep(0.001)
-                            if ServerReady:
-                                port = int(env['MAPIPORT'])
-                                ServerReady = mapi_ping(port, lang)
         else:
             ClntOut = openutf8(TestOutFile, 'a')
             ClntErr = openutf8(TestErrFile, 'a')
 
-        if ServerReady:
+        if SERVER not in ["MAL", "SQL"] or pSrvr.started:
             if   CALL == "other":
                 cmd = [os.path.join(".", TST + EXT), TST] + PRELUDE
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, CTIMEOUT)
@@ -3238,19 +3233,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         ClntErr.close()
 
         if SERVER in ["MAL", "SQL"]:
-            if ServerReady:
-                if os.name == "nt":
-                    pSrvr.send_signal(signal.CTRL_BREAK_EVENT)
-                else:
-                    pSrvr.terminate()
-
-            CollectIt(pSrvr.stdout, SrvrOut)
-            pSrvr.wait()
-            pSrvrTimer.cancel()
-            if procdebug:
-                print('DoIt: process exited "%s" (%s)\n' % ('" "'.join(Srvr), pSrvr.returncode))
-            pSrvrTimer = None
-            pSrvrCode = returnCode(pSrvr, SrvrErr)
+            if pSrvr.started:
+                pSrvr.terminate()
+                if procdebug:
+                    print('DoIt: process exited "%s" (%s)\n' % ('" "'.join(Srvr), pSrvr.code))
 
             AllOut = [SrvrOut, ClntOutFile]
             AllErr = [SrvrErr, ClntErrFile]
@@ -3291,24 +3277,20 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if TestErr is not None:
             TestErr.write(Prompt('Done.'))
             TestErr.close()
-        # there are two tests that create a temporary file called
-        # /tmp/MonetEvents; we just unconditionally remove the file
-        remove('/tmp/MonetEvents')
 
     except KeyboardInterrupt:
-        if pSrvrTimer is not None:
-            pSrvrTimer.cancel()
-            killProc(pSrvr, SrvrErr, Srvr)
+        if pSrvr.started:
+            pSrvr.kill(SrvrErr, Srvr)
         raise
 
-    if returncode is not None or pSrvrCode is not None:
+    if returncode is not None or pSrvr.code is not None:
         # something failed
-        if returncode == 'interrupt' or pSrvrCode == 'interrupt':
+        if returncode == 'interrupt' or pSrvr.code == 'interrupt':
             raise KeyboardInterrupt
         for err in ('timeout', 'segfault', 'abort', 'signal', 'error'):
-            if pSrvrCode == err or returncode == err:
+            if pSrvr.code == err or returncode == err:
                 return err
-        return returncode or pSrvrCode # remaining error (shouldn't get here)
+        return returncode or pSrvr.code # remaining error (shouldn't get here)
 
     if CALL not in ('python', 'other', 'ruby'):
         # running mserver/mclient directly, so we know they didn't fail
@@ -3789,6 +3771,8 @@ def main(argv) :
              'global timeout'),
             ('data_path', 'D', 'data_path', '<path>',
              "Path to the root directory of the data files needed for testing"),
+            ('alltests', None, 'alltests', None,
+             'also run tests that are known to fail'),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -3842,6 +3826,8 @@ def main(argv) :
     releaserun = opts.get('releaserun', releaserun)
     nomito = opts.get('nomito', False)
     CONDITIONALS['RELEASERUN'] = releaserun
+    if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.get('alltests', False):
+        CONDITIONALS['KNOWNFAIL'] = 'execute'
     jenkins = False
     addreqs = False
     all_tests = False

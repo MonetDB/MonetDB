@@ -40,7 +40,6 @@
 /* (author) M.L. Kersten */
 #include "monetdb_config.h"
 #include "mal_client.h"
-#include "mal_readline.h"
 #include "mal_import.h"
 #include "mal_parser.h"
 #include "mal_namespace.h"
@@ -184,7 +183,9 @@ MCexitClient(Client c)
 		}
 		assert(c->bak == NULL);
 		if (c->fdin) {
-			/* missing protection against closing stdin stream */
+			/* protection against closing stdin stream */
+                        if (c->fdin->s == GDKstdin)
+                                c->fdin->s = NULL;
 			bstream_destroy(c->fdin);
 		}
 		c->fdout = NULL;
