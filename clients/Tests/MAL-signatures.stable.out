@@ -8928,6 +8928,8 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "batmtime",	"quarter",	"command batmtime.quarter(d:bat[:date]):bat[:int] ",	"MTIMEdate_extract_quarter_bulk;",	""	]
 [ "batmtime",	"sql_seconds",	"command batmtime.sql_seconds(d:bat[:daytime]):bat[:int] ",	"MTIMEdaytime_extract_sql_seconds_bulk;",	""	]
 [ "batmtime",	"sql_seconds",	"command batmtime.sql_seconds(d:bat[:timestamp]):bat[:int] ",	"MTIMEtimestamp_sql_seconds_bulk;",	""	]
+[ "batmtime",	"timestamp_add_msec_interval",	"command batmtime.timestamp_add_msec_interval(t:bat[:timestamp], ms:bat[:lng]):bat[:timestamp] ",	"MTIMEtimestamp_add_msec_interval_bulk;",	""	]
+[ "batmtime",	"timestamp_sub_msec_interval",	"command batmtime.timestamp_sub_msec_interval(t:bat[:timestamp], ms:bat[:lng]):bat[:timestamp] ",	"MTIMEtimestamp_sub_msec_interval_bulk;",	""	]
 [ "batmtime",	"year",	"command batmtime.year(d:bat[:date]):bat[:int] ",	"MTIMEdate_extract_year_bulk;",	""	]
 [ "batpcre",	"replace",	"command batpcre.replace(orig:bat[:str], pat:str, repl:str, flag:str):bat[:str] ",	"PCREreplace_bat_wrap;",	""	]
 [ "batpcre",	"replace_first",	"command batpcre.replace_first(orig:bat[:str], pat:str, repl:str, flag:str):bat[:str] ",	"PCREreplacefirst_bat_wrap;",	""	]

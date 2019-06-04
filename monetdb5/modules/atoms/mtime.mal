@@ -292,8 +292,12 @@ address MTIMEdate_add_msec_interval;
 
 command timestamp_sub_msec_interval(t:timestamp,ms:lng):timestamp
 address MTIMEtimestamp_sub_msec_interval;
+command batmtime.timestamp_sub_msec_interval(t:bat[:timestamp],ms:bat[:lng]):bat[:timestamp]
+address MTIMEtimestamp_sub_msec_interval_bulk;
 command timestamp_add_msec_interval(t:timestamp,ms:lng):timestamp
 address MTIMEtimestamp_add_msec_interval;
+command batmtime.timestamp_add_msec_interval(t:bat[:timestamp],ms:bat[:lng]):bat[:timestamp]
+address MTIMEtimestamp_add_msec_interval_bulk;
 
 command timestamp_sub_month_interval(t:timestamp,s:int):timestamp
 address MTIMEtimestamp_sub_month_interval
