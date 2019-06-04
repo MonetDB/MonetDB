@@ -58,11 +58,9 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
-
-# 10:09:57 >  
-# 10:09:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31613" "--port=31509"
-# 10:09:57 >  
+# 09:11:28 >  
+# 09:11:28 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12052" "--port=37692"
+# 09:11:28 >  
 
 #create schema test;
 #create table test.share_daily_history (id string, timeid int, c1 int, c2 int, c3 int, c4 int, volume int);

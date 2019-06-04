@@ -10,18 +10,6 @@ stderr of test 'tst670` in directory 'monetdb5/mal` itself:
 # 09:29:49 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25470" "--port=39422"
 # 09:29:49 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-8241/.s.monetdb.34087
-QUERY = function foo();
-        io.print("go");
-        end foo;
-        user.foo();
-        clients.quit();
-        function foo();
-        io.print("gone");
-        end foo;
-        mdb.List("user","foo");
-        user.foo();
-ERROR = !MALException:mal.interpreter:prematurely stopped client
 
 # 09:29:49 >  
 # 09:29:49 >  "Done."

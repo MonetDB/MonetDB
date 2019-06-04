@@ -35,26 +35,26 @@ stdout of test 'trace` in directory 'sql/test` itself:
 % .trace,	.trace # table_name
 % usec,	statement # name
 % bigint,	clob # type
-% 2,	207 # length
-[ 71,	"X_3=0@0:void := querylog.define(\"trace select count(*) from types where id < 30 and systemname <> \\\\'hge\\\\';\":str, \"sequential_pipe\":str, 25:int);"	]
-[ 48,	"X_6=0:int := sql.mvc();"	]
-[ 80,	"X_20=<tmp_146>[35]:bat[:str] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"systemname\":str, 0:int);"	]
-[ 64,	"X_10=<tmp_224>[35]:bat[:int] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"id\":str, 0:int);"	]
-[ 59,	"C_7=<tmp_2340>[35]:bat[:oid] := sql.tid(X_6=0:int, \"sys\":str, \"types\":str);"	]
-[ 84,	"C_88=<tmp_3141>[28]:bat[:oid] := algebra.thetaselect(X_10=<tmp_224>[35]:bat[:int], C_7=<tmp_2340>[35]:bat[:oid], 30:int, \"<\":str);"	]
-[ 71,	"(X_15=<sql_empty_oid_bat>[0]:bat[:oid], X_16=<sql_empty_int_bat>[0]:bat[:int]) := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"id\":str, 2:int);"	]
-[ 73,	"C_89=<tmp_3052>[0]:bat[:oid] := algebra.thetaselect(X_16=<sql_empty_int_bat>[0]:bat[:int], nil:bat[:oid], 30:int, \"<\":str);"	]
-[ 65,	"X_13=<sql_empty_int_bat>[0]:bat[:int] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"id\":str, 1:int);"	]
-[ 74,	"C_91=<tmp_2767>[0]:bat[:oid] := algebra.thetaselect(X_13=<sql_empty_int_bat>[0]:bat[:int], C_7=<tmp_2340>[35]:bat[:oid], 30:int, \"<\":str);"	]
-[ 73,	"C_29=<tmp_3141>[28]:bat[:oid] := sql.subdelta(C_88=<tmp_3141>[28]:bat[:oid], C_7=<tmp_2340>[35]:bat[:oid], X_15=<sql_empty_oid_bat>[0]:bat[:oid], C_89=<tmp_3052>[0]:bat[:oid], C_91=<tmp_2767>[0]:bat[:oid]);"	]
-[ 70,	"C_92=<tmp_2767>[26]:bat[:oid] := algebra.thetaselect(X_20=<tmp_146>[35]:bat[:str], C_29=<tmp_3141>[28]:bat[:oid], \"hge\":str, \"!=\":str);"	]
-[ 74,	"(X_23=<sql_empty_oid_bat>[0]:bat[:oid], X_24=<sql_empty_str_bat>[0]:bat[:str]) := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"systemname\":str, 2:int);"	]
-[ 66,	"C_93=<tmp_3052>[0]:bat[:oid] := algebra.thetaselect(X_24=<sql_empty_str_bat>[0]:bat[:str], nil:bat[:oid], \"hge\":str, \"!=\":str);"	]
-[ 64,	"X_22=<sql_empty_str_bat>[0]:bat[:str] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"systemname\":str, 1:int);"	]
-[ 65,	"C_95=<tmp_2340>[0]:bat[:oid] := algebra.thetaselect(X_22=<sql_empty_str_bat>[0]:bat[:str], C_29=<tmp_3141>[28]:bat[:oid], \"hge\":str, \"!=\":str);"	]
-[ 77,	"C_36=<tmp_2767>[26]:bat[:oid] := sql.subdelta(C_92=<tmp_2767>[26]:bat[:oid], C_29=<tmp_3141>[28]:bat[:oid], X_23=<sql_empty_oid_bat>[0]:bat[:oid], C_93=<tmp_3052>[0]:bat[:oid], C_95=<tmp_2340>[0]:bat[:oid]);"	]
-[ 47,	"X_40=26:lng := aggr.count(C_36=<tmp_2767>[26]:bat[:oid]);"	]
-[ 90,	"sql.resultSet(\"sys.L3\":str, \"L3\":str, \"bigint\":str, 64:int, 0:int, 7:int, X_40=26:lng);"	]
+% 3,	207 # length
+[ 86,	"X_3=0@0:void := querylog.define(\"trace select count(*) from types where id < 30 and systemname <> \\\\'hge\\\\';\":str, \"sequential_pipe\":str, 25:int);"	]
+[ 44,	"X_6=0:int := sql.mvc();"	]
+[ 155,	"X_20=<tmp_146>[35]:bat[:str] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"systemname\":str, 0:int);"	]
+[ 78,	"X_10=<tmp_224>[35]:bat[:int] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"id\":str, 0:int);"	]
+[ 71,	"C_7=<tmp_2330>[35]:bat[:oid] := sql.tid(X_6=0:int, \"sys\":str, \"types\":str);"	]
+[ 112,	"C_88=<tmp_3431>[28]:bat[:oid] := algebra.thetaselect(X_10=<tmp_224>[35]:bat[:int], C_7=<tmp_2330>[35]:bat[:oid], 30:int, \"<\":str);"	]
+[ 86,	"(X_15=<sql_empty_oid_bat>[0]:bat[:oid], X_16=<sql_empty_int_bat>[0]:bat[:int]) := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"id\":str, 2:int);"	]
+[ 86,	"C_89=<tmp_3113>[0]:bat[:oid] := algebra.thetaselect(X_16=<sql_empty_int_bat>[0]:bat[:int], nil:bat[:oid], 30:int, \"<\":str);"	]
+[ 75,	"X_13=<sql_empty_int_bat>[0]:bat[:int] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"id\":str, 1:int);"	]
+[ 85,	"C_91=<tmp_2750>[0]:bat[:oid] := algebra.thetaselect(X_13=<sql_empty_int_bat>[0]:bat[:int], C_7=<tmp_2330>[35]:bat[:oid], 30:int, \"<\":str);"	]
+[ 96,	"C_29=<tmp_3431>[28]:bat[:oid] := sql.subdelta(C_88=<tmp_3431>[28]:bat[:oid], C_7=<tmp_2330>[35]:bat[:oid], X_15=<sql_empty_oid_bat>[0]:bat[:oid], C_89=<tmp_3113>[0]:bat[:oid], C_91=<tmp_2750>[0]:bat[:oid]);"	]
+[ 87,	"C_92=<tmp_2750>[26]:bat[:oid] := algebra.thetaselect(X_20=<tmp_146>[35]:bat[:str], C_29=<tmp_3431>[28]:bat[:oid], \"hge\":str, \"!=\":str);"	]
+[ 88,	"(X_23=<sql_empty_oid_bat>[0]:bat[:oid], X_24=<sql_empty_str_bat>[0]:bat[:str]) := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"systemname\":str, 2:int);"	]
+[ 75,	"C_93=<tmp_3113>[0]:bat[:oid] := algebra.thetaselect(X_24=<sql_empty_str_bat>[0]:bat[:str], nil:bat[:oid], \"hge\":str, \"!=\":str);"	]
+[ 77,	"X_22=<sql_empty_str_bat>[0]:bat[:str] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"systemname\":str, 1:int);"	]
+[ 79,	"C_95=<tmp_2330>[0]:bat[:oid] := algebra.thetaselect(X_22=<sql_empty_str_bat>[0]:bat[:str], C_29=<tmp_3431>[28]:bat[:oid], \"hge\":str, \"!=\":str);"	]
+[ 94,	"C_36=<tmp_2750>[26]:bat[:oid] := sql.subdelta(C_92=<tmp_2750>[26]:bat[:oid], C_29=<tmp_3431>[28]:bat[:oid], X_23=<sql_empty_oid_bat>[0]:bat[:oid], C_93=<tmp_3113>[0]:bat[:oid], C_95=<tmp_2330>[0]:bat[:oid]);"	]
+[ 72,	"X_40=26:lng := aggr.count(C_36=<tmp_2750>[26]:bat[:oid]);"	]
+[ 152,	"sql.resultSet(\"sys.L3\":str, \"L3\":str, \"bigint\":str, 64:int, 0:int, 7:int, X_40=26:lng);"	]
 #SELECT COUNT(*) FROM tracelog();
 % .L4 # table_name
 % L4 # name
