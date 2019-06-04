@@ -26,6 +26,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_backend.h"
+#include "sql_assert.h"
 #include "sql_scenario.h"
 /*
  * Assertion errors detected during the execution of a code block

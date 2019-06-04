@@ -17,7 +17,6 @@
 
 #define new_exp_list(sa) sa_list(sa)
 #define exp2list(sa,e)   append(sa_list(sa),e)
-#define new_compare_list(sa, l, r) exp2list(sa, exp_compare(sa, l, r, cmp_equal))
 
 extern comp_type swap_compare( comp_type t );
 extern comp_type range2lcompare( int r );
@@ -95,7 +94,6 @@ extern list* exps_label(sql_allocator *sa, list *exps, int nr);
 extern sql_exp * exp_copy( sql_allocator *sa, sql_exp *e);
 extern list * exps_copy( sql_allocator *sa, list *exps);
 extern list * exps_alias( sql_allocator *sa, list *exps);
-
 
 extern void exp_swap( sql_exp *e );
 

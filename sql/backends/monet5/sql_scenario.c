@@ -50,7 +50,7 @@ static int SQLinitialized = 0;
 static int SQLnewcatalog = 0;
 int SQLdebug = 0;
 static const char *sqlinit = NULL;
-MT_Lock sql_contextLock = MT_LOCK_INITIALIZER("sql_contextLock");
+static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER("sql_contextLock");
 
 static void
 monet5_freestack(int clientid, backend_stack stk)

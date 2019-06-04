@@ -57,7 +57,6 @@
 
 #define QUERY_MODE(m) (m==m_normal || m==m_instantiate || m==m_deps)
 
-
 /* different query execution modifiers (emod) */
 #define mod_none 	0
 #define mod_debug 	1
@@ -203,7 +202,6 @@ extern sql_column *mvc_null(mvc *c, sql_column *col, int flag);
 extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
 extern sql_column *mvc_drop_default(mvc *c, sql_column *col);
 extern sql_column *mvc_storage(mvc *c, sql_column *col, char *storage);
-extern sql_column *mvc_rename_column(mvc *c, sql_column *col, char *new_name);
 extern sql_table * mvc_access(mvc *m, sql_table *t, sht access);
 extern int mvc_is_sorted(mvc *c, sql_column *col);
 

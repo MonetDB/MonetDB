@@ -672,41 +672,6 @@ rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
 	}
 }
 
-/* special class of table returning function, but with a table input as well */
-static sql_rel *
-rel_named_table_operator(sql_query *query, sql_rel *rel, symbol *ast)
-{
-	mvc *sql = query->sql;
-	exp_kind ek = {type_value, card_relation, TRUE};
-	sql_rel *sq = rel_subquery(query, rel, ast->data.lval->h->data.sym, ek);
-	list *exps;
-	node *en;
-	char *tname = NULL;
-
-	if (!sq)
-		return NULL;
-	
-	if (ast->data.lval->h->next->data.sym) {
-		dlist *column_spec = ast->data.lval->h->next->data.sym->data.lval->h->next->data.lval;
-
-		tname = ast->data.lval->h->next->data.sym->data.lval->h->data.sval;
-		if (column_spec) {
-			dnode *n = column_spec->h;
-
-			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
-			for (en = sq->exps->h; n && en; n = n->next, en = en->next) 
-				exp_setname(sql->sa, en->data, tname, n->data.sval );
-		}
-	}
-
-	exps = new_exp_list(sql->sa);
-	for (en = sq->exps->h; en; en = en->next) {
-		sql_exp *e = en->data;
-		append(exps, exp_column(sql->sa, tname, exp_name(e), exp_subtype(e), CARD_MULTI, has_nil(e), 0));
-	}
-	return rel_relational_func(sql->sa, sq, exps);
-}
-
 static sql_rel *
 rel_values(sql_query *query, symbol *tableref)
 {
@@ -795,9 +760,7 @@ rel_values(sql_query *query, symbol *tableref)
 static int
 check_is_lateral(symbol *tableref) 
 {
-	if (tableref->token == SQL_NAME ||
-	    tableref->token == SQL_TABLE ||
-	    tableref->token == SQL_TABLE_OPERATOR) {
+	if (tableref->token == SQL_NAME || tableref->token == SQL_TABLE) {
 		if (dlist_length(tableref->data.lval) == 3)
 			return tableref->data.lval->h->next->next->data.i_val;
 		return 0;
@@ -901,8 +864,6 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 		return rel_values(query, tableref);
 	} else if (tableref->token == SQL_TABLE) {
 		return rel_named_table_function(query, rel, tableref, lateral);
-	} else if (tableref->token == SQL_TABLE_OPERATOR) {
-		return rel_named_table_operator(query, rel, tableref);
 	} else if (tableref->token == SQL_SELECT) {
 		return rel_subquery_optname(query, rel, tableref);
 	} else {
