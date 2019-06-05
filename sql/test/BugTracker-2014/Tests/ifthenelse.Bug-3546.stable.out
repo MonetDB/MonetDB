@@ -25,33 +25,35 @@ stdout of test 'ifthenelse.Bug-3546` in directory 'sql/test/BugTracker-2014` its
 # 20:44:31 >  
 
 #start transaction;
-#create table t(r integer,a integer);
+#create table t(r smallint,a smallint);
 #insert into t values (1,42),(2,0),(3,null); 
-[ 3	]
+[ 3     ]
 #select * from t;
-% sys.t,	sys.t # table_name
-% r,	a # name
-% int,	int # type
-% 1,	2 # length
-[ 1,	42	]
-[ 2,	0	]
-[ 3,	NULL	]
+% sys.t,        sys.t # table_name
+% r,    a # name
+% smallint,     smallint # type
+% 1,    2 # length
+[ 1,    42      ]
+[ 2,    0       ]
+[ 3,    NULL    ]
 #select case when not (a is null) and a > 0.0 then r/a else -1 end as s from t;
-% sys.L2 # table_name
+% sys. # table_name
+# sys.L2 # table_name
 % s # name
-% int # type
+% smallint # type
 % 2 # length
-[ 0	]
-[ -1	]
-[ -1	]
+[ 0     ]
+[ -1    ]
+[ -1    ]
 #select case when not (a is null) and a > 0.0 then 1.0*r/a else -1 end as r from t;
-% sys.L2 # table_name
+% sys. # table_name
+# sys.L2 # table_name
 % r # name
 % decimal # type
-% 20 # length
-[ 0.023	]
-[ -1.000	]
-[ -1.000	]
+% 19 # length
+[ 0.023 ]
+[ -1.000        ]
+[ -1.000        ]
 #rollback;
 
 # 20:44:31 >  
