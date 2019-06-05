@@ -41,7 +41,7 @@ stdout of test 'subquery_in_from_clause.Bug-2812` in directory 'sql/test/BugTrac
 #Cinnamon Grahams;Snack;0.99;London;Ontario;Canada
 #Mushrooms;Produce;0.99;Blountsville;Alab
 [ 1000	]
-#SELECT SUM(PRICE) as PRICE, ITEM, CATEGORY, CITY, REGION, COUNTRY
+#SELECT cast(SUM(PRICE) as NUMERIC(18,2)) as PRICE, ITEM, CATEGORY, CITY, REGION, COUNTRY
 #FROM  (SELECT MAX(price) as MAXPRICE FROM SALESMART) T, SALESMART S
 #WHERE T.MAXPRICE = S.PRICE
 #GROUP BY ITEM, CATEGORY, CITY, REGION, COUNTRY;
@@ -65,7 +65,7 @@ stdout of test 'subquery_in_from_clause.Bug-2812` in directory 'sql/test/BugTrac
 [ 3.99,	"Tyson roasted chicken",	"Meat",	"Fengjie",	"Sichuan",	"China"	]
 [ 3.99,	"Tyson roasted chicken",	"Meat",	"Cattaraugus",	"New York",	"United States"	]
 [ 3.99,	"Tyson roasted chicken",	"Meat",	"Eau Galle",	"Wisconsin",	"United States"	]
-#SELECT SUM(PRICE) as PRICE, ITEM, CATEGORY, CITY, REGION, COUNTRY
+#SELECT cast(SUM(PRICE) as NUMERIC(18,2)) as PRICE, ITEM, CATEGORY, CITY, REGION, COUNTRY
 #FROM  SALESMART S
 #WHERE S.PRICE IN (SELECT MAX(price) as MAXPRICE FROM SALESMART)
 #GROUP BY ITEM, CATEGORY, CITY, REGION, COUNTRY;

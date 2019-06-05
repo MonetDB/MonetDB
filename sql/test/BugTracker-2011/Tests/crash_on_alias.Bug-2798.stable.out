@@ -16,8 +16,6 @@ stdout of test 'crash_on_alias.Bug-2798` in directory 'sql/test/BugTracker-2011`
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-
-
 # 14:09:56 >  
 # 14:09:56 >  mclient -lsql -ftest -i -e --host=volund --port=31436 
 # 14:09:56 >  
@@ -25,53 +23,57 @@ stdout of test 'crash_on_alias.Bug-2798` in directory 'sql/test/BugTracker-2011`
 #START TRANSACTION;
 #CREATE TABLE dbg (a INT, b INT);
 #INSERT INTO dbg (a,b) VALUES (10,10);
-[ 1	]
-#plan SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
+[ 1     ]
+#plan SELECT a as d, cast(SUM(b) as bigint), cast((2 * (SUM(b) / (SELECT 2))) as bigint) as f FROM dbg GROUP BY d;
 % .plan # table_name
 % rel # name
 % clob # type
-% 105 # length
-project (
-| project (
-| | group by (
-| | | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
-| | ) [ "dbg"."a" as "d" ] [ "dbg"."d", sys.sum no nil ("dbg"."b") as "L3"."L3", "L3"."L3" as "L5"."L5" ]
-| ) [ "dbg"."d", "L3"."L3", sys.sql_mul(sys.sql_div("L5"."L5", tinyint "2"), tinyint "2") as "L6"."f" ]
-) [ "dbg"."d", "L3"."L3", "L6"."f" ]
-#set optimizer = 'sequential_pipe';
-#set optimizer = 'default_pipe';
-#SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
-% sys.dbg,	sys.L3,	sys.L6 # table_name
-% d,	L3,	f # name
-% int,	bigint,	bigint # type
-% 2,	2,	2 # length
-[ 10,	10,	10	]
-#ROLLBACK;
-#START TRANSACTION;
-#CREATE TABLE dbg (a INT, b INT);
-#INSERT INTO dbg (a,b) VALUES (10,10);
-[ 1	]
-#plan SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
-% .plan # table_name
-% rel # name
-% clob # type
-% 115 # length
+% 133 # length
 project (
 | project (
 | | group by (
 | | | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
 | | ) [ "dbg"."a" as "d" ] [ "dbg"."d", sys.sum no nil ("dbg"."b") as "L3"."L3", "L3"."L3" as "L6"."L6" ]
-| ) [ "dbg"."d", "L3"."L3" as "L4"."e", sys.sql_mul(sys.sql_div("L6"."L6", tinyint "2"), tinyint "2") as "L7"."f" ]
-) [ "dbg"."d", "L4"."e", "L7"."f" ]
+| ) [ "dbg"."d", bigint["L3"."L3"] as "L4"."L4", bigint[sys.sql_mul(sys.sql_div("L6"."L6", tinyint "2"), tinyint "2")] as "L10"."f" ]
+) [ "dbg"."d", "L4"."L4", "L10"."f" ]
 #set optimizer = 'sequential_pipe';
 #set optimizer = 'default_pipe';
-#SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP
+#SELECT a as d, cast(SUM(b) as bigint), cast((2 * (SUM(b) / (SELECT 2))) as bigint) as f FROM dbg GROUP BY d;
+% sys.dbg,      sys.,   sys. # table_name
+# sys.dbg,      sys.L4, sys.L10 # table_name
+% d,    L,      f # name
+# d,    L4,     f # name
+% int,  bigint, bigint # type
+% 2,    2,      2 # length
+[ 10,   10,     10      ]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE dbg (a INT, b INT);
+#INSERT INTO dbg (a,b) VALUES (10,10);
+[ 1     ]
+#plan SELECT a as d, cast(SUM(b) as bigint) as e, cast((2 * (SUM(b) / (SELECT 2))) as bigint) as f FROM dbg GROUP BY d;
+% .plan # table_name
+% rel # name
+% clob # type
+% 132 # length
+project (
+| project (
+| | group by (
+| | | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
+| | ) [ "dbg"."a" as "d" ] [ "dbg"."d", sys.sum no nil ("dbg"."b") as "L3"."L3", "L3"."L3" as "L7"."L7" ]
+| ) [ "dbg"."d", bigint["L3"."L3"] as "L5"."e", bigint[sys.sql_mul(sys.sql_div("L7"."L7", tinyint "2"), tinyint "2")] as "L11"."f" ]
+) [ "dbg"."d", "L5"."e", "L11"."f" ]
+#set optimizer = 'sequential_pipe';
+#set optimizer = 'default_pipe';
+#SELECT a as d, cast(SUM(b) as bigint) as e, cast((2 * (SUM(b) / (SELECT 2))) as bigint) as f FROM dbg GROUP
 #BY d;
-% sys.dbg,	sys.L4,	sys.L7 # table_name
-% d,	e,	f # name
-% int,	bigint,	bigint # type
-% 2,	2,	2 # length
-[ 10,	10,	10	]
+% sys.dbg,      sys.,   sys. # table_name
+# sys.dbg,      sys.L5, sys.L11 # table_name
+% d,    e,      f # name
+% int,  bigint, bigint # type
+% 2,    2,      2 # length
+[ 10,   10,     10      ]
+#ROLLBACK;
 
 # 14:09:56 >  
 # 14:09:56 >  Done.
