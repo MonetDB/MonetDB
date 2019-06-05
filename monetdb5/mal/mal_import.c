@@ -296,13 +296,14 @@ evalFile(str fname, int listing)
 }
 
 /* patch a newline character if needed */
-static str mal_cmdline(char *s, int *len)
+static str
+mal_cmdline(char *s, size_t *len)
 {
-	if (s[*len - 1] != '\n') {
-		char *n = GDKmalloc(*len + 1 + 1);
+	if (*len && s[*len - 1] != '\n') {
+		char *n = GDKmalloc(*len + 2);
 		if (n == NULL)
 			return s;
-		strncpy(n, s, *len);
+		memcpy(n, s, *len);
 		n[*len] = '\n';
 		n[*len + 1] = 0;
 		(*len)++;
@@ -313,9 +314,9 @@ static str mal_cmdline(char *s, int *len)
 
 str
 compileString(Symbol *fcn, Client cntxt, str s)
-{	
+{
 	Client c;
-	int len = (int) strlen(s);
+	size_t len = strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED;
 	str qry;
@@ -323,6 +324,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	stream *bs;
 	bstream *fdin = NULL;
 
+	assert(s);
 	s = mal_cmdline(s, &len);
 	qry = s;
 	if (old == s) {
@@ -390,13 +392,16 @@ compileString(Symbol *fcn, Client cntxt, str s)
 
 str
 callString(Client cntxt, str s, int listing)
-{	Client c;
-	int i, len = (int) strlen(s);
+{
+	Client c;
+	int i;
+	size_t len = strlen(s);
 	buffer *b;
 	str old =s;
 	str msg = MAL_SUCCEED, qry;
 	bstream *bs;
 
+	assert(s);
 	s = mal_cmdline(s, &len);
 	qry = s;
 	if (old == s) {

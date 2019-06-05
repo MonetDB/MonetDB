@@ -25,42 +25,46 @@ stdout of test 'trace` in directory 'sql/test` itself:
 # 12:44:32 >  
 
 #set optimizer='sequential_pipe';
-#TRACE SELECT count(*) FROM types WHERE id < 30 AND systemname <> 'hge';
-% sys.L3 # table_name
+#CREATE TABLE mytypes (id integer, systemname varchar(256));
+#INSERT INTO mytypes VALUES (0, 'void'),(1,'bat'),(2,'ptr'),(3,'bit'),(4,'str'),(5,'str'),(6,'str'),(7,'oid'),(8,'bte'),(9,'sht'),
+#(10,'int'),(11,'lng'),(13,'bte'),(14,'sht'),(15,'int'),(16,'lng'),(18,'flt'),(19,'dbl'),
+#(20,'int'),(21,'lng'),(22,'daytime'),(23,'daytime'),(24,'date'),(25,'timestamp'),(26,'timestamp'),(27,'blob');
+[ 26	]
+#select '~BeginVariableOutput~';
+% .L2 # table_name
+% L2 # name
+% char # type
+% 21 # length
+[ "~BeginVariableOutput~"	]
+#TRACE SELECT count(*) FROM mytypes;
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 26	]
-#TRACE SELECT count(*) FROM types WHERE id < 30 AND systemname <> 'hge';
+#TRACE SELECT count(*) FROM mytypes;
 % .trace,	.trace # table_name
 % usec,	statement # name
 % bigint,	clob # type
-% 2,	207 # length
-[ 67,	"X_3=0@0:void := querylog.define(\"trace select count(*) from types where id < 30 and systemname <> \\\\'hge\\\\';\":str, \"sequential_pipe\":str, 25:int);"	]
-[ 39,	"X_6=0:int := sql.mvc();"	]
-[ 76,	"X_20=<tmp_146>[35]:bat[:str] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"systemname\":str, 0:int);"	]
-[ 52,	"X_10=<tmp_224>[35]:bat[:int] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"id\":str, 0:int);"	]
-[ 47,	"C_7=<tmp_2330>[35]:bat[:oid] := sql.tid(X_6=0:int, \"sys\":str, \"types\":str);"	]
-[ 70,	"C_88=<tmp_3414>[28]:bat[:oid] := algebra.thetaselect(X_10=<tmp_224>[35]:bat[:int], C_7=<tmp_2330>[35]:bat[:oid], 30:int, \"<\":str);"	]
-[ 58,	"(X_15=<sql_empty_oid_bat>[0]:bat[:oid], X_16=<sql_empty_int_bat>[0]:bat[:int]) := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"id\":str, 2:int);"	]
-[ 63,	"C_89=<tmp_3115>[0]:bat[:oid] := algebra.thetaselect(X_16=<sql_empty_int_bat>[0]:bat[:int], nil:bat[:oid], 30:int, \"<\":str);"	]
-[ 52,	"X_13=<sql_empty_int_bat>[0]:bat[:int] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"id\":str, 1:int);"	]
-[ 60,	"C_91=<tmp_3113>[0]:bat[:oid] := algebra.thetaselect(X_13=<sql_empty_int_bat>[0]:bat[:int], C_7=<tmp_2330>[35]:bat[:oid], 30:int, \"<\":str);"	]
-[ 57,	"C_29=<tmp_3414>[28]:bat[:oid] := sql.subdelta(C_88=<tmp_3414>[28]:bat[:oid], C_7=<tmp_2330>[35]:bat[:oid], X_15=<sql_empty_oid_bat>[0]:bat[:oid], C_89=<tmp_3115>[0]:bat[:oid], C_91=<tmp_3113>[0]:bat[:oid]);"	]
-[ 57,	"C_92=<tmp_3113>[26]:bat[:oid] := algebra.thetaselect(X_20=<tmp_146>[35]:bat[:str], C_29=<tmp_3414>[28]:bat[:oid], \"hge\":str, \"!=\":str);"	]
-[ 59,	"(X_23=<sql_empty_oid_bat>[0]:bat[:oid], X_24=<sql_empty_str_bat>[0]:bat[:str]) := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"systemname\":str, 2:int);"	]
-[ 49,	"C_93=<tmp_3115>[0]:bat[:oid] := algebra.thetaselect(X_24=<sql_empty_str_bat>[0]:bat[:str], nil:bat[:oid], \"hge\":str, \"!=\":str);"	]
-[ 54,	"X_22=<sql_empty_str_bat>[0]:bat[:str] := sql.bind(X_6=0:int, \"sys\":str, \"types\":str, \"systemname\":str, 1:int);"	]
-[ 53,	"C_95=<tmp_2330>[0]:bat[:oid] := algebra.thetaselect(X_22=<sql_empty_str_bat>[0]:bat[:str], C_29=<tmp_3414>[28]:bat[:oid], \"hge\":str, \"!=\":str);"	]
-[ 63,	"C_36=<tmp_3113>[26]:bat[:oid] := sql.subdelta(C_92=<tmp_3113>[26]:bat[:oid], C_29=<tmp_3414>[28]:bat[:oid], X_23=<sql_empty_oid_bat>[0]:bat[:oid], C_93=<tmp_3115>[0]:bat[:oid], C_95=<tmp_2330>[0]:bat[:oid]);"	]
-[ 41,	"X_40=26:lng := aggr.count(C_36=<tmp_3113>[26]:bat[:oid]);"	]
-[ 94,	"sql.resultSet(\"sys.L3\":str, \"L3\":str, \"bigint\":str, 64:int, 0:int, 7:int, X_40=26:lng);"	]
+% 2,	106 # length
+[ 77,	"X_1=0@0:void := querylog.define(\"trace select count(*) from mytypes;\":str, \"sequential_pipe\":str, 12:int);"	]
+[ 38,	"X_4=0:int := sql.mvc();"	]
+[ 64,	"C_5=<tmp_1173>[26]:bat[:oid] := sql.tid(X_4=0:int, \"sys\":str, \"mytypes\":str);"	]
+[ 59,	"X_18=26:lng := aggr.count(C_5=<tmp_1173>[26]:bat[:oid]);"	]
+[ 93,	"sql.resultSet(\".L3\":str, \"L3\":str, \"bigint\":str, 64:int, 0:int, 7:int, X_18=26:lng);"	]
+#select '~EndVariableOutput~';
+% .L2 # table_name
+% L2 # name
+% char # type
+% 19 # length
+[ "~EndVariableOutput~"	]
 #SELECT COUNT(*) FROM tracelog();
 % .L4 # table_name
 % L4 # name
 % bigint # type
-% 2 # length
-[ 19	]
+% 1 # length
+[ 5	]
+#DROP TABLE mytypes;
 
 # 12:44:32 >  
 # 12:44:32 >  "Done."
