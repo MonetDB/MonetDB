@@ -1535,7 +1535,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			use_orderidx = true;
 			if (view) {
 				vwo = (lng) ((view->theap.base - b->theap.base) >> b->tshift);
-				vwl = b->hseqbase + vwo;
+				vwl = b->hseqbase + (oid) vwo;
 				vwo = (lng) view->hseqbase - (lng) b->hseqbase - vwo;
 				vwh = vwl + view->batCount;
 			} else {
