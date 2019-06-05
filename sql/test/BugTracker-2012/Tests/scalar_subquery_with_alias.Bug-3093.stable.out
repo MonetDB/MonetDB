@@ -15,10 +15,6 @@ stdout of test 'scalar_subquery_with_alias.Bug-3093` in directory 'sql/test/BugT
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://napels.ins.cwi.nl:30915/
 # MonetDB/GIS module loaded
-# MonetDB/JAQL module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -42,9 +38,11 @@ Ready.
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
 
-# 15:14:27 >  
-# 15:14:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=napels" "--port=30915"
-# 15:14:27 >  
+Ready.
+
+# 14:31:37 >  
+# 14:31:37 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17594" "--port=37843"
+# 14:31:37 >  
 
 #CREATE TABLE test1 ( id INT, name VARCHAR(20));
 #CREATE TABLE test2 ( id INT, name VARCHAR(20));
@@ -134,9 +132,9 @@ Ready.
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
+[ 3,	0	]
+[ 3,	0	]
 [ 3,	1	]
-[ 3,	0	]
-[ 3,	0	]
 #SELECT (SELECT COUNT(id) AS cnt1 
 #          FROM test1 
 #       )
@@ -150,9 +148,9 @@ Ready.
 % cnt1,	L15 # name
 % bigint,	bigint # type
 % 1,	1 # length
+[ 3,	0	]
+[ 3,	0	]
 [ 3,	1	]
-[ 3,	0	]
-[ 3,	0	]
 #SELECT (SELECT COUNT(id) AS cnt1 
 #          FROM test1 
 #       )
@@ -166,9 +164,9 @@ Ready.
 % cnt1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
+[ 3,	0	]
+[ 3,	0	]
 [ 3,	1	]
-[ 3,	0	]
-[ 3,	0	]
 #SELECT (SELECT COUNT(b.id) AS cnt2 
 #          FROM test2 b 
 #         WHERE a.id = b.id
@@ -182,9 +180,9 @@ Ready.
 % c2,	c1 # name
 % bigint,	bigint # type
 % 1,	1 # length
+[ 0,	3	]
+[ 0,	3	]
 [ 1,	3	]
-[ 0,	3	]
-[ 0,	3	]
 #SELECT (SELECT COUNT(id) AS cnt1 
 #          FROM test1 
 #       ) AS c1
@@ -198,9 +196,9 @@ Ready.
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
+[ 3,	0	]
+[ 3,	0	]
 [ 3,	1	]
-[ 3,	0	]
-[ 3,	0	]
 #DROP TABLE test1;
 #DROP TABLE test2;
 
