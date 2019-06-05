@@ -34,16 +34,17 @@ Ready.
 [ 5,	3	]
 [ 6,	4	]
 [ 7,	5	]
-#select ( select count( * )+1 from countt1 as tt3 where tt3.b < tt2.b ) from countt1 as tt2; 
-% .L6 # table_name
-% L6 # name
+#select ( select count( * )+1 from countt1 as tt3 where tt3.b < tt2.b ) as cnt from countt1 as tt2 order by cnt;
+% .L7 # table_name
+% cnt # name
 % hugeint # type
 % 1 # length
+[ 1	]
 [ 2	]
 [ 3	]
 [ 4	]
 [ 5	]
-[ 1	]
+#drop table countt1;
 
 # 13:45:53 >  
 # 13:45:53 >  Done.
