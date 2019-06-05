@@ -1227,7 +1227,7 @@ rel_parse_value(backend *be, char *query, char emode)
 	stmt *s = NULL;
 	buffer *b;
 	char *n;
-	int len = _strlen(query);
+	size_t len = _strlen(query);
 	exp_kind ek = {type_value, card_value, FALSE};
 	stream *sr;
 	bstream *bs;
@@ -3209,7 +3209,7 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 	stmt *sq = NULL;
 	buffer *b;
 	char *nquery;
-	int len = _strlen(query);
+	size_t len = _strlen(query);
 	stream *buf;
 	bstream * bst;
 

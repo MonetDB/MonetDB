@@ -1847,11 +1847,11 @@ static int SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 		if(fld==0 || strcmp(fld,"nil")==0){
 			if((v->val.sval= GDKstrdup(str_nil)) == NULL)
 				return -1;
-			v->len= (int) strlen(v->val.sval);
+			v->len = strlen(v->val.sval);
 		} else {
 			if((v->val.sval= GDKstrdup(fld)) == NULL)
 				return -1;
-			v->len= (int) strlen(fld);
+			v->len = strlen(fld);
 		}
 		break;
 	}
@@ -1999,7 +1999,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		/* and reload it into the proper format */
 		str ht,tt;
 		BAT *b= BATdescriptor(BBPindex(*nme));
-		int len;
+		size_t len;
 
 		if( b== NULL){
 			throw(MAL,"mapi.put","Can not access BAT");
@@ -2009,7 +2009,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		ht = getTypeName(TYPE_oid);
 		tt = getTypeName(getBatType(tpe));
 		snprintf(buf,BUFSIZ,"%s:= bat.new(:%s,%s);", *nme, ht,tt );
-		len = (int) strlen(buf);
+		len = strlen(buf);
 		snprintf(buf+len,BUFSIZ-len,"%s:= io.import(%s,tuples);", *nme, *nme);
 
 		/* and execute the request */

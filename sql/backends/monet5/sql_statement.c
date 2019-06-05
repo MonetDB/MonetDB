@@ -3324,7 +3324,7 @@ stmt_has_null(stmt *s)
 static const char *
 func_name(sql_allocator *sa, const char *n1, const char *n2)
 {
-	int l1 = _strlen(n1), l2;
+	size_t l1 = _strlen(n1), l2;
 
 	if (!sa)
 		return n1;

@@ -859,7 +859,7 @@ AUTHdecypherValue(str *ret, const char *value)
 	int escaped = 0;
 	/* we default to some garbage key, just to make password unreadable
 	 * (a space would only uppercase the password) */
-	int keylen = 0;
+	size_t keylen = 0;
 
 	if (vaultKey == NULL)
 		throw(MAL, "decypherValue", "The vault is still locked!");
@@ -867,7 +867,7 @@ AUTHdecypherValue(str *ret, const char *value)
 	if( r == NULL)
 		throw(MAL, "decypherValue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
-	keylen = (int) strlen(vaultKey);
+	keylen = strlen(vaultKey);
 
 	/* XOR all characters.  If we encounter a 'one' char after the XOR
 	 * operation, it is an escape, so replace it with the next char. */
@@ -901,7 +901,7 @@ AUTHcypherValue(str *ret, const char *value)
 	const char *s = value;
 	/* we default to some garbage key, just to make password unreadable
 	 * (a space would only uppercase the password) */
-	int keylen = 0;
+	size_t keylen = 0;
 
 	if (vaultKey == NULL)
 		throw(MAL, "cypherValue", "The vault is still locked!");
@@ -909,7 +909,7 @@ AUTHcypherValue(str *ret, const char *value)
 	if( r == NULL)
 		throw(MAL, "cypherValue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
-	keylen = (int) strlen(vaultKey);
+	keylen = strlen(vaultKey);
 
 	/* XOR all characters.  If we encounter a 'zero' char after the XOR
 	 * operation, escape it with an 'one' char. */

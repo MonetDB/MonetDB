@@ -1412,7 +1412,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 static str
 pat2pcre(str *r, const char *pat)
 {
-	int len = (int) strlen(pat);
+	size_t len = strlen(pat);
 	char *ppat = GDKmalloc(len*2+3 /* 3 = "^'the translated regexp'$0" */);
 	int start = 0;
 

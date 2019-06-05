@@ -650,53 +650,9 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		be->depth--;
 		MSresetInstructions(c->curprg->def, oldstop);
 		freeVariables(c, c->curprg->def, NULL, oldvtop);
-
 		sqlcleanup(m, 0);
-
-		/* construct a mock result set to determine schema */
-		if (!execute && result) {
-			/* 'inspired' by mvc_export_prepare() */
-			if (is_topn(r->op))
-				r = r->l;
-			if (r && is_project(r->op) && r->exps) {
-				node *n;
-				int ncol = 0;
-				res_table *res;
-				for (n = r->exps->h; n; n = n->next) ncol++;
-				res = res_table_create(m->session->tr, m->result_id++, 0, ncol, 1, NULL, NULL);
-				if( res == NULL){
-					msg = createException(SQL,"SQLstatement",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-					goto endofcompile;
-				}
-				for (n = r->exps->h; n; n = n->next) {
-					const char *name, *rname;
-					sql_exp *e = n->data;
-					sql_subtype *t = exp_subtype(e);
-					void *ptr =ATOMnil(t->type->localtype);
-
-					if( ptr == NULL){
-						msg = createException(SQL,"SQLstatement", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-						goto endofcompile;
-					}
-					name = e->name;
-					if (!name && e->type == e_column && e->r)
-						name = e->r;
-					rname = e->rname;
-					if (!rname && e->type == e_column && e->l)
-						rname = e->l;
-					if (res_col_create(m->session->tr, res, rname, name, t->type->sqlname, t->digits,
-							   t->scale, t->type->localtype, ptr) == NULL) {
-						msg = createException(SQL,"SQLstatement", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-						goto endofcompile;
-					}
-				}
-				*result = res;
-			}
-		}
-
-		if (!execute) {
+		if (!execute)
 			goto endofcompile;
-		}
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout, "#parse/execute result %d\n", err);
 #endif

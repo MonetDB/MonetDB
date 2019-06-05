@@ -18,7 +18,8 @@
 static str
 RQcall2str(MalBlkPtr mb, InstrPtr p)
 {
-	int k,len=1;
+	int k;
+	size_t len=1;
 	str msg;
 	str s,cv= NULL;
 
@@ -31,7 +32,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 		strcat(msg, operatorName(p->barrier));
 	
 	if( p->retc > 1) strcat(msg,"(");
-	len= (int) strlen(msg);
+	len = strlen(msg);
 	for (k = 0; k < p->retc; k++) {
 		if( isVarUDFtype(mb, getArg(p,k)) ){
 			str tpe = getTypeName(getVarType(mb, getArg(p, k)));
@@ -41,7 +42,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 			sprintf(msg+len, "%s", getVarName(mb,getArg(p,k)));
 		if (k < p->retc - 1)
 			strcat(msg,",");
-		len= (int) strlen(msg);
+		len = strlen(msg);
 	}
 	if( p->retc > 1) strcat(msg,")");
 	sprintf(msg+len,":= %s.%s(",getModuleId(p),getFunctionId(p));
@@ -49,7 +50,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 	if (s) {
 		s++;
 		*s = 0;
-		len = (int) strlen(msg);
+		len = strlen(msg);
 		for (k = p->retc; k < p->argc; k++) {
 			VarPtr v = getVar(mb, getArg(p, k));
 			if( isVarConstant(mb, getArg(p,k)) ){
@@ -68,7 +69,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 				sprintf(msg+len, "%s", v->id);
 			if (k < p->argc - 1)
 				strcat(msg,",");
-			len= (int) strlen(msg);
+			len = strlen(msg);
 		}
 		strcat(msg,");");
 	}

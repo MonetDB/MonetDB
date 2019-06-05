@@ -2122,7 +2122,7 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 	sql_exp *e = NULL;
 	buffer *b;
 	char *n;
-	int len = _strlen(query);
+	size_t len = _strlen(query);
 	exp_kind ek = {type_value, card_value, FALSE};
 	stream *s;
 	bstream *bs;

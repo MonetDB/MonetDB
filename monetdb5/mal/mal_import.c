@@ -128,7 +128,7 @@ malLoadScript(str name, bstream **fdin)
 	c->srcFile = oldsrcFile; \
 	if(c->prompt) GDKfree(c->prompt); \
 	c->prompt = oldprompt; \
-	c->promptlength= (int)strlen(c->prompt);
+	c->promptlength = strlen(c->prompt);
 #define restoreClient2 \
 	assert(c->glb == 0 || c->glb == oldglb); /* detect leak */ \
 	c->glb = oldglb; \

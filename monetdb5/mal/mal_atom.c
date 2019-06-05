@@ -40,7 +40,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	(void)mb;  /* fool compilers */
 	assert(pci != 0);
 	name = getFunctionId(pci);
-	tpe = getAtomIndex(getModuleId(pci), (int)strlen(getModuleId(pci)), TYPE_any);
+	tpe = getAtomIndex(getModuleId(pci), strlen(getModuleId(pci)), TYPE_any);
 	if (tpe < 0 || tpe >= GDKatomcnt || tpe >= MAXATOMS)
 		return MAL_SUCCEED;
 	assert(pci->fcn != NULL);

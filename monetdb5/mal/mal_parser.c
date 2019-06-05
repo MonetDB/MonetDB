@@ -419,7 +419,7 @@ cstToken(Client cntxt, ValPtr cst)
 		i = stringLength(cntxt);
 		cst->val.sval = strCopy(cntxt, i);
 		if (cst->val.sval)
-			cst->len = (int) strlen(cst->val.sval);
+			cst->len = strlen(cst->val.sval);
 		else
 			cst->len = 0;
 		return i;
@@ -682,7 +682,7 @@ simpleTypeId(Client cntxt)
 		cntxt->yycur--; /* keep it */
 		return -1;
 	}
-	tpe = getAtomIndex(CURRENT(cntxt), l, -1);
+	tpe = getAtomIndex(CURRENT(cntxt), (size_t) l, -1);
 	if (tpe < 0) {
 		parseError(cntxt, "Type identifier expected\n");
 		cntxt->yycur -= l; /* keep it */
@@ -1406,7 +1406,7 @@ static int
 parseEnd(Client cntxt)
 {
 	Symbol curPrg = 0;
-	int l;
+	size_t l;
 	InstrPtr sig;
 	str errors = MAL_SUCCEED;
 
@@ -1427,7 +1427,7 @@ parseEnd(Client cntxt)
 				l = operatorLength(cntxt);
 		}
 		/* parse fcn */
-		if ((l == (int) strlen(curPrg->name) &&
+		if ((l == strlen(curPrg->name) &&
 			strncmp(CURRENT(cntxt), curPrg->name, l) == 0) || l == 0)
 				advance(cntxt, l);
 		else 
@@ -1799,7 +1799,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				curInstr->token= REMsymbol;
 				curInstr->barrier= 0;
 				cst.vtype = TYPE_str;
-				cst.len = (int) strlen(start);
+				cst.len = strlen(start);
 				if((cst.val.sval = GDKstrdup(start)) == NULL) {
 					parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					freeInstruction(curInstr);
