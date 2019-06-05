@@ -1216,6 +1216,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	BAT *bn, *tmp;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
 	oid vwl = 0, vwh = 0;
+	lng vwo = 0;
 	bool use_orderidx = false;
 	union {
 		bte v_bte;
@@ -1533,7 +1534,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < b->batCount/3) {
 			use_orderidx = true;
 			if (view) {
-				vwl = view->hseqbase;
+				vwo = (lng) ((view->theap.base - b->theap.base) >> b->tshift);
+				vwl = b->hseqbase + vwo;
+				vwo = (lng) view->hseqbase - (lng) b->hseqbase - vwo;
 				vwh = vwl + view->batCount;
 			} else {
 				vwl = b->hseqbase;
@@ -1544,7 +1547,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				b = view;
 			}
 		}
-		ALGODEBUG if (view && b != view) fprintf(stderr, "#BATselect: switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh);
+		ALGODEBUG if (view && b != view) fprintf(stderr, "#BATselect: switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " off " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
 	}
 
 	if (BATordered(b) || BATordered_rev(b) || use_orderidx) {
@@ -1714,7 +1717,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 				for (i = low; i < high; i++) {
 					if (vwl <= *rs && *rs < vwh) {
-						*rbn++ = *rs;
+						*rbn++ = (oid) ((lng) *rs + vwo);
 						cnt++;
 					}
 					rs++;
