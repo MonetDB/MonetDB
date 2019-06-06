@@ -35,7 +35,7 @@ extern char *strptime(const char *, const char *, struct tm *);
 #endif
 
 #define YEAR_MIN		(-4712)	/* 4713 BC */
-#define YEAR_MAX		(YEAR_MIN+(1<<21)/12)
+#define YEAR_MAX		(YEAR_MIN+(1<<21)/12-1)
 
 #define YEAR_OFFSET		(-YEAR_MIN)
 #define DTDAY_WIDTH		5		/* 1..28/29/30/31, depending on month */
