@@ -324,7 +324,6 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	stream *bs;
 	bstream *fdin = NULL;
 
-	assert(s);
 	s = mal_cmdline(s, &len);
 	qry = s;
 	if (old == s) {
@@ -401,7 +400,6 @@ callString(Client cntxt, str s, int listing)
 	str msg = MAL_SUCCEED, qry;
 	bstream *bs;
 
-	assert(s);
 	s = mal_cmdline(s, &len);
 	qry = s;
 	if (old == s) {
