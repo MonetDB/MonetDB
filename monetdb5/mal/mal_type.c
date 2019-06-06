@@ -102,8 +102,6 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 {
 	int i;
 
-	if (len == 0)
-		len = strlen(nme);
 	if (len >= IDLENGTH) {
 		/* name too long: cannot match any atom name */
 		return deftype;

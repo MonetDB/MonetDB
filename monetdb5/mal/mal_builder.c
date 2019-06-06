@@ -564,7 +564,7 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 
 	if (q == NULL)
 		return NULL;
-	idx= getAtomIndex(tpe, 0, TYPE_any);
+	idx= getAtomIndex(tpe, strlen(tpe), TYPE_any);
 	if( idx < 0 || idx >= GDKatomcnt || idx >= MAXATOMS)
 		return NULL;
 	cst.vtype=TYPE_void;
