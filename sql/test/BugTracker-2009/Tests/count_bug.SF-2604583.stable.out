@@ -36,7 +36,7 @@ stdout of test 'count_bug.SF-2604583` in directory 'sql/test/BugTracker-2009` it
 [ 5,    3       ]
 [ 6,    4       ]
 [ 7,    5       ]
-#select cast( ( select count( * )+1 from countt1 as tt3 where tt3.b < tt2.b ) as bigint) from countt1 as tt2; 
+#select cast( ( select count( * )+1 from countt1 as tt3 where tt3.b < tt2.b ) as bigint) from countt1 as tt2 order by 1;
 % . # table_name
 # .L6 # table_name
 % L # name
