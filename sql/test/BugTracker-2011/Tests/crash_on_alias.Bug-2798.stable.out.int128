@@ -44,7 +44,7 @@ project (
 # sys.dbg,      sys.L3, sys.L6 # table_name
 % d,    L,      f # name
 # d,    L3,     f # name
-% int,  bigint, bigint # type
+% int,  hugeint,        hugeint # type
 % 2,    2,      2 # length
 [ 10,   10,     10      ]
 #ROLLBACK;
@@ -71,7 +71,7 @@ project (
 % sys.dbg,      sys.,   sys. # table_name
 # sys.dbg,      sys.L4, sys.L7 # table_name
 % d,    e,      f # name
-% int,  bigint, bigint # type
+% int,  hugeint,        hugeint # type
 % 2,    2,      2 # length
 [ 10,   10,     10      ]
 #ROLLBACK;
