@@ -32,7 +32,7 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	bstream *bs;
 	stream *buf;
 	char *n;
-	int len = _strlen(query);
+	size_t len = _strlen(query);
 	sql_schema *c = cur_schema(m);
 	sql_query *qc = NULL;
 

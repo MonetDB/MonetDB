@@ -27,7 +27,7 @@ rel_psm_block(sql_allocator *sa, list *l)
 			return NULL;
 
 		r->op = op_ddl;
-		r->flag = DDL_PSM;
+		r->flag = ddl_psm;
 		r->exps = l;
 		return r;
 	}
@@ -228,7 +228,7 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	} else {
 		return NULL;
 	}
-	if(baset->flag != DDL_CREATE_TABLE)
+	if(baset->flag != ddl_create_table)
 		return NULL;
 	t = (sql_table*)((atom*)((sql_exp*)baset->exps->t->data)->l)->data.val.pval;
 	if(!stack_push_table(sql, name, baset, t))
@@ -776,7 +776,7 @@ rel_create_function(sql_allocator *sa, const char *sname, sql_func *f)
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
-	rel->flag = DDL_CREATE_FUNCTION;
+	rel->flag = ddl_create_function;
 	rel->exps = exps;
 	rel->card = 0;
 	rel->nrcols = 0;
@@ -998,7 +998,7 @@ rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
-	rel->flag = DDL_DROP_FUNCTION;
+	rel->flag = ddl_drop_function;
 	rel->exps = exps;
 	rel->card = 0;
 	rel->nrcols = 0;
@@ -1170,7 +1170,7 @@ rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *t
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
-	rel->flag = DDL_CREATE_TRIGGER;
+	rel->flag = ddl_create_trigger;
 	rel->exps = exps;
 	rel->card = CARD_MULTI;
 	rel->nrcols = 0;
@@ -1323,7 +1323,7 @@ rel_drop_trigger(mvc *sql, const char *sname, const char *tname, int if_exists)
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
-	rel->flag = DDL_DROP_TRIGGER;
+	rel->flag = ddl_drop_trigger;
 	rel->exps = exps;
 	rel->card = CARD_MULTI;
 	rel->nrcols = 0;

@@ -2332,16 +2332,16 @@ stmt_trans(backend *be, int type, stmt *chain, stmt *name)
 		return NULL;
 
 	switch(type){
-	case DDL_RELEASE:
+	case ddl_release:
 		q = newStmt(mb, sqlRef, transaction_releaseRef);
 		break;
-	case DDL_COMMIT:
+	case ddl_commit:
 		q = newStmt(mb, sqlRef, transaction_commitRef);
 		break;
-	case DDL_ROLLBACK:
+	case ddl_rollback:
 		q = newStmt(mb, sqlRef, transaction_rollbackRef);
 		break;
-	case DDL_TRANS:
+	case ddl_trans:
 		q = newStmt(mb, sqlRef, transaction_beginRef);
 		break;
 	default:
@@ -2380,45 +2380,45 @@ stmt_catalog(backend *be, int type, stmt *args)
 
 	/* cast them into properly named operations */
 	switch(type){
-	case DDL_CREATE_SEQ:	q = newStmt(mb, sqlcatalogRef, create_seqRef); break;
-	case DDL_ALTER_SEQ:	q = newStmt(mb, sqlcatalogRef, alter_seqRef); break;
-	case DDL_DROP_SEQ:	q = newStmt(mb, sqlcatalogRef, drop_seqRef); break;
-	case DDL_CREATE_SCHEMA:	q = newStmt(mb, sqlcatalogRef, create_schemaRef); break;
-	case DDL_DROP_SCHEMA:	q = newStmt(mb, sqlcatalogRef, drop_schemaRef); break;
-	case DDL_CREATE_TABLE:	q = newStmt(mb, sqlcatalogRef, create_tableRef); break;
-	case DDL_CREATE_VIEW:	q = newStmt(mb, sqlcatalogRef, create_viewRef); break;
-	case DDL_DROP_TABLE:	q = newStmt(mb, sqlcatalogRef, drop_tableRef); break;
-	case DDL_DROP_VIEW:	q = newStmt(mb, sqlcatalogRef, drop_viewRef); break;
-	case DDL_DROP_CONSTRAINT:	q = newStmt(mb, sqlcatalogRef, drop_constraintRef); break;
-	case DDL_ALTER_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_tableRef); break;
-	case DDL_CREATE_TYPE:	q = newStmt(mb, sqlcatalogRef, create_typeRef); break;
-	case DDL_DROP_TYPE:	q = newStmt(mb, sqlcatalogRef, drop_typeRef); break;
-	case DDL_GRANT_ROLES:	q = newStmt(mb, sqlcatalogRef, grant_rolesRef); break;
-	case DDL_REVOKE_ROLES:	q = newStmt(mb, sqlcatalogRef, revoke_rolesRef); break;
-	case DDL_GRANT:		q = newStmt(mb, sqlcatalogRef, grantRef); break;
-	case DDL_REVOKE:	q = newStmt(mb, sqlcatalogRef, revokeRef); break;
-	case DDL_GRANT_FUNC:	q = newStmt(mb, sqlcatalogRef, grant_functionRef); break;
-	case DDL_REVOKE_FUNC:	q = newStmt(mb, sqlcatalogRef, revoke_functionRef); break;
-	case DDL_CREATE_USER:	q = newStmt(mb, sqlcatalogRef, create_userRef); break;
-	case DDL_DROP_USER:		q = newStmt(mb, sqlcatalogRef, drop_userRef); break;
-	case DDL_ALTER_USER:	q = newStmt(mb, sqlcatalogRef, alter_userRef); break;
-	case DDL_RENAME_USER:	q = newStmt(mb, sqlcatalogRef, rename_userRef); break;
-	case DDL_CREATE_ROLE:	q = newStmt(mb, sqlcatalogRef, create_roleRef); break;
-	case DDL_DROP_ROLE:		q = newStmt(mb, sqlcatalogRef, drop_roleRef); break;
-	case DDL_DROP_INDEX:	q = newStmt(mb, sqlcatalogRef, drop_indexRef); break;
-	case DDL_DROP_FUNCTION:	q = newStmt(mb, sqlcatalogRef, drop_functionRef); break;
-	case DDL_CREATE_FUNCTION:	q = newStmt(mb, sqlcatalogRef, create_functionRef); break;
-	case DDL_CREATE_TRIGGER:	q = newStmt(mb, sqlcatalogRef, create_triggerRef); break;
-	case DDL_DROP_TRIGGER:	q = newStmt(mb, sqlcatalogRef, drop_triggerRef); break;
-	case DDL_ALTER_TABLE_ADD_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_add_tableRef); break;
-	case DDL_ALTER_TABLE_DEL_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_del_tableRef); break;
-	case DDL_ALTER_TABLE_SET_ACCESS:q = newStmt(mb, sqlcatalogRef, alter_set_tableRef); break;
-	case DDL_ALTER_TABLE_ADD_RANGE_PARTITION:	q = newStmt(mb, sqlcatalogRef, alter_add_range_partitionRef); break;
-	case DDL_ALTER_TABLE_ADD_LIST_PARTITION:	q = newStmt(mb, sqlcatalogRef, alter_add_value_partitionRef); break;
-	case DDL_COMMENT_ON:	q = newStmt(mb, sqlcatalogRef, comment_onRef); break;
-	case DDL_RENAME_SCHEMA: q = newStmt(mb, sqlcatalogRef, rename_schemaRef); break;
-	case DDL_RENAME_TABLE: q = newStmt(mb, sqlcatalogRef, rename_tableRef); break;
-	case DDL_RENAME_COLUMN: q = newStmt(mb, sqlcatalogRef, rename_columnRef); break;
+	case ddl_create_seq:	q = newStmt(mb, sqlcatalogRef, create_seqRef); break;
+	case ddl_alter_seq:	q = newStmt(mb, sqlcatalogRef, alter_seqRef); break;
+	case ddl_drop_seq:	q = newStmt(mb, sqlcatalogRef, drop_seqRef); break;
+	case ddl_create_schema:	q = newStmt(mb, sqlcatalogRef, create_schemaRef); break;
+	case ddl_drop_schema:	q = newStmt(mb, sqlcatalogRef, drop_schemaRef); break;
+	case ddl_create_table:	q = newStmt(mb, sqlcatalogRef, create_tableRef); break;
+	case ddl_create_view:	q = newStmt(mb, sqlcatalogRef, create_viewRef); break;
+	case ddl_drop_table:	q = newStmt(mb, sqlcatalogRef, drop_tableRef); break;
+	case ddl_drop_view:	q = newStmt(mb, sqlcatalogRef, drop_viewRef); break;
+	case ddl_drop_constraint:	q = newStmt(mb, sqlcatalogRef, drop_constraintRef); break;
+	case ddl_alter_table:	q = newStmt(mb, sqlcatalogRef, alter_tableRef); break;
+	case ddl_create_type:	q = newStmt(mb, sqlcatalogRef, create_typeRef); break;
+	case ddl_drop_type:	q = newStmt(mb, sqlcatalogRef, drop_typeRef); break;
+	case ddl_grant_roles:	q = newStmt(mb, sqlcatalogRef, grant_rolesRef); break;
+	case ddl_revoke_roles:	q = newStmt(mb, sqlcatalogRef, revoke_rolesRef); break;
+	case ddl_grant:		q = newStmt(mb, sqlcatalogRef, grantRef); break;
+	case ddl_revoke:	q = newStmt(mb, sqlcatalogRef, revokeRef); break;
+	case ddl_grant_func:	q = newStmt(mb, sqlcatalogRef, grant_functionRef); break;
+	case ddl_revoke_func:	q = newStmt(mb, sqlcatalogRef, revoke_functionRef); break;
+	case ddl_create_user:	q = newStmt(mb, sqlcatalogRef, create_userRef); break;
+	case ddl_drop_user:		q = newStmt(mb, sqlcatalogRef, drop_userRef); break;
+	case ddl_alter_user:	q = newStmt(mb, sqlcatalogRef, alter_userRef); break;
+	case ddl_rename_user:	q = newStmt(mb, sqlcatalogRef, rename_userRef); break;
+	case ddl_create_role:	q = newStmt(mb, sqlcatalogRef, create_roleRef); break;
+	case ddl_drop_role:		q = newStmt(mb, sqlcatalogRef, drop_roleRef); break;
+	case ddl_drop_index:	q = newStmt(mb, sqlcatalogRef, drop_indexRef); break;
+	case ddl_drop_function:	q = newStmt(mb, sqlcatalogRef, drop_functionRef); break;
+	case ddl_create_function:	q = newStmt(mb, sqlcatalogRef, create_functionRef); break;
+	case ddl_create_trigger:	q = newStmt(mb, sqlcatalogRef, create_triggerRef); break;
+	case ddl_drop_trigger:	q = newStmt(mb, sqlcatalogRef, drop_triggerRef); break;
+	case ddl_alter_table_add_table:	q = newStmt(mb, sqlcatalogRef, alter_add_tableRef); break;
+	case ddl_alter_table_del_table:	q = newStmt(mb, sqlcatalogRef, alter_del_tableRef); break;
+	case ddl_alter_table_set_access:q = newStmt(mb, sqlcatalogRef, alter_set_tableRef); break;
+	case ddl_alter_table_add_range_partition:	q = newStmt(mb, sqlcatalogRef, alter_add_range_partitionRef); break;
+	case ddl_alter_table_add_list_partition:	q = newStmt(mb, sqlcatalogRef, alter_add_value_partitionRef); break;
+	case ddl_comment_on:	q = newStmt(mb, sqlcatalogRef, comment_onRef); break;
+	case ddl_rename_schema: q = newStmt(mb, sqlcatalogRef, rename_schemaRef); break;
+	case ddl_rename_table: q = newStmt(mb, sqlcatalogRef, rename_tableRef); break;
+	case ddl_rename_column: q = newStmt(mb, sqlcatalogRef, rename_columnRef); break;
 	default:
 		showException(GDKout, SQL, "sql", "catalog operation unknown\n");
 	}
@@ -3324,7 +3324,7 @@ stmt_has_null(stmt *s)
 static const char *
 func_name(sql_allocator *sa, const char *n1, const char *n2)
 {
-	int l1 = _strlen(n1), l2;
+	size_t l1 = _strlen(n1), l2;
 
 	if (!sa)
 		return n1;

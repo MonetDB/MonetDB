@@ -79,10 +79,8 @@ get_table( sql_rel *t)
 	assert(is_updateble(t)); 
 	if (t->op == op_basetable) { /* existing base table */
 		tab = get_basetable(t);
-	} else if (t->op == op_ddl && (
-			t->flag == DDL_ALTER_TABLE ||
-			t->flag == DDL_CREATE_TABLE ||
-			t->flag == DDL_CREATE_VIEW)) {
+	} else if (t->op == op_ddl &&
+			   (t->flag == ddl_alter_table || t->flag == ddl_create_table || t->flag == ddl_create_view)) {
 		return rel_ddl_table_get(t);
 	}
 	return tab;
@@ -854,7 +852,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 }
 
 /* for cascade of updates we change the 'relup' relations into
- * a DDL_LIST of update relations.
+ * a ddl_list of update relations.
  */
 static sql_rel *
 rel_update_idxs(mvc *sql, sql_table *t, sql_rel *relup)
@@ -2069,7 +2067,7 @@ rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql
 	rel->l = l;
 	rel->r = NULL;
 	rel->op = op_ddl;
-	rel->flag = DDL_OUTPUT;
+	rel->flag = ddl_output;
 	rel->exps = exps;
 	rel->card = 0;
 	rel->nrcols = 0;
@@ -2122,7 +2120,7 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 	sql_exp *e = NULL;
 	buffer *b;
 	char *n;
-	int len = _strlen(query);
+	size_t len = _strlen(query);
 	exp_kind ek = {type_value, card_value, FALSE};
 	stream *s;
 	bstream *bs;

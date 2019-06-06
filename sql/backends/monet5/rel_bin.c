@@ -1227,7 +1227,7 @@ rel_parse_value(backend *be, char *query, char emode)
 	stmt *s = NULL;
 	buffer *b;
 	char *n;
-	int len = _strlen(query);
+	size_t len = _strlen(query);
 	exp_kind ek = {type_value, card_value, FALSE};
 	stream *sr;
 	bstream *bs;
@@ -3209,7 +3209,7 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 	stmt *sq = NULL;
 	buffer *b;
 	char *nquery;
-	int len = _strlen(query);
+	size_t len = _strlen(query);
 	stream *buf;
 	bstream * bst;
 
@@ -5284,7 +5284,7 @@ rel2bin_partition_limits(backend *be, sql_rel *rel, list *refs)
 		r = subrel_bin(be, rel->r, refs);
 
 	assert(rel->exps);
-	assert(rel->flag == DDL_ALTER_TABLE_ADD_RANGE_PARTITION || rel->flag == DDL_ALTER_TABLE_ADD_LIST_PARTITION);
+	assert(rel->flag == ddl_alter_table_add_range_partition || rel->flag == ddl_alter_table_add_list_partition);
 
 	if(rel->exps) {
 		for(n = rel->exps->h; n; n = n->next) {
@@ -5437,7 +5437,7 @@ rel2bin_catalog_table(backend *be, sql_rel *rel, list *refs)
 	append(l, sname);
 	assert(tname);
 	append(l, tname);
-	if (rel->flag != DDL_DROP_TABLE && rel->flag != DDL_DROP_VIEW && rel->flag != DDL_DROP_CONSTRAINT) {
+	if (rel->flag != ddl_drop_table && rel->flag != ddl_drop_view && rel->flag != ddl_drop_constraint) {
 		if (en) {
 			table = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
 			if (!table)
@@ -5487,37 +5487,84 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	stmt *s = NULL;
 
-	if (rel->flag == DDL_OUTPUT) {
-		s = rel2bin_output(be, rel, refs);
-		sql->type = Q_TABLE;
-	} else if (rel->flag <= DDL_LIST) {
-		s = rel2bin_list(be, rel, refs);
-	} else if (rel->flag == DDL_PSM) {
-		s = rel2bin_psm(be, rel);
-	} else if (rel->flag == DDL_EXCEPTION) {
-		s = rel2bin_exception(be, rel, refs);
-		sql->type = Q_UPDATE;
-	} else if (rel->flag <= DDL_ALTER_SEQ) {
-		s = rel2bin_seq(be, rel, refs);
-		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_DROP_SEQ) {
-		s = rel2bin_catalog2(be, rel, refs);
-		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_ALTER_TABLE_ADD_LIST_PARTITION) {
-		s = rel2bin_partition_limits(be, rel, refs);
-		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_TRANS) {
-		s = rel2bin_trans(be, rel, refs);
-		sql->type = Q_TRANS;
-	} else if (rel->flag <= DDL_DROP_SCHEMA) {
-		s = rel2bin_catalog(be, rel, refs);
-		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_ALTER_TABLE) {
-		s = rel2bin_catalog_table(be, rel, refs);
-		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_RENAME_COLUMN) {
-		s = rel2bin_catalog2(be, rel, refs);
-		sql->type = Q_SCHEMA;
+	switch (rel->flag) {
+		case ddl_output:
+			s = rel2bin_output(be, rel, refs);
+			sql->type = Q_TABLE;
+			break;
+		case ddl_list:
+			s = rel2bin_list(be, rel, refs);
+			break;
+		case ddl_psm:
+			s = rel2bin_psm(be, rel);
+			break;
+		case ddl_exception:
+			s = rel2bin_exception(be, rel, refs);
+			sql->type = Q_UPDATE;
+			break;
+		case ddl_create_seq:
+		case ddl_alter_seq:
+			s = rel2bin_seq(be, rel, refs);
+			sql->type = Q_SCHEMA;
+			break;
+		case ddl_alter_table_add_range_partition:
+		case ddl_alter_table_add_list_partition:
+			s = rel2bin_partition_limits(be, rel, refs);
+			sql->type = Q_SCHEMA;
+			break;
+		case ddl_release:
+		case ddl_commit:
+		case ddl_rollback:
+		case ddl_trans:
+			s = rel2bin_trans(be, rel, refs);
+			sql->type = Q_TRANS;
+			break;
+		case ddl_create_schema:
+		case ddl_drop_schema:
+			s = rel2bin_catalog(be, rel, refs);
+			sql->type = Q_SCHEMA;
+			break;
+		case ddl_create_table:
+		case ddl_drop_table:
+		case ddl_create_view:
+		case ddl_drop_view:
+		case ddl_drop_constraint:
+		case ddl_alter_table:
+			s = rel2bin_catalog_table(be, rel, refs);
+			sql->type = Q_SCHEMA;
+			break;
+		case ddl_drop_seq:
+		case ddl_create_type:
+		case ddl_drop_type:
+		case ddl_drop_index:
+		case ddl_create_function:
+		case ddl_drop_function:
+		case ddl_create_trigger:
+		case ddl_drop_trigger:
+		case ddl_grant_roles:
+		case ddl_revoke_roles:
+		case ddl_grant:
+		case ddl_revoke:
+		case ddl_grant_func:
+		case ddl_revoke_func:
+		case ddl_create_user:
+		case ddl_drop_user:
+		case ddl_alter_user:
+		case ddl_rename_user:
+		case ddl_create_role:
+		case ddl_drop_role:
+		case ddl_alter_table_add_table:
+		case ddl_alter_table_del_table:
+		case ddl_alter_table_set_access:
+		case ddl_comment_on:
+		case ddl_rename_schema:
+		case ddl_rename_table:
+		case ddl_rename_column:
+			s = rel2bin_catalog2(be, rel, refs);
+			sql->type = Q_SCHEMA;
+			break;
+		default:
+			assert(0);
 	}
 	return s;
 }
@@ -5860,17 +5907,17 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 			return -1;
 		break;
 	case op_ddl:
-		if (r->flag == DDL_OUTPUT) {
+		if (r->flag == ddl_output) {
 			if (r->l)
 				return rel_deps(sql, r->l, refs, l);
-		} else if (r->flag <= DDL_LIST || r->flag == DDL_EXCEPTION) {
+		} else if (r->flag == ddl_list || r->flag == ddl_exception) {
 			if (r->l)
 				return rel_deps(sql, r->l, refs, l);
 			if (r->r)
 				return rel_deps(sql, r->r, refs, l);
-		} else if (r->flag == DDL_PSM) {
+		} else if (r->flag == ddl_psm) {
 			break;
-		} else if (r->flag <= DDL_ALTER_SEQ) {
+		} else if (r->flag == ddl_create_seq || r->flag == ddl_alter_seq) {
 			if (r->l)
 				return rel_deps(sql, r->l, refs, l);
 		}

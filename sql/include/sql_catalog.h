@@ -62,9 +62,6 @@
 #define DEPENDENCY_CHECK_ERROR 3
 #define DEPENDENCY_CHECK_OK 0
 
-#define NO_TRIGGER 0
-#define IS_TRIGGER 1
-
 #define ROLE_PUBLIC   1
 #define ROLE_SYSADMIN 2
 #define USER_MONETDB  3
@@ -189,8 +186,7 @@ typedef enum commit_action_t {
 	CA_COMMIT, 	/* commit rows, only for persistent tables */
 	CA_DELETE, 	/* delete rows */
 	CA_PRESERVE,	/* preserve rows */
-	CA_DROP,	/* drop table */
-	CA_ABORT	/* abort changes, internal only */
+	CA_DROP		/* drop table */
 } ca_t;
 
 typedef int sqlid;
@@ -487,13 +483,6 @@ typedef struct sql_sequence {
 	sql_schema *s;
 } sql_sequence;
 
-/* histogram types */
-typedef enum sql_histype {
-       X_EXACT,
-       X_EQUI_WIDTH,
-       X_EQUI_HEIGHT
-} sql_histype;
-
 typedef struct sql_column {
 	sql_base base;
 	sql_subtype type;
@@ -654,7 +643,6 @@ typedef struct sql_session {
 extern void schema_destroy(sql_schema *s);
 extern void table_destroy(sql_table *t);
 extern void column_destroy(sql_column *c);
-extern void kc_destroy(sql_kc *kc);
 extern void key_destroy(sql_key *k);
 extern void idx_destroy(sql_idx * i);
 

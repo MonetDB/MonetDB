@@ -295,7 +295,7 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_topn:
 	case op_sample:
 	case op_ddl:
-		if (rel->op == op_ddl && rel->flag == DDL_PSM && rel->exps)
+		if (rel->op == op_ddl && rel->flag == ddl_psm && rel->exps)
 			psm_exps_properties(sql, gp, rel->exps);
 		if (rel->l)
 			rel_properties(sql, gp, rel->l);
@@ -2942,7 +2942,7 @@ rel_case_fixup(int *changes, mvc *sql, sql_rel *rel, int top)
 
 	if (!top && rel_is_ref(rel))
 		return rel;
-	if ((is_project(rel->op) || (rel->op == op_ddl && rel->flag == DDL_PSM)) && rel->exps) {
+	if ((is_project(rel->op) || (rel->op == op_ddl && rel->flag == ddl_psm)) && rel->exps) {
 		list *exps = rel->exps;
 		node *n;
 		int needed = 0;
@@ -2975,7 +2975,7 @@ rel_case_fixup(int *changes, mvc *sql, sql_rel *rel, int top)
 				return NULL;
 			list_append(rel->exps, e);
 		}
-		if (is_ddl(rel->op) && rel->flag == DDL_PSM) 
+		if (is_ddl(rel->op) && rel->flag == ddl_psm)
 			rel->exps = rewrite_case_exps(sql, rel->exps, changes);
 		if (rel->l)
 			rel->l = rel_case_fixup(changes, sql, rel->l, is_topn(rel->op)?top:0);
@@ -3331,7 +3331,7 @@ static sql_rel *
 rel_simplify_math(int *changes, mvc *sql, sql_rel *rel) 
 {
 	
-	if ((is_project(rel->op) || (rel->op == op_ddl && rel->flag == DDL_PSM)) && rel->exps) {
+	if ((is_project(rel->op) || (rel->op == op_ddl && rel->flag == ddl_psm)) && rel->exps) {
 		list *exps = rel->exps;
 		node *n;
 		int needed = 0;
@@ -8832,7 +8832,7 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 		rel->l = rewrite(sql, rel->l, rewriter, has_changes);
 		break;
 	case op_ddl:
-		if (rel->flag == DDL_PSM && rel->exps)
+		if (rel->flag == ddl_psm && rel->exps)
 			rel->exps = rewrite_exps(sql, rel->exps, &rewrite, rewriter, has_changes);
 		rel->l = rewrite(sql, rel->l, rewriter, has_changes);
 		if (rel->r)
@@ -8894,7 +8894,7 @@ rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 		rel->l = rewrite_topdown(sql, rel->l, rewriter, has_changes);
 		break;
 	case op_ddl: 
-		if (rel->flag == DDL_PSM && rel->exps)
+		if (rel->flag == ddl_psm && rel->exps)
 			rewrite_exps(sql, rel->exps, &rewrite_topdown, rewriter, has_changes);
 		rel->l = rewrite_topdown(sql, rel->l, rewriter, has_changes);
 		if (rel->r)

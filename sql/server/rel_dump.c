@@ -401,7 +401,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
 		if (rel->r)
 			rel_print_(sql, fout, rel->r, depth+1, refs, decorate);
-		if (rel->exps && (rel->flag == DDL_PSM || rel->flag == DDL_EXCEPTION || rel->flag == DDL_LIST))
+		if (rel->exps && (rel->flag == ddl_psm || rel->flag == ddl_exception || rel->flag == ddl_list))
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		break;
 	case op_join: 
@@ -549,7 +549,7 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 	case op_table:
 		break;
 	case op_ddl:
-		if(rel->flag == DDL_LIST ||rel->flag == DDL_EXCEPTION) {
+		if(rel->flag == ddl_list ||rel->flag == ddl_exception) {
 			if(rel->l) {
 				rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
 				if(rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {

@@ -346,7 +346,7 @@ rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *
 	rel_psm->l = NULL;
 	rel_psm->r = NULL;
 	rel_psm->op = op_ddl;
-	rel_psm->flag = DDL_ALTER_TABLE_ADD_RANGE_PARTITION;
+	rel_psm->flag = ddl_alter_table_add_range_partition;
 	rel_psm->exps = exps;
 	rel_psm->card = CARD_MULTI;
 	rel_psm->nrcols = 0;
@@ -398,7 +398,7 @@ rel_alter_table_add_partition_list(sql_query *query, sql_table *mt, sql_table *p
 	rel_psm->l = NULL;
 	rel_psm->r = NULL;
 	rel_psm->op = op_ddl;
-	rel_psm->flag = DDL_ALTER_TABLE_ADD_LIST_PARTITION;
+	rel_psm->flag = ddl_alter_table_add_list_partition;
 	rel_psm->exps = list_merge(exps, lvals, (fdup)NULL);
 	rel_psm->card = CARD_MULTI;
 	rel_psm->nrcols = 0;

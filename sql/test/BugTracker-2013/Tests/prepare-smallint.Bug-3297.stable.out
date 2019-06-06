@@ -19,29 +19,6 @@ stdout of test 'prepare-smallint.Bug-3297` in directory 'sql/test/BugTracker-201
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_history.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 17_compress.sql
-# loading sql script: 18_dictionary.sql
-# loading sql script: 19_cluster.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 24_zorder.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 99_system.sql
 
 # 20:19:34 >  
 # 20:19:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25917" "--port=35817"
@@ -55,14 +32,41 @@ stdout of test 'prepare-smallint.Bug-3297` in directory 'sql/test/BugTracker-201
 % varchar,	int,	int,	str,	str,	str # type
 % 6,	2,	1,	0,	0,	0 # length
 [ "bigint",	64,	0,	NULL,	NULL,	NULL	]
-#exec  0(1000);
+#exec  5(1);
+[ 1	]
+#exec  5(10);
+[ 1	]
+#exec  5(100);
+[ 1	]
+#exec  5(1000);
+[ 1	]
+#exec  5(10000);
+[ 1	]
+#exec  5(100000);
+[ 1	]
+#exec  5(1000000);
+[ 1	]
+#exec  5(10000000);
+[ 1	]
+#exec  5(100000000);
+[ 1	]
+#exec  5(1000000000);
 [ 1	]
 #select * from ints;
 % sys.ints # table_name
 % val # name
 % int # type
-% 3 # length
+% 9 # length
+[ -19	]
+[ -10	]
+[ 80	]
 [ 980	]
+[ 9980	]
+[ 99980	]
+[ 999980	]
+[ 9999980	]
+[ 99999980	]
+[ 999999980	]
 #drop table ints;
 
 # 20:19:34 >  

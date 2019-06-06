@@ -128,7 +128,7 @@ malLoadScript(str name, bstream **fdin)
 	c->srcFile = oldsrcFile; \
 	if(c->prompt) GDKfree(c->prompt); \
 	c->prompt = oldprompt; \
-	c->promptlength= (int)strlen(c->prompt);
+	c->promptlength = strlen(c->prompt);
 #define restoreClient2 \
 	assert(c->glb == 0 || c->glb == oldglb); /* detect leak */ \
 	c->glb = oldglb; \
@@ -154,7 +154,7 @@ malInclude(Client c, str name, int listing)
 	str p;
 
 	bstream *oldfdin = c->fdin;
-	int oldyycur = c->yycur;
+	size_t oldyycur = c->yycur;
 	int oldlisting = c->listing;
 	enum clientmode oldmode = c->mode;
 	int oldblkmode = c->blkmode;
@@ -324,7 +324,6 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	stream *bs;
 	bstream *fdin = NULL;
 
-	assert(s);
 	s = mal_cmdline(s, &len);
 	qry = s;
 	if (old == s) {
@@ -401,7 +400,6 @@ callString(Client cntxt, str s, int listing)
 	str msg = MAL_SUCCEED, qry;
 	bstream *bs;
 
-	assert(s);
 	s = mal_cmdline(s, &len);
 	qry = s;
 	if (old == s) {

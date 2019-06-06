@@ -24,12 +24,14 @@ stdout of test 'union_with_subqueries.Bug-3518` in directory 'sql/test/BugTracke
 # 18:48:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27766" "--port=37060"
 # 18:48:46 >  
 
-#SELECT sum(a), sum(a) FROM (( SELECT 1 AS A ) UNION ALL (SELECT 3 AS A)) AS query;
-% .L4,	.L6 # table_name
-% L3,	L5 # name
-% bigint,	bigint # type
-% 1,	1 # length
-[ 4,	4	]
+#SELECT cast(sum(a) as bigint), cast(sum(a) as bigint) FROM (( SELECT 1 AS A ) UNION ALL (SELECT 3 AS A)) AS query;
+% .,    . # table_name
+# .L16, .L21 # table_name
+% L,    L # name
+# L16,  L21 # name
+% bigint,       bigint # type
+% 1,    1 # length
+[ 4,    4       ]
 
 # 18:48:47 >  
 # 18:48:47 >  "Done."

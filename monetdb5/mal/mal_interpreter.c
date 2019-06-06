@@ -940,7 +940,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					freeException(v->val.sval);    /* old exception*/
 				v->vtype = TYPE_str;
 				v->val.sval = ret;
-				v->len = (int)strlen(v->val.sval);
+				v->len = strlen(v->val.sval);
 				ret = 0;
 				MT_lock_unset(&mal_contextLock);
 			} else {

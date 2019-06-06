@@ -632,7 +632,7 @@ getType(MalBlkPtr mb, str nme)
 
 	i = findVariable(mb, nme);
 	if (i < 0)
-		return getAtomIndex(nme, -1, TYPE_any);
+		return getAtomIndex(nme, strlen(nme), TYPE_any);
 	return getVarType(mb, i);
 }
 
@@ -1208,7 +1208,8 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name)
 		return NULL;
 	v = findVariable(mb, name);
 	if (v < 0) {
-		if ((v = newVariable(mb, name, strlen(name), getAtomIndex(name, -1, TYPE_any))) < 0) {
+		size_t namelen = strlen(name);
+		if ((v = newVariable(mb, name, namelen, getAtomIndex(name, namelen, TYPE_any))) < 0) {
 			freeInstruction(p);
 			return NULL;
 		}
