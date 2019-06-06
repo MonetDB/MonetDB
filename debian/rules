@@ -14,7 +14,6 @@ DH_VERBOSE=1
 override_dh_auto_configure:
 	dh_auto_configure -- \
 	--enable-assert=no \
-	--enable-console=yes \
 	--enable-debug=no \
 	--enable-developer=no \
 	--enable-embedded=no \
