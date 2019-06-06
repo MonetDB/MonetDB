@@ -650,7 +650,7 @@ handleInts:
  * It would make more sense for tpe parameter to be an int, but simpleTypeId returns a size_t
  */
 static int
-typeAlias(Client cntxt, size_t tpe)
+typeAlias(Client cntxt, int tpe)
 {
 	int t;
 
@@ -700,7 +700,7 @@ parseTypeId(Client cntxt, int defaultType)
 {
 	int i = TYPE_any, kt = 0;
 	char *s = CURRENT(cntxt);
-	size_t tt;
+	int tt;
 
 	if (s[0] == ':' && s[1] == 'b' && s[2] == 'a' && s[3] == 't' && s[4] == '[') {
 		/* parse :bat[:oid,:type] */
