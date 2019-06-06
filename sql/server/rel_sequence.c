@@ -38,7 +38,7 @@ rel_drop_seq(sql_allocator *sa, char *sname, char *seqname)
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
-	rel->flag = DDL_DROP_SEQ;
+	rel->flag = ddl_drop_seq;
 	rel->exps = exps;
 	rel->card = 0;
 	rel->nrcols = 0;
@@ -112,7 +112,7 @@ rel_create_seq(
 
 	seq = create_sql_sequence(sql->sa, s, name, start, min, max, inc, cache, cycle);
 	seq->bedropped = bedropped;
-	res = rel_seq(sql->sa, DDL_CREATE_SEQ, s->base.name, seq, NULL, NULL);
+	res = rel_seq(sql->sa, ddl_create_seq, s->base.name, seq, NULL, NULL);
 	/* for multi statements we keep the sequence around */
 	if (res && stack_has_frame(sql, "MUL") != 0) {
 		if(!stack_push_rel_view(sql, name, rel_dup(res)))
@@ -269,7 +269,7 @@ rel_alter_seq(
 		sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(val));
 		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, 0);
 	}
-	return rel_seq(sql->sa, DDL_ALTER_SEQ, s->base.name, seq, r, val);
+	return rel_seq(sql->sa, ddl_alter_seq, s->base.name, seq, r, val);
 }
 
 static sql_rel *

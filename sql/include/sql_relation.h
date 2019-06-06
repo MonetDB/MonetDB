@@ -11,9 +11,6 @@
 
 #include "sql_catalog.h"
 
-#define BASETABLE 0
-#define RELATION 1
-
 typedef enum expression_type {
 	e_atom,
 	e_column,
@@ -56,11 +53,6 @@ typedef struct expression {
 
 #define LEFT_JOIN	4
 
-#define APPLY_JOIN	8
-#define APPLY_LOJ	16
-#define APPLY_EXISTS	32
-#define APPLY_NOTEXISTS	64
-
 /* ASCENDING > 15 else we have problems with cmp types */
 #define ASCENDING	16
 #define CMPMASK		(ASCENDING-1)
@@ -88,66 +80,57 @@ typedef struct expression {
 #define SET_PSM_LEVEL(level)	(level<<8)
 #define GET_PSM_LEVEL(level)	(level>>8)
 
-/* todo make enum */
-/* ordering is important! see rel2bin_ddl() and rel_deps() */
-#define DDL_OUTPUT			1
-#define DDL_LIST			2
-#define DDL_PSM				3
-#define DDL_EXCEPTION		4
+typedef enum ddl_statement {
+	ddl_output,
+	ddl_list,
+	ddl_psm,
+	ddl_exception,
+	ddl_create_seq,
+	ddl_alter_seq,
+	ddl_drop_seq,
+	ddl_alter_table_add_range_partition,
+	ddl_alter_table_add_list_partition,
+	ddl_release,
+	ddl_commit,
+	ddl_rollback,
+	ddl_trans,
+	ddl_create_schema,
+	ddl_drop_schema,
+	ddl_create_table,
+	ddl_drop_table,
+	ddl_create_view,
+	ddl_drop_view,
+	ddl_drop_constraint,
+	ddl_alter_table,
+	ddl_create_type,
+	ddl_drop_type,
+	ddl_drop_index,
+	ddl_create_function,
+	ddl_drop_function,
+	ddl_create_trigger,
+	ddl_drop_trigger,
+	ddl_grant_roles,
+	ddl_revoke_roles,
+	ddl_grant,
+	ddl_revoke,
+	ddl_grant_func,
+	ddl_revoke_func,
+	ddl_create_user,
+	ddl_drop_user,
+	ddl_alter_user,
+	ddl_rename_user,
+	ddl_create_role,
+	ddl_drop_role,
+	ddl_alter_table_add_table,
+	ddl_alter_table_del_table,
+	ddl_alter_table_set_access,
+	ddl_comment_on,
+	ddl_rename_schema,
+	ddl_rename_table,
+	ddl_rename_column
+} ddl_statement;
 
-#define DDL_CREATE_SEQ			5
-#define DDL_ALTER_SEQ			6
-#define DDL_DROP_SEQ			7
-#define DDL_ALTER_TABLE_ADD_RANGE_PARTITION		8
-#define DDL_ALTER_TABLE_ADD_LIST_PARTITION		9
-
-#define DDL_RELEASE			11
-#define DDL_COMMIT			12
-#define DDL_ROLLBACK			13
-#define DDL_TRANS			14
-
-#define DDL_CREATE_SCHEMA		21
-#define DDL_DROP_SCHEMA			22
-#define DDL_CREATE_TABLE		23
-#define DDL_DROP_TABLE			24
-#define DDL_CREATE_VIEW			25
-#define DDL_DROP_VIEW			26
-#define DDL_DROP_CONSTRAINT		27
-#define DDL_ALTER_TABLE			28
-#define DDL_CREATE_TYPE			29
-#define DDL_DROP_TYPE			30
-#define DDL_DROP_INDEX			31
-
-#define DDL_CREATE_FUNCTION		41
-#define DDL_DROP_FUNCTION		42
-#define DDL_CREATE_TRIGGER		43
-#define DDL_DROP_TRIGGER		44
-
-#define DDL_GRANT_ROLES			51
-#define DDL_REVOKE_ROLES		52
-#define DDL_GRANT			53
-#define DDL_REVOKE			54
-#define DDL_GRANT_FUNC			55
-#define DDL_REVOKE_FUNC			56
-#define DDL_CREATE_USER			57
-#define DDL_DROP_USER			58
-#define DDL_ALTER_USER			59
-#define DDL_RENAME_USER			60
-#define DDL_CREATE_ROLE			61
-#define DDL_DROP_ROLE			62
-
-#define DDL_ALTER_TABLE_ADD_TABLE				63
-#define DDL_ALTER_TABLE_DEL_TABLE				64
-#define DDL_ALTER_TABLE_SET_ACCESS				65
-
-#define DDL_COMMENT_ON			66
-#define DDL_RENAME_SCHEMA		67
-#define DDL_RENAME_TABLE		68
-#define DDL_RENAME_COLUMN		69
-
-#define DDL_EMPTY 100
-
-#define MAXOPS 22
+#define MAXOPS 21
 
 typedef enum operator_type {
 	op_basetable = 0,
@@ -170,7 +153,7 @@ typedef enum operator_type {
 	op_insert,	/* insert(l=table, r insert expressions) */
 	op_update,	/* update(l=table, r update expressions) */
 	op_delete,	/* delete(l=table, r delete expression) */
-	op_truncate /* trucante(l=table) */
+	op_truncate /* truncate(l=table) */
 } operator_type;
 
 #define is_atom(et) \

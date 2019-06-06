@@ -856,7 +856,7 @@ rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps)
 	rel->r = r;
 	rel->exps = exps;
 	rel->op = op_ddl;
-	rel->flag = DDL_EXCEPTION;
+	rel->flag = ddl_exception;
 	return rel;
 }
 
@@ -1296,7 +1296,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 sql_table *
 rel_ddl_table_get(sql_rel *r)
 {
-	if (r->flag == DDL_ALTER_TABLE || r->flag == DDL_CREATE_TABLE || r->flag == DDL_CREATE_VIEW) {
+	if (r->flag == ddl_alter_table || r->flag == ddl_create_table || r->flag == ddl_create_view) {
 		sql_exp *e = r->exps->t->data;
 		atom *a = e->l;
 

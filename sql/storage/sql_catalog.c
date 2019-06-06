@@ -159,7 +159,6 @@ list_find_base_id(list *l, sqlid id)
 	return NULL;
 }
 
-
 sql_key *
 find_sql_key(sql_table *t, const char *kname)
 {

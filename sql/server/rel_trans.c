@@ -42,24 +42,24 @@ rel_transactions(sql_query *query, symbol *s)
 
 	switch (s->token) {
 	case TR_RELEASE:
-		ret = rel_trans(sql, DDL_RELEASE, 0, s->data.sval);
+		ret = rel_trans(sql, ddl_release, 0, s->data.sval);
 		break;
 	case TR_COMMIT:
 		assert(s->type == type_int);
-		ret = rel_trans(sql, DDL_COMMIT, s->data.i_val, NULL);
+		ret = rel_trans(sql, ddl_commit, s->data.i_val, NULL);
 		break;
 	case TR_SAVEPOINT:
-		ret = rel_trans(sql, DDL_COMMIT, 0, s->data.sval);
+		ret = rel_trans(sql, ddl_commit, 0, s->data.sval);
 		break;
 	case TR_ROLLBACK: {
 		dnode *n = s->data.lval->h;
 		assert(n->type == type_int);
-		ret= rel_trans(sql, DDL_ROLLBACK, n->data.i_val, n->next->data.sval);
+		ret= rel_trans(sql, ddl_rollback, n->data.i_val, n->next->data.sval);
 	} 	break;
 	case TR_START:
 	case TR_MODE:
 		assert(s->type == type_int);
-		ret = rel_trans(sql, DDL_TRANS, s->data.i_val, NULL);
+		ret = rel_trans(sql, ddl_trans, s->data.i_val, NULL);
 		break;
 	default:
 		return sql_error(sql, 01, SQLSTATE(42000) "Transaction unknown Symbol(%p)->token = %s", s, token2string(s->token));

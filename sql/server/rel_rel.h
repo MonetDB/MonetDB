@@ -39,7 +39,7 @@
 
 #define is_updateble(rel) \
 	(rel->op == op_basetable || \
-	(rel->op == op_ddl && (rel->flag == DDL_CREATE_TABLE || rel->flag == DDL_ALTER_TABLE)))
+	(rel->op == op_ddl && (rel->flag == ddl_create_table || rel->flag == ddl_alter_table)))
 
 extern const char *rel_name( sql_rel *r );
 extern sql_rel *rel_distinct(sql_rel *l);
