@@ -600,7 +600,7 @@ utf8_putchar(struct scanner *lc, int ch)
 }
 
 static inline int
-scanner_read_more(struct scanner *lc, int n)
+scanner_read_more(struct scanner *lc, size_t n)
 {
 	bstream *b = lc->rs;
 	bool more = false;
@@ -632,8 +632,7 @@ scanner_getc(struct scanner *lc)
 {
 	bstream *b = lc->rs;
 	unsigned char *s = NULL;
-	int c;
-	int n, m, mask;
+	int c, m, n, mask;
 
 	if (scanner_read_more(lc, 1) == EOF) {
 		lc->errstr = "end of input stream";
@@ -657,7 +656,7 @@ scanner_getc(struct scanner *lc)
 		goto error;
 	}
 
-	if (scanner_read_more(lc, n) == EOF)
+	if (scanner_read_more(lc, (size_t) n) == EOF)
 		return EOF;
 	s = (unsigned char *) b->buf + b->pos + lc->yycur;
 
@@ -707,7 +706,7 @@ scanner_string(mvc *c, int quote, bool escapes)
 
 	lc->started = 1;
 	while (cur != EOF) {
-		unsigned int pos = (int)rs->pos + lc->yycur;
+		size_t pos = rs->pos + lc->yycur;
 
 		while ((((cur = rs->buf[pos++]) & 0x80) == 0) && cur && (cur != quote || escape)) {
 			if (escapes && cur == '\\')
@@ -715,7 +714,7 @@ scanner_string(mvc *c, int quote, bool escapes)
 			else
 				escape = false;
 		}
-		lc->yycur = pos - (int)rs->pos;
+		lc->yycur = pos - rs->pos;
 		/* check for quote escaped quote: Obscure SQL Rule */
 		/* TODO also handle double "" */
 		if (cur == quote && rs->buf[pos] == quote) {
@@ -758,9 +757,9 @@ scanner_body(mvc *c)
 	bool escape = false;
 
 	lc->started = 1;
-	assert(rs->buf[(int)rs->pos + lc->yycur-1] == '{');
+	assert(rs->buf[rs->pos + lc->yycur-1] == '{');
 	while (cur != EOF) {
-		unsigned int pos = (int)rs->pos + lc->yycur;
+		size_t pos = rs->pos + lc->yycur;
 
 		while ((((cur = rs->buf[pos++]) & 0x80) == 0) && cur && (blk || escape)) {
 			if (cur != '\\')
@@ -770,7 +769,7 @@ scanner_body(mvc *c)
 			blk += cur =='{';
 			blk -= cur =='}';
 		}
-		lc->yycur = pos - (int)rs->pos;
+		lc->yycur = pos - rs->pos;
 		assert(pos <= rs->len + 1);
 		if (blk == 0 && !escape){
 			lc->yycur--;	/* go back to current (possibly invalid) char */
@@ -796,7 +795,7 @@ keyword_or_ident(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
 	keyword *k = NULL;
-	int s;
+	size_t s;
 
 	lc->started = 1;
 	utf8_putchar(lc, cur);
@@ -1202,7 +1201,8 @@ valid_ident(const char *restrict s, char *restrict dst)
 }
 
 static inline int
-sql_get_next_token(YYSTYPE *yylval, void *parm) {
+sql_get_next_token(YYSTYPE *yylval, void *parm)
+{
 	mvc *c = (mvc*)parm;
 	struct scanner *lc = &c->scanner;
 	int token = 0, cur = 0;
@@ -1229,7 +1229,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 		return EOF;
 	token = tokenize(c, cur);
 
-	yylval->sval = (lc->rs->buf + (int)lc->rs->pos + lc->yysval);
+	yylval->sval = (lc->rs->buf + lc->rs->pos + lc->yysval);
 
 	/* This is needed as ALIAS and aTYPE get defined too late, see
 	   sql_keyword.h */
@@ -1308,13 +1308,13 @@ sqllex(YYSTYPE * yylval, void *parm)
 	int token;
 	mvc *c = (mvc *) parm;
 	struct scanner *lc = &c->scanner;
-	int pos;
+	size_t pos;
 
 	/* store position for when view's query ends */
-	pos = (int)lc->rs->pos + lc->yycur;
+	pos = lc->rs->pos + lc->yycur;
 
 	token = sql_get_next_token(yylval, parm);
-	
+
 	if (token == NOT) {
 		int next = sqllex(yylval, parm);
 
@@ -1342,14 +1342,13 @@ sqllex(YYSTYPE * yylval, void *parm)
 	} else if (token == SCOLON) {
 		/* ignore semi-colon(s) following a semi-colon */
 		if (lc->yylast == SCOLON) {
-			int prev = lc->yycur;
+			size_t prev = lc->yycur;
 			while ((token = sql_get_next_token(yylval, parm)) == SCOLON)
 				prev = lc->yycur;
 
 			/* skip the skipped stuff also in the buffer */
 			lc->rs->pos += prev;
 			lc->yycur -= prev;
-			assert(lc->yycur >= 0);
 		}
 	}
 

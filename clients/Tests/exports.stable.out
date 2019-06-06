@@ -2191,7 +2191,7 @@ str generatorRef;
 MALfcn getAddress(str fcnname);
 str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
 ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
-int getAtomIndex(const char *nme, int len, int deftpe);
+int getAtomIndex(const char *nme, size_t len, int deftpe);
 lng getBatSpace(BAT *b);
 int getBitConstant(MalBlkPtr mb, bit val);
 int getBlockBegin(MalBlkPtr mb, int pc);

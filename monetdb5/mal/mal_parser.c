@@ -154,7 +154,7 @@ skipSpace(Client cntxt)
 }
 
 static inline void
-advance(Client cntxt, int length)
+advance(Client cntxt, size_t length)
 {
 	cntxt->yycur += length;
 	skipSpace(cntxt);
@@ -202,7 +202,7 @@ idLength(Client cntxt)
 {
 	str s,t;
 	int len = 0;
-	
+
 	skipSpace(cntxt);
 	s = CURRENT(cntxt);
 	t = s;
@@ -226,10 +226,10 @@ idLength(Client cntxt)
 }
 
 /* Simple type identifiers can not be marked with a type variable. */
-static int
+static size_t
 typeidLength(Client cntxt)
 {
-	int l;
+	size_t l;
 	char id[IDLENGTH], *t= id;
 	str s;
 	skipSpace(cntxt);
@@ -646,9 +646,11 @@ handleInts:
  * scope.
  * Additional information, such as a repetition factor,
  * encoding tables, or type dependency should be modeled as properties.
+ *
+ * It would make more sense for tpe parameter to be an int, but simpleTypeId returns a size_t
  */
 static int
-typeAlias(Client cntxt, int tpe)
+typeAlias(Client cntxt, size_t tpe)
 {
 	int t;
 
@@ -673,7 +675,8 @@ typeAlias(Client cntxt, int tpe)
 static int
 simpleTypeId(Client cntxt)
 {
-	int l, tpe;
+	int tpe;
+	size_t l;
 
 	nextChar(cntxt);
 	l = typeidLength(cntxt);
@@ -682,7 +685,7 @@ simpleTypeId(Client cntxt)
 		cntxt->yycur--; /* keep it */
 		return -1;
 	}
-	tpe = getAtomIndex(CURRENT(cntxt), (size_t) l, -1);
+	tpe = getAtomIndex(CURRENT(cntxt), l, -1);
 	if (tpe < 0) {
 		parseError(cntxt, "Type identifier expected\n");
 		cntxt->yycur -= l; /* keep it */
@@ -695,8 +698,9 @@ simpleTypeId(Client cntxt)
 static int
 parseTypeId(Client cntxt, int defaultType)
 {
-	int i = TYPE_any, tt, kt = 0;
+	int i = TYPE_any, kt = 0;
 	char *s = CURRENT(cntxt);
+	size_t tt;
 
 	if (s[0] == ':' && s[1] == 'b' && s[2] == 'a' && s[3] == 't' && s[4] == '[') {
 		/* parse :bat[:oid,:type] */

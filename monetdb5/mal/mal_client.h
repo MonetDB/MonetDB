@@ -40,7 +40,7 @@ enum clientmode {
  */
 typedef struct CLIENT_INPUT {
 	bstream             *fdin;
-	int                 yycur;		
+	size_t              yycur;
 	int                 listing;
 	char                *prompt;
 	struct CLIENT_INPUT *next;    
@@ -90,7 +90,7 @@ typedef struct CLIENT {
 	 */
 	str       srcFile;  /* NULL for stdin, or file name */
 	bstream  *fdin;
-	int       yycur;    /* the scanners current position */
+	size_t    yycur;    /* the scanners current position */
 	/*
 	 * Keeping track of instructions executed is a valuable tool for
 	 * script processing and debugging.  It can be changed at runtime
