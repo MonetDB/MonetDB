@@ -24,8 +24,6 @@ enum clientmode {
 	BLOCKCLIENT
 };
 
-#define PROCESSTIMEOUT  2   /* seconds */
-
 /*
  * The prompt structure is designed to simplify recognition of the
  * language framework for interaction. For access through an API we 
@@ -122,7 +120,6 @@ typedef struct CLIENT {
 	 * debugger features.
 	 */
 	int debug;
-	void  *mdb;            /* context upon suspend */
 	enum clientmode mode;  /* FREECLIENT..BLOCKED */
 	/*
 	 * Client records are organized into a two-level dependency tree,

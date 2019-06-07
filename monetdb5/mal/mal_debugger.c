@@ -1211,7 +1211,6 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		state.stk = stk;
 		state.p = getInstrPtr(mb, pc);
 		state.pc = pc;
-		cntxt->mdb = &state;
 		mnstr_printf(cntxt->fdout, "#Process %d put to sleep\n", (int) (cntxt - mal_clients));
 		cntxt->itrace = 'W';
 		mdbTrap(cntxt, mb, stk, state.p);

@@ -218,7 +218,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->listing = 0;
 	c->fdout = fout ? fout : GDKstdout;
-	c->mdb = 0;
 	c->curprg = c->backup = 0;
 	c->glb = 0;
 

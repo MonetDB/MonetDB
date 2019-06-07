@@ -12,7 +12,6 @@
 
 /* #define DEBUG_MAL_TYPE 1 */
 
-#define malVARG " malVARG"
 #define TMPMARKER '_'
 #define REFMARKER 'X'
 #define REFMARKERC 'C'
@@ -58,7 +57,6 @@
 #define PATcall     54		/* pattern call */
 
 #define REMsymbol     99	/* commentary to be retained */
-
 
 mal_export str getTypeName(malType tpe);
 mal_export str getTypeIdentifier(malType tpe);
