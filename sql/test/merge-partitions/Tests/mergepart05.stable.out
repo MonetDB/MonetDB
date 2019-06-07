@@ -74,14 +74,14 @@ Ready.
 % sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum # name
 % varchar,	varchar # type
-% 0,	0 # length
-#ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM 'hello' TO 'world';
+% 0,	9 # length
+[ NULL,	"something"	]
 #SELECT minimum, maximum FROM range_partitions;
 % sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum # name
 % varchar,	varchar # type
-% 5,	5 # length
-[ "hello",	"world"	]
+% 0,	9 # length
+[ NULL,	"something"	]
 #ALTER TABLE listparts DROP TABLE subtable1;
 #ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM '"hello"' TO '"world"';
 #SELECT minimum, maximum FROM range_partitions;

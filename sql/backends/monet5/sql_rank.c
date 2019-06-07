@@ -62,15 +62,13 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define CHECK_NULLS_AND_NEGATIVES_COLUMN(TPE) \
-	for(TPE *lp = (TPE*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_null && !is_negative; lp++) { \
-		is_null |= is_##TPE##_nil(*lp); \
-		is_negative |= (*lp < 0); \
+#define CHECK_NEGATIVES_COLUMN(TPE) \
+	for(TPE *lp = (TPE*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++) { \
+		is_negative |= !is_##TPE##_nil(*lp) && (*lp < 0); \
 	} \
 
-#define CHECK_NULLS_AND_NEGATIVES_SINGLE(TPE, MEMBER) \
-	is_null = is_##TPE##_nil(vlimit->val.MEMBER); \
-	is_negative = vlimit->val.MEMBER < 0; \
+#define CHECK_NEGATIVES_SINGLE(TPE, MEMBER) \
+	is_negative = !is_##TPE##_nil(vlimit->val.MEMBER) && vlimit->val.MEMBER < 0; \
 	limit = &vlimit->val.MEMBER; \
 
 str
@@ -100,13 +98,14 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, part_offset + 1)), *p = NULL, *r, *l = NULL;
-		int tp1 = getBatType(getArgType(mb, pci, part_offset + 1)), tp2 = getArgType(mb, pci, part_offset + 5);
+		int tp1, tp2 = getArgType(mb, pci, part_offset + 5);
 		void* limit = NULL;
-		bool is_negative = false, is_null = false, is_a_bat;
+		bool is_negative = false, is_a_bat;
 		gdk_return gdk_code;
 
 		if (!b)
 			throw(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
+		tp1 = b->ttype;
 
 		if (excl != 0) {
 			BBPunfix(b->batCacheid);
@@ -126,26 +125,26 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			switch (tp2) {
 				case TYPE_bte:
-					CHECK_NULLS_AND_NEGATIVES_COLUMN(bte)
+					CHECK_NEGATIVES_COLUMN(bte)
 					break;
 				case TYPE_sht:
-					CHECK_NULLS_AND_NEGATIVES_COLUMN(sht)
+					CHECK_NEGATIVES_COLUMN(sht)
 					break;
 				case TYPE_int:
-					CHECK_NULLS_AND_NEGATIVES_COLUMN(int)
+					CHECK_NEGATIVES_COLUMN(int)
 					break;
 				case TYPE_lng:
-					CHECK_NULLS_AND_NEGATIVES_COLUMN(lng)
+					CHECK_NEGATIVES_COLUMN(lng)
 					break;
 				case TYPE_flt:
-					CHECK_NULLS_AND_NEGATIVES_COLUMN(flt)
+					CHECK_NEGATIVES_COLUMN(flt)
 					break;
 				case TYPE_dbl:
-					CHECK_NULLS_AND_NEGATIVES_COLUMN(dbl)
+					CHECK_NEGATIVES_COLUMN(dbl)
 					break;
 #ifdef HAVE_HGE
 				case TYPE_hge:
-					CHECK_NULLS_AND_NEGATIVES_COLUMN(hge)
+					CHECK_NEGATIVES_COLUMN(hge)
 					break;
 #endif
 				default: {
@@ -154,11 +153,9 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "sql.window_bound", SQLSTATE(42000) "%s limit not available for %s", "sql.window_bound", ATOMname(tp2));
 				}
 			}
-			if(is_null || is_negative) {
+			if(is_negative) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(l->batCacheid);
-				if(is_null)
-					throw(SQL, "sql.window_bound", SQLSTATE(HY005) "All values on %s boundary must be non-null", preceding ? "PRECEDING" : "FOLLOWING");
 				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "All values on %s boundary must be non-negative", preceding ? "PRECEDING" : "FOLLOWING");
 			}
 		} else {
@@ -166,26 +163,26 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			switch (tp2) {
 				case TYPE_bte:
-					CHECK_NULLS_AND_NEGATIVES_SINGLE(bte, btval)
+					CHECK_NEGATIVES_SINGLE(bte, btval)
 					break;
 				case TYPE_sht:
-					CHECK_NULLS_AND_NEGATIVES_SINGLE(sht, shval)
+					CHECK_NEGATIVES_SINGLE(sht, shval)
 					break;
 				case TYPE_int:
-					CHECK_NULLS_AND_NEGATIVES_SINGLE(int, ival)
+					CHECK_NEGATIVES_SINGLE(int, ival)
 					break;
 				case TYPE_lng:
-					CHECK_NULLS_AND_NEGATIVES_SINGLE(lng, lval)
+					CHECK_NEGATIVES_SINGLE(lng, lval)
 					break;
 				case TYPE_flt:
-					CHECK_NULLS_AND_NEGATIVES_SINGLE(flt, fval)
+					CHECK_NEGATIVES_SINGLE(flt, fval)
 					break;
 				case TYPE_dbl:
-					CHECK_NULLS_AND_NEGATIVES_SINGLE(dbl, dval)
+					CHECK_NEGATIVES_SINGLE(dbl, dval)
 					break;
 #ifdef HAVE_HGE
 				case TYPE_hge:
-					CHECK_NULLS_AND_NEGATIVES_SINGLE(hge, hval)
+					CHECK_NEGATIVES_SINGLE(hge, hval)
 					break;
 #endif
 				default: {
@@ -193,8 +190,6 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "sql.window_bound", SQLSTATE(42000) "%s limit is not available for %s", "sql.window_bound", ATOMname(tp2));
 				}
 			}
-			if(is_null)
-				throw(SQL, "sql.window_bound", SQLSTATE(42000) "The %s boundary must be non-null", preceding ? "PRECEDING" : "FOLLOWING");
 			if(is_negative)
 				throw(SQL, "sql.window_bound", SQLSTATE(42000) "The %s boundary must be non-negative", preceding ? "PRECEDING" : "FOLLOWING");
 		}

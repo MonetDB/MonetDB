@@ -15,66 +15,59 @@
  */
 
 #include "monetdb_config.h"
+#include "mal_exception.h"
 #include "mtime.h"
 
-#define MTIME_SUB_WITH_CHECK(lft, rgt, TYPE, dst, max, on_overflow) \
-	do { \
-		if ((rgt) < 1) { \
-			if ((max) + (rgt) < (lft)) \
-				on_overflow; \
-			else \
-				(dst) = (TYPE) (lft) - (rgt); \
-		} else { \
-			if (-(max) + (rgt) > (lft)) \
-				on_overflow; \
-			else \
-				(dst) = (TYPE) (lft) - (rgt); \
-		} \
-	} while (0)
+static inline date
+date_add_month(date D, int M)
+{
+	date ret;
+	MTIMEdate_addmonths(&ret, &D, &M);
+	return ret;
+}
+static inline date
+date_add_day(date D, int M)
+{
+	date ret;
+	MTIMEdate_adddays(&ret, &D, &M);
+	return ret;
+}
+static inline lng
+timestamp_add_month(lng T, int M)
+{
+	timestamp ret, v;
+	v.alignment = T;
+	MTIMEtimestamp_add_month_interval_wrap(&ret, &v, &M);
+	return ret.alignment;
+}
+static inline lng
+timestamp_add_msec(lng T, lng M)
+{
+	timestamp ret, v;
+	v.alignment = T;
+	MTIMEtimestamp_add(&ret, &v, &M);
+	return ret.alignment;
+}
+static inline daytime
+daytime_add_msec(daytime D, lng M)
+{
+	daytime ret;
+	MTIMEtime_add_msec_interval_wrap(&ret, &D, &M);
+	return ret;
+}
 
-#define MABSOLUTE(X) ((X) < 0 ? -(X) : (X))
+#define date_sub_month(D,M)			date_add_month(D,-(M))
+#define timestamp_sub_month(T,M)	timestamp_add_month(T,-(M))
+#define daytime_sub_msec(D,M)		daytime_add_msec(D, -(M))
+#define date_add_msec(D,M)			date_add_day(D,(int) ((M)/(24*60*60*1000)))
+#define date_sub_msec(D,M)			date_add_day(D,(int) (-(M)/(24*60*60*1000)))
+#define timestamp_sub_msec(T,M)		timestamp_add_msec(T, -(M))
 
-#define DATE_RANGE_MONTH_DIFF(X,Y,R) \
-	do { \
-		MTIME_SUB_WITH_CHECK(X, Y, date, R, date_max, goto calc_overflow); \
-		R = MABSOLUTE(R); \
-		R /= 30; /* days in a month */ \
-		R += (X != Y); /* in a '0' month interval, the rows don't belong to the same frame if the difference is less than one month */ \
-	} while (0)
-
-#define TIMESTAMP_RANGE_MONTH_DIFF(X,Y,R) \
-	do { \
-		MTIME_SUB_WITH_CHECK(X.days, Y.days, date, R, date_max, goto calc_overflow); \
-		R = MABSOLUTE(R); \
-		R /= 30; /* days in a month */ \
-		R += (X.days != Y.days); /* same reason as above */ \
-	} while (0)
-
-#define DAYTIME_RANGE_SEC_DIFF(X,Y,R) \
-	do { \
-		R = MABSOLUTE(X - Y); /* never overflows */ \
-	} while (0)
-
-#define DATE_RANGE_SEC_DIFF(X,Y,R) \
-	do { \
-		MTIME_SUB_WITH_CHECK(X, Y, date, R, date_max, goto calc_overflow); \
-		R = MABSOLUTE(R); \
-		R *= 86400000; /* days in milliseconds */ \
-	} while (0)
-
-#define TIMESTAMP_RANGE_SEC_DIFF(X,Y,R) \
-	do { \
-		MTIME_SUB_WITH_CHECK(X.days, Y.days, date, R, date_max, goto calc_overflow); \
-		R = MABSOLUTE(R); \
-		R *= 86400000; /* days in milliseconds */ \
-		R += MABSOLUTE(X.msecs - Y.msecs); /* never overflows */ \
-	} while (0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME_PRECEDING(TPE1, LIMIT, TPE2, CMP) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME_PRECEDING(TPE1, LIMIT, TPE2, SUB, ADD) \
 	do {																\
 		lng m = k - 1;													\
-		TPE1 v;															\
-		TPE2 rlimit, calc;												\
+		TPE1 v, vmin, vmax;												\
+		TPE2 rlimit;													\
 		for(; k<i; k++, rb++) {											\
 			rlimit = (TPE2) LIMIT;										\
 			v = bp[k];													\
@@ -84,13 +77,15 @@
 						break;											\
 				}														\
 			} else {													\
+				vmin = SUB(v, rlimit);									\
+				vmax = ADD(v, rlimit);									\
 				for(j=k; ; j--) {										\
 					if(j == m)											\
 						break;											\
 					if(is_##TPE1##_nil(bp[j]))							\
 						break;											\
-					CMP(v, bp[j], calc);								\
-					if(calc > rlimit)									\
+					if ((!is_##TPE1##_nil(vmin) && bp[j] < vmin) ||		\
+						(!is_##TPE1##_nil(vmax) && bp[j] > vmax))		\
 						break;											\
 				}														\
 			}															\
@@ -99,10 +94,10 @@
 		}																\
 	} while(0)
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME_FOLLOWING(TPE1, LIMIT, TPE2, CMP) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME_FOLLOWING(TPE1, LIMIT, TPE2, SUB, ADD) \
 	do {																\
-		TPE1 v;															\
-		TPE2 rlimit, calc;												\
+		TPE1 v, vmin, vmax;												\
+		TPE2 rlimit;													\
 		for(; k<i; k++, rb++) {											\
 			rlimit = (TPE2) LIMIT;										\
 			v = bp[k];													\
@@ -112,11 +107,13 @@
 						break;											\
 				}														\
 			} else {													\
+				vmin = SUB(v, rlimit);									\
+				vmax = ADD(v, rlimit);									\
 				for(j=k+1; j<i; j++) {									\
 					if(is_##TPE1##_nil(bp[j]))							\
 						break;											\
-					CMP(v, bp[j], calc);								\
-					if(calc > rlimit)									\
+					if ((!is_##TPE1##_nil(vmin) && bp[j] < vmin) ||		\
+						(!is_##TPE1##_nil(vmax) && bp[j] > vmax))		\
 						break;											\
 				}														\
 			}															\
@@ -124,7 +121,7 @@
 		}																\
 	} while(0)
 
-#define ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(TPE1, IMP, LIMIT, TPE2, CMP) \
+#define ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(TPE1, IMP, LIMIT, TPE2, SUB, ADD) \
 	do { \
 		TPE1 *restrict bp = (TPE1*)Tloc(b, 0); \
 		if(np) { \
@@ -132,24 +129,24 @@
 			for(; np<nend; np++) { \
 				if (*np) { \
 					i += (np - pnp); \
-					IMP(TPE1, LIMIT, TPE2, CMP); \
+					IMP(TPE1, LIMIT, TPE2, SUB, ADD); \
 					pnp = np; \
 				} \
 			} \
 			i += (np - pnp); \
-			IMP(TPE1, LIMIT, TPE2, CMP); \
+			IMP(TPE1, LIMIT, TPE2, SUB, ADD); \
 		} else { \
 			i += (lng) cnt; \
-			IMP(TPE1, LIMIT, TPE2, CMP); \
+			IMP(TPE1, LIMIT, TPE2, SUB, ADD); \
 		} \
 	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_MONTH_INTERVAL(IMP, LIMIT) \
 	do { \
 		if(tp1 == TYPE_date) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, DATE_RANGE_MONTH_DIFF); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, date_sub_month, date_add_month); \
 		} else if(tp1 == TYPE_timestamp) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, TIMESTAMP_RANGE_MONTH_DIFF); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(lng, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, timestamp_sub_month, timestamp_add_month); \
 		} else { \
 			goto type_not_supported; \
 		} \
@@ -158,11 +155,11 @@
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_SEC_INTERVAL(IMP, LIMIT) \
 	do { \
 		if(tp1 == TYPE_daytime) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(daytime, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, DAYTIME_RANGE_SEC_DIFF); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(daytime, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, daytime_sub_msec, daytime_add_msec); \
 		} else if(tp1 == TYPE_date) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, DATE_RANGE_SEC_DIFF); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, date_sub_msec, date_add_msec); \
 		} else if(tp1 == TYPE_timestamp) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, TIMESTAMP_RANGE_SEC_DIFF); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(lng, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, timestamp_sub_msec, timestamp_add_msec); \
 		} else { \
 			goto type_not_supported; \
 		} \
@@ -231,6 +228,4 @@ bound_not_supported:
 	throw(MAL, "mtime.analyticalrangebounds", SQLSTATE(42000) "range frame bound type %s not supported.\n", ATOMname(tp2));
 type_not_supported:
 	throw(MAL, "mtime.analyticalrangebounds", SQLSTATE(42000) "type %s not supported for %s frame bound type.\n", ATOMname(tp1), ATOMname(tp2));
-calc_overflow:
-	throw(MAL, "mtime.analyticalrangebounds", SQLSTATE(22003) "overflow in calculation.\n");
 }

@@ -74,17 +74,15 @@ VALset(ValPtr v, int t, ptr p)
 #endif
 	case TYPE_str:
 		v->val.sval = (str) p;
-		v->len = strLen((str) p);
 		break;
 	case TYPE_ptr:
 		v->val.pval = *(ptr *) p;
-		v->len = ATOMlen(t, *(ptr *) p);
 		break;
 	default:
 		v->val.pval = p;
-		v->len = ATOMlen(t, p);
 		break;
 	}
+	v->len = ATOMlen(v->vtype, VALptr(v));
 	return v;
 }
 
@@ -163,6 +161,7 @@ VALcopy(ValPtr d, const ValRecord *s)
 			return NULL;
 		memcpy(d->val.pval, p, d->len);
 	}
+	d->len = ATOMlen(d->vtype, VALptr(d));
 	return d;
 }
 
@@ -219,8 +218,9 @@ VALinit(ValPtr d, int tpe, const void *s)
 		if (d->val.pval == NULL)
 			return NULL;
 		memcpy(d->val.pval, s, d->len);
-		break;
+		return d;
 	}
+	d->len = ATOMlen(d->vtype, VALptr(d));
 	return d;
 }
 

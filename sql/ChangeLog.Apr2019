@@ -1,3 +1,12 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Jun  7 2019 Sjoerd Mullender <sjoerd@acm.org>
+- Changed the internal representation of RANGE MINVALUE and RANGE MAXVALUE
+  in MERGE TABLE partitions.  Before, the limits were represented by
+  the smallest and largest value of the domain of the column, now these
+  are represented by a NULL value.  This has the added benefit that if
+  you use TO RANGE MAXVALUE, the largest value of the domain is included
+  in the partition (before it wasn't).  Also, these new limits now work
+  for any ordered type, so including VARCHAR.
+
