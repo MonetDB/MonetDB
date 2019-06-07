@@ -2094,6 +2094,7 @@ store_manager(void)
 {
 	const int sleeptime = GDKdebug & FORCEMITOMASK ? 10 : 50;
 	const int timeout = GDKdebug & FORCEMITOMASK ? 500 : 50000;
+	const int changes = GDKdebug & FORCEMITOMASK ? 100 : 1000000;
 
 	MT_thread_setworking("sleeping");
 	while (!GDKexiting()) {
@@ -2111,7 +2112,7 @@ store_manager(void)
 			MT_lock_unset(&bs_lock);
 			return;
 		}
-		if (!need_flush && logger_funcs.changes() < 1000000) {
+		if (!need_flush && logger_funcs.changes() < changes) {
 			MT_lock_unset(&bs_lock);
 			continue;
 		}
