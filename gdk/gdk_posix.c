@@ -343,10 +343,8 @@ MT_getrss(void)
 			return ((size_t) atol(r)) * MT_pagesize();
 		}
 	}
-	return 0;
-#else
-#error Could not find a way to calculate the RSS on the target platform
 #endif
+	return 0;
 }
 
 void *
