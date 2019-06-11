@@ -1588,18 +1588,15 @@ open_xzstream(const char *restrict filename, const char *restrict flags)
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
 			s->isutf8 = true;
 		} else {
-			FILE *fp = xz->fp;
-			lzma_ret ret;
 			lzma_end(&xz->strm);
-			ret = lzma_stream_decoder(&xz->strm, UINT64_MAX, LZMA_CONCATENATED);
-			if (ret != LZMA_OK) {
-				destroy(s);
+			if (lzma_stream_decoder(&xz->strm, UINT64_MAX, LZMA_CONCATENATED) != LZMA_OK
+				|| fseek (xz->fp, 0L, SEEK_SET) < 0) {
+				fclose(xz->fp);
 				free(xz);
-				fclose(fp);
+				destroy(s);
 				return NULL;
 			}
-			rewind(fp);
-			xz->fp = fp;
+			xz->todo = 0;
 		}
 	}
 	return s;
