@@ -347,7 +347,6 @@ MT_getrss(void)
 	return 0;
 }
 
-
 void *
 MT_mmap(const char *path, int mode, size_t len)
 {
@@ -745,11 +744,9 @@ MT_init_posix(void)
 size_t
 MT_getrss(void)
 {
-#ifdef _WIN64
 	PROCESS_MEMORY_COUNTERS ctr;
 	if (GetProcessMemoryInfo(GetCurrentProcess(), &ctr, sizeof(ctr)))
 		return ctr.WorkingSetSize;
-#endif
 	return 0;
 }
 
@@ -902,7 +899,6 @@ MT_path_absolute(const char *pathname)
 		 (pathname[2] == '/' || pathname[2] == '\\')) ||
 		(pathname[0] == '\\' && pathname[1] == '\\'));
 }
-
 
 #ifndef HAVE_GETTIMEOFDAY
 static int nodays[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };

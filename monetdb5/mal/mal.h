@@ -30,7 +30,6 @@
 # include <sys/times.h>
 #endif
 
-#include <setjmp.h>
 /*
  * MonetDB Calling Options
  * The number of invocation arguments is kept to a minimum.
@@ -109,8 +108,6 @@ mal_export void mserver_reset(void);
 
 #define VARARGS 1				/* deal with variable arguments */
 #define VARRETS 2
-
-#define SERVERSHUTDOWNDELAY 5 /* seconds */
 
 typedef int malType;
 typedef str (*MALfcn) ();
@@ -206,7 +203,6 @@ typedef struct MALBLK {
 
 #define STACKINCR   128
 #define MAXGLOBALS  (4 * STACKINCR)
-#define MAXSHARES   8
 
 typedef int (*DFhook) (void *, void *, void *, void *);
 
@@ -217,8 +213,6 @@ typedef struct MALSTK {
 	int stkdepth;		/* to protect against runtime stack overflow */
 	int calldepth;		/* to protect against runtime stack overflow */
 	short keepAlive;	/* do not garbage collect when set */
-	short garbageCollect; /* stack needs garbage collection */
-	lng tmpspace;		/* amount of temporary space produced */
 	/*
 	 * Parallel processing is mostly driven by dataflow, but within this context
 	 * there may be different schemes to take instructions into execution.

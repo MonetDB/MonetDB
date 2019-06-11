@@ -955,7 +955,6 @@ fi
 export CFLAGS
 %{configure} \
 	--enable-assert=no \
-	--enable-console=yes \
 	--enable-debug=no \
 	--enable-developer=no \
 	--enable-embedded=no \

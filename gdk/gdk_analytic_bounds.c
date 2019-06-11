@@ -529,13 +529,13 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 		lng limit;
 		switch (tp2) {
 		case TYPE_bte:
-			limit = (lng) (*(bte *) bound);
+			limit = is_bte_nil(*(bte *) bound) ? lng_nil : (lng) *(bte *) bound;
 			break;
 		case TYPE_sht:
-			limit = (lng) (*(sht *) bound);
+			limit = is_sht_nil(*(sht *) bound) ? lng_nil : (lng) *(sht *) bound;
 			break;
 		case TYPE_int:
-			limit = (lng) (*(int *) bound);
+			limit = is_int_nil(*(int *) bound) ? lng_nil : (lng) *(int *) bound;
 			break;
 		case TYPE_lng:
 			limit = (lng) (*(lng *) bound);
@@ -543,7 +543,7 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 		default:
 			goto bound_not_supported;
 		}
-		if (limit == GDK_lng_max) {
+		if (is_lng_nil(limit)) {
 			return GDKanalyticalallbounds(r, b, p, preceding);
 		} else if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, limit);
@@ -655,7 +655,7 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 			switch (tp2) {
 			case TYPE_bte:{
 				bte ll = (*(bte *) bound);
-				if (ll == GDK_bte_max)	/* UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING cases, avoid overflow */
+				if (is_bte_nil(ll))	/* UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING cases, avoid overflow */
 					return GDKanalyticalallbounds(r, b, p, preceding);
 				else
 					limit = (lng) ll;
@@ -663,7 +663,7 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 			}
 			case TYPE_sht:{
 				sht ll = (*(sht *) bound);
-				if (ll == GDK_sht_max)
+				if (is_sht_nil(ll))
 					return GDKanalyticalallbounds(r, b, p, preceding);
 				else
 					limit = (lng) ll;
@@ -671,7 +671,7 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 			}
 			case TYPE_int:{
 				int ll = (*(int *) bound);
-				if (ll == GDK_int_max)
+				if (is_int_nil(ll))
 					return GDKanalyticalallbounds(r, b, p, preceding);
 				else
 					limit = (lng) ll;
@@ -679,7 +679,7 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 			}
 			case TYPE_lng:{
 				lng ll = (*(lng *) bound);
-				if (ll == GDK_lng_max)
+				if (is_lng_nil(ll))
 					return GDKanalyticalallbounds(r, b, p, preceding);
 				else
 					limit = (lng) ll;
@@ -697,7 +697,7 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 		}
 		case TYPE_flt:{
 			flt limit = (*(flt *) bound);
-			if (limit == GDK_flt_max) {
+			if (is_flt_nil(limit)) {
 				return GDKanalyticalallbounds(r, b, p, preceding);
 			} else if (preceding) {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_FLT(_PRECEDING, limit);
@@ -708,7 +708,7 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 		}
 		case TYPE_dbl:{
 			dbl limit = (*(dbl *) bound);
-			if (limit == GDK_dbl_max) {
+			if (is_dbl_nil(limit)) {
 				return GDKanalyticalallbounds(r, b, p, preceding);
 			} else if (preceding) {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_DBL(_PRECEDING, limit);
@@ -720,7 +720,7 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 #ifdef HAVE_HGE
 		case TYPE_hge:{
 			hge limit = (*(hge *) bound);
-			if (limit == GDK_hge_max) {
+			if (is_hge_nil(limit)) {
 				return GDKanalyticalallbounds(r, b, p, preceding);
 			} else if (preceding) {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_HGE(_PRECEDING, limit);
@@ -804,13 +804,13 @@ GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 		lng limit;
 		switch (tp2) {
 		case TYPE_bte:
-			limit = (lng) (*(bte *) bound);
+			limit = is_bte_nil(*(bte *) bound) ? lng_nil : (lng) *(bte *) bound;
 			break;
 		case TYPE_sht:
-			limit = (lng) (*(sht *) bound);
+			limit = is_sht_nil(*(sht *) bound) ? lng_nil : (lng) *(sht *) bound;
 			break;
 		case TYPE_int:
-			limit = (lng) (*(int *) bound);
+			limit = is_int_nil(*(int *) bound) ? lng_nil : (lng) *(int *) bound;
 			break;
 		case TYPE_lng:
 			limit = (lng) (*(lng *) bound);
@@ -818,7 +818,7 @@ GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 		default:
 			goto bound_not_supported;
 		}
-		if (limit == GDK_lng_max) {
+		if (is_lng_nil(limit)) {
 			return GDKanalyticalallbounds(r, b, p, preceding);
 		} else if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_PRECEDING, limit);

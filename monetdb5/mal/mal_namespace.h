@@ -16,6 +16,4 @@ mal_export str getName(const char *nme);
 mal_export str getNameLen(const char *nme, size_t len);
 mal_export void delName(const char *nme, size_t len);
 
-#define MAXIDENTLEN    1024
-
 #endif /* _MAL_NAMESPACE_H */

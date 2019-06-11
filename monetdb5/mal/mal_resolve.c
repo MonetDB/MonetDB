@@ -26,7 +26,6 @@ static int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
 static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 
 /* #define DEBUG_MAL_RESOLVE*/
-#define MAXMALARG 256
 
 /*
  * We found the proper function. Copy some properties. In particular,

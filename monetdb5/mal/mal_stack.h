@@ -17,9 +17,6 @@ mal_export MalStkPtr reallocGlobalStack(MalStkPtr s, int cnt);
 mal_export void freeStack(MalStkPtr stk);
 mal_export void clearStack(MalStkPtr s);
 
-#define VARfreeze(X)    if(X){X->frozen=TRUE;}
-#define VARfixate(X)    if(X){X->constant=TRUE;}
-
 #define getStkRecord(S,P,I) &(S)->stk[(P)->argv[I]]
 #define getStkValue(S,P,I)  ( getStkType(S,P,I)== TYPE_str? \
 					getStkRecord(S,P,I)->val.sval :\
