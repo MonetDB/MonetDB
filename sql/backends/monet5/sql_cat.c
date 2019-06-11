@@ -216,16 +216,11 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	tp1 = tpe.type->localtype;
 	min_null = ATOMcmp(tp1, min, ATOMnilptr(tp1)) == 0;
 	max_null = ATOMcmp(tp1, max, ATOMnilptr(tp1)) == 0;
-	if(min_null || max_null)
-		with_nills = 1;
 
-	if(!max_null && min_null) {
+	if(max_null && min_null && !with_nills) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: range bound cannot be null");
 		goto finish;
-	} else if(!min_null && max_null) {
-		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: range bound cannot be null");
-		goto finish;
-	} else if(!with_nills && ATOMcmp(tp1, min, max) > 0) {
+	} else if(!min_null && !max_null && ATOMcmp(tp1, min, max) > 0) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is higher than maximum value");
 		goto finish;
 	}

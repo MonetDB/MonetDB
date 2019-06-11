@@ -1,7 +1,7 @@
 CREATE MERGE TABLE listparts (b varchar(32)) PARTITION BY RANGE ON (b);
 CREATE TABLE subtable1 (b varchar(32));
 
-ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM RANGE MINVALUE TO 'something'; --error
+ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM RANGE MINVALUE TO 'something';
 ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM 'else' TO RANGE MAXVALUE; --error
 ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE; --error
 SELECT minimum, maximum FROM range_partitions;

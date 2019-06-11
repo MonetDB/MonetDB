@@ -359,7 +359,7 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 				if(ok)
 					ok = VALinit(&vmax, TYPE_str, next->part.range.maxvalue);
 				if(ok) {
-					if (strcmp((const char *)VALget(&vmin), str_nil) == 0 ||
+					if (strcmp((const char *)VALget(&vmin), str_nil) == 0 &&
 						strcmp((const char *)VALget(&vmax), str_nil) == 0) {
 						int tpe = found.type->localtype;
 						const void *nil_ptr = ATOMnilptr(tpe);

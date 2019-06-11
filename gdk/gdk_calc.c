@@ -14617,5 +14617,6 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 			 ATOMname(v->vtype), ATOMname(ret->vtype));
 		return GDK_FAIL;
 	}
+	ret->len = ATOMlen(ret->vtype, VALptr(ret));
 	return nils == BUN_NONE ? GDK_FAIL : GDK_SUCCEED;
 }

@@ -2702,14 +2702,20 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 					maxv = mapi_fetch_field(shdl, 1);
 					wnulls = mapi_fetch_field(shdl, 2);
 				}
-				if (minv && maxv) {
+				if (minv || maxv) {
 					mnstr_printf(toConsole, " FROM ");
-					squoted_print(toConsole, minv, '\'');
+					if (minv)
+						squoted_print(toConsole, minv, '\'');
+					else
+						mnstr_printf(toConsole, "RANGE MINVALUE");
 					mnstr_printf(toConsole, " TO ");
-					squoted_print(toConsole, maxv, '\'');
+					if (maxv)
+						squoted_print(toConsole, maxv, '\'');
+					else
+						mnstr_printf(toConsole, "RANGE MAXVALUE");
 				}
 				if (strcmp(wnulls, "true") == 0) {
-					mnstr_printf(toConsole, " %s NULL VALUES", (minv && maxv) ? "WITH" : "FOR");
+					mnstr_printf(toConsole, " %s NULL VALUES", (minv || maxv) ? "WITH" : "FOR");
 				}
 				mapi_close_handle(shdl);
 			}

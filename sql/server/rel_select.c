@@ -4882,14 +4882,14 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 
 	if((bound->token == SQL_PRECEDING || bound->token == SQL_FOLLOWING || bound->token == SQL_CURRENT_ROW) && bound->type == type_int) {
 		atom *a = NULL;
-		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie); exp_subtype(ie);
+		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
 		bclass = bt->type->eclass;
 
 		if((bound->data.i_val == UNBOUNDED_PRECEDING_BOUND || bound->data.i_val == UNBOUNDED_FOLLOWING_BOUND)) {
 			if(EC_NUMBER(bclass))
-				a = atom_absolute_max(sql->sa, bt);
+				a = atom_general(sql->sa, bt, NULL);
 			else
-				a = atom_absolute_max(sql->sa, it);
+				a = atom_general(sql->sa, it, NULL);
 		} else if(bound->data.i_val == CURRENT_ROW_BOUND) {
 			if(EC_NUMBER(bclass))
 				a = atom_zero_value(sql->sa, bt);
@@ -4906,6 +4906,12 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 		iet = exp_subtype(ie);
 
 		assert(token == SQL_PRECEDING || token == SQL_FOLLOWING);
+		if (bound->token == SQL_NULL ||
+		    (bound->token == SQL_IDENT &&
+		     bound->data.lval->h->type == type_int &&
+		     sql->args[bound->data.lval->h->data.i_val]->isnull)) {
+			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must not be NULL", bound_desc);
+		}
 		res = rel_value_exp2(query, &p, bound, f, ek, &is_last);
 		if(!res)
 			return NULL;
@@ -5472,17 +5478,17 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
 		sclass = bt->type->eclass;
 		if(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)) {
-			fstart = exp_atom(sql->sa, atom_absolute_max(sql->sa, bt));
+			fstart = exp_atom(sql->sa, atom_general(sql->sa, bt, NULL));
 			if(order_by_clause)
 				fend = exp_atom(sql->sa, atom_zero_value(sql->sa, bt));
 			else
-				fend = exp_atom(sql->sa, atom_absolute_max(sql->sa, bt));
+				fend = exp_atom(sql->sa, atom_general(sql->sa, bt, NULL));
 		} else {
-			fstart = exp_atom(sql->sa, atom_absolute_max(sql->sa, it));
+			fstart = exp_atom(sql->sa, atom_general(sql->sa, it, NULL));
 			if(order_by_clause)
 				fend = exp_atom(sql->sa, atom_zero_value(sql->sa, it));
 			else
-				fend = exp_atom(sql->sa, atom_absolute_max(sql->sa, it));
+				fend = exp_atom(sql->sa, atom_general(sql->sa, it, NULL));
 		}
 		if(!obe)
 			frame_type = FRAME_ALL;
