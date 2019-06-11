@@ -58,11 +58,9 @@ stdout of test 'view-where-cast-error.Bug-6712` in directory 'sql/test/BugTracke
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
-
-# 19:39:23 >  
-# 19:39:23 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12898" "--port=32246"
-# 19:39:23 >  
+# 20:03:06 >  
+# 20:03:06 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25702" "--port=34084"
+# 20:03:06 >  
 
 #start transaction;
 #CREATE TABLE x ("id" INTEGER, "attribute" CHARACTER LARGE OBJECT, "value" CHARACTER LARGE OBJECT);
