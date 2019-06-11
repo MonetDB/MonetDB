@@ -12,3 +12,5 @@ subselect.Bug-6700
 alter_table_set_schema.Bug-6701
 crash-in-rel_dependencies.Bug-6703
 prepared-merge-statement.Bug-6706
+view-where-cast-error.Bug-6712
+
