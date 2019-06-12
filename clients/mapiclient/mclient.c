@@ -1872,6 +1872,11 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 	timerHumanCalled = false;
 
 	do {
+		// get the timings as reported by the backend
+		sqloptimizer = mapi_get_sqloptimizertime(hdl);
+		maloptimizer = mapi_get_maloptimizertime(hdl);
+		querytime = mapi_get_querytime(hdl);
+		timerHumanStop();
 		/* handle errors first */
 		if (mapi_result_error(hdl) != NULL) {
 			mnstr_flush(toConsole);
@@ -1884,14 +1889,10 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			errseen = true;
 			/* don't need to print something like '0
 			 * tuples' if we got an error */
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		}
 
-		// get the timings as reported by the backend
-		sqloptimizer = mapi_get_sqloptimizertime(hdl);
-		maloptimizer = mapi_get_maloptimizertime(hdl);
-		querytime = mapi_get_querytime(hdl);
-		timerHumanStop();
 		switch (mapi_get_querytype(hdl)) {
 		case Q_BLOCK:
 		case Q_PARSE:
