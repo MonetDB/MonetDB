@@ -1468,7 +1468,7 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 
 /* some projections results are order dependend (row_number etc) */
 static int 
-project_unsafe(sql_rel *rel)
+project_unsafe(sql_rel *rel, int allow_identity)
 {
 	sql_rel *sub = rel->l;
 	node *n;
@@ -1484,7 +1484,7 @@ project_unsafe(sql_rel *rel)
 		sql_exp *e = n->data;
 
 		/* aggr func in project ! */
-		if (exp_unsafe(e))
+		if (exp_unsafe(e, allow_identity))
 			return 1;
 	}
 	return 0;
@@ -2373,7 +2373,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		list *l = e->l, *nl = NULL;
 		sql_exp *ne = NULL;
 
-		if (e->type == e_func && exp_unsafe(e))
+		if (e->type == e_func && exp_unsafe(e,0))
 			return NULL;
 		if (!l) {
 			return e;
@@ -2609,7 +2609,7 @@ rel_merge_projects(int *changes, mvc *sql, sql_rel *rel)
 	    prj && prj->op == op_project && !(rel_is_ref(prj)) && !prj->r) {
 		int all = 1;
 
-		if (project_unsafe(rel) || project_unsafe(prj) || exps_share_expensive_exp(rel->exps, prj->exps))
+		if (project_unsafe(rel,0) || project_unsafe(prj,0) || exps_share_expensive_exp(rel->exps, prj->exps))
 			return rel;
 	
 		/* here we need to fix aliases */
@@ -3364,8 +3364,8 @@ rel_merge_union(int *changes, mvc *sql, sql_rel *rel)
 	sql_rel *ref = NULL;
 
 	if (is_union(rel->op) && 
-	    l && is_project(l->op) && !project_unsafe(l) &&
-	    r && is_project(r->op) && !project_unsafe(r) &&	
+	    l && is_project(l->op) && !project_unsafe(l,0) &&
+	    r && is_project(r->op) && !project_unsafe(r,0) &&	
 	    (ref = rel_find_ref(l)) != NULL && ref == rel_find_ref(r)) {
 		/* Find selects and try to merge */
 		sql_rel *ls = rel_find_select(l);
@@ -4340,7 +4340,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 		sql_rel *pl;
 		/* we cannot push through rank (row_number etc) functions or
 		   projects with distinct */
-		if (!r->l || project_unsafe(r))
+		if (!r->l || project_unsafe(r,1))
 			return rel;
 
 		/* here we need to fix aliases */
@@ -5034,7 +5034,7 @@ rel_push_project_down_union(int *changes, mvc *sql, sql_rel *rel)
 		sql_rel *ul = u->l;
 		sql_rel *ur = u->r;
 
-		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel))
+		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel,0))
 			return rel;
 		/* don't push project down union of single values */
 		if ((is_project(ul->op) && !ul->l) || (is_project(ur->op) && !ur->l))
@@ -5780,9 +5780,9 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
 		   (is_select(rel->op) && l->op != op_project) ||
 		   (is_join(rel->op) && l->op != op_project && r->op != op_project) ||
-		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l))) ||
+		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l,is_select(rel->op)))) ||
 		   (is_join(rel->op) && (is_subquery(r) ||
-		    (r->op == op_project && (!r->l || r->r || project_unsafe(r))))))) 
+		    (r->op == op_project && (!r->l || r->r || project_unsafe(r,0))))))) 
 			return rel;
 
 		if (l->op == op_project && l->l) {
