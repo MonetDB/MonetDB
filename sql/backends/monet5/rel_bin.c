@@ -577,7 +577,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		if (!l) 
 			return NULL;
-		s = stmt_convert(be, l, from, to);
+		s = stmt_convert(be, l, from, to, sel);
 	} 	break;
 	case e_func: {
 		node *en;
@@ -1173,7 +1173,7 @@ check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe)
                    (c == 3 && tpe != type_cast)) { 
 			s = NULL;
 		} else {
-			s = stmt_convert(be, s, st, ct);
+			s = stmt_convert(be, s, st, ct, NULL);
 		}
 	} 
 	if (!s) {
@@ -2976,6 +2976,11 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		if (s->nrcols == 0){
 			if (!predicate && sub)
 				predicate = stmt_const(be, bin_first_column(be, sub), stmt_bool(be, 1));
+			if (e->type != e_cmp) {
+				sql_subtype *bt = sql_bind_localtype("bit");
+
+				s = stmt_convert(be, s, exp_subtype(e), bt, NULL);
+			}
 			sel = stmt_uselect(be, predicate, s, cmp_equal, sel, 0);
 		} else if (e->type != e_cmp) {
 			sel = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, NULL, 0);

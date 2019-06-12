@@ -261,6 +261,11 @@ rel_alter_seq(
 		val = rel_value_exp2(query, &r, start_list->h->next->data.sym, sql_sel, ek, &is_last);
 		if (!val || !(val = rel_check_type(sql, lng_t, val, type_equal)))
 			return NULL;
+		if (val && r && r->op == op_project) {
+			exp_label(sql->sa, val, ++sql->label);
+			val = rel_project_add_exp(sql, r, val);
+			val = exp_ref(sql->sa, val);
+		}
 	} else if (start_type == 2) {
 		assert (start_list->h->next->type == type_lng);
 		val = exp_atom_lng(sql->sa, start_list->h->next->data.l_val);

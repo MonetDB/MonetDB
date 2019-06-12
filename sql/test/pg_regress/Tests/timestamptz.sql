@@ -5,33 +5,40 @@
 /* SET australian_timezones = 'off'; */
 
 CREATE TABLE TIMESTAMPTZ_TBL ( d1 timestamp(2) with time zone);
+DECLARE test_now timestamp(2) with time zone;
+DECLARE test_current_timestamp timestamp(2) with time zone;
+DECLARE test_current_date date;
+
+SET test_now = now;
+SET test_current_timestamp = current_timestamp;
+SET test_current_date = current_date;
 
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('now');
-INSERT INTO TIMESTAMPTZ_TBL VALUES (now);
+INSERT INTO TIMESTAMPTZ_TBL VALUES (test_now);
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('current');
-INSERT INTO TIMESTAMPTZ_TBL VALUES (current_timestamp);
+INSERT INTO TIMESTAMPTZ_TBL VALUES (test_current_timestamp);
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('today');
-INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(current_date as timestamptz));
+INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(test_current_date as timestamptz));
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('yesterday');
-INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(sql_sub(current_date, 24*60*60.0) as timestamptz));
+INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(sql_sub(test_current_date, 24*60*60.0) as timestamptz));
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('tomorrow');
-INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(sql_add(current_date, 24*60*60.0) as timestamptz));
+INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(sql_add(test_current_date, 24*60*60.0) as timestamptz));
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('tomorrow EST');
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('tomorrow zulu');
 
 --SELECT d1 FROM TIMESTAMPTZ_TBL;
-SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(current_date as timestamptz);
-SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_add(current_date, 24*60*60.0)as timestamptz);
-SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_sub(current_date, 24*60*60.0)as timestamptz);
-SELECT count(*) AS None FROM TIMESTAMPTZ_TBL WHERE d1 = cast(now as timestamptz);
+SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(test_current_date as timestamptz);
+SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_add(test_current_date, 24*60*60.0)as timestamptz);
+SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_sub(test_current_date, 24*60*60.0)as timestamptz);
+SELECT count(*) AS None FROM TIMESTAMPTZ_TBL WHERE d1 = cast(test_now as timestamptz);
 
 DELETE FROM TIMESTAMPTZ_TBL;
 
 -- verify uniform transaction time within transaction block
 START TRANSACTION;
-INSERT INTO TIMESTAMPTZ_TBL VALUES (now);
-INSERT INTO TIMESTAMPTZ_TBL VALUES (now());
-SELECT count(*) AS two FROM TIMESTAMPTZ_TBL WHERE d1 <= cast(now as timestamptz);
+INSERT INTO TIMESTAMPTZ_TBL VALUES (test_now);
+INSERT INTO TIMESTAMPTZ_TBL VALUES (test_now);
+SELECT count(*) AS two FROM TIMESTAMPTZ_TBL WHERE d1 <= cast(test_now as timestamptz);
 COMMIT;
 DELETE FROM TIMESTAMPTZ_TBL;
 

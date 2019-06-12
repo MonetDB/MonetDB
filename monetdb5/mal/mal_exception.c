@@ -357,7 +357,7 @@ getExceptionMessageAndState(const char *exception)
 		if (strncmp(exceptionNames[i], exception, l) == 0 &&
 			exception[l] == ':') {
 			s = exception + l + 1;
-			if ((t = strchr(s, ':')) != NULL)
+			if ((t = strpbrk(s, ":\n")) != NULL && *t == ':')
 				return (str) (t + 1);
 			return (str) s;
 		}

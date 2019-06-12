@@ -1304,18 +1304,19 @@ SQLCacheRemove(Client c, str nme)
 
 str
 SQLcallback(Client c, str msg){
-	if(msg &&  (strstr(msg, "MALexception") || strstr(msg,"GDKexception"))) {
+	char newerr[1024];
+
+	if (msg && (strstr(msg, "MALexception") || strstr(msg,"GDKexception"))) {
 		// massage the error to comply with SQL
 		char *s;
-		s= strchr(msg,(int)':');
-		if (s ) 
-			s= strchr(msg,(int)':');
-		if( s){
-			char newerr[1024];
+		s = strchr(msg, ':');
+		if (s) {
 			s++;
+			if (s - msg >= (ptrdiff_t) sizeof(newerr))
+				s = msg + sizeof(newerr) - 1;
 			strncpy(newerr, msg, s - msg);
 			newerr[s-msg] = 0;
-			snprintf(newerr + (s-msg), 1024 -(s-msg), SQLSTATE(HY020) "%s",s);
+			snprintf(newerr + (s-msg), sizeof(newerr) -(s-msg), SQLSTATE(HY020) "%s",s);
 			freeException(msg);
 			msg = GDKstrdup(newerr);
 		}
@@ -1325,23 +1326,25 @@ SQLcallback(Client c, str msg){
 		char *m, *n, *p, *s;
 		size_t l;
 
-		m = p = msg;
+		m = msg;
+		p = newerr;
 		while (m && *m) {
 			n = strchr(m, '\n');
-			if (n)
-				*n = 0;
 			s = getExceptionMessageAndState(m);
 			if (n) {
-				*n++ = '\n';
+				n++; /* include newline */
 				l = n - s;
 			} else {
 				l = strlen(s);
 			}
-			memmove(p, s, l);
+			if (p + l >= newerr + sizeof(newerr))
+				l = newerr + sizeof(newerr) - p - 1;
+			memcpy(p, s, l);
 			p += l;
 			m = n;
 		}
 		*p = 0;
+		msg = GDKstrdup(newerr);
 	}
 	return MALcallback(c,msg);
 }
