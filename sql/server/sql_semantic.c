@@ -360,6 +360,9 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		_DELETE(l);
 		break;
 	}
+	case SQL_PARAMETER:
+		strcpy(buf,"?");
+		break;
 	case SQL_NULL:
 		strcpy(buf,"NULL");
 		break;
@@ -414,7 +417,7 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 				*err = e;
 		}
 		return NULL;
-	} 	
+	}
 	case SQL_CAST: {
 		dlist *dl = se->data.lval;
 		char *val;
@@ -436,7 +439,6 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	}
 	case SQL_AGGR:
 	case SQL_SELECT:
-	case SQL_PARAMETER:
 	case SQL_CASE:
 	case SQL_COALESCE:
 	case SQL_NULLIF:

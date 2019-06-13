@@ -412,6 +412,9 @@ static sql_rel* rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, s
 static sql_exp*
 exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 {
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+
 	if (!e)
 		return NULL;
 	switch(e->type) {
@@ -485,6 +488,9 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 static sql_rel*
 rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 {
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+
 	if (!rel)
 		return NULL;
 

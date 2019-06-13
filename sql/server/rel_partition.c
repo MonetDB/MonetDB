@@ -41,8 +41,13 @@ rel_getcount(mvc *sql, sql_rel *rel)
 }
 
 static void
-find_basetables( sql_rel *rel, list *tables )
+find_basetables(mvc *sql, sql_rel *rel, list *tables )
 {
+	if (THRhighwater()) {
+		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return;
+	}
+
 	if (!rel)
 		return;
 	switch (rel->op) {
@@ -68,9 +73,9 @@ find_basetables( sql_rel *rel, list *tables )
 	case op_inter: 
 	case op_except: 
 		if (rel->l)
-			find_basetables(rel->l, tables); 
+			find_basetables(sql, rel->l, tables);
 		if (rel->r)
-			find_basetables(rel->r, tables); 
+			find_basetables(sql, rel->r, tables);
 		break;
 	case op_groupby: 
 	case op_project:
@@ -78,7 +83,7 @@ find_basetables( sql_rel *rel, list *tables )
 	case op_topn: 
 	case op_sample: 
 		if (rel->l)
-			find_basetables(rel->l, tables); 
+			find_basetables(sql, rel->l, tables);
 		break;
 	case op_ddl: 
 		break;
@@ -87,7 +92,7 @@ find_basetables( sql_rel *rel, list *tables )
 	case op_delete:
 	case op_truncate:
 		if (rel->r)
-			find_basetables(rel->r, tables); 
+			find_basetables(sql, rel->r, tables);
 		break;
 	}
 }
@@ -98,7 +103,7 @@ _rel_partition(mvc *sql, sql_rel *rel)
 	list *tables = sa_list(sql->sa); 
 	/* find basetable relations */
 	/* mark one (largest) with REL_PARTITION */
-	find_basetables(rel, tables); 
+	find_basetables(sql, rel, tables);
 	if (list_length(tables)) {
 		sql_rel *r;
 		node *n;
@@ -137,6 +142,8 @@ has_groupby(sql_rel *rel)
 sql_rel *
 rel_partition(mvc *sql, sql_rel *rel) 
 {
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
 	(void)sql;
 	if (rel->op == op_basetable) {
 		rel->flag = REL_PARTITION;
