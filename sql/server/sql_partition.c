@@ -86,16 +86,49 @@ static void exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *col
 static void
 rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 {
-	if(!rel)
+	if (!rel)
 		return;
 
-	if(rel->exps)
-		for(node *n = rel->exps->h ; n ; n = n->next)
+	if (rel->exps)
+		for (node *n = rel->exps->h ; n ; n = n->next)
 			exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
-	if(rel->l)
-		rel_find_table_columns(sql, rel->l, t, cols);
-	if(rel->r)
-		rel_find_table_columns(sql, rel->r, t, cols);
+
+	switch (rel->op) {
+		case op_table:
+		case op_basetable:
+		case op_ddl:
+			break;
+		case op_join:
+		case op_left:
+		case op_right:
+		case op_full:
+		case op_semi:
+		case op_anti:
+		case op_apply:
+		case op_union:
+		case op_inter:
+		case op_except:
+			if (rel->l)
+				rel_find_table_columns(sql, rel->l, t, cols);
+			if (rel->r)
+				rel_find_table_columns(sql, rel->r, t, cols);
+			break;
+		case op_groupby:
+		case op_project:
+		case op_select:
+		case op_topn:
+		case op_sample:
+			if (rel->l)
+				rel_find_table_columns(sql, rel->l, t, cols);
+			break;
+		case op_insert:
+		case op_update:
+		case op_delete:
+		case op_truncate:
+			if (rel->r)
+				rel_find_table_columns(sql, rel->r, t, cols);
+			break;
+	}
 }
 
 static void

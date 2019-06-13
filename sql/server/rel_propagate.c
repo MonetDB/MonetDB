@@ -485,34 +485,21 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 static sql_rel*
 rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 {
-	if(!rel)
+	if (!rel)
 		return NULL;
 
-	if(rel->exps)
-		for(node *n = rel->exps->h ; n ; n = n->next)
+	if (rel->exps)
+		for (node *n = rel->exps->h ; n ; n = n->next)
 			n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
 
-	switch(rel->op) {
-		case op_basetable:
-			if(rel->l == oldt)
-				rel->l = newt;
-			if(rel->r)
-				rel->r = rel_change_base_table(sql, rel->r, oldt, newt);
+	switch (rel->op) {
+		case op_ddl:
 			break;
 		case op_table:
-		case op_topn:
-		case op_sample:
-		case op_project:
-		case op_groupby:
-		case op_select:
-		case op_insert:
-		case op_ddl:
-		case op_update:
-		case op_delete:
-		case op_truncate:
-		case op_union:
-		case op_inter:
-		case op_except:
+		case op_basetable:
+			if (rel->l == oldt)
+				rel->l = newt;
+			break;
 		case op_join:
 		case op_left:
 		case op_right:
@@ -520,10 +507,29 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 		case op_semi:
 		case op_anti:
 		case op_apply:
-			if(rel->l)
+		case op_union:
+		case op_inter:
+		case op_except:
+			if (rel->l)
 				rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
-			if(rel->r)
+			if (rel->r)
 				rel->r = rel_change_base_table(sql, rel->r, oldt, newt);
+			break;
+		case op_groupby:
+		case op_project:
+		case op_select:
+		case op_topn:
+		case op_sample:
+			if (rel->l)
+				rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
+			break;
+		case op_insert:
+		case op_update:
+		case op_delete:
+		case op_truncate:
+			if (rel->r)
+				rel->r = rel_change_base_table(sql, rel->r, oldt, newt);
+			break;
 	}
 	return rel;
 }
