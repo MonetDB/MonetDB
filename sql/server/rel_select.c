@@ -3595,8 +3595,7 @@ rel_intermediates_add_exp(mvc *sql, sql_rel *p, sql_rel *op, sql_exp *in)
 
 		while(pp->l && pp->l != p) 
 			pp = pp->l;
-		if (pp && pp->l == p) {
-			assert(pp->op == op_project);
+		if (pp && pp->l == p && pp->op == op_project) {
 			in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
 			in = rel_project_add_exp(sql, pp, in);
 		}
