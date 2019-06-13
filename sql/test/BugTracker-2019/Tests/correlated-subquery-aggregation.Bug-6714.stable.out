@@ -18,26 +18,24 @@ stdout of test 'correlated-subquery-aggregation.Bug-6714` in directory 'sql/test
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
-
-# 16:27:01 >  
-# 16:27:01 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18731" "--port=37182"
-# 16:27:01 >  
+# 16:52:23 >  
+# 16:52:23 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19767" "--port=33996"
+# 16:52:23 >  
 
 #select func_id, (select name from functions f where f.id = func_id) as name, max(number), count(*) from args
 #group by func_id having count(*) > 8 order by func_id limit 12;
-% .args,	.L10,	.L12,	.L14 # table_name
-% func_id,	name,	L12,	L14 # name
+% sys.args,	.L5,	sys.L7,	sys.L11 # table_name
+% func_id,	name,	L7,	L11 # name
 % int,	varchar,	int,	bigint # type
 % 4,	14,	2,	2 # length
-[ 1495,	"copyfrom",	12,	13	]
-[ 6743,	"querylog_calls",	8,	9	]
-[ 6802,	"tracelog",	12,	13	]
-[ 7234,	"bbp",	10,	11	]
-[ 8531,	"storage",	16,	17	]
-[ 8589,	"storage",	17,	18	]
-[ 8609,	"storage",	18,	19	]
-[ 8630,	"storage",	19,	20	]
+[ 1501,	"copyfrom",	12,	13	]
+[ 6765,	"querylog_calls",	8,	9	]
+[ 6824,	"tracelog",	12,	13	]
+[ 7256,	"bbp",	10,	11	]
+[ 8553,	"storage",	16,	17	]
+[ 8611,	"storage",	17,	18	]
+[ 8631,	"storage",	18,	19	]
+[ 8652,	"storage",	19,	20	]
 
 # 16:27:01 >  
 # 16:27:01 >  "Done."
