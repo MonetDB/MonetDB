@@ -96,7 +96,7 @@ get_inserts( sql_rel *ins )
 }
 
 static sql_rel *
-rel_insert_hash_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
+rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 {
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	node *m;
@@ -142,12 +142,12 @@ rel_insert_hash_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 	}
 	/* append inserts to hash */
 	append(get_inserts(inserts), h);
-	exp_setname(sql->sa, h, i->t->base.name, iname);
+	exp_setname(sql->sa, h, alias, iname);
 	return inserts;
 }
 
 static sql_rel *
-rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
+rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 {
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	int need_nulls = 0;
@@ -185,12 +185,12 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 		lnl = exp_unop(sql->sa, _is, isnil);
 		rnl = exp_unop(sql->sa, _is, isnil);
 		if (need_nulls) {
-		    if (lnll_exps) {
-			lnll_exps = exp_binop(sql->sa, lnll_exps, lnl, or);
-			rnll_exps = exp_binop(sql->sa, rnll_exps, rnl, or);
-		    } else {
-			lnll_exps = lnl;
-			rnll_exps = rnl;
+			if (lnll_exps) {
+				lnll_exps = exp_binop(sql->sa, lnll_exps, lnl, or);
+				rnll_exps = exp_binop(sql->sa, rnll_exps, rnl, or);
+			} else {
+				lnll_exps = lnl;
+				rnll_exps = rnl;
 		    }
 		}
 
@@ -200,14 +200,14 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 		append(join_exps, je);
 	}
 	if (need_nulls) {
-       		_nlls = rel_select( sql->sa, rel_dup(ins), 
+		_nlls = rel_select( sql->sa, rel_dup(ins),
 				exp_compare(sql->sa, lnll_exps, exp_atom_bool(sql->sa, 1), cmp_equal ));
-        	nnlls = rel_select( sql->sa, rel_dup(ins), 
+		nnlls = rel_select( sql->sa, rel_dup(ins),
 				exp_compare(sql->sa, rnll_exps, exp_atom_bool(sql->sa, 0), cmp_equal ));
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
 		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));
-		exp_setname(sql->sa, e, i->t->base.name, iname);
+		exp_setname(sql->sa, e, alias, iname);
 		append(_nlls->exps, e);
 	} else {
 		nnlls = ins;
@@ -219,7 +219,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
 	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-	exp_setname(sql->sa, e, i->t->base.name, iname);
+	exp_setname(sql->sa, e, alias, iname);
 	append(nnlls->exps, e);
 
 	if (need_nulls) {
@@ -234,7 +234,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 }
 
 static sql_rel *
-rel_insert_idxs(mvc *sql, sql_table *t, sql_rel *inserts)
+rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 {
 	sql_rel *p = inserts->r;
 	node *n;
@@ -250,9 +250,9 @@ rel_insert_idxs(mvc *sql, sql_table *t, sql_rel *inserts)
 		if (ins->op == op_union) 
 			inserts->r = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 0, 1));
 		if (hash_index(i->type) || i->type == no_idx) {
-			rel_insert_hash_idx(sql, i, inserts);
+			rel_insert_hash_idx(sql, alias, i, inserts);
 		} else if (i->type == join_idx) {
-			rel_insert_join_idx(sql, i, inserts);
+			rel_insert_join_idx(sql, alias, i, inserts);
 		}
 	}
 	if (inserts->r != p) {
@@ -282,7 +282,7 @@ rel_insert(mvc *sql, sql_rel *t, sql_rel *inserts)
 	r->r = inserts;
 	/* insert indices */
 	if (tab) 
-		return rel_insert_idxs(sql, tab, r);
+		return rel_insert_idxs(sql, tab, rel_name(t), r);
 	return r;
 }
 
@@ -395,7 +395,6 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 		list_append(exps, inserts[i]);
 	return exps;
 }
-
 
 sql_table *
 insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
@@ -673,7 +672,7 @@ is_idx_updated(sql_idx * i, list *exps)
 }
 
 static sql_rel *
-rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
+rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 {
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	node *m;
@@ -690,12 +689,12 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 			sql_kc *c = m->data;
 			sql_exp *e;
 
-	       		e = list_fetch(get_inserts(updates), c->c->colnr+1);
-			
+			e = list_fetch(get_inserts(updates), c->c->colnr+1);
+
 			if (h && i->type == hash_idx)  { 
 				list *exps = new_exp_list(sql->sa);
 				sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", lng, it, &c->c->type, lng);
-	
+
 				append(exps, h);
 				append(exps, exp_atom_int(sql->sa, bits));
 				append(exps, e);
@@ -705,7 +704,7 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 				sql_subfunc *lsh = sql_bind_func_result(sql->sa, sql->session->schema, "left_shift", lng, it, lng);
 				sql_subfunc *lor = sql_bind_func_result(sql->sa, sql->session->schema, "bit_or", lng, lng, lng);
 				sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, lng);
-	
+
 				h = exp_binop(sql->sa, h, exp_atom_int(sql->sa, bits), lsh); 
 				h2 = exp_unop(sql->sa, e, hf);
 				h = exp_binop(sql->sa, h, h2, lor);
@@ -719,11 +718,11 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 	}
 	/* append hash to updates */
 	append(get_inserts(updates), h);
-	exp_setname(sql->sa, h, i->t->base.name, iname);
+	exp_setname(sql->sa, h, alias, iname);
 
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
-	append(updates->exps, exp_column(sql->sa, i->t->base.name, iname, lng, CARD_MULTI, 0, 0));
+	append(updates->exps, exp_column(sql->sa, alias, iname, lng, CARD_MULTI, 0, 0));
 	return updates;
 }
 
@@ -754,7 +753,7 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
             referenced column in R2.
 */
 static sql_rel *
-rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
+rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 {
 	int nr = ++sql->label;
 	char name[16], *nme = number2name(name, 16, nr);
@@ -785,20 +784,19 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 		sql_exp *upd = list_fetch(get_inserts(updates), c->c->colnr + 1), *lnl, *rnl, *je;
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
 
-
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
 		/* Currently only the default MATCH SIMPLE is supported */
 		upd = exp_column(sql->sa, exp_relname(upd), exp_name(upd), exp_subtype(upd), upd->card, has_nil(upd), is_intern(upd));
 		lnl = exp_unop(sql->sa, upd, isnil);
 		rnl = exp_unop(sql->sa, upd, isnil);
 		if (need_nulls) {
-		    if (lnll_exps) {
-			lnll_exps = exp_binop(sql->sa, lnll_exps, lnl, or);
-			rnll_exps = exp_binop(sql->sa, rnll_exps, rnl, or);
-		    } else {
-			lnll_exps = lnl;
-			rnll_exps = rnl;
-		    }
+			if (lnll_exps) {
+				lnll_exps = exp_binop(sql->sa, lnll_exps, lnl, or);
+				rnll_exps = exp_binop(sql->sa, rnll_exps, rnl, or);
+			} else {
+				lnll_exps = lnl;
+				rnll_exps = rnl;
+			}
 		}
 		if (rel_convert_types(sql, &rtc, &upd, 1, type_equal) < 0) {
 			list_destroy(join_exps);
@@ -808,14 +806,14 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 		append(join_exps, je);
 	}
 	if (need_nulls) {
-       		_nlls = rel_select( sql->sa, rel_dup(ups), 
+		_nlls = rel_select( sql->sa, rel_dup(ups),
 				exp_compare(sql->sa, lnll_exps, exp_atom_bool(sql->sa, 1), cmp_equal ));
-        	nnlls = rel_select( sql->sa, rel_dup(ups), 
+		nnlls = rel_select( sql->sa, rel_dup(ups),
 				exp_compare(sql->sa, rnll_exps, exp_atom_bool(sql->sa, 0), cmp_equal ));
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
 		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));
-		exp_setname(sql->sa, e, i->t->base.name, iname);
+		exp_setname(sql->sa, e, alias, iname);
 		append(_nlls->exps, e);
 	} else {
 		nnlls = ups;
@@ -828,7 +826,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
 	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-	exp_setname(sql->sa, e, i->t->base.name, iname);
+	exp_setname(sql->sa, e, alias, iname);
 	append(nnlls->exps, e);
 
 	if (need_nulls) {
@@ -841,7 +839,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 	}
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
-	append(updates->exps, exp_column(sql->sa, i->t->base.name, iname, sql_bind_localtype("oid"), CARD_MULTI, 0, 0));
+	append(updates->exps, exp_column(sql->sa, alias, iname, sql_bind_localtype("oid"), CARD_MULTI, 0, 0));
 	return updates;
 }
 
@@ -849,7 +847,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
  * a DDL_LIST of update relations.
  */
 static sql_rel *
-rel_update_idxs(mvc *sql, sql_table *t, sql_rel *relup)
+rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 {
 	sql_rel *p = relup->r;
 	node *n;
@@ -865,16 +863,16 @@ rel_update_idxs(mvc *sql, sql_table *t, sql_rel *relup)
 		 */
 		if (relup->exps && is_idx_updated(i, relup->exps) == 0) 
 			continue;
-		 
+
 		/* 
 		 * relup->exps isn't set in case of alter statements!
 		 * Ie todo check for new indices.
 		 */
 
 		if (hash_index(i->type) || i->type == no_idx) {
-			rel_update_hash_idx(sql, i, relup);
+			rel_update_hash_idx(sql, alias, i, relup);
 		} else if (i->type == join_idx) {
-			rel_update_join_idx(sql, i, relup);
+			rel_update_join_idx(sql, alias, i, relup);
 		}
 	}
 	if (relup->r != p) {
@@ -913,20 +911,22 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 {
 	sql_rel *r = rel_create(sql->sa);
 	sql_table *tab = get_table(t);
+	const char *alias = rel_name(t);
 	node *m;
-	if(!r)
+
+	if (!r)
 		return NULL;
 
 	if (tab && updates)
-	for (m = tab->columns.set->h; m; m = m->next) {
-		sql_column *c = m->data;
-		sql_exp *v = updates[c->colnr];
+		for (m = tab->columns.set->h; m; m = m->next) {
+			sql_column *c = m->data;
+			sql_exp *v = updates[c->colnr];
 
-		if (tab->idxs.set && !v) 
-			v = exp_column(sql->sa, tab->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
-		if (v)
-			v = rel_project_add_exp(sql, uprel, v);
-	}
+			if (tab->idxs.set && !v)
+				v = exp_column(sql->sa, alias, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			if (v)
+				v = rel_project_add_exp(sql, uprel, v);
+		}
 
 	r->op = op_update;
 	r->l = t;
@@ -934,7 +934,7 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 	r->exps = exps;
 	/* update indices */
 	if (tab)
-		return rel_update_idxs(sql, tab, r);
+		return rel_update_idxs(sql, alias, tab, r);
 	return r;
 }
 
@@ -1150,8 +1150,8 @@ update_table(mvc *sql, dlist *qname, str alias, dlist *assignmentlist, symbol *o
 	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
 		sql_rel *r = NULL, *bt = rel_basetable(sql, t, t->base.name), *res = bt;
 
-		if(alias) {
-			for(node *nn = res->exps->h ; nn ; nn = nn->next)
+		if (alias) {
+			for (node *nn = res->exps->h ; nn ; nn = nn->next)
 				exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
 		}
 #if 0
@@ -1207,10 +1207,10 @@ update_table(mvc *sql, dlist *qname, str alias, dlist *assignmentlist, symbol *o
 			for (n = fl->h; n && res; n = n->next) {
 				fnd = table_ref(sql, NULL, n->data.sym, 0);
 				if (fnd) {
-					if(alias) {
-						for(node *nn = fnd->exps->h ; nn ; nn = nn->next) {
+					if (alias) {
+						for (node *nn = fnd->exps->h ; nn ; nn = nn->next) {
 							sql_exp* ee = (sql_exp*) nn->data;
-							if(ee->rname && !strcmp(ee->rname, alias))
+							if (ee->rname && !strcmp(ee->rname, alias))
 								return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: multiple references into table '%s'", alias);
 						}
 					}
@@ -1223,7 +1223,7 @@ update_table(mvc *sql, dlist *qname, str alias, dlist *assignmentlist, symbol *o
 		}
 		if (opt_where) {
 			int status = sql->session->status;
-	
+
 			if (!table_privs(sql, t, PRIV_SELECT)) 
 				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'", stack_get_string(sql, "current_user"), tname);
 			r = rel_logical_exp(sql, NULL, opt_where, sql_where);
@@ -1314,15 +1314,15 @@ delete_table(mvc *sql, dlist *qname, str alias, symbol *opt_where)
 
 			r = rel_logical_exp(sql, NULL, opt_where, sql_where);
 			if (r) { /* simple predicate which is not using the to 
-		    		    be updated table. We add a select all */
+					    be updated table. We add a select all */
 				sql_rel *l = rel_basetable(sql, t, t->base.name );
 				r = rel_crossproduct(sql->sa, l, r, op_join);
 			} else {
 				sql->errstr[0] = 0;
 				sql->session->status = status;
 				r = rel_basetable(sql, t, t->base.name );
-				if(alias) {
-					for(node *nn = r->exps->h ; nn ; nn = nn->next)
+				if (alias) {
+					for (node *nn = r->exps->h ; nn ; nn = nn->next)
 						exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
 				}
 				r = rel_logical_exp(sql, r, opt_where, sql_where);
@@ -1455,8 +1455,8 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 	if (!bt || !joined)
 		return NULL;
 
-	if(alias) {
-		for(node *nn = bt->exps->h ; nn ; nn = nn->next)
+	if (alias) {
+		for (node *nn = bt->exps->h ; nn ; nn = nn->next)
 			exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
 	}
 	alias_name = alias ? alias : t->base.name;
@@ -2012,7 +2012,6 @@ copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
 
 	return rel;
 }
-
 
 static sql_rel *
 rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql_exp *null_string, sql_exp *file, sql_exp *onclient) 
