@@ -375,6 +375,8 @@ atom2sql(atom *a)
 	if (a->data.vtype == TYPE_str && EC_INTERVAL(ec))
 		ec = EC_STRING; 
 	/* todo handle NULL's early */
+	if (a->isnull)
+		return _STRDUP("NULL");
 	switch (ec) {
 	case EC_BIT:
 		assert( a->data.vtype == TYPE_bit);
@@ -383,11 +385,8 @@ atom2sql(atom *a)
 		return _STRDUP("false");
 	case EC_CHAR:
 	case EC_STRING:
-		assert (a->data.vtype == TYPE_str);
-		if (a->data.val.sval)
-			sprintf(buf, "'%s'", a->data.val.sval);
-		else
-			sprintf(buf, "NULL");
+		assert(a->data.vtype == TYPE_str && a->data.val.sval);
+		sprintf(buf, "'%s'", a->data.val.sval);
 		break;
 	case EC_BLOB:
 		/* TODO atom to string */
@@ -500,11 +499,8 @@ atom2sql(atom *a)
 	case EC_DATE:
 	case EC_TIMESTAMP:
 		if (a->data.vtype == TYPE_str) {
-			if (a->data.val.sval)
-				sprintf(buf, "%s '%s'", a->tpe.type->sqlname,
-					a->data.val.sval);
-			else
-				sprintf(buf, "NULL");
+			assert(a->data.val.sval);
+			sprintf(buf, "%s '%s'", a->tpe.type->sqlname, a->data.val.sval);
 		}
 		break;
 	default:

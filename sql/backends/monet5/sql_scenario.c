@@ -1344,6 +1344,7 @@ SQLcallback(Client c, str msg){
 			m = n;
 		}
 		*p = 0;
+		freeException(msg);
 		msg = GDKstrdup(newerr);
 	}
 	return MALcallback(c,msg);

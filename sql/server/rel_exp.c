@@ -1588,7 +1588,7 @@ exp_has_sideeffect( sql_exp *e )
 }
 
 int
-exp_unsafe( sql_exp *e) 
+exp_unsafe( sql_exp *e, int allow_identity) 
 {
 	if (!e)
 		return 0;
@@ -1597,18 +1597,18 @@ exp_unsafe( sql_exp *e)
 		return 0;
 
 	if (e->type == e_convert && e->l)
-		return exp_unsafe(e->l);
+		return exp_unsafe(e->l, allow_identity);
 	if (e->type == e_func && e->l) {
 		sql_subfunc *f = e->f;
 		list *args = e->l;
 		node *n;
 
-		if (IS_ANALYTIC(f->func) || is_identity(e, NULL))
+		if (IS_ANALYTIC(f->func) || (!allow_identity && is_identity(e, NULL)))
 			return 1;
 		for(n = args->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (exp_unsafe(e))
+			if (exp_unsafe(e, allow_identity))
 				return 1;			
 		}
 	}

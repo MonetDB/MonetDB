@@ -1,0 +1,43 @@
+stdout of test 'correlated-subquery-aggregation.Bug-6714` in directory 'sql/test/BugTracker-2019` itself:
+
+
+# 16:27:01 >  
+# 16:27:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37182" "--set" "mapi_usock=/var/tmp/mtest-18731/.s.monetdb.37182" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2019" "--set" "embedded_c=true"
+# 16:27:01 >  
+
+# MonetDB 5 server v11.33.4 (hg id: 5ad88b364ee5+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2019', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.385 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:37182/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18731/.s.monetdb.37182
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 16:52:23 >  
+# 16:52:23 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19767" "--port=33996"
+# 16:52:23 >  
+
+#select func_id, (select name from functions f where f.id = func_id) as name, max(number), count(*) from args
+#group by func_id having count(*) > 8 order by func_id limit 12;
+% sys.args,	.L5,	sys.L7,	sys.L11 # table_name
+% func_id,	name,	L7,	L11 # name
+% int,	varchar,	int,	bigint # type
+% 4,	14,	2,	2 # length
+[ 1501,	"copyfrom",	12,	13	]
+[ 6765,	"querylog_calls",	8,	9	]
+[ 6824,	"tracelog",	12,	13	]
+[ 7256,	"bbp",	10,	11	]
+[ 8553,	"storage",	16,	17	]
+[ 8611,	"storage",	17,	18	]
+[ 8631,	"storage",	18,	19	]
+[ 8652,	"storage",	19,	20	]
+
+# 16:27:01 >  
+# 16:27:01 >  "Done."
+# 16:27:01 >  
+
