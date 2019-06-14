@@ -50,6 +50,10 @@ typedef struct logger {
 	/* convert old style floating point NIL values to NaN */
 	bool convert_nil_nan;
 #endif
+#ifdef GDKLIBRARY_OLDDATE
+	/* convert old date values to new */
+	bool convert_date;
+#endif
 	char *fn;
 	char *dir;
 	char *local_dir; /* the directory in which the log is written */

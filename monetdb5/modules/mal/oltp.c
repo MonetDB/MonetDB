@@ -17,12 +17,12 @@
 #include "oltp.h"
 #include "mtime.h"
 
-#define LOCKTIMEOUT 20 * 1000
+#define LOCKTIMEOUT (20 * 1000)
 #define LOCKDELAY 20
 
 typedef struct{
 	Client cntxt;	// user holding the write lock
-	int start;		// time when it started
+	lng start;		// time when it started
 	lng retention;	// time when the lock is released
 	lng total;		// accumulated lock time
 	int used;		// how often it used, for balancing
@@ -111,6 +111,7 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,lck;
 	int clk, wait= GDKms();
+	lng now;
 	str sql,cpy;
 
 	(void) stk;
@@ -124,10 +125,11 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	do{
 		MT_lock_set(&mal_oltpLock);
 		clk = GDKms();
+		now = GDKusec();
 		// check if all write locks are available 
 		for( i=1; i< pci->argc; i++){
 			lck= getVarConstant(mb, getArg(pci,i)).val.ival;
-			if ( lck > 0 && (oltp_locks[lck].locked || oltp_locks[lck].retention > clk ))
+			if ( lck > 0 && (oltp_locks[lck].locked || oltp_locks[lck].retention > now ))
 				break;
 		}
 
@@ -140,7 +142,7 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				// only set the write locks
 				if( lck > 0){
 					oltp_locks[lck].cntxt = cntxt;
-					oltp_locks[lck].start = clk;
+					oltp_locks[lck].start = now;
 					oltp_locks[lck].locked = 1;
 					oltp_locks[lck].retention = 0;
 				}
@@ -185,7 +187,7 @@ OLTPrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 
 	MT_lock_set(&mal_oltpLock);
-	clk = GDKms();
+	clk = GDKusec();
 #ifdef _DEBUG_OLTP_
 	fprintf(stderr,"#OLTP %6d release the locks %d:", GDKms(), cntxt->idx);
 	fprintInstruction(stderr,mb,stk,pci, LIST_MAL_ALL);
@@ -220,9 +222,8 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *lockid = getArgReference_bat(stk,pci,2);
 	bat *used = getArgReference_bat(stk,pci,3);
 	int i;
-	lng now;
 	str msg = MAL_SUCCEED; 
-	timestamp ts, tsn;
+	timestamp tsn;
 
 	(void) cntxt;
 	(void) mb;
@@ -243,10 +244,8 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	for( i = 0; msg ==  MAL_SUCCEED && i < MAXOLTPLOCKS; i++)
 	if (oltp_locks[i].used ){
-		now = (lng) oltp_locks[i].start * 1000; // convert to timestamp microsecond
-		if ((msg = MTIMEunix_epoch(&ts)) != MAL_SUCCEED ||
-			(msg = MTIMEtimestamp_add(&tsn, &ts, &now)) != MAL_SUCCEED ||
-			BUNappend(bs, oltp_locks[i].start ? &tsn : timestamp_nil, false) != GDK_SUCCEED ||
+		tsn = oltp_locks[i].start ? timestamp_fromusec(oltp_locks[i].start) : timestamp_nil;
+		if (BUNappend(bs, &tsn, false) != GDK_SUCCEED ||
 			BUNappend(bu, oltp_locks[i].cntxt ? oltp_locks[i].cntxt->username : str_nil, false) != GDK_SUCCEED ||
 			BUNappend(bl, &i, false) != GDK_SUCCEED ||
 			BUNappend(bc, &oltp_locks[i].used, false) != GDK_SUCCEED)

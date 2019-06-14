@@ -2564,6 +2564,7 @@ AC_CHECK_FUNCS([\
 	getopt_long \
 	gettimeofday \
 	getuid \
+	gmtime_r \
 	localtime_r \
 	lockf \
 	madvise \

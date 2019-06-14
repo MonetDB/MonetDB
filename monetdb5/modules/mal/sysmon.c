@@ -28,10 +28,10 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *a = getArgReference_bat(stk,pci,5);
 	bat *o = getArgReference_bat(stk,pci,6);
 	bat *q = getArgReference_bat(stk,pci,7);
-	lng now;
+	time_t now;
 	int i, prog;
 	str usr;
-	timestamp ts, tsn;
+	timestamp tsn;
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
@@ -59,14 +59,13 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; i< qtop; i++)
 	if( QRYqueue[i].query && (QRYqueue[i].cntxt->idx == 0 || cntxt->user == 0 || QRYqueue[i].cntxt->user == cntxt->user)) {
-		now= (lng) time(0);
+		now= time(0);
 		if ( (now-QRYqueue[i].start) > QRYqueue[i].runtime)
 			prog =QRYqueue[i].runtime > 0 ? 100: int_nil;
 		else
 			// calculate progress based on past observations
 			prog = (int) ((now- QRYqueue[i].start) / (QRYqueue[i].runtime/100.0));
-		now = QRYqueue[i].tag;	/* temporarily use so that we have correct type */
-		if (BUNappend(tag, &now, false) != GDK_SUCCEED)
+		if (BUNappend(tag, &(lng){QRYqueue[i].tag}, false) != GDK_SUCCEED)
 			goto bailout;
 		msg = AUTHgetUsername(&usr, QRYqueue[i].cntxt);
 		if (msg != MAL_SUCCEED)
@@ -82,27 +81,23 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 
 		/* convert number of seconds into a timestamp */
-		now = QRYqueue[i].start * 1000;
-		msg = MTIMEunix_epoch(&ts);
-		if (msg)
+		tsn = timestamp_fromtime(QRYqueue[i].start);
+		if (is_timestamp_nil(tsn)) {
+			msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
 			goto bailout;
-		msg = MTIMEtimestamp_add(&tsn, &ts, &now);
-		if (msg)
-			goto bailout;
+		}
 		if (BUNappend(started, &tsn, false) != GDK_SUCCEED)
 			goto bailout;
 
 		if ( QRYqueue[i].mb->runtime == 0) {
-			if (BUNappend(estimate, timestamp_nil, false) != GDK_SUCCEED)
+			if (BUNappend(estimate, &timestamp_nil, false) != GDK_SUCCEED)
 				goto bailout;
 		} else {
-			now = (QRYqueue[i].start * 1000 + QRYqueue[i].mb->runtime);
-			msg = MTIMEunix_epoch(&ts);
-			if (msg)
+			tsn = timestamp_add_usec(tsn, 1000 * QRYqueue[i].mb->runtime);
+			if (is_timestamp_nil(tsn)) {
+				msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
 				goto bailout;
-			msg = MTIMEtimestamp_add(&tsn, &ts, &now);
-			if (msg)
-				goto bailout;
+			}
 			if (BUNappend(estimate, &tsn, false) != GDK_SUCCEED)
 				goto bailout;
 		}

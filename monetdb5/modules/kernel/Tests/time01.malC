@@ -1,7 +1,7 @@
 
-x0 := mtime.daytime("10:00:50");
-x1 := mtime.daytime("10:00:00");
-x2 := mtime.daytime("10:00:20");
+x0 := calc.daytime("10:00:50");
+x1 := calc.daytime("10:00:00");
+x2 := calc.daytime("10:00:20");
 
 b0 := bat.new(:daytime);
 bat.append(b0, x0);

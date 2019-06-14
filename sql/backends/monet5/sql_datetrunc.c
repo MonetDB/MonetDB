@@ -10,16 +10,18 @@
 #include "sql.h"
 #include "mal_instruction.h"
 
+#define do_date_trunc(val, DIVISOR)					\
+	timestamp_create(timestamp_date(val),				\
+			 (timestamp_daytime(val) / (DIVISOR)) * (DIVISOR))
+
 #define date_trunc_time_loop(NAME, DIVISOR)				\
 	do {								\
 		if  ( strcasecmp(*scale, NAME) == 0){			\
 			for( ; lo < hi; lo++)				\
 				if (is_timestamp_nil(bt[lo])) {		\
-					dt[lo] = *timestamp_nil;	\
+					dt[lo] = timestamp_nil;		\
 				} else {                 		\
-					ts = bt[0];			\
-					ts.msecs = (ts.msecs / (DIVISOR)) * (DIVISOR); \
-					dt[lo] = ts;			\
+					dt[lo] = do_date_trunc(bt[lo], DIVISOR); \
 				}					\
 		}							\
 	} while (0)
@@ -51,8 +53,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 	const timestamp *bt;
 	timestamp *dt;
 	char *msg = NULL;
-	timestamp ts;
-	int dow, y, m, d, one = 1;
+	date days;
 
 	if ( truncate_check(*scale) == 0)
 		throw(SQL, "batcalc.truncate_timestamp", SQLSTATE(HY005) "Improper directive ");
@@ -73,116 +74,94 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 	hi = lo + BATcount(b);
 
 	date_trunc_time_loop("microseconds", 1);
-	date_trunc_time_loop("milliseconds", 1);
-	date_trunc_time_loop("second", 1000);
-	date_trunc_time_loop("minute", 1000 * 60);
-	date_trunc_time_loop("hour", 1000 * 60 * 24);
+	date_trunc_time_loop("milliseconds", 1000);
+	date_trunc_time_loop("second", 1000000);
+	date_trunc_time_loop("minute", 1000000 * 60);
+	date_trunc_time_loop("hour", 1000000 * 60 * 24);
 
 	if  ( strcasecmp(*scale, "day") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
-				dt[lo] = *timestamp_nil;
+				dt[lo] = timestamp_nil;
 			} else {
-				ts = bt[lo];
-				ts.msecs = 0;
-				dt[lo] = ts;
+				days = timestamp_date(bt[lo]);
+				dt[lo] = timestamp_fromdate(days);
 			}
 	}
 
 	if  ( strcasecmp(*scale, "week") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
-				dt[lo] = *timestamp_nil;
+				dt[lo] = timestamp_nil;
 			} else {
-				ts = bt[lo];
-				ts.msecs = 0;
-				MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
-				MTIMEdate_extract_dayofweek(&dow, &ts.days);
-				d =  d - dow - 1;
-				MTIMEdate_create(&ts.days, &y, &m, &d);
-				dt[lo] = ts;
+				days = timestamp_date(bt[lo]);
+				dt[lo] = timestamp_fromdate(date_add_day(days, 1 - date_dayofweek(days)));
 			}
 	}
 
 	if  ( strcasecmp(*scale, "month") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
-				dt[lo] = *timestamp_nil;
+				dt[lo] = timestamp_nil;
 			} else {
-				ts = bt[lo];
-				ts.msecs = 0;
-				MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
-				MTIMEdate_create(&ts.days, &y, &m, &one);
-				dt[lo] = ts;
+				days = timestamp_date(bt[lo]);
+				dt[lo] = timestamp_fromdate(
+					date_create(date_year(days),
+						    date_month(days),
+						    1));
 			}
 	}
 
 	if  ( strcasecmp(*scale, "quarter") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
-				dt[lo] = *timestamp_nil;
+				dt[lo] = timestamp_nil;
 			} else {
-				ts = bt[lo];
-				ts.msecs = 0;
-				MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
-				m = m/4 + 1;
-				MTIMEdate_create(&ts.days, &y, &one, &one);
-				dt[lo] = ts;
+				days = timestamp_date(bt[lo]);
+				dt[lo] = timestamp_fromdate(
+					date_create(date_year(days),
+						    (date_month(days) - 1) / 3 + 1,
+						    1));
 			}
 	}
 
 	if  ( strcasecmp(*scale, "year") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
-				dt[lo] = *timestamp_nil;
+				dt[lo] = timestamp_nil;
 			} else {
-				ts = bt[lo];
-				ts.msecs = 0;
-				MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
-				MTIMEdate_create(&ts.days, &y, &one, &one);
-				dt[lo] = ts;
+				days = timestamp_date(bt[lo]);
+				dt[lo] = timestamp_fromdate(date_create(date_year(days), 1, 1));
 			}
 	}
 
 	if  ( strcasecmp(*scale, "decade") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
-				dt[lo] = *timestamp_nil;
+				dt[lo] = timestamp_nil;
 			} else {
-				ts = bt[lo];
-				ts.msecs = 0;
-				MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
-				y = (y /10 ) *10;
-				MTIMEdate_create(&ts.days, &y, &one, &one);
-				dt[lo] = ts;
+				days = timestamp_date(bt[lo]);
+				dt[lo] = timestamp_fromdate(date_create((date_year(days) / 10) * 10, 1, 1));
 			}
 	}
 
 	if  ( strcasecmp(*scale, "century") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
-				dt[lo] = *timestamp_nil;
+				dt[lo] = timestamp_nil;
 			} else {
-				ts = bt[lo];
-				ts.msecs = 0;
-				MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
-				y = (y /100 ) *100;
-				MTIMEdate_create(&ts.days, &y, &one, &one);
-				dt[lo] = ts;
+				days = timestamp_date(bt[lo]);
+				dt[lo] = timestamp_fromdate(date_create((date_year(days) / 100) * 100, 1, 1));
 			}
 	}
 
 	if  ( strcasecmp(*scale, "millennium") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
-				dt[lo] = *timestamp_nil;
+				dt[lo] = timestamp_nil;
 			} else {
-				ts = bt[lo];
-				ts.msecs = 0;
-				MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
-				y = (y /1000 ) *1000;
-				MTIMEdate_create(&ts.days, &y, &one, &one);
-				dt[lo] = ts;
+				days = timestamp_date(bt[lo]);
+				dt[lo] = timestamp_fromdate(date_create((date_year(days) / 1000) * 1000, 1, 1));
 			}
 	}
 
@@ -198,102 +177,71 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 	return msg;
 }
 
-#define date_trunc_single_time(NAME, DIVISOR)				\
-	do {								\
-		if  ( strcasecmp(*scale, NAME) == 0){			\
-			ts = *bt;					\
-			ts.msecs = (ts.msecs / (DIVISOR)) * (DIVISOR);	\
-			*dt = ts;					\
-		}							\
+#define date_trunc_single_time(NAME, DIVISOR)			\
+	do {							\
+		if  ( strcasecmp(*scale, NAME) == 0){		\
+			*dt = do_date_trunc(*bt, DIVISOR);	\
+		}						\
 	} while (0)
 
 str
 date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 {
 	str msg = MAL_SUCCEED;
-	timestamp ts;
-	int dow, y, m, d, one = 1;
+	date days;
 
 	if (truncate_check(*scale) == 0)
 		throw(SQL, "sql.truncate", SQLSTATE(HY001) "Improper directive ");
 
 	if (is_timestamp_nil(*bt)) {
-		*dt = *timestamp_nil;
+		*dt = timestamp_nil;
 		return MAL_SUCCEED;
 	}
 
 	date_trunc_single_time("microseconds", 1);
-	date_trunc_single_time("milliseconds", 1);
-	date_trunc_single_time("second", 1000);
-	date_trunc_single_time("minute", 1000 * 60);
-	date_trunc_single_time("hour", 1000 * 60 * 24);
+	date_trunc_single_time("milliseconds", 1000);
+	date_trunc_single_time("second", 1000000);
+	date_trunc_single_time("minute", 1000000 * 60);
+	date_trunc_single_time("hour", 1000000 * 60 * 24);
 
 	if  ( strcasecmp(*scale, "day") == 0){
-		ts = *bt;
-		ts.msecs = 0;
-		*dt = ts;
+		days = timestamp_date(*bt);
+		*dt = timestamp_fromdate(days);
 	}
 
 	if  ( strcasecmp(*scale, "week") == 0){
-		ts = *bt;
-		ts.msecs = 0;
-		MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
-		MTIMEdate_extract_dayofweek(&dow, &ts.days);
-		d =  d - dow - 1;
-		MTIMEdate_create(&ts.days, &y, &m, &d);
-		*dt = ts;
+		days = timestamp_date(*bt);
+		*dt = timestamp_fromdate(date_add_day(days, 1 - date_dayofweek(days)));
 	}
 
 	if  ( strcasecmp(*scale, "month") == 0){
-		ts = *bt;
-		ts.msecs = 0;
-		MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
-		MTIMEdate_create(&ts.days, &y, &m, &one);
-		*dt = ts;
+		days = timestamp_date(*bt);
+		*dt = timestamp_fromdate(date_create(date_year(days), date_month(days), 1));
 	}
 
 	if  ( strcasecmp(*scale, "quarter") == 0){
-		ts = *bt;
-		ts.msecs = 0;
-		MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
-		m = m/4 + 1;
-		MTIMEdate_create(&ts.days, &y, &one, &one);
-		*dt = ts;
+		days = timestamp_date(*bt);
+		*dt = timestamp_fromdate(date_create(date_year(days), (date_month(days) - 1) / 3 + 1, 1));
 	}
 
 	if  ( strcasecmp(*scale, "year") == 0){
-		ts = *bt;
-		ts.msecs = 0;
-		MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
-		MTIMEdate_create(&ts.days, &y, &one, &one);
-		*dt = ts;
+		days = timestamp_date(*bt);
+		*dt = timestamp_fromdate(date_create(date_year(days), 1, 1));
 	}
 
 	if  ( strcasecmp(*scale, "decade") == 0){
-		ts = *bt;
-		ts.msecs = 0;
-		MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
-		y = (y /10 ) *10;
-		MTIMEdate_create(&ts.days, &y, &one, &one);
-		*dt = ts;
+		days = timestamp_date(*bt);
+		*dt = timestamp_fromdate(date_create((date_year(days) / 10) * 10, 1, 1));
 	}
 
 	if  ( strcasecmp(*scale, "century") == 0){
-		ts = *bt;
-		ts.msecs = 0;
-		MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
-		y = (y /100 ) *100 +1;
-		MTIMEdate_create(&ts.days, &y, &one, &one);
-		*dt = ts;
+		days = timestamp_date(*bt);
+		*dt = timestamp_fromdate(date_create((date_year(days) / 100) * 100, 1, 1));
 	}
 
 	if  ( strcasecmp(*scale, "millennium") == 0){
-		ts = *bt;
-		ts.msecs = 0;
-		MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
-		y = (y /1000 ) *1000 +1;
-		MTIMEdate_create(&ts.days, &y, &one, &one);
-		*dt = ts;
+		days = timestamp_date(*bt);
+		*dt = timestamp_fromdate(date_create((date_year(days) / 1000) * 1000, 1, 1));
 	}
 	return msg;
 }

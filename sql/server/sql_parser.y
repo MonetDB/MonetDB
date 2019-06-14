@@ -696,7 +696,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
-%token YEAR QUARTER MONTH WEEK DAY HOUR MINUTE SECOND ZONE
+%token CENTURY DECADE YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND ZONE
 %token LIMIT OFFSET SAMPLE SEED
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
@@ -919,9 +919,10 @@ set_statement:
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set TIME ZONE LOCAL
 		{ dlist *l = L();
+		sql_subtype t;
 		append_string(l, sa_strdup(SA, "current_timezone"));
-		append_symbol(l, _symbol_create_list( SQL_OP, append_list(L(),
-			append_string( L(), sa_strdup(SA, "local_timezone")))));
+		sql_find_subtype(&t, "sec_interval", inttype2digits(ihour, isec), 0);
+		append_symbol(l, _newAtomNode(atom_int(SA, &t, 0)));
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set TIME ZONE interval_expression
 		{ dlist *l = L();
@@ -4674,8 +4675,14 @@ datetime_field:
 
 extract_datetime_field:
     datetime_field
+ |  CENTURY		{ $$ = icentury; }
+ |  DECADE		{ $$ = idecade; }
  |  QUARTER		{ $$ = iquarter; }
  |  WEEK		{ $$ = iweek; }
+ |  DOW			{ $$ = idow; }
+ /* |  DAY OF WEEK		{ $$ = idow; } */
+ |  DOY			{ $$ = idoy; }
+ /* |  DAY OF YEAR		{ $$ = idoy; } */
  ;
 
 start_field:
@@ -5693,9 +5700,11 @@ non_reserved_word:
 | ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
 | AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
 | CACHE		{ $$ = sa_strdup(SA, "cache"); }
+| CENTURY	{ $$ = sa_strdup(SA, "century"); }
 | CLIENT	{ $$ = sa_strdup(SA, "client"); }
 | COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 | DATA 		{ $$ = sa_strdup(SA, "data"); }
+| DECADE	{ $$ = sa_strdup(SA, "decade"); }
 | SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 | DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
 | SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
@@ -5733,6 +5742,8 @@ non_reserved_word:
 | SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 | TYPE		{ $$ = sa_strdup(SA, "type"); }
 | WEEK 		{ $$ = sa_strdup(SA, "week"); }
+| DOW 		{ $$ = sa_strdup(SA, "dow"); }
+| DOY 		{ $$ = sa_strdup(SA, "doy"); }
 | ZONE		{ $$ = sa_strdup(SA, "zone"); }
 
 /* SQL/XML non reserved words */

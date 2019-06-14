@@ -410,6 +410,68 @@ mbrRead(void *dst, stream *s, size_t cnt)
 }
 #endif
 
+#ifdef GDKLIBRARY_OLDDATE
+static void *
+dateRead(void *dst, stream *s, size_t cnt)
+{
+	int *ptr;
+
+	if ((ptr = BATatoms[TYPE_int].atomRead(dst, s, cnt)) == NULL)
+		return NULL;
+	for (size_t i = 0; i < cnt; i++) {
+		if (!is_int_nil(ptr[i]))
+			ptr[i] = cvtdate(ptr[i]);
+	}
+	return ptr;
+}
+
+static void *
+daytimeRead(void *dst, stream *s, size_t cnt)
+{
+	int *ptr;
+	lng *lptr;
+
+	if ((dst = BATatoms[TYPE_int].atomRead(dst, s, cnt)) == NULL)
+		return NULL;
+	ptr = dst;
+	lptr = dst;
+	/* work backwards so that we do this in place */
+	for (size_t i = cnt; i > 0; ) {
+		i--;
+		if (is_int_nil(ptr[i]))
+			lptr[i] = lng_nil;
+		else
+			lptr[i] = ptr[i] * LL_CONSTANT(1000);
+	}
+	return dst;
+}
+
+static void *
+timestampRead(void *dst, stream *s, size_t cnt)
+{
+	union timestamp {
+		lng l;
+		struct {
+#ifndef WORDS_BIGENDIAN
+			int p_msecs;
+			int p_days;
+#else
+			int p_days;
+			int p_msecs;
+#endif
+		} t;
+	} *ptr;
+
+	if ((ptr = BATatoms[TYPE_lng].atomRead(dst, s, cnt)) == NULL)
+		return NULL;
+	for (size_t i = 0; i < cnt; i++) {
+		if (!is_lng_nil(ptr[i].l))
+			ptr[i].t.p_days = cvtdate(ptr[i].t.p_days);
+	}
+	return ptr;
+}
+#endif
+
 static log_return
 log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid id)
 {
@@ -482,6 +544,16 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 				rt = dblRead;
 			else if (tt > TYPE_str && strcmp(BATatoms[tt].name, "mbr") == 0)
 				rt = mbrRead;
+		}
+#endif
+#ifdef GDKLIBRARY_OLDDATE
+		if (lg->convert_date && tt > TYPE_str) {
+			if (strcmp(BATatoms[tt].name, "date") == 0)
+				rt = dateRead;
+			else if (strcmp(BATatoms[tt].name, "daytime") == 0)
+				rt = daytimeRead;
+			else if (strcmp(BATatoms[tt].name, "timestamp") == 0)
+				rt = timestampRead;
 		}
 #endif
 
@@ -1221,7 +1293,6 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 	/* remaining transactions are not committed, ie abort */
 	while (tr)
 		tr = tr_abort(lg, tr);
-	t0 = time(NULL);
 	if (lg->debug & 1) {
 		printf("# Finished reading the write-ahead log '%s'\n", filename);
 		fflush(stdout);
@@ -2013,6 +2084,9 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 #ifdef GDKLIBRARY_NIL_NAN
 		char cvfile[FILENAME_MAX];
 #endif
+#ifdef GDKLIBRARY_OLDDATE
+		char cvfile1[FILENAME_MAX];
+#endif
 
 		if (check_version(lg, fp) != GDK_SUCCEED) {
 			goto error;
@@ -2136,6 +2210,125 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			}
 		}
 #endif
+
+#ifdef GDKLIBRARY_OLDDATE
+		/* When a file *_date-convert exists in the
+		 * database, it was left there by the BBP
+		 * initialization code when it did a conversion of old
+		 * style dates to new.  If the file exists, we first
+		 * create a file called convert-date in the log
+		 * directory and we write the current log ID into that
+		 * file.  After this file is created, we delete the
+		 * *_date-convert file in the database.  We then
+		 * know that while reading the logs, we have to
+		 * convert old style NILs to NaNs (this is indicated
+		 * by setting the convert_date flag).  When we're
+		 * done reading the logs, we remove the file and
+		 * reset the flag.  If we get interrupted before we
+		 * have written this file, the file in the database
+		 * will still exist, so the next time we're started,
+		 * BBPinit will not convert NILs (that was done before
+		 * we got interrupted), but we will still know to
+		 * convert the NILs ourselves.  If we get interrupted
+		 * after we have deleted the file from the database,
+		 * we check whether the file convert-date exists
+		 * and if it contains the expected ID.  If it does, we
+		 * again know that we have to convert.  If the ID is
+		 * not what we expect, the conversion was apparently
+		 * done already, and so we can delete the file. */
+
+		{
+			FILE *fp1;
+			int len, curid;
+
+			len = snprintf(cvfile1, sizeof(cvfile1), "%sconvert-date",
+				 lg->dir);
+			if (len == -1 || len >= FILENAME_MAX) {
+				GDKerror("Convert-date filename path is too large\n");
+				goto error;
+			}
+			len = snprintf(bak, sizeof(bak), "%s_date-convert", fn);
+			if (len == -1 || len >= FILENAME_MAX) {
+				GDKerror("Convert-date filename path is too large\n");
+				goto error;
+			}
+			/* read the current log id without disturbing
+			 * the file pointer */
+#ifdef _MSC_VER
+			/* work around bug in Visual Studio runtime:
+			 * fgetpos may return incorrect value */
+			if ((fp1 = fopen(filename, "r")) == NULL)
+				goto error;
+			if (fgets(bak, sizeof(bak), fp1) == NULL ||
+			    fgets(bak, sizeof(bak), fp1) == NULL ||
+			    fscanf(fp1, "%d", &curid) != 1) {
+				fclose(fp1);
+				goto error;
+			}
+			fclose(fp1);
+#else
+			fpos_t off;
+			if (fgetpos(fp, &off) != 0)
+				goto error; /* should never happen */
+			if (fscanf(fp, "%d", &curid) != 1)
+				curid = -1; /* shouldn't happen? */
+			if (fsetpos(fp, &off) != 0)
+				goto error; /* should never happen */
+#endif
+
+			if ((fp1 = GDKfileopen(0, NULL, bak, NULL, "r")) != NULL) {
+				/* file indicating that we need to do
+				 * an old to new date conversion exists;
+				 * record the fact in case we get
+				 * interrupted, and set the flag so
+				 * that we actually do what's asked */
+				fclose(fp1);
+				/* first create a versioned file using
+				 * the current log id */
+				if ((fp1 = GDKfileopen(farmid, NULL, cvfile1, NULL, "w")) == NULL ||
+				    fprintf(fp1, "%d\n", curid) < 2 ||
+				    fflush(fp1) != 0 || /* make sure it's save on disk */
+#if defined(_MSC_VER)
+				    _commit(_fileno(fp1)) < 0 ||
+#elif defined(HAVE_FDATASYNC)
+				    fdatasync(fileno(fp1)) < 0 ||
+#elif defined(HAVE_FSYNC)
+				    fsync(fileno(fp1)) < 0 ||
+#endif
+				    fclose(fp1) != 0) {
+					GDKerror("logger_load: failed to write %s\n", cvfile1);
+					goto error;
+				}
+				/* then remove the unversioned file
+				 * that gdk_bbp created (in this
+				 * order!) */
+				if (GDKunlink(0, NULL, bak, NULL) != GDK_SUCCEED) {
+					GDKerror("logger_load: failed to unlink %s\n", bak);
+					goto error;
+				}
+				/* set the flag that we need to convert */
+				lg->convert_date = true;
+			} else if ((fp1 = GDKfileopen(farmid, NULL, cvfile1, NULL, "r")) != NULL) {
+				/* the versioned conversion file
+				 * exists: check version */
+				int newid;
+
+				if (fscanf(fp1, "%d", &newid) == 1 &&
+				    newid == curid) {
+					/* versions match, we need to
+					 * convert */
+					lg->convert_date = true;
+				}
+				fclose(fp1);
+				if (!lg->convert_date) {
+					/* no conversion, so we can
+					 * remove the versioned
+					 * file */
+					GDKunlink(0, NULL, cvfile1, NULL);
+				}
+			}
+		}
+#endif
 		if (logger_readlogs(lg, fp, filename) != GDK_SUCCEED) {
 			goto error;
 		}
@@ -2147,6 +2340,14 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			 * reset conversion flag */
 			GDKunlink(0, NULL, cvfile, NULL);
 			lg->convert_nil_nan = false;
+		}
+#endif
+#ifdef GDKLIBRARY_OLDDATE
+		if (lg->convert_date) {
+			/* we converted, remove versioned file and
+			 * reset conversion flag */
+			GDKunlink(0, NULL, cvfile1, NULL);
+			lg->convert_date = false;
 		}
 #endif
 		if (lg->postfuncp && (*lg->postfuncp)(lg) != GDK_SUCCEED)
@@ -2210,6 +2411,9 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->tid = 0;
 #ifdef GDKLIBRARY_NIL_NAN
 	lg->convert_nil_nan = false;
+#endif
+#ifdef GDKLIBRARY_OLDDATE
+	lg->convert_date = false;
 #endif
 
 	snprintf(filename, sizeof(filename), "%s%c%s%c",

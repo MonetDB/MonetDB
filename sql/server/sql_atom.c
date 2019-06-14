@@ -1381,9 +1381,6 @@ atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
 	bit bval = 0;
 	flt fval = 0;
 	dbl dval = 0;
-	date dt = 0;
-	daytime dyt = 0;
-	timestamp tmp;
 
 	switch (tpe->type->eclass) {
 		case EC_BIT:
@@ -1444,24 +1441,6 @@ atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
 					break;
 			}
 			break;
-		case EC_DATE: {
-			dt = MTIMEtodate(1, 1, YEAR_MIN);
-			ret = &dt;
-			break;
-		}
-		case EC_TIME: {
-			dyt = 0; //milliseconds on a day
-			ret = &dyt;
-			break;
-		}
-		case EC_TIMESTAMP: {
-			tmp = (timestamp) {
-					.msecs = 0, //milliseconds on a day
-					.days = MTIMEtodate(1, 1, YEAR_MIN),
-			};
-			ret = &tmp;
-			break;
-		}
 		default:
 			break;
 	} //no support for strings and blobs zero value

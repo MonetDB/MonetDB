@@ -32,13 +32,13 @@ stdout of test 'extract_bug.SF-2075266` in directory 'sql/test/BugTracker-2008` 
 % L2 # name
 % decimal # type
 % 20 # length
-[ 10.000000	]
+[ 9.000000	]
 #select EXTRACT (SECOND FROM FIPS2) FROM A;
 % sys.L2 # table_name
 % L2 # name
 % decimal # type
 % 11 # length
-[ 1.000	]
+[ 0.999999	]
 #drop table A;
 
 # 14:08:04 >  

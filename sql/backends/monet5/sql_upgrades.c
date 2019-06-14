@@ -1919,6 +1919,36 @@ sql_update_storagemodel(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_default(Client c, mvc *sql)
+{
+	size_t bufsize = 1000, pos = 0;
+	char *buf, *err;
+	res_table *output;
+	BAT *b;
+
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"select id from sys.args where func_id in (select id from sys.functions where schema_id = (select id from sys.schemas where name = 'sys') and name = 'second' and func = 'sql_seconds') and number = 0 and type_scale = 3;\n");
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	if (err) {
+		GDKfree(buf);
+		return err;
+	}
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) > 0) {
+			err = sql_fix_system_tables(c, sql);
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_table_destroy(output);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1928,7 +1958,7 @@ SQLupgrades(Client c, mvc *m)
 	sql_schema *s = mvc_bind_schema(m, "sys");
 	sql_table *t;
 	sql_column *col;
-	bool hugeint_upgraded = false;
+	bool systabfixed = false;
 
 #ifdef HAVE_HGE
 	if (have_hge) {
@@ -1938,7 +1968,7 @@ SQLupgrades(Client c, mvc *m)
 				fprintf(stderr, "!%s\n", err);
 				freeException(err);
 			}
-			hugeint_upgraded = true;
+			systabfixed = true;
 		}
 	}
 #endif
@@ -2106,7 +2136,7 @@ SQLupgrades(Client c, mvc *m)
 
 	if ((t = mvc_bind_table(m, s, "systemfunctions")) != NULL &&
 	    t->type == tt_table) {
-		if (!hugeint_upgraded &&
+		if (!systabfixed &&
 		    (err = sql_fix_system_tables(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
@@ -2127,5 +2157,10 @@ SQLupgrades(Client c, mvc *m)
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
+	}
+
+	if ((err = sql_update_default(c, m)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		freeException(err);
 	}
 }

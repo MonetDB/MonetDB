@@ -29,7 +29,7 @@ str
 nil_2_timestamp(timestamp *res, const void *val)
 {
 	(void) val;
-	*res = *timestamp_nil;
+	*res = timestamp_nil;
 	return MAL_SUCCEED;
 }
 
@@ -71,7 +71,7 @@ batnil_2_timestamp(bat *res, const bat *bid)
 		throw(SQL, "sql.2_timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		if (BUNappend(dst, timestamp_nil, false) != GDK_SUCCEED) {
+		if (BUNappend(dst, &timestamp_nil, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);

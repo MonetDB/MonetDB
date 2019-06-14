@@ -17,52 +17,16 @@
 #include "monetdb_config.h"
 #include "mal_exception.h"
 #include "mtime.h"
-#include "mtime_private.h"
-
-static inline date
-date_add_month(date D, int M)
-{
-	date ret;
-	MTIMEdate_addmonths(&ret, &D, &M);
-	return ret;
-}
-static inline date
-date_add_day(date D, int M)
-{
-	date ret;
-	MTIMEdate_adddays(&ret, &D, &M);
-	return ret;
-}
-static inline lng
-timestamp_add_month(lng T, int M)
-{
-	timestamp ret, v;
-	v.alignment = T;
-	MTIMEtimestamp_add_month_interval_wrap(&ret, &v, &M);
-	return ret.alignment;
-}
-static inline lng
-timestamp_add_msec(lng T, lng M)
-{
-	timestamp ret, v;
-	v.alignment = T;
-	MTIMEtimestamp_add(&ret, &v, &M);
-	return ret.alignment;
-}
-static inline daytime
-daytime_add_msec(daytime D, lng M)
-{
-	daytime ret;
-	MTIMEtime_add_msec_interval_wrap(&ret, &D, &M);
-	return ret;
-}
 
 #define date_sub_month(D,M)			date_add_month(D,-(M))
 #define timestamp_sub_month(T,M)	timestamp_add_month(T,-(M))
-#define daytime_sub_msec(D,M)		daytime_add_msec(D, -(M))
+
+#define daytime_add_msec(D,M)		daytime_add_usec(D, 1000*(M))
+#define daytime_sub_msec(D,M)		daytime_add_usec(D, -1000*(M))
 #define date_add_msec(D,M)			date_add_day(D,(int) ((M)/(24*60*60*1000)))
 #define date_sub_msec(D,M)			date_add_day(D,(int) (-(M)/(24*60*60*1000)))
-#define timestamp_sub_msec(T,M)		timestamp_add_msec(T, -(M))
+#define timestamp_add_msec(T,M)		timestamp_add_usec(T, (M)*1000)
+#define timestamp_sub_msec(T,M)		timestamp_add_usec(T, -(M)*1000)
 
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME_PRECEDING(TPE1, LIMIT, TPE2, SUB, ADD) \
 	do {																\
@@ -147,7 +111,7 @@ daytime_add_msec(daytime D, lng M)
 		if(tp1 == TYPE_date) { \
 			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, date_sub_month, date_add_month); \
 		} else if(tp1 == TYPE_timestamp) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(lng, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, timestamp_sub_month, timestamp_add_month); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, timestamp_sub_month, timestamp_add_month); \
 		} else { \
 			goto type_not_supported; \
 		} \
@@ -160,7 +124,7 @@ daytime_add_msec(daytime D, lng M)
 		} else if(tp1 == TYPE_date) { \
 			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, date_sub_msec, date_add_msec); \
 		} else if(tp1 == TYPE_timestamp) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(lng, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, timestamp_sub_msec, timestamp_add_msec); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, timestamp_sub_msec, timestamp_add_msec); \
 		} else { \
 			goto type_not_supported; \
 		} \

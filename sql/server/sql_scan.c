@@ -303,10 +303,14 @@ scanner_init_keywords(void)
 	failed += keywords_insert("LOCALTIMESTAMP", LOCALTIMESTAMP);
 	failed += keywords_insert("ZONE", ZONE);
 
+	failed += keywords_insert("CENTURY", CENTURY);
+	failed += keywords_insert("DECADE", DECADE);
 	failed += keywords_insert("YEAR", YEAR);
 	failed += keywords_insert("QUARTER", QUARTER);
 	failed += keywords_insert("MONTH", MONTH);
 	failed += keywords_insert("WEEK", WEEK);
+	failed += keywords_insert("DOW", DOW);
+	failed += keywords_insert("DOY", DOY);
 	failed += keywords_insert("DAY", DAY);
 	failed += keywords_insert("HOUR", HOUR);
 	failed += keywords_insert("MINUTE", MINUTE);

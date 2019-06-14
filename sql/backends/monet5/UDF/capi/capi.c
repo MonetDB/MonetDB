@@ -1105,7 +1105,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			for (j = 0; j < bat_data->count; j++) {
 				data_from_timestamp(baseptr[j], bat_data->data + j);
 			}
-			data_from_timestamp(*timestamp_nil, &bat_data->null_value);
+			data_from_timestamp(timestamp_nil, &bat_data->null_value);
 		} else if (bat_type == TYPE_blob) {
 			BATiter li;
 			BUN p = 0, q = 0;
@@ -1251,7 +1251,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			data_from_time(daytime_nil, &bat_data->null_value);
 		} else if (bat_type == TYPE_timestamp) {
 			GENERATE_BAT_OUTPUT_BASE(timestamp);
-			data_from_timestamp(*timestamp_nil, &bat_data->null_value);
+			data_from_timestamp(timestamp_nil, &bat_data->null_value);
 		} else if (bat_type == TYPE_blob) {
 			GENERATE_BAT_OUTPUT_BASE(blob);
 			bat_data->null_value.size = ~(size_t) 0;
@@ -1796,45 +1796,53 @@ size_t GetTypeCount(int type, void *struct_ptr)
 
 void data_from_date(date d, cudf_data_date *ptr)
 {
-	int day, month, year;
-	MTIMEfromdate(d, &day, &month, &year);
-	ptr->day = day;
-	ptr->month = month;
-	ptr->year = year;
+	ptr->day = date_day(d);
+	ptr->month = date_month(d);
+	ptr->year = date_year(d);
 }
 
 date date_from_data(cudf_data_date *ptr)
 {
-	return MTIMEtodate(ptr->day, ptr->month, ptr->year);
+	return date_create(ptr->year, ptr->month, ptr->day);
 }
 
 void data_from_time(daytime d, cudf_data_time *ptr)
 {
-	int hour, min, sec, msec;
-	MTIMEfromtime(d, &hour, &min, &sec, &msec);
-	ptr->hours = hour;
-	ptr->minutes = min;
-	ptr->seconds = sec;
-	ptr->ms = msec;
+	ptr->hours = daytime_hour(d);
+	ptr->minutes = daytime_min(d);
+	ptr->seconds = daytime_sec(d);
+	ptr->ms = daytime_usec(d) / 1000;
 }
 
 daytime time_from_data(cudf_data_time *ptr)
 {
-	return MTIMEtotime(ptr->hours, ptr->minutes, ptr->seconds, ptr->ms);
+	return daytime_create(ptr->hours, ptr->minutes, ptr->seconds,
+						  ptr->ms * 1000);
 }
 
 void data_from_timestamp(timestamp d, cudf_data_timestamp *ptr)
 {
-	data_from_date(d.payload.p_days, &ptr->date);
-	data_from_time(d.payload.p_msecs, &ptr->time);
+	daytime tm = timestamp_daytime(d);
+	date dt = timestamp_date(d);
+
+	ptr->date.day = date_day(dt);
+	ptr->date.month = date_month(dt);
+	ptr->date.year = date_year(dt);
+	ptr->time.hours = daytime_hour(tm);
+	ptr->time.minutes = daytime_min(tm);
+	ptr->time.seconds = daytime_sec(tm);
+	ptr->time.ms = daytime_usec(tm) / 1000;
 }
 
 timestamp timestamp_from_data(cudf_data_timestamp *ptr)
 {
-	timestamp d;
-	d.payload.p_days = date_from_data(&ptr->date);
-	d.payload.p_msecs = time_from_data(&ptr->time);
-	return d;
+	return timestamp_create(date_create(ptr->date.year,
+										ptr->date.month,
+										ptr->date.day),
+							daytime_create(ptr->time.hours,
+										   ptr->time.minutes,
+										   ptr->time.seconds,
+										   ptr->time.ms * 1000));
 }
 
 int date_is_null(cudf_data_date value)

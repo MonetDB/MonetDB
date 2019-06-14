@@ -32,21 +32,21 @@ stdout of test 'date_trunc_bulk` in directory 'sql/test/BugTracker-2019` itself:
 % t # name
 % timestamp # type
 % 26 # length
-[ 2119-02-17 02:08:12.346000	]
+[ 2119-02-17 02:08:12.345678	]
 [ NULL	]
 #select date_trunc('microseconds', t) from dt_tmp;
 % .L2 # table_name
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 2119-02-17 02:08:12.346000	]
+[ 2119-02-17 02:08:12.345678	]
 [ NULL	]
 #select date_trunc('milliseconds', t) from dt_tmp;
 % .L2 # table_name
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 2119-02-17 02:08:12.346000	]
+[ 2119-02-17 02:08:12.345000	]
 [ NULL	]
 #select date_trunc('second', t) from dt_tmp;
 % .L2 # table_name
@@ -81,7 +81,7 @@ stdout of test 'date_trunc_bulk` in directory 'sql/test/BugTracker-2019` itself:
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 2119-02-11 00:00:00.000000	]
+[ 2119-02-13 00:00:00.000000	]
 [ NULL	]
 #select date_trunc('month', t) from dt_tmp;
 % .L2 # table_name
@@ -116,14 +116,14 @@ stdout of test 'date_trunc_bulk` in directory 'sql/test/BugTracker-2019` itself:
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 2101-01-01 00:00:00.000000	]
+[ 2100-01-01 00:00:00.000000	]
 [ NULL	]
 #select date_trunc('millennium', t) from dt_tmp;
 % .L2 # table_name
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 2001-01-01 00:00:00.000000	]
+[ 2000-01-01 00:00:00.000000	]
 [ NULL	]
 #rollback;
 

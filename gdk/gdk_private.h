@@ -28,6 +28,11 @@ enum heaptype {
 	orderidxheap
 };
 
+#ifdef GDKLIBRARY_OLDDATE
+__hidden int cvtdate(int n)
+	__attribute__((__visibility__("hidden")));
+#endif
+
 __hidden gdk_return ATOMheap(int id, Heap *hp, size_t cap)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));

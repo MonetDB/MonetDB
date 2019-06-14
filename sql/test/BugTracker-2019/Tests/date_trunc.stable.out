@@ -28,19 +28,19 @@ stdout of test 'date_trunc` in directory 'sql/test/BugTracker-2019` itself:
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 2119-02-17 02:08:12.346000	]
+[ 2119-02-17 02:08:12.345678	]
 #select date_trunc('microseconds', timestamp '2119-02-17 02:08:12.345678');
 % .L2 # table_name
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 2119-02-17 02:08:12.346000	]
+[ 2119-02-17 02:08:12.345678	]
 #select date_trunc('milliseconds', timestamp '2119-02-17 02:08:12.345678');
 % .L2 # table_name
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 2119-02-17 02:08:12.346000	]
+[ 2119-02-17 02:08:12.345000	]
 #select date_trunc('second', timestamp '2119-02-17 02:08:12.345678');
 % .L2 # table_name
 % L2 # name
@@ -70,7 +70,7 @@ stdout of test 'date_trunc` in directory 'sql/test/BugTracker-2019` itself:
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 2119-02-11 00:00:00.000000	]
+[ 2119-02-13 00:00:00.000000	]
 #select date_trunc('month', timestamp '2119-02-17 02:08:12.345678');
 % .L2 # table_name
 % L2 # name
@@ -100,13 +100,13 @@ stdout of test 'date_trunc` in directory 'sql/test/BugTracker-2019` itself:
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 2101-01-01 00:00:00.000000	]
+[ 2100-01-01 00:00:00.000000	]
 #select date_trunc('millennium', timestamp '2119-02-17 02:08:12.345678');
 % .L2 # table_name
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 2001-01-01 00:00:00.000000	]
+[ 2000-01-01 00:00:00.000000	]
 
 # 08:07:24 >  
 # 08:07:24 >  "Done."

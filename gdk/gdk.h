@@ -778,7 +778,8 @@ typedef struct {
 #define GDKLIBRARY_TALIGN	061036U	/* talign field in BBP.dir */
 #define GDKLIBRARY_NIL_NAN	061037U	/* flt/dbl NIL not represented by NaN */
 #define GDKLIBRARY_BLOB_SORT	061040U /* blob compare changed */
-#define GDKLIBRARY		061041U
+#define GDKLIBRARY_OLDDATE	061041U
+#define GDKLIBRARY		061042U
 
 typedef struct BAT {
 	/* static bat properties */

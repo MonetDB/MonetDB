@@ -23,7 +23,8 @@ stdout of test 'broken_join.SF-1373391` in directory 'sql/test/BugTracker` itsel
 % urlid,	clicktime # name
 % int,	time # type
 % 5,	8 # length
-[ 14534,	19:42:31	]
+[ 14534,	19:42:32	]
+#ROLLBACK;
 
 # 12:47:50 >  
 # 12:47:50 >  Done.

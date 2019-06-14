@@ -84,7 +84,7 @@ stdout of test 'timestamp` in directory 'sql/test/pg_regress` itself:
 % none # name
 % bigint # type
 % 1 # length
-[ 2	]
+[ 0	]
 #DELETE FROM TIMESTAMP_TBL;
 [ 5	]
 #START TRANSACTION;
@@ -202,7 +202,7 @@ stdout of test 'timestamp` in directory 'sql/test/pg_regress` itself:
 % date_trunc_week,	week_trunc # name
 % char,	timestamp # type
 % 0,	26 # length
-[ "",	2004-02-21 00:00:00.000000	]
+[ "",	2004-02-23 00:00:00.000000	]
 #SELECT '' AS "54", d1 - cast('1997-01-02' as timestamp) AS diff
 #  FROM TIMESTAMP_TBL
 #  WHERE d1 BETWEEN cast('1902-01-01' as timestamp)
@@ -324,6 +324,19 @@ stdout of test 'timestamp` in directory 'sql/test/pg_regress` itself:
 [ 2001-09-22 18:19:20.00,	2001	]
 [ 1997-02-11 01:32:01.00,	1997	]
 [ NULL,	NULL	]
+#SELECT d1, extract(century from d1) FROM TIMESTAMP_TBL;
+% sys.timestamp_tbl,	sys.L3 # table_name
+% d1,	L3 # name
+% timestamp,	int # type
+% 22,	2 # length
+[ 1997-01-02 00:00:00.00,	20	]
+[ 1997-01-02 03:04:05.00,	20	]
+[ 1997-02-11 01:32:01.00,	20	]
+[ 1997-02-11 01:32:01.00,	20	]
+[ 1997-06-11 00:32:01.00,	20	]
+[ 2001-09-22 18:19:20.00,	21	]
+[ 1997-02-11 01:32:01.00,	20	]
+[ NULL,	NULL	]
 #SELECT d1, week(d1) FROM TIMESTAMP_TBL;
 % sys.timestamp_tbl,	sys.L3 # table_name
 % d1,	L3 # name
@@ -420,13 +433,13 @@ stdout of test 'timestamp` in directory 'sql/test/pg_regress` itself:
 % d1,	L3 # name
 % timestamp,	decimal # type
 % 22,	11 # length
-[ 1997-01-02 00:00:00.00,	0.000	]
-[ 1997-01-02 03:04:05.00,	5.000	]
-[ 1997-02-11 01:32:01.00,	1.000	]
-[ 1997-02-11 01:32:01.00,	1.000	]
-[ 1997-06-11 00:32:01.00,	1.000	]
-[ 2001-09-22 18:19:20.00,	20.000	]
-[ 1997-02-11 01:32:01.00,	1.000	]
+[ 1997-01-02 00:00:00.00,	0.000000	]
+[ 1997-01-02 03:04:05.00,	5.000000	]
+[ 1997-02-11 01:32:01.00,	1.000000	]
+[ 1997-02-11 01:32:01.00,	1.000000	]
+[ 1997-06-11 00:32:01.00,	1.000000	]
+[ 2001-09-22 18:19:20.00,	20.000000	]
+[ 1997-02-11 01:32:01.00,	1.000000	]
 [ NULL,	NULL	]
 #SELECT d1, extract(hour from d1) FROM TIMESTAMP_TBL;
 % sys.timestamp_tbl,	sys.L3 # table_name
@@ -459,13 +472,13 @@ stdout of test 'timestamp` in directory 'sql/test/pg_regress` itself:
 % d1,	L3 # name
 % timestamp,	decimal # type
 % 22,	11 # length
-[ 1997-01-02 00:00:00.00,	0.000	]
-[ 1997-01-02 03:04:05.00,	5.000	]
-[ 1997-02-11 01:32:01.00,	1.000	]
-[ 1997-02-11 01:32:01.00,	1.000	]
-[ 1997-06-11 00:32:01.00,	1.000	]
-[ 2001-09-22 18:19:20.00,	20.000	]
-[ 1997-02-11 01:32:01.00,	1.000	]
+[ 1997-01-02 00:00:00.00,	0.000000	]
+[ 1997-01-02 03:04:05.00,	5.000000	]
+[ 1997-02-11 01:32:01.00,	1.000000	]
+[ 1997-02-11 01:32:01.00,	1.000000	]
+[ 1997-06-11 00:32:01.00,	1.000000	]
+[ 2001-09-22 18:19:20.00,	20.000000	]
+[ 1997-02-11 01:32:01.00,	1.000000	]
 [ NULL,	NULL	]
 #SELECT d1, sql_add(d1, 365*24*60*60.0) FROM TIMESTAMP_TBL;
 % sys.timestamp_tbl,	sys.L3 # table_name

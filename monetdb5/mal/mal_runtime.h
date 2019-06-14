@@ -31,7 +31,7 @@ typedef struct QRYQUEUE{
 	int tag;
 	str query;
 	str status;
-	lng start;
+	time_t start;
 	lng runtime;
 } *QueryQueue;
 mal_export int qtop;

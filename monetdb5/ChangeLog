@@ -1,6 +1,27 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Fri Jun 14 2019 Sjoerd Mullender <sjoerd@acm.org>
+- The mtime module was completely rewritten, the atom types date,
+  daytime, and timestamp were changed.  Upgrade code for BATs
+  containing these types has been implemented.  The old daytime type
+  used a 32 bit integer to record milliseconds since the start of the
+  day.  The new daytime type uses a 64 bit integer to record
+  microseconds since the start of the day.  The old date type recorded
+  days since or before the year 1.  The new daytime type records the
+  day of the month and the number of months since the year -4712
+  separately in a single 32 bit integer of which only 26 bits are
+  used.  Dates now use the proleptic Gregorian calendar, meaning the
+  normal Gregorian callendar has been extended backward, and before
+  the year 1, we have the year 0.  Both the old and new timestamp
+  types are a combination of a daytime and a date value, but since
+  those types have changed, the timestamp type has also changed.  The
+  new date type has a smaller range than the old.  The new date range
+  is from the year -4712 to the year 170049.  During conversion of
+  date and timestamp columns, the dates are clamped to this range.
+- The tzone and rule atom types have been removed.  They were not used
+  by any code, and they were defined in a non-portable way.
+
 * Thu May  2 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Added "mapi_ipv6" property to monet_options to force ipv6 address
   binding only.  This property is inherited while forking from
@@ -10,9 +31,4 @@
 - Removed (bat)calc.between_symmetric and changed (bat)calc.between
   by adding a number of extra arguments, all of type :bit: symmetric,
   low inclusive, high inclusive, nils false.
-- The layout of the bits in the tzone and rule atoms was changed.
-  Before they were bitfields for which the C language does not give a
-  guarantee (except that they are packed); now they are explicitly masked
-  and shifted.  These types are not used by the SQL layer and therefore
-  unlikely to be in any database.  No upgrade code has been created.
 

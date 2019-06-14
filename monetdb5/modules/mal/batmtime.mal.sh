@@ -46,13 +46,13 @@ module batmtime;
 
 EOF
 
-for tp in date:int timestamp:lng; do
-    rtp=${tp#*:}
-    tp=${tp%:*}
-    cat <<EOF
-command diff(b1:bat[:$tp],b2:bat[:$tp]) :bat[:$rtp]
-address MTIME${tp}_diff_bulk
-comment "Difference of two sets of $tp.";
+cat <<EOF
+command diff(b1:bat[:date],b2:bat[:date]) :bat[:int]
+address MTIMEdate_diff_bulk
+comment "Difference of two sets of date.";
+
+command diff(b1:bat[:timestamp],b2:bat[:timestamp]) :bat[:lng]
+address MTIMEtimestamp_diff_msec_bulk
+comment "Difference of two sets of timestamp.";
 
 EOF
-done

@@ -36,7 +36,7 @@ stdout of test 'fractional_precision_limitation.Bug-3808` in directory 'sql/test
 % a # name
 % timestamp # type
 % 26 # length
-[ 2015-12-12 12:30:59.111000	]
+[ 2015-12-12 12:30:59.111111	]
 #drop table TT7;
 
 # 19:04:36 >  

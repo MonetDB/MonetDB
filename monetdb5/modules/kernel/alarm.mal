@@ -12,15 +12,15 @@ comment "Sleep a few seconds";
 
 unsafe command alarm.usec() :lng
 address ALARMusec
-comment "Return time in microseconds.";
+comment "Return time since Jan 1, 1970 in microseconds.";
 
 unsafe command alarm.time() :int
 address ALARMtime
-comment "Return time in milliseconds.";
+comment "Return time since program start in milliseconds.";
 
 unsafe command alarm.epoch() :int
 address ALARMepoch
-comment "Return the current time as UNIX epoch.";
+comment "Return time since Jan 1, 1970 in seconds.";
 
 unsafe command alarm.ctime() :str
 address ALARMctime
