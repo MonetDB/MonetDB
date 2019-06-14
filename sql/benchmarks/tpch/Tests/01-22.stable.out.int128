@@ -700,7 +700,7 @@ Ready.
 % promo_revenue # name
 % decimal # type
 % 40 # length
-[ 15.486545	]
+[ 15.48654	]
 
 # 18:03:42 >  
 # 18:03:42 >  mclient -lsql -ftest -tnone -Eutf-8 -i -e --host=/var/tmp/mtest-10362 --port=37514 < /home/niels/data/MonetDB/sql/benchmarks/tpch/15.sql
