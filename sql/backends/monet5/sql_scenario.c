@@ -1303,25 +1303,12 @@ SQLCacheRemove(Client c, str nme)
 }
 
 str
-SQLcallback(Client c, str msg){
-	char newerr[1024];
+SQLcallback(Client c, str msg)
+{
+	char *newerr;
 
-	if (msg && (strstr(msg, "MALexception") || strstr(msg,"GDKexception"))) {
-		// massage the error to comply with SQL
-		char *s;
-		s = strchr(msg, ':');
-		if (s) {
-			s++;
-			if (s - msg >= (ptrdiff_t) sizeof(newerr))
-				s = msg + sizeof(newerr) - 1;
-			strncpy(newerr, msg, s - msg);
-			newerr[s-msg] = 0;
-			snprintf(newerr + (s-msg), sizeof(newerr) -(s-msg), SQLSTATE(HY020) "%s",s);
-			freeException(msg);
-			msg = GDKstrdup(newerr);
-		}
-	}
-	if (msg) {
+	if (msg &&
+	    (newerr = GDKmalloc(strlen(msg) + 1)) != NULL) {
 		/* remove exception decoration */
 		char *m, *n, *p, *s;
 		size_t l;
@@ -1337,17 +1324,15 @@ SQLcallback(Client c, str msg){
 			} else {
 				l = strlen(s);
 			}
-			if (p + l >= newerr + sizeof(newerr))
-				l = newerr + sizeof(newerr) - p - 1;
 			memcpy(p, s, l);
 			p += l;
 			m = n;
 		}
 		*p = 0;
 		freeException(msg);
-		msg = GDKstrdup(newerr);
+		msg = GDKrealloc(newerr, strlen(newerr) + 1);
 	}
-	return MALcallback(c,msg);
+	return MALcallback(c, msg);
 }
 
 str

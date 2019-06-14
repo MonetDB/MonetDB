@@ -699,7 +699,7 @@ stdout of test '01-22` in directory 'sql/benchmarks/tpch/LOCKED` itself:
 % promo_revenue # name
 % decimal # type
 % 40 # length
-[ 15.486545	]
+[ 15.48654	]
 
 % sys.supplier,	sys.supplier,	sys.supplier,	sys.supplier,	sys.revenue0 # table_name
 % s_suppkey,	s_name,	s_address,	s_phone,	total_revenue # name
