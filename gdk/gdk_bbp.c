@@ -611,10 +611,12 @@ leapyears(int year)
 }
 
 #define YEAR_OFFSET	4712
+#define YEAR_MIN	(-YEAR_OFFSET)
 #define DTDAY_WIDTH	5		/* 1..28/29/30/31, depending on month */
 #define DTDAY_SHIFT	0
-#define DTMONTH_WIDTH	21		/* enough for 174762 year */
+#define DTMONTH_WIDTH	21		/* enough for 174761 years */
 #define DTMONTH_SHIFT	(DTDAY_WIDTH+DTDAY_SHIFT)
+#define YEAR_MAX	(YEAR_MIN+(1<<DTMONTH_WIDTH)/12-1)
 #define mkdate(d, m, y)	(((((y) + YEAR_OFFSET) * 12 + (m) - 1) << DTMONTH_SHIFT) \
 			 | ((d) << DTDAY_SHIFT))
 #define TSTIME_WIDTH	37		/* [0..24*60*60*1000000) */
@@ -660,14 +662,14 @@ cvtdate(int n)
 		day -= CUMDAYS[month - 1];
 	}
 	/* clamp date */
-	if (year < -YEAR_OFFSET) {
+	if (year < YEAR_MIN) {
 		day = 1;
 		month = 1;
-		year = -YEAR_OFFSET;
-	} else if (year > ((1<<21)/12 - YEAR_OFFSET)) {
+		year = YEAR_MIN;
+	} else if (year > YEAR_MAX) {
 		day = 31;
 		month = 12;
-		year = (1<<21)/12 - YEAR_OFFSET;
+		year = YEAR_MAX;
 	}
 	return mkdate(day, month, year);
 }

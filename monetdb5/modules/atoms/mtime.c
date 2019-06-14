@@ -35,13 +35,15 @@ extern char *strptime(const char *, const char *, struct tm *);
 #endif
 
 #define YEAR_MIN		(-4712)	/* 4713 BC */
-#define YEAR_MAX		(YEAR_MIN+(1<<21)/12-1)
 
 #define YEAR_OFFSET		(-YEAR_MIN)
 #define DTDAY_WIDTH		5		/* 1..28/29/30/31, depending on month */
 #define DTDAY_SHIFT		0
-#define DTMONTH_WIDTH	21		/* enough for 174762 years */
+#define DTMONTH_WIDTH	21		/* enough for 174761 years (and 8 months) */
 #define DTMONTH_SHIFT	(DTDAY_WIDTH+DTDAY_SHIFT)
+
+#define YEAR_MAX		(YEAR_MIN+(1<<DTMONTH_WIDTH)/12-1)
+
 #define isdate(y, m, d)	((m) > 0 && (m) <= 12 && (d) > 0 && (y) >= YEAR_MIN && (y) <= YEAR_MAX && (d) <= monthdays(y, m))
 #define mkdate(y, m, d)	((date) (((uint32_t) (((y) + YEAR_OFFSET) * 12 + (m) - 1) << DTMONTH_SHIFT) \
 								 | ((uint32_t) (d) << DTDAY_SHIFT)))
