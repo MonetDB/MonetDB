@@ -393,7 +393,7 @@ batstr_2_blob(bat *res, const bat *bid)
 }
 
 static str
-SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
+SQLstr_cast_(str *res, mvc *m, sql_class eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
 {
 	char *r = NULL;
 	int sz = MAX(2, len + 1);	/* nil should fit */
@@ -434,7 +434,7 @@ str
 SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *res = getArgReference_str(stk, pci, 0);
-	int eclass = *getArgReference_int(stk, pci, 1);
+	sql_class eclass = (sql_class)*getArgReference_int(stk, pci, 1);
 	int d = *getArgReference_int(stk, pci, 2);
 	int s = *getArgReference_int(stk, pci, 3);
 	int has_tz = *getArgReference_int(stk, pci, 4);
@@ -464,7 +464,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	char *r = NULL;
 	bat *res = getArgReference_bat(stk, pci, 0);
-	int *eclass = getArgReference_int(stk, pci, 1);
+	sql_class eclass = (sql_class) *getArgReference_int(stk, pci, 1);
 	int *d1 = getArgReference_int(stk, pci, 2);
 	int *s1 = getArgReference_int(stk, pci, 3);
 	int *has_tz = getArgReference_int(stk, pci, 4);
@@ -486,7 +486,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	BATloop(b, p, q) {
 		ptr v = (ptr) BUNtail(bi, p);
-		msg = SQLstr_cast_(&r, m, *eclass, *d1, *s1, *has_tz, v, b->ttype, *digits);
+		msg = SQLstr_cast_(&r, m, eclass, *d1, *s1, *has_tz, v, b->ttype, *digits);
 		if (msg) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);

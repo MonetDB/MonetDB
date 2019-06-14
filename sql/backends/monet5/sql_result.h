@@ -31,6 +31,6 @@ extern int mvc_result_table(mvc *m, oid query_id, int nr_cols, int type, BAT *or
 extern int mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
 extern int mvc_result_value(mvc *m, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype);
 
-extern int convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len);
+extern int convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len);
 
 #endif /* sql_result_H */

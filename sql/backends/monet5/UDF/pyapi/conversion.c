@@ -1033,7 +1033,7 @@ int GetSQLType(sql_subtype *sql_subtype)
 		return -1;
 	if (!sql_subtype->type)
 		return -1;
-	return sql_subtype->type->eclass;
+	return (int) sql_subtype->type->eclass;
 }
 
 str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,

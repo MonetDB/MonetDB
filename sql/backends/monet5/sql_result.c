@@ -1277,7 +1277,7 @@ mvc_send_hge(stream *s, hge cnt){
 #endif
 
 int
-convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len)
+convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len)
 {
 	size_t len2 = (size_t) len;
 	ssize_t l = 0;
@@ -1318,7 +1318,7 @@ convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, cha
 }
 
 static int
-export_value(mvc *m, stream *s, int eclass, const char *sqlname, int d, int sc, ptr p, int mtype, char **buf, size_t *len, const char *ns)
+export_value(mvc *m, stream *s, sql_class eclass, const char *sqlname, int d, int sc, ptr p, int mtype, char **buf, size_t *len, const char *ns)
 {
 	int ok = 0;
 	ssize_t l = 0;
@@ -1907,7 +1907,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 
 
 static lng
-get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p)
+get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat bid, ptr p)
 {
 	size_t count = 0, incr = 0;;
 
@@ -2065,7 +2065,8 @@ get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, p
 }
 
 static int
-export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p) {
+export_length(stream *s, int mtype, sql_class eclass, int digits, int scale, int tz, bat bid, ptr p)
+{
 	int ok = 1;
 	lng length = get_print_width(mtype, eclass, digits, scale, tz, bid, p);
 	ok = mvc_send_lng(s, length);
@@ -2421,7 +2422,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 		for (i = 0; i < t->nr_cols; i++) {
 			res_col *c = t->cols + i;
 			int mtype = c->type.type->localtype;
-			int eclass = c->type.type->eclass;
+			sql_class eclass = c->type.type->eclass;
 
 			if (!export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p))
 				return -1;

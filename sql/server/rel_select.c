@@ -3487,15 +3487,15 @@ rel_binop_(sql_query *query, sql_exp *l, sql_exp *r, sql_schema *s,
 		/* bind types of l and r */
 		t1 = exp_subtype(l);
 		t2 = exp_subtype(r);
-		if (IS_ANY(t1->type->eclass) || IS_ANY(t2->type->eclass)) {
+		if (t1->type->eclass == EC_ANY || t2->type->eclass == EC_ANY) {
 			sql_exp *ol = l;
 			sql_exp *or = r;
 
-			if (IS_ANY(t1->type->eclass) && IS_ANY(t2->type->eclass)) {
+			if (t1->type->eclass == EC_ANY && t2->type->eclass == EC_ANY) {
 				sql_subtype *s = sql_bind_localtype("str");
 				l = rel_check_type(sql, s, l, type_equal);
 				r = rel_check_type(sql, s, r, type_equal);
-			} else if (IS_ANY(t1->type->eclass)) {
+			} else if (t1->type->eclass == EC_ANY) {
 				l = rel_check_type(sql, t2, l, type_equal);
 			} else {
 				r = rel_check_type(sql, t1, r, type_equal);
@@ -4876,7 +4876,7 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 {
 	mvc *sql = query->sql;
 	sql_subtype *bt, *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng"), *iet;
-	unsigned char bclass = 0;
+	sql_class bclass = 0;
 	sql_exp *res = NULL;
 
 	if((bound->token == SQL_PRECEDING || bound->token == SQL_FOLLOWING || bound->token == SQL_CURRENT_ROW) && bound->type == type_int) {

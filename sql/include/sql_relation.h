@@ -127,10 +127,9 @@ typedef enum ddl_statement {
 	ddl_comment_on,
 	ddl_rename_schema,
 	ddl_rename_table,
-	ddl_rename_column
+	ddl_rename_column,
+	ddl_maxops /* evaluated to the max value, should be always kept at the bottom */
 } ddl_statement;
-
-#define MAXOPS 21
 
 typedef enum operator_type {
 	op_basetable = 0,

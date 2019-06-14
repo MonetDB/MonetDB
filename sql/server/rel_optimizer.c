@@ -26,7 +26,7 @@
 #define new_col_list(sa) sa_list(sa)
 
 typedef struct global_props {
-	int cnt[MAXOPS];
+	int cnt[ddl_maxops];
 } global_props;
 
 typedef sql_rel *(*rewrite_fptr)(int *changes, mvc *sql, sql_rel *rel);
@@ -8923,7 +8923,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 #ifdef DEBUG
 {
 	int i;
-	for (i = 0; i < MAXOPS; i++) {
+	for (i = 0; i < ddl_maxops; i++) {
 		if (gp.cnt[i]> 0)
 			printf("%s %d\n", op2string((operator_type)i), gp.cnt[i]);
 	}

@@ -266,7 +266,7 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 {
 	sql_exp *exp;
 	char *query, *msg = NULL;
-	int sql_ec;
+	sql_class sql_ec;
 	sql_rel *r;
 
 	assert(isPartitionedByExpressionTable(mt));

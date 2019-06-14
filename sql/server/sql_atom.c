@@ -369,7 +369,7 @@ atom2string(sql_allocator *sa, atom *a)
 char *
 atom2sql(atom *a)
 {
-	int ec = a->tpe.type->eclass;
+	sql_class ec = a->tpe.type->eclass;
 	char buf[BUFSIZ];
 
 	if (a->data.vtype == TYPE_str && EC_INTERVAL(ec))
@@ -508,7 +508,6 @@ atom2sql(atom *a)
 	}
 	return _STRDUP(buf);
 }
-
 
 sql_subtype *
 atom_type(atom *a)
