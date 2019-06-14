@@ -1028,8 +1028,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L4,	L6,	c,	L13,	L15,	L17 # name
 % int,	hugeint,	hugeint,	int,	bigint,	hugeint,	bigint # type
 % 3,	3,	4,	3,	2,	4,	1 # length
-[ 107,	107,	1067,	106,	0,	635,	2	]
 [ 131,	132,	1325,	134,	4,	793,	1	]
+[ 107,	107,	1067,	106,	0,	635,	2	]
 [ 149,	NULL,	NULL,	147,	7,	880,	4	]
 [ 153,	NULL,	NULL,	150,	8,	905,	2	]
 [ 159,	NULL,	NULL,	155,	9,	940,	1	]
@@ -1547,10 +1547,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L4,	L10,	L12,	L14,	c # name
 % smallint,	hugeint,	bigint,	bigint,	bigint,	int # type
 % 3,	3,	2,	1,	2,	3 # length
-[ 444,	NULL,	0,	1,	NULL,	102	]
 [ 222,	NULL,	2,	1,	1,	123	]
-[ 444,	NULL,	0,	3,	NULL,	119	]
 [ 333,	132,	4,	1,	-4,	134	]
+[ 444,	NULL,	0,	1,	NULL,	102	]
+[ 444,	NULL,	0,	3,	NULL,	119	]
 [ 222,	137,	5,	1,	2,	137	]
 [ 222,	142,	6,	1,	2,	141	]
 [ 444,	172,	12,	1,	-2,	172	]
@@ -2110,12 +2110,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	bigint # type
 % 4,	2,	1 # length
 [ 1120,	1,	1	]
-[ NULL,	0,	NULL	]
-[ 1050,	0,	1	]
 [ 1240,	2,	1	]
 [ 1290,	3,	4	]
-[ NULL,	0,	NULL	]
 [ 1300,	4,	4	]
+[ NULL,	0,	NULL	]
+[ NULL,	0,	NULL	]
+[ 1050,	0,	1	]
 [ 1390,	5,	2	]
 [ 1430,	6,	2	]
 [ 1450,	7,	2	]
@@ -4680,11 +4680,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	smallint,	hugeint,	bigint,	int,	int # type
 % 2,	3,	4,	2,	3,	3 # length
 [ 1,	555,	NULL,	NULL,	NULL,	114	]
-[ 0,	333,	1612,	2,	107,	108	]
 [ 2,	333,	NULL,	-3,	121,	122	]
 [ 3,	333,	1902,	-2,	127,	128	]
-[ 0,	333,	NULL,	NULL,	115,	116	]
 [ 4,	444,	1985,	1,	131,	133	]
+[ 0,	333,	1612,	2,	107,	108	]
+[ 0,	333,	NULL,	NULL,	115,	116	]
 [ 5,	111,	2046,	-1,	138,	136	]
 [ 6,	111,	2131,	-1,	142,	140	]
 [ 10,	333,	2432,	3,	163,	164	]
@@ -4749,11 +4749,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	smallint,	hugeint,	bigint,	int,	int # type
 % 2,	3,	4,	2,	3,	3 # length
 [ 1,	555,	NULL,	NULL,	NULL,	114	]
-[ 0,	333,	1612,	2,	107,	108	]
 [ 2,	333,	NULL,	-3,	121,	122	]
 [ 3,	333,	1902,	-2,	127,	128	]
-[ 0,	333,	NULL,	NULL,	115,	116	]
 [ 4,	444,	1985,	1,	131,	133	]
+[ 0,	333,	1612,	2,	107,	108	]
+[ 0,	333,	NULL,	NULL,	115,	116	]
 [ 5,	111,	2046,	-1,	138,	136	]
 [ 6,	111,	2131,	-1,	142,	140	]
 [ 10,	333,	2432,	3,	163,	164	]
@@ -5059,11 +5059,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint,	bigint,	hugeint,	bigint,	int # type
 % 4,	2,	2,	4,	1,	3 # length
 [ NULL,	NULL,	1,	NULL,	1,	114	]
-[ NULL,	NULL,	0,	NULL,	NULL,	101	]
-[ 1067,	2,	0,	635,	1,	108	]
 [ 1226,	-3,	2,	738,	1,	122	]
 [ 1272,	-2,	3,	760,	4,	128	]
 [ 1325,	1,	4,	793,	4,	133	]
+[ NULL,	NULL,	0,	NULL,	NULL,	101	]
+[ 1067,	2,	0,	635,	1,	108	]
 [ 1371,	-1,	5,	827,	2,	136	]
 [ 1411,	-1,	6,	851,	2,	140	]
 [ NULL,	2,	8,	905,	1,	NULL	]
@@ -5142,11 +5142,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint,	bigint,	hugeint,	bigint,	int # type
 % 4,	2,	2,	4,	1,	3 # length
 [ NULL,	NULL,	1,	NULL,	1,	114	]
-[ NULL,	NULL,	0,	NULL,	NULL,	101	]
-[ 1067,	2,	0,	635,	1,	108	]
 [ 1226,	-3,	2,	738,	1,	122	]
 [ 1272,	-2,	3,	760,	4,	128	]
 [ 1325,	1,	4,	793,	4,	133	]
+[ NULL,	NULL,	0,	NULL,	NULL,	101	]
+[ 1067,	2,	0,	635,	1,	108	]
 [ 1371,	-1,	5,	827,	2,	136	]
 [ 1411,	-1,	6,	851,	2,	140	]
 [ NULL,	2,	8,	905,	1,	NULL	]
@@ -5225,11 +5225,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint,	bigint,	hugeint,	bigint,	int # type
 % 4,	2,	2,	4,	1,	3 # length
 [ NULL,	NULL,	1,	NULL,	1,	114	]
-[ NULL,	NULL,	0,	NULL,	NULL,	101	]
-[ 1067,	2,	0,	635,	1,	108	]
 [ 1226,	-3,	2,	738,	1,	122	]
 [ 1272,	-2,	3,	760,	4,	128	]
 [ 1325,	1,	4,	793,	4,	133	]
+[ NULL,	NULL,	0,	NULL,	NULL,	101	]
+[ 1067,	2,	0,	635,	1,	108	]
 [ 1371,	-1,	5,	827,	2,	136	]
 [ 1411,	-1,	6,	851,	2,	140	]
 [ NULL,	2,	8,	905,	1,	NULL	]
@@ -6427,12 +6427,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	int,	int,	hugeint,	int,	bigint # type
 % 4,	3,	3,	3,	3,	2 # length
 [ NULL,	NULL,	114,	NULL,	110,	1	]
-[ NULL,	104,	101,	NULL,	NULL,	0	]
-[ 1612,	107,	108,	107,	109,	0	]
 [ NULL,	121,	122,	NULL,	NULL,	2	]
 [ 1902,	127,	128,	127,	126,	3	]
-[ NULL,	115,	116,	NULL,	117,	0	]
 [ 1985,	131,	133,	132,	132,	4	]
+[ NULL,	115,	116,	NULL,	117,	0	]
+[ NULL,	104,	101,	NULL,	NULL,	0	]
+[ 1612,	107,	108,	107,	109,	0	]
 [ 2046,	138,	136,	137,	135,	5	]
 [ 2131,	142,	140,	142,	144,	6	]
 [ NULL,	149,	NULL,	NULL,	146,	7	]
@@ -8381,12 +8381,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	hugeint,	hugeint,	int,	bigint,	smallint,	hugeint # type
 % 2,	4,	4,	3,	2,	3,	4 # length
 [ 4,	NULL,	NULL,	114,	1,	444,	NULL	]
-[ NULL,	NULL,	NULL,	101,	0,	444,	NULL	]
-[ -1,	1612,	635,	108,	0,	333,	1067	]
 [ NULL,	NULL,	738,	122,	2,	222,	1226	]
 [ 2,	1902,	760,	128,	3,	222,	1272	]
-[ -1,	NULL,	NULL,	116,	0,	444,	NULL	]
 [ 1,	1985,	793,	133,	4,	333,	1325	]
+[ -1,	NULL,	NULL,	116,	0,	444,	NULL	]
+[ NULL,	NULL,	NULL,	101,	0,	444,	NULL	]
+[ -1,	1612,	635,	108,	0,	333,	1067	]
 [ 1,	2046,	827,	136,	5,	222,	1371	]
 [ -4,	2131,	851,	140,	6,	222,	1411	]
 [ NULL,	NULL,	880,	NULL,	7,	444,	NULL	]
@@ -8468,12 +8468,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	smallint,	hugeint,	int # type
 % 2,	2,	3,	4,	3 # length
 [ 1,	4,	444,	NULL,	110	]
-[ 0,	NULL,	444,	NULL,	NULL	]
-[ 0,	-1,	333,	1067,	109	]
 [ 2,	NULL,	222,	1226,	NULL	]
 [ 3,	2,	222,	1272,	126	]
-[ 0,	-1,	444,	NULL,	117	]
 [ 4,	1,	333,	1325,	132	]
+[ 0,	-1,	444,	NULL,	117	]
+[ 0,	NULL,	444,	NULL,	NULL	]
+[ 0,	-1,	333,	1067,	109	]
 [ 5,	1,	222,	1371,	135	]
 [ 6,	-4,	222,	1411,	144	]
 [ 7,	NULL,	444,	NULL,	146	]
@@ -9051,12 +9051,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	bigint,	int,	int,	hugeint # type
 % 2,	4,	2,	3,	3,	4 # length
 [ 1,	1120,	-1,	114,	113,	NULL	]
-[ 0,	NULL,	NULL,	101,	102,	NULL	]
-[ 0,	1050,	-1,	108,	106,	1067	]
 [ 2,	1240,	1,	122,	123,	1226	]
 [ 3,	1290,	4,	128,	125,	1272	]
-[ 0,	NULL,	NULL,	116,	119,	NULL	]
 [ 4,	1300,	-4,	133,	134,	1325	]
+[ 0,	NULL,	NULL,	116,	119,	NULL	]
+[ 0,	NULL,	NULL,	101,	102,	NULL	]
+[ 0,	1050,	-1,	108,	106,	1067	]
 [ 5,	1390,	2,	136,	137,	1371	]
 [ 6,	1430,	2,	140,	141,	1411	]
 [ 7,	1450,	-2,	NULL,	147,	NULL	]
@@ -9591,12 +9591,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	int,	bigint,	bigint,	int # type
 % 2,	3,	2,	2,	3 # length
 [ 4,	110,	NULL,	1,	114	]
-[ NULL,	NULL,	NULL,	0,	101	]
-[ -1,	109,	2,	0,	108	]
 [ NULL,	NULL,	-3,	2,	122	]
 [ 2,	126,	-2,	3,	128	]
-[ -1,	117,	NULL,	0,	116	]
 [ 1,	132,	1,	4,	133	]
+[ -1,	117,	NULL,	0,	116	]
+[ NULL,	NULL,	NULL,	0,	101	]
+[ -1,	109,	2,	0,	108	]
 [ 1,	135,	-1,	5,	136	]
 [ -4,	144,	-1,	6,	140	]
 [ NULL,	146,	4,	7,	NULL	]
@@ -10178,12 +10178,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint # type
 % 2,	2 # length
 [ 1,	-1	]
-[ 0,	1	]
-[ 0,	-2	]
 [ 2,	1	]
 [ 3,	-3	]
-[ 0,	3	]
 [ 4,	1	]
+[ 0,	3	]
+[ 0,	1	]
+[ 0,	-2	]
 [ 5,	1	]
 [ 6,	1	]
 [ 7,	NULL	]
@@ -10423,11 +10423,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	hugeint,	smallint,	int,	bigint,	int,	bigint # type
 % 4,	4,	3,	3,	2,	3,	2 # length
 [ NULL,	NULL,	555,	110,	1,	112,	-1	]
-[ 1067,	635,	333,	109,	0,	105,	-1	]
 [ 1226,	738,	333,	NULL,	2,	124,	1	]
 [ 1272,	760,	333,	126,	3,	129,	4	]
-[ NULL,	NULL,	333,	117,	0,	NULL,	NULL	]
 [ 1325,	793,	444,	132,	4,	130,	-4	]
+[ 1067,	635,	333,	109,	0,	105,	-1	]
+[ NULL,	NULL,	333,	117,	0,	NULL,	NULL	]
 [ 1371,	827,	111,	135,	5,	139,	2	]
 [ 1411,	851,	111,	144,	6,	143,	2	]
 [ 1622,	966,	333,	162,	10,	160,	-1	]
@@ -10498,11 +10498,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	hugeint,	smallint,	int,	bigint,	int,	bigint # type
 % 4,	4,	3,	3,	2,	3,	2 # length
 [ NULL,	NULL,	555,	110,	1,	112,	-1	]
-[ 1067,	635,	333,	109,	0,	105,	-1	]
 [ 1226,	738,	333,	NULL,	2,	124,	1	]
 [ 1272,	760,	333,	126,	3,	129,	4	]
-[ NULL,	NULL,	333,	117,	0,	NULL,	NULL	]
 [ 1325,	793,	444,	132,	4,	130,	-4	]
+[ 1067,	635,	333,	109,	0,	105,	-1	]
+[ NULL,	NULL,	333,	117,	0,	NULL,	NULL	]
 [ 1371,	827,	111,	135,	5,	139,	2	]
 [ 1411,	851,	111,	144,	6,	143,	2	]
 [ 1622,	966,	333,	162,	10,	160,	-1	]
@@ -10573,11 +10573,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	hugeint,	smallint,	int,	bigint,	int,	bigint # type
 % 4,	4,	3,	3,	2,	3,	2 # length
 [ NULL,	NULL,	555,	110,	1,	112,	-1	]
-[ 1067,	635,	333,	109,	0,	105,	-1	]
 [ 1226,	738,	333,	NULL,	2,	124,	1	]
 [ 1272,	760,	333,	126,	3,	129,	4	]
-[ NULL,	NULL,	333,	117,	0,	NULL,	NULL	]
 [ 1325,	793,	444,	132,	4,	130,	-4	]
+[ 1067,	635,	333,	109,	0,	105,	-1	]
+[ NULL,	NULL,	333,	117,	0,	NULL,	NULL	]
 [ 1371,	827,	111,	135,	5,	139,	2	]
 [ 1411,	851,	111,	144,	6,	143,	2	]
 [ 1622,	966,	333,	162,	10,	160,	-1	]
@@ -11476,10 +11476,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L6,	d,	L11,	L13 # name
 % int,	bigint,	int,	hugeint,	bigint # type
 % 3,	2,	3,	3,	1 # length
-[ 104,	0,	101,	NULL,	NULL	]
 [ 121,	2,	122,	NULL,	1	]
-[ 115,	0,	116,	NULL,	NULL	]
 [ 131,	4,	133,	132,	4	]
+[ 104,	0,	101,	NULL,	NULL	]
+[ 115,	0,	116,	NULL,	NULL	]
 [ 138,	5,	136,	137,	2	]
 [ 142,	6,	140,	142,	2	]
 [ 174,	12,	171,	172,	2	]
@@ -14007,12 +14007,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	bigint,	bigint # type
 % 3,	2,	2 # length
 [ 110,	-1,	1	]
-[ NULL,	NULL,	0	]
-[ 109,	-1,	0	]
 [ NULL,	1,	2	]
 [ 126,	4,	3	]
-[ 117,	NULL,	0	]
 [ 132,	-4,	4	]
+[ 117,	NULL,	0	]
+[ NULL,	NULL,	0	]
+[ 109,	-1,	0	]
 [ 135,	2,	5	]
 [ 144,	2,	6	]
 [ 146,	-2,	7	]
@@ -14463,10 +14463,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L6,	L10 # name
 % int,	bigint,	bigint # type
 % 3,	2,	1 # length
-[ 104,	0,	1	]
 [ 121,	2,	1	]
-[ 115,	0,	3	]
 [ 131,	4,	1	]
+[ 104,	0,	1	]
+[ 115,	0,	3	]
 [ 138,	5,	1	]
 [ 142,	6,	1	]
 [ 174,	12,	1	]
@@ -17500,12 +17500,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	int,	bigint,	hugeint,	int # type
 % 4,	3,	2,	4,	3 # length
 [ 1120,	114,	1,	NULL,	110	]
-[ NULL,	101,	0,	NULL,	NULL	]
-[ 1050,	108,	0,	1067,	109	]
 [ 1240,	122,	2,	1226,	NULL	]
 [ 1290,	128,	3,	1272,	126	]
-[ NULL,	116,	0,	NULL,	117	]
 [ 1300,	133,	4,	1325,	132	]
+[ NULL,	116,	0,	NULL,	117	]
+[ NULL,	101,	0,	NULL,	NULL	]
+[ 1050,	108,	0,	1067,	109	]
 [ 1390,	136,	5,	1371,	135	]
 [ 1430,	140,	6,	1411,	144	]
 [ 1450,	NULL,	7,	NULL,	146	]
@@ -17588,10 +17588,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L6,	L10,	L12,	L14,	e # name
 % smallint,	bigint,	bigint,	bigint,	smallint,	int # type
 % 3,	2,	2,	1,	3,	3 # length
-[ 333,	0,	-2,	1,	333,	109	]
 [ 222,	2,	1,	1,	333,	NULL	]
 [ 222,	3,	-3,	4,	333,	126	]
 [ 333,	4,	1,	4,	444,	132	]
+[ 333,	0,	-2,	1,	333,	109	]
 [ 222,	5,	1,	2,	111,	135	]
 [ 222,	6,	1,	2,	111,	144	]
 [ 444,	7,	NULL,	2,	555,	146	]
@@ -17671,10 +17671,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L6,	L10,	L12,	L14,	e # name
 % smallint,	bigint,	bigint,	bigint,	smallint,	int # type
 % 3,	2,	2,	1,	3,	3 # length
-[ 333,	0,	-2,	1,	333,	109	]
 [ 222,	2,	1,	1,	333,	NULL	]
 [ 222,	3,	-3,	4,	333,	126	]
 [ 333,	4,	1,	4,	444,	132	]
+[ 333,	0,	-2,	1,	333,	109	]
 [ 222,	5,	1,	2,	111,	135	]
 [ 222,	6,	1,	2,	111,	144	]
 [ 444,	7,	NULL,	2,	555,	146	]
@@ -17754,10 +17754,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L6,	L10,	L12,	L14,	e # name
 % smallint,	bigint,	bigint,	bigint,	smallint,	int # type
 % 3,	2,	2,	1,	3,	3 # length
-[ 333,	0,	-2,	1,	333,	109	]
 [ 222,	2,	1,	1,	333,	NULL	]
 [ 222,	3,	-3,	4,	333,	126	]
 [ 333,	4,	1,	4,	444,	132	]
+[ 333,	0,	-2,	1,	333,	109	]
 [ 222,	5,	1,	2,	111,	135	]
 [ 222,	6,	1,	2,	111,	144	]
 [ 444,	7,	NULL,	2,	555,	146	]
@@ -18071,10 +18071,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	int,	hugeint,	bigint,	bigint # type
 % 2,	3,	3,	1,	2 # length
 [ 1,	114,	NULL,	0,	-1	]
-[ 0,	108,	107,	0,	-2	]
 [ 2,	122,	NULL,	0,	1	]
 [ 3,	128,	127,	0,	-3	]
 [ 4,	133,	132,	0,	1	]
+[ 0,	108,	107,	0,	-2	]
 [ 5,	136,	137,	0,	1	]
 [ 6,	140,	142,	0,	1	]
 [ 9,	NULL,	NULL,	0,	NULL	]
@@ -18144,10 +18144,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	int,	hugeint,	bigint,	bigint # type
 % 2,	3,	3,	1,	2 # length
 [ 1,	114,	NULL,	0,	-1	]
-[ 0,	108,	107,	0,	-2	]
 [ 2,	122,	NULL,	0,	1	]
 [ 3,	128,	127,	0,	-3	]
 [ 4,	133,	132,	0,	1	]
+[ 0,	108,	107,	0,	-2	]
 [ 5,	136,	137,	0,	1	]
 [ 6,	140,	142,	0,	1	]
 [ 9,	NULL,	NULL,	0,	NULL	]
@@ -18260,8 +18260,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % a,	L3,	L7 # name
 % int,	hugeint,	bigint # type
 % 3,	4,	2 # length
-[ 107,	635,	0	]
 [ 131,	793,	4	]
+[ 107,	635,	0	]
 [ 149,	880,	7	]
 [ 153,	905,	8	]
 [ 159,	940,	9	]
@@ -19789,12 +19789,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	bigint,	int,	bigint,	bigint,	bigint # type
 % 3,	2,	3,	2,	4,	2 # length
 [ 114,	-1,	113,	1,	1120,	NULL	]
-[ 101,	1,	102,	0,	NULL,	NULL	]
-[ 108,	-2,	106,	0,	1050,	2	]
 [ 122,	1,	123,	2,	1240,	-3	]
 [ 128,	-3,	125,	3,	1290,	-2	]
-[ 116,	3,	119,	0,	NULL,	NULL	]
 [ 133,	1,	134,	4,	1300,	1	]
+[ 116,	3,	119,	0,	NULL,	NULL	]
+[ 101,	1,	102,	0,	NULL,	NULL	]
+[ 108,	-2,	106,	0,	1050,	2	]
 [ 136,	1,	137,	5,	1390,	-1	]
 [ 140,	1,	141,	6,	1430,	-1	]
 [ NULL,	NULL,	147,	7,	1450,	4	]
@@ -21970,9 +21970,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	d,	L5,	L11,	L13 # name
 % bigint,	int,	hugeint,	bigint,	hugeint # type
 % 1,	3,	4,	2,	4 # length
+[ 4,	133,	1985,	4,	1325	]
 [ NULL,	101,	NULL,	0,	NULL	]
 [ 1,	108,	1612,	0,	1067	]
-[ 4,	133,	1985,	4,	1325	]
 [ 2,	136,	2046,	5,	1371	]
 [ 2,	140,	2131,	6,	1411	]
 [ 3,	NULL,	NULL,	9,	NULL	]
@@ -22043,9 +22043,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	d,	L5,	L11,	L13 # name
 % bigint,	int,	hugeint,	bigint,	hugeint # type
 % 1,	3,	4,	2,	4 # length
+[ 4,	133,	1985,	4,	1325	]
 [ NULL,	101,	NULL,	0,	NULL	]
 [ 1,	108,	1612,	0,	1067	]
-[ 4,	133,	1985,	4,	1325	]
 [ 2,	136,	2046,	5,	1371	]
 [ 2,	140,	2131,	6,	1411	]
 [ 3,	NULL,	NULL,	9,	NULL	]
@@ -22116,9 +22116,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	d,	L5,	L11,	L13 # name
 % bigint,	int,	hugeint,	bigint,	hugeint # type
 % 1,	3,	4,	2,	4 # length
+[ 4,	133,	1985,	4,	1325	]
 [ NULL,	101,	NULL,	0,	NULL	]
 [ 1,	108,	1612,	0,	1067	]
-[ 4,	133,	1985,	4,	1325	]
 [ 2,	136,	2046,	5,	1371	]
 [ 2,	140,	2131,	6,	1411	]
 [ 3,	NULL,	NULL,	9,	NULL	]
@@ -23055,9 +23055,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	int,	bigint,	bigint # type
 % 4,	3,	2,	2 # length
 [ NULL,	114,	-1,	1	]
-[ 635,	108,	-1,	0	]
 [ 738,	122,	1,	2	]
 [ 793,	133,	-4,	4	]
+[ 635,	108,	-1,	0	]
 [ 827,	136,	2,	5	]
 [ 851,	140,	2,	6	]
 [ 966,	164,	-1,	10	]
@@ -23233,9 +23233,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L4,	L6,	L10,	L12,	L14 # name
 % bigint,	bigint,	hugeint,	hugeint,	bigint # type
 % 2,	1,	3,	4,	2 # length
+[ 4,	4,	132,	1325,	1	]
 [ 0,	NULL,	NULL,	NULL,	NULL	]
 [ 0,	1,	107,	1067,	-1	]
-[ 4,	4,	132,	1325,	1	]
 [ 5,	2,	137,	1371,	1	]
 [ 6,	2,	142,	1411,	-4	]
 [ 9,	3,	NULL,	NULL,	NULL	]
@@ -23304,9 +23304,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L4,	L6,	L10,	L12,	L14 # name
 % bigint,	bigint,	hugeint,	hugeint,	bigint # type
 % 2,	1,	3,	4,	2 # length
+[ 4,	4,	132,	1325,	1	]
 [ 0,	NULL,	NULL,	NULL,	NULL	]
 [ 0,	1,	107,	1067,	-1	]
-[ 4,	4,	132,	1325,	1	]
 [ 5,	2,	137,	1371,	1	]
 [ 6,	2,	142,	1411,	-4	]
 [ 9,	3,	NULL,	NULL,	NULL	]
@@ -23636,8 +23636,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	d,	L7,	L11,	e # name
 % smallint,	int,	bigint,	hugeint,	int # type
 % 3,	3,	2,	3,	3 # length
-[ 333,	108,	0,	107,	109	]
 [ 222,	128,	3,	127,	126	]
+[ 333,	108,	0,	107,	109	]
 [ 444,	116,	0,	NULL,	117	]
 [ 444,	164,	10,	162,	162	]
 [ 333,	185,	15,	187,	189	]
@@ -25247,12 +25247,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % smallint,	int,	int,	hugeint,	bigint,	bigint # type
 % 3,	3,	3,	3,	2,	2 # length
 [ 555,	NULL,	114,	NULL,	1,	-1	]
-[ 555,	104,	101,	NULL,	0,	NULL	]
-[ 333,	107,	108,	107,	0,	-1	]
 [ 333,	121,	122,	NULL,	2,	1	]
 [ 333,	127,	128,	127,	3,	4	]
-[ 333,	115,	116,	NULL,	0,	NULL	]
 [ 444,	131,	133,	132,	4,	-4	]
+[ 333,	115,	116,	NULL,	0,	NULL	]
+[ 555,	104,	101,	NULL,	0,	NULL	]
+[ 333,	107,	108,	107,	0,	-1	]
 [ 111,	138,	136,	137,	5,	2	]
 [ 111,	142,	140,	142,	6,	2	]
 [ 555,	149,	NULL,	NULL,	7,	-2	]
@@ -25773,12 +25773,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint,	bigint,	int,	int # type
 % 4,	2,	2,	3,	3 # length
 [ NULL,	1,	4,	NULL,	112	]
-[ NULL,	0,	NULL,	104,	NULL	]
-[ 1612,	0,	-1,	107,	105	]
 [ NULL,	2,	NULL,	121,	124	]
 [ 1902,	3,	2,	127,	129	]
-[ NULL,	0,	-1,	115,	NULL	]
 [ 1985,	4,	1,	131,	130	]
+[ NULL,	0,	-1,	115,	NULL	]
+[ NULL,	0,	NULL,	104,	NULL	]
+[ 1612,	0,	-1,	107,	105	]
 [ 2046,	5,	1,	138,	139	]
 [ 2131,	6,	-4,	142,	143	]
 [ NULL,	7,	NULL,	149,	145	]
@@ -26838,10 +26838,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % a,	L5,	L11,	L13 # name
 % int,	bigint,	bigint,	hugeint # type
 % 3,	2,	1,	4 # length
-[ 104,	0,	0,	NULL	]
 [ 121,	2,	0,	1226	]
-[ 115,	0,	0,	NULL	]
 [ 131,	4,	0,	1325	]
+[ 104,	0,	0,	NULL	]
+[ 115,	0,	0,	NULL	]
 [ 138,	5,	0,	1371	]
 [ 142,	6,	0,	1411	]
 [ 174,	12,	0,	1714	]
@@ -27850,10 +27850,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L6,	L10,	L12,	L14,	e # name
 % bigint,	bigint,	bigint,	int,	bigint,	int # type
 % 2,	2,	2,	3,	2,	3 # length
-[ NULL,	0,	NULL,	104,	NULL,	NULL	]
-[ -1,	0,	-1,	107,	2,	109	]
 [ 1,	2,	NULL,	121,	-3,	NULL	]
 [ 4,	3,	2,	127,	-2,	126	]
+[ NULL,	0,	NULL,	104,	NULL,	NULL	]
+[ -1,	0,	-1,	107,	2,	109	]
 [ 2,	5,	1,	138,	-1,	135	]
 [ 2,	6,	-4,	142,	-1,	144	]
 [ 1,	8,	NULL,	153,	2,	NULL	]
@@ -27929,10 +27929,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L6,	L10,	L12,	L14,	e # name
 % bigint,	bigint,	bigint,	int,	bigint,	int # type
 % 2,	2,	2,	3,	2,	3 # length
-[ NULL,	0,	NULL,	104,	NULL,	NULL	]
-[ -1,	0,	-1,	107,	2,	109	]
 [ 1,	2,	NULL,	121,	-3,	NULL	]
 [ 4,	3,	2,	127,	-2,	126	]
+[ NULL,	0,	NULL,	104,	NULL,	NULL	]
+[ -1,	0,	-1,	107,	2,	109	]
 [ 2,	5,	1,	138,	-1,	135	]
 [ 2,	6,	-4,	142,	-1,	144	]
 [ 1,	8,	NULL,	153,	2,	NULL	]
@@ -28008,10 +28008,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L6,	L10,	L12,	L14,	e # name
 % bigint,	bigint,	bigint,	int,	bigint,	int # type
 % 2,	2,	2,	3,	2,	3 # length
-[ NULL,	0,	NULL,	104,	NULL,	NULL	]
-[ -1,	0,	-1,	107,	2,	109	]
 [ 1,	2,	NULL,	121,	-3,	NULL	]
 [ 4,	3,	2,	127,	-2,	126	]
+[ NULL,	0,	NULL,	104,	NULL,	NULL	]
+[ -1,	0,	-1,	107,	2,	109	]
 [ 2,	5,	1,	138,	-1,	135	]
 [ 2,	6,	-4,	142,	-1,	144	]
 [ 1,	8,	NULL,	153,	2,	NULL	]
@@ -28603,12 +28603,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint # type
 % 4,	2 # length
 [ NULL,	1	]
-[ NULL,	0	]
-[ 1612,	0	]
 [ NULL,	2	]
 [ 1902,	3	]
-[ NULL,	0	]
 [ 1985,	4	]
+[ NULL,	0	]
+[ NULL,	0	]
+[ 1612,	0	]
 [ 2046,	5	]
 [ 2131,	6	]
 [ NULL,	7	]
@@ -30279,10 +30279,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	d,	L5,	L7,	L11,	L15 # name
 % int,	int,	hugeint,	smallint,	hugeint,	bigint # type
 % 3,	3,	3,	3,	4,	2 # length
-[ 107,	108,	107,	333,	1067,	0	]
 [ 121,	122,	NULL,	333,	1226,	2	]
 [ 127,	128,	127,	333,	1272,	3	]
 [ 131,	133,	132,	444,	1325,	4	]
+[ 107,	108,	107,	333,	1067,	0	]
 [ 138,	136,	137,	111,	1371,	5	]
 [ 142,	140,	142,	111,	1411,	6	]
 [ 149,	NULL,	NULL,	555,	NULL,	7	]
@@ -30360,10 +30360,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	d,	L5,	L7,	L11,	L15 # name
 % int,	int,	hugeint,	smallint,	hugeint,	bigint # type
 % 3,	3,	3,	3,	4,	2 # length
-[ 107,	108,	107,	333,	1067,	0	]
 [ 121,	122,	NULL,	333,	1226,	2	]
 [ 127,	128,	127,	333,	1272,	3	]
 [ 131,	133,	132,	444,	1325,	4	]
+[ 107,	108,	107,	333,	1067,	0	]
 [ 138,	136,	137,	111,	1371,	5	]
 [ 142,	140,	142,	111,	1411,	6	]
 [ 149,	NULL,	NULL,	555,	NULL,	7	]
@@ -30441,10 +30441,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	d,	L5,	L7,	L11,	L15 # name
 % int,	int,	hugeint,	smallint,	hugeint,	bigint # type
 % 3,	3,	3,	3,	4,	2 # length
-[ 107,	108,	107,	333,	1067,	0	]
 [ 121,	122,	NULL,	333,	1226,	2	]
 [ 127,	128,	127,	333,	1272,	3	]
 [ 131,	133,	132,	444,	1325,	4	]
+[ 107,	108,	107,	333,	1067,	0	]
 [ 138,	136,	137,	111,	1371,	5	]
 [ 142,	140,	142,	111,	1411,	6	]
 [ 149,	NULL,	NULL,	555,	NULL,	7	]
@@ -30780,12 +30780,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	int,	smallint,	hugeint,	bigint,	hugeint # type
 % 2,	3,	3,	3,	2,	4 # length
 [ 4,	NULL,	555,	NULL,	1,	NULL	]
-[ NULL,	104,	555,	NULL,	0,	NULL	]
-[ -1,	107,	333,	107,	0,	1067	]
 [ NULL,	121,	333,	NULL,	2,	1226	]
 [ 2,	127,	333,	127,	3,	1272	]
-[ -1,	115,	333,	NULL,	0,	NULL	]
 [ 1,	131,	444,	132,	4,	1325	]
+[ -1,	115,	333,	NULL,	0,	NULL	]
+[ NULL,	104,	555,	NULL,	0,	NULL	]
+[ -1,	107,	333,	107,	0,	1067	]
 [ 1,	138,	111,	137,	5,	1371	]
 [ -4,	142,	111,	142,	6,	1411	]
 [ NULL,	149,	555,	NULL,	7,	NULL	]
@@ -31956,12 +31956,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint,	hugeint,	int,	bigint,	bigint,	bigint # type
 % 4,	2,	4,	3,	2,	2,	1 # length
 [ NULL,	-1,	NULL,	114,	4,	1,	1	]
-[ NULL,	1,	NULL,	101,	NULL,	0,	NULL	]
-[ 1067,	-2,	635,	108,	-1,	0,	1	]
 [ 1226,	1,	738,	122,	NULL,	2,	1	]
 [ 1272,	-3,	760,	128,	2,	3,	4	]
-[ NULL,	3,	NULL,	116,	-1,	0,	NULL	]
 [ 1325,	1,	793,	133,	1,	4,	4	]
+[ NULL,	3,	NULL,	116,	-1,	0,	NULL	]
+[ NULL,	1,	NULL,	101,	NULL,	0,	NULL	]
+[ 1067,	-2,	635,	108,	-1,	0,	1	]
 [ 1371,	1,	827,	136,	1,	5,	2	]
 [ 1411,	1,	851,	140,	-4,	6,	2	]
 [ NULL,	NULL,	880,	NULL,	NULL,	7,	2	]
@@ -33392,10 +33392,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	smallint,	int,	bigint # type
 % 3,	3,	3,	2 # length
 [ NULL,	555,	110,	1	]
-[ 107,	333,	109,	0	]
 [ 127,	333,	126,	3	]
-[ 115,	333,	117,	0	]
 [ 131,	444,	132,	4	]
+[ 107,	333,	109,	0	]
+[ 115,	333,	117,	0	]
 [ 138,	111,	135,	5	]
 [ 142,	111,	144,	6	]
 [ 159,	555,	157,	9	]
@@ -33467,10 +33467,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	smallint,	int,	bigint # type
 % 3,	3,	3,	2 # length
 [ NULL,	555,	110,	1	]
-[ 107,	333,	109,	0	]
 [ 127,	333,	126,	3	]
-[ 115,	333,	117,	0	]
 [ 131,	444,	132,	4	]
+[ 107,	333,	109,	0	]
+[ 115,	333,	117,	0	]
 [ 138,	111,	135,	5	]
 [ 142,	111,	144,	6	]
 [ 159,	555,	157,	9	]
@@ -33542,10 +33542,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	smallint,	int,	bigint # type
 % 3,	3,	3,	2 # length
 [ NULL,	555,	110,	1	]
-[ 107,	333,	109,	0	]
 [ 127,	333,	126,	3	]
-[ 115,	333,	117,	0	]
 [ 131,	444,	132,	4	]
+[ 107,	333,	109,	0	]
+[ 115,	333,	117,	0	]
 [ 138,	111,	135,	5	]
 [ 142,	111,	144,	6	]
 [ 159,	555,	157,	9	]
@@ -33617,10 +33617,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	smallint,	int,	bigint # type
 % 3,	3,	3,	2 # length
 [ NULL,	555,	110,	1	]
-[ 107,	333,	109,	0	]
 [ 127,	333,	126,	3	]
-[ 115,	333,	117,	0	]
 [ 131,	444,	132,	4	]
+[ 107,	333,	109,	0	]
+[ 115,	333,	117,	0	]
 [ 138,	111,	135,	5	]
 [ 142,	111,	144,	6	]
 [ 159,	555,	157,	9	]
@@ -34980,8 +34980,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L4,	L10,	L12,	L14,	L16 # name
 % bigint,	int,	bigint,	smallint,	smallint,	bigint # type
 % 3,	3,	2,	3,	3,	2 # length
-[ 317,	107,	0,	333,	333,	2	]
 [ 385,	127,	3,	333,	222,	-2	]
+[ 317,	107,	0,	333,	333,	2	]
 [ NULL,	115,	0,	333,	444,	NULL	]
 [ 483,	163,	10,	333,	444,	3	]
 [ 560,	188,	15,	444,	333,	2	]
@@ -35031,12 +35031,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	smallint,	hugeint,	int,	bigint,	bigint,	bigint # type
 % 2,	3,	4,	3,	2,	2,	2 # length
 [ -1,	444,	NULL,	112,	NULL,	1,	4	]
-[ 1,	444,	NULL,	NULL,	NULL,	0,	NULL	]
-[ -2,	333,	1067,	105,	2,	0,	-1	]
 [ 1,	222,	1226,	124,	-3,	2,	NULL	]
 [ -3,	222,	1272,	129,	-2,	3,	2	]
-[ 3,	444,	NULL,	NULL,	NULL,	0,	-1	]
 [ 1,	333,	1325,	130,	1,	4,	1	]
+[ 3,	444,	NULL,	NULL,	NULL,	0,	-1	]
+[ 1,	444,	NULL,	NULL,	NULL,	0,	NULL	]
+[ -2,	333,	1067,	105,	2,	0,	-1	]
 [ 1,	222,	1371,	139,	-1,	5,	1	]
 [ 1,	222,	1411,	143,	-1,	6,	-4	]
 [ NULL,	444,	NULL,	145,	4,	7,	NULL	]
@@ -36577,10 +36577,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L4,	L6,	c,	L11,	L13,	L15,	L24 # name
 % bigint,	bigint,	int,	bigint,	bigint,	bigint,	bigint # type
 % 2,	3,	3,	2,	2,	2,	4 # length
-[ 0,	317,	106,	-1,	-1,	-2,	1050	]
 [ 3,	385,	125,	4,	2,	-3,	1290	]
-[ 0,	NULL,	119,	NULL,	-1,	3,	NULL	]
 [ 4,	391,	134,	-4,	1,	1,	1300	]
+[ 0,	317,	106,	-1,	-1,	-2,	1050	]
+[ 0,	NULL,	119,	NULL,	-1,	3,	NULL	]
 [ 5,	416,	137,	2,	1,	1,	1390	]
 [ 6,	428,	141,	2,	-4,	1,	1430	]
 [ 7,	439,	147,	-2,	NULL,	NULL,	1450	]
@@ -36658,10 +36658,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L4,	L6,	c,	L11,	L13,	L15,	L24 # name
 % bigint,	bigint,	int,	bigint,	bigint,	bigint,	bigint # type
 % 2,	3,	3,	2,	2,	2,	4 # length
-[ 0,	317,	106,	-1,	-1,	-2,	1050	]
 [ 3,	385,	125,	4,	2,	-3,	1290	]
-[ 0,	NULL,	119,	NULL,	-1,	3,	NULL	]
 [ 4,	391,	134,	-4,	1,	1,	1300	]
+[ 0,	317,	106,	-1,	-1,	-2,	1050	]
+[ 0,	NULL,	119,	NULL,	-1,	3,	NULL	]
 [ 5,	416,	137,	2,	1,	1,	1390	]
 [ 6,	428,	141,	2,	-4,	1,	1430	]
 [ 7,	439,	147,	-2,	NULL,	NULL,	1450	]
@@ -36739,10 +36739,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L4,	L6,	c,	L11,	L13,	L15,	L24 # name
 % bigint,	bigint,	int,	bigint,	bigint,	bigint,	bigint # type
 % 2,	3,	3,	2,	2,	2,	4 # length
-[ 0,	317,	106,	-1,	-1,	-2,	1050	]
 [ 3,	385,	125,	4,	2,	-3,	1290	]
-[ 0,	NULL,	119,	NULL,	-1,	3,	NULL	]
 [ 4,	391,	134,	-4,	1,	1,	1300	]
+[ 0,	317,	106,	-1,	-1,	-2,	1050	]
+[ 0,	NULL,	119,	NULL,	-1,	3,	NULL	]
 [ 5,	416,	137,	2,	1,	1,	1390	]
 [ 6,	428,	141,	2,	-4,	1,	1430	]
 [ 7,	439,	147,	-2,	NULL,	NULL,	1450	]
@@ -36820,10 +36820,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L4,	L6,	c,	L11,	L13,	L15,	L24 # name
 % bigint,	bigint,	int,	bigint,	bigint,	bigint,	bigint # type
 % 2,	3,	3,	2,	2,	2,	4 # length
-[ 0,	317,	106,	-1,	-1,	-2,	1050	]
 [ 3,	385,	125,	4,	2,	-3,	1290	]
-[ 0,	NULL,	119,	NULL,	-1,	3,	NULL	]
 [ 4,	391,	134,	-4,	1,	1,	1300	]
+[ 0,	317,	106,	-1,	-1,	-2,	1050	]
+[ 0,	NULL,	119,	NULL,	-1,	3,	NULL	]
 [ 5,	416,	137,	2,	1,	1,	1390	]
 [ 6,	428,	141,	2,	-4,	1,	1430	]
 [ 7,	439,	147,	-2,	NULL,	NULL,	1450	]
@@ -37351,11 +37351,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L6,	L12,	L14,	L20,	L22,	L24 # name
 % bigint,	bigint,	smallint,	bigint,	bigint,	bigint # type
 % 4,	2,	3,	1,	2,	2 # length
-[ 1050,	0,	333,	0,	-2,	-1	]
 [ 1240,	2,	333,	0,	1,	NULL	]
 [ 1290,	3,	333,	0,	-3,	2	]
-[ NULL,	0,	333,	0,	3,	-1	]
 [ 1300,	4,	444,	0,	1,	1	]
+[ 1050,	0,	333,	0,	-2,	-1	]
+[ NULL,	0,	333,	0,	3,	-1	]
 [ 1390,	5,	111,	0,	1,	1	]
 [ 1430,	6,	111,	0,	1,	-4	]
 [ 1510,	8,	555,	0,	NULL,	NULL	]
@@ -37426,11 +37426,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L6,	L12,	L14,	L20,	L22,	L24 # name
 % bigint,	bigint,	smallint,	bigint,	bigint,	bigint # type
 % 4,	2,	3,	1,	2,	2 # length
-[ 1050,	0,	333,	0,	-2,	-1	]
 [ 1240,	2,	333,	0,	1,	NULL	]
 [ 1290,	3,	333,	0,	-3,	2	]
-[ NULL,	0,	333,	0,	3,	-1	]
 [ 1300,	4,	444,	0,	1,	1	]
+[ 1050,	0,	333,	0,	-2,	-1	]
+[ NULL,	0,	333,	0,	3,	-1	]
 [ 1390,	5,	111,	0,	1,	1	]
 [ 1430,	6,	111,	0,	1,	-4	]
 [ 1510,	8,	555,	0,	NULL,	NULL	]
@@ -37501,11 +37501,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L6,	L12,	L14,	L20,	L22,	L24 # name
 % bigint,	bigint,	smallint,	bigint,	bigint,	bigint # type
 % 4,	2,	3,	1,	2,	2 # length
-[ 1050,	0,	333,	0,	-2,	-1	]
 [ 1240,	2,	333,	0,	1,	NULL	]
 [ 1290,	3,	333,	0,	-3,	2	]
-[ NULL,	0,	333,	0,	3,	-1	]
 [ 1300,	4,	444,	0,	1,	1	]
+[ 1050,	0,	333,	0,	-2,	-1	]
+[ NULL,	0,	333,	0,	3,	-1	]
 [ 1390,	5,	111,	0,	1,	1	]
 [ 1430,	6,	111,	0,	1,	-4	]
 [ 1510,	8,	555,	0,	NULL,	NULL	]
@@ -37947,12 +37947,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	hugeint,	bigint,	bigint,	int # type
 % 4,	3,	2,	2,	3 # length
 [ NULL,	NULL,	1,	-1,	NULL	]
-[ NULL,	NULL,	0,	NULL,	104	]
-[ 1067,	107,	0,	-1,	107	]
 [ 1226,	NULL,	2,	1,	121	]
 [ 1272,	127,	3,	4,	127	]
-[ NULL,	NULL,	0,	NULL,	115	]
 [ 1325,	132,	4,	-4,	131	]
+[ NULL,	NULL,	0,	NULL,	115	]
+[ NULL,	NULL,	0,	NULL,	104	]
+[ 1067,	107,	0,	-1,	107	]
 [ 1371,	137,	5,	2,	138	]
 [ 1411,	142,	6,	2,	142	]
 [ NULL,	NULL,	7,	-2,	149	]
@@ -39076,9 +39076,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	bigint,	smallint,	int,	bigint # type
 % 3,	2,	3,	3,	3 # length
 [ 113,	1,	555,	NULL,	NULL	]
-[ 106,	0,	333,	107,	317	]
 [ 123,	2,	333,	121,	369	]
 [ 134,	4,	444,	131,	391	]
+[ 106,	0,	333,	107,	317	]
 [ 137,	5,	111,	138,	416	]
 [ 141,	6,	111,	142,	428	]
 [ 161,	10,	333,	163,	483	]
@@ -41370,12 +41370,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint # type
 % 2,	1 # length
 [ 1,	1	]
-[ 0,	NULL	]
-[ 0,	1	]
 [ 2,	1	]
 [ 3,	4	]
-[ 0,	NULL	]
 [ 4,	4	]
+[ 0,	NULL	]
+[ 0,	NULL	]
+[ 0,	1	]
 [ 5,	2	]
 [ 6,	2	]
 [ 7,	2	]
@@ -44758,12 +44758,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	bigint,	smallint,	hugeint,	bigint,	bigint,	int # type
 % 3,	2,	3,	3,	4,	2,	3 # length
 [ 112,	-1,	444,	NULL,	1120,	1,	NULL	]
-[ NULL,	1,	444,	NULL,	NULL,	0,	104	]
-[ 105,	-2,	333,	107,	1050,	0,	107	]
 [ 124,	1,	222,	NULL,	1240,	2,	121	]
 [ 129,	-3,	222,	127,	1290,	3,	127	]
-[ NULL,	3,	444,	NULL,	NULL,	0,	115	]
 [ 130,	1,	333,	132,	1300,	4,	131	]
+[ NULL,	3,	444,	NULL,	NULL,	0,	115	]
+[ NULL,	1,	444,	NULL,	NULL,	0,	104	]
+[ 105,	-2,	333,	107,	1050,	0,	107	]
 [ 139,	1,	222,	137,	1390,	5,	138	]
 [ 143,	1,	222,	142,	1430,	6,	142	]
 [ 145,	NULL,	444,	NULL,	1450,	7,	149	]
@@ -47149,12 +47149,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	hugeint,	bigint,	bigint,	bigint,	bigint,	int # type
 % 3,	3,	2,	2,	1,	2,	3 # length
 [ 113,	NULL,	-1,	NULL,	1,	1,	NULL	]
-[ 102,	NULL,	1,	NULL,	NULL,	0,	104	]
-[ 106,	107,	-2,	2,	1,	0,	107	]
 [ 123,	NULL,	1,	-3,	1,	2,	121	]
 [ 125,	127,	-3,	-2,	4,	3,	127	]
-[ 119,	NULL,	3,	NULL,	NULL,	0,	115	]
 [ 134,	132,	1,	1,	4,	4,	131	]
+[ 119,	NULL,	3,	NULL,	NULL,	0,	115	]
+[ 102,	NULL,	1,	NULL,	NULL,	0,	104	]
+[ 106,	107,	-2,	2,	1,	0,	107	]
 [ 137,	137,	1,	-1,	2,	5,	138	]
 [ 141,	142,	1,	-1,	2,	6,	142	]
 [ 147,	NULL,	NULL,	4,	2,	7,	149	]
@@ -47233,12 +47233,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	bigint,	hugeint # type
 % 2,	2,	2,	4 # length
 [ NULL,	-1,	1,	NULL	]
-[ NULL,	1,	0,	NULL	]
-[ 2,	-2,	0,	635	]
 [ -3,	1,	2,	738	]
 [ -2,	-3,	3,	760	]
-[ NULL,	3,	0,	NULL	]
 [ 1,	1,	4,	793	]
+[ NULL,	3,	0,	NULL	]
+[ NULL,	1,	0,	NULL	]
+[ 2,	-2,	0,	635	]
 [ -1,	1,	5,	827	]
 [ -1,	1,	6,	851	]
 [ 4,	NULL,	7,	880	]
@@ -47273,8 +47273,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L4,	L10,	L12 # name
 % bigint,	bigint,	bigint,	hugeint # type
 % 2,	2,	2,	4 # length
-[ NULL,	1,	0,	NULL	]
 [ NULL,	3,	0,	NULL	]
+[ NULL,	1,	0,	NULL	]
 [ NULL,	-1,	0,	NULL	]
 [ NULL,	-1,	1,	NULL	]
 [ NULL,	1,	18,	NULL	]
@@ -47927,10 +47927,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	int,	bigint,	bigint,	bigint,	bigint,	hugeint # type
 % 3,	3,	2,	1,	2,	4,	4 # length
 [ 110,	NULL,	1,	0,	-1,	1120,	NULL	]
-[ 109,	107,	0,	0,	-1,	1050,	1612	]
 [ NULL,	121,	2,	0,	1,	1240,	NULL	]
 [ 126,	127,	3,	0,	4,	1290,	1902	]
 [ 132,	131,	4,	0,	-4,	1300,	1985	]
+[ 109,	107,	0,	0,	-1,	1050,	1612	]
 [ 135,	138,	5,	0,	2,	1390,	2046	]
 [ 144,	142,	6,	0,	2,	1430,	2131	]
 [ NULL,	153,	8,	0,	1,	1510,	NULL	]
@@ -48010,10 +48010,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	int,	bigint,	bigint,	bigint,	bigint,	hugeint # type
 % 3,	3,	2,	1,	2,	4,	4 # length
 [ 110,	NULL,	1,	0,	-1,	1120,	NULL	]
-[ 109,	107,	0,	0,	-1,	1050,	1612	]
 [ NULL,	121,	2,	0,	1,	1240,	NULL	]
 [ 126,	127,	3,	0,	4,	1290,	1902	]
 [ 132,	131,	4,	0,	-4,	1300,	1985	]
+[ 109,	107,	0,	0,	-1,	1050,	1612	]
 [ 135,	138,	5,	0,	2,	1390,	2046	]
 [ 144,	142,	6,	0,	2,	1430,	2131	]
 [ NULL,	153,	8,	0,	1,	1510,	NULL	]
@@ -48093,10 +48093,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	int,	bigint,	bigint,	bigint,	bigint,	hugeint # type
 % 3,	3,	2,	1,	2,	4,	4 # length
 [ 110,	NULL,	1,	0,	-1,	1120,	NULL	]
-[ 109,	107,	0,	0,	-1,	1050,	1612	]
 [ NULL,	121,	2,	0,	1,	1240,	NULL	]
 [ 126,	127,	3,	0,	4,	1290,	1902	]
 [ 132,	131,	4,	0,	-4,	1300,	1985	]
+[ 109,	107,	0,	0,	-1,	1050,	1612	]
 [ 135,	138,	5,	0,	2,	1390,	2046	]
 [ 144,	142,	6,	0,	2,	1430,	2131	]
 [ NULL,	153,	8,	0,	1,	1510,	NULL	]
@@ -48176,10 +48176,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	int,	bigint,	bigint,	bigint,	bigint,	hugeint # type
 % 3,	3,	2,	1,	2,	4,	4 # length
 [ 110,	NULL,	1,	0,	-1,	1120,	NULL	]
-[ 109,	107,	0,	0,	-1,	1050,	1612	]
 [ NULL,	121,	2,	0,	1,	1240,	NULL	]
 [ 126,	127,	3,	0,	4,	1290,	1902	]
 [ 132,	131,	4,	0,	-4,	1300,	1985	]
+[ 109,	107,	0,	0,	-1,	1050,	1612	]
 [ 135,	138,	5,	0,	2,	1390,	2046	]
 [ 144,	142,	6,	0,	2,	1430,	2131	]
 [ NULL,	153,	8,	0,	1,	1510,	NULL	]
@@ -49065,9 +49065,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L6,	L15,	L17 # name
 % bigint,	bigint,	bigint,	smallint # type
 % 2,	2,	4,	3 # length
+[ -3,	3,	1290,	333	]
 [ 1,	0,	NULL,	555	]
 [ -2,	0,	1050,	333	]
-[ -3,	3,	1290,	333	]
 [ -3,	10,	1600,	333	]
 [ 1,	12,	1700,	555	]
 [ 1,	14,	364,	333	]
@@ -49128,9 +49128,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L6,	L15,	L17 # name
 % bigint,	bigint,	bigint,	smallint # type
 % 2,	2,	4,	3 # length
+[ -3,	3,	1290,	333	]
 [ 1,	0,	NULL,	555	]
 [ -2,	0,	1050,	333	]
-[ -3,	3,	1290,	333	]
 [ -3,	10,	1600,	333	]
 [ 1,	12,	1700,	555	]
 [ 1,	14,	364,	333	]
@@ -49268,12 +49268,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	bigint,	int,	bigint,	hugeint,	hugeint # type
 % 3,	1,	3,	2,	4,	4 # length
 [ 113,	0,	NULL,	1,	NULL,	NULL	]
-[ 102,	0,	104,	0,	NULL,	NULL	]
-[ 106,	0,	107,	0,	1067,	635	]
 [ 123,	0,	121,	2,	1226,	738	]
 [ 125,	0,	127,	3,	1272,	760	]
-[ 119,	0,	115,	0,	NULL,	NULL	]
 [ 134,	0,	131,	4,	1325,	793	]
+[ 119,	0,	115,	0,	NULL,	NULL	]
+[ 102,	0,	104,	0,	NULL,	NULL	]
+[ 106,	0,	107,	0,	1067,	635	]
 [ 137,	0,	138,	5,	1371,	827	]
 [ 141,	0,	142,	6,	1411,	851	]
 [ 147,	0,	149,	7,	NULL,	880	]
@@ -51051,9 +51051,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	bigint,	hugeint # type
 % 2,	2,	2,	4 # length
 [ 1,	-1,	-1,	NULL	]
-[ 0,	-1,	-2,	1067	]
 [ 3,	4,	-3,	1272	]
 [ 4,	-4,	1,	1325	]
+[ 0,	-1,	-2,	1067	]
 [ 5,	2,	1,	1371	]
 [ 6,	2,	1,	1411	]
 [ 9,	3,	NULL,	NULL	]
@@ -51115,12 +51115,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % smallint,	int,	bigint # type
 % 3,	3,	2 # length
 [ 555,	NULL,	1	]
-[ 555,	104,	0	]
-[ 333,	107,	0	]
 [ 333,	121,	2	]
 [ 333,	127,	3	]
-[ 333,	115,	0	]
 [ 444,	131,	4	]
+[ 333,	115,	0	]
+[ 555,	104,	0	]
+[ 333,	107,	0	]
 [ 111,	138,	5	]
 [ 111,	142,	6	]
 [ 555,	149,	7	]
@@ -51930,10 +51930,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	int,	smallint,	bigint # type
 % 2,	3,	3,	3,	2 # length
 [ 1,	NULL,	NULL,	555,	-1	]
-[ 0,	317,	107,	333,	-2	]
 [ 2,	369,	121,	333,	1	]
 [ 3,	385,	127,	333,	-3	]
 [ 4,	391,	131,	444,	1	]
+[ 0,	317,	107,	333,	-2	]
 [ 5,	416,	138,	111,	1	]
 [ 6,	428,	142,	111,	1	]
 [ 8,	455,	153,	555,	NULL	]
@@ -52005,10 +52005,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	int,	smallint,	bigint # type
 % 2,	3,	3,	3,	2 # length
 [ 1,	NULL,	NULL,	555,	-1	]
-[ 0,	317,	107,	333,	-2	]
 [ 2,	369,	121,	333,	1	]
 [ 3,	385,	127,	333,	-3	]
 [ 4,	391,	131,	444,	1	]
+[ 0,	317,	107,	333,	-2	]
 [ 5,	416,	138,	111,	1	]
 [ 6,	428,	142,	111,	1	]
 [ 8,	455,	153,	555,	NULL	]
@@ -52460,12 +52460,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	bigint,	smallint,	int,	int,	hugeint,	bigint # type
 % 3,	2,	3,	3,	3,	4,	3 # length
 [ 113,	1,	444,	NULL,	114,	NULL,	NULL	]
-[ 102,	0,	444,	104,	101,	NULL,	NULL	]
-[ 106,	0,	333,	107,	108,	1067,	317	]
 [ 123,	2,	222,	121,	122,	1226,	369	]
 [ 125,	3,	222,	127,	128,	1272,	385	]
-[ 119,	0,	444,	115,	116,	NULL,	NULL	]
 [ 134,	4,	333,	131,	133,	1325,	391	]
+[ 119,	0,	444,	115,	116,	NULL,	NULL	]
+[ 102,	0,	444,	104,	101,	NULL,	NULL	]
+[ 106,	0,	333,	107,	108,	1067,	317	]
 [ 137,	5,	222,	138,	136,	1371,	416	]
 [ 141,	6,	222,	142,	140,	1411,	428	]
 [ 147,	7,	444,	149,	NULL,	NULL,	439	]
@@ -54333,8 +54333,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	a,	L5,	L11,	L13,	c # name
 % hugeint,	int,	smallint,	bigint,	bigint,	int # type
 % 4,	3,	3,	2,	3,	3 # length
-[ 1612,	107,	333,	0,	317,	106	]
 [ 1902,	127,	333,	3,	385,	125	]
+[ 1612,	107,	333,	0,	317,	106	]
 [ NULL,	115,	333,	0,	NULL,	119	]
 [ 2432,	163,	333,	10,	483,	161	]
 [ 2806,	188,	444,	15,	560,	187	]
@@ -55467,12 +55467,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L4,	L6,	L10,	L17,	d,	L22 # name
 % bigint,	bigint,	smallint,	bigint,	int,	bigint # type
 % 2,	2,	3,	4,	3,	2 # length
-[ 0,	NULL,	444,	NULL,	101,	NULL	]
-[ 0,	2,	333,	1050,	108,	-1	]
 [ 2,	-3,	222,	1240,	122,	1	]
 [ 3,	-2,	222,	1290,	128,	4	]
-[ 0,	NULL,	444,	NULL,	116,	NULL	]
 [ 4,	1,	333,	1300,	133,	-4	]
+[ 0,	NULL,	444,	NULL,	116,	NULL	]
+[ 0,	NULL,	444,	NULL,	101,	NULL	]
+[ 0,	2,	333,	1050,	108,	-1	]
 [ 5,	-1,	222,	1390,	136,	2	]
 [ 6,	-1,	222,	1430,	140,	2	]
 [ 9,	1,	333,	1580,	NULL,	3	]
@@ -55544,12 +55544,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L4,	L6,	L10,	L17,	d,	L22 # name
 % bigint,	bigint,	smallint,	bigint,	int,	bigint # type
 % 2,	2,	3,	4,	3,	2 # length
-[ 0,	NULL,	444,	NULL,	101,	NULL	]
-[ 0,	2,	333,	1050,	108,	-1	]
 [ 2,	-3,	222,	1240,	122,	1	]
 [ 3,	-2,	222,	1290,	128,	4	]
-[ 0,	NULL,	444,	NULL,	116,	NULL	]
 [ 4,	1,	333,	1300,	133,	-4	]
+[ 0,	NULL,	444,	NULL,	116,	NULL	]
+[ 0,	NULL,	444,	NULL,	101,	NULL	]
+[ 0,	2,	333,	1050,	108,	-1	]
 [ 5,	-1,	222,	1390,	136,	2	]
 [ 6,	-1,	222,	1430,	140,	2	]
 [ 9,	1,	333,	1580,	NULL,	3	]
@@ -55621,12 +55621,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L4,	L6,	L10,	L17,	d,	L22 # name
 % bigint,	bigint,	smallint,	bigint,	int,	bigint # type
 % 2,	2,	3,	4,	3,	2 # length
-[ 0,	NULL,	444,	NULL,	101,	NULL	]
-[ 0,	2,	333,	1050,	108,	-1	]
 [ 2,	-3,	222,	1240,	122,	1	]
 [ 3,	-2,	222,	1290,	128,	4	]
-[ 0,	NULL,	444,	NULL,	116,	NULL	]
 [ 4,	1,	333,	1300,	133,	-4	]
+[ 0,	NULL,	444,	NULL,	116,	NULL	]
+[ 0,	NULL,	444,	NULL,	101,	NULL	]
+[ 0,	2,	333,	1050,	108,	-1	]
 [ 5,	-1,	222,	1390,	136,	2	]
 [ 6,	-1,	222,	1430,	140,	2	]
 [ 9,	1,	333,	1580,	NULL,	3	]
@@ -56195,12 +56195,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	int,	hugeint,	hugeint # type
 % 2,	2,	3,	4,	3 # length
 [ -1,	1,	NULL,	NULL,	NULL	]
-[ NULL,	0,	104,	NULL,	NULL	]
-[ -1,	0,	107,	1067,	107	]
 [ 1,	2,	121,	1226,	NULL	]
 [ 4,	3,	127,	1272,	127	]
-[ NULL,	0,	115,	NULL,	NULL	]
 [ -4,	4,	131,	1325,	132	]
+[ NULL,	0,	115,	NULL,	NULL	]
+[ NULL,	0,	104,	NULL,	NULL	]
+[ -1,	0,	107,	1067,	107	]
 [ 2,	5,	138,	1371,	137	]
 [ 2,	6,	142,	1411,	142	]
 [ -2,	7,	149,	NULL,	NULL	]
@@ -56236,8 +56236,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L6,	L10,	L12,	L14 # name
 % bigint,	bigint,	int,	hugeint,	hugeint # type
 % 2,	2,	3,	4,	3 # length
-[ NULL,	0,	104,	NULL,	NULL	]
 [ NULL,	0,	115,	NULL,	NULL	]
+[ NULL,	0,	104,	NULL,	NULL	]
 [ NULL,	0,	201,	NULL,	NULL	]
 [ NULL,	24,	239,	NULL,	NULL	]
 [ -4,	25,	243,	NULL,	NULL	]
@@ -58064,9 +58064,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L4,	L6,	c,	L11,	L13 # name
 % bigint,	bigint,	int,	smallint,	bigint # type
 % 2,	1,	3,	3,	2 # length
-[ 0,	1,	106,	333,	-2	]
 [ 2,	1,	123,	222,	1	]
 [ 3,	4,	125,	222,	-3	]
+[ 0,	1,	106,	333,	-2	]
 [ 0,	NULL,	119,	444,	3	]
 [ 5,	2,	137,	222,	1	]
 [ 6,	2,	141,	222,	1	]
@@ -58131,9 +58131,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L4,	L6,	c,	L11,	L13 # name
 % bigint,	bigint,	int,	smallint,	bigint # type
 % 2,	1,	3,	3,	2 # length
-[ 0,	1,	106,	333,	-2	]
 [ 2,	1,	123,	222,	1	]
 [ 3,	4,	125,	222,	-3	]
+[ 0,	1,	106,	333,	-2	]
 [ 0,	NULL,	119,	444,	3	]
 [ 5,	2,	137,	222,	1	]
 [ 6,	2,	141,	222,	1	]
@@ -58888,12 +58888,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	int,	smallint,	bigint,	int # type
 % 4,	3,	3,	2,	3 # length
 [ NULL,	113,	555,	1,	114	]
-[ NULL,	102,	555,	0,	101	]
-[ 1067,	106,	333,	0,	108	]
 [ 1226,	123,	333,	2,	122	]
 [ 1272,	125,	333,	3,	128	]
-[ NULL,	119,	333,	0,	116	]
 [ 1325,	134,	444,	4,	133	]
+[ NULL,	119,	333,	0,	116	]
+[ NULL,	102,	555,	0,	101	]
+[ 1067,	106,	333,	0,	108	]
 [ 1371,	137,	111,	5,	136	]
 [ 1411,	141,	111,	6,	140	]
 [ NULL,	147,	555,	7,	NULL	]
@@ -60401,10 +60401,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % c,	L5,	d # name
 % int,	bigint,	int # type
 % 3,	2,	3 # length
-[ 102,	0,	101	]
-[ 106,	0,	108	]
 [ 125,	3,	128	]
 [ 134,	4,	133	]
+[ 102,	0,	101	]
+[ 106,	0,	108	]
 [ 147,	7,	NULL	]
 [ 150,	8,	NULL	]
 [ 155,	9,	NULL	]
@@ -60476,10 +60476,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % c,	L5,	d # name
 % int,	bigint,	int # type
 % 3,	2,	3 # length
-[ 102,	0,	101	]
-[ 106,	0,	108	]
 [ 125,	3,	128	]
 [ 134,	4,	133	]
+[ 102,	0,	101	]
+[ 106,	0,	108	]
 [ 147,	7,	NULL	]
 [ 150,	8,	NULL	]
 [ 155,	9,	NULL	]
@@ -62507,12 +62507,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	int,	hugeint,	int # type
 % 2,	3,	4,	3 # length
 [ 1,	110,	NULL,	NULL	]
-[ 0,	NULL,	NULL,	104	]
-[ 0,	109,	1067,	107	]
 [ 2,	NULL,	1226,	121	]
 [ 3,	126,	1272,	127	]
-[ 0,	117,	NULL,	115	]
 [ 4,	132,	1325,	131	]
+[ 0,	117,	NULL,	115	]
+[ 0,	NULL,	NULL,	104	]
+[ 0,	109,	1067,	107	]
 [ 5,	135,	1371,	138	]
 [ 6,	144,	1411,	142	]
 [ 7,	146,	NULL,	149	]
@@ -63031,12 +63031,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	int,	bigint,	bigint # type
 % 2,	3,	2,	1 # length
 [ NULL,	113,	1,	0	]
-[ NULL,	102,	0,	0	]
-[ 2,	106,	0,	0	]
 [ -3,	123,	2,	0	]
 [ -2,	125,	3,	0	]
-[ NULL,	119,	0,	0	]
 [ 1,	134,	4,	0	]
+[ NULL,	119,	0,	0	]
+[ NULL,	102,	0,	0	]
+[ 2,	106,	0,	0	]
 [ -1,	137,	5,	0	]
 [ -1,	141,	6,	0	]
 [ 4,	147,	7,	0	]
@@ -63979,12 +63979,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	smallint,	bigint,	hugeint,	int # type
 % 2,	3,	2,	4,	3 # length
 [ 1,	444,	-1,	NULL,	112	]
-[ 0,	444,	NULL,	NULL,	NULL	]
-[ 0,	333,	-1,	1612,	105	]
 [ 2,	222,	1,	NULL,	124	]
 [ 3,	222,	4,	1902,	129	]
-[ 0,	444,	NULL,	NULL,	NULL	]
 [ 4,	333,	-4,	1985,	130	]
+[ 0,	444,	NULL,	NULL,	NULL	]
+[ 0,	444,	NULL,	NULL,	NULL	]
+[ 0,	333,	-1,	1612,	105	]
 [ 5,	222,	2,	2046,	139	]
 [ 6,	222,	2,	2131,	143	]
 [ 7,	444,	-2,	NULL,	145	]
@@ -64655,8 +64655,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L6,	a,	L11 # name
 % bigint,	bigint,	int,	hugeint # type
 % 1,	2,	3,	4 # length
-[ 1,	0,	107,	1067	]
 [ 4,	4,	131,	1325	]
+[ 1,	0,	107,	1067	]
 [ 2,	7,	149,	NULL	]
 [ 1,	8,	153,	NULL	]
 [ 3,	9,	159,	NULL	]
@@ -64828,12 +64828,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint # type
 % 4,	2 # length
 [ NULL,	1	]
-[ NULL,	0	]
-[ 635,	0	]
 [ 738,	2	]
 [ 760,	3	]
-[ NULL,	0	]
 [ 793,	4	]
+[ NULL,	0	]
+[ NULL,	0	]
+[ 635,	0	]
 [ 827,	5	]
 [ 851,	6	]
 [ 880,	7	]
@@ -66542,12 +66542,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	int,	int,	hugeint,	bigint # type
 % 2,	3,	3,	3,	4,	2 # length
 [ 1,	NULL,	114,	NULL,	NULL,	-1	]
-[ 0,	NULL,	101,	104,	NULL,	1	]
-[ 0,	317,	108,	107,	1067,	-2	]
 [ 2,	369,	122,	121,	1226,	1	]
 [ 3,	385,	128,	127,	1272,	-3	]
-[ 0,	NULL,	116,	115,	NULL,	3	]
 [ 4,	391,	133,	131,	1325,	1	]
+[ 0,	NULL,	116,	115,	NULL,	3	]
+[ 0,	NULL,	101,	104,	NULL,	1	]
+[ 0,	317,	108,	107,	1067,	-2	]
 [ 5,	416,	136,	138,	1371,	1	]
 [ 6,	428,	140,	142,	1411,	1	]
 [ 7,	439,	NULL,	149,	NULL,	NULL	]
@@ -67448,12 +67448,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	int,	bigint,	int,	bigint,	int,	hugeint # type
 % 3,	3,	2,	3,	2,	3,	4 # length
 [ 110,	113,	-1,	NULL,	1,	NULL,	NULL	]
-[ NULL,	102,	1,	104,	0,	104,	NULL	]
-[ 109,	106,	-2,	107,	0,	107,	1067	]
 [ NULL,	123,	1,	121,	2,	121,	1226	]
 [ 126,	125,	-3,	127,	3,	127,	1272	]
-[ 117,	119,	3,	115,	0,	115,	NULL	]
 [ 132,	134,	1,	131,	4,	131,	1325	]
+[ 117,	119,	3,	115,	0,	115,	NULL	]
+[ NULL,	102,	1,	104,	0,	104,	NULL	]
+[ 109,	106,	-2,	107,	0,	107,	1067	]
 [ 135,	137,	1,	138,	5,	138,	1371	]
 [ 144,	141,	1,	142,	6,	142,	1411	]
 [ 146,	147,	NULL,	149,	7,	149,	NULL	]
@@ -67535,12 +67535,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	bigint,	smallint,	bigint,	bigint # type
 % 3,	4,	2,	3,	2,	1 # length
 [ NULL,	1120,	1,	444,	-1,	0	]
-[ NULL,	NULL,	0,	444,	1,	0	]
-[ 317,	1050,	0,	333,	-2,	0	]
 [ 369,	1240,	2,	222,	1,	0	]
 [ 385,	1290,	3,	222,	-3,	0	]
-[ NULL,	NULL,	0,	444,	3,	0	]
 [ 391,	1300,	4,	333,	1,	0	]
+[ NULL,	NULL,	0,	444,	3,	0	]
+[ NULL,	NULL,	0,	444,	1,	0	]
+[ 317,	1050,	0,	333,	-2,	0	]
 [ 416,	1390,	5,	222,	1,	0	]
 [ 428,	1430,	6,	222,	1,	0	]
 [ 439,	1450,	7,	444,	NULL,	0	]
@@ -69191,12 +69191,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	bigint,	int # type
 % 3,	2,	3 # length
 [ 114,	1,	NULL	]
-[ 101,	0,	104	]
-[ 108,	0,	107	]
 [ 122,	2,	121	]
 [ 128,	3,	127	]
-[ 116,	0,	115	]
 [ 133,	4,	131	]
+[ 116,	0,	115	]
+[ 101,	0,	104	]
+[ 108,	0,	107	]
 [ 136,	5,	138	]
 [ 140,	6,	142	]
 [ NULL,	7,	149	]
@@ -69273,9 +69273,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	int,	hugeint,	int # type
 % 2,	3,	3,	3 # length
 [ 1,	112,	NULL,	110	]
-[ 0,	105,	107,	109	]
 [ 3,	129,	127,	126	]
 [ 4,	130,	132,	132	]
+[ 0,	105,	107,	109	]
 [ 5,	139,	137,	135	]
 [ 6,	143,	142,	144	]
 [ 9,	158,	NULL,	157	]
@@ -69340,9 +69340,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	int,	hugeint,	int # type
 % 2,	3,	3,	3 # length
 [ 1,	112,	NULL,	110	]
-[ 0,	105,	107,	109	]
 [ 3,	129,	127,	126	]
 [ 4,	130,	132,	132	]
+[ 0,	105,	107,	109	]
 [ 5,	139,	137,	135	]
 [ 6,	143,	142,	144	]
 [ 9,	158,	NULL,	157	]
@@ -69696,12 +69696,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	bigint,	smallint,	bigint,	hugeint # type
 % 3,	1,	3,	2,	4 # length
 [ NULL,	1,	555,	1,	NULL	]
-[ 104,	NULL,	555,	0,	NULL	]
-[ 107,	1,	333,	0,	1612	]
 [ 121,	1,	333,	2,	NULL	]
 [ 127,	4,	333,	3,	1902	]
-[ 115,	NULL,	333,	0,	NULL	]
 [ 131,	4,	444,	4,	1985	]
+[ 115,	NULL,	333,	0,	NULL	]
+[ 104,	NULL,	555,	0,	NULL	]
+[ 107,	1,	333,	0,	1612	]
 [ 138,	2,	111,	5,	2046	]
 [ 142,	2,	111,	6,	2131	]
 [ 149,	2,	555,	7,	NULL	]
@@ -69781,12 +69781,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	hugeint,	bigint,	int,	smallint # type
 % 2,	4,	2,	3,	3 # length
 [ -1,	NULL,	1,	113,	444	]
-[ 1,	NULL,	0,	102,	444	]
-[ -2,	1067,	0,	106,	333	]
 [ 1,	1226,	2,	123,	222	]
 [ -3,	1272,	3,	125,	222	]
-[ 3,	NULL,	0,	119,	444	]
 [ 1,	1325,	4,	134,	333	]
+[ 3,	NULL,	0,	119,	444	]
+[ 1,	NULL,	0,	102,	444	]
+[ -2,	1067,	0,	106,	333	]
 [ 1,	1371,	5,	137,	222	]
 [ 1,	1411,	6,	141,	222	]
 [ NULL,	NULL,	7,	147,	444	]
@@ -70017,9 +70017,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L4,	L6,	d,	L11,	L15,	L17 # name
 % smallint,	bigint,	bigint,	int,	hugeint,	bigint,	hugeint # type
 % 3,	2,	2,	3,	4,	2,	3 # length
+[ 222,	2,	4,	128,	1902,	3,	127	]
 [ 444,	NULL,	NULL,	101,	NULL,	0,	NULL	]
 [ 333,	-1,	-1,	108,	1612,	0,	107	]
-[ 222,	2,	4,	128,	1902,	3,	127	]
 [ 444,	2,	-1,	164,	2432,	10,	162	]
 [ 444,	-2,	-2,	171,	2579,	12,	172	]
 [ 333,	3,	-3,	183,	2728,	14,	182	]
@@ -70086,9 +70086,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L4,	L6,	d,	L11,	L15,	L17 # name
 % smallint,	bigint,	bigint,	int,	hugeint,	bigint,	hugeint # type
 % 3,	2,	2,	3,	4,	2,	3 # length
+[ 222,	2,	4,	128,	1902,	3,	127	]
 [ 444,	NULL,	NULL,	101,	NULL,	0,	NULL	]
 [ 333,	-1,	-1,	108,	1612,	0,	107	]
-[ 222,	2,	4,	128,	1902,	3,	127	]
 [ 444,	2,	-1,	164,	2432,	10,	162	]
 [ 444,	-2,	-2,	171,	2579,	12,	172	]
 [ 333,	3,	-3,	183,	2728,	14,	182	]
@@ -71107,12 +71107,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	hugeint,	int,	hugeint,	bigint,	int # type
 % 4,	4,	3,	4,	2,	3 # length
 [ 1120,	NULL,	112,	NULL,	1,	NULL	]
-[ NULL,	NULL,	NULL,	NULL,	0,	104	]
-[ 1050,	1612,	105,	635,	0,	107	]
 [ 1240,	NULL,	124,	738,	2,	121	]
 [ 1290,	1902,	129,	760,	3,	127	]
-[ NULL,	NULL,	NULL,	NULL,	0,	115	]
 [ 1300,	1985,	130,	793,	4,	131	]
+[ NULL,	NULL,	NULL,	NULL,	0,	115	]
+[ NULL,	NULL,	NULL,	NULL,	0,	104	]
+[ 1050,	1612,	105,	635,	0,	107	]
 [ 1390,	2046,	139,	827,	5,	138	]
 [ 1430,	2131,	143,	851,	6,	142	]
 [ 1450,	NULL,	145,	880,	7,	149	]
@@ -71149,8 +71149,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L6,	L10,	b,	L13,	L17,	L21 # name
 % bigint,	hugeint,	int,	hugeint,	bigint,	int # type
 % 4,	4,	3,	4,	2,	3 # length
-[ NULL,	NULL,	NULL,	NULL,	0,	104	]
 [ NULL,	NULL,	NULL,	NULL,	0,	115	]
+[ NULL,	NULL,	NULL,	NULL,	0,	104	]
 [ 402,	NULL,	NULL,	NULL,	0,	201	]
 [ 1050,	1612,	105,	635,	0,	107	]
 [ 1120,	NULL,	112,	NULL,	1,	NULL	]
@@ -71411,12 +71411,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	int,	int,	bigint,	int,	bigint,	hugeint # type
 % 4,	3,	3,	3,	3,	2,	3 # length
 [ NULL,	NULL,	114,	NULL,	NULL,	1,	NULL	]
-[ NULL,	104,	101,	NULL,	104,	0,	NULL	]
-[ 635,	107,	108,	317,	107,	0,	107	]
 [ 738,	121,	122,	369,	121,	2,	NULL	]
 [ 760,	127,	128,	385,	127,	3,	127	]
-[ NULL,	115,	116,	NULL,	115,	0,	NULL	]
 [ 793,	131,	133,	391,	131,	4,	132	]
+[ NULL,	115,	116,	NULL,	115,	0,	NULL	]
+[ NULL,	104,	101,	NULL,	104,	0,	NULL	]
+[ 635,	107,	108,	317,	107,	0,	107	]
 [ 827,	138,	136,	416,	138,	5,	137	]
 [ 851,	142,	140,	428,	142,	6,	142	]
 [ 880,	149,	NULL,	439,	149,	7,	NULL	]
@@ -71556,12 +71556,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	bigint,	bigint,	bigint,	int,	smallint,	bigint # type
 % 3,	2,	2,	1,	3,	3,	3 # length
 [ 113,	1,	-1,	1,	NULL,	555,	NULL	]
-[ 102,	0,	NULL,	NULL,	104,	555,	NULL	]
-[ 106,	0,	-1,	1,	107,	333,	317	]
 [ 123,	2,	1,	1,	121,	333,	369	]
 [ 125,	3,	4,	4,	127,	333,	385	]
-[ 119,	0,	NULL,	NULL,	115,	333,	NULL	]
 [ 134,	4,	-4,	4,	131,	444,	391	]
+[ 119,	0,	NULL,	NULL,	115,	333,	NULL	]
+[ 102,	0,	NULL,	NULL,	104,	555,	NULL	]
+[ 106,	0,	-1,	1,	107,	333,	317	]
 [ 137,	5,	2,	2,	138,	111,	416	]
 [ 141,	6,	2,	2,	142,	111,	428	]
 [ 147,	7,	-2,	2,	149,	555,	439	]
@@ -73288,12 +73288,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint,	hugeint # type
 % 4,	2,	4 # length
 [ NULL,	1,	NULL	]
-[ NULL,	0,	NULL	]
-[ 635,	0,	1067	]
 [ 738,	2,	1226	]
 [ 760,	3,	1272	]
-[ NULL,	0,	NULL	]
 [ 793,	4,	1325	]
+[ NULL,	0,	NULL	]
+[ NULL,	0,	NULL	]
+[ 635,	0,	1067	]
 [ 827,	5,	1371	]
 [ 851,	6,	1411	]
 [ 880,	7,	NULL	]
@@ -73802,8 +73802,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % e,	L5 # name
 % int,	bigint # type
 % 3,	2 # length
-[ 109,	0	]
 [ 132,	4	]
+[ 109,	0	]
 [ 146,	7	]
 [ NULL,	8	]
 [ 157,	9	]
@@ -73863,8 +73863,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % e,	L5 # name
 % int,	bigint # type
 % 3,	2 # length
-[ 109,	0	]
 [ 132,	4	]
+[ 109,	0	]
 [ 146,	7	]
 [ NULL,	8	]
 [ 157,	9	]
@@ -74160,8 +74160,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L4,	c,	L7,	a,	L12,	L16,	L20 # name
 % bigint,	int,	smallint,	int,	hugeint,	bigint,	int # type
 % 2,	3,	3,	3,	4,	1,	3 # length
-[ 0,	106,	333,	107,	1067,	0,	107	]
 [ 3,	125,	222,	127,	1272,	0,	127	]
+[ 0,	106,	333,	107,	1067,	0,	107	]
 [ 0,	119,	444,	115,	NULL,	0,	115	]
 [ 10,	161,	444,	163,	1622,	0,	163	]
 [ 15,	187,	333,	188,	1861,	0,	188	]
@@ -74946,10 +74946,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint,	smallint,	bigint # type
 % 4,	4,	3,	2 # length
 [ NULL,	1120,	555,	1	]
-[ 1612,	1050,	333,	0	]
 [ NULL,	1240,	333,	2	]
 [ 1902,	1290,	333,	3	]
 [ 1985,	1300,	444,	4	]
+[ 1612,	1050,	333,	0	]
 [ 2046,	1390,	111,	5	]
 [ 2131,	1430,	111,	6	]
 [ NULL,	1510,	555,	8	]
@@ -75023,10 +75023,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint,	smallint,	bigint # type
 % 4,	4,	3,	2 # length
 [ NULL,	1120,	555,	1	]
-[ 1612,	1050,	333,	0	]
 [ NULL,	1240,	333,	2	]
 [ 1902,	1290,	333,	3	]
 [ 1985,	1300,	444,	4	]
+[ 1612,	1050,	333,	0	]
 [ 2046,	1390,	111,	5	]
 [ 2131,	1430,	111,	6	]
 [ NULL,	1510,	555,	8	]
@@ -75100,10 +75100,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint,	smallint,	bigint # type
 % 4,	4,	3,	2 # length
 [ NULL,	1120,	555,	1	]
-[ 1612,	1050,	333,	0	]
 [ NULL,	1240,	333,	2	]
 [ 1902,	1290,	333,	3	]
 [ 1985,	1300,	444,	4	]
+[ 1612,	1050,	333,	0	]
 [ 2046,	1390,	111,	5	]
 [ 2131,	1430,	111,	6	]
 [ NULL,	1510,	555,	8	]
@@ -75381,12 +75381,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	hugeint,	bigint # type
 % 2,	2,	4,	2 # length
 [ -1,	1,	NULL,	-1	]
-[ 1,	0,	NULL,	NULL	]
-[ -2,	0,	1067,	-1	]
 [ 1,	2,	1226,	1	]
 [ -3,	3,	1272,	4	]
-[ 3,	0,	NULL,	NULL	]
 [ 1,	4,	1325,	-4	]
+[ 3,	0,	NULL,	NULL	]
+[ 1,	0,	NULL,	NULL	]
+[ -2,	0,	1067,	-1	]
 [ 1,	5,	1371,	2	]
 [ 1,	6,	1411,	2	]
 [ NULL,	7,	NULL,	-2	]
@@ -75750,12 +75750,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	hugeint,	smallint,	hugeint # type
 % 4,	2,	4,	3,	3 # length
 [ 1120,	1,	NULL,	444,	NULL	]
-[ NULL,	0,	NULL,	444,	NULL	]
-[ 1050,	0,	1612,	333,	107	]
 [ 1240,	2,	NULL,	222,	NULL	]
 [ 1290,	3,	1902,	222,	127	]
-[ NULL,	0,	NULL,	444,	NULL	]
 [ 1300,	4,	1985,	333,	132	]
+[ NULL,	0,	NULL,	444,	NULL	]
+[ NULL,	0,	NULL,	444,	NULL	]
+[ 1050,	0,	1612,	333,	107	]
 [ 1390,	5,	2046,	222,	137	]
 [ 1430,	6,	2131,	222,	142	]
 [ 1450,	7,	NULL,	444,	NULL	]
@@ -76048,10 +76048,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	int,	bigint,	bigint,	int # type
 % 2,	4,	3,	2,	1,	3 # length
 [ 1,	1120,	112,	4,	1,	114	]
-[ 0,	NULL,	NULL,	NULL,	NULL,	101	]
-[ 0,	1050,	105,	-1,	1,	108	]
 [ 2,	1240,	124,	NULL,	1,	122	]
 [ 4,	1300,	130,	1,	4,	133	]
+[ 0,	NULL,	NULL,	NULL,	NULL,	101	]
+[ 0,	1050,	105,	-1,	1,	108	]
 [ 5,	1390,	139,	1,	2,	136	]
 [ 6,	1430,	143,	-4,	2,	140	]
 [ 10,	1600,	160,	2,	1,	164	]
@@ -76121,10 +76121,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	int,	bigint,	bigint,	int # type
 % 2,	4,	3,	2,	1,	3 # length
 [ 1,	1120,	112,	4,	1,	114	]
-[ 0,	NULL,	NULL,	NULL,	NULL,	101	]
-[ 0,	1050,	105,	-1,	1,	108	]
 [ 2,	1240,	124,	NULL,	1,	122	]
 [ 4,	1300,	130,	1,	4,	133	]
+[ 0,	NULL,	NULL,	NULL,	NULL,	101	]
+[ 0,	1050,	105,	-1,	1,	108	]
 [ 5,	1390,	139,	1,	2,	136	]
 [ 6,	1430,	143,	-4,	2,	140	]
 [ 10,	1600,	160,	2,	1,	164	]
@@ -77263,12 +77263,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint,	hugeint,	bigint,	hugeint,	bigint # type
 % 3,	1,	4,	1,	4,	2 # length
 [ NULL,	0,	NULL,	1,	NULL,	1	]
-[ NULL,	0,	NULL,	NULL,	NULL,	0	]
-[ 107,	0,	1067,	1,	1612,	0	]
 [ NULL,	0,	1226,	1,	NULL,	2	]
 [ 127,	0,	1272,	4,	1902,	3	]
-[ NULL,	0,	NULL,	NULL,	NULL,	0	]
 [ 132,	0,	1325,	4,	1985,	4	]
+[ NULL,	0,	NULL,	NULL,	NULL,	0	]
+[ NULL,	0,	NULL,	NULL,	NULL,	0	]
+[ 107,	0,	1067,	1,	1612,	0	]
 [ 137,	0,	1371,	2,	2046,	5	]
 [ 142,	0,	1411,	2,	2131,	6	]
 [ NULL,	0,	NULL,	2,	NULL,	7	]
@@ -77496,12 +77496,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	int,	int,	int,	bigint,	bigint,	bigint # type
 % 2,	3,	3,	3,	1,	2,	4 # length
 [ -1,	110,	114,	NULL,	1,	1,	1120	]
-[ NULL,	NULL,	101,	104,	NULL,	0,	NULL	]
-[ -1,	109,	108,	107,	1,	0,	1050	]
 [ 1,	NULL,	122,	121,	1,	2,	1240	]
 [ 4,	126,	128,	127,	4,	3,	1290	]
-[ NULL,	117,	116,	115,	NULL,	0,	NULL	]
 [ -4,	132,	133,	131,	4,	4,	1300	]
+[ NULL,	117,	116,	115,	NULL,	0,	NULL	]
+[ NULL,	NULL,	101,	104,	NULL,	0,	NULL	]
+[ -1,	109,	108,	107,	1,	0,	1050	]
 [ 2,	135,	136,	138,	2,	5,	1390	]
 [ 2,	144,	140,	142,	2,	6,	1430	]
 [ -2,	146,	NULL,	149,	2,	7,	1450	]
@@ -79267,10 +79267,10 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L4,	L6,	L10,	L14 # name
 % int,	smallint,	hugeint,	hugeint,	bigint # type
 % 3,	3,	3,	4,	2 # length
-[ 104,	444,	NULL,	NULL,	0	]
 [ 121,	222,	NULL,	1226,	2	]
-[ 115,	444,	NULL,	NULL,	0	]
 [ 131,	333,	132,	1325,	4	]
+[ 104,	444,	NULL,	NULL,	0	]
+[ 115,	444,	NULL,	NULL,	0	]
 [ 138,	222,	137,	1371,	5	]
 [ 142,	222,	142,	1411,	6	]
 [ 174,	444,	172,	1714,	12	]
@@ -79436,11 +79436,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint # type
 % 4,	2 # length
 [ 1120,	1	]
-[ NULL,	0	]
-[ 1050,	0	]
 [ 1240,	2	]
 [ 1290,	3	]
 [ 1300,	4	]
+[ NULL,	0	]
+[ 1050,	0	]
 [ 1390,	5	]
 [ 1430,	6	]
 [ 1600,	10	]
@@ -79505,11 +79505,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint # type
 % 4,	2 # length
 [ 1120,	1	]
-[ NULL,	0	]
-[ 1050,	0	]
 [ 1240,	2	]
 [ 1290,	3	]
 [ 1300,	4	]
+[ NULL,	0	]
+[ 1050,	0	]
 [ 1390,	5	]
 [ 1430,	6	]
 [ 1600,	10	]
@@ -79574,11 +79574,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint # type
 % 4,	2 # length
 [ 1120,	1	]
-[ NULL,	0	]
-[ 1050,	0	]
 [ 1240,	2	]
 [ 1290,	3	]
 [ 1300,	4	]
+[ NULL,	0	]
+[ 1050,	0	]
 [ 1390,	5	]
 [ 1430,	6	]
 [ 1600,	10	]
@@ -80199,9 +80199,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint # type
 % 3,	2 # length
 [ NULL,	1	]
-[ 107,	0	]
 [ 127,	3	]
 [ 132,	4	]
+[ 107,	0	]
 [ 137,	5	]
 [ 142,	6	]
 [ NULL,	9	]
@@ -80268,9 +80268,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint # type
 % 3,	2 # length
 [ NULL,	1	]
-[ 107,	0	]
 [ 127,	3	]
 [ 132,	4	]
+[ 107,	0	]
 [ 137,	5	]
 [ 142,	6	]
 [ NULL,	9	]
@@ -80496,8 +80496,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	bigint,	bigint,	bigint,	smallint,	bigint,	bigint # type
 % 3,	2,	2,	1,	3,	2,	1 # length
 [ 112,	1,	NULL,	0,	555,	-1,	1	]
-[ 105,	0,	2,	0,	333,	-2,	1	]
 [ 130,	4,	1,	0,	444,	1,	4	]
+[ 105,	0,	2,	0,	333,	-2,	1	]
 [ 139,	5,	-1,	0,	111,	1,	2	]
 [ 143,	6,	-1,	0,	111,	1,	2	]
 [ 160,	10,	3,	0,	333,	-3,	1	]
@@ -80555,8 +80555,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	bigint,	bigint,	bigint,	smallint,	bigint,	bigint # type
 % 3,	2,	2,	1,	3,	2,	1 # length
 [ 112,	1,	NULL,	0,	555,	-1,	1	]
-[ 105,	0,	2,	0,	333,	-2,	1	]
 [ 130,	4,	1,	0,	444,	1,	4	]
+[ 105,	0,	2,	0,	333,	-2,	1	]
 [ 139,	5,	-1,	0,	111,	1,	2	]
 [ 143,	6,	-1,	0,	111,	1,	2	]
 [ 160,	10,	3,	0,	333,	-3,	1	]
@@ -80652,12 +80652,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	hugeint,	bigint,	bigint,	bigint # type
 % 3,	4,	2,	2,	2 # length
 [ NULL,	NULL,	4,	1,	NULL	]
-[ 104,	NULL,	NULL,	0,	NULL	]
-[ 107,	1612,	-1,	0,	2	]
 [ 121,	NULL,	NULL,	2,	-3	]
 [ 127,	1902,	2,	3,	-2	]
-[ 115,	NULL,	-1,	0,	NULL	]
 [ 131,	1985,	1,	4,	1	]
+[ 115,	NULL,	-1,	0,	NULL	]
+[ 104,	NULL,	NULL,	0,	NULL	]
+[ 107,	1612,	-1,	0,	2	]
 [ 138,	2046,	1,	5,	-1	]
 [ 142,	2131,	-4,	6,	-1	]
 [ 149,	NULL,	NULL,	7,	4	]
@@ -80851,11 +80851,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint # type
 % 2,	2 # length
 [ 1,	-1	]
-[ 0,	1	]
 [ 2,	1	]
 [ 3,	-3	]
-[ 0,	3	]
 [ 4,	1	]
+[ 0,	3	]
+[ 0,	1	]
 [ 5,	1	]
 [ 6,	1	]
 [ 10,	-3	]
@@ -80910,11 +80910,11 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint # type
 % 2,	2 # length
 [ 1,	-1	]
-[ 0,	1	]
 [ 2,	1	]
 [ 3,	-3	]
-[ 0,	3	]
 [ 4,	1	]
+[ 0,	3	]
+[ 0,	1	]
 [ 5,	1	]
 [ 6,	1	]
 [ 10,	-3	]
@@ -81556,12 +81556,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % smallint,	bigint,	int,	bigint,	bigint,	int,	bigint # type
 % 3,	1,	3,	2,	2,	3,	4 # length
 [ 444,	0,	113,	4,	1,	112,	1120	]
-[ 444,	0,	102,	NULL,	0,	NULL,	NULL	]
-[ 333,	0,	106,	-1,	0,	105,	1050	]
 [ 222,	0,	123,	NULL,	2,	124,	1240	]
 [ 222,	0,	125,	2,	3,	129,	1290	]
-[ 444,	0,	119,	-1,	0,	NULL,	NULL	]
 [ 333,	0,	134,	1,	4,	130,	1300	]
+[ 444,	0,	119,	-1,	0,	NULL,	NULL	]
+[ 444,	0,	102,	NULL,	0,	NULL,	NULL	]
+[ 333,	0,	106,	-1,	0,	105,	1050	]
 [ 222,	0,	137,	1,	5,	139,	1390	]
 [ 222,	0,	141,	-4,	6,	143,	1430	]
 [ 444,	0,	147,	NULL,	7,	145,	1450	]
@@ -81614,8 +81614,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 [ 444,	0,	172,	-2,	12,	170,	1700	]
 [ 222,	0,	193,	-2,	16,	194,	382	]
 [ 222,	0,	215,	-2,	20,	218,	432	]
-[ 333,	0,	106,	-1,	0,	105,	1050	]
 [ 444,	0,	119,	-1,	0,	NULL,	NULL	]
+[ 333,	0,	106,	-1,	0,	105,	1050	]
 [ 444,	0,	202,	-1,	0,	NULL,	402	]
 [ 333,	0,	195,	-1,	17,	198,	398	]
 [ 333,	0,	225,	-1,	22,	228,	458	]
@@ -82041,12 +82041,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint,	bigint,	smallint,	bigint,	hugeint # type
 % 4,	3,	2,	3,	4,	4 # length
 [ NULL,	NULL,	1,	555,	1120,	NULL	]
-[ NULL,	NULL,	0,	555,	NULL,	NULL	]
-[ 1067,	317,	0,	333,	1050,	1612	]
 [ 1226,	369,	2,	333,	1240,	NULL	]
 [ 1272,	385,	3,	333,	1290,	1902	]
-[ NULL,	NULL,	0,	333,	NULL,	NULL	]
 [ 1325,	391,	4,	444,	1300,	1985	]
+[ NULL,	NULL,	0,	333,	NULL,	NULL	]
+[ NULL,	NULL,	0,	555,	NULL,	NULL	]
+[ 1067,	317,	0,	333,	1050,	1612	]
 [ 1371,	416,	5,	111,	1390,	2046	]
 [ 1411,	428,	6,	111,	1430,	2131	]
 [ NULL,	439,	7,	555,	1450,	NULL	]
@@ -82194,12 +82194,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	hugeint,	int # type
 % 2,	2,	4,	3 # length
 [ 4,	1,	NULL,	NULL	]
-[ NULL,	0,	NULL,	104	]
-[ -1,	0,	635,	107	]
 [ NULL,	2,	738,	121	]
 [ 2,	3,	760,	127	]
-[ -1,	0,	NULL,	115	]
 [ 1,	4,	793,	131	]
+[ -1,	0,	NULL,	115	]
+[ NULL,	0,	NULL,	104	]
+[ -1,	0,	635,	107	]
 [ 1,	5,	827,	138	]
 [ -4,	6,	851,	142	]
 [ NULL,	7,	880,	149	]
@@ -82277,9 +82277,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % d,	L3,	c,	L10 # name
 % int,	hugeint,	int,	bigint # type
 % 3,	4,	3,	2 # length
-[ 108,	1067,	106,	0	]
 [ 128,	1272,	125,	3	]
 [ 133,	1325,	134,	4	]
+[ 108,	1067,	106,	0	]
 [ 136,	1371,	137,	5	]
 [ 140,	1411,	141,	6	]
 [ NULL,	NULL,	155,	9	]
@@ -82330,9 +82330,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % d,	L3,	c,	L10 # name
 % int,	hugeint,	int,	bigint # type
 % 3,	4,	3,	2 # length
-[ 108,	1067,	106,	0	]
 [ 128,	1272,	125,	3	]
 [ 133,	1325,	134,	4	]
+[ 108,	1067,	106,	0	]
 [ 136,	1371,	137,	5	]
 [ 140,	1411,	141,	6	]
 [ NULL,	NULL,	155,	9	]
@@ -82383,9 +82383,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % d,	L3,	c,	L10 # name
 % int,	hugeint,	int,	bigint # type
 % 3,	4,	3,	2 # length
-[ 108,	1067,	106,	0	]
 [ 128,	1272,	125,	3	]
 [ 133,	1325,	134,	4	]
+[ 108,	1067,	106,	0	]
 [ 136,	1371,	137,	5	]
 [ 140,	1411,	141,	6	]
 [ NULL,	NULL,	155,	9	]
@@ -82436,9 +82436,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % d,	L3,	c,	L10 # name
 % int,	hugeint,	int,	bigint # type
 % 3,	4,	3,	2 # length
-[ 108,	1067,	106,	0	]
 [ 128,	1272,	125,	3	]
 [ 133,	1325,	134,	4	]
+[ 108,	1067,	106,	0	]
 [ 136,	1371,	137,	5	]
 [ 140,	1411,	141,	6	]
 [ NULL,	NULL,	155,	9	]
@@ -82489,12 +82489,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	int # type
 % 2,	2,	3 # length
 [ 1,	-1,	114	]
-[ 0,	1,	101	]
-[ 0,	-2,	108	]
 [ 2,	1,	122	]
 [ 3,	-3,	128	]
-[ 0,	3,	116	]
 [ 4,	1,	133	]
+[ 0,	3,	116	]
+[ 0,	1,	101	]
+[ 0,	-2,	108	]
 [ 5,	1,	136	]
 [ 6,	1,	140	]
 [ 9,	NULL,	NULL	]
@@ -82568,12 +82568,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	int # type
 % 2,	2,	3 # length
 [ 1,	-1,	114	]
-[ 0,	1,	101	]
-[ 0,	-2,	108	]
 [ 2,	1,	122	]
 [ 3,	-3,	128	]
-[ 0,	3,	116	]
 [ 4,	1,	133	]
+[ 0,	3,	116	]
+[ 0,	1,	101	]
+[ 0,	-2,	108	]
 [ 5,	1,	136	]
 [ 6,	1,	140	]
 [ 9,	NULL,	NULL	]
@@ -82647,12 +82647,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	int # type
 % 2,	2,	3 # length
 [ 1,	-1,	114	]
-[ 0,	1,	101	]
-[ 0,	-2,	108	]
 [ 2,	1,	122	]
 [ 3,	-3,	128	]
-[ 0,	3,	116	]
 [ 4,	1,	133	]
+[ 0,	3,	116	]
+[ 0,	1,	101	]
+[ 0,	-2,	108	]
 [ 5,	1,	136	]
 [ 6,	1,	140	]
 [ 9,	NULL,	NULL	]
@@ -82726,12 +82726,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	int # type
 % 2,	2,	3 # length
 [ 1,	-1,	114	]
-[ 0,	1,	101	]
-[ 0,	-2,	108	]
 [ 2,	1,	122	]
 [ 3,	-3,	128	]
-[ 0,	3,	116	]
 [ 4,	1,	133	]
+[ 0,	3,	116	]
+[ 0,	1,	101	]
+[ 0,	-2,	108	]
 [ 5,	1,	136	]
 [ 6,	1,	140	]
 [ 9,	NULL,	NULL	]
@@ -83125,12 +83125,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	bigint,	int,	bigint,	int,	bigint,	int # type
 % 3,	2,	3,	2,	3,	2,	3 # length
 [ 114,	-1,	NULL,	-1,	110,	1,	113	]
-[ 101,	NULL,	104,	1,	NULL,	0,	102	]
-[ 108,	-1,	107,	-2,	109,	0,	106	]
 [ 122,	1,	121,	1,	NULL,	2,	123	]
 [ 128,	4,	127,	-3,	126,	3,	125	]
-[ 116,	NULL,	115,	3,	117,	0,	119	]
 [ 133,	-4,	131,	1,	132,	4,	134	]
+[ 116,	NULL,	115,	3,	117,	0,	119	]
+[ 101,	NULL,	104,	1,	NULL,	0,	102	]
+[ 108,	-1,	107,	-2,	109,	0,	106	]
 [ 136,	2,	138,	1,	135,	5,	137	]
 [ 140,	2,	142,	1,	144,	6,	141	]
 [ NULL,	-2,	149,	NULL,	146,	7,	147	]
@@ -83597,9 +83597,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % hugeint,	bigint,	bigint,	hugeint,	int # type
 % 4,	2,	2,	3,	3 # length
 [ NULL,	4,	1,	NULL,	NULL	]
-[ 1612,	-1,	0,	107,	107	]
 [ NULL,	NULL,	2,	NULL,	121	]
 [ 1985,	1,	4,	132,	131	]
+[ 1612,	-1,	0,	107,	107	]
 [ 2046,	1,	5,	137,	138	]
 [ 2131,	-4,	6,	142,	142	]
 [ 2432,	2,	10,	162,	163	]
@@ -83710,12 +83710,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint # type
 % 2 # length
 [ 1	]
-[ 0	]
-[ 0	]
 [ 2	]
 [ 3	]
-[ 0	]
 [ 4	]
+[ 0	]
+[ 0	]
+[ 0	]
 [ 5	]
 [ 6	]
 [ 7	]
@@ -87805,9 +87805,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint # type
 % 2 # length
 [ 1	]
-[ 0	]
 [ 3	]
 [ 4	]
+[ 0	]
 [ 5	]
 [ 6	]
 [ 9	]
@@ -87866,9 +87866,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint # type
 % 2 # length
 [ 1	]
-[ 0	]
 [ 3	]
 [ 4	]
+[ 0	]
 [ 5	]
 [ 6	]
 [ 9	]
@@ -87934,8 +87934,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L4,	L10,	e,	L13,	L15,	L17,	L21 # name
 % bigint,	bigint,	int,	hugeint,	int,	bigint,	smallint # type
 % 1,	2,	3,	4,	3,	2,	3 # length
-[ 0,	0,	109,	635,	107,	2,	333	]
 [ 0,	3,	126,	760,	127,	-2,	333	]
+[ 0,	0,	109,	635,	107,	2,	333	]
 [ 0,	0,	117,	NULL,	115,	NULL,	333	]
 [ 0,	10,	162,	966,	163,	3,	333	]
 [ 0,	15,	189,	1121,	188,	2,	444	]
@@ -87991,8 +87991,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L4,	L10,	e,	L13,	L15,	L17,	L21 # name
 % bigint,	bigint,	int,	hugeint,	int,	bigint,	smallint # type
 % 1,	2,	3,	4,	3,	2,	3 # length
-[ 0,	0,	109,	635,	107,	2,	333	]
 [ 0,	3,	126,	760,	127,	-2,	333	]
+[ 0,	0,	109,	635,	107,	2,	333	]
 [ 0,	0,	117,	NULL,	115,	NULL,	333	]
 [ 0,	10,	162,	966,	163,	3,	333	]
 [ 0,	15,	189,	1121,	188,	2,	444	]
@@ -88048,8 +88048,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L4,	L10,	e,	L13,	L15,	L17,	L21 # name
 % bigint,	bigint,	int,	hugeint,	int,	bigint,	smallint # type
 % 1,	2,	3,	4,	3,	2,	3 # length
-[ 0,	0,	109,	635,	107,	2,	333	]
 [ 0,	3,	126,	760,	127,	-2,	333	]
+[ 0,	0,	109,	635,	107,	2,	333	]
 [ 0,	0,	117,	NULL,	115,	NULL,	333	]
 [ 0,	10,	162,	966,	163,	3,	333	]
 [ 0,	15,	189,	1121,	188,	2,	444	]
@@ -88711,12 +88711,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	int,	hugeint,	int,	int,	smallint # type
 % 2,	2,	3,	4,	3,	3,	3 # length
 [ 1,	NULL,	114,	NULL,	NULL,	113,	555	]
-[ 0,	NULL,	101,	NULL,	104,	102,	555	]
-[ 0,	2,	108,	1612,	107,	106,	333	]
 [ 2,	-3,	122,	NULL,	121,	123,	333	]
 [ 3,	-2,	128,	1902,	127,	125,	333	]
-[ 0,	NULL,	116,	NULL,	115,	119,	333	]
 [ 4,	1,	133,	1985,	131,	134,	444	]
+[ 0,	NULL,	116,	NULL,	115,	119,	333	]
+[ 0,	NULL,	101,	NULL,	104,	102,	555	]
+[ 0,	2,	108,	1612,	107,	106,	333	]
 [ 5,	-1,	136,	2046,	138,	137,	111	]
 [ 6,	-1,	140,	2131,	142,	141,	111	]
 [ 7,	4,	NULL,	NULL,	149,	147,	555	]
@@ -89197,9 +89197,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	bigint,	smallint,	bigint,	int,	int,	hugeint # type
 % 3,	2,	3,	2,	3,	3,	3 # length
 [ 114,	-1,	444,	1,	110,	112,	NULL	]
-[ 108,	-2,	333,	0,	109,	105,	107	]
 [ 122,	1,	222,	2,	NULL,	124,	NULL	]
 [ 133,	1,	333,	4,	132,	130,	132	]
+[ 108,	-2,	333,	0,	109,	105,	107	]
 [ 136,	1,	222,	5,	135,	139,	137	]
 [ 140,	1,	222,	6,	144,	143,	142	]
 [ 164,	-3,	444,	10,	162,	160,	162	]
@@ -89256,12 +89256,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % bigint,	bigint,	int,	int,	int,	bigint,	int # type
 % 2,	4,	3,	3,	3,	2,	3 # length
 [ 4,	1120,	112,	NULL,	113,	1,	NULL	]
-[ NULL,	NULL,	NULL,	104,	102,	0,	104	]
-[ -1,	1050,	105,	107,	106,	0,	107	]
 [ NULL,	1240,	124,	121,	123,	2,	121	]
 [ 2,	1290,	129,	127,	125,	3,	127	]
-[ -1,	NULL,	NULL,	115,	119,	0,	115	]
 [ 1,	1300,	130,	131,	134,	4,	131	]
+[ -1,	NULL,	NULL,	115,	119,	0,	115	]
+[ NULL,	NULL,	NULL,	104,	102,	0,	104	]
+[ -1,	1050,	105,	107,	106,	0,	107	]
 [ 1,	1390,	139,	138,	137,	5,	138	]
 [ -4,	1430,	143,	142,	141,	6,	142	]
 [ NULL,	1450,	145,	149,	147,	7,	149	]
@@ -89424,9 +89424,9 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	c,	L5,	L11 # name
 % bigint,	int,	bigint,	bigint # type
 % 1,	3,	2,	2 # length
+[ 4,	125,	4,	3	]
 [ NULL,	102,	NULL,	0	]
 [ 1,	106,	-1,	0	]
-[ 4,	125,	4,	3	]
 [ 1,	161,	-1,	10	]
 [ 2,	172,	-2,	12	]
 [ 3,	184,	-3,	14	]
@@ -92128,12 +92128,12 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % int,	bigint,	smallint,	bigint,	bigint,	hugeint,	int # type
 % 3,	2,	3,	2,	2,	4,	3 # length
 [ NULL,	NULL,	444,	1,	-1,	NULL,	113	]
-[ 104,	NULL,	444,	0,	NULL,	NULL,	102	]
-[ 107,	2,	333,	0,	-1,	1612,	106	]
 [ 121,	-3,	222,	2,	1,	NULL,	123	]
 [ 127,	-2,	222,	3,	4,	1902,	125	]
-[ 115,	NULL,	444,	0,	NULL,	NULL,	119	]
 [ 131,	1,	333,	4,	-4,	1985,	134	]
+[ 115,	NULL,	444,	0,	NULL,	NULL,	119	]
+[ 104,	NULL,	444,	0,	NULL,	NULL,	102	]
+[ 107,	2,	333,	0,	-1,	1612,	106	]
 [ 138,	-1,	222,	5,	2,	2046,	137	]
 [ 142,	-1,	222,	6,	2,	2131,	141	]
 [ 149,	4,	444,	7,	-2,	NULL,	147	]
@@ -92172,8 +92172,8 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 % L2,	L4,	L6,	L12,	L14,	L16,	c # name
 % int,	bigint,	smallint,	bigint,	bigint,	hugeint,	int # type
 % 3,	2,	3,	2,	2,	4,	3 # length
-[ 104,	NULL,	444,	0,	NULL,	NULL,	102	]
 [ 115,	NULL,	444,	0,	NULL,	NULL,	119	]
+[ 104,	NULL,	444,	0,	NULL,	NULL,	102	]
 [ 201,	NULL,	444,	0,	NULL,	NULL,	202	]
 [ 239,	3,	444,	24,	NULL,	NULL,	NULL	]
 [ 131,	1,	333,	4,	-4,	1985,	134	]
