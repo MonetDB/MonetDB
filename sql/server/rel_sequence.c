@@ -258,7 +258,7 @@ rel_alter_seq(
 		sql_subtype *lng_t = sql_bind_localtype("lng");
 
 		val = rel_value_exp2(sql, &r, start_list->h->next->data.sym, sql_sel, ek, &is_last);
-		if (!val || !(val = rel_check_type(sql, lng_t, val, type_equal)))
+		if (!val || !(val = rel_check_type(sql, lng_t, r, val, type_equal)))
 			return NULL;
 	} else if (start_type == 2) {
 		assert (start_list->h->next->type == type_lng);

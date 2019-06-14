@@ -32,7 +32,7 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s, const char* action
 				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			e = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", c->def, typestr), sql->emode, NULL);
 			_DELETE(typestr);
-			if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
+			if (!e || (e = rel_check_type(sql, &c->type, r ? *r : NULL, e, type_equal)) == NULL)
 				return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
 			return e;
 		} else {
@@ -45,7 +45,7 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s, const char* action
 
 		if (!e)
 			return(NULL);
-		return rel_check_type(sql, &c->type, e, type_equal); 
+		return rel_check_type(sql, &c->type, r ? *r : NULL, e, type_equal);
 	}
 }
 
@@ -191,10 +191,10 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 			} else {
 				lnll_exps = lnl;
 				rnll_exps = rnl;
-		    }
+			}
 		}
 
-		if (rel_convert_types(sql, &rtc, &_is, 1, type_equal) < 0) 
+		if (rel_convert_types(sql, rt, ins, &rtc, &_is, 1, type_equal) < 0)
 			return NULL;
 		je = exp_compare(sql->sa, rtc, _is, cmp_equal);
 		append(join_exps, je);
@@ -330,7 +330,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 				sql_column *c = m->data;
 				sql_exp *e = n->data;
 		
-				inserts[c->colnr] = rel_check_type(sql, &c->type, e, type_equal);
+				inserts[c->colnr] = rel_check_type(sql, &c->type, r, e, type_equal);
 			}
 		} else {
 			for (m = collist->h; m; m = m->next) {
@@ -362,7 +362,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 							q = sa_message(sql->sa, "select cast(%s as %s);", c->def, typestr);
 							_DELETE(typestr);
 							e = rel_parse_val(sql, q, sql->emode, NULL);
-							if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
+							if (!e || (e = rel_check_type(sql, &c->type, r, e, type_equal)) == NULL)
 								return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
 						} else {
 							atom *a = atom_general(sql->sa, &c->type, NULL);
@@ -798,7 +798,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 				rnll_exps = rnl;
 			}
 		}
-		if (rel_convert_types(sql, &rtc, &upd, 1, type_equal) < 0) {
+		if (rel_convert_types(sql, rt, updates, &rtc, &upd, 1, type_equal) < 0) {
 			list_destroy(join_exps);
 			return NULL;
 		}
@@ -947,7 +947,7 @@ update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *
 	}
 	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE, 0)) 
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to update table '%s' on column '%s'", action, stack_get_string(sql, "current_user"), t->base.name, cname);
-	if (!v || (v = rel_check_type(sql, &c->type, v, type_equal)) == NULL) {
+	if (!v || (v = rel_check_type(sql, &c->type, r, v, type_equal)) == NULL) {
 		rel_destroy(r);
 		return NULL;
 	}

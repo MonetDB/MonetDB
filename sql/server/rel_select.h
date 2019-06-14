@@ -24,10 +24,11 @@ extern sql_exp * rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f, exp_k
 extern sql_exp * rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_last);
 
 /* TODO rename to exp_check_type + move to rel_exp.c */
-extern sql_exp *rel_check_type(mvc *sql, sql_subtype *t, sql_exp *exp, int tpe);
-extern sql_exp *rel_unop_(mvc *sql, sql_exp *e, sql_schema *s, char *fname, int card);
-extern sql_exp *rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s, char *fname, int card);
-extern sql_exp *rel_nop_(mvc *sql, sql_exp *l, sql_exp *r, sql_exp *r2, sql_exp *r3, sql_schema *s, char *fname, int card);
+extern sql_exp *rel_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, int tpe);
+extern sql_exp *rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, sql_schema *s, char *fname, int card);
+extern sql_exp *rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *fname, int card);
+extern sql_exp *rel_nop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_exp *r2, sql_exp *r3, sql_schema *s,
+						 char *fname, int card);
 
 extern sql_rel *rel_with_query(mvc *sql, symbol *q);
 extern sql_rel *table_ref(mvc *sql, sql_rel *rel, symbol *tableref, int lateral);

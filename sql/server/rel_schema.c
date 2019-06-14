@@ -1597,7 +1597,7 @@ sql_alter_table(mvc *sql, dlist *dl, dlist *qname, symbol *te, int if_exists)
 				} else {
 					e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 				}
-				if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL) {
+				if (!e || (e = rel_check_type(sql, &c->type, r, e, type_equal)) == NULL) {
 					rel_destroy(r);
 					return NULL;
 				}

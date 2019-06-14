@@ -417,7 +417,7 @@ rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, oper
 		sql_exp *le = n->data;
 		sql_exp *re = m->data;
 
-		if ((rel_convert_types(sql, &le, &re, 1, type_set) < 0))
+		if ((rel_convert_types(sql, l, r, &le, &re, 1, type_set) < 0))
 			return NULL;
 		append(nls, le);
 		append(nrs, re);
