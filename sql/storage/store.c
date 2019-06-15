@@ -885,7 +885,7 @@ load_type(sql_trans *tr, sql_schema *s, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(types, "radix"), rid);
 	t->radix = *(int *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(types, "eclass"), rid);
-	t->eclass = *(int *)v;			_DELETE(v);
+	t->eclass = (sql_class)(*(int *)v);			_DELETE(v);
 	t->localtype = ATOMindex(t->base.name);
 	t->bits = 0;
 	t->s = s;
@@ -1400,7 +1400,7 @@ insert_types(sql_trans *tr, sql_table *systype)
 	for (n = types->h; n; n = n->next) {
 		sql_type *t = n->data;
 		int radix = t->radix;
-		int eclass = t->eclass;
+		int eclass = (int) t->eclass;
 
 		if (t->s)
 			table_funcs.table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &radix, &eclass, &t->s->base.id);
@@ -4655,6 +4655,7 @@ sql_trans_create_type(sql_trans *tr, sql_schema * s, const char *sqlname, int di
 	sql_table *systype;
 	int localtype = ATOMindex(impl);
 	sql_class eclass = EC_EXTERNAL;
+	int eclass_cast = (int) eclass;
 
 	if (localtype < 0) 
 		return NULL;
@@ -4670,7 +4671,7 @@ sql_trans_create_type(sql_trans *tr, sql_schema * s, const char *sqlname, int di
 	t->s = s;
 
 	cs_add(&s->types, t, TR_NEW);
-	table_funcs.table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &radix, &eclass, &s->base.id);
+	table_funcs.table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &radix, &eclass_cast, &s->base.id);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
