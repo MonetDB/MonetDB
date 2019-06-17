@@ -4876,7 +4876,7 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 {
 	mvc *sql = query->sql;
 	sql_subtype *bt, *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng"), *iet;
-	sql_class bclass = 0;
+	sql_class bclass = EC_ANY;
 	sql_exp *res = NULL;
 
 	if((bound->token == SQL_PRECEDING || bound->token == SQL_FOLLOWING || bound->token == SQL_CURRENT_ROW) && bound->type == type_int) {
