@@ -129,22 +129,6 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			getArg(q,0) = j;
 			p= 0;
 			actions++;
-		}  else
-		if ( getModuleId(p) == sqlRef &&  getFunctionId(p) == tidRef){
-			//decompress before use such that it can be used properly
-			pushInstruction(mb,p);
-			j=  getArg(p,0);
-			check[getArg(p,0)] = 0;
-
-			q = newStmt(mb,mosaicRef,decompressRef);
-			setVarType(mb,getArg(q,0), getVarType(mb,getArg(p,0)));
-			setVarUDFtype(mb,getArg(q,0));
-
-			getArg(p,0) = getArg(q,0);
-			q = pushArgument(mb,q,getArg(q,0));
-			getArg(q,0) = j;
-			p= 0;
-			actions++;
 		}else
         if ( getModuleId(p) == algebraRef && (getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef) && check[getArg(p,1)] != 0){
 			setModuleId(p, mosaicRef);
