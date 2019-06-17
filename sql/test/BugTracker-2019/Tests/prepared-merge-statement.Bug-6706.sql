@@ -17,17 +17,33 @@ prepare select * from test.share_daily_history
 inner join (values('BHP',?,?,?,?,?,?)) as source(id,timeid,c1,c2,c3,c4,volume)
 on source.id=share_daily_history.id and source.timeid=share_daily_history.timeid; --error
 
-prepare select * from test.share_daily_history
-inner join (values('BHP',?)) as source(id,timeid)
-on source.id=share_daily_history.id and source.timeid=share_daily_history.timeid; --error
+prepare select * from test.share_daily_history inner join (values('BHP',?)) as source(id,timeid)
+on source.id=share_daily_history.id and source.timeid=share_daily_history.timeid;
+exec **(); --error
 
 prepare select * from test.share_daily_history
 inner join (values('BHP')) as source(id)
 on source.id=share_daily_history.id;
-exec **();
+exec **(1); --error
+
+prepare select * from test.share_daily_history
+inner join (values(?), ('BHP')) as source(id)
+on source.id=share_daily_history.id;
+exec **('a');
 
 prepare select * from test.share_daily_history
 inner join (values('BHP'), (?)) as source(id)
-on source.id=share_daily_history.id; --error
+on source.id=share_daily_history.id;
+exec **('a');
+
+prepare select * from test.share_daily_history
+inner join (values(?)) as source(id)
+on source.id=share_daily_history.id;
+exec **('a');
+
+prepare select * from test.share_daily_history
+inner join (values(?),(?),(?)) as source(id)
+on source.id=share_daily_history.id;
+exec **('a','b','c');
 
 drop schema test cascade;

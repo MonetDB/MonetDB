@@ -162,4 +162,5 @@ extern int exp_aggr_is_count(sql_exp *e);
 
 extern void exps_reset_freevar(list *exps);
 
+extern int rel_set_type_recurse(mvc *sql, sql_subtype *type, sql_rel *rel, const char **relname, const char **expname);
 #endif /* _REL_EXP_H_ */

@@ -259,9 +259,9 @@ rel_alter_seq(
 		sql_subtype *lng_t = sql_bind_localtype("lng");
 
 		val = rel_value_exp2(query, &r, start_list->h->next->data.sym, sql_sel, ek, &is_last);
-		if (!val || !(val = rel_check_type(sql, lng_t, val, type_equal)))
+		if (!val || !(val = rel_check_type(sql, lng_t, r, val, type_equal)))
 			return NULL;
-		if (val && r && r->op == op_project) {
+		if (r && r->op == op_project) {
 			exp_label(sql->sa, val, ++sql->label);
 			val = rel_project_add_exp(sql, r, val);
 			val = exp_ref(sql->sa, val);

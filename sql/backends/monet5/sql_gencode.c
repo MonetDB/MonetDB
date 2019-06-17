@@ -813,6 +813,10 @@ backend_call(backend *be, Client c, cq *cq)
 		m->session->status = -3;
 		return;
 	}
+	if (m->emode == m_execute && be->q->paramlen != m->argc) {
+		sql_error(m, 003, SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", be->q->paramlen, m->argc);
+		return;
+	}
 	/* cached (factorized queries return bit??) */
 	if (cq->code && getInstrPtr(((Symbol)cq->code)->def, 0)->token == FACTORYsymbol) {
 		setVarType(mb, getArg(q, 0), TYPE_bit);
