@@ -106,18 +106,16 @@ BATmosaic(BAT *bn, BUN cap)
 }
 
 void
-MOSdestroy(BAT *bn)
-{	Heap *h;
-	
-	// Only destoy the mosaic heap of the BAT if it is not sharing the mosaic heap of some parent BAT.
-	// TODO: Check if !VIEWtparent(bn) is still necessary given VIEWmosaictparent.
-	// TODO: Check if this is correct.
-	if( bn && bn->tmosaic && !VIEWtparent(bn) && !VIEWmosaictparent(bn)){
-		h= bn->tmosaic;
-		if( HEAPdelete(h, BBP_physical(bn->batCacheid), "mosaic"))
-			IODEBUG fprintf(stderr,"#MOSdestroy (%s) failed", BATgetId(bn));
-		bn->tmosaic = NULL;
-		GDKfree(h);
+MOSdestroy(BAT *bn) {
+	if (bn && bn->tmosaic) {
+		// Only destoy the mosaic heap of the BAT if it is not sharing the mosaic heap of some parent BAT.
+		if(!VIEWmosaictparent(bn)){
+			Heap* h= bn->tmosaic;
+			if( HEAPdelete(h, BBP_physical(bn->batCacheid), "mosaic"))
+				IODEBUG fprintf(stderr,"#MOSdestroy (%s) failed", BATgetId(bn));
+			bn->tmosaic = NULL;
+			GDKfree(h);
+		}
 	}
 }
 
@@ -129,7 +127,7 @@ BATcheckmosaic(BAT *b)
 	int ret;
 	lng t;
 
-    if (VIEWtparent(b)) {
+    if (VIEWtparent(b)) { // does this make sense?
         assert(b->tmosaic == NULL);
         b = BBPdescriptor(VIEWtparent(b));
     }

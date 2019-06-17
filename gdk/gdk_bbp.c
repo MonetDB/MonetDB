@@ -2601,6 +2601,7 @@ BBPdestroy(BAT *b)
 {
 	bat tp = b->theap.parentid;
 	bat vtp = VIEWvtparent(b);
+	bat mtp = VIEWmosaictparent(b);
 
 	if (isVIEW(b)) {	/* a physical view */
 		VIEWdestroy(b);
@@ -2625,12 +2626,17 @@ BBPdestroy(BAT *b)
 		GDKunshare(tp);
 	if (vtp)
 		GDKunshare(vtp);
+	if (mtp)
+		GDKunshare(mtp);
 }
 
 static gdk_return
 BBPfree(BAT *b, const char *calledFrom)
 {
-	bat bid = b->batCacheid, tp = VIEWtparent(b), vtp = VIEWvtparent(b);
+	bat bid = b->batCacheid;
+	bat tp = VIEWtparent(b);
+	bat vtp = VIEWvtparent(b);
+	bat mtp = VIEWmosaictparent(b);
 	gdk_return ret;
 
 	assert(bid > 0);
@@ -2661,6 +2667,8 @@ BBPfree(BAT *b, const char *calledFrom)
 		GDKunshare(tp);
 	if (ret == GDK_SUCCEED && vtp)
 		GDKunshare(vtp);
+	if (ret == GDK_SUCCEED && mtp)
+		GDKunshare(mtp);
 	return ret;
 }
 

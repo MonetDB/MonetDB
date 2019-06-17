@@ -567,83 +567,62 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 // recreate the uncompressed heap from its mosaic version
-str
-MOSdecompressInternal(Client cntxt, bat *ret, bat *bid)
+static str
+MOSdecompressInternal(Client cntxt, BAT** res, BAT* bsrc)
 {	
-	BAT *bsrc, * res;
 	MOStask task;
 	str msg;
 	int error;
-	(void) cntxt;
-
-#ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#decompress bat %d\n",*bid);
-#endif
-	if ((bsrc = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "mosaic.decompress", INTERNAL_BAT_ACCESS);
 
 	if (BATcheckmosaic(bsrc) == 0 ){
-#ifdef _DEBUG_MOSAIC_
-		mnstr_printf(cntxt->fdout,"#decompress checkmosaic\n");
-#endif
-		BBPunfix(bsrc->batCacheid);
-		return MAL_SUCCEED;
-	}
-	if (!bsrc->tmosaic) {// TODO: Check if this is actually possible.
-#ifdef _DEBUG_MOSAIC_
-		mnstr_printf(cntxt->fdout,"#decompress tmosaic == 0\n");
-#endif
-		BBPunfix(bsrc->batCacheid);
+		*res = bsrc;
+		BBPfix(bsrc->batCacheid); // We are just returning a reference to bsrc.
 		return MAL_SUCCEED;
 	}
 
-	if (bsrc->tmosaic && VIEWtparent(bsrc)) {// TODO: the check on bsrc->tmosaic DEFINITELY doesn't make sense.
-		BBPunfix(bsrc->batCacheid);
+	if (VIEWtparent(bsrc)) {
 		throw(MAL, "mosaic.decompress", "cannot decompress tail-VIEW");
 	}
 
 	// use the original heap for reconstruction
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
-		BBPunfix(bsrc->batCacheid);
 		throw(MAL, "mosaic.decompress", MAL_MALLOC_FAIL);
 	}
 	
 	// claim the server for exclusive use
+	// TODO why do we need this.
 	msg = MCstartMaintenance(cntxt,1,0);
 	if( msg != MAL_SUCCEED){
 		GDKfree(msg);
-		BBPunfix(bsrc->batCacheid);
 		throw(MAL, "mosaic.decompress", "Can not claim server");
 	}
 
 	BBPshare(bsrc->tmosaic->parentid);
 
-	res = COLnew(0, bsrc->ttype, bsrc->batCapacity, TRANSIENT);
-	BATsetcount(res, bsrc->batCount);
-	res->tmosaic = bsrc->tmosaic;
+	*res = COLnew(0, bsrc->ttype, bsrc->batCapacity, TRANSIENT);
+	BATsetcount(*res, bsrc->batCount);
+	(*res)->tmosaic = bsrc->tmosaic;
 
  	// TODO: We should also compress the string heap itself somehow.
 	// For now we just share the string heap of the original compressed bat.
 	if (bsrc->tvheap) {
 		BBPshare(bsrc->tvheap->parentid);
-		res->tvheap = bsrc->tvheap;
+		(*res)->tvheap = bsrc->tvheap;
 	}
 
-	res->tunique = bsrc->tunique;
-	res->tkey = bsrc->tkey;
-	res->tsorted = bsrc->tsorted;
-	res->trevsorted = bsrc->trevsorted;
-	res->tseqbase = oid_nil;
-	res->tnonil = bsrc->tnonil;
-	res->tnil = bsrc->tnil;
-
-	*ret = res->batCacheid;
+	(*res)->tunique = bsrc->tunique;
+	(*res)->tkey = bsrc->tkey;
+	(*res)->tsorted = bsrc->tsorted;
+	(*res)->trevsorted = bsrc->trevsorted;
+	(*res)->tseqbase = oid_nil;
+	(*res)->tnonil = bsrc->tnonil;
+	(*res)->tnil = bsrc->tnil;
 
 	MOSinit(task,bsrc);
 
-	task->bsrc = res;
-	task->src = Tloc(res, 0);
+	task->bsrc = *res;
+	task->src = Tloc(*res, 0);
 
 	task->timer = GDKusec();
 
@@ -709,25 +688,21 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid)
 		break;
 	case TYPE_str:
 		break;
-#ifdef _DEBUG_MOSAIC_
-	default:
-		mnstr_printf(cntxt->fdout,"#unknown compression compatibility\n");
-#endif
 	}
 	if(error) 
 		mnstr_printf(cntxt->fdout,"#incompatible compression for type %d ratio %f\n", ATOMbasetype(task->type),task->ratio);
+		// TODO: handle error
 
 	task->timer = GDKusec() - task->timer;
 
 	// remove the compressed mirror
-	GDKfree(task);
+	GDKfree(task); // TODO should there not be a more thorough clean up function for tasks
 	// continue with all work
 
-	// MOSdestroy(bsrc); NOTE: Do NOT destroy the mosaic index of the parent. Otherwise sharing doesn't make sense
 	BATsettrivprop(bsrc); // TODO: What's the purpose of this statement?
-	// BBPunfix(bsrc->batCacheid);
 
 	MCexitMaintenance(cntxt);
+
 	return MAL_SUCCEED;
 }
 
@@ -736,23 +711,47 @@ str
 MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
 	bat *bid = getArgReference_bat(stk,pci,1);
-	bat *ret = getArgReference_bat(stk,pci,0);
 	BAT *b;
 
 	(void) mb;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "mosaic.decompress", INTERNAL_BAT_ACCESS);
-	BBPkeepref(*ret = b->batCacheid);
-	// TODO use bid instead of getArgReference_bat(stk,pci,1)
-	return MOSdecompressInternal(cntxt, ret, getArgReference_bat(stk,pci,1));
+
+	BAT* res;
+
+	str result = MOSdecompressInternal(cntxt, &res, b);
+
+	BBPunfix(b->batCacheid);
+
+	BBPkeepref(res->batCacheid);
+
+	*getArgReference_bat(stk,pci,0) = res->batCacheid;
+
+	// TODO: handle errors
+
+	return result;
 }
 
 str
 MOSdecompressStorage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
 	(void) mb;
-	return MOSdecompressInternal(cntxt, getArgReference_bat(stk,pci,1), getArgReference_bat(stk,pci,1));
+
+	BAT*  src =  BATdescriptor(*getArgReference_bat(stk,pci,1));
+	BAT* res;
+
+	str result = MOSdecompressInternal(cntxt, &res, src);
+
+	// TODO: Handle errors
+
+	BBPkeepref(res->batCacheid);
+
+	*getArgReference_bat(stk,pci,0) = res->batCacheid;
+
+	BBPunfix(src->batCacheid);
+
+	return result;
 }
 
 // The remainders is cloned from the generator code base
@@ -1449,9 +1448,17 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 		pat[i].xsize = (BUN) task->bsrc->tmosaic->free;
 		pat[i].xf= task->ratio;
 
+		BAT* decompressed;
+
 		pat[i].clk2 = GDKms();
-		MOSdecompressInternal(cntxt, &bid, &bid);
+
+		MOSdecompressInternal(cntxt, &decompressed, b);
+
 		pat[i].clk2 = GDKms()- pat[i].clk2;
+
+		MOSdestroy(decompressed);
+
+		BBPunfix(decompressed->batCacheid);
 
 		// get rid of mosaic heap
 		MOSdestroy(BBPdescriptor(bid));

@@ -218,8 +218,10 @@ VIEWunlink(BAT *b)
 	if (b) {
 		bat tp = VIEWtparent(b);
 		bat vtp = VIEWvtparent(b);
+		bat mtp = VIEWmosaictparent(b);
 		BAT *tpb = NULL;
 		BAT *vtpb = NULL;
+		BAT *mtpb = NULL;
 
 		assert(b->batCacheid > 0);
 		if (tp)
@@ -228,6 +230,8 @@ VIEWunlink(BAT *b)
 			vtp = tp;
 		if (vtp)
 			vtpb = BBP_cache(vtp);
+		if (mtp)
+			mtpb = BBP_cache(mtp);
 
 		if (tpb == NULL && vtpb == NULL)
 			return;
@@ -246,7 +250,7 @@ VIEWunlink(BAT *b)
 			b->timprints = NULL;
 
 		/* unlink mosaic shared with parent */
-		if (tpb && b->tmosaic && b->tmosaic == tpb->tmosaic)
+		if (mtpb && b->tmosaic && b->tmosaic == mtpb->tmosaic)
 			b->tmosaic = NULL;
 	}
 }
@@ -418,7 +422,6 @@ VIEWdestroy(BAT *b)
 	/* remove any leftover private hash structures */
 	HASHdestroy(b);
 	IMPSdestroy(b);
-	MOSdestroy(b);
 	OIDXdestroy(b);
 	VIEWunlink(b);
 
