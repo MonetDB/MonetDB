@@ -2179,9 +2179,9 @@ exp_set_type_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relna
 			/* if the column pretended is found, set its type */
 			const char *next_rel = exp_relname(e), *next_exp = exp_name(e);
 			if (next_rel && !strcmp(next_rel, *relname)) {
-				*relname = next_rel;
+				*relname = (e->type == e_column && e->l) ? (const char*) e->l : next_rel;
 				if (next_exp && !strcmp(next_exp, *expname)) {
-					*expname = next_exp;
+					*expname = (e->type == e_column && e->r) ? (const char*) e->r : next_exp;
 					if (e->type == e_column && !e->tpe.type) {
 						if (set_type_param(sql, type, e->flag) == 0)
 							e->tpe = *type;

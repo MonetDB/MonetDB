@@ -30,14 +30,7 @@ stderr of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 # 10:09:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31613" "--port=31509"
 # 10:09:57 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-31613/.s.monetdb.31509
-QUERY = prepare merge into test.share_daily_history as target
-        using (select * from (values('BHP',?,?,?,?,?,?)) as a(id,timeid,c1,c2,c3,c4,volume)) as source
-        on source.id=target.id and source.timeid=target.timeid
-        when not matched then insert (id,timeid,c1,c2,c3,c4,volume) values(source.id,source.timeid,source.c1,source.c2,source.c3,source.c4,source.volume); --error
-ERROR = !Could not determine type for argument number 2
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-31613/.s.monetdb.31509
+MAPI  = (monetdb) /var/tmp/mtest-16265/.s.monetdb.32049
 QUERY = prepare select * from test.share_daily_history
         inner join (values('BHP',?,?,?,?,?,?)) as source(id,timeid,c1,c2,c3,c4,volume)
         on source.id=share_daily_history.id and source.timeid=share_daily_history.timeid; --error

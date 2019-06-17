@@ -11,7 +11,8 @@ exec **();
 prepare merge into test.share_daily_history as target
 using (select * from (values('BHP',?,?,?,?,?,?)) as a(id,timeid,c1,c2,c3,c4,volume)) as source
 on source.id=target.id and source.timeid=target.timeid
-when not matched then insert (id,timeid,c1,c2,c3,c4,volume) values(source.id,source.timeid,source.c1,source.c2,source.c3,source.c4,source.volume); --error
+when not matched then insert (id,timeid,c1,c2,c3,c4,volume) values(source.id,source.timeid,source.c1,source.c2,source.c3,source.c4,source.volume);
+exec **(1,2,3,4,5,6);
 
 prepare select * from test.share_daily_history
 inner join (values('BHP',?,?,?,?,?,?)) as source(id,timeid,c1,c2,c3,c4,volume)
