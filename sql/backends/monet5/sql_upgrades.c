@@ -58,7 +58,7 @@ sql_fix_system_tables(Client c, mvc *sql)
 				"insert into sys.types values"
 				" (%d, '%s', '%s', %u, %u, %d, %d, %d);\n",
 				t->base.id, t->base.name, t->sqlname, t->digits,
-				t->scale, t->radix, t->eclass,
+				t->scale, t->radix, (int) t->eclass,
 				t->s ? t->s->base.id : s->base.id);
 	}
 
@@ -297,7 +297,9 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 		    (strcmp(t->base.name, "mbr") == 0 ||
 		     strcmp(t->base.name, "wkb") == 0 ||
 		     strcmp(t->base.name, "wkba") == 0))
-			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %u, %u, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : s->base.id);
+			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %u, %u, %d, %d, %d);\n",
+							t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, (int) t->eclass,
+							t->s ? t->s->base.id : s->base.id);
 	}
 
 	if (schema)
