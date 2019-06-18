@@ -174,10 +174,10 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 
 #define estimateDict(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start;\
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	if( task->range[MOSAIC_DICT] > task->start){\
 		i = task->range[MOSAIC_DICT] - task->start;\
-		if ( i > MOSlimit() ) i = MOSlimit();\
+		if ( i > MOSAICMAXCNT ) i = MOSAICMAXCNT;\
 		if( i * sizeof(TPE) <= wordaligned( MosaicBlkSize + (i*hdr->bits)/8,TPE))\
 			return 0.0;\
 		if( task->dst +  wordaligned(MosaicBlkSize + (i*hdr->bits)/8,sizeof(TPE)) >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)\
@@ -202,7 +202,7 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 
 #define makeDict(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start,v,w;\
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	lng cw,cv;\
 	for(i = 0; i< limit; i++, val++){\
 		MOSfind(j,dict.val##TPE,*val,0,dictsize);\
@@ -351,10 +351,10 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 		switch(task->bsrc->twidth){
 		case 1: //estimateDict(bte); break;
 {	bte *val = ((bte*)task->src) + task->start;\
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	if( task->range[MOSAIC_DICT] > task->start){\
 		i = task->range[MOSAIC_DICT] - task->start;\
-		if ( i > MOSlimit() ) i = MOSlimit();\
+		if ( i > MOSAICMAXCNT ) i = MOSAICMAXCNT;\
 		if( i * sizeof(bte) <= wordaligned( MosaicBlkSize + i,bte))\
 			return 0.0;\
 		if( task->dst +  wordaligned(MosaicBlkSize + i,sizeof(bte)) >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)\
@@ -395,7 +395,7 @@ break;
 #define DICTcompress(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start;\
 	BitVector base = (BitVector) MOScodevector(task);\
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	for(i =0; i<limit; i++, val++){\
 		MOSfind(j,task->hdr->dict.val##TPE,*val,0,hdr->dictsize);\
 		if(j == hdr->dictsize || task->hdr->dict.val##TPE[j] !=  *val) \

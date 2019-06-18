@@ -348,7 +348,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	flt factor = 0.0;
 	int prefixbits = 0,size;
 	lng bits,store;
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
 	(void) cntxt;
 
 	size = ATOMsize(task->type);
@@ -527,7 +527,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 	size = ATOMsize(task->type);
 	if( ATOMstorage(task->type == TYPE_str))
 			size =task->bsrc->twidth;
-	limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
+	limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
 	if( task->elm >=2 )
 	switch(size){
 	case 1:

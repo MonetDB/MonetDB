@@ -148,7 +148,7 @@ MOSskip_linear(Client cntxt, MOStask task)
 #define Estimate(TYPE)\
 {	TYPE *v = ((TYPE*) task->src)+task->start, val = *v++;\
 	TYPE step = *v - val;\
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	if( task->range[MOSAIC_LINEAR] > task->start + 1){\
 		i = task->range[MOSAIC_LINEAR] - task->start;\
 		if (i * sizeof(TYPE) <= wordaligned( MosaicBlkSize + 2 * sizeof(TYPE),TYPE))\
@@ -196,7 +196,7 @@ MOSestimate_linear(Client cntxt, MOStask task)
 	case TYPE_int:
 		{	int *v = ((int*)task->src)+ task->start, val= *v++;
 			int step = *v - val;
-			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
+			BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
 			if( task->range[MOSAIC_LINEAR] > task->start + 1){
 				i = task->range[MOSAIC_LINEAR] - task->start;
 				if(i * sizeof(int) <= wordaligned( MosaicBlkSize + 2 * sizeof(int),int))
@@ -226,7 +226,7 @@ MOSestimate_linear(Client cntxt, MOStask task)
 #define LINEARcompress(TYPE)\
 {	TYPE *v = ((TYPE*) task->src) + task->start, val = *v++;\
 	TYPE step = *v - val;\
-	BUN limit = task->stop - task->start >= MOSlimit()? task->start + MOSlimit():task->stop;\
+	BUN limit = task->stop - task->start >= MOSAICMAXCNT? MOSAICMAXCNT : task->stop - task->start;\
 	*(TYPE*) linear_base(blk) = val;\
 	hdr->checksum.sum##TYPE += val;\
 	*(TYPE*) linear_step(task,blk) = step;\

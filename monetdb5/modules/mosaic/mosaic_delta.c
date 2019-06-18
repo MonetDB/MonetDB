@@ -113,7 +113,7 @@ MOSskip_delta(Client cntxt, MOStask task)
 // append a series of values into the non-compressed block
 #define Estimate_delta(TYPE, EXPR)\
 {	TYPE *v = ((TYPE*)task->src) + task->start, val= *v, delta = 0;\
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop-task->start;\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop-task->start;\
 	for(v++,i =1; i<limit; i++,v++){\
 		delta = *v -val;\
 		if ( EXPR)\
@@ -164,7 +164,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 
 #define DELTAcompress(TYPE,EXPR)\
 {	TYPE *v = ((TYPE*)task->src) + task->start, val= *v, delta =0;\
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit():task->stop - task->start;\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT:task->stop - task->start;\
 	task->dst = MOScodevector(task); \
 	*(TYPE*)task->dst = val;\
 	hdr->checksum.sum##TYPE += *v;\

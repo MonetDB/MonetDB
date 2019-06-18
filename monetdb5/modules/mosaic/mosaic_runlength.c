@@ -135,7 +135,7 @@ MOSskip_runlength(Client cntxt, MOStask task)
 
 #define Estimate(TYPE)\
 {	TYPE *v = ((TYPE*) task->src) + task->start, val = *v;\
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	if( task->range[MOSAIC_RLE] > task->start+1 ){\
 		if( (i= task->range[MOSAIC_RLE] - task->start) * sizeof(TYPE) < wordaligned( MosaicBlkSize + sizeof(TYPE),TYPE) )return 0.0;\
 		factor = ((flt) i * sizeof(TYPE))/ wordaligned(MosaicBlkSize + sizeof(TYPE),TYPE);\
@@ -171,7 +171,7 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 #endif
 	case TYPE_int:
 		{	int *v = ((int*)task->src)+ task->start, val = *v;
-			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
+			BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
 			if( task->range[MOSAIC_RLE] > task->start+1){
 				if( (i= task->range[MOSAIC_RLE] - task->start) * sizeof(int) < wordaligned(MosaicBlkSize + sizeof(int),int))
 					return 0.0;
@@ -209,7 +209,7 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 #define RLEcompress(TYPE)\
 {	TYPE *v = ((TYPE*) task->src)+task->start, val = *v;\
 	TYPE *dst = (TYPE*) task->dst;\
-	BUN limit = task->stop - task->start > MOSlimit() ? MOSlimit(): task->stop - task->start;\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT ? MOSAICMAXCNT: task->stop - task->start;\
 	*dst = val;\
 	for(v++, i =1; i<limit; i++,v++)\
 	if ( *v != val)\

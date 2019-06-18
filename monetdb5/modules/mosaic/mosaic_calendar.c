@@ -134,7 +134,7 @@ MOSskip_calendar(Client cntxt, MOStask task)
 
 #define makeCalendar(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start,v,w;\
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	lng cw,cv;\
 	for(i = 0; i< limit; i++, val++){\
 		v= *val & ~MASKDAY; \
@@ -243,10 +243,10 @@ MOSestimate_calendar(Client cntxt, MOStask task)
 
 	if( task->type == TYPE_date){
 		int *val = ((int*)task->src) + task->start, v;
-		BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
+		BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
 		if( task->range[MOSAIC_CALENDAR] > task->start){
 			i = task->range[MOSAIC_CALENDAR] - task->start;
-			if ( i > MOSlimit() ) i = MOSlimit();
+			if ( i > MOSAICMAXCNT ) i = MOSAICMAXCNT;
 			if( i * sizeof(int) <= wordaligned( MosaicBlkSize + (i * hdr->bits)/8,int))
 				return 0.0;
 			if( task->dst +  wordaligned(MosaicBlkSize + (i * hdr->bits)/8,sizeof(int)) >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)
@@ -280,7 +280,7 @@ MOSestimate_calendar(Client cntxt, MOStask task)
 #define CALcompress(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start, v;\
 	BitVector base = (BitVector) MOScodevector(task);\
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	for(i =0; i<limit; i++, val++){\
 		v = *val & ~MASKDAY;\
 		MOSfind(j,task->hdr->dict.val##TPE,v,0,hdr->dictsize);\

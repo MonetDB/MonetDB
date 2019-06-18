@@ -104,8 +104,14 @@ typedef struct MOSAICHEADER{
 	lng framefreq[256];
 } * MosaicHdr;
 
-// bit stuffed header block, currently 4 bytes wide and chunks should be 4-byte aligned
-#define MOSAICMAXCNT (1<<23)
+
+
+/* limit the number of elements to consider in a block
+ * It should always be smaller then: ~(0377<<MOSshift)
+*/
+
+#define MOSAICMAXCNT 100000
+/* allow for experiementation using different block sizes */
 
 typedef struct MOSAICBLK{
 	unsigned int tag:8, cnt:24;
@@ -113,9 +119,9 @@ typedef struct MOSAICBLK{
 
 #define MOSgetTag(Blk) (Blk->tag)
 #define MOSsetTag(Blk,Tag)  (Blk)->tag = Tag
-#define MOSsetCnt(Blk,I) (assert(I < MOSAICMAXCNT), (Blk)->cnt = (unsigned int)(I))
+#define MOSsetCnt(Blk,I) (assert(I <= MOSAICMAXCNT), (Blk)->cnt = (unsigned int)(I))
 #define MOSgetCnt(Blk) (BUN)((Blk)->cnt)
-#define MOSincCnt(Blk,I) (assert((Blk)->cnt +I < MOSAICMAXCNT), (Blk)->cnt+= (unsigned int)(I))
+#define MOSincCnt(Blk,I) (assert((Blk)->cnt +I <= MOSAICMAXCNT), (Blk)->cnt+= (unsigned int)(I))
 
 /* The start of the encoding withing a Mosaic block */
 #define MOScodevector(Task) (((char*) (Task)->blk)+ MosaicBlkSize)
@@ -185,7 +191,6 @@ if ( task->n && task->cl ){\
 
 
 mal_export char *MOSfiltername[];
-mal_export BUN MOSblocklimit;
 mal_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSdecompressStorage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

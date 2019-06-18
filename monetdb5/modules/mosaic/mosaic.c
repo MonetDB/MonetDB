@@ -25,7 +25,6 @@
 #include "mosaic_calendar.h"
 
 char *MOSfiltername[]={"raw","runlength","dictionary","delta","linear","frame","prefix","calendar","EOL"};
-BUN MOSblocklimit = 100000;
 
 str MOScompressInternal(Client cntxt, bat *bid, MOStask task, bool debug);
 
@@ -433,7 +432,7 @@ MOScompressInternal(Client cntxt, bat *bid, MOStask task, bool debug)
 			}
 			break;
 		case MOSAIC_RAW:
-			if ( MOSgetCnt(task->blk) == MOSlimit()){
+			if ( MOSgetCnt(task->blk) == MOSAICMAXCNT){
 				task->start -= MOSgetCnt(task->blk);
 				MOSupdateHeader(cntxt,task);
 				MOSadvance_raw(cntxt,task);
@@ -489,8 +488,17 @@ MOScompressInternal(Client cntxt, bat *bid, MOStask task, bool debug)
 			break;
 		default :
 			// continue to use the last block header.
-			MOScompress_raw(cntxt,task);
-			task->start++;
+
+			if (MOSgetCnt(task->blk) + 1 < MOSAICMAXCNT) {
+				MOScompress_raw(cntxt,task);
+				task->start++;
+			} else {
+				MOSupdateHeader(cntxt,task);
+				MOSadvance_raw(cntxt,task);
+				MOSnewBlk(task);
+			}
+
+
 		}
 	}
 	if( MOSgetTag(task->blk) == MOSAIC_RAW && MOSgetCnt(task->blk)){
@@ -1670,7 +1678,6 @@ MOSoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mosaic.mosaic", MAL_MALLOC_FAIL);
 
 	bid = *getArgReference_int(stk,pci,1);
-	MOSblocklimit = 100000;
 
 	for( i = 0; i < CANDIDATES; i++)
 		xf[i]= -1;

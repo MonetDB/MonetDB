@@ -116,14 +116,3 @@ MOSinitializeScan(Client cntxt, MOStask task, int startblk, int stopblk)
 	task->start = hdr->oidbase[startblk];
 	task->elm = task->stop = hdr->oidbase[stopblk-1];
 }
-
-/* limit the number of elements to consider in a block
- * It should always be smaller then: ~(0377<<MOSshift)
-*/
-BUN 
-MOSlimit(void) {
-	if( MOSblocklimit > MOSAICMAXCNT)
-		MOSblocklimit = MOSAICMAXCNT;
-	return MOSblocklimit;
-}
-/* allow for experiementation using different block sizes */

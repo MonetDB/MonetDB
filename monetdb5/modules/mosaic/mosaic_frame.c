@@ -140,7 +140,7 @@ MOSskip_frame(Client cntxt, MOStask task)
 
 #define estimateFrame(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start, frame = *val, delta;\
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	for(i =0; i<limit; i++, val++){\
 		delta = *val - frame;\
 		MOSfind(j,task->hdr->frame.val##TPE,delta,0,hdr->framesize);\
@@ -158,7 +158,7 @@ MOSskip_frame(Client cntxt, MOStask task)
 // filter out the most frequent ones
 #define makeFrame(TPE)\
 {	TPE v,*val = ((TPE*)task->src) + task->start, frame = *val, delta;\
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	for(i =0; i< limit; i++, val++){\
 		delta = *val - frame;\
 		for(j= 0; j< hdr->framesize; j++)\
@@ -242,7 +242,7 @@ MOSestimate_frame(Client cntxt, MOStask task)
 #endif
 	case TYPE_int:
 		{	int *val = ((int*)task->src) + task->start, frame = *val, delta;
-			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
+			BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
 
 			/* frame mask may not be valid anymore
 			if( task->range[MOSAIC_FRAME] > task->start){
@@ -260,7 +260,7 @@ MOSestimate_frame(Client cntxt, MOStask task)
 				if( j == hdr->framesize || task->hdr->frame.valint[j] != delta)
 					break;
 			}
-			if ( i > MOSlimit() ) i = MOSlimit();
+			if ( i > MOSAICMAXCNT ) i = MOSAICMAXCNT;
 			if( i * sizeof(int) <= chunk_size(task,i) )
 				return 0.0;
 			if( task->dst +  chunk_size(task,i) >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)
@@ -281,7 +281,7 @@ MOSestimate_frame(Client cntxt, MOStask task)
 
 #define FRAMEcompress(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start, frame = *val, delta;\
-	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	task->dst = MOScodevector(task); \
     *(TPE*) task->dst = frame;\
 	task->dst += sizeof(TPE);\
