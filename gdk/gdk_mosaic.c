@@ -127,7 +127,7 @@ BATcheckmosaic(BAT *b)
 	int ret;
 	lng t;
 
-    if (VIEWtparent(b)) { // does this make sense?
+    if (VIEWtparent(b)) { // TODO: does this make sense?
         assert(b->tmosaic == NULL);
         b = BBPdescriptor(VIEWtparent(b));
     }
