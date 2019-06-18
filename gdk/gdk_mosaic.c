@@ -108,7 +108,7 @@ BATmosaic(BAT *bn, BUN cap)
 void
 MOSdestroy(BAT *bn) {
 	if (bn && bn->tmosaic) {
-		// Only destoy the mosaic heap of the BAT if it is not sharing the mosaic heap of some parent BAT.
+		// Only destroy the mosaic heap of the BAT if it is not sharing the mosaic heap of some parent BAT.
 		if(!VIEWmosaictparent(bn)){
 			Heap* h= bn->tmosaic;
 			if( HEAPdelete(h, BBP_physical(bn->batCacheid), "mosaic"))
