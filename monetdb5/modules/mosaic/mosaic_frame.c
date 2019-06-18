@@ -38,7 +38,6 @@ MOSadvance_frame(Client cntxt, MOStask task)
 
 	assert(cnt > 0);
 	task->start += (oid) cnt;
-	//task->stop = task->stop;
 	bytes =  (cnt * task->hdr->framebits)/8 + (((cnt * task->hdr->framebits) %8) != 0) + sizeof(ulng);
 	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, lng)); 
 }

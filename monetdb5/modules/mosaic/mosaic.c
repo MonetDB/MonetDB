@@ -1190,12 +1190,8 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ( bl->tmosaic){
 		MOSinit(task,bl);
-		//task->stop = BATcount(br);
-		//task->src= Tloc(br,0);
 	} else {
 		MOSinit(task,br);
-		//task->stop = BATcount(bl);
-		//task->src= Tloc(bl,0);
 		swapped=1;
 	}
 	task->lbat = bln;

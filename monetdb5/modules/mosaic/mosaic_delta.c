@@ -101,15 +101,7 @@ MOSskip_delta(Client cntxt, MOStask task)
 		task->blk = 0; // ENDOFLIST
 }
 
-/* we can not re-use the old stat, because the starting value may be different
-	if( task->range[MOSAIC_DELTA] > task->start + 1){\
-		i = task->range[MOSAIC_DELTA] - task->start;\
-		if( i * sizeof(TYPE) <= wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,MosaicBlkRec))\
-			return 0.0;\
-		if(i) factor = ((flt) i * sizeof(TYPE))/ wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,MosaicBlkRec);\
-		return factor;\
-	}\
-*/
+
 // append a series of values into the non-compressed block
 #define Estimate_delta(TYPE, EXPR)\
 {	TYPE *v = ((TYPE*)task->src) + task->start, val= *v, delta = 0;\
@@ -571,48 +563,6 @@ MOSthetaselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 #ifdef HAVE_HGE
 	case TYPE_hge: thetaselect_delta(hge); break;
 #endif
-/*
-	case TYPE_int:
-		{ 	int low,hgh, v;
-			low= hgh = int_nil;
-			if ( strcmp(oper,"<") == 0){
-				hgh= *(int*) val;
-				hgh = PREVVALUEint(hgh);
-			} else
-			if ( strcmp(oper,"<=") == 0){
-				hgh= *(int*) val;
-			} else
-			if ( strcmp(oper,">") == 0){
-				low = *(int*) val;
-				low = NEXTVALUEint(low);
-			} else
-			if ( strcmp(oper,">=") == 0){
-				low = *(int*) val;
-			} else
-			if ( strcmp(oper,"!=") == 0){
-				hgh= low= *(int*) val;
-				anti++;
-			} else
-			if ( strcmp(oper,"==") == 0){
-				hgh= low= *(int*) val;
-			} 
-		 	v= *(int*) (((char*) task->blk) + MosaicBlkSize);
-			task->dst = MOScodevector(task) + sizeof(int);
-			for( ; first < last; first++, v+= *(bte*)task->dst, task->dst++){
-				if( (low == int_nil || v >= low) && (v <= hgh || hgh == int_nil) ){
-					if ( !anti) {
-						MOSskipit();
-						*o++ = (oid) first;
-					}
-				} else
-				if( anti){
-					MOSskipit();
-					*o++ = (oid) first;
-				}
-			}
-		} 
-		break;
-*/
 	default:
 			if( task->type == TYPE_daytime)
 				thetaselect_delta(daytime); 
@@ -666,22 +616,6 @@ MOSprojection_delta(Client cntxt,  MOStask task)
 #ifdef HAVE_HGE
 		case TYPE_hge: projection_delta(hge); break;
 #endif
-/*
-		case TYPE_int:
-		{	int val, *v;
-			bte *delta;
-			v= (int*) task->src;
-			val = *(int*) (((char*) task->blk) + MosaicBlkSize);
-			delta = (bte*) (((char*)task->blk + MosaicBlkSize) + sizeof(int));
-			for(; first < last; first++, val+= *delta, delta++){
-				MOSskipit();
-				*v++ = val;
-				task->cnt++;
-			}
-			task->src = (char*) v;
-		}
-		break;
-*/
 		case  TYPE_str:
 			// we only have to look at the index width, not the values
 			switch(task->bsrc->twidth){
