@@ -80,6 +80,26 @@ stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTra
 [ 1	]
 #exec  7();
 [ 0	]
+#prepare merge into test.share_daily_history as target
+#using (select * from (values('BHP',?,?,?,?,?,?)) as a(id,timeid,c1,c2,c3,c4,volume)) as source
+#on source.id=target.id and source.timeid=target.timeid
+#when not matched then insert (id,timeid,c1,c2,c3,c4,volume) values(source.id,source.timeid,source.c1,source.c2,source.c3,source.c4,source.volume);
+#prepare merge into test.share_daily_history as target
+#using (select * from (values('BHP',?,?,?,?,?,?)) as a(id,timeid,c1,c2,c3,c4,volume)) as source
+#on source.id=target.id and source.timeid=target.timeid
+#when not matched then insert (id,timeid,c1,c2,c3,c4,volume) values(source.id,source.timeid,source.c1,source.c2,source.c3,source.c4,source.volume);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 3,	2,	1,	0,	0,	0 # length
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#exec  9(1,2,3,4,5,6);
+[ 0	]
 #prepare select * from test.share_daily_history inner join (values('BHP',?)) as source(id,timeid)
 #on source.id=share_daily_history.id and source.timeid=share_daily_history.timeid;
 #prepare select * from test.share_daily_history inner join (values('BHP',?)) as source(id,timeid)

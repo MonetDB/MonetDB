@@ -346,17 +346,14 @@ atom2string(sql_allocator *sa, atom *a)
 		sprintf(buf, "%f", a->data.val.dval);
 		break;
 	case TYPE_str:
-		if (a->data.val.sval)
-			return sa_strdup(sa, a->data.val.sval);
-		else
-			sprintf(buf, "NULL");
-		break;
-        default:  
+		assert(a->data.val.sval);
+		return sa_strdup(sa, a->data.val.sval);
+	default:
 		v = &a->data.val.ival;
 		if (ATOMvarsized(a->data.vtype))
 			v = a->data.val.pval;
 		if ((p = ATOMformat(a->data.vtype, v)) == NULL) {
-                	snprintf(buf, BUFSIZ, "atom2string(TYPE_%d) not implemented", a->data.vtype);
+			snprintf(buf, BUFSIZ, "atom2string(TYPE_%d) not implemented", a->data.vtype);
 		} else {
 			 char *r = sa_strdup(sa, p);
 			 _DELETE(p);
@@ -373,8 +370,7 @@ atom2sql(atom *a)
 	char buf[BUFSIZ];
 
 	if (a->data.vtype == TYPE_str && EC_INTERVAL(ec))
-		ec = EC_STRING; 
-	/* todo handle NULL's early */
+		ec = EC_STRING;
 	if (a->isnull)
 		return _STRDUP("NULL");
 	switch (ec) {
