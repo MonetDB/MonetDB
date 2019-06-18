@@ -237,7 +237,7 @@ MOSestimate_calendar(Client cntxt, MOStask task)
 {	
 	BUN i = 0;
 	int j;
-	flt factor= 0.0;
+	flt factor= 1.0;
 	MosaicHdr hdr = task->hdr;
 	(void) cntxt;
 
@@ -263,10 +263,6 @@ MOSestimate_calendar(Client cntxt, MOStask task)
 		if( i * sizeof(int) <= wordaligned( MosaicBlkSize + (i * hdr->bits)/8 ,int))
 			return 0.0;
 		if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( MosaicBlkSize + (i * hdr->bits)/8,int);
-	} else
-	if( task->type == TYPE_daytime){
-	} else
-	if( task->type == TYPE_timestamp){
 	}
 #ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#estimate calendar "BUNFMT" elm %4.2f factor\n", i, factor);
