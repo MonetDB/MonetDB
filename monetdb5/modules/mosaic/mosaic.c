@@ -375,7 +375,7 @@ MOScompressInternal(Client cntxt, bat *bid, MOStask task, bool debug)
 	
 	// initialize the non-compressed read pointer
 	task->src = Tloc(bsrc, 0);
-	task->elm = BATcount(bsrc);
+	task->stop = BATcount(bsrc);
 	task->start = 0;
 	task->stop = BATcount(bsrc);
 	task->timer = GDKusec();
@@ -1190,11 +1190,11 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ( bl->tmosaic){
 		MOSinit(task,bl);
-		//task->elm = BATcount(br);
+		//task->stop = BATcount(br);
 		//task->src= Tloc(br,0);
 	} else {
 		MOSinit(task,br);
-		//task->elm = BATcount(bl);
+		//task->stop = BATcount(bl);
 		//task->src= Tloc(bl,0);
 		swapped=1;
 	}
@@ -1207,10 +1207,10 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MOSinitializeScan(cntxt,task,startblk,stopblk);
 
 	if ( bl->tmosaic){
-		task->elm = BATcount(br);
+		task->stop = BATcount(br);
 		task->src= Tloc(br,0);
 	} else {
-		task->elm = BATcount(bl);
+		task->stop = BATcount(bl);
 		task->src= Tloc(bl,0);
 	}
 	// loop thru all the chunks and collect the results

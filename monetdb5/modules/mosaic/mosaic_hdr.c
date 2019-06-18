@@ -114,5 +114,5 @@ MOSinitializeScan(Client cntxt, MOStask task, int startblk, int stopblk)
 	task->blk = (MosaicBlk) (((char*)task->hdr) + MosaicHdrSize + hdr->offset[startblk]);
 	// set the oid range covered
 	task->start = hdr->oidbase[startblk];
-	task->elm = task->stop = hdr->oidbase[stopblk-1];
+	task->stop = hdr->oidbase[stopblk-1];
 }

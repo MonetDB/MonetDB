@@ -631,7 +631,7 @@ MOSprojection_raw(Client cntxt,  MOStask task)
 	v = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 	for(oo= (oid) first; first < last; first++, v++, oo++){\
 		w = (TPE*) task->src;\
-		for(n = task->elm, o = 0; n -- > 0; w++,o++)\
+		for(n = task->stop, o = 0; n -- > 0; w++,o++)\
 		if ( *w == *v){\
 			if( BUNappend(task->lbat, &oo, false)!= GDK_SUCCEED ||\
 			BUNappend(task->rbat, &o, false) != GDK_SUCCEED)\
@@ -666,7 +666,7 @@ MOSjoin_raw(Client cntxt,  MOStask task)
 			v = (int*) (((char*) task->blk) + MosaicBlkSize);
 			for(oo= (oid) first; first < last; first++, v++, oo++){
 				w = (int*) task->src;
-				for(n = task->elm, o = 0; n -- > 0; w++,o++)
+				for(n = task->stop, o = 0; n -- > 0; w++,o++)
 				if ( *w == *v){
 					if( BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||
 						BUNappend(task->rbat, &o, false) != GDK_SUCCEED )

@@ -38,7 +38,7 @@ MOSadvance_frame(Client cntxt, MOStask task)
 
 	assert(cnt > 0);
 	task->start += (oid) cnt;
-	//task->stop = task->elm;
+	//task->stop = task->stop;
 	bytes =  (cnt * task->hdr->framebits)/8 + (((cnt * task->hdr->framebits) %8) != 0) + sizeof(ulng);
 	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, lng)); 
 }
@@ -604,7 +604,7 @@ MOSprojection_frame(Client cntxt,  MOStask task)
 	base = (BitVector) (((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
 	w = (TPE*) task->src;\
 	limit= MOSgetCnt(task->blk);\
-	for( o=0, n= task->elm; n-- > 0; o++,w++ ){\
+	for( o=0, n= task->stop; n-- > 0; o++,w++ ){\
 		for(oo = task->start,i=0; i < limit; i++,oo++){\
 			framedecompress(i);\
 			if ( *w == frame + task->hdr->frame.val##TPE [j]){\

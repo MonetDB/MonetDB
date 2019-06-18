@@ -34,7 +34,7 @@ MOSadvance_dictionary(Client cntxt, MOStask task)
 
 	assert(cnt > 0);
 	task->start += (oid) cnt;
-	task->stop = task->elm;
+	task->stop = task->stop;
 	bytes =  (long) (cnt * task->hdr->bits)/8 + (((cnt * task->hdr->bits) %8) != 0);
 	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
 }
@@ -772,7 +772,7 @@ MOSprojection_dictionary(Client cntxt,  MOStask task)
 	BitVector base = (BitVector) MOScodevector(task);\
 	w = (TPE*) task->src;\
 	limit= MOSgetCnt(task->blk);\
-	for( o=0, n= task->elm; n-- > 0; o++,w++ ){\
+	for( o=0, n= task->stop; n-- > 0; o++,w++ ){\
 		for(oo = task->start,i=0; i < limit; i++,oo++){\
 			j= getBitVector(base,i,(int) hdr->bits); \
 			if ( *w == task->hdr->dict.val##TPE[j]){\

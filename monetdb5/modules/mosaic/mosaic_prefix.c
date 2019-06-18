@@ -135,7 +135,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 	if( ATOMstorage(task->type == TYPE_str))
 			size =task->bsrc->twidth;
 	task->start += MOSgetCnt(task->blk);
-	task->stop = task->elm;
+	task->stop = task->stop;
 	switch(size){
 	case 1:
 		{	unsigned char *dst = (unsigned char*)  MOScodevector(task);
@@ -354,7 +354,7 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	size = ATOMsize(task->type);
 	if( ATOMstorage(task->type == TYPE_str))
 			size =task->bsrc->twidth;
-	if( task->elm >= 2)
+	if( task->stop >= 2)
 	switch(size){
 	case 1:
 		{	unsigned char *v = ((unsigned char*) task->src) + task->start, val= *v, mask;
@@ -528,7 +528,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 	if( ATOMstorage(task->type == TYPE_str))
 			size =task->bsrc->twidth;
 	limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
-	if( task->elm >=2 )
+	if( task->stop >=2 )
 	switch(size){
 	case 1:
 		{	unsigned char *v = ((unsigned char*) task->src) + task->start, *wlimit= v + limit, val1 = *v, mask, bits;
@@ -1041,7 +1041,7 @@ break;
 	bits = (int) (val & (~mask));\
 	val = val & mask;\
 	w = (TPE*) task->src;\
-	for(n = task->elm, o = 0; n -- > 0; w++,o++){\
+	for(n = task->stop, o = 0; n -- > 0; w++,o++){\
 		for(i=0, oo= (oid) first; oo < (oid) last; v++, oo++,i++){\
 			v = val | decompress(base,i,bits);\
 			value =  (TPE) ((TPE2)val |(TPE2) v);\

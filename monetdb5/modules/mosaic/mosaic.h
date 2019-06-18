@@ -158,7 +158,6 @@ typedef struct MOSTASK{
 
 
 	BAT *bsrc;		// target column to extended with compressed heap
-	BUN	elm;		// number of elements left to be compress
 	char *src;		// read pointer into source
 	//BAT *index;		// collection of unique elements
 	//BAT *freq;		// frequency of these elements

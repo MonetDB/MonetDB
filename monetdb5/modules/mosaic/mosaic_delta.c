@@ -25,7 +25,7 @@ MOSadvance_delta(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	task->start += MOSgetCnt(blk);
-	task->stop = task->elm;
+	task->stop = task->stop;
 	switch(task->type){
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(sizeof(sht) + MosaicBlkSize + MOSgetCnt(blk)-1,sht)); break ;
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(sizeof(int) + MosaicBlkSize + MOSgetCnt(blk)-1,int)); break ;
@@ -709,7 +709,7 @@ MOSprojection_delta(Client cntxt,  MOStask task)
 	v = (bte*) (((char*) task->blk) + MosaicBlkSize + sizeof(int));\
 	for(oo= (oid) first; first < last; first++, base += *v,v++, oo++){\
 		w = (TPE*) task->src;\
-		for(n = task->elm, o = 0; n -- > 0; w++,o++)\
+		for(n = task->stop, o = 0; n -- > 0; w++,o++)\
 		if ( *w == base){\
 			if( BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
 			BUNappend(task->rbat, &o, false) !=GDK_SUCCEED) \

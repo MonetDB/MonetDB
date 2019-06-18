@@ -100,7 +100,7 @@ MOSadvance_runlength(Client cntxt, MOStask task)
 	(void) cntxt;
 
 	task->start += MOSgetCnt(task->blk);
-	//task->stop = task->elm;
+	//task->stop = task->stop;
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(bte),bte)); break;
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(bit),bit)); break;
@@ -677,7 +677,7 @@ MOSprojection_runlength(Client cntxt,  MOStask task)
 {	TPE *v, *w;\
 	v = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 	w = (TPE*) task->src;\
-	for(n = task->elm, o = 0; n -- > 0; w++,o++)\
+	for(n = task->stop, o = 0; n -- > 0; w++,o++)\
 	if ( *w == *v)\
 		for(oo= (oid) first; oo < (oid) last; v++, oo++){\
 			if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
@@ -712,7 +712,7 @@ MOSjoin_runlength(Client cntxt,  MOStask task)
 			{	int *v, *w;
 				v = (int*) (((char*) task->blk) + MosaicBlkSize);
 				w = (int*) task->src;
-				for(n = task->elm, o = 0; n -- > 0; w++,o++)
+				for(n = task->stop, o = 0; n -- > 0; w++,o++)
 				if ( *w == *v)
 					for(oo= (oid) first; oo < (oid) last; v++, oo++){
 						if( BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||
