@@ -63,13 +63,13 @@ typedef struct MOSAICHEADER{
 		flt sumflt;
 		dbl sumdbl;
 	} checksum, checksum2;	// for validity checks
-	int top;
+	int top; // TODO: rename to e.g. nblocks because it is the number of blocks
 	// skip list for direct OID-based access
-	oid oidbase[MOSAICINDEX];	// to speedup localization
+	oid oidbase[MOSAICINDEX];	// to speedup localization // TODO does not make sense if there is a compression strategy that is used more often
 	BUN offset[MOSAICINDEX];
 	// both dictionary and framebased compression require a global dictionary of frequent values
 	// Their size is purposely topped 
-	bte mask, bits, framebits;	// global compression type properties
+	bte mask, bits, framebits;	// global compression type properties TODO: only used in calendar
 	int dictsize;		// used by dictionary compression, it is a small table
 	int framesize;		// used by frame compression, it is a small table
 	union{
@@ -147,7 +147,7 @@ typedef struct MOSTASK{
 
 	/* collect the range being applied for the last compression call */
 	BUN range[MOSAIC_METHODS]; // end of compression range
-	float factor[MOSAIC_METHODS];// compression factor of last range
+	float factor[MOSAIC_METHODS];// compression factor of last range. // TODO: This doesn't seem to be used. It also has some design flaws to it. Like what is its value if there are two blocks of the same compression type.
 
 	MosaicHdr hdr;	// header block with index/synopsis information
 	MosaicBlk blk;	// current block header in scan
