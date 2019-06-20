@@ -7,7 +7,6 @@ base:= algebra.copy(b);
 
 io.print(b);
 mosaic.compress(b,"raw");
-#mosaic.dump(b);
 b:= mosaic.decompress(b);
 io.print(b);
 

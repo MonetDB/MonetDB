@@ -21,7 +21,6 @@
 #define TEMPORALSIZE 256 
 
 mal_export void MOScreatecalendar(Client cntxt, MOStask task);
-mal_export void MOSdump_calendar(Client cntxt, MOStask task);
 mal_export void MOSlayout_calendar(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSlayout_calendar_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSadvance_calendar(Client cntxt, MOStask task);

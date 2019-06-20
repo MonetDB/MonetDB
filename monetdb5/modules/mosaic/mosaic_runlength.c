@@ -16,46 +16,6 @@
 #include "mosaic_runlength.h"
 #include "mosaic_private.h"
 
-/* Beware, the dump routines use the compressed part of the task */
-void
-MOSdump_runlength(Client cntxt, MOStask task)
-{
-	MosaicBlk blk= task->blk;
-	void *val = (void*)(((char*) blk) + MosaicBlkSize);
-
-	mnstr_printf(cntxt->fdout,"#rle "BUNFMT" ", MOSgetCnt(blk));
-	switch(task->type){
-	case TYPE_bte:
-		mnstr_printf(cntxt->fdout,"bte %hhd", *(bte*) val); break;
-	case TYPE_sht:
-		mnstr_printf(cntxt->fdout,"sht %hd", *(sht*) val); break;
-	case TYPE_int:
-		mnstr_printf(cntxt->fdout,"int %d", *(int*) val); break;
-	case  TYPE_oid:
-		mnstr_printf(cntxt->fdout,"oid "OIDFMT, *(oid*) val); break;
-	case  TYPE_lng:
-		mnstr_printf(cntxt->fdout,"lng "LLFMT, *(lng*) val); break;
-#ifdef HAVE_HGE
-	case  TYPE_hge:
-		mnstr_printf(cntxt->fdout,"hge %.40g", (dbl) *(hge*) val); break;
-#endif
-	case TYPE_flt:
-		mnstr_printf(cntxt->fdout,"flt  %f", *(flt*) val); break;
-	case TYPE_dbl:
-		mnstr_printf(cntxt->fdout,"flt  %f", *(dbl*) val); break;
-	case TYPE_str:
-		mnstr_printf(cntxt->fdout,"str TBD"); break;
-	default:
-		if( task->type == TYPE_date)
-			mnstr_printf(cntxt->fdout,"date %d ", *(int*) val); 
-		if( task->type == TYPE_daytime)
-			mnstr_printf(cntxt->fdout,"daytime %d ", *(int*) val);
-		if( task->type == TYPE_timestamp)
-			mnstr_printf(cntxt->fdout,"int "LLFMT, *(lng*) val); 
-	}
-	mnstr_printf(cntxt->fdout,"\n");
-}
-
 void
 MOSlayout_runlength(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
@@ -250,9 +210,6 @@ MOScompress_runlength(Client cntxt, MOStask task)
 		case 8: RLEcompress(lng); break;
 		}
 	}
-#ifdef _DEBUG_MOSAIC_
-	MOSdump_runlength(cntxt, task);
-#endif
 }
 
 // the inverse operator, extend the src

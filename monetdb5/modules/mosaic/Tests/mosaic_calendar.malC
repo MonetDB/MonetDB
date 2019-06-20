@@ -13,7 +13,6 @@ bat.append(d,"2015-07-11":date);
 
 io.print(d);
 mosaic.compress(d,"calendar");
-#mosaic.dump(xd);
 d:= mosaic.decompress(d);
 io.print(d);
 
@@ -29,6 +28,5 @@ bs:= bat.append(bs,bs);
 
 io.print(bs);
 mosaic.compress(bs,"calendar");
-#mosaic.dump(bs);
 mosaic.decompress(bs);
 io.print(bs);

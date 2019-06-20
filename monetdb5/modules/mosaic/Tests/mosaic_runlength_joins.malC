@@ -17,7 +17,6 @@ bat.append(c,2@0);
 bat.append(c,4@0);
 io.print(c);
 
-#mosaic.dump(b);
 s:= algebra.projection(c,base);
 io.print(s);
 xs:= mosaic.projection(c,b);

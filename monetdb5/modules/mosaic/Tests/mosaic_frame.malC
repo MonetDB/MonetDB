@@ -8,7 +8,6 @@ b:= bat.append(b,b);
 base:= algebra.copy(b);
 
 mosaic.compress(b,"frame");
-#mosaic.dump(b);
 b:= mosaic.decompress(b);
 io.print(base,b);
 
@@ -22,7 +21,6 @@ d:= bat.append(d,d);
 dbase:= algebra.copy(d);
 
 mosaic.compress(d,"frame");
-#mosaic.dump(d);
 d:= mosaic.decompress(d);
 io.print(dbase,d);
 
@@ -130,7 +128,6 @@ bat.append(e,"1994-12-30":date);
 
 ebase:= algebra.copy(e);
 mosaic.compress(e,"frame");
-mosaic.dump(e);
 e:= mosaic.decompress(e);
 io.print(ebase,e);
 #mosaic.analyse("frame prefix");

@@ -17,7 +17,6 @@ base:= algebra.copy(b);
 
 io.print(base);
 mosaic.compress(b,"linear");
-#mosaic.dump(b);
 b:= mosaic.decompress(b);
 io.print(b);
 
@@ -33,7 +32,6 @@ bs:= bat.append(bs,bs);
 
 io.print(bs);
 mosaic.compress(bs,"linear");
-#mosaic.dump(bs);
 bs:= mosaic.decompress(bs);
 io.print(bs);
 
@@ -47,6 +45,5 @@ d:= bat.append(d,d);
 
 io.print(d);
 mosaic.compress(d,"linear");
-#mosaic.dump(d);
 d:= mosaic.decompress(d);
 io.print(d);

@@ -24,7 +24,6 @@ base:= algebra.copy(b);
 
 io.print(base);
 mosaic.compress(b);
-mosaic.dump(b);
 
 s:= algebra.select(base,0,50,false,false,false);
 io.print(s);

@@ -10,7 +10,6 @@ base:= algebra.copy(b);
 
 io.print(base);
 mosaic.compress(b,"zone");
-#mosaic.dump(b);
 s:= algebra.select(base,0,50,false,false,false);
 io.print(s);
 xs:= mosaic.select(b,0,50,false,false,false);

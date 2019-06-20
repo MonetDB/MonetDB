@@ -29,7 +29,6 @@ base:=algebra.copy(b);
 
 io.print(b);
 mosaic.compress(b,"prefix");
-#mosaic.dump(b);
 b:= mosaic.decompress(b);
 io.print(b);
 # Linear range compressions
@@ -40,7 +39,6 @@ bat.append(c,2@0);
 bat.append(c,4@0);
 io.print(c);
 
-#mosaic.dump(b);
 s:= algebra.projection(c,base);
 io.print(s);
 xs:= mosaic.projection(c,b);

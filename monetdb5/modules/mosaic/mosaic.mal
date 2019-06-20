@@ -12,47 +12,9 @@ pattern decompress(b:bat[:any_1]) :bat[:any_1]
 address MOSdecompress
 comment "Apply dynamic decompression over chunks producing a temporary version";
 
-pattern decompressStorage(b:bat[:any_1]) :bat[:any_1]
-address MOSdecompressStorage
-comment "Apply dynamic decompression, changing the storage layout permanently";
-
-pattern analyse()
-address MOSanalyse
-comment "Apply heap compression on all";
-
-pattern analyse(properties:str)
-address MOSanalyse
-comment "Apply heap compression on all with minimum threshold";
-
-pattern analyse(properties:str,b:int)
-address MOSanalyse
-comment "Apply heap compression on a single column";
-
-pattern analyse(b:int)
-address MOSanalyse
-comment "Apply default heap compression on a specific column";
-
-pattern optimize(bid:int)
-address MOSoptimizer
-comment "Perform a search thru the compression space using depth 1";
-
-pattern optimize(bid:int)
-address MOSoptimizer
-comment "Perform a search thru the compression space using up to 2^ply
-candidate combinations";
-
-pattern optimize(bid:int, blk:int)
-address MOSoptimizer
-comment "Perform a search thru the compression space using up to 2^ply
-candidate combinations and blk*1000 blocksize limits";
-
 pattern slice(bid:lng)(b0:bte,b1:bte,b2:bte,b3:bte,b4:bte,b5:bte,b6:bte,b7:bte)
 address MOSslice
 comment "Break column into verticalslices";
-
-pattern dump(b:bat[:any])
-address MOSdump
-comment "Dump the compressed structure";
 
 pattern select(b:bat[:bte], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid]
 address MOSselect;

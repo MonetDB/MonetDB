@@ -69,20 +69,6 @@ MOSdump_frameInternal(char *buf, size_t len, MOStask task, int i)
 }
 
 void
-MOSdump_frame(Client cntxt, MOStask task)
-{
-	int i;
-	char buf[BUFSIZ];
-
-	mnstr_printf(cntxt->fdout,"# framebits %d:",task->hdr->framebits);
-	for(i=0; i< task->hdr->framesize; i++){
-		MOSdump_frameInternal(buf, BUFSIZ, task,i);
-		mnstr_printf(cntxt->fdout,"[%d] %s ",i,buf);
-	}
-	mnstr_printf(cntxt->fdout,"\n");
-}
-
-void
 MOSlayout_frame_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	lng cnt=0,j=0;

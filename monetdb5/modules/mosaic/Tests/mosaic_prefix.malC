@@ -28,7 +28,6 @@ bat.append(b,255:int);
 
 io.print(b);
 mosaic.compress(b,"prefix");
-#mosaic.dump(b);
 b:= mosaic.decompress(b);
 io.print(b);
 
@@ -62,6 +61,5 @@ bat.append(c,255:sht);
 
 io.print(c);
 mosaic.compress(c,"prefix");
-mosaic.dump(c);
 c:= mosaic.decompress(c);
 io.print(c);

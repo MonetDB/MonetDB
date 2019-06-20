@@ -17,7 +17,6 @@
 #include "mal_interpreter.h"
 #include "mal_client.h"
 
-mal_export void MOSdump_delta(Client cntxt, MOStask task);
 mal_export void MOSlayout_delta(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSadvance_delta(Client cntxt, MOStask task);
 mal_export void MOSskip_delta(Client cntxt, MOStask task);

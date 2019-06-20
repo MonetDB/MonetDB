@@ -15,24 +15,6 @@
 #include "mosaic.h"
 #include "mosaic_hdr.h"
 
-void
-MOSdumpHeader(Client cntxt, MOStask task)
-{
-	MosaicHdr hdr = (MosaicHdr) task->hdr;
-	int i=0;
-
-#ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#header block version %d\n", hdr->version);
-	mnstr_printf(cntxt->fdout,"#index top %d\n", hdr->top);
-	for(i= 0; i< hdr->top; i++)
-		mnstr_printf(cntxt->fdout,"#[%d] "OIDFMT" " BUNFMT "\n",i, hdr->oidbase[i], hdr->offset[i]);
-#else
-	(void) cntxt;
-	(void) i;
-	(void) hdr;
-#endif
-}
-
 // add the chunk to the index to facilitate 'fast' OID-based access
 void
 MOSupdateHeader(Client cntxt, MOStask task)
@@ -53,7 +35,6 @@ MOSupdateHeader(Client cntxt, MOStask task)
 		hdr->oidbase[hdr->top] = MOSgetCnt(task->blk)+ hdr->oidbase[hdr->top-1];
 		hdr->offset[hdr->top] =  (BUN) (task->dst - (char*) task->hdr);
 		hdr->top++;
-		MOSdumpHeader(cntxt,task);
 		return;
 	}
 	// compress the index by finding the smallest compressed fragment pair
@@ -74,7 +55,6 @@ MOSupdateHeader(Client cntxt, MOStask task)
 		hdr->oidbase[i]  = hdr->oidbase[i+1];
 		hdr->offset[i] = hdr->offset[i+1];
 	}
-	MOSdumpHeader(cntxt,task);
 }
 
 void

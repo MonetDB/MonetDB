@@ -17,7 +17,6 @@
 #include "mal_interpreter.h"
 #include "mal_client.h"
 
-mal_export void MOSdumpHeader(Client cntxt, MOStask task);
 mal_export void MOSupdateHeader(Client cntxt, MOStask task);
 mal_export void MOSinitHeader(MOStask task);
 mal_export void MOSinitializeScan(Client cntxt, MOStask task, int startblk, int stopblk);

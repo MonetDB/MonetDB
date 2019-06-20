@@ -51,26 +51,6 @@ MOSdump_calendarInternal(char *buf, size_t len, MOStask task, int i)
 	}
 }
 
-void
-MOSdump_calendar(Client cntxt, MOStask task)
-{
-	int i,len= BUFSIZ;
-	char buf[BUFSIZ];
-
-	mnstr_printf(cntxt->fdout,"#calendar bits %d dictsize %d",task->hdr->bits, task->hdr->dictsize);
-	for(i=0; i< task->hdr->dictsize; i++){
-		MOSdump_calendarInternal(buf, BUFSIZ, task,i);
-		mnstr_printf(cntxt->fdout,"[%d] %s ",i,buf);
-	}
-	mnstr_printf(cntxt->fdout,"\n");
-	if( task->type == TYPE_daytime || task->type == TYPE_date){
-		snprintf(buf,len,"%d %d", task->hdr->checksum.sumint,task->hdr->checksum2.sumint);
-	}
-	if( task->type == TYPE_timestamp){
-		snprintf(buf,len,"%d %d", task->hdr->checksum.sumint,task->hdr->checksum2.sumint);
-	}
-	mnstr_printf(cntxt->fdout,"#checksums %s\n",buf);
-}
 
 void
 MOSlayout_calendar_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)

@@ -24,7 +24,6 @@ base:= algebra.copy(b);
 
 io.print(base);
 mosaic.compress(b);
-mosaic.dump(b);
 
 s:= algebra.thetaselect(base,50,"<");
 io.print(s);

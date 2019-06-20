@@ -17,13 +17,6 @@
 #include "mosaic_private.h"
 
 void
-MOSdump_raw(Client cntxt, MOStask task)
-{
-	MosaicBlk blk = task->blk;
-	mnstr_printf(cntxt->fdout,"#none "BUNFMT"\n", MOSgetCnt(blk));
-}
-
-void
 MOSlayout_raw(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = (MosaicBlk) task->blk;

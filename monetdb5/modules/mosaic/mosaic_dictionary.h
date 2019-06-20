@@ -21,7 +21,6 @@
 #define DICTSIZE 256 
 
 mal_export void MOScreatedictionary(Client cntxt, MOStask task);
-mal_export void MOSdump_dictionary(Client cntxt, MOStask task);
 mal_export void MOSlayout_dictionary(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSlayout_dictionary_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSadvance_dictionary(Client cntxt, MOStask task);

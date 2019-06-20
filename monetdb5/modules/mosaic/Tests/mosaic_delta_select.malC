@@ -14,7 +14,6 @@ base:= algebra.copy(b);
 
 io.print(base);
 mosaic.compress(b,"delta");
-#mosaic.dump(x);
 s:= algebra.select(base,-1,4,false,false,false);
 io.print(s);
 xs:= mosaic.select(b,-1,4,false,false,false);

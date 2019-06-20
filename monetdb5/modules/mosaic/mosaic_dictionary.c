@@ -74,48 +74,6 @@ MOSdump_dictionaryInternal(char *buf, size_t len, MOStask task, int i)
 }
 
 void
-MOSdump_dictionary(Client cntxt, MOStask task)
-{
-	int i,len= BUFSIZ;
-	char buf[BUFSIZ];
-
-	mnstr_printf(cntxt->fdout,"#dictionary bits %d dictsize %d",task->hdr->bits, task->hdr->dictsize);
-	for(i=0; i< task->hdr->dictsize; i++){
-		MOSdump_dictionaryInternal(buf, BUFSIZ, task,i);
-		mnstr_printf(cntxt->fdout,"[%d] %s ",i,buf);
-	}
-	mnstr_printf(cntxt->fdout,"\n");
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte:
-		snprintf(buf,len,"%d %d", task->hdr->checksum.sumbte,task->hdr->checksum2.sumbte); break;
-	case TYPE_sht:
-		snprintf(buf,len,"%hd %hd", task->hdr->checksum.sumsht,task->hdr->checksum2.sumsht); break;
-	case TYPE_int:
-		snprintf(buf,len,"%d %d", task->hdr->checksum.sumint,task->hdr->checksum2.sumint); break;
-	case  TYPE_oid:
-		snprintf(buf,len,OIDFMT " " OIDFMT, task->hdr->checksum.sumoid,task->hdr->checksum2.sumoid); break;
-	case  TYPE_lng:
-		snprintf(buf,len,LLFMT " " LLFMT, task->hdr->checksum.sumlng,task->hdr->checksum2.sumlng); break;
-#ifdef HAVE_HGE
-	case  TYPE_hge:
-		snprintf(buf,len,"%.40g %.40g", (dbl)task->hdr->checksum.sumhge,(dbl)task->hdr->checksum2.sumhge); break;
-#endif
-	case TYPE_flt:
-		snprintf(buf,len,"%f %f", task->hdr->checksum.sumflt,task->hdr->checksum2.sumflt); break;
-	case TYPE_dbl:
-		snprintf(buf,len,"%g %g", task->hdr->checksum.sumdbl,task->hdr->checksum2.sumdbl); break;
-	case TYPE_str:
-		switch(task->bsrc->twidth){
-			case 1: snprintf(buf,len,"%d", task->hdr->dict.valbte[i]); break;
-			case 2: snprintf(buf,len,"%hd", task->hdr->dict.valsht[i]); break;
-			case 4: snprintf(buf,len,"%d", task->hdr->dict.valint[i]); break;
-			case 8: snprintf(buf,len,LLFMT,  task->hdr->dict.vallng[i]); 
-		}
-	}
-	mnstr_printf(cntxt->fdout,"#checksums %s\n",buf);
-}
-
-void
 MOSlayout_dictionary_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	lng zero=0;

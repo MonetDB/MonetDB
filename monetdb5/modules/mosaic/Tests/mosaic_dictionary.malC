@@ -9,7 +9,6 @@ base:= algebra.copy(b);
 
 io.print(base);
 mosaic.compress(b,"dictionary");
-#mosaic.dump(b);
 b:= mosaic.decompress(b);
 io.print(b);
 
@@ -23,6 +22,5 @@ d:= bat.append(d,d);
 
 io.print(d);
 mosaic.compress(d,"dictionary");
-mosaic.dump(d);
 d:= mosaic.decompress(d);
 io.print(d);

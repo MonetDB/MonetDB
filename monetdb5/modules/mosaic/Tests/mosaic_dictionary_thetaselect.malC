@@ -10,7 +10,6 @@ base:= algebra.copy(b);
 
 io.print(base);
 mosaic.compress(b,"dictionary test 10");
-#mosaic.dump(b);
 b:= mosaic.decompress(b);
 io.print(b);
 

@@ -54,13 +54,6 @@ MOSadvance_delta(Client cntxt, MOStask task)
 
 
 void
-MOSdump_delta(Client cntxt, MOStask task)
-{
-	MosaicBlk blk = task->blk;
-	mnstr_printf(cntxt->fdout,"#delta "BUNFMT"\n", MOSgetCnt(blk));
-}
-
-void
 MOSlayout_delta(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;

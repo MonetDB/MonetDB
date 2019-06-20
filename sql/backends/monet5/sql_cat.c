@@ -932,7 +932,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				}
 				// TODO: check if there should be something like "else {remove_mosaic_index()}".
 
-				msg = MOScompressInternal(cntxt, &b->batCacheid, task, 0);
+				msg = MOScompressInternal(cntxt, &b->batCacheid, task);
 			}
 
 			BBPunfix(b->batCacheid);
