@@ -26,8 +26,6 @@
 
 char *MOSfiltername[]={"raw","runlength","dictionary","delta","linear","frame","prefix","calendar","EOL"};
 
-str MOScompressInternal(Client cntxt, bat *bid, MOStask task, bool debug);
-
 static void
 MOSinit(MOStask task, BAT *b){
 	char *base;
@@ -411,28 +409,10 @@ MOScompressInternal(Client cntxt, bat *bid, MOStask task, bool debug)
 		}
 		assert (task->dst < bsrc->tmosaic->base + bsrc->tmosaic->size );
 
-		// wrapup previous block
-		switch(cand){
-		case MOSAIC_RLE:
-		case MOSAIC_DICT:
-		case MOSAIC_CALENDAR:
-		case MOSAIC_FRAME:
-		case MOSAIC_DELTA:
-		case MOSAIC_LINEAR:
-		case MOSAIC_PREFIX:
-			// close the non-compressed part
-			if( MOSgetTag(task->blk) == MOSAIC_RAW && MOSgetCnt(task->blk) ){
-				task->start -= MOSgetCnt(task->blk);
-				MOSupdateHeader(cntxt,task);
-				MOSadvance_raw(cntxt,task);
-				// always start with an EOL block
-				task->dst = MOScodevector(task);
-				MOSsetTag(task->blk,MOSAIC_EOL);
-				MOSsetCnt(task->blk,0);
-			}
-			break;
-		case MOSAIC_RAW:
-			if ( MOSgetCnt(task->blk) == MOSAICMAXCNT){
+		if ( MOSgetTag(task->blk) == MOSAIC_RAW) {
+			if( cand != MOSAIC_RAW ||  MOSgetCnt(task->blk) +1 == MOSAICMAXCNT) {
+				// We close the old MOSAIC_RAW block if estimation decides to use a different block type
+				// or when the current MOSAIC_RAW block has become too big.
 				task->start -= MOSgetCnt(task->blk);
 				MOSupdateHeader(cntxt,task);
 				MOSadvance_raw(cntxt,task);
@@ -442,6 +422,7 @@ MOScompressInternal(Client cntxt, bat *bid, MOStask task, bool debug)
 				MOSsetCnt(task->blk,0);
 			}
 		}
+
 		// apply the compression to a chunk
 		switch(cand){
 		case MOSAIC_RLE:
@@ -486,34 +467,30 @@ MOScompressInternal(Client cntxt, bat *bid, MOStask task, bool debug)
 			MOSadvance_calendar(cntxt,task);
 			MOSnewBlk(task);
 			break;
-		default :
-			// continue to use the last block header.
-
-			if (MOSgetCnt(task->blk) + 1 < MOSAICMAXCNT) {
-				MOScompress_raw(cntxt,task);
+		case MOSAIC_RAW: // This is basically the default case.
+			/* This tries to insert the single value at task->start into this MOSAIC_RAW block.
+			 * After that compressions tries to re-evaluate through MOSoptimizerCost
+			 * from ++task->start and unwards to estimate a more efficient block type.
+			*/
+			MOScompress_raw(cntxt, task);
 				task->start++;
-			} else {
-				MOSupdateHeader(cntxt,task);
-				MOSadvance_raw(cntxt,task);
-				MOSnewBlk(task);
-			}
-
-
+			break;
+		default : // Unknown block type. Should not happen.
+			assert(0);
 		}
 	}
-	if( MOSgetTag(task->blk) == MOSAIC_RAW && MOSgetCnt(task->blk)){
+
+	if( MOSgetTag(task->blk) == MOSAIC_RAW ) {
 		MOSupdateHeader(cntxt,task);
 		MOSadvance_raw(cntxt,task);
-		task->dst = MOScodevector(task);
-		MOSsetTag(task->blk,MOSAIC_EOL);
-	} else
-		task->dst = MOScodevector(task);
+		MOSnewBlk(task);
+	}
+
 	task->bsrc->tmosaic->free = (task->dst - (char*)task->hdr);
 	task->timer = GDKusec() - task->timer;
 	if(debug) 
 		MOSdumpTask(cntxt,task);
-	// if we couldnt compress well enough, ignore the result
-	// TODO
+	// TODO: if we couldnt compress well enough, ignore the result
 
 	bsrc->batDirtydesc = true;
 	task->ratio = task->hdr->ratio = (flt)task->bsrc->theap.free/ task->bsrc->tmosaic->free;
