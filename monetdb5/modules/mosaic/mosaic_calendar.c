@@ -42,11 +42,12 @@ MOSadvance_calendar(Client cntxt, MOStask task)
 static void
 MOSdump_calendarInternal(char *buf, size_t len, MOStask task, int i)
 {
-
+	/* TODO:
 	if( task->type == TYPE_timestamp){
 		snprintf(buf,len,LLFMT,  task->hdr->dict.vallng[i]); 
 	}
-	if( task->type == TYPE_date || task->type == TYPE_daytime){
+	*/
+	if( task->type == TYPE_date /* || task->type == TYPE_daytime */){
 		snprintf(buf,len,"%d", task->hdr->dict.valint[i]); 
 	}
 }
@@ -165,8 +166,10 @@ MOScreatecalendar(Client cntxt, MOStask task)
 	if( task->type == TYPE_date)
 		makeCalendar(int)
 	if( task->type == TYPE_daytime){
+		// TODO:
 	}
 	if( task->type == TYPE_timestamp){
+		// TODO:
 	}
 
 	if( dictsize == 0)
@@ -304,8 +307,10 @@ MOScompress_calendar(Client cntxt, MOStask task)
 	if( task->type == TYPE_date)
 		CALcompress(int);
 	if( task->type == TYPE_daytime){
+		// TODO:
 	}
 	if( task->type == TYPE_timestamp){
+		// TODO:
 	}
 }
 
@@ -323,8 +328,10 @@ MOSdecompress_calendar(Client cntxt, MOStask task)
 		CALdecompress(int);
 	}
 	if( task->type == TYPE_daytime){
+		// TODO:
 	}
 	if( task->type == TYPE_timestamp){
+		// TODO:
 	}
 }
 
@@ -426,8 +433,10 @@ MOSselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 		select_calendar(int, MASKBITS,MASKDAY); 
 	}
 	if( task->type == TYPE_daytime){
+		// TODO:
 	}
 	if( task->type == TYPE_timestamp){
+		// TODO:
 	}
 	MOSskip_calendar(cntxt,task);
 	task->lb = o;
@@ -499,8 +508,10 @@ MOSthetaselect_calendar(Client cntxt,  MOStask task, void *val, str oper)
 		thetaselect_calendar(int); 
 	}
 	if( task->type == TYPE_daytime){
+		// TODO:
 	}
 	if( task->type == TYPE_timestamp){
+		// TODO:
 	}
 	MOSskip_calendar(cntxt,task);
 	task->lb =o;
@@ -536,8 +547,10 @@ MOSprojection_calendar(Client cntxt,  MOStask task)
 		projection_calendar(int, MASKDAY); 
 	}
 	if( task->type == TYPE_daytime){
+		// TODO:
 	}
 	if( task->type == TYPE_timestamp){
+		// TODO:
 	}
 	MOSskip_calendar(cntxt,task);
 	return MAL_SUCCEED;
@@ -576,8 +589,10 @@ MOSjoin_calendar(Client cntxt,  MOStask task)
 		join_calendar(int); 
 	}
 	if( task->type == TYPE_daytime){
+		// TODO:
 	}
 	if( task->type == TYPE_timestamp){
+		// TODO:
 	}
 	MOSskip_calendar(cntxt,task);
 	return MAL_SUCCEED;
