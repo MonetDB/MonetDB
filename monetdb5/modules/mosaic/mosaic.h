@@ -157,8 +157,6 @@ typedef struct MOSTASK{
 	char 	 *dst;		// write pointer into current compressed blocks
 	oid 	start;		// oid of first element in current blk
 	oid		stop;		// last oid of range to be scanned
-	flt		ratio;		// compression ratio encountered
-
 
 	BAT *bsrc;		// target column to extended with compressed heap
 	char *src;		// read pointer into source

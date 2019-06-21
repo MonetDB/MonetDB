@@ -432,7 +432,7 @@ MOScompressInternal(Client cntxt, BAT* bsrc, const char* compressions)
 	// TODO: if we couldnt compress well enough, ignore the result
 
 	bsrc->batDirtydesc = true;
-	task->ratio = task->hdr->ratio = (flt)task->bsrc->theap.free/ task->bsrc->tmosaic->free;
+	task->hdr->ratio = (flt)task->bsrc->theap.free/ task->bsrc->tmosaic->free;
 finalize:
 	MCexitMaintenance(cntxt);
 
@@ -576,8 +576,6 @@ MOSdecompressInternal(Client cntxt, BAT** res, BAT* bsrc)
 		}
 	}
 
-	task->ratio = (flt)task->bsrc->theap.free/ task->bsrc->tmosaic->free;
-	
 	error = 0;
 	switch( ATOMbasetype(task->type)){
 	case TYPE_bte:
@@ -601,9 +599,9 @@ MOSdecompressInternal(Client cntxt, BAT** res, BAT* bsrc)
 	case TYPE_str:
 		break;
 	}
-	if(error) 
-		mnstr_printf(cntxt->fdout,"#incompatible compression for type %d ratio %f\n", ATOMbasetype(task->type),task->ratio);
+	if(error) {
 		// TODO: handle error
+	}
 
 	task->timer = GDKusec() - task->timer;
 
@@ -1256,10 +1254,7 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 		const char* compressions = buf;
 		MOScompressInternal(cntxt, b, compressions);
 		pat[i].clk1 = GDKms()- pat[i].clk1;
-		
-#ifdef _DEBUG_MOSAIC_
-		mnstr_printf(cntxt->fdout,"#run experiment %d ratio %6.4f "LLFMT" ms  %s\n",i, task->ratio, pat[i].clk1, pat[i].technique);
-#endif
+
 		if(b->tmosaic == NULL){
 			// aborted compression experiment
 			MOSdestroy(BBPdescriptor(bid));
