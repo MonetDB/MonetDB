@@ -17,6 +17,7 @@
 #include "mal_interpreter.h"
 #include "mal_client.h"
 
+bool MOStypes_linear(BAT* b);
 mal_export void MOSdump_linear(Client cntxt, MOStask task);
 mal_export void MOSlayout_linear(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSadvance_linear(Client cntxt, MOStask task);

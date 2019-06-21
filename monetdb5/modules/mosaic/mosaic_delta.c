@@ -18,6 +18,29 @@
 
 //#define _DEBUG_MOSAIC_
 
+bool MOStypes_delta(BAT* b) {
+	switch(ATOMbasetype(getBatType(b->ttype))){
+	case TYPE_sht: return true;
+	case TYPE_int: return true;
+	case TYPE_lng: return true;
+	case TYPE_oid: return true;
+	/* TODO: case TYPE_flt: return true; */
+	/* TODO: case TYPE_dbl: return true; */
+#ifdef HAVE_HGE
+	case TYPE_hge: return true;
+#endif
+	case  TYPE_str:
+		switch(b->twidth){
+		case 2: return true;
+		case 4: return true;
+		case 8: return true;
+		}
+		break;
+	}
+
+	return false;
+}
+
 void
 MOSadvance_delta(Client cntxt, MOStask task)
 {

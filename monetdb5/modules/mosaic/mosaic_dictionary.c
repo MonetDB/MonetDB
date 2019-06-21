@@ -24,6 +24,31 @@
 #include "mosaic_dictionary.h"
 #include "mosaic_private.h"
 
+bool MOStypes_dictionary(BAT* b) {
+	switch(ATOMbasetype(getBatType(b->ttype))){
+	case TYPE_bte: return true;
+	case TYPE_sht: return true;
+	case TYPE_int: return true;
+	case TYPE_lng: return true;
+	case TYPE_oid: return true;
+	case TYPE_flt: return true;
+	case TYPE_dbl: return true;
+#ifdef HAVE_HGE
+	case TYPE_hge: return true;
+#endif
+	case  TYPE_str:
+		switch(b->twidth){
+		case 1: return true;
+		case 2: return true;
+		case 4: return true;
+		case 8: return true;
+		}
+		break;
+	}
+
+	return false;
+}
+
 void
 MOSadvance_dictionary(Client cntxt, MOStask task)
 {

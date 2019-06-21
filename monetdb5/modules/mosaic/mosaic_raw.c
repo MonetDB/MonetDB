@@ -16,6 +16,32 @@
 #include "mosaic_raw.h"
 #include "mosaic_private.h"
 
+bool MOStypes_raw(BAT* b) {
+	switch(ATOMbasetype(getBatType(b->ttype))){
+	case TYPE_bte: return true;
+	case TYPE_bit: return true;
+	case TYPE_sht: return true;
+	case TYPE_int: return true;
+	case TYPE_lng: return true;
+	case TYPE_oid: return true;
+	case TYPE_flt: return true;
+	case TYPE_dbl: return true;
+#ifdef HAVE_HGE
+	case TYPE_hge: return true;
+#endif
+	case  TYPE_str:
+		switch(b->twidth){
+		case 1: return true;
+		case 2: return true;
+		case 4: return true;
+		case 8: return true;
+		}
+		break;
+	}
+
+	return false;
+}
+
 void
 MOSlayout_raw(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {

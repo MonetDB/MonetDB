@@ -23,6 +23,10 @@
 #define MASKDAY 037
 #define MASKBITS 5
 
+bool MOStypes_calendar(BAT* b) {
+	return ATOMbasetype(getBatType(b->ttype)) == TYPE_date /* TODO: || type == TYPE_timestamp || type == TYPE_daytime*/;
+}
+
 void
 MOSadvance_calendar(Client cntxt, MOStask task)
 {

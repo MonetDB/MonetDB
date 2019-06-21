@@ -923,8 +923,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				if( task == NULL)
 					throw(SQL, "sql.alter", MAL_MALLOC_FAIL);
 
-				for(int i = 0, nr_strategies = 0; i< MOSAIC_METHODS; i++){
-					if ( (task->filter[i] = strstr(c->storage_type,MOSfiltername[i]) != 0) )
+				for(int i = 0, nr_strategies = 0; i< MOSAIC_METHODS-1; i++){
+					if ( (task->filter[i] = strstr(c->storage_type,MOSfiltername[i]) != 0 && type_allowed(i, b) ))
 					{
 						if (strstr(c->storage_type,"raw") == 0 && ++nr_strategies > 1)
 							throw(SQL, "sql.alter", NON_TRIVIAL_MIX_NOT_ALLOWED);
@@ -932,9 +932,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				}
 				// TODO: check if there should be something like "else {remove_mosaic_index()}".
 
-				msg = MOScompressInternal(cntxt, &b->batCacheid, task);
+				msg = MOScompressInternal(cntxt, b, task);
 			}
-
 			BBPunfix(b->batCacheid);
 
 			if (msg)

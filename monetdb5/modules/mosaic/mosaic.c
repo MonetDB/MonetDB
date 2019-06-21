@@ -26,6 +26,22 @@
 
 char *MOSfiltername[]={"raw","runlength","dictionary","delta","linear","frame","prefix","calendar","EOL"};
 
+bool type_allowed(int compression, BAT* b) {
+	switch (compression) {
+	case MOSAIC_RAW:		return MOStypes_raw(b);
+	case MOSAIC_RLE:		return MOStypes_runlength(b);
+	case MOSAIC_DICT:		return MOStypes_dictionary(b);
+	case MOSAIC_DELTA:		return MOStypes_delta(b);
+	case MOSAIC_LINEAR:		return MOStypes_runlength(b);
+	case MOSAIC_FRAME:		return MOStypes_frame(b);
+	case MOSAIC_PREFIX:		return MOStypes_prefix(b);
+	case MOSAIC_CALENDAR:	return MOStypes_calendar(b);
+	default: /* should not happen*/ assert(0);
+	}
+
+	return false;
+}
+
 static void
 MOSinit(MOStask task, BAT *b){
 	char *base;
@@ -216,18 +232,15 @@ MOSoptimizerCost(Client cntxt, MOStask task, int typewidth)
 	return cand;
 }
 
-/* the source is extended with a BAT mosaic mirror */
+/* the source is extended with a BAT mosaic heap */
 str
-MOScompressInternal(Client cntxt, bat *bid, MOStask task)
+MOScompressInternal(Client cntxt, BAT* bsrc, MOStask task)
 {
-	BAT *o = NULL, *bsrc;		// the BAT to be augmented with a compressed heap
+	BAT *o = NULL;		// the BAT to be augmented with a compressed heap
 	str msg = MAL_SUCCEED;
 	int cand;
 	int tpe, typewidth;
 	lng t0,t1;
-	
-	if ((bsrc = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "mosaic.compress", INTERNAL_BAT_ACCESS);
 
 	switch( tpe =ATOMbasetype(bsrc->ttype)){
 	case TYPE_bit:
@@ -246,52 +259,36 @@ MOScompressInternal(Client cntxt, bat *bid, MOStask task)
 		break;
 	default:
 		// don't compress it
-		BBPunfix(bsrc->batCacheid);
 		return MAL_SUCCEED;
 	}
 
     if (BATcheckmosaic(bsrc)){
 		/* already compressed */
-		BBPunfix(bsrc->batCacheid);
-		return msg;
+		return MAL_SUCCEED;
 	}
     assert(bsrc->tmosaic == NULL);
 
-	/* views are never compressed */
-    if (VIEWtparent(bsrc)) {
-        bat p = VIEWtparent(bsrc);
-        o = bsrc;
-        bsrc = BATdescriptor(p);
-        if (BATcheckmosaic(bsrc)) {
-			BBPunfix(o->batCacheid);
-            return MAL_SUCCEED;
-        }
-        assert(bsrc->tmosaic == NULL);
-    }
-
 	if ( BATcount(bsrc) < MOSAIC_THRESHOLD  ){
 		/* no need to compress */
-		BBPunfix(bsrc->batCacheid);
-		return msg;
+		return MAL_SUCCEED;
 	}
 
 #ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#compress bat %d \n",*bid);
+	mnstr_printf(cntxt->fdout,"#compress bat %d \n",bsrc->batCacheid);
 #endif
     t0 = GDKusec();
 
-	if( bsrc->tmosaic == NULL && BATmosaic(bsrc,  BATcapacity(bsrc) + (MosaicHdrSize + 2 * MosaicBlkSize)/Tsize(bsrc)+ BATTINY) == GDK_FAIL){
+	if(BATmosaic(bsrc,  BATcapacity(bsrc) + (MosaicHdrSize + 2 * MosaicBlkSize)/Tsize(bsrc)+ BATTINY) == GDK_FAIL){
 		// create the mosaic heap if not available.
 		// The final size should be smaller then the original
 		// It may, however, be the case that we mix a lot of RAW and, say, DELTA small blocks
 		// Then we total size may go beyond the original size and we should terminate the process.
 		// This should be detected before we compress a block, in the estimate functions
 		// or when we extend the non-compressed collector block
-		BBPunfix(bsrc->batCacheid);
 		throw(MAL,"mosaic.compress", "heap construction failes");
 	}
 
-	assert(bsrc->tmosaic->parentid == *bid);
+	assert(bsrc->tmosaic->parentid == bsrc->batCacheid);
 	
 	// initialize the non-compressed read pointer
 	task->src = Tloc(bsrc, 0);
@@ -308,7 +305,6 @@ MOScompressInternal(Client cntxt, bat *bid, MOStask task)
 	msg = MCstartMaintenance(cntxt,1,0);
 	if( msg != MAL_SUCCEED){
 		GDKfree(task);
-		BBPunfix(bsrc->batCacheid);
 		throw(MAL, "mosaic.compress", "Can not claim server");
 	}
 	if( task->filter[MOSAIC_FRAME])
@@ -417,7 +413,6 @@ MOScompressInternal(Client cntxt, bat *bid, MOStask task)
 	task->ratio = task->hdr->ratio = (flt)task->bsrc->theap.free/ task->bsrc->tmosaic->free;
 finalize:
 	MCexitMaintenance(cntxt);
-	BBPunfix(bsrc->batCacheid);
 
     t1 = GDKusec();
     ALGODEBUG fprintf(stderr, "#BATmosaic: mosaic construction " LLFMT " usec\n", t1 - t0);
@@ -442,6 +437,12 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "mosaic.compress", INTERNAL_BAT_ACCESS);
 
+	/* views are never compressed */
+    if (VIEWtparent(b)) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "mosaic.compress", "Mosaic does not allow views as input.");
+    }
+
 	(void) mb;
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
@@ -452,13 +453,13 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( pci->argc == 3)
 		msg = *getArgReference_str(stk,pci,2);
 	if( msg && !strstr(msg,"mosaic"))
-		for( i = 0; i< MOSAIC_METHODS; i++)
-			task->filter[i]= strstr(msg,MOSfiltername[i]) != 0;
+		for( i = 0; i< MOSAIC_METHODS-1; i++)
+			task->filter[i]= strstr(msg,MOSfiltername[i]) != 0 && type_allowed(i, b);
 	else
-		for( i = 0; i< MOSAIC_METHODS; i++)
-			task->filter[i]= 1;
+		for( i = 0; i< MOSAIC_METHODS-1; i++)
+			task->filter[i]= type_allowed(i, b);
 
-	msg= MOScompressInternal(cntxt, bid, task);
+	msg= MOScompressInternal(cntxt, b, task);
 	BBPkeepref(*ret = b->batCacheid);
 	GDKfree(task);
 	return msg;
@@ -1132,14 +1133,14 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define STEP MOSAIC_METHODS
 static int
-makepatterns(int *patterns, int size, str compressions)
+makepatterns(int *patterns, int size, str compressions, BAT* b)
 {
 	int i,j,k, idx, bit=1, step = MOSAIC_METHODS - 1;
 	int lim= 8*7*6*5*4*3*2;
 	int candidate[MOSAIC_METHODS]= {0};
 
-	for( i = 0; i < MOSAIC_METHODS; i++)
-		candidate[i] = compressions == NULL || strstr(compressions,MOSfiltername[i]) != 0;
+	for( i = 0; i < MOSAIC_METHODS-1; i++)
+		candidate[i] = (compressions == NULL || strstr(compressions,MOSfiltername[i]) != 0) &&  type_allowed(i, b);
 
 	for( k=0, i=0; i<lim && k <size; i++){
 		patterns[k]=0;
@@ -1208,7 +1209,7 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 	if( task == NULL)
 		return;
 	// create the list of all possible 2^6 compression patterns 
-	cases = makepatterns(pattern,CANDIDATES, compressions);
+	cases = makepatterns(pattern,CANDIDATES, compressions, b);
 	memset((char*)pat,0, sizeof(pat));
 
 	for( i = 0; i < CANDIDATES; i++)
@@ -1235,7 +1236,10 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 		}
 		pat[i].technique= GDKstrdup(buf);
 		pat[i].clk1 = GDKms();
-		MOScompressInternal(cntxt, &bid, task);
+
+		// TODO: keep a potentially pre-existing mosaic_heap aside.
+
+		MOScompressInternal(cntxt, b, task);
 		pat[i].clk1 = GDKms()- pat[i].clk1;
 		
 #ifdef _DEBUG_MOSAIC_
@@ -1259,19 +1263,14 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 		pat[i].xf= task->ratio;
 
 		BAT* decompressed;
-
 		pat[i].clk2 = GDKms();
-
 		MOSdecompressInternal(cntxt, &decompressed, b);
-
 		pat[i].clk2 = GDKms()- pat[i].clk2;
-
 		MOSdestroy(decompressed);
-
 		BBPunfix(decompressed->batCacheid);
 
 		// get rid of mosaic heap
-		MOSdestroy(BBPdescriptor(bid));
+		MOSdestroy(b);
 	}
 
 	qsort((void*) pat, CANDIDATES, sizeof(struct PAT), cmpPattern);

@@ -25,6 +25,23 @@
 #include "mosaic_frame.h"
 #include "mosaic_private.h"
 
+bool MOStypes_frame(BAT* b) {
+	switch(ATOMbasetype(getBatType(b->ttype))){
+	case TYPE_bte: return true;
+	case TYPE_sht: return true;
+	case TYPE_int: return true;
+	case TYPE_lng: return true;
+	case TYPE_oid: return true;
+	case TYPE_flt: return true;
+	case TYPE_dbl: return true;
+#ifdef HAVE_HGE
+	case TYPE_hge: return true;
+#endif
+	}
+
+	return false;
+}
+
 // we use longs as the basis for bit vectors
 #define chunk_size(Task,Cnt) wordaligned(MosaicBlkSize + (Cnt * Task->hdr->framebits)/8 + (((Cnt * Task->hdr->framebits) %8) != 0), lng)
 
