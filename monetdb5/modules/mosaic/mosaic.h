@@ -48,6 +48,8 @@
  */
 typedef Heap *mosaic;	// compressed data is stored on a heap.
 
+#define METHOD_NOT_AVAILABLE -1
+
 typedef struct MOSAICHEADER{
 	int version;
 	union{
@@ -98,9 +100,10 @@ typedef struct MOSAICHEADER{
 #endif
 	}frame;
 	// collect compression statistics for the particular task
+	// A value of METHOD_NOT_AVAILABLE in blks or elms indicates that the corresponding method wasn't considered as candidate.
 	flt ratio;	//compresion ratio
-	lng blks[MOSAIC_METHODS];	
-	lng elms[MOSAIC_METHODS];	
+	lng blks[MOSAIC_METHODS]; // number of blks per method.
+	lng elms[MOSAIC_METHODS]; // number of compressed values in all blocks for this method.
 	lng framefreq[256];
 } * MosaicHdr;
 
@@ -191,7 +194,7 @@ mal_export char *MOSfiltername[];
 mal_export bool type_allowed(int compression, BAT* b);
 mal_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MOScompressInternal(Client cntxt, BAT* bsrc, MOStask task); // TODO: I don't like to export internal functions
+mal_export str MOScompressInternal(Client cntxt, BAT* bsrc, const char* compressions);
 mal_export str MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
