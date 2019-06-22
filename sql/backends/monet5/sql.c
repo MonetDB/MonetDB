@@ -3691,7 +3691,7 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	for (q = m->qc->q; q; q = q->next) {
-		if (q->type != Q_PREPARE) {
+		if (!q->prepared) {
 			if (BUNappend(query, q->codestring, false) != GDK_SUCCEED ||
 			    BUNappend(count, &q->count, false) != GDK_SUCCEED) {
 				BBPunfix(query->batCacheid);
