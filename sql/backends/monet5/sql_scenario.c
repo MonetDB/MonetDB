@@ -1137,7 +1137,7 @@ SQLparser(Client c)
 			msg = handle_error(m, pstatus, msg);
 			sqlcleanup(m, err);
 			goto finalize;
-		} else if (be->q->type != Q_PREPARE) {
+		} else if (!be->q->prepared) {
 			err = -1;
 			msg = createException(SQL, "EXEC", SQLSTATE(07005) "Given handle id is not for a " "prepared statement: %d\n", m->sym->data.lval->h->data.i_val);
 			*m->errstr = 0;
@@ -1145,6 +1145,7 @@ SQLparser(Client c)
 			sqlcleanup(m, err);
 			goto finalize;
 		}
+		m->type = be->q->type; 
 		scanner_query_processed(&(m->scanner));
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 		/* query template was found in the query cache */
@@ -1194,9 +1195,10 @@ SQLparser(Client c)
 						  m->sym,	/* the sql symbol tree */
 						  m->args,	/* the argument list */
 						  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
-						  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
+						  m->type,	/* the type of the statement */
 						  escaped_q,
-						  m->no_mitosis);
+						  m->no_mitosis,
+						  m->emode == m_prepare);
 			}
 			if(!be->q) {
 				err = 1;
