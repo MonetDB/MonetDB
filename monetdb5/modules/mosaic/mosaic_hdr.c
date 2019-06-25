@@ -17,13 +17,12 @@
 
 // add the chunk to the index to facilitate 'fast' OID-based access
 void
-MOSupdateHeader(Client cntxt, MOStask task)
+MOSupdateHeader(MOStask task)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
 	BUN minsize;
 	int i, j;
 
-	(void) cntxt;
     hdr->blks[MOSgetTag(task->blk)]++;
     hdr->elms[MOSgetTag(task->blk)] += MOSgetCnt(task->blk);
 	if( hdr->top < MOSAICINDEX-1 ){
@@ -47,9 +46,6 @@ MOSupdateHeader(Client cntxt, MOStask task)
 		minsize = hdr->offset[i+2] - hdr->offset[i];
 		j = i+1;
 	}
-#ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#ditch entry %d\n",j);
-#endif
 	// simply remove on element
 	for( i = j; i < hdr->top; i++){
 		hdr->oidbase[i]  = hdr->oidbase[i+1];
@@ -84,11 +80,10 @@ MOSinitHeader(MOStask task)
 
 // position the task on the mosaic blk to be scanned
 void
-MOSinitializeScan(Client cntxt, MOStask task, int startblk, int stopblk)
+MOSinitializeScan(MOStask task, int startblk, int stopblk)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
 
-	(void) cntxt;
 	assert( startblk >= 0 && startblk < hdr->top);
 	assert( stopblk > 0 && stopblk <= hdr->top);
 	task->blk = (MosaicBlk) (((char*)task->hdr) + MosaicHdrSize + hdr->offset[startblk]);

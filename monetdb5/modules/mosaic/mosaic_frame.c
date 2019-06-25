@@ -46,12 +46,11 @@ bool MOStypes_frame(BAT* b) {
 #define chunk_size(Task,Cnt) wordaligned(MosaicBlkSize + (Cnt * Task->hdr->framebits)/8 + (((Cnt * Task->hdr->framebits) %8) != 0), lng)
 
 void
-MOSadvance_frame(Client cntxt, MOStask task)
+MOSadvance_frame(MOStask task)
 {
 	int *dst = (int*)  (((char*) task->blk) + MosaicBlkSize);
 	long cnt = MOSgetCnt(task->blk);
 	long bytes;
-	(void) cntxt;
 
 	assert(cnt > 0);
 	task->start += (oid) cnt;
@@ -59,43 +58,15 @@ MOSadvance_frame(Client cntxt, MOStask task)
 	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, lng)); 
 }
 
-/* Beware, the dump routines use the compressed part of the task */
-static void
-MOSdump_frameInternal(char *buf, size_t len, MOStask task, int i)
-{
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte:
-		snprintf(buf,len,"%hhd", task->hdr->frame.valbte[i]); break;
-	case TYPE_sht:
-		snprintf(buf,len,"%hd", task->hdr->frame.valsht[i]); break;
-	case TYPE_int:
-		snprintf(buf,len,"%d", task->hdr->frame.valint[i]); break;
-	case  TYPE_oid:
-		snprintf(buf,len,OIDFMT, task->hdr->frame.valoid[i]); break;
-	case  TYPE_lng:
-		snprintf(buf,len,LLFMT, task->hdr->frame.vallng[i]); break;
-#ifdef HAVE_HGE
-	case  TYPE_hge:
-		snprintf(buf,len,"%.40g", (dbl)task->hdr->frame.valhge[i]); break;
-#endif
-	case TYPE_flt:
-		snprintf(buf,len,"%f", task->hdr->frame.valflt[i]); break;
-	case TYPE_dbl:
-		snprintf(buf,len,"%g", task->hdr->frame.valdbl[i]); break;
-	}
-}
-
 void
-MOSlayout_frame_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_frame_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	lng cnt=0,j=0;
 	int i;
 	char buf[BUFSIZ];
 
-	(void) cntxt;
 	for(i=0; i< task->hdr->framesize; i++, j++){
 		snprintf(buf,BUFSIZ,"frame[%d]",i);
-		MOSdump_frameInternal(buf, BUFSIZ, task,i);
 		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
 			BUNappend(bcount, &j, false) != GDK_SUCCEED ||
 			BUNappend(binput, &cnt, false) != GDK_SUCCEED ||
@@ -106,12 +77,11 @@ MOSlayout_frame_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *bi
 }
 
 void
-MOSlayout_frame(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_frame(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
-	(void) cntxt;
 	input = cnt * ATOMsize(task->type);
 	output = chunk_size(task,cnt);
 	if( BUNappend(btech, "frame blk", false) != GDK_SUCCEED ||
@@ -123,9 +93,9 @@ MOSlayout_frame(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput
 }
 
 void
-MOSskip_frame(Client cntxt, MOStask task)
+MOSskip_frame(MOStask task)
 {
-	MOSadvance_frame(cntxt, task);
+	MOSadvance_frame( task);
 	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
@@ -197,13 +167,12 @@ MOSskip_frame(Client cntxt, MOStask task)
 
 
 void
-MOScreateframeDictionary(Client cntxt, MOStask task)
+MOScreateframeDictionary(MOStask task)
 {	BUN i;
 	int j;
 	MosaicHdr hdr = task->hdr;
 	lng cnt[256];
 
-	(void) cntxt;
 	memset((char*)cnt,0, sizeof(lng) * 256);
 	hdr->framesize = 0;
 	switch(ATOMbasetype(task->type)){
@@ -218,19 +187,15 @@ MOScreateframeDictionary(Client cntxt, MOStask task)
 	case TYPE_hge: makeFrame(hge); break;
 #endif
 	}
-#ifdef _DEBUG_MOSAIC_
-	MOSdump_frame(cntxt, task);
-#endif
 }
 
 // calculate the expected reduction using dictionary in terms of elements compressed
 flt
-MOSestimate_frame(Client cntxt, MOStask task)
+MOSestimate_frame(MOStask task)
 {	BUN i = 0;
 	int j;
 	flt factor= 0.0;
 	MosaicHdr hdr = task->hdr;
-	(void) cntxt;
 
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: estimateFrame(bte); break;
@@ -270,9 +235,6 @@ MOSestimate_frame(Client cntxt, MOStask task)
 			if(i) factor = (flt) ((int)i * sizeof(int)) / chunk_size(task,i);\
 		}
 	}
-#ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#estimate dict "BUNFMT" elm %4.2f factor\n", i, factor);
-#endif
 	task->factor[MOSAIC_FRAME] = factor;
 	task->range[MOSAIC_FRAME] = task->start + i;
 	return factor; 
@@ -304,7 +266,7 @@ MOSestimate_frame(Client cntxt, MOStask task)
 }
 
 void
-MOScompress_frame(Client cntxt, MOStask task)
+MOScompress_frame(MOStask task)
 {
 	BUN i;
 	int j;
@@ -312,7 +274,6 @@ MOScompress_frame(Client cntxt, MOStask task)
 	MosaicHdr hdr = task->hdr;
 	BitVector base;
 
-	(void) cntxt;
 	MOSsetTag(blk,MOSAIC_FRAME);
 	MOSsetCnt(blk,0);
 
@@ -346,14 +307,13 @@ MOScompress_frame(Client cntxt, MOStask task)
 }
 
 void
-MOSdecompress_frame(Client cntxt, MOStask task)
+MOSdecompress_frame(MOStask task)
 {
 	MosaicBlk blk = task->blk;
 	MosaicHdr hdr = task->hdr;
 	BUN i;
 	unsigned int j;
 	BitVector base;
-	(void) cntxt;
 
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: FRAMEdecompress(bte); break;
@@ -444,7 +404,7 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 }
 
 str
-MOSselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
 	BUN i, first,last;
@@ -452,14 +412,13 @@ MOSselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit 
 	bool cmp;
 	bte j;
 	BitVector base;
-	(void) cntxt;
 
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSskip_frame(cntxt,task);
+		MOSskip_frame(task);
 		return MAL_SUCCEED;
 	}
 	o = task->lb;
@@ -476,7 +435,7 @@ MOSselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit 
 	case TYPE_hge: select_frame(hge); break;
 #endif
 	}
-	MOSskip_frame(cntxt,task);
+	MOSskip_frame(task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
@@ -522,7 +481,7 @@ MOSselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit 
 } 
 
 str
-MOSthetaselect_frame(Client cntxt,  MOStask task, void *val, str oper)
+MOSthetaselect_frame( MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
@@ -530,14 +489,13 @@ MOSthetaselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 	int j;
 	MosaicHdr hdr = task->hdr;
 	BitVector base;
-	(void) cntxt;
 	
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSskip_frame(cntxt,task);
+		MOSskip_frame(task);
 		return MAL_SUCCEED;
 	}
 	o = task->lb;
@@ -554,7 +512,7 @@ MOSthetaselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 	case TYPE_hge: thetaselect_frame(hge); break;
 #endif
 	}
-	MOSskip_frame(cntxt,task);
+	MOSskip_frame(task);
 	task->lb =o;
 	return MAL_SUCCEED;
 }
@@ -573,13 +531,12 @@ MOSthetaselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 }
 
 str
-MOSprojection_frame(Client cntxt,  MOStask task)
+MOSprojection_frame( MOStask task)
 {
 	BUN i,first,last;
 	MosaicHdr hdr = task->hdr;
 	int j;
 	BitVector base;
-	(void) cntxt;
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
@@ -596,7 +553,7 @@ MOSprojection_frame(Client cntxt,  MOStask task)
 		case TYPE_hge: projection_frame(hge); break;
 #endif
 	}
-	MOSskip_frame(cntxt,task);
+	MOSskip_frame(task);
 	return MAL_SUCCEED;
 }
 
@@ -619,14 +576,13 @@ MOSprojection_frame(Client cntxt,  MOStask task)
 }
 
 str
-MOSjoin_frame(Client cntxt,  MOStask task)
+MOSjoin_frame( MOStask task)
 {
 	BUN i,n,limit;
 	oid o, oo;
 	MosaicHdr hdr = task->hdr;
 	int j;
 	BitVector base;
-	(void) cntxt;
 
 	// set the oid range covered and advance scan range
 	switch(ATOMbasetype(task->type)){
@@ -641,6 +597,6 @@ MOSjoin_frame(Client cntxt,  MOStask task)
 		case TYPE_hge: join_frame(hge); break;
 #endif
 		}
-	MOSskip_frame(cntxt,task);
+	MOSskip_frame(task);
 	return MAL_SUCCEED;
 }

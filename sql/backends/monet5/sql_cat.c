@@ -927,7 +927,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					}
 				}
 
-				msg = MOScompressInternal(cntxt, b, c->storage_type);
+				msg = MOScompressInternal(b, c->storage_type);
 			}
 			BBPunfix(b->batCacheid);
 

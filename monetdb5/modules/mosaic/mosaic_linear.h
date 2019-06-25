@@ -18,15 +18,14 @@
 #include "mal_client.h"
 
 bool MOStypes_linear(BAT* b);
-mal_export void MOSdump_linear(Client cntxt, MOStask task);
-mal_export void MOSlayout_linear(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export void MOSadvance_linear(Client cntxt, MOStask task);
-mal_export void MOSskip_linear(Client cntxt, MOStask task);
-mal_export flt  MOSestimate_linear(Client cntxt, MOStask task);
-mal_export void MOScompress_linear(Client cntxt, MOStask task);
-mal_export void MOSdecompress_linear(Client cntxt, MOStask task);
-mal_export str MOSselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mal_export str MOSthetaselect_linear(Client cntxt,  MOStask task, void *val, str oper);
-mal_export str MOSprojection_linear(Client cntxt,  MOStask task);
-mal_export str MOSjoin_linear(Client cntxt,  MOStask task);
+mal_export void MOSlayout_linear(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export void MOSadvance_linear(MOStask task);
+mal_export void MOSskip_linear(MOStask task);
+mal_export flt  MOSestimate_linear(MOStask task);
+mal_export void MOScompress_linear(MOStask task);
+mal_export void MOSdecompress_linear(MOStask task);
+mal_export str MOSselect_linear( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mal_export str MOSthetaselect_linear( MOStask task, void *val, str oper);
+mal_export str MOSprojection_linear( MOStask task);
+mal_export str MOSjoin_linear( MOStask task);
 #endif /* _MOSAIC_LINEAR_ */

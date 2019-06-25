@@ -1828,6 +1828,8 @@ gdk_export gdk_return BAThash(BAT *b);
 gdk_export gdk_return BATmosaic(BAT *b, BUN cap);
 gdk_export void MOSdestroy(BAT *b);
 gdk_export int BATcheckmosaic(BAT *b);
+gdk_export void MOSsetLock(BAT* b);
+gdk_export void MOSunsetLock(BAT* b);
 
 /*
  * @- Column Imprints Functions

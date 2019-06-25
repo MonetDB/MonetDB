@@ -14,6 +14,14 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
+void MOSsetLock(BAT* b) {
+	MT_lock_set(&GDKmosaicLock(b->batCacheid));
+}
+
+void MOSunsetLock(BAT* b) {
+	MT_lock_unset(&GDKmosaicLock(b->batCacheid));
+}
+
 #ifdef PERSISTENTMOSAIC
 struct mosaicsync {
     Heap *hp;
@@ -61,9 +69,7 @@ BATmosaic(BAT *bn, BUN cap)
 	Heap *m;
 	char *fname = 0;
 
-    MT_lock_set(&GDKmosaicLock(bn->batCacheid));
 	if( bn->tmosaic){
-		MT_lock_unset(&GDKmosaicLock(bn->batCacheid));
 		return GDK_SUCCEED;
 	}
 
@@ -74,13 +80,11 @@ BATmosaic(BAT *bn, BUN cap)
 			if( fname)
 				GDKfree(fname);
 			GDKfree(m);
-			MT_lock_unset(&GDKmosaicLock(bn->batCacheid));
 			return GDK_FAIL;
 		}
 	strncpy(m->filename, fname, sizeof(m->filename));
 	
     if( HEAPalloc(m, cap, Tsize(bn)) != GDK_SUCCEED){
-		MT_lock_unset(&GDKmosaicLock(bn->batCacheid));
         return GDK_FAIL;
 	}
     m->parentid = bn->batCacheid;
@@ -101,7 +105,6 @@ BATmosaic(BAT *bn, BUN cap)
 #endif
 	bn->batDirtydesc = TRUE;
 	bn->tmosaic = m;
-	MT_lock_unset(&GDKmosaicLock(bn->batCacheid));
     return GDK_SUCCEED;
 }
 
@@ -134,7 +137,6 @@ BATcheckmosaic(BAT *b)
 
 	assert(b->batCacheid > 0);
 	t = GDKusec();
-	MT_lock_set(&GDKmosaicLock(b->batCacheid));
 	t = GDKusec() - t;
 	if (b->tmosaic == (Heap *) 1) {
 		Heap *hp;
@@ -161,7 +163,6 @@ BATcheckmosaic(BAT *b)
 					close(fd);
 					b->tmosaic = hp;
 					ALGODEBUG fprintf(stderr, "#BATcheckmosaic: reusing persisted mosaic %d\n", b->batCacheid);
-					MT_lock_unset(&GDKmosaicLock(b->batCacheid));
 					return 1;
 				}
 				close(fd);
@@ -174,7 +175,6 @@ BATcheckmosaic(BAT *b)
 		GDKclrerr();	/* we're not currently interested in errors */
 	}
 	ret = b->tmosaic != NULL;
-	MT_lock_unset(&GDKmosaicLock(b->batCacheid));
 	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckmosaic: already has mosaic %d, waited " LLFMT " usec\n", b->batCacheid, t);
 	return ret;
 }

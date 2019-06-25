@@ -107,7 +107,7 @@ sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							continue;
 						// perform the analysis
 						bn = store_funcs.bind_col(m->session->tr, c, 0);
-						MOSlayout(cntxt, bn, btech, bcount, binput, boutput, bproperties);
+						MOSlayout(bn, btech, bcount, binput, boutput, bproperties);
 						BBPunfix(bn->batCacheid);
 						(void) c;
 					}
@@ -214,7 +214,7 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							continue;
 						// perform the analysis
 						bn = store_funcs.bind_col(m->session->tr, c, 0);
-						MOSanalyseReport(cntxt, bn, btech, boutput, bfactor, bcompress, bdecompress, compressions);
+						MOSanalyseReport(bn, btech, boutput, bfactor, bcompress, bdecompress, compressions);
 						BBPunfix(bn->batCacheid);
 						(void) c;
 					}

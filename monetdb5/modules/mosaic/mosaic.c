@@ -52,7 +52,7 @@ MOSinitializeFilter(MOStask task, const char* compressions) {
 	}
 	else {
 		for(int i = 0; i< MOSAIC_METHODS-1; i++) {
-				task->filter[i] = 1;
+				task->filter[i] = type_allowed(i, task->bsrc);
 				task->hdr->elms[i] = task->hdr->blks[i] = 0;
 		}
 	}
@@ -81,7 +81,7 @@ void MOSblk(MosaicBlk blk)
 }
 
 str
-MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MOStask task=0;
 	int i;
@@ -96,7 +96,7 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 			throw(MAL,"mosaic.layout","Compression heap missing");
 
 	MOSinit(task,b);
-	MOSinitializeScan(cntxt,task,0,task->hdr->top);
+	MOSinitializeScan(task,0,task->hdr->top);
 	// safe the general properties
 
 		snprintf(buf,BUFSIZ,"%g", task->hdr->ratio);
@@ -117,11 +117,11 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 				throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
 	}
 	if( task->hdr->blks[MOSAIC_FRAME])
-		MOSlayout_frame_hdr(cntxt,task,btech,bcount,binput,boutput,bproperties);
+		MOSlayout_frame_hdr(task,btech,bcount,binput,boutput,bproperties);
 	if( task->hdr->blks[MOSAIC_DICT])
-		MOSlayout_dictionary_hdr(cntxt,task,btech,bcount,binput,boutput,bproperties);
+		MOSlayout_dictionary_hdr(task,btech,bcount,binput,boutput,bproperties);
 	if( task->hdr->blks[MOSAIC_CALENDAR])
-		MOSlayout_calendar(cntxt,task,btech,bcount,binput,boutput,bproperties);
+		MOSlayout_calendar(task,btech,bcount,binput,boutput,bproperties);
 
 	if( BUNappend(btech, "========", false) != GDK_SUCCEED ||
 		BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
@@ -133,36 +133,36 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 	while(task->start< task->stop){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RAW:
-			MOSlayout_raw(cntxt,task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_raw(cntxt,task);
+			MOSlayout_raw(task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_raw(task);
 			break;
 		case MOSAIC_RLE:
-			MOSlayout_runlength(cntxt,task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_runlength(cntxt,task);
+			MOSlayout_runlength(task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_runlength(task);
 			break;
 		case MOSAIC_DICT:
-			MOSlayout_dictionary(cntxt,task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_dictionary(cntxt,task);
+			MOSlayout_dictionary(task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_dictionary(task);
 			break;
 		case MOSAIC_DELTA:
-			MOSlayout_delta(cntxt,task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_delta(cntxt,task);
+			MOSlayout_delta(task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_delta(task);
 			break;
 		case MOSAIC_LINEAR:
-			MOSlayout_linear(cntxt,task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_linear(cntxt,task);
+			MOSlayout_linear(task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_linear(task);
 			break;
 		case MOSAIC_FRAME:
-			MOSlayout_frame(cntxt,task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_frame(cntxt,task);
+			MOSlayout_frame(task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_frame(task);
 			break;
 		case MOSAIC_PREFIX:
-			MOSlayout_prefix(cntxt,task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_prefix(cntxt,task);
+			MOSlayout_prefix(task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_prefix(task);
 			break;
 		case MOSAIC_CALENDAR:
-			MOSlayout_calendar(cntxt,task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_calendar(cntxt,task);
+			MOSlayout_calendar(task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_calendar(task);
 			break;
 		default:
 			assert(0);
@@ -189,68 +189,67 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
  * sequence is found with high compression factor.
  */
 static int
-MOSoptimizerCost(Client cntxt, MOStask task, int typewidth)
+MOSoptimizerCost(MOStask task, int typewidth)
 {
 	int cand = MOSAIC_RAW;
 	float ratio = 1.0, fac = 1.0;
 
 	// select candidate amongst those
 	if ( task->filter[MOSAIC_RLE]){
-		fac = MOSestimate_runlength(cntxt,task);
+		fac = MOSestimate_runlength(task);
 		if (fac > ratio){
 			cand = MOSAIC_RLE;
 			ratio = fac;
 		}
 	}
 	if ( task->filter[MOSAIC_LINEAR]){
-		fac = MOSestimate_linear(cntxt,task);
+		fac = MOSestimate_linear(task);
 		if ( fac >ratio){
 			cand = MOSAIC_LINEAR;
 			ratio = fac;
 		}
 	}
 	if (ratio < typewidth && task->filter[MOSAIC_PREFIX]){
-		fac = MOSestimate_prefix(cntxt,task);
+		fac = MOSestimate_prefix(task);
 		if ( fac > ratio ){
 			cand = MOSAIC_PREFIX;
 			ratio = fac;
 		}
 	}
 	if (ratio < 64 && task->filter[MOSAIC_DICT]){
-		fac = MOSestimate_dictionary(cntxt,task);
+		fac = MOSestimate_dictionary(task);
 		if (fac > ratio){
 			cand = MOSAIC_DICT;
 			ratio = fac;
 		}
 	}
 	if (ratio < 64 && task->filter[MOSAIC_FRAME]){
-		fac = MOSestimate_frame(cntxt,task);
+		fac = MOSestimate_frame(task);
 		if (fac > ratio){
 			cand = MOSAIC_FRAME;
 			ratio = fac;
 		}
 	}
 	if (ratio < 64 && task->filter[MOSAIC_DELTA]){
-		fac = MOSestimate_delta(cntxt,task);
+		fac = MOSestimate_delta(task);
 		if ( fac > ratio ){
 			cand = MOSAIC_DELTA;
 			ratio = fac;
 		}
 	}
 	if (ratio < 64 && task->filter[MOSAIC_CALENDAR]){
-		fac = MOSestimate_calendar(cntxt,task);
+		fac = MOSestimate_calendar(task);
 		if (fac > ratio){
 			cand = MOSAIC_CALENDAR;
 			ratio = fac;
 		}
 	}
-	//mnstr_printf(cntxt->fdout,"#cand %d factor %f\n",cand,ratio);
 	return cand;
 }
 
 /* the source is extended with a BAT mosaic heap */
 str
-MOScompressInternal(Client cntxt, BAT* bsrc, const char* compressions)
+MOScompressInternal(BAT* bsrc, const char* compressions)
 {
 	MOStask task;
 	BAT *o = NULL;		// the BAT to be augmented with a compressed heap
@@ -279,21 +278,23 @@ MOScompressInternal(Client cntxt, BAT* bsrc, const char* compressions)
 		return MAL_SUCCEED;
 	}
 
-    if (BATcheckmosaic(bsrc)){
+	MOSsetLock(bsrc);
+
+  if (BATcheckmosaic(bsrc)){
 		/* already compressed */
+
+		MOSunsetLock(bsrc);
 		return MAL_SUCCEED;
 	}
     assert(bsrc->tmosaic == NULL);
 
-	if ( BATcount(bsrc) < MOSAIC_THRESHOLD  ){
+	if ( BATcount(bsrc) < MOSAIC_THRESHOLD ){
 		/* no need to compress */
+		MOSunsetLock(bsrc);
 		return MAL_SUCCEED;
 	}
 
-#ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#compress bat %d \n",bsrc->batCacheid);
-#endif
-    t0 = GDKusec();
+  t0 = GDKusec();
 
 	if(BATmosaic(bsrc,  BATcapacity(bsrc) + (MosaicHdrSize + 2 * MosaicBlkSize)/Tsize(bsrc)+ BATTINY) == GDK_FAIL){
 		// create the mosaic heap if not available.
@@ -302,12 +303,14 @@ MOScompressInternal(Client cntxt, BAT* bsrc, const char* compressions)
 		// Then we total size may go beyond the original size and we should terminate the process.
 		// This should be detected before we compress a block, in the estimate functions
 		// or when we extend the non-compressed collector block
+		MOSunsetLock(bsrc);
 		throw(MAL,"mosaic.compress", "heap construction failes");
 	}
 
 	assert(bsrc->tmosaic->parentid == bsrc->batCacheid);
 
 	if((task = (MOStask) GDKzalloc(sizeof(*task))) == NULL) {
+		MOSunsetLock(bsrc);
 		throw(MAL, "mosaic.compress", MAL_MALLOC_FAIL);
 	}
 	
@@ -323,24 +326,23 @@ MOScompressInternal(Client cntxt, BAT* bsrc, const char* compressions)
 	MOSinitializeFilter(task, compressions);
 	MOSinitHeader(task);
 
-	// claim the server for exclusive use
-	msg = MCstartMaintenance(cntxt,1,0);
 	if( msg != MAL_SUCCEED){
 		GDKfree(task);
+		MOSunsetLock(bsrc);
 		throw(MAL, "mosaic.compress", "Can not claim server");
 	}
 	if( task->filter[MOSAIC_FRAME])
-		MOScreateframeDictionary(cntxt,task);
+		MOScreateframeDictionary(task);
 	if( task->filter[MOSAIC_DICT])
-		MOScreatedictionary(cntxt,task);
+		MOScreatedictionary(task);
 	if( task->filter[MOSAIC_CALENDAR])
-		MOScreatecalendar(cntxt,task);
+		MOScreatecalendar(task);
 	// always start with an EOL block
 	MOSsetTag(task->blk,MOSAIC_EOL);
 
 	while(task->start < task->stop ){
 		// default is to extend the non-compressed block with a single element
-		cand = MOSoptimizerCost(cntxt, task, typewidth);
+		cand = MOSoptimizerCost( task, typewidth);
 		if( task->dst >= bsrc->tmosaic->base + bsrc->tmosaic->size - 2 * MosaicBlkSize ){
 			MOSdestroy(bsrc);
 			msg= createException(MAL,"mosaic","abort compression due to size");
@@ -354,8 +356,8 @@ MOScompressInternal(Client cntxt, BAT* bsrc, const char* compressions)
 				// We close the old MOSAIC_RAW block if estimation decides to use a different block type
 				// or when the current MOSAIC_RAW block has become too big.
 				task->start -= MOSgetCnt(task->blk);
-				MOSupdateHeader(cntxt,task);
-				MOSadvance_raw(cntxt,task);
+				MOSupdateHeader(task);
+				MOSadvance_raw(task);
 				// always start with an EOL block
 				task->dst = MOScodevector(task);
 				MOSsetTag(task->blk,MOSAIC_EOL);
@@ -366,45 +368,45 @@ MOScompressInternal(Client cntxt, BAT* bsrc, const char* compressions)
 		// apply the compression to a chunk
 		switch(cand){
 		case MOSAIC_RLE:
-			MOScompress_runlength(cntxt,task);
-			MOSupdateHeader(cntxt,task);
-			MOSadvance_runlength(cntxt,task);
+			MOScompress_runlength(task);
+			MOSupdateHeader(task);
+			MOSadvance_runlength(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_DICT:
-			MOScompress_dictionary(cntxt,task);
-			MOSupdateHeader(cntxt,task);
-			MOSadvance_dictionary(cntxt,task);
+			MOScompress_dictionary(task);
+			MOSupdateHeader(task);
+			MOSadvance_dictionary(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_DELTA:
-			MOScompress_delta(cntxt,task);
-			MOSupdateHeader(cntxt,task);
-			MOSadvance_delta(cntxt,task);
+			MOScompress_delta(task);
+			MOSupdateHeader(task);
+			MOSadvance_delta(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_LINEAR:
-			MOScompress_linear(cntxt,task);
-			MOSupdateHeader(cntxt,task);
-			MOSadvance_linear(cntxt,task);
+			MOScompress_linear(task);
+			MOSupdateHeader(task);
+			MOSadvance_linear(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_FRAME:
-			MOScompress_frame(cntxt,task);
-			MOSupdateHeader(cntxt,task);
-			MOSadvance_frame(cntxt,task);
+			MOScompress_frame(task);
+			MOSupdateHeader(task);
+			MOSadvance_frame(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_PREFIX:
-			MOScompress_prefix(cntxt,task);
-			MOSupdateHeader(cntxt,task);
-			MOSadvance_prefix(cntxt,task);
+			MOScompress_prefix(task);
+			MOSupdateHeader(task);
+			MOSadvance_prefix(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_CALENDAR:
-			MOScompress_calendar(cntxt,task);
-			MOSupdateHeader(cntxt,task);
-			MOSadvance_calendar(cntxt,task);
+			MOScompress_calendar(task);
+			MOSupdateHeader(task);
+			MOSadvance_calendar(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_RAW: // This is basically the default case.
@@ -412,7 +414,7 @@ MOScompressInternal(Client cntxt, BAT* bsrc, const char* compressions)
 			 * After that compressions tries to re-evaluate through MOSoptimizerCost
 			 * from ++task->start and unwards to estimate a more efficient block type.
 			*/
-			MOScompress_raw(cntxt, task);
+			MOScompress_raw( task);
 				task->start++;
 			break;
 		default : // Unknown block type. Should not happen.
@@ -421,8 +423,8 @@ MOScompressInternal(Client cntxt, BAT* bsrc, const char* compressions)
 	}
 
 	if( MOSgetTag(task->blk) == MOSAIC_RAW ) {
-		MOSupdateHeader(cntxt,task);
-		MOSadvance_raw(cntxt,task);
+		MOSupdateHeader(task);
+		MOSadvance_raw(task);
 		MOSnewBlk(task);
 	}
 
@@ -434,15 +436,15 @@ MOScompressInternal(Client cntxt, BAT* bsrc, const char* compressions)
 	bsrc->batDirtydesc = true;
 	task->hdr->ratio = (flt)task->bsrc->theap.free/ task->bsrc->tmosaic->free;
 finalize:
-	MCexitMaintenance(cntxt);
 
-    t1 = GDKusec();
-    ALGODEBUG fprintf(stderr, "#BATmosaic: mosaic construction " LLFMT " usec\n", t1 - t0);
-    if (o != NULL) {
-        o->tmosaic = NULL;  /* views always keep null pointer and
-                       need to obtain the latest mosaic
-                       from the parent at query time */
-    }
+	MOSunsetLock(bsrc);
+	t1 = GDKusec();
+	ALGODEBUG fprintf(stderr, "#BATmosaic: mosaic construction " LLFMT " usec\n", t1 - t0);
+	if (o != NULL) {
+			o->tmosaic = NULL;  /* views always keep null pointer and
+											need to obtain the latest mosaic
+											from the parent at query time */
+	}
 	return msg;
 }
 
@@ -453,6 +455,8 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	bat *bid =getArgReference_bat(stk,pci,1);
 	bat *ret =getArgReference_bat(stk,pci,0);
+
+	(void) cntxt;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "mosaic.compress", INTERNAL_BAT_ACCESS);
@@ -473,41 +477,37 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		compressions = str_nil;
 	}
 
-	msg= MOScompressInternal(cntxt, b, compressions);
+	msg= MOScompressInternal( b, compressions);
 	BBPkeepref(*ret = b->batCacheid);
 	return msg;
 }
 
 // recreate the uncompressed heap from its mosaic version
 static str
-MOSdecompressInternal(Client cntxt, BAT** res, BAT* bsrc)
+MOSdecompressInternal(BAT** res, BAT* bsrc)
 {	
 	MOStask task;
-	str msg;
 	int error;
+
+	MOSsetLock(bsrc);
 
 	if (BATcheckmosaic(bsrc) == 0 ){
 		*res = bsrc;
 		BBPfix(bsrc->batCacheid); // We are just returning a reference to bsrc.
+		MOSunsetLock(bsrc);
 		return MAL_SUCCEED;
 	}
 
 	if (VIEWtparent(bsrc)) {
+		MOSunsetLock(bsrc);
 		throw(MAL, "mosaic.decompress", "cannot decompress tail-VIEW");
 	}
 
 	// use the original heap for reconstruction
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
+		MOSunsetLock(bsrc);
 		throw(MAL, "mosaic.decompress", MAL_MALLOC_FAIL);
-	}
-	
-	// claim the server for exclusive use
-	// TODO why do we need this.
-	msg = MCstartMaintenance(cntxt,1,0);
-	if( msg != MAL_SUCCEED){
-		GDKfree(msg);
-		throw(MAL, "mosaic.decompress", "Can not claim server");
 	}
 
 	BBPshare(bsrc->tmosaic->parentid);
@@ -541,36 +541,36 @@ MOSdecompressInternal(Client cntxt, BAT** res, BAT* bsrc)
 	while(task->blk){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RAW:
-			MOSdecompress_raw(cntxt,task);
-			MOSskip_raw(cntxt,task);
+			MOSdecompress_raw(task);
+			MOSskip_raw(task);
 			break;
 		case MOSAIC_RLE:
-			MOSdecompress_runlength(cntxt,task);
-			MOSskip_runlength(cntxt,task);
+			MOSdecompress_runlength(task);
+			MOSskip_runlength(task);
 			break;
 		case MOSAIC_DICT:
-			MOSdecompress_dictionary(cntxt,task);
-			MOSskip_dictionary(cntxt,task);
+			MOSdecompress_dictionary(task);
+			MOSskip_dictionary(task);
 			break;
 		case MOSAIC_DELTA:
-			MOSdecompress_delta(cntxt,task);
-			MOSskip_delta(cntxt,task);
+			MOSdecompress_delta(task);
+			MOSskip_delta(task);
 			break;
 		case MOSAIC_LINEAR:
-			MOSdecompress_linear(cntxt,task);
-			MOSskip_linear(cntxt,task);
+			MOSdecompress_linear(task);
+			MOSskip_linear(task);
 			break;
 		case MOSAIC_FRAME:
-			MOSdecompress_frame(cntxt,task);
-			MOSskip_frame(cntxt,task);
+			MOSdecompress_frame(task);
+			MOSskip_frame(task);
 			break;
 		case MOSAIC_PREFIX:
-			MOSdecompress_prefix(cntxt,task);
-			MOSskip_prefix(cntxt,task);
+			MOSdecompress_prefix(task);
+			MOSskip_prefix(task);
 			break;
 		case MOSAIC_CALENDAR:
-			MOSdecompress_calendar(cntxt,task);
-			MOSskip_calendar(cntxt,task);
+			MOSdecompress_calendar(task);
+			MOSskip_calendar(task);
 			break;
 		default: assert(0);
 		}
@@ -611,7 +611,7 @@ MOSdecompressInternal(Client cntxt, BAT** res, BAT* bsrc)
 
 	BATsettrivprop(bsrc); // TODO: What's the purpose of this statement?
 
-	MCexitMaintenance(cntxt);
+	MOSunsetLock(bsrc);
 
 	return MAL_SUCCEED;
 }
@@ -623,6 +623,7 @@ MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *bid = getArgReference_bat(stk,pci,1);
 	BAT *b;
 
+	(void) cntxt;
 	(void) mb;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -630,7 +631,7 @@ MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BAT* res;
 
-	str result = MOSdecompressInternal(cntxt, &res, b);
+	str result = MOSdecompressInternal( &res, b);
 
 	BBPunfix(b->batCacheid);
 
@@ -645,7 +646,7 @@ MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 // The remainders is cloned from the generator code base
 // overload the algebra functions to check for compressed heaps.
-static int
+static int // TODO make boolean
 isCompressed(bat bid)
 {
 	BAT *b;
@@ -653,7 +654,10 @@ isCompressed(bat bid)
 	if( bid == 0)
 		return 0;
 	b = BATdescriptor(bid);
+
+	MOSsetLock(b);
 	r = BATcheckmosaic(b);
+	MOSunsetLock(b);
 	BBPunfix(bid);
 	return r;
 }
@@ -677,7 +681,6 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b, *bn, *cand = NULL;
 	str msg = MAL_SUCCEED;
 	MOStask task;
-
 	(void) cntxt;
 	(void) mb;
 	ret = getArgReference_bat(stk, pci, 0);
@@ -744,34 +747,34 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	startblk =0;
 	stopblk = task->hdr->top;
 	// position the scan on the first mosaic block to consider
-	MOSinitializeScan(cntxt,task,startblk,stopblk);
+	MOSinitializeScan(task,startblk,stopblk);
 
 	while(task->start < task->stop ){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
-			MOSselect_runlength(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_runlength(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_DICT:
-			MOSselect_dictionary(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_dictionary(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_FRAME:
-			MOSselect_frame(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_frame(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_DELTA:
-			MOSselect_delta(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_delta(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_PREFIX:
-			MOSselect_prefix(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_prefix(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_LINEAR:
-			MOSselect_linear(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_linear(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_CALENDAR:
-			MOSselect_calendar(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_calendar(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_RAW:
 		default:
-			MOSselect_raw(cntxt,task,low,hgh,li,hi,anti);
+			MOSselect_raw(task,low,hgh,li,hi,anti);
 		}
 	}
 	// derive the filling
@@ -802,9 +805,9 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	void *low;
 	MOStask task;
 
-	(void) mb;
 	(void) cntxt;
-	ret= getArgReference_bat(stk,pci,0);
+	(void) mb;
+		ret= getArgReference_bat(stk,pci,0);
 	bid= getArgReference_bat(stk,pci,1);
 	if( pci->argc == 5){ // candidate list included
 		cid = getArgReference_bat(stk,pci, 2);
@@ -856,34 +859,34 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	startblk =0;
 	stopblk = task->hdr->top;
 	// position the scan on the first mosaic block to consider
-	MOSinitializeScan(cntxt,task,startblk,stopblk);
+	MOSinitializeScan(task,startblk,stopblk);
 
 	while(task->start < task->stop ){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
-			MOSthetaselect_runlength(cntxt,task,low,*oper);
+			MOSthetaselect_runlength(task,low,*oper);
 			break;
 		case MOSAIC_DELTA:
-			MOSthetaselect_delta(cntxt,task,low,*oper);
+			MOSthetaselect_delta(task,low,*oper);
 			break;
 		case MOSAIC_PREFIX:
-			MOSthetaselect_prefix(cntxt,task,low,*oper);
+			MOSthetaselect_prefix(task,low,*oper);
 			break;
 		case MOSAIC_LINEAR:
-			MOSthetaselect_linear(cntxt,task,low,*oper);
+			MOSthetaselect_linear(task,low,*oper);
 			break;
 		case MOSAIC_DICT:
-			MOSthetaselect_dictionary(cntxt,task,low,*oper);
+			MOSthetaselect_dictionary(task,low,*oper);
 			break;
 		case MOSAIC_FRAME:
-			MOSthetaselect_frame(cntxt,task,low,*oper);
+			MOSthetaselect_frame(task,low,*oper);
 			break;
 		case MOSAIC_CALENDAR:
-			MOSthetaselect_calendar(cntxt,task,low,*oper);
+			MOSthetaselect_calendar(task,low,*oper);
 			break;
 		case MOSAIC_RAW:
 		default:
-			MOSthetaselect_raw(cntxt,task,low,*oper);
+			MOSthetaselect_raw(task,low,*oper);
 		}
 	}
 	// derive the filling
@@ -914,8 +917,8 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg= MAL_SUCCEED;
 	MOStask task;
 
-	(void) mb;
 	(void) cntxt;
+	(void) mb;
 
 	ret = getArgReference_bat(stk,pci,0);
 	lid = getArgReference_bat(stk,pci,1);
@@ -967,34 +970,34 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stopblk = task->hdr->top;
 	assert(startblk < stopblk);
 	// position the scan on the first mosaic block to consider
-	MOSinitializeScan(cntxt,task,startblk,stopblk);
+	MOSinitializeScan(task,startblk,stopblk);
 
 	// loop thru all the chunks and fetch all results
 	while(task->start<task->stop )
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
-			MOSprojection_runlength(cntxt, task);
+			MOSprojection_runlength( task);
 			break;
 		case MOSAIC_DICT:
-			MOSprojection_dictionary(cntxt, task);
+			MOSprojection_dictionary( task);
 			break;
 		case MOSAIC_FRAME:
-			MOSprojection_frame(cntxt, task);
+			MOSprojection_frame( task);
 			break;
 		case MOSAIC_DELTA:
-			MOSprojection_delta(cntxt, task);
+			MOSprojection_delta( task);
 			break;
 		case MOSAIC_PREFIX:
-			MOSprojection_prefix(cntxt, task);
+			MOSprojection_prefix( task);
 			break;
 		case MOSAIC_LINEAR:
-			MOSprojection_linear(cntxt, task);
+			MOSprojection_linear( task);
 			break;
 		case MOSAIC_CALENDAR:
-			MOSprojection_calendar(cntxt, task);
+			MOSprojection_calendar( task);
 			break;
 		case MOSAIC_RAW:
-			MOSprojection_raw(cntxt, task);
+			MOSprojection_raw( task);
 			break;
 		default:
 			assert(0);
@@ -1081,7 +1084,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	startblk =0;
 	stopblk = task->hdr->top;
 	// position the scan on the first mosaic block to consider
-	MOSinitializeScan(cntxt,task,startblk,stopblk);
+	MOSinitializeScan(task,startblk,stopblk);
 
 	if ( bl->tmosaic){
 		task->stop = BATcount(br);
@@ -1094,28 +1097,28 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while(task->blk )
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
-			MOSjoin_runlength(cntxt, task);
+			MOSjoin_runlength( task);
 			break;
 		case MOSAIC_DICT:
-			MOSjoin_dictionary(cntxt, task);
+			MOSjoin_dictionary( task);
 			break;
 		case MOSAIC_FRAME:
-			MOSjoin_frame(cntxt, task);
+			MOSjoin_frame( task);
 			break;
 		case MOSAIC_DELTA:
-			MOSjoin_delta(cntxt, task);
+			MOSjoin_delta( task);
 			break;
 		case MOSAIC_PREFIX:
-			MOSjoin_prefix(cntxt, task);
+			MOSjoin_prefix( task);
 			break;
 		case MOSAIC_LINEAR:
-			MOSjoin_linear(cntxt, task);
+			MOSjoin_linear( task);
 			break;
 		case MOSAIC_CALENDAR:
-			MOSjoin_calendar(cntxt, task);
+			MOSjoin_calendar( task);
 			break;
 		case MOSAIC_RAW:
-			MOSjoin_raw(cntxt, task);
+			MOSjoin_raw( task);
 			break;
 		default:
 			assert(0);
@@ -1209,7 +1212,7 @@ static int cmpPattern(const void *p1, const void *p2){
 }
 
 void
-MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *bdecompress, str compressions)
+MOSanalyseReport(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *bdecompress, str compressions)
 {
 	int i,j,k,cases, bit=1, bid= b->batCacheid;
 	int pattern[CANDIDATES];
@@ -1252,7 +1255,7 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 		// TODO: keep a potentially pre-existing mosaic_heap aside.
 
 		const char* compressions = buf;
-		MOScompressInternal(cntxt, b, compressions);
+		MOScompressInternal( b, compressions);
 		pat[i].clk1 = GDKms()- pat[i].clk1;
 
 		if(b->tmosaic == NULL){
@@ -1274,7 +1277,7 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 
 		BAT* decompressed;
 		pat[i].clk2 = GDKms();
-		MOSdecompressInternal(cntxt, &decompressed, b);
+		MOSdecompressInternal( &decompressed, b);
 		pat[i].clk2 = GDKms()- pat[i].clk2;
 		MOSdestroy(decompressed);
 		BBPunfix(decompressed->batCacheid);
@@ -1300,14 +1303,13 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 
 /* slice a fixed size atom into thin bte-wide columns, used for experiments */
 str
-MOSsliceInternal(Client cntxt, bat *slices, BUN size, BAT *b)
+MOSsliceInternal(bat *slices, BUN size, BAT *b)
 {
 	BUN i;
 	BUN cnt= BATcount(b);
 	BAT *bats[8];
 	bte *thin[8];
 	assert(size < 8);
-	(void) cntxt;
 
 	for( i = 0; i< size; i++){
 		bats[i] = COLnew((oid)0,TYPE_bte, cnt, TRANSIENT);
@@ -1367,13 +1369,13 @@ MOSslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat slices[8];
 	BAT *b;
 	BUN s;
-	(void) cntxt;
 
+	(void) cntxt;
 	s = (BUN) ATOMsize(getArgType(mb,pci,pci->retc));
 	if( s > 8)
 		throw(MAL,"mosaic.slice", "illegal type witdh");
 	b = BATdescriptor(* getArgReference_bat(stk,pci, pci->retc));
 	if ( b == NULL)
 		throw(MAL,"mosaic.slice", RUNTIME_OBJECT_MISSING);
-	return MOSsliceInternal(cntxt, slices, s,b);
+	return MOSsliceInternal( slices, s,b);
 }

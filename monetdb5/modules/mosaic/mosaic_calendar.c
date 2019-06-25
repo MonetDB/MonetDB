@@ -28,12 +28,11 @@ bool MOStypes_calendar(BAT* b) {
 }
 
 void
-MOSadvance_calendar(Client cntxt, MOStask task)
+MOSadvance_calendar(MOStask task)
 {
 	int *dst = (int*)  MOScodevector(task);
 	BUN cnt = MOSgetCnt(task->blk);
 	long bytes;
-	(void) cntxt;
 
 	assert(cnt > 0);
 	task->start += (oid) cnt;
@@ -42,32 +41,15 @@ MOSadvance_calendar(Client cntxt, MOStask task)
 	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
 }
 
-/* Beware, the dump routines use the compressed part of the task */
-static void
-MOSdump_calendarInternal(char *buf, size_t len, MOStask task, int i)
-{
-	/* TODO:
-	if( task->type == TYPE_timestamp){
-		snprintf(buf,len,LLFMT,  task->hdr->dict.vallng[i]); 
-	}
-	*/
-	if( task->type == TYPE_date /* || task->type == TYPE_daytime */){
-		snprintf(buf,len,"%d", task->hdr->dict.valint[i]); 
-	}
-}
-
-
 void
-MOSlayout_calendar_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_calendar_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	lng zero=0;
 	int i;
 	char buf[BUFSIZ];
 
-	(void) cntxt;
 	for(i=0; i< task->hdr->dictsize; i++){
 		snprintf(buf, BUFSIZ,"calendar[%d]",i);
-		MOSdump_calendarInternal(buf, BUFSIZ, task,i);
 		if( BUNappend(btech, buf, false)!= GDK_SUCCEED ||
 			BUNappend(bcount, &zero, false)!= GDK_SUCCEED ||
 			BUNappend(binput, &zero, false)!= GDK_SUCCEED ||
@@ -79,12 +61,11 @@ MOSlayout_calendar_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT 
 
 
 void
-MOSlayout_calendar(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_calendar(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
-	(void) cntxt;
 	input = cnt * ATOMsize(task->type);
 	output =  MosaicBlkSize + (cnt * task->hdr->bits)/8 + (((cnt * task->hdr->bits) %8) != 0);
 	if(	BUNappend(btech, "calendar blk", false) != GDK_SUCCEED ||
@@ -96,9 +77,9 @@ MOSlayout_calendar(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *bin
 }
 
 void
-MOSskip_calendar(Client cntxt, MOStask task)
+MOSskip_calendar(MOStask task)
 {
-	MOSadvance_calendar(cntxt, task);
+	MOSadvance_calendar(task);
 	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
@@ -148,7 +129,7 @@ MOSskip_calendar(Client cntxt, MOStask task)
 
 /* there are only three kinds of calendardictionaries */
 void
-MOScreatecalendar(Client cntxt, MOStask task)
+MOScreatecalendar(MOStask task)
 {
 	BUN i;
 	int j, k, max;
@@ -161,7 +142,6 @@ MOScreatecalendar(Client cntxt, MOStask task)
 	bte keep[TMPDICT];
 	int dictsize = 0;
 
-	(void) cntxt;
 	memset((char*) &dict, 0, TMPDICT * sizeof(lng));
 	memset((char*) cnt, 0, sizeof(cnt));
 	memset((char*) keep, 0, sizeof(keep));
@@ -212,21 +192,16 @@ MOScreatecalendar(Client cntxt, MOStask task)
 		hdr->bits++;
 		hdr->mask = (hdr->mask <<1) | 1;
 	}
-#ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#Calendar size %d bits %d mask %o %o\n", task->hdr->dictsize, task->hdr->bits, task->hdr->mask, task->hdr->mask <<MASKBITS);
-	MOSdump_calendar(cntxt, task);
-#endif
 }
 
 // calculate the expected reduction using DICT in terms of elements compressed
 flt
-MOSestimate_calendar(Client cntxt, MOStask task)
+MOSestimate_calendar(MOStask task)
 {	
 	BUN i = 0;
 	int j;
 	flt factor= 1.0;
 	MosaicHdr hdr = task->hdr;
-	(void) cntxt;
 
 	if( task->type == TYPE_date){
 		int *val = ((int*)task->src) + task->start, v;
@@ -251,9 +226,7 @@ MOSestimate_calendar(Client cntxt, MOStask task)
 			return 0.0;
 		if(i) factor = (flt) ((int)i * sizeof(int)) / wordaligned( MosaicBlkSize + (i * hdr->bits)/8,int);
 	}
-#ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#estimate calendar "BUNFMT" elm %4.2f factor\n", i, factor);
-#endif
+
 	task->factor[MOSAIC_CALENDAR] = factor;
 	task->range[MOSAIC_CALENDAR] = task->start + i;
 	return factor; 
@@ -278,8 +251,6 @@ MOSestimate_calendar(Client cntxt, MOStask task)
 	}\
 	assert(i);\
 }
-//mnstr_printf(cntxt->fdout,"#CALcompress   ["BUNFMT"] val %o v [%d] %d %o residu  %o %o\n", i, *val, j, hdr->bits, v,  (unsigned int)( *val & MASKDAY), (unsigned int)( ((j & hdr->mask)<< MASKBITS) | (*val & MASKDAY)) );
-
 
 // the inverse operator, extend the src
 #define CALdecompress(TPE)\
@@ -292,10 +263,9 @@ MOSestimate_calendar(Client cntxt, MOStask task)
 	}\
 	task->src += i * sizeof(TPE);\
 }
-//mnstr_printf(cntxt->fdout,"#CALdecompress ["BUNFMT"] j %o idx %d [%d] %o val %o\n", i, j, hdr->bits, (j>> MASKBITS) & task->hdr->mask, task->hdr->dict.val##TPE[ (j>> MASKBITS) & task->hdr->mask], ((TPE*)task->src)[i]);
 
 void
-MOScompress_calendar(Client cntxt, MOStask task)
+MOScompress_calendar(MOStask task)
 {
 	BUN i;
 	unsigned int j;
@@ -304,7 +274,6 @@ MOScompress_calendar(Client cntxt, MOStask task)
 
 	task->dst = MOScodevector(task);
 
-	(void) cntxt;
 	MOSsetTag(blk,MOSAIC_CALENDAR);
 	MOSsetCnt(blk,0);
 
@@ -319,14 +288,13 @@ MOScompress_calendar(Client cntxt, MOStask task)
 }
 
 void
-MOSdecompress_calendar(Client cntxt, MOStask task)
+MOSdecompress_calendar(MOStask task)
 {
 	MosaicBlk blk = task->blk;
 	MosaicHdr hdr = task->hdr;
 	BUN i;
 	unsigned int j;
 	BitVector base;
-	(void) cntxt;
 
 	if( task->type == TYPE_date){
 		CALdecompress(int);
@@ -413,7 +381,7 @@ MOSdecompress_calendar(Client cntxt, MOStask task)
 }
 
 str
-MOSselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSselect_calendar( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
 	BUN i, first,last;
@@ -421,14 +389,13 @@ MOSselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	int cmp;
 	bte j;
 	BitVector base;
-	(void) cntxt;
 
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSskip_calendar(cntxt,task);
+		MOSskip_calendar(task);
 		return MAL_SUCCEED;
 	}
 	o = task->lb;
@@ -442,7 +409,7 @@ MOSselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	if( task->type == TYPE_timestamp){
 		// TODO:
 	}
-	MOSskip_calendar(cntxt,task);
+	MOSskip_calendar(task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
@@ -488,7 +455,7 @@ MOSselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 } 
 
 str
-MOSthetaselect_calendar(Client cntxt,  MOStask task, void *val, str oper)
+MOSthetaselect_calendar( MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
@@ -496,14 +463,13 @@ MOSthetaselect_calendar(Client cntxt,  MOStask task, void *val, str oper)
 	MosaicHdr hdr = task->hdr;
 	bte j;
 	BitVector base;
-	(void) cntxt;
 	
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSskip_calendar(cntxt,task);
+		MOSskip_calendar(task);
 		return MAL_SUCCEED;
 	}
 	o = task->lb;
@@ -517,7 +483,7 @@ MOSthetaselect_calendar(Client cntxt,  MOStask task, void *val, str oper)
 	if( task->type == TYPE_timestamp){
 		// TODO:
 	}
-	MOSskip_calendar(cntxt,task);
+	MOSskip_calendar(task);
 	task->lb =o;
 	return MAL_SUCCEED;
 }
@@ -536,13 +502,12 @@ MOSthetaselect_calendar(Client cntxt,  MOStask task, void *val, str oper)
 }
 
 str
-MOSprojection_calendar(Client cntxt,  MOStask task)
+MOSprojection_calendar( MOStask task)
 {
 	BUN i,first,last;
 	MosaicHdr hdr = task->hdr;
 	unsigned short j;
 	BitVector base;
-	(void) cntxt;
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
@@ -556,7 +521,7 @@ MOSprojection_calendar(Client cntxt,  MOStask task)
 	if( task->type == TYPE_timestamp){
 		// TODO:
 	}
-	MOSskip_calendar(cntxt,task);
+	MOSskip_calendar(task);
 	return MAL_SUCCEED;
 }
 
@@ -581,13 +546,12 @@ MOSprojection_calendar(Client cntxt,  MOStask task)
 }
 
 str
-MOSjoin_calendar(Client cntxt,  MOStask task)
+MOSjoin_calendar( MOStask task)
 {
 	BUN i,n,limit;
 	oid o, oo;
 	MosaicHdr hdr = task->hdr;
 	int j;
-	(void) cntxt;
 
 	if( task->type == TYPE_date){
 		join_calendar(int); 
@@ -598,6 +562,6 @@ MOSjoin_calendar(Client cntxt,  MOStask task)
 	if( task->type == TYPE_timestamp){
 		// TODO:
 	}
-	MOSskip_calendar(cntxt,task);
+	MOSskip_calendar(task);
 	return MAL_SUCCEED;
 }

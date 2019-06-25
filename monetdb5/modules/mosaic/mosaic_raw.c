@@ -43,13 +43,12 @@ bool MOStypes_raw(BAT* b) {
 }
 
 void
-MOSlayout_raw(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_raw(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
-	(void) cntxt;
-	input = cnt * ATOMsize(task->type);
+		input = cnt * ATOMsize(task->type);
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: output = wordaligned( MosaicBlkSize + sizeof(bte)* MOSgetCnt(blk),bte); break ;
 	case TYPE_bit: output = wordaligned( MosaicBlkSize + sizeof(bit)* MOSgetCnt(blk),bit); break ;
@@ -79,10 +78,9 @@ MOSlayout_raw(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, 
 }
 
 void
-MOSadvance_raw(Client cntxt, MOStask task)
+MOSadvance_raw(MOStask task)
 {
 	MosaicBlk blk = task->blk;
-	(void) cntxt;
 
 	task->start += MOSgetCnt(blk);
 	switch(ATOMbasetype(task->type)){
@@ -108,9 +106,9 @@ MOSadvance_raw(Client cntxt, MOStask task)
 }
 
 void
-MOSskip_raw(Client cntxt, MOStask task)
+MOSskip_raw( MOStask task)
 {
-	MOSadvance_raw(cntxt,task);
+	MOSadvance_raw(task);
 	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
@@ -127,13 +125,12 @@ MOSskip_raw(Client cntxt, MOStask task)
 
 // rather expensive simple value non-compressed store
 void
-MOScompress_raw(Client cntxt, MOStask task)
+MOScompress_raw(MOStask task)
 {
 	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = (MosaicBlk) task->blk;
 
-	(void) cntxt;
-	MOSsetTag(blk,MOSAIC_RAW);
+		MOSsetTag(blk,MOSAIC_RAW);
 
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: RAWcompress(bte); break ;
@@ -161,9 +158,6 @@ MOScompress_raw(Client cntxt, MOStask task)
 		case 8: RAWcompress(lng); break ;
 		}
 	}
-#ifdef _DEBUG_MOSAIC_
-	MOSdump_raw(cntxt, task);
-#endif
 }
 
 // the inverse operator, extend the src
@@ -177,13 +171,12 @@ MOScompress_raw(Client cntxt, MOStask task)
 }
 
 void
-MOSdecompress_raw(Client cntxt, MOStask task)
+MOSdecompress_raw(MOStask task)
 {
 	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	BUN i;
 	char *compressed;
-	(void) cntxt;
 
 	compressed = ((char*)blk) + MosaicBlkSize;
 	switch(ATOMbasetype(task->type)){
@@ -285,19 +278,18 @@ MOSdecompress_raw(Client cntxt, MOStask task)
 	}
 
 str
-MOSselect_raw(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSselect_raw( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
 	BUN first,last;
 	int cmp;
-	(void) cntxt;
 
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSskip_raw(cntxt,task);
+		MOSskip_raw(task);
 		return MAL_SUCCEED;
 	}
 	o = task->lb;
@@ -461,7 +453,7 @@ MOSselect_raw(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *h
 				}
 		}
 	}
-	MOSskip_raw(cntxt,task);
+	MOSskip_raw(task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
@@ -506,19 +498,18 @@ MOSselect_raw(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *h
 } 
 
 str
-MOSthetaselect_raw(Client cntxt,  MOStask task, void *val, str oper)
+MOSthetaselect_raw( MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
 	BUN first,last;
-	(void) cntxt;
-	
+
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSskip_raw(cntxt,task);
+		MOSskip_raw(task);
 		return MAL_SUCCEED;
 	}
 	if ( first + MOSgetCnt(task->blk) > last)
@@ -584,7 +575,7 @@ MOSthetaselect_raw(Client cntxt,  MOStask task, void *val, str oper)
 		case 8: break ;
 		}
 	}
-	MOSskip_raw(cntxt,task);
+	MOSskip_raw(task);
 	task->lb =o;
 	return MAL_SUCCEED;
 }
@@ -602,11 +593,10 @@ MOSthetaselect_raw(Client cntxt,  MOStask task, void *val, str oper)
 }
 
 str
-MOSprojection_raw(Client cntxt,  MOStask task)
+MOSprojection_raw( MOStask task)
 {
 	BUN first,last;
-	(void) cntxt;
-	// set the oid range covered and advance scan range
+		// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
@@ -641,7 +631,7 @@ MOSprojection_raw(Client cntxt,  MOStask task)
 		case 8: projection_raw(lng); break ;
 		}
 	}
-	MOSskip_raw(cntxt,task);
+	MOSskip_raw(task);
 	return MAL_SUCCEED;
 }
 
@@ -660,12 +650,11 @@ MOSprojection_raw(Client cntxt,  MOStask task)
 }
 
 str
-MOSjoin_raw(Client cntxt,  MOStask task)
+MOSjoin_raw( MOStask task)
 {
 	BUN n,first,last;
 	oid o, oo;
-	(void) cntxt;
-	// set the oid range covered and advance scan range
+		// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
@@ -703,6 +692,6 @@ MOSjoin_raw(Client cntxt,  MOStask task)
 		case 8: join_raw(lng); break ;
 		}
 	}
-	MOSskip_raw(cntxt,task);
+	MOSskip_raw(task);
 	return MAL_SUCCEED;
 }

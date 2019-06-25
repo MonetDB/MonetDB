@@ -50,12 +50,11 @@ bool MOStypes_dictionary(BAT* b) {
 }
 
 void
-MOSadvance_dictionary(Client cntxt, MOStask task)
+MOSadvance_dictionary(MOStask task)
 {
 	int *dst = (int*)  MOScodevector(task);
 	BUN cnt = MOSgetCnt(task->blk);
 	long bytes;
-	(void) cntxt;
 
 	assert(cnt > 0);
 	task->start += (oid) cnt;
@@ -64,52 +63,16 @@ MOSadvance_dictionary(Client cntxt, MOStask task)
 	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
 }
 
-/* Beware, the dump routines use the compressed part of the task */
-static void
-MOSdump_dictionaryInternal(char *buf, size_t len, MOStask task, int i)
-{
-
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte:
-		snprintf(buf,len,"%d", task->hdr->dict.valbte[i]); break;
-	case TYPE_sht:
-		snprintf(buf,len,"%hd", task->hdr->dict.valsht[i]); break;
-	case TYPE_int:
-		snprintf(buf,len,"%d", task->hdr->dict.valint[i]); break;
-	case  TYPE_oid:
-		snprintf(buf,len,OIDFMT,  task->hdr->dict.valoid[i]); break;
-	case  TYPE_lng:
-		snprintf(buf,len,LLFMT,  task->hdr->dict.vallng[i]); break;
-#ifdef HAVE_HGE
-	case  TYPE_hge:
-		snprintf(buf,len,"%.40g",  (dbl) task->hdr->dict.valhge[i]); break;
-#endif
-	case TYPE_flt:
-		snprintf(buf,len,"%f", task->hdr->dict.valflt[i]); break;
-	case TYPE_dbl:
-		snprintf(buf,len,"%g", task->hdr->dict.valdbl[i]); break;
-	case TYPE_str:
-		switch(task->bsrc->twidth){
-			case 1: snprintf(buf,len,"%d", task->hdr->dict.valbte[i]); break;
-			case 2: snprintf(buf,len,"%hd", task->hdr->dict.valsht[i]); break;
-			case 4: snprintf(buf,len,"%d", task->hdr->dict.valint[i]); break;
-			case 8: snprintf(buf,len,LLFMT,  task->hdr->dict.vallng[i]); 
-		}
-}
-}
-
 void
-MOSlayout_dictionary_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_dictionary_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	lng zero=0;
 	int i;
 	char buf[BUFSIZ];
 	char bufv[BUFSIZ];
 
-	(void) cntxt;
 	for(i=0; i< task->hdr->dictsize; i++){
 		snprintf(buf, BUFSIZ,"dictionary[%d]",i);
-		MOSdump_dictionaryInternal(bufv, BUFSIZ, task,i);
 		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
 			BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
 			BUNappend(binput, &zero, false) != GDK_SUCCEED ||
@@ -121,12 +84,11 @@ MOSlayout_dictionary_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BA
 
 
 void
-MOSlayout_dictionary(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_dictionary(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
-	(void) cntxt;
 	input = cnt * ATOMsize(task->type);
 	output =  MosaicBlkSize + (cnt * task->hdr->bits)/8 + (((cnt * task->hdr->bits) %8) != 0);
 	if( BUNappend(btech, "dictionary blk", false) != GDK_SUCCEED ||
@@ -138,9 +100,9 @@ MOSlayout_dictionary(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *b
 }
 
 void
-MOSskip_dictionary(Client cntxt, MOStask task)
+MOSskip_dictionary(MOStask task)
 {
-	MOSadvance_dictionary(cntxt, task);
+	MOSadvance_dictionary(task);
 	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
@@ -214,7 +176,7 @@ MOSskip_dictionary(Client cntxt, MOStask task)
 
 /* Take a larger sample before fixing the dictionary */
 void
-MOScreatedictionary(Client cntxt, MOStask task)
+MOScreatedictionary(MOStask task)
 {
 	BUN i;
 	int j, k, max;
@@ -235,7 +197,6 @@ MOScreatedictionary(Client cntxt, MOStask task)
 	bte keep[TMPDICT];
 	int dictsize = 0;
 
-	(void) cntxt;
 	memset((char*) &dict, 0, TMPDICT * sizeof(lng));
 	memset((char*) cnt, 0, sizeof(cnt));
 	memset((char*) keep, 0, sizeof(keep));
@@ -260,10 +221,6 @@ MOScreatedictionary(Client cntxt, MOStask task)
 		case 8: makeDict(lng); break;
 		}
 		break;
-#ifdef _DEBUG_MOSAIC_
-	default:
-		mnstr_printf(cntxt->fdout,"#does not support dictionary type %d\n",ATOMbasetype(task->type));
-#endif
 	}
 	/* find the 256 most frequent values and save them in the mosaic header */
 	if( dictsize < 256){
@@ -304,20 +261,16 @@ MOScreatedictionary(Client cntxt, MOStask task)
 		hdr->bits++;
 		hdr->mask = (hdr->mask <<1) | 1;
 	}
-#ifdef _DEBUG_MOSAIC_
-	MOSdump_dictionary(cntxt, task);
-#endif
 }
 
 // calculate the expected reduction using DICT in terms of elements compressed
 flt
-MOSestimate_dictionary(Client cntxt, MOStask task)
+MOSestimate_dictionary(MOStask task)
 {	
 	BUN i = 0;
 	int j;
 	flt factor= 0.0;
 	MosaicHdr hdr = task->hdr;
-	(void) cntxt;
 
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: estimateDict(bte); break; 
@@ -360,14 +313,7 @@ break;
 		case 8: estimateDict(lng); break;
 		}
 		break;
-#ifdef _DEBUG_MOSAIC_
-	default:
-		mnstr_printf(cntxt->fdout,"#does not support dictionary type %d\n",ATOMbasetype(task->type));
-#endif
 	}
-#ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#estimate dict "BUNFMT" elm %4.2f factor\n", i, factor);
-#endif
 	task->factor[MOSAIC_DICT] = factor;
 	task->range[MOSAIC_DICT] = task->start + i;
 	return factor; 
@@ -395,7 +341,7 @@ break;
 
 
 void
-MOScompress_dictionary(Client cntxt, MOStask task)
+MOScompress_dictionary(MOStask task)
 {
 	BUN i;
 	int j;
@@ -404,7 +350,6 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 
 	task->dst = MOScodevector(task);
 
-	(void) cntxt;
 	MOSsetTag(blk,MOSAIC_DICT);
 	MOSsetCnt(blk,0);
 
@@ -444,14 +389,13 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 }
 
 void
-MOSdecompress_dictionary(Client cntxt, MOStask task)
+MOSdecompress_dictionary(MOStask task)
 {
 	MosaicBlk blk = task->blk;
 	MosaicHdr hdr = task->hdr;
 	BUN i;
 	int j;
 	BitVector base;
-	(void) cntxt;
 
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: DICTdecompress(bte); break;
@@ -551,7 +495,7 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 }
 
 str
-MOSselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSselect_dictionary(MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
 	BUN i, first,last;
@@ -559,14 +503,13 @@ MOSselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *li,
 	int cmp;
 	bte j;
 	BitVector base;
-	(void) cntxt;
 
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSskip_dictionary(cntxt,task);
+		MOSskip_dictionary(task);
 		return MAL_SUCCEED;
 	}
 	o = task->lb;
@@ -591,7 +534,7 @@ MOSselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *li,
 		}
 		break;
 	}
-	MOSskip_dictionary(cntxt,task);
+	MOSskip_dictionary(task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
@@ -639,7 +582,7 @@ MOSselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *li,
 } 
 
 str
-MOSthetaselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
+MOSthetaselect_dictionary( MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
@@ -647,14 +590,13 @@ MOSthetaselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
 	MosaicHdr hdr = task->hdr;
 	bte j;
 	BitVector base;
-	(void) cntxt;
 	
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSskip_dictionary(cntxt,task);
+		MOSskip_dictionary(task);
 		return MAL_SUCCEED;
 	}
 	o = task->lb;
@@ -679,7 +621,7 @@ MOSthetaselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
 		}
 		break;
 	}
-	MOSskip_dictionary(cntxt,task);
+	MOSskip_dictionary(task);
 	task->lb =o;
 	return MAL_SUCCEED;
 }
@@ -700,13 +642,12 @@ MOSthetaselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
 }
 
 str
-MOSprojection_dictionary(Client cntxt,  MOStask task)
+MOSprojection_dictionary( MOStask task)
 {
 	BUN i,first,last;
 	MosaicHdr hdr = task->hdr;
 	unsigned short j;
 	BitVector base;
-	(void) cntxt;
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
@@ -743,7 +684,7 @@ MOSprojection_dictionary(Client cntxt,  MOStask task)
 		}
 		break;
 	}
-	MOSskip_dictionary(cntxt,task);
+	MOSskip_dictionary(task);
 	return MAL_SUCCEED;
 }
 
@@ -768,13 +709,12 @@ MOSprojection_dictionary(Client cntxt,  MOStask task)
 }
 
 str
-MOSjoin_dictionary(Client cntxt,  MOStask task)
+MOSjoin_dictionary( MOStask task)
 {
 	BUN i,n,limit;
 	oid o, oo;
 	MosaicHdr hdr = task->hdr;
 	int j;
-	(void) cntxt;
 
 	// set the oid range covered and advance scan range
 	switch(ATOMbasetype(task->type)){
@@ -797,6 +737,6 @@ MOSjoin_dictionary(Client cntxt,  MOStask task)
 			}
 			break;
 	}
-	MOSskip_dictionary(cntxt,task);
+	MOSskip_dictionary(task);
 	return MAL_SUCCEED;
 }

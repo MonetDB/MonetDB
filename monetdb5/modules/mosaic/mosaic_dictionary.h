@@ -21,16 +21,16 @@
 #define DICTSIZE 256 
 
 bool MOStypes_dictionary(BAT* b);
-mal_export void MOScreatedictionary(Client cntxt, MOStask task);
-mal_export void MOSlayout_dictionary(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export void MOSlayout_dictionary_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export void MOSadvance_dictionary(Client cntxt, MOStask task);
-mal_export void MOSskip_dictionary(Client cntxt, MOStask task);
-mal_export flt  MOSestimate_dictionary(Client cntxt, MOStask task);
-mal_export void MOScompress_dictionary(Client cntxt, MOStask task);
-mal_export void MOSdecompress_dictionary(Client cntxt, MOStask task);
-mal_export str MOSselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mal_export str MOSthetaselect_dictionary(Client cntxt,  MOStask task, void *val, str oper);
-mal_export str MOSprojection_dictionary(Client cntxt,  MOStask task);
-mal_export str MOSjoin_dictionary(Client cntxt,  MOStask task);
+mal_export void MOScreatedictionary(MOStask task);
+mal_export void MOSlayout_dictionary(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export void MOSlayout_dictionary_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export void MOSadvance_dictionary(MOStask task);
+mal_export void MOSskip_dictionary(MOStask task);
+mal_export flt  MOSestimate_dictionary(MOStask task);
+mal_export void MOScompress_dictionary(MOStask task);
+mal_export void MOSdecompress_dictionary(MOStask task);
+mal_export str MOSselect_dictionary( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mal_export str MOSthetaselect_dictionary( MOStask task, void *val, str oper);
+mal_export str MOSprojection_dictionary( MOStask task);
+mal_export str MOSjoin_dictionary( MOStask task);
 #endif /* _MOSAIC_DICT_ */

@@ -21,16 +21,16 @@
 #define TEMPORALSIZE 256 
 
 bool MOStypes_calendar(BAT* b);
-mal_export void MOScreatecalendar(Client cntxt, MOStask task);
-mal_export void MOSlayout_calendar(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export void MOSlayout_calendar_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export void MOSadvance_calendar(Client cntxt, MOStask task);
-mal_export void MOSskip_calendar(Client cntxt, MOStask task);
-mal_export flt  MOSestimate_calendar(Client cntxt, MOStask task);
-mal_export void MOScompress_calendar(Client cntxt, MOStask task);
-mal_export void MOSdecompress_calendar(Client cntxt, MOStask task);
-mal_export str MOSselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mal_export str MOSthetaselect_calendar(Client cntxt,  MOStask task, void *val, str oper);
-mal_export str MOSprojection_calendar(Client cntxt,  MOStask task);
-mal_export str MOSjoin_calendar(Client cntxt,  MOStask task);
+mal_export void MOScreatecalendar(MOStask task);
+mal_export void MOSlayout_calendar(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export void MOSlayout_calendar_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export void MOSadvance_calendar(MOStask task);
+mal_export void MOSskip_calendar(MOStask task);
+mal_export flt  MOSestimate_calendar(MOStask task);
+mal_export void MOScompress_calendar(MOStask task);
+mal_export void MOSdecompress_calendar(MOStask task);
+mal_export str MOSselect_calendar( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mal_export str MOSthetaselect_calendar( MOStask task, void *val, str oper);
+mal_export str MOSprojection_calendar( MOStask task);
+mal_export str MOSjoin_calendar( MOStask task);
 #endif /* _MOSAIC_TEMPORAL_ */

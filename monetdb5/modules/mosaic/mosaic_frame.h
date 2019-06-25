@@ -19,16 +19,16 @@
 #include "mosaic_dictionary.h"
 
 bool MOStypes_frame(BAT* b);
-mal_export void MOScreateframeDictionary(Client cntxt, MOStask task);
-mal_export void MOSlayout_frame_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export void MOSlayout_frame(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export void MOSadvance_frame(Client cntxt, MOStask task);
-mal_export void MOSskip_frame(Client cntxt, MOStask task);
-mal_export flt  MOSestimate_frame(Client cntxt, MOStask task);
-mal_export void MOScompress_frame(Client cntxt, MOStask task);
-mal_export void MOSdecompress_frame(Client cntxt, MOStask task);
-mal_export str MOSselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mal_export str MOSthetaselect_frame(Client cntxt,  MOStask task, void *val, str oper);
-mal_export str MOSprojection_frame(Client cntxt,  MOStask task);
-mal_export str MOSjoin_frame(Client cntxt,  MOStask task);
+mal_export void MOScreateframeDictionary(MOStask task);
+mal_export void MOSlayout_frame_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export void MOSlayout_frame(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export void MOSadvance_frame(MOStask task);
+mal_export void MOSskip_frame(MOStask task);
+mal_export flt  MOSestimate_frame(MOStask task);
+mal_export void MOScompress_frame(MOStask task);
+mal_export void MOSdecompress_frame(MOStask task);
+mal_export str MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mal_export str MOSthetaselect_frame( MOStask task, void *val, str oper);
+mal_export str MOSprojection_frame( MOStask task);
+mal_export str MOSjoin_frame( MOStask task);
 #endif /* _MOSAIC_FRAME_ */

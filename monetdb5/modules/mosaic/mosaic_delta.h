@@ -18,14 +18,14 @@
 #include "mal_client.h"
 
 bool MOStypes_delta(BAT* b);
-mal_export void MOSlayout_delta(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export void MOSadvance_delta(Client cntxt, MOStask task);
-mal_export void MOSskip_delta(Client cntxt, MOStask task);
-mal_export flt  MOSestimate_delta(Client cntxt, MOStask task);
-mal_export void MOScompress_delta(Client cntxt, MOStask task);
-mal_export void MOSdecompress_delta(Client cntxt, MOStask task);
-mal_export str MOSselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mal_export str MOSthetaselect_delta(Client cntxt,  MOStask task, void *val, str oper);
-mal_export str MOSprojection_delta(Client cntxt,  MOStask task);
-mal_export str MOSjoin_delta(Client cntxt,  MOStask task);
+mal_export void MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export void MOSadvance_delta(MOStask task);
+mal_export void MOSskip_delta(MOStask task);
+mal_export flt  MOSestimate_delta(MOStask task);
+mal_export void MOScompress_delta(MOStask task);
+mal_export void MOSdecompress_delta(MOStask task);
+mal_export str MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mal_export str MOSthetaselect_delta( MOStask task, void *val, str oper);
+mal_export str MOSprojection_delta( MOStask task);
+mal_export str MOSjoin_delta( MOStask task);
 #endif /* _MOSAIC_DELTA_ */

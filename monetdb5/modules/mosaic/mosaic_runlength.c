@@ -43,11 +43,10 @@ bool MOStypes_runlength(BAT* b) {
 }
 
 void
-MOSlayout_runlength(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_runlength(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
-	(void) cntxt;
 
 	input = cnt * ATOMsize(task->type);
 	switch(ATOMbasetype(task->type)){
@@ -81,9 +80,8 @@ MOSlayout_runlength(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *bi
 }
 
 void
-MOSadvance_runlength(Client cntxt, MOStask task)
+MOSadvance_runlength(MOStask task)
 {
-	(void) cntxt;
 
 	task->start += MOSgetCnt(task->blk);
 	//task->stop = task->stop;
@@ -112,9 +110,9 @@ MOSadvance_runlength(Client cntxt, MOStask task)
 }
 
 void
-MOSskip_runlength(Client cntxt, MOStask task)
+MOSskip_runlength(MOStask task)
 {
-	MOSadvance_runlength(cntxt, task);
+	MOSadvance_runlength(task);
 	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
@@ -139,10 +137,9 @@ MOSskip_runlength(Client cntxt, MOStask task)
 
 // calculate the expected reduction using RLE in terms of elements compressed
 flt
-MOSestimate_runlength(Client cntxt, MOStask task)
+MOSestimate_runlength(MOStask task)
 {	BUN i = 0;
 	flt factor = 0.0;
-	(void) cntxt;
 
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: Estimate(bte); break;
@@ -183,9 +180,6 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 		case 8: Estimate(lng); break;
 		}
 	}
-#ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#estimate rle "BUNFMT" elm %4.3f factor\n",i,factor);
-#endif
 	task->factor[MOSAIC_RLE] = factor;
 	task->range[MOSAIC_RLE] = task->start + i;
 	return factor;
@@ -206,14 +200,13 @@ MOSestimate_runlength(Client cntxt, MOStask task)
 }
 
 void
-MOScompress_runlength(Client cntxt, MOStask task)
+MOScompress_runlength(MOStask task)
 {
 	BUN i ;
 	MosaicHdr hdr  = task->hdr;
 	MosaicBlk blk = task->blk;
 
-	(void) cntxt;
-	MOSsetTag(blk, MOSAIC_RLE);
+		MOSsetTag(blk, MOSAIC_RLE);
 
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: RLEcompress(bte); break;
@@ -249,13 +242,12 @@ MOScompress_runlength(Client cntxt, MOStask task)
 }
 
 void
-MOSdecompress_runlength(Client cntxt, MOStask task)
+MOSdecompress_runlength(MOStask task)
 {
 	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk =  ((MosaicBlk) task->blk);
 	BUN i;
 	char *compressed;
-	(void) cntxt;
 
 	compressed = (char*) blk + MosaicBlkSize;
 	switch(ATOMbasetype(task->type)){
@@ -358,18 +350,17 @@ MOSdecompress_runlength(Client cntxt, MOStask task)
 }
 
 str
-MOSselect_runlength(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti){
+MOSselect_runlength( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti){
 	oid *o;
 	int cmp;
 	BUN first,last;
-	(void) cntxt;
 
 	// set the oid range covered
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSadvance_runlength(cntxt,task);
+		MOSadvance_runlength(task);
 		return MAL_SUCCEED;
 	}
 	o = task->lb;
@@ -468,7 +459,7 @@ MOSselect_runlength(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 		if( task->type == TYPE_timestamp)
 			select_runlength(lng); 
 	}
-	MOSadvance_runlength(cntxt,task);
+	MOSadvance_runlength(task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
@@ -514,19 +505,18 @@ MOSselect_runlength(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 }
 
 str
-MOSthetaselect_runlength(Client cntxt,  MOStask task, void *val, str oper)
+MOSthetaselect_runlength( MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
 	BUN first,last;
-	(void) cntxt;
-	
+
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSskip_runlength(cntxt,task);
+		MOSskip_runlength(task);
 		return MAL_SUCCEED;
 	}
 	o = task->lb;
@@ -592,7 +582,7 @@ MOSthetaselect_runlength(Client cntxt,  MOStask task, void *val, str oper)
 		}
 		break;
 	}
-	MOSskip_runlength(cntxt,task);
+	MOSskip_runlength(task);
 	task->lb =o;
 	return MAL_SUCCEED;
 }
@@ -610,10 +600,9 @@ MOSthetaselect_runlength(Client cntxt,  MOStask task, void *val, str oper)
 }
 
 str
-MOSprojection_runlength(Client cntxt,  MOStask task)
+MOSprojection_runlength( MOStask task)
 {
 	BUN first,last;
-	(void) cntxt;
 
 	// set the oid range covered and advance scan range
 	first = task->start;
@@ -652,7 +641,7 @@ MOSprojection_runlength(Client cntxt,  MOStask task)
 		}
 		break;
 	}
-	MOSskip_runlength(cntxt,task);
+	MOSskip_runlength(task);
 	return MAL_SUCCEED;
 }
 
@@ -670,11 +659,10 @@ MOSprojection_runlength(Client cntxt,  MOStask task)
 }
 
 str
-MOSjoin_runlength(Client cntxt,  MOStask task)
+MOSjoin_runlength( MOStask task)
 {
 	BUN n,first,last;
 	oid o, oo;
-	(void) cntxt;
 
 	// set the oid range covered and advance scan range
 	first = task->start;
@@ -714,6 +702,6 @@ MOSjoin_runlength(Client cntxt,  MOStask task)
 		}
 			break;
 	}
-	MOSskip_runlength(cntxt,task);
+	MOSskip_runlength(task);
 	return MAL_SUCCEED;
 }

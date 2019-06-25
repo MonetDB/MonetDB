@@ -42,10 +42,9 @@ bool MOStypes_delta(BAT* b) {
 }
 
 void
-MOSadvance_delta(Client cntxt, MOStask task)
+MOSadvance_delta(MOStask task)
 {
 	MosaicBlk blk = task->blk;
-	(void) cntxt;
 
 	task->start += MOSgetCnt(blk);
 	task->stop = task->stop;
@@ -77,12 +76,11 @@ MOSadvance_delta(Client cntxt, MOStask task)
 
 
 void
-MOSlayout_delta(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
-	(void) cntxt;
 	input = cnt * ATOMsize(task->type);
 	switch(task->type){
 	case TYPE_sht: output = wordaligned(sizeof(sht) + MosaicBlkSize + MOSgetCnt(blk)-1,sht); break ;
@@ -110,9 +108,9 @@ MOSlayout_delta(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput
 }
 
 void
-MOSskip_delta(Client cntxt, MOStask task)
+MOSskip_delta(MOStask task)
 {
-	MOSadvance_delta(cntxt, task);
+	MOSadvance_delta(task);
 	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
@@ -137,10 +135,9 @@ MOSskip_delta(Client cntxt, MOStask task)
 
 // estimate the compression level 
 flt
-MOSestimate_delta(Client cntxt, MOStask task)
+MOSestimate_delta(MOStask task)
 {	BUN i = 0;
 	flt factor = 1.0;
-	(void) cntxt;
 
 	switch(ATOMstorage(task->type)){
 		//case TYPE_bte: case TYPE_bit: no compression achievable
@@ -162,9 +159,6 @@ MOSestimate_delta(Client cntxt, MOStask task)
 	break;
 	//case TYPE_flt: case TYPE_dbl: to be looked into.
 	}
-#ifdef _DEBUG_MOSAIC_
-	mnstr_printf(cntxt->fdout,"#estimate delta "BUNFMT" elm %.3f factor\n",i,factor);
-#endif
 	task->factor[MOSAIC_DELTA] = factor;
 	task->range[MOSAIC_DELTA] = task->start + i;
 	return factor;
@@ -190,13 +184,12 @@ MOSestimate_delta(Client cntxt, MOStask task)
 
 // rather expensive simple value non-compressed store
 void
-MOScompress_delta(Client cntxt, MOStask task)
+MOScompress_delta(MOStask task)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	BUN i = 0;
 
-	(void) cntxt;
 	MOSsetTag(blk,MOSAIC_DELTA);
 
 	switch(ATOMstorage(task->type)){
@@ -218,9 +211,6 @@ MOScompress_delta(Client cntxt, MOStask task)
 		}
 	//case TYPE_flt: case TYPE_dbl: to be looked into.
 	}
-#ifdef _DEBUG_MOSAIC_
-	MOSdump_delta(cntxt, task);
-#endif
 }
 
 // the inverse operator, extend the src
@@ -240,12 +230,11 @@ MOScompress_delta(Client cntxt, MOStask task)
 }
 
 void
-MOSdecompress_delta(Client cntxt, MOStask task)
+MOSdecompress_delta(MOStask task)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	BUN i;
-	(void) cntxt;
 
 	switch(ATOMstorage(task->type)){
 	//case TYPE_bte: case TYPE_bit: no compression achievable
@@ -337,19 +326,18 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 	}
 
 str
-MOSselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
 	BUN first,last;
 	int cmp;
-	(void) cntxt;
 
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSskip_delta(cntxt,task);
+		MOSskip_delta(task);
 		return MAL_SUCCEED;
 	}
 	o = task->lb;
@@ -508,7 +496,7 @@ MOSselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit 
 				}
 			}
 	}
-	MOSskip_delta(cntxt,task);
+	MOSskip_delta(task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
@@ -554,19 +542,18 @@ MOSselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit 
 } 
 
 str
-MOSthetaselect_delta(Client cntxt,  MOStask task, void *val, str oper)
+MOSthetaselect_delta( MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
 	BUN first,last;
-	(void) cntxt;
 	
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSskip_delta(cntxt,task);
+		MOSskip_delta(task);
 		return MAL_SUCCEED;
 	}
 	o = task->lb;
@@ -595,7 +582,7 @@ MOSthetaselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 		case 8: break;
 		}
 	}
-	MOSskip_delta(cntxt,task);
+	MOSskip_delta(task);
 	task->lb =o;
 	return MAL_SUCCEED;
 }
@@ -615,10 +602,9 @@ MOSthetaselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 }
 
 str
-MOSprojection_delta(Client cntxt,  MOStask task)
+MOSprojection_delta( MOStask task)
 {
 	BUN first, last;
-	(void) cntxt;
 
 	// set the oid range covered and advance scan range
 	first = task->start;
@@ -648,7 +634,7 @@ MOSprojection_delta(Client cntxt,  MOStask task)
 			if (task->type == TYPE_timestamp)
 				projection_delta(lng); 
 	}
-	MOSskip_delta(cntxt,task);
+	MOSskip_delta(task);
 	return MAL_SUCCEED;
 }
 
@@ -669,11 +655,10 @@ MOSprojection_delta(Client cntxt,  MOStask task)
 }
 
 str
-MOSjoin_delta(Client cntxt,  MOStask task)
+MOSjoin_delta( MOStask task)
 {
 	BUN n, first, last;
 	oid o, oo;
-	(void) cntxt;
 
 	// set the oid range covered and advance scan range
 	first = task->start;
@@ -703,6 +688,6 @@ MOSjoin_delta(Client cntxt,  MOStask task)
 			if (task->type == TYPE_timestamp)
 				join_delta(lng); 
 	}
-	MOSskip_delta(cntxt,task);
+	MOSskip_delta(task);
 	return MAL_SUCCEED;
 }
