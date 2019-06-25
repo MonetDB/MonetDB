@@ -191,7 +191,7 @@ if ( task->n && task->cl ){\
 mal_export char *MOSfiltername[];
 mal_export bool type_allowed(int compression, BAT* b);
 mal_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MOSdecompress(bat* ret, const bat* bid);
 mal_export str MOScompressInternal(BAT* bsrc, const char* compressions);
 mal_export str MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

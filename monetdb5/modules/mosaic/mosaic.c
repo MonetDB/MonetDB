@@ -618,13 +618,9 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 
 // decompression does not change the BAT id
 str
-MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	
-	bat *bid = getArgReference_bat(stk,pci,1);
+MOSdecompress(bat* ret, const bat* bid)
+{
 	BAT *b;
-
-	(void) cntxt;
-	(void) mb;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "mosaic.decompress", INTERNAL_BAT_ACCESS);
@@ -637,7 +633,7 @@ MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BBPkeepref(res->batCacheid);
 
-	*getArgReference_bat(stk,pci,0) = res->batCacheid;
+	*ret = res->batCacheid;
 
 	// TODO: handle errors
 
