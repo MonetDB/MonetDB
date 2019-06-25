@@ -278,19 +278,15 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 		return MAL_SUCCEED;
 	}
 
-	MOSsetLock(bsrc);
-
   if (BATcheckmosaic(bsrc)){
 		/* already compressed */
 
-		MOSunsetLock(bsrc);
 		return MAL_SUCCEED;
 	}
     assert(bsrc->tmosaic == NULL);
 
 	if ( BATcount(bsrc) < MOSAIC_THRESHOLD ){
 		/* no need to compress */
-		MOSunsetLock(bsrc);
 		return MAL_SUCCEED;
 	}
 
@@ -303,14 +299,12 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 		// Then we total size may go beyond the original size and we should terminate the process.
 		// This should be detected before we compress a block, in the estimate functions
 		// or when we extend the non-compressed collector block
-		MOSunsetLock(bsrc);
 		throw(MAL,"mosaic.compress", "heap construction failes");
 	}
 
 	assert(bsrc->tmosaic->parentid == bsrc->batCacheid);
 
 	if((task = (MOStask) GDKzalloc(sizeof(*task))) == NULL) {
-		MOSunsetLock(bsrc);
 		throw(MAL, "mosaic.compress", MAL_MALLOC_FAIL);
 	}
 	
@@ -328,7 +322,6 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 
 	if( msg != MAL_SUCCEED){
 		GDKfree(task);
-		MOSunsetLock(bsrc);
 		throw(MAL, "mosaic.compress", "Can not claim server");
 	}
 	if( task->filter[MOSAIC_FRAME])
@@ -437,7 +430,6 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	task->hdr->ratio = (flt)task->bsrc->theap.free/ task->bsrc->tmosaic->free;
 finalize:
 
-	MOSunsetLock(bsrc);
 	t1 = GDKusec();
 	ALGODEBUG fprintf(stderr, "#BATmosaic: mosaic construction " LLFMT " usec\n", t1 - t0);
 	if (o != NULL) {
@@ -477,7 +469,10 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		compressions = str_nil;
 	}
 
-	msg= MOScompressInternal( b, compressions);
+	MOSsetLock(b);
+	msg= MOScompressInternal(b, compressions);
+	MOSunsetLock(b);
+
 	BBPkeepref(*ret = b->batCacheid);
 	return msg;
 }
@@ -489,24 +484,19 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 	MOStask task;
 	int error;
 
-	MOSsetLock(bsrc);
-
 	if (BATcheckmosaic(bsrc) == 0 ){
 		*res = bsrc;
 		BBPfix(bsrc->batCacheid); // We are just returning a reference to bsrc.
-		MOSunsetLock(bsrc);
 		return MAL_SUCCEED;
 	}
 
 	if (VIEWtparent(bsrc)) {
-		MOSunsetLock(bsrc);
 		throw(MAL, "mosaic.decompress", "cannot decompress tail-VIEW");
 	}
 
 	// use the original heap for reconstruction
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
-		MOSunsetLock(bsrc);
 		throw(MAL, "mosaic.decompress", MAL_MALLOC_FAIL);
 	}
 
@@ -611,8 +601,6 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 
 	BATsettrivprop(bsrc); // TODO: What's the purpose of this statement?
 
-	MOSunsetLock(bsrc);
-
 	return MAL_SUCCEED;
 }
 
@@ -627,7 +615,11 @@ MOSdecompress(bat* ret, const bat* bid)
 
 	BAT* res;
 
+	MOSsetLock(b);
+
 	str result = MOSdecompressInternal( &res, b);
+
+	MOSunsetLock(b);
 
 	BBPunfix(b->batCacheid);
 
@@ -1222,13 +1214,14 @@ MOSanalyseReport(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, 
 
 	for( i = 0; i < CANDIDATES; i++)
 		pat[i].xf= -1;
-	for( i = 1; i< cases; i++){
+	for( i = 1; i< cases; i++) {
 		// Ignore patterns that have a poor individual compressor
-		if( i > MOSAIC_METHODS-2) {
-			for( j=  0; j < MOSAIC_METHODS-1; j++)
-			if ( (pattern[i] & pattern[j]) == pattern[j] && pat[j].xf >= 0 && pat[j].xf < 1.0) break;
-			if( j< MOSAIC_METHODS-1 ) continue;
-		}
+		for( j=  0; j < MOSAIC_METHODS-1 && j < i; j++) {
+				if ( (pattern[i] & pattern[j]) == pattern[j] && pat[j].xf >= 0 && pat[j].xf < 1.0) {
+					break;
+				}
+			}
+		if( j < MOSAIC_METHODS-1 && j < i ) continue;
 
 		t= buf;
 		*t =0;
@@ -1248,7 +1241,14 @@ MOSanalyseReport(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, 
 		pat[i].technique= GDKstrdup(buf);
 		pat[i].clk1 = GDKms();
 
-		// TODO: keep a potentially pre-existing mosaic_heap aside.
+		MOSsetLock(b);
+
+		Heap* original = NULL;
+
+		if (BATcheckmosaic(b)){
+			original = b->tmosaic;
+			b->tmosaic = NULL;
+		}
 
 		const char* compressions = buf;
 		MOScompressInternal( b, compressions);
@@ -1257,6 +1257,12 @@ MOSanalyseReport(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, 
 		if(b->tmosaic == NULL){
 			// aborted compression experiment
 			MOSdestroy(BBPdescriptor(bid));
+
+			if (original) {
+				b->tmosaic = original;
+			}
+
+			MOSunsetLock(b);
 			continue;
 		}
 		// analyse result block distribution to detect a new compression combination
@@ -1280,12 +1286,22 @@ MOSanalyseReport(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, 
 
 		// get rid of mosaic heap
 		MOSdestroy(b);
+
+		if (original) {
+			b->tmosaic = original;
+		}
+
+		MOSunsetLock(b);
 	}
 
 	qsort((void*) pat, CANDIDATES, sizeof(struct PAT), cmpPattern);
 	// Collect the results in a table
 	for(i=0;i< CANDIDATES; i++){
 		if( pattern[i] && pat[i].xf >=0){
+
+			// round down to three decimals.
+			pat[i].xf = ((dbl) (int) (pat[i].xf * 1000)) / 1000;
+
 			if( BUNappend(boutput,&pat[i].xsize,false) != GDK_SUCCEED ||
 				BUNappend(btech,pat[i].technique,false) != GDK_SUCCEED ||
 				BUNappend(bratio,&pat[i].xf,false) != GDK_SUCCEED ||
