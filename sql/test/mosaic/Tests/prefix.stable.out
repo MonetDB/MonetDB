@@ -17,11 +17,9 @@ stdout of test 'prefix` in directory 'sql/test/mosaic` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21664/.s.monetdb.35122
 # MonetDB/SQL module loaded
 
-Ready.
-
-# 12:53:32 >  
-# 12:53:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21664" "--port=35122"
-# 12:53:32 >  
+# 13:32:13 >  
+# 13:32:13 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32286" "--port=32588"
+# 13:32:13 >  
 
 #set optimizer='mosaic_pipe';
 #create table tmpPrefix( i integer);
@@ -55,7 +53,7 @@ Ready.
 [ 2	]
 [ 2	]
 #select count(*) from tmpPrefix;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -75,7 +73,7 @@ Ready.
 [ 2	]
 [ 2	]
 #select sum(i) from tmpPrefix;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % hugeint # type
 % 2 # length

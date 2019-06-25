@@ -4,9 +4,7 @@ compressionRLE2
 xqueries
 xqueries_rle
 xqueries_delta
-#prefix TODO
-
+prefix
 mix
-
 session_init
 session_exit
