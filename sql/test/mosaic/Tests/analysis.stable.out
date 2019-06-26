@@ -1,0 +1,88 @@
+stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
+
+
+# 16:07:15 >  
+# 16:07:15 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38225" "--set" "mapi_usock=/var/tmp/mtest-15728/.s.monetdb.38225" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/aris/sources/monetdb/build/installation/var/MonetDB/mTests_sql_test_mosaic" "--set" "monet_daemon=yes" "--set" "embedded_c=true"
+# 16:07:15 >  
+
+# MonetDB 5 server v11.34.0 (hg id: 4fe7de431d91+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mosaic', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.349 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://aris-XPS-13-9380:38225/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15728/.s.monetdb.38225
+# MonetDB/SQL module loaded
+
+# 16:07:15 >  
+# 16:07:15 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15728" "--port=38225"
+# 16:07:15 >  
+
+#create table tmp4 (i int);
+#insert into tmp4 select * from generate_series(0,10000000);
+[ 10000000	]
+#select technique, factor from mosaic.analysis('sys', 'tmp4', 'i') order by factor desc, technique;
+% .L4,	.L4 # table_name
+% technique,	factor # name
+% clob,	double # type
+% 11,	24 # length
+[ "linear ",	2886.002	]
+[ "delta ",	3.994	]
+[ "frame ",	3.816	]
+[ "prefix ",	2.284	]
+[ "dictionary ",	0.999	]
+[ "runlength ",	0.999	]
+#select technique, factor from mosaic.analysis('sys', 'tmp4', 'i', 'dictionary, runlength') order by factor desc, technique;
+% .L5,	.L5 # table_name
+% technique,	factor # name
+% clob,	double # type
+% 11,	24 # length
+[ "dictionary ",	0.999	]
+[ "runlength ",	0.999	]
+#insert into tmp4 select 10000000 from tmp4;
+[ 10000000	]
+#select technique, factor from mosaic.analysis('sys', 'tmp4', 'i') order by factor desc, technique;
+% .L4,	.L4 # table_name
+% technique,	factor # name
+% clob,	double # type
+% 17,	24 # length
+[ "runlength linear ",	5457.025	]
+[ "linear ",	5312.084	]
+[ "runlength delta ",	7.988	]
+[ "runlength frame ",	7.559	]
+[ "delta prefix ",	7.101	]
+[ "frame prefix ",	6.767	]
+[ "runlength prefix ",	4.567	]
+[ "prefix ",	4.263	]
+[ "delta ",	3.997	]
+[ "delta frame ",	3.997	]
+[ "frame ",	3.905	]
+[ "runlength ",	1.999	]
+[ "dictionary ",	1.454	]
+#select technique, factor from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runlength') order by factor desc, technique;
+% .L5,	.L5 # table_name
+% technique,	factor # name
+% clob,	double # type
+% 17,	24 # length
+[ "runlength linear ",	5457.025	]
+[ "linear ",	5312.084	]
+[ "runlength ",	1.999	]
+#set optimizer='mosaic_pipe';
+#alter table tmp4 alter column i set storage 'dictionary';
+#select technique, factor from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runlength') order by factor desc, technique;
+% .L5,	.L5 # table_name
+% technique,	factor # name
+% clob,	double # type
+% 17,	24 # length
+[ "runlength linear ",	5457.025	]
+[ "linear ",	5312.084	]
+[ "runlength ",	1.999	]
+#drop table tmp4;
+
+# 16:08:07 >  
+# 16:08:07 >  "Done."
+# 16:08:07 >  
+
