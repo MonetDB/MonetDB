@@ -267,7 +267,7 @@ evalFile(str fname, int listing)
 		if (fd)
 			close_stream(fd);
 		throw(MAL,"mal.eval", "WARNING: could not open file '%s'\n", fname);
-	} 
+	}
 
 	c= MCinitClient((oid)0, bstream_create(fd, 128 * BLOCK),0);
 	if( c == NULL){
