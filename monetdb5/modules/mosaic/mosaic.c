@@ -46,14 +46,16 @@ static void
 MOSinitializeFilter(MOStask task, const char* compressions) {
 	if (!GDK_STRNIL(compressions)) {
 		for(int i = 0; i< MOSAIC_METHODS-1; i++) {
-				task->filter[i] = strstr(compressions, MOSfiltername[i]) != 0 && type_allowed(i, task->bsrc);
-				task->hdr->elms[i] = task->hdr->blks[i] = 0;
+				if ( (task->filter[i] = strstr(compressions, MOSfiltername[i]) != 0 && type_allowed(i, task->bsrc)) ) {
+					task->hdr->elms[i] = task->hdr->blks[i] = 0;
+				}
 		}
 	}
 	else {
 		for(int i = 0; i< MOSAIC_METHODS-1; i++) {
-				task->filter[i] = type_allowed(i, task->bsrc);
-				task->hdr->elms[i] = task->hdr->blks[i] = 0;
+				if ( (task->filter[i] = type_allowed(i, task->bsrc)) ) {
+					task->hdr->elms[i] = task->hdr->blks[i] = 0;
+				}
 		}
 	}
 }
@@ -317,8 +319,8 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 
 	MOSinit(task,bsrc);
 	task->blk->cnt= 0;
-	MOSinitializeFilter(task, compressions);
 	MOSinitHeader(task);
+	MOSinitializeFilter(task, compressions);
 
 	if( msg != MAL_SUCCEED){
 		GDKfree(task);
@@ -1183,45 +1185,44 @@ makepatterns(int *patterns, int size, str compressions, BAT* b)
 #define CANDIDATES 256  /* all three combinations */
 
 struct PAT{
-	int pattern;
+	bool include;
 	str technique;
 	BUN xsize;
 	dbl xf;
 	lng clk1, clk2;
 }pat[CANDIDATES];
 
-static int cmpPattern(const void *p1, const void *p2){
-	struct PAT *r1, *r2;
-	r1= (struct PAT *) p1;
-	r2= (struct PAT *) p2;
-	if( r1->xf > r2->xf) return -1;
-	if( r1->xf == r2->xf && r1->technique && r2->technique) return strlen(r1->technique) > strlen(r2->technique);
-	return 0;
-}
-
 void
 MOSanalyseReport(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *bdecompress, str compressions)
 {
-	int i,j,k,cases, bit=1, bid= b->batCacheid;
+	int i,j,cases, bit=1, bid= b->batCacheid;
 	int pattern[CANDIDATES];
+	int antipattern[CANDIDATES];
+	int antipatternSize = 0;
 	char buf[1024]={0}, *t;
 
 	int filter[MOSAIC_METHODS];
 
 	// create the list of all possible 2^6 compression patterns 
 	cases = makepatterns(pattern,CANDIDATES, compressions, b);
+
+	memset(antipattern,0, sizeof(antipattern));
+	antipatternSize++; // the first pattern aka 0 is always an antipattern.
+
 	memset((char*)pat,0, sizeof(pat));
 
-	for( i = 0; i < CANDIDATES; i++)
-		pat[i].xf= -1;
 	for( i = 1; i< cases; i++) {
-		// Ignore patterns that have a poor individual compressor
-		for( j=  0; j < MOSAIC_METHODS-1 && j < i; j++) {
-				if ( (pattern[i] & pattern[j]) == pattern[j] && pat[j].xf >= 0 && pat[j].xf < 1.0) {
+		pat[i].include = true;
+		// Ignore patterns that have a poor or unused individual compressor
+		bool skip = false;
+		for( j=1; j < antipatternSize; j++) {
+				if ( (pattern[i] & antipattern[j]) == antipattern[j] && pattern[i] > antipattern[j]) {
+					pat[i].include = false;
+					skip = true;
 					break;
 				}
 			}
-		if( j < MOSAIC_METHODS-1 && j < i ) continue;
+		if(skip) continue;
 
 		t= buf;
 		*t =0;
@@ -1261,21 +1262,26 @@ MOSanalyseReport(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, 
 			if (original) {
 				b->tmosaic = original;
 			}
-
+			pat[i].include = false;
 			MOSunsetLock(b);
 			continue;
 		}
-		// analyse result block distribution to detect a new compression combination
-		for(k=0, j=0, bit=1; j < MOSAIC_METHODS-1; j++){
-			if ( ((MosaicHdr)  b->tmosaic->base)->blks[j] > 0)
-				k |= bit;
-			bit *=2;
-		}
-		for( j=0; j < i; j++)
-			if (pattern[j] == k )
-				break;
+
 		pat[i].xsize = (BUN) b->tmosaic->free;
 		pat[i].xf= ((MosaicHdr)  b->tmosaic->base)->ratio;
+
+		// analyse result block distribution to exclude complicated compression combination that (probably) won't improve compression rate.
+		if ( i < MOSAIC_METHODS-1 && pat[i].xf >= 0 && pat[i].xf < 1.0) {
+				antipattern[antipatternSize++] = pattern[i];
+		}
+		else {
+			for(j=1; j < MOSAIC_METHODS-1; j++){
+				if ( ((MosaicHdr)  b->tmosaic->base)->blks[j] == 0) {
+					antipattern[antipatternSize++] = pattern[i];
+					pat[i].include = false;
+				}
+			}
+		}
 
 		BAT* decompressed;
 		pat[i].clk2 = GDKms();
@@ -1294,10 +1300,9 @@ MOSanalyseReport(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, 
 		MOSunsetLock(b);
 	}
 
-	qsort((void*) pat, CANDIDATES, sizeof(struct PAT), cmpPattern);
 	// Collect the results in a table
 	for(i=0;i< CANDIDATES; i++){
-		if( pattern[i] && pat[i].xf >=0){
+		if(pat[i].include) {
 
 			// round down to three decimals.
 			pat[i].xf = ((dbl) (int) (pat[i].xf * 1000)) / 1000;
@@ -1309,7 +1314,8 @@ MOSanalyseReport(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, 
 				BUNappend(bdecompress,&pat[i].clk2,false) != GDK_SUCCEED )
 					return;
 		}
-		if( pat[i].technique) GDKfree(pat[i].technique);
+
+		GDKfree(pat[i].technique);
 	}
 }
 
