@@ -29,6 +29,12 @@ Ready.
 #order_id INTEGER NOT NULL,
 #qnt INTEGER NOT NULL
 #);
+CREATE TABLE "sys"."test2" (
+	"order_number" INTEGER       NOT NULL DEFAULT next value for "sys"."seq_8973",
+	"order_id"     INTEGER       NOT NULL,
+	"qnt"          INTEGER       NOT NULL,
+	CONSTRAINT "test2_order_number_pkey" PRIMARY KEY ("order_number")
+);
 #COPY 5 RECORDS INTO test2 FROM stdin USING DELIMITERS '|','\n';
 #1|32|57
 #2|15|105
@@ -54,6 +60,13 @@ Ready.
 #CONSTRAINT pk_order_number FOREIGN KEY ("order_number") REFERENCES 
 #test2("order_number")
 #);
+CREATE TABLE "sys"."test1" (
+	"id"           INTEGER       NOT NULL,
+	"qnt"          INTEGER       NOT NULL,
+	"order_number" INTEGER       NOT NULL,
+	CONSTRAINT "pk_test1_id" PRIMARY KEY ("id", "qnt"),
+	CONSTRAINT "pk_order_number" FOREIGN KEY ("order_number") REFERENCES "sys"."test2" ("order_number")
+);
 #SELECT test2.order_id, 
 #test2.qnt, test2.order_number from test2;
 % sys.test2,	sys.test2,	sys.test2 # table_name
@@ -72,12 +85,42 @@ Ready.
 % sys.test1,	sys.test1,	sys.test1 # table_name
 % id,	qnt,	order_number # name
 % int,	int,	int # type
-% 1,	1,	1 # length
+% 2,	3,	1 # length
 [ 32,	57,	1	]
 [ 15,	105,	2	]
 [ 33,	0,	3	]
 [ 57,	20,	4	]
 [ 67,	134,	5	]
+#CREATE TABLE test3 (id, qnt, order_number) AS SELECT test2.order_id, 
+#test2.qnt, test2.order_number from test2;
+CREATE TABLE "sys"."test3" (
+	"id"           INTEGER,
+	"qnt"          INTEGER,
+	"order_number" INTEGER
+);
+#SELECT * FROM test3;
+% sys.test3,	sys.test3,	sys.test3 # table_name
+% id,	qnt,	order_number # name
+% int,	int,	int # type
+% 2,	3,	1 # length
+[ 32,	57,	1	]
+[ 15,	105,	2	]
+[ 33,	0,	3	]
+[ 57,	20,	4	]
+[ 67,	134,	5	]
+#ALTER TABLE test3 ALTER id SET NOT NULL;
+#ALTER TABLE test3 ALTER order_number SET NOT NULL;
+#ALTER TABLE test3 ADD CONSTRAINT pk_test3_id PRIMARY KEY ("id", "qnt");
+#ALTER TABLE test3 ADD CONSTRAINT fk_order_number FOREIGN KEY ("order_number") REFERENCES 
+#test2("order_number");
+CREATE TABLE "sys"."test3" (
+	"id"           INTEGER       NOT NULL,
+	"qnt"          INTEGER       NOT NULL,
+	"order_number" INTEGER       NOT NULL,
+	CONSTRAINT "pk_test3_id" PRIMARY KEY ("id", "qnt"),
+	CONSTRAINT "fk_order_number" FOREIGN KEY ("order_number") REFERENCES "sys"."test2" ("order_number")
+);
+#DROP TABLE test3;
 #DROP TABLE test1;
 #DROP TABLE test2;
 
