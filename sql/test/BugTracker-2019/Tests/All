@@ -15,3 +15,4 @@ prepared-merge-statement.Bug-6706
 view-where-cast-error.Bug-6712
 correlated-subquery-aggregation.Bug-6714
 merge-statement-aliases.Bug-6715
+insert-into-select.Bug-6718
