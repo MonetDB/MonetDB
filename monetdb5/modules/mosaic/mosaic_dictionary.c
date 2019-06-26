@@ -146,10 +146,13 @@ MOSskip_dictionary(MOStask task)
 #define TMPDICT 16*256
 
 #define makeDict(TPE)\
-{	TPE *val = ((TPE*)task->src) + task->start,v,w;\
-	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
-	lng cw,cv;\
-	for(i = 0; i< limit; i++, val++){\
+{	TPE *val,v,w;\
+	BUN limit = task->stop - task->start > TMPDICT ? TMPDICT:  task->stop - task->start;\
+	BAT* bsample = BATsample_with_seed(task->bsrc, limit, (16-07-1985));\
+	lng cw,cv; \
+	for(i = 0; i< limit; i++){\
+		oid sample = BUNtoid(bsample,i);\
+		val = ((TPE*)task->src) + (sample - task->bsrc->hseqbase);\
 		MOSfind(j,dict.val##TPE,*val,0,dictsize);\
 		if(j == dictsize && dictsize == 0 ){\
 			dict.val##TPE[j]= *val;\
@@ -171,7 +174,33 @@ MOSskip_dictionary(MOStask task)
 			dict.val##TPE[j]= w;\
 			cnt[j] = 1;\
 		} else if (dictsize < TMPDICT) cnt[j]++;\
-} }
+	}\
+	BBPunfix(bsample->batCacheid);\
+	/* find the 256 most frequent values and save them in the mosaic header */ \
+	if( dictsize <= 256){ \
+		memcpy((char*)&task->hdr->dict,  (char*)&dict, dictsize * sizeof(TPE)); \
+		memcpy((char*)task->hdr->dictfreq,  (char*)&cnt, dictsize * sizeof(lng)); \
+		hdr->dictsize = dictsize; \
+	} else { \
+		/* brute force search of the top-k */ \
+		for(j=0; j< 256; j++){ \
+			for(k=0; k< dictsize; k++) \
+			if( keep[k]==0){ \
+				if( cnt[k]> cnt[max]) max = k; \
+			} \
+			keep[max]=1; \
+		} \
+		/* keep the top-k, in order */ \
+		for( j=k=0; k<dictsize; k++) \
+		if( keep[k]){ \
+			task->hdr->dict.val##TPE[j] = dict.val##TPE[k]; \
+			task->hdr->dictfreq[j] = cnt[k]; \
+			j++; \
+		} \
+		hdr->dictsize = j; \
+		assert(j<=256); \
+	} \
+}
 
 
 /* Take a larger sample before fixing the dictionary */
@@ -221,38 +250,6 @@ MOScreatedictionary(MOStask task)
 		case 8: makeDict(lng); break;
 		}
 		break;
-	}
-	/* find the 256 most frequent values and save them in the mosaic header */
-	if( dictsize < 256){
-#ifdef HAVE_HGE
-		memcpy((char*)&task->hdr->dict,  (char*)&dict, dictsize * sizeof(hge));
-#else
-		memcpy((char*)&task->hdr->dict,  (char*)&dict, dictsize * sizeof(lng));
-#endif
-		memcpy((char*)task->hdr->dictfreq,  (char*)&cnt, dictsize * sizeof(lng));
-		hdr->dictsize = dictsize;
-	} else {
-		/* brute force search of the top-k */
-		for(j=0; j< 256; j++){
-			for(max = 0; max <dictsize && keep[max]; max++){}
-			for(k=0; k< dictsize; k++)
-			if( keep[k]==0){
-				if( cnt[k]> cnt[max]) max = k;
-			}
-			keep[max]=1;
-		}
-		/* keep the top-k, in order */
-		for( j=k=0; k<dictsize; k++)
-		if( keep[k]){
-#ifdef HAVE_HGE
-			task->hdr->dict.valhge[j] = dict.valhge[k];
-#else
-			task->hdr->dict.vallng[j] = dict.vallng[k];
-#endif
-			task->hdr->dictfreq[j] = cnt[k];
-		}
-		hdr->dictsize = j;
-		assert(j<256);
 	}
 	/* calculate the bit-width */
 	hdr->bits = 1;
