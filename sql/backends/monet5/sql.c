@@ -2645,7 +2645,10 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	be = cntxt->sqlcontext;
-	if (*ssep == 0)
+	/* The CSV parser expects ssep to have the value 0 if the user does not
+	 * specify a quotation character
+	 */
+	if (*ssep == 0 || strcmp(ssep, str_nil) == 0)
 		ssep = NULL;
 
 	if (fname != NULL && strcmp(str_nil, fname) == 0)
