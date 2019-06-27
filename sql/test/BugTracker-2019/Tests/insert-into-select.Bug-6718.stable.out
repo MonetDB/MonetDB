@@ -18,11 +18,9 @@ stdout of test 'insert-into-select.Bug-6718` in directory 'sql/test/BugTracker-2
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
-
-# 12:34:40 >  
-# 12:34:40 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18256" "--port=35973"
-# 12:34:40 >  
+# 20:04:33 >  
+# 20:04:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4285" "--port=30906"
+# 20:04:33 >  
 
 #CREATE TABLE test2 (
 #order_number SERIAL,
@@ -30,7 +28,7 @@ Ready.
 #qnt INTEGER NOT NULL
 #);
 CREATE TABLE "sys"."test2" (
-	"order_number" INTEGER       NOT NULL DEFAULT next value for "sys"."seq_8973",
+	"order_number" INTEGER       NOT NULL DEFAULT next value for "sys"."seq_9041",
 	"order_id"     INTEGER       NOT NULL,
 	"qnt"          INTEGER       NOT NULL,
 	CONSTRAINT "test2_order_number_pkey" PRIMARY KEY ("order_number")

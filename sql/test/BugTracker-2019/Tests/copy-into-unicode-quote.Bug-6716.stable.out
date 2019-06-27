@@ -18,11 +18,9 @@ stdout of test 'copy-into-unicode-quote.Bug-6716` in directory 'sql/test/BugTrac
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
-
-# 14:16:54 >  
-# 14:16:54 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12124" "--port=31951"
-# 14:16:54 >  
+# 20:04:34 >  
+# 20:04:34 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4285" "--port=30906"
+# 20:04:34 >  
 
 #start transaction;
 #create table foo (i bigint, t text, f int);
