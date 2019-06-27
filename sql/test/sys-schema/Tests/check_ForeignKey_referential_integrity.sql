@@ -141,9 +141,11 @@ SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, ord
 -- new tables introduced in 2019
 SELECT * FROM sys.table_partitions WHERE "table_id" NOT IN (SELECT id FROM sys._tables);
 SELECT * FROM sys.table_partitions WHERE "column_id" IS NOT NULL AND "column_id" NOT IN (SELECT id FROM sys._columns);
+SELECT * FROM sys.table_partitions WHERE "type" NOT IN (5,6,9,10);	-- 5=By Column Range (1+4), 6=By Expression Range (2+4), 9=By Column Value (1+8), 10=By Expression Value (2+8), see sql_catalog.h #define PARTITION_*
 
 SELECT * FROM sys.range_partitions WHERE "table_id" NOT IN (SELECT id FROM sys._tables);
 SELECT * FROM sys.range_partitions WHERE "partition_id" NOT IN (SELECT id FROM sys.table_partitions);
 
 SELECT * FROM sys.value_partitions WHERE "table_id" NOT IN (SELECT id FROM sys._tables);
 SELECT * FROM sys.value_partitions WHERE "partition_id" NOT IN (SELECT id FROM sys.table_partitions);
+
