@@ -529,7 +529,7 @@ Ready.
 % id,	table_id,	column_id,	expression,	type # name
 % int,	int,	int,	varchar,	tinyint # type
 % 1,	1,	1,	0,	1 # length
-#SELECT * FROM sys.table_partitions WHERE "type" NOT IN (SELECT id FROM sys.types);
+#SELECT * FROM sys.table_partitions WHERE "type" NOT IN (5,6,9,10);
 % sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions # table_name
 % id,	table_id,	column_id,	expression,	type # name
 % int,	int,	int,	varchar,	tinyint # type
