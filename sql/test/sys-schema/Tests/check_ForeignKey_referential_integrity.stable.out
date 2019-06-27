@@ -528,6 +528,11 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 % id,	table_id,	column_id,	expression,	type # name
 % int,	int,	int,	varchar,	tinyint # type
 % 1,	1,	1,	0,	1 # length
+#SELECT * FROM sys.table_partitions WHERE "type" NOT IN (5,6,9,10);	-- 5=By Column Range (1+4), 6=By Expression Range (2+4), 9=By Column Value (1+8), 10=By Expression Value (2+8), see sql_catalog.h #define PARTITION_*
+% sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions # table_name
+% id,	table_id,	column_id,	expression,	type # name
+% int,	int,	int,	varchar,	tinyint # type
+% 1,	1,	1,	0,	1 # length
 #SELECT * FROM sys.range_partitions WHERE "table_id" NOT IN (SELECT id FROM sys._tables);
 % sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
 % table_id,	partition_id,	minimum,	maximum,	with_nulls # name
