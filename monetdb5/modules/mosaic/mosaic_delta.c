@@ -49,19 +49,19 @@ MOSadvance_delta(MOStask task)
 	task->start += MOSgetCnt(blk);
 	task->stop = task->stop;
 	switch(task->type){
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(sizeof(sht) + MosaicBlkSize + MOSgetCnt(blk)-1,sht)); break ;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(sizeof(int) + MosaicBlkSize + MOSgetCnt(blk)-1,int)); break ;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(sizeof(oid) + MosaicBlkSize + MOSgetCnt(blk)-1,oid)); break ;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(sizeof(lng) + MosaicBlkSize + MOSgetCnt(blk)-1,lng)); break ;
+	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(sht) + MOSgetCnt(blk)-1,sht)); break ;
+	case TYPE_int: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(int) + MOSgetCnt(blk)-1,int)); break ;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(oid) + MOSgetCnt(blk)-1,oid)); break ;
+	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(lng) + MOSgetCnt(blk)-1,lng)); break ;
 	//case TYPE_flt: case TYPE_dbl: to be looked into.
 #ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(MosaicBlkSize + sizeof(hge) + MOSgetCnt(blk)-1,hge)); break ;
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(hge) + MOSgetCnt(blk)-1,hge)); break ;
 #endif
 	case TYPE_str:
 		switch(task->bsrc->twidth){
-		case 2: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(sizeof(sht)+ MosaicBlkSize + MOSgetCnt(blk)-1,sht)); break ;
-		case 4: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(sizeof(int)+ MosaicBlkSize + MOSgetCnt(blk)-1,int)); break ;
-		case 8: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(sizeof(lng)+ MosaicBlkSize + MOSgetCnt(blk)-1,lng)); break ;
+		case 2: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(MosaicBlkSize + sizeof(sht) + MOSgetCnt(blk)-1,sht)); break ;
+		case 4: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(MosaicBlkSize + sizeof(int)+ MOSgetCnt(blk)-1,int)); break ;
+		case 8: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(MosaicBlkSize + sizeof(lng)+ MOSgetCnt(blk)-1,lng)); break ;
 		}
 		break;
 	default:
@@ -83,10 +83,10 @@ MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 
 	input = cnt * ATOMsize(task->type);
 	switch(task->type){
-	case TYPE_sht: output = wordaligned(sizeof(sht) + MosaicBlkSize + MOSgetCnt(blk)-1,sht); break ;
-	case TYPE_int: output = wordaligned(sizeof(int) + MosaicBlkSize + MOSgetCnt(blk)-1,int); break ;
-	case TYPE_oid: output = wordaligned(sizeof(oid) + MosaicBlkSize + MOSgetCnt(blk)-1,oid); break ;
-	case TYPE_lng: output = wordaligned(sizeof(lng) + MosaicBlkSize + MOSgetCnt(blk)-1,lng); break ;
+	case TYPE_sht: output = wordaligned(MosaicBlkSize + sizeof(sht) + MOSgetCnt(blk)-1,sht); break ;
+	case TYPE_int: output = wordaligned(MosaicBlkSize + sizeof(int) + MOSgetCnt(blk)-1,int); break ;
+	case TYPE_oid: output = wordaligned(MosaicBlkSize + sizeof(oid) + MOSgetCnt(blk)-1,oid); break ;
+	case TYPE_lng: output = wordaligned(MosaicBlkSize + sizeof(lng) + MOSgetCnt(blk)-1,lng); break ;
 	//case TYPE_flt: case TYPE_dbl: to be looked into.
 #ifdef HAVE_HGE
 	case TYPE_hge: output = wordaligned(MosaicBlkSize + sizeof(hge) + MOSgetCnt(blk)-1,hge); break ;
@@ -94,9 +94,9 @@ MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 	case TYPE_str:
 		switch(task->bsrc->twidth){
 		//case 1: output = wordaligned(sizeof(bte)+ MosaicBlkSize + MOSgetCnt(blk)-1,bte); break ;
-		case 2: output = wordaligned(sizeof(sht)+ MosaicBlkSize + MOSgetCnt(blk)-1,sht); break ;
-		case 4: output = wordaligned(sizeof(int)+ MosaicBlkSize + MOSgetCnt(blk)-1,int); break ;
-		case 8: output = wordaligned(sizeof(lng)+ MosaicBlkSize + MOSgetCnt(blk)-1,lng); break ;
+		case 2: output = wordaligned(MosaicBlkSize + sizeof(sht)+ MOSgetCnt(blk)-1,sht); break ;
+		case 4: output = wordaligned(MosaicBlkSize + sizeof(int) + MOSgetCnt(blk)-1,int); break ;
+		case 8: output = wordaligned(MosaicBlkSize + sizeof(lng) + MOSgetCnt(blk)-1,lng); break ;
 		}
 	}
 	if( BUNappend(btech, "delta", false) != GDK_SUCCEED ||
