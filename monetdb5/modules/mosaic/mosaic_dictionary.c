@@ -424,6 +424,15 @@ MOSdecompress_dictionary(MOStask task)
 // perform relational algebra operators over non-compressed chunks
 // They are bound by an oid range and possibly a candidate list
 
+/* TODO: the select_operator for dictionaries doesn't use
+ * the ordered property of the actual global dictionary.
+ * Which is a shame because it could in this select operator
+ * safe on the dictionary look ups by using the dictionary itself
+ * as a reverse index for the ranges of your select predicate.
+ * Or if we want to stick to this set up, then we should use a
+ * hash based dictionary.
+*/
+
 #define select_dictionary_str(TPE) \
 	throw(MAL,"mosaic.dictionary","TBD");
 #define select_dictionary(TPE) {\
