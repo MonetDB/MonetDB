@@ -214,7 +214,7 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							continue;
 						// perform the analysis
 						bn = store_funcs.bind_col(m->session->tr, c, 0);
-						MOSanalyseReport(bn, btech, boutput, bfactor, bcompress, bdecompress, compressions);
+						MOSanalyses(bn, btech, boutput, bfactor, bcompress, bdecompress, compressions);
 						BBPunfix(bn->batCacheid);
 						(void) c;
 					}
