@@ -182,8 +182,13 @@ MOSskip_dictionary(MOStask task)
 		memcpy((char*)task->hdr->dictfreq,  (char*)&cnt, dictsize * sizeof(lng)); \
 		hdr->dictsize = dictsize; \
 	} else { \
-		/* brute force search of the top-k */ \
+		/* brute force search of the top-k dictionary values with highest cnt.
+		 * This is a variation of bubble sort to get the top-k so that
+		 * we can maintain the previous value based dictionary ordering in our top k.
+		 * */ \
 		for(j=0; j< 256; j++){ \
+			/* initialize max with the first non-kept index.*/\
+			for(max = 0; max <dictsize && keep[max]; max++){}\
 			for(k=0; k< dictsize; k++) \
 			if( keep[k]==0){ \
 				if( cnt[k]> cnt[max]) max = k; \
