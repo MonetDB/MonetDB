@@ -2754,7 +2754,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		}
 	}
 	for (n = ft->columns.set->h, m = tt->columns.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
-		sql_column *cc = n->data;
+		sql_column *cc = n->data; // TODO: either stick to to/from terminology or old/current terminology
 		sql_column *oc = m->data;
 
 		if (ATOMIC_GET(&store_nr_active) == 1 || (cc->base.wtime && cc->base.allocated)) {
