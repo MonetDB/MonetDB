@@ -24,272 +24,272 @@ stdout of test 'check_PrimaryKey_uniqueness` in directory 'sql/test/sys-schema` 
 # 16:31:34 >  
 
 #SELECT COUNT(*) AS duplicates, id FROM sys.schemas GROUP BY id HAVING COUNT(*) > 1;
-% sys.L3,	sys.schemas # table_name
+% sys.L2,	sys.schemas # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, table_type_id FROM sys.table_types GROUP BY table_type_id HAVING COUNT(*) > 1;
-% sys.L3,	sys.table_types # table_name
+% sys.L2,	sys.table_types # table_name
 % duplicates,	table_type_id # name
 % bigint,	smallint # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys._tables GROUP BY id HAVING COUNT(*) > 1;
-% sys.L3,	sys._tables # table_name
+% sys.L2,	sys._tables # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM tmp._tables GROUP BY id HAVING COUNT(*) > 1;
-% tmp.L3,	tmp._tables # table_name
+% tmp.L2,	tmp._tables # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.tables GROUP BY id HAVING COUNT(*) > 1;
-% .L41,	.tables # table_name
+% .L16,	.tables # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys._columns GROUP BY id HAVING COUNT(*) > 1;
-% sys.L3,	sys._columns # table_name
+% sys.L2,	sys._columns # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM tmp._columns GROUP BY id HAVING COUNT(*) > 1;
-% tmp.L3,	tmp._columns # table_name
+% tmp.L2,	tmp._columns # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.columns GROUP BY id HAVING COUNT(*) > 1;
-% .L16,	.columns # table_name
+% .L12,	.columns # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, function_type_id FROM sys.function_types GROUP BY function_type_id HAVING COUNT(*) > 1;
-% sys.L3,	sys.function_types # table_name
+% sys.L2,	sys.function_types # table_name
 % duplicates,	function_type_id # name
 % bigint,	smallint # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, language_id FROM sys.function_languages GROUP BY language_id HAVING COUNT(*) > 1;
-% sys.L3,	sys.function_languages # table_name
+% sys.L2,	sys.function_languages # table_name
 % duplicates,	language_id # name
 % bigint,	smallint # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.functions GROUP BY id HAVING COUNT(*) > 1;
-% sys.L3,	sys.functions # table_name
+% sys.L2,	sys.functions # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, function_id FROM sys.systemfunctions GROUP BY function_id HAVING COUNT(*) > 1;
-% sys.L7,	sys.systemfunctions # table_name
+% sys.L5,	sys.systemfunctions # table_name
 % duplicates,	function_id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.args GROUP BY id HAVING COUNT(*) > 1;
-% sys.L3,	sys.args # table_name
+% sys.L2,	sys.args # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.types GROUP BY id HAVING COUNT(*) > 1;
-% sys.L3,	sys.types # table_name
+% sys.L2,	sys.types # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id, nr FROM sys.objects GROUP BY id, nr HAVING COUNT(*) > 1;  -- without column: nr it returns duplicates
-% sys.L3,	sys.objects,	sys.objects # table_name
+% sys.L2,	sys.objects,	sys.objects # table_name
 % duplicates,	id,	nr # name
 % bigint,	int,	int # type
 % 1,	1,	1 # length
 #SELECT COUNT(*) AS duplicates, id, nr FROM tmp.objects GROUP BY id, nr HAVING COUNT(*) > 1;
-% tmp.L3,	tmp.objects,	tmp.objects # table_name
+% tmp.L2,	tmp.objects,	tmp.objects # table_name
 % duplicates,	id,	nr # name
 % bigint,	int,	int # type
 % 1,	1,	1 # length
 #SELECT COUNT(*) AS duplicates, key_type_id FROM sys.key_types GROUP BY key_type_id HAVING COUNT(*) > 1;
-% sys.L3,	sys.key_types # table_name
+% sys.L2,	sys.key_types # table_name
 % duplicates,	key_type_id # name
 % bigint,	smallint # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.keys GROUP BY id HAVING COUNT(*) > 1;
-% sys.L3,	sys.keys # table_name
+% sys.L2,	sys.keys # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM tmp.keys GROUP BY id HAVING COUNT(*) > 1;
-% tmp.L3,	tmp.keys # table_name
+% tmp.L2,	tmp.keys # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, index_type_id FROM sys.index_types GROUP BY index_type_id HAVING COUNT(*) > 1;
-% sys.L3,	sys.index_types # table_name
+% sys.L2,	sys.index_types # table_name
 % duplicates,	index_type_id # name
 % bigint,	smallint # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.idxs GROUP BY id HAVING COUNT(*) > 1;
-% sys.L3,	sys.idxs # table_name
+% sys.L2,	sys.idxs # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM tmp.idxs GROUP BY id HAVING COUNT(*) > 1;
-% tmp.L3,	tmp.idxs # table_name
+% tmp.L2,	tmp.idxs # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.triggers GROUP BY id HAVING COUNT(*) > 1;
-% sys.L3,	sys.triggers # table_name
+% sys.L2,	sys.triggers # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM tmp.triggers GROUP BY id HAVING COUNT(*) > 1;
-% tmp.L3,	tmp.triggers # table_name
+% tmp.L2,	tmp.triggers # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.sequences GROUP BY id HAVING COUNT(*) > 1;
-% sys.L3,	sys.sequences # table_name
+% sys.L2,	sys.sequences # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.comments GROUP BY id HAVING COUNT(*) > 1;
-% sys.L3,	sys.comments # table_name
+% sys.L2,	sys.comments # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, dependency_type_id FROM sys.dependency_types GROUP BY dependency_type_id HAVING COUNT(*) > 1;
-% sys.L3,	sys.dependency_types # table_name
+% sys.L2,	sys.dependency_types # table_name
 % duplicates,	dependency_type_id # name
 % bigint,	smallint # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id, depend_id FROM sys.dependencies GROUP BY id, depend_id HAVING COUNT(*) > 1;
-% sys.L3,	sys.dependencies,	sys.dependencies # table_name
+% sys.L2,	sys.dependencies,	sys.dependencies # table_name
 % duplicates,	id,	depend_id # name
 % bigint,	int,	int # type
 % 1,	1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.ids GROUP BY id HAVING COUNT(*) > 1;
-% .L413,	.ids # table_name
+% .L231,	.ids # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.auths GROUP BY id HAVING COUNT(*) > 1;
-% sys.L3,	sys.auths # table_name
+% sys.L2,	sys.auths # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, name FROM sys.users GROUP BY name HAVING COUNT(*) > 1;
-% .L10,	.users # table_name
+% .L4,	.users # table_name
 % duplicates,	name # name
 % bigint,	varchar # type
 % 1,	0 # length
 #SELECT COUNT(*) AS duplicates, login_id, role_id FROM sys.user_role GROUP BY login_id, role_id HAVING COUNT(*) > 1;
-% sys.L3,	sys.user_role,	sys.user_role # table_name
+% sys.L2,	sys.user_role,	sys.user_role # table_name
 % duplicates,	login_id,	role_id # name
 % bigint,	int,	int # type
 % 1,	1,	1 # length
 #SELECT COUNT(*) AS duplicates, privilege_code_id FROM sys.privilege_codes GROUP BY privilege_code_id HAVING COUNT(*) > 1;
-% sys.L3,	sys.privilege_codes # table_name
+% sys.L2,	sys.privilege_codes # table_name
 % duplicates,	privilege_code_id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, obj_id, auth_id FROM sys.privileges GROUP BY obj_id, auth_id HAVING COUNT(*) > 1;
-% sys.L3,	sys.privileges,	sys.privileges # table_name
+% sys.L2,	sys.privileges,	sys.privileges # table_name
 % duplicates,	obj_id,	auth_id # name
 % bigint,	int,	int # type
 % 1,	1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.querylog_catalog GROUP BY id HAVING COUNT(*) >1;
-% .L10,	.querylog_catalog # table_name
+% .L6,	.querylog_catalog # table_name
 % duplicates,	id # name
 % bigint,	oid # type
 % 1,	3 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.querylog_calls GROUP BY id HAVING COUNT(*) > 1;
-% .L10,	.querylog_calls # table_name
+% .L6,	.querylog_calls # table_name
 % duplicates,	id # name
 % bigint,	oid # type
 % 1,	3 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.querylog_history GROUP BY id HAVING COUNT(*) >1;
-% .L17,	.querylog_history # table_name
+% .L5,	.querylog_history # table_name
 % duplicates,	id # name
 % bigint,	oid # type
 % 1,	3 # length
 #SELECT COUNT(*) AS duplicates, qtag FROM sys.queue GROUP BY qtag HAVING COUNT(*) > 1;
-% .L10,	.queue # table_name
+% .L6,	.queue # table_name
 % duplicates,	qtag # name
 % bigint,	bigint # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, name FROM sys.optimizers GROUP BY name HAVING COUNT(*) > 1;
-% .L10,	.optimizers # table_name
+% .L6,	.optimizers # table_name
 % duplicates,	name # name
 % bigint,	clob # type
 % 1,	0 # length
 #SELECT COUNT(*) AS duplicates, name FROM sys.environment GROUP BY name HAVING COUNT(*) > 1;
-% .L10,	.environment # table_name
+% .L6,	.environment # table_name
 % duplicates,	name # name
 % bigint,	varchar # type
 % 1,	0 # length
 #SELECT COUNT(*) AS duplicates, keyword FROM sys.keywords GROUP BY keyword HAVING COUNT(*) > 1;
-% sys.L3,	sys.keywords # table_name
+% sys.L2,	sys.keywords # table_name
 % duplicates,	keyword # name
 % bigint,	varchar # type
 % 1,	0 # length
 #SELECT COUNT(*) AS duplicates, name FROM sys.db_user_info GROUP BY name HAVING COUNT(*) > 1;
-% sys.L3,	sys.db_user_info # table_name
+% sys.L2,	sys.db_user_info # table_name
 % duplicates,	name # name
 % bigint,	varchar # type
 % 1,	0 # length
 #SELECT COUNT(*) AS duplicates, "user", login, active FROM sys.sessions GROUP BY "user", login, active HAVING COUNT(*) > 1;  -- is this really always unique?
-% .L10,	.sessions,	.sessions,	.sessions # table_name
+% .L6,	.sessions,	.sessions,	.sessions # table_name
 % duplicates,	user,	login,	active # name
 % bigint,	clob,	timestamp,	boolean # type
 % 1,	0,	26,	5 # length
 #SELECT COUNT(*) AS duplicates, column_id FROM sys.statistics GROUP BY column_id HAVING COUNT(*) > 1;
-% sys.L3,	sys.statistics # table_name
+% sys.L2,	sys.statistics # table_name
 % duplicates,	column_id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, rowid FROM sys.rejects GROUP BY rowid HAVING COUNT(*) > 1;
-% .L10,	.rejects # table_name
+% .L6,	.rejects # table_name
 % duplicates,	rowid # name
 % bigint,	bigint # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, schema FROM sys.schemastorage GROUP BY schema HAVING COUNT(*) > 1;
-% .L141,	.schemastorage # table_name
+% .L44,	.schemastorage # table_name
 % duplicates,	schema # name
 % bigint,	varchar # type
 % 1,	0 # length
 #SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storage GROUP BY schema, table, column HAVING COUNT(*) > 1;
-% .L113,	.storage,	.storage,	.storage # table_name
+% .L25,	.storage,	.storage,	.storage # table_name
 % duplicates,	schema,	table,	column # name
 % bigint,	varchar,	varchar,	varchar # type
 % 1,	0,	0,	0 # length
 #SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storagemodel GROUP BY schema, table, column HAVING COUNT(*) > 1;
-% sys.L31,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
+% sys.L13,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
 % duplicates,	schema,	table,	column # name
 % bigint,	varchar,	varchar,	varchar # type
 % 1,	0,	0,	0 # length
 #SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storagemodelinput GROUP BY schema, table, column HAVING COUNT(*) > 1;
-% sys.L3,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% sys.L2,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
 % duplicates,	schema,	table,	column # name
 % bigint,	varchar,	varchar,	varchar # type
 % 1,	0,	0,	0 # length
 #SELECT COUNT(*) AS duplicates, schema, table FROM sys.tablestorage GROUP BY schema, table HAVING COUNT(*) > 1;
-% .L145,	.tablestorage,	.tablestorage # table_name
+% .L46,	.tablestorage,	.tablestorage # table_name
 % duplicates,	schema,	table # name
 % bigint,	varchar,	varchar # type
 % 1,	0,	0 # length
 #SELECT COUNT(*) AS duplicates, schema, table FROM sys.tablestoragemodel GROUP BY schema, table HAVING COUNT(*) > 1;
-% sys.L36,	sys.tablestoragemodel,	sys.tablestoragemodel # table_name
+% sys.L24,	sys.tablestoragemodel,	sys.tablestoragemodel # table_name
 % duplicates,	schema,	table # name
 % bigint,	varchar,	varchar # type
 % 1,	0,	0 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.table_partitions GROUP BY id HAVING COUNT(*) >1;
-% sys.L3,	sys.table_partitions # table_name
+% sys.L2,	sys.table_partitions # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, table_id, partition_id, minimum FROM sys.range_partitions GROUP BY table_id, partition_id, minimum HAVING COUNT(*) >1;
-% sys.L3,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% sys.L2,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
 % duplicates,	table_id,	partition_id,	minimum # name
 % bigint,	int,	int,	varchar # type
 % 1,	1,	1,	0 # length
 #SELECT COUNT(*) AS duplicates, table_id, partition_id, "value" FROM sys.value_partitions GROUP BY table_id, partition_id, "value" HAVING COUNT(*) >1;
-% sys.L3,	sys.value_partitions,	sys.value_partitions,	sys.value_partitions # table_name
+% sys.L2,	sys.value_partitions,	sys.value_partitions,	sys.value_partitions # table_name
 % duplicates,	table_id,	partition_id,	value # name
 % bigint,	int,	int,	varchar # type
 % 1,	1,	1,	0 # length

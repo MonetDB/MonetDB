@@ -59,7 +59,7 @@ stdout of test 'merge_project.Bug-3955` in directory 'sql/test/BugTracker-2016` 
 % .plan # table_name
 % rel # name
 % clob # type
-% 113 # length
+% 112 # length
 project (
 | project (
 | | crossproduct (
@@ -77,10 +77,10 @@ project (
 | | | | | | ) [ "input_double"."a1" = clob "longitude" ]
 | | | | | ) [ "input_double"."a2" as "tmp_3"."a2" ]
 | | | | ) [  ]
-| | | ) [ sys.st_point("tmp_2"."a2" as "tmp"."a1", "tmp_3"."a2" as "tmp"."a2") as "L14"."a1" ]
+| | | ) [ sys.st_point("tmp_2"."a2" as "tmp"."a1", "tmp_3"."a2" as "tmp"."a2") as "L4"."a1" ]
 | | ) [  ]
-| ) [ "v"."a1" as "L32"."a1", sys.st_distance("v"."a2" as "tmp"."a2", "L14"."a1" as "tmp"."a3") as "L34"."prob" ]
-) [ "L32"."a1" as "r"."a1", "L34"."prob" as "r"."prob" ]
+| ) [ "v"."a1" as "L14"."a1", sys.st_distance("v"."a2" as "tmp"."a2", "L4"."a1" as "tmp"."a3") as "L15"."prob" ]
+) [ "L14"."a1" as "r"."a1", "L15"."prob" as "r"."prob" ]
 
 # 14:00:10 >  
 # 14:00:10 >  "Done."

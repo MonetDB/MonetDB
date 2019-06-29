@@ -35,8 +35,8 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-plan-2join-query` i
 project (
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
-| ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
-) [ "L3"."L3" NOT NULL ]
+| ) [  ] [ sys.count() NOT NULL as "L2"."L2" ]
+) [ "L2"."L2" NOT NULL ]
 #plan select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;
 % .plan # table_name
 % rel # name
@@ -66,11 +66,14 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 116 # length
+% 175 # length
 project (
 | project (
 | | left outer join (
-| | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT ,
+| | | left outer join (
+| | | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey, "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT ,
+| | | | table(sys.pk1) [ "pk1"."%TID%" NOT NULL ] COUNT 
+| | | ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ],
 | | | table(sys.pk2) [ "pk2"."v2", "pk2"."%TID%" NOT NULL ] COUNT 
 | | ) [ "fk"."%fk_fk2_fkey" NOT NULL = "pk2"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ]
 | ) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ]
@@ -83,8 +86,8 @@ project (
 project (
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
-| ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
-) [ "L3"."L3" NOT NULL ]
+| ) [  ] [ sys.count() NOT NULL as "L2"."L2" ]
+) [ "L2"."L2" NOT NULL ]
 #plan select id       from pk2 right outer join (pk1 right outer join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id;
 % .plan # table_name
 % rel # name
@@ -112,12 +115,15 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 115 # length
+% 174 # length
 project (
 | project (
 | | right outer join (
 | | | table(sys.pk2) [ "pk2"."v2", "pk2"."%TID%" NOT NULL ] COUNT ,
-| | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT 
+| | | right outer join (
+| | | | table(sys.pk1) [ "pk1"."%TID%" NOT NULL ] COUNT ,
+| | | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey, "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT 
+| | | ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
 | | ) [ "fk"."%fk_fk2_fkey" NOT NULL = "pk2"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ]
 | ) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ]
 ) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
@@ -129,8 +135,8 @@ project (
 project (
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
-| ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
-) [ "L3"."L3" NOT NULL ]
+| ) [  ] [ sys.count() NOT NULL as "L2"."L2" ]
+) [ "L2"."L2" NOT NULL ]
 #plan select id       from pk2 full outer join (pk1 full outer join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id;
 % .plan # table_name
 % rel # name
@@ -158,12 +164,15 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 115 # length
+% 174 # length
 project (
 | project (
 | | full outer join (
 | | | table(sys.pk2) [ "pk2"."v2", "pk2"."%TID%" NOT NULL ] COUNT ,
-| | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT 
+| | | full outer join (
+| | | | table(sys.pk1) [ "pk1"."%TID%" NOT NULL ] COUNT ,
+| | | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey, "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT 
+| | | ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
 | | ) [ "fk"."%fk_fk2_fkey" NOT NULL = "pk2"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ]
 | ) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ]
 ) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
@@ -175,8 +184,8 @@ project (
 project (
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
-| ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
-) [ "L3"."L3" NOT NULL ]
+| ) [  ] [ sys.count() NOT NULL as "L2"."L2" ]
+) [ "L2"."L2" NOT NULL ]
 #plan select id       from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id;
 % .plan # table_name
 % rel # name
@@ -191,11 +200,14 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 116 # length
+% 175 # length
 project (
 | project (
 | | join (
-| | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ] COUNT ,
+| | | join (
+| | | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey, "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT ,
+| | | | table(sys.pk2) [ "pk2"."%TID%" NOT NULL ] COUNT 
+| | | ) [ "fk"."%fk_fk2_fkey" NOT NULL = "pk2"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ],
 | | | table(sys.pk1) [ "pk1"."v1", "pk1"."%TID%" NOT NULL ] COUNT 
 | | ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
 | ) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ]

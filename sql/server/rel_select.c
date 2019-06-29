@@ -2286,6 +2286,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 					}
 				}
 			} else if (r) {
+				sql_rel *outerp = NULL;
 				sql_rel *l = *rel;
 				sql_exp *rls = ls;
 
@@ -2293,12 +2294,24 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 					l = *rel = rel_project(sql->sa, NULL, new_exp_list(sql->sa));
 					ls = rel_project_add_exp(sql, l, ls);
 				} else if (is_sql_sel(f)) { /* allways add left side in case of selections phase */
+#if 0
 					if (!l->processed && is_project(l->op)) { /* add all expressions to the project */
 						l->exps = list_merge(l->exps, rel_projections(sql, l->l, NULL, 1, 1), (fdup)NULL);
 						l->exps = list_distinct(l->exps, (fcmp)exp_equal, (fdup)NULL);
 					}
+#endif
+					if (*rel && (*rel)->l && is_sql_sel(f) && is_project((*rel)->op) && !is_processed((*rel))) {
+						outerp = *rel;
+						l = *rel = (*rel)->l;
+					}
+					if (!*rel)
+						return NULL;
 					if (!(rls = rel_find_exp(l, ls)) || rls == ls /* constant atom */)
+					{
+						if (!list_empty(l->exps))
+							l = rel_project(sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
 						ls = rel_project_add_exp(sql, l, ls);
+					}
 				}
 				rs = rel_lastexp(sql, r);
 				if (quantifier && r->card > CARD_ATOM) {
@@ -2329,6 +2342,10 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 					rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
 				}
 				*rel = rel_crossproduct(sql->sa, l, r, op_join);
+				if (outerp) {
+					outerp->l = *rel;
+					*rel = outerp;
+				}
 			}
 			if (!rs) 
 				return NULL;
@@ -3354,10 +3371,10 @@ rel_unop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		e = rel_aggr(query, rel, se, fs);
 		if (e)
 			return e;
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
 	}
-	/* reset error */
-	sql->session->status = 0;
-	sql->errstr[0] = '\0';
 	e = rel_value_exp(query, rel, l->next->data.sym, fs, iek);
 	if (!e) {
 		if (!f && *rel && (*rel)->card == CARD_AGGR) {
@@ -6079,7 +6096,8 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			relation
 		 */
 		sql_rel *o_inner = inner;
-	       	list *te = NULL, *pre_prj = rel_projections(sql, o_inner, NULL, 1, 1);
+	       	list *te = NULL, *pre_prj = o_inner->exps;//*pre_prj = rel_projections(sql, o_inner, NULL, 1, 1);
+		sql_rel *pre_rel = o_inner;
 		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel);
 
 		if (inner != o_inner) {  /* relation got rewritten */
@@ -6104,6 +6122,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			*/
 			if (!is_project(inner->op)) {
 				if (inner != o_inner && pre_prj) {
+	       				pre_prj = rel_projections(sql, pre_rel, NULL, 1, 1);
 					inner = rel_project(sql->sa, inner, pre_prj);
 					reset_processed(inner);
 				} else

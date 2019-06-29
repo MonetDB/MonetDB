@@ -182,8 +182,8 @@ function user.s16_0():void;
     X_18:bat[:bte] := sql.bind(X_4:int, "sys":str, "udf_fuse":str, "b":str, 0:int);
     X_24:bat[:bte] := algebra.projection(C_5:bat[:oid], X_18:bat[:bte]);
     X_25:bat[:sht] := batudf.fuse(X_17:bat[:bte], X_24:bat[:bte]);
-    X_36:bat[:str] := bat.append(X_29:bat[:str], "sys.L2":str);
-    X_38:bat[:str] := bat.append(X_31:bat[:str], "L2":str);
+    X_36:bat[:str] := bat.append(X_29:bat[:str], "sys.L1":str);
+    X_38:bat[:str] := bat.append(X_31:bat[:str], "L1":str);
     X_40:bat[:str] := bat.append(X_32:bat[:str], "smallint":str);
     X_42:bat[:int] := bat.append(X_33:bat[:int], 16:int);
     X_44:bat[:int] := bat.append(X_35:bat[:int], 0:int);
@@ -233,8 +233,8 @@ function user.s18_0():void;
     X_18:bat[:sht] := sql.bind(X_4:int, "sys":str, "udf_fuse":str, "d":str, 0:int);
     X_24:bat[:sht] := algebra.projection(C_5:bat[:oid], X_18:bat[:sht]);
     X_25:bat[:int] := batudf.fuse(X_17:bat[:sht], X_24:bat[:sht]);
-    X_36:bat[:str] := bat.append(X_29:bat[:str], "sys.L2":str);
-    X_38:bat[:str] := bat.append(X_31:bat[:str], "L2":str);
+    X_36:bat[:str] := bat.append(X_29:bat[:str], "sys.L1":str);
+    X_38:bat[:str] := bat.append(X_31:bat[:str], "L1":str);
     X_40:bat[:str] := bat.append(X_32:bat[:str], "int":str);
     X_42:bat[:int] := bat.append(X_33:bat[:int], 32:int);
     X_44:bat[:int] := bat.append(X_35:bat[:int], 0:int);
@@ -284,8 +284,8 @@ function user.s20_0():void;
     X_18:bat[:int] := sql.bind(X_4:int, "sys":str, "udf_fuse":str, "f":str, 0:int);
     X_24:bat[:int] := algebra.projection(C_5:bat[:oid], X_18:bat[:int]);
     X_25:bat[:lng] := batudf.fuse(X_17:bat[:int], X_24:bat[:int]);
-    X_36:bat[:str] := bat.append(X_29:bat[:str], "sys.L2":str);
-    X_38:bat[:str] := bat.append(X_31:bat[:str], "L2":str);
+    X_36:bat[:str] := bat.append(X_29:bat[:str], "sys.L1":str);
+    X_38:bat[:str] := bat.append(X_31:bat[:str], "L1":str);
     X_40:bat[:str] := bat.append(X_32:bat[:str], "bigint":str);
     X_42:bat[:int] := bat.append(X_33:bat[:int], 64:int);
     X_44:bat[:int] := bat.append(X_35:bat[:int], 0:int);
@@ -317,8 +317,8 @@ end user.s20_0;
 #garbagecollector     actions= 1 time=11 usec 
 #total                actions=27 time=149 usec 
 #select fuse(a,b) from udf_fuse;
-% sys.L2 # table_name
-% L2 # name
+% sys.L1 # table_name
+% L1 # name
 % smallint # type
 % 4 # length
 [ 258	]
@@ -326,8 +326,8 @@ end user.s20_0;
 [ 1286	]
 [ 1800	]
 #select fuse(c,d) from udf_fuse;
-% sys.L2 # table_name
-% L2 # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 9 # length
 [ 65538000	]
@@ -335,8 +335,8 @@ end user.s20_0;
 [ 327686000	]
 [ 458760000	]
 #select fuse(e,f) from udf_fuse;
-% sys.L2 # table_name
-% L2 # name
+% sys.L1 # table_name
+% L1 # name
 % bigint # type
 % 17 # length
 [ 4294967298000000	]

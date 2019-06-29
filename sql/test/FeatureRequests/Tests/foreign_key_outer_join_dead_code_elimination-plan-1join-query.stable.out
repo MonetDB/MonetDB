@@ -35,8 +35,8 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-plan-1join-query` i
 project (
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
-| ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
-) [ "L3"."L3" NOT NULL ]
+| ) [  ] [ sys.count() NOT NULL as "L2"."L2" ]
+) [ "L2"."L2" NOT NULL ]
 #plan select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id;
 % .plan # table_name
 % rel # name
@@ -83,8 +83,8 @@ project (
 project (
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
-| ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
-) [ "L3"."L3" NOT NULL ]
+| ) [  ] [ sys.count() NOT NULL as "L2"."L2" ]
+) [ "L2"."L2" NOT NULL ]
 #plan select id       from pk1 right outer join fk on fk.fk1 = pk1.pk1 order by id;
 % .plan # table_name
 % rel # name
@@ -129,8 +129,8 @@ project (
 project (
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
-| ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
-) [ "L3"."L3" NOT NULL ]
+| ) [  ] [ sys.count() NOT NULL as "L2"."L2" ]
+) [ "L2"."L2" NOT NULL ]
 #plan select id       from pk1 full outer join fk on fk.fk1 = pk1.pk1 order by id;
 % .plan # table_name
 % rel # name
@@ -175,8 +175,8 @@ project (
 project (
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
-| ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
-) [ "L3"."L3" NOT NULL ]
+| ) [  ] [ sys.count() NOT NULL as "L2"."L2" ]
+) [ "L2"."L2" NOT NULL ]
 #plan select id       from pk1 join fk on fk.fk1 = pk1.pk1 order by id;
 % .plan # table_name
 % rel # name

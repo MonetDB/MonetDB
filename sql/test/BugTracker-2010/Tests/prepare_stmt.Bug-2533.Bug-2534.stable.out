@@ -31,11 +31,11 @@ stdout of test 'prepare_stmt.Bug-2533.Bug-2534` in directory 'sql/test/BugTracke
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 6,	3,	1,	0,	2,	2 # length
-[ "bigint",	64,	0,	"",	"L2",	"L2"	]
+[ "bigint",	64,	0,	"",	"L1",	"L1"	]
 [ "bigint",	64,	0,	NULL,	NULL,	NULL	]
 #exec  3(1);
-% .L2 # table_name
-% L2 # name
+% .L1 # table_name
+% L1 # name
 % bigint # type
 % 1 # length
 

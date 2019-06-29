@@ -1844,6 +1844,8 @@ rel_simplify_project_fk_join(int *changes, mvc *sql, sql_rel *r, list *pexps)
 		return r;
 	}
 
+	(void)sql;
+#if 0
 	if (fk_left && is_join(rl->op) && !rel_is_ref(rl)) {
 		rl = rel_simplify_project_fk_join(changes, sql, rl, pexps);
 		r->l = rl;
@@ -1852,6 +1854,7 @@ rel_simplify_project_fk_join(int *changes, mvc *sql, sql_rel *r, list *pexps)
 		rr = rel_simplify_project_fk_join(changes, sql, rr, pexps);
 		r->r = rr;
 	}
+#endif
 	/* primary side must be a full table */
 	if ((fk_left && (!is_left(r->op) && !is_full(r->op)) && !is_basetable(rr->op)) || 
 	    (!fk_left && (!is_right(r->op) && !is_full(r->op)) && !is_basetable(rl->op))) 

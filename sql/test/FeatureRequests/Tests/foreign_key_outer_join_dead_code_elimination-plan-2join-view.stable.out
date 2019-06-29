@@ -35,8 +35,8 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-plan-2join-view` in
 project (
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
-| ) [  ] [ sys.count() NOT NULL as "L13"."L13" ]
-) [ "L13"."L13" NOT NULL ]
+| ) [  ] [ sys.count() NOT NULL as "L11"."L11" ]
+) [ "L11"."L11" NOT NULL ]
 #plan select id       from v2 order by id;
 % .plan # table_name
 % rel # name
@@ -52,11 +52,14 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 116 # length
+% 175 # length
 project (
 | project (
 | | left outer join (
-| | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT ,
+| | | left outer join (
+| | | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey, "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT ,
+| | | | table(sys.pk1) [ "pk1"."%TID%" NOT NULL ] COUNT 
+| | | ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ],
 | | | table(sys.pk2) [ "pk2"."v2", "pk2"."%TID%" NOT NULL ] COUNT 
 | | ) [ "fk"."%fk_fk2_fkey" NOT NULL = "pk2"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ]
 | ) [ "fk"."id" NOT NULL HASHCOL  as "v2"."id", "pk2"."v2" as "v2"."v2" ]

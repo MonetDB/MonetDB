@@ -253,7 +253,7 @@ stdout of test 'bam_lib` in directory 'sql/backends/monet5/vaults/bam` itself:
 #	bam_flag(flag, 'qual_cont') AS qual_cont,
 #	bam_flag(flag, 'opti_dupl') AS opti_dupl,
 #	bam_flag(flag, 'supp_alig') AS supp_alig
-% bam.alignments_1,	bam.L3,	bam.L5,	bam.L7,	bam.L11,	bam.L13,	bam.L15,	bam.L17,	bam.L21,	bam.L23,	bam.L25,	bam.L27,	bam.L31 # table_name
+% bam.alignments_1,	bam.L1,	bam.L2,	bam.L3,	bam.L4,	bam.L5,	bam.L6,	bam.L7,	bam.L10,	bam.L11,	bam.L12,	bam.L13,	bam.L14 # table_name
 % flag,	mult_segm,	prop_alig,	segm_unma,	next_unma,	segm_reve,	next_reve,	firs_segm,	last_segm,	seco_alig,	qual_cont,	opti_dupl,	supp_alig # name
 % smallint,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 3,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length
@@ -432,7 +432,7 @@ stdout of test 'bam_lib` in directory 'sql/backends/monet5/vaults/bam` itself:
 [ "????????????"	]
 #SELECT seq, reverse_seq(seq) AS reverse_seq
 #FROM bam.alignments_1;
-% bam.alignments_1,	bam.L3 # table_name
+% bam.alignments_1,	bam.L1 # table_name
 % seq,	reverse_seq # name
 % clob,	clob # type
 % 100,	100 # length
@@ -515,7 +515,7 @@ stdout of test 'bam_lib` in directory 'sql/backends/monet5/vaults/bam` itself:
 [ "desrever eb dluohS"	]
 #SELECT qual, reverse_qual(qual) AS reverse_qual
 #FROM bam.alignments_1;
-% bam.alignments_1,	bam.L3 # table_name
+% bam.alignments_1,	bam.L1 # table_name
 % qual,	reverse_qual # name
 % clob,	clob # type
 % 100,	100 # length
@@ -610,7 +610,7 @@ stdout of test 'bam_lib` in directory 'sql/backends/monet5/vaults/bam` itself:
 [ 100	]
 #SELECT cigar, seq_length(cigar) AS seq_length
 #FROM bam.alignments_1;
-% bam.alignments_1,	bam.L3 # table_name
+% bam.alignments_1,	bam.L1 # table_name
 % cigar,	seq_length # name
 % clob,	int # type
 % 27,	4 # length
@@ -748,7 +748,7 @@ stdout of test 'bam_lib` in directory 'sql/backends/monet5/vaults/bam` itself:
 #SELECT 17922987 AS ref_pos, seq, pos, cigar, seq_char(17922987, seq, pos, cigar) AS seq_char
 #FROM bam.alignments_1
 #WHERE seq_char(17922987, seq, pos, cigar) IS NOT NULL;
-% .L2,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	.L7 # table_name
+% .L1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	.L2 # table_name
 % ref_pos,	seq,	pos,	cigar,	seq_char # name
 % int,	clob,	int,	clob,	char # type
 % 8,	100,	8,	21,	1 # length

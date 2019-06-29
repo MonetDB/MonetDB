@@ -118,8 +118,8 @@ function user.s16_0():void;
     X_8:bat[:str] := sql.bind(X_4:int, "sys":str, "udf_reverse":str, "x":str, 0:int);
     X_17:bat[:str] := algebra.projection(C_5:bat[:oid], X_8:bat[:str]);
     X_18:bat[:str] := batudf.reverse(X_17:bat[:str]);
-    X_29:bat[:str] := bat.append(X_22:bat[:str], "sys.L2":str);
-    X_31:bat[:str] := bat.append(X_24:bat[:str], "L2":str);
+    X_29:bat[:str] := bat.append(X_22:bat[:str], "sys.L1":str);
+    X_31:bat[:str] := bat.append(X_24:bat[:str], "L1":str);
     X_33:bat[:str] := bat.append(X_25:bat[:str], "clob":str);
     X_35:bat[:int] := bat.append(X_26:bat[:int], 0:int);
     X_36:bat[:int] := bat.append(X_28:bat[:int], 0:int);
@@ -149,8 +149,8 @@ end user.s16_0;
 #garbagecollector     actions= 1 time=52 usec 
 #total                actions=23 time=362 usec 
 #select reverse(x) from udf_reverse;
-% sys.L2 # table_name
-% L2 # name
+% sys.L1 # table_name
+% L1 # name
 % clob # type
 % 30 # length
 [ "BDtenoM"	]
