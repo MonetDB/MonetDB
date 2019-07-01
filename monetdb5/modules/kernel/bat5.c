@@ -1408,3 +1408,25 @@ BKCintersectcand(bat *ret, const bat *aid, const bat *bid)
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
+
+str
+BKCdiffcand(bat *ret, const bat *aid, const bat *bid)
+{
+	BAT *a, *b, *bn;
+
+	if ((a = BATdescriptor(*aid)) == NULL) {
+		throw(MAL, "bat.diffcand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		BBPunfix(a->batCacheid);
+		throw(MAL, "bat.diffcand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATdiffcand(a, b);
+	BBPunfix(a->batCacheid);
+	BBPunfix(b->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.diffcand", OPERATION_FAILED);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}

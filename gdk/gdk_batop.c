@@ -2312,3 +2312,123 @@ BATintersectcand(BAT *a, BAT *b)
 	bn->tnonil = true;
 	return virtualize(bn);
 }
+
+/* calculate the difference of two candidate lists and produce a new one
+ */
+BAT *
+BATdiffcand(BAT *a, BAT *b)
+{
+	BAT *bn;
+	const oid *restrict ap, *restrict bp, *ape, *bpe;
+	oid *restrict p;
+	oid af, al, bf, bl;
+
+	BATcheck(a, "BATdiffcand", NULL);
+	BATcheck(b, "BATdiffcand", NULL);
+	assert(ATOMtype(a->ttype) == TYPE_oid);
+	assert(ATOMtype(b->ttype) == TYPE_oid);
+	assert(a->tsorted);
+	assert(b->tsorted);
+	assert(a->tkey);
+	assert(b->tkey);
+	assert(a->tnonil);
+	assert(b->tnonil);
+
+	if (BATcount(a) == 0)
+		return newdensecand(0, 0);
+	if (BATcount(b) == 0)
+		return COLcopy(a, a->ttype, false, TRANSIENT);
+
+	af = BUNtoid(a, 0);
+	bf = BUNtoid(b, 0);
+	al = BUNtoid(a, BUNlast(a) - 1) + 1;
+	bl = BUNtoid(b, BUNlast(b) - 1) + 1;
+
+	if (bf >= al || bl <= af) {
+		/* no overlap, return a */
+		return COLcopy(a, a->ttype, false, TRANSIENT);
+	}
+
+	if (BATtdense(a) && BATtdense(b)) {
+		/* both a and b are dense */
+		if (af < bf) {
+			if (al <= bl) {
+				/* b overlaps with end of a */
+				return newdensecand(af, bf);
+			}
+			/* b is subset of a */
+			return doublerange(af, bf, bl, al);
+		} else {
+			/* af >= bf */
+			if (al > bl) {
+				/* b overlaps with beginning of a */
+				return newdensecand(bl, al);
+			}
+			/* a is subset f b */
+			return newdensecand(0, 0);
+		}
+	}
+	bn = COLnew(0, TYPE_oid, BATcount(a), TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	p = Tloc(bn, 0);
+	if (BATtdense(b)) {
+		BUN n;
+		/* b is dense and a is not: we can copy the part of a
+		 * that is before the start of b and the part of a
+		 * that is after the end of b */
+		ap = Tloc(a, 0);
+		/* find where b starts in a */
+		n = binsearch(NULL, 0, TYPE_oid, ap, NULL, SIZEOF_OID, 0,
+			      BATcount(a), &bf, 1, 0);
+		if (n > 0)
+			memcpy(p, ap, n * SIZEOF_OID);
+		p += n;
+		n = binsearch(NULL, 0, TYPE_oid, ap, NULL, SIZEOF_OID, 0,
+			      BATcount(a), &bl, 1, 0);
+		if (n < BATcount(a))
+			memcpy(p, ap + n, (BATcount(a) - n) * SIZEOF_OID);
+		p += n;
+	} else {
+		/* b is not dense; find first position in b that is in
+		 * range of a */
+		bp = Tloc(b, 0);
+		bpe = bp + BATcount(b);
+		bp += binsearch(NULL, 0, TYPE_oid, bp, NULL, SIZEOF_OID, 0,
+				BATcount(b), &af, 1, 0);
+		if (BATtdense(a)) {
+			/* only a is dense */
+			while (af < al) {
+				if (bp == bpe)
+					*p++ = af;
+				else if (af < *bp)
+					*p++ = af;
+				else
+					bp++;
+				af++;
+			}
+		} else {
+			/* a and b are both not dense */
+			ap = Tloc(a, 0);
+			ape = ap + BATcount(a);
+			while (ap < ape) {
+				if (bp == bpe)
+					*p++ = *ap;
+				else if (*ap < *bp)
+					*p++ = *ap;
+				else
+					bp++;
+				ap++;
+			}
+		}
+	}
+
+	/* properties */
+	BATsetcount(bn, (BUN) (p - (oid *) Tloc(bn, 0)));
+	bn->trevsorted = BATcount(bn) <= 1;
+	bn->tsorted = true;
+	bn->tkey = true;
+	bn->tnil = false;
+	bn->tnonil = true;
+	return virtualize(bn);
+}

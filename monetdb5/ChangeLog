@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Mon Jul  1 2019 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented a function bat.diffcand to calculate difference of two
+  candidate lists.
+
 * Fri Jun 14 2019 Sjoerd Mullender <sjoerd@acm.org>
 - The mtime module was completely rewritten, the atom types date,
   daytime, and timestamp were changed.  Upgrade code for BATs

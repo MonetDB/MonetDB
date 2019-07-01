@@ -612,6 +612,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "bat",	"delete",	"command bat.delete(b:bat[:any_1]):bat[:any_1] ",	"BKCdelete_all;",	"Delete all entries."	]
 [ "bat",	"delete",	"command bat.delete(b:bat[:any_1], d:bat[:oid]):bat[:any_1] ",	"BKCdelete_multi;",	"Delete multiple BUN, shifting BUNs up"	]
 [ "bat",	"densebat",	"command bat.densebat(sz:lng):bat[:oid] ",	"BKCdensebat;",	"Creates a new [void,void] BAT of size 'sz'."	]
+[ "bat",	"diffcand",	"command bat.diffcand(a:bat[:oid], b:bat[:oid]):bat[:oid] ",	"BKCdiffcand;",	"Calculate difference of two candidate lists"	]
 [ "bat",	"getAccess",	"command bat.getAccess(b:bat[:any_1]):str ",	"BKCgetAccess;",	"Return the access mode attached to this BAT as a character."	]
 [ "bat",	"getCapacity",	"command bat.getCapacity(b:bat[:any_1]):lng ",	"BKCgetCapacity;",	"Returns the current allocation size (in max number of elements) of a BAT."	]
 [ "bat",	"getColumnType",	"command bat.getColumnType(b:bat[:any_1]):str ",	"BKCgetColumnType;",	"Returns the type of the tail column of a BAT, as an integer type number."	]

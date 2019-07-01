@@ -197,3 +197,7 @@ comment "Merge two candidate lists into one";
 command intersectcand(a:bat[:oid],b:bat[:oid]) :bat[:oid]
 address BKCintersectcand
 comment "Intersect two candidate lists into one";
+
+command diffcand(a:bat[:oid],b:bat[:oid]) :bat[:oid]
+address BKCdiffcand
+comment "Calculate difference of two candidate lists";
