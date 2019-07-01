@@ -102,6 +102,7 @@ mal_export  str defineRef;
 mal_export  str deleteRef;
 mal_export  str deltaRef;
 mal_export  str dense_rankRef;
+mal_export  str diffcandRef;
 mal_export  str differenceRef;
 mal_export  str diffRef;
 mal_export  str disconnectRef;

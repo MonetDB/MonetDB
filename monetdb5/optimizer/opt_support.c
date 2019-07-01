@@ -626,8 +626,9 @@ int isFragmentGroup2(InstrPtr p){
 				getFunctionId(p)== projectionRef
 			)) ||
 			(getModuleId(p)== batRef && (
-				getFunctionId(p)== mergecandRef || 
-				getFunctionId(p)== intersectcandRef 
+				getFunctionId(p)== mergecandRef ||
+				getFunctionId(p)== intersectcandRef ||
+				getFunctionId(p)== diffcandRef
 			) 
 		);
 }

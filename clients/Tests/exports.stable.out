@@ -2097,6 +2097,7 @@ str deltaRef;
 str dense_rankRef;
 malType destinationType(MalBlkPtr mb, InstrPtr p);
 str diffRef;
+str diffcandRef;
 str differenceRef;
 str disconnectRef;
 str divRef;

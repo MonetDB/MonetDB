@@ -72,6 +72,7 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		} else if (getModuleId(p) == batRef) {
 			if (getFunctionId(p) == mergecandRef ||
 				getFunctionId(p) == intersectcandRef ||
+				getFunctionId(p) == diffcandRef ||
 				getFunctionId(p) == mirrorRef)
 				setVarCList(mb,getArg(p,0));
 		}
