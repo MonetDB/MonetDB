@@ -2164,8 +2164,8 @@ BATmergecand(BAT *a, BAT *b)
 	if (bn == NULL)
 		return NULL;
 	p = (oid *) Tloc(bn, 0);
-	if (a->ttype == TYPE_void && b->ttype == TYPE_void) {
-		/* both lists are VOID */
+	if (BATtdense(a) && BATtdense(b)) {
+		/* both lists are dense */
 		if (a->tseqbase > b->tseqbase) {
 			BAT *t = a;
 
@@ -2179,14 +2179,14 @@ BATmergecand(BAT *a, BAT *b)
 		     i < b->tseqbase + BATcount(b);
 		     i++)
 			*p++ = i;
-	} else if (a->ttype == TYPE_void || b->ttype == TYPE_void) {
-		if (b->ttype == TYPE_void) {
+	} else if (BATtdense(a) || BATtdense(b)) {
+		if (BATtdense(b)) {
 			BAT *t = a;
 
 			a = b;
 			b = t;
 		}
-		/* a->ttype == TYPE_void, b->ttype == TYPE_oid */
+		/* only a is dense */
 		bp = (const oid *) Tloc(b, 0);
 		bpe = bp + BATcount(b);
 		while (bp < bpe && *bp < a->tseqbase)
@@ -2198,7 +2198,7 @@ BATmergecand(BAT *a, BAT *b)
 		while (bp < bpe)
 			*p++ = *bp++;
 	} else {
-		/* a->ttype == TYPE_oid, b->ttype == TYPE_oid */
+		/* a and b are both not dense */
 		ap = (const oid *) Tloc(a, 0);
 		ape = ap + BATcount(a);
 		bp = (const oid *) Tloc(b, 0);
@@ -2263,7 +2263,7 @@ BATintersectcand(BAT *a, BAT *b)
 	bl = BUNtoid(b, BUNlast(b) - 1);
 
 	if ((af + BATcount(a) - 1 == al) && (bf + BATcount(b) - 1 == bl)) {
-		/* both lists are VOID */
+		/* both lists are dense */
 		return newdensecand(MAX(af, bf), MIN(al, bl) + 1);
 	}
 
@@ -2271,14 +2271,14 @@ BATintersectcand(BAT *a, BAT *b)
 	if (bn == NULL)
 		return NULL;
 	p = (oid *) Tloc(bn, 0);
-	if (a->ttype == TYPE_void || b->ttype == TYPE_void) {
-		if (b->ttype == TYPE_void) {
+	if (BATtdense(a) || BATtdense(b)) {
+		if (BATtdense(b)) {
 			BAT *t = a;
 
 			a = b;
 			b = t;
 		}
-		/* a->ttype == TYPE_void, b->ttype == TYPE_oid */
+		/* only a is dense */
 		bp = (const oid *) Tloc(b, 0);
 		bpe = bp + BATcount(b);
 		while (bp < bpe && *bp < a->tseqbase)
@@ -2286,7 +2286,7 @@ BATintersectcand(BAT *a, BAT *b)
 		while (bp < bpe && *bp < a->tseqbase + BATcount(a))
 			*p++ = *bp++;
 	} else {
-		/* a->ttype == TYPE_oid, b->ttype == TYPE_oid */
+		/* a and b are both not dense */
 		ap = (const oid *) Tloc(a, 0);
 		ape = ap + BATcount(a);
 		bp = (const oid *) Tloc(b, 0);
