@@ -1193,7 +1193,7 @@ struct PAT{
 }pat[CANDIDATES];
 
 void
-MOSanalyses(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *bdecompress, str compressions)
+MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *bdecompress, str compressions)
 {
 	int i,j,cases, bit=1, bid= b->batCacheid;
 	int pattern[CANDIDATES];
