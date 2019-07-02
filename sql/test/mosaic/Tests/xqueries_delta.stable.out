@@ -135,10 +135,10 @@ end user.s12_1;
 % bigint # type
 % 2 # length
 [ 66	]
-#select sum(i) from dtmp3;
-% sys.L3 # table_name
-% L3 # name
-% hugeint # type
+#select cast(sum(i) as bigint) from dtmp3;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from dtmp3;
@@ -156,10 +156,10 @@ end user.s12_1;
 % bigint # type
 % 2 # length
 [ 86	]
-#select sum(i) from dtmp3;
-% sys.L3 # table_name
-% L3 # name
-% hugeint # type
+#select cast(sum(i) as bigint) from dtmp3;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from dtmp3;
@@ -265,10 +265,10 @@ end user.s36_1;
 #alter table dtmp3 alter column i set storage NULL;
 #alter table dtmp3 alter column b set storage NULL;
 #alter table dtmp3 alter column f set storage NULL;
-#select sum(i) from dtmp3;
-% sys.L3 # table_name
-% L3 # name
-% hugeint # type
+#select cast(sum(i) as bigint) from dtmp3;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from dtmp3;

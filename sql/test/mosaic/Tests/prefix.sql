@@ -13,6 +13,6 @@ select count(*) from tmpPrefix;
 alter table tmpPrefix alter column i set storage NULL;
 
 select * from tmpPrefix;
-select sum(i) from tmpPrefix;
+select cast(sum(i) as bigint) from tmpPrefix;
 
 drop table tmpPrefix;

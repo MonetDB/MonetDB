@@ -72,10 +72,10 @@ stdout of test 'prefix` in directory 'sql/test/mosaic` itself:
 [ 1	]
 [ 2	]
 [ 2	]
-#select sum(i) from tmpPrefix;
-% sys.L3 # table_name
-% L3 # name
-% hugeint # type
+#select cast(sum(i) as bigint) from tmpPrefix;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
 % 2 # length
 [ 10	]
 #drop table tmpPrefix;

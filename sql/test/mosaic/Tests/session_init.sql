@@ -91,5 +91,5 @@ insert into tmp3 values
 
 alter table tmp3 set read only;
 select * from tmp3;
-select sum(i) from tmp3;
+select cast(sum(i) as bigint) from tmp3;
 select sum(f) from tmp3;

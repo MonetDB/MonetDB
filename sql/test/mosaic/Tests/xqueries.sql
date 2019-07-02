@@ -90,7 +90,7 @@ insert into tmp3 values
 (10, false, 0.317,'2014-08-23 11:34:54.000000');
 
 alter table tmp3 set read only;
-select sum(i) from tmp3;
+select cast(sum(i) as bigint) from tmp3;
 select sum(f) from tmp3;
 
 explain select count(*) from tmp3 where i <4;
@@ -103,7 +103,7 @@ select count(*) from tmp3 where b = true;
 alter table tmp3 alter column i set storage 'raw';
 alter table tmp3 alter column b set storage 'raw';
 alter table tmp3 alter column f set storage 'raw';
-select sum(i) from tmp3;
+select cast(sum(i) as bigint) from tmp3;
 select sum(f) from tmp3;
 
 explain select count(*) from tmp3 where i <4;

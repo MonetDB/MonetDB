@@ -90,7 +90,7 @@ insert into tmp3RLE values
 (10, false, 0.317,'2014-08-23 11:34:54.000000');
 
 alter table tmp3RLE set read only;
-select sum(i) from tmp3RLE;
+select cast(sum(i) as bigint) from tmp3RLE;
 select sum(f) from tmp3RLE;
 
 explain select * from tmp3RLE;
@@ -111,6 +111,6 @@ explain select b from tmp3RLE;
 explain select f from tmp3RLE;
 explain select t from tmp3RLE;
 select * from tmp3RLE;
-select sum(i) from tmp3RLE;
+select cast(sum(i) as bigint) from tmp3RLE;
 select sum(f) from tmp3RLE;
 

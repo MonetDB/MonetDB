@@ -40,10 +40,10 @@ stdout of test 'xqueries_rle` in directory 'sql/test/mosaic` itself:
 #(1, true, 0.314,'2014-08-23 11:34:54.000000'),
 [ 86	]
 #alter table xtmp3 set read only;
-#select sum(i) from xtmp3;
-% sys.L3 # table_name
-% L3 # name
-% hugeint # type
+#select cast(sum(i) as bigint) from xtmp3;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from xtmp3;
@@ -150,10 +150,10 @@ end user.s16_1;
 #alter table xtmp3 alter column i set storage 'runlength';
 #alter table xtmp3 alter column b set storage 'runlength';
 #alter table xtmp3 alter column f set storage 'runlength';
-#select sum(i) from xtmp3;
-% sys.L3 # table_name
-% L3 # name
-% hugeint # type
+#select cast(sum(i) as bigint) from xtmp3;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from xtmp3;
@@ -259,10 +259,10 @@ end user.s34_1;
 #alter table xtmp3 alter column i set storage NULL;
 #alter table xtmp3 alter column b set storage NULL;
 #alter table xtmp3 alter column f set storage NULL;
-#select sum(i) from xtmp3;
-% sys.L3 # table_name
-% L3 # name
-% hugeint # type
+#select cast(sum(i) as bigint) from xtmp3;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from xtmp3;
