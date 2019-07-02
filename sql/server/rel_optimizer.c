@@ -7191,7 +7191,7 @@ add_exps_too_project(mvc *sql, list *exps, sql_rel *rel)
 	for(n=exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (e->type != e_column)
+		if (e->type != e_column && e->type != e_atom)
 			n->data = add_exp_too_project(sql, e, rel);
 	}
 }
