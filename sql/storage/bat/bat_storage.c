@@ -1895,7 +1895,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 	}
 	if (bat->ibid) {
 		b = temp_descriptor(bat->ibid);
-		if(b) {
+		if (b && !isEbat(b)) {
 			sz += BATcount(b);
 			bat_clear(b);
 			BATcommit(b);
@@ -1905,6 +1905,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 	if (bat->bid) {
 		b = temp_descriptor(bat->bid);
 		if(b) {
+			assert(!isEbat(b));
 			sz += BATcount(b);
 			/* for transactions we simple switch to ibid only */
 			if (tr != gtrans) {
@@ -1920,7 +1921,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 	}
 	if (bat->uibid) { 
 		b = temp_descriptor(bat->uibid);
-		if(b) {
+		if (b && !isEbat(b)) {
 			bat_clear(b);
 			BATcommit(b);
 			bat_destroy(b);
@@ -1928,7 +1929,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 	}
 	if (bat->uvbid) { 
 		b = temp_descriptor(bat->uvbid);
-		if(b) {
+		if(b && !isEbat(b)) {
 			bat_clear(b);
 			BATcommit(b);
 			bat_destroy(b);
@@ -2129,7 +2130,7 @@ clear_dbat(sql_trans *tr, sql_dbat *bat)
 	}
 	if (bat->dbid) {
 		BAT *b = temp_descriptor(bat->dbid);
-		if(b) {
+		if(b && !isEbat(b)) {
 			sz += BATcount(b);
 			bat_clear(b);
 			BATcommit(b);

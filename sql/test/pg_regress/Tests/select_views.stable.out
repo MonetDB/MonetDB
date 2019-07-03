@@ -39,7 +39,7 @@ Ready.
 % clob,	clob # type
 % 0,	0 # length
 #SELECT * FROM toyemp WHERE name = 'sharon';
-% sys.toyemp,	sys.toyemp,	sys.toyemp,	.toyemp # table_name
+% sys.toyemp,	sys.toyemp,	sys.toyemp,	sys.toyemp # table_name
 % name,	age,	location,	annualsal # name
 % clob,	int,	clob,	bigint # type
 % 0,	1,	0,	1 # length
