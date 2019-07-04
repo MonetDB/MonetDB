@@ -2116,7 +2116,7 @@ store_manager(void)
 			MT_lock_unset(&bs_lock);
 			continue;
 		}
-		need_flush = false;
+		need_flush = true;
 		while (ATOMIC_GET(&store_nr_active)) { /* find a moment to flush */
 			MT_lock_unset(&bs_lock);
 			if (GDKexiting())
@@ -2124,6 +2124,7 @@ store_manager(void)
 			MT_sleep_ms(sleeptime);
 			MT_lock_set(&bs_lock);
 		}
+		need_flush = false;
 
 		MT_thread_setworking("flushing");
 		logging = true;
@@ -6499,6 +6500,13 @@ sql_trans_begin(sql_session *s)
 	sql_trans *tr = s->tr;
 	int snr = tr->schema_number;
 
+	while (need_flush) {
+		store_unlock();
+		if (GDKexiting())
+			return -1;
+		MT_sleep_ms(100);
+		store_lock();
+	}
 #ifdef STORE_DEBUG
 	fprintf(stderr,"#sql trans begin %d\n", snr);
 #endif
