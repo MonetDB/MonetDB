@@ -2737,6 +2737,7 @@ gdk_export BAT *BATunique(BAT *b, BAT *s);
 gdk_export BAT *BATmergecand(BAT *a, BAT *b);
 gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
 gdk_export BAT *BATdiffcand(BAT *a, BAT *b);
+gdk_export bool BATcandcontains(BAT *s, oid o);
 
 gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool nilslast, bool distinct)
 	__attribute__((__warn_unused_result__));

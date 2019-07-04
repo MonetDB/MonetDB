@@ -106,6 +106,7 @@ dbl BATcalcvariance_population(dbl *avgp, BAT *b);
 dbl BATcalcvariance_sample(dbl *avgp, BAT *b);
 BAT *BATcalcxor(BAT *b1, BAT *b2, BAT *s);
 BAT *BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s);
+bool BATcandcontains(BAT *s, oid o);
 gdk_return BATclear(BAT *b, bool force);
 void BATcommit(BAT *b);
 BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt, role_t role);

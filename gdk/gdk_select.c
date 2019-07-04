@@ -194,7 +194,7 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 		assert(s->tsorted);
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
 			o = (oid) (i - l + seq);
-			if (SORTfnd(s, &o) != BUN_NONE) {
+			if (BATcandcontains(s, o)) {
 				buninsfix(bn, dst, cnt, o,
 					  maximum - BATcapacity(bn),
 					  maximum, NULL);
