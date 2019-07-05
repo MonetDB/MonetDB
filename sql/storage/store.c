@@ -6497,8 +6497,8 @@ sql_session_reset(sql_session *s, int ac)
 int
 sql_trans_begin(sql_session *s)
 {
-	sql_trans *tr = s->tr;
-	int snr = tr->schema_number;
+	sql_trans *tr;
+	int snr;
 
 	while (need_flush) {
 		store_unlock();
@@ -6507,6 +6507,9 @@ sql_trans_begin(sql_session *s)
 		MT_sleep_ms(100);
 		store_lock();
 	}
+	tr = s->tr;
+	snr = tr->schema_number;
+
 #ifdef STORE_DEBUG
 	fprintf(stderr,"#sql trans begin %d\n", snr);
 #endif
