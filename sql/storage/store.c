@@ -2036,12 +2036,12 @@ store_apply_deltas(void)
 	logging = false;
 }
 
-static bool need_flush = false;
+static ATOMIC_TYPE need_flush = ATOMIC_VAR_INIT(0);
 
 void
 store_flush_log(void)
 {
-	need_flush = true;
+	ATOMIC_SET(&need_flush, 1);
 }
 
 static int
@@ -2101,7 +2101,7 @@ store_manager(void)
 		int res = LOG_OK;
 		int t;
 
-		for (t = timeout; t > 0 && !need_flush; t -= sleeptime) {
+		for (t = timeout; t > 0 && !ATOMIC_GET(&need_flush); t -= sleeptime) {
 			MT_sleep_ms(sleeptime);
 			if (GDKexiting())
 				return;
@@ -2112,11 +2112,11 @@ store_manager(void)
 			MT_lock_unset(&bs_lock);
 			return;
 		}
-		if (!need_flush && logger_funcs.changes() < changes) {
+		if (!ATOMIC_GET(&need_flush) && logger_funcs.changes() < changes) {
 			MT_lock_unset(&bs_lock);
 			continue;
 		}
-		need_flush = true;
+		ATOMIC_SET(&need_flush, 1);
 		while (ATOMIC_GET(&store_nr_active)) { /* find a moment to flush */
 			MT_lock_unset(&bs_lock);
 			if (GDKexiting())
@@ -2124,7 +2124,7 @@ store_manager(void)
 			MT_sleep_ms(sleeptime);
 			MT_lock_set(&bs_lock);
 		}
-		need_flush = false;
+		ATOMIC_SET(&need_flush, 0);
 
 		MT_thread_setworking("flushing");
 		logging = true;
@@ -6500,7 +6500,7 @@ sql_trans_begin(sql_session *s)
 	sql_trans *tr;
 	int snr;
 
-	while (need_flush) {
+	while (ATOMIC_GET(&need_flush)) {
 		store_unlock();
 		if (GDKexiting())
 			return -1;
