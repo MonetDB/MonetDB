@@ -1908,12 +1908,13 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 			sz += BATcount(b);
 			bat_clear(b);
 			BATcommit(b);
-			bat_destroy(b);
 		}
+		if (b)
+			bat_destroy(b);
 	}
 	if (bat->bid) {
 		b = temp_descriptor(bat->bid);
-		if(b) {
+		if (b) {
 			assert(!isEbat(b));
 			sz += BATcount(b);
 			/* for transactions we simple switch to ibid only */
@@ -1933,16 +1934,18 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 		if (b && !isEbat(b)) {
 			bat_clear(b);
 			BATcommit(b);
-			bat_destroy(b);
 		}
+		if (b)
+			bat_destroy(b);
 	}
 	if (bat->uvbid) { 
 		b = temp_descriptor(bat->uvbid);
 		if(b && !isEbat(b)) {
 			bat_clear(b);
 			BATcommit(b);
-			bat_destroy(b);
 		}
+		if (b)
+			bat_destroy(b);
 	}
 	bat->cnt = 0;
 	bat->ucnt = 0;
@@ -2007,9 +2010,11 @@ empty_col(sql_column *c)
 	if (bat->ibid == BID_NIL)
 		return LOG_ERR;
 
-	if (bat->bid == bat->ibid &&
-	    (bat->bid = copyBat(bat->ibid, type, 0)) == 0)
-		return LOG_ERR;
+	if (bat->bid == bat->ibid) { /* if we use the empty, we need to make a real copy */
+		temp_destroy(bat->bid);
+	    	if ((bat->bid = copyBat(bat->ibid, type, 0)) == 0)
+			return LOG_ERR;
+	}
 
 	/* make new bat persistent */
 	{
@@ -2030,8 +2035,7 @@ empty_col(sql_column *c)
 				return LOG_ERR;
 		}
 		bat_set_access(b, BAT_READ);
-		if (BATmode(b, false) != GDK_SUCCEED ||
-		    logger_add_bat(bat_logger, b, bat->name, c->t->bootstrap?0:LOG_COL, c->base.id) != GDK_SUCCEED) {
+		if (logger_add_bat(bat_logger, b, bat->name, c->t->bootstrap?0:LOG_COL, c->base.id) != GDK_SUCCEED) {
 			bat_destroy(b);
 			return LOG_ERR;
 		}
@@ -2057,9 +2061,11 @@ empty_idx(sql_idx *i)
 
 	if (bat->ibid == BID_NIL)
 		return LOG_ERR;
-	if (bat->bid == bat->ibid &&
-	    (bat->bid = copyBat(bat->ibid, type, 0)) == 0)
-		return LOG_ERR;
+	if (bat->bid == bat->ibid) { /* if we use the empty, we need to make a real copy */
+		temp_destroy(bat->bid);
+	    	if ((bat->bid = copyBat(bat->ibid, type, 0)) == 0)
+			return LOG_ERR;
+	}
 
 	/* make new bat persistent */
 	{
@@ -2079,8 +2085,7 @@ empty_idx(sql_idx *i)
 				return LOG_ERR;
 		}
 		bat_set_access(b, BAT_READ);
-		if (BATmode(b, false) != GDK_SUCCEED ||
-		    logger_add_bat(bat_logger, b, bat->name, i->t->bootstrap?0:LOG_IDX, i->base.id) != GDK_SUCCEED) {
+		if (logger_add_bat(bat_logger, b, bat->name, i->t->bootstrap?0:LOG_IDX, i->base.id) != GDK_SUCCEED) {
 			bat_destroy(b);
 			return LOG_ERR;
 		}
@@ -2094,9 +2099,11 @@ empty_del(sql_table *t)
 {
 	sql_dbat *bat = t->data;
 
-	if (bat->dbid == e_bat(TYPE_oid) &&
-	    (bat->dbid = copyBat(bat->dbid, TYPE_oid, 0)) == 0)
-		return LOG_ERR;
+	if (bat->dbid == ebats[TYPE_oid]->batCacheid) { /* if we use the empty, we need to make a real copy */
+		temp_destroy(bat->dbid);
+	    	if ((bat->dbid = copyBat(bat->dbid, TYPE_oid, 0)) == 0)
+			return LOG_ERR;
+	}
 
 	/* make new bat persistent */
 	{
@@ -2116,8 +2123,7 @@ empty_del(sql_table *t)
 				return LOG_ERR;
 		}
 		bat_set_access(b, BAT_READ);
-		if (BATmode(b, false) != GDK_SUCCEED ||
-		    logger_add_bat(bat_logger, b, bat->dname, t->bootstrap?0:LOG_TAB, t->base.id) != GDK_SUCCEED) {
+		if (logger_add_bat(bat_logger, b, bat->dname, t->bootstrap?0:LOG_TAB, t->base.id) != GDK_SUCCEED) {
 			bat_destroy(b);
 			return LOG_ERR;
 		}
@@ -2733,7 +2739,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 			while (b && b->wtime >= oldest->stime)
 				b = b->next;
-			if (/* DISABLES CODE */ (0) && b && b->wtime < oldest->stime) {
+			if (b && b->wtime < oldest->stime) {
 				/* anything older can go */
 				destroy_dbat(tr, b->next);
 				b->next = NULL;
@@ -2773,7 +2779,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				}
 				while (b && b->wtime >= oldest->stime) 
 					b = b->next;
-				if (/* DISABLES CODE */ (0) && b && b->wtime < oldest->stime) {
+				if (b && b->wtime < oldest->stime) {
 					/* anything older can go */
 					destroy_bat(tr, b->next);
 					b->next = NULL;
@@ -2838,7 +2844,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					}
 					while (b && b->wtime >= oldest->stime) 
 						b = b->next;
-					if (/* DISABLES CODE */ (0) && b && b->wtime < oldest->stime) {
+					if (b && b->wtime < oldest->stime) {
 						/* anything older can go */
 						destroy_bat(tr, b->next);
 						b->next = NULL;

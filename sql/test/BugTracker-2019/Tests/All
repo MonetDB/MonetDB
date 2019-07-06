@@ -19,3 +19,4 @@ insert-into-select.Bug-6718
 copy-into-unicode-quote.Bug-6716
 select_window_function_and_asterisk.Bug-6722
 disallow_duplicate_column_aliases.Bug-6723
+prepare-non-existing-function.Bug-6725

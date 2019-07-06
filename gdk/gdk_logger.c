@@ -1503,7 +1503,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 	}
 	n[i++] = dcatalog->batCacheid;
 
-	if (BATcount(dcatalog) > (BATcount(catalog_nme)/2) &&
+	if (BATcount(dcatalog) > 1024 &&
 	    catalog_bid == list_bid &&
 	    catalog_nme == list_nme &&
 	    lg->catalog_bid == catalog_bid) {
@@ -3238,7 +3238,7 @@ logger_add_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 	if (lg->debug & 1)
 		fprintf(stderr, "#create %s\n", NAME(name, tpe, id));
 	assert(log_find(lg->catalog_bid, lg->dcatalog, bid) == BUN_NONE);
-	lg->changes += BATcount(b) + 1;
+	lg->changes += BATcount(b) + 1000;
 	if (BUNappend(lg->catalog_bid, &bid, false) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_nme, name, false) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_tpe, &tpe, false) != GDK_SUCCEED ||

@@ -392,7 +392,8 @@ bind_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t1, sql_subtype *t2
 {
 	sql_subfunc *sf = NULL;
 
-	assert(t1);
+	if (t1 == NULL)
+		return NULL;
 	if (sql->forward) {
 		if (execute_priv(sql, sql->forward) &&
 		    strcmp(fname, sql->forward->base.name) == 0 && 
@@ -3337,9 +3338,13 @@ rel_unop_(sql_query *query, sql_rel *rel, sql_exp *e, sql_schema *s, char *fname
 		}
 		return exp_unop(sql->sa, e, f);
 	} else if (e) {
-		char *type = exp_subtype(e)->type->sqlname;
+		if (t) {
+			char *type = t->type->sqlname;
 
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such unary operator '%s(%s)'", fname, type);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such unary operator '%s(%s)'", fname, type);
+		} else {
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such unary operator '%s(?)'", fname);
+		}
 	}
 	return NULL;
 }
