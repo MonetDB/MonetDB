@@ -6548,6 +6548,7 @@ sql_trans_begin(sql_session *s)
 	sql_trans *tr;
 	int snr;
 
+	/*
 	while (ATOMIC_GET(&need_flush)) {
 		store_unlock();
 		if (GDKexiting())
@@ -6555,6 +6556,7 @@ sql_trans_begin(sql_session *s)
 		MT_sleep_ms(100);
 		store_lock();
 	}
+	*/
 	tr = s->tr;
 	snr = tr->schema_number;
 
