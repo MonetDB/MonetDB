@@ -58,7 +58,9 @@ stdout of test 'prepare-non-existing-function.Bug-6725` in directory 'sql/test/B
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
+# 21:02:39 >  
+# 21:02:39 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24435" "--port=38320"
+# 21:02:39 >  
 
 # 10:04:02 >  
 # 10:04:02 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15712" "--port=37953"

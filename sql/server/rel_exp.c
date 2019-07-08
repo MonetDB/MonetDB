@@ -106,7 +106,7 @@ exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype)
 	sql_exp *e = exp_create(sa, e_cmp);
 	if (e == NULL)
 		return NULL;
-	e->card = l->card;
+	e->card = MAX(l->card,r->card);
 	if (e->card == CARD_ATOM && !exp_is_atom(l))
 		e->card = CARD_AGGR;
 	e->l = l;
@@ -462,28 +462,6 @@ have_nil(list *exps)
 }
 
 sql_exp * 
-exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, int card, int has_nils, int intern) 
-{
-	sql_exp *e = exp_create(sa, e_column);
-
-	if (e == NULL)
-		return NULL;
-	assert(acname && org_cname);
-	e->card = card;
-	e->rname = (arname)?arname:org_rname;
-	e->name = acname;
-	e->l = (char*)org_rname;
-	e->r = (char*)org_cname;
-	if (t)
-		e->tpe = *t;
-	if (!has_nils)
-		set_has_no_nil(e);
-	if (intern)
-		set_intern(e);
-	return e;
-}
-
-sql_exp * 
 exp_column(sql_allocator *sa, const char *rname, const char *cname, sql_subtype *t, int card, int has_nils, int intern) 
 {
 	sql_exp *e = exp_create(sa, e_column);
@@ -502,6 +480,18 @@ exp_column(sql_allocator *sa, const char *rname, const char *cname, sql_subtype 
 		set_has_no_nil(e);
 	if (intern)
 		set_intern(e);
+	return e;
+}
+
+sql_exp * 
+exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, int card, int has_nils, int intern) 
+{
+	sql_exp *e = exp_column(sa, org_rname, org_cname, t, card, has_nils, intern);
+
+	if (e == NULL)
+		return NULL;
+	assert(acname && org_cname);
+	exp_setname(sa, e, (arname)?arname:org_rname, acname);
 	return e;
 }
 
@@ -1878,7 +1868,7 @@ exps_alias( sql_allocator *sa, list *exps)
 		sql_exp *e = n->data, *ne;
 
 		assert(exp_name(e));
-		ne = exp_column(sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0);
+		ne = exp_ref(sa, e);
 		append(nl, ne);
 	}
 	return nl;

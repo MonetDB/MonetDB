@@ -128,7 +128,7 @@ psm_set_exp(sql_query *query, dnode *n)
 
 			if (!exp_name(v))
 				exp_label(sql->sa, v, ++sql->label);
-			v = exp_column(sql->sa, exp_relname(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
+			v = exp_ref(sql->sa, v);
 
 			level = stack_find_frame(sql, vname);
 			v = rel_check_type(sql, tpe, rel_val, v, type_cast);
@@ -487,7 +487,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			if (!cname)
 				cname = sa_strdup(sql->sa, number2name(name, 16, ++sql->label));
 			if (!isproject) 
-				e = exp_column(sql->sa, exp_relname(e), cname, exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+				e = exp_ref(sql->sa, e);
 			e = rel_check_type(sql, &ce->type, oexps_rel, e, type_equal);
 			if (!e)
 				return NULL;
@@ -509,7 +509,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		for (n = t->columns.set->h, m = restypelist->h; n && m; n = n->next, m = m->next) {
 			sql_column *c = n->data;
 			sql_arg *ce = m->data;
-			sql_exp *e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			sql_exp *e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 
 			e = rel_check_type(sql, &ce->type, rel, e, type_equal);
 			if (!e)

@@ -29,8 +29,7 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 	if(isPartitionedByColumnTable(mt)) {
 		int colr = mt->part.pcol->colnr;
 		res = list_fetch((*anti_rel)->exps, colr);
-		res = exp_column(sql->sa, exp_relname(res), exp_name(res), exp_subtype(res), res->card, has_nil(res),
-						 is_intern(res));
+		res = exp_ref(sql->sa, res);
 	} else if(isPartitionedByExpressionTable(mt)) {
 		*anti_rel = rel_project(sql->sa, *anti_rel, NULL);
 		if(!(res = rel_parse_val(sql, sa_message(sql->sa, "select %s;", mt->part.pexp->exp), sql->emode, (*anti_rel)->l)))
@@ -41,8 +40,7 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 	}
 	(*anti_rel)->exps = new_exp_list(sql->sa);
 	append((*anti_rel)->exps, res);
-	res = exp_column(sql->sa, exp_relname(res), exp_name(res), exp_subtype(res), res->card, has_nil(res),
-						 is_intern(res));
+	res = exp_ref(sql->sa, res);
 	return res;
 }
 
@@ -61,10 +59,9 @@ rel_create_common_relation(mvc *sql, sql_rel *rel, sql_table *t)
 		for (node *n = t->columns.set->h, *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
 			sql_column *col = n->data;
 			sql_exp *before = m->data;
-			sql_exp *help = exp_column(sql->sa, t->base.name, col->base.name, exp_subtype(before), before->card,
-									   has_nil(before), is_intern(before));
-			help->l = sa_strdup(sql->sa, exp_relname(before));
-			help->r = sa_strdup(sql->sa, exp_name(before));
+			sql_exp *help = exp_ref(sql->sa, before);
+
+			exp_setname(sql->sa, help, t->base.name, col->base.name);
 			list_append(l, help);
 		}
 		return rel_dup(rel->r);
@@ -90,10 +87,9 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 		for (node *n = t->columns.set->h, *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
 			sql_column *col = n->data;
 			sql_exp *before = m->data;
-			sql_exp *help = exp_column(sql->sa, t->base.name, col->base.name, exp_subtype(before), before->card,
-									   has_nil(before), is_intern(before));
-			help->l = sa_strdup(sql->sa, exp_relname(before));
-			help->r = sa_strdup(sql->sa, exp_name(before));
+			sql_exp *help = exp_ref(sql->sa, before);
+
+			exp_setname(sql->sa, help, t->base.name, col->base.name);
 			list_append(l, help);
 		}
 	}
@@ -110,8 +106,7 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 	} else {
 		assert(0);
 	}
-	res = exp_column(sql->sa, exp_relname(res), exp_name(res), exp_subtype(res), res->card, has_nil(res),
-					 is_intern(res));
+	res = exp_ref(sql->sa, res);
 	return res;
 }
 
@@ -219,8 +214,7 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 	exp_label(sql->sa, aggr, ++sql->label);
 
 	//generate the exception
-	aggr = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card, has_nil(aggr),
-					  is_intern(aggr));
+	aggr = exp_ref(sql->sa, aggr);
 	generate_alter_table_error_message(buf, mt);
 	exception = exp_exception(sql->sa, aggr, buf);
 
@@ -261,8 +255,7 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, i
 	exp_label(sql->sa, aggr, ++sql->label);
 
 	//generate the exception
-	aggr = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card, has_nil(aggr),
-					  is_intern(aggr));
+	aggr = exp_ref(sql->sa, aggr);
 	generate_alter_table_error_message(buf, mt);
 	exception = exp_exception(sql->sa, aggr, buf);
 
@@ -779,8 +772,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_rel **anti_rel, sql_
 	(void) rel_groupby_add_aggr(sql, *anti_rel, aggr);
 	exp_label(sql->sa, aggr, ++sql->label);
 
-	aggr = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card,
-					  has_nil(aggr), is_intern(aggr));
+	aggr = exp_ref(sql->sa, aggr);
 	snprintf(buf, BUFSIZ, "%s: the %s violates the partition %s of values", operation, desc,
 			 isRangePartitionTable(t) ? "range (NB higher limit exclusive)" : "list");
 	*exception = exp_exception(sql->sa, aggr, buf);
@@ -944,8 +936,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 	exp_label(sql->sa, aggr, ++sql->label);
 
 	//generate the exception
-	aggr = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card,
-					  has_nil(aggr), is_intern(aggr));
+	aggr = exp_ref(sql->sa, aggr);
 	snprintf(buf, BUFSIZ, "INSERT: table %s.%s is part of merge table %s.%s and the insert violates the "
 						  "partition %s of values", t->s->base.name, t->base.name, upper->s->base.name,
 			 upper->base.name, isRangePartitionTable(upper) ? "range" : "list");

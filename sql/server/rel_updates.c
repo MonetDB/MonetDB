@@ -178,12 +178,10 @@ rel_insert_join_idx(sql_query *query, const char* alias, sql_idx *i, sql_rel *in
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
 		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je; 
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
-		const char *ename = exp_name(_is);
 
-		if (!ename)
+		if (!exp_name(_is))
 			exp_label(sql->sa, _is, ++sql->label);
-		ename = exp_name(_is);
-		_is = exp_column(sql->sa, exp_relname(_is), ename, exp_subtype(_is), _is->card, has_nil(_is), is_intern(_is));
+		_is = exp_ref(sql->sa, _is);
 		lnl = exp_unop(sql->sa, _is, isnil);
 		rnl = exp_unop(sql->sa, _is, isnil);
 		if (need_nulls) {
@@ -342,7 +340,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 
 				e = exps_bind_column2( r->exps, c->t->base.name, c->base.name);
 				if (e)
-					inserts[c->colnr] = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+					inserts[c->colnr] = exp_ref(sql->sa, e);
 			}
 		}
 	}
@@ -522,7 +520,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 							inner = r;
 						if (inner && !ins->name && !exp_is_atom(ins)) {
 							exp_label(sql->sa, ins, ++sql->label);
-							ins = exp_column(sql->sa, exp_relname(ins), exp_name(ins), exp_subtype(ins), ins->card, has_nil(ins), is_intern(ins));
+							ins = exp_ref(sql->sa, ins);
 						}
 						list_append(vals_list, ins);
 					}
@@ -792,7 +790,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
 		/* Currently only the default MATCH SIMPLE is supported */
-		upd = exp_column(sql->sa, exp_relname(upd), exp_name(upd), exp_subtype(upd), upd->card, has_nil(upd), is_intern(upd));
+		upd = exp_ref(sql->sa, upd);
 		lnl = exp_unop(sql->sa, upd, isnil);
 		rnl = exp_unop(sql->sa, upd, isnil);
 		if (need_nulls) {
@@ -1426,7 +1424,7 @@ validate_merge_update_delete(mvc *sql, sql_table *t, str alias, sql_rel *joined_
 	bf = sql_bind_func(sql->sa, sql->session->schema, ">", exp_subtype(aggr), exp_subtype(aggr), F_FUNC);
 	if (!bf)
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: function '>' not found");
-	list_append(exps, exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card, has_nil(aggr), is_intern(aggr)));
+	list_append(exps, exp_ref(sql->sa, aggr));
 	list_append(exps, exp_atom_lng(sql->sa, 1));
 	bigger = exp_op(sql->sa, exps, bf);
 	exp_label(sql->sa, bigger, ++sql->label);
@@ -1437,7 +1435,7 @@ validate_merge_update_delete(mvc *sql, sql_table *t, str alias, sql_rel *joined_
 	(void) rel_groupby_add_aggr(sql, groupby, aggr);
 	exp_label(sql->sa, aggr, ++sql->label); //count all of them, if there is at least one, throw the exception
 
-	ex = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card, has_nil(aggr), is_intern(aggr));
+	ex = exp_ref(sql->sa, aggr);
 	snprintf(buf, BUFSIZ, "MERGE %s: Multiple rows in the input relation%s%s%s match the same row in the target %s '%s%s%s'",
 			 (upd_token == SQL_DELETE) ? "DELETE" : "UPDATE",
 			 join_rel_name ? " '" : "", join_rel_name ? join_rel_name : "", join_rel_name ? "'" : "",
