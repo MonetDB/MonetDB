@@ -34,16 +34,14 @@ project (
 | project (
 | | group by (
 | | | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
-| | ) [ "dbg"."a" as "d" ] [ "dbg"."d", sys.sum no nil ("dbg"."b") as "L3"."L3", "L3"."L3" as "L5"."L5" ]
-| ) [ "dbg"."d", "L3"."L3", sys.sql_mul(sys.sql_div("L5"."L5", tinyint "2"), tinyint "2") as "L6"."f" ]
-) [ "dbg"."d", "L3"."L3", "L6"."f" ]
+| | ) [ "dbg"."a" as "d" ] [ "dbg"."d", sys.sum no nil ("dbg"."b") as "L1"."L1", "L1"."L1" as "L2"."L2" ]
+| ) [ "dbg"."d", "L1"."L1", sys.sql_mul(sys.sql_div("L2"."L2", tinyint "2"), tinyint "2") as "L3"."f" ]
+) [ "dbg"."d", "L1"."L1", "L3"."f" ]
 #set optimizer = 'sequential_pipe';
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
-% sys.dbg,      sys.,   sys. # table_name
-# sys.dbg,      sys.L3, sys.L6 # table_name
-% d,    L,      f # name
-# d,    L3,     f # name
+% sys.dbg,	sys.L1,	sys.L3 # table_name
+% d,	L1,	f # name
 % int,  bigint, bigint # type
 % 2,    2,      2 # length
 [ 10,   10,     10      ]
