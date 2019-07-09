@@ -2659,8 +2659,13 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared)
 	if (BUNlast(db) > db->batInserted || cleared) {
 		BAT *odb = temp_descriptor(tdb->dbid);
 		if(odb) {
-			assert(!isEbat(odb));
-			assert(!isEbat(odb));
+			if (isEbat(odb)){
+				temp_destroy(tdb->dbid);
+				tdb->dbid = temp_copy(odb->batCacheid, false);
+				bat_destroy(odb);
+				if (tdb->dbid == BID_NIL || (odb = temp_descriptor(tdb->dbid)) == NULL)
+					return LOG_ERR;
+			}
 			if (append_inserted(odb, db) == BUN_NONE)
 				ok = LOG_ERR;
 			else
