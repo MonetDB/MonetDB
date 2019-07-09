@@ -160,7 +160,7 @@ delta_bind_bat( sql_delta *bat, int access, int temp)
 				bat_destroy(b);
 				return NULL;
 			}
-			if (BATcount(nui)) {
+			if (!isEbat(nui) && BATcount(nui)) {
 				o = BATselect(ui, NULL, &b->hseqbase, ATOMnilptr(ui->ttype), true, false, false);
 				if (o == NULL) {
 					bat_destroy(ui);
@@ -2189,6 +2189,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 		bat_destroy(cur);
 		return LOG_ERR;
 	}
+	assert(!isEbat(cur));
 	/* any inserts */
 	if (BUNlast(ins) > 0) {
 		(*changes)++;
@@ -2259,6 +2260,7 @@ gtr_update_dbat(sql_dbat *d, int *changes, char tpe, oid id)
 		BAT *cdb = temp_descriptor(dbid);
 		if(cdb) {
 			(*changes)++;
+			assert(!isEbat(cdb));
 			if (append_inserted(cdb, idb) == BUN_NONE)
 				ok = LOG_ERR;
 			bat_destroy(cdb);
@@ -2475,6 +2477,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 			assert((BATcount(cur) + BATcount(ins)) == cbat->cnt);
 			//assert((BATcount(cur) + BATcount(ins)) == (obat->cnt + (BUNlast(ins) - ins->batInserted)));
 			assert(!BATcount(ins) || !isEbat(ins));
+			assert(!isEbat(cur));
 			if (BATappend(cur, ins, NULL, true) != GDK_SUCCEED) {
 				bat_destroy(cur);
 				bat_destroy(ins);
@@ -2510,6 +2513,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		}
 
 		/* any updates */
+		assert(!isEbat(cur));
 		if (BUNlast(ui) > 0) {
 			if (void_replace_bat(cur, ui, uv, true) != GDK_SUCCEED) {
 				bat_destroy(ui);
@@ -2581,6 +2585,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 			ins = cur;
 			cur = newcur;
 		} else {
+			assert(!isEbat(cur));
 			if (BATappend(cur, ins, NULL, true) != GDK_SUCCEED) {
 				bat_destroy(cur);
 				bat_destroy(ins);
@@ -2601,6 +2606,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 	if (obat->ucnt || cleared) {
 		BAT *ui = temp_descriptor(obat->uibid);
 		BAT *uv = temp_descriptor(obat->uvbid);
+
 		if(!ui || !uv) {
 			bat_destroy(ui);
 			bat_destroy(uv);
@@ -2609,6 +2615,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 		}
 
 		/* any updates */
+		assert(!isEbat(cur));
 		if (BUNlast(ui) > 0) {
 			if (void_replace_bat(cur, ui, uv, true) != GDK_SUCCEED) {
 				bat_destroy(ui);
@@ -2660,6 +2667,13 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared)
 	if (BUNlast(db) > db->batInserted || cleared) {
 		BAT *odb = temp_descriptor(tdb->dbid);
 		if(odb) {
+			if (isEbat(odb)){
+				temp_destroy(tdb->dbid);
+				tdb->dbid = temp_copy(odb->batCacheid, false);
+				bat_destroy(odb);
+				if (tdb->dbid == BID_NIL || (odb = temp_descriptor(tdb->dbid)) == NULL)
+					return LOG_ERR;
+			}
 			if (append_inserted(odb, db) == BUN_NONE)
 				ok = LOG_ERR;
 			else
