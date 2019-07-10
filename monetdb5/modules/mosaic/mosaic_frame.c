@@ -128,6 +128,7 @@ MOSskip_frame(MOStask task)
 
 // store it in the compressed heap header directly
 // filter out the most frequent ones
+// TODO: I think it is safer to use the minimum value as base frame.
 #define makeFrame(TPE)\
 {	TPE v,*val = ((TPE*)task->src) + task->start, frame = *val, delta;\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
