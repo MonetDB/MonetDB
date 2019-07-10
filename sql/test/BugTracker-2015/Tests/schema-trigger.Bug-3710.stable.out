@@ -31,6 +31,51 @@ Ready.
 
 #create schema marketdata;
 #create table marketdata.quotes (i integer);
+#CREATE TRIGGER marketdata.calc_sdate BEFORE INSERT ON marketdata.quotes
+#FOR EACH ROW 
+#BEGIN ATOMIC
+#-- select * from marketdata.quotes limit 1;
+# update marketdata.quotes set i = i +2 where i < 2;
+#END;
+#insert into marketdata.quotes (i) values (1);
+[ 1     ]
+#select * from marketdata.quotes;
+% marketdata.quotes # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1     ]
+#insert into marketdata.quotes (i) values (2);
+[ 1     ]
+#select * from marketdata.quotes;
+% marketdata.quotes # table_name
+% i # name
+% int # type
+% 1 # length
+[ 3     ]
+[ 2     ]
+#insert into marketdata.quotes (i) values (1);
+[ 1     ]
+#select * from marketdata.quotes;
+% marketdata.quotes # table_name
+% i # name
+% int # type
+% 1 # length
+[ 3     ]
+[ 2     ]
+[ 1     ]
+#insert into marketdata.quotes (i) values (2);
+[ 1     ]
+#select * from marketdata.quotes;
+% marketdata.quotes # table_name
+% i # name
+% int # type
+% 1 # length
+[ 3     ]
+[ 2     ]
+[ 3     ]
+[ 2     ]
+#drop trigger marketdata.calc_sdate;
 #drop table marketdata.quotes;
 #drop schema marketdata;
 
