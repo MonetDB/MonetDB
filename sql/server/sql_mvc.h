@@ -107,7 +107,6 @@ typedef struct mvc {
 	int argmax;
 	struct symbol *sym;
 	int no_mitosis;		/* run query without mitosis */
-	bool has_groupby_expressions;
 
 	sqlid user_id;
 	sqlid role_id;

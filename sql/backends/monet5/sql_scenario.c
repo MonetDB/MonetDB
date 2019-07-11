@@ -719,12 +719,11 @@ SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	*ret = NULL;
-	msg = SQLstatementIntern(cntxt, expr, "SQLcompile", FALSE, FALSE, NULL);
-	if (msg == MAL_SUCCEED)
-		*ret = _STRDUP("SQLcompile");
-	if(*ret == NULL)
+	if ((msg = SQLstatementIntern(cntxt, expr, "SQLcompile", FALSE, FALSE, NULL)) != MAL_SUCCEED)
+		return msg;
+	if((*ret = _STRDUP("SQLcompile")) == NULL)
 		throw(SQL,"sql.compile",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	return msg;
+	return MAL_SUCCEED;
 }
 
 /*
