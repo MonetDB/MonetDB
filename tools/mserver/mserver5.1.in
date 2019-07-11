@@ -52,10 +52,7 @@ The server is stopped by Ctrl-D on its console, typing
 or by sending it a termination signal (SIGINT, SIGTERM, SIGQUIT).
 .SH MSERVER5 OPTIONS
 .I Mserver5
-can be started with options and scripts as arguments.
-The MAL scripts will be executed directly after startup on the
-console, which eases e.g. testing of MAL scripts directly, without
-starting a client.
+can be started with options as arguments.
 .TP
 \fB\-\-dbpath=\fP\fIpath\fP
 Path where

@@ -86,7 +86,7 @@ static _Noreturn void usage(char *prog, int xit);
 static void
 usage(char *prog, int xit)
 {
-	fprintf(stderr, "Usage: %s [options] [scripts]\n", prog);
+	fprintf(stderr, "Usage: %s [options]\n", prog);
 	fprintf(stderr, "    --dbpath=<directory>      Specify database location\n");
 	fprintf(stderr, "    --dbextra=<directory>     Directory for transient BATs\n");
 	fprintf(stderr, "    --config=<config_file>    Use config_file to read options from\n");
@@ -247,12 +247,11 @@ main(int argc, char **av)
 {
 	char *prog = *av;
 	opt *set = NULL;
-	int i, grpdebug = 0, debug = 0, setlen = 0, listing = 0;
+	int grpdebug = 0, debug = 0, setlen = 0;
 	str err = MAL_SUCCEED;
 	char prmodpath[FILENAME_MAX];
 	const char *modpath = NULL;
 	char *binpath = NULL;
-	str *monet_script;
 	char *dbpath = NULL;
 	char *dbextra = NULL;
 	int verbosity = 0;
@@ -461,6 +460,9 @@ main(int argc, char **av)
 		}
 	}
 
+	if (optind < argc)
+		usage(prog, -1);
+
 	if (!(setlen = mo_system_config(&set, setlen)))
 		usage(prog, -1);
 
@@ -469,22 +471,6 @@ main(int argc, char **av)
 		mo_print_options(set, setlen);
 	GDKsetverbose(verbosity);
 
-	monet_script = (str *) malloc(sizeof(str) * (argc + 1));
-	if (monet_script == NULL) {
-		fprintf(stderr, "!ERROR: cannot allocate memory for script \n");
-		exit(1);
-	}
-	i = 0;
-	while (optind < argc) {
-		monet_script[i] = absolute_path(av[optind]);
-		if (monet_script[i] == NULL) {
-			fprintf(stderr, "!ERROR: cannot allocate memory for script \n");
-			exit(1);
-		}
-		i++;
-		optind++;
-	}
-	monet_script[i] = NULL;
 	if (!dbpath) {
 		dbpath = absolute_path(mo_find_option(set, setlen, "gdk_dbpath"));
 		if (!dbpath) {
@@ -556,7 +542,7 @@ main(int argc, char **av)
 			p = strrchr(binpath, DIR_SEP);
 			if (p != NULL) {
 				*p = '\0';
-				for (i = 0; libdirs[i] != NULL; i++) {
+				for (int i = 0; libdirs[i] != NULL; i++) {
 					int len = snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5",
 									   binpath, DIR_SEP, libdirs[i], DIR_SEP);
 					if (len == -1 || len >= FILENAME_MAX)
@@ -701,19 +687,6 @@ main(int argc, char **av)
 	}
 
 	emergencyBreakpoint();
-	for (i = 0; monet_script[i]; i++) {
-		str msg = evalFile(monet_script[i], listing);
-		/* check for internal exception message to terminate */
-		if (msg) {
-			if (strcmp(msg, "MALException:client.quit:Server stopped.") == 0)
-				mal_exit(0);
-			fprintf(stderr, "#%s: %s\n", monet_script[i], msg);
-			freeException(msg);
-		}
-		GDKfree(monet_script[i]);
-		monet_script[i] = 0;
-	}
-	free(monet_script);
 
 	if (!GDKinmemory() && (err = msab_registerStarted()) != NULL) {
 		/* throw the error at the user, but don't die */
