@@ -74,11 +74,7 @@ class BuiltinOptions:
             return expandvars(self, val);
         return val
 
-class SystemOptions(BuiltinOptions):
-    '''Values from the system config file.'''
-    pass
-
-class ConfigOptions(SystemOptions):
+class ConfigOptions(BuiltinOptions):
     '''Values from a user-supplied config file.'''
     pass
 
@@ -95,7 +91,6 @@ class ConfigOptions(SystemOptions):
 # overridden by the call to parse_options.
 default_options = [
     # long name, short name, GDK option, argument, comment
-    ('config','c',None,'config_file', 'read options from the given file'),
     ('help','?',None,None,'print usage message'),
     ('set','s',None,'option=value', 'set a named option'),
     ]
@@ -127,51 +122,6 @@ def usage(cmd_options, cmd = None):
         sys.stderr.write(arg+'\n')
     raise Error('usage')
 
-def parse_config(file, options = ConfigOptions):
-    '''parse_config(file)
-
-    Parse a Monet config file.'''
-    try:
-        f = open(file)
-    except IOError:
-        sys.stderr.write('Could not open file %s\n' % file)
-        return
-    while True:
-        line = f.readline()
-        if not line:
-            # end of file
-            break
-        line = string.strip(line)
-        if not line or line[0] == '#':
-            # ignore comments and empty lines
-            continue
-        keyval = string.split(line, '=', 1)
-        if len(keyval) != 2:
-            sys.stderr.write('syntax error in %s\n' % file)
-            f.close()
-            sys.exit(1)
-        key, val = keyval
-        key = string.strip(key)
-        val = string.strip(val)
-        if not key:
-            sys.stderr.write('syntax error in %s\n' % file)
-            f.close()
-            sys.exit(1)
-        quote = False
-        for i in range(len(val)):
-            c = val[i]
-            if c == '"':
-                quote = not quote
-            elif not quote and c == '#':
-                val = string.strip(val[:i])
-                break
-        if quote:
-            sys.stderr.write('syntax error in %s\n' % file)
-            f.close()
-            sys.exit(1)
-        val = string.replace(val, '"', '')
-        setattr(options, key, val)
-
 def print_options(options):
     '''print_options(options)
 
@@ -182,7 +132,7 @@ def print_options(options):
         val = getattr(options, name)
         sys.stderr.write('%s = %s\n' % (name, val))
 
-def parse_options(argv, cmd_options = cmd_options, usage = usage, default_config = True):
+def parse_options(argv, cmd_options = cmd_options, usage = usage):
     '''parse_options(argv) -> options
 
     This is the main interface to this module.
@@ -192,7 +142,6 @@ def parse_options(argv, cmd_options = cmd_options, usage = usage, default_config
     all_options = default_options + cmd_options
     debug = 0
     options = ConfigOptions()
-    seen_config = False
     getopt_short = ''
     getopt_long = []
     for long, short, gdk_opt, argument, comment in all_options:
@@ -222,10 +171,6 @@ def parse_options(argv, cmd_options = cmd_options, usage = usage, default_config
                     break
             else:
                 usage(cmd_options)
-        if long == 'config':
-            options.config = a
-            parse_config(a, ConfigOptions)
-            seen_config = True
         if gdk_opt:
             if not argument:
                 a = True
@@ -246,9 +191,6 @@ def parse_options(argv, cmd_options = cmd_options, usage = usage, default_config
                     setattr(options, key, val)
         elif long == 'help':
             usage(cmd_options)
-    if default_config and not seen_config:
-        options.config = os.path.join(BuiltinOptions().get('sysconfdir'),'MonetDB.conf')
-        parse_config(options.config, SystemOptions)
     if debug:
         print_options(options)
     return options, args

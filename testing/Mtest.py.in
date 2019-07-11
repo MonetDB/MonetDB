@@ -3784,8 +3784,7 @@ def main(argv) :
 
     try:
         # let monet_options.parse_options() parse the command line arguments
-        # without setting a --config default in case the is no --config given
-        opts, args = monet_options.parse_options(argv[1:], options, Usage, False)
+        opts, args = monet_options.parse_options(argv[1:], options, Usage)
     except monet_options.Error:
         sys.exit(1)
 
