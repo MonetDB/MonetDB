@@ -346,10 +346,9 @@ paths.
 Usage
 -----
 
-The MonetDB5 engine can be used interactively or as a
-server.  The SQL back-end can only be used as server.
+The MonetDB5 engine can only be used as a server.
 
-To run MonetDB5 interactively, just run::
+To run MonetDB5 as a server, just run::
 
  mserver5
 

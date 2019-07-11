@@ -47,9 +47,8 @@ prompt, reading from standard input and writing to standard output.
 .P
 The server thread started remains in existence until all other threads
 die.
-The server is stopped by Ctrl-D on its console, typing
-.B quit()
-or by sending it a termination signal (SIGINT, SIGTERM, SIGQUIT).
+The server is stopped by sending it a termination signal (SIGINT,
+SIGTERM, SIGQUIT).
 .SH MSERVER5 OPTIONS
 .I Mserver5
 can be started with options as arguments.

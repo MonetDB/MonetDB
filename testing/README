@@ -8,8 +8,6 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 
 - The testing environment consists of the following tools:
   + Mtest.py	a python script to run tests
-  + Mfilter.py	a python script to filter the test output before running Mdiff
-		(see below)
   + Mdiff	a C program to show the differences of two files as HTML document
   + Mapprove.py	a python script to approve recent test output (see below)
 
