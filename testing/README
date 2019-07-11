@@ -60,15 +60,9 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	TST.*.in  exists instead of  TST.*,  all environment variables in
 	TST.*.in  are replaced by their current value
 	when copying  $TSTSRCDIR/TST.*.in  to  $TSTTRGDIR/TST.* .
-  + a MAL script to be used as prelude for mserver5
-     (optional)                                             (TST.prelude5) (4,5)
   + for frontend tests with MonetDB5 (mserver5), extra options with
     which mserver5 is started
      (optional)                                             (TST.options5) (4,5)
-  + for mclient tests, a MAL script to be used as
-     prologue for mserver5, i.e., a script that is executed by mserver5
-     before (the first) mclient connects to mserver5
-     (optional)                                             (TST.prologue5)(4,5)
   + a file that contains a list of modules (one per line)
      required by the test  (optional)                       (TST.modules)  (4,5)
   + a file that contains a list of tests (one per line) that must
@@ -90,14 +84,13 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   Using this naming conventions, the test environment can automatically
   decide what to do when called as "Mtest.py TST" (see below), i.e. execute
   one of the following:
-  * TST[.sh|.exe|.com|.bat|.cmd] TST [TST.prelude]
-  * python TST.py [TST.prelude]
-  * mserver5 --dbpath=GDK_DBFARM/TSTDB [TST.prelude] < TST.mal
-  * mserver5 --dbpath=GDK_DBFARM/TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT "[<TST.options5]" [TST.prologue5] &
+  * TST[.sh|.exe|.com|.bat|.cmd] TST
+  * python TST.py
+  * mserver5 --dbpath=GDK_DBFARM/TSTDB --set mapi_port=$MAPIPORT "[<TST.options5]" &
          mclient -lmal < TST[_(s|p)XX].malC
      or  TST.MAL.(sh|exe|com|bat|cmd) TST
      or  python TST.MAL.py
-  * mserver5 --dbpath=GDK_DBFARM/TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT "[<TST.options5]" [TST.prologue5] &
+  * mserver5 --dbpath=GDK_DBFARM/TSTDB --set mapi_port=$MAPIPORT "[<TST.options5]" &
          mclient -lsql < TST[_(s|p)XX].sql
      or  TST.SQL.(sh|exe|com|bat|cmd) TST
      or  python TST..SQL.py
