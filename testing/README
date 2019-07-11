@@ -29,13 +29,12 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 
 - Each test named TST consists of
   + a test script which is ONE of the following:
-    * an arbitrary executable (e.g., a shell script)        (TST.sh)        (1,4)
-       on Windows, executables must be ".(exe|com)"         (TST.(exe|com)) (1,4)
-                   and scripts must be ".(bat|cmd)"         (TST.(bat|cmd)) (1,4)
-    * a Python script                                       (TST.py)        (1,4)
-    * a MAL script to be executed by mserver5               (TST.mal)  (2,4,5)
-    * a MAL script to be executed by mclient -lmal          (TST.malC) (3,4,5)
-    * a SQL script to be executed by mclient -lsql          (TST.sql)  (3,4,5)
+    * an arbitrary executable (e.g., a shell script)        (TST.sh)        (1,3)
+       on Windows, executables must be ".(exe|com)"         (TST.(exe|com)) (1,3)
+                   and scripts must be ".(bat|cmd)"         (TST.(bat|cmd)) (1,3)
+    * a Python script                                       (TST.py)        (1,3)
+    * a MAL script to be executed by mclient -lmal          (TST.malC) (2,3,4)
+    * a SQL script to be executed by mclient -lsql          (TST.sql)  (2,3,4)
    (1) In case the name of an arbitrary executable or Python script is
         suffixed with ".MAL" (i.e., TST.MAL[.(sh|exe|com|bat|cmd|py)]),
         Mtest.py starts an mserver5 with a MAL-listerner on MAPIPORT
@@ -46,20 +45,17 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
         MAPIPORT is started;
        In both cases, Mtest.py stops the mserver5 again, once the test has
         finished.
-   (2) For mserver5, if several files are present named
-        TST_sXX.mal (XX={00,01,...,99})
-        these are executed by subsequently calling mserver5
-   (3) For mclient, if several files are present named
+   (2) For mclient, if several files are present named
         (1) TST_sXX.(malC|sql) (XX={00,01,...,99})
-            these are executed subsequently using the same mserver5
+            these are executed sequentlially using the same mserver5
         (2) TST_pXX.(malC|sql) (XX={00,01,...,99})
             these are executed concurrently using the same mserver5
-   (4) For each test file TST[.*] involved,
+   (3) For each test file TST[.*] involved,
         if a file called
 	TST[.*].src  exists instead of  TST[.*],
 	TST[.*].src  is expected to contain a single line
 	giving the original location of the test file to be used.
-   (5) For each test file TST.* involved,
+   (4) For each test file TST.* involved,
         if a file called
 	TST.*.in  exists instead of  TST.*,  all environment variables in
 	TST.*.in  are replaced by their current value
@@ -120,7 +116,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   The default settings are as follows:
 	TSTSRCBASE=`<PACKAGE>-config --source`  (where you checked out <PACKAGE>'s source tree)
 	TSTTRGBASE=`<PACKAGE>-config --prefix`  (where you told configure to install <PACKAGE>)
-  You can over rule any of these defaults by setting the respective
+  You can overrule any of these defaults by setting the respective
   environment variable, or by giving, e.g., --TSTTRGBASE=/tmp as command
   line option to Mtest.py.
 

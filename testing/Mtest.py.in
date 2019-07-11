@@ -1997,8 +1997,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             ('.py',           '.py',     'python', ''),
             ('.MAL.py',       '.MAL.py', 'python', 'MAL'),
             ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
-            ('.mal',          '.mal',    'mal',    'MAL'),
-            ('_s00.mal',      '.mal',    'malXs',  'MAL'),
             ('.malC',         '.malC',   'mal',    'MAL'),
             ('_s00.malC',     '.malC',   'malXs',  'MAL'),
             ('_p00.malC',     '.malC',   'malXp',  'MAL'),
@@ -2023,11 +2021,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                 break
         else:
             if os.name == "nt":
-                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|sql)`"
+                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|malC|sql)`"
             #TODO:
             #elif os.name == "posix":
             else:
-                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.R|.rb]`"
+                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.malC|.sql|.R|.rb]`"
             if quiet:
                 pass
             elif verbose:
@@ -2123,7 +2121,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
     elif MissingTests:
         reason = "as required test%s '%s' failed." % (len(MissingTests) != 1 and 's' or '', "', '".join(MissingTests))
         elem = SkipTest(env, TST, EXT, reason, length)
-    elif EXT in (".malC", ".mal") and  not env['exe']['MAL_Client'][0]:
+    elif EXT == ".malC" and  not env['exe']['MAL_Client'][0]:
         reason = "as %s is not available." % env['MALCLIENT'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
     elif EXT == ".sql" and  not env['exe']['SQL_Client'][0]:
@@ -4263,8 +4261,8 @@ def main(argv) :
                     ErrXit("%s: not a valid test name" % args[0])
                 args = [head]
                 if tail != 'All':
-                    for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
-                                '_p00.sql', '.MAL.py', '.SQL.py', '.malC', '.mal',
+                    for ext in ('_s00.malC', '_p00.malC', '_s00.sql',
+                                '_p00.sql', '.MAL.py', '.SQL.py', '.malC',
                                 '.sql', '.py', '.R', ''):
                         # extentions .in and .src are never combined
                         if tail.endswith(ext + '.in'):
