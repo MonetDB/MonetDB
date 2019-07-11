@@ -1097,6 +1097,58 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "sql.bind", SQLSTATE(42000) "unable to find %s(%s)", tname, cname);
 }
 
+/* The output of this function is a lng bat with the RDONLY, RD_INS and RD_UPD_VAL delta counts and
+ * the number in the transaction chain */
+
+str
+mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	const char *sname = *getArgReference_str(stk, pci, 1);
+	const char *tname = *getArgReference_str(stk, pci, 2);
+	const char *cname = *getArgReference_str(stk, pci, 3);
+	mvc *m;
+	str msg;
+	BAT *b;
+	bat *bid = getArgReference_bat(stk, pci, 0);
+	sql_trans *t;
+	lng level = 0;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	if ((b = COLnew(0, TYPE_lng, 4, TRANSIENT)) == NULL)
+		throw(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	for (int i = RDONLY ; i < RD_UPD_VAL ; i++) {
+		gdk_return ores;
+		lng count;
+		BAT *o = mvc_bind(m, sname, tname, cname, i);
+		if (!o) {
+			BBPreclaim(b);
+			throw(SQL,"sql.delta", SQLSTATE(HY005) "Cannot access the column %s.%s.%s", sname, tname, cname);
+		}
+		count = BATcount(o);
+		ores = BUNappend(b, &count, false);
+		BBPunfix(o->batCacheid);
+		if (ores != GDK_SUCCEED) {
+			BBPreclaim(b);
+			throw(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL); /* should never happen */
+		}
+	}
+
+	t = m->session->tr;
+	while((t = t->parent)) level++;
+	if (BUNappend(b, &level, false) != GDK_SUCCEED){
+		BBPreclaim(b);
+		throw(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL); /* should never happen */
+	}
+
+	BBPkeepref(*bid = b->batCacheid);
+	return MAL_SUCCEED;
+}
+
 /* str mvc_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access); */
 str
 mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1207,11 +1259,12 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "sql.idxbind", SQLSTATE(HY005) "Cannot access column descriptor %s for %s", iname, tname);
 }
 
-str mvc_append_column(sql_trans *t, sql_column *c, BAT *ins) {
+str
+mvc_append_column(sql_trans *t, sql_column *c, BAT *ins)
+{
 	int res = store_funcs.append_col(t, c, ins, TYPE_bat);
-	if (res != 0) {
+	if (res != 0)
 		throw(SQL, "sql.append", SQLSTATE(42000) "Cannot append values");
-	}
 	return MAL_SUCCEED;
 }
 

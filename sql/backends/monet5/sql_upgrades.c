@@ -1951,6 +1951,31 @@ sql_update_default(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_deltas(Client c, mvc *sql)
+{
+	size_t bufsize = 1600, pos = 0;
+	char *schema = NULL, *err = NULL;
+	char *buf = GDKmalloc(bufsize);
+
+	if (buf == NULL)
+		throw(SQL, "sql_update_deltas", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	schema = stack_get_string(sql, "current_schema");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+					"set schema \"sys\";\n"
+					"create function sys.deltas (\"schema\" string, \"table\" string, \"column\" string) returns table (\"values\" bigint) external name \"sql\".\"deltas\";\n");
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -2164,5 +2189,13 @@ SQLupgrades(Client c, mvc *m)
 	if ((err = sql_update_default(c, m)) != NULL) {
 		fprintf(stderr, "!%s\n", err);
 		freeException(err);
+	}
+
+	sql_find_subtype(&tp, "string", 0, 0);
+	if (!sql_bind_func3(m->sa, s, "deltas", &tp, &tp, &tp, F_UNION)) {
+		if ((err = sql_update_deltas(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
 	}
 }

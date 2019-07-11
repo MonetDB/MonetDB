@@ -100,6 +100,10 @@ unsafe pattern restart( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
 
+pattern deltas( schema:str, table:str, column:str )(values:bat[:lng])
+address mvc_delta_values
+comment "Return the delta values sizes of a bat, plus the current transaction level";
+
 pattern emptybindidx(mvc:int, schema:str, table:str, index:str, access:int):bat[:any_1]
 address mvc_bind_idxbat_wrap;
 pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int):bat[:any_1]

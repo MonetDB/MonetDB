@@ -54,3 +54,7 @@ create procedure sys.flush_log ()
 
 create function sys.debug(debug int) returns integer
 	external name mdb."setDebug";
+
+create function sys.deltas ("schema" string, "table" string, "column" string)
+	returns table ("values" bigint)
+	external name "sql"."deltas";
