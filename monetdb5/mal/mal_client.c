@@ -236,7 +236,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->flags = 0;
 	c->errbuf = 0;
 
-	prompt = !fin ? GDKgetenv("monet_prompt") : PROMPT1;
+	prompt = PROMPT1;
 	c->prompt = GDKstrdup(prompt);
 	if ( c->prompt == NULL){
 		if (fin == NULL) {
