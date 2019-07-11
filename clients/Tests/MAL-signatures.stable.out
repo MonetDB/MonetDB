@@ -11631,6 +11631,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "sql",	"delete",	"unsafe pattern sql.delete(mvc:int, sname:str, tname:str, b:any):int ",	"mvc_delete_wrap;",	"Delete a row from a table. Returns sequence number for order dependece."	]
 [ "sql",	"delta",	"command sql.delta(col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]):bat[:any_3] ",	"DELTAbat2;",	"Return column bat with delta's applied."	]
 [ "sql",	"delta",	"command sql.delta(col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3], ins:bat[:any_3]):bat[:any_3] ",	"DELTAbat;",	"Return column bat with delta's applied."	]
+[ "sql",	"deltas",	"pattern sql.deltas(schema:str, table:str, column:str):bat[:lng] ",	"mvc_delta_values;",	"Return the delta values sizes of a bat, plus the current transaction level"	]
 [ "sql",	"dense_rank",	"pattern sql.dense_rank(b:any_1, p:bit, o:bit):int ",	"SQLdense_rank;",	"return the densely ranked groups"	]
 [ "sql",	"diff",	"pattern sql.diff(b:any_1):bit ",	"SQLdiff;",	"return true if cur != prev row"	]
 [ "sql",	"diff",	"pattern sql.diff(p:bit, b:any_1):bit ",	"SQLdiff;",	"return true if cur != prev row"	]
