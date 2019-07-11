@@ -855,7 +855,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		}
 		if (!os)
 			os = ss;
-	       	ot = mvc_bind_table(sql, os, name);
+		ot = mvc_bind_table(sql, os, name);
 		if (!ot) {
 			sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such table '%s'", name);
 			return SQL_ERR;
@@ -863,6 +863,10 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		for (n = ot->columns.set->h; n; n = n->next) {
 			sql_column *oc = n->data;
 
+			if (mvc_bind_column(sql, t, oc->base.name)) {
+				sql_error(sql, 02, SQLSTATE(42S21) "CREATE TABLE: a column named '%s' already exists\n", oc->base.name);
+				return SQL_ERR;
+			}
 			(void)mvc_create_column(sql, t, oc->base.name, &oc->type);
 		}
 	} 	break;
