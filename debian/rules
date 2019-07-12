@@ -15,7 +15,7 @@ override_dh_auto_configure:
 	dh_auto_configure -- \
 	--enable-assert=no \
 	--enable-console=yes \
-	--enable-debug=no \
+	--enable-debug=yes \
 	--enable-developer=no \
 	--enable-embedded=no \
 	--enable-embedded-r=no \
@@ -56,8 +56,7 @@ override_dh_auto_configure:
 	--with-snappy=no \
 	--with-unixodbc=yes \
 	--with-uuid=yes \
-	--with-valgrind=no \
-	X_CFLAGS=-g
+	--with-valgrind=no
 
 # currently the test suite fails
 override_dh_auto_test:

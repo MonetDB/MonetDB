@@ -971,10 +971,12 @@ fi
     CFLAGS="${CFLAGS:-%optflags -Wno-format-truncation}"
 %endif
 export CFLAGS
+# do not use --enable-optimize or --disable-optimize: we don't want
+# any changes to optimization flags
 %{configure} \
 	--enable-assert=no \
 	--enable-console=yes \
-	--enable-debug=no \
+	--enable-debug=yes \
 	--enable-developer=no \
 	--enable-embedded=no \
 	--enable-embedded-r=no \
@@ -987,7 +989,6 @@ export CFLAGS
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
-	--enable-optimize=no \
 	--enable-py2integration=%{?with_py2integration:yes}%{!?with_py2integration:no} \
 	--enable-py3integration=%{?with_py3integration:yes}%{!?with_py3integration:no} \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
