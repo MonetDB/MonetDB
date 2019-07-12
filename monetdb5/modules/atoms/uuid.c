@@ -133,10 +133,10 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external)
 		return 1;
 	}
 	for (i = 0, j = 0; i < UUID_SIZE; i++) {
+		/* on select locations we allow a '-' in the source string */
 		if (j == 8 || j == 12 || j == 16 || j == 20) {
-			if (*s != '-')
-				goto bailout;
-			s++;
+			if (*s == '-')
+				s++;
 		}
 		if (isdigit((unsigned char) *s))
 			(*retval)->u[i] = *s - '0';

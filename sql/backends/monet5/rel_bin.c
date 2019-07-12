@@ -3567,19 +3567,20 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 
 		if(!stack_push_frame(sql, "OLD-NEW"))
 			return 0;
-		if (trigger->event == 0 && trigger->time == time) { 
-			stmt *s = NULL;
+		if (trigger->event == 0 && trigger->time == time) {
 			const char *n = trigger->new_name;
 
 			/* add name for the 'inserted' to the stack */
 			if (!n) n = "new";
 
-			if(!sql_stack_add_inserted(sql, n, t, updates))
+			if(!sql_stack_add_inserted(sql, n, t, updates)) {
+				stack_pop_frame(sql);
 				return 0;
-			s = sql_parse(be, sql->sa, trigger->statement, m_instantiate);
-			
-			if (!s) 
+			}
+			if (!sql_parse(be, sql->sa, trigger->statement, m_instantiate)) {
+				stack_pop_frame(sql);
 				return 0;
+			}
 		}
 		stack_pop_frame(sql);
 	}
@@ -4529,20 +4530,22 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 		if(!stack_push_frame(sql, "OLD-NEW"))
 			return 0;
 		if (trigger->event == 2 && trigger->time == time) {
-			stmt *s = NULL;
-	
 			/* add name for the 'inserted' to the stack */
 			const char *n = trigger->new_name;
 			const char *o = trigger->old_name;
-	
+
 			if (!n) n = "new"; 
 			if (!o) o = "old"; 
 
-			if(!sql_stack_add_updated(sql, o, n, t, tids, updates))
+			if(!sql_stack_add_updated(sql, o, n, t, tids, updates)) {
+				stack_pop_frame(sql);
 				return 0;
-			s = sql_parse(be, sql->sa, trigger->statement, m_instantiate);
-			if (!s) 
+			}
+
+			if (!sql_parse(be, sql->sa, trigger->statement, m_instantiate)) {
+				stack_pop_frame(sql);
 				return 0;
+			}
 		}
 		stack_pop_frame(sql);
 	}
@@ -4798,19 +4801,20 @@ sql_delete_triggers(backend *be, sql_table *t, stmt *tids, int time, int firing_
 		if(!stack_push_frame(sql, "OLD-NEW"))
 			return 0;
 		if (trigger->event == firing_type && trigger->time == time) {
-			stmt *s = NULL;
-
 			/* add name for the 'deleted' to the stack */
 			const char *o = trigger->old_name;
 
 			if (!o) o = "old";
 
-			if(!sql_stack_add_deleted(sql, o, t, tids, internal_type))
+			if(!sql_stack_add_deleted(sql, o, t, tids, internal_type)) {
+				stack_pop_frame(sql);
 				return 0;
-			s = sql_parse(be, sql->sa, trigger->statement, m_instantiate);
+			}
 
-			if (!s) 
+			if (!sql_parse(be, sql->sa, trigger->statement, m_instantiate)) {
+				stack_pop_frame(sql);
 				return 0;
+			}
 		}
 		stack_pop_frame(sql);
 	}

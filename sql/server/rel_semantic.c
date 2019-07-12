@@ -206,9 +206,11 @@ rel_semantic(sql_query *query, symbol *s)
 		for (d = s->data.lval->h; d; d = d->next) {
 			symbol *sym = d->data.sym;
 			sql_rel *nr = rel_semantic(query, sym);
-			
-			if (!nr)
+
+			if (!nr) {
+				stack_pop_frame(sql);
 				return NULL;
+			}
 			if (r)
 				r = rel_list(sql->sa, r, nr);
 			else

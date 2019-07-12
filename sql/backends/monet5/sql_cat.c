@@ -1150,12 +1150,19 @@ SQLcreate_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1); 
 	char *name = *getArgReference_str(stk, pci, 2);
 	char *impl = *getArgReference_str(stk, pci, 3);
-	sql_schema *s;
+	sql_schema *s = NULL;
 
 	initcontext();
-	s = mvc_bind_schema(sql, sname);
-	if (!mvc_schema_privs(sql, sql->session->schema))
-		throw(SQL,"sql.create_type", SQLSTATE(0D000) "CREATE TYPE: not enough privileges to create type '%s'", sname);
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		throw(SQL,"sql.create_type",SQLSTATE(3F000) "CREATE TYPE: no such schema '%s'", sname);
+	if (!s)
+		s = cur_schema(sql);
+
+	if (!mvc_schema_privs(sql, s))
+		throw(SQL,"sql.create_type", SQLSTATE(42000) "CREATE TYPE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+	if (schema_bind_type(sql, s, name))
+		throw(SQL,"sql.create_type", SQLSTATE(42S02) "CREATE TYPE: type '%s' already exists", name);
 	if (!mvc_create_type(sql, s, name, 0, 0, 0, impl))
 		throw(SQL,"sql.create_type", SQLSTATE(0D000) "CREATE TYPE: unknown external type '%s'", impl);
 	return msg;
@@ -1168,21 +1175,25 @@ SQLdrop_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1); 
 	char *name = *getArgReference_str(stk, pci, 2);
 	int drop_action = *getArgReference_int(stk, pci, 3);
-	sql_schema *s;
+	sql_schema *s = NULL;
 	sql_type *t;
 
 	initcontext();
-	s = mvc_bind_schema(sql, sname);
-	t = schema_bind_type( sql, s, name);
-	if (!t)
-		throw(SQL,"sql.drop_type", SQLSTATE(0D000) "DROP TYPE: type '%s' does not exist", sname);
-	else if (!mvc_schema_privs(sql, sql->session->schema))
-		throw(SQL,"sql.drop_type", SQLSTATE(0D000) "DROP TYPE: not enough privileges to drop type '%s'", sname);
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		throw(SQL,"sql.drop_type",SQLSTATE(3F000) "DROP TYPE: no such schema '%s'", sname);
+	if (!s)
+		s = cur_schema(sql);
+
+	if (!mvc_schema_privs(sql, s))
+		throw(SQL,"sql.drop_type", SQLSTATE(42000) "DROP TYPE:  access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+	else if (!(t = schema_bind_type(sql, s, name)))
+		throw(SQL,"sql.drop_type", SQLSTATE(3F000) "DROP TYPE: type '%s' does not exist", name);
 	else if (!drop_action && mvc_check_dependency(sql, t->base.id, TYPE_DEPENDENCY, NULL))
-		throw(SQL,"sql.drop_type", SQLSTATE(42000) "DROP TYPE: unable to drop type %s (there are database objects which depend on it)\n", sname);
-	else if (!mvc_drop_type(sql, sql->session->schema, t, drop_action))
-		throw(SQL,"sql.drop_type", SQLSTATE(0D000) "DROP TYPE: failed to drop type '%s'", sname);
-	return MAL_SUCCEED;
+		throw(SQL,"sql.drop_type", SQLSTATE(42000) "DROP TYPE: unable to drop type %s (there are database objects which depend on it)\n", name);
+	else if (!mvc_drop_type(sql, s, t, drop_action))
+		throw(SQL,"sql.drop_type", SQLSTATE(0D000) "DROP TYPE: failed to drop type '%s'", name);
+	return msg;
 }
 
 str
