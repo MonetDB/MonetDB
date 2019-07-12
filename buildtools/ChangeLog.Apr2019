@@ -1,3 +1,12 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Fri Jul 12 2019 Sjoerd Mullender <sjoerd@acm.org>
+- Removed restriction on using combinations of --enable-assert,
+  --enable-debug,  and --enable-optimize.  --enable-debug adds a -g (or
+  -even -g3) option, --enable-debug=gdb adds a -ggdb3 flag (for GCC);
+  --enable-optimize adds a bunch of optimization flags; --disable-debug
+  (or --enable-debug=no) removes any -g flags; --disable-optimize
+  removes any -O flags; --enable-optimize=auto leaves the optimization
+  flags untouched.
+
