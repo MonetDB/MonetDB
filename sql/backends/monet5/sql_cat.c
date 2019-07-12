@@ -1170,7 +1170,7 @@ SQLdrop_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1); 
 	char *name = *getArgReference_str(stk, pci, 2);
 	int drop_action = *getArgReference_int(stk, pci, 3);
-	sql_schema *s;
+	sql_schema *s = NULL;
 	sql_type *t;
 
 	initcontext();
