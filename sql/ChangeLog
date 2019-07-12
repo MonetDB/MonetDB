@@ -1,6 +1,14 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Jul 12 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Added sys.deltas ("schema" string, "table" string, "column" string)
+  returns table ("values" bigint) system function which returns a single
+  column with 4 values: the count of the RDONLY, RD_INS and RD_UPD_ID
+  deltas of the column itself, as well as the level of the current
+  transaction in the transaction level tree. It should be used for
+  debugging purposes only.
+
 * Mon May  6 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Added "VALUES row_list" statement as a top SQL projection statement.
 
