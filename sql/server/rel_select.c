@@ -314,6 +314,7 @@ rel_with_query(mvc *sql, symbol *q )
 		sql_rel *nrel;
 
 		if (frame_find_var(sql, name)) {
+			stack_pop_frame(sql);
 			return sql_error(sql, 01, SQLSTATE(42000) "Variable '%s' already declared", name);
 		}
 		nrel = rel_semantic(sql, sym);

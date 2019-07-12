@@ -960,8 +960,10 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = strchr(p, (int)'(');
 		*p++ = 0;
 		tnme = sa_strdup(m->sa, tnme);
-		if (!tnme)
+		if (!tnme) {
+			stack_pop_frame(m);
 			return createException(SQL,"RAstatement2",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 		d = strtol(p, &p, 10);
 		p++; /* skip , */
 		s = strtol(p, &p, 10);
@@ -974,11 +976,15 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		 * */
 		if (nr >= 0) { 
 			append(ops, exp_atom_ref(m->sa, nr, &t));
-			if(!sql_set_arg(m, nr, a))
+			if(!sql_set_arg(m, nr, a)) {
+				stack_pop_frame(m);
 				return createException(SQL,"RAstatement2",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 		} else {
-			if(!stack_push_var(m, vnme+1, &t))
+			if(!stack_push_var(m, vnme+1, &t)) {
+				stack_pop_frame(m);
 				return createException(SQL,"RAstatement2",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 			append(ops, exp_var(m->sa, sa_strdup(m->sa, vnme+1), &t, m->frame));
 		}
 		c = strchr(p, (int)',');

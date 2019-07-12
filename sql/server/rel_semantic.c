@@ -205,9 +205,11 @@ rel_semantic(mvc *sql, symbol *s)
 		for (d = s->data.lval->h; d; d = d->next) {
 			symbol *sym = d->data.sym;
 			sql_rel *nr = rel_semantic(sql, sym);
-			
-			if (!nr)
+
+			if (!nr) {
+				stack_pop_frame(sql);
 				return NULL;
+			}
 			if (r)
 				r = rel_list(sql->sa, r, nr);
 			else
