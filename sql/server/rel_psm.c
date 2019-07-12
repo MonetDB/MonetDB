@@ -1249,16 +1249,16 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *t
 
 	if (!instantiate) {
 		t = mvc_bind_table(sql, ss, tname);
-		if(!stack_push_frame(sql, "OLD-NEW"))
+		if (!stack_push_frame(sql, "OLD-NEW"))
 			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		/* we need to add the old and new tables */
-		if (!instantiate && new_name) {
-			if(!_stack_push_table(sql, new_name, t))
-				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		if (new_name && !_stack_push_table(sql, new_name, t)) {
+			stack_pop_frame(sql);
+			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		if (!instantiate && old_name) {
-			if(!_stack_push_table(sql, old_name, t))
-				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		if (old_name && !_stack_push_table(sql, old_name, t)) {
+			stack_pop_frame(sql);
+			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	if (condition) {
@@ -1270,8 +1270,11 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *t
 			rel = stack_find_rel_view(sql, old_name);
 		if (rel)
 			rel = rel_logical_exp(sql, rel, condition, sql_where);
-		if (!rel)
+		if (!rel) {
+			if (!instantiate)
+				stack_pop_frame(sql);
 			return NULL;
+		}
 		/* transition tables */
 		/* insert: rel_select(table [new], searchcondition) */
 		/* delete: rel_select(table [old], searchcondition) */
@@ -1284,6 +1287,8 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *t
 	sq = sequential_block(sql, NULL, NULL, stmts, NULL, 1);
 	r = rel_psm_block(sql->sa, sq);
 
+	if (!instantiate)
+		stack_pop_frame(sql);
 	/* todo trigger_columns */
 	(void)columns;
 	return r;
