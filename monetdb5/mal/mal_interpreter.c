@@ -544,7 +544,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (stk->cmd == 'x' ) {
 				stk->cmd = 0;
 				stkpc = mb->stop;
-				continue;
+				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
+				break;
 			}
 		}
 
