@@ -911,12 +911,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			exceptionVar = -1;
 			msg = strchr(ret, ':');
 			if (msg) {
-				*msg = 0;
 				exceptionVar = findVariableLength(mb, ret, (int)(msg - ret));
-				*msg = ':';
 			}
 			if (exceptionVar == -1)
-				exceptionVar = findVariableLength(mb, "ANYexception", 12);
+				exceptionVar = findVariable(mb, "ANYexception");
 
 			/* unknown exceptions lead to propagation */
 			if (exceptionVar == -1) {
