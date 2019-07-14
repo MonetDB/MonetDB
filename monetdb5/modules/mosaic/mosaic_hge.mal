@@ -1,0 +1,4 @@
+module mosaic;
+
+pattern projection(b:bat[:oid], cand:bat[:hge]) :bat[:hge]
+address MOSprojection;

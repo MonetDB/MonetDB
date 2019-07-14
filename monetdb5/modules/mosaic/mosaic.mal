@@ -187,9 +187,6 @@ address MOSprojection;
 pattern projection(b:bat[:oid], cand:bat[:lng]) :bat[:lng]
 address MOSprojection;
 
-pattern projection(b:bat[:oid], cand:bat[:hge]) :bat[:hge]
-address MOSprojection;
-
 pattern projection(b:bat[:oid], cand:bat[:oid]) :bat[:oid]
 address MOSprojection;
 
@@ -217,4 +214,3 @@ comment "Overloaded projection operation";
 pattern join(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address MOSjoin
 comment "Overloaded join operation";
-
