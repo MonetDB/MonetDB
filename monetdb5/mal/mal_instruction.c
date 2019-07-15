@@ -599,27 +599,20 @@ findVariable(MalBlkPtr mb, const char *name)
 }
 
 /* The second version of findVariable assumes you have not yet
- * allocated a private structure. This is particularly usefull during
+ * allocated a private structure. This is particularly useful during
  * parsing, because most variables are already defined. This way we
  * safe GDKmalloc/GDKfree. */
 int
 findVariableLength(MalBlkPtr mb, str name, int len)
 {
 	int i;
-	int j;
 
-	for (i = mb->vtop - 1; i >= 0; i--)
-	{
-			str s = mb->var[i].id;
+	for (i = mb->vtop - 1; i >= 0; i--) {
+		const char *s = getVarName(mb, i);
 
-			j = 0;
-			if (s)
-				for (j = 0; j < len; j++)
-					if (name[j] != s[j])
-						break;
-			if (j == len && s && s[j] == 0)
-				return i;
-		}
+		if (s && strncmp(name, s, len) == 0 && s[len] == 0)
+			return i;
+	}
 	return -1;
 }
 

@@ -2539,6 +2539,7 @@ AC_CHECK_FUNCS([\
 	getlogin \
 	getopt \
 	getopt_long \
+	getrlimit \
 	gettimeofday \
 	getuid \
 	gmtime_r \

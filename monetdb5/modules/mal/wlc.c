@@ -350,10 +350,9 @@ WLCinit(void)
 		if( msg)
 			GDKerror("%s",msg);
 		if (MT_create_thread(&wlc_logger, WLClogger , (void*) 0,
-							 MT_THR_JOINABLE, "WLClogger") < 0) {
+							 MT_THR_DETACHED, "WLClogger") < 0) {
 			GDKerror("wlc.logger thread could not be spawned");
 		}
-		GDKregister(wlc_logger);
 	}
 	return MAL_SUCCEED;
 }
