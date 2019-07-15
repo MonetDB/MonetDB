@@ -41,6 +41,9 @@ int GDKverbose = 0;
 #ifdef HAVE_SYS_SYSCTL_H
 # include <sys/sysctl.h>
 #endif
+#if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT)
+#include <sys/resource.h>
+#endif
 
 #ifdef __CYGWIN__
 #include <sysinfoapi.h>
@@ -391,6 +394,48 @@ MT_init(void)
 # endif
 #else
 # error "don't know how to get the amount of physical memory for your OS"
+#endif
+	/* limit values to whatever cgroups gives us */
+	FILE *f;
+	/* limit of memory usage */
+	f = fopen("/sys/fs/cgroup/memory/memory.limit_in_bytes", "r");
+	if (f != NULL) {
+		uint64_t mem;
+		if (fscanf(f, "%" SCNu64, &mem) == 1
+		    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+			_MT_npages = (size_t) (mem / _MT_pagesize);
+		}
+		fclose(f);
+	}
+	/* soft limit of memory usage */
+	f = fopen("/sys/fs/cgroup/memory/memory.soft_limit_in_bytes", "r");
+	if (f != NULL) {
+		uint64_t mem;
+		if (fscanf(f, "%" SCNu64, &mem) == 1
+		    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+			_MT_npages = (size_t) (mem / _MT_pagesize);
+		}
+		fclose(f);
+	}
+	/* limit of memory+swap usage
+	 * we use this as maximum virtual memory size */
+	f = fopen("/sys/fs/cgroup/memory/memory.memsw.limit_in_bytes", "r");
+	if (f != NULL) {
+		uint64_t mem;
+		if (fscanf(f, "%" SCNu64, &mem) == 1
+		    && mem < (uint64_t) GDK_vm_maxsize) {
+			GDK_vm_maxsize = (size_t) mem;
+		}
+		fclose(f);
+	}
+#if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT) && defined(RLIMIT_AS)
+	struct rlimit l;
+	/* address space (virtual memory) limit */
+	if (getrlimit(RLIMIT_AS, &l) == 0
+	    && l.rlim_cur != RLIM_INFINITY
+	    && l.rlim_cur < GDK_vm_maxsize) {
+		GDK_vm_maxsize = l.rlim_cur;
+	}
 #endif
 }
 

@@ -1,3 +1,8 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Mon Jul 15 2019 Sjoerd Mullender <sjoerd@acm.org>
+- We now look at the limits imposed by cgroups and the setrlimit system
+  call to initialize some internal values related to how much (virtual)
+  memory we think is available.
+
