@@ -355,7 +355,7 @@ MT_Id sqllogthread, idlethread;
 static str
 SQLinit(Client c)
 {
-	char *debug_str = GDKgetenv("sql_debug");
+	const char *debug_str = GDKgetenv("sql_debug");
 	char *msg = MAL_SUCCEED, *other = MAL_SUCCEED;
 	bool readonly = GDKgetenv_isyes("gdk_readonly");
 	bool single_user = GDKgetenv_isyes("gdk_single_user");
