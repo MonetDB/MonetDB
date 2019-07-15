@@ -2027,7 +2027,53 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 	return store_load();
 }
 
+static int
+store_needs_vacuum( sql_trans *tr )
+{
+	size_t max_dels = GDKdebug & FORCEMITOMASK ? 1 : 128;
+	sql_schema *s = find_sql_schema(tr, "sys");
+	node *n;
+
+	for( n = s->tables.set->h; n; n = n->next) {
+		sql_table *t = n->data;
+		sql_column *c = t->columns.set->h->data;
+
+		if (!t->system)
+			continue;
+		/* no inserts, updates and enough deletes ? */
+		if (store_funcs.count_col(tr, c, 0) == 0 &&
+		    store_funcs.count_upd(tr, t) == 0 &&
+		    store_funcs.count_del(tr, t) >= max_dels)
+			return 1;
+	}
+	return 0;
+}
+
+static int
+store_vacuum( sql_trans *tr )
+{
+	/* tables */
+	size_t max_dels = GDKdebug & FORCEMITOMASK ? 1 : 128;
+	sql_schema *s = find_sql_schema(tr, "sys");
+	node *n;
+
+	for( n = s->tables.set->h; n; n = n->next) {
+		sql_table *t = n->data;
+		sql_column *c = t->columns.set->h->data;
+
+		if (!t->system)
+			continue;
+		if (store_funcs.count_col(tr, c, 0) == 0 &&
+		    store_funcs.count_upd(tr, t) == 0 &&
+		    store_funcs.count_del(tr, t) >= max_dels)
+			if (table_funcs.table_vacuum(tr, t) != SQL_OK)
+				return -1;
+	}
+	return 0;
+}
+
 static bool logging = false;
+static ATOMIC_TYPE need_flush = ATOMIC_VAR_INIT(0);
 
 void
 store_exit(void)
@@ -2086,57 +2132,10 @@ store_apply_deltas(void)
 	logging = false;
 }
 
-static ATOMIC_TYPE need_flush = ATOMIC_VAR_INIT(0);
-
 void
 store_flush_log(void)
 {
 	ATOMIC_SET(&need_flush, 1);
-}
-
-static int
-store_needs_vacuum( sql_trans *tr )
-{
-	size_t max_dels = GDKdebug & FORCEMITOMASK ? 1 : 128;
-	sql_schema *s = find_sql_schema(tr, "sys");
-	node *n;
-
-	for( n = s->tables.set->h; n; n = n->next) {
-		sql_table *t = n->data;
-		sql_column *c = t->columns.set->h->data;
-
-		if (!t->system)
-			continue;
-		/* no inserts, updates and enough deletes ? */
-		if (store_funcs.count_col(tr, c, 0) == 0 &&
-		    store_funcs.count_upd(tr, t) == 0 &&
-		    store_funcs.count_del(tr, t) >= max_dels)
-			return 1;
-	}
-	return 0;
-}
-
-static int
-store_vacuum( sql_trans *tr )
-{
-	/* tables */
-	size_t max_dels = GDKdebug & FORCEMITOMASK ? 1 : 128;
-	sql_schema *s = find_sql_schema(tr, "sys");
-	node *n;
-
-	for( n = s->tables.set->h; n; n = n->next) {
-		sql_table *t = n->data;
-		sql_column *c = t->columns.set->h->data;
-
-		if (!t->system)
-			continue;
-		if (store_funcs.count_col(tr, c, 0) == 0 &&
-		    store_funcs.count_upd(tr, t) == 0 &&
-		    store_funcs.count_del(tr, t) >= max_dels)
-			if (table_funcs.table_vacuum(tr, t) != SQL_OK)
-				return -1;
-	}
-	return 0;
 }
 
 void
