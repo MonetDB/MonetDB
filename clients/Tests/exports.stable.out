@@ -274,7 +274,6 @@ int GDKnr_threads;
 void GDKprepareExit(void);
 void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast);
 void *GDKrealloc(void *pold, size_t size) __attribute__((__alloc_size__(2))) __attribute__((__warn_unused_result__));
-void GDKregister(MT_Id pid);
 gdk_return GDKreleasemmap(void *ptr, size_t size, size_t id);
 gdk_return GDKreleasesem(int sem_id);
 void GDKreset(int status);

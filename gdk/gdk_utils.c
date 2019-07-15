@@ -754,51 +754,19 @@ GDKexiting(void)
 	return (bool) (ATOMIC_GET(&GDKstopped) > 0);
 }
 
-struct serverthread {
-	struct serverthread *next;
-	MT_Id pid;
-};
-static ATOMIC_PTR_TYPE serverthread = ATOMIC_PTR_VAR_INIT(NULL);
-
 void
 GDKprepareExit(void)
 {
-	struct serverthread *st;
-
 	if (ATOMIC_ADD(&GDKstopped, 1) > 0)
 		return;
 
 	THRDDEBUG dump_threads();
-	/* we're saved from the ABA problem in this code because it is
-	 * only executed by one thread */
-	while ((st = ATOMIC_PTR_GET(&serverthread)) != NULL) {
-		while (!ATOMIC_PTR_CAS(&serverthread, &((void *) {st}), st->next))
-			;
-		MT_join_thread(st->pid);
-		GDKfree(st);
-	}
 	join_detached_threads();
-}
-
-/* Register a thread that should be waited for in GDKreset.  The
- * thread must exit by itself when GDKexiting() returns true. */
-void
-GDKregister(MT_Id pid)
-{
-	struct serverthread *st;
-
-	if ((st = GDKmalloc(sizeof(struct serverthread))) == NULL)
-		return;
-	st->pid = pid;
-	st->next = ATOMIC_PTR_GET(&serverthread);
-	while (!ATOMIC_PTR_CAS(&serverthread, &((void *) {st->next}), st))
-		;
 }
 
 void
 GDKreset(int status)
 {
-	struct serverthread *st;
 	MT_Id pid = MT_getpid();
 
 	assert(GDKexiting());
@@ -812,21 +780,12 @@ GDKreset(int status)
 		GDKval = NULL;
 	}
 
-	/* we're saved from the ABA problem in this code because it is
-	 * only executed by one thread */
-	while ((st = ATOMIC_PTR_GET(&serverthread)) != NULL) {
-		while (!ATOMIC_PTR_CAS(&serverthread, &((void *) {st}), st->next))
-			;
-		MT_join_thread(st->pid);
-		GDKfree(st);
-	}
 	join_detached_threads();
 
 	if (status == 0) {
 		/* they had their chance, now kill them */
 		bool killed = false;
 		MT_lock_set(&GDKthreadLock);
-		assert(ATOMIC_PTR_GET(&serverthread) == NULL);
 		for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
 			MT_Id victim;
 			if ((victim = (MT_Id) ATOMIC_GET(&t->pid)) != 0) {
