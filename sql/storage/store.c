@@ -1749,14 +1749,18 @@ store_load(void) {
 
 	if (first) {
 		/* cannot initialize database in readonly mode */
-		if (store_readonly) {
+		if (store_readonly)
+			return -1;
+		tr = sql_trans_create(backend_stk, NULL, NULL);
+		if (!tr) {
+			fprintf(stderr, "Failure to start a transaction while loading the storage\n");
 			return -1;
 		}
-		tr = sql_trans_create(backend_stk, NULL, NULL);
-		if(!tr)
-			return -1;
 	} else {
-		store_oids = GDKzalloc(300 * sizeof(sqlid)); /* 150 suffices */
+		if (!(store_oids = GDKzalloc(300 * sizeof(sqlid)))) { /* 150 suffices */
+			fprintf(stderr, "Allocation failure while loading the storage\n");
+			return -1;
+		}
 	}
 
 	s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN, USER_MONETDB);
@@ -1944,7 +1948,6 @@ store_load(void) {
 int
 store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk)
 {
-
 	int v = 1;
 
 	backend_stk = stk;
