@@ -43,7 +43,7 @@ slash_2_dir_sep(str fname)
 }
 
 static str
-malResolveFile(str fname)
+malResolveFile(const char *fname)
 {
 	char path[FILENAME_MAX];
 	str script;
