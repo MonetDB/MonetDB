@@ -207,7 +207,7 @@ SQLepilogue(void *ret)
 	str res;
 
 	(void) ret;
-	SQLexit(NULL);
+	(void) SQLexit(NULL);
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
 	res = msab_retreatScenario(m);
@@ -367,15 +367,16 @@ SQLinit(Client c)
 	backend *be = NULL;
 	mvc *m = NULL;
 
-
 #ifdef _SQL_SCENARIO_DEBUG
 	fprintf(stderr, "#SQLinit Monet 5\n");
 #endif
-	if (SQLinitialized)
-		return MAL_SUCCEED;
-
-
 	MT_lock_set(&sql_contextLock);
+
+	if (SQLinitialized) {
+		MT_lock_unset(&sql_contextLock);
+		return MAL_SUCCEED;
+	}
+
 	be_funcs = (backend_functions) {
 		.fstack = &monet5_freestack,
 		.fcode = &monet5_freecode,
@@ -678,9 +679,12 @@ SQLinitClient(Client c)
 #ifdef _SQL_SCENARIO_DEBUG
 	fprintf(stderr, "#SQLinitClient\n");
 #endif
-	if (SQLinitialized == 0)// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
-		return msg;
+
 	MT_lock_set(&sql_contextLock);
+	if (SQLinitialized == 0) {// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
+		MT_lock_unset(&sql_contextLock);
+		return msg;
+	}
 	if ((msg = WLRinit()) != MAL_SUCCEED) {
 		MT_lock_unset(&sql_contextLock);
 		return msg;
@@ -698,12 +702,19 @@ str
 SQLexitClient(Client c)
 {
 	str err;
+
 #ifdef _SQL_SCENARIO_DEBUG
 	fprintf(stderr, "#SQLexitClient\n");
 #endif
-	if (SQLinitialized == FALSE)
+
+	MT_lock_set(&sql_contextLock);
+	if (SQLinitialized == FALSE) {
+		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLexitClient", SQLSTATE(42000) "Catalogue not available");
-	if ((err = SQLresetClient(c)) != MAL_SUCCEED)
+	}
+	err = SQLresetClient(c);
+	MT_lock_unset(&sql_contextLock);
+	if (err != MAL_SUCCEED)
 		return err;
 	MALexitClient(c);
 	return MAL_SUCCEED;
@@ -833,8 +844,13 @@ SQLreader(Client c)
 	int language = -1;
 	mvc *m = NULL;
 	bool blocked = isa_block_stream(in->s);
+	int isSQLinitialized;
 
-	if (SQLinitialized == FALSE) {
+	MT_lock_set(&sql_contextLock);
+	isSQLinitialized = SQLinitialized;
+	MT_lock_unset(&sql_contextLock);
+
+	if (isSQLinitialized == FALSE) {
 		c->mode = FINISHCLIENT;
 		return MAL_SUCCEED;
 	}
