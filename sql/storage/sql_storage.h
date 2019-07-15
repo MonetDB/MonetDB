@@ -344,7 +344,7 @@ extern res_table *res_tables_find(res_table *results, int res_id);
 extern int store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk);
 extern void store_exit(void);
 
-extern void store_apply_deltas(void);
+extern int store_apply_deltas(bool locked);
 extern void store_flush_log(void);
 extern void store_manager(void);
 extern void idle_manager(void);

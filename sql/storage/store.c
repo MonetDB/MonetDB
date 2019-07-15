@@ -1341,7 +1341,7 @@ store_upgrade_ids(sql_trans* tr)
 			}
 		}
 	}
-	store_apply_deltas();
+	store_apply_deltas(true);
 	logger_funcs.with_ids();
 	return SQL_OK;
 }
@@ -2115,9 +2115,10 @@ store_exit(void)
 	MT_lock_unset(&bs_lock);
 }
 
-/* call locked ! */
-void
-store_apply_deltas(void)
+
+/* call locked! */
+int
+store_apply_deltas(bool locked)
 {
 	int res = LOG_OK;
 
@@ -2127,9 +2128,16 @@ store_apply_deltas(void)
 	if (store_funcs.gtrans_update)
 		store_funcs.gtrans_update(gtrans);
 	res = logger_funcs.restart();
-	if (logging && res == LOG_OK)
+	if (res == LOG_OK) {
+		if (!locked)
+			MT_lock_unset(&bs_lock);
 		res = logger_funcs.cleanup();
+		if (!locked)
+			MT_lock_set(&bs_lock);
+	}
 	logging = false;
+
+	return res;
 }
 
 void
@@ -2176,21 +2184,8 @@ store_manager(void)
 		ATOMIC_SET(&need_flush, 0);
 
 		MT_thread_setworking("flushing");
-		logging = true;
-		/* make sure we reset all transactions on re-activation */
-		gtrans->wstime = timestamp();
-		if (store_funcs.gtrans_update) {
-			store_funcs.gtrans_update(gtrans);
-		}
-		res = logger_funcs.restart();
+		store_apply_deltas(false);
 
-		MT_lock_unset(&bs_lock);
-		if (logging && res == LOG_OK) {
-			res = logger_funcs.cleanup();
-		}
-
-		MT_lock_set(&bs_lock);
-		logging = false;
 		MT_lock_unset(&bs_lock);
 
 		if (res != LOG_OK)

@@ -149,7 +149,7 @@ sqlcleanup(mvc *c, int err)
 			sql_trans_commit(c->session->tr);
 			/* write changes to disk */
 			sql_trans_end(c->session);
-			store_apply_deltas();
+			store_apply_deltas(true);
 			sql_trans_begin(c->session);
 		}
 		store_unlock();

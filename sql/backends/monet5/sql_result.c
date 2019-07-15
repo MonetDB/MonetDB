@@ -874,7 +874,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 	if (locked) {
 		/* flush old changes to disk */
 		sql_trans_end(m->session);
-		store_apply_deltas();
+		store_apply_deltas(true);
 		sql_trans_begin(m->session);
 	}
 
