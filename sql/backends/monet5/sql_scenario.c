@@ -358,7 +358,7 @@ MT_Id sqllogthread, idlethread;
 static str
 SQLinit(Client c)
 {
-	char *debug_str = GDKgetenv("sql_debug"), *msg = MAL_SUCCEED;
+	char *debug_str = GDKgetenv("sql_debug"), *msg = MAL_SUCCEED, *other = MAL_SUCCEED;
 	bool readonly = GDKgetenv_isyes("gdk_readonly");
 	bool single_user = GDKgetenv_isyes("gdk_single_user");
 	const char *gmt = "GMT";
@@ -569,8 +569,12 @@ SQLinit(Client c)
 		sqlcleanup(m, mvc_status(m));
 	}
 
-	msg = SQLresetClient(c);
+	other = SQLresetClient(c);
 	MT_lock_unset(&sql_contextLock);
+	if (other && !msg) /* 'msg' variable might be set or not, as well as 'other'. Throw the earliest one */
+		msg = other;
+	else if (other)
+		freeException(other);
 	if (msg != MAL_SUCCEED)
 		return msg;
 
