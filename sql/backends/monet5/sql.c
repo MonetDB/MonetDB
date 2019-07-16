@@ -1113,9 +1113,13 @@ append_bat_delta_size(mvc *m, BAT* res, const char *sname, const char *tname, co
 	return MAL_SUCCEED;
 }
 
-/* The output of this function is a lng bat with the RDONLY, RD_INS and RD_UPD_VAL delta counts for provided column,
- * the number of deletes of the column's table and the number in the transaction chain (.i.e for each savepoint a
- * new transaction is added in the chain) */
+/* The output of this function is a lng bat with:
+ *  - A flag indicating if the column's upper table is cleared or not.
+ *  - RDONLY, RD_INS and RD_UPD_ID delta counts for the input column (each in a separate row)
+ *  - number of deletes of the column's table
+ *  - the number in the transaction chain (.i.e for each savepoint a new transaction is added in the chain)
+ *  If the table is cleared, the values RDONLY, RD_INS and RD_UPD_ID and the number of deletes will be 0.
+ */
 
 str
 mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1130,7 +1134,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_trans *tr;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	lng level = 0, deletes;
+	lng level = 0, deletes, cleared;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		goto cleanup;
@@ -1148,10 +1152,17 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(t = mvc_bind_table(m, s, tname)))
 		throw(SQL, "sql.delta", SQLSTATE(3F000) "No such table '%s' in schema '%s'", tname, s->base.name);
 
-	if ((b = COLnew(0, TYPE_lng, 5, TRANSIENT)) == NULL) {
+	if ((b = COLnew(0, TYPE_lng, 6, TRANSIENT)) == NULL) {
 		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
+
+	cleared = t->cleared ? 1 : 0;
+	if (BUNappend(b, &cleared, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+
 	if ((msg = append_bat_delta_size(m, b, sname, tname, cname, RDONLY)))
 		goto cleanup;
 	if ((msg = append_bat_delta_size(m, b, sname, tname, cname, RD_INS)))
