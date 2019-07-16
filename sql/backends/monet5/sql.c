@@ -1967,8 +1967,10 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (store_funcs.count_del(tr, t)) {
 		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
 		BAT *diff;
-		if (d == NULL)
+		if (d == NULL) {
+			BBPunfix(tids->batCacheid);
 			throw(SQL,"sql.tid", SQLSTATE(45002) "Can not bind delete column");
+		}
 
 		diff = BATdiff(tids, d, NULL, NULL, false, BUN_NONE);
 		BBPunfix(d->batCacheid);
