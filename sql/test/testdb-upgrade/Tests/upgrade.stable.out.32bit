@@ -5114,8 +5114,8 @@ set schema "sys";
 # 16:03:28 >  
 
 #select count(*) from testschema.smallstring;
-% .L3 # table_name
-% L3 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 66	]

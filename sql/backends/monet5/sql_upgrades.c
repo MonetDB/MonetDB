@@ -1963,8 +1963,10 @@ sql_update_deltas(Client c, mvc *sql)
 	schema = stack_get_string(sql, "current_schema");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-					"set schema \"sys\";\n"
-					"create function sys.deltas (\"schema\" string, \"table\" string, \"column\" string) returns table (\"values\" bigint) external name \"sql\".\"deltas\";\n");
+			"set schema \"sys\";\n"
+			"create function sys.deltas (\"schema\" string, \"table\" string, \"column\" string) returns table (\"values\" bigint) external name \"sql\".\"deltas\";\n"
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name in ('deltas') and type = %d;\n", F_UNION);
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");

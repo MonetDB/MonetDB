@@ -5936,7 +5936,12 @@ update sys.functions set system = true where name = 'filter' and schema_id = (se
 set schema "sys";
 commit;
 
-# MonetDB/SQL module loaded
+Running database upgrade commands:
+set schema "sys";
+create function sys.deltas ("schema" string, "table" string, "column" string) returns table ("values" bigint) external name "sql"."deltas";
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('deltas') and type = 5;
+set schema "sys";
+commit;
 
 
 # 11:26:52 >  
@@ -5944,8 +5949,8 @@ commit;
 # 11:26:52 >  
 
 #select count(*) from testschema.smallstring;
-% .L3 # table_name
-% L3 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 66	]

@@ -5898,6 +5898,14 @@ insert into sys.functions values (145, 'count', 'count', 'aggr', 0, 3, false, fa
 insert into sys.args values (29566, 145, 'res', 'bigint', 64, 0, 0, 0);
 set schema "sys";
 
+Running database upgrade commands:
+set schema "sys";
+create function sys.deltas ("schema" string, "table" string, "column" string) returns table ("values" bigint) external name "sql"."deltas";
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('deltas') and type = 5;
+set schema "sys";
+commit;
+
+# MonetDB/SQL module loaded
 
 # 15:17:55 >  
 # 15:17:55 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6495" "--port=30245"
