@@ -140,6 +140,7 @@ base_init(sql_allocator *sa, sql_base * b, sqlid id, int flags, const char *name
 	assert(sa);
 	b->wtime = 0;
 	b->rtime = 0;
+	b->stime = 0;
 	b->flags = flags;
 	b->name = NULL;
 	b->refcnt = 1;

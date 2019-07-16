@@ -284,7 +284,7 @@ int
 mvc_trans(mvc *m)
 {
 	int schema_changed = 0, err = m->session->status;
-	assert(!m->session->active);	/* can only start a new transaction */
+	assert(!m->session->tr->active);	/* can only start a new transaction */
 
 	store_lock();
 	if (GDKverbose >= 1)
@@ -371,7 +371,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	char operation[BUFSIZ];
 
 	assert(tr);
-	assert(m->session->active);	/* only commit an active transaction */
+	assert(m->session->tr->active);	/* only commit an active transaction */
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_commit %s\n", (name) ? name : "");
@@ -520,7 +520,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		fprintf(stderr, "#mvc_rollback %s\n", (name) ? name : "");
 
 	assert(tr);
-	assert(m->session->active);	/* only abort an active transaction */
+	assert(m->session->tr->active);	/* only abort an active transaction */
 	(void) disabling_auto_commit;
 
 	store_lock();
@@ -588,7 +588,7 @@ mvc_release(mvc *m, const char *name)
 	str msg = MAL_SUCCEED;
 
 	assert(tr);
-	assert(m->session->active);	/* only release active transactions */
+	assert(m->session->tr->active);	/* only release active transactions */
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_release %s\n", (name) ? name : "");
@@ -714,7 +714,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 		fprintf(stderr, "#mvc_reset\n");
 	tr = m->session->tr;
 	if (tr && tr->parent) {
-		assert(m->session->active == 0);
+		assert(m->session->tr->active == 0);
 		store_lock();
 		while (tr->parent->parent != NULL) 
 			tr = sql_trans_destroy(tr);
@@ -783,7 +783,7 @@ mvc_destroy(mvc *m)
 	tr = m->session->tr;
 	if (tr) {
 		store_lock();
-		if (m->session->active)
+		if (m->session->tr->active)
 			sql_trans_end(m->session);
 		while (tr->parent)
 			tr = sql_trans_destroy(tr);

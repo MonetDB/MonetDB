@@ -3142,6 +3142,8 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 							tb->rtime = fb->rtime;
 						if (apply && fb->wtime && fb->wtime > tb->wtime)
 							tb->wtime = fb->wtime;
+						if (apply)
+							fb->stime = tb->stime = tb->wtime;
 					}
 				}
 			}
@@ -3166,6 +3168,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 						fb->flags = 0;
 					}
 					tb->flags = 0;
+					fb->stime = tb->stime = tb->wtime;
 				} else if (!rollforward_creates(tr, fb, mode)) {
 					ok = LOG_ERR;
 				}
@@ -3683,8 +3686,6 @@ rollforward_trans(sql_trans *tr, int mode)
 			if (tr->schema_updates) 
 				schema_number++;
 		}
-		//tr->wtime = tr->rtime = 0;
-	//	assert(gtrans->wstime == gtrans->wtime);
 	}
 	return ok;
 }
@@ -3765,6 +3766,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 				if (rf)
 					ok = rf(tr, fb, pfb);
 				fb->rtime = fb->wtime = 0;
+				fb->stime = pfb->wtime;
 				n = n->next;
 				m = m->next;
 				if (bs_debug) 
@@ -3783,6 +3785,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 				/* cs_add_before add r to fs before node n */
 				cs_add_before(fs, n, r);
 				r->rtime = r->wtime = 0;
+				r->stime = pfb->wtime;
 				m = m->next;
 				if (bs_debug) 
 					fprintf(stderr, "#reset_cs new %s\n", (r->name)?r->name:"help");
@@ -3794,6 +3797,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 			sql_base *r = fd(tr, 0, pfb, b);
 			cs_add(fs, r, 0);
 			r->rtime = r->wtime = 0;
+			r->stime = pfb->wtime;
 			if (bs_debug) {
 				fprintf(stderr, "#reset_cs new %s\n",
 					(r->name)?r->name:"help");
@@ -3822,10 +3826,11 @@ static int
 reset_idx(sql_trans *tr, sql_idx *fi, sql_idx *pfi)
 {
 	/* did we access the idx or is the global changed after we started */
-	if (fi->base.rtime || fi->base.wtime || tr->stime < pfi->base.wtime) {
+	if (fi->base.rtime || fi->base.wtime || tr->stime < pfi->base.wtime || fi->base.stime < pfi->base.wtime) {
 		if (isTable(fi->t)) 
 			store_funcs.destroy_idx(NULL, fi);
 		fi->base.wtime = fi->base.rtime = 0;
+		fi->base.stime = pfi->base.wtime;
 	}
 	return LOG_OK;
 }
@@ -3834,7 +3839,7 @@ static int
 reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 {
 	/* did we access the column or is the global changed after we started */
-	if (fc->base.rtime || fc->base.wtime || tr->stime < pfc->base.wtime) {
+	if (fc->base.rtime || fc->base.wtime || tr->stime < pfc->base.wtime || fc->base.stime < pfc->base.wtime) {
 
 		if (isTable(fc->t)) 
 			store_funcs.destroy_col(NULL, fc);
@@ -3856,6 +3861,7 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 		if (pfc->def)
 			fc->def = pfc->def;
 		fc->base.wtime = fc->base.rtime = 0;
+		fc->base.stime = pfc->base.wtime;
 		fc->min = fc->max = NULL;
 	}
 	return LOG_OK;
@@ -3897,7 +3903,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		return LOG_OK;
 
 	/* did we access the table or did the global change */
-	if (ft->base.rtime || ft->base.wtime || tr->stime < pft->base.wtime) {
+	if (ft->base.rtime || ft->base.wtime || tr->stime < pft->base.wtime || ft->base.stime < pft->base.wtime) {
 		int ok = LOG_OK;
 
 		if (isTable(ft)) 
@@ -3906,6 +3912,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		ft->base.wtime = ft->base.rtime = 0;
 		ft->cleared = 0;
 		ft->access = pft->access;
+		ft->base.stime = pft->base.wtime;
 
 		if (tr->status == 1 && isRenamed(ft)) { /* remove possible renaming */
 			list_hash_delete(ft->s->tables.set, ft, NULL);
@@ -6439,7 +6446,7 @@ sql_session_create(backend_stack stk, int ac )
 		return NULL;
 	}
 	s->schema_name = NULL;
-	s->active = 0;
+	s->tr->active = 0;
 	s->stk = stk;
 	if(!sql_session_reset(s, ac)) {
 		sql_trans_destroy(s->tr);
@@ -6453,7 +6460,7 @@ sql_session_create(backend_stack stk, int ac )
 void
 sql_session_destroy(sql_session *s) 
 {
-	assert(s->active == 0);
+	assert(!s->tr || s->tr->active == 0);
 	if (s->tr)
 		sql_trans_destroy(s->tr);
 	if (s->schema_name)
@@ -6486,7 +6493,7 @@ sql_session_reset(sql_session *s, int ac)
 				sql_trans_clear_table(s->tr, t);
 		}
 	}
-	assert(s->active == 0);
+	assert(s->tr && s->tr->active == 0);
 
 	if (s->schema_name)
 		_DELETE(s->schema_name);
@@ -6518,8 +6525,9 @@ sql_trans_begin(sql_session *s)
 #ifdef STORE_DEBUG
 	fprintf(stderr,"#sql trans begin %d\n", snr);
 #endif
-	if (tr->stime < gtrans->wstime || tr->wtime || 
-			store_schema_number() != snr) {
+	if (tr->parent && tr->parent == gtrans && 
+	    (tr->stime < gtrans->wstime || tr->wtime || 
+			store_schema_number() != snr)) {
 		if (!list_empty(tr->moved_tables)) {
 			tr->name = (char*)1; /* make sure it get destroyed properly */
 			sql_trans_destroy(tr);
@@ -6529,7 +6537,7 @@ sql_trans_begin(sql_session *s)
 		}
 	}
 	tr = trans_init(tr, tr->stk, tr->parent);
-	s->active = 1;
+	tr->active = 1;
 	s->schema = find_sql_schema(tr, s->schema_name);
 	s->tr = tr;
 	(void) ATOMIC_INC(&store_nr_active);
@@ -6547,7 +6555,7 @@ sql_trans_end(sql_session *s)
 #ifdef STORE_DEBUG
 	fprintf(stderr,"#sql trans end (%d)\n", s->tr->schema_number);
 #endif
-	s->active = 0;
+	s->tr->active = 0;
 	s->auto_commit = s->ac_on_commit;
 	list_remove_data(active_sessions, s);
 	(void) ATOMIC_DEC(&store_nr_active);

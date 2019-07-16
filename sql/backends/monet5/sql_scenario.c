@@ -329,11 +329,11 @@ SQLresetClient(Client c)
 		mvc *m = be->mvc;
 
 		assert(m->session);
-		if (m->session->auto_commit && m->session->active) {
+		if (m->session->auto_commit && m->session->tr->active) {
 			if (mvc_status(m) >= 0)
 				msg = mvc_commit(m, 0, NULL, false);
 		}
-		if (m->session->active)
+		if (m->session->tr->active)
 			other = mvc_rollback(m, 0, NULL, false);
 
 		res_tables_destroy(m->results);
@@ -555,7 +555,9 @@ SQLinit(Client c)
 		if (!m->sa) {
 			msg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		} else if (maybeupgrade) {
+			SQLtrans(m);
 			SQLupgrades(c,m);
+			msg = mvc_commit(m, 0, NULL, false);
 		}
 		maybeupgrade = 0;
 	}
@@ -631,7 +633,7 @@ SQLautocommit(mvc *m)
 {
 	str msg = MAL_SUCCEED;
 
-	if (m->session->auto_commit && m->session->active) {
+	if (m->session->auto_commit && m->session->tr->active) {
 		if (mvc_status(m) < 0) {
 			msg = mvc_rollback(m, 0, NULL, false);
 		} else {
@@ -645,7 +647,7 @@ void
 SQLtrans(mvc *m)
 {
 	m->caching = m->cache;
-	if (!m->session->active) {
+	if (!m->session->tr->active) {
 		sql_session *s;
 
 		if(mvc_trans(m) < 0) {
@@ -1109,7 +1111,7 @@ SQLparser(Client c)
 			commit = (!m->session->auto_commit && v);
 			m->session->auto_commit = (v) != 0;
 			m->session->ac_on_commit = m->session->auto_commit;
-			if (m->session->active) {
+			if (m->session->tr->active) {
 				if (commit) {
 					msg = mvc_commit(m, 0, NULL, true);
 				} else {

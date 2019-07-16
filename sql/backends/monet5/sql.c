@@ -251,7 +251,7 @@ SQLabort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
-	if (sql->session->active) {
+	if (sql->session->tr->active) {
 		msg = mvc_rollback(sql, 0, NULL, false);
 	}
 	return msg;
@@ -1921,7 +1921,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	sql_column *c;
 	BAT *tids;
-	size_t nr, inr = 0;
+	size_t nr, inr = 0, dcnt;
 	oid sb = 0;
 
 	*res = bat_nil;
@@ -1964,7 +1964,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tids == NULL)
 		throw(SQL, "sql.tid", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
-	if (store_funcs.count_del(tr, t)) {
+	if ((dcnt=store_funcs.count_del(tr, t)) > 0) {
 		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
 		BAT *diff;
 		if (d == NULL) {
@@ -1973,6 +1973,8 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		diff = BATdiff(tids, d, NULL, NULL, false, BUN_NONE);
+		(void)dcnt;
+		assert(pci->argc == 6 || BATcount(diff) == (nr-dcnt));
 		BBPunfix(d->batCacheid);
 		BBPunfix(tids->batCacheid);
 		if (diff == NULL)
