@@ -1097,8 +1097,25 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "sql.bind", SQLSTATE(42000) "unable to find %s(%s)", tname, cname);
 }
 
-/* The output of this function is a lng bat with the RDONLY, RD_INS and RD_UPD_VAL delta counts and
- * the number in the transaction chain */
+static str
+append_bat_delta_size(mvc *m, BAT* res, const char *sname, const char *tname, const char *cname, int delta)
+{
+	gdk_return ores;
+	lng count;
+	BAT *o = mvc_bind(m, sname, tname, cname, delta);
+	if (!o)
+		throw(SQL,"sql.delta", SQLSTATE(HY005) "Cannot access the column %s.%s.%s", sname, tname, cname);
+	count = BATcount(o);
+	ores = BUNappend(res, &count, false);
+	BBPunfix(o->batCacheid);
+	if (ores != GDK_SUCCEED)
+		throw(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return MAL_SUCCEED;
+}
+
+/* The output of this function is a lng bat with the RDONLY, RD_INS and RD_UPD_VAL delta counts for provided column,
+ * the number of deletes of the column's table and the number in the transaction chain (.i.e for each savepoint a
+ * new transaction is added in the chain) */
 
 str
 mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1107,46 +1124,62 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *tname = *getArgReference_str(stk, pci, 2);
 	const char *cname = *getArgReference_str(stk, pci, 3);
 	mvc *m;
-	str msg;
-	BAT *b;
+	str msg = MAL_SUCCEED;
+	BAT *b = NULL;
 	bat *bid = getArgReference_bat(stk, pci, 0);
-	sql_trans *t;
-	lng level = 0;
+	sql_trans *tr;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	lng level = 0, deletes;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
+		goto cleanup;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
+		goto cleanup;
 
-	if ((b = COLnew(0, TYPE_lng, 4, TRANSIENT)) == NULL)
-		throw(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if (!sname || strcmp(sname, str_nil) == 0 || *sname == '\0')
+		throw(SQL, "sql.delta", SQLSTATE(3F000) "Invalid schema name");
+	if (!tname || strcmp(tname, str_nil) == 0 || *tname == '\0')
+		throw(SQL, "sql.delta", SQLSTATE(3F000) "Invalid table name");
+	if (!cname || strcmp(cname, str_nil) == 0 || *cname == '\0')
+		throw(SQL, "sql.delta", SQLSTATE(3F000) "Invalid column name");
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.delta", SQLSTATE(3F000) "No such schema '%s'", sname);
+	if (!(t = mvc_bind_table(m, s, tname)))
+		throw(SQL, "sql.delta", SQLSTATE(3F000) "No such table '%s' in schema '%s'", tname, s->base.name);
 
-	for (int i = RDONLY ; i < RD_UPD_VAL ; i++) {
-		gdk_return ores;
-		lng count;
-		BAT *o = mvc_bind(m, sname, tname, cname, i);
-		if (!o) {
-			BBPreclaim(b);
-			throw(SQL,"sql.delta", SQLSTATE(HY005) "Cannot access the column %s.%s.%s", sname, tname, cname);
-		}
-		count = BATcount(o);
-		ores = BUNappend(b, &count, false);
-		BBPunfix(o->batCacheid);
-		if (ores != GDK_SUCCEED) {
-			BBPreclaim(b);
-			throw(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL); /* should never happen */
-		}
+	if ((b = COLnew(0, TYPE_lng, 5, TRANSIENT)) == NULL) {
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	if ((msg = append_bat_delta_size(m, b, sname, tname, cname, RDONLY)))
+		goto cleanup;
+	if ((msg = append_bat_delta_size(m, b, sname, tname, cname, RD_INS)))
+		goto cleanup;
+	if ((msg = append_bat_delta_size(m, b, sname, tname, cname, RD_UPD_ID)))
+		goto cleanup;
+
+	deletes = (lng) store_funcs.count_del(m->session->tr, t);
+	if (BUNappend(b, &deletes, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
 	}
 
-	t = m->session->tr;
-	while((t = t->parent)) level++;
-	if (BUNappend(b, &level, false) != GDK_SUCCEED){
-		BBPreclaim(b);
-		throw(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL); /* should never happen */
+	tr = m->session->tr;
+	while((tr = tr->parent)) level++;
+	if (BUNappend(b, &level, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
 	}
 
-	BBPkeepref(*bid = b->batCacheid);
-	return MAL_SUCCEED;
+cleanup:
+	if (msg) {
+		if (b)
+			BBPreclaim(b);
+	} else {
+		BBPkeepref(*bid = b->batCacheid);
+	}
+	return msg;
 }
 
 /* str mvc_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access); */
@@ -2114,12 +2147,6 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( scale) BBPunfix(scaleId);
 	return msg;
 }
-
-
-
-
-
-
 
 /* Copy the result set into a CSV file */
 str
