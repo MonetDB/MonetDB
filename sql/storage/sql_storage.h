@@ -137,6 +137,7 @@ typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 typedef size_t (*count_del_fptr) (sql_trans *tr, sql_table *t);
 typedef size_t (*count_upd_fptr) (sql_trans *tr, sql_table *t);
 typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int all /* all or new only */);
+typedef size_t (*count_col_upd_fptr) (sql_trans *tr, sql_column *c);
 typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int all /* all or new only */);
 typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
@@ -226,6 +227,7 @@ typedef struct store_functions {
 	count_del_fptr count_del;
 	count_upd_fptr count_upd;
 	count_col_fptr count_col;
+	count_col_upd_fptr count_col_upd;
 	count_idx_fptr count_idx;
 	dcount_col_fptr dcount_col;
 	prop_col_fptr sorted_col;

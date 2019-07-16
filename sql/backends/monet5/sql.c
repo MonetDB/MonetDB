@@ -1097,26 +1097,12 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "sql.bind", SQLSTATE(42000) "unable to find %s(%s)", tname, cname);
 }
 
-static str
-append_bat_delta_size(mvc *m, BAT* res, const char *sname, const char *tname, const char *cname, int delta)
-{
-	gdk_return ores;
-	lng count;
-	BAT *o = mvc_bind(m, sname, tname, cname, delta);
-	if (!o)
-		throw(SQL,"sql.delta", SQLSTATE(HY005) "Cannot access the column %s.%s.%s", sname, tname, cname);
-	count = BATcount(o);
-	ores = BUNappend(res, &count, false);
-	BBPunfix(o->batCacheid);
-	if (ores != GDK_SUCCEED)
-		throw(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
-}
-
 /* The output of this function is a lng bat with:
  *  - A flag indicating if the column's upper table is cleared or not.
- *  - RDONLY, RD_INS and RD_UPD_ID delta counts for the input column (each in a separate row)
- *  - number of deletes of the column's table
+ *  - Number of read-only values of the column (inherited from the previous transaction).
+ *  - Number of inserted rows during the current transaction.
+ *  - Number of updated rows during the current transaction.
+ *  - Number of deletes of the column's table.
  *  - the number in the transaction chain (.i.e for each savepoint a new transaction is added in the chain)
  *  If the table is cleared, the values RDONLY, RD_INS and RD_UPD_ID and the number of deletes will be 0.
  */
@@ -1134,7 +1120,8 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_trans *tr;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	lng level = 0, deletes, cleared;
+	sql_column *c = NULL;
+	lng level = 0, cleared, all, readonly, inserted, updates, deletes;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		goto cleanup;
@@ -1151,6 +1138,8 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.delta", SQLSTATE(3F000) "No such schema '%s'", sname);
 	if (!(t = mvc_bind_table(m, s, tname)))
 		throw(SQL, "sql.delta", SQLSTATE(3F000) "No such table '%s' in schema '%s'", tname, s->base.name);
+	if (!(c = mvc_bind_column(m, t, cname)))
+		throw(SQL, "sql.delta", SQLSTATE(3F000) "No such column '%s' in table '%s'", cname, t->base.name);
 
 	if ((b = COLnew(0, TYPE_lng, 6, TRANSIENT)) == NULL) {
 		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -1163,14 +1152,23 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto cleanup;
 	}
 
-	if ((msg = append_bat_delta_size(m, b, sname, tname, cname, RDONLY)))
-		goto cleanup;
-	if ((msg = append_bat_delta_size(m, b, sname, tname, cname, RD_INS)))
-		goto cleanup;
-	if ((msg = append_bat_delta_size(m, b, sname, tname, cname, RD_UPD_ID)))
-		goto cleanup;
-
+	inserted = (lng) store_funcs.count_col(m->session->tr, c, 0);
+	all = (lng) store_funcs.count_col(m->session->tr, c, 1);
+	updates = (lng) store_funcs.count_col_upd(m->session->tr, c);
 	deletes = (lng) store_funcs.count_del(m->session->tr, t);
+	readonly = all - inserted;
+	if (BUNappend(b, &readonly, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	if (BUNappend(b, &inserted, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	if (BUNappend(b, &updates, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
 	if (BUNappend(b, &deletes, false) != GDK_SUCCEED) {
 		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
