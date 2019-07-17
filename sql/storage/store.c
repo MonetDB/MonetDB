@@ -2133,7 +2133,7 @@ flusher_should_run(void)
 
 	// Read and clear flush_now. If we decide not to flush
 	// we'll put it back.
-	ATOMIC_TYPE my_flush_now = ATOMIC_XCG(&flusher.flush_now, 0);
+	bool my_flush_now = (bool) ATOMIC_XCG(&flusher.flush_now, 0);
 	if (my_flush_now)
 		reason_to = "user request";
 
