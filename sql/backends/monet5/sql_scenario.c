@@ -145,8 +145,8 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		.language = "msql",
 		.exitSystem = "SQLexit",
 		.exitSystemCmd = SQLexit,
-		.initClient = "SQLinitClient",
-		.initClientCmd = SQLinitClient,
+		.initClient = "SQLinitClientFromMAL",
+		.initClientCmd = SQLinitClientFromMAL,
 		.exitClient = "SQLexitClient",
 		.exitClientCmd = SQLexitClient,
 		.reader = "MALreader",
@@ -288,6 +288,12 @@ SQLprepareClient(Client c, int login)
 	} else {
 		be = c->sqlcontext;
 		m = be->mvc;
+		/* Only reset if there is no active transaction which
+		 * can happen when we combine sql.init with msql.
+		*/
+		if(m->session->tr->active) {
+			return NULL;
+		}
 		if(mvc_reset(m, c->fdin, c->fdout, SQLdebug, NR_GLOBAL_VARS) < 0) {
 			throw(SQL,"sql.initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
@@ -703,6 +709,34 @@ SQLinitClient(Client c)
 }
 
 str
+SQLinitClientFromMAL(Client c) {
+	str msg = MAL_SUCCEED;
+
+	if ( (msg = SQLinitClient(c)) != MAL_SUCCEED) {
+		return msg;
+	}
+
+	mvc* m = ((backend*) c->sqlcontext)->mvc;
+
+	/* Crucial step:
+	 * MAL script that interact with the sql module
+	 * have to have a properly initialized transaction.
+	 */
+	SQLtrans(m);
+
+	if(*m->errstr) {
+		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
+			msg = createException(PARSE, "SQLinitClientFromMAL", "%s", m->errstr);
+		else
+			msg = createException(PARSE, "SQLinitClientFromMAL", SQLSTATE(42000) "%s", m->errstr);
+		*m->errstr=0;
+		c->mode = FINISHCLIENT;
+	}
+
+	return msg;
+}
+
+str
 SQLexitClient(Client c)
 {
 	str err;
@@ -736,7 +770,7 @@ SQLinitEnvironment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	if ((err = SQLinitClient(cntxt)) == MAL_SUCCEED)
+	if ((err = SQLinitClientFromMAL(cntxt)) == MAL_SUCCEED)
 		cntxt->phase[MAL_SCENARIO_EXITCLIENT] = SQLexitClient;
 	return err;
 }
