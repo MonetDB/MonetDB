@@ -3898,26 +3898,32 @@ def main(argv) :
         py3list = []
     for py2 in py2list + ['python2', 'python2.7', 'python2.6']:
         if CheckExec(py2):
-            proc = process.Popen([py2, '-c', 'import pymonetdb'],
-                                 stdout=process.PIPE, stderr=process.PIPE,
-                                 universal_newlines=True)
-            pyout, pyerr = proc.communicate()
-            if proc.returncode == 0:
-                CONDITIONALS['HAVE_PY2MONETDB'] = '#'
-                os.environ['PYTHON2'] = py2
-                break
+            try:
+                proc = process.Popen([py2, '-c', 'import pymonetdb'],
+                                     stdout=process.PIPE, stderr=process.PIPE,
+                                     universal_newlines=True)
+                pyout, pyerr = proc.communicate()
+                if proc.returncode == 0:
+                    CONDITIONALS['HAVE_PY2MONETDB'] = '#'
+                    os.environ['PYTHON2'] = py2
+                    break
+            except FileNotFoundError:
+                pass
     else:
         CONDITIONALS['HAVE_PY2MONETDB'] = '' # no pymonetdb for python2
     for py3 in py3list + ['python3', 'python3.7', 'python3.6', 'python3.5', 'python3.4']:
         if CheckExec(py3):
-            proc = process.Popen([py3, '-c', 'import pymonetdb'],
-                                 stdout=process.PIPE, stderr=process.PIPE,
-                                 universal_newlines=True)
-            pyout, pyerr = proc.communicate()
-            if proc.returncode == 0:
-                CONDITIONALS['HAVE_PY3MONETDB'] = '#'
-                os.environ['PYTHON3'] = py3
-                break
+            try:
+                proc = process.Popen([py3, '-c', 'import pymonetdb'],
+                                     stdout=process.PIPE, stderr=process.PIPE,
+                                     universal_newlines=True)
+                pyout, pyerr = proc.communicate()
+                if proc.returncode == 0:
+                    CONDITIONALS['HAVE_PY3MONETDB'] = '#'
+                    os.environ['PYTHON3'] = py3
+                    break
+            except FileNotFoundError:
+                pass
     else:
         CONDITIONALS['HAVE_PY3MONETDB'] = '' # no pymonetdb for python3
     try:
