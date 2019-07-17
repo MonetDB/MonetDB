@@ -3907,7 +3907,7 @@ def main(argv) :
                     CONDITIONALS['HAVE_PY2MONETDB'] = '#'
                     os.environ['PYTHON2'] = py2
                     break
-            except FileNotFoundError:
+            except OSError:
                 pass
     else:
         CONDITIONALS['HAVE_PY2MONETDB'] = '' # no pymonetdb for python2
@@ -3922,7 +3922,7 @@ def main(argv) :
                     CONDITIONALS['HAVE_PY3MONETDB'] = '#'
                     os.environ['PYTHON3'] = py3
                     break
-            except FileNotFoundError:
+            except OSError:
                 pass
     else:
         CONDITIONALS['HAVE_PY3MONETDB'] = '' # no pymonetdb for python3
