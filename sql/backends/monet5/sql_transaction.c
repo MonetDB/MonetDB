@@ -106,7 +106,7 @@ SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (sql->session->auto_commit == 0)
 		throw(SQL, "sql.trans", SQLSTATE(25001) "START TRANSACTION: cannot start a transaction within a transaction");
-	if (sql->session->active)
+	if (sql->session->tr->active)
 		msg = mvc_rollback(sql, 0, NULL, false);
 	sql->session->auto_commit = 0;
 	sql->session->ac_on_commit = 1;
@@ -135,7 +135,7 @@ SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (sql->session->auto_commit == 0)
 		throw(SQL, "sql.trans", SQLSTATE(25001) "START TRANSACTION: cannot start a transaction within a transaction");
-	if (sql->session->active)
+	if (sql->session->tr->active)
 		msg = mvc_rollback(sql, 0, NULL, false);
 	sql->session->auto_commit = 0;
 	sql->session->ac_on_commit = 1;

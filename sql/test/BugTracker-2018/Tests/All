@@ -62,7 +62,7 @@ sqlitelogictest-complex-expression.Bug-6589
 sqlitelogictest-complex-case-not-in.Bug-6594
 multiple-count.Bug-6599
 sqlitelogictest-select-errors.Bug-6600
-remote-table-where-is-null.Bug-6601
+HAVE_PYMONETDB?remote-table-where-is-null.Bug-6601
 sqlitelogictest-select-not-in-wrong.Bug-6602
 sqlitelogictest-groupby-distinct-duplicate.Bug-6603
 procedure-create-table.Bug-6604
@@ -70,9 +70,9 @@ sqlitelogictest-cast-null-not-in.Bug-6605
 sqlitelogictest-groupby-coalesce-error-message.Bug-6608
 sqlitelogictest-algebra-rangejoin-undefined.Bug-6610
 KNOWNFAIL?lateral-join-crash.Bug-6613
-dependency_column_on_sequence.Bug-6618
-KNOWNFAIL?local_replica_table_not_detected.Bug-6620
-remote-table-where-not-equal.Bug-6621
+HAVE_PYMONETDB?dependency_column_on_sequence.Bug-6618
+KNOWNFAIL&HAVE_PYMONETDB?local_replica_table_not_detected.Bug-6620
+HAVE_PYMONETDB?remote-table-where-not-equal.Bug-6621
 groupby_having_orderby_count.Bug-6624
 or_in_subselect.Bug-6625
 strptime.Bug-6626

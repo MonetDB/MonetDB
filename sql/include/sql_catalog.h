@@ -194,6 +194,7 @@ typedef int sqlid;
 typedef struct sql_base {
 	int wtime;
 	int rtime;
+	int stime;
 	int allocated;
 	int flags;
 	int refcnt;
@@ -245,6 +246,7 @@ typedef struct sql_trans {
 	int wtime;		/* timestamp of latest write performed in transaction*/
 	int schema_number;	/* schema timestamp */
 	int schema_updates;	/* set on schema changes */
+	int active;		/* active transaction */
 	int status;		/* status of the last query */
 	list *dropped;  	/* protection against recursive cascade action*/
 	list *moved_tables;
@@ -669,7 +671,6 @@ typedef struct sql_session {
 	                           commit, rollback, etc. */
 	char auto_commit;
 	int level;		/* TRANSACTION isolation level */
-	int active;		/* active transaction */
 	int status;		/* status, ok/error */
 	backend_stack stk;
 } sql_session;

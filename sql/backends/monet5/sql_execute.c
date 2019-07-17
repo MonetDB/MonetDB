@@ -817,6 +817,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(c)) != NULL)
 		return msg;
+	SQLtrans(m);
 	if (!m->sa)
 		m->sa = sa_create();
 	if (!m->sa)
@@ -852,6 +853,10 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			resetMalBlk(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop);
 		}
+		if (!msg)
+			msg = mvc_commit(m, 0, NULL, false);
+		else
+			msg = mvc_rollback(m, 0, NULL, false);
 	}
 	return msg;
 }
@@ -886,6 +891,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+	SQLtrans(m);
 	if (!m->sa)
 		m->sa = sa_create();
 	if (!m->sa)
