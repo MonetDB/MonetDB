@@ -9,20 +9,20 @@ create table t1 (i int, v varchar(10))
 insert into t1 values (48, 'foo'), (29, 'bar'), (63, 'abc')
 #create remote table t1 (i int, v varchar(10)) on 'mapi:monetdb://localhost:61212/node1';
 select * from t1
-[(48, u'foo'), (29, u'bar'), (63, u'abc')]
+[(48, 'foo'), (29, 'bar'), (63, 'abc')]
 select * from t1 where i < 50
-[(48, u'foo'), (29, u'bar')]
+[(48, 'foo'), (29, 'bar')]
 select * from t1 where i > 50
-[(63, u'abc')]
+[(63, 'abc')]
 select * from t1 where i <> 50
-[(48, u'foo'), (29, u'bar'), (63, u'abc')]
+[(48, 'foo'), (29, 'bar'), (63, 'abc')]
 select * from t1 where v = 'foo'
-[(48, u'foo')]
+[(48, 'foo')]
 select * from t1 where v <> 'foo'
-[(29, u'bar'), (63, u'abc')]
+[(29, 'bar'), (63, 'abc')]
 select * from t1 where v <> 'bla'
-[(48, u'foo'), (29, u'bar'), (63, u'abc')]
-# MonetDB 5 server v11.29.8
+[(48, 'foo'), (29, 'bar'), (63, 'abc')]
+# MonetDB 5 server v11.34.0 (hg id: cb94603265f9+)
 # This is an unreleased version
 # Serving database 'node1', using 4 threads
 # Compiled for x86_64-apple-darwin17.6.0/64bit with 128bit integers

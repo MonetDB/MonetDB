@@ -29,7 +29,7 @@ dnl     The two versions are compared, the body corresponding with
 dnl     whether the first version is less than, equal to, or greater
 dnl     than the second version is executed.
 
-dnl  AS_VAR_IF(var, word, eq-body, ne-body)
+dnl  AS_VAR_IF(var, word, eq-body [, ne-body])
 dnl     If $var is equal to word, execute eq-body, else execute ne-body.
 
 dnl  AS_VAR_COPY(dest, src)
@@ -365,7 +365,6 @@ AC_SUBST([MONETDB5_PASSWDHASH])
 
 AC_DISABLE_STATIC
 AC_ENABLE_SHARED
-AM_CONDITIONAL([CROSS_COMPILING], [test x$cross_compiling = xyes])
 
 # logs usually end up in /var/log
 logdir='${localstatedir}/log/monetdb'
@@ -801,9 +800,7 @@ translatepath=echo
 AC_ARG_WITH([translatepath],
 	[AS_HELP_STRING([--with-translatepath=PROG],
 		[program to translate paths from configure-time format to execute-time format.  Take care that this program can be given paths like ${prefix}/etc which should be translated carefully.])],
-	[translatepath="$withval"],
-	[AS_VAR_IF([cross_compiling], [yes],
-		[AC_MSG_WARN([Cross compiling, but no --with-translatepath option given])])])
+	[translatepath="$withval"])
 
 AC_MSG_CHECKING([for --enable-debug])
 AS_CASE([$enable_debug],
@@ -1017,6 +1014,20 @@ AC_DEFINE_UNQUOTED([DIFF], ["$DIFF"], [Program to perform diffs])
 
 AC_CHECK_PROGS([RPMBUILD], [rpmbuild])
 
+# This is how we use the various Python-related configuration variables.
+# PYTHON - the Python interpreter we use for testing.  This can either
+#    be Python 3 (preferred) or Python 2.  Set automatically.
+# PYTHON_LIBDIR - the location where the MonetDBtesting module, used
+#    during testing, is installed.  Based on PYTHON.
+# PYTHON2 - the Python version 2 interpreter
+# PYTHON3 - the Python version 3 interpreter
+# HAVE_LIBPY2 - Python 2 libraries available for linking to
+# libpy2_CFLAGS - compiler flags to compile with Python 2
+# libpy2_LIBS - Python 2 libraries to be linked
+# HAVE_LIBPY3 - Python 3 libraries available for linking to
+# libpy3_CFLAGS - compiler flags to compile with Python 3
+# libpy3_LIBS - Python 3 libraries to be linked
+
 # check major version of python
 # check if python2 and python3 exist
 # if python2 or python3 doesn't exist, use python if major matches
@@ -1057,159 +1068,87 @@ AC_PATH_PROG([PYTHON], [python], [no], [$PATH])
 PYTHON_MAJ=unknown
 AS_VAR_IF([PYTHON], [no], [], [
 	AC_MSG_CHECKING([major version of $PYTHON])
-	AS_CASE([`"$PYTHON" -V 2>&1`],
-		["Python 2."[[67]]*], [
-			PYTHON_MAJ=2],
-		["Python 3."*], [
-			PYTHON_MAJ=3])
+	PYTHON_MAJ=`"$PYTHON" -c 'import sys; print(sys.version[[:1]])'`
 	AC_MSG_RESULT([$PYTHON_MAJ])])
 
 AS_VAR_IF([have_python2], [no],
-	[],
-	[AS_VAR_IF([cross_compiling], [yes],
-		[],
-		[AC_PATH_PROG([PYTHON2], [$PYTHON2], [no], [$PATH])
-		 AS_VAR_IF([PYTHON2], [no],
-			[AS_IF([test '(' "x$have_python2" = xyes -o "x$have_python2" = xauto ')' -a "x$PYTHON_MAJ" = x2],
-				[PYTHON2="$PYTHON"
-				 have_python2=yes],
-				[AS_VAR_IF([have_python2], [auto],
-					[have_python2=no
-				 	 why_not_python2="(Python 2 executable not found)"],
-					[AC_MSG_ERROR([Python 2 executable not found])])])],
-			[AS_CASE([`"$PYTHON2" -V 2>&1`],
-				["Python 2."[[67]]*], [],
-				[AS_VAR_IF([have_python2], [auto], [
-					have_python2=no
-					why_not_python2="(Python 2 executable too old)"], [
-					AC_MSG_ERROR([Python 2 executable too old])])])])])])
-
-AS_VAR_IF([have_python2], [no],
-	[# no Python 2 implies no Python 2 libraries
-	 have_python2_libdir=no
-	 PYTHON2_LIBDIR=""
-	 # and no interpreter
-	 PYTHON2=false],
-	[have_python2_libdir=auto
-	 AC_ARG_WITH([python2-libdir],
-		[AS_HELP_STRING([--with-python2-libdir=DIR],
-			[relative path for Python 2 library directory (where Python 2 modules should be installed)])],
-		[have_python2_libdir="$withval"])
-	 AS_CASE([$have_python2_libdir],
-		[yes|auto], [
-			AS_VAR_IF([cross_compiling], [yes],
-				[AC_MSG_ERROR([Must specify --with-python2-libdir when cross compiling])])
-			AS_CASE([$host_os-`"$PYTHON2" -V 2>&1`],
-				[darwin9*-*2.5.1], [
-					# This is the Python installed on OSX Leopard, in
-					# later versions of OSX, Python is fixed to return
-					# standard output
-					PYTHON2_LIBDIR=`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"'"$Qprefix"'")' 2>/dev/null`/site-packages],
-				[
-					# Use prefix field for Ubuntu Python, bug #3207
-					PYTHON2_LIBDIR=`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"'"$Qprefix"'")' 2>/dev/null`])
-			PYTHON2_LIBDIR=`AS_ECHO(["$PYTHON2_LIBDIR"]) | sed "s|^$Qprefix/||"`],
-		[no], [],
-		[$Qprefix/*], [ # dubious
-			PYTHON2_LIBDIR=`AS_ECHO(["$have_python2_libdir"]) | sed "s|^$Qprefix/||"`
-			have_python2_libdir=yes],
-		[	PYTHON2_LIBDIR="$have_python2_libdir"
-			have_python2_libdir=yes])])
+	[PYTHON2=no],
+	[AC_PATH_PROG([PYTHON2], [$PYTHON2], [no], [$PATH])
+	 AS_VAR_IF([PYTHON2], [no],
+		[AS_IF([test '(' "x$have_python2" = xyes -o "x$have_python2" = xauto ')' -a "x$PYTHON_MAJ" = x2],
+			[PYTHON2="$PYTHON"
+			 have_python2=yes],
+			[AS_VAR_IF([have_python2], [auto],
+				[have_python2=no
+			 	 why_not_python2="(Python 2 executable not found)"],
+				[AC_MSG_ERROR([Python 2 executable not found])])])],
+		[AS_CASE([`"$PYTHON2" -V 2>&1`],
+			["Python 2."[[67]]*], [],
+			[AS_VAR_IF([have_python2], [auto], [
+				PYTHON2=no
+				have_python2=no
+				why_not_python2="(Python 2 executable too old)"], [
+				AC_MSG_ERROR([Python 2 executable too old])])])])])
 
 AC_SUBST([PYTHON2])
 QPYTHON2="$PYTHON2"
 XPYTHON2=`$translatepath "$QPYTHON2"`
 QXPYTHON2=`AS_ECHO(["$XPYTHON2"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([QXPYTHON2])
-AM_CONDITIONAL([HAVE_PYTHON2], [test x"$have_python2" != xno])
-AC_SUBST([PYTHON2_LIBDIR])
-QPYTHON2_LIBDIR="$PYTHON2_LIBDIR"
-XPYTHON2_LIBDIR=`$translatepath "$QPYTHON2_LIBDIR"`
-QXPYTHON2_LIBDIR=`AS_ECHO(["$XPYTHON2_LIBDIR"]) | sed 's/\\\\/\\\\\\\\/g'`
-AC_SUBST([QXPYTHON2_LIBDIR])
 
 AS_VAR_IF([have_python3], [no],
-	[],
-	[AS_VAR_IF([cross_compiling], [yes],
-		[],
-		[AC_PATH_PROG([PYTHON3], [$PYTHON3], [no], [$PATH])
-		 AS_VAR_IF([PYTHON3], [no],
-		 	[AS_IF([test '(' "x$have_python3" = xyes -o "x$have_python3" = xauto ')' -a "x$PYTHON_MAJ" = x3],
-				[PYTHON3="$PYTHON"
-				 have_python3=yes],
-				[AS_VAR_IF([have_python3], [auto],
-					[have_python3=no
-				 	 why_not_python3="(Python 3 executable not found)"],
-					[AC_MSG_ERROR([Python3 executable not found])])])])])])
-
-AS_VAR_IF([have_python3], [no],
-	[# no Python 3 implies no Python 3 libraries
-	 have_python3_libdir=no
-	 PYTHON3_LIBDIR=""
-	 # and no interpreter
-	 PYTHON3=false
-	 # and no Python 3 integration
-	 AS_CASE([$enable_py3integration],
-	 	[no|auto], [enable_py3integration=no],
-		[AC_MSG_ERROR([--enable-py3integration requires Python 3])])],
-	[have_python3_libdir=auto
-
-	 AC_ARG_WITH([python3-libdir],
-		[AS_HELP_STRING([--with-python3-libdir=DIR],
-			[relative path for Python 3 library directory (where Python 3 modules should be installed)])],
-		[have_python3_libdir="$withval"])
-
-	 AS_CASE([$have_python3_libdir],
-		[yes|auto], [
-			AS_VAR_IF([cross_compiling], [yes],
-				[AC_MSG_ERROR([Must specify --with-python3-libdir when cross compiling])])
-			# Use prefix field for Ubuntu Python, bug #3207
-			PYTHON3_LIBDIR=`"$PYTHON3" -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,"'"$Qprefix"'"))' 2>/dev/null`
-			PYTHON3_LIBDIR=`AS_ECHO(["$PYTHON3_LIBDIR"]) | sed "s|^$Qprefix/||"`],
-		[no], [],
-		[$Qprefix/*], [ # dubious
-			PYTHON3_LIBDIR=`AS_ECHO(["$have_python3_libdir"]) | sed "s|^$Qprefix/||"`
-			have_python3_libdir=yes],
-		[	PYTHON3_LIBDIR="$have_python3_libdir"
-			have_python3_libdir=yes])])
+	[AS_VAR_IF([PYTHON2], [no], [],
+		[PYTHON=$PYTHON2])],
+	[AC_PATH_PROG([PYTHON3], [$PYTHON3], [no], [$PATH])
+	 AS_VAR_IF([PYTHON3], [no],
+		[AS_IF([test '(' "x$have_python3" = xyes -o "x$have_python3" = xauto ')' -a "x$PYTHON_MAJ" = x3],
+			[PYTHON3="$PYTHON"
+			 have_python3=yes],
+			[AS_VAR_IF([have_python3], [auto],
+				[have_python3=no
+				 why_not_python3="(Python 3 executable not found)"],
+				[AC_MSG_ERROR([Python3 executable not found])])])],
+		[have_python3=yes
+		 PYTHON=$PYTHON3])])
 
 AC_SUBST([PYTHON3])
 QPYTHON3="$PYTHON3"
 XPYTHON3=`$translatepath "$QPYTHON3"`
 QXPYTHON3=`AS_ECHO(["$XPYTHON3"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([QXPYTHON3])
-AM_CONDITIONAL([HAVE_PYTHON3], [test x"$have_python3" != xno])
-AC_SUBST([PYTHON3_LIBDIR])
-QPYTHON3_LIBDIR="$PYTHON3_LIBDIR"
-XPYTHON3_LIBDIR=`$translatepath "$QPYTHON3_LIBDIR"`
-QXPYTHON3_LIBDIR=`AS_ECHO(["$XPYTHON3_LIBDIR"]) | sed 's/\\\\/\\\\\\\\/g'`
-AC_SUBST([QXPYTHON3_LIBDIR])
-
-AM_CONDITIONAL([HAVE_PYTHON], [test x"$have_python2" != xno -o x"$have_python3" != xno])
 
 AS_VAR_IF([PYTHON], [no],
-	[AS_VAR_IF([PYTHON2], [false],
-		[AS_VAR_IF([PYTHON3], [false],
-			[PYTHON=false]
-			[PYTHON="$PYTHON3"
-			 PYTHON_LIBDIR="$PYTHON3_LIBDIR"])],
-		[PYTHON="$PYTHON2"
-		 PYTHON_LIBDIR="$PYTHON2_LIBDIR"])],
-	[AS_VAR_IF([PYTHON_MAJ],
-		[2], [PYTHON_LIBDIR="$PYTHON2_LIBDIR"],
-		[PYTHON_LIBDIR="$PYTHON3_LIBDIR"])])
+	[AS_CASE([$enable_testing],
+		[yes],
+		[AC_MSG_ERROR([--enable-testing requires Python (either version 2 or 3)])],
+		[auto],
+		[enable_testing=no
+		 why_not_testing='(Testing requires Python)'])])
+
+have_python_libdir=auto
+AC_ARG_WITH([python-libdir],
+	[AS_HELP_STRING([--with-python-libdir=DIR],
+		[relative path for Python library directory (where Python modules should be installed)])],
+	[have_python_libdir="$withval"])
+
+AS_CASE([$have_python_libdir],
+	[yes|auto], [
+		# Use prefix field for Ubuntu Python, bug #3207
+		PYTHON_LIBDIR=`"$PYTHON" -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,"'"$Qprefix"'"))' 2>/dev/null`
+		PYTHON_LIBDIR=`AS_ECHO(["$PYTHON_LIBDIR"]) | sed "s|^$Qprefix/||"`],
+	[no], [],
+	[$Qprefix/*], [ # dubious
+		PYTHON_LIBDIR=`AS_ECHO(["$have_python_libdir"]) | sed "s|^$Qprefix/||"`
+		have_python_libdir=yes],
+	[	PYTHON_LIBDIR="$have_python_libdir"
+		have_python_libdir=yes])
+
 AC_SUBST([PYTHON])
 AC_SUBST([PYTHON_LIBDIR])
 QPYTHON_LIBDIR="$PYTHON_LIBDIR"
 XPYTHON_LIBDIR=`$translatepath "$QPYTHON_LIBDIR"`
 QXPYTHON_LIBDIR=`AS_ECHO(["$XPYTHON_LIBDIR"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([QXPYTHON_LIBDIR])
-
-# Mtest/Mfilter currently require Python 2
-AS_VAR_IF([enable_testing], [no],
-	[],
-	[AS_VAR_IF([PYTHON], [false],
-		[enable_testing=no])])
 
 AC_PROG_YACC
 AS_CASE([$YACC],
@@ -1796,7 +1735,7 @@ AS_VAR_IF([enable_rintegration], [no], [], [
 AM_CONDITIONAL([HAVE_LIBR], [test x"$have_libr" != xno])
 
 # Python API (Python UDFs)
-have_libpy=no
+have_libpy2=no
 AS_VAR_IF([enable_py2integration], [no], [], [
 	AS_CASE([$enable_py2integration],
 		[yes|auto], [XPATH="$PATH"],
@@ -1810,51 +1749,50 @@ AS_VAR_IF([enable_py2integration], [no], [], [
 		   	AS_VAR_IF([PYCMD2], [no], [
 		   		AS_VAR_IF([enable_py2integration], [yes],
 					[AC_MSG_ERROR([python2-config library required for Python integration support])],
-					[have_libpy=no
-					 why_not_libpy="(python2-config command not found)"
+					[have_libpy2=no
+					 why_not_libpy2="(python2-config command not found)"
 					 enable_py2integration=no
 					 why_not_py2integration="(python2-config command not found)"])
 			], [PY2CONFIG="$PYCMD2"])
 	   	], [])
 	], [PY2CONFIG="$have_py2config"])
 	AS_VAR_IF([enable_py2integration], [no], [], [
-		PYTHON_CMD=$PYTHON2
-		NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)" 2> /dev/null`
+		NUMPYVER=`$PYTHON2 -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)" 2> /dev/null`
 		# check numpyconfig.h because autoconf tests includes by
 		# compiling a small C program, and other numpy headers do
 		# not compile without Python.h
 		AC_CHECK_HEADER([numpy/numpyconfig.h],
 			[NUMPYHEADERS=True],
-			[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`])
+			[NUMPYHEADERS=`$PYTHON2 -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`])
 		AS_IF([test "x$NUMPYVER" = x -o "x$NUMPYVER" = xFalse],
 			[AS_VAR_IF([enable_py2integration], [yes],
 				[AC_MSG_ERROR([numpy version >= 1.7.0 required for Python integration support])],
-				[have_libpy=no
-				 why_not_libpy="(numpy version >= 1.7.0 not found)"
+				[have_libpy2=no
+				 why_not_libpy2="(numpy version >= 1.7.0 not found)"
 				 enable_py2integration=no
 				 why_not_py2integration="(numpy version >= 1.7.0 not found)"])],
 			[test "x$NUMPYHEADERS" = xFalse ],
 			[AS_VAR_IF([enable_py2integration], [yes],
 				[AC_MSG_ERROR([numpy/arrayobject.h not found])],
-				[have_libpy=no
-				 why_not_libpy="(numpy/arrayobject.h not found)"
+				[have_libpy2=no
+				 why_not_libpy2="(numpy/arrayobject.h not found)"
 				 enable_py2integration=no
 				 why_not_py2integration="(numpy/arrayobject.h not found)"])],
-			[libpy_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
-			 libpy_LIBS=`$PY2CONFIG --ldflags`
-			 HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
+			[libpy2_CFLAGS=`$PYTHON2 -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
+			 libpy2_LIBS=`$PY2CONFIG --ldflags`
+			 HAVEPYTHONHEADER=`$PYTHON2 -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
 			 AS_VAR_IF([HAVEPYTHONHEADER], [True],
-				[have_libpy=yes
-				 AC_DEFINE([HAVE_LIBPY], 1, [Define if we can link to python2])
-				 AC_SUBST([libpy_CFLAGS], [$libpy_CFLAGS])
-				 AC_SUBST([libpy_LIBS], [$libpy_LIBS])],
+				[have_libpy2=yes
+				 AC_DEFINE([HAVE_LIBPY2], 1, [Define if we can link to python2])
+				 AC_SUBST([libpy2_CFLAGS], [$libpy2_CFLAGS])
+				 AC_SUBST([libpy2_LIBS], [$libpy2_LIBS])],
 				[AS_VAR_IF([enable_py2integration], [yes],
 					[AC_MSG_ERROR([Python.h not found])],
-					[have_libpy=no
-					 why_not_libpy="Python.h not found"
+					[have_libpy2=no
+					 why_not_libpy2="Python.h not found"
 					 enable_py2integration=no
 					 why_not_py2integration="Python.h not found"])])])])])
-AM_CONDITIONAL([HAVE_LIBPY], [test x"$have_libpy" != xno])
+AM_CONDITIONAL([HAVE_LIBPY2], [test x"$have_libpy2" != xno])
 
 
 # Python 3 UDFs
@@ -1894,14 +1832,12 @@ AS_VAR_IF([enable_py3integration], [no], [],
 		[PY3CONFIG="$have_py3config"])
 
 	AS_VAR_IF([enable_py3integration], [no], [], [
-		PYTHON_CMD=$PYTHON3
-
-		NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)" 2> /dev/null`
+		NUMPYVER=`$PYTHON3 -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)" 2> /dev/null`
 		# check numpyconfig.h because autoconf tests includes by compiling a small C program, and other numpy headers do not compile without Python.h
 		AC_CHECK_HEADER(
 			[numpy/numpyconfig.h], 
 			[NUMPYHEADERS=True],
-			[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`])
+			[NUMPYHEADERS=`$PYTHON3 -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`])
 		AS_IF([test "x$NUMPYVER" = x -o "x$NUMPYVER" = xFalse],
 			[AS_VAR_IF([enable_py3integration], [yes],
 				[AC_MSG_ERROR([numpy version >= 1.7.0 required for Python3 integration support])],
@@ -1916,9 +1852,9 @@ AS_VAR_IF([enable_py3integration], [no], [],
 				 why_not_libpy3="(numpy/arrayobject.h not found)"
 				 enable_py3integration=no
 				 why_not_py3integration="(numpy/arrayobject.h not found)"])],
-			[libpy3_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
+			[libpy3_CFLAGS=`$PYTHON3 -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
 			 libpy3_LIBS=`$PY3CONFIG --ldflags`
-			 HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
+			 HAVEPYTHONHEADER=`$PYTHON3 -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
 			 AS_VAR_IF([HAVEPYTHONHEADER], [True],
 				[have_libpy3=yes
 				 AC_DEFINE(HAVE_LIBPY3, 1, [Define if we can link to python3])

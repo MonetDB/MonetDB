@@ -1,4 +1,4 @@
-#!@PYTHON2@
+#!@PYTHON@
 
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
@@ -281,13 +281,6 @@ if isatty and os.isatty(sys.stdin.fileno()):
                 # ridiculously narrow tty, ignore value
                 ttywidth = 0
 
-# if os.name == 'nt':
-#     p = os.path.join(sys.prefix, 'Lib')
-#     if 'PYTHONPATH' in os.environ:
-#         p = os.environ['PYTHONPATH'] + os.pathsep + p
-#     os.environ['PYTHONPATH'] = p
-#     print('setting PYTHONPATH to %s' % p)
-
 import string                   # for whitespace
 def splitcommand(cmd):
     '''Like string.split, except take quotes into account.'''
@@ -400,7 +393,7 @@ CONDITIONALS = {
     'HAVE_LIBLZ4'          : "@HAVE_LIBLZ4_FALSE@",
     'HAVE_LIBLZMA'         : "@HAVE_LIBLZMA_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
-    'HAVE_LIBPY'           : "@HAVE_LIBPY_FALSE@",
+    'HAVE_LIBPY2'          : "@HAVE_LIBPY2_FALSE@",
     'HAVE_LIBPY3'          : "@HAVE_LIBPY3_FALSE@",
     'HAVE_LIBXML'          : "@HAVE_LIBXML_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
@@ -411,9 +404,6 @@ CONDITIONALS = {
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
-    'HAVE_PYTHON'          : "@HAVE_PYTHON_FALSE@",
-    'HAVE_PYTHON2'         : "@HAVE_PYTHON2_FALSE@",
-    'HAVE_PYTHON3'         : "@HAVE_PYTHON3_FALSE@",
     'HAVE_SAMTOOLS'        : "@HAVE_SAMTOOLS_FALSE@",
     'HAVE_SQL'             : "@HAVE_SQL_FALSE@",
     'HAVE_TESTING'         : "@HAVE_TESTING_FALSE@",
@@ -431,11 +421,15 @@ CONDITIONALS = {
     'HAVE_JDBCTESTS_JAR'   : "",
     'HAVE_JDBCTESTS_DIR'   : "",
     'HAVE_JDBCTESTS'       : "",
-    'HAVE_LIBPANDAS'       : "",
-    'HAVE_LIBSCIPY'        : "",
+    'HAVE_LIBPANDAS2'      : "",
+    'HAVE_LIBSCIPY2'       : "",
+#    'HAVE_LIBPANDAS3'      : "",
+    'HAVE_LIBSCIPY3'       : "",
     'HAVE_PERL'            : "",
     'HAVE_PHP'             : "",
-    'HAVE_PYMONETDB'       : "",
+    'HAVE_PYMONETDB'       : "", # default PYTHON can import pymonetdb
+    'HAVE_PY2MONETDB'      : "", # PYTHON2 exists and can import pymonetdb
+    'HAVE_PY3MONETDB'      : "", # PYTHON3 exists and can import pymonetdb
     'HAVE_RUBY'            : "",
     'HAVE_DATA_PATH'       : "",
     'MERCURIAL'            : "",
@@ -721,9 +715,9 @@ elif sys.version_info[0] == 3:
         return url
 
 def openutf8(file, mode='r'):
-    try:
+    if sys.version[:1] == '3':
         f = open(file, mode, encoding='utf-8', errors='replace') # Python 3
-    except TypeError:
+    else:
         f = open(file, mode)    # Python 2
     return f
 
@@ -1325,14 +1319,6 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     os.environ['TSTSRCDIR'] = TSTSRCDIR
     os.environ['TSTTRGDIR'] = TSTTRGDIR
     os.environ['RELSRCDIR'] = env['RELSRCDIR']
-    os.environ['PYTHON2']   = '@QXPYTHON2@'
-    if 'PYTHON2PATH' not in os.environ:
-        os.environ['PYTHON2PATH'] = ''
-    os.environ['PYTHON2PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
-    os.environ['PYTHON3']   = '@QXPYTHON3@'
-    if 'PYTHON3PATH' not in os.environ:
-        os.environ['PYTHON3PATH'] = ''
-    os.environ['PYTHON3PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', '@QXPYTHON3_LIBDIR@'))
     if 'TSTDATAPATH' not in os.environ and TSTDATAPATH:
         env['TSTDATAPATH'] = TSTDATAPATH
         os.environ['TSTDATAPATH'] = TSTDATAPATH
@@ -3111,7 +3097,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                     except WindowsError:
                         pass
                 Srvr.extend(['--set', 'embedded_py=3'])
-            elif (not all_tests or (COND != None and "HAVE_LIBPY" in COND)) and CONDITIONALS['HAVE_LIBPY']:
+            elif (not all_tests or (COND != None and "HAVE_LIBPY2" in COND)) and CONDITIONALS['HAVE_LIBPY2']:
                 # enable Python integration in server
                 if winreg is not None:
                     if env['TST_BITS'] == '32bit' and sys.maxsize > 2**32:
@@ -3893,24 +3879,79 @@ def main(argv) :
     # hence, we set them at runtime.
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
+    python_version = ''
+    if CheckExec('python'):
+        proc = process.Popen(['python', '-c', 'import sys; print(sys.version[:1])'],
+                             stdout=process.PIPE, stderr=process.PIPE,
+                             universal_newlines=True)
+        pyout, pyerr = proc.communicate()
+        if proc.returncode == 0 and pyout:
+            python_version = pyout.strip()
+            os.environ['PYTHON' + python_version] = 'python'
+    if python_version == '2':
+        py2list = ['python']
+    else:
+        py2list = []
+    if python_version == '3':
+        py3list = ['python']
+    else:
+        py3list = []
+    for py2 in py2list + ['python2', 'python2.7', 'python2.6']:
+        if CheckExec(py2):
+            proc = process.Popen([py2, '-c', 'import pymonetdb'],
+                                 stdout=process.PIPE, stderr=process.PIPE,
+                                 universal_newlines=True)
+            pyout, pyerr = proc.communicate()
+            if proc.returncode == 0:
+                CONDITIONALS['HAVE_PY2MONETDB'] = '#'
+                os.environ['PYTHON2'] = py2
+                break
+    else:
+        CONDITIONALS['HAVE_PY2MONETDB'] = '' # no pymonetdb for python2
+    for py3 in py3list + ['python3', 'python3.7', 'python3.6', 'python3.5', 'python3.4']:
+        if CheckExec(py3):
+            proc = process.Popen([py3, '-c', 'import pymonetdb'],
+                                 stdout=process.PIPE, stderr=process.PIPE,
+                                 universal_newlines=True)
+            pyout, pyerr = proc.communicate()
+            if proc.returncode == 0:
+                CONDITIONALS['HAVE_PY3MONETDB'] = '#'
+                os.environ['PYTHON3'] = py3
+                break
+    else:
+        CONDITIONALS['HAVE_PY3MONETDB'] = '' # no pymonetdb for python3
     try:
         import pymonetdb
     except ImportError:
         print('Python available, but pymonetdb package not available')
     else:
         CONDITIONALS['HAVE_PYMONETDB'] = '#'
-    try:
-        import scipy
-    except ImportError:
-        pass
-    else:
-        CONDITIONALS['HAVE_LIBSCIPY'] = '#'
-    try:
-        import pandas
-    except ImportError:
-        pass
-    else:
-        CONDITIONALS['HAVE_LIBPANDAS'] = '#'
+    if 'PYTHON2' in os.environ:
+        proc = process.Popen([os.environ['PYTHON2'], '-c', 'import scipy'],
+                             stdout=process.PIPE, stderr=process.PIPE,
+                             universal_newlines=True)
+        pyout, pyerr = proc.communicate()
+        if proc.returncode == 0:
+            CONDITIONALS['HAVE_LIBSCIPY2'] = '#'
+        proc = process.Popen([os.environ['PYTHON2'], '-c', 'import pandas'],
+                             stdout=process.PIPE, stderr=process.PIPE,
+                             universal_newlines=True)
+        pyout, pyerr = proc.communicate()
+        if proc.returncode == 0:
+            CONDITIONALS['HAVE_LIBPANDAS2'] = '#'
+    if 'PYTHON3' in os.environ:
+        proc = process.Popen([os.environ['PYTHON3'], '-c', 'import scipy'],
+                             stdout=process.PIPE, stderr=process.PIPE,
+                             universal_newlines=True)
+        pyout, pyerr = proc.communicate()
+        if proc.returncode == 0:
+            CONDITIONALS['HAVE_LIBSCIPY3'] = '#'
+        # proc = process.Popen([os.environ['PYTHON3'], '-c', 'import pandas'],
+        #                      stdout=process.PIPE, stderr=process.PIPE,
+        #                      universal_newlines=True)
+        # pyout, pyerr = proc.communicate()
+        # if proc.returncode == 0:
+        #     CONDITIONALS['HAVE_LIBPANDAS3'] = '#'
     if env.get('TSTDATAPATH'):
         CONDITIONALS['HAVE_DATA_PATH'] = '#'
     if CheckExec('perl'):

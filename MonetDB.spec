@@ -100,8 +100,8 @@
 %bcond_without fits
 %endif
 
-%{!?__python2: %global __python2 %__python}
-%{!?python2_sitelib: %global python2_sitelib %(%{__python2} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
+%{!?__python3: %global __python3 /usr/bin/python3}
+%{!?python3_sitelib: %global python3_sitelib %(%{__python3} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 
 Name: %{name}
 Version: %{version}
@@ -126,6 +126,7 @@ BuildRequires: hardlink
 %endif
 BuildRequires: gcc
 BuildRequires: bison
+BuildRequires: /usr/bin/python3
 %if %{?rhel:1}%{!?rhel:0}
 BuildRequires: bzip2-devel
 %else
@@ -397,7 +398,7 @@ Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
 %endif
 Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Requires: python-pymonetdb >= 1.0.6
+Requires: python3-pymonetdb >= 1.0.6
 
 %description client-tests
 MonetDB is a database management system that is developed from a
@@ -846,7 +847,7 @@ Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires: %{name}-testing = %{version}-%{release}
 Requires: %{name}-client-tests = %{version}-%{release}
-Requires: python
+Requires: /usr/bin/python3
 BuildArch: noarch
 
 %description testing-python
@@ -863,8 +864,8 @@ developer, but if you do want to test, this is the package you need.
 %defattr(-,root,root)
 %{_bindir}/Mapprove.py
 %{_bindir}/Mtest.py
-%dir %{python2_sitelib}/MonetDBtesting
-%{python2_sitelib}/MonetDBtesting/*
+%dir %{python3_sitelib}/MonetDBtesting
+%{python3_sitelib}/MonetDBtesting/*
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %package selinux
@@ -990,8 +991,8 @@ export CFLAGS
 	--with-openssl=yes \
 	--with-proj=no \
 	--with-pthread=yes \
-	--with-python2=yes \
-	--with-python3=%{?with_py3integration:yes}%{!?with_py3integration:no} \
+	--with-python2=%{?with_py2integration:yes}%{!?with_py2integration:no} \
+	--with-python3=yes \
 	--with-readline=yes \
 	--with-regex=%{?with_pcre:PCRE}%{!?with_pcre:POSIX} \
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \

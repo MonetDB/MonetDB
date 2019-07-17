@@ -76,7 +76,7 @@ spurious_error.Bug-6344
 caching_stats_bug.6374
 name-interference.Bug-6348
 parsererror.Bug-6381
-HAVE_LIBPY?aggr_udf_with_more_than_2params.Bug-6385
+HAVE_LIBPY2?aggr_udf_with_more_than_2params.Bug-6385
 exists.Bug-6392
 case.Bug-6386
 sqllitelogistest_case.Bug-6335
@@ -102,10 +102,10 @@ sqlitelogictest-select-in.Bug-6433
 sqlitelogictest-select-not-in.Bug-6435
 drop_schema_restrict.Bug-6438
 sqlitelogictest-cast-decimal.Bug-6445
-HAVE_LIBPY?table_returning_with.Bug-6444
+HAVE_LIBPY2?table_returning_with.Bug-6444
 insert_into_multiple_subqueries.Bug-6448
 HAVE_SAMTOOLS?sqlsmith.Bug-6449
-KNOWNFAIL&HAVE_LIBPY?python_loader_clobbers_default_with_null.Bug-6464
+KNOWNFAIL&HAVE_LIBPY2?python_loader_clobbers_default_with_null.Bug-6464
 skip_problem_best_effort.Bug-6442
 date_to_str.Bug-6467
 cleanup_statistics.Bug-6439
