@@ -2602,6 +2602,19 @@ column_dup(sql_trans *tr, int flags, sql_column *oc, sql_table *t)
 	base_init(sa, &c->base, oc->base.id, tr_flag(&oc->base, flags), oc->base.name);
 	obj_ref(oc,c,flags);
 	c->type = oc->type;
+	if (c->type.type->s) { /* user type */
+		sql_schema *s = t->s;
+		sql_type *lt = NULL;
+
+		if (s->base.id == c->type.type->s->base.id) {
+			lt = sql_trans_bind_type(tr, s, c->type.type->base.name);
+		} else { 
+			lt = sql_trans_bind_type(tr, find_sql_schema_id(tr, c->type.type->s->base.id), c->type.type->base.name);
+		}
+		if (lt == NULL) 
+			GDKfatal("SQL type %s missing", c->type.type->base.name);
+		sql_init_subtype(&c->type, lt, c->type.digits, c->type.scale);
+	}
 	c->def = NULL;
 	if (oc->def)
 		c->def = sa_strdup(sa, oc->def);
