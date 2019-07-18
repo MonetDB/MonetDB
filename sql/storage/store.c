@@ -2236,6 +2236,22 @@ store_flush_log(void)
 }
 
 void
+store_suspend_log(void)
+{
+	MT_lock_set(&bs_lock);
+	flusher.enabled = false;
+	MT_lock_unset(&bs_lock);
+}
+
+void
+store_resume_log(void)
+{
+	MT_lock_set(&bs_lock);
+	flusher.enabled = true;
+	MT_lock_unset(&bs_lock);
+}
+
+void
 store_manager(void)
 {
 	MT_thread_setworking("sleeping");

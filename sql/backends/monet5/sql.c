@@ -5692,6 +5692,31 @@ SQLflush_log(void *ret)
 	return MAL_SUCCEED;
 }
 
+str 
+SQLresume_log_flushing(void *ret)
+{
+	(void)ret;
+	store_resume_log();
+	return MAL_SUCCEED;
+}
+
+str 
+SQLsuspend_log_flushing(void *ret)
+{
+	(void)ret;
+	store_suspend_log();
+	return MAL_SUCCEED;
+}
+
+str
+SQLhot_snapshot(void *ret, const str *tarfile_arg)
+{
+	(void)ret;
+	char *tarfile = *tarfile_arg;
+	fprintf(stderr, "hot_snapshot to %s\n", tarfile);
+	return MAL_SUCCEED;
+}
+
 str
 SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
