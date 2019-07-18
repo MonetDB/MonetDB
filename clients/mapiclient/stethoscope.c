@@ -246,16 +246,21 @@ usageStethoscope(void)
 static void
 stopListening(int i)
 {
-	fprintf(stderr,"signal %d received\n",i);
+	fprintf(stderr,"stethoscope: signal %d received\n",i);
 	if( dbh)
 		doQ("profiler.stop();");
 stop_disconnect:
 	// show follow up action only once
-	if(trace)
-		fclose(trace);
+	/*
+	if(trace) {
+		fflush(trace);
+		int res = fclose(trace);
+		assert(res==0);
+	}
+	*/
 	if(dbh)
 		mapi_disconnect(dbh);
-	exit(0);
+	/* exit(0); */
 }
 
 int
@@ -393,7 +398,7 @@ main(int argc, char **argv)
 #endif
 	signal(SIGINT, stopListening);
 	signal(SIGTERM, stopListening);
-	close(0);
+	/* close(0); */
 
 	if (user == NULL)
 		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
@@ -422,7 +427,7 @@ main(int argc, char **argv)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
 
-	snprintf(buf, BUFSIZ, " profiler.openstream(%d);", stream_mode);
+	snprintf(buf, BUFSIZ, "profiler.openstream(%d);", stream_mode);
 	if( debug)
 		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);
@@ -455,6 +460,7 @@ main(int argc, char **argv)
 		if(json) {
 			if(trace != NULL) {
 				fprintf(trace, "%s", response + len);
+				fflush(trace);
 			} else {
 				printf("%s", response + len);
 				fflush(stdout);
