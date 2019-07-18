@@ -544,7 +544,10 @@ SQLinit(Client c)
 		} else if (maybeupgrade) {
 			SQLtrans(m);
 			SQLupgrades(c,m);
-			msg = mvc_commit(m, 0, NULL, false);
+			/* sometimes the upgrade ends in a COMMIT,
+			 * sometimes not */
+			if (m->session->tr->active)
+				msg = mvc_commit(m, 0, NULL, false);
 		}
 		maybeupgrade = 0;
 	}
