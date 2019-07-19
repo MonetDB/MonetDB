@@ -1129,9 +1129,10 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 	node *n;
-	bool cleared;
+	bit cleared;
 	int level = 0;
-	lng nrows = 0, all, readonly, inserted, updates, deletes;
+	BUN nrows = 0;
+	lng all, readonly, inserted, updates, deletes;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		goto cleanup;
@@ -1159,7 +1160,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL, "sql.delta", SQLSTATE(3F000) "No such column '%s' in table '%s'", cname, t->base.name);
 			nrows = 1;
 		} else {
-			nrows = t->columns.set->cnt;
+			nrows = (BUN) t->columns.set->cnt;
 		}
 	} else if (s->tables.set) {
 		for (n = s->tables.set->h; n ; n = n->next) {
