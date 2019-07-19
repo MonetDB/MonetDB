@@ -125,8 +125,8 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		.language = "msql",
 		.exitSystem = "SQLexit",
 		.exitSystemCmd = SQLexit,
-		.initClient = "SQLinitClient",
-		.initClientCmd = SQLinitClient,
+		.initClient = "SQLinitClientFromMAL",
+		.initClientCmd = SQLinitClientFromMAL,
 		.exitClient = "SQLexitClient",
 		.exitClientCmd = SQLexitClient,
 		.reader = "MALreader",
@@ -288,6 +288,12 @@ SQLprepareClient(Client c, int login)
 	} else {
 		be = c->sqlcontext;
 		m = be->mvc;
+		/* Only reset if there is no active transaction which
+		 * can happen when we combine sql.init with msql.
+		*/
+		if(m->session->tr->active) {
+			return NULL;
+		}
 		if(mvc_reset(m, c->fdin, c->fdout, SQLdebug, NR_GLOBAL_VARS) < 0) {
 			throw(SQL,"sql.initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
@@ -690,6 +696,34 @@ SQLinitClient(Client c)
 	msg = SQLprepareClient(c, 0);
 #endif
 	MT_lock_unset(&sql_contextLock);
+	return msg;
+}
+
+str
+SQLinitClientFromMAL(Client c) {
+	str msg = MAL_SUCCEED;
+
+	if ( (msg = SQLinitClient(c)) != MAL_SUCCEED) {
+		return msg;
+	}
+
+	mvc* m = ((backend*) c->sqlcontext)->mvc;
+
+	/* Crucial step:
+	 * MAL scripts that interact with the sql module
+	 * must have a properly initialized transaction.
+	 */
+	SQLtrans(m);
+
+	if(*m->errstr) {
+		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
+			msg = createException(PARSE, "SQLinitClientFromMAL", "%s", m->errstr);
+		else
+			msg = createException(PARSE, "SQLinitClientFromMAL", SQLSTATE(42000) "%s", m->errstr);
+		*m->errstr=0;
+		c->mode = FINISHCLIENT;
+	}
+
 	return msg;
 }
 

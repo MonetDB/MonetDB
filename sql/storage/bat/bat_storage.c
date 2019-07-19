@@ -42,6 +42,7 @@ delta_bind_del(sql_dbat *bat, int access)
 	assert(access != RD_UPD_ID && access != RD_UPD_VAL);
 
 	b = temp_descriptor(bat->dbid);
+	assert(BATcount(b) == bat->cnt);
 	return b;
 }
 
@@ -787,6 +788,7 @@ dup_dbat( sql_trans *tr, sql_dbat *obat, sql_dbat *bat, int is_new, int temp)
 		} else {
 			bat->dbid = ebat_copy(bat->dbid, 0, temp);
 		}
+		assert(BATcount(quick_descriptor(bat->dbid)) == bat->cnt);
 		if (bat->dbid == BID_NIL) 
 			return LOG_ERR;
 	}
@@ -944,11 +946,13 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 			return LOG_ERR;
 	}
 	assert(b->theap.storage != STORE_PRIV);
+	assert(BATcount(b) == bat->cnt);
 	if (BATappend(b, i, NULL, true) != GDK_SUCCEED) {
 		bat_destroy(b);
 		return LOG_ERR;
 	}
 	BATkey(b, true);
+	assert(BATcount(b) == bat->cnt+ BATcount(i));
 	bat_destroy(b);
 
 	bat->cnt += BATcount(i);
@@ -971,6 +975,7 @@ delta_delete_val( sql_dbat *bat, oid rid )
 			return LOG_ERR;
 	}
 	assert(b->theap.storage != STORE_PRIV);
+	assert(BATcount(b) == bat->cnt);
 	if (BUNappend(b, (ptr)&rid, true) != GDK_SUCCEED) {
 		bat_destroy(b);
 		return LOG_ERR;
@@ -2258,12 +2263,15 @@ gtr_update_dbat(sql_trans *tr, sql_dbat *d, int *changes, char tpe, oid id)
 			assert(!isEbat(cdb));
 			if (append_inserted(cdb, idb) == BUN_NONE)
 				ok = LOG_ERR;
+			else
+				BATcommit(cdb);
 			bat_destroy(cdb);
 		} else {
 			ok = LOG_ERR;
 		}
 	}
 	bat_destroy(idb);
+	assert(BATcount(quick_descriptor(d->dbid)) == d->cnt);
 	return ok;
 }
 
@@ -2673,10 +2681,12 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared)
 				ok = LOG_ERR;
 			else
 				BATcommit(odb);
+			assert(BATcount(odb) == fdb->cnt);
 			temp_destroy(fdb->dbid);
 
 			if (ok == LOG_OK) {
 				fdb->dbid = 0;
+				assert(BATcount(db) == fdb->cnt);
 				tdb->cnt = fdb->cnt;
 			}
 			bat_destroy(odb);

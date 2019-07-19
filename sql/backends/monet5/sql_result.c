@@ -2059,6 +2059,8 @@ get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat 
 		return count;
 	} else if (eclass == EC_BIT) {
 		return 5;	/* max(strlen("true"), strlen("false")) */
+	} else if (strcmp(ATOMname(mtype), "uuid") == 0) {
+		return 36;	/* xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx */
 	} else {
 		return 0;
 	}
