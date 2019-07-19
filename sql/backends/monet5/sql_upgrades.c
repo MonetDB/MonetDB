@@ -1964,7 +1964,15 @@ sql_update_deltas(Client c, mvc *sql)
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
-			"create function sys.deltas (\"schema\" string, \"table\" string, \"column\" string) returns table (\"values\" bigint) external name \"sql\".\"deltas\";\n"
+			"create function sys.deltas (\"schema\" string)"
+			" returns table (\"id\" int, \"cleared\" boolean, \"immutable\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)"
+			" external name \"sql\".\"deltas\";\n"
+			"create function sys.deltas (\"schema\" string, \"table\" string)"
+			" returns table (\"id\" int, \"cleared\" boolean, \"immutable\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)"
+			" external name \"sql\".\"deltas\";\n"
+			"create function sys.deltas (\"schema\" string, \"table\" string, \"column\" string)"
+			" returns table (\"id\" int, \"cleared\" boolean, \"immutable\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)"
+			" external name \"sql\".\"deltas\";\n"
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('deltas') and type = %d;\n", F_UNION);
 	if (schema)
