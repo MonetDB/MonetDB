@@ -56,17 +56,17 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
-
-# 14:39:22 >  
-# 14:39:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23085" "--port=30158"
-# 14:39:22 >  
+# 16:19:19 >  
+# 16:19:19 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28001" "--port=38663"
+# 16:19:19 >  
 
 #select * from sys.malfunctions() order by module, "function", address, signature, comment;
 % .L1,	.L1,	.L1,	.L1,	.L1 # table_name
 % module,	function,	signature,	address,	comment # name
 % clob,	clob,	clob,	clob,	clob # type
-% 11,	28,	364,	44,	874 # length
+% 11,	28,	364,	38,	874 # length
+[ "aggr",	"allnotequal",	"command aggr.allnotequal(l:bat[:any_1], r:bat[:any_1]):bit ",	"SQLallnotequal;",	"if all values in r are not equal to l return true, else if r has nil nil else false"	]
+[ "aggr",	"anyequal",	"command aggr.anyequal(l:bat[:any_1], r:bat[:any_1]):bit ",	"SQLanyequal;",	"if any value in r is equal to l return true, else if r has nil nil else false"	]
 [ "aggr",	"avg",	"command aggr.avg(b:bat[:bte], g:bat[:oid], e:bat[:any_1]):bat[:dbl] ",	"AGGRavg13_dbl;",	"Grouped tail average on bte"	]
 [ "aggr",	"avg",	"command aggr.avg(b:bat[:dbl], g:bat[:oid], e:bat[:any_1]):bat[:dbl] ",	"AGGRavg13_dbl;",	"Grouped tail average on dbl"	]
 [ "aggr",	"avg",	"command aggr.avg(b:bat[:flt], g:bat[:oid], e:bat[:any_1]):bat[:dbl] ",	"AGGRavg13_dbl;",	"Grouped tail average on flt"	]
@@ -6117,22 +6117,14 @@ Ready.
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:sht], s:bat[:oid], scale:int):dbl ",	"CMDcalcavg;",	"average of non-nil values of B"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:sht], scale:int) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:sht], scale:int):dbl ",	"CMDcalcavg;",	"average of non-nil values of B with candidates list"	]
-[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], lo:any_1, hi:any_1):bat[:bit] ",	"CMDbatBETWEEN;",	"B between LO and HI inclusive"	]
-[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], lo:any_1, hi:any_1, s:bat[:oid]):bat[:bit] ",	"CMDbatBETWEEN;",	"B between LO and HI inclusive with candidates list"	]
-[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], lo:any_1, hi:bat[:any_1]):bat[:bit] ",	"CMDbatBETWEEN;",	"B between LO and HI inclusive"	]
-[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], lo:any_1, hi:bat[:any_1], s:bat[:oid]):bat[:bit] ",	"CMDbatBETWEEN;",	"B between LO and HI inclusive with candidates list"	]
-[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], lo:bat[:any_1], hi:any_1):bat[:bit] ",	"CMDbatBETWEEN;",	"B between LO and HI inclusive"	]
-[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], lo:bat[:any_1], hi:any_1, s:bat[:oid]):bat[:bit] ",	"CMDbatBETWEEN;",	"B between LO and HI inclusive with candidates list"	]
-[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], lo:bat[:any_1], hi:bat[:any_1]):bat[:bit] ",	"CMDbatBETWEEN;",	"B between LO and HI inclusive"	]
-[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], lo:bat[:any_1], hi:bat[:any_1], s:bat[:oid]):bat[:bit] ",	"CMDbatBETWEEN;",	"B between LO and HI inclusive with candidates list"	]
-[ "batcalc",	"between_symmetric",	"pattern batcalc.between_symmetric(b:bat[:any_1], v1:any_1, v2:any_1):bat[:bit] ",	"CMDbatBETWEENsymmetric;",	"B between V1 and V2 (or vice versa) inclusive"	]
-[ "batcalc",	"between_symmetric",	"pattern batcalc.between_symmetric(b:bat[:any_1], v1:any_1, v2:any_1, s:bat[:oid]):bat[:bit] ",	"CMDbatBETWEENsymmetric;",	"B between V1 and V2 (or vice versa) inclusive with candidates list"	]
-[ "batcalc",	"between_symmetric",	"pattern batcalc.between_symmetric(b:bat[:any_1], v1:any_1, v2:bat[:any_1]):bat[:bit] ",	"CMDbatBETWEENsymmetric;",	"B between V1 and V2 (or vice versa) inclusive"	]
-[ "batcalc",	"between_symmetric",	"pattern batcalc.between_symmetric(b:bat[:any_1], v1:any_1, v2:bat[:any_1], s:bat[:oid]):bat[:bit] ",	"CMDbatBETWEENsymmetric;",	"B between V1 and V2 (or vice versa) inclusive with candidates list"	]
-[ "batcalc",	"between_symmetric",	"pattern batcalc.between_symmetric(b:bat[:any_1], v1:bat[:any_1], v2:any_1):bat[:bit] ",	"CMDbatBETWEENsymmetric;",	"B between V1 and V2 (or vice versa) inclusive"	]
-[ "batcalc",	"between_symmetric",	"pattern batcalc.between_symmetric(b:bat[:any_1], v1:bat[:any_1], v2:any_1, s:bat[:oid]):bat[:bit] ",	"CMDbatBETWEENsymmetric;",	"B between V1 and V2 (or vice versa) inclusive with candidates list"	]
-[ "batcalc",	"between_symmetric",	"pattern batcalc.between_symmetric(b:bat[:any_1], v1:bat[:any_1], v2:bat[:any_1]):bat[:bit] ",	"CMDbatBETWEENsymmetric;",	"B between V1 and V2 (or vice versa) inclusive"	]
-[ "batcalc",	"between_symmetric",	"pattern batcalc.between_symmetric(b:bat[:any_1], v1:bat[:any_1], v2:bat[:any_1], s:bat[:oid]):bat[:bit] ",	"CMDbatBETWEENsymmetric;",	"B between V1 and V2 (or vice versa) inclusive with candidates list"	]
+[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], v1:any_1, v2:any_1, s:bat[:oid], sym:bit, linc:bit, hinc:bit, nils_false:bit):bat[:bit] ",	"CMDbatBETWEEN;",	"B between V1 and V2 (or vice versa) with candidate list"	]
+[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], v1:any_1, v2:any_1, sym:bit, linc:bit, hinc:bit, nils_false:bit):bat[:bit] ",	"CMDbatBETWEEN;",	"B between V1 and V2 (or vice versa)"	]
+[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], v1:any_1, v2:bat[:any_1], s:bat[:oid], sym:bit, linc:bit, hinc:bit, nils_false:bit):bat[:bit] ",	"CMDbatBETWEEN;",	"B between V1 and V2 (or vice versa) with candidate list"	]
+[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], v1:any_1, v2:bat[:any_1], sym:bit, linc:bit, hinc:bit, nils_false:bit):bat[:bit] ",	"CMDbatBETWEEN;",	"B between V1 and V2 (or vice versa)"	]
+[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], v1:bat[:any_1], v2:any_1, s:bat[:oid], sym:bit, linc:bit, hinc:bit, nils_false:bit):bat[:bit] ",	"CMDbatBETWEEN;",	"B between V1 and V2 (or vice versa) with candidate list"	]
+[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], v1:bat[:any_1], v2:any_1, sym:bit, linc:bit, hinc:bit, nils_false:bit):bat[:bit] ",	"CMDbatBETWEEN;",	"B between V1 and V2 (or vice versa)"	]
+[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], v1:bat[:any_1], v2:bat[:any_1], s:bat[:oid], sym:bit, linc:bit, hinc:bit, nils_false:bit):bat[:bit] ",	"CMDbatBETWEEN;",	"B between V1 and V2 (or vice versa) with candidate list"	]
+[ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], v1:bat[:any_1], v2:bat[:any_1], sym:bit, linc:bit, hinc:bit, nils_false:bit):bat[:bit] ",	"CMDbatBETWEEN;",	"B between V1 and V2 (or vice versa)"	]
 [ "batcalc",	"bit",	"pattern batcalc.bit(b:bat[:bit]):bat[:bit] ",	"CMDconvertsignal_bit;",	"cast from bit to bit, signal error on overflow"	]
 [ "batcalc",	"bit",	"pattern batcalc.bit(b:bat[:bit], s:bat[:oid]):bat[:bit] ",	"CMDconvertsignal_bit;",	"cast from bit to bit with candidates list, signal error on overflow"	]
 [ "batcalc",	"bit",	"pattern batcalc.bit(b:bat[:bte]):bat[:bit] ",	"CMDconvertsignal_bit;",	"cast from bte to bit, signal error on overflow"	]
