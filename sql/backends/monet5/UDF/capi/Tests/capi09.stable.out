@@ -41,7 +41,7 @@ Ready.
 % sys.L2 # table_name
 % L2 # name
 % uuid # type
-% 0 # length
+% 36 # length
 [ ad887b3d-08f7-c308-7285-354a1857cbc8	]
 [ NULL	]
 #DROP FUNCTION capi12;
