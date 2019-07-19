@@ -1161,14 +1161,13 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			nrows = t->columns.set->cnt;
 		}
-	} else {
+	} else if (s->tables.set) {
 		for (n = s->tables.set->h; n ; n = n->next) {
 			t = (sql_table *) n->data;
 			if (!(isView(t) || isMergeTable(t) || isStream(t) || isRemote(t) || isReplicaTable(t)))
 				nrows += t->columns.set->cnt;
 		}
 	}
-	assert(nrows);
 
 	if ((col1 = COLnew(0, TYPE_int, nrows, TRANSIENT)) == NULL) {
 		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -1199,53 +1198,18 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto cleanup;
 	}
 
-	tr = m->session->tr;
-	while((tr = tr->parent)) level++;
+	if (nrows) {
+		tr = m->session->tr;
+		while((tr = tr->parent)) level++;
 
-	if (tname) {
-		cleared = (t->cleared != 0);
-		deletes = (lng) store_funcs.count_del(m->session->tr, t);
-		if (cname) {
-			inserted = (lng) store_funcs.count_col(m->session->tr, c, 0);
-			all = (lng) store_funcs.count_col(m->session->tr, c, 1);
-			updates = (lng) store_funcs.count_col_upd(m->session->tr, c);
-			readonly = all - inserted;
-
-			if (BUNappend(col1, &c->base.id, false) != GDK_SUCCEED) {
-				msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				goto cleanup;
-			}
-			if (BUNappend(col2, &cleared, false) != GDK_SUCCEED) {
-				msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				goto cleanup;
-			}
-			if (BUNappend(col3, &readonly, false) != GDK_SUCCEED) {
-				msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				goto cleanup;
-			}
-			if (BUNappend(col4, &inserted, false) != GDK_SUCCEED) {
-				msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				goto cleanup;
-			}
-			if (BUNappend(col5, &updates, false) != GDK_SUCCEED) {
-				msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				goto cleanup;
-			}
-			if (BUNappend(col6, &deletes, false) != GDK_SUCCEED) {
-				msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				goto cleanup;
-			}
-			if (BUNappend(col7, &level, false) != GDK_SUCCEED) {
-				msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				goto cleanup;
-			}
-		} else {
-			for (n = t->columns.set->h; n ; n = n->next) {
-				c = (sql_column*) n->data;
-
+		if (tname) {
+			cleared = (t->cleared != 0);
+			deletes = (lng) store_funcs.count_del(m->session->tr, t);
+			if (cname) {
 				inserted = (lng) store_funcs.count_col(m->session->tr, c, 0);
 				all = (lng) store_funcs.count_col(m->session->tr, c, 1);
 				updates = (lng) store_funcs.count_col_upd(m->session->tr, c);
+				assert(all >= inserted);
 				readonly = all - inserted;
 
 				if (BUNappend(col1, &c->base.id, false) != GDK_SUCCEED) {
@@ -1276,21 +1240,14 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
-			}
-		}
-	} else {
-		for (n = s->tables.set->h; n ; n = n->next) {
-			t = (sql_table *) n->data;
-			if (!(isView(t) || isMergeTable(t) || isStream(t) || isRemote(t) || isReplicaTable(t))) {
-				cleared = (t->cleared != 0);
-				deletes = (lng) store_funcs.count_del(m->session->tr, t);
-
-				for (node *nn = t->columns.set->h; nn ; nn = nn->next) {
-					c = (sql_column*) nn->data;
+			} else {
+				for (n = t->columns.set->h; n ; n = n->next) {
+					c = (sql_column*) n->data;
 
 					inserted = (lng) store_funcs.count_col(m->session->tr, c, 0);
 					all = (lng) store_funcs.count_col(m->session->tr, c, 1);
 					updates = (lng) store_funcs.count_col_upd(m->session->tr, c);
+					assert(all >= inserted);
 					readonly = all - inserted;
 
 					if (BUNappend(col1, &c->base.id, false) != GDK_SUCCEED) {
@@ -1320,6 +1277,53 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (BUNappend(col7, &level, false) != GDK_SUCCEED) {
 						msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						goto cleanup;
+					}
+				}
+			}
+		} else if (s->tables.set) {
+			for (n = s->tables.set->h; n ; n = n->next) {
+				t = (sql_table *) n->data;
+				if (!(isView(t) || isMergeTable(t) || isStream(t) || isRemote(t) || isReplicaTable(t))) {
+					cleared = (t->cleared != 0);
+					deletes = (lng) store_funcs.count_del(m->session->tr, t);
+
+					for (node *nn = t->columns.set->h; nn ; nn = nn->next) {
+						c = (sql_column*) nn->data;
+
+						inserted = (lng) store_funcs.count_col(m->session->tr, c, 0);
+						all = (lng) store_funcs.count_col(m->session->tr, c, 1);
+						updates = (lng) store_funcs.count_col_upd(m->session->tr, c);
+						assert(all >= inserted);
+						readonly = all - inserted;
+
+						if (BUNappend(col1, &c->base.id, false) != GDK_SUCCEED) {
+							msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							goto cleanup;
+						}
+						if (BUNappend(col2, &cleared, false) != GDK_SUCCEED) {
+							msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							goto cleanup;
+						}
+						if (BUNappend(col3, &readonly, false) != GDK_SUCCEED) {
+							msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							goto cleanup;
+						}
+						if (BUNappend(col4, &inserted, false) != GDK_SUCCEED) {
+							msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							goto cleanup;
+						}
+						if (BUNappend(col5, &updates, false) != GDK_SUCCEED) {
+							msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							goto cleanup;
+						}
+						if (BUNappend(col6, &deletes, false) != GDK_SUCCEED) {
+							msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							goto cleanup;
+						}
+						if (BUNappend(col7, &level, false) != GDK_SUCCEED) {
+							msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							goto cleanup;
+						}
 					}
 				}
 			}
