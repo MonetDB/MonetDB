@@ -2728,10 +2728,11 @@ column_dup(sql_trans *tr, int flags, sql_column *oc, sql_table *t)
 		sql_type *lt = NULL;
 
 		if (s->base.id == c->type.type->s->base.id) {
-			/* current column belongs to current schema. So search there for current user type. */
+			/* Current user type belongs to current schema. So search there for current user type. */
 			lt = find_sql_type(s, c->type.type->base.name);
-		} else { 
-			lt = sql_trans_bind_type(tr, find_sql_schema_id(tr, c->type.type->s->base.id), c->type.type->base.name);
+		} else {
+			/* Current user type belongs to another schema in the current transaction. Search there for current user type. */
+			lt = sql_trans_bind_type(tr, NULL, c->type.type->base.name);
 		}
 		if (lt == NULL) 
 			GDKfatal("SQL type %s missing", c->type.type->base.name);
