@@ -1092,7 +1092,8 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "sql.bind", SQLSTATE(42000) "unable to find %s(%s)", tname, cname);
 }
 
-/* The output of this function is a lng bat with:
+/* The output of this function are 7 columns:
+ *  - The sqlid of the column
  *  - A flag indicating if the column's upper table is cleared or not.
  *  - Number of read-only values of the column (inherited from the previous transaction).
  *  - Number of inserted rows during the current transaction.
@@ -1105,18 +1106,26 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	const char *sname = *getArgReference_str(stk, pci, 1);
-	const char *tname = *getArgReference_str(stk, pci, 2);
-	const char *cname = *getArgReference_str(stk, pci, 3);
+	const char *sname = *getArgReference_str(stk, pci, 7);
+	const char *tname = *getArgReference_str(stk, pci, 8);
+	const char *cname = *getArgReference_str(stk, pci, 9);
 	mvc *m;
 	str msg = MAL_SUCCEED;
-	BAT *b = NULL;
-	bat *bid = getArgReference_bat(stk, pci, 0);
+	BAT *col1 = NULL, *col2 = NULL, *col3 = NULL, *col4 = NULL, *col5 = NULL, *col6 = NULL, *col7 = NULL;
+	bat *b1 = getArgReference_bat(stk, pci, 0),
+		*b2 = getArgReference_bat(stk, pci, 1),
+		*b3 = getArgReference_bat(stk, pci, 2),
+		*b4 = getArgReference_bat(stk, pci, 3),
+		*b5 = getArgReference_bat(stk, pci, 4),
+		*b6 = getArgReference_bat(stk, pci, 5),
+		*b7 = getArgReference_bat(stk, pci, 6);
 	sql_trans *tr;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_column *c = NULL;
-	lng level = 0, cleared, all, readonly, inserted, updates, deletes;
+	bool cleared;
+	int level = 0;
+	lng all, readonly, inserted, updates, deletes;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		goto cleanup;
@@ -1136,52 +1145,97 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(c = mvc_bind_column(m, t, cname)))
 		throw(SQL, "sql.delta", SQLSTATE(3F000) "No such column '%s' in table '%s'", cname, t->base.name);
 
-	if ((b = COLnew(0, TYPE_lng, 6, TRANSIENT)) == NULL) {
-		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		goto cleanup;
-	}
-
-	cleared = t->cleared ? 1 : 0;
-	if (BUNappend(b, &cleared, false) != GDK_SUCCEED) {
-		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		goto cleanup;
-	}
-
+	cleared = (t->cleared != 0);
 	inserted = (lng) store_funcs.count_col(m->session->tr, c, 0);
 	all = (lng) store_funcs.count_col(m->session->tr, c, 1);
 	updates = (lng) store_funcs.count_col_upd(m->session->tr, c);
 	deletes = (lng) store_funcs.count_del(m->session->tr, t);
 	readonly = all - inserted;
-	if (BUNappend(b, &readonly, false) != GDK_SUCCEED) {
-		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	tr = m->session->tr;
+	while((tr = tr->parent)) level++;
+
+	if ((col1 = COLnew(0, TYPE_int, 1, TRANSIENT)) == NULL) {
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
-	if (BUNappend(b, &inserted, false) != GDK_SUCCEED) {
-		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if ((col2 = COLnew(0, TYPE_bit, 1, TRANSIENT)) == NULL) {
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
-	if (BUNappend(b, &updates, false) != GDK_SUCCEED) {
-		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if ((col3 = COLnew(0, TYPE_lng, 1, TRANSIENT)) == NULL) {
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
-	if (BUNappend(b, &deletes, false) != GDK_SUCCEED) {
-		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if ((col4 = COLnew(0, TYPE_lng, 1, TRANSIENT)) == NULL) {
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	if ((col5 = COLnew(0, TYPE_lng, 1, TRANSIENT)) == NULL) {
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	if ((col6 = COLnew(0, TYPE_lng, 1, TRANSIENT)) == NULL) {
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	if ((col7 = COLnew(0, TYPE_int, 1, TRANSIENT)) == NULL) {
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
-	tr = m->session->tr;
-	while((tr = tr->parent)) level++;
-	if (BUNappend(b, &level, false) != GDK_SUCCEED) {
+	if (BUNappend(col1, &c->base.id, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	if (BUNappend(col2, &cleared, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	if (BUNappend(col3, &readonly, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	if (BUNappend(col4, &inserted, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	if (BUNappend(col5, &updates, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	if (BUNappend(col6, &deletes, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	if (BUNappend(col7, &level, false) != GDK_SUCCEED) {
 		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
 cleanup:
 	if (msg) {
-		if (b)
-			BBPreclaim(b);
+		if (col1)
+			BBPreclaim(col1);
+		if (col2)
+			BBPreclaim(col2);
+		if (col3)
+			BBPreclaim(col3);
+		if (col4)
+			BBPreclaim(col4);
+		if (col5)
+			BBPreclaim(col5);
+		if (col6)
+			BBPreclaim(col6);
+		if (col7)
+			BBPreclaim(col7);
 	} else {
-		BBPkeepref(*bid = b->batCacheid);
+		BBPkeepref(*b1 = col1->batCacheid);
+		BBPkeepref(*b2 = col2->batCacheid);
+		BBPkeepref(*b3 = col3->batCacheid);
+		BBPkeepref(*b4 = col4->batCacheid);
+		BBPkeepref(*b5 = col5->batCacheid);
+		BBPkeepref(*b6 = col6->batCacheid);
+		BBPkeepref(*b7 = col7->batCacheid);
 	}
 	return msg;
 }
