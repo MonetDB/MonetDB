@@ -2607,7 +2607,8 @@ column_dup(sql_trans *tr, int flags, sql_column *oc, sql_table *t)
 		sql_type *lt = NULL;
 
 		if (s->base.id == c->type.type->s->base.id) {
-			lt = sql_trans_bind_type(tr, s, c->type.type->base.name);
+			/* current column belongs to current schema. So search there for current user type. */
+			lt = find_sql_type(s, c->type.type->base.name);
 		} else { 
 			lt = sql_trans_bind_type(tr, find_sql_schema_id(tr, c->type.type->s->base.id), c->type.type->base.name);
 		}
