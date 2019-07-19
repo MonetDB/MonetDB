@@ -203,7 +203,7 @@ gdk_export const ptr ptr_nil;
 #define ATOMdel(t,hp,src)	do if (BATatoms[t].atomDel) BATatoms[t].atomDel(hp,src); while (0)
 #define ATOMvarsized(t)		(BATatoms[t].atomPut != NULL)
 #define ATOMlinear(t)		BATatoms[t].linear
-#define ATOMtype(t)		((t == TYPE_void)?TYPE_oid:t)
+#define ATOMtype(t)		((t) == TYPE_void ? TYPE_oid : (t))
 #define ATOMfix(t,v)		do if (BATatoms[t].atomFix) BATatoms[t].atomFix(v); while (0)
 #define ATOMunfix(t,v)		do if (BATatoms[t].atomUnfix) BATatoms[t].atomUnfix(v); while (0)
 
