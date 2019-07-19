@@ -1092,6 +1092,100 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "sql.bind", SQLSTATE(42000) "unable to find %s(%s)", tname, cname);
 }
 
+/* The output of this function is a lng bat with:
+ *  - A flag indicating if the column's upper table is cleared or not.
+ *  - Number of read-only values of the column (inherited from the previous transaction).
+ *  - Number of inserted rows during the current transaction.
+ *  - Number of updated rows during the current transaction.
+ *  - Number of deletes of the column's table.
+ *  - the number in the transaction chain (.i.e for each savepoint a new transaction is added in the chain)
+ *  If the table is cleared, the values RDONLY, RD_INS and RD_UPD_ID and the number of deletes will be 0.
+ */
+
+str
+mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	const char *sname = *getArgReference_str(stk, pci, 1);
+	const char *tname = *getArgReference_str(stk, pci, 2);
+	const char *cname = *getArgReference_str(stk, pci, 3);
+	mvc *m;
+	str msg = MAL_SUCCEED;
+	BAT *b = NULL;
+	bat *bid = getArgReference_bat(stk, pci, 0);
+	sql_trans *tr;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
+	lng level = 0, cleared, all, readonly, inserted, updates, deletes;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		goto cleanup;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		goto cleanup;
+
+	if (!sname || strcmp(sname, str_nil) == 0 || *sname == '\0')
+		throw(SQL, "sql.delta", SQLSTATE(3F000) "Invalid schema name");
+	if (!tname || strcmp(tname, str_nil) == 0 || *tname == '\0')
+		throw(SQL, "sql.delta", SQLSTATE(3F000) "Invalid table name");
+	if (!cname || strcmp(cname, str_nil) == 0 || *cname == '\0')
+		throw(SQL, "sql.delta", SQLSTATE(3F000) "Invalid column name");
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.delta", SQLSTATE(3F000) "No such schema '%s'", sname);
+	if (!(t = mvc_bind_table(m, s, tname)))
+		throw(SQL, "sql.delta", SQLSTATE(3F000) "No such table '%s' in schema '%s'", tname, s->base.name);
+	if (!(c = mvc_bind_column(m, t, cname)))
+		throw(SQL, "sql.delta", SQLSTATE(3F000) "No such column '%s' in table '%s'", cname, t->base.name);
+
+	if ((b = COLnew(0, TYPE_lng, 6, TRANSIENT)) == NULL) {
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+
+	cleared = t->cleared ? 1 : 0;
+	if (BUNappend(b, &cleared, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+
+	inserted = (lng) store_funcs.count_col(m->session->tr, c, 0);
+	all = (lng) store_funcs.count_col(m->session->tr, c, 1);
+	updates = (lng) store_funcs.count_col_upd(m->session->tr, c);
+	deletes = (lng) store_funcs.count_del(m->session->tr, t);
+	readonly = all - inserted;
+	if (BUNappend(b, &readonly, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	if (BUNappend(b, &inserted, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	if (BUNappend(b, &updates, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	if (BUNappend(b, &deletes, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+
+	tr = m->session->tr;
+	while((tr = tr->parent)) level++;
+	if (BUNappend(b, &level, false) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+
+cleanup:
+	if (msg) {
+		if (b)
+			BBPreclaim(b);
+	} else {
+		BBPkeepref(*bid = b->batCacheid);
+	}
+	return msg;
+}
+
 /* str mvc_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access); */
 str
 mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
