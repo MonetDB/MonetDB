@@ -719,8 +719,8 @@ SQLinitClientFromMAL(Client c) {
 	mvc* m = ((backend*) c->sqlcontext)->mvc;
 
 	/* Crucial step:
-	 * MAL script that interact with the sql module
-	 * have to have a properly initialized transaction.
+	 * MAL scripts that interact with the sql module
+	 * must have a properly initialized transaction.
 	 */
 	SQLtrans(m);
 
