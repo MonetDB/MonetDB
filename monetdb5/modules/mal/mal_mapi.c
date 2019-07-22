@@ -561,6 +561,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	int on = 1;
 	int i = 0;
 	MT_Id pid;
+	size_t ulen;
 #ifdef DEBUG_SERVER
 	char msg[512], host[512];
 	Client cntxt= mal_clients;
@@ -745,9 +746,16 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #endif
 
 		userver.sun_family = AF_UNIX;
-		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
-		userver.sun_path[sizeof(userver.sun_path) - 1] = 0;
-
+		ulen = strlen(usockfile);
+		if (ulen >= sizeof(userver.sun_path)) {
+			char *e = createException(IO, "mal_mapi.listen", "usockfile name is too large");
+			if (sock != INVALID_SOCKET)
+				closesocket(sock);
+			closesocket(usock);
+			GDKfree(psock);
+			return e;
+		}
+		memcpy(userver.sun_path, usockfile, ulen + 1);
 		length = (SOCKLEN) sizeof(userver);
 		if(remove(usockfile) == -1 && errno != ENOENT) {
 			char *e = createException(IO, "mal_mapi.listen", OPERATION_FAILED ": remove UNIX socket file");

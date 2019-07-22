@@ -458,9 +458,14 @@ typedef struct MT_Lock {
 
 #define MT_lock_init(l, n)					\
 	do {							\
+		size_t nlen; \
+		assert(n); \
 		ATOMIC_CLEAR(&(l)->lock);			\
-		strncpy((l)->name, (n), sizeof((l)->name));	\
-		(l)->name[sizeof((l)->name) - 1] = 0;		\
+		nlen = strlen(n); \
+		if (nlen >= sizeof((l)->name)) \
+			nlen = sizeof((l)->name) - 1; \
+		memcpy((l)->name, (n), nlen + 1); \
+		(l)->name[sizeof((l)->name) - 1] = 0; \
 		_DBG_LOCK_INIT(l);				\
 	} while (0)
 

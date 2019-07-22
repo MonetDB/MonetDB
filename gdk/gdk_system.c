@@ -713,8 +713,13 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	pthread_attr_t attr;
 	int ret;
 	struct posthread *p;
+	size_t tlen;
 
 	join_threads();
+	if (!threadname) {
+		fprintf(stderr, "#MT_create_thread: thread must have a name\n");
+		return -1;
+	}
 	if ((ret = pthread_attr_init(&attr)) != 0) {
 		fprintf(stderr,
 			"#MT_create_thread: cannot init pthread attr: %s\n",
@@ -743,8 +748,15 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		.detached = (d == MT_THR_DETACHED),
 	};
 	ATOMIC_INIT(&p->exited, 0);
-	strncpy(p->threadname, threadname, sizeof(p->threadname));
-	p->threadname[sizeof(p->threadname) - 1] = 0;
+
+	tlen = strlen(threadname);
+	if (tlen >= sizeof(p->threadname)) {
+		fprintf(stderr, "#MT_create_thread: thread's name is too large\n");
+		pthread_attr_destroy(&attr);
+		free(p);
+		return -1;
+	}
+	memcpy(p->threadname, threadname, tlen + 1);
 	pthread_mutex_lock(&posthread_lock);
 	p->next = posthreads;
 	posthreads = p;
