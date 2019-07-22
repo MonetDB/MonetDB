@@ -1041,6 +1041,7 @@ set_members(changeset *ts)
 				sql_part *p = m->data;
 				sql_table *pt = find_sql_table(t->s, p->base.name);
 
+				p->t = pt;
 				pt->p = t;
 			}
 		}
@@ -1564,36 +1565,34 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 }
 
 static sql_part *
-dup_sql_part(sql_allocator *sa, sql_table *t, sql_part *opt)
+dup_sql_part(sql_allocator *sa, sql_table *mt, sql_part *op)
 {
-	sql_part *pt = SA_ZNEW(sa, sql_part);
+	sql_part *p = SA_ZNEW(sa, sql_part);
 
-	base_init(sa, &pt->base, opt->base.id, opt->base.flags, opt->base.name);
-	pt->tpe = opt->tpe;
-	pt->t = t;
-	pt->with_nills = opt->with_nills;
+	base_init(sa, &p->base, op->base.id, op->base.flags, op->base.name);
+	p->tpe = op->tpe;
+	p->with_nills = op->with_nills;
 
-	if(isRangePartitionTable(t)) {
-		pt->part.range.minvalue = sa_alloc(sa, opt->part.range.minlength);
-		pt->part.range.maxvalue = sa_alloc(sa, opt->part.range.maxlength);
-		memcpy(pt->part.range.minvalue, opt->part.range.minvalue, opt->part.range.minlength);
-		memcpy(pt->part.range.maxvalue, opt->part.range.maxvalue, opt->part.range.maxlength);
-		pt->part.range.minlength = opt->part.range.minlength;
-		pt->part.range.maxlength = opt->part.range.maxlength;
-	} else if(isListPartitionTable(t)) {
-		pt->part.values = list_new(sa, (fdestroy) NULL);
-		for(node *n = opt->part.values->h ; n ; n = n->next) {
+	if(isRangePartitionTable(mt)) {
+		p->part.range.minvalue = sa_alloc(sa, op->part.range.minlength);
+		p->part.range.maxvalue = sa_alloc(sa, op->part.range.maxlength);
+		memcpy(p->part.range.minvalue, op->part.range.minvalue, op->part.range.minlength);
+		memcpy(p->part.range.maxvalue, op->part.range.maxvalue, op->part.range.maxlength);
+		p->part.range.minlength = op->part.range.minlength;
+		p->part.range.maxlength = op->part.range.maxlength;
+	} else if(isListPartitionTable(mt)) {
+		p->part.values = list_new(sa, (fdestroy) NULL);
+		for(node *n = op->part.values->h ; n ; n = n->next) {
 			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(sa, sql_part_value);
 			nextv->tpe = prev->tpe;
 			nextv->value = sa_alloc(sa, prev->length);
 			memcpy(nextv->value, prev->value, prev->length);
 			nextv->length = prev->length;
-			list_append(pt->part.values, nextv);
+			list_append(p->part.values, nextv);
 		}
 	}
-
-	cs_add(&t->members, pt, TR_NEW);
-	return pt;
+	cs_add(&mt->members, p, TR_NEW);
+	return p;
 }
 
 sql_table *
@@ -2640,37 +2639,40 @@ column_dup(sql_trans *tr, int flags, sql_column *oc, sql_table *t)
 }
 
 static sql_part *
-part_dup(sql_trans *tr, int flags, sql_part *opt, sql_table *ot)
+part_dup(sql_trans *tr, int flags, sql_part *op, sql_table *mt)
 {
 	sql_allocator *sa = (newFlagSet(flags))?tr->parent->sa:tr->sa;
-	sql_part *pt = SA_ZNEW(sa, sql_part);
+	sql_part *p = SA_ZNEW(sa, sql_part);
+	sql_table *pt = find_sql_table(mt->s, op->base.name);
 
-	base_init(sa, &pt->base, opt->base.id, tr_flag(&opt->base, flags), opt->base.name);
-	pt->tpe = opt->tpe;
-	pt->with_nills = opt->with_nills;
+	base_init(sa, &p->base, op->base.id, tr_flag(&op->base, flags), op->base.name);
+	p->tpe = op->tpe;
+	p->with_nills = op->with_nills;
+	p->t = pt;
+	if (pt) /* during loading we use set_members */
+		pt->p = mt;
 	if (newFlagSet(flags) && tr->parent == gtrans)
-		removeNewFlag(opt);
+		removeNewFlag(op);
 
-	if(isRangePartitionTable(ot)) {
-		pt->part.range.minvalue = sa_alloc(sa, opt->part.range.minlength);
-		pt->part.range.maxvalue = sa_alloc(sa, opt->part.range.maxlength);
-		memcpy(pt->part.range.minvalue, opt->part.range.minvalue, opt->part.range.minlength);
-		memcpy(pt->part.range.maxvalue, opt->part.range.maxvalue, opt->part.range.maxlength);
-		pt->part.range.minlength = opt->part.range.minlength;
-		pt->part.range.maxlength = opt->part.range.maxlength;
-	} else if(isListPartitionTable(ot)) {
-		pt->part.values = list_new(sa, (fdestroy) NULL);
-		for(node *n = opt->part.values->h ; n ; n = n->next) {
+	if(isRangePartitionTable(mt)) {
+		p->part.range.minvalue = sa_alloc(sa, op->part.range.minlength);
+		p->part.range.maxvalue = sa_alloc(sa, op->part.range.maxlength);
+		memcpy(p->part.range.minvalue, op->part.range.minvalue, op->part.range.minlength);
+		memcpy(p->part.range.maxvalue, op->part.range.maxvalue, op->part.range.maxlength);
+		p->part.range.minlength = op->part.range.minlength;
+		p->part.range.maxlength = op->part.range.maxlength;
+	} else if(isListPartitionTable(mt)) {
+		p->part.values = list_new(sa, (fdestroy) NULL);
+		for(node *n = op->part.values->h ; n ; n = n->next) {
 			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(sa, sql_part_value);
 			nextv->tpe = prev->tpe;
 			nextv->value = sa_alloc(sa, prev->length);
 			memcpy(nextv->value, prev->value, prev->length);
 			nextv->length = prev->length;
-			list_append(pt->part.values, nextv);
+			list_append(p->part.values, nextv);
 		}
 	}
-
-	return pt;
+	return p;
 }
 
 static int
@@ -2848,9 +2850,9 @@ table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 	if (ot->columns.set) {
 		for (n = ot->columns.set->h; n; n = n->next) {
 			sql_column *c = n->data, *copy = column_dup(tr, flags, c, t);
+
 			if(isPartitionedByColumnTable(ot) && ot->part.pcol->base.id == c->base.id)
 				t->part.pcol = copy;
-
 			cs_add(&t->columns, copy, tr_flag(&c->base, flags));
 		}
 		if (tr->parent == gtrans)
@@ -2858,8 +2860,8 @@ table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 	}
 	if (ot->members.set) {
 		for (n = ot->members.set->h; n; n = n->next) {
-			sql_part *pt = n->data, *dupped = part_dup(tr, flags, pt, ot);
-			dupped->t = t;
+			sql_part *pt = n->data, *dupped = part_dup(tr, flags, pt, t);
+
 			cs_add(&t->members, dupped, tr_flag(&pt->base, flags));
 		}
 		if (tr->parent == gtrans)
