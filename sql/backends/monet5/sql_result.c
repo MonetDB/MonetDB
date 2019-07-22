@@ -1089,13 +1089,13 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 				len3++;
 				max3 *= 10;
 			}
-			name = e->rname;
+			name = exp_relname(e);
 			if (!name && e->type == e_column && e->l)
 				name = e->l;
 			slen = name ? strlen(name) : 0;
 			if (slen > len5)
 				len5 = slen;
-			name = e->name;
+			name = exp_name(e);
 			if (!name && e->type == e_column && e->r)
 				name = e->r;
 			slen = name ? strlen(name) : 0;
@@ -1140,10 +1140,10 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			sql_exp *e = n->data;
 
 			t = exp_subtype(e);
-			name = e->name;
+			name = exp_name(e);
 			if (!name && e->type == e_column && e->r)
 				name = e->r;
-			rname = e->rname;
+			rname = exp_relname(e);
 			if (!rname && e->type == e_column && e->l)
 				rname = e->l;
 

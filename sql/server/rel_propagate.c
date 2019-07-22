@@ -478,8 +478,8 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 			}
 		} break;
 	}
-	if(e->rname && !strcmp(e->rname, oldt->base.name))
-		e->rname = sa_strdup(sql->sa, newt->base.name);
+	if (exp_relname(e) && !strcmp(exp_relname(e), oldt->base.name))
+		exp_setname(sql->sa, e, newt->base.name, NULL);
 	return e;
 }
 

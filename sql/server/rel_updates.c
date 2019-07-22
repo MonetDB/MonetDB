@@ -518,7 +518,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 							inner = rel_crossproduct(sql->sa, inner, r, op_join);
 						else if (r)
 							inner = r;
-						if (inner && !ins->name && !exp_is_atom(ins)) {
+						if (inner && !exp_name(ins) && !exp_is_atom(ins)) {
 							exp_label(sql->sa, ins, ++sql->label);
 							ins = exp_ref(sql->sa, ins);
 						}
@@ -536,7 +536,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 							inner = rel_crossproduct(sql->sa, inner, r, op_join);
 						else if (r)
 							inner = r;
-						if (!ins->name)
+						if (!exp_name(ins))
 							exp_label(sql->sa, ins, ++sql->label);
 						list_append(exps, ins);
 					}
@@ -600,7 +600,7 @@ merge_generate_inserts(sql_query *query, sql_table *t, sql_rel *r, dlist *column
 				sql_exp *ins = insert_value(query, c, &r, n->data.sym, "MERGE");
 				if (!ins)
 					return NULL;
-				if (!ins->name)
+				if (!exp_name(ins))
 					exp_label(sql->sa, ins, ++sql->label);
 				list_append(exps, ins);
 			}
@@ -664,7 +664,7 @@ is_idx_updated(sql_idx * i, list *exps)
 
 		for (n = exps->h; n; n = n->next) {
 			sql_exp *ce = n->data;
-			sql_column *c = find_sql_column(i->t, ce->name);
+			sql_column *c = find_sql_column(i->t, exp_name(ce));
 
 			if (c && ic->c->colnr == c->colnr) {
 				update = 1;
@@ -1227,7 +1227,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 					if (alias) {
 						for (node *nn = fnd->exps->h ; nn ; nn = nn->next) {
 							sql_exp* ee = (sql_exp*) nn->data;
-							if (ee->rname && !strcmp(ee->rname, alias))
+							if (exp_relname(ee) && !strcmp(exp_relname(ee), alias))
 								return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: multiple references into table '%s'", alias);
 						}
 					}

@@ -56,7 +56,7 @@ stdout of test 'typecast_error.Bug-3622` in directory 'sql/test/BugTracker-2014`
 #GROUP BY refpos
 #ORDER BY cnt DESC
 #LIMIT 10;
-% .s,	.L12 # table_name
+% .L3,	.L5 # table_name
 % refpos,	cnt # name
 % smallint,	bigint # type
 % 1,	1 # length

@@ -27,8 +27,8 @@ rel_name( sql_rel *r )
 		return rel_name(r->l);
 	if (r->exps && list_length(r->exps)) {
 		sql_exp *e = r->exps->h->data;
-		if (e->rname)
-			return e->rname;
+		if (exp_relname(e))
+			return exp_relname(e);
 		if (e->type == e_column)
 			return e->l;
 	}
@@ -274,7 +274,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f )
 	if ((is_project(rel->op) || is_base(rel->op)) && rel->exps) {
 		sql_exp *e = exps_bind_column(rel->exps, cname, NULL);
 		if (e)
-			return exp_alias_or_copy(sql, e->rname, cname, rel, e);
+			return exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
 	}
 	return NULL;
 }
@@ -536,10 +536,11 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	assert(is_project(rel->op));
 
-	if (!e->rname) {
-		exp_setrelname(sql->sa, e, ++sql->label);
-		if (!e->name)
-			e->name = e->rname;
+	if (!exp_relname(e)) {
+		if (exp_name(e))
+			exp_setrelname(sql->sa, e, ++sql->label);
+		else
+			exp_label(sql->sa, e, ++sql->label);
 	}
 	if (rel->op == op_project) {
 		if (!rel->exps)
@@ -643,7 +644,7 @@ rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 	char name[16], *nme = NULL;
 
 	if ((m=exps_find_match_exp(rel->exps, e)) == NULL) {
-		if (!e->name) {
+		if (!exp_name(e)) {
 			nme = number2name(name, 16, ++sql->label);
 			exp_setname(sql->sa, e, nme, nme);
 		}
@@ -1360,7 +1361,7 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 		if (!e && cname[0] == '%')
 			e = exps_bind_column(rel->exps, cname, &ambiguous);
 		if (e && !ambiguous)
-			return exp_alias(sa, e->rname, exp_name(e), e->rname, cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			return exp_alias(sa, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
 	}
 	if (is_project(rel->op) && rel->l && !is_processed(rel)) {
 		return rel_find_column(sa, rel->l, tname, cname);

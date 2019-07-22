@@ -190,7 +190,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			if (e->type == e_atom)
 				snprintf(buf,64,"A%d",e->flag);
 			else
-				snprintf(buf,64,"A%s",e->name);
+				snprintf(buf,64,"A%s",exp_name(e));
 			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);

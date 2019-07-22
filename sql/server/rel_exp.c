@@ -85,18 +85,20 @@ exp_create(sql_allocator *sa, int type )
 
 	if (e == NULL)
 		return NULL;
-	e->name = NULL;
-	e->rname = NULL;
-	e->card = 0;
-	e->flag = 0;
-	e->freevar = 0;
-	e->l = e->r = NULL;
 	e->type = (expression_type)type;
-	e->f = NULL;
-	e->p = NULL;
+	e->alias.label = 0;
+	e->alias.name = NULL;
+	e->alias.rname = NULL;
+	e->f = e->l = e->r = NULL;
+	e->flag = 0;
+	e->card = 0;
+	e->freevar = 0;
+	e->intern = 0;
+	e->anti = 0;
 	e->used = 0;
 	e->tpe.type = NULL;
 	e->tpe.digits = e->tpe.scale = 0;
+	e->p = NULL;
 	return e;
 }
 
@@ -206,10 +208,7 @@ exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype 
 	totype = dup_subtype(sa, totype);
 	e->r = append(append(sa_list(sa), dup_subtype(sa, fromtype)),totype);
 	e->tpe = *totype; 
-	if (exp->name)
-		e->name = exp->name;
-	if (exp->rname)
-		e->rname = exp->rname;
+	e->alias = exp->alias;
 	return e;
 }
 
@@ -470,10 +469,10 @@ exp_column(sql_allocator *sa, const char *rname, const char *cname, sql_subtype 
 		return NULL;
 	assert(cname);
 	e->card = card;
-	e->name = cname;
-	e->rname = rname;
-	e->r = (char*)e->name;
-	e->l = (char*)e->rname;
+	e->alias.name = cname;
+	e->alias.rname = rname;
+	e->r = (char*)e->alias.name;
+	e->l = (char*)e->alias.rname;
 	if (t)
 		e->tpe = *t;
 	if (!has_nils)
@@ -501,7 +500,7 @@ exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel
 	sql_exp *ne = NULL;
 
 	if (!tname)
-		tname = old->rname;
+		tname = old->alias.rname;
 
 	if (!tname && old->type == e_column)
 		tname = old->l;
@@ -518,7 +517,7 @@ exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel
 		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
 		ne->p = prop_copy(sql->sa, old->p);
 		return ne;
-	} else if (cname && !old->name) {
+	} else if (cname && !old->alias.name) {
 		exp_setname(sql->sa, old, tname, cname);
 	}
 	ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
@@ -533,7 +532,7 @@ exp_set(sql_allocator *sa, const char *name, sql_exp *val, int level)
 
 	if (e == NULL)
 		return NULL;
-	e->name = name;
+	e->alias.name = name;
 	e->l = val;
 	e->flag = PSM_SET + SET_PSM_LEVEL(level);
 	return e;
@@ -546,7 +545,7 @@ exp_var(sql_allocator *sa, const char *name, sql_subtype *type, int level)
 
 	if (e == NULL)
 		return NULL;
-	e->name = name;
+	e->alias.name = name;
 	e->tpe = *type;
 	e->flag = PSM_VAR + SET_PSM_LEVEL(level);
 	return e;
@@ -559,7 +558,7 @@ exp_table(sql_allocator *sa, const char *name, sql_table *t, int level)
 
 	if (e == NULL)
 		return NULL;
-	e->name = name;
+	e->alias.name = name;
 	e->f = t;
 	e->flag = PSM_VAR + SET_PSM_LEVEL(level);
 	return e;
@@ -640,9 +639,10 @@ exp_exception(sql_allocator *sa, sql_exp *cond, char* error_message)
 void 
 exp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const char *name )
 {
+	e->alias.label = 0;
 	if (name) 
-		e->name = sa_strdup(sa, name);
-	e->rname = (rname)?sa_strdup(sa, rname):NULL;
+		e->alias.name = sa_strdup(sa, name);
+	e->alias.rname = (rname)?sa_strdup(sa, rname):NULL;
 }
 
 void 
@@ -650,6 +650,20 @@ noninternexp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const cha
 {
 	if (!is_intern(e))
 		exp_setname(sa, e, rname, name);
+}
+
+void 
+exp_setalias(sql_exp *e, const char *rname, const char *name )
+{
+	e->alias.label = 0;
+	e->alias.name = name;
+	e->alias.rname = rname;
+}
+
+void 
+exp_prop_alias(sql_exp *e, sql_exp *oe )
+{
+	e->alias = oe->alias;
 }
 
 str
@@ -670,7 +684,8 @@ exp_setrelname(sql_allocator *sa, sql_exp *e, int nr)
 	char name[16], *nme;
 
 	nme = number2name(name, 16, nr);
-	e->rname = sa_strdup(sa, nme);
+	e->alias.label = 0;
+	e->alias.rname = sa_strdup(sa, nme);
 }
 
 char *
@@ -685,14 +700,16 @@ make_label(sql_allocator *sa, int nr)
 sql_exp*
 exp_label(sql_allocator *sa, sql_exp *e, int nr)
 {
-	e->rname = e->name = make_label(sa, nr);
+	assert(nr > 0);
+	e->alias.label = nr;
+	e->alias.rname = e->alias.name = make_label(sa, nr);
 	return e;
 }
 
 sql_exp*
 exp_label_table(sql_allocator *sa, sql_exp *e, int nr)
 {
-	e->rname = make_label(sa, nr);
+	e->alias.rname = make_label(sa, nr);
 	return e;
 }
 
@@ -761,8 +778,8 @@ exp_subtype( sql_exp *e )
 const char *
 exp_name( sql_exp *e )
 {
-	if (e->name)
-		return e->name;
+	if (e->alias.name)
+		return e->alias.name;
 	if (e->type == e_convert && e->l)
 		return exp_name(e->l);
 	return NULL;
@@ -771,18 +788,20 @@ exp_name( sql_exp *e )
 const char *
 exp_relname( sql_exp *e )
 {
-	if (e->rname)
-		return e->rname;
+	if (e->alias.rname)
+		return e->alias.rname;
+	/*
 	if (e->type == e_column && e->l)
 		return e->l;
+	*/
 	return NULL;
 }
 
 const char *
 exp_find_rel_name(sql_exp *e)
 {
-	if (e->rname)
-		return e->rname;
+	if (e->alias.rname)
+		return e->alias.rname;
 	switch(e->type) {
 	case e_column:
 		if (e->l)
@@ -809,8 +828,8 @@ exp_func_name( sql_exp *e )
 		sql_subfunc *f = e->f;
 		return f->func->base.name;
 	}
-	if (e->name)
-		return e->name;
+	if (e->alias.name)
+		return e->alias.name;
 	if (e->type == e_convert && e->l)
 		return exp_name(e->l);
 	return NULL;
@@ -827,8 +846,8 @@ exp_equal( sql_exp *e1, sql_exp *e2)
 {
 	if (e1 == e2)
 		return 0;
-	if (e1->rname && e2->rname && strcmp(e1->rname, e2->rname) == 0)
-		return strcmp(e1->name, e2->name);
+	if (e1->alias.rname && e2->alias.rname && strcmp(e1->alias.rname, e2->alias.rname) == 0)
+		return strcmp(e1->alias.name, e2->alias.name);
 	return -1;
 }
 
@@ -883,9 +902,9 @@ int
 exp_refers( sql_exp *p, sql_exp *c)
 {
 	if (c->type == e_column) {
-		if (!p->name || !c->r || strcmp(p->name, c->r) != 0)
+		if (!p->alias.name || !c->r || strcmp(p->alias.name, c->r) != 0)
 			return 0;
-		if (!c->l || (p->rname && strcmp(p->rname, c->l) != 0) || (!p->rname && strcmp(p->l, c->l) != 0))
+		if (c->l && ((p->alias.rname && strcmp(p->alias.rname, c->l) != 0) || (!p->alias.rname && strcmp(p->l, c->l) != 0)))
 			return 0;
 		return 1;
 	}
@@ -1026,7 +1045,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 		            exp_match_list(e1->l, e2->l) && 
 			    exp_match_list(e1->r, e2->r))
 				return 1;
-			else if (e1->flag == e2->flag && 
+			else if (e1->flag == e2->flag && is_anti(e1) == is_anti(e2) &&
 				(e1->flag == cmp_in || e1->flag == cmp_notin) &&
 		            exp_match_exp(e1->l, e2->l) && 
 			    exp_match_list(e1->r, e2->r))
@@ -1609,8 +1628,8 @@ exp_unsafe( sql_exp *e, int allow_identity)
 static int
 exp_key( sql_exp *e )
 {
-	if (e->name)
-		return hash_key(e->name);
+	if (e->alias.name)
+		return hash_key(e->alias.name);
 	return 0;
 }
 
@@ -1632,7 +1651,7 @@ exps_bind_column( list *exps, const char *cname, int *ambiguous )
 				}
 				for (en = exps->h; en; en = en->next ) {
 					sql_exp *e = en->data;
-					if (e->name) {
+					if (e->alias.name) {
 						int key = exp_key(e);
 
 						if (hash_add(exps->ht, key, e) == NULL) {
@@ -1649,8 +1668,8 @@ exps_bind_column( list *exps, const char *cname, int *ambiguous )
 				for (; he; he = he->chain) {
 					sql_exp *ce = he->value;
 
-					if (ce->name && strcmp(ce->name, cname) == 0) {
-						if (e && e != ce && ce->rname && e->rname && strcmp(ce->rname, e->rname) != 0 ) {
+					if (ce->alias.name && strcmp(ce->alias.name, cname) == 0) {
+						if (e && e != ce && ce->alias.rname && e->alias.rname && strcmp(ce->alias.rname, e->alias.rname) != 0 ) {
 							if (ambiguous)
 								*ambiguous = 1;
 							MT_lock_unset(&exps->ht_lock);
@@ -1666,7 +1685,7 @@ exps_bind_column( list *exps, const char *cname, int *ambiguous )
 		}
 		for (en = exps->h; en; en = en->next ) {
 			sql_exp *ce = en->data;
-			if (ce->name && strcmp(ce->name, cname) == 0) {
+			if (ce->alias.name && strcmp(ce->alias.name, cname) == 0) {
 				if (e) {
 					if (ambiguous)
 						*ambiguous = 1;
@@ -1696,7 +1715,7 @@ exps_bind_column2( list *exps, const char *rname, const char *cname )
 
 				for (en = exps->h; en; en = en->next ) {
 					sql_exp *e = en->data;
-					if (e->name) {
+					if (e->alias.name) {
 						int key = exp_key(e);
 
 						if (hash_add(exps->ht, key, e) == NULL) {
@@ -1713,8 +1732,8 @@ exps_bind_column2( list *exps, const char *rname, const char *cname )
 				for (; he; he = he->chain) {
 					sql_exp *e = he->value;
 
-					if ((e && is_column(e->type) && e->name && e->rname && strcmp(e->name, cname) == 0 && strcmp(e->rname, rname) == 0) ||
-					    (e && e->type == e_column && e->name && !e->rname && e->l && strcmp(e->name, cname) == 0 && strcmp(e->l, rname) == 0)) {
+					if ((e && is_column(e->type) && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0) ||
+					    (e && e->type == e_column && e->alias.name && !e->alias.rname && e->l && strcmp(e->alias.name, cname) == 0 && strcmp(e->l, rname) == 0)) {
 						MT_lock_unset(&exps->ht_lock);
 						return e;
 					}
@@ -1727,9 +1746,9 @@ exps_bind_column2( list *exps, const char *rname, const char *cname )
 		for (en = exps->h; en; en = en->next ) {
 			sql_exp *e = en->data;
 		
-			if (e && is_column(e->type) && e->name && e->rname && strcmp(e->name, cname) == 0 && strcmp(e->rname, rname) == 0)
+			if (e && is_column(e->type) && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0)
 				return e;
-			if (e && e->type == e_column && e->name && !e->rname && e->l && strcmp(e->name, cname) == 0 && strcmp(e->l, rname) == 0)
+			if (e && e->type == e_column && e->alias.name && !e->alias.rname && e->l && strcmp(e->alias.name, cname) == 0 && strcmp(e->l, rname) == 0)
 				return e;
 		}
 	}
@@ -1966,16 +1985,19 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 		break;
 	case e_psm:
 		if (e->flag == PSM_SET) 
-			ne = exp_set(sa, e->name, exp_copy(sa, e->l), GET_PSM_LEVEL(e->flag));
+			ne = exp_set(sa, e->alias.name, exp_copy(sa, e->l), GET_PSM_LEVEL(e->flag));
 		break;
 	}
 	if (!ne)
 		return ne;
 	if (e->p)
 		ne->p = prop_copy(sa, e->p);
-	if (e->name)
-		exp_setname(sa, ne, exp_find_rel_name(e), exp_name(e));
+	if (e->alias.name)
+		//exp_setname(sa, ne, exp_find_rel_name(e), exp_name(e));
+		exp_prop_alias(ne, e);
 	ne->freevar = e->freevar;
+	ne->intern = e->intern;
+	ne->anti = e->anti;
 	return ne;
 }
 

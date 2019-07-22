@@ -84,6 +84,8 @@ extern sql_exp * exp_rel(mvc *sql, sql_rel * r);
 
 extern void exp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const char *name );
 extern void exp_setrelname(sql_allocator *sa, sql_exp *e, int nr );
+extern void exp_setalias(sql_exp *e, const char *rname, const char *name);
+extern void exp_prop_alias(sql_exp *e, sql_exp *oe);
 
 extern void noninternexp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const char *name );
 extern char* make_label(sql_allocator *sa, int nr);

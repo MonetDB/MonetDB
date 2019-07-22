@@ -25,24 +25,26 @@ typedef enum expression_type {
 #define CARD_AGGR 2
 #define CARD_MULTI 3
 
-typedef struct expression {
-	expression_type type;	/* atom, cmp, func/aggr */
+typedef struct sql_exp_name {
+	unsigned int label;
 	const char *name;
 	const char *rname;
+} sql_exp_name;
+
+typedef struct expression {
+	expression_type type;	/* atom, cmp, func/aggr */
+	sql_exp_name alias;
 	void *l;
 	void *r;
-	void *f;	/* func's and aggr's */
-			/* e_cmp may have have 2 arguments */
-	int flag;	/* EXP_DISTINCT, NO_NIL, ASCENDING, NULLS_LAST, cmp types */
-	int freevar;	/* free variable, ie binds to the upper dependent join */
-	unsigned char card;	/* card
-				   (0 truth value!)
-				   (1 atoms)
-				   (2 aggr)
-				   (3 multi value)
-			*/
+	void *f;	/* func's and aggr's, also e_cmp may have have 2 arguments */
+	unsigned int
+	 flag:18,	/* EXP_DISTINCT, NO_NIL, ASCENDING, NULLS_LAST, cmp types */
+	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
+	 freevar:1,	/* free variable, ie binds to the upper dependent join */
+	 intern:1,
+	 anti:1,
+	 used:1;	/* used for quick dead code removal */
 	sql_subtype	tpe;
-	int used;	/* used for quick dead code removal */
 	void *p;	/* properties for the optimizer */
 } sql_exp;
 
@@ -57,10 +59,8 @@ typedef struct expression {
 #define ASCENDING	16
 #define CMPMASK		(ASCENDING-1)
 #define get_cmp(e)	(e->flag&CMPMASK)
-#define ANTISEL	32
-#define HAS_NO_NIL	64
-#define EXP_INTERN	128
-#define NULLS_LAST	256
+#define HAS_NO_NIL	32
+#define NULLS_LAST	64
 
 #define UPD_COMP		1
 #define UPD_LOCKED		2
@@ -253,9 +253,16 @@ typedef enum operator_type {
 	e->flag |= ((dir&1)?ASCENDING:0) | ((dir&2)?NULLS_LAST:0)
 
 #define is_anti(e) \
-	((e->flag&ANTISEL)==ANTISEL)
+	((e)->anti)
 #define set_anti(e) \
-	e->flag |= ANTISEL
+	(e)->anti = 1
+#define is_intern(e) \
+	((e)->intern)
+#define set_intern(e) \
+	(e)->intern = 1
+
+#define has_label(e) \
+	((e)->alias.label > 0)
 
 /* used for expressions and relations */
 #define need_distinct(e) \
@@ -264,12 +271,6 @@ typedef enum operator_type {
 	e->flag |= EXP_DISTINCT
 #define set_nodistinct(e) \
 	e->flag &= (~EXP_DISTINCT)
-
-/* used for expressions and relations */
-#define is_intern(e) \
-	(e->type != e_atom && (e->flag&EXP_INTERN)==EXP_INTERN)
-#define set_intern(e) \
-	e->flag |= EXP_INTERN
 
 #define is_processed(rel) \
 	((rel)->processed)
