@@ -456,12 +456,16 @@ typedef struct MT_Lock {
 		_DBG_LOCK_COUNT_2(l);					\
 	} while (0)
 
-#define MT_lock_init(l, n)					\
-	do {							\
-		ATOMIC_CLEAR(&(l)->lock);			\
-		strncpy((l)->name, (n), sizeof((l)->name));	\
-		(l)->name[sizeof((l)->name) - 1] = 0;		\
-		_DBG_LOCK_INIT(l);				\
+#define MT_lock_init(l, n)				\
+	do {						\
+		size_t nlen;				\
+		ATOMIC_CLEAR(&(l)->lock);		\
+		nlen = strlen(n);			\
+		if (nlen >= sizeof((l)->name))		\
+			nlen = sizeof((l)->name) - 1;	\
+		memcpy((l)->name, (n), nlen + 1);	\
+		(l)->name[sizeof((l)->name) - 1] = 0;	\
+		_DBG_LOCK_INIT(l);			\
 	} while (0)
 
 #define MT_lock_unset(l)					\

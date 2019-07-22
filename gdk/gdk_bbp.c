@@ -3279,6 +3279,7 @@ BBPbackup(BAT *b, bool subcommit)
 	char *srcdir;
 	long_str nme;
 	const char *s = BBP_physical(b->batCacheid);
+	size_t slen;
 
 	if (BBPprepare(subcommit) != GDK_SUCCEED) {
 		return GDK_FAIL;
@@ -3292,8 +3293,11 @@ BBPbackup(BAT *b, bool subcommit)
 	s = strrchr(srcdir, DIR_SEP);
 	if (!s)
 		goto fail;
-	strncpy(nme, ++s, sizeof(nme));
-	nme[sizeof(nme) - 1] = 0;
+
+	slen = strlen(++s);
+	if (slen >= sizeof(nme))
+		goto fail;
+	memcpy(nme, s, slen + 1);
 	srcdir[s - srcdir] = 0;
 
 	if (b->ttype != TYPE_void &&

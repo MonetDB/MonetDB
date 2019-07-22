@@ -387,14 +387,20 @@ getMalBlkOptimized(MalBlkPtr mb, str name)
 	InstrPtr p;
 	int i= 0;
 	char buf[IDLENGTH]= {0}, *n;
+	size_t nlen;
 
 	if( name == 0)
 		return mb;
-	strncpy(buf,name, IDLENGTH);
-	buf[IDLENGTH - 1] = 0;
+
+	nlen = strlen(name);
+	if (nlen >= sizeof(buf)) {
+		mb->errors = createMalException(mb,0, TYPE, "Optimizer name is too large");
+		return NULL;
+	}
+	memcpy(buf, name, nlen + 1);
 	n = strchr(buf,']');
 	if( n) *n = 0;
-	
+
 	while (h ){
 		for( i = 1; i< h->stop; i++){
 			p = getInstrPtr(h,i);

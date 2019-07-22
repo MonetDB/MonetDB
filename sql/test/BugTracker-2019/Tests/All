@@ -23,3 +23,4 @@ prepare-types.Bug-6724
 prepare-non-existing-function.Bug-6725
 select-distinct.Bug-6728
 table-duplicate-column.Bug-6729
+view-too-few-rows.Bug-6736

@@ -818,9 +818,15 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #endif
 
 		userver.sun_family = AF_UNIX;
-		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
-		userver.sun_path[sizeof(userver.sun_path) - 1] = 0;
-
+		size_t ulen = strlen(usockfile);
+		if (ulen >= sizeof(userver.sun_path)) {
+			if (sock != INVALID_SOCKET)
+				closesocket(sock);
+			closesocket(usock);
+			GDKfree(psock);
+			throw(IO, "mal_mapi.listen", "usockfile name is too large");
+		}
+		memcpy(userver.sun_path, usockfile, ulen + 1);
 		length = (SOCKLEN) sizeof(userver);
 		if(remove(usockfile) == -1 && errno != ENOENT) {
 			char *e = createException(IO, "mal_mapi.listen", OPERATION_FAILED ": remove UNIX socket file");
