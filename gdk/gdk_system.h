@@ -459,7 +459,6 @@ typedef struct MT_Lock {
 #define MT_lock_init(l, n)				\
 	do {						\
 		size_t nlen;				\
-		assert(n);				\
 		ATOMIC_CLEAR(&(l)->lock);		\
 		nlen = strlen(n);			\
 		if (nlen >= sizeof((l)->name))		\
