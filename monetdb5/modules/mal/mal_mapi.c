@@ -561,7 +561,6 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	int on = 1;
 	int i = 0;
 	MT_Id pid;
-	size_t ulen;
 #ifdef DEBUG_SERVER
 	char msg[512], host[512];
 	Client cntxt= mal_clients;
@@ -746,7 +745,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #endif
 
 		userver.sun_family = AF_UNIX;
-		ulen = strlen(usockfile);
+		size_t ulen = strlen(usockfile);
 		if (ulen >= sizeof(userver.sun_path)) {
 			if (sock != INVALID_SOCKET)
 				closesocket(sock);
