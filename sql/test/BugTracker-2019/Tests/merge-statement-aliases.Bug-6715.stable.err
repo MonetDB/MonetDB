@@ -26,6 +26,28 @@ stderr of test 'merge-statement-aliases.Bug-6715` in directory 'sql/test/BugTrac
 # 10:27:55 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18243" "--port=31635"
 # 10:27:55 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-25315/.s.monetdb.33017
+QUERY = MERGE INTO ProductTarget T USING ProductSource S ON S.ProductID = T.ProductID WHEN MATCHED THEN UPDATE SET T.Name = S.Name, ProductTarget.ProductNumber = S.ProductNumber, ProductTarget.Color = S.Color;
+ERROR = !syntax error, unexpected '.', expecting '=' in: "merge into producttarget t using productsource s on s.productid = t.productid wh"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-25315/.s.monetdb.33017
+QUERY = MERGE INTO ProductTarget T USING ProductSource S ON S.ProductID = T.ProductID WHEN NOT MATCHED THEN INSERT (T.ProductID, ProductTarget.ProductNumber, ProductTarget.Color, T.Name) VALUES (S.ProductID, S.ProductNumber, S.Color, S.Name);
+ERROR = !syntax error, unexpected '.', expecting ')' or ',' in: "merge into producttarget t using productsource s on s.productid = t.productid wh"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-25315/.s.monetdb.33017
+QUERY = MERGE INTO ProductTarget T USING ProductSource S ON S.ProductID = T.ProductID
+         WHEN MATCHED     THEN UPDATE SET ProductTarget.Name = S.Name, ProductTarget.ProductNumber = S.ProductNumber, T.Color = S.Color
+         WHEN NOT MATCHED THEN INSERT (T.ProductID, ProductTarget.ProductNumber, ProductTarget.Color, T.Name) VALUES (ProductID, S.ProductNumber, S.Color, Name);
+ERROR = !syntax error, unexpected '.', expecting '=' in: "merge into producttarget t using productsource s on s.productid = t.productid
+        ! w"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-25315/.s.monetdb.33017
+QUERY = MERGE INTO ProductTarget T USING ProductSource S ON T.ProductID = S.ProductID
+         WHEN MATCHED     THEN UPDATE SET T.Name = S.Name, T.ProductNumber = ProductNumber, T.Color = Color
+         WHEN NOT MATCHED THEN INSERT (T.ProductID, T.ProductNumber, T.Color, T.Name) VALUES (ProductID, S.ProductNumber, S.Color, Name);
+ERROR = !syntax error, unexpected '.', expecting '=' in: "merge into producttarget t using productsource s on t.productid = s.productid
+        ! w"
+CODE  = 42000
 
 # 10:27:55 >  
 # 10:27:55 >  "Done."
