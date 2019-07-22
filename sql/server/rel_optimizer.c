@@ -4133,7 +4133,7 @@ rel_is_join_on_pkey( sql_rel *rel )
 			sql_exp *e = je->l;
 			sql_column *c = exp_find_column(rel, e, -2);
 
-			if (c && c->t->pkey && list_find(c->t->pkey->k.columns, c, cmp) != NULL) 
+			if (c && c->t->p && c->t->pkey && list_find(c->t->pkey->k.columns, c, cmp) != NULL)
 				return 1;
 		}
 	}

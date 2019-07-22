@@ -298,7 +298,7 @@ Ready.
 #where "facts_costi"."periodo_id" = "dim_periodi"."id"
 #and "facts_costi"."classe_movimento_id" = "classi"."id"
 #and "classi"."id" = "bri_classi_gruppi_movimenti"."classe_movimento_id"
-% dw_hospital.L72,	dw_hospital.L74,	dw_hospital.L77 # table_name
+% .L72,	.L74,	.L77 # table_name
 % c0,	c1,	m0 # name
 % int,	varchar,	bigint # type
 % 4,	4,	1 # length

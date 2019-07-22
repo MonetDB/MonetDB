@@ -26,21 +26,9 @@ stdout of test 'merge-statement-aliases.Bug-6715` in directory 'sql/test/BugTrac
 #CREATE TABLE ProductSource (ProductID SERIAL, Name VARCHAR(100) NOT NULL, ProductNumber BIGINT, Color VARCHAR(30) NOT NULL);
 #MERGE INTO ProductTarget T USING ProductSource S ON S.ProductID = T.ProductID WHEN MATCHED THEN UPDATE SET Name = S.Name;
 [ 0	]
-#MERGE INTO ProductTarget T USING ProductSource S ON S.ProductID = T.ProductID WHEN MATCHED THEN UPDATE SET T.Name = S.Name, ProductTarget.ProductNumber = S.ProductNumber, ProductTarget.Color = S.Color;
-[ 0     ]
-#MERGE INTO ProductTarget T USING ProductSource S ON S.ProductID = T.ProductID WHEN NOT MATCHED THEN INSERT (T.ProductID, ProductTarget.ProductNumber, ProductTarget.Color, T.Name) VALUES (S.ProductID, S.ProductNumber, S.Color, S.Name);
-[ 0     ]
 #MERGE INTO ProductTarget T USING ProductSource S ON S.ProductID = T.ProductID
 # WHEN MATCHED THEN UPDATE SET Name = S.Name, ProductNumber = S.ProductNumber, Color = S.Color
 # WHEN NOT MATCHED THEN INSERT (ProductID, ProductNumber, Color, Name) VALUES (S.ProductID, S.ProductNumber, Color, Name);
-[ 0     ]
-#MERGE INTO ProductTarget T USING ProductSource S ON S.ProductID = T.ProductID
-# WHEN MATCHED     THEN UPDATE SET ProductTarget.Name = S.Name, ProductTarget.ProductNumber = S.ProductNumber, T.Color = S.Color
-# WHEN NOT MATCHED THEN INSERT (T.ProductID, ProductTarget.ProductNumber, ProductTarget.Color, T.Name) VALUES (ProductID, S.ProductNumber, S.Color, Name);
-[ 0     ]
-#MERGE INTO ProductTarget T USING ProductSource S ON T.ProductID = S.ProductID
-# WHEN MATCHED     THEN UPDATE SET T.Name = S.Name, T.ProductNumber = ProductNumber, T.Color = Color
-# WHEN NOT MATCHED THEN INSERT (T.ProductID, T.ProductNumber, T.Color, T.Name) VALUES (ProductID, S.ProductNumber, S.Color, Name);
 [ 0     ]
 #DROP TABLE ProductTarget;
 #DROP TABLE ProductSource;
