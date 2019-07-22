@@ -748,12 +748,11 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		userver.sun_family = AF_UNIX;
 		ulen = strlen(usockfile);
 		if (ulen >= sizeof(userver.sun_path)) {
-			char *e = createException(IO, "mal_mapi.listen", "usockfile name is too large");
 			if (sock != INVALID_SOCKET)
 				closesocket(sock);
 			closesocket(usock);
 			GDKfree(psock);
-			return e;
+			throw(IO, "mal_mapi.listen", "usockfile name is too large");
 		}
 		memcpy(userver.sun_path, usockfile, ulen + 1);
 		length = (SOCKLEN) sizeof(userver);

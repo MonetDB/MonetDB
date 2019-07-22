@@ -2851,10 +2851,10 @@ BBPbackup(BAT *b, bool subcommit)
 	if (!s)
 		goto fail;
 
-	slen = strlen(s);
+	slen = strlen(++s);
 	if (slen >= sizeof(nme))
 		goto fail;
-	memcpy(nme, ++s, slen + 1);
+	memcpy(nme, s, slen + 1);
 	srcdir[s - srcdir] = 0;
 
 	if (b->ttype != TYPE_void &&
