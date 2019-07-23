@@ -119,15 +119,15 @@ project (
 | | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ]
 | | | | | | | ) [ "f"."id", "p"."number" ]
 | | | | | | ) [ "f"."id" ASC, "p"."number" ASC ] [ "f"."id" ASC, "p"."number" ASC ]
-| | | | | ) [ "f"."id", "p"."number", sys.row_number("f"."id", boolean "false", sys.diff(sys.diff("f"."id" ASC), "p"."number" ASC)) as "L27"."L27" ]
-| | | | ) [ "f"."id" as "L4"."fid", "L27"."L27" as "L31"."line" ]
-| | | ) [ "L4"."fid", "L31"."line" ] [ "L31"."line" ASC ]
-| | ) [ "L4"."fid" as "commented_function_signatures_6542"."fid" ]
-| ) [  ] [ sys.count() NOT NULL as "L36"."L36" ]
-) [ "L36"."L36" NOT NULL ]
+| | | | | ) [ "f"."id", "p"."number", sys.row_number("f"."id", boolean "false", sys.diff(sys.diff("f"."id" ASC), "p"."number" ASC)) as "L32"."L32" ]
+| | | | ) [ "f"."id" as "L14"."fid", "L32"."L32" as "L34"."line" ]
+| | | ) [ "L14"."fid", "L34"."line" ] [ "L34"."line" ASC ]
+| | ) [ "L14"."fid" as "commented_function_signatures_6542"."fid" ]
+| ) [  ] [ sys.count() NOT NULL as "L41"."L41" ]
+) [ "L41"."L41" NOT NULL ]
 #select count (*) from sys.commented_function_signatures_6542;
-% .L36 # table_name
-% L36 # name
+% .L41 # table_name
+% L41 # name
 % bigint # type
 % 1 # length
 [ 0	]

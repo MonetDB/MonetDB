@@ -35,7 +35,7 @@ stdout of test 'query2.2` in directory 'sql/backends/monet5/vaults/bam` itself:
 #        GROUP BY qname
 #        HAVING COUNT(*) = 2
 #           AND SUM(bam.bam_flag(flag, 'firs_segm')) = 1
-% bam.L10,	bam.L12 # table_name
+% bam.L12,	bam.L14 # table_name
 % distance,	nr_alignments # name
 % hugeint,	bigint # type
 % 3,	1 # length

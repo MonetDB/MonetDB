@@ -732,6 +732,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 			p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
 			p->value = NULL;
 		}
+		set_basecol(e);
 		append(rel->exps, e);
 	}
 	append(rel->exps, exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
@@ -907,7 +908,7 @@ exps_has_nil(list *exps)
 }
 
 list *
-rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern)
+_rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern, int basecol /* basecol only */ )
 {
 	list *lexps, *rexps, *exps;
 	int include_subquery = (intern==2)?1:0;
@@ -923,10 +924,10 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 	case op_left:
 	case op_right:
 	case op_full:
-		exps = rel_projections(sql, rel->l, tname, settname, intern);
+		exps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
 		if (rel->op == op_full || rel->op == op_right)
 			exps_has_nil(exps);
-		rexps = rel_projections(sql, rel->r, tname, settname, intern);
+		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
 		if (rel->op == op_full || rel->op == op_left)
 			exps_has_nil(rexps);
 		exps = list_merge( exps, rexps, (fdup)NULL);
@@ -946,6 +947,9 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 			exps = new_exp_list(sql->sa);
 			for (en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
+
+				if (basecol && !is_basecol(e))
+					continue;
 				if (intern || !is_intern(e)) {
 					append(exps, e = exp_alias_or_copy(sql, tname, exp_name(e), rel, e));
 					if (!settname) /* noname use alias */
@@ -955,8 +959,8 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 			}
 			return exps;
 		}
-		lexps = rel_projections(sql, rel->l, tname, settname, intern);
-		rexps = rel_projections(sql, rel->r, tname, settname, intern);
+		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
+		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
 		exps = sa_list(sql->sa);
 		if (lexps && rexps && exps) {
 			node *en, *ren;
@@ -977,10 +981,16 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 	case op_select:
 	case op_topn:
 	case op_sample:
-		return rel_projections(sql, rel->l, tname, settname, intern);
+		return _rel_projections(sql, rel->l, tname, settname, intern, basecol);
 	default:
 		return NULL;
 	}
+}
+
+list *
+rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern)
+{
+	return _rel_projections(sql, rel, tname, settname, intern, 0);
 }
 
 /* find the path to the relation containing the base of the expression

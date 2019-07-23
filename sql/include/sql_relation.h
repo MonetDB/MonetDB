@@ -43,6 +43,7 @@ typedef struct expression {
 	 freevar:1,	/* free variable, ie binds to the upper dependent join */
 	 intern:1,
 	 anti:1,
+	 base:1,
 	 used:1;	/* used for quick dead code removal */
 	sql_subtype	tpe;
 	void *p;	/* properties for the optimizer */
@@ -260,6 +261,10 @@ typedef enum operator_type {
 	((e)->intern)
 #define set_intern(e) \
 	(e)->intern = 1
+#define is_basecol(e) \
+	((e)->base)
+#define set_basecol(e) \
+	(e)->base = 1
 
 #define has_label(e) \
 	((e)->alias.label > 0)

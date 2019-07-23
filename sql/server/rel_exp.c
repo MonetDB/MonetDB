@@ -95,6 +95,7 @@ exp_create(sql_allocator *sa, int type )
 	e->freevar = 0;
 	e->intern = 0;
 	e->anti = 0;
+	e->base = 0;
 	e->used = 0;
 	e->tpe.type = NULL;
 	e->tpe.digits = e->tpe.scale = 0;
@@ -482,6 +483,19 @@ exp_column(sql_allocator *sa, const char *rname, const char *cname, sql_subtype 
 	return e;
 }
 
+sql_exp *
+exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
+{
+	if (is_intern(oe))
+		set_intern(ne);
+	if (is_anti(oe))
+		set_anti(ne);
+	if (is_basecol(oe))
+		set_basecol(ne);
+	ne->p = prop_copy(sa, oe->p);
+	return ne;
+}
+
 sql_exp * 
 exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, int card, int has_nils, int intern) 
 {
@@ -507,22 +521,19 @@ exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel
 
 	if (!cname && exp_name(old) && exp_name(old)[0] == 'L') {
 		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
-		ne->p = prop_copy(sql->sa, old->p);
-		return ne;
+		return exp_propagate(sql->sa, ne, old);
 	} else if (!cname) {
 		char name[16], *nme;
 		nme = number2name(name, 16, ++sql->label);
 
 		exp_setname(sql->sa, old, nme, nme);
 		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
-		ne->p = prop_copy(sql->sa, old->p);
-		return ne;
+		return exp_propagate(sql->sa, ne, old);
 	} else if (cname && !old->alias.name) {
 		exp_setname(sql->sa, old, tname, cname);
 	}
 	ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
-	ne->p = prop_copy(sql->sa, old->p);
-	return ne;
+	return exp_propagate(sql->sa, ne, old);
 }
 
 sql_exp *
@@ -1990,14 +2001,12 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 	}
 	if (!ne)
 		return ne;
-	if (e->p)
-		ne->p = prop_copy(sa, e->p);
 	if (e->alias.name)
 		//exp_setname(sa, ne, exp_find_rel_name(e), exp_name(e));
 		exp_prop_alias(ne, e);
-	ne->freevar = e->freevar;
-	ne->intern = e->intern;
-	ne->anti = e->anti;
+	ne = exp_propagate(sa, ne, e);
+	if (is_freevar(e))
+		set_freevar(ne);
 	return ne;
 }
 

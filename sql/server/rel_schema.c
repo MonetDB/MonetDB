@@ -120,6 +120,7 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 		n = exp_is_atom(e)?e:exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), sq->card, has_nil(e), is_intern(e));
 
 		exp_setname(sql->sa, n, NULL, cname);
+		set_basecol(n);
 		list_append(l, n);
 	}
 	/* skip any intern columns */

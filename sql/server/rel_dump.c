@@ -244,6 +244,10 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, " ASC");
 	if (e->type != e_atom && e->type != e_cmp && !has_nil(e))
 		mnstr_printf(fout, " NOT NULL");
+	/*
+	if (is_basecol(e))
+		mnstr_printf(fout, " BASECOL");
+		*/
 	if (e->p) {
 		prop *p = e->p;
 		char *pv;

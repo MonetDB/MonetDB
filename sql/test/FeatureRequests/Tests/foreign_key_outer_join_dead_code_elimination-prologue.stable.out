@@ -158,38 +158,38 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-prologue` in direct
 [ 5,	4,	NULL,	4,	14,	NULL,	NULL	]
 [ 6,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select count(*) from fk;
-% .L3 # table_name
-% L3 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from v0;
+% .L5 # table_name
+% L5 # name
+% bigint # type
+% 1 # length
+[ 6	]
+#select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1;
+% .L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 6	]
+#select count(*) from v1;
 % .L7 # table_name
 % L7 # name
 % bigint # type
 % 1 # length
 [ 6	]
-#select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1;
-% .L3 # table_name
-% L3 # name
-% bigint # type
-% 1 # length
-[ 6	]
-#select count(*) from v1;
-% .L11 # table_name
-% L11 # name
-% bigint # type
-% 1 # length
-[ 6	]
 #select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2;
-% .L3 # table_name
-% L3 # name
+% .L6 # table_name
+% L6 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from v2;
-% .L13 # table_name
-% L13 # name
+% .L11 # table_name
+% L11 # name
 % bigint # type
 % 1 # length
 [ 6	]
