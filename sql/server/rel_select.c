@@ -5691,7 +5691,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 			e = _rel_lastexp(sql, r);
 
 			/* group by needed ? */
-			if (e->card >= CARD_ATOM && e->card > ek.card) {
+			if (e->card >= CARD_ATOM && e->card > (unsigned) ek.card) {
 
 				int processed = is_processed(r);
 

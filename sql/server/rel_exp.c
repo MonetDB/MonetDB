@@ -406,7 +406,7 @@ exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg)
 		if (e->flag <= 1) /* global variable */
 			return stack_get_var(sql, e->r); 
 		return NULL; 
-	} else if (sql->emode == m_normal && e->flag < maxarg) { /* do not get the value in the prepared case */
+	} else if (sql->emode == m_normal && e->flag < (unsigned) maxarg) { /* do not get the value in the prepared case */
 		return args[e->flag]; 
 	}
 	return NULL; 
@@ -1420,7 +1420,7 @@ exp_is_true(mvc *sql, sql_exp *e)
 	if (e->type == e_atom) {
 		if (e->l) {
 			return atom_is_true(e->l);
-		} else if(sql->emode == m_normal && sql->argc > e->flag && EC_BOOLEAN(exp_subtype(e)->type->eclass)) {
+		} else if(sql->emode == m_normal && (unsigned) sql->argc > e->flag && EC_BOOLEAN(exp_subtype(e)->type->eclass)) {
 			return atom_is_true(sql->args[e->flag]);
 		}
 	}
@@ -1433,7 +1433,7 @@ exp_is_zero(mvc *sql, sql_exp *e)
 	if (e->type == e_atom) {
 		if (e->l) {
 			return atom_is_zero(e->l);
-		} else if(sql->emode == m_normal && sql->argc > e->flag && EC_COMPUTE(exp_subtype(e)->type->eclass)) {
+		} else if(sql->emode == m_normal && (unsigned) sql->argc > e->flag && EC_COMPUTE(exp_subtype(e)->type->eclass)) {
 			return atom_is_zero(sql->args[e->flag]);
 		}
 	}
@@ -1446,7 +1446,7 @@ exp_is_not_null(mvc *sql, sql_exp *e)
 	if (e->type == e_atom) {
 		if (e->l) {
 			return !(atom_null(e->l));
-		} else if(sql->emode == m_normal && sql->argc > e->flag && EC_COMPUTE(exp_subtype(e)->type->eclass)) {
+		} else if(sql->emode == m_normal && (unsigned) sql->argc > e->flag && EC_COMPUTE(exp_subtype(e)->type->eclass)) {
 			return !atom_null(sql->args[e->flag]);
 		}
 	}
@@ -1462,7 +1462,7 @@ exp_is_null(mvc *sql, sql_exp *e )
 			return 0;
 		if (e->l) {
 			return (atom_null(e->l));
-		} else if (sql->emode == m_normal && sql->argc > e->flag) {
+		} else if (sql->emode == m_normal && (unsigned) sql->argc > e->flag) {
 			return atom_null(sql->args[e->flag]);
 		}
 		return 0;
@@ -1809,7 +1809,7 @@ exps_fix_card( list *exps, int card)
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (e->card > card)
+		if (e->card > (unsigned) card)
 			e->card = card;
 	}
 }
