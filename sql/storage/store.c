@@ -3026,11 +3026,9 @@ schema_dup(sql_trans *tr, int flags, sql_schema *os, sql_trans *o)
 	return s;
 }
 
-static sql_trans *
-trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
+static void
+_trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 {
-	node *m,*n;
-
 	tr->wtime = tr->rtime = 0;
 	tr->stime = otr->wtime;
 	tr->wstime = timestamp ();
@@ -3043,6 +3041,14 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 	tr->schema_number = store_schema_number();
 	tr->parent = otr;
 	tr->stk = stk;
+}
+
+static sql_trans *
+trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
+{
+	node *m,*n;
+
+	_trans_init(tr, stk, otr);
 
 	for (m = otr->schemas.set->h, n = tr->schemas.set->h; m && n; m = m->next, n = n->next ) { 
 		sql_schema *ps = m->data; /* parent transactions schema */
@@ -3108,9 +3114,7 @@ trans_dup(backend_stack stk, sql_trans *ot, const char *newname)
 		_DELETE(t);
 		return NULL;
 	}
-	//t = trans_init(t, stk, ot);
-	t->stk = stk;
-	t->parent = ot;
+	_trans_init(t, stk, ot);
 
 	cs_new(&t->schemas, t->sa, (fdestroy) &schema_destroy);
 
