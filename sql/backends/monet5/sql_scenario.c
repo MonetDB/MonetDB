@@ -713,6 +713,7 @@ SQLinitClientFromMAL(Client c) {
 	str msg = MAL_SUCCEED;
 
 	if ( (msg = SQLinitClient(c)) != MAL_SUCCEED) {
+		c->mode = FINISHCLIENT;
 		return msg;
 	}
 
