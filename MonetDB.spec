@@ -946,7 +946,7 @@ fi
 # to reduce the number of warnings during compilation.
 %ifarch aarch64
     if gcc -v 2>&1 | grep -q 'gcc version 4\.'; then
-	CFLAGS="${CFLAGS:-$(echo %optflags | sed 's/-fstack-protector-strong//')"
+	CFLAGS="${CFLAGS:-$(echo %optflags | sed 's/-fstack-protector-strong//')}"
     else
 	CFLAGS="${CFLAGS:-%optflags -Wno-format-truncation}"
     fi
