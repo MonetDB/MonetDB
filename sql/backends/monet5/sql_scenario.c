@@ -548,12 +548,13 @@ SQLinit(Client c)
 		if (!m->sa) {
 			msg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		} else if (maybeupgrade) {
-			SQLtrans(m);
-			SQLupgrades(c,m);
-			/* sometimes the upgrade ends in a COMMIT,
-			 * sometimes not */
-			if (m->session->tr->active)
-				msg = mvc_commit(m, 0, NULL, false);
+			if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
+				SQLupgrades(c,m);
+				/* sometimes the upgrade ends in a COMMIT,
+				 * sometimes not */
+				if (m->session->tr->active)
+					msg = mvc_commit(m, 0, NULL, false);
+			}
 		}
 		maybeupgrade = 0;
 	}
@@ -700,12 +701,12 @@ SQLinitClient(Client c)
 }
 
 str
-SQLinitClientFromMAL(Client c) {
+SQLinitClientFromMAL(Client c)
+{
 	str msg = MAL_SUCCEED;
 
-	if ( (msg = SQLinitClient(c)) != MAL_SUCCEED) {
+	if ((msg = SQLinitClient(c)) != MAL_SUCCEED)
 		return msg;
-	}
 
 	mvc* m = ((backend*) c->sqlcontext)->mvc;
 
@@ -713,17 +714,10 @@ SQLinitClientFromMAL(Client c) {
 	 * MAL scripts that interact with the sql module
 	 * must have a properly initialized transaction.
 	 */
-	SQLtrans(m);
-
-	if(*m->errstr) {
-		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
-			msg = createException(PARSE, "SQLinitClientFromMAL", "%s", m->errstr);
-		else
-			msg = createException(PARSE, "SQLinitClientFromMAL", SQLSTATE(42000) "%s", m->errstr);
-		*m->errstr=0;
+	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
 		c->mode = FINISHCLIENT;
+		return msg;
 	}
-
 	return msg;
 }
 
