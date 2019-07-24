@@ -138,21 +138,21 @@ stdout of test 'column_alias_in_where_clause.Bug-3947` in directory 'sql/test/Bu
 % char,	int,	varchar # type
 % 1,	1,	0 # length
 #SELECT a AS "A", b AS "B", c AS "C" FROM t_alias ORDER BY "C", "A", "B";
-% sys.L2,	sys.L4,	sys.L6 # table_name
+% sys.L1,	sys.L2,	sys.L3 # table_name
 % A,	B,	C # name
 % int,	int,	varchar # type
 % 2,	2,	4 # length
 [ 11,	2,	"elf"	]
 [ 1,	10,	"tien"	]
 #SELECT a*b AS "A*B", c AS "C" FROM t_alias GROUP BY "C", "A*B";
-% sys.L2,	sys.t_alias # table_name
+% sys.L1,	sys.L2 # table_name
 % A*B,	C # name
 % bigint,	varchar # type
 % 2,	4 # length
 [ 10,	"tien"	]
 [ 22,	"elf"	]
 #SELECT a*b*b AS "A*B", c AS "C" FROM t_alias GROUP BY "C", "A*B" HAVING "A*B" IS NOT NULL ORDER BY -"A*B";
-% sys.L2,	sys.t_alias # table_name
+% sys.L1,	sys.L2 # table_name
 % A*B,	C # name
 % bigint,	varchar # type
 % 3,	4 # length

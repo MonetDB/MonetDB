@@ -57,11 +57,9 @@ stdout of test 'view-too-few-rows.Bug-6736` in directory 'sql/test/BugTracker-20
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
-
-# 11:46:36 >  
-# 11:46:36 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25842" "--port=36855"
-# 11:46:36 >  
+# 09:25:08 >  
+# 09:25:08 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20368" "--port=37000"
+# 09:25:08 >  
 
 #start transaction;
 #CREATE SCHEMA "dw_hospital";
@@ -298,7 +296,7 @@ Ready.
 #where "facts_costi"."periodo_id" = "dim_periodi"."id"
 #and "facts_costi"."classe_movimento_id" = "classi"."id"
 #and "classi"."id" = "bri_classi_gruppi_movimenti"."classe_movimento_id"
-% .L72,	.L74,	.L77 # table_name
+% .L37,	.L40,	.L42 # table_name
 % c0,	c1,	m0 # name
 % int,	varchar,	bigint # type
 % 4,	4,	1 # length
