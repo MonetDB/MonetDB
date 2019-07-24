@@ -134,3 +134,5 @@ THREADS=1?fsum1
 NOT_WIN32&HAVE_LIBLZ4?copy-into-lz4
 NOT_WIN32&HAVE_LIBLZ4?copy-from-lz4
 unicode
+
+window_functions
