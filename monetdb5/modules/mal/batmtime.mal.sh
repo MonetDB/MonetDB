@@ -38,6 +38,31 @@ address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 
 EOF
+	case $op in
+	==|!=)
+	    cat <<EOF
+pattern $op(b1:bat[:$tp],b2:bat[:$tp],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B1 $op B2";
+pattern $op(b1:bat[:$tp],b2:bat[:$tp],s:bat[:oid],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B1 $op B2 with candidates list";
+pattern $op(b:bat[:$tp],v:$tp,nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V";
+pattern $op(b:bat[:$tp],v:$tp,s:bat[:oid],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V with candidates list";
+pattern $op(v:$tp,b:bat[:$tp],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B";
+pattern $op(v:$tp,b:bat[:$tp],s:bat[:oid],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B with candidates list";
+
+EOF
+	    ;;
+	esac
     done
 done
 
