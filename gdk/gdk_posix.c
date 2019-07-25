@@ -1094,11 +1094,12 @@ win_mkdir(const char *pathname, const int mode)
 }
 #endif
 
-#ifndef NATIVE_WIN32
-
 void
 MT_sleep_ms(unsigned int ms)
 {
+#ifdef NATIVE_WIN32
+	Sleep(ms);
+#else
 #ifdef HAVE_NANOSLEEP
 	(void) nanosleep(&(struct timespec) {.tv_sec = ms / 1000,
 				.tv_nsec = ms == 1 ? 1000 : (long) (ms % 1000) * 1000000,},
@@ -1108,14 +1109,5 @@ MT_sleep_ms(unsigned int ms)
 		      &(struct timeval) {.tv_sec = ms / 1000,
 				      .tv_usec = ms == 1 ? 1 : (ms % 1000) * 1000,});
 #endif
-}
-
-#else /* WIN32 */
-
-void
-MT_sleep_ms(unsigned int ms)
-{
-	Sleep(ms);
-}
-
 #endif
+}
