@@ -54,22 +54,22 @@ FROM   employee;
 
 -- query 3  ROWS
 SELECT id, dep_name, salary,
-       SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
-                           ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as growing_sum,
-       SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
-                           ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS sum_over_1or2or3_rows
+       cast(SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
+                           ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as DECIMAL(7,2)) as growing_sum,
+       cast(SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
+                           ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) as DECIMAL(7,2)) AS sum_over_1or2or3_rows
 FROM   employee;
 
 -- query 4  GROUPS
 SELECT id, dep_name, salary,
-       SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
-                           GROUPS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS sum_over_groups
+       cast(SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
+                           GROUPS BETWEEN 1 PRECEDING AND 1 FOLLOWING) as DECIMAL(7,2)) AS sum_over_groups
 FROM   employee;
 
 -- query 5  RANGE, adapted RANGE values 100 into 100.0 and 50 into 50.0
 SELECT id, dep_name, salary,
-       SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
-                           RANGE BETWEEN 100.0 PRECEDING AND 50.0 FOLLOWING) AS sum_over_range
+       cast(SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
+                           RANGE BETWEEN 100.0 PRECEDING AND 50.0 FOLLOWING) as DECIMAL(7,2)) AS sum_over_range
 FROM   employee;
 
 

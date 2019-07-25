@@ -124,10 +124,10 @@ Ready.
 #       SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
 #                           ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS sum_over_1or2or3_rows
 #FROM   employee;
-% sys.employee,	sys.employee,	sys.employee,	sys.L11,	sys.L16 # table_name
+% sys.employee,	sys.employee,	sys.employee,	sys.L12,	sys.L20 # table_name
 % id,	dep_name,	salary,	growing_sum,	sum_over_1or2or3_rows # name
 % decimal,	varchar,	decimal,	decimal,	decimal # type
-% 20,	10,	9,	40,	40 # length
+% 20,	10,	9,	9,	9 # length
 [ 3.000,	"Management",	4000.00,	4000.00,	4000.00	]
 [ 2.000,	"Management",	4400.00,	8400.00,	8400.00	]
 [ 1.000,	"Management",	4500.00,	12900.00,	12900.00	]
@@ -143,10 +143,10 @@ Ready.
 #       SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
 #                           GROUPS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS sum_over_groups
 #FROM   employee;
-% sys.employee,	sys.employee,	sys.employee,	sys.L11 # table_name
+% sys.employee,	sys.employee,	sys.employee,	sys.L12 # table_name
 % id,	dep_name,	salary,	sum_over_groups # name
 % decimal,	varchar,	decimal,	decimal # type
-% 20,	10,	9,	40 # length
+% 20,	10,	9,	9 # length
 [ 3.000,	"Management",	4000.00,	8400.00	]
 [ 2.000,	"Management",	4400.00,	12900.00	]
 [ 1.000,	"Management",	4500.00,	8900.00	]
@@ -162,10 +162,10 @@ Ready.
 #       SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
 #                           RANGE BETWEEN 100.0 PRECEDING AND 50.0 FOLLOWING) AS sum_over_range
 #FROM   employee;
-% sys.employee,	sys.employee,	sys.employee,	sys.L11 # table_name
+% sys.employee,	sys.employee,	sys.employee,	sys.L12 # table_name
 % id,	dep_name,	salary,	sum_over_range # name
 % decimal,	varchar,	decimal,	decimal # type
-% 20,	10,	9,	40 # length
+% 20,	10,	9,	9 # length
 [ 3.000,	"Management",	4000.00,	4000.00	]
 [ 2.000,	"Management",	4400.00,	4400.00	]
 [ 1.000,	"Management",	4500.00,	4500.00	]
