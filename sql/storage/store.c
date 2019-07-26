@@ -2019,6 +2019,7 @@ store_exit(void)
 	fprintf(stderr, "#store exit unlocked\n");
 #endif
 	MT_lock_unset(&bs_lock);
+	store_initialized=0;
 }
 
 /* call locked ! */
