@@ -58,18 +58,16 @@ stdout of test 'sum-over-hge.Bug.6738` in directory 'sql/test/BugTracker-2019` i
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
-
-# 17:10:55 >  
-# 17:10:55 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27118" "--port=39988"
-# 17:10:55 >  
+# 09:40:03 >  
+# 09:40:03 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18723" "--port=31052"
+# 09:40:03 >  
 
 #select foo,
 #       sum(foo) over () as s1,
 #       1.0 * sum(foo) over () as s2,
 #       1.0 * cast(sum(foo) over () as float) as s3
 #  from (select 7 as foo union all select 3 as foo) as t;
-% .t,	.L20,	.L25,	.L33 # table_name
+% .t,	.L16,	.L22,	.L27 # table_name
 % foo,	s1,	s2,	s3 # name
 % tinyint,	hugeint,	decimal,	double # type
 % 1,	2,	40,	24 # length
@@ -78,8 +76,8 @@ Ready.
 #select foo,
 #       sum(foo) over () / 2
 #  from (select 7 as foo union all select 3 as foo) as t;
-% .t,	.L20 # table_name
-% foo,	L20 # name
+% .t,	.L16 # table_name
+% foo,	L16 # name
 % tinyint,	hugeint # type
 % 1,	1 # length
 [ 7,	5	]
@@ -88,7 +86,7 @@ Ready.
 #       sum(foo) over (order by foo) as sumsum1,
 #       1.0 * sum(foo) over (order by foo) as cumsum2
 #  from (values (1),(2),(3),(4),(5),(6)) as t(foo);
-% .t,	.L7,	.L14 # table_name
+% .t,	.L5,	.L11 # table_name
 % foo,	sumsum1,	cumsum2 # name
 % tinyint,	hugeint,	decimal # type
 % 1,	2,	40 # length

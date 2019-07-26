@@ -5283,7 +5283,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		for(n = obe->h ; n ; n = n->next) {
 			sql_exp *oexp = n->data, *nexp;
 
-			if (is_sql_sel(f) && pp->op == op_project && !is_processed(pp))
+			if (is_sql_sel(f) && pp->op == op_project && !is_processed(pp) && !rel_find_exp(pp, oexp))
 				append(pp->exps, oexp);
 			n->data = nexp = opt_groupby_add_exp(sql, p, pp, oexp);
 			if (is_ascending(oexp))
