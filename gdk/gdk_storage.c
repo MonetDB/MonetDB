@@ -745,6 +745,7 @@ BATsave(BAT *bd)
 	gdk_return err = GDK_SUCCEED;
 	const char *nme;
 	BAT bs;
+	Heap vhs;
 	BAT *b = bd;
 
 	BATcheck(b, "BATsave", GDK_FAIL);
@@ -764,16 +765,12 @@ BATsave(BAT *bd)
 	/* copy the descriptor to a local variable in order to let our
 	 * messing in the BAT descriptor not affect other threads that
 	 * only read it. */
-	bs = *BBP_desc(b->batCacheid);
-	/* fix up internal pointers */
+	bs = *b;
 	b = &bs;
 
 	if (b->tvheap) {
-		b->tvheap = GDKmalloc(sizeof(Heap));
-		if (b->tvheap == NULL) {
-			return GDK_FAIL;
-		}
-		*b->tvheap = *bd->tvheap;
+		vhs = *bd->tvheap;
+		b->tvheap = &vhs;
 	}
 
 	/* start saving data */
@@ -781,14 +778,12 @@ BATsave(BAT *bd)
 	if (!b->batCopiedtodisk || b->batDirtydesc || b->theap.dirty)
 		if (err == GDK_SUCCEED && b->ttype)
 			err = HEAPsave(&b->theap, nme, "tail");
-	if (b->tvheap && (!b->batCopiedtodisk || b->batDirtydesc || b->tvheap->dirty))
-		if (b->ttype && b->tvarsized) {
-			if (err == GDK_SUCCEED)
-				err = HEAPsave(b->tvheap, nme, "theap");
-		}
-
-	if (b->tvheap)
-		GDKfree(b->tvheap);
+	if (b->tvheap
+	    && (!b->batCopiedtodisk || b->batDirtydesc || b->tvheap->dirty)
+	    && b->ttype
+	    && b->tvarsized
+	    && err == GDK_SUCCEED)
+		err = HEAPsave(b->tvheap, nme, "theap");
 
 	if (err == GDK_SUCCEED) {
 		bd->batCopiedtodisk = true;
