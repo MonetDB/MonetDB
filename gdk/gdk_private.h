@@ -99,8 +99,6 @@ __hidden void BBPunshare(bat b)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
-__hidden bool binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
-	__attribute__((__visibility__("hidden")));
 __hidden BUN binsearch_bte(const oid *restrict indir, oid offset, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN binsearch_sht(const oid *restrict indir, oid offset, const sht *restrict vals, BUN lo, BUN hi, sht v, int ordering, int last)

@@ -64,7 +64,7 @@ key_cmp(sql_key *k, sqlid *id)
 
 static int stamp = 1;
 
-static int timestamp (void) {
+static int timestamp(void) {
 	return stamp++;
 }
 
@@ -1254,7 +1254,7 @@ create_trans(sql_allocator *sa, backend_stack stk)
 	t->name = NULL;
 	t->wtime = t->rtime = 0;
 	t->stime = 0;
-	t->wstime = timestamp ();
+	t->wstime = timestamp();
 	t->schema_updates = 0;
 	t->status = 0;
 
@@ -2201,6 +2201,7 @@ store_exit(void)
 	fprintf(stderr, "#store exit unlocked\n");
 #endif
 	MT_lock_unset(&bs_lock);
+	store_initialized=0;
 }
 
 
@@ -3152,7 +3153,7 @@ _trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 {
 	tr->wtime = tr->rtime = 0;
 	tr->stime = otr->wtime;
-	tr->wstime = timestamp ();
+	tr->wstime = timestamp();
 	tr->schema_updates = 0;
 	tr->dropped = NULL;
 	tr->status = 0;
@@ -3321,6 +3322,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 				if (fb->wtime && !newFlagSet(fb->flags)) {
 					node *tbn = cs_find_id(ts, fb->id);
 
+					assert(fb->rtime <= fb->wtime);
 					if (tbn) {
 						sql_base *tb = tbn->data;
 
@@ -3333,6 +3335,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 							tb->wtime = fb->wtime;
 						if (apply)
 							fb->stime = tb->stime = tb->wtime;
+						assert(!apply || tb->rtime <= tb->wtime);
 					}
 				}
 			}
@@ -3752,7 +3755,6 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 				fprintf(stderr, "#update table %s\n", tt->base.name);
 			ok = store_funcs.update_table(tr, ft, tt);
 			ft->cleared = 0;
-			ft->base.rtime = ft->base.wtime = 0;
 			tt->access = ft->access;
 		}
 	}
@@ -4143,13 +4145,11 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 				n = nxt;
 			}
 		}
-		fs->base.wtime = fs->base.rtime = 0;
 		return ok;
 	}
 
 	/* did we access the schema or is the global changed after we started */
 	if (fs->base.rtime || fs->base.wtime || tr->stime < pfs->base.wtime) {
-		fs->base.wtime = fs->base.rtime = 0;
 
 		if (tr->status == 1 && isRenamed(fs)) { /* remove possible renaming */
 			list_hash_delete(tr->schemas.set, fs, NULL);
@@ -4179,7 +4179,6 @@ reset_trans(sql_trans *tr, sql_trans *ptr)
 #ifdef STORE_DEBUG
 	fprintf(stderr,"#reset trans %d\n", tr->wtime);
 #endif
-	tr->wtime = tr->rtime = 0;
 	return res;
 }
 
