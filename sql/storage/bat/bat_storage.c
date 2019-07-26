@@ -54,6 +54,7 @@ bind_del(sql_trans *tr, sql_table *t, int access)
 		sql_table *ot = tr_find_table(tr->parent, t);
 		t->data = timestamp_dbat(ot->data, t->base.stime);
 	}
+	assert(!store_initialized || tr != gtrans);
 	t->s->base.rtime = t->base.rtime = tr->stime;
 	return delta_bind_del(t->data, access);
 }
@@ -101,6 +102,7 @@ bind_ucol(sql_trans *tr, sql_column *c, int access)
 		sql_table *ot = tr_find_table(tr->parent, c->t);
 		c->t->data = timestamp_dbat(ot->data, c->t->base.stime);
 	}
+	assert(tr != gtrans);
 	c->t->s->base.rtime = c->t->base.rtime = c->base.rtime = tr->stime;
 	u = delta_bind_ubat(c->data, access, c->type.type->localtype);
 	return u;
@@ -120,6 +122,7 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access)
 		sql_table *ot = tr_find_table(tr->parent, i->t);
 		i->t->data = timestamp_dbat(ot->data, i->t->base.stime);
 	}
+	assert(tr != gtrans);
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	u = delta_bind_ubat(i->data, access, (oid_index(i->type))?TYPE_oid:TYPE_lng);
 	return u;
@@ -206,7 +209,8 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 	}
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_ucol(tr, c, access);
-	if (tr)
+	assert(access == QUICK || tr != gtrans);
+	if (tr && access != QUICK)
 		c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
 	return delta_bind_bat( c->data, access, isTemp(c));
 }
@@ -223,7 +227,8 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	}
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_uidx(tr, i, access);
-	if (tr)
+	assert(access == QUICK || tr != gtrans);
+	if (tr && access != QUICK)
 		i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	return delta_bind_bat( i->data, access, isTemp(i));
 }
@@ -597,6 +602,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 	}
 	bat = c->data;
 	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
+	assert(tr != gtrans);
 	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		return delta_update_bat(bat, tids, upd, isNew(c));
@@ -627,6 +633,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 	}
 	bat = i->data;
 	bat->wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
+	assert(tr != gtrans);
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		return delta_update_bat(bat, tids, upd, isNew(i));
@@ -842,6 +849,7 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	/* inserts are ordered with the current delta implementation */
 	/* therefor mark appends as reads */
+	assert(tr != gtrans);
 	c->t->s->base.rtime = c->t->base.rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		ok = delta_append_bat(bat, i);
@@ -2816,11 +2824,9 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			oc->base.rtime = cc->base.rtime;
 		if (oc->base.wtime < cc->base.wtime)
 			oc->base.wtime = cc->base.wtime;
-		if (cc->base.stime < oc->base.wtime)
-			cc->base.stime = oc->base.wtime;
 		if (cc->data) 
 			destroy_col(tr, cc);
-		cc->base.allocated = cc->base.rtime = cc->base.wtime = 0;
+		cc->base.allocated = 0;
 	}
 	if (ok == LOG_OK && tt->idxs.set) {
 		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
@@ -2830,7 +2836,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			/* some indices have no bats */
 			if (!oi->data) {
 				ci->data = NULL;
-				ci->base.allocated = ci->base.rtime = ci->base.wtime = 0;
+				ci->base.allocated = 0;
 				continue;
 			}
 			if (ATOMIC_GET(&store_nr_active) == 1 || (ci->base.wtime && ci->base.allocated)) {
@@ -2867,22 +2873,18 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				oi->base.rtime = ci->base.rtime;
 			if (oi->base.wtime < ci->base.wtime)
 				oi->base.wtime = ci->base.wtime;
-			if (ci->base.stime < oi->base.wtime)
-				ci->base.stime = oi->base.wtime;
 			if (ci->data)
 				destroy_idx(tr, ci);
-			ci->base.allocated = ci->base.rtime = ci->base.wtime = 0;
+			ci->base.allocated = 0;
 		}
 	}
 	if (tt->base.rtime < ft->base.rtime)
 		tt->base.rtime = ft->base.rtime;
 	if (tt->base.wtime < ft->base.wtime)
 		tt->base.wtime = ft->base.wtime;
-	if (ft->base.stime < tt->base.wtime)
-		ft->base.stime = tt->base.wtime;
 	if (ft->data)
 		destroy_del(tr, ft);
-	ft->base.allocated = ft->base.rtime = ft->base.wtime = 0;
+	ft->base.allocated = 0;
 	return ok;
 }
 
