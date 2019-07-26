@@ -2374,27 +2374,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return GDK_FAIL;
 }
 
-/* binary search in a candidate list, return true if found, false if not */
-inline bool
-binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
-{
-	BUN mid;
-
-	--hi;			/* now hi is inclusive */
-	if (v < cand[lo] || v > cand[hi])
-		return false;
-	while (hi > lo) {
-		mid = (lo + hi) / 2;
-		if (cand[mid] == v)
-			return true;
-		if (cand[mid] < v)
-			lo = mid + 1;
-		else
-			hi = mid - 1;
-	}
-	return cand[lo] == v;
-}
-
 #define HASHLOOPBODY()							\
 	do {								\
 		MAYBEEXTEND(1);						\
