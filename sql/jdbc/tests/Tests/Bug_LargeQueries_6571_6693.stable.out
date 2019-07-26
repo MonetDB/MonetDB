@@ -18,7 +18,9 @@ stdout of test 'Bug_LargeQueries_6571_6693` in directory 'sql/jdbc/tests` itself
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
+# 09:56:55 >  
+# 09:56:55 >  "./Bug_LargeQueries_6571_6693.SQL.sh" "Bug_LargeQueries_6571_6693"
+# 09:56:55 >  
 
 # 18:48:54 >  
 # 18:48:54 >  "./Bug_LargeQueries_6571_6693.SQL.sh" "Bug_LargeQueries_6571_6693"
