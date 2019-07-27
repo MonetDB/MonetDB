@@ -2795,6 +2795,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			} else if (oc->data && cc->base.allocated) {
 				tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
 			} else if (ATOMIC_GET(&store_nr_active) == 1 && !cc->base.allocated) {
+				/* only deletes, merge earlier changes */
 				if (!oc->data) {
 					sql_column *o = tr_find_column(tr->parent, oc);
 					oc->data = timestamp_delta(o->data, oc->base.stime);

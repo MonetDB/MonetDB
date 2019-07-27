@@ -2593,6 +2593,9 @@ trigger_dup(sql_trans *tr, int flags, sql_trigger * i, sql_table *t)
 	return nt;
 }
 
+/* flags 0, dup from parent to new tr 
+ *	 TR_NEW, dup from child tr to parent
+ * */
 static sql_column *
 column_dup(sql_trans *tr, int flags, sql_column *oc, sql_table *t)
 {
@@ -2630,6 +2633,12 @@ column_dup(sql_trans *tr, int flags, sql_column *oc, sql_table *t)
 
 	/* Needs copy when committing (ie from tr to gtrans) and 
 	 * on savepoints from tr->parent to new tr */
+	if (flags) {
+		c->base.allocated = oc->base.allocated;
+		c->data = oc->data;
+		oc->base.allocated = 0;
+		oc->data = NULL;
+	} else 
 	if ((isNew(oc) && newFlagSet(flags) && tr->parent == gtrans) ||
 	    (oc->base.allocated && tr->parent != gtrans))
 		if (isTable(c->t)) 
@@ -2827,6 +2836,12 @@ table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 
 	/* Needs copy when committing (ie from tr to gtrans) and 
 	 * on savepoints from tr->parent to new tr */
+	if (flags) {
+		t->base.allocated = ot->base.allocated;
+		t->data = ot->data;
+		ot->base.allocated = 0;
+		ot->data = NULL;
+	} else 
 	if ((isNew(ot) && newFlagSet(flags) && tr->parent == gtrans) ||
 	    (ot->base.allocated && tr->parent != gtrans))
 		if (isTable(t))
@@ -3054,7 +3069,8 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 	for (m = otr->schemas.set->h, n = tr->schemas.set->h; m && n; m = m->next, n = n->next ) { 
 		sql_schema *ps = m->data; /* parent transactions schema */
 		sql_schema *s = n->data; 
-
+		int istmp = isTempSchema(ps);
+	
 		if (s->base.id == ps->base.id) {
 			node *k, *l;
 
@@ -3068,6 +3084,9 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 
 				t->base.rtime = t->base.wtime = 0;
 				t->base.stime = pt->base.wtime;
+				if (!istmp && !t->base.allocated)
+					t->data = NULL;
+				assert (istmp || (!t->data && !t->base.allocated));
 
 				if (pt->base.id == t->base.id) {
 					node *i, *j;
@@ -3079,6 +3098,9 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 						if (pc->base.id == c->base.id) {
 							c->base.rtime = c->base.wtime = 0;
 							c->base.stime = pc->base.wtime;
+							if (!istmp && !c->base.allocated)
+								c->data = NULL;
+							assert (istmp || (!c->data && !c->base.allocated));
 						} else {
 							/* for now assert */
 							assert(0);
@@ -6581,12 +6603,15 @@ sql_trans_begin(sql_session *s)
 			reset_trans(tr, gtrans);
 		}
 	}
-	tr = trans_init(tr, tr->stk, tr->parent);
+	if (tr->parent == gtrans)
+		tr = trans_init(tr, tr->stk, tr->parent);
 	tr->active = 1;
 	s->schema = find_sql_schema(tr, s->schema_name);
 	s->tr = tr;
-	(void) ATOMIC_INC(&store_nr_active);
-	list_append(active_sessions, s); 
+	if (tr->parent == gtrans) {
+		(void) ATOMIC_INC(&store_nr_active);
+		list_append(active_sessions, s); 
+	}
 	s->status = 0;
 #ifdef STORE_DEBUG
 	fprintf(stderr,"#sql trans begin (%d)\n", tr->schema_number);
@@ -6602,8 +6627,10 @@ sql_trans_end(sql_session *s)
 #endif
 	s->tr->active = 0;
 	s->auto_commit = s->ac_on_commit;
-	list_remove_data(active_sessions, s);
-	(void) ATOMIC_DEC(&store_nr_active);
+	if (s->tr->parent == gtrans) {
+		list_remove_data(active_sessions, s);
+		(void) ATOMIC_DEC(&store_nr_active);
+	}
 	assert(list_length(active_sessions) == (int) ATOMIC_GET(&store_nr_active));
 }
 
