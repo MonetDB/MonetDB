@@ -2177,7 +2177,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *res = getArgReference_bat(stk, pci, 0);
 	mvc *m = NULL;
-	str msg;
+	str msg = MAL_SUCCEED;
 	sql_trans *tr;
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *tname = *getArgReference_str(stk, pci, 3);
@@ -2240,7 +2240,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		diff = BATdiff(tids, d, NULL, NULL, false, BUN_NONE);
 		// assert(pci->argc == 6 || BATcount(diff) == (nr-dcnt));
 		if( !(pci->argc == 6 || BATcount(diff) == (nr-dcnt)) )
-			throw(SQL, "sql.tid", SQLSTATE(00000) "Invalid sqltid state argc= %d diff=  %d, dcnt=%d", pci->argc, (int)nr, (int)dcnt);
+			msg = createException(SQL, "sql.tid", SQLSTATE(00000) "Invalid sqltid state argc= %d diff=  %d, dcnt=%d", pci->argc, (int)nr, (int)dcnt);
 		BBPunfix(d->batCacheid);
 		BBPunfix(tids->batCacheid);
 		if (diff == NULL)
@@ -2249,7 +2249,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tids = diff;
 	}
 	BBPkeepref(*res = tids->batCacheid);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 /* unsafe pattern resultSet(tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:bat[:any]...) :int */
