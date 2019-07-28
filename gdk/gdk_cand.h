@@ -74,5 +74,7 @@ gdk_export void canditer_reset(struct canditer *ci);
 gdk_export BUN canditer_search(struct canditer *ci, oid o, bool next);
 gdk_export BAT *canditer_slice(struct canditer *ci, BUN lo, BUN hi);
 gdk_export BAT *canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2);
+gdk_export int BATnegcands( BAT *cands, BAT *odels);
+gdk_export BAT *BATcands( BAT *negcands);
 
 #endif	/* _GDK_CAND_H_ */

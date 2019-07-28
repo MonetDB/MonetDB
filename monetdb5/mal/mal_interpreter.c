@@ -18,6 +18,7 @@
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_type.h"
 #include "mal_private.h"
+#include "gdk_cand.h"
 
 static lng qptimeout = 0; /* how often we print still running queries (usec) */
 
@@ -443,6 +444,40 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	return ret;
 }
 
+
+static void
+sqlHandleTids(Client cntxt, MalBlkPtr mb, InstrPtr pci, MalStkPtr stk, int cmd)
+{
+	int i;
+
+	(void)cntxt;
+	(void)stk;
+
+	for(i = pci->retc; i< pci->argc; i++) {
+		int a = getArg(pci, i);
+		int t = getArgType(mb, pci, i);
+
+		if (isaBatType(t) && getBatType(t) == TYPE_oid) {
+			bat bid;
+			BAT *_b;
+
+			MT_lock_set(&mal_contextLock);
+			bid = stk->stk[a].val.bval;
+			_b = BATdescriptor(bid);
+			if (_b && _b->tvheap) {
+				BAT *bn;
+				printf("#found neg tids (%s:%s:%d)\n", cmd?"command":"pattern", pci->fcnname, i);
+
+				bn = BATcands(_b);
+				BBPkeepref(stk->stk[a].val.bval = bn->batCacheid);
+				BBPrelease(bid);
+			}
+			MT_lock_unset(&mal_contextLock);
+			if(_b) BBPunfix(bid);
+		}
+	}
+}
+
 /*
  * The core of the interpreter is presented next. It takes the context
  * information and starts the interpretation at the designated
@@ -644,6 +679,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			break;
 		case PATcall:
+			sqlHandleTids(cntxt, mb, pci, stk, 0);
 			if (pci->fcn == NULL) {
 				ret = createException(MAL,"mal.interpreter", "address of pattern %s.%s missing", pci->modname, pci->fcnname);
 			} else {
@@ -674,6 +710,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			break;
 		case CMDcall:
+			sqlHandleTids(cntxt, mb, pci, stk, 1);
 			ret = malCommandCall(stk, pci);
 #ifndef NDEBUG
 			if (ret == MAL_SUCCEED) {
