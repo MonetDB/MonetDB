@@ -1071,7 +1071,10 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					bat_destroy(vl);
 					throw(SQL, "sql.bind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				}
-				assert(BATcount(id) == BATcount(vl));
+				if ( BATcount(id) != BATcount(vl)){
+					BBPunfix(b->batCacheid);
+					throw(SQL, "sql.bind", SQLSTATE(0000) "Inconsistent BAT count");
+				}
 				BBPkeepref(*bid = id->batCacheid);
 				BBPkeepref(*uvl = vl->batCacheid);
 			} else {
@@ -2180,7 +2183,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *res = getArgReference_bat(stk, pci, 0);
 	mvc *m = NULL;
-	str msg;
+	str msg = MAL_SUCCEED;
 	sql_trans *tr;
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *tname = *getArgReference_str(stk, pci, 3);
@@ -2232,7 +2235,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tids == NULL)
 		throw(SQL, "sql.tid", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
-	if ((dcnt=store_funcs.count_del(tr, t)) > 0) {
+	if ((dcnt = store_funcs.count_del(tr, t)) > 0) {
 		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
 		BAT *diff;
 		if (d == NULL) {
@@ -2241,8 +2244,9 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		diff = BATdiff(tids, d, NULL, NULL, false, false, BUN_NONE);
-		(void)dcnt;
-		assert(pci->argc == 6 || BATcount(diff) == (nr-dcnt));
+		// assert(pci->argc == 6 || BATcount(diff) == (nr-dcnt));
+		if( !(pci->argc == 6 || BATcount(diff) == (nr-dcnt)) )
+			msg = createException(SQL, "sql.tid", SQLSTATE(00000) "Invalid sqltid state argc= %d diff=  %d, dcnt=%d", pci->argc, (int)nr, (int)dcnt);
 		BBPunfix(d->batCacheid);
 		BBPunfix(tids->batCacheid);
 		if (diff == NULL)
@@ -2251,7 +2255,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tids = diff;
 	}
 	BBPkeepref(*res = tids->batCacheid);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 /* unsafe pattern resultSet(tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:bat[:any]...) :int */
@@ -3281,7 +3285,6 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 	return MAL_SUCCEED;
   bailout:
-	assert(msg != MAL_SUCCEED);
 	for (i = 0; i < pci->retc; i++) {
 		bat bid; 
 		if ((bid = *getArgReference_bat(stk, pci, i)) != 0) {

@@ -2965,9 +2965,12 @@ rel_case_fixup(int *changes, mvc *sql, sql_rel *rel, int top)
 		}
 
 		/* get proper output first, then rewrite lower project (such that it can split expressions) */
-		push_down = is_simple_project(rel->op) && !rel->r && !rel_is_ref(rel) && !need_distinct(rel);
-		if (push_down)
+		push_down = is_simple_project(rel->op) && !rel->r && !rel_is_ref(rel);
+		if (push_down) {
 			res = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 2));
+			if (need_distinct(rel))
+				set_distinct(res);
+		}
 
 		rel->exps = new_exp_list(sql->sa); 
 		for (n = exps->h; n; n = n->next) { 
@@ -7471,7 +7474,7 @@ split_exps(mvc *sql, list *exps, sql_rel *rel)
 static sql_rel *
 rel_split_project(int *changes, mvc *sql, sql_rel *rel, int top) 
 {
-	if (is_project(rel->op) && list_length(rel->exps) && (is_groupby(rel->op) || rel->l)) {
+	if (is_project(rel->op) && list_length(rel->exps) && (is_groupby(rel->op) || rel->l) && !need_distinct(rel)) {
 		list *exps = rel->exps;
 		node *n;
 		int funcs = 0;

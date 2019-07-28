@@ -25,13 +25,13 @@
 str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int arg, i, j, limit, slimit;
+	int i, j, limit, slimit;
 	InstrPtr p, *old;
 	int actions = 0;
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
-	str nme;
+	//str nme;
 	char *used;
 	//int *varlnk, *stmtlnk;
 
@@ -59,6 +59,15 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	limit = mb->stop;
 	slimit = mb->ssize;
 	//vlimit = mb->vtop;
+
+	/* rename all temporaries used for ease of debugging and profile interpretation */
+
+ 	for( i = 0; i < mb->vtop; i++)
+		if( sscanf(getVarName(mb,i),"X_%d", &j) == 1)
+			snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
+		else
+		if( sscanf(getVarName(mb,i),"C_%d", &j) == 1)
+			snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
 
 	// move SQL query definition to the front for event profiling tools
 	p = NULL;
@@ -98,6 +107,9 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		/* Set the program counter to ease profiling */
 		p->pc = i;
 		/* rename all temporaries used for ease of debugging and profile interpretation */
+/* lets check if this is the culprit for DS22 on april
+ * Remove the use of 'used' and only looking at returns. 
+ * It should be sufficient to look into the variable table
 		for( j = 0; j< p->retc; j++){
 			arg = getArg(p,j);
 			if( used[arg] ==0){
@@ -110,6 +122,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 				used[arg] ++;
 			}
 		}
+*/
 
 		if ( p->barrier == RETURNsymbol){
 			pushInstruction(mb, p);
@@ -122,8 +135,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 		/* A block exit is never within a parallel block,
 		 * otherwise we could not inject the assignment */
-			/* force garbage collection of all declared within output block and ending here  */
-/* ignore for the time being, it requires a more thorough analysis of dependencies.
+		/* force garbage collection of all declared within output block and ending here  */
+		/* ignore for the time being, it requires a more thorough analysis of dependencies.
 		if (blockExit(p) ){
 			for( k = stmtlnk[i]; k; k = varlnk[k])
 			if( isaBatType(getVarType(mb,k)) ){
@@ -137,7 +150,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 				actions++;
 			}
 		}
-*/
+		*/
 	}
 	/* A good MAL plan should end with an END instruction */
 	pushInstruction(mb, p);

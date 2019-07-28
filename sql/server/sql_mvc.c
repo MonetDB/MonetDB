@@ -326,7 +326,12 @@ sql_trans_deref( sql_trans *tr )
 			if (t->po) { 
 				sql_table *p = t->po;
 
-				t->po = t->po->po;
+				if (t->base.rtime < p->base.rtime)
+					t->base.rtime = p->base.rtime;
+				if (t->base.wtime < p->base.wtime)
+					t->base.wtime = p->base.wtime;
+				t->po = p->po;
+				p->po = NULL; /* we used its reference */
 				table_destroy(p);
 			}
 
@@ -337,7 +342,12 @@ sql_trans_deref( sql_trans *tr )
 					if (c->po) {
 						sql_column *p = c->po;
 
-						c->po = c->po->po;
+						if (c->base.rtime < p->base.rtime)
+							c->base.rtime = p->base.rtime;
+						if (c->base.wtime < p->base.wtime)
+							c->base.wtime = p->base.wtime;
+						c->po = p->po;
+						p->po = NULL; /* we used its reference */
 						column_destroy(p);
 					}
 				}
@@ -354,7 +364,12 @@ sql_trans_deref( sql_trans *tr )
 				if (i->po) {
 					sql_idx *p = i->po;
 
-					i->po = i->po->po;
+					if (i->base.rtime < p->base.rtime)
+						i->base.rtime = p->base.rtime;
+					if (i->base.wtime < p->base.wtime)
+						i->base.wtime = p->base.wtime;
+					i->po = p->po;
+					p->po = NULL; /* we used its reference */
 					idx_destroy(p);
 				}
 			}
