@@ -20,11 +20,9 @@ stdout of test 'select_window_function_and_asterisk.Bug-6722` in directory 'sql/
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
-
-# 13:01:42 >  
-# 13:01:42 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13851" "--port=31714"
-# 13:01:42 >  
+# 10:42:58 >  
+# 10:42:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27248" "--port=33326"
+# 10:42:58 >  
 
 #create table test_6722  (part string, qty double);
 #insert into test_6722 values ('a', 18), ('a', 13),('a', 16),('b', 15),('b', 16),('c', 17),('c', 18),('c', 12),('d', 12),('d', 12);
@@ -35,7 +33,7 @@ Ready.
 # *
 #from test_6722
 #order by part, qty;
-% sys.L5,	sys.L12,	sys.test_6722,	sys.test_6722 # table_name
+% sys.L4,	sys.L10,	sys.test_6722,	sys.test_6722 # table_name
 % rank_id,	row_id,	part,	qty # name
 % int,	int,	clob,	double # type
 % 1,	2,	1,	24 # length
@@ -55,7 +53,7 @@ Ready.
 # (row_number() over (order by part, qty)) as row_id 
 #from test_6722
 #order by part, qty;
-% sys.L5,	sys.test_6722,	sys.test_6722,	sys.L14 # table_name
+% sys.L4,	sys.test_6722,	sys.test_6722,	sys.L11 # table_name
 % rank_id,	part,	qty,	row_id # name
 % int,	clob,	double,	int # type
 % 1,	1,	24,	2 # length
@@ -75,7 +73,7 @@ Ready.
 # (row_number() over (order by part, qty)) as row_id 
 #from test_6722
 #order by part, qty;
-% sys.test_6722,	sys.test_6722,	sys.L10,	sys.L15 # table_name
+% sys.test_6722,	sys.test_6722,	sys.L6,	sys.L12 # table_name
 % part,	qty,	rank_id,	row_id # name
 % clob,	double,	int,	int # type
 % 1,	24,	1,	2 # length
