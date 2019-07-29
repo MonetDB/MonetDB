@@ -100,26 +100,26 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 			} else if (g->tsorted) {
 				gids = (const oid *) Tloc(g, 0);
 				/* find first non-nil */
-				for (i = 0, ngrp = BATcount(g); i < ngrp; i++, gids++) {
-					if (!is_oid_nil(*gids)) {
-						min = *gids;
+				for (i = 0, ngrp = BATcount(g); i < ngrp; i++) {
+					if (!is_oid_nil(gids[i])) {
+						min = gids[i];
 						break;
 					}
 				}
 				if (!is_oid_nil(min)) {
 					/* found a non-nil, max must be last
 					 * value (and there is one!) */
-					max = * (const oid *) Tloc(g, BUNlast(g) - 1);
+					max = gids[BUNlast(g) - 1];
 				}
 			} else {
 				/* we'll do a complete scan */
 				gids = (const oid *) Tloc(g, 0);
-				for (i = 0, ngrp = BATcount(g); i < ngrp; i++, gids++) {
-					if (!is_oid_nil(*gids)) {
-						if (*gids < min)
-							min = *gids;
-						if (*gids > max)
-							max = *gids;
+				for (i = 0, ngrp = BATcount(g); i < ngrp; i++) {
+					if (!is_oid_nil(gids[i])) {
+						if (gids[i] < min)
+							min = gids[i];
+						if (gids[i] > max)
+							max = gids[i];
 					}
 				}
 				/* note: max < min is possible if all groups
@@ -799,7 +799,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	if (BATtdense(g))
 		gids = NULL;
 	else
-		gids = (const oid *) Tloc(g, start);
+		gids = (const oid *) Tloc(g, 0);
 
 	nils = dosum(Tloc(b, 0), b->tnonil, b->hseqbase, start, end,
 		     Tloc(bn, 0), ngrp, b->ttype, tp,
@@ -1398,7 +1398,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	if (BATtdense(g))
 		gids = NULL;
 	else
-		gids = (const oid *) Tloc(g, start);
+		gids = (const oid *) Tloc(g, 0);
 
 	nils = doprod(Tloc(b, 0), b->hseqbase, start, end,
 		      Tloc(bn, 0), ngrp, b->ttype, tp,
@@ -1671,7 +1671,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	if (BATtdense(g))
 		gids = NULL;
 	else
-		gids = (const oid *) Tloc(g, start);
+		gids = (const oid *) Tloc(g, 0);
 
 	switch (b->ttype) {
 	case TYPE_bte:
@@ -1991,7 +1991,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 	if (BATtdense(g))
 		gids = NULL;
 	else
-		gids = (const oid *) Tloc(g, start);
+		gids = (const oid *) Tloc(g, 0);
 
 	if (!skip_nils || b->tnonil) {
 		/* if nils are nothing special, or if there are no
@@ -2134,7 +2134,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	if (BATtdense(g))
 		gids = NULL;
 	else
-		gids = (const oid *) Tloc(g, start);
+		gids = (const oid *) Tloc(g, 0);
 
 	bits = (const bit *) Tloc(b, 0);
 
@@ -2523,7 +2523,7 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
 	if (g == NULL || BATtdense(g))
 		gids = NULL;
 	else
-		gids = (const oid *) Tloc(g, start);
+		gids = (const oid *) Tloc(g, 0);
 
 	nils = (*minmax)(oids, b, gids, ngrp, min, max, start, end,
 			 cand, candend, BATcount(b), skip_nils,
@@ -3179,7 +3179,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	if (BATtdense(g))
 		gids = NULL;
 	else
-		gids = (const oid *) Tloc(g, start);
+		gids = (const oid *) Tloc(g, 0);
 
 	switch (b->ttype) {
 	case TYPE_bte:
