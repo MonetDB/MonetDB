@@ -411,7 +411,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		if (mvc_debug)
 			fprintf(stderr, "#mvc_savepoint\n");
 		store_lock();
-		m->session->tr = sql_trans_create(m->session->stk, tr, name);
+		m->session->tr = sql_trans_create(m->session->stk, tr, name, true);
 		if(!m->session->tr) {
 			store_unlock();
 			msg = createException(SQL, "sql.commit", SQLSTATE(HY001) "%s allocation failure while committing the transaction, will ROLLBACK instead", operation);
@@ -451,7 +451,7 @@ build up the hash (not copied in the trans dup)) */
 			ctr = sql_trans_deref(ctr);
 		}
 		while (tr->parent != NULL && ok == SQL_OK) 
-			tr = sql_trans_destroy(tr);
+			tr = sql_trans_destroy(tr, true);
 		store_unlock();
 	}
 	cur -> parent = tr;
@@ -555,7 +555,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 			/* make sure we do not reuse changed data */
 			if (tr->wtime)
 				tr->status = 1;
-			tr = sql_trans_destroy(tr);
+			tr = sql_trans_destroy(tr, true);
 		}
 		m->session->tr = tr;	/* restart at savepoint */
 		m->session->status = tr->status;
@@ -565,7 +565,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	} else if (tr->parent) {
 		/* first release all intermediate savepoints */
 		while (tr->parent->parent != NULL) {
-			tr = sql_trans_destroy(tr);
+			tr = sql_trans_destroy(tr, true);
 		}
 		m->session-> tr = tr;
 		/* make sure we do not reuse changed data */
@@ -626,7 +626,7 @@ mvc_release(mvc *m, const char *name)
 		/* commit all intermediate savepoints */
 		if (sql_trans_commit(tr) != SQL_OK)
 			GDKfatal("release savepoints should not fail");
-		tr = sql_trans_destroy(tr);
+		tr = sql_trans_destroy(tr, true);
 	}
 	tr->name = NULL;
 	store_unlock();
@@ -732,7 +732,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 		assert(m->session->tr->active == 0);
 		store_lock();
 		while (tr->parent->parent != NULL) 
-			tr = sql_trans_destroy(tr);
+			tr = sql_trans_destroy(tr, true);
 		store_unlock();
 	}
 	if (tr && !sql_session_reset(m->session, 1 /*autocommit on*/))
@@ -801,7 +801,7 @@ mvc_destroy(mvc *m)
 		if (m->session->tr->active)
 			sql_trans_end(m->session);
 		while (tr->parent)
-			tr = sql_trans_destroy(tr);
+			tr = sql_trans_destroy(tr, true);
 		m->session->tr = NULL;
 		store_unlock();
 	}
