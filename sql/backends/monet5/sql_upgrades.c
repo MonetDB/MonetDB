@@ -1954,7 +1954,6 @@ sql_update_deltas(Client c, mvc *sql)
 			" and name in ('deltas') and type = %d;\n", F_UNION);
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
