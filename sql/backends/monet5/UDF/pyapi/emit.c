@@ -354,6 +354,12 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					}
 				}
 				self->cols[i].b->tnonil = !self->cols[i].b->tnil;
+				if (ret->numpy_array) {
+					Py_DECREF(ret->numpy_array);
+				}
+				if (ret->numpy_mask) {
+					Py_DECREF(ret->numpy_mask);
+				}
 			}
 		} else {
 			if (self->cols[i].def != NULL) {
