@@ -95,6 +95,11 @@ Print list of options.
 .B \-\-version
 Print version and compile configuration.
 .TP
+.B \-\-in\-memory
+Run mserver5 in-memory.
+.B No
+data will be persisted.
+.TP
 .B \-\-trace
 Print information about MAL instructions as they are executed.
 .TP
