@@ -897,7 +897,6 @@ sql_update_mar2018(Client c, mvc *sql)
 			"SELECT 'current_timezone', current_timezone UNION ALL\n"
 			"SELECT 'current_user', current_user UNION ALL\n"
 			"SELECT 'debug', debug UNION ALL\n"
-			"SELECT 'history', history UNION ALL\n"
 			"SELECT 'last_id', last_id UNION ALL\n"
 			"SELECT 'optimizer', optimizer UNION ALL\n"
 			"SELECT 'pi', pi() UNION ALL\n"
