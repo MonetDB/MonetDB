@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_cand.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
 #include <math.h>
@@ -61,14 +62,12 @@
 const char *
 BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 		 /* outputs: */
-		 oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp,
-		 const oid **candp, const oid **candendp)
+		 oid *minp, oid *maxp, BUN *ngrpp,
+		 struct canditer *ci, BUN *ncand)
 {
 	oid min, max;
 	BUN i, ngrp;
 	const oid *restrict gids;
-	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
 
 	if (b == NULL)
 		return "b must exist";
@@ -136,11 +135,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 	*maxp = max;
 	*ngrpp = ngrp;
 
-	CANDINIT(b, s, start, end, cnt, cand, candend);
-	*startp = start;
-	*endp = end;
-	*candp = cand;
-	*candendp = candend;
+	*ncand = canditer_init(ci, b, s);
 
 	return NULL;
 }
@@ -180,9 +175,10 @@ exchange(double *x, double *y)
 
 /* this function was adapted from https://bugs.python.org/file10357/msum4.py */
 BUN
-dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
+dofsum(const void *restrict values, oid seqb,
+       struct canditer *restrict ci, BUN ncand,
        void *restrict results, BUN ngrp, int tp1, int tp2,
-       const oid *restrict cand, const oid *candend, const oid *restrict gids,
+       const oid *restrict gids,
        oid min, oid max, bool skip_nils, bool abort_on_error,
        bool nil_if_empty, const char *func)
 {
@@ -236,16 +232,9 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 			return BUN_NONE;
 		}
 	}
-	for (;;) {
-		if (cand) {
-			if (cand >= candend)
-				break;
-			listi = *cand++ - seqb;
-		} else {
-			if (start >= end)
-				break;
-			listi = start++;
-		}
+	while (ncand > 0) {
+		ncand--;
+		listi = canditer_next(ci) - seqb;
 		grp = gids ? gids[listi] : 0;
 		if (grp < min || grp > max)
 			continue;
@@ -457,19 +446,19 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 	do {								\
 		TYPE1 x;						\
 		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
-		if (ngrp == 1 && cand == NULL) {			\
+		if (ngrp == 1 && ci->tpe == cand_dense) {		\
 			/* single group, no candidate list */		\
 			TYPE2 sum;					\
 			ALGODEBUG fprintf(stderr,			\
 					  "#%s: no candidates, no groups; " \
-					  "start " BUNFMT ", end " BUNFMT \
+					  "start " OIDFMT ", count " BUNFMT \
 					  ", nonil = %d\n",		\
-					  func, start, end, nonil);	\
+					  func, ci->seq, ncand, nonil);	\
 			sum = 0;					\
 			if (nonil) {					\
-				*seen = start < end;			\
-				for (i = start; i < end && nils == 0; i++) { \
-					x = vals[i];			\
+				*seen = ncand > 0;			\
+				for (i = 0; i < ncand && nils == 0; i++) { \
+					x = vals[ci->seq + i - seqb];	\
 					ADD_WITH_CHECK(x, sum,		\
 						       TYPE2, sum,	\
 						       GDK_##TYPE2##_max, \
@@ -477,8 +466,8 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 				}					\
 			} else {					\
 				bool seenval = false;			\
-				for (i = start; i < end && nils == 0; i++) { \
-					x = vals[i];			\
+				for (i = 0; i < ncand && nils == 0; i++) { \
+					x = vals[ci->seq + i - seqb];	\
 					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
 							sum = TYPE2##_nil; \
@@ -502,15 +491,12 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 			bool seenval = false;				\
 			ALGODEBUG fprintf(stderr,			\
 					  "#%s: with candidates, no groups; " \
-					  "start " BUNFMT ", end " BUNFMT \
+					  "start " OIDFMT ", count " BUNFMT \
 					  "\n",				\
-					  func, start, end);		\
+					  func, ci->seq, ncand);	\
 			sum = 0;					\
-			while (cand < candend && nils == 0) {		\
-				i = *cand++ - seqb;			\
-				if (i >= end)				\
-					break;				\
-				x = vals[i];				\
+			for (i = 0; i < ncand && nils == 0; i++) {	\
+				x = vals[canditer_next(ci) - seqb];	\
 				if (is_##TYPE1##_nil(x)) {		\
 					if (!skip_nils) {		\
 						sum = TYPE2##_nil;	\
@@ -526,18 +512,18 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 			}						\
 			if (seenval)					\
 				*sums = sum;				\
-		} else if (cand == NULL) {				\
+		} else if (ci->tpe == cand_dense) {			\
 			/* multiple groups, no candidate list */	\
 			ALGODEBUG fprintf(stderr,			\
 					  "#%s: no candidates, with groups; " \
-					  "start " BUNFMT ", end " BUNFMT \
+					  "start " OIDFMT ", count " BUNFMT \
 					  "\n",				\
-					  func, start, end);		\
-			for (i = start; i < end; i++) {			\
+					  func, ci->seq, ncand);	\
+			for (i = 0; i < ncand; i++) {			\
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
 					gid = gids ? gids[i] - min : (oid) i; \
-					x = vals[i];			\
+					x = vals[ci->seq + i - seqb];	\
 					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
 							sums[gid] = TYPE2##_nil; \
@@ -565,13 +551,12 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 			/* multiple groups, with candidate list */	\
 			ALGODEBUG fprintf(stderr,			\
 					  "#%s: with candidates, with " \
-					  "groups; start " BUNFMT ", "	\
-					  "end " BUNFMT "\n",		\
-					  func, start, end);		\
-			while (cand < candend) {			\
-				i = *cand++ - seqb;			\
-				if (i >= end)				\
-					break;				\
+					  "groups; start " OIDFMT ", "	\
+					  "count " BUNFMT "\n",		\
+					  func, ci->seq, ncand);	\
+			while (ncand > 0) {				\
+				ncand--;				\
+				i = canditer_next(ci) - seqb;		\
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
 					gid = gids ? gids[i] - min : (oid) i; \
@@ -603,9 +588,10 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 	} while (0)
 
 static BUN
-dosum(const void *restrict values, bool nonil, oid seqb, BUN start, BUN end,
+dosum(const void *restrict values, bool nonil, oid seqb,
+      struct canditer *restrict ci, BUN ncand,
       void *restrict results, BUN ngrp, int tp1, int tp2,
-      const oid *restrict cand, const oid *candend, const oid *restrict gids,
+      const oid *restrict gids,
       oid min, oid max, bool skip_nils, bool abort_on_error,
       bool nil_if_empty, const char *func)
 {
@@ -622,7 +608,9 @@ dosum(const void *restrict values, bool nonil, oid seqb, BUN start, BUN end,
 	case TYPE_dbl:
 		if (tp1 != TYPE_flt && tp1 != TYPE_dbl)
 			goto unsupported;
-		return dofsum(values, seqb, start, end, results, ngrp, tp1, tp2, cand, candend, gids, min, max, skip_nils, abort_on_error, nil_if_empty, func);
+		return dofsum(values, seqb, ci, ncand, results, ngrp, tp1, tp2,
+			      gids, min, max, skip_nils, abort_on_error,
+			      nil_if_empty, func);
 	}
 
 	/* allocate bitmap for seen group ids */
@@ -763,12 +751,11 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	BUN ngrp;
 	BUN nils;
 	BAT *bn;
-	BUN start, end;
-	const oid *cand = NULL, *candend = NULL;
+	struct canditer ci;
+	BUN ncand;
 	const char *err;
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cand, &candend)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATgroupsum: %s\n", err);
 		return NULL;
 	}
@@ -801,9 +788,8 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	else
 		gids = (const oid *) Tloc(g, 0);
 
-	nils = dosum(Tloc(b, 0), b->tnonil, b->hseqbase, start, end,
-		     Tloc(bn, 0), ngrp, b->ttype, tp,
-		     cand, candend, gids, min, max,
+	nils = dosum(Tloc(b, 0), b->tnonil, b->hseqbase, &ci, ncand,
+		     Tloc(bn, 0), ngrp, b->ttype, tp, gids, min, max,
 		     skip_nils, abort_on_error, true, "BATgroupsum");
 
 	if (nils < BUN_NONE) {
@@ -827,12 +813,11 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	oid min, max;
 	BUN ngrp;
 	BUN nils;
-	BUN start, end;
-	const oid *cand = NULL, *candend = NULL;
+	struct canditer ci;
+	BUN ncand;
 	const char *err;
 
-	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp,
-				    &start, &end, &cand, &candend)) != NULL) {
+	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATsum: %s\n", err);
 		return GDK_FAIL;
 	}
@@ -929,8 +914,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	}
 	if (BATcount(b) == 0)
 		return GDK_SUCCEED;
-	nils = dosum(Tloc(b, 0), b->tnonil, b->hseqbase, start, end,
-		     res, true, b->ttype, tp, cand, candend, &min, min, max,
+	nils = dosum(Tloc(b, 0), b->tnonil, b->hseqbase, &ci, ncand,
+		     res, true, b->ttype, tp, &min, min, max,
 		     skip_nils, abort_on_error, nil_if_empty, "BATsum");
 	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
 }
@@ -942,18 +927,9 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	do {								\
 		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
 		gid = 0;	/* doesn't change if gidincr == false */ \
-		for (;;) {						\
-			if (cand) {					\
-				if (cand == candend)			\
-					break;				\
-				i = *cand++ - seqb;			\
-				if (i >= end)				\
-					break;				\
-			} else {					\
-				i = start++;				\
-				if (i == end)				\
-					break;				\
-			}						\
+		while (ncand > 0) {					\
+			ncand--;					\
+			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
 			    (gids[i] >= min && gids[i] <= max)) {	\
 				if (gidincr) {				\
@@ -992,18 +968,9 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	do {								\
 		const TYPE *vals = (const TYPE *) values;		\
 		gid = 0;	/* doesn't change if gidincr == false */ \
-		for (;;) {						\
-			if (cand) {					\
-				if (cand == candend)			\
-					break;				\
-				i = *cand++ - seqb;			\
-				if (i >= end)				\
-					break;				\
-			} else {					\
-				i = start++;				\
-				if (i == end)				\
-					break;				\
-			}						\
+		while (ncand > 0) {					\
+			ncand--;					\
+			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
 			    (gids[i] >= min && gids[i] <= max)) {	\
 				if (gidincr) {				\
@@ -1037,18 +1004,9 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) values;	\
 		gid = 0;	/* doesn't change if gidincr == false */ \
-		for (;;) {						\
-			if (cand) {					\
-				if (cand == candend)			\
-					break;				\
-				i = *cand++ - seqb;			\
-				if (i >= end)				\
-					break;				\
-			} else {					\
-				i = start++;				\
-				if (i == end)				\
-					break;				\
-			}						\
+		while (ncand > 0) {					\
+			ncand--;					\
+			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
 			    (gids[i] >= min && gids[i] <= max)) {	\
 				if (gidincr) {				\
@@ -1086,18 +1044,9 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	do {								\
 		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
 		gid = 0;	/* doesn't change if gidincr == false */ \
-		for (;;) {						\
-			if (cand) {					\
-				if (cand == candend)			\
-					break;				\
-				i = *cand++ - seqb;			\
-				if (i >= end)				\
-					break;				\
-			} else {					\
-				i = start++;				\
-				if (i == end)				\
-					break;				\
-			}						\
+		while (ncand > 0) {					\
+			ncand--;					\
+			i = canditer_next(ci) - seqb;			\
 			if (gids == NULL || !gidincr ||			\
 			    (gids[i] >= min && gids[i] <= max)) {	\
 				if (gidincr) {				\
@@ -1134,8 +1083,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	} while (0)
 
 static BUN
-doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict results,
-       BUN ngrp, int tp1, int tp2, const oid *restrict cand, const oid *candend,
+doprod(const void *restrict values, oid seqb, struct canditer *ci, BUN ncand,
+       void *restrict results, BUN ngrp, int tp1, int tp2,
        const oid *restrict gids, bool gidincr, oid min, oid max,
        bool skip_nils, bool abort_on_error, bool nil_if_empty, const char *func)
 {
@@ -1362,12 +1311,11 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	BUN ngrp;
 	BUN nils;
 	BAT *bn;
-	BUN start, end;
-	const oid *cand = NULL, *candend = NULL;
+	struct canditer ci;
+	BUN ncand;
 	const char *err;
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cand, &candend)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATgroupprod: %s\n", err);
 		return NULL;
 	}
@@ -1400,10 +1348,9 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	else
 		gids = (const oid *) Tloc(g, 0);
 
-	nils = doprod(Tloc(b, 0), b->hseqbase, start, end,
-		      Tloc(bn, 0), ngrp, b->ttype, tp,
-		      cand, candend, gids, true, min, max,
-		      skip_nils, abort_on_error, true, "BATgroupprod");
+	nils = doprod(Tloc(b, 0), b->hseqbase, &ci, ncand, Tloc(bn, 0), ngrp,
+		      b->ttype, tp, gids, true, min, max, skip_nils,
+		      abort_on_error, true, "BATgroupprod");
 
 	if (nils < BUN_NONE) {
 		BATsetcount(bn, ngrp);
@@ -1426,12 +1373,11 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 	oid min, max;
 	BUN ngrp;
 	BUN nils;
-	BUN start, end;
-	const oid *cand = NULL, *candend = NULL;
+	struct canditer ci;
+	BUN ncand;
 	const char *err;
 
-	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp,
-				    &start, &end, &cand, &candend)) != NULL) {
+	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATprod: %s\n", err);
 		return GDK_FAIL;
 	}
@@ -1466,8 +1412,8 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 	}
 	if (BATcount(b) == 0)
 		return GDK_SUCCEED;
-	nils = doprod(Tloc(b, 0), b->hseqbase, start, end, res, true,
-		      b->ttype, tp, cand, candend, &min, false, min, max,
+	nils = doprod(Tloc(b, 0), b->hseqbase, &ci, ncand, res, true,
+		      b->ttype, tp, &min, false, min, max,
 		      skip_nils, abort_on_error, nil_if_empty, "BATprod");
 	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
 }
@@ -1481,18 +1427,9 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 		TYPE *restrict avgs = GDKzalloc(ngrp * sizeof(TYPE));	\
 		if (avgs == NULL)					\
 			goto alloc_fail;				\
-		for (;;) {						\
-			if (cand) {					\
-				if (cand == candend)			\
-					break;				\
-				i = *cand++ - b->hseqbase;		\
-				if (i >= end)				\
-					break;				\
-			} else {					\
-				i = start++;				\
-				if (i == end)				\
-					break;				\
-			}						\
+		while (ncand > 0) {					\
+			ncand--;					\
+			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
 				if (gids)				\
@@ -1527,18 +1464,9 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
 		for (i = 0; i < ngrp; i++)				\
 			dbls[i] = 0;					\
-		for (;;) {						\
-			if (cand) {					\
-				if (cand == candend)			\
-					break;				\
-				i = *cand++ - b->hseqbase;		\
-				if (i >= end)				\
-					break;				\
-			} else {					\
-				i = start++;				\
-				if (i == end)				\
-					break;				\
-			}						\
+		while (ncand > 0) {					\
+			ncand--;					\
+			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
 				if (gids)				\
@@ -1577,16 +1505,15 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	lng *restrict cnts = NULL;
 	dbl *restrict dbls;
 	BAT *bn = NULL, *cn = NULL;
-	BUN start, end;
-	const oid *cand = NULL, *candend = NULL;
+	struct canditer ci;
+	BUN ncand;
 	const char *err;
 
 	assert(tp == TYPE_dbl);
 	(void) tp;		/* compatibility (with other BATgroup*
 				 * functions) argument */
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cand, &candend)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATgroupavg: %s\n", err);
 		return GDK_FAIL;
 	}
@@ -1756,18 +1683,9 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 									\
 		/* first try to calculate the sum of all values into a */ \
 		/* lng/hge */						\
-		for (;;) {						\
-			if (cand) {					\
-				if (cand == candend)			\
-					break;				\
-				i = *cand++ - b->hseqbase;		\
-				if (i >= end)				\
-					break;				\
-			} else {					\
-				i = start++;				\
-				if (i == end)				\
-					break;				\
-			}						\
+		while (ncand > 0) {					\
+			ncand--;					\
+			i = canditer_next(&ci) - b->hseqbase;		\
 			x = ((const TYPE *) src)[i];			\
 			if (is_##TYPE##_nil(x))				\
 				continue;				\
@@ -1803,22 +1721,12 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 					r = n - r;			\
 				}					\
 			}						\
-			if (cand)					\
-				--cand;					\
-									\
-			for (;;) {					\
+			while (ncand > 0) {				\
 				/* loop invariant: */			\
 				/* a + r/n == average(x[0],...,x[n]); */ \
 				/* 0 <= r < n */			\
-				if (cand) {				\
-					if (cand == candend)		\
-						break;			\
-					i = *cand++ - b->hseqbase;	\
-				} else {				\
-					i = start++;			\
-				}					\
-				if (i >= end)				\
-					break;				\
+				ncand--;				\
+				i = canditer_next(&ci) - b->hseqbase;	\
 				x = ((const TYPE *) src)[i];		\
 				if (is_##TYPE##_nil(x))			\
 					continue;			\
@@ -1838,18 +1746,9 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	do {							\
 		double a = 0;					\
 		TYPE x;						\
-		for (;;) {					\
-			if (cand) {				\
-				if (cand == candend)		\
-					break;			\
-				i = *cand++ - b->hseqbase;	\
-				if (i >= end)			\
-					break;			\
-			} else {				\
-				i = start++;			\
-				if (i == end)			\
-					break;			\
-			}					\
+		while (ncand > 0) {				\
+			ncand--;				\
+			i = canditer_next(&ci) - b->hseqbase;	\
 			x = ((const TYPE *) src)[i];		\
 			if (is_##TYPE##_nil(x))			\
 				continue;			\
@@ -1867,14 +1766,14 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 #else
 	lng sum = 0;
 #endif
-	BUN start, end, cnt;
-	const oid *cand = NULL, *candend = NULL;
+	struct canditer ci;
+	BUN ncand;
 	const void *restrict src;
 	/* these two needed for ADD_WITH_CHECK macro */
 	bool abort_on_error = true;
 	BUN nils = 0;
 
-	CANDINIT(b, s, start, end, cnt, cand, candend);
+	ncand = canditer_init(&ci, b, s);
 
 	src = Tloc(b, 0);
 
@@ -1920,16 +1819,9 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 #define AGGR_COUNT(TYPE)						\
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
-		for (;;) {						\
-			if (cand) {					\
-				if (cand == candend)			\
-					break;				\
-				i = *cand++ - b->hseqbase;		\
-			} else {					\
-				i = start++;				\
-				if (i == end)				\
-					break;				\
-			}						\
+		while (ncand > 0) {					\
+			ncand--;					\
+			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
 				if (gids)				\
@@ -1957,16 +1849,15 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
 	BATiter bi;
-	BUN start, end;
-	const oid *cand = NULL, *candend = NULL;
+	struct canditer ci;
+	BUN ncand;
 	const char *err;
 
 	assert(tp == TYPE_lng);
 	(void) tp;		/* compatibility (with other BATgroup* */
 	(void) abort_on_error;	/* functions) argument */
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cand, &candend)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATgroupcount: %s\n", err);
 		return NULL;
 	}
@@ -1996,28 +1887,18 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 	if (!skip_nils || b->tnonil) {
 		/* if nils are nothing special, or if there are no
 		 * nils, we don't need to look at the values at all */
-		if (cand) {
-			if (gids) {
-				while (cand < candend) {
-					i = *cand++ - b->hseqbase;
-					if (gids[i] >= min && gids[i] <= max)
-						cnts[gids[i] - min]++;
-				}
-			} else {
-				while (cand < candend) {
-					i = *cand++ - b->hseqbase;
-					cnts[i] = 1;
-				}
+		if (gids) {
+			while (ncand > 0) {
+				ncand--;
+				i = canditer_next(&ci) - b->hseqbase;
+				if (gids[i] >= min && gids[i] <= max)
+					cnts[gids[i] - min]++;
 			}
 		} else {
-			if (gids) {
-				for (i = start; i < end; i++) {
-					if (gids[i] >= min && gids[i] <= max)
-						cnts[gids[i] - min]++;
-				}
-			} else {
-				for (i = start; i < end; i++)
-					cnts[i] = 1;
+			while (ncand > 0) {
+				ncand--;
+				i = canditer_next(&ci) - b->hseqbase;
+				cnts[i] = 1;
 			}
 		}
 	} else {
@@ -2053,16 +1934,9 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 		default:
 			bi = bat_iterator(b);
 
-			for (;;) {
-				if (cand) {
-					if (cand == candend)
-						break;
-					i = *cand++ - b->hseqbase;
-				} else {
-					i = start++;
-					if (i == end)
-						break;
-				}
+			while (ncand > 0) {
+				ncand--;
+				i = canditer_next(&ci) - b->hseqbase;
 				if (gids == NULL ||
 				    (gids[i] >= min && gids[i] <= max)) {
 					if (gids)
@@ -2097,8 +1971,8 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	const bit *restrict bits;
 	lng *restrict cnts;
 	BAT *bn = NULL;
-	BUN start, end;
-	const oid *cand = NULL, *candend = NULL;
+	struct canditer ci;
+	BUN ncand;
 	const char *err;
 
 	assert(tp == TYPE_lng);
@@ -2108,8 +1982,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	(void) abort_on_error;
 	(void) skip_nils;
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cand, &candend)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATgroupsize: %s\n", err);
 		return NULL;
 	}
@@ -2138,18 +2011,9 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 
 	bits = (const bit *) Tloc(b, 0);
 
-	for (;;) {
-		if (cand) {
-			if (cand == candend)
-				break;
-			i = *cand++ - b->hseqbase;
-			if (i >= end)
-				break;
-		} else {
-			i = start++;
-			if (i == end)
-				break;
-		}
+	while (ncand > 0) {
+		ncand--;
+		i = canditer_next(&ci) - b->hseqbase;
 		if (bits[i] == 1 &&
 		    (gids == NULL || (gids[i] >= min && gids[i] <= max))) {
 			cnts[gids ? gids[i] - min : (oid) i]++;
@@ -2172,40 +2036,20 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
 		if (ngrp == cnt) {					\
 			/* single element groups */			\
-			if (cand) {					\
-				while (cand < candend) {		\
-					i = *cand++ - b->hseqbase;	\
-					if (i >= end)			\
-						break;			\
-					if (!skip_nils ||		\
-					    !is_##TYPE##_nil(vals[i])) { \
-						oids[i] = i + b->hseqbase; \
-						nils--;			\
-					}				\
-				}					\
-			} else {					\
-				for (i = start; i < end; i++) {		\
-					if (!skip_nils ||		\
-					    !is_##TYPE##_nil(vals[i])) { \
-						oids[i] = i + b->hseqbase; \
-						nils--;			\
-					}				\
+			while (ncand > 0) {				\
+				ncand--;				\
+				i = canditer_next(ci) - b->hseqbase;	\
+				if (!skip_nils ||			\
+				    !is_##TYPE##_nil(vals[i])) {	\
+					oids[i] = i + b->hseqbase;	\
+					nils--;				\
 				}					\
 			}						\
 		} else {						\
 			gid = 0; /* in case gids == NULL */		\
-			for (;;) {					\
-				if (cand) {				\
-					if (cand == candend)		\
-						break;			\
-					i = *cand++ - b->hseqbase;	\
-					if (i >= end)			\
-						break;			\
-				} else {				\
-					i = start++;			\
-					if (i == end)			\
-						break;			\
-				}					\
+			while (ncand > 0) {				\
+				ncand--;				\
+				i = canditer_next(ci) - b->hseqbase;	\
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
 					if (gids)			\
@@ -2230,8 +2074,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
  * values occur */
 static BUN
 do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
-	    oid min, oid max, BUN start, BUN end,
-	    const oid *restrict cand, const oid *candend,
+	    oid min, oid max, struct canditer *restrict ci, BUN ncand,
 	    BUN cnt, bool skip_nils, bool gdense)
 {
 	oid gid;
@@ -2277,7 +2120,7 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 		break;
 	case TYPE_void:
 		if (!gdense && gids == NULL) {
-			oids[0] = start + b->hseqbase;
+			oids[0] = canditer_next(ci);
 			nils--;
 			break;
 		}
@@ -2288,40 +2131,20 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 
 		if (gdense) {
 			/* single element groups */
-			if (cand) {
-				while (cand < candend) {
-					i = *cand++ - b->hseqbase;
-					if (i >= end)
-						break;
-					if (!skip_nils ||
-					    (*atomcmp)(BUNtail(bi, i), nil) != 0) {
-						oids[i] = i + b->hseqbase;
-						nils--;
-					}
-				}
-			} else {
-				for (i = start; i < end; i++) {
-					if (!skip_nils ||
-					    (*atomcmp)(BUNtail(bi, i), nil) != 0) {
-						oids[i] = i + b->hseqbase;
-						nils--;
-					}
+			while (ncand > 0) {
+				ncand--;
+				i = canditer_next(ci) - b->hseqbase;
+				if (!skip_nils ||
+				    (*atomcmp)(BUNtail(bi, i), nil) != 0) {
+					oids[i] = i + b->hseqbase;
+					nils--;
 				}
 			}
 		} else {
 			gid = 0; /* in case gids == NULL */
-			for (;;) {
-				if (cand) {
-					if (cand == candend)
-						break;
-					i = *cand++ - b->hseqbase;
-					if (i >= end)
-						break;
-				} else {
-					i = start++;
-					if (i == end)
-						break;
-				}
+			while (ncand > 0) {
+				ncand--;
+				i = canditer_next(ci) - b->hseqbase;
 				if (gids == NULL ||
 				    (gids[i] >= min && gids[i] <= max)) {
 					const void *v = BUNtail(bi, i);
@@ -2355,8 +2178,7 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
  * values occur */
 static BUN
 do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
-	    oid min, oid max, BUN start, BUN end,
-	    const oid *restrict cand, const oid *candend,
+	    oid min, oid max, struct canditer *restrict ci, BUN ncand,
 	    BUN cnt, bool skip_nils, bool gdense)
 {
 	oid gid;
@@ -2402,7 +2224,7 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 		break;
 	case TYPE_void:
 		if (!gdense && gids == NULL) {
-			oids[0] = end + b->hseqbase - 1;
+			oids[0] = canditer_last(ci);
 			nils--;
 			break;
 		}
@@ -2413,40 +2235,20 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 
 		if (gdense) {
 			/* single element groups */
-			if (cand) {
-				while (cand < candend) {
-					i = *cand++ - b->hseqbase;
-					if (i >= end)
-						break;
-					if (!skip_nils ||
-					    (*atomcmp)(BUNtail(bi, i), nil) != 0) {
-						oids[i] = i + b->hseqbase;
-						nils--;
-					}
-				}
-			} else {
-				for (i = start; i < end; i++) {
-					if (!skip_nils ||
-					    (*atomcmp)(BUNtail(bi, i), nil) != 0) {
-						oids[i] = i + b->hseqbase;
-						nils--;
-					}
+			while (ncand > 0) {
+				ncand--;
+				i = canditer_next(ci) - b->hseqbase;
+				if (!skip_nils ||
+				    (*atomcmp)(BUNtail(bi, i), nil) != 0) {
+					oids[i] = i + b->hseqbase;
+					nils--;
 				}
 			}
 		} else {
 			gid = 0; /* in case gids == NULL */
-			for (;;) {
-				if (cand) {
-					if (cand == candend)
-						break;
-					i = *cand++ - b->hseqbase;
-					if (i >= end)
-						break;
-				} else {
-					i = start++;
-					if (i == end)
-						break;
-				}
+			while (ncand > 0) {
+				ncand--;
+				i = canditer_next(ci) - b->hseqbase;
 				if (gids == NULL ||
 				    (gids[i] >= min && gids[i] <= max)) {
 					const void *v = BUNtail(bi, i);
@@ -2479,8 +2281,8 @@ static BAT *
 BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
 	       bool abort_on_error,
 	       BUN (*minmax)(oid *restrict, BAT *, const oid *restrict, BUN,
-			     oid, oid, BUN, BUN, const oid *restrict,
-			     const oid *, BUN, bool, bool),
+			     oid, oid, struct canditer *restrict, BUN,
+			     BUN, bool, bool),
 	       const char *name)
 {
 	const oid *restrict gids;
@@ -2489,8 +2291,8 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
 	oid *restrict oids;
 	BAT *bn = NULL;
 	BUN nils;
-	BUN start, end;
-	const oid *cand = NULL, *candend = NULL;
+	struct canditer ci;
+	BUN ncand;
 	const char *err;
 
 	assert(tp == TYPE_oid);
@@ -2503,8 +2305,7 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
 		return NULL;
 	}
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cand, &candend)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("%s: %s\n", name, err);
 		return NULL;
 	}
@@ -2525,9 +2326,8 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
 	else
 		gids = (const oid *) Tloc(g, 0);
 
-	nils = (*minmax)(oids, b, gids, ngrp, min, max, start, end,
-			 cand, candend, BATcount(b), skip_nils,
-			 g && BATtdense(g));
+	nils = (*minmax)(oids, b, gids, ngrp, min, max, &ci, ncand,
+			 BATcount(b), skip_nils, g && BATtdense(g));
 
 	BATsetcount(bn, ngrp);
 
@@ -2619,9 +2419,10 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 				}
 			}
 		} else {
-			(void) do_groupmin(&pos, b, NULL, 1, 0, 0, 0,
-					   BATcount(b), NULL, NULL, BATcount(b),
-					   skipnil, false);
+			struct canditer ci;
+			BUN ncand = canditer_init(&ci, b, NULL);
+			(void) do_groupmin(&pos, b, NULL, 1, 0, 0, &ci, ncand,
+					   BATcount(b), skipnil, false);
 		}
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
@@ -2711,9 +2512,10 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 				}
 			}
 		} else {
-			(void) do_groupmax(&pos, b, NULL, 1, 0, 0, 0,
-					   BATcount(b), NULL, NULL, BATcount(b),
-					   skipnil, false);
+			struct canditer ci;
+			BUN ncand = canditer_init(&ci, b, NULL);
+			(void) do_groupmax(&pos, b, NULL, 1, 0, 0, &ci, ncand,
+					   BATcount(b), skipnil, false);
 		}
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
@@ -2762,8 +2564,8 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	BUN ngrp;
 	BUN nils = 0;
 	BAT *bn = NULL;
-	BUN start, end;
-	const oid *cand = NULL, *candend = NULL;
+	struct canditer ci;
+	BUN ncand;
 	BAT *t1, *t2;
 	BATiter bi;
 	const void *v;
@@ -2772,8 +2574,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	const char *err;
 	(void) abort_on_error;
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cand, &candend)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATgroupquantile: %s\n", err);
 		return NULL;
 	}
@@ -3073,18 +2874,9 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 #define AGGR_STDEV(TYPE)						\
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
-		for (;;) {						\
-			if (cand) {					\
-				if (cand == candend)			\
-					break;				\
-				i = *cand++ - b->hseqbase;		\
-				if (i >= end)				\
-					break;				\
-			} else {					\
-				i = start++;				\
-				if (i == end)				\
-					break;				\
-			}						\
+		while (ncand > 0) {					\
+			ncand--;					\
+			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
 			    (gids[i] >= min && gids[i] <= max)) {	\
 				if (gids)				\
@@ -3138,16 +2930,15 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	BUN *restrict cnts = NULL;
 	dbl *restrict dbls, *restrict mean, *restrict delta, *restrict m2;
 	BAT *bn = NULL;
-	BUN start, end;
-	const oid *cand = NULL, *candend = NULL;
+	struct canditer ci;
+	BUN ncand;
 	const char *err;
 
 	assert(tp == TYPE_dbl);
 	(void) tp;		/* compatibility (with other BATgroup*
 				 * functions) argument */
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
-				    &cand, &candend)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("%s: %s\n", func, err);
 		return NULL;
 	}

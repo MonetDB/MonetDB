@@ -6,6 +6,9 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
+#ifndef _GDK_CAND_H_
+#define _GDK_CAND_H_
+
 /* This macro initializes the variables start, end, cnt, cand, and
  * candend that were passed as arguments from the input parameters b
  * and s (the candidate list).  Start and end are the start and end
@@ -55,3 +58,48 @@
 			}						\
 		}							\
 	} while (0)
+
+struct canditer {
+	const oid *oids;
+	oid seq;
+	enum {
+		cand_dense,	/* simple dense BAT, i.e. no look ups */
+		cand_materialized, /* simple materialized OID list */
+		cand_except,	/* list of exceptions in vheap */
+	} tpe;
+	BUN noids;		/* number of values in .oids */
+	BUN ncand;		/* number of candidates */
+	BUN next;		/* next BUN to return value for */
+	oid add;		/* value to add because of exceptions seen */
+};
+
+static inline oid
+canditer_next(struct canditer *ci)
+{
+	if (ci->next == ci->ncand)
+		return oid_nil;
+	switch (ci->tpe) {
+	case cand_dense:
+		return ci->seq + ci->next++;
+	case cand_materialized:
+		assert(ci->next < ci->noids);
+		return ci->oids[ci->next++];
+	case cand_except:
+		/* work around compiler error: control reaches end of
+		 * non-void function */
+		break;
+	}
+	oid o = ci->seq + ci->add + ci->next++;
+	while (ci->add < ci->noids && o == ci->oids[ci->add]) {
+		ci->add++;
+		o++;
+	}
+	return o;
+}
+
+gdk_export BUN canditer_init(struct canditer *ci, BAT *b, BAT *s);
+gdk_export oid canditer_last(struct canditer *ci);
+gdk_export oid canditer_idx(struct canditer *ci, BUN p);
+gdk_export void canditer_reset(struct canditer *ci);
+
+#endif	/* _GDK_CAND_H_ */

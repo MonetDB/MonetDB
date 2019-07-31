@@ -1488,6 +1488,9 @@ BUNfnd(BAT *b, const void *v)
 	BATcheck(b, "BUNfnd", BUN_NONE);
 	if (!v)
 		return r;
+	if (b->ttype == TYPE_void && b->tvheap != NULL) {
+		/* must be a candidate list with exceptions */
+	}
 	if (BATtvoid(b))
 		return BUNfndVOID(b, v);
 	if (!BATcheckhash(b)) {
