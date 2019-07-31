@@ -8,6 +8,7 @@ stderr of test 'mserver5--help` in directory 'monetdb5/tools` itself:
 Usage: mserver5.exe [options]
     --dbpath=<directory>      Specify database location
     --dbextra=<directory>     Directory for transient BATs
+    --in-memory               Run database in-memory only
     --config=<config_file>    Use config_file to read options from
     --single-user             Allow only one user at a time
     --readonly                Safeguard database
