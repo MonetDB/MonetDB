@@ -25,15 +25,14 @@
 #include "mosaic_frame.h"
 #include "mosaic_private.h"
 
+#include <stdint.h>
+
 bool MOStypes_frame(BAT* b) {
 	switch(ATOMbasetype(getBatType(b->ttype))){
-	case TYPE_bte: return true;
 	case TYPE_sht: return true;
 	case TYPE_int: return true;
 	case TYPE_lng: return true;
 	case TYPE_oid: return true;
-	case TYPE_flt: return true;
-	case TYPE_dbl: return true;
 #ifdef HAVE_HGE
 	case TYPE_hge: return true;
 #endif
@@ -42,8 +41,9 @@ bool MOStypes_frame(BAT* b) {
 	return false;
 }
 
+// TODO: Revisit the whole layout stuffchunk_size is no longer correct
 // we use longs as the basis for bit vectors
-#define chunk_size(Task,Cnt) wordaligned(MosaicBlkSize + (Cnt * Task->hdr->framebits)/8 + (((Cnt * Task->hdr->framebits) %8) != 0), lng)
+#define chunk_size(Task, Cnt) wordaligned(MosaicBlkSize + (Cnt * Task->hdr->framebits)/8 + (((Cnt * Task->hdr->framebits) %8) != 0), lng)
 
 void
 MOSadvance_frame(MOStask task)
@@ -110,297 +110,278 @@ MOSskip_frame(MOStask task)
    RES= f;\
 }
 
-#define estimateFrame(TPE)\
-{	TPE *val = ((TPE*)task->src) + task->start, frame = *val, delta;\
-	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
-	for(i =0; i<limit; i++, val++){\
-		delta = *val - frame;\
-		MOSfind(j,task->hdr->frame.val##TPE,delta,0,hdr->framesize);\
-		if( j == hdr->framesize || task->hdr->frame.val##TPE[j] != delta )\
-			break;\
-	}\
-	if( i * sizeof(TPE) <= chunk_size(task,i) )\
-		return 0.0;\
-	if( task->dst +  chunk_size(task,i) >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)\
-		return 0.0;\
-	if(i) factor = (flt) ((int)i * sizeof(TPE)) / chunk_size(task,i);\
-}
+typedef struct _FrameParameters_t {
+	MosaicBlkRec base;
+	int bits;
+	union {
+		bte minbte;
+		sht minsht;
+		int minint;
+		lng minlng;
+		oid minoid;
+#ifdef HAVE_HGE
+		hge minhge;
+#endif
+	} min;
+	union {
+		bte maxbte;
+		sht maxsht;
+		int maxint;
+		lng maxlng;
+		oid maxoid;
+#ifdef HAVE_HGE
+		hge maxhge;
+#endif
+	} max;
 
-// store it in the compressed heap header directly
-// filter out the most frequent ones
-// TODO: I think it is safer to use the minimum value as base frame.
-#define makeFrame(TPE)\
-{	TPE v,*val = ((TPE*)task->src) + task->start, frame = *val, delta;\
-	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
-	for(i =0; i< limit; i++, val++){\
-		delta = *val - frame;\
-		for(j= 0; j< hdr->framesize; j++)\
-			if( task->hdr->frame.val##TPE[j] == delta) break;\
-		if ( j == hdr->framesize){\
-			if ( hdr->framesize == 256){\
-				int min = 0;\
-				for(j=1;j<256;j++)\
-					if( cnt[min] <cnt[j]) min = j;\
-				j=min;\
-				cnt[j]=0;\
+} MosaicBlkHeader_frame_t;
+
+#define MOScodevectorFrame(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_frame_t),lng))
+
+/* Use ternary operator because (in theory) we have to be careful not to get overflow's*/\
+#define GET_DELTA_FOR_SIGNED_TYPE(DELTA_TPE, max, min) (min < 0? max < 0?(DELTA_TPE) (max - min) : (DELTA_TPE)(max) + (DELTA_TPE)(-1 * min) : (DELTA_TPE) (max - min))
+#define GET_DELTA_FOR_UNSIGNED_TYPE(DELTA_TPE, max, min) ((DELTA_TPE) (max - min))
+
+#define determineFrameParameters(PARAMETERS, SRC, LIMIT, TPE, DELTA_TPE, GET_DELTA) \
+do {\
+	TPE *val = SRC, max, min;\
+	int bits = 1;\
+	BUN i;\
+	max = *val;\
+	min = *val;\
+	/*TODO: add additional loop to find best bit wise upper bound*/\
+	for(i = 0; i < LIMIT; i++, val++){\
+		bool evaluate_bits = false;\
+		if (*val > max) {\
+			max = *val;\
+			evaluate_bits = true;\
+		}\
+		if (*val < min) {\
+			min = *val;\
+			evaluate_bits = true;\
+		}\
+		if (evaluate_bits) {\
+		 	DELTA_TPE width = GET_DELTA(DELTA_TPE, max, min);\
+			int current_bits = bits;\
+			while (width > ((DELTA_TPE)(-1)) >> (sizeof(DELTA_TPE) * CHAR_BIT - current_bits) ) {/*keep track of number of BITS necessary to store difference*/\
+				current_bits++;\
+			}\
+			if ( (current_bits >= (int) ((sizeof(TPE) * CHAR_BIT) / 2))\
+				/*TODO: this extra condition should be removed once bitvector is extended to int63's*/\
+				|| (current_bits > (int) sizeof(unsigned int)) ) {\
+				/*If we can from here on not compress better then the half of the original data type, we give up. */\
 				break;\
 			}\
-			task->hdr->frame.val##TPE[j] = delta;\
-			cnt[j]++;\
-			hdr->framesize++;\
-		} else\
-			cnt[j]++;\
+		}\
 	}\
-	for(i=0; i< (BUN) hdr->framesize; i++)\
-		for(j=(int)(i+1); j< hdr->framesize; j++)\
-			if(task->hdr->frame.val##TPE[i] >task->hdr->frame.val##TPE[j]){\
-				v= task->hdr->frame.val##TPE[i];\
-				task->hdr->frame.val##TPE[i] = task->hdr->frame.val##TPE[j];\
-				task->hdr->frame.val##TPE[j] = v;\
-			}\
-	hdr->framebits = 1;\
-	hdr->mask =1;\
-	for( i=2 ; i < (BUN) hdr->framesize; i *=2){\
-		hdr->framebits++;\
-		hdr->mask = (hdr->mask <<1) | 1;\
-	}\
-}
+	(PARAMETERS).min.min##TPE = min;\
+	(PARAMETERS).max.max##TPE = max;\
+	(PARAMETERS).bits = bits;\
+	(PARAMETERS).base.cnt = i;\
+} while(0)
 
+#define getSrc(TPE, TASK) (((TPE*)TASK->src) + TASK->start)
 
-void
-MOScreateframeDictionary(MOStask task)
-{	BUN i;
-	int j;
-	MosaicHdr hdr = task->hdr;
-	lng cnt[256];
-
-	memset((char*)cnt,0, sizeof(lng) * 256);
-	hdr->framesize = 0;
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: makeFrame(bte); break;
-	case TYPE_sht: makeFrame(sht); break;
-	case TYPE_int: makeFrame(int); break;
-	case TYPE_lng: makeFrame(lng); break;
-	case TYPE_oid: makeFrame(oid); break;
-	case TYPE_flt: makeFrame(flt); break;
-	case TYPE_dbl: makeFrame(dbl); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: makeFrame(hge); break;
-#endif
-	}
-}
+#define estimateFrame(TASK, TPE, DELTA_TPE, GET_DELTA)\
+do {\
+	TPE *src = getSrc(TPE, (TASK));\
+	BUN limit = (TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start;\
+	MosaicBlkHeader_frame_t parameters;\
+	determineFrameParameters(parameters, src, limit, TPE, DELTA_TPE, GET_DELTA);\
+	if(parameters.base.cnt) (TASK)->factor[MOSAIC_FRAME] = (flt) ((int) (parameters.base.cnt) * sizeof(TPE)) / (wordaligned(sizeof(MosaicBlkHeader_frame_t), lng) + wordaligned((parameters.base.cnt * parameters.bits) / CHAR_BIT, lng));\
+	else (TASK)->factor[MOSAIC_FRAME] = 0.0;\
+	(TASK)->range[MOSAIC_FRAME] = task->start + parameters.base.cnt;\
+} while (0)
 
 // calculate the expected reduction using dictionary in terms of elements compressed
 flt
-MOSestimate_frame(MOStask task)
-{	BUN i = 0;
-	int j;
-	flt factor= 0.0;
-	MosaicHdr hdr = task->hdr;
+MOSestimate_frame(MOStask task) {
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: estimateFrame(bte); break;
-	case TYPE_sht: estimateFrame(sht); break;
-	case TYPE_lng: estimateFrame(lng); break;
-	case TYPE_oid: estimateFrame(oid); break;
-	case TYPE_flt: estimateFrame(flt); break;
-	case TYPE_dbl: estimateFrame(dbl); break;
+	case TYPE_bte: estimateFrame(task, bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_sht: estimateFrame(task, sht, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_int: estimateFrame(task, int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_lng: estimateFrame(task, lng, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_oid: estimateFrame(task, oid,  oid, GET_DELTA_FOR_UNSIGNED_TYPE); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: estimateFrame(hge); break;
+	case TYPE_hge: estimateFrame(task, hge, uhge, GET_DELTA_FOR_SIGNED_TYPE); break;
 #endif
-	case TYPE_int:
-		{	int *val = ((int*)task->src) + task->start, frame = *val, delta;
-			BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
-
-			/* frame mask may not be valid anymore
-			if( task->range[MOSAIC_FRAME] > task->start){
-				i = task->range[MOSAIC_FRAME] - task->start;
-				if(i) factor = (flt) ((int) i * sizeof(int))/ chunk_size(task,i); 
-				if( i * sizeof(int) < chunk_size(task,i) )
-					return 0.0;
-				return factor;
-			}
-			*/
-
-			for(i =0; i<limit; i++, val++){
-				delta= *val - frame;
-				MOSfind(j,task->hdr->frame.valint,delta,0,hdr->framesize);
-				if( j == hdr->framesize || task->hdr->frame.valint[j] != delta)
-					break;
-			}
-			if ( i > MOSAICMAXCNT ) i = MOSAICMAXCNT;
-			if( i * sizeof(int) <= chunk_size(task,i) )
-				return 0.0;
-			if( task->dst +  chunk_size(task,i) >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)
-				return 0.0;
-			if(i) factor = (flt) ((int)i * sizeof(int)) / chunk_size(task,i);\
-		}
 	}
-	task->factor[MOSAIC_FRAME] = factor;
-	task->range[MOSAIC_FRAME] = task->start + i;
-	return factor; 
+
+	return task->factor[MOSAIC_FRAME];
 }
 
-// insert a series of values into the compressor block using frame
-#define framecompress(Vector,I,Bits,Value) setBitVector(Vector,I,Bits,Value)
-
-#define FRAMEcompress(TPE)\
-{	TPE *val = ((TPE*)task->src) + task->start, frame = *val, delta;\
-	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
-	task->dst = MOScodevector(task); \
-    *(TPE*) task->dst = frame;\
-	task->dst += sizeof(TPE);\
-	base = (BitVector) (((char*) task->blk) +  MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
-	base[0]=0;\
-	for(i =0; i<limit; i++, val++){\
-		delta = *val - frame;\
-		MOSfind(j,task->hdr->frame.val##TPE,delta,0,hdr->framesize);\
-		if(j == hdr->framesize || task->hdr->frame.val##TPE[j] != delta) \
-			break;\
-		else {\
-			hdr->checksum.sum##TPE += delta;\
-			hdr->framefreq[j]++;\
-			MOSincCnt(blk,1);\
-			framecompress(base,i,hdr->framebits,j);\
-	} }\
-	task->dst += wordaligned((i * hdr->framebits / 8) + ( (i * hdr->framebits) % 8 ) != 0, lng);\
-}
+#define FRAMEcompress(TASK, TPE, DELTA_TPE, GET_DELTA)\
+do {\
+	TPE *src = getSrc(TPE, (TASK));\
+	TPE delta;\
+	int i = 0;\
+	BUN limit = (TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start;\
+	BitVector base;\
+	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((TASK))->blk;\
+	determineFrameParameters(*parameters, src, limit, TPE, DELTA_TPE, GET_DELTA);\
+	(TASK)->dst = MOScodevectorFrame(TASK);\
+	base = (BitVector) (((char*) (TASK)->blk) +  MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
+	base[0] = 0;\
+	for(i = 0; i < parameters->base.cnt; i++, src++) {\
+		/*TODO: assert that delta's actually does not cause an overflow. */\
+		delta = *src - parameters->min.min##TPE;\
+		setBitVector(base, i, parameters->bits, delta);\
+	}\
+	(TASK)->dst += wordaligned((i * parameters->bits / CHAR_BIT) + ( (i * parameters->bits) % CHAR_BIT ) != 0, lng);\
+} while(0)
 
 void
 MOScompress_frame(MOStask task)
 {
-	BUN i;
-	int j;
 	MosaicBlk blk = task->blk;
-	MosaicHdr hdr = task->hdr;
-	BitVector base;
 
 	MOSsetTag(blk,MOSAIC_FRAME);
-	MOSsetCnt(blk,0);
+	MOSsetCnt(blk, 0);
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: FRAMEcompress(bte); break;
-	case TYPE_sht: FRAMEcompress(sht); break;
-	case TYPE_int: FRAMEcompress(int); break;
-	case TYPE_lng: FRAMEcompress(lng); break;
-	case TYPE_oid: FRAMEcompress(oid); break;
-	case TYPE_flt: FRAMEcompress(flt); break;
-	case TYPE_dbl: FRAMEcompress(dbl); break;
+	case TYPE_bte: FRAMEcompress(task, bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_sht: FRAMEcompress(task, sht, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_int: FRAMEcompress(task, int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_lng: FRAMEcompress(task, lng, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_oid: FRAMEcompress(task, oid, oid, GET_DELTA_FOR_UNSIGNED_TYPE); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: FRAMEcompress(hge); break;
+	case TYPE_hge: FRAMEcompress(task, hge, uhge, GET_DELTA_FOR_SIGNED_TYPE); break;
 #endif
 	}
 }
 
 // the inverse operator, extend the src
-#define framedecompress(I) j = getBitVector(base,I,hdr->framebits)
 
-#define FRAMEdecompress(TPE)\
-{	BUN lim = MOSgetCnt(blk);\
-    TPE frame = *(TPE*)MOScodevector(task);\
-	base = (BitVector) (((char*) blk) +  MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
+#define FRAMEdecompress(TASK, TPE)\
+do {\
+	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((TASK))->blk;\
+	BUN lim = parameters->base.cnt;\
+    TPE min = parameters->min.min##TPE;\
+	BitVector base = (BitVector) MOScodevectorFrame(TASK);\
+	BUN i;\
 	for(i = 0; i < lim; i++){\
-		framedecompress(i);\
-		((TPE*)task->src)[i] = frame + task->hdr->frame.val##TPE[j];\
-		hdr->checksum2.sum##TPE += task->hdr->frame.val##TPE[j];\
+		TPE delta = getBitVector(base, i, parameters->bits);\
+		/*TODO: assert that delta's actually does not cause an overflow. */\
+		TPE val = min + delta;\
+		((TPE*)(TASK)->src)[i] = val;\
+		(TASK)->hdr->checksum2.sum##TPE += val;\
 	}\
-	task->src += i * sizeof(TPE);\
-}
+	(TASK)->src += i * sizeof(TPE);\
+} while(0)
 
 void
 MOSdecompress_frame(MOStask task)
 {
-	MosaicBlk blk = task->blk;
-	MosaicHdr hdr = task->hdr;
-	BUN i;
-	unsigned int j;
-	BitVector base;
-
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: FRAMEdecompress(bte); break;
-	case TYPE_sht: FRAMEdecompress(sht); break;
-	case TYPE_int: FRAMEdecompress(int); break;
-	case TYPE_lng: FRAMEdecompress(lng); break;
-	case TYPE_oid: FRAMEdecompress(oid); break;
-	case TYPE_flt: FRAMEdecompress(flt); break;
-	case TYPE_dbl: FRAMEdecompress(dbl); break;
+	case TYPE_bte: FRAMEdecompress(task, bte); break;
+	case TYPE_sht: FRAMEdecompress(task, sht); break;
+	case TYPE_int: FRAMEdecompress(task, int); break;
+	case TYPE_lng: FRAMEdecompress(task, lng); break;
+	case TYPE_oid: FRAMEdecompress(task, oid); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: FRAMEdecompress(hge); break;
+	case TYPE_hge: FRAMEdecompress(task, hge); break;
 #endif
 	}
 }
 
-// perform relational algebra operators over non-compressed chunks
-// They are bound by an oid range and possibly a candidate list
+#define ANTI(Boolean) !(Boolean)
+#define PRO(Boolean) (Boolean)
 
-#define select_frame(TPE) {\
-    TPE frame = *(TPE*)MOScodevector(task);\
-	base = (BitVector) (((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
-	if( !*anti){\
-		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
+#define non_trivial_select_frame(TASK, TPE, DELTA_TPE, CMP_FLAVOR) \
+do {\
+    MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((TASK))->blk;\
+	TPE min =  parameters->min.min##TPE;\
+	TPE max =  parameters->max.max##TPE;\
+	BitVector base = (BitVector) MOScodevectorFrame(TASK);\
+	if( is_nil(TPE, *(TPE*) low)) {\
+		DELTA_TPE hgh2;\
+		bool hi2 = *hi;\
+		if (*(TPE*) hgh < min) {\
+			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();}\
+		}\
+		else if (*(TPE*) hgh > max || (*(TPE*) hgh == max && hi2) ) {\
+			if (CMP_FLAVOR(true) /* AKA NOT ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();}\
+		}\
+		else { /* min >= *(TPE*) hgh <= max */\
+			hgh2 = *(TPE*) hgh - min;\
+			for(i=0 ; first < last; first++, i++){\
+				MOSskipit();\
+				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+				bool cmp  =  ((hi2 && delta <= hgh2 ) || (!hi2 && delta < hgh2 ));\
+				if (CMP_FLAVOR(cmp) ) *o++ = (oid) first;\
+			}\
+		}\
+	}\
+	else if( is_nil(TPE, *(TPE*) hgh)){\
+		DELTA_TPE low2;\
+		bool li2 = *li;\
+		if (*(TPE*) low > max) {\
+			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();}\
+		} else\
+		if (*(TPE*) low < min && (*(TPE*) low == min && li2) )  {\
+			if (CMP_FLAVOR(true) /* AKA NOT ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();}\
+		} else  {\
+			low2 = *(TPE*) low - min;\
+			for(i=0; first < last; first++, i++){\
+				MOSskipit();\
+				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+				bool cmp  =  ((li2 && delta >= low2 ) || (!li2 && delta > low2 ));\
+				if (CMP_FLAVOR(cmp) )\
+					*o++ = (oid) first;\
+			}\
+		}\
+	}\
+	else {\
+		DELTA_TPE low2;\
+		DELTA_TPE hgh2;\
+		bool li2 = *li;\
+		bool hi2 = *hi;\
+		assert(!is_nil(TPE, *(TPE*) low) && !is_nil(TPE, *(TPE*) hgh));\
+		if (*(TPE*) hgh < min) {\
+			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();}\
+		}\
+		else if (*(TPE*) low > max) {\
+			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();}\
+		}\
+		else if ( (*(TPE*) hgh > max || (*(TPE*) hgh == max && hi2)) && (*(TPE*) low < min && (*(TPE*) low == min && li2) ) ) {\
+			if (CMP_FLAVOR(true) /* AKA NOT ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();}\
+		}\
+		else {\
+		 	hgh2	= *(TPE*) hgh > max ? max - min : *(TPE*) hgh - min;\
+			hi2		= *(TPE*) hgh > max ? true : hi2;\
+			low2	= *(TPE*) low < min ? 0 : *(TPE*) low - min;\
+			li2		= *(TPE*) low < min ? true : li2;\
+			for(i=0 ; first < last; first++, i++){\
+				MOSskipit();\
+				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+				bool cmp  =  ((hi2 && delta <= hgh2 ) || (!hi2 && delta < hgh2 )) &&\
+						((li2 && delta >= low2 ) || (!li2 && delta > low2 ));\
+				if (CMP_FLAVOR(cmp))\
+					*o++ = (oid) first;\
+			}\
+		}\
+	}\
+} while(0)
+
+// TODO: Simplify (deduplication) and optimize (control deps to data deps) this macro
+#define select_frame(TASK, TPE, DELTA_TPE) {\
+	if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
+		if (!*anti) {\
 			for( ; first < last; first++){\
 				MOSskipit();\
 				*o++ = (oid) first;\
 			}\
-		} else\
-		if( is_nil(TPE, *(TPE*) low) ){\
-			for(i=0 ; first < last; first++, i++){\
-				MOSskipit();\
-				framedecompress(i); \
-				cmp  =  ((*hi && frame + task->hdr->frame.val##TPE[j] <= * (TPE*)hgh ) || (!*hi && frame + task->hdr->frame.val##TPE[j] < *(TPE*)hgh ));\
-				if (cmp )\
-					*o++ = (oid) first;\
-			}\
-		} else\
-		if( is_nil(TPE, *(TPE*) hgh) ){\
-			for(i=0; first < last; first++, i++){\
-				MOSskipit();\
-				framedecompress(i); \
-				cmp  =  ((*li && frame + task->hdr->frame.val##TPE[j] >= * (TPE*)low ) || (!*li && frame + task->hdr->frame.val##TPE[j] > *(TPE*)low ));\
-				if (cmp )\
-					*o++ = (oid) first;\
-			}\
-		} else{\
-			for(i=0 ; first < last; first++, i++){\
-				MOSskipit();\
-				framedecompress(i); \
-				cmp  =  ((*hi && frame + task->hdr->frame.val##TPE[j] <= * (TPE*)hgh ) || (!*hi && frame + task->hdr->frame.val##TPE[j] < *(TPE*)hgh )) &&\
-						((*li && frame + task->hdr->frame.val##TPE[j] >= * (TPE*)low ) || (!*li && frame + task->hdr->frame.val##TPE[j] > *(TPE*)low ));\
-				if (cmp )\
-					*o++ = (oid) first;\
-			}\
 		}\
-	} else {\
-		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
+		else {\
 			/* nothing is matching */\
-		} else\
-		if( is_nil(TPE, *(TPE*) low) ){\
-			for(i=0 ; first < last; first++, i++){\
-				MOSskipit();\
-				framedecompress(i); \
-				cmp  =  ((*hi && frame + task->hdr->frame.val##TPE[j] <= * (TPE*)hgh ) || (!*hi && frame + task->hdr->frame.val##TPE[j] < *(TPE*)hgh ));\
-				if ( !cmp )\
-					*o++ = (oid) first;\
-			}\
-		} else\
-		if( is_nil(TPE, *(TPE*) hgh) ){\
-			for(i=0 ; first < last; first++, i++){\
-				MOSskipit();\
-				framedecompress(i); \
-				cmp  =  ((*li && frame +task->hdr->frame.val##TPE[j] >= * (TPE*)low ) || (!*li && frame +task->hdr->frame.val##TPE[j] > *(TPE*)low ));\
-				if ( !cmp )\
-					*o++ = (oid) first;\
-			}\
-		} else{\
-			for(i=0 ; first < last; first++, i++){\
-				MOSskipit();\
-				framedecompress(i); \
-				cmp  =  ((*hi && frame +task->hdr->frame.val##TPE[j] <= * (TPE*)hgh ) || (!*hi && frame +task->hdr->frame.val##TPE[j] < *(TPE*)hgh )) &&\
-						((*li && frame +task->hdr->frame.val##TPE[j] >= * (TPE*)low ) || (!*li && frame +task->hdr->frame.val##TPE[j] > *(TPE*)low ));\
-				if ( !cmp )\
-					*o++ = (oid) first;\
-			}\
 		}\
+	}\
+	else if( !*anti){\
+		non_trivial_select_frame(TASK, TPE, DELTA_TPE, PRO);\
+	}\
+	else {\
+		non_trivial_select_frame(TASK, TPE, DELTA_TPE, ANTI);\
 	}\
 }
 
@@ -409,10 +390,6 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 {
 	oid *o;
 	BUN i, first,last;
-	MosaicHdr hdr = task->hdr;
-	bool cmp;
-	bte j;
-	BitVector base;
 
 	// set the oid range covered and advance scan range
 	first = task->start;
@@ -425,15 +402,13 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: select_frame(bte); break;
-	case TYPE_sht: select_frame(sht); break;
-	case TYPE_int: select_frame(int); break;
-	case TYPE_lng: select_frame(lng); break;
-	case TYPE_oid: select_frame(oid); break;
-	case TYPE_flt: select_frame(flt); break;
-	case TYPE_dbl: select_frame(dbl); break;
+	case TYPE_bte: select_frame(task, bte, ulng); break;
+	case TYPE_sht: select_frame(task, sht, ulng); break;
+	case TYPE_int: select_frame(task, int, ulng); break;
+	case TYPE_lng: select_frame(task, lng, ulng); break;
+	case TYPE_oid: select_frame(task, oid, oid); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: select_frame(hge); break;
+	case TYPE_hge: select_frame(task, hge, uhge); break;
 #endif
 	}
 	MOSskip_frame(task);
@@ -441,55 +416,117 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	return MAL_SUCCEED;
 }
 
-#define thetaselect_frame(TPE)\
-{ 	TPE low,hgh;\
-	TPE frame = *(TPE*) MOScodevector(task);\
-	base = (BitVector) (((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
-	low= hgh = TPE##_nil;\
-	if ( strcmp(oper,"<") == 0){\
-		hgh= *(TPE*) val;\
-		hgh = PREVVALUE##TPE(hgh);\
-	} else\
-	if ( strcmp(oper,"<=") == 0){\
-		hgh= *(TPE*) val;\
-	} else\
-	if ( strcmp(oper,">") == 0){\
-		low = *(TPE*) val;\
-		low = NEXTVALUE##TPE(low);\
-	} else\
-	if ( strcmp(oper,">=") == 0){\
-		low = *(TPE*) val;\
-	} else\
-	if ( strcmp(oper,"!=") == 0){\
-		hgh= low= *(TPE*) val;\
-		anti++;\
-	} else\
-	if ( strcmp(oper,"==") == 0){\
-		hgh= low= *(TPE*) val;\
-	} \
-	for( ; first < last; first++){\
-		MOSskipit();\
-		framedecompress(first); \
-		if( (is_nil(TPE, low) || frame + task->hdr->frame.val##TPE[j] >= low) && (frame + task->hdr->frame.val##TPE[j] <= hgh || is_nil(TPE, hgh)) ){\
-			if ( !anti) {\
-				*o++ = (oid) first;\
+#define thetaselect_frame(TPE, DELTA_TPE, GET_DELTA)\
+{\
+    MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
+	TPE min =  parameters->min.min##TPE;\
+	BitVector base = (BitVector) MOScodevectorFrame(task);\
+	if ( strcmp(oper,"<") == 0) {\
+		TPE hgh= *(TPE*) val;\
+		if (hgh >= min) {\
+			DELTA_TPE hgh2 = GET_DELTA(DELTA_TPE, hgh, min);\
+			for(int i=0; first < last; first++, i++){\
+				MOSskipit();\
+				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+				if( (delta < hgh2 ) ){\
+					*o++ = (oid) first;\
+				}\
 			}\
-		} else\
-			if( anti){\
-				*o++ = (oid) first;\
-			}\
+		}\
+		/*else nothing matches*/\
 	}\
-} 
+	else if ( strcmp(oper,"<=") == 0) {\
+		TPE hgh= *(TPE*) val;\
+		if (hgh >= min) {\
+			DELTA_TPE hgh2 = GET_DELTA(DELTA_TPE, hgh, min);\
+			for(int i=0; first < last; first++, i++){\
+				MOSskipit();\
+				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+				if( (delta <= hgh2 ) ){\
+					*o++ = (oid) first;\
+				}\
+			}\
+		}\
+		/*else nothing matches*/\
+	}\
+	else if ( strcmp(oper,">") == 0) {\
+		TPE low= *(TPE*) val;\
+		if (low >= min) {\
+			DELTA_TPE low2 = GET_DELTA(DELTA_TPE, low, min);\
+			for(int i=0; first < last; first++, i++){\
+				MOSskipit();\
+				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+				if( (delta > low2 ) ){\
+					*o++ = (oid) first;\
+				}\
+			}\
+		}\
+		else /*everything matches*/ {\
+			for(int i=0; first < last; first++, i++){\
+				MOSskipit();\
+				*o++ = (oid) first;\
+			}\
+		}\
+	}\
+	else if ( strcmp(oper,">=") == 0) {\
+		TPE low= *(TPE*) val;\
+		if (low >= min) {\
+			DELTA_TPE low2 = GET_DELTA(DELTA_TPE, low, min);\
+			for(int i=0; first < last; first++, i++){\
+				MOSskipit();\
+				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+				if( (delta >= low2 ) ){\
+					*o++ = (oid) first;\
+				}\
+			}\
+		}\
+		else /*everything matches*/ {\
+			for(int i=0; first < last; first++, i++){\
+				MOSskipit();\
+				*o++ = (oid) first;\
+			}\
+		}\
+	}\
+	else if ( strcmp(oper,"!=") == 0) {\
+		TPE cmprnd= *(TPE*) val;\
+		if (cmprnd >= min) {\
+			DELTA_TPE low2 = GET_DELTA(DELTA_TPE, cmprnd, min);\
+			for(int i=0; first < last; first++, i++){\
+				MOSskipit();\
+				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+				if( (delta != low2 ) ){\
+					*o++ = (oid) first;\
+				}\
+			}\
+		}\
+		else /*everything matches*/ {\
+			for(int i=0; first < last; first++, i++){\
+				MOSskipit();\
+				*o++ = (oid) first;\
+			}\
+		}\
+	}\
+	else if ( strcmp(oper,"==") == 0) {\
+		TPE cmprnd= *(TPE*) val;\
+		if (cmprnd >= min) {\
+			DELTA_TPE low2 = GET_DELTA(DELTA_TPE, cmprnd, min);\
+			for(int i=0; first < last; first++, i++){\
+				MOSskipit();\
+				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+				if( (delta == low2 ) ){\
+					*o++ = (oid) first;\
+				}\
+			}\
+		}\
+		/*else nothing matches*/\
+	}\
+}
 
 str
 MOSthetaselect_frame( MOStask task, void *val, str oper)
 {
 	oid *o;
-	int anti=0;
 	BUN first,last;
-	int j;
-	MosaicHdr hdr = task->hdr;
-	BitVector base;
 	
 	// set the oid range covered and advance scan range
 	first = task->start;
@@ -502,15 +539,13 @@ MOSthetaselect_frame( MOStask task, void *val, str oper)
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: thetaselect_frame(bte); break;
-	case TYPE_sht: thetaselect_frame(sht); break;
-	case TYPE_lng: thetaselect_frame(lng); break;
-	case TYPE_int: thetaselect_frame(int); break;
-	case TYPE_oid: thetaselect_frame(oid); break;
-	case TYPE_flt: thetaselect_frame(flt); break;
-	case TYPE_dbl: thetaselect_frame(dbl); break;
+	case TYPE_bte: thetaselect_frame(bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_sht: thetaselect_frame(sht, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_int: thetaselect_frame(int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_lng: thetaselect_frame(lng, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_oid: thetaselect_frame(oid, oid, GET_DELTA_FOR_UNSIGNED_TYPE); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: thetaselect_frame(hge); break;
+	case TYPE_hge: thetaselect_frame(hge, uhge, GET_DELTA_FOR_SIGNED_TYPE); break;
 #endif
 	}
 	MOSskip_frame(task);
@@ -520,13 +555,13 @@ MOSthetaselect_frame( MOStask task, void *val, str oper)
 
 #define projection_frame(TPE)\
 {	TPE *v;\
-	TPE frame = *(TPE*) MOScodevector(task);\
-	base = (BitVector) (((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
+    MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
+	TPE frame =  parameters->min.min##TPE;\
+	BitVector base = (BitVector) MOScodevectorFrame(task);\
 	v= (TPE*) task->src;\
-	for(i=0; first < last; first++,i++){\
+	for(i=0; first < last; first++,i++) {\
 		MOSskipit();\
-		framedecompress(i);\
-		*v++ = frame + task->hdr->frame.val##TPE[j];\
+		*v++ = frame + getBitVector(base, i, parameters->bits);\
 		task->cnt++;\
 	}\
 }
@@ -535,9 +570,6 @@ str
 MOSprojection_frame( MOStask task)
 {
 	BUN i,first,last;
-	MosaicHdr hdr = task->hdr;
-	int j;
-	BitVector base;
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
@@ -545,11 +577,9 @@ MOSprojection_frame( MOStask task)
 	switch(ATOMbasetype(task->type)){
 		case TYPE_bte: projection_frame(bte); break;
 		case TYPE_sht: projection_frame(sht); break;
-		case TYPE_lng: projection_frame(lng); break;
 		case TYPE_int: projection_frame(int); break;
+		case TYPE_lng: projection_frame(lng); break;
 		case TYPE_oid: projection_frame(oid); break;
-		case TYPE_flt: projection_frame(flt); break;
-		case TYPE_dbl: projection_frame(dbl); break;
 #ifdef HAVE_HGE
 		case TYPE_hge: projection_frame(hge); break;
 #endif
@@ -560,14 +590,14 @@ MOSprojection_frame( MOStask task)
 
 #define join_frame(TPE)\
 {	TPE *w;\
-	TPE frame = *(TPE*) MOScodevector(task);\
-	base = (BitVector) (((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
+    MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
+	TPE frame =  parameters->min.min##TPE;\
+	BitVector base = (BitVector) MOScodevectorFrame(task);\
 	w = (TPE*) task->src;\
 	limit= MOSgetCnt(task->blk);\
 	for( o=0, n= task->stop; n-- > 0; o++,w++ ){\
 		for(oo = task->start,i=0; i < limit; i++,oo++){\
-			framedecompress(i);\
-			if ( *w == frame + task->hdr->frame.val##TPE [j]){\
+			if ( *w == frame + getBitVector(base, i, parameters->bits)){\
 				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
 				BUNappend(task->rbat, &o, false)!= GDK_SUCCEED)\
 				throw(MAL,"mosaic.frame",MAL_MALLOC_FAIL);\
@@ -581,9 +611,6 @@ MOSjoin_frame( MOStask task)
 {
 	BUN i,n,limit;
 	oid o, oo;
-	MosaicHdr hdr = task->hdr;
-	int j;
-	BitVector base;
 
 	// set the oid range covered and advance scan range
 	switch(ATOMbasetype(task->type)){
@@ -592,8 +619,6 @@ MOSjoin_frame( MOStask task)
 		case TYPE_int: join_frame(int); break;
 		case TYPE_lng: join_frame(lng); break;
 		case TYPE_oid: join_frame(oid); break;
-		case TYPE_flt: join_frame(flt); break;
-		case TYPE_dbl: join_frame(dbl); break;
 #ifdef HAVE_HGE
 		case TYPE_hge: join_frame(hge); break;
 #endif

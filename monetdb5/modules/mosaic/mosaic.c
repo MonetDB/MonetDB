@@ -326,8 +326,6 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 		GDKfree(task);
 		throw(MAL, "mosaic.compress", "Can not claim server");
 	}
-	if( task->filter[MOSAIC_FRAME])
-		MOScreateframeDictionary(task);
 	if( task->filter[MOSAIC_DICT])
 		MOScreatedictionary(task);
 	if( task->filter[MOSAIC_CALENDAR])
