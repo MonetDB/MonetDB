@@ -388,17 +388,17 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	ATOMIC_INIT(&w->exited, 0);
 	strncpy(w->threadname, threadname, sizeof(w->threadname));
 	w->threadname[sizeof(w->threadname) - 1] = 0;
-	EnterCriticalSection(&winthread_cs);
-	w->next = winthreads;
-	winthreads = w;
-	LeaveCriticalSection(&winthread_cs);
 	THRDDEBUG fprintf(stderr, "#create \"%s\" \"%s\"\n", MT_thread_getname(), threadname);
+	EnterCriticalSection(&winthread_cs);
 	w->hdl = CreateThread(NULL, THREAD_STACK_SIZE, thread_starter, w,
 			      0, &w->tid);
 	if (w->hdl == NULL) {
-		rm_winthread(w);
+		LeaveCriticalSection(&winthread_cs);
 		return -1;
 	}
+	w->next = winthreads;
+	winthreads = w;
+	LeaveCriticalSection(&winthread_cs);
 	/* must not fail after this: the thread has been started */
 	*t = (MT_Id) w->tid;
 	return 0;
@@ -746,27 +746,28 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	ATOMIC_INIT(&p->exited, 0);
 
 	memcpy(p->threadname, threadname, tlen + 1);
-	pthread_mutex_lock(&posthread_lock);
-	p->next = posthreads;
-	posthreads = p;
-	*t = p->mtid = ++MT_thread_id;
-	pthread_mutex_unlock(&posthread_lock);
 #ifdef HAVE_PTHREAD_SIGMASK
 	sigset_t new_mask, orig_mask;
 	(void) sigfillset(&new_mask);
 	MT_thread_sigmask(&new_mask, &orig_mask);
 #endif
 	THRDDEBUG fprintf(stderr, "#create \"%s\" \"%s\"\n", MT_thread_getname(), threadname);
+	/* protect posthreads during thread creation and only add to
+	 * it after the thread was created successfully */
+	pthread_mutex_lock(&posthread_lock);
+	*t = p->mtid = ++MT_thread_id;
 	ret = pthread_create(&p->tid, &attr, thread_starter, p);
 	if (ret != 0) {
 		fprintf(stderr,
 			"#MT_create_thread: cannot start thread: %s\n",
 			strerror(ret));
-		rm_posthread(p);
 		ret = -1;
 	} else {
 		/* must not fail after this: the thread has been started */
+		p->next = posthreads;
+		posthreads = p;
 	}
+	pthread_mutex_unlock(&posthread_lock);
 #ifdef HAVE_PTHREAD_SIGMASK
 	MT_thread_sigmask(&orig_mask, NULL);
 #endif
