@@ -113,7 +113,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Apr2019/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Apr2019-SP1/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -1061,6 +1061,56 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Aug 01 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.33.5-20190801
+- Rebuilt.
+- BZ#6697: Duplicate expressions not eliminated with long CASE statement
+- BZ#6701: When changing the schema name of a table, referencing rows
+  from sys.columns, sys.keys and more tables are not removed
+- BZ#6703: SQL optimizer enters loop and goes into stack overflow
+- BZ#6706: prepare doesn't recognize merge statement
+- BZ#6712: Where clause with cast ignores sub-select
+- BZ#6713: COPY INTO FROM 'file.xz' does not work
+- BZ#6714: Assertion failure in rel_select.c for correlated subquery in
+  aggregation query (with group by and having and order by and limit)
+- BZ#6715: Assertion failure in rel_bin.c for MERGE INTO command
+- BZ#6716: COPY INTO does not load UTF8 encoded text
+- BZ#6718: Can't copy table into another table with constraints
+  (mkey.bulk_rotate_xor_hash)
+- BZ#6720: Compilation issues on gcc 9.1.1 [-Werror=stringop-truncation]
+- BZ#6721: Possibly incorrect call to pcre_exec
+- BZ#6725: Prepare statement on non-existing function crashes
+- BZ#6728: SELECT DISTINCT not removing duplicates
+- BZ#6729: Creating a table with duplicate column name should not
+  be possible
+- BZ#6730: sys.stop or sys.pause a INSERT query triggers "BATproject:
+  does not match always"
+- BZ#6736: Unexpected query result with merge tables and view after
+  upgrade
+- BZ#6738: issue with window functions and hugeint type coercion
+
+* Mon Jul 15 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.5-20190801
+- gdk: We now look at the limits imposed by cgroups and the setrlimit system
+  call to initialize some internal values related to how much (virtual)
+  memory we think is available.
+
+* Fri Jul 12 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.5-20190801
+- buildtools: Removed restriction on using combinations of --enable-assert,
+  --enable-debug,  and --enable-optimize.  --enable-debug adds a -g (or
+  -even -g3) option, --enable-debug=gdb adds a -ggdb3 flag (for GCC);
+  --enable-optimize adds a bunch of optimization flags; --disable-debug
+  (or --enable-debug=no) removes any -g flags; --disable-optimize
+  removes any -O flags; --enable-optimize=auto leaves the optimization
+  flags untouched.
+
+* Fri Jun  7 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.5-20190801
+- sql: Changed the internal representation of RANGE MINVALUE and RANGE MAXVALUE
+  in MERGE TABLE partitions.  Before, the limits were represented by
+  the smallest and largest value of the domain of the column, now these
+  are represented by a NULL value.  This has the added benefit that if
+  you use TO RANGE MAXVALUE, the largest value of the domain is included
+  in the partition (before it wasn't).  Also, these new limits now work
+  for any ordered type, so including VARCHAR.
+
 * Fri Apr 26 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.3-20190426
 - Rebuilt.
 - BZ#6647: Add suport to Python 3 on Windows

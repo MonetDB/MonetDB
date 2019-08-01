@@ -5935,6 +5935,7 @@ GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;
 update sys.functions set system = true where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr') and schema_id = (select id from sys.schemas where name = 'sys');
 update sys.functions set system = true where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json');
 set schema "sys";
+commit;
 
 Running database upgrade commands:
 set schema "sys";
@@ -5943,7 +5944,6 @@ create function sys.deltas ("schema" string, "table" string) returns table ("id"
 create function sys.deltas ("schema" string, "table" string, "column" string) returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int) external name "sql"."deltas";
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('deltas') and type = 5;
 set schema "sys";
-commit;
 
 
 # 15:43:25 >  
