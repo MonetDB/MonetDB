@@ -172,6 +172,7 @@ do {\
 				/*If we can from here on not compress better then the half of the original data type, we give up. */\
 				break;\
 			}\
+			bits = current_bits;\
 		}\
 	}\
 	(PARAMETERS).min.min##TPE = min;\
@@ -221,8 +222,7 @@ do {\
 	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((TASK))->blk;\
 	determineFrameParameters(*parameters, src, limit, TPE, DELTA_TPE, GET_DELTA);\
 	(TASK)->dst = MOScodevectorFrame(TASK);\
-	base = (BitVector) (((char*) (TASK)->blk) +  MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
-	base[0] = 0;\
+	base = (BitVector) ((TASK)->dst);\
 	for(i = 0; i < parameters->base.cnt; i++, src++) {\
 		/*TODO: assert that delta's actually does not cause an overflow. */\
 		delta = *src - parameters->min.min##TPE;\
