@@ -697,6 +697,7 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( b == NULL)
 			throw(MAL, "mosaic.select",RUNTIME_OBJECT_MISSING);
 
+	// TODO: why is this task on the heap?
 	task= (MOStask) GDKzalloc(sizeof(*task));
 	if( task == NULL){
 		BBPunfix(b->batCacheid);
