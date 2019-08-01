@@ -4,7 +4,7 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
-import sys, os, getopt, string, re
+import sys, os, getopt, re
 
 class Error(Exception):
     """Bad option."""
@@ -119,11 +119,11 @@ def usage(cmd_options, cmd = None):
             arg.append('-' + short)
         if long:
             arg.append('--' + long)
-        arg = string.join(arg, ' or ')
+        arg = ' or '.join(arg)
         if argument:
             arg = arg + ' ' + argument
         if comment:
-            arg = arg + '\n\t' + string.replace(comment, '\n', '\n\t')
+            arg = arg + '\n\t' + comment.replace('\n', '\n\t')
         sys.stderr.write(arg+'\n')
     raise Error('usage')
 
@@ -141,18 +141,18 @@ def parse_config(file, options = ConfigOptions):
         if not line:
             # end of file
             break
-        line = string.strip(line)
+        line = line.strip()
         if not line or line[0] == '#':
             # ignore comments and empty lines
             continue
-        keyval = string.split(line, '=', 1)
+        keyval = line.split('=', 1)
         if len(keyval) != 2:
             sys.stderr.write('syntax error in %s\n' % file)
             f.close()
             sys.exit(1)
         key, val = keyval
-        key = string.strip(key)
-        val = string.strip(val)
+        key = key.strip()
+        val = val.strip()
         if not key:
             sys.stderr.write('syntax error in %s\n' % file)
             f.close()
@@ -163,13 +163,13 @@ def parse_config(file, options = ConfigOptions):
             if c == '"':
                 quote = not quote
             elif not quote and c == '#':
-                val = string.strip(val[:i])
+                val = val[:i].strip()
                 break
         if quote:
             sys.stderr.write('syntax error in %s\n' % file)
             f.close()
             sys.exit(1)
-        val = string.replace(val, '"', '')
+        val = val.replace('"', '')
         setattr(options, key, val)
 
 def print_options(options):
@@ -233,13 +233,13 @@ def parse_options(argv, cmd_options = cmd_options, usage = usage, default_config
             if long == 'debug':
                 debug = 1
         elif long == 'set':
-            keyval = string.split(a, '=', 1)
+            keyval = a.split('=', 1)
             if len(keyval) != 2:
                 sys.stderr.write('wrong format for --set option %s\n' % a)
             else:
                 key, val = keyval
-                key = string.strip(key)
-                val = string.strip(val)
+                key = key.strip()
+                val = val.strip()
                 if not key:
                     sys.stderr.write('wrong format for --set option %s\n' % a)
                 else:
