@@ -310,53 +310,30 @@ BAThashsync(void *arg)
 #define starthash(TYPE)							\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		if (cand) {						\
-			for (; p < cnt1; p++) {				\
-				c = hash_##TYPE(h, v + cand[p] - b->hseqbase); \
-				hget = HASHget(h, c);			\
-				if (hget == hnil) {			\
-					if (nslots == maxslots)		\
-						break; /* mask too full */ \
-					nslots++;			\
-				}					\
-				HASHputlink(h, p, hget);		\
-				HASHput(h, c, p);			\
+		for (; p < cnt1; p++) {					\
+			oid o = canditer_next(&ci);			\
+			c = hash_##TYPE(h, v + o - b->hseqbase);	\
+			hget = HASHget(h, c);				\
+			if (hget == hnil) {				\
+				if (nslots == maxslots)			\
+					break; /* mask too full */	\
+				nslots++;				\
 			}						\
-		} else {						\
-			v += start;					\
-			for (; p < cnt1; p++) {				\
-				c = hash_##TYPE(h, v + p);		\
-				hget = HASHget(h, c);			\
-				if (hget == hnil) {			\
-					if (nslots == maxslots)		\
-						break; /* mask too full */ \
-					nslots++;			\
-				}					\
-				HASHputlink(h, p, hget);		\
-				HASHput(h, c, p);			\
-			}						\
+			HASHputlink(h, p, hget);			\
+			HASHput(h, c, p);				\
 		}							\
 	} while (0)
 #define finishhash(TYPE)						\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		if (cand) {						\
-			for (; p < cnt; p++) {				\
-				c = hash_##TYPE(h, v + cand[p] - b->hseqbase); \
-				hget = HASHget(h, c);			\
-				nslots += hget == hnil;			\
-				HASHputlink(h, p, hget);		\
-				HASHput(h, c, p);			\
-			}						\
-		} else {						\
-			v += start;					\
-			for (; p < cnt; p++) {				\
-				c = hash_##TYPE(h, v + p);		\
-				hget = HASHget(h, c);			\
-				nslots += hget == hnil;			\
-				HASHputlink(h, p, hget);		\
-				HASHput(h, c, p);			\
-			}						\
+		for (; p < cnt; p++) {					\
+			oid o = canditer_next(&ci);			\
+			c = hash_##TYPE(h, v + o - b->hseqbase);	\
+			c = hash_##TYPE(h, v + o - b->hseqbase);	\
+			hget = HASHget(h, c);				\
+			nslots += hget == hnil;				\
+			HASHputlink(h, p, hget);			\
+			HASHput(h, c, p);				\
 		}							\
 	} while (0)
 
@@ -370,8 +347,8 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 {
 	lng t0 = 0;
 	unsigned int tpe = ATOMbasetype(b->ttype);
-	BUN cnt, start, end, cnt1;
-	const oid *cand, *candend;
+	BUN cnt, cnt1;
+	struct canditer ci;
 	BUN mask, maxmask = 0;
 	BUN p, c;
 	BUN nslots;
@@ -394,8 +371,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		tpe = TYPE_void;
 	}
 
-	CANDINIT(b, s, start, end, cnt, cand, candend);
-	cnt = cand ? (BUN) (candend - cand) : end - start;
+	cnt = canditer_init(&ci, b, s);
 
 	if ((h = GDKzalloc(sizeof(*h))) == NULL ||
 	    (h->heap.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) < 0) {
@@ -473,32 +449,18 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 			break;
 #endif
 		default:
-			if (cand) {
-				for (; p < cnt1; p++) {
-					const void *restrict v = BUNtail(bi, cand[p] - b->hseqbase);
-					c = heap_hash_any(b->tvheap, h, v);
-					hget = HASHget(h, c);
-					if (hget == hnil) {
-						if (nslots == maxslots)
-							break; /* mask too full */
-						nslots++;
-					}
-					HASHputlink(h, p, hget);
-					HASHput(h, c, p);
+			for (; p < cnt1; p++) {
+				oid o = canditer_next(&ci);
+				const void *restrict v = BUNtail(bi, o - b->hseqbase);
+				c = heap_hash_any(b->tvheap, h, v);
+				hget = HASHget(h, c);
+				if (hget == hnil) {
+					if (nslots == maxslots)
+						break; /* mask too full */
+					nslots++;
 				}
-			} else {
-				for (; p < cnt1; p++) {
-					const void *restrict v = BUNtail(bi, p + start);
-					c = heap_hash_any(b->tvheap, h, v);
-					hget = HASHget(h, c);
-					if (hget == hnil) {
-						if (nslots == maxslots)
-							break; /* mask too full */
-						nslots++;
-					}
-					HASHputlink(h, p, hget);
-					HASHput(h, c, p);
-				}
+				HASHputlink(h, p, hget);
+				HASHput(h, c, p);
 			}
 			break;
 		}
@@ -513,6 +475,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		 * increase mask size a bit more quickly */
 		if (mask < maxmask && p <= maxslots * 1.2)
 			mask <<= 2;
+		canditer_reset(&ci);
 	}
 
 	/* finish the hashtable with the current mask */
@@ -541,24 +504,14 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		break;
 #endif
 	default:
-		if (cand) {
-			for (; p < cnt; p++) {
-				const void *restrict v = BUNtail(bi, cand[p] - b->hseqbase);
-				c = heap_hash_any(b->tvheap, h, v);
-				hget = HASHget(h, c);
-				nslots += hget == hnil;
-				HASHputlink(h, p, hget);
-				HASHput(h, c, p);
-			}
-		} else {
-			for (; p < cnt; p++) {
-				const void *restrict v = BUNtail(bi, p + start);
-				c = heap_hash_any(b->tvheap, h, v);
-				hget = HASHget(h, c);
-				nslots += hget == hnil;
-				HASHputlink(h, p, hget);
-				HASHput(h, c, p);
-			}
+		for (; p < cnt; p++) {
+			oid o = canditer_next(&ci);
+			const void *restrict v = BUNtail(bi, o - b->hseqbase);
+			c = heap_hash_any(b->tvheap, h, v);
+			hget = HASHget(h, c);
+			nslots += hget == hnil;
+			HASHputlink(h, p, hget);
+			HASHput(h, c, p);
 		}
 		break;
 	}
