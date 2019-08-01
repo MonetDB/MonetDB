@@ -298,10 +298,10 @@ do {\
 		DELTA_TPE hgh2;\
 		bool hi2 = *hi;\
 		if (*(TPE*) hgh < min) {\
-			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();}\
+			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();*o++ = (oid) first;}\
 		}\
 		else if (*(TPE*) hgh > max || (*(TPE*) hgh == max && hi2) ) {\
-			if (CMP_FLAVOR(true) /* AKA NOT ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();}\
+			if (CMP_FLAVOR(true) /* AKA NOT ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();*o++ = (oid) first;}\
 		}\
 		else { /* min >= *(TPE*) hgh <= max */\
 			hgh2 = *(TPE*) hgh - min;\
@@ -317,10 +317,10 @@ do {\
 		DELTA_TPE low2;\
 		bool li2 = *li;\
 		if (*(TPE*) low > max) {\
-			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();}\
+			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();*o++ = (oid) first;}\
 		} else\
-		if (*(TPE*) low < min && (*(TPE*) low == min && li2) )  {\
-			if (CMP_FLAVOR(true) /* AKA NOT ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();}\
+		if (*(TPE*) low < min || (*(TPE*) low == min && li2) )  {\
+			if (CMP_FLAVOR(true) /* AKA NOT ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();*o++ = (oid) first;}\
 		} else  {\
 			low2 = *(TPE*) low - min;\
 			for(i=0; first < last; first++, i++){\
@@ -339,13 +339,13 @@ do {\
 		bool hi2 = *hi;\
 		assert(!is_nil(TPE, *(TPE*) low) && !is_nil(TPE, *(TPE*) hgh));\
 		if (*(TPE*) hgh < min) {\
-			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();}\
+			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();*o++ = (oid) first;}\
 		}\
 		else if (*(TPE*) low > max) {\
-			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();}\
+			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();*o++ = (oid) first;}\
 		}\
-		else if ( (*(TPE*) hgh > max || (*(TPE*) hgh == max && hi2)) && (*(TPE*) low < min && (*(TPE*) low == min && li2) ) ) {\
-			if (CMP_FLAVOR(true) /* AKA NOT ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();}\
+		else if ( (*(TPE*) hgh > max || (*(TPE*) hgh == max && hi2)) && (*(TPE*) low < min || (*(TPE*) low == min && li2) ) ) {\
+			if (CMP_FLAVOR(true) /* AKA NOT ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();*o++ = (oid) first;}\
 		}\
 		else {\
 		 	hgh2	= *(TPE*) hgh > max ? max - min : *(TPE*) hgh - min;\
