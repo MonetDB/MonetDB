@@ -60,17 +60,18 @@
 	} while (0)
 
 struct canditer {
-	const oid *oids;
-	oid seq;
+	const oid *oids;	/* candidate or exceptions for non-dense */
+	oid seq;		/* first candidate for non-materialized */
+	oid add;		/* value to add because of exceptions seen */
+	BUN noids;		/* number of values in .oids */
+	BUN ncand;		/* number of candidates */
+	BUN next;		/* next BUN to return value for */
+	BUN offset;		/* how much of candidate list BAT we skipped */
 	enum {
 		cand_dense,	/* simple dense BAT, i.e. no look ups */
 		cand_materialized, /* simple materialized OID list */
 		cand_except,	/* list of exceptions in vheap */
 	} tpe;
-	BUN noids;		/* number of values in .oids */
-	BUN ncand;		/* number of candidates */
-	BUN next;		/* next BUN to return value for */
-	oid add;		/* value to add because of exceptions seen */
 };
 
 static inline oid
@@ -101,5 +102,8 @@ gdk_export BUN canditer_init(struct canditer *ci, BAT *b, BAT *s);
 gdk_export oid canditer_last(struct canditer *ci);
 gdk_export oid canditer_idx(struct canditer *ci, BUN p);
 gdk_export void canditer_reset(struct canditer *ci);
+gdk_export BUN canditer_search(struct canditer *ci, oid o, bool next);
+gdk_export BAT *BATcandslice(BAT *s, BUN lo, BUN hi);
+gdk_export BAT *BATcandslice2(BAT *s, BUN lo1, BUN hi1, BUN lo2, BUN hi2);
 
 #endif	/* _GDK_CAND_H_ */
