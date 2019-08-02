@@ -393,7 +393,7 @@ push_up_project(mvc *sql, sql_rel *rel)
 	if (rel && is_join(rel->op) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
-		if (r && r->op == op_project) {
+		if (r && r->op == op_project && r->l) {
 			node *m;
 			/* move project up, ie all attributes of left + the old expression list */
 			sql_rel *n = rel_project( sql->sa, rel, 
@@ -415,6 +415,12 @@ push_up_project(mvc *sql, sql_rel *rel)
 			r->l = NULL;
 			rel_destroy(r);
 			return n;
+		} else if (r && r->op == op_project && !r->l) {
+			sql_rel *l = rel->l;
+
+			rel->l = NULL;
+			rel_destroy(rel);
+			return l;
 		}
 	}
 	/* a dependent semi/anti join with a project on the right side, could be removed */
