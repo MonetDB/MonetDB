@@ -61,6 +61,7 @@
 
 struct canditer {
 	const oid *oids;	/* candidate or exceptions for non-dense */
+	BAT *s;			/* candidate BAT the iterator is based on */
 	oid seq;		/* first candidate for non-materialized */
 	oid add;		/* value to add because of exceptions seen */
 	BUN noids;		/* number of values in .oids */
@@ -103,7 +104,7 @@ gdk_export oid canditer_last(struct canditer *ci);
 gdk_export oid canditer_idx(struct canditer *ci, BUN p);
 gdk_export void canditer_reset(struct canditer *ci);
 gdk_export BUN canditer_search(struct canditer *ci, oid o, bool next);
-gdk_export BAT *BATcandslice(BAT *s, BUN lo, BUN hi);
-gdk_export BAT *BATcandslice2(BAT *s, BUN lo1, BUN hi1, BUN lo2, BUN hi2);
+gdk_export BAT *canditer_slice(struct canditer *ci, BUN lo, BUN hi);
+gdk_export BAT *canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2);
 
 #endif	/* _GDK_CAND_H_ */

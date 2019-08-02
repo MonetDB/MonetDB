@@ -427,6 +427,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		/* every row is a candidate */
 		*ci = (struct canditer) {
 			.tpe = cand_dense,
+			.s = s,
 			.seq = b->hseqbase,
 			.ncand = BATcount(b),
 		};
@@ -435,6 +436,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 
 	*ci = (struct canditer) {
 		.seq = s->tseqbase,
+		.s = s,
 	};
 
 	assert(ATOMtype(s->ttype) == TYPE_oid);
@@ -706,42 +708,55 @@ canditer_search(struct canditer *ci, oid o, bool next)
  * "virtual" slice of the input candidate list BAT; except, unlike
  * BATslice, the hseqbase of the returned BAT is 0 */
 BAT *
-BATcandslice(BAT *s, BUN lo, BUN hi)
+canditer_slice(struct canditer *ci, BUN lo, BUN hi)
 {
 	BAT *bn;
+	oid o;
+	BUN add;
 
-	if (lo >= BATcount(s) || lo >= hi)
+	assert(ci != NULL);
+
+	if (lo >= ci->ncand || lo >= hi)
 		return BATdense(0, 0, 0);
-	if (hi > BATcount(s))
-		hi = BATcount(s);
-	if (s->ttype == TYPE_oid) {
-		bn = BATslice(s, lo, hi);
-		BAThseqbase(bn, 0);
-		return bn;
-	}
-	if (s->tvheap == NULL)
-		return BATdense(0, s->tseqbase + lo, hi - lo);
-	BUN nexc = (BUN) (s->tvheap->free / SIZEOF_OID);
-	oid o = BUNtoid(s, lo);
-	BUN add = o - s->tseqbase - lo;
-	assert(add <= nexc);
-	if (add == nexc) {
-		/* after last exception: return dense sequence */
-		return BATdense(0, o, hi - lo);
-	}
-	bn = COLnew(0, TYPE_oid, hi - lo, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	BATsetcount(bn, hi - lo);
-	oid *dst = Tloc(bn, 0);
-	const oid *exc = (const oid *) s->tvheap->base;
-	while (lo < hi) {
-		while (add < nexc && o == exc[add]) {
-			o++;
-			add++;
+	if (hi > ci->ncand)
+		hi = ci->ncand;
+	switch (ci->tpe) {
+	case cand_materialized:
+		if (ci->s) {
+			bn = BATslice(ci->s, lo + ci->offset, hi + ci->offset);
+			BAThseqbase(bn, 0);
+			return bn;
 		}
-		*dst++ = o;
+		bn = COLnew(0, TYPE_oid, hi - lo, TRANSIENT);
+		if (bn == NULL)
+			return NULL;
+		BATsetcount(bn, hi - lo);
+		memcpy(Tloc(bn, 0), ci->oids + lo, (hi - lo) * sizeof(oid));
+		break;
+	case cand_dense:
+		return BATdense(0, ci->seq + lo, hi - lo);
+	case cand_except:
+		o = canditer_idx(ci, lo);
+		add = o - ci->seq - lo;
+		assert(add <= ci->noids);
+		if (add == ci->noids) {
+			/* after last exception: return dense sequence */
+			return BATdense(0, o, hi - lo);
+		}
+		bn = COLnew(0, TYPE_oid, hi - lo, TRANSIENT);
+		if (bn == NULL)
+			return NULL;
+		BATsetcount(bn, hi - lo);
+		for (oid *dst = Tloc(bn, 0); lo < hi; lo++) {
+			while (add < ci->noids && o == ci->oids[add]) {
+				o++;
+				add++;
+			}
+			*dst++ = o;
+		}
+		break;
 	}
+	bn->tsorted = true;
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tkey = true;
 	bn->tseqbase = oid_nil;
@@ -751,27 +766,31 @@ BATcandslice(BAT *s, BUN lo, BUN hi)
 }
 
 BAT *
-BATcandslice2(BAT *s, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
+canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
 {
+	BAT *bn;
+	oid o;
+	BUN add;
+
 	assert(lo1 <= hi1);
 	assert(lo2 <= hi2);
 	assert(hi1 <= lo2 || (lo2 == 0 && hi2 == 0));
 
 	if (hi1 == lo2)		/* consecutive slices: combine into one */
-		return BATcandslice(s, lo1, hi2);
-	if (lo2 == hi2 || hi1 >= BATcount(s) || lo2 >= BATcount(s)) {
+		return canditer_slice(ci, lo1, hi2);
+	if (lo2 == hi2 || hi1 >= ci->ncand || lo2 >= ci->ncand) {
 		/* empty second slice */
-		return BATcandslice(s, lo1, hi1);
+		return canditer_slice(ci, lo1, hi1);
 	}
 	if (lo1 == hi1)		/* empty first slice */
-		return BATcandslice(s, lo2, hi2);
-	if (lo1 >= BATcount(s))	/* out of range */
+		return canditer_slice(ci, lo2, hi2);
+	if (lo1 >= ci->ncand)	/* out of range */
 		return BATdense(0, 0, 0);
 
-	if (hi2 >= BATcount(s))
-		hi2 = BATcount(s);
+	if (hi2 >= ci->ncand)
+		hi2 = ci->ncand;
 
-	BAT *bn = COLnew(0, TYPE_oid, hi1 - lo1 + hi2 - lo2, TRANSIENT);
+	bn = COLnew(0, TYPE_oid, hi1 - lo1 + hi2 - lo2, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	BATsetcount(bn, hi1 - lo1 + hi2 - lo2);
@@ -784,48 +803,50 @@ BATcandslice2(BAT *s, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
 
 	oid *dst = Tloc(bn, 0);
 
-	if (s->ttype == TYPE_oid) {
-		size_t n = (hi1 - lo1) * sizeof(oid);
-		memcpy(dst, Tloc(s, lo1), n);
-		memcpy(dst + n, Tloc(s, lo2), (hi2 - lo2) * sizeof(oid));
-	} else if (s->tvheap == NULL) {
+	switch (ci->tpe) {
+	case cand_materialized:
+		memcpy(dst, ci->oids + lo1, (hi1 - lo1) * sizeof(oid));
+		memcpy(dst + hi1 - lo1, ci->oids + lo2, (hi2 - lo2) * sizeof(oid));
+		break;
+	case cand_dense:
 		while (lo1 < hi1)
-			*dst++ = s->hseqbase + lo1++;
+			*dst++ = ci->seq + lo1++;
 		while (lo2 < hi2)
-			*dst++ = s->hseqbase + lo2++;
-	} else {
-		BUN nexc = (BUN) (s->tvheap->free / SIZEOF_OID);
-		const oid *exc = (const oid *) s->tvheap->base;
-		oid o = BUNtoid(s, lo1);
-		BUN add = o - s->tseqbase - lo1;
-		assert(add <= nexc);
-		if (add == nexc) {
+			*dst++ = ci->seq + lo2++;
+		break;
+	case cand_except:
+		o = canditer_idx(ci, lo1);
+		add = o - ci->seq - lo1;
+		assert(add <= ci->noids);
+		if (add == ci->noids) {
 			/* after last exception: return dense sequence */
 			while (lo1 < hi1)
-				*dst++ = s->hseqbase + add + lo1++;
+				*dst++ = ci->seq + add + lo1++;
 		} else {
 			while (lo1 < hi1) {
-				while (add < nexc && o == exc[add]) {
+				while (add < ci->noids && o == ci->oids[add]) {
 					o++;
 					add++;
 				}
 				*dst++ = o;
+				lo1++;
 			}
 		}
-		o = BUNtoid(s, lo2);
-		add = o - s->tseqbase - lo2;
-		assert(add <= nexc);
-		if (add == nexc) {
+		o = canditer_idx(ci, lo2);
+		add = o - ci->seq - lo2;
+		assert(add <= ci->noids);
+		if (add == ci->noids) {
 			/* after last exception: return dense sequence */
 			while (lo2 < hi2)
-				*dst++ = s->hseqbase + add + lo2++;
+				*dst++ = ci->seq + add + lo2++;
 		} else {
 			while (lo2 < hi2) {
-				while (add < nexc && o == exc[add]) {
+				while (add < ci->noids && o == ci->oids[add]) {
 					o++;
 					add++;
 				}
 				*dst++ = o;
+				lo2++;
 			}
 		}
 	}

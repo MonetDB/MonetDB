@@ -225,10 +225,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 		/* trivial: return all candidates */
 		if (lastp)
 			*lastp = 0;
-		if (s) {
-			return BATcandslice(s, ci.offset, ci.offset + cnt);
-		}
-		return BATdense(0, b->hseqbase, cnt);
+		return canditer_slice(&ci, 0, cnt);
 	}
 
 	if (BATtvoid(b)) {
@@ -237,28 +234,17 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 		if (asc || is_oid_nil(b->tseqbase)) {
 			/* return the first part of the candidate list
 			 * or of the BAT itself */
-			if (s) {
-				bn = BATcandslice(s, ci.offset, ci.offset + n);
-				if (bn && lastp)
-					*lastp = BUNtoid(bn, n - 1);
-				return bn;
-			}
-			if (lastp)
-				*lastp = b->hseqbase + n - 1;
-			return BATdense(0, b->hseqbase, n);
+			bn = canditer_slice(&ci, 0, n);
+			if (bn && lastp)
+				*lastp = BUNtoid(bn, n - 1);
+			return bn;
 		}
 		/* return the last part of the candidate list or of
 		 * the BAT itself */
-		if (s) {
-			bn = BATcandslice(s, ci.offset + cnt - n,
-					  ci.offset + cnt);
-			if (bn && lastp)
-				*lastp = BUNtoid(bn, 0);
-			return bn;
-		}
-		if (lastp)
-			*lastp = b->hseqbase + cnt - n;
-		return BATdense(0, b->hseqbase + cnt - n, n);
+		bn = canditer_slice(&ci, cnt - n, cnt);
+		if (bn && lastp)
+			*lastp = BUNtoid(bn, 0);
+		return bn;
 	}
 	/* note, we want to do both calls */
 	if (BATordered(b) | BATordered_rev(b)) {
@@ -267,19 +253,6 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 		 * list); however, if nilslast == asc, then the nil
 		 * values (if any) are in the wrong place, so we need
 		 * to do a little more work */
-
-		/* note, we use a trick here: if there is no candidate
-		 * list s, we create one that covers all of b.  This
-		 * is cheap since it's a void BAT.  If there is a
-		 * candidate list, we increase the reference count.
-		 * In either case, we decrement the reference count at
-		 * the end, destroying the temporary candidate list.
-		 * The reason we do this is that it makes creating the
-		 * return BAT easier. */
-		if (s)
-			BBPfix(s->batCacheid);
-		else if ((s = BATdense(0, b->hseqbase, cnt)) == NULL)
-			return NULL;
 
 		/* after we create the to-be-returned BAT, we set pos
 		 * to the BUN in the new BAT whose value we should
@@ -298,19 +271,19 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 					/* prefer non-nil and
 					 * smallest */
 					if (cnt - pos < n) {
-						bn = BATcandslice(s, ci.offset + cnt - n, ci.offset + cnt);
+						bn = canditer_slice(&ci, cnt - n, cnt);
 						pos = 0;
 					} else {
-						bn = BATcandslice(s, ci.offset + pos, ci.offset + pos + n);
+						bn = canditer_slice(&ci, pos, pos + n);
 						pos = n - 1;
 					}
 				} else { /* i.e. !asc, !nilslast */
 					/* prefer nil and largest */
 					if (pos < n) {
-						bn = BATcandslice2(s, ci.offset, ci.offset + pos, ci.offset + cnt - (n - pos), ci.offset + cnt);
+						bn = canditer_slice2(&ci, 0, pos, cnt - (n - pos), cnt);
 						/* pos = pos; */
 					} else {
-						bn = BATcandslice(s, ci.offset, ci.offset + n);
+						bn = canditer_slice(&ci, 0, n);
 						pos = 0;
 					}
 				}
@@ -322,19 +295,19 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 					/* prefer non-nil and
 					 * smallest */
 					if (pos < n) {
-						bn = BATcandslice(s, ci.offset, ci.offset + n);
+						bn = canditer_slice(&ci, 0, n);
 						/* pos = pos; */
 					} else {
-						bn = BATcandslice(s, ci.offset + pos - n, ci.offset + pos);
+						bn = canditer_slice(&ci, pos - n, pos);
 						pos = 0;
 					}
 				} else { /* i.e. !asc, !nilslast */
 					/* prefer nil and largest */
 					if (cnt - pos < n) {
-						bn = BATcandslice2(s, ci.offset, ci.offset + n - (cnt - pos), ci.offset + pos, ci.offset + cnt);
+						bn = canditer_slice2(&ci, 0, n - (cnt - pos), pos, cnt);
 						pos = n - (cnt - pos) - 1;
 					} else {
-						bn = BATcandslice(s, ci.offset + pos, ci.offset + pos + n);
+						bn = canditer_slice(&ci, pos, pos + n);
 						pos = 0;
 					}
 				}
@@ -346,16 +319,15 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 			if (asc ? b->tsorted : b->trevsorted) {
 				/* return copy of first part of
 				 * candidate list */
-				bn = BATcandslice(s, ci.offset, ci.offset + n);
+				bn = canditer_slice(&ci, 0, n);
 				pos = n - 1;
 			} else {
 				/* return copy of last part of
 				 * candidate list */
-				bn = BATcandslice(s, ci.offset + cnt - n, ci.offset + cnt);
+				bn = canditer_slice(&ci, cnt - n, cnt);
 				pos = 0;
 			}
 		}
-		BBPunfix(s->batCacheid);
 		if (bn && lastp)
 			*lastp = BUNtoid(bn, pos);
 		return bn;
@@ -742,15 +714,10 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 		 * initial part of b (or slice of s) */
 		if (lastgp)
 			*lastgp = g->tseqbase + n - 1;
-		if (s) {
-			bn = BATcandslice(s, ci.offset, ci.offset + n);
-			if (bn && lastp)
-				*lastp = BUNtoid(bn, n - 1);
-			return bn;
-		}
-		if (lastp)
-			*lastp = b->hseqbase + n - 1;
-		return BATdense(0, b->hseqbase, n);
+		bn = canditer_slice(&ci, 0, n);
+		if (bn && lastp)
+			*lastp = BUNtoid(bn, n - 1);
+		return bn;
 	}
 
 	bn = COLnew(0, TYPE_oid, n, TRANSIENT);

@@ -480,11 +480,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			goto error;
 		*groups = gn;
 		if (extents) {
-			if (s) {
-				en = BATcandslice(s, ci.offset, ci.offset + cnt);
-			} else {
-				en = BATdense(0, b->hseqbase, cnt);
-			}
+			en = canditer_slice(&ci, 0, cnt);
 			if (en == NULL)
 				goto error;
 			*extents = en;
