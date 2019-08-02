@@ -311,7 +311,6 @@ BAThashsync(void *arg)
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
 		for (; p < cnt1; p++) {					\
-			oid o = canditer_next(&ci);			\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
 			if (hget == hnil) {				\
@@ -321,19 +320,20 @@ BAThashsync(void *arg)
 			}						\
 			HASHputlink(h, p, hget);			\
 			HASHput(h, c, p);				\
+			o = canditer_next(&ci);				\
 		}							\
 	} while (0)
 #define finishhash(TYPE)						\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
 		for (; p < cnt; p++) {					\
-			oid o = canditer_next(&ci);			\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
 			nslots += hget == hnil;				\
 			HASHputlink(h, p, hget);			\
 			HASHput(h, c, p);				\
+			o = canditer_next(&ci);				\
 		}							\
 	} while (0)
 
@@ -351,6 +351,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	struct canditer ci;
 	BUN mask, maxmask = 0;
 	BUN p, c;
+	oid o;
 	BUN nslots;
 	BUN hnil, hget;
 	Hash *h = NULL;
@@ -408,6 +409,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		cnt1 = cnt >> 2;
 	}
 
+	o = canditer_next(&ci);	/* always one ahead */
 	for (;;) {
 		BUN maxslots = (mask >> 3) - 1;	/* 1/8 full is too full */
 
@@ -450,7 +452,6 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 #endif
 		default:
 			for (; p < cnt1; p++) {
-				oid o = canditer_next(&ci);
 				const void *restrict v = BUNtail(bi, o - b->hseqbase);
 				c = heap_hash_any(b->tvheap, h, v);
 				hget = HASHget(h, c);
@@ -461,6 +462,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 				}
 				HASHputlink(h, p, hget);
 				HASHput(h, c, p);
+				o = canditer_next(&ci);
 			}
 			break;
 		}
@@ -476,6 +478,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		if (mask < maxmask && p <= maxslots * 1.2)
 			mask <<= 2;
 		canditer_reset(&ci);
+		o = canditer_next(&ci);
 	}
 
 	/* finish the hashtable with the current mask */
@@ -505,13 +508,13 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 #endif
 	default:
 		for (; p < cnt; p++) {
-			oid o = canditer_next(&ci);
 			const void *restrict v = BUNtail(bi, o - b->hseqbase);
 			c = heap_hash_any(b->tvheap, h, v);
 			hget = HASHget(h, c);
 			nslots += hget == hnil;
 			HASHputlink(h, p, hget);
 			HASHput(h, c, p);
+			o = canditer_next(&ci);
 		}
 		break;
 	}
