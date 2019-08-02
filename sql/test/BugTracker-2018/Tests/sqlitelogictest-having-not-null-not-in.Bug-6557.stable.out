@@ -32,6 +32,14 @@ Ready.
 % col2 # name
 % int # type
 % 1 # length
+#SELECT DISTINCT * FROM tab0 AS cor0 GROUP BY cor0.col1, cor0.col2, cor0.col0;
+% sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col1,	col2,	col0 # name
+% int,	int,	int # type
+% 2,	2,	2 # length
+[ 0,	38,	83	]
+[ 0,	79,	26	]
+[ 81,	24,	43	]
 #DROP TABLE tab0;
 
 # 12:32:58 >  
