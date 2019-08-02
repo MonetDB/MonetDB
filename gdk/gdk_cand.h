@@ -62,7 +62,7 @@
 struct canditer {
 	const oid *oids;	/* candidate or exceptions for non-dense */
 	BAT *s;			/* candidate BAT the iterator is based on */
-	oid seq;		/* first candidate for non-materialized */
+	oid seq;		/* first candidate */
 	oid add;		/* value to add because of exceptions seen */
 	BUN noids;		/* number of values in .oids */
 	BUN ncand;		/* number of candidates */

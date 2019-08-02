@@ -459,7 +459,6 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 	} else if (is_oid_nil(ci->seq) && BATcount(s) > 0) {
 		ci->tpe = cand_materialized;
 		ci->oids = (const oid *) s->theap.base;
-		
 	} else {
 		ci->tpe = cand_dense;
 	}
