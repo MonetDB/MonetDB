@@ -226,7 +226,7 @@ do {\
 	for(i = 0; i < parameters->base.cnt; i++, src++) {\
 		/*TODO: assert that delta's actually does not cause an overflow. */\
 		delta = *src - parameters->min.min##TPE;\
-		setBitVector(base, i, parameters->bits, delta);\
+		setBitVector(base, i, parameters->bits, (unsigned int) /*TODO: fix this once we have increased capacity of bitvector*/ delta);\
 	}\
 	(TASK)->dst += wordaligned((i * parameters->bits / CHAR_BIT) + ( (i * parameters->bits) % CHAR_BIT ) != 0, lng);\
 } while(0)
