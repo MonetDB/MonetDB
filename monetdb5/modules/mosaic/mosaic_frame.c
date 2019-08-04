@@ -216,7 +216,7 @@ MOSestimate_frame(MOStask task) {
 do {\
 	TPE *src = getSrc(TPE, (TASK));\
 	TPE delta;\
-	int i = 0;\
+	BUN i = 0;\
 	BUN limit = (TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start;\
 	BitVector base;\
 	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((TASK))->blk;\
