@@ -2968,6 +2968,7 @@ close_connection(Mapi mid)
 		close_stream(mid->from);
 		mid->from = 0;
 	}
+	mid->redircnt = 0;
 	mapi_log_record(mid, "Connection closed\n");
 }
 
