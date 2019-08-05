@@ -1500,7 +1500,7 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 				list_append(extra_project->exps, exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 				//select bt values which are not null (they had a match in the join)
-				project_first = extra_project->exps->h->next->data;
+				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
 				project_first = exp_column(sql->sa, exp_relname(project_first), exp_name(project_first), exp_subtype(project_first), project_first->card, has_nil(project_first), is_intern(project_first));
 				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
 				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_notequal));
@@ -1528,7 +1528,7 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 				list_append(extra_project->exps, exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 				//select bt values which are not null (they had a match in the join)
-				project_first = extra_project->exps->h->next->data;
+				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
 				project_first = exp_column(sql->sa, exp_relname(project_first), exp_name(project_first), exp_subtype(project_first), project_first->card, has_nil(project_first), is_intern(project_first));
 				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
 				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_notequal));
@@ -1564,7 +1564,7 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 			extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
 
 			//select bt values which are null (they didn't have match in the join)
-			project_first = extra_project->exps->h->next->data;
+			project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
 			project_first = exp_column(sql->sa, exp_relname(project_first), exp_name(project_first), exp_subtype(project_first), project_first->card, has_nil(project_first), is_intern(project_first));
 			nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
 			extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal));
