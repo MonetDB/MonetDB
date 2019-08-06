@@ -2682,6 +2682,14 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		if (!cc->def)
 			oc->def = NULL;
 
+		if (isRenamed(cc)) { /* apply possible renaming */
+			list_hash_delete(oc->t->columns.set, oc, NULL);
+			oc->base.name = sa_strdup(tr->sa, cc->base.name);
+			if (!list_hash_add(oc->t->columns.set, oc, NULL))
+				ok = LOG_ERR;
+			removeRenamedFlag(cc);
+		}
+
 		if (oc->base.rtime < cc->base.rtime)
 			oc->base.rtime = cc->base.rtime;
 		if (oc->base.wtime < cc->base.wtime)

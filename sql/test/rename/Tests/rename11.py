@@ -21,7 +21,7 @@ ALTER SCHEMA s2 RENAME TO s3;\
 CREATE TABLE s3.tab3 (col1 tinyint);\
 INSERT INTO s3.tab3 VALUES (1);\
 SELECT col1 FROM s3.tab3;\
-CREATE TABLE tab4 (col1 tinyint);\
+CREATE TABLE tab4 (col1 tinyint, col3 int);\
 ALTER TABLE tab4 RENAME COLUMN col1 TO col2;\
 SELECT col2 FROM tab4;\
 CREATE SCHEMA s4;\

@@ -3657,6 +3657,14 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 			ok = store_funcs.update_table(tr, ft, tt);
 			ft->cleared = 0;
 			tt->access = ft->access;
+
+			if (ok == LOG_OK && isRenamed(ft)) { /* apply possible renaming */
+				list_hash_delete(tt->s->tables.set, tt, NULL);
+				tt->base.name = sa_strdup(tr->sa, ft->base.name);
+				if (!list_hash_add(tt->s->tables.set, tt, NULL))
+					ok = LOG_ERR;
+				removeRenamedFlag(ft);
+			}
 		}
 	}
 	return ok;
@@ -3711,7 +3719,7 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 			for (n = fs->tables.set->h; n; ) {
 				node *nxt = n->next;
 				sql_table *t = n->data;
-	
+
 				if ((isTable(t) && isGlobal(t) &&
 				    t->commit_action != CA_PRESERVE) || 
 				    t->commit_action == CA_DELETE) {
@@ -3739,6 +3747,15 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 		ok = rollforward_changeset_updates(tr, &fs->seqs, &ts->seqs, &ts->base, (rfufunc) &rollforward_update_seq, (rfcfunc) &rollforward_create_seq, (rfdfunc) &rollforward_drop_seq, (dupfunc) &seq_dup, mode);
 
 	set_members(&fs->tables);
+
+	if (ok == LOG_OK && isRenamed(fs)) { /* apply possible renaming */
+		list_hash_delete(tr->schemas.set, ts, NULL);
+		ts->base.name = sa_strdup(tr->sa, fs->base.name);
+		if (!list_hash_add(tr->schemas.set, ts, NULL))
+			ok = LOG_ERR;
+		removeRenamedFlag(fs);
+	}
+
 	return ok;
 }
 
