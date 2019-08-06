@@ -1042,6 +1042,7 @@ sql_update_mar2018(Client c, mvc *sql)
 		if (schema)
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 		pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
 		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	}
@@ -1591,6 +1592,7 @@ sql_update_apr2019(Client c, mvc *sql)
 		if (schema)
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 		pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
 		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	}
@@ -1976,6 +1978,7 @@ sql_update_deltas(Client c, mvc *sql)
 			" and name in ('deltas') and type = %d;\n", F_UNION);
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
