@@ -3721,7 +3721,7 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 				sql_table *t = n->data;
 
 				if ((isTable(t) && isGlobal(t) &&
-				    t->commit_action != CA_PRESERVE) || 
+				    t->commit_action != CA_PRESERVE) ||
 				    t->commit_action == CA_DELETE) {
 					sql_trans_clear_table(tr, t);
 				} else if (t->commit_action == CA_DROP) {
@@ -5274,7 +5274,7 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 	table_funcs.column_update_value(tr, find_sql_column(systable, "name"), rid, (void*) new_name);
 
 	setRenamedFlag(t);
-	t->base.wtime = tr->wtime = tr->wstime;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	return t;
 }
@@ -5690,7 +5690,7 @@ sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const
 	table_funcs.column_update_value(tr, find_sql_column(syscolumn, "name"), rid, (void*) new_name);
 
 	setRenamedFlag(c);
-	c->base.wtime = tr->wtime = tr->wstime;
+	c->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	return c;
 }
