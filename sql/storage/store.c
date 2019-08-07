@@ -3748,7 +3748,7 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 
 	set_members(&fs->tables);
 
-	if (ok == LOG_OK && isRenamed(fs)) { /* apply possible renaming */
+	if (apply && ok == LOG_OK && isRenamed(fs)) { /* apply possible renaming */
 		list_hash_delete(tr->schemas.set, ts, NULL);
 		ts->base.name = sa_strdup(tr->sa, fs->base.name);
 		if (!list_hash_add(tr->schemas.set, ts, NULL))
