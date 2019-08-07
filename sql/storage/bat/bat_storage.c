@@ -2687,7 +2687,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			oc->base.name = sa_strdup(tr->sa, cc->base.name);
 			if (!list_hash_add(oc->t->columns.set, oc, NULL))
 				ok = LOG_ERR;
-			removeRenamedFlag(cc);
+			setRenamedFlag(oc); /* propagate the change to the upper transaction */
 		}
 
 		if (oc->base.rtime < cc->base.rtime)

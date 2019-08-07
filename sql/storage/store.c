@@ -3663,7 +3663,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 				tt->base.name = sa_strdup(tr->sa, ft->base.name);
 				if (!list_hash_add(tt->s->tables.set, tt, NULL))
 					ok = LOG_ERR;
-				removeRenamedFlag(ft);
+				setRenamedFlag(tt); /* propagate the change to the upper transaction */
 			}
 		}
 	}
@@ -3753,7 +3753,7 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 		ts->base.name = sa_strdup(tr->sa, fs->base.name);
 		if (!list_hash_add(tr->schemas.set, ts, NULL))
 			ok = LOG_ERR;
-		removeRenamedFlag(fs);
+		setRenamedFlag(ts); /* propagate the change to the upper transaction */
 	}
 
 	return ok;
@@ -3945,12 +3945,12 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 		if (isTable(fc->t)) 
 			store_funcs.destroy_col(NULL, fc);
 
-		if (tr->status == 1 && isRenamed(fc)) { /* remove possible renaming */
+		/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
+		if ((tr->status == 1 && isRenamed(fc)) || isRenamed(pfc)) {
 			list_hash_delete(fc->t->columns.set, fc, NULL);
 			fc->base.name = sa_strdup(tr->sa, pfc->base.name);
-			if(!list_hash_add(fc->t->columns.set, fc, NULL))
+			if (!list_hash_add(fc->t->columns.set, fc, NULL))
 				return LOG_ERR;
-			removeRenamedFlag(fc);
 		}
 
 		fc->null = pfc->null;
@@ -4010,12 +4010,13 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 
 		ft->cleared = 0;
 		ft->access = pft->access;
-		if (tr->status == 1 && isRenamed(ft)) { /* remove possible renaming */
+
+		/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
+		if ((tr->status == 1 && isRenamed(ft)) || isRenamed(pft)) {
 			list_hash_delete(ft->s->tables.set, ft, NULL);
 			ft->base.name = sa_strdup(tr->sa, pft->base.name);
-			if(!list_hash_add(ft->s->tables.set, ft, NULL))
+			if (!list_hash_add(ft->s->tables.set, ft, NULL))
 				ok = LOG_ERR;
-			removeRenamedFlag(ft);
 		}
 
 		if (ok == LOG_OK)
@@ -4069,12 +4070,12 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 	/* did we access the schema or is the global changed after we started */
 	if (fs->base.rtime || fs->base.wtime || tr->stime < pfs->base.wtime) {
 
-		if (tr->status == 1 && isRenamed(fs)) { /* remove possible renaming */
+		/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
+		if ((tr->status == 1 && isRenamed(fs)) || isRenamed(pfs)) {
 			list_hash_delete(tr->schemas.set, fs, NULL);
 			fs->base.name = sa_strdup(tr->sa, pfs->base.name);
-			if(!list_hash_add(tr->schemas.set, fs, NULL))
+			if (!list_hash_add(tr->schemas.set, fs, NULL))
 				ok = LOG_ERR;
-			removeRenamedFlag(fs);
 		}
 
 		if (ok == LOG_OK)
@@ -4967,7 +4968,7 @@ sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 
 	list_hash_delete(tr->schemas.set, s, NULL); /* has to re-hash the entry in the changeset */
 	s->base.name = sa_strdup(tr->sa, new_name);
-	if(!list_hash_add(tr->schemas.set, s, NULL))
+	if (!list_hash_add(tr->schemas.set, s, NULL))
 		return NULL;
 
 	rid = table_funcs.column_find_row(tr, find_sql_column(sysschema, "id"), &s->base.id, NULL);
@@ -5266,7 +5267,7 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 
 	list_hash_delete(s->tables.set, t, NULL); /* has to re-hash the entry in the changeset */
 	t->base.name = sa_strdup(tr->sa, new_name);
-	if(!list_hash_add(s->tables.set, t, NULL))
+	if (!list_hash_add(s->tables.set, t, NULL))
 		return NULL;
 
 	rid = table_funcs.column_find_row(tr, find_sql_column(systable, "id"), &t->base.id, NULL);
@@ -5682,7 +5683,7 @@ sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const
 
 	list_hash_delete(t->columns.set, c, NULL); /* has to re-hash the entry in the changeset */
 	c->base.name = sa_strdup(tr->sa, new_name);
-	if(!list_hash_add(t->columns.set, c, NULL))
+	if (!list_hash_add(t->columns.set, c, NULL))
 		return NULL;
 
 	rid = table_funcs.column_find_row(tr, find_sql_column(syscolumn, "id"), &c->base.id, NULL);
