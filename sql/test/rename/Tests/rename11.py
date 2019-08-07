@@ -21,6 +21,7 @@ def freeport():
 
 
 farm_dir = tempfile.mkdtemp()
+os.mkdir(os.path.join(farm_dir, 'renames'))
 sport = freeport()
 s = process.server(mapiport=sport, dbname='renames', dbfarm=os.path.join(farm_dir, 'renames'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 client1 = pymonetdb.connect(database='renames', port=sport, autocommit=True)
