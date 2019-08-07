@@ -1,4 +1,10 @@
+import os
 import sys
+import socket
+import tempfile
+import shutil
+
+import pymonetdb
 
 try:
     from MonetDBtesting import process
@@ -6,67 +12,89 @@ except ImportError:
     import process
 
 
-s = process.server(args=[], stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
-c1 = process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
-c2 = process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
+def freeport():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(('', 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    return port
 
-script1 = '''
-CREATE TABLE tab1 (col1 tinyint);\
-INSERT INTO tab1 VALUES (1);\
-SELECT col1 FROM tab1;\
-ALTER TABLE tab1 RENAME TO tab2;\
-SELECT col1 FROM tab2;\
-CREATE SCHEMA s2;\
-ALTER SCHEMA s2 RENAME TO s3;\
-CREATE TABLE s3.tab3 (col1 tinyint);\
-INSERT INTO s3.tab3 VALUES (1);\
-SELECT col1 FROM s3.tab3;\
-CREATE TABLE tab4 (col1 tinyint, col3 int);\
-ALTER TABLE tab4 RENAME COLUMN col1 TO col2;\
-SELECT col2 FROM tab4;\
-CREATE SCHEMA s4;\
-CREATE TABLE tab5 (col1 int);\
-INSERT INTO tab5 VALUES (1);\
-ALTER TABLE tab5 SET SCHEMA s4;\
-SELECT col1 FROM s4.tab5;
-'''
 
-script2 = '''
-SELECT col1 FROM tab2;\
-SELECT col1 FROM s3.tab3;\
-SELECT col2 FROM tab4;\
-SELECT col1 FROM s4.tab5;
-'''
+farm_dir = tempfile.mkdtemp()
+sport = freeport()
+s = process.server(mapiport=sport, dbname='renames', dbfarm=os.path.join(farm_dir, 'renames'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
+client1 = pymonetdb.connect(database='renames', port=sport, autocommit=True)
+client2 = pymonetdb.connect(database='renames', port=sport, autocommit=True)
+cursor1 = client1.cursor()
+cursor2 = client2.cursor()
 
-script3 = '''
-DROP SCHEMA s3 CASCADE;\
-DROP TABLE tab2;\
-ALTER TABLE tab4 DROP COLUMN col2;\
-DROP TABLE tab4;\
-DROP TABLE s4.tab5;\
-DROP SCHEMA s4 CASCADE;
-'''
+cursor1.execute('CREATE TABLE tab1 (col1 tinyint);')
+cursor1.execute('INSERT INTO tab1 VALUES (1);')
 
-out, err = c1.communicate(script1)
-sys.stdout.write(out)
-sys.stderr.write(err)
+cursor2.execute('SELECT col1 FROM tab1;')
 
-c3 = process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
+cursor1.execute('SELECT col1 FROM tab1;')
+cursor1.execute('ALTER TABLE tab1 RENAME TO tab2;')
+cursor1.execute('SELECT col1 FROM tab2;')
+cursor1.execute('CREATE SCHEMA s2;')
+cursor1.execute('ALTER SCHEMA s2 RENAME TO s3;')
+cursor1.execute('CREATE TABLE s3.tab3 (col1 tinyint);')
+cursor1.execute('INSERT INTO s3.tab3 VALUES (1);')
 
-out, err = c2.communicate(script2)
-sys.stdout.write(out)
-sys.stderr.write(err)
+cursor2.execute('SELECT col1 FROM s3.tab3;')
 
-out, err = c3.communicate(script2)
-sys.stdout.write(out)
-sys.stderr.write(err)
+cursor1.execute('SELECT col1 FROM s3.tab3;')
+cursor1.execute('CREATE TABLE tab4 (col1 tinyint, col3 int);')
 
-c4 = process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
+cursor2.execute('SELECT col1 FROM tab4;')
 
-out, err = c4.communicate(script3)
-sys.stdout.write(out)
-sys.stderr.write(err)
+cursor1.execute('ALTER TABLE tab4 RENAME COLUMN col1 TO col2;')
+cursor1.execute('SELECT col2 FROM tab4;')
+cursor1.execute('CREATE SCHEMA s4;')
+cursor1.execute('CREATE TABLE tab5 (col1 int);')
+cursor1.execute('INSERT INTO tab5 VALUES (1);')
+cursor1.execute('ALTER TABLE tab5 SET SCHEMA s4;')
+
+cursor2.execute('SELECT col1 FROM s4.tab5;')
+
+cursor1.execute('SELECT col1 FROM s4.tab5;')
+
+cursor2.execute('SELECT col1 FROM tab2;')
+cursor2.execute('SELECT col1 FROM s3.tab3;')
+cursor2.execute('SELECT col2 FROM tab4;')
+cursor2.execute('SELECT col1 FROM s4.tab5;')
+
+cursor1.close()
+cursor2.close()
+client1.close()
+client2.close()
+
+client3 = pymonetdb.connect(database='renames', port=sport, autocommit=True)
+cursor3 = client3.cursor()
+
+cursor3.execute('SELECT col1 FROM tab2;')
+cursor3.execute('SELECT col1 FROM s3.tab3;')
+cursor3.execute('SELECT col2 FROM tab4;')
+cursor3.execute('SELECT col1 FROM s4.tab5;')
+
+cursor3.close()
+client3.close()
+
+client4 = pymonetdb.connect(database='renames', port=sport, autocommit=True)
+cursor4 = client4.cursor()
+
+cursor4.execute('DROP SCHEMA s3 CASCADE;')
+cursor4.execute('DROP TABLE tab2;')
+cursor4.execute('ALTER TABLE tab4 DROP COLUMN col2;')
+cursor4.execute('DROP TABLE tab4;')
+cursor4.execute('DROP TABLE s4.tab5;')
+cursor4.execute('DROP SCHEMA s4 CASCADE;')
+
+cursor4.close()
+client4.close()
 
 out, err = s.communicate()
 sys.stdout.write(out)
 sys.stderr.write(err)
+
+shutil.rmtree(farm_dir)
