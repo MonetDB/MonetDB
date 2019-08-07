@@ -1,4 +1,4 @@
-policy_module(monetdb, 0.5)
+policy_module(monetdb, 0.6)
 # The above line declares that this file is a SELinux policy file. Its
 # name is monetdb, so the file should be saved as monetdb.te
 
@@ -8,12 +8,14 @@ require {
 	type tmp_t;
 	type var_t;
 	type user_home_t;
+	type unconfined_service_t;	# for EPEL 7
+	type proc_t;			# for EPEL 7
 	class dir { read };
 	class fd { use };
 	class fifo_file { getattr read write };
 	class file { entrypoint execute getattr manage_file_perms map open read };
 	class netlink_selinux_socket create_socket_perms;
-	class process { rlimitinh siginh signal sigterm sigkill transition };
+	class process { rlimitinh siginh signal sigchld sigterm sigkill transition };
 	class tcp_socket create_stream_socket_perms;
 	class udp_socket create_stream_socket_perms;
 	class unix_dgram_socket create_socket_perms;
@@ -41,6 +43,10 @@ type_transition monetdbd_t mserver5_exec_t:process mserver5_t;
 
 # monetdbd must be allowed to kill the server it started
 allow monetdbd_t mserver5_t:process { sigterm sigkill };
+# on EPEL 7 we need these as well
+allow mserver5_t monetdbd_t:process sigchld;
+allow monetdbd_t unconfined_service_t:process signal;
+allow mserver5_t proc_t:file { open read getattr };      # read /proc/meminfo
 
 # declare a type for the systemd unit file (monetdbd.service)
 type monetdbd_unit_file_t;
@@ -123,6 +129,9 @@ manage_sock_files_pattern(mserver5_t, mserver5_db_t, mserver5_db_t)
 allow mserver5_t monetdbd_t:fifo_file { read write getattr };
 allow mserver5_t monetdbd_t:unix_stream_socket { read write getopt shutdown };
 allow mserver5_t var_t:dir { read };
+# we want to be able to read some cgroup files
+fs_search_cgroup_dirs(mserver5_t);
+fs_read_cgroup_files(mserver5_t);
 allow monetdbd_t var_t:dir { read };
 gen_tunable(mserver5_can_read_home, false)
 tunable_policy(`mserver5_can_read_home', `

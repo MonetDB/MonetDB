@@ -16,7 +16,6 @@
 #define BID_NIL 0
 
 #define bat_set_access(b,access) b->batRestricted = access
-#define bat_clear(b) bat_set_access(b,BAT_WRITE);BATclear(b,true);bat_set_access(b,BAT_READ)
 
 extern BAT *temp_descriptor(log_bid b);
 extern BAT *quick_descriptor(log_bid b);
@@ -27,6 +26,7 @@ extern log_bid temp_copy(log_bid b, int temp);
 
 extern void bat_destroy(BAT *b);
 extern BAT *bat_new(int tt, BUN size, role_t role);
+extern void bat_clear(BAT *b);
 
 extern BUN append_inserted(BAT *b, BAT *i );
 

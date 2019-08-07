@@ -2483,6 +2483,24 @@ mapi_reconnect(Mapi mid)
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 #endif
+		/* compare our own address with that of our peer and
+		 * if they are the same, we were connected to our own
+		 * socket, so then we can't use this connection */
+		union {
+			struct sockaddr s;
+			struct sockaddr_in i;
+		} myaddr, praddr;
+		socklen_t myaddrlen, praddrlen;
+		myaddrlen = (socklen_t) sizeof(myaddr);
+		praddrlen = (socklen_t) sizeof(praddr);
+		if (getsockname(s, &myaddr.s, &myaddrlen) == 0 &&
+		    getpeername(s, &praddr.s, &praddrlen) == 0 &&
+		    myaddr.i.sin_addr.s_addr == praddr.i.sin_addr.s_addr &&
+		    myaddr.i.sin_port == praddr.i.sin_port) {
+			closesocket(s);
+			return mapi_setError(mid, "connected to self",
+					     "mapi_reconnect", MERROR);
+		}
 	}
 
 	mid->to = socket_wstream(s, "Mapi client write");
@@ -2989,6 +3007,7 @@ close_connection(Mapi mid)
 		close_stream(mid->from);
 		mid->from = 0;
 	}
+	mid->redircnt = 0;
 	mapi_log_record(mid, "Connection closed\n");
 }
 
