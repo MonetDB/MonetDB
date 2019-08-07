@@ -1061,6 +1061,9 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Aug 07 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.33.7-20190807
+- Rebuilt.
+
 * Thu Aug 01 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.33.5-20190801
 - Rebuilt.
 - BZ#6697: Duplicate expressions not eliminated with long CASE statement
