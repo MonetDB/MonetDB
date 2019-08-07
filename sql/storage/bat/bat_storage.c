@@ -2042,8 +2042,11 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes, int id, int tpe)
 	(void)tr;
 	assert(ATOMIC_GET(&store_nr_active)==0);
 	
-	if (!cbat->bid)
+	if (!cbat->bid) {
 		cbat->bid = logger_find_bat(bat_logger, cbat->name, tpe, id);
+		temp_dup(cbat->bid);
+	}
+	assert(cbat->bid == logger_find_bat(bat_logger, cbat->name, tpe, id));
 	cur = temp_descriptor(cbat->bid);
 	ins = temp_descriptor(cbat->ibid);
 
@@ -2113,7 +2116,7 @@ static int
 gtr_update_dbat(sql_trans *tr, sql_dbat *d, int *changes, char tpe, oid id)
 {
 	int ok = LOG_OK;
-	BAT *idb;
+	BAT *idb, *cdb;
 	int dbid = logger_find_bat(bat_logger, d->dname, tpe, id);
 
 	assert(ATOMIC_GET(&store_nr_active)==0);
@@ -2127,23 +2130,26 @@ gtr_update_dbat(sql_trans *tr, sql_dbat *d, int *changes, char tpe, oid id)
 	idb = temp_descriptor(d->dbid);
 	if(!idb)
 		return LOG_ERR;
-	if (BUNlast(idb) > idb->batInserted || d->cleared) {
-		BAT *cdb = temp_descriptor(dbid);
-		if(cdb) {
-			(*changes)++;
-			assert(!isEbat(cdb));
-			if (d->cleared)
-				bat_clear(cdb);
-			if (append_inserted(cdb, idb) == BUN_NONE)
-				ok = LOG_ERR;
-			else
-				BATcommit(cdb);
-			d->cnt = BATcount(cdb);
-			bat_destroy(cdb);
-		} else {
-			ok = LOG_ERR;
+	cdb = temp_descriptor(dbid);
+	if(cdb) {
+		(*changes)++;
+		assert(!isEbat(cdb));
+		if (d->cleared) {
+			bat_clear(cdb);
+			d->cnt = 0;
 		}
+		d->cnt = BATcount(cdb);
+		idb->batInserted = d->cnt;
+		if (append_inserted(cdb, idb) == BUN_NONE)
+			ok = LOG_ERR;
+		else
+			BATcommit(cdb);
+		d->cnt = BATcount(cdb);
+		bat_destroy(cdb);
+	} else {
+		ok = LOG_ERR;
 	}
+	assert(BATcount(quick_descriptor(dbid)) == d->cnt);
 	d->cleared = 0;
 	temp_destroy(d->dbid);
 	d->dbid = dbid;
@@ -2301,7 +2307,8 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 	/* for cleared tables the bid is reset */
 	if (cbat->bid == 0) {
 		cbat->bid = obat->bid;
-		temp_dup(cbat->bid);
+		if (cbat->bid)
+			temp_dup(cbat->bid);
 	}
 
 	if (obat->cached) {
@@ -2513,6 +2520,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 		bat_destroy(ui);
 		bat_destroy(uv);
 	}
+	assert(obat->cnt == BATcount(quick_descriptor(obat->bid)));
 	obat->cleared = 0;
 	bat_destroy(cur);
 	if (obat->next) { 
@@ -2543,7 +2551,7 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb)
 	db = temp_descriptor(fdb->dbid);
 	if(!db)
 		return LOG_ERR;
-	if (BUNlast(db) > db->batInserted || fdb->cleared) {
+	if (tdb->cnt < BATcount(db) || fdb->cleared) {
 		BAT *odb = temp_descriptor(tdb->dbid);
 		if(odb) {
 			if (isEbat(odb)){
@@ -2553,12 +2561,15 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb)
 				if (tdb->dbid == BID_NIL || (odb = temp_descriptor(tdb->dbid)) == NULL)
 					return LOG_ERR;
 			}
-			if (fdb->cleared)
+			if (fdb->cleared) {
+				tdb->cnt = 0;
 				bat_clear(odb);
+			}
+			db->batInserted = tdb->cnt;
 			if (append_inserted(odb, db) == BUN_NONE)
 				ok = LOG_ERR;
-			//else
-				//BATcommit(odb);
+			else
+				BATcommit(odb);
 			assert(BATcount(odb) == fdb->cnt);
 			temp_destroy(fdb->dbid);
 
