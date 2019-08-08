@@ -1403,7 +1403,7 @@ extern sql_rel *rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r);
 
 static sql_rel *
 validate_merge_update_delete(mvc *sql, sql_table *t, str alias, sql_rel *joined_table, tokens upd_token,
-							 sql_rel *upd_del, sql_rel *bt, sql_rel *join_rel)
+							 sql_rel *upd_del, sql_rel *bt, sql_rel *extra_selection)
 {
 	char buf[BUFSIZ];
 	sql_exp *aggr, *bigger, *ex;
@@ -1415,7 +1415,7 @@ validate_merge_update_delete(mvc *sql, sql_table *t, str alias, sql_rel *joined_
 
 	assert(upd_token == SQL_UPDATE || upd_token == SQL_DELETE);
 
-	groupby = rel_groupby(sql, rel_dup(join_rel), NULL); //aggregate by all column and count (distinct values)
+	groupby = rel_groupby(sql, rel_dup(extra_selection), NULL); //aggregate by all column and count (distinct values)
 	groupby->r = rel_projections(sql, bt, NULL, 1, 0);
 	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, groupby->card, 0);
 	(void) rel_groupby_add_aggr(sql, groupby, aggr);
@@ -1454,7 +1454,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 	char *sname = qname_schema(qname), *tname = qname_table(qname), *alias_name;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	sql_rel *bt, *joined, *join_rel = NULL, *extra_project = NULL, *insert = NULL, *upd_del = NULL, *res = NULL;
+	sql_rel *bt, *joined, *join_rel = NULL, *extra_project, *insert = NULL, *upd_del = NULL, *res = NULL, *extra_select;
+	sql_exp *nils, *project_first;
 	int processed = 0;
 
 	assert(tref && search_cond && merge_list);
@@ -1500,79 +1501,108 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 		action = dl->h->next->data.sym;
 		sts = action->data.lval;
 
-		if(opt_search)
+		if (opt_search)
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE: search condition not yet supported");
 
-		if(token == SQL_MERGE_MATCH) {
+		if (token == SQL_MERGE_MATCH) {
 			tokens uptdel = action->token;
-			sql_exp *e;
 
-			if((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE)
+			if ((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE)
 				return sql_error(sql, 02, SQLSTATE(42000) "MERGE: only one WHEN MATCHED clause is allowed");
 			processed |= MERGE_UPDATE_DELETE;
 
-			if(uptdel == SQL_UPDATE) {
-				if(!update_allowed(sql, t, tname, "MERGE", "update", 0))
+			if (uptdel == SQL_UPDATE) {
+				if (!update_allowed(sql, t, tname, "MERGE", "update", 0))
 					return NULL;
-				if((processed & MERGE_INSERT) == MERGE_INSERT)
-					joined = rel_dup(joined);
+				if ((processed & MERGE_INSERT) == MERGE_INSERT) {
+					join_rel = rel_dup(join_rel);
+				} else {
+					join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
+					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where)))
+						return NULL;
+					set_processed(join_rel);
+				}
 
-				join_rel = rel_crossproduct(sql->sa, bt, joined, op_join);
-				join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where);
-				if (!join_rel)
-					return NULL;
-				set_processed(join_rel);
-
+				//project columns of both bt and joined + oid
 				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
 				extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
-				e = exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-				append(extra_project->exps, e);
+				list_append(extra_project->exps, exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
-				upd_del = update_generate_assignments(query, t, extra_project, bt, sts->h->data.lval, "MERGE");
-			} else if(uptdel == SQL_DELETE) {
+				//select bt values which are not null (they had a match in the join)
+				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
+				project_first = exp_ref(sql->sa, project_first);
+				nils = rel_unop_(query, extra_project, project_first, NULL, "isnull", card_value);
+				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_notequal));
+
+				//the update statement requires a projection on the right side
+				extra_project = rel_project(sql->sa, extra_select, rel_projections(sql, bt, NULL, 1, 0));
+				extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
+				list_append(extra_project->exps,
+					exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+				upd_del = update_generate_assignments(query, t, extra_project, rel_dup(bt), sts->h->data.lval, "MERGE");
+			} else if (uptdel == SQL_DELETE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "delete", 1))
 					return NULL;
-				if((processed & MERGE_INSERT) == MERGE_INSERT)
-					joined = rel_dup(joined);
+				if ((processed & MERGE_INSERT) == MERGE_INSERT) {
+					join_rel = rel_dup(join_rel);
+				} else {
+					join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
+					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where)))
+						return NULL;
+					set_processed(join_rel);
+				}
 
-				join_rel = rel_crossproduct(sql->sa, bt, joined, op_join);
-				join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where);
-				if (!join_rel)
-					return NULL;
-				set_processed(join_rel);
+				//project columns of bt + oid
+				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
+				list_append(extra_project->exps, exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
-				e = exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-				extra_project = rel_project(sql->sa, join_rel, append(new_exp_list(sql->sa), e));
+				//select bt values which are not null (they had a match in the join)
+				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
+				project_first = exp_ref(sql->sa, project_first);
+				nils = rel_unop_(query, extra_project, project_first, NULL, "isnull", card_value);
+				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_notequal));
 
-				upd_del = rel_delete(sql->sa, bt, extra_project);
+				//the delete statement requires a projection on the right side, which will be the oid values
+				extra_project = rel_project(sql->sa, extra_select, list_append(new_exp_list(sql->sa),
+					exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1)));
+				upd_del = rel_delete(sql->sa, rel_dup(bt), extra_project);
 			} else {
 				assert(0);
 			}
-			if(!upd_del || !(upd_del = validate_merge_update_delete(sql, t, alias, joined, uptdel, upd_del, bt, join_rel)))
+			if (!upd_del || !(upd_del = validate_merge_update_delete(sql, t, alias, joined, uptdel, upd_del, bt, extra_select)))
 				return NULL;
-		} else if(token == SQL_MERGE_NO_MATCH) {
-			if((processed & MERGE_INSERT) == MERGE_INSERT)
+		} else if (token == SQL_MERGE_NO_MATCH) {
+			if ((processed & MERGE_INSERT) == MERGE_INSERT)
 				return sql_error(sql, 02, SQLSTATE(42000) "MERGE: only one WHEN NOT MATCHED clause is allowed");
 			processed |= MERGE_INSERT;
 
 			assert(action->token == SQL_INSERT);
 			if (!insert_allowed(sql, t, tname, "MERGE", "insert"))
 				return NULL;
-			if((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE)
-				joined = rel_dup(joined);
+			if ((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE) {
+				join_rel = rel_dup(join_rel);
+			} else {
+				join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
+				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where)))
+					return NULL;
+				set_processed(join_rel);
+			}
 
-			join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-			join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where);
-			if (!join_rel)
-				return NULL;
-			join_rel->op = op_anti;
-			set_processed(join_rel);
+			//project columns of both
+			extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
+			extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
 
-			insert = merge_generate_inserts(query, t, join_rel, sts->h->data.lval, sts->h->next->data.sym);
-			if(!insert)
+			//select bt values which are null (they didn't have match in the join)
+			project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
+			project_first = exp_ref(sql->sa, project_first);
+			nils = rel_unop_(query, extra_project, project_first, NULL, "isnull", card_value);
+			extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal));
+
+			//project only values from the joined relation
+			extra_project = rel_project(sql->sa, extra_select, rel_projections(sql, joined, NULL, 1, 0));
+			if (!(insert = merge_generate_inserts(query, t, extra_project, sts->h->data.lval, sts->h->next->data.sym)))
 				return NULL;
-			insert = rel_insert(query, rel_dup(bt), insert);
-			if(!insert)
+			if (!(insert = rel_insert(query, rel_dup(bt), insert)))
 				return NULL;
 		} else {
 			assert(0);
@@ -2207,7 +2237,7 @@ rel_updates(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = copyfrom(query, 
+		ret = copyfrom(query,
 				l->h->data.lval, 
 				l->h->next->data.lval, 
 				l->h->next->next->data.lval, 

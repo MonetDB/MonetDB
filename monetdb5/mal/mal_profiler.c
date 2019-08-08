@@ -167,7 +167,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	logadd("\"pc\":%d,%s", mb?getPC(mb,pci):0, prettify);
 	logadd("\"tag\":%d,%s", stk?stk->tag:0, prettify);
 	logadd("\"module\":\"%s\",%s", pci->modname ? pci->modname : "", prettify);
-	if (strcmp(pci->modname, "user") == 0) {
+	if (pci->modname && strcmp(pci->modname, "user") == 0) {
 		int caller_tag = 0;
 		if(stk && stk->up) {
 			caller_tag = stk->up->tag;

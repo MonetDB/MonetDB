@@ -807,7 +807,8 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 			e->card = rel->card;
 			if (!exp_name(e))
 				exp_label(sql->sa, e, ++sql->label);
-			ne = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0);
+			ne = exp_ref(sql->sa, e);
+			ne = exp_propagate(sql->sa, ne, e);
 			append(aggrs, ne);
 		}
 	}
