@@ -100,8 +100,12 @@ canditer_next(struct canditer *ci)
 }
 
 gdk_export BUN canditer_init(struct canditer *ci, BAT *b, BAT *s);
+gdk_export oid canditer_peek(struct canditer *ci);
 gdk_export oid canditer_last(struct canditer *ci);
+gdk_export oid canditer_prev(struct canditer *ci);
+gdk_export oid canditer_peekprev(struct canditer *ci);
 gdk_export oid canditer_idx(struct canditer *ci, BUN p);
+gdk_export void canditer_setidx(struct canditer *ci, BUN p);
 gdk_export void canditer_reset(struct canditer *ci);
 gdk_export BUN canditer_search(struct canditer *ci, oid o, bool next);
 gdk_export BAT *canditer_slice(struct canditer *ci, BUN lo, BUN hi);

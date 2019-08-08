@@ -613,6 +613,72 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 }
 
 oid
+canditer_peek(struct canditer *ci)
+{
+	if (ci->next == ci->ncand)
+		return oid_nil;
+	switch (ci->tpe) {
+	case cand_dense:
+		return ci->seq + ci->next;
+	case cand_materialized:
+		assert(ci->next < ci->noids);
+		return ci->oids[ci->next];
+	case cand_except:
+		/* work around compiler error: control reaches end of
+		 * non-void function */
+		break;
+	}
+	oid o = ci->seq + ci->add + ci->next;
+	while (ci->add < ci->noids && o == ci->oids[ci->add]) {
+		ci->add++;
+		o++;
+	}
+	return o;
+}
+
+oid
+canditer_prev(struct canditer *ci)
+{
+	if (ci->next == 0)
+		return oid_nil;
+	switch (ci->tpe) {
+	case cand_dense:
+		return ci->seq + --ci->next;
+	case cand_materialized:
+		return ci->oids[--ci->next];
+	case cand_except:
+		break;
+	}
+	oid o = ci->seq + ci->add + --ci->next;
+	while (ci->add > 0 && o == ci->oids[ci->add - 1]) {
+		ci->add--;
+		o--;
+	}
+	return o;
+}
+
+oid
+canditer_peekprev(struct canditer *ci)
+{
+	if (ci->next == 0)
+		return oid_nil;
+	switch (ci->tpe) {
+	case cand_dense:
+		return ci->seq + ci->next - 1;
+	case cand_materialized:
+		return ci->oids[ci->next - 1];
+	case cand_except:
+		break;
+	}
+	oid o = ci->seq + ci->add + ci->next - 1;
+	while (ci->add > 0 && o == ci->oids[ci->add - 1]) {
+		ci->add--;
+		o--;
+	}
+	return o;
+}
+
+oid
 canditer_last(struct canditer *ci)
 {
 	if (ci->ncand == 0)
@@ -662,6 +728,22 @@ canditer_idx(struct canditer *ci, BUN p)
 			hi = mid;
 	}
 	return o + hi;
+}
+
+void
+canditer_setidx(struct canditer *ci, BUN p)
+{
+	if (p != ci->next) {
+		if (p >= ci->ncand) {
+			ci->next = ci->ncand;
+			if (ci->tpe == cand_dense)
+				ci->add = ci->noids;
+		} else {
+			ci->next = p;
+			if (ci->tpe == cand_dense)
+				ci->add = canditer_idx(ci, p) - ci->seq - p;
+		}
+	}
 }
 
 void
