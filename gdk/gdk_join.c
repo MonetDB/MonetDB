@@ -1534,6 +1534,11 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 							nlx = canditer_search(lci, nlx + l->hseqbase, true);
 							nlx -= lci->next;
 						}
+					} else if ((lng)*(oid*)v < loff) {
+						/* first value in r
+						 * before first value
+						 * in dense l */
+						nlx = 0;
 					} else {
 						lval = (oid) ((lng) *(const oid*)v - loff);
 						lv = canditer_idx(lci, lci->next + lscan);
