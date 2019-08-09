@@ -5114,6 +5114,7 @@ create function sys.deltas ("schema" string, "table" string) returns table ("id"
 create function sys.deltas ("schema" string, "table" string, "column" string) returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int) external name "sql"."deltas";
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('deltas') and type = 5;
 set schema "sys";
+commit;
 
 # MonetDB/SQL module loaded
 
