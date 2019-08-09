@@ -5107,6 +5107,7 @@ insert into sys.args values (26292, 135, 'res', 'bigint', 64, 0, 0, 0);
 insert into sys.functions values (136, 'count', 'count', 'aggr', 0, 3, false, false, false, 2000, true);
 insert into sys.args values (26293, 136, 'res', 'bigint', 64, 0, 0, 0);
 set schema "sys";
+commit;
 
 
 # 15:55:37 >  
