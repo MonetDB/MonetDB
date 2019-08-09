@@ -524,11 +524,14 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				r1 = mg;
 				if (r1 == NULL)
 					return GDK_FAIL;
+			} else {
+				BBPunfix(r2->batCacheid);
 			}
+			r2 = NULL;
 		}
 		*r1p = r1;
 		if (r2p == NULL)
-			return GDK_SUCCEED;
+			goto doreturn2;
 		if (BATtdense(r1) && BATtdense(l)) {
 			r2 = BATdense(0, l->tseqbase + r1->tseqbase - l->hseqbase + r->hseqbase - r->tseqbase, BATcount(r1));
 			if (r2 == NULL) {
