@@ -77,11 +77,11 @@ BATcheckorderidx(BAT *b)
 
 	if (b == NULL)
 		return false;
+	ACCELDEBUG t = GDKusec();
 	assert(b->batCacheid > 0);
 	/* we don't need the lock just to read the value b->torderidx */
 	if (b->torderidx == (Heap *) 1) {
 		/* but when we want to change it, we need the lock */
-		ACCELDEBUG t = GDKusec();
 		MT_lock_set(&GDKhashLock(b->batCacheid));
 		if (b->torderidx == (Heap *) 1) {
 			Heap *hp;
