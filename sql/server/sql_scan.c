@@ -709,12 +709,14 @@ scanner_string(mvc *c, int quote, bool escapes)
 	while (cur != EOF) {
 		unsigned int pos = (int)rs->pos + lc->yycur;
 
-		while ((((cur = rs->buf[pos++]) & 0x80) == 0) && cur && (cur != quote || escape)) {
+		while (cur != EOF && (((cur = rs->buf[pos++]) & 0x80) == 0) && cur && (cur != quote || escape)) {
 			if (escapes && cur == '\\')
 				escape = !escape;
 			else
 				escape = false;
 		}
+		if (cur == EOF)
+			break;
 		lc->yycur = pos - (int)rs->pos;
 		/* check for quote escaped quote: Obscure SQL Rule */
 		/* TODO also handle double "" */

@@ -2403,6 +2403,12 @@ idx_dup(sql_trans *tr, int flags, sql_idx * i, sql_table *t)
 
 	/* Needs copy when committing (ie from tr to gtrans) and 
 	 * on savepoints from tr->parent to new tr */
+	if (flags) {
+		ni->base.allocated = i->base.allocated;
+		ni->data = i->data;
+		i->base.allocated = 0;
+		i->data = NULL;
+	} else
 	if ((isNew(i) && newFlagSet(flags) && tr->parent == gtrans) ||
 	    (i->base.allocated && tr->parent != gtrans))
 		if (isTable(ni->t)) 

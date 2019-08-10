@@ -1966,6 +1966,7 @@ clear_col(sql_trans *tr, sql_column *c)
 			return 0;
 		c->base.allocated = 1;
 	}
+	c->t->s->base.wtime = c->t->base.wtime = c->base.wtime = tr->wstime;
 	if (c->data)
 		return clear_delta(tr, c->data);
 	return 0;
@@ -1987,6 +1988,7 @@ clear_idx(sql_trans *tr, sql_idx *i)
 			return 0;
 		i->base.allocated = 1;
 	}
+	i->t->s->base.wtime = i->t->base.wtime = i->base.wtime = tr->wstime;
 	if (i->data)
 		return clear_delta(tr, i->data);
 	return 0;
@@ -2030,6 +2032,7 @@ clear_del(sql_trans *tr, sql_table *t)
 		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(t)); 
 		t->base.allocated = 1;
 	}
+	t->s->base.wtime = t->base.wtime = tr->wstime;
 	return clear_dbat(tr, t->data);
 }
 
