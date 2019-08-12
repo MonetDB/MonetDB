@@ -79,6 +79,10 @@ address XMLprelude;
 
 xml.prelude();
 
+command epilogue():void
+address XMLepilogue
+comment "release the resources held by the xml module";
+
 module calc;
 command xml(src:str):xml address XMLstr2xml;
 command xml(src:xml):xml address XMLxml2xml;

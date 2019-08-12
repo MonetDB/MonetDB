@@ -119,6 +119,23 @@ msab_isuuid(const char *restrict s)
 	return hyphens == 4;
 }
 
+void
+msab_exit(void)
+{
+	if (_sabaoth_internal_dbfarm != NULL) {
+		free(_sabaoth_internal_dbfarm);
+		_sabaoth_internal_dbfarm = NULL;
+	}
+	if (_sabaoth_internal_dbname != NULL) {
+		free(_sabaoth_internal_dbname);
+		_sabaoth_internal_dbname = NULL;
+	}
+	if (_sabaoth_internal_uuid != NULL) {
+		free(_sabaoth_internal_uuid);
+		_sabaoth_internal_uuid = NULL;
+	}
+}
+
 /**
  * Initialises this Sabaoth instance to use the given dbfarm and dbname.
  * dbname may be NULL to indicate that there is no active database.  The
