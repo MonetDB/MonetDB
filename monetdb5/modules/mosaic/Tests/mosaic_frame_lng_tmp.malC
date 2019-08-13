@@ -649,3 +649,39 @@ io.print(sa, sc);
 sa:= algebra.select(a,980:lng, 1020:lng,false,false,true);
 sc:= mosaic.select (c,980:lng, 1020:lng,false,false,true);
 io.print(sa, sc);
+
+b:= bat.new(:lng);
+bat.append(b,1000:lng);
+bat.append(b,1001:lng);
+bat.append(b,999:lng);
+bat.append(b,1003:lng);
+bat.append(b,997:lng);
+bat.append(b,1010:lng);
+bat.append(b,991:lng);
+bat.append(b,992:lng);
+bat.append(b,993:lng);
+bat.append(b,1000:lng);
+
+(l,r)   := algebra.join(a,b,nil:bat,nil:bat, false, 0:lng);
+(r, p) := algebra.sort(r, false:bit, false:bit, false:bit);
+l      := algebra.projection(p, l);
+
+(lc,rc) := mosaic.join (c,b,nil:bat,nil:bat, false, 0:lng);
+(rc, p) := algebra.sort(rc, false:bit, false:bit, false:bit);
+lc      := algebra.projection(p, lc);
+io.print(l,lc);
+io.print(r,rc);
+
+tsa:= mosaic.thetaselect(a,900:lng, ">");
+tsap    := algebra.projection(tsa, a);
+tsapc   := mosaic.projection(tsa, c);
+io.print(tsap, tsapc);
+
+sa:= algebra.select(a,900:lng, nil:lng,false,false,false);
+sap    := algebra.projection(tsa, a);
+sapc   := mosaic.projection(tsa, c);
+io.print(sap, sapc);
+
+pl  := algebra.projection(l, a);
+plc := mosaic.projection(l, c);
+io.print(pl, plc);

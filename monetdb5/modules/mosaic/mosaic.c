@@ -927,6 +927,15 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"mosaic.projection",RUNTIME_OBJECT_MISSING);
 	}
 
+	if (BATtdense(bl) || /*not a candidate list*/ !(bl->tkey && bl->tsorted && bl->tnonil)) {
+
+		msg = ALGprojection(ret, lid, rid);
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+
+		return msg;
+	}
+
 	cnt = BATcount(bl);
 	bn = COLnew((oid)0,br->ttype, cnt, TRANSIENT);
 	if ( bn == NULL){
