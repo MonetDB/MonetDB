@@ -431,10 +431,8 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	 * has a match in r */
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(r->tsorted || r->trevsorted);
-	assert(sl == NULL || sl->tsorted);
-	assert(sr == NULL || sr->tsorted);
 	assert(BATcount(l) > 0);
-	assert(BATtdense(r));
+	assert(rci->tpe == cand_dense);
 	assert(BATcount(r) > 0);
 
 	/* figure out range [lo..hi) of values in r that we need to match */

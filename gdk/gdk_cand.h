@@ -98,6 +98,20 @@ canditer_next(struct canditer *ci)
 	}
 	return o;
 }
+#define canditer_next_dense(ci)		((ci)->next == (ci)->ncand ? oid_nil : (ci)->seq + (ci)->next++)
+#define canditer_next_mater(ci)		((ci)->next == (ci)->ncand ? oid_nil : (ci)->oids[(ci)->next++])
+static inline oid
+canditer_next_except(struct canditer *ci)
+{
+	if (ci->next == ci->ncand)
+		return oid_nil;
+	oid o = ci->seq + ci->add + ci->next++;
+	while (ci->add < ci->noids && o == ci->oids[ci->add]) {
+		ci->add++;
+		o++;
+	}
+	return o;
+}
 
 gdk_export BUN canditer_init(struct canditer *ci, BAT *b, BAT *s);
 gdk_export oid canditer_peek(struct canditer *ci);
