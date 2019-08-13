@@ -1014,7 +1014,11 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-
+/* A mosaic join operator that works when either the left or the right side is compressed
+ * and there are no additional candidate lists.
+ * Furthermore if both sides are in possesion of a mosaic index,
+ * the operator implementation currently only uses the mosaic index of the left side.
+ */
 str
 MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1051,13 +1055,6 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"mosaic.join",RUNTIME_OBJECT_MISSING);
 	}
 
-	// we assume one compressed argument
-	if (bl->tmosaic && br->tmosaic){
-		BBPunfix(bl->batCacheid);
-		BBPunfix(br->batCacheid);
-		throw(MAL,"mosaic.join","Join over generator pairs not supported");
-    }
-
 	// result set preparation
 	bln = COLnew((oid)0,TYPE_oid, cnt, TRANSIENT);
 	brn = COLnew((oid)0,TYPE_oid, cnt, TRANSIENT);
@@ -1070,6 +1067,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"mosaic.join",MAL_MALLOC_FAIL);
 	}
 
+	// if the left side is not compressed, then assume the right side is compressed.
 	if ( bl->tmosaic){
 		MOSinit(task,bl);
 	} else {
