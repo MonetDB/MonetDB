@@ -27,3 +27,4 @@ view-too-few-rows.Bug-6736
 slow-inner-join.Bug-6737
 sum-over-hge.Bug.6738
 sequences-defaults.Bug-6744
+sequences-types.Bug-6745

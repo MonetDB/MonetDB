@@ -139,7 +139,7 @@ list_create_seq(
 	bit bedropped)
 {
 	dnode *n;
-	sql_subtype* t = NULL;
+	sql_subtype *t = NULL;
 	lng start = lng_nil, inc = lng_nil, min = lng_nil, max = lng_nil, cache = lng_nil;
 	unsigned int used = 0;
 	bit cycle = 0;
@@ -150,12 +150,24 @@ list_create_seq(
 			symbol *s = n->data.sym;
 
 			switch(s->token) {
-			case SQL_TYPE:
+			case SQL_TYPE: {
+				bool found = false;
+				const char *valid_types[4] = {"tinyint", "smallint", "int", "bigint"};
+				size_t number_valid_types = sizeof(valid_types) / sizeof(valid_types[0]);
+
 				if ((used&(1<<SEQ_TYPE)))
 					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: AS type found should be used as most once");
 				used |= (1<<SEQ_TYPE);
 				t = &s->data.lval->h->data.typeval;
-				break;
+				for (size_t i = 0; i < number_valid_types; i++) {
+					if (strcasecmp(valid_types[i], t->type->sqlname) == 0) {
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: The type of the sequence must be either tinyint, smallint, int or bigint");
+			} break;
 			case SQL_START:
 				if ((used&(1<<SEQ_START)))
 					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: START value should be passed as most once");
