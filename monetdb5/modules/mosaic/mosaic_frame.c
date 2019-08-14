@@ -167,7 +167,7 @@ do {\
 				current_bits++;\
 			}\
 			if ( (current_bits >= (int) ((sizeof(TPE) * CHAR_BIT) / 2))\
-				/*TODO: this extra condition should be removed once bitvector is extended to int63's*/\
+				/*TODO: this extra condition should be removed once bitvector is extended to int64's*/\
 				|| (current_bits > (int) sizeof(unsigned int) * CHAR_BIT) ) {\
 				/*If we can from here on not compress better then the half of the original data type, we give up. */\
 				break;\
