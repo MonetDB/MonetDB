@@ -1473,9 +1473,11 @@ create_col(sql_trans *tr, sql_column *c)
 		if (cnt && fc != c) {
 			sql_delta *d = fc->data;
 
-			bat->bid = copyBat(d->bid, type, 0);
-			if(bat->bid == BID_NIL)
-				ok = LOG_ERR;
+			if (d->bid) {
+				bat->bid = copyBat(d->bid, type, 0);
+				if(bat->bid == BID_NIL)
+					ok = LOG_ERR;
+			}
 			if (d->ibid) {
 				bat->ibid = copyBat(d->ibid, type, d->ibase);
 				if(bat->ibid == BID_NIL)

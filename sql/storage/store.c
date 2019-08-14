@@ -2464,7 +2464,8 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i)
 
 	if (isDeclaredTable(i->t)) 
 	if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
-		store_funcs.create_idx(tr, ni);
+		if (store_funcs.create_idx(tr, ni) != LOG_OK)
+			return NULL;
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
 	ni->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
