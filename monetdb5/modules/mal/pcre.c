@@ -2001,17 +2001,13 @@ static char *
 pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		 const char *esc, bool caseignore)
 {
-	BUN lstart, lend, lcnt;
-	const oid *lcand = NULL, *lcandend = NULL;
-	BUN rstart, rend, rcnt;
-	const oid *rcand = NULL, *rcandend = NULL;
+	struct canditer lci, rci;
 	const char *lvals, *rvals;
 	const char *lvars, *rvars;
 	int lwidth, rwidth;
 	const char *vl, *vr;
-	const oid *p;
 	oid lastl = 0;		/* last value inserted into r1 */
-	BUN n, nl;
+	BUN nl;
 	BUN newcap;
 	oid lo, ro;
 	int rskipped = 0;	/* whether we skipped values in r */
@@ -2060,8 +2056,8 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	assert(sl == NULL || sl->tsorted);
 	assert(sr == NULL || sr->tsorted);
 
-	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
-	CANDINIT(r, sr, rstart, rend, rcnt, rcand, rcandend);
+	canditer_init(&lci, l, sl);
+	canditer_init(&rci, r, sr);
 
 	lvals = (const char *) Tloc(l, 0);
 	rvals = (const char *) Tloc(r, 0);
@@ -2079,20 +2075,11 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	r2->trevsorted = true;
 
 	/* nested loop implementation for PCRE join */
-	for (;;) {
+	for (BUN ri = 0; ri < rci.ncand; ri++) {
 		int nr;
 
-		if (rcand) {
-			if (rcand == rcandend)
-				break;
-			ro = *rcand++;
-			vr = VALUE(r, ro - r->hseqbase);
-		} else {
-			if (rstart == rend)
-				break;
-			vr = VALUE(r, rstart);
-			ro = rstart++ + r->hseqbase;
-		}
+		ro = canditer_next(&rci);
+		vr = VALUE(r, ro - r->hseqbase);
 		if (strcmp(vr, str_nil) == 0)
 			continue;
 		if (*esc == 0 && (nr = re_simple(vr)) > 0) {
@@ -2151,20 +2138,10 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			}
 		}
 		nl = 0;
-		p = lcand;
-		n = lstart;
-		for (;;) {
-			if (lcand) {
-				if (p == lcandend)
-					break;
-				lo = *p++;
-				vl = VALUE(l, lo - l->hseqbase);
-			} else {
-				if (n == lend)
-					break;
-				vl = VALUE(l, n);
-				lo = n++ + l->hseqbase;
-			}
+		canditer_reset(&lci);
+		for (BUN li = 0; li < lci.ncand; li++) {
+			lo = canditer_next(&lci);
+			vl = VALUE(l, lo - l->hseqbase);
 			if (strcmp(vl, str_nil) == 0)
 				continue;
 			if (re) {
