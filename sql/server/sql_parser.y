@@ -483,6 +483,7 @@ int yydebug=1;
 	opt_paramlist
 	opt_typelist
 	typelist
+	params_list
 	opt_seq_params
 	opt_alt_seq_params
 	serial_opt_params
@@ -1370,7 +1371,7 @@ seq_def:
  * 	[ [ NO ] CYCLE ]
  * start may be a value or subquery
  */
-  | ALTER SEQUENCE qname opt_alt_seq_params 	
+  | ALTER SEQUENCE qname opt_alt_seq_params
 	{
 		dlist *l = L();
 		append_list(l, $3);
@@ -1380,8 +1381,12 @@ seq_def:
   ;
 
 opt_seq_params:
-	opt_seq_param				{ $$ = append_symbol(L(), $1); }
-  |	opt_seq_params opt_seq_param		{ $$ = append_symbol($1, $2); }
+	params_list  { $$ = $1; }
+  |              { $$ = NULL; }
+
+params_list:
+	opt_seq_param			  { $$ = append_symbol(L(), $1); }
+  |	params_list opt_seq_param { $$ = append_symbol($1, $2); }
   ;
 
 opt_alt_seq_params:
@@ -1390,13 +1395,13 @@ opt_alt_seq_params:
   ;
 
 opt_seq_param:
-    	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
+	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
   |	START WITH opt_sign lngval 	{ $$ = _symbol_create_lng(SQL_START, is_lng_nil($4) ? $4 : $3 * $4); }
   |	opt_seq_common_param		{ $$ = $1; }
   ;
 
 opt_alt_seq_param:
-    	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
+	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
   |	RESTART 			{ $$ = _symbol_create_list(SQL_START, append_int(L(),0)); /* plain restart now */ }
   |	RESTART WITH opt_sign lngval 	{ $$ = _symbol_create_list(SQL_START, append_lng(append_int(L(),2), is_lng_nil($4) ? $4 : $3 * $4));  }
   |	RESTART WITH subquery 		{ $$ = _symbol_create_list(SQL_START, append_symbol(append_int(L(),1), $3));  }
@@ -1404,7 +1409,7 @@ opt_alt_seq_param:
   ;
 
 opt_seq_common_param:
-  	INCREMENT BY opt_sign lngval	{ $$ = _symbol_create_lng(SQL_INC, is_lng_nil($4) ? $4 : $3 * $4); }
+	INCREMENT BY opt_sign lngval	{ $$ = _symbol_create_lng(SQL_INC, is_lng_nil($4) ? $4 : $3 * $4); }
   |	MINVALUE opt_sign lngval	{ $$ = _symbol_create_lng(SQL_MINVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
   |	NO MINVALUE			{ $$ = _symbol_create_lng(SQL_MINVALUE, 0); }
   |	MAXVALUE opt_sign lngval	{ $$ = _symbol_create_lng(SQL_MAXVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
@@ -1851,7 +1856,7 @@ generated_column:
 		if (!$5)
 			$5 = L();
 		sql_find_subtype(&it, "int", 32, 0);
-    		append_symbol($5, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
+		append_symbol($5, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 
 		/* finally all the options */
 		append_list(l, $5);
@@ -1905,7 +1910,7 @@ generated_column:
 
 serial_opt_params:
 	/* empty: return the defaults */ 	{ $$ = NULL; }
-  |	'(' opt_seq_params ')'			{ $$ = $2; }
+  |	'(' params_list ')'					{ $$ = $2; }
  ;
 
 

@@ -79,5 +79,6 @@ msab_export void msab_freeStatus(sabdb** ret);
 msab_export char *msab_getUplogInfo(sabuplog *ret, const sabdb *db);
 msab_export char *msab_serialise(char **ret, const sabdb *db);
 msab_export char *msab_deserialise(sabdb **ret, char *sabdb);
+msab_export void msab_exit(void);
 
 #endif

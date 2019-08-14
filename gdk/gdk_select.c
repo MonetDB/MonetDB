@@ -329,7 +329,7 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 		/* the following does work, however */			\
 		mask = (((((uint##B##_t) 1 << hbin) - 1) << 1) | 1) - (((uint##B##_t) 1 << lbin) - 1); \
 		innermask = mask;					\
-		if (!b->tnonil || vl != minval)				\
+		if (vl != minval)					\
 			innermask = IMPSunsetBit(B, innermask, lbin);	\
 		if (vh != maxval)					\
 			innermask = IMPSunsetBit(B, innermask, hbin);	\
@@ -338,6 +338,9 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 			mask = ~innermask;				\
 			innermask = ~tmp;				\
 		}							\
+		/* if there are nils, we may need to check bin 0 */	\
+		if (!b->tnonil)						\
+			innermask = IMPSunsetBit(B, innermask, 0);	\
 									\
 		if (BATcapacity(bn) < maximum) {			\
 			impsloop(CAND, TEST,				\

@@ -894,7 +894,9 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	for (; n; n = n->next) {
 		/* propagate alter table .. add column */
 		sql_column *c = n->data;
-		mvc_copy_column(sql, nt, c);
+
+		if (mvc_copy_column(sql, nt, c) == NULL)
+			throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: Failed to create column %s.%s", c->t->base.name, c->base.name);
 	}
 	if (t->idxs.set) {
 		/* alter drop index */
@@ -929,7 +931,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				if (r != GDK_SUCCEED)
 					throw(SQL, "sql.alter_table", GDK_EXCEPTION);
 			}
-			mvc_copy_idx(sql, nt, i);
+			if (mvc_copy_idx(sql, nt, i) == NULL)
+				throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: Failed to create index %s.%s", i->t->base.name, i->base.name);
 		}
 	}
 	if (t->keys.set) {
