@@ -146,7 +146,7 @@ typedef struct _FrameParameters_t {
 do {\
 	TPE *val = SRC, max, min;\
 	int bits = 1;\
-	BUN i;\
+	unsigned int i;\
 	max = *val;\
 	min = *val;\
 	/*TODO: add additional loop to find best bit wise upper bound*/\
