@@ -1576,13 +1576,20 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		/* Here we also handle indices created through alter stmts */
 		/* These need to be created aligned to the existing data */
 
-		bat->bid = copyBat(d->bid, type, 0);
-		bat->ibid = copyBat(d->ibid, type, d->ibase);
+
+		if (d->bid) {
+			bat->bid = copyBat(d->bid, type, 0);
+			if(bat->bid == BID_NIL)
+				ok = LOG_ERR;
+		}
+		if (d->ibid) {
+			bat->ibid = copyBat(d->ibid, type, d->ibase);
+			if(bat->ibid == BID_NIL)
+				ok = LOG_ERR;
+		}
 		bat->ibase = d->ibase;
 		bat->cnt = d->cnt;
 		bat->ucnt = 0;
-		if(bat->bid == BID_NIL || bat->ibid == BID_NIL)
-			ok = LOG_ERR;
 
 		if (d->uibid) {
 			bat->uibid = e_bat(TYPE_oid);
