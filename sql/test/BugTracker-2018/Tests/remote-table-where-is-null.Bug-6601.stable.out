@@ -10,19 +10,19 @@ stdout of test 'remote-table-where-is-null.Bug-6601` in directory 'sql/test/BugT
 # node1: INSERT INTO tbl VALUES (2, '2')
 # node1: INSERT INTO tbl (id) VALUES (3)
 # node1: SELECT * FROM tbl
-[(1, u'1'), (2, u'2'), (3, None)]
+[(1, '1'), (2, '2'), (3, None)]
 # node1: SELECT * FROM tbl WHERE NAME IS NULL
 [(3, None)]
 # node1: SELECT * FROM tbl
-[(1, u'1'), (2, u'2'), (3, None)]
-# node2: CREATE REMOTE TABLE tbl (id INT, name TEXT) on 'mapi:monetdb://localhost:56927/node1/sys/tbl'
+[(1, '1'), (2, '2'), (3, None)]
+# node2: CREATE REMOTE TABLE tbl (id INT, name TEXT) on 'mapi:monetdb://localhost:37187/node1/sys/tbl'
 # node2: SELECT * FROM tbl
-[(1, u'1'), (2, u'2'), (3, None)]
+[(1, '1'), (2, '2'), (3, None)]
 # node2: SELECT * FROM tbl WHERE NAME IS NULL
 [(3, None)]
 # node2: SELECT * FROM tbl
-[(1, u'1'), (2, u'2'), (3, None)]
-# MonetDB 5 server v11.34.0 (hg id: bde99d002da3+)
+[(1, '1'), (2, '2'), (3, None)]
+# MonetDB 5 server v11.34.0 (hg id: f48604e1e938)
 # This is an unreleased version
 # Serving database 'node1', using 8 threads
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
