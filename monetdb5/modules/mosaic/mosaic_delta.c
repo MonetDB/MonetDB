@@ -117,8 +117,8 @@ MOSskip_delta(MOStask task)
 
 
 // append a series of values into the non-compressed block
-#define Estimate_delta(TYPE, EXPR)\
-{	TYPE *v = ((TYPE*)task->src) + task->start, val= *v, delta = 0;\
+#define Estimate_delta(TPE, EXPR)\
+{	TPE *v = ((TPE*)task->src) + task->start, val= *v, delta = 0;\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop-task->start;\
 	for(v++,i =1; i<limit; i++,v++){\
 		delta = *v -val;\
@@ -126,11 +126,11 @@ MOSskip_delta(MOStask task)
 			break;\
 		val = *v;\
 	}\
-	if( i == 1 || i * sizeof(TYPE) <= wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,MosaicBlkRec))\
+	if( i == 1 || i * sizeof(TPE) <= wordaligned(MosaicBlkSize + sizeof(TPE) + i-1,MosaicBlkRec))\
 		return 0.0;\
 	if( task->dst +  wordaligned(MosaicBlkSize + sizeof(int) + i-1,MosaicBlkRec) >=task->bsrc->tmosaic->base+ task->bsrc->tmosaic->size)\
 		return 0.0;\
-	factor = ((flt) i * sizeof(TYPE))/ wordaligned(MosaicBlkSize + sizeof(TYPE) + i-1,MosaicBlkRec);\
+	factor = ((flt) i * sizeof(TPE))/ wordaligned(MosaicBlkSize + sizeof(TPE) + i-1,MosaicBlkRec);\
 }
 
 // estimate the compression level 
@@ -164,18 +164,18 @@ MOSestimate_delta(MOStask task)
 	return factor;
 }
 
-#define DELTAcompress(TYPE,EXPR)\
-{	TYPE *v = ((TYPE*)task->src) + task->start, val= *v, delta =0;\
+#define DELTAcompress(TPE,EXPR)\
+{	TPE *v = ((TPE*)task->src) + task->start, val= *v, delta =0;\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT:task->stop - task->start;\
 	task->dst = MOScodevector(task); \
-	*(TYPE*)task->dst = val;\
-	hdr->checksum.sum##TYPE += *v;\
-	task->dst += sizeof(TYPE);\
+	*(TPE*)task->dst = val;\
+	hdr->checksum.sum##TPE += *v;\
+	task->dst += sizeof(TPE);\
 	for(v++,i =1; i<limit; i++,v++){\
 		delta = *v -val;\
 		if ( EXPR )\
 			break;\
-		hdr->checksum.sum##TYPE += *v;\
+		hdr->checksum.sum##TPE += *v;\
 		*(bte*)task->dst++ = (bte) delta;\
 		val = *v;\
 	}\
@@ -197,7 +197,7 @@ MOScompress_delta(MOStask task)
 	case TYPE_sht: DELTAcompress(sht,(delta < -127 || delta >127)); break;
 	case TYPE_int: DELTAcompress(int,(delta < -127 || delta >127)); break;
 	case TYPE_oid: DELTAcompress(oid,(delta > 127)); break;
-	case TYPE_lng: DELTAcompress(lng,(delta < -127 || delta > 127)); break;
+	case TYPE_lng: DELTAcompress(lng,(delta > 127)); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: DELTAcompress(hge,(delta < -127 || delta < -127 || delta >127)); break;
 #endif
@@ -214,19 +214,19 @@ MOScompress_delta(MOStask task)
 }
 
 // the inverse operator, extend the src
-#define DELTAdecompress(TYPE)\
-{ 	TYPE val;\
+#define DELTAdecompress(TPE)\
+{ 	TPE val;\
 	BUN lim = MOSgetCnt(blk);\
 	task->dst = MOScodevector(task);\
-	val = *(TYPE*)task->dst ;\
-	task->dst += sizeof(TYPE);\
+	val = *(TPE*)task->dst ;\
+	task->dst += sizeof(TPE);\
 	for(i = 0; i < lim; i++) {\
-		hdr->checksum2.sum##TYPE += val;\
-		((TYPE*)task->src)[i] = val;\
+		hdr->checksum2.sum##TPE += val;\
+		((TPE*)task->src)[i] = val;\
 		val = val + *(bte*) (task->dst);\
 		task->dst++;\
 	}\
-	task->src += i * sizeof(TYPE);\
+	task->src += i * sizeof(TPE);\
 }
 
 void
@@ -262,7 +262,7 @@ MOSdecompress_delta(MOStask task)
 	
 #define select_delta(TPE) {\
 		TPE val= * (TPE*) (((char*) task->blk) + MosaicBlkSize);\
-		task->dst = MOScodevector(task)  + sizeof(TYPE);\
+		task->dst = MOScodevector(task)  + sizeof(TPE);\
 		if( !*anti){\
 			if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh) ){\
 				for( ; first < last; first++){\
@@ -349,73 +349,7 @@ MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 #ifdef HAVE_HGE
 	case TYPE_hge: select_delta(hge); break;
 #endif
-	case TYPE_int:
-	// Expanded MOSselect_delta for debugging
-		{ 	int val= *(int*) (((char*) task->blk) + MosaicBlkSize);
-			task->dst = MOScodevector(task) + sizeof(int);
-
-			if( !*anti){
-				if( *(int*) low == int_nil && *(int*) hgh == int_nil){
-					for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){
-						MOSskipit();
-						*o++ = (oid) first;
-					}
-				} else
-				if( *(int*) low == int_nil ){
-					for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){
-						MOSskipit();
-						cmp  =  ((*hi && val <= * (int*)hgh ) || (!*hi && val < *(int*)hgh ));
-						if (cmp )
-							*o++ = (oid) first;
-					}
-				} else
-				if( *(int*) hgh == int_nil ){
-					for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){
-						MOSskipit();
-						cmp  =  ((*li && val >= * (int*)low ) || (!*li && val > *(int*)low ));
-						if (cmp )
-							*o++ = (oid) first;
-					}
-				} else{
-					for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){
-						MOSskipit();
-						cmp  =  ((*hi && val <= * (int*)hgh ) || (!*hi && val < *(int*)hgh )) &&
-								((*li && val >= * (int*)low ) || (!*li && val > *(int*)low ));
-						if (cmp )
-							*o++ = (oid) first;
-					}
-				}
-			} else {
-				if( *(int*) low == int_nil && *(int*) hgh == int_nil){
-					/* nothing is matching */
-				} else
-				if( *(int*) low == int_nil ){
-					for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){
-						MOSskipit();
-						cmp  =  ((*hi && val <= * (int*)hgh ) || (!*hi && val < *(int*)hgh ));
-						if ( !cmp )
-							*o++ = (oid) first;
-					}
-				} else
-				if( *(int*) hgh == int_nil ){
-					for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){
-						MOSskipit();
-						cmp  =  ((*li && val >= * (int*)low ) || (!*li && val > *(int*)low ));
-						if ( !cmp )
-							*o++ = (oid) first;
-					}
-				} else{
-					for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){
-						MOSskipit();
-						cmp  =  ((*hi && val <= * (int*)hgh ) || (!*hi && val < *(int*)hgh )) &&
-								((*li && val >= * (int*)low ) || (!*li && val > *(int*)low ));
-						if ( !cmp )
-							*o++ = (oid) first;
-					}
-				}
-			}
-		}
-	break;
+	case TYPE_int: select_delta(int); break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
 		switch(task->bsrc->twidth){
@@ -526,7 +460,7 @@ MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 		hgh= low= *(TPE*) val;\
 	} \
 	v= *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
-	task->dst = MOScodevector(task) + sizeof(int);\
+	task->dst = MOScodevector(task) + sizeof(TPE);\
 	for( ; first < last; first++, v+= *(bte*)task->dst, task->dst++){\
 		if( (is_nil(TPE, low) || v >= low) && (v <= hgh || is_nil(TPE, hgh)) ){\
 			if ( !anti) {\
@@ -641,8 +575,8 @@ MOSprojection_delta( MOStask task)
 #define join_delta(TPE)\
 {	TPE *w,base;\
 	bte *v;\
-	base = *(int*) (((char*) task->blk) + MosaicBlkSize);\
-	v = (bte*) (((char*) task->blk) + MosaicBlkSize + sizeof(int));\
+	base = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
+	v = (bte*) (((char*) task->blk) + MosaicBlkSize + sizeof(TPE));\
 	for(oo= (oid) first; first < last; first++, base += *v,v++, oo++){\
 		w = (TPE*) task->src;\
 		for(n = task->stop, o = 0; n -- > 0; w++,o++)\
