@@ -65,6 +65,26 @@ stdout of test 'wlr01` in directory 'sql/test/wlcr` itself:
 % i,	s # name
 % int,	clob # type
 % 1,	0 # length
+/export/scratch1/mk/branches/default//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc.config
+#logs=/export/scratch1/mk/branches/default//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs/
+#id=2
+#write=2019-08-14T12:11:18.000
+#state=1
+#batches=2
+#beat=0
+#
+/export/scratch1/mk/branches/default//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs/mTests_sql_test_wlcr_000000000001
+#    wlr.transaction(1:lng, "2019-08-14T12:11:18.000":str, "monetdb":str);
+#    wlr.action("insert into tmp values(1,\\'hello\\'), (2,\\'world\\');":str);
+#    wlr.append("sys":str, "tmp":str, "i":str, 1:int, 2:int);
+#    wlr.append("sys":str, "tmp":str, "s":str, "hello":str, "world":str);
+#    wlr.commit();
+#
+/export/scratch1/mk/branches/default//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs/mTests_sql_test_wlcr_000000000000
+#    wlr.transaction(0:lng, "2019-08-14T12:11:18.000":str, "monetdb":str);
+#    wlr.catalog("create table tmp(i int, s string);":str);
+#    wlr.commit();
+#
 
 # 21:37:59 >  
 # 21:37:59 >  "Done."
