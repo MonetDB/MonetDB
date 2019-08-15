@@ -378,80 +378,80 @@ MOSselect_raw( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 		case 2: break ;
 		case 4: break ;
 		case 8: break ;
+	}
+	default: {
+		if( task->type == TYPE_date)
+			select_raw(date); 
+		if( task->type == TYPE_daytime)
+			select_raw(daytime); 
 		
-		default:
-			if( task->type == TYPE_date)
-				select_raw(date); 
-			if( task->type == TYPE_daytime)
-				select_raw(daytime); 
-			
-			if( task->type == TYPE_timestamp)
-				{ 	lng *val= (lng*) (((char*) task->blk) + MosaicBlkSize);
-					int lownil = is_timestamp_nil(*(timestamp*)low);
-					int hghnil = is_timestamp_nil(*(timestamp*)hgh);
+		if( task->type == TYPE_timestamp)
+			{ 	lng *val= (lng*) (((char*) task->blk) + MosaicBlkSize);
+				int lownil = is_timestamp_nil(*(timestamp*)low);
+				int hghnil = is_timestamp_nil(*(timestamp*)hgh);
 
-					if( !*anti){
-						if( lownil && hghnil){
-							for( ; first < last; first++, val++){
-								MOSskipit();
-								*o++ = (oid) first;
-							}
-						} else
-						if( lownil){
-							for( ; first < last; first++, val++){
-								MOSskipit();
-								cmp  =  ((*hi && *(lng*)val <= * (lng*)hgh ) || (!*hi && *(lng*)val < *(lng*)hgh ));
-								if (cmp )
-									*o++ = (oid) first;
-							}
-						} else
-						if( hghnil){
-							for( ; first < last; first++, val++){
-								MOSskipit();
-								cmp  =  ((*li && *(lng*)val >= * (lng*)low ) || (!*li && *(lng*)val > *(lng*)low ));
-								if (cmp )
-									*o++ = (oid) first;
-							}
-						} else{
-							for( ; first < last; first++, val++){
-								MOSskipit();
-								cmp  =  ((*hi && *(lng*)val <= * (lng*)hgh ) || (!*hi && *(lng*)val < *(lng*)hgh )) &&
-										((*li && *(lng*)val >= * (lng*)low ) || (!*li && *(lng*)val > *(lng*)low ));
-								if (cmp )
-									*o++ = (oid) first;
-							}
+				if( !*anti){
+					if( lownil && hghnil){
+						for( ; first < last; first++, val++){
+							MOSskipit();
+							*o++ = (oid) first;
 						}
-					} else {
-						if( lownil && hghnil){
-							/* nothing is matching */
-						} else
-						if( lownil){
-							for( ; first < last; first++, val++){
-								MOSskipit();
-								cmp  =  ((*hi && *(lng*)val <= * (lng*)hgh ) || (!*hi && *(lng*)val < *(lng*)hgh ));
-								if ( !cmp )
-									*o++ = (oid) first;
-							}
-						} else
-						if( hghnil){
-							for( ; first < last; first++, val++){
-								MOSskipit();
-								cmp  =  ((*li && *(lng*)val >= * (lng*)low ) || (!*li && *(lng*)val > *(lng*)low ));
-								if ( !cmp )
-									*o++ = (oid) first;
-							}
-						} else{
-							for( ; first < last; first++, val++){
-								MOSskipit();
-								cmp  =  ((*hi && *(lng*)val <= * (lng*)hgh ) || (!*hi && *(lng*)val < *(lng*)hgh )) &&
-										((*li && *(lng*)val >= * (lng*)low ) || (!*li && *(lng*)val > *(lng*)low ));
-								if ( !cmp )
-									*o++ = (oid) first;
-							}
+					} else
+					if( lownil){
+						for( ; first < last; first++, val++){
+							MOSskipit();
+							cmp  =  ((*hi && *(lng*)val <= * (lng*)hgh ) || (!*hi && *(lng*)val < *(lng*)hgh ));
+							if (cmp )
+								*o++ = (oid) first;
+						}
+					} else
+					if( hghnil){
+						for( ; first < last; first++, val++){
+							MOSskipit();
+							cmp  =  ((*li && *(lng*)val >= * (lng*)low ) || (!*li && *(lng*)val > *(lng*)low ));
+							if (cmp )
+								*o++ = (oid) first;
+						}
+					} else{
+						for( ; first < last; first++, val++){
+							MOSskipit();
+							cmp  =  ((*hi && *(lng*)val <= * (lng*)hgh ) || (!*hi && *(lng*)val < *(lng*)hgh )) &&
+									((*li && *(lng*)val >= * (lng*)low ) || (!*li && *(lng*)val > *(lng*)low ));
+							if (cmp )
+								*o++ = (oid) first;
+						}
+					}
+				} else {
+					if( lownil && hghnil){
+						/* nothing is matching */
+					} else
+					if( lownil){
+						for( ; first < last; first++, val++){
+							MOSskipit();
+							cmp  =  ((*hi && *(lng*)val <= * (lng*)hgh ) || (!*hi && *(lng*)val < *(lng*)hgh ));
+							if ( !cmp )
+								*o++ = (oid) first;
+						}
+					} else
+					if( hghnil){
+						for( ; first < last; first++, val++){
+							MOSskipit();
+							cmp  =  ((*li && *(lng*)val >= * (lng*)low ) || (!*li && *(lng*)val > *(lng*)low ));
+							if ( !cmp )
+								*o++ = (oid) first;
+						}
+					} else{
+						for( ; first < last; first++, val++){
+							MOSskipit();
+							cmp  =  ((*hi && *(lng*)val <= * (lng*)hgh ) || (!*hi && *(lng*)val < *(lng*)hgh )) &&
+									((*li && *(lng*)val >= * (lng*)low ) || (!*li && *(lng*)val > *(lng*)low ));
+							if ( !cmp )
+								*o++ = (oid) first;
 						}
 					}
 				}
-		}
+			}
+	}
 	}
 	MOSskip_raw(task);
 	task->lb = o;
