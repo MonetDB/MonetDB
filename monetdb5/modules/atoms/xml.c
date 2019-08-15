@@ -633,14 +633,6 @@ XMLprelude(void *ret)
 	return MAL_SUCCEED;
 }
 
-str
-XMLepilogue(void *ret)
-{
-	(void) ret;
-	xmlCleanupParser();
-	return MAL_SUCCEED;
-}
-
 ssize_t
 XMLfromString(const char *src, size_t *len, xml *x, bool external)
 {
@@ -819,11 +811,6 @@ size_t XMLunquotestring(const char **p, char q, char *buf) {
 str XMLprelude(void *ret) {
 	(void) ret;
 	return MAL_SUCCEED; /* to not break init */
-}
-
-str XMLepilogue(void *ret) {
-	(void) ret;
-	return MAL_SUCCEED;
 }
 
 #endif
