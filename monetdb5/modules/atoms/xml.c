@@ -821,4 +821,11 @@ str XMLprelude(void *ret) {
 	return MAL_SUCCEED; /* to not break init */
 }
 
+str
+XMLepilogue(void *ret)
+{
+	(void) ret;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+
 #endif
