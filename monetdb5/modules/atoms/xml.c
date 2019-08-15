@@ -692,7 +692,7 @@ ssize_t XMLfromString(const char *src, size_t *len, xml *x, bool external) {
 	(void) len;
 	(void) x;
 	(void) external;
-	GDKerror("not implemented\n");
+	GDKerror("XMLfromString is not implemented\n");
 	return -1;
 }
 ssize_t XMLtoString(str *s, size_t *len, const char *src, bool external) {
@@ -700,74 +700,74 @@ ssize_t XMLtoString(str *s, size_t *len, const char *src, bool external) {
 	(void) len;
 	(void) src;
 	(void) external;
-	GDKerror("not implemented\n");
+	GDKerror("XMLtoString is not implemented\n");
 	return -1;
 }
 str XMLxml2str(str *s, xml *x) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.xml2str", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLstr2xml(xml *x, const char **s) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.xml2str", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLxmltext(str *s, xml *x) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.xmltext", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLxml2xml(xml *x, xml *s) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.xml2xml", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLdocument(xml *x, str *s) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.document", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLcontent(xml *x, str *s) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.content", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLisdocument(bit *x, str *s) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.isdocument", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLcomment(xml *x, str *s) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.comment", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLpi(xml *x, str *target, str *s) {
 	(void) s;
 	(void) target;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.pi", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLroot(xml *x, xml *v, str *version, str *standalone) {
 	(void) x;
 	(void) v;
 	(void) version;
 	(void) standalone;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.root", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLparse(xml *x, str *doccont, str *s, str *option) {
 	(void) x;
 	(void) doccont;
 	(void) s;
 	(void) option;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.parse", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLattribute(xml *ret, str *name, str *val) {
 	(void) ret;
 	(void) name;
 	(void) val;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.attribute", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val) {
 	(void) ret;
@@ -775,26 +775,26 @@ str XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val) {
 	(void) nspace;
 	(void) attr;
 	(void) val;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.element", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLelementSmall(xml *ret, str *name, xml *val) {
 	(void) ret;
 	(void) name;
 	(void) val;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.elementSmall", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLconcat(xml *ret, xml *left, xml *right) {
 	(void) ret;
 	(void) left;
 	(void) right;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.concat", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) {
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) p;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.forest", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 size_t XMLquotestring(const char *s, char *buf, size_t len) {
 	(void) s;
