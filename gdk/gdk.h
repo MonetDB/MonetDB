@@ -1254,26 +1254,10 @@ BUNtoid(BAT *b, BUN p)
 		return o;
 	}
 	const oid *exc = (oid *) b->tvheap->base;
-	if (o < exc[0]) {
-		/* before first exception */
-		return o;
-	}
-	BUN hi = nexc - 1;
-	if (o + hi >= exc[hi]) {
-		/* after last exception */
-		return o + nexc;
-	}
-	BUN lo = 0;
-	/* perform binary search on exception list
-	 * loop invariant: o + lo <= exc[lo] && o + hi > exc[hi] */
-	while (lo + 1 < hi) {
-		BUN mid = (lo + hi) / 2;
-		if (o + mid <= exc[mid])
-			lo = mid;
-		else
-			hi = mid;
-	}
-	return o + hi;
+	for (BUN i = 0; i < nexc; i++)
+		if (o + i < exc[i])
+			return o + i;
+	return o + nexc;
 }
 
 static inline BATiter

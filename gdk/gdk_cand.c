@@ -667,18 +667,10 @@ canditer_idx(struct canditer *ci, BUN p)
 		return o;
 	if (o + ci->noids > ci->oids[ci->noids - 1])
 		return o + ci->noids;
-	/* perform binary search on exception list
-	 * loop invariant:
-	 * o + lo <= ci->oids[lo] && o + hi > ci->oids[hi] */
-	BUN lo = 0, hi = ci->noids - 1;
-	while (lo + 1 < hi) {
-		BUN mid = (lo + hi) / 2;
-		if (o + mid <= ci->oids[mid])
-			lo = mid;
-		else
-			hi = mid;
-	}
-	return o + hi;
+	for (BUN i = 0; i < ci->noids; i++)
+		if (o + i < ci->oids[i])
+			return o + i;
+	return o + ci->noids;
 }
 
 void
