@@ -416,6 +416,7 @@ BATprojectchain(BAT **bats)
 		BAT *b;		/* the BAT */
 		oid hlo;	/* lowest allowed oid to index the BAT */
 		BUN cnt;	/* size of allowed index range */
+		struct canditer ci; /* candidate iterator for cand w/ except. */
 	} *ba;
 	int i, n, tpe;
 	BAT *b, *bn;
@@ -431,7 +432,7 @@ BATprojectchain(BAT **bats)
 	 * temporary work space */
 	for (n = 0; bats[n]; n++)
 		;
-	ba = GDKmalloc(sizeof(*ba) * n);
+	ba = GDKzalloc(sizeof(*ba) * n);
 	if (ba == NULL)
 		return NULL;
 	b = *bats++;
@@ -444,7 +445,7 @@ BATprojectchain(BAT **bats)
 		issorted &= b->tsorted;
 		if (!allnil) {
 			if (n > 0 && ba[i-1].vals == NULL) {
-				/* previous BAT was dense-tailed: we will
+				/* previous BAT was dense: we will
 				 * combine it with this one */
 				i--;
 				assert(off == 0);
@@ -483,6 +484,11 @@ BATprojectchain(BAT **bats)
 					    is_oid_nil(b->tseqbase)) {
 						tseq = oid_nil;
 						allnil = true;
+					} else if (b->ttype == TYPE_void) {
+						assert(b->tvheap != NULL);
+						canditer_init(&ba[i].ci, NULL, b);
+						/* make sure .vals != NULL */
+						ba[i].vals = ba[i].ci.oids;
 					} else
 						ba[i].vals = (const oid *) Tloc(b, off);
 				}
@@ -498,7 +504,11 @@ BATprojectchain(BAT **bats)
 					if (b->ttype == TYPE_void &&
 					    is_oid_nil(b->tseqbase))
 						allnil = true;
-					else
+					else if (b->ttype == TYPE_void) {
+						assert(b->tvheap != NULL);
+						/* make sure .vals != NULL */
+						ba[i].vals = (const oid *) b->tvheap->base;
+					} else
 						ba[i].vals = (const oid *) Tloc(b, 0);
 				}
 			}
@@ -587,19 +597,19 @@ BATprojectchain(BAT **bats)
 			offset = (lng) tseq - (lng) ba[n].hlo;
 			ba[n].cnt += ba[n].hlo; /* upper bound of last BAT */
 			for (p = 0; p < cnt; p++) {
-				o = ba[0].vals[p];
+				o = ba[0].ci.oids ? canditer_next(&ba[0].ci) : ba[0].vals[p];
 				for (i = 1; i < n; i++) {
+					if (is_oid_nil(o)) {
+						bn->tnil = true;
+						o = oid_nil;
+						break;
+					}
 					o -= ba[i].hlo;
 					if (o >= ba[i].cnt) {
-						if (o == oid_nil - ba[i].hlo) {
-							bn->tnil = true;
-							o = oid_nil;
-							break;
-						}
 						GDKerror("BATprojectchain: does not match always\n");
 						goto bunins_failed;
 					}
-					o = ba[i].vals[o];
+					o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o) : ba[i].vals[o];
 				}
 				if (is_oid_nil(o)) {
 					*v++ = *(oid *) nil;
@@ -614,19 +624,19 @@ BATprojectchain(BAT **bats)
 		} else {
 			/* last BAT is materialized */
 			for (p = 0; p < cnt; p++) {
-				o = ba[0].vals[p];
+				o = ba[0].ci.oids ? canditer_next(&ba[0].ci) : ba[0].vals[p];
 				for (i = 1; i <= n; i++) { /* note "<=" */
+					if (is_oid_nil(o)) {
+						bn->tnil = true;
+						o = oid_nil;
+						break;
+					}
 					o -= ba[i].hlo;
 					if (o >= ba[i].cnt) {
-						if (o == oid_nil - ba[i].hlo) {
-							bn->tnil = true;
-							o = oid_nil;
-							break;
-						}
 						GDKerror("BATprojectchain: does not match always\n");
 						goto bunins_failed;
 					}
-					o = ba[i].vals[o];
+					o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o) : ba[i].vals[o];
 				}
 				*v++ = (is_oid_nil(o)) & !stringtrick ? *(oid *) nil : o;
 			}
@@ -638,19 +648,19 @@ BATprojectchain(BAT **bats)
 		OTPE *restrict dst = (OTPE *) Tloc(bn, 0);
 
 		for (p = 0; p < cnt; p++) {
-			o = ba[0].vals[p];
+			o = ba[0].ci.oids ? canditer_next(&ba[0].ci) : ba[0].vals[p];
 			for (i = 1; i < n; i++) {
+				if (is_oid_nil(o)) {
+					bn->tnil = true;
+					o = oid_nil;
+					break;
+				}
 				o -= ba[i].hlo;
 				if (o >= ba[i].cnt) {
-					if (o == oid_nil - ba[i].hlo) {
-						bn->tnil = true;
-						o = oid_nil;
-						break;
-					}
 					GDKerror("BATprojectchain: does not match always\n");
 					goto bunins_failed;
 				}
-				o = ba[i].vals[o];
+				o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o) : ba[i].vals[o];
 			}
 			if (is_oid_nil(o)) {
 				*dst++ = * (OTPE *) nil;
@@ -666,26 +676,27 @@ BATprojectchain(BAT **bats)
 	} else if (ATOMvarsized(tpe)) {
 		/* generic code for var-sized atoms */
 		BATiter bi = bat_iterator(b);
-		const void *v = nil; /* make compiler happy with init */
+		const void *v;
 
 		assert(!stringtrick);
 		for (p = 0; p < cnt; p++) {
-			o = ba[0].vals[p];
+			o = ba[0].ci.oids ? canditer_next(&ba[0].ci) : ba[0].vals[p];
 			for (i = 1; i < n; i++) {
+				if (is_oid_nil(o)) {
+					bn->tnil = true;
+					o = oid_nil;
+					break;
+				}
 				o -= ba[i].hlo;
 				if (o >= ba[i].cnt) {
-					if (o == oid_nil - ba[i].hlo) {
-						bn->tnil = true;
-						v = nil;
-						o = oid_nil;
-						break;
-					}
 					GDKerror("BATprojectchain: does not match always\n");
 					goto bunins_failed;
 				}
-				o = ba[i].vals[o];
+				o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o) : ba[i].vals[o];
 			}
-			if (!is_oid_nil(o)) {
+			if (is_oid_nil(o)) {
+				v = nil;
+			} else {
 				o -= ba[n].hlo;
 				if (o >= ba[n].cnt) {
 					GDKerror("BATprojectchain: does not match always\n");
@@ -698,25 +709,26 @@ BATprojectchain(BAT **bats)
 	} else {
 		/* generic code for fixed-sized atoms */
 		BATiter bi = bat_iterator(b);
-		const void *v = nil; /* make compiler happy with init */
+		const void *v;
 
 		for (p = 0; p < cnt; p++) {
-			o = ba[0].vals[p];
+			o = ba[0].ci.oids ? canditer_next(&ba[0].ci) : ba[0].vals[p];
 			for (i = 1; i < n; i++) {
+				if (is_oid_nil(o)) {
+					bn->tnil = true;
+					o = oid_nil;
+					break;
+				}
 				o -= ba[i].hlo;
 				if (o >= ba[i].cnt) {
-					if (o == oid_nil - ba[i].hlo) {
-						bn->tnil = true;
-						v = nil;
-						o = oid_nil;
-						break;
-					}
 					GDKerror("BATprojectchain: does not match always\n");
 					goto bunins_failed;
 				}
-				o = ba[i].vals[o];
+				o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o) : ba[i].vals[o];
 			}
-			if (!is_oid_nil(o)) {
+			if (is_oid_nil(o)) {
+				v = nil;
+			} else {
 				o -= ba[n].hlo;
 				if (o >= ba[n].cnt) {
 					GDKerror("BATprojectchain: does not match always\n");
@@ -724,16 +736,7 @@ BATprojectchain(BAT **bats)
 				}
 				v = BUNtloc(bi, o + off);
 			}
-			if (BATcount(bn) >= BATcapacity(bn)) {
-				if (BATcount(bn) == BUN_MAX) {
-					GDKerror("BATprojectchain: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX);
-					goto bunins_failed;
-				}
-				if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED)
-					goto bunins_failed;
-			}
 			bn->theap.free += Tsize(bn);
-			bn->theap.dirty |= Tsize(bn) != 0;
 			ATOMputFIX(bn->ttype, Tloc(bn, bn->batCount), v);
 			bn->batCount++;
 		}
