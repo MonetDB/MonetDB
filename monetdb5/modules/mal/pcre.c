@@ -1978,8 +1978,6 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	return PCRElikeselect2(ret, bid, sid, pat, &esc, &f, anti);
 }
 
-#include "gdk_cand.h"
-
 #define APPEND(b, o)	(((oid *) b->theap.base)[b->batCount++] = (o))
 #define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##width))
 

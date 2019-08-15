@@ -327,40 +327,6 @@ binsearchcand(const oid *cand, BUN hi, oid o)
 	return hi;
 }
 
-bool
-BATcandcontains(BAT *s, oid o)
-{
-	BUN p;
-
-	if (s == NULL)
-		return true;
-
-	assert(ATOMtype(s->ttype) == TYPE_oid);
-	assert(s->tsorted);
-	assert(s->tkey);
-	assert(s->tnonil);
-
-	if (BATcount(s) == 0)
-		return false;
-	if (s->ttype == TYPE_void && s->tvheap) {
-		assert(s->tvheap->free % SIZEOF_OID == 0);
-		BUN nexc = (BUN) (s->tvheap->free / SIZEOF_OID);
-		if (o < s->tseqbase ||
-		    o >= s->tseqbase + BATcount(s) + nexc)
-			return false;
-		const oid *exc = (const oid *) s->tvheap->base;
-		if (nexc > 0) {
-			p = binsearchcand(exc, nexc - 1, o);
-			return p == nexc || exc[p] != o;
-		}
-	}
-	if (BATtdense(s))
-		return s->tseqbase <= o && o < s->tseqbase + BATcount(s);
-	const oid *oids = Tloc(s, 0);
-	p = binsearchcand(oids, BATcount(s) - 1, o);
-	return p != BATcount(s) && oids[p] == o;
-}
-
 /* initialize a candidate iterator, return number of iterations */
 BUN
 canditer_init(struct canditer *ci, BAT *b, BAT *s)

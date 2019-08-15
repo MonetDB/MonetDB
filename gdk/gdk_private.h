@@ -262,7 +262,7 @@ __hidden BAT *virtualize(BAT *bn)
 			b->hseqbase,			\
 			ATOMname(b->ttype),		\
 			!b->batTransient ? "P" : isVIEW(b) ? "V" : "T", \
-			BATtdense(b) ? "D" : "",	\
+			BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" :"", \
 			b->tsorted ? "S" : "",		\
 			b->trevsorted ? "R" : "",	\
 			b->tkey ? "K" : "",		\
@@ -282,7 +282,7 @@ __hidden BAT *virtualize(BAT *bn)
 			b ? ATOMname(b->ttype) : "",	\
 			b ? "]" : "",			\
 			b ? !b->batTransient ? "P" : isVIEW(b) ? "V" : "T" : "", \
-			b && BATtdense(b) ? "D" : "",	\
+			b && BATtdense(b) ? "D" : b && b->ttype == TYPE_void && b->tvheap ? "X" :"", \
 			b && b->tsorted ? "S" : "",	\
 			b && b->trevsorted ? "R" : "",	\
 			b && b->tkey ? "K" : "",	\
