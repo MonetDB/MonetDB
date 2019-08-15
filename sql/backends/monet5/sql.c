@@ -2240,7 +2240,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		diff = BATdiff(tids, d, NULL, NULL, false, BUN_NONE);
 		// assert(pci->argc == 6 || BATcount(diff) == (nr-dcnt));
 		if( !(pci->argc == 6 || BATcount(diff) == (nr-dcnt)) )
-			msg = createException(SQL, "sql.tid", SQLSTATE(00000) "Invalid sqltid state argc= %d diff=  %d, dcnt=%d", pci->argc, (int)nr, (int)dcnt);
+			msg = createException(SQL, "sql.tid", SQLSTATE(00000) "Invalid sqltid state argc=%d diff=" BUNFMT ", nr=%zd, dcnt=%zd", pci->argc, BATcount(diff), nr, dcnt);
 		BBPunfix(d->batCacheid);
 		BBPunfix(tids->batCacheid);
 		if (diff == NULL)
