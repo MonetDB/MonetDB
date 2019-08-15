@@ -268,6 +268,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 			mask = ~innermask;				\
 			innermask = ~tmp;				\
 		}							\
+		/* if there are nils, we may need to check bin 0 */	\
 		if (!b->tnonil)						\
 			innermask = IMPSunsetBit(B, innermask, 0);	\
 									\

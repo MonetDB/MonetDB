@@ -2524,6 +2524,12 @@ idx_dup(sql_trans *tr, int flags, sql_idx * i, sql_table *t)
 
 	/* Needs copy when committing (ie from tr to gtrans) and 
 	 * on savepoints from tr->parent to new tr */
+	if (flags) {
+		ni->base.allocated = i->base.allocated;
+		ni->data = i->data;
+		i->base.allocated = 0;
+		i->data = NULL;
+	} else
 	if ((isNew(i) && newFlagSet(flags) && tr->parent == gtrans) ||
 	    (i->base.allocated && tr->parent != gtrans))
 		if (isTable(ni->t)) 
@@ -2579,7 +2585,8 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i)
 
 	if (isDeclaredTable(i->t)) 
 	if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
-		store_funcs.create_idx(tr, ni);
+		if (store_funcs.create_idx(tr, ni) != LOG_OK)
+			return NULL;
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
 	ni->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
