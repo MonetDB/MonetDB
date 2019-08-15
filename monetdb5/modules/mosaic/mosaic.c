@@ -254,7 +254,6 @@ str
 MOScompressInternal(BAT* bsrc, const char* compressions)
 {
 	MOStask task;
-	BAT *o = NULL;		// the BAT to be augmented with a compressed heap
 	str msg = MAL_SUCCEED;
 	int cand;
 	int tpe, typewidth;
@@ -429,14 +428,11 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	bsrc->batDirtydesc = true;
 	task->hdr->ratio = (flt)task->bsrc->theap.free/ task->bsrc->tmosaic->free;
 finalize:
+	GDKfree(task);
 
 	t1 = GDKusec();
 	ALGODEBUG fprintf(stderr, "#BATmosaic: mosaic construction " LLFMT " usec\n", t1 - t0);
-	if (o != NULL) {
-			o->tmosaic = NULL;  /* views always keep null pointer and
-											need to obtain the latest mosaic
-											from the parent at query time */
-	}
+
 	return msg;
 }
 
