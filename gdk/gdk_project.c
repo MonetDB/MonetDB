@@ -126,6 +126,53 @@ project_void(BAT *bn, BAT *l, struct canditer *restrict ci, BAT *r)
 }
 
 static gdk_return
+project_cand(BAT *bn, BAT *l, struct canditer *restrict lci, BAT *r)
+{
+	BUN lo, hi;
+	oid *restrict bt;
+	oid rseq, rend;
+	struct canditer rci;
+
+	rseq = r->hseqbase;
+	rend = rseq + BATcount(r);
+	canditer_init(&rci, NULL, r);
+	bt = (oid *) Tloc(bn, 0);
+	bn->tsorted = l->tsorted;
+	bn->trevsorted = l->trevsorted;
+	bn->tkey = l->tkey;
+	bn->tnonil = true;
+	bn->tnil = false;
+	if (lci) {
+		for (lo = 0, hi = lci->ncand; lo < hi; lo++) {
+			oid o = canditer_next(lci);
+			if (o < rseq || o >= rend) {
+				GDKerror("BATproject: does not match always\n");
+				return GDK_FAIL;
+			}
+			bt[lo] = canditer_idx(&rci, o - rseq);
+		}
+	} else {
+		const oid *o = (const oid *) Tloc(l, 0);
+		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
+			if (o[lo] < rseq || o[lo] >= rend) {
+				if (is_oid_nil(o[lo])) {
+					bt[lo] = oid_nil;
+					bn->tnonil = false;
+					bn->tnil = true;
+				} else {
+					GDKerror("BATproject: does not match always\n");
+					return GDK_FAIL;
+				}
+			} else {
+				bt[lo] = canditer_idx(&rci, o[lo] - rseq);
+			}
+		}
+	}
+	BATsetcount(bn, lo);
+	return GDK_SUCCEED;
+}
+
+static gdk_return
 project_any(BAT *bn, BAT *l, struct canditer *restrict ci, BAT *r, bool nilcheck)
 {
 	BUN lo, hi;
@@ -317,8 +364,11 @@ BATproject(BAT *l, BAT *r)
 		break;
 #endif
 	case TYPE_oid:
-		if (r->ttype == TYPE_void) {
+		if (BATtdense(r)) {
 			res = project_void(bn, l, lci, r);
+		} else if (r->ttype == TYPE_void) {
+			assert(r->tvheap != NULL);
+			res = project_cand(bn, l, lci, r);
 		} else {
 #if SIZEOF_OID == SIZEOF_INT
 			res = project_int(bn, l, lci, r, nilcheck);
@@ -505,8 +555,9 @@ BATprojectchain(BAT **bats)
 						allnil = true;
 					else if (b->ttype == TYPE_void) {
 						assert(b->tvheap != NULL);
+						canditer_init(&ba[i].ci, NULL, b);
 						/* make sure .vals != NULL */
-						ba[i].vals = (const oid *) b->tvheap->base;
+						ba[i].vals = ba[i].ci.oids;
 					} else
 						ba[i].vals = (const oid *) Tloc(b, 0);
 				}

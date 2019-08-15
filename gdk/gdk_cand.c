@@ -925,37 +925,37 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 {
 	const char *nme;
 	Heap *dels;
-	char *fname = 0;
+	BUN lo, hi;
 
 	assert(BATtdense(dense_cands));
 	assert(dense_cands->ttype == TYPE_void);
 	assert(dense_cands->batRole == TRANSIENT);
-	assert(BATcount(dense_cands) >= BATcount(odels));
 
 	if (BATcount(odels) == 0)
 		return GDK_SUCCEED;
 
+	lo = SORTfndfirst(odels, &dense_cands->tseqbase);
+	hi = SORTfndfirst(odels, &(oid) {dense_cands->tseqbase + BATcount(dense_cands)});
+	if (lo == hi)
+		return GDK_SUCCEED;
+
 	nme = BBP_physical(dense_cands->batCacheid);
 	if ((dels = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
-	    (dels->farmid = BBPselectfarm(dense_cands->batRole, dense_cands->ttype, varheap)) < 0 ||
-            (fname = GDKfilepath(NOFARM, NULL, nme, "theap")) == NULL){
-		GDKfree(fname);
+	    (dels->farmid = BBPselectfarm(dense_cands->batRole, dense_cands->ttype, varheap)) < 0){
 		GDKfree(dels);
 		return GDK_FAIL;
 	}
-	//dels->farmid = dense_cands->theap.farmid;
-	strncpy(dels->filename, fname, sizeof(dels->filename));
-	GDKfree(fname);
+	stpconcat(dels->filename, nme, ".theap", NULL);
 
-    	if (HEAPalloc(dels, BATcount(odels), sizeof(oid)) != GDK_SUCCEED) {
+    	if (HEAPalloc(dels, hi - lo, sizeof(oid)) != GDK_SUCCEED) {
 		GDKfree(dels);
         	return GDK_FAIL;
 	}
     	dels->parentid = dense_cands->batCacheid;
-	memcpy(dels->base, Tloc(odels,0), sizeof(oid)*BATcount(odels));
-	dels->free += sizeof(oid)*BATcount(odels);
+	memcpy(dels->base, Tloc(odels, lo), sizeof(oid) * (hi - lo));
+	dels->free += sizeof(oid) * (hi - lo);
 	dense_cands->batDirtydesc = true;
 	dense_cands->tvheap = dels;
-	BATsetcount(dense_cands, dense_cands->batCount - odels->batCount);
+	BATsetcount(dense_cands, dense_cands->batCount - (hi - lo));
     	return GDK_SUCCEED;
 }

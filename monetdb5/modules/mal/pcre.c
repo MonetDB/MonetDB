@@ -538,8 +538,8 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 						  "#BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
 						  "scanselect %s\n", BATgetId(b), BATcount(b),	\
 						  s ? BATgetId(s) : "NULL", anti, #TEST);		\
-		while (p < q) {													\
-			o = *candlist++;											\
+		for (p = 0; p < ci.ncand; p++) {								\
+			o = canditer_next(&ci);										\
 			r = (BUN) (o - off);										\
 			v = BUNtvar(bi, r);											\
 			if (TEST)													\
@@ -624,18 +624,11 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, boo
 	off = b->hseqbase;
 
 	if (s && !BATtdense(s)) {
-		const oid *candlist;
+		struct canditer ci;
 		BUN r;
 
-		assert(s->ttype == TYPE_oid || s->ttype == TYPE_void);
-		assert(s->tsorted);
-		assert(s->tkey);
-		/* setup candscanloop loop vars to only iterate over
-		 * part of s that has values that are in range of b */
-		o = b->hseqbase + BATcount(b);
-		q = SORTfndfirst(s, &o);
-		p = SORTfndfirst(s, &b->hseqbase);
-		candlist = (const oid *) Tloc(s, p);
+		canditer_init(&ci, b, s);
+
 #ifdef HAVE_LIBPCRE
 #define BODY     (pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 9) >= 0)
 #else
@@ -715,17 +708,11 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 			throw(MAL, "pcre.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	if (s && !BATtdense(s)) {
-		const oid *candlist;
+		struct canditer ci;
 		BUN r;
-		assert(s->ttype == TYPE_oid || s->ttype == TYPE_void);
-		assert(s->tsorted);
-		assert(s->tkey);
-		/* setup candscanloop loop vars to only iterate over
-		 * part of s that has values that are in range of b */
-		o = b->hseqbase + BATcount(b);
-		q = SORTfndfirst(s, &o);
-		p = SORTfndfirst(s, &b->hseqbase);
-		candlist = (const oid *) Tloc(s, p);
+
+		canditer_init(&ci, b, s);
+
 		if (use_strcmp) {
 			if (caseignore) {
 				uint32_t *wpat;
