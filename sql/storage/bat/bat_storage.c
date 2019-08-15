@@ -951,7 +951,7 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 			return LOG_ERR;
 		bat_destroy(b);
 		b = temp_descriptor(bat->dbid);
-		if(!b)
+		if (b == NULL)
 			return LOG_ERR;
 	}
 	assert(b->theap.storage != STORE_PRIV);
@@ -2089,7 +2089,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes, int id, int tpe)
 	}
 	bat_destroy(ins);
 
-	if ((cbat->ucnt && cbat->uibid) || cbat->cleared) {
+	if (cbat->ucnt) {
 		BAT *ui = temp_descriptor(cbat->uibid);
 		BAT *uv = temp_descriptor(cbat->uvbid);
 		if(ui == NULL || uv == NULL) {
@@ -2134,6 +2134,7 @@ gtr_update_dbat(sql_trans *tr, sql_dbat *d, int *changes, char tpe, oid id)
 
 	assert(ATOMIC_GET(&store_nr_active)==0);
 	if (d->dbid == dbid) {
+		assert(!d->cleared);
 		if (d->next) { 
 			ok = destroy_dbat(tr, d->next);
 			d->next = NULL;
