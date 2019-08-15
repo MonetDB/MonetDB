@@ -8,6 +8,7 @@ def main():
     c = process.client('sql',
                        args = [os.path.join(os.getenv('TSTSRCBASE'),
                                             os.getenv('TSTDIR'),
+                                            'Tests',
                                             'zones2.sql')],
                        stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
     out, err = c.communicate()

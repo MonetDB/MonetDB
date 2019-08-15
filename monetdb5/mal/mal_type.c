@@ -98,12 +98,10 @@ getTypeIdentifier(malType tpe){
 #define qt(x) (nme[1]==x[1] && nme[2]==x[2] )
 
 int
-getAtomIndex(const char *nme, int len, int deftype)
+getAtomIndex(const char *nme, size_t len, int deftype)
 {
 	int i;
 
-	if (len < 0)
-		len = (int) strlen(nme);
 	if (len >= IDLENGTH) {
 		/* name too long: cannot match any atom name */
 		return deftype;

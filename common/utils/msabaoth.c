@@ -45,7 +45,7 @@ char *_sabaoth_internal_dbfarm = NULL;
 /** the database which is "active" */
 char *_sabaoth_internal_dbname = NULL;
 /** identifier of the current process */
-char *_sabaoth_internal_uuid = NULL;
+static char *_sabaoth_internal_uuid = NULL;
 
 /**
  * Retrieves the dbfarm path plus an optional extra component added
@@ -117,6 +117,23 @@ msab_isuuid(const char *restrict s)
 	}
 	/* correct number of hyphens */
 	return hyphens == 4;
+}
+
+void
+msab_exit(void)
+{
+	if (_sabaoth_internal_dbfarm != NULL) {
+		free(_sabaoth_internal_dbfarm);
+		_sabaoth_internal_dbfarm = NULL;
+	}
+	if (_sabaoth_internal_dbname != NULL) {
+		free(_sabaoth_internal_dbname);
+		_sabaoth_internal_dbname = NULL;
+	}
+	if (_sabaoth_internal_uuid != NULL) {
+		free(_sabaoth_internal_uuid);
+		_sabaoth_internal_uuid = NULL;
+	}
 }
 
 /**
@@ -240,6 +257,15 @@ msab_getDBname(char **ret)
 		return(strdup("sabaoth was not initialized as active database"));
 	*ret = strdup(_sabaoth_internal_dbname);
 	return(NULL);
+}
+
+char *
+msab_getUUID(char **ret)
+{
+	if (_sabaoth_internal_uuid == NULL)
+		return(strdup("sabaoth not initialized"));
+	*ret = strdup(_sabaoth_internal_uuid);
+	return NULL;
 }
 
 #define SCENARIOFILE ".scen"
@@ -769,7 +795,7 @@ msab_getStatus(sabdb** ret, char *dbname)
 /**
  * Frees up the sabdb structure returned by getStatus.
  */
-char *
+void
 msab_freeStatus(sabdb** ret)
 {
 	sabdb *p, *q;
@@ -803,8 +829,6 @@ msab_freeStatus(sabdb** ret)
 		free(p);
 		p = q;
 	}
-
-	return(NULL);
 }
 
 /**

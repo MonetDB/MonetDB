@@ -51,6 +51,7 @@ typedef union {
 } uuid;
 
 mal_export str UUIDprelude(void *ret);
+mal_export str UUIDepilogue(void *ret);
 mal_export int UUIDcompare(const uuid *l, const uuid *r);
 mal_export ssize_t UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external);
 mal_export BUN UUIDhash(const void *u);
@@ -67,26 +68,27 @@ mal_export str UUIDisaUUID(bit *retval, str *u);
 mal_export str UUIDequal(bit *retval, uuid **l, uuid **r);
 
 static uuid uuid_nil;			/* automatically initialized as zeros */
-static uuid *uuid_session;		/* automatically set during system restart */
+static uuid *uuid_session = NULL;	/* automatically set during system restart */
 
 str
 UUIDprelude(void *ret)
 {
-	size_t len = 0;
-	str msg;
-
+	if (uuid_session)
+		return MAL_SUCCEED;
 	(void) ret;
 	assert(UUID_SIZE == 16);
 	(void) malAtomSize(sizeof(uuid), "uuid");
-	msg = UUIDgenerateUuid(&uuid_session);
-	if (msg)
-		return msg;
-	if (UUIDtoString(&mal_session_uuid, &len, uuid_session, false) < 0) {
-		GDKfree(mal_session_uuid);
-		mal_session_uuid = NULL;
-		throw(MAL, "uuid.prelude", GDK_EXCEPTION);
+	return MAL_SUCCEED;
+}
+
+str
+UUIDepilogue(void *ret)
+{
+	(void) ret;
+	if (uuid_session) {
+		GDKfree(uuid_session);
+		uuid_session = NULL;
 	}
-	//mnstr_printf(GDKerr,"Session uid:%s", uuid_session_name);
 	return MAL_SUCCEED;
 }
 
@@ -146,10 +148,10 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external)
 		return 1;
 	}
 	for (i = 0, j = 0; i < UUID_SIZE; i++) {
+		/* on select locations we allow a '-' in the source string */
 		if (j == 8 || j == 12 || j == 16 || j == 20) {
-			if (*s != '-')
-				goto bailout;
-			s++;
+			if (*s == '-')
+				s++;
 		}
 		if (isdigit((unsigned char) *s))
 			(*retval)->u[i] = *s - '0';

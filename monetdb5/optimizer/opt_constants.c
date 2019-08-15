@@ -17,6 +17,10 @@
 /*
  * We have to keep an alias table to reorganize the program
  * after the variable stack has changed.
+ * The plan may contain many constants and to check them all would be quadratic 
+ * in the size of the constant list.
+ * The heuristic is to look back into the list only partially.
+ * A hash structure could help out with further reduction.
  */
 #include "monetdb_config.h"
 #include "mal_instruction.h"
@@ -25,7 +29,7 @@
 str
 OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,k=1, n=0, fnd=0, actions=0;
+	int i, k = 1, n  = 0, fnd = 0, actions  = 0, limit = 0;
 	int *alias, *index;
 	VarPtr x,y, *cst;
 	char buf[256];
@@ -50,12 +54,13 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for (i=0; i< mb->vtop; i++)
 		alias[ i]= i;
-	for (i=0; i< mb->vtop && n < 100; i++)
+	for (i=0; i< mb->vtop; i++)
 		if ( isVarConstant(mb,i)  && isVarFixed(mb,i)  && getVarType(mb,i) != TYPE_ptr){
 			x= getVar(mb,i); 
 			fnd = 0;
+			limit = n - 128; // don't look to far back
 			if ( x->type && x->value.vtype)
-			for( k= n-1; k>=0; k--){
+			for( k = n-1; k >= 0 && k > limit; k--){
 				y= cst[k];
 				if ( x->type == y->type &&
 					 x->rowcnt == y->rowcnt &&

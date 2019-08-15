@@ -283,8 +283,8 @@ stdout of test 'crash-with-huge-query.Bug-2647` in directory 'sql/test/BugTracke
 #Cheapest_Price(product_id, price) AS
 #  (SELECT product_id, MIN(price)
 #     FROM Variants v
-#    WHERE v.product_id IN (SELECT product_id 
-% sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sav # table_name
+#    WHERE v.product_id IN (SELECT product_id FROM yv)
+% sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.sugg,	sys.L135 # table_name
 % sugg_id,	sugg_product_id,	sugg_sku,	sugg_price,	sugg_weight,	sugg_height,	sugg_width,	sugg_depth,	sugg_deleted_at,	id,	product_id,	sku,	price,	weight,	height,	width,	depth,	deleted_at,	line_item_id,	order_id,	amount # name
 % int,	int,	varchar,	decimal,	decimal,	decimal,	decimal,	decimal,	timestamp,	int,	int,	varchar,	decimal,	decimal,	decimal,	decimal,	decimal,	timestamp,	int,	int,	decimal # type
 % 1,	1,	0,	10,	10,	10,	10,	10,	26,	1,	1,	0,	10,	10,	10,	10,	10,	26,	1,	1,	20 # length

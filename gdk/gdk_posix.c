@@ -347,7 +347,6 @@ MT_getrss(void)
 	return 0;
 }
 
-
 void *
 MT_mmap(const char *path, int mode, size_t len)
 {
@@ -629,12 +628,13 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #endif
 #endif
 						) {
-						int err = errno;
+						int err = errno, other;
 						/* extending failed:
 						 * free any disk space
 						 * allocated in the
 						 * process */
-						(void) ftruncate(fd, (off_t) old_size);
+						other = ftruncate(fd, (off_t) old_size);
+						(void) other; /* silence compiler warning for ignoring result of ftruncate */
 						errno = err; /* restore for error message */
 						GDKsyserror("MT_mremap: growing file failed\n");
 						close(fd);
@@ -744,11 +744,9 @@ MT_init_posix(void)
 size_t
 MT_getrss(void)
 {
-#ifdef _WIN64
 	PROCESS_MEMORY_COUNTERS ctr;
 	if (GetProcessMemoryInfo(GetCurrentProcess(), &ctr, sizeof(ctr)))
 		return ctr.WorkingSetSize;
-#endif
 	return 0;
 }
 
@@ -901,7 +899,6 @@ MT_path_absolute(const char *pathname)
 		 (pathname[2] == '/' || pathname[2] == '\\')) ||
 		(pathname[0] == '\\' && pathname[1] == '\\'));
 }
-
 
 #ifndef HAVE_GETTIMEOFDAY
 static int nodays[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
@@ -1094,11 +1091,12 @@ win_mkdir(const char *pathname, const int mode)
 }
 #endif
 
-#ifndef NATIVE_WIN32
-
 void
 MT_sleep_ms(unsigned int ms)
 {
+#ifdef NATIVE_WIN32
+	Sleep(ms);
+#else
 #ifdef HAVE_NANOSLEEP
 	(void) nanosleep(&(struct timespec) {.tv_sec = ms / 1000,
 				.tv_nsec = ms == 1 ? 1000 : (long) (ms % 1000) * 1000000,},
@@ -1108,14 +1106,5 @@ MT_sleep_ms(unsigned int ms)
 		      &(struct timeval) {.tv_sec = ms / 1000,
 				      .tv_usec = ms == 1 ? 1 : (ms % 1000) * 1000,});
 #endif
-}
-
-#else /* WIN32 */
-
-void
-MT_sleep_ms(unsigned int ms)
-{
-	Sleep(ms);
-}
-
 #endif
+}

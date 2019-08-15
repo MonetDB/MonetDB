@@ -388,9 +388,12 @@ value_list(backend *be, list *vals, stmt *left, stmt *sel)
 {
 	node *n;
 	stmt *s;
+	sql_subtype *type = exp_subtype(vals->h->data);
 
+	if (!type)
+		return sql_error(be->mvc, 02, SQLSTATE(42000) "Could not infer the type of a value list column");
 	/* create bat append values */
-	s = stmt_temp(be, exp_subtype(vals->h->data));
+	s = stmt_temp(be, type);
 	for( n = vals->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel);
@@ -400,7 +403,6 @@ value_list(backend *be, list *vals, stmt *left, stmt *sel)
 
 		if (list_length(vals) == 1)
 			return i;
-		
 		s = stmt_append(be, s, i);
 	}
 	return s;
@@ -464,12 +466,12 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			stmt *r = exp_bin(be, e->l, left, right, grp, ext, cnt, sel);
 			if(!r)
 				return NULL;
-			return stmt_assign(be, e->name, r, GET_PSM_LEVEL(e->flag));
+			return stmt_assign(be, exp_name(e), r, GET_PSM_LEVEL(e->flag));
 		} else if (e->flag & PSM_VAR) {
 			if (e->f)
-				return stmt_vars(be, e->name, e->f, 1, GET_PSM_LEVEL(e->flag));
+				return stmt_vars(be, exp_name(e), e->f, 1, GET_PSM_LEVEL(e->flag));
 			else
-				return stmt_var(be, e->name, &e->tpe, 1, GET_PSM_LEVEL(e->flag));
+				return stmt_var(be, exp_name(e), &e->tpe, 1, GET_PSM_LEVEL(e->flag));
 		} else if (e->flag & PSM_RETURN) {
 			sql_exp *l = e->l;
 			stmt *r = exp_bin(be, l, left, right, grp, ext, cnt, sel);
@@ -575,14 +577,14 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		if (!l) 
 			return NULL;
-		s = stmt_convert(be, l, from, to);
+		s = stmt_convert(be, l, from, to, sel);
 	} 	break;
 	case e_func: {
 		node *en;
 		list *l = sa_list(sql->sa), *exps = e->l;
 		sql_subfunc *f = e->f;
 		stmt *rows = NULL, *cond_execution = NULL;
-		char name[16], *nme;
+		char name[16], *nme = NULL;
 
 		if (f->func->side_effect && left) {
 			if (!exps || list_empty(exps))
@@ -1171,7 +1173,7 @@ check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe)
                    (c == 3 && tpe != type_cast)) { 
 			s = NULL;
 		} else {
-			s = stmt_convert(be, s, st, ct);
+			s = stmt_convert(be, s, st, ct, NULL);
 		}
 	} 
 	if (!s) {
@@ -1225,7 +1227,7 @@ rel_parse_value(backend *be, char *query, char emode)
 	stmt *s = NULL;
 	buffer *b;
 	char *n;
-	int len = _strlen(query);
+	size_t len = _strlen(query);
 	exp_kind ek = {type_value, card_value, FALSE};
 	stream *sr;
 	bstream *bs;
@@ -1303,8 +1305,8 @@ rel_parse_value(backend *be, char *query, char emode)
 static stmt *
 stmt_rename(backend *be, sql_rel *rel, sql_exp *exp, stmt *s )
 {
-	const char *name = exp->name;
-	const char *rname = exp->rname;
+	const char *name = exp_name(exp);
+	const char *rname = exp_relname(exp);
 	stmt *o = s;
 
 	(void)rel;
@@ -1377,7 +1379,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 	assert(rel->exps);
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
-		const char *rname = exp->rname?exp->rname:exp->l;
+		const char *rname = exp_relname(exp)?exp_relname(exp):exp->l;
 		const char *oname = exp->r;
 		stmt *s = NULL;
 
@@ -1418,7 +1420,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			s = stmt_col(be, c, dels);
 		}
 		s->tname = rname;
-		s->cname = exp->name;
+		s->cname = exp_name(exp);
 		list_append(l, s);
 	}
 	return stmt_list(be, l);
@@ -1634,10 +1636,10 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					for(i=0, en = rel->exps->h, n = f->res->h; en; en = en->next, n = n->next, i++ ) {
 						sql_exp *exp = en->data;
 						sql_subtype *st = n->data;
-						const char *rnme = exp->rname?exp->rname:exp->l;
+						const char *rnme = exp_relname(exp)?exp_relname(exp):exp->l;
 						stmt *s = stmt_rs_column(be, psub, i, st); 
 				
-						s = stmt_alias(be, s, rnme, exp->name);
+						s = stmt_alias(be, s, rnme, exp_name(exp));
 						list_append(l, s);
 					}
 				} else {
@@ -1700,7 +1702,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 	l = sa_list(sql->sa);
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
-		const char *rnme = exp->rname?exp->rname:exp->l;
+		const char *rnme = exp_relname(exp)?exp_relname(exp):exp->l;
 		stmt *s;
 
 		/* no relation names */
@@ -1714,7 +1716,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		}
 		if (sub && sub->nrcols >= 1 && s->nrcols == 0)
 			s = stmt_const(be, bin_first_column(be, sub), s);
-		s = stmt_alias(be, s, rnme, exp->name);
+		s = stmt_alias(be, s, rnme, exp_name(exp));
 		list_append(l, s);
 	}
 	if (osub && osub->nrcols) 
@@ -2974,6 +2976,11 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		if (s->nrcols == 0){
 			if (!predicate && sub)
 				predicate = stmt_const(be, bin_first_column(be, sub), stmt_bool(be, 1));
+			if (e->type != e_cmp) {
+				sql_subtype *bt = sql_bind_localtype("bit");
+
+				s = stmt_convert(be, s, exp_subtype(e), bt, NULL);
+			}
 			sel = stmt_uselect(be, predicate, s, cmp_equal, sel, 0);
 		} else if (e->type != e_cmp) {
 			sel = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, NULL, 0);
@@ -3207,7 +3214,7 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 	stmt *sq = NULL;
 	buffer *b;
 	char *nquery;
-	int len = _strlen(query);
+	size_t len = _strlen(query);
 	stream *buf;
 	bstream * bst;
 
@@ -3560,19 +3567,20 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 
 		if(!stack_push_frame(sql, "OLD-NEW"))
 			return 0;
-		if (trigger->event == 0 && trigger->time == time) { 
-			stmt *s = NULL;
+		if (trigger->event == 0 && trigger->time == time) {
 			const char *n = trigger->new_name;
 
 			/* add name for the 'inserted' to the stack */
 			if (!n) n = "new";
 
-			if(!sql_stack_add_inserted(sql, n, t, updates))
+			if(!sql_stack_add_inserted(sql, n, t, updates)) {
+				stack_pop_frame(sql);
 				return 0;
-			s = sql_parse(be, sql->sa, trigger->statement, m_instantiate);
-			
-			if (!s) 
+			}
+			if (!sql_parse(be, sql->sa, trigger->statement, m_instantiate)) {
+				stack_pop_frame(sql);
 				return 0;
+			}
 		}
 		stack_pop_frame(sql);
 	}
@@ -4522,20 +4530,22 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 		if(!stack_push_frame(sql, "OLD-NEW"))
 			return 0;
 		if (trigger->event == 2 && trigger->time == time) {
-			stmt *s = NULL;
-	
 			/* add name for the 'inserted' to the stack */
 			const char *n = trigger->new_name;
 			const char *o = trigger->old_name;
-	
+
 			if (!n) n = "new"; 
 			if (!o) o = "old"; 
 
-			if(!sql_stack_add_updated(sql, o, n, t, tids, updates))
+			if(!sql_stack_add_updated(sql, o, n, t, tids, updates)) {
+				stack_pop_frame(sql);
 				return 0;
-			s = sql_parse(be, sql->sa, trigger->statement, m_instantiate);
-			if (!s) 
+			}
+
+			if (!sql_parse(be, sql->sa, trigger->statement, m_instantiate)) {
+				stack_pop_frame(sql);
 				return 0;
+			}
 		}
 		stack_pop_frame(sql);
 	}
@@ -4671,7 +4681,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	/* lookup the updates */
 	for (m = rel->exps->h; m; m = m->next) {
 		sql_exp *ce = m->data;
-		sql_column *c = find_sql_column(t, ce->name);
+		sql_column *c = find_sql_column(t, exp_name(ce));
 
 		if (c) 
 			updates[c->colnr] = bin_find_column(be, update, ce->l, ce->r);
@@ -4683,7 +4693,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	updcol = first_updated_col(updates, list_length(t->columns.set));
 	for (m = rel->exps->h; m; m = m->next) {
 		sql_exp *ce = m->data;
-		sql_idx *i = find_sql_idx(t, ce->name+1);
+		sql_idx *i = find_sql_idx(t, exp_name(ce)+1);
 
 		if (i) {
 			stmt *update_idx = bin_find_column(be, update, ce->l, ce->r), *is = NULL;
@@ -4714,7 +4724,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 /* apply the update */
 	for (m = rel->exps->h; m; m = m->next) {
 		sql_exp *ce = m->data;
-		sql_column *c = find_sql_column(t, ce->name);
+		sql_column *c = find_sql_column(t, exp_name(ce));
 
 		if (c) 
 			append(l, stmt_update_col(be,  c, tids, updates[c->colnr]));
@@ -4791,19 +4801,20 @@ sql_delete_triggers(backend *be, sql_table *t, stmt *tids, int time, int firing_
 		if(!stack_push_frame(sql, "OLD-NEW"))
 			return 0;
 		if (trigger->event == firing_type && trigger->time == time) {
-			stmt *s = NULL;
-
 			/* add name for the 'deleted' to the stack */
 			const char *o = trigger->old_name;
 
 			if (!o) o = "old";
 
-			if(!sql_stack_add_deleted(sql, o, t, tids, internal_type))
+			if(!sql_stack_add_deleted(sql, o, t, tids, internal_type)) {
+				stack_pop_frame(sql);
 				return 0;
-			s = sql_parse(be, sql->sa, trigger->statement, m_instantiate);
+			}
 
-			if (!s) 
+			if (!sql_parse(be, sql->sa, trigger->statement, m_instantiate)) {
+				stack_pop_frame(sql);
 				return 0;
+			}
 		}
 		stack_pop_frame(sql);
 	}
@@ -5282,7 +5293,7 @@ rel2bin_partition_limits(backend *be, sql_rel *rel, list *refs)
 		r = subrel_bin(be, rel->r, refs);
 
 	assert(rel->exps);
-	assert(rel->flag == DDL_ALTER_TABLE_ADD_RANGE_PARTITION || rel->flag == DDL_ALTER_TABLE_ADD_LIST_PARTITION);
+	assert(rel->flag == ddl_alter_table_add_range_partition || rel->flag == ddl_alter_table_add_list_partition);
 
 	if(rel->exps) {
 		for(n = rel->exps->h; n; n = n->next) {
@@ -5435,7 +5446,7 @@ rel2bin_catalog_table(backend *be, sql_rel *rel, list *refs)
 	append(l, sname);
 	assert(tname);
 	append(l, tname);
-	if (rel->flag != DDL_DROP_TABLE && rel->flag != DDL_DROP_VIEW && rel->flag != DDL_DROP_CONSTRAINT) {
+	if (rel->flag != ddl_drop_table && rel->flag != ddl_drop_view && rel->flag != ddl_drop_constraint) {
 		if (en) {
 			table = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
 			if (!table)
@@ -5485,37 +5496,84 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	stmt *s = NULL;
 
-	if (rel->flag == DDL_OUTPUT) {
-		s = rel2bin_output(be, rel, refs);
-		sql->type = Q_TABLE;
-	} else if (rel->flag <= DDL_LIST) {
-		s = rel2bin_list(be, rel, refs);
-	} else if (rel->flag == DDL_PSM) {
-		s = rel2bin_psm(be, rel);
-	} else if (rel->flag == DDL_EXCEPTION) {
-		s = rel2bin_exception(be, rel, refs);
-		sql->type = Q_UPDATE;
-	} else if (rel->flag <= DDL_ALTER_SEQ) {
-		s = rel2bin_seq(be, rel, refs);
-		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_DROP_SEQ) {
-		s = rel2bin_catalog2(be, rel, refs);
-		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_ALTER_TABLE_ADD_LIST_PARTITION) {
-		s = rel2bin_partition_limits(be, rel, refs);
-		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_TRANS) {
-		s = rel2bin_trans(be, rel, refs);
-		sql->type = Q_TRANS;
-	} else if (rel->flag <= DDL_DROP_SCHEMA) {
-		s = rel2bin_catalog(be, rel, refs);
-		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_ALTER_TABLE) {
-		s = rel2bin_catalog_table(be, rel, refs);
-		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_RENAME_COLUMN) {
-		s = rel2bin_catalog2(be, rel, refs);
-		sql->type = Q_SCHEMA;
+	switch (rel->flag) {
+		case ddl_output:
+			s = rel2bin_output(be, rel, refs);
+			sql->type = Q_TABLE;
+			break;
+		case ddl_list:
+			s = rel2bin_list(be, rel, refs);
+			break;
+		case ddl_psm:
+			s = rel2bin_psm(be, rel);
+			break;
+		case ddl_exception:
+			s = rel2bin_exception(be, rel, refs);
+			sql->type = Q_UPDATE;
+			break;
+		case ddl_create_seq:
+		case ddl_alter_seq:
+			s = rel2bin_seq(be, rel, refs);
+			sql->type = Q_SCHEMA;
+			break;
+		case ddl_alter_table_add_range_partition:
+		case ddl_alter_table_add_list_partition:
+			s = rel2bin_partition_limits(be, rel, refs);
+			sql->type = Q_SCHEMA;
+			break;
+		case ddl_release:
+		case ddl_commit:
+		case ddl_rollback:
+		case ddl_trans:
+			s = rel2bin_trans(be, rel, refs);
+			sql->type = Q_TRANS;
+			break;
+		case ddl_create_schema:
+		case ddl_drop_schema:
+			s = rel2bin_catalog(be, rel, refs);
+			sql->type = Q_SCHEMA;
+			break;
+		case ddl_create_table:
+		case ddl_drop_table:
+		case ddl_create_view:
+		case ddl_drop_view:
+		case ddl_drop_constraint:
+		case ddl_alter_table:
+			s = rel2bin_catalog_table(be, rel, refs);
+			sql->type = Q_SCHEMA;
+			break;
+		case ddl_drop_seq:
+		case ddl_create_type:
+		case ddl_drop_type:
+		case ddl_drop_index:
+		case ddl_create_function:
+		case ddl_drop_function:
+		case ddl_create_trigger:
+		case ddl_drop_trigger:
+		case ddl_grant_roles:
+		case ddl_revoke_roles:
+		case ddl_grant:
+		case ddl_revoke:
+		case ddl_grant_func:
+		case ddl_revoke_func:
+		case ddl_create_user:
+		case ddl_drop_user:
+		case ddl_alter_user:
+		case ddl_rename_user:
+		case ddl_create_role:
+		case ddl_drop_role:
+		case ddl_alter_table_add_table:
+		case ddl_alter_table_del_table:
+		case ddl_alter_table_set_access:
+		case ddl_comment_on:
+		case ddl_rename_schema:
+		case ddl_rename_table:
+		case ddl_rename_column:
+			s = rel2bin_catalog2(be, rel, refs);
+			sql->type = Q_SCHEMA;
+			break;
+		default:
+			assert(0);
 	}
 	return s;
 }
@@ -5858,17 +5916,17 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 			return -1;
 		break;
 	case op_ddl:
-		if (r->flag == DDL_OUTPUT) {
+		if (r->flag == ddl_output) {
 			if (r->l)
 				return rel_deps(sql, r->l, refs, l);
-		} else if (r->flag <= DDL_LIST || r->flag == DDL_EXCEPTION) {
+		} else if (r->flag == ddl_list || r->flag == ddl_exception) {
 			if (r->l)
 				return rel_deps(sql, r->l, refs, l);
 			if (r->r)
 				return rel_deps(sql, r->r, refs, l);
-		} else if (r->flag == DDL_PSM) {
+		} else if (r->flag == ddl_psm) {
 			break;
-		} else if (r->flag <= DDL_ALTER_SEQ) {
+		} else if (r->flag == ddl_create_seq || r->flag == ddl_alter_seq) {
 			if (r->l)
 				return rel_deps(sql, r->l, refs, l);
 		}

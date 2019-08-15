@@ -87,21 +87,63 @@ static void exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *col
 static void
 rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 {
-	if(!rel)
+	if (THRhighwater()) {
+		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return;
+	}
+
+	if (!rel)
 		return;
 
-	if(rel->exps)
-		for(node *n = rel->exps->h ; n ; n = n->next)
+	if (rel->exps)
+		for (node *n = rel->exps->h ; n ; n = n->next)
 			exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
-	if(rel->l)
-		rel_find_table_columns(sql, rel->l, t, cols);
-	if(rel->r)
-		rel_find_table_columns(sql, rel->r, t, cols);
+
+	switch (rel->op) {
+		case op_table:
+		case op_basetable:
+		case op_ddl:
+			break;
+		case op_join:
+		case op_left:
+		case op_right:
+		case op_full:
+		case op_semi:
+		case op_anti:
+		case op_union:
+		case op_inter:
+		case op_except:
+			if (rel->l)
+				rel_find_table_columns(sql, rel->l, t, cols);
+			if (rel->r)
+				rel_find_table_columns(sql, rel->r, t, cols);
+			break;
+		case op_groupby:
+		case op_project:
+		case op_select:
+		case op_topn:
+		case op_sample:
+			if (rel->l)
+				rel_find_table_columns(sql, rel->l, t, cols);
+			break;
+		case op_insert:
+		case op_update:
+		case op_delete:
+		case op_truncate:
+			if (rel->r)
+				rel_find_table_columns(sql, rel->r, t, cols);
+			break;
+	}
 }
 
 static void
 exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 {
+	if (THRhighwater()) {
+		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return;
+	}
+
 	if (!e)
 		return;
 	switch(e->type) {
@@ -176,11 +218,8 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 }
 
 static str
-find_expression_type(sql_exp *e, sql_subtype *tpe, char *query)
+find_expression_type(sql_exp *e, sql_subtype *tpe)
 {
-	if (!e)
-		throw(SQL,"sql.partition", SQLSTATE(42000) "It was not possible to compile the expression: '%s'", query);
-
 	switch(e->type) {
 		case e_convert: {
 			assert(list_length(e->r) == 2);
@@ -193,14 +232,16 @@ find_expression_type(sql_exp *e, sql_subtype *tpe, char *query)
 			} else if (e->r) {
 				*tpe = e->tpe;
 			} else if (e->f) {
-				throw(SQL,"sql.partition", SQLSTATE(42000) "The expression should return 1 value only");
+				throw(SQL,"sql.partition", SQLSTATE(42000) "List of values not allowed in expressions");
+			} else {
+				throw(SQL,"sql.partition", SQLSTATE(42000) "Variables/parameters are not allowed in expressions");
 			}
 		} break;
 		case e_func: {
 			sql_subfunc *f = e->f;
 			sql_func *func = f->func;
-			if(list_length(func->res) != 1)
-				throw(SQL,"sql.partition", SQLSTATE(42000) "The expression should return 1 value only");
+			if (list_length(func->res) != 1)
+				throw(SQL,"sql.partition", SQLSTATE(42000) "An expression should return a single value");
 			*tpe = *(sql_subtype *)f->res->h->data;
 		} 	break;
 		case e_cmp: {
@@ -211,9 +252,9 @@ find_expression_type(sql_exp *e, sql_subtype *tpe, char *query)
 			*tpe = e->tpe;
 		} break;
 		case e_psm:
-			throw(SQL,"sql.partition", SQLSTATE(42000) "PSM calls not supported in expressions");
+			throw(SQL,"sql.partition", SQLSTATE(42000) "PSM calls are not allowed in expressions");
 		case e_aggr:
-			throw(SQL,"sql.partition", SQLSTATE(42000) "Aggregation functions not supported in expressions");
+			throw(SQL,"sql.partition", SQLSTATE(42000) "Aggregation functions are not allowed in expressions");
 	}
 	return NULL;
 }
@@ -225,10 +266,13 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 {
 	sql_exp *exp;
 	char *query, *msg = NULL;
-	int sql_ec;
+	sql_class sql_ec;
 	sql_rel *r;
 
 	assert(isPartitionedByExpressionTable(mt));
+
+	if (sql->emode == m_prepare)
+		throw(SQL,"sql.partition", SQLSTATE(42000) "Partition expressions not compilable with prepared statements");
 
 	r = rel_basetable(sql, mt, mt->base.name);
 	query = mt->part.pexp->exp;
@@ -246,7 +290,7 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		mt->part.pexp->cols = sa_list(rsa);
 	exp_find_table_columns(sql, exp, mt, mt->part.pexp->cols);
 
-	if((msg = find_expression_type(exp, &(mt->part.pexp->type), query)) != NULL)
+	if((msg = find_expression_type(exp, &(mt->part.pexp->type))) != NULL)
 		return msg;
 
 	sql_ec = mt->part.pexp->type.type->eclass;
@@ -257,7 +301,7 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 			throw(SQL, "sql.partition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		} else {
 			msg = createException(SQL, "sql.partition",
-								  SQLSTATE(42000) "Column type %s not yet supported for the expression return value", err);
+								  SQLSTATE(42000) "Column type %s not supported for the expression return value", err);
 			GDKfree(err);
 		}
 	}
@@ -359,7 +403,7 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 				if(ok)
 					ok = VALinit(&vmax, TYPE_str, next->part.range.maxvalue);
 				if(ok) {
-					if (strcmp((const char *)VALget(&vmin), str_nil) == 0 ||
+					if (strcmp((const char *)VALget(&vmin), str_nil) == 0 &&
 						strcmp((const char *)VALget(&vmax), str_nil) == 0) {
 						int tpe = found.type->localtype;
 						const void *nil_ptr = ATOMnilptr(tpe);

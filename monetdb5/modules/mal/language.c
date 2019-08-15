@@ -220,14 +220,12 @@ CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (s == 0) 
 		throw(MAL, "mal.evalFile", RUNTIME_FILE_NOT_FOUND "missing file name");
 
-	if (*s != '/') {
+	if (!MT_path_absolute(s)) {
 		char *buf = GDKmalloc(strlen(monet_cwd) + strlen(s) + 2);
 		if ( buf == NULL)
 			throw(MAL,"language.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
-		strcpy(buf, monet_cwd);
-		strcat(buf, "/");
-		strcat(buf, s);
+		stpcpy(stpcpy(stpcpy(buf, monet_cwd), DIR_SEP_STR), s);
 		msg = evalFile(buf, 0);
 		GDKfree(buf);
 	} else 

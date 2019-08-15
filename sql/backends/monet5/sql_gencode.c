@@ -52,6 +52,7 @@
 #include "rel_dump.h"
 #include "rel_remote.h"
 
+#include "msabaoth.h"		/* msab_getUUID */
 #include "muuid.h"
 
 int
@@ -189,7 +190,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			if (e->type == e_atom)
 				snprintf(buf,64,"A%d",e->flag);
 			else
-				snprintf(buf,64,"A%s",e->name);
+				snprintf(buf,64,"A%s",exp_name(e));
 			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
@@ -424,17 +425,21 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	}
 	pushInstruction(curBlk, p);
 
-	if (mal_session_uuid) {
+	char *mal_session_uuid, *err = NULL;
+	if (!GDKinmemory() && (err = msab_getUUID(&mal_session_uuid)) == NULL) {
 		str rsupervisor_session = GDKstrdup(mal_session_uuid);
 		if (rsupervisor_session == NULL) {
+			free(mal_session_uuid);
 			return -1;
 		}
 
 		str lsupervisor_session = GDKstrdup(mal_session_uuid);
 		if (lsupervisor_session == NULL) {
+			free(mal_session_uuid);
 			GDKfree(rsupervisor_session);
 			return -1;
 		}
+		free(mal_session_uuid);
 
 		str rworker_plan_uuid = generateUUID();
 		if (rworker_plan_uuid == NULL) {
@@ -486,7 +491,8 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		free(rworker_plan_uuid);   /* This was created with strdup */
 		GDKfree(lsupervisor_session);
 		GDKfree(rsupervisor_session);
-	}
+	} else if (err)
+		free(err);
 
 	/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
 	p = newInstruction(curBlk, remoteRef, execRef);
@@ -632,16 +638,16 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 		return -1;
 	be->mvc_var = getDestVar(q);
 	be->mb = mb;
-       	s = sql_relation2stmt(be, r);
+	s = sql_relation2stmt(be, r);
 	if (!s) {
 		if (querylog)
 			(void) pushInt(mb, querylog, mb->stop);
-		return 0;
+		return (be->mvc->errstr[0] == '\0') ? 0 : -1;
 	}
 
 	be->mvc_var = old_mv;
 	be->mb = old_mb;
-	if (top && c->clientid && !be->depth && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
+	if (top && !be->depth && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		q = newStmt(mb, sqlRef, exportOperationRef);
 		if (q == NULL)
 			return -1;
@@ -735,8 +741,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 			sql_type *tpe = atom_type(a)->type;
 			int type, varid = 0;
 
-			if(!tpe) {
-				sql_error(m, 003, SQLSTATE(42000) "Could not determine type for argument %d\n", argc+1);
+			if (!tpe) {
+				sql_error(m, 003, SQLSTATE(42000) "Could not determine type for argument number %d\n", argc+1);
 				goto cleanup;
 			}
 			type = tpe->localtype;
@@ -756,8 +762,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 			sql_type *tpe = a->type.type;
 			int type, varid = 0;
 
-			if(!tpe) {
-				sql_error(m, 003, SQLSTATE(42000) "Could not determine type for argument %d\n", argc+1);
+			if (!tpe) {
+				sql_error(m, 003, SQLSTATE(42000) "Could not determine type for argument number %d\n", argc+1);
 				goto cleanup;
 			}
 			type = tpe->localtype;
@@ -805,6 +811,10 @@ backend_call(backend *be, Client c, cq *cq)
 	q = newStmt(mb, userRef, cq->name);
 	if (!q) {
 		m->session->status = -3;
+		return;
+	}
+	if (m->emode == m_execute && be->q->paramlen != m->argc) {
+		sql_error(m, 003, SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", be->q->paramlen, m->argc);
 		return;
 	}
 	/* cached (factorized queries return bit??) */

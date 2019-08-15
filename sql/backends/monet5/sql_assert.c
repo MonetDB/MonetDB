@@ -26,6 +26,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_backend.h"
+#include "sql_assert.h"
 #include "sql_scenario.h"
 /*
  * Assertion errors detected during the execution of a code block
@@ -42,7 +43,6 @@ SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if (*flg) {
-		/* mdbDump(mb,stk,pci); */
 		if (strlen(*msg) > 6 &&
 		    (*msg)[5] == '!' &&
 		    (isdigit((unsigned char) (*msg)[0]) ||
@@ -71,7 +71,6 @@ SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if (*flg) {
-		/* mdbDump(mb,stk,pci); */
 		if (strlen(*msg) > 6 &&
 		    (*msg)[5] == '!' &&
 		    (isdigit((unsigned char) (*msg)[0]) ||
@@ -100,7 +99,6 @@ SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if (*flg) {
-		/* mdbDump(mb,stk,pci); */
 		if (strlen(*msg) > 6 &&
 		    (*msg)[5] == '!' &&
 		    (isdigit((unsigned char) (*msg)[0]) ||
@@ -129,7 +127,6 @@ SQLassertHge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if (*flg){
 		const char *sqlstate = SQLSTATE(M0M29) ;
 		(void) sqlstate;
-		/* mdbDump(mb,stk,pci);*/
 		if (strlen(*msg) > 6 && (*msg)[5] == '!' &&
 		    (isdigit((unsigned char) (*msg)[0]) ||
 		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&

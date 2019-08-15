@@ -32,7 +32,7 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	bstream *bs;
 	stream *buf;
 	char *n;
-	int len = _strlen(query);
+	size_t len = _strlen(query);
 	sql_schema *c = cur_schema(m);
 	sql_query *qc = NULL;
 
@@ -206,9 +206,11 @@ rel_semantic(sql_query *query, symbol *s)
 		for (d = s->data.lval->h; d; d = d->next) {
 			symbol *sym = d->data.sym;
 			sql_rel *nr = rel_semantic(query, sym);
-			
-			if (!nr)
+
+			if (!nr) {
+				stack_pop_frame(sql);
 				return NULL;
+			}
 			if (r)
 				r = rel_list(sql->sa, r, nr);
 			else

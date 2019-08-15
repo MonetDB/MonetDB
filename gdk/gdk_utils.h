@@ -89,7 +89,6 @@ gdk_export void GDKexit(int status);
 #endif
 gdk_export bool GDKexiting(void);
 
-gdk_export void GDKregister(MT_Id pid);
 gdk_export void GDKprepareExit(void);
 gdk_export void GDKreset(int status);
 gdk_export const char *GDKversion(void);

@@ -154,7 +154,7 @@ skipSpace(Client cntxt)
 }
 
 static inline void
-advance(Client cntxt, int length)
+advance(Client cntxt, size_t length)
 {
 	cntxt->yycur += length;
 	skipSpace(cntxt);
@@ -202,7 +202,7 @@ idLength(Client cntxt)
 {
 	str s,t;
 	int len = 0;
-	
+
 	skipSpace(cntxt);
 	s = CURRENT(cntxt);
 	t = s;
@@ -226,10 +226,10 @@ idLength(Client cntxt)
 }
 
 /* Simple type identifiers can not be marked with a type variable. */
-static int
+static size_t
 typeidLength(Client cntxt)
 {
-	int l;
+	size_t l;
 	char id[IDLENGTH], *t= id;
 	str s;
 	skipSpace(cntxt);
@@ -419,7 +419,7 @@ cstToken(Client cntxt, ValPtr cst)
 		i = stringLength(cntxt);
 		cst->val.sval = strCopy(cntxt, i);
 		if (cst->val.sval)
-			cst->len = (int) strlen(cst->val.sval);
+			cst->len = strlen(cst->val.sval);
 		else
 			cst->len = 0;
 		return i;
@@ -646,6 +646,8 @@ handleInts:
  * scope.
  * Additional information, such as a repetition factor,
  * encoding tables, or type dependency should be modeled as properties.
+ *
+ * It would make more sense for tpe parameter to be an int, but simpleTypeId returns a size_t
  */
 static int
 typeAlias(Client cntxt, int tpe)
@@ -673,7 +675,8 @@ typeAlias(Client cntxt, int tpe)
 static int
 simpleTypeId(Client cntxt)
 {
-	int l, tpe;
+	int tpe;
+	size_t l;
 
 	nextChar(cntxt);
 	l = typeidLength(cntxt);
@@ -695,8 +698,9 @@ simpleTypeId(Client cntxt)
 static int
 parseTypeId(Client cntxt, int defaultType)
 {
-	int i = TYPE_any, tt, kt = 0;
+	int i = TYPE_any, kt = 0;
 	char *s = CURRENT(cntxt);
+	int tt;
 
 	if (s[0] == ':' && s[1] == 'b' && s[2] == 'a' && s[3] == 't' && s[4] == '[') {
 		/* parse :bat[:oid,:type] */
@@ -1406,7 +1410,7 @@ static int
 parseEnd(Client cntxt)
 {
 	Symbol curPrg = 0;
-	int l;
+	size_t l;
 	InstrPtr sig;
 	str errors = MAL_SUCCEED;
 
@@ -1427,7 +1431,7 @@ parseEnd(Client cntxt)
 				l = operatorLength(cntxt);
 		}
 		/* parse fcn */
-		if ((l == (int) strlen(curPrg->name) &&
+		if ((l == strlen(curPrg->name) &&
 			strncmp(CURRENT(cntxt), curPrg->name, l) == 0) || l == 0)
 				advance(cntxt, l);
 		else 
@@ -1799,7 +1803,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				curInstr->token= REMsymbol;
 				curInstr->barrier= 0;
 				cst.vtype = TYPE_str;
-				cst.len = (int) strlen(start);
+				cst.len = strlen(start);
 				if((cst.val.sval = GDKstrdup(start)) == NULL) {
 					parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					freeInstruction(curInstr);

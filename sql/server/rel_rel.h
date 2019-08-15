@@ -39,7 +39,7 @@
 
 #define is_updateble(rel) \
 	(rel->op == op_basetable || \
-	(rel->op == op_ddl && (rel->flag == DDL_CREATE_TABLE || rel->flag == DDL_ALTER_TABLE)))
+	(rel->op == op_ddl && (rel->flag == ddl_create_table || rel->flag == ddl_alter_table)))
 
 extern const char *rel_name( sql_rel *r );
 extern sql_rel *rel_distinct(sql_rel *l);
@@ -57,7 +57,7 @@ extern sql_rel *rel_inplace_setop(sql_rel *rel, sql_rel *l, sql_rel *r, operator
 extern sql_rel *rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e);
 extern sql_rel *rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps );
 
-extern int rel_convert_types(mvc *sql, sql_exp **L, sql_exp **R, int scale_fixing, int tpe);
+extern int rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, int scale_fixing, int tpe);
 extern sql_rel *rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop);
 extern sql_rel *rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
 extern sql_rel *rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join);
@@ -85,6 +85,7 @@ extern sql_rel *rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps);
 extern sql_rel *rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind);
 
 
+extern list *_rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern, int basecol);
 extern list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern);
 
 extern sql_rel *rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e);

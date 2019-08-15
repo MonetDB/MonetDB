@@ -30,11 +30,27 @@ stdout of test 'nil_cast.Bug-3787` in directory 'sql/test/BugTracker-2015` itsel
 
 #START TRANSACTION;
 #create table foo (a smallint);
-#select count(y),sum(z) from (select '',false,a=200 from foo union all select '',null,a=200 from foo) as t(x,y,z) group by x;
-% .L7,	.L10 # table_name
-% L7,	L10 # name
-% bigint,	bigint # type
-% 1,	1 # length
+#insert into foo values (1), (200);
+[ 2     ]
+#select '',false,a=200 from foo union all select '',null,a=200 from foo;
+% .,    .,      . # table_name
+# .L21, .L21,   .L21 # table_name
+% L,    L,      L # name
+# L2,   L4,     L6 # name
+% char, boolean,        boolean # type
+% 0,    5,      5 # length
+[ "",   false,  false   ]
+[ "",   false,  true    ]
+[ "",   NULL,   false   ]
+[ "",   NULL,   true    ]
+#select count(y),cast(sum(z)as bigint) from (select '',false,a=200 from foo union all select '',null,a=200 from foo) as t(x,y,z) group by x;
+% .,    . # table_name
+# .L24, .L27 # table_name
+% L,    L # name
+# L24,  L27 # name
+% bigint,       bigint # type
+% 1,    1 # length
+[ 2,    2       ]
 #ROLLBACK;
 
 # 12:38:58 >  

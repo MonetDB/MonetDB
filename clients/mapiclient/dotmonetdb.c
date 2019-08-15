@@ -39,9 +39,9 @@ parse_dotmonetdb(char **user, char **passwd, char **dbname, char **language, int
 		/* empty environment variable: skip the file */
 		cfile = NULL;
 	} else if ((config = fopen(cfile, "r")) == NULL) {
-		cfile = NULL;
 		fprintf(stderr, "failed to open file '%s': %s\n",
 			cfile, strerror(errno));
+		cfile = NULL;
 	} else {
 		cfile = strdup(cfile);
 	}

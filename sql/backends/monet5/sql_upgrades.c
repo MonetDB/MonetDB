@@ -58,7 +58,7 @@ sql_fix_system_tables(Client c, mvc *sql)
 				"insert into sys.types values"
 				" (%d, '%s', '%s', %u, %u, %d, %d, %d);\n",
 				t->base.id, t->base.name, t->sqlname, t->digits,
-				t->scale, t->radix, t->eclass,
+				t->scale, t->radix, (int) t->eclass,
 				t->s ? t->s->base.id : s->base.id);
 	}
 
@@ -297,7 +297,9 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 		    (strcmp(t->base.name, "mbr") == 0 ||
 		     strcmp(t->base.name, "wkb") == 0 ||
 		     strcmp(t->base.name, "wkba") == 0))
-			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %u, %u, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : s->base.id);
+			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %u, %u, %d, %d, %d);\n",
+							t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, (int) t->eclass,
+							t->s ? t->s->base.id : s->base.id);
 	}
 
 	if (schema)
@@ -895,7 +897,6 @@ sql_update_mar2018(Client c, mvc *sql)
 			"SELECT 'current_timezone', current_timezone UNION ALL\n"
 			"SELECT 'current_user', current_user UNION ALL\n"
 			"SELECT 'debug', debug UNION ALL\n"
-			"SELECT 'history', history UNION ALL\n"
 			"SELECT 'last_id', last_id UNION ALL\n"
 			"SELECT 'optimizer', optimizer UNION ALL\n"
 			"SELECT 'pi', pi() UNION ALL\n"
@@ -1041,6 +1042,7 @@ sql_update_mar2018(Client c, mvc *sql)
 		if (schema)
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 		pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
 		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	}
@@ -1590,6 +1592,7 @@ sql_update_apr2019(Client c, mvc *sql)
 		if (schema)
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 		pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
 		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	}
@@ -1919,6 +1922,71 @@ sql_update_storagemodel(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_default(Client c, mvc *sql)
+{
+	size_t bufsize = 1000, pos = 0;
+	char *buf, *err;
+	res_table *output;
+	BAT *b;
+
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"select id from sys.args where func_id in (select id from sys.functions where schema_id = (select id from sys.schemas where name = 'sys') and name = 'second' and func = 'sql_seconds') and number = 0 and type_scale = 3;\n");
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	if (err) {
+		GDKfree(buf);
+		return err;
+	}
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) > 0) {
+			err = sql_fix_system_tables(c, sql);
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_table_destroy(output);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_deltas(Client c, mvc *sql)
+{
+	size_t bufsize = 1600, pos = 0;
+	char *schema = NULL, *err = NULL;
+	char *buf = GDKmalloc(bufsize);
+
+	if (buf == NULL)
+		throw(SQL, "sql_update_deltas", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	schema = stack_get_string(sql, "current_schema");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"set schema \"sys\";\n"
+			"create function sys.deltas (\"schema\" string)"
+			" returns table (\"id\" int, \"cleared\" boolean, \"immutable\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)"
+			" external name \"sql\".\"deltas\";\n"
+			"create function sys.deltas (\"schema\" string, \"table\" string)"
+			" returns table (\"id\" int, \"cleared\" boolean, \"immutable\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)"
+			" external name \"sql\".\"deltas\";\n"
+			"create function sys.deltas (\"schema\" string, \"table\" string, \"column\" string)"
+			" returns table (\"id\" int, \"cleared\" boolean, \"immutable\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)"
+			" external name \"sql\".\"deltas\";\n"
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name in ('deltas') and type = %d;\n", F_UNION);
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1928,7 +1996,7 @@ SQLupgrades(Client c, mvc *m)
 	sql_schema *s = mvc_bind_schema(m, "sys");
 	sql_table *t;
 	sql_column *col;
-	bool hugeint_upgraded = false;
+	bool systabfixed = false;
 
 #ifdef HAVE_HGE
 	if (have_hge) {
@@ -1938,7 +2006,7 @@ SQLupgrades(Client c, mvc *m)
 				fprintf(stderr, "!%s\n", err);
 				freeException(err);
 			}
-			hugeint_upgraded = true;
+			systabfixed = true;
 		}
 	}
 #endif
@@ -2106,7 +2174,7 @@ SQLupgrades(Client c, mvc *m)
 
 	if ((t = mvc_bind_table(m, s, "systemfunctions")) != NULL &&
 	    t->type == tt_table) {
-		if (!hugeint_upgraded &&
+		if (!systabfixed &&
 		    (err = sql_fix_system_tables(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
@@ -2124,6 +2192,19 @@ SQLupgrades(Client c, mvc *m)
 	 && (t = mvc_bind_table(m, s, "tablestorage")) == NULL
 	 && (t = mvc_bind_table(m, s, "schemastorage")) == NULL ) {
 		if ((err = sql_update_storagemodel(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	if ((err = sql_update_default(c, m)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		freeException(err);
+	}
+
+	sql_find_subtype(&tp, "string", 0, 0);
+	if (!sql_bind_func3(m->sa, s, "deltas", &tp, &tp, &tp, F_UNION)) {
+		if ((err = sql_update_deltas(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}

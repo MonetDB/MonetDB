@@ -38,8 +38,8 @@ stdout of test 'quantile_function_resolution.Bug-3773` in directory 'sql/test/Bu
 project (
 | group by (
 | | table(sys.x) [ "x"."y" ] COUNT 
-| ) [  ] [ sys.quantile no nil (decimal(18,3)["x"."y"] as "x"."y", double "0") as "L3"."L3" ]
-) [ "L3"."L3" ]
+| ) [  ] [ sys.quantile no nil (decimal(18,3)["x"."y"] as "x"."y", double "0") as "L2"."L2" ]
+) [ "L2"."L2" ]
 #plan select quantile(y, 0) from x;
 % .plan # table_name
 % rel # name
@@ -48,8 +48,8 @@ project (
 project (
 | group by (
 | | table(sys.x) [ "x"."y" ] COUNT 
-| ) [  ] [ sys.quantile no nil (decimal(18,3)["x"."y"] as "x"."y", double "0") as "L3"."L3" ]
-) [ "L3"."L3" ]
+| ) [  ] [ sys.quantile no nil (decimal(18,3)["x"."y"] as "x"."y", double "0") as "L2"."L2" ]
+) [ "L2"."L2" ]
 #rollback;
 
 # 10:18:57 >  

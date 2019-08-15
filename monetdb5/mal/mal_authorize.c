@@ -98,7 +98,7 @@ AUTHrequireAdmin(Client cntxt) {
 		return(MAL_SUCCEED);
 	id = cntxt->user;
 
-	if (id != 0) {
+	if (id != MAL_ADMIN) {
 		str user = NULL;
 		str tmp;
 
@@ -122,8 +122,8 @@ AUTHrequireAdminOrUser(Client cntxt, const char *username) {
 	str user = NULL;
 	str tmp = MAL_SUCCEED;
 
-	/* root?  then all is well */
-	if (id == 0)
+	/* MAL_ADMIN then all is well */
+	if (id == MAL_ADMIN)
 		return(MAL_SUCCEED);
 
 	rethrow("requireAdminOrUser", tmp, AUTHresolveUser(&user, id));
@@ -382,18 +382,17 @@ AUTHinitTables(const char *passwd) {
 		 * complete fresh and new auth tables system */
 		char *pw;
 		oid uid;
-		Client c = &mal_clients[0];
 
 		if (passwd == NULL)
 			passwd = "monetdb";	/* default password */
 		pw = mcrypt_BackendSum(passwd, strlen(passwd));
 		if(!pw)
 			throw(MAL, "initTables", SQLSTATE(42000) "Crypt backend hash not found");
-		msg = AUTHaddUser(&uid, c, "monetdb", pw);
+		msg = AUTHaddUser(&uid, NULL, "monetdb", pw);
 		free(pw);
 		if (msg)
 			return msg;
-		if (uid != 0)
+		if (uid != MAL_ADMIN)
 			throw(MAL, "initTables", INTERNAL_AUTHORIZATION " while they were just created!");
 		/* normally, we'd commit here, but it's done already in AUTHaddUser */
 	}
@@ -420,7 +419,8 @@ AUTHcheckCredentials(
 	BUN p;
 	BATiter passi;
 
-	rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(cntxt, username));
+	if (cntxt)
+		rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(cntxt, username));
 	assert(user);
 	assert(pass);
 
@@ -475,9 +475,10 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 	str tmp;
 	str hash = NULL;
 
-	rethrow("addUser", tmp, AUTHrequireAdmin(cntxt));
 	assert(user);
 	assert(pass);
+	if (BATcount(user))
+		rethrow("addUser", tmp, AUTHrequireAdmin(cntxt));
 
 	/* some pre-condition checks */
 	if (username == NULL || strNil(username))
@@ -504,7 +505,8 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 	p = AUTHfindUser(username);
 
 	/* make the stuff persistent */
-	AUTHcommit();
+	if (!GDKinmemory())
+		AUTHcommit();
 
 	*uid = p;
 	return(MAL_SUCCEED);
@@ -857,7 +859,7 @@ AUTHdecypherValue(str *ret, const char *value)
 	int escaped = 0;
 	/* we default to some garbage key, just to make password unreadable
 	 * (a space would only uppercase the password) */
-	int keylen = 0;
+	size_t keylen = 0;
 
 	if (vaultKey == NULL)
 		throw(MAL, "decypherValue", "The vault is still locked!");
@@ -865,7 +867,7 @@ AUTHdecypherValue(str *ret, const char *value)
 	if( r == NULL)
 		throw(MAL, "decypherValue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
-	keylen = (int) strlen(vaultKey);
+	keylen = strlen(vaultKey);
 
 	/* XOR all characters.  If we encounter a 'one' char after the XOR
 	 * operation, it is an escape, so replace it with the next char. */
@@ -899,7 +901,7 @@ AUTHcypherValue(str *ret, const char *value)
 	const char *s = value;
 	/* we default to some garbage key, just to make password unreadable
 	 * (a space would only uppercase the password) */
-	int keylen = 0;
+	size_t keylen = 0;
 
 	if (vaultKey == NULL)
 		throw(MAL, "cypherValue", "The vault is still locked!");
@@ -907,7 +909,7 @@ AUTHcypherValue(str *ret, const char *value)
 	if( r == NULL)
 		throw(MAL, "cypherValue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
-	keylen = (int) strlen(vaultKey);
+	keylen = strlen(vaultKey);
 
 	/* XOR all characters.  If we encounter a 'zero' char after the XOR
 	 * operation, escape it with an 'one' char. */

@@ -106,7 +106,7 @@ newComment(MalBlkPtr mb, const char *val)
 		freeInstruction(q);
 		return NULL;
 	}
-	cst.len= (int) strlen(cst.val.sval);
+	cst.len = strlen(cst.val.sval);
 	getArg(q,0) = defConstant(mb,TYPE_str,&cst);
 	clrVarConstant(mb,getArg(q,0));
 	setVarDisabled(mb,getArg(q,0));
@@ -457,7 +457,7 @@ getStrConstant(MalBlkPtr mb, str val)
 
 	cst.vtype = TYPE_str;
 	cst.val.sval = val; 
-	cst.len = (int) strlen(val);
+	cst.len = strlen(val);
 	_t= fndConstant(mb, &cst, mb->vtop);
 	if( _t < 0) {
 		if ((cst.val.sval= GDKstrdup(val)) == NULL) 
@@ -480,7 +480,7 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 		freeInstruction(q);
 		return NULL;
 	}
-	cst.len= (int) strlen(cst.val.sval);
+	cst.len = strlen(cst.val.sval);
 	_t = defConstant(mb,TYPE_str,&cst);
 	return pushArgument(mb, q, _t);
 }
@@ -564,7 +564,7 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 
 	if (q == NULL)
 		return NULL;
-	idx= getAtomIndex(tpe, -1, TYPE_any);
+	idx= getAtomIndex(tpe, strlen(tpe), TYPE_any);
 	if( idx < 0 || idx >= GDKatomcnt || idx >= MAXATOMS)
 		return NULL;
 	cst.vtype=TYPE_void;

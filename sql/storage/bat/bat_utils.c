@@ -23,6 +23,14 @@ bat_new(int tt, BUN size, role_t role)
 	return COLnew(0, tt, size, role);
 }
 
+void
+bat_clear(BAT *b)
+{
+	bat_set_access(b,BAT_WRITE);
+	BATclear(b,true);
+	bat_set_access(b,BAT_READ);
+}
+
 BAT *
 temp_descriptor(log_bid b)
 {

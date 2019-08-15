@@ -30,24 +30,28 @@ stdout of test 'crash_in_reduce_groupby.Bug-3818` in directory 'sql/test/BugTrac
 
 #CREATE TABLE t1a (cods int, elrik int, ether int, jaelen int, otter int, sora int);
 #CREATE TABLE t2a (tib0 int);
-#SELECT cods, elrik, ether, jaelen, sora, SUM(otter)
+#SELECT cods, elrik, ether, jaelen, sora, cast( SUM(otter) as bigint)
 #  FROM t1a
 #  GROUP BY cods, elrik, ether, jaelen, sora
 #  UNION ALL
-#  SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, SUM(tib0)
+#  SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, cast( SUM(tib0) as bigint)
 #  FROM t2a
 #  GROUP BY cods, elrik, ether, jaelen, sora;
-% .L11,	.L11,	.L11,	.L11,	.L11,	.L11 # table_name
-% cods,	elrik,	ether,	jaelen,	sora,	L7 # name
-% int,	int,	int,	int,	int,	bigint # type
-% 1,	1,	1,	1,	1,	1 # length
-#SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, SUM(tib0)
+% .,    .,      .,      .,      .,      . # table_name
+# .L32, .L32,   .L32,   .L32,   .L32,   .L32 # table_name
+% cods, elrik,  ether,  jaelen, sora,   L # name
+# cods, elrik,  ether,  jaelen, sora,   L10 # name
+% int,  int,    int,    int,    int,    bigint # type
+% 1,    1,      1,      1,      1,      1 # length
+#SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, cast( SUM(tib0) as bigint)
 # FROM t2a
 #GROUP BY cods, elrik, ether, jaelen, sora;
-% .L,	.L,	.L,	.L,	.L,	sys.L1 # table_name
-% cods,	elrik,	ether,	jaelen,	sora,	L14 # name
-% tinyint,	tinyint,	tinyint,	tinyint,	tinyint,	bigint # type
-% 1,	1,	1,	1,	1,	1 # length
+% .,    .,      .,      .,      .,      sys. # table_name
+# .L2,  .L4,    .L6,    .L10,   .L12,   sys.L15 # table_name
+% cods, elrik,  ether,  jaelen, sora,   L # name
+# cods, elrik,  ether,  jaelen, sora,   L15 # name
+% tinyint,      tinyint,        tinyint,        tinyint,        tinyint,        bigint # type
+% 1,    1,      1,      1,      1,      1 # length
 #drop table t2a;
 #drop table t1a;
 

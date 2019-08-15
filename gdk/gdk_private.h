@@ -30,6 +30,11 @@ enum heaptype {
 	mosaicheap
 };
 
+#ifdef GDKLIBRARY_OLDDATE
+__hidden int cvtdate(int n)
+	__attribute__((__visibility__("hidden")));
+#endif
+
 __hidden gdk_return ATOMheap(int id, Heap *hp, size_t cap)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
@@ -95,8 +100,6 @@ __hidden int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 __hidden void BBPunshare(bat b)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
-	__attribute__((__visibility__("hidden")));
-__hidden bool binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN binsearch_bte(const oid *restrict indir, oid offset, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
@@ -259,9 +262,10 @@ __hidden BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 
 /* some macros to help print info about BATs when using ALGODEBUG */
-#define ALGOBATFMT	"%s#" BUNFMT "[%s]%s%s%s%s%s%s%s%s%s"
+#define ALGOBATFMT	"%s#" BUNFMT "@" OIDFMT "[%s]%s%s%s%s%s%s%s%s%s"
 #define ALGOBATPAR(b)	BATgetId(b),			\
 			BATcount(b),			\
+			b->hseqbase,			\
 			ATOMname(b->ttype),		\
 			!b->batTransient ? "P" : isVIEW(b) ? "V" : "T", \
 			BATtdense(b) ? "D" : "",	\
@@ -273,11 +277,13 @@ __hidden BAT *virtualize(BAT *bn)
 			b->torderidx ? "O" : "",	\
 			b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
-#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s%s%s%s%s%s%s%s%s%s%s%s"
+#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)				\
 			b ? BATgetId(b) : "",		\
 			b ? "#" : "",			\
 			b ? BATcount(b) : 0,		\
+			b ? "@" : "",			\
+			b ? b->hseqbase : 0,		\
 			b ? "[" : "",			\
 			b ? ATOMname(b->ttype) : "",	\
 			b ? "]" : "",			\

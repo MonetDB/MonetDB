@@ -30,7 +30,7 @@ stderr of test 'mergepart28` in directory 'sql/test/merge-partitions` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-21060/.s.monetdb.33036
 QUERY = COPY 1347 RECORDS INTO ratings FROM E'/home/ferreira/repositories/monetdb-test-data/netflix_data/movies.csv' USING DELIMITERS ',',E'\n','"'; --error
-ERROR = !INSERT: the insert violates the partition range of values
+ERROR = !INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-28639/.s.monetdb.36178
 QUERY = COPY LOADER INTO ratings FROM tryaloader();

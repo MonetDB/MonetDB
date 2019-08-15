@@ -2483,6 +2483,24 @@ mapi_reconnect(Mapi mid)
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 #endif
+		/* compare our own address with that of our peer and
+		 * if they are the same, we were connected to our own
+		 * socket, so then we can't use this connection */
+		union {
+			struct sockaddr s;
+			struct sockaddr_in i;
+		} myaddr, praddr;
+		socklen_t myaddrlen, praddrlen;
+		myaddrlen = (socklen_t) sizeof(myaddr);
+		praddrlen = (socklen_t) sizeof(praddr);
+		if (getsockname(s, &myaddr.s, &myaddrlen) == 0 &&
+		    getpeername(s, &praddr.s, &praddrlen) == 0 &&
+		    myaddr.i.sin_addr.s_addr == praddr.i.sin_addr.s_addr &&
+		    myaddr.i.sin_port == praddr.i.sin_port) {
+			closesocket(s);
+			return mapi_setError(mid, "connected to self",
+					     "mapi_reconnect", MERROR);
+		}
 	}
 
 	mid->to = socket_wstream(s, "Mapi client write");
@@ -2989,6 +3007,7 @@ close_connection(Mapi mid)
 		close_stream(mid->from);
 		mid->from = 0;
 	}
+	mid->redircnt = 0;
 	mapi_log_record(mid, "Connection closed\n");
 }
 
@@ -3649,7 +3668,7 @@ slice_row(const char *reply, char *null, char ***anchorsp, size_t **lensp, int l
 	i = 0;
 	anchors = length == 0 ? NULL : malloc(length * sizeof(*anchors));
 	lens = length == 0 ? NULL : malloc(length * sizeof(*lens));
-	do {
+	for (;;) {
 		if (i >= length) {
 			length = i + 1;
 			REALLOC(anchors, length);
@@ -3663,9 +3682,17 @@ slice_row(const char *reply, char *null, char ***anchorsp, size_t **lensp, int l
 		}
 		lens[i] = len;
 		anchors[i++] = start;
-		while (reply && *reply && isspace((unsigned char) *reply))
+		if (reply == NULL)
+			break;
+		while (*reply && isspace((unsigned char) *reply))
 			reply++;
-	} while (reply && *reply && *reply != endchar);
+		if (*reply == ',') {
+			reply++;
+			while (*reply && isspace((unsigned char) *reply))
+				reply++;
+		} else if (*reply == 0 || *reply == endchar)
+			break;
+	}
 	*anchorsp = anchors;
 	*lensp = lens;
 	return i;
@@ -4774,8 +4801,6 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 		/* skip over trailing junk (presumably white space) */
 		while (*p && *p != ',' && *p != endchar)
 			p++;
-		if (*p == ',')
-			p++;
 		if (next)
 			*next = p;
 		*str = start;
@@ -4797,8 +4822,7 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 			;
 		if (s < msg || !isspace((unsigned char) *s))	/* gone one too far */
 			s++;
-		if (*p == ',' || *p == '\t') {
-			/* there is more to come; skip over separator */
+		if (*p == '\t') {
 			p++;
 		}
 		len = s - msg;

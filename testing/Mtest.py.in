@@ -1,4 +1,4 @@
-#!@PYTHON2@
+#!@PYTHON@
 
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
@@ -40,6 +40,7 @@ except ImportError:
     except ImportError:
         winreg = None           # not on Windows
 
+MonetDB_VERSION = '@VERSION@'.split('.')
 
 procdebug = False
 verbose = False
@@ -280,13 +281,6 @@ if isatty and os.isatty(sys.stdin.fileno()):
                 # ridiculously narrow tty, ignore value
                 ttywidth = 0
 
-# if os.name == 'nt':
-#     p = os.path.join(sys.prefix, 'Lib')
-#     if 'PYTHONPATH' in os.environ:
-#         p = os.environ['PYTHONPATH'] + os.pathsep + p
-#     os.environ['PYTHONPATH'] = p
-#     print('setting PYTHONPATH to %s' % p)
-
 import string                   # for whitespace
 def splitcommand(cmd):
     '''Like string.split, except take quotes into account.'''
@@ -399,7 +393,7 @@ CONDITIONALS = {
     'HAVE_LIBLZ4'          : "@HAVE_LIBLZ4_FALSE@",
     'HAVE_LIBLZMA'         : "@HAVE_LIBLZMA_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
-    'HAVE_LIBPY'           : "@HAVE_LIBPY_FALSE@",
+    'HAVE_LIBPY2'          : "@HAVE_LIBPY2_FALSE@",
     'HAVE_LIBPY3'          : "@HAVE_LIBPY3_FALSE@",
     'HAVE_LIBXML'          : "@HAVE_LIBXML_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
@@ -410,9 +404,6 @@ CONDITIONALS = {
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
-    'HAVE_PYTHON'          : "@HAVE_PYTHON_FALSE@",
-    'HAVE_PYTHON2'         : "@HAVE_PYTHON2_FALSE@",
-    'HAVE_PYTHON3'         : "@HAVE_PYTHON3_FALSE@",
     'HAVE_SAMTOOLS'        : "@HAVE_SAMTOOLS_FALSE@",
     'HAVE_SQL'             : "@HAVE_SQL_FALSE@",
     'HAVE_TESTING'         : "@HAVE_TESTING_FALSE@",
@@ -421,6 +412,7 @@ CONDITIONALS = {
     'PROFILING'            : "@PROFILING_FALSE@",
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
+    'KNOWNFAIL'            : "", # skip on release branch when not in testweb
     'HAVE_MONETDBJDBC_JAR' : "",
     'HAVE_JAVA'            : "",
     'HAVE_JAVAJDBC'        : "",
@@ -429,11 +421,15 @@ CONDITIONALS = {
     'HAVE_JDBCTESTS_JAR'   : "",
     'HAVE_JDBCTESTS_DIR'   : "",
     'HAVE_JDBCTESTS'       : "",
-    'HAVE_LIBPANDAS'       : "",
-    'HAVE_LIBSCIPY'        : "",
+    'HAVE_LIBPANDAS2'      : "",
+    'HAVE_LIBSCIPY2'       : "",
+#    'HAVE_LIBPANDAS3'      : "",
+    'HAVE_LIBSCIPY3'       : "",
     'HAVE_PERL'            : "",
     'HAVE_PHP'             : "",
-    'HAVE_PYMONETDB'       : "",
+    'HAVE_PYMONETDB'       : "", # default PYTHON can import pymonetdb
+    'HAVE_PY2MONETDB'      : "", # PYTHON2 exists and can import pymonetdb
+    'HAVE_PY3MONETDB'      : "", # PYTHON3 exists and can import pymonetdb
     'HAVE_RUBY'            : "",
     'HAVE_DATA_PATH'       : "",
     'MERCURIAL'            : "",
@@ -719,9 +715,9 @@ elif sys.version_info[0] == 3:
         return url
 
 def openutf8(file, mode='r'):
-    try:
+    if sys.version[:1] == '3':
         f = open(file, mode, encoding='utf-8', errors='replace') # Python 3
-    except TypeError:
+    else:
         f = open(file, mode)    # Python 2
     return f
 
@@ -1323,14 +1319,6 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     os.environ['TSTSRCDIR'] = TSTSRCDIR
     os.environ['TSTTRGDIR'] = TSTTRGDIR
     os.environ['RELSRCDIR'] = env['RELSRCDIR']
-    os.environ['PYTHON2']   = '@QXPYTHON2@'
-    if 'PYTHON2PATH' not in os.environ:
-        os.environ['PYTHON2PATH'] = ''
-    os.environ['PYTHON2PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
-    os.environ['PYTHON3']   = '@QXPYTHON3@'
-    if 'PYTHON3PATH' not in os.environ:
-        os.environ['PYTHON3PATH'] = ''
-    os.environ['PYTHON3PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', '@QXPYTHON3_LIBDIR@'))
     if 'TSTDATAPATH' not in os.environ and TSTDATAPATH:
         env['TSTDATAPATH'] = TSTDATAPATH
         os.environ['TSTDATAPATH'] = TSTDATAPATH
@@ -1712,7 +1700,12 @@ def GetBitsAndModsAndThreads(env) :
     global setpgrp
     rtrn = 0
     cmd = splitcommand(env['exe']['mserver5'][1])
-    cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
+    dbpath = os.path.join(env['GDK_DBFARM'], TSTPREF)
+    try:
+        os.unlink(os.path.join(dbpath, '.started'))
+    except OSError:
+        pass
+    cmd.append('--dbpath=%s' % dbpath)
     if env.get('MULTIFARM'):
         cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
         shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
@@ -1728,7 +1721,20 @@ def GetBitsAndModsAndThreads(env) :
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
     try:
         t.start()
-        input = '''\
+        while True:
+            proc.poll()
+            if proc.returncode is not None:
+                break
+            if os.path.exists(os.path.join(dbpath, '.started')):
+                break
+            time.sleep(0.001)
+        if proc.returncode is None:
+            cmd = splitcommand(env['exe']['MAL_Client'][1])
+            if procdebug:
+                print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
+            clnt = process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
+                                 stderr=process.PIPE, universal_newlines=True)
+            input = '''\
                 c := mdb.modules();
                 modsid := algebra.unique(c);
                 mods := algebra.projection(modsid,c);
@@ -1744,10 +1750,15 @@ def GetBitsAndModsAndThreads(env) :
                 exit h;
                 s := s + "\\n";
                 io.printf(s);
-                clients.quit();
             '''
-        ##module("NoModule");
-        qOut, qErr = proc.communicate(input = input)
+            ##module("NoModule");
+            qOut, qErr = clnt.communicate(input=input)
+            proc.terminate()
+            sOut = proc.stdout.read()
+            sErr = proc.stderr.read()
+            proc.wait()
+            qOut = sOut + qOut
+            qErr = sErr + qErr
         t.cancel()
         if procdebug:
             print('GetBitsAndModsAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
@@ -1757,20 +1768,6 @@ def GetBitsAndModsAndThreads(env) :
         if procdebug:
             print('GetBitsAndModsAndThreads: process killed "%s"\n' % '" "'.join(cmd))
         raise
-    returncode = returnCode(proc)
-    if returncode is not None:
-        STDERR.write(' '.join(cmd) + "\n\n")
-        if input:
-            STDERR.write(input)
-            STDERR.write("\n")
-        if qOut:
-            STDERR.write(qOut)
-            STDERR.write("\n")
-        if qErr:
-            STDERR.write(qErr)
-            STDERR.write("\n")
-        STDERR.flush()
-        ErrExit('GetBitsAndModsAndThreads: subcommand failed: %s' % returncode)
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
     env['TST_INT128'] = ""
@@ -1986,11 +1983,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             ('.py',           '.py',     'python', ''),
             ('.MAL.py',       '.MAL.py', 'python', 'MAL'),
             ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
-            ('.mal',          '.mal',    'mal',    ''),
-            ('_s00.mal',      '.mal',    'malXs',  ''),
-            ('.malC',         '.malC',   'malC',   'MAL'),
-            ('_s00.malC',     '.malC',   'malCXs', 'MAL'),
-            ('_p00.malC',     '.malC',   'malCXp', 'MAL'),
+            ('.malC',         '.malC',   'mal',    'MAL'),
+            ('_s00.malC',     '.malC',   'malXs',  'MAL'),
+            ('_p00.malC',     '.malC',   'malXp',  'MAL'),
             ('.sql',          '.sql',    'sql',    'SQL'),
             ('_s00.sql',      '.sql',    'sqlXs',  'SQL'),
             ('_p00.sql',      '.sql',    'sqlXp',  'SQL'),
@@ -2012,11 +2007,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                 break
         else:
             if os.name == "nt":
-                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|sql)`"
+                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|malC|sql)`"
             #TODO:
             #elif os.name == "posix":
             else:
-                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.R|.rb]`"
+                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.malC|.sql|.R|.rb]`"
             if quiet:
                 pass
             elif verbose:
@@ -2136,7 +2131,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
     elif MissingMods:
         reason = "as modules '%s` are missing." % str(MissingMods)
         elem = SkipTest(env, TST, EXT, reason, length)
-    elif CALL == "malCXp":
+    elif CALL == "malXp":
         reason = "as multiple MAL clients in parallel are currently not supported by %s." % THISFILE
         elem = SkipTest(env, TST, EXT, reason, length)
     elif CALL == "sqlXp":
@@ -2230,11 +2225,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             openutf8(TST+STABLEerr,"w").close()
             ACCURACYerr = 0
             errmissing = True
-
-        PRELUDE = []
-        if EXT !=  '.sql':
-            if os.path.isfile(TST+".prelude5"):
-                PRELUDE = [TST+".prelude5"]
+        if (outmissing or errmissing) and not CONDITIONALS['KNOWNFAIL']:
+            # no stable output, so known to fail
+            reason = "as conditional 'KNOWNFAIL' does not hold."
+            elem = SkipTest(env, TST, EXT, reason, length)
+            return TX,Failed,Failed,elem,reason,links
 
         TIMEOUT = par['TIMEOUT']
         if os.path.isfile(TST+".timeout"):
@@ -2248,13 +2243,13 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
         if   CALL in ["other", "python", "ruby"]:
             if TIMEOUT > 0:
                 CTIMEOUT = CTIMEOUT + min(TIMEOUT, par['TIMEOUT'])
-        elif CALL in ["malXs", "sqlXs"]:
+        elif CALL == "sqlXs":
             test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$", re.MULTILINE)
             d = listdir(os.getcwd())
             for f in d:
                 if test.match(f):
                     CTIMEOUT = CTIMEOUT + TIMEOUT
-        elif CALL in ["mal", "malC", "sql"]:
+        elif CALL in ["mal", "sql"]:
             CTIMEOUT = CTIMEOUT + TIMEOUT
         if  CTIMEOUT < TIMEOUT:
             CTIMEOUT = TIMEOUT
@@ -2274,7 +2269,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests)
 
         t1 = time.time()
         TX = t1 - t0
@@ -2841,47 +2836,99 @@ def killProc(proc, outfile = None, cmd = None):
     else:
         killchildren(proc.pid)
 
-def LaunchIt(cmd, TestOut, TestErr, TimeOut, SrvrOut = None) :
-    global setpgrp
-    if not SrvrOut:
-        SrvrOut = process.PIPE
+class ServerClass:
+    def __init__(self):
+        self.proc = None
+        self.timer = None
+        self.errfile = None
+        self.code = None
+        self.started = False
 
-    TestOut.write(Prompt(cmd))
-    TestOut.flush()
-    TestErr.write(Prompt(cmd))
-    TestErr.flush()
+    def terminate(self):
+        if os.name == 'nt':
+            self.proc.send_signal(signal.CTRL_BREAK_EVENT)
+        else:
+            self.proc.terminate()
+        self.proc.wait()
+        self.timer.cancel()
+        self.code = returnCode(self.proc, self.errfile)
 
-    if procdebug:
-        print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd))
-    setpgrp = True
-    if os.name == "nt":
-        proc = process.Popen(cmd, stdin=open(os.devnull), stdout=SrvrOut,
-                             stderr=TestErr, universal_newlines=True,
-                             creationflags=process.CREATE_NEW_PROCESS_GROUP)
-    else:
-        proc = process.Popen(cmd, stdin=open(os.devnull), stdout=SrvrOut,
-                             stderr=TestErr, universal_newlines=True)
-    # maybe buffer output as it comes to avoid deadlock
-    if SrvrOut == process.PIPE:
-        proc.stdout = process._BufferedPipe(proc.stdout)
-    if TestErr == process.PIPE:
-        proc.stderr = process._BufferedPipe(proc.stderr)
-    proc.killed = False
-    proc.onechild = True
-    t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
-    t.start()
+    def kill(self, outfile=None, cmd=None):
+        self.timer.cancel()
+        killProc(self.proc, outfile, cmd)
 
-    return proc, t
-### LaunchIt(cmd, TestIn, TestOut, TestErr, TimeOut, SrvrOut) #
+    def LaunchIt(self, cmd, TestOut, TestErr, TimeOut, pollfile, port) :
+        global setpgrp
 
-def CollectIt(pOut, TestOut) :
-    if pOut:
-        while True:
-            buf = pOut.read(8192)
-            if not buf:
-                break
-            TestOut.write(buf)
-### CollectIt(pOut, pErr, TestOut, TestErr) #
+        TestOut.write(Prompt(cmd))
+        TestOut.flush()
+        TestErr.write(Prompt(cmd))
+        TestErr.flush()
+
+        self.errfile = TestErr
+
+        if procdebug:
+            print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd))
+        setpgrp = True
+        if pollfile:
+            try:
+                os.unlink(pollfile)
+            except OSError:
+                pass
+        if os.name == "nt":
+            proc = process.Popen(cmd, stdin=open(os.devnull), stdout=TestOut,
+                                 stderr=TestErr, universal_newlines=True,
+                                 creationflags=process.CREATE_NEW_PROCESS_GROUP)
+        else:
+            proc = process.Popen(cmd, stdin=open(os.devnull), stdout=TestOut,
+                                 stderr=TestErr, universal_newlines=True)
+        # maybe buffer output as it comes to avoid deadlock
+        if TestOut == process.PIPE:
+            proc.stdout = process._BufferedPipe(proc.stdout)
+        if TestErr == process.PIPE:
+            proc.stderr = process._BufferedPipe(proc.stderr)
+        proc.killed = False
+        proc.onechild = True
+        t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
+        t.start()
+        self.proc = proc
+        self.timer = t
+
+        if pollfile:
+            while True:
+                proc.poll()
+                if proc.returncode is not None:
+                    # exited
+                    proc.wait()
+                    t.cancel()
+                    return
+                if os.path.exists(pollfile):
+                    break
+                time.sleep(0.001)
+        elif port is not None:
+            while True:
+                proc.poll()
+                if proc.returncode is not None:
+                    # exited
+                    proc.wait()
+                    t.cancel()
+                    return
+                if mapi_ping(port):
+                    break
+                time.sleep(0.1)
+            port = None         # don't try again
+        if port is not None and not mapi_ping(port):
+            # check whether we can connect
+            if os.name == "nt":
+                proc.send_signal(signal.CTRL_BREAK_EVENT)
+            else:
+                proc.terminate()
+            proc.wait()
+            t.cancel()
+            return
+        self.started = True
+
+### LaunchIt(cmd, TestIn, TestOut, TestErr, TimeOut, pollfile, port) #
 
 def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut) :
     global setpgrp
@@ -2926,7 +2973,7 @@ def Log() :
     time.strftime('%H:%M:%S> ',time.localtime(time.time()))
 ### Log() #
 
-def mapi_ping(port,lang) :
+def mapi_ping(port) :
     retry = 0
     wait = 1
     host = 'localhost'
@@ -2947,15 +2994,15 @@ def mapi_ping(port,lang) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests) :
+def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests) :
     ATJOB2 = ""
     STDERR.flush()
     if quiet:
         STDOUT.write(".")
     elif verbose:
-        STDOUT.write('%s%s %s (<=%d,%d,%d) ...' %
+        STDOUT.write('%s%s  (<=%d,%d,%d) ...' %
                      (prompt(), os.path.join(env['TSTDIR'], TST + EXT),
-                      PRELUDE and PRELUDE[0] or '', TIMEOUT, CTIMEOUT, STIMEOUT))
+                      TIMEOUT, CTIMEOUT, STIMEOUT))
     else:
         if ttywidth > 0 and length + 10 + 21 >= ttywidth:
             # 10 - length of prompt()
@@ -2979,25 +3026,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     TSTDB = env['TSTDB']
     exe = env['exe']
 
-    if os.path.isfile(TST+".conf"):
-        LOCAL_CONF = ['--config=%s.conf' % TST ]
-    elif os.path.isfile(os.path.join(env['TSTSRCDIR'],"All.conf")):
-        LOCAL_CONF = ['--config=%s' % os.path.join(env['TSTSRCDIR'],"All.conf")]
-    else:
-        LOCAL_CONF = []
-
     # Release reserved sockets and run the actual test
     MAPIsockets[0].close()
     MAPIsockets[1].close()
 
     returncode = None
-    pSrvrCode = None
-    ServerReady = True
-    pSrvr = None
-    pSrvrTimer = None
+    pSrvr = ServerClass()
     try:
         if SERVER in ["MAL", "SQL"]:
-            ServerReady = False
             SrvrOutFile = TST+".server.out"
             SrvrErrFile = TST+".server.err"
             SrvrOut = openutf8(SrvrOutFile,"w")
@@ -3006,11 +3042,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             ClntErrFile = TST+".client.err"
             ClntOut = openutf8(ClntOutFile,"w")
             ClntErr = openutf8(ClntErrFile,"w")
-            PROLOGUE = []
-            if os.path.isfile(TST + ".prologue5"):
-                PROLOGUE = [TST + ".prologue5"]
 
-            Srvr = splitcommand(exe['mserver5'][1]) + LOCAL_CONF
+            Srvr = splitcommand(exe['mserver5'][1])
             if nomito:
                 try:
                     Srvr.remove('--forcemito')
@@ -3028,7 +3061,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
                               ignore_errors = True)
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
-            Srvr.extend(['--set', 'monet_daemon=yes'])
             if os.path.isfile(TST + '.options5'):
                 Srvr.extend(openutf8(TST + '.options5').read().split())
             lang=""
@@ -3037,7 +3069,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 lang="mal"
             if SERVER == "SQL":
                 lang="sql"
-            Srvr.extend(PROLOGUE)
 
             # enable r integration in server
             if (not all_tests or (COND != None and "HAVE_LIBR" in COND)) and CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
@@ -3066,7 +3097,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     except WindowsError:
                         pass
                 Srvr.extend(['--set', 'embedded_py=3'])
-            elif (not all_tests or (COND != None and "HAVE_LIBPY" in COND)) and CONDITIONALS['HAVE_LIBPY']:
+            elif (not all_tests or (COND != None and "HAVE_LIBPY2" in COND)) and CONDITIONALS['HAVE_LIBPY2']:
                 # enable Python integration in server
                 if winreg is not None:
                     if env['TST_BITS'] == '32bit' and sys.maxsize > 2**32:
@@ -3087,12 +3118,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             # enable C integration in server
             Srvr.extend(['--set', 'embedded_c=true'])
 
-            try:
-                os.unlink(os.path.join(dbpath, '.started'))
-            except OSError:
-                pass
-
-            pSrvr, pSrvrTimer = LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT)
+            pSrvr.LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), int(env['MAPIPORT']))
             if savepath is not None:
                 os.environ['PATH'] = savepath
                 if savepypath:
@@ -3103,96 +3129,20 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     os.environ['PYTHONHOME'] = savepyhome
                 else:
                     del os.environ['PYTHONHOME']
-            while True:
-                pSrvr.poll()
-                if pSrvr.returncode is not None:
-                    break
-                if os.path.exists(os.path.join(dbpath, '.started')):
-                    ServerReady = True
-                    break
-                time.sleep(0.001)
-            if not ServerReady:
-                # Process exited.
-                # It may be that there are far too many network
-                # connections in use, all in TIME_WAIT status.  We'll
-                # just wait a while for that to clear and try again.
-                pSrvrTimer.cancel()
-                CollectIt(pSrvr.stdout, SrvrOut)
-                if returnCode(pSrvr) == 'error' and sys.platform == 'linux2':
-                    x = process.Popen(['netstat', '-an'], stdout = process.PIPE, stderr = process.PIPE, universal_newlines = True)
-                    out, err = x.communicate()
-                    if out.count('TIME_WAIT') > 100:
-                        time.sleep(120)
-                        pSrvr, pSrvrTimer = LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT)
-                        while True:
-                            pSrvr.poll()
-                            if pSrvr.returncode is not None:
-                                break
-                            if os.path.exists(os.path.join(dbpath, '.started')):
-                                ServerReady = True
-                                break
-                            time.sleep(0.001)
-
-            if ServerReady:
-                port = int(env['MAPIPORT'])
-                ServerReady = mapi_ping(port, lang)
-                if not ServerReady:
-                    pSrvr.terminate()
-                    CollectIt(pSrvr.stdout, SrvrOut)
-                    pSrvr.wait()
-                    pSrvrTimer.cancel()
-                    if returnCode(pSrvr) == 'error' and sys.platform == 'linux2':
-                        x = process.Popen(['netstat', '-an'], stdout = process.PIPE, stderr = process.PIPE, universal_newlines = True)
-                        out, err = x.communicate()
-                        if out.count('TIME_WAIT') > 100:
-                            time.sleep(120)
-                            pSrvr, pSrvrTimer = LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT)
-                            while True:
-                                pSrvr.poll()
-                                if pSrvr.returncode is not None:
-                                    break
-                                if os.path.exists(os.path.join(dbpath, '.started')):
-                                    ServerReady = True
-                                    break
-                                time.sleep(0.001)
-                            if ServerReady:
-                                port = int(env['MAPIPORT'])
-                                ServerReady = mapi_ping(port, lang)
         else:
             ClntOut = openutf8(TestOutFile, 'a')
             ClntErr = openutf8(TestErrFile, 'a')
 
-        if ServerReady:
+        if SERVER not in ["MAL", "SQL"] or pSrvr.started:
             if   CALL == "other":
-                cmd = [os.path.join(".", TST + EXT), TST] + PRELUDE
+                cmd = [os.path.join(".", TST + EXT), TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL == "python":
-                cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST] + PRELUDE
+                cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL in ["mal", "malXs"]:
-                cmd = splitcommand(exe['mserver5'][1]) + LOCAL_CONF + PRELUDE
-                cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB))
-                if env.get('MULTIFARM'):
-                    cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
-                    shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
-                                  ignore_errors = True)
-                    os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
-                if CALL == "mal":
-                    X=""
-                else:
-                    X="_s[0-9][0-9]"
-                test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-                d = listdir(os.getcwd())
-                d.sort()
-                for f in d:
-                    if test.match(f):
-                        cmd.append(f)
-                        returncode = RunIt(cmd, True, openutf8(os.devnull), ClntOut, ClntErr, TIMEOUT)
-                    if returncode:
-                        break
-            elif CALL in ["malC", "malCXs"]:
                 TSTs = []
-                if CALL == "malC":
+                if CALL == "mal":
                     X=""
                 else:
                     X="_s[0-9][0-9]"
@@ -3251,19 +3201,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         ClntErr.close()
 
         if SERVER in ["MAL", "SQL"]:
-            if ServerReady:
-                if os.name == "nt":
-                    pSrvr.send_signal(signal.CTRL_BREAK_EVENT)
-                else:
-                    pSrvr.terminate()
-
-            CollectIt(pSrvr.stdout, SrvrOut)
-            pSrvr.wait()
-            pSrvrTimer.cancel()
-            if procdebug:
-                print('DoIt: process exited "%s" (%s)\n' % ('" "'.join(Srvr), pSrvr.returncode))
-            pSrvrTimer = None
-            pSrvrCode = returnCode(pSrvr, SrvrErr)
+            if pSrvr.started:
+                pSrvr.terminate()
+                if procdebug:
+                    print('DoIt: process exited "%s" (%s)\n' % ('" "'.join(Srvr), pSrvr.code))
 
             AllOut = [SrvrOut, ClntOutFile]
             AllErr = [SrvrErr, ClntErrFile]
@@ -3304,24 +3245,20 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if TestErr is not None:
             TestErr.write(Prompt('Done.'))
             TestErr.close()
-        # there are two tests that create a temporary file called
-        # /tmp/MonetEvents; we just unconditionally remove the file
-        remove('/tmp/MonetEvents')
 
     except KeyboardInterrupt:
-        if pSrvrTimer is not None:
-            pSrvrTimer.cancel()
-            killProc(pSrvr, SrvrErr, Srvr)
+        if pSrvr.started:
+            pSrvr.kill(SrvrErr, Srvr)
         raise
 
-    if returncode is not None or pSrvrCode is not None:
+    if returncode is not None or pSrvr.code is not None:
         # something failed
-        if returncode == 'interrupt' or pSrvrCode == 'interrupt':
+        if returncode == 'interrupt' or pSrvr.code == 'interrupt':
             raise KeyboardInterrupt
         for err in ('timeout', 'segfault', 'abort', 'signal', 'error'):
-            if pSrvrCode == err or returncode == err:
+            if pSrvr.code == err or returncode == err:
                 return err
-        return returncode or pSrvrCode # remaining error (shouldn't get here)
+        return returncode or pSrvr.code # remaining error (shouldn't get here)
 
     if CALL not in ('python', 'other', 'ruby'):
         # running mserver/mclient directly, so we know they didn't fail
@@ -3345,7 +3282,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
     return None
 
-### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito) #
+### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito) #
 
 def Check(command, input) :
     global setpgrp
@@ -3802,6 +3739,8 @@ def main(argv) :
              'global timeout'),
             ('data_path', 'D', 'data_path', '<path>',
              "Path to the root directory of the data files needed for testing"),
+            ('alltests', None, 'alltests', None,
+             'also run tests that are known to fail'),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -3831,14 +3770,9 @@ def main(argv) :
 
     try:
         # let monet_options.parse_options() parse the command line arguments
-        # without setting a --config default in case the is no --config given
-        opts, args = monet_options.parse_options(argv[1:], options, Usage, False)
+        opts, args = monet_options.parse_options(argv[1:], options, Usage)
     except monet_options.Error:
         sys.exit(1)
-
-    config = opts.get('config', '')
-    if config:
-        config = ' "--config=%s"' % config
 
     recursive = opts.get('recursive', False)
     global testweb
@@ -3855,6 +3789,8 @@ def main(argv) :
     releaserun = opts.get('releaserun', releaserun)
     nomito = opts.get('nomito', False)
     CONDITIONALS['RELEASERUN'] = releaserun
+    if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.get('alltests', False):
+        CONDITIONALS['KNOWNFAIL'] = 'execute'
     jenkins = False
     addreqs = False
     all_tests = False
@@ -3943,24 +3879,85 @@ def main(argv) :
     # hence, we set them at runtime.
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
+    python_version = ''
+    if CheckExec('python'):
+        proc = process.Popen(['python', '-c', 'import sys; print(sys.version[:1])'],
+                             stdout=process.PIPE, stderr=process.PIPE,
+                             universal_newlines=True)
+        pyout, pyerr = proc.communicate()
+        if proc.returncode == 0 and pyout:
+            python_version = pyout.strip()
+            os.environ['PYTHON' + python_version] = 'python'
+    if python_version == '2':
+        py2list = ['python']
+    else:
+        py2list = []
+    if python_version == '3':
+        py3list = ['python']
+    else:
+        py3list = []
+    for py2 in py2list + ['python2', 'python2.7', 'python2.6']:
+        if CheckExec(py2):
+            try:
+                proc = process.Popen([py2, '-c', 'import pymonetdb'],
+                                     stdout=process.PIPE, stderr=process.PIPE,
+                                     universal_newlines=True)
+                pyout, pyerr = proc.communicate()
+                if proc.returncode == 0:
+                    CONDITIONALS['HAVE_PY2MONETDB'] = '#'
+                    os.environ['PYTHON2'] = py2
+                    break
+            except OSError:
+                pass
+    else:
+        CONDITIONALS['HAVE_PY2MONETDB'] = '' # no pymonetdb for python2
+    for py3 in py3list + ['python3', 'python3.7', 'python3.6', 'python3.5', 'python3.4']:
+        if CheckExec(py3):
+            try:
+                proc = process.Popen([py3, '-c', 'import pymonetdb'],
+                                     stdout=process.PIPE, stderr=process.PIPE,
+                                     universal_newlines=True)
+                pyout, pyerr = proc.communicate()
+                if proc.returncode == 0:
+                    CONDITIONALS['HAVE_PY3MONETDB'] = '#'
+                    os.environ['PYTHON3'] = py3
+                    break
+            except OSError:
+                pass
+    else:
+        CONDITIONALS['HAVE_PY3MONETDB'] = '' # no pymonetdb for python3
     try:
         import pymonetdb
     except ImportError:
         print('Python available, but pymonetdb package not available')
     else:
         CONDITIONALS['HAVE_PYMONETDB'] = '#'
-    try:
-        import scipy
-    except ImportError:
-        pass
-    else:
-        CONDITIONALS['HAVE_LIBSCIPY'] = '#'
-    try:
-        import pandas
-    except ImportError:
-        pass
-    else:
-        CONDITIONALS['HAVE_LIBPANDAS'] = '#'
+    if 'PYTHON2' in os.environ:
+        proc = process.Popen([os.environ['PYTHON2'], '-c', 'import scipy'],
+                             stdout=process.PIPE, stderr=process.PIPE,
+                             universal_newlines=True)
+        pyout, pyerr = proc.communicate()
+        if proc.returncode == 0:
+            CONDITIONALS['HAVE_LIBSCIPY2'] = '#'
+        proc = process.Popen([os.environ['PYTHON2'], '-c', 'import pandas'],
+                             stdout=process.PIPE, stderr=process.PIPE,
+                             universal_newlines=True)
+        pyout, pyerr = proc.communicate()
+        if proc.returncode == 0:
+            CONDITIONALS['HAVE_LIBPANDAS2'] = '#'
+    if 'PYTHON3' in os.environ:
+        proc = process.Popen([os.environ['PYTHON3'], '-c', 'import scipy'],
+                             stdout=process.PIPE, stderr=process.PIPE,
+                             universal_newlines=True)
+        pyout, pyerr = proc.communicate()
+        if proc.returncode == 0:
+            CONDITIONALS['HAVE_LIBSCIPY3'] = '#'
+        # proc = process.Popen([os.environ['PYTHON3'], '-c', 'import pandas'],
+        #                      stdout=process.PIPE, stderr=process.PIPE,
+        #                      universal_newlines=True)
+        # pyout, pyerr = proc.communicate()
+        # if proc.returncode == 0:
+        #     CONDITIONALS['HAVE_LIBPANDAS3'] = '#'
     if env.get('TSTDATAPATH'):
         CONDITIONALS['HAVE_DATA_PATH'] = '#'
     if CheckExec('perl'):
@@ -4262,8 +4259,8 @@ def main(argv) :
                 SOCK = ""
 
             exe = {}
-            exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= %s %s' % \
-                                                                   (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
+            exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s %s %s' % \
+                                                                   (env['setDBG'], env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
             exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
             exe['python']        = CheckExec(sys.executable) , sys.executable
             exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], env['MAPIPORT'])
@@ -4290,8 +4287,8 @@ def main(argv) :
                     ErrXit("%s: not a valid test name" % args[0])
                 args = [head]
                 if tail != 'All':
-                    for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
-                                '_p00.sql', '.MAL.py', '.SQL.py', '.malC', '.mal',
+                    for ext in ('_s00.malC', '_p00.malC', '_s00.sql',
+                                '_p00.sql', '.MAL.py', '.SQL.py', '.malC',
                                 '.sql', '.py', '.R', ''):
                         # extentions .in and .src are never combined
                         if tail.endswith(ext + '.in'):
@@ -4453,8 +4450,6 @@ def main(argv) :
                 shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
                               ignore_errors = True)
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-            if Check(cmd, 'clients.quit();\n'):
-                sys.exit(1)
             if GetBitsAndModsAndThreads(env):
                 sys.exit(1)
             STDERR.flush()

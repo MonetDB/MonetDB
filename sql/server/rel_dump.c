@@ -188,20 +188,24 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		if (e->l)
 			mnstr_printf(fout, "\"%s\".", (char*)e->l);
 		mnstr_printf(fout, "\"%s\"", (char*)e->r);
-		if (e->rname && e->name && e->l && e->r &&
-			strcmp(e->rname, e->l) == 0 &&
-			strcmp(e->name, e->r) == 0) 
+		if (exp_relname(e) && exp_name(e) && e->l && e->r &&
+			strcmp(exp_relname(e), e->l) == 0 &&
+			strcmp(exp_name(e), e->r) == 0) 
 			alias = 0;
-		if (!e->rname && e->name && strcmp(e->name, e->r)==0)
+		if (!exp_relname(e) && exp_name(e) && strcmp(exp_name(e), e->r)==0)
 			alias = 0;
 	 	break;
 	case e_cmp: 
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
 			exp_print(sql, fout, e->l, depth, refs, 0, alias);
+			if (is_anti(e))
+				mnstr_printf(fout, " !");
 			cmp_print(sql, fout, get_cmp(e));
 			exps_print(sql, fout, e->r, depth, refs, alias, 1);
 		} else if (get_cmp(e) == cmp_or) {
 			exps_print(sql, fout, e->l, depth, refs, alias, 1);
+			if (is_anti(e))
+				mnstr_printf(fout, " !");
 			cmp_print(sql, fout, get_cmp(e));
 			exps_print(sql, fout, e->r, depth, refs, alias, 1);
 		} else if (get_cmp(e) == cmp_filter) {
@@ -215,11 +219,11 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		} else if (e->f) {
 			exp_print(sql, fout, e->r, depth+1, refs, 0, 0);
 			if (is_anti(e))
-				mnstr_printf(fout, " ! ");
+				mnstr_printf(fout, " !");
 			cmp_print(sql, fout, swap_compare(range2lcompare(e->flag)) );
 			exp_print(sql, fout, e->l, depth+1, refs, 0, 0);
 			if (is_anti(e))
-				mnstr_printf(fout, " ! ");
+				mnstr_printf(fout, " !");
 			cmp_print(sql, fout, range2rcompare(e->flag) );
 			exp_print(sql, fout, e->f, depth+1, refs, 0, 0);
 			if (e->flag & CMP_SYMMETRIC)
@@ -227,7 +231,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		} else {
 			exp_print(sql, fout, e->l, depth+1, refs, 0, 0);
 			if (is_anti(e))
-				mnstr_printf(fout, " ! ");
+				mnstr_printf(fout, " !");
 			cmp_print(sql, fout, get_cmp(e));
 
 			exp_print(sql, fout, e->r, depth+1, refs, 0, 0);
@@ -240,6 +244,10 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, " ASC");
 	if (e->type != e_atom && e->type != e_cmp && !has_nil(e))
 		mnstr_printf(fout, " NOT NULL");
+	/*
+	if (is_basecol(e))
+		mnstr_printf(fout, " BASECOL");
+		*/
 	if (e->p) {
 		prop *p = e->p;
 		char *pv;
@@ -250,11 +258,11 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			GDKfree(pv);
 		}
 	}
-	if (e->name && alias) {
+	if (exp_name(e) && alias) {
 		mnstr_printf(fout, " as ");
-		if (e->rname)
-			mnstr_printf(fout, "\"%s\".", e->rname);
-		mnstr_printf(fout, "\"%s\"", e->name);
+		if (exp_relname(e))
+			mnstr_printf(fout, "\"%s\".", exp_relname(e));
+		mnstr_printf(fout, "\"%s\"", exp_name(e));
 	}
 	if (comma)
 		mnstr_printf(fout, ", ");
@@ -401,7 +409,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
 		if (rel->r)
 			rel_print_(sql, fout, rel->r, depth+1, refs, decorate);
-		if (rel->exps && (rel->flag == DDL_PSM || rel->flag == DDL_EXCEPTION || rel->flag == DDL_LIST))
+		if (rel->exps && (rel->flag == ddl_psm || rel->flag == ddl_exception || rel->flag == ddl_list))
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		break;
 	case op_join: 
@@ -549,7 +557,7 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 	case op_table:
 		break;
 	case op_ddl:
-		if(rel->flag == DDL_LIST ||rel->flag == DDL_EXCEPTION) {
+		if(rel->flag == ddl_list ||rel->flag == ddl_exception) {
 			if(rel->l) {
 				rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
 				if(rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
@@ -1013,7 +1021,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			if (pexps) {
 				exp = exps_bind_column(pexps, cname, &amb);
 				if (exp)
-					exp = exp_alias_or_copy(sql, exp->rname, cname, lrel, exp);
+					exp = exp_alias_or_copy(sql, exp_relname(exp), cname, lrel, exp);
 			}
 			(void)amb;
 			assert(amb == 0);

@@ -134,7 +134,6 @@ newMalBlk(int elements)
 	mb->unsafeProp = 0;
 	mb->sealedProp = 0;
 	mb->replica = NULL;
-	mb->trap = 0;
 	mb->starttime = 0;
 	mb->runtime = 0;
 	mb->calls = 0;
@@ -340,7 +339,6 @@ copyMalBlk(MalBlkPtr old)
 	strncpy(mb->binding,  old->binding, IDLENGTH);
 	mb->errors = old->errors? GDKstrdup(old->errors):0;
 	mb->tag = old->tag;
-	mb->trap = old->trap;
 	mb->runtime = old->runtime;
 	mb->calls = old->calls;
 	mb->optimize = old->optimize;
@@ -389,14 +387,20 @@ getMalBlkOptimized(MalBlkPtr mb, str name)
 	InstrPtr p;
 	int i= 0;
 	char buf[IDLENGTH]= {0}, *n;
+	size_t nlen;
 
 	if( name == 0)
 		return mb;
-	strncpy(buf,name, IDLENGTH);
-	buf[IDLENGTH - 1] = 0;
+
+	nlen = strlen(name);
+	if (nlen >= sizeof(buf)) {
+		mb->errors = createMalException(mb,0, TYPE, "Optimizer name is too large");
+		return NULL;
+	}
+	memcpy(buf, name, nlen + 1);
 	n = strchr(buf,']');
 	if( n) *n = 0;
-	
+
 	while (h ){
 		for( i = 1; i< h->stop; i++){
 			p = getInstrPtr(h,i);
@@ -601,27 +605,20 @@ findVariable(MalBlkPtr mb, const char *name)
 }
 
 /* The second version of findVariable assumes you have not yet
- * allocated a private structure. This is particularly usefull during
+ * allocated a private structure. This is particularly useful during
  * parsing, because most variables are already defined. This way we
  * safe GDKmalloc/GDKfree. */
 int
 findVariableLength(MalBlkPtr mb, str name, int len)
 {
 	int i;
-	int j;
 
-	for (i = mb->vtop - 1; i >= 0; i--)
-	{
-			str s = mb->var[i].id;
+	for (i = mb->vtop - 1; i >= 0; i--) {
+		const char *s = getVarName(mb, i);
 
-			j = 0;
-			if (s)
-				for (j = 0; j < len; j++)
-					if (name[j] != s[j])
-						break;
-			if (j == len && s && s[j] == 0)
-				return i;
-		}
+		if (s && strncmp(name, s, len) == 0 && s[len] == 0)
+			return i;
+	}
 	return -1;
 }
 
@@ -634,7 +631,7 @@ getType(MalBlkPtr mb, str nme)
 
 	i = findVariable(mb, nme);
 	if (i < 0)
-		return getAtomIndex(nme, -1, TYPE_any);
+		return getAtomIndex(nme, strlen(nme), TYPE_any);
 	return getVarType(mb, i);
 }
 
@@ -1210,7 +1207,8 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name)
 		return NULL;
 	v = findVariable(mb, name);
 	if (v < 0) {
-		if ((v = newVariable(mb, name, strlen(name), getAtomIndex(name, -1, TYPE_any))) < 0) {
+		size_t namelen = strlen(name);
+		if ((v = newVariable(mb, name, namelen, getAtomIndex(name, namelen, TYPE_any))) < 0) {
 			freeInstruction(p);
 			return NULL;
 		}

@@ -16,11 +16,12 @@
  */
 #include "monetdb_config.h"
 #include "mutils.h"         /* mercurial_revision */
+#include "msabaoth.h"		/* msab_getUUID */
 #include "mal_function.h"
 #include "mal_listing.h"
 #include "mal_profiler.h"
 #include "mal_runtime.h"
-#include "mal_debugger.h"
+#include "mal_utils.h"
 #include "mal_resource.h"
 
 #ifdef HAVE_SYS_TIME_H
@@ -166,9 +167,22 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	logadd("\"pc\":%d,%s", mb?getPC(mb,pci):0, prettify);
 	logadd("\"tag\":%d,%s", stk?stk->tag:0, prettify);
 	logadd("\"module\":\"%s\",%s", pci->modname ? pci->modname : "", prettify);
+	if (pci->modname && strcmp(pci->modname, "user") == 0) {
+		int caller_tag = 0;
+		if(stk && stk->up) {
+			caller_tag = stk->up->tag;
+		}
+		logadd("\"caller\":%d,%s", caller_tag, prettify);
+	}
 	logadd("\"instruction\":\"%s\",%s", pci->fcnname ? pci->fcnname : "", prettify);
-	if( mal_session_uuid)
-		logadd("\"session\":\"%s\",%s",mal_session_uuid,prettify);
+	if (!GDKinmemory()) {
+		char *uuid;
+		if ((c = msab_getUUID(&uuid)) == NULL) {
+			logadd("\"session\":\"%s\",%s", uuid, prettify);
+			free(uuid);
+		} else
+			free(c);
+	}
 
 	if( start){
 		logadd("\"state\":\"start\",%s", prettify);
@@ -456,8 +470,14 @@ profilerHeartbeatEvent(char *alter)
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
 	logadd("\"source\":\"heartbeat\",%s", prettify);
-	if(mal_session_uuid)
-		logadd("\"session\":\"%s\",%s", mal_session_uuid, prettify);
+	if (GDKinmemory()) {
+		char *uuid, *err;
+		if ((err = msab_getUUID(&uuid)) == NULL) {
+			logadd("\"session\":\"%s\",%s", uuid, prettify);
+			free(uuid);
+		} else
+			free(err);
+	}
 	logadd("\"clk\":"LLFMT",%s",usec,prettify);
 	logadd("\"ctime\":%"PRIu64",%s", microseconds, prettify);
 	logadd("\"rss\":%zu,%s", MT_getrss()/1024/1024, prettify);
@@ -659,8 +679,6 @@ void
 MPresetProfiler(stream *fdout)
 {
 	if (fdout != eventstream)
-		return;
-	if (mal_trace) // already traced on console
 		return;
 	MT_lock_set(&mal_profileLock);
 	eventstream = 0;
@@ -1079,8 +1097,6 @@ void setHeartbeat(int delay)
 void initProfiler(void)
 {
 	gettimeofday(&startup_time, NULL);
-	if( mal_trace)
-		openProfilerStream(mal_clients[0].fdout,0);
 }
 
 void initHeartbeat(void)

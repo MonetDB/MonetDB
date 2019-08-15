@@ -19,28 +19,6 @@ stdout of test 'groupby.Bug-3421` in directory 'sql/test/BugTracker-2014` itself
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 17_compress.sql
-# loading sql script: 18_dictionary.sql
-# loading sql script: 19_cluster.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 24_zorder.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 40_json.sql
 
 # 10:34:33 >  
 # 10:34:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29232" "--port=30277"
@@ -57,66 +35,78 @@ stdout of test 'groupby.Bug-3421` in directory 'sql/test/BugTracker-2014` itself
 #  unique (toplevelorderid, connector)
 #);
 #insert into OrderConnectorMetrics values (5508, '2013-02-01', 'C1', 3000000, 3000000, 4, null);
-[ 1	]
+[ 1     ]
 #insert into OrderConnectorMetrics values (5508, '2013-02-01', 'C2', 2000000, 2000000, 2, null);
-[ 1	]
+[ 1     ]
 #create table t2 as select * from orderconnectormetrics where
 #toplevelorderid = 5508 with data;
 #select * from t2;
-% sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2,	sys.t2 # table_name
-% toplevelorderid,	businessdate,	connector,	filledvalue,	filledqty,	numberoffills,	chargeusd # name
-% bigint,	date,	varchar,	real,	real,	int,	real # type
-% 4,	10,	2,	15,	15,	1,	15 # length
-[ 5508,	2013-02-01,	"C1",	3e+06,	3e+06,	4,	NULL	]
-[ 5508,	2013-02-01,	"C2",	2e+06,	2e+06,	2,	NULL	]
-#select toplevelorderid, count(*), sum(numberoffills) from t2 group by toplevelorderid;
-% sys.t2,	sys.L1,	sys.L2 # table_name
-% toplevelorderid,	L1,	L2 # name
-% bigint,	bigint,	bigint # type
-% 4,	1,	1 # length
-[ 5508,	2,	6	]
-#select toplevelorderid, count(*), sum(numberoffills) from t2 where
+% sys.t2,       sys.t2, sys.t2, sys.t2, sys.t2, sys.t2, sys.t2 # table_name
+% toplevelorderid,      businessdate,   connector,      filledvalue,    filledqty,      numberoffills,  chargeusd # name
+% bigint,       date,   varchar,        real,   real,   int,    real # type
+% 4,    10,     2,      15,     15,     1,      15 # length
+[ 5508, 2013-02-01,     "C1",   3e+6,   3e+6,   4,      NULL    ]
+[ 5508, 2013-02-01,     "C2",   2e+6,   2e+6,   2,      NULL    ]
+#select toplevelorderid, count(*), cast( sum(numberoffills) as bigint) from t2 group by toplevelorderid;
+% sys.t2,       sys.,   sys. # table_name
+# sys.t2,       sys.L3, sys.L6 # table_name
+% toplevelorderid,      L,      L # name
+# toplevelorderid,      L3,     L6 # name
+% bigint,       bigint, bigint # type
+% 4,    1,      1 # length
+[ 5508, 2,      6       ]
+#select toplevelorderid, count(*), cast( sum(numberoffills) as bigint) from t2 where
 #toplevelorderid = 5508 group by toplevelorderid;
-% sys.t2,	sys.L1,	sys.L2 # table_name
-% toplevelorderid,	L1,	L2 # name
-% bigint,	bigint,	bigint # type
-% 4,	1,	1 # length
-[ 5508,	2,	6	]
-#select toplevelorderid, count(*), sum(numberoffills) from t2 group by toplevelorderid;
-% sys.t2,	sys.L1,	sys.L2 # table_name
-% toplevelorderid,	L1,	L2 # name
-% bigint,	bigint,	bigint # type
-% 4,	1,	1 # length
-[ 5508,	2,	6	]
-#select toplevelorderid, count(*), sum(numberoffills) from t2 where
+% sys.t2,       sys.,   sys. # table_name
+# sys.t2,       sys.L3, sys.L6 # table_name
+% toplevelorderid,      L,      L # name
+# toplevelorderid,      L3,     L6 # name
+% bigint,       bigint, bigint # type
+% 4,    1,      1 # length
+[ 5508, 2,      6       ]
+#select toplevelorderid, count(*), cast( sum(numberoffills) as bigint) from t2 group by toplevelorderid;
+% sys.t2,       sys.,   sys. # table_name
+# sys.t2,       sys.L3, sys.L6 # table_name
+% toplevelorderid,      L,      L # name
+# toplevelorderid,      L3,     L6 # name
+% bigint,       bigint, bigint # type
+% 4,    1,      1 # length
+[ 5508, 2,      6       ]
+#select toplevelorderid, count(*), cast( sum(numberoffills) as bigint) from t2 where
 #toplevelorderid = 5508 group by toplevelorderid;
-% sys.t2,	sys.L1,	sys.L2 # table_name
-% toplevelorderid,	L1,	L2 # name
-% bigint,	bigint,	bigint # type
-% 4,	1,	1 # length
-[ 5508,	2,	6	]
-#select toplevelorderid, count(*), sum(numberoffills) from
+% sys.t2,       sys.,   sys. # table_name
+# sys.t2,       sys.L3, sys.L6 # table_name
+% toplevelorderid,      L,      L # name
+# toplevelorderid,      L3,     L6 # name
+% bigint,       bigint, bigint # type
+% 4,    1,      1 # length
+[ 5508, 2,      6       ]
+#select toplevelorderid, count(*), cast( sum(numberoffills) as bigint) from
 #orderconnectormetrics where toplevelorderid = 5508 group by toplevelorderid;
-% sys.orderconnectormetrics,	sys.L1,	sys.L2 # table_name
-% toplevelorderid,	L1,	L2 # name
-% bigint,	bigint,	bigint # type
-% 4,	1,	1 # length
-[ 5508,	2,	6	]
+% sys.orderconnectormetrics,    sys.,   sys. # table_name
+# sys.orderconnectormetrics,    sys.L3, sys.L6 # table_name
+% toplevelorderid,      L,      L # name
+# toplevelorderid,      L3,     L6 # name
+% bigint,       bigint, bigint # type
+% 4,    1,      1 # length
+[ 5508, 2,      6       ]
 #delete from t2;
-[ 2	]
+[ 2     ]
 #insert into t2 select * from orderconnectormetrics where toplevelorderid = 5508;
-[ 2	]
+[ 2     ]
 #insert into t2 values (5508, '2013-02-01', 'C1', 3000000, 3000000, 4, null);
-[ 1	]
+[ 1     ]
 #insert into t2 values (5508, '2013-02-01', 'C2', 2000000, 2000000, 2, null);
-[ 1	]
-#select toplevelorderid, count(*), sum(numberoffills) from t2 where
+[ 1     ]
+#select toplevelorderid, count(*), cast( sum(numberoffills) as bigint) from t2 where
 #toplevelorderid = 5508 group by toplevelorderid;
-% sys.t2,	sys.L1,	sys.L2 # table_name
-% toplevelorderid,	L1,	L2 # name
-% bigint,	bigint,	bigint # type
-% 4,	1,	2 # length
-[ 5508,	4,	12	]
+% sys.t2,       sys.,   sys. # table_name
+# sys.t2,       sys.L3, sys.L6 # table_name
+% toplevelorderid,      L,      L # name
+# toplevelorderid,      L3,     L6 # name
+% bigint,       bigint, bigint # type
+% 4,    1,      2 # length
+[ 5508, 4,      12      ]
 #drop table t2;
 #drop table OrderConnectorMetrics;
 

@@ -1,27 +1,29 @@
 stdout of test 'connectto.Bug-2548` in directory 'sql/test/BugTracker-2010` itself:
 
 
-# 13:12:55 >  
-# 13:12:55 >   mserver5 "--config=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/HG/Jun2010/prefix./var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39884 --set xrpc_port=41478 --set monet_prompt= --set mal_listing=2 --trace  "--dbname=mTests_src_test_BugTracker-2010" --set mal_listing=0 ; echo ; echo Over..
-# 13:12:55 >  
+# 17:38:30 >  
+# 17:38:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32761" "--set" "mapi_usock=/var/tmp/mtest-9897/.s.monetdb.32761" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2010" "--set" "embedded_c=true"
+# 17:38:30 >  
 
-# MonetDB server v5.20.3, based on kernel v1.38.2
-# Serving database 'mTests_src_test_BugTracker-2010', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 7.751 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:39884/
-# MonetDB/SQL module v2.38.3 loaded
+# MonetDB 5 server v11.34.0 (hg id: 8a60f0f74a17+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2010', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 31.305 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:32761/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9897/.s.monetdb.32761
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 17:38:31 >  
+# 17:38:31 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9897" "--port=32761"
+# 17:38:31 >  
 
 
-
-# 13:12:55 >  
-# 13:12:55 >  mclient -lsql -ftest -i -e --host=rig --port=39884 
-# 13:12:55 >  
-
-# 13:12:55 >  
-# 13:12:55 >  Done.
-# 13:12:55 >  
+# 17:38:31 >  
+# 17:38:31 >  "Done."
+# 17:38:31 >  
 

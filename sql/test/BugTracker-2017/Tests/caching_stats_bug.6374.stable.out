@@ -35,8 +35,8 @@ stdout of test 'caching_stats_bug.6374` in directory 'sql/test/BugTracker-2017` 
 #alter table sub1 set read only;
 #alter table sub2 set read only;
 #select count(*) from mt where i >= 5 and i < 100;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -50,15 +50,15 @@ project (
 | | select (
 | | | table(sys.sub2) [ "mt"."i" ] COUNT 
 | | ) [ int "5" <= "mt"."i" < int "100" ]
-| ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
-) [ "L3"."L3" NOT NULL ]
+| ) [  ] [ sys.count() NOT NULL as "L2"."L2" ]
+) [ "L2"."L2" NOT NULL ]
 #alter table sub1 set read write;
 #insert into sub1 values (7),(8);
 [ 2	]
 #alter table sub1 set read only;
 #select count(*) from mt where i >= 5 and i < 100;
-% .L3 # table_name
-% L3 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 4	]
@@ -76,17 +76,17 @@ project (
 | | | | | | table(sys.sub1) [ "sub1"."i" as "mt"."i" ] COUNT 
 | | | | | ) [ int "5" <= "mt"."i" < int "100" ]
 | | | | ) [ "mt"."i" ]
-| | | ) [  ] [ sys.count() NOT NULL as "L3"."L3" ],
+| | | ) [  ] [ sys.count() NOT NULL as "L2"."L2" ],
 | | | group by (
 | | | | project (
 | | | | | select (
 | | | | | | table(sys.sub2) [ "sub2"."i" as "mt"."i" ] COUNT 
 | | | | | ) [ int "5" <= "mt"."i" < int "100" ]
 | | | | ) [ "mt"."i" ]
-| | | ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
-| | ) [ "L3"."L3" ]
-| ) [  ] [ sys.sum no nil ("L3"."L3") as "L3"."L3" ]
-) [ "L3"."L3" NOT NULL ]
+| | | ) [  ] [ sys.count() NOT NULL as "L2"."L2" ]
+| | ) [ "L2"."L2" ]
+| ) [  ] [ sys.sum no nil ("L2"."L2") as "L2"."L2" ]
+) [ "L2"."L2" NOT NULL ]
 #drop table mt;
 #drop table sub1;
 #drop table sub2;

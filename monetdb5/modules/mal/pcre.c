@@ -574,7 +574,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, boo
 	pcre_extra *pe;
 	const char *error;
 	int errpos;
-	int ovector[10];
+	int ovector[9];
 #else
 	int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
 	regex_t re;
@@ -637,7 +637,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, boo
 		p = SORTfndfirst(s, &b->hseqbase);
 		candlist = (const oid *) Tloc(s, p);
 #ifdef HAVE_LIBPCRE
-#define BODY     (pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 10) >= 0)
+#define BODY     (pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 9) >= 0)
 #else
 #define BODY     (regexec(&re, v, (size_t) 0, NULL, 0) != REG_NOMATCH)
 #endif
@@ -1412,7 +1412,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 static str
 pat2pcre(str *r, const char *pat)
 {
-	int len = (int) strlen(pat);
+	size_t len = strlen(pat);
 	char *ppat = GDKmalloc(len*2+3 /* 3 = "^'the translated regexp'$0" */);
 	int start = 0;
 
@@ -1518,10 +1518,10 @@ str
 PCREindex(int *res, const pcre *pattern, const str *s)
 {
 #ifdef HAVE_LIBPCRE
-	int v[2];
+	int v[3];
 
 	v[0] = v[1] = *res = 0;
-	if (pcre_exec(pattern, NULL, *s, (int) strlen(*s), 0, 0, v, 2) >= 0) {
+	if (pcre_exec(pattern, NULL, *s, (int) strlen(*s), 0, 0, v, 3) >= 0) {
 		*res = v[1];
 	}
 	return MAL_SUCCEED;

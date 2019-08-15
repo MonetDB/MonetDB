@@ -47,15 +47,11 @@ prompt, reading from standard input and writing to standard output.
 .P
 The server thread started remains in existence until all other threads
 die.
-The server is stopped by Ctrl-D on its console, typing
-.B quit()
-or by sending it a termination signal (SIGINT, SIGTERM, SIGQUIT).
+The server is stopped by sending it a termination signal (SIGINT,
+SIGTERM, SIGQUIT).
 .SH MSERVER5 OPTIONS
 .I Mserver5
-can be started with options and scripts as arguments.
-The MAL scripts will be executed directly after startup on the
-console, which eases e.g. testing of MAL scripts directly, without
-starting a client.
+can be started with options as arguments.
 .TP
 \fB\-\-dbpath=\fP\fIpath\fP
 Path where
@@ -98,6 +94,11 @@ Print list of options.
 .TP
 .B \-\-version
 Print version and compile configuration.
+.TP
+.B \-\-in\-memory
+Run mserver5 in-memory.
+.B No
+data will be persisted.
 .TP
 .B \-\-trace
 Print information about MAL instructions as they are executed.

@@ -382,7 +382,7 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 	else
 		est = (BUN) *estimate;
 
-	err = GDK_EXCEPTION;		/* most likely error now */
+	err = NULL;		/* most likely error now is GDK_EXCEPTION */
 
 	if (thetafunc) {
 		assert(joinfunc == NULL);
@@ -453,6 +453,8 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 		BBPunfix(candleft->batCacheid);
 	if (candright)
 		BBPunfix(candright->batCacheid);
+	if (err == NULL)
+		throw(MAL, funcname, GDK_EXCEPTION);
 	throw(MAL, funcname, "%s", err);
 }
 

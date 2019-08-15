@@ -1,4 +1,4 @@
-HAVE_LIBPY?pyUDF-crash.Bug-6508
+HAVE_LIBPY2?pyUDF-crash.Bug-6508
 sqlitelogictest-wrong-aggregation-count.Bug-6510
 sqlitelogictest-wrong-select-not-between.Bug-6511
 case_with_orderby_limit.Bug-6512
@@ -51,7 +51,7 @@ sqlitelogictest-complex-case.Bug-6573
 create-temp-table-ordered-index-error.Bug-6574
 sqlitelogictest-missing-bulk-implementation.Bug-6575
 sqlitelogictest-aritmetic-expressions-handling.Bug-6576
-HAVE_LIBPY?temp-table-performance.Bug-6577
+HAVE_LIBPY2?temp-table-performance.Bug-6577
 multiple-insertinto-table-Bug-6578
 sqlitelogictest-select-nullif-case.Bug-6579
 concat-str-int.Bug-6583
@@ -62,17 +62,17 @@ sqlitelogictest-complex-expression.Bug-6589
 sqlitelogictest-complex-case-not-in.Bug-6594
 multiple-count.Bug-6599
 sqlitelogictest-select-errors.Bug-6600
-remote-table-where-is-null.Bug-6601
+HAVE_PYMONETDB?remote-table-where-is-null.Bug-6601
 sqlitelogictest-select-not-in-wrong.Bug-6602
 sqlitelogictest-groupby-distinct-duplicate.Bug-6603
 procedure-create-table.Bug-6604
 sqlitelogictest-cast-null-not-in.Bug-6605
 sqlitelogictest-groupby-coalesce-error-message.Bug-6608
 sqlitelogictest-algebra-rangejoin-undefined.Bug-6610
-lateral-join-crash.Bug-6613
-dependency_column_on_sequence.Bug-6618
-local_replica_table_not_detected.Bug-6620
-remote-table-where-not-equal.Bug-6621
+KNOWNFAIL?lateral-join-crash.Bug-6613
+HAVE_PYMONETDB?dependency_column_on_sequence.Bug-6618
+KNOWNFAIL&HAVE_PYMONETDB?local_replica_table_not_detected.Bug-6620
+HAVE_PYMONETDB?remote-table-where-not-equal.Bug-6621
 groupby_having_orderby_count.Bug-6624
 or_in_subselect.Bug-6625
 strptime.Bug-6626

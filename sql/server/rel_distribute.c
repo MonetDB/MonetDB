@@ -80,7 +80,7 @@ rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_part *pd, int remote_
 		sql_exp *e = n->data;
 		sql_exp *ne = m->data;
 
-		exp_setname(sql->sa, ne, e->rname, e->name);
+		exp_prop_alias(ne, e);
 	}
 	rel_destroy(rel);
 
@@ -223,7 +223,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 		rel->l = replica(sql, rel->l, uri);
 		break;
 	case op_ddl: 
-		if ((rel->flag == DDL_PSM || rel->flag == DDL_EXCEPTION) && rel->exps)
+		if ((rel->flag == ddl_psm || rel->flag == ddl_exception) && rel->exps)
 			rel->exps = exps_replica(sql, rel->exps, uri);
 		rel->l = replica(sql, rel->l, uri);
 		if (rel->r)
@@ -373,7 +373,7 @@ distribute(mvc *sql, sql_rel *rel)
 		}
 		break;
 	case op_ddl: 
-		if ((rel->flag == DDL_PSM || rel->flag == DDL_EXCEPTION) && rel->exps)
+		if ((rel->flag == ddl_psm || rel->flag == ddl_exception) && rel->exps)
 			rel->exps = exps_distribute(sql, rel->exps);
 		rel->l = distribute(sql, rel->l);
 		if (rel->r)
@@ -459,7 +459,7 @@ rel_remote_func(mvc *sql, sql_rel *rel)
 		rel->l = rel_remote_func(sql, rel->l);
 		break;
 	case op_ddl: 
-		if ((rel->flag == DDL_PSM || rel->flag == DDL_EXCEPTION) && rel->exps)
+		if ((rel->flag == ddl_psm || rel->flag == ddl_exception) && rel->exps)
 			rel->exps = exps_remote_func(sql, rel->exps);
 		rel->l = rel_remote_func(sql, rel->l);
 		if (rel->r)

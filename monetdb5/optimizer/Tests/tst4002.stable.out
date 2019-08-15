@@ -28,7 +28,7 @@ stdout of test 'tst4002` in directory 'monetdb5/optimizer` itself:
 
 #mdb.list("user","foo");
 function user.foo():void;
-    d := mtime.date("nil");
+    d := calc.date("nil");
 end user.foo;
 
 # 23:52:51 >  

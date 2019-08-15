@@ -524,11 +524,14 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				r1 = mg;
 				if (r1 == NULL)
 					return GDK_FAIL;
+			} else {
+				BBPunfix(r2->batCacheid);
 			}
+			r2 = NULL;
 		}
 		*r1p = r1;
 		if (r2p == NULL)
-			return GDK_SUCCEED;
+			goto doreturn2;
 		if (BATtdense(r1) && BATtdense(l)) {
 			r2 = BATdense(0, l->tseqbase + r1->tseqbase - l->hseqbase + r->hseqbase - r->tseqbase, BATcount(r1));
 			if (r2 == NULL) {
@@ -2386,27 +2389,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BBPreclaim(r1);
 	BBPreclaim(r2);
 	return GDK_FAIL;
-}
-
-/* binary search in a candidate list, return true if found, false if not */
-inline bool
-binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
-{
-	BUN mid;
-
-	--hi;			/* now hi is inclusive */
-	if (v < cand[lo] || v > cand[hi])
-		return false;
-	while (hi > lo) {
-		mid = (lo + hi) / 2;
-		if (cand[mid] == v)
-			return true;
-		if (cand[mid] < v)
-			lo = mid + 1;
-		else
-			hi = mid - 1;
-	}
-	return cand[lo] == v;
 }
 
 #define HASHLOOPBODY()							\

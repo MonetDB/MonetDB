@@ -29,7 +29,7 @@ stdout of test 'rewrite_like_into_likesubselect.Bug-3179` in directory 'sql/test
 % mal # name
 % clob # type
 % 146 # length
-function user.s4_1():void;
+function user.s4_0():void;
     X_2:void := querylog.define("explain select name,func from functions where name like \\'%optimizers%\\';":str, "sequential_pipe":str, 36:int);
     X_35:bat[:str] := bat.new(nil:str);
     X_41:bat[:int] := bat.new(nil:int);
@@ -61,7 +61,7 @@ function user.s4_1():void;
     X_56:bat[:int] := bat.append(X_48:bat[:int], 8196:int);
     X_58:bat[:int] := bat.append(X_50:bat[:int], 0:int);
     sql.resultSet(X_52:bat[:str], X_53:bat[:str], X_55:bat[:str], X_56:bat[:int], X_58:bat[:int], X_32:bat[:str], X_33:bat[:str]);
-end user.s4_1;
+end user.s4_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -90,7 +90,7 @@ end user.s4_1;
 % mal # name
 % clob # type
 % 150 # length
-function user.s6_1():void;
+function user.s6_0():void;
     X_2:void := querylog.define("explain select name,func from functions where name not like \\'%optimizers%\\';":str, "sequential_pipe":str, 36:int);
     X_35:bat[:str] := bat.new(nil:str);
     X_41:bat[:int] := bat.new(nil:int);
@@ -122,7 +122,7 @@ function user.s6_1():void;
     X_56:bat[:int] := bat.append(X_48:bat[:int], 8196:int);
     X_58:bat[:int] := bat.append(X_50:bat[:int], 0:int);
     sql.resultSet(X_52:bat[:str], X_53:bat[:str], X_55:bat[:str], X_56:bat[:int], X_58:bat[:int], X_32:bat[:str], X_33:bat[:str]);
-end user.s6_1;
+end user.s6_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -152,7 +152,7 @@ end user.s6_1;
 % mal # name
 % clob # type
 % 147 # length
-function user.s8_1():void;
+function user.s8_0():void;
     X_2:void := querylog.define("explain select name,func from functions where name ilike \\'%optimizers%\\';":str, "sequential_pipe":str, 36:int);
     X_35:bat[:str] := bat.new(nil:str);
     X_41:bat[:int] := bat.new(nil:int);
@@ -184,9 +184,9 @@ function user.s8_1():void;
     X_56:bat[:int] := bat.append(X_48:bat[:int], 8196:int);
     X_58:bat[:int] := bat.append(X_50:bat[:int], 0:int);
     sql.resultSet(X_52:bat[:str], X_53:bat[:str], X_55:bat[:str], X_56:bat[:int], X_58:bat[:int], X_32:bat[:str], X_33:bat[:str]);
-end user.s8_1;
-#inline               actions= 0 time=0 usec 
-#remap                actions= 0 time=1 usec 
+end user.s8_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 1 time=3 usec 
 #evaluate             actions= 1 time=16 usec 
@@ -212,7 +212,7 @@ end user.s8_1;
 % mal # name
 % clob # type
 % 151 # length
-function user.s10_1():void;
+function user.s10_0():void;
     X_2:void := querylog.define("explain select name,func from functions where name not ilike \\'%optimizers%\\';":str, "sequential_pipe":str, 36:int);
     X_35:bat[:str] := bat.new(nil:str);
     X_41:bat[:int] := bat.new(nil:int);
@@ -244,8 +244,8 @@ function user.s10_1():void;
     X_56:bat[:int] := bat.append(X_48:bat[:int], 8196:int);
     X_58:bat[:int] := bat.append(X_50:bat[:int], 0:int);
     sql.resultSet(X_52:bat[:str], X_53:bat[:str], X_55:bat[:str], X_56:bat[:int], X_58:bat[:int], X_32:bat[:str], X_33:bat[:str]);
-end user.s10_1;
-#inline               actions= 0 time=1 usec 
+end user.s10_0;
+#inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 1 time=3 usec 
@@ -294,7 +294,7 @@ end user.s10_1;
 % mal # name
 % clob # type
 % 150 # length
-function user.s20_1():void;
+function user.s20_0():void;
     X_2:void := querylog.define("explain select name,func from functions where contains(name, \\'optimizers\\');":str, "sequential_pipe":str, 37:int);
     X_37:bat[:str] := bat.new(nil:str);
     X_43:bat[:int] := bat.new(nil:int);
@@ -325,36 +325,38 @@ function user.s20_1():void;
     X_58:bat[:int] := bat.append(X_50:bat[:int], 8196:int);
     X_60:bat[:int] := bat.append(X_52:bat[:int], 0:int);
     sql.resultSet(X_54:bat[:str], X_55:bat[:str], X_57:bat[:str], X_58:bat[:int], X_60:bat[:int], X_34:bat[:str], X_35:bat[:str]);
-end user.s20_1;
-#inline               actions= 0 time=12 usec 
-#remap                actions= 1 time=100 usec 
-#costmodel            actions= 1 time=3 usec 
-#coercion             actions= 5 time=18 usec 
-#evaluate             actions= 4 time=35 usec 
-#emptybind            actions= 0 time=16 usec 
-#pushselect           actions= 2 time=45 usec 
-#aliases              actions= 6 time=16 usec 
-#mergetable           actions= 0 time=53 usec 
-#deadcode             actions= 3 time=11 usec 
-#aliases              actions= 0 time=9 usec 
-#constants            actions= 5 time=23 usec 
-#commonTerms          actions= 0 time=9 usec 
-#projectionpath       actions= 0 time=6 usec 
-#reorder              actions= 1 time=42 usec 
-#deadcode             actions= 0 time=9 usec 
-#reduce               actions=72 time=22 usec 
-#matpack              actions= 0 time=4 usec 
-#multiplex            actions= 0 time=4 usec 
-#profiler             actions= 1 time=5 usec 
-#candidates           actions= 1 time=2 usec 
-#garbagecollector     actions= 1 time=26 usec 
-#total                actions= 1 time=621 usec 
+end user.s20_0;
+#inline               actions= 0 time=4 usec 
+#remap                actions= 1 time=32 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 3 time=5 usec 
+#aliases              actions= 7 time=6 usec 
+#evaluate             actions= 2 time=19 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 5 time=18 usec 
+#aliases              actions= 4 time=6 usec 
+#mergetable           actions= 0 time=25 usec 
+#deadcode             actions= 2 time=7 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 3 time=8 usec 
+#commonTerms          actions= 0 time=4 usec 
+#projectionpath       actions= 0 time=2 usec 
+#deadcode             actions= 0 time=6 usec 
+#reorder              actions= 1 time=19 usec 
+#matpack              actions= 0 time=1 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=5 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=18 usec 
+#total                actions=27 time=256 usec 
 #explain select name,func from functions where not_contains(name, 'optimizers');
 % .explain # table_name
 % mal # name
 % clob # type
 % 154 # length
-function user.s22_1():void;
+function user.s22_0():void;
     X_2:void := querylog.define("explain select name,func from functions where not_contains(name, \\'optimizers\\');":str, "sequential_pipe":str, 37:int);
     X_37:bat[:str] := bat.new(nil:str);
     X_43:bat[:int] := bat.new(nil:int);
@@ -385,36 +387,38 @@ function user.s22_1():void;
     X_58:bat[:int] := bat.append(X_50:bat[:int], 8196:int);
     X_60:bat[:int] := bat.append(X_52:bat[:int], 0:int);
     sql.resultSet(X_54:bat[:str], X_55:bat[:str], X_57:bat[:str], X_58:bat[:int], X_60:bat[:int], X_34:bat[:str], X_35:bat[:str]);
-end user.s22_1;
-#inline               actions= 0 time=7 usec 
-#remap                actions= 1 time=92 usec 
-#costmodel            actions= 1 time=2 usec 
-#coercion             actions= 5 time=18 usec 
-#evaluate             actions= 4 time=33 usec 
-#emptybind            actions= 0 time=16 usec 
-#pushselect           actions= 2 time=34 usec 
-#aliases              actions= 6 time=16 usec 
-#mergetable           actions= 0 time=51 usec 
-#deadcode             actions= 3 time=12 usec 
-#aliases              actions= 0 time=9 usec 
-#constants            actions= 5 time=23 usec 
-#commonTerms          actions= 0 time=8 usec 
-#projectionpath       actions= 0 time=5 usec 
-#reorder              actions= 1 time=43 usec 
-#deadcode             actions= 0 time=10 usec 
-#reduce               actions=72 time=22 usec 
-#matpack              actions= 0 time=4 usec 
-#multiplex            actions= 0 time=4 usec 
-#profiler             actions= 1 time=6 usec 
-#candidates           actions= 1 time=2 usec 
-#garbagecollector     actions= 1 time=27 usec 
-#total                actions= 1 time=600 usec 
+end user.s22_0;
+#inline               actions= 0 time=4 usec 
+#remap                actions= 1 time=32 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 3 time=4 usec 
+#aliases              actions= 7 time=7 usec 
+#evaluate             actions= 2 time=14 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 5 time=17 usec 
+#aliases              actions= 4 time=5 usec 
+#mergetable           actions= 0 time=24 usec 
+#deadcode             actions= 2 time=7 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 3 time=8 usec 
+#commonTerms          actions= 0 time=3 usec 
+#projectionpath       actions= 0 time=2 usec 
+#deadcode             actions= 0 time=5 usec 
+#reorder              actions= 1 time=18 usec 
+#matpack              actions= 0 time=0 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=0 usec 
+#deadcode             actions= 0 time=6 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=17 usec 
+#total                actions=27 time=245 usec 
 #explain select name,func from functions where icontains(name, 'optimizers');
 % .explain # table_name
 % mal # name
 % clob # type
 % 151 # length
-function user.s24_1():void;
+function user.s24_0():void;
     X_2:void := querylog.define("explain select name,func from functions where icontains(name, \\'optimizers\\');":str, "sequential_pipe":str, 37:int);
     X_37:bat[:str] := bat.new(nil:str);
     X_43:bat[:int] := bat.new(nil:int);
@@ -445,36 +449,38 @@ function user.s24_1():void;
     X_58:bat[:int] := bat.append(X_50:bat[:int], 8196:int);
     X_60:bat[:int] := bat.append(X_52:bat[:int], 0:int);
     sql.resultSet(X_54:bat[:str], X_55:bat[:str], X_57:bat[:str], X_58:bat[:int], X_60:bat[:int], X_34:bat[:str], X_35:bat[:str]);
-end user.s24_1;
-#inline               actions= 0 time=7 usec 
-#remap                actions= 1 time=91 usec 
-#costmodel            actions= 1 time=2 usec 
-#coercion             actions= 5 time=18 usec 
-#evaluate             actions= 4 time=33 usec 
-#emptybind            actions= 0 time=16 usec 
-#pushselect           actions= 2 time=33 usec 
-#aliases              actions= 6 time=16 usec 
-#mergetable           actions= 0 time=50 usec 
-#deadcode             actions= 3 time=11 usec 
-#aliases              actions= 0 time=9 usec 
-#constants            actions= 5 time=22 usec 
-#commonTerms          actions= 0 time=7 usec 
-#projectionpath       actions= 0 time=6 usec 
-#reorder              actions= 1 time=49 usec 
-#deadcode             actions= 0 time=9 usec 
-#reduce               actions=72 time=22 usec 
-#matpack              actions= 0 time=4 usec 
-#multiplex            actions= 0 time=3 usec 
-#profiler             actions= 1 time=5 usec 
-#candidates           actions= 1 time=2 usec 
-#garbagecollector     actions= 1 time=26 usec 
-#total                actions= 1 time=587 usec 
+end user.s24_0;
+#inline               actions= 0 time=3 usec 
+#remap                actions= 1 time=31 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 3 time=5 usec 
+#aliases              actions= 7 time=7 usec 
+#evaluate             actions= 2 time=14 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 5 time=16 usec 
+#aliases              actions= 4 time=6 usec 
+#mergetable           actions= 0 time=24 usec 
+#deadcode             actions= 2 time=8 usec 
+#aliases              actions= 0 time=1 usec 
+#constants            actions= 3 time=8 usec 
+#commonTerms          actions= 0 time=4 usec 
+#projectionpath       actions= 0 time=2 usec 
+#deadcode             actions= 0 time=6 usec 
+#reorder              actions= 1 time=18 usec 
+#matpack              actions= 0 time=0 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=5 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=18 usec 
+#total                actions=27 time=244 usec 
 #explain select name,func from functions where not_icontains(name, 'optimizers');
 % .explain # table_name
 % mal # name
 % clob # type
 % 155 # length
-function user.s26_1():void;
+function user.s26_0():void;
     X_2:void := querylog.define("explain select name,func from functions where not_icontains(name, \\'optimizers\\');":str, "sequential_pipe":str, 37:int);
     X_37:bat[:str] := bat.new(nil:str);
     X_43:bat[:int] := bat.new(nil:int);
@@ -505,31 +511,32 @@ function user.s26_1():void;
     X_58:bat[:int] := bat.append(X_50:bat[:int], 8196:int);
     X_60:bat[:int] := bat.append(X_52:bat[:int], 0:int);
     sql.resultSet(X_54:bat[:str], X_55:bat[:str], X_57:bat[:str], X_58:bat[:int], X_60:bat[:int], X_34:bat[:str], X_35:bat[:str]);
-end user.s26_1;
-#inline               actions= 0 time=7 usec 
-#remap                actions= 1 time=117 usec 
-#costmodel            actions= 1 time=3 usec 
-#coercion             actions= 5 time=19 usec 
-#evaluate             actions= 4 time=35 usec 
-#emptybind            actions= 0 time=17 usec 
-#pushselect           actions= 2 time=34 usec 
-#aliases              actions= 6 time=17 usec 
-#mergetable           actions= 0 time=54 usec 
-#deadcode             actions= 3 time=12 usec 
-#aliases              actions= 0 time=10 usec 
-#constants            actions= 5 time=23 usec 
-#commonTerms          actions= 0 time=9 usec 
-#projectionpath       actions= 0 time=5 usec 
-#reorder              actions= 1 time=44 usec 
-#deadcode             actions= 0 time=9 usec 
-#reduce               actions=72 time=22 usec 
-#matpack              actions= 0 time=11 usec 
-#multiplex            actions= 0 time=4 usec 
-#profiler             actions= 1 time=5 usec 
-#candidates           actions= 1 time=2 usec 
-#garbagecollector     actions= 1 time=27 usec 
-#total                actions= 1 time=639 usec 
-#rollback;
+end user.s26_0;
+#inline               actions= 0 time=3 usec 
+#remap                actions= 1 time=31 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 3 time=4 usec 
+#aliases              actions= 7 time=6 usec 
+#evaluate             actions= 2 time=14 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 5 time=16 usec 
+#aliases              actions= 4 time=5 usec 
+#mergetable           actions= 0 time=25 usec 
+#deadcode             actions= 2 time=6 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 3 time=7 usec 
+#commonTerms          actions= 0 time=3 usec 
+#projectionpath       actions= 0 time=2 usec 
+#deadcode             actions= 0 time=6 usec 
+#reorder              actions= 1 time=18 usec 
+#matpack              actions= 0 time=0 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=0 usec 
+#deadcode             actions= 0 time=5 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=17 usec 
+#total                actions=27 time=256 usec 
 
 # 13:28:51 >  
 # 13:28:51 >  "Done."

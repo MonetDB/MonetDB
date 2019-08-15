@@ -62,9 +62,6 @@
 #define DEPENDENCY_CHECK_ERROR 3
 #define DEPENDENCY_CHECK_OK 0
 
-#define NO_TRIGGER 0
-#define IS_TRIGGER 1
-
 #define ROLE_PUBLIC   1
 #define ROLE_SYSADMIN 2
 #define USER_MONETDB  3
@@ -189,8 +186,7 @@ typedef enum commit_action_t {
 	CA_COMMIT, 	/* commit rows, only for persistent tables */
 	CA_DELETE, 	/* delete rows */
 	CA_PRESERVE,	/* preserve rows */
-	CA_DROP,	/* drop table */
-	CA_ABORT	/* abort changes, internal only */
+	CA_DROP		/* drop table */
 } ca_t;
 
 typedef int sqlid;
@@ -198,6 +194,7 @@ typedef int sqlid;
 typedef struct sql_base {
 	int wtime;
 	int rtime;
+	int stime;
 	int allocated;
 	int flags;
 	int refcnt;
@@ -243,12 +240,13 @@ typedef size_t backend_stack;
 
 typedef struct sql_trans {
 	char *name;
-	int stime;		/* read transaction time stamp */
-	int wstime;		/* write transaction time stamp */
-	int rtime;
-	int wtime;
+	int stime;		/* start of transaction */
+	int wstime;		/* first write transaction time stamp */
+	int rtime;		/* timestamp of latest read performed in transaction*/
+	int wtime;		/* timestamp of latest write performed in transaction*/
 	int schema_number;	/* schema timestamp */
 	int schema_updates;	/* set on schema changes */
+	int active;		/* active transaction */
 	int status;		/* status of the last query */
 	list *dropped;  	/* protection against recursive cascade action*/
 	list *moved_tables;
@@ -280,6 +278,40 @@ typedef struct sql_schema {
 	sql_trans *tr;
 } sql_schema;
 
+typedef enum sql_class {
+	EC_ANY,
+	EC_TABLE,
+	EC_BIT,
+	EC_CHAR,
+	EC_STRING,
+	EC_BLOB,
+	EC_POS,
+	EC_NUM,
+	EC_MONTH,
+	EC_SEC,
+	EC_DEC,
+	EC_FLT,
+	EC_TIME,
+	EC_DATE,
+	EC_TIMESTAMP,
+	EC_GEOM,
+	EC_EXTERNAL,
+	EC_MAX /* evaluated to the max value, should be always kept at the bottom */
+} sql_class;
+
+#define has_tz(e,n)	(EC_TEMP(e) && \
+			((e == EC_TIME && strcmp(n, "timetz") == 0) || \
+			(e == EC_TIMESTAMP && strcmp(n, "timestamptz") == 0)) )
+#define type_has_tz(t)	has_tz((t)->type->eclass, (t)->type->sqlname)
+#define EC_VARCHAR(e)	(e==EC_CHAR||e==EC_STRING)
+#define EC_INTERVAL(e)	(e==EC_MONTH||e==EC_SEC)
+#define EC_NUMBER(e)	(e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||e==EC_FLT)
+#define EC_COMPUTE(e)	(e==EC_NUM||e==EC_FLT)
+#define EC_BOOLEAN(e)	(e==EC_BIT||e==EC_NUM||e==EC_FLT)
+#define EC_TEMP(e)		(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP)
+#define EC_TEMP_FRAC(e)	(e==EC_TIME||e==EC_TIMESTAMP)
+#define EC_FIXED(e)		(e==EC_BIT||e==EC_CHAR||e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||EC_TEMP(e))
+
 typedef struct sql_type {
 	sql_base base;
 
@@ -289,7 +321,7 @@ typedef struct sql_type {
 	int localtype;		/* localtype, need for coersions */
 	unsigned char radix;
 	unsigned int bits;
-	unsigned char eclass; 	/* types are grouped into equivalence classes */
+	sql_class eclass; 	/* types are grouped into equivalence classes */
 	sql_schema *s;
 } sql_type;
 
@@ -487,13 +519,6 @@ typedef struct sql_sequence {
 	sql_schema *s;
 } sql_sequence;
 
-/* histogram types */
-typedef enum sql_histype {
-       X_EXACT,
-       X_EQUI_WIDTH,
-       X_EQUI_HEIGHT
-} sql_histype;
-
 typedef struct sql_column {
 	sql_base base;
 	sql_subtype type;
@@ -646,7 +671,6 @@ typedef struct sql_session {
 	                           commit, rollback, etc. */
 	char auto_commit;
 	int level;		/* TRANSACTION isolation level */
-	int active;		/* active transaction */
 	int status;		/* status, ok/error */
 	backend_stack stk;
 } sql_session;
@@ -654,7 +678,6 @@ typedef struct sql_session {
 extern void schema_destroy(sql_schema *s);
 extern void table_destroy(sql_table *t);
 extern void column_destroy(sql_column *c);
-extern void kc_destroy(sql_kc *kc);
 extern void key_destroy(sql_key *k);
 extern void idx_destroy(sql_idx * i);
 

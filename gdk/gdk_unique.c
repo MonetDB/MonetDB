@@ -275,7 +275,7 @@ BATunique(BAT *b, BAT *s)
 				if (cmp(v, BUNtail(bi, hb)) == 0) {
 					o = hb - lo + seq;
 					if (cand == NULL ||
-					    SORTfnd(s, &o) != BUN_NONE) {
+					    BATcandcontains(s, o)) {
 						/* we've seen this
 						 * value before */
 						break;

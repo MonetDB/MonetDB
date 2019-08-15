@@ -136,9 +136,6 @@
 /* Define if you have the CommonCrypto library */
 /* #undef HAVE_COMMONCRYPTO */
 
-/* If the console should be used */
-#define HAVE_CONSOLE 1
-
 /* Define to 1 if you have the `ctime_r' function. */
 #define HAVE_CTIME_R 1
 
@@ -267,7 +264,7 @@
 /* #undef HAVE_LIBPTHREAD */
 
 /* Define if we can link to python */
-/* #undef HAVE_LIBPY */
+/* #undef HAVE_LIBPY2 */
 
 /* Define if we can link to python */
 /* #undef HAVE_LIBPY3 */

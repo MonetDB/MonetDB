@@ -257,7 +257,7 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 
 char * toUpperCopy(char *dest, const char *src) 
 {
-	int i, len;
+	size_t i, len;
 
 	if (src == NULL) {
 		*dest = '\0';
@@ -361,6 +361,9 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		_DELETE(l);
 		break;
 	}
+	case SQL_PARAMETER:
+		strcpy(buf,"?");
+		break;
 	case SQL_NULL:
 		strcpy(buf,"NULL");
 		break;
@@ -415,7 +418,7 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 				*err = e;
 		}
 		return NULL;
-	} 	
+	}
 	case SQL_CAST: {
 		dlist *dl = se->data.lval;
 		char *val;
@@ -437,7 +440,6 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	}
 	case SQL_AGGR:
 	case SQL_SELECT:
-	case SQL_PARAMETER:
 	case SQL_CASE:
 	case SQL_COALESCE:
 	case SQL_NULLIF:

@@ -26,5 +26,5 @@ mergepart24
 mergepart25
 mergepart26
 mergepart27
-HAVE_DATA_PATH&HAVE_LIBPY?mergepart28
-mergepart29
+HAVE_DATA_PATH&HAVE_LIBPY2?mergepart28
+HAVE_PYMONETDB?mergepart29

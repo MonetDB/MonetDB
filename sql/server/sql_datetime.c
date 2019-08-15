@@ -279,6 +279,10 @@ datetime_field(itype f)
 {
 	switch (f) {
 	default:
+	case icentury:
+		return "century";
+	case idecade:
+		return "decade";
 	case iyear:
 		return "year";
 	case imonth:
@@ -295,6 +299,10 @@ datetime_field(itype f)
 		return "quarter";
 	case iweek:
 		return "week";
+	case idow:
+		return "dayofweek";
+	case idoy:
+		return "dayofyear";
 	}
 }
 

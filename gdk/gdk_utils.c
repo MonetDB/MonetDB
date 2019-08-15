@@ -42,6 +42,9 @@ int GDKverbose = 0;
 #ifdef HAVE_SYS_SYSCTL_H
 # include <sys/sysctl.h>
 #endif
+#if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT)
+#include <sys/resource.h>
+#endif
 
 #ifdef __CYGWIN__
 #include <sysinfoapi.h>
@@ -301,9 +304,12 @@ static ATOMIC_TYPE GDK_vm_cursize = ATOMIC_VAR_INIT(0);
 size_t _MT_pagesize = 0;	/* variable holding page size */
 size_t _MT_npages = 0;		/* variable holding memory size in pages */
 
+static lng programepoch;
+
 void
 MT_init(void)
 {
+	programepoch = GDKusec();
 #ifdef _MSC_VER
 	{
 		SYSTEM_INFO sysInfo;
@@ -394,6 +400,48 @@ MT_init(void)
 # endif
 #else
 # error "don't know how to get the amount of physical memory for your OS"
+#endif
+	/* limit values to whatever cgroups gives us */
+	FILE *f;
+	/* limit of memory usage */
+	f = fopen("/sys/fs/cgroup/memory/memory.limit_in_bytes", "r");
+	if (f != NULL) {
+		uint64_t mem;
+		if (fscanf(f, "%" SCNu64, &mem) == 1
+		    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+			_MT_npages = (size_t) (mem / _MT_pagesize);
+		}
+		fclose(f);
+	}
+	/* soft limit of memory usage */
+	f = fopen("/sys/fs/cgroup/memory/memory.soft_limit_in_bytes", "r");
+	if (f != NULL) {
+		uint64_t mem;
+		if (fscanf(f, "%" SCNu64, &mem) == 1
+		    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+			_MT_npages = (size_t) (mem / _MT_pagesize);
+		}
+		fclose(f);
+	}
+	/* limit of memory+swap usage
+	 * we use this as maximum virtual memory size */
+	f = fopen("/sys/fs/cgroup/memory/memory.memsw.limit_in_bytes", "r");
+	if (f != NULL) {
+		uint64_t mem;
+		if (fscanf(f, "%" SCNu64, &mem) == 1
+		    && mem < (uint64_t) GDK_vm_maxsize) {
+			GDK_vm_maxsize = (size_t) mem;
+		}
+		fclose(f);
+	}
+#if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT) && defined(RLIMIT_AS)
+	struct rlimit l;
+	/* address space (virtual memory) limit */
+	if (getrlimit(RLIMIT_AS, &l) == 0
+	    && l.rlim_cur != RLIM_INFINITY
+	    && l.rlim_cur < GDK_vm_maxsize) {
+		GDK_vm_maxsize = l.rlim_cur;
+	}
 #endif
 }
 
@@ -706,51 +754,19 @@ GDKexiting(void)
 	return (bool) (ATOMIC_GET(&GDKstopped) > 0);
 }
 
-struct serverthread {
-	struct serverthread *next;
-	MT_Id pid;
-};
-static ATOMIC_PTR_TYPE serverthread = ATOMIC_PTR_VAR_INIT(NULL);
-
 void
 GDKprepareExit(void)
 {
-	struct serverthread *st;
-
 	if (ATOMIC_ADD(&GDKstopped, 1) > 0)
 		return;
 
 	THRDDEBUG dump_threads();
-	/* we're saved from the ABA problem in this code because it is
-	 * only executed by one thread */
-	while ((st = ATOMIC_PTR_GET(&serverthread)) != NULL) {
-		while (!ATOMIC_PTR_CAS(&serverthread, &((void *) {st}), st->next))
-			;
-		MT_join_thread(st->pid);
-		GDKfree(st);
-	}
 	join_detached_threads();
-}
-
-/* Register a thread that should be waited for in GDKreset.  The
- * thread must exit by itself when GDKexiting() returns true. */
-void
-GDKregister(MT_Id pid)
-{
-	struct serverthread *st;
-
-	if ((st = GDKmalloc(sizeof(struct serverthread))) == NULL)
-		return;
-	st->pid = pid;
-	st->next = ATOMIC_PTR_GET(&serverthread);
-	while (!ATOMIC_PTR_CAS(&serverthread, &((void *) {st->next}), st))
-		;
 }
 
 void
 GDKreset(int status)
 {
-	struct serverthread *st;
 	MT_Id pid = MT_getpid();
 
 	assert(GDKexiting());
@@ -764,21 +780,12 @@ GDKreset(int status)
 		GDKval = NULL;
 	}
 
-	/* we're saved from the ABA problem in this code because it is
-	 * only executed by one thread */
-	while ((st = ATOMIC_PTR_GET(&serverthread)) != NULL) {
-		while (!ATOMIC_PTR_CAS(&serverthread, &((void *) {st}), st->next))
-			;
-		MT_join_thread(st->pid);
-		GDKfree(st);
-	}
 	join_detached_threads();
 
 	if (status == 0) {
 		/* they had their chance, now kill them */
 		bool killed = false;
 		MT_lock_set(&GDKthreadLock);
-		assert(ATOMIC_PTR_GET(&serverthread) == NULL);
 		for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
 			MT_Id victim;
 			if ((victim = (MT_Id) ATOMIC_GET(&t->pid)) != 0) {
@@ -1238,63 +1245,37 @@ lng
 GDKusec(void)
 {
 	/* Return the time in microseconds since an epoch.  The epoch
-	 * is roughly the time this program started. */
-#ifdef _MSC_VER
-	static LARGE_INTEGER freq, start;	/* automatically initialized to 0 */
-	LARGE_INTEGER ctr;
-
-	if (start.QuadPart == 0 &&
-	    (!QueryPerformanceFrequency(&freq) ||
-	     !QueryPerformanceCounter(&start)))
-		start.QuadPart = -1;
-	if (start.QuadPart > 0) {
-		QueryPerformanceCounter(&ctr);
-		return (lng) (((ctr.QuadPart - start.QuadPart) * 1000000) / freq.QuadPart);
-	}
-#endif
-#ifdef HAVE_CLOCK_GETTIME
-#if defined(CLOCK_UPTIME_FAST)
-#define CLK_ID CLOCK_UPTIME_FAST	/* FreeBSD */
+	 * is currently midnight at the start of January 1, 1970, UTC. */
+#if defined(NATIVE_WIN32)
+	FILETIME ft;
+	ULARGE_INTEGER f;
+	GetSystemTimeAsFileTime(&ft); /* time since Jan 1, 1601 */
+	f.LowPart = ft.dwLowDateTime;
+	f.HighPart = ft.dwHighDateTime;
+	/* there are 369 years, of which 89 are leap years from
+	 * January 1, 1601 to January 1, 1970 which makes 134774 days;
+	 * multiply that with the number of seconds in a day and the
+	 * number of 100ns units in a second; subtract that from the
+	 * value for the current time since January 1, 1601 to get the
+	 * time since the Unix epoch */
+	f.QuadPart -= LL_CONSTANT(134774) * 24 * 60 * 60 * 10000000;
+	/* and convert to microseconds */
+	return (lng) (f.QuadPart / 10);
+#elif defined(HAVE_CLOCK_GETTIME)
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	return (lng) (ts.tv_sec * LL_CONSTANT(1000000) + ts.tv_nsec / 1000);
+#elif defined(HAVE_GETTIMEOFDAY)
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return (lng) (tv.tv_sec * LL_CONSTANT(1000000) + tv.tv_usec);
+#elif defined(HAVE_FTIME)
+	struct timeb tb;
+	ftime(&tb);
+	return (lng) (tb.time * LL_CONSTANT(1000000) + tb.millitm * LL_CONSTANT(1000));
 #else
-#define CLK_ID CLOCK_MONOTONIC		/* Posix (fallback) */
-#endif
-	{
-		static struct timespec tsbase;
-		struct timespec ts;
-		if (tsbase.tv_sec == 0) {
-			clock_gettime(CLK_ID, &tsbase);
-			return tsbase.tv_nsec / 1000;
-		}
-		if (clock_gettime(CLK_ID, &ts) == 0)
-			return (ts.tv_sec - tsbase.tv_sec) * 1000000 + ts.tv_nsec / 1000;
-	}
-#endif
-#ifdef HAVE_GETTIMEOFDAY
-	{
-		static struct timeval tpbase;	/* automatically initialized to 0 */
-		struct timeval tp;
-
-		if (tpbase.tv_sec == 0) {
-			gettimeofday(&tpbase, NULL);
-			return (lng) tpbase.tv_usec;
-		}
-		gettimeofday(&tp, NULL);
-		return (lng) (tp.tv_sec - tpbase.tv_sec) * 1000000 + (lng) tp.tv_usec;
-	}
-#else
-#ifdef HAVE_FTIME
-	{
-		static struct timeb tbbase;	/* automatically initialized to 0 */
-		struct timeb tb;
-
-		if (tbbase.time == 0) {
-			ftime(&tbbase);
-			return (lng) tbbase.millitm * 1000;
-		}
-		ftime(&tb);
-		return (lng) (tb.time - tbbase.time) * 1000000 + (lng) tb.millitm * 1000;
-	}
-#endif
+	/* last resort */
+	return (lng) (time(NULL) * LL_CONSTANT(1000000));
 #endif
 }
 
@@ -1302,7 +1283,8 @@ GDKusec(void)
 int
 GDKms(void)
 {
-	return (int) (GDKusec() / 1000);
+	/* wraps around after a bit over 24 days */
+	return (int) ((GDKusec() - programepoch) / 1000);
 }
 
 

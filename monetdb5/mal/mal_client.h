@@ -17,9 +17,6 @@
 
 #define SCENARIO_PROPERTIES 8
 
-#define CONSOLE     0
-#define isAdministrator(X) (X==mal_clients)
-
 enum clientmode {
 	FREECLIENT,
 	FINISHCLIENT,
@@ -27,13 +24,10 @@ enum clientmode {
 	BLOCKCLIENT
 };
 
-#define PROCESSTIMEOUT  2   /* seconds */
-
 /*
  * The prompt structure is designed to simplify recognition of the
- * language framework for interaction. For direct console access it is a
- * short printable ASCII string. For access through an API we assume the
- * prompt is an ASCII string surrounded by a \001 character. This
+ * language framework for interaction. For access through an API we 
+ * assume the prompt is an ASCII string surrounded by a \001 character. This
  * simplifies recognition.  The information between the prompt brackets
  * can be used to pass the mode to the front-end. Moreover, the prompt
  * can be dropped if a single stream of information is expected from the
@@ -44,7 +38,7 @@ enum clientmode {
  */
 typedef struct CLIENT_INPUT {
 	bstream             *fdin;
-	int                 yycur;		
+	size_t              yycur;
 	int                 listing;
 	char                *prompt;
 	struct CLIENT_INPUT *next;    
@@ -94,7 +88,7 @@ typedef struct CLIENT {
 	 */
 	str       srcFile;  /* NULL for stdin, or file name */
 	bstream  *fdin;
-	int       yycur;    /* the scanners current position */
+	size_t    yycur;    /* the scanners current position */
 	/*
 	 * Keeping track of instructions executed is a valuable tool for
 	 * script processing and debugging.  It can be changed at runtime
@@ -126,8 +120,6 @@ typedef struct CLIENT {
 	 * debugger features.
 	 */
 	int debug;
-	void  *mdb;            /* context upon suspend */
-	str    history;	       /* where to keep console history */
 	enum clientmode mode;  /* FREECLIENT..BLOCKED */
 	/*
 	 * Client records are organized into a two-level dependency tree,
@@ -156,9 +148,6 @@ typedef struct CLIENT {
 	 * we have to wait for the next one.
 	 */
 	int		actions;
-
-	jmp_buf	exception_buf;
-	int exception_buf_initialized;
 
 	/*
 	 * Here are pointers to scenario backends contexts.  For the time
@@ -199,7 +188,6 @@ mal_export bool    MCinit(void);
 
 mal_export int MAL_MAXCLIENTS;
 mal_export ClientRec *mal_clients;
-mal_export int MCdefault;
 
 mal_export Client  MCgetClient(int id);
 mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);

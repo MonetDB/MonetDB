@@ -27,7 +27,7 @@ CREATE TABLE "_attributesDouble" (
 CREATE TABLE "_attributesPoint" (
 	"subject"   INTEGER,
 	"attribute" CHARACTER LARGE OBJECT,
-	"value"     GEOMETRY(POINT),
+--	"value"     GEOMETRY(POINT),
 	"prob"      DOUBLE        DEFAULT 1.000000
 );
 CREATE TABLE "_attributes" (
@@ -104,7 +104,7 @@ CREATE TABLE "params_double" (
 );
 CREATE TABLE "params_point" (
 	"paramname" CHARACTER LARGE OBJECT,
-	"value"     GEOMETRY(POINT),
+--	"value"     GEOMETRY(POINT),
 	"prob"      DOUBLE
 );
 CREATE TABLE "termdict" (
@@ -147,7 +147,7 @@ CREATE TABLE "obj_date" (
 CREATE TABLE "obj_point" (
 	"subject"   INTEGER,
 	"attribute" CHARACTER LARGE OBJECT,
-	"value"     GEOMETRY(POINT),
+--	"value"     GEOMETRY(POINT),
 	"prob"      DOUBLE
 );
 CREATE TABLE "obj_relation" (
@@ -168,7 +168,7 @@ create view s13f62054e14_params_str as select paramname as a1, value as a2, prob
 create view s13f62054e14_params_int as select paramname as a1, value as a2, prob as prob from params_int;
 create view s13f62054e14_params_double as select paramname as a1, value as a2, prob as prob from params_double;
 create view s13f62054e14_params_date as select paramname as a1, value as a2, prob as prob from params_date;
-create view s13f62054e14_params_point as select paramname as a1, value as a2, prob as prob from params_point;
+-- create view s13f62054e14_params_point as select paramname as a1, value as a2, prob as prob from params_point;
 create view s13f62054e14_genericindex_data_dict as select idstr as a1, id as a2, type as a3, prob as prob from dict;
 create view s13f62054e14_genericindex_data_obj_relation as select subject as a1, predicate as a2, object as a3, prob as prob from obj_relation;
 create view s13f62054e14_genericindex_data_obj_string as select subject as a1, attribute as a2, value as a3, prob as prob from obj_string;
@@ -179,7 +179,7 @@ create view s13f62055e38_params_str as select paramname as a1, value as a2, prob
 create view s13f62055e38_params_int as select paramname as a1, value as a2, prob as prob from params_int;
 create view s13f62055e38_params_double as select paramname as a1, value as a2, prob as prob from params_double;
 create view s13f62055e38_params_date as select paramname as a1, value as a2, prob as prob from params_date;
-create view s13f62055e38_params_point as select paramname as a1, value as a2, prob as prob from params_point;
+-- create view s13f62055e38_params_point as select paramname as a1, value as a2, prob as prob from params_point;
 create view s13f62055e38_genericindex_data_dict as select idstr as a1, id as a2, type as a3, prob as prob from dict;
 create view s13f62055e38_genericindex_data_obj_relation as select subject as a1, predicate as a2, object as a3, prob as prob from obj_relation;
 create view s13f62055e38_genericindex_data_obj_string as select subject as a1, attribute as a2, value as a3, prob as prob from obj_string;
@@ -193,7 +193,7 @@ create view s13f62fa36e4_params_str as select paramname as a1, value as a2, prob
 create view s13f62fa36e4_params_int as select paramname as a1, value as a2, prob as prob from params_int;
 create view s13f62fa36e4_params_double as select paramname as a1, value as a2, prob as prob from params_double;
 create view s13f62fa36e4_params_date as select paramname as a1, value as a2, prob as prob from params_date;
-create view s13f62fa36e4_params_point as select paramname as a1, value as a2, prob as prob from params_point;
+-- create view s13f62fa36e4_params_point as select paramname as a1, value as a2, prob as prob from params_point;
 create view s13f62fa36e4_genericindex_data_dict as select idstr as a1, id as a2, type as a3, prob as prob from dict;
 create view s13f62fa36e4_genericindex_data_obj_relation as select subject as a1, predicate as a2, object as a3, prob as prob from obj_relation;
 create view s13f62fa36e4_genericindex_data_obj_string as select subject as a1, attribute as a2, value as a3, prob as prob from obj_string;

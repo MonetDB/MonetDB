@@ -350,10 +350,9 @@ WLCinit(void)
 		if( msg)
 			GDKerror("%s",msg);
 		if (MT_create_thread(&wlc_logger, WLClogger , (void*) 0,
-							 MT_THR_JOINABLE, "WLClogger") < 0) {
+							 MT_THR_DETACHED, "WLClogger") < 0) {
 			GDKerror("wlc.logger thread could not be spawned");
 		}
-		GDKregister(wlc_logger);
 	}
 	return MAL_SUCCEED;
 }
@@ -471,8 +470,12 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str call)
 	if(gettimeofday(&clock,NULL) == -1)
 		throw(MAL,call,"Unable to retrieve current time");
 	clk = clock.tv_sec;
+#ifdef HAVE_LOCALTIME_R
+	(void) localtime_r(&clk, &ctm);
+#else
 	ctm = *localtime(&clk);
-	strftime(wlc_time, 26, "%Y-%m-%dT%H:%M:%S",&ctm);
+#endif
+	strftime(wlc_time, sizeof(wlc_time), "%Y-%m-%dT%H:%M:%S.000",&ctm);
 	if (pushStr(cntxt->wlc, p, wlc_time) == NULL)
 		throw(MAL, call, MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;

@@ -483,6 +483,7 @@ int yydebug=1;
 	opt_paramlist
 	opt_typelist
 	typelist
+	params_list
 	opt_seq_params
 	opt_alt_seq_params
 	serial_opt_params
@@ -696,7 +697,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
-%token YEAR QUARTER MONTH WEEK DAY HOUR MINUTE SECOND ZONE
+%token CENTURY DECADE YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND ZONE
 %token LIMIT OFFSET SAMPLE SEED
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
@@ -919,9 +920,10 @@ set_statement:
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set TIME ZONE LOCAL
 		{ dlist *l = L();
+		sql_subtype t;
 		append_string(l, sa_strdup(SA, "current_timezone"));
-		append_symbol(l, _symbol_create_list( SQL_OP, append_list(L(),
-			append_string( L(), sa_strdup(SA, "local_timezone")))));
+		sql_find_subtype(&t, "sec_interval", inttype2digits(ihour, isec), 0);
+		append_symbol(l, _newAtomNode(atom_int(SA, &t, 0)));
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set TIME ZONE interval_expression
 		{ dlist *l = L();
@@ -1369,7 +1371,7 @@ seq_def:
  * 	[ [ NO ] CYCLE ]
  * start may be a value or subquery
  */
-  | ALTER SEQUENCE qname opt_alt_seq_params 	
+  | ALTER SEQUENCE qname opt_alt_seq_params
 	{
 		dlist *l = L();
 		append_list(l, $3);
@@ -1379,8 +1381,12 @@ seq_def:
   ;
 
 opt_seq_params:
-	opt_seq_param				{ $$ = append_symbol(L(), $1); }
-  |	opt_seq_params opt_seq_param		{ $$ = append_symbol($1, $2); }
+	params_list  { $$ = $1; }
+  |              { $$ = NULL; }
+
+params_list:
+	opt_seq_param			  { $$ = append_symbol(L(), $1); }
+  |	params_list opt_seq_param { $$ = append_symbol($1, $2); }
   ;
 
 opt_alt_seq_params:
@@ -1389,13 +1395,13 @@ opt_alt_seq_params:
   ;
 
 opt_seq_param:
-    	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
+	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
   |	START WITH opt_sign lngval 	{ $$ = _symbol_create_lng(SQL_START, is_lng_nil($4) ? $4 : $3 * $4); }
   |	opt_seq_common_param		{ $$ = $1; }
   ;
 
 opt_alt_seq_param:
-    	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
+	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
   |	RESTART 			{ $$ = _symbol_create_list(SQL_START, append_int(L(),0)); /* plain restart now */ }
   |	RESTART WITH opt_sign lngval 	{ $$ = _symbol_create_list(SQL_START, append_lng(append_int(L(),2), is_lng_nil($4) ? $4 : $3 * $4));  }
   |	RESTART WITH subquery 		{ $$ = _symbol_create_list(SQL_START, append_symbol(append_int(L(),1), $3));  }
@@ -1403,7 +1409,7 @@ opt_alt_seq_param:
   ;
 
 opt_seq_common_param:
-  	INCREMENT BY opt_sign lngval	{ $$ = _symbol_create_lng(SQL_INC, is_lng_nil($4) ? $4 : $3 * $4); }
+	INCREMENT BY opt_sign lngval	{ $$ = _symbol_create_lng(SQL_INC, is_lng_nil($4) ? $4 : $3 * $4); }
   |	MINVALUE opt_sign lngval	{ $$ = _symbol_create_lng(SQL_MINVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
   |	NO MINVALUE			{ $$ = _symbol_create_lng(SQL_MINVALUE, 0); }
   |	MAXVALUE opt_sign lngval	{ $$ = _symbol_create_lng(SQL_MAXVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
@@ -1850,7 +1856,7 @@ generated_column:
 		if (!$5)
 			$5 = L();
 		sql_find_subtype(&it, "int", 32, 0);
-    		append_symbol($5, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
+		append_symbol($5, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 
 		/* finally all the options */
 		append_list(l, $5);
@@ -1904,7 +1910,7 @@ generated_column:
 
 serial_opt_params:
 	/* empty: return the defaults */ 	{ $$ = NULL; }
-  |	'(' opt_seq_params ')'			{ $$ = $2; }
+  |	'(' params_list ')'					{ $$ = $2; }
  ;
 
 
@@ -2900,7 +2906,6 @@ _transaction_mode_list:
 		{ $$ = ($1 | $3); }
  ;
 
-
 transaction_mode:
 	READ ONLY			{ $$ = tr_readonly; }
  |	READ WRITE			{ $$ = tr_writable; }
@@ -2998,8 +3003,6 @@ copyfrom_stmt:
 	  append_int(l, 0);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
   ;
-  
-
 
 opt_fwf_widths:
        /* empty */		{ $$ = NULL; }
@@ -3610,7 +3613,7 @@ table_ref:
 		  	  	  append_symbol(l, $3);
 		  	  	  append_int(l, 1);
 		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
- |  subquery_with_orderby table_name		
+ |  subquery_with_orderby table_name
 				{
 				  $$ = $1;
 				  if ($$->token == SQL_SELECT) {
@@ -3620,7 +3623,7 @@ table_ref:
 				  	append_symbol($1->data.lval, $2);
 				  }
 				}
- |  LATERAL subquery table_name		
+ |  LATERAL subquery table_name
 				{
 				  $$ = $2;
 				  if ($$->token == SQL_SELECT) {
@@ -3639,17 +3642,6 @@ table_ref:
 				}
  |  joined_table 		{ $$ = $1;
 				  append_symbol($1->data.lval, NULL); }
-/* Basket expression, TODO window */
- |  '[' 
-	{ m->caching = 0; }
-	select_no_parens ']' table_name 	
-	{
-		dlist *op = L();
-
- 	  	append_symbol(op, $3);
-		append_symbol(op, $5);
-		$$ = _symbol_create_list(SQL_TABLE_OPERATOR, op); 
-	}
  ;
 
 table_name:
@@ -4688,8 +4680,14 @@ datetime_field:
 
 extract_datetime_field:
     datetime_field
+ |  CENTURY		{ $$ = icentury; }
+ |  DECADE		{ $$ = idecade; }
  |  QUARTER		{ $$ = iquarter; }
  |  WEEK		{ $$ = iweek; }
+ |  DOW			{ $$ = idow; }
+ /* |  DAY OF WEEK		{ $$ = idow; } */
+ |  DOY			{ $$ = idoy; }
+ /* |  DAY OF YEAR		{ $$ = idoy; } */
  ;
 
 start_field:
@@ -5707,9 +5705,11 @@ non_reserved_word:
 | ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
 | AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
 | CACHE		{ $$ = sa_strdup(SA, "cache"); }
+| CENTURY	{ $$ = sa_strdup(SA, "century"); }
 | CLIENT	{ $$ = sa_strdup(SA, "client"); }
 | COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 | DATA 		{ $$ = sa_strdup(SA, "data"); }
+| DECADE	{ $$ = sa_strdup(SA, "decade"); }
 | SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 | DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
 | SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
@@ -5747,6 +5747,8 @@ non_reserved_word:
 | SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 | TYPE		{ $$ = sa_strdup(SA, "type"); }
 | WEEK 		{ $$ = sa_strdup(SA, "week"); }
+| DOW 		{ $$ = sa_strdup(SA, "dow"); }
+| DOY 		{ $$ = sa_strdup(SA, "doy"); }
 | ZONE		{ $$ = sa_strdup(SA, "zone"); }
 
 /* SQL/XML non reserved words */
@@ -6542,189 +6544,171 @@ int find_subgeometry_type(char* geoSubType) {
 char *token2string(tokens token)
 {
 	switch (token) {
+	// Please keep this list sorted for easy of maintenance
 #define SQL(TYPE) case SQL_##TYPE : return #TYPE
-	SQL(CREATE_SCHEMA);
-	SQL(CREATE_TABLE);
-	SQL(CREATE_TABLE_LOADER);
-	SQL(CREATE_VIEW);
+	SQL(AGGR);
+	SQL(ALTER_SEQ);
+	SQL(ALTER_TABLE);
+	SQL(ALTER_USER);
+	SQL(ANALYZE);
+	SQL(AND);
+	SQL(ASSIGN);
+	SQL(ATOM);
+	SQL(BETWEEN);
+	SQL(BINCOPYFROM);
+	SQL(BINOP);
+	SQL(CACHE);
+	SQL(CALL);
+	SQL(CASE);
+	SQL(CAST);
+	SQL(CHARSET);
+	SQL(CHECK);
+	SQL(COALESCE);
+	SQL(COLUMN);
+	SQL(COLUMN_OPTIONS);
+	SQL(COMMENT);
+	SQL(COMPARE);
+	SQL(CONSTRAINT);
+	SQL(COPYFROM);
+	SQL(COPYLOADER);
+	SQL(COPYTO);
+	SQL(CREATE_FUNC);
 	SQL(CREATE_INDEX);
 	SQL(CREATE_ROLE);
-	SQL(CREATE_USER);
-	SQL(CREATE_TYPE);
-	SQL(CREATE_FUNC);
+	SQL(CREATE_SCHEMA);
 	SQL(CREATE_SEQ);
+	SQL(CREATE_TABLE);
+	SQL(CREATE_TABLE_LOADER);
 	SQL(CREATE_TRIGGER);
-	SQL(DROP_SCHEMA);
-	SQL(DROP_TABLE);
-	SQL(DROP_VIEW);
-	SQL(DROP_INDEX);
-	SQL(DROP_ROLE);
-	SQL(DROP_USER);
-	SQL(DROP_TYPE);
-	SQL(DROP_FUNC);
-	SQL(DROP_SEQ);
-	SQL(DROP_TRIGGER);
-	SQL(ALTER_TABLE);
-	SQL(ALTER_SEQ);
-	SQL(ALTER_USER);
+	SQL(CREATE_TYPE);
+	SQL(CREATE_USER);
+	SQL(CREATE_VIEW);
+	SQL(CROSS);
+	SQL(CURRENT_ROW);
+	SQL(CYCLE);
+	SQL(DECLARE);
+	SQL(DECLARE_TABLE);
+	SQL(DEFAULT);
+	SQL(DELETE);
 	SQL(DROP_COLUMN);
 	SQL(DROP_CONSTRAINT);
 	SQL(DROP_DEFAULT);
-	SQL(DECLARE);
-	SQL(DECLARE_TABLE);
-	SQL(COMMENT);
-	SQL(SET);
-	SQL(PREP);
-	SQL(PREPARE);
-	SQL(NAME);
-	SQL(USER);
-	SQL(PATH);
-	SQL(CHARSET);
-	SQL(SCHEMA);
-	SQL(TABLE);
-	SQL(VIEW);
-	SQL(INDEX);
-	SQL(TYPE);
-	SQL(SEQUENCE);
-	SQL(CASE);
-	SQL(CAST);
-	SQL(RETURN);
-	SQL(IF);
+	SQL(DROP_FUNC);
+	SQL(DROP_INDEX);
+	SQL(DROP_ROLE);
+	SQL(DROP_SCHEMA);
+	SQL(DROP_SEQ);
+	SQL(DROP_TABLE);
+	SQL(DROP_TRIGGER);
+	SQL(DROP_TYPE);
+	SQL(DROP_USER);
+	SQL(DROP_VIEW);
 	SQL(ELSE);
-	SQL(WHILE);
+	SQL(ESCAPE);
+	SQL(EXCEPT);
+	SQL(EXECUTE);
+	SQL(EXISTS);
+	SQL(FILTER);
+	SQL(FOLLOWING);
+	SQL(FOREIGN_KEY);
+	SQL(FRAME);
+	SQL(FROM);
+	SQL(FUNC);
+	SQL(GRANT);
+	SQL(GRANT_ROLES);
+	SQL(GROUPBY);
 	SQL(IDENT);
-	SQL(COLUMN);
-	SQL(COLUMN_OPTIONS);
-	SQL(COALESCE);
-	SQL(CONSTRAINT);
-	SQL(CHECK);
-	SQL(DEFAULT);
+	SQL(IF);
+	SQL(IN);
+	SQL(INC);
+	SQL(INDEX);
+	SQL(INSERT);
+	SQL(INTERSECT);
+	SQL(IS_NOT_NULL);
+	SQL(IS_NULL);
+	SQL(JOIN);
+	SQL(LIKE);
+	SQL(MAXVALUE);
+	SQL(MERGE);
+	SQL(MERGE_MATCH);
+	SQL(MERGE_NO_MATCH);
+	SQL(MERGE_PARTITION);
+	SQL(MINVALUE);
+	SQL(MULSTMT);
+	SQL(NAME);
+	SQL(NEXT);
+	SQL(NOP);
+	SQL(NOT);
+	SQL(NOT_BETWEEN);
+	SQL(NOT_EXISTS);
+	SQL(NOT_IN);
+	SQL(NOT_LIKE);
 	SQL(NOT_NULL);
 	SQL(NULL);
 	SQL(NULLIF);
-	SQL(UNIQUE);
-	SQL(PRIMARY_KEY);
-	SQL(FOREIGN_KEY);
-	SQL(BEGIN);
-#define TR(TYPE) case TR_##TYPE : return #TYPE
-	TR(COMMIT);
-	TR(ROLLBACK);
-	TR(SAVEPOINT);
-	TR(RELEASE);
-	TR(START);
-	TR(MODE);
-	SQL(INSERT);
-	SQL(DELETE);
-	SQL(TRUNCATE);
-	SQL(UPDATE);
-	SQL(MERGE);
-	SQL(CROSS);
-	SQL(JOIN);
-	SQL(SELECT);
-	SQL(WHERE);
-	SQL(FROM);
-	SQL(UNIONJOIN);
-	SQL(UNION);
-	SQL(EXCEPT);
-	SQL(INTERSECT);
-	SQL(VALUES);
-	SQL(ASSIGN);
-	SQL(ORDERBY);
-	SQL(GROUPBY);
-	SQL(DESC);
-	SQL(AND);
-	SQL(OR);
-	SQL(NOT);
-	SQL(EXISTS);
-	SQL(NOT_EXISTS);
 	SQL(OP);
-	SQL(UNOP);
-	SQL(BINOP);
-	SQL(NOP);
-	SQL(BETWEEN);
-	SQL(NOT_BETWEEN);
-	SQL(LIKE);
-	SQL(IN);
-	SQL(NOT_IN);
-	SQL(GRANT);
-	SQL(GRANT_ROLES);
+	SQL(OR);
+	SQL(ORDERBY);
+	SQL(PARAMETER);
+	SQL(PARTITION_COLUMN);
+	SQL(PARTITION_EXPRESSION);
+	SQL(PARTITION_LIST);
+	SQL(PARTITION_RANGE);
+	SQL(PATH);
+	SQL(PRECEDING);
+	SQL(PREP);
+	SQL(PRIMARY_KEY);
+	SQL(PW_ENCRYPTED);
+	SQL(PW_UNENCRYPTED);
+	SQL(RANK);
+	SQL(RENAME_COLUMN);
+	SQL(RENAME_SCHEMA);
+	SQL(RENAME_TABLE);
+	SQL(RENAME_USER);
+	SQL(RETURN);
 	SQL(REVOKE);
 	SQL(REVOKE_ROLES);
-	SQL(EXEC);
-	SQL(EXECUTE);
-	SQL(PRIVILEGES);
-	SQL(ROLE);
-	SQL(PARAMETER);
-	SQL(FUNC);
-	SQL(AGGR);
-	SQL(RANK);
-	SQL(FRAME);
-	SQL(COMPARE);
-	SQL(FILTER);
 	SQL(ROUTINE);
-	SQL(TEMP_LOCAL);
-	SQL(TEMP_GLOBAL);
-	SQL(INT_VALUE);
-	SQL(ATOM);
+	SQL(SAMPLE);
+	SQL(SCHEMA);
+	SQL(SELECT);
+	SQL(SEQUENCE);
+	SQL(SET);
+	SQL(SET_TABLE_SCHEMA);
+	SQL(START);
+	SQL(STORAGE);
+	SQL(TABLE);
+	SQL(TRUNCATE);
+	SQL(TYPE);
+	SQL(UNION);
+	SQL(UNIONJOIN);
+	SQL(UNIQUE);
+	SQL(UNOP);
+	SQL(UPDATE);
 	SQL(USING);
+	SQL(VALUES);
+	SQL(VIEW);
 	SQL(WHEN);
-	SQL(ESCAPE);
-	SQL(COPYFROM);
-	SQL(BINCOPYFROM);
-	SQL(COPYTO);
-	SQL(EXPORT);
-	SQL(NEXT);
-	SQL(MULSTMT);
+	SQL(WHILE);
+	SQL(WINDOW);
 	SQL(WITH);
+	SQL(XMLATTRIBUTE);
 	SQL(XMLCOMMENT);
 	SQL(XMLCONCAT);
 	SQL(XMLDOCUMENT);
 	SQL(XMLELEMENT);
-	SQL(XMLATTRIBUTE);
 	SQL(XMLFOREST);
 	SQL(XMLPARSE);
 	SQL(XMLPI);
-	SQL(XMLQUERY);
 	SQL(XMLTEXT);
-	SQL(XMLVALIDATE);
-	SQL(XMLNAMESPACES);
-	SQL(MERGE_PARTITION);
-	SQL(PARTITION_LIST);
-	SQL(PARTITION_RANGE);
-	SQL(PARTITION_COLUMN);
-	SQL(PARTITION_EXPRESSION);
-	SQL(RENAME_SCHEMA);
-	SQL(RENAME_TABLE);
-	SQL(RENAME_COLUMN);
-	SQL(SET_TABLE_SCHEMA);
-	SQL(PRECEDING);
-	SQL(FOLLOWING);
-	SQL(CURRENT_ROW);
-	SQL(WINDOW);
-	SQL(MERGE_MATCH);
-	SQL(MERGE_NO_MATCH);
-	SQL(RENAME_USER);
-	SQL(ANALYZE);
-	SQL(SAMPLE);
-	SQL(CALL);
-	SQL(TABLE_OPERATOR);
-	SQL(IS_NULL);
-	SQL(IS_NOT_NULL);
-	SQL(STORAGE);
-	SQL(CONNECT);
-	SQL(DISCONNECT);
-	SQL(DATABASE);
-	SQL(PORT);
-	SQL(NOT_LIKE);
-	SQL(PW_UNENCRYPTED);
-	SQL(PW_ENCRYPTED);
-	SQL(COPYLOADER);
-	SQL(START);
-	SQL(INC);
-	SQL(MINVALUE);
-	SQL(MAXVALUE);
-	SQL(CACHE);
-	SQL(CYCLE);
+#define TR(TYPE) case TR_##TYPE : return #TYPE
+	TR(COMMIT);
+	TR(MODE);
+	TR(RELEASE);
+	TR(ROLLBACK);
+	TR(SAVEPOINT);
+	TR(START);
+	// Please keep this list sorted for easy of maintenance
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }

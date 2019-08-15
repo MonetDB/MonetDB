@@ -64,7 +64,7 @@ stdout of test 'restore-uuid.Bug-3407` in directory 'sql/test/BugTracker-2013` i
 % sys.testuuid # table_name
 % column1 # name
 % uuid # type
-% 0 # length
+% 36 # length
 [ 38fded43-79ef-41b0-a2af-05d20d7c4d51	]
 #ROLLBACK;
 

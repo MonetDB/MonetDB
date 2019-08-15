@@ -552,7 +552,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	}
 
 	if (!schema || !mvc_set_schema(m, schema)) {
-		if (m->session->active) {
+		if (m->session->tr->active) {
 			if((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 				freeException(other);
 		}

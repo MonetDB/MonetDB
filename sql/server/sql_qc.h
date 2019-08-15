@@ -18,6 +18,7 @@
 #define DEFAULT_CACHESIZE 100
 typedef struct cq {
 	struct cq *next;	/* link them into a queue */
+	int prepared;		/* prepared or cached query */
 	int type;		/* sql_query_t: Q_PARSE,Q_SCHEMA,.. */
 	sql_allocator *sa;	/* the symbols are allocated from this sa */
 	sql_rel *rel;		/* relational query */
@@ -46,7 +47,7 @@ extern void qc_destroy(qc *cache);
 extern void qc_clean(qc *cache);
 extern cq *qc_find(qc *cache, int id);
 extern cq *qc_match(qc *cache, mvc *sql, symbol *s, atom **params, int plen, int key);
-extern cq *qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, int type, char *codedstr, int no_mitosis);
+extern cq *qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, int type, char *codedstr, int no_mitosis, int prepared);
 extern void qc_delete(qc *cache, cq *q);
 extern int qc_size(qc *cache);
 extern int qc_isaquerytemplate(char *nme);

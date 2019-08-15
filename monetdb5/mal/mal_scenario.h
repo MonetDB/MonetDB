@@ -42,22 +42,16 @@ typedef struct SCENARIO {
 	MALfcn exitClientCmd;
 	str reader;
 	MALfcn readerCmd;
-	void *readerState;
 	str parser;
 	MALfcn parserCmd;
-	void *parserState;
 	str optimizer;
 	MALfcn optimizerCmd;
-	void *optimizerState;
 	str tactics;
 	MALfcn tacticsCmd;
-	void *tacticsState;
 	str engine;
 	MALfcn engineCmd;
-	void *engineState;
 	str callback;
 	MALfcn callbackCmd;
-	void *callbackState;
 } *Scenario;
 
 mal_export str setScenario(Client c, str nme);

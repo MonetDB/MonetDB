@@ -27,6 +27,7 @@
 #ifdef HAVE_STRINGS_H
 #include <strings.h>		/* strcasecmp */
 #endif
+#include <sys/stat.h>
 
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
@@ -1511,25 +1512,26 @@ SQLrenderer(MapiHdl hdl)
 		char *s;
 
 		len[i] = mapi_get_len(hdl, i);
-		if (len[i] == 0 &&
-		    ((s = mapi_get_type(hdl, i)) == NULL ||
-		     (strcmp(s, "varchar") != 0 &&
-		      strcmp(s, "clob") != 0 &&
-		      strcmp(s, "char") != 0 &&
-		      strcmp(s, "str") != 0 &&
-		      strcmp(s, "json") != 0))) {
-			/* no table width known, use maximum, rely on
-			 * squeezing later on to fix it to whatever is
-			 * available; note that for a column type of
-			 * varchar, 0 means the complete column is
-			 * NULL or empty string, so MINCOLSIZE (below)
-			 * will work great */
-			len[i] = pagewidth <= 0 ? DEFWIDTH : pagewidth;
-		} else if (len[i] == 0 &&
-			   strcmp(mapi_get_type(hdl, i), "uuid") == 0) {
-			/* we know how large the UUID representation
-			 * is, even if the server doesn't */
-			len[i] = 36;
+		if (len[i] == 0) {
+			if ((s = mapi_get_type(hdl, i)) == NULL ||
+			    (strcmp(s, "varchar") != 0 &&
+			     strcmp(s, "clob") != 0 &&
+			     strcmp(s, "char") != 0 &&
+			     strcmp(s, "str") != 0 &&
+			     strcmp(s, "json") != 0)) {
+				/* no table width known, use maximum,
+				 * rely on squeezing later on to fix
+				 * it to whatever is available; note
+				 * that for a column type of varchar,
+				 * 0 means the complete column is NULL
+				 * or empty string, so MINCOLSIZE
+				 * (below) will work great */
+				len[i] = pagewidth <= 0 ? DEFWIDTH : pagewidth;
+			} else if (strcmp(s, "uuid") == 0) {
+				/* we know how large the UUID representation
+				 * is, even if the server doesn't */
+				len[i] = 36;
+			}
 		}
 		if (len[i] < MINCOLSIZE)
 			len[i] = MINCOLSIZE;
@@ -1871,6 +1873,11 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 	timerHumanCalled = false;
 
 	do {
+		// get the timings as reported by the backend
+		sqloptimizer = mapi_get_sqloptimizertime(hdl);
+		maloptimizer = mapi_get_maloptimizertime(hdl);
+		querytime = mapi_get_querytime(hdl);
+		timerHumanStop();
 		/* handle errors first */
 		if (mapi_result_error(hdl) != NULL) {
 			mnstr_flush(toConsole);
@@ -1883,14 +1890,10 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			errseen = true;
 			/* don't need to print something like '0
 			 * tuples' if we got an error */
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		}
 
-		// get the timings as reported by the backend
-		sqloptimizer = mapi_get_sqloptimizertime(hdl);
-		maloptimizer = mapi_get_maloptimizertime(hdl);
-		querytime = mapi_get_querytime(hdl);
-		timerHumanStop();
 		switch (mapi_get_querytype(hdl)) {
 		case Q_BLOCK:
 		case Q_PARSE:
@@ -3083,7 +3086,8 @@ getfile(void *data, const char *filename, bool binary,
 	struct privdata *priv = data;
 	ssize_t s;
 
-	*size = 0;		/* most returns require this */
+	if (size)
+		*size = 0;	/* most returns require this */
 	if (priv->buf == NULL) {
 		priv->buf = malloc(READSIZE);
 		if (priv->buf == NULL)
@@ -3240,6 +3244,18 @@ usage(const char *prog, int xit)
 
 /* hardwired defaults, only used if monet environment cannot be found */
 #define defaultPort 50000
+
+static inline bool
+isfile(FILE *fp)
+{
+	struct stat stb;
+	if (fstat(fileno(fp), &stb) < 0 ||
+	    (stb.st_mode & S_IFMT) != S_IFREG) {
+		fclose(fp);
+		return false;
+	}
+	return true;
+}
 
 int
 main(int argc, char **argv)
@@ -3559,7 +3575,8 @@ main(int argc, char **argv)
 	has_fileargs = optind != argc;
 
 	if (dbname == NULL && has_fileargs &&
-	    (fp = fopen(argv[optind], "r")) == NULL) {
+	    ((fp = fopen(argv[optind], "r")) == NULL || !isfile(fp))) {
+		fp = NULL;
 		dbname = strdup(argv[optind]);
 		optind++;
 		has_fileargs = optind != argc;

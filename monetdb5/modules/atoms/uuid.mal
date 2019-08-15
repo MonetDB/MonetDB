@@ -13,6 +13,10 @@ command write() address UUIDwrite;
 command prelude():void address UUIDprelude;
 uuid.prelude();
 
+command epilogue():void
+address UUIDepilogue
+comment "release the resources held by the uuid module";
+
 # unsafe is to prevent optimizers to reuse common expressions
 unsafe command new() :uuid
 address UUIDgenerateUuid

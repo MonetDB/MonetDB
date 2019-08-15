@@ -7,18 +7,6 @@
 module batsql;
 module sql;
 
-pattern start():void 
-address SQLsession
-comment "Switch to processing SQL statements";
-
-pattern start2():void
-address SQLsession2
-comment "Switch to processing precompiled sql statements";
-
-pattern init():void
-address SQLinitEnvironment
-comment "Initialize the environment for MAL";
-
 pattern shutdown(delay:bte, force:bit):str
 address SQLshutdown_wrap;
 pattern shutdown(delay:sht, force:bit):str
@@ -50,7 +38,6 @@ comment "Trigger the commit operation for a MAL block";
 pattern abort()
 address SQLabort
 comment "Trigger the abort operation for a MAL block";
-
 
 pattern eval(cmd:str):void 
 address SQLstatement
@@ -112,6 +99,18 @@ comment "return the current value of the sequence";
 unsafe pattern restart( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
+
+pattern deltas( schema:str )(ids:bat[:int],cleared:bat[:bit],readonly:bat[:lng],inserted:bat[:lng],updated:bat[:lng],deleted:bat[:lng],tr_level:bat[:int])
+address mvc_delta_values
+comment "Return the delta values sizes of all columns of the schema's tables, plus the current transaction level";
+
+pattern deltas( schema:str, table:str )(ids:bat[:int],cleared:bat[:bit],readonly:bat[:lng],inserted:bat[:lng],updated:bat[:lng],deleted:bat[:lng],tr_level:bat[:int])
+address mvc_delta_values
+comment "Return the delta values sizes from the table's columns, plus the current transaction level";
+
+pattern deltas( schema:str, table:str, column:str )(ids:bat[:int],cleared:bat[:bit],readonly:bat[:lng],inserted:bat[:lng],updated:bat[:lng],deleted:bat[:lng],tr_level:bat[:int])
+address mvc_delta_values
+comment "Return the delta values sizes of a column, plus the current transaction level";
 
 pattern emptybindidx(mvc:int, schema:str, table:str, index:str, access:int):bat[:any_1]
 address mvc_bind_idxbat_wrap;

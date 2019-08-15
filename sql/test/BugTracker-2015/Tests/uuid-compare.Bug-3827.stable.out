@@ -68,32 +68,32 @@ stdout of test 'uuid-compare.Bug-3827` in directory 'sql/test/BugTracker-2015` i
 % sys.u,	sys.u # table_name
 % u1,	u2 # name
 % uuid,	uuid # type
-% 0,	0 # length
+% 36,	36 # length
 #select * from u where u1 <> u2;
 % sys.u,	sys.u # table_name
 % u1,	u2 # name
 % uuid,	uuid # type
-% 0,	0 # length
+% 36,	36 # length
 #select * from u where u1 < u2;
 % sys.u,	sys.u # table_name
 % u1,	u2 # name
 % uuid,	uuid # type
-% 0,	0 # length
+% 36,	36 # length
 #select * from u where u1 <= u2;
 % sys.u,	sys.u # table_name
 % u1,	u2 # name
 % uuid,	uuid # type
-% 0,	0 # length
+% 36,	36 # length
 #select * from u where u1 > u2;
 % sys.u,	sys.u # table_name
 % u1,	u2 # name
 % uuid,	uuid # type
-% 0,	0 # length
+% 36,	36 # length
 #select * from u where u1 >= u2;
 % sys.u,	sys.u # table_name
 % u1,	u2 # name
 % uuid,	uuid # type
-% 0,	0 # length
+% 36,	36 # length
 #drop table u;
 
 # 09:49:16 >  

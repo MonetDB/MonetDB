@@ -58,4 +58,5 @@ mal_export str BKCreuseBAT(bat *ret, const bat *bid, const bat *did);
 mal_export str BKCreuseBATmap(bat *ret, const bat *bid, const bat *did);
 mal_export str BKCmergecand(bat *ret, const bat *aid, const bat *bid);
 mal_export str BKCintersectcand(bat *ret, const bat *aid, const bat *bid);
+mal_export str BKCdiffcand(bat *ret, const bat *aid, const bat *bid);
 #endif /*_BAT_H_*/

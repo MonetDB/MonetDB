@@ -780,7 +780,8 @@ typedef struct {
 #define GDKLIBRARY_TALIGN	061036U	/* talign field in BBP.dir */
 #define GDKLIBRARY_NIL_NAN	061037U	/* flt/dbl NIL not represented by NaN */
 #define GDKLIBRARY_BLOB_SORT	061040U /* blob compare changed */
-#define GDKLIBRARY		061041U
+#define GDKLIBRARY_OLDDATE	061041U
+#define GDKLIBRARY		061042U
 
 typedef struct BAT {
 	/* static bat properties */
@@ -2749,6 +2750,8 @@ gdk_export BAT *BATunique(BAT *b, BAT *s);
 
 gdk_export BAT *BATmergecand(BAT *a, BAT *b);
 gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
+gdk_export BAT *BATdiffcand(BAT *a, BAT *b);
+gdk_export bool BATcandcontains(BAT *s, oid o);
 
 gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool nilslast, bool distinct)
 	__attribute__((__warn_unused_result__));

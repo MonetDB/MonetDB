@@ -315,7 +315,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 							  run_process_bam_alignments,
 							  &r_thread_data[i],
 							  MT_THR_JOINABLE,
-							  "run_process_bam_alignments")) != 0) {
+							  "bam_alignments")) != 0) {
 			msg = createException(MAL, "bam_loader",
 						  SQLSTATE(BA000) "Could not create thread to process alignments (errnr %d)",
 						  errnr);

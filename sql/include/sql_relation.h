@@ -11,9 +11,6 @@
 
 #include "sql_catalog.h"
 
-#define BASETABLE 0
-#define RELATION 1
-
 typedef enum expression_type {
 	e_atom,
 	e_column,
@@ -28,24 +25,27 @@ typedef enum expression_type {
 #define CARD_AGGR 2
 #define CARD_MULTI 3
 
-typedef struct expression {
-	expression_type type;	/* atom, cmp, func/aggr */
+typedef struct sql_exp_name {
+	unsigned int label;
 	const char *name;
 	const char *rname;
+} sql_exp_name;
+
+typedef struct expression {
+	expression_type type;	/* atom, cmp, func/aggr */
+	sql_exp_name alias;
 	void *l;
 	void *r;
-	void *f;	/* func's and aggr's */
-			/* e_cmp may have have 2 arguments */
-	int flag;	/* EXP_DISTINCT, NO_NIL, ASCENDING, NULLS_LAST, cmp types */
-	int freevar;	/* free variable, ie binds to the upper dependent join */
-	unsigned char card;	/* card
-				   (0 truth value!)
-				   (1 atoms)
-				   (2 aggr)
-				   (3 multi value)
-			*/
+	void *f;	/* func's and aggr's, also e_cmp may have have 2 arguments */
+	unsigned int
+	 flag:18,	/* EXP_DISTINCT, NO_NIL, ASCENDING, NULLS_LAST, cmp types */
+	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
+	 freevar:1,	/* free variable, ie binds to the upper dependent join */
+	 intern:1,
+	 anti:1,
+	 base:1,
+	 used:1;	/* used for quick dead code removal */
 	sql_subtype	tpe;
-	int used;	/* used for quick dead code removal */
 	void *p;	/* properties for the optimizer */
 } sql_exp;
 
@@ -56,19 +56,12 @@ typedef struct expression {
 
 #define LEFT_JOIN	4
 
-#define APPLY_JOIN	8
-#define APPLY_LOJ	16
-#define APPLY_EXISTS	32
-#define APPLY_NOTEXISTS	64
-
 /* ASCENDING > 15 else we have problems with cmp types */
 #define ASCENDING	16
 #define CMPMASK		(ASCENDING-1)
 #define get_cmp(e)	(e->flag&CMPMASK)
-#define ANTISEL	32
-#define HAS_NO_NIL	64
-#define EXP_INTERN	128
-#define NULLS_LAST	256
+#define HAS_NO_NIL	32
+#define NULLS_LAST	64
 
 #define UPD_COMP		1
 #define UPD_LOCKED		2
@@ -88,66 +81,56 @@ typedef struct expression {
 #define SET_PSM_LEVEL(level)	(level<<8)
 #define GET_PSM_LEVEL(level)	(level>>8)
 
-/* todo make enum */
-/* ordering is important! see rel2bin_ddl() and rel_deps() */
-#define DDL_OUTPUT			1
-#define DDL_LIST			2
-#define DDL_PSM				3
-#define DDL_EXCEPTION		4
-
-#define DDL_CREATE_SEQ			5
-#define DDL_ALTER_SEQ			6
-#define DDL_DROP_SEQ			7
-#define DDL_ALTER_TABLE_ADD_RANGE_PARTITION		8
-#define DDL_ALTER_TABLE_ADD_LIST_PARTITION		9
-
-#define DDL_RELEASE			11
-#define DDL_COMMIT			12
-#define DDL_ROLLBACK			13
-#define DDL_TRANS			14
-
-#define DDL_CREATE_SCHEMA		21
-#define DDL_DROP_SCHEMA			22
-#define DDL_CREATE_TABLE		23
-#define DDL_DROP_TABLE			24
-#define DDL_CREATE_VIEW			25
-#define DDL_DROP_VIEW			26
-#define DDL_DROP_CONSTRAINT		27
-#define DDL_ALTER_TABLE			28
-#define DDL_CREATE_TYPE			29
-#define DDL_DROP_TYPE			30
-#define DDL_DROP_INDEX			31
-
-#define DDL_CREATE_FUNCTION		41
-#define DDL_DROP_FUNCTION		42
-#define DDL_CREATE_TRIGGER		43
-#define DDL_DROP_TRIGGER		44
-
-#define DDL_GRANT_ROLES			51
-#define DDL_REVOKE_ROLES		52
-#define DDL_GRANT			53
-#define DDL_REVOKE			54
-#define DDL_GRANT_FUNC			55
-#define DDL_REVOKE_FUNC			56
-#define DDL_CREATE_USER			57
-#define DDL_DROP_USER			58
-#define DDL_ALTER_USER			59
-#define DDL_RENAME_USER			60
-#define DDL_CREATE_ROLE			61
-#define DDL_DROP_ROLE			62
-
-#define DDL_ALTER_TABLE_ADD_TABLE				63
-#define DDL_ALTER_TABLE_DEL_TABLE				64
-#define DDL_ALTER_TABLE_SET_ACCESS				65
-
-#define DDL_COMMENT_ON			66
-#define DDL_RENAME_SCHEMA		67
-#define DDL_RENAME_TABLE		68
-#define DDL_RENAME_COLUMN		69
-
-#define DDL_EMPTY 100
-
-#define MAXOPS 22
+typedef enum ddl_statement {
+	ddl_output,
+	ddl_list,
+	ddl_psm,
+	ddl_exception,
+	ddl_create_seq,
+	ddl_alter_seq,
+	ddl_drop_seq,
+	ddl_alter_table_add_range_partition,
+	ddl_alter_table_add_list_partition,
+	ddl_release,
+	ddl_commit,
+	ddl_rollback,
+	ddl_trans,
+	ddl_create_schema,
+	ddl_drop_schema,
+	ddl_create_table,
+	ddl_drop_table,
+	ddl_create_view,
+	ddl_drop_view,
+	ddl_drop_constraint,
+	ddl_alter_table,
+	ddl_create_type,
+	ddl_drop_type,
+	ddl_drop_index,
+	ddl_create_function,
+	ddl_drop_function,
+	ddl_create_trigger,
+	ddl_drop_trigger,
+	ddl_grant_roles,
+	ddl_revoke_roles,
+	ddl_grant,
+	ddl_revoke,
+	ddl_grant_func,
+	ddl_revoke_func,
+	ddl_create_user,
+	ddl_drop_user,
+	ddl_alter_user,
+	ddl_rename_user,
+	ddl_create_role,
+	ddl_drop_role,
+	ddl_alter_table_add_table,
+	ddl_alter_table_del_table,
+	ddl_alter_table_set_access,
+	ddl_comment_on,
+	ddl_rename_schema,
+	ddl_rename_table,
+	ddl_rename_column,
+	ddl_maxops /* evaluated to the max value, should be always kept at the bottom */
+} ddl_statement;
 
 typedef enum operator_type {
 	op_basetable = 0,
@@ -170,7 +153,7 @@ typedef enum operator_type {
 	op_insert,	/* insert(l=table, r insert expressions) */
 	op_update,	/* update(l=table, r update expressions) */
 	op_delete,	/* delete(l=table, r delete expression) */
-	op_truncate /* trucante(l=table) */
+	op_truncate /* truncate(l=table) */
 } operator_type;
 
 #define is_atom(et) \
@@ -271,9 +254,20 @@ typedef enum operator_type {
 	e->flag |= ((dir&1)?ASCENDING:0) | ((dir&2)?NULLS_LAST:0)
 
 #define is_anti(e) \
-	((e->flag&ANTISEL)==ANTISEL)
+	((e)->anti)
 #define set_anti(e) \
-	e->flag |= ANTISEL
+	(e)->anti = 1
+#define is_intern(e) \
+	((e)->intern)
+#define set_intern(e) \
+	(e)->intern = 1
+#define is_basecol(e) \
+	((e)->base)
+#define set_basecol(e) \
+	(e)->base = 1
+
+#define has_label(e) \
+	((e)->alias.label > 0)
 
 /* used for expressions and relations */
 #define need_distinct(e) \
@@ -282,12 +276,6 @@ typedef enum operator_type {
 	e->flag |= EXP_DISTINCT
 #define set_nodistinct(e) \
 	e->flag &= (~EXP_DISTINCT)
-
-/* used for expressions and relations */
-#define is_intern(e) \
-	(e->type != e_atom && (e->flag&EXP_INTERN)==EXP_INTERN)
-#define set_intern(e) \
-	e->flag |= EXP_INTERN
 
 #define is_processed(rel) \
 	((rel)->processed)

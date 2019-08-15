@@ -50,10 +50,8 @@ SELECT v, convert(v, Blob) from T_BOOLEAN; -- conversion not supported
 SELECT v, convert(v, date) from T_BOOLEAN; -- conversion not supported
 SELECT v, convert(v, time) from T_BOOLEAN; -- conversion not supported
 SELECT v, convert(v, timestamp) from T_BOOLEAN; -- conversion not supported
-SELECT v, convert(v, time with timezone) from T_BOOLEAN; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_BOOLEAN; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_BOOLEAN; -- conversion not supported
-SELECT v, convert(v, timestamptz) from T_BOOLEAN; -- conversion not supported
+SELECT v, convert(v, time with time zone) from T_BOOLEAN; -- conversion not supported
+SELECT v, convert(v, timestamp with time zone) from T_BOOLEAN; -- conversion not supported
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_BOOLEAN;
@@ -93,10 +91,8 @@ SELECT v, cast(v as Blob) from T_BOOLEAN; -- conversion not supported
 SELECT v, cast(v as date) from T_BOOLEAN; -- conversion not supported
 SELECT v, cast(v as time) from T_BOOLEAN; -- conversion not supported
 SELECT v, cast(v as timestamp) from T_BOOLEAN; -- conversion not supported
-SELECT v, cast(v as time with timezone) from T_BOOLEAN; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_BOOLEAN; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_BOOLEAN; -- conversion not supported
-SELECT v, cast(v as timestamptz) from T_BOOLEAN; -- conversion not supported
+SELECT v, cast(v as time with time zone) from T_BOOLEAN; -- conversion not supported
+SELECT v, cast(v as timestamp with time zone) from T_BOOLEAN; -- conversion not supported
 
 -- some JDBC specific types
 SELECT v, convert(v, XML) from T_BOOLEAN; -- XML not valid data type
@@ -159,10 +155,8 @@ SELECT v, convert(v, Blob) from T_blob;
 SELECT v, convert(v, date) from T_blob; -- conversion not supported
 SELECT v, convert(v, time) from T_blob; -- conversion not supported
 SELECT v, convert(v, timestamp) from T_blob; -- conversion not supported
-SELECT v, convert(v, time with timezone) from T_blob; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_blob; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_blob; -- conversion not supported
-SELECT v, convert(v, timestamptz) from T_blob; -- conversion not supported
+SELECT v, convert(v, time with time zone) from T_blob; -- conversion not supported
+SELECT v, convert(v, timestamp with time zone) from T_blob; -- conversion not supported
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_blob;
@@ -202,10 +196,8 @@ SELECT v, cast(v as Blob) from T_blob;
 SELECT v, cast(v as date) from T_blob; -- conversion not supported
 SELECT v, cast(v as time) from T_blob; -- conversion not supported
 SELECT v, cast(v as timestamp) from T_blob; -- conversion not supported
-SELECT v, cast(v as time with timezone) from T_blob; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_blob; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_blob; -- conversion not supported
-SELECT v, cast(v as timestamptz) from T_blob; -- conversion not supported
+SELECT v, cast(v as time with time zone) from T_blob; -- conversion not supported
+SELECT v, cast(v as timestamp with time zone) from T_blob; -- conversion not supported
 
 DROP TABLE T_blob;
 
@@ -257,10 +249,8 @@ SELECT v, convert(v, Blob) from T_tinyint; -- conversion not supported
 SELECT v, convert(v, date) from T_tinyint; -- conversion not supported
 SELECT v, convert(v, time) from T_tinyint; -- conversion not supported
 SELECT v, convert(v, timestamp) from T_tinyint; -- conversion not supported
-SELECT v, convert(v, time with timezone) from T_tinyint; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_tinyint; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_tinyint; -- conversion not supported
-SELECT v, convert(v, timestamptz) from T_tinyint; -- conversion not supported
+SELECT v, convert(v, time with time zone) from T_tinyint; -- conversion not supported
+SELECT v, convert(v, timestamp with time zone) from T_tinyint; -- conversion not supported
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_tinyint;
@@ -300,10 +290,8 @@ SELECT v, cast(v as Blob) from T_tinyint; -- conversion not supported
 SELECT v, cast(v as date) from T_tinyint; -- conversion not supported
 SELECT v, cast(v as time) from T_tinyint; -- conversion not supported
 SELECT v, cast(v as timestamp) from T_tinyint; -- conversion not supported
-SELECT v, cast(v as time with timezone) from T_tinyint; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_tinyint; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_tinyint; -- conversion not supported
-SELECT v, cast(v as timestamptz) from T_tinyint; -- conversion not supported
+SELECT v, cast(v as time with time zone) from T_tinyint; -- conversion not supported
+SELECT v, cast(v as timestamp with time zone) from T_tinyint; -- conversion not supported
 
 DROP TABLE T_tinyint;
 
@@ -352,10 +340,8 @@ SELECT v, convert(v, Blob) from T_smallint; -- conversion not supported
 SELECT v, convert(v, date) from T_smallint; -- conversion not supported
 SELECT v, convert(v, time) from T_smallint; -- conversion not supported
 SELECT v, convert(v, timestamp) from T_smallint; -- conversion not supported
-SELECT v, convert(v, time with timezone) from T_smallint; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_smallint; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_smallint; -- conversion not supported
-SELECT v, convert(v, timestamptz) from T_smallint; -- conversion not supported
+SELECT v, convert(v, time with time zone) from T_smallint; -- conversion not supported
+SELECT v, convert(v, timestamp with time zone) from T_smallint; -- conversion not supported
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_smallint;
@@ -395,10 +381,8 @@ SELECT v, cast(v as Blob) from T_smallint; -- conversion not supported
 SELECT v, cast(v as date) from T_smallint; -- conversion not supported
 SELECT v, cast(v as time) from T_smallint; -- conversion not supported
 SELECT v, cast(v as timestamp) from T_smallint; -- conversion not supported
-SELECT v, cast(v as time with timezone) from T_smallint; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_smallint; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_smallint; -- conversion not supported
-SELECT v, cast(v as timestamptz) from T_smallint; -- conversion not supported
+SELECT v, cast(v as time with time zone) from T_smallint; -- conversion not supported
+SELECT v, cast(v as timestamp with time zone) from T_smallint; -- conversion not supported
 
 DROP TABLE T_smallint;
 
@@ -447,10 +431,8 @@ SELECT v, convert(v, Blob) from T_int; -- conversion not supported
 SELECT v, convert(v, date) from T_int; -- conversion not supported
 SELECT v, convert(v, time) from T_int; -- conversion not supported
 SELECT v, convert(v, timestamp) from T_int; -- conversion not supported
-SELECT v, convert(v, time with timezone) from T_int; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_int; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_int; -- conversion not supported
-SELECT v, convert(v, timestamptz) from T_int; -- conversion not supported
+SELECT v, convert(v, time with time zone) from T_int; -- conversion not supported
+SELECT v, convert(v, timestamp with time zone) from T_int; -- conversion not supported
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_int;
@@ -490,10 +472,8 @@ SELECT v, cast(v as Blob) from T_int; -- conversion not supported
 SELECT v, cast(v as date) from T_int; -- conversion not supported
 SELECT v, cast(v as time) from T_int; -- conversion not supported
 SELECT v, cast(v as timestamp) from T_int; -- conversion not supported
-SELECT v, cast(v as time with timezone) from T_int; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_int; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_int; -- conversion not supported
-SELECT v, cast(v as timestamptz) from T_int; -- conversion not supported
+SELECT v, cast(v as time with time zone) from T_int; -- conversion not supported
+SELECT v, cast(v as timestamp with time zone) from T_int; -- conversion not supported
 
 DROP TABLE T_int;
 
@@ -542,10 +522,8 @@ SELECT v, convert(v, Blob) from T_bigint; -- conversion not supported
 SELECT v, convert(v, date) from T_bigint; -- conversion not supported
 SELECT v, convert(v, time) from T_bigint; -- conversion not supported
 SELECT v, convert(v, timestamp) from T_bigint; -- conversion not supported
-SELECT v, convert(v, time with timezone) from T_bigint; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_bigint; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_bigint; -- conversion not supported
-SELECT v, convert(v, timestamptz) from T_bigint; -- conversion not supported
+SELECT v, convert(v, time with time zone) from T_bigint; -- conversion not supported
+SELECT v, convert(v, timestamp with time zone) from T_bigint; -- conversion not supported
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_bigint;
@@ -585,10 +563,8 @@ SELECT v, cast(v as Blob) from T_bigint; -- conversion not supported
 SELECT v, cast(v as date) from T_bigint; -- conversion not supported
 SELECT v, cast(v as time) from T_bigint; -- conversion not supported
 SELECT v, cast(v as timestamp) from T_bigint; -- conversion not supported
-SELECT v, cast(v as time with timezone) from T_bigint; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_bigint; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_bigint; -- conversion not supported
-SELECT v, cast(v as timestamptz) from T_bigint; -- conversion not supported
+SELECT v, cast(v as time with time zone) from T_bigint; -- conversion not supported
+SELECT v, cast(v as timestamp with time zone) from T_bigint; -- conversion not supported
 
 DROP TABLE T_bigint;
 
@@ -640,10 +616,8 @@ SELECT v, convert(v, Blob) from T_float; -- conversion not supported
 SELECT v, convert(v, date) from T_float; -- conversion not supported
 SELECT v, convert(v, time) from T_float; -- conversion not supported
 SELECT v, convert(v, timestamp) from T_float; -- conversion not supported
-SELECT v, convert(v, time with timezone) from T_float; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_float; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_float; -- conversion not supported
-SELECT v, convert(v, timestamptz) from T_float; -- conversion not supported
+SELECT v, convert(v, time with time zone) from T_float; -- conversion not supported
+SELECT v, convert(v, timestamp with time zone) from T_float; -- conversion not supported
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_float;
@@ -683,10 +657,8 @@ SELECT v, cast(v as Blob) from T_float; -- conversion not supported
 SELECT v, cast(v as date) from T_float; -- conversion not supported
 SELECT v, cast(v as time) from T_float; -- conversion not supported
 SELECT v, cast(v as timestamp) from T_float; -- conversion not supported
-SELECT v, cast(v as time with timezone) from T_float; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_float; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_float; -- conversion not supported
-SELECT v, cast(v as timestamptz) from T_float; -- conversion not supported
+SELECT v, cast(v as time with time zone) from T_float; -- conversion not supported
+SELECT v, cast(v as timestamp with time zone) from T_float; -- conversion not supported
 
 DROP TABLE T_float;
 
@@ -734,10 +706,8 @@ SELECT v, convert(v, Blob) from T_real; -- conversion not supported
 SELECT v, convert(v, date) from T_real; -- conversion not supported
 SELECT v, convert(v, time) from T_real; -- conversion not supported
 SELECT v, convert(v, timestamp) from T_real; -- conversion not supported
-SELECT v, convert(v, time with timezone) from T_real; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_real; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_real; -- conversion not supported
-SELECT v, convert(v, timestamptz) from T_real; -- conversion not supported
+SELECT v, convert(v, time with time zone) from T_real; -- conversion not supported
+SELECT v, convert(v, timestamp with time zone) from T_real; -- conversion not supported
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_real;
@@ -777,10 +747,8 @@ SELECT v, cast(v as Blob) from T_real; -- conversion not supported
 SELECT v, cast(v as date) from T_real; -- conversion not supported
 SELECT v, cast(v as time) from T_real; -- conversion not supported
 SELECT v, cast(v as timestamp) from T_real; -- conversion not supported
-SELECT v, cast(v as time with timezone) from T_real; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_real; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_real; -- conversion not supported
-SELECT v, cast(v as timestamptz) from T_real; -- conversion not supported
+SELECT v, cast(v as time with time zone) from T_real; -- conversion not supported
+SELECT v, cast(v as timestamp with time zone) from T_real; -- conversion not supported
 
 DROP TABLE T_real;
 
@@ -829,10 +797,8 @@ SELECT v, convert(v, Blob) from T_double; -- conversion not supported
 SELECT v, convert(v, date) from T_double; -- conversion not supported
 SELECT v, convert(v, time) from T_double; -- conversion not supported
 SELECT v, convert(v, timestamp) from T_double; -- conversion not supported
-SELECT v, convert(v, time with timezone) from T_double; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_double; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_double; -- conversion not supported
-SELECT v, convert(v, timestamptz) from T_double; -- conversion not supported
+SELECT v, convert(v, time with time zone) from T_double; -- conversion not supported
+SELECT v, convert(v, timestamp with time zone) from T_double; -- conversion not supported
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_double;
@@ -872,10 +838,8 @@ SELECT v, cast(v as Blob) from T_double; -- conversion not supported
 SELECT v, cast(v as date) from T_double; -- conversion not supported
 SELECT v, cast(v as time) from T_double; -- conversion not supported
 SELECT v, cast(v as timestamp) from T_double; -- conversion not supported
-SELECT v, cast(v as time with timezone) from T_double; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_double; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_double; -- conversion not supported
-SELECT v, cast(v as timestamptz) from T_double; -- conversion not supported
+SELECT v, cast(v as time with time zone) from T_double; -- conversion not supported
+SELECT v, cast(v as timestamp with time zone) from T_double; -- conversion not supported
 
 DROP TABLE T_double;
 
@@ -924,10 +888,8 @@ SELECT v, convert(v, Blob) from T_num; -- conversion not supported
 SELECT v, convert(v, date) from T_num; -- conversion not supported
 SELECT v, convert(v, time) from T_num; -- conversion not supported
 SELECT v, convert(v, timestamp) from T_num; -- conversion not supported
-SELECT v, convert(v, time with timezone) from T_num; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_num; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_num; -- conversion not supported
-SELECT v, convert(v, timestamptz) from T_num; -- conversion not supported
+SELECT v, convert(v, time with time zone) from T_num; -- conversion not supported
+SELECT v, convert(v, timestamp with time zone) from T_num; -- conversion not supported
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_num;
@@ -967,10 +929,8 @@ SELECT v, cast(v as Blob) from T_num; -- conversion not supported
 SELECT v, cast(v as date) from T_num; -- conversion not supported
 SELECT v, cast(v as time) from T_num; -- conversion not supported
 SELECT v, cast(v as timestamp) from T_num; -- conversion not supported
-SELECT v, cast(v as time with timezone) from T_num; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_num; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_num; -- conversion not supported
-SELECT v, cast(v as timestamptz) from T_num; -- conversion not supported
+SELECT v, cast(v as time with time zone) from T_num; -- conversion not supported
+SELECT v, cast(v as timestamp with time zone) from T_num; -- conversion not supported
 
 DROP TABLE T_num;
 
@@ -1018,10 +978,8 @@ SELECT v, convert(v, Blob) from T_dec; -- conversion not supported
 SELECT v, convert(v, date) from T_dec; -- conversion not supported
 SELECT v, convert(v, time) from T_dec; -- conversion not supported
 SELECT v, convert(v, timestamp) from T_dec; -- conversion not supported
-SELECT v, convert(v, time with timezone) from T_dec; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_dec; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_dec; -- conversion not supported
-SELECT v, convert(v, timestamptz) from T_dec; -- conversion not supported
+SELECT v, convert(v, time with time zone) from T_dec; -- conversion not supported
+SELECT v, convert(v, timestamp with time zone) from T_dec; -- conversion not supported
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_dec;
@@ -1061,10 +1019,8 @@ SELECT v, cast(v as Blob) from T_dec; -- conversion not supported
 SELECT v, cast(v as date) from T_dec; -- conversion not supported
 SELECT v, cast(v as time) from T_dec; -- conversion not supported
 SELECT v, cast(v as timestamp) from T_dec; -- conversion not supported
-SELECT v, cast(v as time with timezone) from T_dec; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_dec; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_dec; -- conversion not supported
-SELECT v, cast(v as timestamptz) from T_dec; -- conversion not supported
+SELECT v, cast(v as time with time zone) from T_dec; -- conversion not supported
+SELECT v, cast(v as timestamp with time zone) from T_dec; -- conversion not supported
 
 DROP TABLE T_dec;
 
@@ -1113,10 +1069,8 @@ SELECT v, convert(v, Blob) from T_char where v in ('0123456789');
 SELECT v, convert(v, date) from T_char;
 SELECT v, convert(v, time) from T_char;
 SELECT v, convert(v, timestamp) from T_char;
-SELECT v, convert(v, time with timezone) from T_char; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_char; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_char;
-SELECT v, convert(v, timestamptz) from T_char;
+SELECT v, convert(v, time with time zone) from T_char;
+SELECT v, convert(v, timestamp with time zone) from T_char;
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_char where v in ('0', '1');
@@ -1156,10 +1110,8 @@ SELECT v, cast(v as Blob) from T_char where v in ('0123456789');
 SELECT v, cast(v as date) from T_char;
 SELECT v, cast(v as time) from T_char;
 SELECT v, cast(v as timestamp) from T_char;
-SELECT v, cast(v as time with timezone) from T_char; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_char; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_char;
-SELECT v, cast(v as timestamptz) from T_char;
+SELECT v, cast(v as time with time zone) from T_char;
+SELECT v, cast(v as timestamp with time zone) from T_char;
 
 DROP TABLE T_char;
 
@@ -1207,10 +1159,8 @@ SELECT v, convert(v, Blob) from T_varchar where v in ('0123456789');
 SELECT v, convert(v, date) from T_varchar;
 SELECT v, convert(v, time) from T_varchar;
 SELECT v, convert(v, timestamp) from T_varchar;
-SELECT v, convert(v, time with timezone) from T_varchar; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_varchar; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_varchar;
-SELECT v, convert(v, timestamptz) from T_varchar;
+SELECT v, convert(v, time with time zone) from T_varchar;
+SELECT v, convert(v, timestamp with time zone) from T_varchar;
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_varchar where v in ('0', '1');
@@ -1250,10 +1200,8 @@ SELECT v, cast(v as Blob) from T_varchar where v in ('0123456789');
 SELECT v, cast(v as date) from T_varchar;
 SELECT v, cast(v as time) from T_varchar;
 SELECT v, cast(v as timestamp) from T_varchar;
-SELECT v, cast(v as time with timezone) from T_varchar; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_varchar; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_varchar;
-SELECT v, cast(v as timestamptz) from T_varchar;
+SELECT v, cast(v as time with time zone) from T_varchar;
+SELECT v, cast(v as timestamp with time zone) from T_varchar;
 
 DROP TABLE T_varchar;
 
@@ -1302,10 +1250,8 @@ SELECT v, convert(v, Blob) from T_longvarchar where v in ('0123456789');
 SELECT v, convert(v, date) from T_longvarchar;
 SELECT v, convert(v, time) from T_longvarchar;
 SELECT v, convert(v, timestamp) from T_longvarchar;
-SELECT v, convert(v, time with timezone) from T_longvarchar; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_longvarchar; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_longvarchar;
-SELECT v, convert(v, timestamptz) from T_longvarchar;
+SELECT v, convert(v, time with time zone) from T_longvarchar;
+SELECT v, convert(v, timestamp with time zone) from T_longvarchar;
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_longvarchar where v in ('0', '1');
@@ -1345,10 +1291,8 @@ SELECT v, cast(v as Blob) from T_longvarchar where v in ('0123456789');
 SELECT v, cast(v as date) from T_longvarchar;
 SELECT v, cast(v as time) from T_longvarchar;
 SELECT v, cast(v as timestamp) from T_longvarchar;
-SELECT v, cast(v as time with timezone) from T_longvarchar; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_longvarchar; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_longvarchar;
-SELECT v, cast(v as timestamptz) from T_longvarchar;
+SELECT v, cast(v as time with time zone) from T_longvarchar;
+SELECT v, cast(v as timestamp with time zone) from T_longvarchar;
 
 DROP TABLE T_longvarchar;
 */
@@ -1397,10 +1341,8 @@ SELECT v, convert(v, Blob) from T_clob where v in ('0123456789');
 SELECT v, convert(v, date) from T_clob;
 SELECT v, convert(v, time) from T_clob;
 SELECT v, convert(v, timestamp) from T_clob;
-SELECT v, convert(v, time with timezone) from T_clob; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_clob; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_clob;
-SELECT v, convert(v, timestamptz) from T_clob;
+SELECT v, convert(v, time with time zone) from T_clob;
+SELECT v, convert(v, timestamp with time zone) from T_clob;
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_clob where v in ('0', '1');
@@ -1440,10 +1382,8 @@ SELECT v, cast(v as Blob) from T_clob where v in ('0123456789');
 SELECT v, cast(v as date) from T_clob;
 SELECT v, cast(v as time) from T_clob;
 SELECT v, cast(v as timestamp) from T_clob;
-SELECT v, cast(v as time with timezone) from T_clob; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_clob; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_clob;
-SELECT v, cast(v as timestamptz) from T_clob;
+SELECT v, cast(v as time with time zone) from T_clob;
+SELECT v, cast(v as timestamp with time zone) from T_clob;
 
 DROP TABLE T_clob;
 
@@ -1492,10 +1432,8 @@ SELECT v, convert(v, Blob) from T_date where v in (date '2016-01-01');
 SELECT v, convert(v, date) from T_date;
 SELECT v, convert(v, time) from T_date;
 SELECT v, convert(v, timestamp) from T_date;
-SELECT v, convert(v, time with timezone) from T_date; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_date; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_date;
-SELECT v, convert(v, timestamptz) from T_date;
+SELECT v, convert(v, time with time zone) from T_date;
+SELECT v, convert(v, timestamp with time zone) from T_date;
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_date;
@@ -1535,10 +1473,8 @@ SELECT v, cast(v as Blob) from T_date where v in (date '2016-01-01');
 SELECT v, cast(v as date) from T_date;
 SELECT v, cast(v as time) from T_date;
 SELECT v, cast(v as timestamp) from T_date;
-SELECT v, cast(v as time with timezone) from T_date; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_date; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_date;
-SELECT v, cast(v as timestamptz) from T_date;
+SELECT v, cast(v as time with time zone) from T_date;
+SELECT v, cast(v as timestamp with time zone) from T_date;
 
 DROP TABLE T_date;
 
@@ -1587,10 +1523,8 @@ SELECT v, convert(v, Blob) from T_time;
 SELECT v, convert(v, date) from T_time;
 SELECT v, convert(v, time) from T_time;
 SELECT v, convert(v, timestamp) from T_time;
-SELECT v, convert(v, time with timezone) from T_time; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_time; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_time;
-SELECT v, convert(v, timestamptz) from T_time;
+SELECT v, convert(v, time with time zone) from T_time;
+SELECT v, convert(v, timestamp with time zone) from T_time;
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_time;
@@ -1630,10 +1564,8 @@ SELECT v, cast(v as Blob) from T_time;
 SELECT v, cast(v as date) from T_time;
 SELECT v, cast(v as time) from T_time;
 SELECT v, cast(v as timestamp) from T_time;
-SELECT v, cast(v as time with timezone) from T_time; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_time; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_time;
-SELECT v, cast(v as timestamptz) from T_time;
+SELECT v, cast(v as time with time zone) from T_time;
+SELECT v, cast(v as timestamp with time zone) from T_time;
 
 DROP TABLE T_time;
 
@@ -1682,10 +1614,8 @@ SELECT v, convert(v, Blob) from T_timestamp;
 SELECT v, convert(v, date) from T_timestamp;
 SELECT v, convert(v, time) from T_timestamp;
 SELECT v, convert(v, timestamp) from T_timestamp;
-SELECT v, convert(v, time with timezone) from T_timestamp; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_timestamp; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_timestamp;
-SELECT v, convert(v, timestamptz) from T_timestamp;
+SELECT v, convert(v, time with time zone) from T_timestamp;
+SELECT v, convert(v, timestamp with time zone) from T_timestamp;
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_timestamp;
@@ -1725,17 +1655,14 @@ SELECT v, cast(v as Blob) from T_timestamp;
 SELECT v, cast(v as date) from T_timestamp;
 SELECT v, cast(v as time) from T_timestamp;
 SELECT v, cast(v as timestamp) from T_timestamp;
-SELECT v, cast(v as time with timezone) from T_timestamp; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_timestamp; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_timestamp;
-SELECT v, cast(v as timestamptz) from T_timestamp;
+SELECT v, cast(v as time with time zone) from T_timestamp;
+SELECT v, cast(v as timestamp with time zone) from T_timestamp;
 
 DROP TABLE T_timestamp;
 
 
--- TIME WITH TIMEZONE
-CREATE TABLE T_timetz (v TIMETZ);
-INSERT into T_timetz VALUES (timetz '00:00:00'), (timetz '23:59:58');
+CREATE TABLE T_timetz (v TIME WITH TIME ZONE);
+INSERT into T_timetz VALUES (time with time zone '00:00:00'), (time with time zone '23:59:58');
 INSERT into T_timetz VALUES (null);
 SELECT v FROM T_timetz ORDER BY v;
 
@@ -1777,10 +1704,8 @@ SELECT v, convert(v, Blob) from T_timetz;
 SELECT v, convert(v, date) from T_timetz;
 SELECT v, convert(v, time) from T_timetz;
 SELECT v, convert(v, timestamp) from T_timetz;
-SELECT v, convert(v, time with timezone) from T_timetz; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_timetz; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_timetz;
-SELECT v, convert(v, timestamptz) from T_timetz;
+SELECT v, convert(v, time with time zone) from T_timetz;
+SELECT v, convert(v, timestamp with time zone) from T_timetz;
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_timetz;
@@ -1820,17 +1745,14 @@ SELECT v, cast(v as Blob) from T_timetz;
 SELECT v, cast(v as date) from T_timetz;
 SELECT v, cast(v as time) from T_timetz;
 SELECT v, cast(v as timestamp) from T_timetz;
-SELECT v, cast(v as time with timezone) from T_timetz; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_timetz; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_timetz;
-SELECT v, cast(v as timestamptz) from T_timetz;
+SELECT v, cast(v as time with time zone) from T_timetz;
+SELECT v, cast(v as timestamp with time zone) from T_timetz;
 
 DROP TABLE T_timetz;
 
 
--- TIMESTAMP WITH TIMEZONE
-CREATE TABLE T_timestamptz (v TIMESTAMPTZ);
-INSERT into T_timestamptz VALUES (timestamptz '1999-12-31 23:59:59'), (timestamptz '2016-01-01 00:00:00'), (timestamptz '2016-02-29 00:00:00'), (timestamptz '2016-12-31 23:59:58');
+CREATE TABLE T_timestamptz (v TIMESTAMP WITH TIME ZONE);
+INSERT into T_timestamptz VALUES (timestamp with time zone '1999-12-31 23:59:59'), (timestamp with time zone '2016-01-01 00:00:00'), (timestamp with time zone '2016-02-29 00:00:00'), (timestamp with time zone '2016-12-31 23:59:58');
 INSERT into T_timestamptz VALUES (null);
 SELECT v FROM T_timestamptz ORDER BY v;
 
@@ -1872,10 +1794,8 @@ SELECT v, convert(v, Blob) from T_timestamptz;
 SELECT v, convert(v, date) from T_timestamptz;
 SELECT v, convert(v, time) from T_timestamptz;
 SELECT v, convert(v, timestamp) from T_timestamptz;
-SELECT v, convert(v, time with timezone) from T_timestamptz; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_timestamptz; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_timestamptz;
-SELECT v, convert(v, timestamptz) from T_timestamptz;
+SELECT v, convert(v, time with time zone) from T_timestamptz;
+SELECT v, convert(v, timestamp with time zone) from T_timestamptz;
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_timestamptz;
@@ -1915,10 +1835,8 @@ SELECT v, cast(v as Blob) from T_timestamptz;
 SELECT v, cast(v as date) from T_timestamptz;
 SELECT v, cast(v as time) from T_timestamptz;
 SELECT v, cast(v as timestamp) from T_timestamptz;
-SELECT v, cast(v as time with timezone) from T_timestamptz; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_timestamptz; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_timestamptz;
-SELECT v, cast(v as timestamptz) from T_timestamptz;
+SELECT v, cast(v as time with time zone) from T_timestamptz;
+SELECT v, cast(v as timestamp with time zone) from T_timestamptz;
 
 DROP TABLE T_timestamptz;
 

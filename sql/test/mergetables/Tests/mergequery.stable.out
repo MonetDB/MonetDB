@@ -88,7 +88,7 @@ stdout of test 'mergequery` in directory 'sql/test/mergetables` itself:
 % mal # name
 % clob # type
 % 142 # length
-function user.s22_1():void;
+function user.s22_0():void;
     X_3:void := querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;":str, "default_pipe":str, 66:int);
 barrier X_235:bit := language.dataflow();
     X_74:bat[:dbl] := bat.new(nil:dbl);
@@ -169,22 +169,22 @@ exit X_235:bit;
     X_93:int := sql.append(X_90:int, "sys":str, "answ":str, "z":str, X_84:bat[:dbl]);
     X_95:lng := aggr.count(X_84:bat[:dbl]);
     sql.affectedRows(X_93:int, X_95:lng);
-end user.s22_1;
-#inline               actions= 0 time=2 usec 
-#candidates           actions= 1 time=31 usec 
-#remap                actions= 0 time=4 usec 
-#costModel            actions= 1 time=28 usec 
-#coercions            actions= 0 time=3 usec 
-#evaluate             actions= 4 time=45 usec 
-#emptybind            actions= 0 time=4 usec 
-#pushselect           actions= 8 time=41 usec 
-#aliases              actions=16 time=30 usec 
-#mitosis              actions= 0 time=5 usec 
-#mergetable           actions= 0 time=34 usec 
-#deadcode             actions=12 time=24 usec 
-#aliases              actions= 0 time=6 usec 
-#constants            actions= 9 time=22 usec 
-#commonTerms          actions= 0 time=7 usec 
+end user.s22_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=2 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 4 time=9 usec 
+#evaluate             actions= 4 time=17 usec 
+#emptybind            actions= 6 time=11 usec 
+#pushselect           actions= 8 time=12 usec 
+#aliases              actions=16 time=9 usec 
+#mitosis              actions=1 time=53 usec 
+#mergetable           actions= 4 time=70 usec 
+#deadcode             actions=28 time=17 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions=15 time=8 usec 
+#commonTerms          actions= 0 time=11 usec 
 #projectionpath       actions= 0 time=6 usec 
 #deadcode             actions= 0 time=6 usec 
 #reorder              actions= 1 time=37 usec 
@@ -207,7 +207,7 @@ end user.s22_1;
 % mal # name
 % clob # type
 % 164 # length
-function user.s24_1():void;
+function user.s24_0():void;
     X_5:void := querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;":str, "default_pipe":str, 76:int);
 barrier X_252:bit := language.dataflow();
     X_88:bat[:dbl] := bat.new(nil:dbl);
@@ -298,28 +298,27 @@ exit X_252:bit;
     X_106:int := sql.append(X_103:int, "sys":str, "answ":str, "z":str, X_97:bat[:dbl]);
     X_108:lng := aggr.count(X_97:bat[:dbl]);
     sql.affectedRows(X_106:int, X_108:lng);
-end user.s24_1;
-#inline               actions= 0 time=2 usec 
-#remap                actions= 0 time=4 usec 
-#costModel            actions= 1 time=29 usec 
-#coercions            actions= 0 time=2 usec 
-#evaluate             actions= 8 time=50 usec 
-#emptybind            actions= 0 time=4 usec 
-#pushselect           actions= 8 time=37 usec 
-#aliases              actions=20 time=36 usec 
-#mitosis              actions= 0 time=4 usec 
-#mergetable           actions= 0 time=52 usec 
-#deadcode             actions=12 time=25 usec 
-#aliases              actions= 0 time=7 usec 
-#constants            actions=12 time=23 usec 
-#commonTerms          actions= 0 time=8 usec 
-#projectionpath       actions= 0 time=6 usec 
-#deadcode             actions= 0 time=7 usec 
-#reorder              actions= 1 time=38 usec 
-#reduce               actions=81 time=44 usec 
-#matpack              actions= 0 time=5 usec 
-#dataflow             actions=31 time=38 usec 
-#querylog             actions= 0 time=1 usec 
+end user.s24_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=2 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=2 usec 
+#aliases              actions= 8 time=10 usec 
+#evaluate             actions= 8 time=24 usec 
+#emptybind            actions= 6 time=12 usec 
+#pushselect           actions= 8 time=12 usec 
+#aliases              actions=20 time=9 usec 
+#mitosis              actions=1 time=51 usec 
+#mergetable           actions= 5 time=72 usec 
+#deadcode             actions=28 time=18 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions=18 time=8 usec 
+#commonTerms          actions= 0 time=13 usec 
+#projectionpath       actions= 0 time=5 usec 
+#deadcode             actions= 0 time=11 usec 
+#reorder              actions= 1 time=34 usec 
+#matpack              actions= 3 time=10 usec 
+#dataflow             actions= 1 time=35 usec 
 #multiplex            actions= 0 time=3 usec 
 #generator            actions= 0 time=2 usec 
 #profiler             actions= 1 time=21 usec 

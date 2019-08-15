@@ -76,7 +76,7 @@ HASHmask(BUN cnt)
 	return m;
 }
 
-static void
+static inline void
 HASHclear(Hash *h)
 {
 	/* since BUN2_NONE, BUN4_NONE, BUN8_NONE

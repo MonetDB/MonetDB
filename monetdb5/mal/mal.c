@@ -13,8 +13,6 @@
 char 	monet_cwd[FILENAME_MAX] = { 0 };
 size_t 	monet_memory = 0;
 char 	monet_characteristics[4096];
-int		mal_trace;		/* enable profile events on console */
-str     mal_session_uuid;   /* unique marker for the session */
 
 #ifdef HAVE_HGE
 int have_hge;
@@ -29,7 +27,7 @@ int have_hge;
 #include "mal_interpreter.h"
 #include "mal_namespace.h"  /* for initNamespace() */
 #include "mal_client.h"
-#include "mal_sabaoth.h"
+#include "msabaoth.h"
 #include "mal_dataflow.h"
 #include "mal_profiler.h"
 #include "mal_private.h"
@@ -42,12 +40,10 @@ int have_hge;
 #include "tablet.h"
 
 MT_Lock     mal_contextLock = MT_LOCK_INITIALIZER("mal_contextLock");
-MT_Lock     mal_namespaceLock = MT_LOCK_INITIALIZER("mal_namespaceLk");
 MT_Lock     mal_remoteLock = MT_LOCK_INITIALIZER("mal_remoteLock");
-MT_Lock  	mal_profileLock = MT_LOCK_INITIALIZER("mal_profileLock");
+MT_Lock     mal_profileLock = MT_LOCK_INITIALIZER("mal_profileLock");
 MT_Lock     mal_copyLock = MT_LOCK_INITIALIZER("mal_copyLock");
 MT_Lock     mal_delayLock = MT_LOCK_INITIALIZER("mal_delayLock");
-MT_Lock     mal_beatLock = MT_LOCK_INITIALIZER("mal_beatLock");
 MT_Lock     mal_oltpLock = MT_LOCK_INITIALIZER("mal_oltpLock");
 
 /*
@@ -60,10 +56,12 @@ int mal_init(void){
  */
 	if (!MCinit())
 		return -1;
+#ifndef NDEBUG
 	if (!mdbInit()) {
 		mal_client_reset();
 		return -1;
 	}
+#endif
 	monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
 	initParser();
@@ -74,7 +72,9 @@ int mal_init(void){
 	str err = malBootstrap();
 	if (err != MAL_SUCCEED) {
 		mal_client_reset();
+#ifndef NDEBUG
 		mdbExit();
+#endif
 		dumpExceptionsToStream(NULL, err);
 		freeException(err);
 		return -1;
@@ -94,8 +94,6 @@ int mal_init(void){
  * activity first.
  * This function should be called after you have issued sql_reset();
  */
-void cleanOptimizerPipe(void);
-
 void mserver_reset(void)
 {
 	str err = 0;
@@ -105,38 +103,19 @@ void mserver_reset(void)
 	MCstopClients(0);
 	setHeartbeat(-1);
 	stopProfiler();
-	AUTHreset(); 
-	if ((err = msab_wildRetreat()) != NULL) {
-		fprintf(stderr, "!%s", err);
-		free(err);
+	AUTHreset();
+	if (!GDKinmemory()) {
+		if ((err = msab_wildRetreat()) != NULL) {
+			fprintf(stderr, "!%s", err);
+			free(err);
+		}
+		if ((err = msab_registerStop()) != NULL) {
+			fprintf(stderr, "!%s", err);
+			free(err);
+		}
 	}
-	if ((err = msab_registerStop()) != NULL) {
-		fprintf(stderr, "!%s", err);
-		free(err);
-	}
-	/* TODO: make sure this is still required
-#ifdef HAVE_EMBEDDED
-	MTIMEreset();
-#endif
-*/
 	mal_factory_reset();
 	mal_dataflow_reset();
-	THRdel(mal_clients->mythread);
-	GDKfree(mal_clients->errbuf);
-	mal_clients->fdin->s = NULL;
-	bstream_destroy(mal_clients->fdin);
-	GDKfree(mal_clients->prompt);
-	GDKfree(mal_clients->username);
-	freeStack(mal_clients->glb);
-	if (mal_clients->usermodule/* && strcmp(mal_clients->usermodule->name,"user")==0*/)
-		freeModule(mal_clients->usermodule);
-
-	mal_clients->fdin = 0;
-	mal_clients->prompt = 0;
-	mal_clients->username = 0;
-	mal_clients->curprg = 0;
-	mal_clients->usermodule = 0;
-
 	mal_client_reset();
   	mal_linker_reset();
 	mal_resource_reset();
@@ -144,15 +123,15 @@ void mserver_reset(void)
 	mal_module_reset();
 	mal_atom_reset();
 	opt_pipes_reset();
+#ifndef NDEBUG
 	mdbExit();
-	GDKfree(mal_session_uuid);
-	mal_session_uuid = NULL;
+#endif
 
-	memset((char*)monet_cwd,0, sizeof(monet_cwd));
+	memset((char*)monet_cwd, 0, sizeof(monet_cwd));
 	monet_memory = 0;
 	memset((char*)monet_characteristics,0, sizeof(monet_characteristics));
-	mal_trace = 0;
 	mal_namespace_reset();
+	msab_exit();
 	/* No need to clean up the namespace, it will simply be extended
 	 * upon restart mal_namespace_reset(); */
 	GDKreset(0);	// terminate all other threads
@@ -161,7 +140,7 @@ void mserver_reset(void)
 
 /* stopping clients should be done with care, as they may be in the mids of
  * transactions. One safe place is between MAL instructions, which would
- * abort the transaction by raising an exception. All non-console sessions are
+ * abort the transaction by raising an exception. All sessions are
  * terminate this way.
  * We should also ensure that no new client enters the scene while shutting down.
  * For this we mark the client records as BLOCKCLIENT.

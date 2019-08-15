@@ -137,6 +137,7 @@ typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 typedef size_t (*count_del_fptr) (sql_trans *tr, sql_table *t);
 typedef size_t (*count_upd_fptr) (sql_trans *tr, sql_table *t);
 typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int all /* all or new only */);
+typedef size_t (*count_col_upd_fptr) (sql_trans *tr, sql_column *c);
 typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int all /* all or new only */);
 typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
@@ -226,6 +227,7 @@ typedef struct store_functions {
 	count_del_fptr count_del;
 	count_upd_fptr count_upd;
 	count_col_fptr count_col;
+	count_col_upd_fptr count_col_upd;
 	count_idx_fptr count_idx;
 	dcount_col_fptr dcount_col;
 	prop_col_fptr sorted_col;
@@ -299,8 +301,6 @@ typedef int (*logger_get_sequence_fptr) (int seq, lng *id);
 typedef lng (*logger_read_last_transaction_id_fptr)(void);
 typedef lng (*logger_get_transaction_drift_fptr)(void);
 
-typedef int (*logger_reload_fptr) (void);
-
 typedef int (*log_isnew_fptr)(void);
 typedef bool (*log_needs_update_fptr)(void);
 typedef int (*log_tstart_fptr) (void);
@@ -319,8 +319,6 @@ typedef struct logger_functions {
 	logger_get_sequence_fptr get_sequence;
 	logger_read_last_transaction_id_fptr read_last_transaction_id;
 	logger_get_transaction_drift_fptr get_transaction_drift;
-
-	logger_reload_fptr reload;
 
 	log_isnew_fptr log_isnew;
 	log_needs_update_fptr log_needs_update;
@@ -346,7 +344,7 @@ extern res_table *res_tables_find(res_table *results, int res_id);
 extern int store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk);
 extern void store_exit(void);
 
-extern void store_apply_deltas(void);
+extern int store_apply_deltas(bool locked);
 extern void store_flush_log(void);
 extern void store_manager(void);
 extern void idle_manager(void);
@@ -355,8 +353,8 @@ extern void store_lock(void);
 extern void store_unlock(void);
 extern int store_next_oid(void);
 
-extern sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, const char *name);
-extern sql_trans *sql_trans_destroy(sql_trans *tr);
+extern sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool try_spare);
+extern sql_trans *sql_trans_destroy(sql_trans *tr, bool try_spare);
 extern bool sql_trans_validate(sql_trans *tr);
 extern int sql_trans_commit(sql_trans *tr);
 

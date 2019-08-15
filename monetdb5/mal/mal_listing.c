@@ -565,10 +565,11 @@ str
 mal2str(MalBlkPtr mb, int first, int last)
 {
 	str ps = NULL, *txt;
-	int i, *len, totlen = 0, j;
+	int i, j;
+	size_t *len, totlen = 0;
 
 	txt = GDKmalloc(sizeof(str) * mb->stop);
-	len = GDKmalloc(sizeof(int) * mb->stop);
+	len = GDKmalloc(sizeof(size_t) * mb->stop);
 
 	if( txt == NULL || len == NULL){
 		addMalException(mb,"mal2str: " MAL_MALLOC_FAIL);
@@ -586,7 +587,7 @@ mal2str(MalBlkPtr mb, int first, int last)
 #endif
 
 		if ( txt[i])
-			totlen += len[i] = (int)strlen(txt[i]);
+			totlen += len[i] = strlen(txt[i]);
 		else {
 			addMalException(mb,"mal2str: " MAL_MALLOC_FAIL);
 			GDKfree(len);

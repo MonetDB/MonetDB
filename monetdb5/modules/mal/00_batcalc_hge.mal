@@ -10947,7 +10947,6 @@ pattern between(b:bat[:hge],lo:hge,hi:hge,s:bat[:oid]) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
 
-
 pattern avg(b:bat[:hge]) :dbl
 address CMDcalcavg
 comment "average of non-nil values of B with candidates list";

@@ -17,7 +17,6 @@
 
 #define new_exp_list(sa) sa_list(sa)
 #define exp2list(sa,e)   append(sa_list(sa),e)
-#define new_compare_list(sa, l, r) exp2list(sa, exp_compare(sa, l, r, cmp_equal))
 
 extern comp_type swap_compare( comp_type t );
 extern comp_type range2lcompare( int r );
@@ -71,7 +70,8 @@ extern list * exp_types(sql_allocator *sa, list *exps);
 extern int have_nil(list *exps);
 
 extern sql_exp * exp_column(sql_allocator *sa, const char *rname, const char *name, sql_subtype *t, int card, int has_nils, int intern);
-#define exp_ref(sa, e) exp_column(sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e))
+extern sql_exp * exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe);
+#define exp_ref(sa, e) exp_propagate(sa, exp_column(sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e)), e)
 extern sql_exp * exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, int card, int has_nils, int intern);
 extern sql_exp * exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel, sql_exp *old);
 extern sql_exp * exp_set(sql_allocator *sa, const char *name, sql_exp *val, int level);
@@ -85,6 +85,8 @@ extern sql_exp * exp_rel(mvc *sql, sql_rel * r);
 
 extern void exp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const char *name );
 extern void exp_setrelname(sql_allocator *sa, sql_exp *e, int nr );
+extern void exp_setalias(sql_exp *e, const char *rname, const char *name);
+extern void exp_prop_alias(sql_exp *e, sql_exp *oe);
 
 extern void noninternexp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const char *name );
 extern char* make_label(sql_allocator *sa, int nr);
@@ -95,7 +97,6 @@ extern list* exps_label(sql_allocator *sa, list *exps, int nr);
 extern sql_exp * exp_copy( sql_allocator *sa, sql_exp *e);
 extern list * exps_copy( sql_allocator *sa, list *exps);
 extern list * exps_alias( sql_allocator *sa, list *exps);
-
 
 extern void exp_swap( sql_exp *e );
 
@@ -129,7 +130,7 @@ extern int exp_is_not_null(mvc *sql, sql_exp *e);
 extern int exp_is_null(mvc *sql, sql_exp *e);
 extern int exps_are_atoms(list *exps);
 extern int exp_has_func(sql_exp *e);
-extern int exp_unsafe(sql_exp *e);
+extern int exp_unsafe(sql_exp *e, int allow_identity);
 extern int exp_has_sideeffect(sql_exp *e);
 
 /* returns 0 when the relation contain the passed expression else < 0 */
@@ -164,4 +165,5 @@ extern int exp_aggr_is_count(sql_exp *e);
 
 extern void exps_reset_freevar(list *exps);
 
+extern int rel_set_type_recurse(mvc *sql, sql_subtype *type, sql_rel *rel, const char **relname, const char **expname);
 #endif /* _REL_EXP_H_ */

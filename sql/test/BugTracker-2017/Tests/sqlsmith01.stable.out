@@ -30,7 +30,7 @@ stdout of test 'sqlsmith01` in directory 'sql/test/BugTracker-2017` itself:
 #from
 #  bam.rg as ref_20
 #where ref_20.fo is not NULL;
-% bam.L2,	bam.L5 # table_name
+% bam.L1,	bam.L3 # table_name
 % c0,	c1 # name
 % clob,	bigint # type
 % 0,	1 # length
@@ -52,7 +52,7 @@ stdout of test 'sqlsmith01` in directory 'sql/test/BugTracker-2017` itself:
 #              on (ref_18.fullname = ref_20.name )
 #            left join sys._columns as ref_21
 #              inner join sys.columns as ref_22
-% .L160,	.L162,	.L164,	.L166 # table_name
+% .L62,	.L63,	.L64,	.L65 # table_name
 % c0,	c1,	c2,	c3 # name
 % int,	int,	int,	int # type
 % 1,	1,	1,	1 # length

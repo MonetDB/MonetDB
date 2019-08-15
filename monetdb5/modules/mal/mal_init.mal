@@ -61,7 +61,6 @@ include batstr;
 include batcolor;
 
 # MAL related extensions
-include sabaoth;
 include pcre;
 include clients;
 include bbp;

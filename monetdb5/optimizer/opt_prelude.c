@@ -106,6 +106,7 @@ str defineRef;
 str deleteRef;
 str deltaRef;
 str dense_rankRef;
+str diffcandRef;
 str differenceRef;
 str disconnectRef;
 str divRef;
@@ -410,6 +411,7 @@ void optimizerInit(void)
 	deleteRef = putName("delete");
 	deltaRef = putName("delta");
 	dense_rankRef = putName("dense_rank");
+	diffcandRef= putName("diffcand");
 	differenceRef = putName("difference");
 	disconnectRef= putName("disconnect");
 	divRef = putName("/");

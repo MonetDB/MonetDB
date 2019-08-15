@@ -40,9 +40,15 @@ stdout of test 'aggregate_incorrect_precision_scale.Bug-3182` in directory 'sql/
 % bigint,	bigint # type
 % 1,	1 # length
 [ 3,	3	]
-#select sum(dval), sum(nval) from type_test;
+#select sum(dval), cast(sum(nval) as numeric(18,3)) from type_test;
 % sys.L3,	sys.L5 # table_name
 % L3,	L5 # name
+% double,	double # type
+% 24,	24 # length
+[ 4.984,	4.984	]
+#select sum(dval), cast(sum(nval) as numeric(18,3)) from type_test;
+% sys.L3,	sys.L6 # table_name
+% L3,	L6 # name
 % double,	decimal # type
 % 24,	20 # length
 [ 14.952,	14.952	]

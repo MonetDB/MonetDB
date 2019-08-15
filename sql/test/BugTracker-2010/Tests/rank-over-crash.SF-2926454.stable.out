@@ -15,29 +15,38 @@ stdout of test 'rank-over-crash.SF-2926454` in directory 'sql/test/BugTracker-20
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31389/
 # MonetDB/SQL module v2.38.0 loaded
 
-
-
 # 20:16:19 >  
 # 20:16:19 >  mclient -lsql -ftest -i -e --host=alf --port=31389 
 # 20:16:19 >  
 
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
+#create table score_table (
+#s_name varchar(20),
+#subject varchar(10),
+#score int
+#);
+#insert into score_table values('foo','english',70);
+[ 1     ]
+#insert into score_table values('foo','history',50);
+[ 1     ]
+#insert into score_table values('foo','math',60);
+[ 1     ]
+#insert into score_table values('bar','english',45);
+[ 1     ]
+#insert into score_table values('bar','history',75);
+[ 1     ]
 #select
 #s_name,
-#sum(score) as totalscore,
+#cast(sum(score) as bigint) as totalscore,
 #rank() over (order by sum(score) desc) -- cannot use alias 'totalscore' here
 #from score_table
 #group by s_name;
-% sys.score_table,	sys.L2,	sys.L4 # table_name
-% s_name,	totalscore,	L4 # name
-% varchar,	bigint,	int # type
-% 3,	3,	1 # length
-[ "foo",	180,	1	]
-[ "bar",	120,	2	]
+% sys.score_table,	sys.L5,	sys.L11 # table_name
+% s_name,	totalscore,	L11 # name
+% varchar,      bigint, int # type
+% 3,    3,      1 # length
+[ "foo",        180,    1       ]
+[ "bar",        120,    2       ]
+#drop table score_table;
 
 # 20:16:19 >  
 # 20:16:19 >  Done.

@@ -31,3 +31,21 @@ sys.stdout.write(sout)
 sys.stdout.write(cout)
 sys.stderr.write(serr)
 sys.stderr.write(cerr)
+
+def listfiles(path):
+    for f in os.listdir(path):
+        if f.find('wlc') >= 0 and f != 'wlc_logs':
+            file = path + os.path.sep + f
+            sys.stdout.write(file + "\n")
+            try:
+                x = open(file)
+                s = x.read()
+                lines = s.split('\n')
+                for l in lines:
+                    sys.stdout.write('#' + l + '\n')
+                x.close()
+            except IOError:
+                sys.stderr.write('Failure to read file ' + file + '\n')
+
+listfiles(dbfarm + os.path.sep + tstdb)
+listfiles(dbfarm + os.path.sep + tstdb + os.path.sep + 'wlc_logs')

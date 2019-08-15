@@ -28,7 +28,7 @@ stdout of test 'extract_seconds.Bug-2793` in directory 'sql/test/BugTracker-2011
 % L2 # name
 % decimal # type
 % 11 # length
-[ 42.246	]
+[ 42.246000	]
 #select extract(minute from timestamp '2011-3-10 9:30:42.246');
 % .L2 # table_name
 % L2 # name
@@ -58,7 +58,7 @@ stdout of test 'extract_seconds.Bug-2793` in directory 'sql/test/BugTracker-2011
 % L2 # name
 % decimal # type
 % 11 # length
-[ 42.246	]
+[ 42.246000	]
 #select extract(minute from timestamp '2011-3-10 9:30:42.246+01:00');
 % .L2 # table_name
 % L2 # name

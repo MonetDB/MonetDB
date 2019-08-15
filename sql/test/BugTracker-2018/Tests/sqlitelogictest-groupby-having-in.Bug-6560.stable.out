@@ -27,13 +27,13 @@ stdout of test 'sqlitelogictest-groupby-having-in.Bug-6560` in directory 'sql/te
 #INSERT INTO tab1 VALUES(22,6,8), (28,57,45), (82,44,71);
 [ 3	]
 #SELECT + - col2 FROM tab1 AS cor0 GROUP BY col0, col2 HAVING ( col2 / + 15 + + 88 ) IN ( AVG ( col2 ) );
-% sys.L2 # table_name
-% L2 # name
+% sys.L1 # table_name
+% L1 # name
 % int # type
 % 1 # length
 #SELECT DISTINCT - NULLIF ( - 85, 24 ) * tab1.col1 FROM tab1 GROUP BY tab1.col1;
-% sys.L2 # table_name
-% L2 # name
+% .L1 # table_name
+% L1 # name
 % bigint # type
 % 4 # length
 [ 510	]

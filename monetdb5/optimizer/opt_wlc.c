@@ -12,7 +12,6 @@
 #include "monetdb_config.h"
 #include "opt_wlc.h"
 
-
 str
 OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int i, j, limit, slimit, updates=0, query=1;

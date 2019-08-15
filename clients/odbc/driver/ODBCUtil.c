@@ -362,7 +362,7 @@ static struct scalars {
 	{"degrees", 1, "sys.\"degrees\"(\1)", },
 	{"difference", 2, "sys.\"difference\"(\1,\2)", },
 	{"exp", 1, "sys.\"exp\"(\1)", },
-	{"extract", 1, "sys.\"extract\"(\1)", }, /* include "X FROM " in argument */
+	{"extract", 1, "EXTRACT(\1)", }, /* include "X FROM " in argument */
 	{"floor", 1, "sys.\"floor\"(\1)", },
 	{"hour", 1, "sys.\"hour\"(\1)", },
 	{"ifnull", 2, "sys.\"coalesce\"(\1,\2)", },

@@ -136,46 +136,29 @@ static ssize_t
 sql_time_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 {
 	struct time_res *ts_res = TS_RES;
-	int i;
 	ssize_t len1;
 	size_t big = 128;
 	char buf1[128], *s1 = buf1, *s;
-	lng val = 0, timezone = ts_res->timezone;
 	daytime tmp;
-	const daytime *a = A;
-	daytime mtime = 24 * 60 * 60 * 1000;
 
 	(void) type;
+	tmp = *(const daytime *) A;
 	if (ts_res->has_tz)
-		val = *a + timezone;
-	else
-		val = *a;
-	if (val < 0)
-		val = mtime + val;
-	if (val > mtime)
-		val = val - mtime;
-	tmp = (daytime) val;
+		tmp = daytime_add_usec_modulo(tmp, ts_res->timezone * 1000);
 
-	len1 = daytime_tostr(&s1, &big, &tmp, true);
+	len1 = daytime_precision_tostr(&s1, &big, tmp, ts_res->fraction, true);
 	if (len1 < 0)
 		return -1;
 	if (len1 == 3 && strcmp(s1, "nil") == 0) {
 		if (*len < 4 || *buf == NULL) {
-			if (*buf)
-				GDKfree(*buf);
-			*buf = (str) GDKzalloc(*len = 4);
-			if (*buf == NULL) {
+			GDKfree(*buf);
+			*buf = GDKzalloc(*len = 4);
+			if (*buf == NULL)
 				return -1;
-			}
 		}
-		strcpy(*buf, s1);
+		strcpy(*buf, "nil");
 		return len1;
 	}
-
-	/* fixup the fraction, default is 3 */
-	len1 += (ts_res->fraction - 3);
-	if (ts_res->fraction == 0)
-		len1--;
 
 	if (*len < (size_t) len1 + 8) {
 		if (*buf)
@@ -188,16 +171,12 @@ sql_time_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 	s = *buf;
 	strcpy(s, buf1);
 	s += len1;
-	s[0] = 0;
-	/* extra zero's for usec's */
-	for (i = 3; i < ts_res->fraction; i++)
-		s[-i + 2] = '0';
 
 	if (ts_res->has_tz) {
-		timezone = ts_res->timezone / 60000;
-		*s++ = (ts_res->timezone >= 0) ? '+' : '-';
-		sprintf(s, "%02d:%02d", (int) (llabs(timezone) / 60), (int) (llabs(timezone) % 60));
-		s += 5;
+		lng timezone = llabs(ts_res->timezone / 60000);
+		s += sprintf(s, "%c%02d:%02d",
+			     (ts_res->timezone >= 0) ? '+' : '-',
+			     (int) (timezone / 60), (int) (timezone % 60));
 	}
 	return (ssize_t) (s - *buf);
 }
@@ -206,33 +185,40 @@ static ssize_t
 sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 {
 	struct time_res *ts_res = TS_RES;
-	int i;
 	ssize_t len1, len2;
 	size_t big = 128;
 	char buf1[128], buf2[128], *s, *s1 = buf1, *s2 = buf2;
 	timestamp tmp;
-	const timestamp *a = A;
 	lng timezone = ts_res->timezone;
+	date days;
+	daytime usecs;
 
 	(void) type;
+	tmp = *(const timestamp *)A;
 	if (ts_res->has_tz) {
-		MTIMEtimestamp_add(&tmp, a, &timezone);
-		len1 = date_tostr(&s1, &big, &tmp.days, true);
-		len2 = daytime_tostr(&s2, &big, &tmp.msecs, true);
-	} else {
-		len1 = date_tostr(&s1, &big, &a->days, true);
-		len2 = daytime_tostr(&s2, &big, &a->msecs, true);
+		tmp = timestamp_add_usec(tmp, timezone * 1000);
 	}
+	days = timestamp_date(tmp);
+	usecs = timestamp_daytime(tmp);
+	len1 = date_tostr(&s1, &big, &days, true);
+	len2 = daytime_precision_tostr(&s2, &big, usecs, ts_res->fraction, true);
 	if (len1 < 0 || len2 < 0) {
 		GDKfree(s1);
 		GDKfree(s2);
 		return -1;
 	}
 
-	/* fixup the fraction, default is 3 */
-	len2 += (ts_res->fraction - 3);
-	if (ts_res->fraction == 0)
-		len2--;
+	if ((len1 == 3 && strcmp(s1, "nil") == 0) ||
+	    (len2 == 3 && strcmp(s2, "nil") == 0)) {
+		if (*len < 4 || *buf == NULL) {
+			GDKfree(*buf);
+			*buf = GDKzalloc(*len = 4);
+			if (*buf == NULL)
+				return -1;
+		}
+		strcpy(*buf, "nil");
+		return len1;
+	}
 
 	if (*len < (size_t) len1 + (size_t) len2 + 8) {
 		if (*buf)
@@ -249,9 +235,6 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 	strcpy(s, buf2);
 	s += len2;
 	s[0] = 0;
-	/* extra zero's for usec's */
-	for (i = 3; i < ts_res->fraction; i++)
-		s[-i + 2] = '0';
 
 	if (ts_res->has_tz) {
 		timezone = ts_res->timezone / 60000;
@@ -891,7 +874,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 	if (locked) {
 		/* flush old changes to disk */
 		sql_trans_end(m->session);
-		store_apply_deltas();
+		store_apply_deltas(true);
 		sql_trans_begin(m->session);
 	}
 
@@ -1106,13 +1089,13 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 				len3++;
 				max3 *= 10;
 			}
-			name = e->rname;
+			name = exp_relname(e);
 			if (!name && e->type == e_column && e->l)
 				name = e->l;
 			slen = name ? strlen(name) : 0;
 			if (slen > len5)
 				len5 = slen;
-			name = e->name;
+			name = exp_name(e);
 			if (!name && e->type == e_column && e->r)
 				name = e->r;
 			slen = name ? strlen(name) : 0;
@@ -1157,10 +1140,10 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			sql_exp *e = n->data;
 
 			t = exp_subtype(e);
-			name = e->name;
+			name = exp_name(e);
 			if (!name && e->type == e_column && e->r)
 				name = e->r;
-			rname = e->rname;
+			rname = exp_relname(e);
 			if (!rname && e->type == e_column && e->l)
 				rname = e->l;
 
@@ -1294,7 +1277,7 @@ mvc_send_hge(stream *s, hge cnt){
 #endif
 
 int
-convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len)
+convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len)
 {
 	size_t len2 = (size_t) len;
 	ssize_t l = 0;
@@ -1335,7 +1318,7 @@ convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, cha
 }
 
 static int
-export_value(mvc *m, stream *s, int eclass, const char *sqlname, int d, int sc, ptr p, int mtype, char **buf, size_t *len, const char *ns)
+export_value(mvc *m, stream *s, sql_class eclass, const char *sqlname, int d, int sc, ptr p, int mtype, char **buf, size_t *len, const char *ns)
 {
 	int ok = 0;
 	ssize_t l = 0;
@@ -1681,23 +1664,23 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					size_t j = 0;
 					bool swap = mnstr_get_swapbytes(s);
 					timestamp *times = (timestamp*) Tloc(iterators[i].b, srow);
+					timestamp epoch = timestamp_create(date_create(1970, 1, 1), daytime_create(0, 0, 0, 0));
 					lng *bufptr = (lng*) buf;
 					for(j = 0; j < (row - srow); j++) {
-						MTIMEepoch2lng(&time, times + j);
+						time = timestamp_diff(times[j], epoch) / 1000;
 						bufptr[j] = swap ? long_long_SWAP(time) : time;
 					}
 					atom_size = sizeof(lng);
 				} else if (c->type.type->eclass == EC_DATE) {
 					// convert dates into timestamps since epoch
 					lng time;
-					timestamp tstamp;
 					size_t j = 0;
 					bool swap = mnstr_get_swapbytes(s);
 					date *dates = (date*) Tloc(iterators[i].b, srow);
+					date epoch = date_create(1970, 1, 1);
 					lng *bufptr = (lng*) buf;
 					for(j = 0; j < (row - srow); j++) {
-						tstamp.payload.p_days = dates[j];
-						MTIMEepoch2lng(&time, &tstamp);
+						time = date_diff(dates[j], epoch) * 24*60*60*LL_CONSTANT(1000);
 						bufptr[j] = swap ? long_long_SWAP(time) : time;
 					}
 					atom_size = sizeof(lng);
@@ -1924,7 +1907,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 
 
 static lng
-get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p)
+get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat bid, ptr p)
 {
 	size_t count = 0, incr = 0;;
 
@@ -2076,13 +2059,16 @@ get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, p
 		return count;
 	} else if (eclass == EC_BIT) {
 		return 5;	/* max(strlen("true"), strlen("false")) */
+	} else if (strcmp(ATOMname(mtype), "uuid") == 0) {
+		return 36;	/* xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx */
 	} else {
 		return 0;
 	}
 }
 
 static int
-export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p) {
+export_length(stream *s, int mtype, sql_class eclass, int digits, int scale, int tz, bat bid, ptr p)
+{
 	int ok = 1;
 	lng length = get_print_width(mtype, eclass, digits, scale, tz, bid, p);
 	ok = mvc_send_lng(s, length);
@@ -2438,7 +2424,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 		for (i = 0; i < t->nr_cols; i++) {
 			res_col *c = t->cols + i;
 			int mtype = c->type.type->localtype;
-			int eclass = c->type.type->eclass;
+			sql_class eclass = c->type.type->eclass;
 
 			if (!export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p))
 				return -1;
