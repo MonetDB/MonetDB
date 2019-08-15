@@ -825,7 +825,7 @@ str
 XMLepilogue(void *ret)
 {
 	(void) ret;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return MAL_SUCCEED;
 }
 
 #endif
