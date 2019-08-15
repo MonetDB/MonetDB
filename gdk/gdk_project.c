@@ -238,7 +238,6 @@ BATproject(BAT *l, BAT *r)
 				  BATgetId(l), BATgetId(r), ALGOOPTBATPAR(bn));
 		return bn;
 	}
-	assert(l->ttype == TYPE_oid);
 
 	if (ATOMstorage(tpe) == TYPE_str &&
 	    l->tnonil &&

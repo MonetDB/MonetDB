@@ -920,72 +920,42 @@ canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
 	return virtualize(bn);
 }
 
-int
+gdk_return
 BATnegcands(BAT *dense_cands, BAT *odels)
 {
 	const char *nme;
 	Heap *dels;
 	char *fname = 0;
 
+	assert(BATtdense(dense_cands));
+	assert(dense_cands->ttype == TYPE_void);
+	assert(dense_cands->batRole == TRANSIENT);
+	assert(BATcount(dense_cands) >= BATcount(odels));
+
+	if (BATcount(odels) == 0)
+		return GDK_SUCCEED;
+
 	nme = BBP_physical(dense_cands->batCacheid);
-	if ((dels = (Heap*)GDKzalloc(sizeof(Heap))) == NULL || 
+	if ((dels = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
 	    (dels->farmid = BBPselectfarm(dense_cands->batRole, dense_cands->ttype, varheap)) < 0 ||
             (fname = GDKfilepath(NOFARM, NULL, nme, "theap")) == NULL){
-		if (fname)
-			GDKfree(fname);
+		GDKfree(fname);
 		GDKfree(dels);
 		return GDK_FAIL;
 	}
 	//dels->farmid = dense_cands->theap.farmid;
 	strncpy(dels->filename, fname, sizeof(dels->filename));
-	
-    	if (HEAPalloc(dels, BATcount(odels), sizeof(oid)) != GDK_SUCCEED)
+	GDKfree(fname);
+
+    	if (HEAPalloc(dels, BATcount(odels), sizeof(oid)) != GDK_SUCCEED) {
+		GDKfree(dels);
         	return GDK_FAIL;
+	}
     	dels->parentid = dense_cands->batCacheid;
 	memcpy(dels->base, Tloc(odels,0), sizeof(oid)*BATcount(odels));
 	dels->free += sizeof(oid)*BATcount(odels);
-	dense_cands->batDirtydesc = TRUE;
+	dense_cands->batDirtydesc = true;
 	dense_cands->tvheap = dels;
+	BATsetcount(dense_cands, dense_cands->batCount - odels->batCount);
     	return GDK_SUCCEED;
-}
-
-BAT *
-BATcands(BAT *neg_cands)
-{
-	BAT *bn;
-	size_t dcnt = neg_cands->tvheap->free/sizeof(oid);
-	oid ncf, ncl, *restrict p;
-	const oid *restrict dp, *dpe;
-
-	bn = COLnew(0, TYPE_oid, BATcount(neg_cands), TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	ncf = BUNtoid(neg_cands, 0);
-	ncl = BUNtoid(neg_cands, BUNlast(neg_cands) - 1);
-	BAThseqbase(bn, ncf);
-
-	/* neg_cands is dense */
-	dp = (const oid *)neg_cands->tvheap->base;
-	dpe = dp + dcnt;
-	p = Tloc(bn, 0);
-	/* first skip deletes outside of the dense range */
-	while (dp < dpe && *dp < ncf)
-		dp++;
-	while (ncf <= ncl && dp < dpe) {
-		if (ncf < *dp) {
-			*p++ = ncf++;
-		} else if (ncf == *dp) {
-			dp++;
-			ncf++;
-		}
-	}
-	while (ncf <= ncl)
-		*p++ = ncf++;
-	BATsetcount(bn, (BUN) (p - (oid *) Tloc(bn, 0)));
-	bn->trevsorted = BATcount(bn) <= 1;
-	bn->tsorted = true;
-	bn->tkey = true;
-	bn->tnil = false;
-	bn->tnonil = true;
-	return bn;
 }
