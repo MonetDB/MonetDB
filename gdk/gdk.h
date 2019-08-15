@@ -1471,7 +1471,8 @@ gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restric
 #define BATtordered(b)	((b)->tsorted)
 #define BATtrevordered(b) ((b)->trevsorted)
 /* BAT is dense (i.e., BATtvoid() is true and tseqbase is not NIL) */
-#define BATtdense(b)	(!is_oid_nil((b)->tseqbase) && (b)->tvheap == NULL)
+#define BATtdense(b)	(!is_oid_nil((b)->tseqbase) &&			\
+			 ((b)->tvheap == NULL || (b)->tvheap->free == 0))
 /* BATtvoid: BAT can be (or actually is) represented by TYPE_void */
 #define BATtvoid(b)	(BATtdense(b) || (b)->ttype==TYPE_void)
 #define BATtkey(b)	((b)->tkey || BATtdense(b))

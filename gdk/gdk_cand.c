@@ -397,8 +397,6 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		*ci = (struct canditer) {
 			.tpe = cand_dense,
 			.s = s,
-			.seq = 0,
-			.ncand = 0,
 		};
 		return 0;
 	}
@@ -807,8 +805,9 @@ canditer_slice(struct canditer *ci, BUN lo, BUN hi)
 		o = canditer_idx(ci, lo);
 		add = o - ci->seq - lo;
 		assert(add <= ci->noids);
-		if (add == ci->noids) {
-			/* after last exception: return dense sequence */
+		if (add == ci->noids || o + hi - lo < ci->oids[add]) {
+			/* after last exception or before next
+			 * exception: return dense sequence */
 			return BATdense(0, o, hi - lo);
 		}
 		bn = COLnew(0, TYPE_oid, hi - lo, TRANSIENT);
