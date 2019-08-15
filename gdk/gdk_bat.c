@@ -1489,7 +1489,9 @@ BUNfnd(BAT *b, const void *v)
 	if (!v)
 		return r;
 	if (b->ttype == TYPE_void && b->tvheap != NULL) {
-		/* must be a candidate list with exceptions */
+		struct canditer ci;
+		canditer_init(&ci, NULL, b);
+		return canditer_search(&ci, * (const oid *) v, false);
 	}
 	if (BATtvoid(b))
 		return BUNfndVOID(b, v);

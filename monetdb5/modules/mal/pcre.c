@@ -544,7 +544,6 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 			v = BUNtvar(bi, r);											\
 			if (TEST)													\
 				bunfastappTYPE(oid, bn, &o);							\
-			p++;														\
 		}																\
 	} while (0)
 
@@ -585,6 +584,9 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, boo
 	BUN p, q;
 	oid o, off;
 	const char *v;
+	struct canditer ci;
+
+	canditer_init(&ci, b, s);
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 
@@ -611,7 +613,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, boo
 			  OPERATION_FAILED ": compilation of pattern \"%s\" failed\n", pat);
 	}
 #endif
-	bn = COLnew(0, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
+	bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT);
 	if (bn == NULL) {
 #ifdef HAVE_LIBPCRE
 		pcre_free_study(pe);
@@ -624,10 +626,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, boo
 	off = b->hseqbase;
 
 	if (s && !BATtdense(s)) {
-		struct canditer ci;
 		BUN r;
-
-		canditer_init(&ci, b, s);
 
 #ifdef HAVE_LIBPCRE
 #define BODY     (pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 9) >= 0)

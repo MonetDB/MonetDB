@@ -24,12 +24,14 @@
 /*
  * The noop simply means that we keep the properties for the generator object.
  */
-#define VLTnoop(TPE)\
-		{	TPE s;\
-			s = pci->argc == 3 ? 1: *getArgReference_##TPE(stk,pci, 3);\
-			zeroerror = (s == 0);\
-			nullerr = is_##TPE##_nil(s);\
-		}
+#define VLTnoop(TPE)							\
+	do {								\
+		TPE s;							\
+		s = pci->argc == 3 ? 1: *getArgReference_##TPE(stk,pci, 3); \
+		zeroerror = (s == 0);					\
+		nullerr = is_##TPE##_nil(s);				\
+	} while (0)
+
 str
 VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -296,9 +298,8 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	oid o1, o2;
 	BUN n = 0;
-	oid *cl = 0;
-	BUN c;
 	BAT *bn, *cand = NULL;
+	struct canditer ci = (struct canditer) {.tpe = cand_dense};
 	InstrPtr p;
 	int tpe;
 
@@ -315,7 +316,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (cand == NULL)
 				throw(MAL, "generator.select",
 				      SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			cl = (oid *) Tloc(cand, 0);
+			canditer_init(&ci, NULL, cand);
 		}
 		i = 3;
 	} else
@@ -383,19 +384,11 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			// simply enumerate the sequence and filter it by predicate and candidate list
 			ol = (oid *) Tloc(bn, 0);
-			for (c=0, o1=0; o1 <= o2; o1++) {
+			for (o1=0; o1 <= o2; o1++) {
 				if(((is_timestamp_nil(tlow) || tsf >= tlow) &&
 				    (is_timestamp_nil(thgh) || tsf < thgh)) != anti ){
 					/* could be improved when no candidate list is available into a void/void BAT */
-					if( cl){
-						while ( c < BATcount(cand) && *cl < o1 ) {cl++; c++;}
-						if( *cl == o1){
-							*ol++ = o1;
-							cl++;
-							n++;
-							c++;
-						}
-					} else{
+					if( cand == NULL || canditer_search(&ci, o1, false) != BUN_NONE) {
 						*ol++ = o1;
 						n++;
 					}
@@ -430,34 +423,12 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		anti = 0;
 	}
 	if (cand) {
-		oid o;
-		o = o1;
-		o1 = SORTfndfirst(cand, &o);
-		o = o2;
-		o2 = SORTfndfirst(cand, &o);
-		n = BATcount(cand);
-		if (anti && o1 < o2) {
-			bn = COLnew(0, TYPE_oid, n - (o2 - o1), TRANSIENT);
-			if (bn) {
-				oid *op = (oid *) Tloc(bn, 0);
-				const oid *cp = (const oid *) Tloc(cand, 0);
-				BATsetcount(bn, n - (o2 - o1));
-				bn->tnil = false;
-				bn->tnonil = true;
-				bn->tsorted = true;
-				bn->trevsorted = BATcount(bn) <= 1;
-				bn->tkey = true;
-				for (o = 0; o < o1; o++)
-					*op++ = cp[o];
-				for (o = o2; o < (oid) n; o++)
-					*op++ = cp[o];
-			}
+		o1 = canditer_search(&ci, o1, true);
+		o2 = canditer_search(&ci, o2, true);
+		if (anti) {
+			bn = canditer_slice2(&ci, 0, o1, o2, ci.ncand);
 		} else {
-			if (anti) {
-				o1 = 0;
-				o2 = (oid) n;
-			}
-			bn = BATslice(cand, (BUN) o1, (BUN) o2);
+			bn = canditer_slice(&ci, o1, o2);
 		}
 		BBPunfix(cand->batCacheid);
 		if (bn == NULL)
@@ -519,53 +490,48 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
 
-#define VLTthetasubselect(TPE,ABS) {\
-	TPE f,l,s, low, hgh;\
-	BUN j; oid *v;\
-	f = *getArgReference_##TPE(stk,p, 1);\
-	l = *getArgReference_##TPE(stk,p, 2);\
-	if ( p->argc == 3) \
-		s = f<l? (TPE) 1: (TPE)-1;\
-	else s =  *getArgReference_##TPE(stk,p, 3);\
-	if( s == 0 || (f<l && s < 0) || (f>l && s> 0)) \
-		throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Illegal range");\
-	cap = (BUN)(ABS(l-f)/ABS(s));\
-	bn = COLnew(0, TYPE_oid, cap, TRANSIENT);\
-	if( bn == NULL)\
-		throw(MAL,"generator.thetaselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);\
-	low= hgh = TPE##_nil;\
-	v = (oid*) Tloc(bn,0);\
-	if ( strcmp(oper,"<") == 0){\
-		hgh= *getArgReference_##TPE(stk,pci,idx);\
-		hgh = PREVVALUE##TPE(hgh);\
-	} else\
-	if ( strcmp(oper,"<=") == 0){\
-		hgh= *getArgReference_##TPE(stk,pci,idx);\
-	} else\
-	if ( strcmp(oper,">") == 0){\
-		low= *getArgReference_##TPE(stk,pci,idx);\
-		low = NEXTVALUE##TPE(low);\
-	} else\
-	if ( strcmp(oper,">=") == 0){\
-		low= *getArgReference_##TPE(stk,pci,idx);\
-	} else\
-	if ( strcmp(oper,"!=") == 0 || strcmp(oper, "<>") == 0){\
-		hgh= low= *getArgReference_##TPE(stk,pci,idx);\
-		anti = 1;\
-	} else\
-	if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){\
-		hgh= low= *getArgReference_##TPE(stk,pci,idx);\
-	} else\
-		throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");\
-	if(cand){ cn = BATcount(cand); if( cl == 0) oc = cand->tseqbase; }\
-	for(j=0;j<cap;j++, f+=s, o++)\
-		if( ((is_##TPE##_nil(low) || f >= low) && (is_##TPE##_nil(hgh) || f <= hgh)) != anti){\
-			if(cand){ \
-				if( cl){ while(cn-- >= 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}} \
-				else { while(cn-- >= 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }\
-			} else {*v++ = o; c++;}\
-		} \
-}
+#define VLTthetasubselect(TPE,ABS)					\
+	do {								\
+		TPE f,l,s, low, hgh;					\
+		BUN j; oid *v;						\
+		f = *getArgReference_##TPE(stk,p, 1);			\
+		l = *getArgReference_##TPE(stk,p, 2);			\
+		if ( p->argc == 3)					\
+			s = f<l? (TPE) 1: (TPE)-1;			\
+		else s =  *getArgReference_##TPE(stk,p, 3);		\
+		if( s == 0 || (f<l && s < 0) || (f>l && s> 0))		\
+			throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Illegal range"); \
+		cap = (BUN)(ABS(l-f)/ABS(s));				\
+		bn = COLnew(0, TYPE_oid, cap, TRANSIENT);		\
+		if( bn == NULL)						\
+			throw(MAL,"generator.thetaselect", SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+		low= hgh = TPE##_nil;					\
+		v = (oid*) Tloc(bn,0);					\
+		if ( strcmp(oper,"<") == 0){				\
+			hgh= *getArgReference_##TPE(stk,pci,idx);	\
+			hgh = PREVVALUE##TPE(hgh);			\
+		} else if ( strcmp(oper,"<=") == 0){			\
+			hgh= *getArgReference_##TPE(stk,pci,idx);	\
+		} else if ( strcmp(oper,">") == 0){			\
+			low= *getArgReference_##TPE(stk,pci,idx);	\
+			low = NEXTVALUE##TPE(low);			\
+		} else if ( strcmp(oper,">=") == 0){			\
+			low= *getArgReference_##TPE(stk,pci,idx);	\
+		} else if ( strcmp(oper,"!=") == 0 || strcmp(oper, "<>") == 0){ \
+			hgh= low= *getArgReference_##TPE(stk,pci,idx);	\
+			anti = 1;					\
+		} else if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){ \
+			hgh= low= *getArgReference_##TPE(stk,pci,idx);	\
+		} else							\
+			throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");	\
+		for(j=0;j<cap;j++, f+=s, o++)				\
+			if( ((is_##TPE##_nil(low) || f >= low) && (is_##TPE##_nil(hgh) || f <= hgh)) != anti){ \
+				if(cand == NULL || canditer_search(&ci, o, false) != BUN_NONE) { \
+					*v++ = o;			\
+					c++;				\
+				}					\
+			}						\
+	} while (0)
 
 
 str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -573,9 +539,9 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	int idx, c= 0, anti =0,tpe;
 	bat cndid =0;
 	BAT *cand = 0, *bn = NULL;
+	struct canditer ci = (struct canditer) {.tpe = cand_dense};
 	BUN cap,j;
-	lng cn= 0;
-	oid o = 0, oc = 0,  *cl = 0;
+	oid o = 0;
 	InstrPtr p;
 	str oper, msg= MAL_SUCCEED;
 
@@ -590,7 +556,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			cand = BATdescriptor(cndid);
 			if( cand == NULL)
 				throw(MAL,"generator.select", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			cl = (oid*) Tloc(cand,0);
+			canditer_init(&ci, NULL, cand);
 		} 
 		idx = 3;
 	} else idx = 2;
@@ -679,15 +645,14 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			}
 			v = (oid*) Tloc(bn,0);
 
-			if(cand){ cn = BATcount(cand); if( cl == 0) oc = cand->tseqbase; }
 			val = f;
 			for(j = 0; j< cap; j++,  o++){
 				if (((is_timestamp_nil(low) || val >= low) && 
 				     (is_timestamp_nil(hgh) || val <= hgh)) != anti){
-					if(cand){
-						if( cl){ while(cn-- >= 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}}
-						else { while(cn-- >= 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }
-					} else {*v++ = o; c++;}
+					if(cand == NULL || canditer_search(&ci, o, false) != BUN_NONE){
+						*v++ = o;
+						c++;
+					}
 				}
 				val = timestamp_add_usec(val, s);
 				if (is_timestamp_nil(val)) {
