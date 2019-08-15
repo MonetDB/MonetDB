@@ -926,6 +926,12 @@ BATslice(BAT *b, BUN l, BUN h)
 		return NULL;
 	}
 
+	if (b->ttype == TYPE_void && b->tvheap != NULL) {
+		/* slicing a candidate list with exceptions */
+		struct canditer ci;
+		canditer_init(&ci, NULL, b);
+		return canditer_slice(&ci, l, h);
+	}
 	/* If the source BAT is readonly, then we can obtain a VIEW
 	 * that just reuses the memory of the source. */
 	if (b->batRestricted == BAT_READ &&
