@@ -705,7 +705,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 			BATkey(b, false);
 		}
 		if (b->ttype != TYPE_void && b->tsorted && BATtdense(b) &&
-		    (BATtdense(n) == 0 ||
+		    (!BATtdense(n) ||
 		     ci.tpe != cand_dense ||
 		     1 + *(oid *) BUNtloc(bi, last) != BUNtoid(n, ci.seq - hseq))) {
 			b->tseqbase = oid_nil;

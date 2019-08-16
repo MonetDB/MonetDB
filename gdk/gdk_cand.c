@@ -667,7 +667,10 @@ canditer_idx(struct canditer *ci, BUN p)
 		return o;
 	if (o + ci->noids > ci->oids[ci->noids - 1])
 		return o + ci->noids;
-	for (BUN i = 0; i < ci->noids; i++)
+	BUN i = 0;
+	if (ci->noids > 1024)
+		i = binsearchcand(ci->oids, ci->noids, o);
+	for (; i < ci->noids; i++)
 		if (o + i < ci->oids[i])
 			return o + i;
 	return o + ci->noids;
@@ -777,7 +780,7 @@ canditer_slice(struct canditer *ci, BUN lo, BUN hi)
 				o++;
 				add++;
 			}
-			*dst++ = o;
+			*dst++ = o++;
 		}
 		break;
 	}
@@ -853,7 +856,7 @@ canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
 					o++;
 					add++;
 				}
-				*dst++ = o;
+				*dst++ = o++;
 				lo1++;
 			}
 		}
@@ -870,7 +873,7 @@ canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
 					o++;
 					add++;
 				}
-				*dst++ = o;
+				*dst++ = o++;
 				lo2++;
 			}
 		}
@@ -915,5 +918,9 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 	dense_cands->batDirtydesc = true;
 	dense_cands->tvheap = dels;
 	BATsetcount(dense_cands, dense_cands->batCount - (hi - lo));
+	ALGODEBUG fprintf(stderr, "#BATnegcands(cands=" ALGOBATFMT ","
+			  "dels=" ALGOBATFMT ")\n",
+			  ALGOBATPAR(dense_cands),
+			  ALGOBATPAR(odels));
     	return GDK_SUCCEED;
 }
