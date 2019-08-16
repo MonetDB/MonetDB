@@ -2641,7 +2641,8 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				b->cached = NULL;
 			}
 		} else if (tt->data && ft->base.allocated) {
-			tr_update_dbat(tr, tt->data, ft->data);
+			if (tr_update_dbat(tr, tt->data, ft->data) != LOG_OK)
+				ok = LOG_ERR;
 		} else if (ATOMIC_GET(&store_nr_active) == 1 && !ft->base.allocated) {
 			/* only insert/updates, merge earlier deletes */
 			if (!tt->data && tt->po) {
@@ -2649,7 +2650,8 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				tt->data = timestamp_dbat(ot->data, tt->base.stime);
 			}
 			assert(tt->data);
-			tr_merge_dbat(tr, tt->data);
+			if (tr_merge_dbat(tr, tt->data) != LOG_OK)
+				ok = LOG_ERR;
 			ft->data = NULL;
 		} else if (ft->data) {
 			tt->data = ft->data;
@@ -2677,7 +2679,8 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					b->cached = NULL;
 				}
 			} else if (oc->data && cc->base.allocated) {
-				tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
+				if (tr_update_delta(tr, oc->data, cc->data, cc->unique == 1) != LOG_OK) 
+					ok = LOG_ERR;
 			} else if (ATOMIC_GET(&store_nr_active) == 1 && !cc->base.allocated) {
 				/* only deletes, merge earlier changes */
 				if (!oc->data) {
@@ -2685,7 +2688,8 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					oc->data = timestamp_delta(o->data, oc->base.stime);
 				}
 				assert(oc->data);
-				tr_merge_delta(tr, oc->data, oc->unique == 1);
+				if (tr_merge_delta(tr, oc->data, oc->unique == 1) != LOG_OK)
+					ok = LOG_ERR;
 				cc->data = NULL;
 			} else if (cc->data) {
 				oc->data = cc->data; 
@@ -2746,14 +2750,16 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						b->cached = NULL;
 					}
 				} else if (oi->data && ci->base.allocated) {
-					tr_update_delta(tr, oi->data, ci->data, 0);
+					if (tr_update_delta(tr, oi->data, ci->data, 0) != LOG_OK)
+						ok = LOG_ERR;
 				} else if (ATOMIC_GET(&store_nr_active) == 1 && !ci->base.allocated) {
 					if (!oi->data) {
 						sql_idx *o = tr_find_idx(tr->parent, oi);
 						oi->data = timestamp_delta(o->data, oi->base.stime);
 					}
 					assert(oi->data);
-					tr_merge_delta(tr, oi->data, 0);
+					if (tr_merge_delta(tr, oi->data, 0) != LOG_OK)
+						ok = LOG_ERR;
 					ci->data = NULL;
 				} else if (ci->data) {
 					oi->data = ci->data;
