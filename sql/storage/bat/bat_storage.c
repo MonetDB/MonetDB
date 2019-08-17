@@ -857,6 +857,7 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 		ok = delta_append_bat(bat, i);
 	else
 		ok = delta_append_val(bat, i);
+	/*
 	if (!c->t->data || !c->t->base.allocated) {
 		sql_table *ot = tr_find_table(tr->parent, c->t);
 		sql_dbat *bat = ZNEW(sql_dbat), *obat;
@@ -873,6 +874,7 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 		bat_destroy(bat->cached);
 		bat->cached = NULL;
 	}
+	*/
 	return ok;
 }
 
@@ -911,21 +913,17 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 		ok = delta_append_bat(bat, ib);
 	else
 		ok = delta_append_val(bat, ib);
+	/*
 	if (!i->t->data || !i->t->base.allocated) {
 		sql_table *ot = tr_find_table(tr->parent, i->t);
 		sql_dbat *bat = ZNEW(sql_dbat), *obat;
 		if(!bat)
-			ok = LOG_ERR;
-		else {
-			i->t->data = bat;
-			obat = timestamp_dbat(ot->data, i->t->base.stime);
-			dup_dbat(tr, obat, bat, isNew(ot), isTempTable(i->t));
-			i->t->base.allocated = 1;
-		}
+			return LOG_ERR;
+		i->t->data = bat;
+		obat = timestamp_dbat(ot->data, i->t->base.stime);
+		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(i->t));
+		i->t->base.allocated = 1;
 	}
-
-	if(ok == LOG_ERR)
-		return ok;
 
 	if (i->t && i->t->data && ((sql_dbat*)i->t->data)->cached) {
 		sql_dbat *bat = i->t->data;
@@ -933,6 +931,7 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 		bat_destroy(bat->cached);
 		bat->cached = NULL;
 	}
+	*/
 	return ok;
 }
 
@@ -2134,7 +2133,8 @@ gtr_update_dbat(sql_trans *tr, sql_dbat *d, int *changes, char tpe, oid id)
 
 	assert(ATOMIC_GET(&store_nr_active)==0);
 	if (d->dbid == dbid) {
-		assert(!d->cleared);
+		/* if set its handled by the bat clear of the dbid */
+		d->cleared = 0;
 		if (d->next) { 
 			ok = destroy_dbat(tr, d->next);
 			d->next = NULL;
@@ -2548,9 +2548,6 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb)
 	int ok = LOG_OK;
 	BAT *db = NULL;
 
-	if (!fdb)
-		return ok;
-
 	if (fdb->cached) {
 		bat_destroy(fdb->cached);
 		fdb->cached = NULL;
@@ -2574,6 +2571,7 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb)
 					return LOG_ERR;
 			}
 			if (fdb->cleared) {
+				tdb->cleared = 1;
 				tdb->cnt = 0;
 				bat_clear(odb);
 			}
@@ -2645,7 +2643,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				ok = LOG_ERR;
 		} else if (ATOMIC_GET(&store_nr_active) == 1 && !ft->base.allocated) {
 			/* only insert/updates, merge earlier deletes */
-			if (!tt->data && tt->po) {
+			if (!tt->data) {
 				sql_table *ot = tr_find_table(tr->parent, tt);
 				tt->data = timestamp_dbat(ot->data, tt->base.stime);
 			}

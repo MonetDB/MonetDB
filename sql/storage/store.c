@@ -3093,7 +3093,7 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 				t->base.stime = pt->base.wtime;
 				if (!istmp && !t->base.allocated)
 					t->data = NULL;
-				assert (istmp || (!t->data && !t->base.allocated));
+				assert (istmp || !t->base.allocated);
 
 				if (pt->base.id == t->base.id) {
 					node *i, *j;
@@ -3107,7 +3107,7 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 							c->base.stime = pc->base.wtime;
 							if (!istmp && !c->base.allocated)
 								c->data = NULL;
-							assert (istmp || (!c->data && !c->base.allocated));
+							assert (istmp || !c->base.allocated);
 						} else {
 							/* for now assert */
 							assert(0);
