@@ -880,6 +880,181 @@ bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
 	return res;
 }
 
+/* Write a plan entry to copy part of the given file. 
+ * That part of the file must remain unchanged until the plan is executed.
+ */
+static void
+snapshot_lazy_copy_file(stream *plan, char *name, long extent)
+{
+	mnstr_printf(plan, "c %ld %s\n", extent, name);
+}
+
+/* Write a plan entry to write the current contents of the given file.
+ * The contents are included in the plan so the source file is allowed to
+ * change in the mean time.
+ */
+static gdk_return
+snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
+{
+	gdk_return ret = GDK_FAIL;
+	struct stat statbuf;
+	char *buf = NULL;
+	FILE *f = NULL;
+	long size;
+	size_t bytes_read;
+	size_t bytes_written;
+
+	if (stat(path, &statbuf) < 0) {
+		GDKerror("stat failed on %s: %s", path, strerror(errno));
+		goto end;
+	}
+	size = (long)statbuf.st_size;
+
+	buf = GDKmalloc(size);
+	if (!buf) {
+		GDKerror("malloc failed");
+		goto end;
+	}
+
+	f = fopen(path, "rb");
+	if (!f) {
+		GDKerror("could not open %s: %s", path, strerror(errno));
+		goto end;
+	}
+
+	bytes_read = fread(buf, 1, size, f);
+	if ((long)bytes_read < size) {
+		if (ferror(f))
+			GDKerror("could not open %s: %s", path, strerror(errno));
+		else if (feof(f)) 
+			GDKerror("file %s unexpectedly short, %ld rather than %ld bytes", 
+				path, bytes_read, size);
+		else
+			GDKerror("read unexplainably truncated");
+		goto end;
+	}
+
+	mnstr_printf(plan, "w %ld %s\n", size, name);
+	bytes_written = mnstr_write(plan, buf, 1, bytes_read);
+	if (bytes_written < bytes_read) {
+		GDKerror("write to plan truncated");
+		goto end;
+	}
+
+	ret = GDK_SUCCEED;
+end:
+	GDKfree(buf);
+	if (f)
+		fclose(f);
+	return ret;
+}
+
+/* Like snapshot_lazy_copy_file, but takes a Heap* instead of a path */
+static void
+snapshot_lazy_copy_heap(stream *plan, Heap *heap)
+{
+	long extent = heap->free;
+	char *name = heap->filename;
+	char path[FILENAME_MAX];
+	snprintf(path, sizeof(path), "%s%c%s", BATDIR, DIR_SEP, name);
+	snapshot_lazy_copy_file(plan, path, extent);
+}
+
+/* Add plan entries for all relevant files in the Write Ahead Log */
+static gdk_return
+snapshot_wal(stream *plan, const char *db_dir)
+{
+	stream *log = bat_logger->log;
+	char log_file[FILENAME_MAX];
+
+	snprintf(log_file, sizeof(log_file), "%s/%s%s", db_dir, bat_logger->dir, LOGFILE);
+	snapshot_immediate_copy_file(plan, log_file, log_file + strlen(db_dir) + 1);
+
+	snprintf(log_file, sizeof(log_file), "%s%s." LLFMT, bat_logger->dir, LOGFILE, bat_logger->id);
+	FILE *f = getFile(log);
+	long pos = ftell(f);
+	if (pos < 0) {
+		GDKerror("ftell failed on %s: %s", log_file, strerror(errno));
+		return GDK_FAIL;
+	}
+	
+	// there is some unflushed data in that stream so not all bytes reported by ftell are
+	// actually on disk. Is it safe to flush it? I don't know.
+	mnstr_flush(log);
+
+	snapshot_lazy_copy_file(plan, log_file, pos);
+
+	return GDK_SUCCEED;
+}
+
+/* Add plan entries for all persistent BATs */
+static gdk_return
+snapshot_bats(stream *plan, const char *db_dir)
+{
+	char bbpdir[FILENAME_MAX];
+	bat active_bats;
+	gdk_return ret;
+
+	active_bats = getBBPsize();
+
+	snprintf(bbpdir, sizeof(bbpdir), "%s%c%s%c%s", db_dir, DIR_SEP, BAKDIR, DIR_SEP, "BBP.dir");
+	ret = snapshot_immediate_copy_file(plan, bbpdir, bbpdir + strlen(db_dir) + 1);
+	if (ret == GDK_FAIL)
+		goto end;
+
+	for (bat id = 1; id < active_bats; id++) {
+		if (BBP_status(id) & BBPPERSISTENT) {
+			BAT *b = BBP_desc(id);
+			snapshot_lazy_copy_heap(plan, &b->theap);
+			if (b->tvheap)
+				snapshot_lazy_copy_heap(plan, b->tvheap);
+			if (b->torderidx)
+				snapshot_lazy_copy_heap(plan, b->torderidx);
+
+			// Not sure why I commented this out
+			// if (b->thash)
+			// 	snapshot_lazy_copy_heap(plan, &b->thash->heap);
+
+			// Hmm.. the definition of b->timprints not available here so
+			// b->timprints->heap is unreachable. Hopefully the system can 
+			//reconstruct the imprints on demand.
+		}
+	}
+
+end:
+	return ret;
+}
+
+static gdk_return
+bl_snapshot(stream *plan)
+{
+	gdk_return ret;
+	char *db_dir = NULL;
+	size_t db_dir_len;
+
+	// Assume farmid 0 is the persistent farm.
+	db_dir = GDKfilepath(0, NULL, "", NULL);
+	db_dir_len = strlen(db_dir);
+	if (db_dir[db_dir_len - 1] == DIR_SEP)
+		db_dir[db_dir_len - 1] = '\0';
+
+	mnstr_printf(plan, "%s\n", db_dir);
+
+	ret = snapshot_wal(plan, db_dir);
+	if (ret != GDK_SUCCEED)
+		goto end;
+
+	ret = snapshot_bats(plan, db_dir);
+	if (ret != GDK_SUCCEED)
+		goto end;
+
+	ret = GDK_SUCCEED;
+end:
+	if (db_dir)
+		GDKfree(db_dir);
+	return ret;
+}
+
 void
 bat_logger_init( logger_functions *lf )
 {
@@ -896,4 +1071,6 @@ bat_logger_init( logger_functions *lf )
 	lf->log_tend = bl_tend;
 	lf->log_sequence = bl_sequence;
 	lf->log_find_table_value = bl_find_table_value;
+
+	lf->get_snapshot_files = bl_snapshot; 
 }

@@ -5713,8 +5713,11 @@ SQLhot_snapshot(void *ret, const str *tarfile_arg)
 {
 	(void)ret;
 	char *tarfile = *tarfile_arg;
-	fprintf(stderr, "hot_snapshot to %s\n", tarfile);
-	return MAL_SUCCEED;
+	lng result = store_hot_snapshot(tarfile);
+	if (result)
+		return MAL_SUCCEED;
+	else
+		throw(SQL, "sql.hot_snapshot", GDK_EXCEPTION);
 }
 
 str

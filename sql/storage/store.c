@@ -2348,6 +2348,24 @@ store_unlock(void)
 	MT_lock_unset(&bs_lock);
 }
 
+extern lng
+store_hot_snapshot(str tarfile)
+{
+	gdk_return result;
+	
+	if (!logger_funcs.get_snapshot_files) {
+		GDKerror("backend does not support hot snapshots");
+		return 0;
+	}
+
+	MT_lock_set(&bs_lock);
+	(void)tarfile;
+	result = logger_funcs.get_snapshot_files(file_wstream(stderr, "<stderr>"));
+	MT_lock_unset(&bs_lock);
+
+	return result > 0;
+}
+
 static sql_kc *
 kc_dup_(sql_trans *tr, int flags, sql_kc *kc, sql_table *t, int copy)
 {
