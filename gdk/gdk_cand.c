@@ -682,11 +682,11 @@ canditer_setidx(struct canditer *ci, BUN p)
 	if (p != ci->next) {
 		if (p >= ci->ncand) {
 			ci->next = ci->ncand;
-			if (ci->tpe == cand_dense)
+			if (ci->tpe == cand_except)
 				ci->add = ci->noids;
 		} else {
 			ci->next = p;
-			if (ci->tpe == cand_dense)
+			if (ci->tpe == cand_except)
 				ci->add = canditer_idx(ci, p) - ci->seq - p;
 		}
 	}

@@ -538,6 +538,7 @@ BATprojectchain(BAT **bats)
 						canditer_init(&ba[i].ci, NULL, b);
 						/* make sure .vals != NULL */
 						ba[i].vals = ba[i].ci.oids;
+						canditer_setidx(&ba[i].ci, off);
 					} else
 						ba[i].vals = (const oid *) Tloc(b, off);
 				}
@@ -659,7 +660,7 @@ BATprojectchain(BAT **bats)
 						GDKerror("BATprojectchain: does not match always\n");
 						goto bunins_failed;
 					}
-					o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o) : ba[i].vals[o];
+					o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o + ba[i].ci.next) : ba[i].vals[o];
 				}
 				if (is_oid_nil(o)) {
 					*v++ = *(oid *) nil;
@@ -686,7 +687,7 @@ BATprojectchain(BAT **bats)
 						GDKerror("BATprojectchain: does not match always\n");
 						goto bunins_failed;
 					}
-					o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o) : ba[i].vals[o];
+					o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o + ba[i].ci.next) : ba[i].vals[o];
 				}
 				*v++ = (is_oid_nil(o)) & !stringtrick ? *(oid *) nil : o;
 			}
@@ -710,7 +711,7 @@ BATprojectchain(BAT **bats)
 					GDKerror("BATprojectchain: does not match always\n");
 					goto bunins_failed;
 				}
-				o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o) : ba[i].vals[o];
+				o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o + ba[i].ci.next) : ba[i].vals[o];
 			}
 			if (is_oid_nil(o)) {
 				*dst++ = * (OTPE *) nil;
@@ -742,7 +743,7 @@ BATprojectchain(BAT **bats)
 					GDKerror("BATprojectchain: does not match always\n");
 					goto bunins_failed;
 				}
-				o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o) : ba[i].vals[o];
+				o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o + ba[i].ci.next) : ba[i].vals[o];
 			}
 			if (is_oid_nil(o)) {
 				v = nil;
@@ -774,7 +775,7 @@ BATprojectchain(BAT **bats)
 					GDKerror("BATprojectchain: does not match always\n");
 					goto bunins_failed;
 				}
-				o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o) : ba[i].vals[o];
+				o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o + ba[i].ci.next) : ba[i].vals[o];
 			}
 			if (is_oid_nil(o)) {
 				v = nil;
