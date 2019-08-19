@@ -799,6 +799,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 							}
 						}
 						strcpy(q + pr, p);
+						length = pr + strlen(p);
 						free(nquery);
 						nquery = q;
 						q += n;

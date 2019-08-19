@@ -47,5 +47,24 @@ select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.tabl
 server_stop(s)
 
 s = process.server(args = [], stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-client('drop table t;')
+client('''\
+drop table t;\
+start transaction;\
+create table t (a int, b int, c int);\
+alter table t add unique (b);\
+select * from t;\
+select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';\
+select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';\
+select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';\
+select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';\
+alter table t drop column b cascade;\
+select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';\
+select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';\
+select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';\
+select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';\
+select * from t;\
+commit;\
+select * from t;\
+drop table t;
+''')
 server_stop(s)
