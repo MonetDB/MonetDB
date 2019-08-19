@@ -6304,13 +6304,13 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	if (k->idx)
 		sql_trans_drop_idx(tr, s, k->idx->base.id, drop_action);
 
+	if (!isTempTable(k->t)) 
+		sys_drop_key(tr, k, drop_action);
+
 	/*Clean the key from the keys*/
 	n = cs_find_name(&k->t->keys, k->base.name);
 	if (n)
 		cs_del(&k->t->keys, n, k->base.flags);
-
-	if (!isTempTable(k->t)) 
-		sys_drop_key(tr, k, drop_action);
 
 	k->base.wtime = k->t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(k->t)) 

@@ -30,3 +30,4 @@ sequence-first-next-value.Bug-6743
 sequences-defaults.Bug-6744
 sequences-types.Bug-6745
 alter_table_drop_column.Bug-6749
+remote-table-non-existent-column.Bug-6750
