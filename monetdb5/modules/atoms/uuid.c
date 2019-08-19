@@ -67,13 +67,10 @@ mal_export str UUIDisaUUID(bit *retval, str *u);
 mal_export str UUIDequal(bit *retval, uuid **l, uuid **r);
 
 static uuid uuid_nil;			/* automatically initialized as zeros */
-static uuid *uuid_session;		/* automatically set during system restart */
 
 str
 UUIDprelude(void *ret)
 {
-	if (uuid_session)
-		return MAL_SUCCEED;
 	(void) ret;
 	assert(UUID_SIZE == 16);
 	(void) malAtomSize(sizeof(uuid), "uuid");
