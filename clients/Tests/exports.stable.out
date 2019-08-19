@@ -2363,7 +2363,7 @@ void moveInstruction(MalBlkPtr mb, int pc, int target);
 void msab_dbfarminit(const char *dbfarm);
 void msab_dbpathinit(const char *dbpath);
 char *msab_deserialise(sabdb **ret, char *sabdb);
-char *msab_freeStatus(sabdb **ret);
+void msab_freeStatus(sabdb **ret);
 char *msab_getDBfarm(char **ret);
 char *msab_getDBname(char **ret);
 char *msab_getMyStatus(sabdb **ret);
