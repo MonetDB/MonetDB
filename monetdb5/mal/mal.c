@@ -129,7 +129,6 @@ void mserver_reset(void)
 	monet_memory = 0;
 	memset((char*)monet_characteristics,0, sizeof(monet_characteristics));
 	mal_namespace_reset();
-	msab_exit();
 	/* No need to clean up the namespace, it will simply be extended
 	 * upon restart mal_namespace_reset(); */
 	GDKreset(0);	// terminate all other threads

@@ -51,7 +51,6 @@ typedef union {
 } uuid;
 
 mal_export str UUIDprelude(void *ret);
-mal_export str UUIDepilogue(void *ret);
 mal_export int UUIDcompare(const uuid *l, const uuid *r);
 mal_export ssize_t UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external);
 mal_export BUN UUIDhash(const void *u);
@@ -68,7 +67,7 @@ mal_export str UUIDisaUUID(bit *retval, str *u);
 mal_export str UUIDequal(bit *retval, uuid **l, uuid **r);
 
 static uuid uuid_nil;			/* automatically initialized as zeros */
-static uuid *uuid_session = NULL;	/* automatically set during system restart */
+static uuid *uuid_session;		/* automatically set during system restart */
 
 str
 UUIDprelude(void *ret)
@@ -78,17 +77,6 @@ UUIDprelude(void *ret)
 	(void) ret;
 	assert(UUID_SIZE == 16);
 	(void) malAtomSize(sizeof(uuid), "uuid");
-	return MAL_SUCCEED;
-}
-
-str
-UUIDepilogue(void *ret)
-{
-	(void) ret;
-	if (uuid_session) {
-		GDKfree(uuid_session);
-		uuid_session = NULL;
-	}
 	return MAL_SUCCEED;
 }
 

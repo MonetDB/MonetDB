@@ -14,6 +14,7 @@
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
+#include "rel_updates.h"
 #include "rel_remote.h"
 #include "mal_errors.h"		/* for SQLSTATE() */
 
@@ -32,7 +33,7 @@ print_indent(mvc *sql, stream *fout, int depth, int decorate)
 	if (depth > LINESIZE)
 		depth = LINESIZE;
 	for (i = 0; i < depth; i++){
-		if ((i % TABSTOP) == 0)	
+		if ((i % TABSTOP) == 0)
 			buf[i] = '|';
 		else
 			buf[i] = ' ';
@@ -42,7 +43,7 @@ print_indent(mvc *sql, stream *fout, int depth, int decorate)
 }
 
 static void
-cmp_print(mvc *sql, stream *fout, int cmp) 
+cmp_print(mvc *sql, stream *fout, int cmp)
 {
 	char *r = NULL;
 
@@ -79,7 +80,7 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 static void exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets);
 
 static void
-exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, int alias) 
+exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, int alias)
 {
 	(void)sql;
 	if (!e)
@@ -126,7 +127,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			atom *a = e->l;
 			if (atom_type(a)->type->localtype == TYPE_ptr) {
 				sql_table *t = a->data.val.pval;
-				mnstr_printf(fout, "%s(%s)", 
+				mnstr_printf(fout, "%s(%s)",
 					isStream(t)?"stream":
 					isMergeTable(t)?"merge table":
 					isReplicaTable(t)?"replica table":"table",
@@ -159,8 +160,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	} 	break;
 	case e_func: {
 		sql_subfunc *f = e->f;
-		mnstr_printf(fout, "%s.%s", 
-				f->func->s?f->func->s->base.name:"sys", 
+		mnstr_printf(fout, "%s.%s",
+				f->func->s?f->func->s->base.name:"sys",
 				f->func->base.name);
 		exps_print(sql, fout, e->l, depth, refs, alias, 1);
 		if (e->r)
@@ -168,8 +169,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	} 	break;
 	case e_aggr: {
 		sql_subaggr *a = e->f;
-		mnstr_printf(fout, "%s.%s", 
-				a->aggr->s?a->aggr->s->base.name:"sys", 
+		mnstr_printf(fout, "%s.%s",
+				a->aggr->s?a->aggr->s->base.name:"sys",
 				a->aggr->base.name);
 		if (need_distinct(e))
 			mnstr_printf(fout, " unique ");
@@ -182,7 +183,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		else
 			mnstr_printf(fout, "()");
 	} 	break;
-	case e_column: 
+	case e_column:
 		if (is_freevar(e)) 
 			mnstr_printf(fout, "!!!FREE!!! ");
 		if (e->l)
@@ -190,12 +191,12 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, "\"%s\"", (char*)e->r);
 		if (exp_relname(e) && exp_name(e) && e->l && e->r &&
 			strcmp(exp_relname(e), e->l) == 0 &&
-			strcmp(exp_name(e), e->r) == 0) 
+			strcmp(exp_name(e), e->r) == 0)
 			alias = 0;
 		if (!exp_relname(e) && exp_name(e) && strcmp(exp_name(e), e->r)==0)
 			alias = 0;
 	 	break;
-	case e_cmp: 
+	case e_cmp:
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
 			exp_print(sql, fout, e->l, depth, refs, 0, alias);
 			if (is_anti(e))
@@ -269,7 +270,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 }
 
 static void
-exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets) 
+exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets)
 {
 	node *en;
 
@@ -278,7 +279,7 @@ exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias,
 	else
 		mnstr_printf(fout, " [ ");
 	if (exps)
-		for (en = exps->h; en; en = en->next) 
+		for (en = exps->h; en; en = en->next)
 			exp_print(sql, fout, en->data, depth+1, refs, (en->next!=NULL), alias);
 	if (brackets)
 		mnstr_printf(fout, ")");
@@ -287,7 +288,7 @@ exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias,
 }
 
 const char *
-op2string(operator_type op) 
+op2string(operator_type op)
 {
 	switch (op) {
 	case op_basetable:
@@ -298,29 +299,29 @@ op2string(operator_type op)
 		return "ddl";
 	case op_project:
 		return "project";
-	case op_select: 
+	case op_select:
 		return "select";
-	case op_join: 
-	case op_left: 
-	case op_right: 
-	case op_full: 
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
 		return "join";
-	case op_semi: 
+	case op_semi:
 		return "semi";
-	case op_anti: 
+	case op_anti:
 		return "anti";
-	case op_union: 
-	case op_inter: 
-	case op_except: 
+	case op_union:
+	case op_inter:
+	case op_except:
 		return "set op";
-	case op_groupby: 
+	case op_groupby:
 		return "group by";
-	case op_topn: 
+	case op_topn:
 		return "topn";
 	case op_sample:
 		return "sample";
-	case op_insert: 
-	case op_update: 
+	case op_insert:
+	case op_update:
 	case op_delete:
 	case op_truncate:
 		return "modify op";
@@ -329,7 +330,7 @@ op2string(operator_type op)
 	}
 }
 
-static int 
+static int
 find_ref( list *refs, sql_rel *rel )
 {
 	node *n;
@@ -343,8 +344,8 @@ find_ref( list *refs, sql_rel *rel )
 }
 
 void
-rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate) 
-{ 
+rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate)
+{
 	char *r = NULL;
 
 	if (!rel)
@@ -376,19 +377,19 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 				tname = mapiuri_table( uri, sql->sa, tname);
 			}
 			if (sname)
-				mnstr_printf(fout, "%s(%s.%s)", 
+				mnstr_printf(fout, "%s(%s.%s)",
 					isStream(t)?"stream":
 					isRemote(t)&&decorate?"REMOTE":
 					isReplicaTable(t)?"REPLICA":"table",
 					sname, tname);
 			else
-		  		mnstr_printf(fout, "%s(%s)", 
+		  		mnstr_printf(fout, "%s(%s)",
 					isStream(t)?"stream":
 					isRemote(t)&&decorate?"REMOTE":
 					isReplicaTable(t)?"REPLICA":"table",
 					tname);
-		}	
-		if (rel->exps) 
+		}
+		if (rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 	} 	break;
 	case op_table:
@@ -399,7 +400,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			exp_print(sql, fout, rel->r, depth, refs, 1, 0);
 		if (rel->l)
 			rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
-		if (rel->exps) 
+		if (rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		break;
 	case op_ddl:
@@ -412,15 +413,15 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		if (rel->exps && (rel->flag == ddl_psm || rel->flag == ddl_exception || rel->flag == ddl_list))
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		break;
-	case op_join: 
-	case op_left: 
-	case op_right: 
-	case op_full: 
-	case op_semi: 
-	case op_anti: 
-	case op_union: 
-	case op_inter: 
-	case op_except: 
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+	case op_semi:
+	case op_anti:
+	case op_union:
+	case op_inter:
+	case op_except:
 		r = "join";
 		if (rel->op == op_left)
 			r = "left outer join";
@@ -464,10 +465,10 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		break;
 	case op_project:
-	case op_select: 
-	case op_groupby: 
-	case op_topn: 
-	case op_sample: 
+	case op_select:
+	case op_groupby:
+	case op_topn:
+	case op_sample:
 		r = "project";
 		if (rel->op == op_select)
 			r = "select";
@@ -548,7 +549,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 }
 
 void
-rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int decorate) 
+rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int decorate)
 {
 	if (!rel)
 		return;
@@ -574,15 +575,15 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 			}
 		}
 	break;
-	case op_join: 
-	case op_left: 
-	case op_right: 
-	case op_full: 
-	case op_semi: 
-	case op_anti: 
-	case op_union: 
-	case op_inter: 
-	case op_except: 
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+	case op_semi:
+	case op_anti:
+	case op_union:
+	case op_inter:
+	case op_except:
 		rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
 		rel_print_refs(sql, fout, rel->r, depth, refs, decorate);
 		if (rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
@@ -595,18 +596,18 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 		}
 		break;
 	case op_project:
-	case op_select: 
-	case op_groupby: 
-	case op_topn: 
-	case op_sample: 
+	case op_select:
+	case op_groupby:
+	case op_topn:
+	case op_sample:
 		rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
 		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
 			rel_print_(sql, fout, rel->l, depth, refs, decorate);
 			list_append(refs, rel->l);
 		}
 		break;
-	case op_insert: 
-	case op_update: 
+	case op_insert:
+	case op_update:
 	case op_delete:
 	case op_truncate:
 		rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
@@ -626,14 +627,14 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 static void
 skipWS( char *r, int *pos)
 {
-	while(r[*pos] && (isspace((unsigned char) r[*pos]) || r[*pos] == '|')) 
+	while(r[*pos] && (isspace((unsigned char) r[*pos]) || r[*pos] == '|'))
 		(*pos)++;
 }
 
 static void
 skipUntilWS( char *r, int *pos)
 {
-	while(r[*pos] && (!isspace((unsigned char) r[*pos]) || r[*pos] == '|')) 
+	while(r[*pos] && (!isspace((unsigned char) r[*pos]) || r[*pos] == '|'))
 		(*pos)++;
 }
 
@@ -682,7 +683,7 @@ readInt( char *r, int *pos)
 }
 
 static char *
-readString( char *r, int *pos) 
+readString( char *r, int *pos)
 {
 	char *st = NULL;
 
@@ -699,9 +700,8 @@ readString( char *r, int *pos)
 
 static sql_exp* exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos, int grp) ;
 
-
 static void *
-read_prop( mvc *sql, sql_exp *exp, char *r, int *pos) 
+read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 {
 	/* PROPs */
 	if (strncmp(r+*pos, "JOINIDX",  strlen("JOINIDX")) == 0) {
@@ -715,12 +715,12 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 		/* schema.table.index */
 		sname = r+*pos;
 		skipIdent(r,pos);
-		if (r[*pos] != '.') 
+		if (r[*pos] != '.')
 			return sql_error(sql, -1, SQLSTATE(42000) "JOINIDX: missing '.'\n");
 		r[*pos] = 0;
 		(*pos)++;
 		skipIdent(r,pos);
-		if (r[*pos] != '.') 
+		if (r[*pos] != '.')
 			return sql_error(sql, -1, SQLSTATE(42000) "JOINIDX: missing '.'\n");
 		r[*pos] = 0;
 		(*pos)++;
@@ -728,7 +728,7 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 		skipIdent(r,pos);
 		old = r[*pos];
 		r[*pos] = 0;
-		
+
 		s = mvc_bind_schema(sql, sname);
 		if (!find_prop(exp->p, PROP_JOINIDX)) {
 			p = exp->p = prop_create(sql->sa, PROP_JOINIDX, exp->p);
@@ -741,7 +741,7 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 }
 
 static list*
-read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos, char bracket, int grp) 
+read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos, char bracket, int grp)
 {
 	list *exps = new_exp_list(sql->sa);
 	sql_exp *e;
@@ -780,7 +780,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos
 			skipWS( r, pos);
 			read_prop( sql, e, r, pos);
 		}
-		if (r[*pos] != ebracket) 
+		if (r[*pos] != ebracket)
 			return sql_error(sql, -1, SQLSTATE(42000) "Missing closing %c\n", ebracket);
 		(*pos)++;
 		skipWS( r, pos);
@@ -789,10 +789,9 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos
 }
 
 static sql_exp*
-exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos, int grp) 
+exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos, int grp)
 {
-	int f = -1;
-	int not = 1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0;
+	int f = -1, not = 1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0;
 	char *tname, *cname = NULL, *e, *b = r + *pos, *st;
 	sql_exp *exp = NULL;
 	list *exps = NULL;
@@ -804,7 +803,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	e = r+*pos-quote;
 	skipWS(r, pos);
 	switch(r[*pos]) {
-	case '.': 
+	case '.':
 		*e = 0;
 		(*pos)++;
 		tname = b;
@@ -813,7 +812,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		e = r+*pos - quote;
 		old = *e;
 		*e = 0;
-		
+
 		tname = sa_strdup(sql->sa, tname);
 		cname = sa_strdup(sql->sa, cname);
 		*e = old;
@@ -823,7 +822,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			if (exp)
 				exp = exp_alias_or_copy(sql, tname, cname, lrel, exp);
 		}
-		if (!exp && lrel) { 
+		if (!exp && lrel) {
 			exp = rel_bind_column2(sql, lrel, tname, cname, 0);
 			if (!exp && rrel)
 				exp = rel_bind_column2(sql, rrel, tname, cname, 0);
@@ -832,12 +831,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		}
 		break;
 	/* atom */
-	case '(': 
+	case '(':
 		if (b == (r+*pos)) { /* or */
 			int filter = 0, anti = 0;
 			list *lexps,*rexps;
 			char *fname = NULL;
-		       
+
 			lexps = read_exps(sql, lrel, rrel, pexps, r, pos, '(', 0);
 			skipWS(r, pos);
 			if (r[*pos] == '!') {
@@ -869,53 +868,60 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 				sql_subfunc *func = sql_find_func(sql->sa, mvc_bind_schema(sql, "sys"), fname, 1+list_length(exps), F_FILT, NULL);
 				if (!func)
 					return sql_error(sql, -1, SQLSTATE(42000) "Filter: missing function '%s'\n", fname);
-					
+
 				return exp_filter(sql->sa, lexps, rexps, func, anti);
 			}
 			return exp_or(sql->sa, lexps, rexps, anti);
 		}
 		/* fall through */
-	case '[': 
-		old = *e;
-		*e = 0;
+	case '[':
 		tname = b;
-		if (old != '[') {
-			(*pos)++;
-			d = readInt(r,pos);
-			if (r[*pos] != ')' && r[*pos] != ',')
-				return sql_error(sql, -1, SQLSTATE(42000) "Type: missing ')' or ','\n");
-			if (r[*pos] == ',') {
-				(*pos)++;
-				s = readInt(r,pos);
-			}
-			if (r[*pos] != ')') 
-				return sql_error(sql, -1, SQLSTATE(42000) "Type: missing ')'\n");
-			(*pos)++;
-		}
-		tpe = sql_bind_subtype(sql->sa, tname, d, s);
-		skipWS(r, pos);
-		*e = old;
-		if (r[*pos] == '[') { /* convert */
-			(*pos)++;
-			skipWS(r, pos);
-			exp = exp_read(sql, lrel, rrel, pexps, r, pos, 0);
-			if (!exp)
+		if (tname && *tname == '[') { /* list of values */
+			exps = read_exps(sql, lrel, rrel, pexps, r, pos, '[', 0);
+			if (!exps)
 				return NULL;
-			if (r[*pos] != ']') 
-				return sql_error(sql, -1, SQLSTATE(42000) "Convert: missing ']'\n");
-			(*pos)++;
-			skipWS(r, pos);
-			exp = exp_convert(sql->sa, exp, exp_subtype(exp), tpe);
+			exp = exp_values(sql->sa, exps);
 		} else {
-			st = readString(r,pos);
-			if (st && strcmp(st, "NULL") == 0)
-				exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
-			else
-				exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
+			old = *e;
+			*e = 0;
+			if (old != '[') {
+				(*pos)++;
+				d = readInt(r,pos);
+				if (r[*pos] != ')' && r[*pos] != ',')
+					return sql_error(sql, -1, SQLSTATE(42000) "Type: missing ')' or ','\n");
+				if (r[*pos] == ',') {
+					(*pos)++;
+					s = readInt(r,pos);
+				}
+				if (r[*pos] != ')')
+					return sql_error(sql, -1, SQLSTATE(42000) "Type: missing ')'\n");
+				(*pos)++;
+			}
+			tpe = sql_bind_subtype(sql->sa, tname, d, s);
 			skipWS(r, pos);
+			*e = old;
+			if (r[*pos] == '[') { /* convert */
+				(*pos)++;
+				skipWS(r, pos);
+				exp = exp_read(sql, lrel, rrel, pexps, r, pos, 0);
+				if (!exp)
+					return NULL;
+				if (r[*pos] != ']')
+					return sql_error(sql, -1, SQLSTATE(42000) "Convert: missing ']'\n");
+				(*pos)++;
+				skipWS(r, pos);
+				exp = exp_convert(sql->sa, exp, exp_subtype(exp), tpe);
+			} else {
+				st = readString(r,pos);
+				if (st && strcmp(st, "NULL") == 0)
+					exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
+				else
+					exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
+				skipWS(r, pos);
+			}
 		}
 		break;
-	case '\"': 
+	case '\"':
 		*e = 0;
 		tname = b;
 		tpe = sql_bind_subtype(sql->sa, tname, 0, 0);
@@ -972,13 +978,13 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			if (f && f->func->fix_scale == SCALE_MUL && list_length(exps) == 2) {
 				sql_arg *ares = f->func->res->h->data;
 
-        			if (strcmp(f->func->imp, "*") == 0 && ares->type.type->scale == SCALE_FIX) {
-                			sql_subtype *res = f->res->h->data;
+				if (strcmp(f->func->imp, "*") == 0 && ares->type.type->scale == SCALE_FIX) {
+					sql_subtype *res = f->res->h->data;
 					sql_subtype *lt = ops->h->data;
 					sql_subtype *rt = ops->h->next->data;
 
 					res->digits = lt->digits;
-                			res->scale = lt->scale + rt->scale;
+					res->scale = lt->scale + rt->scale;
 				}
 			}
 
@@ -1011,7 +1017,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			}
 			*e = old;
 		}
-		if (!exp && lrel) { 
+		if (!exp && lrel) {
 			int amb = 0;
 			char *cname;
 
@@ -1110,7 +1116,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	}
 	skipWS(r, pos);
 	switch(r[*pos]) {
-	case 'n': 
+	case 'n':
 		if (strncmp(r+*pos, "notin",  strlen("notin")) == 0) {
 			(*pos)+= (int) strlen("notin");
 			f = cmp_notin;
@@ -1122,13 +1128,13 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			f = cmp_filter;
 		}
 		break;
-	case 'i': 
+	case 'i':
 		if (strncmp(r+*pos, "in",  strlen("in")) == 0) {
 			(*pos)+= (int) strlen("in");
 			f = cmp_in;
 		}
 		break;
-	case 'o': 
+	case 'o':
 		if (strncmp(r+*pos, "or",  strlen("or")) == 0) {
 			(*pos)+= (int) strlen("or");
 			f = cmp_or;
@@ -1142,7 +1148,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			(*pos)++;
 		}
 		break;
-	case '=': 
+	case '=':
 		f = cmp_equal;
 		(*pos)++;
 		if (r[(*pos)] == '*') {
@@ -1150,7 +1156,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			(*pos)++;
 		}
 		break;
-	case '<': 
+	case '<':
 		f = cmp_lt;
 		(*pos)++;
 		if (r[(*pos)] == '=') {
@@ -1158,7 +1164,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			(*pos)++;
 		}
 		break;
-	case '>': 
+	case '>':
 		f = cmp_gt;
 		(*pos)++;
 		if (r[(*pos)] == '=') {
@@ -1166,24 +1172,20 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			(*pos)++;
 		}
 		break;
-	case ',': 
-	case ']': 
-	case ')': 
+	case ',':
+	case ']':
+	case ')':
 	default:
 		return exp;
 	}
 	if (f >= 0) {
 		skipWS(r,pos);
 		if (f == cmp_in || f == cmp_notin) {
-	        	list *exps;
-		       
-			exps = read_exps(sql, lrel, rrel, pexps, r, pos, '(', 0);
+			list *exps = read_exps(sql, lrel, rrel, pexps, r, pos, '(', 0);
 			if (f == cmp_in || f == cmp_notin)
 				return exp_in(sql->sa, exp, exps, f);
 		} else {
-			sql_exp *e;
-
-	        	e = exp_read(sql, lrel, rrel, pexps, r, pos, 0);
+			sql_exp *e = exp_read(sql, lrel, rrel, pexps, r, pos, 0);
 			if (e && e->type == e_cmp) {
 				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag));
 				if (is_anti(exp))
@@ -1247,27 +1249,82 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		nr = readInt(r,pos); /* skip nr refs */
 		return rel_dup(list_fetch(refs, nr-1));
 	}
+
+	if (r[*pos] == 'i' && r[*pos+1] == 'n' && r[*pos+2] == 's') {
+		*pos += (int) strlen("insert");
+		skipWS(r, pos);
+		(*pos)++; /* ( */
+		lrel = rel_read(sql, r, pos, refs); /* to be inserted relation */
+		skipWS(r,pos);
+		rrel = rel_read(sql, r, pos, refs); /* the inserts relation */
+		skipWS(r,pos);
+		(*pos)++; /* ) */
+
+		return rel_insert(sql, lrel, rrel);
+	}
+
+	if (r[*pos] == 'd' && r[*pos+1] == 'e' && r[*pos+2] == 'l') {
+		*pos += (int) strlen("delete");
+		skipWS(r, pos);
+		(*pos)++; /* ( */
+		lrel = rel_read(sql, r, pos, refs); /* to be deleted relation */
+		skipWS(r,pos);
+		rrel = rel_read(sql, r, pos, refs); /* the deletes relation */
+		skipWS(r,pos);
+		(*pos)++; /* ) */
+
+		return rel_delete(sql->sa, lrel, rrel);
+	}
+
+	if (r[*pos] == 't' && r[*pos+1] == 'r' && r[*pos+2] == 'u') {
+		*pos += (int) strlen("truncate");
+		skipWS(r, pos);
+		(*pos)++; /* ( */
+		lrel = rel_read(sql, r, pos, refs); /* to be truncated relation */
+		skipWS(r,pos);
+		(*pos)++; /* ) */
+
+		/* TODO drop_action and check_identity options */
+		return rel_truncate(sql->sa, lrel, 0, 0);
+	}
+
+	if (r[*pos] == 'u' && r[*pos+1] == 'p' && r[*pos+2] == 'd') {
+		*pos += (int) strlen("update");
+		skipWS(r, pos);
+		(*pos)++; /* ( */
+		lrel = rel_read(sql, r, pos, refs); /* to be updated relation */
+		skipWS(r,pos);
+		rrel = rel_read(sql, r, pos, refs); /* the updates relation */
+		skipWS(r,pos);
+		(*pos)++; /* ) */
+
+		exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0); /* columns to be updated */
+		if (!exps)
+			return NULL;
+		return rel_update(sql, lrel, rrel, NULL, exps);
+	}
+
 	if (r[*pos] == 'd') {
 		*pos += (int) strlen("distinct");
 		skipWS(r, pos);
 		distinct = 1;
 	}
 	switch(r[*pos]) {
-	case 't': 
+	case 't':
 		if (r[*pos+1] == 'a') {
 			sql_schema *s = NULL;
 			sql_table *t = NULL;
 			char *sname, *tname, *e;
 			*pos += (int) strlen("table");
 			skipWS(r, pos);
-			if (r[*pos] != '(') 
+			if (r[*pos] != '(')
 				return sql_error(sql, -1, SQLSTATE(42000) "Table: missing '('\n");
 			(*pos)++;
 			skipWS(r, pos);
 			sname = r+*pos;
 			skipIdent(r, pos);
 			e = r+*pos;
-			if (r[*pos] != '.') 
+			if (r[*pos] != '.')
 				return sql_error(sql, -1, SQLSTATE(42000) "Table: missing '.' in table name\n");
 			*e = 0;
 			(*pos)++;
@@ -1275,7 +1332,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			skipIdent(r, pos);
 			e = r+*pos;
 			skipWS(r, pos);
-			if (r[*pos] != ')') 
+			if (r[*pos] != ')')
 				sql_error(sql, -1, SQLSTATE(42000) "Table: missing ')'\n");
 			*e = 0;
 			(*pos)++;
@@ -1286,10 +1343,10 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			if (!s || !t)
 				return sql_error(sql, -1, SQLSTATE(42000) "Table: missing '%s.%s'\n", sname, tname);
 			rel = rel_basetable(sql, t, tname);
-		
+
 			if (!r[*pos])
 				return rel;
-	
+
 			/* scan aliases */
 			exps = read_exps(sql, rel, NULL, NULL, r, pos, '[', 0);
 			if (exps && list_length(exps))
@@ -1301,12 +1358,12 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		} else { /* top N */
 			*pos += (int) strlen("top N");
 			skipWS(r, pos);
-			if (r[*pos] != '(') 
+			if (r[*pos] != '(')
 				return sql_error(sql, -1, SQLSTATE(42000) "Top N: missing '('\n");
 			(*pos)++;
 			skipWS(r, pos);
 			nrel = rel_read(sql, r, pos, refs);
-			if (r[*pos] != ')') 
+			if (r[*pos] != ')')
 				return sql_error(sql, -1, SQLSTATE(42000) "Top N: missing ')'\n");
 			(*pos)++;
 			skipWS(r, pos);
@@ -1318,13 +1375,13 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		*pos += (int) strlen("project");
 		skipWS(r, pos);
 
-		if (r[*pos] != '(') 
+		if (r[*pos] != '(')
 			return sql_error(sql, -1, SQLSTATE(42000) "Project: missing '('\n");
 		(*pos)++;
 		skipWS(r, pos);
 		nrel = rel_read(sql, r, pos, refs);
 		skipWS(r, pos);
-		if (r[*pos] != ')') 
+		if (r[*pos] != ')')
 			return sql_error(sql, -1, SQLSTATE(42000) "Project: missing ')'\n");
 		(*pos)++;
 		skipWS(r, pos);
@@ -1332,7 +1389,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0);
 		rel = rel_project(sql->sa, nrel, exps);
 		/* order by ? */
-		if (r[*pos] == '[') 
+		if (r[*pos] == '[')
 			rel->r = read_exps(sql, nrel, rel, NULL, r, pos, '[', 0);
 		if (distinct)
 			set_distinct(rel);
@@ -1342,13 +1399,13 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		*pos += (int) strlen("group by");
 		skipWS(r, pos);
 
-		if (r[*pos] != '(') 
+		if (r[*pos] != '(')
 			return sql_error(sql, -1, SQLSTATE(42000) "Group by: missing '('\n");
 		(*pos)++;
 		skipWS(r, pos);
 		nrel = rel_read(sql, r, pos, refs);
 		skipWS(r, pos);
-		if (r[*pos] != ')') 
+		if (r[*pos] != ')')
 			return sql_error(sql, -1, SQLSTATE(42000) "Group by: missing ')'\n");
 		(*pos)++;
 		skipWS(r, pos);
@@ -1367,12 +1424,12 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (r[*pos+1] == 'a') {
 			*pos += (int) strlen("sample");
 			skipWS(r, pos);
-			if (r[*pos] != '(') 
+			if (r[*pos] != '(')
 				return sql_error(sql, -1, SQLSTATE(42000) "Sample: missing '('\n");
 			(*pos)++;
 			skipWS(r, pos);
 			nrel = rel_read(sql, r, pos, refs);
-			if (r[*pos] != ')') 
+			if (r[*pos] != ')')
 				return sql_error(sql, -1, SQLSTATE(42000) "Sample: missing ')'\n");
 			(*pos)++;
 			skipWS(r, pos);
@@ -1381,13 +1438,13 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		} else if (r[*pos+2] == 'l') {
 			*pos += (int) strlen("select");
 			skipWS(r, pos);
-			if (r[*pos] != '(') 
+			if (r[*pos] != '(')
 				return sql_error(sql, -1, SQLSTATE(42000) "Select: missing '('\n");
 			(*pos)++;
 			skipWS(r, pos);
 			nrel = rel_read(sql, r, pos, refs);
 			skipWS(r, pos);
-			if (r[*pos] != ')') 
+			if (r[*pos] != ')')
 				return sql_error(sql, -1, SQLSTATE(42000) "Select: missing ')'\n");
 			(*pos)++;
 			skipWS(r, pos);
@@ -1398,26 +1455,26 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		} else if (r[*pos+1] == 'e' || r[*pos+1] == 'n') {
 			j = op_semi;
 
-			if (r[*pos+1] == 'n') 
+			if (r[*pos+1] == 'n')
 				j = op_anti;
 
 			*pos += (int) strlen("semijoin");
 			skipWS(r, pos);
-			if (r[*pos] != '(') 
+			if (r[*pos] != '(')
 				return sql_error(sql, -1, SQLSTATE(42000) "Semijoin: missing '('\n");
 			(*pos)++;
 			skipWS(r, pos);
 			lrel = rel_read(sql, r, pos, refs);
 			skipWS(r, pos);
 
-			if (r[*pos] != ',') 
+			if (r[*pos] != ',')
 				return sql_error(sql, -1, SQLSTATE(42000) "Semijoin: missing ','\n");
 			(*pos)++;
 			skipWS(r, pos);
 			rrel = rel_read(sql, r, pos, refs);
 
 			skipWS(r, pos);
-			if (r[*pos] != ')') 
+			if (r[*pos] != ')')
 				return sql_error(sql, -1, SQLSTATE(42000) "Semijoin: missing ')'\n");
 			(*pos)++;
 			skipWS(r, pos);
@@ -1431,7 +1488,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		*pos += (int) strlen("left outer join");
 		j = op_left;
 		/* fall through */
-	case 'r': 
+	case 'r':
 		if (j == op_basetable) {
 			*pos += (int) strlen("right outer join");
 			j = op_right;
@@ -1456,21 +1513,21 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		}
 		skipWS(r, pos);
 
-		if (r[*pos] != '(') 
+		if (r[*pos] != '(')
 			return sql_error(sql, -1, SQLSTATE(42000) "Join: missing '('\n");
 		(*pos)++;
 		skipWS(r, pos);
 		lrel = rel_read(sql, r, pos, refs);
 		skipWS(r, pos);
 
-		if (r[*pos] != ',') 
+		if (r[*pos] != ',')
 			return sql_error(sql, -1, SQLSTATE(42000) "Join: missing ','\n");
 		(*pos)++;
 		skipWS(r, pos);
 		rrel = rel_read(sql, r, pos, refs);
 
 		skipWS(r, pos);
-		if (r[*pos] != ')') 
+		if (r[*pos] != ')')
 			return sql_error(sql, -1, SQLSTATE(42000) "Join: missing ')'\n");
 		(*pos)++;
 		skipWS(r, pos);
@@ -1498,21 +1555,21 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		}
 		skipWS(r, pos);
 
-		if (r[*pos] != '(') 
+		if (r[*pos] != '(')
 			return sql_error(sql, -1, SQLSTATE(42000) "Setop: missing '('\n");
 		(*pos)++;
 		skipWS(r, pos);
 		lrel = rel_read(sql, r, pos, refs);
 		skipWS(r, pos);
 
-		if (r[*pos] != ',') 
+		if (r[*pos] != ',')
 			return sql_error(sql, -1, SQLSTATE(42000) "Setop: missing ','\n");
 		(*pos)++;
 		skipWS(r, pos);
 		rrel = rel_read(sql, r, pos, refs);
 
 		skipWS(r, pos);
-		if (r[*pos] != ')') 
+		if (r[*pos] != ')')
 			return sql_error(sql, -1, SQLSTATE(42000) "Setop: missing ')'\n");
 		(*pos)++;
 		skipWS(r, pos);
@@ -1526,6 +1583,18 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			return NULL;
 		set_processed(rel);
 		break;
+	case '[': /* projection of list of values */
+		exps = read_exps(sql, NULL, NULL, NULL, r, pos, '[', 0);
+		if (!exps)
+			return NULL;
+		rel = rel_project(sql->sa, NULL, exps);
+		/* order by ? */
+		if (r[*pos] == '[')
+			rel->r = read_exps(sql, NULL, rel, NULL, r, pos, '[', 0);
+		if (distinct)
+			set_distinct(rel);
+		distinct = 0;
+		break;
 	case 'd':
 		/* 'ddl' not supported */
 	default:
@@ -1538,6 +1607,13 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		skipUntilWS(r, pos);
 		skipWS(r, pos);
 	}
+	while (strncmp(r+*pos, "USED", strlen("USED")) == 0) {
+		(*pos)+= (int) strlen("USED");
+		skipWS(r, pos);
+	}
+	while (strncmp(r+*pos, "DISTRIBUTE", strlen("DISTRIBUTE")) == 0) {
+		(*pos)+= (int) strlen("DISTRIBUTE");
+		skipWS(r, pos);
+	}
 	return rel;
 }
-
