@@ -733,7 +733,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_rel **anti_rel, sql_
 			list_remove_data(dup->exps, del);
 		}
 
-		s1 = rel_insert(query, new_table, dup);
+		s1 = rel_insert(query->sql, new_table, dup);
 		if (just_one == 0) {
 			sel = rel_list(sql->sa, sel, s1);
 		} else {
