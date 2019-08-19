@@ -2486,7 +2486,9 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k)
 
 		if (nk->type == fkey)
 			sql_trans_create_dependency(tr, kc->c->base.id, k->base.id, FKEY_DEPENDENCY);
-		if (nk->type == pkey) {
+		else if (nk->type == ukey)
+			sql_trans_create_dependency(tr, kc->c->base.id, k->base.id, KEY_DEPENDENCY);
+		else if (nk->type == pkey) {
 			sql_trans_create_dependency(tr, kc->c->base.id, k->base.id, KEY_DEPENDENCY);
 			sql_trans_alter_null(tr, kc->c, 0);
 		}
