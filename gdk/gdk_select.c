@@ -1365,7 +1365,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					high = SORTfndfirst(b, th);
 			}
 		} else if (b->trevsorted) {
-			assert(b->trevsorted);
 			ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
 					  ",s=" ALGOOPTBATFMT ",anti=%d): "
 					  "reverse sorted\n",
