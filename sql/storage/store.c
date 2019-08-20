@@ -2235,11 +2235,22 @@ store_flush_log(void)
 	ATOMIC_SET(&flusher.flush_now, 1);
 }
 
+static void
+wait_until_flusher_idle()
+{
+
+}
 void
 store_suspend_log(void)
 {
 	MT_lock_set(&bs_lock);
 	flusher.enabled = false;
+	while (flusher.working) {
+		const int sleeptime = 100;
+		MT_lock_unset(&bs_lock);
+		MT_sleep_ms(sleeptime);
+		MT_lock_set(&bs_lock);
+	}
 	MT_lock_unset(&bs_lock);
 }
 
