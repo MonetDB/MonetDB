@@ -1082,7 +1082,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	} while (0)
 
 static BUN
-doprod(const void *restrict values, oid seqb, struct canditer *ci, BUN ncand,
+doprod(const void *restrict values, oid seqb, struct canditer *restrict ci, BUN ncand,
        void *restrict results, BUN ngrp, int tp1, int tp2,
        const oid *restrict gids, bool gidincr, oid min, oid max,
        bool skip_nils, bool abort_on_error, bool nil_if_empty, const char *func)

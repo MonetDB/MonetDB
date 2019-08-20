@@ -252,7 +252,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
  * values of l, and *r2p (if r2p is not NULL) is all nil.  If neither
  * of those flags is set, the result is two empty BATs. */
 static gdk_return
-nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *lci,
+nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *restrict lci,
 	bool nil_on_miss, bool only_misses, const char *func, lng t0)
 {
 	BAT *r1, *r2 = NULL;
@@ -299,7 +299,7 @@ nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *lci,
  * point select to find matches in the right column. */
 static gdk_return
 selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
-	   struct canditer *lci, bool nil_matches, lng t0, bool swapped)
+	   struct canditer *restrict lci, bool nil_matches, lng t0, bool swapped)
 {
 	BATiter li = bat_iterator(l);
 	const void *v;
@@ -409,7 +409,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
  * need to do some more work. */
 static gdk_return
 mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
-	       struct canditer *lci, struct canditer *rci,
+	       struct canditer *restrict lci, struct canditer *restrict rci,
 	       bool nil_on_miss, bool only_misses, lng t0, bool swapped)
 {
 	oid lo, hi;
@@ -1569,7 +1569,7 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
  */
 static gdk_return
 mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
-	  struct canditer *lci, struct canditer *rci,
+	  struct canditer *restrict lci, struct canditer *restrict rci,
 	  bool nil_matches, bool nil_on_miss, bool semi, bool only_misses,
 	  bool not_in, BUN estimate, lng t0, bool swapped)
 {
@@ -2296,7 +2296,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
  * column. */
 static gdk_return
 hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
-	 struct canditer *lci, struct canditer *rci,
+	 struct canditer *restrict lci, struct canditer *restrict rci,
 	 bool nil_matches, bool nil_on_miss, bool semi, bool only_misses,
 	 bool not_in,
 	 BUN estimate, lng t0, bool swapped, bool phash, const char *reason)
@@ -3101,7 +3101,7 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 /* small ordered right, dense left, oid's only, do fetches */
 static gdk_return
 fetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
-	  struct canditer *lci, struct canditer *rci, lng t0)
+	  struct canditer *restrict lci, struct canditer *restrict rci, lng t0)
 {
 	oid lo = lci->seq - l->hseqbase + l->tseqbase, hi = lo + lci->ncand;
 	BUN b, e, p;
