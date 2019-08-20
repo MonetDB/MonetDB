@@ -1445,7 +1445,7 @@ sql_update_aug2018_sp2(Client c, mvc *sql)
 
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
-			err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+			err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 		}
 		BBPunfix(b->batCacheid);
 	}
@@ -1918,6 +1918,23 @@ sql_update_storagemodel(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_apr2019_sp1(Client c)
+{
+	size_t bufsize = 1000, pos = 0;
+	char *buf, *err;
+
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, "sql_update_aug2018_sp2", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	/* required update for changeset 23e1231ada99 */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into dependencies (select c.id as id, k.id as depend_id, dt.dependency_type_id as depend_type from sys.dependency_types dt, sys._columns c, sys.keys k, sys.objects o where k.id = o.id and o.name = c.name and c.table_id = k.table_id and dt.dependency_type_name = 'KEY' and k.type = 1 and not exists (select d.id from sys.dependencies d where d.id = c.id and d.depend_id = k.id and d.depend_type = dt.dependency_type_id));\n");
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -2126,5 +2143,10 @@ SQLupgrades(Client c, mvc *m)
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
+	}
+
+	if ((err = sql_update_apr2019_sp1(c)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		freeException(err);
 	}
 }
