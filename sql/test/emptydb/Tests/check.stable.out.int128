@@ -4492,7 +4492,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.t1,	sys.c1,	sys.s2,	sys.t2,	sys.k2,	.dt # table_name
 % name,	name,	name,	name,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
-% 3,	18,	18,	3,	18,	40,	4 # length
+% 3,	18,	20,	3,	18,	44,	4 # length
 [ "bam",	"files",	"file_id",	"bam",	"files",	"files_pkey_file_id",	"KEY"	]
 [ "bam",	"pg",	"file_id",	"bam",	"pg",	"pg_fkey_file_id",	"FKEY"	]
 [ "bam",	"pg",	"file_id",	"bam",	"pg",	"pg_pkey_id_file_id",	"KEY"	]
@@ -4505,14 +4505,21 @@ drop function pcre_replace(string, string, string, string);
 [ "bam",	"sq",	"sn",	"bam",	"sq",	"sq_pkey_sn_file_id",	"KEY"	]
 [ "sys",	"comments",	"id",	"sys",	"comments",	"comments_id_pkey",	"KEY"	]
 [ "sys",	"dependency_types",	"dependency_type_id",	"sys",	"dependency_types",	"dependency_types_dependency_type_id_pkey",	"KEY"	]
+[ "sys",	"dependency_types",	"dependency_type_name",	"sys",	"dependency_types",	"dependency_types_dependency_type_name_unique",	"KEY"	]
 [ "sys",	"function_languages",	"language_id",	"sys",	"function_languages",	"function_languages_language_id_pkey",	"KEY"	]
+[ "sys",	"function_languages",	"language_name",	"sys",	"function_languages",	"function_languages_language_name_unique",	"KEY"	]
 [ "sys",	"function_types",	"function_type_id",	"sys",	"function_types",	"function_types_function_type_id_pkey",	"KEY"	]
+[ "sys",	"function_types",	"function_type_name",	"sys",	"function_types",	"function_types_function_type_name_unique",	"KEY"	]
 [ "sys",	"index_types",	"index_type_id",	"sys",	"index_types",	"index_types_index_type_id_pkey",	"KEY"	]
+[ "sys",	"index_types",	"index_type_name",	"sys",	"index_types",	"index_types_index_type_name_unique",	"KEY"	]
 [ "sys",	"key_types",	"key_type_id",	"sys",	"key_types",	"key_types_key_type_id_pkey",	"KEY"	]
+[ "sys",	"key_types",	"key_type_name",	"sys",	"key_types",	"key_types_key_type_name_unique",	"KEY"	]
 [ "sys",	"keywords",	"keyword",	"sys",	"keywords",	"keywords_keyword_pkey",	"KEY"	]
 [ "sys",	"privilege_codes",	"privilege_code_id",	"sys",	"privilege_codes",	"privilege_codes_privilege_code_id_pkey",	"KEY"	]
+[ "sys",	"privilege_codes",	"privilege_code_name",	"sys",	"privilege_codes",	"privilege_codes_privilege_code_name_unique",	"KEY"	]
 [ "sys",	"spatial_ref_sys",	"srid",	"sys",	"spatial_ref_sys",	"spatial_ref_sys_srid_pkey",	"KEY"	]
 [ "sys",	"table_types",	"table_type_id",	"sys",	"table_types",	"table_types_table_type_id_pkey",	"KEY"	]
+[ "sys",	"table_types",	"table_type_name",	"sys",	"table_types",	"table_types_table_type_name_unique",	"KEY"	]
 #select s1.name, t1.name, c1.name, s2.name, t2.name, i2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, idxs i2 where d.id = c1.id and d.depend_id = i2.id and c1.table_id = t1.id and t1.schema_id = s1.id and i2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, i2.name, s1.name, t1.name, c1.name;
 % sys.s1,	sys.t1,	sys.c1,	sys.s2,	sys.t2,	sys.i2,	.dt # table_name
 % name,	name,	name,	name,	name,	name,	dependency_type_name # name
