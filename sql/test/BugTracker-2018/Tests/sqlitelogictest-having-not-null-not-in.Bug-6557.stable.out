@@ -40,6 +40,18 @@ Ready.
 [ 0,	38,	83	]
 [ 0,	79,	26	]
 [ 81,	24,	43	]
+#SELECT CAST(SUM(col0) AS BIGINT) FROM tab0 WHERE + + col0 BETWEEN NULL AND + col2;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+#SELECT CAST(SUM(col0) AS BIGINT) FROM tab0 WHERE + + col0 NOT BETWEEN NULL AND + col2;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 126	]
 #DROP TABLE tab0;
 
 # 12:32:58 >  
