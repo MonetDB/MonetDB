@@ -210,6 +210,7 @@ typedef int (*idx_upd_fptr) (sql_trans *tr, sql_idx *c, void *rows, void *data);
 -- returns LOG_OK, LOG_ERR
 */
 typedef int (*del_fptr) (sql_trans *tr, sql_table *c, void *rows);
+typedef int (*snapshot_fptr) ( sql_table *t ); 
 
 /* backing struct for this interface */
 typedef struct store_functions {
@@ -270,6 +271,8 @@ typedef struct store_functions {
 	destroy_col_fptr snapshot_destroy_col;
 	destroy_idx_fptr snapshot_destroy_idx;
 	destroy_del_fptr snapshot_destroy_del;
+
+	snapshot_fptr save_snapshot;
 
 	/* rollforward the changes, first snapshot, then log and finaly apply */
 	update_table_fptr snapshot_table;
@@ -357,6 +360,7 @@ extern sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, const c
 extern sql_trans *sql_trans_destroy(sql_trans *tr, bool try_spare);
 extern bool sql_trans_validate(sql_trans *tr);
 extern int sql_trans_commit(sql_trans *tr);
+extern int sql_save_snapshots(sql_trans *tr);
 
 extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl);
 extern int sql_trans_drop_type(sql_trans *tr, sql_schema * s, sqlid id, int drop_action);

@@ -1,6 +1,6 @@
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * License, v. 2.0.  If a copy of the MPH was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
@@ -4289,6 +4289,46 @@ sql_trans_validate(sql_trans *tr)
 			}
 		}
 	return true;
+}
+
+static int
+save_tables_snapshots(sql_schema *s)
+{
+	node *n;
+
+	if (cs_size(&s->tables))
+		for (n = s->tables.set->h; n; n = n->next) {
+			sql_table *t = n->data;
+
+			if (!t->base.wtime)
+				continue;
+
+			if (isKindOfTable(t)) {
+				if (store_funcs.save_snapshot(t) != LOG_OK)
+					return SQL_ERR;
+			}
+		}
+	return SQL_OK;
+}
+
+int
+sql_save_snapshots(sql_trans *tr)
+{
+	node *n;
+
+	if (cs_size(&tr->schemas)) {
+		for (n = tr->schemas.set->h; n; n = n->next) {
+			sql_schema *s = n->data;
+
+			if (isTempSchema(s))
+				continue;
+
+			if (s->base.wtime != 0)
+				if (save_tables_snapshots(s) != SQL_OK)
+					return SQL_ERR;
+		}
+	}
+	return SQL_OK;
 }
 
 #ifdef CAT_DEBUG

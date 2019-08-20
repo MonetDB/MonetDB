@@ -2901,6 +2901,51 @@ log_table(sql_trans *tr, sql_table *ft)
 }
 
 static int 
+snapshot_bat(sql_delta *cbat)
+{
+	if (!cbat->ibase && cbat->cnt > SNAPSHOT_MINSIZE) {
+		BAT *ins = temp_descriptor(cbat->ibid);
+		if(ins) {
+			if (BATsave(ins) != GDK_SUCCEED) {
+				bat_destroy(ins);
+				return LOG_ERR;
+			}
+			bat_destroy(ins);
+		}
+	}
+	return LOG_OK;
+}
+
+static int
+save_snapshot(sql_table *ft)
+{
+	int ok = LOG_OK;
+	node *n;
+
+	for (n = ft->columns.set->h; ok == LOG_OK && n; n = n->next) {
+		sql_column *cc = n->data;
+
+		if (!cc->base.wtime || !cc->base.allocated) 
+			continue;
+		if (snapshot_bat(cc->data) != LOG_OK)
+			return LOG_ERR;
+	}
+	if (ok == LOG_OK && ft->idxs.set) {
+		for (n = ft->idxs.set->h; ok == LOG_OK && n; n = n->next) {
+			sql_idx *ci = n->data;
+
+			/* some indices have no bats or changes */
+			if (!ci->data || !ci->base.wtime || !ci->base.allocated)
+				continue;
+
+			if (snapshot_bat(ci->data) != LOG_OK)
+				return LOG_ERR;
+		}
+	}
+	return LOG_OK;
+}
+
+static int 
 tr_snapshot_bat( sql_trans *tr, sql_delta *cbat)
 {
 	int ok = LOG_OK;
@@ -2991,6 +3036,8 @@ bat_storage_init( store_functions *sf)
 	sf->snapshot_create_col = (create_col_fptr)&snapshot_create_col;
 	sf->snapshot_create_idx = (create_idx_fptr)&snapshot_create_idx;
 	sf->snapshot_create_del = (create_del_fptr)&snapshot_create_del;
+
+	sf->save_snapshot = (snapshot_fptr)&save_snapshot;
 
 	sf->dup_col = (dup_col_fptr)&dup_col;
 	sf->dup_idx = (dup_idx_fptr)&dup_idx;
