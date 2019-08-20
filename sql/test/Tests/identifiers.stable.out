@@ -14,7 +14,6 @@ stdout of test 'identifiers` in directory 'sql/test` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:39921/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 # falling back to direct mode 
 #function user.main():void;
 #    clients.quit();
@@ -52,19 +51,6 @@ Ready.
 #SELECT 1 AS "BLA"; -- gives BLA
 % .L2 # table_name
 % BLA # name
-% tinyint # type
-% 1 # length
-[ 1	]
-#CREATE TABLE "B\"la\"" (id int); -- should fail
-#SELECT 1 AS "B\"la\""; -- should fail
-% .L2 # table_name
-% "B\\\"la\\\"" # name
-% tinyint # type
-% 1 # length
-[ 1	]
-#SELECT 1 AS "\"Bla\""; -- should fail
-% .L2 # table_name
-% "\\\"Bla\\\"" # name
 % tinyint # type
 % 1 # length
 [ 1	]

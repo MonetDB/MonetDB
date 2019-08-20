@@ -32,6 +32,8 @@ def query(conn, sql):
     return r
 
 farm_dir = tempfile.mkdtemp()
+os.mkdir(os.path.join(farm_dir, 'node1'))
+os.mkdir(os.path.join(farm_dir, 'node2'))
 
 # node1 is the worker
 prt1 = freeport()

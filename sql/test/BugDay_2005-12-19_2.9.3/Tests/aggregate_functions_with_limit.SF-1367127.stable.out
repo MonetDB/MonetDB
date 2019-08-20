@@ -13,7 +13,6 @@ stdout of test 'aggregate_functions_with_limit.SF-1367127` in directory 'sql/tes
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34442/
 # MonetDB/SQL module v2.25.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

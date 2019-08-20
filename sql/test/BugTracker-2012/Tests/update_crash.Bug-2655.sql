@@ -1,7 +1,7 @@
-CREATE SEQUENCE sys.seq_5700 AS INTEGER;
+CREATE SEQUENCE sys.myseq_5700 AS INTEGER;
 
 CREATE TABLE kvk (
-        id                INTEGER       NOT NULL       DEFAULT next value for seq_5700,
+        id                INTEGER       NOT NULL       DEFAULT next value for myseq_5700,
         kvk               BIGINT,
         bedrijfsnaam      VARCHAR(256),
         adres             VARCHAR(256),
@@ -49,4 +49,4 @@ select * from  kvk;
 
 drop table kvk_extra_nieuw;
 drop table  kvk;
-drop SEQUENCE sys.seq_5700;
+drop SEQUENCE sys.myseq_5700;

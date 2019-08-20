@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -210,8 +210,8 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 							goto wrapup;
 						}
 					}
-					self->cols[self->ncols].b->tnil = 1;
-					self->cols[self->ncols].b->tnonil = 0;
+					self->cols[self->ncols].b->tnil = true;
+					self->cols[self->ncols].b->tnonil = false;
 					BATsetcount(self->cols[self->ncols].b, self->nvals);
 				}
 				self->ncols++;
@@ -223,7 +223,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 		PyObject *dictEntry = PyDict_GetItemString(args, self->cols[i].name);
 		if (dictEntry && dictEntry != Py_None) {
 			if (PyType_IsPyScalar(dictEntry)) {
-				if (self->cols[i].b->ttype == TYPE_blob || self->cols[i].b->ttype == TYPE_sqlblob) {
+				if (self->cols[i].b->ttype == TYPE_blob) {
 					blob s;
 					blob* val = &s;
 					val->nitems = ~(size_t) 0;
@@ -353,7 +353,13 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 						GDKfree(utf8_string);
 					}
 				}
-				self->cols[i].b->tnonil = 1 - self->cols[i].b->tnil;
+				self->cols[i].b->tnonil = !self->cols[i].b->tnil;
+				if (ret->numpy_array) {
+					Py_DECREF(ret->numpy_array);
+				}
+				if (ret->numpy_mask) {
+					Py_DECREF(ret->numpy_mask);
+				}
 			}
 		} else {
 			if (self->cols[i].def != NULL) {
@@ -367,8 +373,8 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					goto wrapup;
 				}
 			}
-			self->cols[i].b->tnil = 1;
-			self->cols[i].b->tnonil = 0;
+			self->cols[i].b->tnil = true;
+			self->cols[i].b->tnonil = false;
 		}
 		BATsetcount(self->cols[i].b, self->nvals + el_count);
 	}

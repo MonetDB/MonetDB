@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -28,7 +28,6 @@
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
-#include "monet_options.h"
 #include <time.h>
 
 #ifdef HAVE_ODBCINST_H
@@ -261,7 +260,7 @@ MNDBConnect(ODBCDbc *dbc,
 		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
 		set_timezone(mid);
 		get_serverinfo(dbc);
-		mapi_set_size_header(mid, 1);
+		mapi_set_size_header(mid, true);
 		/* set timeout after we're connected */
 		mapi_timeout(mid, dbc->sql_attr_connection_timeout * 1000);
 	}
@@ -332,11 +331,11 @@ SQLConnectW(SQLHDBC ConnectionHandle,
 	clearDbcErrors(dbc);
 
 	fixWcharIn(ServerName, NameLength1, SQLCHAR, ds,
-		   addDbcError, dbc, goto exit);
+		   addDbcError, dbc, goto bailout);
 	fixWcharIn(UserName, NameLength2, SQLCHAR, uid,
-		   addDbcError, dbc, goto exit);
+		   addDbcError, dbc, goto bailout);
 	fixWcharIn(Authentication, NameLength3, SQLCHAR, pwd,
-		   addDbcError, dbc, goto exit);
+		   addDbcError, dbc, goto bailout);
 
 	rc = MNDBConnect(dbc,
 			 ds, SQL_NTS,
@@ -344,7 +343,7 @@ SQLConnectW(SQLHDBC ConnectionHandle,
 			 pwd, SQL_NTS,
 			 NULL, 0, NULL);
 
-      exit:
+      bailout:
 	if (ds)
 		free(ds);
 	if (uid)

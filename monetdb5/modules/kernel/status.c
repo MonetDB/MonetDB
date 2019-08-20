@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -121,12 +121,12 @@ static struct tms state;
 str
 SYScpuStatistics(bat *ret, bat *ret2)
 {
-	int i;
+	lng i;
 	BAT *b, *bn;
 #ifdef HAVE_TIMES
 	struct tms newst;
 # ifndef HZ
-	static int HZ;
+	static int HZ = 0;
 
 	if (HZ == 0) {
 #  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
@@ -139,7 +139,7 @@ SYScpuStatistics(bat *ret, bat *ret2)
 #endif
 
 	bn = COLnew(0, TYPE_str, 32, TRANSIENT);
-	b = COLnew(0, TYPE_int, 32, TRANSIENT);
+	b = COLnew(0, TYPE_lng, 32, TRANSIENT);
 	if (b == 0 || bn == 0){
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
@@ -152,7 +152,7 @@ SYScpuStatistics(bat *ret, bat *ret2)
 	}
 	times(&newst);
 	/* store counters, ignore errors */
-	i = (int) (time(0) - clk);
+	i = (lng) (time(0) - clk);
 	if (BUNappend(bn, "elapsed", false) != GDK_SUCCEED ||
 		BUNappend(b, &i, false) != GDK_SUCCEED)
 		goto bailout;
@@ -175,7 +175,7 @@ SYScpuStatistics(bat *ret, bat *ret2)
 
 	state = newst;
 #else
-	i = int_nil;
+	i = lng_nil;
 	if (BUNappend(bn, "elapsed", false) != GDK_SUCCEED ||
 		BUNappend(b, &i, false) != GDK_SUCCEED ||
 		BUNappend(bn, "user", false) != GDK_SUCCEED ||
@@ -266,7 +266,7 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 	}
 	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
-		BAT *c = BBPquickdesc(i,0);
+		BAT *c = BBPquickdesc(i, false);
 		str s;
 
 		if( c == NULL  || !BBPvalid(i))
@@ -484,24 +484,24 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 str
 SYSioStatistics(bat *ret, bat *ret2)
 {
-#ifndef NATIVE_WIN32
+#ifdef HAVE_SYS_RESOURCE_H
 	struct rusage ru;
 #endif
-	int i;
+	lng i;
 	BAT *b, *bn;
 
-#ifndef NATIVE_WIN32
+#ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &ru);
 #endif
 	bn = COLnew(0, TYPE_str, 32, TRANSIENT);
-	b = COLnew(0, TYPE_int, 32, TRANSIENT);
+	b = COLnew(0, TYPE_lng, 32, TRANSIENT);
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.ioStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-#ifndef NATIVE_WIN32
+#ifdef HAVE_SYS_RESOURCE_H
 	/* store counters, ignore errors */
 	i = ru.ru_maxrss;
 	if (BUNappend(bn, "maxrss", false) != GDK_SUCCEED ||
@@ -536,7 +536,7 @@ SYSioStatistics(bat *ret, bat *ret2)
 		BUNappend(b, &i, false) != GDK_SUCCEED)
 		goto bailout;
 #else
-	i = int_nil;
+	i = lng_nil;
 	if (BUNappend(bn, "maxrss", false) != GDK_SUCCEED ||
 		BUNappend(b, &i, false) != GDK_SUCCEED ||
 		BUNappend(bn, "minflt", false) != GDK_SUCCEED ||
@@ -587,10 +587,10 @@ SYSgdkEnv(bat *ret, bat *ret2)
 		if (BBPvalid(i)) {
 			pbat++;
 			if (BBP_cache(i)) {
-				if (BBP_cache(i)->batPersistence == PERSISTENT)
-					per++;
-				else
+				if (BBP_cache(i)->batTransient)
 					tmp++;
+				else
+					per++;
 			} else {
 				pdisk++;
 			}
@@ -604,10 +604,6 @@ SYSgdkEnv(bat *ret, bat *ret2)
 		BUNappend(b, &per, false) != GDK_SUCCEED ||
 		BUNappend(bn, "ondisk", false) != GDK_SUCCEED ||
 		BUNappend(b, &pdisk, false) != GDK_SUCCEED ||
-		BUNappend(bn, "todisk", false) != GDK_SUCCEED ||
-		BUNappend(b, &BBPout, false) != GDK_SUCCEED ||
-		BUNappend(bn, "fromdisk", false) != GDK_SUCCEED ||
-		BUNappend(b, &BBPin, false) != GDK_SUCCEED ||
 		pseudo(ret,ret2, bn,b)) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
@@ -621,6 +617,7 @@ SYSgdkThread(bat *ret, bat *ret2)
 {
 	BAT *b, *bn;
 	int i;
+	Thread thr;
 
 	bn = COLnew(0,TYPE_int, THREADS, TRANSIENT);
 	b = COLnew(0, TYPE_str, THREADS, TRANSIENT);
@@ -630,10 +627,11 @@ SYSgdkThread(bat *ret, bat *ret2)
 		throw(MAL, "status.getThreads", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	for (i = 0; i < THREADS; i++) {
-		if (GDKthreads[i].pid){
-			if (BUNappend(bn, &GDKthreads[i].tid, false) != GDK_SUCCEED ||
-				BUNappend(b, GDKthreads[i].name? GDKthreads[i].name:"", false) != GDK_SUCCEED)
+	for (i = 1; i <= THREADS; i++) {
+		thr = THRget(i);
+		if (ATOMIC_GET(&thr->pid)){
+			if (BUNappend(bn, &thr->tid, false) != GDK_SUCCEED ||
+				BUNappend(b, thr->name? thr->name:"", false) != GDK_SUCCEED)
 				goto bailout;
 		}
 	}

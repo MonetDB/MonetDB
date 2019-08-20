@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -58,37 +58,6 @@ pseudo(bat *ret, BAT *b, const char *X1, const char *X2, const char *X3) {
 	BBPkeepref(*ret);
 	return 0;
 }
-#if 0
-str
-MDBtoggle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	int b = 0;
-
-	(void) mb;		/* still unused */
-	if (p->argc == 1) {
-		/* Toggle */
-		stk->cmd = stk->cmd ? 0 : 's';
-		cntxt->itrace = cntxt->itrace ? 0 : 's';
-		if (stk->cmd)
-			MDBdelay = 1;	/* wait for real command */
-		if (stk->up)
-			stk->up->cmd = 0;
-		return MAL_SUCCEED;
-	}
-	if (p->argc > 1) {
-		b = *getArgReference_int(stk, p, 1);
-	} else
-		b = stk->cmd;
-	if (b)
-		MDBdelay = 1;	/* wait for real command */
-	MDBstatus(b);
-	stk->cmd = b ? 'n' : 0;
-	if (stk->up)
-		stk->up->cmd = b ? 'n' : 0;
-	cntxt->itrace = b ? 'n' : 0;
-	return MAL_SUCCEED;
-}
-#endif
 
 str
 MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -120,7 +89,7 @@ MDBstartFactory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) stk;
 	(void) p;
-		throw(MAL, "mdb.start", PROGRAM_NYI);
+		throw(MAL, "mdb.start", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 str
@@ -668,7 +637,7 @@ TBL_getdir(void)
 	BAT *b = COLnew(0, TYPE_str, 100, TRANSIENT);
 	int i = 0;
 
-	char *mod_path;
+	const char *mod_path;
 	size_t extlen = strlen(MAL_EXT);
 	size_t len;
 	struct dirent *dent;
@@ -687,7 +656,7 @@ TBL_getdir(void)
 	while (mod_path || dirp) {
 		if (dirp == NULL) {
 			char *cur_dir;
-			char *p;
+			const char *p;
 			size_t l;
 
 			if ((p = strchr(mod_path, PATH_SEP)) != NULL) {
@@ -700,8 +669,7 @@ TBL_getdir(void)
 				BBPreclaim(b);
 				return NULL;
 			}
-			strncpy(cur_dir, mod_path, l);
-			cur_dir[l] = 0;
+			strncpy(cur_dir, mod_path, l + 1); /* including NULL byte */
 			if ((mod_path = p) != NULL) {
 				while (*mod_path == PATH_SEP)
 					mod_path++;

@@ -13,7 +13,6 @@ stdout of test 'MapiClient-dump.SF-905851` in directory 'sql/test/BugDay_2005-10
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:35465/
 # MonetDB/SQL module v2.23.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -126,7 +125,7 @@ CREATE TABLE "sys"."allnewtriples" (
 CREATE INDEX "allnewtriples_object_idx" ON "sys"."allnewtriples" ("object");
 CREATE INDEX "allnewtriples_predicate_idx" ON "sys"."allnewtriples" ("predicate");
 CREATE INDEX "allnewtriples_subject_idx" ON "sys"."allnewtriples" ("subject");
-COPY 7 RECORDS INTO "sys"."allnewtriples" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 7 RECORDS INTO "sys"."allnewtriples" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 1	1	1	1	false
 2	1	1	2	false
 3	1	2	1	false
@@ -140,7 +139,7 @@ CREATE TABLE "sys"."foreign" (
 	"predicate" INTEGER NOT NULL,
 	"object" INTEGER NOT NULL
 );
-COPY 7 RECORDS INTO "sys"."foreign" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 7 RECORDS INTO "sys"."foreign" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 1	1	1	1
 2	2	2	2
 3	1	2	2

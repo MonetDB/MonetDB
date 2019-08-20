@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -50,8 +50,8 @@ SQLParamData(SQLHSTMT StatementHandle,
 
 	/* TODO: implement this function and corresponding behavior */
 
-	/* Function sequence error */
-	addStmtError(stmt, "HY010", NULL, 0);
+	/* Driver does not support this function */
+	addStmtError(stmt, "IM001", NULL, 0);
 
 	return SQL_ERROR;
 }

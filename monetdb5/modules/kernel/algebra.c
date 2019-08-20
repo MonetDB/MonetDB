@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -87,7 +87,7 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 			id++;
 		}
 	}
-	r -> tkey = FALSE;
+	r -> tkey = false;
 	r -> tseqbase = oid_nil;
 	r -> tsorted = BATtordered(gids);
 	r -> trevsorted = BATtrevordered(gids);
@@ -127,7 +127,7 @@ slice(BAT **retval, BAT *b, lng start, lng end)
  */
 
 str
-ALGminany(ptr result, const bat *bid)
+ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 {
 	BAT *b;
 	ptr p;
@@ -142,9 +142,9 @@ ALGminany(ptr result, const bat *bid)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			* (ptr *) result = p = BATmin(b, NULL);
+			* (ptr *) result = p = BATmin_skipnil(b, NULL, *skipnil);
 		} else {
-			p = BATmin(b, result);
+			p = BATmin_skipnil(b, result, *skipnil);
 			assert(p == result);
 		}
 		if (p == NULL)
@@ -155,7 +155,14 @@ ALGminany(ptr result, const bat *bid)
 }
 
 str
-ALGmaxany(ptr result, const bat *bid)
+ALGminany(ptr result, const bat *bid)
+{
+	bit skipnil = TRUE;
+	return ALGminany_skipnil(result, bid, &skipnil);
+}
+
+str
+ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 {
 	BAT *b;
 	ptr p;
@@ -170,9 +177,9 @@ ALGmaxany(ptr result, const bat *bid)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			* (ptr *) result = p = BATmax(b, NULL);
+			* (ptr *) result = p = BATmax_skipnil(b, NULL, *skipnil);
 		} else {
-			p = BATmax(b, result);
+			p = BATmax_skipnil(b, result, *skipnil);
 			assert(p == result);
 		}
 		if (p == NULL)
@@ -180,6 +187,13 @@ ALGmaxany(ptr result, const bat *bid)
 	}
 	BBPunfix(b->batCacheid);
 	return msg;
+}
+
+str
+ALGmaxany(ptr result, const bat *bid)
+{
+	bit skipnil = TRUE;
+	return ALGmaxany_skipnil(result, bid, &skipnil);
 }
 
 str
@@ -334,7 +348,7 @@ static str
 do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 		const bat *slid, const bat *srid,
 		int op, const void *c1, const void *c2, bool li, bool hi,
-		const bit *nil_matches, const lng *estimate,
+		const bit *nil_matches, const bit *not_in, const lng *estimate,
 		gdk_return (*joinfunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
 							   bool, BUN),
 		gdk_return (*thetafunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
@@ -343,7 +357,8 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 							   const void *, const void *, bool, bool, BUN),
 		gdk_return (*rangefunc)(BAT **, BAT **, BAT *, BAT *, BAT *,
 								BAT *, BAT *, bool, bool, BUN),
-		BAT *(*difffunc)(BAT *, BAT *, BAT *, BAT *, bool, BUN),
+		BAT *(*difffunc)(BAT *, BAT *, BAT *, BAT *, bool, bool, BUN),
+		BAT *(*interfunc)(BAT *, BAT *, BAT *, BAT *, bool, BUN),
 		const char *funcname)
 {
 	BAT *left = NULL, *right = NULL, *right2 = NULL;
@@ -367,29 +382,33 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 	else
 		est = (BUN) *estimate;
 
-	err = GDK_EXCEPTION;		/* most likely error now */
+	err = NULL;		/* most likely error now is GDK_EXCEPTION */
 
 	if (thetafunc) {
 		assert(joinfunc == NULL);
 		assert(bandfunc == NULL);
 		assert(rangefunc == NULL);
 		assert(difffunc == NULL);
+		assert(interfunc == NULL);
 		if ((*thetafunc)(&result1, &result2, left, right, candleft, candright, op, *nil_matches, est) != GDK_SUCCEED)
 			goto fail;
 	} else if (joinfunc) {
 		assert(bandfunc == NULL);
 		assert(rangefunc == NULL);
 		assert(difffunc == NULL);
+		assert(interfunc == NULL);
 		result2 = NULL;
 		if ((*joinfunc)(&result1, r2 ? &result2 : NULL, left, right, candleft, candright, *nil_matches, est) != GDK_SUCCEED)
 			goto fail;
 	} else if (bandfunc) {
 		assert(rangefunc == NULL);
 		assert(difffunc == NULL);
+		assert(interfunc == NULL);
 		if ((*bandfunc)(&result1, &result2, left, right, candleft, candright, c1, c2, li, hi, est) != GDK_SUCCEED)
 			goto fail;
 	} else if (rangefunc) {
 		assert(difffunc == NULL);
+		assert(interfunc == NULL);
 		if ((right2 = BATdescriptor(*r2id)) == NULL) {
 			err = SQLSTATE(HY002) RUNTIME_OBJECT_MISSING;
 			goto fail;
@@ -397,9 +416,15 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 		if ((*rangefunc)(&result1, &result2, left, right, right2, candleft, candright, li, hi, est) != GDK_SUCCEED)
 			goto fail;
 		BBPunfix(right2->batCacheid);
+	} else if (difffunc) {
+		assert(r2 == NULL);
+		assert(interfunc == NULL);
+		if ((result1 = (*difffunc)(left, right, candleft, candright, *nil_matches, *not_in, est)) == NULL)
+			goto fail;
+		result2 = NULL;
 	} else {
 		assert(r2 == NULL);
-		if ((result1 = (*difffunc)(left, right, candleft, candright, *nil_matches, est)) == NULL)
+		if ((result1 = (*interfunc)(left, right, candleft, candright, *nil_matches, est)) == NULL)
 			goto fail;
 		result2 = NULL;
 	}
@@ -428,6 +453,8 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 		BBPunfix(candleft->batCacheid);
 	if (candright)
 		BBPunfix(candright->batCacheid);
+	if (err == NULL)
+		throw(MAL, funcname, GDK_EXCEPTION);
 	throw(MAL, funcname, "%s", err);
 }
 
@@ -436,8 +463,8 @@ ALGjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const
 		   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, nil_matches, estimate,
-				   BATjoin, NULL, NULL, NULL, NULL, "algebra.join");
+				   false, false, nil_matches, NULL, estimate,
+				   BATjoin, NULL, NULL, NULL, NULL, NULL, "algebra.join");
 }
 
 str
@@ -445,8 +472,8 @@ ALGleftjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 			   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, nil_matches, estimate,
-				   BATleftjoin, NULL, NULL, NULL, NULL, "algebra.leftjoin");
+				   false, false, nil_matches, NULL, estimate,
+				   BATleftjoin, NULL, NULL, NULL, NULL, NULL, "algebra.leftjoin");
 }
 
 str
@@ -454,8 +481,8 @@ ALGouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, 
 				const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, nil_matches, estimate,
-				   BATouterjoin, NULL, NULL, NULL, NULL, "algebra.outerjoin");
+				   false, false, nil_matches, NULL, estimate,
+				   BATouterjoin, NULL, NULL, NULL, NULL, NULL, "algebra.outerjoin");
 }
 
 str
@@ -463,8 +490,8 @@ ALGsemijoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 			   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, nil_matches, estimate,
-				   BATsemijoin, NULL, NULL, NULL, NULL, "algebra.semijoin");
+				   false, false, nil_matches, NULL, estimate,
+				   BATsemijoin, NULL, NULL, NULL, NULL, NULL, "algebra.semijoin");
 }
 
 str
@@ -472,8 +499,8 @@ ALGthetajoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, 
 				const int *op, const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, *op, NULL, NULL,
-				   false, false, nil_matches, estimate,
-				   NULL, BATthetajoin, NULL, NULL, NULL, "algebra.thetajoin");
+				   false, false, nil_matches, NULL, estimate,
+				   NULL, BATthetajoin, NULL, NULL, NULL, NULL, "algebra.thetajoin");
 }
 
 str
@@ -482,25 +509,25 @@ ALGbandjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 			   const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, c1, c2,
-				   *li, *hi, NULL, estimate,
-				   NULL, NULL, BATbandjoin, NULL, NULL, "algebra.bandjoin");
+				   *li, *hi, NULL, NULL, estimate,
+				   NULL, NULL, BATbandjoin, NULL, NULL, NULL, "algebra.bandjoin");
 }
 
 str
 ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid, const bit *li, const bit *hi, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rlid, rhid, slid, srid, 0, NULL, NULL,
-				   *li, *hi, NULL, estimate,
-				   NULL, NULL, NULL, BATrangejoin, NULL, "algebra.rangejoin");
+				   *li, *hi, NULL, NULL, estimate,
+				   NULL, NULL, NULL, BATrangejoin, NULL, NULL, "algebra.rangejoin");
 }
 
 str
 ALGdifference(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
-			   const bit *nil_matches, const lng *estimate)
+			  const bit *nil_matches, const bit *not_in, const lng *estimate)
 {
 	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, nil_matches, estimate,
-				   NULL, NULL, NULL, NULL, BATdiff, "algebra.difference");
+				   false, false, nil_matches, not_in, estimate,
+				   NULL, NULL, NULL, NULL, BATdiff, NULL, "algebra.difference");
 }
 
 str
@@ -508,8 +535,8 @@ ALGintersect(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat
 			   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, nil_matches, estimate,
-				   NULL, NULL, NULL, NULL, BATintersect, "algebra.intersect");
+				   false, false, nil_matches, NULL, estimate,
+				   NULL, NULL, NULL, NULL, NULL, BATintersect, "algebra.intersect");
 }
 
 /* algebra.firstn(b:bat[:any],
@@ -517,6 +544,7 @@ ALGintersect(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat
  *                [ g:bat[:oid], ] ]
  *                n:lng,
  *                asc:bit,
+ *                nilslast:bit,
  *                distinct:bit)
  * returns :bat[:oid] [ , :bat[:oid] ]
  */
@@ -528,16 +556,16 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b, *s = NULL, *g = NULL;
 	BAT *bn, *gn;
 	lng n;
-	bit asc, distinct;
+	bit asc, nilslast, distinct;
 	gdk_return rc;
 
 	(void) cntxt;
 	(void) mb;
 
 	assert(pci->retc == 1 || pci->retc == 2);
-	assert(pci->argc - pci->retc >= 4 && pci->argc - pci->retc <= 6);
+	assert(pci->argc - pci->retc >= 5 && pci->argc - pci->retc <= 7);
 
-	n = * getArgReference_lng(stk, pci, pci->argc - 3);
+	n = * getArgReference_lng(stk, pci, pci->argc - 4);
 	if (n < 0 || (lng) n >= (lng) BUN_MAX)
 		throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
 	ret1 = getArgReference_bat(stk, pci, 0);
@@ -546,13 +574,13 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = *getArgReference_bat(stk, pci, pci->retc);
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "algebra.firstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (pci->argc - pci->retc > 4) {
+	if (pci->argc - pci->retc > 5) {
 		sid = *getArgReference_bat(stk, pci, pci->retc + 1);
 		if ((s = BATdescriptor(sid)) == NULL) {
 			BBPunfix(bid);
 			throw(MAL, "algebra.firstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		if (pci->argc - pci->retc > 5) {
+		if (pci->argc - pci->retc > 6) {
 			gid = *getArgReference_bat(stk, pci, pci->retc + 2);
 			if ((g = BATdescriptor(gid)) == NULL) {
 				BBPunfix(bid);
@@ -561,9 +589,10 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	asc = * getArgReference_bit(stk, pci, pci->argc - 2);
+	asc = * getArgReference_bit(stk, pci, pci->argc - 3);
+	nilslast = * getArgReference_bit(stk, pci, pci->argc - 2);
 	distinct = * getArgReference_bit(stk, pci, pci->argc - 1);
-	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n, asc, distinct);
+	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n, asc, nilslast, distinct);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -687,7 +716,7 @@ ALGprojection(bat *result, const bat *lid, const bat *rid)
 }
 
 str
-ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable)
+ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *nilslast, const bit *stable)
 {
 	BAT *bn = NULL, *on = NULL, *gn = NULL;
 	BAT *b = NULL, *o = NULL, *g = NULL;
@@ -707,7 +736,7 @@ ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *orde
 	if (BATsort(result ? &bn : NULL,
 				   norder ? &on : NULL,
 				   ngroup ? &gn : NULL,
-				   b, o, g, *reverse, *stable) != GDK_SUCCEED) {
+				b, o, g, *reverse, *nilslast, *stable) != GDK_SUCCEED) {
 		if (o)
 			BBPunfix(o->batCacheid);
 		if (g)
@@ -730,51 +759,51 @@ ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *orde
 }
 
 str
-ALGsort32(bat *result, bat *norder, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable)
+ALGsort32(bat *result, bat *norder, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *nilslast, const bit *stable)
 {
-	return ALGsort33(result, norder, NULL, bid, order, group, reverse, stable);
+	return ALGsort33(result, norder, NULL, bid, order, group, reverse, nilslast, stable);
 }
 
 str
-ALGsort31(bat *result, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *stable)
+ALGsort31(bat *result, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *nilslast, const bit *stable)
 {
-	return ALGsort33(result, NULL, NULL, bid, order, group, reverse, stable);
+	return ALGsort33(result, NULL, NULL, bid, order, group, reverse, nilslast, stable);
 }
 
 str
-ALGsort23(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bit *reverse, const bit *stable)
+ALGsort23(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bit *reverse, const bit *nilslast, const bit *stable)
 {
-	return ALGsort33(result, norder, ngroup, bid, order, NULL, reverse, stable);
+	return ALGsort33(result, norder, ngroup, bid, order, NULL, reverse, nilslast, stable);
 }
 
 str
-ALGsort22(bat *result, bat *norder, const bat *bid, const bat *order, const bit *reverse, const bit *stable)
+ALGsort22(bat *result, bat *norder, const bat *bid, const bat *order, const bit *reverse, const bit *nilslast, const bit *stable)
 {
-	return ALGsort33(result, norder, NULL, bid, order, NULL, reverse, stable);
+	return ALGsort33(result, norder, NULL, bid, order, NULL, reverse, nilslast, stable);
 }
 
 str
-ALGsort21(bat *result, const bat *bid, const bat *order, const bit *reverse, const bit *stable)
+ALGsort21(bat *result, const bat *bid, const bat *order, const bit *reverse, const bit *nilslast, const bit *stable)
 {
-	return ALGsort33(result, NULL, NULL, bid, order, NULL, reverse, stable);
+	return ALGsort33(result, NULL, NULL, bid, order, NULL, reverse, nilslast, stable);
 }
 
 str
-ALGsort13(bat *result, bat *norder, bat *ngroup, const bat *bid, const bit *reverse, const bit *stable)
+ALGsort13(bat *result, bat *norder, bat *ngroup, const bat *bid, const bit *reverse, const bit *nilslast, const bit *stable)
 {
-	return ALGsort33(result, norder, ngroup, bid, NULL, NULL, reverse, stable);
+	return ALGsort33(result, norder, ngroup, bid, NULL, NULL, reverse, nilslast, stable);
 }
 
 str
-ALGsort12(bat *result, bat *norder, const bat *bid, const bit *reverse, const bit *stable)
+ALGsort12(bat *result, bat *norder, const bat *bid, const bit *reverse, const bit *nilslast, const bit *stable)
 {
-	return ALGsort33(result, norder, NULL, bid, NULL, NULL, reverse, stable);
+	return ALGsort33(result, norder, NULL, bid, NULL, NULL, reverse, nilslast, stable);
 }
 
 str
-ALGsort11(bat *result, const bat *bid, const bit *reverse, const bit *stable)
+ALGsort11(bat *result, const bat *bid, const bit *reverse, const bit *nilslast, const bit *stable)
 {
-	return ALGsort33(result, NULL, NULL, bid, NULL, NULL, reverse, stable);
+	return ALGsort33(result, NULL, NULL, bid, NULL, NULL, reverse, nilslast, stable);
 }
 
 str
@@ -1089,7 +1118,7 @@ str ALGreuse(bat *ret, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.reuse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if( b->batPersistence != TRANSIENT || b->batRestricted != BAT_WRITE){
+	if( !b->batTransient || b->batRestricted != BAT_WRITE){
 		if( ATOMvarsized(b->ttype) ){
 			bn= BATwcopy(b);
 			if (bn == NULL) {
@@ -1103,8 +1132,8 @@ str ALGreuse(bat *ret, const bat *bid)
 				throw(MAL, "algebra.reuse", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			BATsetcount(bn,BATcount(b));
-			bn->tsorted = FALSE;
-			bn->trevsorted = FALSE;
+			bn->tsorted = false;
+			bn->trevsorted = false;
 			BATkey(bn, false);
 		}
 		BBPkeepref(*ret= bn->batCacheid);

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* Manual config.h. needed for win32 .  */
@@ -80,9 +80,6 @@
 /* Define if building universal (internal helper macro) */
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
 
-/* location where binaries are installed */
-/* #undef BINDIR */
-
 /* read-only architecture-independent data */
 #define DATA_DIR PREFIX "\\share"
 
@@ -94,6 +91,9 @@
 
 /* architecture-dependent files */
 #define EXEC_PREFIX PREFIX
+
+/* location where binaries are installed */
+#define BINDIR EXEC_PREFIX "\\bin"
 
 /* Define to nothing if C supports flexible array members, and to 1 if it does
    not. That way, with a declaration like `struct s { int n; double
@@ -111,9 +111,6 @@
 #define HAVE_ASCTIME_R3 1
 /* there is something very similar to asctime_r on Windows: */
 #define asctime_r(t,b,s)	asctime_s(b,s,t)
-
-/* Define to 1 if you have the <atomic_ops.h> header file. */
-/* #undef HAVE_ATOMIC_OPS_H */
 
 /* Define to 1 if you have the `backtrace' function. */
 /* #undef HAVE_BACKTRACE */
@@ -138,9 +135,6 @@
 
 /* Define if you have the CommonCrypto library */
 /* #undef HAVE_COMMONCRYPTO */
-
-/* If the console should be used */
-#define HAVE_CONSOLE 1
 
 /* Define to 1 if you have the `ctime_r' function. */
 #define HAVE_CTIME_R 1
@@ -248,9 +242,6 @@
 /* Define to 1 if you have the <langinfo.h> header file. */
 /* #undef HAVE_LANGINFO_H */
 
-/* Define if you have the atomic_ops library */
-/* #undef HAVE_LIBATOMIC_OPS */
-
 /* Define if you have the bz2 library */
 /* #undef HAVE_LIBBZ2 */
 
@@ -273,7 +264,7 @@
 /* #undef HAVE_LIBPTHREAD */
 
 /* Define if we can link to python */
-/* #undef HAVE_LIBPY */
+/* #undef HAVE_LIBPY2 */
 
 /* Define if we can link to python */
 /* #undef HAVE_LIBPY3 */
@@ -443,6 +434,11 @@
 
 /* Define if you have the SQLGetPrivateProfileString function */
 #define HAVE_SQLGETPRIVATEPROFILESTRING 1
+
+/* Define to 1 if stdatomic.h conforms to C11. */
+#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 1800)
+#define HAVE_STDATOMIC_H 1
+#endif
 
 /* Define to 1 if stdbool.h conforms to C99. */
 #define HAVE_STDBOOL_H 1
@@ -642,7 +638,7 @@
 #define MONETDB5_PASSWDHASH_TOKEN SHA512
 
 /* Release name or "unreleased" */
-#define MONETDB_RELEASE "unreleased"
+/* #define MONETDB_RELEASE "unreleased" */
 
 /* Define if you do not want assertions */
 /* #undef NDEBUG */
@@ -666,7 +662,7 @@
 #define PACKAGE_URL "https://www.monetdb.org/"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "11.30.0"
+#define PACKAGE_VERSION "11.34.0"
 
 /* Path separator */
 #define PATH_SEP ';'
@@ -834,6 +830,8 @@
 #endif
 #endif
 
+#define _Noreturn __declspec(noreturn)
+
 /* Define to `long int' if <sys/types.h> does not define. */
 /* #undef off_t */
 
@@ -877,6 +875,16 @@ c99_snprintf(char *outBuf, size_t size, const char *format, ...)
 }
 #endif
 
+static inline char *
+stpcpy(char *restrict dst, const char *restrict src)
+{
+	size_t i;
+	for (i = 0; src[i]; i++)
+		dst[i] = src[i];
+	dst[i] = 0;
+	return dst + i;
+}
+
 /* type used by connect */
 #define socklen_t int
 
@@ -910,5 +918,6 @@ typedef __uint128_t uhge;
 
 #define PROMPT1		"\001\001\n"	/* prompt: ready for new query */
 #define PROMPT2		"\001\002\n"	/* prompt: more data needed */
+#define PROMPT3		"\001\003\n"	/* prompt: get file content */
 
 #endif /* _SEEN_MONETDB_CONFIG_H */

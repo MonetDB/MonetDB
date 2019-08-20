@@ -19,7 +19,6 @@ stdout of test 'negative_oid_crash.Bug-3667` in directory 'sql/test/BugTracker-2
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 18:39:12 >  
 # 18:39:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18114" "--port=30454"

@@ -13,7 +13,6 @@ stdout of test 'zones` in directory 'sql/test` itself:
 # Listening for connection requests on mapi:monetdb://aquarius.ins.cwi.nl:34832/
 # MonetDB/SQL module v2.21.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -109,7 +108,7 @@ Ready.
 #    set z1 = sin(radians(pdec));
 #select count(S.objID) 
 #from GetNearbyObjects(193.75, 1.48, 0.1) as S;
-% .L7 # table_name
+% .L6 # table_name
 % L6 # name
 % bigint # type
 % 1 # length
@@ -142,8 +141,8 @@ Ready.
 #        return ob;
 #end;
 #select fGetNearestObjIdAllEq(193.75,1.48,0.1) - nearest;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 0	]

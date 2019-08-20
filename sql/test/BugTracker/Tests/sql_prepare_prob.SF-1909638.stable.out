@@ -13,7 +13,6 @@ stdout of test 'sql_prepare_prob.SF-1909638` in directory 'sql/test/BugTracker` 
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:36740/
 # MonetDB/SQL module v2.23.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

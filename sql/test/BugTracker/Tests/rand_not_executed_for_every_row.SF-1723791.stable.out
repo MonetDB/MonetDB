@@ -11,7 +11,6 @@ stdout of test 'rand_not_executed_for_every_row.SF-1723791` in directory 'sql/te
 # dbname:mTests_src_test_BugTracker
 # Visit http://monetdb.cwi.nl/ for further information
 
-Ready.
 
 
 # 23:24:26 >  
@@ -32,7 +31,7 @@ Ready.
 #	(select rand() as r, nr from nr) a,
 #	(select rand() as r, nr from nr) b
 #	where a.r = b.r;
-% .L12 # table_name
+% .L11 # table_name
 % L11 # name
 % bigint # type
 % 1 # length

@@ -2,7 +2,7 @@
 .. License, v. 2.0.  If a copy of the MPL was not distributed with this
 .. file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ..
-.. Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+.. Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 .. This document is written in reStructuredText (see
    http://docutils.sourceforge.net/ for more information).
@@ -183,7 +183,7 @@ compiler uses to determine which files to compile.  Python can be
 downloaded from http://www.python.org/.  Just download and install the
 Windows binary distribution.
 
-.. Say something about pyintegration.
+.. Say something about py2integration.
 
 Note that you can use either or both Python2 and Python3, and on 64
 bit architectures, either the 32 bit or 64 bit version of Python.  All
@@ -631,24 +631,6 @@ with the extra parameter ``HAVE_LIBBZ2=1``.
 
 __ http://www.bzip.org/
 
-Libatomic_ops
--------------
-
-`Atomic Ops`__ is a library that provides semi-portable access to
-hardware-provided atomic memory update operations on a number of
-architectures.  We optionally uses this to implement thread-safe
-access to a number of variables and for the implementation of locks.
-
-To install, it suffices to copy the file ``src\atomic_ops.h`` and the
-folder ``src\atomic_ops`` to the installation location in
-e.g. ``C:\Libraries``.
-
-Fix the ``LIBATOMIC_OPS`` definition in ``NT\rules.msc`` so that it
-refers to the location where you installed the header files and call
-``nmake`` with the extra parameter ``HAVE_ATOMIC_OPS=1``.
-
-__ https://github.com/ivmai/libatomic_ops
-
 Build Environment
 =================
 
@@ -709,13 +691,12 @@ Studio Tools`` -> ``Visual Studio x64 Win64 Command Prompt (2010)``
 (this is for a 64-bit build on a 64-bit version of the operating
 system).
 
-When using the Intel compiler, you also need to set the ``CC`` and
-``CXX`` variables::
+When using the Intel compiler, you also need to set the ``CC``
+variable::
 
  set CC=icl -Qstd=c99 -GR- -Qsafeseh-
- set CXX=icl -Qstd=c99 -GR- -Qsafeseh-
 
-(These are the values for the 10.1 and 11.1 versions, for 9.1 replace
+(This is the value for the 10.1 and 11.1 versions, for 9.1 replace
 ``-Qstd=c99`` with ``-Qc99``.)
 
 Internal Variables
@@ -805,7 +786,7 @@ The contents of the file referred to with the ``MAKE_INCLUDEFILE``
 parameter may contain something like::
 
  bits=32
-  LIBPCRE=C:\Program Files\PCRE
+ LIBPCRE=C:\Program Files\PCRE
  LIBICONV=C:\Libraries\iconv-1.11.win32
  LIBZLIB=C:\Libraries\zlib-1.2.8.win32
  LIBXML2=C:\Libraries\libxml2-2.9.2.win32
@@ -813,50 +794,24 @@ parameter may contain something like::
 Building Installers
 ~~~~~~~~~~~~~~~~~~~
 
-Installers can be built either using the full-blown Visual Studio user
-interface or on the command line.  To use the user interface, open one
-or more of the files ``MonetDB5-SQL-Installer.sln``,
-``MonetDB-ODBC-Driver.sln``, and ``MonetDB5-Geom-Module.sln`` in the
-installation folder and select ``Build`` -> ``Build Solution``.  To use
-the command line, execute one or more of the commands in the
-installation folder::
+The installers are built using the WiX Toolset.  The WiX Toolset can
+be installed using Chocolatey.
 
- devenv MonetDB5-SQL-Installer.sln /build
- devenv MonetDB-ODBC-Driver.sln /build
- devenv MonetDB5-Geom-Module.sln /build
+The Python scripts ``mksqlwxs.py`` and ``mkodbcwxs.py`` in the ``NT``
+subdirectory are used to create the files
+``MonetDB5-SQL-Installer.wxs`` and ``MonetDB-ODBC-Installer.wxs``.
+This happens as part of the normal build process.
 
-In both cases, use the solutions (``.sln`` files) that are
-appropriate.
+These files then need to be processed using the ``candle`` command
+from the WiX Toolset::
 
-There is an annoying bug in Visual Studio on Windows64 that affects
-the MonetDB5-Geom-Module installer.  The installer contains code to
-check the registry to find out where MonetDB5/SQL is installed.  The
-bug is that the 64 bit installer will check the 32-bit section of the
-registry.  The code can be fixed by editing the generated installer
-(``.msi`` file) using e.g. the program ``orca`` from Microsoft.  Open
-the installer in ``orca`` and locate the table ``RegLocator``.  In the
-Type column, change the value from ``2`` to ``18`` and save the file.
-Alternatively, use the following Python script to fix the ``.msi``
-file::
+  candle.exe -nologo -arch x64 MonetDB5-SQL-Installer.wxs
 
- # Fix a .msi (Windows Installer) file for a 64-bit registry search.
- # Microsoft refuses to fix a bug in Visual Studio so that for a 64-bit
- # build, the registry search will look in the 32-bit part of the
- # registry instead of the 64-bit part of the registry.  This script
- # fixes the .msi to look in the correct part.
+Use ``-arch x86`` for 32 bit Windows.
 
- import msilib
- import sys
- import glob
+This command produces a file ``MonetDB5-SQL-Installer.wixobj`` which
+needs to be processed with the ``light`` command from the toolset::
 
- def fixmsi(f):
-     db = msilib.OpenDatabase(f, msilib.MSIDBOPEN_DIRECT)
-     v = db.OpenView('UPDATE RegLocator SET Type = 18 WHERE Type = 2')
-     v.Execute(None)
-     v.Close()
-     db.Commit()
+  light.exe -nologo -sice:ICO03 -sice:ICE60 -sice:ICE82 -ext WixUIExtension MonetDB5-SQL-Installer.wixobj
 
- if __name__ == '__main__':
-     for f in sys.argv[1:]:
-	 for g in glob.glob(f):
-	     fixmsi(g)
+The same for the ODBC driver.

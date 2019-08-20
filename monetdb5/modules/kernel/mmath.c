@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -20,6 +20,7 @@
 #include "monetdb_config.h"
 #include "mmath.h"
 #include <fenv.h>
+#include "mmath_private.h"
 #ifndef FE_INVALID
 #define FE_INVALID			0
 #endif
@@ -33,6 +34,18 @@
 #define cot(x)				(1 / tan(x))
 #define radians(x)			((x) * 3.14159265358979323846 / 180.0)
 #define degrees(x)			((x) * 180.0 / 3.14159265358979323846)
+
+double
+logbs(double x, double base)
+{
+	return log(x) / log(base);
+}
+
+float
+logbsf(float x, float base)
+{
+	return logf(x) / logf(base);
+}
 
 #define unopbaseM5(NAME, FUNC, TYPE)								\
 str																	\
@@ -100,16 +113,16 @@ MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 	return MAL_SUCCEED;												\
 }
 
-#define unopM5NOT(NAME, FUNC)					\
-str												\
-MATHunary##NAME##dbl(dbl *res , const dbl *a)	\
-{												\
-	throw(MAL, "mmath." #FUNC, PROGRAM_NYI);	\
-}												\
-str												\
-MATHunary##NAME##flt(flt *res , const flt *a)	\
-{												\
-	throw(MAL, "mmath." #FUNC, PROGRAM_NYI);	\
+#define unopM5NOT(NAME, FUNC)									\
+str																\
+MATHunary##NAME##dbl(dbl *res , const dbl *a)					\
+{																\
+	throw(MAL, "mmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
+}																\
+str																\
+MATHunary##NAME##flt(flt *res , const flt *a)					\
+{																\
+	throw(MAL, "mmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
 }
 
 #define binopM5(NAME, FUNC)						\
@@ -160,6 +173,9 @@ unopM5(_TANH,tanh)
 unopM5(_EXP,exp)
 unopM5(_LOG,log)
 unopM5(_LOG10,log10)
+unopM5(_LOG2,log2)
+
+binopM5(_LOG,logbs)
 
 binopM5(_POW,pow)
 unopM5(_SQRT,sqrt)
@@ -219,6 +235,20 @@ MATHunary_FINITE(bit *res, const dbl *a)
 	return MAL_SUCCEED;
 }
 
+#include "xoshiro256starstar.h"
+
+/* global pseudo random generator state */
+static random_state_engine mmath_rse;
+/* serialize access to state */
+static MT_Lock mmath_rse_lock = MT_LOCK_INITIALIZER("mmath_rse_lock");
+
+str
+MATHprelude(void *ret)
+{
+	(void) ret;
+	init_random_state_engine(mmath_rse, (uint64_t) GDKusec());
+	return MAL_SUCCEED;
+}
 
 str
 MATHrandint(int *res)
@@ -226,7 +256,9 @@ MATHrandint(int *res)
 #ifdef STATIC_CODE_ANALYSIS
 	*res = 0;
 #else
-	*res = rand();
+	MT_lock_set(&mmath_rse_lock);
+	*res = (int) (next(mmath_rse) >> 33);
+	MT_lock_unset(&mmath_rse_lock);
 #endif
 	return MAL_SUCCEED;
 }
@@ -238,7 +270,9 @@ MATHrandintarg(int *res, const int *dummy)
 #ifdef STATIC_CODE_ANALYSIS
 	*res = 0;
 #else
-	*res = rand();
+	MT_lock_set(&mmath_rse_lock);
+	*res = (int) (next(mmath_rse) >> 33);
+	MT_lock_unset(&mmath_rse_lock);
 #endif
 	return MAL_SUCCEED;
 }
@@ -247,18 +281,22 @@ str
 MATHsrandint(void *ret, const int *seed)
 {
 	(void) ret;
-	srand(*seed);
+	MT_lock_set(&mmath_rse_lock);
+	init_random_state_engine(mmath_rse, (uint64_t) *seed);
+	MT_lock_unset(&mmath_rse_lock);
 	return MAL_SUCCEED;
 }
 
 str
 MATHsqlrandint(int *res, const int *seed)
 {
-	srand(*seed);
 #ifdef STATIC_CODE_ANALYSIS
 	*res = 0;
 #else
-	*res = rand();
+	MT_lock_set(&mmath_rse_lock);
+	init_random_state_engine(mmath_rse, (uint64_t) *seed);
+	*res = (int) (next(mmath_rse) >> 33);
+	MT_lock_unset(&mmath_rse_lock);
 #endif
 	return MAL_SUCCEED;
 }

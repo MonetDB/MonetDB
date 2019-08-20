@@ -45,10 +45,8 @@ SELECT v, convert(v, Blob) from T_hugeint; -- conversion not supported
 SELECT v, convert(v, date) from T_hugeint; -- conversion not supported
 SELECT v, convert(v, time) from T_hugeint; -- conversion not supported
 SELECT v, convert(v, timestamp) from T_hugeint; -- conversion not supported
-SELECT v, convert(v, time with timezone) from T_hugeint; -- data type not supported (parse error)
-SELECT v, convert(v, timestamp with timezone) from T_hugeint; -- data type not supported (parse error)
-SELECT v, convert(v, timetz) from T_hugeint; -- conversion not supported
-SELECT v, convert(v, timestamptz) from T_hugeint; -- conversion not supported
+SELECT v, convert(v, time with time zone) from T_hugeint; -- conversion not supported
+SELECT v, convert(v, timestamp with time zone) from T_hugeint; -- conversion not supported
 
 -- test cast()
 SELECT v, cast(v as boolean) from T_hugeint;
@@ -88,10 +86,8 @@ SELECT v, cast(v as Blob) from T_hugeint; -- conversion not supported
 SELECT v, cast(v as date) from T_hugeint; -- conversion not supported
 SELECT v, cast(v as time) from T_hugeint; -- conversion not supported
 SELECT v, cast(v as timestamp) from T_hugeint; -- conversion not supported
-SELECT v, cast(v as time with timezone) from T_hugeint; -- data type not supported (parse error)
-SELECT v, cast(v as timestamp with timezone) from T_hugeint; -- data type not supported (parse error)
-SELECT v, cast(v as timetz) from T_hugeint; -- conversion not supported
-SELECT v, cast(v as timestamptz) from T_hugeint; -- conversion not supported
+SELECT v, cast(v as time with time zone) from T_hugeint; -- conversion not supported
+SELECT v, cast(v as timestamp with time zone) from T_hugeint; -- conversion not supported
 
 DROP TABLE T_hugeint;
 

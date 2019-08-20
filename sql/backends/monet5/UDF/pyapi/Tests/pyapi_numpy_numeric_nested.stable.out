@@ -19,7 +19,6 @@ stdout of test 'pyapi_numpy_numeric_nested` in directory 'sql/backends/monet5/UD
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 00:29:50 >  
 # 00:29:50 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30800" "--port=32717"

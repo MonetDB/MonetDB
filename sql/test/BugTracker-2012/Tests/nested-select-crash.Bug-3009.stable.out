@@ -17,7 +17,6 @@ stdout of test 'nested-select-crash.Bug-3009` in directory 'sql/test/BugTracker-
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:07:02 >  
 # 16:07:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=31869"

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* author: M Kersten
@@ -236,8 +236,10 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				
 				/* inject the complete sub-path */
 #ifdef DEBUG_OPT_PROJECTIONPATH
-				fprintf(stderr,"#inject ");
-				fprintInstruction(stderr,mb, 0, r, LIST_MAL_ALL);
+				if (r) {
+					fprintf(stderr,"#inject ");
+					fprintInstruction(stderr,mb, 0, r, LIST_MAL_ALL);
+				}
 #endif
 				if ( getFunctionId(p) == projectionRef){
 					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== projectionRef  || getFunctionId(r)== projectionpathRef) ){

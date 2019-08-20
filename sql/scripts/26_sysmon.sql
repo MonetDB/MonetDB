@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 -- System monitoring
 
@@ -19,8 +19,10 @@ returns table(
 	query string
 )
 external name sql.sysmon_queue;
+grant execute on function sys.queue to public;
 
 create view sys.queue as select * from sys.queue();
+grant select on sys.queue to public;
 
 -- operations to manipulate the state of havoc queries
 create procedure sys.pause(tag int)

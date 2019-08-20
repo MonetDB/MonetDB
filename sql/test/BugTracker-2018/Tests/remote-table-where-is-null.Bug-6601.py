@@ -25,6 +25,8 @@ def freeport():
 
 
 farm_dir = tempfile.mkdtemp()
+os.mkdir(os.path.join(farm_dir, 'node1'))
+os.mkdir(os.path.join(farm_dir, 'node2'))
 
 node1_port = freeport()
 node1_proc = process.server(mapiport=node1_port, dbname='node1', dbfarm=os.path.join(farm_dir, 'node1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
@@ -71,7 +73,7 @@ out, err = node1_proc.communicate()
 sys.stdout.write(out)
 sys.stderr.write(err)
 
-out, err = node1_proc.communicate()
+out, err = node2_proc.communicate()
 sys.stdout.write(out)
 sys.stderr.write(err)
 

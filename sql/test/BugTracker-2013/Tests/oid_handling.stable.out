@@ -19,7 +19,6 @@ stdout of test 'oid_handling` in directory 'sql/test/BugTracker-2013` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 20:25:02 >  
 # 20:25:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26643" "--port=34073"

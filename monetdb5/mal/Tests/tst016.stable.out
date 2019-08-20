@@ -23,7 +23,6 @@ stdout of test 'tst016` in directory 'monetdb5/mal` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 11:22:45 >  
 # 11:22:45 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12237" "--port=31044"
@@ -31,10 +30,7 @@ Ready.
 
 #io.print(a);
 [ "Dit is een test\n" ]
-#io.print(b);
-[ "(17: 44 69 74 20 69 73 20 65 65 6E 20 74 65 73 74 0A 00)"	]
-#io.print(c);
-[ "Dit is een test\n" ]
+[ "4469742069732065656E20746573740A00"	]
 
 # 20:08:53 >  
 # 20:08:53 >  Done.

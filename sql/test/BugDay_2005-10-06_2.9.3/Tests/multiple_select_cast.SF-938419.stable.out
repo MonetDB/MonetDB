@@ -11,7 +11,6 @@ stdout of test 'multiple_select_cast.SF-938419` in directory 'sql/test/BugDay_20
 # Visit http://monetdb.cwi.nl/ for further information.
 
 
-Ready.
 
 
 #select cast(0 as integer);

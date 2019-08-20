@@ -18,7 +18,6 @@ stdout of test 'tuples_INTERSECT_vs_count_intersect_differs.Bug-2659` in directo
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -381,7 +380,7 @@ Ready.
 [ 30,	30,	30,	30,	10	]
 #select count(*) from (select * from T intersect select * from T ) as cnt;
 % sys.L15 # table_name
-% L14 # name
+% L15 # name
 % bigint # type
 % 3 # length
 [ 102	]

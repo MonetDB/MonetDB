@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 sed '/^$/q' $0			# copy copyright from this file
 
@@ -104,6 +104,14 @@ command avg(b:bat[:${tp}], g:bat[:oid], e:bat[:any_1]) (:bat[:dbl],:bat[:lng])
 address AGGRavg23_dbl
 comment "Grouped tail average on ${tp}, also returns count";
 
+command avg(b:bat[:${tp}], g:bat[:oid], e:bat[:any_1], scale:int):bat[:dbl]
+address AGGRavg14_dbl
+comment "Grouped tail average on ${tp}";
+
+command avg(b:bat[:${tp}], g:bat[:oid], e:bat[:any_1], scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRavg24_dbl
+comment "Grouped tail average on ${tp}, also returns count";
+
 command subavg(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubavg1_dbl
 comment "Grouped average aggregate";
@@ -118,6 +126,22 @@ comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2cand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+
+command subavg(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1s_dbl
+comment "Grouped average aggregate";
+
+command subavg(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1scand_dbl
+comment "Grouped average aggregate with candidates list";
+
+command subavg(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2s_dbl
+comment "Grouped average aggregate, also returns count";
+
+command subavg(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2scand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
 EOF

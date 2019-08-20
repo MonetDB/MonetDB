@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -35,30 +35,31 @@ rel_trans(mvc *sql, int trans_type, int nr, char *name)
 }
 
 sql_rel *
-rel_transactions(mvc *sql, symbol *s)
+rel_transactions(sql_query *query, symbol *s)
 {
+	mvc *sql = query->sql;
 	sql_rel *ret = NULL;
 
 	switch (s->token) {
 	case TR_RELEASE:
-		ret = rel_trans(sql, DDL_RELEASE, 0, s->data.sval);
+		ret = rel_trans(sql, ddl_release, 0, s->data.sval);
 		break;
 	case TR_COMMIT:
 		assert(s->type == type_int);
-		ret = rel_trans(sql, DDL_COMMIT, s->data.i_val, NULL);
+		ret = rel_trans(sql, ddl_commit, s->data.i_val, NULL);
 		break;
 	case TR_SAVEPOINT:
-		ret = rel_trans(sql, DDL_COMMIT, 0, s->data.sval);
+		ret = rel_trans(sql, ddl_commit, 0, s->data.sval);
 		break;
 	case TR_ROLLBACK: {
 		dnode *n = s->data.lval->h;
 		assert(n->type == type_int);
-		ret= rel_trans(sql, DDL_ROLLBACK, n->data.i_val, n->next->data.sval);
+		ret= rel_trans(sql, ddl_rollback, n->data.i_val, n->next->data.sval);
 	} 	break;
 	case TR_START:
 	case TR_MODE:
 		assert(s->type == type_int);
-		ret = rel_trans(sql, DDL_TRANS, s->data.i_val, NULL);
+		ret = rel_trans(sql, ddl_trans, s->data.i_val, NULL);
 		break;
 	default:
 		return sql_error(sql, 01, SQLSTATE(42000) "Transaction unknown Symbol(%p)->token = %s", s, token2string(s->token));

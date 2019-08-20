@@ -1,59 +1,22 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Thu Jun  7 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
-- Removed deprecated table producing system functions:
-  sys.dependencies_columns_on_functions()
-  sys.dependencies_columns_on_indexes()
-  sys.dependencies_columns_on_keys()
-  sys.dependencies_columns_on_triggers()
-  sys.dependencies_columns_on_views()
-  sys.dependencies_functions_on_functions()
-  sys.dependencies_functions_on_triggers()
-  sys.dependencies_keys_on_foreignkeys()
-  sys.dependencies_owners_on_schemas()
-  sys.dependencies_schemas_on_users()
-  sys.dependencies_tables_on_foreignkeys()
-  sys.dependencies_tables_on_functions()
-  sys.dependencies_tables_on_indexes()
-  sys.dependencies_tables_on_triggers()
-  sys.dependencies_tables_on_views()
-  sys.dependencies_views_on_functions()
-  sys.dependencies_views_on_triggers()
-  They are replaced by new system dependency_* views:
-  sys.dependency_args_on_types
-  sys.dependency_columns_on_functions
-  sys.dependency_columns_on_indexes
-  sys.dependency_columns_on_keys
-  sys.dependency_columns_on_procedures
-  sys.dependency_columns_on_triggers
-  sys.dependency_columns_on_types
-  sys.dependency_columns_on_views
-  sys.dependency_functions_on_functions
-  sys.dependency_functions_on_procedures
-  sys.dependency_functions_on_triggers
-  sys.dependency_functions_on_types
-  sys.dependency_functions_on_views
-  sys.dependency_keys_on_foreignkeys
-  sys.dependency_owners_on_schemas
-  sys.dependency_schemas_on_users
-  sys.dependency_tables_on_foreignkeys
-  sys.dependency_tables_on_functions
-  sys.dependency_tables_on_indexes
-  sys.dependency_tables_on_procedures
-  sys.dependency_tables_on_triggers
-  sys.dependency_tables_on_views
-  sys.dependency_views_on_functions
-  sys.dependency_views_on_procedures
-  sys.dependency_views_on_views
+* Fri Jul 12 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Added sys.deltas ("schema" string, "table" string, "column" string)
+  returns table ("values" bigint) system function which returns a single
+  column with 6 values: a flag indicating if the column's upper table is
+  cleared or not, the count of the RDONLY, RD_INS and RD_UPD_ID deltas
+  of the column itself, the number of deleted values of the column's
+  table, as well as the level of the current transaction in the
+  transaction level tree. It should be used for debugging purposes only.
 
-* Tue Mar 13 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Implemented group_concat(X,Y) aggregate function which also
-  concatenates a column of strings X, but using a supplied string Y as
-  the separator. This function is also a SQL extension.
+* Mon May  6 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Added "VALUES row_list" statement as a top SQL projection statement.
 
-* Fri Mar  9 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Implemented group_concat(X) aggregate function which concatenates a
-  column of strings using a comma as a separator. This function is not
-  featured in the SQL standard.
+* Mon Feb 18 2019 Aris Koning <aris.koning@monetdbsolutions.com>
+- The implementation of in-expression now follows a join-based approach
+  instead of using iterative union/selects. This greatly improves
+  performance for large in-value-lists. Furthermore the old approach has
+  large in-value-lists generate large MAL plans. This is now no longer
+  the case.
 

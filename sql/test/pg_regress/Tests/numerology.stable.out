@@ -18,7 +18,6 @@ stdout of test 'numerology` in directory 'sql/test/pg_regress` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -98,7 +97,7 @@ Ready.
 [ 10	]
 #SELECT '' AS ten, f1 FROM TEMP_FLOAT
 #  ORDER BY f1;
-% .L2,	sys.temp_float # table_name
+% .L1,	sys.temp_float # table_name
 % ten,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -132,7 +131,7 @@ Ready.
 [ 10	]
 #SELECT '' AS nine, f1 FROM TEMP_INT4
 #  ORDER BY f1;
-% .L2,	sys.temp_int4 # table_name
+% .L1,	sys.temp_int4 # table_name
 % nine,	f1 # name
 % char,	int # type
 % 0,	6 # length
@@ -161,7 +160,7 @@ Ready.
 [ 2	]
 #SELECT '' AS five, f1 FROM TEMP_INT2
 #  ORDER BY f1;
-% .L2,	sys.temp_int2 # table_name
+% .L1,	sys.temp_int2 # table_name
 % five,	f1 # name
 % char,	smallint # type
 % 0,	4 # length
@@ -181,7 +180,7 @@ Ready.
 #  FROM INT4_TBL i, FLOAT8_TBL f;
 [ 50	]
 #SELECT DISTINCT f1 AS two FROM TEMP_GROUP;
-% sys.L2 # table_name
+% sys.L1 # table_name
 % two # name
 % int # type
 % 1 # length
@@ -191,7 +190,7 @@ Ready.
 #  FROM TEMP_GROUP
 #  GROUP BY f1
 #  ORDER BY two, max_float, min_float;
-% sys.L2,	sys.L5,	sys.L10 # table_name
+% sys.L1,	sys.L3,	sys.L5 # table_name
 % two,	max_float,	min_float # name
 % int,	double,	double # type
 % 1,	24,	24 # length
@@ -201,7 +200,7 @@ Ready.
 #  FROM TEMP_GROUP
 #  GROUP BY two
 #  ORDER BY two, max_float, min_float;
-% sys.temp_group,	sys.L4,	sys.L7 # table_name
+% sys.L1,	sys.L3,	sys.L5 # table_name
 % two,	max_float,	min_float # name
 % int,	double,	double # type
 % 1,	24,	24 # length
@@ -211,7 +210,7 @@ Ready.
 #  FROM TEMP_GROUP
 #  GROUP BY f1
 #  ORDER BY two, min_minus_1;
-% sys.L2,	sys.L5,	sys.L10 # table_name
+% sys.L1,	sys.L3,	sys.L5 # table_name
 % two,	max_plus_1,	min_minus_1 # name
 % int,	double,	double # type
 % 1,	24,	24 # length
@@ -223,7 +222,7 @@ Ready.
 #  FROM TEMP_GROUP
 #  GROUP BY f1
 #  ORDER BY two, min_minus_1;
-% sys.L2,	sys.L6,	sys.L11 # table_name
+% sys.L1,	sys.L4,	sys.L6 # table_name
 % two,	max_plus_min,	min_minus_1 # name
 % int,	bigint,	double # type
 % 1,	1,	24 # length

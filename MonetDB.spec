@@ -1,39 +1,43 @@
-%define name MonetDB
-%define version 11.30.0
+%global name MonetDB
+%global version 11.34.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
-# groups of related archs
-%define all_x86 i386 i586 i686
+# Use bcond_with to add a --with option; i.e., "without" is default.
+# Use bcond_without to add a --without option; i.e., "with" is default.
+# The --with OPTION and --without OPTION arguments can be passed on
+# the commandline of both rpmbuild and mock.
 
-%ifarch %{all_x86}
-%define bits 32
-%else
-%define bits 64
-%define with_int128 1
+# On 64 bit architectures we build "hugeint" packages.
+%if "%{?_lib}" == "lib64"
+%bcond_without hugeint
 %endif
 
-%define release %{buildno}%{?dist}
+%global release %{buildno}%{?dist}
+
+# This package contains monetdbd which is a (long running) daemon, so
+# we need to harden:
+%global _hardened_build 1
 
 # On RedHat Enterprise Linux and derivatives, if the Extra Packages
-# for Enterprise Linux (EPEL) repository is available, you can define
-# the _with_epel macro.  When using mock to build the RPMs, this can
-# be done using the --with=epel option to mock.
-# If the EPEL repository is availabe, or if building for Fedora, all
+# for Enterprise Linux (EPEL) repository is available, you can enable
+# its use by providing rpmbuild or mock with the "--with epel" option.
+# If the EPEL repository is availabe, or if building for Fedora, most
 # optional sub packages can be built.  We indicate that here by
 # setting the macro fedpkgs to 1.  If the EPEL repository is not
 # available and we are not building for Fedora, we set fedpkgs to 0.
 %if %{?rhel:1}%{!?rhel:0}
 # RedHat Enterprise Linux (or CentOS or Scientific Linux)
-%if %{?_with_epel:1}%{!?_with_epel:0}
+%bcond_with epel
+%if %{with epel}
 # EPEL is enabled through the command line
-%define fedpkgs 1
+%global fedpkgs 1
 %else
 # EPEL is not enabled
-%define fedpkgs 0
+%global fedpkgs 0
 %endif
 %else
 # Not RHEL (so presumably Fedora)
-%define fedpkgs 1
+%global fedpkgs 1
 %endif
 
 # On Fedora, the geos library is available, and so we can require it
@@ -45,7 +49,8 @@
 # up-to-date version of RHEL.
 %if %{fedpkgs}
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-%define with_geos 1
+# By default create the MonetDB-geom-MonetDB5 package on Fedora and RHEL 7
+%bcond_without geos
 %endif
 %endif
 
@@ -55,73 +60,48 @@
 # available if EPEL is enabled, and then only on version 7.
 %if %{fedpkgs}
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-# If the _without_lidar macro is not set, the MonetDB-lidar RPM will
-# be created.  The macro can be set when using mock by passing it the
-# flag --without=lidar.
-%if %{?_without_lidar:0}%{!?_without_lidar:1}
-%define with_lidar 1
-%endif
+# By default create the MonetDB-lidar package on Fedora and RHEL 7
+%bcond_without lidar
 %endif
 %endif
 
 %if %{?rhel:0}%{!?rhel:1}
-# If the _without_samtools macro is not set, the MonetDB-bam-MonetDB5
-# RPM will be created.  The macro can be set when using mock by
-# passing it the flag --without=samtools.
+# By default create the MonetDB-bam-MonetDB5 package.
 # Note that the samtools-devel RPM is not available on RedHat
 # Enterprise Linux and derivatives, even with EPEL availabe.
 # (Actually, at the moment of writing, samtools-devel is available in
 # EPEL for RHEL 6, but not for RHEL 7.  We don't make the distinction
 # here and just not build the MonetDB-bam-MonetDB5 RPM.)
-%if %{?_without_samtools:0}%{!?_without_samtools:1}
-%define with_samtools 1
-%endif
+%bcond_without samtools
 %endif
 
-# If the _without_pcre macro is not set, the PCRE library is used for
-# the implementation of the SQL LIKE and ILIKE operators.  Otherwise
-# the POSIX regex functions are used.  The macro can be set when using
-# mock by passing it the flag --without=pcre.
-%if %{?_without_pcre:0}%{!?_without_pcre:1}
-%define with_pcre 1
-%endif
+# By default use PCRE for the implementation of the SQL LIKE and ILIKE
+# operators.  Otherwise the POSIX regex functions are used.
+%bcond_without pcre
 
 %if %{fedpkgs}
-# If the _without_rintegration macro is not set, the MonetDB-R RPM
-# will be created.  The macro can be set when using mock by passing it
-# the flag --without=rintegration.
-%if %{?_without_rintegration:0}%{!?_without_rintegration:1}
-%define with_rintegration 1
-%endif
+# By default, create the MonetDB-R package.
+%bcond_without rintegration
 %endif
 
-# If the _without_pyintegration macro is not set, the MonetDB-python2
-# RPM will be created.  The macro can be set when using mock by
-# passing it the flag --without=pyintegration.
+# On Fedora and RHEL 7, create the MonetDB-python2 package.
 # On RHEL 6, numpy is too old.
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-%if %{?_without_pyintegration:0}%{!?_without_pyintegration:1}
-%define with_pyintegration 1
+%bcond_without py2integration
 %endif
+%if %{?rhel:0}%{!?rhel:1}
+# On RHEL 6, Python 3 is too old, and on RHEL 7, the default Python 3
+# is too old (in both cases 3.4).
+%bcond_without py3integration
 %endif
 
 %if %{fedpkgs}
-# If the _with_fits macro is set, the MonetDB-cfitsio RPM will be
-# created.  The macro can be set when using mock by passing it the
-# flag --with=fits.
-%if %{?_with_fits:1}%{!?_with_fits:0}
-%define with_fits 1
-%endif
+# By default, create the MonetDB-cfitsio package.
+%bcond_without fits
 %endif
 
-%{!?__python2: %global __python2 %__python}
-%{!?python2_sitelib: %global python2_sitelib %(%{__python2} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
-
-%if 0%{?fedora}
-%bcond_without python3
-%else
-%bcond_with python3
-%endif
+%{!?__python3: %global __python3 /usr/bin/python3}
+%{!?python3_sitelib: %global python3_sitelib %(%{__python3} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 
 Name: %{name}
 Version: %{version}
@@ -132,7 +112,8 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Mar2018-SP1/%{name}-%{version}.tar.bz2
+BugURL: https://bugs.monetdb.org/
+Source: https://www.monetdb.org/downloads/sources/Apr2019-SP1/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -143,40 +124,41 @@ BuildRequires: checkpolicy
 BuildRequires: selinux-policy-devel
 BuildRequires: hardlink
 %endif
-BuildRequires: bison
-BuildRequires: bzip2-devel
-%if %{?with_fits:1}%{!?with_fits:0}
-BuildRequires: cfitsio-devel
-%endif
 BuildRequires: gcc
-%if %{?with_geos:1}%{!?with_geos:0}
+BuildRequires: bison
+BuildRequires: /usr/bin/python3
+%if %{?rhel:1}%{!?rhel:0}
+BuildRequires: bzip2-devel
+%else
+BuildRequires: pkgconfig(bzip2)
+%endif
+%if %{with fits}
+BuildRequires: pkgconfig(cfitsio)
+%endif
+%if %{with geos}
 BuildRequires: geos-devel >= 3.4.0
 %endif
-%if %{?with_lidar:1}%{!?with_lidar:0}
+%if %{with lidar}
 BuildRequires: liblas-devel >= 1.8.0
-BuildRequires: gdal-devel
-BuildRequires: libgeotiff-devel
-# Fedora 22 liblas-devel does not depend on liblas:
-BuildRequires: liblas >= 1.8.0
+BuildRequires: pkgconfig(gdal)
 %endif
-BuildRequires: libatomic_ops-devel
-BuildRequires: libcurl-devel
-BuildRequires: xz-devel
+BuildRequires: pkgconfig(libcurl)
+BuildRequires: pkgconfig(liblzma)
 # BuildRequires: libmicrohttpd-devel
 BuildRequires: libuuid-devel
-BuildRequires: libxml2-devel
-BuildRequires: openssl-devel
-%if %{?with_pcre:1}%{!?with_pcre:0}
-BuildRequires: pcre-devel >= 4.5
+BuildRequires: pkgconfig(libxml-2.0)
+BuildRequires: pkgconfig(openssl)
+%if %{with pcre}
+BuildRequires: pkgconfig(libpcre) >= 4.5
 %endif
 BuildRequires: readline-devel
 BuildRequires: unixODBC-devel
 # BuildRequires: uriparser-devel
-BuildRequires: zlib-devel
-%if %{?with_samtools:1}%{!?with_samtools:0}
+BuildRequires: pkgconfig(zlib)
+%if %{with samtools}
 BuildRequires: samtools-devel
 %endif
-%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%if %{with py2integration}
 BuildRequires: python-devel
 %if %{?rhel:1}%{!?rhel:0}
 # RedHat Enterprise Linux calls it simply numpy
@@ -190,7 +172,11 @@ BuildRequires: numpy
 %endif
 %endif
 %endif
-%if %{?with_rintegration:1}%{!?with_rintegration:0}
+%if %{with py3integration}
+BuildRequires: python3-devel >= 3.5
+BuildRequires: python3-numpy
+%endif
+%if %{with rintegration}
 BuildRequires: R-core-devel
 %endif
 
@@ -204,7 +190,7 @@ Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains the core components of MonetDB in the form of a
 single shared library.  If you want to use MonetDB, you will certainly
@@ -222,13 +208,12 @@ Summary: MonetDB development files
 Group: Applications/Databases
 Requires: %{name}%{?_isa} = %{version}-%{release}
 Requires: %{name}-stream-devel%{?_isa} = %{version}-%{release}
-Requires: libatomic_ops-devel
 
 %description devel
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains files needed to develop extensions to the core
 functionality of MonetDB.
@@ -237,6 +222,7 @@ functionality of MonetDB.
 %defattr(-,root,root)
 %dir %{_includedir}/monetdb
 %{_includedir}/monetdb/gdk*.h
+%{_includedir}/monetdb/matomic.h
 %{_includedir}/monetdb/monet*.h
 %{_libdir}/libbat.so
 %{_libdir}/pkgconfig/monetdb-gdk.pc
@@ -249,7 +235,7 @@ Group: Applications/Databases
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains a shared library (libstream) which is needed by
 various other components.
@@ -271,7 +257,7 @@ Requires: zlib-devel
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains the files to develop with the %{name}-stream
 library.
@@ -295,7 +281,7 @@ Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains mclient, the main client program to communicate
 with the MonetDB database server, and msqldump, a program to dump the
@@ -325,7 +311,7 @@ Recommends: /usr/bin/gnuplot
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains stethoscope, tomograph, and tachograph.  These
 tools can be used to monitor the MonetDB database server.
@@ -350,7 +336,7 @@ Requires: openssl-devel
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains the files needed to develop with the
 %{name}-client package.
@@ -366,13 +352,14 @@ This package contains the files needed to develop with the
 Summary: MonetDB ODBC driver
 Group: Applications/Databases
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
-Requires(pre): unixODBC
+Requires(post): unixODBC
+Requires(postun): unixODBC
 
 %description client-odbc
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains the MonetDB ODBC driver.
 
@@ -411,13 +398,13 @@ Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
 %endif
 Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Requires: python-pymonetdb >= 1.0.6
+Requires: python3-pymonetdb >= 1.0.6
 
 %description client-tests
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains the sample MAPI programs used for testing other
 MonetDB packages.  You probably don't need this, unless you are a
@@ -434,23 +421,22 @@ developer.
 %{_bindir}/smack01
 %{_bindir}/shutdowntest
 %{_bindir}/testgetinfo
+%{_bindir}/testStmtAttr
 %{_bindir}/malsample.pl
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl
 
-%if %{?with_geos:1}%{!?with_geos:0}
+%if %{with geos}
 %package geom-MonetDB5
 Summary: MonetDB5 SQL GIS support module
 Group: Applications/Databases
 Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
-Obsoletes: %{name}-geom
-Obsoletes: %{name}-geom-devel
 
 %description geom-MonetDB5
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains the GIS (Geographic Information System)
 extensions for %{name}-SQL-server5.
@@ -463,7 +449,7 @@ extensions for %{name}-SQL-server5.
 %{_libdir}/monetdb5/lib_geom.so
 %endif
 
-%if %{?with_lidar:1}%{!?with_lidar:0}
+%if %{with lidar}
 %package lidar
 Summary: MonetDB5 SQL support for working with LiDAR data
 Group: Applications/Databases
@@ -473,7 +459,7 @@ Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains support for reading and writing LiDAR data.
 
@@ -485,7 +471,7 @@ This package contains support for reading and writing LiDAR data.
 %{_libdir}/monetdb5/lib_lidar.so
 %endif
 
-%if %{?with_samtools:1}%{!?with_samtools:0}
+%if %{with samtools}
 %package bam-MonetDB5
 Summary: MonetDB5 SQL interface to the bam library
 Group: Applications/Databases
@@ -495,7 +481,7 @@ Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains the interface to load and query BAM (binary
 version of Sequence Alignment/Map) data.
@@ -508,7 +494,7 @@ version of Sequence Alignment/Map) data.
 %{_libdir}/monetdb5/lib_bam.so
 %endif
 
-%if %{?with_rintegration:1}%{!?with_rintegration:0}
+%if %{with rintegration}
 %package R
 Summary: Integration of MonetDB and R, allowing use of R from within SQL
 Group: Applications/Databases
@@ -518,7 +504,7 @@ Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains the interface to use the R language from within
 SQL queries.
@@ -534,7 +520,7 @@ install it.
 %{_libdir}/monetdb5/lib_rapi.so
 %endif
 
-%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%if %{with py2integration}
 %package python2
 Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
 Group: Applications/Databases
@@ -544,7 +530,7 @@ Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains the interface to use the Python language from
 within SQL queries.  This package is for Python 2.
@@ -560,7 +546,33 @@ install it.
 %{_libdir}/monetdb5/lib_pyapi.so
 %endif
 
-%if %{?with_fits:1}%{!?with_fits:0}
+%if %{with py3integration}
+%package python3
+Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
+Group: Applications/Databases
+Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
+
+%description python3
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL front end.
+
+This package contains the interface to use the Python language from
+within SQL queries.  This package is for Python 3.
+
+NOTE: INSTALLING THIS PACKAGE OPENS UP SECURITY ISSUES.  If you don't
+know how this package affects the security of your system, do not
+install it.
+
+%files python3
+%defattr(-,root,root)
+%{_libdir}/monetdb5/pyapi3.*
+%{_libdir}/monetdb5/autoload/*_pyapi3.mal
+%{_libdir}/monetdb5/lib_pyapi3.so
+%endif
+
+%if %{with fits}
 %package cfitsio
 Summary: MonetDB: Add on module that provides support for FITS files
 Group: Applications/Databases
@@ -570,7 +582,7 @@ Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains a module for accessing data in the FITS file
 format.
@@ -590,7 +602,7 @@ Requires(pre): shadow-utils
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-%if %{bits} == 64
+%if %{with hugeint}
 Recommends: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
 %endif
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
@@ -602,30 +614,18 @@ Conflicts: python-pymonetdb < 1.0.6
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains the MonetDB server component.  You need this
 package if you want to use the MonetDB database system.  If you want
-to use the SQL frontend, you also need %{name}-SQL-server5.
+to use the SQL front end, you also need %{name}-SQL-server5.
 
 %pre -n MonetDB5-server
 getent group monetdb >/dev/null || groupadd -r monetdb
 getent passwd monetdb >/dev/null || \
-useradd -r -g monetdb -d %{_localstatedir}/MonetDB -s /sbin/nologin \
-    -c "MonetDB Server" monetdb
+    useradd -r -g monetdb -d %{_localstatedir}/MonetDB -s /sbin/nologin \
+	-c "MonetDB Server" monetdb
 exit 0
-
-%post -n MonetDB5-server
-# move database from old location to new location
-if [ -d %{_localstatedir}/MonetDB5/dbfarm -a ! %{_localstatedir}/MonetDB5/dbfarm -ef %{_localstatedir}/monetdb5/dbfarm ]; then
-	# old database exists and is different from new
-	if [ $(find %{_localstatedir}/monetdb5 -print | wc -l) -le 2 ]; then
-		# new database is still empty
-		rmdir %{_localstatedir}/monetdb5/dbfarm
-		rmdir %{_localstatedir}/monetdb5
-		mv %{_localstatedir}/MonetDB5 %{_localstatedir}/monetdb5
-	fi
-fi
 
 %files -n MonetDB5-server
 %defattr(-,root,root)
@@ -636,44 +636,50 @@ fi
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
 %dir %{_libdir}/monetdb5/autoload
-%if %{?with_fits:1}%{!?with_fits:0}
+%if %{with fits}
 %exclude %{_libdir}/monetdb5/fits.mal
 %exclude %{_libdir}/monetdb5/autoload/*_fits.mal
 %exclude %{_libdir}/monetdb5/createdb/*_fits.sql
 %endif
-%if %{?with_geos:1}%{!?with_geos:0}
+%if %{with geos}
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
-%if %{?with_lidar:1}%{!?with_lidar:0}
+%if %{with lidar}
 %exclude %{_libdir}/monetdb5/lidar.mal
 %endif
-%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%if %{with py2integration}
 %exclude %{_libdir}/monetdb5/pyapi.mal
 %endif
-%if %{?with_rintegration:1}%{!?with_rintegration:0}
+%if %{with py3integration}
+%exclude %{_libdir}/monetdb5/pyapi3.mal
+%endif
+%if %{with rintegration}
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
 %exclude %{_libdir}/monetdb5/sql*.mal
-%if %{bits} == 64
+%if %{with hugeint}
 %exclude %{_libdir}/monetdb5/*_hge.mal
 %exclude %{_libdir}/monetdb5/autoload/*_hge.mal
 %endif
 %{_libdir}/monetdb5/*.mal
-%if %{?with_geos:1}%{!?with_geos:0}
+%if %{with geos}
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
 %endif
-%if %{?with_lidar:1}%{!?with_lidar:0}
+%if %{with lidar}
 %exclude %{_libdir}/monetdb5/autoload/*_lidar.mal
 %endif
-%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%if %{with py2integration}
 %exclude %{_libdir}/monetdb5/autoload/*_pyapi.mal
 %endif
-%if %{?with_rintegration:1}%{!?with_rintegration:0}
+%if %{with py3integration}
+%exclude %{_libdir}/monetdb5/autoload/*_pyapi3.mal
+%endif
+%if %{with rintegration}
 %exclude %{_libdir}/monetdb5/autoload/*_rapi.mal
 %endif
 %exclude %{_libdir}/monetdb5/autoload/??_sql*.mal
 %{_libdir}/monetdb5/autoload/*.mal
-%if %{?with_samtools:1}%{!?with_samtools:0}
+%if %{with samtools}
 %exclude %{_libdir}/monetdb5/bam.mal
 %exclude %{_libdir}/monetdb5/autoload/*_bam.mal
 %endif
@@ -681,13 +687,12 @@ fi
 %{_libdir}/monetdb5/lib_generator.so
 %{_libdir}/monetdb5/lib_opt_sql_append.so
 %{_libdir}/monetdb5/lib_udf.so
-%{_libdir}/monetdb5/lib_vault.so
 %doc %{_mandir}/man1/mserver5.1.gz
 %dir %{_datadir}/doc/MonetDB
 %docdir %{_datadir}/doc/MonetDB
 %{_datadir}/doc/MonetDB/*
 
-%if %{bits} == 64
+%if %{with hugeint}
 %package -n MonetDB5-server-hugeint
 Summary: MonetDB - 128-bit integer support for MonetDB5-server
 Group: Applications/Databases
@@ -697,7 +702,7 @@ Requires: MonetDB5-server%{?_isa}
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package provides HUGEINT (128-bit integer) support for the
 MonetDB5-server component.
@@ -719,7 +724,7 @@ Requires: %{name}-devel%{?_isa} = %{version}-%{release}
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains files needed to develop extensions that can be
 used from the MAL level.
@@ -734,13 +739,9 @@ used from the MAL level.
 %package SQL-server5
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-# RHEL >= 7, and all current Fedora
-Requires: %{_bindir}/systemd-tmpfiles
-%endif
+Requires(pre): MonetDB5-server%{?_isa} = %{version}-%{release}
 %if (0%{?fedora} >= 22)
-%if %{bits} == 64
+%if %{with hugeint}
 Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
 %endif
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
@@ -750,15 +751,10 @@ Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
-This package contains the SQL frontend for MonetDB.  If you want to
+This package contains the SQL front end for MonetDB.  If you want to
 use SQL with MonetDB, you will need to install this package.
-
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-%post SQL-server5
-systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
-%endif
 
 %files SQL-server5
 %defattr(-,root,root)
@@ -767,7 +763,8 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
-%{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%dir %attr(775,monetdb,monetdb) /run/monetdb
+%{_tmpfilesdir}/monetdbd.conf
 %{_unitdir}/monetdbd.service
 %else
 # RedHat Enterprise Linux < 7
@@ -777,22 +774,22 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_prefix}/lib/systemd/system/monetdbd.service
 %endif
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
+%config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
-%{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
-%if %{?with_geos:1}%{!?with_geos:0}
+%if %{with geos}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
-%if %{?with_lidar:1}%{!?with_lidar:0}
+%if %{with lidar}
 %exclude %{_libdir}/monetdb5/createdb/*_lidar.sql
 %endif
-%if %{?with_samtools:1}%{!?with_samtools:0}
+%if %{with samtools}
 %exclude %{_libdir}/monetdb5/createdb/*_bam.sql
 %endif
 %{_libdir}/monetdb5/createdb/*.sql
 %{_libdir}/monetdb5/sql*.mal
-%if %{bits} == 64
+%if %{with hugeint}
 %exclude %{_libdir}/monetdb5/createdb/*_hge.sql
 %exclude %{_libdir}/monetdb5/sql*_hge.mal
 %endif
@@ -802,7 +799,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
 
-%if %{bits} == 64
+%if %{with hugeint}
 %package SQL-server5-hugeint
 Summary: MonetDB5 128 bit integer (hugeint) support for SQL
 Group: Applications/Databases
@@ -813,10 +810,10 @@ Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package provides HUGEINT (128-bit integer) support for the SQL
-frontend of MonetDB.
+front end of MonetDB.
 
 %files SQL-server5-hugeint
 %defattr(-,root,root)
@@ -833,7 +830,7 @@ Group: Applications/Databases
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains the programs and files needed for testing the
 MonetDB packages.  You probably don't need this, unless you are a
@@ -850,14 +847,14 @@ Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires: %{name}-testing = %{version}-%{release}
 Requires: %{name}-client-tests = %{version}-%{release}
-Requires: python
+Requires: /usr/bin/python3
 BuildArch: noarch
 
 %description testing-python
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains the Python programs and files needed for testing
 the MonetDB packages.  You probably don't need this, unless you are a
@@ -867,19 +864,22 @@ developer, but if you do want to test, this is the package you need.
 %defattr(-,root,root)
 %{_bindir}/Mapprove.py
 %{_bindir}/Mtest.py
-%dir %{python2_sitelib}/MonetDBtesting
-%{python2_sitelib}/MonetDBtesting/*
+%dir %{python3_sitelib}/MonetDBtesting
+%{python3_sitelib}/MonetDBtesting/*
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %package selinux
 Summary: SELinux policy files for MonetDB
 Group: Applications/Databases
-%if "%{_selinux_policy_version}" != ""
-Requires:       selinux-policy >= %{_selinux_policy_version}
+%if "%{?_selinux_policy_version}" != ""
+Requires:       selinux-policy >= %{?_selinux_policy_version}
 %endif
-Requires:       %{name}-SQL-server5 = %{version}-%{release}
-Requires(post):   /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles, MonetDB-SQL-server5, MonetDB5-server
-Requires(postun): /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles, MonetDB-SQL-server5, MonetDB5-server
+Requires(post):   MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires(postun): MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires(post):   %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Requires(postun): %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Requires(post):   /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles
+Requires(postun): /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles
 BuildArch: noarch
 
 %global selinux_types %(%{__awk} '/^#[[:space:]]*SELINUXTYPE=/,/^[^#]/ { if ($3 == "-") printf "%s ", $2 }' /etc/selinux/config 2>/dev/null)
@@ -889,10 +889,13 @@ BuildArch: noarch
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
+accelerators.  It also has an SQL front end.
 
 This package contains the SELinux policy for running MonetDB under
-control of systemd.
+control of systemd.  There is one tunable parameter, mserver5_can_read_home,
+which can be set using "setsebool -P mserver5_can_read_home=true" to allow
+an mserver5 process started by monetdbd under the control of systemd to
+read files in users' home directories.
 
 %post selinux
 for selinuxvariant in %{selinux_variants}
@@ -900,6 +903,8 @@ do
   /usr/sbin/semodule -s ${selinuxvariant} -i \
     %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
 done
+# use %{_localstatedir}/run/monetdb here for EPEL 6; on other systems,
+# %{_localstatedir}/run is a symlink to /run
 /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
 /usr/bin/systemctl try-restart monetdbd.service
 
@@ -913,6 +918,8 @@ if [ $1 -eq 0 ] ; then
   do
     /usr/sbin/semodule -s ${selinuxvariant} -r monetdb &> /dev/null || :
   done
+  # use %{_localstatedir}/run/monetdb here for EPEL 6; on other systems,
+  # %{_localstatedir}/run is a symlink to /run
   /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
   if [ $active = active ]; then
     /usr/bin/systemctl start monetdbd.service
@@ -935,34 +942,42 @@ fi
 # that causes it to report an internal error when compiling
 # testing/difflib.c.  The work around is to not use -fstack-protector-strong.
 # The bug exhibits itself on CentOS 7 on AArch64.
-if [ `gcc -v 2>&1 | grep -c 'Target: aarch64\|gcc version 4\.'` -eq 2 ]; then
-	# set CFLAGS before configure, so that this value gets used
-	CFLAGS='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4 -grecord-gcc-switches  '
-	export CFLAGS
-fi
+# Everywhere else, add -Wno-format-truncation to the compiler options
+# to reduce the number of warnings during compilation.
+%ifarch aarch64
+    if gcc -v 2>&1 | grep -q 'gcc version 4\.'; then
+	CFLAGS="${CFLAGS:-$(echo %optflags | sed 's/-fstack-protector-strong//')}"
+    else
+	CFLAGS="${CFLAGS:-%optflags -Wno-format-truncation}"
+    fi
+%else
+    CFLAGS="${CFLAGS:-%optflags -Wno-format-truncation}"
+%endif
+export CFLAGS
+# do not use --enable-optimize or --disable-optimize: we don't want
+# any changes to optimization flags
 %{configure} \
 	--enable-assert=no \
-	--enable-console=yes \
-	--enable-debug=no \
+	--enable-debug=yes \
 	--enable-developer=no \
 	--enable-embedded=no \
 	--enable-embedded-r=no \
 	--enable-fits=%{?with_fits:yes}%{!?with_fits:no} \
 	--enable-gdk=yes \
 	--enable-geom=%{?with_geos:yes}%{!?with_geos:no} \
-	--enable-instrument=no \
-	--enable-int128=%{?with_int128:yes}%{!?with_int128:no} \
+	--enable-int128=%{?with_hugeint:yes}%{!?with_hugeint:no} \
 	--enable-lidar=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--enable-mapi=yes \
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
-	--enable-optimize=no \
-	--enable-profile=no \
-	--enable-pyintegration=%{?with_pyintegration:yes}%{!?with_pyintegration:no} \
+	--enable-py2integration=%{?with_py2integration:yes}%{!?with_py2integration:no} \
+	--enable-py3integration=%{?with_py3integration:yes}%{!?with_py3integration:no} \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
+	--enable-sanitizer=no \
 	--enable-shp=no \
 	--enable-sql=yes \
+	--enable-static-analysis=no \
 	--enable-strict=no \
 	--enable-testing=yes \
 	--with-bz2=yes \
@@ -971,21 +986,23 @@ fi
 	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
 	--with-liblas=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--with-libxml2=yes \
+	--with-lz4=no \
 	--with-lzma=yes \
 	--with-openssl=yes \
-	--with-regex=%{?with_pcre:PCRE}%{!?with_pcre:POSIX} \
 	--with-proj=no \
 	--with-pthread=yes \
-	--with-python2=yes \
-	--with-python3=no \
+	--with-python2=%{?with_py2integration:yes}%{!?with_py2integration:no} \
+	--with-python3=yes \
 	--with-readline=yes \
+	--with-regex=%{?with_pcre:PCRE}%{!?with_pcre:POSIX} \
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
+	--with-snappy=no \
 	--with-unixodbc=yes \
 	--with-uuid=yes \
 	--with-valgrind=no \
 	%{?comp_cc:CC="%{comp_cc}"}
 
-make %{?_smp_mflags}
+%make_build
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 cd buildtools/selinux
@@ -1006,17 +1023,28 @@ cd -
 %install
 %make_install
 
-mkdir -p %{buildroot}%{_localstatedir}/MonetDB
-mkdir -p %{buildroot}%{_localstatedir}/monetdb5/dbfarm
-mkdir -p %{buildroot}%{_localstatedir}/log/monetdb
-mkdir -p %{buildroot}%{_localstatedir}/run/monetdb
+# move file to correct location
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+mkdir -p %{buildroot}%{_tmpfilesdir}
+mv %{buildroot}%{_sysconfdir}/tmpfiles.d/monetdbd.conf %{buildroot}%{_tmpfilesdir}
+rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
+%endif
+
+install -d -m 0750 %{buildroot}%{_localstatedir}/MonetDB
+install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
+install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+# RHEL >= 7, and all current Fedora
+install -d -m 0775 %{buildroot}/run/monetdb
+%else
+# RedHat Enterprise Linux < 7
+install -d -m 0775 %{buildroot}%{_localstatedir}/run/monetdb
+%endif
 
 # remove unwanted stuff
 # .la files
 rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/*.la
-# internal development stuff
-rm -f %{buildroot}%{_bindir}/Maddlog
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 for selinuxvariant in %{selinux_variants}
@@ -1033,6 +1061,641 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Aug 07 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.33.7-20190807
+- Rebuilt.
+
+* Thu Aug 01 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.33.5-20190801
+- Rebuilt.
+- BZ#6697: Duplicate expressions not eliminated with long CASE statement
+- BZ#6701: When changing the schema name of a table, referencing rows
+  from sys.columns, sys.keys and more tables are not removed
+- BZ#6703: SQL optimizer enters loop and goes into stack overflow
+- BZ#6706: prepare doesn't recognize merge statement
+- BZ#6712: Where clause with cast ignores sub-select
+- BZ#6713: COPY INTO FROM 'file.xz' does not work
+- BZ#6714: Assertion failure in rel_select.c for correlated subquery in
+  aggregation query (with group by and having and order by and limit)
+- BZ#6715: Assertion failure in rel_bin.c for MERGE INTO command
+- BZ#6716: COPY INTO does not load UTF8 encoded text
+- BZ#6718: Can't copy table into another table with constraints
+  (mkey.bulk_rotate_xor_hash)
+- BZ#6720: Compilation issues on gcc 9.1.1 [-Werror=stringop-truncation]
+- BZ#6721: Possibly incorrect call to pcre_exec
+- BZ#6725: Prepare statement on non-existing function crashes
+- BZ#6728: SELECT DISTINCT not removing duplicates
+- BZ#6729: Creating a table with duplicate column name should not
+  be possible
+- BZ#6730: sys.stop or sys.pause a INSERT query triggers "BATproject:
+  does not match always"
+- BZ#6736: Unexpected query result with merge tables and view after
+  upgrade
+- BZ#6738: issue with window functions and hugeint type coercion
+
+* Mon Jul 15 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.5-20190801
+- gdk: We now look at the limits imposed by cgroups and the setrlimit system
+  call to initialize some internal values related to how much (virtual)
+  memory we think is available.
+
+* Fri Jul 12 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.5-20190801
+- buildtools: Removed restriction on using combinations of --enable-assert,
+  --enable-debug,  and --enable-optimize.  --enable-debug adds a -g (or
+  -even -g3) option, --enable-debug=gdb adds a -ggdb3 flag (for GCC);
+  --enable-optimize adds a bunch of optimization flags; --disable-debug
+  (or --enable-debug=no) removes any -g flags; --disable-optimize
+  removes any -O flags; --enable-optimize=auto leaves the optimization
+  flags untouched.
+
+* Fri Jun  7 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.5-20190801
+- sql: Changed the internal representation of RANGE MINVALUE and RANGE MAXVALUE
+  in MERGE TABLE partitions.  Before, the limits were represented by
+  the smallest and largest value of the domain of the column, now these
+  are represented by a NULL value.  This has the added benefit that if
+  you use TO RANGE MAXVALUE, the largest value of the domain is included
+  in the partition (before it wasn't).  Also, these new limits now work
+  for any ordered type, so including VARCHAR.
+
+* Fri Apr 26 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.3-20190426
+- Rebuilt.
+- BZ#6647: Add suport to Python 3 on Windows
+- BZ#6696: Re-use of MAL explain plans with complex type coercions
+
+* Fri Apr 05 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- Rebuilt.
+- BZ#2403: stream: http read support in streams
+- BZ#2416: GDK: file/dir creation mask
+- BZ#2478: SQL: rename columns
+- BZ#2496: SQL: implement greatest / least
+- BZ#3384: Auxiliary window functions
+- BZ#3416: log() SQL function only supports natural logarithm
+- BZ#3448: Make lbatomic_ops optional if installed
+- BZ#3520: Add support for scalar function LN(num)
+- BZ#3530: sigabort on window aggr function
+- BZ#3567: Add support for: ALTER TABLE [schema1.]oldtablename RENAME [TO]
+  [schema2.]newtablename
+- BZ#3743: DELETE FROM merge table not supported.
+- BZ#3832: Cannot use expressions in GROUP BY clause
+- BZ#3946: Expose C log2 function to SQL
+- BZ#4056: mapi_timeout is not implemented
+- BZ#6181: comments cause error with return in function
+- BZ#6326: Eliminate unused UNION tables
+- BZ#6347: Mserver returns with "memory exhausted in" error if query
+  size exceeds 2.5MB
+- BZ#6402: JDBC: Support for Connection.prepareCall
+- BZ#6475: Remove unused SQL global variable "history"
+- BZ#6588: Table aliasing are not supported in SQL update queries
+- BZ#6591: Name mangling in the SQL catalog results in ambiguity
+- BZ#6608: Sqlitelogictest error message in group by with coalesce
+- BZ#6609: Rename Schema in MonetDB
+- BZ#6636: sys.queue() extension: allow DBA to see all running queries
+- BZ#6671: Error when running user function on merge table with remote
+  part
+- BZ#6674: R UDF with Date type fails to convert RAPI
+- BZ#6676: Max data length of 2048 for column sys._tables.query is too
+  small for the actual data (2811 for view sys.ids)
+- BZ#6678: Binding NULL parameter to parametrized query results in syntax
+  error on execution
+- BZ#6680: Copy cannot open CSV file if systemctl enabled
+- BZ#6684: Inserting into a replica table crashes the server
+- BZ#6685: adding a view to a merge table gives unexpected behaviour
+- BZ#6690: Unable to fetch empty string with ODBC driver
+
+* Tue Mar 19 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.33.1-20190405
+- merovingian: Added a new database property named `profilerbeatfreq`. Its value,
+  <freq>, should be an integer and, if it is set the command
+  `profilerstart` will call stethoscope with this value as the
+  argument to -b. This will instruct stethoscope to collect heartbeat
+  events from the MonetDB server every <freq> milliseconds. Please note
+  that no type checking is done, and if
+  <freq> is not an integer, stethoscope will silently ignore it.
+
+* Tue Mar 19 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- buildtools: We now use the C11 atomic operations if available, although
+  libatomic_ops is still used if present and not disabled on the configure
+  command line.
+
+* Tue Mar 19 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- gdk: During processing, we now try to maintain the smallest and largest
+  values that occur in a BAT.  This information is not saved across
+  server restarts.
+
+* Tue Mar 19 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- selinux: There is one tunable parameter, mserver5_can_read_home, which can
+  be set using "setsebool -P mserver5_can_read_home=true" to allow an
+  mserver5 process started by monetdbd under the control of systemd to
+  read files in users' home directories.
+
+* Fri Feb  8 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- monetdb5: Changed the way blobs are ordered.  Before, shorter blobs came before
+  longer, now the contents is compared first.
+
+* Mon Jan 28 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- sql: Implemented two-argument least/greatest functions.  If one argument
+  is NULL, the functions return the other value, otherwise they return
+  the least/greatest of the two arguments.
+
+* Thu Jan 24 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- sql: Implemented SQL2003 natural logarithm function: ln(num_expr).
+
+* Wed Jan 23 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- monetdb5: Removed function blob.tostring() since it cannot guarantee that the
+  resulting string is properly encoded in UTF-8.
+
+* Wed Jan 23 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- sql: Function octet_length now also accepts a BLOB argument and returns
+  the length of the BLOB (i.e. the same as length when called with a
+  BLOB argument).
+
+* Tue Jan 22 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- monetdb5: Removed the type "sqlblob", changed the external format of the type
+  "blob" to be like what "sqlblob" used to be.  In other words, the
+  "blob" type is now SQL-compatible.
+
+* Tue Jan 22 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- sql: Implemented length(blob) and comparison between blobs.
+- sql: Implemented a two argument function log which calculates the logarithm
+  of the first argument using the second argument as base.
+- sql: Next to the functions log (natural logarithm) and log10 (base 10
+  logarithm), there is now also log2 (base 2 logarithm).
+
+* Fri Jan 18 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- sql: Removed unused global SQL variable "history".
+
+* Fri Jan  4 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.33.1-20190405
+- sql: Allow usage of custom expressions in GROUP BY and PARTITION BY
+  clauses. The same expressions can be used in the projection phase as
+  long as it is exactly the same used in the grouping clause (textual
+  lookup is performed). As an example the query:
+  SELECT col1*2 FROM t1 GROUP BY col1*2; is correct, while
+  SELECT sin(col1+5) FROM t1 GROUP BY col1*2; is wrong.
+- sql: Allow usage of WITH clauses in insert, update, delete and merge
+  statements.
+
+* Fri Jan  4 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.33.1-20190405
+- sql: Implemented merge statements from SQL:2003 standard. Using a source
+  relation R, a target table T is updating depending on the result of
+  the merge. In case of a match, the table T's row is either updated
+  or deleted with R's row. In a non-match case, R's row is inserted
+  into T. The grammar is the follows:
+  > MERGE INTO target [ [AS] ident ] USING source ON search_condition
+  { WHEN MATCHED [ AND search_condition ] THEN
+    { UPDATE SET assignment_list | DELETE } } |
+  { WHEN NOT MATCHED [ AND search_condition ] THEN
+    INSERT [ column_list ] [ { DEFAULT VALUES | VALUES row_values } ] }
+- sql: Added possibility to change the schema of a table with the syntax:
+  > ALTER TABLE [ IF EXISTS ] qname SET SCHEMA ident
+- sql: Added optional alias option for target table in update and delete
+  statements: (e.g. UPDATE target AS alias SET col1=1 WHERE alias.col2 < 5)
+
+* Fri Jan  4 2019 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.33.1-20190405
+- sql: Improved and extended storagemodel functionality. Changes include:
+- sql: Added views sys."tablestorage" and sys."schemastorage" for easy and
+  quick assesment of aggregated storage usage per table or per schema.
+- sql: Excluded listing system tables in views sys."storage", sys."tablestorage"
+  and sys."schemastorage". You can still use sys."storage"() to query
+  storage of system tables and columns.
+- sql: In procedure sys.storagemodelinit() when populating table
+  sys.storagemodelinput it now excludes system tables as system tables are
+  not useful to be modeled for storagesize by application users.
+  It now also computes and populates the atomwidth column more correctly
+  for variable size data types (strings, blobs) when the table has
+  representative data in those columns.
+- sql: System function sys.columnsize() has been corrected for types: tinyint,
+  real, date, time, timetz, sec_interval, month_interval, decimal, uuid,
+  mbr, char, clob, json, url, blob, geometry and geometrya.
+  For variable size data types (varchar, char, clob, json, url, blob,
+  geometry, geometrya) it now returns the columnsize excluding the
+  variable heapsize. The heapsize is retrievable via sys.heapsize().
+- sql: System function sys.heapsize() has been corrected for all variable size
+  data types: varchar, char, clob, json, url, blob, geometry and geometrya.
+- sql: System function sys.imprintsize() has been corrected. The imprintsize
+  depends on the width (1 or 2 or 4 or 8 or 16 bytes) of the data type.
+  Also instead of 12% it now uses 20%, which is a better estimate.
+- sql: System function sys.storagemodel() has been removed as it outputs the
+  same data as view sys.storagemodel. Use view sys.storagemodel instead.
+- sql: Corrected views sys.storagemodel and sys.tablestoragemodel by returning
+  a computed orderidxsize when the count has been changed in the
+  sys.storagemodelinput table.  Also the views now return data ordered
+  by schema, table and column names.
+- sql: Extended view sys.tablestoragemodel with column: "storages". Besides
+  columns also keys (primary, foreign and unique keys) and indexes
+  (ordered, imprints) use storage, so the "storages" count can be higher
+  than the number of columns per table.
+- sql: Corrected the data type of columns "schema", "table", "column", "type",
+  "mode" and location in table sys.storagemodelinput and functions
+  sys."storage"(), sys."storage"(sname), sys."storage"(sname, tname)
+  and sys."storage"(sname, tname, cname) from string into varchar(1024).
+  Consequently also the views based on the table or functions will be
+  reporting varchar(1024) as column meta data instead of clob for those
+  columns.  This allows faster querying and reporting by generic SQL
+  programs which treat clob querying different from varchar columns.
+
+* Fri Jan  4 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.33.1-20190405
+- sql: Extended windowing functions catalog with SQL standard semantics.
+  Standard aggregation functions can now be used in windowing
+  functions: (avg,max,min,sum,prod,count). Other windowing specific
+  functions were also implemented: (percent_rank,cume_dist,ntile,
+  lag,lead,first_value,last_value,nth_value).
+- sql: The standard frame specification was implemented for aggregation
+  functions as well as first_value, last_value and nth_value
+  functions. The available frames are rows, range and groups.
+  Bounds can be unbounded (partition limit), the current row, a fixed
+  number of rows (constant), or variable (column as input).
+  (e.g SELECT COUNT(col1) OVER (PARTITION BY col2 ORDER BY col3 RANGE
+  BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM t1;).
+- sql: Added WINDOW keyword which is optionally provided after the FROM
+  clause, with window specifications used in the projection
+  (e.g SELECT SUM(col1) OVER w1, LAST_VALUE(col2) OVER w2 FROM t1
+  WINDOW w1 AS (ROWS BETWEEN 5 PRECEDING AND 0 FOLLOWING),
+  w2 AS (w1);).
+- sql: Our previous partitioning implementation didn’t impose order in the
+  input. With this reexamination, partitioning now imposes ascending
+  order by default, thus pairing with the industry standard
+  implementation.
+
+* Fri Jan  4 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- sql: Implemented X'...' style binary string literals.
+- sql: Implemented U&'...' Unicode character string literals and
+  U&"..." Unicode delimited identifiers, including UESCAPE.  For the
+  string literals, you can have U&'...' '...' '...' UESCAPE '...' where
+  the escape must be as single character and the other '...' strings
+  are also Unicode character string literals.  For now, these latter
+  strings also undergo C-style backslash interpretation.
+- sql: Implemented PostgreSQL-like E'...' strings.  The strings can contain
+  C-style backslash escapes.  The old format strings '...' currently
+  still also accept C-style escapes, but that feature will be removed
+  in a future release.
+
+* Fri Jan  4 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- gdk: Added an extra argument of type `bool' to the atom to string and
+  string to atom methods to indicate whether the string is for
+  internal use (casting the value to or from a string) of external use
+  (to be printed).
+
+* Fri Jan  4 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- monetdb5: The MAL functions algebra.sort and algebra.firstn now have a new,
+  extra second-to-last argument, nilslast:bit, which indicates where
+  NIL values are to be sorted: at the beginning, or at the end.  The old
+  behavior is when for algebra.sort, the value of nilslast is equal to
+  the value or the reverse:bit parameter, for algebra.firstn when the
+  value of nilslast is opposite to the value of the asc:bit parameter.
+
+* Fri Jan  4 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- sql: Implemented the NULLS FIRST and NULLS LAST option to ORDER BY.  The
+  default is NULLS FIRST for ASC(ending) and NULLS LAST for DESC(ending).
+
+* Fri Jan  4 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- gdk: Implemented a nilslast option for BATfirstn.  If set, NILs come
+  last in the ordering that BATfirstn simulates, so non-NIL values are
+  preferentially returned.  The old behavior can be obtained by setting
+  nilslast to !asc(ending).
+
+* Fri Jan  4 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- gdk: Implemented a nilslast option for BATsort.  This option should be
+  equal to the reverse option for stable sort (it is not implemented for
+  stable sort), but can be different from reverse for non-stable sort.
+  The functions BATsort and GDKqsort have extra parameters, the function
+  GDKqsort_rev has been removed (superseded by GDKqsort with the new
+  `reverse' parameter).
+
+* Fri Jan  4 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- gdk: The BUNtail, BUNtvar, BUNtloc, and BUNtpos macros (and Tloc and Tpos)
+  now return a `void *' instead of a `char *'.
+
+* Fri Jan  4 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.33.1-20190405
+- sql: Added possibility to rename SQL schemas, tables and columns with ALTER
+  statements:
+  > ALTER SCHEMA [ IF EXISTS ] ident RENAME TO ident
+  > ALTER TABLE [ IF EXISTS ] qname RENAME TO ident
+  > ALTER TABLE [ IF EXISTS ] qname RENAME [ COLUMN ] ident TO ident
+  Also added optional IF EXISTS clause to other existing ALTER TABLE
+  statements.
+
+* Fri Jan  4 2019 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.33.1-20190405
+- clients: The mclient program can now be quit by typing quit or exit on the
+  command-line.  This makes it easier for novice users to quit the program
+  if they do not know that the standard command to quit is \q.
+
+* Fri Jan  4 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+
+* Fri Jan  4 2019 Aris Koning <aris.koning@monetdbsolutions.com> - 11.33.1-20190405
+- sql: The sql SAMPLE syntax is extended to include an optional integral SEED
+  parameter that sets the seed for the internal random number generator
+  in the sample algorithm.  When the seed is set, the user can obtain
+  a reproducible sample set from a static dataset with the same sample
+  query. The new syntax is
+  SELECT ... FROM ... WHERE ... SAMPLE <expr> [SEED <integer>]
+
+* Fri Jan  4 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- sql: Implemented a version of COPY INTO that reads/writes files from/to
+  the client instead of doing it in the server.  This has the
+  advantage that COPY INTO is then no longer restricted to only the
+  "super user" monetdb, nor only to absolute file names.  The syntax
+  to have the server communicate with the client for file content is
+  COPY INTO table FROM file ON CLIENT ...; and COPY query INTO file ON
+  CLIENT ...;.  This also works for COPY BINARY INTO.  There is also
+  the possibility to specify that files are to be read/written by the
+  server by using ON SERVER.  This is also the default when ON CLIENT
+  or ON SERVER is not specified.
+
+* Fri Jan  4 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- stream: The functions mnstr_write{Sht,Int,Lng,Hge} and their Array variants
+  now swap bytes of the written values if the stream is set to swap bytes
+  (i.e. big-endian on a little-endian machine and v.v.).
+- stream: Removed defines ST_ASCII, ST_BIN, ST_READ, ST_WRITE from stream.h.
+- stream: Changed function mnstr_set_byteorder(stream, char) to
+  mnstr_set_bigendian(stream, bool) where the second argument should
+  be `true' for specifying that the stream is bigendian.  This sets an
+  internal flag whether or not to swap bytes which can be retrieved
+  with mnstr_get_swapbytes(stream).
+- stream: Changed function `int mnstr_byteorder(stream)' to `bool
+  mnstr_get_swapbytes(stream)'; it now returns whether bytes are
+  swapped.
+- stream: Changed function `int mnstr_type(stream)' to `bool
+  mnstr_isbinary(stream)'.
+
+* Fri Jan  4 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- mapilib: Removed function mapi_cache_shuffle.
+- mapilib: Removed function mapi_stream_query.
+
+* Fri Jan  4 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- buildtools: We now also build the Python 3 integration packages for Fedora, Debian,
+  Ubuntu, and Windows (not for Debian 8, Ubuntu 14.04, or EPEL 6 and 7
+  which are too old).
+
+* Fri Jan  4 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- gdk: Function PROPdestroy now takes a BAT* parameter.
+
+* Fri Jan  4 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- gdk: A whole bunch of functions now take a bool argument instead of an
+  int argument.  Some functions now return a bool instead of an int.
+  In all these cases, the int was used as a Boolean value.
+
+* Fri Jan  4 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
+- sql: The sys.functions table now has an extra column called "system" of
+  type BOOLEAN whose value is TRUE for system functions (i.e. functions
+  that should not be dumped).  The table sys.systemfunctions has been
+  changed to a view and is now officially deprecated.
+
+* Fri Jan  4 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.33.1-20190405
+- sql: Extended merge tables with partitioning using a predicate:
+  > CREATE MERGE TABLE [ IF NOT EXISTS ] table_name (... columns ...)
+  [ PARTITION BY { RANGE | VALUES }
+  { ON '(' column_name ')' | USING '(' expression ')' } ]
+  The partitioning can occur by range or list of values using one of
+  the table's columns or an expression. The domain of the partitioning
+  scheme will be covered by each child table added with alter statements
+  depending if the table is partitioned by range or list of values:
+  > ALTER TABLE merge_table_name { ADD | SET } TABLE child_table_name
+  AS PARTITION IN '(' expression [ ',' ... ] ')' [ WITH NULL ]
+  > ALTER TABLE merge_table_name { ADD | SET } TABLE child_table_name
+  AS PARTITION BETWEEN { RANGE MINVALUE | expression } AND
+  { RANGE MAXVALUE | expression } [ WITH NULL ]
+  > ALTER TABLE merge_table_name { ADD | SET } TABLE child_table_name
+  AS PARTITION WITH NULL
+  When updating a single partition range/list of values, the SET
+  keyword should be used instead of ADD.
+  INSERT, UPDATE and DELETE statements are possible on partitioned
+  tables with corresponding validation on each partition domain.
+  The system tables sys.table_partitions, sys.range_partitions and
+  sys.value_partitions were added to store meta-information about
+  each existing partition.
+
+* Fri Jan 04 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.31.13-20190104
+- Rebuilt.
+- BZ#6643: schema name qualifier in create global temporary table
+  json.table6643 ... is not honered
+- BZ#6645: optimizer treats all the functions with no or constant
+  parameters as constant
+- BZ#6650: PREPARE SQL statement fails to compile user defined functions
+  with parameter/s
+- BZ#6651: Multi-column IN clause for subquery produces wrong results
+- BZ#6653: CREATE TABLE accepts empty table/column name
+- BZ#6654: Incorrect handling of 'TRUE' in compound select
+- BZ#6657: Restart sequence with a non atomic sub-query cardinality
+  gives wrong error message
+- BZ#6660: GRANTing a ROLE is not idempotent
+- BZ#6662: Concurrency Conflicts Exception string "!transaction is
+  aborted because of concurrency conflicts, will ROLLBACK instead" not
+  shown on prompt.
+- BZ#6664: mserver5 crash: infinite recursive happens at rel_bin.c:489
+- BZ#6665: Creation of serial types does not accept negative numbers
+- BZ#6666: COPY INTO from .. LOCKED doubles input data
+- BZ#6668: The SAMPLE key word doesn't work in a subquery.
+- BZ#6669: COPY [xxx RECORDS] INTO foo FROM STDIN ... doesn't work
+  without specifying nr of to be copied records
+- BZ#6672: SQLGetData with SQL_C_WCHAR string truncation and invalid
+  StrLen_or_Ind value
+
+* Tue Oct 30 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.13-20190104
+- sql: Disabled function sys.getcontent(url).
+
+* Thu Oct 11 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.13-20190104
+
+* Thu Oct 11 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.11-20181011
+- Rebuilt.
+- BZ#6648: key property potentially wrong after type conversion
+- BZ#6649: Projection inside within transaction gives wrong results
+
+* Wed Oct 10 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.11-20181011
+- MonetDB: Some subtle dependencies between RPMs have been fixed.
+
+* Fri Oct 05 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.9-20181005
+- Rebuilt.
+- BZ#6640: timestamp_to_str returning incorrectly adjusted results
+- BZ#6641: race condition in SQL UDF with update
+- BZ#6642: Hanging query
+- BZ#6646: Example SQLcopyinto.java does not work
+
+* Wed Oct  3 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.9-20181005
+- buildtools: On Ubuntu 18.10 (Cosmic Cuttlefish), the libmonetdb5-server-bam package
+  cannot be built because of an incompatibility in the libbam library
+  (it cannot be used in a shared object).
+
+* Wed Aug 29 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.7-20180829
+- Rebuilt.
+
+* Wed Aug 29 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.5-20180829
+- Rebuilt.
+- BZ#6506: Improper performance counters
+- BZ#6606: Misleading parameter name in generate_series function
+- BZ#6639: COMMENT ON TABLE abc IS NULL invalidly sets the remark column
+  to null where remark column is defined as NOT NULLable
+
+* Tue Aug 28 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.5-20180829
+- buildtools: Build the MonetDB-cfitsio RPM and libmonetdb5-server-cfitsio
+  Debian/Ubuntu package.
+
+* Mon Aug 27 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.5-20180829
+- merovingian: Added a "logrotate" configuration file.  See /etc/logrotate.d/monetdbd.
+
+* Tue Aug 21 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.3-20180821
+- Rebuilt.
+
+* Wed Aug 15 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- Rebuilt.
+- BZ#4020: Importing timestamp with zone from copy into
+- BZ#6564: Changes to the Remote Table definition
+- BZ#6575: Sqlitelogictest crash on groupby query with coalesce call
+- BZ#6579: Sqlitelogic test infinite loop while compiling SQL query
+- BZ#6586: Sqlitelogictest crash on complex aggregation query
+- BZ#6593: Poor performance with like operator and escape clause
+- BZ#6596: Multicolumn aggregation very slow after ANALYZE when persistent
+  hashes are enabled
+- BZ#6605: Sqlitelogictest set queries with wrong results
+- BZ#6610: Sqlitelogictest algebra.rangejoin undefined
+- BZ#6611: Cannot compile with GCC 8.1 and --enable-debug=no
+- BZ#6612: Implement BLOB handling in python UDFs
+- BZ#6614: JDBC 2.35/2.36 throws NullPointerException on getObject(int i)
+  on Timestamp column
+- BZ#6615: JDBC 2.35 returns "false" for Boolean NULL
+- BZ#6616: JDBC 2.35 returns minint (-2147483648) for int NULL
+- BZ#6618: dependency column on sequence violated by DROP SEQUENCE
+- BZ#6621: SELECT FROM REMOTE TABLE WHERE <> returns wrong results
+- BZ#6624: "Cannot use non GROUP BY column in query results without an
+  aggregate function" when using aggregate function in both HAVING and
+  ORDER BY clauses.
+- BZ#6625: OR in subselect causes the server to crash with segmentation
+  fault
+- BZ#6627: stddev_pop inconsistent behaviour
+- BZ#6628: User cannot insert into own local temporary table
+- BZ#6629: CREATE TABLE IF NOT EXISTS returns 42000!
+- BZ#6630: Sqlitelogictest cast NULL to integer failing
+- BZ#6632: Dataflow causes crash when THRnew fails
+- BZ#6633: ILIKE clauses don't work on certain characters
+- BZ#6635: monetdbd exits due to "Too many open files" error
+- BZ#6637: Within a transaction, d after an error causes mclient to exit
+- BZ#6638: (sequences of) mkey.bulk_rotate_xor_hash() can generate NIL
+  from non-NIL making multi-col joins return wrong results
+
+* Thu Aug  2 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.31.1-20180815
+- clients: ODBC SQLGetInfo now returns a positive numeric value for InfoTypes:
+  SQL_MAX_COLUMN_NAME_LEN, SQL_MAX_DRIVER_CONNECTIONS,
+  SQL_MAX_IDENTIFIER_LEN, SQL_MAX_PROCEDURE_NAME_LEN,
+  SQL_MAX_SCHEMA_NAME_LEN, SQL_MAX_TABLE_NAME_LEN and
+  SQL_MAX_USER_NAME_LEN.
+
+* Mon Jul 30 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- gdk: Hash indexes are now persistent across server restarts.
+- gdk: The macros bunfastapp and tfastins and variants no longer set the dirty
+  flag of the heap they write to.  This now needs to be done separately
+  (and preferably outside of the inner loop).
+
+* Fri Jul 27 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- gdk: Removed batDirty flag from BAT record.  Its function is completely
+  superseded by batDirtydesc and the dirty flags on the various heaps.
+
+* Tue Jul 24 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- clients: ODBC: Implemented SQL_ATTR_QUERY_TIMEOUT parameter in SQLSetStmtAttr.
+
+* Tue Jul 24 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- gdk: Removed "masksize" argument of function BAThash.
+
+* Thu Jun  7 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.31.1-20180815
+- sql: Removed deprecated table producing system functions:
+  sys.dependencies_columns_on_functions()
+  sys.dependencies_columns_on_indexes()
+  sys.dependencies_columns_on_keys()
+  sys.dependencies_columns_on_triggers()
+  sys.dependencies_columns_on_views()
+  sys.dependencies_functions_on_functions()
+  sys.dependencies_functions_on_triggers()
+  sys.dependencies_keys_on_foreignkeys()
+  sys.dependencies_owners_on_schemas()
+  sys.dependencies_schemas_on_users()
+  sys.dependencies_tables_on_foreignkeys()
+  sys.dependencies_tables_on_functions()
+  sys.dependencies_tables_on_indexes()
+  sys.dependencies_tables_on_triggers()
+  sys.dependencies_tables_on_views()
+  sys.dependencies_views_on_functions()
+  sys.dependencies_views_on_triggers()
+  They are replaced by new system dependency_* views:
+  sys.dependency_args_on_types
+  sys.dependency_columns_on_functions
+  sys.dependency_columns_on_indexes
+  sys.dependency_columns_on_keys
+  sys.dependency_columns_on_procedures
+  sys.dependency_columns_on_triggers
+  sys.dependency_columns_on_types
+  sys.dependency_columns_on_views
+  sys.dependency_functions_on_functions
+  sys.dependency_functions_on_procedures
+  sys.dependency_functions_on_triggers
+  sys.dependency_functions_on_types
+  sys.dependency_functions_on_views
+  sys.dependency_keys_on_foreignkeys
+  sys.dependency_owners_on_schemas
+  sys.dependency_schemas_on_users
+  sys.dependency_tables_on_foreignkeys
+  sys.dependency_tables_on_functions
+  sys.dependency_tables_on_indexes
+  sys.dependency_tables_on_procedures
+  sys.dependency_tables_on_triggers
+  sys.dependency_tables_on_views
+  sys.dependency_views_on_functions
+  sys.dependency_views_on_procedures
+  sys.dependency_views_on_views
+
+* Thu May 31 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- gdk: A whole bunch of functions that took an int argument that was used as a
+  Boolean (true/false) value now take a value of type bool.  The functions
+  BATkeyed, BATordered and BATordered_rev now return a bool instead of
+  an int.
+
+* Thu May 31 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- monetdb5: The lsst module was moved to a separate repository
+  (https://dev.monetdb.org/hg/MonetDB-lsst/).
+
+* Thu May 31 2018 Ying Zhang <y.zhang@cwi.nl> - 11.31.1-20180815
+- clients: Added a '-f rowcount' option in mclient to repress printing the actual
+  data of a resultset, but only print the number of returned tuples
+
+* Thu May 31 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- buildtools: On Windows, the separate MonetDB5-Geom installer has been incorporated
+  into the main MonetDB5-SQL installer and is therefore no longer
+  available as a separate download.
+
+* Thu May 31 2018 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.31.1-20180815
+- merovingian: Changed the monetdb profilerstart command to be more robust.  If the
+  server or stethoscope crashed before, the pid file is still there,
+  so the next time we try to start stethoscope, it will fail.  Now the
+  profilerstart command will check if a stethoscope process with the
+  recorded pid is running. If not, we start stethoscope, assuming that
+  something went wrong before.
+- merovingian: Changed the monetdb stop command to try to stop stethoscope before
+  stoping the server. The error conditions that can arrise from attempting
+  to stop stethoscope are:
+  - The database is not running.
+  - The profilerlogpath is not set.
+  - The profiler.pid file does not exist or is inaccessible.
+  - The contents of the profiler.pid are not valid.
+  - Shutdown of stethoscope did not succeed.
+  - Removing the profiler.pid file failed.
+  In all the cases, the attempt to stop the server can continue normally,
+  so we actually ignore any errors that rise from the attempt to stop
+  stethoscope.
+
+* Thu May 31 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- testing: Removed helper programs Mtimeout and MkillUsers: they have long been
+  superseded by timeout handling by Mtest.py itself.
+
+* Thu May 31 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- gdk: Removed the tdense property: it's function is completely replaced by
+  whether or not tseqbase is equal to oid_nil.
+
+* Thu May 31 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.31.1-20180815
+- sql: Implemented group_concat(X,Y) aggregate function which also
+  concatenates a column of strings X, but using a supplied string Y as
+  the separator. This function is also a SQL extension.
+
+* Thu May 31 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.31.1-20180815
+- sql: Implemented group_concat(X) aggregate function which concatenates a
+  column of strings using a comma as a separator. This function is not
+  featured in the SQL standard.
+
+* Thu May 31 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.31.1-20180815
+- stream: Added support for lz4 compressed files in the stream library
+
 * Thu May 31 2018 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.29.7-20180531
 - Rebuilt.
 

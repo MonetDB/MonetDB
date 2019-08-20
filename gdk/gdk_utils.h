@@ -3,27 +3,24 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _GDK_UTILS_H_
 #define _GDK_UTILS_H_
 
-#include "monet_options.h"
 #include <setjmp.h>
 
-gdk_export BAT *GDKkey;
-gdk_export BAT *GDKval;
+gdk_export const char *GDKgetenv(const char *name);
 
-gdk_export char *GDKgetenv(const char *name);
-
-gdk_export int GDKgetenv_istext(const char *name, const char* text);
-gdk_export int GDKgetenv_isyes(const char *name);
-gdk_export int GDKgetenv_istrue(const char *name);
+gdk_export bool GDKgetenv_istext(const char *name, const char* text);
+gdk_export bool GDKgetenv_isyes(const char *name);
+gdk_export bool GDKgetenv_istrue(const char *name);
 
 gdk_export int GDKgetenv_int(const char *name, int def);
 
 gdk_export gdk_return GDKsetenv(const char *name, const char *value);
+gdk_export gdk_return GDKcopyenv(BAT **key, BAT **val, bool writable);
 
 /*
  * @+ Memory management
@@ -74,7 +71,8 @@ gdk_export size_t _MT_pagesize;
 #define MT_npages()	_MT_npages
 
 gdk_export void MT_init(void);	/*  init the package. */
-gdk_export int GDKinit(opt *set, int setlen);
+struct opt;
+gdk_export gdk_return GDKinit(struct opt *set, int setlen);
 
 /* used for testing only */
 gdk_export void GDKsetmallocsuccesscount(lng count);
@@ -84,21 +82,16 @@ gdk_export void GDKsetmallocsuccesscount(lng count);
  * the transient BATs should be removed.  The buffer pool manager
  * takes care of this.
  */
-gdk_export int GDKnr_threads;
 #ifndef HAVE_EMBEDDED
-__declspec(noreturn) gdk_export void GDKexit(int status)
-	__attribute__((__noreturn__));
+gdk_export _Noreturn void GDKexit(int status);
 #else
 gdk_export void GDKexit(int status);
 #endif
-gdk_export int GDKexiting(void);
+gdk_export bool GDKexiting(void);
 
-gdk_export void GDKregister(MT_Id pid);
 gdk_export void GDKprepareExit(void);
-gdk_export void GDKreset(int status, int exit);
+gdk_export void GDKreset(int status);
 gdk_export const char *GDKversion(void);
-
-gdk_export gdk_return GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir);
 
 // these are used in embedded mode to jump out of GDKfatal
 gdk_export jmp_buf GDKfataljump;

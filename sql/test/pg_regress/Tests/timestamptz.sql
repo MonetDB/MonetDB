@@ -5,33 +5,40 @@
 /* SET australian_timezones = 'off'; */
 
 CREATE TABLE TIMESTAMPTZ_TBL ( d1 timestamp(2) with time zone);
+DECLARE test_now timestamp(2) with time zone;
+DECLARE test_current_timestamp timestamp(2) with time zone;
+DECLARE test_current_date date;
+
+SET test_now = now;
+SET test_current_timestamp = current_timestamp;
+SET test_current_date = current_date;
 
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('now');
-INSERT INTO TIMESTAMPTZ_TBL VALUES (now);
+INSERT INTO TIMESTAMPTZ_TBL VALUES (test_now);
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('current');
-INSERT INTO TIMESTAMPTZ_TBL VALUES (current_timestamp);
+INSERT INTO TIMESTAMPTZ_TBL VALUES (test_current_timestamp);
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('today');
-INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(current_date as timestamptz));
+INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(test_current_date as timestamptz));
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('yesterday');
-INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(sql_sub(current_date, 24*60*60.0) as timestamptz));
+INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(sql_sub(test_current_date, 24*60*60.0) as timestamptz));
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('tomorrow');
-INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(sql_add(current_date, 24*60*60.0) as timestamptz));
+INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(sql_add(test_current_date, 24*60*60.0) as timestamptz));
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('tomorrow EST');
 INSERT INTO TIMESTAMPTZ_TBL VALUES ('tomorrow zulu');
 
 --SELECT d1 FROM TIMESTAMPTZ_TBL;
-SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(current_date as timestamptz);
-SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_add(current_date, 24*60*60.0)as timestamptz);
-SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_sub(current_date, 24*60*60.0)as timestamptz);
-SELECT count(*) AS None FROM TIMESTAMPTZ_TBL WHERE d1 = cast(now as timestamptz);
+SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(test_current_date as timestamptz);
+SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_add(test_current_date, 24*60*60.0)as timestamptz);
+SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_sub(test_current_date, 24*60*60.0)as timestamptz);
+SELECT count(*) AS None FROM TIMESTAMPTZ_TBL WHERE d1 = cast(test_now as timestamptz);
 
 DELETE FROM TIMESTAMPTZ_TBL;
 
 -- verify uniform transaction time within transaction block
 START TRANSACTION;
-INSERT INTO TIMESTAMPTZ_TBL VALUES (now);
-INSERT INTO TIMESTAMPTZ_TBL VALUES (now());
-SELECT count(*) AS two FROM TIMESTAMPTZ_TBL WHERE d1 <= cast(now as timestamptz);
+INSERT INTO TIMESTAMPTZ_TBL VALUES (test_now);
+INSERT INTO TIMESTAMPTZ_TBL VALUES (test_now);
+SELECT count(*) AS two FROM TIMESTAMPTZ_TBL WHERE d1 <= cast(test_now as timestamptz);
 COMMIT;
 DELETE FROM TIMESTAMPTZ_TBL;
 
@@ -200,7 +207,7 @@ SELECT '' AS to_char_4, to_char(d1, 'FMY,YYY FMYYYY FMYYY FMYY FMY FMCC FMQ FMMM
 SELECT '' AS to_char_5, to_char(d1, 'HH HH12 HH24 MI SS SSSS') 
    FROM TIMESTAMPTZ_TBL;
 
-SELECT '' AS to_char_6, to_char(d1, '"HH:MI:SS is" HH:MI:SS "\\"text between quote marks\\""') 
+SELECT '' AS to_char_6, to_char(d1, E'"HH:MI:SS is" HH:MI:SS "\\"text between quote marks\\""') 
    FROM TIMESTAMPTZ_TBL;		
 		
 SELECT '' AS to_char_7, to_char(d1, 'HH24--text--MI--text--SS')
@@ -228,7 +235,7 @@ SELECT '' AS to_timestamp_4, to_timestamp('My birthday-> Year: 1976, Month: May,
 SELECT '' AS to_timestamp_5, to_timestamp('1,582nd VIII 21', 'Y,YYYth FMRM DD');
 
 SELECT '' AS to_timestamp_6, to_timestamp('15 "text between quote marks" 98 54 45', 
-										  'HH "\\text between quote marks\\"" YY MI SS');
+										  E'HH "\\text between quote marks\\"" YY MI SS');
     
 SELECT '' AS to_timestamp_7, to_timestamp('05121445482000', 'MMDDHHMISSYYYY');
 
@@ -274,7 +281,7 @@ SELECT d1, extract(quarter from d1) FROM TIMESTAMPTZ_TBL;
 SELECT d1, extract(halfyear from d1) FROM TIMESTAMPTZ_TBL;
 SELECT d1, extract(year from d1) FROM TIMESTAMPTZ_TBL;
 SELECT d1, extract(century from d1) FROM TIMESTAMPTZ_TBL;
-SELECT d1, extract(millenium from d1) FROM TIMESTAMPTZ_TBL;
+SELECT d1, extract(millennium from d1) FROM TIMESTAMPTZ_TBL;
 SELECT d1, extract(epoch from d1) FROM TIMESTAMPTZ_TBL;
 
 SELECT d1, week(d1) FROM TIMESTAMPTZ_TBL;

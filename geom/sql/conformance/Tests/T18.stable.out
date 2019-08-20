@@ -18,7 +18,6 @@ stdout of test 'T18` in directory 'geom/sql/conformance` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 #WARNING To speedup geom.AsText a bulk operator implementation is needed
 
 # 14:23:23 >  
@@ -26,11 +25,11 @@ Ready.
 # 14:23:23 >  
 
 #SELECT ST_AsText(ST_EndPoint(centerline)) FROM road_segments WHERE fid = 102;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
-% 15 # length
-[ "\"POINT (44 31)\""	]
+% 13 # length
+[ "POINT (44 31)"	]
 
 # 14:23:23 >  
 # 14:23:23 >  "Done."

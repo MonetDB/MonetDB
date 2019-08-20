@@ -59,7 +59,6 @@ stdout of test 'groupconcat01` in directory 'sql/test/group-concat` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:11:33 >  
 # 14:11:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28908" "--port=37314"
@@ -114,7 +113,7 @@ Ready.
 % 1,	28 # length
 [ 1,	"another,testing,todo,serious"	]
 [ 2,	"lets,get,harder,more"	]
-[ 3,	NULL	]
+[ 3,	"even,,more,,stress"	]
 [ 4,	NULL	]
 #insert into testme values (5, ''), (4, 'nothing'), (5, ''), (3, '');
 [ 4	]
@@ -125,9 +124,19 @@ Ready.
 % 1,	28 # length
 [ 1,	"another,testing,todo,serious"	]
 [ 2,	"lets,get,harder,more"	]
-[ 3,	NULL	]
-[ 4,	NULL	]
+[ 3,	"even,,more,,stress,"	]
+[ 4,	"nothing"	]
 [ 5,	","	]
+#select a, group_concat(a) from testme group by a;
+% sys.testme,	sys.L3 # table_name
+% a,	L3 # name
+% int,	clob # type
+% 1,	13 # length
+[ 1,	"1,1,1,1"	]
+[ 2,	"2,2,2,2"	]
+[ 3,	"3,3,3,3,3,3,3"	]
+[ 4,	"4,4,4"	]
+[ 5,	"5,5"	]
 #rollback;
 
 # 14:11:33 >  

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _MAL_PROFILER_H
@@ -20,8 +20,6 @@
 typedef struct rusage Rusage;
 #endif
 
-typedef struct tms Tms;
-
 mal_export int malProfileMode;
 
 mal_export void initProfiler(void);
@@ -35,7 +33,6 @@ mal_export str stopProfiler(void);
 mal_export str startTrace(str path);
 mal_export str stopTrace(str path);
 mal_export void setHeartbeat(int delay);
-mal_export str setprofilerpoolsize(int size);
 mal_export void initHeartbeat(void);
 mal_export void profilerHeartbeatEvent(char *alter);
 mal_export int getprofilerlimit(void);

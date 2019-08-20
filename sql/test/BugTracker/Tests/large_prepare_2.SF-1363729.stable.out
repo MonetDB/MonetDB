@@ -11,7 +11,6 @@ stdout of test 'large_prepare_2.SF-1363729` in directory 'sql/test/BugTracker` i
 # dbname:mTests_src_test_BugTracker
 # Visit http://monetdb.cwi.nl/ for further information
 
-Ready.
 
 # 12:37:41 >  
 # 12:37:41 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=madrid" "--port=32243"
@@ -146,7 +145,7 @@ Ready.
 #);
 [ 1	]
 #select count(*) from mytable;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

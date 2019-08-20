@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 import subprocess
 import os
@@ -13,14 +13,22 @@ import tempfile
 import copy
 import atexit
 import threading
-if sys.version[:1] == '2':
+import signal
+if sys.version.startswith('2'):
     import Queue as queue
 else:
     import queue
 
 from subprocess import PIPE
-
 __all__ = ['PIPE', 'Popen', 'client', 'server']
+
+try:
+    # on Windows, also make this available
+    from subprocess import CREATE_NEW_PROCESS_GROUP
+except ImportError:
+    pass
+else:
+    __all__.append('CREATE_NEW_PROCESS_GROUP')
 
 verbose = False
 
@@ -67,102 +75,36 @@ def _delfiles():
 atexit.register(_delfiles)
 
 class _BufferedPipe:
-    def __init__(self, fd, waitfor = None, skip = None):
+    def __init__(self, fd):
         self._pipe = fd
         self._queue = queue.Queue()
         self._eof = False
         self._empty = ''
-        if waitfor is not None:
-            self._wfq = queue.Queue()
-        else:
-            self._wfq = None
-        self._thread = threading.Thread(target = self._readerthread,
-                                        args = (fd, self._queue, waitfor, self._wfq, skip))
+        self._thread = threading.Thread(target=self._readerthread,
+                                        args=(fd, self._queue))
         self._thread.setDaemon(True)
         self._thread.start()
 
-    def _readerthread(self, fh, queue, waitfor, wfq, skip):
-        # If `skip' has a value, don't pass it through the first time
-        # we encounter it.
-        # If `waitfor' has a value, put something into the wfq queue
-        # when we've seen it.
+    def _readerthread(self, fh, queue):
         s = 0
         w = 0
-        skipqueue = []
         first = True
         while True:
-            if skipqueue:
-                c = skipqueue[0]
-                del skipqueue[0]
-            else:
-                c = fh.read(1)
-                if first:
-                    if type(c) is type(b''):
-                        self._empty = b''
-                    first = False
-                if skip and c:
-                    if c == skip[s]:
-                        s += 1
-                        if s == len(skip):
-                            skip = None
-                    else:
-                        j = 0
-                        while j < s:
-                            if skip[j:s] + c != skip[:s-j+1]:
-                                skipqueue.append(skip[j])
-                                j += 1
-                            else:
-                                s = s-j+1
-                                break
-                        else:
-                            if c == skip[0]:
-                                s = 1
-                            else:
-                                skipqueue.append(c)
-                                s = 0
-                    continue
-            if waitfor and c:
-                if c == waitfor[w]:
-                    w += 1
-                    if w == len(waitfor):
-                        waitfor = None
-                        wfq.put('ready')
-                        wfq = None
-                else:
-                    j = 0
-                    while j < w:
-                        if waitfor[j:w] + c != waitfor[:w-j+1]:
-                            queue.put(waitfor[j])
-                            j += 1
-                        else:
-                            w = w-j+1
-                            break
-                    else:
-                        if c == waitfor[0]:
-                            w = 1
-                        else:
-                            queue.put(c)
-                            w = 0
-                continue
+            c = fh.read(1)
+            if first:
+                if type(c) is type(b''):
+                    self._empty = b''
+                first = False
             queue.put(c)                # put '' if at EOF
             if not c:
-                if waitfor is not None:
-                    # if at EOF and still waiting for string, signal EOF
-                    wfq.put('eof')
-                    waitfor = None
-                    wfq = None
                 break
-
-    def _waitfor(self):
-        rdy = self._wfq.get()
-        self._wfq = None
 
     def close(self):
         if self._thread:
             self._thread.join()
         self._thread = None
 
-    def read(self, size = -1):
+    def read(self, size=-1):
         if self._eof:
             return self._empty
         if size < 0:
@@ -186,7 +128,7 @@ class _BufferedPipe:
                 break                   # EOF
         return self._empty.join(ret)
 
-    def readline(self, size = -1):
+    def readline(self, size=-1):
         ret = []
         while size != 0:
             c = self.read(1)
@@ -200,6 +142,7 @@ class _BufferedPipe:
 class Popen(subprocess.Popen):
     def __init__(self, *args, **kwargs):
         self.dotmonetdbfile = None
+        self.isserver = False
         subprocess.Popen.__init__(self, *args, **kwargs)
 
     def wait(self):
@@ -212,7 +155,7 @@ class Popen(subprocess.Popen):
                 pass
         return ret
 
-    def communicate(self, input = None):
+    def communicate(self, input=None):
         # since we always use threads for stdout/stderr, we can just read()
         stdout = None
         stderr = None
@@ -223,6 +166,14 @@ class Popen(subprocess.Popen):
                 except IOError:
                     pass
             self.stdin.close()
+        if self.isserver:
+            try:
+                if os.name == 'nt':
+                    self.send_signal(signal.CTRL_BREAK_EVENT)
+                else:
+                    self.terminate()
+            except OSError:
+                pass
         if self.stdout:
             stdout = self.stdout.read()
             self.stdout.close()
@@ -232,11 +183,11 @@ class Popen(subprocess.Popen):
         self.wait()
         return stdout, stderr
 
-def client(lang, args = [], stdin = None, stdout = None, stderr = None,
-           port = os.getenv('MAPIPORT'), dbname = os.getenv('TSTDB'), host = None,
-           user = 'monetdb', passwd = 'monetdb', log = False,
-           interactive = None, echo = None, format = None,
-           input = None, communicate = False, universal_newlines = True):
+def client(lang, args=[], stdin=None, stdout=None, stderr=None,
+           server=None, port=None, dbname=None, host=None,
+           user='monetdb', passwd='monetdb', log=False,
+           interactive=None, echo=None, format=None,
+           input=None, communicate=False, universal_newlines=True):
     '''Start a client process.'''
     if lang == 'mal':
         cmd = _mal_client[:]
@@ -244,6 +195,8 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
         cmd = _sql_client[:]
     elif lang == 'sqldump':
         cmd = _sql_dump[:]
+    if verbose:
+        sys.stdout.write('Default client: ' + ' '.join(cmd +  args) + '\n')
 
     # no -i if input from -s or /dev/null
     if '-i' in cmd and ('-s' in args or stdin is None):
@@ -267,18 +220,28 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
 
     env = None
 
+    # if server instance is specified, it provides defaults for
+    # database name and port
+    if server is not None:
+        if port is None:
+            port = server.dbport
+        if dbname is None:
+            dbname = server.dbname
+
     if port is not None:
         for i in range(len(cmd)):
-            if cmd[i][:7] == '--port=':
+            if cmd[i].startswith('--port='):
                 del cmd[i]
                 break
         cmd.append('--port=%d' % int(port))
+    if dbname is None:
+        dbname = os.getenv('TSTDB')
     if dbname is not None:
         cmd.append('--database=%s' % dbname)
     fnam = None
     if user is not None or passwd is not None:
         env = copy.deepcopy(os.environ)
-        fd, fnam = tempfile.mkstemp(text = True)
+        fd, fnam = tempfile.mkstemp(text=True)
         _dotmonetdbfile.append(fnam)
         if user is not None:
             os.write(fd, ('user=%s\n' % user).encode('utf-8'))
@@ -288,7 +251,7 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
         env['DOTMONETDBFILE'] = fnam
     if host is not None:
         for i in range(len(cmd)):
-            if cmd[i][:7] == '--host=':
+            if cmd[i].startswith('--host='):
                 del cmd[i]
                 break
         cmd.append('--host=%s' % host)
@@ -320,12 +283,12 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
     else:
         out = stdout
     p = Popen(cmd + args,
-              stdin = stdin,
-              stdout = out,
-              stderr = stderr,
-              shell = False,
-              env = env,
-              universal_newlines = universal_newlines)
+              stdin=stdin,
+              stdout=out,
+              stderr=stderr,
+              shell=False,
+              env=env,
+              universal_newlines=universal_newlines)
     p.dotmonetdbfile = fnam
     if stdout == PIPE:
         p.stdout = _BufferedPipe(p.stdout)
@@ -339,10 +302,10 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
         sys.stderr.write(err)
     return p
 
-def server(args = [], stdin = None, stdout = None, stderr = None,
-           mapiport = None, dbname = os.getenv('TSTDB'), dbfarm = None,
-           dbinit = None, dbextra=None, bufsize = 0, log = False,
-           notrace = False, notimeout = False):
+def server(args=[], stdin=None, stdout=None, stderr=None,
+           mapiport=None, dbname=os.getenv('TSTDB'), dbfarm=None,
+           dbextra=None, bufsize=0, log=False,
+           notrace=False, notimeout=False, ipv6=False):
     '''Start a server process.'''
     cmd = _server[:]
     if not cmd:
@@ -350,31 +313,41 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
                '--set', 'mapi_open=true',
                '--set', 'gdk_nr_threads=1',
                '--set', 'monet_prompt=']
+    cmd.extend(['--set', 'monet_daemon=yes'])
+    if verbose:
+        sys.stdout.write('Default server: ' + ' '.join(cmd +  args) + '\n')
     if notrace and '--trace' in cmd:
         cmd.remove('--trace')
-    if dbinit is not None:
-        cmd.append('--dbinit')
-        cmd.append(dbinit)
-    if mapiport is not None:
+    if ipv6:
         for i in range(len(cmd)):
-            if cmd[i][:10] == 'mapi_port=':
+            if cmd[i].startswith('mapi_ipv6='):
+                del cmd[i]
+                del cmd[i - 1]
+                break
+        cmd.append('--set')
+        cmd.append('mapi_ipv6=true')
+    if mapiport is not None:
+        # make sure it's a string
+        mapiport = str(int(mapiport))
+        for i in range(len(cmd)):
+            if cmd[i].startswith('mapi_port='):
                 del cmd[i]
                 del cmd[i - 1]
                 break
         usock = None
         for i in range(len(cmd)):
-            if cmd[i][:11] == 'mapi_usock=':
+            if cmd[i].startswith('mapi_usock='):
                 usock = cmd[i][11:cmd[i].rfind('.')]
                 del cmd[i]
                 del cmd[i - 1]
                 break
         cmd.append('--set')
-        cmd.append('mapi_port=%d' % int(mapiport))
+        cmd.append('mapi_port=%s' % mapiport)
         if usock is not None:
             cmd.append('--set')
-            cmd.append('mapi_usock=%s.%d' % (usock, int(mapiport)))
+            cmd.append('mapi_usock=%s.%s' % (usock, mapiport))
     for i in range(len(cmd)):
-        if cmd[i][:9] == '--dbpath=':
+        if cmd[i].startswith('--dbpath='):
             dbpath = cmd[i][9:]
             del cmd[i]
             break
@@ -384,18 +357,21 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
             break
     else:
         dbpath = None
-    if dbname is None and dbfarm is not None:
-        dbname = 'demo'
-    if dbname is not None:
-        if dbfarm is None:
-            if _dbfarm is None:
-                raise RuntimeError('no dbfarm known')
-            dbfarm = _dbfarm
-        dbpath = os.path.join(dbfarm, dbname)
     if dbpath is not None:
-        cmd.append('--dbpath=%s' % dbpath)
+        if dbfarm is None:
+            dbfarm = os.path.dirname(dbpath)
+        if dbname is None:
+            dbname = os.path.basename(dbpath)
+    if dbname is None:
+        dbname = 'demo'
+    if dbfarm is None:
+        if _dbfarm is None:
+            raise RuntimeError('no dbfarm known')
+        dbfarm = _dbfarm
+    dbpath = os.path.join(dbfarm, dbname)
+    cmd.append('--dbpath=%s' % dbpath)
     for i in range(len(cmd)):
-        if cmd[i][:10] == '--dbextra=':
+        if cmd[i].startswith('--dbextra='):
             dbextra_path = cmd[i][10:]
             del cmd[i]
             break
@@ -437,26 +413,39 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
         sys.stderr.write(prompt + '\n')
         sys.stderr.write('\n')
         sys.stderr.flush()
+    started = os.path.join(dbpath, '.started')
+    try:
+        os.unlink(started)
+    except OSError:
+        pass
+    if os.name == 'nt':
+        kw = {'creationflags': CREATE_NEW_PROCESS_GROUP}
+    else:
+        kw = {}
     p = Popen(cmd + args,
-              stdin = stdin,
-              stdout = stdout,
-              stderr = stderr,
-              shell = False,
-              universal_newlines = True,
-              bufsize = bufsize)
+              stdin=stdin,
+              stdout=stdout,
+              stderr=stderr,
+              shell=False,
+              universal_newlines=True,
+              bufsize=bufsize,
+              **kw)
+    p.isserver = True
     if stderr == PIPE:
         p.stderr = _BufferedPipe(p.stderr)
     if stdout == PIPE:
-        if stdin == PIPE:
-            # If both stdin and stdout are pipes, we wait until the
-            # server is ready.  This is done by sending a print
-            # command and waiting for the result to appear.
-            rdy = '\nServer Ready.\n'
-            cmd = 'io.printf("%s");\n' % rdy.replace('\n', '\\n')
-            p.stdout = _BufferedPipe(p.stdout, rdy, cmd)
-            p.stdin.write(cmd)
-            p.stdin.flush()
-            p.stdout._waitfor()
-        else:
-            p.stdout = _BufferedPipe(p.stdout)
+        p.stdout = _BufferedPipe(p.stdout)
+    # store database name and port in the returned instance for the
+    # client to pick up
+    p.dbname = dbname
+    p.dbport = mapiport
+    while True:
+        p.poll()
+        if p.returncode is not None:
+            # process exited already
+            break
+        if os.path.exists(started):
+            # server is ready
+            break
+        time.sleep(0.001)
     return p

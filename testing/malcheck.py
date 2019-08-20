@@ -40,10 +40,10 @@ mappings = {
     'any_2': 'void',
     'any_3': 'void',
     'any_4': 'void',
-    'sqlblob': 'blob',
+    'blob': 'blob',
 }
 cmappings = {
-    'sqlblob': 'blob',
+    'blob': 'blob',
 }
 atomfunctypes = {
     # MAL name: (return type, (argument...))
@@ -51,7 +51,7 @@ atomfunctypes = {
     'cmp': ('int', (('void *', True), ('void *', True))),
     'del': ('void', (('Heap *', False), ('var_t *', False))),
     'fix': ('int', (('void *', True),)),
-    'fromstr': ('ssize_t', (('char *', True), ('size_t *', False), ('void **', False))),
+    'fromstr': ('ssize_t', (('char *', True), ('size_t *', False), ('void **', False), ('bool', False))),
     'hash': ('BUN', (('void *', True),)),
     'heap': ('void', (('Heap *', False), ('size_t', False))),
     'length': ('size_t', (('void *', True),)),
@@ -60,7 +60,7 @@ atomfunctypes = {
     'put': ('var_t', (('Heap *', False), ('var_t *', False), ('void *', True))),
     'read': ('void *', (('void *', False), ('stream *', False), ('size_t', False))),
     'storage': ('long', (('void', False),)),
-    'tostr': ('ssize_t', (('char **', False), ('size_t *', False), ('void *', True))),
+    'tostr': ('ssize_t', (('char **', False), ('size_t *', False), ('void *', True), ('bool', False))),
     'unfix': ('int', (('void *', True),)),
     'write': ('gdk_return', (('void *', True), ('stream *', False), ('size_t', False))),
     }

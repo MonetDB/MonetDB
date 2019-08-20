@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -76,7 +76,7 @@ mcrypt_MD5Sum(const char *string, size_t len)
 	unsigned char md[MD5_DIGEST_LENGTH];
 	char *ret;
 
-	assert(MD5_DIGEST_LENGTH == 16);
+	static_assert(MD5_DIGEST_LENGTH == 16, "MD5_DIGEST_LENGTH should be 16");
 	MD5_Init(&c);
 	MD5_Update(&c, string, len);
 	MD5_Final(md, &c);
@@ -97,7 +97,6 @@ mcrypt_MD5Sum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No MD5 digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -114,7 +113,7 @@ mcrypt_SHA1Sum(const char *string, size_t len)
 	unsigned char md[SHA_DIGEST_LENGTH];
 	char *ret;
 
-	assert(SHA_DIGEST_LENGTH == 20);
+	static_assert(SHA_DIGEST_LENGTH == 20, "SHA_DIGEST_LENGTH should be 20");
 	SHA1_Init(&c);
 	SHA1_Update(&c, string, len);
 	SHA1_Final(md, &c);
@@ -135,7 +134,6 @@ mcrypt_SHA1Sum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No SHA1 digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -152,7 +150,7 @@ mcrypt_SHA224Sum(const char *string, size_t len)
 	unsigned char md[SHA224_DIGEST_LENGTH];
 	char *ret;
 
-	assert(SHA224_DIGEST_LENGTH == 28);
+	static_assert(SHA224_DIGEST_LENGTH == 28, "SHA224_DIGEST_LENGTH should be 28");
 	SHA224_Init(&c);
 	SHA224_Update(&c, string, len);
 	SHA224_Final(md, &c);
@@ -176,7 +174,6 @@ mcrypt_SHA224Sum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No SHA224 digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -193,7 +190,7 @@ mcrypt_SHA256Sum(const char *string, size_t len)
 	unsigned char md[SHA256_DIGEST_LENGTH];
 	char *ret;
 
-	assert(SHA256_DIGEST_LENGTH == 32);
+	static_assert(SHA256_DIGEST_LENGTH == 32, "SHA256_DIGEST_LENGTH should be 32");
 	SHA256_Init(&c);
 	SHA256_Update(&c, string, len);
 	SHA256_Final(md, &c);
@@ -219,7 +216,6 @@ mcrypt_SHA256Sum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No SHA256 digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -236,7 +232,7 @@ mcrypt_SHA384Sum(const char *string, size_t len)
 	unsigned char md[SHA384_DIGEST_LENGTH];
 	char *ret;
 
-	assert(SHA384_DIGEST_LENGTH == 48);
+	static_assert(SHA384_DIGEST_LENGTH == 48, "SHA384_DIGEST_LENGTH should be 48");
 	SHA384_Init(&c);
 	SHA384_Update(&c, string, len);
 	SHA384_Final(md, &c);
@@ -266,7 +262,6 @@ mcrypt_SHA384Sum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No SHA384 digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -283,7 +278,7 @@ mcrypt_SHA512Sum(const char *string, size_t len)
 	unsigned char md[SHA512_DIGEST_LENGTH];
 	char *ret;
 
-	assert(SHA512_DIGEST_LENGTH == 64);
+	static_assert(SHA512_DIGEST_LENGTH == 64, "SHA512_DIGEST_LENGTH should be 64");
 	SHA512_Init(&c);
 	SHA512_Update(&c, string, len);
 	SHA512_Final(md, &c);
@@ -318,7 +313,6 @@ mcrypt_SHA512Sum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No SHA512 digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -335,7 +329,7 @@ mcrypt_RIPEMD160Sum(const char *string, size_t len)
 	unsigned char md[RIPEMD160_DIGEST_LENGTH];
 	char *ret;
 
-	assert(RIPEMD160_DIGEST_LENGTH == 20);
+	static_assert(RIPEMD160_DIGEST_LENGTH == 20, "RIPEMD160_DIGEST_LENGTH should be 20");
 	RIPEMD160_Init(&c);
 	RIPEMD160_Update(&c, string, len);
 	RIPEMD160_Final(md, &c);
@@ -356,7 +350,6 @@ mcrypt_RIPEMD160Sum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No RIPEMD160 digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -376,7 +369,6 @@ mcrypt_BackendSum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -492,7 +484,6 @@ mcrypt_hashPassword(
 		(void) password;
 		(void) challenge;
 		fprintf(stderr, "MonetDB was built without OpenSSL, but what you are trying to do requires it.\n");
-		exit(1);
 		return NULL;
 	}
 

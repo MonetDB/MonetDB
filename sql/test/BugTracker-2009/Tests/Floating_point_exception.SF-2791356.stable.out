@@ -14,7 +14,6 @@ stdout of test 'Floating_point_exception.SF-2791356` in directory 'sql/test/BugT
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:32123/
 # MonetDB/SQL module v2.32.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

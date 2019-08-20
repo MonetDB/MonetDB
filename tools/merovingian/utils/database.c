@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* NOTE: for this file to work correctly, msab_init must be called. */
@@ -15,6 +15,7 @@
 #include <sys/stat.h> /* mkdir, stat, umask */
 #include <sys/types.h> /* mkdir, readdir */
 #include <string.h>
+#include <ctype.h>
 #include "utils.h"
 #include "mutils.h"
 #include "database.h"
@@ -30,7 +31,7 @@ char* db_validname(char *dbname) {
 		if (
 				!(dbname[c] >= 'A' && dbname[c] <= 'Z') &&
 				!(dbname[c] >= 'a' && dbname[c] <= 'z') &&
-				!(dbname[c] >= '0' && dbname[c] <= '9') &&
+				!isdigit((unsigned char) dbname[c]) &&
 				!(dbname[c] == '-') &&
 				!(dbname[c] == '_')
 		   )

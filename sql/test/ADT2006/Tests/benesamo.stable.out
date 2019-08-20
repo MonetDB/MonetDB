@@ -13,7 +13,6 @@ stdout of test 'benesamo` in directory 'sql/test/ADT2006` itself:
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 
-Ready.
 
 
 # 17:58:24 >  
@@ -190,19 +189,19 @@ Ready.
 [ "Ada",	"Wilson",	"(survived the attack on 1888-28-03)"	]
 [ "Annie",	"Farmer",	"(survived the attack on 1888-11-20)"	]
 #select count(*) from scene_witness where scene_id IN ( select scene_id from scene where victim_id IN ( select victim_id from victim where surname='Stride'));
-% sys.L26 # table_name
-% L25 # name
+% sys.L14 # table_name
+% L14 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from scene_inspector where inspector_id IN (Select inspector_id from inspector where surname='Monro') Group by inspector_id;
-% sys.L11 # table_name
-% L10 # name
+% sys.L5 # table_name
+% L5 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from victim where eyes='blue';
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -257,7 +256,7 @@ Ready.
 % 3,	6,	6,	8 # length
 [ "Dr.",	"George",	"Baxter",	"Phillips"	]
 #SELECT count(*) FROM victim;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length

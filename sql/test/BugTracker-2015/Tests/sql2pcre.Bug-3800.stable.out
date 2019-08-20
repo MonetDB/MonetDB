@@ -21,7 +21,6 @@ stdout of test 'sql2pcre.Bug-3800` in directory 'sql/test/BugTracker-2015` itsel
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -105,8 +104,8 @@ Ready.
 % .L2 # table_name
 % L2 # name
 % clob # type
-% 4 # length
-[ "^.*$"	]
+% 5 # length
+[ "^.*?$"	]
 #SELECT sql2pcre('_??', '?');
 % .L2 # table_name
 % L2 # name
@@ -123,8 +122,8 @@ Ready.
 % .L2 # table_name
 % L2 # name
 % clob # type
-% 8 # length
-[ "^.*\\^.*$"	]
+% 10 # length
+[ "^.*?\\^.*?$"	]
 #DROP FUNCTION sql2pcre;
 
 # 16:37:27 >  

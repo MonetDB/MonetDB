@@ -17,7 +17,6 @@ stdout of test 'non_keyword_no.Bug-3079` in directory 'sql/test/BugTracker-2012`
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 08:41:23 >  
 # 08:41:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=35811"

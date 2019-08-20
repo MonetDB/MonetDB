@@ -18,7 +18,6 @@ stdout of test 'Test_Int128` in directory 'sql/jdbc/tests` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:37:36 >  
 # 14:37:36 >  "./Test_Int128.SQL.sh" "Test_Int128"

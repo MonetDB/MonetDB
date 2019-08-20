@@ -1,3 +1,4 @@
+HAVE_JDBCTESTS?SQLcopyinto
 HAVE_JDBCTESTS?Test_Cautocommit
 HAVE_JDBCTESTS?Test_CisValid
 HAVE_JDBCTESTS?Test_Clargequery
@@ -22,6 +23,7 @@ HAVE_JDBCTESTS?Test_PSsqldata
 HAVE_JDBCTESTS?Test_PStimedate
 HAVE_JDBCTESTS?Test_PStimezone
 HAVE_JDBCTESTS?Test_PStypes
+HAVE_JDBCTESTS?Test_CallableStmt
 HAVE_JDBCTESTS?Test_Rbooleans
 HAVE_JDBCTESTS?Test_Rmetadata
 HAVE_JDBCTESTS?Test_Rpositioning
@@ -40,3 +42,4 @@ HAVE_JDBCTESTS?BugResultSetMetaData_Bug_6183
 HAVE_JDBCTESTS?Bug_PrepStmtSetObject_CLOB_6349
 HAVE_JDBCTESTS?Bug_Connect_as_voc_getMetaData_Failure_Bug_6388
 HAVE_JDBCTESTS?Bug_PrepStmtSetString_6382
+HAVE_JDBCTESTS?Bug_LargeQueries_6571_6693

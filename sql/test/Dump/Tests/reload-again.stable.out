@@ -18,7 +18,6 @@ stdout of test 'reload-again` in directory 'sql/test/Dump` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 22:29:02 >  
 # 22:29:02 >  "/usr/bin/python" "reload-again.SQL.py" "reload-again"

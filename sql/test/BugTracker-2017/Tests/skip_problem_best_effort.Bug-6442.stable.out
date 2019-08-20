@@ -18,7 +18,6 @@ stdout of test 'skip_problem_best_effort.Bug-6442` in directory 'sql/test/BugTra
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:20:23 >  
 # 15:20:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5456" "--port=32985"

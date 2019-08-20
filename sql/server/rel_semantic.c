@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -32,8 +32,9 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	bstream *bs;
 	stream *buf;
 	char *n;
-	int len = _strlen(query);
+	size_t len = _strlen(query);
 	sql_schema *c = cur_schema(m);
+	sql_query *qc = NULL;
 
 	m->qc = NULL;
 
@@ -51,10 +52,8 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		GDKfree(b);
 		return NULL;
 	}
-	strncpy(n, query, len);
+	snprintf(n, len + 2, "%s\n", query);
 	query = n;
-	query[len] = '\n';
-	query[len+1] = 0;
 	len++;
 	buffer_init(b, query, len);
 	buf = buffer_rastream(b, "sqlstatement");
@@ -81,7 +80,8 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		m->user_id = USER_MONETDB;
 
 	(void) sqlparse(m);     /* blindly ignore errors */
-	rel = rel_semantic(m, m->sym);
+	qc = query_create(m);
+	rel = rel_semantic(qc, m->sym);
 
 	GDKfree(query);
 	GDKfree(b);
@@ -98,14 +98,12 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		strcpy(m->errstr, errstr);
 	} else {
 		int label = m->label;
-		list *sqs = m->sqs;
 
 		while (m->topvars > o.topvars) {
 			if (m->vars[--m->topvars].name)
 				c_delete(m->vars[m->topvars].name);
 		}
 		*m = o;
-		m->sqs = sqs;
 		m->label = label;
 	}
 	m->session->schema = c;
@@ -113,8 +111,9 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 }
 
 sql_rel * 
-rel_semantic(mvc *sql, symbol *s)
+rel_semantic(sql_query *query, symbol *s)
 {
+	mvc *sql = query->sql;
 	if (!s)
 		return NULL;
 
@@ -126,11 +125,12 @@ rel_semantic(mvc *sql, symbol *s)
 	case TR_ROLLBACK:
 	case TR_START:
 	case TR_MODE:
-		return rel_transactions(sql, s);
+		return rel_transactions(query, s);
 
 	case SQL_CREATE_SCHEMA:
 	case SQL_DROP_SCHEMA:
 
+	case SQL_DECLARE_TABLE:
 	case SQL_CREATE_TABLE:
 	case SQL_CREATE_VIEW:
 	case SQL_DROP_TABLE:
@@ -153,16 +153,21 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_CREATE_USER:
 	case SQL_DROP_USER:
 	case SQL_ALTER_USER:
+
+	case SQL_RENAME_COLUMN:
+	case SQL_RENAME_SCHEMA:
+	case SQL_RENAME_TABLE:
 	case SQL_RENAME_USER:
+	case SQL_SET_TABLE_SCHEMA:
 
 	case SQL_CREATE_TYPE:
 	case SQL_DROP_TYPE:
-		return rel_schemas(sql, s);
+		return rel_schemas(query, s);
 
 	case SQL_CREATE_SEQ:
 	case SQL_ALTER_SEQ:
 	case SQL_DROP_SEQ:
-		return rel_sequences(sql, s);
+		return rel_sequences(query, s);
 
 	case SQL_CREATE_FUNC:
 	case SQL_DROP_FUNC:
@@ -176,20 +181,21 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DROP_TRIGGER:
 
 	case SQL_ANALYZE:
-		return rel_psm(sql, s);
+		return rel_psm(query, s);
 
 	case SQL_INSERT:
 	case SQL_UPDATE:
 	case SQL_DELETE:
 	case SQL_TRUNCATE:
+	case SQL_MERGE:
 	case SQL_COPYFROM:
 	case SQL_BINCOPYFROM:
 	case SQL_COPYLOADER:
 	case SQL_COPYTO:
-		return rel_updates(sql, s);
+		return rel_updates(query, s);
 
 	case SQL_WITH:
-		return rel_with_query(sql, s);
+		return rel_with_query(query, s);
 
 	case SQL_MULSTMT: {
 		dnode *d;
@@ -199,10 +205,12 @@ rel_semantic(mvc *sql, symbol *s)
 			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		for (d = s->data.lval->h; d; d = d->next) {
 			symbol *sym = d->data.sym;
-			sql_rel *nr = rel_semantic(sql, sym);
-			
-			if (!nr)
+			sql_rel *nr = rel_semantic(query, sym);
+
+			if (!nr) {
+				stack_pop_frame(sql);
 				return NULL;
+			}
 			if (r)
 				r = rel_list(sql->sa, r, nr);
 			else
@@ -215,7 +223,7 @@ rel_semantic(mvc *sql, symbol *s)
 	{
 		dnode *d = s->data.lval->h;
 		symbol *sym = d->data.sym;
-		sql_rel *r = rel_semantic(sql, sym);
+		sql_rel *r = rel_semantic(query, sym);
 
 		if (!r) 
 			return NULL;
@@ -228,7 +236,8 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
-		return rel_selects(sql, s);
+	case SQL_VALUES:
+		return rel_selects(query, s);
 
 	default:
 		return sql_error(sql, 02, SQLSTATE(42000) "Symbol type not found");

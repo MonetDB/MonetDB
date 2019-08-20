@@ -19,7 +19,6 @@ stdout of test 'manifold2` in directory 'monetdb5/optimizer` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 #    z:bat[:oid,:dbl] := mal.multiplex("calc":str,"max":str,b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);
 
 # 15:36:15 >  

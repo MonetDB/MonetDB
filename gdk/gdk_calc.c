@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -135,6 +135,27 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, end, cnt);	\
 	} while (0)
 
+/* special case for EQ and NE where we have a nil_matches flag for
+ * when it is set */
+#define BINARY_3TYPE_FUNC_nilmatch(TYPE1, TYPE2, TYPE3, FUNC)		\
+	do {								\
+		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, 0, start);	\
+		for (i = start * incr1, j = start * incr2, k = start;	\
+		     k < end; i += incr1, j += incr2, k++) {		\
+			register TYPE1 v1;				\
+			register TYPE2 v2;				\
+			CHECKCAND((TYPE3 *) dst, k, candoff, TYPE3##_nil); \
+			v1 = ((const TYPE1 *) lft)[i];			\
+			v2 = ((const TYPE2 *) rgt)[j];			\
+			if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+				((TYPE3 *) dst)[k] = FUNC(is_##TYPE1##_nil(v1), is_##TYPE2##_nil(v2)); \
+			} else {					\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+			}						\
+		}							\
+		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, end, cnt);	\
+	} while (0)
+
 #define BINARY_3TYPE_FUNC_nonil(TYPE1, TYPE2, TYPE3, FUNC)		\
 	do {								\
 		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, 0, start);	\
@@ -238,15 +259,15 @@ BATcalcnot(BAT *b, BAT *s)
 	bn->trevsorted = nils == 0 && b->tsorted;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tkey = b->tkey;
+	bn->tkey = b->tkey && nils <= 1;
 
 	if (nils != 0 && !b->tnil) {
-		b->tnil = 1;
-		b->batDirtydesc = 1;
+		b->tnil = true;
+		b->batDirtydesc = true;
 	}
 	if (nils == 0 && !b->tnonil) {
-		b->tnonil = 1;
-		b->batDirtydesc = 1;
+		b->tnonil = true;
+		b->batDirtydesc = true;
 	}
 
 	return bn;
@@ -357,15 +378,15 @@ BATcalcnegate(BAT *b, BAT *s)
 	bn->trevsorted = nils == 0 && b->tsorted;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tkey = b->tkey;
+	bn->tkey = b->tkey && nils <= 1;
 
 	if (nils != 0 && !b->tnil) {
-		b->tnil = 1;
-		b->batDirtydesc = 1;
+		b->tnil = true;
+		b->batDirtydesc = true;
 	}
 	if (nils == 0 && !b->tnonil) {
-		b->tnonil = 1;
-		b->batDirtydesc = 1;
+		b->tnonil = true;
+		b->batDirtydesc = true;
 	}
 
 	return bn;
@@ -489,12 +510,12 @@ BATcalcabsolute(BAT *b, BAT *s)
 	bn->tnonil = nils == 0;
 
 	if (nils && !b->tnil) {
-		b->tnil = 1;
-		b->batDirtydesc = 1;
+		b->tnil = true;
+		b->batDirtydesc = true;
 	}
 	if (nils == 0 && !b->tnonil) {
-		b->tnonil = 1;
-		b->batDirtydesc = 1;
+		b->tnonil = true;
+		b->batDirtydesc = true;
 	}
 
 	return bn;
@@ -617,12 +638,12 @@ BATcalciszero(BAT *b, BAT *s)
 	bn->tnonil = nils == 0;
 
 	if (nils != 0 && !b->tnil) {
-		b->tnil = 1;
-		b->batDirtydesc = 1;
+		b->tnil = true;
+		b->batDirtydesc = true;
 	}
 	if (nils == 0 && !b->tnonil) {
-		b->tnonil = 1;
-		b->batDirtydesc = 1;
+		b->tnonil = true;
+		b->batDirtydesc = true;
 	}
 
 	return bn;
@@ -749,12 +770,12 @@ BATcalcsign(BAT *b, BAT *s)
 	bn->tnonil = nils == 0;
 
 	if (nils != 0 && !b->tnil) {
-		b->tnil = 1;
-		b->batDirtydesc = 1;
+		b->tnil = true;
+		b->batDirtydesc = true;
 	}
 	if (nils == 0 && !b->tnonil) {
-		b->tnonil = 1;
-		b->batDirtydesc = 1;
+		b->tnonil = true;
+		b->batDirtydesc = true;
 	}
 
 	return bn;
@@ -1005,18 +1026,19 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1088,18 +1110,19 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1166,18 +1189,19 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1254,18 +1278,19 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1339,18 +1364,19 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1422,18 +1448,19 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1500,18 +1527,19 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1588,18 +1616,19 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1633,7 +1662,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				BUN cnt, BUN start,			\
 				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
-				int abort_on_error)			\
+				bool abort_on_error)			\
 {									\
 	BUN i, j, k;							\
 	BUN nils = 0;							\
@@ -1646,8 +1675,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			ADD##IF##_WITH_CHECK(TYPE1, lft[i],		\
-					     TYPE2, rgt[j],		\
+			ADD##IF##_WITH_CHECK(lft[i], rgt[j],		\
 					     TYPE3, dst[k],		\
 					     max,			\
 					     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
@@ -1665,7 +1693,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				BUN cnt, BUN start,			\
 				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
-				int abort_on_error)			\
+				bool abort_on_error)			\
 {									\
 	BUN i, j, k;							\
 	BUN nils = 0;							\
@@ -1679,8 +1707,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				ADD##IF##_WITH_CHECK(TYPE1, lft[i],	\
-						     TYPE2, rgt[j],	\
+				ADD##IF##_WITH_CHECK(lft[i], rgt[j],	\
 						     TYPE3, dst[k],	\
 						     max,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
@@ -1945,7 +1972,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 		   void *restrict dst, int tp, BUN cnt,
 		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
-		   int abort_on_error, const char *func)
+		   bool abort_on_error, const char *func)
 {
 	BUN nils;
 
@@ -3437,6 +3464,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	}
 	for (i = end; i < cnt; i++)
 		tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn));
+	bn->theap.dirty = true;
 	GDKfree(s);
 	return nils;
 
@@ -3446,7 +3474,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 }
 
 BAT *
-BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
+BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -3501,7 +3529,7 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 }
 
 BAT *
-BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
+BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -3550,7 +3578,7 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 }
 
 BAT *
-BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
+BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -3600,7 +3628,7 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 
 gdk_return
 VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
-	   int abort_on_error)
+	   bool abort_on_error)
 {
 	if (add_typeswitchloop(VALptr(lft), lft->vtype, 0,
 			       VALptr(rgt), rgt->vtype, 0,
@@ -3612,10 +3640,10 @@ VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 }
 
 static BAT *
-BATcalcincrdecr(BAT *b, BAT *s, int abort_on_error,
+BATcalcincrdecr(BAT *b, BAT *s, bool abort_on_error,
 		BUN (*typeswitchloop)(const void *, int, int, const void *,
 				      int, int, void *, int, BUN, BUN, BUN,
-				      const oid *restrict, const oid *, oid, int,
+				      const oid *restrict, const oid *, oid, bool,
 				      const char *),
 		const char *func)
 {
@@ -3659,26 +3687,26 @@ BATcalcincrdecr(BAT *b, BAT *s, int abort_on_error,
 	bn->tnonil = nils == 0;
 
 	if (nils && !b->tnil) {
-		b->tnil = 1;
-		b->batDirtydesc = 1;
+		b->tnil = true;
+		b->batDirtydesc = true;
 	}
 	if (nils == 0 && !b->tnonil) {
-		b->tnonil = 1;
-		b->batDirtydesc = 1;
+		b->tnonil = true;
+		b->batDirtydesc = true;
 	}
 
 	return bn;
 }
 
 BAT *
-BATcalcincr(BAT *b, BAT *s, int abort_on_error)
+BATcalcincr(BAT *b, BAT *s, bool abort_on_error)
 {
 	return BATcalcincrdecr(b, s, abort_on_error, add_typeswitchloop,
 			       "BATcalcincr");
 }
 
 gdk_return
-VARcalcincr(ValPtr ret, const ValRecord *v, int abort_on_error)
+VARcalcincr(ValPtr ret, const ValRecord *v, bool abort_on_error)
 {
 	bte one = 1;
 
@@ -3702,7 +3730,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				BUN cnt, BUN start,			\
 				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
-				int abort_on_error)			\
+				bool abort_on_error)			\
 {									\
 	BUN i, j, k;							\
 	BUN nils = 0;							\
@@ -3715,8 +3743,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			SUB##IF##_WITH_CHECK(TYPE1, lft[i],		\
-					     TYPE2, rgt[j],		\
+			SUB##IF##_WITH_CHECK(lft[i], rgt[j],		\
 					     TYPE3, dst[k],		\
 					     max,			\
 					     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
@@ -3734,7 +3761,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				BUN cnt, BUN start,			\
 				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
-				int abort_on_error)			\
+				bool abort_on_error)			\
 {									\
 	BUN i, j, k;							\
 	BUN nils = 0;							\
@@ -3748,8 +3775,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				SUB##IF##_WITH_CHECK(TYPE1, lft[i],	\
-						     TYPE2, rgt[j],	\
+				SUB##IF##_WITH_CHECK(lft[i], rgt[j],	\
 						     TYPE3, dst[k],	\
 						     max,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
@@ -4014,7 +4040,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 		   void *restrict dst, int tp, BUN cnt,
 		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
-		   int abort_on_error, const char *func)
+		   bool abort_on_error, const char *func)
 {
 	BUN nils;
 
@@ -5447,7 +5473,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
+BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -5490,7 +5516,7 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 }
 
 BAT *
-BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
+BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -5534,7 +5560,7 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 }
 
 BAT *
-BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
+BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -5580,7 +5606,7 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 
 gdk_return
 VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
-	   int abort_on_error)
+	   bool abort_on_error)
 {
 	if (sub_typeswitchloop(VALptr(lft), lft->vtype, 0,
 			       VALptr(rgt), rgt->vtype, 0,
@@ -5592,14 +5618,14 @@ VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 }
 
 BAT *
-BATcalcdecr(BAT *b, BAT *s, int abort_on_error)
+BATcalcdecr(BAT *b, BAT *s, bool abort_on_error)
 {
 	return BATcalcincrdecr(b, s, abort_on_error, sub_typeswitchloop,
 			       "BATcalcdecr");
 }
 
 gdk_return
-VARcalcdecr(ValPtr ret, const ValRecord *v, int abort_on_error)
+VARcalcdecr(ValPtr ret, const ValRecord *v, bool abort_on_error)
 {
 	bte one = 1;
 
@@ -5625,7 +5651,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				BUN cnt, BUN start,			\
 				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
-				int abort_on_error)			\
+				bool abort_on_error)			\
 {									\
 	BUN i, j, k;							\
 	BUN nils = 0;							\
@@ -5638,8 +5664,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			MUL##IF##4_WITH_CHECK(TYPE1, lft[i],		\
-					      TYPE2, rgt[j],		\
+			MUL##IF##4_WITH_CHECK(lft[i], rgt[j],		\
 					      TYPE3, dst[k],		\
 					      max,			\
 					      TYPE4,			\
@@ -5658,7 +5683,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				BUN cnt, BUN start,			\
 				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
-				int abort_on_error)			\
+				bool abort_on_error)			\
 {									\
 	BUN i, j, k;							\
 	BUN nils = 0;							\
@@ -5672,8 +5697,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				MUL##IF##4_WITH_CHECK(TYPE1, lft[i],	\
-						      TYPE2, rgt[j],	\
+				MUL##IF##4_WITH_CHECK(lft[i], rgt[j],	\
 						      TYPE3, dst[k],	\
 						      max,		\
 						      TYPE3,		\
@@ -5708,7 +5732,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 			    BUN cnt, BUN start,				\
 			    BUN end, const oid *restrict cand,		\
 			    const oid *candend, oid candoff,		\
-			    int abort_on_error)				\
+			    bool abort_on_error)				\
 {									\
 	BUN i, j, k;							\
 	BUN nils = 0;							\
@@ -5721,8 +5745,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 			dst[k] = hge_nil;				\
 			nils++;						\
 		} else {						\
-			HGEMUL_CHECK(TYPE1, lft[i],			\
-				     TYPE2, rgt[j],			\
+			HGEMUL_CHECK(lft[i], rgt[j],			\
 				     dst[k],				\
 				     max,				\
 				     ON_OVERFLOW(TYPE1, TYPE2, "*"));	\
@@ -5742,7 +5765,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 			    BUN cnt, BUN start,				\
 			    BUN end, const oid *restrict cand,		\
 			    const oid *candend, oid candoff,		\
-			    int abort_on_error)				\
+			    bool abort_on_error)				\
 {									\
 	BUN i, j, k;							\
 	BUN nils = 0;							\
@@ -5755,8 +5778,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 			dst[k] = lng_nil;				\
 			nils++;						\
 		} else {						\
-			LNGMUL_CHECK(TYPE1, lft[i],			\
-				     TYPE2, rgt[j],			\
+			LNGMUL_CHECK(lft[i], rgt[j],			\
 				     dst[k],				\
 				     max,				\
 				     ON_OVERFLOW(TYPE1, TYPE2, "*"));	\
@@ -5776,7 +5798,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				BUN cnt, BUN start,			\
 				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
-				int abort_on_error)			\
+				bool abort_on_error)			\
 {									\
 	BUN i, j, k;							\
 	BUN nils = 0;							\
@@ -6046,7 +6068,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 		   void *restrict dst, int tp, BUN cnt,
 		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
-		   int abort_on_error, const char *func)
+		   bool abort_on_error, const char *func)
 {
 	BUN nils;
 
@@ -7481,10 +7503,10 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 static BAT *
-BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error,
+BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error,
 		 BUN (*typeswitchloop)(const void *, int, int, const void *,
 				       int, int, void *resrict, int, BUN, BUN, BUN,
-				       const oid *restrict, const oid *, oid, int,
+				       const oid *restrict, const oid *, oid, bool,
 				       const char *),
 		 const char *func)
 {
@@ -7529,14 +7551,14 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error,
 }
 
 BAT *
-BATcalcmul(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
+BATcalcmul(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error)
 {
 	return BATcalcmuldivmod(b1, b2, s, tp, abort_on_error,
 				mul_typeswitchloop, "BATcalcmul");
 }
 
 BAT *
-BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
+BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -7590,7 +7612,7 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 }
 
 BAT *
-BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
+BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -7645,7 +7667,7 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 
 gdk_return
 VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
-	   int abort_on_error)
+	   bool abort_on_error)
 {
 	if (mul_typeswitchloop(VALptr(lft), lft->vtype, 0,
 			       VALptr(rgt), rgt->vtype, 0,
@@ -7667,7 +7689,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				BUN cnt, BUN start,			\
 				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
-				int abort_on_error)			\
+				bool abort_on_error)			\
 {									\
 	BUN i, j, k;							\
 	BUN nils = 0;							\
@@ -7706,7 +7728,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				BUN cnt, BUN start,			\
 				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
-				int abort_on_error)			\
+				bool abort_on_error)			\
 {									\
 	BUN i, j, k;							\
 	BUN nils = 0;							\
@@ -7996,7 +8018,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 		   void *restrict dst, int tp, BUN cnt,
 		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
-		   int abort_on_error, const char *func)
+		   bool abort_on_error, const char *func)
 {
 	BUN nils;
 
@@ -9562,14 +9584,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalcdiv(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
+BATcalcdiv(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error)
 {
 	return BATcalcmuldivmod(b1, b2, s, tp, abort_on_error,
 				div_typeswitchloop, "BATcalcdiv");
 }
 
 BAT *
-BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
+BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -9626,7 +9648,7 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 }
 
 BAT *
-BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
+BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -9666,7 +9688,7 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 
 gdk_return
 VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
-	   int abort_on_error)
+	   bool abort_on_error)
 {
 	if (div_typeswitchloop(VALptr(lft), lft->vtype, 0,
 			       VALptr(rgt), rgt->vtype, 0,
@@ -9687,7 +9709,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				TYPE3 *restrict dst, BUN cnt, BUN start, \
 				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
-				int abort_on_error)			\
+				bool abort_on_error)			\
 {									\
 	BUN i, j, k;							\
 	BUN nils = 0;							\
@@ -9719,7 +9741,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				TYPE3 *restrict dst, BUN cnt, BUN start, \
 				BUN end, const oid *restrict cand,	\
 				const oid *candend, oid candoff,	\
-				int abort_on_error)			\
+				bool abort_on_error)			\
 {									\
 	BUN i, j, k;							\
 	BUN nils = 0;							\
@@ -9970,7 +9992,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 		   void *restrict dst, int tp, BUN cnt,
 		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
-		   int abort_on_error, const char *func)
+		   bool abort_on_error, const char *func)
 {
 	BUN nils;
 
@@ -11138,14 +11160,14 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalcmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
+BATcalcmod(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error)
 {
 	return BATcalcmuldivmod(b1, b2, s, tp, abort_on_error,
 				mod_typeswitchloop, "BATcalcmod");
 }
 
 BAT *
-BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
+BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -11184,7 +11206,7 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 }
 
 BAT *
-BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
+BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -11224,7 +11246,7 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 
 gdk_return
 VARcalcmod(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
-	   int abort_on_error)
+	   bool abort_on_error)
 {
 	if (mod_typeswitchloop(VALptr(lft), lft->vtype, 0,
 			       VALptr(rgt), rgt->vtype, 0,
@@ -11954,7 +11976,7 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 		   void *restrict dst, BUN cnt,
 		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
-		   int abort_on_error, const char *func)
+		   bool abort_on_error, const char *func)
 {
 	BUN nils = 0;
 	BUN i, j, k;
@@ -12116,7 +12138,7 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalclsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
+BATcalclsh(BAT *b1, BAT *b2, BAT *s, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -12158,7 +12180,7 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 }
 
 BAT *
-BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
+BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -12196,7 +12218,7 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 }
 
 BAT *
-BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
+BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -12235,7 +12257,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 
 gdk_return
 VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
-	   int abort_on_error)
+	   bool abort_on_error)
 {
 	ret->vtype = lft->vtype;
 	if (lsh_typeswitchloop(VALptr(lft), lft->vtype, 0,
@@ -12257,7 +12279,7 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 		   void *restrict dst, BUN cnt,
 		   BUN start, BUN end, const oid *restrict cand,
 		   const oid *candend, oid candoff,
-		   int abort_on_error, const char *func)
+		   bool abort_on_error, const char *func)
 {
 	BUN nils = 0;
 	BUN i, j, k;
@@ -12419,7 +12441,7 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalcrsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
+BATcalcrsh(BAT *b1, BAT *b2, BAT *s, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -12461,7 +12483,7 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 }
 
 BAT *
-BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
+BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -12499,7 +12521,7 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 }
 
 BAT *
-BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
+BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -12538,7 +12560,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 
 gdk_return
 VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
-	   int abort_on_error)
+	   bool abort_on_error)
 {
 	ret->vtype = lft->vtype;
 	if (rsh_typeswitchloop(VALptr(lft), lft->vtype, 0,
@@ -12656,6 +12678,8 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define BATcalccstop		BATcalccsteq
 #define VARcalcop		VARcalceq
 
+#define NIL_MATCHES_FLAG 1
+
 #include "gdk_calc_compare.h"
 
 #undef OP
@@ -12680,6 +12704,8 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define VARcalcop		VARcalcne
 
 #include "gdk_calc_compare.h"
+
+#undef NIL_MATCHES_FLAG
 
 #undef OP
 #undef op_typeswitchloop
@@ -12732,10 +12758,15 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 /* between (any "linear" type) */
 
 #define BETWEEN(v, lo, hi, TYPE)					\
-	(is_##TYPE##_nil(v) || is_##TYPE##_nil(lo) || is_##TYPE##_nil(hi) ? \
-	 (nils++, bit_nil) :						\
-	 (bit) (((v) >= (lo) && (v) <= (hi)) ||				\
-		(sym && (v) >= (hi) && (v) <= (lo))))
+	(is_##TYPE##_nil(v)						\
+	 ? nils_false ? 0 : (nils++, bit_nil)				\
+	 : (is_##TYPE##_nil(lo) || is_##TYPE##_nil(hi)			\
+	    ? (nils++, bit_nil)						\
+	    : (bit) ((((lo) < (v) || (linc && (lo) == (v))) &&		\
+		      ((v) < (hi) || (hinc && (v) == (hi)))) ||		\
+		     (symmetric &&					\
+		      ((hi) < (v) || (hinc && (hi) == (v))) &&		\
+		      ((v) < (lo) || (linc && (v) == (lo)))))))
 
 #define BETWEEN_LOOP_TYPE(TYPE)						\
 	do {								\
@@ -12757,9 +12788,10 @@ static BAT *
 BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 		      const void *lo, int incr2, const char *hp2, int wd2,
 		      const void *hi, int incr3, const char *hp3, int wd3,
-		      int tp, BUN cnt, BUN start, BUN end, const oid *restrict cand,
-		      const oid *candend, oid seqbase, int sym,
-		      const char *func)
+		      int tp, BUN cnt, BUN start, BUN end,
+		      const oid *restrict cand, const oid *candend,
+		      oid seqbase, bool symmetric,
+		      bool linc, bool hinc, bool nils_false, const char *func)
 {
 	BAT *bn;
 	BUN nils = 0;
@@ -12821,21 +12853,41 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 			     soff += wd1, loff += wd2, hoff += wd3) {
 			const void *p1, *p2, *p3;
 			CHECKCAND(dst, l, seqbase, bit_nil);
-			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(src, i, wd1)) : (const void *) ((const char *) src + soff);
-			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(lo, j, wd2)) : (const void *) ((const char *) lo + loff);
-			p3 = hp3 ? (const void *) (hp3 + VarHeapVal(hi, k, wd3)) : (const void *) ((const char *) hi + hoff);
-			if (p1 == NULL || p2 == NULL || p3 == NULL ||
-			    (*atomcmp)(p1, nil) == 0 ||
-			    (*atomcmp)(p2, nil) == 0 ||
-			    (*atomcmp)(p3, nil) == 0) {
+			p1 = hp1
+				? (const void *) (hp1 + VarHeapVal(src, i, wd1))
+				: (const void *) ((const char *) src + soff);
+			p2 = hp2
+				? (const void *) (hp2 + VarHeapVal(lo, j, wd2))
+				: (const void *) ((const char *) lo + loff);
+			p3 = hp3
+				? (const void *) (hp3 + VarHeapVal(hi, k, wd3))
+				: (const void *) ((const char *) hi + hoff);
+			if (p1 == NULL || p2 == NULL || p3 == NULL) {
+				nils++;
+				dst[l] = bit_nil;
+			} else if ((*atomcmp)(p1, nil) == 0) {
+				if (nils_false)
+					dst[l] = 0;
+				else {
+					nils++;
+					dst[l] = bit_nil;
+				}
+			} else if ((*atomcmp)(p2, nil) == 0 ||
+				   (*atomcmp)(p3, nil) == 0) {
 				nils++;
 				dst[l] = bit_nil;
 			} else {
-				dst[l] = (bit) (((*atomcmp)(p1, p2) >= 0 &&
-						 (*atomcmp)(p1, p3) <= 0) ||
-						(sym &&
-						 (*atomcmp)(p1, p3) >= 0 &&
-						 (*atomcmp)(p1, p2) <= 0));
+				int c;
+				dst[l] = (bit)
+					((((c = (*atomcmp)(p1, p2)) > 0
+					   || (linc && c == 0))
+					  && ((c = (*atomcmp)(p1, p3)) < 0
+					      || (hinc && c == 0)))
+					 || (symmetric
+					     && ((c = (*atomcmp)(p1, p3)) > 0
+						 || (hinc && c == 0))
+					     && ((c = (*atomcmp)(p1, p2)) < 0
+						 || (linc && c == 0))));
 			}
 		}
 		break;
@@ -12855,7 +12907,8 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 }
 
 BAT *
-BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, int sym)
+BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, bool symmetric,
+	       bool linc, bool hinc, bool nils_false)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -12872,23 +12925,29 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, int sym)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	if (b->ttype == TYPE_void &&
-	    lo->ttype == TYPE_void &&
-	    hi->ttype == TYPE_void) {
+	if (BATtvoid(b) &&
+	    BATtvoid(lo) &&
+	    BATtvoid(hi)) {
 		bit res;
 
-		if (is_oid_nil(b->tseqbase) ||
-		    is_oid_nil(lo->tseqbase) ||
-		    is_oid_nil(hi->tseqbase))
+		if (!BATtdense(b))
+			res = nils_false ? 0 : bit_nil;
+		else if (!BATtdense(lo) || !BATtdense(hi))
 			res = bit_nil;
 		else
-			res = (bit) ((b->tseqbase >= lo->tseqbase &&
-				      b->tseqbase <= hi->tseqbase) ||
-				     (sym &&
-				      b->tseqbase >= hi->tseqbase &&
-				      b->tseqbase <= lo->tseqbase));
+			res = (bit)
+				(((b->tseqbase > lo->tseqbase ||
+				   (linc && b->tseqbase == lo->tseqbase)) &&
+				  (b->tseqbase < hi->tseqbase ||
+				   (hinc && b->tseqbase == hi->tseqbase))) ||
+				 (symmetric &&
+				  (b->tseqbase > hi->tseqbase ||
+				   (hinc && b->tseqbase == hi->tseqbase)) &&
+				  (b->tseqbase < lo->tseqbase ||
+				   (linc && b->tseqbase == lo->tseqbase))));
 
-		return BATconstant(b->hseqbase, TYPE_bit, &res, BATcount(b), TRANSIENT);
+		return BATconstant(b->hseqbase, TYPE_bit, &res, BATcount(b),
+				   TRANSIENT);
 	}
 
 	bn = BATcalcbetween_intern(Tloc(b, 0), 1,
@@ -12902,13 +12961,15 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, int sym)
 				   hi->twidth,
 				   b->ttype, cnt,
 				   start, end, cand, candend,
-				   b->hseqbase, sym, "BATcalcbetween");
+				   b->hseqbase, symmetric, linc, hinc,
+				   nils_false, "BATcalcbetween");
 
 	return bn;
 }
 
 BAT *
-BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, int sym)
+BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s,
+		     bool symmetric, bool linc, bool hinc, bool nils_false)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -12931,13 +12992,16 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, i
 				   VALptr(hi), 0, NULL, 0,
 				   b->ttype, cnt,
 				   start, end, cand, candend,
-				   b->hseqbase, sym, "BATcalcbetweencstcst");
+				   b->hseqbase, symmetric,
+				   linc, hinc, nils_false,
+				   "BATcalcbetweencstcst");
 
 	return bn;
 }
 
 BAT *
-BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, int sym)
+BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s,
+		     bool symmetric, bool linc, bool hinc, bool nils_false)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -12965,13 +13029,16 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, int sym)
 				   VALptr(hi), 0, NULL, 0,
 				   b->ttype, cnt,
 				   start, end, cand, candend,
-				   b->hseqbase, sym, "BATcalcbetweenbatcst");
+				   b->hseqbase, symmetric,
+				   linc, hinc, nils_false,
+				   "BATcalcbetweenbatcst");
 
 	return bn;
 }
 
 BAT *
-BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, int sym)
+BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s,
+		     bool symmetric, bool linc, bool hinc, bool nils_false)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -12999,14 +13066,17 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, int sym)
 				   hi->twidth,
 				   b->ttype, cnt,
 				   start, end, cand, candend,
-				   b->hseqbase, sym, "BATcalcbetweencstbat");
+				   b->hseqbase, symmetric,
+				   linc, hinc, nils_false,
+				   "BATcalcbetweencstbat");
 
 	return bn;
 }
 
 gdk_return
 VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
-	       const ValRecord *hi, int sym)
+	       const ValRecord *hi, bool symmetric, bool linc, bool hinc,
+	       bool nils_false)
 {
 	BUN nils = 0;		/* to make reusing BETWEEN macro easier */
 	int t;
@@ -13053,17 +13123,24 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 	default:
 		nil = ATOMnilptr(t);
 		atomcmp = ATOMcompare(t);
-		if (atomcmp(VALptr(v), nil) == 0 ||
-		    atomcmp(VALptr(lo), nil) == 0 ||
-		    atomcmp(VALptr(hi), nil) == 0)
+		if (atomcmp(VALptr(v), nil) == 0)
+			ret->val.btval = nils_false ? 0 : bit_nil;
+		else if (atomcmp(VALptr(lo), nil) == 0 ||
+			 atomcmp(VALptr(hi), nil) == 0)
 			ret->val.btval = bit_nil;
-		else
+		else {
+			int c;
 			ret->val.btval =
-				(bit) ((atomcmp(VALptr(v), VALptr(lo)) >= 0 &&
-					atomcmp(VALptr(v), VALptr(hi)) <= 0) ||
-				       (sym &&
-					atomcmp(VALptr(v), VALptr(hi)) >= 0 &&
-					atomcmp(VALptr(v), VALptr(lo)) <= 0));
+				(bit) ((((c = atomcmp(VALptr(v), VALptr(lo))) > 0 ||
+					 (linc && c == 0)) &&
+					((c = atomcmp(VALptr(v), VALptr(hi)) < 0 ||
+					  (hinc && c == 0)))) ||
+				       (symmetric &&
+					((c = atomcmp(VALptr(v), VALptr(hi))) > 0 ||
+					 (hinc && c == 0)) &&
+					((c = atomcmp(VALptr(v), VALptr(lo))) < 0 ||
+					 (linc && c == 0))));
+		}
 		break;
 	}
 	(void) nils;
@@ -13206,6 +13283,7 @@ BATcalcifthenelse_intern(BAT *b,
 	}
 
 	BATsetcount(bn, cnt);
+	bn->theap.dirty = true;
 
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
@@ -13313,10 +13391,11 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 static BUN								\
 convert_##TYPE##_##TYPE(const TYPE *src, TYPE *restrict dst, BUN cnt,	\
 			BUN start, BUN end, const oid *restrict cand,	\
-			const oid *candend, oid candoff)		\
+			const oid *candend, oid candoff, bool *reduce)	\
 {									\
 	BUN i, nils = 0;						\
 									\
+	*reduce = false;						\
 	CANDLOOP(dst, i, TYPE##_nil, 0, start);				\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, TYPE##_nil);			\
@@ -13331,10 +13410,33 @@ convert_##TYPE##_##TYPE(const TYPE *src, TYPE *restrict dst, BUN cnt,	\
 static BUN								\
 convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 			  BUN start, BUN end, const oid *restrict cand,	\
-			  const oid *candend, oid candoff)		\
+			  const oid *candend, oid candoff, bool *reduce) \
 {									\
 	BUN i, nils = 0;						\
 									\
+	*reduce = false;						\
+	CANDLOOP(dst, i, TYPE2##_nil, 0, start);			\
+	for (i = start; i < end; i++) {					\
+		CHECKCAND(dst, i, candoff, TYPE2##_nil);		\
+		if (is_##TYPE1##_nil(src[i])) {				\
+			dst[i] = TYPE2##_nil;				\
+			nils++;						\
+		} else							\
+			dst[i] = (TYPE2) src[i];			\
+	}								\
+	CANDLOOP(dst, i, TYPE2##_nil, end, cnt);			\
+	return nils;							\
+}
+
+#define convertimpl_enlarge_float(TYPE1, TYPE2, MANT_DIG)		\
+static BUN								\
+convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
+			  BUN start, BUN end, const oid *restrict cand, \
+			  const oid *candend, oid candoff, bool *reduce) \
+{									\
+	BUN i, nils = 0;						\
+									\
+	*reduce = 8 * sizeof(TYPE1) > MANT_DIG;				\
 	CANDLOOP(dst, i, TYPE2##_nil, 0, start);			\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, TYPE2##_nil);		\
@@ -13360,10 +13462,11 @@ static BUN								\
 convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst, BUN cnt,	\
 		      BUN start, BUN end, const oid *restrict cand,	\
 		      const oid *candend, oid candoff,			\
-		      int abort_on_error)				\
+		      bool abort_on_error, bool *reduce)			\
 {									\
 	BUN i, nils = 0;						\
 									\
+	*reduce = false;						\
 	CANDLOOP(dst, i, oid_nil, 0, start);				\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, oid_nil);			\
@@ -13373,6 +13476,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst, BUN cnt,	\
 		} else if (src[i] < 0) {				\
 			if (abort_on_error)				\
 				CONV_OVERFLOW(TYPE1, "oid", src[i]);	\
+			*reduce = true;					\
 			dst[i] = oid_nil;				\
 			nils++;						\
 		} else if (is_oid_nil((dst[i] = (oid) src[i])) &&	\
@@ -13388,10 +13492,11 @@ static BUN								\
 convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst, BUN cnt,	\
 		      BUN start, BUN end, const oid *restrict cand,	\
 		      const oid *candend, oid candoff,			\
-		      int abort_on_error)				\
+		      bool abort_on_error, bool *reduce)			\
 {									\
 	BUN i, nils = 0;						\
 									\
+	*reduce = false;						\
 	CANDLOOP(dst, i, oid_nil, 0, start);				\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, oid_nil);			\
@@ -13402,6 +13507,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst, BUN cnt,	\
 			   src[i] > (TYPE1) GDK_oid_max) {		\
 			if (abort_on_error)				\
 				CONV_OVERFLOW(TYPE1, "oid", src[i]);	\
+			*reduce = true;					\
 			dst[i] = oid_nil;				\
 			nils++;						\
 		} else if (is_oid_nil((dst[i] = (oid) src[i])) &&	\
@@ -13417,10 +13523,11 @@ static BUN								\
 convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 			  BUN start, BUN end, const oid *restrict cand,	\
 			  const oid *candend, oid candoff,		\
-			  int abort_on_error)				\
+			  bool abort_on_error, bool *reduce)		\
 {									\
 	BUN i, nils = 0;						\
 									\
+	*reduce = false;						\
 	CANDLOOP(dst, i, TYPE2##_nil, 0, start);			\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, TYPE2##_nil);		\
@@ -13431,6 +13538,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 			   src[i] > (TYPE1) GDK_##TYPE2##_max) {	\
 			if (abort_on_error)				\
 				CONV_OVERFLOW(TYPE1, #TYPE2, src[i]);	\
+			*reduce = true;					\
 			dst[i] = TYPE2##_nil;				\
 			nils++;						\
 		} else							\
@@ -13456,10 +13564,11 @@ static BUN								\
 convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 			  BUN start, BUN end, const oid *restrict cand,	\
 			  const oid *candend, oid candoff,		\
-			  int abort_on_error)				\
+			  bool abort_on_error, bool *reduce)		\
 {									\
 	BUN i, nils = 0;						\
 									\
+	*reduce = true;							\
 	CANDLOOP(dst, i, TYPE2##_nil, 0, start);			\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, TYPE2##_nil);		\
@@ -13487,10 +13596,11 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 static BUN								\
 convert_##TYPE##_bit(const TYPE *src, bit *restrict dst, BUN cnt,	\
 		     BUN start, BUN end, const oid *restrict cand,	\
-		     const oid *candend, oid candoff)			\
+		     const oid *candend, oid candoff, bool *reduce)	\
 {									\
 	BUN i, nils = 0;						\
 									\
+	*reduce = true;							\
 	CANDLOOP(dst, i, bit_nil, 0, start);				\
 	for (i = start; i < end; i++) {					\
 		CHECKCAND(dst, i, candoff, bit_nil);			\
@@ -13512,8 +13622,8 @@ convertimpl_enlarge(bte, lng)
 #ifdef HAVE_HGE
 convertimpl_enlarge(bte, hge)
 #endif
-convertimpl_enlarge(bte, flt)
-convertimpl_enlarge(bte, dbl)
+convertimpl_enlarge_float(bte, flt, FLT_MANT_DIG)
+convertimpl_enlarge_float(bte, dbl, DBL_MANT_DIG)
 
 convertimpl_reduce(sht, bte)
 convertimpl_copy(sht)
@@ -13523,8 +13633,8 @@ convertimpl_enlarge(sht, lng)
 #ifdef HAVE_HGE
 convertimpl_enlarge(sht, hge)
 #endif
-convertimpl_enlarge(sht, flt)
-convertimpl_enlarge(sht, dbl)
+convertimpl_enlarge_float(sht, flt, FLT_MANT_DIG)
+convertimpl_enlarge_float(sht, dbl, DBL_MANT_DIG)
 
 convertimpl_reduce(int, bte)
 convertimpl_reduce(int, sht)
@@ -13534,8 +13644,8 @@ convertimpl_enlarge(int, lng)
 #ifdef HAVE_HGE
 convertimpl_enlarge(int, hge)
 #endif
-convertimpl_enlarge(int, flt)
-convertimpl_enlarge(int, dbl)
+convertimpl_enlarge_float(int, flt, FLT_MANT_DIG)
+convertimpl_enlarge_float(int, dbl, DBL_MANT_DIG)
 
 convertimpl_reduce(lng, bte)
 convertimpl_reduce(lng, sht)
@@ -13549,8 +13659,8 @@ convertimpl_copy(lng)
 #ifdef HAVE_HGE
 convertimpl_enlarge(lng, hge)
 #endif
-convertimpl_enlarge(lng, flt)
-convertimpl_enlarge(lng, dbl)
+convertimpl_enlarge_float(lng, flt, FLT_MANT_DIG)
+convertimpl_enlarge_float(lng, dbl, DBL_MANT_DIG)
 
 #ifdef HAVE_HGE
 convertimpl_reduce(hge, bte)
@@ -13559,8 +13669,8 @@ convertimpl_reduce(hge, int)
 convertimpl_oid_reduce(hge)
 convertimpl_reduce(hge, lng)
 convertimpl_copy(hge)
-convertimpl_enlarge(hge, flt)
-convertimpl_enlarge(hge, dbl)
+convertimpl_enlarge_float(hge, flt, FLT_MANT_DIG)
+convertimpl_enlarge_float(hge, dbl, DBL_MANT_DIG)
 #endif
 
 convertimpl_reduce_float(flt, bte)
@@ -13572,7 +13682,7 @@ convertimpl_reduce_float(flt, lng)
 convertimpl_reduce_float(flt, hge)
 #endif
 convertimpl_copy(flt)
-convertimpl_enlarge(flt, dbl)
+convertimpl_enlarge_float(flt, dbl, DBL_MANT_DIG)
 
 convertimpl_reduce_float(dbl, bte)
 convertimpl_reduce_float(dbl, sht)
@@ -13610,7 +13720,7 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 	BUN i;
 	const void *nil = ATOMnilptr(tp);
 	const void *restrict src;
-	ssize_t (*atomtostr)(str *, size_t *, const void *) = BATatoms[tp].atomToStr;
+	ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[tp].atomToStr;
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
 
 	for (i = 0; i < start; i++)
@@ -13652,11 +13762,14 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 					end = i + 1;
 			}
 			src = BUNtvar(bi, i);
-			if ((*atomtostr)(&dst, &len, src) < 0)
-				goto bunins_failed;
-			if ((*atomcmp)(src, nil) == 0)
+			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
-			tfastins_nocheckVAR(bn, i, dst, bn->twidth);
+				tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
+			} else {
+				if ((*atomtostr)(&dst, &len, src, false) < 0)
+					goto bunins_failed;
+				tfastins_nocheckVAR(bn, i, dst, bn->twidth);
+			}
 		}
 	} else {
 		size_t size = ATOMsize(tp);
@@ -13673,16 +13786,20 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 				if (++cand == candend)
 					end = i + 1;
 			}
-			if ((*atomtostr)(&dst, &len, src) < 0)
-				goto bunins_failed;
-			if ((*atomcmp)(src, nil) == 0)
+			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
-			tfastins_nocheckVAR(bn, i, dst, bn->twidth);
+				tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
+			} else {
+				if ((*atomtostr)(&dst, &len, src, false) < 0)
+					goto bunins_failed;
+				tfastins_nocheckVAR(bn, i, dst, bn->twidth);
+			}
 			src = (const void *) ((const char *) src + size);
 		}
 	}
 	for (i = end; i < cnt; i++)
 		tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
+	bn->theap.dirty = true;
 	BATsetcount(bn, cnt);
 	GDKfree(dst);
 	return nils;
@@ -13694,7 +13811,7 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 static BUN
 convert_str_any(BAT *b, int tp, void *restrict dst,
 		BUN start, BUN end, const oid *restrict cand,
-		const oid *candend, oid candoff, int abort_on_error)
+		const oid *candend, oid candoff, bool abort_on_error)
 {
 	BUN i, cnt = BATcount(b);
 	BUN nils = 0;
@@ -13703,7 +13820,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 	void *d;
 	size_t len = ATOMsize(tp);
 	ssize_t l;
-	ssize_t (*atomfromstr)(const char *, size_t *, ptr *) = BATatoms[tp].atomFromStr;
+	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
 	BATiter bi = bat_iterator(b);
 
 	for (i = 0; i < start; i++) {
@@ -13728,7 +13845,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 			nils++;
 		} else {
 			d = dst;
-			if ((l = (*atomfromstr)(s, &len, &d)) < 0 ||
+			if ((l = (*atomfromstr)(s, &len, &d, false)) < 0 ||
 			    l < (ssize_t) strlen(s)) {
 				if (abort_on_error) {
 					GDKclrerr();
@@ -13755,16 +13872,18 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 static BUN
 convert_void_any(oid seq, BUN cnt, BAT *bn,
 		 BUN start, BUN end, const oid *restrict cand,
-		 const oid *candend, oid candoff, int abort_on_error)
+		 const oid *candend, oid candoff, bool abort_on_error,
+		 bool *reduce)
 {
 	BUN nils = 0;
 	BUN i = 0;
 	int tp = bn->ttype;
 	void *restrict dst = Tloc(bn, 0);
-	ssize_t (*atomtostr)(str *, size_t *, const void *) = BATatoms[TYPE_oid].atomToStr;
+	ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[TYPE_oid].atomToStr;
 	str s = 0;
 	size_t len = 0;
 
+	*reduce = false;
 	if (is_oid_nil(seq)) {
 		start = end = 0;
 	} else {
@@ -13774,6 +13893,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 			/* overflow */
 			if (abort_on_error)
 				CONV_OVERFLOW(oid, ATOMname(tp), seq + cnt);
+			*reduce = true;
 			nils = ((oid) 1 << (8 * ATOMsize(tp) - 1)) - seq;
 		} else {
 			nils = cnt;
@@ -13798,7 +13918,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 					((bte *) dst)[i] = 1;
 				}
 			} else {
-				for (i = 0; i < end; i++, seq++) {
+				for (i = start; i < end; i++, seq++) {
 					CHECKCAND((bte *) dst, i, candoff,
 						  bte_nil);
 					((bte *) dst)[i] = (bte) seq;
@@ -13852,7 +13972,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 		case TYPE_str:
 			for (i = 0; i < start; i++)
 				tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
-			for (i = 0; i < end; i++) {
+			for (; i < end; i++) {
 				if (cand) {
 					if (i < *cand - candoff) {
 						nils++;
@@ -13864,7 +13984,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 					if (++cand == candend)
 						end = i + 1;
 				}
-				if ((*atomtostr)(&s, &len, &seq) < 0)
+				if ((*atomtostr)(&s, &len, &seq, false) < 0)
 					goto bunins_failed;
 				tfastins_nocheckVAR(bn, i, s, bn->twidth);
 				seq++;
@@ -13907,16 +14027,13 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 			((dbl *) dst)[i] = dbl_nil;
 		break;
 	case TYPE_str:
-		seq = oid_nil;
-		if ((*atomtostr)(&s, &len, &seq) < 0)
-			goto bunins_failed;
-		for (; i < cnt; i++) {
-			tfastins_nocheckVAR(bn, i, s, bn->twidth);
-		}
+		for (; i < cnt; i++)
+			tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
 		break;
 	default:
 		return BUN_NONE + 1;
 	}
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	GDKfree(s);
 	return nils;
@@ -13929,7 +14046,8 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 static BUN
 convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		       BUN cnt, BUN start, BUN end, const oid *restrict cand,
-		       const oid *candend, oid candoff, int abort_on_error)
+		       const oid *candend, oid candoff, bool abort_on_error,
+		       bool *reduce)
 {
 	switch (ATOMbasetype(stp)) {
 	case TYPE_bte:
@@ -13938,50 +14056,51 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			if (dtp == TYPE_bit)
 				return convert_bte_bit(src, dst, cnt,
 						       start, end, cand,
-						       candend, candoff);
+						       candend, candoff,
+						       reduce);
 			return convert_bte_bte(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		case TYPE_sht:
 			return convert_bte_sht(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (dtp == TYPE_oid)
 				return convert_bte_oid(src, dst, cnt,
 						       start, end, cand,
 						       candend, candoff,
-						       abort_on_error);
+						       abort_on_error, reduce);
 #endif
 			return convert_bte_int(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (dtp == TYPE_oid)
 				return convert_bte_oid(src, dst, cnt,
 						       start, end, cand,
 						       candend, candoff,
-						       abort_on_error);
+						       abort_on_error, reduce);
 #endif
 			return convert_bte_lng(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_bte_hge(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 #endif
 		case TYPE_flt:
 			return convert_bte_flt(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		case TYPE_dbl:
 			return convert_bte_dbl(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -13991,51 +14110,52 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			if (dtp == TYPE_bit)
 				return convert_sht_bit(src, dst, cnt,
 						       start, end, cand,
-						       candend, candoff);
+						       candend, candoff,
+						       reduce);
 			return convert_sht_bte(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_sht:
 			return convert_sht_sht(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (dtp == TYPE_oid)
 				return convert_sht_oid(src, dst, cnt,
 						       start, end, cand,
 						       candend, candoff,
-						       abort_on_error);
+						       abort_on_error, reduce);
 #endif
 			return convert_sht_int(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (dtp == TYPE_oid)
 				return convert_sht_oid(src, dst, cnt,
 						       start, end, cand,
 						       candend, candoff,
-						       abort_on_error);
+						       abort_on_error, reduce);
 #endif
 			return convert_sht_lng(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_sht_hge(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 #endif
 		case TYPE_flt:
 			return convert_sht_flt(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		case TYPE_dbl:
 			return convert_sht_dbl(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -14045,53 +14165,54 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			if (dtp == TYPE_bit) {
 				return convert_int_bit(src, dst, cnt,
 						       start, end, cand,
-						       candend, candoff);
+						       candend, candoff,
+						       reduce);
 			}
 			return convert_int_bte(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_sht:
 			return convert_int_sht(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (dtp == TYPE_oid)
 				return convert_int_oid(src, dst, cnt,
 						       start, end, cand,
 						       candend, candoff,
-						       abort_on_error);
+						       abort_on_error, reduce);
 #endif
 			return convert_int_int(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (dtp == TYPE_oid)
 				return convert_int_oid(src, dst, cnt,
 						       start, end, cand,
 						       candend, candoff,
-						       abort_on_error);
+						       abort_on_error, reduce);
 #endif
 			return convert_int_lng(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_int_hge(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 #endif
 		case TYPE_flt:
 			return convert_int_flt(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		case TYPE_dbl:
 			return convert_int_dbl(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -14101,54 +14222,55 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			if (dtp == TYPE_bit) {
 				return convert_lng_bit(src, dst, cnt,
 						       start, end, cand,
-						       candend, candoff);
+						       candend, candoff,
+						       reduce);
 			}
 			return convert_lng_bte(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_sht:
 			return convert_lng_sht(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (dtp == TYPE_oid)
 				return convert_lng_oid(src, dst, cnt,
 						       start, end, cand,
 						       candend, candoff,
-						       abort_on_error);
+						       abort_on_error, reduce);
 #endif
 			return convert_lng_int(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (dtp == TYPE_oid)
 				return convert_lng_oid(src, dst, cnt,
 						       start, end, cand,
 						       candend, candoff,
-						       abort_on_error);
+						       abort_on_error, reduce);
 #endif
 			return convert_lng_lng(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_lng_hge(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 #endif
 		case TYPE_flt:
 			return convert_lng_flt(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		case TYPE_dbl:
 			return convert_lng_dbl(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -14159,44 +14281,45 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			if (dtp == TYPE_bit) {
 				return convert_hge_bit(src, dst, cnt,
 						       start, end, cand,
-						       candend, candoff);
+						       candend, candoff,
+						       reduce);
 			}
 			return convert_hge_bte(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_sht:
 			return convert_hge_sht(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_int:
 			return convert_hge_int(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_lng:
 			return convert_hge_lng(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_hge:
 			return convert_hge_hge(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		case TYPE_oid:
 			return convert_hge_oid(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_flt:
 			return convert_hge_flt(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		case TYPE_dbl:
 			return convert_hge_dbl(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -14207,56 +14330,57 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			if (dtp == TYPE_bit) {
 				return convert_flt_bit(src, dst, cnt,
 						       start, end, cand,
-						       candend, candoff);
+						       candend, candoff,
+						       reduce);
 			}
 			return convert_flt_bte(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_sht:
 			return convert_flt_sht(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (dtp == TYPE_oid)
 				return convert_flt_oid(src, dst, cnt,
 						       start, end, cand,
 						       candend, candoff,
-						       abort_on_error);
+						       abort_on_error, reduce);
 #endif
 			return convert_flt_int(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (dtp == TYPE_oid)
 				return convert_flt_oid(src, dst, cnt,
 						       start, end, cand,
 						       candend, candoff,
-						       abort_on_error);
+						       abort_on_error, reduce);
 #endif
 			return convert_flt_lng(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_flt_hge(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 #endif
 		case TYPE_flt:
 			return convert_flt_flt(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		case TYPE_dbl:
 			return convert_flt_dbl(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -14266,57 +14390,58 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			if (dtp == TYPE_bit) {
 				return convert_dbl_bit(src, dst, cnt,
 						       start, end, cand,
-						       candend, candoff);
+						       candend, candoff,
+						       reduce);
 			}
 			return convert_dbl_bte(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_sht:
 			return convert_dbl_sht(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (dtp == TYPE_oid)
 				return convert_dbl_oid(src, dst, cnt,
 						       start, end, cand,
 						       candend, candoff,
-						       abort_on_error);
+						       abort_on_error, reduce);
 #endif
 			return convert_dbl_int(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (dtp == TYPE_oid)
 				return convert_dbl_oid(src, dst, cnt,
 						       start, end, cand,
 						       candend, candoff,
-						       abort_on_error);
+						       abort_on_error, reduce);
 #endif
 			return convert_dbl_lng(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return convert_dbl_hge(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 #endif
 		case TYPE_flt:
 			return convert_dbl_flt(src, dst, cnt,
 					       start, end, cand,
 					       candend, candoff,
-					       abort_on_error);
+					       abort_on_error, reduce);
 		case TYPE_dbl:
 			return convert_dbl_dbl(src, dst, cnt,
 					       start, end, cand,
-					       candend, candoff);
+					       candend, candoff, reduce);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -14326,12 +14451,16 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 }
 
 BAT *
-BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
+BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils = 0;	/* in case no conversion defined */
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
+	/* set reduce to true if there are (potentially) multiple
+	 * (different) source values that map to the same destination
+	 * value */
+	bool reduce = false;
 
 	BATcheck(b, "BATconvert", NULL);
 	if (tp == TYPE_void)
@@ -14353,19 +14482,20 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 	if (b->ttype == TYPE_void)
 		nils = convert_void_any(b->tseqbase, b->batCount, bn,
 					start, end, cand, candend, b->hseqbase,
-					abort_on_error);
+					abort_on_error, &reduce);
 	else if (tp == TYPE_str)
 		nils = convert_any_str(b, bn, cnt, start, end, cand, candend);
-	else if (b->ttype == TYPE_str)
+	else if (b->ttype == TYPE_str) {
+		reduce = true;
 		nils = convert_str_any(b, tp, Tloc(bn, 0),
 				       start, end, cand, candend, b->hseqbase,
 				       abort_on_error);
-	else
+	} else
 		nils = convert_typeswitchloop(Tloc(b, 0), b->ttype,
 					      Tloc(bn, 0), tp,
 					      b->batCount, start, end,
 					      cand, candend, b->hseqbase,
-					      abort_on_error);
+					      abort_on_error, &reduce);
 
 	if (nils >= BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -14388,22 +14518,23 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 		bn->tsorted = nils == 0 && b->tsorted;
 		bn->trevsorted = nils == 0 && b->trevsorted;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
 	}
-	if (bn->ttype != TYPE_bit || BATcount(bn) < 2)
-		bn->tkey = (b->tkey & 1) && nils <= 1;
+	if (!reduce || BATcount(bn) < 2)
+		bn->tkey = b->tkey && nils <= 1;
 	else
-		bn->tkey = 0;
+		bn->tkey = false;
 
 	return bn;
 }
 
 gdk_return
-VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
+VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 {
 	ptr p;
 	BUN nils = 0;
+	bool reduce;
 
 	if (ret->vtype == TYPE_str) {
 		if (v->vtype == TYPE_void ||
@@ -14417,7 +14548,8 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 			ret->val.sval = NULL;
 			if ((*BATatoms[v->vtype].atomToStr)(&ret->val.sval,
 							    &ret->len,
-							    VALptr(v)) < 0) {
+							    VALptr(v),
+							    false) < 0) {
 				GDKfree(ret->val.sval);
 				ret->val.sval = NULL;
 				ret->len = 0;
@@ -14434,10 +14566,8 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 		}
 		ret->val.oval = oid_nil;
 	} else if (v->vtype == TYPE_void) {
-		nils = convert_typeswitchloop(&oid_nil, TYPE_oid,
-					      VALget(ret), ret->vtype,
-					      1, 0, 1, NULL, NULL, 0,
-					      abort_on_error);
+		if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
+			nils = BUN_NONE;
 	} else if (v->vtype == TYPE_str) {
 		if (v->val.sval == NULL || strcmp(v->val.sval, str_nil) == 0) {
 			if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
@@ -14457,7 +14587,7 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 				len = ATOMsize(ret->vtype);
 			}
 			if ((l = (*BATatoms[ret->vtype].atomFromStr)(
-				     v->val.sval, &len, &p)) < 0 ||
+				     v->val.sval, &len, &p, false)) < 0 ||
 			    l < (ssize_t) strlen(v->val.sval)) {
 				if (ATOMextern(ret->vtype))
 					GDKfree(p);
@@ -14479,7 +14609,7 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 		nils = convert_typeswitchloop(VALptr(v), v->vtype,
 					      VALget(ret), ret->vtype,
 					      1, 0, 1, NULL, NULL, 0,
-					      abort_on_error);
+					      abort_on_error, &reduce);
 	}
 	if (nils == BUN_NONE + 1) {
 		GDKerror("VARconvert: conversion from type %s to type %s "
@@ -14487,5 +14617,6 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 			 ATOMname(v->vtype), ATOMname(ret->vtype));
 		return GDK_FAIL;
 	}
+	ret->len = ATOMlen(ret->vtype, VALptr(ret));
 	return nils == BUN_NONE ? GDK_FAIL : GDK_SUCCEED;
 }

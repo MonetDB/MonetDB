@@ -14,7 +14,6 @@ stdout of test 'text` in directory 'sql/test/pg_regress` itself:
 # Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:35864/
 # MonetDB/SQL module v2.31.0 loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

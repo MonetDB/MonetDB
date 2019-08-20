@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -109,40 +109,40 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 	 0, 0,			/* implicit */
 	 "MALinitClient", (MALfcn) &MALinitClient,
 	 "MALexitClient", (MALfcn) &MALexitClient,
-	 "MALreader", (MALfcn) &MALreader, 0,
-	 "MALparser", (MALfcn) &MALparser, 0,
-	 "MALoptimizer", 0, 0,
-	 0, 0, 0,
-	 "MALengine", (MALfcn) &MALengine, 0,
-	 "MALcallback", (MALfcn) &MALcallback, 0,0 },
+	 "MALreader", (MALfcn) &MALreader,
+	 "MALparser", (MALfcn) &MALparser,
+	 "MALoptimizer", 0,
+	 0, 0,
+	 "MALengine", (MALfcn) &MALengine,
+	 "MALcallback", (MALfcn) &MALcallback },
 	{"profiler","profiler",			/* name */
 	 0, 0,			/* initClient */
 	 0, 0,			/* exitClient */
 	 "PROFinitClient", (MALfcn) &PROFinitClient,			/* initClient */
 	 "PROFexitClient", (MALfcn) &PROFexitClient,			/* exitClient */
-	 "MALreader", (MALfcn) &MALreader, 0,		/* reader */
-	 "MALparser", (MALfcn) &MALparser, 0,		/* parser */
-	 0, 0, 0,		/* optimizer */
-	 0, 0, 0,		/* scheduler */
-	 0, 0, 0,		/* callback */
-	 0, 0, 0,0		/* engine */
+	 "MALreader", (MALfcn) &MALreader,		/* reader */
+	 "MALparser", (MALfcn) &MALparser,		/* parser */
+	 0, 0,		/* optimizer */
+	 0, 0,		/* scheduler */
+	 0, 0,		/* callback */
+	 0, 0		/* engine */
 	 },
 	{0, 0,		/* name */
 	 0, 0,		/* init */
 	 0, 0,		/* exit */
 	 0, 0,		/* initClient */
 	 0, 0,		/* exitClient */
-	 0, 0, 0,		/* reader */
-	 0, 0, 0,		/* parser */
-	 0, 0, 0,		/* optimizer */
-	 0, 0, 0,		/* scheduler */
-	 0, 0, 0,		/* callback */
-	 0, 0, 0, 0		/* engine */
+	 0, 0,		/* reader */
+	 0, 0,		/* parser */
+	 0, 0,		/* optimizer */
+	 0, 0,		/* scheduler */
+	 0, 0,		/* callback */
+	 0, 0		/* engine */
 	 }
 };
 
 static str fillScenario(Client c, Scenario scen);
-static MT_Lock scenarioLock MT_LOCK_INITIALIZER("scenarioLock");
+static MT_Lock scenarioLock = MT_LOCK_INITIALIZER("scenarioLock");
 
 
 /*
@@ -224,10 +224,6 @@ initScenario(Client c, Scenario s)
 str
 defaultScenario(Client c)
 {
-#ifdef NEED_MT_LOCK_INIT
-	if (c == mal_clients)
-		MT_lock_init(&scenarioLock, "scenarioLock");
-#endif
 	return initScenario(c, scenarioRec);
 }
 
@@ -502,12 +498,24 @@ resetScenario(Client c)
  * between speed and ability to analysis its behavior.
  *
  */
+static const char *phases[] = {
+	[MAL_SCENARIO_CALLBACK] = "scenario callback",
+	[MAL_SCENARIO_ENGINE] = "scenario engine",
+	[MAL_SCENARIO_EXITCLIENT] = "scenario exitclient",
+	[MAL_SCENARIO_INITCLIENT] = "scenario initclient",
+	[MAL_SCENARIO_OPTIMIZE] = "scenario optimize",
+	[MAL_SCENARIO_PARSER] = "scenario parser",
+	[MAL_SCENARIO_READER] = "scenario reader",
+	[MAL_SCENARIO_SCHEDULER] = "scenario scheduler",
+};
 static str
 runPhase(Client c, int phase)
 {
 	str msg = MAL_SUCCEED;
-	if (c->phase[phase])
+	if (c->phase[phase]) {
+		MT_thread_setworking(phases[phase]);
 	    return msg = (str) (*c->phase[phase])(c);
+	}
 	return msg;
 }
 
@@ -518,11 +526,8 @@ runPhase(Client c, int phase)
 static str
 runScenarioBody(Client c, int once)
 {
-	str msg= MAL_SUCCEED;
+	str msg = MAL_SUCCEED;
 
-	c->exception_buf_initialized = 1;
-	if (setjmp( c->exception_buf) < 0)
-		c->mode = FINISHCLIENT;
 	while (c->mode > FINISHCLIENT && !GDKexiting()) {
 		// be aware that a MAL call  may initialize a different scenario
 		if ( !c->state[0] && (msg = runPhase(c, MAL_SCENARIO_INITCLIENT)) ) 
@@ -539,8 +544,10 @@ runScenarioBody(Client c, int once)
 			goto wrapup;
 	wrapup:
 		if (msg != MAL_SUCCEED){
-			if(c->phase[MAL_SCENARIO_CALLBACK])
+			if (c->phase[MAL_SCENARIO_CALLBACK]) {
+				MT_thread_setworking(phases[MAL_SCENARIO_CALLBACK]);
 				msg = (str) (*c->phase[MAL_SCENARIO_CALLBACK])(c, msg);
+			}
 			if (msg) {
 				mnstr_printf(c->fdout,"!%s%s", msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
 				freeException(msg);
@@ -553,9 +560,8 @@ runScenarioBody(Client c, int once)
 		c->actions++;
 		if( once) break;
 	}
-	c->exception_buf_initialized = 0;
-	if (once == 0 && c->phase[MAL_SCENARIO_EXITCLIENT])
-		msg = (*c->phase[MAL_SCENARIO_EXITCLIENT]) (c);
+	if (once == 0)
+		msg = runPhase(c, MAL_SCENARIO_EXITCLIENT);
 	return msg;
 }
 

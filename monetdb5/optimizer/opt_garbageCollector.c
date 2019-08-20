@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -31,6 +31,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
+	//str nme;
+	char *used;
 	//int *varlnk, *stmtlnk;
 
 	(void) pci;
@@ -49,10 +51,23 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 */
 	
+	used = (char*) GDKzalloc(sizeof(char) * mb->vtop);
+	if ( used == NULL)
+		throw(MAL, "optimizer.garbagecollector", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
 	old= mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
 	//vlimit = mb->vtop;
+
+	/* rename all temporaries used for ease of debugging and profile interpretation */
+
+ 	for( i = 0; i < mb->vtop; i++)
+		if( sscanf(getVarName(mb,i),"X_%d", &j) == 1)
+			snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
+		else
+		if( sscanf(getVarName(mb,i),"C_%d", &j) == 1)
+			snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
 
 	// move SQL query definition to the front for event profiling tools
 	p = NULL;
@@ -91,6 +106,23 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		p->typechk = TYPE_UNKNOWN;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
+		/* rename all temporaries used for ease of debugging and profile interpretation */
+/* lets check if this is the culprit for DS22 on april
+ * Remove the use of 'used' and only looking at returns. 
+ * It should be sufficient to look into the variable table
+		for( j = 0; j< p->retc; j++){
+			arg = getArg(p,j);
+			if( used[arg] ==0){
+				nme = getVarName(mb,arg);
+				if( nme[0] == 'X' && nme[1] == '_' )
+						snprintf(nme, IDLENGTH, "X_%d", arg);
+				else
+				if( nme[0] == 'C' && nme[1] == '_' )
+						snprintf(nme, IDLENGTH,"C_%d", arg);
+				used[arg] ++;
+			}
+		}
+*/
 
 		if ( p->barrier == RETURNsymbol){
 			pushInstruction(mb, p);
@@ -103,8 +135,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 		/* A block exit is never within a parallel block,
 		 * otherwise we could not inject the assignment */
-			/* force garbage collection of all declared within output block and ending here  */
-/* ignore for the time being, it requires a more thorough analysis of dependencies.
+		/* force garbage collection of all declared within output block and ending here  */
+		/* ignore for the time being, it requires a more thorough analysis of dependencies.
 		if (blockExit(p) ){
 			for( k = stmtlnk[i]; k; k = varlnk[k])
 			if( isaBatType(getVarType(mb,k)) ){
@@ -118,7 +150,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 				actions++;
 			}
 		}
-*/
+		*/
 	}
 	/* A good MAL plan should end with an END instruction */
 	pushInstruction(mb, p);
@@ -134,6 +166,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	//GDKfree(varlnk);
 	//GDKfree(stmtlnk);
 	GDKfree(old);
+	GDKfree(used);
 #ifdef DEBUG_OPT_GARBAGE
 	{ 	int k;
 		fprintf(stderr, "#Garbage collected BAT variables \n");
@@ -144,21 +177,13 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		chkFlow(mb);
 		if ( mb->errors != MAL_SUCCEED ){
 			fprintf(stderr,"%s\n",mb->errors);
-			GDKfree(mb->errors);
+			freeException(mb->errors);
 			mb->errors = MAL_SUCCEED;
 		}
 		fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
 		fprintf(stderr, "End of GCoptimizer\n");
 	}
 #endif
-
-	/* rename all temporaries for ease of debugging */
-	for( i = 0; i < mb->vtop; i++)
-	if( sscanf(getVarName(mb,i),"X_%d", &j) == 1)
-		snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
-	else
-	if( sscanf(getVarName(mb,i),"C_%d", &j) == 1)
-		snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);
@@ -168,6 +193,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		chkFlow(mb);
 		chkDeclarations(mb);
 	}
+
 	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);

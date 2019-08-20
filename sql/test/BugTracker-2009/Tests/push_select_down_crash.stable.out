@@ -14,7 +14,6 @@ stdout of test 'push_select_down_crash` in directory 'sql/test/BugTracker-2009` 
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:32790/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

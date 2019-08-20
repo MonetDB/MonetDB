@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -89,7 +89,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	oid uid = 0;
 	bat bid = 0;
 	str ret;
-	int user_id;
+	sqlid user_id;
 	str pwd;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
 	sql_table *db_user_info, *auths;
@@ -204,12 +204,12 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	sql_table *t, *uinfo;
 	mvc *m = (mvc *) _mvc;
 	char *err = NULL;
-	int schema_id = 0;
+	sqlid schema_id = 0;
 	str monetdbuser = "monetdb";
 	list *res, *ops;
 
 	/* create the authorisation related tables */
-	t = mvc_create_table(m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1);
+	t = mvc_create_table(m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2048);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
@@ -223,7 +223,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	ops = sa_list(m->sa);
 	/* following funcion returns a table (single column) of user names
 	   with the approriate scenario (sql) */
-	mvc_create_func(m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE);
+	mvc_create_func(m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE, TRUE);
 
 	t = mvc_create_view(m, s, "users", SQL_PERSIST,
 			    "SELECT u.\"name\" AS \"name\", "
@@ -493,6 +493,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	sql_column *schemas_id = NULL;
 	sql_table *auths = NULL;
 	sql_column *auths_name = NULL;
+	str other;
 
 	void *p = 0;
 
@@ -551,8 +552,10 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	}
 
 	if (!schema || !mvc_set_schema(m, schema)) {
-		if (m->session->active)
-			mvc_rollback(m, 0, NULL);
+		if (m->session->tr->active) {
+			if((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
+				freeException(other);
+		}
 		GDKfree(username);
 		return NULL;
 	}
@@ -563,6 +566,9 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		schema = NULL;
 	}
 	GDKfree(username);
-	mvc_rollback(m, 0, NULL);
+	if((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED) {
+		freeException(other);
+		return NULL;
+	}
 	return schema;
 }

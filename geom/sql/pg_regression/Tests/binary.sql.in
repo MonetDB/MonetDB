@@ -30,9 +30,9 @@ SELECT st_force4d(g) FROM tm.geoms WHERE id < 15 ORDER BY id;
 INSERT INTO tm.geoms(g)
 SELECT st_setsrid(g,4326) FROM tm.geoms ORDER BY id;
 
-COPY select * from tm.geoms INTO '$TSTSRCDIR/tmpfile_1';
+COPY select * from tm.geoms INTO E'$QTSTSRCDIR/tmpfile_1';
 CREATE TABLE tm.geoms_in AS SELECT * FROM tm.geoms WITH NO DATA;
-COPY INTO tm.geoms_in FROM '$TSTSRCDIR/tmpfile_1';
+COPY INTO tm.geoms_in FROM E'$QTSTSRCDIR/tmpfile_1';
 SELECT 'geometry', count(*) FROM tm.geoms_in i, tm.geoms o WHERE i.id = o.id
  AND ST_OrderingEquals(i.g, o.g);
 
@@ -44,9 +44,9 @@ WHERE geometrytype(g) NOT LIKE '%CURVE%'
   AND geometrytype(g) NOT LIKE 'TIN%'
 WITH DATA;
 
-COPY select * from tm.geogs INTO '$TSTSRCDIR/tmpfile_2';
+COPY select * from tm.geogs INTO E'$QTSTSRCDIR/tmpfile_2';
 CREATE TABLE tm.geogs_in AS SELECT * FROM tm.geogs WITH NO DATA;
-COPY INTO tm.geogs_in FROM '$TSTSRCDIR/tmpfile_2';
+COPY INTO tm.geogs_in FROM E'$QTSTSRCDIR/tmpfile_2';
 SELECT 'geometry', count(*) FROM tm.geogs_in i, tm.geogs o WHERE i.id = o.id
  AND ST_OrderingEquals(i.g, o.g);
 

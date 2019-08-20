@@ -195,7 +195,7 @@ The next ODBC API functions always return SQL_ERROR (or SQL_INVALID_HANDLE):
 - SQLGetCursorName()
 - SQLSetCursorName()
 - SQLSetScrollOptions()
-- SQLSetParam()
+- SQLSetParam()      It is mapped to SQLBindParameter(..., SQL_PARAM_INPUT_OUTPUT, ...).
 - SQLDrivers()       Note on MS Windows this is implemented by the ODBC Driver Manager
 - SQLDataSources()   Note on MS Windows this is implemented by the ODBC Driver Manager
 

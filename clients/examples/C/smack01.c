@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifdef _MSC_VER
@@ -66,7 +66,7 @@ main(int argc, char **argv)
 			die(dbh, hdl);
 
 		/* switch of autocommit */
-		if (lang==1 && (mapi_setAutocommit(dbh, 0) != MOK || mapi_error(dbh)))
+		if (lang==1 && (mapi_setAutocommit(dbh, false) != MOK || mapi_error(dbh)))
 			die(dbh,NULL);
 
 		if (lang==1)

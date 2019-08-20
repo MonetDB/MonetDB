@@ -4,9 +4,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
-VERSION=11.30.0
+VERSION=11.34.0
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -69,7 +69,6 @@ PYTHON2BASE=C:\Python27
 !IFNDEF PYTHON2LIB
 PYTHON2LIB=python27.lib
 !ENDIF
-PYTHON2_LIBDIR=share\MonetDB\python
 
 !IFNDEF PYTHON3BASE
 PYTHON3BASE=C:\Python32
@@ -77,15 +76,8 @@ PYTHON3BASE=C:\Python32
 !IFNDEF PYTHON3LIB
 PYTHON3LIB=python32.lib
 !ENDIF
-PYTHON3_LIBDIR=share\MonetDB\python3
 
-!IFDEF PYTHON2BASE
-PYTHON_LIBDIR=$(PYTHON2_LIBDIR)
-!ELSE
-!IFDEF PYTHON3BASE
-PYTHON_LIBDIR=$(PYTHON3_LIBDIR)
-!ENDIF
-!ENDIF
+PYTHON_LIBDIR=share\MonetDB\python
 
 !IFDEF HAVE_PCRE
 # This is the location of the PCRE library
@@ -114,13 +106,6 @@ LTLIBICONV = "$(LIBICONV)\lib\iconv.dll.lib"
 ICONV_CFLAGS = -DHAVE_ICONV "-I$(LIBICONV)\include"
 !ENDIF
 
-!IFDEF HAVE_ATOMIC_OPS
-!IFNDEF LIBATOMIC_OPS
-LIBATOMIC_OPS = C:\atomic_ops-7.2
-!ENDIF
-ATOMIC_OPS_CFLAGS = -DHAVE_LIBATOMIC_OPS "-I$(LIBATOMIC_OPS)"
-!endif
-
 !IFDEF HAVE_LIBZ
 # This is the location of the ZLIB library
 !IFNDEF LIBZLIB
@@ -138,8 +123,14 @@ zlib_CFLAGS = -DHAVE_LIBZ "-I$(LIBZLIB)\include"
 !IFNDEF LIBBZIP2
 LIBBZIP2 = C:\bzip2-1.0.5.win$(bits)
 !ENDIF
-BZ_LIBS = "$(LIBBZIP2)\lib\libbz2.lib"
-BZ_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
+!IFDEF DEBUG
+# in a debug build of MonetDB, we need to use a debug build of libbz2
+# since it seems that the FILE pointer cannot be carried over from a
+# debug build to a non-debug build.
+BZIPDEBUGEXT = d
+!endif
+bzip2_LIBS = "$(LIBBZIP2)\lib\libbz2$(BZIPDEBUGEXT).lib"
+bzip2_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
 !ENDIF
 
 !IFDEF HAVE_LIBXML
@@ -174,19 +165,25 @@ libr_CFLAGS = -DHAVE_LIBR "-I$(LIBR)\include"
 
 # generate R.lib from R.dll, needed for linking
 R.lib: "$(libr_DLL)"
-	dumpbin /exports "$(libr_DLL)" | python "$(TOPDIR)\..\NT\makelibdef.py" > R.def
+	dumpbin /exports "$(libr_DLL)" | "$(PYTHON)" "$(TOPDIR)\..\NT\makelibdef.py" > R.def
 	lib /machine:$(BITSMCHN) /def:R.def /out:R.lib
 !ENDIF
 
-!IFDEF HAVE_LIBPY
-libpy_LIBS = $(PYTHON2DIR)\libs\python27.lib
-libpy_CFLAGS = -DHAVE_LIBPY -I$(PYTHON2DIR)\include -I$(PYTHON2DIR)\Lib\site-packages\numpy\core\include
+!IFDEF HAVE_LIBPY2
+libpy2_LIBS = "$(PYTHON2DIR)\libs\python27.lib"
+libpy2_CFLAGS = -DHAVE_LIBPY2 "-I$(PYTHON2DIR)\include" "-I$(PYTHON2DIR)\Lib\site-packages\numpy\core\include"
+!ENDIF
+
+!IFDEF HAVE_LIBPY3
+libpy3_LIBS = "$(PYTHON3DIR)\libs\python37.lib"
+libpy3_CFLAGS = -DHAVE_LIBPY3 "-I$(PYTHON3DIR)\include" "-I$(PYTHON3DIR)\Lib\site-packages\numpy\core\include"
 !ENDIF
 
 # some programs we use, probably no need to edit
 
 # install python, flex and bison on your systems
 # PYTHON may be either a version 2 or a version 3
+# here we let %Path% determine which version we get
 PYTHON = python
 YACC = bison
 LEX = flex
@@ -208,7 +205,7 @@ COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -MDd -nologo -Od -D_DEBUG -RTC1 -Zi -Oi
 # add -Zi flag (implies -debug, not -D_DEBUG) to get symbol info in .pdb files
 COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -MD -nologo -Ox -Zi -Oi
 !ENDIF
-CFLAGS = $(COMPILERFLAGS)  -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES) $(WINCONFIG_INCS) $(ICONV_CFLAGS) $(ATOMIC_OPS_CFLAGS)
+CFLAGS = $(COMPILERFLAGS)  -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES) $(WINCONFIG_INCS) $(ICONV_CFLAGS)
 
 # No general LDFLAGS needed
 INSTALL = copy
@@ -284,11 +281,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) CROSS_COMPILING_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_FITS
-	$(ECHO) HAVE_FITS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_FITS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_CURL
 	$(ECHO) HAVE_CURL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -298,6 +290,11 @@ create_winconfig_conds_new_py:
 	$(ECHO) HAVE_DEVELOPER_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_DEVELOPER_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_FITS
+	$(ECHO) HAVE_FITS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_FITS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_GDK
 	$(ECHO) HAVE_GDK_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
@@ -319,10 +316,15 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_LIBBZ2_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_LIBPY
-	$(ECHO) HAVE_LIBPY_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF HAVE_LIBLZMA
+	$(ECHO) HAVE_LIBLZMA_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) HAVE_LIBPY_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_LIBLZMA_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_LIBPY2
+	$(ECHO) HAVE_LIBPY2_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIBPY2_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_LIBPY3
 	$(ECHO) HAVE_LIBPY3_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
@@ -349,11 +351,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_LIDAR_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_SHP
-	$(ECHO) HAVE_SHP_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_SHP_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_MONETDB5
 	$(ECHO) HAVE_MONETDB5_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -379,25 +376,15 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_PROJ_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_PYTHON
-	$(ECHO) HAVE_PYTHON_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_PYTHON_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF HAVE_PYTHON2
-	$(ECHO) HAVE_PYTHON2_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_PYTHON2_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF HAVE_PYTHON3
-	$(ECHO) HAVE_PYTHON3_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_PYTHON3_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_SAMTOOLS
 	$(ECHO) HAVE_SAMTOOLS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_SAMTOOLS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_SHP
+	$(ECHO) HAVE_SHP_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_SHP_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_SQL
 	$(ECHO) HAVE_SQL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
@@ -430,7 +417,7 @@ update_winconfig_conds_py: create_winconfig_conds_new_py
 	cmp -s "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py" || \
 	$(CP) "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
 
-CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
+CONFIGURE="$(PYTHON)" $(CONFIGURE_PY) \
 	"$(TOPDIR)\winconfig_conds.py" \
 	"prefix=$(prefix)" \
 	"LIBICONV=$(LIBICONV)" \
@@ -440,9 +427,7 @@ CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
 	"PYTHON=$(PYTHON)" \
 	"PYTHON_LIBDIR=$(PYTHON_LIBDIR)" \
 	"PYTHON2=$(PYTHON2)" \
-	"PYTHON2_LIBDIR=$(PYTHON2_LIBDIR)" \
 	"PYTHON3=$(PYTHON3)" \
-	"PYTHON3_LIBDIR=$(PYTHON3_LIBDIR)" \
 	"TOPDIR=$(TOPDIR)" \
 	"VERSION=$(VERSION)" \
 	"builtby=%USER%@%COMPUTERNAME%" \

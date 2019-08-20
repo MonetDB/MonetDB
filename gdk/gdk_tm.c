@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -58,7 +58,7 @@ prelude(int cnt, bat *subcommit)
 			BAT *b = BBP_cache(bid);
 
 			if (b == NULL && (BBP_status(bid) & BBPSWAPPED)) {
-				b = BBPquickdesc(bid, TRUE);
+				b = BBPquickdesc(bid, true);
 				if (b == NULL)
 					return GDK_FAIL;
 			}
@@ -106,7 +106,7 @@ epilogue(int cnt, bat *subcommit)
 			}
 		}
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
-			BAT *b = BBPquickdesc(bid, TRUE);
+			BAT *b = BBPquickdesc(bid, true);
 
 			/* the unloaded ones are deleted without
 			 * loading deleted disk images */
@@ -182,8 +182,11 @@ TMsubcommit_list(bat *subcommit, int cnt)
 	assert(cnt > 0);
 	assert(subcommit[0] == 0); /* BBP artifact: slot 0 in the array will be ignored */
 
+	if (GDKinmemory())
+		return GDK_SUCCEED;
+
 	/* sort the list on BAT id */
-	GDKqsort(subcommit + 1, NULL, NULL, cnt - 1, sizeof(bat), 0, TYPE_bat);
+	GDKqsort(subcommit + 1, NULL, NULL, cnt - 1, sizeof(bat), 0, TYPE_bat, false, false);
 
 	assert(cnt == 1 || subcommit[1] > 0);  /* all values > 0 */
 	/* de-duplication of BAT ids in subcommit list
@@ -221,7 +224,7 @@ TMsubcommit(BAT *b)
 	BUN p, q;
 	BATiter bi = bat_iterator(b);
 
-	subcommit = (bat *) GDKmalloc((BATcount(b) + 1) * sizeof(bat));
+	subcommit = GDKmalloc((BATcount(b) + 1) * sizeof(bat));
 	if (subcommit == NULL)
 		return GDK_FAIL;
 
@@ -229,10 +232,8 @@ TMsubcommit(BAT *b)
 	/* collect the list and save the new bats outside any
 	 * locking */
 	BATloop(b, p, q) {
-		bat bid = BBPindex((str) BUNtail(bi, p));
+		bat bid = BBPindex((str) BUNtvar(bi, p));
 
-		if (bid < 0)
-			bid = -bid;
 		if (bid)
 			subcommit[cnt++] = bid;
 	}
@@ -257,19 +258,19 @@ TMabort(void)
 	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
 		if (BBP_status(i) & BBPNEW) {
-			BAT *b = BBPquickdesc(i, FALSE);
+			BAT *b = BBPquickdesc(i, false);
 
 			if (b) {
-				if (b->batPersistence == PERSISTENT)
+				if (!b->batTransient)
 					BBPrelease(i);
-				b->batPersistence = TRANSIENT;
-				b->batDirtydesc = 1;
+				b->batTransient = true;
+				b->batDirtydesc = true;
 			}
 		}
 	}
 	for (i = 1; i < getBBPsize(); i++) {
 		if (BBP_status(i) & (BBPPERSISTENT | BBPDELETED | BBPSWAPPED)) {
-			BAT *b = BBPquickdesc(i, TRUE);
+			BAT *b = BBPquickdesc(i, true);
 
 			if (b == NULL)
 				continue;
@@ -297,10 +298,10 @@ TMabort(void)
 			}
 			if (BBP_status(i) & BBPDELETED) {
 				BBP_status_on(i, BBPEXISTING, "TMabort");
-				if (b->batPersistence != PERSISTENT)
+				if (b->batTransient)
 					BBPretain(i);
-				b->batPersistence = PERSISTENT;
-				b->batDirtydesc = 1;
+				b->batTransient = false;
+				b->batDirtydesc = true;
 			}
 			BBPunfix(i);
 		}

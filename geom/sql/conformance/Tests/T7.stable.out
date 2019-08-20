@@ -18,7 +18,6 @@ stdout of test 'T7` in directory 'geom/sql/conformance` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 #WARNING To speedup geom.GeometryType1 a bulk operator implementation is needed
 
 # 14:02:52 >  

@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 from __future__ import print_function
 
@@ -762,6 +762,8 @@ def am_library(fd, var, libmap, am):
     if 'MODULE' in libmap:
         ldflags.append('-module')
         ldflags.append('-avoid-version')
+    if 'NOINST' not in libmap:
+        ldflags.append('@NO_UNDEFINED@')
     if "LDFLAGS" in libmap:
         for x in libmap["LDFLAGS"]:
             ldflags.append(x)

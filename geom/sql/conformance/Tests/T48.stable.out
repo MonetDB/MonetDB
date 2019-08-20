@@ -18,7 +18,6 @@ stdout of test 'T48` in directory 'geom/sql/conformance` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 #WARNING To speedup geom.AsText a bulk operator implementation is needed
 
 # 15:15:54 >  
@@ -26,11 +25,11 @@ Ready.
 # 15:15:54 >  
 
 #SELECT ST_AsText(ST_Difference(named_places.boundary, forests.boundary)) FROM named_places, forests WHERE named_places.name = 'Ashton' AND forests.name = 'Green Forest';
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
-% 47 # length
-[ "\"POLYGON ((62 48, 84 48, 84 42, 56 34, 62 48))\""	]
+% 45 # length
+[ "POLYGON ((62 48, 84 48, 84 42, 56 34, 62 48))"	]
 
 # 15:15:54 >  
 # 15:15:54 >  "Done."

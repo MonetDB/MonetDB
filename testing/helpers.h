@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef HELPERS_H
@@ -12,8 +12,7 @@
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
-__declspec(noreturn) void ErrXit(char *text1, char *text2, int num)
-	__attribute__((__noreturn__));
+_Noreturn void ErrXit(char *text1, char *text2, int num);
 FILE *Rfopen(char *name);
 FILE *Wfopen(char *name);
 FILE *Afopen(char *name);

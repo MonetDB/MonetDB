@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _GDK_DELTA_H_
@@ -33,11 +33,11 @@
  * Upon saving a BAT, we should convert the delta marker BUN pointers
  * into indexes and convert them back into pointers upon reload.
  *
- * The b->batDirty field tells you whether a BATs main memory
+ * The BATdirty(b) tells you whether a BAT's main memory
  * representation differs from its saved image on stable storage. But
  * *not* whether it has changed since last transaction commit (it can
  * be storage-clean, but transaction-dirty). For this we have
- * @%DELTAdirty(b)@.
+ * DELTAdirty(b).
  */
 #define DELTAdirty(b)	((b)->batInserted < BUNlast(b))
 

@@ -14,7 +14,6 @@ stdout of test 'innerjoin_multiple-bug-sf-943661` in directory 'sql/test/bugs` i
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31407/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -24,7 +23,18 @@ Ready.
 # 11:55:31 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < innerjoin_multiple-bug-sf-943661.sql
 # 11:55:31 >  
 
-% sys.schemas,	.tables,	.columns # table_name
+#select schemas.name, tables.name, columns.name from 
+#	columns 
+#		inner join 
+#	tables 
+#		on (columns.table_id = tables.id) 
+#		inner join 
+#	schemas on (tables.schema_id = schemas.id)
+# where tables."system" = true 
+# 	and tables.name in ('args', 'columns', 'functions', 'idxs',
+#			'objects', 'keys', 'modules', 'sequences')
+# order by schemas.name, tables.name, columns.name;
+% .schemas,	.tables,	.columns # table_name
 % name,	name,	name # name
 % varchar,	varchar,	varchar # type
 % 3,	9,	11 # length
@@ -53,6 +63,7 @@ Ready.
 [ "sys",	"functions",	"name"	]
 [ "sys",	"functions",	"schema_id"	]
 [ "sys",	"functions",	"side_effect"	]
+[ "sys",	"functions",	"system"	]
 [ "sys",	"functions",	"type"	]
 [ "sys",	"functions",	"vararg"	]
 [ "sys",	"functions",	"varres"	]
@@ -102,7 +113,7 @@ Ready.
 # 	and t.name in ('args', 'columns', 'functions', 'idxs',
 #			'objects', 'keys', 'modules', 'sequences')
 # order by s.name, t.name, c.name;
-% sys.s,	.t,	.c # table_name
+% .s,	.t,	.c # table_name
 % name,	name,	name # name
 % varchar,	varchar,	varchar # type
 % 3,	9,	11 # length
@@ -131,6 +142,7 @@ Ready.
 [ "sys",	"functions",	"name"	]
 [ "sys",	"functions",	"schema_id"	]
 [ "sys",	"functions",	"side_effect"	]
+[ "sys",	"functions",	"system"	]
 [ "sys",	"functions",	"type"	]
 [ "sys",	"functions",	"vararg"	]
 [ "sys",	"functions",	"varres"	]

@@ -19,7 +19,6 @@ stdout of test 'bogus_aggregation_casts.Bug-3342` in directory 'sql/test/BugTrac
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 21:17:25 >  
 # 21:17:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12574" "--port=30271"

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _GDK_BBP_H_
@@ -53,13 +53,10 @@
 
 #define BBPTRIM_ALL	(((size_t)1) << (sizeof(size_t)*8 - 2))	/* very large positive size_t */
 
-gdk_export int BBPin;		/* BATs swapped into BBP  */
-gdk_export int BBPout;		/* BATs swapped out of BBP */
 gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
 
 /* global calls */
-gdk_export void BBPaddfarm(const char *dirname, int rolemask);
-gdk_export void BBPresetfarms(void);
+gdk_export gdk_return BBPaddfarm(const char *dirname, int rolemask);
 
 /* update interface */
 gdk_export void BBPclear(bat bid);

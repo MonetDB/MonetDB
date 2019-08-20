@@ -1,4 +1,4 @@
-stdout of test 'pyapi05` in directory 'sql/backends/monet5` itself:
+stdout of test 'pyapi3_05` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 
 
 # 22:42:27 >  
@@ -19,7 +19,6 @@ stdout of test 'pyapi05` in directory 'sql/backends/monet5` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 22:42:28 >  
 # 22:42:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8933" "--port=35079"
@@ -49,7 +48,7 @@ Ready.
 #};
 #SELECT cluster FROM (SELECT MIN(x) AS minx, MAX(x) AS maxx, kmeans(x,5) AS cluster FROM xdata 
 #	GROUP BY cluster) as cdata ORDER BY cluster;
-% sys.cdata # table_name
+% sys.L6 # table_name
 % cluster # name
 % int # type
 % 1 # length

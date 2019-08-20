@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _GDK_SEARCH_H_
@@ -128,12 +128,16 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	} while (0)
 #endif
 
+/* mix_bte(0x80) == 0x80 */
 #define mix_bte(X)	((unsigned int) (unsigned char) (X))
+/* mix_sht(0x8000) == 0x8000 */
 #define mix_sht(X)	((unsigned int) (unsigned short) (X))
+/* mix_int(0x81060038) == 0x80000000 */
 #define mix_int(X)	(((unsigned int) (X) >> 7) ^	\
 			 ((unsigned int) (X) >> 13) ^	\
 			 ((unsigned int) (X) >> 21) ^	\
 			 (unsigned int) (X))
+/* mix_lng(0x810600394347424F) == 0x8000000000000000 */
 #define mix_lng(X)	(((ulng) (X) >> 7) ^	\
 			 ((ulng) (X) >> 13) ^	\
 			 ((ulng) (X) >> 21) ^	\
@@ -143,6 +147,8 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 			 ((ulng) (X) >> 56) ^	\
 			 (ulng) (X))
 #ifdef HAVE_HGE
+/* mix_hge(0x810600394347424F90AC1429D6BFCC57) ==
+ * 0x80000000000000000000000000000000 */
 #define mix_hge(X)	(((uhge) (X) >> 7) ^	\
 			 ((uhge) (X) >> 13) ^	\
 			 ((uhge) (X) >> 21) ^	\
@@ -237,14 +243,19 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHins(b,i,v)							\
 	do {								\
 		if ((b)->thash) {					\
-			assert((b)->thash != (Hash *) 1);		\
-			assert((((size_t *) (b)->thash->heap.base)[0] & (1 << 24)) == 0); \
-			if (((i) & 1023) == 1023 && HASHgonebad((b), (v))) { \
+			MT_lock_set(&GDKhashLock((b)->batCacheid));	\
+			if ((b)->thash == (Hash *) 1 ||			\
+			    ((b)->thash != NULL &&			\
+			     (((size_t *) (b)->thash->heap.base)[0] & (1 << 24) || \
+			      ((size_t *) (b)->thash->heap.base)[2] * 2 < b->batCount)) || \
+			    (((i) & 1023) == 1023 && HASHgonebad((b), (v)))) { \
+				MT_lock_unset(&GDKhashLock((b)->batCacheid)); \
 				HASHdestroy(b);				\
 			} else {					\
 				BUN _c = HASHprobe((b)->thash, (v));	\
 				HASHputall((b)->thash, (i), _c);	\
-				(b)->thash->heap.dirty = TRUE;		\
+				(b)->thash->heap.dirty = true;		\
+				MT_lock_unset(&GDKhashLock((b)->batCacheid)); \
 			}						\
 		}							\
 	} while (0)

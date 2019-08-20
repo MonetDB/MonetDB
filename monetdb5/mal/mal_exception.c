@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -51,7 +51,8 @@ static char *M5OutOfMemory = MAL_MALLOC_FAIL;
  * is good.
  */
 static str createExceptionInternal(enum malexception type, const char *fcn, const char *format, va_list ap)
-	__attribute__((__format__(__printf__, 3, 0)));
+	__attribute__((__format__(__printf__, 3, 0)))
+	__attribute__((__returns_nonnull__));
 static str
 createExceptionInternal(enum malexception type, const char *fcn, const char *format, va_list ap)
 {
@@ -78,6 +79,11 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 		if (newmsg != NULL)
 			message = newmsg;
 	}
+	char *q = message;
+	for (char *p = strchr(q, '\n'); p; q = p + 1, p = strchr(q, '\n'))
+		fprintf(stderr, "#%s:!ERROR:%.*s\n", MT_thread_getname(), (int) (p - q), q);
+	if (*q)
+		fprintf(stderr, "#%s:!ERROR:%s\n", MT_thread_getname(), q);
 	return message;
 }
 
@@ -155,14 +161,21 @@ dumpExceptionsToStream(stream *out, str whatever) {
 			if (i - last > 0) { /* skip empty lines */
 				if (whatever[last] == '!') /* no need for double ! */
 					last++;
-				mnstr_printf(out, "!%s\n", whatever + last);
+				if (out)
+					mnstr_printf(out, "!%s\n", whatever + last);
+				else
+					fprintf(stderr, "!%s\n", whatever + last);
 			}
 			last = i + 1;
 		}
 	}
 	/* flush last part */
-	if (i - last > 0) /* skip if empty */
-		mnstr_printf(out, "!%s\n", whatever + last);
+	if (i - last > 0) { /* skip if empty */
+		if (out)
+			mnstr_printf(out, "!%s\n", whatever + last);
+		else
+			fprintf(stderr, "!%s\n", whatever + last);
+	}
 }
 
 /**
@@ -189,7 +202,8 @@ showException(stream *out, enum malexception type, const char *fcn, const char *
  */
 static str
 createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *prev, const char *format, va_list ap)
-	__attribute__((__format__(__printf__, 5, 0)));
+	__attribute__((__format__(__printf__, 5, 0)))
+	__attribute__((__returns_nonnull__));
 static str
 createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *prev, const char *format, va_list ap)
 {
@@ -343,7 +357,7 @@ getExceptionMessageAndState(const char *exception)
 		if (strncmp(exceptionNames[i], exception, l) == 0 &&
 			exception[l] == ':') {
 			s = exception + l + 1;
-			if ((t = strchr(s, ':')) != NULL)
+			if ((t = strpbrk(s, ":\n")) != NULL && *t == ':')
 				return (str) (t + 1);
 			return (str) s;
 		}
@@ -359,15 +373,15 @@ getExceptionMessage(const char *exception)
 	char *msg = getExceptionMessageAndState(exception);
 
 	if (strlen(msg) > 6 && msg[5] == '!' &&
-		((msg[0] >= '0' && msg[0] <= '9') ||
+		(isdigit((unsigned char) msg[0]) ||
 	     (msg[0] >= 'A' && msg[0] <= 'Z')) &&
-	    ((msg[1] >= '0' && msg[1] <= '9') ||
+	    (isdigit((unsigned char) msg[1]) ||
 	     (msg[1] >= 'A' && msg[1] <= 'Z')) &&
-	    ((msg[2] >= '0' && msg[2] <= '9') ||
+	    (isdigit((unsigned char) msg[2]) ||
 	     (msg[2] >= 'A' && msg[2] <= 'Z')) &&
-	    ((msg[3] >= '0' && msg[3] <= '9') ||
+	    (isdigit((unsigned char) msg[3]) ||
 	     (msg[3] >= 'A' && msg[3] <= 'Z')) &&
-	    ((msg[4] >= '0' && msg[4] <= '9') ||
+	    (isdigit((unsigned char) msg[4]) ||
 	     (msg[4] >= 'A' && msg[4] <= 'Z')))
 		msg += 6;
 	return msg;

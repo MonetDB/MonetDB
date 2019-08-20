@@ -18,7 +18,6 @@ stdout of test 'scalar_subquery_with_alias.Bug-3093` in directory 'sql/test/BugT
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -57,7 +56,7 @@ Ready.
 #       ) AS c2
 #  FROM test1 a
 #;
-% .L6,	.L17 # table_name
+% .L6,	.L14 # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -70,8 +69,8 @@ Ready.
 #       )
 #  FROM test1 a
 #;
-% .L5,	.L15 # table_name
-% cnt1,	L15 # name
+% .L5,	.L12 # table_name
+% cnt1,	cnt2 # name
 % bigint,	bigint # type
 % 1,	1 # length
 #SELECT (SELECT COUNT(id) AS cnt1 
@@ -83,7 +82,7 @@ Ready.
 #       ) AS c2
 #  FROM test1 a
 #;
-% .L5,	.L16 # table_name
+% .L5,	.L13 # table_name
 % cnt1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -96,7 +95,7 @@ Ready.
 #       ) AS c1
 #  FROM test1 a
 #;
-% .L10,	sys.L16 # table_name
+% .L6,	.L14 # table_name
 % c2,	c1 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -109,7 +108,7 @@ Ready.
 #       ) AS c2
 #  FROM test1 a
 #;
-% .L6,	.L17 # table_name
+% .L6,	.L14 # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -130,13 +129,13 @@ Ready.
 #       ) AS c2
 #  FROM test1 a
 #;
-% .L6,	.L17 # table_name
+% .L6,	.L14 # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
+[ 3,	0	]
+[ 3,	0	]
 [ 3,	1	]
-[ 3,	0	]
-[ 3,	0	]
 #SELECT (SELECT COUNT(id) AS cnt1 
 #          FROM test1 
 #       )
@@ -146,13 +145,13 @@ Ready.
 #       )
 #  FROM test1 a
 #;
-% .L5,	.L15 # table_name
-% cnt1,	L15 # name
+% .L5,	.L12 # table_name
+% cnt1,	cnt2 # name
 % bigint,	bigint # type
 % 1,	1 # length
+[ 3,	0	]
+[ 3,	0	]
 [ 3,	1	]
-[ 3,	0	]
-[ 3,	0	]
 #SELECT (SELECT COUNT(id) AS cnt1 
 #          FROM test1 
 #       )
@@ -162,13 +161,13 @@ Ready.
 #       ) AS c2
 #  FROM test1 a
 #;
-% .L5,	.L16 # table_name
+% .L5,	.L13 # table_name
 % cnt1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
+[ 3,	0	]
+[ 3,	0	]
 [ 3,	1	]
-[ 3,	0	]
-[ 3,	0	]
 #SELECT (SELECT COUNT(b.id) AS cnt2 
 #          FROM test2 b 
 #         WHERE a.id = b.id
@@ -178,13 +177,13 @@ Ready.
 #       ) AS c1
 #  FROM test1 a
 #;
-% .L10,	sys.L16 # table_name
+% .L6,	.L14 # table_name
 % c2,	c1 # name
 % bigint,	bigint # type
 % 1,	1 # length
+[ 0,	3	]
+[ 0,	3	]
 [ 1,	3	]
-[ 0,	3	]
-[ 0,	3	]
 #SELECT (SELECT COUNT(id) AS cnt1 
 #          FROM test1 
 #       ) AS c1
@@ -194,13 +193,13 @@ Ready.
 #       ) AS c2
 #  FROM test1 a
 #;
-% .L6,	.L17 # table_name
+% .L6,	.L14 # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
+[ 3,	0	]
+[ 3,	0	]
 [ 3,	1	]
-[ 3,	0	]
-[ 3,	0	]
 #DROP TABLE test1;
 #DROP TABLE test2;
 

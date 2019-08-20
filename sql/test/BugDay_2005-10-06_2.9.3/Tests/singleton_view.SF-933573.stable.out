@@ -13,7 +13,6 @@ stdout of test 'singleton_view.SF-933573` in directory 'sql/test/BugDay_2005-10-
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34442/
 # MonetDB/SQL module v2.25.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -24,7 +23,9 @@ Ready.
 # 12:40:13 >  
 
 [ 4	]
-% sys.v_sv # table_name
+#create view v_sv as select count(*) from t_sv;
+#select * from v_sv;
+% .v_sv # table_name
 % L3 # name
 % bigint # type
 % 1 # length

@@ -19,7 +19,6 @@ stdout of test 'mitosis-floor.Bug-3330` in directory 'sql/test/BugTracker-2013` 
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 20:31:25 >  
 # 20:31:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25950" "--port=38400"

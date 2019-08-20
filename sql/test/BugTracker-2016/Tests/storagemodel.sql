@@ -8,7 +8,7 @@ call storagemodelinit();
 update storagemodelinput set "count" =10000 where "table" ='bug3923';
 update storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i';
 
-select * from storagemodel() where "table" = 'bug3923';
+select * from storagemodel where "table" = 'bug3923';
 
 drop table bug3923;
 
@@ -24,7 +24,7 @@ call sys.storagemodelinit();
 update sys.storagemodelinput set "count" =10000 where "table" ='bug3923';
 update sys.storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i';
 
-select * from sys.storagemodel() where "table" = 'bug3923';
+select * from sys.storagemodel where "table" = 'bug3923';
 
 drop table bug3923;
 

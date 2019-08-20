@@ -23,7 +23,6 @@ stdout of test 'lowcardinality` in directory 'sql/benchmarks/tpch` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:58:29 >  
 # 15:58:29 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32482" "--port=36722"

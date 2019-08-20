@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -15,11 +15,13 @@
  * reset once the owner leaves.
  */
 #include "monetdb_config.h"
+#include "mutils.h"         /* mercurial_revision */
+#include "msabaoth.h"		/* msab_getUUID */
 #include "mal_function.h"
 #include "mal_listing.h"
 #include "mal_profiler.h"
 #include "mal_runtime.h"
-#include "mal_debugger.h"
+#include "mal_utils.h"
 #include "mal_resource.h"
 
 #ifdef HAVE_SYS_TIME_H
@@ -44,7 +46,7 @@ int malProfileMode = 0;     /* global flag to indicate profiling mode */
 
 static struct timeval startup_time;
 
-static volatile ATOMIC_TYPE hbdelay = 0;
+static ATOMIC_TYPE hbdelay = ATOMIC_VAR_INIT(0);
 
 #ifdef HAVE_SYS_RESOURCE_H
 struct rusage infoUsage;
@@ -56,10 +58,8 @@ static struct{
 	double load;
 } corestat[256];
 
+
 /* the heartbeat process produces a ping event once every X milliseconds */
-//#ifdef ATOMIC_LOCK
-//static MT_Lock mal_beatLock MT_LOCK_INITIALIZER("beatLock");
-//#endif
 
 #define LOGLEN 8192
 #define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
@@ -153,6 +153,10 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	/* make profile event tuple  */
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
+	/* TODO: This could probably be optimized somehow to avoid the
+	 * function call to mercurial_revision().
+	 */
+	logadd("\"version\":\""VERSION" (hg id: %s)\",%s", mercurial_revision(), prettify);
 	logadd("\"source\":\"trace\",%s", prettify);
 
 	logadd("\"clk\":"LLFMT",%s", usec, prettify);
@@ -163,9 +167,22 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	logadd("\"pc\":%d,%s", mb?getPC(mb,pci):0, prettify);
 	logadd("\"tag\":%d,%s", stk?stk->tag:0, prettify);
 	logadd("\"module\":\"%s\",%s", pci->modname ? pci->modname : "", prettify);
+	if (pci->modname && strcmp(pci->modname, "user") == 0) {
+		int caller_tag = 0;
+		if(stk && stk->up) {
+			caller_tag = stk->up->tag;
+		}
+		logadd("\"caller\":%d,%s", caller_tag, prettify);
+	}
 	logadd("\"instruction\":\"%s\",%s", pci->fcnname ? pci->fcnname : "", prettify);
-	if( mal_session_uuid)
-		logadd("\"session\":\"%s\",%s",mal_session_uuid,prettify);
+	if (!GDKinmemory()) {
+		char *uuid;
+		if ((c = msab_getUUID(&uuid)) == NULL) {
+			logadd("\"session\":\"%s\",%s", uuid, prettify);
+			free(uuid);
+		} else
+			free(c);
+	}
 
 	if( start){
 		logadd("\"state\":\"start\",%s", prettify);
@@ -326,10 +343,10 @@ This information can be used to determine memory footprint and variable life tim
 							logadd("\"parent\":%d,%s", VIEWtparent(d), pret);
 							logadd("\"seqbase\":"BUNFMT",%s", d->hseqbase, pret);
 							logadd("\"hghbase\":"BUNFMT",%s", d->hseqbase + cnt, pret);
-							v= BBPquickdesc(VIEWtparent(d),0);
-							logadd("\"kind\":\"%s\",%s", (v &&  v->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
+							v= BBPquickdesc(VIEWtparent(d), false);
+							logadd("\"kind\":\"%s\",%s", (v &&  !v->batTransient ? "persistent" : "transient"), pret);
 						} else
-							logadd("\"kind\":\"%s\",%s", ( d->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
+							logadd("\"kind\":\"%s\",%s", ( d->batTransient ? "transient" : "persistent"), pret);
 						total += cnt * d->twidth;
 						total += heapinfo(d->tvheap, d->batCacheid);
 						total += hashinfo(d->thash, d->batCacheid);
@@ -443,7 +460,7 @@ profilerHeartbeatEvent(char *alter)
 	lng usec = GDKusec();
 	uint64_t microseconds = (uint64_t)startup_time.tv_sec*1000000 + (uint64_t)startup_time.tv_usec + (uint64_t)usec;
 
-	if (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream  == NULL)
+	if (ATOMIC_GET(&hbdelay) == 0 || eventstream  == NULL)
 		return;
 
 	/* get CPU load on beat boundaries only */
@@ -453,8 +470,14 @@ profilerHeartbeatEvent(char *alter)
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
 	logadd("\"source\":\"heartbeat\",%s", prettify);
-	if(mal_session_uuid)
-		logadd("\"session\":\"%s\",%s", mal_session_uuid, prettify);
+	if (GDKinmemory()) {
+		char *uuid, *err;
+		if ((err = msab_getUUID(&uuid)) == NULL) {
+			logadd("\"session\":\"%s\",%s", uuid, prettify);
+			free(uuid);
+		} else
+			free(err);
+	}
 	logadd("\"clk\":"LLFMT",%s",usec,prettify);
 	logadd("\"ctime\":%"PRIu64",%s", microseconds, prettify);
 	logadd("\"rss\":%zu,%s", MT_getrss()/1024/1024, prettify);
@@ -585,20 +608,29 @@ static int tracecounter = 0;
 str
 startTrace(str path)
 {
+	int len;
 	char buf[FILENAME_MAX];
 
-	if( path && eventstream == NULL){
+	if (path && eventstream == NULL){
 		// create a file to keep the events, unless we
 		// already have a profiler stream
 		MT_lock_set(&mal_profileLock );
 		if(eventstream == NULL && offlinestore ==0){
-			snprintf(buf,FILENAME_MAX,"%s%c%s",GDKgetenv("gdk_dbpath"), DIR_SEP, path);
-			if (mkdir(buf, 0755) < 0 && errno != EEXIST) {
+			len = snprintf(buf,FILENAME_MAX,"%s%c%s",GDKgetenv("gdk_dbpath"), DIR_SEP, path);
+			if (len == -1 || len >= FILENAME_MAX) {
+				MT_lock_unset(&mal_profileLock);
+				throw(MAL, "profiler.startTrace", SQLSTATE(HY001) "Profiler filename path is too large");
+			}
+			if (mkdir(buf, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
 				MT_lock_unset(&mal_profileLock);
 				throw(MAL, "profiler.startTrace", SQLSTATE(42000) "Failed to create directory %s", buf);
 			}
-			snprintf(buf,FILENAME_MAX,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbpath"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
-			if((eventstream = open_wastream(buf)) == NULL) {
+			len = snprintf(buf,FILENAME_MAX,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbpath"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
+			if (len == -1 || len >= FILENAME_MAX) {
+				MT_lock_unset(&mal_profileLock);
+				throw(MAL, "profiler.startTrace", SQLSTATE(HY001) "Profiler filename path is too large");
+			}
+			if ((eventstream = open_wastream(buf)) == NULL) {
 				MT_lock_unset(&mal_profileLock );
 				throw(MAL,"profiler.startTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
@@ -647,8 +679,6 @@ void
 MPresetProfiler(stream *fdout)
 {
 	if (fdout != eventstream)
-		return;
-	if (mal_trace) // already traced on console
 		return;
 	MT_lock_set(&mal_profileLock);
 	eventstream = 0;
@@ -1025,7 +1055,7 @@ void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 }
 
 static MT_Id hbthread;
-static volatile ATOMIC_TYPE hbrunning;
+static ATOMIC_TYPE hbrunning = ATOMIC_VAR_INIT(0);
 
 static void profilerHeartbeat(void *dummy)
 {
@@ -1035,50 +1065,47 @@ static void profilerHeartbeat(void *dummy)
 	(void) dummy;
 	for (;;) {
 		/* wait until you need this info */
-		while (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream == NULL) {
-			if (GDKexiting() || !ATOMIC_GET(hbrunning, mal_beatLock))
+		MT_thread_setworking("sleeping");
+		while (ATOMIC_GET(&hbdelay) == 0 || eventstream == NULL) {
+			if (GDKexiting() || !ATOMIC_GET(&hbrunning))
 				return;
 			MT_sleep_ms(timeout);
 		}
-		for (t = (int) ATOMIC_GET(hbdelay, mal_beatLock); t > 0; t -= timeout) {
-			if (GDKexiting() || !ATOMIC_GET(hbrunning, mal_beatLock))
+		for (t = (int) ATOMIC_GET(&hbdelay); t > 0; t -= timeout) {
+			if (GDKexiting() || !ATOMIC_GET(&hbrunning))
 				return;
 			MT_sleep_ms(t > timeout ? timeout : t);
 		}
+		MT_thread_setworking("pinging");
 		profilerHeartbeatEvent("ping");
 	}
-	ATOMIC_SET(hbdelay, 0, mal_beatLock);
 }
 
 void setHeartbeat(int delay)
 {
 	if (delay < 0 ){
-		ATOMIC_SET(hbrunning, 0, mal_beatLock);
+		ATOMIC_SET(&hbrunning, 0);
 		if (hbthread)
 			MT_join_thread(hbthread);
 		return;
 	}
 	if ( delay > 0 &&  delay <= 10)
 		delay = 10;
-	ATOMIC_SET(hbdelay, (ATOMIC_TYPE) delay, mal_beatLock);
+	ATOMIC_SET(&hbdelay, delay);
 }
 
 void initProfiler(void)
 {
 	gettimeofday(&startup_time, NULL);
-	if( mal_trace)
-		openProfilerStream(mal_clients[0].fdout,0);
 }
 
 void initHeartbeat(void)
 {
-#ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(mal_beatLock, "beatLock");
-#endif
-	ATOMIC_SET(hbrunning, 1, mal_beatLock);
-	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE) < 0) {
+	ATOMIC_SET(&hbrunning, 1);
+	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE,
+						 "heartbeat") < 0) {
 		/* it didn't happen */
 		hbthread = 0;
-		ATOMIC_SET(hbrunning, 0, mal_beatLock);
+		ATOMIC_SET(&hbrunning, 0);
 	}
 }

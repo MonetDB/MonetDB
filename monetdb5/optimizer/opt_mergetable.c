@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -497,9 +497,9 @@ mat_apply2(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, in
 		for(l=0; l < p->retc; l++) {
 			int res = 0;
 			if (is_select)
-				res = setPartnr(ml, getArg(q,p->retc+1), getArg(q,l), k);
+				res = propagatePartnr(ml, getArg(q,p->retc+1), getArg(q,l), k);
 			else
-				res = setPartnr(ml, -1, getArg(q,l), k);
+				res = propagatePartnr(ml, -1, getArg(q,l), k);
 			if(res) {
 				for(l=0; l < k; l++)
 					freeInstruction(r[l]);
@@ -511,13 +511,12 @@ mat_apply2(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, in
 	}
 
 	for(k=0; k < p->retc; k++) {
-		if(mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, m),  -1, -1, 1)) {
+		if(mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, m),  -1, -1, 0)) {
 			for(l=0; l < k; l++)
 				freeInstruction(r[l]);
 			GDKfree(r);
 			return -1;
 		}
-		pushInstruction(mb, r[k]);
 	}
 	GDKfree(r);
 	return 0;
@@ -599,6 +598,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 		for(k=1; k<mat[m].mi->argc; k++) { 
 			InstrPtr q = copyInstruction(p);
 			InstrPtr s = newInstruction(mb, matRef, packRef);
+			int ttpe = 0;
 
 			if(!q || !s) {
 				if(q)
@@ -611,8 +611,9 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 
 			getArg(s,0) = newTmpVariable(mb, getArgType(mb, mat[n].mi, k));
 	
+		       	ttpe = getArgType(mb, mat[n].mi, 0);
 			for (j=1; j<mat[n].mi->argc; j++) {
-				if (overlap(ml, getArg(mat[m].mi, k), getArg(mat[n].mi, j), -1, -2, 1)){
+				if (getBatType(ttpe) != TYPE_oid || overlap(ml, getArg(mat[m].mi, k), getArg(mat[n].mi, j), k, j, 1)){
 					s = pushArgument(mb,s,getArg(mat[n].mi,j));
 				}
 			}
@@ -989,7 +990,7 @@ aggr_phase2(char *aggr)
 static void
 mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 {
-	int tp = getArgType(mb,p,0), k, tp2 = TYPE_lng;
+	int tp = getArgType(mb,p,0), k, tp2 = TYPE_lng, i;
 	int battp = (getModuleId(p)==aggrRef)?newBatType(tp):tp, battp2 = 0;
 	int isAvg = (getFunctionId(p) == avgRef);
 	InstrPtr r = NULL, s = NULL, q = NULL, u = NULL;
@@ -1013,6 +1014,8 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		if (isAvg) 
 			q = pushReturn(mb, q, newTmpVariable(mb, tp2));
 		q = pushArgument(mb,q,getArg(mat[m].mi,k));
+		for (i = q->argc; i<p->argc; i++)
+			q = pushArgument(mb,q,getArg(p,i));
 		pushInstruction(mb,q);
 		
 		r = pushArgument(mb,r,getArg(q,0));
@@ -1778,7 +1781,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	matlist_t ml;
 	int oldtop, fm, fn, fo, fe, i, k, m, n, o, e, slimit, bailout = 0;
 	int size=0, match, actions=0, distinct_topn = 0, /*topn_res = 0,*/ groupdone = 0, *vars;
-	char buf[256];
+	char buf[256], *group_input;
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
@@ -1791,12 +1794,15 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
 #endif
 
-	vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
-	if( vars == NULL){
+	vars = (int*) GDKmalloc(sizeof(int)* mb->vtop);
+	group_input = (char*) GDKzalloc(sizeof(char)* mb->vtop);
+	if (vars == NULL || group_input == NULL){
+		if (vars)
+			GDKfree(vars);
 		throw(MAL, "optimizer.mergetable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	/* check for bailout conditions */
-	for (i = 1; i < oldtop; i++) {
+	for (i = 1; i < oldtop && !bailout; i++) {
 		int j;
 
 		p = old[i];
@@ -1817,9 +1823,30 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (getFunctionId(q) == subgroupdoneRef || getFunctionId(q) == groupdoneRef)
 				groupdone = 1;
 		}
+		/* bail out if there is a input for a group, which has been used for a group already (solves problems with qube like groupings) */
+		if (getModuleId(p) == groupRef &&
+		   (getFunctionId(p) == subgroupRef ||
+			getFunctionId(p) == subgroupdoneRef ||
+			getFunctionId(p) == groupRef ||
+			getFunctionId(p) == groupdoneRef)) {
+			int input = getArg(p, p->retc); /* argument one is first input */
+
+			if (group_input[input]) {
+#ifdef DEBUG_OPT_MERGETABLE
+				fprintf(stderr,"WARNING::: mergetable bailout on group input reuse in group statement \n");
+#endif
+				bailout = 1;
+			}
+
+			group_input[input] = 1;
+		}
 		if (getModuleId(p) == algebraRef && 
-		    getFunctionId(p) == selectNotNilRef )
+		    getFunctionId(p) == selectNotNilRef ) {
+#ifdef DEBUG_OPT_MERGETABLE
+			fprintf(stderr,"WARNING::: mergetable bailout not nil ref \n");
+#endif
 			bailout = 1;
+		}
 		/*
 		if (isTopn(p))
 			topn_res = getArg(p, 0);
@@ -1828,15 +1855,14 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			//distinct_topn = 1;
 	}
 	GDKfree(vars);
+	GDKfree(group_input);
 
 	ml.horigin = 0;
 	ml.torigin = 0;
 	ml.v = 0;
 	ml.vars = 0;
-	if (bailout){
-		msg = createException(MAL,"optimizer.mergetable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if (bailout)
 		goto cleanup;
-	}
 
 	/* the number of MATs is limited to the variable stack*/
 	ml.size = mb->vtop;
@@ -1937,7 +1963,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * Handle the rewrite v:=aggr.count(b) and sum()
 		 * And the min/max is as easy
 		 */
-		if (match == 1 && p->argc == 2 &&
+		if (match == 1 && p->argc >= 2 &&
 		   ((getModuleId(p)==aggrRef &&
 			(getFunctionId(p)== countRef || 
 			 getFunctionId(p)== count_no_nilRef || 

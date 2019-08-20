@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 ## Process this file with automake to produce Makefile.in
 
@@ -12,8 +12,8 @@ INCLUDES = ../include ../common ../storage \
 		   ../../monetdb5/modules/mal \
 		   ../../monetdb5/extras/rapi \
 		   ../../clients/mapilib \
-		   ../../common/options \
 		   ../../common/stream \
+		   ../../common/utils \
 		   ../../gdk
 
 AM_YFLAGS = -d -p sql -r all
@@ -31,9 +31,11 @@ lib_sqlserver = {
 		sql_symbol.c \
 		sql_scan.c \
 		sql_parser.y \
+		sql_partition.c \
 		sql_mvc.c \
 		sql_env.c \
 		sql_privileges.c \
+		sql_query.c \
 		rel_semantic.c \
 		rel_select.c \
 		rel_updates.c \
@@ -43,19 +45,21 @@ lib_sqlserver = {
 		rel_prop.c \
 		rel_exp.c \
 		rel_rel.c \
+		rel_unnest.c \
 		rel_optimizer.c \
 		rel_partition.c \
 		rel_planner.c rel_planner.h \
 		rel_distribute.c \
 		rel_remote.c rel_remote.h \
+		rel_propagate.c rel_propagate.h \
 		rel_psm.c \
 		rel_xml.c \
 		rel_dump.c \
 		rel_dump.h rel_exp.h rel_rel.h \
-		rel_optimizer.h rel_partition.h rel_distribute.h rel_prop.h rel_schema.h rel_select.h \
+		rel_unnest.h rel_optimizer.h rel_partition.h rel_distribute.h rel_prop.h rel_schema.h rel_select.h \
 		rel_semantic.h rel_sequence.h rel_trans.h \
 		rel_updates.h rel_psm.h rel_xml.h sql_atom.h sql_datetime.h \
 		sql_decimal.h sql_env.h sql_mvc.h sql_parser.h \
-		sql_privileges.h sql_qc.h sql_scan.h \
-		sql_semantic.h sql_symbol.h
+		sql_privileges.h sql_query.h sql_qc.h sql_scan.h \
+		sql_semantic.h sql_symbol.h sql_tokens.h sql_partition.h
 }

@@ -14,7 +14,6 @@ stdout of test 'python3_dbapi` in directory 'sql/test/mapi` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:32187/
 # MonetDB/SQL module v2.30.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -31,7 +30,7 @@ Ready.
 
 [(1,)]
 (2,)
-42000!syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz"
+42000!syntax error, unexpected IDENT, expecting SELECT or '(' or VALUES in: "( xyz"
 
 [(3, 'three'), (7, 'seven')]
 2

@@ -21,7 +21,6 @@ stdout of test 'alter-table.Bug-3828-part1` in directory 'sql/test/BugTracker-20
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -97,7 +96,7 @@ Ready.
 #select tables.name, columns.name, location from tables inner join columns on tables.id=columns.table_id left join storage on tables.name=storage.table and columns.name=storage.column where location is null and tables.name like 'hmda%';
 % .tables,	.columns,	.storage # table_name
 % name,	name,	location # name
-% varchar,	varchar,	clob # type
+% varchar,	varchar,	varchar # type
 % 0,	0,	0 # length
 
 # 14:20:07 >  

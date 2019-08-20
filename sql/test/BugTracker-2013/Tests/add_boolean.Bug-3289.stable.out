@@ -19,7 +19,6 @@ stdout of test 'add_boolean.Bug-3289` in directory 'sql/test/BugTracker-2013` it
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 19:26:54 >  
 # 19:26:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17257" "--port=36389"

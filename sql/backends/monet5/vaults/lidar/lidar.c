@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -36,7 +36,7 @@
 #define DEL_TABLE "DELETE FROM lidarfiles;"
 #define ATTACHDIR "CALL lidarattach('%s');"
 
-static MT_Lock mt_lidar_lock MT_LOCK_INITIALIZER("mt_lidar_lock");
+static MT_Lock mt_lidar_lock = MT_LOCK_INITIALIZER("mt_lidar_lock");
 
 #ifndef NDEBUG
 static
@@ -210,14 +210,14 @@ LIDARinitCatalog(mvc *m)
 
 	lidar_fl = mvc_bind_table(m, sch, "lidar_files");
 	if (lidar_fl == NULL) {
-		lidar_fl = mvc_create_table(m, sch, "lidar_files", tt_table, 0, SQL_PERSIST, 0, 2);
+		lidar_fl = mvc_create_table(m, sch, "lidar_files", tt_table, 0, SQL_PERSIST, 0, 2, 0);
 		mvc_create_column_(m, lidar_fl, "id", "int", 32);
 		mvc_create_column_(m, lidar_fl, "name", "varchar", 255);
 	}
 	
 	lidar_tbl = mvc_bind_table(m, sch, "lidar_tables");
 	if (lidar_tbl == NULL) {
-		lidar_tbl = mvc_create_table(m, sch, "lidar_tables", tt_table, 0, SQL_PERSIST, 0, 21);
+		lidar_tbl = mvc_create_table(m, sch, "lidar_tables", tt_table, 0, SQL_PERSIST, 0, 21, 0);
 		mvc_create_column_(m, lidar_tbl, "id", "int", 32);
 		mvc_create_column_(m, lidar_tbl, "file_id", "int", 32);
 		mvc_create_column_(m, lidar_tbl, "name", "varchar", 255);
@@ -243,7 +243,7 @@ LIDARinitCatalog(mvc *m)
 
 	lidar_col = mvc_bind_table(m, sch, "lidar_columns");
 	if (lidar_col == NULL) {
-		lidar_col = mvc_create_table(m, sch, "lidar_columns", tt_table, 0, SQL_PERSIST, 0, 15);
+		lidar_col = mvc_create_table(m, sch, "lidar_columns", tt_table, 0, SQL_PERSIST, 0, 15, 0);
 		mvc_create_column_(m, lidar_col, "id", "int", 32);
 		mvc_create_column_(m, lidar_col, "file_id", "int", 32);
 		mvc_create_column_(m, lidar_col, "table_id", "int", 32);
@@ -831,7 +831,7 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* create an SQL table to hold the LIDAR table */
 	cnum = 3;//x, y, z. TODO: Add all available columnt
-	tbl = mvc_create_table(m, sch, tname_low, tt_table, 0, SQL_PERSIST, 0, cnum);
+	tbl = mvc_create_table(m, sch, tname_low, tt_table, 0, SQL_PERSIST, 0, cnum, 0);
 	mvc_create_column_(m, tbl, "x", "double", 64);
 	mvc_create_column_(m, tbl, "y", "double", 64);
 	mvc_create_column_(m, tbl, "z", "double", 64);
@@ -1037,18 +1037,18 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATsetcount(y, rows);
 	BATsetcount(z, rows);
 
-	x->tsorted = 0;
-	x->trevsorted = 0;
-	y->tsorted = 0;
-	y->trevsorted = 0;
-	z->tsorted = 0;
-	z->trevsorted = 0;
+	x->tsorted = false;
+	x->trevsorted = false;
+	y->tsorted = false;
+	y->trevsorted = false;
+	z->tsorted = false;
+	z->trevsorted = false;
 #ifndef NDEBUG
 	fprintf(stderr,"#File loaded in %d ms\t", GDKms() - time0);
 #endif
-	BATmode(x, PERSISTENT);
-	BATmode(y, PERSISTENT);
-	BATmode(z, PERSISTENT);
+	BATmode(x, false);
+	BATmode(y, false);
+	BATmode(z, false);
 	store_funcs.append_col(m->session->tr, colx, x, TYPE_bat);
 	store_funcs.append_col(m->session->tr, coly, y, TYPE_bat);
 	store_funcs.append_col(m->session->tr, colz, z, TYPE_bat);
@@ -1072,18 +1072,4 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_unset(&mt_lidar_lock);
 
 	return msg;
-}
-
-str
-LIDARprelude(void *ret) {
-#ifdef NEED_MT_LOCK_INIT
-	static int initialized = 0;
-	/* since we don't destroy the lock, only initialize it once */
-	if (!initialized)
-		MT_lock_init(&mt_lidar_lock, "lidar.lock");
-	initialized = 1;
-#endif
-	(void) ret;
-
-	return MAL_SUCCEED;
 }

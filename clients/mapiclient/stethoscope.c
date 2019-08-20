@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* (c) M Kersten, S Manegold
@@ -17,7 +17,6 @@
 */
 
 #include "monetdb_config.h"
-#include "monet_options.h"
 #include "stream.h"
 #include "stream_socket.h"
 #include "mapi.h"
@@ -84,7 +83,7 @@ static FILE *trace = NULL;
 static void
 renderEvent(EventRecord *ev){
 	FILE *s;
-	if(trace != NULL) 
+	if(trace != NULL)
 		s = trace;
 	else
 		s = stdout;
@@ -94,7 +93,7 @@ renderEvent(EventRecord *ev){
 		fprintf(s, "0,	");
 		fprintf(s, "\"\",	" );
 		fprintf(s, "0,	");
-		fprintf(s, "\"system\",	"); 
+		fprintf(s, "\"system\",	");
 		fprintf(s, "0,	");
 		fprintf(s, "0,	");
 		fprintf(s, "0,	");
@@ -102,7 +101,7 @@ renderEvent(EventRecord *ev){
 		fprintf(s, "0,	");
 		fprintf(s, "0,	");
 		fprintf(s, "\"");
-		fprintf(s, "version:%s, release:%s, threads:%s, memory:%s, host:%s, oid:%d, package:%s ", 
+		fprintf(s, "version:%s, release:%s, threads:%s, memory:%s, host:%s, oid:%d, package:%s ",
 			ev->version, ev->release, ev->threads, ev->memory, ev->host, ev->oid, ev->package);
 		fprintf(s, "\"	]\n");
 		return ;
@@ -122,7 +121,7 @@ renderEvent(EventRecord *ev){
 	case MDB_DONE: fprintf(s, "\"done \",	"); break;
 	case MDB_WAIT: fprintf(s, "\"wait \",	"); break;
 	case MDB_PING: fprintf(s, "\"ping \",	"); break;
-	case MDB_SYSTEM: fprintf(s, "\"system\",	"); 
+	case MDB_SYSTEM: fprintf(s, "\"system\",	");
 	}
 	fprintf(s, "%"PRId64",	", ev->ticks);
 	fprintf(s, "%"PRId64",	", ev->rss);
@@ -186,7 +185,7 @@ convertOldFormat(char *inputfile)
 	}
 	fprintf(trace,"[\n{");
 	len = 0;
-	memset(&event, 0, sizeof(event));
+	event = (EventRecord) {0};
 	while (fgets(buf + len, (int) (bufsize - len), fdin) != NULL) {
 		while ((e = strchr(buf + len, '\n')) == NULL) {
 			/* rediculously long line */
@@ -247,16 +246,21 @@ usageStethoscope(void)
 static void
 stopListening(int i)
 {
-	fprintf(stderr,"signal %d received\n",i);
+	fprintf(stderr,"stethoscope: signal %d received\n",i);
 	if( dbh)
 		doQ("profiler.stop();");
 stop_disconnect:
 	// show follow up action only once
-	if(trace)
-		fclose(trace);
+	/*
+	if(trace) {
+		fflush(trace);
+		int res = fclose(trace);
+		assert(res==0);
+	}
+	*/
 	if(dbh)
 		mapi_disconnect(dbh);
-	exit(0);
+	/* exit(0); */
 }
 
 int
@@ -394,7 +398,7 @@ main(int argc, char **argv)
 #endif
 	signal(SIGINT, stopListening);
 	signal(SIGTERM, stopListening);
-	close(0);
+	/* close(0); */
 
 	if (user == NULL)
 		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
@@ -423,7 +427,7 @@ main(int argc, char **argv)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
 
-	snprintf(buf, BUFSIZ, " profiler.openstream(%d);", stream_mode);
+	snprintf(buf, BUFSIZ, "profiler.openstream(%d);", stream_mode);
 	if( debug)
 		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);
@@ -456,6 +460,7 @@ main(int argc, char **argv)
 		if(json) {
 			if(trace != NULL) {
 				fprintf(trace, "%s", response + len);
+				fflush(trace);
 			} else {
 				printf("%s", response + len);
 				fflush(stdout);
@@ -494,7 +499,7 @@ main(int argc, char **argv)
 			if (debug)
 				printf("LASTLINE:%s", response);
 			len = strlen(response);
-			strncpy(buffer, response, len + 1);
+			snprintf(buffer, len + 1, "%s", response);
 		} else /* reset this line of buffer */
 			len = 0;
 	}

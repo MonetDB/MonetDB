@@ -22,7 +22,6 @@ stdout of test 'renameUser` in directory 'sql/test/Users` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 23:01:32 >  
 # 23:01:32 >  "/usr/bin/python2" "renameUser.SQL.py" "renameUser"

@@ -18,33 +18,32 @@ stdout of test 'exist-bigint-missing.Bug-6315` in directory 'sql/test/BugTracker
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:32:28 >  
 # 16:32:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27183" "--port=36678"
 # 16:32:28 >  
 
 #select 
-#        case when EXISTS ( select hashes from sys.tablestoragemodel )
+#        case when EXISTS ( select hashsize from sys.tablestoragemodel )
 #                then (true)
 #                else (false)
 #        end
 #from sys.table_types limit 3;
-% .L72 # table_name
-% L72 # name
+% .L37 # table_name
+% L37 # name
 % boolean # type
 % 5 # length
 [ false	]
 [ false	]
 [ false	]
 #select 
-#        case when EXISTS ( select count(hashes) from sys.tablestoragemodel )
+#        case when EXISTS ( select count(hashsize) from sys.tablestoragemodel )
 #                then (true)
 #                else (false)
 #        end
 #from sys.table_types limit 3;
-% .L72 # table_name
-% L72 # name
+% .L41 # table_name
+% L41 # name
 % boolean # type
 % 5 # length
 [ true	]

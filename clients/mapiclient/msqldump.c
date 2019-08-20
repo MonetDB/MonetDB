@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -22,11 +22,12 @@
 
 #include "stream.h"
 #include "msqldump.h"
+#define LIBMUTILS 1
 #include "mprompt.h"
+#include "mutils.h"		/* mercurial_revision */
 #include "dotmonetdb.h"
 
-__declspec(noreturn) static void usage(const char *prog, int xit)
-	__attribute__((__noreturn__));
+static _Noreturn void usage(const char *prog, int xit);
 
 static void
 usage(const char *prog, int xit)
@@ -56,7 +57,7 @@ main(int argc, char **argv)
 	char *passwd = NULL;
 	char *host = NULL;
 	char *dbname = NULL;
-	int trace = 0;
+	bool trace = false;
 	bool describe = false;
 	bool functions = false;
 	bool useinserts = false;
@@ -77,13 +78,14 @@ main(int argc, char **argv)
 		{"Xdebug", 0, 0, 'X'},
 		{"user", 1, 0, 'u'},
 		{"quiet", 0, 0, 'q'},
+		{"version", 0, 0, 'v'},
 		{"help", 0, 0, '?'},
 		{0, 0, 0, 0}
 	};
 
 	parse_dotmonetdb(&user, &passwd, &dbname, NULL, NULL, NULL, NULL);
 
-	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NXu:q?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NXu:qv?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
 			if (user)
@@ -123,8 +125,21 @@ main(int argc, char **argv)
 			quiet = true;
 			break;
 		case 'X':
-			trace = MAPI_TRACE;
+			trace = true;
 			break;
+		case 'v': {
+			printf("msqldump, the MonetDB interactive database "
+			       "dump tool, version %s", VERSION);
+#ifdef MONETDB_RELEASE
+			printf(" (%s)", MONETDB_RELEASE);
+#else
+			const char *rev = mercurial_revision();
+			if (strcmp(rev, "Unknown") != 0)
+				printf(" (hg id: %s)", rev);
+#endif
+			printf("\n");
+			return 0;
+		}
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
@@ -165,7 +180,7 @@ main(int argc, char **argv)
 		exit(2);
 	}
 	if (!quiet) {
-		char *motd = mapi_get_motd(mid);
+		const char *motd = mapi_get_motd(mid);
 
 		if (motd)
 			fprintf(stderr, "%s", motd);
@@ -194,16 +209,27 @@ main(int argc, char **argv)
 #endif
 		if ((p = strrchr(buf, '\n')) != NULL)
 			*p = 0;
-		mnstr_printf(out, "-- msqldump %s %s%s %s\n",
+
+		mnstr_printf(out,
+			     "-- msqldump version %s", VERSION);
+#ifdef MONETDB_RELEASE
+		mnstr_printf(out, " (%s)", MONETDB_RELEASE);
+#else
+		const char *rev = mercurial_revision();
+		if (strcmp(rev, "Unknown") != 0)
+			mnstr_printf(out, " (hg id: %s)", rev);
+#endif
+		mnstr_printf(out, " %s %s%s\n",
 			     describe ? "describe" : "dump",
 			     functions ? "functions" : table ? "table " : "database",
-			     table ? table : "", buf);
-		dump_version(mid, out, "--");
+			     table ? table : "");
+		dump_version(mid, out, "-- server:");
+		mnstr_printf(out, "-- %s\n", buf);
 	}
 	if (functions)
 		c = dump_functions(mid, out, true, NULL, NULL, NULL);
 	else if (table)
-		c = dump_table(mid, NULL, table, out, describe, true, useinserts);
+		c = dump_table(mid, NULL, table, out, describe, true, useinserts, false);
 	else
 		c = dump_database(mid, out, describe, useinserts);
 	mnstr_flush(out);

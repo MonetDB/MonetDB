@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -137,14 +137,6 @@ res_table_destroy(res_table *t)
 	if (t->order)
 		bat_decref(t->order);
 	_DELETE(t->cols);
-	if (t->tsep)
-		_DELETE(t->tsep);
-	if (t->rsep)
-		_DELETE(t->rsep);
-	if (t->ssep)
-		_DELETE(t->ssep);
-	if (t->ns)
-		_DELETE(t->ns);
 	_DELETE(t);
 }
 

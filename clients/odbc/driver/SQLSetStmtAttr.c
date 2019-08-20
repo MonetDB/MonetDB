@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -277,7 +277,7 @@ MNDBSetStmtAttr(ODBCStmt *stmt,
 		/* TODO: implement requested behavior */
 	case SQL_ATTR_ASYNC_ENABLE:		/* SQLULEN */
 #ifdef SQL_ATTR_ASYNC_STMT_EVENT
-	case SQL_ATTR_ASYNC_EVENT:		/* SQLPOINTER */
+	case SQL_ATTR_ASYNC_STMT_EVENT:		/* SQLPOINTER */
 #endif
 #ifdef SQL_ATTR_ASYNC_STMT_PCALLBACK
 	case SQL_ATTR_ASYNC_PCALLBACK:		/* SQLPOINTER */

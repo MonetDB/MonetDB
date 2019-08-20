@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -199,6 +199,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	char dbpath[1024];
 	char dbextra_path[1024];
 	char port[24];
+	char listenaddr[512];
 	char muri[512]; /* possibly undersized */
 	char usock[512];
 	char mydoproxy;
@@ -209,6 +210,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	char *embeddedr = NULL;
 	char *embeddedpy = NULL;
 	char *embeddedc = NULL;
+	char *ipv6 = NULL;
 	char *dbextra = NULL;
 	char *argv[512];	/* for the exec arguments */
 	char property_other[1024];
@@ -341,24 +343,27 @@ forkMserver(char *database, sabdb** stats, int force)
 	/* create the pipes (filedescriptors) now, such that we and the
 	 * child have the same descriptor set */
 	if (pipe(pfdo) == -1) {
+		int e = errno;
 		msab_freeStatus(stats);
 		freeConfFile(ckv);
 		free(ckv);
 		pthread_mutex_unlock(&fork_lock);
-		return(newErr("unable to create pipe: %s", strerror(errno)));
+		return(newErr("unable to create pipe: %s", strerror(e)));
 	}
 	if (pipe(pfde) == -1) {
+		int e = errno;
 		close(pfdo[0]);
 		close(pfdo[1]);
 		msab_freeStatus(stats);
 		freeConfFile(ckv);
 		free(ckv);
 		pthread_mutex_unlock(&fork_lock);
-		return(newErr("unable to create pipe: %s", strerror(errno)));
+		return(newErr("unable to create pipe: %s", strerror(e)));
 	}
 
 	/* a multiplex-funnel means starting a separate thread */
 	if (strcmp(kv->val, "mfunnel") == 0) {
+		FILE *f1, *f2;
 		/* create a dpair entry */
 		pthread_mutex_lock(&_mero_topdp_lock);
 
@@ -377,8 +382,20 @@ forkMserver(char *database, sabdb** stats, int force)
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		kv = findConfKey(ckv, "mfunnel");
-		if ((er = multiplexInit(database, kv->val,
-								fdopen(pfdo[1], "a"), fdopen(pfde[1], "a"))) != NO_ERR) {
+		if(!(f1 = fdopen(pfdo[1], "a"))) {
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&fork_lock);
+			return newErr("Failed to open file descriptor\n");
+		}
+		if(!(f2 = fdopen(pfde[1], "a"))) {
+			fclose(f1);
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&fork_lock);
+			return newErr("Failed to open file descriptor\n");
+		}
+		if ((er = multiplexInit(database, kv->val, f1, f2)) != NO_ERR) {
 			Mfprintf(stderr, "failed to create multiplex-funnel: %s\n",
 					 getErrMsg(er));
 			freeConfFile(ckv);
@@ -463,7 +480,7 @@ forkMserver(char *database, sabdb** stats, int force)
 
 	kv = findConfKey(ckv, "embedpy");
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
-		embeddedpy = "embedded_py=true";
+		embeddedpy = "embedded_py=2";
 
 	kv = findConfKey(ckv, "embedpy3");
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
@@ -485,8 +502,22 @@ forkMserver(char *database, sabdb** stats, int force)
 		dbextra = kv->val;
 	}
 
-
+	kv = findConfKey(ckv, "listenaddr");
+	if (kv->val != NULL) {
+		if (mydoproxy == 1) {
+			// listenaddr is only available on forwarding method
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&fork_lock);
+			free(sabdbfarm);
+			return newErr("attempting to start mserver with listening address while being proxied by monetdbd; this option is only possible on forward method\n");
+		}
+		snprintf(listenaddr, sizeof(listenaddr), "mapi_listenaddr=%s", kv->val);
+	} else {
+		listenaddr[0] = '\0';
+	}
 	mport = (unsigned int)getConfNum(_mero_props, "port");
+	ipv6 = getConfNum(_mero_props, "ipv6") == 1 ? "mapi_ipv6=true" : "mapi_ipv6=false";
 
 	/* ok, now exec that mserver we want */
 	snprintf(dbpath, sizeof(dbpath),
@@ -522,7 +553,11 @@ forkMserver(char *database, sabdb** stats, int force)
 			snprintf(usock, sizeof(usock), "mapi_usock=");
 		}
 	} else {
-		argv[c++] = "--set"; argv[c++] = "mapi_open=true";
+		if (listenaddr[0] != '\0') {
+			argv[c++] = "--set"; argv[c++] = listenaddr;
+		} else {
+			argv[c++] = "--set"; argv[c++] = "mapi_open=true";
+		}
 		argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
 		/* avoid this mserver binding to the same port as merovingian
 		 * but on another interface, (INADDR_ANY ... sigh) causing
@@ -531,6 +566,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		snprintf(port, sizeof(port), "mapi_port=%u", mport + 1);
 		snprintf(usock, sizeof(usock), "mapi_usock=");
 	}
+	argv[c++] = "--set"; argv[c++] = ipv6;
 	argv[c++] = "--set"; argv[c++] = port;
 	argv[c++] = "--set"; argv[c++] = usock;
 	argv[c++] = "--set"; argv[c++] = vaultkey;
@@ -566,9 +602,6 @@ forkMserver(char *database, sabdb** stats, int force)
 		list++;
 	}
 
-	/* keep this one last for easy copy/paste with gdb */
-	argv[c++] = "--set"; argv[c++] = "monet_daemon=yes";
-
 	argv[c++] = NULL;
 
 	freeConfFile(ckv);
@@ -583,13 +616,18 @@ forkMserver(char *database, sabdb** stats, int force)
 		/* redirect stdout and stderr to a new pair of fds for
 		 * logging help */
 		ssize_t write_error;	/* to avoid compiler warning */
+		int dup_err;
 		close(pfdo[0]);
-		dup2(pfdo[1], 1);
+		dup_err = dup2(pfdo[1], 1);
 		close(pfdo[1]);
 
 		close(pfde[0]);
-		dup2(pfde[1], 2);
+		if(dup_err == -1)
+			perror("dup2");
+		dup_err = dup2(pfde[1], 2);
 		close(pfde[1]);
+		if(dup_err == -1)
+			perror("dup2");
 
 		write_error = write(1, "arguments:", 10);
 		for (c = 0; argv[c] != NULL; c++) {
@@ -744,15 +782,17 @@ forkMserver(char *database, sabdb** stats, int force)
 		}
 
 		return(NO_ERR);
-	} else
-		pthread_mutex_unlock(&_mero_topdp_lock);
+	}
+	int e = errno;
+	pthread_mutex_unlock(&_mero_topdp_lock);
+
 	/* forking failed somehow, cleanup the pipes */
 	close(pfdo[0]);
 	close(pfdo[1]);
 	close(pfde[0]);
 	close(pfde[1]);
 	pthread_mutex_unlock(&fork_lock);
-	return(newErr("%s", strerror(errno)));
+	return(newErr("%s", strerror(e)));
 }
 
 #define BUFLEN 1024
@@ -772,6 +812,7 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	size_t pidfnlen;
 	FILE *pidfile;
 	char *profiler_executable;
+	char *beat_frequency = NULL;
 	char *tmp_exe;
 	struct stat path_info;
 	int error_code;
@@ -833,6 +874,10 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	/* find the path that the profiler will be storing files */
 	ckv = getDefaultProps();
 	readAllProps(ckv, (*stats)->path);
+	kv = findConfKey(ckv, PROFILERBEATFREQ);
+	if (kv) {
+		beat_frequency = kv->val;
+	}
 	kv = findConfKey(ckv, PROFILERLOGPROPERTY);
 
 	if (kv == NULL) {
@@ -903,9 +948,9 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 		}
 
 		if (fgets(buf, sizeof(buf), pidfile) == NULL) {
-			fclose(pidfile);
 			error = newErr("cannot read from pid file %s: %s\n",
 						   pidfilename, strerror(errno));
+			fclose(pidfile);
 			free(*log_path);
 			*log_path = NULL;
 			goto cleanup;
@@ -1013,6 +1058,10 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 		argv[arg_idx++] = "-j";  /* JSON output */
 		argv[arg_idx++] = "-d";
 		argv[arg_idx++] = dbname;
+		if (beat_frequency) {
+			argv[arg_idx++] = "-b";
+			argv[arg_idx++] = beat_frequency;
+		}
 		argv[arg_idx++] = "-o";
 		argv[arg_idx++] = log_filename;
 		/* execute */

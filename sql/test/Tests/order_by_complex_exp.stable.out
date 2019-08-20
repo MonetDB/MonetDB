@@ -14,7 +14,6 @@ stdout of test 'order_by_complex_exp` in directory 'sql/test` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34580/
 # MonetDB/SQL module v2.29.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -37,12 +36,14 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 128 # length
+% 130 # length
 project (
-| group by (
-| | table(sys.test02) [ "test02"."col1" NOT NULL ] COUNT 
-| ) [ "test02"."col1" NOT NULL ] [ "test02"."col1" NOT NULL, sys.count no nil ("test02"."col1" NOT NULL) NOT NULL as "L3"."L3" ]
-) [ "test02"."col1" NOT NULL ] [ "L3"."L3" ASC NOT NULL ]
+| project (
+| | group by (
+| | | table(sys.test02) [ "test02"."col1" NOT NULL ] COUNT 
+| | ) [ "test02"."col1" NOT NULL ] [ "test02"."col1" NOT NULL, sys.count no nil ("test02"."col1" NOT NULL) NOT NULL as "L2"."L2" ]
+| ) [ "test02"."col1" NOT NULL, "L2"."L2" NOT NULL ]
+) [ "test02"."col1" NOT NULL ] [ "L2"."L2" ASC NOT NULL, "test02"."col1" ASC NOT NULL ]
 #select col1
 #from test02
 #group by col1
@@ -51,10 +52,11 @@ project (
 % col1 # name
 % varchar # type
 % 3 # length
-[ "ABF"	]
 [ "ABC"	]
-[ "ABE"	]
+[ "ABF"	]
 [ "ABD"	]
+[ "ABE"	]
+#drop table test02;
 
 # 14:06:10 >  
 # 14:06:10 >  Done.

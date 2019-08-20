@@ -40,7 +40,6 @@ stdout of test 'php-size-limit-bug` in directory 'sql/test/BugTracker-2013` itse
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:29:35 >  
 # 17:29:35 >  "./php-size-limit-bug.SQL.sh" "php-size-limit-bug"

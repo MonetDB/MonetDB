@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -26,6 +26,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_backend.h"
+#include "sql_assert.h"
 #include "sql_scenario.h"
 /*
  * Assertion errors detected during the execution of a code block
@@ -42,18 +43,17 @@ SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if (*flg) {
-		/* mdbDump(mb,stk,pci); */
 		if (strlen(*msg) > 6 &&
 		    (*msg)[5] == '!' &&
-		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[0]) ||
 		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
-		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[1]) ||
 		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
-		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[2]) ||
 		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
-		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[3]) ||
 		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
-		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[4]) ||
 		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
 			sqlstate = "";
 		throw(SQL, "assert", SQLSTATE(M0M29) "%s", *msg);
@@ -71,18 +71,17 @@ SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if (*flg) {
-		/* mdbDump(mb,stk,pci); */
 		if (strlen(*msg) > 6 &&
 		    (*msg)[5] == '!' &&
-		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[0]) ||
 		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
-		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[1]) ||
 		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
-		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[2]) ||
 		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
-		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[3]) ||
 		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
-		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[4]) ||
 		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
 			sqlstate = "";
 		throw(SQL, "assert", SQLSTATE(M0M29) "%s", *msg);
@@ -100,18 +99,17 @@ SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if (*flg) {
-		/* mdbDump(mb,stk,pci); */
 		if (strlen(*msg) > 6 &&
 		    (*msg)[5] == '!' &&
-		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[0]) ||
 		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
-		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[1]) ||
 		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
-		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[2]) ||
 		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
-		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[3]) ||
 		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
-		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[4]) ||
 		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
 			sqlstate = "";
 		throw(SQL, "assert", SQLSTATE(M0M29) "%s", *msg);
@@ -129,17 +127,16 @@ SQLassertHge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if (*flg){
 		const char *sqlstate = SQLSTATE(M0M29) ;
 		(void) sqlstate;
-		/* mdbDump(mb,stk,pci);*/
 		if (strlen(*msg) > 6 && (*msg)[5] == '!' &&
-		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[0]) ||
 		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
-		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[1]) ||
 		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
-		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[2]) ||
 		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
-		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[3]) ||
 		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
-		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[4]) ||
 		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
 			sqlstate = "";
 		throw(SQL, "assert", SQLSTATE(M0M29) "%s", *msg);

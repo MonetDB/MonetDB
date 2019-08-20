@@ -5,7 +5,7 @@ create table test3527 (
        b int,
        c int
 );
-copy 54 records into test3527 from stdin using delimiters ',','\n';
+copy 54 records into test3527 from stdin using delimiters ',',E'\n';
 0,0,0
 0,0,1
 0,0,2

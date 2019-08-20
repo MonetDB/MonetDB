@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _SQL_SEMANTIC_H_
@@ -54,8 +54,8 @@ extern sql_arg *sql_bind_param(mvc *sql, const char *name);
 extern int set_type_param(mvc *sql, sql_subtype *type, int nr);
 extern void sql_destroy_params(mvc *sql);	/* used in backend */
 
-extern char *symbol2string(mvc *sql, symbol *s, char **err);
-extern char *dlist2string(mvc *sql, dlist *s, char **err);
+extern char *symbol2string(mvc *sql, symbol *s, int expression, char **err);
+extern char *dlist2string(mvc *sql, dlist *s, int expression, char **err);
 
 extern char * toUpperCopy(char *dest, const char *src); 
 

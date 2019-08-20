@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -55,10 +55,9 @@ static void ComputeParallelAggregation(AggrParams *p);
 static void CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  size_t retcols, oid seqbase);
 
-static char *FunctionBasePath(void);
-static char *FunctionBasePath(void)
+static const char *FunctionBasePath(void)
 {
-	char *basepath = GDKgetenv("function_basepath");
+	const char *basepath = GDKgetenv("function_basepath");
 	if (basepath == NULL) {
 		basepath = getenv("HOME");
 	}
@@ -68,10 +67,10 @@ static char *FunctionBasePath(void)
 	return basepath;
 }
 
-static MT_Lock pyapiLock MT_LOCK_INITIALIZER("pyapiLock");
-static int pyapiInitialized = FALSE;
+static MT_Lock pyapiLock = MT_LOCK_INITIALIZER("pyapiLock");
+static bool pyapiInitialized = false;
 
-int PYFUNCNAME(PyAPIInitialized)(void) {
+bool PYFUNCNAME(PyAPIInitialized)(void) {
 	return pyapiInitialized;
 }
 
@@ -88,26 +87,26 @@ static bool enable_zerocopy_output = true;
 #endif
 
 static str
-PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped);
+PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool grouped, bool mapped);
 
 str
 PYFUNCNAME(PyAPIevalStd)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	return PyAPIeval(cntxt, mb, stk, pci, 0, 0);
+	return PyAPIeval(cntxt, mb, stk, pci, false, false);
 }
 
 str
 PYFUNCNAME(PyAPIevalStdMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	return PyAPIeval(cntxt, mb, stk, pci, 0, 1);
+	return PyAPIeval(cntxt, mb, stk, pci, false, true);
 }
 
 str
 PYFUNCNAME(PyAPIevalAggr)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	return PyAPIeval(cntxt, mb, stk, pci, 1, 0);
+	return PyAPIeval(cntxt, mb, stk, pci, true, false);
 }
 
 str
 PYFUNCNAME(PyAPIevalAggrMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	return PyAPIeval(cntxt, mb, stk, pci, 1, 1);
+	return PyAPIeval(cntxt, mb, stk, pci, true, true);
 }
 
 #define NP_SPLIT_BAT(tpe)                                                      \
@@ -142,7 +141,7 @@ PYFUNCNAME(PyAPIevalAggrMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 //! [EXECUTE_CODE] Step 3: It executes the Python code using the Numpy arrays as arguments
 //! [RETURN_VALUES] Step 4: It collects the return values and converts them back into BATs
 //! If 'mapped' is set to True, it will fork a separate process at [FORK_PROCESS] that executes Step 1-3, the process will then write the return values into memory mapped files and exit, then Step 4 is executed by the main process
-static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped) {
+static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool grouped, bool mapped) {
 	sql_func * sqlfun = NULL;
 	str exprStr;
 
@@ -172,17 +171,17 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 	void **mmap_ptrs = NULL;
 	size_t *mmap_sizes = NULL;
 #endif
-	bit allow_loopback = !mapped;
+	bool allow_loopback = !mapped;
 	bit varres;
 	int retcols;
 	bool gstate = 0;
 	int unnamedArgs = 0;
-	bit parallel_aggregation = grouped && mapped;
+	bool parallel_aggregation = grouped && mapped;
 	int argcount = pci->argc;
 
 	char *eval_additional_args[] = {"_columns", "_column_types", "_conn"};
 
-	mapped = 0;
+	mapped = false;
 
 #ifndef HAVE_FORK
 	(void)mapped;
@@ -234,10 +233,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 		if (parallel_aggregation && unnamedArgs < pci->argc) {
 			argcount = unnamedArgs;
 		} else {
-			parallel_aggregation = 0;
+			parallel_aggregation = false;
 		}
 	} else {
-		parallel_aggregation = 0;
+		parallel_aggregation = false;
 	}
 
 	// We name all the unknown arguments, if grouping is enabled the first
@@ -350,10 +349,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 		assert(memory_size > 0);
 		// create the shared memory for the header
 		MT_lock_set(&pyapiLock);
-		GDKinitmmap(mmap_id + 0, memory_size, &mmap_ptrs[0], &mmap_sizes[0],
-					&msg);
+		mmap_ptrs[0] = GDKinitmmap(mmap_id + 0, memory_size, &mmap_sizes[0]);
 		MT_lock_unset(&pyapiLock);
-		if (msg != MAL_SUCCEED) {
+		if (mmap_ptrs[0] == NULL) {
+			msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 			goto wrapup;
 		}
 		mmap_ptr = mmap_ptrs[0];
@@ -364,16 +363,18 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 		// requested or the child process is done)
 		// the forked process waits for the second one when it requests a query
 		// (waiting for the result of the query)
-		if (GDKcreatesem(mmap_id, 2, &query_sem, &msg) != GDK_SUCCEED) {
+		if (GDKcreatesem(mmap_id, 2, &query_sem) != GDK_SUCCEED) {
+			msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 			goto wrapup;
 		}
 
 		// create the shared memory space for queries
 		MT_lock_set(&pyapiLock);
-		GDKinitmmap(mmap_id + 1, sizeof(QueryStruct), &mmap_ptrs[1],
-					&mmap_sizes[1], &msg);
+		mmap_ptrs[1] = GDKinitmmap(mmap_id + 1, sizeof(QueryStruct),
+						 &mmap_sizes[1]);
 		MT_lock_unset(&pyapiLock);
-		if (msg != MAL_SUCCEED) {
+		if (mmap_ptrs[1] == NULL) {
+			msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 			goto wrapup;
 		}
 		query_ptr = mmap_ptrs[1];
@@ -395,8 +396,9 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 		} else if (pid == 0) {
 			child_process = true;
 			query_ptr = NULL;
-			if (GDKinitmmap(mmap_id + 1, sizeof(QueryStruct),
-							(void **)&query_ptr, NULL, &msg) != GDK_SUCCEED) {
+			if ((query_ptr = GDKinitmmap(mmap_id + 1, sizeof(QueryStruct),
+										 NULL)) == NULL) {
+				msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 				goto wrapup;
 			}
 		} else {
@@ -418,8 +420,8 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 				// some reason
 				// in this case the semaphore value is never increased, so we
 				// would be stuck otherwise
-				if (GDKchangesemval_timeout(query_sem, 0, -1, 100, &sem_success,
-											&msg) != GDK_SUCCEED) {
+				if (GDKchangesemval_timeout(query_sem, 0, -1, 100, &sem_success) != GDK_SUCCEED) {
+					msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 					goto wrapup;
 				}
 				if (sem_success) {
@@ -454,11 +456,12 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					msg = createException(
 						MAL, "pyapi.eval",
 						SQLSTATE(PY000) "Failure in child process with unknown error.");
-				} else if (GDKinitmmap(mmap_id + 3, descr->bat_size,
-									   &mmap_ptrs[3], &mmap_sizes[3],
-									   &msg) == GDK_SUCCEED) {
+				} else if ((mmap_ptrs[3] = GDKinitmmap(mmap_id + 3, descr->bat_size,
+													   &mmap_sizes[3])) != NULL) {
 					msg = createException(MAL, "pyapi.eval", SQLSTATE(PY000) "%s",
 										  (char *)mmap_ptrs[3]);
+				} else {
+					msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 				}
 				goto wrapup;
 			}
@@ -484,10 +487,11 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 				// get the shared memory address for this return value
 				assert(total_size > 0);
 				MT_lock_set(&pyapiLock);
-				GDKinitmmap(mmap_id + i + 3, total_size, &mmap_ptrs[i + 3],
-							&mmap_sizes[i + 3], &msg);
+				mmap_ptrs[i + 3] = GDKinitmmap(mmap_id + i + 3, total_size,
+											   &mmap_sizes[i + 3]);
 				MT_lock_unset(&pyapiLock);
-				if (msg != MAL_SUCCEED) {
+				if (mmap_ptrs[i + 3] == NULL) {
+					msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 					goto wrapup;
 				}
 				ret->array_data = mmap_ptrs[i + 3];
@@ -500,11 +504,12 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 
 					assert(mask_size > 0);
 					MT_lock_set(&pyapiLock);
-					GDKinitmmap(mmap_id + pci->retc + (i + 3), mask_size,
-								&mmap_ptrs[pci->retc + (i + 3)],
-								&mmap_sizes[pci->retc + (i + 3)], &msg);
+					mmap_ptrs[pci->retc + (i + 3)] = GDKinitmmap(
+						mmap_id + pci->retc + (i + 3), mask_size,
+						&mmap_sizes[pci->retc + (i + 3)]);
 					MT_lock_unset(&pyapiLock);
-					if (msg != MAL_SUCCEED) {
+					if (mmap_ptrs[pci->retc + (i + 3)] == NULL) {
+						msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 						goto wrapup;
 					}
 					ret->mask_data = mmap_ptrs[pci->retc + (i + 3)];
@@ -536,7 +541,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 			FILE *fp;
 			char address[1000];
 			struct stat buffer;
-			size_t length;
+			ssize_t length;
 			if (exprStr[0] == '/') {
 				// absolute path
 				snprintf(address, 1000, "%s", exprStr);
@@ -557,16 +562,31 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					SQLSTATE(PY000) "Could not open Python source file \"%s\".", address);
 				goto wrapup;
 			}
-			fseek(fp, 0, SEEK_END);
-			length = ftell(fp);
-			fseek(fp, 0, SEEK_SET);
+			if(fseek(fp, 0, SEEK_END) == -1) {
+				msg = createException(
+						MAL, "pyapi.eval",
+						SQLSTATE(PY000) "Failed to set file pointer on Python source file \"%s\".", address);
+				goto wrapup;
+			}
+			if((length = ftell(fp)) == -1) {
+				msg = createException(
+						MAL, "pyapi.eval",
+						SQLSTATE(PY000) "Failed to set file pointer on Python source file \"%s\".", address);
+				goto wrapup;
+			}
+			if(fseek(fp, 0, SEEK_SET) == -1) {
+				msg = createException(
+						MAL, "pyapi.eval",
+						SQLSTATE(PY000) "Failed to set file pointer on Python source file \"%s\".", address);
+				goto wrapup;
+			}
 			exprStr = GDKzalloc(length + 1);
 			if (exprStr == NULL) {
 				msg = createException(MAL, "pyapi.eval",
 									  SQLSTATE(HY001) MAL_MALLOC_FAIL " function body string.");
 				goto wrapup;
 			}
-			if (fread(exprStr, 1, length, fp) != length) {
+			if (fread(exprStr, 1, (size_t) length, fp) != (size_t) length) {
 				msg = createException(MAL, "pyapi.eval",
 									  SQLSTATE(PY000) "Failed to read from file \"%s\".",
 									  address);
@@ -844,7 +864,8 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					res = MT_create_thread(&params->thread,
 										   (void (*)(void *)) &
 											   ComputeParallelAggregation,
-										   params, MT_THR_JOINABLE);
+										   params, MT_THR_JOINABLE,
+										   "pyapi_par_aggr");
 					if (res != 0) {
 						msg = createException(MAL, "pyapi.eval",
 											  SQLSTATE(PY000) "Failed to start thread.");
@@ -1025,8 +1046,8 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 		// pointer to the header data first
 		// The main process has already created the header data for the child
 		// process
-		if (GDKinitmmap(mmap_id + 0, memory_size, &mmap_ptrs[0], &mmap_sizes[0],
-						&msg) != GDK_SUCCEED) {
+		if ((mmap_ptrs[0] = GDKinitmmap(mmap_id + 0, memory_size, &mmap_sizes[0])) == NULL) {
+			msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 			goto wrapup;
 		}
 
@@ -1092,8 +1113,9 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 				// now create shared memory for the return value and copy the
 				// actual values
 				assert(memory_size > 0);
-				if (GDKinitmmap(mmap_id + i + 3, memory_size, &mmap_ptrs[i + 3],
-								&mmap_sizes[i + 3], &msg) != GDK_SUCCEED) {
+				if ((mmap_ptrs[i + 3] = GDKinitmmap(mmap_id + i + 3, memory_size,
+													&mmap_sizes[i + 3])) == NULL) {
+					msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 					goto wrapup;
 				}
 				mem_ptr = mmap_ptrs[i + 3];
@@ -1106,10 +1128,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					int mask_size = ret->count * sizeof(bool);
 					assert(mask_size > 0);
 					// create a memory space for the mask
-					if (GDKinitmmap(mmap_id + retcols + (i + 3), mask_size,
-									&mmap_ptrs[retcols + (i + 3)],
-									&mmap_sizes[retcols + (i + 3)],
-									&msg) != GDK_SUCCEED) {
+					if ((mmap_ptrs[retcols + (i + 3)] = GDKinitmmap(
+							 mmap_id + retcols + (i + 3), mask_size,
+							 &mmap_sizes[retcols + (i + 3)])) == NULL) {
+						msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 						goto wrapup;
 					}
 					mask_ptr = mmap_ptrs[retcols + i + 3];
@@ -1119,7 +1141,8 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 			}
 		}
 		// now free the main process from the semaphore
-		if (GDKchangesemval(query_sem, 0, 1, &msg) != GDK_SUCCEED) {
+		if (GDKchangesemval(query_sem, 0, 1) != GDK_SUCCEED) {
+			msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 			goto wrapup;
 		}
 		// Exit child process without an error code
@@ -1183,17 +1206,16 @@ wrapup:
 #ifdef HAVE_FORK
 	if (mapped && child_process) {
 		// If we get here, something went wrong in a child process
-		char *error_mem, *tmp_msg;
+		char *error_mem;
 		ReturnBatDescr *ptr;
 
 		// Now we exit the program with an error code
-		if (GDKchangesemval(query_sem, 0, 1, &tmp_msg) != GDK_SUCCEED) {
+		if (GDKchangesemval(query_sem, 0, 1) != GDK_SUCCEED) {
 			exit(1);
 		}
 
 		assert(memory_size > 0);
-		if (GDKinitmmap(mmap_id + 0, memory_size, &mmap_ptrs[0], &mmap_sizes[0],
-						&tmp_msg) != GDK_SUCCEED) {
+		if ((mmap_ptrs[0] = GDKinitmmap(mmap_id + 0, memory_size, &mmap_sizes[0])) == NULL) {
 			exit(1);
 		}
 
@@ -1213,8 +1235,9 @@ wrapup:
 		// We can simply use the slot mmap_id + 3, even though this is normally
 		// used for query return values
 		// This is because, if the process fails, no values will be returned
-		if (GDKinitmmap(mmap_id + 3, (strlen(msg) + 1) * sizeof(char),
-						(void **)&error_mem, NULL, &tmp_msg) != GDK_SUCCEED) {
+		if ((error_mem = GDKinitmmap(mmap_id + 3,
+									 (strlen(msg) + 1) * sizeof(char),
+									 NULL)) == NULL) {
 			exit(1);
 		}
 		strcpy(error_mem, msg);
@@ -1240,7 +1263,7 @@ wrapup:
 		}
 		for (i = 0; i < 3 + pci->retc * 2; i++) {
 			if (mmap_ptrs[i] != NULL) {
-				GDKreleasemmap(mmap_ptrs[i], mmap_sizes[i], mmap_id + i, &msg);
+				GDKreleasemmap(mmap_ptrs[i], mmap_sizes[i], mmap_id + i);
 			}
 		}
 		if (mmap_ptrs)
@@ -1248,7 +1271,7 @@ wrapup:
 		if (mmap_sizes)
 			GDKfree(mmap_sizes);
 		if (query_sem > 0) {
-			GDKreleasesem(query_sem, &msg);
+			GDKreleasesem(query_sem);
 		}
 	}
 #endif
@@ -1299,13 +1322,6 @@ wrapup:
 
 str
 PYFUNCNAME(PyAPIprelude)(void *ret) {
-#ifdef NEED_MT_LOCK_INIT
-	static int initialized = 0;
-	/* since we don't destroy the lock, only initialize it once */
-	if (!initialized)
-		MT_lock_init(&pyapiLock, "pyapi_lock");
-	initialized = 1;
-#endif
 	(void) ret;
 	MT_lock_set(&pyapiLock);
 	if (!pyapiInitialized) {
@@ -1336,21 +1352,25 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
 		marshal_module = PyImport_Import(tmp);
 		Py_DECREF(tmp);
 		if (marshal_module == NULL) {
+			MT_lock_unset(&pyapiLock);
 			return createException(MAL, "pyapi.eval", SQLSTATE(PY000) "Failed to load Marshal module.");
 		}
 		marshal_loads = PyObject_GetAttrString(marshal_module, "loads");
 		if (marshal_loads == NULL) {
+			MT_lock_unset(&pyapiLock);
 			return createException(MAL, "pyapi.eval", SQLSTATE(PY000) "Failed to load function \"loads\" from Marshal module.");
 		}
 		if (PyRun_SimpleString("import numpy") != 0) {
-			return PyError_CreateException("Failed to initialize embedded python", NULL);
+			msg = PyError_CreateException("Failed to initialize embedded python", NULL);
+			MT_lock_unset(&pyapiLock);
+			return msg;
 		}
 		PyEval_SaveThread();
 		if (msg != MAL_SUCCEED) {
 			MT_lock_unset(&pyapiLock);
 			return msg;
 		}
-		pyapiInitialized++;
+		pyapiInitialized = true;
 		fprintf(stdout, "# MonetDB/Python%d module loaded\n",
 #ifdef IS_PY3K
 			3
@@ -1359,7 +1379,6 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
 #endif
 		);
 	}
-	MT_lock_unset(&pyapiLock);
 	MT_lock_unset(&pyapiLock);
 	option_disable_fork = GDKgetenv_istrue(fork_disableflag) || GDKgetenv_isyes(fork_disableflag);
 	return MAL_SUCCEED;

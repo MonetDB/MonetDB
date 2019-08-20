@@ -8,7 +8,7 @@ stdout of test 'without_oid` in directory 'sql/test/pg_regress` itself:
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
 # Serving database 'mTests_sql_test_pg_regress', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Compiled for i686-pc-winnt/32bit
 # Found 15.356 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
@@ -19,7 +19,6 @@ stdout of test 'without_oid` in directory 'sql/test/pg_regress` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -105,14 +104,14 @@ Ready.
 #INSERT INTO wo (i) SELECT i+6688 FROM wi WHERE i<=2448;  -- 6688+2448=9136
 [ 2448	]
 #SELECT count(oid) FROM wi;
-% sys.L1 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 4 # length
 [ 9136	]
 #SELECT count(i) FROM wo;
-% sys.L1 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 4 # length
 [ 9136	]
@@ -120,9 +119,8 @@ Ready.
 # WHERE "table" IN ('wi', 'wo');
 % .storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage,	.storage # table_name
 % schema,	table,	column,	type,	count,	typewidth,	columnsize,	heapsize,	hashes,	imprints,	sorted # name
-% clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% varchar,	varchar,	varchar,	varchar,	bigint,	int,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 3,	2,	3,	3,	4,	1,	5,	1,	1,	1,	5 # length
-[ "sys",	"wi",	"oid",	"oid",	9136,	4,	36544,	0,	0,	0,	true	]
 [ "sys",	"wi",	"i",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
 [ "sys",	"wi",	"n1",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
 [ "sys",	"wi",	"n2",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
@@ -132,6 +130,7 @@ Ready.
 [ "sys",	"wi",	"n6",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
 [ "sys",	"wi",	"n7",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
 [ "sys",	"wi",	"n8",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
+[ "sys",	"wi",	"oid",	"oid",	9136,	4,	36544,	0,	0,	0,	true	]
 [ "sys",	"wo",	"i",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
 [ "sys",	"wo",	"n1",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
 [ "sys",	"wo",	"n2",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
@@ -154,14 +153,14 @@ Ready.
 #CREATE TABLE create_table_test3 /* WITHOUT OIDS */ AS
 #    SELECT a + b AS c1, a - b AS c2 FROM create_table_test WITH DATA;
 #SELECT count(oid) FROM create_table_test2;
-% sys.L1 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #SELECT count(*) FROM create_table_test3;
-% sys.L1 # table_name
-% L1 # name
+% .L3 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 2	]

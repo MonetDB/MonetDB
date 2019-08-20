@@ -9,7 +9,7 @@ CREATE TABLE SALESMART (
     COUNTRY VARCHAR(100)
 );
 
-COPY 1000 RECORDS INTO SALESMART FROM STDIN USING DELIMITERS ';', '\n', '"';
+COPY 1000 RECORDS INTO SALESMART FROM STDIN USING DELIMITERS ';', E'\n', '"';
 L'Oven Fresh white bread;Baked goods;0.59;San Francisco;California;United States
 Texas cheese toast;Frozen;1.49;Paris;Ile-De-France;France
 Broccoli stir fry mixture;Frozen;0.89;Bluff City;Kansas;United States
@@ -1011,12 +1011,12 @@ Cucumber (large);Produce;0.49;North Grafton;Massachusetts;United States
 Tyson roasted chicken;Meat;3.99;Eau Galle;Wisconsin;United States
 Deluxe topping pizza;Frozen;1.99;Thousandsticks;Kentucky;United States
 
-SELECT SUM(PRICE) as PRICE, ITEM, CATEGORY, CITY, REGION, COUNTRY
+SELECT cast(SUM(PRICE) as NUMERIC(18,2)) as PRICE, ITEM, CATEGORY, CITY, REGION, COUNTRY
 FROM  (SELECT MAX(price) as MAXPRICE FROM SALESMART) T, SALESMART S
 WHERE T.MAXPRICE = S.PRICE
 GROUP BY ITEM, CATEGORY, CITY, REGION, COUNTRY;
 
-SELECT SUM(PRICE) as PRICE, ITEM, CATEGORY, CITY, REGION, COUNTRY
+SELECT cast(SUM(PRICE) as NUMERIC(18,2)) as PRICE, ITEM, CATEGORY, CITY, REGION, COUNTRY
 FROM  SALESMART S
 WHERE S.PRICE IN (SELECT MAX(price) as MAXPRICE FROM SALESMART)
 GROUP BY ITEM, CATEGORY, CITY, REGION, COUNTRY;

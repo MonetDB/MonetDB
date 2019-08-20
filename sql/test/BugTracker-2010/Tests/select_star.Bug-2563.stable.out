@@ -15,7 +15,6 @@ stdout of test 'select_star.Bug-2563` in directory 'sql/test/BugTracker-2010` it
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:33997/
 # MonetDB/SQL module v2.38.0 loaded
 
-Ready.
 
 
 # 08:53:38 >  

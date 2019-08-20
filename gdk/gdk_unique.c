@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -60,7 +60,13 @@ BATunique(BAT *b, BAT *s)
 				return NULL;
 			bn = BATproject(b, s);
 			BBPunfix(b->batCacheid);
-			return virtualize(bn);
+			bn = virtualize(bn);
+			ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ","
+					  "s=" ALGOBATFMT ")="
+					  ALGOOPTBATFMT "\n",
+					  ALGOBATPAR(b), ALGOBATPAR(s),
+					  ALGOOPTBATPAR(bn));
+			return bn;
 		}
 		/* we can return all values */
 		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s=NULL):"
@@ -105,7 +111,13 @@ BATunique(BAT *b, BAT *s)
 		nr = BATproject(r, s);
 		BBPunfix(nb->batCacheid);
 		BBPunfix(r->batCacheid);
-		return virtualize(nr);
+		nr = virtualize(nr);
+		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ","
+				  "s=" ALGOBATFMT ")="
+				  ALGOOPTBATFMT "\n",
+				  ALGOBATPAR(b), ALGOBATPAR(s),
+				  ALGOOPTBATPAR(nr));
+		return nr;
 	}
 
 	assert(b->ttype != TYPE_void);
@@ -220,7 +232,7 @@ BATunique(BAT *b, BAT *s)
 		GDKfree(seen);
 		seen = NULL;
 	} else if (BATcheckhash(b) ||
-		   (b->batPersistence == PERSISTENT &&
+		   (!b->batTransient &&
 		    BAThash(b) == GDK_SUCCEED) ||
 		   ((parent = VIEWtparent(b)) != 0 &&
 		    BATcheckhash(BBPdescriptor(parent)))) {
@@ -263,7 +275,7 @@ BATunique(BAT *b, BAT *s)
 				if (cmp(v, BUNtail(bi, hb)) == 0) {
 					o = hb - lo + seq;
 					if (cand == NULL ||
-					    SORTfnd(s, &o) != BUN_NONE) {
+					    BATcandcontains(s, o)) {
 						/* we've seen this
 						 * value before */
 						break;
@@ -341,6 +353,7 @@ BATunique(BAT *b, BAT *s)
 		GDKfree(hs);
 	}
 
+	bn->theap.dirty = true;
 	bn->tsorted = true;
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tkey = true;
@@ -353,7 +366,13 @@ BATunique(BAT *b, BAT *s)
 		b->tkey = true;
 		b->batDirtydesc = true;
 	}
-	return virtualize(bn);
+	bn = virtualize(bn);
+	ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ","
+			  "s=" ALGOOPTBATFMT ")="
+			  ALGOBATFMT "\n",
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+			  ALGOBATPAR(bn));
+	return bn;
 
   bunins_failed:
 	if (seen)

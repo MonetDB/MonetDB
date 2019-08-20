@@ -3,14 +3,14 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _MAL_RESOURCE_H
 #define _MAL_RESOURCE_H
 
 #include "mal_interpreter.h"
-#include "gdk_atomic.h"
+#include "matomic.h"
 
 #define TIMESLICE  (3 * 60 * 1000 * 1000) /* usec , 3 minute high priority */
 #define DELAYUNIT 2 /* ms delay in parallel processing decisions */

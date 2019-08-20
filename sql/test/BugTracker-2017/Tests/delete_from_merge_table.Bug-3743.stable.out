@@ -20,7 +20,6 @@ stdout of test 'delete_from_merge_table.Bug-3743` in directory 'sql/test/BugTrac
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -81,6 +80,12 @@ Ready.
 % 1 # length
 [ 1	]
 [ 2	]
+#delete from tt where t = 1;
+[ 1	]
+#delete from tt where t = 2;
+[ 1	]
+#delete from tt;
+[ 0	]
 #drop table tt cascade;
 #drop table t1 cascade;
 #drop table t2 cascade;

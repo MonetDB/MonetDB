@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -15,6 +15,8 @@
 #ifdef _MAL_CLIENT_H_
 /* _MAL_CLIENT_H_ is defined in the same file as Client */
 __hidden void MCexitClient(Client c)
+	__attribute__((__visibility__("hidden")));
+__hidden void MCfreeClient(Client c)
 	__attribute__((__visibility__("hidden")));
 __hidden int MCreadClient(Client c)
 	__attribute__((__visibility__("hidden")));
@@ -33,14 +35,9 @@ __hidden str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 	__attribute__((__visibility__("hidden")));
 __hidden str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag)
 	__attribute__((__visibility__("hidden")));
-
 #endif
 
 __hidden void initResource(void)
-	__attribute__((__visibility__("hidden")));
-__hidden int moreClients(int reruns)
-	__attribute__((__visibility__("hidden")));
-__hidden void stopMALdataflow(void)
 	__attribute__((__visibility__("hidden")));
 
 __hidden str malAtomDefinition(str name,int tpe)
@@ -48,16 +45,12 @@ __hidden str malAtomDefinition(str name,int tpe)
 __hidden str malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	__attribute__((__visibility__("hidden")));
 
-__hidden extern MT_Lock mal_namespaceLock;
+__hidden void setqptimeout(lng usecs)
+	__attribute__((__visibility__("hidden")));
 
-__hidden void mdbInit(void)
+__hidden bool mdbInit(void)
 	__attribute__((__visibility__("hidden")));
 __hidden void mdbExit(void)
-	__attribute__((__visibility__("hidden")));
-
-__hidden str createScriptException(MalBlkPtr, int, enum malexception,
-	const char *, _In_z_ _Printf_format_string_ const char *, ...)
-	__attribute__((__format__(__printf__, 5, 6)))
 	__attribute__((__visibility__("hidden")));
 
 #ifdef MAXSCOPE
@@ -70,12 +63,6 @@ __hidden int getBarrierEnvelop(MalBlkPtr mb)
 __hidden void malGarbageCollector(MalBlkPtr mb)
 	__attribute__((__visibility__("hidden")));
 __hidden void listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int step)
-	__attribute__((__visibility__("hidden")));
-
-/* mal_http_daemon.h */
-__hidden void startHttpdaemon(void)
-	__attribute__((__visibility__("hidden")));
-__hidden void stopHttpdaemon(void)
 	__attribute__((__visibility__("hidden")));
 
 /* mal_linker.h */
@@ -110,7 +97,4 @@ __hidden mal_export void mal_resource_reset(void)
 __hidden mal_export void mal_runtime_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-extern volatile ATOMIC_TYPE mal_running;
-#ifdef ATOMIC_LOCK
-extern MT_Lock mal_runningLock;
-#endif
+extern ATOMIC_TYPE mal_running;

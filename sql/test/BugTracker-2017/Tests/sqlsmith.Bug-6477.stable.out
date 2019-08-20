@@ -18,12 +18,36 @@ stdout of test 'sqlsmith.Bug-6477` in directory 'sql/test/BugTracker-2017` itsel
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:26:12 >  
 # 14:26:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23479" "--port=39335"
 # 14:26:12 >  
 
+#select
+#  cast(coalesce(ref_0.stop,
+#    ref_0.stop) as timestamp) as c0,
+#  ref_0.id as c1,
+#  cast(coalesce(ref_0.cpu,
+#    ref_0.io) as int) as c2,
+#  ref_0.run as c3,
+#  ref_0.stop as c4,
+#  ref_0.cpu as c5,
+#  case when cast(nullif(ref_0.tuples,
+#        ref_0.tuples) as bigint) is not NULL then ref_0.io else ref_0.io end
+#     as c6
+#from
+#  sys.querylog_calls as ref_0
+#where cast(coalesce(ref_0.tuples,
+#    case when EXISTS (
+#        select
+#            ref_1.id as c0
+#          from
+#            sys.args as ref_1
+#              left join tmp.objects as ref_2
+% .L14,	.L16,	.L21,	.L23,	.L25,	.L27,	.L32 # table_name
+% c0,	c1,	c2,	c3,	c4,	c5,	c6 # name
+% timestamp,	oid,	int,	bigint,	timestamp,	int,	int # type
+% 26,	3,	1,	1,	26,	1,	1 # length
 
 # 14:26:12 >  
 # 14:26:12 >  "Done."

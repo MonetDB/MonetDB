@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef SQL_CATALOG_H
@@ -62,9 +62,6 @@
 #define DEPENDENCY_CHECK_ERROR 3
 #define DEPENDENCY_CHECK_OK 0
 
-#define NO_TRIGGER 0
-#define IS_TRIGGER 1
-
 #define ROLE_PUBLIC   1
 #define ROLE_SYSADMIN 2
 #define USER_MONETDB  3
@@ -85,8 +82,9 @@
 #define SCALE_EQ	7	/* user defined functions need equal scales */
 #define SCALE_DIGITS_FIX 8	/* the geom module requires the types and functions to have the same scale and digits */
 
-#define TR_OLD 0
+/* Warning TR flags are a bitmask */
 #define TR_NEW 1
+#define TR_RENAMED 2
 
 #define RDONLY 0
 #define RD_INS 1
@@ -94,14 +92,39 @@
 #define RD_UPD_VAL 3
 #define QUICK  4
 
-#define FRAME_ROWS  0 
-#define FRAME_RANGE 1
+/* the following list of macros are used by rel_rankop function */
+#define UNBOUNDED_PRECEDING_BOUND 0
+#define UNBOUNDED_FOLLOWING_BOUND 1
+#define CURRENT_ROW_BOUND         2
 
-#define EXCLUDE_NONE 0
-#define EXCLUDE_CURRENT_ROW 1
-#define EXCLUDE_GROUP 2
-#define EXCLUDE_TIES 3
-#define EXCLUDE_NO_OTHERS 4
+#define FRAME_ROWS  0 		/* number of rows (preceding/following) */
+#define FRAME_RANGE 1		/* logical range (based on the ordering column).
+				   Example:
+				   RANGE BETWEEN INTERVAL '1' MONTH PRECEDING  
+				             AND INTERVAL '1' MONTH FOLLOWING */
+#define FRAME_GROUPS 2
+#define FRAME_ALL 3 /* special case of FRAME_RANGE, cover the entire partition */
+
+/* the following list of macros are used by SQLwindow_bound function */
+#define BOUND_FIRST_HALF_PRECEDING  0
+#define BOUND_FIRST_HALF_FOLLOWING  1
+#define BOUND_SECOND_HALF_PRECEDING 2
+#define BOUND_SECOND_HALF_FOLLOWING 3
+#define CURRENT_ROW_PRECEDING       4
+#define CURRENT_ROW_FOLLOWING       5
+
+#define EXCLUDE_NONE 0		/* nothing excluded (also the default) */
+#define EXCLUDE_CURRENT_ROW 1	/* exclude the current row */
+#define EXCLUDE_GROUP 2		/* exclude group */
+#define EXCLUDE_TIES 3		/* exclude group but not the current row */
+
+/* The following macros are used in properties field of sql_table */
+#define PARTITION_RANGE       1
+#define PARTITION_LIST        2
+#define PARTITION_COLUMN      4
+#define PARTITION_EXPRESSION  8
+
+#define STORAGE_MAX_VALUE_LENGTH 2048
 
 #define cur_user 1
 #define cur_role 2
@@ -110,7 +133,6 @@
 
 #define dt_schema 	"%dt%"
 #define isDeclaredSchema(s) 	(strcmp(s->base.name, dt_schema) == 0)
-
 
 extern const char *TID;
 
@@ -135,16 +157,21 @@ typedef enum comp_type {
 
 	cmp_filter = 6,
 	cmp_or = 7,
-	cmp_in = 8,
-	cmp_notin = 9,
+	cmp_in = 8,			/* in value list */
+	cmp_notin = 9,			/* not in value list */
+	cmp_equal_nil = 10, 		/* case equi join, with nil = nil */
+
+	mark_in = 11,			/* mark joins */
+	mark_notin = 12,
+	mark_exists = 13,
+	mark_notexists = 14,
 
 	/* The followin cmp_* are only used within stmt (not sql_exp) */
-	cmp_all = 10,			/* special case for crossproducts */
-	cmp_project = 11,		/* special case for projection joins */
-	cmp_joined = 12, 		/* special case already joined */
-	cmp_equal_nil = 13, 		/* special case equi join, with nil = nil */
-	cmp_left = 14,			/* special case equi join, keep left order */
-	cmp_left_project = 15		/* last step of outer join */
+	cmp_all = 15,			/* special case for crossproducts */
+	cmp_project = 16,		/* special case for projection joins */
+	cmp_joined = 17, 		/* special case already joined */
+	cmp_left = 18,			/* special case equi join, keep left order */
+	cmp_left_project = 19		/* last step of outer join */
 } comp_type;
 
 /* for ranges we keep the requirment for symmetric */
@@ -159,8 +186,7 @@ typedef enum commit_action_t {
 	CA_COMMIT, 	/* commit rows, only for persistent tables */
 	CA_DELETE, 	/* delete rows */
 	CA_PRESERVE,	/* preserve rows */
-	CA_DROP,	/* drop table */
-	CA_ABORT	/* abort changes, internal only */
+	CA_DROP		/* drop table */
 } ca_t;
 
 typedef int sqlid;
@@ -168,16 +194,23 @@ typedef int sqlid;
 typedef struct sql_base {
 	int wtime;
 	int rtime;
+	int stime;
 	int allocated;
-	int flag;
+	int flags;
 	int refcnt;
 	sqlid id;
 	char *name;
 } sql_base;
 
-extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, int flag, const char *name);
-extern void base_set_name(sql_base * b, const char *name);
-extern void base_destroy(sql_base * b);
+#define newFlagSet(x)     ((x & TR_NEW) == TR_NEW)
+#define removeNewFlag(x)  ((x)->base.flags &= ~TR_NEW)
+#define isNew(x)          (newFlagSet((x)->base.flags))
+
+#define setRenamedFlag(x)    ((x)->base.flags |= TR_RENAMED)
+#define removeRenamedFlag(x) ((x)->base.flags &= ~TR_RENAMED)
+#define isRenamed(x)         (((x)->base.flags & TR_RENAMED) == TR_RENAMED)
+
+extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, int flags, const char *name);
 
 typedef struct changeset {
 	sql_allocator *sa;
@@ -190,11 +223,14 @@ typedef struct changeset {
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern void cs_destroy(changeset * cs);
 extern void cs_add(changeset * cs, void *elm, int flag);
+extern void *cs_add_with_validate(changeset * cs, void *elm, int flag, fvalidate cmp);
 extern void cs_add_before(changeset * cs, node *n, void *elm);
 extern void cs_del(changeset * cs, node *elm, int flag);
+extern void cs_move(changeset *from, changeset *to, void *data);
+extern void *cs_transverse_with_validate(changeset * cs, void *elm, fvalidate cmp);
 extern int cs_size(changeset * cs);
 extern node *cs_find_name(changeset * cs, const char *name);
-extern node *cs_find_id(changeset * cs, int id);
+extern node *cs_find_id(changeset * cs, sqlid id);
 extern node *cs_first_node(changeset * cs);
 extern node *cs_last_node(changeset * cs);
 extern void cs_remove_node(changeset * cs, node *n);
@@ -204,14 +240,16 @@ typedef size_t backend_stack;
 
 typedef struct sql_trans {
 	char *name;
-	int stime;		/* read transaction time stamp */
-	int wstime;		/* write transaction time stamp */
-	int rtime;
-	int wtime;
+	int stime;		/* start of transaction */
+	int wstime;		/* first write transaction time stamp */
+	int rtime;		/* timestamp of latest read performed in transaction*/
+	int wtime;		/* timestamp of latest write performed in transaction*/
 	int schema_number;	/* schema timestamp */
 	int schema_updates;	/* set on schema changes */
+	int active;		/* active transaction */
 	int status;		/* status of the last query */
 	list *dropped;  	/* protection against recursive cascade action*/
+	list *moved_tables;
 
 	changeset schemas;
 
@@ -223,8 +261,8 @@ typedef struct sql_trans {
 
 typedef struct sql_schema {
 	sql_base base;
-	int auth_id;
-	int owner;
+	sqlid auth_id;
+	sqlid owner;
 	bit system;		/* system or user schema */
 	// TODO? int type;	/* persistent, session local, transaction local */
 
@@ -240,6 +278,40 @@ typedef struct sql_schema {
 	sql_trans *tr;
 } sql_schema;
 
+typedef enum sql_class {
+	EC_ANY,
+	EC_TABLE,
+	EC_BIT,
+	EC_CHAR,
+	EC_STRING,
+	EC_BLOB,
+	EC_POS,
+	EC_NUM,
+	EC_MONTH,
+	EC_SEC,
+	EC_DEC,
+	EC_FLT,
+	EC_TIME,
+	EC_DATE,
+	EC_TIMESTAMP,
+	EC_GEOM,
+	EC_EXTERNAL,
+	EC_MAX /* evaluated to the max value, should be always kept at the bottom */
+} sql_class;
+
+#define has_tz(e,n)	(EC_TEMP(e) && \
+			((e == EC_TIME && strcmp(n, "timetz") == 0) || \
+			(e == EC_TIMESTAMP && strcmp(n, "timestamptz") == 0)) )
+#define type_has_tz(t)	has_tz((t)->type->eclass, (t)->type->sqlname)
+#define EC_VARCHAR(e)	(e==EC_CHAR||e==EC_STRING)
+#define EC_INTERVAL(e)	(e==EC_MONTH||e==EC_SEC)
+#define EC_NUMBER(e)	(e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||e==EC_FLT)
+#define EC_COMPUTE(e)	(e==EC_NUM||e==EC_FLT)
+#define EC_BOOLEAN(e)	(e==EC_BIT||e==EC_NUM||e==EC_FLT)
+#define EC_TEMP(e)		(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP)
+#define EC_TEMP_FRAC(e)	(e==EC_TIME||e==EC_TIMESTAMP)
+#define EC_FIXED(e)		(e==EC_BIT||e==EC_CHAR||e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||EC_TEMP(e))
+
 typedef struct sql_type {
 	sql_base base;
 
@@ -249,7 +321,7 @@ typedef struct sql_type {
 	int localtype;		/* localtype, need for coersions */
 	unsigned char radix;
 	unsigned int bits;
-	unsigned char eclass; 	/* types are grouped into equivalence classes */
+	sql_class eclass; 	/* types are grouped into equivalence classes */
 	sql_schema *s;
 } sql_type;
 
@@ -329,6 +401,7 @@ typedef struct sql_func {
 	bit side_effect;
 	bit varres;	/* variable output result */
 	bit vararg;	/* variable input arguments */
+	bit system;	/* system function */
 	int fix_scale;
 			/*
 	   		   SCALE_NOFIX/SCALE_NONE => nothing
@@ -446,13 +519,6 @@ typedef struct sql_sequence {
 	sql_schema *s;
 } sql_sequence;
 
-/* histogram types */
-typedef enum sql_histype {
-       X_EXACT,
-       X_EQUI_WIDTH,
-       X_EQUI_HEIGHT
-} sql_histype;
-
 typedef struct sql_column {
 	sql_base base;
 	sql_subtype type;
@@ -481,29 +547,65 @@ typedef enum table_types {
 	tt_replica_table = 6	/* multiple replica of the same table */
 } table_types;
 
-#define isTable(x) 	  (x->type==tt_table)
-#define isView(x)  	  (x->type==tt_view)
-#define isMergeTable(x)   (x->type==tt_merge_table)
-#define isStream(x)  	  (x->type==tt_stream)
-#define isRemote(x)  	  (x->type==tt_remote)
-#define isReplicaTable(x) (x->type==tt_replica_table)
-#define isKindOfTable(x)  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
-#define isPartition(x)    (isTable(x) && x->p)
+#define TABLE_TYPE_DESCRIPTION(tt,properties)                                                                       \
+(tt == tt_table)?"TABLE":(tt == tt_view)?"VIEW":(tt == tt_merge_table && !properties)?"MERGE TABLE":                \
+(tt == tt_stream)?"STREAM TABLE":(tt == tt_remote)?"REMOTE TABLE":                                                  \
+(tt == tt_merge_table && (properties & PARTITION_LIST) == PARTITION_LIST)?"LIST PARTITION TABLE":                   \
+(tt == tt_merge_table && (properties & PARTITION_RANGE) == PARTITION_RANGE)?"RANGE PARTITION TABLE":"REPLICA TABLE"
+
+#define isTable(x)                        (x->type==tt_table)
+#define isView(x)                         (x->type==tt_view)
+#define isNonPartitionedTable(x)          (x->type==tt_merge_table && !x->properties)
+#define isRangePartitionTable(x)          (x->type==tt_merge_table && (x->properties & PARTITION_RANGE) == PARTITION_RANGE)
+#define isListPartitionTable(x)           (x->type==tt_merge_table && (x->properties & PARTITION_LIST) == PARTITION_LIST)
+#define isPartitionedByColumnTable(x)     (x->type==tt_merge_table && (x->properties & PARTITION_COLUMN) == PARTITION_COLUMN)
+#define isPartitionedByExpressionTable(x) (x->type==tt_merge_table && (x->properties & PARTITION_EXPRESSION) == PARTITION_EXPRESSION)
+#define isMergeTable(x)                   (x->type==tt_merge_table)
+#define isStream(x)                       (x->type==tt_stream)
+#define isRemote(x)                       (x->type==tt_remote)
+#define isReplicaTable(x)                 (x->type==tt_replica_table)
+#define isKindOfTable(x)                  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
+#define isPartition(x)                    (isTable(x) && x->p)
 
 #define TABLE_WRITABLE	0
 #define TABLE_READONLY	1
 #define TABLE_APPENDONLY	2
 
+typedef struct sql_part_value {
+	sql_subtype tpe;
+	ptr value;
+	size_t length;
+} sql_part_value;
+
 typedef struct sql_part {
 	sql_base base;
-	struct sql_table *t; /* cached value */
+	struct sql_table *t; /* cached value of the merge table */
+	sql_subtype tpe;     /* the column/expression type */
+	int with_nills;
+	union {
+		list *values;         /* partition by values/list */
+		struct sql_range {    /* partition by range */
+			ptr minvalue;
+			ptr maxvalue;
+			size_t minlength;
+			size_t maxlength;
+		} range;
+	} part;
 } sql_part;
+
+typedef struct sql_expression {
+	sql_subtype type; /* the returning sql_subtype of the expression */
+	char *exp;        /* the expression itself */
+	list *cols;       /* list of colnr of the columns of the table used in the expression */
+} sql_expression;
 
 typedef struct sql_table {
 	sql_base base;
 	sht type;		/* table, view, etc */
 	sht access;		/* writable, readonly, appendonly */
 	bit system;		/* system or user table */
+	bit bootstrap;		/* system table created during bootstrap */
+	bte properties;		/* used for merge_tables */
 	temp_t persistence;	/* persistent, global or local temporary */
 	ca_t commit_action;  	/* on commit action */
 	char *query;		/* views may require some query */
@@ -520,9 +622,20 @@ typedef struct sql_table {
 	int cleared;		/* cleared in the current transaction */
 	void *data;
 	struct sql_schema *s;
-	struct sql_table *p;	/* The table is part of this merge table */
 	struct sql_table *po;	/* the outer transactions table */
+
+	struct sql_table *p;	 /* The table is part of this merge table */
+	union {
+		struct sql_column *pcol; /* If it is partitioned on a column */
+		struct sql_expression *pexp; /* If it is partitioned by an expression */
+	} part;
 } sql_table;
+
+typedef struct sql_moved_table {
+	sql_schema *from;
+	sql_schema *to;
+	sql_table *t;
+} sql_moved_table;
 
 typedef struct res_col {
 	char *tn;
@@ -539,10 +652,10 @@ typedef struct res_table {
 	int query_type;
 	int nr_cols;
 	int cur_col;
-	char *tsep;
-	char *rsep;
-	char *ssep;
-	char *ns;
+	const char *tsep;
+	const char *rsep;
+	const char *ssep;
+	const char *ns;
 	res_col *cols;
 	bat order;
 	struct res_table *next;
@@ -558,7 +671,6 @@ typedef struct sql_session {
 	                           commit, rollback, etc. */
 	char auto_commit;
 	int level;		/* TRANSACTION isolation level */
-	int active;		/* active transaction */
 	int status;		/* status, ok/error */
 	backend_stack stk;
 } sql_session;
@@ -566,14 +678,13 @@ typedef struct sql_session {
 extern void schema_destroy(sql_schema *s);
 extern void table_destroy(sql_table *t);
 extern void column_destroy(sql_column *c);
-extern void kc_destroy(sql_kc *kc);
 extern void key_destroy(sql_key *k);
 extern void idx_destroy(sql_idx * i);
 
 extern int base_key(sql_base *b);
 extern node *list_find_name(list *l, const char *name);
-extern node *list_find_id(list *l, int id);
-extern node *list_find_base_id(list *l, int id);
+extern node *list_find_id(list *l, sqlid id);
+extern node *list_find_base_id(list *l, sqlid id);
 
 extern sql_key *find_sql_key(sql_table *t, const char *kname);
 
@@ -581,25 +692,31 @@ extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
+extern sql_part *find_sql_part(sql_table *t, const char *tname);
+
 extern sql_table *find_sql_table(sql_schema *s, const char *tname);
-extern sql_table *find_sql_table_id(sql_schema *s, int id);
-extern node *find_sql_table_node(sql_schema *s, int id);
+extern sql_table *find_sql_table_id(sql_schema *s, sqlid id);
+extern node *find_sql_table_node(sql_schema *s, sqlid id);
 
 extern sql_sequence *find_sql_sequence(sql_schema *s, const char *sname);
 
 extern sql_schema *find_sql_schema(sql_trans *t, const char *sname);
-extern sql_schema *find_sql_schema_id(sql_trans *t, int id);
-extern node *find_sql_schema_node(sql_trans *t, int id);
+extern sql_schema *find_sql_schema_id(sql_trans *t, sqlid id);
+extern node *find_sql_schema_node(sql_trans *t, sqlid id);
 
 extern sql_type *find_sql_type(sql_schema * s, const char *tname);
 extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, const char *name);
-extern node *find_sql_type_node(sql_schema *s, int id);
+extern node *find_sql_type_node(sql_schema *s, sqlid id);
 
 extern sql_func *find_sql_func(sql_schema * s, const char *tname);
 extern list *find_all_sql_func(sql_schema * s, const char *tname, int type);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
-extern sql_func *sql_trans_find_func(sql_trans *tr, int id);
-extern node *find_sql_func_node(sql_schema *s, int id);
+extern sql_func *sql_trans_find_func(sql_trans *tr, sqlid id);
+extern node *find_sql_func_node(sql_schema *s, sqlid id);
+
+extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, int* res);
+extern void *sql_range_part_validate_and_insert(void *v1, void *v2);
+extern void *sql_values_part_validate_and_insert(void *v1, void *v2);
 
 typedef struct {
 	BAT *b;

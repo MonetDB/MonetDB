@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -178,6 +178,7 @@ project_any(BAT *bn, BAT *l, BAT *r, bool nilcheck)
 	}
 	assert(n == BATcount(l));
 	BATsetcount(bn, n);
+	bn->theap.dirty = true;
 	return GDK_SUCCEED;
 bunins_failed:
 	return GDK_FAIL;
@@ -344,7 +345,7 @@ BATproject(BAT *l, BAT *r)
 				goto bailout;
 			bn->tvheap->parentid = bn->batCacheid;
 			bn->tvheap->farmid = BBPselectfarm(bn->batRole, TYPE_str, varheap);
-			snprintf(bn->tvheap->filename, sizeof(bn->tvheap->filename), "%s.theap", BBP_physical(bn->batCacheid));
+			stpconcat(bn->tvheap->filename, BBP_physical(bn->batCacheid), ".theap", NULL);
 			if (HEAPcopy(bn->tvheap, r->tvheap) != GDK_SUCCEED)
 				goto bailout;
 		}
@@ -419,6 +420,7 @@ BATprojectchain(BAT **bats)
 	oid hseq, tseq;
 	bool allnil = false, nonil = true;
 	bool stringtrick = false;
+	bool issorted = true;	/* result sorted if all bats sorted */
 
 	/* count number of participating BATs and allocate some
 	 * temporary work space */
@@ -434,6 +436,7 @@ BATprojectchain(BAT **bats)
 	off = 0;		/* this will be the BUN offset into last BAT */
 	for (i = n = 0; b != NULL; n++, i++) {
 		nonil &= b->tnonil; /* not guaranteed without nils */
+		issorted &= b->tsorted;
 		if (!allnil) {
 			if (n > 0 && ba[i-1].vals == NULL) {
 				/* previous BAT was dense-tailed: we will
@@ -517,7 +520,6 @@ BATprojectchain(BAT **bats)
 	if (i == 1) {
 		/* only dense-tailed BATs before last: we can return a
 		 * slice and manipulate offsets and head seqbase */
-		ALGODEBUG fprintf(stderr, "#BATprojectchain with %d BATs, size "BUNFMT", type %s, using BATslice("BUNFMT","BUNFMT")\n", n, cnt, ATOMname(tpe), off, off + cnt);
 		GDKfree(ba);
 		if (BATtdense(b)) {
 			bn = BATdense(hseq, tseq, cnt);
@@ -529,6 +531,12 @@ BATprojectchain(BAT **bats)
 			if (bn->ttype == TYPE_void)
 				BATtseqbase(bn, tseq);
 		}
+		ALGODEBUG fprintf(stderr, "#BATprojectchain with %d BATs, "
+				  "size " BUNFMT ", type %s, using "
+				  "BATslice(" BUNFMT "," BUNFMT ")="
+				  ALGOOPTBATFMT "\n",
+				  n, cnt, ATOMname(tpe), off, off + cnt,
+				  ALGOOPTBATPAR(bn));
 		return bn;
 	}
 	ALGODEBUG fprintf(stderr, "#BATprojectchain with %d (%d) BATs, size "BUNFMT", type %s\n", n, i, cnt, ATOMname(tpe));
@@ -544,9 +552,14 @@ BATprojectchain(BAT **bats)
 	bn = COLnew(hseq, tpe, cnt, TRANSIENT);
 	if (bn == NULL || cnt == 0) {
 		GDKfree(ba);
+		ALGODEBUG fprintf(stderr, "#BATprojectchain with %d BATs, "
+				  "size " BUNFMT ", type %s="
+				  ALGOOPTBATFMT "\n",
+				  n, cnt, ATOMname(tpe), ALGOOPTBATPAR(bn));
 		return bn;
 	}
-	bn->tnil = bn->tnonil = false; /* we're not paying attention to this */
+	bn->tnil = false;	/* we're not paying attention to this */
+	bn->tnonil = nonil;
 	n = i - 1;		/* ba[n] is last BAT */
 
 /* figure out the "other" type, i.e. not compatible with oid */
@@ -574,7 +587,7 @@ BATprojectchain(BAT **bats)
 					o -= ba[i].hlo;
 					if (o >= ba[i].cnt) {
 						if (o == oid_nil - ba[i].hlo) {
-							bn->tnil = 1;
+							bn->tnil = true;
 							o = oid_nil;
 							break;
 						}
@@ -720,9 +733,11 @@ BATprojectchain(BAT **bats)
 			bn->batCount++;
 		}
 	}
+	bn->theap.dirty = true;
 	BATsetcount(bn, cnt);
 	if (stringtrick) {
-		bn->tnonil = bn->tnil = false;
+		bn->tnil = false;
+		bn->tnonil = nonil;
 		bn->tkey = false;
 		BBPshare(b->tvheap->parentid);
 		bn->tvheap = b->tvheap;
@@ -732,8 +747,11 @@ BATprojectchain(BAT **bats)
 		bn->tshift = b->tshift;
 	}
 	bn->tsorted = bn->trevsorted = cnt <= 1;
+	bn->tsorted |= issorted;
 	bn->tseqbase = oid_nil;
 	GDKfree(ba);
+	ALGODEBUG fprintf(stderr, "#BATprojectchain()=" ALGOBATFMT "\n",
+			  ALGOBATPAR(bn));
 	return bn;
 
   bunins_failed:

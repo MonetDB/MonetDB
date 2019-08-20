@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -26,12 +26,10 @@ static list *
 list_init(list *l, sql_allocator *sa, fdestroy destroy)
 {
 	if (l) {
-		l->sa = sa;
-		l->destroy = destroy;
-		l->h = l->t = NULL;
-		l->cnt = 0;
-		l->expected_cnt = 0;
-		l->ht = NULL;
+		*l = (list) {
+			.sa = sa,
+			.destroy = destroy,
+		};
 		MT_lock_init(&l->ht_lock, "sa_ht_lock");
 	}
 	return l;
@@ -141,6 +139,87 @@ list_append(list *l, void *data)
 	}
 	MT_lock_unset(&l->ht_lock);
 	return l;
+}
+
+void*
+list_append_with_validate(list *l, void *data, fvalidate cmp)
+{
+	node *n = node_create(l->sa, data), *m;
+	void* err = NULL;
+
+	if (n == NULL)
+		return NULL;
+	if (l->cnt) {
+		for (m = l->h; m; m = m->next) {
+			err = cmp(m->data, data);
+			if(err)
+				return err;
+		}
+		l->t->next = n;
+	} else {
+		l->h = n;
+	}
+	l->t = n;
+	l->cnt++;
+	MT_lock_set(&l->ht_lock);
+	if (l->ht) {
+		int key = l->ht->key(data);
+
+		if (hash_add(l->ht, key, data) == NULL) {
+			MT_lock_unset(&l->ht_lock);
+			return NULL;
+		}
+	}
+	MT_lock_unset(&l->ht_lock);
+	return NULL;
+}
+
+void*
+list_append_sorted(list *l, void *data, fcmpvalidate cmp)
+{
+	node *n = node_create(l->sa, data), *m, *prev = NULL;
+	int first = 1, comp = 0;
+	void* err = NULL;
+
+	if (n == NULL)
+		return NULL;
+	if (l->cnt == 0) {
+		l->h = n;
+		l->t = n;
+	} else {
+		for (m = l->h; m; m = m->next) {
+			err = cmp(m->data, data, &comp);
+			if(err)
+				return err;
+			if(comp < 0)
+				break;
+			first = 0;
+			prev = m;
+		}
+		if(first) {
+			n->next = l->h;
+			l->h = n;
+		} else if(!m) {
+			l->t->next = n;
+			l->t = n;
+		} else {
+			assert(prev);
+			n->next = m;
+			prev->next = n;
+		}
+	}
+	l->cnt++;
+	MT_lock_set(&l->ht_lock);
+	if (l->ht) {
+		int key = l->ht->key(data);
+
+		if (hash_add(l->ht, key, data) == NULL) {
+			MT_lock_unset(&l->ht_lock);
+			return NULL;
+		}
+	}
+	MT_lock_unset(&l->ht_lock);
+	return NULL;
 }
 
 list *
@@ -304,6 +383,19 @@ list_traverse(list *l, traverse_func f, void *clientdata)
 	return res;
 }
 
+void *
+list_traverse_with_validate(list *l, void *data, fvalidate cmp)
+{
+	void* err = NULL;
+
+	for (node *n = l->h; n; n = n->next) {
+		err = cmp(n->data, data);
+		if(err)
+			break;
+	}
+	return err;
+}
+
 node *
 list_find(list *l, void *key, fcmp cmp)
 {
@@ -379,28 +471,27 @@ list_keysort(list *l, int *keys, fdup dup)
 {
 	list *res;
 	node *n = NULL;
-	int i, j, *pos, cnt = list_length(l);
+	int i, cnt = list_length(l);
+	void **data;
 
-	pos = (int*)GDKmalloc(cnt*sizeof(int));
-	if (pos == NULL) {
+	data = GDKmalloc(cnt*sizeof(void *));
+	if (data == NULL) {
 		return NULL;
 	}
 	res = list_new_(l);
 	if (res == NULL) {
-		GDKfree(pos);
+		GDKfree(data);
 		return NULL;
 	}
 	for (n = l->h, i = 0; n; n = n->next, i++) {
-		pos[i] = i;
+		data[i] = n->data;
 	}
 	/* sort descending */
-	GDKqsort_rev(keys, pos, NULL, cnt, sizeof(int), sizeof(int), TYPE_int);
-	for(j=0; j<cnt; j++) {
-		for(n = l->h, i = 0; i != pos[j]; n = n->next, i++) 
-			assert(n);
-		list_append(res, dup?dup(n->data):n->data);
+	GDKqsort(keys, data, NULL, cnt, sizeof(int), sizeof(void *), TYPE_int, true, true);
+	for(i=0; i<cnt; i++) {
+		list_append(res, dup?dup(data[i]):data[i]);
 	}
-	GDKfree(pos);
+	GDKfree(data);
 	return res;
 }
 
@@ -409,36 +500,33 @@ list_sort(list *l, fkeyvalue key, fdup dup)
 {
 	list *res;
 	node *n = NULL;
-	int i, j, *keys, *pos, cnt = list_length(l);
+	int i, *keys, cnt = list_length(l);
+	void **data;
 
-	keys = (int*)GDKmalloc(cnt*sizeof(int));
-	pos = (int*)GDKmalloc(cnt*sizeof(int));
-	if (keys == NULL || pos == NULL) {
-		if (keys)
-			GDKfree(keys);
-		if (pos)
-			GDKfree(pos);
+	keys = GDKmalloc(cnt*sizeof(int));
+	data = GDKmalloc(cnt*sizeof(void *));
+	if (keys == NULL || data == NULL) {
+		GDKfree(keys);
+		GDKfree(data);
 		return NULL;
 	}
 	res = list_new_(l);
 	if (res == NULL) {
 		GDKfree(keys);
-		GDKfree(pos);
+		GDKfree(data);
 		return NULL;
 	}
 	for (n = l->h, i = 0; n; n = n->next, i++) {
 		keys[i] = key(n->data);
-		pos[i] = i;
+		data[i] = n->data;
 	}
 	/* sort descending */
-	GDKqsort_rev(keys, pos, NULL, cnt, sizeof(int), sizeof(int), TYPE_int);
-	for(j=0; j<cnt; j++) {
-		for(n = l->h, i = 0; i != pos[j]; n = n->next, i++) 
-			assert(n);
-		list_append(res, dup?dup(n->data):n->data);
+	GDKqsort(keys, data, NULL, cnt, sizeof(int), sizeof(void *), TYPE_int, true, true);
+	for(i=0; i<cnt; i++) {
+		list_append(res, dup?dup(data[i]):data[i]);
 	}
 	GDKfree(keys);
-	GDKfree(pos);
+	GDKfree(data);
 	return res;
 }
 
@@ -616,6 +704,39 @@ list_dup(list *l, fdup dup)
 	return res ? list_merge(res, l, dup) : NULL;
 }
 
+void
+list_hash_delete(list *l, void *data, fcmp cmp)
+{
+	if (l && data) {
+		node *n = list_find(l, data, cmp);
+		if(n) {
+			MT_lock_set(&l->ht_lock);
+			if (l->ht && n->data)
+				hash_delete(l->ht, data);
+			MT_lock_unset(&l->ht_lock);
+		}
+	}
+}
+
+void*
+list_hash_add(list *l, void *data, fcmp cmp)
+{
+	if (l && data) {
+		node *n = list_find(l, data, cmp);
+		if(n) {
+			MT_lock_set(&l->ht_lock);
+			if (l->ht && n->data) {
+				int nkey = l->ht->key(data);
+				if (hash_add(l->ht, nkey, data) == NULL) {
+					MT_lock_unset(&l->ht_lock);
+					return NULL;
+				}
+			}
+			MT_lock_unset(&l->ht_lock);
+		}
+	}
+	return data;
+}
 
 #ifdef TEST
 #include <string.h>

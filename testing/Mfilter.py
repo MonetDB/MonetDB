@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 from __future__ import print_function
 
@@ -31,6 +31,13 @@ def warn(THISFILE,TEXT) :
 def wlen(str) :
     return len(' '.join(str.split()))
 ### wlen(str) #
+
+def openutf8(file, mode='r'):
+    try:
+        f = open(file, mode, encoding='utf-8', errors='replace') # Python 3
+    except TypeError:
+        f = open(file, mode)    # Python 2
+    return f
 
 test = (
         # potential differences, which we want to ignore
@@ -94,7 +101,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r'^(\[.*POLYGON.*\(59\.0{16} 18\.0{16}, )(59\.0{16} 13\.0{16})(, 67\.0{16} 13\.0{16}, )(67\.0{16} 18\.0{16})(, 59\.0{16} 18\.0{16}\).*)',   # 10: 5
     # test geom/BugTracker/Tests/X_crash.SF-1971632.* might produce different error messages, depending on evaluation order
     r'^(ERROR = !MALException:geom.wkbGetCoordinate:Geometry ")(.*)(" not a Point)\n',                                                          # 11: 3
-    r"^(QUERY = COPY\b.* INTO .* FROM  *(?:\( *)?)('.*')(.*)\n", # 12: 3
+    r"^(QUERY = COPY\b.* INTO .* FROM  *(?:\( *)?)(E?'.*')(.*)\n", # 12: 3
 ])+')',  re.MULTILINE)
 norm_hint = '# the original non-normalized output was: '
 norm_out = (
@@ -140,7 +147,7 @@ def mFilter (FILE, IGNORE) :
         i += 1
     IGNORE = ''.join(ign)
 
-    fin = open(FILE, "rU")
+    fin = openutf8(FILE, "rU")
     LINE = fin.readline()
     while  len(LINE)  and  ( len(LINE) < 15  or  LINE[:15] not in ("stdout of test ", "stderr of test ") ):
         LINE = fin.readline()
@@ -154,12 +161,14 @@ def mFilter (FILE, IGNORE) :
     ftmp = []
     ig = n = 0
     il = iw = ic = el = ew = ec = al = aw = ac = 0
-    for iline in open(FILE, 'rU'):
+    for iline in openutf8(FILE, 'rU'):
         iline = iline.replace('\033[?1034h','')
         if iline.startswith('# builtin opt') or \
            iline.startswith('# cmdline opt') or \
            iline.startswith('# config opt'):
             continue
+        if iline.startswith('#--------------------------'):
+            iline = '#--------------------------#\n'
         # normalize exponents in floating point representation: remove
         # leading zeros from exponent (but keeping at least one digit,
         # even if zero)
@@ -240,7 +249,7 @@ def mFilter (FILE, IGNORE) :
                         ic = ic + c
                 ftmp.append(ln)
 
-    fout = open(FILE + ".FILTERED", "w")
+    fout = openutf8(FILE + ".FILTERED", "w")
     if (al > 0) or (aw > 0) or (ac >0):
         fout.write("Statistics about std"+WHAT+" of test '"+TST+"` in directory '"+TSTDIR+"`:\n")
         fout.write("  %9d lines, %9d words, %9d chars   in lines not matching '^$|%s|^=`\n" % (il,iw,ic,IGNORE))
@@ -289,7 +298,7 @@ def mFilter (FILE, IGNORE) :
                     warn(THISFILE, "Removing input file '%s'." % FILE)
                     try:
                         os.remove(FILE)
-                        fin = open(FILE,"w")
+                        fin = openutf8(FILE,"w")
                         fin.write("%s: Removed '%s' to create space for '%s'.\n" % (THISFILE, FILE, fout.name))
                         fin.close()
                     except:

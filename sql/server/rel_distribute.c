@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*#define DEBUG*/
@@ -36,7 +36,6 @@ has_remote_or_replica( sql_rel *rel )
 	case op_right: 
 	case op_full: 
 
-	case op_apply: 
 	case op_semi: 
 	case op_anti: 
 
@@ -81,7 +80,7 @@ rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_part *pd, int remote_
 		sql_exp *e = n->data;
 		sql_exp *ne = m->data;
 
-		exp_setname(sql->sa, ne, e->rname, e->name);
+		exp_prop_alias(ne, e);
 	}
 	rel_destroy(rel);
 
@@ -120,8 +119,10 @@ exp_replica(mvc *sql, sql_exp *e, char *uri)
 			e->f = exps_replica(sql, e->f, uri);
 		return e;
 	}
-	if (e->flag & PSM_REL) 
+	if (e->flag & PSM_REL)
 		e->l = replica(sql, e->l, uri);
+	if (e->flag & PSM_EXCEPTION)
+		e->l = exp_replica(sql, e->l, uri);
 	return e;
 }
 
@@ -145,7 +146,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 
 	if (rel_is_ref(rel)) {
 		if (has_remote_or_replica(rel)) {
-			sql_rel *nrel = rel_copy(sql->sa, rel);
+			sql_rel *nrel = rel_copy(sql->sa, rel, 0);
 
 			if (nrel && rel->p)
 				nrel->p = prop_copy(sql->sa, rel->p);
@@ -205,7 +206,6 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 	case op_right: 
 	case op_full: 
 
-	case op_apply: 
 	case op_semi: 
 	case op_anti: 
 
@@ -223,7 +223,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 		rel->l = replica(sql, rel->l, uri);
 		break;
 	case op_ddl: 
-		if (rel->flag == DDL_PSM && rel->exps) 
+		if ((rel->flag == ddl_psm || rel->flag == ddl_exception) && rel->exps)
 			rel->exps = exps_replica(sql, rel->exps, uri);
 		rel->l = replica(sql, rel->l, uri);
 		if (rel->r)
@@ -258,8 +258,10 @@ exp_distribute(mvc *sql, sql_exp *e)
 			e->f = exps_distribute(sql, e->f);
 		return e;
 	}
-	if (e->flag & PSM_REL) 
+	if (e->flag & PSM_REL)
 		e->l = distribute(sql, e->l);
+	if (e->flag & PSM_EXCEPTION)
+		e->l = exp_distribute(sql, e->l);
 	return e;
 }
 
@@ -286,7 +288,7 @@ distribute(mvc *sql, sql_rel *rel)
 
 	if (rel_is_ref(rel)) {
 		if (has_remote_or_replica(rel)) {
-			sql_rel *nrel = rel_copy(sql->sa, rel);
+			sql_rel *nrel = rel_copy(sql->sa, rel, 0);
 
 			if (nrel && rel->p)
 				nrel->p = prop_copy(sql->sa, rel->p);
@@ -324,7 +326,6 @@ distribute(mvc *sql, sql_rel *rel)
 	case op_right: 
 	case op_full: 
 
-	case op_apply: 
 	case op_semi: 
 	case op_anti: 
 
@@ -372,7 +373,7 @@ distribute(mvc *sql, sql_rel *rel)
 		}
 		break;
 	case op_ddl: 
-		if (rel->flag == DDL_PSM && rel->exps) 
+		if ((rel->flag == ddl_psm || rel->flag == ddl_exception) && rel->exps)
 			rel->exps = exps_distribute(sql, rel->exps);
 		rel->l = distribute(sql, rel->l);
 		if (rel->r)
@@ -407,8 +408,10 @@ exp_remote_func(mvc *sql, sql_exp *e)
 			e->f = exps_remote_func(sql, e->f);
 		return e;
 	}
-	if (e->flag & PSM_REL) 
+	if (e->flag & PSM_REL)
 		e->l = rel_remote_func(sql, e->l);
+	if (e->flag & PSM_EXCEPTION)
+		e->l = exp_remote_func(sql, e->l);
 	return e;
 }
 
@@ -439,7 +442,6 @@ rel_remote_func(mvc *sql, sql_rel *rel)
 	case op_right: 
 	case op_full: 
 
-	case op_apply: 
 	case op_semi: 
 	case op_anti: 
 
@@ -457,7 +459,7 @@ rel_remote_func(mvc *sql, sql_rel *rel)
 		rel->l = rel_remote_func(sql, rel->l);
 		break;
 	case op_ddl: 
-		if (rel->flag == DDL_PSM && rel->exps) 
+		if ((rel->flag == ddl_psm || rel->flag == ddl_exception) && rel->exps)
 			rel->exps = exps_remote_func(sql, rel->exps);
 		rel->l = rel_remote_func(sql, rel->l);
 		if (rel->r)

@@ -19,7 +19,6 @@ stdout of test 'missing_alias.Bug-3626` in directory 'sql/test/BugTracker-2014` 
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 09:16:09 >  
 # 09:16:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20572" "--port=30356"

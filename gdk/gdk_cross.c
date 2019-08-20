@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -44,11 +44,11 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 	}
 
 	BATsetcount(bn1, cnt1 * cnt2);
-	bn1->tsorted = 1;
+	bn1->tsorted = true;
 	bn1->trevsorted = cnt1 <= 1;
 	bn1->tkey = cnt2 <= 1;
-	bn1->tnil = 0;
-	bn1->tnonil = 1;
+	bn1->tnil = false;
+	bn1->tnonil = true;
 	p = (oid *) Tloc(bn1, 0);
 	if (lcand) {
 		for (i = 0; i < cnt1; i++)
@@ -67,8 +67,8 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 	bn2->tsorted = cnt1 <= 1 || cnt2 <= 1;
 	bn2->trevsorted = cnt2 <= 1;
 	bn2->tkey = cnt1 <= 1;
-	bn2->tnil = 0;
-	bn2->tnonil = 1;
+	bn2->tnil = false;
+	bn2->tnonil = true;
 	p = (oid *) Tloc(bn2, 0);
 	if (rcand) {
 		for (i = 0; i < cnt1; i++)
@@ -85,5 +85,6 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 
 	*r1p = bn1;
 	*r2p = bn2;
+	ALGODEBUG fprintf(stderr, "#BATsubcross()=(" ALGOBATFMT "," ALGOBATFMT ")\n", ALGOBATPAR(bn1), ALGOBATPAR(bn2));
 	return GDK_SUCCEED;
 }

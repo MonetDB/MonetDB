@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* Author(s) M.L. Kersten
@@ -87,7 +87,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		QRYqueue[i].tag = qtag++;
 		mb->tag = QRYqueue[i].tag;
 		QRYqueue[i].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
-		QRYqueue[i].start = (lng)time(0);
+		QRYqueue[i].start = time(0);
 		QRYqueue[i].runtime = mb->runtime; 	// the estimated execution time
 		q = isaSQLquery(mb);
 		QRYqueue[i].query = q? GDKstrdup(q):0;
@@ -119,7 +119,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			return;
 		}
 		QRYqueue[i].mb->calls++;
-		QRYqueue[i].mb->runtime += (lng) (((lng)time(0) - QRYqueue[i].start) * 1000.0/QRYqueue[i].mb->calls);
+		QRYqueue[i].mb->runtime += (lng) ((lng)(time(0) - QRYqueue[i].start) * 1000.0/QRYqueue[i].mb->calls);
 
 		// reset entry
 		if (QRYqueue[i].query)
@@ -182,7 +182,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 
 	/* keep track of actual running instructions over BATs */
 	if( isaBatType(getArgType(mb, pci, 0)) )
-		(void) ATOMIC_INC(mal_running, mal_runningLock);
+		(void) ATOMIC_INC(&mal_running);
 
 	/* emit the instruction upon start as well */
 	if(malProfileMode > 0 )
@@ -203,7 +203,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 
 	assert(pci);
 	if( isaBatType(getArgType(mb, pci, 0)) )
-		(void) ATOMIC_DEC(mal_running, mal_runningLock);
+		(void) ATOMIC_DEC(&mal_running);
 
 	assert(prof);
 	/* always collect the MAL instruction execution time */
@@ -261,7 +261,7 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 		if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
 			oid cnt = 0;
 
-			b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval, TRUE);
+			b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval, true);
 			if (b == NULL)
 				continue;
 			cnt = BATcount(b);

@@ -5,7 +5,7 @@ CREATE TABLE "temp_27_TERM" (
 	"prob"   double,
 	CONSTRAINT "temp_27_TERM_termid_pkey" PRIMARY KEY ("termid")
 );
-COPY 2222 RECORDS INTO "temp_27_TERM" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 2222 RECORDS INTO "temp_27_TERM" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 0	"#STOPWORD#"	1
 1	"a"	1
 2	"about"	1
@@ -2236,7 +2236,7 @@ CREATE TABLE "temp_20_TERM" (
 	"prob"   double,
 	CONSTRAINT "temp_20_TERM_termid_pkey" PRIMARY KEY ("termid")
 );
-COPY 1621 RECORDS INTO "temp_20_TERM" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 1621 RECORDS INTO "temp_20_TERM" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 0	"#STOPWORD#"	1
 1	"a"	1
 2	"about"	1
@@ -3866,7 +3866,7 @@ CREATE TABLE "temp_26_TERM" (
 	"prob"   double,
 	CONSTRAINT "temp_26_TERM_termid_pkey" PRIMARY KEY ("termid")
 );
-COPY 2503 RECORDS INTO "temp_26_TERM" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 2503 RECORDS INTO "temp_26_TERM" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 0	"#STOPWORD#"	1
 1	"a"	1
 2	"about"	1
@@ -6378,7 +6378,7 @@ CREATE TABLE "temp_24_TERM" (
 	"prob"   double,
 	CONSTRAINT "temp_24_TERM_termid_pkey" PRIMARY KEY ("termid")
 );
-COPY 956 RECORDS INTO "temp_24_TERM" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 956 RECORDS INTO "temp_24_TERM" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 0	"#STOPWORD#"	1
 1	"a"	1
 2	"about"	1

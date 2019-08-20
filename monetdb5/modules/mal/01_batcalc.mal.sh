@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 sed '/^$/q' $0			# copy copyright from this file
 
@@ -425,7 +425,7 @@ done
 for func in '<:lt' '<=:le' '>:gt' '>=:ge' '==:eq' '!=:ne'; do
     op=${func%:*}
     func=${func#*:}
-    for tp in bit str oid; do
+    for tp in bit str blob oid; do
 	cat <<EOF
 pattern $op(b1:bat[:$tp],b2:bat[:$tp]) :bat[:bit]
 address CMDbat${func^^}
@@ -447,6 +447,31 @@ address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 
 EOF
+	case $op in
+	== | !=)
+	    cat <<EOF
+pattern $op(b1:bat[:$tp],b2:bat[:$tp],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B1 $op B2";
+pattern $op(b1:bat[:$tp],b2:bat[:$tp],s:bat[:oid],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B1 $op B2 with candidates list";
+pattern $op(b:bat[:$tp],v:$tp,nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V";
+pattern $op(b:bat[:$tp],v:$tp,s:bat[:oid],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V with candidates list";
+pattern $op(v:$tp,b:bat[:$tp],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B";
+pattern $op(v:$tp,b:bat[:$tp],s:bat[:oid],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B with candidates list";
+
+EOF
+	    ;;
+	esac
     done
     for tp1 in ${numeric[@]}; do
 	for tp2 in ${numeric[@]}; do
@@ -471,6 +496,31 @@ address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 
 EOF
+	    case $op in
+	    == | !=)
+		cat <<EOF
+pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B1 $op B2";
+pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B1 $op B2 with candidates list";
+pattern $op(b:bat[:$tp1],v:$tp2,nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V";
+pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V with candidates list";
+pattern $op(v:$tp1,b:bat[:$tp2],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B";
+pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B with candidates list";
+
+EOF
+	    ;;
+	    esac
 	done
     done
     echo
@@ -529,55 +579,30 @@ done
 echo
 
 cat <<EOF
-pattern between(b:bat[:any_1],lo:bat[:any_1],hi:bat[:any_1]) :bat[:bit]
+pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive";
-pattern between(b:bat[:any_1],lo:bat[:any_1],hi:bat[:any_1],s:bat[:oid]) :bat[:bit]
+comment "B between V1 and V2 (or vice versa)";
+pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list";
-pattern between(b:bat[:any_1],lo:bat[:any_1],hi:any_1) :bat[:bit]
+comment "B between V1 and V2 (or vice versa) with candidate list";
+pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive";
-pattern between(b:bat[:any_1],lo:bat[:any_1],hi:any_1,s:bat[:oid]) :bat[:bit]
+comment "B between V1 and V2 (or vice versa)";
+pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list";
-pattern between(b:bat[:any_1],lo:any_1,hi:bat[:any_1]) :bat[:bit]
+comment "B between V1 and V2 (or vice versa) with candidate list";
+pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive";
-pattern between(b:bat[:any_1],lo:any_1,hi:bat[:any_1],s:bat[:oid]) :bat[:bit]
+comment "B between V1 and V2 (or vice versa)";
+pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list";
-pattern between(b:bat[:any_1],lo:any_1,hi:any_1) :bat[:bit]
+comment "B between V1 and V2 (or vice versa) with candidate list";
+pattern between(b:bat[:any_1],v1:any_1,v2:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive";
-pattern between(b:bat[:any_1],lo:any_1,hi:any_1,s:bat[:oid]) :bat[:bit]
+comment "B between V1 and V2 (or vice versa)";
+pattern between(b:bat[:any_1],v1:any_1,v2:any_1,s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list";
-
-pattern between_symmetric(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1]) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive";
-pattern between_symmetric(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],s:bat[:oid]) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive with candidates list";
-pattern between_symmetric(b:bat[:any_1],v1:bat[:any_1],v2:any_1) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive";
-pattern between_symmetric(b:bat[:any_1],v1:bat[:any_1],v2:any_1,s:bat[:oid]) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive with candidates list";
-pattern between_symmetric(b:bat[:any_1],v1:any_1,v2:bat[:any_1]) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive";
-pattern between_symmetric(b:bat[:any_1],v1:any_1,v2:bat[:any_1],s:bat[:oid]) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive with candidates list";
-pattern between_symmetric(b:bat[:any_1],v1:any_1,v2:any_1) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive";
-pattern between_symmetric(b:bat[:any_1],v1:any_1,v2:any_1,s:bat[:oid]) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive with candidates list";
+comment "B between V1 and V2 (or vice versa) with candidate list";
 
 EOF
 echo
@@ -594,6 +619,18 @@ pattern avg(b:bat[:$tp]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B";
 pattern avg(b:bat[:$tp],s:bat[:oid]) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B with candidates list";
+pattern avg(b:bat[:$tp],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B with candidates list";
+pattern avg(b:bat[:$tp],s:bat[:oid],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+pattern avg(b:bat[:$tp],scale:int) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B";
+pattern avg(b:bat[:$tp],s:bat[:oid],scale:int) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B with candidates list";
 

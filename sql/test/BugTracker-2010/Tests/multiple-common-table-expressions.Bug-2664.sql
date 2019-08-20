@@ -8,7 +8,7 @@ CREATE TABLE "t2664" (
 	"commit_action" SMALLINT,
 	"readonly"      BOOLEAN
 );
-COPY 30 RECORDS INTO "t2664" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 30 RECORDS INTO "t2664" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 2001	"schemas"	2000	NULL	0	true	0	false
 2006	"types"	2000	NULL	0	true	0	false
 2015	"functions"	2000	NULL	0	true	0	false
@@ -28,10 +28,10 @@ COPY 30 RECORDS INTO "t2664" FROM stdin USING DELIMITERS '\t','\n','"';
 2131	"idxs"	2103	NULL	0	true	2	false
 2136	"triggers"	2103	NULL	0	true	2	false
 2147	"keycolumns"	2103	NULL	0	true	2	false
-5039	"tables"	2000	"SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type < 2;"	1	true	0	false
-5049	"columns"	2000	"SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;"	1	true	0	false
+5039	"tables"	2000	"SELECT * FROM (SELECT p.*, 0 AS ""temporary"" FROM ""sys"".""_tables"" AS p UNION ALL SELECT t.*, 1 AS ""temporary"" FROM ""tmp"".""_tables"" AS t) AS tables where tables.type < 2;"	1	true	0	false
+5049	"columns"	2000	"SELECT * FROM (SELECT p.* FROM ""sys"".""_columns"" AS p UNION ALL SELECT t.* FROM ""tmp"".""_columns"" AS t) AS columns;"	1	true	0	false
 5069	"db_user_info"	2000	NULL	0	true	0	false
-5077	"users"	2000	"SELECT u.\"name\" AS \"name\", ui.\"fullname\", ui.\"default_schema\" FROM db_users() AS u LEFT JOIN \"sys\".\"db_user_info\" AS ui ON u.\"name\" = ui.\"name\" ;"	1	true	0	false
+5077	"users"	2000	"SELECT u.""name"" AS ""name"", ui.""fullname"", ui.""default_schema"" FROM db_users() AS u LEFT JOIN ""sys"".""db_user_info"" AS ui ON u.""name"" = ui.""name"" ;"	1	true	0	false
 5081	"user_role"	2000	NULL	0	true	0	false
 5084	"auths"	2000	NULL	0	true	0	false
 5088	"privileges"	2000	NULL	0	true	0	false

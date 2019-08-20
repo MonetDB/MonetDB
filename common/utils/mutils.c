@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -294,7 +294,7 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 	} *lockedfiles;
 	struct lockedfiles **fpp, *fp;
 
-	memset(&ov, 0, sizeof(ov));
+	ov = (OVERLAPPED) {0};
 #if defined(DUMMYSTRUCTNAME) && (defined(NONAMELESSUNION) || !defined(_MSC_EXTENSIONS))	/* Windows SDK v7.0 */
 	ov.u.s.Offset = (unsigned int) off;
 #if 0
@@ -444,7 +444,7 @@ get_bin_path(void)
 {
 	/* getting the path to the executable's binary, isn't all that
 	 * simple, unfortunately */
-#ifdef WIN32
+#ifdef NATIVE_WIN32
 	if (GetModuleFileName(NULL, _bin_path,
 			      (DWORD) sizeof(_bin_path)) != 0)
 		return _bin_path;
@@ -479,7 +479,7 @@ get_bin_path(void)
 		if (realpath(execn, _bin_path) != NULL)
 			return(_bin_path);
 	}
-#else  /* try Linux approach */
+#else  /* try Linux approach, also works on Cygwin */
 	if (readlink("/proc/self/exe",
 				_bin_path, sizeof(_bin_path)) != -1)
 			return _bin_path;

@@ -21,7 +21,6 @@ stdout of test 'deps-install` in directory 'clients/R` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 16:13:02 >  
 # 16:13:02 >  "R" "--vanilla" "--slave" "--args" "35560"

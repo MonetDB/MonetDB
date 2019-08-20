@@ -19,7 +19,6 @@ stdout of test 'assert-on-push-project-up.Bug-6077` in directory 'sql/test/BugTr
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 14:17:20 >  
 # 14:17:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23333" "--port=39688"
@@ -97,7 +96,7 @@ Ready.
 #		on (ref_140.var_id = ref_185.default_schema )
 % .L47,	.L51,	.L53 # table_name
 % c0,	c1,	c2 # name
-% clob,	char,	clob # type
+% varchar,	char,	varchar # type
 % 0,	10,	0 # length
 #ROLLBACK;
 

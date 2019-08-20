@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _MAL_SCENARIO_H
@@ -42,23 +42,16 @@ typedef struct SCENARIO {
 	MALfcn exitClientCmd;
 	str reader;
 	MALfcn readerCmd;
-	void *readerState;
 	str parser;
 	MALfcn parserCmd;
-	void *parserState;
 	str optimizer;
 	MALfcn optimizerCmd;
-	void *optimizerState;
 	str tactics;
 	MALfcn tacticsCmd;
-	void *tacticsState;
 	str engine;
 	MALfcn engineCmd;
-	void *engineState;
 	str callback;
 	MALfcn callbackCmd;
-	void *callbackState;
-	struct SCENARIO *next;
 } *Scenario;
 
 mal_export str setScenario(Client c, str nme);

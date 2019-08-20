@@ -20,7 +20,6 @@ stdout of test 'truncate_bam_tables.Bug-6543` in directory 'sql/test/BugTracker-
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -69,61 +68,61 @@ Ready.
 # 17:33:23 >  
 
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.sq;
-% bam.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.sq;
-% bam.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.rg;
-% bam.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.rg;
-% bam.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.pg;
-% bam.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.pg;
-% bam.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.export;
-% bam.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.export;
-% bam.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.files;
-% bam.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.files;
-% bam.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -202,67 +202,70 @@ BATcheckimprints(BAT *b)
 		b = BBPdescriptor(VIEWtparent(b));
 	}
 
-	MT_lock_set(&GDKimprintsLock(b->batCacheid));
 	if (b->timprints == (Imprints *) 1) {
-		Imprints *imprints;
-		const char *nme = BBP_physical(b->batCacheid);
+		MT_lock_set(&GDKimprintsLock(b->batCacheid));
+		if (b->timprints == (Imprints *) 1) {
+			Imprints *imprints;
+			const char *nme = BBP_physical(b->batCacheid);
 
-		b->timprints = NULL;
-		if ((imprints = GDKzalloc(sizeof(Imprints))) != NULL &&
-		    (imprints->imprints.farmid = BBPselectfarm(b->batRole, b->ttype, imprintsheap)) >= 0) {
-			int fd;
+			assert(!GDKinmemory());
+			b->timprints = NULL;
+			if ((imprints = GDKzalloc(sizeof(Imprints))) != NULL &&
+			    (imprints->imprints.farmid = BBPselectfarm(b->batRole, b->ttype, imprintsheap)) >= 0) {
+				int fd;
 
-			snprintf(imprints->imprints.filename, sizeof(imprints->imprints.filename), "%s.timprints", nme);
-			/* check whether a persisted imprints index
-			 * can be found */
-			if ((fd = GDKfdlocate(imprints->imprints.farmid, nme, "rb", "timprints")) >= 0) {
-				size_t hdata[4];
-				struct stat st;
-				size_t pages;
+				stpconcat(imprints->imprints.filename, nme, ".timprints", NULL);
+				/* check whether a persisted imprints index
+				 * can be found */
+				if ((fd = GDKfdlocate(imprints->imprints.farmid, nme, "rb", "timprints")) >= 0) {
+					size_t hdata[4];
+					struct stat st;
+					size_t pages;
 
-				pages = (((size_t) BATcount(b) * b->twidth) + IMPS_PAGE - 1) / IMPS_PAGE;
-				if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
-				    hdata[0] & ((size_t) 1 << 16) &&
-				    ((hdata[0] & 0xFF00) >> 8) == IMPRINTS_VERSION &&
-				    hdata[3] == (size_t) BATcount(b) &&
-				    fstat(fd, &st) == 0 &&
-				    st.st_size >= (off_t) (imprints->imprints.size =
-							   imprints->imprints.free =
-							   64 * b->twidth +
-							   64 * 2 * SIZEOF_OID +
-							   64 * SIZEOF_BUN +
-							   pages * ((bte) hdata[0] / 8) +
-							   hdata[2] * sizeof(cchdc_t) +
-							   sizeof(uint64_t) /* padding for alignment */
-							   + 4 * SIZEOF_SIZE_T) &&
-				    HEAPload(&imprints->imprints, nme, "timprints", false) == GDK_SUCCEED) {
-					/* usable */
-					imprints->bits = (bte) (hdata[0] & 0xFF);
-					imprints->impcnt = (BUN) hdata[1];
-					imprints->dictcnt = (BUN) hdata[2];
-					imprints->bins = imprints->imprints.base + 4 * SIZEOF_SIZE_T;
-					imprints->stats = (BUN *) ((char *) imprints->bins + 64 * b->twidth);
-					imprints->imps = (void *) (imprints->stats + 64 * 3);
-					imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
+					pages = (((size_t) BATcount(b) * b->twidth) + IMPS_PAGE - 1) / IMPS_PAGE;
+					if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
+					    hdata[0] & ((size_t) 1 << 16) &&
+					    ((hdata[0] & 0xFF00) >> 8) == IMPRINTS_VERSION &&
+					    hdata[3] == (size_t) BATcount(b) &&
+					    fstat(fd, &st) == 0 &&
+					    st.st_size >= (off_t) (imprints->imprints.size =
+								   imprints->imprints.free =
+								   64 * b->twidth +
+								   64 * 2 * SIZEOF_OID +
+								   64 * SIZEOF_BUN +
+								   pages * ((bte) hdata[0] / 8) +
+								   hdata[2] * sizeof(cchdc_t) +
+								   sizeof(uint64_t) /* padding for alignment */
+								   + 4 * SIZEOF_SIZE_T) &&
+					    HEAPload(&imprints->imprints, nme, "timprints", false) == GDK_SUCCEED) {
+						/* usable */
+						imprints->bits = (bte) (hdata[0] & 0xFF);
+						imprints->impcnt = (BUN) hdata[1];
+						imprints->dictcnt = (BUN) hdata[2];
+						imprints->bins = imprints->imprints.base + 4 * SIZEOF_SIZE_T;
+						imprints->stats = (BUN *) ((char *) imprints->bins + 64 * b->twidth);
+						imprints->imps = (void *) (imprints->stats + 64 * 3);
+						imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
+						close(fd);
+						imprints->imprints.parentid = b->batCacheid;
+						b->timprints = imprints;
+						ACCELDEBUG fprintf(stderr, "#BATcheckimprints(" ALGOBATFMT "): reusing persisted imprints\n", ALGOBATPAR(b));
+						MT_lock_unset(&GDKimprintsLock(b->batCacheid));
+
+						return true;
+					}
 					close(fd);
-					imprints->imprints.parentid = b->batCacheid;
-					b->timprints = imprints;
-					ALGODEBUG fprintf(stderr, "#BATcheckimprints(" ALGOBATFMT "): reusing persisted imprints\n", ALGOBATPAR(b));
-					MT_lock_unset(&GDKimprintsLock(b->batCacheid));
-
-					return true;
+					/* unlink unusable file */
+					GDKunlink(imprints->imprints.farmid, BATDIR, nme, "timprints");
 				}
-				close(fd);
-				/* unlink unusable file */
-				GDKunlink(imprints->imprints.farmid, BATDIR, nme, "timprints");
 			}
+			GDKfree(imprints);
+			GDKclrerr();	/* we're not currently interested in errors */
 		}
-		GDKfree(imprints);
-		GDKclrerr();	/* we're not currently interested in errors */
+		MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 	}
 	ret = b->timprints != NULL;
-	MT_lock_unset(&GDKimprintsLock(b->batCacheid));
-	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckimprints(" ALGOBATFMT "): already has imprints\n", ALGOBATPAR(b));
+	ACCELDEBUG if (ret) fprintf(stderr, "#BATcheckimprints(" ALGOBATFMT "): already has imprints\n", ALGOBATPAR(b));
 	return ret;
 }
 
@@ -273,36 +276,56 @@ BATimpsync(void *arg)
 	Imprints *imprints;
 	int fd;
 	lng t0 = 0;
+	const char *failed = " failed";
 
-	ALGODEBUG t0 = GDKusec();
+	ACCELDEBUG t0 = GDKusec();
 
 	MT_lock_set(&GDKimprintsLock(b->batCacheid));
 	if ((imprints = b->timprints) != NULL) {
-		if (HEAPsave(&imprints->imprints, BBP_physical(b->batCacheid),
-			     "timprints") == GDK_SUCCEED &&
-		    (fd = GDKfdlocate(imprints->imprints.farmid,
-				      BBP_physical(b->batCacheid), "rb+",
-				      "timprints")) >= 0) {
-			/* add version number */
-			((size_t *) imprints->imprints.base)[0] |= (size_t) IMPRINTS_VERSION << 8;
-			/* sync-on-disk checked bit */
-			((size_t *) imprints->imprints.base)[0] |= (size_t) 1 << 16;
-			if (write(fd, imprints->imprints.base, sizeof(size_t)) < 0)
-				perror("write imprints");
-			if (!(GDKdebug & NOSYNCMASK)) {
+		Heap *hp = &imprints->imprints;
+		if (HEAPsave(hp, hp->filename, NULL) == GDK_SUCCEED) {
+			if (hp->storage == STORE_MEM) {
+				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
+					/* add version number */
+					((size_t *) hp->base)[0] |= (size_t) IMPRINTS_VERSION << 8;
+					/* sync-on-disk checked bit */
+					((size_t *) hp->base)[0] |= (size_t) 1 << 16;
+					if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
+						failed = ""; /* not failed */
+						if (!(GDKdebug & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
-				_commit(fd);
+							_commit(fd);
 #elif defined(HAVE_FDATASYNC)
-				fdatasync(fd);
+							fdatasync(fd);
 #elif defined(HAVE_FSYNC)
-				fsync(fd);
+							fsync(fd);
 #endif
+						}
+						hp->dirty = false;
+					} else {
+						failed = " write failed";
+						perror("write hash");
+					}
+					close(fd);
+				}
+			} else {
+				/* add version number */
+				((size_t *) hp->base)[0] |= (size_t) IMPRINTS_VERSION << 8;
+				/* sync-on-disk checked bit */
+				((size_t *) hp->base)[0] |= (size_t) 1 << 16;
+				if (!(GDKdebug & NOSYNCMASK) &&
+				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0) {
+					failed = " sync failed";
+					((size_t *) hp->base)[0] &= ~((size_t) IMPRINTS_VERSION << 8);
+				} else {
+					hp->dirty = false;
+					failed = ""; /* not failed */
+				}
 			}
-			close(fd);
-			ALGODEBUG fprintf(stderr, "#BATimpsync(" ALGOBATFMT "): "
+			ACCELDEBUG fprintf(stderr, "#BATimpsync(" ALGOBATFMT "): "
 					  "imprints persisted "
-					  "(" LLFMT " usec)\n", ALGOBATPAR(b),
-					  GDKusec() - t0);
+					  "(" LLFMT " usec)%s\n", ALGOBATPAR(b),
+					  GDKusec() - t0, failed);
 		}
 	}
 	MT_lock_unset(&GDKimprintsLock(b->batCacheid));
@@ -338,26 +361,24 @@ BATimprints(BAT *b)
 
 	if (BATcheckimprints(b))
 		return GDK_SUCCEED;
-	assert(b->timprints == NULL);
 
 	if (VIEWtparent(b)) {
 		/* views always keep null pointer and need to obtain
 		 * the latest imprint from the parent at query time */
-		s2 = b;		/* remember for ALGODEBUG print */
+		s2 = b;		/* remember for ACCELDEBUG print */
 		b = BBPdescriptor(VIEWtparent(b));
 		assert(b);
 		if (BATcheckimprints(b))
 			return GDK_SUCCEED;
-		assert(b->timprints == NULL);
 	}
 	MT_lock_set(&GDKimprintsLock(b->batCacheid));
-	ALGODEBUG t0 = GDKusec();
+	ACCELDEBUG t0 = GDKusec();
 	if (b->timprints == NULL) {
 		BUN cnt;
-		const char *nme = BBP_physical(b->batCacheid);
+		const char *nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
 		size_t pages;
 
-		ALGODEBUG {
+		ACCELDEBUG {
 			if (s2)
 				fprintf(stderr, "#BATimprints(b=" ALGOBATFMT
 					"): creating imprints on parent "
@@ -375,7 +396,7 @@ BATimprints(BAT *b)
 			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 			return GDK_FAIL;
 		}
-		snprintf(imprints->imprints.filename, sizeof(imprints->imprints.filename), "%s.timprints", nme);
+		stpconcat(imprints->imprints.filename, nme, ".timprints", NULL);
 		pages = (((size_t) BATcount(b) * b->twidth) + IMPS_PAGE - 1) / IMPS_PAGE;
 		imprints->imprints.farmid = BBPselectfarm(b->batRole, b->ttype,
 							   imprintsheap);
@@ -402,8 +423,8 @@ BATimprints(BAT *b)
 			GDKfree(imprints);
 			return GDK_FAIL;
 		}
-		s3->tkey = 1;	/* we know is unique on tail now */
-		if (BATsort(&s4, NULL, NULL, s3, NULL, NULL, false, false) != GDK_SUCCEED) {
+		s3->tkey = true;	/* we know is unique on tail now */
+		if (BATsort(&s4, NULL, NULL, s3, NULL, NULL, false, false, false) != GDK_SUCCEED) {
 			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 			BBPunfix(s1->batCacheid);
 			BBPunfix(s2->batCacheid);
@@ -504,15 +525,20 @@ BATimprints(BAT *b)
 		((size_t *) imprints->imprints.base)[3] = (size_t) BATcount(b);
 		imprints->imprints.parentid = b->batCacheid;
 		b->timprints = imprints;
-		if (BBP_status(b->batCacheid) & BBPEXISTING) {
+		if (BBP_status(b->batCacheid) & BBPEXISTING &&
+		    !b->theap.dirty &&
+		    !GDKinmemory()) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
-			if (MT_create_thread(&tid, BATimpsync, b, MT_THR_DETACHED) < 0)
+			char name[16];
+			snprintf(name, sizeof(name), "impssync%d", b->batCacheid);
+			if (MT_create_thread(&tid, BATimpsync, b,
+					     MT_THR_DETACHED, name) < 0)
 				BBPunfix(b->batCacheid);
 		}
 	}
 
-	ALGODEBUG fprintf(stderr, "#BATimprints(%s): imprints construction " LLFMT " usec\n", BATgetId(b), GDKusec() - t0);
+	ACCELDEBUG fprintf(stderr, "#BATimprints(%s): imprints construction " LLFMT " usec\n", BATgetId(b), GDKusec() - t0);
 	MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 
 	/* BBPUnfix tries to get the imprints lock which might lead to
@@ -609,7 +635,6 @@ IMPSremove(BAT *b)
 	assert(b->timprints != NULL);
 	assert(!VIEWtparent(b));
 
-	MT_lock_set(&GDKimprintsLock(b->batCacheid));
 	if ((imprints = b->timprints) != NULL) {
 		b->timprints = NULL;
 
@@ -622,14 +647,13 @@ IMPSremove(BAT *b)
 
 		GDKfree(imprints);
 	}
-
-	MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 }
 
 void
 IMPSdestroy(BAT *b)
 {
-	if (b) {
+	if (b && b->timprints) {
+		MT_lock_set(&GDKimprintsLock(b->batCacheid));
 		if (b->timprints == (Imprints *) 1) {
 			b->timprints = NULL;
 			GDKunlink(BBPselectfarm(b->batRole, b->ttype, imprintsheap),
@@ -638,6 +662,7 @@ IMPSdestroy(BAT *b)
 				  "timprints");
 		} else if (b->timprints != NULL && !VIEWtparent(b))
 			IMPSremove(b);
+		MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 	}
 }
 
@@ -649,15 +674,23 @@ IMPSfree(BAT *b)
 {
 	Imprints *imprints;
 
-	if (b) {
+	if (b && b->timprints) {
 		assert(b->batCacheid > 0);
 		MT_lock_set(&GDKimprintsLock(b->batCacheid));
 		imprints = b->timprints;
 		if (imprints != NULL && imprints != (Imprints *) 1) {
-			b->timprints = (Imprints *) 1;
-			if (!VIEWtparent(b)) {
-				HEAPfree(&imprints->imprints, false);
-				GDKfree(imprints);
+			if (GDKinmemory()) {
+				b->timprints = NULL;
+				if (!VIEWtparent(b)) {
+					HEAPfree(&imprints->imprints, true);
+					GDKfree(imprints);
+				}
+			} else {
+				b->timprints = (Imprints *) 1;
+				if (!VIEWtparent(b)) {
+					HEAPfree(&imprints->imprints, false);
+					GDKfree(imprints);
+				}
 			}
 		}
 		MT_lock_unset(&GDKimprintsLock(b->batCacheid));
@@ -687,8 +720,8 @@ IMPSprint(BAT *b)
 	bte j;
 	int i;
 
-	if (BATimprints(b) != GDK_SUCCEED) {
-		GDKclrerr(); /* not interested in BATimprints errors */
+	if (!BATcheckimprints(b)) {
+		fprintf(stderr, "no imprint\n");
 		return;
 	}
 	imprints = b->timprints;

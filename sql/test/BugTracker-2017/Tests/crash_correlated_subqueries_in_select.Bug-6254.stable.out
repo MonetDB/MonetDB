@@ -20,7 +20,6 @@ stdout of test 'crash_correlated_subqueries_in_select.Bug-6254` in directory 'sq
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 
 # 10:01:40 >  
@@ -81,8 +80,11 @@ Ready.
 [ "sys",	2000,	"roles",	true,	3	]
 [ "sys",	2000,	"var_values",	true,	2	]
 [ "sys",	2000,	"storage",	true,	17	]
+[ "sys",	2000,	"tablestorage",	true,	9	]
+[ "sys",	2000,	"schemastorage",	true,	7	]
 [ "sys",	2000,	"storagemodel",	true,	13	]
-[ "sys",	2000,	"tablestoragemodel",	true,	8	]
+[ "sys",	2000,	"tablestoragemodel",	true,	9	]
+[ "sys",	2000,	"systemfunctions",	true,	1	]
 [ "sys",	2000,	"view_stats",	false,	5	]
 #SELECT * FROM sys.view_stats WHERE is_system_view;
 % .view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats # table_name
@@ -131,8 +133,11 @@ Ready.
 [ "sys",	2000,	"roles",	true,	3	]
 [ "sys",	2000,	"var_values",	true,	2	]
 [ "sys",	2000,	"storage",	true,	17	]
+[ "sys",	2000,	"tablestorage",	true,	9	]
+[ "sys",	2000,	"schemastorage",	true,	7	]
 [ "sys",	2000,	"storagemodel",	true,	13	]
-[ "sys",	2000,	"tablestoragemodel",	true,	8	]
+[ "sys",	2000,	"tablestoragemodel",	true,	9	]
+[ "sys",	2000,	"systemfunctions",	true,	1	]
 #SELECT * FROM sys.view_stats WHERE NOT is_system_view;
 % .view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats # table_name
 % schema_nm,	schema_id,	table_nm,	is_system_view,	"# columns" # name

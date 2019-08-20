@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef BATSTORAGE_H
@@ -17,8 +17,9 @@ typedef struct sql_delta {
 	int bid;
 	oid ibase;		/* ibase: first id of inserts */
 	int ibid;		/* bat with inserts */
-	int uibid;		/* bat with updates */
-	int uvbid;		/* bat with updates */
+	int uibid;		/* bat with positions of updates */
+	int uvbid;		/* bat with values of updates */
+	int cleared;
 	size_t cnt;		/* number of tuples (excluding the deletes) */
 	size_t ucnt;		/* number of updates */
 	BAT *cached;		/* cached copy, used for schema bats only */
@@ -29,6 +30,7 @@ typedef struct sql_delta {
 typedef struct sql_dbat {
 	char *dname;		/* name of the persistent deletes bat */
 	int dbid;		/* bat with deletes */
+	int cleared;
 	size_t cnt;
 	BAT *cached;		/* cached copy, used for schema bats only */
 	int wtime;		/* time stamp */

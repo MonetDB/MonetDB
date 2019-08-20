@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 -- create additional tables in "sys" schema and fill them with static content
 
@@ -215,6 +215,7 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('WHEN'),
   ('WHERE'),
   ('WHILE'),
+  ('WINDOW'),
   ('WITH'),
   ('WORK'),
   ('WRITE'),
@@ -242,8 +243,7 @@ CREATE TABLE sys.table_types (
     table_type_name VARCHAR(25) NOT NULL UNIQUE);
 
 -- Values taken from sql/include/sql_catalog.h see enum table_types:
--- table = 0, view = 1, merge_table = 3, stream = 4, remote = 5,
--- replica_table = 6.
+-- table = 0, view = 1, merge_table = 3, stream = 4, remote = 5, replica_table = 6
 -- Note: values 10, 11, 20 and 30 are synthetically constructed, see
 -- view sys.tables. Do not change them as they are used by ODBC
 -- SQLTables(SQL_ALL_TABLE_TYPES) and JDBC methods getTableTypes() and
@@ -413,7 +413,6 @@ SELECT 'current_schema', current_schema UNION ALL
 SELECT 'current_timezone', current_timezone UNION ALL
 SELECT 'current_user', current_user UNION ALL
 SELECT 'debug', debug UNION ALL
-SELECT 'history', history UNION ALL
 SELECT 'last_id', last_id UNION ALL
 SELECT 'optimizer', optimizer UNION ALL
 SELECT 'pi', pi() UNION ALL

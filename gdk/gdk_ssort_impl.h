@@ -3,12 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
- */
-
-/* This file is included multiple times.  We expect a bunch of tokens
- * to be redefined differently each time (see gdk_ssort.c).  If the
- * token GDKssortimpl is defined, the main interface is defined.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -18,6 +13,11 @@
  * environment.
  * The original author of the sort algorithm was Tim Peters, the
  * adaptation was done by Sjoerd Mullender.
+ *
+ *
+ * This file is included multiple times.  We expect a bunch of tokens
+ * to be redefined differently each time (see gdk_ssort.c).  If the
+ * token GDKssortimpl is defined, the main interface is defined.
  */
 
 /* binarysort is the best method for sorting small arrays: it does few
@@ -797,8 +797,8 @@ do_ssort(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t minru
  * the actual key is found at that offset (MonetDB var-sized
  * atoms). */
 gdk_return
-GDKssortimpl(void *restrict h, void *restrict t, const void *restrict heap, size_t nitems,
-	     int hs, int ts, int tpe)
+GDKssortimpl(void *restrict h, void *restrict t, const void *restrict heap,
+	     size_t nitems, int hs, int ts, int tpe)
 {
 	char temp;
 	MergeState ms;

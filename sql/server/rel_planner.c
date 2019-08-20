@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -68,32 +68,23 @@ memo_find(list *memo, const char *name)
 static char *
 merge_names( sql_allocator *sa, const char *lname, const char *rname)
 {
-	size_t llen = strlen(lname);
-	size_t rlen = strlen(rname);
-	char *n = SA_NEW_ARRAY(sa, char, llen+rlen+2), *p = n;
-	const char *c = lname;
+	size_t l = strlen(lname) + strlen(rname) + 2;
+	char *n = SA_NEW_ARRAY(sa, char, l);
+	const char *p = lname;
+	const char *c;
 
-	while (*c) {
-		int i = 0;
-		for ( ; c[i] && c[i] != ','; i++) 
-			p[i] = c[i];
-		p[i] = 0;
-		if (strcmp(p, rname) > 0) {
-			strncpy(p, rname, rlen);
-			p+=rlen;
-			*p++ = ',';
-			strcpy(p, c);
-			break;
-		} else {
-			p+=i;
-			*p++ = ',';
-			c+=i;
-			if (*c == 0) 
-				strcpy(p, rname);
+	while ((c = strchr(p, ',')) != NULL) {
+		if (strncmp(p, rname, c - p) > 0) {
+			if (p > lname)
+				snprintf(n, l, "%.*s,%s,%s", (int) (c - lname),
+					 lname, rname, c + 1);
 			else
-				c++;
+				snprintf(n, l, "%s,%s", rname, lname);
+			return n;
 		}
+		p = c + 1;
 	}
+	snprintf(n, l, "%s,%s", lname, rname);
 	return n;
 }
 
@@ -208,7 +199,7 @@ exp_getdcount( mvc *sql, sql_rel *r , sql_exp *e, lng count)
 }
 
 static int
-exp_getranges( mvc *sql, sql_rel *r , sql_exp *e, void **min, void **max)
+exp_getranges( mvc *sql, sql_rel *r , sql_exp *e, char **min, char **max)
 {
 	switch(e->type) {
 	case e_column: {
@@ -260,7 +251,7 @@ exp_getatom( mvc *sql, sql_exp *e, atom *m)
 }
 
 static dbl
-exp_getrange_sel( mvc *sql, sql_rel *r, sql_exp *e, void *min, void *max)
+exp_getrange_sel( mvc *sql, sql_rel *r, sql_exp *e, char *min, char *max)
 {
 	atom *amin, *amax, *emin, *emax;
 	dbl sel = 1.0;
@@ -317,7 +308,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 		case cmp_gte:
 		case cmp_lt:
 		case cmp_lte: {
-			void *min, *max;
+			char *min, *max;
 			if (exp_getranges( sql, r, e->l, &min, &max )) {
 				sel = (dbl)exp_getrange_sel( sql, r, e, min, max);
 			} else {

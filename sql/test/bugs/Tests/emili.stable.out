@@ -19,7 +19,6 @@ stdout of test 'emili` in directory 'sql/test/bugs` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 19:14:59 >  
 # 19:14:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15106" "--port=32975"

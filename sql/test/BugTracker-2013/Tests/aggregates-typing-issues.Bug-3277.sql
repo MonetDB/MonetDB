@@ -1,6 +1,6 @@
 CREATE TABLE mtcars ( rownames VARCHAR(255) , mpg DOUBLE PRECISION , cyl DOUBLE PRECISION , disp DOUBLE PRECISION , hp DOUBLE PRECISION , drat DOUBLE PRECISION , wt DOUBLE PRECISION , qsec DOUBLE PRECISION , vs DOUBLE PRECISION , am DOUBLE PRECISION , gear DOUBLE PRECISION , carb DOUBLE PRECISION ) ;
 
-COPY 32 offset 2 records into mtcars from stdin USING DELIMITERS ',','\n','\"' NULL as '' ;
+COPY 32 offset 2 records into mtcars from stdin USING DELIMITERS ',',E'\n','"' NULL as '' ;
 "","mpg","cyl","disp","hp","drat","wt","qsec","vs","am","gear","carb"
 "Mazda RX4",21,6,160,110,3.9,2.62,16.46,0,1,4,4
 "Mazda RX4 Wag",21,6,160,110,3.9,2.875,17.02,0,1,4,4
@@ -44,7 +44,7 @@ select * from mtcars2;
 
 --THESE WORK;
 select median( prob1 )  from mtcars2;
-select prod( prob1 ) from mtcars2;
+select cast (prod( prob1 ) as bigint) from mtcars2;
 
 --THESE BREAK;
 select stddev_pop( prob1 ) from mtcars2;
@@ -63,7 +63,7 @@ select * from mtcars2;
 
 --THESE WORK;
 select median( prob1 )  from mtcars2;
-select prod( prob1 ) from mtcars2;
+select cast (prod( prob1 ) as bigint) from mtcars2;
 select stddev_pop( prob1 ) from mtcars2;
 
 --THESE BREAK;
@@ -82,7 +82,7 @@ select * from mtcars2;
 
 --THESE WORK;
 select median( prob1 )  from mtcars2;
-select prod( prob1 ) from mtcars2;
+select cast (prod( prob1 ) as bigint) from mtcars2;
 select stddev_pop( prob1 ) from mtcars2;
 
 --THESE BREAK;
@@ -101,7 +101,7 @@ select * from mtcars2;
 
 --THESE WORK;
 select median( prob1 )  from mtcars2;
-select prod( prob1 ) from mtcars2;
+select cast (prod( prob1 ) as bigint) from mtcars2;
 select stddev_pop( prob1 ) from mtcars2;
 
 --THESE BREAK;
@@ -120,7 +120,7 @@ select * from mtcars2;
 
 --THESE WORK;
 select median( prob1 )  from mtcars2;
-select prod( prob1 ) from mtcars2;
+select cast (prod( prob1 ) as bigint) from mtcars2;
 select stddev_pop( prob1 ) from mtcars2;
 
 --THESE BREAK;

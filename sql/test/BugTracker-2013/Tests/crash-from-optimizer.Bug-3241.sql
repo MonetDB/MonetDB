@@ -5,7 +5,7 @@ CREATE TABLE "_dict" (
         "id"    INTEGER       NOT NULL,
         CONSTRAINT "_dict_id_pkey" PRIMARY KEY ("id")
 );
-COPY 7 RECORDS INTO "_dict" FROM stdin USING DELIMITERS ' ','\n','"';
+COPY 7 RECORDS INTO "_dict" FROM stdin USING DELIMITERS ' ',E'\n','"';
 "entity.department-dummy:11be0f0ab68e55dbbb205fa871914d89" 0
 "entity.person:e1c055925f3783a7631a2efcde7d4413" 1
 "entity.section:3673f53d1a8e1e5981b8bb6726923e68" 2

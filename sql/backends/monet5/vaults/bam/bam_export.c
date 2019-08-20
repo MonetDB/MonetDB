@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -313,7 +313,7 @@ write_header(stream *output, bam_field fields[11])
 	 * the table will be small (<30 chromosomes).
 	 */
 	BATloop(fields[2].b, p, q) {
-		cur = (str) BUNtail(iter, p);
+		cur = (str) BUNtvar(iter, p);
 
 		/* Do not print unknown chromosome (*) to header */
 		if(strcmp(cur, "*") == 0) {
@@ -394,9 +394,9 @@ cleanup_fields(bam_field fields[11]) {
 }
 
 
-#define CUR_STR(field, i) ((str) BUNtail(field.iter, (field.cur+i)))
-#define CUR_SHT(field, i) (*(sht *) BUNtail(field.iter, (field.cur+i)))
-#define CUR_INT(field, i) (*(int *) BUNtail(field.iter, (field.cur+i)))
+#define CUR_STR(field, i) ((str) BUNtvar(field.iter, (field.cur+i)))
+#define CUR_SHT(field, i) (*(sht *) BUNtloc(field.iter, (field.cur+i)))
+#define CUR_INT(field, i) (*(int *) BUNtloc(field.iter, (field.cur+i)))
 
 str
 sam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -415,7 +415,7 @@ sam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	memset(fields, 0, 11 * sizeof(bam_field));
 
-	if ((output = bsopen(output_path)) == NULL) {
+	if ((output = bsopen(output_path, false)) == NULL) {
 		msg = createException(MAL, "sam_export", SQLSTATE(BA000) "Could not open output file '%s' for writing", output_path);
 		goto cleanup;
 	}
@@ -466,7 +466,7 @@ bam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 
-	throw(MAL, "bam_export", SQLSTATE(BA000) "Exporting to BAM files is not implemented yet. This is our first priority for the next release of the BAM library.");
+	throw(MAL, "bam_export", SQLSTATE(0A000) PROGRAM_NYI);
 #else
 	/* arg 1: path to desired output file */
 	str output_path = *getArgReference_str(stk, pci, pci->retc);
@@ -492,7 +492,7 @@ bam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	snprintf(output_header_path, 1024, "%s_tmp.sam", output_path);
-	if ((output_header = bsopen(output_header_path)) == NULL) {
+	if ((output_header = bsopen(output_header_path, false)) == NULL) {
 		msg = createException(MAL, "bam_export", SQLSTATE(BA000) "Could not open temporary output file '%s' for writing", output_header_path);
 		goto cleanup;
 	}

@@ -23,11 +23,11 @@ TABLE 	(card MULTI)
  */
 DDL 	(card 0!, top of the tree always)
 	-> flags	/* OUTPUT, TRANSACTION-types, CREATE/DROP/ALTER* */ 
-	-> exps		For 'OUTPUT' is list of output options
+	-> exps		For 'OUTPUT' is list of output options, for ddl_exception is a list of psm_exception
 			For 'transactions' simple flags
 			for CREATE etc full sql string.
-	-> l		only used for 'OUTPUT' relation to output
-	-> r		(only for DDL_LIST)
+	-> l		used in ddl_output as the relation to output and ddl_exception as a ddl_list
+	-> r		used in ddl_list and ddl_exception
 
 SELECT 	(card MULTI or same ...?) 
 	-> exps		selection expressions (ie all e_cmp)
@@ -45,12 +45,6 @@ SEMI/ANTI
 	-> exps		join expressions (ie all e_cmp)
 	-> l		is left relation
 	-> r		is rigth relation
-
-APPLY
-	(card MULTI)
-	-> exps		are the bind variables (from the outer, correlated in the subquery)
-	-> l		is outer relation
-	-> r		is subquery relation
 
 UNION|EXCEPT|INTERSECT 
 	(card ATOM, AGGR or MULTI (same card as lower relation))
@@ -126,8 +120,13 @@ e_cmp
 			cmp_in = 8,		in list handling 	->r is a list of values
 			cmp_notin = 9		not in list handling	->r is a list of values
 
-        		cmp_all = 10,		cross product
-			cmp_project = 11, 	special case for projection joins
+		        mark_in = 10,
+        		mark_not_in = 11, 
+        		mark_exists = 12,
+        		mark_not_exists = 13,
+
+        		cmp_all = 14,		cross product
+			cmp_project = 15, 	special case for projection joins
 		)
 
 e_func
@@ -160,3 +159,5 @@ e_psm
 				->r loop_exp_list
 		psm_return	->l return_exp
 		psm_rel		->l relation
+		psm_exception ->l cond_exp
+					  ->r error_string

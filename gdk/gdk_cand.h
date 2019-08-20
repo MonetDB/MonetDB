@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* This macro initializes the variables start, end, cnt, cand, and
@@ -27,10 +27,8 @@
 					start = (s)->tseqbase;		\
 					end = start + BATcount(s);	\
 				} else {				\
-					oid x = (b)->hseqbase;		\
-					start = SORTfndfirst((s), &x);	\
-					x += BATcount(b);		\
-					end = SORTfndfirst((s), &x);	\
+					start = SORTfndfirst((s), &(b)->hseqbase); \
+					end = SORTfndfirst((s), &(oid){(b)->hseqbase+BATcount(b)}); \
 					cand = (const oid *) Tloc((s), start); \
 					candend = (const oid *) Tloc((s), end); \
 					if (cand == candend) {		\

@@ -1,5 +1,6 @@
 -- check all standard MonetDB sys (and tmp) tables on Primary Key uniqueness.
 -- All queries should return NO rows (so no duplicates found).
+
 SELECT COUNT(*) AS duplicates, id FROM sys.schemas GROUP BY id HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, table_type_id FROM sys.table_types GROUP BY table_type_id HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, id FROM sys._tables GROUP BY id HAVING COUNT(*) > 1;
@@ -36,6 +37,7 @@ SELECT COUNT(*) AS duplicates, id FROM sys.comments GROUP BY id HAVING COUNT(*) 
 
 SELECT COUNT(*) AS duplicates, dependency_type_id FROM sys.dependency_types GROUP BY dependency_type_id HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, id, depend_id FROM sys.dependencies GROUP BY id, depend_id HAVING COUNT(*) > 1;
+SELECT COUNT(*) AS duplicates, id FROM sys.ids GROUP BY id HAVING COUNT(*) > 1;
 
 SELECT COUNT(*) AS duplicates, id FROM sys.auths GROUP BY id HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, name FROM sys.users GROUP BY name HAVING COUNT(*) > 1;
@@ -59,12 +61,19 @@ SELECT COUNT(*) AS duplicates, "user", login, active FROM sys.sessions GROUP BY 
 SELECT COUNT(*) AS duplicates, column_id FROM sys.statistics GROUP BY column_id HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, rowid FROM sys.rejects GROUP BY rowid HAVING COUNT(*) > 1;
 
+SELECT COUNT(*) AS duplicates, schema FROM sys.schemastorage GROUP BY schema HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storage GROUP BY schema, table, column HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storagemodel GROUP BY schema, table, column HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storagemodelinput GROUP BY schema, table, column HAVING COUNT(*) > 1;
+SELECT COUNT(*) AS duplicates, schema, table FROM sys.tablestorage GROUP BY schema, table HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, schema, table FROM sys.tablestoragemodel GROUP BY schema, table HAVING COUNT(*) > 1;
+
+-- new tables introduced in 2019
+SELECT COUNT(*) AS duplicates, id FROM sys.table_partitions GROUP BY id HAVING COUNT(*) >1;
+SELECT COUNT(*) AS duplicates, table_id, partition_id, minimum FROM sys.range_partitions GROUP BY table_id, partition_id, minimum HAVING COUNT(*) >1;
+SELECT COUNT(*) AS duplicates, table_id, partition_id, "value" FROM sys.value_partitions GROUP BY table_id, partition_id, "value" HAVING COUNT(*) >1;
 
 --SELECT COUNT(*) AS duplicates, event FROM sys.tracelog GROUP BY event HAVING COUNT(*) > 1;  -- Error: Profiler not started
 
--- NOT included here are the 5 netcdf_* tables and GEOM table spatial_ref_sys as those aren't available on all platforms.
+-- NOT included here are the 5 netcdf_* tables and GEOM table spatial_ref_sys and bam schema tables as those aren't available on all platforms.
 

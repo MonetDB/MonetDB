@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 module alarm;
 
@@ -10,37 +10,18 @@ unsafe command alarm.sleep(secs:int):void
 address ALARMsleep
 comment "Sleep a few seconds";
 
-#command alarm.action(secs:int, action:str):void
-#address ALARMsetalarm
-#comment "Execute a MAL action after a few secs. NYI";
-
-#unsafe command alarm.timers() (time:bat[:str],action:bat[:str])
-#address ALARMtimers
-#comment "Give the list of all active timers. NYI";
-
 unsafe command alarm.usec() :lng
 address ALARMusec
-comment "Return time in microseconds.";
+comment "Return time since Jan 1, 1970 in microseconds.";
 
 unsafe command alarm.time() :int
 address ALARMtime
-comment "Return time in milliseconds.";
+comment "Return time since program start in milliseconds.";
 
 unsafe command alarm.epoch() :int
 address ALARMepoch
-comment "Return the current time as UNIX epoch.";
+comment "Return time since Jan 1, 1970 in seconds.";
 
 unsafe command alarm.ctime() :str
 address ALARMctime
 comment "Return the current time as a C-time string.";
-
-command alarm.prelude():void
-address ALARMprelude
-comment "Initialize alarm module.";
-
-command alarm.epilogue():void
-address ALARMepilogue
-comment "Finalize alarm module.";
-
-alarm.prelude();
-

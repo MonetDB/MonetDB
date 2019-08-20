@@ -18,7 +18,7 @@ WHERE qname IN (
     SELECT *
     FROM qnames_insct
 )
-ORDER BY qname, 1, flag, cigar;
+ORDER BY qname, 1, flag, cigar, pos;
 
 WITH qnames_insct AS (
     SELECT distinct qname
@@ -40,4 +40,4 @@ WHERE qname IN (
     SELECT *
     FROM qnames_insct
 )
-ORDER BY qname, 1, flag, cigar;
+ORDER BY qname, 1, flag, cigar, pos;

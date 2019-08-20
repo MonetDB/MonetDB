@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -62,8 +62,7 @@ sql_create_sequence(sql_sequence *seq )
 	s -> cur = seq->start; 	  
 	s -> cached = seq->start;
 
-	if (seq->base.flag == TR_OLD && 
-	    logger_funcs.get_sequence(seq->base.id, &id )) 
+	if (!isNew(seq) && logger_funcs.get_sequence(seq->base.id, &id ))
 		s->cached = id;
 	s -> cur = s->cached;
 	return s;

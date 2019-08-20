@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -500,7 +500,7 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		msg= OPTmacroImplementation(cntxt,mb,stk,p);
 	// similar to OPTmacro
 	if( msg) {
-		GDKfree(msg);
+		freeException(msg);
 		msg= MAL_SUCCEED;
 	}
 
@@ -510,7 +510,7 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	chkDeclarations(mb);
 	usec += GDKusec() - clk;
 	/* keep all actions taken as a post block comment */
-	snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","macro",usec);
+	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","macro",usec);
 	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
@@ -553,7 +553,7 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	usec += GDKusec() - clk;
 	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-	snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","orcam",usec);
+	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","orcam",usec);
 	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 	if (mb->errors)

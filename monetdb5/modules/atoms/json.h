@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef JSON_H
@@ -46,8 +46,8 @@ typedef str json;
 
 mal_export int TYPE_json;
 
-mal_export ssize_t JSONfromString(const char *src, size_t *len, json *x);
-mal_export ssize_t JSONtoString(str *s, size_t *len, const char *src);
+mal_export ssize_t JSONfromString(const char *src, size_t *len, json *x, bool external);
+mal_export ssize_t JSONtoString(str *s, size_t *len, const char *src, bool external);
 
 
 mal_export str JSONstr2json(json *ret, str *j);

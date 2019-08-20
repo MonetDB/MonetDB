@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef SQL_HASH_H
@@ -38,4 +38,4 @@ extern void hash_del(sql_hash *ht, int key, void *value);
 
 extern unsigned int hash_key(const char *n);
 
-#endif /* SQL_STACK_H */
+#endif /* SQL_HASH_H */

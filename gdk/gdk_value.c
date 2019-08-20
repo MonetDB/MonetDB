@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -74,17 +74,15 @@ VALset(ValPtr v, int t, ptr p)
 #endif
 	case TYPE_str:
 		v->val.sval = (str) p;
-		v->len = ATOMlen(t, p);
 		break;
 	case TYPE_ptr:
 		v->val.pval = *(ptr *) p;
-		v->len = ATOMlen(t, *(ptr *) p);
 		break;
 	default:
 		v->val.pval = p;
-		v->len = ATOMlen(t, p);
 		break;
 	}
+	v->len = ATOMlen(v->vtype, VALptr(v));
 	return v;
 }
 
@@ -163,6 +161,7 @@ VALcopy(ValPtr d, const ValRecord *s)
 			return NULL;
 		memcpy(d->val.pval, p, d->len);
 	}
+	d->len = ATOMlen(d->vtype, VALptr(d));
 	return d;
 }
 
@@ -219,13 +218,14 @@ VALinit(ValPtr d, int tpe, const void *s)
 		if (d->val.pval == NULL)
 			return NULL;
 		memcpy(d->val.pval, s, d->len);
-		break;
+		return d;
 	}
+	d->len = ATOMlen(d->vtype, VALptr(d));
 	return d;
 }
 
 /* Format the value in RES in the standard way for the type of RES
- * into a newly allocated buffer which is returned through BUF. */
+ * into a newly allocated buffer.  Also see ATOMformat. */
 char *
 VALformat(const ValRecord *res)
 {
@@ -234,7 +234,8 @@ VALformat(const ValRecord *res)
 
 /* Convert (cast) the value in T to the type TYP, do this in place.
  * Return a pointer to the converted value, or NULL if the conversion
- * didn't succeed.  Also see VARconvert. */
+ * didn't succeed.  If the conversion didn't succeed, the original
+ * value is not modified.  Also see VARconvert. */
 ptr
 VALconvert(int typ, ValPtr t)
 {
@@ -242,13 +243,6 @@ VALconvert(int typ, ValPtr t)
 	ValRecord dst;
 
 	dst.vtype = typ;
-	/* use base types for user types */
-	if (src_tpe > TYPE_str)
-		src_tpe = ATOMstorage(src_tpe);
-	if (dst.vtype > TYPE_str)
-		dst.vtype = ATOMstorage(dst.vtype);
-	else if (dst.vtype == TYPE_void)
-		dst.vtype = TYPE_oid;
 
 	/* first convert into a new location */
 	if (VARconvert(&dst, t, 0) != GDK_SUCCEED)

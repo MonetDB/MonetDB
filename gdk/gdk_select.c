@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -64,7 +64,7 @@ virtualize(BAT *bn)
 	return bn;
 }
 
-static BAT *
+BAT *
 doublerange(oid l1, oid h1, oid l2, oid h2)
 {
 	BAT *bn;
@@ -93,7 +93,7 @@ doublerange(oid l1, oid h1, oid l2, oid h2)
 	return bn;
 }
 
-static BAT *
+BAT *
 doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 {
 	BAT *bn;
@@ -194,7 +194,7 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 		assert(s->tsorted);
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
 			o = (oid) (i - l + seq);
-			if (SORTfnd(s, &o) != BUN_NONE) {
+			if (BATcandcontains(s, o)) {
 				buninsfix(bn, dst, cnt, o,
 					  maximum - BATcapacity(bn),
 					  maximum, NULL);
@@ -272,7 +272,7 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 	do {								\
 		BUN dcnt, icnt, limit, i, l, e;				\
 		cchdc_t *restrict d = (cchdc_t *) imprints->dict;	\
-		bte rpp    = ATOMelmshift(IMPS_PAGE >> b->tshift);	\
+		uint8_t rpp = ATOMelmshift(IMPS_PAGE >> b->tshift);	\
 		CAND;							\
 		for (i = 0, dcnt = 0, icnt = 0;				\
 		     dcnt < imprints->dictcnt && i + off < w + pr_off && p < q; \
@@ -329,7 +329,7 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 		/* the following does work, however */			\
 		mask = (((((uint##B##_t) 1 << hbin) - 1) << 1) | 1) - (((uint##B##_t) 1 << lbin) - 1); \
 		innermask = mask;					\
-		if (!b->tnonil || vl != minval)				\
+		if (vl != minval)					\
 			innermask = IMPSunsetBit(B, innermask, lbin);	\
 		if (vh != maxval)					\
 			innermask = IMPSunsetBit(B, innermask, hbin);	\
@@ -338,6 +338,9 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 			mask = ~innermask;				\
 			innermask = ~tmp;				\
 		}							\
+		/* if there are nils, we may need to check bin 0 */	\
+		if (!b->tnonil)						\
+			innermask = IMPSunsetBit(B, innermask, 0);	\
 									\
 		if (BATcapacity(bn) < maximum) {			\
 			impsloop(CAND, TEST,				\
@@ -1204,14 +1207,19 @@ BAT *
 BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	     bool li, bool hi, bool anti)
 {
-	bool hval, lval, equi, lnil, hash;
+	bool lval;		/* low value used for comparison */
+	bool lnil;		/* low value is nil */
+	bool hval;		/* high value used for comparison */
+	bool equi;		/* select for single value (not range) */
+	bool hash;		/* use hash (equi must be true) */
 	bool phash = false;	/* use hash on parent BAT (if view) */
-	int t;
-	bat parent;
+	int t;			/* data type */
+	bat parent;		/* b's parent bat (if b is a view) */
 	const void *nil;
 	BAT *bn, *tmp;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
 	oid vwl = 0, vwh = 0;
+	lng vwo = 0;
 	bool use_orderidx = false;
 	union {
 		bte v_bte;
@@ -1246,11 +1254,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		    (s->tseqbase >= b->hseqbase + BATcount(b) ||
 		     s->tseqbase + BATcount(s) <= b->hseqbase))))) {
 		/* trivially empty result */
+		bn = BATdense(0, 0, 0);
 		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",anti=%d): "
+				  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+				  " (" LLFMT " usec): "
 				  "trivially empty\n",
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti);
-		return BATdense(0, 0, 0);
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+				  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		return bn;
 	}
 
 	t = b->ttype;
@@ -1263,12 +1274,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		/* upper and lower bound of range are equal and we
 		 * want an interval that's open on at least one
 		 * side */
+		bn = BATdense(0, 0, 0);
 		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",li=%d,hi=%d,anti=%d): "
+				  ",s=" ALGOOPTBATFMT ",li=%d,hi=%d,anti=%d)=" ALGOOPTBATFMT
+				  " (" LLFMT " usec): "
 				  "empty interval\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-				  li, hi, anti);
-		return BATdense(0, 0, 0);
+				  li, hi, anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
+		return bn;
 	}
 
 	lval = !lnil || th == NULL;	 /* low value used for comparison */
@@ -1309,12 +1322,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			/* antiselect for nil-nil range: all non-nil
 			 * values are in range; we must return all
 			 * other non-nil values, i.e. nothing */
+			bn = BATdense(0, 0, 0);
 			ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
-					  ",s=" ALGOOPTBATFMT ",anti=%d): "
+					  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+					  " (" LLFMT " usec): "
 					  "anti: nil-nil range, nonil\n",
 					  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-					  anti);
-			return BATdense(0, 0, 0);
+					  anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
+			return bn;
 		} else if (equi && lnil) {
 			/* antiselect for nil value: turn into range
 			 * select for nil-nil range (i.e. everything
@@ -1362,35 +1377,111 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	if (hval && ((equi && !(li && hi)) || ATOMcmp(t, tl, th) > 0)) {
 		/* empty range */
+		bn = BATdense(0, 0, 0);
 		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",anti=%d): "
+				  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+				  " (" LLFMT " usec): "
 				  "empty range\n",
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti);
-		return BATdense(0, 0, 0);
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+				  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		return bn;
 	}
 	if (equi && lnil && b->tnonil) {
 		/* return all nils, but there aren't any */
+		bn = BATdense(0, 0, 0);
 		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",anti=%d): "
+				  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+				  " (" LLFMT " usec): "
 				  "equi-nil, nonil\n",
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti);
-		return BATdense(0, 0, 0);
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+				  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		return bn;
 	}
 
 	if (!equi && !lval && !hval && lnil && b->tnonil) {
 		/* return all non-nils from a BAT that doesn't have
 		 * any: i.e. return everything */
-		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",anti=%d): "
-				  "everything, nonil\n",
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti);
 		if (s) {
 			oid o = b->hseqbase + BATcount(b);
 			BUN q = SORTfndfirst(s, &o);
 			BUN p = SORTfndfirst(s, &b->hseqbase);
-			return BATslice(s, p, q);
+			bn = BATslice(s, p, q);
 		} else {
-			return BATdense(0, b->hseqbase, BATcount(b));
+			bn = BATdense(0, b->hseqbase, BATcount(b));
+		}
+		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
+				  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+				  " (" LLFMT " usec): "
+				  "everything, nonil\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+				  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		return bn;
+	}
+
+	if (anti) {
+		PROPrec *prop;
+		int c;
+
+		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
+			c = ATOMcmp(t, tl, VALptr(&prop->v));
+			if (c < 0 || (li && c == 0)) {
+				if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
+					c = ATOMcmp(t, th, VALptr(&prop->v));
+					if (c > 0 || (hi && c == 0)) {
+						/* tl..th range fully
+						 * inside MIN..MAX
+						 * range of values in
+						 * BAT, so nothing
+						 * left over for
+						 * anti */
+						bn = BATdense(0, 0, 0);
+						ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
+								  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+								  " (" LLFMT " usec): "
+								  "nothing, out of range\n",
+								  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
+						return bn;
+					}
+				}
+			}
+		}
+	} else if (!equi || !lnil) {
+		PROPrec *prop;
+		int c;
+
+		if (hval && (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
+			c = ATOMcmp(t, th, VALptr(&prop->v));
+			if (c < 0 || (!hi && c == 0)) {
+				/* smallest value in BAT larger than
+				 * what we're looking for */
+				bn = BATdense(0, 0, 0);
+				ALGODEBUG fprintf(stderr, "#BATselect(b="
+						  ALGOBATFMT ",s="
+						  ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+						  " (" LLFMT " usec): "
+						  "nothing, out of range\n",
+						  ALGOBATPAR(b),
+						  ALGOOPTBATPAR(s), anti,
+						  ALGOOPTBATPAR(bn), GDKusec() - t0);
+				return bn;
+			}
+		}
+		if (lval && (prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
+			c = ATOMcmp(t, tl, VALptr(&prop->v));
+			if (c > 0 || (!li && c == 0)) {
+				/* largest value in BAT smaller than
+				 * what we're looking for */
+				bn = BATdense(0, 0, 0);
+				ALGODEBUG fprintf(stderr, "#BATselect(b="
+						  ALGOBATFMT ",s="
+						  ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+						  " (" LLFMT " usec): "
+						  "nothing, out of range\n",
+						  ALGOBATPAR(b),
+						  ALGOOPTBATPAR(s), anti,
+						  ALGOOPTBATPAR(bn), GDKusec() - t0);
+				return bn;
+			}
 		}
 	}
 
@@ -1434,7 +1525,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	    (!s || (s && BATtdense(s)))    &&
 	    (BATcheckorderidx(b) ||
 	     (VIEWtparent(b) &&
-	      BATcheckorderidx(BBPquickdesc(VIEWtparent(b), 0))))) {
+	      BATcheckorderidx(BBPquickdesc(VIEWtparent(b), false))))) {
 		BAT *view = NULL;
 		if (VIEWtparent(b) && !BATcheckorderidx(b)) {
 			view = b;
@@ -1446,7 +1537,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < b->batCount/3) {
 			use_orderidx = true;
 			if (view) {
-				vwl = view->hseqbase;
+				vwo = (lng) ((view->theap.base - b->theap.base) >> b->tshift);
+				vwl = b->hseqbase + (oid) vwo;
+				vwo = (lng) view->hseqbase - (lng) b->hseqbase - vwo;
 				vwh = vwl + view->batCount;
 			} else {
 				vwl = b->hseqbase;
@@ -1457,6 +1550,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				b = view;
 			}
 		}
+		ALGODEBUG if (view && b != view) fprintf(stderr, "#BATselect: switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " off " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
 	}
 
 	if (BATordered(b) || BATordered_rev(b) || use_orderidx) {
@@ -1626,7 +1720,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 				for (i = low; i < high; i++) {
 					if (vwl <= *rs && *rs < vwh) {
-						*rbn++ = *rs;
+						*rbn++ = (oid) ((lng) *rs + vwo);
 						cnt++;
 					}
 					rs++;
@@ -1634,7 +1728,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				BATsetcount(bn, cnt);
 
 				/* output must be sorted */
-				GDKqsort(Tloc(bn, 0), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);
+				GDKqsort(Tloc(bn, 0), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid, false, false);
 				bn->tsorted = true;
 				bn->trevsorted = bn->batCount <= 1;
 				bn->tkey = true;
@@ -1662,11 +1756,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 
+		bn = virtualize(bn);
 		ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOOPTBATFMT
 				  " (" LLFMT " usec)\n",
 				  BATgetId(b), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
-		return virtualize(bn);
+		return bn;
 	}
 
 	/* upper limit for result size */
@@ -1724,7 +1819,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * persistent and the total size wouldn't be too large; check
 	 * for existence of hash last since that may involve I/O */
 	hash = equi &&
-		((b->batPersistence == PERSISTENT &&
+		((!b->batTransient &&
 		  ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2) ||
 		 BATcheckhash(b));
@@ -1737,7 +1832,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * hash chain (count divided by #slots) times the cost
 		 * to do a binary search on the candidate list (or 1
 		 * if no need for search)) */
-		tmp = BBPquickdesc(parent, 0);
+		tmp = BBPquickdesc(parent, false);
 		hash = phash = BATcheckhash(tmp) &&
 			(BATcount(tmp) == BATcount(b) ||
 			 BATcount(tmp) / ((size_t *) tmp->thash->heap.base)[5] * (s && !BATtdense(s) ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
@@ -1816,19 +1911,20 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 */
 		bool use_imprints = !equi &&
 			!b->tvarsized &&
-			(b->batPersistence == PERSISTENT ||
+			(!b->batTransient ||
 			 (parent != 0 &&
-			  (tmp = BBPquickdesc(parent, 0)) != NULL &&
-			  tmp->batPersistence == PERSISTENT));
+			  (tmp = BBPquickdesc(parent, false)) != NULL &&
+			  !tmp->batTransient));
 		bn = scanselect(b, s, bn, tl, th, li, hi, equi, anti,
 				lval, hval, lnil, maximum, use_imprints);
 	}
 
+	bn = virtualize(bn);
 	ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOOPTBATFMT
 			  " (" LLFMT " usec)\n",
 			  BATgetId(b), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
-	return virtualize(bn);
+	return bn;
 }
 
 /* theta select
@@ -1989,7 +2085,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 	ll = l->hseqbase;
 	lh = ll + l->batCount;
 	if ((!sl || (sl && BATtdense(sl))) &&
-	    (BATcheckorderidx(l) || (VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(VIEWtparent(l), 0))))) {
+	    (BATcheckorderidx(l) || (VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(VIEWtparent(l), false))))) {
 		use_orderidx = true;
 		if (VIEWtparent(l) && !BATcheckorderidx(l)) {
 			l = BBPdescriptor(VIEWtparent(l));
@@ -2155,10 +2251,10 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 		cnt = BATcount(r1);
 		assert(BATcount(r1) == BATcount(r2));
 	} else if ((BATcount(rl) > 2 ||
-		    l->batPersistence == PERSISTENT ||
+		    !l->batTransient ||
 		    (VIEWtparent(l) != 0 &&
-		     (tmp = BBPquickdesc(VIEWtparent(l), 0)) != NULL &&
-		     tmp->batPersistence == PERSISTENT) ||
+		     (tmp = BBPquickdesc(VIEWtparent(l), false)) != NULL &&
+		     !tmp->batTransient) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {
 		/* implementation using imprints on left column

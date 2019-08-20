@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -219,7 +219,7 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	10	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	7	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
@@ -230,37 +230,15 @@ mo_builtin_settings(opt **Set)
 			      "dbfarm" DIR_SEP_STR "demo");
 	i++;
 	set[i].kind = opt_builtin;
-	set[i].name = strdup("gdk_debug");
-	set[i].value = strdup("0");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("gdk_vmtrim");
-	/* default for gdk_vmtrim is
-	 * "yes" on 32 bit architectures and
-	 * "no"  on 64 bit architectures;
-	 * see also GDKinit() in gdk/gdk_utils.c */
-#if SIZEOF_VOID_P == 4
-	/* 32 bit architecture */
-	set[i].value = strdup("yes");
-#else
-	/* 64 bit architecture */
-	set[i].value = strdup("no");
-#endif
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("monet_prompt");
-	set[i].value = strdup(">");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("monet_daemon");
-	set[i].value = strdup("no");
-	i++;
-	set[i].kind = opt_builtin;
 	set[i].name = strdup("mapi_port");
 	set[i].value = strdup("50000");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("mapi_open");
+	set[i].value = strdup("false");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("mapi_ipv6");
 	set[i].value = strdup("false");
 	i++;
 	set[i].kind = opt_builtin;

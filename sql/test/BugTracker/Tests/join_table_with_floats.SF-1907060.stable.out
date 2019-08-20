@@ -15,7 +15,6 @@ stdout of test 'join_table_with_floats.SF-1907060` in directory 'sql/test/BugTra
 # Listening for connection requests on mapi:monetdb://amelia.ins.cwi.nl:30709/
 # MonetDB/SQL module v2.22.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

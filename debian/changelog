@@ -1,3 +1,851 @@
+monetdb (11.33.7) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Wed, 07 Aug 2019 13:35:13 +0200
+
+monetdb (11.33.5) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6697: Duplicate expressions not eliminated with long CASE statement
+  * BZ#6701: When changing the schema name of a table, referencing rows
+    from sys.columns, sys.keys and more tables are not removed
+  * BZ#6703: SQL optimizer enters loop and goes into stack overflow
+  * BZ#6706: prepare doesn't recognize merge statement
+  * BZ#6712: Where clause with cast ignores sub-select
+  * BZ#6713: COPY INTO FROM 'file.xz' does not work
+  * BZ#6714: Assertion failure in rel_select.c for correlated subquery in
+    aggregation query (with group by and having and order by and limit)
+  * BZ#6715: Assertion failure in rel_bin.c for MERGE INTO command
+  * BZ#6716: COPY INTO does not load UTF8 encoded text
+  * BZ#6718: Can't copy table into another table with constraints
+    (mkey.bulk_rotate_xor_hash)
+  * BZ#6720: Compilation issues on gcc 9.1.1 [-Werror=stringop-truncation]
+  * BZ#6721: Possibly incorrect call to pcre_exec
+  * BZ#6725: Prepare statement on non-existing function crashes
+  * BZ#6728: SELECT DISTINCT not removing duplicates
+  * BZ#6729: Creating a table with duplicate column name should not
+    be possible
+  * BZ#6730: sys.stop or sys.pause a INSERT query triggers "BATproject:
+    does not match always"
+  * BZ#6736: Unexpected query result with merge tables and view after
+    upgrade
+  * BZ#6738: issue with window functions and hugeint type coercion
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Thu, 01 Aug 2019 11:56:38 +0200
+
+monetdb (11.33.5) unstable; urgency=low
+
+  * gdk: We now look at the limits imposed by cgroups and the setrlimit system
+    call to initialize some internal values related to how much (virtual)
+    memory we think is available.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 15 Jul 2019 11:56:38 +0200
+
+monetdb (11.33.5) unstable; urgency=low
+
+  * buildtools: Removed restriction on using combinations of --enable-assert,
+    --enable-debug,  and --enable-optimize.  --enable-debug adds a -g (or
+    -even -g3) option, --enable-debug=gdb adds a -ggdb3 flag (for GCC);
+    --enable-optimize adds a bunch of optimization flags; --disable-debug
+    (or --enable-debug=no) removes any -g flags; --disable-optimize
+    removes any -O flags; --enable-optimize=auto leaves the optimization
+    flags untouched.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 12 Jul 2019 11:56:38 +0200
+
+monetdb (11.33.5) unstable; urgency=low
+
+  * sql: Changed the internal representation of RANGE MINVALUE and RANGE MAXVALUE
+    in MERGE TABLE partitions.  Before, the limits were represented by
+    the smallest and largest value of the domain of the column, now these
+    are represented by a NULL value.  This has the added benefit that if
+    you use TO RANGE MAXVALUE, the largest value of the domain is included
+    in the partition (before it wasn't).  Also, these new limits now work
+    for any ordered type, so including VARCHAR.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 7 Jun 2019 11:56:38 +0200
+
+monetdb (11.33.3) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6647: Add suport to Python 3 on Windows
+  * BZ#6696: Re-use of MAL explain plans with complex type coercions
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 26 Apr 2019 15:11:15 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#2403: stream: http read support in streams
+  * BZ#2416: GDK: file/dir creation mask
+  * BZ#2478: SQL: rename columns
+  * BZ#2496: SQL: implement greatest / least
+  * BZ#3384: Auxiliary window functions
+  * BZ#3416: log() SQL function only supports natural logarithm
+  * BZ#3448: Make lbatomic_ops optional if installed
+  * BZ#3520: Add support for scalar function LN(num)
+  * BZ#3530: sigabort on window aggr function
+  * BZ#3567: Add support for: ALTER TABLE [schema1.]oldtablename RENAME [TO]
+    [schema2.]newtablename
+  * BZ#3743: DELETE FROM merge table not supported.
+  * BZ#3832: Cannot use expressions in GROUP BY clause
+  * BZ#3946: Expose C log2 function to SQL
+  * BZ#4056: mapi_timeout is not implemented
+  * BZ#6181: comments cause error with return in function
+  * BZ#6326: Eliminate unused UNION tables
+  * BZ#6347: Mserver returns with "memory exhausted in" error if query
+    size exceeds 2.5MB
+  * BZ#6402: JDBC: Support for Connection.prepareCall
+  * BZ#6475: Remove unused SQL global variable "history"
+  * BZ#6588: Table aliasing are not supported in SQL update queries
+  * BZ#6591: Name mangling in the SQL catalog results in ambiguity
+  * BZ#6608: Sqlitelogictest error message in group by with coalesce
+  * BZ#6609: Rename Schema in MonetDB
+  * BZ#6636: sys.queue() extension: allow DBA to see all running queries
+  * BZ#6671: Error when running user function on merge table with remote
+    part
+  * BZ#6674: R UDF with Date type fails to convert RAPI
+  * BZ#6676: Max data length of 2048 for column sys._tables.query is too
+    small for the actual data (2811 for view sys.ids)
+  * BZ#6678: Binding NULL parameter to parametrized query results in syntax
+    error on execution
+  * BZ#6680: Copy cannot open CSV file if systemctl enabled
+  * BZ#6684: Inserting into a replica table crashes the server
+  * BZ#6685: adding a view to a merge table gives unexpected behaviour
+  * BZ#6690: Unable to fetch empty string with ODBC driver
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 05 Apr 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * merovingian: Added a new database property named `profilerbeatfreq`. Its value,
+    <freq>, should be an integer and, if it is set the command
+    `profilerstart` will call stethoscope with this value as the
+    argument to -b. This will instruct stethoscope to collect heartbeat
+    events from the MonetDB server every <freq> milliseconds. Please note
+    that no type checking is done, and if
+    <freq> is not an integer, stethoscope will silently ignore it.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Tue, 19 Mar 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * buildtools: We now use the C11 atomic operations if available, although
+    libatomic_ops is still used if present and not disabled on the configure
+    command line.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 19 Mar 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * gdk: During processing, we now try to maintain the smallest and largest
+    values that occur in a BAT.  This information is not saved across
+    server restarts.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 19 Mar 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * selinux: There is one tunable parameter, mserver5_can_read_home, which can
+    be set using "setsebool -P mserver5_can_read_home=true" to allow an
+    mserver5 process started by monetdbd under the control of systemd to
+    read files in users' home directories.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 19 Mar 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * monetdb5: Changed the way blobs are ordered.  Before, shorter blobs came before
+    longer, now the contents is compared first.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 8 Feb 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: Implemented two-argument least/greatest functions.  If one argument
+    is NULL, the functions return the other value, otherwise they return
+    the least/greatest of the two arguments.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 28 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: Implemented SQL2003 natural logarithm function: ln(num_expr).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 24 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * monetdb5: Removed function blob.tostring() since it cannot guarantee that the
+    resulting string is properly encoded in UTF-8.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 23 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: Function octet_length now also accepts a BLOB argument and returns
+    the length of the BLOB (i.e. the same as length when called with a
+    BLOB argument).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 23 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * monetdb5: Removed the type "sqlblob", changed the external format of the type
+    "blob" to be like what "sqlblob" used to be.  In other words, the
+    "blob" type is now SQL-compatible.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 22 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: Implemented length(blob) and comparison between blobs.
+  * sql: Implemented a two argument function log which calculates the logarithm
+    of the first argument using the second argument as base.
+  * sql: Next to the functions log (natural logarithm) and log10 (base 10
+    logarithm), there is now also log2 (base 2 logarithm).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 22 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: Removed unused global SQL variable "history".
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 18 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: Allow usage of custom expressions in GROUP BY and PARTITION BY
+    clauses. The same expressions can be used in the projection phase as
+    long as it is exactly the same used in the grouping clause (textual
+    lookup is performed). As an example the query:
+    SELECT col1*2 FROM t1 GROUP BY col1*2; is correct, while
+    SELECT sin(col1+5) FROM t1 GROUP BY col1*2; is wrong.
+  * sql: Allow usage of WITH clauses in insert, update, delete and merge
+    statements.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: Implemented merge statements from SQL:2003 standard. Using a source
+    relation R, a target table T is updating depending on the result of
+    the merge. In case of a match, the table T's row is either updated
+    or deleted with R's row. In a non-match case, R's row is inserted
+    into T. The grammar is the follows:
+    > MERGE INTO target [ [AS] ident ] USING source ON search_condition
+    { WHEN MATCHED [ AND search_condition ] THEN
+      { UPDATE SET assignment_list | DELETE } } |
+    { WHEN NOT MATCHED [ AND search_condition ] THEN
+      INSERT [ column_list ] [ { DEFAULT VALUES | VALUES row_values } ] }
+  * sql: Added possibility to change the schema of a table with the syntax:
+    > ALTER TABLE [ IF EXISTS ] qname SET SCHEMA ident
+  * sql: Added optional alias option for target table in update and delete
+    statements: (e.g. UPDATE target AS alias SET col1=1 WHERE alias.col2 < 5)
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: Improved and extended storagemodel functionality. Changes include:
+  * sql: Added views sys."tablestorage" and sys."schemastorage" for easy and
+    quick assesment of aggregated storage usage per table or per schema.
+  * sql: Excluded listing system tables in views sys."storage", sys."tablestorage"
+    and sys."schemastorage". You can still use sys."storage"() to query
+    storage of system tables and columns.
+  * sql: In procedure sys.storagemodelinit() when populating table
+    sys.storagemodelinput it now excludes system tables as system tables are
+    not useful to be modeled for storagesize by application users.
+    It now also computes and populates the atomwidth column more correctly
+    for variable size data types (strings, blobs) when the table has
+    representative data in those columns.
+  * sql: System function sys.columnsize() has been corrected for types: tinyint,
+    real, date, time, timetz, sec_interval, month_interval, decimal, uuid,
+    mbr, char, clob, json, url, blob, geometry and geometrya.
+    For variable size data types (varchar, char, clob, json, url, blob,
+    geometry, geometrya) it now returns the columnsize excluding the
+    variable heapsize. The heapsize is retrievable via sys.heapsize().
+  * sql: System function sys.heapsize() has been corrected for all variable size
+    data types: varchar, char, clob, json, url, blob, geometry and geometrya.
+  * sql: System function sys.imprintsize() has been corrected. The imprintsize
+    depends on the width (1 or 2 or 4 or 8 or 16 bytes) of the data type.
+    Also instead of 12% it now uses 20%, which is a better estimate.
+  * sql: System function sys.storagemodel() has been removed as it outputs the
+    same data as view sys.storagemodel. Use view sys.storagemodel instead.
+  * sql: Corrected views sys.storagemodel and sys.tablestoragemodel by returning
+    a computed orderidxsize when the count has been changed in the
+    sys.storagemodelinput table.  Also the views now return data ordered
+    by schema, table and column names.
+  * sql: Extended view sys.tablestoragemodel with column: "storages". Besides
+    columns also keys (primary, foreign and unique keys) and indexes
+    (ordered, imprints) use storage, so the "storages" count can be higher
+    than the number of columns per table.
+  * sql: Corrected the data type of columns "schema", "table", "column", "type",
+    "mode" and location in table sys.storagemodelinput and functions
+    sys."storage"(), sys."storage"(sname), sys."storage"(sname, tname)
+    and sys."storage"(sname, tname, cname) from string into varchar(1024).
+    Consequently also the views based on the table or functions will be
+    reporting varchar(1024) as column meta data instead of clob for those
+    columns.  This allows faster querying and reporting by generic SQL
+    programs which treat clob querying different from varchar columns.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: Extended windowing functions catalog with SQL standard semantics.
+    Standard aggregation functions can now be used in windowing
+    functions: (avg,max,min,sum,prod,count). Other windowing specific
+    functions were also implemented: (percent_rank,cume_dist,ntile,
+    lag,lead,first_value,last_value,nth_value).
+  * sql: The standard frame specification was implemented for aggregation
+    functions as well as first_value, last_value and nth_value
+    functions. The available frames are rows, range and groups.
+    Bounds can be unbounded (partition limit), the current row, a fixed
+    number of rows (constant), or variable (column as input).
+    (e.g SELECT COUNT(col1) OVER (PARTITION BY col2 ORDER BY col3 RANGE
+    BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM t1;).
+  * sql: Added WINDOW keyword which is optionally provided after the FROM
+    clause, with window specifications used in the projection
+    (e.g SELECT SUM(col1) OVER w1, LAST_VALUE(col2) OVER w2 FROM t1
+    WINDOW w1 AS (ROWS BETWEEN 5 PRECEDING AND 0 FOLLOWING),
+    w2 AS (w1);).
+  * sql: Our previous partitioning implementation didn’t impose order in the
+    input. With this reexamination, partitioning now imposes ascending
+    order by default, thus pairing with the industry standard
+    implementation.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: Implemented X'...' style binary string literals.
+  * sql: Implemented U&'...' Unicode character string literals and
+    U&"..." Unicode delimited identifiers, including UESCAPE.  For the
+    string literals, you can have U&'...' '...' '...' UESCAPE '...' where
+    the escape must be as single character and the other '...' strings
+    are also Unicode character string literals.  For now, these latter
+    strings also undergo C-style backslash interpretation.
+  * sql: Implemented PostgreSQL-like E'...' strings.  The strings can contain
+    C-style backslash escapes.  The old format strings '...' currently
+    still also accept C-style escapes, but that feature will be removed
+    in a future release.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * gdk: Added an extra argument of type `bool' to the atom to string and
+    string to atom methods to indicate whether the string is for
+    internal use (casting the value to or from a string) of external use
+    (to be printed).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * monetdb5: The MAL functions algebra.sort and algebra.firstn now have a new,
+    extra second-to-last argument, nilslast:bit, which indicates where
+    NIL values are to be sorted: at the beginning, or at the end.  The old
+    behavior is when for algebra.sort, the value of nilslast is equal to
+    the value or the reverse:bit parameter, for algebra.firstn when the
+    value of nilslast is opposite to the value of the asc:bit parameter.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: Implemented the NULLS FIRST and NULLS LAST option to ORDER BY.  The
+    default is NULLS FIRST for ASC(ending) and NULLS LAST for DESC(ending).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * gdk: Implemented a nilslast option for BATfirstn.  If set, NILs come
+    last in the ordering that BATfirstn simulates, so non-NIL values are
+    preferentially returned.  The old behavior can be obtained by setting
+    nilslast to !asc(ending).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * gdk: Implemented a nilslast option for BATsort.  This option should be
+    equal to the reverse option for stable sort (it is not implemented for
+    stable sort), but can be different from reverse for non-stable sort.
+    The functions BATsort and GDKqsort have extra parameters, the function
+    GDKqsort_rev has been removed (superseded by GDKqsort with the new
+    `reverse' parameter).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * gdk: The BUNtail, BUNtvar, BUNtloc, and BUNtpos macros (and Tloc and Tpos)
+    now return a `void *' instead of a `char *'.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: Added possibility to rename SQL schemas, tables and columns with ALTER
+    statements:
+    > ALTER SCHEMA [ IF EXISTS ] ident RENAME TO ident
+    > ALTER TABLE [ IF EXISTS ] qname RENAME TO ident
+    > ALTER TABLE [ IF EXISTS ] qname RENAME [ COLUMN ] ident TO ident
+    Also added optional IF EXISTS clause to other existing ALTER TABLE
+    statements.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * clients: The mclient program can now be quit by typing quit or exit on the
+    command-line.  This makes it easier for novice users to quit the program
+    if they do not know that the standard command to quit is \q.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: The sql SAMPLE syntax is extended to include an optional integral SEED
+    parameter that sets the seed for the internal random number generator
+    in the sample algorithm.  When the seed is set, the user can obtain
+    a reproducible sample set from a static dataset with the same sample
+    query. The new syntax is
+    SELECT ... FROM ... WHERE ... SAMPLE <expr> [SEED <integer>]
+
+ -- Aris Koning <aris.koning@monetdbsolutions.com>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: Implemented a version of COPY INTO that reads/writes files from/to
+    the client instead of doing it in the server.  This has the
+    advantage that COPY INTO is then no longer restricted to only the
+    "super user" monetdb, nor only to absolute file names.  The syntax
+    to have the server communicate with the client for file content is
+    COPY INTO table FROM file ON CLIENT ...; and COPY query INTO file ON
+    CLIENT ...;.  This also works for COPY BINARY INTO.  There is also
+    the possibility to specify that files are to be read/written by the
+    server by using ON SERVER.  This is also the default when ON CLIENT
+    or ON SERVER is not specified.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * stream: The functions mnstr_write{Sht,Int,Lng,Hge} and their Array variants
+    now swap bytes of the written values if the stream is set to swap bytes
+    (i.e. big-endian on a little-endian machine and v.v.).
+  * stream: Removed defines ST_ASCII, ST_BIN, ST_READ, ST_WRITE from stream.h.
+  * stream: Changed function mnstr_set_byteorder(stream, char) to
+    mnstr_set_bigendian(stream, bool) where the second argument should
+    be `true' for specifying that the stream is bigendian.  This sets an
+    internal flag whether or not to swap bytes which can be retrieved
+    with mnstr_get_swapbytes(stream).
+  * stream: Changed function `int mnstr_byteorder(stream)' to `bool
+    mnstr_get_swapbytes(stream)'; it now returns whether bytes are
+    swapped.
+  * stream: Changed function `int mnstr_type(stream)' to `bool
+    mnstr_isbinary(stream)'.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * mapilib: Removed function mapi_cache_shuffle.
+  * mapilib: Removed function mapi_stream_query.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * buildtools: We now also build the Python 3 integration packages for Fedora, Debian,
+    Ubuntu, and Windows (not for Debian 8, Ubuntu 14.04, or EPEL 6 and 7
+    which are too old).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * gdk: Function PROPdestroy now takes a BAT* parameter.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * gdk: A whole bunch of functions now take a bool argument instead of an
+    int argument.  Some functions now return a bool instead of an int.
+    In all these cases, the int was used as a Boolean value.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: The sys.functions table now has an extra column called "system" of
+    type BOOLEAN whose value is TRUE for system functions (i.e. functions
+    that should not be dumped).  The table sys.systemfunctions has been
+    changed to a view and is now officially deprecated.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.33.1) unstable; urgency=low
+
+  * sql: Extended merge tables with partitioning using a predicate:
+    > CREATE MERGE TABLE [ IF NOT EXISTS ] table_name (... columns ...)
+    [ PARTITION BY { RANGE | VALUES }
+    { ON '(' column_name ')' | USING '(' expression ')' } ]
+    The partitioning can occur by range or list of values using one of
+    the table's columns or an expression. The domain of the partitioning
+    scheme will be covered by each child table added with alter statements
+    depending if the table is partitioned by range or list of values:
+    > ALTER TABLE merge_table_name { ADD | SET } TABLE child_table_name
+    AS PARTITION IN '(' expression [ ',' ... ] ')' [ WITH NULL ]
+    > ALTER TABLE merge_table_name { ADD | SET } TABLE child_table_name
+    AS PARTITION BETWEEN { RANGE MINVALUE | expression } AND
+    { RANGE MAXVALUE | expression } [ WITH NULL ]
+    > ALTER TABLE merge_table_name { ADD | SET } TABLE child_table_name
+    AS PARTITION WITH NULL
+    When updating a single partition range/list of values, the SET
+    keyword should be used instead of ADD.
+    INSERT, UPDATE and DELETE statements are possible on partitioned
+    tables with corresponding validation on each partition domain.
+    The system tables sys.table_partitions, sys.range_partitions and
+    sys.value_partitions were added to store meta-information about
+    each existing partition.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Fri, 4 Jan 2019 15:26:55 +0200
+
+monetdb (11.31.13) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6643: schema name qualifier in create global temporary table
+    json.table6643 ... is not honered
+  * BZ#6645: optimizer treats all the functions with no or constant
+    parameters as constant
+  * BZ#6650: PREPARE SQL statement fails to compile user defined functions
+    with parameter/s
+  * BZ#6651: Multi-column IN clause for subquery produces wrong results
+  * BZ#6653: CREATE TABLE accepts empty table/column name
+  * BZ#6654: Incorrect handling of 'TRUE' in compound select
+  * BZ#6657: Restart sequence with a non atomic sub-query cardinality
+    gives wrong error message
+  * BZ#6660: GRANTing a ROLE is not idempotent
+  * BZ#6662: Concurrency Conflicts Exception string "!transaction is
+    aborted because of concurrency conflicts, will ROLLBACK instead" not
+    shown on prompt.
+  * BZ#6664: mserver5 crash: infinite recursive happens at rel_bin.c:489
+  * BZ#6665: Creation of serial types does not accept negative numbers
+  * BZ#6666: COPY INTO from .. LOCKED doubles input data
+  * BZ#6668: The SAMPLE key word doesn't work in a subquery.
+  * BZ#6669: COPY [xxx RECORDS] INTO foo FROM STDIN ... doesn't work
+    without specifying nr of to be copied records
+  * BZ#6672: SQLGetData with SQL_C_WCHAR string truncation and invalid
+    StrLen_or_Ind value
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 04 Jan 2019 10:34:42 +0100
+
+monetdb (11.31.13) unstable; urgency=low
+
+  * sql: Disabled function sys.getcontent(url).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 30 Oct 2018 10:34:42 +0100
+
+monetdb (11.31.13) unstable; urgency=low
+
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 11 Oct 2018 10:34:42 +0100
+
+monetdb (11.31.11) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6648: key property potentially wrong after type conversion
+  * BZ#6649: Projection inside within transaction gives wrong results
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 11 Oct 2018 09:48:25 +0200
+
+monetdb (11.31.11) unstable; urgency=low
+
+  * MonetDB: Some subtle dependencies between RPMs have been fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 10 Oct 2018 09:48:25 +0200
+
+monetdb (11.31.9) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6640: timestamp_to_str returning incorrectly adjusted results
+  * BZ#6641: race condition in SQL UDF with update
+  * BZ#6642: Hanging query
+  * BZ#6646: Example SQLcopyinto.java does not work
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 05 Oct 2018 09:50:02 +0200
+
+monetdb (11.31.9) unstable; urgency=low
+
+  * buildtools: On Ubuntu 18.10 (Cosmic Cuttlefish), the libmonetdb5-server-bam package
+    cannot be built because of an incompatibility in the libbam library
+    (it cannot be used in a shared object).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 3 Oct 2018 09:50:02 +0200
+
+monetdb (11.31.7) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 29 Aug 2018 13:19:10 +0200
+
+monetdb (11.31.5) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6506: Improper performance counters
+  * BZ#6606: Misleading parameter name in generate_series function
+  * BZ#6639: COMMENT ON TABLE abc IS NULL invalidly sets the remark column
+    to null where remark column is defined as NOT NULLable
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 29 Aug 2018 09:22:10 +0200
+
+monetdb (11.31.5) unstable; urgency=low
+
+  * buildtools: Build the MonetDB-cfitsio RPM and libmonetdb5-server-cfitsio
+    Debian/Ubuntu package.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 28 Aug 2018 09:22:10 +0200
+
+monetdb (11.31.5) unstable; urgency=low
+
+  * merovingian: Added a "logrotate" configuration file.  See /etc/logrotate.d/monetdbd.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 27 Aug 2018 09:22:10 +0200
+
+monetdb (11.31.3) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 21 Aug 2018 09:59:19 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#4020: Importing timestamp with zone from copy into
+  * BZ#6564: Changes to the Remote Table definition
+  * BZ#6575: Sqlitelogictest crash on groupby query with coalesce call
+  * BZ#6579: Sqlitelogic test infinite loop while compiling SQL query
+  * BZ#6586: Sqlitelogictest crash on complex aggregation query
+  * BZ#6593: Poor performance with like operator and escape clause
+  * BZ#6596: Multicolumn aggregation very slow after ANALYZE when persistent
+    hashes are enabled
+  * BZ#6605: Sqlitelogictest set queries with wrong results
+  * BZ#6610: Sqlitelogictest algebra.rangejoin undefined
+  * BZ#6611: Cannot compile with GCC 8.1 and --enable-debug=no
+  * BZ#6612: Implement BLOB handling in python UDFs
+  * BZ#6614: JDBC 2.35/2.36 throws NullPointerException on getObject(int i)
+    on Timestamp column
+  * BZ#6615: JDBC 2.35 returns "false" for Boolean NULL
+  * BZ#6616: JDBC 2.35 returns minint (-2147483648) for int NULL
+  * BZ#6618: dependency column on sequence violated by DROP SEQUENCE
+  * BZ#6621: SELECT FROM REMOTE TABLE WHERE <> returns wrong results
+  * BZ#6624: "Cannot use non GROUP BY column in query results without an
+    aggregate function" when using aggregate function in both HAVING and
+    ORDER BY clauses.
+  * BZ#6625: OR in subselect causes the server to crash with segmentation
+    fault
+  * BZ#6627: stddev_pop inconsistent behaviour
+  * BZ#6628: User cannot insert into own local temporary table
+  * BZ#6629: CREATE TABLE IF NOT EXISTS returns 42000!
+  * BZ#6630: Sqlitelogictest cast NULL to integer failing
+  * BZ#6632: Dataflow causes crash when THRnew fails
+  * BZ#6633: ILIKE clauses don't work on certain characters
+  * BZ#6635: monetdbd exits due to "Too many open files" error
+  * BZ#6637: Within a transaction, d after an error causes mclient to exit
+  * BZ#6638: (sequences of) mkey.bulk_rotate_xor_hash() can generate NIL
+    from non-NIL making multi-col joins return wrong results
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 15 Aug 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * clients: ODBC SQLGetInfo now returns a positive numeric value for InfoTypes:
+    SQL_MAX_COLUMN_NAME_LEN, SQL_MAX_DRIVER_CONNECTIONS,
+    SQL_MAX_IDENTIFIER_LEN, SQL_MAX_PROCEDURE_NAME_LEN,
+    SQL_MAX_SCHEMA_NAME_LEN, SQL_MAX_TABLE_NAME_LEN and
+    SQL_MAX_USER_NAME_LEN.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Thu, 2 Aug 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * gdk: Hash indexes are now persistent across server restarts.
+  * gdk: The macros bunfastapp and tfastins and variants no longer set the dirty
+    flag of the heap they write to.  This now needs to be done separately
+    (and preferably outside of the inner loop).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 30 Jul 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * gdk: Removed batDirty flag from BAT record.  Its function is completely
+    superseded by batDirtydesc and the dirty flags on the various heaps.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 27 Jul 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * clients: ODBC: Implemented SQL_ATTR_QUERY_TIMEOUT parameter in SQLSetStmtAttr.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 24 Jul 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * gdk: Removed "masksize" argument of function BAThash.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 24 Jul 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * sql: Removed deprecated table producing system functions:
+    sys.dependencies_columns_on_functions()
+    sys.dependencies_columns_on_indexes()
+    sys.dependencies_columns_on_keys()
+    sys.dependencies_columns_on_triggers()
+    sys.dependencies_columns_on_views()
+    sys.dependencies_functions_on_functions()
+    sys.dependencies_functions_on_triggers()
+    sys.dependencies_keys_on_foreignkeys()
+    sys.dependencies_owners_on_schemas()
+    sys.dependencies_schemas_on_users()
+    sys.dependencies_tables_on_foreignkeys()
+    sys.dependencies_tables_on_functions()
+    sys.dependencies_tables_on_indexes()
+    sys.dependencies_tables_on_triggers()
+    sys.dependencies_tables_on_views()
+    sys.dependencies_views_on_functions()
+    sys.dependencies_views_on_triggers()
+    They are replaced by new system dependency_* views:
+    sys.dependency_args_on_types
+    sys.dependency_columns_on_functions
+    sys.dependency_columns_on_indexes
+    sys.dependency_columns_on_keys
+    sys.dependency_columns_on_procedures
+    sys.dependency_columns_on_triggers
+    sys.dependency_columns_on_types
+    sys.dependency_columns_on_views
+    sys.dependency_functions_on_functions
+    sys.dependency_functions_on_procedures
+    sys.dependency_functions_on_triggers
+    sys.dependency_functions_on_types
+    sys.dependency_functions_on_views
+    sys.dependency_keys_on_foreignkeys
+    sys.dependency_owners_on_schemas
+    sys.dependency_schemas_on_users
+    sys.dependency_tables_on_foreignkeys
+    sys.dependency_tables_on_functions
+    sys.dependency_tables_on_indexes
+    sys.dependency_tables_on_procedures
+    sys.dependency_tables_on_triggers
+    sys.dependency_tables_on_views
+    sys.dependency_views_on_functions
+    sys.dependency_views_on_procedures
+    sys.dependency_views_on_views
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Thu, 7 Jun 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * gdk: A whole bunch of functions that took an int argument that was used as a
+    Boolean (true/false) value now take a value of type bool.  The functions
+    BATkeyed, BATordered and BATordered_rev now return a bool instead of
+    an int.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 31 May 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * monetdb5: The lsst module was moved to a separate repository
+    (https://dev.monetdb.org/hg/MonetDB-lsst/).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 31 May 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * clients: Added a '-f rowcount' option in mclient to repress printing the actual
+    data of a resultset, but only print the number of returned tuples
+
+ -- Ying Zhang <y.zhang@cwi.nl>  Thu, 31 May 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * buildtools: On Windows, the separate MonetDB5-Geom installer has been incorporated
+    into the main MonetDB5-SQL installer and is therefore no longer
+    available as a separate download.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 31 May 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * merovingian: Changed the monetdb profilerstart command to be more robust.  If the
+    server or stethoscope crashed before, the pid file is still there,
+    so the next time we try to start stethoscope, it will fail.  Now the
+    profilerstart command will check if a stethoscope process with the
+    recorded pid is running. If not, we start stethoscope, assuming that
+    something went wrong before.
+  * merovingian: Changed the monetdb stop command to try to stop stethoscope before
+    stoping the server. The error conditions that can arrise from attempting
+    to stop stethoscope are:
+    - The database is not running.
+    - The profilerlogpath is not set.
+    - The profiler.pid file does not exist or is inaccessible.
+    - The contents of the profiler.pid are not valid.
+    - Shutdown of stethoscope did not succeed.
+    - Removing the profiler.pid file failed.
+    In all the cases, the attempt to stop the server can continue normally,
+    so we actually ignore any errors that rise from the attempt to stop
+    stethoscope.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Thu, 31 May 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * testing: Removed helper programs Mtimeout and MkillUsers: they have long been
+    superseded by timeout handling by Mtest.py itself.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 31 May 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * gdk: Removed the tdense property: it's function is completely replaced by
+    whether or not tseqbase is equal to oid_nil.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 31 May 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * sql: Implemented group_concat(X,Y) aggregate function which also
+    concatenates a column of strings X, but using a supplied string Y as
+    the separator. This function is also a SQL extension.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Thu, 31 May 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * sql: Implemented group_concat(X) aggregate function which concatenates a
+    column of strings using a comma as a separator. This function is not
+    featured in the SQL standard.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Thu, 31 May 2018 10:52:45 +0200
+
+monetdb (11.31.1) unstable; urgency=low
+
+  * stream: Added support for lz4 compressed files in the stream library
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Thu, 31 May 2018 10:52:45 +0200
+
 monetdb (11.29.7) unstable; urgency=low
 
   * Rebuilt.

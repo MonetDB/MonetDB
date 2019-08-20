@@ -2,22 +2,10 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 module batsql;
 module sql;
-
-pattern start():void 
-address SQLsession
-comment "Switch to processing SQL statements";
-
-pattern start2():void
-address SQLsession2
-comment "Switch to processing precompiled sql statements";
-
-pattern init():void
-address SQLinitEnvironment
-comment "Initialize the environment for MAL";
 
 pattern shutdown(delay:bte, force:bit):str
 address SQLshutdown_wrap;
@@ -51,7 +39,6 @@ pattern abort()
 address SQLabort
 comment "Trigger the abort operation for a MAL block";
 
-
 pattern eval(cmd:str):void 
 address SQLstatement
 comment "Compile and execute a single sql statement";
@@ -73,19 +60,7 @@ comment "Compile the relational statement (rel_smt) and register it as mal funct
 
 command flush_log( ) :void
 address SQLflush_log
-comment "flush the WAL log now";
-
-command resume_log_flushing( ) :void
-address SQLresume_log_flushing
-comment "Resume WAL log flushing";
-
-command suspend_log_flushing( ) :void
-address SQLsuspend_log_flushing
-comment "Suspend WAL log flushing";
-
-command hot_snapshot(dir:str) :void
-address SQLhot_snapshot
-comment "Create a hot snapshot in the given directory";
+comment "flush the log now";
 
 pattern assert(b:bit,msg:str):void
 address SQLassert
@@ -124,6 +99,18 @@ comment "return the current value of the sequence";
 unsafe pattern restart( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
+
+pattern deltas( schema:str )(ids:bat[:int],cleared:bat[:bit],readonly:bat[:lng],inserted:bat[:lng],updated:bat[:lng],deleted:bat[:lng],tr_level:bat[:int])
+address mvc_delta_values
+comment "Return the delta values sizes of all columns of the schema's tables, plus the current transaction level";
+
+pattern deltas( schema:str, table:str )(ids:bat[:int],cleared:bat[:bit],readonly:bat[:lng],inserted:bat[:lng],updated:bat[:lng],deleted:bat[:lng],tr_level:bat[:int])
+address mvc_delta_values
+comment "Return the delta values sizes from the table's columns, plus the current transaction level";
+
+pattern deltas( schema:str, table:str, column:str )(ids:bat[:int],cleared:bat[:bit],readonly:bat[:lng],inserted:bat[:lng],updated:bat[:lng],deleted:bat[:lng],tr_level:bat[:int])
+address mvc_delta_values
+comment "Return the delta values sizes of a column, plus the current transaction level";
 
 pattern emptybindidx(mvc:int, schema:str, table:str, index:str, access:int):bat[:any_1]
 address mvc_bind_idxbat_wrap;
@@ -269,10 +256,10 @@ unsafe pattern resultSet(tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:
 address mvc_table_result_wrap
 comment "Prepare a table result set for the client in default CSV format";
 
-unsafe pattern export_table(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:any...) :int 
+unsafe pattern export_table(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, onclient:int, tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:any...) :int 
 address mvc_export_row_wrap
 comment "Prepare a table result set for the COPY INTO stream";
-unsafe pattern export_table(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:bat[:any]...) :int 
+unsafe pattern export_table(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, onclient:int, tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:bat[:any]...) :int 
 address mvc_export_table_wrap
 comment "Prepare a table result set for the COPY INTO stream";
 
@@ -301,7 +288,7 @@ address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 
 unsafe pattern copy_from( t:ptr, 
-	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int, best:int, fwf:str) (:bat[:any]...)
+	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int, best:int, fwf:str, onclient:int) (:bat[:any]...)
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
@@ -313,13 +300,19 @@ comment "Import a table from bstream s with the
 pattern single(x:any_2):bat[:any_2]
 address CMDBATsingle;
 
-unsafe pattern importTable( sname:str, tname:str, fname:str... )(:bat[:any]...)
+unsafe pattern importTable( sname:str, tname:str, onclient:int, fname:str... )(:bat[:any]...)
 address mvc_bin_import_table_wrap
 comment "Import a table from the files (fname)";
 
 command zero_or_one( col:bat[:any_1]) :any_1
 address zero_or_one
 comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
+command zero_or_one( col:bat[:any_1], err:bit) :any_1
+address zero_or_one_error
+comment "if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil";
+command zero_or_one( col:bat[:any_1], err:bat[:bit]) :any_1
+address zero_or_one_error_bat
+comment "if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil";
 
 inline function sql.subzero_or_one( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
 	(g,e,h) := group.group(gp);
@@ -334,7 +327,47 @@ end sql.subzero_or_one;
 
 command all( col:bat[:any_1]) :any_1
 address SQLall
-comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
+comment "if all values in col are equal return this, else nil";
+
+command null(b:bat[:any_1]) :bit
+address SQLnil
+comment "if b has a nil return true, else false";
+
+command any(cmp:bit, nl:bit, nr:bit) :bit
+address SQLany_cmp
+comment "if cmp then true, (nl or nr) nil then nil, else false";
+
+command all(cmp:bit, nl:bit, nr:bit) :bit
+address SQLall_cmp
+comment "if !cmp then false, (nl or nr) then nil, else true";
+
+module aggr;
+
+command anyequal(l:bat[:any_1], r:bat[:any_1]) :bit
+address SQLanyequal
+comment "if any value in r is equal to l return true, else if r has nil nil else false";
+
+command allnotequal(l:bat[:any_1], r:bat[:any_1]) :bit
+address SQLallnotequal
+comment "if all values in r are not equal to l return true, else if r has nil nil else false";
+
+command subanyequal(l:bat[:any_1], r:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
+address SQLanyequal_grp
+comment "if any value in r is equal to l return true, else if r has nil nil else false";
+
+command subanyequal(l:bat[:any_1], r:bat[:any_1], rid:bat[:oid], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
+address SQLanyequal_grp2
+comment "if any value in r is equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then false";
+
+command suballnotequal(l:bat[:any_1], r:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
+address SQLallnotequal_grp
+comment "if all values in r are not equal to l return true, else if r has nil nil else false";
+
+command suballnotequal(l:bat[:any_1], r:bat[:any_1], rid:bat[:oid], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
+address SQLallnotequal_grp2
+comment "if all values in r are not equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then true";
+
+module sql;
 
 # todo implement = all aggregator (ie keep last value and compare status)
 inline function sql.all( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
@@ -924,6 +957,14 @@ command batcalc.daytime( v:bat[:daytime], digits:int ) :bat[:daytime]
 address batdaytime_2time_daytime
 comment "cast daytime to daytime and check for overflow";
 
+command sql.date_trunc( scale:str, v:bat[:timestamp]):bat[:timestamp] 
+address bat_date_trunc
+comment "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)";
+
+command sql.date_trunc( scale:str, v:timestamp):timestamp 
+address date_trunc
+comment "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)";
+
 pattern current_time() :daytime
 address SQLcurrent_daytime
 comment "Get the clients current daytime";
@@ -949,15 +990,15 @@ command calc.str( v:date ) :str
 address SQLdate_2_str
 comment "cast date to str";
 
-command calc.sqlblob( v:str ) :sqlblob 
-address str_2_sqlblob
-comment "cast to sqlblob";
-command batcalc.sqlblob( v:bat[:str] ) :bat[:sqlblob] 
-address batstr_2_sqlblob
-comment "cast to sqlblob";
-command calc.str( v:sqlblob ) :str 
-address SQLsqlblob_2_str
-comment "cast sqlblob to str";
+command calc.blob( v:str ) :blob 
+address str_2_blob
+comment "cast to blob";
+command batcalc.blob( v:bat[:str] ) :bat[:blob] 
+address batstr_2_blob
+comment "cast to blob";
+command calc.str( v:blob ) :str 
+address SQLblob_2_str
+comment "cast blob to str";
 
 pattern calc.str( eclass:int, d1:int, s1:int, has_tz:int, v:any_1, digits:int ) :str 
 address SQLstr_cast

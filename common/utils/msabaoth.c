@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /**
@@ -28,6 +28,7 @@
 #include <time.h>
 #include <string.h> /* for getting error messages */
 #include <stddef.h>
+#include <ctype.h>
 
 #include "msabaoth.h"
 #include "mutils.h"
@@ -44,7 +45,7 @@ char *_sabaoth_internal_dbfarm = NULL;
 /** the database which is "active" */
 char *_sabaoth_internal_dbname = NULL;
 /** identifier of the current process */
-char *_sabaoth_internal_uuid = NULL;
+static char *_sabaoth_internal_uuid = NULL;
 
 /**
  * Retrieves the dbfarm path plus an optional extra component added
@@ -106,7 +107,7 @@ msab_isuuid(const char *restrict s)
 		return 0;
 	/* only hexadecimals and hypens */
 	while (*s) {
-		if (!('a' <= *s && *s <= 'f') && !('0' <= *s && *s <= '9')) {
+		if (!isxdigit((unsigned char) *s)) {
 			if (*s == '-')
 				hyphens++;
 			else
@@ -241,6 +242,15 @@ msab_getDBname(char **ret)
 	return(NULL);
 }
 
+char *
+msab_getUUID(char **ret)
+{
+	if (_sabaoth_internal_uuid == NULL)
+		return(strdup("sabaoth not initialized"));
+	*ret = strdup(_sabaoth_internal_uuid);
+	return NULL;
+}
+
 #define SCENARIOFILE ".scen"
 
 /**
@@ -326,9 +336,9 @@ msab_retreatScenario(const char *lang)
 				rewind(f);
 				len = strlen(buf) + 1;
 				if (fwrite(buf, 1, len, f) < len) {
-					(void)fclose(f);
 					snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
 							strerror(errno), pathbuf);
+					(void)fclose(f);
 					return(strdup(buf));
 				}
 				fflush(f);
@@ -768,7 +778,7 @@ msab_getStatus(sabdb** ret, char *dbname)
 /**
  * Frees up the sabdb structure returned by getStatus.
  */
-char *
+void
 msab_freeStatus(sabdb** ret)
 {
 	sabdb *p, *q;
@@ -802,8 +812,6 @@ msab_freeStatus(sabdb** ret)
 		free(p);
 		p = q;
 	}
-
-	return(NULL);
 }
 
 /**
@@ -832,10 +840,11 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 	memset(avg30, 0, sizeof(int) * 30);
 
 	/* clear the struct */
-	memset(ret, 0, sizeof(sabuplog));
-	ret->minuptime = -1;
-	ret->lastcrash = -1;
-	ret->laststop = -1;
+	*ret = (sabuplog) {
+		.minuptime = -1,
+		.lastcrash = -1,
+		.laststop = -1,
+	};
 
 	snprintf(log, sizeof(log), "%s/%s", db->path, UPLOGFILE);
 	if ((f = fopen(log, "r")) != NULL) {

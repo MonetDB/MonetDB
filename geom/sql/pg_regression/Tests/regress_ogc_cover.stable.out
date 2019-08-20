@@ -50,7 +50,6 @@ stdout of test 'regress_ogc_cover` in directory 'geom/sql/pg_regression` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:00:02 >  
 # 17:00:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15092" "--port=37341"

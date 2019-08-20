@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -79,7 +79,7 @@ setenv(const char *name, const char *value, int overwrite)
 	int ret = 0;
 
 	if (overwrite || getenv(name) == NULL) {
-		char *p = (char *) GDKmalloc(2 + strlen(name) + strlen(value));
+		char *p = GDKmalloc(2 + strlen(name) + strlen(value));
 
 		if (p == NULL)
 			return -1;
@@ -346,7 +346,6 @@ MT_getrss(void)
 #endif
 	return 0;
 }
-
 
 void *
 MT_mmap(const char *path, int mode, size_t len)
@@ -629,12 +628,13 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #endif
 #endif
 						) {
-						int err = errno;
+						int err = errno, other;
 						/* extending failed:
 						 * free any disk space
 						 * allocated in the
 						 * process */
-						(void) ftruncate(fd, (off_t) old_size);
+						other = ftruncate(fd, (off_t) old_size);
+						(void) other; /* silence compiler warning for ignoring result of ftruncate */
 						errno = err; /* restore for error message */
 						GDKsyserror("MT_mremap: growing file failed\n");
 						close(fd);
@@ -691,7 +691,7 @@ MT_msync(void *p, size_t len)
 	return ret;
 }
 
-int
+bool
 MT_path_absolute(const char *pathname)
 {
 	return (*pathname == DIR_SEP);
@@ -744,11 +744,9 @@ MT_init_posix(void)
 size_t
 MT_getrss(void)
 {
-#ifdef _WIN64
 	PROCESS_MEMORY_COUNTERS ctr;
 	if (GetProcessMemoryInfo(GetCurrentProcess(), &ctr, sizeof(ctr)))
 		return ctr.WorkingSetSize;
-#endif
 	return 0;
 }
 
@@ -891,7 +889,7 @@ MT_msync(void *p, size_t len)
 	return 0;
 }
 
-int
+bool
 MT_path_absolute(const char *pathname)
 {
 	/* drive letter, colon, directory separator */
@@ -901,7 +899,6 @@ MT_path_absolute(const char *pathname)
 		 (pathname[2] == '/' || pathname[2] == '\\')) ||
 		(pathname[0] == '\\' && pathname[1] == '\\'));
 }
-
 
 #ifndef HAVE_GETTIMEOFDAY
 static int nodays[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
@@ -1094,33 +1091,20 @@ win_mkdir(const char *pathname, const int mode)
 }
 #endif
 
-#ifndef WIN32
-
 void
 MT_sleep_ms(unsigned int ms)
 {
-#ifdef HAVE_NANOSLEEP_dont_use
-	struct timespec ts;
-
-	ts.tv_sec = (time_t) (ms / 1000);
-	ts.tv_nsec = 1000000 * (ms % 1000);
-	while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
-		;
-#else
-	struct timeval tv;
-
-	tv.tv_sec = ms / 1000;
-	tv.tv_usec = 1000 * (ms % 1000);
-	(void) select(0, NULL, NULL, NULL, &tv);
-#endif
-}
-
-#else /* WIN32 */
-
-void
-MT_sleep_ms(unsigned int ms)
-{
+#ifdef NATIVE_WIN32
 	Sleep(ms);
-}
-
+#else
+#ifdef HAVE_NANOSLEEP
+	(void) nanosleep(&(struct timespec) {.tv_sec = ms / 1000,
+				.tv_nsec = ms == 1 ? 1000 : (long) (ms % 1000) * 1000000,},
+		NULL);
+#else
+	(void) select(0, NULL, NULL, NULL,
+		      &(struct timeval) {.tv_sec = ms / 1000,
+				      .tv_usec = ms == 1 ? 1 : (ms % 1000) * 1000,});
 #endif
+#endif
+}

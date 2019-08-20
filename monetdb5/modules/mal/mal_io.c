@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -567,7 +567,7 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BBPunfix(piv[i]->batCacheid);
 			throw(MAL, "io.table", ILLEGAL_ARGUMENT " BAT expected");
 		}
-		if ((piv[i] = BATdescriptor(*(int *) val)) == NULL) {
+		if ((piv[i] = BATdescriptor(*(bat *) val)) == NULL) {
 			while (--i >= 1)
 				BBPunfix(piv[i]->batCacheid);
 			throw(MAL, "io.table", ILLEGAL_ARGUMENT " null BAT encountered");
@@ -623,8 +623,7 @@ IOexport(void *ret, bat *bid, str *fnme)
 		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
 	}
     BATprintcolumns(s, 1, &b);
-	mnstr_close(s);
-	mnstr_destroy(s);
+	close_stream(s);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -636,7 +635,7 @@ str
 IOimport(void *ret, bat *bid, str *fnme)
 {
 	BAT *b;
-	ssize_t (*tconvert) (const char *, size_t *, ptr *);
+	ssize_t (*tconvert) (const char *, size_t *, ptr *, bool);
 	ssize_t n;
 	size_t bufsize = 2048;	/* NIELS:tmp change used to be 1024 */
 	char *base, *cur, *end;
@@ -777,7 +776,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 			GDKfree(t);
 			throw(MAL, "io.import", "%s", msg);
 		}
-		n = tconvert(p, &lt, (ptr*)&t);
+		n = tconvert(p, &lt, (ptr*)&t, true);
 		if (n < 0) {
 			BBPunfix(b->batCacheid);
 			snprintf(msg,sizeof(msg),"error in input %s",buf);

@@ -19,7 +19,6 @@ stdout of test 'rapi05` in directory 'sql/backends/monet5` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:37:14 >  
 # 17:37:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20729" "--port=35474"
@@ -32,7 +31,7 @@ Ready.
 #language R {kmeans(arg1,arg2)$cluster};
 #SELECT cluster FROM (SELECT MIN(x) AS minx, MAX(x) AS maxx, kmeans(x,5) AS cluster FROM xdata 
 #	GROUP BY cluster) as cdata ORDER BY cluster;
-% sys.cdata # table_name
+% sys.L12 # table_name
 % cluster # name
 % int # type
 % 1 # length

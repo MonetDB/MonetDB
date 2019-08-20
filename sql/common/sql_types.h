@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef SQL_TYPES_H
@@ -16,45 +16,6 @@
 #include "sql_storage.h"
 #include "stream.h"
 
-#define EC_MAX 		17
-#define EC_ANY	 	0
-#define IS_ANY(e)	(e==EC_ANY)
-#define EC_TABLE 	1
-#define EC_BIT 		2
-#define EC_CHAR 	3
-#define EC_STRING 	4
-#define EC_BLOB		5
-#define EC_VARCHAR(e)	(e==EC_CHAR||e==EC_STRING)
-
-#define EC_POS 		6
-#define EC_NUM 		7
-#define EC_MONTH 	8
-#define EC_SEC	 	9
-#define EC_DEC 		10
-#define EC_FLT 		11
-#define EC_INTERVAL(e)	(e==EC_MONTH||e==EC_SEC)
-#define EC_NUMBER(e)	(e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||e==EC_FLT)
-#define EC_COMPUTE(e)	(e==EC_NUM||e==EC_FLT)
-#define EC_BOOLEAN(e)	(e==EC_BIT||e==EC_NUM||e==EC_FLT)
-
-#define EC_TIME		12
-#define EC_DATE		13
-#define EC_TIMESTAMP	14
-#define EC_TEMP(e)	(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP)
-#define EC_GEOM		15
-#define EC_EXTERNAL	16
-
-#define EC_TEMP_FRAC(e)	(e==EC_TIME||e==EC_TIMESTAMP)
-
-#define EC_FIXED(e)	(e==EC_BIT||e==EC_CHAR||\
-			 e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||EC_TEMP(e))
-
-#define has_tz(e,n)	(EC_TEMP(e) && \
-			((e == EC_TIME && strcmp(n, "timetz") == 0) || \
-		 	(e == EC_TIMESTAMP && strcmp(n, "timestamptz") == 0)) )
-
-#define type_has_tz(t)	has_tz((t)->type->eclass, (t)->type->sqlname)
-
 extern list *aliases;
 extern list *types;
 extern list *aggrs;
@@ -64,7 +25,7 @@ extern int bits2digits(int b);
 extern int digits2bits(int d);
 
 extern int sql_type_convert(int form, int to); /* return 1, convert possible but it's a down cast, 2 convert possible can be done savely */
-extern int is_commutative(const char *fnm); 	/* return 1, if commutative */
+extern bool is_commutative(const char *fnm); 	/* return true if commutative */
 
 extern char *sql_bind_alias(const char *alias);
 
@@ -84,8 +45,6 @@ extern int is_subtype(sql_subtype *t1, sql_subtype *t2);
 extern char *subtype2string(sql_subtype *t);
 extern char *subtype2string2(sql_subtype *tpe);
 
-extern void type_destroy(sql_type *t);
-
 extern sql_arg *sql_create_arg(sql_allocator *sa, const char *name, sql_subtype *t, char inout);
 extern sql_arg *arg_dup(sql_allocator *sa, sql_arg *a);
 
@@ -96,6 +55,7 @@ extern sql_subaggr *sql_find_aggr(sql_allocator *sa, sql_schema *s, const char *
 extern int subaggr_cmp( sql_subaggr *a1, sql_subaggr *a2);
 
 extern int subfunc_cmp( sql_subfunc *f1, sql_subfunc *f2);
+extern sql_subfunc *sql_find_func_by_name(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, int type);
 extern sql_subfunc *sql_find_func(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, int type, sql_subfunc *prev);
 extern list *sql_find_funcs(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, int type);
 extern sql_subfunc *sql_bind_member(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *tp, int nrargs, sql_subfunc *prev);

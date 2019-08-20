@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 sed '/^$/q' $0			# copy copyright from this file
 
@@ -400,6 +400,31 @@ address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 
 EOF
+	    case $op in
+	    == | !=)
+		cat <<EOF
+pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B1 $op B2";
+pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B1 $op B2 with candidates list";
+pattern $op(b:bat[:$tp1],v:$tp2,nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V";
+pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V with candidates list";
+pattern $op(v:$tp1,b:bat[:$tp2],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B";
+pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B with candidates list";
+
+EOF
+		;;
+	    esac
 	done
     done
     echo
@@ -438,37 +463,33 @@ EOF
 done
 echo
 
-for tp in hge; do
-    cat <<EOF
-pattern between(b:bat[:$tp],lo:bat[:$tp],hi:bat[:$tp]) :bat[:bit]
+cat <<EOF
+pattern between(b:bat[:hge],lo:bat[:hge],hi:bat[:hge]) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
-pattern between(b:bat[:$tp],lo:bat[:$tp],hi:bat[:$tp],s:bat[:oid]) :bat[:bit]
+pattern between(b:bat[:hge],lo:bat[:hge],hi:bat[:hge],s:bat[:oid]) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
-pattern between(b:bat[:$tp],lo:bat[:$tp],hi:$tp) :bat[:bit]
+pattern between(b:bat[:hge],lo:bat[:hge],hi:hge) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
-pattern between(b:bat[:$tp],lo:bat[:$tp],hi:$tp,s:bat[:oid]) :bat[:bit]
+pattern between(b:bat[:hge],lo:bat[:hge],hi:hge,s:bat[:oid]) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
-pattern between(b:bat[:$tp],lo:$tp,hi:bat[:$tp]) :bat[:bit]
+pattern between(b:bat[:hge],lo:hge,hi:bat[:hge]) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
-pattern between(b:bat[:$tp],lo:$tp,hi:bat[:$tp],s:bat[:oid]) :bat[:bit]
+pattern between(b:bat[:hge],lo:hge,hi:bat[:hge],s:bat[:oid]) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
-pattern between(b:bat[:$tp],lo:$tp,hi:$tp) :bat[:bit]
+pattern between(b:bat[:hge],lo:hge,hi:hge) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
-pattern between(b:bat[:$tp],lo:$tp,hi:$tp,s:bat[:oid]) :bat[:bit]
+pattern between(b:bat[:hge],lo:hge,hi:hge,s:bat[:oid]) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive with candidates list, nil border is (minus) infinity";
 
 EOF
-done
-echo
-
 for tp in hge; do
     cat <<EOF
 pattern avg(b:bat[:$tp]) :dbl
@@ -481,6 +502,18 @@ pattern avg(b:bat[:$tp]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B";
 pattern avg(b:bat[:$tp],s:bat[:oid]) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B with candidates list";
+pattern avg(b:bat[:$tp],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B with candidates list";
+pattern avg(b:bat[:$tp],s:bat[:oid],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+pattern avg(b:bat[:$tp],scale:int) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B";
+pattern avg(b:bat[:$tp],s:bat[:oid],scale:int) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B with candidates list";
 

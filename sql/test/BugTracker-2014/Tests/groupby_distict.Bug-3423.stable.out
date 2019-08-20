@@ -19,7 +19,6 @@ stdout of test 'groupby_distict.Bug-3423` in directory 'sql/test/BugTracker-2014
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 12:15:11 >  
 # 12:15:11 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11107" "--port=30206"
@@ -37,8 +36,8 @@ Ready.
 #INSERT into a3423 values (5,21);
 [ 1	]
 #SELECT k as c,count(distinct b) from a3423 group by c;
-% sys.a3423,	sys.L4 # table_name
-% c,	L3 # name
+% sys.L1,	sys.L2 # table_name
+% c,	L2 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 1,	1	]

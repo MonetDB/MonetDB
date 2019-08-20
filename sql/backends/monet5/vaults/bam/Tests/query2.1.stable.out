@@ -17,7 +17,6 @@ stdout of test 'query2.1` in directory 'sql/backends/monet5/vaults/bam` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:22:41 >  
 # 10:22:41 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"
@@ -36,7 +35,7 @@ Ready.
 #    FROM alig
 #    WHERE qname IN (
 #        SELECT qname
-% bam.L43,	bam.L45,	bam.L47,	bam.L51,	bam.L53 # table_name
+% bam.L21,	bam.L22,	bam.L23,	bam.L24,	bam.L25 # table_name
 % qname,	l_seq,	qual1,	r_seq,	qual2 # name
 % clob,	clob,	clob,	clob,	clob # type
 % 0,	0,	0,	0,	0 # length
@@ -49,7 +48,7 @@ Ready.
 #WHERE l_mapq < 100
 #  AND r_mapq < 100
 #ORDER BY qname;
-% bam.paired_primary_alignments_3,	bam.L3,	bam.L5,	bam.L7,	bam.L11 # table_name
+% bam.paired_primary_alignments_3,	bam.L1,	bam.L2,	bam.L3,	bam.L4 # table_name
 % qname,	l_seq,	l_qual,	r_seq,	r_qual # name
 % clob,	clob,	clob,	clob,	clob # type
 % 0,	0,	0,	0,	0 # length

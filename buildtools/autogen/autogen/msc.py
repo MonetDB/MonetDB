@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 from __future__ import print_function
 
@@ -123,25 +123,24 @@ def msc_libdir(fd, var, values, msc):
 def msc_mtsafe(fd, var, values, msc):
     fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
-def msc_add_srcdir(path, msc, prefix =""):
-    dir = path
+def msc_add_srcdir(dir, msc, prefix = ""):
     if dir[0] == '$':
         return ""
     elif not os.path.isabs(dir):
-        dir = "$(srcdir)/" + dir
+        return prefix + "$(srcdir)\\" + dir.replace('/', '\\')
     else:
         return ""
-    return prefix+dir.replace('/', '\\')
 
 def msc_translate_dir(path, msc):
-    dir = path
-    rest = ""
-    if path.find('/') >= 0:
-        dir, rest = path.split('/', 1)
+    path = path.replace('/' , '\\')
+    if path.find('\\') >= 0:
+        dir, rest = path.split('\\', 1)
+    else:
+        dir, rest = path, ''
     if dir == "top_builddir":
         dir = "$(TOPDIR)"
     elif dir == "top_srcdir":
-        dir = "$(TOPDIR)/.."
+        dir = "$(TOPDIR)\\.."
     elif dir == "builddir":
         dir = "."
     elif dir == "srcdir":
@@ -155,12 +154,12 @@ def msc_translate_dir(path, msc):
         dir = "$("+dir+")"
     if rest:
         dir = dir+ "\\" + rest
-    return dir.replace('/', '\\')
+    return dir
 
 def msc_translate_file(path, msc):
     if os.path.isfile(os.path.join(msc['cwd'], path)):
-        return "$(srcdir)\\" + path
-    return path
+        path = "$(srcdir)/" + path
+    return path.replace('/', '\\')
 
 def msc_space_sep_list(l):
     res = ""
@@ -321,24 +320,22 @@ def msc_dep(fd, tar, deplist, msc):
         msc['_IN'].append(y)
     getsrc = ""
     src = msc_translate_dir(msc_translate_ext(msc_translate_file(deplist[0], msc)), msc)
-    if os.path.split(src)[0]:
-        getsrc = '\t$(INSTALL) "%s" "%s"\n' % (src, os.path.split(src)[1])
+    if '\\' in src:
+        getsrc = '\t$(INSTALL) "%s" "%s"\n' % (src, src.split('\\')[-1])
     if ext == "tab.h":
         fd.write(getsrc)
         x, de = split_filename(deplist[0])
         of = b + '.' + de
-        of = msc_translate_file(of, msc)
         fd.write('\t$(YACC) $(YFLAGS) $(AM_YFLAGS) "%s"\n' % of)
-    if ext == "tab.c":
+    elif ext == "tab.c":
         fd.write(getsrc)
         x, de = split_filename(deplist[0])
         of = b + '.' + de
-        of = msc_translate_file(of, msc)
         fd.write('\t$(YACC) $(YFLAGS) $(AM_YFLAGS) "%s"\n' % of)
-    if ext == "yy.c":
+    elif ext == "yy.c":
         fd.write(getsrc)
         fd.write('\t$(LEX) $(LFLAGS) $(AM_LFLAGS) "%s.l"\n' % b)
-    if ext in ("obj", "tab.obj", "yy.obj"):
+    elif ext in ("obj", "tab.obj", "yy.obj"):
         target, name = msc_find_target(tar, msc)
         if name[0] == '_':
             name = name[1:]
@@ -347,7 +344,7 @@ def msc_dep(fd, tar, deplist, msc):
             if dext in ("c", "cpp", "yy.c", "tab.c"):
                 fd.write('\t$(CC) /EHsc $(CFLAGS) $(%s_CFLAGS) $(GENDLL) -D_CRT_SECURE_NO_WARNINGS -DLIB%s "-Fo%s" -c "%s"\n' %
                          (split_filename(msc_basename(src))[0], name, t, src))
-    if ext == 'res':
+    elif ext == 'res':
         fd.write("\t$(RC) -fo%s %s\n" % (t, src))
 
 def msc_deps(fd, deps, objext, msc):

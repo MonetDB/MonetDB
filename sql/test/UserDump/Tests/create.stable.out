@@ -14,7 +14,6 @@ stdout of test 'create` in directory 'sql/test/UserDump` itself:
 # Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:31535/
 # MonetDB/SQL module v2.30.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -37,25 +36,23 @@ CREATE TABLE "voc"."foo" (
 	"v"  INTEGER,
 	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
 );
+create view bar as select * from foo;
+create function b(i int) returns int begin return select v from bar where id = i; end;
 CREATE TABLE "voc"."a" (
 	"id" INTEGER
 );
+create trigger a after insert on foo insert into a values (1);
 SET SCHEMA "test";
 CREATE TABLE "test"."foo" (
 	"id" INTEGER       NOT NULL,
 	"v"  INTEGER,
 	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
 );
+create view bar as select * from foo;
+create function b(i int) returns int begin return select v from bar where id = i; end;
 CREATE TABLE "test"."a" (
 	"id" INTEGER
 );
-SET SCHEMA "voc";
-create view bar as select * from foo;
-create function b(i int) returns int begin return select v from bar where id = i; end;
-create trigger a after insert on foo insert into a values (1);
-SET SCHEMA "test";
-create view bar as select * from foo;
-create function b(i int) returns int begin return select v from bar where id = i; end;
 create trigger a after insert on foo insert into a values (1);
 create trigger test.x after insert on foo insert into a values (1);
 create trigger "test"."z" after insert on "foo" insert into a values (1);
@@ -68,11 +65,11 @@ CREATE TABLE "voc"."foo" (
 	"v"  INTEGER,
 	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
 );
+create view bar as select * from foo;
+create function b(i int) returns int begin return select v from bar where id = i; end;
 CREATE TABLE "voc"."a" (
 	"id" INTEGER
 );
-create view bar as select * from foo;
-create function b(i int) returns int begin return select v from bar where id = i; end;
 create trigger a after insert on foo insert into a values (1);
 COMMIT;
 START TRANSACTION;
@@ -82,11 +79,11 @@ CREATE TABLE "test"."foo" (
 	"v"  INTEGER,
 	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
 );
+create view bar as select * from foo;
+create function b(i int) returns int begin return select v from bar where id = i; end;
 CREATE TABLE "test"."a" (
 	"id" INTEGER
 );
-create view bar as select * from foo;
-create function b(i int) returns int begin return select v from bar where id = i; end;
 create trigger a after insert on foo insert into a values (1);
 create trigger test.x after insert on foo insert into a values (1);
 create trigger "test"."z" after insert on "foo" insert into a values (1);

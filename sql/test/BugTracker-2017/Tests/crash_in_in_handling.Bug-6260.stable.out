@@ -18,7 +18,6 @@ stdout of test 'crash_in_in_handling.Bug-6260` in directory 'sql/test/BugTracker
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:07:27 >  
 # 14:07:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29945" "--port=39677"

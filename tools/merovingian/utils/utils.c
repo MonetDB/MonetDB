@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /**
@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <time.h>
+#include <ctype.h>
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
@@ -216,7 +217,7 @@ setConfVal(confkeyval *ckv, const char *val) {
 		}
 		case INT: {
 			const char *p = val;
-			while (*p >= '0' && *p <= '9')
+			while (isdigit((unsigned char) *p))
 				p++;
 			if (*p != '\0') {
 				char buf[256];

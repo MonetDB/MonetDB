@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -52,7 +52,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	for (i = 1; i < p->argc; i++) {
 		bat bid = stk->stk[getArg(p,i)].val.bval;
-		b = BBPquickdesc(bid,FALSE);
+		b = BBPquickdesc(bid, false);
 		if( b ){
 			if (tt == TYPE_any)
 				tt = b->ttype;
@@ -132,7 +132,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			throw(MAL, "mat.pack", GDK_EXCEPTION);
 		}
 		assert(!bn->tnil || !bn->tnonil);
-		bn->S.unused = (pieces-1); /* misuse "unused" field */
+		bn->unused = (pieces-1); /* misuse "unused" field */
 		BBPkeepref(*ret = bn->batCacheid);
 		BBPunfix(b->batCacheid);
 	} else {
@@ -150,9 +150,12 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			BBPunfix(bb->batCacheid);
 		}
-		b->S.unused--;
-		if(b->S.unused == 0)
-			BATsetaccess(b, BAT_READ);
+		b->unused--;
+		if(b->unused == 0)
+			if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED) {
+				BBPunfix(b->batCacheid);
+				throw(MAL, "mat.pack", GDK_EXCEPTION);
+			}
 		assert(!b->tnil || !b->tnonil);
 		BBPkeepref(*ret = b->batCacheid);
 	}

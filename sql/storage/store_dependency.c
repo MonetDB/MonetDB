@@ -3,14 +3,14 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "store_dependency.h"
 
-static int
-list_find_func_id(list *ids, int id) {
+static sqlid
+list_find_func_id(list *ids, sqlid id) {
 	node *n = ids->h;
 	while(n) {
 		sql_func * f = n->data;
@@ -24,7 +24,7 @@ list_find_func_id(list *ids, int id) {
 
 /*Function to create a dependency*/
 void
-sql_trans_create_dependency(sql_trans* tr, sqlid id, sqlid depend_id, short depend_type)
+sql_trans_create_dependency(sql_trans* tr, sqlid id, sqlid depend_id, sht depend_type)
 {
 	sql_schema * s = find_sql_schema(tr, "sys");
 	sql_table *t = find_sql_table(s, "dependencies");
@@ -54,7 +54,7 @@ sql_trans_drop_dependencies(sql_trans* tr, sqlid depend_id)
 
 /*Function to drop the dependency between object and target, ie obj_id/depend_id*/
 void
-sql_trans_drop_dependency(sql_trans* tr, sqlid obj_id, sqlid depend_id, short depend_type)
+sql_trans_drop_dependency(sql_trans* tr, sqlid obj_id, sqlid depend_id, sht depend_type)
 {
 	oid rid;
 	sql_schema * s = find_sql_schema(tr, "sys");
@@ -70,10 +70,9 @@ sql_trans_drop_dependency(sql_trans* tr, sqlid obj_id, sqlid depend_id, short de
 	table_funcs.rids_destroy(rs);
 }
 
-
 /*It returns a list with depend_id_1, depend_type_1, depend_id_2, depend_type_2, ....*/
 list*
-sql_trans_get_dependencies(sql_trans* tr, int id, short depend_type, list * ignore_ids)
+sql_trans_get_dependencies(sql_trans* tr, sqlid id, sht depend_type, list * ignore_ids)
 {
 	void *v;
 	sql_schema *s = find_sql_schema(tr, "sys");	
@@ -129,8 +128,8 @@ sql_trans_get_dependencies(sql_trans* tr, int id, short depend_type, list * igno
 }
 
 /*It checks if there are dependency between two ID's */
-int
-sql_trans_get_dependency_type(sql_trans *tr, int id, short depend_type)
+sqlid
+sql_trans_get_dependency_type(sql_trans *tr, sqlid id, sht depend_type)
 {
 	oid rid;
 	sql_schema *s;
@@ -159,7 +158,7 @@ sql_trans_get_dependency_type(sql_trans *tr, int id, short depend_type)
 
 /*It checks if there are dependency between two ID's */
 int
-sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, short depend_type)
+sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sht depend_type)
 {
 	oid rid;
 	sql_schema *s;
@@ -180,18 +179,16 @@ sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, short depend_ty
 	else return 0;
 }
 
-
-
 /*Schema on users*/
 
 list *
-sql_trans_schema_user_dependencies(sql_trans *tr, int schema_id)
+sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id)
 {
 	void *v;
 	sql_schema * s = find_sql_schema(tr, "sys");
 	sql_table *auths = find_sql_table(s, "auths");
 	sql_column *auth_id = find_sql_column(auths, "id");
-	short type = USER_DEPENDENCY;
+	sht type = USER_DEPENDENCY;
 	list *l = list_create((fdestroy) GDKfree);
 	rids *users;
 	oid rid;
@@ -220,14 +217,14 @@ sql_trans_schema_user_dependencies(sql_trans *tr, int schema_id)
 
 /*owner on schemas*/
 list *
-sql_trans_owner_schema_dependencies(sql_trans *tr, int owner_id)
+sql_trans_owner_schema_dependencies(sql_trans *tr, sqlid owner_id)
 {
 	void *v;
 	sql_schema * s = find_sql_schema(tr, "sys");
 	sql_table *schemas = find_sql_table(s, "schemas");
 	sql_column *schema_owner = find_sql_column(schemas, "authorization");
 	sql_column *schema_id = find_sql_column(schemas, "id");
-	short type = SCHEMA_DEPENDENCY;
+	sht type = SCHEMA_DEPENDENCY;
 	list *l = list_create((fdestroy) GDKfree);
 	rids *rs;
 	oid rid;

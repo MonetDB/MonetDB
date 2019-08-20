@@ -13,7 +13,6 @@ stdout of test 'full_join_crash.SF-1841754` in directory 'sql/test/BugTracker` i
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:36556/
 # MonetDB/SQL module v2.21.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

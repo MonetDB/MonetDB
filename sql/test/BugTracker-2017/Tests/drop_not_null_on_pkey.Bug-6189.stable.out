@@ -18,7 +18,6 @@ stdout of test 'drop_not_null_on_pkey.Bug-6189` in directory 'sql/test/BugTracke
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:54:58 >  
 # 13:54:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2736" "--port=35008"

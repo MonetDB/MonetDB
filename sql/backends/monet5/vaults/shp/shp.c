@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -17,6 +17,9 @@
 #include "sql_mvc.h"
 #include "sql.h"
 #define HAVE_CXX11 0		/* stupid include file gdal/cpl_port.h */
+#ifndef __clang_major__		/* stupid include file gdal/cpl_port.h */
+#define __clang_major__ 0
+#endif
 #include "shp.h"
 #include <cpl_conv.h>		/* for CPLFree */
 #include "sql_execute.h"

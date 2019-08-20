@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* This file is included multiple times (from sql_cast.c).
@@ -60,11 +60,7 @@ FUN(,TP1,_num2dec_,TP2)(TP2 *res, const TP1 *v, const int *d2, const int *s2)
 		      inlen + scale, precision);
 
 #ifndef TRUNCATE_NUMBERS
-#if TPE(TP1) == TYPE_flt
-	*res = (TP2) roundf(val * scales[scale]);
-#else
-	*res = (TP2) round(val * scales[scale]);
-#endif
+	*res = (TP2) round_float(val * scales[scale]);
 #endif
 
 
@@ -75,21 +71,19 @@ str
 FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *s2)
 {
 	BAT *b, *dst;
-	BATiter bi;
 	BUN p, q;
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) "Cannot access column descriptor");
 	}
-	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
+	const TP1 *v = (const TP1 *) Tloc(b, 0);
 	BATloop(b, p, q) {
-		TP1 *v = (TP1 *) BUNtail(bi, p);
 		TP2 r;
 		msg = FUN(,TP1,_num2dec_,TP2) (&r, v, d2, s2);
 		if (msg) {
@@ -102,6 +96,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
+		v++;
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);

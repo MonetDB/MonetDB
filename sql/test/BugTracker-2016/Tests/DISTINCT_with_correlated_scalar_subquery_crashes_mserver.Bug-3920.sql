@@ -11,7 +11,7 @@ CREATE TABLE "sys"."functions_cpy" (
 	"vararg"      BOOLEAN,
 	"schema_id"   INTEGER
 );
-COPY 1167 RECORDS INTO "sys"."functions_cpy" FROM stdin USING DELIMITERS '|','\n','"';
+COPY 1167 RECORDS INTO "sys"."functions_cpy" FROM stdin USING DELIMITERS '|',E'\n','"';
 83|"sql_min"|"min"|"calc"|0|1|false|false|false|0
 84|"sql_max"|"max"|"calc"|0|1|false|false|false|0
 139|"sql_mul"|"*"|"calc"|0|1|false|false|false|0
@@ -1184,7 +1184,7 @@ CREATE TABLE "sys"."args_cpy" (
 	"func_id" INTEGER,
 	"number"  INTEGER
 );
-COPY 3416 RECORDS INTO "sys"."args_cpy" FROM stdin USING DELIMITERS '|','\n','"';
+COPY 3416 RECORDS INTO "sys"."args_cpy" FROM stdin USING DELIMITERS '|',E'\n','"';
 2286|83|0
 2287|83|1
 2288|83|2

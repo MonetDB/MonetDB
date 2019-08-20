@@ -24,14 +24,12 @@ stderr of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbpath = /ufs/sjoerd/@Monet-candidate/var/MonetDB/mTests_sql_test_testdb-upgrade-chain
 # cmdline opt 	gdk_debug = 553648138
+#BBPretain: range error 72
+#BBPretain: range error 71
 
 
-# 15:17:06 >  
-# 15:17:06 >  "/usr/bin/python" "upgrade.SQL.py" "upgrade"
-# 15:17:06 >  
 
-
-# 15:17:06 >  
-# 15:17:06 >  "Done."
-# 15:17:06 >  
+# 11:26:52 >  
+# 11:26:52 >  "Done."
+# 11:26:52 >  
 

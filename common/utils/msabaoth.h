@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _SEEN_SABAOTH_H
@@ -65,6 +65,7 @@ msab_export void msab_dbpathinit(const char *dbpath);
 msab_export void msab_dbfarminit(const char *dbfarm);
 msab_export char *msab_getDBfarm(char **ret);
 msab_export char *msab_getDBname(char **ret);
+msab_export char *msab_getUUID(char **ret);
 msab_export char *msab_marchScenario(const char *lang);
 msab_export char *msab_retreatScenario(const char *lang);
 msab_export char *msab_marchConnection(const char *host, const int port);
@@ -74,7 +75,7 @@ msab_export char *msab_registerStarted(void);
 msab_export char *msab_registerStop(void);
 msab_export char *msab_getMyStatus(sabdb** ret);
 msab_export char *msab_getStatus(sabdb** ret, char *dbname);
-msab_export char *msab_freeStatus(sabdb** ret);
+msab_export void msab_freeStatus(sabdb** ret);
 msab_export char *msab_getUplogInfo(sabuplog *ret, const sabdb *db);
 msab_export char *msab_serialise(char **ret, const sabdb *db);
 msab_export char *msab_deserialise(sabdb **ret, char *sabdb);

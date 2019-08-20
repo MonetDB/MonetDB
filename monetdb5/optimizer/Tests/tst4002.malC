@@ -2,7 +2,7 @@
 
 function foo();
 z:= "nil";
-d:= mtime.date(z);
+d:= calc.date(z);
 end foo;
 
 optimizer.aliases("user","foo");

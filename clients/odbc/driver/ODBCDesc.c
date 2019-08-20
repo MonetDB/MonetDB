@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "ODBCGlobal.h"
@@ -131,7 +131,7 @@ cleanODBCDescRec(ODBCDesc *desc, ODBCDescRec *rec)
 		free(rec->sql_desc_table_name);
 	if (rec->sql_desc_type_name)
 		free(rec->sql_desc_type_name);
-	memset(rec, 0, sizeof(*rec));
+	*rec = (ODBCDescRec) {0};
 	if (desc) {
 		if (isAD(desc)) {
 			rec->sql_desc_concise_type = SQL_C_DEFAULT;

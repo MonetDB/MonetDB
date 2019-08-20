@@ -80,13 +80,8 @@ tst115
 tst116
 tst1150
 #tst120	files are not located in module and paths are runtime dependent
-tst1200
-tst1201
-tst1202
-tst1203
-tst1204
-tst1205
-tst1225
+#tst1200
+#tst1204
 tst120a
 tst120b
 tst130
@@ -127,8 +122,7 @@ tst2550
 tst256
 tst2570
 tst272
-# opens /tmp/MonetEvents, i.e. not on Windows:
-NOT_WIN32?tst275
+tst275
 tst280
 tst281
 tst292

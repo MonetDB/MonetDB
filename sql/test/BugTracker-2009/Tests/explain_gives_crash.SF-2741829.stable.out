@@ -18,7 +18,6 @@ stdout of test 'explain_gives_crash.SF-2741829` in directory 'sql/test/BugTracke
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:17:23 >  
 # 13:17:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23841" "--port=32129"

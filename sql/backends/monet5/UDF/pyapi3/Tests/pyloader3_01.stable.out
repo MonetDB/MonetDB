@@ -18,7 +18,6 @@ stdout of test 'pyloader3_01` in directory 'sql/backends/monet5/UDF/pyapi3` itse
 # MonetDB/SQL module loaded
 # MonetDB/Python module loaded
 
-Ready.
 
 # 13:26:39 >  
 # 13:26:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30229" "--port=37683"
@@ -66,10 +65,10 @@ Ready.
 #DROP LOADER myfunc2;
 #DROP LOADER myfunc3;
 #SELECT * FROM functions WHERE name='myfunc';
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system # name
+% int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean # type
+% 1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5 # length
 #ROLLBACK;
 
 # 13:26:39 >  

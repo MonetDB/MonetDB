@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -65,12 +65,11 @@ static char name[128];
 static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 {
 	BATiter bi = bat_iterator(b);
-	BATiter biidx = bat_iterator(bidx);
 	BUN p;
 
 	if (BAThash(b) == GDK_SUCCEED) {
 		HASHloop_str(bi, b->thash, p, part) {
-			if (*((oid *) BUNtail(biidx, p)) == *prv) {
+			if (BUNtoid(bidx, p) == *prv) {
 				*prv = (oid) p;
 				return TRUE;
 			}
@@ -80,7 +79,7 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 		BUN q;
 
 		BATloop(b, p, q) {
-			if (*((oid *) BUNtail(biidx, p)) == *prv &&
+			if (BUNtoid(bidx, p) == *prv &&
 				strcmp(BUNtail(bi, p), part) == 0) {
 				*prv = (oid) p;
 				return TRUE;
@@ -409,9 +408,11 @@ TKNZRdepositFile(void *r, str *fnme)
 
 	(void) r;
 	if (**fnme == '/')
-		snprintf(buf, FILENAME_MAX, "%s", *fnme);
+		len = snprintf(buf, FILENAME_MAX, "%s", *fnme);
 	else
-		snprintf(buf, FILENAME_MAX, "%s/%s", monet_cwd, *fnme);
+		len = snprintf(buf, FILENAME_MAX, "%s/%s", monet_cwd, *fnme);
+	if (len == -1 || len >= FILENAME_MAX)
+		throw(MAL, "tokenizer.depositFile", SQLSTATE(HY001) "tokenizer filename path is too large");
 	/* later, handle directory separator */
 	fs = open_rastream(buf);
 	if (fs == NULL)
@@ -444,8 +445,7 @@ TKNZRdepositFile(void *r, str *fnme)
 			msg = TKNZRappend(&pos, &s);
 			if (msg ) {
 				bstream_destroy(bs);
-				mnstr_close(fs);
-				mnstr_destroy(fs);
+				close_stream(fs);
 				return msg;
 			}
 			*t = '\n';
@@ -455,8 +455,7 @@ TKNZRdepositFile(void *r, str *fnme)
 	}
 
 	bstream_destroy(bs);
-	mnstr_close(fs);
-	mnstr_destroy(fs);
+	close_stream(fs);
 	return MAL_SUCCEED;
 }
 
@@ -524,7 +523,6 @@ takeOid(oid id, str *val)
 	str parts[MAX_TKNZR_DEPTH];
 	size_t lngth = 0;
 	str s;
-	BATiter biidx; /* Iterator for index bat */
 
 	if (id >= BATcount(tokenBAT[INDEX].val)) {
 		throw(MAL, "tokenizer.takeOid", OPERATION_FAILED " illegal oid");
@@ -537,9 +535,8 @@ takeOid(oid id, str *val)
 
 	for (i = depth - 1; i >= 0; i--) {
 		BATiter bi = bat_iterator(tokenBAT[i].val);
-		biidx = bat_iterator(tokenBAT[i].idx);
-		parts[i] = (str) BUNtail(bi, id);
-		id = *(oid *) BUNtail(biidx, id);
+		parts[i] = (str) BUNtvar(bi, id);
+		id = BUNtoid(tokenBAT[i].idx, id);
 		lngth += strlen(parts[i]);
 	}
 

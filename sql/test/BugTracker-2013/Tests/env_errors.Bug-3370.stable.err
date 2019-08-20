@@ -30,12 +30,12 @@ stderr of test 'env_errors.Bug-3370` in directory 'sql/test/BugTracker-2013` its
 
 MAPI  = (monetdb) /var/tmp/mtest-12309/.s.monetdb.33326
 QUERY = set role blah;
-ERROR = !SQLException:sql.update_var:42000!Role (blah) missing
-CODE  = 42100
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+ERROR = !Role (blah) missing
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12403/.s.monetdb.39068
 QUERY = set schema xyz;
-ERROR = !SQLException:sql.update_var:3F000!Schema (xyz) missing
-CODE  = 42100
+ERROR = !Schema (xyz) missing
+CODE  = 3F000
 
 # 09:53:02 >  
 # 09:53:02 >  "Done."

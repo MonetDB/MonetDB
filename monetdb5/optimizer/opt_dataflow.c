@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -118,6 +118,12 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 	/* update instructions can be updated if the target variable
 	 * has not been read in the block so far */
 	if ( isUpdateInstruction(p) ){
+		/* the SQL update functions change BATs that are not
+		 * explicitly mentioned as arguments (and certainly not as the
+		 * first argument), but that can still be available to the MAL
+		 * program (see bugs.monetdb.org/6641) */
+		if (getModuleId(p) == sqlRef)
+			return 1;
 #ifdef DEBUG_OPT_DATAFLOW
 		if( getState(states,p,1) & (VARREAD | VARBLOCK))
 			fprintf(stderr,"#breakpoint on update %s state %d\n", getVarName(mb,getArg(p,j)), getState(states,p,j));

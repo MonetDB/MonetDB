@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _SQL_SCAN_H_
@@ -21,19 +21,17 @@ struct scanner {
 	stream *log;
 
 	int yynext;		/* next token, lr(1) isn't powerful enough for sql */
-	int yylast;		/* previous token, to detect superfluous semi-colons */
-	int yysval;		/* start of current token */
+	size_t yylast;	/* previous token, to detect superfluous semi-colons */
+	size_t yysval;	/* start of current token */
 	int yyval;		/* current token */
-	int yycur;		/* next char in the queue */
+	size_t yycur;	/* next char in the queue */
 	char yybak;		/* sometimes it's needed to write an EOS marker */
-	int as;			/* start of query part of view's etc */
+	size_t as;		/* start of query part of view's etc */
 	int key;		/* query hash */
-	int started;		/* found at least one token */
+	int started;	/* found at least one token */
 	prot mode;		/* which mode (line (1,N), blocked) */
-	char *schema;		/* Keep schema name of create statement, 
-				   needed AUTO_INCREMENT, SERIAL */
-	char *errstr;		/* error message from the bowels of
-				 * the scanner */
+	char *schema;	/* Keep schema name of create statement, needed AUTO_INCREMENT, SERIAL */
+	char *errstr;	/* error message from the bowels of the scanner */
 };
 
 #define QUERY(scanner) (scanner.rs->buf+scanner.rs->pos)

@@ -3,11 +3,11 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
- * The first attempt of the multiple optimizer is to locate
+ * The first attempt of the multiplex optimizer is to locate
  * a properly typed multi-plexed implementation.
  * The policy is to search for bat<mod>.<fcn> before going
  * into the iterator code generation.
@@ -245,11 +245,11 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					setModuleId(q,putName(buf));
 					q->typechk = TYPE_UNKNOWN;
 
-					actions++;
 					/* now see if we can resolve the instruction */
 					typeChecker(cntxt->usermodule,mq,q,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
+					actions++;
 					break;
 				}
 				/* handle simple upgraded assignments as well */
@@ -261,11 +261,11 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					q= pushArgument(mq,q, getArg(q,1));
 					getArg(q,1)= refbat;
 				
-					actions++;
 					q->typechk = TYPE_UNKNOWN;
 					typeChecker(cntxt->usermodule,mq,q,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
+					actions++;
 					break;
 				}
 		}
@@ -350,7 +350,7 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module
 		/* always restore the allocated function name */
 		getVarConstant(mb, getArg(pci, 2)).val.sval= fcn;
 		assert(strlen(fcn) <= INT_MAX);
-		getVarConstant(mb, getArg(pci, 2)).len= (int) strlen(fcn);
+		getVarConstant(mb, getArg(pci, 2)).len = strlen(fcn);
 
 		if (r) return 1;
 

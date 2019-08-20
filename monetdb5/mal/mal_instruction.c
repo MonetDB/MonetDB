@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -27,7 +27,7 @@ addMalException(MalBlkPtr mb, str msg)
 			return ; // just stick to one error message, ignore rest
 		strcpy(new, mb->errors);
 		strcat(new, msg);
-		GDKfree(mb->errors);
+		freeException(mb->errors);
 		mb->errors = new;
 	} else {
 		new = GDKstrdup(msg);
@@ -111,7 +111,7 @@ newMalBlk(int elements)
 	if (mb == NULL)
 		return NULL;
 
-	/* each MAL instruction implies at least on variable 
+	/* each MAL instruction implies at least one variable 
  	 * we reserve some extra for constants */
 	v = (VarRecord *) GDKzalloc(sizeof(VarRecord) * (elements + 8) );
 	if (v == NULL) {
@@ -134,7 +134,6 @@ newMalBlk(int elements)
 	mb->unsafeProp = 0;
 	mb->sealedProp = 0;
 	mb->replica = NULL;
-	mb->trap = 0;
 	mb->starttime = 0;
 	mb->runtime = 0;
 	mb->calls = 0;
@@ -312,8 +311,10 @@ copyMalBlk(MalBlkPtr old)
 	for (i = 0; i < old->stop; i++) {
 		mb->stmt[i] = copyInstruction(old->stmt[i]);
 		if(!mb->stmt[i]) {
-			while (--i >= 0)
+			while (--i >= 0){
 				freeInstruction(mb->stmt[i]);
+				mb->stmt[i]= NULL;
+			}
 			for (i = 0; i < old->vtop; i++)
 				VALclear(&mb->var[i].value);
 			GDKfree(mb->var);
@@ -324,8 +325,10 @@ copyMalBlk(MalBlkPtr old)
 	}
 	mb->help = old->help ? GDKstrdup(old->help) : NULL;
 	if (old->help && !mb->help) {
-		for (i = 0; i < old->stop; i++)
+		for (i = 0; i < old->stop; i++){
 			freeInstruction(mb->stmt[i]);
+			mb->stmt[i]= NULL;
+		}
 		for (i = 0; i < old->vtop; i++)
 			VALclear(&mb->var[i].value);
 		GDKfree(mb->var);
@@ -336,7 +339,6 @@ copyMalBlk(MalBlkPtr old)
 	strncpy(mb->binding,  old->binding, IDLENGTH);
 	mb->errors = old->errors? GDKstrdup(old->errors):0;
 	mb->tag = old->tag;
-	mb->trap = old->trap;
 	mb->runtime = old->runtime;
 	mb->calls = old->calls;
 	mb->optimize = old->optimize;
@@ -385,14 +387,20 @@ getMalBlkOptimized(MalBlkPtr mb, str name)
 	InstrPtr p;
 	int i= 0;
 	char buf[IDLENGTH]= {0}, *n;
+	size_t nlen;
 
 	if( name == 0)
 		return mb;
-	strncpy(buf,name, IDLENGTH);
-	buf[IDLENGTH - 1] = 0;
+
+	nlen = strlen(name);
+	if (nlen >= sizeof(buf)) {
+		mb->errors = createMalException(mb,0, TYPE, "Optimizer name is too large");
+		return NULL;
+	}
+	memcpy(buf, name, nlen + 1);
 	n = strchr(buf,']');
 	if( n) *n = 0;
-	
+
 	while (h ){
 		for( i = 1; i< h->stop; i++){
 			p = getInstrPtr(h,i);
@@ -549,6 +557,7 @@ removeInstructionBlock(MalBlkPtr mb, int pc, int cnt)
 	for (i = pc; i < pc + cnt; i++) {
 		p = getInstrPtr(mb, i);
 		freeInstruction(p);
+		mb->stmt[i]= NULL;
 	}
 
 	for (i = pc; i < mb->stop - cnt; i++)
@@ -596,27 +605,20 @@ findVariable(MalBlkPtr mb, const char *name)
 }
 
 /* The second version of findVariable assumes you have not yet
- * allocated a private structure. This is particularly usefull during
+ * allocated a private structure. This is particularly useful during
  * parsing, because most variables are already defined. This way we
  * safe GDKmalloc/GDKfree. */
 int
 findVariableLength(MalBlkPtr mb, str name, int len)
 {
 	int i;
-	int j;
 
-	for (i = mb->vtop - 1; i >= 0; i--)
-	{
-			str s = mb->var[i].id;
+	for (i = mb->vtop - 1; i >= 0; i--) {
+		const char *s = getVarName(mb, i);
 
-			j = 0;
-			if (s)
-				for (j = 0; j < len; j++)
-					if (name[j] != s[j])
-						break;
-			if (j == len && s && s[j] == 0)
-				return i;
-		}
+		if (s && strncmp(name, s, len) == 0 && s[len] == 0)
+			return i;
+	}
 	return -1;
 }
 
@@ -629,7 +631,7 @@ getType(MalBlkPtr mb, str nme)
 
 	i = findVariable(mb, nme);
 	if (i < 0)
-		return getAtomIndex(nme, -1, TYPE_any);
+		return getAtomIndex(nme, strlen(nme), TYPE_any);
 	return getVarType(mb, i);
 }
 
@@ -987,180 +989,36 @@ convertConstant(int type, ValPtr vr)
 		throw(SYNTAX, "convertConstant", "type index out of bound");
 	if (vr->vtype == type)
 		return MAL_SUCCEED;
-	if (vr->vtype == TYPE_str) {
-		size_t ll = 0;
-		ptr d = NULL;
-		char *s = vr->val.sval;
-
-		if (ATOMfromstr(type, &d, &ll, vr->val.sval) < 0 || d == NULL) {
-			GDKfree(d);
-			VALinit(vr, type, ATOMnilptr(type));
-			throw(SYNTAX, "convertConstant", "parse error in '%s'", s);
-		}
-		if (strncmp(vr->val.sval, "nil", 3) != 0 && ATOMcmp(type, d, ATOMnilptr(type)) == 0) {
-			GDKfree(d);
-			VALinit(vr, type, ATOMnilptr(type));
-			throw(SYNTAX, "convertConstant", "parse error in '%s'", s);
-		}
-		VALset(vr, type, d);
-		if (ATOMextern(type) == 0)
-			GDKfree(d);
-		if (vr->vtype != type)
-			throw(SYNTAX, "convertConstant", "coercion failed in '%s'", s);
-	}
-
 	if (type == TYPE_bat || isaBatType(type)) {
 		/* BAT variables can only be set to nil */
+		VALclear(vr);
 		vr->vtype = type;
 		vr->val.bval = bat_nil;
 		return MAL_SUCCEED;
 	}
-	switch (ATOMstorage(type)) {
-	case TYPE_any:
-		/* In case *DEBUG*_MAL_INSTR is not defined and assertions are
-		 * disabled, this will fall-through to the type cases below,
-		 * rather than triggering an exception.
-		 * Is this correct/intended like this??
-		 */
-#ifdef DEBUG_MAL_INSTR
-		throw(SYNTAX, "convertConstant", "missing type");
-#else
-		assert(0);
-#endif
-	case TYPE_bit:
-	case TYPE_bte:
-	case TYPE_sht:
-	case TYPE_int:
-	case TYPE_void:
-	case TYPE_oid:
-	case TYPE_flt:
-	case TYPE_dbl:
-	case TYPE_lng:
-#ifdef HAVE_HGE
-	case TYPE_hge:
-#endif
-		if (VALconvert(type, vr) == NULL)
-			throw(SYNTAX, "convertConstant", "coercion failed");
-		return MAL_SUCCEED;
-	case TYPE_str:
-	{
-		str w;
-		if (vr->vtype == TYPE_void || ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
-			vr->vtype = type;
-			if ((vr->val.sval = GDKstrdup(str_nil)) == NULL)
-				throw(SYNTAX, "convertConstant", SQLSTATE(HY001) GDK_EXCEPTION);
-			vr->len = (int) strlen(vr->val.sval);
-			return MAL_SUCCEED;
-		}
-		w = ATOMformat(vr->vtype, VALptr(vr));
-		if (w == NULL)
-			throw(SYNTAX, "convertConstant", GDK_EXCEPTION);
-		vr->vtype = TYPE_str;
-		vr->len = (int) strlen(w);
-		vr->val.sval = w;
-		/* VALset(vr, type, w); does not use TYPE-str */
-		if (vr->vtype != type)
-			throw(SYNTAX, "convertConstant", "coercion failed");
-		return MAL_SUCCEED;
-	}
-
-	case TYPE_bat:
-		/* BAT variables can only be set to nil */
-		vr->vtype = type;
-		vr->val.bval = bat_nil;
-		return MAL_SUCCEED;
-	case TYPE_ptr:
+	if (type == TYPE_ptr) {
 		/* all coercions should be avoided to protect against memory probing */
 		if (vr->vtype == TYPE_void) {
+			VALclear(vr);
 			vr->vtype = type;
 			vr->val.pval = 0;
 			return MAL_SUCCEED;
 		}
-		/*
-		   if (ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
-		   vr->vtype = type;
-		   vr->val.pval = 0;
-		   return MAL_SUCCEED;
-		   }
-		   if (vr->vtype == TYPE_int) {
-		   char buf[BUFSIZ];
-		   size_t ll = 0;
-		   ptr d = NULL;
-
-		   snprintf(buf, BUFSIZ, "%d", vr->val.ival);
-		   (*BATatoms[type].atomFromStr) (buf, &ll, &d);
-		   if( d==0 ){
-		   VALinit(vr, type, ATOMnilptr(type));
-		   throw(SYNTAX, "convertConstant", "conversion error");
-		   }
-		   VALset(vr, type, d);
-		   if (ATOMextern(type) == 0 )
-		   GDKfree(d);
-		   }
-		 */
 		if (vr->vtype != type)
 			throw(SYNTAX, "convertConstant", "pointer conversion error");
 		return MAL_SUCCEED;
-		/* Extended types are always represented as string literals
-		 * and converted to the internal storage structure. Beware
-		 * that the typeFromStr routines generate storage space for
-		 * the new value. This should be garbage collected at the
-		 * end. */
-	default:{
-		size_t ll = 0;
-		ptr d = NULL;
-
-		if (isaBatType(type)) {
-			if (VALinit(vr, TYPE_bat, ATOMnilptr(TYPE_bat)) == NULL)
-				throw(MAL, "convertConstant", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			break;
-		}
-		/* see if an atomFromStr() function is available */
-		if (BATatoms[type].atomFromStr == 0)
-			throw(SYNTAX, "convertConstant", "no conversion operator defined");
-
-		/* if the value we're converting from is nil, the to
-		 * convert to value will also be nil */
-		if (ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
-			if (VALinit(vr, type, ATOMnilptr(type)) == NULL)
-				throw(MAL, "convertConstant", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			break;
-		}
-
-		/* if what we're converting from is not a string */
-		if (vr->vtype != TYPE_str) {
-			/* an extern type */
-			str w;
-
-			/* dump the non-string atom as string in w */
-			if ((w = ATOMformat(vr->vtype, VALptr(vr))) == NULL ||
-				/* and try to parse it from string as the desired type */
-				ATOMfromstr(type, &d, &ll, w) < 0 ||
-				d == NULL) {
-				GDKfree(d);
-				GDKfree(w);
-				VALinit(vr, type, ATOMnilptr(type));
-				throw(SYNTAX, "convertConstant", "conversion error");
-			}
-			GDKfree(w);
-			memset((char *) vr, 0, sizeof(*vr));
-			VALset(vr, type, d);
-			if (ATOMextern(type) == 0)
-				GDKfree(d);
-		} else {				/* what we're converting from is a string */
-			if (ATOMfromstr(type, &d, &ll, vr->val.sval) < 0 || d == NULL) {
-				GDKfree(d);
-				VALinit(vr, type, ATOMnilptr(type));
-				throw(SYNTAX, "convertConstant", "conversion error");
-			}
-			VALset(vr, type, d);
-			if (ATOMextern(type) == 0)
-				GDKfree(d);
-		}
 	}
+	if (type == TYPE_any) {
+#ifndef DEBUG_MAL_INSTR
+		assert(0);
+#endif
+		throw(SYNTAX, "convertConstant", "missing type");
 	}
-	if (vr->vtype != type)
-		throw(SYNTAX, "convertConstant", "conversion error");
+	if (VALconvert(type, vr) == NULL) {
+		if (vr->vtype == TYPE_str)
+			throw(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
+		throw(SYNTAX, "convertConstant", "coercion failed");
+	}
 	return MAL_SUCCEED;
 }
 
@@ -1210,7 +1068,6 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 		cst->vtype = TYPE_bat;
 		cst->val.bval = bat_nil;
 	} else if (cst->vtype != type && !isaBatType(type) && !isPolyType(type)) {
-		ValRecord vr = *cst;
 		int otype = cst->vtype;
 		assert(type != TYPE_any);	/* help Coverity */
 		msg = convertConstant(type, cst);
@@ -1227,7 +1084,6 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 		} else {
 			assert(cst->vtype == type);
 		}
-		VALclear(&vr);
 	}
 	k = fndConstant(mb, cst, MAL_VAR_WINDOW);
 	if (k >= 0) {
@@ -1351,7 +1207,8 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name)
 		return NULL;
 	v = findVariable(mb, name);
 	if (v < 0) {
-		if ((v = newVariable(mb, name, strlen(name), getAtomIndex(name, -1, TYPE_any))) < 0) {
+		size_t namelen = strlen(name);
+		if ((v = newVariable(mb, name, namelen, getAtomIndex(name, namelen, TYPE_any))) < 0) {
 			freeInstruction(p);
 			return NULL;
 		}

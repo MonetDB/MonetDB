@@ -22,7 +22,6 @@ stdout of test 'withGrantOption` in directory 'sql/test/Users` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:30:20 >  
 # 10:30:20 >  "/usr/bin/python2" "withGrantOption.SQL.py" "withGrantOption"

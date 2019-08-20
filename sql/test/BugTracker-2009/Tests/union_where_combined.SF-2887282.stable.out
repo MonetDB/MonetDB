@@ -15,7 +15,6 @@ stdout of test 'union_where_combined.SF-2887282` in directory 'sql/test/BugTrack
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:37056/
 # MonetDB/SQL module v2.34.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

@@ -18,7 +18,6 @@ stdout of test 'imprints_hge_type` in directory 'sql/test/orderidx` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:02:31 >  
 # 17:02:31 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19069" "--port=37467"
@@ -112,7 +111,7 @@ CREATE IMPRINTS INDEX "hge_impidx_hugeint" ON "sys"."hge_types" ("hugeint");
 CREATE IMPRINTS INDEX "hge_impidx_numeric" ON "sys"."hge_types" ("numeric");
 CREATE IMPRINTS INDEX "hge_impidx_numeric37_9" ON "sys"."hge_types" ("numeric37_9");
 CREATE IMPRINTS INDEX "hge_impidx_numeric38" ON "sys"."hge_types" ("numeric38");
-COPY 18 RECORDS INTO "sys"."hge_types" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 18 RECORDS INTO "sys"."hge_types" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 12345678900987654321	NULL	NULL	NULL	NULL	NULL	NULL
 NULL	123456789012345.678	NULL	NULL	NULL	NULL	NULL
 NULL	NULL	NULL	NULL	123456789012345.678	NULL	NULL
@@ -277,7 +276,7 @@ CREATE TABLE "sys"."hge_types" (
 	"numeric38"    DECIMAL(38),
 	"numeric37_9"  DECIMAL(37,9)
 );
-COPY 36 RECORDS INTO "sys"."hge_types" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 36 RECORDS INTO "sys"."hge_types" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 12345678900987654321	NULL	NULL	NULL	NULL	NULL	NULL
 NULL	123456789012345.678	NULL	NULL	NULL	NULL	NULL
 NULL	NULL	NULL	NULL	123456789012345.678	NULL	NULL

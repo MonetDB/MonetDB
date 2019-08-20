@@ -19,7 +19,6 @@ stdout of test 'segfault_in_aggregation.Bug-3225` in directory 'sql/test/BugTrac
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 01:10:42 >  
 # 01:10:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12853" "--port=36424"

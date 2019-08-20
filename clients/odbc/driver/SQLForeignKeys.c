@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -389,23 +389,23 @@ SQLForeignKeysW(SQLHSTMT StatementHandle,
 	clearStmtErrors(stmt);
 
 	fixWcharIn(PKCatalogName, NameLength1, SQLCHAR,
-		   PKcatalog, addStmtError, stmt, goto exit);
+		   PKcatalog, addStmtError, stmt, goto bailout);
 	fixWcharIn(PKSchemaName, NameLength2, SQLCHAR,
-		   PKschema, addStmtError, stmt, goto exit);
+		   PKschema, addStmtError, stmt, goto bailout);
 	fixWcharIn(PKTableName, NameLength3, SQLCHAR,
-		   PKtable, addStmtError, stmt, goto exit);
+		   PKtable, addStmtError, stmt, goto bailout);
 	fixWcharIn(FKCatalogName, NameLength4, SQLCHAR,
-		   FKcatalog, addStmtError, stmt, goto exit);
+		   FKcatalog, addStmtError, stmt, goto bailout);
 	fixWcharIn(FKSchemaName, NameLength5, SQLCHAR,
-		   FKschema, addStmtError, stmt, goto exit);
+		   FKschema, addStmtError, stmt, goto bailout);
 	fixWcharIn(FKTableName, NameLength6, SQLCHAR,
-		   FKtable, addStmtError, stmt, goto exit);
+		   FKtable, addStmtError, stmt, goto bailout);
 
 	rc = MNDBForeignKeys(stmt, PKcatalog, SQL_NTS, PKschema, SQL_NTS,
 			     PKtable, SQL_NTS, FKcatalog, SQL_NTS,
 			     FKschema, SQL_NTS, FKtable, SQL_NTS);
 
-      exit:
+      bailout:
 	if (PKcatalog)
 		free(PKcatalog);
 	if (PKschema)

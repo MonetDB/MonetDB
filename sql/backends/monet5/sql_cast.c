@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -29,7 +29,7 @@ str
 nil_2_timestamp(timestamp *res, const void *val)
 {
 	(void) val;
-	*res = *timestamp_nil;
+	*res = timestamp_nil;
 	return MAL_SUCCEED;
 }
 
@@ -41,7 +41,7 @@ str_2_timestamp(timestamp *res, const str *val)
 	ssize_t e;
 	char buf[BUFSIZ];
 
-	e = ATOMfromstr(TYPE_timestamp, &p, &len, *val);
+	e = ATOMfromstr(TYPE_timestamp, &p, &len, *val, false);
 	if (e < 0 || !p || (ATOMcmp(TYPE_timestamp, p, ATOMnilptr(TYPE_timestamp)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
@@ -71,8 +71,7 @@ batnil_2_timestamp(bat *res, const bat *bid)
 		throw(SQL, "sql.2_timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		timestamp r = *timestamp_nil;
-		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
+		if (BUNappend(dst, &timestamp_nil, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -101,7 +100,7 @@ batstr_2_timestamp(bat *res, const bat *bid)
 		throw(SQL, "sql.2_timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		str v = (str) BUNtail(bi, p);
+		str v = (str) BUNtvar(bi, p);
 		timestamp r;
 		msg = str_2_timestamp(&r, &v);
 		if (msg) {
@@ -136,7 +135,7 @@ str_2_daytime(daytime *res, const str *val)
 	ssize_t e;
 	char buf[BUFSIZ];
 
-	e = ATOMfromstr(TYPE_daytime, &p, &len, *val);
+	e = ATOMfromstr(TYPE_daytime, &p, &len, *val, false);
 	if (e < 0 || !p || (ATOMcmp(TYPE_daytime, p, ATOMnilptr(TYPE_daytime)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
@@ -165,8 +164,8 @@ batnil_2_daytime(bat *res, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.2_daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
+	daytime r = daytime_nil;
 	BATloop(b, p, q) {
-		daytime r = daytime_nil;
 		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
@@ -196,7 +195,7 @@ batstr_2_daytime(bat *res, const bat *bid)
 		throw(SQL, "sql.2_daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		str v = (str) BUNtail(bi, p);
+		str v = (str) BUNtvar(bi, p);
 		daytime r;
 		msg = str_2_daytime(&r, &v);
 		if (msg) {
@@ -231,7 +230,7 @@ str_2_date(date *res, const str *val)
 	ssize_t e;
 	char buf[BUFSIZ];
 
-	e = ATOMfromstr(TYPE_date, &p, &len, *val);
+	e = ATOMfromstr(TYPE_date, &p, &len, *val, false);
 	if (e < 0 || !p || (ATOMcmp(TYPE_date, p, ATOMnilptr(TYPE_date)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
@@ -251,7 +250,7 @@ SQLdate_2_str(str *res, const date *val)
 {
 	char *p = NULL;
 	size_t len = 0;
-	if (date_tostr(&p, &len, val) < 0) {
+	if (date_tostr(&p, &len, val, false) < 0) {
 		GDKfree(p);
 		throw(SQL, "date", GDK_EXCEPTION);
 	}
@@ -273,8 +272,8 @@ batnil_2_date(bat *res, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.2_date", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
+	date r = date_nil;
 	BATloop(b, p, q) {
-		date r = date_nil;
 		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
@@ -304,7 +303,7 @@ batstr_2_date(bat *res, const bat *bid)
 		throw(SQL, "sql.2_date", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		str v = (str) BUNtail(bi, p);
+		str v = (str) BUNtvar(bi, p);
 		date r;
 		msg = str_2_date(&r, &v);
 		if (msg) {
@@ -324,30 +323,30 @@ batstr_2_date(bat *res, const bat *bid)
 }
 
 str
-str_2_sqlblob(sqlblob **res, const str *val)
+str_2_blob(blob **res, const str *val)
 {
 	ptr p = NULL;
 	size_t len = 0;
 	ssize_t e;
 	char buf[BUFSIZ];
 
-	e = ATOMfromstr(TYPE_sqlblob, &p, &len, *val);
-	if (e < 0 || !p || (ATOMcmp(TYPE_sqlblob, p, ATOMnilptr(TYPE_sqlblob)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
+	e = ATOMfromstr(TYPE_blob, &p, &len, *val, false);
+	if (e < 0 || !p || (ATOMcmp(TYPE_blob, p, ATOMnilptr(TYPE_blob)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
 		snprintf(buf, BUFSIZ, "Conversion of string '%s' failed", *val? *val:"");
-		throw(SQL, "sqlblob", SQLSTATE(42000) "%s", buf);
+		throw(SQL, "blob", SQLSTATE(42000) "%s", buf);
 	}
-	*res = (sqlblob *) p;
+	*res = (blob *) p;
 	return MAL_SUCCEED;
 }
 
 str
-SQLsqlblob_2_str(str *res, const sqlblob *val)
+SQLblob_2_str(str *res, const blob *val)
 {
 	char *p = NULL;
 	size_t len = 0;
-	if (SQLBLOBtostr(&p, &len, val) < 0) {
+	if (BLOBtostr(&p, &len, val, false) < 0) {
 		GDKfree(p);
 		throw(SQL, "blob", GDK_EXCEPTION);
 	}
@@ -356,7 +355,7 @@ SQLsqlblob_2_str(str *res, const sqlblob *val)
 }
 
 str
-batstr_2_sqlblob(bat *res, const bat *bid)
+batstr_2_blob(bat *res, const bat *bid)
 {
 	BAT *b, *dst;
 	BATiter bi;
@@ -364,18 +363,18 @@ batstr_2_sqlblob(bat *res, const bat *bid)
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2_sqlblob", SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, "batcalc.str_2_blob", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = COLnew(b->hseqbase, TYPE_sqlblob, BATcount(b), TRANSIENT);
+	dst = COLnew(b->hseqbase, TYPE_blob, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_sqlblob", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.2_blob", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		str v = (str) BUNtail(bi, p);
-		sqlblob *r;
-		msg = str_2_sqlblob(&r, &v);
+		str v = (str) BUNtvar(bi, p);
+		blob *r;
+		msg = str_2_blob(&r, &v);
 		if (msg) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
@@ -394,7 +393,7 @@ batstr_2_sqlblob(bat *res, const bat *bid)
 }
 
 static str
-SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
+SQLstr_cast_(str *res, mvc *m, sql_class eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
 {
 	char *r = NULL;
 	int sz = MAX(2, len + 1);	/* nil should fit */
@@ -435,7 +434,7 @@ str
 SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *res = getArgReference_str(stk, pci, 0);
-	int eclass = *getArgReference_int(stk, pci, 1);
+	sql_class eclass = (sql_class)*getArgReference_int(stk, pci, 1);
 	int d = *getArgReference_int(stk, pci, 2);
 	int s = *getArgReference_int(stk, pci, 3);
 	int has_tz = *getArgReference_int(stk, pci, 4);
@@ -465,7 +464,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	char *r = NULL;
 	bat *res = getArgReference_bat(stk, pci, 0);
-	int *eclass = getArgReference_int(stk, pci, 1);
+	sql_class eclass = (sql_class) *getArgReference_int(stk, pci, 1);
 	int *d1 = getArgReference_int(stk, pci, 2);
 	int *s1 = getArgReference_int(stk, pci, 3);
 	int *has_tz = getArgReference_int(stk, pci, 4);
@@ -487,7 +486,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	BATloop(b, p, q) {
 		ptr v = (ptr) BUNtail(bi, p);
-		msg = SQLstr_cast_(&r, m, *eclass, *d1, *s1, *has_tz, v, b->ttype, *digits);
+		msg = SQLstr_cast_(&r, m, eclass, *d1, *s1, *has_tz, v, b->ttype, *digits);
 		if (msg) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
@@ -602,6 +601,8 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* sql_cast_impl_down_from_flt */
 
+#define round_float(x)	roundf(x)
+
 #define TP1 flt
 #define TP2 bte
 #include "sql_cast_impl_down_from_flt.h"
@@ -633,6 +634,9 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP2
 #undef TP1
 #endif
+
+#undef round_float
+#define round_float(x)	round(x)
 
 #define TP1 dbl
 #define TP2 bte
@@ -731,10 +735,6 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP2
 #undef TP1
 #endif
-
-/* down casting */
-
-#define DOWNCAST
 
 #define TP1 sht
 #define TP2 bte

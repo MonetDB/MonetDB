@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -97,7 +97,7 @@ qc_clean(qc *cache)
 	cq *n, *q, *p = NULL;
 
 	for (q = cache->q; q; ) {
-		if (q->type != Q_PREPARE) {
+		if (!q->prepared) {
 			n = q->next;
 			if (p) 
 				p->next = n;
@@ -222,13 +222,13 @@ qc_find(qc *cache, int id)
 }
 
 cq *
-qc_match(qc *cache, symbol *s, atom **params, int  plen, int key)
+qc_match(qc *cache, mvc *sql, symbol *s, atom **params, int  plen, int key)
 {
 	cq *q;
 
 	for (q = cache->q; q; q = q->next) {
 		if (q->key == key) {
-			if (q->paramlen == plen && param_list_cmp(q->params, params, plen, q->type) == 0 && symbol_cmp(q->s, s) == 0) {
+			if (q->paramlen == plen && param_list_cmp(q->params, params, plen, q->type) == 0 && symbol_cmp(sql, q->s, s) == 0) {
 				q->count++;
 				return q;
 			}
@@ -238,7 +238,7 @@ qc_match(qc *cache, symbol *s, atom **params, int  plen, int key)
 }
 
 cq *
-qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, atom **params, int paramlen, int key, int type, char *cmd, int no_mitosis)
+qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, atom **params, int paramlen, int key, int type, char *cmd, int no_mitosis, int prepared)
 {
 	int i, namelen;
 	cq *n = MNEW(cq);
@@ -266,6 +266,7 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, ato
 			n->params[i] = *(atom_type(a));
 		}
 	}
+	n->prepared = prepared;
 	n->next = cache->q;
 	n->stk = 0;
 	n->code = NULL;

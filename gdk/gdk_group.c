@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -217,7 +217,7 @@
 						cnts[grp]++;		\
 					if (gn->tsorted &&		\
 					    grp != ngrp - 1)		\
-						gn->tsorted = 0;	\
+						gn->tsorted = false;	\
 					/* we found the value/group */	\
 					/* combination, go to next */	\
 					/* value */			\
@@ -313,7 +313,7 @@
 						cnts[grp]++;		\
 					if (gn->tsorted &&		\
 					    grp != ngrp - 1)		\
-						gn->tsorted = 0;	\
+						gn->tsorted = false;	\
 					break;				\
 				}					\
 			}						\
@@ -413,7 +413,7 @@ pop(oid x)
 							cnts[grp]++;	\
 						if (gn->tsorted &&	\
 						    grp != ngrp - 1)	\
-							gn->tsorted = 0; \
+							gn->tsorted = false; \
 						break;			\
 					}				\
 				}					\
@@ -442,7 +442,7 @@ pop(oid x)
 							cnts[grp]++;	\
 						if (gn->tsorted &&	\
 						    grp != ngrp - 1)	\
-							gn->tsorted = 0; \
+							gn->tsorted = false; \
 						break;			\
 					}				\
 				}					\
@@ -574,11 +574,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					goto error;
 				BATsetcount(en, cnt);
 				memcpy(Tloc(en, 0), cand, cnt * sizeof(oid));
-				en->tsorted = 1;
+				en->tsorted = true;
 				en->trevsorted = cnt <= 1;
-				en->tkey = 1;
-				en->tnil = 0;
-				en->tnonil = 1;
+				en->tkey = true;
+				en->tnil = false;
+				en->tnonil = true;
 				en->tseqbase = oid_nil;
 			} else {
 				en = BATdense(0, b->hseqbase + start, cnt);
@@ -597,6 +597,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 		return GDK_SUCCEED;
 	}
+	assert(!BATtdense(b));
 	if (g) {
 		if (BATtdense(g))
 			maxgrp = g->tseqbase + BATcount(g);
@@ -805,7 +806,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			break;
 		}
 
-		gn->tsorted = 1;
+		gn->tsorted = true;
 		*groups = gn;
 	} else if (BATordered(b) || BATordered_rev(b)) {
 		BUN i, j;
@@ -851,7 +852,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* initialize to impossible position */
 		memset(pgrp, ~0, sizeof(BUN) * j);
 
-		gn->tsorted = 1; /* be optimistic */
+		gn->tsorted = true; /* be optimistic */
 
 		switch (t) {
 		case TYPE_bte:
@@ -898,7 +899,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		if (histo)
 			memset(cnts, 0, maxgrps * sizeof(lng));
 		ngrp = 0;
-		gn->tsorted = 1;
+		gn->tsorted = true;
 		r = 0;
 		for (;;) {
 			if (cand) {
@@ -917,7 +918,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			}
 			ngrps[r] = v;
 			if (r > 0 && v < ngrps[r - 1])
-				gn->tsorted = 0;
+				gn->tsorted = false;
 			if (histo)
 				cnts[v]++;
 			r++;
@@ -938,7 +939,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		if (histo)
 			memset(cnts, 0, maxgrps * sizeof(lng));
 		ngrp = 0;
-		gn->tsorted = 1;
+		gn->tsorted = true;
 		r = 0;
 		for (;;) {
 			if (cand) {
@@ -957,7 +958,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			}
 			ngrps[r] = v;
 			if (r > 0 && v < ngrps[r - 1])
-				gn->tsorted = 0;
+				gn->tsorted = false;
 			if (histo)
 				cnts[v]++;
 			r++;
@@ -965,7 +966,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKfree(sgrps);
 	} else if (g == NULL &&
 		   (BATcheckhash(b) ||
-		    (b->batPersistence == PERSISTENT &&
+		    (!b->batTransient &&
 		     BAThash(b) == GDK_SUCCEED) ||
 		    ((parent = VIEWtparent(b)) != 0 &&
 		     BATcheckhash(BBPdescriptor(parent))))) {
@@ -1000,7 +1001,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			end += lo;
 		}
 		hs = b->thash;
-		gn->tsorted = 1; /* be optimistic */
+		gn->tsorted = true; /* be optimistic */
 
 		switch (t) {
 		case TYPE_bte:
@@ -1056,7 +1057,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted, gc ? " (g clustered)" : "");
-		nme = BBP_physical(b->batCacheid);
+		nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
 		mask = MAX(HASHmask(cnt), 1 << 16);
 		/* mask is a power of two, so pop(mask - 1) tells us
 		 * which power of two */
@@ -1072,7 +1073,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GDKerror("BATgroup: cannot allocate hash table\n");
 			goto error;
 		}
-		gn->tsorted = 1; /* be optimistic */
+		gn->tsorted = true; /* be optimistic */
 
 		switch (t) {
 		case TYPE_bte:
@@ -1161,32 +1162,32 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	if (extents) {
 		BATsetcount(en, (BUN) ngrp);
-		en->tkey = 1;
-		en->tsorted = 1;
+		en->tkey = true;
+		en->tsorted = true;
 		en->trevsorted = ngrp == 1;
-		en->tnonil = 1;
-		en->tnil = 0;
+		en->tnonil = true;
+		en->tnil = false;
 		*extents = virtualize(en);
 	}
 	if (histo) {
 		BATsetcount(hn, (BUN) ngrp);
 		if (ngrp == cnt || ngrp == 1) {
 			hn->tkey = ngrp == 1;
-			hn->tsorted = 1;
-			hn->trevsorted = 1;
+			hn->tsorted = true;
+			hn->trevsorted = true;
 		} else {
-			hn->tkey = 0;
-			hn->tsorted = 0;
-			hn->trevsorted = 0;
+			hn->tkey = false;
+			hn->tsorted = false;
+			hn->trevsorted = false;
 		}
-		hn->tnonil = 1;
-		hn->tnil = 0;
+		hn->tnonil = true;
+		hn->tnil = false;
 		*histo = hn;
 	}
 	gn->tkey = ngrp == BATcount(gn);
 	gn->trevsorted = ngrp == 1 || BATcount(gn) <= 1;
-	gn->tnonil = 1;
-	gn->tnil = 0;
+	gn->tnonil = true;
+	gn->tnil = false;
 	ngrp--;	     /* max value is one less than number of values */
 	BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &ngrp);
 	*groups = gn;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -135,6 +135,7 @@ typedef struct{
 			break;														\
 		}																\
 		}																\
+		mut->args[0].b->theap.dirty = true;								\
 	} while (0)
 
 // single argument is preparatory step for GDK_mapreduce
@@ -332,9 +333,9 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		msg= createException(MAL,"mal.manifold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
-	mat[0].b->tnonil=0;
-	mat[0].b->tsorted=0;
-	mat[0].b->trevsorted=0;
+	mat[0].b->tnonil=false;
+	mat[0].b->tsorted=false;
+	mat[0].b->trevsorted=false;
 	mat[0].bi = bat_iterator(mat[0].b);
 	mat[0].first = (void *)  Tloc(mat[0].b, 0);
 	mat[0].last = (void *)  Tloc(mat[0].b, BUNlast(mat[0].b));

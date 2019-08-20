@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* multi version catalog */
@@ -16,7 +16,9 @@
 #include "sql_types.h"
 #include "sql_env.h"
 #include "sql_semantic.h"
+#include "sql_partition.h"
 #include "sql_privileges.h"
+#include "sql_querytype.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "gdk_logger.h"
@@ -33,7 +35,7 @@ sql_create_comments(mvc *m, sql_schema *s)
 	sql_column *c;
 	sql_key *k;
 
-	t = mvc_create_table(m, s, "comments", tt_table, 1, SQL_PERSIST, 0, -1);
+	t = mvc_create_table(m, s, "comments", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	c = mvc_create_column_(m, t, "id", "int", 32);
 	k = sql_trans_create_ukey(m->session->tr, t, "comments_id_pkey", pkey);
 	k = sql_trans_create_kc(m->session->tr, k, c);
@@ -43,36 +45,29 @@ sql_create_comments(mvc *m, sql_schema *s)
 	sql_trans_alter_null(m->session->tr, c, 0);
 }
 
+#define MVC_INIT_DROP_TABLE(SQLID, TNAME)				\
+	t = mvc_bind_table(m, s, TNAME);				\
+	SQLID = t->base.id;						\
+	if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) {	\
+		mvc_destroy(m);						\
+		fprintf(stderr, "!mvc_init: %s\n", output);		\
+		freeException(output);					\
+		return -1;						\
+	}
+
 int
 mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 {
 	int first = 0;
-
-	logger_settings log_settings;
-	/* Set the default WAL directory. "sql_logs" by default */
-	log_settings.logdir = "sql_logs";
-	/* Get and pass on the WAL directory location, if set */
-	if (GDKgetenv("gdk_logdir") != NULL) {
-		log_settings.logdir = GDKgetenv("gdk_logdir");
-	}
-	/* Get and pass on the shared WAL directory location, if set */
-	log_settings.shared_logdir = GDKgetenv("gdk_shared_logdir");
-	/* Get and pass on the shared WAL drift threshold, if set.
-	 * -1 by default, meaning it should be ignored, since it is not set */
-	log_settings.shared_drift_threshold = GDKgetenv_int("gdk_shared_drift_threshold", -1);
-
-	/* Get and pass on the flag how many WAL files should be preserved.
-	 * 0 by default - keeps only the current WAL file. */
-	log_settings.keep_persisted_log_files = GDKgetenv_int("gdk_keep_persisted_log_files", 0);
+	sql_schema *s;
+	sql_table *t;
+	sqlid tid = 0, ntid, cid = 0, ncid;
+	mvc *m;
+	str msg;
 
 	mvc_debug = debug&4;
 	if (mvc_debug) {
-		fprintf(stderr, "#mvc_init logdir %s\n", log_settings.logdir);
-		fprintf(stderr, "#mvc_init keep_persisted_log_files %d\n", log_settings.keep_persisted_log_files);
-		if (log_settings.shared_logdir != NULL) {
-			fprintf(stderr, "#mvc_init shared_logdir %s\n", log_settings.shared_logdir);
-		}
-		fprintf(stderr, "#mvc_init shared_drift_threshold %d\n", log_settings.shared_drift_threshold);
+		fprintf(stderr, "#mvc_init\n");
 	}
 	keyword_init();
 	if(scanner_init_keywords() != 0) {
@@ -80,59 +75,43 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		return -1;
 	}
 
-	if ((first = store_init(debug, store, ro, su, &log_settings, stk)) < 0) {
+	if ((first = store_init(debug, store, ro, su, stk)) < 0) {
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}
+
+	m = mvc_create(0, stk, 0, NULL, NULL);
+	if (!m) {
+		fprintf(stderr, "!mvc_init: malloc failure\n");
+		return -1;
+	}
+
+	m->sa = sa_create();
+	if (!m->sa) {
+		mvc_destroy(m);
+		fprintf(stderr, "!mvc_init: malloc failure\n");
+		return -1;
+	}
+
+	/* disable caching */
+	m->caching = 0;
+	/* disable size header */
+	m->sizeheader = false;
+
 	if (first || catalog_version) {
-		sql_schema *s;
-		sql_table *t;
-		sqlid tid = 0, ntid, cid = 0, ncid;
-		mvc *m = mvc_create(0, stk, 0, NULL, NULL);
-		if (!m) {
-			fprintf(stderr, "!mvc_init: malloc failure\n");
-			return -1;
-		}
-
-		m->sa = sa_create();
-		if (!m->sa) {
-			mvc_destroy(m);
-			fprintf(stderr, "!mvc_init: malloc failure\n");
-			return -1;
-		}
-
-		/* disable caching */
-		m->caching = 0;
-		/* disable history */
-		m->history = 0;
-		/* disable size header */
-		m->sizeheader = 0;
 		if(mvc_trans(m) < 0) {
 			mvc_destroy(m);
 			fprintf(stderr, "!mvc_init: failed to start transaction\n");
 			return -1;
 		}
+
 		s = m->session->schema = mvc_bind_schema(m, "sys");
 		assert(m->session->schema != NULL);
 
 		if (!first) {
 			str output;
-			t = mvc_bind_table(m, s, "tables");
-			tid = t->base.id;
-			if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) {
-				mvc_destroy(m);
-				fprintf(stderr, "!mvc_init: %s\n", output);
-				GDKfree(output);
-				return -1;
-			}
-			t = mvc_bind_table(m, s, "columns");
-			cid = t->base.id;
-			if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) {
-				mvc_destroy(m);
-				fprintf(stderr, "!mvc_init: %s\n", output);
-				GDKfree(output);
-				return -1;
-			}
+			MVC_INIT_DROP_TABLE(tid,  "tables")
+			MVC_INIT_DROP_TABLE(cid,  "columns")
 		}
 
 		t = mvc_create_view(m, s, "tables", SQL_PERSIST, "SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(CASE WHEN \"system\" THEN \"type\" + 10 /* system table/view */ ELSE (CASE WHEN \"commit_action\" = 0 THEN \"type\" /* table/view */ ELSE \"type\" + 20 /* global temp table */ END) END AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", CASE WHEN (NOT \"system\" AND \"commit_action\" > 0) THEN 1 ELSE 0 END AS \"temporary\" FROM \"sys\".\"_tables\" WHERE \"type\" <> 2 UNION ALL SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(\"type\" + 30 /* local temp table */ AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", 1 AS \"temporary\" FROM \"tmp\".\"_tables\";", 1);
@@ -140,7 +119,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
 		mvc_create_column_(m, t, "schema_id", "int", 32);
-		mvc_create_column_(m, t, "query", "varchar", 2048);
+		mvc_create_column_(m, t, "query", "varchar", 1 << 20);
 		mvc_create_column_(m, t, "type", "smallint", 16);
 		mvc_create_column_(m, t, "system", "boolean", 1);
 		mvc_create_column_(m, t, "commit_action", "smallint", 16);
@@ -173,7 +152,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		mvc_create_column_(m, t, "type_digits", "int", 32);
 		mvc_create_column_(m, t, "type_scale", "int", 32);
 		mvc_create_column_(m, t, "table_id", "int", 32);
-		mvc_create_column_(m, t, "default", "varchar", 2048);
+		mvc_create_column_(m, t, "default", "varchar", STORAGE_MAX_VALUE_LENGTH);
 		mvc_create_column_(m, t, "null", "boolean", 1);
 		mvc_create_column_(m, t, "number", "int", 32);
 		mvc_create_column_(m, t, "storage", "varchar", 2048);
@@ -203,13 +182,45 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		s = m->session->schema = mvc_bind_schema(m, "tmp");
 		assert(m->session->schema != NULL);
 
-		if (mvc_commit(m, 0, NULL) < 0) {
-			fprintf(stderr, "!mvc_init: unable to commit system tables\n");
+		if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {
+			fprintf(stderr, "!mvc_init: unable to commit system tables: %s\n", (msg + 6));
+			freeException(msg);
 			return -1;
 		}
-
-		mvc_destroy(m);
 	}
+
+	if(mvc_trans(m) < 0) {
+		mvc_destroy(m);
+		fprintf(stderr, "!mvc_init: failed to start transaction\n");
+		return -1;
+	}
+
+	//as the sql_parser is not yet initialized in the storage, we determine the sql type of the sql_parts here
+	for (node *n = m->session->tr->schemas.set->h; n; n = n->next) {
+		sql_schema *ss = (sql_schema*) n->data;
+		if(ss->tables.set) {
+			for (node *nn = ss->tables.set->h; nn; nn = nn->next) {
+				sql_table *tt = (sql_table*) nn->data;
+				if(isPartitionedByColumnTable(tt) || isPartitionedByExpressionTable(tt)) {
+					char *err;
+					if((err = initialize_sql_parts(m, tt)) != NULL) {
+						fprintf(stderr, "!mvc_init: unable to start partitioned table: %s.%s: %s\n",
+								ss->base.name, tt->base.name, err);
+						freeException(err);
+						return -1;
+					}
+				}
+			}
+		}
+	}
+
+	if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {
+		fprintf(stderr, "!mvc_init: unable to commit system tables: %s\n", (msg + 6));
+		freeException(msg);
+		return -1;
+	}
+
+	mvc_destroy(m);
 	return first;
 }
 
@@ -226,19 +237,13 @@ mvc_exit(void)
 void
 mvc_logmanager(void)
 {
-	Thread thr = THRnew("logmanager");
-
 	store_manager();
-	THRdel(thr);
 }
 
 void
 mvc_idlemanager(void)
 {
-	Thread thr = THRnew("idlemanager");
-
 	idle_manager();
-	THRdel(thr);
 }
 
 int
@@ -280,9 +285,12 @@ int
 mvc_trans(mvc *m)
 {
 	int schema_changed = 0, err = m->session->status;
-	assert(!m->session->active);	/* can only start a new transaction */
+	assert(!m->session->tr->active);	/* can only start a new transaction */
 
 	store_lock();
+	if (GDKverbose >= 1)
+		fprintf(stderr, "#%s: starting transaction\n",
+			MT_thread_getname());
 	schema_changed = sql_trans_begin(m->session);
 	if (m->qc && (schema_changed || m->qc->nr > m->cache || err)){
 		if (schema_changed || err) {
@@ -318,19 +326,35 @@ sql_trans_deref( sql_trans *tr )
 			if (t->po) { 
 				sql_table *p = t->po;
 
-				t->po = t->po->po;
+				if (t->base.rtime < p->base.rtime)
+					t->base.rtime = p->base.rtime;
+				if (t->base.wtime < p->base.wtime)
+					t->base.wtime = p->base.wtime;
+				t->po = p->po;
+				p->po = NULL; /* we used its reference */
 				table_destroy(p);
 			}
 
-			if (t->columns.set)
-			for ( o = t->columns.set->h; o; o = o->next) {
-				sql_column *c = o->data;
+			if (t->columns.set) {
+				for ( o = t->columns.set->h; o; o = o->next) {
+					sql_column *c = o->data;
 
-				if (c->po) {
-					sql_column *p = c->po;
+					if (c->po) {
+						sql_column *p = c->po;
 
-					c->po = c->po->po;
-					column_destroy(p);
+						if (c->base.rtime < p->base.rtime)
+							c->base.rtime = p->base.rtime;
+						if (c->base.wtime < p->base.wtime)
+							c->base.wtime = p->base.wtime;
+						c->po = p->po;
+						p->po = NULL; /* we used its reference */
+						column_destroy(p);
+					}
+				}
+				if(isPartitionedByColumnTable(t)) {
+					t->part.pcol = t->po->part.pcol;
+				} else if(isPartitionedByExpressionTable(t)) {
+					t->part.pexp = t->po->part.pexp;
 				}
 			}
 			if (t->idxs.set)
@@ -340,7 +364,12 @@ sql_trans_deref( sql_trans *tr )
 				if (i->po) {
 					sql_idx *p = i->po;
 
-					i->po = i->po->po;
+					if (i->base.rtime < p->base.rtime)
+						i->base.rtime = p->base.rtime;
+					if (i->base.wtime < p->base.wtime)
+						i->base.wtime = p->base.wtime;
+					i->po = p->po;
+					p->po = NULL; /* we used its reference */
 					idx_destroy(p);
 				}
 			}
@@ -349,23 +378,32 @@ sql_trans_deref( sql_trans *tr )
 	return tr->parent;
 }
 
-int
-mvc_commit(mvc *m, int chain, const char *name)
+str
+mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 {
 	sql_trans *cur, *tr = m->session->tr, *ctr;
 	int ok = SQL_OK;//, wait = 0;
-	str msg;
+	str msg, other;
+	char operation[BUFSIZ];
 
 	assert(tr);
-	assert(m->session->active);	/* only commit an active transaction */
+	assert(m->session->tr->active);	/* only commit an active transaction */
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_commit %s\n", (name) ? name : "");
 
+	if(enabling_auto_commit)
+		snprintf(operation, BUFSIZ, "Commit failed while enabling auto_commit: ");
+	else if(name)
+		snprintf(operation, BUFSIZ, "SAVEPOINT: (%s)", name);
+	else
+		snprintf(operation, BUFSIZ, "COMMIT:");
+
 	if (m->session->status < 0) {
-		(void)sql_error(m, 010, SQLSTATE(40000) "COMMIT: transaction is aborted, will ROLLBACK instead");
-		mvc_rollback(m, chain, name);
-		return -1;
+		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted, will ROLLBACK instead", operation);
+		if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+			freeException(other);
+		return msg;
 	}
 
 	/* savepoint then simply make a copy of the current transaction */
@@ -374,19 +412,20 @@ mvc_commit(mvc *m, int chain, const char *name)
 		if (mvc_debug)
 			fprintf(stderr, "#mvc_savepoint\n");
 		store_lock();
-		m->session->tr = sql_trans_create(m->session->stk, tr, name);
+		m->session->tr = sql_trans_create(m->session->stk, tr, name, true);
 		if(!m->session->tr) {
 			store_unlock();
-			(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure while committing the transaction, will ROLLBACK instead");
-			mvc_rollback(m, chain, name);
-			return -1;
+			msg = createException(SQL, "sql.commit", SQLSTATE(HY001) "%s allocation failure while committing the transaction, will ROLLBACK instead", operation);
+			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+				freeException(other);
+			return msg;
 		}
 		msg = WLCcommit(m->clientid);
 		store_unlock();
 		if(msg != MAL_SUCCEED) {
-			(void) sql_error(m, 02, "%s\n", msg);
-			mvc_rollback(m, chain, name);
-			return -1;
+			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+				freeException(other);
+			return msg;
 		}
 		m->type = Q_TRANS;
 		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
@@ -395,7 +434,10 @@ build up the hash (not copied in the trans dup)) */
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		if (mvc_debug)
 			fprintf(stderr, "#mvc_commit %s done\n", name);
-		return 0;
+		if (GDKverbose >= 1)
+			fprintf(stderr, "#%s: savepoint commit %s done\n",
+				MT_thread_getname(), name);
+		return msg;
 	}
 
 	/* first release all intermediate savepoints */
@@ -410,7 +452,7 @@ build up the hash (not copied in the trans dup)) */
 			ctr = sql_trans_deref(ctr);
 		}
 		while (tr->parent != NULL && ok == SQL_OK) 
-			tr = sql_trans_destroy(tr);
+			tr = sql_trans_destroy(tr, true);
 		store_unlock();
 	}
 	cur -> parent = tr;
@@ -425,23 +467,26 @@ build up the hash (not copied in the trans dup)) */
 		msg = WLCcommit(m->clientid);
 		store_unlock();
 		if(msg != MAL_SUCCEED) {
-			(void) sql_error(m, 02, "%s\n", msg);
-			mvc_rollback(m, chain, name);
-			return -1;
+			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+				freeException(other);
+			return msg;
 		}
 		if (mvc_debug)
-			fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
-		return 0;
+			fprintf(stderr, "#mvc_commit done\n");
+		if (GDKverbose >= 1)
+			fprintf(stderr, "#%s: commit done (no changes)\n",
+				MT_thread_getname());
+		return msg;
 	}
 
 	/*
-	while (tr->schema_updates && store_nr_active > 1) {
+	while (tr->schema_updates && ATOMIC_GET(&store_nr_active) > 1) {
 		store_unlock();
 		MT_sleep_ms(100);
 		wait += 100;
 		if (wait > 1000) {
 			(void)sql_error(m, 010, SQLSTATE(40000) "COMMIT: transaction is aborted because of DDL concurrency conflicts, will ROLLBACK instead");
-			mvc_rollback(m, chain, name);
+			mvc_rollback(m, chain, name, false);
 			return -1;
 		}
 		store_lock();
@@ -450,37 +495,40 @@ build up the hash (not copied in the trans dup)) */
 	/* validation phase */
 	if (sql_trans_validate(tr)) {
 		if ((ok = sql_trans_commit(tr)) != SQL_OK) {
-			char *msg = sql_message(SQLSTATE(40000) "COMMIT: transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", GDKerrbuf);
-			GDKfatal("%s", msg);
-			_DELETE(msg);
+			char *err = sql_message(SQLSTATE(40000) "%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
+			GDKfatal("%s", err);
+			_DELETE(err);
 		}
 	} else {
 		store_unlock();
-		(void)sql_error(m, 010, SQLSTATE(40000) "COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
-		mvc_rollback(m, chain, name);
-		return -1;
+		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
+		if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+			freeException(other);
+		return msg;
 	}
 	msg = WLCcommit(m->clientid);
 	if(msg != MAL_SUCCEED) {
 		store_unlock();
-		(void) sql_error(m, 02, "%s\n", msg);
-		mvc_rollback(m, chain, name);
-		return -1;
+		if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+			freeException(other);
+		return msg;
 	}
 	sql_trans_end(m->session);
-	if (chain) 
+	if (chain)
 		sql_trans_begin(m->session);
 	store_unlock();
 	m->type = Q_TRANS;
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
-	return ok;
+		fprintf(stderr, "#mvc_commit done\n");
+	if (GDKverbose >= 1)
+		fprintf(stderr, "#%s: commit done\n",
+			MT_thread_getname());
+	return msg;
 }
 
-int
-mvc_rollback(mvc *m, int chain, const char *name)
+str
+mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 {
-	int res = 0;
 	sql_trans *tr = m->session->tr;
 	str msg;
 
@@ -488,7 +536,8 @@ mvc_rollback(mvc *m, int chain, const char *name)
 		fprintf(stderr, "#mvc_rollback %s\n", (name) ? name : "");
 
 	assert(tr);
-	assert(m->session->active);	/* only abort an active transaction */
+	assert(m->session->tr->active);	/* only abort an active transaction */
+	(void) disabling_auto_commit;
 
 	store_lock();
 	if (m->qc) 
@@ -497,17 +546,17 @@ mvc_rollback(mvc *m, int chain, const char *name)
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
 		if (!tr) {
-			(void)sql_error(m, 010, SQLSTATE(42000) "ROLLBACK: no such savepoint: '%s'", name);
+			msg = createException(SQL, "sql.rollback", SQLSTATE(42000) "ROLLBACK TO SAVEPOINT: no such savepoint: '%s'", name);
 			m->session->status = -1;
 			store_unlock();
-			return -1;
+			return msg;
 		}
 		tr = m->session->tr;
 		while (!tr->name || strcmp(tr->name, name) != 0) {
 			/* make sure we do not reuse changed data */
 			if (tr->wtime)
 				tr->status = 1;
-			tr = sql_trans_destroy(tr);
+			tr = sql_trans_destroy(tr, true);
 		}
 		m->session->tr = tr;	/* restart at savepoint */
 		m->session->status = tr->status;
@@ -517,7 +566,7 @@ mvc_rollback(mvc *m, int chain, const char *name)
 	} else if (tr->parent) {
 		/* first release all intermediate savepoints */
 		while (tr->parent->parent != NULL) {
-			tr = sql_trans_destroy(tr);
+			tr = sql_trans_destroy(tr, true);
 		}
 		m->session-> tr = tr;
 		/* make sure we do not reuse changed data */
@@ -530,41 +579,47 @@ mvc_rollback(mvc *m, int chain, const char *name)
 	msg = WLCrollback(m->clientid);
 	store_unlock();
 	if (msg != MAL_SUCCEED) {
-		(void)sql_error(m, 02, "%s\n", msg);
 		m->session->status = -1;
-		return -1;
+		return msg;
 	}
 	m->type = Q_TRANS;
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_rollback %s done\n", (name) ? name : "");
-	return res;
+	if (GDKverbose >= 1)
+		fprintf(stderr, "#%s: commit%s%s rolled back%s\n",
+			MT_thread_getname(), name ? " " : "", name ? name : "",
+			tr->wtime == 0 ? " (no changes)" : "");
+	return msg;
 }
 
 /* release all savepoints up including the given named savepoint 
  * but keep the current changes.
  * */
-int
+str
 mvc_release(mvc *m, const char *name)
 {
 	int ok = SQL_OK;
 	int res = Q_TRANS;
 	sql_trans *tr = m->session->tr;
+	str msg = MAL_SUCCEED;
 
 	assert(tr);
-	assert(m->session->active);	/* only release active transactions */
+	assert(m->session->tr->active);	/* only release active transactions */
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_release %s\n", (name) ? name : "");
 
-	if (!name)
-		mvc_rollback(m, 0, name);
+	if (!name && (msg = mvc_rollback(m, 0, name, false)) != MAL_SUCCEED) {
+		m->session->status = -1;
+		return msg;
+	}
 
 	while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 		tr = tr->parent;
 	if (!tr || !tr->name || strcmp(tr->name, name) != 0) {
-		(void)sql_error(m, 010, SQLSTATE(42000) "Release savepoint %s doesn't exists", name);
+		msg = createException(SQL, "sql.release", SQLSTATE(42000) "Release savepoint %s doesn't exist", name);
 		m->session->status = -1;
-		return -1;
+		return msg;
 	}
 	tr = m->session->tr;
 	store_lock();
@@ -572,7 +627,7 @@ mvc_release(mvc *m, const char *name)
 		/* commit all intermediate savepoints */
 		if (sql_trans_commit(tr) != SQL_OK)
 			GDKfatal("release savepoints should not fail");
-		tr = sql_trans_destroy(tr);
+		tr = sql_trans_destroy(tr, true);
 	}
 	tr->name = NULL;
 	store_unlock();
@@ -580,7 +635,7 @@ mvc_release(mvc *m, const char *name)
 	m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 
 	m->type = res;
-	return res;
+	return msg;
 }
 
 mvc *
@@ -637,7 +692,6 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->debug = debug;
 	m->cache = DEFAULT_CACHESIZE;
 	m->caching = m->cache;
-	m->history = 0;
 
 	m->label = 0;
 	m->remote = 0;
@@ -676,10 +730,10 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 		fprintf(stderr, "#mvc_reset\n");
 	tr = m->session->tr;
 	if (tr && tr->parent) {
-		assert(m->session->active == 0);
+		assert(m->session->tr->active == 0);
 		store_lock();
 		while (tr->parent->parent != NULL) 
-			tr = sql_trans_destroy(tr);
+			tr = sql_trans_destroy(tr, true);
 		store_unlock();
 	}
 	if (tr && !sql_session_reset(m->session, 1 /*autocommit on*/))
@@ -718,9 +772,6 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 		stack_set_number(m, "cache", DEFAULT_CACHESIZE);
 	m->cache = DEFAULT_CACHESIZE;
 	m->caching = m->cache;
-	if (m->history != 0)
-		stack_set_number(m, "history", 0);
-	m->history = 0;
 
 	m->label = 0;
 	m->remote = 0;
@@ -748,10 +799,10 @@ mvc_destroy(mvc *m)
 	tr = m->session->tr;
 	if (tr) {
 		store_lock();
-		if (m->session->active)
+		if (m->session->tr->active)
 			sql_trans_end(m->session);
 		while (tr->parent)
-			tr = sql_trans_destroy(tr);
+			tr = sql_trans_destroy(tr, true);
 		m->session->tr = NULL;
 		store_unlock();
 	}
@@ -769,7 +820,6 @@ mvc_destroy(mvc *m)
 	if (m->qc)
 		qc_destroy(m->qc);
 	m->qc = NULL;
-	m->sqs = NULL;
 
 	_DELETE(m->args);
 	m->args = NULL;
@@ -1018,17 +1068,17 @@ mvc_drop_type(mvc *m, sql_schema *s, sql_type *t, int drop_action)
 }
 
 sql_func *
-mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, const char *name, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg)
+mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, const char *name, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system)
 {
 	sql_func *f = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_func %s\n", name);
 	if (sa) {
-		f = create_sql_func(sa, name, args, res, type, lang, mod, impl, query, varres, vararg);
+		f = create_sql_func(sa, name, args, res, type, lang, mod, impl, query, varres, vararg, system);
 		f->s = s;
-	} else 
-		f = sql_trans_create_func(sql->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg);
+	} else
+		f = sql_trans_create_func(sql->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg, system);
 	return f;
 }
 
@@ -1051,7 +1101,7 @@ mvc_drop_all_func(mvc *m, sql_schema *s, list *list_func, int drop_action)
 }
 
 sql_schema *
-mvc_create_schema(mvc *m, const char *name, int auth_id, int owner)
+mvc_create_schema(mvc *m, const char *name, sqlid auth_id, sqlid owner)
 {
 	sql_schema *s = NULL;
 
@@ -1204,18 +1254,32 @@ mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger *tri)
 
 
 sql_table *
-mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz)
+mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties)
 {
 	sql_table *t = NULL;
+	char *err = NULL;
+	int check = 0;
 
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_create_table %s %s %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action);
+		fprintf(stderr, "#mvc_create_table %s %s %d %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action, (int)properties);
 
 	if (persistence == SQL_DECLARED_TABLE && (!s || strcmp(s->base.name, dt_schema))) {
-		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action);
+		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action, properties);
 		t->s = s;
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz);
+		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz, properties);
+		if(t && isPartitionedByExpressionTable(t) && (err = bootstrap_partition_expression(m, m->session->tr->sa, t, 1))) {
+			(void) sql_error(m, 02, "%s", err);
+			return NULL;
+		}
+		check = sql_trans_set_partition_table(m->session->tr, t);
+		if(check == -1) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
+			return NULL;
+		} else if (check) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
+			return NULL;
+		}
 	}
 	return t;
 }
@@ -1229,11 +1293,11 @@ mvc_create_view(mvc *m, sql_schema *s, const char *name, int persistence, const 
 		fprintf(stderr, "#mvc_create_view %s %s %s\n", s->base.name, name, sql);
 
 	if (persistence == SQL_DECLARED_TABLE) {
-		t = create_sql_table(m->sa, name, tt_view, system, persistence, 0);
+		t = create_sql_table(m->sa, name, tt_view, system, persistence, 0, 0);
 		t->s = s;
 		t->query = sa_strdup(m->sa, sql);
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0);
+		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0, 0);
 	}
 	return t;
 }
@@ -1247,11 +1311,11 @@ mvc_create_remote(mvc *m, sql_schema *s, const char *name, int persistence, cons
 		fprintf(stderr, "#mvc_create_remote %s %s %s\n", s->base.name, name, loc);
 
 	if (persistence == SQL_DECLARED_TABLE) {
-		t = create_sql_table(m->sa, name, tt_remote, 0, persistence, 0);
+		t = create_sql_table(m->sa, name, tt_remote, 0, persistence, 0, 0);
 		t->s = s;
 		t->query = sa_strdup(m->sa, loc);
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0);
+		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0, 0);
 	}
 	return t;
 }
@@ -1331,34 +1395,32 @@ mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 }
 
 void
-mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type)
+mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sht depend_type)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_dependency %d %d %d\n", id, depend_id, depend_type);
 	if ( (id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) )
 		sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
-	
 }
 
 void
-mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type)
+mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sht dep_type)
 {
 	node *n = id_l->h;
 	int i;
-	
+
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_dependencies on %d of type %d\n", depend_id, dep_type);
 
 	for (i = 0; i < list_length(id_l); i++)
 	{
-		mvc_create_dependency(m, *(int *) n->data, depend_id, dep_type);
+		mvc_create_dependency(m, *(sqlid *) n->data, depend_id, dep_type);
 		n = n->next;
 	}
-
 }
 
 int
-mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids)
+mvc_check_dependency(mvc * m, sqlid id, sht type, list *ignore_ids)
 {
 	list *dep_list = NULL;
 
@@ -1477,7 +1539,7 @@ mvc_is_sorted(mvc *m, sql_column *col)
 
 /* variable management */
 static sql_var*
-stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, sql_table *t, int view, int frame)
+stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, sql_table *t, dlist *wdef, sql_groupby_expression *exp, int view, int frame)
 {
 	sql_var *v, *nvars;
 	int nextsize = sql->sizevars;
@@ -1499,6 +1561,9 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 	v->t = t;
 	v->view = view;
 	v->frame = frame;
+	v->visited = 0;
+	v->wdef = wdef;
+	v->exp = exp;
 	if (type) {
 		int tpe = type->type->localtype;
 		VALset(&sql->vars[var].a.data, tpe, (ptr) ATOMnilptr(tpe));
@@ -1515,7 +1580,7 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 sql_var*
 stack_push_var(mvc *sql, const char *name, sql_subtype *type)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, type, NULL, NULL, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, type, NULL, NULL, NULL, NULL, 0, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1524,7 +1589,7 @@ stack_push_var(mvc *sql, const char *name, sql_subtype *type)
 sql_var*
 stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, type, var, NULL, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, type, var, NULL, NULL, NULL, 0, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1533,7 +1598,7 @@ stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type)
 sql_var*
 stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, t, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, t, NULL, NULL, 0, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1542,10 +1607,84 @@ stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t)
 sql_var*
 stack_push_rel_view(mvc *sql, const char *name, sql_rel *var)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, NULL, 1, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, NULL, NULL, NULL, 1, 0);
 	if(res)
 		sql->topvars++;
 	return res;
+}
+
+sql_var*
+stack_push_window_def(mvc *sql, const char *name, dlist *wdef)
+{
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, wdef, NULL, 0, 0);
+	if(res)
+		sql->topvars++;
+	return res;
+}
+
+dlist *
+stack_get_window_def(mvc *sql, const char *name, int *pos)
+{
+	for (int i = sql->topvars-1; i >= 0; i--) {
+		if (!sql->vars[i].frame && sql->vars[i].wdef && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
+			if(pos)
+				*pos = i;
+			return sql->vars[i].wdef;
+		}
+	}
+	return NULL;
+}
+
+sql_var*
+stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp)
+{
+	sql_var* res = NULL;
+	sql_groupby_expression *sge = MNEW(sql_groupby_expression);
+
+	if(sge) {
+		sge->sdef = def;
+		sge->token = def->token;
+		sge->exp = exp;
+
+		res = stack_set(sql, sql->topvars, NULL, NULL, NULL, NULL, NULL, sge, 0, 0);
+		if(res)
+			sql->topvars++;
+	}
+	return res;
+}
+
+sql_exp*
+stack_get_groupby_expression(mvc *sql, symbol *def)
+{
+	for (int i = sql->topvars-1; i >= 0; i--)
+		if (!sql->vars[i].frame && sql->vars[i].exp && sql->vars[i].exp->token == def->token && symbol_cmp(sql, sql->vars[i].exp->sdef, def)==0)
+			return sql->vars[i].exp->exp;
+	return NULL;
+}
+
+/* There could a possibility that this is vulnerable to a time-of-check, time-of-use race condition.
+ * However this should never happen in the SQL compiler */
+char
+stack_check_var_visited(mvc *sql, int i)
+{
+	if(i < 0 || i >= sql->topvars)
+		return 0;
+	return sql->vars[i].visited;
+}
+
+void
+stack_set_var_visited(mvc *sql, int i)
+{
+	if(i < 0 || i >= sql->topvars)
+		return;
+	sql->vars[i].visited = 1;
+}
+
+void
+stack_clear_frame_visited_flag(mvc *sql)
+{
+	for (int i = sql->topvars-1; i >= 0 && !sql->vars[i].frame; i--)
+		sql->vars[i].visited = 0;
 }
 
 atom *
@@ -1555,7 +1694,7 @@ stack_set_var(mvc *sql, const char *name, ValRecord *v)
 	atom *res = NULL;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && strcmp(sql->vars[i].name, name)==0) {
+		if (!sql->vars[i].frame && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
 			VALclear(&sql->vars[i].a.data);
 			if(VALcopy(&sql->vars[i].a.data, v) == NULL)
 				return NULL;
@@ -1576,7 +1715,7 @@ stack_get_var(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && strcmp(sql->vars[i].name, name)==0) {
+		if (!sql->vars[i].frame && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
 			return &sql->vars[i].a;
 		}
 	}
@@ -1586,7 +1725,7 @@ stack_get_var(mvc *sql, const char *name)
 sql_var*
 stack_push_frame(mvc *sql, const char *name)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, 0, 1);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, NULL, NULL, 0, 1);
 	if(res) {
 		sql->topvars++;
 		sql->frame++;
@@ -1603,6 +1742,9 @@ stack_pop_until(mvc *sql, int top)
 		c_delete(v->name);
 		VALclear(&v->a.data);
 		v->a.data.vtype = 0;
+		if(v->exp)
+			_DELETE(v->exp);
+		v->wdef = NULL;
 	}
 }
 
@@ -1615,10 +1757,13 @@ stack_pop_frame(mvc *sql)
 		c_delete(v->name);
 		VALclear(&v->a.data);
 		v->a.data.vtype = 0;
-		if (v->t && v->view) 
+		if (v->t && v->view)
 			table_destroy(v->t);
 		else if (v->rel)
 			rel_destroy(v->rel);
+		else if(v->exp)
+			_DELETE(v->exp);
+		v->wdef = NULL;
 	}
 	if (sql->topvars && sql->vars[sql->topvars].name)  
 		c_delete(sql->vars[sql->topvars].name);
@@ -1631,8 +1776,7 @@ stack_find_type(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && !sql->vars[i].view &&
-			strcmp(sql->vars[i].name, name)==0)
+		if (!sql->vars[i].frame && !sql->vars[i].view && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return &sql->vars[i].a.tpe;
 	}
 	return NULL;
@@ -1644,8 +1788,8 @@ stack_find_table(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && !sql->vars[i].view &&
-		    sql->vars[i].t && strcmp(sql->vars[i].name, name)==0)
+		if (!sql->vars[i].frame && !sql->vars[i].view && sql->vars[i].t
+			&& sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return sql->vars[i].t;
 	}
 	return NULL;
@@ -1658,7 +1802,7 @@ stack_find_rel_view(mvc *sql, const char *name)
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && sql->vars[i].view &&
-		    sql->vars[i].rel && strcmp(sql->vars[i].name, name)==0)
+		    sql->vars[i].rel && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return rel_dup(sql->vars[i].rel);
 	}
 	return NULL;
@@ -1671,7 +1815,7 @@ stack_update_rel_view(mvc *sql, const char *name, sql_rel *view)
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && sql->vars[i].view &&
-		    sql->vars[i].rel && strcmp(sql->vars[i].name, name)==0) {
+		    sql->vars[i].rel && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
 			rel_destroy(sql->vars[i].rel);
 			sql->vars[i].rel = view;
 		}
@@ -1684,8 +1828,7 @@ stack_find_var(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && !sql->vars[i].view &&
-		    strcmp(sql->vars[i].name, name)==0)
+		if (!sql->vars[i].frame && !sql->vars[i].view && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return 1;
 	}
 	return 0;
@@ -1698,7 +1841,7 @@ stack_find_rel_var(mvc *sql, const char *name)
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && !sql->vars[i].view &&
-		    sql->vars[i].rel && strcmp(sql->vars[i].name, name)==0)
+		    sql->vars[i].rel && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return rel_dup(sql->vars[i].rel);
 	}
 	return NULL;
@@ -1710,7 +1853,7 @@ frame_find_var(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0 && !sql->vars[i].frame; i--) {
-		if (strcmp(sql->vars[i].name, name)==0)
+		if (sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return 1;
 	}
 	return 0;
@@ -1736,8 +1879,7 @@ stack_has_frame(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (sql->vars[i].frame && sql->vars[i].name && 
-		    strcmp(sql->vars[i].name, name)==0)
+		if (sql->vars[i].frame && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return 1;
 	}
 	return 0;
@@ -1751,7 +1893,7 @@ stack_nr_of_declared_tables(mvc *sql)
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (sql->vars[i].rel && !sql->vars[i].view) {
 			sql_var *v = &sql->vars[i];
-			if (v->t) 
+			if (v->t)
 				dt++;
 		}
 	}
@@ -1876,61 +2018,170 @@ mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i)
 	return sql_trans_copy_idx(m->session->tr, t, i);
 }
 
-sql_subquery *
-mvc_push_subquery(mvc *m, const char *name, sql_rel *r)
+sql_trigger *
+mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr)
 {
-	sql_subquery *res = NULL;
+	return sql_trans_copy_trigger(m->session->tr, t, tr);
+}
 
-	if (!m->sqs)
-		m->sqs = sa_list(m->sa);
-	if (m->sqs) {
-		sql_subquery *v = SA_NEW(m->sa, sql_subquery);
+sql_part *
+mvc_copy_part(mvc *m, sql_table *t, sql_part *pt)
+{
+	return sql_trans_copy_part(m->session->tr, t, pt);
+}
 
-		v->name = name;
-		v->rel = r;
-		v->s = NULL;
-		list_append(m->sqs, v);
-		res = v;
+static inline int dlist_cmp(mvc *sql, dlist *l1, dlist *l2);
+
+static inline int
+dnode_cmp(mvc *sql, dnode *d1, dnode *d2)
+{
+	if (d1 == d2)
+		return 0;
+
+	if (!d1 || !d2)
+		return -1;
+
+	if (d1->type == d2->type) {
+		switch (d1->type) {
+			case type_int:
+				return (d1->data.i_val - d2->data.i_val);
+			case type_lng: {
+				lng c = d1->data.l_val - d2->data.l_val;
+				assert((lng) GDK_int_min <= c && c <= (lng) GDK_int_max);
+				return (int) c;
+			}
+			case type_string:
+				if (d1->data.sval == d2->data.sval)
+					return 0;
+				if (!d1->data.sval || !d2->data.sval)
+					return -1;
+				return strcmp(d1->data.sval, d2->data.sval);
+			case type_list:
+				return dlist_cmp(sql, d1->data.lval, d2->data.lval);
+			case type_symbol:
+				return symbol_cmp(sql, d1->data.sym, d2->data.sym);
+			case type_type:
+				return subtype_cmp(&d1->data.typeval, &d2->data.typeval);
+			default:
+				assert(0);
+		}
+	}
+	return -1;
+}
+
+static inline int
+dlist_cmp(mvc *sql, dlist *l1, dlist *l2)
+{
+	int res = 0;
+	dnode *d1, *d2;
+
+	if (l1 == l2)
+		return 0;
+
+	if (!l1 || !l2 || dlist_length(l1) != dlist_length(l2))
+		return -1;
+
+	for (d1 = l1->h, d2 = l2->h; !res && d1; d1 = d1->next, d2 = d2->next) {
+		res = dnode_cmp(sql, d1, d2);
 	}
 	return res;
 }
 
-sql_subquery *
-mvc_find_subquery(mvc *m, const char *rname, const char *name) 
+static inline int
+AtomNodeCmp(AtomNode *a1, AtomNode *a2)
 {
-	node *n;
-
-	if (!m->sqs)
-		return NULL;
-	for (n = m->sqs->h; n; n = n->next) {
-		sql_subquery *v = n->data;
-
-		if (strcmp(v->name, rname) == 0) {
-			sql_exp *ne = exps_bind_column2(v->rel->exps, rname, name);
-
-			if (ne)
-				return v;
-		}
-	}
-	return NULL;
+	if (a1 == a2)
+		return 0;
+	if (!a1 || !a2)
+		return -1;
+	if (a1->a && a2->a)
+		return atom_cmp(a1->a, a2->a);
+	return -1;
 }
 
-sql_exp *
-mvc_find_subexp(mvc *m, const char *rname, const char *name) 
+static inline int
+SelectNodeCmp(mvc *sql, SelectNode *s1, SelectNode *s2)
 {
-	node *n;
+	if (s1 == s2)
+		return 0;
+	if (!s1 || !s2)
+		return -1;
 
-	if (!m->sqs)
-		return NULL;
-	for (n = m->sqs->h; n; n = n->next) {
-		sql_subquery *v = n->data;
+	if (symbol_cmp(sql, s1->limit, s2->limit) == 0 &&
+		symbol_cmp(sql, s1->offset, s2->offset) == 0 &&
+		symbol_cmp(sql, s1->sample, s2->sample) == 0 &&
+		s1->distinct == s2->distinct &&
+		s1->lateral == s2->lateral &&
+		symbol_cmp(sql, s1->name, s2->name) == 0 &&
+		symbol_cmp(sql, s1->orderby, s2->orderby) == 0 &&
+		symbol_cmp(sql, s1->having, s2->having) == 0 &&
+		symbol_cmp(sql, s1->groupby, s2->groupby) == 0 &&
+		symbol_cmp(sql, s1->where, s2->where) == 0 &&
+		symbol_cmp(sql, s1->from, s2->from) == 0 &&
+		symbol_cmp(sql, s1->window, s2->window) == 0 &&
+		dlist_cmp(sql, s1->selection, s2->selection) == 0)
+		return 0;
+	return -1;
+}
 
-		if (strcmp(v->name, rname) == 0) {
-			sql_exp *ne = exps_bind_column2(v->rel->exps, rname, name);
-
-			if (ne)
-				return ne;
+static inline int
+_symbol_cmp(mvc *sql, symbol *s1, symbol *s2)
+{
+	if (s1 == s2)
+		return 0;
+	if (!s1 || !s2)
+		return -1;
+	if (s1->token != s2->token || s1->type != s2->type)
+		return -1;
+	switch (s1->type) {
+		case type_int:
+			return (s1->data.i_val - s2->data.i_val);
+		case type_lng: {
+			lng c = s1->data.l_val - s2->data.l_val;
+			assert((lng) GDK_int_min <= c && c <= (lng) GDK_int_max);
+			return (int) c;
 		}
+		case type_string:
+			if (s1->data.sval == s2->data.sval)
+				return 0;
+			if (!s1->data.sval || !s2->data.sval)
+				return -1;
+			return strcmp(s1->data.sval, s2->data.sval);
+		case type_list: {
+			if (s1->token == SQL_IDENT) {
+				atom *at1, *at2;
+
+				if (s2->token != SQL_IDENT)
+					return -1;
+				at1 = sql_bind_arg(sql, s1->data.lval->h->data.i_val);
+				at2 = sql_bind_arg(sql, s2->data.lval->h->data.i_val);
+				return atom_cmp(at1, at2);
+			} else {
+				return dlist_cmp(sql, s1->data.lval, s2->data.lval);
+			}
+		}
+		case type_type:
+			return subtype_cmp(&s1->data.typeval, &s2->data.typeval);
+		case type_symbol:
+			if (s1->token == SQL_SELECT) {
+				if (s2->token != SQL_SELECT)
+					return -1;
+				return SelectNodeCmp(sql, (SelectNode *) s1, (SelectNode *) s2);
+			} else if (s1->token == SQL_ATOM) {
+				if (s2->token != SQL_ATOM)
+					return -1;
+				return AtomNodeCmp((AtomNode *) s1, (AtomNode *) s2);
+			} else {
+				return symbol_cmp(sql, s1->data.sym, s2->data.sym);
+			}
+		default:
+			assert(0);
 	}
-	return NULL;
+	return 0;		/* never reached, just to pacify compilers */
+}
+
+int
+symbol_cmp(mvc *sql, symbol *s1, symbol *s2)
+{
+	return _symbol_cmp(sql, s1, s2);
 }

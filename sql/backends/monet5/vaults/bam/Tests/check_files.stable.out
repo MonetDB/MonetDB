@@ -18,7 +18,6 @@ stdout of test 'check_files` in directory 'sql/backends/monet5/vaults/bam` itsel
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:58:06 >  
 # 10:58:06 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8049" "--port=34492"

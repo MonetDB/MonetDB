@@ -18,7 +18,6 @@ stdout of test 'select-in-returns-null.Bug-6491` in directory 'sql/test/BugTrack
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:53:38 >  
 # 11:53:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3679" "--port=36593"

@@ -22,7 +22,6 @@ stdout of test 'columnRights` in directory 'sql/test/Users` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 11:31:52 >  
 # 11:31:52 >  "/usr/bin/python2" "columnRights.SQL.py" "columnRights"

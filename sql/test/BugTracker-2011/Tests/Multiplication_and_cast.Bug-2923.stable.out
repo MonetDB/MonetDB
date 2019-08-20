@@ -17,7 +17,6 @@ stdout of test 'Multiplication_and_cast.Bug-2923` in directory 'sql/test/BugTrac
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:01:58 >  
 # 11:01:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=31057"

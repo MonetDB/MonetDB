@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -36,7 +36,7 @@ bool string_copy(const char *source, char *dest, size_t max_size, bool allow_uni
 int hge_to_string(char *str, hge x)
 {
 	size_t len = 256; /* assume str is large enough */
-	hgeToStr(&str, &len, &x);
+	hgeToStr(&str, &len, &x, false);
 	return TRUE;
 }
 
@@ -219,7 +219,7 @@ wrapup:
 				return GDKstrdup("string too long to convert.");               \
 			ptr = buf;                                                         \
 		}                                                                      \
-		if (BATatoms[TYPE_##tpe].atomFromStr(ptr, &len, (void **)&value) < 0)  \
+		if (BATatoms[TYPE_##tpe].atomFromStr(ptr, &len, (void **)&value, false) < 0) \
 			return GDKstrdup("Error converting string.");                      \
 		return MAL_SUCCEED;                                                    \
 	}
@@ -272,7 +272,7 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
 		PyLongObject *p = (PyLongObject*) ptr;				\
 		inttpe h = 0;							\
 		inttpe prev = 0;						\
-		int i = Py_SIZE(p);						\
+		Py_ssize_t i = Py_SIZE(p);						\
 		int sign = i < 0 ? -1 : 1;					\
 		i *= sign;							\
 		while (--i >= 0) {						\
@@ -284,7 +284,7 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
 		}								\
 		*value = (type)(h * sign);					\
 	} else if (PyBool_Check(ptr)) {					\
-		*value = ptr == Py_True ? 1 : 0;				\
+		*value = ptr == Py_True ? (type) 1 : (type) 0;			\
 	} else if (PyFloat_CheckExact(ptr)) {				\
 		*value = isnan(((PyFloatObject*)ptr)->ob_fval) ? type##_nil : (type) ((PyFloatObject*)ptr)->ob_fval; \
 	} else if (PyUnicode_CheckExact(ptr)) {				\

@@ -1,6 +1,6 @@
 create table inputStat ( "type" int, "time" int, "carid" int, "speed" int, "xway" int, "lane" int, "dir" int, "seg" int, "pos" int, "qid" int, "m_init" int, "m_end" int, "dow" int, "tod" int, "day2" int);
 
-COPY 89 RECORDS INTO inputStat from STDIN USING DELIMITERS ',','\n';
+COPY 89 RECORDS INTO inputStat from STDIN USING DELIMITERS ',',E'\n';
 0,0,110,27,0,0,1,11,62914,-1,-1,-1,-1,-1,-1
 0,0,119,23,0,0,1,5,31306,-1,-1,-1,-1,-1,-1
 0,1,123,23,0,0,1,87,464260,-1,-1,-1,-1,-1,-1

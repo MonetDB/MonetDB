@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -74,7 +74,7 @@
 static connection conns = NULL;
 static unsigned char localtype = 0177;
 
-static inline str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
+static inline str RMTquery(MapiHdl *ret, const char *func, Mapi conn, const char *query);
 static inline str RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in);
 
 /**
@@ -82,12 +82,14 @@ static inline str RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in);
  * merovingian is not running, this function throws an error.
  */
 str RMTresolve(bat *ret, str *pat) {
-#ifdef WIN32
+#ifdef NATIVE_WIN32
+	(void) ret;
+	(void) pat;
 	throw(MAL, "remote.resolve", "merovingian is not available on "
 			"your platform, sorry"); /* please upgrade to Linux, etc. */
 #else
 	BAT *list;
-	char *mero_uri;
+	const char *mero_uri;
 	char *p;
 	unsigned int port;
 	char **redirs;
@@ -108,6 +110,11 @@ str RMTresolve(bat *ret, str *pat) {
 
 	/* extract port from mero_uri, let mapi figure out the rest */
 	mero_uri+=strlen("mapi:monetdb://");
+	if (*mero_uri == '[') {
+		if ((mero_uri = strchr(mero_uri, ']')) == NULL)
+			throw(MAL, "remote.resolve", "illegal IPv6 address on merovingian_uri: %s",
+				  GDKgetenv("merovingian_uri"));
+	}
 	if ((p = strchr(mero_uri, ':')) == NULL)
 		throw(MAL, "remote.resolve", "illegal merovingian_uri setting: %s",
 				GDKgetenv("merovingian_uri"));
@@ -191,8 +198,7 @@ str RMTconnectScen(
 
 	/* generate an unique connection name, they are only known
 	 * within one mserver, id is primary key, the rest is super key */
-	s = mapi_get_dbname(m);
-	snprintf(conn, BUFSIZ, "%s_%s_%zu", s, *user, connection_id++);
+	snprintf(conn, BUFSIZ, "%s_%s_%zu", mapi_get_dbname(m), *user, connection_id++);
 	/* make sure we can construct MAL identifiers using conn */
 	for (s = conn; *s != '\0'; s++) {
 		if (!isalnum((unsigned char)*s)) {
@@ -219,6 +225,7 @@ str RMTconnectScen(
 	}
 	c->mconn = m;
 	c->nextid = 0;
+	MT_lock_init(&c->lock, c->name);
 	c->next = conns;
 	conns = c;
 
@@ -233,10 +240,8 @@ str RMTconnectScen(
 		c->type = 0;
 	}
 
-	MT_lock_init(&c->lock, "remote connection lock");
-
 #ifdef _DEBUG_MAPI_
-	mapi_trace(c->mconn, TRUE);
+	mapi_trace(c->mconn, true);
 #endif
 
 	MT_lock_unset(&mal_remoteLock);
@@ -367,7 +372,7 @@ str RMTdisconnect(void *ret, str *conn) {
  * NOTE: this function acquires the mal_remoteLock before accessing conns
  */
 static inline str
-RMTfindconn(connection *ret, str conn) {
+RMTfindconn(connection *ret, const char *conn) {
 	connection c;
 
 	/* just make sure the return isn't garbage */
@@ -430,7 +435,7 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
  * NOTE: this function assumes a lock for conn is set
  */
 static inline str
-RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
+RMTquery(MapiHdl *ret, const char *func, Mapi conn, const char *query) {
 	MapiHdl mhdl;
 
 	*ret = NULL;
@@ -523,6 +528,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	ValPtr v;
 
 	(void)mb;
+	(void) cntxt;
 
 	conn = *getArgReference_str(stk, pci, 1);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
@@ -571,8 +577,6 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
 #ifdef _DEBUG_REMOTE
 		fprintf(stderr, "#remote.get:%s\n", qbuf);
-#else
-		(void) cntxt;
 #endif
 		/* this call should be a single transaction over the channel*/
 		MT_lock_set(&c->lock);
@@ -586,19 +590,24 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #endif
 			MT_lock_unset(&c->lock);
 			var = createException(MAL, "remote.get", "%s", tmp);
-			GDKfree(tmp);
+			freeException(tmp);
 			return var;
 		}
 		t = getBatType(rtype);
 		b = COLnew(0, t, 0, TRANSIENT);
-		if (b == NULL)
+		if (b == NULL) {
+			mapi_close_handle(mhdl);
+			MT_lock_unset(&c->lock);
 			throw(MAL, "remote.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 
 		if (ATOMvarsized(t)) {
 			while (mapi_fetch_row(mhdl)) {
 				var = mapi_fetch_field(mhdl, 1);
 				if (BUNappend(b, var == NULL ? str_nil : var, false) != GDK_SUCCEED) {
 					BBPreclaim(b);
+					mapi_close_handle(mhdl);
+					MT_lock_unset(&c->lock);
 					throw(MAL, "remote.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				}
 			}
@@ -609,10 +618,12 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 					var = "nil";
 				s = 0;
 				r = NULL;
-				if (ATOMfromstr(t, &r, &s, var) < 0 ||
+				if (ATOMfromstr(t, &r, &s, var, true) < 0 ||
 					BUNappend(b, r, false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					GDKfree(r);
+					mapi_close_handle(mhdl);
+					MT_lock_unset(&c->lock);
 					throw(MAL, "remote.get", GDK_EXCEPTION);
 				}
 				GDKfree(r);
@@ -621,6 +632,9 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		v->val.bval = b->batCacheid;
 		v->vtype = TYPE_bat;
 		BBPkeepref(b->batCacheid);
+
+		mapi_close_handle(mhdl);
+		MT_lock_unset(&c->lock);
 	} else if (isaBatType(rtype)) {
 		/* binary compatible remote host, transfer BAT in binary form */
 		stream *sout;
@@ -670,6 +684,8 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		v->val.bval = b->batCacheid;
 		v->vtype = TYPE_bat;
 		BBPkeepref(b->batCacheid);
+
+		MT_lock_unset(&c->lock);
 	} else {
 		ptr p = NULL;
 		str val;
@@ -681,7 +697,6 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #endif
 		if ((tmp=RMTquery(&mhdl, "remote.get", c->mconn, qbuf)) != MAL_SUCCEED)
 		{
-			MT_lock_unset(&c->lock);
 			return tmp;
 		}
 		(void) mapi_fetch_row(mhdl); /* should succeed */
@@ -689,16 +704,17 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		if (ATOMvarsized(rtype)) {
 			p = GDKstrdup(val == NULL ? str_nil : val);
-			if (p == NULL)
+			if (p == NULL) {
+				mapi_close_handle(mhdl);
 				throw(MAL, "remote.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 			VALset(v, rtype, p);
-		} else if (ATOMfromstr(rtype, &p, &len, val == NULL ? "nil" : val) < 0) {
+		} else if (ATOMfromstr(rtype, &p, &len, val == NULL ? "nil" : val, true) < 0) {
 			char *msg;
 			msg = createException(MAL, "remote.get",
 								  "unable to parse value: %s",
 								  val == NULL ? "nil" : val);
 			mapi_close_handle(mhdl);
-			MT_lock_unset(&c->lock);
 			GDKfree(p);
 			return msg;
 		} else {
@@ -706,11 +722,9 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			if (ATOMextern(rtype) == 0)
 				GDKfree(p);
 		}
-	}
 
-	if (mhdl != NULL)
 		mapi_close_handle(mhdl);
-	MT_lock_unset(&c->lock);
+	}
 
 	return(MAL_SUCCEED);
 }
@@ -764,7 +778,6 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		BATiter bi;
 		/* naive approach using bat.new() and bat.insert() calls */
 		char *tail;
-		char qbuf[BUFSIZ];
 		bat bid;
 		BAT *b = NULL;
 		BUN p, q;
@@ -818,8 +831,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		/* write the empty line the server is waiting for, handles
 		 * all errors at the same time, if any */
-		qbuf[0] = '\0';
-		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf))
+		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, ""))
 				!= MAL_SUCCEED)
 		{
 			MT_lock_unset(&c->lock);
@@ -895,7 +907,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * The implementation is based on serialisation of the block into a string
  * followed by remote parsing.
  */
-str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
+static str RMTregisterInternal(Client cntxt, const char *conn, const char *mod, const char *fcn)
 {
 	str tmp, qry, msg;
 	connection c;
@@ -903,7 +915,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 	MapiHdl mhdl = NULL;
 	Symbol sym;
 
-	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
+	if (conn == NULL || strcmp(conn, str_nil) == 0)
 		throw(ILLARG, "remote.register", ILLEGAL_ARGUMENT ": connection name is NULL or nil");
 
 	/* find local definition */
@@ -958,9 +970,9 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 }
 
 str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str conn = *getArgReference_str(stk, pci, 1);
-	str mod = *getArgReference_str(stk, pci, 2);
-	str fcn = *getArgReference_str(stk, pci, 3);
+	const char *conn = *getArgReference_str(stk, pci, 1);
+	const char *mod = *getArgReference_str(stk, pci, 2);
+	const char *fcn = *getArgReference_str(stk, pci, 3);
 	(void)mb;
 	return RMTregisterInternal(cntxt, conn, mod, fcn);
 }
@@ -1090,7 +1102,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(MAL, "remote.load", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	/* grab the input stream and start reading */
-	fdin->eof = 0;
+	fdin->eof = false;
 	len = fdin->pos;
 	while (len < fdin->len || bstream_next(fdin) > 0) {
 		/* newline hunting (how spartan) */
@@ -1115,7 +1127,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		s = 0;
 		r = NULL;
-		if (ATOMfromstr(t, &r, &s, var) < 0 ||
+		if (ATOMfromstr(t, &r, &s, var, true) < 0 ||
 			BUNappend(b, r, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			GDKfree(r);
@@ -1137,7 +1149,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid = *getArgReference_bat(stk, pci, 1);
-	BAT *b = BBPquickdesc(bid, FALSE);
+	BAT *b = BBPquickdesc(bid, false);
 	char sendtheap = 0;
 
 	(void)mb;
@@ -1147,7 +1159,8 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == NULL)
 		throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_UNDEFINED);
 
-	BBPfix(bid);
+	if (BBPfix(bid) <= 0)
+		throw(MAL, "remote.bincopyto", MAL_MALLOC_FAIL);
 
 	sendtheap = b->ttype != TYPE_void && b->tvarsized;
 
@@ -1262,7 +1275,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 				} else {
 					/* all values should be non-negative, so we check that
 					 * here as well */
-					if (lngFromStr(val, &len, &lvp) < 0 ||
+					if (lngFromStr(val, &len, &lvp, true) < 0 ||
 						lv < 0 /* includes lng_nil */)
 						throw(MAL, "remote.bincopyfrom",
 							  "bad %s value: %s", nme, val);
@@ -1336,14 +1349,14 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 		if (HEAPextend(&b->theap, bb.tailsize, true) != GDK_SUCCEED ||
 			mnstr_read(in, b->theap.base, bb.tailsize, 1) < 0)
 			goto bailout;
-		b->theap.dirty = TRUE;
+		b->theap.dirty = true;
 	}
 	if (bb.theapsize > 0) {
 		if (HEAPextend(b->tvheap, bb.theapsize, true) != GDK_SUCCEED ||
 			mnstr_read(in, b->tvheap->base, bb.theapsize, 1) < 0)
 			goto bailout;
 		b->tvheap->free = bb.theapsize;
-		b->tvheap->dirty = TRUE;
+		b->tvheap->dirty = true;
 	}
 
 	/* set properties */
@@ -1355,7 +1368,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	if (bb.Ttype == TYPE_str && bb.size)
 		BATsetcapacity(b, (BUN) (bb.tailsize >> b->tshift));
 	BATsetcount(b, bb.size);
-	b->batDirty = TRUE;
+	b->batDirtydesc = true;
 
 	/* read blockmode flush */
 	while (mnstr_read(in, &tmp, 1, 1) > 0) {
@@ -1386,7 +1399,7 @@ str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	 * rest is binary data directly on the stream.  We get the first
 	 * line from the buffered stream we have here, and pass it on
 	 * together with the raw stream we have. */
-	cntxt->fdin->eof = 0; /* in case it was before */
+	cntxt->fdin->eof = false; /* in case it was before */
 	if (bstream_next(cntxt->fdin) <= 0)
 		throw(MAL, "remote.bincopyfrom", "expected JSON header");
 
@@ -1454,7 +1467,7 @@ RMTisalive(int *ret, str *conn)
 	rethrow("remote.get", tmp, RMTfindconn(&c, *conn));
 
 	*ret = 0;
-	if (mapi_is_connected(c->mconn) != 0 && mapi_ping(c->mconn) == MOK)
+	if (mapi_is_connected(c->mconn) && mapi_ping(c->mconn) == MOK)
 		*ret = 1;
 
 	return MAL_SUCCEED;

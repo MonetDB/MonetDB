@@ -13,7 +13,6 @@ stdout of test 'case_with_aggr.SF-1876779` in directory 'sql/test/BugTracker` it
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:38978/
 # MonetDB/SQL module v2.22.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -29,13 +28,13 @@ Ready.
 
 #CREATE TABLE casebug(a int);
 #SELECT SUM(a) FROM casebug;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % hugeint # type
 % 1 # length
 [ NULL	]
 #SELECT MIN(a) FROM casebug;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % int # type
 % 1 # length

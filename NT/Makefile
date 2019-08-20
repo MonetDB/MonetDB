@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 TOPDIR = .
 srcdir = $(TOPDIR)\..
@@ -19,7 +19,7 @@ all: _all
 
 !INCLUDE "$(NT)\rules.msc"
 
-_all: update_winconfig_conds_py "$(srcdir)\Makefile.msc" monetdb_config.h unistd.h .monetdb
+_all: update_winconfig_conds_py "$(srcdir)\Makefile.msc" monetdb_config.h unistd.h .monetdb monetdb_hgversion.h
 	$(MAKE) /nologo /f "$(srcdir)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 install: targetdirs all
@@ -33,6 +33,9 @@ $(srcdir)\Makefile.msc: "$(srcdir)\Makefile.ag"
 
 monetdb_config.h: "$(TOPDIR)\winconfig_conds.py" "$(NT)\monetdb_config.h.in"
 	$(CONFIGURE) "$(NT)\monetdb_config.h.in" > monetdb_config.h
+
+monetdb_hgversion.h:
+	$(ECHO) #undef MERCURIAL_ID > monetdb_hgversion.h
 
 unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h

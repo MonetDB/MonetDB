@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 -- QUERY HISTORY
 -- The query history mechanism of MonetDB/SQL relies on a few hooks.
@@ -65,7 +65,7 @@ external name sql.querylog_empty;
 -- manipulate the query logger
 create procedure sys.querylog_enable()
 external name sql.querylog_enable;
-create procedure sys.querylog_enable(threshold smallint)
-external name sql.querylog_enable_threshold;
+create procedure sys.querylog_enable(threshold integer)
+external name sql.querylog_enable;
 create procedure sys.querylog_disable()
 external name sql.querylog_disable;

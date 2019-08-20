@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -148,7 +148,7 @@ loadLibrary(str filename, int flag)
 	void *handle = NULL;
 	str s;
 	int idx;
-	char *mod_path = GDKgetenv("monet_mod_path");
+	const char *mod_path = GDKgetenv("monet_mod_path");
 
 	/* AIX requires RTLD_MEMBER to load a module that is a member of an
 	 * archive.  */
@@ -179,45 +179,49 @@ loadLibrary(str filename, int flag)
 	}
 
 	while (*mod_path) {
-		char *p;
+		int len;
+		const char *p;
 
 		for (p = mod_path; *p && *p != PATH_SEP; p++)
 			;
 
 		/* try hardcoded SO_EXT if that is the same for modules */
 #ifdef _AIX
-		snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s(%s_%s.0)",
+		len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s(%s_%s.0)",
 				 (int) (p - mod_path),
 				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT, SO_PREFIX, s);
 #else
-		snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s",
+		len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s",
 				 (int) (p - mod_path),
 				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
 #endif
+		if (len == -1 || len >= FILENAME_MAX)
+			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
 		handle = dlopen(nme, mode);
-		if (handle == NULL && fileexists(nme)) {
+		if (handle == NULL && fileexists(nme))
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
-		}
-		if (handle == NULL && strcmp(SO_EXT, ".so") != 0) {
+		if (handle == NULL && strcmp(SO_EXT, ".so") != /* DISABLES CODE */ (0)) {
 			/* try .so */
-			snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.so",
+			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.so",
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
+			if (len == -1 || len >= FILENAME_MAX)
+				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
 			handle = dlopen(nme, mode);
-			if (handle == NULL && fileexists(nme)) {
+			if (handle == NULL && fileexists(nme))
 				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
-			}
 		}
 #ifdef __APPLE__
 		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
 			/* try .bundle */
-			snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.bundle",
+			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.bundle",
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
+			if (len == -1 || len >= FILENAME_MAX)
+				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
 			handle = dlopen(nme, mode);
-			if (handle == NULL && fileexists(nme)) {
+			if (handle == NULL && fileexists(nme))
 				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
-			}
 		}
 #endif
 
@@ -233,6 +237,7 @@ loadLibrary(str filename, int flag)
 
 	MT_lock_set(&mal_contextLock);
 	if (lastfile == maxfiles) {
+		MT_lock_unset(&mal_contextLock);
 		if (handle)
 			dlclose(handle);
 		throw(MAL,"mal.linker", "loadModule internal error, too many modules loaded");
@@ -246,8 +251,8 @@ loadLibrary(str filename, int flag)
 		}
 		filesLoaded[lastfile].fullname = GDKstrdup(handle ? nme : "");
 		if(filesLoaded[lastfile].fullname == NULL) {
-			MT_lock_unset(&mal_contextLock);
 			GDKfree(filesLoaded[lastfile].modname);
+			MT_lock_unset(&mal_contextLock);
 			if (handle)
 				dlclose(handle);
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not allocate space");
@@ -304,7 +309,7 @@ cmpstr(const void *_p1, const void *_p2)
 char *
 locate_file(const char *basename, const char *ext, bit recurse)
 {
-	char *mod_path = GDKgetenv("monet_mod_path");
+	const char *mod_path = GDKgetenv("monet_mod_path");
 	char *fullname;
 	size_t fullnamelen;
 	size_t filelen = strlen(basename) + strlen(ext);
@@ -324,7 +329,7 @@ locate_file(const char *basename, const char *ext, bit recurse)
 		return NULL;
 	while (*mod_path) {
 		size_t i;
-		char *p;
+		const char *p;
 		int fd;
 		DIR *rdir;
 
@@ -358,6 +363,7 @@ locate_file(const char *basename, const char *ext, bit recurse)
 				if (strcmp(e->d_name, "..") == 0 || strcmp(e->d_name, ".") == 0)
 					continue;
 				if (strcmp(e->d_name + strlen(e->d_name) - strlen(ext), ext) == 0) {
+					int len;
 					strs[lasts] = GDKmalloc(strlen(fullname) + sizeof(DIR_SEP)
 							+ strlen(e->d_name) + sizeof(PATH_SEP) + 1);
 					if (strs[lasts] == NULL) {
@@ -367,7 +373,14 @@ locate_file(const char *basename, const char *ext, bit recurse)
 						(void)closedir(rdir);
 						return NULL;
 					}
-					sprintf(strs[lasts], "%s%c%s%c", fullname, DIR_SEP, e->d_name, PATH_SEP);
+					len = sprintf(strs[lasts], "%s%c%s%c", fullname, DIR_SEP, e->d_name, PATH_SEP);
+					if (len == -1 || len >= FILENAME_MAX) {
+						while (lasts >= 0)
+							GDKfree(strs[lasts--]);
+						GDKfree(fullname);
+						(void)closedir(rdir);
+						return NULL;
+					}
 					lasts++;
 				}
 				if (lasts >= MAXMULTISCRIPT)
@@ -437,17 +450,13 @@ MSP_locate_sqlscript(const char *filename, bit recurse)
 int
 malLibraryEnabled(str name) {
 	if (strcmp(name, "pyapi") == 0) {
-		char *val = GDKgetenv("embedded_py");
-		if (val && (strcasecmp(val, "2") == 0 || GDKgetenv_istrue("embedded_py") || GDKgetenv_istrue("embedded_py"))) {
-			return true;
-		}
-		return false;
+		const char *val = GDKgetenv("embedded_py");
+		return val && (strcmp(val, "2") == 0 ||
+					   strcasecmp(val, "true") == 0 ||
+					   strcasecmp(val, "yes") == 0);
 	} else if (strcmp(name, "pyapi3") == 0) {
-		char *val = GDKgetenv("embedded_py");
-		if (val && strcasecmp(val, "3") == 0) {
-			return true;
-		}
-		return false;
+		const char *val = GDKgetenv("embedded_py");
+		return val && strcasecmp(val, "3") == 0;
 	}
 	return true;
 }

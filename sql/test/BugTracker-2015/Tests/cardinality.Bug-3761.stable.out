@@ -23,7 +23,6 @@ stdout of test 'cardinality.Bug-3761` in directory 'sql/test/BugTracker-2015` it
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 16:23:57 >  
 # 16:23:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3180" "--port=33257"

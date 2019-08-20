@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -47,8 +47,8 @@ BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {
-		b->tsorted = 1;
-		b->trevsorted = 0;
+		b->tsorted = true;
+		b->trevsorted = false;
 		b->tseqbase = oid_nil;
 		BATkey(b, true);
 		*bn = b;
@@ -76,8 +76,8 @@ BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 	}
 
 	BATsetcount(b, n);
-	b->tsorted = FALSE;
-	b->trevsorted = FALSE;
+	b->tsorted = false;
+	b->trevsorted = false;
 	b->tseqbase = oid_nil;
 	BATkey(b, false);
 	*bn = b;
@@ -107,8 +107,8 @@ BATuniform(BAT **bn, oid *base, lng *size, int *domain)
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {
-		b->tsorted = 1;
-		b->trevsorted = 0;
+		b->tsorted = true;
+		b->trevsorted = false;
 		b->tseqbase = oid_nil;
 		BATkey(b, true);
 		*bn = b;
@@ -133,8 +133,8 @@ BATuniform(BAT **bn, oid *base, lng *size, int *domain)
 	}
 
 	BATsetcount(b, n);
-	b->tsorted = FALSE;
-	b->trevsorted = FALSE;
+	b->tsorted = false;
+	b->trevsorted = false;
 	b->tseqbase = oid_nil;
 	BATkey(b, *size <= *domain);
 	*bn = b;
@@ -170,8 +170,8 @@ BATskewed(BAT **bn, oid *base, lng *size, int *domain, int *skew)
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {
-		b->tsorted = 1;
-		b->trevsorted = 0;
+		b->tsorted = true;
+		b->trevsorted = false;
 		b->tseqbase = oid_nil;
 		BATkey(b, true);
 		*bn = b;
@@ -195,8 +195,8 @@ BATskewed(BAT **bn, oid *base, lng *size, int *domain, int *skew)
 	}
 
 	BATsetcount(b, n);
-	b->tsorted = FALSE;
-	b->trevsorted = FALSE;
+	b->tsorted = false;
+	b->trevsorted = false;
 	b->tseqbase = oid_nil;
 	BATkey(b, *size <= *domain);
 	*bn = b;
@@ -251,8 +251,8 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 		return GDK_FAIL;
         }
 	if (n == 0) {
-		b->tsorted = 1;
-		b->trevsorted = 0;
+		b->tsorted = true;
+		b->trevsorted = false;
 		b->tseqbase = oid_nil;
 		BATkey(b, true);
 		*bn = b;
@@ -307,8 +307,8 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 
 
 	BATsetcount(b, n);
-	b->tsorted = FALSE;
-	b->trevsorted = FALSE;
+	b->tsorted = false;
+	b->trevsorted = false;
 	b->tseqbase = oid_nil;
 	BATkey(b, n<2);
 	*bn = b;

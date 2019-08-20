@@ -15,7 +15,6 @@ stdout of test 'copy_multiple_files.SF-2902320` in directory 'sql/test/BugTracke
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:36694/
 # MonetDB/SQL module v2.34.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -28,12 +27,12 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 202 # length
+% 212 # length
 insert(
 | table(sys.cm_tmp) [ "cm_tmp"."i", "cm_tmp"."%TID%" NOT NULL ]
 | union (
-| | table sys.copyfrom(table(cm_tmp), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "a:\file1", bigint "-1", bigint "0", int "0", int "0", varchar "NULL"),  [ "cm_tmp"."i" ] COUNT ,
-| | table sys.copyfrom(table(cm_tmp), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "Z:/file2", bigint "-1", bigint "0", int "0", int "0", varchar "NULL"),  [ "cm_tmp"."i" ] COUNT 
+| | table sys.copyfrom(table(cm_tmp), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "a:\\file1", bigint "-1", bigint "0", int "0", int "0", varchar "NULL", int "0"),  [ "cm_tmp"."i" ] COUNT ,
+| | table sys.copyfrom(table(cm_tmp), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "Z:/file2", bigint "-1", bigint "0", int "0", int "0", varchar "NULL", int "0"),  [ "cm_tmp"."i" ] COUNT 
 | ) [ int "NULL" ]
 )
 

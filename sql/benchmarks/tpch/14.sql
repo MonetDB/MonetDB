@@ -1,8 +1,10 @@
 -- using default substitutions
 
+-- Adapted orignal query in testweb. Replaced 100.00 by 100.0 to avoid error "!Too many digits (19 > 18)" on architectures
+-- which do not support decimals with more than 18 digits precision (such as MSVC Windows and --disable-int128 builts).
 
 select
-	100.00 * sum(case
+	100.0 * sum(case
 		when p_type like 'PROMO%'
 			then l_extendedprice * (1 - l_discount)
 		else 0

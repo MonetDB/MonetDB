@@ -1,16 +1,8 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
-* Tue Jul 24 2018 Sjoerd Mullender <sjoerd@acm.org>
-- Removed "masksize" argument of function BAThash.
-
-* Tue May 29 2018 Sjoerd Mullender <sjoerd@acm.org>
-- A whole bunch of functions that took an int argument that was used as a
-  Boolean (true/false) value now take a value of type bool.  The functions
-  BATkeyed, BATordered and BATordered_rev now return a bool instead of
-  an int.
-
-* Tue Mar 20 2018 Sjoerd Mullender <sjoerd@acm.org>
-- Removed the tdense property: it's function is completely replaced by
-  whether or not tseqbase is equal to oid_nil.
+* Thu Apr 18 2019 Sjoerd Mullender <sjoerd@acm.org>
+- All forms of BATcalcbetween and VARcalcbetween have extra bool arguments
+  for low inclusive, high inclusive and nils false.  The latter causes
+  the result to be false instead of nil if the value being checked is nil.
 

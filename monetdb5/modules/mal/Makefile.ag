@@ -2,15 +2,14 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 INCLUDES = ../../mal ../atoms ../kernel \
 	../../../clients/mapilib \
-	../../../common/options \
 	../../../common/stream \
 	../../../common/utils \
 	../../../gdk \
-	$(pcre_CFLAGS) $(zlib_CFLAGS) $(BZIP_INCS) $(MSGCONTROL_FLAGS) \
+	$(pcre_CFLAGS) $(MSGCONTROL_FLAGS) \
 	$(openssl_CFLAGS)
 
 MTSAFE
@@ -41,7 +40,6 @@ lib_mal = {
 		profiler.c profiler.h \
 		querylog.c querylog.h \
 		remote.c remote.h \
-		sabaoth.c sabaoth.h \
 		sysmon.c sysmon.h \
 		tablet.c tablet.h \
 		tokenizer.c tokenizer.h \
@@ -61,7 +59,7 @@ headers_mal = {
 		iterator.mal clients.mal \
 		factories.mal groupby.mal mdb.mal pcre.mal mat.mal \
 		transaction.mal oltp.mal wlc.mal \
-		mal_mapi.mal sabaoth.mal remote.mal  \
+		mal_mapi.mal remote.mal  \
 		txtsim.mal \
 		tokenizer.mal sample.mal json_util.mal \
 		batmtime.mal querylog.mal sysmon.mal

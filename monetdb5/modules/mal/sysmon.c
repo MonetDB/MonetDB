@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -28,15 +28,14 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *a = getArgReference_bat(stk,pci,5);
 	bat *o = getArgReference_bat(stk,pci,6);
 	bat *q = getArgReference_bat(stk,pci,7);
-	lng now;
+	time_t now;
 	int i, prog;
 	str usr;
-	timestamp ts, tsn;
+	timestamp tsn;
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) mb;
-	MT_lock_set(&mal_delayLock);
 	tag = COLnew(0, TYPE_lng, 256, TRANSIENT);
 	user = COLnew(0, TYPE_str, 256, TRANSIENT);
 	started = COLnew(0, TYPE_timestamp, 256, TRANSIENT);
@@ -46,30 +45,29 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oids = COLnew(0, TYPE_oid, 256, TRANSIENT);
 	query = COLnew(0, TYPE_str, 256, TRANSIENT);
 	if ( tag == NULL || user == NULL || query == NULL || started == NULL || estimate == NULL || progress == NULL || activity == NULL || oids == NULL){
-		if (tag) BBPunfix(tag->batCacheid);
-		if (user) BBPunfix(user->batCacheid);
-		if (query) BBPunfix(query->batCacheid);
-		if (activity) BBPunfix(activity->batCacheid);
-		if (started) BBPunfix(started->batCacheid);
-		if (estimate) BBPunfix(estimate->batCacheid);
-		if (progress) BBPunfix(progress->batCacheid);
-		if (oids) BBPunfix(oids->batCacheid);
-		MT_lock_unset(&mal_delayLock);
+		BBPreclaim(tag);
+		BBPreclaim(user);
+		BBPreclaim(query);
+		BBPreclaim(activity);
+		BBPreclaim(started);
+		BBPreclaim(estimate);
+		BBPreclaim(progress);
+		BBPreclaim(oids);
 		throw(MAL, "SYSMONqueue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
+	MT_lock_set(&mal_delayLock);
 	for ( i = 0; i< qtop; i++)
-	if( QRYqueue[i].query && (QRYqueue[i].cntxt->idx == 0 || QRYqueue[i].cntxt->user == cntxt->user)) {
-		now= (lng) time(0);
+	if( QRYqueue[i].query && (QRYqueue[i].cntxt->idx == 0 || cntxt->user == 0 || QRYqueue[i].cntxt->user == cntxt->user)) {
+		now= time(0);
 		if ( (now-QRYqueue[i].start) > QRYqueue[i].runtime)
 			prog =QRYqueue[i].runtime > 0 ? 100: int_nil;
 		else
 			// calculate progress based on past observations
 			prog = (int) ((now- QRYqueue[i].start) / (QRYqueue[i].runtime/100.0));
-		now = QRYqueue[i].tag;	/* temporarily use so that we have correct type */
-		if (BUNappend(tag, &now, false) != GDK_SUCCEED)
+		if (BUNappend(tag, &(lng){QRYqueue[i].tag}, false) != GDK_SUCCEED)
 			goto bailout;
-		msg = AUTHgetUsername(&usr, cntxt);
+		msg = AUTHgetUsername(&usr, QRYqueue[i].cntxt);
 		if (msg != MAL_SUCCEED)
 			goto bailout;
 
@@ -83,27 +81,23 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 
 		/* convert number of seconds into a timestamp */
-		now = QRYqueue[i].start * 1000;
-		msg = MTIMEunix_epoch(&ts);
-		if (msg)
+		tsn = timestamp_fromtime(QRYqueue[i].start);
+		if (is_timestamp_nil(tsn)) {
+			msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
 			goto bailout;
-		msg = MTIMEtimestamp_add(&tsn, &ts, &now);
-		if (msg)
-			goto bailout;
+		}
 		if (BUNappend(started, &tsn, false) != GDK_SUCCEED)
 			goto bailout;
 
 		if ( QRYqueue[i].mb->runtime == 0) {
-			if (BUNappend(estimate, timestamp_nil, false) != GDK_SUCCEED)
+			if (BUNappend(estimate, &timestamp_nil, false) != GDK_SUCCEED)
 				goto bailout;
 		} else {
-			now = (QRYqueue[i].start * 1000 + QRYqueue[i].mb->runtime);
-			msg = MTIMEunix_epoch(&ts);
-			if (msg)
+			tsn = timestamp_add_usec(tsn, 1000 * QRYqueue[i].mb->runtime);
+			if (is_timestamp_nil(tsn)) {
+				msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
 				goto bailout;
-			msg = MTIMEtimestamp_add(&tsn, &ts, &now);
-			if (msg)
-				goto bailout;
+			}
 			if (BUNappend(estimate, &tsn, false) != GDK_SUCCEED)
 				goto bailout;
 		}

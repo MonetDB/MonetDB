@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -33,7 +33,6 @@
 #include "sql_scenario.h"
 #include "sql_mvc.h"
 #include "sql_qc.h"
-#include "sql_optimizer.h"
 #include "mal_namespace.h"
 #include "opt_prelude.h"
 #include "querylog.h"
@@ -41,6 +40,7 @@
 #include "mal_debugger.h"
 
 #include "rel_select.h"
+#include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_distribute.h"
 #include "rel_partition.h"
@@ -52,6 +52,7 @@
 #include "rel_dump.h"
 #include "rel_remote.h"
 
+#include "msabaoth.h"		/* msab_getUUID */
 #include "muuid.h"
 
 int
@@ -67,17 +68,6 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 		return -1;
 	idx = defConstant(mb, vr->vtype, &cst);
 	return idx;
-}
-
-/*
- * To speedup code generation we freeze the references to the major module names.
- */
-
-void
-initSQLreferences(void)
-{
-	if (zero_or_oneRef == NULL)
-		GDKfatal("error initSQLreferences");
 }
 
 InstrPtr
@@ -200,7 +190,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			if (e->type == e_atom)
 				snprintf(buf,64,"A%d",e->flag);
 			else
-				snprintf(buf,64,"A%s",e->name);
+				snprintf(buf,64,"A%s",exp_name(e));
 			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
@@ -265,7 +255,7 @@ cleanup:
 	if(b)
 		buffer_destroy(b);
 	if(s)
-		mnstr_destroy(s);
+		close_stream(s);
 	return res;
 }
 
@@ -435,17 +425,21 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	}
 	pushInstruction(curBlk, p);
 
-	if (mal_session_uuid) {
+	char *mal_session_uuid, *err = NULL;
+	if (!GDKinmemory() && (err = msab_getUUID(&mal_session_uuid)) == NULL) {
 		str rsupervisor_session = GDKstrdup(mal_session_uuid);
 		if (rsupervisor_session == NULL) {
+			free(mal_session_uuid);
 			return -1;
 		}
 
 		str lsupervisor_session = GDKstrdup(mal_session_uuid);
 		if (lsupervisor_session == NULL) {
+			free(mal_session_uuid);
 			GDKfree(rsupervisor_session);
 			return -1;
 		}
+		free(mal_session_uuid);
 
 		str rworker_plan_uuid = generateUUID();
 		if (rworker_plan_uuid == NULL) {
@@ -497,7 +491,8 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		free(rworker_plan_uuid);   /* This was created with strdup */
 		GDKfree(lsupervisor_session);
 		GDKfree(rsupervisor_session);
-	}
+	} else if (err)
+		free(err);
 
 	/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
 	p = newInstruction(curBlk, remoteRef, execRef);
@@ -610,7 +605,7 @@ sql_relation2stmt(backend *be, sql_rel *r)
 }
 
 int
-backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, char *query)
+backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, const char *query)
 {
 	mvc *c = be->mvc;
 	InstrPtr q, querylog = NULL;
@@ -643,16 +638,16 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 		return -1;
 	be->mvc_var = getDestVar(q);
 	be->mb = mb;
-       	s = sql_relation2stmt(be, r);
+	s = sql_relation2stmt(be, r);
 	if (!s) {
 		if (querylog)
 			(void) pushInt(mb, querylog, mb->stop);
-		return 0;
+		return (be->mvc->errstr[0] == '\0') ? 0 : -1;
 	}
 
 	be->mvc_var = old_mv;
 	be->mb = old_mb;
-	if (top && c->clientid && !be->depth && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
+	if (top && !be->depth && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		q = newStmt(mb, sqlRef, exportOperationRef);
 		if (q == NULL)
 			return -1;
@@ -743,9 +738,14 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if (m->argc) {
 		for (argc = 0; argc < m->argc; argc++) {
 			atom *a = m->args[argc];
-			int type = atom_type(a)->type->localtype;
-			int varid = 0;
+			sql_type *tpe = atom_type(a)->type;
+			int type, varid = 0;
 
+			if (!tpe) {
+				sql_error(m, 003, SQLSTATE(42000) "Could not determine type for argument number %d\n", argc+1);
+				goto cleanup;
+			}
+			type = tpe->localtype;
 			snprintf(arg, IDLENGTH, "A%d", argc);
 			a->varid = varid = newVariable(mb, arg,strlen(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
@@ -759,9 +759,14 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 
 		for (n = m->params->h; n; n = n->next, argc++) {
 			sql_arg *a = n->data;
-			int type = a->type.type->localtype;
-			int varid = 0;
+			sql_type *tpe = a->type.type;
+			int type, varid = 0;
 
+			if (!tpe) {
+				sql_error(m, 003, SQLSTATE(42000) "Could not determine type for argument number %d\n", argc+1);
+				goto cleanup;
+			}
+			type = tpe->localtype;
 			snprintf(arg, IDLENGTH, "A%d", argc);
 			varid = newVariable(mb, arg,strlen(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
@@ -808,6 +813,10 @@ backend_call(backend *be, Client c, cq *cq)
 		m->session->status = -3;
 		return;
 	}
+	if (m->emode == m_execute && be->q->paramlen != m->argc) {
+		sql_error(m, 003, SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", be->q->paramlen, m->argc);
+		return;
+	}
 	/* cached (factorized queries return bit??) */
 	if (cq->code && getInstrPtr(((Symbol)cq->code)->def, 0)->token == FACTORYsymbol) {
 		setVarType(mb, getArg(q, 0), TYPE_bit);
@@ -824,7 +833,7 @@ backend_call(backend *be, Client c, cq *cq)
 			sql_subtype *pt = cq->params + i;
 
 			if (!atom_cast(m->sa, a, pt)) {
-				sql_error(m, 003, "wrong type for argument %d of " "function call: %s, expected %s\n", i + 1, atom_type(a)->type->sqlname, pt->type->sqlname);
+				sql_error(m, 003, SQLSTATE(42000) "wrong type for argument %d of " "function call: %s, expected %s\n", i + 1, atom_type(a)->type->sqlname, pt->type->sqlname);
 				break;
 			}
 			if (atom_null(a)) {
@@ -906,7 +915,7 @@ backend_create_r_func(backend *be, sql_func *f)
 // defaults to python 2 if none is enabled
 static int
 enabled_python_version(void) {
-    char* env = GDKgetenv(pyapi_enableflag);
+    const char* env = GDKgetenv(pyapi_enableflag);
     if (env && strncmp(env, "3", 1) == 0) {
     	return 3;
     }
@@ -1032,6 +1041,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		f->sql++;
 	r = rel_parse(m, f->s, f->query, m_instantiate);
 	if (r) {
+		r = rel_unnest(m, r);
 		r = rel_optimizer(m, r, 0);
 		r = rel_distribute(m, r);
 		r = rel_partition(m, r);
@@ -1253,8 +1263,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	/* output the data */
 	mnstr_printf(fd, "%s\n", b->buf + 1 /* omit starting \n */);
 
-	mnstr_close(s);
-	mnstr_destroy(s);
+	close_stream(s);
 	buffer_destroy(b);
 }
 

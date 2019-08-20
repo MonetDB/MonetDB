@@ -2,7 +2,7 @@
 START TRANSACTION;
 
 # decimal
-# decimals are integer types (bit, short, int or lng)
+# decimals are integer types (bte (int8_t), sht (int16_t), int or lng (int64_t))
 # each decimal type has a "scale" (supplied as double)
 # this scale is the scaling factor of the value
 # for example, the value "10.3" may be stored as "103" with scaling factor "10"

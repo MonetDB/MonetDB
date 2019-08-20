@@ -15,7 +15,6 @@ stdout of test 'function_call_not_handled.SF-2864179` in directory 'sql/test/Bug
 # Listening for connection requests on mapi:monetdb://yngling.ins.cwi.nl:39569/
 # MonetDB/SQL module v2.33.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

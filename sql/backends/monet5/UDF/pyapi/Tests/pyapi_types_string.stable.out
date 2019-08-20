@@ -23,7 +23,6 @@ stdout of test 'pyapi_types_string` in directory 'sql/backends/monet5/UDF/pyapi`
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 20:45:39 >  
 # 20:45:39 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9070" "--port=37361"

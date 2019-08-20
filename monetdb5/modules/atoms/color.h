@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _COLOR_H
@@ -27,8 +27,8 @@ mal_export str CLRcb(int *g, const color *c);
 mal_export str CLRhsv(color *c, const flt *h, const flt *s, const flt *v);
 mal_export str CLRrgb(color *rgb, const int *r, const int *g, const int *b);
 mal_export str CLRycc(color *c, const int *y, const int *cr, const int *cb);
-mal_export ssize_t color_fromstr(const char *colorStr, size_t *len, color **c);
-mal_export ssize_t color_tostr(char **colorStr, size_t *len, const color *c);
+mal_export ssize_t color_fromstr(const char *colorStr, size_t *len, color **c, bool external);
+mal_export ssize_t color_tostr(char **colorStr, size_t *len, const color *c, bool external);
 
 #define color_nil ((color)int_nil)
 #define is_color_nil(v)		is_int_nil((int) (v))

@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 # NOTE: if you happen to have bootstrap failures due to missing M4
 # macros, export M4DIRS as a space separated list of directories where
@@ -62,6 +62,8 @@ aclocal$amv ${_m4_extra_dirs} || exit $?
 autoheader  || exit $?
 automake$amv --add-missing --copy --foreign  || exit $?
 autoconf || exit $?
+# a bit hacky: add dependency on monetdb_hgversion.h for common/utils/revision.c
+sed -i~ '/revision.*:/s;$; ../../monetdb_hgversion.h;' common/utils/Makefile.am
 if [ -f buildtools/conf/install-sh -a ! -x buildtools/conf/install-sh ]; then
     chmod +x buildtools/conf/install-sh
 fi

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -261,10 +261,10 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	memcpy(Tloc(bn, 0), (const oid *) b->torderidx->base + ORDERIDXOFF,
 		   BATcount(b) * SIZEOF_OID);
 	BATsetcount(bn, BATcount(b));
-	bn->tkey = 1;
+	bn->tkey = true;
 	bn->tsorted = bn->trevsorted = BATcount(b) <= 1;
-	bn->tnil = 0;
-	bn->tnonil = 1;
+	bn->tnil = false;
+	bn->tnonil = true;
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPunfix(b->batCacheid);

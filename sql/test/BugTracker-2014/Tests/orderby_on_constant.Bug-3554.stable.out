@@ -19,7 +19,6 @@ stdout of test 'orderby_on_constant.Bug-3554` in directory 'sql/test/BugTracker-
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 19:40:07 >  
 # 19:40:07 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21225" "--port=31986"

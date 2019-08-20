@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 from __future__ import print_function
 
@@ -163,7 +163,7 @@ def filter(st):
         return st + '\n'
     return ''
 
-OutList.sort(key=lambda x: x.count(os.sep))
+OutList.sort(key=lambda x: x.count('/'))
 OutList = map(filter, OutList)
 OutListFd = open("acout.in", "w")
 OutListFd.writelines(OutList)

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -53,7 +53,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if( defineQuery == NULL)
 		throw(MAL,"optimizer.querylog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
-	defineQuery->argc--;  // remoge MAL instruction count
+	defineQuery->argc--;  // remove MAL instruction count
 	setFunctionId(defineQuery, appendRef);
 	getArg(defineQuery,0) = newTmpVariable(mb,TYPE_any);
 	defineQuery->token = ASSIGNsymbol;
@@ -195,10 +195,10 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
         chkFlow(mb);
         chkDeclarations(mb);
     }
-    /* keep all actions taken as a post block comment */
+	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","querylog", usec);
-    newComment(mb,buf);
+	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","querylog", usec);
+	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 	return msg;
 }

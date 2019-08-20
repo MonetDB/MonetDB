@@ -1,5 +1,5 @@
 start transaction;
-create table t(r integer,a integer);
+create table t(r smallint,a smallint);
 insert into t values (1,42),(2,0),(3,null); 
 select * from t;
 -- this works

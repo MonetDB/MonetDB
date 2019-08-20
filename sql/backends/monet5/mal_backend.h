@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef MAL_BACKEND_H
@@ -31,16 +31,21 @@ typedef enum output_format {
 	OFMT_NONE = 3
 } ofmt;
 
+/* The cur_append variable on an insert/update/delete on a partitioned table, tracks the current MAL variable holding
+ * the total number of rows affected. The first_statement_generated looks if the first of the sub-statements was
+ * generated or not */
+
 typedef struct backend {
-	char 	console;
 	char 	language;		/* 'S' or 's' or 'X' */
 	char 	depth;
+	bool 	first_statement_generated;
 	mvc 	*mvc;
 	stream 	*out;
 	ofmt	output_format;	/* csv, json */
 	Client 	client;
 	MalBlkPtr mb;		/* needed during mal generation */
-	int 	mvc_var;	
+	int 	mvc_var;
+	int 	cur_append;
 	int	vtop;		/* top of the variable stack before the current function */
 	cq 	*q;		/* pointer to the cached query */
 } backend;

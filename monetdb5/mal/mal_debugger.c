@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -12,7 +12,6 @@
  */
 #include "monetdb_config.h"
 #include "mal.h"
-#include "mal_readline.h"
 #include "mal_debugger.h"
 #include "mal_interpreter.h"	/* for getArgReference() */
 #include "mal_linker.h"		/* for getAddress() */
@@ -22,16 +21,15 @@
 #include "mal_namespace.h"
 #include "mal_private.h"
 
-int MDBdelay;			/* do not immediately react */
 typedef struct {
 	MalBlkPtr brkBlock[MAXBREAKS];
-	int		brkPc[MAXBREAKS];
-	int		brkVar[MAXBREAKS];
-	str		brkMod[MAXBREAKS];
-	str		brkFcn[MAXBREAKS];
-	char	brkCmd[MAXBREAKS];
-	str		brkRequest[MAXBREAKS];
-	int		brkTop;
+	int brkPc[MAXBREAKS];
+	int brkVar[MAXBREAKS];
+	str brkMod[MAXBREAKS];
+	str brkFcn[MAXBREAKS];
+	char brkCmd[MAXBREAKS];
+	str brkRequest[MAXBREAKS];
+	int brkTop;
 } mdbStateRecord, *mdbState;
 
 typedef struct MDBSTATE{
@@ -46,21 +44,245 @@ typedef struct MDBSTATE{
 #define skipWord(c, X)     while (*(X) && (isalnum((unsigned char) *X))) { X++; } \
 	skipBlanc(c, X);
 
-static void printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first);
-static void printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index);
-static void printBATelm(stream *f, bat i, BUN cnt, BUN first);
-static void printBatDetails(stream *f, int bid);
-static void printBatInfo(stream *f, VarPtr n, ValPtr v);
-static void printBatProperties(stream *f, VarPtr n, ValPtr v, str props);
-static void mdbHelp(stream *f);
+/* Utilities
+ * Dumping a stack on a file is primarilly used for debugging.
+ * Printing the stack requires access to both the symbol table and
+ * the stackframes in most cases.
+ * Beware that a stack frame need not be initialized with null values.
+ * It has been zeroed upon creation.
+ *
+ * The routine  can also be used to inspect the symbol table of
+ * arbitrary functions.
+ */
+static void
+printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index)
+{
+	VarPtr n = getVar(mb, index);
 
-static mdbStateRecord *mdbTable;
+	if (v == 0 && isVarConstant(mb, index))
+		v = &getVarConstant(mb, index);
+	mnstr_printf(f, "#[%2d] %5s", index, n->id);
+	mnstr_printf(f, " (%d,%d,%d) = ", getBeginScope(mb,index), getLastUpdate(mb,index),getEndScope(mb, index));
+	if (v)
+		ATOMprint(v->vtype, VALptr(v), f);
+}
+
+static void
+printBATproperties(stream *f, BAT *b)
+{
+	mnstr_printf(f, " count=" BUNFMT " lrefs=%d ",
+			BATcount(b), BBP_lrefs(b->batCacheid));
+	if (BBP_refs(b->batCacheid) - 1)
+		mnstr_printf(f, " refs=%d ", BBP_refs(b->batCacheid));
+	if (b->batSharecnt)
+		mnstr_printf(f, " views=%d", b->batSharecnt);
+	if (b->theap.parentid)
+		mnstr_printf(f, "view on %s ", BBPname(b->theap.parentid));
+}
+
+static void
+printBATelm(stream *f, bat i, BUN cnt, BUN first)
+{
+	BAT *b, *bs[2]={0};
+	str tpe;
+
+	b = BATdescriptor(i);
+	if (b) {
+		tpe = getTypeName(newBatType(b->ttype));
+		mnstr_printf(f, ":%s ", tpe);
+		GDKfree(tpe);
+		printBATproperties(f, b);
+		/* perform property checking */
+		BATassertProps(b);
+		mnstr_printf(f, "\n");
+		if (cnt && BATcount(b) > 0) {
+			if (cnt < BATcount(b)) {
+				mnstr_printf(f, "Sample " BUNFMT " out of " BUNFMT "\n", cnt, BATcount(b));
+			}
+			/* cut out a portion of the BAT for display */
+			bs[1] = BATslice(b, first, first + cnt);
+			/* get the void values */
+			if (bs[1] == NULL)
+				mnstr_printf(f, "Failed to take chunk\n");
+			else {
+				bs[0] = BATdense(bs[1]->hseqbase, 0, BATcount(bs[1]));
+				if( bs[0] == NULL){
+					mnstr_printf(f, "Failed to take chunk index\n");
+				} else {
+					BATprintcolumns(f, 2, bs);
+					BBPunfix(bs[0]->batCacheid);
+					BBPunfix(bs[1]->batCacheid);
+				}
+			}
+		}
+
+		BBPunfix(b->batCacheid);
+	} else
+		mnstr_printf(f, "\n");
+}
+
+static void
+printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
+{
+	str nme, nmeOnStk;
+	VarPtr n = getVar(mb, index);
+
+	printStackHdr(f, mb, v, index);
+
+	if (v && v->vtype == TYPE_bat) {
+		bat i = v->val.bval;
+		BAT *b = BBPquickdesc(i, true);
+
+		if (b) {
+			nme = getTypeName(newBatType(b->ttype));
+			mnstr_printf(f, " :%s rows="BUNFMT, nme, BATcount(b));
+		} else {
+			nme = getTypeName(n->type);
+			mnstr_printf(f, " :%s", nme);
+		}
+	} else {
+		nme = getTypeName(n->type);
+		mnstr_printf(f, " :%s", nme);
+	}
+	nmeOnStk = v ? getTypeName(v->vtype) : GDKstrdup(nme);
+	/* check for type errors */
+	if (strcmp(nmeOnStk, nme) && strncmp(nmeOnStk, "BAT", 3))
+		mnstr_printf(f, "!%s ", nmeOnStk);
+	mnstr_printf(f, " %s", (isVarConstant(mb, index) ? " constant" : ""));
+	mnstr_printf(f, " %s", (isVarUsed(mb,index) ? "": " not used" ));
+	mnstr_printf(f, " %s", (isVarTypedef(mb, index) ? " type variable" : ""));
+	GDKfree(nme);
+	mnstr_printf(f, "\n");
+	GDKfree(nmeOnStk);
+
+	if (cnt && v && (isaBatType(n->type) || v->vtype == TYPE_bat) && !is_bat_nil(v->val.bval)) {
+		printBATelm(f,v->val.bval,cnt,first);
+	}
+}
+
+void
+printStack(stream *f, MalBlkPtr mb, MalStkPtr s)
+{
+	int i = 0;
+
+	if (s) {
+		mnstr_printf(f, "#Stack '%s' size=%d top=%d\n",
+				getInstrPtr(mb, 0)->fcnname, s->stksize, s->stktop);
+		for (; i < mb->vtop; i++)
+			printStackElm(f, mb, s->stk + i, i, 0, 0);
+	} else
+		for (; i < mb->vtop; i++)
+			printStackElm(f, mb, 0, i, 0, 0);
+}
+
+/* utility to display an instruction being called and its stack position */
+static void
+printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
+{
+	str msg;
+	msg = instruction2str(mb, stk, getInstrPtr(mb, pc), LIST_MAL_CALL);
+	mnstr_printf(cntxt->fdout, "#%s at %s.%s[%d]\n", (msg?msg:"failed instruction2str()") ,
+			getModuleId(getInstrPtr(mb, 0)),
+			getFunctionId(getInstrPtr(mb, 0)), pc);
+	GDKfree(msg);
+}
+
+static void
+mdbBacktrace(Client cntxt, MalStkPtr stk, int pci)
+{
+	for (; stk != NULL; stk = stk->up) {
+		printCall(cntxt, stk->blk, stk, pci);
+		if (stk->up)
+			pci = stk->up->pcup;
+	}
+}
+
+void
+mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i = getPC(mb, pci);
+	mnstr_printf(cntxt->fdout, "!MDB dump of instruction %d\n", i);
+	if( i < 0)
+		return;
+	printFunction(cntxt->fdout, mb, stk, LIST_MAL_ALL);
+	mdbBacktrace(cntxt, stk, i);
+	printStack(cntxt->fdout, mb, stk);
+}
+
+#ifndef NDEBUG
+static void
+printBatDetails(stream *f, bat bid)
+{
+	BAT *b[2];
+	bat ret,ret2;
+	MALfcn fcn;
+
+	/* at this level we don't know bat kernel primitives */
+	mnstr_printf(f, "#Show info for %d\n", bid);
+	fcn = getAddress("BKCinfo");
+	if (fcn) {
+		(*fcn)(&ret,&ret2, &bid);
+		b[0] = BATdescriptor(ret);
+		if (b[0] == NULL)
+			return;
+		b[1] = BATdescriptor(ret2);
+		if (b[1] == NULL) {
+			BBPunfix(b[0]->batCacheid);
+			return;
+		}
+		BATprintcolumns(f, 2, b);
+		BBPunfix(b[0]->batCacheid);
+		BBPunfix(b[1]->batCacheid);
+	}
+}
+
+static void
+printBatInfo(stream *f, VarPtr n, ValPtr v)
+{
+	if (isaBatType(n->type) && v->val.ival)
+		printBatDetails(f, v->val.ival);
+}
+
+static void
+mdbHelp(stream *f)
+{
+	mnstr_printf(f, "next             -- Advance to next statement\n");
+	mnstr_printf(f, "continue         -- Continue program being debugged\n");
+	mnstr_printf(f, "catch            -- Catch the next exception \n");
+	mnstr_printf(f, "break [<var>]    -- set breakpoint on current instruction or <var>\n");
+	mnstr_printf(f, "delete [<var>]   -- remove break/trace point <var>\n");
+	mnstr_printf(f, "debug <int>      -- set kernel debugging mask\n");
+	mnstr_printf(f, "step             -- advance to next MAL instruction\n");
+	mnstr_printf(f, "module           -- display a module signatures\n");
+	mnstr_printf(f, "atom             -- show atom list\n");
+	mnstr_printf(f, "finish           -- finish current call\n");
+	mnstr_printf(f, "exit             -- terminate executionr\n");
+	mnstr_printf(f, "quit             -- turn off debugging\n");
+	mnstr_printf(f, "list <obj>       -- list current program block\n");
+	mnstr_printf(f, "list #  [+#],-#  -- list current program block slice\n");
+	mnstr_printf(f, "List <obj> [#]   -- list with type information[slice]\n");
+	mnstr_printf(f, "list [#] <obj>   -- list program block after optimizer <#>\n");
+	mnstr_printf(f, "List #  [+#],-#  -- list current program block slice\n");
+	mnstr_printf(f, "var  <obj>       -- print symbol table for module\n");
+	mnstr_printf(f, "optimizer <obj>  -- display optimizer steps\n");
+	mnstr_printf(f, "print <var>      -- display value of a variable\n");
+	mnstr_printf(f, "print <var> <cnt>[<first>] -- display BAT chunk\n");
+	mnstr_printf(f, "info <var>       -- display bat variable properties\n");
+	mnstr_printf(f, "run              -- restart current procedure\n");
+	mnstr_printf(f, "where            -- print stack trace\n");
+	mnstr_printf(f, "down             -- go down the stack\n");
+	mnstr_printf(f, "up               -- go up the stack\n");
+	mnstr_printf(f, "trace <var>      -- trace assignment to variables\n");
+	mnstr_printf(f, "trap <mod>.<fcn> -- catch MAL function call in debugger\n");
+	mnstr_printf(f, "help             -- this message\n");
+}
 
 /*
  * The debugger flags overview
  */
+static mdbStateRecord *mdbTable;
 
-void
+bool
 mdbInit(void)
 {
 	/*
@@ -72,8 +294,9 @@ mdbInit(void)
 	mdbTable = GDKzalloc(sizeof(mdbStateRecord) * MAL_MAXCLIENTS);
 	if (mdbTable == NULL) {
 		fprintf(stderr,"#mdbInit:" MAL_MALLOC_FAIL);
-		mal_exit();
+		return false;
 	}
+	return true;
 }
 
 void
@@ -259,33 +482,6 @@ mdbClrBreakRequest(Client cntxt, str request)
 	mdb->brkTop = j;
 }
 
-int
-mdbSetTrap(Client cntxt, str modnme, str fcnnme, int flag)
-{
-	Symbol s;
-	s = findSymbol(cntxt->usermodule, putName(modnme),
-			putName(fcnnme));
-	if (s == NULL)
-		return -1;
-	while (s) {
-		s->def->trap = flag;
-		s = s->peer;
-	}
-	return 0;
-}
-
-/* utility to display an instruction being called and its stack position */
-static void
-printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
-{
-	str msg;
-	msg = instruction2str(mb, stk, getInstrPtr(mb, pc), LIST_MAL_CALL);
-	mnstr_printf(cntxt->fdout, "#%s at %s.%s[%d]\n", (msg?msg:"failed instruction2str()") ,
-			getModuleId(getInstrPtr(mb, 0)),
-			getFunctionId(getInstrPtr(mb, 0)), pc);
-	GDKfree(msg);
-}
-
 /* utility to display instruction and dispose of structure */
 static void
 printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
@@ -299,28 +495,6 @@ printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 	GDKfree(msg);
 }
 
-static void
-mdbBacktrace(Client cntxt, MalStkPtr stk, int pci)
-{
-	for (; stk != NULL; stk = stk->up) {
-		printCall(cntxt, stk->blk, stk, pci);
-		if (stk->up)
-			pci = stk->up->pcup;
-	}
-}
-
-static void
-printBATproperties(stream *f, BAT *b)
-{
-	mnstr_printf(f, " count=" BUNFMT " lrefs=%d ",
-			BATcount(b), BBP_lrefs(b->batCacheid));
-	if (BBP_refs(b->batCacheid) - 1)
-		mnstr_printf(f, " refs=%d ", BBP_refs(b->batCacheid));
-	if (b->batSharecnt)
-		mnstr_printf(f, " views=%d", b->batSharecnt);
-	if (b->theap.parentid)
-		mnstr_printf(f, "view on %s ", BBPname(b->theap.parentid));
-}
 /* MAL debugger parser
  * The debugger structure is inherited from GDB.
  * The routine mdbCommand is called with p=0 after finishing a mal- function call
@@ -393,6 +567,52 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b)
 	return getMalBlkHistory(mb, -1);
 }
 
+static void
+printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
+{
+	if (isaBatType(n->type) && v->val.ival) {
+		bat bid;
+		bat ret,ret2;
+		MALfcn fcn;
+		BUN p;
+
+		/* at this level we don't know bat kernel primitives */
+		fcn = getAddress("BKCinfo");
+		if (fcn) {
+			BAT *b[2];
+			str res;
+
+			bid = v->val.ival;
+			mnstr_printf(f, "BAT %d %s= ", bid, props);
+			res = (*fcn)(&ret, &ret2, &bid);
+			if (res != MAL_SUCCEED) {
+				GDKfree(res);
+				mnstr_printf(f, "mal.info failed\n");
+				return;
+			}
+			b[0] = BATdescriptor(ret);
+			b[1] = BATdescriptor(ret2);
+			if (b[0] == NULL || b[1] == NULL) {
+				mnstr_printf(f, "Could not access descriptor\n");
+				if (b[0])
+					BBPunfix(b[0]->batCacheid);
+				if (b[1])
+					BBPunfix(b[1]->batCacheid);
+				return;
+			}
+			p = BUNfnd(b[0], props);
+			if (p != BUN_NONE) {
+				BATiter bi = bat_iterator(b[1]);
+				mnstr_printf(f, " %s\n", (str) BUNtvar(bi, p));
+			} else {
+				mnstr_printf(f, " not found\n");
+			}
+			BBPunfix(b[0]->batCacheid);
+			BBPunfix(b[1]->batCacheid);
+		}
+	}
+}
+
 
 static void
 mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
@@ -427,7 +647,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 retryRead:
 			msg = (char *) (*cntxt->phase[MAL_SCENARIO_READER])(cntxt);
 			if (msg != MAL_SUCCEED || cntxt->mode == FINISHCLIENT){
-				GDKfree(msg);
+				freeException(msg);
 				break;
 			}
 			/* SQL patch, it should only react to Smessages, Xclose requests to be ignored */
@@ -436,13 +656,6 @@ retryRead:
 				goto retryRead;
 			}
 		}
-#ifndef HAVE_EMBEDDED
-		else if (cntxt == mal_clients) {
-			/* switch to mdb streams */
-			if (readConsole(cntxt) <= 0)
-				break;
-		}
-#endif
 		b = CURRENT(cntxt);
 
 		/* terminate the line with zero */
@@ -595,7 +808,6 @@ retryRead:
 				skipBlanc(cntxt, b);
 				if ((w = strchr(b, '\n')))
 					*w = 0;
-				traceFcnName = GDKstrdup(b);
 			}
 			break;
 		case 't':   /* trace a variable toggle */
@@ -972,53 +1184,15 @@ partial:
 	cntxt->promptlength = oldpromptlength;
 }
 
-void
-mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str 
+mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i = getPC(mb, pci);
-	mnstr_printf(cntxt->fdout, "!MDB dump of instruction %d\n", i);
-	if( i < 0)
-		return;
-	printFunction(cntxt->fdout, mb, stk, LIST_MAL_ALL);
-	mdbBacktrace(cntxt, stk, i);
-	printStack(cntxt->fdout, mb, stk);
-}
-static int mdbSessionActive;
-int mdbSession(void)
-{
-	return mdbSessionActive;
-}
-static Client trapped_cntxt;
-static MalBlkPtr trapped_mb;
-static MalStkPtr trapped_stk;
-static int trapped_pc;
-
-str mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	int cnt = 20;   /* total 10 sec delay */
 	int pc = getPC(mb,p);
 
-	mnstr_printf(mal_clients[0].fdout, "#trapped %s.%s[%d]\n",
+	mnstr_printf(cntxt->fdout, "#trapped %s.%s[%d]\n",
 			getModuleId(mb->stmt[0]), getFunctionId(mb->stmt[0]), pc);
-	printInstruction(mal_clients[0].fdout, mb, stk, p, LIST_MAL_DEBUG);
+	printInstruction(cntxt->fdout, mb, stk, p, LIST_MAL_DEBUG);
 	cntxt->itrace = 'W';
-	MT_lock_set(&mal_contextLock);
-	if (trapped_mb) {
-		mnstr_printf(mal_clients[0].fdout, "#registry not available\n");
-		mnstr_flush(cntxt->fdout);
-	}
-	while (trapped_mb && cnt-- > 0) {
-		MT_lock_unset(&mal_contextLock);
-		MT_sleep_ms(500);
-		MT_lock_set(&mal_contextLock);
-	}
-	if (cnt > 0) {
-		trapped_cntxt = cntxt;
-		trapped_mb = mb;
-		trapped_stk = stk;
-		trapped_pc = pc;
-	} /* else give up */
-	MT_lock_unset(&mal_contextLock);
 	return MAL_SUCCEED;
 }
 
@@ -1029,7 +1203,6 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	char ch;
 	stream *out = cntxt->fdout;
 
-	mdbSessionActive = 1; /* for name completion */
 	/* mdbSanityCheck(cntxt, mb, stk, pc); expensive */
 	/* process should sleep */
 	if (cntxt->itrace == 'S') {
@@ -1038,23 +1211,16 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		state.stk = stk;
 		state.p = getInstrPtr(mb, pc);
 		state.pc = pc;
-		cntxt->mdb = &state;
-		mnstr_printf(mal_clients[0].fdout, "#Process %d put to sleep\n", (int) (cntxt - mal_clients));
+		mnstr_printf(cntxt->fdout, "#Process %d put to sleep\n", (int) (cntxt - mal_clients));
 		cntxt->itrace = 'W';
 		mdbTrap(cntxt, mb, stk, state.p);
 		while (cntxt->itrace == 'W')
 			MT_sleep_ms(300);
-		mnstr_printf(mal_clients[0].fdout, "#Process %d woke up\n", (int) (cntxt - mal_clients));
+		mnstr_printf(cntxt->fdout, "#Process %d woke up\n", (int) (cntxt - mal_clients));
 		return;
 	}
 	if (stk->cmd == 0)
 		stk->cmd = 'n';
-	/* a trapped call leads to process suspension */
-	/* then the console can be used to attach a debugger */
-	if (mb->trap) {
-		mdbTrap(cntxt, mb, stk, getInstrPtr(mb,pc));
-		return;
-	}
 	p = getInstrPtr(mb, pc);
 	switch (stk->cmd) {
 	case 'c':
@@ -1074,8 +1240,6 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	case 't':
 		printTraceCall(out, mb, stk, pc, LIST_MAL_CALL);
 		break;
-	case 'C':
-		mdbSessionActive = 0; /* for name completion */
 	}
 	if (mb->errors != MAL_SUCCEED) {
 		MalStkPtr su;
@@ -1086,71 +1250,8 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		mnstr_printf(out, "mdb>#EOD\n");
 		stk->cmd = 'x'; /* will force a graceful termination */
 	}
-	if (mdbSessionActive == 0)
-		return;
-	mdbSessionActive = 0; /* for name completion */
 }
 
-/*
- * Grabbing the execution state of a running query can be
- * useful to inspect its runtime environment. Ideally, any
- * suspended running MAL block should be accessed this way.
- */
-str
-mdbGrab(Client cntxt, MalBlkPtr mb1, MalStkPtr stk1, InstrPtr pc1)
-{
-	Client c;
-	MalBlkPtr mb;
-	MalStkPtr stk;
-	int pc, sve;
-
-	(void) mb1;
-	(void) stk1;
-	(void) pc1;
-
-	/* get hold of a suspended plan and run debugger */
-	MT_lock_set(&mal_contextLock);
-	if (trapped_mb == 0) {
-		mnstr_printf(cntxt->fdout, "#no trapped function\n");
-		MT_lock_unset(&mal_contextLock);
-		return MAL_SUCCEED;
-	}
-	c = trapped_cntxt;
-	mb = trapped_mb;
-	stk = trapped_stk;
-	pc = trapped_pc;
-	trapped_cntxt = 0;
-	trapped_mb = 0;
-	trapped_stk = 0;
-	trapped_pc = 0;
-	MT_lock_unset(&mal_contextLock);
-	mnstr_printf(cntxt->fdout, "#Debugging trapped function\n");
-	mnstr_flush(cntxt->fdout);
-	sve = stk->cmd;
-	stk->cmd = 'n';
-	mdbCommand(cntxt, mb, stk, getInstrPtr(mb, pc), pc);
-	stk->cmd = sve;
-	c->itrace = 0; /* wakeup target */
-	return MAL_SUCCEED;
-}
-
-str
-mdbTrapClient(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	int id = *getArgReference_int(stk, p, 1);
-	Client c;
-
-	(void) cntxt;
-	(void) mb;
-	if (id < 0 || id >= MAL_MAXCLIENTS || mal_clients[id].mode == 0)
-		throw(INVCRED, "mdb.trap", INVCRED_WRONG_ID);
-	c = mal_clients + id;
-
-	c->itrace = 'S';
-	mnstr_printf(cntxt->fdout, "#process %d requested to suspend\n", id);
-	mnstr_flush(cntxt->fdout);
-	return MAL_SUCCEED;
-}
 /*
  * It would come in handy if at any time you could activate
  * the debugger on a specific function. This calls for the
@@ -1176,248 +1277,13 @@ runMALDebugger(Client cntxt, MalBlkPtr mb)
 	return msg;
 }
 
-/* Utilities
- * Dumping a stack on a file is primarilly used for debugging.
- * Printing the stack requires access to both the symbol table and
- * the stackframes in most cases.
- * Beware that a stack frame need not be initialized with null values.
- * It has been zeroed upon creation.
- *
- * The routine  can also be used to inspect the symbol table of
- * arbitrary functions.
- */
-void
-printStack(stream *f, MalBlkPtr mb, MalStkPtr s)
+#else
+str runMALDebugger(Client cntxt, MalBlkPtr mb) 
 {
-	int i = 0;
-
-	if (s) {
-		mnstr_printf(f, "#Stack '%s' size=%d top=%d\n",
-				getInstrPtr(mb, 0)->fcnname, s->stksize, s->stktop);
-		for (; i < mb->vtop; i++)
-			printStackElm(f, mb, s->stk + i, i, 0, 0);
-	} else
-		for (; i < mb->vtop; i++)
-			printStackElm(f, mb, 0, i, 0, 0);
+	(void)cntxt; (void)mb;
+	return NULL;
 }
-
-static void
-printBATelm(stream *f, bat i, BUN cnt, BUN first)
-{
-	BAT *b, *bs[2]={0};
-	str tpe;
-
-	b = BATdescriptor(i);
-	if (b) {
-		tpe = getTypeName(newBatType(b->ttype));
-		mnstr_printf(f, ":%s ", tpe);
-		GDKfree(tpe);
-		printBATproperties(f, b);
-		/* perform property checking */
-		BATassertProps(b);
-		mnstr_printf(f, "\n");
-		if (cnt && BATcount(b) > 0) {
-			if (cnt < BATcount(b)) {
-				mnstr_printf(f, "Sample " BUNFMT " out of " BUNFMT "\n", cnt, BATcount(b));
-			}
-			/* cut out a portion of the BAT for display */
-			bs[1] = BATslice(b, first, first + cnt);
-			/* get the void values */
-			if (bs[1] == NULL)
-				mnstr_printf(f, "Failed to take chunk\n");
-			else {
-				bs[0] = BATdense(bs[1]->hseqbase, 0, BATcount(bs[1]));
-				if( bs[0] == NULL){
-					mnstr_printf(f, "Failed to take chunk index\n");
-				} else {
-					BATprintcolumns(f, 2, bs);
-					BBPunfix(bs[0]->batCacheid);
-					BBPunfix(bs[1]->batCacheid);
-				}
-			}
-		}
-
-		BBPunfix(b->batCacheid);
-	} else
-		mnstr_printf(f, "\n");
+void mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd) {
+	(void)cntxt; (void)mb; (void)request; (void)cmd;
 }
-
-
-void
-printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index)
-{
-	VarPtr n = getVar(mb, index);
-
-	if (v == 0 && isVarConstant(mb, index))
-		v = &getVarConstant(mb, index);
-	mnstr_printf(f, "#[%2d] %5s", index, n->id);
-	mnstr_printf(f, " (%d,%d,%d) = ", getBeginScope(mb,index), getLastUpdate(mb,index),getEndScope(mb, index));
-	if (v)
-		ATOMprint(v->vtype, VALptr(v), f);
-}
-
-void
-printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
-{
-	str nme, nmeOnStk;
-	VarPtr n = getVar(mb, index);
-
-	printStackHdr(f, mb, v, index);
-
-	if (v && v->vtype == TYPE_bat) {
-		bat i = v->val.bval;
-		BAT *b = BBPquickdesc(i, TRUE);
-
-		if (b) {
-			nme = getTypeName(newBatType(b->ttype));
-			mnstr_printf(f, " :%s rows="BUNFMT, nme, BATcount(b));
-		} else {
-			nme = getTypeName(n->type);
-			mnstr_printf(f, " :%s", nme);
-		}
-	} else {
-		nme = getTypeName(n->type);
-		mnstr_printf(f, " :%s", nme);
-	}
-	nmeOnStk = v ? getTypeName(v->vtype) : GDKstrdup(nme);
-	/* check for type errors */
-	if (strcmp(nmeOnStk, nme) && strncmp(nmeOnStk, "BAT", 3))
-		mnstr_printf(f, "!%s ", nmeOnStk);
-	mnstr_printf(f, " %s", (isVarConstant(mb, index) ? " constant" : ""));
-	mnstr_printf(f, " %s", (isVarUsed(mb,index) ? "": " not used" ));
-	mnstr_printf(f, " %s", (isVarTypedef(mb, index) ? " type variable" : ""));
-	GDKfree(nme);
-	mnstr_printf(f, "\n");
-	GDKfree(nmeOnStk);
-
-	if (cnt && v && (isaBatType(n->type) || v->vtype == TYPE_bat) && !is_bat_nil(v->val.bval)) {
-		printBATelm(f,v->val.bval,cnt,first);
-	}
-}
-
-static void
-printBatDetails(stream *f, bat bid)
-{
-	BAT *b[2];
-	bat ret,ret2;
-	MALfcn fcn;
-
-	/* at this level we don't know bat kernel primitives */
-	mnstr_printf(f, "#Show info for %d\n", bid);
-	fcn = getAddress("BKCinfo");
-	if (fcn) {
-		(*fcn)(&ret,&ret2, &bid);
-		b[0] = BATdescriptor(ret);
-		if (b[0] == NULL)
-			return;
-		b[1] = BATdescriptor(ret2);
-		if (b[1] == NULL) {
-			BBPunfix(b[0]->batCacheid);
-			return;
-		}
-		BATprintcolumns(f, 2, b);
-		BBPunfix(b[0]->batCacheid);
-		BBPunfix(b[1]->batCacheid);
-	}
-}
-
-static void
-printBatInfo(stream *f, VarPtr n, ValPtr v)
-{
-	if (isaBatType(n->type) && v->val.ival)
-		printBatDetails(f, v->val.ival);
-}
-
-static void
-printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
-{
-	if (isaBatType(n->type) && v->val.ival) {
-		bat bid;
-		bat ret,ret2;
-		MALfcn fcn;
-		BUN p;
-
-		/* at this level we don't know bat kernel primitives */
-		fcn = getAddress("BKCinfo");
-		if (fcn) {
-			BAT *b[2];
-			str res;
-
-			bid = v->val.ival;
-			mnstr_printf(f, "BAT %d %s= ", bid, props);
-			res = (*fcn)(&ret, &ret2, &bid);
-			if (res != MAL_SUCCEED) {
-				GDKfree(res);
-				mnstr_printf(f, "mal.info failed\n");
-				return;
-			}
-			b[0] = BATdescriptor(ret);
-			b[1] = BATdescriptor(ret2);
-			if (b[0] == NULL || b[1] == NULL) {
-				mnstr_printf(f, "Could not access descriptor\n");
-				if (b[0])
-					BBPunfix(b[0]->batCacheid);
-				if (b[1])
-					BBPunfix(b[1]->batCacheid);
-				return;
-			}
-			p = BUNfnd(b[0], props);
-			if (p != BUN_NONE) {
-				BATiter bi = bat_iterator(b[1]);
-				mnstr_printf(f, " %s\n", (str) BUNtail(bi, p));
-			} else {
-				mnstr_printf(f, " not found\n");
-			}
-			BBPunfix(b[0]->batCacheid);
-			BBPunfix(b[1]->batCacheid);
-		}
-	}
-}
-
-static void
-mdbHelp(stream *f)
-{
-	mnstr_printf(f, "next             -- Advance to next statement\n");
-	mnstr_printf(f, "continue         -- Continue program being debugged\n");
-	mnstr_printf(f, "catch            -- Catch the next exception \n");
-	mnstr_printf(f, "break [<var>]    -- set breakpoint on current instruction or <var>\n");
-	mnstr_printf(f, "delete [<var>]   -- remove break/trace point <var>\n");
-	mnstr_printf(f, "debug <int>      -- set kernel debugging mask\n");
-	mnstr_printf(f, "step             -- advance to next MAL instruction\n");
-	mnstr_printf(f, "module           -- display a module signatures\n");
-	mnstr_printf(f, "atom             -- show atom list\n");
-	mnstr_printf(f, "finish           -- finish current call\n");
-	mnstr_printf(f, "exit             -- terminate executionr\n");
-	mnstr_printf(f, "quit             -- turn off debugging\n");
-	mnstr_printf(f, "list <obj>       -- list current program block\n");
-	mnstr_printf(f, "list #  [+#],-#  -- list current program block slice\n");
-	mnstr_printf(f, "List <obj> [#]   -- list with type information[slice]\n");
-	mnstr_printf(f, "list [#] <obj>   -- list program block after optimizer <#>\n");
-	mnstr_printf(f, "List #  [+#],-#  -- list current program block slice\n");
-	mnstr_printf(f, "var  <obj>       -- print symbol table for module\n");
-	mnstr_printf(f, "optimizer <obj>  -- display optimizer steps\n");
-	mnstr_printf(f, "print <var>      -- display value of a variable\n");
-	mnstr_printf(f, "print <var> <cnt>[<first>] -- display BAT chunk\n");
-	mnstr_printf(f, "info <var>       -- display bat variable properties\n");
-	mnstr_printf(f, "run              -- restart current procedure\n");
-	mnstr_printf(f, "where            -- print stack trace\n");
-	mnstr_printf(f, "down             -- go down the stack\n");
-	mnstr_printf(f, "up               -- go up the stack\n");
-	mnstr_printf(f, "trace <var>      -- trace assignment to variables\n");
-	mnstr_printf(f, "trap <mod>.<fcn> -- catch MAL function call in console\n");
-	mnstr_printf(f, "help             -- this message\n");
-}
-
-/*
- * Optimizer debugging
- * The modular approach to optimize a MAL program brings with it the
- * need to check individual steps. Two options come to mind. If in
- * debug mode we could stop after each optimizer action for inspection.
- * Alternatively, we keep a history of all MAL program versions for
- * aposteriori analysis.
- * The latter is implemented first.
- *
- * A global stack is used for simplity, later we may have to
- * make it thread safe by assigning it to a client record.
- */
-int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
+#endif

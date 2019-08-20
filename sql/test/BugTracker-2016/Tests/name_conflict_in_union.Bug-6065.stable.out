@@ -19,7 +19,6 @@ stdout of test 'name_conflict_in_union.Bug-6065` in directory 'sql/test/BugTrack
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 12:57:08 >  
 # 12:57:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11796" "--port=35574"

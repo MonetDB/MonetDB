@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _REL_SEQUENCE_H_
@@ -11,8 +11,9 @@
 
 #include "sql_symbol.h"
 #include "store_sequence.h"
+#include "sql_query.h"
 
-extern sql_rel *rel_sequences(mvc *sql, symbol *s);
+extern sql_rel *rel_sequences(sql_query *query, symbol *s);
 extern char* sql_next_seq_name(mvc *sql);
 
 #endif /*_REL_SEQUENCE_H_*/

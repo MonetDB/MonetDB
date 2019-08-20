@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef MAL_TYPE_H
@@ -12,7 +12,6 @@
 
 /* #define DEBUG_MAL_TYPE 1 */
 
-#define malVARG " malVARG"
 #define TMPMARKER '_'
 #define REFMARKER 'X'
 #define REFMARKERC 'C'
@@ -59,10 +58,9 @@
 
 #define REMsymbol     99	/* commentary to be retained */
 
-
 mal_export str getTypeName(malType tpe);
 mal_export str getTypeIdentifier(malType tpe);
-mal_export int getAtomIndex(const char *nme, int len, int deftpe);
+mal_export int getAtomIndex(const char *nme, size_t len, int deftpe);
 #define idcmp(n, m)	strcmp(n, m)
 mal_export int isIdentifier(str s);
 mal_export int findGDKtype(int type);	/* used in src/mal/mal_interpreter.c */

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -115,7 +115,7 @@ MNDBFetch(ODBCStmt *stmt, SQLUSMALLINT *RowStatusArray)
 		stmt->rowSetSize++;
 
 		for (i = 1; i <= ird->sql_desc_count; i++)
-			ird->descRec[i].already_returned = 0;
+			ird->descRec[i].already_returned = -1;
 
 		for (i = 1; i <= ard->sql_desc_count; i++) {
 			rec = &ard->descRec[i];

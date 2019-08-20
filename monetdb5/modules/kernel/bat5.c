@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -34,7 +34,7 @@
 
 /* set access mode to bat, replacing input with output */
 static BAT *
-setaccess(BAT *b, int mode)
+setaccess(BAT *b, restrict_t mode)
 {
 	BAT *bn = b;
 
@@ -149,7 +149,7 @@ infoHeap(BAT *bk, BAT*bv, Heap *hp, str nme)
 static inline char *
 oidtostr(oid i, char *p, size_t len)
 {
-	if (OIDtoStr(&p, &len, &i) < 0)
+	if (OIDtoStr(&p, &len, &i, false) < 0)
 		return NULL;
 	return p;
 }
@@ -166,7 +166,7 @@ oidtostr(oid i, char *p, size_t len)
 
 
 str
-BKCnewBAT(bat *res, const int *tt, const BUN *cap, int role)
+BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role)
 {
 	BAT *bn;
 
@@ -186,7 +186,7 @@ BKCattach(bat *ret, const int *tt, const char * const *heapfile)
 	bn = BATattach(*tt, *heapfile, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "bat.attach", GDK_EXCEPTION);
-	if( bn->batPersistence == PERSISTENT)
+	if( !bn->batTransient)
 		BATmsync(bn);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
@@ -280,7 +280,7 @@ BKCdelete_all(bat *r, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.delete_all", GDK_EXCEPTION);
 	}
-	if( b->batPersistence == PERSISTENT)
+	if( !b->batTransient)
 		BATmsync(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
@@ -313,7 +313,7 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	}
-	if( b->batPersistence == PERSISTENT)
+	if( !b->batTransient)
 		BATmsync(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
@@ -440,7 +440,7 @@ BKCgetCapacity(lng *res, const bat *bid)
 {
 	*res = lng_nil;
 	if (BBPcheck(*bid, "bat.getCapacity")) {
-		BAT *b = BBPquickdesc(*bid, 0);
+		BAT *b = BBPquickdesc(*bid, false);
 
 		if (b != NULL)
 			*res = (lng) BATcapacity(b);
@@ -454,7 +454,7 @@ BKCgetColumnType(str *res, const bat *bid)
 	const char *ret = str_nil;
 
 	if (BBPcheck(*bid, "bat.getColumnType")) {
-		BAT *b = BBPquickdesc(*bid, 0);
+		BAT *b = BBPquickdesc(*bid, false);
 
 		if (b) {
 			ret = *bid < 0 ? ATOMname(TYPE_void) : ATOMname(b->ttype);
@@ -497,12 +497,12 @@ BKCsetkey(bat *res, const bat *bid, const bit *param)
 			throw(MAL, "bat.setKey", "values of bat not unique, cannot set key property");
 		}
 		BATkey(b, true);
-		b->tunique = 1;
+		b->tunique = true;
 	} else {
-		b->tunique = 0;
+		b->tunique = false;
 	}
 	if (b->tunique != unique)
-		b->batDirtydesc = 1;
+		b->batDirtydesc = true;
 	*res = b->batCacheid;
 	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -561,7 +561,7 @@ BKCpersists(void *r, const bat *bid, const bit *flg)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setPersistence", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (BATmode(b, (*flg == TRUE) ? PERSISTENT : TRANSIENT) != GDK_SUCCEED) {
+	if (BATmode(b, (*flg != TRUE)) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setPersistence", ILLEGAL_ARGUMENT);
 	}
@@ -584,7 +584,7 @@ BKCisPersistent(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setPersistence", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	*res = (b->batPersistence == PERSISTENT) ? TRUE :FALSE;
+	*res = !b->batTransient;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -604,7 +604,7 @@ BKCisTransient(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setTransient", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	*res = b->batPersistence == TRANSIENT;
+	*res = b->batTransient;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -613,7 +613,7 @@ str
 BKCsetAccess(bat *res, const bat *bid, const char * const *param)
 {
 	BAT *b;
-	int m;
+	restrict_t m;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.setAccess", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -655,10 +655,6 @@ BKCgetAccess(str *res, const bat *bid)
 	case BAT_WRITE:
 		*res = GDKstrdup("write");
 		break;
-	default:
-		/* cannot happen, just here to help analysis tools */
-		*res = GDKstrdup(str_nil);
-		break;
 	}
 	BBPunfix(b->batCacheid);
 	if(*res == NULL)
@@ -692,12 +688,10 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 		throw(MAL, "bat.getInfo", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	if (b->batPersistence == PERSISTENT) {
-		mode = "persistent";
-	} else if (b->batPersistence == TRANSIENT) {
+	if (b->batTransient) {
 		mode = "transient";
 	} else {
-		mode ="unknown";
+		mode = "persistent";
 	}
 
 	switch (b->batRestricted) {
@@ -934,14 +928,17 @@ BKCsave(bit *res, const char * const *input)
 	BAT *b;
 
 	*res = FALSE;
-	if (bid) {
-		BBPfix(bid);
-		b = BBP_cache(bid);
-		if (b && BATdirty(b)) {
-			if (BBPsave(b) == GDK_SUCCEED)
-				*res = TRUE;
+	if (!is_bat_nil(bid)) {
+		if (BBPfix(bid) > 0) {
+			b = BBP_cache(bid);
+			if (b && BATdirty(b)) {
+				if (BBPsave(b) == GDK_SUCCEED)
+					*res = TRUE;
+			}
+			BBPunfix(bid);
+			return MAL_SUCCEED;
 		}
-		BBPunfix(bid);
+		throw(MAL, "bat.save", "fix failed");
 	}
 	return MAL_SUCCEED;
 }
@@ -955,7 +952,7 @@ BKCsave2(void *r, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.save", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if ( b->batPersistence != TRANSIENT){
+	if ( !b->batTransient){
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.save", "Only save transient columns.");
 	}
@@ -1050,7 +1047,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrink", SQLSTATE(HY001) MAL_MALLOC_FAIL );
 	}
-	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false);
+	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
@@ -1109,8 +1106,8 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	}
 
 	BATsetcount(bn, cnt);
-	bn->tsorted = 0;
-	bn->trevsorted = 0;
+	bn->tsorted = false;
+	bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
 	bn->tkey = b->tkey;
 	bn->tnonil = b->tnonil;
@@ -1146,7 +1143,7 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrinkMap", SQLSTATE(HY001) MAL_MALLOC_FAIL );
 	}
-	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false);
+	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
@@ -1169,8 +1166,8 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 	}
 
     BATsetcount(bn, BATcount(b)-BATcount(bs));
-    bn->tsorted = 0;
-    bn->trevsorted = 0;
+    bn->tsorted = false;
+    bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
 
 
@@ -1224,7 +1221,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.reuse", SQLSTATE(HY001) MAL_MALLOC_FAIL );
 	}
-	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false);
+	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
@@ -1295,8 +1292,8 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 	}
 
     BATsetcount(bn, BATcount(b) - BATcount(bs));
-    bn->tsorted = 0;
-    bn->trevsorted = 0;
+    bn->tsorted = false;
+    bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
 	bn->tkey = b->tkey;
 
@@ -1328,7 +1325,7 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrinkMap", SQLSTATE(HY001) MAL_MALLOC_FAIL );
 	}
-	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false);
+	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
@@ -1357,8 +1354,8 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 	}
 
     BATsetcount(bn, BATcount(b)-BATcount(bs));
-    bn->tsorted = 0;
-    bn->trevsorted = 0;
+    bn->tsorted = false;
+    bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
 
 
@@ -1407,6 +1404,28 @@ BKCintersectcand(bat *ret, const bat *aid, const bat *bid)
 	BBPunfix(b->batCacheid);
 	if (bn == NULL)
 		throw(MAL, "bat.intersectcand", OPERATION_FAILED);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+
+str
+BKCdiffcand(bat *ret, const bat *aid, const bat *bid)
+{
+	BAT *a, *b, *bn;
+
+	if ((a = BATdescriptor(*aid)) == NULL) {
+		throw(MAL, "bat.diffcand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		BBPunfix(a->batCacheid);
+		throw(MAL, "bat.diffcand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATdiffcand(a, b);
+	BBPunfix(a->batCacheid);
+	BBPunfix(b->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.diffcand", OPERATION_FAILED);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;

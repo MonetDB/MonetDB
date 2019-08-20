@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* (c) M Kersten */
@@ -114,8 +114,9 @@ resetEventRecord(EventRecord *ev)
 	if( ev->numa) free(ev->numa);
 	if(ev->beauty) free(ev->beauty);
 	if(ev->prereq) free(ev->prereq);
-	memset( (char*) ev, 0, sizeof(EventRecord));
-	ev->eventnr = -1;
+	*ev = (EventRecord) {
+		.eventnr = -1,
+	};
 	clearArguments();
 }
 
@@ -353,7 +354,7 @@ lineparser(char *row, EventRecord *ev)
 		return -3;
 	/* convert time to epoch in seconds*/
 	cc =c;
-	memset(&stm, 0, sizeof(struct tm));
+	stm = (struct tm) {0};
 #ifdef HAVE_STRPTIME
 	c = strptime(c + 1, "%H:%M:%S", &stm);
 	ev->clkticks = (((int64_t) stm.tm_hour * 60 + stm.tm_min) * 60 + stm.tm_sec) * 1000000;

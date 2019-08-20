@@ -19,7 +19,6 @@ stdout of test 'unsafe_project_push_down.Bug-3523` in directory 'sql/test/BugTra
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:05:59 >  
 # 17:05:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32652" "--port=37461"

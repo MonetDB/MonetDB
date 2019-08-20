@@ -15,7 +15,7 @@ mergedropcrash
 mergedrop1
 mergedrop2
 mergemergeload
-singlekeyconstraint
+KNOWNFAIL?singlekeyconstraint
 part-elim
 mergedropcascade
 addtable

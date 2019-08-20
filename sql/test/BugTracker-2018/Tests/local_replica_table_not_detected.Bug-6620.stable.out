@@ -27,15 +27,15 @@ project (
 ) [ "reps"."i" ]
 plan select * from repS, mrgT
 union (
-| table 
-| | project (
-| | | crossproduct (
-| | | | REMOTE(sys.s1) [ "s1"."i" as "reps"."i", "s1"."%TID%" NOT NULL as "reps"."%TID%" ],
+| project (
+| | crossproduct (
+| | | table(sys.s2) [ "s2"."i" as "reps"."i", "s2"."%TID%" NOT NULL as "reps"."%TID%" ],
+| | | table 
 | | | | project (
 | | | | | REMOTE(sys.t1) [ "t1"."s" as "mrgt"."s" ] COUNT 
-| | | | ) [ "mrgt"."s" ]
-| | | ) [  ]
-| | ) [ "reps"."i", "mrgt"."s" ] REMOTE mapi:monetdb://localhost:52345/node1 [ "reps"."i", "mrgt"."s" ],
+| | | | ) [ "mrgt"."s" ] REMOTE sys.t1 [ "mrgt"."s" ]
+| | ) [  ]
+| ) [ "reps"."i", "mrgt"."s" ],
 | project (
 | | crossproduct (
 | | | table(sys.s2) [ "s2"."i" as "reps"."i", "s2"."%TID%" NOT NULL as "reps"."%TID%" ],

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -24,7 +24,6 @@ sql_stack_new(sql_allocator *sa, int size)
 		_DELETE(s);
 		return NULL;
 	}
-	s -> values[s->top++] = NULL; 
 	return s;
 }
 
@@ -44,5 +43,21 @@ sql_stack_push(sql_stack *s, void *v)
 void *
 sql_stack_pop(sql_stack *s)
 {
+	if (s->top == 0)
+		return NULL;
 	return s->values[--s->top];
+}
+
+void *
+sql_stack_peek(sql_stack *s, int p)
+{
+	if (p>=s->top)
+		return NULL;
+	return s->values[(s->top-1)-p];
+}
+
+int
+sql_stack_empty(sql_stack *s)
+{
+	return (s->top == 0);
 }

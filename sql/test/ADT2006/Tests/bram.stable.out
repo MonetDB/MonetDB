@@ -17,7 +17,6 @@ stdout of test 'bram` in directory 'sql/test/ADT2006` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:44:21 >  
 # 14:44:21 >  "mclient" "-lsql" "-ftest" "-i" "-e" "--host=ottar" "--port=33320"

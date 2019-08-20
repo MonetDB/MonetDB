@@ -19,7 +19,6 @@ stdout of test 'find_fk.Bug-3690` in directory 'sql/test/BugTracker-2015` itself
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 11:21:23 >  
 # 11:21:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24320" "--port=38092"

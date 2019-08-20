@@ -19,7 +19,6 @@ stdout of test 'ifthenelse.Bug-3629` in directory 'sql/test/BugTracker-2014` its
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 18:33:32 >  
 # 18:33:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3090" "--port=36196"

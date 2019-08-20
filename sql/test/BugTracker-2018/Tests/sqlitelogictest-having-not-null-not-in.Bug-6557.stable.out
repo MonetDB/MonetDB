@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-having-not-null-not-in.Bug-6557` in directory 's
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 12:32:58 >  
 # 12:32:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25333" "--port=30615"
@@ -32,6 +31,14 @@ Ready.
 % col2 # name
 % int # type
 % 1 # length
+#SELECT DISTINCT * FROM tab0 AS cor0 GROUP BY cor0.col1, cor0.col2, cor0.col0;
+% sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col1,	col2,	col0 # name
+% int,	int,	int # type
+% 2,	2,	2 # length
+[ 0,	38,	83	]
+[ 0,	79,	26	]
+[ 81,	24,	43	]
 #DROP TABLE tab0;
 
 # 12:32:58 >  

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _MAL_AUTHORIZE_H
@@ -13,6 +13,8 @@
 #include "mal.h"
 #include "mal_instruction.h"
 #include "mal_client.h"
+
+#define MAL_ADMIN 0
 
 mal_export str AUTHcheckCredentials(oid *ret, Client c, const char *user, const char *passwd, const char *challenge, const char *algo);
 mal_export str AUTHaddUser(oid *ret, Client c, const char *user, const char *pass);

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -83,6 +83,7 @@ static struct SQLStateMsg {
 	{"08004", "Server rejected the connection"},
 	{"08007", "Connection failure during transaction"},
 	{"08S01", "Communication link failure"},
+	{"0A000", "Feature not supported"},
 	{"21S01", "Insert value list does not match column list"},
 	{"21S02", "Degree of derived table does not match column list"},
 	{"22001", "String data, right truncated"},

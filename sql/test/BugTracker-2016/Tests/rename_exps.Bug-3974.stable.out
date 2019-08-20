@@ -23,7 +23,6 @@ stdout of test 'rename_exps.Bug-3974` in directory 'sql/test/BugTracker-2016` it
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 12:27:17 >  
 # 12:27:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21445" "--port=39847"
@@ -36,7 +35,7 @@ Ready.
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 6,	2,	1,	0,	3,	3 # length
-[ "bigint",	64,	0,	"",	"L17",	"L17"	]
+[ "bigint",	64,	0,	"",	"L12",	"L12"	]
 #drop table foo;
 
 # 12:27:17 >  

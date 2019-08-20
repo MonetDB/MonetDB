@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -30,7 +30,8 @@
 
 str
 CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	int tt, kind = TRANSIENT;
+	int tt;
+	role_t kind = TRANSIENT;
 	BUN cap = 0;
 	bat *res;
 

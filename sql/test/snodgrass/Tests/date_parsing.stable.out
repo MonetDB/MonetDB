@@ -16,7 +16,6 @@ stdout of test 'date_parsing` in directory 'sql/test/snodgrass` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -79,13 +78,13 @@ Ready.
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 1997-01-15 11:35:29.123000	]
+[ 1997-01-15 11:35:29.123456	]
 #SELECT TIMESTAMP '1997-01-15 11:35:29.123456-07:00';
 % .L2 # table_name
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 1997-01-15 18:35:29.123000	]
+[ 1997-01-15 18:35:29.123456	]
 
 # 21:11:50 >  
 # 21:11:50 >  "Done."

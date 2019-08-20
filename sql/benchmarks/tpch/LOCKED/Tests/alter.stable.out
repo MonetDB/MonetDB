@@ -16,7 +16,6 @@ stdout of test 'alter` in directory 'sql/benchmarks/tpch/LOCKED` itself:
 # Listening for connection requests on mapi:monetdb://mane-3:33497/
 # MonetDB/SQL module v2.41.0 loaded
 
-Ready.
 
 
 # 10:53:23 >  

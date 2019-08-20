@@ -15,7 +15,6 @@ stdout of test 'unique_constraint_on_char.SF-2873564` in directory 'sql/test/Bug
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:30183/
 # MonetDB/SQL module v2.34.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

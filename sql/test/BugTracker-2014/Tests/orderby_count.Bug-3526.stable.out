@@ -19,7 +19,6 @@ stdout of test 'orderby_count.Bug-3526` in directory 'sql/test/BugTracker-2014` 
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:12:12 >  
 # 17:12:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-917" "--port=33631"
@@ -60,8 +59,8 @@ Ready.
 [ "two",	NULL	]
 [ "two",	NULL	]
 #select k,count(*),count(v) from (select k,v from a union all select k,null from b) as t(k,v) group by k order by count(*) desc;
-% .t,	.L16,	.L21 # table_name
-% k,	L15,	L20 # name
+% .t,	.L16,	.L20 # table_name
+% k,	L16,	L20 # name
 % varchar,	bigint,	bigint # type
 % 3,	1,	1 # length
 [ "two",	4,	1	]

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -59,11 +59,12 @@ handleClient(void *data)
 	char *user = NULL, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s;
 	char dbmod[64];
-	char host[128];
+	char host[512];
+	char port[16];
 	sabdb *top = NULL;
 	sabdb *stat = NULL;
-	struct sockaddr_in saddr;
-	socklen_t saddrlen = sizeof(struct sockaddr_in);
+	struct sockaddr saddr;
+	socklen_t saddrlen = 0;
 	err e;
 	confkeyval *ckv, *kv;
 	char mydoproxy;
@@ -77,14 +78,14 @@ handleClient(void *data)
 	isusock = ((struct clientdata *) data)->isusock;
 	self = ((struct clientdata *) data)->self;
 	free(data);
-	fdin = socket_rastream(sock, "merovingian<-client (read)");
+	fdin = socket_rstream(sock, "merovingian<-client (read)");
 	if (fdin == 0) {
 		self->dead = 1;
 		return(newErr("merovingian-client inputstream problems"));
 	}
 	fdin = block_stream(fdin);
 
-	fout = socket_wastream(sock, "merovingian->client (write)");
+	fout = socket_wstream(sock, "merovingian->client (write)");
 	if (fout == 0) {
 		close_stream(fdin);
 		self->dead = 1;
@@ -94,23 +95,16 @@ handleClient(void *data)
 
 	if (isusock) {
 		snprintf(host, sizeof(host), "(local)");
-	} else if (getpeername(sock, (struct sockaddr *)&saddr, &saddrlen) == -1) {
-		Mfprintf(stderr, "couldn't get peername of client: %s\n",
-				strerror(errno));
+	} else if (getpeername(sock, &saddr, &saddrlen) == -1) {
+		Mfprintf(stderr, "couldn't get peername of client: %s\n", strerror(errno));
 		snprintf(host, sizeof(host), "(unknown)");
 	} else {
-		struct hostent *hoste = 
-			gethostbyaddr(&saddr.sin_addr.s_addr, 4, saddr.sin_family);
-		if (hoste == NULL) {
-			snprintf(host, sizeof(host), "%u.%u.%u.%u:%u",
-					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 24) & 0xff),
-					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 16) & 0xff),
-					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 8) & 0xff),
-					(unsigned) (ntohl(saddr.sin_addr.s_addr) & 0xff),
-					(unsigned) (ntohs(saddr.sin_port)));
+		char ghost[512];
+		if (getnameinfo(&saddr, saddrlen, ghost, sizeof(ghost), port, sizeof(port),
+			NI_NUMERICSERV | NI_NUMERICHOST) == 0) {
+			snprintf(host, sizeof(host), "%s:%s", ghost, port);
 		} else {
-			snprintf(host, sizeof(host), "%s:%u",
-					hoste->h_name, (unsigned) (ntohs(saddr.sin_port)));
+			snprintf(host, sizeof(host), "(unknown):%s", port);
 		}
 	}
 
@@ -459,7 +453,17 @@ acceptConnections(int sock, int usock)
 		if (retval == -1) {
 			if (_mero_keep_listening == 0)
 				break;
-			if (errnr != EINTR) {
+			switch (errnr) {
+			case EINTR:
+				/* interrupted */
+				break;
+			case EMFILE:
+			case ENFILE:
+			case ENOBUFS:
+			case ENOMEM:
+				/* transient failures */
+				break;
+			default:
 				msg = strerror(errnr);
 				goto error;
 			}
@@ -469,7 +473,20 @@ acceptConnections(int sock, int usock)
 			if ((msgsock = accept4(sock, (SOCKPTR)0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
-				if (errno != EINTR) {
+				switch (errno) {
+				case EINTR:
+					/* interrupted */
+					break;
+				case EMFILE:
+				case ENFILE:
+				case ENOBUFS:
+				case ENOMEM:
+					/* transient failures */
+					break;
+				case ECONNABORTED:
+					/* connection aborted before we began */
+					break;
+				default:
 					msg = strerror(errno);
 					goto error;
 				}
@@ -488,7 +505,20 @@ acceptConnections(int sock, int usock)
 			if ((msgsock = accept4(usock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
-				if (errno != EINTR) {
+				switch (errno) {
+				case EINTR:
+					/* interrupted */
+					break;
+				case EMFILE:
+				case ENFILE:
+				case ENOBUFS:
+				case ENOMEM:
+					/* transient failures */
+					break;
+				case ECONNABORTED:
+					/* connection aborted before we began */
+					break;
+				default:
 					msg = strerror(errno);
 					goto error;
 				}
@@ -529,7 +559,7 @@ acceptConnections(int sock, int usock)
 				continue;
 			}
 
-			switch (*buf) {
+			switch (buf[0]) {
 			case '0':
 				/* nothing special, nothing to do */
 				break;
@@ -549,9 +579,18 @@ acceptConnections(int sock, int usock)
 		/* start handleClient as a thread so that we're not blocked by
 		 * a slow client */
 		data = malloc(sizeof(*data)); /* freed by handleClient */
+		p = malloc(sizeof(*p));
+		if (data == NULL || p == NULL) {
+			if (data)
+				free(data);
+			if (p)
+				free(p);
+			closesocket(msgsock);
+			Mfprintf(stderr, "cannot allocate memory\n");
+			continue;
+		}
 		data->sock = msgsock;
 		data->isusock = FD_ISSET(usock, &fds);
-		p = malloc(sizeof(*p));
 		p->dead = 0;
 		data->self = p;
 		if (pthread_create(&p->tid, NULL, handleClient, data) == 0) {

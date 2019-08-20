@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -15,18 +15,22 @@ parse_dotmonetdb(char **user, char **passwd, char **dbname, char **language, int
 {
 	char *cfile;
 	FILE *config = NULL;
-	char buf[1024];
+	char buf[FILENAME_MAX];
 
 	if ((cfile = getenv("DOTMONETDBFILE")) == NULL) {
 		/* no environment variable: use a default */
 		if ((config = fopen(".monetdb", "r")) == NULL) {
 			if ((cfile = getenv("HOME")) != NULL) {
-				snprintf(buf, sizeof(buf), "%s%c.monetdb", cfile, DIR_SEP);
-				config = fopen(buf, "r");
-				if (config)
-					cfile = strdup(buf);
-				else
+				int len = snprintf(buf, sizeof(buf), "%s%c.monetdb", cfile, DIR_SEP);
+				if (len == -1 || len >= FILENAME_MAX) {
 					cfile = NULL;
+				} else {
+					config = fopen(buf, "r");
+					if (config)
+						cfile = strdup(buf);
+					else
+						cfile = NULL;
+				}
 			}
 		} else {
 			cfile = strdup(".monetdb");
@@ -35,9 +39,9 @@ parse_dotmonetdb(char **user, char **passwd, char **dbname, char **language, int
 		/* empty environment variable: skip the file */
 		cfile = NULL;
 	} else if ((config = fopen(cfile, "r")) == NULL) {
-		cfile = NULL;
 		fprintf(stderr, "failed to open file '%s': %s\n",
 			cfile, strerror(errno));
+		cfile = NULL;
 	} else {
 		cfile = strdup(cfile);
 	}

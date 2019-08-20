@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -118,45 +118,48 @@ run_process_bam_alignments(void *d)
 	reader_thread_data *data = (reader_thread_data *) d;
 	bam_wrapper *bw;
 
-	TO_LOG("<Thread %d> Starting on next file...\n", data->thread_id);
-	/* First, find out on which bam wrapper we have to work */
-	MT_lock_set(data->reader_lock);
-	if (*data->cur_file == data->nr_files - 1) {
-		/* The last file is already (being) processed, this
-		 * thread is done */
+	for (;;) {
+		TO_LOG("<Thread %d> Starting on next file...\n", data->thread_id);
+		/* First, find out on which bam wrapper we have to work */
+		MT_lock_set(data->reader_lock);
+		if (*data->cur_file == data->nr_files - 1) {
+			/* The last file is already (being) processed, this
+			 * thread is done */
+			MT_lock_unset(data->reader_lock);
+			TO_LOG("<Thread %d> No files left to work on; thread done\n",
+				   data->thread_id);
+			return;
+		}
+		(*data->cur_file) += 1;
+		bw = &data->bws[*data->cur_file];
 		MT_lock_unset(data->reader_lock);
-		TO_LOG("<Thread %d> No files left to work on; thread done\n",
-			   data->thread_id);
-		return;
-	}
-	(*data->cur_file) += 1;
-	bw = &data->bws[*data->cur_file];
-	MT_lock_unset(data->reader_lock);
-	TO_LOG("<Thread %d> Processing alignments of file '%s' (file id "
-		   LLFMT ")...\n", data->thread_id, bw->file_location,
-		   bw->file_id);
+		TO_LOG("<Thread %d> Processing alignments of file '%s' (file id "
+			   LLFMT ")...\n", data->thread_id, bw->file_location,
+			   bw->file_id);
 
-	if ((data->msg =
-		 process_alignments(bw, data->failure)) != MAL_SUCCEED) {
-		TO_LOG("<Thread %d> Error while processing alignments of file '%s' (file id " LLFMT ") (%s)\n", data->thread_id, bw->file_location, bw->file_id, data->msg);
-		REUSE_EXCEPTION(data->msg, MAL, "run_process_bam_alignments",
-				"Error while processing alignments of file '%s' (file id "
-				LLFMT "): %s", bw->file_location, bw->file_id,
-				data->msg);
-		return;
-	}
-	if (*data->failure) {
-		/* process_bam_alignments returned because another
-		 * thread failed and not because this thread failed */
-		TO_LOG("<Thread %d> Exit due to failure in other thread\n",
-			   data->thread_id);
-		return;
-	}
+		if ((data->msg =
+			 process_alignments(bw, data->failure)) != MAL_SUCCEED) {
+			TO_LOG("<Thread %d> Error while processing alignments of file '%s' "
+				   "(file id " LLFMT ") (%s)\n",
+				   data->thread_id, bw->file_location, bw->file_id, data->msg);
+			REUSE_EXCEPTION(data->msg, MAL, "run_process_bam_alignments",
+							"Error while processing alignments of file '%s' "
+							"(file id " LLFMT "): %s",
+							bw->file_location, bw->file_id, data->msg);
+			return;
+		}
+		if (*data->failure) {
+			/* process_bam_alignments returned because another
+			 * thread failed and not because this thread failed */
+			TO_LOG("<Thread %d> Exit due to failure in other thread\n",
+				   data->thread_id);
+			return;
+		}
 
-	TO_LOG("<Thread %d> All alignments in file '%s' (file id " LLFMT
-		   ") processed!\n", data->thread_id, bw->file_location,
-		   bw->file_id);
-	run_process_bam_alignments(d);
+		TO_LOG("<Thread %d> All alignments in file '%s' (file id " LLFMT
+			   ") processed!\n", data->thread_id, bw->file_location,
+			   bw->file_id);
+	}
 }
 
 
@@ -309,9 +312,10 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	for (i = 0; i < nr_threads; ++i) {
 		if ((errnr =
 			 MT_create_thread(&reader_threads[i],
-					  run_process_bam_alignments,
-					  &r_thread_data[i],
-					  MT_THR_JOINABLE)) != 0) {
+							  run_process_bam_alignments,
+							  &r_thread_data[i],
+							  MT_THR_JOINABLE,
+							  "bam_alignments")) != 0) {
 			msg = createException(MAL, "bam_loader",
 						  SQLSTATE(BA000) "Could not create thread to process alignments (errnr %d)",
 						  errnr);

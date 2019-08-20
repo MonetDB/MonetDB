@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -72,6 +72,7 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		} else if (getModuleId(p) == batRef) {
 			if (getFunctionId(p) == mergecandRef ||
 				getFunctionId(p) == intersectcandRef ||
+				getFunctionId(p) == diffcandRef ||
 				getFunctionId(p) == mirrorRef)
 				setVarCList(mb,getArg(p,0));
 		}
@@ -82,11 +83,11 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	//chkTypes(cntxt->usermodule, mb, FALSE);
 	//chkFlow(mb);
 	//chkDeclarations(mb);
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","candidates",usec);
-    newComment(mb,buf);
-	addtoMalBlkHistory(mb);
 
+	/* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","candidates",usec);
+	newComment(mb,buf);
+	addtoMalBlkHistory(mb);
 	return MAL_SUCCEED;
 }

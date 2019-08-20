@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -363,13 +363,13 @@ SQLProcedureColumnsW(SQLHSTMT StatementHandle,
 	clearStmtErrors(stmt);
 
 	fixWcharIn(CatalogName, NameLength1, SQLCHAR, catalog,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 	fixWcharIn(SchemaName, NameLength2, SQLCHAR, schema,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 	fixWcharIn(ProcName, NameLength3, SQLCHAR, proc,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 	fixWcharIn(ColumnName, NameLength4, SQLCHAR, column,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 
 	rc = MNDBProcedureColumns(stmt,
 				  catalog, SQL_NTS,
@@ -377,7 +377,7 @@ SQLProcedureColumnsW(SQLHSTMT StatementHandle,
 				  proc, SQL_NTS,
 				  column, SQL_NTS);
 
-      exit:
+      bailout:
 	if (catalog)
 		free(catalog);
 	if (schema)

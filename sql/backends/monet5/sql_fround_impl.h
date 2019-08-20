@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #define dec_round_body_nonil	FUN(TYPE, dec_round_body_nonil)
@@ -79,7 +79,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	dst = (TYPE *) Tloc(res, 0);
 
 	nonil = TRUE;
-	if (v->tnonil == TRUE) {
+	if (v->tnonil) {
 		for (i = 0; i < cnt; i++)
 			dst[i] = dec_round_body_nonil(src[i], *r);
 	} else {
@@ -189,7 +189,7 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 	dst = (TYPE *) Tloc(res, 0);
 
 	nonil = TRUE;
-	if (v->tnonil == TRUE) {
+	if (v->tnonil) {
 		for (i = 0; i < cnt; i++)
 			dst[i] = round_body_nonil(src[i], *r);
 	} else {

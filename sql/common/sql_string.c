@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -92,56 +92,6 @@ strip_extra_zeros(char *s)
 	s++;
 	*s = 0;
 	return res;
-}
-
-char *
-sql2str(char *s)
-{
-	int escaped = 0;
-	char *cur, *p = s;
-
-	if (strcmp(str_nil, s) == 0)
-		return s;
-	for (cur = s; *cur && !escaped; cur++)
-		escaped = (*cur == '\\'); 
-
-	if (!escaped)
-		return s;
-	escaped = 0;
-	for (cur = s; *cur; cur++) {
-		if (escaped) {
-			if (*cur == 'n') {
-				*p++ = '\n';
-			} else if (*cur == 't') {
-				*p++ = '\t';
-			} else if (*cur == 'r') {
-				*p++ = '\r';
-			} else if (*cur == 'f') {
-				*p++ = '\f';
-			} else if (*cur == 'b') {
-				*p++ = '\b';
-			} else if (*cur == '/') {
-				*p++ = '/';
-			} else if (*cur == '"') {
-				*p++ = '\\';
-				*p++ = '"';
-			} else if (*cur == '\\') {
-				*p++ = '\\';
-			} else if ((cur[0] >= '0' && cur[0] <= '7') && (cur[1] >= '0' && cur[1] <= '7') && (cur[2] >= '0' && cur[2] <= '7')) {
-				*p++ = (cur[2] & 7) | ((cur[1] & 7) << 3) | ((cur[0] & 7) << 6);
-				cur += 2;
-			} else {
-				*p++ = *cur;
-			}
-			escaped = FALSE;
-		} else if (*cur == '\\') {
-			escaped = TRUE;
-		} else {
-			*p++ = *cur;
-		}
-	}
-	*p = '\0';
-	return s;
 }
 
 char *

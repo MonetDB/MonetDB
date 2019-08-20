@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-aritmetic-expressions-handling.Bug-6576` in dire
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:20:37 >  
 # 16:20:37 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2283" "--port=39398"
@@ -157,6 +156,30 @@ Ready.
 % bigint # type
 % 1 # length
 [ 1	]
+#SELECT CAST ( NULL AS INTEGER ) - 1 - 1 + 2 * 70; --NULL
+% .L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+#SELECT ALL - - 11 + 51 + + 32 + 13 - - - NULLIF ( - + 52, + + 19 ) - + ( + + 9 ) + + 44 * - 69 / + - 30 + 24 / - 71 + + CAST ( NULL AS REAL ) * - 72 + - 44 * - + 68 + - + COUNT ( DISTINCT 55 ) AS col1; -- NULL
+% .L5 # table_name
+% col1 # name
+% real # type
+% 15 # length
+[ NULL	]
+#SELECT - + 94 * - 81 / + 4 + + 92 * + + CAST ( NULL AS REAL ) * + + 97 * - ( + - COUNT ( * ) ) AS col0; -- NULL
+% .L5 # table_name
+% col0 # name
+% real # type
+% 15 # length
+[ NULL	]
+#SELECT 71 * - 59 / - COUNT ( * ) + - 98 * - + 35 / + CAST ( NULL AS REAL ) / - ( + COUNT ( * ) ) AS col0; --NULL
+% .L6 # table_name
+% col0 # name
+% real # type
+% 15 # length
+[ NULL	]
 
 # 16:20:37 >  
 # 16:20:37 >  "Done."

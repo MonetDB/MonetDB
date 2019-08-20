@@ -16,7 +16,6 @@ stdout of test 'drop-sequence-crash.SF-2854195` in directory 'sql/test/BugTracke
 # MonetDB/SQL module v11.0.0 loaded
 # MonetDB/GIS module v11.0.0 loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 
 
@@ -31,6 +30,7 @@ Ready.
 #	CONSTRAINT "x_id_pkey" PRIMARY KEY ("id")
 #);
 #DROP TABLE x;
+#DROP SEQUENCE "seq_2184";
 #ROLLBACK;
 
 # 14:55:13 >  

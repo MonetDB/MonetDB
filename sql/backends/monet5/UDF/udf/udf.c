@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* monetdb_config.h must be the first include in each .c file */
@@ -99,7 +99,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 	BATloop(src, p, q) {
 		char *tr = NULL, *err = NULL;
 
-		const char *t = (const char *) BUNtail(li, p);
+		const char *t = (const char *) BUNtvar(li, p);
 
 		/* revert tail value */
 		err = UDFreverse_(&tr, t);
@@ -299,12 +299,12 @@ UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 		 */
 		if (BATtordered(bone)
 		    && (BATtkey(bone) || two_tail_sorted_unsigned))
-			bres->tsorted = 1;
+			bres->tsorted = true;
 		else
 			bres->tsorted = (BATcount(bres) <= 1);
 		if (BATtrevordered(bone)
 		    && (BATtkey(bone) || two_tail_revsorted_unsigned))
-			bres->trevsorted = 1;
+			bres->trevsorted = true;
 		else
 			bres->trevsorted = (BATcount(bres) <= 1);
 		/* result tail is key (unique), iff both input tails are */

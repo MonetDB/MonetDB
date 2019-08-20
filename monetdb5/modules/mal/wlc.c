@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -150,7 +150,7 @@
 #include "mal_builder.h"
 #include "wlc.h"
 
-MT_Lock     wlc_lock MT_LOCK_INITIALIZER("wlc_lock");
+MT_Lock     wlc_lock = MT_LOCK_INITIALIZER("wlc_lock");
 
 static char wlc_snapshot[FILENAME_MAX]; // The location of the snapshot against which the logs work
 static stream *wlc_fd = 0;
@@ -184,13 +184,13 @@ WLCreadConfig(FILE *fd)
 	while( fgets(path, FILENAME_MAX, fd) ){
 		path[strlen(path)-1] = 0;
 		if( strncmp("logs=", path,5) == 0)
-			strncpy(wlc_dir, path + 5, FILENAME_MAX);
+			snprintf(wlc_dir, FILENAME_MAX, "%s", path + 5);
 		if( strncmp("snapshot=", path,9) == 0)
-			strncpy(wlc_snapshot, path + 9, FILENAME_MAX);
+			snprintf(wlc_snapshot, FILENAME_MAX, "%s", path + 9);
 		if( strncmp("id=", path,3) == 0)
 			wlc_id = atol(path+ 3);
 		if( strncmp("write=", path,6) == 0)
-			strncpy(wlc_write, path + 6, 26);
+			snprintf(wlc_write, 26, "%s", path + 6);
 		if( strncmp("batches=", path, 8) == 0)
 			wlc_batches = atoi(path+ 8);
 		if( strncmp("beat=", path, 5) == 0)
@@ -245,13 +245,18 @@ str WLCsetConfig(void){
 static str
 WLCsetlogger(void)
 {
+	int len;
 	char path[FILENAME_MAX];
 	str msg = MAL_SUCCEED;
 
 	if( wlc_dir[0] == 0)
 		throw(MAL,"wlc.setlogger","Path not initalized");
 	MT_lock_set(&wlc_lock);
-	snprintf(path,FILENAME_MAX,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlc_name, wlc_batches);
+	len = snprintf(path,FILENAME_MAX,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlc_name, wlc_batches);
+	if (len == -1 || len >= FILENAME_MAX) {
+		MT_lock_unset(&wlc_lock);
+		throw(MAL, "wlc.setlogger", "Logger filename path is too large");
+	}
 	wlc_fd = open_wastream(path);
 	if( wlc_fd == 0){
 		MT_lock_unset(&wlc_lock);
@@ -271,6 +276,7 @@ WLCcloselogger(void)
 {
 	if( wlc_fd == NULL)
 		return MAL_SUCCEED;
+	mnstr_flush(wlc_fd);
 	mnstr_fsync(wlc_fd);
 	close_stream(wlc_fd);
 	wlc_fd= NULL;
@@ -289,7 +295,7 @@ WLCreset(void)
 	wlc_write[0] =0;
 	MT_lock_unset(&wlc_lock);
 	if(msg) //TODO we have to return a possible error message somehow
-		GDKfree(msg);
+		freeException(msg);
 }
 
 /*
@@ -308,12 +314,13 @@ WLClogger(void *arg)
 	(void) arg;
 	while(!GDKexiting()){
 		if( wlc_dir[0] && wlc_fd ){
-				MT_lock_set(&wlc_lock);
-				if((msg = WLCcloselogger()) != MAL_SUCCEED) {
-					GDKerror("%s",msg);
-				}
-				MT_lock_unset(&wlc_lock);
+			MT_lock_set(&wlc_lock);
+			if((msg = WLCcloselogger()) != MAL_SUCCEED) {
+				GDKerror("%s",msg);
+				freeException(msg);
 			}
+			MT_lock_unset(&wlc_lock);
+		}
 		for( seconds = 0; (wlc_beat == 0 || seconds < wlc_beat) && ! GDKexiting(); seconds++)
 			MT_sleep_ms( 1000);
 	}
@@ -338,14 +345,14 @@ WLCinit(void)
 		}
 		GDKfree(conf);
 		// we are in master mode
-		strncpy(wlc_name, GDKgetenv("gdk_dbname"),IDLENGTH );
+		snprintf(wlc_name, IDLENGTH, "%s", GDKgetenv("gdk_dbname"));
 		msg =  WLCgetConfig();
 		if( msg)
 			GDKerror("%s",msg);
-		if (MT_create_thread(&wlc_logger, WLClogger , (void*) 0, MT_THR_JOINABLE) < 0) {
+		if (MT_create_thread(&wlc_logger, WLClogger , (void*) 0,
+							 MT_THR_DETACHED, "WLClogger") < 0) {
 			GDKerror("wlc.logger thread could not be spawned");
 		}
-		GDKregister(wlc_logger);
 	}
 	return MAL_SUCCEED;
 }
@@ -406,7 +413,8 @@ WLCgetmasterbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str 
 WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	
+{
+	int len;
 	char path[FILENAME_MAX];
 	str l;
 
@@ -416,19 +424,23 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"master","WARNING: logging has been stopped. Use new snapshot");
 	if( wlc_state == WLC_RUN)
 		throw(MAL,"master","WARNING: already in master mode, call ignored");
-	if( pci->argc == 2)
-		strncpy(path, *getArgReference_str(stk, pci,1), FILENAME_MAX);
-	else{
+	if( pci->argc == 2) {
+		len = snprintf(path, FILENAME_MAX, "%s", *getArgReference_str(stk, pci,1));
+		if (len == -1 || len >= FILENAME_MAX)
+			throw(MAL, "wlc.master", "wlc master filename path is too large");
+	} else {
 		if((l = GDKfilepath(0,0,"wlc_logs",0)) == NULL)
 			throw(SQL,"wlc.master", MAL_MALLOC_FAIL);
-		snprintf(path,FILENAME_MAX,"%s%c",l, DIR_SEP);
+		len = snprintf(path,FILENAME_MAX,"%s%c",l, DIR_SEP);
 		GDKfree(l);
+		if (len == -1 || len >= FILENAME_MAX)
+			throw(MAL, "wlc.master", "wlc master filename path is too large");
 	}
 	// set location for logs
 	if( GDKcreatedir(path) == GDK_FAIL)
 		throw(SQL,"wlc.master","Could not create %s\n", path);
-	strncpy(wlc_name, GDKgetenv("gdk_dbname"),IDLENGTH );
-	strncpy(wlc_dir,path, FILENAME_MAX);
+	snprintf(wlc_name, IDLENGTH, "%s", GDKgetenv("gdk_dbname"));
+	snprintf(wlc_dir, FILENAME_MAX, "%s", path);
 	wlc_state= WLC_RUN;
 	return WLCsetConfig();
 }
@@ -458,8 +470,12 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str call)
 	if(gettimeofday(&clock,NULL) == -1)
 		throw(MAL,call,"Unable to retrieve current time");
 	clk = clock.tv_sec;
+#ifdef HAVE_LOCALTIME_R
+	(void) localtime_r(&clk, &ctm);
+#else
 	ctm = *localtime(&clk);
-	strftime(wlc_time, 26, "%Y-%m-%dT%H:%M:%S",&ctm);
+#endif
+	strftime(wlc_time, sizeof(wlc_time), "%Y-%m-%dT%H:%M:%S.000",&ctm);
 	if (pushStr(cntxt->wlc, p, wlc_time) == NULL)
 		throw(MAL, call, MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -648,7 +664,7 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 					pci = pushStr(cntxt->wlc, pci, col);
 				}
 				k++;
-				pci = pushStr(cntxt->wlc, pci ,(str) BUNtail(bi,p));
+				pci = pushStr(cntxt->wlc, pci ,(str) BUNtvar(bi,p));
 		} }
 		break;
 	default:
@@ -715,7 +731,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) stk;
 	(void) mb;
-	b= BBPquickdesc(bid, FALSE);
+	b= BBPquickdesc(bid, false);
 	if( BATcount(b) == 0)
 		return MAL_SUCCEED;
 	WLCstart(p, WLC_UPDATE, msg, "wlr.delete");
@@ -815,7 +831,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p = pushStr(cntxt->wlc, p, tbl);
 				p = pushStr(cntxt->wlc, p, col);
 				p = pushOid(cntxt->wlc, p, (ol? *ol++ : o++));
-				p = pushStr(cntxt->wlc, p , BUNtail(bi,x));
+				p = pushStr(cntxt->wlc, p , BUNtvar(bi,x));
 				k++;
 		} }
 		/* fall through */
@@ -897,7 +913,7 @@ WLCwrite(Client cntxt)
 		
 		// Update wlc administration
 		wlc_id++;
-		strncpy(wlc_write, getVarConstant(cntxt->wlc, getArg(p, 2)).val.sval, 26);
+		snprintf(wlc_write, 26, "%s", getVarConstant(cntxt->wlc, getArg(p, 2)).val.sval);
 
 		// close file if no delay is allowed
 		if( wlc_beat == 0 )

@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 DH_VERBOSE=1
 
@@ -14,27 +14,26 @@ DH_VERBOSE=1
 override_dh_auto_configure:
 	dh_auto_configure -- \
 	--enable-assert=no \
-	--enable-console=yes \
-	--enable-debug=no \
+	--enable-debug=yes \
 	--enable-developer=no \
 	--enable-embedded=no \
 	--enable-embedded-r=no \
-	--enable-fits=no \
+	--enable-fits=yes \
 	--enable-gdk=yes \
 	--enable-geom=yes \
-	--enable-gsl=yes \
-	--enable-instrument=no \
 	--enable-lidar=yes \
 	--enable-mapi=yes \
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
 	--enable-optimize=yes \
-	--enable-profile=no \
-	--enable-pyintegration=yes \
+	--enable-py2integration=yes \
+	--enable-py3integration=yes \
 	--enable-rintegration=yes \
+	--enable-sanitizer=no \
 	--enable-shp=no \
 	--enable-sql=yes \
+	--enable-static-analysis=no \
 	--enable-strict=no \
 	--enable-testing=yes \
 	--with-bz2=yes \
@@ -43,19 +42,20 @@ override_dh_auto_configure:
 	--with-geos=yes \
 	--with-liblas=yes \
 	--with-libxml2=yes \
+	--with-lz4=no \
 	--with-lzma=yes \
 	--with-openssl=yes \
 	--with-proj=no \
 	--with-pthread=yes \
 	--with-python2=yes \
-	--with-python3=no \
+	--with-python3=yes \
 	--with-readline=yes \
 	--with-regex=PCRE \
 	--with-samtools=yes \
+	--with-snappy=no \
 	--with-unixodbc=yes \
 	--with-uuid=yes \
-	--with-valgrind=no \
-	X_CFLAGS=-g
+	--with-valgrind=no
 
 # currently the test suite fails
 override_dh_auto_test:
