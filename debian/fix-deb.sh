@@ -45,54 +45,21 @@ if [[ $ARCH == i?86 ]]; then
 fi
 
 case $SUITE in
-trusty)
-    # fix control file because this system doesn't have liblas and a
-    # too old version of libgeos
-    sed -i -e 's/, libgeos-dev[^,]*//;s/, liblas-c-dev[^,]*//' \
-	-e 's/libcfitsio-dev/libcfitsio3-dev/' \
-	-e '/^Package:.*lidar/,/^$/d' \
-	-e '/^Package:.*geom/,/^$/d' debian/control
-    rm debian/libmonetdb5-server-lidar.install debian/libmonetdb5-server-geom.install
-    sed -i '/geo[ms]=yes/s/yes/no/;/gdal=yes/s/yes/no/;/lidar=yes/s/yes/no/;/liblas=yes/s/yes/no/' debian/rules
-    ;;
-esac
-
-case $SUITE in
-jessie | trusty)
-    # Xenial Xerus (and presumably newer releases) uses php-cli,
-    # all others still have php5-cli and don't have php*-sockets
+jessie)
+    # Debian 8 still have php5-cli and doesn't have php*-sockets;
+    # newer ones use php-cli and do have php-sockets.
     sed -i 's/php-cli/php5-cli/;s/, *php-sockets//' debian/control
     ;;
 esac
 
 case $SUITE in
-trusty)
-    # the trusty linker produces unresolved references to openSSL functions
-    sed -i '/openssl_LIBS/s/WIN32?//' clients/mapilib/Makefile.ag
-    sed -i '/^libmapi_la_LIBADD/s/$/ $(openssl_LIBS)/' clients/mapilib/Makefile.am clients/mapilib/Makefile.in
-    ;;
-esac
-
-case $SUITE in
-jessie | trusty)
+jessie)
     # The Python 3 version is too old for py3integration.
     sed -i '/^Package: monetdb-python3/,/^$/d' debian/control
     sed -i 's/ python3-dev, python3-numpy,//' debian/control
     rm debian/monetdb-python3.install
     sed -i 's/py3integration=yes/py3integration=no/' debian/rules
 ;;
-esac
-
-case $SUITE in
-cosmic)
-    # libbam is not available as a shared object (also true for older
-    # version) and this means that on 18.10 the libmonetdb5-server-bam
-    # package cannot be compiled on amd64
-    sed -i -e 's/libbam-dev, //' \
-	-e '/^Package: libmonetdb5-server-bam/,/^$/d' debian/control
-    sed -i '/samtools=yes/s/yes/no/' debian/rules
-    rm debian/libmonetdb5-server-bam.install
-    ;;
 esac
 
 # debhelper compatibility 9 and later support multiarch by using
