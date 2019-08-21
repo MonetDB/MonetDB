@@ -2145,8 +2145,29 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-	if ((err = sql_update_apr2019_sp1(c)) != NULL) {
-		fprintf(stderr, "!%s\n", err);
-		freeException(err);
+	{
+		/* Determine if missing dependency table entry for unique keys is required */
+		char *qry = "select c.id from sys.dependency_types dt, sys._columns c, sys.keys k, sys.objects o "
+					"where k.id = o.id and o.name = c.name and c.table_id = k.table_id and dt.dependency_type_name = 'KEY' and k.type = 1 "
+					"and not exists (select d.id from sys.dependencies d where d.id = c.id and d.depend_id = k.id and d.depend_type = dt.dependency_type_id);";
+		res_table *output = NULL;
+		err = SQLstatementIntern(c, &qry, "update", true, false, &output);
+		if (err) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		} else {
+			BAT *b = BATdescriptor(output->cols[0].b);
+			if (b) {
+				if (BATcount(b) > 0) {
+					if ((err = sql_update_apr2019_sp1(c)) != NULL) {
+						fprintf(stderr, "!%s\n", err);
+						freeException(err);
+					}
+				}
+				BBPunfix(b->batCacheid);
+			}
+		}
+		if (output != NULL)
+			res_tables_destroy(output);
 	}
 }
