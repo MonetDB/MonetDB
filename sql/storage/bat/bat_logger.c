@@ -1040,11 +1040,11 @@ bl_snapshot(stream *plan)
 
 	mnstr_printf(plan, "%s\n", db_dir);
 
-	ret = snapshot_wal(plan, db_dir);
+	ret = snapshot_bats(plan, db_dir);
 	if (ret != GDK_SUCCEED)
 		goto end;
 
-	ret = snapshot_bats(plan, db_dir);
+	ret = snapshot_wal(plan, db_dir);
 	if (ret != GDK_SUCCEED)
 		goto end;
 

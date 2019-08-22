@@ -2235,22 +2235,23 @@ store_flush_log(void)
 	ATOMIC_SET(&flusher.flush_now, 1);
 }
 
+/* Call while holding bs_lock */
 static void
-wait_until_flusher_idle()
+wait_until_flusher_idle(void)
 {
-
-}
-void
-store_suspend_log(void)
-{
-	MT_lock_set(&bs_lock);
-	flusher.enabled = false;
 	while (flusher.working) {
 		const int sleeptime = 100;
 		MT_lock_unset(&bs_lock);
 		MT_sleep_ms(sleeptime);
 		MT_lock_set(&bs_lock);
 	}
+}
+void
+store_suspend_log(void)
+{
+	MT_lock_set(&bs_lock);
+	flusher.enabled = false;
+	wait_until_flusher_idle();
 	MT_lock_unset(&bs_lock);
 }
 
@@ -2359,22 +2360,295 @@ store_unlock(void)
 	MT_lock_unset(&bs_lock);
 }
 
+// Helper function for tar_write_header.
+// stream.h makes sure __attribute__ exists
+static void tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
+	__attribute__((__format__(__printf__, 3, 4)));
+static void
+tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	vsnprintf(*cursor_ptr, size + 1, fmt, ap);
+	va_end(ap);
+
+	*cursor_ptr += size; /* regardless of bytes written */
+}
+
+#define TAR_BLOCK_SIZE (512)
+
+// Write a tar header to the given stream.
+static gdk_return
+tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
+{
+	char buf[TAR_BLOCK_SIZE] = {0};
+	char *cursor = buf;
+	char *chksum;
+
+	// We set the uid/gid fields to 0 and the uname/gname fields to "".
+	// When unpacking as a normal user, they are ignored and the files are
+	// owned by that user. When unpacking as root it is reasonable that
+	// the resulting files are owned by root.
+
+	// The following is taken directly from the definition of the header
+	// in /usr/include/tar.h.
+	tar_write_header_field(&cursor, 100, "%s", path);   // name[100]
+	tar_write_header_field(&cursor, 8, "0000644");      // mode[8]
+	tar_write_header_field(&cursor, 8, "%07o", 0);      // uid[8]
+	tar_write_header_field(&cursor, 8, "%07o", 0);      // gid[8]
+	tar_write_header_field(&cursor, 12, "%011zo", size);      // size[12]
+	tar_write_header_field(&cursor, 12, "%011lo", (long)mtime); // mtime[12]
+	chksum = cursor; // use this later to set the computed checksum
+	tar_write_header_field(&cursor, 8, "%8s", ""); // chksum[8]
+	*cursor++ = '0'; // typeflag REGTYPE
+	tar_write_header_field(&cursor, 100, "%s", "");  // linkname[100]
+	tar_write_header_field(&cursor, 6, "%s", "ustar"); // magic[6]
+	tar_write_header_field(&cursor, 2, "%02o", 0); // version, not null terminated
+	tar_write_header_field(&cursor, 32, "%s", ""); // uname[32]
+	tar_write_header_field(&cursor, 32, "%s", ""); // gname[32]
+	tar_write_header_field(&cursor, 8, "%07o", 0); // devmajor[8]
+	tar_write_header_field(&cursor, 8, "%07o", 0); // devminor[8]
+	tar_write_header_field(&cursor, 155, "%s", ""); // prefix[155]
+
+	assert(cursor - buf == 500);
+
+	int sum = 0;
+	for (int i = 0; i < TAR_BLOCK_SIZE; i++)
+		sum += buf[i];
+
+	tar_write_header_field(&chksum, 8, "%06o", sum);
+
+	if (mnstr_write(tarfile, buf, TAR_BLOCK_SIZE, 1) != 1) {
+		GDKerror("error writing tar header %s: %s", path, mnstr_error(tarfile));
+		return GDK_FAIL;
+	}
+
+	return GDK_SUCCEED;
+}
+
+static gdk_return
+tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data, size_t size)
+{
+	int res;
+
+	res = tar_write_header(tarfile, path, mtime, size);
+	if (res != GDK_SUCCEED)
+		return res;
+
+	// The spec requires us to only write complete blocks.
+	// So first we write all full blocks and then we copy the remainder
+	// into a buffer so we can write a tail block
+
+	size_t tail = size % TAR_BLOCK_SIZE;
+	size_t bulk = size - tail;
+	size_t written = mnstr_write(tarfile, data, 1, bulk);
+	if (written != bulk) {
+		GDKerror("Wrote only %ld bytes instead of first %ld", written, bulk);
+		return GDK_FAIL;
+	}
+
+	if (tail) {
+		char buf[TAR_BLOCK_SIZE] = {0};
+		memcpy(buf, data + bulk, tail);
+		written = mnstr_write(tarfile, buf, 1, TAR_BLOCK_SIZE);
+		if (written != TAR_BLOCK_SIZE) {
+			GDKerror("Wrote only %ld tail bytes instead of %d", written, TAR_BLOCK_SIZE);
+			return GDK_FAIL;
+		}
+	}
+
+	return GDK_SUCCEED;
+}
+
+
+static gdk_return
+tar_copy_data(stream *tarfile, const char *path, time_t mtime, stream *contents, ssize_t size)
+{
+	gdk_return ret = GDK_FAIL;
+	const ssize_t bufsize = 64 * 1024;
+	char *buf = malloc(bufsize);
+	ssize_t nbytes;
+
+	if (!buf) {
+		GDKerror("could not allocate buffer");
+		goto end;
+	}
+
+	if (tar_write_header(tarfile, path, mtime, size) != GDK_SUCCEED)
+		goto end;
+
+	assert(bufsize > TAR_BLOCK_SIZE);
+	assert(bufsize % TAR_BLOCK_SIZE == 0);
+
+	// Again, we need to be careful to not write partial blocks.
+
+	while (size > TAR_BLOCK_SIZE) {
+		ssize_t chunk = size <= bufsize ? size : bufsize;
+		chunk -= chunk % TAR_BLOCK_SIZE;
+		assert(chunk > 0);
+		assert(chunk % TAR_BLOCK_SIZE == 0);
+		fprintf(stderr, "#copying %ld/%ld bytes of component %s\n", chunk, size, path);
+		nbytes = mnstr_read(contents, buf, 1, chunk);
+		if (nbytes != chunk) {
+			GDKerror("Read only %ld/%ld bytes of component %s: %s", nbytes, chunk, path, mnstr_error(contents));
+			goto end;
+		}
+		nbytes = mnstr_write(tarfile, buf, 1, chunk);
+		if (nbytes != chunk){
+			GDKerror("Wrote only %ld/%ld bytes of component %s to tar file: %s", nbytes, chunk, path, mnstr_error(tarfile));
+			goto end;
+		}
+		size -= chunk;
+		fprintf(stderr, "# %ld left\n", size);
+	}
+
+	if (size > 0) {
+		memset(buf, 0, TAR_BLOCK_SIZE);
+		nbytes = mnstr_read(contents, buf, 1, size);
+		if (nbytes != size) {
+			GDKerror("Read only %ld/%ld final bytes of component %s: %s", nbytes, size, path, mnstr_error(contents));
+			goto end;
+		}
+		nbytes = mnstr_write(tarfile, buf, 1, TAR_BLOCK_SIZE);
+		if (nbytes != TAR_BLOCK_SIZE) {
+			GDKerror("Only wrote %ld/%ld bytes of block of component %s to tar file: %s", nbytes, size, path, mnstr_error(tarfile));
+			goto end;
+		}
+		fprintf(stderr, "#tail written\n");
+	}
+
+	ret = GDK_SUCCEED;
+end:
+	if (buf)
+		free(buf);
+	return ret;
+}
+
+
+
+static gdk_return
+hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
+{
+	(void)out;
+	gdk_return ret;
+	const char *p = plan; // our cursor in the plan
+	time_t timestamp = time(NULL);
+	char abs_src_path[2 * FILENAME_MAX];
+	char *src_name = abs_src_path;
+	char dest_path[100]; // size imposed by tar format.
+	char *dest_name = dest_path + snprintf(dest_path, sizeof(dest_path), "%s/", prefix);
+	stream *infile = NULL;
+
+	int len;
+	if (sscanf(p, "%[^\n]\n%n", abs_src_path, &len) != 1) {
+		GDKerror("internal error: first line of plan is malformed");
+		ret = GDK_FAIL;
+		goto end;
+	}
+	p += len;
+	src_name = abs_src_path + len - 1; // - 1 because len includes the trailing newline
+	*src_name++ = DIR_SEP;
+
+	int scanned;
+	char command;
+	long size;
+	while ((scanned = sscanf(p, "%c %ld %100s\n%n", &command, &size, src_name, &len)) == 3) {
+		p += len;
+		strcpy(dest_name, src_name);
+		if (size < 0) {
+			GDKerror("malformed snapshot plan for %s: size %ld < 0", src_name, size);
+			goto end;
+		}
+		switch (command) {
+			case 'c':
+				infile = open_rstream(abs_src_path);
+				if (!infile) {
+					GDKerror("Could not open %s", abs_src_path);
+					goto end;
+				}
+				if (tar_copy_data(out, dest_path, timestamp, infile, size) != GDK_SUCCEED)
+					goto end;
+				mnstr_close(infile);
+				break;
+			case 'w':
+				if (tar_write_data(out, dest_path, timestamp, p, size) != GDK_SUCCEED)
+					goto end;
+				p += size;
+				break;
+			default:
+				GDKerror("Unknown command in snapshot plan: %c (%s)", command, src_name);
+				ret = GDK_FAIL;
+				goto end;
+		}
+	}
+	ret = GDK_SUCCEED;
+
+end:
+	if (infile)
+		mnstr_close(infile);
+	return ret;
+}
+
 extern lng
 store_hot_snapshot(str tarfile)
 {
-	gdk_return result;
-	
+	int locked = 0;
+	lng result = 0;
+	stream *tar_stream = NULL;
+	buffer *plan_buf = NULL;
+	stream *plan_stream = NULL;
+	gdk_return r;
+
 	if (!logger_funcs.get_snapshot_files) {
 		GDKerror("backend does not support hot snapshots");
 		return 0;
 	}
 
-	MT_lock_set(&bs_lock);
-	(void)tarfile;
-	result = logger_funcs.get_snapshot_files(file_wstream(stderr, "<stderr>"));
-	MT_lock_unset(&bs_lock);
+	// We should really write to a tempfile first..
+	tar_stream = open_wstream(tarfile);
+	if (!tar_stream) {
+		GDKerror("Failed to open %s for writing", tarfile);
+		goto end;
+	}
+	plan_buf = buffer_create(64 * 1024);
+	if (!plan_buf) {
+		GDKerror("Failed to allocate buffer");
+		goto end;
+	}
+	plan_stream = buffer_wastream(plan_buf, "write_snapshot_plan");
+	if (!plan_stream) {
+		GDKerror("Failed to allocate buffer stream");
+		goto end;
+	}
 
-	return result > 0;
+	MT_lock_set(&bs_lock);
+	locked = 1;
+	wait_until_flusher_idle();
+	if (GDKexiting())
+		goto end;
+
+	r = logger_funcs.get_snapshot_files(plan_stream);
+	if (r != GDK_SUCCEED)
+		goto end; // should already have set a GDK error
+	close_stream(plan_stream);
+	plan_stream = NULL;
+	r = hot_snapshot_write_tar(tar_stream, "banana", buffer_get_buf(plan_buf));
+	if (r != GDK_SUCCEED)
+		goto end;
+
+	result = 42; // figure out how we can do better than this
+
+end:
+	if (locked)
+		MT_lock_unset(&bs_lock);
+	if (tar_stream)
+		close_stream(tar_stream);
+	if (plan_stream)
+		close_stream(plan_stream);
+	if (plan_buf)
+		buffer_destroy(plan_buf);
+	return result;
 }
 
 static sql_kc *
