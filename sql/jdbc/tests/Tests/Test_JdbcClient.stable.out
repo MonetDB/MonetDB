@@ -133,35 +133,34 @@ Operation successful
 
 START TRANSACTION;
 
-CREATE SCHEMA "sys";
-
 SET SCHEMA "sys";
 
-CREATE MERGE TABLE "mt" (
+CREATE MERGE TABLE "sys"."mt" (
 	"id" INTEGER       NOT NULL,
 	"nm" VARCHAR(123)  NOT NULL,
 	CONSTRAINT "mt_id_pkey" PRIMARY KEY ("id")
 );
 
-CREATE REMOTE TABLE "remt" (
+CREATE REMOTE TABLE "sys"."remt" (
 	"id" INTEGER       NOT NULL,
 	"nm" VARCHAR(123)  NOT NULL,
 	CONSTRAINT "remt_id_pkey" PRIMARY KEY ("id")
 );
 
-CREATE REPLICA TABLE "replt" (
+CREATE REPLICA TABLE "sys"."replt" (
 	"id" INTEGER       NOT NULL,
 	"nm" VARCHAR(123)  NOT NULL,
 	CONSTRAINT "replt_id_pkey" PRIMARY KEY ("id")
 );
 
-CREATE STREAM TABLE "strt" (
+CREATE STREAM TABLE "sys"."strt" (
 	"id" INTEGER       NOT NULL,
 	"nm" VARCHAR(123)  NOT NULL,
 	CONSTRAINT "strt_id_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "allnewtriples" (
+
+CREATE TABLE "sys"."allnewtriples" (
 	"id"        INTEGER       NOT NULL,
 	"subject"   INTEGER       NOT NULL,
 	"predicate" INTEGER       NOT NULL,
@@ -170,19 +169,19 @@ CREATE TABLE "allnewtriples" (
         CONSTRAINT "allnewtriples_id_pkey" PRIMARY KEY ("id"),
         CONSTRAINT "unique_key" UNIQUE ("subject", "predicate", "object")
 );
-CREATE INDEX "allnewtriples_object_idx" ON "allnewtriples" ("object");
-CREATE INDEX "allnewtriples_predicate_idx" ON "allnewtriples" ("predicate");
-CREATE INDEX "allnewtriples_subject_idx" ON "allnewtriples" ("subject");
+CREATE INDEX "allnewtriples_object_idx" ON "sys"."allnewtriples" ("object");
+CREATE INDEX "allnewtriples_predicate_idx" ON "sys"."allnewtriples" ("predicate");
+CREATE INDEX "allnewtriples_subject_idx" ON "sys"."allnewtriples" ("subject");
 
-INSERT INTO "allnewtriples" VALUES (1, 1, 1, 1, false);
-INSERT INTO "allnewtriples" VALUES (2, 1, 1, 2, false);
-INSERT INTO "allnewtriples" VALUES (3, 1, 2, 1, false);
-INSERT INTO "allnewtriples" VALUES (4, 2, 1, 1, false);
-INSERT INTO "allnewtriples" VALUES (5, 1, 2, 2, false);
-INSERT INTO "allnewtriples" VALUES (6, 2, 2, 1, false);
-INSERT INTO "allnewtriples" VALUES (7, 2, 2, 2, false);
+INSERT INTO "sys"."allnewtriples" VALUES (1, 1, 1, 1, false);
+INSERT INTO "sys"."allnewtriples" VALUES (2, 1, 1, 2, false);
+INSERT INTO "sys"."allnewtriples" VALUES (3, 1, 2, 1, false);
+INSERT INTO "sys"."allnewtriples" VALUES (4, 2, 1, 1, false);
+INSERT INTO "sys"."allnewtriples" VALUES (5, 1, 2, 2, false);
+INSERT INTO "sys"."allnewtriples" VALUES (6, 2, 2, 1, false);
+INSERT INTO "sys"."allnewtriples" VALUES (7, 2, 2, 2, false);
 
-CREATE TABLE "foreign" (
+CREATE TABLE "sys"."foreign" (
 	"id"        INTEGER       NOT NULL,
 	"subject"   INTEGER       NOT NULL,
 	"predicate" INTEGER       NOT NULL,
@@ -191,15 +190,15 @@ CREATE TABLE "foreign" (
 	CONSTRAINT "foreign_subject_predicate_object_fkey" FOREIGN KEY ("subject", "predicate", "object") REFERENCES "sys"."allnewtriples" ("subject", "predicate", "object")
 );
 
-INSERT INTO "foreign" VALUES (1, 1, 1, 1);
-INSERT INTO "foreign" VALUES (2, 2, 2, 2);
-INSERT INTO "foreign" VALUES (3, 1, 2, 2);
-INSERT INTO "foreign" VALUES (4, 2, 2, 1);
-INSERT INTO "foreign" VALUES (5, 2, 1, 1);
-INSERT INTO "foreign" VALUES (6, 1, 2, 1);
-INSERT INTO "foreign" VALUES (7, 1, 1, 2);
+INSERT INTO "sys"."foreign" VALUES (1, 1, 1, 1);
+INSERT INTO "sys"."foreign" VALUES (2, 2, 2, 2);
+INSERT INTO "sys"."foreign" VALUES (3, 1, 2, 2);
+INSERT INTO "sys"."foreign" VALUES (4, 2, 2, 1);
+INSERT INTO "sys"."foreign" VALUES (5, 2, 1, 1);
+INSERT INTO "sys"."foreign" VALUES (6, 1, 2, 1);
+INSERT INTO "sys"."foreign" VALUES (7, 1, 1, 2);
 
-CREATE TABLE "triples" (
+CREATE TABLE "sys"."triples" (
 	"id"        INTEGER       NOT NULL,
 	"subject"   INTEGER       NOT NULL,
 	"predicate" INTEGER       NOT NULL,
@@ -207,28 +206,28 @@ CREATE TABLE "triples" (
 	"explicit"  BOOLEAN       NOT NULL,
 	CONSTRAINT "triples_subject_predicate_object_unique" UNIQUE ("subject", "predicate", "object")
 );
-CREATE INDEX "triples_object_idx" ON "triples" ("object");
-CREATE INDEX "triples_predicate_idx" ON "triples" ("predicate");
-CREATE INDEX "triples_predicate_object_idx" ON "triples" ("predicate", "object");
-CREATE INDEX "triples_subject_idx" ON "triples" ("subject");
-CREATE INDEX "triples_subject_object_idx" ON "triples" ("subject", "object");
-CREATE INDEX "triples_subject_predicate_idx" ON "triples" ("subject", "predicate");
+CREATE INDEX "triples_object_idx" ON "sys"."triples" ("object");
+CREATE INDEX "triples_predicate_idx" ON "sys"."triples" ("predicate");
+CREATE INDEX "triples_predicate_object_idx" ON "sys"."triples" ("predicate", "object");
+CREATE INDEX "triples_subject_idx" ON "sys"."triples" ("subject");
+CREATE INDEX "triples_subject_object_idx" ON "sys"."triples" ("subject", "object");
+CREATE INDEX "triples_subject_predicate_idx" ON "sys"."triples" ("subject", "predicate");
 
-INSERT INTO "triples" VALUES (1, 1, 1, 1, false);
-INSERT INTO "triples" VALUES (2, 1, 1, 2, false);
-INSERT INTO "triples" VALUES (3, 1, 2, 1, false);
-INSERT INTO "triples" VALUES (4, 2, 1, 1, false);
-INSERT INTO "triples" VALUES (5, 1, 2, 2, false);
-INSERT INTO "triples" VALUES (6, 2, 2, 1, false);
-INSERT INTO "triples" VALUES (7, 2, 2, 2, false);
+INSERT INTO "sys"."triples" VALUES (1, 1, 1, 1, false);
+INSERT INTO "sys"."triples" VALUES (2, 1, 1, 2, false);
+INSERT INTO "sys"."triples" VALUES (3, 1, 2, 1, false);
+INSERT INTO "sys"."triples" VALUES (4, 2, 1, 1, false);
+INSERT INTO "sys"."triples" VALUES (5, 1, 2, 2, false);
+INSERT INTO "sys"."triples" VALUES (6, 2, 2, 1, false);
+INSERT INTO "sys"."triples" VALUES (7, 2, 2, 2, false);
 
-CREATE VIEW "object_stats" AS select "object", cast(count(*) as bigint) as counts, min("object") as min_value, max("object") as max_value from "triples" group by "object" order by "object"
+CREATE VIEW "sys"."object_stats" AS select "object", cast(count(*) as bigint) as counts, min("object") as min_value, max("object") as max_value from "triples" group by "object" order by "object"
 ;
 
-CREATE VIEW "predicate_stats" AS select "predicate", cast(count(*) as bigint) as counts, min("predicate") as min_value, max("predicate") as max_value from "triples" group by "predicate" order by "predicate"
+CREATE VIEW "sys"."predicate_stats" AS select "predicate", cast(count(*) as bigint) as counts, min("predicate") as min_value, max("predicate") as max_value from "triples" group by "predicate" order by "predicate"
 ;
 
-CREATE VIEW "subject_stats" AS select "subject", cast(count(*) as bigint) as counts, min("subject") as min_value, max("subject") as max_value from "triples" group by "subject" order by "subject"
+CREATE VIEW "sys"."subject_stats" AS select "subject", cast(count(*) as bigint) as counts, min("subject") as min_value, max("subject") as max_value from "triples" group by "subject" order by "subject"
 ;
 
 COMMIT;
