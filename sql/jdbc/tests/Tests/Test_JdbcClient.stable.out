@@ -24,31 +24,25 @@ Ready.
 # 12:08:05 >  
 
 Operation successful
-
 Operation successful
-
 Operation successful
-
 Operation successful
-
 Operation successful
-
 Operation successful
-
 Operation successful
-
 Operation successful
-
 Operation successful
-
 Operation successful
-
 Operation successful
-
 Operation successful
-
 Operation successful
-
+Operation successful
+Operation successful
+Operation successful
+Operation successful
+Operation successful
+Operation successful
+Operation successful
 Operation successful
 
 
@@ -59,31 +53,18 @@ Operation successful
 Operation successful
 
 1 affected row
-
 1 affected row
-
 1 affected row
-
 1 affected row
-
 1 affected row
-
 1 affected row
-
 1 affected row
-
 1 affected row
-
 1 affected row
-
 1 affected row
-
 1 affected row
-
 1 affected row
-
 1 affected row
-
 1 affected row
 
 +------+---------+-----------+--------+----------+
@@ -110,18 +91,75 @@ Operation successful
 |    7 |       1 |         1 |      2 |
 +------+---------+-----------+--------+
 7 rows
+7 affected rows
++------+---------+-----------+--------+----------+
+| id   | subject | predicate | object | explicit |
++======+=========+===========+========+==========+
+|    1 |       1 |         1 |      1 | false    |
+|    2 |       1 |         1 |      2 | false    |
+|    3 |       1 |         2 |      1 | false    |
+|    4 |       2 |         1 |      1 | false    |
+|    5 |       1 |         2 |      2 | false    |
+|    6 |       2 |         2 |      1 | false    |
+|    7 |       2 |         2 |      2 | false    |
++------+---------+-----------+--------+----------+
+7 rows
++---------+--------+-----------+-----------+
+| subject | counts | min_value | max_value |
++=========+========+===========+===========+
+|       1 |      4 |         1 |         1 |
+|       2 |      3 |         2 |         2 |
++---------+--------+-----------+-----------+
+2 rows
++-----------+--------+-----------+-----------+
+| predicate | counts | min_value | max_value |
++===========+========+===========+===========+
+|         1 |      3 |         1 |         1 |
+|         2 |      4 |         2 |         2 |
++-----------+--------+-----------+-----------+
+2 rows
++--------+--------+-----------+-----------+
+| object | counts | min_value | max_value |
++========+========+===========+===========+
+|      1 |      4 |         1 |         1 |
+|      2 |      3 |         2 |         2 |
++--------+--------+-----------+-----------+
+2 rows
 Operation successful
 
-
-# 20:01:24 >  
-# 20:01:24 >  java -jar /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/build-pegasus.ins.cwi.nl/sql/src/jdbc/jdbcclient-1.2.jar -h localhost -p 47764 -d
-# 20:01:24 >  
+# 17:26:44 >  
+# 17:26:44 >  java nl.cwi.monetdb.client.JdbcClient -h catskill -p 33431 -d mTests_sql_jdbc_tests -D
+# 17:26:44 >  
 
 START TRANSACTION;
 
 CREATE SCHEMA "sys";
 
 SET SCHEMA "sys";
+
+CREATE MERGE TABLE "mt" (
+	"id" INTEGER       NOT NULL,
+	"nm" VARCHAR(123)  NOT NULL,
+	CONSTRAINT "mt_id_pkey" PRIMARY KEY ("id")
+);
+
+CREATE REMOTE TABLE "remt" (
+	"id" INTEGER       NOT NULL,
+	"nm" VARCHAR(123)  NOT NULL,
+	CONSTRAINT "remt_id_pkey" PRIMARY KEY ("id")
+);
+
+CREATE REPLICA TABLE "replt" (
+	"id" INTEGER       NOT NULL,
+	"nm" VARCHAR(123)  NOT NULL,
+	CONSTRAINT "replt_id_pkey" PRIMARY KEY ("id")
+);
+
+CREATE STREAM TABLE "strt" (
+	"id" INTEGER       NOT NULL,
+	"nm" VARCHAR(123)  NOT NULL,
+	CONSTRAINT "strt_id_pkey" PRIMARY KEY ("id")
+);
 
 CREATE TABLE "allnewtriples" (
 	"id"        INTEGER       NOT NULL,
@@ -176,6 +214,22 @@ CREATE INDEX "triples_subject_idx" ON "triples" ("subject");
 CREATE INDEX "triples_subject_object_idx" ON "triples" ("subject", "object");
 CREATE INDEX "triples_subject_predicate_idx" ON "triples" ("subject", "predicate");
 
+INSERT INTO "triples" VALUES (1, 1, 1, 1, false);
+INSERT INTO "triples" VALUES (2, 1, 1, 2, false);
+INSERT INTO "triples" VALUES (3, 1, 2, 1, false);
+INSERT INTO "triples" VALUES (4, 2, 1, 1, false);
+INSERT INTO "triples" VALUES (5, 1, 2, 2, false);
+INSERT INTO "triples" VALUES (6, 2, 2, 1, false);
+INSERT INTO "triples" VALUES (7, 2, 2, 2, false);
+
+CREATE VIEW "object_stats" AS select "object", cast(count(*) as bigint) as counts, min("object") as min_value, max("object") as max_value from "triples" group by "object" order by "object"
+;
+
+CREATE VIEW "predicate_stats" AS select "predicate", cast(count(*) as bigint) as counts, min("predicate") as min_value, max("predicate") as max_value from "triples" group by "predicate" order by "predicate"
+;
+
+CREATE VIEW "subject_stats" AS select "subject", cast(count(*) as bigint) as counts, min("subject") as min_value, max("subject") as max_value from "triples" group by "subject" order by "subject"
+;
 
 COMMIT;
 
