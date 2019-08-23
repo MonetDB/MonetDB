@@ -2284,6 +2284,13 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		nr++;							\
 	} while (false)
 
+#define HASHloop_bound_TYPE(vals, h, hb, v, lo, hi, TYPE)		\
+	for (hb = HASHget(h, hash_##TYPE(h, &v));			\
+	     hb != HASHnil(h);						\
+	     hb = HASHgetlink(h,hb))					\
+		if (hb >= (lo) && hb < (hi) &&				\
+		    v == vals[hb])
+
 #define HASHloop_bound(bi, h, hb, v, lo, hi)		\
 	for (hb = HASHget(h, HASHprobe((h), v));	\
 	     hb != HASHnil(h);				\
@@ -2291,6 +2298,84 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (hb >= (lo) && hb < (hi) &&		\
 		    (cmp == NULL ||			\
 		     (*cmp)(v, BUNtail(bi, hb)) == 0))
+
+#define HASHJOIN(TYPE)							\
+	do {								\
+		TYPE *rvals = Tloc(r, 0);				\
+		TYPE *lvals = Tloc(l, 0);				\
+		TYPE v;							\
+		while (lci->next < lci->ncand) {			\
+			lo = canditer_next(lci);			\
+			v = lvals[lo - l->hseqbase];			\
+			nr = 0;						\
+			if ((!nil_matches || not_in) && is_##TYPE##_nil(v)) { \
+				/* no match */				\
+				if (not_in)				\
+					continue;			\
+			} else if (sr) {				\
+				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
+				     rb != HASHnil(hsh);		\
+				     rb = HASHgetlink(hsh, rb)) {	\
+					ro = BUNtoid(sr, rb);		\
+					if (v != rvals[ro - r->hseqbase]) \
+						continue;		\
+					if (only_misses) {		\
+						nr++;			\
+						break;			\
+					}				\
+					HASHLOOPBODY();			\
+					if (semi)			\
+						break;			\
+				}					\
+			} else {					\
+				HASHloop_bound_TYPE(rvals, hsh, rb, v, rl, rh, TYPE) { \
+					ro = (oid) (rb - rl + rseq);	\
+					if (only_misses) {		\
+						nr++;			\
+						break;			\
+					}				\
+					HASHLOOPBODY();			\
+					if (semi)			\
+						break;			\
+				}					\
+			}						\
+			if (nr == 0) {					\
+				if (only_misses) {			\
+					nr = 1;				\
+					MAYBEEXTEND(1, lci);		\
+					APPEND(r1, lo);			\
+					if (lskipped)			\
+						r1->tseqbase = oid_nil;	\
+				} else if (nil_on_miss) {		\
+					nr = 1;				\
+					r2->tnil = true;		\
+					r2->tnonil = false;		\
+					r2->tkey = false;		\
+					MAYBEEXTEND(1, lci);		\
+					APPEND(r1, lo);			\
+					APPEND(r2, oid_nil);		\
+				} else {				\
+					lskipped = BATcount(r1) > 0;	\
+				}					\
+			} else if (only_misses) {			\
+				lskipped = BATcount(r1) > 0;		\
+			} else {					\
+				if (lskipped) {				\
+					/* note, we only get here in an	\
+					 * iteration *after* lskipped was \
+					 * first set to true, i.e. we did \
+					 * indeed skip values in l */	\
+					r1->tseqbase = oid_nil;		\
+				}					\
+				if (nr > 1) {				\
+					r1->tkey = false;		\
+					r1->tseqbase = oid_nil;		\
+				}					\
+			}						\
+			if (nr > 0 && BATcount(r1) > nr)		\
+				r1->trevsorted = false;			\
+		}							\
+	} while (0)
 
 /* Implementation of join using a hash lookup of values in the right
  * column. */
@@ -2332,6 +2417,10 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(sl == NULL || sl->tsorted);
 	assert(sr == NULL || sr->tsorted);
+
+	int t = ATOMbasetype(r->ttype);
+	if (r->ttype == TYPE_void || l->ttype == TYPE_void)
+		t = TYPE_void;
 
 	lwidth = l->twidth;
 	lvals = (const char *) Tloc(l, 0);
@@ -2438,81 +2527,91 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (sl && !BATtdense(sl))
 		r1->tseqbase = oid_nil;
 
-	while (lci->next < lci->ncand) {
-		lo = canditer_next(lci);
-		if (BATtvoid(l)) {
-			if (BATtdense(l))
-				lval = lo - l->hseqbase + l->tseqbase;
-		} else {
-			v = VALUE(l, lo - l->hseqbase);
-		}
-		nr = 0;
-		if ((!nil_matches || not_in) && cmp(v, nil) == 0) {
-			/* no match */
-			if (not_in)
-				continue;
-		} else if (sr) {
-			for (rb = HASHget(hsh, HASHprobe(hsh, v));
-			     rb != HASHnil(hsh);
-			     rb = HASHgetlink(hsh, rb)) {
-				ro = BUNtoid(sr, rb);
-				if ((*cmp)(v, BUNtail(ri, ro - r->hseqbase)) != 0)
-					continue;
-				if (only_misses) {
-					nr++;
-					break;
-				}
-				HASHLOOPBODY();
-				if (semi)
-					break;
-			}
-		} else {
-			HASHloop_bound(ri, hsh, rb, v, rl, rh) {
-				ro = (oid) (rb - rl + rseq);
-				if (only_misses) {
-					nr++;
-					break;
-				}
-				HASHLOOPBODY();
-				if (semi)
-					break;
-			}
-		}
-		if (nr == 0) {
-			if (only_misses) {
-				nr = 1;
-				MAYBEEXTEND(1, lci);
-				APPEND(r1, lo);
-				if (lskipped)
-					r1->tseqbase = oid_nil;
-			} else if (nil_on_miss) {
-				nr = 1;
-				r2->tnil = true;
-				r2->tnonil = false;
-				r2->tkey = false;
-				MAYBEEXTEND(1, lci);
-				APPEND(r1, lo);
-				APPEND(r2, oid_nil);
+	switch (t) {
+	case TYPE_int:
+		HASHJOIN(int);
+		break;
+	case TYPE_lng:
+		HASHJOIN(lng);
+		break;
+	default:
+		while (lci->next < lci->ncand) {
+			lo = canditer_next(lci);
+			if (BATtvoid(l)) {
+				if (BATtdense(l))
+					lval = lo - l->hseqbase + l->tseqbase;
 			} else {
+				v = VALUE(l, lo - l->hseqbase);
+			}
+			nr = 0;
+			if ((!nil_matches || not_in) && cmp(v, nil) == 0) {
+				/* no match */
+				if (not_in)
+					continue;
+			} else if (sr) {
+				for (rb = HASHget(hsh, HASHprobe(hsh, v));
+				     rb != HASHnil(hsh);
+				     rb = HASHgetlink(hsh, rb)) {
+					ro = BUNtoid(sr, rb);
+					if ((*cmp)(v, BUNtail(ri, ro - r->hseqbase)) != 0)
+						continue;
+					if (only_misses) {
+						nr++;
+						break;
+					}
+					HASHLOOPBODY();
+					if (semi)
+						break;
+				}
+			} else {
+				HASHloop_bound(ri, hsh, rb, v, rl, rh) {
+					ro = (oid) (rb - rl + rseq);
+					if (only_misses) {
+						nr++;
+						break;
+					}
+					HASHLOOPBODY();
+					if (semi)
+						break;
+				}
+			}
+			if (nr == 0) {
+				if (only_misses) {
+					nr = 1;
+					MAYBEEXTEND(1, lci);
+					APPEND(r1, lo);
+					if (lskipped)
+						r1->tseqbase = oid_nil;
+				} else if (nil_on_miss) {
+					nr = 1;
+					r2->tnil = true;
+					r2->tnonil = false;
+					r2->tkey = false;
+					MAYBEEXTEND(1, lci);
+					APPEND(r1, lo);
+					APPEND(r2, oid_nil);
+				} else {
+					lskipped = BATcount(r1) > 0;
+				}
+			} else if (only_misses) {
 				lskipped = BATcount(r1) > 0;
+			} else {
+				if (lskipped) {
+					/* note, we only get here in an
+					 * iteration *after* lskipped was
+					 * first set to true, i.e. we did
+					 * indeed skip values in l */
+					r1->tseqbase = oid_nil;
+				}
+				if (nr > 1) {
+					r1->tkey = false;
+					r1->tseqbase = oid_nil;
+				}
 			}
-		} else if (only_misses) {
-			lskipped = BATcount(r1) > 0;
-		} else {
-			if (lskipped) {
-				/* note, we only get here in an
-				 * iteration *after* lskipped was
-				 * first set to true, i.e. we did
-				 * indeed skip values in l */
-				r1->tseqbase = oid_nil;
-			}
-			if (nr > 1) {
-				r1->tkey = false;
-				r1->tseqbase = oid_nil;
-			}
-		}
 			if (nr > 0 && BATcount(r1) > nr)
 				r1->trevsorted = false;
+		}
+		break;
 	}
 	if (sr) {
 		HEAPfree(&hsh->heap, true);

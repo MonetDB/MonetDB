@@ -666,6 +666,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn, const char *tl, cons
 
 /* scan/imprints select */
 scan_sel(fullscan, canditer_next)
+scan_sel(densescan, canditer_next_dense)
 
 
 static BAT *
@@ -710,26 +711,47 @@ scanselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	/* call type-specific core scan select function */
 	switch (t) {
 	case TYPE_bte:
-		cnt = fullscan_bte(scanargs);
+		if (ci->tpe == cand_dense)
+			cnt = densescan_bte(scanargs);
+		else
+			cnt = fullscan_bte(scanargs);
 		break;
 	case TYPE_sht:
-		cnt = fullscan_sht(scanargs);
+		if (ci->tpe == cand_dense)
+			cnt = densescan_sht(scanargs);
+		else
+			cnt = fullscan_sht(scanargs);
 		break;
 	case TYPE_int:
-		cnt = fullscan_int(scanargs);
+		if (ci->tpe == cand_dense)
+			cnt = densescan_int(scanargs);
+		else
+			cnt = fullscan_int(scanargs);
 		break;
 	case TYPE_flt:
-		cnt = fullscan_flt(scanargs);
+		if (ci->tpe == cand_dense)
+			cnt = densescan_flt(scanargs);
+		else
+			cnt = fullscan_flt(scanargs);
 		break;
 	case TYPE_dbl:
-		cnt = fullscan_dbl(scanargs);
+		if (ci->tpe == cand_dense)
+			cnt = densescan_dbl(scanargs);
+		else
+			cnt = fullscan_dbl(scanargs);
 		break;
 	case TYPE_lng:
-		cnt = fullscan_lng(scanargs);
+		if (ci->tpe == cand_dense)
+			cnt = densescan_lng(scanargs);
+		else
+			cnt = fullscan_lng(scanargs);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		cnt = fullscan_hge(scanargs);
+		if (ci->tpe == cand_dense)
+			cnt = densescan_hge(scanargs);
+		else
+			cnt = fullscan_hge(scanargs);
 		break;
 #endif
 	case TYPE_str:
