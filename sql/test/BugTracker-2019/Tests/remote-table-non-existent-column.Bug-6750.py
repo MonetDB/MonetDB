@@ -46,7 +46,7 @@ cur2.execute("drop table tab2;")
 # Remote tables referencing merge tables in a loop
 cur1.execute("create merge table m1 (col1 clob);")
 cur2.execute("create merge table m2 (col1 clob);")
-cur1.execute("create remote table m2 (col1 clob) on 'mapi:monetdb://localhost:"+str(prt2)+"/node1';")
+cur1.execute("create remote table m2 (col1 clob) on 'mapi:monetdb://localhost:"+str(prt2)+"/node2';")
 cur2.execute("create remote table m1 (col1 clob) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';")
 cur1.execute("alter table m1 add table m2;")
 cur2.execute("alter table m2 add table m1;")
