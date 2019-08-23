@@ -760,7 +760,7 @@ canditer_slice(struct canditer *ci, BUN lo, BUN hi)
 		BATsetcount(bn, hi - lo);
 		memcpy(Tloc(bn, 0), ci->oids + lo, (hi - lo) * sizeof(oid));
 		break;
-	case cand_dense:
+	default: /* really: case cand_dense: */
 		return BATdense(0, ci->seq + lo, hi - lo);
 	case cand_except:
 		o = canditer_idx(ci, lo);
