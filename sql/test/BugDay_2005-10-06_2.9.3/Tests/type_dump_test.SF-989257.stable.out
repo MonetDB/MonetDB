@@ -24,8 +24,7 @@ Ready.
 # 12:41:41 >  
 
 Operation successful
-
-CREATE TABLE "sys"."voyages" (
+CREATE TABLE "voyages" (
 	"number"            INTEGER,
 	"number_sup"        CHAR(1),
 	"trip"              INTEGER,
