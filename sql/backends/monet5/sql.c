@@ -2243,15 +2243,16 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	 * 3) if function can handle it pass along, else fall back to first diff.
 	 * */
 	if ((dcnt = store_funcs.count_del(tr, t)) > 0) {
-		BAT *d = store_funcs.bind_del(tr, t, RD_INS), *o;
-		int ret = GDK_SUCCEED;
+		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
 
 		if (d == NULL) {
 			BBPunfix(tids->batCacheid);
 			throw(SQL,"sql.tid", SQLSTATE(45002) "Can not bind delete column");
 		}
 
-		ret = BATsort(&o, NULL, NULL, d, NULL, NULL, false, false, false);
+#if 1
+		BAT *o;
+		gdk_return ret = BATsort(&o, NULL, NULL, d, NULL, NULL, false, false, false);
 		BBPunfix(d->batCacheid);
 		if (ret != GDK_SUCCEED)
 			throw(MAL, "sql.tids", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -2264,7 +2265,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ret != GDK_SUCCEED)
 			throw(MAL, "sql.tids", SQLSTATE(45003) "TIDdeletes failed");
 
-/*
+#else
 		BAT *diff;
 		diff = BATdiff(tids, d, NULL, NULL, false, false, BUN_NONE);
 		assert(pci->argc == 6 || BATcount(diff) == (nr-dcnt));
@@ -2276,7 +2277,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL,"sql.tid", SQLSTATE(45002) "Cannot subtract delete column");
 		BAThseqbase(diff, sb);
 		tids = diff;
-*/
+#endif
 	}
 	BBPkeepref(*res = tids->batCacheid);
 	return msg;
