@@ -1148,6 +1148,7 @@ BATkeyed(BAT *b)
 			const char *nme;
 			BUN prb;
 			BUN mask;
+			int len;
 
 			GDKclrerr(); /* not interested in BAThash errors */
 			nme = BBP_physical(b->batCacheid);
@@ -1162,9 +1163,10 @@ BATkeyed(BAT *b)
 				if (mask < ((BUN) 1 << 16))
 					mask = (BUN) 1 << 16;
 			}
-			if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
-			    snprintf(hs->heap.filename, sizeof(hs->heap.filename),
-				     "%s.hash%d", nme, THRgettid()) < 0 ||
+			if ((hs = GDKzalloc(sizeof(Hash))) == NULL)
+				goto doreturn;
+			len = snprintf(hs->heap.filename, sizeof(hs->heap.filename), "%s.hash%d", nme, THRgettid());
+			if (len == -1 || len >= (int) sizeof(hs->heap.filename) ||
 			    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE) != GDK_SUCCEED) {
 				GDKfree(hs);
 				/* err on the side of caution: not keyed */

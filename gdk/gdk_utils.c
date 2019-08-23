@@ -1425,6 +1425,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	Thread s;
 	struct THRstart *t;
 	static uint64_t ctr = 0; /* protected by GDKthreadLock */
+	int len;
 
 	if ((t = GDKmalloc(sizeof(*t))) == NULL)
 		return 0;
@@ -1455,7 +1456,12 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	};
 	MT_lock_unset(&GDKthreadLock);
 	t->thr = s;
-	snprintf(t->semname, sizeof(t->semname), "THRcreate%" PRIu64, ++ctr);
+	len = snprintf(t->semname, sizeof(t->semname), "THRcreate%" PRIu64, ++ctr);
+	if (len == -1 || len > (int) sizeof(t->semname)) {
+		IODEBUG fprintf(stderr, "#THRcreate: thread name is too large\n");
+		GDKerror("THRcreate: thread name is too large\n");
+		return 0;
+	}
 	MT_sema_init(&t->sem, 0, t->semname);
 	if (MT_create_thread(&pid, THRstarter, t, d, name) != 0) {
 		GDKerror("THRcreate: could not start thread\n");

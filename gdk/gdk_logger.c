@@ -957,11 +957,19 @@ tr_commit(logger *lg, trans *tr)
 static gdk_return
 logger_open(logger *lg)
 {
+	int len;
 	char id[BUFSIZ];
 	char *filename;
 
-	snprintf(id, sizeof(id), LLFMT, lg->id);
-	filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id);
+	len = snprintf(id, sizeof(id), LLFMT, lg->id);
+	if (len == -1 || len >= BUFSIZ) {
+		fprintf(stderr, "!ERROR: logger_open: filename is too large\n");
+		return GDK_FAIL;
+	}
+	if (!(filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id))) {
+		fprintf(stderr, "!ERROR: logger_open: allocation failure\n");
+		return GDK_FAIL;
+	}
 
 	lg->log = open_wstream(filename);
 	if (lg->log) {
@@ -1342,13 +1350,18 @@ bm_tids(BAT *b, BAT *d)
 static gdk_return
 logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 {
+	int len;
 	char bak[BUFSIZ];
 
 	if (BATmode(old, true) != GDK_SUCCEED) {
 		GDKerror("Logger_new: cannot convert old %s to transient", name);
 		return GDK_FAIL;
 	}
-	snprintf(bak, sizeof(bak), "tmp_%o", (unsigned) old->batCacheid);
+	len = snprintf(bak, sizeof(bak), "tmp_%o", (unsigned) old->batCacheid);
+	if (len == -1 || len >= BUFSIZ) {
+		GDKerror("Logger_new: filename is too large");
+		return GDK_FAIL;
+	}
 	if (BBPrename(old->batCacheid, bak) != 0) {
 		return GDK_FAIL;
 	}
@@ -1562,7 +1575,12 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 
 	if(!(filenamestr = GDKfilepath(farmid, lg->dir, LOGFILE, NULL)))
 		goto error;
-	snprintf(filename, FILENAME_MAX, "%s", filenamestr);
+	len = snprintf(filename, FILENAME_MAX, "%s", filenamestr);
+	if (len == -1 || len >= FILENAME_MAX) {
+		GDKfree(filenamestr);
+		GDKerror("Logger filename path is too large\n");
+		goto error;
+	}
 	len = snprintf(bak, sizeof(bak), "%s.bak", filename);
 	GDKfree(filenamestr);
 	if (len == -1 || len >= FILENAME_MAX) {
@@ -2156,6 +2174,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 static logger *
 logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
+	int len;
 	logger *lg;
 	char filename[FILENAME_MAX];
 
@@ -2182,8 +2201,12 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->convert_nil_nan = false;
 #endif
 
-	snprintf(filename, sizeof(filename), "%s%c%s%c",
-		 logdir, DIR_SEP, fn, DIR_SEP);
+	len = snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP);
+	if (len == -1 || len >= FILENAME_MAX) {
+		fprintf(stderr, "!ERROR: logger_new: filename is too large\n");
+		GDKfree(lg);
+		return NULL;
+	}
 	lg->fn = GDKstrdup(fn);
 	lg->dir = GDKstrdup(filename);
 	lg->bufsize = 64*1024;
@@ -2228,9 +2251,14 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 gdk_return
 logger_reload(logger *lg)
 {
+	int len;
 	char filename[FILENAME_MAX];
 
-	snprintf(filename, sizeof(filename), "%s", lg->dir);
+	len = snprintf(filename, sizeof(filename), "%s", lg->dir);
+	if (len == -1 || len >= FILENAME_MAX) {
+		fprintf(stderr, "#logger_reload filename is too large");
+		return GDK_FAIL;
+	}
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_reload %s\n", filename);
 	}
@@ -2375,7 +2403,11 @@ logger_exit(logger *lg)
 
 		/* atomic action, switch to new log, keep old for
 		 * later cleanup actions */
-		snprintf(ext, sizeof(ext), "bak-" LLFMT, lg->id);
+		len = snprintf(ext, sizeof(ext), "bak-" LLFMT, lg->id);
+		if (len == -1 || len >= FILENAME_MAX) {
+			fprintf(stderr, "!ERROR: logger_exit: new logger filename path is too large\n");
+			return GDK_FAIL;
+		}
 
 		if (GDKmove(farmid, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, ext) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: logger_exit: rename %s.bak to %s.%s failed\n",
@@ -2408,11 +2440,16 @@ logger_restart(logger *lg)
 gdk_return
 logger_cleanup(logger *lg)
 {
+	int len;
 	char buf[BUFSIZ];
 	FILE *fp = NULL;
 	int farmid = BBPselectfarm(PERSISTENT, 0, offheap);
 
-	snprintf(buf, sizeof(buf), "%s%s.bak-" LLFMT, lg->dir, LOGFILE, lg->id);
+	len = snprintf(buf, sizeof(buf), "%s%s.bak-" LLFMT, lg->dir, LOGFILE, lg->id);
+	if (len == -1 || len >= BUFSIZ) {
+		fprintf(stderr, "#logger_cleanup: filename is too large\n");
+		return GDK_FAIL;
+	}
 
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_cleanup %s\n", buf);
@@ -2429,7 +2466,11 @@ logger_cleanup(logger *lg)
 	while (lid-- > 0) {
 		char log_id[FILENAME_MAX];
 
-		snprintf(log_id, sizeof(log_id), LLFMT, lid);
+		len = snprintf(log_id, sizeof(log_id), LLFMT, lid);
+		if (len == -1 || len >= FILENAME_MAX) {
+			fprintf(stderr, "#logger_cleanup: log_id filename is too large\n");
+			return GDK_FAIL;
+		}
 		if (GDKunlink(farmid, lg->dir, LOGFILE, log_id) != GDK_SUCCEED) {
 			/* not a disaster (yet?) if unlink fails */
 			fprintf(stderr, "#logger_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, buf);
@@ -2438,7 +2479,11 @@ logger_cleanup(logger *lg)
 	}
 	fclose(fp);
 
-	snprintf(buf, sizeof(buf), "bak-" LLFMT, lg->id);
+	len = snprintf(buf, sizeof(buf), "bak-" LLFMT, lg->id);
+	if (len == -1 || len >= BUFSIZ) {
+		fprintf(stderr, "#logger_cleanup: filename is too large\n");
+		GDKclrerr();
+	}
 
 	if (GDKunlink(farmid, lg->dir, LOGFILE, buf) != GDK_SUCCEED) {
 		/* not a disaster (yet?) if unlink fails */

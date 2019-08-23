@@ -56,6 +56,8 @@ WLRgetConfig(void){
 	char *path;
 	char line[MAXLINE];
 	FILE *fd;
+	int len;
+	str msg = MAL_SUCCEED;
 
 	if((path = GDKfilepath(0,0,"wlr.config",0)) == NULL)
 		throw(MAL,"wlr.getConfig","Could not access wlr.config file\n");
@@ -65,8 +67,13 @@ WLRgetConfig(void){
 		return MAL_SUCCEED;
 	while( fgets(line, MAXLINE, fd) ){
 		line[strlen(line)-1]= 0;
-		if( strncmp("master=", line,7) == 0)
-			snprintf(wlr_master, IDLENGTH, "%s", line + 7);
+		if( strncmp("master=", line,7) == 0) {
+			len = snprintf(wlr_master, IDLENGTH, "%s", line + 7);
+			if (len == -1 || len >= IDLENGTH) {
+				msg = createException(MAL, "wlr.getConfig", "master config value is too large");
+				goto bailout;
+			}
+		}	
 		if( strncmp("batches=", line, 8) == 0)
 			wlr_batches = atoi(line+ 8);
 		if( strncmp("tag=", line, 4) == 0)
@@ -77,11 +84,17 @@ WLRgetConfig(void){
 			wlr_limit = atol(line+ 6);
 		if( strncmp("timelimit=", line, 10) == 0)
 			strcpy(wlr_timelimit, line + 10);
-		if( strncmp("error=", line, 6) == 0)
-			snprintf(wlr_error, FILENAME_MAX, "%s", line + 6);
+		if( strncmp("error=", line, 6) == 0) {
+			len = snprintf(wlr_error, FILENAME_MAX, "%s", line + 6);
+			if (len == -1 || len >= FILENAME_MAX) {
+				msg = createException(MAL, "wlr.getConfig", "error config value is too large");
+				goto bailout;
+			}
+		}
 	}
+bailout:
 	fclose(fd);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 static str
@@ -469,10 +482,13 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if( pci->argc > 1){
 		if( getArgType(mb, pci, 1) == TYPE_str){
+			int len;
 			wlr_limit = -1;
 			if( strcmp(GDKgetenv("gdk_dbname"),*getArgReference_str(stk,pci,1)) == 0)
 				throw(SQL,"wlr.replicate",SQLSTATE(42000) "Master and replicate should be different");
-			snprintf(wlr_master, IDLENGTH, "%s", *getArgReference_str(stk,pci,1));
+			len = snprintf(wlr_master, IDLENGTH, "%s", *getArgReference_str(stk,pci,1));
+			if (len == -1 || len >= IDLENGTH)
+				throw(MAL, "wlr.replicate", "input value is too large for wlr_master buffer");
 		}
 	} else  {
 		timelimit[0]=0;
