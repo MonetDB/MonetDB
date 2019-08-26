@@ -1834,8 +1834,6 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 
 		for (; n; n = n->next) {
 			const char *fname = n->data.sval;
-			char *next_match;
-			MT_glob matches;
 			sql_rel *nrel;
 
 			if (!onclient && fname && !MT_path_absolute(fname)) {
@@ -1846,26 +1844,16 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				return NULL;
 			}
 
-			if (MT_glob_start(fname, &matches))
-				return NULL;
+			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort, fwf_widths, onclient);
 
-			while ((next_match = MT_glob_next(&matches))) {
-				nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, next_match, nr, offset, locked, best_effort, fwf_widths, onclient);
-
-				if (!rel)
-					rel = nrel;
-				else {
-					rel = rel_setop(sql->sa, rel, nrel, op_union);
-					set_processed(rel);
-				}
-				if (!rel) {
-					(void) MT_glob_finish(&matches);
-					return rel;
-				}
+			if (!rel)
+				rel = nrel;
+			else {
+				rel = rel_setop(sql->sa, rel, nrel, op_union);
+				set_processed(rel);
 			}
-
-			if (MT_glob_finish(&matches))
-				return NULL;
+			if (!rel)
+				return rel;
 		}
 	} else {
 		assert(onclient == 0);

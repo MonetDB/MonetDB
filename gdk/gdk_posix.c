@@ -697,46 +697,6 @@ MT_path_absolute(const char *pathname)
 	return (*pathname == DIR_SEP);
 }
 
-int
-MT_glob_start(const char *pattern, MT_glob *res)
-{
-	res->cur = 0;
-	switch(glob(pattern, GLOB_ERR | GLOB_NOSORT, NULL, &(res->glob)))
-	{
-		case GLOB_NOSPACE:
-			GDKsyserror("MT_glob_start: out of memory\n");
-			break;
-		case GLOB_ABORTED:
-			GDKsyserror("MT_glob_start: read error \n");
-			break;
-		case GLOB_NOMATCH:
-			GDKsyserror("MT_glob_start: no files matched the pattern\n");
-			break;
-		case 0:
-			return 0;
-		default:
-			GDKsyserror("MT_glob_start: unknown error\n");
-			break;
-	}
-	return -1;
-}
-
-char* 
-MT_glob_next(MT_glob *glob)
-{
-	if (glob->cur >= glob->glob.gl_pathc)
-		return NULL;
-	else
-		return glob->glob.gl_pathv[glob->cur++];
-}
-
-int
-MT_glob_finish(MT_glob *glob)
-{
-	globfree(&(glob->glob));
-	return 0;
-}
-
 #ifdef HAVE_DLFCN_H
 # include <dlfcn.h>
 #endif
