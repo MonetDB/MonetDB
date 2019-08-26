@@ -721,17 +721,18 @@ MT_glob_start(const char *pattern, MT_glob *res)
 	return -1;
 }
 
-char* 
-MT_glob_next(MT_glob *glob)
+int
+MT_glob_next(MT_glob *glob, char **res)
 {
 	if (glob->cur >= glob->glob.gl_pathc)
-		return NULL;
+		*res = NULL;
 	else
-		return glob->glob.gl_pathv[glob->cur++];
+		*res = glob->glob.gl_pathv[glob->cur++];
+	return 0;
 }
 
 int
-MT_glob_finish(MT_glob *glob)
+MT_glob_end(MT_glob *glob)
 {
 	globfree(&(glob->glob));
 	return 0;
@@ -938,6 +939,56 @@ MT_path_absolute(const char *pathname)
 		 pathname[1] == ':' &&
 		 (pathname[2] == '/' || pathname[2] == '\\')) ||
 		(pathname[0] == '\\' && pathname[1] == '\\'));
+}
+
+int
+MT_glob_start(const char *pattern, MT_glob *res)
+{
+	res->first = true;
+	res->opened = true;
+	res->hFind = FindFirstFileEx(pattern, FindExInfoStandard, &(res->fData), FindExSearchNameMatch, NULL, 0);
+
+	if (res->hFind == INVALID_HANDLE_VALUE) {
+		GDKsyserror("MT_glob_start: FindFirstFileEx failed\n");
+		FindClose(res->hFind);
+		res->hFind = 0;
+		return -1;
+   	}
+	return 0;
+}
+
+int
+MT_glob_next(MT_glob *glob, char **res)
+{
+	int status = 0;
+
+	*res = NULL;
+	if (glob->first) {
+		glob->first = false;
+		*res = glob->fData.cFileName;
+	} else {
+		if (FindNextFile(glob->hFind, &(glob->fData)) {
+			*res = glob->fData.cFileName;
+		} else {
+			if (GetLastError() = ERROR_NO_MORE_FILES) {
+				*res = NULL;
+			} else {
+				GDKsyserror("MT_glob_next: FindNextFile failed\n");
+				status = -1;
+			}	
+		}
+	}
+	return status;
+}
+
+int
+MT_glob_end(MT_glob *glob)
+{
+	if (glob->opened) {
+		FindClose(glob->hFind);
+		glob->opened = false;
+	}
+	return 0;
 }
 
 #ifndef HAVE_GETTIMEOFDAY

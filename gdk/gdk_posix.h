@@ -130,8 +130,9 @@ gdk_export bool MT_path_absolute(const char *path);
 
 #ifdef NATIVE_WIN32
 typedef strut {
-    WIN32_FIND_DATA glob; 
-    size_t cur;
+	bool first:1, opened:1;
+    HANDLE hFind;
+    WIN32_FIND_DATA fData;
 } MT_glob;
 #else
 #include <glob.h>
@@ -142,8 +143,8 @@ typedef struct {
 #endif
 
 gdk_export int MT_glob_start(const char *pattern, MT_glob *glob);
-gdk_export char* MT_glob_next(MT_glob *glob);
-gdk_export int MT_glob_finish(MT_glob *glob);
+gdk_export int MT_glob_next(MT_glob *glob, char **res);
+gdk_export int MT_glob_end(MT_glob *glob);
 
 /*
  * @+ Posix under WIN32
