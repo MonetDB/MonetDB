@@ -47,11 +47,8 @@ malResolveFile(const char *fname)
 {
 	char path[FILENAME_MAX];
 	str script;
-	int written;
 
-	written = snprintf(path, FILENAME_MAX, "%s", fname);
-	if (written == -1 || written >= FILENAME_MAX)
-		return NULL;
+	snprintf(path, FILENAME_MAX, "%s", fname);
 	slash_2_dir_sep(path);
 	if ((script = MSP_locate_script(path)) == NULL) {
 		/* this function is also called for scripts that are not located

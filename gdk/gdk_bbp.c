@@ -790,9 +790,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		BBP_desc(bid) = bn;
 		BBP_status(bid) = BBPEXISTING;	/* do we need other status bits? */
 		if ((s = strchr(headname, '~')) != NULL && s == headname) {
-			int len = snprintf(logical, sizeof(logical), "tmp_%o", (unsigned) bid);
-			if (len == -1 || len >= (int) sizeof(logical))
-				GDKfatal("BBPinit: BBP logical filename directory is too large\n");
+			snprintf(logical, sizeof(logical), "tmp_%o", (unsigned) bid);
 		} else {
 			if (s)
 				*s = 0;

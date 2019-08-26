@@ -178,38 +178,19 @@ WLCused(void)
 }
 
 /* The master configuration file is a simple key=value table */
-str
+void
 WLCreadConfig(FILE *fd)
-{	
-	str msg = MAL_SUCCEED;
-	char path[FILENAME_MAX];
-	int len;
-
+{	char path[FILENAME_MAX];
 	while( fgets(path, FILENAME_MAX, fd) ){
 		path[strlen(path)-1] = 0;
-		if( strncmp("logs=", path,5) == 0) {
-			len = snprintf(wlc_dir, FILENAME_MAX, "%s", path + 5);
-			if (len == -1 || len >= FILENAME_MAX) {
-				msg = createException(MAL, "wlc.readConfig", "logs config value is too large");
-				goto bailout;
-			}
-		}
-		if( strncmp("snapshot=", path,9) == 0) {
-			len = snprintf(wlc_snapshot, FILENAME_MAX, "%s", path + 9);
-			if (len == -1 || len >= FILENAME_MAX) {
-				msg = createException(MAL, "wlc.readConfig", "snapshot config value is too large");
-				goto bailout;
-			}
-		}
+		if( strncmp("logs=", path,5) == 0)
+			snprintf(wlc_dir, FILENAME_MAX, "%s", path + 5);
+		if( strncmp("snapshot=", path,9) == 0)
+			snprintf(wlc_snapshot, FILENAME_MAX, "%s", path + 9);
 		if( strncmp("id=", path,3) == 0)
 			wlc_id = atol(path+ 3);
-		if( strncmp("write=", path,6) == 0) {
-			len = snprintf(wlc_write, 26, "%s", path + 6);
-			if (len == -1 || len >= 26) {
-				msg = createException(MAL, "wlc.readConfig", "write config value is too large");
-				goto bailout;
-			}
-		}			
+		if( strncmp("write=", path,6) == 0)
+			snprintf(wlc_write, 26, "%s", path + 6);
 		if( strncmp("batches=", path, 8) == 0)
 			wlc_batches = atoi(path+ 8);
 		if( strncmp("beat=", path, 5) == 0)
@@ -217,9 +198,7 @@ WLCreadConfig(FILE *fd)
 		if( strncmp("state=", path, 6) == 0)
 			wlc_state = atoi(path+ 6);
 	}
-bailout:
 	fclose(fd);
-	return msg;
 }
 
 str
@@ -233,7 +212,8 @@ WLCgetConfig(void){
 	GDKfree(l);
 	if( fd == NULL)
 		throw(MAL,"wlc.getConfig","Could not access wlc.config file\n");
-	return WLCreadConfig(fd);
+	WLCreadConfig(fd);
+	return MAL_SUCCEED;
 }
 
 static 
@@ -352,7 +332,6 @@ str
 WLCinit(void)
 {
 	str conf, msg= MAL_SUCCEED;
-	int len;
 
 	if( wlc_state == WLC_STARTUP){
 		// use default location for master configuration file
@@ -365,10 +344,7 @@ WLCinit(void)
 		}
 		GDKfree(conf);
 		// we are in master mode
-		len = snprintf(wlc_name, IDLENGTH, "%s", GDKgetenv("gdk_dbname"));
-		if (len == -1 || len >= IDLENGTH)
-			throw(MAL, "wlc.init", "gdk_dbname variable is too large");
-
+		snprintf(wlc_name, IDLENGTH, "%s", GDKgetenv("gdk_dbname"));
 		msg =  WLCgetConfig();
 		if( msg)
 			GDKerror("%s",msg);
@@ -462,12 +438,8 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// set location for logs
 	if( GDKcreatedir(path) == GDK_FAIL)
 		throw(SQL,"wlc.master","Could not create %s\n", path);
-	len = snprintf(wlc_name, IDLENGTH, "%s", GDKgetenv("gdk_dbname"));
-	if (len == -1 || len >= IDLENGTH)
-		throw(SQL,"wlc.master","gdk_dbname is too large");
-	len = snprintf(wlc_dir, FILENAME_MAX, "%s", path);
-	if (len == -1 || len >= FILENAME_MAX)
-		throw(SQL,"wlc.master","wlc_dir directory name is too large");
+	snprintf(wlc_name, IDLENGTH, "%s", GDKgetenv("gdk_dbname"));
+	snprintf(wlc_dir, FILENAME_MAX, "%s", path);
 	wlc_state= WLC_RUN;
 	return WLCsetConfig();
 }
