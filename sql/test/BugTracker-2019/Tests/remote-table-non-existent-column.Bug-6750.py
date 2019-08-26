@@ -31,19 +31,29 @@ cur1.execute("insert into tab1 values ('a');")
 cur1.execute("create table tab2 (col1 tinyint);")
 cur1.execute("insert into tab2 values (1);")
 cur1.execute("commit;")
-cur1.close()
-conn1.close()
 
 prt2 = freeport()
 prc2 = process.server(mapiport=prt2, dbname='node2', dbfarm=os.path.join(farm_dir, 'node2'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 conn2 = pymonetdb.connect(database='node2', port=prt2, autocommit=True)
 cur2 = conn2.cursor()
-cur2.execute("start transaction;")
 cur2.execute("create remote table tab1 (col1 clob, col2 int) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';")
 cur2.execute("create remote table tab2 (col1 double) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';")
 cur2.execute("select col2 from tab1;")  # col2 doesn't exist
 cur2.execute("select col1 from tab2;")  # col1 is not a floating point column
-cur2.execute("rollback;")
+cur2.execute("drop table tab1;")
+cur2.execute("drop table tab2;")
+
+# Remote tables referencing merge tables in a loop
+cur1.execute("create merge table m1 (col1 clob);")
+cur2.execute("create merge table m2 (col1 clob);")
+cur1.execute("create remote table m2 (col1 clob) on 'mapi:monetdb://localhost:"+str(prt2)+"/node2';")
+cur2.execute("create remote table m1 (col1 clob) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';")
+cur1.execute("alter table m1 add table m2;")
+cur2.execute("alter table m2 add table m1;")
+cur2.execute("select * from m2;")
+
+cur1.close()
+conn1.close()
 cur2.close()
 conn2.close()
 

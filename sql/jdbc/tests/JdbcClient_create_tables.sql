@@ -43,4 +43,15 @@ CREATE INDEX "triples_subject_idx" ON "triples" ("subject");
 CREATE INDEX "triples_subject_object_idx" ON "triples" ("subject", "object");
 CREATE INDEX "triples_subject_predicate_idx" ON "triples" ("subject", "predicate");
 
+
+CREATE View   subject_stats as SELECT "subject",   CAST(COUNT(*) AS BIGINT) AS counts, MIN("subject")   AS min_value, MAX("subject")   AS max_value FROM "triples" GROUP BY "subject"   ORDER BY "subject";
+CREATE View predicate_stats as SELECT "predicate", CAST(COUNT(*) AS BIGINT) AS counts, MIN("predicate") AS min_value, MAX("predicate") AS max_value FROM "triples" GROUP BY "predicate" ORDER BY "predicate";
+CREATE View    object_stats as SELECT "object",    CAST(COUNT(*) AS BIGINT) AS counts, MIN("object")    AS min_value, MAX("object")    AS max_value FROM "triples" GROUP BY "object"    ORDER BY "object";
+
+
+CREATE   MERGE TABLE mt    (id int primary key, nm varchar(123) NOT NULL);
+CREATE  REMOTE TABLE remt  (id int primary key, nm varchar(123) NOT NULL) ON 'mapi:monetdb://localhost:42001/mdb3';
+CREATE REPLICA TABLE replt (id int primary key, nm varchar(123) NOT NULL);
+CREATE  STREAM TABLE strt  (id int primary key, nm varchar(123) NOT NULL);
+
 COMMIT;
