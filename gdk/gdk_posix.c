@@ -951,7 +951,7 @@ MT_glob_start(const char *pattern, MT_glob *res)
 	if (res->hFind == INVALID_HANDLE_VALUE) {
 		GDKsyserror("MT_glob_start: FindFirstFileEx failed\n");
 		FindClose(res->hFind);
-		res->hFind = 0;
+		res->opened = false;
 		return -1;
    	}
 	return 0;
@@ -966,17 +966,13 @@ MT_glob_next(MT_glob *glob, char **res)
 	if (glob->first) {
 		glob->first = false;
 		*res = glob->fData.cFileName;
+	} else if (FindNextFile(glob->hFind, &(glob->fData)) {
+		*res = glob->fData.cFileName;
+	} else if (GetLastError() = ERROR_NO_MORE_FILES) {
+		*res = NULL;
 	} else {
-		if (FindNextFile(glob->hFind, &(glob->fData)) {
-			*res = glob->fData.cFileName;
-		} else {
-			if (GetLastError() = ERROR_NO_MORE_FILES) {
-				*res = NULL;
-			} else {
-				GDKsyserror("MT_glob_next: FindNextFile failed\n");
-				status = -1;
-			}	
-		}
+		GDKsyserror("MT_glob_next: FindNextFile failed\n");
+		status = -1;
 	}
 	return status;
 }
