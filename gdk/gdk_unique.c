@@ -318,7 +318,7 @@ BATunique(BAT *b, BAT *s)
 		}
 		len = snprintf(hs->heap.filename, sizeof(hs->heap.filename), "%s.hash%d", nme, THRgettid());
 		if (len == -1 || len >= (int) sizeof(hs->heap.filename) ||
-			HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE) != GDK_SUCCEED) {
+		    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("BATunique: cannot allocate hash table\n");

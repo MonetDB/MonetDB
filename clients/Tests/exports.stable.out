@@ -1908,7 +1908,7 @@ str WLCinit(void);
 str WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str WLCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-void WLCreadConfig(FILE *fd);
+str WLCreadConfig(FILE *fd);
 void WLCreset(void);
 str WLCrollback(int clientid);
 str WLCrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
