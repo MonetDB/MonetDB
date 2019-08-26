@@ -960,21 +960,20 @@ MT_glob_start(const char *pattern, MT_glob *res)
 int
 MT_glob_next(MT_glob *glob, char **res)
 {
-	int status = 0;
-
 	*res = NULL;
-	if (glob->first) {
+
+	if (!glob->opened) {
+		return 0;
+	} else if (glob->first) {
 		glob->first = false;
 		*res = glob->fData.cFileName;
 	} else if (FindNextFile(glob->hFind, &(glob->fData)) {
 		*res = glob->fData.cFileName;
-	} else if (GetLastError() = ERROR_NO_MORE_FILES) {
-		*res = NULL;
-	} else {
+	} else if (GetLastError() != ERROR_NO_MORE_FILES) {
 		GDKsyserror("MT_glob_next: FindNextFile failed\n");
-		status = -1;
+		return -1;
 	}
-	return status;
+	return 0;
 }
 
 int
