@@ -1764,12 +1764,12 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			MT_lock_set(&GDKhashLock(pb->batCacheid));
 			if (pb->torderidx == NULL) {
 				pb->batDirtydesc = true;
-				pb->torderidx = m;
 				if (ords != (oid *) m->base + ORDERIDXOFF) {
 					memcpy((oid *) m->base + ORDERIDXOFF,
 					       ords,
 					       BATcount(pb) * sizeof(oid));
 				}
+				pb->torderidx = m;
 				persistOIDX(pb);
 			} else {
 				HEAPfree(m, true);
