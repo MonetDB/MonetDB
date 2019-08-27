@@ -137,6 +137,7 @@ typedef strut {
 #else
 #include <glob.h>
 typedef struct {
+    bool opened;
     glob_t glob; 
     size_t cur;
 } MT_glob;

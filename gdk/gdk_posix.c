@@ -701,6 +701,7 @@ int
 MT_glob_start(const char *pattern, MT_glob *res)
 {
 	res->cur = 0;
+	res->opened = true;
 	switch(glob(pattern, GLOB_ERR | GLOB_NOSORT, NULL, &(res->glob)))
 	{
 		case GLOB_NOSPACE:
@@ -734,7 +735,10 @@ MT_glob_next(MT_glob *glob, char **res)
 int
 MT_glob_end(MT_glob *glob)
 {
-	globfree(&(glob->glob));
+	if (glob->opened) {
+		globfree(&(glob->glob));
+		glob->opened = false;
+	}
 	return 0;
 }
 

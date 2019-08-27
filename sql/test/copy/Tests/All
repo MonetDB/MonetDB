@@ -13,3 +13,4 @@ key_copy
 nonutf8
 incorrect_columns
 columns
+HAVE_DATA_PATH?glob_import

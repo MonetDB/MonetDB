@@ -1834,7 +1834,8 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 
 		for (; n; n = n->next) {
 			const char *fname = n->data.sval;
-			char *next_match;
+			char *next_match = NULL;
+			sql_rel *nrel = NULL;
 			MT_glob matches;
 
 			if (!onclient && fname && !MT_path_absolute(fname)) {
@@ -1845,10 +1846,14 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				return NULL;
 			}
 
-			if (MT_glob_start(fname, &matches))
+			if (MT_glob_start(fname, &matches)) {
+				char *fn = ATOMformat(TYPE_str, fname);
+				sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: no file matched the expression: %s", fn);
+				GDKfree(fn);
 				return NULL;
+			}
 			while (!MT_glob_next(&matches, &next_match) && next_match) {
-				sql_rel *nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, next_match, nr, offset, locked, best_effort, fwf_widths, onclient);
+				nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, next_match, nr, offset, locked, best_effort, fwf_widths, onclient);
 
 				if (!rel)
 					rel = nrel;
@@ -1863,9 +1868,14 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 			}
 			if (MT_glob_end(&matches))
 				return NULL;
+			if (!nrel) {
+				char *fn = ATOMformat(TYPE_str, fname);
+				sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: no file matched the expression: %s", fn);
+				GDKfree(fn);
+				return NULL;
+			}
 		}
-		if (!rel)
-			return NULL;
+		assert(rel);
 	} else {
 		assert(onclient == 0);
 		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked, best_effort, NULL, onclient);
