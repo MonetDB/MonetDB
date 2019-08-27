@@ -5109,6 +5109,9 @@ insert into sys.args values (12098, 136, 'res', 'bigint', 64, 0, 0, 0);
 set schema "sys";
 
 Running database upgrade commands:
+insert into sys.dependencies (select c.id as id, k.id as depend_id, dt.dependency_type_id as depend_type from sys.dependency_types dt, sys._columns c, sys.keys k, sys.objects o where k.id = o.id and o.name = c.name and c.table_id = k.table_id and dt.dependency_type_name = 'KEY' and k.type = 1 and not exists (select d.id from sys.dependencies d where d.id = c.id and d.depend_id = k.id and d.depend_type = dt.dependency_type_id));
+
+Running database upgrade commands:
 set schema "sys";
 create function sys.deltas ("schema" string) returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int) external name "sql"."deltas";
 create function sys.deltas ("schema" string, "table" string) returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int) external name "sql"."deltas";

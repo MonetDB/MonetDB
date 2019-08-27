@@ -26,4 +26,12 @@ SELECT * FROM allnewtriples;
 
 SELECT * FROM "foreign";
 
+INSERT INTO triples SELECT id, subject, predicate, object, explicit FROM allnewtriples;
+
+SELECT * FROM triples;
+
+Select * from subject_stats;
+Select * from predicate_stats;
+Select * from object_stats;
+
 COMMIT;
