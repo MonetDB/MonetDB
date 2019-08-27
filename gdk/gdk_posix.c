@@ -971,7 +971,7 @@ MT_glob_next(MT_glob *glob, char **res)
 	} else if (glob->first) {
 		glob->first = false;
 		*res = glob->fData.cFileName;
-	} else if (FindNextFile(glob->hFind, &(glob->fData)) {
+	} else if (FindNextFile(glob->hFind, &(glob->fData))) {
 		*res = glob->fData.cFileName;
 	} else if (GetLastError() != ERROR_NO_MORE_FILES) {
 		GDKsyserror("MT_glob_next: FindNextFile failed\n");

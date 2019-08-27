@@ -129,7 +129,7 @@ gdk_export int MT_munmap(void *p, size_t len);
 gdk_export bool MT_path_absolute(const char *path);
 
 #ifdef NATIVE_WIN32
-typedef strut {
+typedef struct {
     bool first:1, opened:1;
     HANDLE hFind;
     WIN32_FIND_DATA fData;
