@@ -373,6 +373,8 @@ int yydebug=1;
 	merge_match_clause
 	merge_update_or_delete
 	merge_insert
+	group_by_element
+	ordinary_grouping_element
 
 %type <type>
 	data_type
@@ -519,6 +521,8 @@ int yydebug=1;
 	drop_routine_designator
 	partition_list
 	merge_when_list
+	group_by_list
+	ordinary_grouping_set
 
 %type <i_val>
 	any_all_some
@@ -632,7 +636,7 @@ int yydebug=1;
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
-%token <operation> EXISTS ESCAPE UESCAPE HAVING sqlGROUP sqlNULL
+%token <operation> EXISTS ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
 %token <operation> FROM FOR MATCH
 
 %token <operation> EXTRACT
@@ -3668,13 +3672,25 @@ table_name:
  ;
 
 opt_table_name:
-	      /* empty */ 	{ $$ = NULL; }
- | table_name			{ $$ = $1; }
+	/* empty */ { $$ = NULL; }
+ |  table_name  { $$ = $1; }
  ;
 
 opt_group_by_clause:
-    /* empty */ 		  { $$ = NULL; }
- |  sqlGROUP BY search_condition_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
+	/* empty */               { $$ = NULL; }
+ |  sqlGROUP BY group_by_list { $$ = _symbol_create_list(SQL_GROUPBY, $3); }
+ ;
+
+group_by_list:
+	group_by_element                   { $$ = append_symbol(L(), $1); }
+ |  group_by_list ',' group_by_element { $$ = append_symbol($1, $3); }
+ ;
+
+group_by_element:
+	search_condition_commalist           { $$ = _symbol_create_list(SQL_GROUPBY, $1); }
+ |  ROLLUP '(' ordinary_grouping_set ')' { $$ = _symbol_create_list(SQL_ROLLUP, $3); }
+ |  CUBE '(' ordinary_grouping_set ')'   { $$ = _symbol_create_list(SQL_CUBE, $3); }
+ |  '(' ')'                              { $$ = _symbol_create_list(SQL_GROUPBY, NULL); }
  ;
 
 search_condition_commalist:
@@ -3682,19 +3698,25 @@ search_condition_commalist:
  |  search_condition_commalist ',' search_condition { $$ = append_symbol($1, $3); }
  ;
 
+ordinary_grouping_set:
+    ordinary_grouping_element                           { $$ = append_symbol(L(), $1); }
+ |  ordinary_grouping_set ',' ordinary_grouping_element { $$ = append_symbol($1, $3); }
+ ;
+
+ordinary_grouping_element:
+    '(' column_ref_commalist ')' { $$ = _symbol_create_list(SQL_GROUPBY, $2); }
+ |  column_ref                   { $$ = _symbol_create_list(SQL_COLUMN, $1); }
+ ;
+
 column_ref_commalist:
-    column_ref		{ $$ = append_symbol(L(),
-			       _symbol_create_list(SQL_COLUMN,$1)); }
- |  column_ref_commalist ',' column_ref
-			{ $$ = append_symbol( $1,
-			       _symbol_create_list(SQL_COLUMN,$3)); }
+    column_ref		                    { $$ = append_symbol(L(), _symbol_create_list(SQL_COLUMN,$1)); }
+ |  column_ref_commalist ',' column_ref { $$ = append_symbol($1, _symbol_create_list(SQL_COLUMN,$3)); }
  ;
 
 opt_having_clause:
-    /* empty */ 		 { $$ = NULL; }
- |  HAVING search_condition	 { $$ = $2; }
+    /* empty */             { $$ = NULL; }
+ |  HAVING search_condition { $$ = $2; }
  ;
-
 
 search_condition:
     search_condition OR and_exp
@@ -6584,6 +6606,7 @@ char *token2string(tokens token)
 	SQL(CREATE_USER);
 	SQL(CREATE_VIEW);
 	SQL(CROSS);
+	SQL(CUBE);
 	SQL(CURRENT_ROW);
 	SQL(CYCLE);
 	SQL(DECLARE);
@@ -6668,6 +6691,7 @@ char *token2string(tokens token)
 	SQL(RETURN);
 	SQL(REVOKE);
 	SQL(REVOKE_ROLES);
+	SQL(ROLLUP);
 	SQL(ROUTINE);
 	SQL(SAMPLE);
 	SQL(SCHEMA);

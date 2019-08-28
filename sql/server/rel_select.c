@@ -4454,11 +4454,65 @@ rel_selection_ref(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection
 	return NULL;
 }
 
-static list *
-rel_group_by(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection, int f )
+static sql_rel*
+rel_groupings(sql_query *query, sql_rel *rel, symbol *groupby, dlist *selection, int f)
 {
 	mvc *sql = query->sql;
 	dnode *o = groupby->data.lval->h;
+
+	for (; o; o = o->next) {
+		symbol *grouping = o->data.sym;
+		switch (grouping->token) {
+			case SQL_GROUPBY: {
+				dlist *dl = grouping->data.lval;
+				if (dl) { /* GROUP BY a, b, ... case */
+					list *exps = new_exp_list(sql->sa);
+					for (dnode *oo = dl->h; oo; oo = oo->next) {
+						symbol *grp = oo->data.sym;
+						int is_last = 1;
+						exp_kind ek = {type_value, card_value, TRUE};
+						sql_exp *e = rel_value_exp2(query, &rel, grp, f, ek, &is_last);
+
+						if (!e) {
+							char buf[ERRSIZE];
+							/* reset error */
+							sql->session->status = 0;
+							strcpy(buf, sql->errstr);
+							sql->errstr[0] = '\0';
+
+							e = rel_selection_ref(query, &rel, grp, selection);
+							if (!e) {
+								if (sql->errstr[0] == 0)
+									strcpy(sql->errstr, buf);
+								return NULL;
+							}
+						}
+						if (e->type != e_column) /* store group by expressions in the stack */
+							if (!stack_push_groupby_expression(sql, grp, e))
+								return NULL;
+						append(exps, e);
+					}
+					rel = rel_groupby(sql, rel, exps);
+				} else { /* GROUP BY () case */
+					rel = rel_groupby(sql, rel, NULL);
+				}
+			} break;
+			case SQL_ROLLUP:
+				break;
+			case SQL_CUBE:
+				break;
+			default:
+				assert(0);
+		}
+	}
+	return rel;
+}
+
+static list *
+rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dlist *selection, int f)
+{
+	mvc *sql = query->sql;
+	dnode *o = partitionby->data.lval->h;
 	list *exps = new_exp_list(sql->sa);
 
 	for (; o; o = o->next) {
@@ -4481,10 +4535,9 @@ rel_group_by(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection,
 				return NULL;
 			}
 		}
-		if(e->type != e_column) { //store group by expressions in the stack
-			if(!stack_push_groupby_expression(sql, grp, e))
+		if (e->type != e_column) /* store group by expressions in the stack */
+			if (!stack_push_groupby_expression(sql, grp, e))
 				return NULL;
-		}
 		append(exps, e);
 	}
 	return exps;
@@ -5226,14 +5279,14 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		nf = sql_partitionby;
 	/* Partition By */
 	if (partition_by_clause) {
-		gbe = rel_group_by(query, &pp, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, nf);
+		gbe = rel_partition_groupings(query, &pp, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, nf);
 		if (!gbe && !group) { /* try with implicit groupby */
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
 			p = pp = rel_project(sql->sa, p, sa_list(sql->sa));
 			reset_processed(p);
-			gbe = rel_group_by(query, &p, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, f);
+			gbe = rel_partition_groupings(query, &p, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, f);
 		}
 		if (!gbe)
 			return NULL;
@@ -6100,11 +6153,9 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 
 	if (rel) {
 		if (rel && sn->groupby) {
-			list *gbe = rel_group_by(query, &rel, sn->groupby, sn->selection, sql_sel | sql_groupby );
-
-			if (!gbe)
+			rel = rel_groupings(query, rel, sn->groupby, sn->selection, sql_sel | sql_groupby);
+			if (!rel)
 				return NULL;
-			rel = rel_groupby(sql, rel, gbe);
 		}
 	}
 
