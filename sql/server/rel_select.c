@@ -6330,18 +6330,25 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 
 		for (node *n = sets->h ; n ; n = n->next) {
 			list *l = (list*) n->data;
-
 			sql_rel *nrel = rel_groupby(sql, unions ? rel_dup(group->l) : group->l, l);
-			nrel->exps = list_dup(group_exps, (fdup)NULL);
-			for (node *m = nrel->exps->h ; m ; m = m->next) {
-				sql_exp *e = (sql_exp*) m->data;
-				if (e->type == e_column && !exps_find_exp(l, e)) { /* set to null */
-					sql_exp *next = exp_atom(sql->sa, atom_null_value(sql->sa, &(e->tpe)));
-					exp_setname(sql->sa, next, e->alias.rname, e->alias.name);
-					m->data = next;
+			list *exps = sa_list(sql->sa);
+			list *pexps = sa_list(sql->sa);
+
+			for (node *m = group_exps->h ; m ; m = m->next) {
+				sql_exp *e = (sql_exp*) m->data, *ne = NULL;
+
+				if (e->type == e_column && !exps_find_exp(l, e)) { 
+					/* do not include in the output of the group by, but add to the project as null */
+					ne = exp_atom(sql->sa, atom_null_value(sql->sa, &(e->tpe)));
+					exp_setname(sql->sa, ne, e->alias.rname, e->alias.name);
+				} else {
+					ne = exp_ref(sql->sa, e);
+					append(exps, e);
 				}
+				append(pexps, ne);
 			}
-			nrel = rel_project(sql->sa, nrel, rel_projections(sql, nrel, NULL, 1, 0));
+			nrel->exps = exps;
+			nrel = rel_project(sql->sa, nrel, pexps);
 
 			if (!unions)
 				unions = nrel;
