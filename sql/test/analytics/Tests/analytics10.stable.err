@@ -23,6 +23,16 @@ stderr of test 'analytics10` in directory 'sql/test/analytics` itself:
 # 11:30:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10427" "--port=34219"
 # 11:30:14 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-25423/.s.monetdb.37936
+QUERY = SELECT 
+            CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+        FROM tbl_ProductSales
+        GROUP BY ROLLUP (); --error, rollup must have at least one column
+ERROR = !syntax error, unexpected ')' in: "select 
+        !    cast(sum(totalsales) as bigint) as totalsales
+        !from tbl_productsales
+        !"
+CODE  = 42000
 
 # 11:30:14 >  
 # 11:30:14 >  "Done."

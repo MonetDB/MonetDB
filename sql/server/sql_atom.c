@@ -1461,3 +1461,14 @@ atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
 
 	return res;
 }
+
+atom*
+atom_null_value(sql_allocator *sa, sql_subtype* tpe)
+{
+	atom *res = atom_create(sa);
+	if (res) {
+		res->tpe = *tpe;
+		res->isnull = 1;
+	}
+	return res;
+}

@@ -205,6 +205,8 @@ scanner_init_keywords(void)
 	failed += keywords_insert("FIRST", FIRST);
 	failed += keywords_insert("GLOBAL", GLOBAL);
 	failed += keywords_insert("GROUP", sqlGROUP);
+	failed += keywords_insert("ROLLUP", ROLLUP);
+	failed += keywords_insert("CUBE", CUBE);
 	failed += keywords_insert("HAVING", HAVING);
 	failed += keywords_insert("ILIKE", ILIKE);
 	failed += keywords_insert("IMPRINTS", IMPRINTS);

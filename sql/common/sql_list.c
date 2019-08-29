@@ -612,6 +612,19 @@ list_fetch(list *l, int pos)
 }
 
 void *
+list_fetch_node(list *l, int pos)
+{
+	node *n = NULL;
+	int i;
+
+	for (n = l->h, i=0; n && i<pos; n = n->next, i++)
+		;
+	if (n)
+		return n;
+	return NULL;
+}
+
+void *
 list_reduce(list *l, freduce red, fdup dup)
 {
 	void *res = NULL;

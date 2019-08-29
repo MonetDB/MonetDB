@@ -4454,61 +4454,65 @@ rel_selection_ref(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection
 	return NULL;
 }
 
-static sql_rel*
-rel_groupings(sql_query *query, sql_rel *rel, symbol *groupby, dlist *selection, int f)
+static sql_exp*
+rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection, int f)
+{
+	mvc *sql = query->sql;
+	int is_last = 1;
+	exp_kind ek = {type_value, card_value, TRUE};
+	sql_exp *e = rel_value_exp2(query, rel, grp, f, ek, &is_last);
+
+	if (!e) {
+		char buf[ERRSIZE];
+		/* reset error */
+		sql->session->status = 0;
+		strcpy(buf, sql->errstr);
+		sql->errstr[0] = '\0';
+
+		e = rel_selection_ref(query, rel, grp, selection);
+		if (!e) {
+			if (sql->errstr[0] == 0)
+				strcpy(sql->errstr, buf);
+			return NULL;
+		}
+	}
+	return e;
+}
+
+#define ROLLUP 1
+#define CUBE   2
+
+static list*
+rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection, int f, int *special)
 {
 	mvc *sql = query->sql;
 	dnode *o = groupby->data.lval->h;
+	list *exps = new_exp_list(sql->sa);
 
 	for (; o; o = o->next) {
 		symbol *grouping = o->data.sym;
-		switch (grouping->token) {
-			case SQL_GROUPBY: {
-				dlist *dl = grouping->data.lval;
-				if (dl) { /* GROUP BY a, b, ... case */
-					list *exps = new_exp_list(sql->sa);
-					for (dnode *oo = dl->h; oo; oo = oo->next) {
-						symbol *grp = oo->data.sym;
-						int is_last = 1;
-						exp_kind ek = {type_value, card_value, TRUE};
-						sql_exp *e = rel_value_exp2(query, &rel, grp, f, ek, &is_last);
-
-						if (!e) {
-							char buf[ERRSIZE];
-							/* reset error */
-							sql->session->status = 0;
-							strcpy(buf, sql->errstr);
-							sql->errstr[0] = '\0';
-
-							e = rel_selection_ref(query, &rel, grp, selection);
-							if (!e) {
-								if (sql->errstr[0] == 0)
-									strcpy(sql->errstr, buf);
-								return NULL;
-							}
-						}
-						if (e->type != e_column) /* store group by expressions in the stack */
-							if (!stack_push_groupby_expression(sql, grp, e))
-								return NULL;
-						append(exps, e);
-					}
-					rel = rel_groupby(sql, rel, exps);
-				} else { /* GROUP BY () case */
-					rel = rel_groupby(sql, rel, NULL);
-				}
-			} break;
-			case SQL_ROLLUP:
-				break;
-			case SQL_CUBE:
-				break;
-			default:
-				assert(0);
+		dlist *dl = grouping->data.lval;
+		if (dl) { /* GROUP BY a, b, ... case */
+			for (dnode *oo = dl->h; oo; oo = oo->next) {
+				symbol *grp = oo->data.sym;
+				sql_exp *e = rel_group_column(query, rel, grp, selection, f);
+				if (!e)
+					return NULL;
+				if (grouping->token == SQL_ROLLUP)
+					*special |= ROLLUP;
+				else if (grouping->token == SQL_CUBE)
+					*special |= CUBE;
+				/* store group by expressions in the stack */
+				if (e->type != e_column && !stack_push_groupby_expression(sql, grp, e))
+					return NULL;
+				list_append(exps, e);
+			}
 		}
 	}
-	return rel;
+	return exps;
 }
 
-static list *
+static list*
 rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dlist *selection, int f)
 {
 	mvc *sql = query->sql;
@@ -4516,29 +4520,11 @@ rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dl
 	list *exps = new_exp_list(sql->sa);
 
 	for (; o; o = o->next) {
-		symbol *grp = o->data.sym;
-		int is_last = 1;
-		exp_kind ek = {type_value, card_value, TRUE};
-		sql_exp *e = rel_value_exp2(query, rel, grp, f, ek, &is_last);
-
-		if (!e) {
-			char buf[ERRSIZE];
-			/* reset error */
-			sql->session->status = 0;
-			strcpy(buf, sql->errstr);
-			sql->errstr[0] = '\0';
-
-			e = rel_selection_ref(query, rel, grp, selection);
-			if (!e) {
-				if (sql->errstr[0] == 0)
-					strcpy(sql->errstr, buf);
-				return NULL;
-			}
-		}
-		if (e->type != e_column) /* store group by expressions in the stack */
-			if (!stack_push_groupby_expression(sql, grp, e))
-				return NULL;
-		append(exps, e);
+		symbol *part = o->data.sym;
+		sql_exp *e = rel_group_column(query, rel, part, selection, f);
+		if (!e)
+			return NULL;
+		list_append(exps, e);
 	}
 	return exps;
 }
@@ -6131,7 +6117,8 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 	mvc *sql = query->sql;
 	dnode *n;
 	//int aggr = 0;
-	sql_rel *inner = NULL;
+	sql_rel *inner = NULL, *group, *l;
+	int special = 0;
 
 	assert(sn->s.token == SQL_SELECT);
 	if (!sn->selection)
@@ -6153,9 +6140,10 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 
 	if (rel) {
 		if (rel && sn->groupby) {
-			rel = rel_groupings(query, rel, sn->groupby, sn->selection, sql_sel | sql_groupby);
-			if (!rel)
+			list *gbe = rel_groupings(query, &rel, sn->groupby, sn->selection, sql_sel | sql_groupby, &special);
+			if (!gbe)
 				return NULL;
+			rel = rel_groupby(sql, rel, gbe);
 		}
 	}
 
@@ -6230,6 +6218,9 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		list_merge( rel->exps, te, (fdup)NULL);
 	}
 
+	group = rel->l;
+	l = rel;
+
 	if (sn->having) {
 		inner = rel->l;
 		assert(is_project(rel->op) && inner);
@@ -6242,7 +6233,51 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			return NULL;
 		if (inner -> exps && exps_card(inner->exps) > CARD_AGGR)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot compare sets with values, probably an aggregate function missing");
-		rel -> l = inner;
+		rel->l = inner;
+		group = inner->l;
+		l = inner;
+	}
+
+	if ((special & ROLLUP) == ROLLUP) {
+		sql_rel *unions = NULL, *nrel = NULL;
+		list *groupings = list_dup((list*) group->r, (fdup)NULL);
+		list *group_exps = list_dup(group->exps, (fdup)NULL);
+		int i = groupings->cnt;
+
+		while (groupings->cnt > 0) {
+			nrel = rel_groupby(sql, unions ? rel_dup(group->l) : group->l, list_dup(groupings, (fdup)NULL));
+			nrel->exps = list_dup(group_exps, (fdup)NULL);
+			nrel = rel_project(sql->sa, nrel, rel_projections(sql, nrel, NULL, 1, 0));
+
+			if (!unions)
+				unions = nrel;
+			else {
+				unions = rel_setop(sql->sa, unions, nrel, op_union);
+				unions->exps = rel_projections(sql, group, NULL, 1, 0);
+				set_processed(unions);
+			}
+			if (!unions)
+				return unions;
+
+			/* For the next iteration, this column will be set as a NULL projection */
+			node *n = list_fetch_node(group_exps, i - 1);
+			sql_exp *old = n->data;
+			sql_exp *next = exp_atom(sql->sa, atom_null_value(sql->sa, &(old->tpe)));
+			exp_setname(sql->sa, next, old->alias.rname, old->alias.name);
+			n->data = next;
+
+			/* Remove the column from the grouping set */
+			(void) list_remove_node(groupings, groupings->t);
+			i--;
+		}
+		nrel = rel_groupby(sql, rel_dup(group->l), NULL);
+		nrel->exps = list_dup(group_exps, (fdup)NULL);
+		nrel = rel_project(sql->sa, nrel, rel_projections(sql, nrel, NULL, 1, 0));
+
+		unions = rel_setop(sql->sa, unions, nrel, op_union);
+		unions->exps = rel_projections(sql, group, NULL, 1, 0);
+		set_processed(unions);
+		l->l = unions;
 	}
 
 	if (rel && sn->distinct)
