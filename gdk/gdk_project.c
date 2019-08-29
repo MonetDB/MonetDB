@@ -594,8 +594,6 @@ BATprojectchain(BAT **bats)
 			if (bn == NULL)
 				return NULL;
 			BAThseqbase(bn, hseq);
-			if (bn->ttype == TYPE_void)
-				BATtseqbase(bn, tseq);
 		}
 		ALGODEBUG fprintf(stderr, "#BATprojectchain with %d BATs, "
 				  "size " BUNFMT ", type %s, using "
