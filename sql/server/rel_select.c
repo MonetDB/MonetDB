@@ -4479,17 +4479,76 @@ rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection,
 	return e;
 }
 
-#define ROLLUP 1
-#define CUBE   2
+static list*
+list_power_set(sql_allocator *sa, list* input) /* cube */
+{
+	list *res = sa_list(sa);
+	// N stores total number of subsets
+	int N = (int) pow(2, input->cnt);
+
+	// generate each subset one by one
+	for (int i = 0; i < N; i++) {
+		list *ll = sa_list(sa);
+		int j = 0; // check every bit of i
+		for (node *n = input->h ; n ; n = n->next) {
+			// if j'th bit of i is set, then append
+			if (i & (1 << j))
+				list_append(ll, n->data);
+			j++;
+		}
+		list_append(res, ll);
+	}
+	return res;
+}
 
 static list*
-rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection, int f, int *special)
+list_rollup(sql_allocator *sa, list* input)
+{
+	list *res = sa_list(sa);
+	int counter, j;
+
+	for (counter = input->cnt; counter >= 0; counter--) {
+		list *ll = sa_list(sa);
+		j = 0;
+		for (node *n = input->h; n && j < counter; j++, n = n->next)
+			list_append(ll, n->data);
+		list_append(res, ll);
+	}
+	return res;
+}
+
+static int
+list_equal(list* list1, list* list2)
+{
+	for (node *n = list1->h; n ; n = n->next) {
+		sql_exp *e = (sql_exp*) n->data;
+		if (!exps_find_exp(list2, e))
+			return 1;
+	}
+	for (node *n = list2->h; n ; n = n->next) {
+		sql_exp *e = (sql_exp*) n->data;
+		if (!exps_find_exp(list1, e))
+			return 1;
+	}
+	return 0;
+}
+
+static list*
+rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection, int f, list **sets)
 {
 	mvc *sql = query->sql;
-	dnode *o = groupby->data.lval->h;
+	dnode *o;
+	bool combined_totals = false;
 	list *exps = new_exp_list(sql->sa);
 
-	for (; o; o = o->next) {
+	for (o = groupby->data.lval->h; o ; o = o->next) {
+		symbol *grouping = o->data.sym;
+		if (grouping->token == SQL_ROLLUP || grouping->token == SQL_CUBE) {
+			combined_totals = true;
+			break;
+		}
+	}
+	for (o = groupby->data.lval->h; o; o = o->next) {
 		symbol *grouping = o->data.sym;
 		dlist *dl = grouping->data.lval;
 		if (dl) { /* GROUP BY a, b, ... case */
@@ -4498,16 +4557,42 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 				sql_exp *e = rel_group_column(query, rel, grp, selection, f);
 				if (!e)
 					return NULL;
-				if (grouping->token == SQL_ROLLUP)
-					*special |= ROLLUP;
-				else if (grouping->token == SQL_CUBE)
-					*special |= CUBE;
 				/* store group by expressions in the stack */
-				if (e->type != e_column && !stack_push_groupby_expression(sql, grp, e))
-					return NULL;
+				if (e->type != e_column) {
+					if (combined_totals) {
+						(void) sql_error(sql, 02, SQLSTATE(42000) "Group by with expressions not possible with ROLLUP and CUBE");
+						return NULL;
+					}
+					if (!stack_push_groupby_expression(sql, grp, e))
+						return NULL;
+				}
 				list_append(exps, e);
 			}
-		}
+			if (grouping->token == SQL_ROLLUP) {
+				assert(combined_totals);
+				if (!*sets) {
+					*sets = list_rollup(sql->sa, exps);
+				} else {
+					list *new_set = list_rollup(sql->sa, exps);
+					*sets = list_distinct(list_merge(*sets, new_set, (fdup)NULL), (fcmp)list_equal, (fdup)NULL);
+				}
+			} else if (grouping->token == SQL_CUBE) {
+				assert(combined_totals);
+				if (!*sets) {
+					*sets = list_power_set(sql->sa, exps);
+				} else {
+					list *new_set = list_power_set(sql->sa, exps);
+					*sets = list_distinct(list_merge(*sets, new_set, (fdup)NULL), (fcmp)list_equal, (fdup)NULL);
+				}
+			} else if (combined_totals && grouping->token == SQL_GROUPBY) {
+				if (!*sets) {
+					*sets = list_dup(exps, (fdup)NULL);
+				} else {
+					list *new_set = list_dup(exps, (fdup)NULL);
+					*sets = list_distinct(list_merge(*sets, new_set, (fdup)NULL), (fcmp)list_equal, (fdup)NULL);
+				}
+			}
+		} /* The GROUP BY () case is the global aggregate which is always added by ROLLUP and CUBE */
 	}
 	return exps;
 }
@@ -6118,7 +6203,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 	dnode *n;
 	//int aggr = 0;
 	sql_rel *inner = NULL, *group, *l;
-	int special = 0;
+	list *sets = NULL;
 
 	assert(sn->s.token == SQL_SELECT);
 	if (!sn->selection)
@@ -6140,7 +6225,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 
 	if (rel) {
 		if (rel && sn->groupby) {
-			list *gbe = rel_groupings(query, &rel, sn->groupby, sn->selection, sql_sel | sql_groupby, &special);
+			list *gbe = rel_groupings(query, &rel, sn->groupby, sn->selection, sql_sel | sql_groupby, &sets);
 			if (!gbe)
 				return NULL;
 			rel = rel_groupby(sql, rel, gbe);
@@ -6238,45 +6323,36 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		l = inner;
 	}
 
-	if ((special & ROLLUP) == ROLLUP) {
-		sql_rel *unions = NULL, *nrel = NULL;
-		list *groupings = list_dup((list*) group->r, (fdup)NULL);
+	/* ROLLUP and CUBE cases */
+	if (sets) {
+		sql_rel *unions = NULL;
 		list *group_exps = list_dup(group->exps, (fdup)NULL);
-		int i = groupings->cnt;
 
-		while (groupings->cnt > 0) {
-			nrel = rel_groupby(sql, unions ? rel_dup(group->l) : group->l, list_dup(groupings, (fdup)NULL));
+		for (node *n = sets->h ; n ; n = n->next) {
+			list *l = (list*) n->data;
+
+			sql_rel *nrel = rel_groupby(sql, unions ? rel_dup(group->l) : group->l, l);
 			nrel->exps = list_dup(group_exps, (fdup)NULL);
+			for (node *m = nrel->exps->h ; m ; m = m->next) {
+				sql_exp *e = (sql_exp*) m->data;
+				if (e->type == e_column && !exps_find_exp(l, e)) { /* set to null */
+					sql_exp *next = exp_atom(sql->sa, atom_null_value(sql->sa, &(e->tpe)));
+					exp_setname(sql->sa, next, e->alias.rname, e->alias.name);
+					m->data = next;
+				}
+			}
 			nrel = rel_project(sql->sa, nrel, rel_projections(sql, nrel, NULL, 1, 0));
 
 			if (!unions)
 				unions = nrel;
 			else {
 				unions = rel_setop(sql->sa, unions, nrel, op_union);
-				unions->exps = rel_projections(sql, group, NULL, 1, 0);
+				unions->exps = list_dup(group_exps, (fdup)NULL);
 				set_processed(unions);
 			}
 			if (!unions)
 				return unions;
-
-			/* For the next iteration, this column will be set as a NULL projection */
-			node *n = list_fetch_node(group_exps, i - 1);
-			sql_exp *old = n->data;
-			sql_exp *next = exp_atom(sql->sa, atom_null_value(sql->sa, &(old->tpe)));
-			exp_setname(sql->sa, next, old->alias.rname, old->alias.name);
-			n->data = next;
-
-			/* Remove the column from the grouping set */
-			(void) list_remove_node(groupings, groupings->t);
-			i--;
 		}
-		nrel = rel_groupby(sql, rel_dup(group->l), NULL);
-		nrel->exps = list_dup(group_exps, (fdup)NULL);
-		nrel = rel_project(sql->sa, nrel, rel_projections(sql, nrel, NULL, 1, 0));
-
-		unions = rel_setop(sql->sa, unions, nrel, op_union);
-		unions->exps = rel_projections(sql, group, NULL, 1, 0);
-		set_processed(unions);
 		l->l = unions;
 	}
 
