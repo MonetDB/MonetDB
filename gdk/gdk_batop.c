@@ -1398,6 +1398,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	oid *restrict grps, *restrict ords, prev;
 	BUN p, q, r;
 	lng t0 = 0;
+	bool mkorderidx, orderidxlock = false;
 
 	ALGODEBUG t0 = GDKusec();
 
@@ -1429,7 +1430,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			b->trevsorted = !b->trevsorted;
 			b->batDirtydesc = true;
 		}
-		if (b->tkey != BATtdense(b)) {
+		if (b->tkey != !is_oid_nil(b->tseqbase)) {
 			b->tkey = !b->tkey;
 			b->batDirtydesc = true;
 		}
@@ -1535,8 +1536,26 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	} else {
 		pb = b;
 	}
+	/* when we will create an order index if it doesn't already exist */
+	mkorderidx = (g == NULL && !reverse && !nilslast && pb != NULL && (order || !pb->batTransient));
+	if (g == NULL && !reverse && !nilslast &&
+	    pb != NULL && !BATcheckorderidx(pb)) {
+		MT_lock_set(&GDKhashLock(pb->batCacheid));
+		if (pb->torderidx == NULL) {
+			/* no index created while waiting for lock */
+			if (mkorderidx) /* keep lock when going to create */
+				orderidxlock = true;
+		} else {
+			/* no need to create an index: it already exists */
+			mkorderidx = false;
+		}
+		if (!orderidxlock)
+			MT_lock_unset(&GDKhashLock(pb->batCacheid));
+	} else {
+		mkorderidx = false;
+	}
 	if (g == NULL && o == NULL && !reverse && !nilslast &&
-	    pb != NULL && BATcheckorderidx(pb) &&
+	    pb != NULL && pb->torderidx != NULL &&
 	    /* if we want a stable sort, the order index must be
 	     * stable, if we don't want stable, we don't care */
 	    (!stable || ((oid *) pb->torderidx->base)[2])) {
@@ -1730,12 +1749,10 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		Heap *m = NULL;
 		/* only invest in creating an order index if the BAT
 		 * is persistent */
-		if (!reverse &&
-		    !nilslast &&
-		    pb != NULL &&
-		    (ords != NULL || !pb->batTransient) &&
-		    (m = createOIDXheap(pb, stable)) != NULL) {
-			if (ords == NULL) {
+		if (mkorderidx) {
+			assert(orderidxlock);
+			if ((m = createOIDXheap(pb, stable)) != NULL &&
+			    ords == NULL) {
 				ords = (oid *) m->base + ORDERIDXOFF;
 				if (o && o->ttype != TYPE_void)
 					memcpy(ords, Tloc(o, 0), BATcount(o) * sizeof(oid));
@@ -1759,12 +1776,14 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				HEAPfree(m, true);
 				GDKfree(m);
 			}
+			if (orderidxlock)
+				MT_lock_unset(&GDKhashLock(pb->batCacheid));
 			goto error;
 		}
 		bn->tsorted = !reverse && !nilslast;
 		bn->trevsorted = reverse && nilslast;
 		if (m != NULL) {
-			MT_lock_set(&GDKhashLock(pb->batCacheid));
+			assert(orderidxlock);
 			if (pb->torderidx == NULL) {
 				pb->batDirtydesc = true;
 				if (ords != (oid *) m->base + ORDERIDXOFF) {
@@ -1778,9 +1797,10 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				HEAPfree(m, true);
 				GDKfree(m);
 			}
-			MT_lock_unset(&GDKhashLock(pb->batCacheid));
 		}
 	}
+	if (orderidxlock)
+		MT_lock_unset(&GDKhashLock(pb->batCacheid));
 	bn->theap.dirty = true;
 	bn->tnosorted = 0;
 	bn->tnorevsorted = 0;
