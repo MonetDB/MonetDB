@@ -41,7 +41,7 @@ stdout of test 'analytics10` in directory 'sql/test/analytics` itself:
 #GROUP BY ROLLUP(Product_Category);
 % .tbl_productsales,	.L3 # table_name
 % product_category,	totalsales # name
-% clob,	bigint # type
+% varchar,	bigint # type
 % 7,	4 # length
 [ "Game",	600	]
 [ "Fashion",	600	]
@@ -52,7 +52,7 @@ stdout of test 'analytics10` in directory 'sql/test/analytics` itself:
 #GROUP BY ROLLUP(Product_Name);
 % .tbl_productsales,	.L3 # table_name
 % product_name,	totalsales # name
-% clob,	bigint # type
+% varchar,	bigint # type
 % 9,	4 # length
 [ "Mobo Game",	200	]
 [ "PKO Game",	400	]
@@ -65,7 +65,7 @@ stdout of test 'analytics10` in directory 'sql/test/analytics` itself:
 #GROUP BY ROLLUP(Product_Category, Product_Name);
 % .tbl_productsales,	.tbl_productsales,	.L3 # table_name
 % product_category,	product_name,	totalsales # name
-% clob,	clob,	bigint # type
+% varchar,	varchar,	bigint # type
 % 7,	9,	4 # length
 [ "Game",	"Mobo Game",	200	]
 [ "Game",	"PKO Game",	400	]
@@ -80,12 +80,73 @@ stdout of test 'analytics10` in directory 'sql/test/analytics` itself:
 #GROUP BY ROLLUP(Product_Category, Product_Name) HAVING SUM(TotalSales) > 400;
 % .tbl_productsales,	.tbl_productsales,	.L3 # table_name
 % product_category,	product_name,	totalsales # name
-% clob,	clob,	bigint # type
+% varchar,	varchar,	bigint # type
 % 7,	5,	4 # length
 [ "Fashion",	"Shirt",	500	]
 [ "Game",	NULL,	600	]
 [ "Fashion",	NULL,	600	]
 [ NULL,	NULL,	1200	]
+#SELECT 
+#    Product_Category, CAST(SUM(TotalSales) as BIGINT) AS TotalSales FROM tbl_ProductSales
+#GROUP BY CUBE(Product_Category);
+% .tbl_productsales,	.L3 # table_name
+% product_category,	totalsales # name
+% varchar,	bigint # type
+% 7,	4 # length
+[ NULL,	1200	]
+[ "Game",	600	]
+[ "Fashion",	600	]
+#SELECT
+#    Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+#FROM tbl_ProductSales
+#GROUP BY CUBE(Product_Name);
+% .tbl_productsales,	.L3 # table_name
+% product_name,	totalsales # name
+% varchar,	bigint # type
+% 9,	4 # length
+[ NULL,	1200	]
+[ "Mobo Game",	200	]
+[ "PKO Game",	400	]
+[ "Shirt",	500	]
+[ "Shorts",	100	]
+#SELECT
+#    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+#FROM tbl_ProductSales
+#GROUP BY CUBE(Product_Category, Product_Name);
+% .tbl_productsales,	.tbl_productsales,	.L3 # table_name
+% product_category,	product_name,	totalsales # name
+% varchar,	varchar,	bigint # type
+% 7,	9,	4 # length
+[ NULL,	NULL,	1200	]
+[ "Game",	NULL,	600	]
+[ "Fashion",	NULL,	600	]
+[ NULL,	"Mobo Game",	200	]
+[ NULL,	"PKO Game",	400	]
+[ NULL,	"Shirt",	500	]
+[ NULL,	"Shorts",	100	]
+[ "Game",	"Mobo Game",	200	]
+[ "Game",	"PKO Game",	400	]
+[ "Fashion",	"Shirt",	500	]
+[ "Fashion",	"Shorts",	100	]
+#SELECT
+#    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+#FROM tbl_ProductSales
+#GROUP BY CUBE(Product_Category, Product_Name) ORDER BY Product_Category, Product_Name;
+% .tbl_productsales,	.tbl_productsales,	.L3 # table_name
+% product_category,	product_name,	totalsales # name
+% varchar,	varchar,	bigint # type
+% 7,	9,	4 # length
+[ NULL,	NULL,	1200	]
+[ NULL,	"Mobo Game",	200	]
+[ NULL,	"PKO Game",	400	]
+[ NULL,	"Shirt",	500	]
+[ NULL,	"Shorts",	100	]
+[ "Fashion",	NULL,	600	]
+[ "Fashion",	"Shirt",	500	]
+[ "Fashion",	"Shorts",	100	]
+[ "Game",	NULL,	600	]
+[ "Game",	"Mobo Game",	200	]
+[ "Game",	"PKO Game",	400	]
 #DROP TABLE tbl_ProductSales;
 
 # 11:30:14 >  

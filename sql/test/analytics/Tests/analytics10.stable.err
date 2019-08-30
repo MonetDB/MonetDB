@@ -33,6 +33,16 @@ ERROR = !syntax error, unexpected ')' in: "select
         !from tbl_productsales
         !"
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-2432/.s.monetdb.39687
+QUERY = SELECT 
+            CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+        FROM tbl_ProductSales
+        GROUP BY CUBE(); --error, cube must have at least one column
+ERROR = !syntax error, unexpected ')' in: "select 
+        !    cast(sum(totalsales) as bigint) as totalsales
+        !from tbl_productsales
+        !"
+CODE  = 42000
 
 # 11:30:14 >  
 # 11:30:14 >  "Done."

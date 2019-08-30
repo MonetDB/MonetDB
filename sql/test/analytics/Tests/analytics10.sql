@@ -1,4 +1,4 @@
-CREATE TABLE tbl_ProductSales (ColID int, Product_Category clob, Product_Name clob, TotalSales int); 
+CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product_Name  varchar(64), TotalSales int); 
 INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Game',400),(3,'Fashion','Shirt',500),(4,'Fashion','Shorts',100);
 
 SELECT 
