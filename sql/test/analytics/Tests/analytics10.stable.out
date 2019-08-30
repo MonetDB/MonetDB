@@ -147,6 +147,70 @@ stdout of test 'analytics10` in directory 'sql/test/analytics` itself:
 [ "Game",	NULL,	600	]
 [ "Game",	"Mobo Game",	200	]
 [ "Game",	"PKO Game",	400	]
+#SELECT
+#    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+#FROM tbl_ProductSales
+#GROUP BY ColID, ROLLUP(Product_Category, Product_Name);
+% .tbl_productsales,	.tbl_productsales,	.L3 # table_name
+% product_category,	product_name,	totalsales # name
+% varchar,	varchar,	bigint # type
+% 7,	9,	3 # length
+[ "Game",	"Mobo Game",	200	]
+[ "Game",	"PKO Game",	400	]
+[ "Fashion",	"Shirt",	500	]
+[ "Fashion",	"Shorts",	100	]
+[ "Game",	NULL,	200	]
+[ "Game",	NULL,	400	]
+[ "Fashion",	NULL,	500	]
+[ "Fashion",	NULL,	100	]
+[ NULL,	NULL,	200	]
+[ NULL,	NULL,	400	]
+[ NULL,	NULL,	500	]
+[ NULL,	NULL,	100	]
+#SELECT
+#    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+#FROM tbl_ProductSales
+#GROUP BY (ColID), ROLLUP(Product_Category, Product_Name);
+% .tbl_productsales,	.tbl_productsales,	.L3 # table_name
+% product_category,	product_name,	totalsales # name
+% varchar,	varchar,	bigint # type
+% 7,	9,	3 # length
+[ "Game",	"Mobo Game",	200	]
+[ "Game",	"PKO Game",	400	]
+[ "Fashion",	"Shirt",	500	]
+[ "Fashion",	"Shorts",	100	]
+[ "Game",	NULL,	200	]
+[ "Game",	NULL,	400	]
+[ "Fashion",	NULL,	500	]
+[ "Fashion",	NULL,	100	]
+[ NULL,	NULL,	200	]
+[ NULL,	NULL,	400	]
+[ NULL,	NULL,	500	]
+[ NULL,	NULL,	100	]
+#SELECT
+#    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+#FROM tbl_ProductSales
+#GROUP BY (ColID), CUBE(Product_Category, Product_Name);
+% .tbl_productsales,	.tbl_productsales,	.L3 # table_name
+% product_category,	product_name,	totalsales # name
+% varchar,	varchar,	bigint # type
+% 7,	9,	3 # length
+[ NULL,	NULL,	200	]
+[ NULL,	NULL,	400	]
+[ NULL,	NULL,	500	]
+[ NULL,	NULL,	100	]
+[ "Game",	NULL,	200	]
+[ "Game",	NULL,	400	]
+[ "Fashion",	NULL,	500	]
+[ "Fashion",	NULL,	100	]
+[ NULL,	"Mobo Game",	200	]
+[ NULL,	"PKO Game",	400	]
+[ NULL,	"Shirt",	500	]
+[ NULL,	"Shorts",	100	]
+[ "Game",	"Mobo Game",	200	]
+[ "Game",	"PKO Game",	400	]
+[ "Fashion",	"Shirt",	500	]
+[ "Fashion",	"Shorts",	100	]
 #DROP TABLE tbl_ProductSales;
 
 # 11:30:14 >  

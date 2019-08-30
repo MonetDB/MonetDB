@@ -59,4 +59,24 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY CUBE(Product_Category, Product_Name) ORDER BY Product_Category, Product_Name;
 
+SELECT
+    Product_Category, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ROLLUP(Product_Category), 1+1; --error, group by with expressions and rollup/cube not possible right now
+
+SELECT
+    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ColID, ROLLUP(Product_Category, Product_Name);
+
+SELECT
+    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY (ColID), ROLLUP(Product_Category, Product_Name);
+
+SELECT
+    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY (ColID), CUBE(Product_Category, Product_Name);
+
 DROP TABLE tbl_ProductSales;

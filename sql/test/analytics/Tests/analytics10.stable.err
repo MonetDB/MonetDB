@@ -43,6 +43,13 @@ ERROR = !syntax error, unexpected ')' in: "select
         !from tbl_productsales
         !"
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-13711/.s.monetdb.35950
+QUERY = SELECT
+            Product_Category, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+        FROM tbl_ProductSales
+        GROUP BY ROLLUP(Product_Category), 1+1; --error, group by with expressions and rollup/cube not possible right now
+ERROR = !Group by with expressions not possible with ROLLUP and CUBE
+CODE  = 42000
 
 # 11:30:14 >  
 # 11:30:14 >  "Done."

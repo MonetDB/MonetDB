@@ -504,7 +504,6 @@ int yydebug=1;
 	routine_body
 	table_function_column_list
 	select_target_list
-	search_condition_commalist
 	external_function_name
 	with_list
 	window_specification
@@ -522,6 +521,7 @@ int yydebug=1;
 	partition_list
 	merge_when_list
 	group_by_list
+	search_condition_commalist
 	ordinary_grouping_set
 
 %type <i_val>
@@ -3687,15 +3687,10 @@ group_by_list:
  ;
 
 group_by_element:
-	search_condition_commalist           { $$ = _symbol_create_list(SQL_GROUPBY, $1); }
+    search_condition                     { $$ = _symbol_create_list(SQL_GROUPBY, append_symbol(L(), $1)); }
  |  ROLLUP '(' ordinary_grouping_set ')' { $$ = _symbol_create_list(SQL_ROLLUP, $3); }
  |  CUBE '(' ordinary_grouping_set ')'   { $$ = _symbol_create_list(SQL_CUBE, $3); }
  |  '(' ')'                              { $$ = _symbol_create_list(SQL_GROUPBY, NULL); }
- ;
-
-search_condition_commalist:
-    search_condition                                { $$ = append_symbol(L(), $1); }
- |  search_condition_commalist ',' search_condition { $$ = append_symbol($1, $3); }
  ;
 
 ordinary_grouping_set:
@@ -4300,6 +4295,11 @@ window_ident_clause:
 	/* empty */ { $$ = NULL; }
   |	ident       { $$ = $1; }
   ;
+
+search_condition_commalist:
+    search_condition                                { $$ = append_symbol(L(), $1); }
+ |  search_condition_commalist ',' search_condition { $$ = append_symbol($1, $3); }
+ ;
 
 window_partition_clause:
 	/* empty */ 	{ $$ = NULL; }
