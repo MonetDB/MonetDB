@@ -305,6 +305,7 @@ BATdiffcand(BAT *a, BAT *b)
 	return virtualize(bn);
 }
 
+/* return offset of first value in cand that is >= o */
 static inline BUN
 binsearchcand(const oid *cand, BUN hi, oid o)
 {
@@ -383,6 +384,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			} else {
 				/* why the vheap? */
 				ci->tpe = cand_dense;
+				ci->oids = NULL;
 			}
 		} else {
 			ci->tpe = cand_dense;
@@ -403,6 +405,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 	}
 	switch (ci->tpe) {
 	case cand_dense:
+	case_cand_dense:
 		if (b != NULL) {
 			if (ci->seq + cnt <= b->hseqbase ||
 			    ci->seq >= b->hseqbase + BATcount(b)) {
@@ -410,8 +413,8 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				return 0;
 			}
 			if (b->hseqbase > ci->seq) {
-				ci->offset = b->hseqbase - ci->seq;
-				cnt -= ci->offset;
+				cnt -= b->hseqbase - ci->seq;
+				ci->offset += b->hseqbase - ci->seq;
 				ci->seq = b->hseqbase;
 			}
 			if (ci->seq + cnt > b->hseqbase + BATcount(b))
@@ -481,81 +484,68 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			ci->noids--;
 			ci->oids++;
 			ci->seq++;
-			ci->offset++;
 		}
 		while (ci->noids > 0 &&
 		       ci->oids[ci->noids - 1] == ci->seq + cnt + ci->noids - 1)
 			ci->noids--;
+		/* WARNING: don't reset ci->oids to NULL when setting
+		 * ci->tpe to cand_dense below: BATprojectchain will
+		 * fail */
+		if (ci->noids == 0) {
+			ci->tpe = cand_dense;
+			goto case_cand_dense;
+		}
 		if (b != NULL) {
-			if (ci->noids == 0 ||
-			    ci->oids[0] >= b->hseqbase + BATcount(b)) {
-				/* no exceptions left after pruning, or first
-				 * exception beyond range of b */
-				ci->tpe = cand_dense;
-				ci->oids = NULL;
-				if (b->hseqbase > ci->seq) {
-					ci->offset += b->hseqbase - ci->seq;
-					cnt -= b->hseqbase - ci->seq;
-					ci->seq = b->hseqbase;
+			BUN p;
+			p = binsearchcand(ci->oids, ci->noids - 1, b->hseqbase);
+			if (p == ci->noids) {
+				/* all exceptions before start of b */
+				p = b->hseqbase - ci->seq + ci->noids;
+				if (p >= cnt) {
+					/* no candidates left */
+					*ci = (struct canditer) {
+						.tpe = cand_dense,
+					};
+					return 0;
 				}
+				/* rest of list is dense */
+				ci->tpe = cand_dense;
+				cnt -= p;
+				ci->offset += p;
+				ci->seq = b->hseqbase;
 				if (ci->seq + cnt > b->hseqbase + BATcount(b))
 					cnt = b->hseqbase + BATcount(b) - ci->seq;
-				ci->noids = 0;
 				break;
 			}
-			if (ci->oids[ci->noids - 1] < b->hseqbase) {
-				/* last exception before start of b */
-				ci->tpe = cand_dense;
-				ci->oids = NULL;
-				ci->offset += b->hseqbase - ci->seq - ci->noids;
-				cnt -= b->hseqbase - ci->seq - ci->noids;
-				ci->seq = b->hseqbase;
-				ci->noids = cnt;
-				if (ci->seq + cnt > b->hseqbase + BATcount(b))
-					cnt = b->hseqbase + BATcount(b) - ci->seq;
-				ci->noids = 0;
-				break;
-			}
-			if (ci->oids[0] < b->hseqbase) {
-				BUN lo = 0;
-				BUN hi = cnt - 1;
-				const oid o = b->hseqbase;
-				/* loop invariant:
-				 * ci->oids[lo] < o <= ci->oids[hi] */
-				while (lo + 1 < hi) {
-					BUN mid = (lo + hi) / 2;
-					if (ci->oids[mid] > o)
-						hi = mid;
-					else
-						lo = mid;
-				}
-				ci->offset += hi;
-				ci->oids += hi;
-				ci->noids -= hi;
-				cnt += hi;
-			}
-			if (ci->seq < b->hseqbase) {
-				ci->offset += b->hseqbase - ci->seq;
-				cnt -= b->hseqbase - ci->seq;
+			assert(b->hseqbase > ci->seq || p == 0);
+			if (b->hseqbase > ci->seq) {
+				/* skip candidates, possibly including
+				 * exceptions */
+				ci->oids += p;
+				ci->noids -= p;
+				p = b->hseqbase - ci->seq - p;
+				cnt -= p;
+				ci->offset += p;
 				ci->seq = b->hseqbase;
 			}
-			if (ci->oids[ci->noids - 1] >= b->hseqbase + BATcount(b)) {
-				BUN lo = 0;
-				BUN hi = cnt - 1;
-				const oid o = b->hseqbase + BATcount(b);
-				/* loop invariant:
-				 * ci->oids[lo] < o <= ci->oids[hi] */
-				while (lo + 1 < hi) {
-					BUN mid = (lo + hi) / 2;
-					if (ci->oids[mid] > o)
-						hi = mid;
-					else
-						lo = mid;
-				}
-				ci->noids = hi;
-			}
-			if (ci->seq + cnt + ci->noids > b->hseqbase + BATcount(b))
+			if (ci->seq + cnt + ci->noids > b->hseqbase + BATcount(b)) {
+				p = binsearchcand(ci->oids, ci->noids - 1,
+						  b->hseqbase + BATcount(b));
+				ci->noids = p;
 				cnt = b->hseqbase + BATcount(b) - ci->seq - ci->noids;
+			}
+			while (ci->noids > 0 && ci->oids[0] == ci->seq) {
+				ci->noids--;
+				ci->oids++;
+				ci->seq++;
+			}
+			while (ci->noids > 0 &&
+			       ci->oids[ci->noids - 1] == ci->seq + cnt + ci->noids - 1)
+				ci->noids--;
+			if (ci->noids == 0) {
+				ci->tpe = cand_dense;
+				goto case_cand_dense;
+			}
 		}
 		break;
 	}
