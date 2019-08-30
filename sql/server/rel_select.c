@@ -4483,15 +4483,15 @@ static list*
 list_power_set(sql_allocator *sa, list* input) /* cube */
 {
 	list *res = sa_list(sa);
-	// N stores total number of subsets
+	/* N stores total number of subsets */
 	int N = (int) pow(2, input->cnt);
 
-	// generate each subset one by one
+	/* generate each subset one by one */
 	for (int i = 0; i < N; i++) {
 		list *ll = sa_list(sa);
-		int j = 0; // check every bit of i
+		int j = 0; /* check every bit of i */
 		for (node *n = input->h ; n ; n = n->next) {
-			// if j'th bit of i is set, then append
+			/* if j'th bit of i is set, then append */
 			if (i & (1 << j))
 				list_append(ll, n->data);
 			j++;
@@ -4505,56 +4505,33 @@ static list*
 list_rollup(sql_allocator *sa, list* input)
 {
 	list *res = sa_list(sa);
-	int counter, j;
 
-	for (counter = input->cnt; counter >= 0; counter--) {
+	for (int counter = input->cnt; counter > 0; counter--) {
 		list *ll = sa_list(sa);
-		j = 0;
+		int j = 0;
 		for (node *n = input->h; n && j < counter; j++, n = n->next)
 			list_append(ll, n->data);
 		list_append(res, ll);
 	}
+	list_append(res, sa_list(sa)); /* global aggregate case */
 	return res;
 }
-
-static int
-list_equal(list* list1, list* list2)
-{
-	for (node *n = list1->h; n ; n = n->next) {
-		sql_exp *e = (sql_exp*) n->data;
-		if (!exps_find_exp(list2, e))
-			return 1;
-	}
-	for (node *n = list2->h; n ; n = n->next) {
-		sql_exp *e = (sql_exp*) n->data;
-		if (!exps_find_exp(list1, e))
-			return 1;
-	}
-	return 0;
-}
-
-/*
-(a, b),
-(a),
-()
-
-(c)
-*/
 
 static list*
 lists_cartesian_product_and_distinct(sql_allocator *sa, list *l1, list *l2)
 {
 	list *res = sa_list(sa);
 
+	/* for each list of l2, merge into each list of l1 while removing duplicates */
 	for (node *n = l1->h ; n ; n = n->next) {
 		list *sub_list = (list*) n->data;
 
 		for (node *m = l2->h ; m ; m = m->next) {
 			list *other = (list*) m->data;
-			list_append(res, list_merge(list_dup(sub_list, (fdup) NULL), other, (fdup) NULL));
+			list_append(res, list_distinct(list_merge(list_dup(sub_list, (fdup) NULL), other, (fdup) NULL), (fcmp) exp_equal, (fdup) NULL));
 		}
 	}
-	return list_distinct(res, (fcmp)list_equal, (fdup)NULL);
+	return res;
 }
 
 static list*
@@ -4576,6 +4553,8 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 		symbol *grouping = o->data.sym;
 		dlist *dl = grouping->data.lval;
 		if (dl) { /* GROUP BY a, b, ... case */
+			list *gexps = new_exp_list(sql->sa);
+			
 			for (dnode *oo = dl->h; oo; oo = oo->next) {
 				symbol *grp = oo->data.sym;
 				sql_exp *e = rel_group_column(query, rel, grp, selection, f);
@@ -4590,36 +4569,37 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 					if (!stack_push_groupby_expression(sql, grp, e))
 						return NULL;
 				}
-				list_append(exps, e);
+				list_append(gexps, e);
 			}
 			if (grouping->token == SQL_ROLLUP) {
 				assert(combined_totals);
 				if (!*sets) {
-					*sets = list_rollup(sql->sa, exps);
+					*sets = list_rollup(sql->sa, gexps);
 				} else {
-					list *new_set = list_rollup(sql->sa, exps);
+					list *new_set = list_rollup(sql->sa, gexps);
 					*sets = lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
 				}
 			} else if (grouping->token == SQL_CUBE) {
 				assert(combined_totals);
 				if (!*sets) {
-					*sets = list_power_set(sql->sa, exps);
+					*sets = list_power_set(sql->sa, gexps);
 				} else {
-					list *new_set = list_power_set(sql->sa, exps);
+					list *new_set = list_power_set(sql->sa, gexps);
 					*sets = lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
 				}
 			} else if (combined_totals && grouping->token == SQL_GROUPBY) {
 				if (!*sets) {
-					list *single_l = list_dup(exps, (fdup)NULL);
+					list *single_l = list_dup(gexps, (fdup)NULL);
 					*sets = sa_list(sql->sa);
 					list_append(*sets, single_l);
 				} else {
-					list *single_l = list_dup(exps, (fdup)NULL);
+					list *single_l = list_dup(gexps, (fdup)NULL);
 					list *new_set = sa_list(sql->sa);
 					list_append(new_set, single_l);
 					*sets = lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
 				}
 			}
+			exps = list_merge(exps, gexps, (fdup) NULL);
 		} /* The GROUP BY () case is the global aggregate which is always added by ROLLUP and CUBE */
 	}
 	return exps;
