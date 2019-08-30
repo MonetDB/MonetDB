@@ -1079,6 +1079,11 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Aug 30 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.11-20190830
+- Rebuilt.
+- BZ#6749: mserver5 restart aborts/segfaults after dropping column
+  with constraint
+
 * Tue Aug 20 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.9-20190820
 - Rebuilt.
 - BZ#6571: Jdbc connection hangs
