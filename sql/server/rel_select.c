@@ -4551,86 +4551,80 @@ lists_cartesian_product_and_distinct(sql_allocator *sa, list *l1, list *l2)
 }
 
 static list*
-rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection, int f, list **sets)
+rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection, int f, bool combined_totals, bool grouping_sets, list **sets)
 {
 	mvc *sql = query->sql;
-	dnode *o;
-	bool combined_totals = false;
 	list *exps = new_exp_list(sql->sa);
 
-	for (o = groupby->data.lval->h; o ; o = o->next) {
+	for (dnode *o = groupby->data.lval->h; o; o = o->next) {
 		symbol *grouping = o->data.sym;
-		if (grouping->token == SQL_ROLLUP || grouping->token == SQL_CUBE) {
-			combined_totals = true;
-			break;
-		}
-	}
-	for (o = groupby->data.lval->h; o; o = o->next) {
-		symbol *grouping = o->data.sym;
-		dlist *dl = grouping->data.lval;
-		if (dl) { /* GROUP BY a, b, ... case */
-			list *set_exps = new_exp_list(sql->sa);
+		if (grouping->token == SQL_GROUPING_SETS) {
+			list *other = rel_groupings(query, rel, grouping, selection, f, combined_totals, true, sets);
+			exps = list_merge(exps, other, (fdup) NULL);
+		} else {
+			dlist *dl = grouping->data.lval;
+			if (dl) {
+				list *set_exps = new_exp_list(sql->sa);
 
-			for (dnode *oo = dl->h; oo; oo = oo->next) {
-				symbol *grp = oo->data.sym;
-				list *elements = sa_list(sql->sa);
+				for (dnode *oo = dl->h; oo; oo = oo->next) {
+					symbol *grp = oo->data.sym;
+					list *elements = sa_list(sql->sa); /* next set of columns */
 
-				if (grp->token == SQL_COLUMN_GROUP) { /* list of columns */
-					assert(combined_totals);
-					for (dnode *ooo = grp->data.lval->h; ooo; ooo = ooo->next) {
-						symbol *elm = ooo->data.sym;
-						sql_exp *e = rel_group_column(query, rel, elm, selection, f);
+					if (grp->token == SQL_COLUMN_GROUP) { /* set of columns */
+						assert(combined_totals);
+						for (dnode *ooo = grp->data.lval->h; ooo; ooo = ooo->next) {
+							symbol *elm = ooo->data.sym;
+							sql_exp *e = rel_group_column(query, rel, elm, selection, f);
+							if (!e)
+								return NULL;
+							list_append(elements, e);
+							list_append(exps, e);
+						}
+					} else { /* single column or expression */
+						sql_exp *e = rel_group_column(query, rel, grp, selection, f);
 						if (!e)
 							return NULL;
+						if (e->type != e_column) { /* store group by expressions in the stack */
+							if (combined_totals) {
+								(void) sql_error(sql, 02, SQLSTATE(42000) "Group by with expressions not possible with ROLLUP, CUBE, GROUPING SETS");
+								return NULL;
+							}
+							if (!stack_push_groupby_expression(sql, grp, e))
+								return NULL;
+						}
 						list_append(elements, e);
 						list_append(exps, e);
 					}
-				} else {
-					sql_exp *e = rel_group_column(query, rel, grp, selection, f);
-					if (!e)
-						return NULL;
-					if (e->type != e_column) { /* store group by expressions in the stack */
-						if (combined_totals) {
-							(void) sql_error(sql, 02, SQLSTATE(42000) "Group by with expressions not possible with ROLLUP and CUBE");
-							return NULL;
-						}
-						if (!stack_push_groupby_expression(sql, grp, e))
-							return NULL;
+					list_append(set_exps, elements);
+				}
+				if (grouping->token == SQL_ROLLUP) {
+					assert(combined_totals);
+					if (!*sets) {
+						*sets = list_rollup(sql->sa, set_exps);
+					} else {
+						list *new_set = list_rollup(sql->sa, set_exps);
+						*sets = grouping_sets ? list_merge(*sets, new_set, (fdup) NULL) : lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
 					}
-					list_append(elements, e);
-					list_append(exps, e);
+				} else if (grouping->token == SQL_CUBE) {
+					assert(combined_totals);
+					if (!*sets) {
+						*sets = list_power_set(sql->sa, set_exps);
+					} else {
+						list *new_set = list_power_set(sql->sa, set_exps);
+						*sets = grouping_sets ? list_merge(*sets, new_set, (fdup) NULL) : lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
+					}
+				} else if (combined_totals && (grouping->token == SQL_GROUPBY)) {
+					if (!*sets) {
+						*sets = new_exp_list(sql->sa);
+						list_append(*sets, set_exps);
+					} else {
+						list *new_set = new_exp_list(sql->sa);
+						list_append(new_set, set_exps);
+						*sets = grouping_sets ? list_merge(*sets, new_set, (fdup) NULL) : lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
+					}
 				}
-				list_append(set_exps, elements);
-			}
-			if (grouping->token == SQL_ROLLUP) {
-				assert(combined_totals);
-				if (!*sets) {
-					*sets = list_rollup(sql->sa, set_exps);
-				} else {
-					list *new_set = list_rollup(sql->sa, set_exps);
-					*sets = lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
-				}
-			} else if (grouping->token == SQL_CUBE) {
-				assert(combined_totals);
-				if (!*sets) {
-					*sets = list_power_set(sql->sa, set_exps);
-				} else {
-					list *new_set = list_power_set(sql->sa, set_exps);
-					*sets = lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
-				}
-			} else if (combined_totals && grouping->token == SQL_GROUPBY) {
-				if (!*sets) {
-					list *single_l = list_dup(set_exps, (fdup)NULL);
-					*sets = sa_list(sql->sa);
-					list_append(*sets, single_l);
-				} else {
-					list *single_l = list_dup(set_exps, (fdup)NULL);
-					list *new_set = sa_list(sql->sa);
-					list_append(new_set, single_l);
-					*sets = lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
-				}
-			}
-		} /* The GROUP BY () case is the global aggregate which is always added by ROLLUP and CUBE */
+			} /* The GROUP BY () case is the global aggregate which is always added by ROLLUP and CUBE */
+		}
 	}
 	return exps;
 }
@@ -6263,7 +6257,16 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 
 	if (rel) {
 		if (rel && sn->groupby) {
-			list *gbe = rel_groupings(query, &rel, sn->groupby, sn->selection, sql_sel | sql_groupby, &sets);
+			list *gbe;
+			bool combined_totals = false;
+			for (dnode *o = sn->groupby->data.lval->h; o ; o = o->next) {
+				symbol *grouping = o->data.sym;
+				if (grouping->token == SQL_ROLLUP || grouping->token == SQL_CUBE || grouping->token == SQL_GROUPING_SETS) {
+					combined_totals = true;
+					break;
+				}
+			}
+			gbe = rel_groupings(query, &rel, sn->groupby, sn->selection, sql_sel | sql_groupby, combined_totals, false, &sets);
 			if (!gbe)
 				return NULL;
 			rel = rel_groupby(sql, rel, gbe);

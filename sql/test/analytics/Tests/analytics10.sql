@@ -162,4 +162,11 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY CUBE((Product_Category, Product_Name), ColID), ColID , ROLLUP((Product_Category, ColID), Product_Name);
 
+-- GROUPING SETS
+
+SELECT 
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS((Product_Category, Product_Name), (ColID));
+
 DROP TABLE tbl_ProductSales;

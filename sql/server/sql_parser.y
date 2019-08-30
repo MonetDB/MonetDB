@@ -375,6 +375,7 @@ int yydebug=1;
 	merge_insert
 	group_by_element
 	ordinary_grouping_element
+	grouping_set_element
 
 %type <type>
 	data_type
@@ -523,6 +524,7 @@ int yydebug=1;
 	group_by_list
 	search_condition_commalist
 	ordinary_grouping_set
+	grouping_set_list
 
 %type <i_val>
 	any_all_some
@@ -637,7 +639,7 @@ int yydebug=1;
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
 %token <operation> EXISTS ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
-%token <operation> FROM FOR MATCH
+%token <operation> GROUPING SETS FROM FOR MATCH
 
 %token <operation> EXTRACT
 
@@ -3687,10 +3689,11 @@ group_by_list:
  ;
 
 group_by_element:
-    search_condition                     { $$ = _symbol_create_list(SQL_GROUPBY, append_symbol(L(), $1)); }
- |  ROLLUP '(' ordinary_grouping_set ')' { $$ = _symbol_create_list(SQL_ROLLUP, $3); }
- |  CUBE '(' ordinary_grouping_set ')'   { $$ = _symbol_create_list(SQL_CUBE, $3); }
- |  '(' ')'                              { $$ = _symbol_create_list(SQL_GROUPBY, NULL); }
+    search_condition                        { $$ = _symbol_create_list(SQL_GROUPBY, append_symbol(L(), $1)); }
+ |  ROLLUP '(' ordinary_grouping_set ')'    { $$ = _symbol_create_list(SQL_ROLLUP, $3); }
+ |  CUBE '(' ordinary_grouping_set ')'      { $$ = _symbol_create_list(SQL_CUBE, $3); }
+ |  GROUPING SETS '(' grouping_set_list ')' { $$ = _symbol_create_list(SQL_GROUPING_SETS, $4); }
+ |  '(' ')'                                 { $$ = _symbol_create_list(SQL_GROUPBY, NULL); }
  ;
 
 ordinary_grouping_set:
@@ -3706,6 +3709,19 @@ ordinary_grouping_element:
 column_ref_commalist:
     column_ref		                    { $$ = append_symbol(L(), _symbol_create_list(SQL_COLUMN,$1)); }
  |  column_ref_commalist ',' column_ref { $$ = append_symbol($1, _symbol_create_list(SQL_COLUMN,$3)); }
+ ;
+
+grouping_set_list:
+	grouping_set_element                       { $$ = append_symbol(L(), $1); }
+ |  grouping_set_list ',' grouping_set_element { $$ = append_symbol($1, $3); }
+ ;
+
+grouping_set_element:
+    ordinary_grouping_element               { $$ = _symbol_create_list(SQL_GROUPBY, append_symbol(L(), $1)); }
+ |  ROLLUP '(' ordinary_grouping_set ')'    { $$ = _symbol_create_list(SQL_ROLLUP, $3); }
+ |  CUBE '(' ordinary_grouping_set ')'      { $$ = _symbol_create_list(SQL_CUBE, $3); }
+ |  GROUPING SETS '(' grouping_set_list ')' { $$ = _symbol_create_list(SQL_GROUPING_SETS, $4); }
+ |  '(' ')'                                 { $$ = _symbol_create_list(SQL_GROUPBY, NULL); }
  ;
 
 opt_having_clause:
@@ -6641,6 +6657,7 @@ char *token2string(tokens token)
 	SQL(GRANT);
 	SQL(GRANT_ROLES);
 	SQL(GROUPBY);
+	SQL(GROUPING_SETS);
 	SQL(IDENT);
 	SQL(IF);
 	SQL(IN);

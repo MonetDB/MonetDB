@@ -84,6 +84,7 @@ typedef enum tokens {
 	SQL_GRANT,
 	SQL_GRANT_ROLES,
 	SQL_GROUPBY,
+	SQL_GROUPING_SETS,
 	SQL_IDENT,
 	SQL_IF,
 	SQL_IN,
