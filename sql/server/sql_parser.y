@@ -3699,7 +3699,7 @@ ordinary_grouping_set:
  ;
 
 ordinary_grouping_element:
-    '(' column_ref_commalist ')' { $$ = _symbol_create_list(SQL_GROUPBY, $2); }
+    '(' column_ref_commalist ')' { $$ = _symbol_create_list(SQL_COLUMN_GROUP, $2); }
  |  column_ref                   { $$ = _symbol_create_list(SQL_COLUMN, $1); }
  ;
 
@@ -6587,6 +6587,7 @@ char *token2string(tokens token)
 	SQL(CHECK);
 	SQL(COALESCE);
 	SQL(COLUMN);
+	SQL(COLUMN_GROUP);
 	SQL(COLUMN_OPTIONS);
 	SQL(COMMENT);
 	SQL(COMPARE);

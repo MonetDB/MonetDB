@@ -704,6 +704,18 @@ list_dup(list *l, fdup dup)
 	return res ? list_merge(res, l, dup) : NULL;
 }
 
+list *
+list_flaten(list *l)
+{
+	list *res = list_new_(l);
+	for (node *n = l->h ; n ; n = n->next) {
+		list *ll = (list*) n->data;
+		for (node *m = ll->h ; m ; m = m->next)
+			list_append(res, m->data);
+	}
+	return res;
+}
+
 void
 list_hash_delete(list *l, void *data, fcmp cmp)
 {

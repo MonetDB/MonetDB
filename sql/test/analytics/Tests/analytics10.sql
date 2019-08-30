@@ -130,4 +130,36 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ROLLUP(Product_Category, Product_Name), CUBE(Product_Category, Product_Name);
 
+-- Sets of columns
+
+SELECT
+    Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY CUBE((Product_Name));
+
+SELECT 
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY CUBE((Product_Category, Product_Name, ColID));
+
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ROLLUP((Product_Category, Product_Name), ColID);
+
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ROLLUP((Product_Category, Product_Name), ColID), ColID;
+
+SELECT
+    COUNT(*), CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY CUBE((Product_Category, Product_Name), ColID), ColID , ROLLUP((Product_Category, ColID), Product_Name);
+
+SELECT
+    DISTINCT CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY CUBE((Product_Category, Product_Name), ColID), ColID , ROLLUP((Product_Category, ColID), Product_Name);
+
 DROP TABLE tbl_ProductSales;

@@ -93,6 +93,8 @@ extern list *list_dup(list *l, fdup dup);
 extern list *list_merge(list *l, list *data, fdup dup);
 extern list *list_merge_destroy(list *l, list *data, fdup dup);
 
+extern list *list_flaten(list *l);
+
 extern void list_hash_delete(list *l, void *data, fcmp cmp);
 extern void* list_hash_add(list *l, void *data, fcmp cmp);
 

@@ -4517,6 +4517,22 @@ list_rollup(sql_allocator *sa, list* input)
 	return res;
 }
 
+static int
+list_equal(list* list1, list* list2)
+{
+	for (node *n = list1->h; n ; n = n->next) {
+		sql_exp *e = (sql_exp*) n->data;
+		if (!exps_find_exp(list2, e))
+			return 1;
+	}
+	for (node *n = list2->h; n ; n = n->next) {
+		sql_exp *e = (sql_exp*) n->data;
+		if (!exps_find_exp(list1, e))
+			return 1;
+	}
+	return 0;
+}
+
 static list*
 lists_cartesian_product_and_distinct(sql_allocator *sa, list *l1, list *l2)
 {
@@ -4528,7 +4544,7 @@ lists_cartesian_product_and_distinct(sql_allocator *sa, list *l1, list *l2)
 
 		for (node *m = l2->h ; m ; m = m->next) {
 			list *other = (list*) m->data;
-			list_append(res, list_distinct(list_merge(list_dup(sub_list, (fdup) NULL), other, (fdup) NULL), (fcmp) exp_equal, (fdup) NULL));
+			list_append(res, list_distinct(list_merge(list_dup(sub_list, (fdup) NULL), other, (fdup) NULL), (fcmp) list_equal, (fdup) NULL));
 		}
 	}
 	return res;
@@ -4553,53 +4569,67 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 		symbol *grouping = o->data.sym;
 		dlist *dl = grouping->data.lval;
 		if (dl) { /* GROUP BY a, b, ... case */
-			list *gexps = new_exp_list(sql->sa);
-			
+			list *set_exps = new_exp_list(sql->sa);
+
 			for (dnode *oo = dl->h; oo; oo = oo->next) {
 				symbol *grp = oo->data.sym;
-				sql_exp *e = rel_group_column(query, rel, grp, selection, f);
-				if (!e)
-					return NULL;
-				/* store group by expressions in the stack */
-				if (e->type != e_column) {
-					if (combined_totals) {
-						(void) sql_error(sql, 02, SQLSTATE(42000) "Group by with expressions not possible with ROLLUP and CUBE");
-						return NULL;
+				list *elements = sa_list(sql->sa);
+
+				if (grp->token == SQL_COLUMN_GROUP) { /* list of columns */
+					assert(combined_totals);
+					for (dnode *ooo = grp->data.lval->h; ooo; ooo = ooo->next) {
+						symbol *elm = ooo->data.sym;
+						sql_exp *e = rel_group_column(query, rel, elm, selection, f);
+						if (!e)
+							return NULL;
+						list_append(elements, e);
+						list_append(exps, e);
 					}
-					if (!stack_push_groupby_expression(sql, grp, e))
+				} else {
+					sql_exp *e = rel_group_column(query, rel, grp, selection, f);
+					if (!e)
 						return NULL;
+					if (e->type != e_column) { /* store group by expressions in the stack */
+						if (combined_totals) {
+							(void) sql_error(sql, 02, SQLSTATE(42000) "Group by with expressions not possible with ROLLUP and CUBE");
+							return NULL;
+						}
+						if (!stack_push_groupby_expression(sql, grp, e))
+							return NULL;
+					}
+					list_append(elements, e);
+					list_append(exps, e);
 				}
-				list_append(gexps, e);
+				list_append(set_exps, elements);
 			}
 			if (grouping->token == SQL_ROLLUP) {
 				assert(combined_totals);
 				if (!*sets) {
-					*sets = list_rollup(sql->sa, gexps);
+					*sets = list_rollup(sql->sa, set_exps);
 				} else {
-					list *new_set = list_rollup(sql->sa, gexps);
+					list *new_set = list_rollup(sql->sa, set_exps);
 					*sets = lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
 				}
 			} else if (grouping->token == SQL_CUBE) {
 				assert(combined_totals);
 				if (!*sets) {
-					*sets = list_power_set(sql->sa, gexps);
+					*sets = list_power_set(sql->sa, set_exps);
 				} else {
-					list *new_set = list_power_set(sql->sa, gexps);
+					list *new_set = list_power_set(sql->sa, set_exps);
 					*sets = lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
 				}
 			} else if (combined_totals && grouping->token == SQL_GROUPBY) {
 				if (!*sets) {
-					list *single_l = list_dup(gexps, (fdup)NULL);
+					list *single_l = list_dup(set_exps, (fdup)NULL);
 					*sets = sa_list(sql->sa);
 					list_append(*sets, single_l);
 				} else {
-					list *single_l = list_dup(gexps, (fdup)NULL);
+					list *single_l = list_dup(set_exps, (fdup)NULL);
 					list *new_set = sa_list(sql->sa);
 					list_append(new_set, single_l);
 					*sets = lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
 				}
 			}
-			exps = list_merge(exps, gexps, (fdup) NULL);
 		} /* The GROUP BY () case is the global aggregate which is always added by ROLLUP and CUBE */
 	}
 	return exps;
@@ -6337,10 +6367,11 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		list *group_exps = list_dup(group->exps, (fdup)NULL);
 
 		for (node *n = sets->h ; n ; n = n->next) {
-			list *l = (list*) n->data;
-			sql_rel *nrel = rel_groupby(sql, unions ? rel_dup(group->l) : group->l, l);
-			list *exps = sa_list(sql->sa);
-			list *pexps = sa_list(sql->sa);
+			sql_rel *nrel;
+			list *l = (list*) n->data, *exps = sa_list(sql->sa), *pexps = sa_list(sql->sa);
+
+			l = list_flaten(l);
+			nrel = rel_groupby(sql, unions ? rel_dup(group->l) : group->l, l);
 
 			for (node *m = group_exps->h ; m ; m = m->next) {
 				sql_exp *e = (sql_exp*) m->data, *ne = NULL;
