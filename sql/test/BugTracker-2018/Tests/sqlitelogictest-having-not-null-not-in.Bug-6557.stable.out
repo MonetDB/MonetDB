@@ -51,7 +51,18 @@ Ready.
 % L4 # name
 % bigint # type
 % 1 # length
-[ 126	]
+[ NULL	]
+#debug SELECT CAST(SUM(col0) AS BIGINT) FROM tab0 WHERE + + col0 NOT BETWEEN NULL AND + col2;
+mdb>#X_2=0@0:void := querylog.define("debug select cast(sum(col0) as bigint) from tab0 where + + col0 not between null and + col2;", "default_pipe", 24:int);
+mdb>#barrier X_137=false := language.dataflow();
+mdb>#X_5=0 := sql.mvc();
+mdb>#X_92=nil:bat[:int] := sql.bind(X_5=0, "sys", "tab0", "col0", 0:int, 0:int, 3:int);
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+mdb>#EOD
 #DROP TABLE tab0;
 
 # 12:32:58 >  
