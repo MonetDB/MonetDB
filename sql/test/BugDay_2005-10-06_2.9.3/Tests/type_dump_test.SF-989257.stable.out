@@ -46,6 +46,7 @@ CREATE TABLE "sys"."voyages" (
 	"next_voyage"       INTEGER,
 	"particulars"       VARCHAR(507)
 );
+Operation successful
 
 # 12:41:42 >  
 # 12:41:42 >  Done.
