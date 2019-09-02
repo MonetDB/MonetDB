@@ -4562,10 +4562,14 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 	for (dnode *o = groupby->data.lval->h; o; o = o->next) {
 		symbol *grouping = o->data.sym;
 		if (grouping->token == SQL_GROUPING_SETS) {
-			list *other = rel_groupings(query, rel, grouping, selection, f, combined_totals, true, sets);
+			list *nsets = NULL, *other = rel_groupings(query, rel, grouping, selection, f, combined_totals, true, &nsets);
 			if (!other)
 				return NULL;
-			exps = list_merge(exps, other, (fdup) NULL);
+			exps = list_distinct(list_merge(exps, other, (fdup) NULL), (fcmp) exp_equal, (fdup) NULL);
+			if (!*sets)
+				*sets = nsets;
+			else
+				*sets = grouping_sets ? list_merge(*sets, nsets, (fdup) NULL) : lists_cartesian_product_and_distinct(sql->sa, *sets, nsets);
 		} else {
 			dlist *dl = grouping->data.lval;
 			if (dl) {
@@ -6372,7 +6376,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		l = inner;
 	}
 
-	/* ROLLUP and CUBE cases */
+	/* ROLLUP, CUBE, GROUPING SETS cases */
 	if (sets) {
 		sql_rel *unions = NULL;
 		list *group_exps = list_dup(group->exps, (fdup)NULL);

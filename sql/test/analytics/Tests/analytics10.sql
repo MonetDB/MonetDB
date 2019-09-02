@@ -197,6 +197,26 @@ GROUP BY GROUPING SETS((Product_Category), (Product_Category));
 SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
+GROUP BY ColID, GROUPING SETS ((Product_Name), (Product_Category));
+
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
 GROUP BY ColID, CUBE (Product_Category, ColID), GROUPING SETS ((Product_Name), (Product_Category));
+
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS(CUBE(Product_Category, Product_Name), ROLLUP(ColID, Product_Name));
+
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ColID, GROUPING SETS (GROUPING SETS (()), (Product_Name), (Product_Category));
+
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS (ROLLUP(ColID), (), GROUPING SETS ((Product_Category, Product_Name), CUBE(ColID), ColID));
 
 DROP TABLE tbl_ProductSales;
