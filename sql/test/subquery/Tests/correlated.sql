@@ -152,6 +152,9 @@ SELECT i, (SELECT MIN(i)+i1.i FROM integers WHERE i>i1.i) FROM integers i1 ORDER
 	-- 1, 3
 	-- 2, 5
 	-- 3, NULL
+
+SELECT (SELECT SUM(i + i1.i), 1 FROM integers) FROM integers i1; --error, the subquery should output only one column
+
 /*
 -- exit
 	// aggregate with correlation in GROUP BY

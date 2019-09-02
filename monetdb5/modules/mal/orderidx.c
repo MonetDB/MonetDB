@@ -44,7 +44,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		return MAL_SUCCEED;
 
 	/* check if b already has index */
-	if (b->torderidx)
+	if (BATcheckorderidx(b))
 		return MAL_SUCCEED;
 
 	switch (ATOMbasetype(b->ttype)) {
@@ -249,7 +249,7 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == NULL)
 		throw(MAL, "bat.getorderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if (b->torderidx == NULL) {
+	if (!BATcheckorderidx(b)) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.getorderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
