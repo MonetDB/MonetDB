@@ -4556,19 +4556,24 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 	mvc *sql = query->sql;
 	list *exps = new_exp_list(sql->sa);
 
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+
 	for (dnode *o = groupby->data.lval->h; o; o = o->next) {
 		symbol *grouping = o->data.sym;
 		if (grouping->token == SQL_GROUPING_SETS) {
 			list *other = rel_groupings(query, rel, grouping, selection, f, combined_totals, true, sets);
+			if (!other)
+				return NULL;
 			exps = list_merge(exps, other, (fdup) NULL);
 		} else {
 			dlist *dl = grouping->data.lval;
 			if (dl) {
-				list *set_exps = new_exp_list(sql->sa);
+				list *set_exps = new_exp_list(sql->sa); /* columns and combination of columns to be used for the next set */
 
 				for (dnode *oo = dl->h; oo; oo = oo->next) {
 					symbol *grp = oo->data.sym;
-					list *elements = sa_list(sql->sa); /* next set of columns */
+					list *elements = new_exp_list(sql->sa); /* next set of columns */
 
 					if (grp->token == SQL_COLUMN_GROUP) { /* set of columns */
 						assert(combined_totals);
@@ -4613,17 +4618,20 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 						list *new_set = list_power_set(sql->sa, set_exps);
 						*sets = grouping_sets ? list_merge(*sets, new_set, (fdup) NULL) : lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
 					}
-				} else if (combined_totals && (grouping->token == SQL_GROUPBY)) {
+				} else if (combined_totals && (grouping->token == SQL_GROUPBY)) { /* the list of sets is not used in the "GROUP BY a, b, ..." case */
 					if (!*sets) {
 						*sets = new_exp_list(sql->sa);
 						list_append(*sets, set_exps);
 					} else {
-						list *new_set = new_exp_list(sql->sa);
-						list_append(new_set, set_exps);
+						list *new_set = list_append(new_exp_list(sql->sa), set_exps);
 						*sets = grouping_sets ? list_merge(*sets, new_set, (fdup) NULL) : lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
 					}
 				}
-			} /* The GROUP BY () case is the global aggregate which is always added by ROLLUP and CUBE */
+			} else if (grouping_sets) { /* The GROUP BY () case is the global aggregate which is always added by ROLLUP and CUBE */
+				if (!*sets)
+					*sets = new_exp_list(sql->sa);
+				list_append(*sets, new_exp_list(sql->sa));
+			}
 		}
 	}
 	return exps;

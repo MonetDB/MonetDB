@@ -21,6 +21,11 @@ GROUP BY Product_Category;
 SELECT 
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
+GROUP BY Product_Category, (); --same as GROUP BY Product_Category
+
+SELECT 
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
 GROUP BY Product_Name;
 
 SELECT 
@@ -155,18 +160,43 @@ GROUP BY ROLLUP((Product_Category, Product_Name), ColID), ColID;
 SELECT
     COUNT(*), CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
-GROUP BY CUBE((Product_Category, Product_Name), ColID), ColID , ROLLUP((Product_Category, ColID), Product_Name);
+GROUP BY CUBE((Product_Category, Product_Name), ColID), ColID, ROLLUP((Product_Category, ColID), Product_Name);
 
 SELECT
     DISTINCT CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
-GROUP BY CUBE((Product_Category, Product_Name), ColID), ColID , ROLLUP((Product_Category, ColID), Product_Name);
+GROUP BY CUBE((Product_Category, Product_Name), ColID), ColID, ROLLUP((Product_Category, ColID), Product_Name);
 
 -- GROUPING SETS
 
-SELECT 
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS(); --error
+
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS(());
+
+SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS((Product_Category, Product_Name), (ColID));
+
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS((Product_Category), ());
+
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS((Product_Category), (Product_Category));
+
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ColID, CUBE (Product_Category, ColID), GROUPING SETS ((Product_Name), (Product_Category));
 
 DROP TABLE tbl_ProductSales;
