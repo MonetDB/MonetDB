@@ -4586,6 +4586,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 							sql_exp *e = rel_group_column(query, rel, elm, selection, f);
 							if (!e)
 								return NULL;
+							assert(e->type == e_column);
 							list_append(elements, e);
 							list_append(exps, e);
 						}
@@ -4624,8 +4625,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 					}
 				} else if (combined_totals && (grouping->token == SQL_GROUPBY)) { /* the list of sets is not used in the "GROUP BY a, b, ..." case */
 					if (!*sets) {
-						*sets = new_exp_list(sql->sa);
-						list_append(*sets, set_exps);
+						*sets = list_append(new_exp_list(sql->sa), set_exps);
 					} else {
 						list *new_set = list_append(new_exp_list(sql->sa), set_exps);
 						*sets = grouping_sets ? list_merge(*sets, new_set, (fdup) NULL) : lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
@@ -6246,7 +6246,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 	mvc *sql = query->sql;
 	dnode *n;
 	//int aggr = 0;
-	sql_rel *inner = NULL, *group, *l;
+	sql_rel *inner = NULL, *group, *left;
 	list *sets = NULL;
 
 	assert(sn->s.token == SQL_SELECT);
@@ -6357,7 +6357,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 	}
 
 	group = rel->l;
-	l = rel;
+	left = rel;
 
 	if (sn->having) {
 		inner = rel->l;
@@ -6373,8 +6373,24 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot compare sets with values, probably an aggregate function missing");
 		rel->l = inner;
 		group = inner->l;
-		l = inner;
+		left = inner;
 	}
+
+	if (rel && sn->orderby) {
+		list *obe = NULL;
+
+		set_processed(rel);
+		rel = rel_orderby(sql, rel);
+		obe = rel_order_by(query, &rel, sn->orderby, sql_orderby);
+		if (!obe)
+			return NULL;
+		rel->r = obe;
+
+		if (!is_select(left->op)) /* if the rollup query has a having clause, it's no longer needed to update left*/
+			left = rel->l;
+	}
+	if (!rel)
+		return NULL;
 
 	/* ROLLUP, CUBE, GROUPING SETS cases */
 	if (sets) {
@@ -6414,24 +6430,11 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			if (!unions)
 				return unions;
 		}
-		l->l = unions;
+		left->l = unions;
 	}
 
 	if (rel && sn->distinct)
 		rel = rel_distinct(rel);
-
-	if (rel && sn->orderby) {
-		list *obe = NULL;
-
-		set_processed(rel);
-		rel = rel_orderby(sql, rel);
-		obe = rel_order_by(query, &rel, sn->orderby, sql_orderby);
-		if (!obe)
-			return NULL;
-		rel->r = obe;
-	}
-	if (!rel)
-		return NULL;
 
 	if (sn->limit || sn->offset) {
 		sql_subtype *lng = sql_bind_localtype("lng");

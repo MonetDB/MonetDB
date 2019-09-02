@@ -219,4 +219,20 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS (ROLLUP(ColID), (), GROUPING SETS ((Product_Category, Product_Name), CUBE(ColID), ColID));
 
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)
+ORDER BY SUM(TotalSales);
+
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)
+HAVING SUM(TotalSales) > 600;
+
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)
+HAVING SUM(TotalSales) > 600
+ORDER BY AVG(TotalSales);
+
 DROP TABLE tbl_ProductSales;
