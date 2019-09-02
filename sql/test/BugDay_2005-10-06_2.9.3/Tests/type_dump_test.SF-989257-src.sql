@@ -23,3 +23,5 @@ CREATE TABLE voyages (
 );
 
 \d voyages
+
+drop table voyages;

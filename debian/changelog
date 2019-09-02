@@ -1,3 +1,11 @@
+monetdb (11.33.11) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6749: mserver5 restart aborts/segfaults after dropping column
+    with constraint
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 30 Aug 2019 02:27:33 +0200
+
 monetdb (11.33.9) unstable; urgency=low
 
   * Rebuilt.
