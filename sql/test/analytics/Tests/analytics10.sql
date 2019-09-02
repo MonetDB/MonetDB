@@ -221,6 +221,11 @@ GROUP BY GROUPING SETS (ROLLUP(ColID), (), GROUPING SETS ((Product_Category, Pro
 
 SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ColID, GROUPING SETS (GROUPING SETS (()), (Product_Name), (Product_Category)) LIMIT 1 OFFSET 2;
+
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)
 ORDER BY SUM(TotalSales);
 
@@ -228,6 +233,11 @@ SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)
 HAVING SUM(TotalSales) > 600;
+
+SELECT
+    DISTINCT CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)
+ORDER BY SUM(TotalSales);
 
 SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales

@@ -754,6 +754,15 @@ stdout of test 'analytics10` in directory 'sql/test/analytics` itself:
 [ 100	]
 #SELECT
 #    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+#FROM tbl_ProductSales
+#GROUP BY ColID, GROUPING SETS (GROUPING SETS (()), (Product_Name), (Product_Category)) LIMIT 1 OFFSET 2;
+% .L3 # table_name
+% totalsales # name
+% bigint # type
+% 3 # length
+[ 500	]
+#SELECT
+#    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 #FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)
 #ORDER BY SUM(TotalSales);
 % .L3 # table_name
@@ -775,6 +784,20 @@ stdout of test 'analytics10` in directory 'sql/test/analytics` itself:
 % totalsales # name
 % bigint # type
 % 4 # length
+[ 1200	]
+#SELECT
+#    DISTINCT CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+#FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)
+#ORDER BY SUM(TotalSales);
+% .L3 # table_name
+% totalsales # name
+% bigint # type
+% 4 # length
+[ 100	]
+[ 200	]
+[ 400	]
+[ 500	]
+[ 600	]
 [ 1200	]
 #SELECT
 #    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
