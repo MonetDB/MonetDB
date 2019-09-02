@@ -15,6 +15,13 @@
 
 #define SNAPSHOT_MINSIZE ((BUN) 1024*128)
 
+static sql_trans *
+oldest_active_transaction(void)
+{
+	sql_session *s = active_sessions->h->data;
+	return s->tr;
+}
+
 sql_delta *
 timestamp_delta( sql_delta *d, int ts)
 {
@@ -1789,13 +1796,12 @@ destroy_bat(sql_delta *b)
 {
 	sql_delta *n;
 
-	if (!b)
-		return LOG_OK;
-	n = b->next;
-	destroy_delta(b);
-	_DELETE(b);
-	if (n)
-		return destroy_bat(n);
+	while(b) {
+		n = b->next;
+		destroy_delta(b);
+		_DELETE(b);
+		b = n;
+	}
 	return LOG_OK;
 }
 
@@ -1843,14 +1849,9 @@ log_destroy_idx(sql_trans *tr, sql_idx *i)
 	return LOG_OK;
 }
 
-static int
-destroy_dbat(sql_trans *tr, sql_dbat *bat)
+static void
+_destroy_dbat(sql_dbat *bat)
 {
-	sql_dbat *n;
-       
-	if (!bat)
-		return LOG_OK;
-	n = bat->next;
 	if (bat->dname)
 		_DELETE(bat->dname);
 	if (bat->dbid)
@@ -1862,8 +1863,19 @@ destroy_dbat(sql_trans *tr, sql_dbat *bat)
 	bat->dbid = 0;
 	bat->dname = NULL;
 	_DELETE(bat);
-	if (n)
-		return destroy_dbat(tr, n);
+}
+
+static int
+destroy_dbat(sql_trans *tr, sql_dbat *bat)
+{
+	sql_dbat *n;
+
+	(void)tr;
+	while(bat) {
+		n = bat->next;
+		_destroy_dbat(bat);
+		bat = n;
+	}
 	return LOG_OK;
 }
 
@@ -2629,8 +2641,10 @@ tr_merge_dbat(sql_trans *tr, sql_dbat *tdb)
 static int
 update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 {
+	sql_trans *oldest = oldest_active_transaction();
+	sql_table *ot = NULL;
 	int ok = LOG_OK;
-	node *n, *m;
+	node *n, *m, *o = NULL;
 
 	if (ATOMIC_GET(&store_nr_active) == 1 || ft->base.allocated) {
 		if (ATOMIC_GET(&store_nr_active) > 1 && ft->data) { /* move delta */
@@ -2645,6 +2659,15 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			if (b->cached) {
 				bat_destroy(b->cached);
 				b->cached = NULL;
+			}
+			while (b && b->wtime >= oldest->stime)
+				b = b->next;
+			/* find table t->base.stime */
+			ot = tr_find_table(oldest, tt);
+			if (b && ot && b->wtime < ot->base.stime) {
+				/* anything older can go */
+				destroy_dbat(tr, b->next);
+				b->next = NULL;
 			}
 		} else if (tt->data && ft->base.allocated) {
 			if (tr_update_dbat(tr, tt->data, ft->data) != LOG_OK)
@@ -2665,7 +2688,9 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			ft->data = NULL;
 		}
 	}
-	for (n = ft->columns.set->h, m = tt->columns.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
+	if (ot)
+		o = ot->columns.set->h;
+	for (n = ft->columns.set->h, m = tt->columns.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next, o=(o?o->next:NULL)) {
 		sql_column *cc = n->data; // TODO: either stick to to/from terminology or old/current terminology
 		sql_column *oc = m->data;
 
@@ -2673,6 +2698,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			assert(!cc->base.wtime || oc->base.wtime < cc->base.wtime);
 			if (ATOMIC_GET(&store_nr_active) > 1 && cc->data) { /* move delta */
 				sql_delta *b = cc->data;
+				sql_column *oldc = NULL;
 
 				if (!oc->data)
 					oc->base.allocated = cc->base.allocated;
@@ -2683,6 +2709,16 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				if (b->cached) {
 					bat_destroy(b->cached);
 					b->cached = NULL;
+				}
+				while (b && b->wtime >= oldest->stime) 
+					b = b->next;
+				/* find column c->base.stime */
+				if (o)
+					oldc = o->data;
+				if (oldc && b && oldc->base.id == cc->base.id && b->wtime < oldc->base.stime) {
+					/* anything older can go */
+					destroy_bat(b->next);
+					b->next = NULL;
 				}
 			} else if (oc->data && cc->base.allocated) {
 				if (tr_update_delta(tr, oc->data, cc->data, cc->unique == 1) != LOG_OK) 
@@ -2732,7 +2768,10 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		cc->base.allocated = 0;
 	}
 	if (ok == LOG_OK && tt->idxs.set) {
-		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
+		o = NULL;
+		if (ot)
+			o = ot->idxs.set->h;
+		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next, o=(o?o->next:NULL)) {
 			sql_idx *ci = n->data;
 			sql_idx *oi = m->data;
 
@@ -2745,6 +2784,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			if (ATOMIC_GET(&store_nr_active) == 1 || (ci->base.wtime && ci->base.allocated)) {
 				if (ATOMIC_GET(&store_nr_active) > 1 && ci->data) { /* move delta */
 					sql_delta *b = ci->data;
+					sql_idx *oldi = NULL;
 
 					if (!oi->data)
 						oi->base.allocated = ci->base.allocated;
@@ -2754,6 +2794,16 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					if (b->cached) {
 						bat_destroy(b->cached);
 						b->cached = NULL;
+					}
+					while (b && b->wtime >= oldest->stime) 
+						b = b->next;
+					/* find idx i->base.stime */
+					if (o)
+						oldi = o->data;
+					if (oldi && b && oldi->base.id == ci->base.id && b->wtime < oldi->base.stime) {
+						/* anything older can go */
+						destroy_bat(b->next);
+						b->next = NULL;
 					}
 				} else if (oi->data && ci->base.allocated) {
 					if (tr_update_delta(tr, oi->data, ci->data, 0) != LOG_OK)
