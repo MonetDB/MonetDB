@@ -433,14 +433,14 @@ SQLhelp sqlhelp1[] = {
 	 "[ FROM from_item [',' ...] ]\n"
 	 "[ WINDOW window_definition [',' ...] ]\n"
 	 "[ WHERE condition ]\n"
-	 "[ GROUP BY expression [',' ...] ]\n"
+	 "[ GROUP BY group_by_element [',' ...] ]\n"
 	 "[ HAVING condition [',' ...] ]\n"
 	 "[ { UNION | INTERSECT | EXCEPT } [ ALL | DISTINCT ] [ CORRESPONDING ] select ]\n"
 	 "[ ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...] ]\n"
 	 "[ LIMIT { count | param } ]\n"
 	 "[ OFFSET { count | param } ]\n"
 	 "[ SAMPLE size [ SEED size ] ]",
-	 "cte_list,expression,window_definition",
+	 "cte_list,expression,group_by_element,window_definition",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/TableExpressions"},
 	{"SET",
 	 "Assign a value to a variable or column",
@@ -628,6 +628,12 @@ SQLhelp sqlhelp2[] = {
 	 NULL,
 	 "{ PUBLIC | authid } ",
 	 "authid",
+	 NULL},
+	{"group_by_element",
+	 NULL,
+	 "{ expression | '(' ')' | ROLLUP '(' ident [',' ... ] ')' | CUBE '(' ident [',' ... ] ')'\n"
+	 "| GROUPING SETS '(' group_by_element [',' ... ] ')' }",
+	 "expression",
 	 NULL},
 	{"headerlist",
 	 NULL,
