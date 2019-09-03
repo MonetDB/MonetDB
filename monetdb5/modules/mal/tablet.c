@@ -1247,7 +1247,7 @@ mkdfa(const unsigned char *sep, size_t seplen)
 	for (i = 0; i < seplen; i++)
 		dfa[i][sep[0]] = 1;
 	for (j = 0; j < seplen; j++) {
-		dfa[j][sep[j]] = j + 1;
+		dfa[j][sep[j]] = (unsigned char) (j + 1);
 		for (k = 0; k < j; k++) {
 			for (i = 0; i < j - k; i++)
 				if (sep[k + i] != sep[i])

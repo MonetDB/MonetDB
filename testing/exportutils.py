@@ -30,7 +30,7 @@ deepnesting = False
 # exports that are hidden away in several levels of macro definitions
 #
 # we assume that there are no continuation lines in the input
-def preprocess(data):
+def preprocess(data, printdef=False):
     # remove C comments
     res = cmtre.search(data)
     while res is not None:
@@ -51,11 +51,13 @@ def preprocess(data):
             if name not in ('__attribute__', '__format__', '__alloc_size__') and \
                (name not in defines or not defines[name][1].strip()):
                 defines[name] = (args, body)
+            if printdef:
+                ndata.append(line)
         else:
             changed = True
             while changed:
                 line, changed = replace(line, defines, [])
-            if not cldef.match(line):
+            if printdef or not cldef.match(line):
                 ndata.append(line)
     return '\n'.join(ndata)
 
@@ -124,3 +126,8 @@ def normalize(decl):
     decl = comre.sub(', ', decl)
     decl = decl.replace('( *', ' (*').replace('* (*', '*(*')
     return decl
+
+if __name__ == '__main__':
+    import sys
+    for f in sys.argv[1:]:
+        print(preprocess(open(f).read(), printdef=True))
