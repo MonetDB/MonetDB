@@ -892,7 +892,7 @@ SQLreader(Client c)
 		   B \n C; -- statements in one block   S
 		 */
 		/* auto_commit on end of statement */
-		if (m->scanner.mode == LINE_N && !commit_done) {
+		if (language != 'D' && m->scanner.mode == LINE_N && !commit_done) {
 			msg = SQLautocommit(m);
 			go = msg == MAL_SUCCEED;
 			commit_done = true;
@@ -912,11 +912,12 @@ SQLreader(Client c)
 				c->yycur = 0;
 			}
 			if (in->eof || !blocked) {
-				language = 0;
+				if (language != 'D')
+					language = 0;
 
 				/* The rules of auto_commit require us to finish
 				   and start a transaction on the start of a new statement (s A;B; case) */
-				if (!(m->emod & mod_debug) && !commit_done) {
+				if (language != 'D' && !(m->emod & mod_debug) && !commit_done) {
 					msg = SQLautocommit(m);
 					go = msg == MAL_SUCCEED;
 					commit_done = true;
@@ -935,8 +936,10 @@ SQLreader(Client c)
 #ifdef _SQL_READER_DEBUG
 				fprintf(stderr, "#rd %d  language %d eof %d\n", rd, language, in->eof);
 #endif
-				if (be->language == 'D' && !in->eof)
+				if (be->language == 'D' && !in->eof) {
+					in->pos++;// skip 's' or 'S'
 					return msg;
+				}
 
 				if (rd == 0 && language !=0 && in->eof) {
 					/* we hadn't seen the EOF before, so just try again
@@ -958,6 +961,8 @@ SQLreader(Client c)
 				} else if (be->language == 'S') {
 					m->scanner.mode = LINE_N;
 				}
+			} else if (go && language == 'D' && !in->eof) {
+				in->pos++;// skip 's' or 'S'
 			}
 #ifdef _SQL_READER_DEBUG
 			fprintf(stderr, "#SQL blk:%s\n", in->buf + in->pos);
