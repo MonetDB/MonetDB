@@ -1849,6 +1849,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 						r1->trevsorted = false;
 				} else {
 					lskipped = BATcount(r1) > 0;
+					canditer_setidx(lci, lci->next + nlx);
 				}
 			}
 			if (v == NULL) {
