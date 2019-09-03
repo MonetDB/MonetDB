@@ -4561,23 +4561,21 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 
 	for (dnode *o = groupby->data.lval->h; o; o = o->next) {
 		symbol *grouping = o->data.sym;
-		if (grouping->token == SQL_GROUPING_SETS) {
-			list *nsets = NULL, *other = rel_groupings(query, rel, grouping, selection, f, combined_totals, true, &nsets);
+		list *next_set = NULL;
+
+		if (grouping->token == SQL_GROUPING_SETS) { /* call recursively, and merge the genererated sets */
+			list *other = rel_groupings(query, rel, grouping, selection, f, combined_totals, true, &next_set);
 			if (!other)
 				return NULL;
 			exps = list_distinct(list_merge(exps, other, (fdup) NULL), (fcmp) exp_equal, (fdup) NULL);
-			if (!*sets)
-				*sets = nsets;
-			else
-				*sets = grouping_sets ? list_merge(*sets, nsets, (fdup) NULL) : lists_cartesian_product_and_distinct(sql->sa, *sets, nsets);
 		} else {
 			dlist *dl = grouping->data.lval;
 			if (dl) {
-				list *set_exps = new_exp_list(sql->sa); /* columns and combination of columns to be used for the next set */
+				list *set_cols = new_exp_list(sql->sa); /* columns and combination of columns to be used for the next set */
 
 				for (dnode *oo = dl->h; oo; oo = oo->next) {
 					symbol *grp = oo->data.sym;
-					list *elements = new_exp_list(sql->sa); /* next set of columns */
+					list *next_tuple = new_exp_list(sql->sa); /* next tuple of columns */
 
 					if (grp->token == SQL_COLUMN_GROUP) { /* set of columns */
 						assert(combined_totals);
@@ -4587,7 +4585,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 							if (!e)
 								return NULL;
 							assert(e->type == e_column);
-							list_append(elements, e);
+							list_append(next_tuple, e);
 							list_append(exps, e);
 						}
 					} else { /* single column or expression */
@@ -4602,40 +4600,28 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 							if (!stack_push_groupby_expression(sql, grp, e))
 								return NULL;
 						}
-						list_append(elements, e);
+						list_append(next_tuple, e);
 						list_append(exps, e);
 					}
-					list_append(set_exps, elements);
+					list_append(set_cols, next_tuple);
 				}
-				if (grouping->token == SQL_ROLLUP) {
-					assert(combined_totals);
-					if (!*sets) {
-						*sets = list_rollup(sql->sa, set_exps);
-					} else {
-						list *new_set = list_rollup(sql->sa, set_exps);
-						*sets = grouping_sets ? list_merge(*sets, new_set, (fdup) NULL) : lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
-					}
-				} else if (grouping->token == SQL_CUBE) {
-					assert(combined_totals);
-					if (!*sets) {
-						*sets = list_power_set(sql->sa, set_exps);
-					} else {
-						list *new_set = list_power_set(sql->sa, set_exps);
-						*sets = grouping_sets ? list_merge(*sets, new_set, (fdup) NULL) : lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
-					}
-				} else if (combined_totals && (grouping->token == SQL_GROUPBY)) { /* the list of sets is not used in the "GROUP BY a, b, ..." case */
-					if (!*sets) {
-						*sets = list_append(new_exp_list(sql->sa), set_exps);
-					} else {
-						list *new_set = list_append(new_exp_list(sql->sa), set_exps);
-						*sets = grouping_sets ? list_merge(*sets, new_set, (fdup) NULL) : lists_cartesian_product_and_distinct(sql->sa, *sets, new_set);
-					}
+				if (combined_totals) {
+					if (grouping->token == SQL_ROLLUP)
+						next_set = list_rollup(sql->sa, set_cols);
+					else if (grouping->token == SQL_CUBE)
+						next_set = list_power_set(sql->sa, set_cols);
+					else /* the list of sets is not used in the "GROUP BY a, b, ..." case */
+						next_set = list_append(new_exp_list(sql->sa), set_cols);
 				}
-			} else if (grouping_sets) { /* The GROUP BY () case is the global aggregate which is always added by ROLLUP and CUBE */
-				if (!*sets)
-					*sets = new_exp_list(sql->sa);
-				list_append(*sets, new_exp_list(sql->sa));
-			}
+			} else if (combined_totals && grouping_sets) /* The GROUP BY () case is the global aggregate which is always added by ROLLUP and CUBE */
+				next_set = list_append(new_exp_list(sql->sa), new_exp_list(sql->sa));
+		}
+		if (combined_totals) { /* if there are no sets, set the found one, otherwise calculate cartesian product and merge the distinct ones */
+			assert(next_set);
+			if (!*sets)
+				*sets = next_set;
+			else
+				*sets = grouping_sets ? list_merge(*sets, next_set, (fdup) NULL) : lists_cartesian_product_and_distinct(sql->sa, *sets, next_set);
 		}
 	}
 	return exps;
@@ -6393,7 +6379,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		return NULL;
 
 	/* ROLLUP, CUBE, GROUPING SETS cases */
-	if (sets) {
+	if (sets && list_length(sets) > 1) { /* if there is only one combination, there is no reason to generate unions */
 		sql_rel *unions = NULL;
 		list *group_exps = list_dup(group->exps, (fdup)NULL);
 

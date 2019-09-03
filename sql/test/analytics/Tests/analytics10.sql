@@ -182,6 +182,11 @@ GROUP BY GROUPING SETS(());
 SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
+GROUP BY GROUPING SETS((Product_Category));
+
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
 GROUP BY GROUPING SETS((Product_Category, Product_Name), (ColID));
 
 SELECT

@@ -585,6 +585,16 @@ stdout of test 'analytics10` in directory 'sql/test/analytics` itself:
 #SELECT
 #    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 #FROM tbl_ProductSales
+#GROUP BY GROUPING SETS((Product_Category));
+% sys.L3 # table_name
+% totalsales # name
+% bigint # type
+% 3 # length
+[ 600	]
+[ 600	]
+#SELECT
+#    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+#FROM tbl_ProductSales
 #GROUP BY GROUPING SETS((Product_Category, Product_Name), (ColID));
 % .L3 # table_name
 % totalsales # name
