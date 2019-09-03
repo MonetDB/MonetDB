@@ -3848,19 +3848,15 @@ rel_intermediates_add_exp(mvc *sql, sql_rel *p, sql_rel *op, sql_exp *in)
 	}
 }
 
-static sql_exp *
-_rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *aname, dnode *args, int f)
+
+static sql_rel *
+rel_find_groupby(sql_query *query, sql_rel *groupby, sql_rel **og, sql_rel **sel, int *group, int f, char* aname)
 {
 	mvc *sql = query->sql;
-	exp_kind ek = {type_value, card_column, FALSE};
-	sql_subaggr *a = NULL;
-	int no_nil = 0, group = 0, freevar = 1;
-	sql_rel *groupby = *rel, *sel = NULL, *gr, *og = NULL;
-	list *exps = NULL;
 
 	/* find having select */
 	if (groupby && !is_processed(groupby) && is_sql_having(f)) { 
-		og = groupby;
+		*og = groupby;
 		while(!is_processed(groupby) && !is_base(groupby->op)) {
 			if (is_select(groupby->op) || !groupby->l)
 				break;
@@ -3868,20 +3864,20 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				groupby = groupby->l;
 		}
 		if (groupby && is_select(groupby->op) && !is_processed(groupby)) {
-			group = 1;
-			sel = groupby;
+			*group = 1;
+			*sel = groupby;
 			/* At the end we switch back to the old projection relation og. 
 			 * During the partitioning and ordering we add the expressions to the intermediate relations. */
 		}
-		if (!sel)
-			groupby = og;
-		if (sel && sel->l)
-			groupby = sel->l;
+		if (!*sel)
+			groupby = *og;
+		if (*sel && (*sel)->l)
+			groupby = (*sel)->l;
 	}
 
 	/* find groupby */
 	if (groupby && !is_processed(groupby) && !is_base(groupby->op)) { 
-		og = groupby;
+		*og = groupby;
 		while(!is_processed(groupby) && !is_base(groupby->op)) {
 			if (groupby->op == op_groupby || !groupby->l)
 				break;
@@ -3889,32 +3885,82 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				groupby = groupby->l;
 		}
 		if (groupby && groupby->op == op_groupby) {
-			group = 1;
+			*group = 1;
 			/* At the end we switch back to the old projection relation og. 
 			 * During the partitioning and ordering we add the expressions to the intermediate relations. */
 		}
-		if (!group)
-			groupby = og;
+		if (!*group)
+			groupby = *og;
 	}
 
 	if (!groupby) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
-		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by",
-				       uaname ? toUpperCopy(uaname, aname) : aname);
+		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by",
+						 uaname ? toUpperCopy(uaname, aname) : aname);
 		if (uaname)
 			GDKfree(uaname);
-		return e;
+		return NULL;
 	} else if(is_sql_groupby(f) || (is_sql_partitionby(f) && groupby->op != op_groupby)) {
 		const char *clause = is_sql_groupby(f) ? "GROUP BY":"PARTITION BY";
 		char *uaname = GDKmalloc(strlen(aname) + 1);
-		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in %s clause",
-							   uaname ? toUpperCopy(uaname, aname) : aname, aname, clause);
+		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in %s clause",
+						 uaname ? toUpperCopy(uaname, aname) : aname, aname, clause);
 		if (uaname)
 			GDKfree(uaname);
-		return e;
+		return NULL;
 	}
 
-	if (groupby->op != op_groupby) { 		/* implicit groupby */
+	return groupby;
+}
+
+static sql_exp *
+rel_grouping(sql_query *query, sql_rel **rel, symbol *se, int f)
+{
+	mvc *sql = query->sql;
+	sql_rel *groupby, *sel = NULL, *og = NULL;
+	int group = 0;
+	dlist *l = se->data.lval;
+	list *group_cols;
+
+	(void) group;
+	(void) sel;
+	(void) og;
+
+	if (is_sql_groupby(f) || is_sql_partitionby(f) || is_sql_where(f) || is_sql_from(f))
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: GROUPING expression not allowed in %s clause", 
+						 is_sql_groupby(f) ? "GROUP BY" : is_sql_partitionby(f) ? "PARTITION BY" : is_sql_where(f) ? "WHERE" : "FROM");
+	if (!(groupby = rel_find_groupby(query, *rel, &og, &sel, &group, f, "GROUPING")))
+		return NULL;
+	if (groupby->op != op_groupby)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: GROUPING requires a GROUP BY clause");
+
+	group_cols = (list*) groupby->r;
+
+	for (dnode *dn = l->h; dn; dn = dn->next) {
+		symbol *sym = dn->data.sym;
+		exp_kind ek = {type_value, card_column, FALSE};
+		sql_exp *col = rel_value_exp(query, rel, sym, f, ek);
+		if (!col)
+			return NULL; /* GROUPING(x, ...) columns must be present in the GROUP BY clause */
+	}
+
+	return exp_atom(sql->sa, atom_int(sql->sa, sql_bind_localtype("int"), 0));
+}
+
+static sql_exp *
+_rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *aname, dnode *args, int f)
+{
+	mvc *sql = query->sql;
+	exp_kind ek = {type_value, card_column, FALSE};
+	sql_subaggr *a = NULL;
+	int no_nil = 0, group = 0, freevar = 1;
+	sql_rel *groupby, *sel = NULL, *gr, *og = NULL;
+	list *exps = NULL;
+
+	if (!(groupby = rel_find_groupby(query, *rel, &og, &sel, &group, f, aname)))
+		return NULL;
+
+	if (groupby->op != op_groupby) { /* implicit groupby */
 		sql_rel *np = rel_project2groupby(sql, groupby);
 
 		if (*rel == groupby) {
@@ -5990,6 +6036,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 			return exp_atom(sql->sa, atom_dup(sql->sa, an->a));
 		}
 	}
+	case SQL_GROUPING:
+		return rel_grouping(query, rel, se, f);
 	case SQL_NEXT:
 		return rel_next_value_for(sql, se);
 	case SQL_CAST:

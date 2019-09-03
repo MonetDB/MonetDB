@@ -6291,7 +6291,7 @@ exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 			nr += e->used;
 		}
 
-		if (!nr && is_project(rel->op)) /* project atleast one column */
+		if (!nr && is_project(rel->op) && len > 0) /* project at least one column if exists */
 			exps[0]->used = 1; 
 
 		for (i = len-1; i >= 0; i--) {

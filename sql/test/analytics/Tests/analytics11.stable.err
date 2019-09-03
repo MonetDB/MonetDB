@@ -1,0 +1,47 @@
+stderr of test 'analytics11` in directory 'sql/test/analytics` itself:
+
+
+# 14:50:26 >  
+# 14:50:26 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33540" "--set" "mapi_usock=/var/tmp/mtest-19672/.s.monetdb.33540" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-grouping-analytics/BUILD/var/MonetDB/mTests_sql_test_analytics" "--set" "embedded_c=true"
+# 14:50:26 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-grouping-analytics/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33540
+# cmdline opt 	mapi_usock = /var/tmp/mtest-19672/.s.monetdb.33540
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-grouping-analytics/BUILD/var/MonetDB/mTests_sql_test_analytics
+# cmdline opt 	embedded_c = true
+#client2:!ERROR:ParseException:SQLparser:42000!syntax error, unexpected ')' in: "select
+#client2:!ERROR:    grouping()"
+#client2:!ERROR:ParseException:SQLparser:42000!SELECT: cannot use non GROUP BY column 'product_name' in query results without an aggregate function
+
+# 14:50:27 >  
+# 14:50:27 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19672" "--port=33540"
+# 14:50:27 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-19672/.s.monetdb.33540
+QUERY = SELECT
+            GROUPING()
+        FROM tbl_ProductSales
+        GROUP BY Product_Category; --error, "grouping" requires arguments
+ERROR = !syntax error, unexpected ')' in: "select
+        !    grouping()"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-19672/.s.monetdb.33540
+QUERY = SELECT
+            GROUPING(Product_Name)
+        FROM tbl_ProductSales GROUP BY (); --error, Product_Name it's not a grouping column
+ERROR = !SELECT: cannot use non GROUP BY column 'product_name' in query results without an aggregate function
+CODE  = 42000
+
+# 14:50:27 >  
+# 14:50:27 >  "Done."
+# 14:50:27 >  
+

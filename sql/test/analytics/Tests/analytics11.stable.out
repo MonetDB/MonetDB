@@ -1,0 +1,50 @@
+stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
+
+
+# 14:50:26 >  
+# 14:50:26 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33540" "--set" "mapi_usock=/var/tmp/mtest-19672/.s.monetdb.33540" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-grouping-analytics/BUILD/var/MonetDB/mTests_sql_test_analytics" "--set" "embedded_c=true"
+# 14:50:26 >  
+
+# MonetDB 5 server v11.34.0 (hg id: 926989675ef4+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_analytics', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.527 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:33540/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-19672/.s.monetdb.33540
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 14:50:27 >  
+# 14:50:27 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19672" "--port=33540"
+# 14:50:27 >  
+
+#CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product_Name  varchar(64), TotalSales int); 
+#INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Game',400),(3,'Fashion','Shirt',500),(4,'Fashion','Shorts',100);
+[ 4	]
+#SELECT 1
+#FROM tbl_ProductSales
+#GROUP BY Product_Category;
+% .L1 # table_name
+% L1 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+#SELECT 1
+#FROM tbl_ProductSales
+#GROUP BY ();
+% .L1 # table_name
+% L1 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#DROP TABLE tbl_ProductSales;
+
+# 14:50:27 >  
+# 14:50:27 >  "Done."
+# 14:50:27 >  
+

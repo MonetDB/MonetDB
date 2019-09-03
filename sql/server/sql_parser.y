@@ -4253,27 +4253,26 @@ scalar_exp:
 
 value_exp:
     atom
- |  user		{ $$ = _symbol_create_list( SQL_COLUMN, 
-			  append_string(L(), sa_strdup(SA, "current_user"))); }
- |  CURRENT_ROLE	{ $$ = _symbol_create_list( SQL_COLUMN, 
-			  append_string(L(), sa_strdup(SA, "current_role"))); }
- |  window_function
- |  column_ref 		{ $$ = _symbol_create_list( SQL_COLUMN, $1); }
- |  var_ref		
  |  aggr_ref
- |  func_ref
- |  NEXT VALUE FOR qname	{ $$ = _symbol_create_list( SQL_NEXT, $4); }
- |  datetime_funcs
- |  string_funcs
  |  case_exp
  |  cast_exp
- |  XML_value_function
- |  param
+ |  column_ref                            { $$ = _symbol_create_list(SQL_COLUMN, $1); }
+ |  CURRENT_ROLE   { $$ = _symbol_create_list(SQL_COLUMN, append_string(L(), sa_strdup(SA, "current_role"))); }
+ |  datetime_funcs
+ |  func_ref
+ |  GROUPING '(' column_ref_commalist ')' { $$ = _symbol_create_list(SQL_GROUPING, $3); }
+ |  NEXT VALUE FOR qname                  { $$ = _symbol_create_list(SQL_NEXT, $4); }
  |  null
+ |  param
+ |  string_funcs
+ |  user            { $$ = _symbol_create_list(SQL_COLUMN, append_string(L(), sa_strdup(SA, "current_user"))); }
+ |  var_ref
+ |  window_function
+ |  XML_value_function
  ;
 
-param:  
-   '?'			
+param:
+   '?'
 	{ 
 	  int nr = (m->params)?list_length(m->params):0;
 
@@ -6657,6 +6656,7 @@ char *token2string(tokens token)
 	SQL(GRANT);
 	SQL(GRANT_ROLES);
 	SQL(GROUPBY);
+	SQL(GROUPING);
 	SQL(GROUPING_SETS);
 	SQL(IDENT);
 	SQL(IF);

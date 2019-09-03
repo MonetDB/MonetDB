@@ -329,6 +329,21 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		}
 		len = snprintf( buf+len, BUFSIZ-len, ")"); 
 	} break;
+	case SQL_GROUPING: {
+		dnode *lst = se->data.lval->h;
+		dnode *ops = lst->data.lval->h;
+		len = snprintf( buf+len, BUFSIZ-len, "GROUPING("); 
+		for (; ops; ops = ops->next) {
+			char *tmp = symbol2string(sql, ops->data.sym, expression, err);
+			if (tmp == NULL)
+				return NULL;
+			len = snprintf( buf+len, BUFSIZ-len, "%s%s", 
+				tmp, 
+				(ops->next)?",":"");
+			_DELETE(tmp);
+		}
+		len = snprintf( buf+len, BUFSIZ-len, ")"); 
+	} break;
 	case SQL_BINOP: {
 		dnode *lst = se->data.lval->h;
 		char *op = qname_fname(lst->data.lval);
