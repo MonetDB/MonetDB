@@ -62,6 +62,8 @@ canditer_next_except(struct canditer *ci)
 	}
 	return o;
 }
+#define canditer_search_dense(ci, o, next) ((o) < (ci)->seq ? next ? 0 : BUN_NONE : (o) >= (ci)->seq + (ci)->ncand ? next ? (ci)->ncand : BUN_NONE : (o) - (ci)->seq)
+
 
 gdk_export BUN canditer_init(struct canditer *ci, BAT *b, BAT *s);
 gdk_export oid canditer_peek(struct canditer *ci);

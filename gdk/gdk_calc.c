@@ -12946,19 +12946,35 @@ convert_##TYPE##_##TYPE(const TYPE *src, TYPE *restrict dst, BUN cnt,	\
 	oid x = canditer_next(ci) - candoff;				\
 									\
 	*reduce = false;						\
-	do {								\
-		while (i < x) {						\
-			dst[i++] = TYPE##_nil;				\
-			nils++;						\
-		}							\
-		nils += is_##TYPE##_nil(src[i]);			\
-		dst[i] = src[i];					\
-		i++;							\
-		x = canditer_next(ci);					\
-		if (is_oid_nil(x))					\
-			break;						\
-		x -= candoff;						\
-	} while (i < cnt);						\
+	if (ci->tpe == cand_dense) {					\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = TYPE##_nil;			\
+				nils++;					\
+			}						\
+			nils += is_##TYPE##_nil(src[i]);		\
+			dst[i] = src[i];				\
+			i++;						\
+			x = canditer_next_dense(ci);			\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	} else {							\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = TYPE##_nil;			\
+				nils++;					\
+			}						\
+			nils += is_##TYPE##_nil(src[i]);		\
+			dst[i] = src[i];				\
+			i++;						\
+			x = canditer_next(ci);				\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	}								\
 	while (i < cnt) {						\
 		dst[i++] = TYPE##_nil;					\
 		nils++;							\
@@ -12976,22 +12992,41 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 	oid x = canditer_next(ci) - candoff;				\
 									\
 	*reduce = false;						\
-	do {								\
-		while (i < x) {						\
-			dst[i++] = TYPE2##_nil;				\
-			nils++;						\
-		}							\
-		if (is_##TYPE1##_nil(src[i])) {				\
-			dst[i] = TYPE2##_nil;				\
-			nils++;						\
-		} else							\
-			dst[i] = (TYPE2) src[i];			\
-		i++;							\
-		x = canditer_next(ci);					\
-		if (is_oid_nil(x))					\
-			break;						\
-		x -= candoff;						\
-	} while (i < cnt);						\
+	if (ci->tpe == cand_dense) {					\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = TYPE2##_nil;			\
+				nils++;					\
+			}						\
+			if (is_##TYPE1##_nil(src[i])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (TYPE2) src[i];		\
+			i++;						\
+			x = canditer_next_dense(ci);			\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	} else {							\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = TYPE2##_nil;			\
+				nils++;					\
+			}						\
+			if (is_##TYPE1##_nil(src[i])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (TYPE2) src[i];		\
+			i++;						\
+			x = canditer_next(ci);				\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	}								\
 	while (i < cnt) {						\
 		dst[i++] = TYPE2##_nil;					\
 		nils++;							\
@@ -13009,22 +13044,41 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 	oid x = canditer_next(ci) - candoff;				\
 									\
 	*reduce = 8 * sizeof(TYPE1) > MANT_DIG;				\
-	do {								\
-		while (i < x) {						\
-			dst[i++] = TYPE2##_nil;				\
-			nils++;						\
-		}							\
-		if (is_##TYPE1##_nil(src[i])) {				\
-			dst[i] = TYPE2##_nil;				\
-			nils++;						\
-		} else							\
-			dst[i] = (TYPE2) src[i];			\
-		i++;							\
-		x = canditer_next(ci);					\
-		if (is_oid_nil(x))					\
-			break;						\
-		x -= candoff;						\
-	} while (i < cnt);						\
+	if (ci->tpe == cand_dense) {					\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = TYPE2##_nil;			\
+				nils++;					\
+			}						\
+			if (is_##TYPE1##_nil(src[i])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (TYPE2) src[i];		\
+			i++;						\
+			x = canditer_next_dense(ci);			\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	} else {							\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = TYPE2##_nil;			\
+				nils++;					\
+			}						\
+			if (is_##TYPE1##_nil(src[i])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (TYPE2) src[i];		\
+			i++;						\
+			x = canditer_next(ci);				\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	}								\
 	while (i < cnt) {						\
 		dst[i++] = TYPE2##_nil;					\
 		nils++;							\
@@ -13049,29 +13103,55 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst, BUN cnt,	\
 	oid x = canditer_next(ci) - candoff;				\
 									\
 	*reduce = false;						\
-	do {								\
-		while (i < x) {						\
-			dst[i++] = oid_nil;				\
-			nils++;						\
-		}							\
-		if (is_##TYPE1##_nil(src[i])) {				\
-			dst[i] = oid_nil;				\
-			nils++;						\
-		} else if (src[i] < 0) {				\
-			if (abort_on_error)				\
+	if (ci->tpe == cand_dense) {					\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = oid_nil;			\
+				nils++;					\
+			}						\
+			if (is_##TYPE1##_nil(src[i])) {			\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (src[i] < 0) {			\
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, "oid", src[i]); \
+				*reduce = true;				\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (is_oid_nil((dst[i] = (oid) src[i])) && \
+				   abort_on_error)			\
 				CONV_OVERFLOW(TYPE1, "oid", src[i]);	\
-			*reduce = true;					\
-			dst[i] = oid_nil;				\
-			nils++;						\
-		} else if (is_oid_nil((dst[i] = (oid) src[i])) &&	\
-			   abort_on_error)				\
-			CONV_OVERFLOW(TYPE1, "oid", src[i]);		\
-		i++;							\
-		x = canditer_next(ci);					\
-		if (is_oid_nil(x))					\
-			break;						\
-		x -= candoff;						\
-	} while (i < cnt);						\
+			i++;						\
+			x = canditer_next_dense(ci);			\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	} else {							\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = oid_nil;			\
+				nils++;					\
+			}						\
+			if (is_##TYPE1##_nil(src[i])) {			\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (src[i] < 0) {			\
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, "oid", src[i]); \
+				*reduce = true;				\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (is_oid_nil((dst[i] = (oid) src[i])) && \
+				   abort_on_error)			\
+				CONV_OVERFLOW(TYPE1, "oid", src[i]);	\
+			i++;						\
+			x = canditer_next(ci);				\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	}								\
 	while (i < cnt) {						\
 		dst[i++] = oid_nil;					\
 		nils++;							\
@@ -13089,30 +13169,57 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst, BUN cnt,	\
 	oid x = canditer_next(ci) - candoff;				\
 									\
 	*reduce = false;						\
-	do {								\
-		while (i < x) {						\
-			dst[i++] = oid_nil;				\
-			nils++;						\
-		}							\
-		if (is_##TYPE1##_nil(src[i])) {				\
-			dst[i] = oid_nil;				\
-			nils++;						\
-		} else if (src[i] < 0 ||				\
-			   src[i] > (TYPE1) GDK_oid_max) {		\
-			if (abort_on_error)				\
+	if (ci->tpe == cand_dense) {					\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = oid_nil;			\
+				nils++;					\
+			}						\
+			if (is_##TYPE1##_nil(src[i])) {			\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (src[i] < 0 ||			\
+				   src[i] > (TYPE1) GDK_oid_max) {	\
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, "oid", src[i]); \
+				*reduce = true;				\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (is_oid_nil((dst[i] = (oid) src[i])) && \
+				   abort_on_error)			\
 				CONV_OVERFLOW(TYPE1, "oid", src[i]);	\
-			*reduce = true;					\
-			dst[i] = oid_nil;				\
-			nils++;						\
-		} else if (is_oid_nil((dst[i] = (oid) src[i])) &&	\
-			   abort_on_error)				\
-			CONV_OVERFLOW(TYPE1, "oid", src[i]);		\
-		i++;							\
-		x = canditer_next(ci);					\
-		if (is_oid_nil(x))					\
-			break;						\
-		x -= candoff;						\
-	} while (i < cnt);						\
+			i++;						\
+			x = canditer_next_dense(ci);			\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	} else {							\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = oid_nil;			\
+				nils++;					\
+			}						\
+			if (is_##TYPE1##_nil(src[i])) {			\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (src[i] < 0 ||			\
+				   src[i] > (TYPE1) GDK_oid_max) {	\
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, "oid", src[i]); \
+				*reduce = true;				\
+				dst[i] = oid_nil;			\
+				nils++;					\
+			} else if (is_oid_nil((dst[i] = (oid) src[i])) && \
+				   abort_on_error)			\
+				CONV_OVERFLOW(TYPE1, "oid", src[i]);	\
+			i++;						\
+			x = canditer_next(ci);				\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	}								\
 	while (i < cnt) {						\
 		dst[i++] = oid_nil;					\
 		nils++;							\
@@ -13130,29 +13237,55 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 	oid x = canditer_next(ci) - candoff;				\
 									\
 	*reduce = false;						\
-	do {								\
-		while (i < x) {						\
-			dst[i++] = TYPE2##_nil;				\
-			nils++;						\
-		}							\
-		if (is_##TYPE1##_nil(src[i])) {				\
-			dst[i] = TYPE2##_nil;				\
-			nils++;						\
-		} else if (src[i] < (TYPE1) GDK_##TYPE2##_min ||	\
-			   src[i] > (TYPE1) GDK_##TYPE2##_max) {	\
-			if (abort_on_error)				\
-				CONV_OVERFLOW(TYPE1, #TYPE2, src[i]);	\
-			*reduce = true;					\
-			dst[i] = TYPE2##_nil;				\
-			nils++;						\
-		} else							\
-			dst[i] = (TYPE2) src[i];			\
-		i++;							\
-		x = canditer_next(ci);					\
-		if (is_oid_nil(x))					\
-			break;						\
-		x -= candoff;						\
-	} while (i < cnt);						\
+	if (ci->tpe == cand_dense) {					\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = TYPE2##_nil;			\
+				nils++;					\
+			}						\
+			if (is_##TYPE1##_nil(src[i])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else if (src[i] < (TYPE1) GDK_##TYPE2##_min || \
+				   src[i] > (TYPE1) GDK_##TYPE2##_max) { \
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, #TYPE2, src[i]); \
+				*reduce = true;				\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (TYPE2) src[i];		\
+			i++;						\
+			x = canditer_next_dense(ci);			\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	} else {							\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = TYPE2##_nil;			\
+				nils++;					\
+			}						\
+			if (is_##TYPE1##_nil(src[i])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else if (src[i] < (TYPE1) GDK_##TYPE2##_min || \
+				   src[i] > (TYPE1) GDK_##TYPE2##_max) { \
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, #TYPE2, src[i]); \
+				*reduce = true;				\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (TYPE2) src[i];		\
+			i++;						\
+			x = canditer_next(ci);				\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	}								\
 	while (i < cnt) {						\
 		dst[i++] = TYPE2##_nil;					\
 		nils++;							\
@@ -13181,32 +13314,61 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 	oid x = canditer_next(ci) - candoff;				\
 									\
 	*reduce = true;							\
-	do {								\
-		while (i < x) {						\
-			dst[i++] = TYPE2##_nil;				\
-			nils++;						\
-		}							\
-		if (is_##TYPE1##_nil(src[i])) {				\
-			dst[i] = TYPE2##_nil;				\
-			nils++;						\
-		} else if (src[i] < (TYPE1) GDK_##TYPE2##_min ||	\
-			   src[i] > (TYPE1) GDK_##TYPE2##_max) {	\
-			if (abort_on_error)				\
-				CONV_OVERFLOW(TYPE1, #TYPE2, src[i]);	\
-			dst[i] = TYPE2##_nil;				\
-			nils++;						\
-		} else {						\
-			dst[i] = (TYPE2) round##TYPE1(src[i]);		\
-			if (is_##TYPE2##_nil(dst[i]) &&			\
-			    abort_on_error)				\
-				CONV_OVERFLOW(TYPE1, #TYPE2, src[i]);	\
-		}							\
-		i++;							\
-		x = canditer_next(ci);					\
-		if (is_oid_nil(x))					\
-			break;						\
-		x -= candoff;						\
-	} while (i < cnt);						\
+	if (ci->tpe == cand_dense) {					\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = TYPE2##_nil;			\
+				nils++;					\
+			}						\
+			if (is_##TYPE1##_nil(src[i])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else if (src[i] < (TYPE1) GDK_##TYPE2##_min || \
+				   src[i] > (TYPE1) GDK_##TYPE2##_max) { \
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, #TYPE2, src[i]); \
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[i] = (TYPE2) round##TYPE1(src[i]);	\
+				if (is_##TYPE2##_nil(dst[i]) &&		\
+				    abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, #TYPE2, src[i]); \
+			}						\
+			i++;						\
+			x = canditer_next_dense(ci);			\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	} else {							\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = TYPE2##_nil;			\
+				nils++;					\
+			}						\
+			if (is_##TYPE1##_nil(src[i])) {			\
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else if (src[i] < (TYPE1) GDK_##TYPE2##_min || \
+				   src[i] > (TYPE1) GDK_##TYPE2##_max) { \
+				if (abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, #TYPE2, src[i]); \
+				dst[i] = TYPE2##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[i] = (TYPE2) round##TYPE1(src[i]);	\
+				if (is_##TYPE2##_nil(dst[i]) &&		\
+				    abort_on_error)			\
+					CONV_OVERFLOW(TYPE1, #TYPE2, src[i]); \
+			}						\
+			i++;						\
+			x = canditer_next(ci);				\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	}								\
 	while (i < cnt) {						\
 		dst[i++] = TYPE2##_nil;					\
 		nils++;							\
@@ -13224,22 +13386,41 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst, BUN cnt,	\
 	oid x = canditer_next(ci) - candoff;				\
 									\
 	*reduce = true;							\
-	do {								\
-		while (i < x) {						\
-			dst[i++] = bit_nil;				\
-			nils++;						\
-		}							\
-		if (is_##TYPE##_nil(src[i])) {				\
-			dst[i] = bit_nil;				\
-			nils++;						\
-		} else							\
-			dst[i] = (bit) (src[i] != 0);			\
-		i++;							\
-		x = canditer_next(ci);					\
-		if (is_oid_nil(x))					\
-			break;						\
-		x -= candoff;						\
-	} while (i < cnt);						\
+	if (ci->tpe == cand_dense) {					\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = bit_nil;			\
+				nils++;					\
+			}						\
+			if (is_##TYPE##_nil(src[i])) {			\
+				dst[i] = bit_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (bit) (src[i] != 0);		\
+			i++;						\
+			x = canditer_next_dense(ci);			\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	} else {							\
+		do {							\
+			while (i < x) {					\
+				dst[i++] = bit_nil;			\
+				nils++;					\
+			}						\
+			if (is_##TYPE##_nil(src[i])) {			\
+				dst[i] = bit_nil;			\
+				nils++;					\
+			} else						\
+				dst[i] = (bit) (src[i] != 0);		\
+			i++;						\
+			x = canditer_next(ci);				\
+			if (is_oid_nil(x))				\
+				break;					\
+			x -= candoff;					\
+		} while (i < cnt);					\
+	}								\
 	while (i < cnt) {						\
 		dst[i++] = bit_nil;					\
 		nils++;							\

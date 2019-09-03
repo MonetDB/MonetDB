@@ -98,32 +98,63 @@
 #define GRP_compare_consecutive_values(INIT_0,INIT_1,DIFFER,KEEP)	\
 	do {								\
 		INIT_0;							\
-		if (grps) {						\
-			for (r = 0; r < cnt; r++) {			\
-				p = canditer_next(&ci) - hseqb;		\
-				INIT_1;					\
-				if (ngrp == 0 || grps[r] != prev || DIFFER) { \
-					GRPnotfound();			\
-				} else {				\
-					ngrps[r] = ngrp - 1;		\
-					if (histo)			\
-						cnts[ngrp - 1]++;	\
+		if (ci.tpe == cand_dense) {				\
+			if (grps) {					\
+				for (r = 0; r < cnt; r++) {		\
+					p = canditer_next_dense(&ci) - hseqb; \
+					INIT_1;				\
+					if (ngrp == 0 || grps[r] != prev || DIFFER) { \
+						GRPnotfound();		\
+					} else {			\
+						ngrps[r] = ngrp - 1;	\
+						if (histo)		\
+							cnts[ngrp - 1]++; \
+					}				\
+					KEEP;				\
+					prev = grps[r];			\
 				}					\
-				KEEP;					\
-				prev = grps[r];				\
+			} else {					\
+				for (r = 0; r < cnt; r++) {		\
+					p = canditer_next_dense(&ci) - hseqb; \
+					INIT_1;				\
+					if (ngrp == 0 || DIFFER) {	\
+						GRPnotfound();		\
+					} else {			\
+						ngrps[r] = ngrp - 1;	\
+						if (histo)		\
+							cnts[ngrp - 1]++; \
+					}				\
+					KEEP;				\
+				}					\
 			}						\
 		} else {						\
-			for (r = 0; r < cnt; r++) {			\
-				p = canditer_next(&ci) - hseqb;		\
-				INIT_1;					\
-				if (ngrp == 0 || DIFFER) {		\
-					GRPnotfound();			\
-				} else {				\
-					ngrps[r] = ngrp - 1;		\
-					if (histo)			\
-						cnts[ngrp - 1]++;	\
+			if (grps) {					\
+				for (r = 0; r < cnt; r++) {		\
+					p = canditer_next(&ci) - hseqb;	\
+					INIT_1;				\
+					if (ngrp == 0 || grps[r] != prev || DIFFER) { \
+						GRPnotfound();		\
+					} else {			\
+						ngrps[r] = ngrp - 1;	\
+						if (histo)		\
+							cnts[ngrp - 1]++; \
+					}				\
+					KEEP;				\
+					prev = grps[r];			\
 				}					\
-				KEEP;					\
+			} else {					\
+				for (r = 0; r < cnt; r++) {		\
+					p = canditer_next(&ci) - hseqb;	\
+					INIT_1;				\
+					if (ngrp == 0 || DIFFER) {	\
+						GRPnotfound();		\
+					} else {			\
+						ngrps[r] = ngrp - 1;	\
+						if (histo)		\
+							cnts[ngrp - 1]++; \
+					}				\
+					KEEP;				\
+				}					\
 			}						\
 		}							\
 	} while(0)
@@ -159,43 +190,84 @@
 		INIT_0;							\
 		pgrp[grps[0]] = 0;					\
 		j = 0;							\
-		for (r = 0; r < cnt; r++) {				\
-			p = canditer_next(&ci) - hseqb;			\
-			INIT_1;						\
-			if (ngrp != 0 && EQUAL) {			\
-				/* range [j, r) is all same value */	\
-				/* i is position where we saw r's */	\
-				/* old group last */			\
-				i = pgrp[grps[r]];			\
-				/* p is new position where we saw this	\
-				 * group */				\
-				pgrp[grps[r]] = r;			\
-				if (j <= i && i < r)	{		\
-					/* i is position of equal */	\
-					/* value in same old group */	\
-					/* as r, so r gets same new */	\
-					/* group as i */		\
-					oid grp = ngrps[i];		\
-					ngrps[r] = grp;			\
-					if (histo)			\
-						cnts[grp]++;		\
-					if (gn->tsorted &&		\
-					    grp != ngrp - 1)		\
-						gn->tsorted = false;	\
-					/* we found the value/group */	\
-					/* combination, go to next */	\
-					/* value */			\
-					continue;			\
+		if (ci.tpe == cand_dense) {				\
+			for (r = 0; r < cnt; r++) {			\
+				p = canditer_next_dense(&ci) - hseqb;	\
+				INIT_1;					\
+				if (ngrp != 0 && EQUAL) {		\
+					/* range [j, r) is all same value */ \
+					/* i is position where we saw r's */ \
+					/* old group last */		\
+					i = pgrp[grps[r]];		\
+					/* p is new position where we saw this \
+					 * group */			\
+					pgrp[grps[r]] = r;		\
+					if (j <= i && i < r)	{	\
+						/* i is position of equal */ \
+						/* value in same old group */ \
+						/* as r, so r gets same new */ \
+						/* group as i */	\
+						oid grp = ngrps[i];	\
+						ngrps[r] = grp;		\
+						if (histo)		\
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = false; \
+						/* we found the value/group */ \
+						/* combination, go to next */ \
+						/* value */		\
+						continue;		\
+					}				\
+				} else {				\
+					/* value differs from previous value */	\
+					/* (or is the first) */		\
+					j = r;				\
+					KEEP;				\
+					pgrp[grps[r]] = r;		\
 				}					\
-			} else {					\
-				/* value differs from previous value */	\
-				/* (or is the first) */			\
-				j = r;					\
-				KEEP;					\
-				pgrp[grps[r]] = r;			\
+				/* start a new group */			\
+				GRPnotfound();				\
 			}						\
-			/* start a new group */				\
-			GRPnotfound();					\
+		} else {						\
+			for (r = 0; r < cnt; r++) {			\
+				p = canditer_next(&ci) - hseqb;		\
+				INIT_1;					\
+				if (ngrp != 0 && EQUAL) {		\
+					/* range [j, r) is all same value */ \
+					/* i is position where we saw r's */ \
+					/* old group last */		\
+					i = pgrp[grps[r]];		\
+					/* p is new position where we saw this \
+					 * group */			\
+					pgrp[grps[r]] = r;		\
+					if (j <= i && i < r)	{	\
+						/* i is position of equal */ \
+						/* value in same old group */ \
+						/* as r, so r gets same new */ \
+						/* group as i */	\
+						oid grp = ngrps[i];	\
+						ngrps[r] = grp;		\
+						if (histo)		\
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = false; \
+						/* we found the value/group */ \
+						/* combination, go to next */ \
+						/* value */		\
+						continue;		\
+					}				\
+				} else {				\
+					/* value differs from previous value */	\
+					/* (or is the first) */		\
+					j = r;				\
+					KEEP;				\
+					pgrp[grps[r]] = r;		\
+				}					\
+				/* start a new group */			\
+				GRPnotfound();				\
+			}						\
 		}							\
 	} while(0)
 
@@ -243,36 +315,71 @@
 	do {								\
 		INIT_0;							\
 		assert(grps == NULL);					\
-		for (r = 0; r < cnt; r++) {				\
-			oid o = canditer_next(&ci);			\
-			p = o - hseqb + lo;				\
-			INIT_1;						\
-			/* this loop is similar, but not */		\
-			/* equal, to HASHloop: the difference */	\
-			/* is that we only consider BUNs */		\
-			/* smaller than the one we're looking */	\
-			/* up (p) */					\
-			for (hb = HASHgetlink(hs, p);			\
-			     hb != HASHnil(hs) && hb >= lo;		\
-			     hb = HASHgetlink(hs, hb)) {		\
-				oid grp;				\
-				assert(hb < p);				\
-				q = canditer_search(&ci, hb + hseqb - lo, false); \
-				if (q == BUN_NONE)			\
-					continue;			\
-				if (EQUAL) {				\
-					grp = ngrps[q];			\
-					ngrps[r] = grp;			\
-					if (histo)			\
-						cnts[grp]++;		\
-					if (gn->tsorted &&		\
-					    grp != ngrp - 1)		\
-						gn->tsorted = false;	\
-					break;				\
+		if (ci.tpe == cand_dense) {				\
+			for (r = 0; r < cnt; r++) {			\
+				oid o = canditer_next_dense(&ci);	\
+				p = o - hseqb + lo;			\
+				INIT_1;					\
+				/* this loop is similar, but not */	\
+				/* equal, to HASHloop: the difference */ \
+				/* is that we only consider BUNs */	\
+				/* smaller than the one we're looking */ \
+				/* up (p) */				\
+				for (hb = HASHgetlink(hs, p);		\
+				     hb != HASHnil(hs) && hb >= lo;	\
+				     hb = HASHgetlink(hs, hb)) {	\
+					oid grp;			\
+					assert(hb < p);			\
+					q = canditer_search_dense(&ci, hb + hseqb - lo, false); \
+					if (q == BUN_NONE)		\
+						continue;		\
+					if (EQUAL) {			\
+						grp = ngrps[q];		\
+						ngrps[r] = grp;		\
+						if (histo)		\
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = false; \
+						break;			\
+					}				\
+				}					\
+				if (hb == HASHnil(hs) || hb < lo) {	\
+					GRPnotfound();			\
 				}					\
 			}						\
-			if (hb == HASHnil(hs) || hb < lo) {		\
-				GRPnotfound();				\
+		} else {						\
+			for (r = 0; r < cnt; r++) {			\
+				oid o = canditer_next(&ci);		\
+				p = o - hseqb + lo;			\
+				INIT_1;					\
+				/* this loop is similar, but not */	\
+				/* equal, to HASHloop: the difference */ \
+				/* is that we only consider BUNs */	\
+				/* smaller than the one we're looking */ \
+				/* up (p) */				\
+				for (hb = HASHgetlink(hs, p);		\
+				     hb != HASHnil(hs) && hb >= lo;	\
+				     hb = HASHgetlink(hs, hb)) {	\
+					oid grp;			\
+					assert(hb < p);			\
+					q = canditer_search(&ci, hb + hseqb - lo, false); \
+					if (q == BUN_NONE)		\
+						continue;		\
+					if (EQUAL) {			\
+						grp = ngrps[q];		\
+						ngrps[r] = grp;		\
+						if (histo)		\
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = false; \
+						break;			\
+					}				\
+				}					\
+				if (hb == HASHnil(hs) || hb < lo) {	\
+					GRPnotfound();			\
+				}					\
 			}						\
 		}							\
 	} while(0)
@@ -344,34 +451,67 @@ pop(oid x)
 
 #define GRP_create_partial_hash_table_core(INIT_1,HASH,EQUAL,ASSERT,GRPTST) \
 	do {								\
-		for (r = 0; r < cnt; r++) {				\
-			p = canditer_next(&ci) - hseqb;			\
-			INIT_1;						\
-			prb = HASH;					\
-			for (hb = HASHget(hs, prb);			\
-			     hb != HASHnil(hs);				\
-			     hb = HASHgetlink(hs, hb)) {		\
-				ASSERT;					\
-				q = canditer_search(&ci, hb + hseqb, false); \
-				if (q == BUN_NONE)			\
-					continue;			\
-				GRPTST(q, r);				\
-				if (EQUAL) {				\
-					grp = ngrps[q];			\
-					ngrps[r] = grp;			\
-					if (histo)			\
-						cnts[grp]++;		\
-					if (gn->tsorted &&		\
-					    grp != ngrp - 1)		\
-						gn->tsorted = false;	\
-					break;				\
+		if (ci.tpe == cand_dense) {				\
+			for (r = 0; r < cnt; r++) {			\
+				p = canditer_next_dense(&ci) - hseqb;	\
+				INIT_1;					\
+				prb = HASH;				\
+				for (hb = HASHget(hs, prb);		\
+				     hb != HASHnil(hs);			\
+				     hb = HASHgetlink(hs, hb)) {	\
+					ASSERT;				\
+					q = canditer_search_dense(&ci, hb + hseqb, false); \
+					if (q == BUN_NONE)		\
+						continue;		\
+					GRPTST(q, r);			\
+					if (EQUAL) {			\
+						grp = ngrps[q];		\
+						ngrps[r] = grp;		\
+						if (histo)		\
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = false; \
+						break;			\
+					}				\
+				}					\
+				if (hb == HASHnil(hs)) {		\
+					GRPnotfound();			\
+					/* enter new group into hash table */ \
+					HASHputlink(hs, p, HASHget(hs, prb)); \
+					HASHput(hs, prb, p);		\
 				}					\
 			}						\
-			if (hb == HASHnil(hs)) {			\
-				GRPnotfound();				\
-				/* enter new group into hash table */	\
-				HASHputlink(hs, p, HASHget(hs, prb));	\
-				HASHput(hs, prb, p);			\
+		} else {						\
+			for (r = 0; r < cnt; r++) {			\
+				p = canditer_next(&ci) - hseqb;		\
+				INIT_1;					\
+				prb = HASH;				\
+				for (hb = HASHget(hs, prb);		\
+				     hb != HASHnil(hs);			\
+				     hb = HASHgetlink(hs, hb)) {	\
+					ASSERT;				\
+					q = canditer_search(&ci, hb + hseqb, false); \
+					if (q == BUN_NONE)		\
+						continue;		\
+					GRPTST(q, r);			\
+					if (EQUAL) {			\
+						grp = ngrps[q];		\
+						ngrps[r] = grp;		\
+						if (histo)		\
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = false; \
+						break;			\
+					}				\
+				}					\
+				if (hb == HASHnil(hs)) {		\
+					GRPnotfound();			\
+					/* enter new group into hash table */ \
+					HASHputlink(hs, p, HASHget(hs, prb)); \
+					HASHput(hs, prb, p);		\
+				}					\
 			}						\
 		}							\
 	} while (0)
@@ -793,11 +933,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			memset(cnts, 0, maxgrps * sizeof(lng));
 		ngrp = 0;
 		gn->tsorted = true;
-		r = 0;
-		for (;;) {
+		for (r = 0; r < cnt; r++) {
 			oid o = canditer_next(&ci);
-			if (is_oid_nil(o))
-				break;
 			p = o - b->hseqbase;
 			if ((v = bgrps[w[p]]) == 0xFF && ngrp < 256) {
 				bgrps[w[p]] = v = (unsigned char) ngrp++;
@@ -809,7 +946,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				gn->tsorted = false;
 			if (histo)
 				cnts[v]++;
-			r++;
 		}
 		GDKfree(bgrps);
 	} else if (g == NULL && t == TYPE_sht) {
@@ -828,11 +964,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			memset(cnts, 0, maxgrps * sizeof(lng));
 		ngrp = 0;
 		gn->tsorted = true;
-		r = 0;
-		for (;;) {
+		for (r = 0; r < cnt; r++) {
 			oid o = canditer_next(&ci);
-			if (is_oid_nil(o))
-				break;
 			p = o - b->hseqbase;
 			if ((v = sgrps[w[p]]) == 0xFFFF && ngrp < 65536) {
 				sgrps[w[p]] = v = (unsigned short) ngrp++;
@@ -844,7 +977,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				gn->tsorted = false;
 			if (histo)
 				cnts[v]++;
-			r++;
 		}
 		GDKfree(sgrps);
 	} else if (g == NULL &&
