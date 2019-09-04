@@ -14266,12 +14266,12 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error)
 		return COLcopy(b, tp, false, TRANSIENT);
 	}
 
-	bn = COLnew(b->hseqbase, tp, b->batCount, TRANSIENT);
+	bn = COLnew(b->hseqbase, tp, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
 	if (b->ttype == TYPE_void)
-		nils = convert_void_any(b->tseqbase, b->batCount, bn,
+		nils = convert_void_any(b->tseqbase, cnt, bn,
 					&ci, b->hseqbase,
 					abort_on_error, &reduce);
 	else if (tp == TYPE_str)
@@ -14284,7 +14284,7 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error)
 	} else
 		nils = convert_typeswitchloop(Tloc(b, 0), b->ttype,
 					      Tloc(bn, 0), tp,
-					      b->batCount, &ci, b->hseqbase,
+					      cnt, &ci, b->hseqbase,
 					      abort_on_error, &reduce);
 
 	if (nils >= BUN_NONE) {
@@ -14299,7 +14299,7 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error)
 		return NULL;
 	}
 
-	BATsetcount(bn, b->batCount);
+	BATsetcount(bn, cnt);
 
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
