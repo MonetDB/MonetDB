@@ -71,7 +71,7 @@ MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
 QUERY = copy 2 records into tbl_bug2575 from stdin using delimiters E'\t',E'\n','';
         10001160000	29	.v.
         10001690001	0	co√
-ERROR = !Failed to import table 'tbl_bug2575', input not properly encoded UTF-8
+ERROR = !Failed to import table 'tbl_bug2575', line 2: input not properly encoded UTF-8
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-9014/.s.monetdb.38503
 QUERY = copy 2 records into tbl_bug2575 from stdin using delimiters E'\t',E'\n','';
