@@ -648,29 +648,50 @@ dofsum(const void *restrict values, oid seqb,
 				*sums = sum;				\
 		} else if (ci->tpe == cand_dense) {			\
 			/* multiple groups, no candidate list */	\
-			ALGODEBUG fprintf(stderr,			\
-					  "#%s: no candidates, with groups, no overflow; " \
-					  "start " OIDFMT ", count " BUNFMT \
-					  "\n",				\
-					  func, ci->seq, ncand);	\
-			for (i = 0; i < ncand; i++) {			\
-				if (gids == NULL ||			\
-				    (gids[i] >= min && gids[i] <= max)) { \
-					gid = gids ? gids[i] - min : (oid) i; \
-					x = vals[ci->seq + i - seqb];	\
-					if (is_##TYPE1##_nil(x)) {	\
-						if (!skip_nils) {	\
-							sums[gid] = TYPE2##_nil; \
-							nils++;		\
-						}			\
-					} else {			\
+			if (nonil) {					\
+				ALGODEBUG fprintf(stderr,			\
+						  "#%s: no candidates, with groups, no nils, no overflow; " \
+						  "start " OIDFMT ", count " BUNFMT \
+						  "\n",				\
+						  func, ci->seq, ncand);	\
+				for (i = 0; i < ncand; i++) {		\
+					if (gids == NULL ||		\
+					    (gids[i] >= min && gids[i] <= max)) { \
+						gid = gids ? gids[i] - min : (oid) i; \
+						x = vals[ci->seq + i - seqb]; \
 						if (nil_if_empty &&	\
 						    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
 							seen[gid >> 5] |= 1U << (gid & 0x1F); \
 							sums[gid] = 0;	\
 						}			\
-						if (!is_##TYPE2##_nil(sums[gid])) { \
-							sums[gid] += x;	\
+						sums[gid] += x;		\
+					}				\
+				}					\
+			} else {					\
+				ALGODEBUG fprintf(stderr,			\
+						  "#%s: no candidates, with groups, no overflow; " \
+						  "start " OIDFMT ", count " BUNFMT \
+						  "\n",				\
+						  func, ci->seq, ncand);	\
+				for (i = 0; i < ncand; i++) {		\
+					if (gids == NULL ||		\
+					    (gids[i] >= min && gids[i] <= max)) { \
+						gid = gids ? gids[i] - min : (oid) i; \
+						x = vals[ci->seq + i - seqb]; \
+						if (is_##TYPE1##_nil(x)) { \
+							if (!skip_nils) { \
+								sums[gid] = TYPE2##_nil; \
+								nils++;	\
+							}		\
+						} else {		\
+							if (nil_if_empty && \
+							    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
+								seen[gid >> 5] |= 1U << (gid & 0x1F); \
+								sums[gid] = 0; \
+							}		\
+							if (!is_##TYPE2##_nil(sums[gid])) { \
+								sums[gid] += x;	\
+							}		\
 						}			\
 					}				\
 				}					\
