@@ -291,6 +291,7 @@ BATunique(BAT *b, BAT *s)
 		BUN prb;
 		BUN p;
 		BUN mask;
+		int len;
 
 		GDKclrerr();	/* not interested in BAThash errors */
 		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
@@ -311,9 +312,12 @@ BATunique(BAT *b, BAT *s)
 			if (mask < ((BUN) 1 << 16))
 				mask = (BUN) 1 << 16;
 		}
-		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
-		    snprintf(hs->heap.filename, sizeof(hs->heap.filename),
-			     "%s.hash%d", nme, THRgettid()) < 0 ||
+		if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
+			GDKerror("BATunique: cannot allocate hash table\n");
+			goto bunins_failed;
+		}
+		len = snprintf(hs->heap.filename, sizeof(hs->heap.filename), "%s.hash%d", nme, THRgettid());
+		if (len == -1 || len >= (int) sizeof(hs->heap.filename) ||
 		    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;

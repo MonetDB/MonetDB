@@ -1035,7 +1035,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		bool gc = g != NULL && (BATordered(g) || BATordered_rev(g));
 		const char *nme;
 		BUN prb;
-		int bits;
+		int bits, len;
 		BUN mask;
 		oid grp;
 
@@ -1063,11 +1063,15 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * which power of two */
 		bits = 8 * SIZEOF_OID - pop(mask - 1);
 		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
-		    (hs->heap.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
-		    snprintf(hs->heap.filename, sizeof(hs->heap.filename),
-			     "%s.hash%d", nme, THRgettid()) < 0 ||
-		    HASHnew(hs, b->ttype, BUNlast(b),
-			    mask, BUN_NONE) != GDK_SUCCEED) {
+		    (hs->heap.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0) {
+			GDKfree(hs);
+			hs = NULL;
+			GDKerror("BATgroup: cannot allocate hash table\n");
+			goto error;
+		}
+		len = snprintf(hs->heap.filename, sizeof(hs->heap.filename), "%s.hash%d", nme, THRgettid());
+		if (len < 0 || len >= (int) sizeof(hs->heap.filename) ||
+		    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("BATgroup: cannot allocate hash table\n");

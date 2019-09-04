@@ -2545,12 +2545,15 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			hsh = r->thash;
 			sr = NULL;
 		} else {
+			int len;
 			char ext[32];
 			assert(!phash);
 			ALGODEBUG fprintf(stderr, "#hashjoin(%s): creating "
 					  "hash for candidate list\n",
 					  BATgetId(r));
-			snprintf(ext, sizeof(ext), "thash%x", sr->batCacheid);
+			len = snprintf(ext, sizeof(ext), "thash%x", sr->batCacheid);
+			if (len == -1 || len >= (int) sizeof(ext))
+				goto bailout;
 			if ((hsh = BAThash_impl(r, sr, ext)) == NULL) {
 				goto bailout;
 			}

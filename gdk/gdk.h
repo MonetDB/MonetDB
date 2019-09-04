@@ -1369,6 +1369,8 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
  * @emph{th}) for variable-sized atoms.
  */
 
+gdk_export gdk_return BATsave(BAT *b)
+	__attribute__((__warn_unused_result__));
 gdk_export void BATmsync(BAT *b);
 
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
@@ -1842,6 +1844,7 @@ gdk_export lng IMPSimprintsize(BAT *b);
 
 gdk_export gdk_return BATorderidx(BAT *b, bool stable);
 gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
+gdk_export bool BATcheckorderidx(BAT *b);
 
 /*
  * @- Multilevel Storage Modes
