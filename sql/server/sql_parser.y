@@ -4260,7 +4260,14 @@ value_exp:
  |  CURRENT_ROLE   { $$ = _symbol_create_list(SQL_COLUMN, append_string(L(), sa_strdup(SA, "current_role"))); }
  |  datetime_funcs
  |  func_ref
- |  GROUPING '(' column_ref_commalist ')' { $$ = _symbol_create_list(SQL_GROUPING, $3); }
+ |  GROUPING '(' column_ref_commalist ')' { dlist *l = L();
+										    append_list(l, append_string(L(), "grouping"));
+										    append_int(l, FALSE);
+											for (dnode *dn = $3->h ; dn ; dn = dn->next) {
+												symbol *sym = dn->data.sym; /* do like a aggrN */
+												append_symbol(l, _symbol_create_list(SQL_COLUMN, sym->data.lval));
+											}
+										    $$ = _symbol_create_list(SQL_AGGR, l); }
  |  NEXT VALUE FOR qname                  { $$ = _symbol_create_list(SQL_NEXT, $4); }
  |  null
  |  param
@@ -6656,7 +6663,6 @@ char *token2string(tokens token)
 	SQL(GRANT);
 	SQL(GRANT_ROLES);
 	SQL(GROUPBY);
-	SQL(GROUPING);
 	SQL(GROUPING_SETS);
 	SQL(IDENT);
 	SQL(IF);

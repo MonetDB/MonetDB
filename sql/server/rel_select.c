@@ -3848,15 +3848,19 @@ rel_intermediates_add_exp(mvc *sql, sql_rel *p, sql_rel *op, sql_exp *in)
 	}
 }
 
-
-static sql_rel *
-rel_find_groupby(sql_query *query, sql_rel *groupby, sql_rel **og, sql_rel **sel, int *group, int f, char* aname)
+static sql_exp *
+_rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *aname, dnode *args, int f)
 {
 	mvc *sql = query->sql;
+	exp_kind ek = {type_value, card_column, FALSE};
+	sql_subaggr *a = NULL;
+	int no_nil = 0, group = 0, freevar = 1;
+	sql_rel *groupby = *rel, *sel = NULL, *gr, *og = NULL;
+	list *exps = NULL;
 
 	/* find having select */
 	if (groupby && !is_processed(groupby) && is_sql_having(f)) { 
-		*og = groupby;
+		og = groupby;
 		while(!is_processed(groupby) && !is_base(groupby->op)) {
 			if (is_select(groupby->op) || !groupby->l)
 				break;
@@ -3864,20 +3868,20 @@ rel_find_groupby(sql_query *query, sql_rel *groupby, sql_rel **og, sql_rel **sel
 				groupby = groupby->l;
 		}
 		if (groupby && is_select(groupby->op) && !is_processed(groupby)) {
-			*group = 1;
-			*sel = groupby;
+			group = 1;
+			sel = groupby;
 			/* At the end we switch back to the old projection relation og. 
 			 * During the partitioning and ordering we add the expressions to the intermediate relations. */
 		}
-		if (!*sel)
-			groupby = *og;
-		if (*sel && (*sel)->l)
-			groupby = (*sel)->l;
+		if (!sel)
+			groupby = og;
+		if (sel && sel->l)
+			groupby = sel->l;
 	}
 
 	/* find groupby */
 	if (groupby && !is_processed(groupby) && !is_base(groupby->op)) { 
-		*og = groupby;
+		og = groupby;
 		while(!is_processed(groupby) && !is_base(groupby->op)) {
 			if (groupby->op == op_groupby || !groupby->l)
 				break;
@@ -3885,12 +3889,12 @@ rel_find_groupby(sql_query *query, sql_rel *groupby, sql_rel **og, sql_rel **sel
 				groupby = groupby->l;
 		}
 		if (groupby && groupby->op == op_groupby) {
-			*group = 1;
+			group = 1;
 			/* At the end we switch back to the old projection relation og. 
 			 * During the partitioning and ordering we add the expressions to the intermediate relations. */
 		}
-		if (!*group)
-			groupby = *og;
+		if (!group)
+			groupby = og;
 	}
 
 	if (!groupby) {
@@ -3909,56 +3913,6 @@ rel_find_groupby(sql_query *query, sql_rel *groupby, sql_rel **og, sql_rel **sel
 			GDKfree(uaname);
 		return NULL;
 	}
-
-	return groupby;
-}
-
-static sql_exp *
-rel_grouping(sql_query *query, sql_rel **rel, symbol *se, int f)
-{
-	mvc *sql = query->sql;
-	sql_rel *groupby, *sel = NULL, *og = NULL;
-	int group = 0;
-	dlist *l = se->data.lval;
-	list *group_cols;
-
-	(void) group;
-	(void) sel;
-	(void) og;
-
-	if (is_sql_groupby(f) || is_sql_partitionby(f) || is_sql_where(f) || is_sql_from(f))
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: GROUPING expression not allowed in %s clause", 
-						 is_sql_groupby(f) ? "GROUP BY" : is_sql_partitionby(f) ? "PARTITION BY" : is_sql_where(f) ? "WHERE" : "FROM");
-	if (!(groupby = rel_find_groupby(query, *rel, &og, &sel, &group, f, "GROUPING")))
-		return NULL;
-	if (groupby->op != op_groupby)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: GROUPING requires a GROUP BY clause");
-
-	group_cols = (list*) groupby->r;
-
-	for (dnode *dn = l->h; dn; dn = dn->next) {
-		symbol *sym = dn->data.sym;
-		exp_kind ek = {type_value, card_column, FALSE};
-		sql_exp *col = rel_value_exp(query, rel, sym, f, ek);
-		if (!col)
-			return NULL; /* GROUPING(x, ...) columns must be present in the GROUP BY clause */
-	}
-
-	return exp_atom(sql->sa, atom_int(sql->sa, sql_bind_localtype("int"), 0));
-}
-
-static sql_exp *
-_rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *aname, dnode *args, int f)
-{
-	mvc *sql = query->sql;
-	exp_kind ek = {type_value, card_column, FALSE};
-	sql_subaggr *a = NULL;
-	int no_nil = 0, group = 0, freevar = 1;
-	sql_rel *groupby, *sel = NULL, *gr, *og = NULL;
-	list *exps = NULL;
-
-	if (!(groupby = rel_find_groupby(query, *rel, &og, &sel, &group, f, aname)))
-		return NULL;
 
 	if (groupby->op != op_groupby) { /* implicit groupby */
 		sql_rel *np = rel_project2groupby(sql, groupby);
@@ -4047,7 +4001,11 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		list_append(exps, e);
 	}
 
-	a = sql_bind_aggr_(sql->sa, s, aname, exp_types(sql->sa, exps));
+	if (!strcmp(aname, "grouping"))
+		a = sql_bind_aggr(sql->sa, s, aname, NULL);
+	else
+		a = sql_bind_aggr_(sql->sa, s, aname, exp_types(sql->sa, exps));
+
 	if (!a && list_length(exps) > 1) { 
 		sql_subtype *t1 = exp_subtype(exps->h->data);
 		a = sql_bind_member_aggr(sql->sa, s, aname, exp_subtype(exps->h->data), list_length(exps));
@@ -6036,8 +5994,6 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 			return exp_atom(sql->sa, atom_dup(sql->sa, an->a));
 		}
 	}
-	case SQL_GROUPING:
-		return rel_grouping(query, rel, se, f);
 	case SQL_NEXT:
 		return rel_next_value_for(sql, se);
 	case SQL_CAST:
@@ -6274,6 +6230,175 @@ rel_remove_internal_exp(sql_rel *rel)
 	}
 }
 
+static sql_exp*
+exp_replace_groupings(mvc *sql, sql_rel *rel, sql_exp *e)
+{
+	assert(e);
+	switch(e->type) {
+		case e_atom:
+		case e_column:
+		case e_psm:
+			break;
+		case e_convert: {
+			e->l = exp_replace_groupings(sql, rel, e->l);
+		} break;
+		case e_func: {
+			for (node *n = ((list*)e->l)->h ; n ; n = n->next)
+				n->data = exp_replace_groupings(sql, rel, (sql_exp*) n->data);
+			if (e->r)
+				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
+					n->data = exp_replace_groupings(sql, rel, (sql_exp*) n->data);
+		} break;
+		case e_aggr: {
+			sql_subaggr *aggr = (sql_subaggr*) e->f;
+			if (!strcmp(aggr->aggr->base.name, "grouping")) {
+				sql_subtype *tpe;
+				sql_exp *res;
+				list *groups = (list*)e->l, *group_cols;
+				atom *a;
+#ifdef HAVE_HGE
+				hge counter = (hge) list_length(groups) - 1;
+#else
+				lng counter = (lng) list_length(groups) - 1;
+#endif
+				assert(groups && list_length(groups) > 0 && is_groupby(rel->op));
+				group_cols = (list*) rel->r;
+
+				if (list_length(group_cols) <= 7)
+					tpe = sql_bind_localtype("bte");
+				else if (list_length(group_cols) <= 15)
+					tpe = sql_bind_localtype("sht");
+				else if (list_length(group_cols) <= 31)
+					tpe = sql_bind_localtype("int");
+				else if (list_length(group_cols) <= 63)
+					tpe = sql_bind_localtype("lng");
+#ifdef HAVE_HGE
+				else if (list_length(group_cols) <= 127)
+					tpe = sql_bind_localtype("hge");
+#endif
+				else
+					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: GROUPING the number of grouping columns is larger than"
+									 " the maximum possible for this call (%d > %d)", list_length(group_cols),
+#ifdef HAVE_HGE
+									 127
+#else
+									 63
+#endif
+									);
+
+				a = atom_int(sql->sa, tpe, 0);
+				for (node *n = groups->h ; n ; n = n->next) {
+					sql_exp *exp = (sql_exp*) n->data;
+					if (!exps_find_exp(group_cols, exp)) {
+						switch (ATOMstorage(a->data.vtype)) {
+							case TYPE_bte:
+								a->data.val.btval += (bte) (1 << counter);
+								break;
+							case TYPE_sht:
+								a->data.val.shval += (sht) (1 << counter);
+								break;
+							case TYPE_int:
+								a->data.val.ival += (int) (1 << counter);
+								break;
+							case TYPE_lng:
+								a->data.val.lval += (lng) (1 << counter);
+								break;
+#ifdef HAVE_HGE
+							case TYPE_hge:
+								a->data.val.hval += (hge) (1 << counter);
+								break;
+#endif
+							default:
+								assert(0);
+						}
+					}
+					counter--;
+				}
+
+				res = exp_atom(sql->sa, a);
+				exp_setname(sql->sa, res, e->alias.rname, e->alias.name);
+				return res;
+			}
+		} break;
+		case e_cmp: {
+			if (e->flag == cmp_in || e->flag == cmp_notin) {
+				e->l = exp_replace_groupings(sql, rel, e->l);
+				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
+					n->data = exp_replace_groupings(sql, rel, (sql_exp*) n->data);
+			} else if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
+				for (node *n = ((list*)e->l)->h ; n ; n = n->next)
+					n->data = exp_replace_groupings(sql, rel, (sql_exp*) n->data);
+				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
+					n->data = exp_replace_groupings(sql, rel, (sql_exp*) n->data);
+			} else {
+				if (e->l)
+					e->l = exp_replace_groupings(sql, rel, e->l);
+				if (e->r)
+					e->l = exp_replace_groupings(sql, rel, e->r);
+				if (e->f)
+					e->l = exp_replace_groupings(sql, rel, e->f);
+			}
+		} break;
+	}
+	return e;
+}
+
+static sql_rel*
+rel_replace_groupings(mvc *sql, sql_rel *rel)
+{
+	assert(rel);
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+
+	switch (rel->op) {
+		case op_basetable:
+		case op_table:
+		case op_ddl:
+			break;
+		case op_join:
+		case op_left:
+		case op_right:
+		case op_full:
+		case op_semi:
+		case op_anti:
+		case op_union:
+		case op_inter:
+		case op_except:
+			if (rel->l)
+				if (!rel_replace_groupings(sql, rel->l))
+					return NULL;
+			if (rel->r)
+				if (!rel_replace_groupings(sql, rel->r))
+					return NULL;
+			break;
+		case op_groupby: {
+			if (rel->l)
+				if (!rel_replace_groupings(sql, rel->l))
+					return NULL;
+			for (node *n = rel->exps->h; n ; n = n->next)
+				if (!(n->data = exp_replace_groupings(sql, rel, (sql_exp*) n->data)))
+					return NULL;
+		} break;
+		case op_project:
+		case op_select:
+		case op_topn:
+		case op_sample:
+			if (rel->l)
+				if (!rel_replace_groupings(sql, rel->l))
+					return NULL;
+			break;
+		case op_insert:
+		case op_update:
+		case op_delete:
+		case op_truncate:
+			if (rel->r)
+				if (!rel_replace_groupings(sql, rel->r))
+					return NULL;
+			break;
+	}
+	return rel;
+}
+
 static sql_rel *
 rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 {
@@ -6420,7 +6545,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			return NULL;
 		rel->r = obe;
 
-		if (!is_select(left->op)) /* if the rollup query has a having clause, it's no longer needed to update left*/
+		if (!is_select(left->op)) /* if the rollup query has a having clause, it's no longer needed to update left */
 			left = rel->l;
 	}
 	if (!rel)
@@ -6466,6 +6591,9 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		}
 		left->l = unions;
 	}
+
+	if (!(rel = rel_replace_groupings(sql, rel)))
+		return NULL;
 
 	if (rel && sn->distinct)
 		rel = rel_distinct(rel);
