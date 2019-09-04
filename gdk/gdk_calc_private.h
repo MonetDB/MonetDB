@@ -316,5 +316,5 @@ __hidden BUN dofsum(const void *restrict values, oid seqb,
 		    void *restrict results, BUN ngrp, int tp1, int tp2,
 		    const oid *restrict gids,
 		    oid min, oid max, bool skip_nils, bool abort_on_error,
-		    bool nil_if_empty, const char *func)
+		    bool nil_if_empty)
 	__attribute__((__visibility__("hidden")));

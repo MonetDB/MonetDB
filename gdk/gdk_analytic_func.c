@@ -1119,8 +1119,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit *restrict ignore_ni
 					   &(struct canditer){.tpe = cand_dense, .ncand = parcel,}, \
 					   parcel, &curval, 1, TYPE_##TPE1, \
 					   TYPE_##TPE2, NULL, 0, 0, true, \
-					   false, true,			\
-					   "GDKanalyticalsum") == BUN_NONE) { \
+					   false, true) == BUN_NONE) {	\
 					goto bailout;			\
 				}					\
 			}						\

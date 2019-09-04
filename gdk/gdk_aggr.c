@@ -179,7 +179,7 @@ dofsum(const void *restrict values, oid seqb,
        void *restrict results, BUN ngrp, int tp1, int tp2,
        const oid *restrict gids,
        oid min, oid max, bool skip_nils, bool abort_on_error,
-       bool nil_if_empty, const char *func)
+       bool nil_if_empty)
 {
 	struct pergroup {
 		int npartials;
@@ -202,7 +202,6 @@ dofsum(const void *restrict values, oid seqb,
 	BUN nils = 0;
 	volatile flt f;
 
-	ALGODEBUG fprintf(stderr, "#%s: floating point summation\n", func);
 	/* we only deal with the two floating point types */
 	assert(tp1 == TYPE_flt || tp1 == TYPE_dbl);
 	assert(tp2 == TYPE_flt || tp2 == TYPE_dbl);
@@ -448,11 +447,7 @@ dofsum(const void *restrict values, oid seqb,
 		if (ngrp == 1 && ci->tpe == cand_dense) {		\
 			/* single group, no candidate list */		\
 			TYPE2 sum;					\
-			ALGODEBUG fprintf(stderr,			\
-					  "#%s: no candidates, no groups; " \
-					  "start " OIDFMT ", count " BUNFMT \
-					  ", nonil = %d\n",		\
-					  func, ci->seq, ncand, nonil);	\
+			*algo = "no candidates, no groups";		\
 			sum = 0;					\
 			if (nonil) {					\
 				*seen = ncand > 0;			\
@@ -488,11 +483,7 @@ dofsum(const void *restrict values, oid seqb,
 			/* single group, with candidate list */		\
 			TYPE2 sum;					\
 			bool seenval = false;				\
-			ALGODEBUG fprintf(stderr,			\
-					  "#%s: with candidates, no groups; " \
-					  "start " OIDFMT ", count " BUNFMT \
-					  "\n",				\
-					  func, ci->seq, ncand);	\
+			*algo = "with candidates, no groups";		\
 			sum = 0;					\
 			for (i = 0; i < ncand && nils == 0; i++) {	\
 				x = vals[canditer_next(ci) - seqb];	\
@@ -513,11 +504,7 @@ dofsum(const void *restrict values, oid seqb,
 				*sums = sum;				\
 		} else if (ci->tpe == cand_dense) {			\
 			/* multiple groups, no candidate list */	\
-			ALGODEBUG fprintf(stderr,			\
-					  "#%s: no candidates, with groups; " \
-					  "start " OIDFMT ", count " BUNFMT \
-					  "\n",				\
-					  func, ci->seq, ncand);	\
+			*algo = "no candidates, with groups";		\
 			for (i = 0; i < ncand; i++) {			\
 				if (gids == NULL ||			\
 				    (gids[i] >= min && gids[i] <= max)) { \
@@ -548,11 +535,7 @@ dofsum(const void *restrict values, oid seqb,
 			}						\
 		} else {						\
 			/* multiple groups, with candidate list */	\
-			ALGODEBUG fprintf(stderr,			\
-					  "#%s: with candidates, with " \
-					  "groups; start " OIDFMT ", "	\
-					  "count " BUNFMT "\n",		\
-					  func, ci->seq, ncand);	\
+			*algo = "with candidates, with groups";		\
 			while (ncand > 0) {				\
 				ncand--;				\
 				i = canditer_next(ci) - seqb;		\
@@ -593,19 +576,16 @@ dofsum(const void *restrict values, oid seqb,
 		if (ngrp == 1 && ci->tpe == cand_dense) {		\
 			/* single group, no candidate list */		\
 			TYPE2 sum;					\
-			ALGODEBUG fprintf(stderr,			\
-					  "#%s: no candidates, no groups, no overflow; " \
-					  "start " OIDFMT ", count " BUNFMT \
-					  ", nonil = %d\n",		\
-					  func, ci->seq, ncand, nonil);	\
 			sum = 0;					\
 			if (nonil) {					\
+				*algo = "no candidates, no groups, no nils, no overflow"; \
 				*seen = ncand > 0;			\
 				for (i = 0; i < ncand && nils == 0; i++) { \
 					sum += vals[ci->seq + i - seqb]; \
 				}					\
 			} else {					\
 				bool seenval = false;			\
+				*algo = "no candidates, no groups, no overflow"; \
 				for (i = 0; i < ncand && nils == 0; i++) { \
 					x = vals[ci->seq + i - seqb];	\
 					if (is_##TYPE1##_nil(x)) {	\
@@ -626,11 +606,7 @@ dofsum(const void *restrict values, oid seqb,
 			/* single group, with candidate list */		\
 			TYPE2 sum;					\
 			bool seenval = false;				\
-			ALGODEBUG fprintf(stderr,			\
-					  "#%s: with candidates, no groups, no overflow; " \
-					  "start " OIDFMT ", count " BUNFMT \
-					  "\n",				\
-					  func, ci->seq, ncand);	\
+			*algo = "with candidates, no groups, no overflow"; \
 			sum = 0;					\
 			for (i = 0; i < ncand && nils == 0; i++) {	\
 				x = vals[canditer_next(ci) - seqb];	\
@@ -649,11 +625,7 @@ dofsum(const void *restrict values, oid seqb,
 		} else if (ci->tpe == cand_dense) {			\
 			/* multiple groups, no candidate list */	\
 			if (nonil) {					\
-				ALGODEBUG fprintf(stderr,			\
-						  "#%s: no candidates, with groups, no nils, no overflow; " \
-						  "start " OIDFMT ", count " BUNFMT \
-						  "\n",				\
-						  func, ci->seq, ncand);	\
+				*algo = "no candidates, with groups, no nils, no overflow"; \
 				for (i = 0; i < ncand; i++) {		\
 					if (gids == NULL ||		\
 					    (gids[i] >= min && gids[i] <= max)) { \
@@ -668,11 +640,7 @@ dofsum(const void *restrict values, oid seqb,
 					}				\
 				}					\
 			} else {					\
-				ALGODEBUG fprintf(stderr,			\
-						  "#%s: no candidates, with groups, no overflow; " \
-						  "start " OIDFMT ", count " BUNFMT \
-						  "\n",				\
-						  func, ci->seq, ncand);	\
+				*algo = "no candidates, with groups, no overflow"; \
 				for (i = 0; i < ncand; i++) {		\
 					if (gids == NULL ||		\
 					    (gids[i] >= min && gids[i] <= max)) { \
@@ -698,11 +666,7 @@ dofsum(const void *restrict values, oid seqb,
 			}						\
 		} else {						\
 			/* multiple groups, with candidate list */	\
-			ALGODEBUG fprintf(stderr,			\
-					  "#%s: with candidates, with " \
-					  "groups, no overflow; start " OIDFMT ", "	\
-					  "count " BUNFMT "\n",		\
-					  func, ci->seq, ncand);	\
+			*algo = "with candidates, with groups, no overflow"; \
 			while (ncand > 0) {				\
 				ncand--;				\
 				i = canditer_next(ci) - seqb;		\
@@ -736,7 +700,7 @@ dosum(const void *restrict values, bool nonil, oid seqb,
       void *restrict results, BUN ngrp, int tp1, int tp2,
       const oid *restrict gids,
       oid min, oid max, bool skip_nils, bool abort_on_error,
-      bool nil_if_empty, const char *func)
+      bool nil_if_empty, const char *func, const char **algo)
 {
 	BUN nils = 0;
 	BUN i;
@@ -751,9 +715,10 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 	case TYPE_dbl:
 		if (tp1 != TYPE_flt && tp1 != TYPE_dbl)
 			goto unsupported;
+		*algo = "floating sum";
 		return dofsum(values, seqb, ci, ncand, results, ngrp, tp1, tp2,
 			      gids, min, max, skip_nils, abort_on_error,
-			      nil_if_empty, func);
+			      nil_if_empty);
 	}
 
 	/* allocate bitmap for seen group ids */
@@ -927,6 +892,10 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	struct canditer ci;
 	BUN ncand;
 	const char *err;
+	const char *algo = NULL;
+	lng t0 = 0;
+
+	ALGODEBUG t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATgroupsum: %s\n", err);
@@ -963,7 +932,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 
 	nils = dosum(Tloc(b, 0), b->tnonil, b->hseqbase, &ci, ncand,
 		     Tloc(bn, 0), ngrp, b->ttype, tp, gids, min, max,
-		     skip_nils, abort_on_error, true, "BATgroupsum");
+		     skip_nils, abort_on_error, true, "BATgroupsum", &algo);
 
 	if (nils < BUN_NONE) {
 		BATsetcount(bn, ngrp);
@@ -977,6 +946,15 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 		bn = NULL;
 	}
 
+	ALGODEBUG fprintf(stderr,
+			  "#%s: %s(b="ALGOBATFMT",g="ALGOOPTBATFMT",e="ALGOOPTBATFMT",s="ALGOOPTBATFMT")="ALGOOPTBATFMT": %s; "
+			  "start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)"
+			  "\n",
+			  MT_thread_getname(), __func__,
+			  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+			  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
+			  algo ? algo : "",
+			  ci.seq, ncand, GDKusec() - t0);
 	return bn;
 }
 
@@ -989,6 +967,10 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	struct canditer ci;
 	BUN ncand;
 	const char *err;
+	const char *algo = NULL;
+	lng t0 = 0;
+
+	ALGODEBUG t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATsum: %s\n", err);
@@ -1089,7 +1071,15 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 		return GDK_SUCCEED;
 	nils = dosum(Tloc(b, 0), b->tnonil, b->hseqbase, &ci, ncand,
 		     res, true, b->ttype, tp, &min, min, max,
-		     skip_nils, abort_on_error, nil_if_empty, "BATsum");
+		     skip_nils, abort_on_error, nil_if_empty, "BATsum", &algo);
+	ALGODEBUG fprintf(stderr,
+			  "#%s: %s(b="ALGOBATFMT",s="ALGOOPTBATFMT"): %s; "
+			  "start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)"
+			  "\n",
+			  MT_thread_getname(), __func__,
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+			  algo ? algo : "",
+			  ci.seq, ncand, GDKusec() - t0);
 	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
 }
 
