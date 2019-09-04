@@ -586,6 +586,129 @@ dofsum(const void *restrict values, oid seqb,
 		}							\
 	} while (0)
 
+#define AGGR_SUM_NOOVL(TYPE1, TYPE2)					\
+	do {								\
+		TYPE1 x;						\
+		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
+		if (ngrp == 1 && ci->tpe == cand_dense) {		\
+			/* single group, no candidate list */		\
+			TYPE2 sum;					\
+			ALGODEBUG fprintf(stderr,			\
+					  "#%s: no candidates, no groups, no overflow; " \
+					  "start " OIDFMT ", count " BUNFMT \
+					  ", nonil = %d\n",		\
+					  func, ci->seq, ncand, nonil);	\
+			sum = 0;					\
+			if (nonil) {					\
+				*seen = ncand > 0;			\
+				for (i = 0; i < ncand && nils == 0; i++) { \
+					sum += vals[ci->seq + i - seqb]; \
+				}					\
+			} else {					\
+				bool seenval = false;			\
+				for (i = 0; i < ncand && nils == 0; i++) { \
+					x = vals[ci->seq + i - seqb];	\
+					if (is_##TYPE1##_nil(x)) {	\
+						if (!skip_nils) {	\
+							sum = TYPE2##_nil; \
+							nils = 1;	\
+						}			\
+					} else {			\
+						sum += x;		\
+						seenval = true;		\
+					}				\
+				}					\
+				*seen = seenval;			\
+			}						\
+			if (*seen)					\
+				*sums = sum;				\
+		} else if (ngrp == 1) {					\
+			/* single group, with candidate list */		\
+			TYPE2 sum;					\
+			bool seenval = false;				\
+			ALGODEBUG fprintf(stderr,			\
+					  "#%s: with candidates, no groups, no overflow; " \
+					  "start " OIDFMT ", count " BUNFMT \
+					  "\n",				\
+					  func, ci->seq, ncand);	\
+			sum = 0;					\
+			for (i = 0; i < ncand && nils == 0; i++) {	\
+				x = vals[canditer_next(ci) - seqb];	\
+				if (is_##TYPE1##_nil(x)) {		\
+					if (!skip_nils) {		\
+						sum = TYPE2##_nil;	\
+						nils = 1;		\
+					}				\
+				} else {				\
+					sum += x;			\
+					seenval = true;			\
+				}					\
+			}						\
+			if (seenval)					\
+				*sums = sum;				\
+		} else if (ci->tpe == cand_dense) {			\
+			/* multiple groups, no candidate list */	\
+			ALGODEBUG fprintf(stderr,			\
+					  "#%s: no candidates, with groups, no overflow; " \
+					  "start " OIDFMT ", count " BUNFMT \
+					  "\n",				\
+					  func, ci->seq, ncand);	\
+			for (i = 0; i < ncand; i++) {			\
+				if (gids == NULL ||			\
+				    (gids[i] >= min && gids[i] <= max)) { \
+					gid = gids ? gids[i] - min : (oid) i; \
+					x = vals[ci->seq + i - seqb];	\
+					if (is_##TYPE1##_nil(x)) {	\
+						if (!skip_nils) {	\
+							sums[gid] = TYPE2##_nil; \
+							nils++;		\
+						}			\
+					} else {			\
+						if (nil_if_empty &&	\
+						    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
+							seen[gid >> 5] |= 1U << (gid & 0x1F); \
+							sums[gid] = 0;	\
+						}			\
+						if (!is_##TYPE2##_nil(sums[gid])) { \
+							sums[gid] += x;	\
+						}			\
+					}				\
+				}					\
+			}						\
+		} else {						\
+			/* multiple groups, with candidate list */	\
+			ALGODEBUG fprintf(stderr,			\
+					  "#%s: with candidates, with " \
+					  "groups, no overflow; start " OIDFMT ", "	\
+					  "count " BUNFMT "\n",		\
+					  func, ci->seq, ncand);	\
+			while (ncand > 0) {				\
+				ncand--;				\
+				i = canditer_next(ci) - seqb;		\
+				if (gids == NULL ||			\
+				    (gids[i] >= min && gids[i] <= max)) { \
+					gid = gids ? gids[i] - min : (oid) i; \
+					x = vals[i];			\
+					if (is_##TYPE1##_nil(x)) {	\
+						if (!skip_nils) {	\
+							sums[gid] = TYPE2##_nil; \
+							nils++;		\
+						}			\
+					} else {			\
+						if (nil_if_empty &&	\
+						    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
+							seen[gid >> 5] |= 1U << (gid & 0x1F); \
+							sums[gid] = 0;	\
+						}			\
+						if (!is_##TYPE2##_nil(sums[gid])) { \
+							sums[gid] += x;	\
+						}			\
+					}				\
+				}					\
+			}						\
+		}							\
+	} while (0)
+
 static BUN
 dosum(const void *restrict values, bool nonil, oid seqb,
       struct canditer *restrict ci, BUN ncand,
@@ -635,7 +758,10 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 		sht *restrict sums = (sht *) results;
 		switch (tp1) {
 		case TYPE_bte:
-			AGGR_SUM(bte, sht);
+			if (ncand < ((BUN) 1 << ((sizeof(sht) - sizeof(bte)) << 3)))
+				AGGR_SUM_NOOVL(bte, sht);
+			else
+				AGGR_SUM(bte, sht);
 			break;
 		case TYPE_sht:
 			AGGR_SUM(sht, sht);
@@ -649,10 +775,16 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 		int *restrict sums = (int *) results;
 		switch (tp1) {
 		case TYPE_bte:
-			AGGR_SUM(bte, int);
+			if (ncand < ((BUN) 1 << ((sizeof(int) - sizeof(bte)) << 3)))
+				AGGR_SUM_NOOVL(bte, int);
+			else
+				AGGR_SUM(bte, int);
 			break;
 		case TYPE_sht:
-			AGGR_SUM(sht, int);
+			if (ncand < ((BUN) 1 << ((sizeof(int) - sizeof(sht)) << 3)))
+				AGGR_SUM_NOOVL(sht, int);
+			else
+				AGGR_SUM(sht, int);
 			break;
 		case TYPE_int:
 			AGGR_SUM(int, int);
@@ -665,15 +797,36 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 	case TYPE_lng: {
 		lng *restrict sums = (lng *) results;
 		switch (tp1) {
+#if SIZEOF_BUN == 4
 		case TYPE_bte:
-			AGGR_SUM(bte, lng);
+			AGGR_SUM_NOOVL(bte, lng);
 			break;
 		case TYPE_sht:
-			AGGR_SUM(sht, lng);
+			AGGR_SUM_NOOVL(sht, lng);
 			break;
 		case TYPE_int:
-			AGGR_SUM(int, lng);
+			AGGR_SUM_NOOVL(int, lng);
 			break;
+#else
+		case TYPE_bte:
+			if (ncand < ((BUN) 1 << ((sizeof(lng) - sizeof(bte)) << 3)))
+				AGGR_SUM_NOOVL(bte, lng);
+			else
+				AGGR_SUM(bte, lng);
+			break;
+		case TYPE_sht:
+			if (ncand < ((BUN) 1 << ((sizeof(lng) - sizeof(sht)) << 3)))
+				AGGR_SUM_NOOVL(sht, lng);
+			else
+				AGGR_SUM(sht, lng);
+			break;
+		case TYPE_int:
+			if (ncand < ((BUN) 1 << ((sizeof(lng) - sizeof(int)) << 3)))
+				AGGR_SUM_NOOVL(int, lng);
+			else
+				AGGR_SUM(int, lng);
+			break;
+#endif
 		case TYPE_lng:
 			AGGR_SUM(lng, lng);
 			break;
@@ -687,16 +840,16 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 		hge *sums = (hge *) results;
 		switch (tp1) {
 		case TYPE_bte:
-			AGGR_SUM(bte, hge);
+			AGGR_SUM_NOOVL(bte, hge);
 			break;
 		case TYPE_sht:
-			AGGR_SUM(sht, hge);
+			AGGR_SUM_NOOVL(sht, hge);
 			break;
 		case TYPE_int:
-			AGGR_SUM(int, hge);
+			AGGR_SUM_NOOVL(int, hge);
 			break;
 		case TYPE_lng:
-			AGGR_SUM(lng, hge);
+			AGGR_SUM_NOOVL(lng, hge);
 			break;
 		case TYPE_hge:
 			AGGR_SUM(hge, hge);
