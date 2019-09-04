@@ -2466,9 +2466,16 @@ static gdk_return
 tar_copy_data(stream *tarfile, const char *path, time_t mtime, stream *contents, ssize_t size)
 {
 	gdk_return ret = GDK_FAIL;
+	ssize_t file_size = getFileSize(contents);
 	const ssize_t bufsize = 64 * 1024;
 	char *buf = malloc(bufsize);
 	ssize_t nbytes;
+
+	fprintf(stderr, "#need to copy %ld/%ld bytes of component %s\n", size, file_size, path);
+	if (file_size < size) {
+		fprintf(stderr, "#adjusting amount to copy to %ld\n", file_size);
+		size = file_size;
+	}
 
 	if (!buf) {
 		GDKerror("could not allocate buffer");
@@ -2488,7 +2495,6 @@ tar_copy_data(stream *tarfile, const char *path, time_t mtime, stream *contents,
 		chunk -= chunk % TAR_BLOCK_SIZE;
 		assert(chunk > 0);
 		assert(chunk % TAR_BLOCK_SIZE == 0);
-		fprintf(stderr, "#copying %ld/%ld bytes of component %s\n", chunk, size, path);
 		nbytes = mnstr_read(contents, buf, 1, chunk);
 		if (nbytes != chunk) {
 			GDKerror("Read only %ld/%ld bytes of component %s: %s", nbytes, chunk, path, mnstr_error(contents));
@@ -2500,7 +2506,6 @@ tar_copy_data(stream *tarfile, const char *path, time_t mtime, stream *contents,
 			goto end;
 		}
 		size -= chunk;
-		fprintf(stderr, "# %ld left\n", size);
 	}
 
 	if (size > 0) {
@@ -2515,7 +2520,6 @@ tar_copy_data(stream *tarfile, const char *path, time_t mtime, stream *contents,
 			GDKerror("Only wrote %ld/%ld bytes of block of component %s to tar file: %s", nbytes, size, path, mnstr_error(tarfile));
 			goto end;
 		}
-		fprintf(stderr, "#tail written\n");
 	}
 
 	ret = GDK_SUCCEED;
