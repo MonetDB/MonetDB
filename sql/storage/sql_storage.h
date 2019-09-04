@@ -349,6 +349,8 @@ extern void store_exit(void);
 
 extern int store_apply_deltas(bool locked);
 extern void store_flush_log(void);
+extern void store_suspend_log(void);
+extern void store_resume_log(void);
 extern void store_manager(void);
 extern void idle_manager(void);
 
