@@ -663,34 +663,33 @@ typedef struct {
 static void
 tablet_error(READERtask *task, lng row, int col, const char *msg, const char *fcn)
 {
+	MT_lock_set(&errorlock);
 	if (task->cntxt->error_row != NULL) {
-		MT_lock_set(&errorlock);
 		if (BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_msg, msg, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_input, fcn, false) != GDK_SUCCEED)
 			task->besteffort = 0;
-		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL)) {
-			task->as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			task->besteffort = 0;
-		}
 		if (!is_lng_nil(row) && task->rowerror)
 			task->rowerror[row]++;
-#ifdef _DEBUG_TABLET_
-		mnstr_printf(GDKout, "#tablet_error: " LLFMT ",%d:%s:%s\n",
-					 row, col, msg, fcn);
-#endif
-		task->errorcnt++;
-		MT_lock_unset(&errorlock);
-	} else {
-		MT_lock_set(&errorlock);
-		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL)) {
-			task->as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			task->besteffort = 0;
-		}
-		task->errorcnt++;
-		MT_lock_unset(&errorlock);
 	}
+	if (task->as->error == NULL) {
+		if (msg == NULL)
+			task->besteffort = 0;
+		else if (!is_lng_nil(row)) {
+			if (!is_int_nil(col))
+				task->as->error = createException(MAL, "sql.copy_from", "line " LLFMT ": column %d: %s", row + 1, col + 1, msg);
+			else
+				task->as->error = createException(MAL, "sql.copy_from", "line " LLFMT ": %s", row + 1, msg);
+		} else
+			task->as->error = createException(MAL, "sql.copy_from", "%s", msg);
+	}
+#ifdef _DEBUG_TABLET_
+	mnstr_printf(GDKout, "#tablet_error: " LLFMT ",%d:%s:%s\n",
+				 row, col, msg, fcn);
+#endif
+	task->errorcnt++;
+	MT_lock_unset(&errorlock);
 }
 
 /*
@@ -883,7 +882,6 @@ SQLinsert_val(READERtask *task, int col, int idx)
 					 row, fmt->name ? fmt->name : "", fmt->type,
 					 s ? " in '" : "", s ? s : "", s ? "'" : "");
 			GDKfree(s);
-			buf[sizeof(buf)-1]=0;
 			if (task->as->error == NULL && (task->as->error = GDKstrdup(buf)) == NULL)
 				task->as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			task->rowerror[idx]++;
@@ -1025,8 +1023,7 @@ SQLload_parse_line(READERtask *task, int idx)
 			/* not enough fields */
 			if (i < as->nr_attrs - 1) {
 				errline = SQLload_error(task, idx, i+1);
-				snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing", i+1);
-				tablet_error(task, idx, (int) i, errmsg, errline);
+				tablet_error(task, idx, (int) i, "Column value missing", errline);
 				GDKfree(errline);
 				error = true;
 			  errors1:
@@ -1065,8 +1062,7 @@ SQLload_parse_line(READERtask *task, int idx)
 			/* not enough fields */
 			if (i < as->nr_attrs - 1) {
 				errline = SQLload_error(task, idx,i+1);
-				snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing",i+1);
-				tablet_error(task, idx, (int) i, errmsg, errline);
+				tablet_error(task, idx, (int) i, "Column value missing", errline);
 				GDKfree(errline);
 				error = true;
 				/* we save all errors detected */
@@ -1273,7 +1269,7 @@ SQLproducer(void *p)
 	size_t rseplen = strlen(rsep), partial = 0;
 	char quote = task->quote;
 	dfa_t rdfa;
-	lng rowno = 1;
+	lng rowno = 0;
 
 	MT_sema_down(&task->producer);
 	if (task->id < 0) {
