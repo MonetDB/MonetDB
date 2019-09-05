@@ -16,11 +16,6 @@ stdout of test 'authorization.SF-1430616` in directory 'sql/test/BugTracker` its
 # Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:38700/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7090/.s.monetdb.38700
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/Python module loaded
-# MonetDB/R   module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -61,6 +56,9 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 17:04:39 >  
 # 17:04:39 >  "./authorization.SF-1430616.SQL.sh" "authorization.SF-1430616"
