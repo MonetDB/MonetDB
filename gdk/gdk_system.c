@@ -890,5 +890,41 @@ MT_check_nr_cores(void)
 		ncpus = 16;
 #endif
 
+	/* get the number of allocated cpus from the cgroup settings */
+	FILE *f = fopen("/sys/fs/cgroup/cpuset/cpuset.cpus", "r");
+	if (f != NULL) {
+		char buf[512];
+		char *p = fgets(buf, 512, f);
+		fclose(f);
+		if (p != NULL) {
+			/* syntax is: ranges of CPU numbers separated
+			 * by comma; a range is either a single CPU
+			 * id, or two IDs separated by a minus; any
+			 * deviation causes the file to be ignored */
+			int ncpu = 0;
+			for (;;) {
+				char *q;
+				unsigned fst = strtoul(p, &q, 10);
+				if (q == p)
+					return ncpus;
+				ncpu++;
+				if (*q == '-') {
+					p = q + 1;
+					unsigned lst = strtoul(p, &q, 10);
+					if (q == p || lst <= fst)
+						return ncpus;
+					ncpu += lst - fst;
+				}
+				if (*q == '\n')
+					break;
+				if (*q != ',')
+					return ncpus;
+				p = q + 1;
+			}
+			if (ncpu < ncpus)
+				return ncpu;
+		}
+	}
+
 	return ncpus;
 }
