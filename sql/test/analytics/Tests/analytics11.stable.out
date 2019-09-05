@@ -42,6 +42,141 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 % tinyint # type
 % 1 # length
 [ 1	]
+#SELECT
+#    GROUPING(Product_Category) AS myalias
+#FROM tbl_ProductSales
+#GROUP BY Product_Category;
+% .L2 # table_name
+% myalias # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 0	]
+#SELECT
+#    GROUPING(Product_Category) AS myalias
+#FROM tbl_ProductSales
+#GROUP BY Product_Category, Product_Name;
+% .L2 # table_name
+% myalias # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+#SELECT
+#    GROUPING(Product_Name, Product_Category)
+#FROM tbl_ProductSales
+#GROUP BY Product_Category, Product_Name;
+% .L1 # table_name
+% L1 # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+#SELECT
+#    GROUPING(Product_Category) AS myalias
+#FROM tbl_ProductSales
+#GROUP BY ROLLUP(Product_Category);
+% .L2 # table_name
+% myalias # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 1	]
+#SELECT
+#    GROUPING(Product_Category) AS myalias
+#FROM tbl_ProductSales
+#GROUP BY Product_Category, ROLLUP(Product_Category);
+% .L2 # table_name
+% myalias # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+#SELECT
+#    GROUPING(Product_Category, Product_Name, ColID)
+#FROM tbl_ProductSales
+#GROUP BY ROLLUP(Product_Category, Product_Name, ColID);
+% .L1 # table_name
+% L1 # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 3	]
+[ 3	]
+[ 7	]
+#SELECT
+#    GROUPING(Product_Category, Product_Name, ColID)
+#FROM tbl_ProductSales
+#GROUP BY ROLLUP((Product_Category, Product_Name, ColID));
+% .L1 # table_name
+% L1 # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 7	]
+#SELECT
+#    GROUPING(Product_Category, ColID)
+#FROM tbl_ProductSales
+#GROUP BY ROLLUP((Product_Category, Product_Name, ColID));
+% .L1 # table_name
+% L1 # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 3	]
+#SELECT
+#    GROUPING(Product_Category, ColID)
+#FROM tbl_ProductSales
+#GROUP BY CUBE((Product_Category, Product_Name, ColID));
+% .L1 # table_name
+% L1 # name
+% tinyint # type
+% 1 # length
+[ 3	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+#SELECT
+#    GROUPING(Product_Category)
+#FROM tbl_ProductSales
+#GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ())
+#ORDER BY GROUPING(Product_Category);
+% .L1 # table_name
+% L1 # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 #DROP TABLE tbl_ProductSales;
 
 # 14:50:27 >  

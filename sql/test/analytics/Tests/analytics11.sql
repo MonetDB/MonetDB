@@ -36,7 +36,12 @@ GROUP BY GROUPING SETS((Product_Category)); --error, "grouping" not allowed in w
 SELECT 
     AVG(GROUPING(Product_Category))
 FROM tbl_ProductSales
-GROUP BY GROUPING SETS((Product_Category)) --error, "grouping" not allowed inside aggregation functions
+GROUP BY GROUPING SETS((Product_Category)); --error, "grouping" not allowed inside aggregation functions
+
+SELECT
+    GROUPING(1)
+FROM tbl_ProductSales
+GROUP BY Product_Category; --error, "grouping" requires group columns as input
 
 -- GROUPING calls
 
@@ -46,7 +51,7 @@ FROM tbl_ProductSales
 GROUP BY Product_Category;
 
 SELECT
-    GROUPING(Product_Category) AS myalias
+    GROUPING(Product_Category) myalias
 FROM tbl_ProductSales
 GROUP BY Product_Category, Product_Name;
 
@@ -78,6 +83,16 @@ FROM tbl_ProductSales
 GROUP BY ROLLUP((Product_Category, Product_Name, ColID));
 
 SELECT
+    GROUPING(Product_Category, ColID)
+FROM tbl_ProductSales
+GROUP BY ROLLUP((Product_Category, Product_Name, ColID));
+
+SELECT
+    GROUPING(Product_Category, ColID)
+FROM tbl_ProductSales
+GROUP BY CUBE((Product_Category, Product_Name, ColID));
+
+SELECT
     GROUPING(Product_Category)
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ())
@@ -88,5 +103,12 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ())
 HAVING GROUPING(Product_Category) = 0;
+
+SELECT
+    GROUPING(Product_Category, ColID)
+FROM tbl_ProductSales
+GROUP BY CUBE((Product_Category, Product_Name, ColID))
+HAVING GROUPING(Product_Category) = 3
+ORDER BY GROUPING(Product_Category);
 
 DROP TABLE tbl_ProductSales;

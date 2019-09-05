@@ -486,7 +486,7 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 			scale = member->scale;
 		}
 		/* same type as the input */
-		if (r->type->eclass == EC_ANY) 
+		if (r->type->eclass == EC_ANY && member) 
 			r = member;
 		res = sql_create_subtype(sa, r->type, digits, scale);
 		list_append(ares->res, res);
@@ -1535,8 +1535,7 @@ sqltypeinit( sql_allocator *sa)
 	*t = NULL;
 
 //	sql_create_func(sa, "st_pointfromtext", "geom", "st_pointformtext", OID, NULL, OID, SCALE_FIX);
-	/* using ANY for the res type for grouping aggregate gives problems, however we don't care about the types of it at all */
-	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, TABLE);
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, ANY);
 
 	sql_create_aggr(sa, "not_unique", "sql", "not_unique", OID, BIT);
 	/* well to be precise it does reduce and map */

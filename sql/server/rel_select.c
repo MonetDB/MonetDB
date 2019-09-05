@@ -3857,6 +3857,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	int no_nil = 0, group = 0, freevar = 1;
 	sql_rel *groupby = *rel, *sel = NULL, *gr, *og = NULL;
 	list *exps = NULL;
+	bool is_grouping = !strcmp(aname, "grouping");
 
 	/* find having select */
 	if (groupby && !is_processed(groupby) && is_sql_having(f)) { 
@@ -3997,11 +3998,17 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			gr->l = gl;
 		if (!e || !exp_subtype(e)) /* we also do not expect parameters here */
 			return NULL;
+		if (is_grouping && !exps_find_exp((list*)groupby->r, e)) {
+			const char *cname = exp_name(e);
+			assert(cname && e->type == e_column);
+			return sql_error(sql, 02, SQLSTATE(42000) "GROUPING: cannot use column %s without specifying it in the GROUP BY clause", cname);
+		}
+
 		freevar &= exp_has_freevar(e);
 		list_append(exps, e);
 	}
 
-	if (!strcmp(aname, "grouping"))
+	if (is_grouping)
 		a = sql_bind_aggr(sql->sa, s, aname, NULL);
 	else
 		a = sql_bind_aggr_(sql->sa, s, aname, exp_types(sql->sa, exps));
