@@ -3349,8 +3349,8 @@ def CheckClassPath() :
         cp = ''
         cpx = ''
     JARS = {
-        'HAVE_MONETDBJDBC_JAR' : re.compile('^monetdb-jdbc-[0-9]\.[0-9]+(-[a-f0-9]{12})?\.jar$'),
-        'HAVE_JDBCCLIENT_JAR'  : re.compile('^jdbcclient\.jar$'),
+        'HAVE_MONETDBJDBC_JAR' : re.compile('^monetdb-jdbc-[0-9]\.[0-9]+(-[a-f0-9]{12})?\.jre[0-9]+\.jar$'),
+        'HAVE_JDBCCLIENT_JAR'  : re.compile('^jdbcclient\.jre[0-9]+\.jar$'),
         'HAVE_JDBCTESTS_JAR'   : re.compile('^jdbctests\.jar$'),
     }
     # check for known JARs in CLASSPATH files
@@ -3359,19 +3359,17 @@ def CheckClassPath() :
             for f in os.listdir(p):
                 if not f.endswith('.jar'):
                     continue
-                C = 'HAVE_%s' % f.upper().replace('.','_')
-                if C not in JARS:
-                    C = 'HAVE_MONETDBJDBC_JAR'
-                if JARS[C].match(f):
-                    CONDITIONALS[C] = '#'
-                    cp = os.path.join(p, f) + os.pathsep + cp
+                for C in JARS:
+                    if JARS[C].match(f):
+                        CONDITIONALS[C] = '#'
+                        cp = os.path.join(p, f) + os.pathsep + cp
+                        break
         elif os.path.isfile(p):
             f = os.path.basename(p)
-            C = 'HAVE_%s' % f.upper().replace('.','_')
-            if C not in JARS:
-                C = 'HAVE_MONETDBJDBC_JAR'
-            if JARS[C].match(f):
-                CONDITIONALS[C] = '#'
+            for C in JARS:
+                if JARS[C].match(f):
+                    CONDITIONALS[C] = '#'
+                    break
     # check for known JARs in CLASSPATH directories
     # + fall-back using pkgdatadir/lib
     cpx += _configure(os.path.join('@QXdatadir@','monetdb','lib'))
