@@ -401,6 +401,8 @@ MT_init(void)
 #else
 # error "don't know how to get the amount of physical memory for your OS"
 #endif
+
+#ifndef WIN32
 	/* limit values to whatever cgroups gives us */
 	FILE *f;
 	/* limit of memory usage */
@@ -434,6 +436,8 @@ MT_init(void)
 		}
 		fclose(f);
 	}
+#endif
+
 #if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT) && defined(RLIMIT_AS)
 	struct rlimit l;
 	/* address space (virtual memory) limit */

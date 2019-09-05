@@ -1,8 +1,3 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-* Thu May  2 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Added ipv6 property to monetdbd properties to force IPv6 addresses
-  binding only.  By default this property is false to allow IPv4
-  addresses as well.
-

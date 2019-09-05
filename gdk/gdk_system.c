@@ -870,16 +870,18 @@ MT_check_nr_cores(void)
 	if (ncpus <= 0)
 		ncpus = 1;
 #if SIZEOF_SIZE_T == SIZEOF_INT
-	/* On 32-bits systems with large amounts of cpus/cores, we quickly
-	 * run out of space due to the amount of threads in use.  Since it
-	 * is questionable whether many cores on a 32-bits system are going
-	 * to beneficial due to this, we simply limit the auto-detected
-	 * cores to 16 on 32-bits systems.  The user can always override
-	 * this via gdk_nr_threads. */
+	/* On 32-bits systems with large numbers of cpus/cores, we
+	 * quickly run out of space due to the number of threads in
+	 * use.  Since it is questionable whether many cores on a
+	 * 32-bits system are going to be beneficial due to this, we
+	 * simply limit the auto-detected cores to 16 on 32-bits
+	 * systems.  The user can always override this via
+	 * gdk_nr_threads. */
 	if (ncpus > 16)
 		ncpus = 16;
 #endif
 
+#ifndef WIN32
 	/* get the number of allocated cpus from the cgroup settings */
 	FILE *f = fopen("/sys/fs/cgroup/cpuset/cpuset.cpus", "r");
 	if (f != NULL) {
@@ -915,6 +917,7 @@ MT_check_nr_cores(void)
 				return ncpu;
 		}
 	}
+#endif
 
 	return ncpus;
 }
