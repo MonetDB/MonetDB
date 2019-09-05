@@ -1256,7 +1256,8 @@ BUNtoid(BAT *b, BUN p)
 	const oid *exc = (oid *) b->tvheap->base;
 	BUN hi = 0;
 	if (nexc > 1024) {
-		BUN lo = 0, hi = nexc - 1;
+		BUN lo = 0;
+		hi = nexc - 1;
 		while (hi > lo + 1) {
 			BUN mid = (lo + hi) / 2;
 			if (exc[mid] == o) {
@@ -1271,8 +1272,8 @@ BUNtoid(BAT *b, BUN p)
 	}
 	for (; hi < nexc; hi++)
 		if (o + hi < exc[hi])
-			return o + hi;
-	return o + nexc;
+			break;
+	return o + hi;
 }
 
 static inline BATiter

@@ -2264,7 +2264,6 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(o->batCacheid);
 		if (ret != GDK_SUCCEED)
 			throw(MAL, "sql.tids", SQLSTATE(45003) "TIDdeletes failed");
-
 #else
 		BAT *diff;
 		diff = BATdiff(tids, d, NULL, NULL, false, false, BUN_NONE);
