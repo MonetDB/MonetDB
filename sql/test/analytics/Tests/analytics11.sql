@@ -130,4 +130,48 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ROLLUP(Product_Category, Product_Name, ColID);
 
+SELECT
+    GROUPING(Product_Category), AVG(SUM(TotalSales)) OVER (ROWS UNBOUNDED PRECEDING), RANK() OVER (PARTITION BY SUM(TotalSales))
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
+
+SELECT
+    GROUPING(Product_Category), 
+    SUM(SUM(TotalSales)) OVER (RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING), 
+    RANK() OVER (PARTITION BY SUM(ColID))
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
+
+CREATE TABLE tbl_X (ColID int, NItems int); 
+INSERT INTO tbl_X VALUES (1,1000),(2,500),(3,323),(4,0);
+
+SELECT myalias, COUNT(*) FROM
+(
+    SELECT
+        GROUPING(tbl_ProductSales.ColID, tbl_X.ColID) AS myalias
+    FROM tbl_ProductSales
+    INNER JOIN tbl_X
+    ON tbl_ProductSales.ColID = tbl_X.ColID
+    WHERE tbl_X.NItems < 1000
+    GROUP BY CUBE(tbl_ProductSales.Product_Category, tbl_ProductSales.Product_Name, tbl_ProductSales.ColID), ROLLUP(tbl_X.ColID, tbl_X.NItems)
+) AS SubTables GROUP BY myalias ORDER BY myalias;
+
+SELECT
+    GROUPING(ColID, ColID)
+FROM tbl_ProductSales
+INNER JOIN tbl_X
+ON tbl_ProductSales.ColID = tbl_X.ColID
+GROUP BY CUBE(tbl_ProductSales.Product_Category); --error, ambiguous identifier
+
+SELECT
+    GROUPING(tbl_ProductSales.ColID, tbl_X.ColID) AS myalias
+FROM tbl_ProductSales
+INNER JOIN tbl_X
+ON tbl_ProductSales.ColID = tbl_X.ColID
+WHERE tbl_X.NItems < 1000
+GROUP BY CUBE(Product_Category, Product_Name, tbl_ProductSales.ColID), ROLLUP(tbl_X.ColID, tbl_X.NItems)
+ORDER BY SUM(TotalSales) DESC
+LIMIT 1;
+
 DROP TABLE tbl_ProductSales;
+DROP TABLE tbl_X;

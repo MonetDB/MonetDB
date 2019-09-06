@@ -97,6 +97,15 @@ QUERY = SELECT
         GROUP BY Product_Category, Product_Name; --error, requires ROLLUP, CUBE or GROUPING SETS
 ERROR = !GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-21690/.s.monetdb.30152
+QUERY = SELECT
+            GROUPING(ColID, ColID)
+        FROM tbl_ProductSales
+        INNER JOIN tbl_X
+        ON tbl_ProductSales.ColID = tbl_X.ColID
+        GROUP BY CUBE(tbl_ProductSales.Product_Category); --error, ambiguous identifier
+
+CODE  = 42000
 
 # 14:50:27 >  
 # 14:50:27 >  "Done."

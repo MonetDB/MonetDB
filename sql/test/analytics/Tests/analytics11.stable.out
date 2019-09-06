@@ -245,6 +245,81 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 [ 2	]
 [ 2	]
 [ NULL	]
+#SELECT
+#    GROUPING(Product_Category), AVG(SUM(TotalSales)) OVER (ROWS UNBOUNDED PRECEDING), RANK() OVER (PARTITION BY SUM(TotalSales))
+#FROM tbl_ProductSales
+#GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
+% .L1,	.L3,	.L7 # table_name
+% L1,	L3,	L7 # name
+% tinyint,	double,	int # type
+% 1,	24,	1 # length
+[ 0,	600,	1	]
+[ 0,	600,	1	]
+[ 1,	466.6666667,	1	]
+[ 1,	450,	1	]
+[ 1,	460,	1	]
+[ 1,	400,	1	]
+[ 0,	371.4285714,	1	]
+[ 0,	375,	1	]
+[ 0,	388.8888889,	1	]
+[ 0,	360,	1	]
+[ 1,	436.3636364,	1	]
+#SELECT
+#    GROUPING(Product_Category), 
+#    SUM(SUM(TotalSales)) OVER (RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING), 
+#    RANK() OVER (PARTITION BY SUM(ColID))
+#FROM tbl_ProductSales
+#GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
+% .L1,	.L3,	.L7 # table_name
+% L1,	L3,	L7 # name
+% tinyint,	hugeint,	int # type
+% 1,	4,	1 # length
+[ 0,	4800,	1	]
+[ 0,	4800,	1	]
+[ 1,	4800,	1	]
+[ 1,	4800,	1	]
+[ 1,	4800,	1	]
+[ 1,	4800,	1	]
+[ 0,	4800,	1	]
+[ 0,	4800,	1	]
+[ 0,	4800,	1	]
+[ 0,	4800,	1	]
+[ 1,	4800,	1	]
+#CREATE TABLE tbl_X (ColID int, NItems int); 
+#INSERT INTO tbl_X VALUES (1,1000),(2,500),(3,323),(4,0);
+[ 4	]
+#SELECT myalias, COUNT(*) FROM
+#(
+#    SELECT
+#        GROUPING(tbl_ProductSales.ColID, tbl_X.ColID) AS myalias
+#    FROM tbl_ProductSales
+#    INNER JOIN tbl_X
+#    ON tbl_ProductSales.ColID = tbl_X.ColID
+#    WHERE tbl_X.NItems < 1000
+#    GROUP BY CUBE(tbl_ProductSales.Product_Category, tbl_ProductSales.Product_Name, tbl_ProductSales.ColID), ROLLUP(tbl_X.ColID, tbl_X.NItems)
+#) AS SubTables GROUP BY myalias ORDER BY myalias;
+% .subtables,	.L34 # table_name
+% myalias,	L34 # name
+% tinyint,	bigint # type
+% 1,	2 # length
+[ 0,	24	]
+[ 1,	12	]
+[ 2,	24	]
+[ 3,	9	]
+#SELECT
+#    GROUPING(tbl_ProductSales.ColID, tbl_X.ColID) AS myalias
+#FROM tbl_ProductSales
+#INNER JOIN tbl_X
+#ON tbl_ProductSales.ColID = tbl_X.ColID
+#WHERE tbl_X.NItems < 1000
+#GROUP BY CUBE(Product_Category, Product_Name, tbl_ProductSales.ColID), ROLLUP(tbl_X.ColID, tbl_X.NItems)
+#ORDER BY SUM(TotalSales) DESC
+#LIMIT 1;
+% .L4 # table_name
+% myalias # name
+% tinyint # type
+% 1 # length
+[ 3	]
 #DROP TABLE tbl_ProductSales;
 
 # 14:50:27 >  
