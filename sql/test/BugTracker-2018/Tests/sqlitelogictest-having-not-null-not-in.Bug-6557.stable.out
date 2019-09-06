@@ -40,27 +40,23 @@ stdout of test 'sqlitelogictest-having-not-null-not-in.Bug-6557` in directory 's
 [ 0,	79,	26	]
 [ 81,	24,	43	]
 #SELECT CAST(SUM(col0) AS BIGINT) FROM tab0 WHERE + + col0 BETWEEN NULL AND + col2;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ NULL	]
 #SELECT CAST(SUM(col0) AS BIGINT) FROM tab0 WHERE + + col0 NOT BETWEEN NULL AND + col2;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
-[ NULL	]
-#debug SELECT CAST(SUM(col0) AS BIGINT) FROM tab0 WHERE + + col0 NOT BETWEEN NULL AND + col2;
-mdb>#X_2=0@0:void := querylog.define("debug select cast(sum(col0) as bigint) from tab0 where + + col0 not between null and + col2;", "default_pipe", 24:int);
-mdb>#barrier X_137=false := language.dataflow();
-mdb>#X_5=0 := sql.mvc();
-mdb>#X_92=nil:bat[:int] := sql.bind(X_5=0, "sys", "tab0", "col0", 0:int, 0:int, 3:int);
-% sys.L4 # table_name
-% L4 # name
+[ 126	]
+#finish
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
-[ NULL	]
+[ 126	]
 mdb>#EOD
 #DROP TABLE tab0;
 

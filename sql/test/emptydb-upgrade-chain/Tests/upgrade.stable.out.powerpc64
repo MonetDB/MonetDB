@@ -17,9 +17,6 @@ stdout of test 'upgrade` in directory 'sql/test/emptydb-upgrade-chain` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30908/.s.monetdb.39660
 # MonetDB/GIS module loaded
 Running database upgrade commands:
-insert into sys.dependencies (select c.id as id, k.id as depend_id, dt.dependency_type_id as depend_type from sys.dependency_types dt, sys._columns c, sys.keys k, sys.objects o where k.id = o.id and o.name = c.name and c.table_id = k.table_id and dt.dependency_type_name = 'KEY' and k.type = 1 and not exists (select d.id from sys.dependencies d where d.id = c.id and d.depend_id = k.id and d.depend_type = dt.dependency_type_id));
-
-Running database upgrade commands:
 set schema "sys";
 delete from sys.dependencies where id < 2000;
 delete from sys.types where id < 2000;
@@ -5109,6 +5106,14 @@ insert into sys.functions values (135, 'count_no_nil', 'count_no_nil', 'aggr', 0
 insert into sys.args values (26292, 135, 'res', 'bigint', 64, 0, 0, 0);
 insert into sys.functions values (136, 'count', 'count', 'aggr', 0, 3, false, false, false, 2000, true);
 insert into sys.args values (26293, 136, 'res', 'bigint', 64, 0, 0, 0);
+set schema "sys";
+
+Running database upgrade commands:
+set schema "sys";
+create function sys.deltas ("schema" string) returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int) external name "sql"."deltas";
+create function sys.deltas ("schema" string, "table" string) returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int) external name "sql"."deltas";
+create function sys.deltas ("schema" string, "table" string, "column" string) returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int) external name "sql"."deltas";
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('deltas') and type = 5;
 set schema "sys";
 commit;
 

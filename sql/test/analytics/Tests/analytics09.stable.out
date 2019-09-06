@@ -382,6 +382,13 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 % int # type
 % 1 # length
 [ 1	]
+#select avg(sum(aa)) over (rows unbounded preceding),
+#       rank() over (partition by sum(aa)) from analytics;
+% sys.L5,	sys.L12 # table_name
+% L5,	L12 # name
+% double,	int # type
+% 24,	1 # length
+[ 46,	1	]
 #drop table analytics;
 
 # 13:13:17 >  

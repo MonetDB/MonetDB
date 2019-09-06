@@ -75,6 +75,8 @@ SELECT i % 2 AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k HAVING SUM(i)
 SELECT i FROM integers WHERE NOT(i IN (SELECT i FROM integers WHERE i>1)); -- 1
 SELECT (SELECT CAST(SUM(i) AS BIGINT) FROM integers), (SELECT 42);
 
+SELECT 1 FROM integers WHERE SUM(i) > 1; --aggregates not allowed in where clause
+
 drop TABLE integers;
 
 -- varchar tests
