@@ -173,7 +173,7 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 [ 0,	0	]
 [ 7,	3	]
 #SELECT
-#    GROUPING(Product_Category, Product_Name, ColID)
+#    GROUPING(Product_Category, Product_Name, ColID) + 1
 #FROM tbl_ProductSales
 #GROUP BY ROLLUP(Product_Category, Product_Name, ColID)
 #HAVING GROUPING(Product_Category, Product_Name, ColID) <> 3
@@ -191,6 +191,60 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 [ 1	]
+#SELECT GROUPING(Product_Category), AVG(SUM(TotalSales)) OVER (ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
+% .L1,	.L3 # table_name
+% L1,	L3 # name
+% tinyint,	double # type
+% 1,	24 # length
+[ 0,	600	]
+[ 0,	600	]
+[ 1,	466.6666667	]
+[ 1,	450	]
+[ 1,	460	]
+[ 1,	400	]
+[ 0,	371.4285714	]
+[ 0,	375	]
+[ 0,	388.8888889	]
+[ 0,	360	]
+[ 1,	436.3636364	]
+#SELECT
+#    GROUPING(Product_Category), RANK() OVER (PARTITION BY SUM(TotalSales))
+#FROM tbl_ProductSales
+#GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
+% .L1,	.L4 # table_name
+% L1,	L4 # name
+% tinyint,	int # type
+% 1,	1 # length
+[ 1,	1	]
+[ 0,	1	]
+[ 1,	1	]
+[ 0,	1	]
+[ 1,	1	]
+[ 0,	1	]
+[ 1,	1	]
+[ 0,	1	]
+[ 0,	1	]
+[ 0,	1	]
+[ 1,	1	]
+#SELECT
+#    CASE WHEN GROUPING(Product_Category, Product_Name, ColID) * 10 = 30 THEN 2 ELSE NULL END
+#FROM tbl_ProductSales
+#GROUP BY ROLLUP(Product_Category, Product_Name, ColID);
+% .L2 # table_name
+% L2 # name
+% tinyint # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ 2	]
+[ 2	]
+[ NULL	]
 #DROP TABLE tbl_ProductSales;
 
 # 14:50:27 >  

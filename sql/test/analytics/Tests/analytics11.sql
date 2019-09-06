@@ -115,4 +115,19 @@ GROUP BY ROLLUP(Product_Category, Product_Name, ColID)
 HAVING GROUPING(Product_Category, Product_Name, ColID) <> 3
 ORDER BY GROUPING(Product_Category, Product_Name, ColID) DESC;
 
+SELECT
+    GROUPING(Product_Category), AVG(SUM(TotalSales)) OVER (ROWS UNBOUNDED PRECEDING)
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
+
+SELECT
+    GROUPING(Product_Category), RANK() OVER (PARTITION BY SUM(TotalSales))
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
+
+SELECT
+    CASE WHEN GROUPING(Product_Category, Product_Name, ColID) * 10 = 30 THEN 2 ELSE NULL END
+FROM tbl_ProductSales
+GROUP BY ROLLUP(Product_Category, Product_Name, ColID);
+
 DROP TABLE tbl_ProductSales;

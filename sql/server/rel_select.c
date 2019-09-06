@@ -6273,7 +6273,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 	mvc *sql = query->sql;
 	dnode *n;
 	//int aggr = 0;
-	sql_rel *inner = NULL, *group, *left;
+	sql_rel *inner = NULL;
 	list *sets = NULL;
 	int group_totals = 0;
 
@@ -6383,9 +6383,6 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		list_merge( rel->exps, te, (fdup)NULL);
 	}
 
-	group = rel->l;
-	left = rel;
-
 	if (sn->having) {
 		inner = rel->l;
 		assert(is_project(rel->op) && inner);
@@ -6399,8 +6396,6 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		if (inner -> exps && exps_card(inner->exps) > CARD_AGGR)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot compare sets with values, probably an aggregate function missing");
 		rel->l = inner;
-		group = inner->l;
-		left = inner;
 	}
 
 	if (rel && sn->orderby) {
@@ -6412,17 +6407,18 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		if (!obe)
 			return NULL;
 		rel->r = obe;
-
-		if (!is_select(left->op)) /* if the rollup query has a having clause, it's no longer needed to update left */
-			left = rel->l;
 	}
 	if (!rel)
 		return NULL;
 
 	/* ROLLUP, CUBE, GROUPING SETS cases */
 	if (sets && list_length(sets) > 1) { /* if there is only one combination, there is no reason to generate unions */
-		sql_rel *unions = NULL;
+		sql_rel *unions = NULL, *group = rel->l, *left = rel;
 
+		while (!is_groupby(group->op)) {
+			left = group;
+			group = group->l;
+		}
 		for (node *n = sets->h ; n ; n = n->next) {
 			sql_rel *nrel;
 			list *l = (list*) n->data, *exps = sa_list(sql->sa), *pexps = sa_list(sql->sa);
