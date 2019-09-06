@@ -535,19 +535,19 @@ sql_bind_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql_subtyp
 }
 
 sql_subaggr *
-sql_bind_aggr_(sql_allocator *sa, sql_schema *s, const char *sqlaname, list *ops)
+sql_bind_aggr_(sql_allocator *sa, sql_schema *s, const char *sqlaname, list *inputs, bool args)
 {
 	node *n = aggrs->h;
 	sql_subtype *type = NULL;
 
-	if (ops->h)
-		type = ops->h->data;
+	if (inputs->h)
+		type = inputs->h->data;
 
 	while (n) {
 		sql_func *a = n->data;
 
 		if (strcmp(a->base.name, sqlaname) == 0 &&  
-		    list_cmp(a->ops, ops, (fcmp) &arg_subtype_cmp) == 0)
+		    list_cmp(args ? a->ops : a->res, inputs, (fcmp) &arg_subtype_cmp) == 0)
 			return _dup_subaggr(sa, a, type);
 		n = n->next;
 	}
@@ -561,7 +561,7 @@ sql_bind_aggr_(sql_allocator *sa, sql_schema *s, const char *sqlaname, list *ops
 				continue;
 
 			if (strcmp(a->base.name, sqlaname) == 0 &&  
-		    	    list_cmp(a->ops, ops, (fcmp) &arg_subtype_cmp) == 0)
+		    	    list_cmp(args ? a->ops : a->res, inputs, (fcmp) &arg_subtype_cmp) == 0)
 				return _dup_subaggr(sa, a, type);
 		}
 	}
@@ -1535,7 +1535,13 @@ sqltypeinit( sql_allocator *sa)
 	*t = NULL;
 
 //	sql_create_func(sa, "st_pointfromtext", "geom", "st_pointformtext", OID, NULL, OID, SCALE_FIX);
-	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, ANY);
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, BTE);
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, SHT);
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, INT);
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, LNG);
+#ifdef HAVE_HGE
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, HGE);
+#endif
 
 	sql_create_aggr(sa, "not_unique", "sql", "not_unique", OID, BIT);
 	/* well to be precise it does reduce and map */

@@ -43,24 +43,22 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY Product_Category; --error, "grouping" requires group columns as input
 
--- GROUPING calls
-
 SELECT
     GROUPING(Product_Category) AS myalias
 FROM tbl_ProductSales
-GROUP BY Product_Category;
+GROUP BY Product_Category; --error, requires ROLLUP, CUBE or GROUPING SETS
 
 SELECT
     GROUPING(Product_Category) myalias
 FROM tbl_ProductSales
-GROUP BY Product_Category, Product_Name;
+GROUP BY Product_Category, Product_Name; --error, requires ROLLUP, CUBE or GROUPING SETS
 
 SELECT
     GROUPING(Product_Name, Product_Category)
 FROM tbl_ProductSales
-GROUP BY Product_Category, Product_Name;
+GROUP BY Product_Category, Product_Name; --error, requires ROLLUP, CUBE or GROUPING SETS
 
--- With ROLLUP, CUBE and GROUPING SETS, the "grouping" outputs non-zero values
+-- Valid GROUPING calls
 
 SELECT
     GROUPING(Product_Category) AS myalias
@@ -105,10 +103,16 @@ GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Pr
 HAVING GROUPING(Product_Category) = 0;
 
 SELECT
-    GROUPING(Product_Category, ColID)
+    GROUPING(Product_Category, Product_Name, ColID), GROUPING(Product_Name, ColID)
 FROM tbl_ProductSales
 GROUP BY CUBE((Product_Category, Product_Name, ColID))
-HAVING GROUPING(Product_Category) = 3
-ORDER BY GROUPING(Product_Category);
+ORDER BY GROUPING(Product_Category, ColID);
+
+SELECT
+    GROUPING(Product_Category, Product_Name, ColID) + 1
+FROM tbl_ProductSales
+GROUP BY ROLLUP(Product_Category, Product_Name, ColID)
+HAVING GROUPING(Product_Category, Product_Name, ColID) <> 3
+ORDER BY GROUPING(Product_Category, Product_Name, ColID) DESC;
 
 DROP TABLE tbl_ProductSales;

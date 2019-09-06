@@ -38,13 +38,13 @@ MAPI  = (monetdb) /var/tmp/mtest-19672/.s.monetdb.33540
 QUERY = SELECT
             GROUPING(Product_Name)
         FROM tbl_ProductSales GROUP BY (); --error, Product_Name it's not a grouping column
-ERROR = !GROUPING: cannot use column product_name without specifying it in the GROUP BY clause
+ERROR = !GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-11452/.s.monetdb.32908
 QUERY = SELECT
             GROUPING(Product_Name)
         FROM tbl_ProductSales; --error, same as upper one
-ERROR = !GROUPING: cannot use column product_name without specifying it in the GROUP BY clause
+ERROR = !GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-11452/.s.monetdb.32908
 QUERY = SELECT
@@ -59,7 +59,7 @@ QUERY = SELECT
         FROM tbl_ProductSales
         WHERE GROUPING(Product_Category) > 1
         GROUP BY GROUPING SETS((Product_Category)); --error, "grouping" not allowed in where clause
-ERROR = !Subquery result missing
+ERROR = !GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-11452/.s.monetdb.32908
 QUERY = SELECT 
@@ -75,6 +75,27 @@ QUERY = SELECT
         GROUP BY Product_Category; --error, "grouping" requires group columns as input
 ERROR = !syntax error, unexpected sqlINT in: "select
         !    grouping(1"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-2139/.s.monetdb.31788
+QUERY = SELECT
+            GROUPING(Product_Category) AS myalias
+        FROM tbl_ProductSales
+        GROUP BY Product_Category; --error, requires ROLLUP, CUBE or GROUPING SETS
+ERROR = !GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-2139/.s.monetdb.31788
+QUERY = SELECT
+            GROUPING(Product_Category) myalias
+        FROM tbl_ProductSales
+        GROUP BY Product_Category, Product_Name; --error, requires ROLLUP, CUBE or GROUPING SETS
+ERROR = !GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-2139/.s.monetdb.31788
+QUERY = SELECT
+            GROUPING(Product_Name, Product_Category)
+        FROM tbl_ProductSales
+        GROUP BY Product_Category, Product_Name; --error, requires ROLLUP, CUBE or GROUPING SETS
+ERROR = !GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY
 CODE  = 42000
 
 # 14:50:27 >  

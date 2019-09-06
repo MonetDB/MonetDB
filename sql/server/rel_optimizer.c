@@ -1456,7 +1456,7 @@ project_unsafe(sql_rel *rel, int allow_identity)
 	sql_rel *sub = rel->l;
 	node *n;
 
-	if (need_distinct(rel) || rel->r /* order by */)
+	if (need_distinct(rel) || rel->r /* order by */ || is_grouping_totals(rel))
 		return 1;
 	if (!rel->exps)
 		return 0;

@@ -45,40 +45,6 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #SELECT
 #    GROUPING(Product_Category) AS myalias
 #FROM tbl_ProductSales
-#GROUP BY Product_Category;
-% .L2 # table_name
-% myalias # name
-% tinyint # type
-% 1 # length
-[ 0	]
-[ 0	]
-#SELECT
-#    GROUPING(Product_Category) AS myalias
-#FROM tbl_ProductSales
-#GROUP BY Product_Category, Product_Name;
-% .L2 # table_name
-% myalias # name
-% tinyint # type
-% 1 # length
-[ 0	]
-[ 0	]
-[ 0	]
-[ 0	]
-#SELECT
-#    GROUPING(Product_Name, Product_Category)
-#FROM tbl_ProductSales
-#GROUP BY Product_Category, Product_Name;
-% .L1 # table_name
-% L1 # name
-% tinyint # type
-% 1 # length
-[ 0	]
-[ 0	]
-[ 0	]
-[ 0	]
-#SELECT
-#    GROUPING(Product_Category) AS myalias
-#FROM tbl_ProductSales
 #GROUP BY ROLLUP(Product_Category);
 % .L2 # table_name
 % myalias # name
@@ -173,6 +139,54 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#SELECT
+#    GROUPING(Product_Category)
+#FROM tbl_ProductSales
+#GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ())
+#HAVING GROUPING(Product_Category) = 0;
+% .L1 # table_name
+% L1 # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+#SELECT
+#    GROUPING(Product_Category, Product_Name, ColID), GROUPING(Product_Name, ColID)
+#FROM tbl_ProductSales
+#GROUP BY CUBE((Product_Category, Product_Name, ColID))
+#ORDER BY GROUPING(Product_Category, ColID);
+% .L1,	.L2 # table_name
+% L1,	L2 # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 0,	0	]
+[ 0,	0	]
+[ 0,	0	]
+[ 0,	0	]
+[ 7,	3	]
+#SELECT
+#    GROUPING(Product_Category, Product_Name, ColID)
+#FROM tbl_ProductSales
+#GROUP BY ROLLUP(Product_Category, Product_Name, ColID)
+#HAVING GROUPING(Product_Category, Product_Name, ColID) <> 3
+#ORDER BY GROUPING(Product_Category, Product_Name, ColID) DESC;
+% .L2 # table_name
+% L2 # name
+% smallint # type
+% 1 # length
+[ 8	]
+[ 2	]
+[ 2	]
+[ 2	]
+[ 2	]
 [ 1	]
 [ 1	]
 [ 1	]
