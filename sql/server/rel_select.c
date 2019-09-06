@@ -3687,6 +3687,13 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 		if (uaname)
 			GDKfree(uaname);
 		return e;
+	} else if (is_sql_where(f)) {
+		char *uaname = GDKmalloc(strlen(aname) + 1);
+		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: not allowed in WHERE clause",
+				       uaname ? toUpperCopy(uaname, aname) : aname);
+		if (uaname)
+			GDKfree(uaname);
+		return e;
 	}
 
 	if (groupby->op != op_groupby) { 		/* implicit groupby */
@@ -3705,15 +3712,6 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	}
 	if (!*rel)
 		return NULL;
-
-	if (is_sql_where(f)) {
-		char *uaname = GDKmalloc(strlen(aname) + 1);
-		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: not allowed in WHERE clause",
-				       uaname ? toUpperCopy(uaname, aname) : aname);
-		if (uaname)
-			GDKfree(uaname);
-		return e;
-	}
 
 	if (!args->data.sym) {	/* count(*) case */
 		sql_exp *e;
