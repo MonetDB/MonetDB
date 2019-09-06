@@ -4790,18 +4790,34 @@ opt_groupby_add_exp(mvc *sql, sql_rel *p, sql_rel *pp, sql_exp *in)
 		if (!exp_name(in))
 			exp_label(sql->sa, in, ++sql->label);
 		found = exps_find_exp( p->exps, in);
-		if (!found)
+		if (!found) {
+			sql_rel *l = p->l;
+			while (l && !is_base(l->op)) {
+				if (!exps_find_exp(l->exps, in))
+					append(l->exps, exp_copy(sql->sa, in));
+				else
+					break;
+				l = l->l;
+			}
 			append(p->exps, in);
-		else
+		} else
 			in = found;
 		in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
 	} else if (pp && pp->op == op_groupby) {
 		if (!exp_name(in))
 			exp_label(sql->sa, in, ++sql->label);
 		found = exps_find_exp( p->exps, in);
-		if (!found)
+		if (!found) {
+			sql_rel *l = p->l;
+			while (l && !is_base(l->op)) {
+				if (!exps_find_exp(l->exps, in))
+					append(l->exps, exp_copy(sql->sa, in));
+				else
+					break;
+				l = l->l;
+			}
 			append(p->exps, in);
-		else
+		} else
 			in = found;
 		in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
 	}
