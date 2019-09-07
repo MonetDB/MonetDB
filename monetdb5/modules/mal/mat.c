@@ -87,7 +87,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	if( !(!bn->tnil || !bn->tnonil)){
 		BBPkeepref(*ret = bn->batCacheid);
-		throw(MAL, "mat.pack", "INTERNAL ERROR", "bn->tnil or  bn->tnonil fails ");
+		throw(MAL, "mat.pack", "INTERNAL ERROR" "bn->tnil or  bn->tnonil fails ");
 	}
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
@@ -137,8 +137,8 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		bn->unused = (pieces-1); /* misuse "unused" field */
 		BBPkeepref(*ret = bn->batCacheid);
 		BBPunfix(b->batCacheid);
-		if( !(!bn->tnil || !bn->tnonil)
-			throw(MAL, "mat.packIncrement", "INTERNAL ERROR", "bn->tnil %d bn->tnonil %d", bn->tnil, bn->tnonil);
+		if( !(!bn->tnil || !bn->tnonil))
+			throw(MAL, "mat.packIncrement", "INTERNAL ERROR" " bn->tnil %d bn->tnonil %d", bn->tnil, bn->tnonil);
 	} else {
 		/* remaining steps */
 		bb = BATdescriptor(stk->stk[getArg(p,2)].val.ival);
@@ -162,7 +162,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 		if( !(!b->tnil || !b->tnonil)){
 			BBPkeepref(*ret = b->batCacheid);
-			throw(MAL, "mat.pack", "INTERNAL ERROR", "b->tnil or  b->tnonil fails ");
+			throw(MAL, "mat.pack", "INTERNAL ERROR" " b->tnil or  b->tnonil fails ");
 		}
 		BBPkeepref(*ret = b->batCacheid);
 	}
