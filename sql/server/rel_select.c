@@ -5793,6 +5793,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 			if (r) {
 				rs = _rel_lastexp(sql, r);
 
+				if (ek.card <= card_set && is_project(r->op) && list_length(r->exps) > 1) 
+					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
 				if (is_sql_sel(f) && ek.card <= card_column && r->card > CARD_ATOM) {
 					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
 					rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
