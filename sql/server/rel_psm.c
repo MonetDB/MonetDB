@@ -1345,11 +1345,14 @@ psm_analyze(mvc *sql, char *analyzeType, dlist *qname, dlist *columns, symbol *s
 
 	append(exps, mm_exp = exp_atom_int(sql->sa, minmax));
 	append(tl, exp_subtype(mm_exp));
-	if (sample) {
+	if (sample) { 
 		sql_subtype *tpe = sql_bind_localtype("lng");
+		dlist* sample_parameters = sample->data.lval;
 
-		if ((sample_exp = rel_value_exp(sql, NULL, sample, 0, ek)))
+		if (sample_parameters->cnt == 1 && (sample_exp = rel_value_exp(sql, NULL, sample_parameters->h->data.sym, 0, ek)))
 			sample_exp = rel_check_type(sql, tpe, NULL, sample_exp, type_cast);
+		else
+			return sql_error(sql, 01, SQLSTATE(42000) "Analyze sample size incorrect");
 	} else {
 		sample_exp = exp_atom_lng(sql->sa, 0);
 	}
