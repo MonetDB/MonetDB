@@ -5063,17 +5063,9 @@ opt_groupby_add_exp(mvc *sql, sql_rel *p, sql_rel *pp, sql_exp *in)
 		if (!exp_name(in))
 			exp_label(sql->sa, in, ++sql->label);
 		found = exps_find_exp( p->exps, in);
-		if (!found) {
-			sql_rel *l = p->l;
-			while (l && !is_base(l->op)) {
-				if (!exps_find_exp(l->exps, in))
-					append(l->exps, exp_copy(sql->sa, in));
-				else
-					break;
-				l = l->l;
-			}
+		if (!found)
 			append(p->exps, in);
-		} else
+		else
 			in = found;
 		in = exp_ref(sql->sa, in);
 	} else if (pp && pp->op == op_groupby) {
@@ -5082,7 +5074,8 @@ opt_groupby_add_exp(mvc *sql, sql_rel *p, sql_rel *pp, sql_exp *in)
 		found = exps_find_exp( p->exps, in);
 		if (!found) {
 			sql_rel *l = p->l;
-			while (l && !is_base(l->op)) {
+
+			while (l && l != pp && !is_base(l->op)) {
 				if (!exps_find_exp(l->exps, in))
 					append(l->exps, exp_copy(sql->sa, in));
 				else
