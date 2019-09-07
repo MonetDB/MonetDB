@@ -593,7 +593,7 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		break;
 	}
 
-	if ( cntxt->user != mal_clients[0].user)
+	if (mal_clients[0].user != MAL_ADMIN)
 		throw(MAL,"mal.shutdown", "Administrator rights required");
 	MCstopClients(cntxt);
 	do{
