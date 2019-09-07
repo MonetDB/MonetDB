@@ -287,13 +287,11 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		id = *getArgReference_int(stk,pci,1);
 	else id =cntxt->idx;
 
-	if (id == 0 && cntxt->fdout != GDKout )
-		throw(MAL, "client.quit", INVCRED_ACCESS_DENIED);
+	/* A user can only quite a session under the same id */
 	if ( cntxt->idx == mal_clients[id].idx)
 		mal_clients[id].mode = FINISHCLIENT;
-	/* the console should be finished with an exception */
-	if (id == 0)
-		throw(MAL,"client.quit",SERVER_STOPPED);
+	else 
+		throw(MAL, "client.quit", INVCRED_ACCESS_DENIED);
 	return MAL_SUCCEED;
 }
 
