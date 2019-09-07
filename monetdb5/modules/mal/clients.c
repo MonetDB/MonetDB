@@ -53,7 +53,8 @@ str
 CLTgetClientId(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
-	assert(cntxt - mal_clients <= INT_MAX);
+	if(cntxt - mal_clients < 0 || cntxt - mal_clients >= MAL_MAXCLIENTS)
+		throw(MAL, "clients.getClientId", "Illegal client index");
 	*getArgReference_int(stk,pci,0) = (int) (cntxt - mal_clients);
 	return MAL_SUCCEED;
 }
