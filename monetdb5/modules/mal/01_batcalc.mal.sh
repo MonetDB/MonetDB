@@ -579,28 +579,28 @@ done
 echo
 
 cat <<EOF
-pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
+pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa)";
-pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
+pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with candidate list";
-pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
+pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa)";
-pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
+pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with candidate list";
-pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
+pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa)";
-pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
+pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with candidate list";
-pattern between(b:bat[:any_1],v1:any_1,v2:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
+pattern between(b:bat[:any_1],v1:any_1,v2:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa)";
-pattern between(b:bat[:any_1],v1:any_1,v2:any_1,s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
+pattern between(b:bat[:any_1],v1:any_1,v2:any_1,s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with candidate list";
 
