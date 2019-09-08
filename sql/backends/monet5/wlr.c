@@ -188,17 +188,10 @@ WLRprocess(void *arg)
 	lng currid =0;
 	Symbol prev = NULL;
 
-	MT_lock_set(&wlc_lock);
-	if( wlrprocessrunning){
-		MT_lock_unset(&wlc_lock);
-		return;
-	}
-	wlrprocessrunning ++;
-	MT_lock_unset(&wlc_lock);
 	c =MCforkClient(cntxt);
 	if( c == 0){
 		wlrprocessrunning =0;
-		fprintf(stderr, "Could not create user for WLR process\n");
+		fprintf(stderr, "#Could not create user for WLR process\n");
 		return;
 	}
 	c->promptlength = 0;
@@ -207,14 +200,14 @@ WLRprocess(void *arg)
 	if(c->fdout == NULL) {
 		wlrprocessrunning =0;
 		MCcloseClient(c);
-		fprintf(stderr, "Could not create user for WLR process\n");
+		fprintf(stderr, "#Could not create user for WLR process\n");
 		return;
 	}
 	prev = newFunction(putName("user"), putName("wlr"), FUNCTIONsymbol);
 	if(prev == NULL) {
 		wlrprocessrunning =0;
 		MCcloseClient(c);
-		fprintf(stderr, "Could not create user for WLR process\n");
+		fprintf(stderr, "#Could not create user for WLR process\n");
 		return;
 	}
 	c->curprg = prev;
@@ -387,6 +380,9 @@ wrapup:
 }
 
 /*
+ *  Single WLR thread is allowed to run in the background.
+ *  If it happens to crash then replication roll forward is suspended.
+ *
  * A timing issue.
  * The WLRprocess can only start after an SQL environment has been initialized.
  * It is therefore initialized when a SQLclient() is issued.
@@ -404,6 +400,8 @@ WLRprocessScheduler(void *arg)
 	if((msg = WLRgetConfig()) != MAL_SUCCEED) {
 		fprintf(stderr,"%s\n",msg);
 		freeException(msg);
+		// At this stage we can not continue
+		return;
 	}
 	cntxt = MCinitClient(MAL_ADMIN, NULL,NULL);
 	wlr_state = WLR_RUN;
@@ -455,18 +453,31 @@ WLRinit(void)
 {
 	str msg;
 
-	if((msg = WLRgetConfig()) != MAL_SUCCEED)
+	MT_lock_set(&wlc_lock);
+	if( wlrprocessrunning){
+		MT_lock_unset(&wlc_lock);
+		return MAL_SUCCEED;
+	}
+	if((msg = WLRgetConfig()) != MAL_SUCCEED){
+		MT_lock_unset(&wlc_lock);
 		return msg;
-	if( wlr_master[0] == 0)
+	}
+	if( wlr_master[0] == 0){
+		MT_lock_unset(&wlc_lock);
 		return MAL_SUCCEED;
-	if( wlr_state != WLR_START)
+	}
+	if( wlr_state != WLR_START){
+		MT_lock_unset(&wlc_lock);
 		return MAL_SUCCEED;
+	}
 	
 	// time to continue the consolidation process in the background
 	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) NULL,
 			     MT_THR_DETACHED, "WLRprocSched") < 0) {
 			throw(SQL,"wlr.init",SQLSTATE(42000) "Starting wlr manager failed");
 	}
+	wlrprocessrunning ++;
+	MT_lock_unset(&wlc_lock);
 	return MAL_SUCCEED;
 }
 
