@@ -90,8 +90,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ 3	]
 #SELECT *, (SELECT MAX(i) FROM integers) FROM integers ORDER BY i;
-% sys.integers,	.L6 # table_name
-% i,	L6 # name
+% sys.integers,	.L3 # table_name
+% i,	L3 # name
 % int,	int # type
 % 1,	1 # length
 [ NULL,	3	]
@@ -99,14 +99,14 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ 2,	3	]
 [ 3,	3	]
 #SELECT (SELECT 42) AS k, MAX(i) FROM integers GROUP BY k; -- 42, 3
-% .L2,	sys.L4 # table_name
-% k,	L4 # name
+% .L1,	sys.L2 # table_name
+% k,	L2 # name
 % tinyint,	int # type
 % 2,	1 # length
 [ 42,	3	]
 #SELECT i, MAX((SELECT 42)) FROM integers GROUP BY i ORDER BY i;
-% sys.integers,	.L3 # table_name
-% i,	L3 # name
+% sys.integers,	.L1 # table_name
+% i,	L1 # name
 % int,	tinyint # type
 % 1,	2 # length
 [ NULL,	42	]
@@ -114,8 +114,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ 2,	42	]
 [ 3,	42	]
 #SELECT (SELECT * FROM integers WHERE i>10) FROM integers;
-% .L4 # table_name
-% L4 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -141,8 +141,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ 3	]
 [ NULL	]
 #SELECT (SELECT i FROM integers WHERE i=1); --1
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -186,32 +186,32 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % int # type
 % 1 # length
 #SELECT EXISTS(SELECT * FROM integers); -- true
-% .L4 # table_name
-% L4 # name
+% .L3 # table_name
+% L3 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT EXISTS(SELECT * FROM integers WHERE i>10); -- false
-% .L4 # table_name
-% L4 # name
+% .L3 # table_name
+% L3 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT EXISTS(SELECT * FROM integers), EXISTS(SELECT * FROM integers); -- true, true
-% .L4,	.L10 # table_name
-% L4,	L10 # name
+% .L3,	.L6 # table_name
+% L3,	L6 # name
 % boolean,	boolean # type
 % 5,	5 # length
 [ true,	true	]
 #SELECT EXISTS(SELECT * FROM integers) AND EXISTS(SELECT * FROM integers); -- true
-% .L10 # table_name
-% L10 # name
+% .L6 # table_name
+% L6 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT EXISTS(SELECT EXISTS(SELECT * FROM integers)); -- true
-% .L10 # table_name
-% L10 # name
+% .L7 # table_name
+% L7 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -239,8 +239,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % int # type
 % 1 # length
 #SELECT 1 IN (SELECT NULL) FROM integers; 
-% .L10 # table_name
-% L10 # name
+% .L7 # table_name
+% L7 # name
 % boolean # type
 % 5 # length
 [ NULL	]
@@ -248,17 +248,17 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ NULL	]
 [ NULL	]
 #SELECT NULL IN (SELECT * FROM integers) FROM integers;
-% .L13 # table_name
-% L13 # name
+% .L11 # table_name
+% L11 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
 [ NULL	]
-#SELECT cast(SUM(i) as bigint) FROM integers WHERE 1 IN (SELECT * FROM integers); -- 6
-% sys.L7 # table_name
-% L7 # name
+#SELECT CAST(SUM(i) AS BIGINT) FROM integers WHERE 1 IN (SELECT * FROM integers); -- 6
+% sys.L5 # table_name
+% L5 # name
 % bigint # type
 % 1 # length
 [ 6	]
@@ -269,23 +269,23 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % 2 # length
 [ 42	]
 #SELECT (SELECT EXISTS(SELECT * FROM integers WHERE i>2)) FROM integers; -- single column 4xtrue
-% .L4 # table_name
-% L4 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 [ true	]
 [ true	]
 [ true	]
-#SELECT (SELECT MAX(i) FROM integers) AS k, cast(SUM(i) as bigint) FROM integers GROUP BY k; -- 3,6
-% .L3,	.L7 # table_name
-% k,	L7 # name
+#SELECT (SELECT MAX(i) FROM integers) AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k; -- 3,6
+% .L3,	.L5 # table_name
+% k,	L5 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 3,	6	]
-#SELECT i % 2 AS k, cast(SUM(i) as bigint) FROM integers GROUP BY k HAVING SUM(i) > (SELECT MAX(i) FROM integers); -- 1,4
-% sys.L2,	sys.L5 # table_name
-% k,	L5 # name
+#SELECT i % 2 AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k HAVING SUM(i) > (SELECT MAX(i) FROM integers); -- 1,4
+% sys.L1,	sys.L3 # table_name
+% k,	L3 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 1,	4	]
@@ -295,9 +295,9 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % int # type
 % 1 # length
 [ 1	]
-#SELECT (SELECT cast(SUM(i) as bigint) FROM integers), (SELECT 42);
-% .L6,	.L10 # table_name
-% L6,	L10 # name
+#SELECT (SELECT CAST(SUM(i) AS BIGINT) FROM integers), (SELECT 42);
+% .L5,	.L7 # table_name
+% L5,	L7 # name
 % bigint,	tinyint # type
 % 1,	2 # length
 [ 6,	42	]
@@ -306,26 +306,26 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 #INSERT INTO strings VALUES ('hello'), ('world'), (NULL);
 [ 3	]
 #SELECT NULL IN (SELECT * FROM strings); -- NULL
-% .L14 # table_name
-% L14 # name
+% .L13 # table_name
+% L13 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 'hello' IN (SELECT * FROM strings); -- true
-% .L14 # table_name
-% L14 # name
+% .L13 # table_name
+% L13 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'bla' IN (SELECT * FROM strings); -- NULL
-% .L14 # table_name
-% L14 # name
+% .L13 # table_name
+% L13 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 'bla' IN (SELECT * FROM strings WHERE v IS NOT NULL); -- false
-% .L14 # table_name
-% L14 # name
+% .L13 # table_name
+% L13 # name
 % boolean # type
 % 5 # length
 [ false	]
