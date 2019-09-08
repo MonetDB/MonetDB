@@ -1603,7 +1603,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		p = pushBit(mb, p, (cmp & 1) != 0);	    /* lo inclusive */
 		p = pushBit(mb, p, (cmp & 2) != 0);	    /* hi inclusive */
 		p = pushBit(mb, p, FALSE);		    /* nils_false */
-		p = pushBit(mb, p, FALSE);		    /* anti */
+		p = pushBit(mb, p, (anti)?TRUE:FALSE);	    /* anti */
 		k = getDestVar(p);
 
 		q = newStmt(mb, algebraRef, selectRef);
@@ -1614,7 +1614,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
-		q = pushBit(mb, q, (anti)?TRUE:FALSE);
+		q = pushBit(mb, q, FALSE);
 		if (q == NULL)
 			return NULL;
 	} else {
