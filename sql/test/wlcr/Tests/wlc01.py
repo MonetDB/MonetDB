@@ -24,6 +24,9 @@ c = process.client('sql', server = s, stdin = process.PIPE, stdout = process.PIP
 cout, cerr = c.communicate('''\
 call masterbeat(0);
 call master();
+
+create table tmp0(i int, s string);
+drop table tmp0;
 create table tmp(i int, s string);
 insert into tmp values(1,'hello'), (2,'world');
 select * from tmp;
