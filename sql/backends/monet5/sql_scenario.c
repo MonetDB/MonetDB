@@ -687,16 +687,13 @@ SQLinitClient(Client c)
 		MT_lock_unset(&sql_contextLock);
 		return msg;
 	}
-	if ((msg = WLRinit()) != MAL_SUCCEED) {
-		MT_lock_unset(&sql_contextLock);
-		return msg;
-	}
 #ifndef HAVE_EMBEDDED
 	msg = SQLprepareClient(c, 1);
 #else
 	msg = SQLprepareClient(c, 0);
 #endif
 	MT_lock_unset(&sql_contextLock);
+	WLRinit();
 	return msg;
 }
 

@@ -198,7 +198,7 @@ WLRprocess(void *arg)
 	c =MCforkClient(cntxt);
 	if( c == 0){
 		wlrprocessrunning =0;
-		GDKerror("Could not create user for WLR process\n");
+		fprintf(stderr, "Could not create user for WLR process\n");
 		return;
 	}
 	c->promptlength = 0;
@@ -207,14 +207,14 @@ WLRprocess(void *arg)
 	if(c->fdout == NULL) {
 		wlrprocessrunning =0;
 		MCcloseClient(c);
-		GDKerror("Could not create user for WLR process\n");
+		fprintf(stderr, "Could not create user for WLR process\n");
 		return;
 	}
 	prev = newFunction(putName("user"), putName("wlr"), FUNCTIONsymbol);
 	if(prev == NULL) {
 		wlrprocessrunning =0;
 		MCcloseClient(c);
-		GDKerror("Could not create user for WLR process\n");
+		fprintf(stderr, "Could not create user for WLR process\n");
 		return;
 	}
 	c->curprg = prev;
@@ -387,10 +387,9 @@ wrapup:
 }
 
 /*
- * A timing issue. The WLRprocess can only start after the
- * SQL environment has been initialized.
- * It is now activated as part of the startup, but before
- * a SQL client is known.
+ * A timing issue.
+ * The WLRprocess can only start after an SQL environment has been initialized.
+ * It is therefore initialized when a SQLclient() is issued.
  */
 static void
 WLRprocessScheduler(void *arg)
@@ -406,10 +405,10 @@ WLRprocessScheduler(void *arg)
 		fprintf(stderr,"%s\n",msg);
 		freeException(msg);
 	}
+	cntxt = MCinitClient(MAL_ADMIN, NULL,NULL);
 	wlr_state = WLR_RUN;
 	while(!GDKexiting() && wlr_state == WLR_RUN){
 		// wait at most for the cycle period, also at start
-		//mnstr_printf(cntxt->fdout,"#sleep %d ms\n",(wlc_beat? wlc_beat:1) * 1000);
 		MT_thread_setworking("sleeping");
 		duration = (wlc_beat? wlc_beat:1) * 1000 ;
 		if( wlr_timelimit[0]){
@@ -420,8 +419,11 @@ WLRprocessScheduler(void *arg)
 #else
 			ctm = *localtime(&clk);
 #endif
+
+#define _WLR_DEBUG_
 			strftime(clktxt, sizeof(clktxt), "%Y-%m-%dT%H:%M:%S.000",&ctm);
-			mnstr_printf(cntxt->fdout,"#now %s tlimit %s\n",clktxt, wlr_timelimit);
+			fprintf(stderr,"#now %s tlimit %s\n",clktxt, wlr_timelimit);
+#endif
 			// actually never wait longer then the timelimit requires
 			// preference is given to the beat.
 			if(strncmp(clktxt, wlr_timelimit,sizeof(wlr_timelimit)) >= 0) 
@@ -447,19 +449,21 @@ WLRprocessScheduler(void *arg)
 	wlr_state = WLR_START;
 }
 
+/* make sure there is a single replication thread active */
 str
 WLRinit(void)
 {
 	str msg;
-	Client cntxt = MCinitClient(MAL_ADMIN, NULL,NULL);
+
 	if((msg = WLRgetConfig()) != MAL_SUCCEED)
 		return msg;
 	if( wlr_master[0] == 0)
 		return MAL_SUCCEED;
 	if( wlr_state != WLR_START)
 		return MAL_SUCCEED;
+	
 	// time to continue the consolidation process in the background
-	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) cntxt,
+	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) NULL,
 			     MT_THR_DETACHED, "WLRprocSched") < 0) {
 			throw(SQL,"wlr.init",SQLSTATE(42000) "Starting wlr manager failed");
 	}
@@ -906,7 +910,7 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		break;
 	default:
-		GDKerror("Missing type in WLRupdate");
+		fprintf(stderr, "Missing type in WLRupdate");
 	}
 
 	BATmsync(tids);
