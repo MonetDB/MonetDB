@@ -420,7 +420,7 @@ WLRprocessScheduler(void *arg)
 			ctm = *localtime(&clk);
 #endif
 
-#define _WLR_DEBUG_
+#ifdef _WLR_DEBUG_
 			strftime(clktxt, sizeof(clktxt), "%Y-%m-%dT%H:%M:%S.000",&ctm);
 			fprintf(stderr,"#now %s tlimit %s\n",clktxt, wlr_timelimit);
 #endif
