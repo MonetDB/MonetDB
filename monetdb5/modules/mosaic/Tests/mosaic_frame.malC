@@ -4,6 +4,10 @@ bat.append(b,"2014-08-14 12:00:00":timestamp);
 bat.append(b,"2014-08-14 12:01:00":timestamp);
 bat.append(b,"2014-08-14 12:02:00":timestamp);
 bat.append(b,"2014-08-14 12:00:00":timestamp);
+bat.append(b,"2014-08-14 12:00:00":timestamp);
+bat.append(b,"2014-08-14 12:01:00":timestamp);
+bat.append(b,"2014-08-14 12:02:00":timestamp);
+bat.append(b,"2014-08-14 12:00:00":timestamp);
 b:= bat.append(b,b);
 base:= algebra.copy(b);
 
@@ -12,6 +16,11 @@ b:= mosaic.decompress(b);
 io.print(base,b);
 
 d:= bat.new(:date);
+bat.append(d,"2014-08-14":date);
+bat.append(d,"2014-08-14":date);
+bat.append(d,"2014-08-14":date);
+bat.append(d,"2014-08-14":date);
+bat.append(d,"2014-08-15":date);
 bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-14":date);
