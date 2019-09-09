@@ -46,6 +46,10 @@ MAPI  = (monetdb) /var/tmp/mtest-28086/.s.monetdb.30011
 QUERY = SELECT * FROM integers WHERE i=(SELECT i, i + 2 FROM integers);
 ERROR = !SELECT: subquery must return only one column
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-17217/.s.monetdb.30774
+QUERY = SELECT 1 FROM integers WHERE SUM(i) > 1; --aggregates not allowed in where clause
+ERROR = !SUM: not allowed in WHERE clause
+CODE  = 42000
 
 # 17:27:37 >  
 # 17:27:37 >  "Done."

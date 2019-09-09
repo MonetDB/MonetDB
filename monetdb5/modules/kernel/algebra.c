@@ -145,9 +145,10 @@ ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 			* (ptr *) result = p = BATmin_skipnil(b, NULL, *skipnil);
 		} else {
 			p = BATmin_skipnil(b, result, *skipnil);
-			assert(p == result);
+			if ( p != result )
+				msg = createException(MAL, "algebra.min", SQLSTATE(HY002) "INTERNAL ERROR");
 		}
-		if (p == NULL)
+		if (msg == MAL_SUCCEED && p == NULL)
 			msg = createException(MAL, "algebra.min", GDK_EXCEPTION);
 	}
 	BBPunfix(b->batCacheid);
@@ -180,9 +181,10 @@ ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 			* (ptr *) result = p = BATmax_skipnil(b, NULL, *skipnil);
 		} else {
 			p = BATmax_skipnil(b, result, *skipnil);
-			assert(p == result);
+			if ( p != result )
+				msg = createException(MAL, "algebra.max", SQLSTATE(HY002) "INTERNAL ERROR");
 		}
-		if (p == NULL)
+		if ( msg == MAL_SUCCEED && p == NULL)
 			msg = createException(MAL, "algebra.max", GDK_EXCEPTION);
 	}
 	BBPunfix(b->batCacheid);

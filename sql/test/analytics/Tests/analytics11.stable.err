@@ -59,7 +59,7 @@ QUERY = SELECT
         FROM tbl_ProductSales
         WHERE GROUPING(Product_Category) > 1
         GROUP BY GROUPING SETS((Product_Category)); --error, "grouping" not allowed in where clause
-ERROR = !GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY
+ERROR = !GROUPING: not allowed in WHERE clause
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-11452/.s.monetdb.32908
 QUERY = SELECT 
@@ -104,7 +104,7 @@ QUERY = SELECT
         INNER JOIN tbl_X
         ON tbl_ProductSales.ColID = tbl_X.ColID
         GROUP BY CUBE(tbl_ProductSales.Product_Category); --error, ambiguous identifier
-
+ERROR = !SELECT: identifier 'colid' ambiguous
 CODE  = 42000
 
 # 14:50:27 >  

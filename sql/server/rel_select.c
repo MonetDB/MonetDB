@@ -3913,10 +3913,17 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		if (uaname)
 			GDKfree(uaname);
 		return NULL;
+	} else if (!query_has_outer(query) && is_sql_where(f)) {
+		char *uaname = GDKmalloc(strlen(aname) + 1);
+		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: not allowed in WHERE clause",
+						 uaname ? toUpperCopy(uaname, aname) : aname);
+		if (uaname)
+			GDKfree(uaname);
+		return NULL;
 	} else if (is_grouping && !is_sql_group_totals(f))
 		return sql_error(sql, 02, SQLSTATE(42000) "GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY");
 
-	if (groupby->op != op_groupby) { /* implicit groupby */
+	if (groupby->op != op_groupby) { 		/* implicit groupby */
 		sql_rel *np = rel_project2groupby(sql, groupby);
 
 		if (*rel == groupby) {
@@ -3932,15 +3939,6 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	}
 	if (!*rel)
 		return NULL;
-
-	if (!query_has_outer(query) && is_sql_where(f)) {
-		char *uaname = GDKmalloc(strlen(aname) + 1);
-		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: not allowed in WHERE clause",
-				       uaname ? toUpperCopy(uaname, aname) : aname);
-		if (uaname)
-			GDKfree(uaname);
-		return e;
-	}
 
 	if (!args->data.sym) {	/* count(*) case */
 		sql_exp *e;
@@ -5260,17 +5258,9 @@ opt_groupby_add_exp(mvc *sql, sql_rel *p, sql_rel *pp, sql_exp *in)
 		if (!exp_name(in))
 			exp_label(sql->sa, in, ++sql->label);
 		found = exps_find_exp( p->exps, in);
-		if (!found) {
-			sql_rel *l = p->l;
-			while (l && !is_base(l->op)) {
-				if (!exps_find_exp(l->exps, in))
-					append(l->exps, exp_copy(sql->sa, in));
-				else
-					break;
-				l = l->l;
-			}
+		if (!found)
 			append(p->exps, in);
-		} else
+		else
 			in = found;
 		in = exp_ref(sql->sa, in);
 	} else if (pp && pp->op == op_groupby) {
@@ -5279,7 +5269,8 @@ opt_groupby_add_exp(mvc *sql, sql_rel *p, sql_rel *pp, sql_exp *in)
 		found = exps_find_exp( p->exps, in);
 		if (!found) {
 			sql_rel *l = p->l;
-			while (l && !is_base(l->op)) {
+
+			while (l && l != pp && !is_base(l->op)) {
 				if (!exps_find_exp(l->exps, in))
 					append(l->exps, exp_copy(sql->sa, in));
 				else
@@ -5997,6 +5988,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 			if (r) {
 				rs = _rel_lastexp(sql, r);
 
+				if (ek.card <= card_set && is_project(r->op) && list_length(r->exps) > 1) 
+					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
 				if (is_sql_sel(f) && ek.card <= card_column && r->card > CARD_ATOM) {
 					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
 					rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
