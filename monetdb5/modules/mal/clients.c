@@ -53,7 +53,8 @@ str
 CLTgetClientId(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
-	assert(cntxt - mal_clients <= INT_MAX);
+	if(cntxt - mal_clients < 0 || cntxt - mal_clients >= MAL_MAXCLIENTS)
+		throw(MAL, "clients.getClientId", "Illegal client index");
 	*getArgReference_int(stk,pci,0) = (int) (cntxt - mal_clients);
 	return MAL_SUCCEED;
 }
@@ -286,13 +287,11 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		id = *getArgReference_int(stk,pci,1);
 	else id =cntxt->idx;
 
-	if (id == 0 && cntxt->fdout != GDKout )
-		throw(MAL, "client.quit", INVCRED_ACCESS_DENIED);
+	/* A user can only quite a session under the same id */
 	if ( cntxt->idx == mal_clients[id].idx)
 		mal_clients[id].mode = FINISHCLIENT;
-	/* the console should be finished with an exception */
-	if (id == 0)
-		throw(MAL,"client.quit",SERVER_STOPPED);
+	else 
+		throw(MAL, "client.quit", INVCRED_ACCESS_DENIED);
 	return MAL_SUCCEED;
 }
 
@@ -593,7 +592,7 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		break;
 	}
 
-	if ( cntxt->user != mal_clients[0].user)
+	if (mal_clients[0].user != MAL_ADMIN)
 		throw(MAL,"mal.shutdown", "Administrator rights required");
 	MCstopClients(cntxt);
 	do{

@@ -3854,6 +3854,7 @@ exps_merge_project_rse( mvc *sql, list *exps)
 						append(ops, exp_atom_bool(sql->sa, lf->func->base.name[1] == '=')); /* left inclusive */
 						append(ops, exp_atom_bool(sql->sa, rf->func->base.name[1] == '=')); /* right exclusive */
 						append(ops, exp_atom_bool(sql->sa, 0)); /* nils_false */
+						append(ops, exp_atom_bool(sql->sa, 0)); /* anti */
 
 						types = exp_types(sql->sa, ops);
 						/* convert into between */

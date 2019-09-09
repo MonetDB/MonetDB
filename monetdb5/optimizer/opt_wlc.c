@@ -7,7 +7,8 @@
  */
 
 /* author M.Kersten
- * This optimizer prepares the code for workload-capture-replay processing.
+ * This optimizer prepares the code for workload-capture-replay processing
+ * by injection of the proper calls.
  */
 #include "monetdb_config.h"
 #include "opt_wlc.h"

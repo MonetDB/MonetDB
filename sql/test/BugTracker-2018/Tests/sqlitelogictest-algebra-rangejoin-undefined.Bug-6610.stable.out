@@ -36,7 +36,25 @@ stdout of test 'sqlitelogictest-algebra-rangejoin-undefined.Bug-6610` in directo
 % sys.tab2,	sys.tab2,	sys.tab2,	sys.cor0,	sys.cor0,	sys.cor0,	sys.tab1,	sys.tab1,	sys.tab1 # table_name
 % col0,	col1,	col2,	col0,	col1,	col2,	col0,	col1,	col2 # name
 % int,	int,	int,	int,	int,	int,	int,	int,	int # type
-% 1,	1,	1,	1,	1,	1,	1,	1,	1 # length
+% 2,	2,	2,	2,	2,	2,	2,	2,	2 # length
+[ 79,	17,	38,	64,	10,	57,	64,	10,	57	]
+[ 79,	17,	38,	64,	10,	57,	3,	26,	54	]
+[ 79,	17,	38,	64,	10,	57,	80,	13,	96	]
+[ 78,	59,	26,	64,	10,	57,	64,	10,	57	]
+[ 78,	59,	26,	64,	10,	57,	3,	26,	54	]
+[ 78,	59,	26,	64,	10,	57,	80,	13,	96	]
+[ 79,	17,	38,	3,	26,	54,	64,	10,	57	]
+[ 79,	17,	38,	3,	26,	54,	3,	26,	54	]
+[ 79,	17,	38,	3,	26,	54,	80,	13,	96	]
+[ 78,	59,	26,	3,	26,	54,	64,	10,	57	]
+[ 78,	59,	26,	3,	26,	54,	3,	26,	54	]
+[ 78,	59,	26,	3,	26,	54,	80,	13,	96	]
+[ 79,	17,	38,	80,	13,	96,	64,	10,	57	]
+[ 79,	17,	38,	80,	13,	96,	3,	26,	54	]
+[ 79,	17,	38,	80,	13,	96,	80,	13,	96	]
+[ 78,	59,	26,	80,	13,	96,	64,	10,	57	]
+[ 78,	59,	26,	80,	13,	96,	3,	26,	54	]
+[ 78,	59,	26,	80,	13,	96,	80,	13,	96	]
 #SELECT ALL * FROM tab1, tab2, tab2 AS cor0 WHERE + tab2.col2 BETWEEN ( tab1.col0 ) AND NULL;
 % sys.tab1,	sys.tab1,	sys.tab1,	sys.tab2,	sys.tab2,	sys.tab2,	sys.cor0,	sys.cor0,	sys.cor0 # table_name
 % col0,	col1,	col2,	col0,	col1,	col2,	col0,	col1,	col2 # name

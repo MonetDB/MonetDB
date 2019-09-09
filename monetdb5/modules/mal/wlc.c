@@ -280,7 +280,7 @@ WLCsetlogger(void)
 	wlc_fd = open_wastream(path);
 	if( wlc_fd == 0){
 		MT_lock_unset(&wlc_lock);
-		GDKerror("wlc.logger:Could not create %s\n",path);
+		fprintf(stderr, "wlc.logger:Could not create %s\n",path);
 		throw(MAL,"wlc.logger","Could not create %s\n",path);
 	}
 
@@ -336,7 +336,7 @@ WLClogger(void *arg)
 		if( wlc_dir[0] && wlc_fd ){
 			MT_lock_set(&wlc_lock);
 			if((msg = WLCcloselogger()) != MAL_SUCCEED) {
-				GDKerror("%s",msg);
+				fprintf(stderr, "%s",msg);
 				freeException(msg);
 			}
 			MT_lock_unset(&wlc_lock);
@@ -372,10 +372,10 @@ WLCinit(void)
 
 		msg =  WLCgetConfig();
 		if( msg)
-			GDKerror("%s",msg);
+			fprintf(stderr, "%s",msg);
 		if (MT_create_thread(&wlc_logger, WLClogger , (void*) 0,
 							 MT_THR_DETACHED, "WLClogger") < 0) {
-			GDKerror("wlc.logger thread could not be spawned");
+			fprintf(stderr, "wlc.logger thread could not be spawned");
 		}
 	}
 	return MAL_SUCCEED;
@@ -696,7 +696,7 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 		} }
 		break;
 	default:
-		mnstr_printf(cntxt->fdout,"#wlc datashipping, non-supported type\n");
+		fprintf(stderr, "#wlc datashipping, non-supported type %d\n", ATOMstorage(b->ttype));
 		cntxt->wlc_kind = WLC_CATALOG;
 	}
 finish:
@@ -903,11 +903,17 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+/* Beware that a client context can be used in parallel and
+ * that we don't want transaction interference caused by merging
+ * the MAL instructions accidentally.
+ * The effectively means that the SQL transaction record should
+ * collect the MAL instructions and flush them.
+ */
 static str
 WLCwrite(Client cntxt)
 {	str msg = MAL_SUCCEED;
 	InstrPtr p;
-	int tag;
+	int  tag;
 	ValRecord cst;
 	// save the wlc record on a file 
 	if( cntxt->wlc == 0 || cntxt->wlc->stop <= 1 ||  cntxt->wlc_kind == WLC_QUERY )
@@ -928,14 +934,13 @@ WLCwrite(Client cntxt)
 		
 		p = getInstrPtr(cntxt->wlc,0);
 		MT_lock_set(&wlc_lock);
-		// Tag each transaction record with an unique id
+		/* Find a single transaction sequence ending with COMMIT or ROLLBACK */
 		cst.vtype= TYPE_lng;
 		cst.val.lval = wlc_id;
 		tag = defConstant(cntxt->wlc,TYPE_lng, &cst);
 		p = getInstrPtr(cntxt->wlc,0);
 		p = setArgument(cntxt->wlc, p, p->retc, tag);
 
-		// save it as an ordinary MAL block
 		printFunction(wlc_fd, cntxt->wlc, 0, LIST_MAL_DEBUG );
 		(void) mnstr_flush(wlc_fd);
 		

@@ -263,6 +263,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"between",	5,	"boolean",	""	]
 [ "sys",	"between",	6,	"boolean",	""	]
 [ "sys",	"between",	7,	"boolean",	""	]
+[ "sys",	"between",	8,	"boolean",	""	]
 [ "sys",	"bit_and",	0,	"oid",	"and"	]
 [ "sys",	"bit_and",	1,	"oid",	""	]
 [ "sys",	"bit_and",	2,	"oid",	""	]
