@@ -2171,23 +2171,38 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			ul = rel_project(sql->sa, ul, NULL);
 			ul->exps = exps_copy(sql->sa, r->exps);
 			/* possibly add order by column */
-			if (add_r)
-				ul->exps = list_merge(ul->exps, exps_copy(sql->sa, r->r), NULL);
+			if (add_r) {
+				for (node *n = ((list*)r->r)->h ; n ; n = n->next) {
+					sql_exp *exp = (sql_exp*) n->data;
+					if (rel_has_exp(ul, exp))
+						list_append(ul->exps, exp_copy(sql->sa, exp));
+				}
+			}
 			ul->r = exps_copy(sql->sa, r->r);
 			ul = rel_topn(sql->sa, ul, sum_limit_offset(sql, rel->exps));
 			ur = rel_project(sql->sa, ur, NULL);
 			ur->exps = exps_copy(sql->sa, r->exps);
 			/* possibly add order by column */
-			if (add_r)
-				ur->exps = list_merge(ur->exps, exps_copy(sql->sa, r->r), NULL);
+			if (add_r) {
+				for (node *n = ((list*)r->r)->h ; n ; n = n->next) {
+					sql_exp *exp = (sql_exp*) n->data;
+					if (rel_has_exp(ur, exp))
+						list_append(ur->exps, exp_copy(sql->sa, exp));
+				}
+			}
 			ur->r = exps_copy(sql->sa, r->r);
 			ur = rel_topn(sql->sa, ur, sum_limit_offset(sql, rel->exps));
 			u = rel_setop(sql->sa, ul, ur, op_union);
 			u->exps = exps_alias(sql->sa, r->exps); 
 			set_processed(u);
 			/* possibly add order by column */
-			if (add_r)
-				u->exps = list_merge(u->exps, exps_copy(sql->sa, r->r), NULL);
+			if (add_r) {
+				for (node *n = ((list*)r->r)->h ; n ; n = n->next) {
+					sql_exp *exp = (sql_exp*) n->data;
+					if (rel_has_exp(u, exp))
+						list_append(u->exps, exp_copy(sql->sa, exp));
+				}
+			}
 
 			if (need_distinct(r)) {
 				set_distinct(ul);
