@@ -864,7 +864,8 @@ SQLinsert_val(READERtask *task, int col, int idx)
 					task->rowerror[idx]++;
 					task->errorcnt++;
 					task->besteffort = 0; /* no longer best effort */
-					if (BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
+					if (task->cntxt->error_row == NULL ||
+						BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
 						BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
 						BUNappend(task->cntxt->error_msg, SQLSTATE(HY001) MAL_MALLOC_FAIL, false) != GDK_SUCCEED ||
 						BUNappend(task->cntxt->error_input, err, false) != GDK_SUCCEED) {
@@ -886,7 +887,8 @@ SQLinsert_val(READERtask *task, int col, int idx)
 				task->as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			task->rowerror[idx]++;
 			task->errorcnt++;
-			if (BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
+			if (task->cntxt->error_row == NULL ||
+				BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
 				BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
 				BUNappend(task->cntxt->error_msg, buf, false) != GDK_SUCCEED ||
 				BUNappend(task->cntxt->error_input, err, false) != GDK_SUCCEED) {
@@ -909,7 +911,8 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	if (task->rowerror) {
 		lng row = BATcount(fmt->c);
 		MT_lock_set(&errorlock);
-		if (BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
+		if (task->cntxt->error_row == NULL ||
+			BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_msg, "insert failed", false) != GDK_SUCCEED ||
 			(err = SQLload_error(task, idx,task->as->nr_attrs)) == NULL ||
@@ -1577,11 +1580,7 @@ create_rejects_table(Client cntxt)
 				BBPunfix(cntxt->error_msg->batCacheid);
 			if (cntxt->error_input)
 				BBPunfix(cntxt->error_input->batCacheid);
-		} else {
-			BBPkeepref(cntxt->error_row->batCacheid);
-			BBPkeepref(cntxt->error_fld->batCacheid);
-			BBPkeepref(cntxt->error_msg->batCacheid);
-			BBPkeepref(cntxt->error_input->batCacheid);
+			cntxt->error_row = cntxt->error_fld = cntxt->error_msg = cntxt->error_input = NULL;
 		}
 	}
 	MT_lock_unset(&mal_contextLock);
@@ -1609,6 +1608,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	task = (READERtask) {
 		.cntxt = cntxt,
 		.from_stdin = from_stdin,
+		.as = as,
 	};
 
 	/* create the reject tables */
@@ -1651,7 +1651,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		goto bailout;
 	}
 
-	task.as = as;
 	task.skip = skip;
 	task.quote = quote;
 	task.csep = csep;
