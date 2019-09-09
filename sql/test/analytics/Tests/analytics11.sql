@@ -173,5 +173,14 @@ GROUP BY CUBE(Product_Category, Product_Name, tbl_ProductSales.ColID), ROLLUP(tb
 ORDER BY SUM(TotalSales) DESC
 LIMIT 1;
 
+CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
+INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
+
+SELECT
+    GROUPING(col1, col2, col3, col4, col5, col6, col7, col8)
+FROM another_T
+GROUP BY ROLLUP(col1, col2, col3, col4, col5, col6, col7, col8); --with 8 columns, a smallint is necessary for grouping's output
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE tbl_X;
+DROP TABLE another_T;
