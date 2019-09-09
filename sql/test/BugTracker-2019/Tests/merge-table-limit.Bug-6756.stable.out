@@ -58,11 +58,9 @@ stdout of test 'merge-table-limit.Bug-6756` in directory 'sql/test/BugTracker-20
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
-
-# 17:09:08 >  
-# 17:09:08 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7363" "--port=39515"
-# 17:09:08 >  
+# 21:58:51 >  
+# 21:58:51 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16567" "--port=32376"
+# 21:58:51 >  
 
 #START TRANSACTION;
 #CREATE SCHEMA logs;
@@ -125,7 +123,7 @@ Ready.
 #WHERE processed_timestamp >= '2019-09-09 01:23:58.949' AND processed_timestamp <= '2019-09-09 17:38:58.949'
 #ORDER BY timestamp
 #LIMIT 2000;
-% .L2,	.L4,	.L6,	.L10 # table_name
+% .L1,	.L2,	.L3,	.L4 # table_name
 % timestamp,	logentry_no,	logsource,	program # name
 % timestamp,	bigint,	clob,	clob # type
 % 26,	1,	0,	0 # length
@@ -134,7 +132,7 @@ Ready.
 #WHERE processed_timestamp >= '2019-09-09 01:23:58.949' AND processed_timestamp <= '2019-09-09 17:38:58.949'
 #ORDER BY timestamp 
 #LIMIT 2000;
-% .L2,	.L4,	.L6 # table_name
+% .L1,	.L2,	.L3 # table_name
 % timestamp,	logentry_no,	logsource # name
 % timestamp,	bigint,	clob # type
 % 26,	1,	0 # length
