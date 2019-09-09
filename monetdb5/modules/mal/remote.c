@@ -409,7 +409,8 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	str rt;
 	static int idtag=0;
 
-	assert (p->retc);
+	if( p->retc == 0)
+		throw(MAL, "remote.getId", ILLEGAL_ARGUMENT "MAL instruction misses retc");
 
 	var = getArgName(mb, p, arg);
 	f = getInstrPtr(mb, 0); /* top level function */
@@ -1019,7 +1020,8 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* this call should be a single transaction over the channel*/
 	MT_lock_set(&c->lock);
 
-	assert(pci->argc - pci->retc >= 3); /* conn, mod, func, ... */
+	if(pci->argc - pci->retc < 3) /* conn, mod, func, ... */
+		throw(MAL, "remote.exec", ILLEGAL_ARGUMENT  " MAL instruction misses arguments");
 
 	len = 0;
 	/* count how big a buffer we need */
@@ -1091,6 +1093,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	BAT *b;
 	size_t len;
 	char *var;
+	str msg = MAL_SUCCEED;
 	bstream *fdin = cntxt->fdin;
 
 	v = &stk->stk[pci->argv[0]]; /* return */
@@ -1115,8 +1118,8 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		if (fdin->pos == len) {
 			if (isa_block_stream(fdin->s)) {
 				ssize_t n = bstream_next(fdin);
-				assert(n == 0);
-				(void) n;
+				if( n )
+					msg = createException(MAL, "remote.load", SQLSTATE(HY001) "Unexpected return from remote");
 			}
 			break;
 		}
@@ -1140,7 +1143,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	v->vtype = TYPE_bat;
 	BBPkeepref(b->batCacheid);
 
-	return(MAL_SUCCEED);
+	return msg;
 }
 
 /**
