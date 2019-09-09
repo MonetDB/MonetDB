@@ -258,6 +258,41 @@ strPut(Heap *h, var_t *dst, const char *v)
 	}
 	/* the string was not found in the heap, we need to enter it */
 
+	if (v[0] != '\200' || v[1] != '\0') {
+		/* check that string is correctly encoded UTF-8; there
+		 * was no need to do this earlier: if the string was
+		 * found above, it must have gone through here in the
+		 * past */
+		int nutf8 = 0;
+		int m = 0;
+		for (size_t i = 0; v[i]; i++) {
+			if (nutf8 > 0) {
+				if ((v[i] & 0xC0) != 0x80 ||
+				    (m != 0 && (v[i] & m) == 0)) {
+				  badutf8:
+					GDKerror("strPut: incorrectly encoded UTF-8");
+					return 0;
+				}
+				m = 0;
+				nutf8--;
+			} else if ((v[i] & 0xE0) == 0xC0) {
+				nutf8 = 1;
+				if ((v[i] & 0x1E) == 0)
+					goto badutf8;
+			} else if ((v[i] & 0xF0) == 0xE0) {
+				nutf8 = 2;
+				if ((v[i] & 0x0F) == 0)
+					m = 0x20;
+			} else if ((v[i] & 0xF8) == 0xF0) {
+				nutf8 = 3;
+				if ((v[i] & 0x07) == 0)
+					m = 0x30;
+			} else if ((v[i] & 0x80) != 0) {
+				goto badutf8;
+			}
+		}
+	}
+
 	pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
 	if (elimbase == 0) {	/* i.e. h->free < GDK_ELIMLIMIT */
 		if (pad < sizeof(stridx_t)) {
@@ -310,56 +345,6 @@ strPut(Heap *h, var_t *dst, const char *v)
 	/* insert string */
 	pos = h->free + pad + extralen;
 	*dst = (var_t) pos;
-#ifndef NDEBUG
-	/* just before inserting into the heap, make sure that the
-	 * string is actually UTF-8 (if we encountered a return
-	 * statement before this, the string was already in the heap,
-	 * and hence already checked) */
-	if (v[0] != '\200' || v[1] != '\0') {
-		/* not str_nil, must be UTF-8 */
-		size_t i;
-
-		for (i = 0; v[i] != '\0'; i++) {
-			/* check that v[i] is the start of a validly
-			 * coded UTF-8 sequence: this involves
-			 * checking that the first byte is a valid
-			 * start byte and is followed by the correct
-			 * number of follow-up bytes, but also that
-			 * the sequence cannot be shorter */
-			if ((v[i] & 0x80) == 0) {
-				/* 0aaaaaaa */
-				continue;
-			} else if ((v[i] & 0xE0) == 0xC0) {
-				/* 110bbbba 10aaaaaa
-				 * one of the b's must be set*/
-				assert(v[i] & 0x4D);
-				i++;
-				assert((v[i] & 0xC0) == 0x80);
-			} else if ((v[i] & 0xF0) == 0xE0) {
-				/* 1110cccc 10cbbbba 10aaaaaa
-				 * one of the c's must be set*/
-				assert(v[i] & 0x0F || v[i + 1] & 0x20);
-				i++;
-				assert((v[i] & 0xC0) == 0x80);
-				i++;
-				assert((v[i] & 0xC0) == 0x80);
-			} else if ((v[i] & 0xF8) == 0xF0) {
-				/* 11110ddd 10ddcccc 10cbbbba 10aaaaaa
-				 * one of the d's must be set */
-				assert(v[i] & 0x07 || v[i + 1] & 0x30);
-				i++;
-				assert((v[i] & 0xC0) == 0x80);
-				i++;
-				assert((v[i] & 0xC0) == 0x80);
-				i++;
-				assert((v[i] & 0xC0) == 0x80);
-			} else {
-				/* this will fail */
-				assert((v[i] & 0x80) == 0);
-			}
-		}
-	}
-#endif
 	memcpy(h->base + pos, v, len);
 	if (h->hashash) {
 		((BUN *) (h->base + pos))[-1] = strhash;

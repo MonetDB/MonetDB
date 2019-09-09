@@ -9,7 +9,7 @@ INSERT INTO tab0 VALUES(6,904,193.16,'eozui',48,698.55,'ejyzs');
 INSERT INTO tab0 VALUES(7,606,650.64,'ovmce',417,962.43,'dvkbh');
 INSERT INTO tab0 VALUES(8,535,18.11,'ijika',630,489.63,'hpnyu');
 INSERT INTO tab0 VALUES(9,501,776.40,'cvygg',725,75.5,'etlyv');
-SELECT * FROM tab0 AS cor0 WHERE NOT ( - col0 ) BETWEEN - + col4 AND NULL; --should be -5
+SELECT * FROM tab0 AS cor0 WHERE NOT ( - col0 ) BETWEEN - + col4 AND NULL;
 SELECT + - COUNT ( * ) FROM tab0 AS cor0 WHERE NOT ( - col0 ) BETWEEN - + col4 AND NULL; --should be -5
 DROP TABLE tab0;
 
