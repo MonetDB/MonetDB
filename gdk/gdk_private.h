@@ -115,10 +115,6 @@ __hidden gdk_return BUNreplace(BAT *b, oid left, const void *right, bool force)
 	__attribute__((__visibility__("hidden")));
 __hidden Heap *createOIDXheap(BAT *b, bool stable)
 	__attribute__((__visibility__("hidden")));
-__hidden BAT *doublerange(oid l1, oid h1, oid l2, oid h2)
-	__attribute__((__visibility__("hidden")));
-__hidden BAT *doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
-	__attribute__((__visibility__("hidden")));
 __hidden void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKextend(const char *fn, size_t size)
@@ -261,7 +257,7 @@ __hidden BAT *virtualize(BAT *bn)
 			b->hseqbase,			\
 			ATOMname(b->ttype),		\
 			!b->batTransient ? "P" : isVIEW(b) ? "V" : "T", \
-			BATtdense(b) ? "D" : "",	\
+			BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" :"", \
 			b->tsorted ? "S" : "",		\
 			b->trevsorted ? "R" : "",	\
 			b->tkey ? "K" : "",		\
@@ -281,7 +277,7 @@ __hidden BAT *virtualize(BAT *bn)
 			b ? ATOMname(b->ttype) : "",	\
 			b ? "]" : "",			\
 			b ? !b->batTransient ? "P" : isVIEW(b) ? "V" : "T" : "", \
-			b && BATtdense(b) ? "D" : "",	\
+			b && BATtdense(b) ? "D" : b && b->ttype == TYPE_void && b->tvheap ? "X" :"", \
 			b && b->tsorted ? "S" : "",	\
 			b && b->trevsorted ? "R" : "",	\
 			b && b->tkey ? "K" : "",	\

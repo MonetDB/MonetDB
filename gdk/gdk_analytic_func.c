@@ -1115,8 +1115,11 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit *restrict ignore_ni
 			if (end[i] > start[i]) {			\
 				bs = bp + start[i];			\
 				parcel = (BUN)(end[i] - start[i]);	\
-				if (dofsum(bs, 0, 0, parcel, &curval, 1, TYPE_##TPE1, TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true, false, \
-					  	  true, "GDKanalyticalsum") == BUN_NONE) { \
+				if (dofsum(bs, 0,			\
+					   &(struct canditer){.tpe = cand_dense, .ncand = parcel,}, \
+					   parcel, &curval, 1, TYPE_##TPE1, \
+					   TYPE_##TPE2, NULL, 0, 0, true, \
+					   false, true) == BUN_NONE) {	\
 					goto bailout;			\
 				}					\
 			}						\

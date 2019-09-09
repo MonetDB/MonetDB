@@ -13,75 +13,57 @@
 /*
  * BATproject returns a BAT aligned with the left input whose values
  * are the values from the right input that were referred to by the
- * OIDs in the tail of the left input.
+ * OIDs in the left input.
  */
 
 #define project_loop(TYPE)						\
 static gdk_return							\
-project_##TYPE(BAT *bn, BAT *l, BAT *r, bool nilcheck)			\
+project_##TYPE(BAT *bn, BAT *l, struct canditer *restrict ci, BAT *r, bool nilcheck) \
 {									\
-	oid lo, hi;							\
+	BUN lo, hi;							\
 	const TYPE *restrict rt;					\
 	TYPE *restrict bt;						\
 	TYPE v;								\
-	const oid *restrict o;						\
 	oid rseq, rend;							\
+	bool hasnil = false;						\
 									\
-	o = (const oid *) Tloc(l, 0);					\
 	rt = (const TYPE *) Tloc(r, 0);					\
 	bt = (TYPE *) Tloc(bn, 0);					\
 	rseq = r->hseqbase;						\
 	rend = rseq + BATcount(r);					\
-	lo = 0;								\
-	hi = lo + BATcount(l);						\
-	if (nilcheck) {							\
-		for (; lo < hi; lo++) {					\
-			if (o[lo] < rseq || o[lo] >= rend) {		\
-				if (is_oid_nil(o[lo])) {		\
-					bt[lo] = TYPE##_nil;		\
-					bn->tnonil = false;		\
-					bn->tnil = true;		\
-					bn->tsorted = false;		\
-					bn->trevsorted = false;		\
-					bn->tkey = false;		\
-					lo++;				\
-					break;				\
-				} else {				\
-					GDKerror("BATproject: does not match always\n"); \
-					return GDK_FAIL;		\
-				}					\
-			} else {					\
-				v = rt[o[lo] - rseq];			\
-				bt[lo] = v;				\
-				if (is_##TYPE##_nil(v) && bn->tnonil) {	\
-					bn->tnonil = false;		\
-					bn->tnil = true;		\
-					lo++;				\
-					break;				\
-				}					\
-			}						\
-		}							\
-	}								\
-	for (; lo < hi; lo++) {						\
-		if (o[lo] < rseq || o[lo] >= rend) {			\
-			if (is_oid_nil(o[lo])) {			\
-				bt[lo] = TYPE##_nil;			\
-				bn->tnonil = false;			\
-				bn->tnil = true;			\
-				bn->tsorted = false;			\
-				bn->trevsorted = false;			\
-				bn->tkey = false;			\
-			} else {					\
+	if (ci) {							\
+		for (lo = 0, hi = ci->ncand; lo < hi; lo++) {		\
+			oid o = canditer_next(ci);			\
+			if (o < rseq || o >= rend) {			\
 				GDKerror("BATproject: does not match always\n"); \
 				return GDK_FAIL;			\
 			}						\
-		} else {						\
-			v = rt[o[lo] - rseq];				\
+			v = rt[o - rseq];				\
 			bt[lo] = v;					\
+			hasnil |= is_##TYPE##_nil(v);			\
+		}							\
+	} else {							\
+		const oid *restrict o = (const oid *) Tloc(l, 0);	\
+		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {		\
+			if (is_oid_nil(o[lo])) {			\
+				assert(nilcheck);			\
+				bt[lo] = TYPE##_nil;			\
+				hasnil = true;				\
+			} else if (o[lo] < rseq || o[lo] >= rend) {	\
+				GDKerror("BATproject: does not match always\n"); \
+				return GDK_FAIL;			\
+			} else {					\
+				v = rt[o[lo] - rseq];			\
+				bt[lo] = v;				\
+				hasnil |= is_##TYPE##_nil(v);		\
+			}						\
 		}							\
 	}								\
-	assert((BUN) lo == BATcount(l));				\
-	BATsetcount(bn, (BUN) lo);					\
+	if (nilcheck && hasnil) {					\
+		bn->tnonil = false;					\
+		bn->tnil = true;					\
+	}								\
+	BATsetcount(bn, lo);						\
 	return GDK_SUCCEED;						\
 }
 
@@ -98,86 +80,150 @@ project_loop(hge)
 #endif
 
 static gdk_return
-project_void(BAT *bn, BAT *l, BAT *r)
+project_void(BAT *bn, BAT *l, struct canditer *restrict ci, BAT *r)
 {
-	oid lo, hi;
+	BUN lo, hi;
 	oid *restrict bt;
-	const oid *o;
 	oid rseq, rend;
 
 	assert(BATtdense(r));
-	o = (const oid *) Tloc(l, 0);
+	rseq = r->hseqbase;
+	rend = rseq + BATcount(r);
 	bt = (oid *) Tloc(bn, 0);
 	bn->tsorted = l->tsorted;
 	bn->trevsorted = l->trevsorted;
 	bn->tkey = l->tkey;
 	bn->tnonil = true;
 	bn->tnil = false;
-	rseq = r->hseqbase;
-	rend = rseq + BATcount(r);
-	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++) {
-		if (o[lo] < rseq || o[lo] >= rend) {
-			if (is_oid_nil(o[lo])) {
-				bt[lo] = oid_nil;
-				bn->tnonil = false;
-				bn->tnil = true;
-				bn->tsorted = false;
-				bn->trevsorted = false;
-				bn->tkey = false;
-			} else {
+	if (ci) {
+		for (lo = 0, hi = ci->ncand; lo < hi; lo++) {
+			oid o = canditer_next(ci);
+			if (o < rseq || o >= rend) {
 				GDKerror("BATproject: does not match always\n");
 				return GDK_FAIL;
 			}
-		} else {
-			bt[lo] = o[lo] - rseq + r->tseqbase;
+			bt[lo] = o - rseq + r->tseqbase;
+		}
+	} else {
+		const oid *o = (const oid *) Tloc(l, 0);
+		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
+			if (o[lo] < rseq || o[lo] >= rend) {
+				if (is_oid_nil(o[lo])) {
+					bt[lo] = oid_nil;
+					bn->tnonil = false;
+					bn->tnil = true;
+				} else {
+					GDKerror("BATproject: does not match always\n");
+					return GDK_FAIL;
+				}
+			} else {
+				bt[lo] = o[lo] - rseq + r->tseqbase;
+			}
 		}
 	}
-	assert((BUN) lo == BATcount(l));
-	BATsetcount(bn, (BUN) lo);
+	BATsetcount(bn, lo);
 	return GDK_SUCCEED;
 }
 
 static gdk_return
-project_any(BAT *bn, BAT *l, BAT *r, bool nilcheck)
+project_cand(BAT *bn, BAT *l, struct canditer *restrict lci, BAT *r)
 {
-	BUN n;
-	oid lo, hi;
+	BUN lo, hi;
+	oid *restrict bt;
+	oid rseq, rend;
+	struct canditer rci;
+
+	rseq = r->hseqbase;
+	rend = rseq + BATcount(r);
+	canditer_init(&rci, NULL, r);
+	bt = (oid *) Tloc(bn, 0);
+	bn->tsorted = l->tsorted;
+	bn->trevsorted = l->trevsorted;
+	bn->tkey = l->tkey;
+	bn->tnonil = true;
+	bn->tnil = false;
+	if (lci) {
+		for (lo = 0, hi = lci->ncand; lo < hi; lo++) {
+			oid o = canditer_next(lci);
+			if (o < rseq || o >= rend) {
+				GDKerror("BATproject: does not match always\n");
+				return GDK_FAIL;
+			}
+			bt[lo] = canditer_idx(&rci, o - rseq);
+		}
+	} else {
+		const oid *o = (const oid *) Tloc(l, 0);
+		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
+			if (o[lo] < rseq || o[lo] >= rend) {
+				if (is_oid_nil(o[lo])) {
+					bt[lo] = oid_nil;
+					bn->tnonil = false;
+					bn->tnil = true;
+				} else {
+					GDKerror("BATproject: does not match always\n");
+					return GDK_FAIL;
+				}
+			} else {
+				bt[lo] = canditer_idx(&rci, o[lo] - rseq);
+			}
+		}
+	}
+	BATsetcount(bn, lo);
+	return GDK_SUCCEED;
+}
+
+static gdk_return
+project_any(BAT *bn, BAT *l, struct canditer *restrict ci, BAT *r, bool nilcheck)
+{
+	BUN lo, hi;
 	BATiter ri;
 	int (*cmp)(const void *, const void *) = ATOMcompare(r->ttype);
 	const void *nil = ATOMnilptr(r->ttype);
 	const void *v;
-	const oid *o;
 	oid rseq, rend;
 
-	o = (const oid *) Tloc(l, 0);
-	n = 0;
 	ri = bat_iterator(r);
 	rseq = r->hseqbase;
 	rend = rseq + BATcount(r);
-	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++, n++) {
-		if (o[lo] < rseq || o[lo] >= rend) {
-			if (is_oid_nil(o[lo])) {
-				tfastins_nocheck(bn, n, nil, Tsize(bn));
-				bn->tnonil = false;
-				bn->tnil = true;
-				bn->tsorted = false;
-				bn->trevsorted = false;
-				bn->tkey = false;
-			} else {
+	if (ci) {
+		for (lo = 0, hi = ci->ncand; lo < hi; lo++) {
+			oid o = canditer_next(ci);
+			if (o < rseq || o >= rend) {
 				GDKerror("BATproject: does not match always\n");
 				goto bunins_failed;
+			} else {
+				v = BUNtail(ri, o - rseq);
+				tfastins_nocheck(bn, lo, v, Tsize(bn));
+				if (nilcheck && bn->tnonil && cmp(v, nil) == 0) {
+					bn->tnonil = false;
+					bn->tnil = true;
+				}
 			}
-		} else {
-			v = BUNtail(ri, o[lo] - rseq);
-			tfastins_nocheck(bn, n, v, Tsize(bn));
-			if (nilcheck && bn->tnonil && cmp(v, nil) == 0) {
-				bn->tnonil = false;
-				bn->tnil = true;
+		}
+	} else {
+		const oid *o = (const oid *) Tloc(l, 0);
+
+		for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++) {
+			if (o[lo] < rseq || o[lo] >= rend) {
+				if (is_oid_nil(o[lo])) {
+					tfastins_nocheck(bn, lo, nil, Tsize(bn));
+					bn->tnonil = false;
+					bn->tnil = true;
+				} else {
+					GDKerror("BATproject: does not match always\n");
+					goto bunins_failed;
+				}
+			} else {
+				v = BUNtail(ri, o[lo] - rseq);
+				tfastins_nocheck(bn, lo, v, Tsize(bn));
+				if (nilcheck && bn->tnonil && cmp(v, nil) == 0) {
+					bn->tnonil = false;
+					bn->tnil = true;
+				}
 			}
 		}
 	}
-	assert(n == BATcount(l));
-	BATsetcount(bn, n);
+	BATsetcount(bn, lo);
 	bn->theap.dirty = true;
 	return GDK_SUCCEED;
 bunins_failed:
@@ -193,6 +239,7 @@ BATproject(BAT *l, BAT *r)
 	int tpe = ATOMtype(r->ttype);
 	bool nilcheck = true, stringtrick = false;
 	BUN lcount = BATcount(l), rcount = BATcount(r);
+	struct canditer ci, *lci = NULL;
 	lng t0 = 0;
 
 	ALGODEBUG t0 = GDKusec();
@@ -203,27 +250,32 @@ BATproject(BAT *l, BAT *r)
 
 	assert(ATOMtype(l->ttype) == TYPE_oid);
 
-	if (BATtdense(l) && BATcount(l) > 0) {
+	if (BATtdense(l) && lcount > 0) {
 		lo = l->tseqbase;
-		hi = l->tseqbase + BATcount(l);
-		if (lo < r->hseqbase || hi > r->hseqbase + BATcount(r)) {
+		hi = l->tseqbase + lcount;
+		if (lo < r->hseqbase || hi > r->hseqbase + rcount) {
 			GDKerror("BATproject: does not match always\n");
 			return NULL;
 		}
 		bn = BATslice(r, lo - r->hseqbase, hi - r->hseqbase);
-		BAThseqbase(bn, l->hseqbase + (lo - l->tseqbase));
+		BAThseqbase(bn, l->hseqbase);
 		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=" ALGOOPTBATFMT " (slice)\n",
 				  BATgetId(l), BATgetId(r),  ALGOOPTBATPAR(bn));
 		return bn;
 	}
+	if (l->ttype == TYPE_void && l->tvheap != NULL) {
+		/* l is candidate list with exceptions */
+		lcount = canditer_init(&ci, NULL, l);
+		lci = &ci;
+	}
 	/* if l has type void, it is either empty or not dense (i.e. nil) */
-	if (l->ttype == TYPE_void || BATcount(l) == 0 ||
+	if (lcount == 0 || (l->ttype == TYPE_void && lci == NULL) ||
 	    (r->ttype == TYPE_void && is_oid_nil(r->tseqbase))) {
 		/* trivial: all values are nil (includes no entries at all) */
 		const void *nil = ATOMnilptr(r->ttype);
 
 		bn = BATconstant(l->hseqbase, r->ttype == TYPE_oid ? TYPE_void : r->ttype,
-				 nil, BATcount(l), TRANSIENT);
+				 nil, lcount, TRANSIENT);
 		if (bn != NULL &&
 		    ATOMtype(bn->ttype) == TYPE_oid &&
 		    BATcount(bn) == 0) {
@@ -233,7 +285,6 @@ BATproject(BAT *l, BAT *r)
 				  BATgetId(l), BATgetId(r), ALGOOPTBATPAR(bn));
 		return bn;
 	}
-	assert(l->ttype == TYPE_oid);
 
 	if (ATOMstorage(tpe) == TYPE_str &&
 	    l->tnonil &&
@@ -252,7 +303,7 @@ BATproject(BAT *l, BAT *r)
 		nilcheck = false;
 		stringtrick = true;
 	}
-	bn = COLnew(l->hseqbase, tpe, BATcount(l), TRANSIENT);
+	bn = COLnew(l->hseqbase, tpe, lcount, TRANSIENT);
 	if (bn == NULL) {
 		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=0\n",
 				  BATgetId(l), BATgetId(r));
@@ -290,41 +341,44 @@ BATproject(BAT *l, BAT *r)
 
 	switch (tpe) {
 	case TYPE_bte:
-		res = project_bte(bn, l, r, nilcheck);
+		res = project_bte(bn, l, lci, r, nilcheck);
 		break;
 	case TYPE_sht:
-		res = project_sht(bn, l, r, nilcheck);
+		res = project_sht(bn, l, lci, r, nilcheck);
 		break;
 	case TYPE_int:
-		res = project_int(bn, l, r, nilcheck);
+		res = project_int(bn, l, lci, r, nilcheck);
 		break;
 	case TYPE_flt:
-		res = project_flt(bn, l, r, nilcheck);
+		res = project_flt(bn, l, lci, r, nilcheck);
 		break;
 	case TYPE_dbl:
-		res = project_dbl(bn, l, r, nilcheck);
+		res = project_dbl(bn, l, lci, r, nilcheck);
 		break;
 	case TYPE_lng:
-		res = project_lng(bn, l, r, nilcheck);
+		res = project_lng(bn, l, lci, r, nilcheck);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		res = project_hge(bn, l, r, nilcheck);
+		res = project_hge(bn, l, lci, r, nilcheck);
 		break;
 #endif
 	case TYPE_oid:
-		if (r->ttype == TYPE_void) {
-			res = project_void(bn, l, r);
+		if (BATtdense(r)) {
+			res = project_void(bn, l, lci, r);
+		} else if (r->ttype == TYPE_void) {
+			assert(r->tvheap != NULL);
+			res = project_cand(bn, l, lci, r);
 		} else {
 #if SIZEOF_OID == SIZEOF_INT
-			res = project_int(bn, l, r, nilcheck);
+			res = project_int(bn, l, lci, r, nilcheck);
 #else
-			res = project_lng(bn, l, r, nilcheck);
+			res = project_lng(bn, l, lci, r, nilcheck);
 #endif
 		}
 		break;
 	default:
-		res = project_any(bn, l, r, nilcheck);
+		res = project_any(bn, l, lci, r, nilcheck);
 		break;
 	}
 
@@ -411,6 +465,7 @@ BATprojectchain(BAT **bats)
 		BAT *b;		/* the BAT */
 		oid hlo;	/* lowest allowed oid to index the BAT */
 		BUN cnt;	/* size of allowed index range */
+		struct canditer ci; /* candidate iterator for cand w/ except. */
 	} *ba;
 	int i, n, tpe;
 	BAT *b, *bn;
@@ -426,7 +481,7 @@ BATprojectchain(BAT **bats)
 	 * temporary work space */
 	for (n = 0; bats[n]; n++)
 		;
-	ba = GDKmalloc(sizeof(*ba) * n);
+	ba = GDKzalloc(sizeof(*ba) * n);
 	if (ba == NULL)
 		return NULL;
 	b = *bats++;
@@ -439,7 +494,7 @@ BATprojectchain(BAT **bats)
 		issorted &= b->tsorted;
 		if (!allnil) {
 			if (n > 0 && ba[i-1].vals == NULL) {
-				/* previous BAT was dense-tailed: we will
+				/* previous BAT was dense: we will
 				 * combine it with this one */
 				i--;
 				assert(off == 0);
@@ -478,6 +533,12 @@ BATprojectchain(BAT **bats)
 					    is_oid_nil(b->tseqbase)) {
 						tseq = oid_nil;
 						allnil = true;
+					} else if (b->ttype == TYPE_void) {
+						assert(b->tvheap != NULL);
+						canditer_init(&ba[i].ci, NULL, b);
+						/* make sure .vals != NULL */
+						ba[i].vals = ba[i].ci.oids;
+						canditer_setidx(&ba[i].ci, off);
 					} else
 						ba[i].vals = (const oid *) Tloc(b, off);
 				}
@@ -493,7 +554,12 @@ BATprojectchain(BAT **bats)
 					if (b->ttype == TYPE_void &&
 					    is_oid_nil(b->tseqbase))
 						allnil = true;
-					else
+					else if (b->ttype == TYPE_void) {
+						assert(b->tvheap != NULL);
+						canditer_init(&ba[i].ci, NULL, b);
+						/* make sure .vals != NULL */
+						ba[i].vals = ba[i].ci.oids;
+					} else
 						ba[i].vals = (const oid *) Tloc(b, 0);
 				}
 			}
@@ -528,8 +594,6 @@ BATprojectchain(BAT **bats)
 			if (bn == NULL)
 				return NULL;
 			BAThseqbase(bn, hseq);
-			if (bn->ttype == TYPE_void)
-				BATtseqbase(bn, tseq);
 		}
 		ALGODEBUG fprintf(stderr, "#BATprojectchain with %d BATs, "
 				  "size " BUNFMT ", type %s, using "
@@ -582,19 +646,19 @@ BATprojectchain(BAT **bats)
 			offset = (lng) tseq - (lng) ba[n].hlo;
 			ba[n].cnt += ba[n].hlo; /* upper bound of last BAT */
 			for (p = 0; p < cnt; p++) {
-				o = ba[0].vals[p];
+				o = ba[0].ci.oids ? canditer_next(&ba[0].ci) : ba[0].vals[p];
 				for (i = 1; i < n; i++) {
+					if (is_oid_nil(o)) {
+						bn->tnil = true;
+						o = oid_nil;
+						break;
+					}
 					o -= ba[i].hlo;
 					if (o >= ba[i].cnt) {
-						if (o == oid_nil - ba[i].hlo) {
-							bn->tnil = true;
-							o = oid_nil;
-							break;
-						}
 						GDKerror("BATprojectchain: does not match always\n");
 						goto bunins_failed;
 					}
-					o = ba[i].vals[o];
+					o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o + ba[i].ci.next) : ba[i].vals[o];
 				}
 				if (is_oid_nil(o)) {
 					*v++ = *(oid *) nil;
@@ -609,19 +673,19 @@ BATprojectchain(BAT **bats)
 		} else {
 			/* last BAT is materialized */
 			for (p = 0; p < cnt; p++) {
-				o = ba[0].vals[p];
+				o = ba[0].ci.oids ? canditer_next(&ba[0].ci) : ba[0].vals[p];
 				for (i = 1; i <= n; i++) { /* note "<=" */
+					if (is_oid_nil(o)) {
+						bn->tnil = true;
+						o = oid_nil;
+						break;
+					}
 					o -= ba[i].hlo;
 					if (o >= ba[i].cnt) {
-						if (o == oid_nil - ba[i].hlo) {
-							bn->tnil = true;
-							o = oid_nil;
-							break;
-						}
 						GDKerror("BATprojectchain: does not match always\n");
 						goto bunins_failed;
 					}
-					o = ba[i].vals[o];
+					o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o + ba[i].ci.next) : ba[i].vals[o];
 				}
 				*v++ = (is_oid_nil(o)) & !stringtrick ? *(oid *) nil : o;
 			}
@@ -633,19 +697,19 @@ BATprojectchain(BAT **bats)
 		OTPE *restrict dst = (OTPE *) Tloc(bn, 0);
 
 		for (p = 0; p < cnt; p++) {
-			o = ba[0].vals[p];
+			o = ba[0].ci.oids ? canditer_next(&ba[0].ci) : ba[0].vals[p];
 			for (i = 1; i < n; i++) {
+				if (is_oid_nil(o)) {
+					bn->tnil = true;
+					o = oid_nil;
+					break;
+				}
 				o -= ba[i].hlo;
 				if (o >= ba[i].cnt) {
-					if (o == oid_nil - ba[i].hlo) {
-						bn->tnil = true;
-						o = oid_nil;
-						break;
-					}
 					GDKerror("BATprojectchain: does not match always\n");
 					goto bunins_failed;
 				}
-				o = ba[i].vals[o];
+				o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o + ba[i].ci.next) : ba[i].vals[o];
 			}
 			if (is_oid_nil(o)) {
 				*dst++ = * (OTPE *) nil;
@@ -661,26 +725,27 @@ BATprojectchain(BAT **bats)
 	} else if (ATOMvarsized(tpe)) {
 		/* generic code for var-sized atoms */
 		BATiter bi = bat_iterator(b);
-		const void *v = nil; /* make compiler happy with init */
+		const void *v;
 
 		assert(!stringtrick);
 		for (p = 0; p < cnt; p++) {
-			o = ba[0].vals[p];
+			o = ba[0].ci.oids ? canditer_next(&ba[0].ci) : ba[0].vals[p];
 			for (i = 1; i < n; i++) {
+				if (is_oid_nil(o)) {
+					bn->tnil = true;
+					o = oid_nil;
+					break;
+				}
 				o -= ba[i].hlo;
 				if (o >= ba[i].cnt) {
-					if (o == oid_nil - ba[i].hlo) {
-						bn->tnil = true;
-						v = nil;
-						o = oid_nil;
-						break;
-					}
 					GDKerror("BATprojectchain: does not match always\n");
 					goto bunins_failed;
 				}
-				o = ba[i].vals[o];
+				o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o + ba[i].ci.next) : ba[i].vals[o];
 			}
-			if (!is_oid_nil(o)) {
+			if (is_oid_nil(o)) {
+				v = nil;
+			} else {
 				o -= ba[n].hlo;
 				if (o >= ba[n].cnt) {
 					GDKerror("BATprojectchain: does not match always\n");
@@ -693,25 +758,26 @@ BATprojectchain(BAT **bats)
 	} else {
 		/* generic code for fixed-sized atoms */
 		BATiter bi = bat_iterator(b);
-		const void *v = nil; /* make compiler happy with init */
+		const void *v;
 
 		for (p = 0; p < cnt; p++) {
-			o = ba[0].vals[p];
+			o = ba[0].ci.oids ? canditer_next(&ba[0].ci) : ba[0].vals[p];
 			for (i = 1; i < n; i++) {
+				if (is_oid_nil(o)) {
+					bn->tnil = true;
+					o = oid_nil;
+					break;
+				}
 				o -= ba[i].hlo;
 				if (o >= ba[i].cnt) {
-					if (o == oid_nil - ba[i].hlo) {
-						bn->tnil = true;
-						v = nil;
-						o = oid_nil;
-						break;
-					}
 					GDKerror("BATprojectchain: does not match always\n");
 					goto bunins_failed;
 				}
-				o = ba[i].vals[o];
+				o = ba[i].ci.oids ? canditer_idx(&ba[i].ci, (BUN) o + ba[i].ci.next) : ba[i].vals[o];
 			}
-			if (!is_oid_nil(o)) {
+			if (is_oid_nil(o)) {
+				v = nil;
+			} else {
 				o -= ba[n].hlo;
 				if (o >= ba[n].cnt) {
 					GDKerror("BATprojectchain: does not match always\n");
@@ -719,16 +785,7 @@ BATprojectchain(BAT **bats)
 				}
 				v = BUNtloc(bi, o + off);
 			}
-			if (BATcount(bn) >= BATcapacity(bn)) {
-				if (BATcount(bn) == BUN_MAX) {
-					GDKerror("BATprojectchain: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX);
-					goto bunins_failed;
-				}
-				if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED)
-					goto bunins_failed;
-			}
 			bn->theap.free += Tsize(bn);
-			bn->theap.dirty |= Tsize(bn) != 0;
 			ATOMputFIX(bn->ttype, Tloc(bn, bn->batCount), v);
 			bn->batCount++;
 		}

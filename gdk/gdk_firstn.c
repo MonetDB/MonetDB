@@ -183,8 +183,9 @@
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
 		heapify(OP##fix, SWAP1);				\
-		while (cand ? cand < candend : start < end) {		\
-			i = cand ? *cand++ : start++ + b->hseqbase;	\
+		while (cnt > 0) {					\
+			cnt--;						\
+			i = canditer_next(&ci);				\
 			if (OP(vals[i - b->hseqbase],			\
 			       vals[oids[0] - b->hseqbase])) {		\
 				oids[0] = i;				\
@@ -209,8 +210,8 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
 	oid *restrict oids;
-	BUN i, cnt, start, end;
-	const oid *restrict cand, *candend;
+	BUN i, cnt;
+	struct canditer ci;
 	int tpe = b->ttype;
 	int (*cmp)(const void *, const void *);
 	const void *nil;
@@ -218,57 +219,32 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 	oid item;
 	BUN pos, childpos;
 
-	CANDINIT(b, s, start, end, cnt, cand, candend);
+	cnt = canditer_init(&ci, b, s);
 
-	if (cand) {
-		cnt = (BUN) (candend - cand);
-		start = (BUN) (cand - (const oid *) Tloc(s, 0));
-		end = (BUN) (candend - (const oid *) Tloc(s, 0));
-		if (n >= cnt) {
-			/* trivial: return the candidate list (the
-			 * part that refers to b, that is) */
-			if (lastp)
-				*lastp = 0;
-			return BATslice(s, start, end);
-		}
-	} else {
-		cnt = end - start;
-		if (n >= cnt) {
-			/* trivial: return everything */
-			bn = BATdense(0, start + b->hseqbase, cnt);
-			if (bn == NULL)
-				return NULL;
-			if (lastp)
-				*lastp = 0;
-			return bn;
-		}
+	if (n >= cnt) {
+		/* trivial: return all candidates */
+		if (lastp)
+			*lastp = 0;
+		return canditer_slice(&ci, 0, cnt);
 	}
+
 	if (BATtvoid(b)) {
 		/* nilslast doesn't make a difference: either all are
 		 * nil, or none are */
 		if (asc || is_oid_nil(b->tseqbase)) {
 			/* return the first part of the candidate list
 			 * or of the BAT itself */
-			if (cand) {
-				if (lastp)
-					*lastp = cand[n - 1];
-				return BATslice(s, start, start + n);
-			}
-			if (lastp)
-				*lastp = is_oid_nil(b->tseqbase)
-					? oid_nil : b->hseqbase + n - 1;
-			return BATdense(0, b->hseqbase, n);
+			bn = canditer_slice(&ci, 0, n);
+			if (bn && lastp)
+				*lastp = BUNtoid(bn, n - 1);
+			return bn;
 		}
 		/* return the last part of the candidate list or of
 		 * the BAT itself */
-		if (cand) {
-			if (lastp)
-				*lastp = cand[cnt - n];
-			return BATslice(s, end - n, end);
-		}
-		if (lastp)
-			*lastp = b->hseqbase + end - n;
-		return BATdense(0, b->hseqbase + end - n, n);
+		bn = canditer_slice(&ci, cnt - n, cnt);
+		if (bn && lastp)
+			*lastp = BUNtoid(bn, 0);
+		return bn;
 	}
 	/* note, we want to do both calls */
 	if (BATordered(b) | BATordered_rev(b)) {
@@ -277,166 +253,84 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 		 * list); however, if nilslast == asc, then the nil
 		 * values (if any) are in the wrong place, so we need
 		 * to do a little more work */
-		if (cand) {
-			if (nilslast == asc && !b->tnonil) {
-				pos = binsearch(cand, b->hseqbase, tpe,
-						Tloc(b, 0),
-						b->tvheap?b->tvheap->base:NULL,
-						b->twidth, 0,
-						cnt,
-						ATOMnilptr(tpe),
-						b->tsorted ? 1 : -1, 1);
-				/* 0 <= pos <= cnt
-				 * 0 < n < cnt
+
+		/* after we create the to-be-returned BAT, we set pos
+		 * to the BUN in the new BAT whose value we should
+		 * return through *lastp */
+		if (nilslast == asc && !b->tnonil) {
+			pos = SORTfndlast(b, ATOMnilptr(tpe));
+			pos = canditer_search(&ci, b->hseqbase + pos, true);
+			/* 0 <= pos <= cnt
+			 * 0 < n < cnt
+			 */
+			if (b->tsorted) {
+				/* [0..pos) -- nil
+				 * [pos..cnt) -- non-nil <<<
 				 */
-				if (b->tsorted) {
-					/* [0..pos) -- nil
-					 * [pos..cnt) -- non-nil <<<
-					 */
-					if (asc) { /* i.e. nilslast */
-						/* prefer non-nil and
-						 * smallest */
-						if (cnt - pos < n) {
-							if (lastp)
-								*lastp = cand[cnt - n];
-							return BATslice(s, end - n, end);
-						}
-						if (lastp)
-							*lastp = cand[pos + n - 1];
-						return BATslice(s, start + pos, start + pos + n);
-					} else { /* i.e. !asc, !nilslast */
-						/* prefer nil and largest */
-						if (pos < n) {
-							if (lastp)
-								*lastp = cand[cnt - (n - pos)];
-							return doubleslice(s, 0, pos, cnt - (n - pos), cnt);
-						}
-						if (lastp)
-							*lastp = cand[0];
-						return BATslice(s, start, start + n);
+				if (asc) { /* i.e. nilslast */
+					/* prefer non-nil and
+					 * smallest */
+					if (cnt - pos < n) {
+						bn = canditer_slice(&ci, cnt - n, cnt);
+						pos = 0;
+					} else {
+						bn = canditer_slice(&ci, pos, pos + n);
+						pos = n - 1;
 					}
-				} else { /* i.e. trevsorted */
-					/* [0..pos) -- non-nil >>>
-					 * [pos..cnt) -- nil
-					 */
-					if (asc) { /* i.e. nilslast */
-						/* prefer non-nil and
-						 * smallest */
-						if (pos < n) {
-							if (lastp)
-								*lastp = cand[pos];
-							return BATslice(s, start, start + n);
-						}
-						if (lastp)
-							*lastp = cand[pos - n];
-						return BATslice(s, start + pos - n, start + pos);
-					} else { /* i.e. !asc, !nilslast */
-						/* prefer nil and largest */
-						if (cnt - pos < n) {
-							if (lastp)
-								*lastp = cand[n - (cnt - pos) - 1];
-							return doubleslice(s, 0, n - (cnt - pos), pos, cnt);
-						}
-						if (lastp)
-							*lastp = cand[pos];
-						return BATslice(s, start + pos, start + pos + n);
+				} else { /* i.e. !asc, !nilslast */
+					/* prefer nil and largest */
+					if (pos < n) {
+						bn = canditer_slice2(&ci, 0, pos, cnt - (n - pos), cnt);
+						/* pos = pos; */
+					} else {
+						bn = canditer_slice(&ci, 0, n);
+						pos = 0;
+					}
+				}
+			} else { /* i.e. trevsorted */
+				/* [0..pos) -- non-nil >>>
+				 * [pos..cnt) -- nil
+				 */
+				if (asc) { /* i.e. nilslast */
+					/* prefer non-nil and
+					 * smallest */
+					if (pos < n) {
+						bn = canditer_slice(&ci, 0, n);
+						/* pos = pos; */
+					} else {
+						bn = canditer_slice(&ci, pos - n, pos);
+						pos = 0;
+					}
+				} else { /* i.e. !asc, !nilslast */
+					/* prefer nil and largest */
+					if (cnt - pos < n) {
+						bn = canditer_slice2(&ci, 0, n - (cnt - pos), pos, cnt);
+						pos = n - (cnt - pos) - 1;
+					} else {
+						bn = canditer_slice(&ci, pos, pos + n);
+						pos = 0;
 					}
 				}
 			}
+		} else {
 			/* either there are no nils, or they are in
 			 * the appropriate position already, so we can
 			 * just slice */
 			if (asc ? b->tsorted : b->trevsorted) {
 				/* return copy of first part of
 				 * candidate list */
-				if (lastp)
-					*lastp = cand[n - 1];
-				return BATslice(s, start, start + n);
-			}
-			/* return copy of last part of candidate
-			 * list */
-			if (lastp)
-				*lastp = candend[-(ssize_t)n];
-			return BATslice(s, end - n, end);
-		}
-		if (nilslast == asc && !b->tnonil) {
-			pos = binsearch(NULL, 0, tpe,
-					Tloc(b, 0),
-					b->tvheap?b->tvheap->base:NULL,
-					b->twidth, start,
-					end,
-					ATOMnilptr(tpe),
-					b->tsorted ? 1 : -1, 1);
-			/* start <= pos <= end
-			 * start < end
-			 * n < end - start
-			 * or, using cnt = end - start:
-			 * start <= pos <= end
-			 * 0 < n < cnt -- not equivalent, but true
-			 */
-			if (b->tsorted) {
-				/* [start..pos) -- nil
-				 * [pos..end) -- non-nil <<<
-				 */
-				if (asc) { /* i.e. nilslast */
-					/* prefer non-nil and smallest */
-					if (end - pos < n) {
-						if (lastp)
-							*lastp = b->hseqbase + end - n;
-						return BATdense(0, b->hseqbase + end - n, n);
-					}
-					if (lastp)
-						*lastp = b->hseqbase + pos + n - 1;
-					return BATdense(0, b->hseqbase + pos, n);
-				} else { /* i.e. !asc, !nilslast */
-					/* prefer nil and largest */
-					if (pos < n) {
-						if (lastp)
-							*lastp = cand[cnt - (n - pos)];
-						return doublerange(b->hseqbase + start, b->hseqbase + pos, b->hseqbase + end - (n - pos), b->hseqbase + end);
-					}
-					if (lastp)
-						*lastp = b->hseqbase + start;
-					return BATdense(0, b->hseqbase + start, n);
-				}
-			} else { /* i.e. trevsorted */
-				/* [start..pos) -- non-nil >>>
-				 * [pos..end) -- nil
-				 */
-				if (asc) { /* i.e. nilslast */
-					/* prefer non-nil and smallest */
-					if (pos - start < n) {
-						if (lastp)
-							*lastp = b->hseqbase + pos;
-						return BATdense(0, b->hseqbase + start, n);
-					}
-					if (lastp)
-						*lastp = b->hseqbase + pos - n;
-					return BATdense(0, b->hseqbase + pos - n, n);
-				} else { /* i.e. !asc, !nilslast */
-					/* prefer nil and largest */
-					if (end - pos < n) {
-						if (lastp)
-							*lastp = b->hseqbase + start + n - (end - pos) - 1;
-						return doublerange(b->hseqbase + start, b->hseqbase + start + n - (end - pos), b->hseqbase + pos, b->hseqbase + end);
-					}
-					if (lastp)
-						*lastp = b->hseqbase + pos;
-					return BATdense(0, b->hseqbase + pos, n);
-				}
+				bn = canditer_slice(&ci, 0, n);
+				pos = n - 1;
+			} else {
+				/* return copy of last part of
+				 * candidate list */
+				bn = canditer_slice(&ci, cnt - n, cnt);
+				pos = 0;
 			}
 		}
-		if (asc ? b->tsorted : b->trevsorted) {
-			/* first n entries from b */
-			if (lastp)
-				*lastp = b->hseqbase + start + n - 1;
-			return BATdense(0, b->hseqbase + start, n);
-		} else {
-			/* last n entries from b */
-			if (lastp)
-				*lastp = b->hseqbase + start + cnt - n;
-			return BATdense(0, b->hseqbase + start + cnt - n, n);
-		}
+		if (bn && lastp)
+			*lastp = BUNtoid(bn, pos);
+		return bn;
 	}
 
 	bn = COLnew(0, TYPE_oid, n, TRANSIENT);
@@ -455,23 +349,19 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 	 * and to start off with the last n elements when doing a
 	 * firstn-descending so that most values that we look at after
 	 * this will be skipped. */
-	if (cand) {
-		if (asc) {
-			for (i = 0; i < n; i++)
-				oids[i] = *cand++;
-		} else {
-			for (i = 0; i < n; i++)
-				oids[i] = *--candend;
-		}
+	if (asc) {
+		for (i = 0; i < n; i++)
+			oids[i] = canditer_next(&ci);
 	} else {
-		if (asc) {
-			for (i = 0; i < n; i++)
-				oids[i] = start++ + b->hseqbase;
-		} else {
-			for (i = 0; i < n; i++)
-				oids[i] = --end + b->hseqbase;
-		}
+		item = canditer_idx(&ci, cnt - n);
+		ci.next = cnt - n;
+		ci.add = item - ci.seq - (cnt - n);
+		for (i = n; i > 0; i--)
+			oids[i - 1] = canditer_next(&ci);
+		canditer_reset(&ci);
 	}
+	cnt -= n;
+
 	if (asc) {
 		if (nilslast && !b->tnonil) {
 			switch (tpe) {
@@ -500,8 +390,9 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 				break;
 			default:
 				heapify(nLTany, SWAP1);
-				while (cand ? cand < candend : start < end) {
-					i = cand ? *cand++ : start++ + b->hseqbase;
+				while (cnt > 0) {
+					cnt--;
+					i = canditer_next(&ci);
 					if (cmp(BUNtail(bi, i - b->hseqbase), nil) != 0
 					    && (cmp(BUNtail(bi, oids[0] - b->hseqbase), nil) == 0
 						|| cmp(BUNtail(bi, i - b->hseqbase),
@@ -539,8 +430,9 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 				break;
 			default:
 				heapify(LTany, SWAP1);
-				while (cand ? cand < candend : start < end) {
-					i = cand ? *cand++ : start++ + b->hseqbase;
+				while (cnt > 0) {
+					cnt--;
+					i = canditer_next(&ci);
 					if (cmp(BUNtail(bi, i - b->hseqbase),
 						BUNtail(bi, oids[0] - b->hseqbase)) < 0) {
 						oids[0] = i;
@@ -578,8 +470,9 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 				break;
 			default:
 				heapify(GTany, SWAP1);
-				while (cand ? cand < candend : start < end) {
-					i = cand ? *cand++ : start++ + b->hseqbase;
+				while (cnt > 0) {
+					cnt--;
+					i = canditer_next(&ci);
 					if (cmp(BUNtail(bi, i - b->hseqbase),
 						BUNtail(bi, oids[0] - b->hseqbase)) > 0) {
 						oids[0] = i;
@@ -615,8 +508,9 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 				break;
 			default:
 				heapify(nGTany, SWAP1);
-				while (cand ? cand < candend : start < end) {
-					i = cand ? *cand++ : start++ + b->hseqbase;
+				while (cnt > 0) {
+					cnt--;
+					i = canditer_next(&ci);
 					if (cmp(BUNtail(bi, oids[0] - b->hseqbase), nil) != 0
 					    && (cmp(BUNtail(bi, i - b->hseqbase), nil) == 0
 						|| cmp(BUNtail(bi, i - b->hseqbase),
@@ -639,7 +533,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 	bn->tseqbase = n <= 1 ? oids[0] : oid_nil;
 	bn->tnil = false;
 	bn->tnonil = true;
-	return bn;
+	return virtualize(bn);
 }
 
 #define LTfixgrp(p1, p2)			\
@@ -758,17 +652,18 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
 		heapify(OP##fixgrp, SWAP2);				\
-		while (cand ? cand < candend : start < end) {		\
-			i = cand ? *cand++ : start++ + b->hseqbase;	\
-			if (gv[ci] < goids[0] ||			\
-			    (gv[ci] == goids[0] &&			\
+		while (cnt > 0) {					\
+			cnt--;						\
+			i = canditer_next(&ci);				\
+			if (gv[j] < goids[0] ||				\
+			    (gv[j] == goids[0] &&			\
 			     OP(vals[i - b->hseqbase],			\
 				vals[oids[0] - b->hseqbase]))) {	\
 				oids[0] = i;				\
-				goids[0] = gv[ci];			\
+				goids[0] = gv[j];			\
 				siftdown(OP##fixgrp, 0, SWAP2);		\
 			}						\
-			ci++;						\
+			j++;						\
 		}							\
 	} while (0)
 
@@ -790,8 +685,8 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 	BATiter bi = bat_iterator(b);
 	oid *restrict oids, *restrict goids;
 	const oid *restrict gv;
-	BUN i, cnt, start, end, ci;
-	const oid *restrict cand, *candend;
+	BUN i, j, cnt;
+	struct canditer ci;
 	int tpe = b->ttype;
 	int (*cmp)(const void *, const void *);
 	const void *nil;
@@ -799,9 +694,8 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 	oid item;
 	BUN pos, childpos;
 
-	CANDINIT(b, s, start, end, cnt, cand, candend);
+	cnt = canditer_init(&ci, b, s);
 
-	cnt = cand ? (BUN) (candend - cand) : end - start;
 	if (n > cnt)
 		n = cnt;
 
@@ -820,25 +714,10 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 		 * initial part of b (or slice of s) */
 		if (lastgp)
 			*lastgp = g->tseqbase + n - 1;
-		if (cand) {
-			if (lastp)
-				*lastp = cand[n - 1];
-			bn = COLnew(0, TYPE_oid, n, TRANSIENT);
-			if (bn == NULL)
-				return NULL;
-			memcpy(Tloc(bn, 0), cand, n * sizeof(oid));
-			BATsetcount(bn, n);
-			bn->tsorted = true;
-			bn->trevsorted = n <= 1;
-			bn->tkey = true;
-			bn->tseqbase = n <= 1 ? cand[0] : oid_nil;
-			bn->tnil = false;
-			bn->tnonil = true;
-			return bn;
-		}
-		if (lastp)
-			*lastp = b->hseqbase + start + n - 1;
-		return BATdense(0, b->hseqbase + start, n);
+		bn = canditer_slice(&ci, 0, n);
+		if (bn && lastp)
+			*lastp = BUNtoid(bn, n - 1);
+		return bn;
 	}
 
 	bn = COLnew(0, TYPE_oid, n, TRANSIENT);
@@ -858,45 +737,42 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
 	tpe = ATOMbasetype(tpe); /* takes care of oid */
-	ci = 0;
-	if (cand) {
-		for (i = 0; i < n; i++) {
-			oids[i] = *cand++;
-			goids[i] = gv[ci++];
-		}
-	} else {
-		for (i = 0; i < n; i++) {
-			oids[i] = start++ + b->hseqbase;
-			goids[i] = gv[ci++];
-		}
+	j = 0;
+	for (i = 0; i < n; i++) {
+		oids[i] = canditer_next(&ci);
+		goids[i] = gv[j++];
 	}
+	cnt -= n;
+
 	if (BATtvoid(b)) {
 		/* nilslast doesn't make a difference (all nil, or no nil) */
 		if (asc) {
 			heapify(LTvoidgrp, SWAP2);
-			while (cand ? cand < candend : start < end) {
-				i = cand ? *cand++ : start++ + b->hseqbase;
-				if (gv[ci] < goids[0]
-				    /* || (gv[ci] == goids[0]
+			while (cnt > 0) {
+				cnt--;
+				i = canditer_next(&ci);
+				if (gv[j] < goids[0]
+				    /* || (gv[j] == goids[0]
 					&& i < oids[0]) -- always false */) {
 					oids[0] = i;
-					goids[0] = gv[ci];
+					goids[0] = gv[j];
 					siftdown(LTvoidgrp, 0, SWAP2);
 				}
-				ci++;
+				j++;
 			}
 		} else {
 			heapify(GTvoidgrp, SWAP2);
-			while (cand ? cand < candend : start < end) {
-				i = cand ? *cand++ : start++ + b->hseqbase;
-				if (gv[ci] < goids[0]
-				    || (gv[ci] == goids[0]
+			while (cnt > 0) {
+				cnt--;
+				i = canditer_next(&ci);
+				if (gv[j] < goids[0]
+				    || (gv[j] == goids[0]
 				        /* && i > oids[0] -- always true */)) {
 					oids[0] = i;
-					goids[0] = gv[ci];
+					goids[0] = gv[j];
 					siftdown(GTvoidgrp, 0, SWAP2);
 				}
-				ci++;
+				j++;
 			}
 		}
 	} else if (asc) {
@@ -927,19 +803,20 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 				break;
 			default:
 				heapify(nLTanygrp, SWAP2);
-				while (cand ? cand < candend : start < end) {
-					i = cand ? *cand++ : start++ + b->hseqbase;
-					if (gv[ci] < goids[0]
-					    || (gv[ci] == goids[0]
+				while (cnt > 0) {
+					cnt--;
+					i = canditer_next(&ci);
+					if (gv[j] < goids[0]
+					    || (gv[j] == goids[0]
 						&& cmp(BUNtail(bi, i - b->hseqbase), nil) != 0
 						&& (cmp(BUNtail(bi, oids[0] - b->hseqbase), nil) == 0
 						    || cmp(BUNtail(bi, i - b->hseqbase),
 							   BUNtail(bi, oids[0] - b->hseqbase)) < 0))) {
 						oids[0] = i;
-						goids[0] = gv[ci];
+						goids[0] = gv[j];
 						siftdown(nLTanygrp, 0, SWAP2);
 					}
-					ci++;
+					j++;
 				}
 				break;
 			}
@@ -970,17 +847,18 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 				break;
 			default:
 				heapify(LTanygrp, SWAP2);
-				while (cand ? cand < candend : start < end) {
-					i = cand ? *cand++ : start++ + b->hseqbase;
-					if (gv[ci] < goids[0] ||
-					    (gv[ci] == goids[0] &&
+				while (cnt > 0) {
+					cnt--;
+					i = canditer_next(&ci);
+					if (gv[j] < goids[0] ||
+					    (gv[j] == goids[0] &&
 					     cmp(BUNtail(bi, i - b->hseqbase),
 						 BUNtail(bi, oids[0] - b->hseqbase)) < 0)) {
 						oids[0] = i;
-						goids[0] = gv[ci];
+						goids[0] = gv[j];
 						siftdown(LTanygrp, 0, SWAP2);
 					}
-					ci++;
+					j++;
 				}
 				break;
 			}
@@ -1012,17 +890,18 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 			break;
 		default:
 			heapify(GTanygrp, SWAP2);
-			while (cand ? cand < candend : start < end) {
-				i = cand ? *cand++ : start++ + b->hseqbase;
-				if (gv[ci] < goids[0] ||
-				    (gv[ci] == goids[0] &&
+			while (cnt > 0) {
+				cnt--;
+				i = canditer_next(&ci);
+				if (gv[j] < goids[0] ||
+				    (gv[j] == goids[0] &&
 				     cmp(BUNtail(bi, i - b->hseqbase),
 					 BUNtail(bi, oids[0] - b->hseqbase)) > 0)) {
 					oids[0] = i;
-					goids[0] = gv[ci];
+					goids[0] = gv[j];
 					siftdown(GTanygrp, 0, SWAP2);
 				}
-				ci++;
+				j++;
 			}
 			break;
 		}
@@ -1053,19 +932,20 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool nilsl
 			break;
 		default:
 			heapify(nGTanygrp, SWAP2);
-			while (cand ? cand < candend : start < end) {
-				i = cand ? *cand++ : start++ + b->hseqbase;
-				if (gv[ci] < goids[0]
-				    || (gv[ci] == goids[0]
+			while (cnt > 0) {
+				cnt--;
+				i = canditer_next(&ci);
+				if (gv[j] < goids[0]
+				    || (gv[j] == goids[0]
 					&& cmp(BUNtail(bi, oids[0] - b->hseqbase), nil) != 0
 					&& (cmp(BUNtail(bi, i - b->hseqbase), nil) == 0
 					    || cmp(BUNtail(bi, i - b->hseqbase),
 						   BUNtail(bi, oids[0] - b->hseqbase)) > 0))) {
 					oids[0] = i;
-					goids[0] = gv[ci];
+					goids[0] = gv[j];
 					siftdown(nGTanygrp, 0, SWAP2);
 				}
-				ci++;
+				j++;
 			}
 			break;
 		}

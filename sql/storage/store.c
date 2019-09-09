@@ -2139,7 +2139,7 @@ flusher_should_run(void)
 	if (ATOMIC_GET(&store_nr_active) > 0)
 		reason_not_to = "awaiting idle time";
 
-	if (!flusher.enabled)
+	if (!flusher.enabled && !my_flush_now)
 		reason_not_to = "disabled";
 
 	bool do_it = (reason_to && !reason_not_to);
@@ -2233,6 +2233,22 @@ void
 store_flush_log(void)
 {
 	ATOMIC_SET(&flusher.flush_now, 1);
+}
+
+void
+store_suspend_log(void)
+{
+	MT_lock_set(&bs_lock);
+	flusher.enabled = false;
+	MT_lock_unset(&bs_lock);
+}
+
+void
+store_resume_log(void)
+{
+	MT_lock_set(&bs_lock);
+	flusher.enabled = true;
+	MT_lock_unset(&bs_lock);
 }
 
 void
