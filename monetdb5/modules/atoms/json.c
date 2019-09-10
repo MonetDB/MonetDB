@@ -975,10 +975,6 @@ JSONparse(const char *j)
 	if (jt == NULL)
 		return NULL;
 	skipblancs(j);
-	if (!*j || !(*j == '{' || *j == '[')) {
-		jt->error = createException(MAL, "json.parser", "JSON syntax error: json parse failed, expecting '{', '['");
-		return jt;
-	}
 	JSONtoken(jt, j, &j);
 	if (jt->error)
 		return jt;
