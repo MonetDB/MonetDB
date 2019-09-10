@@ -3695,7 +3695,7 @@ def main(argv) :
 
     recursive = opts.recursive
     global testweb
-    testweb = opts.testweb
+    testweb = False
     global quiet
     quiet = opts.quiet
     global verbose
@@ -3705,18 +3705,21 @@ def main(argv) :
     global procdebug
     procdebug = opts.procdebug
     global releaserun
-    releaserun = opts.releaserun
-    nomito = opts.nomito
+    releaserun = False
+    nomito = False
     CONDITIONALS['RELEASERUN'] = releaserun
-    if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.alltests or CONDITIONALS['MERCURIAL']:
-        CONDITIONALS['KNOWNFAIL'] = 'execute'
     jenkins = False
     addreqs = False
     all_tests = False
     if THISFILE == "Mtest.py":
+        testweb = opts.testweb
+        releaserun = opts.releaserun
+        nomito = opts.nomito
         par['IGNORE'] = opts.ignore
         par['CONTEXT'] = str(opts.context)
         a = opts.accuracy
+        if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.alltests or CONDITIONALS['MERCURIAL']:
+            CONDITIONALS['KNOWNFAIL'] = 'execute'
         if a not in (-1,0,1,2):
             ErrExit('Accuracy for diff (-A) must be one of: 0=lines, 1=words, 2=chars !')
         par['ACCURACY'] = a
