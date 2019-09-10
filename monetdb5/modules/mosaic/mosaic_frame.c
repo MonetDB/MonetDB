@@ -36,11 +36,10 @@ bool MOStypes_frame(BAT* b) {
 #ifdef HAVE_HGE
 	case TYPE_hge: return true;
 #endif
-	default: {
-		if (b->ttype == TYPE_date) {return true;}
-		if (b->ttype == TYPE_daytime) {return true;}
-		if (b->ttype == TYPE_timestamp) {return true;}
-	}
+	default:
+		if (b->ttype == TYPE_date) {return true;} // Will be mapped to int
+		if (b->ttype == TYPE_daytime) {return true;} // Will be mapped to lng
+		if (b->ttype == TYPE_timestamp) {return true;} // Will be mapped to lng
 	}
 
 	return false;
@@ -203,7 +202,7 @@ do {\
 flt
 MOSestimate_frame(MOStask task) {
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bte: estimateFrame(task, bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 	case TYPE_sht: estimateFrame(task, sht, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 	case TYPE_int: estimateFrame(task, int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
@@ -212,11 +211,6 @@ MOSestimate_frame(MOStask task) {
 #ifdef HAVE_HGE
 	case TYPE_hge: estimateFrame(task, hge, uhge, GET_DELTA_FOR_SIGNED_TYPE); break;
 #endif
-	default: {
-		if (task->type == TYPE_date) {estimateFrame(task, int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;}
-		if (task->type == TYPE_daytime) {estimateFrame(task, lng, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;}
-		if (task->type == TYPE_timestamp) {estimateFrame(task, lng, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;}
-	}
 	}
 
 	return task->factor[MOSAIC_FRAME];
@@ -249,7 +243,7 @@ MOScompress_frame(MOStask task)
 	MOSsetTag(blk,MOSAIC_FRAME);
 	MOSsetCnt(blk, 0);
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bte: FRAMEcompress(task, bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 	case TYPE_sht: FRAMEcompress(task, sht, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 	case TYPE_int: FRAMEcompress(task, int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
@@ -258,11 +252,6 @@ MOScompress_frame(MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: FRAMEcompress(task, hge, uhge, GET_DELTA_FOR_SIGNED_TYPE); break;
 #endif
-	default: {
-		if (task->type == TYPE_date) {FRAMEcompress(task, int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;}
-		if (task->type == TYPE_daytime) {FRAMEcompress(task, lng, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;}
-		if (task->type == TYPE_timestamp) {FRAMEcompress(task, lng, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;}
-	}
 	}
 }
 
@@ -288,7 +277,7 @@ do {\
 void
 MOSdecompress_frame(MOStask task)
 {
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bte: FRAMEdecompress(task, bte); break;
 	case TYPE_sht: FRAMEdecompress(task, sht); break;
 	case TYPE_int: FRAMEdecompress(task, int); break;
@@ -297,11 +286,6 @@ MOSdecompress_frame(MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: FRAMEdecompress(task, hge); break;
 #endif
-	default: {
-		if (task->type == TYPE_date) {FRAMEdecompress(task, int); break;}
-		if (task->type == TYPE_daytime) {FRAMEdecompress(task, lng); break;}
-		if (task->type == TYPE_timestamp) {FRAMEdecompress(task, lng); break;}
-	}
 	}
 }
 
@@ -421,7 +405,7 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	}
 	o = task->lb;
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bte: select_frame(task, bte, ulng); break;
 	case TYPE_sht: select_frame(task, sht, ulng); break;
 	case TYPE_int: select_frame(task, int, ulng); break;
@@ -430,11 +414,6 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 #ifdef HAVE_HGE
 	case TYPE_hge: select_frame(task, hge, uhge); break;
 #endif
-	default: {
-		if (task->type == TYPE_date) {select_frame(task, int, ulng); break;}
-		if (task->type == TYPE_daytime) {select_frame(task, lng, ulng); break;}
-		if (task->type == TYPE_timestamp) {select_frame(task, lng, ulng); break;}
-	}
 	}
 	MOSskip_frame(task);
 	task->lb = o;
@@ -563,7 +542,7 @@ MOSthetaselect_frame( MOStask task, void *val, str oper)
 	}
 	o = task->lb;
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_bte: thetaselect_frame(bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 	case TYPE_sht: thetaselect_frame(sht, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 	case TYPE_int: thetaselect_frame(int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
@@ -572,11 +551,6 @@ MOSthetaselect_frame( MOStask task, void *val, str oper)
 #ifdef HAVE_HGE
 	case TYPE_hge: thetaselect_frame(hge, uhge, GET_DELTA_FOR_SIGNED_TYPE); break;
 #endif
-	default: {
-		if (task->type == TYPE_date) {thetaselect_frame(int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;}
-		if (task->type == TYPE_daytime) {thetaselect_frame(lng, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;}
-		if (task->type == TYPE_timestamp) {thetaselect_frame(lng, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;}
-	}
 	}
 	MOSskip_frame(task);
 	task->lb =o;
@@ -604,7 +578,7 @@ MOSprojection_frame( MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 		case TYPE_bte: projection_frame(bte); break;
 		case TYPE_sht: projection_frame(sht); break;
 		case TYPE_int: projection_frame(int); break;
@@ -613,11 +587,6 @@ MOSprojection_frame( MOStask task)
 #ifdef HAVE_HGE
 		case TYPE_hge: projection_frame(hge); break;
 #endif
-	default: {
-		if (task->type == TYPE_date) {projection_frame(int); break;}
-		if (task->type == TYPE_daytime) {projection_frame(lng); break;}
-		if (task->type == TYPE_timestamp) {projection_frame(lng); break;}
-	}
 	}
 	MOSskip_frame(task);
 	return MAL_SUCCEED;
@@ -648,7 +617,7 @@ MOSjoin_frame( MOStask task)
 	oid o, oo;
 
 	// set the oid range covered and advance scan range
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 		case TYPE_bte: join_frame(bte); break;
 		case TYPE_sht: join_frame(sht); break;
 		case TYPE_int: join_frame(int); break;
@@ -657,11 +626,6 @@ MOSjoin_frame( MOStask task)
 #ifdef HAVE_HGE
 		case TYPE_hge: join_frame(hge); break;
 #endif
-	default: {
-		if (task->type == TYPE_date) {join_frame(int); break;}
-		if (task->type == TYPE_daytime) {join_frame(lng); break;}
-		if (task->type == TYPE_timestamp) {join_frame(lng); break;}
-	}
 		}
 	MOSskip_frame(task);
 	return MAL_SUCCEED;
