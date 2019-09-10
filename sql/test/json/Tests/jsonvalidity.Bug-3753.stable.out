@@ -57,7 +57,7 @@ stdout of test 'jsonvalidity.Bug-3753` in directory 'sql/test/json` itself:
 % L2 # name
 % boolean # type
 % 5 # length
-[ false	]
+[ true	]
 #SELECT json.isValid('"'); 	-- false
 % .L2 # table_name
 % L2 # name
@@ -69,7 +69,7 @@ stdout of test 'jsonvalidity.Bug-3753` in directory 'sql/test/json` itself:
 % L2 # name
 % boolean # type
 % 5 # length
-[ false	]
+[ true	]
 #SELECT json.isValid('"""'); 	-- false
 % .L2 # table_name
 % L2 # name
@@ -81,7 +81,7 @@ stdout of test 'jsonvalidity.Bug-3753` in directory 'sql/test/json` itself:
 % L2 # name
 % boolean # type
 % 5 # length
-[ false	]
+[ true	]
 #SELECT json.isValid('""""'); 	-- false
 % .L2 # table_name
 % L2 # name
@@ -93,7 +93,7 @@ stdout of test 'jsonvalidity.Bug-3753` in directory 'sql/test/json` itself:
 % L2 # name
 % boolean # type
 % 5 # length
-[ false	]
+[ true	]
 #SELECT json.isValid('[]'); 	-- true
 % .L2 # table_name
 % L2 # name
