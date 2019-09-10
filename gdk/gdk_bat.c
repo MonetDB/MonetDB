@@ -1087,7 +1087,8 @@ BUNappend(BAT *b, const void *t, bool force)
 	do {
 		for (prop = b->tprops; prop; prop = prop->next)
 			if (prop->id != GDK_MAX_VALUE &&
-			    prop->id != GDK_MIN_VALUE) {
+			    prop->id != GDK_MIN_VALUE &&
+			    prop->id != GDK_HASH_MASK) {
 				BATrmprop(b, prop->id);
 				break;
 			}
@@ -1168,7 +1169,8 @@ BUNdelete(BAT *b, oid o)
 	do {
 		for (prop = b->tprops; prop; prop = prop->next)
 			if (prop->id != GDK_MAX_VALUE &&
-			    prop->id != GDK_MIN_VALUE) {
+			    prop->id != GDK_MIN_VALUE &&
+			    prop->id != GDK_HASH_MASK) {
 				BATrmprop(b, prop->id);
 				break;
 			}
@@ -1255,7 +1257,8 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		do {
 			for (prop = b->tprops; prop; prop = prop->next)
 				if (prop->id != GDK_MAX_VALUE &&
-				    prop->id != GDK_MIN_VALUE) {
+				    prop->id != GDK_MIN_VALUE &&
+				    prop->id != GDK_HASH_MASK) {
 					BATrmprop(b, prop->id);
 					break;
 				}

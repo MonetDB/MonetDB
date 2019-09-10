@@ -2306,6 +2306,8 @@ idle_manager(void)
 			if (GDKexiting())
 				return;
 		}
+		/* cleanup any collected intermediate storage */
+		store_funcs.cleanup();
 		MT_lock_set(&bs_lock);
 		if (ATOMIC_GET(&store_nr_active) || GDKexiting() || !store_needs_vacuum(gtrans)) {
 			MT_lock_unset(&bs_lock);
@@ -4399,7 +4401,6 @@ sql_trans_commit(sql_trans *tr)
 		fprintf(stderr, "#done forwarding changes %d,%d\n", gtrans->stime, gtrans->wstime);
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
-
 
 static int
 sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, sqlid id, sht type)

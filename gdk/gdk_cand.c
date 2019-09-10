@@ -500,21 +500,12 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			p = binsearchcand(ci->oids, ci->noids - 1, b->hseqbase);
 			if (p == ci->noids) {
 				/* all exceptions before start of b */
-				p = b->hseqbase - ci->seq + ci->noids;
-				if (p >= cnt) {
-					/* no candidates left */
-					*ci = (struct canditer) {
-						.tpe = cand_dense,
-					};
-					return 0;
-				}
-				/* rest of list is dense */
-				ci->tpe = cand_dense;
-				cnt -= p;
-				ci->offset += p;
+				ci->offset = b->hseqbase - ci->seq - ci->noids;
+				cnt = ci->seq + cnt + ci->noids - b->hseqbase;
 				ci->seq = b->hseqbase;
-				if (ci->seq + cnt > b->hseqbase + BATcount(b))
-					cnt = b->hseqbase + BATcount(b) - ci->seq;
+				ci->noids = 0;
+				ci->oids = NULL;
+				ci->tpe = cand_dense;
 				break;
 			}
 			assert(b->hseqbase > ci->seq || p == 0);
