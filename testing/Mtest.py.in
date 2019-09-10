@@ -632,9 +632,7 @@ def Usage (options) :
     try:
         monet_options.usage(options, '%s [options] ( [<dir>] [<tests>] | [<dirs>] )' % THISFILE)
     except monet_options.Error:
-        pass
-
-    sys.stderr.write("""
+        sys.stderr.write("""
  <dir>   : if present, %(prog)s behaves as if called in <dir>
  <tests> : list of tests to be processed; if none or 'All' is given,
             all tests listed in 'Tests/All' are processed
@@ -647,7 +645,7 @@ def Usage (options) :
 """ % {'prog': THISFILE,
        'readme': os.path.join('@QXSOURCE@','testing','README'),
        })
-    raise
+        raise
 
 ### Usage () #
 
@@ -1719,6 +1717,7 @@ def GetBitsAndModsAndThreads(env) :
     proc.killed = False
     proc.onechild = True
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
+    qOut = None
     try:
         t.start()
         while True:
