@@ -341,10 +341,7 @@ def CheckExec(cmd) :
     return ""
 ### CheckExec(cmd) #
 
-try:
-    import monet_options
-except ImportError:
-    from MonetDBtesting import monet_options
+import argparse
 
 import threading
 
@@ -627,27 +624,6 @@ stylesheet = Element('style', None, Text('''
 TIMES = []
 
 random.seed(time.time())
-
-def Usage (options) :
-    try:
-        monet_options.usage(options, '%s [options] ( [<dir>] [<tests>] | [<dirs>] )' % THISFILE)
-    except monet_options.Error:
-        sys.stderr.write("""
- <dir>   : if present, %(prog)s behaves as if called in <dir>
- <tests> : list of tests to be processed; if none or 'All' is given,
-            all tests listed in 'Tests/All' are processed
-            (defaults to 'All' if -r is used)
- <dirs>  : list of directories to be processed; if present, %(prog)s
-            processes 'All' tests in each directory of <dirs>; -r may be used also
-
-         See  %(readme)s
-         for details about  %(prog)s.
-""" % {'prog': THISFILE,
-       'readme': os.path.join('@QXSOURCE@','testing','README'),
-       })
-        raise
-
-### Usage () #
 
 #TODO:
 #class TimeoutError:
@@ -3630,10 +3606,11 @@ dft = {}
 def main(argv) :
     #TODO:
     #signal.signal(signal.SIGALRM, AlarmHandler)
+    global global_timeout
 
-    vars = ['TSTSRCBASE', 'TSTTRGBASE']
+    VARS = ['TSTSRCBASE', 'TSTTRGBASE']
     if THISFILE == "Mtest.py":
-        vars = vars + [ 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'RCLIENT', 'RUBYCLIENT']    #, 'MONETDB_MOD_PATH' ]
+        VARS = VARS + [ 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'RCLIENT', 'RUBYCLIENT']    #, 'MONETDB_MOD_PATH' ]
 
     env = {}
     env['DIRSEP'] = os.sep
@@ -3656,210 +3633,149 @@ def main(argv) :
     #par = {}
     # get current environment
     env['HOST'] = os.environ['HOST']
-    for v in vars:
+    for v in VARS:
         if v in os.environ:
             env[v] = os.environ[v]
             #TODO:
             # make sure, that PATHs are absolute
 
     # commandline options overrule environment
-    cmd_options = [
-        # long name, short name, GDK option, argument, comment
-        ('recursive', 'r', 'recursive', None,
-         "recurse into subdirectories (implies 'All')"),
-        ('revision', None, 'revision', '<hgid>',
-         'use given revision as the HG short hash'),
-        ('TSTSRCBASE', None, 'TSTSRCBASE', '<path>',
-         'default: "%s"' % _configure('@QXSOURCE@')),
-        ('TSTTRGBASE', None, 'TSTTRGBASE', '<path>',
-         'default: "%s"' % _configure('@QXprefix@')),
-        ('quiet', 'q', 'quiet', None,
-         "suppress messages on stdout"),
-        ('verbose', 'v', 'verbose', None,
-         "more verbose test output"),
-        ('procdebug', None, 'procdebug', None,
-         'process debugging (Mtest developers only)'),
-        ]
+    parser = argparse.ArgumentParser(usage='%(prog)s [options] ( [<dir>] [<tests>] | [<dirs>] )', epilog='See %s for details about Mtest.py.' % _configure(os.path.join('@QXSOURCE@','testing','README')))
+    parser.add_argument('--version', action='version', version='@VERSION@')
+    parser.add_argument('--recursive', '-r', action='store_true', dest='recursive', help="recurse into subdirectories (implies 'All')")
+    parser.add_argument('--revision', action='store', dest='revision', metavar='<hgid>', help='use given revision as the HG short hash')
+    parser.add_argument('--TSTSRCBASE', action='store', dest='TSTSRCBASE', metavar='<path>', help='default: "%s"' % _configure('@QXSOURCE@'))
+    parser.add_argument('--TSTTRGBASE', action='store', dest='TSTTRGBASE', metavar='<path>', help='default: "%s"' % _configure('@QXprefix@'))
+    parser.add_argument('--quiet', '-q', action='store_true', dest='quiet', help="suppress messages on stdout")
+    parser.add_argument('--verbose', '-v', action='store_true', dest='verbose', help="more verbose test output")
+    parser.add_argument('--procdebug', action='store_true', dest='procdebug', help='process debugging (Mtest developers only)')
 
     if THISFILE == "Mtest.py":
-        common_options = cmd_options + [
-            (None, 'I', 'ignore', '<exp>',
-             "ignore lines matching <exp> during diff (default: '%s')" % dftIGNORE),
-            (None, 'C', 'context', '<num>',
-             "use <num> lines of context during diff (default: -C1)"),
-            (None, 'A', 'accuracy', '<num>',
-             "accuracy for diff: 0=lines, 1=words, 2=chars (default: -A1)"),
-            (None, 't', 'timeout', '<sec>',
-             "timeout: kill (hanging) tests after <sec> seconds;\n"
-             "-t0 means no timeout (default: -t60)"),
-            ('debug', 'd', 'debug', '<num>',
-             ("debug value to be used by mserver5 (default: -d%s)\n"
-              "(see `mserver5 --help' for details)") % TSTDBG),
-            ('nr_threads', 'n', 'nr_threads', '<num>',
-             ("number of threads for mserver5 (default: -n%s)\n"
-              "-n0 => mserver5 automatically determines the number of CPU cores") % TSTTHREADS),
-            ('monet_mod_path', None, 'monet_mod_path', '<pathlist>',
-             "override mserver5's default module search path"),
-            ('dbfarm', None, 'gdk_dbfarm', '<directory>',
-             "override default location of database directory"),
-            ('MALCLIENT', None, 'MALCLIENT', '<mal-client program>',
-             'default: %s' % dft['MALCLIENT']),
-            ('SQLCLIENT', None, 'SQLCLIENT', '<sql-client program>',
-             'default: %s' % dft['SQLCLIENT']),
-            ('SQLDUMP', None, 'SQLDUMP', '<sql-dump program>',
-             'default: %s' % dft['SQLDUMP']),
-            ('RCLIENT', None, 'RCLIENT', '<R program>',
-             'default: %s' % dft['RCLIENT']),
-            ('RUBYCLIENT', None, 'RUBYCLIENT', '<ruby program>',
-             'default: %s' % dft['RUBYCLIENT']),
-            ('concurrent', None, 'concurrent', None,
-             'There are concurrent Mtest runs using the same MonetDB installation'),
-            ('dbg', None, 'dbg', '<debugger/valgrind>',
-             "debugger to start before each server"),
-            ('echo-diff', None, 'echo-diff', None,
-             "echo differences between stable and current test output to console (stdout)"),
-            ('mserver_set', None, 'mserver_set', '<mserver5_option>',
-             "This passes a single set to the server"),
-            ('no-clean', None, 'no_clean', None, 'Do not clean up before test'),
-            ('testweb', None, 'testweb', None, 'Optimize testing for testweb'),
-            ('releaserun', None, 'releaserun', None,
-             'run tests as if for a release test'),
-            ('multifarm', None, 'multifarm', None,
-             'use multiple dbfarms (developers only)'),
-            ('nomito', None, 'nomito', None,
-             'Do not pass --forcemito to server'),
-            ('jenkins', None, 'jenkins', None,
-             'special handling for Jenkins'),
-            ('addreqs', None, 'addreqs', None,
-             'automatically add required tests when testing individual tests'),
-            ('global_timeout', 'T', 'global_timeout', '<sec>',
-             'global timeout'),
-            ('data_path', 'D', 'data_path', '<path>',
-             "Path to the root directory of the data files needed for testing"),
-            ('alltests', None, 'alltests', None,
-             'also run tests that are known to fail'),
-            ]
-
-    if THISFILE == 'Mtest.py':
-        options = common_options # + []
+        parser.add_argument('-I', action='store', dest='ignore', default=dftIGNORE, metavar='<exp>', help="ignore lines matching <exp> during diff (default: '%s')" % dftIGNORE)
+        parser.add_argument('-C', action='store', dest='context', metavar='<num>', type=int, default=1, help="use <num> lines of context during diff (default: -C1)")
+        parser.add_argument('-A', action='store', dest='accuracy', metavar='<num>', type=int, default=1, help="accuracy for diff: 0=lines, 1=words, 2=chars (default: -A1)")
+        parser.add_argument('-t', action='store', dest='timeout', metavar='<sec>', type=int, default=60, help="timeout: kill (hanging) tests after <sec> seconds;\n-t0 means no timeout (default: -t60)")
+        parser.add_argument('--debug', '-d', action='store', dest='debug', metavar='<sec>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5 (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
+        parser.add_argument('--nr_threads', '-n', action='store', dest='nr_threads', metavar='<num>', type=int, default=int(TSTTHREADS), help="number of threads for mserver5 (default: -n%s)\n-n0 => mserver5 automatically determines the number of CPU cores" % TSTTHREADS)
+        parser.add_argument('--monet_mod_path', action='store', dest='monet_mod_path', metavar='<pathlist>', help="override mserver5's default module search path")
+        parser.add_argument('--dbfarm', action='store', dest='gdk_dbfarm', default=_configure(os.path.join('@QXlocalstatedir@','MonetDB')), metavar='<directory>', help="override default location of database directory")
+        parser.add_argument('--MALCLIENT', action='store', dest='MALCLIENT', metavar='<mal-client program>', help='default: %s' % dft['MALCLIENT'])
+        parser.add_argument('--SQLCLIENT', action='store', dest='SQLCLIENT', metavar='<sql-client program>', help='default: %s' % dft['SQLCLIENT'])
+        parser.add_argument('--SQLDUMP', action='store', dest='SQLDUMP', metavar='<sql-dump program>', help='default: %s' % dft['SQLDUMP'])
+        parser.add_argument('--RCLIENT', action='store', dest='RCLIENT', metavar='<R program>', help='default: %s' % dft['RCLIENT'])
+        parser.add_argument('--RUBYCLIENT', action='store', dest='RUBYCLIENT', metavar='<ruby program>', help='default: %s' % dft['RUBYCLIENT'])
+        parser.add_argument('--concurrent', action='store_true', dest='concurrent', help='There are concurrent Mtest runs using the same MonetDB installation')
+        parser.add_argument('--dbg', action='store', dest='dbg', metavar='<debugger/valgrind>', help="debugger to start before each server")
+        parser.add_argument('--echo-diff', action='store_true', dest='echo_diff', help="echo differences between stable and current test output to console (stdout)")
+        parser.add_argument('--mserver_set', action='store', dest='mserver_set', metavar='<mserver5_option>', help="This passes a single set to the server")
+        parser.add_argument('--no-clean', action='store_true', dest='no_clean', help='Do not clean up before test')
+        parser.add_argument('--testweb', action='store_true', dest='testweb', help='Optimize testing for testweb')
+        parser.add_argument('--releaserun', action='store_true', dest='releaserun', help='run tests as if for a release test')
+        parser.add_argument('--multifarm', action='store_true', dest='multifarm', help='use multiple dbfarms (developers only)')
+        parser.add_argument('--nomito', action='store_true', dest='nomito', help='Do not pass --forcemito to server')
+        parser.add_argument('--jenkins', action='store_true', dest='jenkins', help='special handling for Jenkins')
+        parser.add_argument('--addreqs', action='store_true', dest='addreqs', help='automatically add required tests when testing individual tests')
+        parser.add_argument('--global_timeout', '-T', action='store', dest='global_timeout', type=int, default=global_timeout, metavar='<sec>', help='global timeout')
+        parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing')
+        parser.add_argument('--alltests', action='store_true', dest='alltests', help='also run tests that are known to fail')
     elif THISFILE == 'Mapprove.py':
         f = _configure(os.path.join('@QXprefix@',dftTSTPREF,'.Mapprove.rc'))
         v = ReadMapproveRc(f)
         for i in 'INT128', 'SINGLE':
             if v[i]:
                 v[i] = '[.%s]' % v[i]
-        options = cmd_options + [
-            (None, 'x', 'ext', '<ext>',
-             "approve only output files *.<ext><sys> (<ext> = 'out' or 'err')\n"
-             "(default: <ext> = 'out' & 'err')"),
-            (None, 'S', 'sys', '<sys>',
-             "approve specific output *.<ext><sys>\n"
-             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.((32|64)bit|<ARCH>)][.int128][.single]',\n"
-             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])][.(%s|%s)%s%s')"
-              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['ARCH'], v['INT128'], v['SINGLE'])),
-            (None, 'f', 'force', None,
-             "force approval of error messages (i.e., lines starting with '!')"),
-            ('nopatch', None, 'nopatch', None,
-             "do not attempt to patch other outputs"),
-            ]
-    else:
-        options = []
+        parser.add_argument('-x', action='store', dest='ext', choices=['out', 'err'], metavar='<ext>', help="approve only output files *.<ext><sys> (<ext> = 'out' or 'err')\n(default: <ext> = 'out' & 'err')")
+        parser.add_argument('-S', action='store', dest='sys', metavar='<sys>', help="approve specific output *.<ext><sys>\n(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.((32|64)bit|<ARCH>)][.int128][.single]',\n(default: longest match for <sys> = '[.(%s[%s]|%s[%s])][.(%s|%s)%s%s')" % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['ARCH'], v['INT128'], v['SINGLE']))
+        parser.add_argument('-f', action='store_true', dest='force', help="force approval of error messages (i.e., lines starting with '!')")
+        parser.add_argument('--nopatch', action='store_true', dest='nopatch', help="do not attempt to patch other outputs")
 
-    try:
-        # let monet_options.parse_options() parse the command line arguments
-        opts, args = monet_options.parse_options(argv[1:], options, Usage)
-    except monet_options.Error:
-        sys.exit(1)
+    parser.add_argument('tests', nargs='*', help='The positional arguments are either a list of one or more directories to be tested, or a single directory followed by a list of tests within that directory.')
+    opts = parser.parse_args()
+    args = opts.tests
 
-    recursive = opts.get('recursive', False)
+    recursive = opts.recursive
     global testweb
-    testweb = opts.get('testweb', False)
+    testweb = opts.testweb
     global quiet
-    quiet = opts.get('quiet', False)
+    quiet = opts.quiet
     global verbose
-    verbose = opts.get('verbose', False)
+    verbose = opts.verbose
     if quiet and verbose:
         ErrExit('--verbose and --quiet are mutually exclusive')
     global procdebug
-    procdebug = opts.get('procdebug', False)
+    procdebug = opts.procdebug
     global releaserun
-    releaserun = opts.get('releaserun', releaserun)
-    nomito = opts.get('nomito', False)
+    releaserun = opts.releaserun
+    nomito = opts.nomito
     CONDITIONALS['RELEASERUN'] = releaserun
-    if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.get('alltests', False):
+    if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.alltests or CONDITIONALS['MERCURIAL']:
         CONDITIONALS['KNOWNFAIL'] = 'execute'
     jenkins = False
     addreqs = False
     all_tests = False
-    global global_timeout
     if THISFILE == "Mtest.py":
-        _IGNORE = dftIGNORE
-        par['IGNORE'] = opts.get('ignore', _IGNORE)
-        par['CONTEXT'] = opts.get('context', '1')
-        a = int(opts.get('accuracy', 1))
+        par['IGNORE'] = opts.ignore
+        par['CONTEXT'] = str(opts.context)
+        a = opts.accuracy
         if a not in (-1,0,1,2):
             ErrExit('Accuracy for diff (-A) must be one of: 0=lines, 1=words, 2=chars !')
         par['ACCURACY'] = a
-        par['TIMEOUT'] = int(opts.get('timeout', 60))
-        a = opts.get('debug')
-        if a is not None:
-            env['GDK_DEBUG'] = str(int(a))
-        a = opts.get('nr_threads')
-        if a is not None:
-            env['GDK_NR_THREADS'] = str(int(a))
-        a = opts.get('monet_mod_path')
+        par['TIMEOUT'] = opts.timeout
+        env['GDK_DEBUG'] = str(opts.debug)
+        env['GDK_NR_THREADS'] = str(opts.nr_threads)
+        a = opts.monet_mod_path
         if a is not None:
             env['MONETDB_MOD_PATH'] = a
-        a = opts.get('gdk_dbfarm')
+        a = opts.gdk_dbfarm
         if a is not None:
             env['GDK_DBFARM'] = a
-        a = opts.get('concurrent')
-        if a is not None:
+        a = opts.concurrent
+        if a:
             env['CONCURRENT'] = a
-        a = opts.get('dbg')
+        a = opts.dbg
         if a is not None:
             env['DBG'] = a
-        a = opts.get('echo-diff')
-        if a is not None:
+        a = opts.echo_diff
+        if a:
             env['ECHO_DIFF'] = a
-        a = opts.get('mserver_set')
+        a = opts.mserver_set
         if a is not None:
             env['MSERVER_SET'] = "--set " + a
         else:
             env['MSERVER_SET'] = ""
-        a = opts.get('no_clean')
-        if a is not None:
+        a = opts.no_clean
+        if a:
             env['NOCLEAN'] = a
-        a = opts.get('multifarm')
-        if a is not None:
+        a = opts.multifarm
+        if a:
             env['MULTIFARM'] = 'True'
-        jenkins = opts.get('jenkins', False)
-        addreqs = opts.get('addreqs', False)
-        a = opts.get('global_timeout')
-        if a is not None:
-            global_timeout = int(a)
-        a = opts.get('data_path')
+        jenkins = opts.jenkins
+        addreqs = opts.addreqs
+        a = opts.global_timeout
+        if a:
+            global_timeout = a
+        a = opts.data_path
         if a is not None:
             env['TSTDATAPATH'] = a
     if THISFILE == 'Mapprove.py':
-        a = opts.get('ext')
+        a = opts.ext
         if a is None:
             par['EXTENSION'] = ['out', 'err']
         elif a in ('out', 'err'):
             par['EXTENSION'] = [a]
         else:
             ErrXit("Extension (-x) must be one of: 'out', 'err' !")
-        par['FORCE'] = opts.get('force', False)
-        par['NOPATCH'] = opts.get('nopatch', False)
-        a = opts.get('sys')
+        par['FORCE'] = opts.force
+        par['NOPATCH'] = opts.nopatch
+        a = opts.sys
         if a is None:
             par['SYSTEM'] = ''
         else:
             par['SYSTEM'] = a
             # -S option implies --nopatch
             par['NOPATCH'] = True
-    for v in vars:
-        a = opts.get(v)
+    for v in VARS:
+        a = vars(opts).get(v)
         if a is not None:
             env[v] = a
 
@@ -4013,9 +3929,9 @@ def main(argv) :
 
     # tidy-up and fall-back to defaults where necessary
     if THISFILE == "Mtest.py":
-        vars_ = vars + ['MAPIPORT', 'GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
+        vars_ = VARS + ['MAPIPORT', 'GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
-        vars_ = vars
+        vars_ = VARS
     for v in vars_:
         if v not in env:
             env[v] = eval(dft[v])
@@ -4215,7 +4131,7 @@ def main(argv) :
 
     global REV
     global URLPREFIX
-    REV = opts.get('revision')
+    REV = opts.revision
     if REV is None:             # no --revision option: try to find out
         try:
             proc = process.Popen(['hg', 'id', '-i'],
