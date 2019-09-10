@@ -211,6 +211,7 @@ typedef int (*idx_upd_fptr) (sql_trans *tr, sql_idx *c, void *rows, void *data);
 */
 typedef int (*del_fptr) (sql_trans *tr, sql_table *c, void *rows);
 typedef int (*snapshot_fptr) ( sql_table *t ); 
+typedef int (*cleanup_fptr) (); 
 
 /* backing struct for this interface */
 typedef struct store_functions {
@@ -288,6 +289,8 @@ typedef struct store_functions {
 	idx_upd_fptr idx_upd;
 
 	del_fptr del;
+
+	cleanup_fptr cleanup;
 } store_functions;
 
 sqlstore_export store_functions store_funcs;
