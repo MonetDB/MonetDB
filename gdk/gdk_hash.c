@@ -227,6 +227,9 @@ BATcheckhash(BAT *b)
 						close(fd);
 						h->heap.parentid = b->batCacheid;
 						h->heap.dirty = false;
+						BATsetprop(b, GDK_HASH_MASK,
+							   TYPE_oid,
+							   &(oid){h->mask + 1});
 						b->thash = h;
 						ACCELDEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
 						MT_lock_unset(&GDKhashLock(b->batCacheid));
@@ -379,6 +382,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	Hash *h = NULL;
 	const char *nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
+	PROPrec *prop;
 
 	ACCELDEBUG t0 = GDKusec();
 	ACCELDEBUG fprintf(stderr, "#BAThash: create hash(" ALGOBATFMT ");\n",
@@ -417,7 +421,14 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
 		mask = HASHmask(cnt);
- 	} else {
+ 	} else if (s == NULL && (prop = BATgetprop(b, GDK_HASH_MASK)) != NULL) {
+		assert(prop->v.vtype == TYPE_oid);
+		mask = prop->v.val.oval;
+		assert((mask & (mask - 1)) == 0); /* power of two */
+		maxmask = HASHmask(cnt);
+		if (mask > maxmask)
+			mask = maxmask;
+	} else {
 		/* dynamic hash: we start with HASHmask(cnt)/64, or,
 		 * if cnt large enough, HASHmask(cnt)/256; if there
 		 * are too many collisions we try HASHmask(cnt)/64,
@@ -562,6 +573,8 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		}
 		break;
 	}
+	if (s == NULL)
+		BATsetprop(b, GDK_HASH_MASK, TYPE_oid, &(oid){h->mask + 1});
 	((size_t *) h->heap.base)[5] = (size_t) nslots;
 #ifndef NDEBUG
 	/* clear unused part of Link array */
