@@ -19,7 +19,7 @@
 //#define _DEBUG_MOSAIC_
 
 bool MOStypes_delta(BAT* b) {
-	switch(ATOMbasetype(getBatType(b->ttype))){
+	switch(ATOMstorage(getBatType(b->ttype))){
 	case TYPE_sht: return true;
 	case TYPE_int: return true;
 	case TYPE_lng: return true;
@@ -48,7 +48,7 @@ MOSadvance_delta(MOStask task)
 
 	task->start += MOSgetCnt(blk);
 	task->stop = task->stop;
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(sht) + MOSgetCnt(blk)-1,sht)); break ;
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(int) + MOSgetCnt(blk)-1,int)); break ;
 	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(oid) + MOSgetCnt(blk)-1,oid)); break ;
@@ -64,13 +64,6 @@ MOSadvance_delta(MOStask task)
 		case 8: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(MosaicBlkSize + sizeof(lng)+ MOSgetCnt(blk)-1,lng)); break ;
 		}
 		break;
-	default:
-		if( task->type == TYPE_timestamp)
-			task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(timestamp) + MOSgetCnt(blk)-1,timestamp)); 
-		if( task->type == TYPE_date)
-			task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(date) + MOSgetCnt(blk)-1,date)); 
-		if( task->type == TYPE_daytime)
-			task->blk = (MosaicBlk)( ((char*) blk) + MosaicBlkSize + wordaligned(sizeof(daytime) + MOSgetCnt(blk)-1,daytime)); 
 	}
 }
 
@@ -82,7 +75,7 @@ MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
 	input = cnt * ATOMsize(task->type);
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_sht: output = wordaligned(MosaicBlkSize + sizeof(sht) + MOSgetCnt(blk)-1,sht); break ;
 	case TYPE_int: output = wordaligned(MosaicBlkSize + sizeof(int) + MOSgetCnt(blk)-1,int); break ;
 	case TYPE_oid: output = wordaligned(MosaicBlkSize + sizeof(oid) + MOSgetCnt(blk)-1,oid); break ;
@@ -156,8 +149,7 @@ MOSestimate_delta(MOStask task)
 			case 4: Estimate_delta(int, (delta < -127 || delta > 127)); break;
 			case 8: Estimate_delta(lng, (delta < -127 || delta > 127)); break;
 		}
-	break;
-	//case TYPE_flt: case TYPE_dbl: to be looked into.
+		break;
 	}
 	task->factor[MOSAIC_DELTA] = factor;
 	task->range[MOSAIC_DELTA] = task->start + i;
@@ -196,8 +188,8 @@ MOScompress_delta(MOStask task)
 	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: DELTAcompress(sht,(delta < -127 || delta >127)); break;
 	case TYPE_int: DELTAcompress(int,(delta < -127 || delta >127)); break;
-	case TYPE_oid: DELTAcompress(oid,(delta > 127)); break;
-	case TYPE_lng: DELTAcompress(lng,(delta > 127)); break;
+	case TYPE_oid: DELTAcompress(oid,(delta > 255)); break;
+	case TYPE_lng: DELTAcompress(lng,(delta < -127 || delta >127)); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: DELTAcompress(hge,(delta < -127 || delta < -127 || delta >127)); break;
 #endif
@@ -209,7 +201,6 @@ MOScompress_delta(MOStask task)
 		case 4: DELTAcompress(int,(delta < 0 || delta > 127)); break;
 		case 8: DELTAcompress(lng,(delta < 0 || delta > 127)); break;
 		}
-	//case TYPE_flt: case TYPE_dbl: to be looked into.
 	}
 }
 
@@ -342,7 +333,7 @@ MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	}
 	o = task->lb;
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_sht: select_delta(sht); break;
 	case TYPE_lng: select_delta(lng); break;
 	case TYPE_oid: select_delta(oid); break;
@@ -358,77 +349,6 @@ MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 		case 8: break;
 		}
 		break;
-	default:
-		if( task->type == TYPE_daytime)
-			select_delta(daytime);
-		if( task->type == TYPE_date)
-			select_delta(date);
-		if( task->type == TYPE_timestamp)
-			{ 	lng val= *(lng*) (((char*) task->blk) + MosaicBlkSize);
-				int lownil = is_timestamp_nil(*(timestamp*)low);
-				int hghnil = is_timestamp_nil(*(timestamp*)hgh);
-
-				if( !*anti){
-					if( lownil && hghnil){
-						for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){
-							MOSskipit();
-							*o++ = (oid) first;
-						}
-					} else
-					if( lownil){
-						for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){
-							MOSskipit();
-							cmp  =  ((*hi && val <= * (lng*)hgh ) || (!*hi && val < *(lng*)hgh ));
-							if (cmp )
-								*o++ = (oid) first;
-						}
-					} else
-					if( hghnil){
-						for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){
-							MOSskipit();
-							cmp  =  ((*li && val >= * (lng*)low ) || (!*li && val > *(lng*)low ));
-							if (cmp )
-								*o++ = (oid) first;
-						}
-					} else{
-						for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){
-							MOSskipit();
-							cmp  =  ((*hi && val <= * (lng*)hgh ) || (!*hi && val < *(lng*)hgh )) &&
-									((*li && val >= * (lng*)low ) || (!*li && val > *(lng*)low ));
-							if (cmp )
-								*o++ = (oid) first;
-						}
-					}
-				} else {
-					if( lownil && hghnil){
-						/* nothing is matching */
-					} else
-					if( lownil){
-						for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){
-							MOSskipit();
-							cmp  =  ((*hi && val <= * (lng*)hgh ) || (!*hi && val < *(lng*)hgh ));
-							if ( !cmp )
-								*o++ = (oid) first;
-						}
-					} else
-					if( hghnil){
-						for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){
-							MOSskipit();
-							cmp  =  ((*li && val >= * (lng*)low ) || (!*li && val > *(lng*)low ));
-							if ( !cmp )
-								*o++ = (oid) first;
-						}
-					} else{
-						for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){
-							MOSskipit();
-							cmp  =  ((*hi && val <= * (lng*)hgh ) || (!*hi && val < *(lng*)hgh )) &&
-									((*li && val >= * (lng*)low ) || (!*li && val > *(lng*)low ));
-							if ( !cmp )
-								*o++ = (oid) first;
-						}
-					}
-				}
-			}
 	}
 	MOSskip_delta(task);
 	task->lb = o;
@@ -492,7 +412,7 @@ MOSthetaselect_delta( MOStask task, void *val, str oper)
 	}
 	o = task->lb;
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 	case TYPE_sht: thetaselect_delta(sht); break;
 	case TYPE_int: thetaselect_delta(int); break;
 	case TYPE_lng: thetaselect_delta(lng); break;
@@ -500,14 +420,6 @@ MOSthetaselect_delta( MOStask task, void *val, str oper)
 #ifdef HAVE_HGE
 	case TYPE_hge: thetaselect_delta(hge); break;
 #endif
-	default:
-			if( task->type == TYPE_daytime)
-				thetaselect_delta(daytime); 
-			if( task->type == TYPE_date)
-				thetaselect_delta(date); 
-			if( task->type == TYPE_timestamp)
-				thetaselect_delta(lng); 
-		break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
 		switch(task->bsrc->twidth){
@@ -544,7 +456,7 @@ MOSprojection_delta( MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 		case TYPE_sht: projection_delta(sht); break;
 		case TYPE_int: projection_delta(int); break;
 		case TYPE_lng: projection_delta(lng); break;
@@ -560,13 +472,6 @@ MOSprojection_delta( MOStask task)
 			case 8: projection_delta(lng); break;
 			}
 		break;
-		default:
-			if (task->type == TYPE_daytime)
-				projection_delta(daytime); 
-			if (task->type == TYPE_date)
-				projection_delta(date); 
-			if (task->type == TYPE_timestamp)
-				projection_delta(lng); 
 	}
 	MOSskip_delta(task);
 	return MAL_SUCCEED;
@@ -598,7 +503,7 @@ MOSjoin_delta( MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(task->type){
+	switch(ATOMstorage(task->type)){
 		case TYPE_sht: join_delta(sht); break;
 		case TYPE_int: join_delta(int); break;
 		case TYPE_lng: join_delta(lng); break;
@@ -614,13 +519,6 @@ MOSjoin_delta( MOStask task)
 				case 8: break;
 			}
 		break;
-		default:
-			if (task->type == TYPE_daytime)
-				join_delta(daytime); 
-			if (task->type == TYPE_date)
-				join_delta(date); 
-			if (task->type == TYPE_timestamp)
-				join_delta(lng); 
 	}
 	MOSskip_delta(task);
 	return MAL_SUCCEED;
