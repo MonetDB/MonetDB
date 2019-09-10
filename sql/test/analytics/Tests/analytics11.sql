@@ -177,9 +177,26 @@ CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 I
 INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
 
 SELECT
-    GROUPING(col1, col2, col3, col4, col5, col6, col7, col8)
+    col1 IN (SELECT ColID FROM tbl_ProductSales)
 FROM another_T
-GROUP BY ROLLUP(col1, col2, col3, col4, col5, col6, col7, col8); --with 8 columns, a smallint is necessary for grouping's output
+GROUP BY ROLLUP(col1);
+
+SELECT
+    col1 IN (SELECT ColID + col1 FROM tbl_ProductSales)
+FROM another_T
+GROUP BY ROLLUP(col1);
+
+SELECT
+    col1 IN (SELECT ColID + col2 FROM tbl_ProductSales)
+FROM another_T
+GROUP BY ROLLUP(col1); --error, col2 is not a grouping column
+
+SELECT
+    GROUPING(col1, col2, col3, col4, col5, col6, col7, col8), AVG(col1), CAST(SUM(col2) * 3 AS BIGINT), col3 + col4,
+    CAST(MAX(col5) * MIN(col6) AS BIGINT), col7, col1 IN (SELECT ColID FROM tbl_ProductSales), col2 IN (SELECT ColID + col3 FROM tbl_ProductSales)
+FROM another_T
+GROUP BY ROLLUP(col1, col2, col3, col4, col5, col6, col7, col8) --with 8 columns, a smallint is necessary for grouping's output
+ORDER BY GROUPING(col1, col2, col3, col4, col5, col6, col7, col8);
 
 DROP TABLE tbl_ProductSales;
 DROP TABLE tbl_X;
