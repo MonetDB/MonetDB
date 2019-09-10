@@ -3202,6 +3202,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			re2 = exp_binop(sql->sa, re1, re2, max);
 			re1 = tmp;
 			symmetric = 0;
+			if (!re1 || !re2) 
+				return NULL;
 		}
 
 		flag = (symmetric)?CMP_SYMMETRIC:0;
@@ -3225,9 +3227,9 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			e2 = exp_atom_bool(sql->sa, 1);
 			rel = rel_select(sql->sa, rel, exp_compare(sql->sa,  e1, e2, cmp_equal));
 		} else if (sc->token == SQL_NOT_BETWEEN) {
-			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|flag, 1, 0);
+			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, 1, 0);
 		} else {
-			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|flag, 0, 0);
+			rel = rel_compare_exp_(query, rel, le, re1, re2, 3|CMP_BETWEEN|flag, 0, 0);
 		}
 		return rel;
 	}
