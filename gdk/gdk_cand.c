@@ -504,7 +504,6 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				cnt = ci->seq + cnt + ci->noids - b->hseqbase;
 				ci->seq = b->hseqbase;
 				ci->noids = 0;
-				ci->oids = NULL;
 				ci->tpe = cand_dense;
 				break;
 			}
