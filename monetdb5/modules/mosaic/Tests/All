@@ -35,5 +35,9 @@ mosaic_frame_oid
 mosaic_frame_date
 mosaic_frame_timestamp
 
-mosaic_delta_lng_tmp
+mosaic_delta_oid
+mosaic_delta_lng
+mosaic_delta_date
+mosaic_delta_timestamp
+
 mosaic_linear_lng_tmp
