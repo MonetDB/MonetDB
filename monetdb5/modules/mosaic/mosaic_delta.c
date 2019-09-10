@@ -19,7 +19,7 @@
 //#define _DEBUG_MOSAIC_
 
 bool MOStypes_delta(BAT* b) {
-	switch(ATOMstorage(getBatType(b->ttype))){
+	switch(b->ttype) {
 	case TYPE_sht: return true;
 	case TYPE_int: return true;
 	case TYPE_lng: return true;
@@ -36,6 +36,10 @@ bool MOStypes_delta(BAT* b) {
 		case 8: return true;
 		}
 		break;
+	default:
+		if (b->ttype == TYPE_date) {return true;} // Will be mapped to int
+		if (b->ttype == TYPE_daytime) {return true;} // Will be mapped to lng
+		if (b->ttype == TYPE_timestamp) {return true;} // Will be mapped to lng
 	}
 
 	return false;
