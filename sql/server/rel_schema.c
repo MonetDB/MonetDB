@@ -1117,7 +1117,7 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 		temp = (tt == tt_table)?temp:SQL_PERSIST;
 		res = rel_table(sql, ddl_create_table, sname, t, temp);
 		if (with_data) {
-			res = rel_insert(query, res, sq);
+			res = rel_insert(query->sql, res, sq);
 		} else {
 			rel_destroy(sq);
 		}

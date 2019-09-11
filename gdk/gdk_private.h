@@ -54,8 +54,6 @@ __hidden bool BATcheckimprints(BAT *b)
 __hidden gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden bool BATcheckorderidx(BAT *b)
-	__attribute__((__visibility__("hidden")));
 __hidden BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATdelete(BAT *b)
@@ -74,9 +72,6 @@ __hidden void BATinit_idents(BAT *bn)
 __hidden BAT *BATload_intern(bat bid, bool lock)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATmaterialize(BAT *b)
-	__attribute__((__warn_unused_result__))
-	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BATsave(BAT *b)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden void BATsetdims(BAT *b)
@@ -121,10 +116,6 @@ __hidden gdk_return BUNreplace(BAT *b, oid left, const void *right, bool force)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden Heap *createOIDXheap(BAT *b, bool stable)
-	__attribute__((__visibility__("hidden")));
-__hidden BAT *doublerange(oid l1, oid h1, oid l2, oid h2)
-	__attribute__((__visibility__("hidden")));
-__hidden BAT *doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	__attribute__((__visibility__("hidden")));
 __hidden void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));
@@ -268,7 +259,7 @@ __hidden BAT *virtualize(BAT *bn)
 			b->hseqbase,			\
 			ATOMname(b->ttype),		\
 			!b->batTransient ? "P" : isVIEW(b) ? "V" : "T", \
-			BATtdense(b) ? "D" : "",	\
+			BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" :"", \
 			b->tsorted ? "S" : "",		\
 			b->trevsorted ? "R" : "",	\
 			b->tkey ? "K" : "",		\
@@ -288,7 +279,7 @@ __hidden BAT *virtualize(BAT *bn)
 			b ? ATOMname(b->ttype) : "",	\
 			b ? "]" : "",			\
 			b ? !b->batTransient ? "P" : isVIEW(b) ? "V" : "T" : "", \
-			b && BATtdense(b) ? "D" : "",	\
+			b && BATtdense(b) ? "D" : b && b->ttype == TYPE_void && b->tvheap ? "X" :"", \
 			b && b->tsorted ? "S" : "",	\
 			b && b->trevsorted ? "R" : "",	\
 			b && b->tkey ? "K" : "",	\

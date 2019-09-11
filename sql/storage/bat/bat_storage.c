@@ -15,6 +15,13 @@
 
 #define SNAPSHOT_MINSIZE ((BUN) 1024*128)
 
+static sql_trans *
+oldest_active_transaction(void)
+{
+	sql_session *s = active_sessions->h->data;
+	return s->tr;
+}
+
 sql_delta *
 timestamp_delta( sql_delta *d, int ts)
 {
@@ -858,6 +865,7 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 		ok = delta_append_bat(bat, i);
 	else
 		ok = delta_append_val(bat, i);
+	/*
 	if (!c->t->data || !c->t->base.allocated) {
 		sql_table *ot = tr_find_table(tr->parent, c->t);
 		sql_dbat *bat = ZNEW(sql_dbat), *obat;
@@ -874,6 +882,7 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 		bat_destroy(bat->cached);
 		bat->cached = NULL;
 	}
+	*/
 	return ok;
 }
 
@@ -912,21 +921,17 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 		ok = delta_append_bat(bat, ib);
 	else
 		ok = delta_append_val(bat, ib);
+	/*
 	if (!i->t->data || !i->t->base.allocated) {
 		sql_table *ot = tr_find_table(tr->parent, i->t);
 		sql_dbat *bat = ZNEW(sql_dbat), *obat;
 		if(!bat)
-			ok = LOG_ERR;
-		else {
-			i->t->data = bat;
-			obat = timestamp_dbat(ot->data, i->t->base.stime);
-			dup_dbat(tr, obat, bat, isNew(ot), isTempTable(i->t));
-			i->t->base.allocated = 1;
-		}
+			return LOG_ERR;
+		i->t->data = bat;
+		obat = timestamp_dbat(ot->data, i->t->base.stime);
+		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(i->t));
+		i->t->base.allocated = 1;
 	}
-
-	if(ok == LOG_ERR)
-		return ok;
 
 	if (i->t && i->t->data && ((sql_dbat*)i->t->data)->cached) {
 		sql_dbat *bat = i->t->data;
@@ -934,6 +939,7 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 		bat_destroy(bat->cached);
 		bat->cached = NULL;
 	}
+	*/
 	return ok;
 }
 
@@ -952,7 +958,7 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 			return LOG_ERR;
 		bat_destroy(b);
 		b = temp_descriptor(bat->dbid);
-		if(!b)
+		if (b == NULL)
 			return LOG_ERR;
 	}
 	assert(b->theap.storage != STORE_PRIV);
@@ -1790,13 +1796,12 @@ destroy_bat(sql_delta *b)
 {
 	sql_delta *n;
 
-	if (!b)
-		return LOG_OK;
-	n = b->next;
-	destroy_delta(b);
-	_DELETE(b);
-	if (n)
-		return destroy_bat(n);
+	while(b) {
+		n = b->next;
+		destroy_delta(b);
+		_DELETE(b);
+		b = n;
+	}
 	return LOG_OK;
 }
 
@@ -1844,14 +1849,9 @@ log_destroy_idx(sql_trans *tr, sql_idx *i)
 	return LOG_OK;
 }
 
-static int
-destroy_dbat(sql_trans *tr, sql_dbat *bat)
+static void
+_destroy_dbat(sql_dbat *bat)
 {
-	sql_dbat *n;
-       
-	if (!bat)
-		return LOG_OK;
-	n = bat->next;
 	if (bat->dname)
 		_DELETE(bat->dname);
 	if (bat->dbid)
@@ -1863,8 +1863,19 @@ destroy_dbat(sql_trans *tr, sql_dbat *bat)
 	bat->dbid = 0;
 	bat->dname = NULL;
 	_DELETE(bat);
-	if (n)
-		return destroy_dbat(tr, n);
+}
+
+static int
+destroy_dbat(sql_trans *tr, sql_dbat *bat)
+{
+	sql_dbat *n;
+
+	(void)tr;
+	while(bat) {
+		n = bat->next;
+		_destroy_dbat(bat);
+		bat = n;
+	}
 	return LOG_OK;
 }
 
@@ -2097,7 +2108,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes, int id, int tpe)
 	}
 	bat_destroy(ins);
 
-	if ((cbat->ucnt && cbat->uibid) || cbat->cleared) {
+	if (cbat->ucnt) {
 		BAT *ui = temp_descriptor(cbat->uibid);
 		BAT *uv = temp_descriptor(cbat->uvbid);
 		if(ui == NULL || uv == NULL) {
@@ -2142,6 +2153,8 @@ gtr_update_dbat(sql_trans *tr, sql_dbat *d, int *changes, char tpe, oid id)
 
 	assert(ATOMIC_GET(&store_nr_active)==0);
 	if (d->dbid == dbid) {
+		/* if set its handled by the bat clear of the dbid */
+		d->cleared = 0;
 		if (d->next) { 
 			ok = destroy_dbat(tr, d->next);
 			d->next = NULL;
@@ -2555,9 +2568,6 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb)
 	int ok = LOG_OK;
 	BAT *db = NULL;
 
-	if (!fdb)
-		return ok;
-
 	if (fdb->cached) {
 		bat_destroy(fdb->cached);
 		fdb->cached = NULL;
@@ -2581,6 +2591,7 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb)
 					return LOG_ERR;
 			}
 			if (fdb->cleared) {
+				tdb->cleared = 1;
 				tdb->cnt = 0;
 				bat_clear(odb);
 			}
@@ -2630,8 +2641,10 @@ tr_merge_dbat(sql_trans *tr, sql_dbat *tdb)
 static int
 update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 {
+	sql_trans *oldest = oldest_active_transaction();
+	sql_table *ot = NULL;
 	int ok = LOG_OK;
-	node *n, *m;
+	node *n, *m, *o = NULL;
 
 	if (ATOMIC_GET(&store_nr_active) == 1 || ft->base.allocated) {
 		if (ATOMIC_GET(&store_nr_active) > 1 && ft->data) { /* move delta */
@@ -2647,16 +2660,27 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				bat_destroy(b->cached);
 				b->cached = NULL;
 			}
+			while (b && b->wtime >= oldest->stime)
+				b = b->next;
+			/* find table t->base.stime */
+			ot = tr_find_table(oldest, tt);
+			if (b && ot && b->wtime < ot->base.stime) {
+				/* anything older can go */
+				destroy_dbat(tr, b->next);
+				b->next = NULL;
+			}
 		} else if (tt->data && ft->base.allocated) {
-			tr_update_dbat(tr, tt->data, ft->data);
+			if (tr_update_dbat(tr, tt->data, ft->data) != LOG_OK)
+				ok = LOG_ERR;
 		} else if (ATOMIC_GET(&store_nr_active) == 1 && !ft->base.allocated) {
 			/* only insert/updates, merge earlier deletes */
-			if (!tt->data && tt->po) {
+			if (!tt->data) {
 				sql_table *ot = tr_find_table(tr->parent, tt);
 				tt->data = timestamp_dbat(ot->data, tt->base.stime);
 			}
 			assert(tt->data);
-			tr_merge_dbat(tr, tt->data);
+			if (tr_merge_dbat(tr, tt->data) != LOG_OK)
+				ok = LOG_ERR;
 			ft->data = NULL;
 		} else if (ft->data) {
 			tt->data = ft->data;
@@ -2664,7 +2688,9 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			ft->data = NULL;
 		}
 	}
-	for (n = ft->columns.set->h, m = tt->columns.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
+	if (ot)
+		o = ot->columns.set->h;
+	for (n = ft->columns.set->h, m = tt->columns.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next, o=(o?o->next:NULL)) {
 		sql_column *cc = n->data; // TODO: either stick to to/from terminology or old/current terminology
 		sql_column *oc = m->data;
 
@@ -2672,6 +2698,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			assert(!cc->base.wtime || oc->base.wtime < cc->base.wtime);
 			if (ATOMIC_GET(&store_nr_active) > 1 && cc->data) { /* move delta */
 				sql_delta *b = cc->data;
+				sql_column *oldc = NULL;
 
 				if (!oc->data)
 					oc->base.allocated = cc->base.allocated;
@@ -2683,8 +2710,19 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					bat_destroy(b->cached);
 					b->cached = NULL;
 				}
+				while (b && b->wtime >= oldest->stime) 
+					b = b->next;
+				/* find column c->base.stime */
+				if (o)
+					oldc = o->data;
+				if (oldc && b && oldc->base.id == cc->base.id && b->wtime < oldc->base.stime) {
+					/* anything older can go */
+					destroy_bat(b->next);
+					b->next = NULL;
+				}
 			} else if (oc->data && cc->base.allocated) {
-				tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
+				if (tr_update_delta(tr, oc->data, cc->data, cc->unique == 1) != LOG_OK) 
+					ok = LOG_ERR;
 			} else if (ATOMIC_GET(&store_nr_active) == 1 && !cc->base.allocated) {
 				/* only deletes, merge earlier changes */
 				if (!oc->data) {
@@ -2692,7 +2730,8 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					oc->data = timestamp_delta(o->data, oc->base.stime);
 				}
 				assert(oc->data);
-				tr_merge_delta(tr, oc->data, oc->unique == 1);
+				if (tr_merge_delta(tr, oc->data, oc->unique == 1) != LOG_OK)
+					ok = LOG_ERR;
 				cc->data = NULL;
 			} else if (cc->data) {
 				oc->data = cc->data; 
@@ -2729,7 +2768,10 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		cc->base.allocated = 0;
 	}
 	if (ok == LOG_OK && tt->idxs.set) {
-		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
+		o = NULL;
+		if (ot)
+			o = ot->idxs.set->h;
+		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next, o=(o?o->next:NULL)) {
 			sql_idx *ci = n->data;
 			sql_idx *oi = m->data;
 
@@ -2742,6 +2784,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			if (ATOMIC_GET(&store_nr_active) == 1 || (ci->base.wtime && ci->base.allocated)) {
 				if (ATOMIC_GET(&store_nr_active) > 1 && ci->data) { /* move delta */
 					sql_delta *b = ci->data;
+					sql_idx *oldi = NULL;
 
 					if (!oi->data)
 						oi->base.allocated = ci->base.allocated;
@@ -2752,15 +2795,27 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						bat_destroy(b->cached);
 						b->cached = NULL;
 					}
+					while (b && b->wtime >= oldest->stime) 
+						b = b->next;
+					/* find idx i->base.stime */
+					if (o)
+						oldi = o->data;
+					if (oldi && b && oldi->base.id == ci->base.id && b->wtime < oldi->base.stime) {
+						/* anything older can go */
+						destroy_bat(b->next);
+						b->next = NULL;
+					}
 				} else if (oi->data && ci->base.allocated) {
-					tr_update_delta(tr, oi->data, ci->data, 0);
+					if (tr_update_delta(tr, oi->data, ci->data, 0) != LOG_OK)
+						ok = LOG_ERR;
 				} else if (ATOMIC_GET(&store_nr_active) == 1 && !ci->base.allocated) {
 					if (!oi->data) {
 						sql_idx *o = tr_find_idx(tr->parent, oi);
 						oi->data = timestamp_delta(o->data, oi->base.stime);
 					}
 					assert(oi->data);
-					tr_merge_delta(tr, oi->data, 0);
+					if (tr_merge_delta(tr, oi->data, 0) != LOG_OK)
+						ok = LOG_ERR;
 					ci->data = NULL;
 				} else if (ci->data) {
 					oi->data = ci->data;
@@ -2896,6 +2951,51 @@ log_table(sql_trans *tr, sql_table *ft)
 }
 
 static int 
+snapshot_bat(sql_delta *cbat)
+{
+	if (!cbat->ibase && cbat->cnt > SNAPSHOT_MINSIZE) {
+		BAT *ins = temp_descriptor(cbat->ibid);
+		if(ins) {
+			if (BATsave(ins) != GDK_SUCCEED) {
+				bat_destroy(ins);
+				return LOG_ERR;
+			}
+			bat_destroy(ins);
+		}
+	}
+	return LOG_OK;
+}
+
+static int
+save_snapshot(sql_table *ft)
+{
+	int ok = LOG_OK;
+	node *n;
+
+	for (n = ft->columns.set->h; ok == LOG_OK && n; n = n->next) {
+		sql_column *cc = n->data;
+
+		if (!cc->base.wtime || !cc->base.allocated) 
+			continue;
+		if (snapshot_bat(cc->data) != LOG_OK)
+			return LOG_ERR;
+	}
+	if (ok == LOG_OK && ft->idxs.set) {
+		for (n = ft->idxs.set->h; ok == LOG_OK && n; n = n->next) {
+			sql_idx *ci = n->data;
+
+			/* some indices have no bats or changes */
+			if (!ci->data || !ci->base.wtime || !ci->base.allocated)
+				continue;
+
+			if (snapshot_bat(ci->data) != LOG_OK)
+				return LOG_ERR;
+		}
+	}
+	return LOG_OK;
+}
+
+static int 
 tr_snapshot_bat( sql_trans *tr, sql_delta *cbat)
 {
 	int ok = LOG_OK;
@@ -2986,6 +3086,8 @@ bat_storage_init( store_functions *sf)
 	sf->snapshot_create_col = (create_col_fptr)&snapshot_create_col;
 	sf->snapshot_create_idx = (create_idx_fptr)&snapshot_create_idx;
 	sf->snapshot_create_del = (create_del_fptr)&snapshot_create_del;
+
+	sf->save_snapshot = (snapshot_fptr)&save_snapshot;
 
 	sf->dup_col = (dup_col_fptr)&dup_col;
 	sf->dup_idx = (dup_idx_fptr)&dup_idx;

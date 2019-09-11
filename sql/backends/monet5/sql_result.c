@@ -1017,7 +1017,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			}
 		}
 		if (as.error) {
-			if( !best) sql_error(m, 500, "%s", as.error);
+			if( !best) sql_error(m, 500, "%s", getExceptionMessage(as.error));
 			freeException(as.error);
 			as.error = NULL;
 		}

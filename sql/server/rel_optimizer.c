@@ -2174,7 +2174,6 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			/* possibly add order by column */
 			if (add_r)
 				u->exps = list_merge(u->exps, exps_copy(sql->sa, r->r), NULL);
-
 			if (need_distinct(r)) {
 				set_distinct(ul);
 				set_distinct(ur);
@@ -3854,6 +3853,7 @@ exps_merge_project_rse( mvc *sql, list *exps)
 						append(ops, exp_atom_bool(sql->sa, lf->func->base.name[1] == '=')); /* left inclusive */
 						append(ops, exp_atom_bool(sql->sa, rf->func->base.name[1] == '=')); /* right exclusive */
 						append(ops, exp_atom_bool(sql->sa, 0)); /* nils_false */
+						append(ops, exp_atom_bool(sql->sa, 0)); /* anti */
 
 						types = exp_types(sql->sa, ops);
 						/* convert into between */
@@ -8766,6 +8766,7 @@ rel_remove_union_partitions(int *changes, mvc *sql, sql_rel *rel)
 		return rel;
 	if (exp_is_zero_rows(sql, rel->l, NULL)) {
 		sql_rel *r = rel->r;
+		rel_rename_exps(sql, rel->exps, r->exps); 
 		rel->r = NULL;
 		rel_destroy(rel);
 		(*changes)++;
@@ -8774,6 +8775,7 @@ rel_remove_union_partitions(int *changes, mvc *sql, sql_rel *rel)
 	}
 	if (exp_is_zero_rows(sql, rel->r, NULL)) {
 		sql_rel *l = rel->l;
+		rel_rename_exps(sql, rel->exps, l->exps); 
 		rel->l = NULL;
 		rel_destroy(rel);
 		(*changes)++;

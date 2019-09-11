@@ -421,10 +421,10 @@ MCfreeClient(Client c)
 		c->glb = NULL;
 	}
 	if( c->error_row){
-		BBPrelease(c->error_row->batCacheid);
-		BBPrelease(c->error_fld->batCacheid);
-		BBPrelease(c->error_msg->batCacheid);
-		BBPrelease(c->error_input->batCacheid);
+		BBPunfix(c->error_row->batCacheid);
+		BBPunfix(c->error_fld->batCacheid);
+		BBPunfix(c->error_msg->batCacheid);
+		BBPunfix(c->error_input->batCacheid);
 		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	}
 	if( c->wlc)

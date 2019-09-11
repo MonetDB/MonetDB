@@ -23,7 +23,6 @@ stdout of test 'type_dump_test.SF-989257` in directory 'sql/test/BugDay_2005-10-
 # 12:41:41 >  
 
 Operation successful
-
 CREATE TABLE "sys"."voyages" (
 	"number"            INTEGER,
 	"number_sup"        CHAR(1),
@@ -47,6 +46,7 @@ CREATE TABLE "sys"."voyages" (
 	"next_voyage"       INTEGER,
 	"particulars"       VARCHAR(507)
 );
+Operation successful
 
 # 12:41:42 >  
 # 12:41:42 >  Done.

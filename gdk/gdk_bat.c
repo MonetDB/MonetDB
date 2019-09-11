@@ -1494,6 +1494,11 @@ BUNfnd(BAT *b, const void *v)
 	BATcheck(b, "BUNfnd", BUN_NONE);
 	if (!v)
 		return r;
+	if (b->ttype == TYPE_void && b->tvheap != NULL) {
+		struct canditer ci;
+		canditer_init(&ci, NULL, b);
+		return canditer_search(&ci, * (const oid *) v, false);
+	}
 	if (BATtvoid(b))
 		return BUNfndVOID(b, v);
 	if (!BATcheckhash(b)) {
@@ -2227,10 +2232,29 @@ BATassertProps(BAT *b)
 		assert(b->twidth == 0);
 		assert(b->tsorted);
 		if (is_oid_nil(b->tseqbase)) {
+			assert(b->tvheap == NULL);
 			assert(BATcount(b) == 0 || !b->tnonil);
 			assert(BATcount(b) <= 1 || !b->tkey);
 			assert(b->trevsorted);
 		} else {
+			if (b->tvheap != NULL) {
+				/* candidate list with exceptions */
+				assert(b->batRole == TRANSIENT);
+				assert(b->tvheap->free <= b->tvheap->size);
+				assert(b->tvheap->free % SIZEOF_OID == 0);
+				if (b->tvheap->free > 0) {
+					const oid *oids = (const oid *) b->tvheap->base;
+					q = b->tvheap->free / SIZEOF_OID;
+					assert(oids != NULL);
+					assert(b->tseqbase + BATcount(b) + q <= GDK_oid_max);
+					/* exceptions within range */
+					assert(oids[0] >= b->tseqbase);
+					assert(oids[q - 1] < b->tseqbase + BATcount(b) + q);
+					/* exceptions sorted */
+					for (p = 1; p < q; p++)
+						assert(oids[p - 1] < oids[p]);
+				}
+			}
 			assert(b->tseqbase + b->batCount <= GDK_oid_max);
 			assert(BATcount(b) == 0 || !b->tnil);
 			assert(BATcount(b) <= 1 || !b->trevsorted);
@@ -2364,6 +2388,7 @@ BATassertProps(BAT *b)
 			const char *nme = BBP_physical(b->batCacheid);
 			Hash *hs = NULL;
 			BUN mask;
+			int len;
 
 			if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
 				fprintf(stderr,
@@ -2371,8 +2396,14 @@ BATassertProps(BAT *b)
 					"hash table\n");
 				goto abort_check;
 			}
-			snprintf(hs->heap.filename, sizeof(hs->heap.filename),
-				 "%s.hash%d", nme, THRgettid());
+			len = snprintf(hs->heap.filename, sizeof(hs->heap.filename), "%s.hash%d", nme, THRgettid());
+			if (len == -1 || len > (int) sizeof(hs->heap.filename)) {
+				GDKfree(hs);
+				fprintf(stderr,
+					"#BATassertProps: heap filename "
+					"is too large\n");
+				goto abort_check;
+			}
 			if (ATOMsize(b->ttype) == 1)
 				mask = (BUN) 1 << 8;
 			else if (ATOMsize(b->ttype) == 2)

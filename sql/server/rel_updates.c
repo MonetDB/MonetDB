@@ -96,9 +96,8 @@ get_inserts( sql_rel *ins )
 }
 
 static sql_rel *
-rel_insert_hash_idx(sql_query *query, const char* alias, sql_idx *i, sql_rel *inserts)
+rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 {
-	mvc *sql = query->sql;
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	node *m;
 	sql_subtype *it, *lng;
@@ -148,9 +147,8 @@ rel_insert_hash_idx(sql_query *query, const char* alias, sql_idx *i, sql_rel *in
 }
 
 static sql_rel *
-rel_insert_join_idx(sql_query *query, const char* alias, sql_idx *i, sql_rel *inserts)
+rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 {
-	mvc *sql = query->sql;
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	int need_nulls = 0;
 	node *m, *o;
@@ -234,9 +232,8 @@ rel_insert_join_idx(sql_query *query, const char* alias, sql_idx *i, sql_rel *in
 }
 
 static sql_rel *
-rel_insert_idxs(sql_query *query, sql_table *t, const char* alias, sql_rel *inserts)
+rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 {
-	mvc *sql = query->sql;
 	sql_rel *p = inserts->r;
 	node *n;
 
@@ -251,9 +248,9 @@ rel_insert_idxs(sql_query *query, sql_table *t, const char* alias, sql_rel *inse
 		if (ins->op == op_union) 
 			inserts->r = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 0, 1));
 		if (hash_index(i->type) || i->type == no_idx) {
-			rel_insert_hash_idx(query, alias, i, inserts);
+			rel_insert_hash_idx(sql, alias, i, inserts);
 		} else if (i->type == join_idx) {
-			rel_insert_join_idx(query, alias, i, inserts);
+			rel_insert_join_idx(sql, alias, i, inserts);
 		}
 	}
 	if (inserts->r != p) {
@@ -271,9 +268,9 @@ rel_insert_idxs(sql_query *query, sql_table *t, const char* alias, sql_rel *inse
 }
 
 sql_rel *
-rel_insert(sql_query *query, sql_rel *t, sql_rel *inserts)
+rel_insert(mvc *sql, sql_rel *t, sql_rel *inserts)
 {
-	sql_rel * r = rel_create(query->sql->sa);
+	sql_rel * r = rel_create(sql->sa);
 	sql_table *tab = get_table(t);
 	if(!r)
 		return NULL;
@@ -283,14 +280,14 @@ rel_insert(sql_query *query, sql_rel *t, sql_rel *inserts)
 	r->r = inserts;
 	/* insert indices */
 	if (tab)
-		return rel_insert_idxs(query, tab, rel_name(t), r);
+		return rel_insert_idxs(sql, tab, rel_name(t), r);
 	return r;
 }
 
 static sql_rel *
 rel_insert_table(sql_query *query, sql_table *t, char *name, sql_rel *inserts)
 {
-	return rel_insert(query, rel_basetable(query->sql, t, name), inserts);
+	return rel_insert(query->sql, rel_basetable(query->sql, t, name), inserts);
 }
 
 static list *
@@ -1602,7 +1599,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			extra_project = rel_project(sql->sa, extra_select, rel_projections(sql, joined, NULL, 1, 0));
 			if (!(insert = merge_generate_inserts(query, t, extra_project, sts->h->data.lval, sts->h->next->data.sym)))
 				return NULL;
-			if (!(insert = rel_insert(query, rel_dup(bt), insert)))
+			if (!(insert = rel_insert(query->sql, rel_dup(bt), insert)))
 				return NULL;
 		} else {
 			assert(0);

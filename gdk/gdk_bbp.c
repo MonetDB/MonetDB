@@ -1152,7 +1152,9 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 			options = buf + nread + 1;
 
 		if ((s = strchr(headname, '~')) != NULL && s == headname) {
-			snprintf(logical, sizeof(logical), "tmp_%o", (unsigned) bid);
+			int len = snprintf(logical, sizeof(logical), "tmp_%o", (unsigned) bid);
+			if (len == -1 || len >= (int) sizeof(logical))
+				GDKfatal("BBPinit: BBP logical filename directory is too large\n");
 		} else {
 			if (s)
 				*s = 0;

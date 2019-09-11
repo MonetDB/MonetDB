@@ -1,0 +1,87 @@
+stderr of test 'alter_table_drop_column.Bug-6749` in directory 'sql/test/BugTracker-2019` itself:
+
+
+# 13:37:31 >  
+# 13:37:31 >  "/usr/bin/python2" "alter_table_drop_column.Bug-6749.py" "alter_table_drop_column.Bug-6749"
+# 13:37:31 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30301
+# cmdline opt 	mapi_usock = /var/tmp/mtest-26192/.s.monetdb.30301
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2019
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30301
+# cmdline opt 	mapi_usock = /var/tmp/mtest-26192/.s.monetdb.30301
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2019
+MAPI  = (monetdb) /var/tmp/mtest-26192/.s.monetdb.30301
+QUERY = alter table t drop column b; --error, b has a depenency
+ERROR = !ALTER TABLE: cannot drop column 'b': there are database objects which depend on it
+CODE  = 2BM37
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30301
+# cmdline opt 	mapi_usock = /var/tmp/mtest-26192/.s.monetdb.30301
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2019
+#client1:!ERROR:ParseException:SQLparser:2BM37!ALTER TABLE: cannot drop column 'b': there are database objects which depend on it
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30301
+# cmdline opt 	mapi_usock = /var/tmp/mtest-26192/.s.monetdb.30301
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2019
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30301
+# cmdline opt 	mapi_usock = /var/tmp/mtest-26192/.s.monetdb.30301
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2019
+
+# 13:37:33 >  
+# 13:37:33 >  "Done."
+# 13:37:33 >  
+

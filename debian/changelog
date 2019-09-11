@@ -1,3 +1,32 @@
+monetdb (11.33.11) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6749: mserver5 restart aborts/segfaults after dropping column
+    with constraint
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 30 Aug 2019 02:27:33 +0200
+
+monetdb (11.33.9) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6571: Jdbc connection hangs
+  * BZ#6693: mix of long and short queries make JDBC-driver hang
+  * BZ#6741: report no such table when execute “alter table tb1 rename
+    to tb2” according to using mapi
+  * BZ#6744: CREATE SEQUENCE seq;  fails
+  * BZ#6748: MonetDB "forgets" columns after ALTER TABLE statements
+  * BZ#6751: ODBC driver(11.33.3) Seg Faults when "fn ucase" is used in SQL
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 20 Aug 2019 13:39:03 +0200
+
+monetdb (11.33.9) unstable; urgency=low
+
+  * sql: Many fixes for using the server in a highly concurrent setting with
+    many clients doing read-only queries mixed with clients doing updating
+    queries.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 20 Aug 2019 13:39:03 +0200
+
 monetdb (11.33.7) unstable; urgency=low
 
   * Rebuilt.

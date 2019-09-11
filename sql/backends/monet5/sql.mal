@@ -62,6 +62,14 @@ command flush_log( ) :void
 address SQLflush_log
 comment "flush the log now";
 
+command resume_log_flushing( ) :void
+address SQLresume_log_flushing
+comment "Resume WAL log flushing";
+
+command suspend_log_flushing( ) :void
+address SQLsuspend_log_flushing
+comment "Suspend WAL log flushing";
+
 pattern assert(b:bit,msg:str):void
 address SQLassert
 comment "Generate an exception when b==true";

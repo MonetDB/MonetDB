@@ -178,19 +178,38 @@ WLCused(void)
 }
 
 /* The master configuration file is a simple key=value table */
-void
+str
 WLCreadConfig(FILE *fd)
-{	char path[FILENAME_MAX];
+{	
+	str msg = MAL_SUCCEED;
+	char path[FILENAME_MAX];
+	int len;
+
 	while( fgets(path, FILENAME_MAX, fd) ){
 		path[strlen(path)-1] = 0;
-		if( strncmp("logs=", path,5) == 0)
-			snprintf(wlc_dir, FILENAME_MAX, "%s", path + 5);
-		if( strncmp("snapshot=", path,9) == 0)
-			snprintf(wlc_snapshot, FILENAME_MAX, "%s", path + 9);
+		if( strncmp("logs=", path,5) == 0) {
+			len = snprintf(wlc_dir, FILENAME_MAX, "%s", path + 5);
+			if (len == -1 || len >= FILENAME_MAX) {
+				msg = createException(MAL, "wlc.readConfig", "logs config value is too large");
+				goto bailout;
+			}
+		}
+		if( strncmp("snapshot=", path,9) == 0) {
+			len = snprintf(wlc_snapshot, FILENAME_MAX, "%s", path + 9);
+			if (len == -1 || len >= FILENAME_MAX) {
+				msg = createException(MAL, "wlc.readConfig", "snapshot config value is too large");
+				goto bailout;
+			}
+		}
 		if( strncmp("id=", path,3) == 0)
 			wlc_id = atol(path+ 3);
-		if( strncmp("write=", path,6) == 0)
-			snprintf(wlc_write, 26, "%s", path + 6);
+		if( strncmp("write=", path,6) == 0) {
+			len = snprintf(wlc_write, 26, "%s", path + 6);
+			if (len == -1 || len >= 26) {
+				msg = createException(MAL, "wlc.readConfig", "write config value is too large");
+				goto bailout;
+			}
+		}			
 		if( strncmp("batches=", path, 8) == 0)
 			wlc_batches = atoi(path+ 8);
 		if( strncmp("beat=", path, 5) == 0)
@@ -198,7 +217,9 @@ WLCreadConfig(FILE *fd)
 		if( strncmp("state=", path, 6) == 0)
 			wlc_state = atoi(path+ 6);
 	}
+bailout:
 	fclose(fd);
+	return msg;
 }
 
 str
@@ -212,8 +233,7 @@ WLCgetConfig(void){
 	GDKfree(l);
 	if( fd == NULL)
 		throw(MAL,"wlc.getConfig","Could not access wlc.config file\n");
-	WLCreadConfig(fd);
-	return MAL_SUCCEED;
+	return WLCreadConfig(fd);
 }
 
 static 
@@ -260,7 +280,7 @@ WLCsetlogger(void)
 	wlc_fd = open_wastream(path);
 	if( wlc_fd == 0){
 		MT_lock_unset(&wlc_lock);
-		GDKerror("wlc.logger:Could not create %s\n",path);
+		fprintf(stderr, "wlc.logger:Could not create %s\n",path);
 		throw(MAL,"wlc.logger","Could not create %s\n",path);
 	}
 
@@ -316,7 +336,7 @@ WLClogger(void *arg)
 		if( wlc_dir[0] && wlc_fd ){
 			MT_lock_set(&wlc_lock);
 			if((msg = WLCcloselogger()) != MAL_SUCCEED) {
-				GDKerror("%s",msg);
+				fprintf(stderr, "%s",msg);
 				freeException(msg);
 			}
 			MT_lock_unset(&wlc_lock);
@@ -333,6 +353,7 @@ str
 WLCinit(void)
 {
 	str conf, msg= MAL_SUCCEED;
+	int len;
 
 	if( wlc_state == WLC_STARTUP){
 		// use default location for master configuration file
@@ -345,13 +366,16 @@ WLCinit(void)
 		}
 		GDKfree(conf);
 		// we are in master mode
-		snprintf(wlc_name, IDLENGTH, "%s", GDKgetenv("gdk_dbname"));
+		len = snprintf(wlc_name, IDLENGTH, "%s", GDKgetenv("gdk_dbname"));
+		if (len == -1 || len >= IDLENGTH)
+			throw(MAL, "wlc.init", "gdk_dbname variable is too large");
+
 		msg =  WLCgetConfig();
 		if( msg)
-			GDKerror("%s",msg);
+			fprintf(stderr, "%s",msg);
 		if (MT_create_thread(&wlc_logger, WLClogger , (void*) 0,
 							 MT_THR_DETACHED, "WLClogger") < 0) {
-			GDKerror("wlc.logger thread could not be spawned");
+			fprintf(stderr, "wlc.logger thread could not be spawned");
 		}
 	}
 	return MAL_SUCCEED;
@@ -439,8 +463,12 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// set location for logs
 	if( GDKcreatedir(path) == GDK_FAIL)
 		throw(SQL,"wlc.master","Could not create %s\n", path);
-	snprintf(wlc_name, IDLENGTH, "%s", GDKgetenv("gdk_dbname"));
-	snprintf(wlc_dir, FILENAME_MAX, "%s", path);
+	len = snprintf(wlc_name, IDLENGTH, "%s", GDKgetenv("gdk_dbname"));
+	if (len == -1 || len >= IDLENGTH)
+		throw(SQL,"wlc.master","gdk_dbname is too large");
+	len = snprintf(wlc_dir, FILENAME_MAX, "%s", path);
+	if (len == -1 || len >= FILENAME_MAX)
+		throw(SQL,"wlc.master","wlc_dir directory name is too large");
 	wlc_state= WLC_RUN;
 	return WLCsetConfig();
 }
@@ -668,7 +696,7 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 		} }
 		break;
 	default:
-		mnstr_printf(cntxt->fdout,"#wlc datashipping, non-supported type\n");
+		fprintf(stderr, "#wlc datashipping, non-supported type %d\n", ATOMstorage(b->ttype));
 		cntxt->wlc_kind = WLC_CATALOG;
 	}
 finish:
@@ -875,11 +903,17 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+/* Beware that a client context can be used in parallel and
+ * that we don't want transaction interference caused by merging
+ * the MAL instructions accidentally.
+ * The effectively means that the SQL transaction record should
+ * collect the MAL instructions and flush them.
+ */
 static str
 WLCwrite(Client cntxt)
 {	str msg = MAL_SUCCEED;
 	InstrPtr p;
-	int tag;
+	int  tag;
 	ValRecord cst;
 	// save the wlc record on a file 
 	if( cntxt->wlc == 0 || cntxt->wlc->stop <= 1 ||  cntxt->wlc_kind == WLC_QUERY )
@@ -900,14 +934,13 @@ WLCwrite(Client cntxt)
 		
 		p = getInstrPtr(cntxt->wlc,0);
 		MT_lock_set(&wlc_lock);
-		// Tag each transaction record with an unique id
+		/* Find a single transaction sequence ending with COMMIT or ROLLBACK */
 		cst.vtype= TYPE_lng;
 		cst.val.lval = wlc_id;
 		tag = defConstant(cntxt->wlc,TYPE_lng, &cst);
 		p = getInstrPtr(cntxt->wlc,0);
 		p = setArgument(cntxt->wlc, p, p->retc, tag);
 
-		// save it as an ordinary MAL block
 		printFunction(wlc_fd, cntxt->wlc, 0, LIST_MAL_DEBUG );
 		(void) mnstr_flush(wlc_fd);
 		

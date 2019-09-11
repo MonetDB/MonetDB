@@ -1,0 +1,230 @@
+stdout of test 'alter_table_drop_column.Bug-6749` in directory 'sql/test/BugTracker-2019` itself:
+
+
+# 13:37:31 >  
+# 13:37:31 >  "/usr/bin/python2" "alter_table_drop_column.Bug-6749.py" "alter_table_drop_column.Bug-6749"
+# 13:37:31 >  
+
+#create table t (a int, b int, c int);alter table t add unique (b);
+#create table t (a int, b int, c int);alter table t add unique (b);
+# MonetDB 5 server v11.33.4 (hg id: 101e6463524a+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2019', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.527 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:30301/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26192/.s.monetdb.30301
+# MonetDB/GIS module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+#alter table t drop column c;
+# MonetDB 5 server v11.33.4 (hg id: 101e6463524a+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2019', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.527 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:30301/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26192/.s.monetdb.30301
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB 5 server v11.33.4 (hg id: 101e6463524a+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2019', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.527 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:30301/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26192/.s.monetdb.30301
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+#select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';
+% .L54 # table_name
+% L54 # name
+% bigint # type
+% 1 # length
+[ 2	]
+#select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';
+% .L54 # table_name
+% L54 # name
+% bigint # type
+% 1 # length
+[ 2	]
+#select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';
+% .keys,	.keys,	.keys,	.keys # table_name
+% type,	name,	rkey,	action # name
+% int,	varchar,	int,	int # type
+% 1,	10,	2,	2 # length
+[ 1,	"t_b_unique",	-1,	-1	]
+#select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';
+% .idxs,	.idxs # table_name
+% type,	name # name
+% int,	varchar # type
+% 1,	10 # length
+[ 0,	"t_b_unique"	]
+#select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';
+#select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';
+% .L54 # table_name
+% L54 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';
+% .L54 # table_name
+% L54 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';
+% .keys,	.keys,	.keys,	.keys # table_name
+% type,	name,	rkey,	action # name
+% int,	varchar,	int,	int # type
+% 1,	0,	1,	1 # length
+#select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';
+% .idxs,	.idxs # table_name
+% type,	name # name
+% int,	varchar # type
+% 1,	0 # length
+# MonetDB 5 server v11.33.4 (hg id: 101e6463524a+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2019', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.527 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:30301/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26192/.s.monetdb.30301
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+% sys.t,	sys.t,	sys.t # table_name
+% a,	b,	c # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+% .L54 # table_name
+% L54 # name
+% bigint # type
+% 1 # length
+[ 2	]
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+% .L54 # table_name
+% L54 # name
+% bigint # type
+% 1 # length
+[ 2	]
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+% .keys,	.keys,	.keys,	.keys # table_name
+% type,	name,	rkey,	action # name
+% int,	varchar,	int,	int # type
+% 1,	10,	2,	2 # length
+[ 1,	"t_b_unique",	-1,	-1	]
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+% .idxs,	.idxs # table_name
+% type,	name # name
+% int,	varchar # type
+% 1,	10 # length
+[ 0,	"t_b_unique"	]
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+% .L54 # table_name
+% L54 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+% .L54 # table_name
+% L54 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+% .keys,	.keys,	.keys,	.keys # table_name
+% type,	name,	rkey,	action # name
+% int,	varchar,	int,	int # type
+% 1,	0,	1,	1 # length
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+% .idxs,	.idxs # table_name
+% type,	name # name
+% int,	varchar # type
+% 1,	0 # length
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+% sys.t,	sys.t # table_name
+% a,	c # name
+% int,	int # type
+% 1,	1 # length
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+% sys.t,	sys.t # table_name
+% a,	c # name
+% int,	int # type
+% 1,	1 # length
+#drop table t;start transaction;create table t (a int, b int, c int);alter table t add unique (b);select * from t;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';alter table t drop column b cascade;select count(*) from objects inner join dependencies on objects.id = dependencies.depend_id inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select count(*) from dependencies inner join columns on dependencies.id = columns.id inner join tables on columns.table_id = tables.id where tables.name = 't';select keys.type, keys.name, keys.rkey, keys.action from keys inner join tables on tables.id = keys.table_id where tables.name = 't';select idxs.type, idxs.name from idxs inner join tables on tables.id = idxs.table_id where tables.name = 't';select * from t;commit;select * from t;drop table t;
+# MonetDB 5 server v11.33.4 (hg id: 101e6463524a+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2019', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.527 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:30301/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26192/.s.monetdb.30301
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 13:37:33 >  
+# 13:37:33 >  "Done."
+# 13:37:33 >  
+

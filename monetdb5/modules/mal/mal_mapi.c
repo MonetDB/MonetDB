@@ -128,9 +128,6 @@ struct challengedata {
 static void
 doChallenge(void *data)
 {
-#ifdef DEBUG_SERVER
-	Client cntxt= mal_clients;
-#endif
 	char *buf = GDKmalloc(BLOCK + 1);
 	char challenge[13];
 
@@ -253,9 +250,6 @@ doChallenge(void *data)
 #ifdef DEBUG_SERVER
 	fprintf(stderr,"mal_mapi:Client accepted %s\n", buf);
 	fflush(stderr);
-
-	mnstr_printf(cntxt->fdout, "#SERVERlisten:client accepted\n");
-	mnstr_printf(cntxt->fdout, "#SERVERlisten:client string %s\n", buf);
 #endif
 	bs = bstream_create(fdin, 128 * BLOCK);
 
@@ -443,7 +437,7 @@ SERVERlistenThread(SOCKET *Sock)
 		}
 #ifdef DEBUG_SERVER
 		fprintf(stderr,"server:accepted\n");
-		fflush(stdout);
+		fflush(stderr);
 #endif
 		data = GDKmalloc(sizeof(*data));
 		if( data == NULL){
@@ -528,7 +522,6 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	const char *listenaddr;
 #ifdef DEBUG_SERVER
 	char msg[512], host[512];
-	Client cntxt= mal_clients;
 #endif
 
 	accept_any = GDKgetenv_istrue("mapi_open");

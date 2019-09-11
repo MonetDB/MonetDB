@@ -554,8 +554,8 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ptr val;
 
 	(void) cntxt;
-	assert(pci->retc == 1);
-	assert(pci->argc >= 2);
+	if ( pci->retc != 1 || pci->argc < 2)
+		throw(MAL, "io.table", "INTERNAL ERROR" " assertion error  retc %d  argc %d", pci->retc, pci->argc);
 
 	memset(piv, 0, sizeof(BAT*) * MAXPARAMS);
 	for (i = 1; i < pci->argc; i++) {

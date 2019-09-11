@@ -1,5 +1,5 @@
 %global name MonetDB
-%global version 11.34.0
+%global version 11.36.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -1061,6 +1061,26 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Aug 30 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.11-20190830
+- Rebuilt.
+- BZ#6749: mserver5 restart aborts/segfaults after dropping column
+  with constraint
+
+* Tue Aug 20 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.9-20190820
+- Rebuilt.
+- BZ#6571: Jdbc connection hangs
+- BZ#6693: mix of long and short queries make JDBC-driver hang
+- BZ#6741: report no such table when execute “alter table tb1 rename
+  to tb2” according to using mapi
+- BZ#6744: CREATE SEQUENCE seq;  fails
+- BZ#6748: MonetDB "forgets" columns after ALTER TABLE statements
+- BZ#6751: ODBC driver(11.33.3) Seg Faults when "fn ucase" is used in SQL
+
+* Tue Aug 20 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.9-20190820
+- sql: Many fixes for using the server in a highly concurrent setting with
+  many clients doing read-only queries mixed with clients doing updating
+  queries.
+
 * Wed Aug 07 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.33.7-20190807
 - Rebuilt.
 
