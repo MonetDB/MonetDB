@@ -8,7 +8,6 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
-#include "gdk_cand.h"
 #include "gdk_private.h"
 #include <math.h>
 
@@ -45,14 +44,22 @@ virtualize(BAT *bn)
 	     * (const oid *) Tloc(bn, 0) + BATcount(bn) - 1 ==
 	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
 		/* column is dense, replace by virtual oid */
-		ALGODEBUG fprintf(stderr, "#virtualize(bn=" ALGOBATFMT ",seq="OIDFMT")\n",
+		ALGODEBUG fprintf(stderr, "#%s: %s(bn=" ALGOBATFMT ",seq="OIDFMT")\n",
+				  MT_thread_getname(), __func__,
 				  ALGOBATPAR(bn),
 				  BATcount(bn) > 0 ? * (const oid *) Tloc(bn, 0) : 0);
 		if (BATcount(bn) == 0)
 			bn->tseqbase = 0;
 		else
 			bn->tseqbase = * (const oid *) Tloc(bn, 0);
-		HEAPfree(&bn->theap, true);
+		if (VIEWtparent(bn)) {
+			BBPunshare(VIEWtparent(bn));
+			BBPunfix(VIEWtparent(bn));
+			bn->theap.parentid = 0;
+			bn->theap.base = NULL;
+		} else {
+			HEAPfree(&bn->theap, true);
+		}
 		bn->theap.storage = bn->theap.newstorage = STORE_MEM;
 		bn->theap.size = 0;
 		bn->ttype = TYPE_void;
@@ -64,69 +71,6 @@ virtualize(BAT *bn)
 	return bn;
 }
 
-BAT *
-doublerange(oid l1, oid h1, oid l2, oid h2)
-{
-	BAT *bn;
-	oid *restrict p;
-
-	assert(l1 <= h1);
-	assert(l2 <= h2);
-	assert(h1 <= l2);
-	if (l1 == h1 || l2 == h2) {
-		return BATdense(0, l1 == h1 ? l2 : l1, h1 - l1 + h2 - l2);
-	}
-	bn = COLnew(0, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	BATsetcount(bn, h1 - l1 + h2 - l2);
-	p = (oid *) Tloc(bn, 0);
-	while (l1 < h1)
-		*p++ = l1++;
-	while (l2 < h2)
-		*p++ = l2++;
-	bn->tkey = true;
-	bn->tsorted = true;
-	bn->trevsorted = BATcount(bn) <= 1;
-	bn->tnil = false;
-	bn->tnonil = true;
-	return bn;
-}
-
-BAT *
-doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
-{
-	BAT *bn;
-	oid *restrict p;
-	const oid *restrict o;
-
-	assert(l1 <= h1);
-	assert(l2 <= h2);
-	assert(h1 <= l2);
-	assert(b->tsorted);
-	assert(b->tkey);
-	if (b->ttype == TYPE_void)
-		return doublerange(l1 + b->tseqbase, h1 + b->tseqbase,
-				   l2 + b->tseqbase, h2 + b->tseqbase);
-	bn = COLnew(0, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	BATsetcount(bn, h1 - l1 + h2 - l2);
-	p = (oid *) Tloc(bn, 0);
-	o = (const oid *) Tloc(b, l1);
-	while (l1++ < h1)
-		*p++ = *o++;
-	o = (const oid *) Tloc(b, l2);
-	while (l2++ < h2)
-		*p++ = *o++;
-	bn->tkey = true;
-	bn->tsorted = true;
-	bn->trevsorted = BATcount(bn) <= 1;
-	bn->tnil = false;
-	bn->tnonil = true;
-	return virtualize(bn);
-}
-
 #define HASHloop_bound(bi, h, hb, v, lo, hi)		\
 	for (hb = HASHget(h, HASHprobe((h), v));	\
 	     hb != HASHnil(h);				\
@@ -136,44 +80,37 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 		     (*cmp)(v, BUNtail(bi, hb)) == 0))
 
 static BAT *
-hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
+hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
+	   const void *tl, BUN maximum, bool phash, const char **algo)
 {
 	BATiter bi;
 	BUN i, cnt;
 	oid o, *restrict dst;
-	BUN l, h;
+	BUN l, h, d = 0;
 	oid seq;
 	int (*cmp)(const void *, const void *);
 
 	assert(bn->ttype == TYPE_oid);
 	seq = b->hseqbase;
-	l = 0;
-	h = BUNlast(b);
+	l = ci->seq - seq;
+	h = canditer_last(ci) + 1 - seq;
 
+	*algo = "hashselect";
 	if (phash) {
 		BAT *b2 = BBPdescriptor(VIEWtparent(b));
-		ALGODEBUG
-			fprintf(stderr, "#hashselect(" ALGOBATFMT "): "
-				"using parent(" ALGOBATFMT ") "
-				"for hash\n",
-				ALGOBATPAR(b),
-				ALGOBATPAR(b2));
-		l = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
-		h = l + BATcount(b);
+		*algo = "hashselect on parent";
+		ALGODEBUG fprintf(stderr, "#%s: %s(" ALGOBATFMT "): "
+				  "using parent(" ALGOBATFMT ") "
+				  "for hash\n",
+				  MT_thread_getname(), __func__,
+				  ALGOBATPAR(b),
+				  ALGOBATPAR(b2));
+		d = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
+		l += d;
+		h += d;
 		b = b2;
 	}
 
-	if (s && BATtdense(s)) {
-		/* no need for binary search in s, we just adjust the
-		 * boundaries */
-		if (s->tseqbase + BATcount(s) < seq + (h - l))
-			h -= seq + (h - l) - (s->tseqbase + BATcount(s));
-		if (s->tseqbase > seq) {
-			l += s->tseqbase - seq;
-			seq += s->tseqbase - seq;
-		}
-		s = NULL;
-	}
 	if (BAThash(b) != GDK_SUCCEED) {
 		BBPreclaim(bn);
 		return NULL;
@@ -190,11 +127,10 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 	bi = bat_iterator(b);
 	dst = (oid *) Tloc(bn, 0);
 	cnt = 0;
-	if (s) {
-		assert(s->tsorted);
+	if (ci->tpe != cand_dense) {
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
-			o = (oid) (i - l + seq);
-			if (BATcandcontains(s, o)) {
+			o = (oid) (i + seq - d);
+			if (canditer_search(ci, o, false) != BUN_NONE) {
 				buninsfix(bn, dst, cnt, o,
 					  maximum - BATcapacity(bn),
 					  maximum, NULL);
@@ -203,7 +139,7 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 		}
 	} else {
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
-			o = (oid) (i - l + seq);
+			o = (oid) (i + seq - d);
 			buninsfix(bn, dst, cnt, o,
 				  maximum - BATcapacity(bn),
 				  maximum, NULL);
@@ -230,36 +166,33 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 /* Imprints select code */
 
 /* inner check */
-#define impscheck(CAND,TEST,ADD)				\
-	do {							\
-		e = (BUN) (i+limit-pr_off+off);			\
-		if (im[icnt] & mask) {				\
-			if ((im[icnt] & ~innermask) == 0) {	\
-				while (p < q && o < e) {	\
-					v = src[o-off];		\
-					ADD;			\
-					cnt++;			\
-					p++;			\
-					if (p < q)		\
-						CAND;		\
-				}				\
-			} else {				\
-				while (p < q && o < e) {	\
-					v = src[o-off];		\
-					ADD;			\
-					cnt += (TEST) != 0;	\
-					p++;			\
-					if (p < q)		\
-						CAND;		\
-				}				\
-			}					\
-		} else {					\
-			while (p < q && o < e) {		\
-				p++;				\
-				if (p < q)			\
-					CAND;			\
-			}					\
-		}						\
+#define impscheck(canditer_next,TEST,ADD)				\
+	do {								\
+		const oid e = (oid) (i+limit-pr_off+hseq);		\
+		if (im[icnt] & mask) {					\
+			if ((im[icnt] & ~innermask) == 0) {		\
+				while (p < ci->ncand && o < e) {	\
+					v = src[o-hseq];		\
+					ADD;				\
+					cnt++;				\
+					p++;				\
+					o = canditer_next(ci);		\
+				}					\
+			} else {					\
+				while (p < ci->ncand && o < e) {	\
+					v = src[o-hseq];		\
+					ADD;				\
+					cnt += (TEST) != 0;		\
+					p++;				\
+					o = canditer_next(ci);		\
+				}					\
+			}						\
+		} else {						\
+			while (p < ci->ncand && o < e) {		\
+				p++;					\
+				o = canditer_next(ci);			\
+			}						\
+		}							\
 	} while (false)
 
 /* main loop for imprints */
@@ -268,38 +201,38 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
  * dcnt is the iterator for dictionary entries
  * i    is the iterator for the values in imprints
  */
-#define impsloop(CAND,TEST,ADD)						\
+#define impsloop(canditer_next,TEST,ADD)				\
 	do {								\
-		BUN dcnt, icnt, limit, i, l, e;				\
-		cchdc_t *restrict d = (cchdc_t *) imprints->dict;	\
-		uint8_t rpp = ATOMelmshift(IMPS_PAGE >> b->tshift);	\
-		CAND;							\
-		for (i = 0, dcnt = 0, icnt = 0;				\
-		     dcnt < imprints->dictcnt && i + off < w + pr_off && p < q; \
+		BUN dcnt, icnt, limit, i;				\
+		const cchdc_t *restrict d = (cchdc_t *) imprints->dict;	\
+		const uint8_t rpp = ATOMelmshift(IMPS_PAGE >> b->tshift); \
+		o = canditer_next(ci);					\
+		for (i = 0, dcnt = 0, icnt = 0, p = 0;			\
+		     dcnt < imprints->dictcnt && i <= w - hseq + pr_off && p < ci->ncand; \
 		     dcnt++) {						\
 			limit = ((BUN) d[dcnt].cnt) << rpp;		\
-			while (i + limit + off <= o + pr_off) {		\
+			while (i + limit <= o - hseq + pr_off) {	\
 				i += limit;				\
 				icnt += d[dcnt].repeat ? 1 : d[dcnt].cnt; \
 				dcnt++;					\
 				limit = ((BUN) d[dcnt].cnt) << rpp;	\
 			}						\
 			if (!d[dcnt].repeat) {				\
+				const BUN l = icnt + d[dcnt].cnt;	\
 				limit = (BUN) 1 << rpp;			\
-				l = icnt + d[dcnt].cnt;			\
-				while (i + limit + off <= o + pr_off) {	\
+				while (i + limit <= o - hseq + pr_off) { \
 					icnt++;				\
 					i += limit;			\
 				}					\
 				for (;					\
-				     icnt < l && i + off < w + pr_off;	\
+				     icnt < l && i <= w - hseq + pr_off; \
 				     icnt++) {				\
-					impscheck(CAND,TEST,ADD);	\
+					impscheck(canditer_next,TEST,ADD); \
 					i += limit;			\
 				}					\
 			}						\
 			else {						\
-				impscheck(CAND,TEST,ADD);		\
+				impscheck(canditer_next,TEST,ADD);	\
 				i += limit;				\
 				icnt++;					\
 			}						\
@@ -313,14 +246,13 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 	} while (false)
 
 /* construct the mask */
-#define impsmask(CAND,TEST,B)						\
+#define impsmask(canditer_next,TEST,B)					\
 	do {								\
-		uint##B##_t *restrict im = (uint##B##_t *) imprints->imps; \
+		const uint##B##_t *restrict im = (uint##B##_t *) imprints->imps; \
 		uint##B##_t mask = 0, innermask;			\
-		int lbin, hbin;						\
-		int tpe = ATOMbasetype(b->ttype);			\
-		lbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, tl); \
-		hbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, th); \
+		const int tpe = ATOMbasetype(b->ttype);			\
+		const int lbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, tl); \
+		const int hbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, th); \
 		/* note: (1<<n)-1 gives a sequence of n one bits */	\
 		/* to set bits hbin..lbin inclusive, we would do: */	\
 		/* mask = ((1 << (hbin + 1)) - 1) - ((1 << lbin) - 1); */ \
@@ -343,22 +275,21 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 			innermask = IMPSunsetBit(B, innermask, 0);	\
 									\
 		if (BATcapacity(bn) < maximum) {			\
-			impsloop(CAND, TEST,				\
+			impsloop(canditer_next, TEST,			\
 				 buninsfix(bn, dst, cnt, o,		\
-					   (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r) \
-						  * (dbl) (q-p) * 1.1 + 1024), \
-					   BATcapacity(bn) + q - p, BUN_NONE));	\
+					   (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
+						  * (dbl) (ci->ncand-p) * 1.1 + 1024), \
+					   BATcapacity(bn) + ci->ncand - p, BUN_NONE)); \
 		} else {						\
-			impsloop(CAND, TEST, quickins(dst, cnt, o, bn)); \
+			impsloop(canditer_next, TEST, quickins(dst, cnt, o, bn)); \
 		}							\
 	} while (false)
 
 #define checkMINMAX(B, TYPE)						\
 	do {								\
-		int ii;							\
-		BUN *restrict imp_cnt = imprints->stats + 128;		\
+		const BUN *restrict imp_cnt = imprints->stats + 128;	\
 		imp_min = imp_max = nil;				\
-		for (ii = 0; ii < B; ii++) {				\
+		for (BUN ii = 0; ii < B; ii++) {			\
 			if (is_##TYPE##_nil(imp_min) && imp_cnt[ii]) {	\
 				imp_min = basesrc[imprints->stats[ii]];	\
 			}						\
@@ -376,20 +307,15 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 	} while (false)
 
 /* choose number of bits */
-#define bitswitch(CAND, TEST, TYPE)					\
+#define bitswitch(canditer_next, TEST, TYPE)				\
 	do {								\
 		assert(imprints);					\
-		ALGODEBUG fprintf(stderr,				\
-				  "#BATselect(b=" ALGOBATFMT ",s=" ALGOOPTBATFMT ",anti=%d): " \
-				  "imprints select %s\n",		\
-				  ALGOBATPAR(b),			\
-				  ALGOOPTBATPAR(s),			\
-				  anti, #TEST);				\
+		*algo = "imprints select " #TEST " (" #canditer_next ")"; \
 		switch (imprints->bits) {				\
-		case 8:  checkMINMAX(8, TYPE); impsmask(CAND,TEST,8); break; \
-		case 16: checkMINMAX(16, TYPE); impsmask(CAND,TEST,16); break; \
-		case 32: checkMINMAX(32, TYPE); impsmask(CAND,TEST,32); break; \
-		case 64: checkMINMAX(64, TYPE); impsmask(CAND,TEST,64); break; \
+		case 8:  checkMINMAX(8, TYPE); impsmask(canditer_next,TEST,8); break; \
+		case 16: checkMINMAX(16, TYPE); impsmask(canditer_next,TEST,16); break; \
+		case 32: checkMINMAX(32, TYPE); impsmask(canditer_next,TEST,32); break; \
+		case 64: checkMINMAX(64, TYPE); impsmask(canditer_next,TEST,64); break; \
 		default: assert(0); break;				\
 		}							\
 	} while (false)
@@ -397,43 +323,36 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 /* scan select without imprints */
 
 /* core scan select loop with & without candidates */
-#define scanloop(NAME,CAND,TEST)					\
+#define scanloop(NAME,canditer_next,TEST)				\
 	do {								\
-		ALGODEBUG fprintf(stderr,				\
-				  "#BATselect(b=" ALGOBATFMT ",s=" ALGOOPTBATFMT ",anti=%d): " \
-				  "%s %s\n",				\
-				  ALGOBATPAR(b),			\
-				  ALGOOPTBATPAR(s),			\
-				  anti, #NAME, #TEST);			\
+		*algo = #NAME " " #TEST " (" #canditer_next ")";	\
 		if (BATcapacity(bn) < maximum) {			\
-			while (p < q) {					\
-				CAND;					\
-				v = src[o-off];				\
+			for (p = 0; p < ci->ncand; p++) {		\
+				o = canditer_next(ci);			\
+				v = src[o-hseq];			\
 				if (TEST) {				\
 					buninsfix(bn, dst, cnt, o,	\
-						  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r) \
-							 * (dbl) (q-p) * 1.1 + 1024), \
-						  BATcapacity(bn) + q - p, BUN_NONE); \
+						  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
+							 * (dbl) (ci->ncand-p) * 1.1 + 1024), \
+						  BATcapacity(bn) + ci->ncand - p, BUN_NONE); \
 					cnt++;				\
 				}					\
-				p++;					\
 			}						\
 		} else {						\
-			while (p < q) {					\
-				CAND;					\
-				v = src[o-off];				\
+			for (p = 0; p < ci->ncand; p++) {		\
+				o = canditer_next(ci);			\
+				v = src[o-hseq];			\
 				assert(cnt < BATcapacity(bn));		\
 				dst[cnt] = o;				\
 				cnt += (TEST) != 0;			\
-				p++;					\
 			}						\
 		}							\
 	} while (false)
 
 /* argument list for type-specific core scan select function call */
 #define scanargs							\
-	b, s, bn, tl, th, li, hi, equi, anti, lval, hval, lnil, p, q,	\
-	cnt, off, dst, candlist, maximum, use_imprints
+	b, ci, bn, tl, th, li, hi, equi, anti, lval, hval, lnil,	\
+	cnt, b->hseqbase, dst, maximum, use_imprints, algo
 
 #define PREVVALUEbte(x)	((x) - 1)
 #define PREVVALUEsht(x)	((x) - 1)
@@ -479,38 +398,38 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 #define MAXVALUEflt	GDK_flt_max
 #define MAXVALUEdbl	GDK_dbl_max
 
-#define choose(NAME, CAND, TEST, TYPE)			\
-	do {						\
-		if (use_imprints) {			\
-			bitswitch(CAND, TEST, TYPE);	\
-		} else {				\
-			scanloop(NAME, CAND, TEST);	\
-		}					\
+#define choose(NAME, canditer_next, TEST, TYPE)			\
+	do {							\
+		if (use_imprints) {				\
+			bitswitch(canditer_next, TEST, TYPE);	\
+		} else {					\
+			scanloop(NAME, canditer_next, TEST);	\
+		}						\
 	} while (false)
 
 /* definition of type-specific core scan select function */
-#define scanfunc(NAME, TYPE, CAND, END)					\
+#define scanfunc(NAME, TYPE, canditer_next)				\
 static BUN								\
-NAME##_##TYPE(BAT *b, BAT *s, BAT *bn, const TYPE *tl, const TYPE *th,	\
-	      bool li, bool hi, bool equi, bool anti, bool lval, bool hval, \
-	      bool lnil, BUN r, BUN q, BUN cnt, lng off, oid *restrict dst, \
-	      const oid *candlist, BUN maximum, bool use_imprints)	\
+NAME##_##TYPE(BAT *b, struct canditer *restrict ci, BAT *bn,		\
+	      const TYPE *tl, const TYPE *th, bool li, bool hi,		\
+	      bool equi, bool anti, bool lval, bool hval,		\
+	      bool lnil, BUN cnt, const oid hseq, oid *restrict dst,	\
+	      BUN maximum, bool use_imprints, const char **algo)	\
 {									\
 	TYPE vl = *tl;							\
 	TYPE vh = *th;							\
 	TYPE imp_min;							\
 	TYPE imp_max;							\
 	TYPE v;								\
-	TYPE nil = TYPE##_nil;						\
-	TYPE minval = MINVALUE##TYPE;					\
-	TYPE maxval = MAXVALUE##TYPE;					\
+	const TYPE nil = TYPE##_nil;					\
+	const TYPE minval = MINVALUE##TYPE;				\
+	const TYPE maxval = MAXVALUE##TYPE;				\
 	const TYPE *src = (const TYPE *) Tloc(b, 0);			\
 	const TYPE *basesrc;						\
-	oid o;								\
-	BUN w, p = r;							\
+	oid o, w;							\
+	BUN p;								\
 	BUN pr_off = 0;							\
 	Imprints *imprints;						\
-	(void) candlist;						\
 	(void) li;							\
 	(void) hi;							\
 	(void) lval;							\
@@ -524,167 +443,71 @@ NAME##_##TYPE(BAT *b, BAT *s, BAT *bn, const TYPE *tl, const TYPE *th,	\
 		assert(parent);						\
 		basesrc = (const TYPE *) Tloc(parent, 0);		\
 		imprints = parent->timprints;				\
-		pr_off = (BUN) ((TYPE *)Tloc(b,0) -			\
-				(TYPE *)Tloc(parent,0));		\
+		pr_off = (BUN) (src - basesrc);				\
 	} else {							\
 		imprints = b->timprints;				\
-		basesrc = (const TYPE *) Tloc(b, 0);			\
+		basesrc = src;						\
 	}								\
-	END;								\
+	w = canditer_last(ci);						\
 	if (equi) {							\
 		assert(!use_imprints);					\
 		if (lnil)						\
-			scanloop(NAME, CAND, is_##TYPE##_nil(v));	\
+			scanloop(NAME, canditer_next, is_##TYPE##_nil(v)); \
 		else							\
-			scanloop(NAME, CAND, v == vl);			\
+			scanloop(NAME, canditer_next, v == vl);		\
 	} else if (anti) {						\
 		if (b->tnonil) {					\
-			choose(NAME, CAND, (v <= vl || v >= vh), TYPE);	\
+			choose(NAME, canditer_next, (v <= vl || v >= vh), TYPE); \
 		} else {						\
-			choose(NAME, CAND, !is_##TYPE##_nil(v) && (v <= vl || v >= vh), TYPE); \
+			choose(NAME, canditer_next, !is_##TYPE##_nil(v) && (v <= vl || v >= vh), TYPE); \
 		}							\
 	} else if (b->tnonil && vl == minval) {				\
-		choose(NAME, CAND, v <= vh, TYPE);			\
+		choose(NAME, canditer_next, v <= vh, TYPE);		\
 	} else if (vh == maxval) {					\
-		choose(NAME, CAND, v >= vl, TYPE);			\
+		choose(NAME, canditer_next, v >= vl, TYPE);		\
 	} else {							\
-		choose(NAME, CAND, v >= vl && v <= vh, TYPE);		\
+		choose(NAME, canditer_next, v >= vl && v <= vh, TYPE);	\
 	}								\
 	return cnt;							\
 }
 
 static BUN
-candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
-	      bool li, bool hi, bool equi, bool anti, bool lval, bool hval,
-	      bool lnil, BUN r, BUN q, BUN cnt, lng off, oid *restrict dst,
-	      const oid *candlist, BUN maximum, bool use_imprints)
-{
-	const void *v;
-	const void *nil = ATOMnilptr(b->ttype);
-	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
-	BATiter bi = bat_iterator(b);
-	oid o;
-	BUN p = r;
-	int c;
-
-	(void) maximum;
-	(void) use_imprints;
-	(void) lnil;
-
-	if (equi) {
-		ALGODEBUG fprintf(stderr,
-				  "#BATselect(b=" ALGOBATFMT ",s=" ALGOBATFMT ",anti=%d): "
-				  "candscan equi\n",
-				  ALGOBATPAR(b), ALGOBATPAR(s),
-				  anti);
-		while (p < q) {
-			o = *candlist++;
-			v = BUNtail(bi,(BUN)(o-off));
-			if ((*cmp)(tl, v) == 0) {
-				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
-						 * (dbl) (q-p) * 1.1 + 1024),
-					  BATcapacity(bn) + q - p, BUN_NONE);
-				cnt++;
-			}
-			p++;
-		}
-	} else if (anti) {
-		ALGODEBUG fprintf(stderr,
-				  "#BATselect(b=" ALGOBATFMT ",s=" ALGOBATFMT ",anti=%d): "
-				  "candscan anti\n",
-				  ALGOBATPAR(b), ALGOBATPAR(s),
-				  anti);
-		while (p < q) {
-			o = *candlist++;
-			v = BUNtail(bi,(BUN)(o-off));
-			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			    ((lval &&
-			      ((c = (*cmp)(tl, v)) > 0 ||
-			       (!li && c == 0))) ||
-			     (hval &&
-			      ((c = (*cmp)(th, v)) < 0 ||
-			       (!hi && c == 0))))) {
-				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
-						 * (dbl) (q-p) * 1.1 + 1024),
-					  BATcapacity(bn) + q - p, BUN_NONE);
-				cnt++;
-			}
-			p++;
-		}
-	} else {
-		ALGODEBUG fprintf(stderr,
-				  "#BATselect(b=" ALGOBATFMT ",s=" ALGOBATFMT ",anti=%d): "
-				  "candscan range\n",
-				  ALGOBATPAR(b), ALGOBATPAR(s),
-				  anti);
-		while (p < q) {
-			o = *candlist++;
-			v = BUNtail(bi,(BUN)(o-off));
-			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
-			    ((!lval ||
-			      (c = cmp(tl, v)) < 0 ||
-			      (li && c == 0)) &&
-			     (!hval ||
-			      (c = cmp(th, v)) > 0 ||
-			      (hi && c == 0)))) {
-				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
-						 * (dbl) (q-p) * 1.1 + 1024),
-					  BATcapacity(bn) + q - p, BUN_NONE);
-				cnt++;
-			}
-			p++;
-		}
-	}
-	return cnt;
-}
-
-static BUN
-fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
+fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
+	     const void *tl, const void *th,
 	     bool li, bool hi, bool equi, bool anti, bool lval, bool hval,
-	     bool lnil, BUN r, BUN q, BUN cnt, lng off, oid *restrict dst,
-	     const oid *candlist, BUN maximum, bool use_imprints)
+	     bool lnil, BUN cnt, const oid hseq, oid *restrict dst,
+	     BUN maximum, bool use_imprints, const char **algo)
 {
 	const void *v;
 	const void *restrict nil = ATOMnilptr(b->ttype);
 	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	BATiter bi = bat_iterator(b);
 	oid o;
-	BUN p = r;
+	BUN p;
 	int c;
 
-	(void) candlist;
 	(void) maximum;
 	(void) use_imprints;
 	(void) lnil;
 
 	if (equi) {
-		ALGODEBUG fprintf(stderr,
-				  "#BATselect(b=" ALGOBATFMT ",s=" ALGOOPTBATFMT ",anti=%d): "
-				  "fullscan equi\n",
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti);
-		while (p < q) {
-			o = (oid)(p + off);
-			v = BUNtail(bi,(BUN)(o-off));
+		*algo = "fullscan equi";
+		for (p = 0; p < ci->ncand; p++) {
+			o = canditer_next(ci);
+			v = BUNtail(bi,(BUN)(o-hseq));
 			if ((*cmp)(tl, v) == 0) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
-						 * (dbl) (q-p) * 1.1 + 1024),
-					  BATcapacity(bn) + q - p, BUN_NONE);
+					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
+					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
 				cnt++;
 			}
-			p++;
 		}
 	} else if (anti) {
-		ALGODEBUG fprintf(stderr,
-				  "#BATselect(b=" ALGOBATFMT ",s=" ALGOOPTBATFMT ",anti=%d): "
-				  "fullscan anti\n",
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti);
-		while (p < q) {
-			o = (oid)(p + off);
-			v = BUNtail(bi,(BUN)(o-off));
+		*algo = "fullscan anti";
+		for (p = 0; p < ci->ncand; p++) {
+			o = canditer_next(ci);
+			v = BUNtail(bi,(BUN)(o-hseq));
 			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
 			    ((lval &&
 			      ((c = (*cmp)(tl, v)) > 0 ||
@@ -693,21 +516,17 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			      ((c = (*cmp)(th, v)) < 0 ||
 			       (!hi && c == 0))))) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
-						 * (dbl) (q-p) * 1.1 + 1024),
-					  BATcapacity(bn) + q - p, BUN_NONE);
+					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
+					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
 				cnt++;
 			}
-			p++;
 		}
 	} else {
-		ALGODEBUG fprintf(stderr,
-				  "#BATselect(b=" ALGOBATFMT ",s=" ALGOOPTBATFMT ",anti=%d): "
-				  "fullscan range\n",
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti);
-		while (p < q) {
-			o = (oid)(p + off);
-			v = BUNtail(bi,(BUN)(o-off));
+		*algo = "fullscan range";
+		for (p = 0; p < ci->ncand; p++) {
+			o = canditer_next(ci);
+			v = BUNtail(bi,(BUN)(o-hseq));
 			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
 			    ((!lval ||
 			      (c = cmp(tl, v)) < 0 ||
@@ -716,101 +535,95 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			      (c = cmp(th, v)) > 0 ||
 			      (hi && c == 0)))) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
-						 * (dbl) (q-p) * 1.1 + 1024),
-					  BATcapacity(bn) + q - p, BUN_NONE);
+					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
+					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
 				cnt++;
 			}
-			p++;
 		}
 	}
 	return cnt;
 }
 
 static BUN
-fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
+fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
+	     const char *tl, const char *th,
 	     bool li, bool hi, bool equi, bool anti, bool lval, bool hval,
-	     bool lnil, BUN r, BUN q, BUN cnt, lng off, oid *restrict dst,
-	     const oid *candlist, BUN maximum, bool use_imprints)
+	     bool lnil, BUN cnt, const oid hseq, oid *restrict dst,
+	     BUN maximum, bool use_imprints, const char **algo)
 {
 	var_t pos;
-	BUN p = r;
-	oid o = (oid) (p + off);
+	BUN p;
+	oid o;
 
 	if (!equi || !GDK_ELIMDOUBLES(b->tvheap))
-		return fullscan_any(b, s, bn, tl, th, li, hi, equi, anti,
-				    lval, hval, lnil, r, q, cnt, off, dst,
-				    candlist, maximum, use_imprints);
-	ALGODEBUG fprintf(stderr,
-			  "#BATselect(b=" ALGOBATFMT ",s=" ALGOOPTBATFMT ",anti=%d): "
-			  "fullscan equi strelim\n",
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti);
-
-	if ((pos = strLocate(b->tvheap, tl)) == 0)
+		return fullscan_any(b, ci, bn, tl, th, li, hi, equi, anti,
+				    lval, hval, lnil, cnt, hseq, dst,
+				    maximum, use_imprints, algo);
+	if ((pos = strLocate(b->tvheap, tl)) == 0) {
+		*algo = "fullscan equi strelim (nomatch)";
 		return 0;
+	}
+	*algo = "fullscan equi strelim";
 	assert(pos >= GDK_VAROFFSET);
 	switch (b->twidth) {
 	case 1: {
 		const unsigned char *ptr = (const unsigned char *) Tloc(b, 0);
 		pos -= GDK_VAROFFSET;
-		while (p < q) {
-			if (ptr[p] == pos) {
+		for (p = 0; p < ci->ncand; p++) {
+			o = canditer_next(ci);
+			if (ptr[o - hseq] == pos) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
-						 * (dbl) (q-p) * 1.1 + 1024),
-					  BATcapacity(bn) + q - p, BUN_NONE);
+					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
+					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
 				cnt++;
 			}
-			p++;
-			o++;
 		}
 		break;
 	}
 	case 2: {
 		const unsigned short *ptr = (const unsigned short *) Tloc(b, 0);
 		pos -= GDK_VAROFFSET;
-		while (p < q) {
-			if (ptr[p] == pos) {
+		for (p = 0; p < ci->ncand; p++) {
+			o = canditer_next(ci);
+			if (ptr[o - hseq] == pos) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
-						 * (dbl) (q-p) * 1.1 + 1024),
-					  BATcapacity(bn) + q - p, BUN_NONE);
+					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
+					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
 				cnt++;
 			}
-			p++;
-			o++;
 		}
 		break;
 	}
 #if SIZEOF_VAR_T == 8
 	case 4: {
 		const unsigned int *ptr = (const unsigned int *) Tloc(b, 0);
-		while (p < q) {
-			if (ptr[p] == pos) {
+		for (p = 0; p < ci->ncand; p++) {
+			o = canditer_next(ci);
+			if (ptr[o - hseq] == pos) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
-						 * (dbl) (q-p) * 1.1 + 1024),
-					  BATcapacity(bn) + q - p, BUN_NONE);
+					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
+					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
 				cnt++;
 			}
-			p++;
-			o++;
 		}
 		break;
 	}
 #endif
 	default: {
 		const var_t *ptr = (const var_t *) Tloc(b, 0);
-		while (p < q) {
-			if (ptr[p] == pos) {
+		for (p = 0; p < ci->ncand; p++) {
+			o = canditer_next(ci);
+			if (ptr[o - hseq] == pos) {
 				buninsfix(bn, dst, cnt, o,
-					  (BUN) ((dbl) cnt / (dbl) (p == r ? 1 : p - r)
-						 * (dbl) (q-p) * 1.1 + 1024),
-					  BATcapacity(bn) + q - p, BUN_NONE);
+					  (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+						 * (dbl) (ci->ncand-p) * 1.1 + 1024),
+					  BATcapacity(bn) + ci->ncand - p, BUN_NONE);
 				cnt++;
 			}
-			p++;
-			o++;
 		}
 		break;
 	}
@@ -820,39 +633,37 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 
 /* scan select type switch */
 #ifdef HAVE_HGE
-#define scanfunc_hge(NAME, CAND, END)		\
-	scanfunc(NAME, hge, CAND, END)
+#define scanfunc_hge(NAME, canditer_next)	\
+	scanfunc(NAME, hge, canditer_next)
 #else
-#define scanfunc_hge(NAME, CAND, END)
+#define scanfunc_hge(NAME, canditer_next)
 #endif
-#define scan_sel(NAME, CAND, END)		\
-	scanfunc(NAME, bte, CAND, END)		\
-	scanfunc(NAME, sht, CAND, END)		\
-	scanfunc(NAME, int, CAND, END)		\
-	scanfunc(NAME, flt, CAND, END)		\
-	scanfunc(NAME, dbl, CAND, END)		\
-	scanfunc(NAME, lng, CAND, END)		\
-	scanfunc_hge(NAME, CAND, END)
+#define scan_sel(NAME, canditer_next)		\
+	scanfunc(NAME, bte, canditer_next)	\
+	scanfunc(NAME, sht, canditer_next)	\
+	scanfunc(NAME, int, canditer_next)	\
+	scanfunc(NAME, flt, canditer_next)	\
+	scanfunc(NAME, dbl, canditer_next)	\
+	scanfunc(NAME, lng, canditer_next)	\
+	scanfunc_hge(NAME, canditer_next)
 
-/* scan/imprints select with candidates */
-scan_sel(candscan, o = *candlist++, w = (BUN) ((*(oid *) Tloc(s,q?(q - 1):0)) + 1))
-/* scan/imprints select without candidates */
-scan_sel(fullscan, o = (oid) (p+off), w = (BUN) (q+off))
+/* scan/imprints select */
+scan_sel(fullscan, canditer_next)
+scan_sel(densescan, canditer_next_dense)
 
 
 static BAT *
-scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
+scanselect(BAT *b, struct canditer *restrict ci, BAT *bn,
+	   const void *tl, const void *th,
 	   bool li, bool hi, bool equi, bool anti, bool lval, bool hval,
-	   bool lnil, BUN maximum, bool use_imprints)
+	   bool lnil, BUN maximum, bool use_imprints, const char **algo)
 {
 #ifndef NDEBUG
 	int (*cmp)(const void *, const void *);
 #endif
 	int t;
-	BUN p, q, cnt;
-	oid o, *restrict dst;
-	lng off;
-	const oid *candlist;
+	BUN cnt = 0;
+	oid *restrict dst;
 
 	assert(b != NULL);
 	assert(bn != NULL);
@@ -876,103 +687,62 @@ scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		use_imprints = false;
 	}
 
-	off = (lng) b->hseqbase;
 	dst = (oid *) Tloc(bn, 0);
-	cnt = 0;
 
 	t = ATOMbasetype(b->ttype);
 
-	if (s && !BATtdense(s)) {
-
-		assert(s->tsorted);
-		assert(s->tkey);
-		/* setup candscanloop loop vars to only iterate over
-		 * part of s that has values that are in range of b */
-		o = b->hseqbase + BATcount(b);
-		q = SORTfndfirst(s, &o);
-		p = SORTfndfirst(s, &b->hseqbase);
-		/* should we return an error if p > 0 || q <
-		 * BUNlast(s) (i.e. s not fully used)? */
-		candlist = (const oid *) Tloc(s, p);
-		/* call type-specific core scan select function */
-		assert(b->batCapacity >= BATcount(b));
-		assert(s->batCapacity >= BATcount(s));
-		switch (t) {
-		case TYPE_bte:
-			cnt = candscan_bte(scanargs);
-			break;
-		case TYPE_sht:
-			cnt = candscan_sht(scanargs);
-			break;
-		case TYPE_int:
-			cnt = candscan_int(scanargs);
-			break;
-		case TYPE_flt:
-			cnt = candscan_flt(scanargs);
-			break;
-		case TYPE_dbl:
-			cnt = candscan_dbl(scanargs);
-			break;
-		case TYPE_lng:
-			cnt = candscan_lng(scanargs);
-			break;
-#ifdef HAVE_HGE
-		case TYPE_hge:
-			cnt = candscan_hge(scanargs);
-			break;
-#endif
-		default:
-			cnt = candscan_any(scanargs);
-			break;
-		}
-	} else {
-		if (s) {
-			assert(BATtdense(s));
-			p = (BUN) s->tseqbase;
-			q = p + BATcount(s);
-			if ((oid) p < b->hseqbase)
-				p = (BUN) b->hseqbase;
-			if ((oid) q > b->hseqbase + BATcount(b))
-				q = (BUN) b->hseqbase + BATcount(b);
-			p = (BUN) (p - off);
-			q = (BUN) (q - off);
-		} else {
-			p = 0;
-			q = BUNlast(b);
-		}
-		candlist = NULL;
-		/* call type-specific core scan select function */
-		switch (t) {
-		case TYPE_bte:
+	/* call type-specific core scan select function */
+	switch (t) {
+	case TYPE_bte:
+		if (ci->tpe == cand_dense)
+			cnt = densescan_bte(scanargs);
+		else
 			cnt = fullscan_bte(scanargs);
-			break;
-		case TYPE_sht:
+		break;
+	case TYPE_sht:
+		if (ci->tpe == cand_dense)
+			cnt = densescan_sht(scanargs);
+		else
 			cnt = fullscan_sht(scanargs);
-			break;
-		case TYPE_int:
+		break;
+	case TYPE_int:
+		if (ci->tpe == cand_dense)
+			cnt = densescan_int(scanargs);
+		else
 			cnt = fullscan_int(scanargs);
-			break;
-		case TYPE_flt:
+		break;
+	case TYPE_flt:
+		if (ci->tpe == cand_dense)
+			cnt = densescan_flt(scanargs);
+		else
 			cnt = fullscan_flt(scanargs);
-			break;
-		case TYPE_dbl:
+		break;
+	case TYPE_dbl:
+		if (ci->tpe == cand_dense)
+			cnt = densescan_dbl(scanargs);
+		else
 			cnt = fullscan_dbl(scanargs);
-			break;
-		case TYPE_lng:
+		break;
+	case TYPE_lng:
+		if (ci->tpe == cand_dense)
+			cnt = densescan_lng(scanargs);
+		else
 			cnt = fullscan_lng(scanargs);
-			break;
+		break;
 #ifdef HAVE_HGE
-		case TYPE_hge:
+	case TYPE_hge:
+		if (ci->tpe == cand_dense)
+			cnt = densescan_hge(scanargs);
+		else
 			cnt = fullscan_hge(scanargs);
-			break;
+		break;
 #endif
-		case TYPE_str:
-			cnt = fullscan_str(scanargs);
-			break;
-		default:
-			cnt = fullscan_any(scanargs);
-			break;
-		}
+	case TYPE_str:
+		cnt = fullscan_str(scanargs);
+		break;
+	default:
+		cnt = fullscan_any(scanargs);
+		break;
 	}
 	if (cnt == BUN_NONE) {
 		return NULL;
@@ -1217,10 +987,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	bat parent;		/* b's parent bat (if b is a view) */
 	const void *nil;
 	BAT *bn, *tmp;
+	struct canditer ci;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
 	oid vwl = 0, vwh = 0;
 	lng vwo = 0;
 	bool use_orderidx = false;
+	const char *algo;
 	union {
 		bte v_bte;
 		sht v_sht;
@@ -1240,25 +1012,20 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	BATcheck(b, "BATselect", NULL);
 	BATcheck(tl, "BATselect: tl value required", NULL);
 
-	assert(s == NULL || s->ttype == TYPE_oid || s->ttype == TYPE_void);
-
 	if (s && !BATtordered(s)) {
 		GDKerror("BATselect: invalid argument: "
 			 "s must be sorted.\n");
 		return NULL;
 	}
 
-	if (b->batCount == 0 ||
-	    (s && (s->batCount == 0 ||
-		   (BATtdense(s) &&
-		    (s->tseqbase >= b->hseqbase + BATcount(b) ||
-		     s->tseqbase + BATcount(s) <= b->hseqbase))))) {
+	if (canditer_init(&ci, b, s) == 0) {
 		/* trivially empty result */
 		bn = BATdense(0, 0, 0);
-		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
+		ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 				  " (" LLFMT " usec): "
 				  "trivially empty\n",
+				  MT_thread_getname(), __func__,
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
 				  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
@@ -1275,10 +1042,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * want an interval that's open on at least one
 		 * side */
 		bn = BATdense(0, 0, 0);
-		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
+		ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",li=%d,hi=%d,anti=%d)=" ALGOOPTBATFMT
 				  " (" LLFMT " usec): "
 				  "empty interval\n",
+				  MT_thread_getname(), __func__,
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 				  li, hi, anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
@@ -1313,9 +1081,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			hval = ti;
 			lnil = ATOMcmp(t, tl, nil) == 0;
 			anti = false;
-			ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
+			ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
 					  ",s=" ALGOOPTBATFMT ",anti=%d): "
 					  "anti: switch ranges...\n",
+					  MT_thread_getname(), __func__,
 					  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 					  anti);
 		} else if (!lval && !hval) {
@@ -1323,10 +1092,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			 * values are in range; we must return all
 			 * other non-nil values, i.e. nothing */
 			bn = BATdense(0, 0, 0);
-			ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
+			ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
 					  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 					  " (" LLFMT " usec): "
 					  "anti: nil-nil range, nonil\n",
+					  MT_thread_getname(), __func__,
 					  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 					  anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
 			return bn;
@@ -1338,9 +1108,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			anti = false;
 			lval = false;
 			hval = false;
-			ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
+			ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
 					  ",s=" ALGOOPTBATFMT ",anti=0): "
 					  "anti-nil...\n",
+					  MT_thread_getname(), __func__,
 					  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		} else if (equi) {
 			equi = false;
@@ -1351,10 +1122,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				anti = false;
 				lval = false;
 				hval = false;
-				ALGODEBUG fprintf(stderr, "#BATselect(b="
+				ALGODEBUG fprintf(stderr, "#%s: %s(b="
 						  ALGOBATFMT ",s="
 						  ALGOOPTBATFMT ",anti=0): "
 						  "anti-nothing...\n",
+						  MT_thread_getname(), __func__,
 						  ALGOBATPAR(b),
 						  ALGOOPTBATPAR(s));
 			}
@@ -1365,9 +1137,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			anti = false;
 			lval = false;
 			hval = false;
-			ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
+			ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
 					  ",s=" ALGOOPTBATFMT ",anti=0): "
 					  "anti-nil...\n",
+					  MT_thread_getname(), __func__,
 					  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		}
 	}
@@ -1378,10 +1151,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (hval && ((equi && !(li && hi)) || ATOMcmp(t, tl, th) > 0)) {
 		/* empty range */
 		bn = BATdense(0, 0, 0);
-		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
+		ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 				  " (" LLFMT " usec): "
 				  "empty range\n",
+				  MT_thread_getname(), __func__,
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
 				  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
@@ -1389,10 +1163,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (equi && lnil && b->tnonil) {
 		/* return all nils, but there aren't any */
 		bn = BATdense(0, 0, 0);
-		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
+		ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 				  " (" LLFMT " usec): "
 				  "equi-nil, nonil\n",
+				  MT_thread_getname(), __func__,
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
 				  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
@@ -1401,18 +1176,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (!equi && !lval && !hval && lnil && b->tnonil) {
 		/* return all non-nils from a BAT that doesn't have
 		 * any: i.e. return everything */
-		if (s) {
-			oid o = b->hseqbase + BATcount(b);
-			BUN q = SORTfndfirst(s, &o);
-			BUN p = SORTfndfirst(s, &b->hseqbase);
-			bn = BATslice(s, p, q);
-		} else {
-			bn = BATdense(0, b->hseqbase, BATcount(b));
-		}
-		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
+		bn = canditer_slice(&ci, 0, ci.ncand);
+		ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 				  " (" LLFMT " usec): "
 				  "everything, nonil\n",
+				  MT_thread_getname(), __func__,
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
 				  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
@@ -1435,10 +1204,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 						 * left over for
 						 * anti */
 						bn = BATdense(0, 0, 0);
-						ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
+						ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
 								  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 								  " (" LLFMT " usec): "
 								  "nothing, out of range\n",
+								  MT_thread_getname(), __func__,
 								  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
 						return bn;
 					}
@@ -1455,11 +1225,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				/* smallest value in BAT larger than
 				 * what we're looking for */
 				bn = BATdense(0, 0, 0);
-				ALGODEBUG fprintf(stderr, "#BATselect(b="
+				ALGODEBUG fprintf(stderr, "#%s: %s(b="
 						  ALGOBATFMT ",s="
 						  ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 						  " (" LLFMT " usec): "
 						  "nothing, out of range\n",
+						  MT_thread_getname(), __func__,
 						  ALGOBATPAR(b),
 						  ALGOOPTBATPAR(s), anti,
 						  ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -1472,11 +1243,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				/* largest value in BAT smaller than
 				 * what we're looking for */
 				bn = BATdense(0, 0, 0);
-				ALGODEBUG fprintf(stderr, "#BATselect(b="
+				ALGODEBUG fprintf(stderr, "#%s: %s(b="
 						  ALGOBATFMT ",s="
 						  ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 						  " (" LLFMT " usec): "
 						  "nothing, out of range\n",
+						  MT_thread_getname(), __func__,
 						  ALGOBATPAR(b),
 						  ALGOOPTBATPAR(s), anti,
 						  ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -1515,6 +1287,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
+	/* make sure tsorted and trevsorted flags are set */
+	(void) BATordered(b);
+	(void) BATordered_rev(b);
+
 	/* If there is an order index or it is a view and the parent has an ordered
 	 * index, and the bat is not tsorted or trevstorted then use the order
 	 * index.
@@ -1522,7 +1298,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * TODO: we do not support anti-select with order index */
 	if (!anti &&
 	    !(b->tsorted || b->trevsorted) &&
-	    (!s || (s && BATtdense(s)))    &&
+	    ci.tpe == cand_dense &&
 	    (BATcheckorderidx(b) ||
 	     (VIEWtparent(b) &&
 	      BATcheckorderidx(BBPquickdesc(VIEWtparent(b), false))))) {
@@ -1538,22 +1314,21 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			use_orderidx = true;
 			if (view) {
 				vwo = (lng) ((view->theap.base - b->theap.base) >> b->tshift);
-				vwl = b->hseqbase + (oid) vwo;
+				vwl = b->hseqbase + (oid) vwo + ci.seq - view->hseqbase;
+				vwh = vwl + canditer_last(&ci) - ci.seq;
 				vwo = (lng) view->hseqbase - (lng) b->hseqbase - vwo;
-				vwh = vwl + view->batCount;
 			} else {
-				vwl = b->hseqbase;
-				vwh = vwl + b->batCount;
+				vwl = ci.seq;
+				vwh = canditer_last(&ci);
 			}
-		} else {
-			if (view) {
-				b = view;
-			}
+		} else if (view) {
+			b = view;
+			view = NULL;
 		}
-		ALGODEBUG if (view && b != view) fprintf(stderr, "#BATselect: switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " off " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
+		ALGODEBUG if (view) fprintf(stderr, "#%s: %s: switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " hseq " LLFMT "\n", MT_thread_getname(), __func__, ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
 	}
 
-	if (BATordered(b) || BATordered_rev(b) || use_orderidx) {
+	if (b->tsorted || b->trevsorted || use_orderidx) {
 		BUN low = 0;
 		BUN high = b->batCount;
 
@@ -1565,11 +1340,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			oid h, l;
 			assert(b->tnonil);
 			assert(b->tsorted);
-			ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
-					  ",s=" ALGOOPTBATFMT ",anti=%d): "
-					  "dense\n",
-					  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-					  anti);
+			algo = "dense";
 			h = * (oid *) th + hi;
 			if (h > b->tseqbase)
 				h -= b->tseqbase;
@@ -1588,11 +1359,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (low > high)
 				low = high;
 		} else if (b->tsorted) {
-			ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
-					  ",s=" ALGOOPTBATFMT ",anti=%d): "
-					  "sorted\n",
-					  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-					  anti);
+			algo = "sorted";
 			if (lval) {
 				if (li)
 					low = SORTfndfirst(b, tl);
@@ -1609,12 +1376,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					high = SORTfndfirst(b, th);
 			}
 		} else if (b->trevsorted) {
-			assert(b->trevsorted);
-			ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
-					  ",s=" ALGOOPTBATFMT ",anti=%d): "
-					  "reverse sorted\n",
-					  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-					  anti);
+			algo = "reverse sorted";
 			if (lval) {
 				if (li)
 					high = SORTfndlast(b, tl);
@@ -1632,11 +1394,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		} else {
 			assert(use_orderidx);
-			ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
-					  ",s=" ALGOOPTBATFMT ",anti=%d): "
-					  "orderidx\n",
-					  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-					  anti);
+			algo = "orderidx";
 			if (lval) {
 				if (li)
 					low = ORDERfndfirst(b, tl);
@@ -1657,54 +1415,27 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (b->tsorted) {
 				BUN first = SORTfndlast(b, nil);
 				/* match: [first..low) + [high..last) */
-				if (s) {
-					/* restrict first, last so
-					 * that they refer to existing
-					 * head values of b whose
-					 * value is not nil */
-					oid o = (oid) first + b->hseqbase;
-					BUN last;
-					first = SORTfndfirst(s, &o);
-					o = (oid) low + b->hseqbase;
-					low = SORTfndfirst(s, &o);
-					o = (oid) high + b->hseqbase;
-					high = SORTfndfirst(s, &o);
-					o = b->hseqbase + b->batCount;
-					last = SORTfndfirst(s, &o);
-					bn = doubleslice(s, first, low, high, last);
-				} else {
-					bn = doublerange(first + b->hseqbase,
-							 low + b->hseqbase,
-							 high + b->hseqbase,
-							 BATcount(b) + b->hseqbase);
-				}
+				bn = canditer_slice2(&ci,
+						     canditer_search(&ci, first + b->hseqbase, true),
+						     canditer_search(&ci, low + b->hseqbase, true),
+						     canditer_search(&ci, high + b->hseqbase, true),
+						     ci.ncand);
 			} else {
 				BUN last = SORTfndfirst(b, nil);
 				/* match: [first..low) + [high..last) */
-				if (s) {
-					/* restrict first, last so
-					 * that they refer to existing
-					 * head values of b whose
-					 * value is not nil */
-					oid o = (oid) last + b->hseqbase;
-					BUN first;
-					last = SORTfndfirst(s, &o);
-					o = (oid) low + b->hseqbase;
-					low = SORTfndfirst(s, &o);
-					o = (oid) high + b->hseqbase;
-					high = SORTfndfirst(s, &o);
-					o = b->hseqbase;
-					first = SORTfndfirst(s, &o);
-					bn = doubleslice(s, first, low, high, last);
-				} else {
-					bn = doublerange(0 + b->hseqbase,
-							 low + b->hseqbase,
-							 high + b->hseqbase,
-							 last + b->hseqbase);
-				}
+				bn = canditer_slice2(&ci,
+						     0,
+						     canditer_search(&ci, low + b->hseqbase, true),
+						     canditer_search(&ci, high + b->hseqbase, true),
+						     canditer_search(&ci, last + b->hseqbase, true));
 			}
 		} else {
-			if (use_orderidx) {
+			if (b->tsorted || b->trevsorted) {
+				/* match: [low..high) */
+				bn = canditer_slice(&ci,
+						    canditer_search(&ci, low + b->hseqbase, true),
+						    canditer_search(&ci, high + b->hseqbase, true));
+			} else {
 				BUN i;
 				BUN cnt = 0;
 				const oid *rs;
@@ -1719,7 +1450,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				rbn = (oid *) Tloc((bn), 0);
 
 				for (i = low; i < high; i++) {
-					if (vwl <= *rs && *rs < vwh) {
+					if (vwl <= *rs && *rs <= vwh) {
 						*rbn++ = (oid) ((lng) *rs + vwo);
 						cnt++;
 					}
@@ -1740,48 +1471,22 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					BBPunfix(bn->batCacheid);
 					bn = s;
 				}
-			} else {
-				/* match: [low..high) */
-				if (s) {
-					oid o = (oid) low + b->hseqbase;
-					low = SORTfndfirst(s, &o);
-					o = (oid) high + b->hseqbase;
-					high = SORTfndfirst(s, &o);
-					bn = doubleslice(s, 0, 0, low, high);
-				} else {
-					bn = doublerange(0, 0,
-						         low + b->hseqbase,
-						         high + b->hseqbase);
-				}
 			}
 		}
 
 		bn = virtualize(bn);
-		ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOOPTBATFMT
-				  " (" LLFMT " usec)\n",
-				  BATgetId(b), ALGOOPTBATPAR(bn), GDKusec() - t0);
+		ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT ",anti=%s)="
+				  ALGOOPTBATFMT " %s (" LLFMT " usec)\n",
+				  MT_thread_getname(), __func__,
+				  ALGOBATPAR(b), anti ? "true" : "false",
+				  ALGOOPTBATPAR(bn), algo,
+				  GDKusec() - t0);
 
 		return bn;
 	}
 
 	/* upper limit for result size */
-	maximum = BATcount(b);
-	if (s) {
-		/* refine upper limit of result size by candidate list */
-		oid ol = b->hseqbase;
-		oid oh = ol + BATcount(b);
-		assert(s->tsorted);
-		assert(s->tkey);
-		if (BATtdense(s)) {
-			maximum = MIN(maximum ,
-				      MIN(oh, s->tseqbase + BATcount(s))
-				      - MAX(ol, s->tseqbase));
-		} else {
-			maximum = MIN(maximum,
-				      SORTfndfirst(s, &oh)
-				      - SORTfndfirst(s, &ol));
-		}
-	}
+	maximum = ci.ncand;
 	if (b->tkey) {
 		/* exact result size in special cases */
 		if (equi) {
@@ -1802,7 +1507,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				estimate = (BUN) (*(hge *) th - *(hge *) tl);
+				if (*(hge *) th - *(hge *) tl < (hge) BUN_MAX)
+					estimate = (BUN) (*(hge *) th - *(hge *) tl);
 				break;
 #endif
 			}
@@ -1835,7 +1541,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		tmp = BBPquickdesc(parent, false);
 		hash = phash = BATcheckhash(tmp) &&
 			(BATcount(tmp) == BATcount(b) ||
-			 BATcount(tmp) / ((size_t *) tmp->thash->heap.base)[5] * (s && !BATtdense(s) ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
+			 BATcount(tmp) / ((size_t *) tmp->thash->heap.base)[5] * (ci.tpe != cand_dense ? ilog2(ci.noids) : 1) < ci.ncand ||
 			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));
 	}
 	if (hash &&
@@ -1845,10 +1551,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		/* no exact result size, but we need estimate to
 		 * choose between hash- & scan-select (if we already
 		 * have a hash, it's a no-brainer: we use it) */
-		BUN cnt = BATcount(b);
-		if (s && BATcount(s) < cnt)
-			cnt = BATcount(s);
-		if (cnt <= 10000) {
+		if (ci.ncand <= 10000) {
 			/* "small" input: don't bother about more accurate
 			 * estimate */
 			estimate = maximum;
@@ -1882,7 +1585,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				estimate = (BATcount(b) / 100) - 1;
 			}
 		}
-		hash = estimate < cnt / 100;
+		hash = estimate < ci.ncand / 100;
 	}
 	if (estimate == BUN_NONE) {
 		/* no better estimate possible/required:
@@ -1898,11 +1601,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return NULL;
 
 	if (hash) {
-		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT "): "
-				  "hash select\n",
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
-		bn = hashselect(b, s, bn, tl, maximum, phash);
+		bn = hashselect(b, &ci, bn, tl, maximum, phash, &algo);
 	} else {
 		/* use imprints if
 		 *   i) bat is persistent, or parent is persistent
@@ -1915,14 +1614,18 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			 (parent != 0 &&
 			  (tmp = BBPquickdesc(parent, false)) != NULL &&
 			  !tmp->batTransient));
-		bn = scanselect(b, s, bn, tl, th, li, hi, equi, anti,
-				lval, hval, lnil, maximum, use_imprints);
+		bn = scanselect(b, &ci, bn, tl, th, li, hi, equi, anti,
+				lval, hval, lnil, maximum, use_imprints, &algo);
 	}
 
 	bn = virtualize(bn);
-	ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOOPTBATFMT
-			  " (" LLFMT " usec)\n",
-			  BATgetId(b), ALGOOPTBATPAR(bn), GDKusec() - t0);
+	ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT ",s=" ALGOOPTBATFMT",anti=%s)=" ALGOOPTBATFMT
+			  " %s (" LLFMT " usec)\n",
+			  MT_thread_getname(), __func__,
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+			  anti ? "true" : "false",
+			  ALGOOPTBATPAR(bn), algo,
+			  GDKusec() - t0);
 
 	return bn;
 }
@@ -1998,10 +1701,7 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 gdk_return
 rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, BUN maxsize)
 {
-	BUN lstart, lend, lcnt;
-	const oid *lcand, *lcandend;
-	BUN rstart, rend, rcnt;
-	const oid *rcand, *rcandend;
+	struct canditer lci, rci;
 	const char *rlvals, *rhvals;
 	const char *lvars, *rlvars, *rhvars;
 	int rlwidth, rhwidth;
@@ -2011,28 +1711,26 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 	int t;
 	BUN cnt, ncnt;
 	oid *restrict dst1, *restrict dst2;
-	const char *vrl, *vrh;
+	const void *vrl, *vrh;
 	oid ro;
-	lng off = 0;
 	oid rlval = oid_nil, rhval = oid_nil;
 	int sorted = 0;		/* which column is sorted */
 	BAT *tmp;
 	bool use_orderidx = false;
-	oid ll, lh;
+	const char *algo = NULL;
 
 	assert(ATOMtype(l->ttype) == ATOMtype(rl->ttype));
 	assert(ATOMtype(l->ttype) == ATOMtype(rh->ttype));
 	assert(BATcount(rl) == BATcount(rh));
 	assert(rl->hseqbase == rh->hseqbase);
-	assert(sl == NULL || (sl->tsorted && sl->tkey));
-	assert(sr == NULL || (sr->tsorted && sr->tkey));
 	assert(BATcount(r1) == BATcount(r2));
 	assert(r1->ttype == TYPE_oid);
 	assert(r2->ttype == TYPE_oid);
 
-	ALGODEBUG fprintf(stderr, "#rangejoin(l=" ALGOBATFMT ","
+	ALGODEBUG fprintf(stderr, "#%s: %s(l=" ALGOBATFMT ","
 			  "rl=" ALGOBATFMT ",rh=" ALGOBATFMT ","
 			  "sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ")\n",
+			  MT_thread_getname(), __func__,
 			  ALGOBATPAR(l),
 			  ALGOBATPAR(rl),
 			  ALGOBATPAR(rh),
@@ -2046,8 +1744,11 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 		return GDK_SUCCEED;
 	}
 
-	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
-	CANDINIT(rl, sr, rstart, rend, rcnt, rcand, rcandend);
+	if (canditer_init(&lci, l, sl) == 0 ||
+	    canditer_init(&rci, rl, sr) == 0) {
+		/* trivial: empty input */
+		return GDK_SUCCEED;
+	}
 
 	rlvals = rl->ttype == TYPE_void ? NULL : (const char *) Tloc(rl, 0);
 	rhvals = rh->ttype == TYPE_void ? NULL : (const char *) Tloc(rh, 0);
@@ -2056,16 +1757,6 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 	rhwidth = rh->twidth;
 	dst1 = (oid *) Tloc(r1, 0);
 	dst2 = (oid *) Tloc(r2, 0);
-
-	if (l->ttype == TYPE_void) {
-		if (lcand) {
-			lstart = 0;
-			lend = (BUN) (lcandend - lcand);
-			lcand = NULL;
-			lwidth = SIZEOF_OID;
-		}
-		off = (lng) l->tseqbase - (lng) l->hseqbase;
-	}
 
 	t = ATOMtype(l->ttype);
 	t = ATOMbasetype(t);
@@ -2082,9 +1773,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 		lvars = rlvars = rhvars = NULL;
 	}
 
-	ll = l->hseqbase;
-	lh = ll + l->batCount;
-	if ((!sl || (sl && BATtdense(sl))) &&
+	if (!BATordered(l) && !BATordered_rev(l) &&
 	    (BATcheckorderidx(l) || (VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(VIEWtparent(l), false))))) {
 		use_orderidx = true;
 		if (VIEWtparent(l) && !BATcheckorderidx(l)) {
@@ -2092,64 +1781,39 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 		}
 	}
 
+	vrl = &rlval;
+	vrh = &rhval;
 	if (BATordered(l) || BATordered_rev(l) || use_orderidx) {
 		/* left column is sorted, use binary search */
-		const oid *sval = sl ? (const oid *) Tloc(sl, 0) : NULL;
-
 		sorted = 2;
-		for (;;) {
+		for (BUN i = 0; i < rci.ncand; i++) {
 			BUN low, high;
 
-			if (rcand) {
-				if (rcand == rcandend)
-					break;
-				ro = *rcand++;
-				if (rlvals) {
-					vrl = VALUE(rl, ro - rl->hseqbase);
-				} else {
-					/* TYPE_void */
-					rlval = ro;
-					vrl = (const char *) &rlval;
-				}
-				if (rhvals) {
-					vrh = VALUE(rh, ro - rh->hseqbase);
-				} else {
-					/* TYPE_void */
-					rhval = ro;
-					vrh = (const char *) &rhval;
-				}
+			ro = canditer_next(&rci);
+			if (rlvals) {
+				vrl = VALUE(rl, ro - rl->hseqbase);
 			} else {
-				if (rstart == rend)
-					break;
-				if (rlvals) {
-					vrl = VALUE(rl, rstart);
-				} else {
-					/* TYPE_void */
-					rlval = rstart + rl->tseqbase;
-					vrl = (const char *) &rlval;
-				}
-				if (rhvals) {
-					vrh = VALUE(rh, rstart);
-				} else {
-					/* TYPE_void */
-					rhval = rstart + rh->tseqbase;
-					vrh = (const char *) &rhval;
-				}
-				ro = rstart++ + rl->hseqbase;
+				/* TYPE_void */
+				rlval = ro - rl->hseqbase + rl->tseqbase;
+			}
+			if (rhvals) {
+				vrh = VALUE(rh, ro - rh->hseqbase);
+			} else {
+				/* TYPE_void */
+				rhval = ro - rh->hseqbase + rh->tseqbase;
 			}
 			if (cmp(vrl, nil) == 0 || cmp(vrh, nil) == 0)
 				continue;
-			if (l->tsorted || use_orderidx) {
+			if (l->tsorted) {
 				if (li)
-					low = use_orderidx? ORDERfndfirst(l, vrl): SORTfndfirst(l, vrl);
+					low = SORTfndfirst(l, vrl);
 				else
-					low = use_orderidx? ORDERfndlast(l, vrl): SORTfndlast(l, vrl);
+					low = SORTfndlast(l, vrl);
 				if (hi)
-					high = use_orderidx? ORDERfndlast(l, vrh): SORTfndlast(l, vrh);
+					high = SORTfndlast(l, vrh);
 				else
-					high = use_orderidx? ORDERfndfirst(l, vrh): SORTfndfirst(l, vrh);
-			} else {
-				assert(l->trevsorted);
+					high = SORTfndfirst(l, vrh);
+			} else  if (l->trevsorted) {
 				if (hi)
 					low = SORTfndfirst(l, vrh);
 				else
@@ -2158,21 +1822,48 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 					high = SORTfndlast(l, vrl);
 				else
 					high = SORTfndfirst(l, vrl);
+			} else {
+				assert(use_orderidx);
+				if (li)
+					low = ORDERfndfirst(l, vrl);
+				else
+					low = ORDERfndlast(l, vrl);
+				if (hi)
+					high = ORDERfndlast(l, vrh);
+				else
+					high = ORDERfndfirst(l, vrh);
 			}
 			if (high <= low)
 				continue;
-			low += l->hseqbase;
-			high += l->hseqbase;
-			if (use_orderidx) {
-				const oid *ord;
-				ord = (const oid *) l->torderidx->base + ORDERIDXOFF;
+			if (l->tsorted || l->trevsorted) {
+				low = canditer_search(&lci, low + l->hseqbase, true);
+				high = canditer_search(&lci, high + l->hseqbase, true);
+				assert(high >= low);
 
-				if (sl) {
-					assert(BATtdense(sl));
-					ll = SORTfndfirst(sl, ord + low);
-					lh = SORTfndfirst(sl, ord + high);
+				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
+					cnt = BUNlast(r1) + high - low + 1024;
+					if (cnt > maxsize)
+						cnt = maxsize;
+					BATsetcount(r1, BATcount(r1));
+					BATsetcount(r2, BATcount(r2));
+					if (BATextend(r1, cnt) != GDK_SUCCEED ||
+					    BATextend(r2, cnt) != GDK_SUCCEED)
+						goto bailout;
+					assert(BATcapacity(r1) == BATcapacity(r2));
+					dst1 = (oid *) Tloc(r1, 0);
+					dst2 = (oid *) Tloc(r2, 0);
 				}
-				assert(lh >= ll);
+				canditer_setidx(&lci, low);
+				while (low < high) {
+					dst1[r1->batCount++] = canditer_next(&lci);
+					dst2[r2->batCount++] = ro;
+					low++;
+				}
+			} else {
+				const oid *ord;
+
+				assert(use_orderidx);
+				ord = (const oid *) l->torderidx->base + ORDERIDXOFF;
 
 				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
 					cnt = BUNlast(r1) + high - low + 1024;
@@ -2188,63 +1879,12 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 					dst2 = (oid *) Tloc(r2, 0);
 				}
 
-				ord += low;
 				while (low < high) {
-					if (ll <= *ord && *ord < lh) {
-						dst1[r1->batCount++] = *ord;
+					if (canditer_search(&lci, ord[low], false) != BUN_NONE) {
+						dst1[r1->batCount++] = ord[low];
 						dst2[r2->batCount++] = ro;
-						low++;
-						ord++;
 					}
-				}
-			} else {
-				if (sl) {
-					oid o;
-
-					o = (oid) low;
-					low = SORTfndfirst(sl, &o);
-					o = (oid) high;
-					high = SORTfndfirst(sl, &o);
-					assert(high >= low);
-
-					if (BATcapacity(r1) < BUNlast(r1) + high - low) {
-						cnt = BUNlast(r1) + high - low + 1024;
-						if (cnt > maxsize)
-							cnt = maxsize;
-						BATsetcount(r1, BATcount(r1));
-						BATsetcount(r2, BATcount(r2));
-						if (BATextend(r1, cnt) != GDK_SUCCEED ||
-						    BATextend(r2, cnt) != GDK_SUCCEED)
-							goto bailout;
-						assert(BATcapacity(r1) == BATcapacity(r2));
-						dst1 = (oid *) Tloc(r1, 0);
-						dst2 = (oid *) Tloc(r2, 0);
-					}
-					while (low < high) {
-						dst1[r1->batCount++] = sval[low];
-						dst2[r2->batCount++] = ro;
-						low++;
-					}
-				} else {
-					/* [low..high) */
-					if (BATcapacity(r1) < BUNlast(r1) + high - low) {
-						cnt = BUNlast(r1) + high - low + 1024;
-						if (cnt > maxsize)
-							cnt = maxsize;
-						BATsetcount(r1, BATcount(r1));
-						BATsetcount(r2, BATcount(r2));
-						if (BATextend(r1, cnt) != GDK_SUCCEED ||
-						    BATextend(r2, cnt) != GDK_SUCCEED)
-							goto bailout;
-						assert(BATcapacity(r1) == BATcapacity(r2));
-						dst1 = (oid *) Tloc(r1, 0);
-						dst2 = (oid *) Tloc(r2, 0);
-					}
-					while (low < high) {
-						dst1[r1->batCount++] = low;
-						dst2[r2->batCount++] = ro;
-						low++;
-					}
+					low++;
 				}
 			}
 		}
@@ -2266,46 +1906,21 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 		BUN maximum;
 
 		sorted = 2;
-		off = l->hseqbase;
 		cnt = 0;
-		maximum = lcand ? (BUN) (lcandend - lcand) : BATcount(l);
-		for (;;) {
-			if (rcand) {
-				if (rcand == rcandend)
-					break;
-				ro = *rcand++;
-				if (rlvals) {
-					vrl = FVALUE(rl, ro - rl->hseqbase);
-				} else {
-					/* TYPE_void */
-					rlval = ro;
-					vrl = (const char *) &rlval;
-				}
-				if (rhvals) {
-					vrh = FVALUE(rh, ro - rh->hseqbase);
-				} else {
-					/* TYPE_void */
-					rhval = ro;
-					vrh = (const char *) &rhval;
-				}
+		maximum = lci.ncand;
+		for (BUN i = 0; i < rci.ncand; i++) {
+			ro = canditer_next(&rci);
+			if (rlvals) {
+				vrl = FVALUE(rl, ro - rl->hseqbase);
 			} else {
-				if (rstart == rend)
-					break;
-				if (rlvals) {
-					vrl = FVALUE(rl, rstart);
-				} else {
-					/* TYPE_void */
-					rlval = rstart + rl->tseqbase;
-					vrl = (const char *) &rlval;
-				}
-				if (rhvals) {
-					vrh = FVALUE(rh, rstart);
-				} else {
-					/* TYPE_void */
-					rhval = rstart + rh->tseqbase;
-					vrh = (const char *) &rhval;
-				}
-				ro = rstart++ + rl->hseqbase;
+				/* TYPE_void */
+				rlval = ro - rl->hseqbase + rl->tseqbase;
+			}
+			if (rhvals) {
+				vrh = FVALUE(rh, ro - rh->hseqbase);
+			} else {
+				/* TYPE_void */
+				rhval = ro - rl->hseqbase + rl->tseqbase;
 			}
 			dst1 = (oid *) Tloc(r1, 0);
 			switch (t) {
@@ -2327,24 +1942,13 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 				if (vl > vh)
 					continue;
-				if (lcand)
-					ncnt = candscan_bte(l, sl, r1, &vl, &vh,
-							    true, true, false,
-							    false, true, true,
-							    false,
-							    lstart, lend, cnt,
-							    off, dst1, lcand,
-							    cnt + maximum,
-							    true);
-				else
-					ncnt = fullscan_bte(l, sl, r1, &vl, &vh,
-							    true, true, false,
-							    false, true, true,
-							    false,
-							    lstart, lend, cnt,
-							    off, dst1, NULL,
-							    cnt + maximum,
-							    true);
+				ncnt = fullscan_bte(l, &lci, r1, &vl, &vh,
+						    true, true, false,
+						    false, true, true,
+						    false, cnt,
+						    l->hseqbase, dst1,
+						    cnt + maximum,
+						    true, &algo);
 				break;
 			}
 			case TYPE_sht: {
@@ -2365,24 +1969,13 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 				if (vl > vh)
 					continue;
-				if (lcand)
-					ncnt = candscan_sht(l, sl, r1, &vl, &vh,
-							    true, true, false,
-							    false, true, true,
-							    false,
-							    lstart, lend, cnt,
-							    off, dst1, lcand,
-							    cnt + maximum,
-							    true);
-				else
-					ncnt = fullscan_sht(l, sl, r1, &vl, &vh,
-							    true, true, false,
-							    false, true, true,
-							    false,
-							    lstart, lend, cnt,
-							    off, dst1, NULL,
-							    cnt + maximum,
-							    true);
+				ncnt = fullscan_sht(l, &lci, r1, &vl, &vh,
+						    true, true, false,
+						    false, true, true,
+						    false, cnt,
+						    l->hseqbase, dst1,
+						    cnt + maximum,
+						    true, &algo);
 				break;
 			}
 			case TYPE_int:
@@ -2416,24 +2009,13 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 				if (vl > vh)
 					continue;
-				if (lcand)
-					ncnt = candscan_int(l, sl, r1, &vl, &vh,
-							    true, true, false,
-							    false, true, true,
-							    false,
-							    lstart, lend, cnt,
-							    off, dst1, lcand,
-							    cnt + maximum,
-							    true);
-				else
-					ncnt = fullscan_int(l, sl, r1, &vl, &vh,
-							    true, true, false,
-							    false, true, true,
-							    false,
-							    lstart, lend, cnt,
-							    off, dst1, NULL,
-							    cnt + maximum,
-							    true);
+				ncnt = fullscan_int(l, &lci, r1, &vl, &vh,
+						    true, true, false,
+						    false, true, true,
+						    false, cnt,
+						    l->hseqbase, dst1,
+						    cnt + maximum,
+						    true, &algo);
 				break;
 			}
 			case TYPE_lng:
@@ -2467,24 +2049,13 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 				if (vl > vh)
 					continue;
-				if (lcand)
-					ncnt = candscan_lng(l, sl, r1, &vl, &vh,
-							    true, true, false,
-							    false, true, true,
-							    false,
-							    lstart, lend, cnt,
-							    off, dst1, lcand,
-							    cnt + maximum,
-							    true);
-				else
-					ncnt = fullscan_lng(l, sl, r1, &vl, &vh,
-							    true, true, false,
-							    false, true, true,
-							    false,
-							    lstart, lend, cnt,
-							    off, dst1, NULL,
-							    cnt + maximum,
-							    true);
+				ncnt = fullscan_lng(l, &lci, r1, &vl, &vh,
+						    true, true, false,
+						    false, true, true,
+						    false, cnt,
+						    l->hseqbase, dst1,
+						    cnt + maximum,
+						    true, &algo);
 				break;
 			}
 #ifdef HAVE_HGE
@@ -2506,24 +2077,13 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 				if (vl > vh)
 					continue;
-				if (lcand)
-					ncnt = candscan_hge(l, sl, r1, &vl, &vh,
-							    true, true, false,
-							    false, true, true,
-							    false,
-							    lstart, lend, cnt,
-							    off, dst1, lcand,
-							    cnt + maximum,
-							    true);
-				else
-					ncnt = fullscan_hge(l, sl, r1, &vl, &vh,
-							    true, true, false,
-							    false, true, true,
-							    false,
-							    lstart, lend, cnt,
-							    off, dst1, NULL,
-							    cnt + maximum,
-							    true);
+				ncnt = fullscan_hge(l, &lci, r1, &vl, &vh,
+						    true, true, false,
+						    false, true, true,
+						    false, cnt,
+						    l->hseqbase, dst1,
+						    cnt + maximum,
+						    true, &algo);
 				break;
 			}
 #endif
@@ -2547,24 +2107,13 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 				if (vl > vh)
 					continue;
-				if (lcand)
-					ncnt = candscan_flt(l, sl, r1, &vl, &vh,
-							    true, true, false,
-							    false, true, true,
-							    false,
-							    lstart, lend, cnt,
-							    off, dst1, lcand,
-							    cnt + maximum,
-							    true);
-				else
-					ncnt = fullscan_flt(l, sl, r1, &vl, &vh,
-							    true, true, false,
-							    false, true, true,
-							    false,
-							    lstart, lend, cnt,
-							    off, dst1, NULL,
-							    cnt + maximum,
-							    true);
+				ncnt = fullscan_flt(l, &lci, r1, &vl, &vh,
+						    true, true, false,
+						    false, true, true,
+						    false, cnt,
+						    l->hseqbase, dst1,
+						    cnt + maximum,
+						    true, &algo);
 				break;
 			}
 			case TYPE_dbl: {
@@ -2587,24 +2136,13 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 				if (vl > vh)
 					continue;
-				if (lcand)
-					ncnt = candscan_dbl(l, sl, r1, &vl, &vh,
-							    true, true, false,
-							    false, true, true,
-							    false,
-							    lstart, lend, cnt,
-							    off, dst1, lcand,
-							    cnt + maximum,
-							    true);
-				else
-					ncnt = fullscan_dbl(l, sl, r1, &vl, &vh,
-							    true, true, false,
-							    false, true, true,
-							    false,
-							    lstart, lend, cnt,
-							    off, dst1, NULL,
-							    cnt + maximum,
-							    true);
+				ncnt = fullscan_dbl(l, &lci, r1, &vl, &vh,
+						    true, true, false,
+						    false, true, true,
+						    false, cnt,
+						    l->hseqbase, dst1,
+						    cnt + maximum,
+						    true, &algo);
 				break;
 			}
 			default:
@@ -2628,84 +2166,46 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 		}
 	} else {
 		/* nested loop implementation */
-		const char *vl;
+		const void *vl;
 		const char *lvals;
+		oid lval;
 
 		GDKclrerr();	/* not interested in BATimprints errors */
 		sorted = 1;
 		lvals = l->ttype == TYPE_void ? NULL : (const char *) Tloc(l, 0);
-		for (;;) {
-			BUN n, nr;
-			const oid *p;
-			oid lo, lval;
+		vl = &lval;
+		for (BUN i = 0; i < lci.ncand; i++) {
+			oid lo;
 
-			if (lcand) {
-				if (lcand == lcandend)
-					break;
-				lo = *lcand++;
-				vl = VALUE(l, lstart);
+			lo = canditer_next(&lci);
+			if (lvals) {
+				vl = VALUE(l, lo - l->hseqbase);
+				if (cmp(vl, nil) == 0)
+					continue;
 			} else {
-				if (lstart == lend)
-					break;
-				if (lvals) {
-					vl = VALUE(l, lstart);
-					if (off != 0) {
-						lval = (oid) (*(const oid *)vl + off);
-						vl = (const char *) &lval;
-					}
-				} else {
-					lval = lstart + l->tseqbase;
-					vl = (const char *) &lval;
-				}
-				lo = lstart++ + l->hseqbase;
+				lval = lo - l->hseqbase + l->tseqbase;
 			}
-			if (cmp(vl, nil) == 0)
-				continue;
-			nr = 0;
-			p = rcand;
-			n = rstart;
-			for (;;) {
+			canditer_reset(&rci);
+			for (BUN j = 0; j < rci.ncand; j++) {
 				int c;
 
-				if (rcand) {
-					if (p == rcandend)
-						break;
-					ro = *p++;
-					if (rlvals)
-						vrl = VALUE(rl, ro - rl->hseqbase);
-					else {
-						/* TYPE_void */
-						rlval = ro;
-						vrl = (const char *) &rlval;
-					}
-					if (rhvals)
-						vrh = VALUE(rh, ro - rh->hseqbase);
-					else {
-						/* TYPE_void */
-						rhval = ro;
-						vrh = (const char *) &rhval;
-					}
+				ro = canditer_next(&rci);
+				if (rlvals) {
+					vrl = VALUE(rl, ro - rl->hseqbase);
+					if (cmp(vrl, nil) == 0)
+						continue;
 				} else {
-					if (n == rend)
-						break;
-					if (rlvals) {
-						vrl = VALUE(rl, n);
-					} else {
-						/* TYPE_void */
-						rlval = n + rl->tseqbase;
-						vrl = (const char *) &rlval;
-					}
-					if (rhvals) {
-						vrh = VALUE(rh, n);
-					} else {
-						/* TYPE_void */
-						rhval = n + rh->tseqbase;
-						vrh = (const char *) &rhval;
-					}
-					ro = n++ + rl->hseqbase;
+					/* TYPE_void */
+					rlval = ro - rl->hseqbase + rl->tseqbase;
 				}
-				if (cmp(vrl, nil) == 0 || cmp(vrh, nil) == 0)
-					continue;
+				if (rhvals) {
+					vrh = VALUE(rh, ro - rh->hseqbase);
+					if (cmp(vrh, nil) == 0)
+						continue;
+				} else {
+					/* TYPE_void */
+					rhval = ro - rh->hseqbase + rh->tseqbase;
+				}
 				c = cmp(vl, vrl);
 				if (c < 0 || (c == 0 && !li))
 					continue;
@@ -2727,7 +2227,6 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 				dst1[r1->batCount++] = lo;
 				dst2[r2->batCount++] = ro;
-				nr++;
 			}
 		}
 		cnt = BATcount(r1);
@@ -2791,8 +2290,9 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 	}
 	if (BATtdense(r2))
 		r2->tseqbase = cnt > 0 ? dst2[0] : 0;
-	ALGODEBUG fprintf(stderr, "#rangejoin(l=%s,rl=%s,rh=%s)="
+	ALGODEBUG fprintf(stderr, "#%s: %s(l=%s,rl=%s,rh=%s)="
 			  "(" ALGOBATFMT "," ALGOBATFMT ")\n",
+			  MT_thread_getname(), __func__,
 			  BATgetId(l), BATgetId(rl), BATgetId(rh),
 			  ALGOBATPAR(r1), ALGOBATPAR(r2));
 	return GDK_SUCCEED;

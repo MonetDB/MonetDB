@@ -9,7 +9,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_cand.h"
 
 /* Calculate a cross product between bats l and r with optional
  * candidate lists sl for l and sr for r.
@@ -19,21 +18,13 @@ gdk_return
 BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 {
 	BAT *bn1, *bn2;
-	BUN start1, start2;
-	BUN end1, end2;
+	struct canditer ci1, ci2;
 	BUN cnt1, cnt2;
-	const oid *restrict lcand, *restrict rcand;
-	const oid *lcandend, *rcandend;
-	oid seq;
 	oid *restrict p;
 	BUN i, j;
 
-	CANDINIT(l, sl, start1, end1, cnt1, lcand, lcandend);
-	CANDINIT(r, sr, start2, end2, cnt2, rcand, rcandend);
-	if (lcand)
-		cnt1 = lcandend - lcand;
-	if (rcand)
-		cnt2 = rcandend - rcand;
+	cnt1 = canditer_init(&ci1, l, sl);
+	cnt2 = canditer_init(&ci2, r, sr);
 
 	bn1 = COLnew(0, TYPE_oid, cnt1 * cnt2, TRANSIENT);
 	bn2 = COLnew(0, TYPE_oid, cnt1 * cnt2, TRANSIENT);
@@ -42,47 +33,37 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 		BBPreclaim(bn2);
 		return GDK_FAIL;
 	}
+	if (cnt1 > 0 && cnt2 > 0) {
+		BATsetcount(bn1, cnt1 * cnt2);
+		bn1->tsorted = true;
+		bn1->trevsorted = cnt1 <= 1;
+		bn1->tkey = cnt2 <= 1;
+		bn1->tnil = false;
+		bn1->tnonil = true;
+		p = (oid *) Tloc(bn1, 0);
+		for (i = 0; i < cnt1; i++) {
+			oid x = canditer_next(&ci1);
+			for (j = 0; j < cnt2; j++) {
+				*p++ = x;
+			}
+		}
+		BATtseqbase(bn1, cnt2 == 1 ? *(oid *) Tloc(bn1, 0) : oid_nil);
 
-	BATsetcount(bn1, cnt1 * cnt2);
-	bn1->tsorted = true;
-	bn1->trevsorted = cnt1 <= 1;
-	bn1->tkey = cnt2 <= 1;
-	bn1->tnil = false;
-	bn1->tnonil = true;
-	p = (oid *) Tloc(bn1, 0);
-	if (lcand) {
-		for (i = 0; i < cnt1; i++)
-			for (j = 0; j < cnt2; j++)
-				*p++ = lcand[i];
-		bn1->tseqbase = oid_nil;
-	} else {
-		seq = l->hseqbase + start1;
-		for (i = 0; i < cnt1; i++)
-			for (j = 0; j < cnt2; j++)
-				*p++ = i + seq;
-		BATtseqbase(bn1, bn1->tkey ? seq : oid_nil);
+		BATsetcount(bn2, cnt1 * cnt2);
+		bn2->tsorted = cnt1 <= 1 || cnt2 <= 1;
+		bn2->trevsorted = cnt2 <= 1;
+		bn2->tkey = cnt1 <= 1;
+		bn2->tnil = false;
+		bn2->tnonil = true;
+		p = (oid *) Tloc(bn2, 0);
+		for (i = 0; i < cnt1; i++) {
+			for (j = 0; j < cnt2; j++) {
+				*p++ = canditer_next(&ci2);
+			}
+			canditer_reset(&ci2);
+		}
+		BATtseqbase(bn2, cnt1 == 1 ? *(oid *) Tloc(bn2, 0) : oid_nil);
 	}
-
-	BATsetcount(bn2, cnt1 * cnt2);
-	bn2->tsorted = cnt1 <= 1 || cnt2 <= 1;
-	bn2->trevsorted = cnt2 <= 1;
-	bn2->tkey = cnt1 <= 1;
-	bn2->tnil = false;
-	bn2->tnonil = true;
-	p = (oid *) Tloc(bn2, 0);
-	if (rcand) {
-		for (i = 0; i < cnt1; i++)
-			for (j = 0; j < cnt2; j++)
-				*p++ = rcand[j];
-		bn2->tseqbase = oid_nil;
-	} else {
-		seq = r->hseqbase + start2;
-		for (i = 0; i < cnt1; i++)
-			for (j = 0; j < cnt2; j++)
-				*p++ = j + seq;
-		BATtseqbase(bn2, bn2->tkey ? seq : oid_nil);
-	}
-
 	*r1p = bn1;
 	*r2p = bn2;
 	ALGODEBUG fprintf(stderr, "#BATsubcross()=(" ALGOBATFMT "," ALGOBATFMT ")\n", ALGOBATPAR(bn1), ALGOBATPAR(bn2));

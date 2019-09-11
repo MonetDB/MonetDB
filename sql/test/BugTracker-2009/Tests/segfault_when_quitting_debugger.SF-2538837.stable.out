@@ -15,9 +15,9 @@ stdout of test 'segfault_when_quitting_debugger.SF-2538837` in directory 'sql/te
 # MonetDB/SQL module v2.28.0 loaded
 
 
-# 16:24:01 >  
-# 16:24:01 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17200" "--port=32363"
-# 16:24:01 >  
+#set optimizer = 'sequential_pipe'; -- to get predictable errors
+#debug select * from tables;
+mdb>#X_1=0@0:void := querylog.define("debug select * from tables;", "sequential_pipe", 190:int);
 
 # 22:21:12 >  
 # 22:21:12 >  "Done."

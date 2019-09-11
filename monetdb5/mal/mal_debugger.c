@@ -630,17 +630,12 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 
 	do {
 		if (p != NULL) {
-			if (cntxt != mal_clients)
-				/* help mclients with fake prompt */
-				if (lastcmd != 'l' && lastcmd != 'L') {
-					mnstr_printf(out, "mdb>");
-					printTraceCall(out, mb, stk, pc, LIST_MAL_CALL);
-				}
+			/* help mclients with fake prompt */
+			if (lastcmd != 'l' && lastcmd != 'L') {
+				mnstr_printf(out, "mdb>");
+				printTraceCall(out, mb, stk, pc, LIST_MAL_CALL);
+			}
 
-		}
-		if (cntxt == mal_clients) {
-			cntxt->prompt = "mdb>";
-			cntxt->promptlength = 4;
 		}
 
 		if (cntxt->phase[MAL_SCENARIO_READER]) {
@@ -1226,9 +1221,8 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	case 'c':
 		ch = isBreakpoint(cntxt, mb, p, pc);
 		if (ch == 't') {
-			if (cntxt != mal_clients)
-				/* help mclients with fake prompt */
-				mnstr_printf(out, "mdb>");
+			/* help mclients with fake prompt */
+			mnstr_printf(out, "mdb>");
 			printTraceCall(out, mb, stk, pc, LIST_MAL_CALL);
 		} else if (ch)
 			mdbCommand(cntxt, mb, stk, p, pc);

@@ -1953,7 +1953,7 @@ sql_update_apr2019_sp1(Client c)
 }
 
 static str
-sql_update_default(Client c, mvc *sql)
+sql_update_nov2019(Client c, mvc *sql)
 {
 	size_t bufsize = 1000, pos = 0;
 	char *buf, *err;
@@ -1961,7 +1961,7 @@ sql_update_default(Client c, mvc *sql)
 	BAT *b;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_nov2019", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"select id from sys.args where func_id in (select id from sys.functions where schema_id = (select id from sys.schemas where name = 'sys') and name = 'second' and func = 'sql_seconds') and number = 0 and type_scale = 3;\n");
@@ -2232,7 +2232,7 @@ SQLupgrades(Client c, mvc *m)
 		freeException(err);
 	}
 
-	if ((err = sql_update_default(c, m)) != NULL) {
+	if ((err = sql_update_nov2019(c, m)) != NULL) {
 		fprintf(stderr, "!%s\n", err);
 		freeException(err);
 	}

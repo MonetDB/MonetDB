@@ -1589,7 +1589,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 	if (op1->nr < 0 && (sub && sub->nr < 0))
 		return NULL;
 	l = op1->nr;
-	if ((op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
+	if (((cmp & CMP_BETWEEN) || op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
 		int k;
 
 		if (op2->nr < 0 || op3->nr < 0)
@@ -1603,6 +1603,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		p = pushBit(mb, p, (cmp & 1) != 0);	    /* lo inclusive */
 		p = pushBit(mb, p, (cmp & 2) != 0);	    /* hi inclusive */
 		p = pushBit(mb, p, FALSE);		    /* nils_false */
+		p = pushBit(mb, p, (anti)?TRUE:FALSE);	    /* anti */
 		k = getDestVar(p);
 
 		q = newStmt(mb, algebraRef, selectRef);
@@ -1613,7 +1614,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
-		q = pushBit(mb, q, (anti)?TRUE:FALSE);
+		q = pushBit(mb, q, FALSE);
 		if (q == NULL)
 			return NULL;
 	} else {

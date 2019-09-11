@@ -20,7 +20,8 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) cntxt;
 
-	assert(pci->argc > 1);
+	if(pci->argc <= 1)
+		throw(MAL, "algebra.projectionpath", SQLSTATE(HY001) "INTERNAL ERROR");
 	if ( joins == NULL)
 		throw(MAL, "algebra.projectionpath", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = pci->retc; i < pci->argc; i++) {
