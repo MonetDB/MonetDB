@@ -888,12 +888,9 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			mvc_default(sql, nc, c->def);
 
 		if (c->storage_type != nc->storage_type) {
-			bat bid = 0;
 			BAT *b;
 			size_t cnt;
-			sql_delta *d;
 			char *msg = MAL_SUCCEED;
-			int filter[MOSAIC_METHODS];
 /* no restriction
 			if (c->t->access == TABLE_WRITABLE)
 				return sql_message("40002!ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
@@ -908,17 +905,20 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			}
 
 			if( c->storage_type) {
-				memset(filter,0, sizeof(filter));
 
 				if (strstr(c->storage_type,"mosaic") != 0)
 							throw(SQL,
 								"sql.alter", MOSAIC_STRATEGY_NOT_ALLOWED);
 
+				int contains_explicit_raw = strstr(c->storage_type,"raw") != NULL ? 1 : 0;
+
 				for(int i = 0, nr_strategies = 0; i< MOSAIC_METHODS-1; i++){
-					if ( (filter[i] = strstr(c->storage_type,MOSfiltername[i]) != 0 && type_allowed(i, b) ))
+					if ( (strstr(c->storage_type,MOSfiltername[i]) && type_allowed(i, b) ))
 					{
-						if (strstr(c->storage_type,"raw") == 0 && ++nr_strategies > 1)
+						if ( (++nr_strategies - contains_explicit_raw) > 1) {
+							BBPunfix(b->batCacheid);
 							throw(SQL, "sql.alter", NON_TRIVIAL_MIX_NOT_ALLOWED);
+						}
 					}
 				}
 
@@ -926,14 +926,10 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			}
 			BBPunfix(b->batCacheid);
 
-			if (msg)
+			if (msg) {
 				return msg;
+			}
 
-			store_funcs.clear_col(sql->session->tr, nc);
-			assert(nc->base.allocated == 1);
-			d = nc->data;
-			d->bid = bid;
-			d->cnt = cnt;
 			mvc_storage(sql, nc, c->storage_type);
 		}
 	}
