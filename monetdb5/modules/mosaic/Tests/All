@@ -30,6 +30,11 @@ mosaic_linear_joins
 mosaic_prefix_joins
 mosaic_mix_joins
 
+mosaic_raw_lng
+mosaic_raw_oid
+mosaic_raw_date
+mosaic_raw_timestamp
+
 mosaic_frame_lng
 mosaic_frame_oid
 mosaic_frame_date
