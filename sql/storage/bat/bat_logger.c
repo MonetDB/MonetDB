@@ -951,17 +951,6 @@ end:
 	return ret;
 }
 
-/* Like snapshot_lazy_copy_file, but takes a Heap* instead of a path */
-static void
-snapshot_lazy_copy_heap(stream *plan, Heap *heap)
-{
-	long extent = heap->free;
-	char *name = heap->filename;
-	char path[FILENAME_MAX];
-	snprintf(path, sizeof(path), "%s%c%s", BATDIR, DIR_SEP, name);
-	snapshot_lazy_copy_file(plan, path, extent);
-}
-
 /* Add plan entries for all relevant files in the Write Ahead Log */
 static gdk_return
 snapshot_wal(stream *plan, const char *db_dir)
@@ -985,8 +974,8 @@ snapshot_wal(stream *plan, const char *db_dir)
  *
  * If `mandatory` is set, it is an error for both files not to exist.
  *
- * This interface is slightly messy but of all I tried this gives the most
- * readable code.
+ * This interface is rather messy but of all I tried this ends up
+ * being most readable.
  */
 static gdk_return
 snapshot_one_heap(stream *plan, bool mandatory, const char *path, const char *name, const char *alt_path, const char *alt_name)
@@ -1025,7 +1014,7 @@ snapshot_one_heap(stream *plan, bool mandatory, const char *path, const char *na
  * the absolute path of the heap file, for example /tmp/mydatabase/bat/07/726.
  * This function attempts to add suffixes such as .tail, .theap etc
  * and copies those files if they exist.
- * local_part_index is the number of byte to skip to get to the local
+ * local_part_index is the number of bytes to skip to get to the local
  * part of the filename, in this example skipping the "/tmp/mydatabase/"
  *
  * Note: path_buffer must have room for this function to append the suffixes
@@ -1034,6 +1023,7 @@ snapshot_one_heap(stream *plan, bool mandatory, const char *path, const char *na
 static gdk_return
 snapshot_one_bat(stream *plan, char *path_buffer, char *alt_path_buffer, size_t local_part_index)
 {
+	// M = mandatory, O = optional
 	static const char *suffixes[] = { "M.tail", "O.theap", "O.tvheap", "O.torderidx", "O.timprint", NULL };
 	//TODO check the above
 	gdk_return ret = GDK_FAIL;
@@ -1132,7 +1122,6 @@ end:
 	if (cat) {
 		close_stream(cat);
 	}
-	(void)snapshot_lazy_copy_heap;
 	return ret;
 }
 

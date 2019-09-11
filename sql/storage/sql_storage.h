@@ -314,7 +314,7 @@ typedef int (*log_tend_fptr) (void);
 typedef int (*log_sequence_fptr) (int seq, lng id);
 
 /*
--- Lists which parts of which files must be included in a hot snapshot.
+-- List which parts of which files must be included in a hot snapshot.
 -- This is written to the given stream in the following format:
 -- - The first line is the absolute path of the db dir. All other paths
 --   are relative to this.
@@ -325,7 +325,6 @@ typedef int (*log_sequence_fptr) (int seq, lng id);
 --   after the newline.
 -- Using a stream (buffer) instead of a list data structure simplifies debugging
 -- and avoids a lot of tiny allocations and pointer manipulations.
--- Returns a nonpositive number on failure.
 */
 typedef gdk_return (*logger_get_snapshot_files_fptr)(stream *plan);
 

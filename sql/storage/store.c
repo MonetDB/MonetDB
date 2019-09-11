@@ -2363,7 +2363,7 @@ store_unlock(void)
 }
 
 // Helper function for tar_write_header.
-// stream.h makes sure __attribute__ exists
+// stream.h makes sure __attribute__ exists.
 static void tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
 static void
@@ -2375,7 +2375,11 @@ tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 	vsnprintf(*cursor_ptr, size + 1, fmt, ap);
 	va_end(ap);
 
-	*cursor_ptr += size; /* regardless of bytes written */
+	/* move *cursor_ptr to the start of the next field.
+	 * therefore, uncoditionally add `size` and ignore the return value
+	 * of vsnprintf, which only tells us how much we wrote into the
+	 * current field. */
+	*cursor_ptr += size;
 }
 
 #define TAR_BLOCK_SIZE (512)
@@ -2393,8 +2397,8 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
 	// owned by that user. When unpacking as root it is reasonable that
 	// the resulting files are owned by root.
 
-	// The following is taken directly from the definition of the header
-	// in /usr/include/tar.h.
+	// The following is taken directly from the definition
+	// in /usr/include/tar.h on a Linux system.
 	tar_write_header_field(&cursor, 100, "%s", path);   // name[100]
 	tar_write_header_field(&cursor, 8, "0000644");      // mode[8]
 	tar_write_header_field(&cursor, 8, "%07o", 0);      // uid[8]
@@ -2536,10 +2540,11 @@ end:
 static gdk_return
 hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 {
-	(void)out;
 	gdk_return ret;
 	const char *p = plan; // our cursor in the plan
 	time_t timestamp = time(NULL);
+	// We use _path for the absolute path
+	// and _name for the corresponding local relative path
 	char abs_src_path[2 * FILENAME_MAX];
 	char *src_name = abs_src_path;
 	char dest_path[100]; // size imposed by tar format.
@@ -2556,10 +2561,9 @@ hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 	src_name = abs_src_path + len - 1; // - 1 because len includes the trailing newline
 	*src_name++ = DIR_SEP;
 
-	int scanned;
 	char command;
 	long size;
-	while ((scanned = sscanf(p, "%c %ld %100s\n%n", &command, &size, src_name, &len)) == 3) {
+	while (sscanf(p, "%c %ld %100s\n%n", &command, &size, src_name, &len) == 3) {
 		p += len;
 		strcpy(dest_name, src_name);
 		if (size < 0) {
@@ -2619,7 +2623,7 @@ store_hot_snapshot(str tarfile)
 	}
 	plan_buf = buffer_create(64 * 1024);
 	if (!plan_buf) {
-		GDKerror("Failed to allocate buffer");
+		GDKerror("Failed to allocate plan buffer");
 		goto end;
 	}
 	plan_stream = buffer_wastream(plan_buf, "write_snapshot_plan");
