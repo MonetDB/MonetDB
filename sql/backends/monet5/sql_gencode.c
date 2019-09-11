@@ -1040,12 +1040,12 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (!vararg)
 		f->sql++;
 	r = rel_parse(m, f->s, f->query, m_instantiate);
-	if (r) {
-		r = rel_unnest(m, r);
-		r = rel_optimizer(m, r, 0);
+	if (r)
+		r = sql_processrelation(m, r, 0);
+	if (r)
 		r = rel_distribute(m, r);
+	if (r)
 		r = rel_partition(m, r);
-	}
 	if (r && !f->sql) 	/* native function */
 		return 0;
 

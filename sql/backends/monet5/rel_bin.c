@@ -3296,7 +3296,9 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 		sql_query *query = query_create(m);
 		sql_rel *r = rel_semantic(query, m->sym);
 
-		if (r && (r = rel_unnest(m,r)) != NULL && (r = rel_optimizer(m, r, 1)) != NULL)
+		if (r)
+			r = sql_processrelation(m, r, 1);
+		if (r)
 			sq = rel_bin(be, r);
 	}
 

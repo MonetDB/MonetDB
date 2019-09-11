@@ -106,6 +106,13 @@ QUERY = SELECT
         GROUP BY CUBE(tbl_ProductSales.Product_Category); --error, ambiguous identifier
 ERROR = !SELECT: identifier 'colid' ambiguous
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12342/.s.monetdb.31583
+QUERY = SELECT
+            col1 IN (SELECT ColID + col2 FROM tbl_ProductSales)
+        FROM another_T
+        GROUP BY ROLLUP(col1); --error, col2 is not a grouping column
+ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
+CODE  = 42000
 
 # 14:50:27 >  
 # 14:50:27 >  "Done."

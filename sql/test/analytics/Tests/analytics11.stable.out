@@ -298,8 +298,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    WHERE tbl_X.NItems < 1000
 #    GROUP BY CUBE(tbl_ProductSales.Product_Category, tbl_ProductSales.Product_Name, tbl_ProductSales.ColID), ROLLUP(tbl_X.ColID, tbl_X.NItems)
 #) AS SubTables GROUP BY myalias ORDER BY myalias;
-% .subtables,	.L34 # table_name
-% myalias,	L34 # name
+% .subtables,	.L5 # table_name
+% myalias,	L5 # name
 % tinyint,	bigint # type
 % 1,	2 # length
 [ 0,	24	]
@@ -325,6 +325,20 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 [ 4	]
 #SELECT
 #    GROUPING(col1, col2, col3, col4, col5, col6, col7, col8)
+#FROM another_T
+#GROUP BY ROLLUP(col1);
+% .L10 # table_name
+% L10 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ false	]
+[ false	]
+[ false	]
+[ NULL	]
+#SELECT
+#    GROUPING(col1, col2, col3, col4, col5, col6, col7, col8), AVG(col1), CAST(SUM(col2) * 3 AS BIGINT), col3 + col4,
+#    CAST(MAX(col5) * MIN(col6) AS BIGINT), col7, col1 IN (SELECT ColID FROM tbl_ProductSales), col2 IN (SELECT ColID + col3 FROM tbl_ProductSales)
 #FROM another_T
 #GROUP BY ROLLUP(col1, col2, col3, col4, col5, col6, col7, col8) --with 8 columns, a smallint is necessary for grouping's output
 #ORDER BY GROUPING(col1, col2, col3, col4, col5, col6, col7, col8);

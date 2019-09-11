@@ -1207,9 +1207,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			sym = newSelectNode(sql->sa, 0, selection, NULL, symbol_create_list(sql->sa, SQL_FROM, from_list), opt_where, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 			sq = rel_selects(sql, sym);
 			if (sq)
-				sq = rel_unnest(sql, sq);
-			if (sq)
-				sq = rel_optimizer(sql, sq, 0);
+				sq = sql_processrelation(sql, sq, 0);
 		}
 #endif
 

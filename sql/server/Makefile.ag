@@ -36,6 +36,7 @@ lib_sqlserver = {
 		sql_env.c \
 		sql_privileges.c \
 		sql_query.c \
+		rel_groupings.c \
 		rel_semantic.c \
 		rel_select.c \
 		rel_updates.c \
@@ -55,7 +56,7 @@ lib_sqlserver = {
 		rel_psm.c \
 		rel_xml.c \
 		rel_dump.c \
-		rel_dump.h rel_exp.h rel_rel.h \
+		rel_dump.h rel_exp.h rel_groupings.h rel_rel.h \
 		rel_unnest.h rel_optimizer.h rel_partition.h rel_distribute.h rel_prop.h rel_schema.h rel_select.h \
 		rel_semantic.h rel_sequence.h rel_trans.h \
 		rel_updates.h rel_psm.h rel_xml.h sql_atom.h sql_datetime.h \

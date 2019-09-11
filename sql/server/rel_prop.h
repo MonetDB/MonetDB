@@ -16,15 +16,17 @@ typedef struct prop {
 			   which are kept in a chain list */
 } prop;
 
-#define PROP_COUNT	0
-#define PROP_JOINIDX	1	/* could use join idx */
-#define PROP_HASHIDX	2	/* is hash idx */
-#define PROP_SORTIDX	3	/* is sorted */
-#define PROP_HASHCOL	4	/* could use hash idx */
-#define PROP_FETCH	5	/* fetchjoin */
-#define PROP_REMOTE     6	/* uri for remote execution */
-#define PROP_USED	10	/* number of times exp is used */
-#define PROP_DISTRIBUTE	11	/* number of times exp is used */
+#define PROP_COUNT       0
+#define PROP_JOINIDX     1	/* could use join idx */
+#define PROP_HASHIDX     2	/* is hash idx */
+#define PROP_SORTIDX     3	/* is sorted */
+#define PROP_HASHCOL     4	/* could use hash idx */
+#define PROP_FETCH       5	/* fetchjoin */
+#define PROP_REMOTE      6	/* uri for remote execution */
+#define PROP_USED       10	/* number of times exp is used */
+#define PROP_DISTRIBUTE	11	/* used by merge tables when sql.affectedRows 
+							   is the sum of several insert/update/delete statements */
+#define PROP_GROUPINGS  12  /* used by ROLLUP/CUBE/GROUPING SETS, value contains the list of sets */
 
 extern prop * prop_create( sql_allocator *sa, int kind, prop *pre );
 extern prop * prop_copy( sql_allocator *sa, prop *p);

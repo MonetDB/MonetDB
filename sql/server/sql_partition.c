@@ -260,6 +260,7 @@ find_expression_type(sql_exp *e, sql_subtype *tpe)
 }
 
 extern list *rel_dependencies(mvc *sql, sql_rel *r);
+extern sql_rel *sql_processrelation(mvc *m, sql_rel* rel, int value_based_opt);
 
 str
 bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int instantiate)
@@ -306,15 +307,13 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		}
 	}
 
-	if(instantiate) {
+	if (instantiate) {
 		r = rel_project(sql->sa, r, NULL);
 		r->exps = sa_list(sql->sa);
 		list_append(r->exps, exp);
 
 		if (r)
-			r = rel_unnest(sql, r);
-		if (r)
-			r = rel_optimizer(sql, r, 0);
+			r = sql_processrelation(sql, r, 0);
 		if (r) {
 			int i;
 			node *n, *found = NULL;

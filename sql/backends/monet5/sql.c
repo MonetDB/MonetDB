@@ -25,6 +25,7 @@
 #include "sql_datetime.h"
 #include "sql_partition.h"
 #include "rel_unnest.h"
+#include "rel_groupings.h"
 #include "rel_optimizer.h"
 #include "rel_partition.h"
 #include "rel_distribute.h"
@@ -113,23 +114,33 @@ rel_need_distinct_query(sql_rel *rel)
 }
 
 sql_rel *
-sql_symbol2relation(mvc *c, symbol *sym)
+sql_processrelation(mvc *sql, sql_rel* rel, int value_based_opt)
 {
-	sql_rel *r;
-	sql_query *query = query_create(c);
+	if (rel)
+		rel = rel_unnest(sql, rel);
+	if (rel)
+		rel = rel_generate_groupings(sql, rel);
+	if (rel)
+		rel = rel_optimizer(sql, rel, value_based_opt);
+	return rel;
+}
 
-	r = rel_semantic(query, sym);
-	if (r)
-		r = rel_unnest(c, r);
-	if (r)
-		r = rel_optimizer(c, r, 1);
-	if (r)
-		r = rel_distribute(c, r);
-	if (r)
-		r = rel_partition(c, r);
-	if (r && (rel_no_mitosis(r) || rel_need_distinct_query(r)))
-		c->no_mitosis = 1;
-	return r;
+sql_rel *
+sql_symbol2relation(mvc *sql, symbol *sym)
+{
+	sql_rel *rel;
+	sql_query *query = query_create(sql);
+
+	rel = rel_semantic(query, sym);
+	if (rel)
+		rel = sql_processrelation(sql, rel, 1);
+	if (rel)
+		rel = rel_distribute(sql, rel);
+	if (rel)
+		rel = rel_partition(sql, rel);
+	if (rel && (rel_no_mitosis(rel) || rel_need_distinct_query(rel)))
+		sql->no_mitosis = 1;
+	return rel;
 }
 
 /*
@@ -434,12 +445,9 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		}
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
-			r = rel_unnest(sql, r);
-		if (r)
-			r = rel_optimizer(sql, r, 0);
+			r = sql_processrelation(sql, r, 0);
 		if (r) {
 			list *id_l = rel_dependencies(sql, r);
-
 			mvc_create_dependencies(sql, id_l, nt->base.id, VIEW_DEPENDENCY);
 		}
 		sa_destroy(sql->sa);
