@@ -10,10 +10,3 @@
 create procedure hot_snapshot(tarfile string)
 	external name sql.hot_snapshot;
 
--- Helper function to disable the log merger
-create procedure suspend_log_flushing()
-	external name sql.suspend_log_flushing;
-
--- Helper function to enable the log merger
-create procedure resume_log_flushing()
-	external name sql.resume_log_flushing;
