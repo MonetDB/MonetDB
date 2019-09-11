@@ -108,10 +108,13 @@ e_cmp
 	-> l	left sub expression
 	-> r	right sub expression (f second arg (->f) for range expressions)
 	-> flag compare type		
-		(       cmp_gt = 0,
-        		cmp_gte = 1,
-        		cmp_lte = 2,
-        		cmp_lt = 3,
+		(       cmp_gt = 0,		or [ v > l && v < h ] 
+        		cmp_gte = 1,		or [ v >= l && v < h ]
+        		cmp_lte = 2,		or [ v > l && v <= h ]
+        		cmp_lt = 3,		or [ v >= l && v <= h ]
+						 uses flag&CMP_BETWEEN bit for handling nil 
+							open ranges and isNull vs NULL
+						 uses flag&CMP_SYMMETRIC bit for symmetric 
         		cmp_equal = 4,
         		cmp_notequal = 5,
 

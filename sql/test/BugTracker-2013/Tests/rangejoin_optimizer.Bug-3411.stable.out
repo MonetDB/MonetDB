@@ -37,7 +37,7 @@ project (
 | join (
 | | table(sys.t4311) [ "t4311"."a" as "t2"."a" ] COUNT ,
 | | table(sys.t4311) [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ] COUNT 
-| ) [ "t1"."a" <= "t2"."a" <= "t1"."b" ]
+| ) [ "t1"."a" <= "t2"."a" <= "t1"."b" ASC ]
 ) [ "t2"."a" ]
 #plan 
 #SELECT t2.a

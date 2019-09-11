@@ -15,6 +15,10 @@
 
 #define SNAPSHOT_MINSIZE ((BUN) 1024*128)
 
+static MT_Lock destroy_lock = MT_LOCK_INITIALIZER("destroy_lock");
+sql_dbat *tobe_destroyed_dbat = NULL;
+sql_delta *tobe_destroyed_delta = NULL;
+
 static sql_trans *
 oldest_active_transaction(void)
 {
@@ -1880,6 +1884,56 @@ destroy_dbat(sql_trans *tr, sql_dbat *bat)
 }
 
 static int
+cleanup(void)
+{
+	int ok = LOG_OK;
+
+	MT_lock_set(&destroy_lock);
+	if (tobe_destroyed_delta) {
+		ok = destroy_bat(tobe_destroyed_delta);
+		tobe_destroyed_delta = NULL;
+	}
+	if (ok == LOG_OK && tobe_destroyed_dbat) {
+		ok = destroy_dbat(NULL, tobe_destroyed_dbat);
+		tobe_destroyed_dbat = NULL;
+	}
+	MT_lock_unset(&destroy_lock);
+	return ok;
+}
+
+static int
+delayed_destroy_bat(sql_delta *b)
+{
+	sql_delta *n = b;
+
+	if (!n)
+		return LOG_OK;
+	while(n->next) 
+		n = n->next;
+	MT_lock_set(&destroy_lock);
+	n->next = tobe_destroyed_delta;
+	tobe_destroyed_delta = b;
+	MT_lock_unset(&destroy_lock);
+	return LOG_OK;
+}
+
+static int
+delayed_destroy_dbat(sql_dbat *b)
+{
+	sql_dbat *n = b;
+
+	if (!n)
+		return LOG_OK;
+	while(n->next) 
+		n = n->next;
+	MT_lock_set(&destroy_lock);
+	n->next = tobe_destroyed_dbat;
+	tobe_destroyed_dbat = b;
+	MT_lock_unset(&destroy_lock);
+	return LOG_OK;
+}
+
+static int
 destroy_del(sql_trans *tr, sql_table *t)
 {
 	int ok = LOG_OK;
@@ -2100,7 +2154,6 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes, int id, int tpe)
 			return LOG_ERR;
 		}
 		cbat->cnt = cbat->ibase = BATcount(cur);
-		PROPdestroy(cur);
 		temp_destroy(cbat->ibid);
 		cbat->ibid = e_bat(cur->ttype);
 		if(cbat->ibid == BID_NIL)
@@ -2404,7 +2457,6 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 				bat_destroy(ins);
 				return LOG_ERR;
 			}
-			PROPdestroy(cur);
 			temp_destroy(cbat->bid);
 			temp_destroy(cbat->ibid);
 			cbat->bid = cbat->ibid = 0;
@@ -2510,7 +2562,6 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 				bat_destroy(ins);
 				return LOG_ERR;
 			}
-			PROPdestroy(cur);
 		}
 		obat->cnt = obat->ibase = BATcount(cur);
 		temp_destroy(obat->ibid);
@@ -2666,7 +2717,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			ot = tr_find_table(oldest, tt);
 			if (b && ot && b->wtime < ot->base.stime) {
 				/* anything older can go */
-				destroy_dbat(tr, b->next);
+				delayed_destroy_dbat(b->next);
 				b->next = NULL;
 			}
 		} else if (tt->data && ft->base.allocated) {
@@ -2717,7 +2768,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					oldc = o->data;
 				if (oldc && b && oldc->base.id == cc->base.id && b->wtime < oldc->base.stime) {
 					/* anything older can go */
-					destroy_bat(b->next);
+					delayed_destroy_bat(b->next);
 					b->next = NULL;
 				}
 			} else if (oc->data && cc->base.allocated) {
@@ -2802,7 +2853,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						oldi = o->data;
 					if (oldi && b && oldi->base.id == ci->base.id && b->wtime < oldi->base.stime) {
 						/* anything older can go */
-						destroy_bat(b->next);
+						delayed_destroy_bat(b->next);
 						b->next = NULL;
 					}
 				} else if (oi->data && ci->base.allocated) {
@@ -3110,4 +3161,6 @@ bat_storage_init( store_functions *sf)
 	sf->snapshot_table = (update_table_fptr)&snapshot_table;
 	sf->gtrans_update = (gtrans_update_fptr)&gtr_update;
 	sf->gtrans_minmax = (gtrans_update_fptr)&gtr_minmax;
+
+	sf->cleanup = (cleanup_fptr)&cleanup;
 }

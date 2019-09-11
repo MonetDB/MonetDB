@@ -11009,6 +11009,8 @@ VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 /* ---------------------------------------------------------------------- */
 /* logical (for type bit) or bitwise (for integral types) OR */
 
+#define or3(a,b)	((a) == 1 || (b) == 1 ? 1 : is_bit_nil(a) || is_bit_nil(b) ? bit_nil : 0)
+
 #define OR(a, b)	((a) | (b))
 
 static BUN
@@ -11035,20 +11037,8 @@ or_typeswitchloop(const void *lft, int incr1,
 				j = x * incr2;
 				bit v1 = ((const bit *) lft)[i];
 				bit v2 = ((const bit *) rgt)[j];
-				/* note that any value not equal to 0
-				 * and not equal to bit_nil (0x80) is
-				 * considered true */
-				if (v1 & 0x7F || v2 & 0x7F) {
-					/* either one is true */
-					((bit *) dst)[k] = 1;
-				} else if (v1 == 0 && v2 == 0) {
-					/* both are false */
-					((bit *) dst)[k] = 0;
-				} else {
-					/* both are nil */
-					((bit *) dst)[k] = bit_nil;
-					nils++;
-				}
+				((bit *) dst)[k] = or3(v1, v2);
+				nils += is_bit_nil(((bit *) dst)[k]);
 				k++;
 				x = canditer_next(ci);
 				if (is_oid_nil(x))
@@ -11228,6 +11218,8 @@ VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 /* ---------------------------------------------------------------------- */
 /* logical (for type bit) or bitwise (for integral types) exclusive AND */
 
+#define and3(a,b)	((a) == 0 || (b) == 0 ? 0 : is_bit_nil(a) || is_bit_nil(b) ? bit_nil : 1)
+
 #define AND(a, b)	((a) & (b))
 
 static BUN
@@ -11254,17 +11246,8 @@ and_typeswitchloop(const void *lft, int incr1,
 				j = x * incr2;
 				bit v1 = ((const bit *) lft)[i];
 				bit v2 = ((const bit *) rgt)[j];
-				if (v1 == 0 || v2 == 0) {
-					/* either one is false */
-					((bit *) dst)[k] = 0;
-				} else if (!is_bit_nil(v1) &&
-					   !is_bit_nil(v2)) {
-					/* both are true */
-					((bit *) dst)[k] = 1;
-				} else {
-					((bit *) dst)[k] = bit_nil;
-					nils++;
-				}
+				((bit *) dst)[k] = and3(v1, v2);
+				nils += is_bit_nil(((bit *) dst)[k]);
 				k++;
 				x = canditer_next(ci);
 				if (is_oid_nil(x))
@@ -12279,6 +12262,7 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define LTint(a,b)	((a) < (b))
 #define LTlng(a,b)	((a) < (b))
 #define LThge(a,b)	((a) < (b))
+#define LToid(a,b)	((a) < (b))
 #define LTflt(a,b)	((a) < (b))
 #define LTdbl(a,b)	((a) < (b))
 #define LTany(a,b)	((*atomcmp)(a, b) < 0)
@@ -12287,6 +12271,7 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define EQint(a,b)	((a) == (b))
 #define EQlng(a,b)	((a) == (b))
 #define EQhge(a,b)	((a) == (b))
+#define EQoid(a,b)	((a) == (b))
 #define EQflt(a,b)	((a) == (b))
 #define EQdbl(a,b)	((a) == (b))
 #define EQany(a,b)	((*atomcmp)(a, b) == 0)
@@ -12295,8 +12280,6 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 
 #define less3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(a, b) || (i && EQ##t(a, b)))
 #define grtr3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(b, a) || (i && EQ##t(a, b)))
-#define and3(a,b)	(is_bit_nil(a) ? is_bit_nil(b) || (b) ? bit_nil : 0 : is_bit_nil(b) ? (a) ? bit_nil : 0 : (a) && (b))
-#define or3(a,b)	(is_bit_nil(a) ? (is_bit_nil(b) || !(b) ? bit_nil : 1) : ((a) ? 1 : (is_bit_nil(b) ? bit_nil : (b))))
 #define not3(a)		(is_bit_nil(a) ? bit_nil : !(a))
 
 #define between3(v, lo, linc, hi, hinc, TYPE)	\
@@ -12473,23 +12456,7 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, bool symmetric,
 	    cnt == ncand) {
 		bit res;
 
-		if (!BATtdense(b))
-			res = nils_false ? 0 : bit_nil;
-		else if (!BATtdense(lo) || !BATtdense(hi))
-			res = bit_nil;
-		else
-			res = (bit)
-				((((b->tseqbase > lo->tseqbase ||
-				    (linc && b->tseqbase == lo->tseqbase)) &&
-				   (b->tseqbase < hi->tseqbase ||
-				    (hinc && b->tseqbase == hi->tseqbase))) ||
-				  (symmetric &&
-				   (b->tseqbase > hi->tseqbase ||
-				    (hinc && b->tseqbase == hi->tseqbase)) &&
-				   (b->tseqbase < lo->tseqbase ||
-				    (linc && b->tseqbase == lo->tseqbase))))
-				 ^ anti);
-
+		res = BETWEEN(b->tseqbase, lo->tseqbase, hi->tseqbase, oid);
 		return BATconstant(b->hseqbase, TYPE_bit, &res, BATcount(b),
 				   TRANSIENT);
 	}
