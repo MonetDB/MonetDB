@@ -1,1 +1,4 @@
-"%PYTHON3%" "%TSTSRCBASE%/%TSTDIR%/sqllogictest.py" --host=localhost --port=%MAPIPORT% "--database=%TSTDB% %TSTSRCBASE%/%TSTDIR%/select3.test"
+@prompt # $t $g
+@echo on
+
+"%PYTHON3%" "%TSTSRCBASE%/%TSTDIR%/sqllogictest.py" --host=localhost --port=%MAPIPORT% --database=%TSTDB% "%TSTSRCBASE%/%TSTDIR%/select3.test"
