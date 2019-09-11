@@ -29,13 +29,6 @@ bool MOStypes_delta(BAT* b) {
 #ifdef HAVE_HGE
 	case TYPE_hge: return true;
 #endif
-	case  TYPE_str:
-		switch(b->twidth){
-		case 2: return true;
-		case 4: return true;
-		case 8: return true;
-		}
-		break;
 	default:
 		if (b->ttype == TYPE_date) {return true;} // Will be mapped to int
 		if (b->ttype == TYPE_daytime) {return true;} // Will be mapped to lng
@@ -59,15 +52,8 @@ MOSadvance_delta(MOStask task)
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(lng) + MOSgetCnt(blk)-1,lng)); break ;
 	//case TYPE_flt: case TYPE_dbl: to be looked into.
 #ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(hge) + MOSgetCnt(blk)-1,hge)); break ;
+	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(hge) + MOSgetCnt(blk)-1,hge)); break ;	
 #endif
-	case TYPE_str:
-		switch(task->bsrc->twidth){
-		case 2: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(MosaicBlkSize + sizeof(sht) + MOSgetCnt(blk)-1,sht)); break ;
-		case 4: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(MosaicBlkSize + sizeof(int)+ MOSgetCnt(blk)-1,int)); break ;
-		case 8: task->blk = (MosaicBlk)( ((char*) blk) + wordaligned(MosaicBlkSize + sizeof(lng)+ MOSgetCnt(blk)-1,lng)); break ;
-		}
-		break;
 	}
 }
 
@@ -88,13 +74,6 @@ MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 #ifdef HAVE_HGE
 	case TYPE_hge: output = wordaligned(MosaicBlkSize + sizeof(hge) + MOSgetCnt(blk)-1,hge); break ;
 #endif
-	case TYPE_str:
-		switch(task->bsrc->twidth){
-		//case 1: output = wordaligned(sizeof(bte)+ MosaicBlkSize + MOSgetCnt(blk)-1,bte); break ;
-		case 2: output = wordaligned(MosaicBlkSize + sizeof(sht)+ MOSgetCnt(blk)-1,sht); break ;
-		case 4: output = wordaligned(MosaicBlkSize + sizeof(int) + MOSgetCnt(blk)-1,int); break ;
-		case 8: output = wordaligned(MosaicBlkSize + sizeof(lng) + MOSgetCnt(blk)-1,lng); break ;
-		}
 	}
 	if( BUNappend(btech, "delta", false) != GDK_SUCCEED ||
 		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
@@ -145,15 +124,6 @@ MOSestimate_delta(MOStask task)
 	#ifdef HAVE_HGE
 		case TYPE_hge: Estimate_delta(hge,  (delta < -127 || delta >127)); break;
 	#endif
-		case  TYPE_str:
-			// we only have to look at the index width, not the values
-			switch(task->bsrc->twidth){
-			//case 1:  no compression achievable
-			case 2: Estimate_delta(sht, (delta < -127 || delta > 127)); break;
-			case 4: Estimate_delta(int, (delta < -127 || delta > 127)); break;
-			case 8: Estimate_delta(lng, (delta < -127 || delta > 127)); break;
-		}
-		break;
 	}
 	task->factor[MOSAIC_DELTA] = factor;
 	task->range[MOSAIC_DELTA] = task->start + i;
@@ -197,14 +167,6 @@ MOScompress_delta(MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: DELTAcompress(hge,(delta < -127 || delta < -127 || delta >127)); break;
 #endif
-	case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->bsrc->twidth){
-		//case 1: no compression achievable
-		case 2: DELTAcompress(sht,(delta < 0 || delta > 127)); break;
-		case 4: DELTAcompress(int,(delta < 0 || delta > 127)); break;
-		case 8: DELTAcompress(lng,(delta < 0 || delta > 127)); break;
-		}
 	}
 }
 
@@ -240,14 +202,6 @@ MOSdecompress_delta(MOStask task)
 	case TYPE_hge: DELTAdecompress(hge); break;
 #endif
 	case TYPE_lng: DELTAdecompress(lng); break;
-	case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->bsrc->twidth){
-		// case 1: no compression achievable
-		case 2: DELTAdecompress(sht); break;
-		case 4: DELTAdecompress(int); break;
-		case 8: DELTAdecompress(lng); break;
-		}
 	}
 }
 
@@ -339,20 +293,12 @@ MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 
 	switch(ATOMstorage(task->type)){
 	case TYPE_sht: select_delta(sht); break;
+	case TYPE_int: select_delta(int); break;
 	case TYPE_lng: select_delta(lng); break;
 	case TYPE_oid: select_delta(oid); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: select_delta(hge); break;
 #endif
-	case TYPE_int: select_delta(int); break;
-	case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->bsrc->twidth){
-		case 2: break;
-		case 4: break;
-		case 8: break;
-		}
-		break;
 	}
 	MOSskip_delta(task);
 	task->lb = o;
@@ -424,13 +370,6 @@ MOSthetaselect_delta( MOStask task, void *val, str oper)
 #ifdef HAVE_HGE
 	case TYPE_hge: thetaselect_delta(hge); break;
 #endif
-	case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->bsrc->twidth){
-		case 2: break;
-		case 4: break;
-		case 8: break;
-		}
 	}
 	MOSskip_delta(task);
 	task->lb =o;
@@ -468,14 +407,6 @@ MOSprojection_delta( MOStask task)
 #ifdef HAVE_HGE
 		case TYPE_hge: projection_delta(hge); break;
 #endif
-		case  TYPE_str:
-			// we only have to look at the index width, not the values
-			switch(task->bsrc->twidth){
-			case 2: projection_delta(sht); break;
-			case 4: projection_delta(int); break;
-			case 8: projection_delta(lng); break;
-			}
-		break;
 	}
 	MOSskip_delta(task);
 	return MAL_SUCCEED;
@@ -515,14 +446,6 @@ MOSjoin_delta( MOStask task)
 #ifdef HAVE_HGE
 		case TYPE_hge: join_delta(hge); break;
 #endif
-		case  TYPE_str:
-		// we only have to look at the index width, not the values
-			switch(task->bsrc->twidth){
-				case 2: break;
-				case 4: break;
-				case 8: break;
-			}
-		break;
 	}
 	MOSskip_delta(task);
 	return MAL_SUCCEED;
