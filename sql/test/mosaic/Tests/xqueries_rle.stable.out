@@ -41,14 +41,14 @@ stdout of test 'xqueries_rle` in directory 'sql/test/mosaic` itself:
 [ 86	]
 #alter table xtmp3 set read only;
 #select cast(sum(i) as bigint) from xtmp3;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from xtmp3;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % real # type
 % 15 # length
 [ 27.104	]
@@ -57,17 +57,17 @@ stdout of test 'xqueries_rle` in directory 'sql/test/mosaic` itself:
 % mal # name
 % clob # type
 % 113 # length
-function user.s14_1():void;
+function user.s14_0():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i <4;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
     C_6:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 4:int, "<":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
-    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
-end user.s14_1;
-#inline               actions= 0 time=1 usec 
-#remap                actions= 0 time=2 usec 
+    sql.resultSet("sys.L2":str, "L2":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+end user.s14_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=2 usec 
 #evaluate             actions= 1 time=10 usec 
@@ -89,8 +89,8 @@ end user.s14_1;
 #garbagecollector     actions= 1 time=9 usec 
 #total                actions= 1 time=194 usec 
 #select count(*) from xtmp3 where i <4;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 44	]
@@ -99,15 +99,15 @@ end user.s14_1;
 % mal # name
 % clob # type
 % 114 # length
-function user.s16_1():void;
+function user.s16_0():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i = 7;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
     C_6:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 7:int, "==":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
-    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
-end user.s16_1;
+    sql.resultSet("sys.L2":str, "L2":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+end user.s16_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=3 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -130,20 +130,20 @@ end user.s16_1;
 #garbagecollector     actions= 1 time=11 usec 
 #total                actions= 1 time=191 usec 
 #select count(*) from xtmp3 where i = 7;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from xtmp3 where f <0.316;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 42	]
 #select count(*) from xtmp3 where b = true;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 66	]
@@ -151,14 +151,14 @@ end user.s16_1;
 #alter table xtmp3 alter column b set storage 'runlength';
 #alter table xtmp3 alter column f set storage 'runlength';
 #select cast(sum(i) as bigint) from xtmp3;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from xtmp3;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % real # type
 % 15 # length
 [ 27.104	]
@@ -167,15 +167,15 @@ end user.s16_1;
 % mal # name
 % clob # type
 % 113 # length
-function user.s32_1():void;
+function user.s32_0():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i <4;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
     C_6:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 4:int, "<":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
-    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
-end user.s32_1;
+    sql.resultSet("sys.L2":str, "L2":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+end user.s32_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -198,8 +198,8 @@ end user.s32_1;
 #garbagecollector     actions= 1 time=11 usec 
 #total                actions= 1 time=183 usec 
 #select count(*) from xtmp3 where i <4;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 44	]
@@ -208,51 +208,53 @@ end user.s32_1;
 % mal # name
 % clob # type
 % 114 # length
-function user.s34_1():void;
+function user.s34_0():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i = 7;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
     C_6:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 7:int, "==":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
-    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
-end user.s34_1;
-#inline               actions= 0 time=1 usec 
-#remap                actions= 0 time=2 usec 
-#costmodel            actions= 1 time=1 usec 
-#coercion             actions= 0 time=1 usec 
-#evaluate             actions= 0 time=2 usec 
-#aliases              actions= 1 time=5 usec 
-#mergetable           actions= 0 time=19 usec 
-#deadcode             actions= 0 time=5 usec 
-#aliases              actions= 1 time=4 usec 
-#constants            actions= 1 time=4 usec 
-#commonTerms          actions= 0 time=4 usec 
-#projectionpath       actions= 0 time=4 usec 
-#reorder              actions= 1 time=16 usec 
-#deadcode             actions= 0 time=4 usec 
-#reduce               actions=20 time=16 usec 
-#matpack              actions= 0 time=2 usec 
-#multiplex            actions= 0 time=2 usec 
-#profiler             actions= 1 time=2 usec 
+    sql.resultSet("sys.L2":str, "L2":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+end user.s34_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=0 usec 
+#coercion             actions= 0 time=0 usec 
+#evaluate             actions= 2 time=8 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 2 time=3 usec 
+#aliases              actions= 3 time=3 usec 
+#mergetable           actions= 0 time=14 usec 
+#deadcode             actions= 1 time=3 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 2 time=2 usec 
+#commonTerms          actions= 0 time=1 usec 
+#projectionpath       actions= 0 time=1 usec 
+#deadcode             actions= 0 time=3 usec 
+#reorder              actions= 1 time=9 usec 
+#matpack              actions= 0 time=0 usec 
+#multiplex            actions= 0 time=1 usec 
+#mosaic               actions= 1 time=2 usec 
+#profiler             actions= 1 time=0 usec 
 #candidates           actions= 1 time=1 usec 
 #garbagecollector     actions= 1 time=10 usec 
 #total                actions= 1 time=183 usec 
 #select count(*) from xtmp3 where i = 7;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from xtmp3 where f <0.316;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 42	]
 #select count(*) from xtmp3 where b = true;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 66	]
@@ -260,14 +262,14 @@ end user.s34_1;
 #alter table xtmp3 alter column b set storage NULL;
 #alter table xtmp3 alter column f set storage NULL;
 #select cast(sum(i) as bigint) from xtmp3;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from xtmp3;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % real # type
 % 15 # length
 [ 27.104	]
@@ -276,15 +278,15 @@ end user.s34_1;
 % mal # name
 % clob # type
 % 113 # length
-function user.s50_1():void;
+function user.s50_0():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i <4;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
     C_6:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 4:int, "<":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
-    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
-end user.s50_1;
+    sql.resultSet("sys.L2":str, "L2":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+end user.s50_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=3 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -307,8 +309,8 @@ end user.s50_1;
 #garbagecollector     actions= 1 time=12 usec 
 #total                actions= 1 time=183 usec 
 #select count(*) from xtmp3 where i <4;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 44	]
@@ -317,15 +319,15 @@ end user.s50_1;
 % mal # name
 % clob # type
 % 114 # length
-function user.s52_1():void;
+function user.s52_0():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i = 7;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
     C_6:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 7:int, "==":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
-    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
-end user.s52_1;
+    sql.resultSet("sys.L2":str, "L2":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+end user.s52_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -348,20 +350,20 @@ end user.s52_1;
 #garbagecollector     actions= 1 time=11 usec 
 #total                actions= 1 time=183 usec 
 #select count(*) from xtmp3 where i = 7;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from xtmp3 where f <0.316;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 42	]
 #select count(*) from xtmp3 where b = true;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 66	]

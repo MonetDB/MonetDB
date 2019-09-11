@@ -53,8 +53,8 @@ stdout of test 'prefix` in directory 'sql/test/mosaic` itself:
 [ 2	]
 [ 2	]
 #select count(*) from tmpPrefix;
-% .L3 # table_name
-% L3 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 8	]
@@ -73,8 +73,8 @@ stdout of test 'prefix` in directory 'sql/test/mosaic` itself:
 [ 2	]
 [ 2	]
 #select cast(sum(i) as bigint) from tmpPrefix;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 10	]

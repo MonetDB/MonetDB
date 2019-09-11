@@ -33,7 +33,7 @@ stdout of test 'session_exit` in directory 'sql/test/mosaic` itself:
 % mal # name
 % clob # type
 % 168 # length
-function user.s4_1():void;
+function user.s4_0():void;
     X_1:void := querylog.define("explain select * from tmp3;":str, "mosaic_pipe":str, 39:int);
     X_22:bat[:str] := bat.new(nil:str);
     X_28:bat[:int] := bat.new(nil:int);
@@ -71,7 +71,7 @@ function user.s4_1():void;
     X_57:bat[:int] := bat.append(X_49:bat[:int], 7:int);
     X_59:bat[:int] := bat.append(X_51:bat[:int], 0:int);
     sql.resultSet(X_52:bat[:str], X_53:bat[:str], X_55:bat[:str], X_57:bat[:int], X_59:bat[:int], X_11:bat[:int], X_14:bat[:bit], X_17:bat[:flt], X_20:bat[:timestamp]);
-end user.s4_1;
+end user.s4_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=2 usec 
@@ -193,7 +193,7 @@ end user.s4_1;
 % mal # name
 % clob # type
 % 168 # length
-function user.s12_1():void;
+function user.s12_0():void;
     X_1:void := querylog.define("explain select * from tmp3;":str, "mosaic_pipe":str, 39:int);
     X_22:bat[:str] := bat.new(nil:str);
     X_28:bat[:int] := bat.new(nil:int);
@@ -231,9 +231,9 @@ function user.s12_1():void;
     X_57:bat[:int] := bat.append(X_49:bat[:int], 7:int);
     X_59:bat[:int] := bat.append(X_51:bat[:int], 0:int);
     sql.resultSet(X_52:bat[:str], X_53:bat[:str], X_55:bat[:str], X_57:bat[:int], X_59:bat[:int], X_11:bat[:int], X_14:bat[:bit], X_17:bat[:flt], X_20:bat[:timestamp]);
-end user.s12_1;
-#inline               actions= 0 time=2 usec 
-#remap                actions= 0 time=3 usec 
+end user.s12_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=2 usec 
 #evaluate             actions= 0 time=4 usec 
@@ -345,20 +345,20 @@ end user.s12_1;
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
 #select cast(sum(i) as bigint) from tmp3;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % real # type
 % 15 # length
 [ 27.104	]
 #select count(*) from tmp3;
-% .L3 # table_name
-% L3 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 86	]
@@ -370,7 +370,7 @@ end user.s12_1;
 % mal # name
 % clob # type
 % 168 # length
-function user.s26_1():void;
+function user.s26_0():void;
     X_1:void := querylog.define("explain select * from tmp3;":str, "mosaic_pipe":str, 39:int);
     X_22:bat[:str] := bat.new(nil:str);
     X_28:bat[:int] := bat.new(nil:int);
@@ -408,7 +408,7 @@ function user.s26_1():void;
     X_57:bat[:int] := bat.append(X_49:bat[:int], 7:int);
     X_59:bat[:int] := bat.append(X_51:bat[:int], 0:int);
     sql.resultSet(X_52:bat[:str], X_53:bat[:str], X_55:bat[:str], X_57:bat[:int], X_59:bat[:int], X_11:bat[:int], X_14:bat[:bit], X_17:bat[:flt], X_20:bat[:timestamp]);
-end user.s26_1;
+end user.s26_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=4 usec 
 #costmodel            actions= 1 time=2 usec 
@@ -522,14 +522,14 @@ end user.s26_1;
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
 #select cast(sum(i) as bigint) from tmp3;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % real # type
 % 15 # length
 [ 27.104	]

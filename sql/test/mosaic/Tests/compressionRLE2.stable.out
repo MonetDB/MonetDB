@@ -120,8 +120,8 @@ stdout of test 'compressionRLE2` in directory 'sql/test/mosaic` itself:
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
 #select count(*) from tmp3RLE;
-% .L3 # table_name
-% L3 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ 86	]
@@ -134,7 +134,7 @@ stdout of test 'compressionRLE2` in directory 'sql/test/mosaic` itself:
 % mal # name
 % clob # type
 % 168 # length
-function user.s16_1():void;
+function user.s16_0():void;
     X_1:void := querylog.define("explain select * from tmp3rle;":str, "mosaic_pipe":str, 39:int);
     X_22:bat[:str] := bat.new(nil:str);
     X_28:bat[:int] := bat.new(nil:int);
@@ -172,9 +172,9 @@ function user.s16_1():void;
     X_57:bat[:int] := bat.append(X_49:bat[:int], 7:int);
     X_59:bat[:int] := bat.append(X_51:bat[:int], 0:int);
     sql.resultSet(X_52:bat[:str], X_53:bat[:str], X_55:bat[:str], X_57:bat[:int], X_59:bat[:int], X_11:bat[:int], X_14:bat[:bit], X_17:bat[:flt], X_20:bat[:timestamp]);
-end user.s16_1;
-#inline               actions= 0 time=1 usec 
-#remap                actions= 0 time=2 usec 
+end user.s16_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=1 usec 
 #evaluate             actions= 0 time=2 usec 

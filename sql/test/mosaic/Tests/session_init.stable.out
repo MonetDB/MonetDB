@@ -135,14 +135,14 @@ stdout of test 'session_init` in directory 'sql/test/mosaic` itself:
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
 #select cast(sum(i) as bigint) from tmp3;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % real # type
 % 15 # length
 [ 27.104	]
