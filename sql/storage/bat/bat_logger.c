@@ -880,7 +880,7 @@ bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
 	return res;
 }
 
-/* Write a plan entry to copy part of the given file. 
+/* Write a plan entry to copy part of the given file.
  * That part of the file must remain unchanged until the plan is executed.
  */
 static void
@@ -910,7 +910,7 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 	}
 	size = (long)statbuf.st_size;
 
-	// TODO we should really do this in pieces, 
+	// TODO we should really do this in pieces,
 	// not allocate memory for the whole file
 	buf = GDKmalloc(size);
 	if (!buf) {
@@ -928,8 +928,8 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 	if ((long)bytes_read < size) {
 		if (ferror(f))
 			GDKerror("could not open %s: %s", path, strerror(errno));
-		else if (feof(f)) 
-			GDKerror("file %s unexpectedly short, %ld rather than %ld bytes", 
+		else if (feof(f))
+			GDKerror("file %s unexpectedly short, %ld rather than %ld bytes",
 				path, bytes_read, size);
 		else
 			GDKerror("read unexplainably truncated");
@@ -982,9 +982,9 @@ snapshot_wal(stream *plan, const char *db_dir)
 
 /* If `path` exists, lazy copy it with name `name`.
  * Otherwise, if `alt_path` exists, lazy copy it with name `alt_name`.
- * 
+ *
  * If `mandatory` is set, it is an error for both files not to exist.
- * 
+ *
  * This interface is slightly messy but of all I tried this gives the most
  * readable code.
  */
@@ -1021,13 +1021,13 @@ snapshot_one_heap(stream *plan, bool mandatory, const char *path, const char *na
 }
 
 /* Add plan entry for the heaps of one BAT.
- * path_buffer points at a buffer containing the initial part of 
+ * path_buffer points at a buffer containing the initial part of
  * the absolute path of the heap file, for example /tmp/mydatabase/bat/07/726.
  * This function attempts to add suffixes such as .tail, .theap etc
  * and copies those files if they exist.
  * local_part_index is the number of byte to skip to get to the local
  * part of the filename, in this example skipping the "/tmp/mydatabase/"
- * 
+ *
  * Note: path_buffer must have room for this function to append the suffixes
  * in-place!
  */
@@ -1055,7 +1055,7 @@ snapshot_one_bat(stream *plan, char *path_buffer, char *alt_path_buffer, size_t 
 		strcpy(tail, *suf + 1);
 		strcpy(alt_tail, *suf + 1);
 		ret = snapshot_one_heap(
-			plan, mandatory, 
+			plan, mandatory,
 			path_buffer, path_buffer + local_part_index,
 			alt_path_buffer, alt_path_buffer + local_part_index);
 		if (ret != GDK_SUCCEED)
@@ -1183,5 +1183,5 @@ bat_logger_init( logger_functions *lf )
 	lf->log_sequence = bl_sequence;
 	lf->log_find_table_value = bl_find_table_value;
 
-	lf->get_snapshot_files = bl_snapshot; 
+	lf->get_snapshot_files = bl_snapshot;
 }

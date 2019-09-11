@@ -319,7 +319,7 @@ typedef int (*log_sequence_fptr) (int seq, lng id);
 -- - The first line is the absolute path of the db dir. All other paths
 --   are relative to this.
 -- - Every other line is either "c %ld %s\n" or "w %ld %s\n". The long
---   is always the number of bytes to write. The %s is the relative path of the 
+--   is always the number of bytes to write. The %s is the relative path of the
 --   destination. For "c" lines (copy), it is also the relative path of the
 --   source file. For "w" lines (write), the %ld bytes to write follow directly
 --   after the newline.
