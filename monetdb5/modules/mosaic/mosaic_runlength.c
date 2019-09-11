@@ -17,7 +17,7 @@
 #include "mosaic_private.h"
 
 bool MOStypes_runlength(BAT* b) {
-	switch(ATOMbasetype(getBatType(b->ttype))){
+	switch(b->ttype){
 	case TYPE_bte: return true;
 	case TYPE_bit: return true;
 	case TYPE_sht: return true;
@@ -29,14 +29,10 @@ bool MOStypes_runlength(BAT* b) {
 #ifdef HAVE_HGE
 	case TYPE_hge: return true;
 #endif
-	case  TYPE_str:
-		switch(b->twidth){
-		case 1: return true;
-		case 2: return true;
-		case 4: return true;
-		case 8: return true;
-		}
-		break;
+	default:
+		if (b->ttype == TYPE_date) {return true;} // Will be mapped to int
+		if (b->ttype == TYPE_daytime) {return true;} // Will be mapped to lng
+		if (b->ttype == TYPE_timestamp) {return true;} // Will be mapped to lng
 	}
 
 	return false;
@@ -61,15 +57,6 @@ MOSlayout_runlength(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *bou
 #ifdef HAVE_HGE
 	case TYPE_hge: output = wordaligned( MosaicBlkSize + sizeof(hge),hge); break;
 #endif
-	case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->bsrc->twidth){
-		case 1: output = wordaligned( MosaicBlkSize + sizeof(bte),bte); break;
-		case 2: output = wordaligned( MosaicBlkSize + sizeof(sht),sht); break;
-		case 4: output = wordaligned( MosaicBlkSize + sizeof(int),int); break;
-		case 8: output = wordaligned( MosaicBlkSize + sizeof(lng),lng); break;
-		}
-		break;
 	}
 	if( BUNappend(btech, "runlength blk", false) != GDK_SUCCEED ||
 		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
@@ -97,15 +84,6 @@ MOSadvance_runlength(MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(hge),hge)); break;
 #endif
-	case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->bsrc->twidth){
-		case 1: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(bte),bte)); break;
-		case 2: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(sht),sht)); break;
-		case 4: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(int),int)); break;
-		case 8: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(lng),lng)); break;
-		}
-		break;
 	}
 }
 
@@ -171,14 +149,6 @@ MOSestimate_runlength(MOStask task)
 			factor = ( (flt)i * sizeof(int))/ wordaligned( MosaicBlkSize + sizeof(int),int);
 		}
 		break;
-	case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->bsrc->twidth){
-		case 1: Estimate(bte); break;
-		case 2: Estimate(sht); break;
-		case 4: Estimate(int); break;
-		case 8: Estimate(lng); break;
-		}
 	}
 	task->factor[MOSAIC_RLE] = factor;
 	task->range[MOSAIC_RLE] = task->start + i;
@@ -220,14 +190,6 @@ MOScompress_runlength(MOStask task)
 	case TYPE_hge: RLEcompress(hge); break;
 #endif
 	case TYPE_int: RLEcompress(int); break;
-	case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->bsrc->twidth){
-		case 1: RLEcompress(bte); break;
-		case 2: RLEcompress(sht); break;
-		case 4: RLEcompress(int); break;
-		case 8: RLEcompress(lng); break;
-		}
 	}
 }
 
@@ -270,14 +232,6 @@ MOSdecompress_runlength(MOStask task)
 			task->src += i * sizeof(int);
 		}
 		break;
-	case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->bsrc->twidth){
-		case 1: RLEdecompress(bte); break;
-		case 2: RLEdecompress(sht); break;
-		case 4: RLEdecompress(int); break;
-		case 8: RLEdecompress(lng); break;
-		}
 	}
 }
 
@@ -369,6 +323,7 @@ MOSselect_runlength( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *
 	case TYPE_bit: select_runlength(bit); break;
 	case TYPE_bte: select_runlength(bte); break;
 	case TYPE_sht: select_runlength(sht); break;
+	case TYPE_int: select_runlength(int); break;
 	case TYPE_lng: select_runlength(lng); break;
 	case TYPE_oid: select_runlength(oid); break;
 	case TYPE_flt: select_runlength(flt); break;
@@ -376,88 +331,6 @@ MOSselect_runlength( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *
 #ifdef HAVE_HGE
 	case TYPE_hge: select_runlength(hge); break;
 #endif
-	case TYPE_int:
-	// Expanded MOSselect_runlength for debugging
-	{ 	int *val= (int*) (((char*) task->blk) + MosaicBlkSize);
-
-		if( !*anti){
-			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
-				for( ; first < last; first++){
-					MOSskipit();
-					*o++ = (oid) first;
-				}
-			} else
-			if( *(int*) low == int_nil ){
-				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh ));
-				if (cmp )
-				for( ; first < last; first++){
-					MOSskipit();
-					*o++ = (oid) first;
-				}
-			} else
-			if( *(int*) hgh == int_nil ){
-				cmp  =  ((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
-				if (cmp )
-				for( ; first < last; first++){
-					MOSskipit();
-					*o++ = (oid) first;
-				}
-			} else{
-				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh )) &&
-						((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
-				if (cmp )
-				for( ; first < last; first++){
-					MOSskipit();
-					*o++ = (oid) first;
-				}
-			}
-		} else {
-			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
-				/* nothing is matching */
-			} else
-			if( *(int*) low == int_nil ){
-				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh ));
-				if ( !cmp )
-				for( ; first < last; first++){
-					MOSskipit();
-					*o++ = (oid) first;
-				}
-			} else
-			if( *(int*) hgh == int_nil ){
-				cmp  =  ((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
-				if ( !cmp )
-				for( ; first < last; first++){
-					MOSskipit();
-					*o++ = (oid) first;
-				}
-			} else{
-				cmp  =  ((*hi && *(int*)val <= * (int*)hgh ) || (!*hi && *(int*)val < *(int*)hgh )) &&
-						((*li && *(int*)val >= * (int*)low ) || (!*li && *(int*)val > *(int*)low ));
-				if (!cmp)
-				for( ; first < last; first++){
-					MOSskipit();
-					*o++ = (oid) first;
-				}
-			}
-		}
-	}
-	break;
-	case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->bsrc->twidth){
-		case 1: break;
-		case 2: break;
-		case 4: break;
-		case 8: break;
-		}
-		break;
-	default:
-		if( task->type == TYPE_date)
-			select_runlength(date); 
-		if( task->type == TYPE_daytime)
-			select_runlength(daytime); 
-		if( task->type == TYPE_timestamp)
-			select_runlength(lng); 
 	}
 	MOSadvance_runlength(task);
 	task->lb = o;
@@ -525,6 +398,7 @@ MOSthetaselect_runlength( MOStask task, void *val, str oper)
 	case TYPE_bit: thetaselect_runlength(bit); break;
 	case TYPE_bte: thetaselect_runlength(bte); break;
 	case TYPE_sht: thetaselect_runlength(sht); break;
+	case TYPE_int: thetaselect_runlength(int); break;
 	case TYPE_lng: thetaselect_runlength(lng); break;
 	case TYPE_oid: thetaselect_runlength(oid); break;
 	case TYPE_flt: thetaselect_runlength(flt); break;
@@ -532,55 +406,6 @@ MOSthetaselect_runlength( MOStask task, void *val, str oper)
 #ifdef HAVE_HGE
 	case TYPE_hge: thetaselect_runlength(hge); break;
 #endif
-	case TYPE_int:
-		{ 	int low,hgh,*v;
-			low= hgh = int_nil;
-			if ( strcmp(oper,"<") == 0){
-				hgh= *(int*) val;
-				hgh = PREVVALUEint(hgh);
-			} else
-			if ( strcmp(oper,"<=") == 0){
-				hgh= *(int*) val;
-			} else
-			if ( strcmp(oper,">") == 0){
-				low = *(int*) val;
-				low = NEXTVALUEint(low);
-			} else
-			if ( strcmp(oper,">=") == 0){
-				low = *(int*) val;
-			} else
-			if ( strcmp(oper,"!=") == 0){
-				low = hgh = *(int*) val;
-				anti++;
-			} else
-			if ( strcmp(oper,"==") == 0){
-				hgh= low= *(int*) val;
-			} 
-			v = (int*) (((char*)task->blk) + MosaicBlkSize);
-			if( (low == int_nil || * v >= low) && (* v <= hgh || hgh == int_nil) ){
-					if ( !anti) {
-						for( ; first < last; first++){
-							MOSskipit();
-							*o++ = (oid) first;
-						}
-					}
-			} else
-			if( anti)
-				for( ; first < last; first++){
-					MOSskipit();
-					*o++ = (oid) first;
-				}
-		}
-		break;
-	case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->bsrc->twidth){
-		case 1: break;
-		case 2: break;
-		case 4: break;
-		case 8: break;
-		}
-		break;
 	}
 	MOSskip_runlength(task);
 	task->lb =o;
@@ -612,6 +437,7 @@ MOSprojection_runlength( MOStask task)
 		case TYPE_bit: projection_runlength(bit); break;
 		case TYPE_bte: projection_runlength(bte); break;
 		case TYPE_sht: projection_runlength(sht); break;
+		case TYPE_int: projection_runlength(int); break;
 		case TYPE_lng: projection_runlength(lng); break;
 		case TYPE_oid: projection_runlength(oid); break;
 		case TYPE_flt: projection_runlength(flt); break;
@@ -619,27 +445,6 @@ MOSprojection_runlength( MOStask task)
 #ifdef HAVE_HGE
 		case TYPE_hge: projection_runlength(hge); break;
 #endif
-		case TYPE_int:
-		{	int val, *v;
-			v= (int*) task->src;
-			val = *(int*) (((char*) task->blk) + MosaicBlkSize);
-			for(; first < last; first++){
-				MOSskipit();
-				*v++ = val;
-				task->cnt++;
-			}
-			task->src = (char*) v;
-		}
-		break;
-	case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->bsrc->twidth){
-		case 1: projection_runlength(bte); break;
-		case 2: projection_runlength(sht); break;
-		case 4: projection_runlength(int); break;
-		case 8: projection_runlength(lng); break;
-		}
-		break;
 	}
 	MOSskip_runlength(task);
 	return MAL_SUCCEED;
@@ -672,6 +477,7 @@ MOSjoin_runlength( MOStask task)
 		case TYPE_bit: join_runlength(bit); break;
 		case TYPE_bte: join_runlength(bte); break;
 		case TYPE_sht: join_runlength(sht); break;
+		case TYPE_int: join_runlength(int); break;
 		case TYPE_lng: join_runlength(lng); break;
 		case TYPE_oid: join_runlength(oid); break;
 		case TYPE_flt: join_runlength(flt); break;
@@ -679,28 +485,6 @@ MOSjoin_runlength( MOStask task)
 #ifdef HAVE_HGE
 		case TYPE_hge: join_runlength(hge); break;
 #endif
-		case TYPE_int:
-			{	int *v, *w;
-				v = (int*) (((char*) task->blk) + MosaicBlkSize);
-				w = (int*) task->src;
-				for(n = task->stop, o = 0; n -- > 0; w++,o++)
-				if ( *w == *v)
-					for(oo= (oid) first; oo < (oid) last; v++, oo++){
-						if( BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||
-						BUNappend(task->rbat, &o, false) != GDK_SUCCEED )
-						throw(MAL,"mosaic.runlength",MAL_MALLOC_FAIL);
-					}
-			}
-			break;
-		case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->bsrc->twidth){
-		case 1: break;
-		case 2: break;
-		case 4: break;
-		case 8: break;
-		}
-			break;
 	}
 	MOSskip_runlength(task);
 	return MAL_SUCCEED;
