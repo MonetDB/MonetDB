@@ -187,6 +187,17 @@ FROM another_T
 GROUP BY ROLLUP(col1);
 
 SELECT
+    col1 IN (SELECT ColID + col2 FROM tbl_ProductSales),
+    col1 < ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales),
+    col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col8) IS NULL),
+    EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1),
+    col1 + col5 = (SELECT MIN(ColID) FROM tbl_ProductSales),
+    SUM(DISTINCT CASE WHEN col5 - col8 = (SELECT MIN(ColID / col2) FROM tbl_ProductSales) THEN col2 - 5 ELSE ABS(col1) END),
+    (SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(col5))
+FROM another_T
+GROUP BY CUBE(col1, col2, col5, col8);
+
+SELECT
     col1 IN (SELECT ColID + col2 FROM tbl_ProductSales)
 FROM another_T
 GROUP BY ROLLUP(col1); --error, col2 is not a grouping column
