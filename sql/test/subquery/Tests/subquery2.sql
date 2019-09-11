@@ -23,3 +23,23 @@ SELECT name, major FROM students s WHERE EXISTS(SELECT * FROM exams e WHERE e.si
 
 drop table students;
 drop table exams;
+
+CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product_Name  varchar(64), TotalSales int); 
+INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Game',400),(3,'Fashion','Shirt',500),(4,'Fashion','Shorts',100);
+CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
+INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
+SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1; 
+	-- False
+	-- False
+	-- False
+	-- False
+
+INSERT INTO tbl_ProductSales VALUES (0, 'a', 'b', 0);
+SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1; 
+	-- True
+	-- True
+	-- True
+	-- True
+
+DROP TABLE tbl_ProductSales;
+DROP TABLE another_T;
