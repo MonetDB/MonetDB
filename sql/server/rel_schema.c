@@ -2372,7 +2372,7 @@ rel_find_designated_routine(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	dlist *designator;
 	dlist *qname;
 	dlist *typelist;
-	int func_type;
+	sql_ftype func_type;
 	sql_schema *s;
 	char *fname;
 	sql_func *func;
@@ -2382,7 +2382,7 @@ rel_find_designated_routine(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	assert(designator->cnt == 3);
 	qname = designator->h->data.lval;
 	typelist = designator->h->next->data.lval;
-	func_type = designator->h->next->next->data.i_val;
+	func_type = (sql_ftype) designator->h->next->next->data.i_val;
 
 	if (!(s = current_or_designated_schema(sql, qname_schema(qname))))
 		return 0;
