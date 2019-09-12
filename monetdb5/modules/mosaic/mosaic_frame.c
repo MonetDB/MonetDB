@@ -88,16 +88,6 @@ MOSskip_frame(MOStask task)
 		task->blk = 0; // ENDOFLIST
 }
 
-#define MOSfind(RES,DICT,VAL,F,L)\
-{ int m,f= F, l=L; \
-   while( l-f > 0 ) { \
-	m = f + (l-f)/2;\
-	if ( VAL < DICT[m] ) l=m-1; else f= m;\
-	if ( VAL > DICT[m] ) f=m+1; else l= m;\
-   }\
-   RES= f;\
-}
-
 typedef struct _FrameParameters_t {
 	MosaicBlkRec base;
 	int bits;
@@ -124,7 +114,7 @@ typedef struct _FrameParameters_t {
 
 } MosaicBlkHeader_frame_t;
 
-#define MOScodevectorFrame(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_frame_t),lng))
+#define MOScodevectorFrame(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_frame_t), BitVector))
 
 /* Use ternary operator because (in theory) we have to be careful not to get overflow's*/\
 #define GET_DELTA_FOR_SIGNED_TYPE(DELTA_TPE, max, min) (min < 0? max < 0?(DELTA_TPE) (max - min) : (DELTA_TPE)(max) + (DELTA_TPE)(-1 * min) : (DELTA_TPE) (max - min))
@@ -169,27 +159,20 @@ do {\
 	(PARAMETERS).base.cnt = i;\
 } while(0)
 
-#define getSrc(TPE, TASK) (((TPE*)TASK->src) + TASK->start)
-
 #define estimateFrame(TASK, TPE, DELTA_TPE, GET_DELTA)\
 do {\
 	TPE *src = getSrc(TPE, (TASK));\
 	BUN limit = (TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start;\
 	MosaicBlkHeader_frame_t parameters;\
 	determineFrameParameters(parameters, src, limit, TPE, DELTA_TPE, GET_DELTA);\
-	assert(parameters.base.cnt > 0);/*Should always compress.*/\
-	current->is_applicable = true;\
-	current->uncompressed_size += (BUN) (parameters.base.cnt * sizeof(TPE));\
-	current->compressed_size += wordaligned(sizeof(MosaicBlkHeader_frame_t), lng) + wordaligned((parameters.base.cnt * parameters.bits) / CHAR_BIT, lng);\
-	current->compression_strategy.cnt = (unsigned int) parameters.base.cnt;\
+	if(parameters.base.cnt) (TASK)->factor[MOSAIC_FRAME] = (flt) ((int) (parameters.base.cnt) * sizeof(TPE)) / (wordaligned(sizeof(MosaicBlkHeader_frame_t), BitVector) + wordaligned((parameters.base.cnt * parameters.bits) / CHAR_BIT, BitVector));\
+	else (TASK)->factor[MOSAIC_FRAME] = 0.0;\
+	(TASK)->range[MOSAIC_FRAME] = task->start + parameters.base.cnt;\
 } while (0)
 
 // calculate the expected reduction using dictionary in terms of elements compressed
-str
-MOSestimate_frame(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous) {
-	(void) previous;
-	current->is_applicable = true;
-	current->compression_strategy.tag = MOSAIC_FRAME;
+flt
+MOSestimate_frame(MOStask task) {
 
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: estimateFrame(task, bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;

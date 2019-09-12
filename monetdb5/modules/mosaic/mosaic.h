@@ -68,20 +68,6 @@ typedef struct MOSAICHEADER{
 	// both dictionary and framebased compression require a global dictionary of frequent values
 	// Their size is purposely topped 
 	bte mask, bits, framebits;	// global compression type properties
-	int dictsize;		// used by capped compression, it is a small table
-	union{
-		bte valbte[256];
-		sht valsht[256];
-		int valint[256];
-		lng vallng[256];
-		oid valoid[256];
-		flt valflt[256];
-		dbl valdbl[256];
-#ifdef HAVE_HGE
-		hge valhge[256];
-#endif
-	}dict;
-	lng dictfreq[256];// keep track on their use
 	// collect compression statistics for the particular task
 	// A value of METHOD_NOT_AVAILABLE in blks or elms indicates that the corresponding method wasn't considered as candidate.
 	flt ratio;	//compresion ratio
@@ -126,6 +112,8 @@ typedef struct MOSAICBLK{
 // helper function to check if a value is equal to the nil value of its type.
 // TODO: check if this function can be added to gdk_atoms.h
 #define is_nil(TPE, v) (ATOMcmp( TYPE_##TPE , (void*) &(v), (void*) ATOMnilptr(TYPE_##TPE) ) == 0)
+
+#define getSrc(TPE, TASK) (((TPE*)TASK->src) + TASK->start)
 
 /* The (de) compression task descriptor */
 typedef struct MOSTASK{
