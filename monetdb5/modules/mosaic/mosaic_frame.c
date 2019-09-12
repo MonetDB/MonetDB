@@ -63,24 +63,6 @@ MOSadvance_frame(MOStask task)
 }
 
 void
-MOSlayout_frame_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
-{
-	lng cnt=0,j=0;
-	int i;
-	char buf[BUFSIZ];
-
-	for(i=0; i< task->hdr->framesize; i++, j++){
-		snprintf(buf,BUFSIZ,"frame[%d]",i);
-		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
-			BUNappend(bcount, &j, false) != GDK_SUCCEED ||
-			BUNappend(binput, &cnt, false) != GDK_SUCCEED ||
-			BUNappend(boutput, &task->hdr->framefreq[i], false) != GDK_SUCCEED ||
-			BUNappend(bproperties, buf, false) != GDK_SUCCEED )
-			return;
-	}
-}
-
-void
 MOSlayout_frame(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;

@@ -20,36 +20,15 @@ void
 MOSupdateHeader(MOStask task)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
-	BUN minsize;
-	int i, j;
 
     hdr->blks[MOSgetTag(task->blk)]++;
     hdr->elms[MOSgetTag(task->blk)] += MOSgetCnt(task->blk);
+
 	if( hdr->top < MOSAICINDEX-1 ){
 		if( hdr->top == 0){
-			hdr->oidbase[hdr->top] = 0;
-			hdr->offset[hdr->top] = 0;
 			hdr->top++;
 		}
-		hdr->oidbase[hdr->top] = MOSgetCnt(task->blk)+ hdr->oidbase[hdr->top-1];
-		hdr->offset[hdr->top] =  (BUN) (task->dst - (char*) task->hdr);
 		hdr->top++;
-		return;
-	}
-	// compress the index by finding the smallest compressed fragment pair
-	hdr->oidbase[hdr->top] = MOSgetCnt(task->blk) + hdr->oidbase[hdr->top-1];
-	hdr->offset[hdr->top] =  (BUN) (task->dst - (char*) task->hdr);
-	minsize = hdr->offset[2];
-	j = 1;
-	for( i = 1; i+2 <= hdr->top; i++)
-	if ( hdr->offset[i+2] - hdr->offset[i] < minsize ){
-		minsize = hdr->offset[i+2] - hdr->offset[i];
-		j = i+1;
-	}
-	// simply remove on element
-	for( i = j; i < hdr->top; i++){
-		hdr->oidbase[i]  = hdr->oidbase[i+1];
-		hdr->offset[i] = hdr->offset[i+1];
 	}
 }
 
@@ -68,26 +47,18 @@ MOSinitHeader(MOStask task)
 	hdr->top = 0;
 	hdr->checksum.sumlng = 0;
 	hdr->checksum2.sumlng = 0;
-	for(i=0; i < MOSAICINDEX; i++){
-		hdr->oidbase[i] = 0;
-		hdr->offset[i] = 0;
-	}
+
 	for(i=0; i < 256; i++){
 		hdr->dictfreq[i]=0;
-		hdr->framefreq[i]=0;
 	}
 }
 
 // position the task on the mosaic blk to be scanned
 void
-MOSinitializeScan(MOStask task, int startblk, int stopblk)
+MOSinitializeScan(MOStask task, BAT* /*compressed*/ b)
 {
-	MosaicHdr hdr = (MosaicHdr) task->hdr;
+	task->blk = (MosaicBlk) (((char*)task->hdr) + MosaicHdrSize);
 
-	assert( startblk >= 0 && startblk < hdr->top);
-	assert( stopblk > 0 && stopblk <= hdr->top);
-	task->blk = (MosaicBlk) (((char*)task->hdr) + MosaicHdrSize + hdr->offset[startblk]);
-	// set the oid range covered
-	task->start = hdr->oidbase[startblk];
-	task->stop = hdr->oidbase[stopblk-1];
+	task->start = 0;
+	task->stop = b->batCount;
 }

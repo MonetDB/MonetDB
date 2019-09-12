@@ -19,5 +19,5 @@
 
 mal_export void MOSupdateHeader(MOStask task);
 mal_export void MOSinitHeader(MOStask task);
-mal_export void MOSinitializeScan(MOStask task, int startblk, int stopblk);
+mal_export void MOSinitializeScan(MOStask task, BAT* b);
 #endif /* _MOSAIC_HDR_ */

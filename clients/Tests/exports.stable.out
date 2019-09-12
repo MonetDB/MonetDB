@@ -1536,7 +1536,7 @@ flt MOSestimate_prefix(MOStask task);
 flt MOSestimate_runlength(MOStask task);
 char *MOSfiltername[];
 void MOSinitHeader(MOStask task);
-void MOSinitializeScan(MOStask task, int startblk, int stopblk);
+void MOSinitializeScan(MOStask task, BAT *b);
 str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MOSjoin_calendar(MOStask task);
 str MOSjoin_delta(MOStask task);

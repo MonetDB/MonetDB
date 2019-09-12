@@ -98,7 +98,7 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 			throw(MAL,"mosaic.layout","Compression heap missing");
 
 	MOSinit(task,b);
-	MOSinitializeScan(task,0,task->hdr->top);
+	MOSinitializeScan(task, b);
 	// safe the general properties
 
 		snprintf(buf,BUFSIZ,"%g", task->hdr->ratio);
@@ -118,8 +118,6 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 			BUNappend(bproperties, "", false) != GDK_SUCCEED)
 				throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
 	}
-	if( task->hdr->blks[MOSAIC_FRAME])
-		MOSlayout_frame_hdr(task,btech,bcount,binput,boutput,bproperties);
 	if( task->hdr->blks[MOSAIC_DICT])
 		MOSlayout_dictionary_hdr(task,btech,bcount,binput,boutput,bproperties);
 	if( task->hdr->blks[MOSAIC_CALENDAR])
@@ -660,7 +658,6 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	void *low, *hgh;
 	bat *ret, *bid, *cid= 0;
 	int i;
-	int startblk,stopblk; // block range to scan
 	BUN cnt = 0;
 	BAT *b, *bn, *cand = NULL;
 	str msg = MAL_SUCCEED;
@@ -710,6 +707,7 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	task->lb = (oid*) Tloc(bn,0);
 
 	MOSinit(task,b);
+	MOSinitializeScan(task, b);
 	// drag along the candidate list into the task descriptor
 	if (cid) {
 		cand = BATdescriptor(*cid);
@@ -728,11 +726,6 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	** TODO: Figure out how do partitions relate to mosaic chunks.
 	** Is it a good idea to set the capacity to the total size of the select operand b?
 	*/
-
-	startblk =0;
-	stopblk = task->hdr->top;
-	// position the scan on the first mosaic block to consider
-	MOSinitializeScan(task,startblk,stopblk);
 
 	while(task->start < task->stop ){
 		switch(MOSgetTag(task->blk)){
@@ -782,7 +775,6 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx;
 	bat *cid =0,  *ret, *bid;
-	int startblk, stopblk; // block range to scan
 	BAT *b = 0, *cand = 0, *bn = NULL;
 	BUN cnt=0;
 	str msg= MAL_SUCCEED;
@@ -828,6 +820,7 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	task->lb = (oid*) Tloc(bn,0);
 
 	MOSinit(task,b);
+	MOSinitializeScan(task, b);
 	// drag along the candidate list into the task descriptor
 	if (cid) {
 		cand = BATdescriptor(*cid);
@@ -840,11 +833,6 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		task->cl = (oid*) Tloc(cand, 0);
 		task->n = BATcount(cand);
 	}
-
-	startblk =0;
-	stopblk = task->hdr->top;
-	// position the scan on the first mosaic block to consider
-	MOSinitializeScan(task,startblk,stopblk);
 
 	while(task->start < task->stop ){
 		switch(MOSgetTag(task->blk)){
@@ -895,7 +883,6 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret, *lid =0, *rid=0;
-	int startblk,stopblk;
 	BAT *bl = NULL, *br = NULL, *bn;
 	BUN cnt;
 	oid *ol =0, o = 0;
@@ -955,16 +942,11 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mosaic.projection", RUNTIME_OBJECT_MISSING);
 	}
 	MOSinit(task,br);
+	MOSinitializeScan(task, br);
 	task->src = (char*) Tloc(bn,0);
 
 	task->cl = ol;
 	task->n = cnt;
-
-	startblk =0;
-	stopblk = task->hdr->top;
-	assert(startblk < stopblk);
-	// position the scan on the first mosaic block to consider
-	MOSinitializeScan(task,startblk,stopblk);
 
 	// loop thru all the chunks and fetch all results
 	while(task->start<task->stop )
@@ -1019,7 +1001,6 @@ str
 MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret, *ret2,*lid,*rid, *sl, *sr;
-	int startblk,stopblk;
 	bit *nil_matches= 0;
 	lng *estimate;
 	BAT  *bl = NULL, *br = NULL, *bln = NULL, *brn= NULL;
@@ -1066,17 +1047,14 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// if the left side is not compressed, then assume the right side is compressed.
 	if ( bl->tmosaic){
 		MOSinit(task,bl);
+		MOSinitializeScan(task, bl);
 	} else {
 		MOSinit(task,br);
+		MOSinitializeScan(task, br);
 		swapped=1;
 	}
 	task->lbat = bln;
 	task->rbat = brn;
-
-	startblk =0;
-	stopblk = task->hdr->top;
-	// position the scan on the first mosaic block to consider
-	MOSinitializeScan(task,startblk,stopblk);
 
 	if ( bl->tmosaic){
 		task->stop = BATcount(br);
