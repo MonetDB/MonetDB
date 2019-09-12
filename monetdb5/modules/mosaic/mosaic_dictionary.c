@@ -25,7 +25,7 @@
 #include "mosaic_private.h"
 
 bool MOStypes_dictionary(BAT* b) {
-	switch(ATOMbasetype(getBatType(b->ttype))){
+	switch (b->ttype){
 	case TYPE_bte: return true;
 	case TYPE_sht: return true;
 	case TYPE_int: return true;
@@ -36,14 +36,10 @@ bool MOStypes_dictionary(BAT* b) {
 #ifdef HAVE_HGE
 	case TYPE_hge: return true;
 #endif
-	case  TYPE_str:
-		switch(b->twidth){
-		case 1: return true;
-		case 2: return true;
-		case 4: return true;
-		case 8: return true;
-		}
-		break;
+	default:
+		if (b->ttype == TYPE_date) {return true;} // Will be mapped to int
+		if (b->ttype == TYPE_daytime) {return true;} // Will be mapped to lng
+		if (b->ttype == TYPE_timestamp) {return true;} // Will be mapped to lng
 	}
 
 	return false;
@@ -247,14 +243,6 @@ MOScreatedictionary(MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: makeDict(hge); break;
 #endif
-	case TYPE_str:
-		switch(task->bsrc->twidth){
-		case 1: makeDict(bte); break;
-		case 2: makeDict(sht); break;
-		case 4: makeDict(int); break;
-		case 8: makeDict(lng); break;
-		}
-		break;
 	}
 	/* calculate the bit-width */
 	hdr->bits = 1;
@@ -285,36 +273,6 @@ MOSestimate_dictionary(MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: estimateDict(hge); break;
 #endif
-	case TYPE_str:
-		switch(task->bsrc->twidth){
-		case 1: //estimateDict(bte); break;
-{	bte *val = ((bte*)task->src) + task->start;\
-	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
-	if( task->range[MOSAIC_DICT] > task->start){\
-		i = task->range[MOSAIC_DICT] - task->start;\
-		if ( i > MOSAICMAXCNT ) i = MOSAICMAXCNT;\
-		if( i * sizeof(bte) <= wordaligned( MosaicBlkSize + i,bte))\
-			return 0.0;\
-		if( task->dst +  wordaligned(MosaicBlkSize + i,sizeof(bte)) >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)\
-			return 0.0;\
-		if(i) factor = (flt) ((int)i * sizeof(bte)) / wordaligned( MosaicBlkSize + (i*hdr->bits)/8,bte);
-		return factor;\
-	}\
-	for(i =0; i<limit; i++, val++){\
-		MOSfind(j,hdr->dict.valbte,*val,0,hdr->dictsize);\
-		if( j == hdr->dictsize || hdr->dict.valbte[j] != *val )\
-			break;\
-	}\
-	if( i * sizeof(bte) <= wordaligned( MosaicBlkSize + (i * hdr->bits)/8,bte))\
-		return 0.0;\
-	if(i) factor = (flt) ((int) i * sizeof(bte)) / wordaligned( MosaicBlkSize + (i*hdr->bits)/8,bte);\
-}
-break;
-		case 2: estimateDict(sht); break;
-		case 4: estimateDict(int); break;
-		case 8: estimateDict(lng); break;
-		}
-		break;
 	}
 	task->factor[MOSAIC_DICT] = factor;
 	task->range[MOSAIC_DICT] = task->start + i;
@@ -366,14 +324,6 @@ MOScompress_dictionary(MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: DICTcompress(hge); break;
 #endif
-	case TYPE_str:
-		switch(task->bsrc->twidth){
-		case 1: DICTcompress(bte); break;
-		case 2: DICTcompress(sht); break;
-		case 4: DICTcompress(int); break;
-		case 8: DICTcompress(lng); break;
-		}
-		break;
 	}
 }
 
@@ -410,14 +360,6 @@ MOSdecompress_dictionary(MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: DICTdecompress(hge); break;
 #endif
-	case TYPE_str:
-		switch(task->bsrc->twidth){
-		case 1: DICTdecompress(bte); break;
-		case 2: DICTdecompress(sht); break;
-		case 4: DICTdecompress(int); break;
-		case 8: DICTdecompress(lng); break;
-		}
-		break;
 	}
 }
 
@@ -536,14 +478,6 @@ MOSselect_dictionary(MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *
 #ifdef HAVE_HGE
 	case TYPE_hge: select_dictionary(hge); break;
 #endif
-	case TYPE_str:
-		switch(task->bsrc->twidth){
-		case 1: select_dictionary_str(bte); break;
-		case 2: select_dictionary_str(sht); break;
-		case 4: select_dictionary_str(int); break;
-		case 8: select_dictionary_str(lng); break;
-		}
-		break;
 	}
 	MOSskip_dictionary(task);
 	task->lb = o;
@@ -623,14 +557,6 @@ MOSthetaselect_dictionary( MOStask task, void *val, str oper)
 #ifdef HAVE_HGE
 	case TYPE_hge: thetaselect_dictionary(hge); break;
 #endif
-	case TYPE_str:
-		switch(task->bsrc->twidth){
-		case 1: thetaselect_dictionary_str(bte); break;
-		case 2: thetaselect_dictionary_str(sht); break;
-		case 4: thetaselect_dictionary_str(int); break;
-		case 8: thetaselect_dictionary_str(lng); break;
-		}
-		break;
 	}
 	MOSskip_dictionary(task);
 	task->lb =o;
@@ -666,6 +592,7 @@ MOSprojection_dictionary( MOStask task)
 	switch(ATOMbasetype(task->type)){
 		case TYPE_bte: projection_dictionary(bte); break;
 		case TYPE_sht: projection_dictionary(sht); break;
+		case TYPE_int: projection_dictionary(int); break;
 		case TYPE_lng: projection_dictionary(lng); break;
 		case TYPE_oid: projection_dictionary(oid); break;
 		case TYPE_flt: projection_dictionary(flt); break;
@@ -673,27 +600,6 @@ MOSprojection_dictionary( MOStask task)
 #ifdef HAVE_HGE
 		case TYPE_hge: projection_dictionary(hge); break;
 #endif
-		case TYPE_int:
-		{	int *v;
-			base  = (BitVector) (((char*) task->blk) + MosaicBlkSize);
-			v= (int*) task->src;
-			for(i=0 ; first < last; first++, i++){
-				MOSskipit();
-				j= getBitVector(base,i,(int) hdr->bits); \
-				*v++ = task->hdr->dict.valint[j];
-				task->cnt++;
-			}
-			task->src = (char*) v;
-		}
-		break;
-	case TYPE_str:
-		switch(task->bsrc->twidth){
-		case 1: projection_dictionary_str(bte); break;
-		case 2: projection_dictionary_str(sht); break;
-		case 4: projection_dictionary_str(int); break;
-		case 8: projection_dictionary_str(lng); break;
-		}
-		break;
 	}
 	MOSskip_dictionary(task);
 	return MAL_SUCCEED;
@@ -739,14 +645,6 @@ MOSjoin_dictionary( MOStask task)
 #ifdef HAVE_HGE
 		case TYPE_hge: join_dictionary(hge); break;
 #endif
-		case TYPE_str:
-			switch(task->bsrc->twidth){
-			case 1: join_dictionary_str(bte); break;
-			case 2: join_dictionary_str(sht); break;
-			case 4: join_dictionary_str(int); break;
-			case 8: join_dictionary_str(lng); break;
-			}
-			break;
 	}
 	MOSskip_dictionary(task);
 	return MAL_SUCCEED;
