@@ -2643,7 +2643,7 @@ store_hot_snapshot(str tarfile)
 		goto end; // should already have set a GDK error
 	close_stream(plan_stream);
 	plan_stream = NULL;
-	r = hot_snapshot_write_tar(tar_stream, "banana", buffer_get_buf(plan_buf));
+	r = hot_snapshot_write_tar(tar_stream, GDKgetenv("gdk_dbname"), buffer_get_buf(plan_buf));
 	if (r != GDK_SUCCEED)
 		goto end;
 
