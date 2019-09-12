@@ -55,8 +55,6 @@
 #define m_instantiate 	5
 #define m_deps 		6
 
-#define QUERY_MODE(m) (m==m_normal || m==m_instantiate || m==m_deps)
-
 /* different query execution modifiers (emod) */
 #define mod_none 	0
 #define mod_debug 	1
