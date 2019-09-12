@@ -41,6 +41,7 @@
 #include "mal_instruction.h"
 #include "mal_resource.h"
 #include "mal_authorize.h"
+#include "gdk_cand.h"
 
 static int
 rel_is_table(sql_rel *rel)
@@ -2129,6 +2130,7 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 	return MAL_SUCCEED;
 }
 
+
 /* str SQLtid(bat *result, mvc *m, str *sname, str *tname) */
 str
 SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -2187,14 +2189,35 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tids == NULL)
 		throw(SQL, "sql.tid", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
+	/* V1 of the deleted list 
+	 * 1) in case of deletes, bind_del, order it, put into a heap(of the tids bat)
+	 * 2) in mal recognize this type of bat.
+	 * 3) if function can handle it pass along, else fall back to first diff.
+	 * */
 	if ((dcnt = store_funcs.count_del(tr, t)) > 0) {
 		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
-		BAT *diff;
+
 		if (d == NULL) {
 			BBPunfix(tids->batCacheid);
 			throw(SQL,"sql.tid", SQLSTATE(45002) "Can not bind delete column");
 		}
 
+#if 1
+		BAT *o;
+		gdk_return ret = BATsort(&o, NULL, NULL, d, NULL, NULL, false, false, false);
+		BBPunfix(d->batCacheid);
+		if (ret != GDK_SUCCEED)
+			throw(MAL, "sql.tids", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+		/* TODO handle dense o, ie full range out of the dense tids, could be at beginning or end (reduce range of tids) 
+		 * else materialize */
+		/* copy into heap */
+		ret = BATnegcands(tids, o);
+		BBPunfix(o->batCacheid);
+		if (ret != GDK_SUCCEED)
+			throw(MAL, "sql.tids", SQLSTATE(45003) "TIDdeletes failed");
+#else
+		BAT *diff;
 		diff = BATdiff(tids, d, NULL, NULL, false, false, BUN_NONE);
 		assert(pci->argc == 6 || BATcount(diff) == (nr-dcnt));
 		//if( !(pci->argc == 6 || BATcount(diff) == (nr-dcnt)) )
@@ -2205,6 +2228,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL,"sql.tid", SQLSTATE(45002) "Cannot subtract delete column");
 		BAThseqbase(diff, sb);
 		tids = diff;
+#endif
 	}
 	BBPkeepref(*res = tids->batCacheid);
 	return msg;
@@ -5644,6 +5668,21 @@ SQLflush_log(void *ret)
 	return MAL_SUCCEED;
 }
 
+str 
+SQLresume_log_flushing(void *ret)
+{
+	(void)ret;
+	store_resume_log();
+	return MAL_SUCCEED;
+}
+
+str 
+SQLsuspend_log_flushing(void *ret)
+{
+	(void)ret;
+	store_suspend_log();
+	return MAL_SUCCEED;
+}
 str
 SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {

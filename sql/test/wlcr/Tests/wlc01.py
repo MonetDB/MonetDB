@@ -15,7 +15,6 @@ if not tstdb or not dbfarm:
 
 #clean up first
 dbname = tstdb
-dbnameclone = tstdb + '-clone'
 
 s = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
@@ -42,7 +41,7 @@ sys.stderr.write(cerr)
 
 def listfiles(path):
     for f in sorted(os.listdir(path)):
-        if f.find('wlc') >= 0 and f != 'wlc_logs':
+        if (f.find('wlc') >= 0 or f.find('wlr') >=0 ) and f != 'wlc_logs':
             file = path + os.path.sep + f
             sys.stdout.write('#' + file + "\n")
             try:

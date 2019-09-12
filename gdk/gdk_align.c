@@ -195,6 +195,22 @@ BATmaterialize(BAT *b)
 	if (is_oid_nil(t)) {
 		while (p < q)
 			x[p++] = oid_nil;
+	} else if (b->tvheap) {
+		assert(b->batRole == TRANSIENT);
+		assert(b->tvheap->free % SIZEOF_OID == 0);
+		BUN nexc = (BUN) (b->tvheap->free / SIZEOF_OID);
+		const oid *exc = (const oid *) b->tvheap->base;
+		BUN i = 0;
+		while (p < q) {
+			while (i < nexc && t == exc[i]) {
+				i++;
+				t++;
+			}
+			x[p++] = t++;
+		}
+		b->tseqbase = oid_nil;
+		HEAPfree(b->tvheap, true);
+		b->tvheap = NULL;
 	} else {
 		while (p < q)
 			x[p++] = t++;

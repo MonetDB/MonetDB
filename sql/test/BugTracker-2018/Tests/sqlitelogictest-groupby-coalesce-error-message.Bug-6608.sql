@@ -15,11 +15,11 @@ SELECT ALL + 33 * - COALESCE ( - 86, tab1.col2 ) + + col1 FROM tab1;
 SELECT ALL + 33 * - COALESCE ( - 86, tab1.col2 ) + + col1 FROM tab1 GROUP BY tab1.col1;
 SELECT COALESCE ( - 86, tab1.col2 ) FROM tab1 GROUP BY tab1.col1;
 
-SELECT ALL + COALESCE ( - cor0.col1, cor0.col1, 63, - cor0.col2 ) * - cor0.col1 AS col1 FROM tab0 cor0;
+SELECT ALL CAST( + COALESCE ( - cor0.col1, cor0.col1, 63, - cor0.col2 ) * - cor0.col1 AS BIGINT) AS col1 FROM tab0 cor0;
 SELECT ALL + COALESCE ( - cor0.col1, cor0.col1, 63, - cor0.col2 ) * - cor0.col1 AS col1 FROM tab0 cor0 GROUP BY cor0.col0, col1;
 SELECT ALL + COALESCE ( - cor0.col1, cor0.col1, 63, cor0.col2 ) AS col1 FROM tab0 cor0 GROUP BY cor0.col0, col1;
 
-SELECT - 38 + - tab1.col1 - tab1.col1 / COALESCE ( + 20, - tab1.col0 ) FROM tab1;
+SELECT CAST(- 38 + - tab1.col1 - tab1.col1 / COALESCE ( + 20, - tab1.col0 ) AS BIGINT) FROM tab1;
 SELECT - 38 + - tab1.col1 - tab1.col1 / COALESCE ( + 20, - tab1.col0 ) FROM tab1 GROUP BY tab1.col1;
 SELECT COALESCE ( + 20, tab1.col0 ) FROM tab1 GROUP BY tab1.col1;
 

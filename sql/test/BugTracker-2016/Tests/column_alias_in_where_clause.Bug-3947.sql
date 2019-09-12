@@ -10,10 +10,10 @@ SELECT a AS "A", b AS "B", c AS "C" FROM t_alias WHERE "A" < "B";
 -- SELECT: identifier 'A' unknown
 SELECT * FROM (SELECT a AS "A", b AS "B", c AS "C" FROM t_alias) T1 WHERE "A" < "B";
 
-SELECT a AS "A", b * b AS "B", c AS "C" FROM t_alias WHERE "b" * b >99;
+SELECT a AS "A", CAST(b * b AS BIGINT) AS "B", c AS "C" FROM t_alias WHERE "b" * b >99;
 SELECT a AS "A", b * b AS "B", c AS "C" FROM t_alias WHERE "B" >99;
 -- SELECT: identifier 'B' unknown
-SELECT * FROM (SELECT a AS "A", b * b AS "B", c AS "C" FROM t_alias) T1 WHERE "B" >99;
+SELECT * FROM (SELECT a AS "A", CAST(b * b AS BIGINT) AS "B", c AS "C" FROM t_alias) T1 WHERE "B" >99;
 
 SELECT a AS "A", b AS "B", c AS "C" FROM t_alias WHERE "c" LIKE '%en';
 SELECT a AS "A", b AS "B", c AS "C" FROM t_alias WHERE "C" LIKE '%en';
@@ -37,8 +37,8 @@ SELECT * FROM (SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_
 
 -- column aliases can be used in ORDER BY and GROUP BY clauses
 SELECT a AS "A", b AS "B", c AS "C" FROM t_alias ORDER BY "C", "A", "B";
-SELECT a*b AS "A*B", c AS "C" FROM t_alias GROUP BY "C", "A*B";
-SELECT a*b*b AS "A*B", c AS "C" FROM t_alias GROUP BY "C", "A*B" HAVING "A*B" IS NOT NULL ORDER BY -"A*B";
+SELECT CAST(a*b AS BIGINT) AS "A*B", c AS "C" FROM t_alias GROUP BY "C", "A*B";
+SELECT CAST(a*b*b AS BIGINT) AS "A*B", c AS "C" FROM t_alias GROUP BY "C", "A*B" HAVING "A*B" IS NOT NULL ORDER BY -"A*B";
 
 DROP TABLE t_alias;
 
