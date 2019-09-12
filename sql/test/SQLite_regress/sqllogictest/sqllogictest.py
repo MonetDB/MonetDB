@@ -44,7 +44,8 @@ class SQLLogic:
                                        password=password,
                                        hostname=hostname,
                                        port=port,
-                                       database=database)
+                                       database=database,
+                                       autocommit=True)
         self.__crs = self.__dbh.cursor()
 
     def drop(self):
@@ -61,20 +62,13 @@ class SQLLogic:
             return
         try:
             self.command(statement)
-        except pymonetdb.OperationalError:
+        except pymonetdb.DatabaseError:
             if not expectok:
                 return
         else:
             if expectok:
                 return
-        print("statement didn't give expected result")
-        print("statement started on line %d fo file %s" % (self.qline, self.__name))
-        if expectok:
-            print("statement was expected to succeed but didn't")
-        else:
-            print("statement was expected to fail bat didn't")
-        print("statement text:")
-        print(statement)
+        self.query_error(statement, "statement didn't give expected result", expectok and "statement was expected to succeed but didn't" or "statement was expected to fail bat didn't")
 
     def convertresult(self, query, columns, data):
         ndata = []
@@ -84,10 +78,15 @@ class SQLLogic:
                 return None
             nrow = []
             for i in range(len(columns)):
-                if row[i] is None:
+                if row[i] is None or row[i] == 'NULL':
                     nrow.append('NULL')
                 elif columns[i] == 'I':
-                    nrow.append('%d' % row[i])
+                    if row[i] == 'true':
+                        nrow.append('1')
+                    elif row[i] == 'false':
+                        nrow.append('0')
+                    else:
+                        nrow.append('%d' % row[i])
                 elif columns[i] == 'T':
                     if row[i] == '':
                         nrow.append('(empty)')
@@ -106,14 +105,21 @@ class SQLLogic:
             ndata.append(tuple(nrow))
         return ndata
 
-    def query_error(self, query, message):
+    def query_error(self, query, message, exception=None):
         print(message)
+        if exception:
+            print(exception.rstrip('\n'))
         print("query started on line %d fo file %s" % (self.qline, self.__name))
         print("query text:")
         print(query)
+        print('')
 
     def exec_query(self, query, columns, sorting, args, nresult, hash, expected):
-        rows = self.command(query)
+        try:
+            rows = self.command(query)
+        except pymonetdb.DatabaseError as e:
+            self.query_error(query, 'query failed', e.args[0])
+            return
         if rows * len(columns) != nresult:
             self.query_error(query, 'wrong number of rows received')
             return
@@ -208,7 +214,7 @@ class SQLLogic:
                     raise SQLLogicSyntaxError('---- expected')
                 line = self.readline()
                 if not line:
-                    raise SQLLogicSyntaxError('query result expected')
+                    line = '\n'
                 if 'values hashing to' in line:
                     line = line.split()
                     hash = line[4]
