@@ -2477,10 +2477,9 @@ tar_copy_data(stream *tarfile, const char *path, time_t mtime, stream *contents,
 	char *buf = malloc(bufsize);
 	ssize_t nbytes;
 
-	fprintf(stderr, "#need to copy %ld/%ld bytes of component %s\n", size, file_size, path);
 	if (file_size < size) {
-		fprintf(stderr, "#adjusting amount to copy to %ld\n", file_size);
-		size = file_size;
+		GDKerror("Have to copy %ld bytes but only %ld exist in %s", size, file_size, path);
+		goto end;
 	}
 
 	if (!buf) {

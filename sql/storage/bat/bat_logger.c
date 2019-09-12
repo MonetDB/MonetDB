@@ -981,7 +981,6 @@ static gdk_return
 snapshot_one_heap(stream *plan, bool mandatory, const char *path, const char *name, const char *alt_path, const char *alt_name)
 {
 	struct stat statbuf;
-	fprintf(stderr, "#cp %s=%s\n", name, path);
 
 	if (stat(path, &statbuf) == 0) {
 		snapshot_lazy_copy_file(plan, name, statbuf.st_size);
