@@ -292,7 +292,7 @@ find_sql_func(sql_schema * s, const char *tname)
 }
 
 list *
-find_all_sql_func(sql_schema * s, const char *name, int type)
+find_all_sql_func(sql_schema * s, const char *name, sql_ftype type)
 {
 	list *l = s->funcs.set, *res = NULL;
 	node *n = NULL;

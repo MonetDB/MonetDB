@@ -166,7 +166,7 @@ extern str mvc_release(mvc *c, const char *name);
 extern sql_type *mvc_bind_type(mvc *sql, const char *name);
 extern sql_type *schema_bind_type(mvc *sql, sql_schema * s, const char *name);
 extern sql_func *mvc_bind_func(mvc *sql, const char *name);
-extern list *schema_bind_func(mvc *sql, sql_schema * s, const char *name, int type);
+extern list *schema_bind_func(mvc *sql, sql_schema * s, const char *name, sql_ftype type);
 
 extern sql_schema *mvc_bind_schema(mvc *c, const char *sname);
 extern sql_table *mvc_bind_table(mvc *c, sql_schema *s, const char *tname);
@@ -180,7 +180,7 @@ extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, const char *tname);
 extern sql_type *mvc_create_type(mvc *sql, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl);
 extern int mvc_drop_type(mvc *sql, sql_schema *s, sql_type *t, int drop_action);
 
-extern sql_func *mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
+extern sql_func *mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 extern int mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action);
 extern int mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
 

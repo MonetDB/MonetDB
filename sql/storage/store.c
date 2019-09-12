@@ -951,7 +951,7 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->lang = *(int *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "type"), rid);
 	t->sql = (t->lang==FUNC_LANG_SQL||t->lang==FUNC_LANG_MAL);
-	t->type = *(int *)v;			_DELETE(v);
+	t->type = (sql_ftype) *(int *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "side_effect"), rid);
 	t->side_effect = *(bit *)v;		_DELETE(v);
 	if (t->type==F_FILT)
@@ -1426,13 +1426,13 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 		int lang = FUNC_LANG_INT;
 		bit se = f->side_effect;
 		sqlid id;
-		int number = 0;
+		int number = 0, ftype = (int) f->type;
 		char arg_nme[7] = "arg_0";
 
 		if (f->s)
-			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &f->type, &se, &f->varres, &f->vararg, &f->s->base.id, &f->system);
+			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &ftype, &se, &f->varres, &f->vararg, &f->s->base.id, &f->system);
 		else
-			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &f->type, &se, &f->varres, &f->vararg, &zero, &f->system);
+			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &ftype, &se, &f->varres, &f->vararg, &zero, &f->system);
 
 		if (f->res) {
 			char res_nme[] = "res_0";
@@ -1480,12 +1480,12 @@ insert_aggrs(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 		sql_arg *res = NULL;
 		sql_func *aggr = n->data;
 		sqlid id;
-		int number = 0;
+		int number = 0, atype = (int) aggr->type;
 
 		if (aggr->s)
-			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &aggr->type, &F, &aggr->varres, &aggr->vararg, &aggr->s->base.id, &aggr->system);
+			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &atype, &F, &aggr->varres, &aggr->vararg, &aggr->s->base.id, &aggr->system);
 		else
-			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &aggr->type, &F, &aggr->varres, &aggr->vararg, &zero, &aggr->system);
+			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &atype, &F, &aggr->varres, &aggr->vararg, &zero, &aggr->system);
 		
 		res = aggr->res->h->data;
 		id = next_oid();
@@ -4922,7 +4922,7 @@ sql_trans_drop_type(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 }
 
 sql_func *
-create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int type, int lang, const char *mod,
+create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, sql_ftype type, int lang, const char *mod,
 				const char *impl, const char *query, bit varres, bit vararg, bit system)
 {
 	sql_func *t = SA_ZNEW(sa, sql_func);
@@ -4947,14 +4947,14 @@ create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int 
 }
 
 sql_func *
-sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *args, list *res, int type, int lang,
+sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *args, list *res, sql_ftype type, int lang,
 					  const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system)
 {
 	sql_func *t = SA_ZNEW(tr->sa, sql_func);
 	sql_table *sysfunc = find_sql_table(find_sql_schema(tr, "sys"), "functions");
 	sql_table *sysarg = find_sql_table(find_sql_schema(tr, "sys"), "args");
 	node *n;
-	int number = 0;
+	int number = 0, ftype = (int) type;
 	bit se;
 
 	base_init(tr->sa, &t->base, next_oid(), TR_NEW, func);
@@ -4981,7 +4981,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *arg
 	t->s = s;
 
 	cs_add(&s->funcs, t, TR_NEW);
-	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &lang, &type, &se,
+	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &lang, &ftype, &se,
 							 &t->varres, &t->vararg, &s->base.id, &t->system);
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;

@@ -89,7 +89,6 @@ typedef sqlid (*subrids_nextid_fptr)(subrids *r);
 /* clean up the resources taken by the result of table_select */
 typedef void (*subrids_destroy_fptr)(subrids *r);
 
-
 typedef struct table_functions {
 	column_find_row_fptr column_find_row;
 	column_find_value_fptr column_find_value;
@@ -368,7 +367,7 @@ extern int sql_save_snapshots(sql_trans *tr);
 extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl);
 extern int sql_trans_drop_type(sql_trans *tr, sql_schema * s, sqlid id, int drop_action);
 
-extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
+extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args, list *res, sql_ftype type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 
 extern int sql_trans_drop_func(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 extern int sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action);
@@ -453,7 +452,7 @@ extern sql_key * key_create_done(sql_allocator *sa, sql_key *k);
 
 extern sql_idx *create_sql_idx(sql_allocator *sa, sql_table *t, const char *nme, idx_type it);
 extern sql_idx *create_sql_ic(sql_allocator *sa, sql_idx *i, sql_column *c);
-extern sql_func *create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
+extern sql_func *create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, sql_ftype type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 
 /* for alter we need to duplicate a table */
 extern sql_table *dup_sql_table(sql_allocator *sa, sql_table *t);

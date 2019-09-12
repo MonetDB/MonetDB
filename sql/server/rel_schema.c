@@ -2365,7 +2365,6 @@ rel_find_designated_sequence(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	return 0;
 }
 
-
 static sqlid
 rel_find_designated_routine(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	(void)sql;
@@ -2377,7 +2376,6 @@ rel_find_designated_routine(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	sql_schema *s;
 	char *fname;
 	sql_func *func;
-
 
 	assert(sym->type == type_list);
 	designator = sym->data.lval;

@@ -351,13 +351,15 @@ typedef struct sql_arg {
 	sql_subtype type;
 } sql_arg;
 
-#define F_FUNC 1
-#define F_PROC 2
-#define F_AGGR 3
-#define F_FILT 4
-#define F_UNION 5
-#define F_ANALYTIC 6
-#define F_LOADER 7
+typedef enum sql_ftype {
+	F_FUNC = 1,
+	F_PROC = 2,
+	F_AGGR = 3,
+	F_FILT = 4,
+	F_UNION = 5,
+	F_ANALYTIC = 6,
+	F_LOADER = 7
+} sql_ftype;
 
 #define IS_FUNC(f) (f->type == F_FUNC)
 #define IS_PROC(f) (f->type == F_PROC)
@@ -389,7 +391,7 @@ typedef struct sql_func {
 
 	char *imp;
 	char *mod;
-	int type;
+	sql_ftype type;
 	list *ops;	/* param list */
 	list *res;	/* list of results */
 	int nr;
@@ -710,7 +712,7 @@ extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, const char *n
 extern node *find_sql_type_node(sql_schema *s, sqlid id);
 
 extern sql_func *find_sql_func(sql_schema * s, const char *tname);
-extern list *find_all_sql_func(sql_schema * s, const char *tname, int type);
+extern list *find_all_sql_func(sql_schema * s, const char *tname, sql_ftype type);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
 extern sql_func *sql_trans_find_func(sql_trans *tr, sqlid id);
 extern node *find_sql_func_node(sql_schema *s, sqlid id);

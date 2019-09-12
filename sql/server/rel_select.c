@@ -393,7 +393,7 @@ query_exp_optname(sql_query *query, sql_rel *r, symbol *q)
 }
 
 static sql_subfunc *
-bind_func_(mvc *sql, sql_schema *s, char *fname, list *ops, int type )
+bind_func_(mvc *sql, sql_schema *s, char *fname, list *ops, sql_ftype type )
 {
 	sql_subfunc *sf = NULL;
 
@@ -408,7 +408,7 @@ bind_func_(mvc *sql, sql_schema *s, char *fname, list *ops, int type )
 }
 
 static sql_subfunc *
-bind_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t1, sql_subtype *t2, int type )
+bind_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t1, sql_subtype *t2, sql_ftype type )
 {
 	sql_subfunc *sf = NULL;
 
@@ -446,7 +446,7 @@ bind_member_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t, int nrarg
 }
 
 static sql_subfunc *
-find_func(mvc *sql, sql_schema *s, char *fname, int len, int type, sql_subfunc *prev )
+find_func(mvc *sql, sql_schema *s, char *fname, int len, sql_ftype type, sql_subfunc *prev )
 {
 	sql_subfunc *sf = NULL;
 
@@ -486,7 +486,7 @@ score_func( sql_subfunc *sf, list *tl)
 }
 
 static sql_exp *
-find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, int type, sql_subfunc **sf)
+find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, sql_ftype type, sql_subfunc **sf)
 {
 	sql_exp *e = NULL;
 	*sf = bind_func_(sql, s, fname, tl, type);
@@ -684,7 +684,7 @@ static sql_exp *
 rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
 {
 	sql_subfunc *f = NULL;
-	int type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
+	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
 		   ((ek.card == card_relation)?F_UNION:F_FUNC));
 
 	f = sql_bind_func(sql->sa, s, fname, NULL, NULL, type);
@@ -1839,9 +1839,9 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 {
 	sql_subfunc *f = NULL;
 	int table_func = (ek.card == card_relation);
-	int type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
+	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
 		   ((ek.card == card_relation)?F_UNION:F_FUNC));
-	int filt = (type == F_FUNC)?F_FILT:type;
+	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 
 	(void)filt;
 	(void)nr_args;
@@ -3334,7 +3334,7 @@ rel_unop_(sql_query *query, sql_rel *rel, sql_exp *e, sql_schema *s, char *fname
 	mvc *sql = query->sql;
 	sql_subfunc *f = NULL;
 	sql_subtype *t = NULL;
-	int type = (card == card_loader)?F_LOADER:((card == card_none)?F_PROC:
+	sql_ftype type = (card == card_loader)?F_LOADER:((card == card_none)?F_PROC:
 		   ((card == card_relation)?F_UNION:F_FUNC));
 
 	if (!s)
@@ -3393,7 +3393,7 @@ rel_unop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	sql_exp *e = NULL;
 	sql_subfunc *f = NULL;
 	sql_subtype *t = NULL;
-	int type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
+	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
 
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
@@ -3465,7 +3465,7 @@ rel_binop_(sql_query *query, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s
 	sql_exp *res = NULL;
 	sql_subtype *t1, *t2;
 	sql_subfunc *f = NULL;
-	int type = (card == card_loader)?F_LOADER:((card == card_none)?F_PROC:((card == card_relation)?F_UNION:F_FUNC));
+	sql_ftype type = (card == card_loader)?F_LOADER:((card == card_none)?F_PROC:((card == card_relation)?F_UNION:F_FUNC));
 	if (card == card_loader)
 		card = card_none;
 	t1 = exp_subtype(l);
@@ -3702,7 +3702,7 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	char *sname = qname_schema(dl->data.lval);
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
-	int type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
+	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
 
 	sql_subfunc *sf = NULL;
 
@@ -3758,7 +3758,7 @@ rel_nop_(sql_query *query, sql_rel *rel, sql_exp *a1, sql_exp *a2, sql_exp *a3, 
 	mvc *sql = query->sql;
 	list *tl = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
-	int type = (card == card_none)?F_PROC:((card == card_relation)?F_UNION:F_FUNC);
+	sql_ftype type = (card == card_none)?F_PROC:((card == card_relation)?F_UNION:F_FUNC);
 
 	(void) rel;
 	append(tl, exp_subtype(a1));

@@ -873,7 +873,7 @@ mvc_bind_func(mvc *sql, const char *name)
 }
 
 list *
-schema_bind_func(mvc *sql, sql_schema * s, const char *name, int type)
+schema_bind_func(mvc *sql, sql_schema * s, const char *name, sql_ftype type)
 {
 	list *func_list = find_all_sql_func(s, name, type);
 
@@ -1081,7 +1081,7 @@ mvc_drop_type(mvc *m, sql_schema *s, sql_type *t, int drop_action)
 }
 
 sql_func *
-mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, const char *name, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system)
+mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, const char *name, list *args, list *res, sql_ftype type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system)
 {
 	sql_func *f = NULL;
 
