@@ -6135,7 +6135,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 		(*changes)++;
 		return rel_inplace_project(sql->sa, rel, NULL, exps);
 	}
-	if (is_groupby(rel->op) && !rel_is_ref(rel) && rel->exps) {
+	if (is_groupby(rel->op) && !rel_is_ref(rel) && rel->exps && list_length(rel->exps) > 1) {
 		node *n;
 		int fnd = 0;
 		list *aexps, *pexps;
@@ -6154,7 +6154,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 
 		aexps = sa_list(sql->sa);
 		pexps = sa_list(sql->sa);
-		for ( n = rel->exps->h; n; n = n->next) {
+		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data, *ne = NULL;
 
 			switch (e->type) {	

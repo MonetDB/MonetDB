@@ -32,7 +32,7 @@ t2 AS (
     SELECT t."Carrier", tmp.*
     FROM tmp, (SELECT DISTINCT "Carrier" FROM t1) AS t
 )
-SELECT "Carrier", "Hour", SUM("PredictedArrDelay")
+SELECT "Carrier", "Hour", CAST(SUM("PredictedArrDelay") AS DECIMAL(18,2))
 FROM (SELECT * FROM t1 UNION SELECT * FROM t2) AS t
 GROUP BY "Carrier", "Hour"
 ORDER BY "Carrier", "Hour";

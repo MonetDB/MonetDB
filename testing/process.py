@@ -311,9 +311,7 @@ def server(args=[], stdin=None, stdout=None, stderr=None,
     if not cmd:
         cmd = ['mserver5',
                '--set', 'mapi_open=true',
-               '--set', 'gdk_nr_threads=1',
-               '--set', 'monet_prompt=']
-    cmd.extend(['--set', 'monet_daemon=yes'])
+               '--set', 'gdk_nr_threads=1']
     if verbose:
         sys.stdout.write('Default server: ' + ' '.join(cmd +  args) + '\n')
     if notrace and '--trace' in cmd:
