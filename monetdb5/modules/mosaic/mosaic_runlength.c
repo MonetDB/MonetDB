@@ -456,7 +456,7 @@ MOSprojection_runlength( MOStask task)
 	w = (TPE*) task->src;\
 	for(n = task->stop, o = 0; n -- > 0; w++,o++)\
 	if ( *w == *v)\
-		for(oo= (oid) first; oo < (oid) last; v++, oo++){\
+		for(oo= (oid) first; oo < (oid) last; oo++){\
 			if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
 			BUNappend(task->rbat, &o, false) != GDK_SUCCEED )\
 			throw(MAL,"mosaic.runlength",MAL_MALLOC_FAIL);\
