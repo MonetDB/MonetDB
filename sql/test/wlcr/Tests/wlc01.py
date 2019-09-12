@@ -25,6 +25,7 @@ call masterbeat(0);
 call master();
 
 create table tmp0(i int, s string);
+insert into tmp0 values(1,'gaap'), (2,'sleep');
 drop table tmp0;
 create table tmp(i int, s string);
 insert into tmp values(1,'hello'), (2,'world');

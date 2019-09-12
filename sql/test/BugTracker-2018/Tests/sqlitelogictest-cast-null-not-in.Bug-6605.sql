@@ -33,4 +33,8 @@ SELECT DISTINCT * FROM tab2 AS cor0 WHERE CAST ( NULL AS INTEGER ) / col2 NOT IN
 
 SELECT * FROM tab1, tab0 AS cor0 WHERE NULL NOT IN ( cor0.col2 ); --6 columns in the output
 
+SELECT DISTINCT CAST ( MAX ( DISTINCT CAST ( NULL AS INTEGER ) ) * COUNT ( * ) + COUNT ( * ) * + ( - COUNT ( * ) ) + - 
+COUNT ( * ) + ( CAST ( NULL AS INTEGER ) ) + + MAX ( DISTINCT 20 ) / 55 + - COUNT ( * ) AS BIGINT ) AS col1 
+FROM tab1 AS cor0; --Single null value
+
 ROLLBACK;

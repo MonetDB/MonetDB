@@ -58,7 +58,9 @@ stdout of test 'sequence-first-next-value.Bug-6743` in directory 'sql/test/BugTr
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
+# 13:06:00 >  
+# 13:06:00 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27980" "--port=33484"
+# 13:06:00 >  
 
 # 11:39:46 >  
 # 11:39:46 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17641" "--port=32076"
@@ -83,13 +85,13 @@ Ready.
 % L2 # name
 % bigint # type
 % 1 # length
+[ 1	]
+#select next_value_for('sys','seq');
+% .L2 # table_name
+% L2 # name
+% bigint # type
+% 1 # length
 [ 2	]
-#select next_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
-% bigint # type
-% 1 # length
-[ 3	]
 #select get_value_for('sys','seq');
 % .L2 # table_name
 % L2 # name
@@ -107,7 +109,7 @@ Ready.
 % L2 # name
 % bigint # type
 % 1 # length
-[ 4	]
+[ 3	]
 #select get_value_for('sys','seq');
 % .L2 # table_name
 % L2 # name
@@ -119,7 +121,7 @@ Ready.
 % L2 # name
 % bigint # type
 % 1 # length
-[ 5	]
+[ 4	]
 #select get_value_for('sys','seq');
 % .L2 # table_name
 % L2 # name
@@ -146,13 +148,13 @@ Ready.
 % L2 # name
 % bigint # type
 % 1 # length
+[ 1	]
+#select next_value_for('sys','seq');
+% .L2 # table_name
+% L2 # name
+% bigint # type
+% 1 # length
 [ 2	]
-#select next_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
-% bigint # type
-% 1 # length
-[ 3	]
 #select get_value_for('sys','seq');
 % .L2 # table_name
 % L2 # name
@@ -170,7 +172,7 @@ Ready.
 % L2 # name
 % bigint # type
 % 1 # length
-[ 4	]
+[ 3	]
 #select get_value_for('sys','seq');
 % .L2 # table_name
 % L2 # name
@@ -182,7 +184,7 @@ Ready.
 % L2 # name
 % bigint # type
 % 1 # length
-[ 5	]
+[ 4	]
 #select get_value_for('sys','seq');
 % .L2 # table_name
 % L2 # name
