@@ -36,6 +36,9 @@ mosaic_raw_date
 mosaic_raw_timestamp
 
 mosaic_runlength_lng
+mosaic_runlength_oid
+mosaic_runlength_date
+mosaic_runlength_timestamp
 
 mosaic_frame_lng
 mosaic_frame_oid
