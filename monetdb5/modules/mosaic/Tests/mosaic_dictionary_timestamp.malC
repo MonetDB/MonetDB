@@ -1,0 +1,687 @@
+a:= bat.new(:timestamp);
+bat.append(a,"2014-08-14 12:10:00":timestamp);
+bat.append(a,"2014-08-14 12:10:00":timestamp);
+bat.append(a,"2014-08-14 12:10:00":timestamp);
+bat.append(a,"2014-08-14 12:10:01":timestamp);
+bat.append(a,"2014-08-14 12:10:01":timestamp);
+bat.append(a,"2014-08-14 12:10:01":timestamp);
+bat.append(a,"2014-08-14 12:10:02":timestamp);
+bat.append(a,"2014-08-14 12:10:02":timestamp);
+bat.append(a,"2014-08-14 12:10:02":timestamp);
+bat.append(a,"2014-08-14 12:09:58":timestamp);
+bat.append(a,"2014-08-14 12:09:58":timestamp);
+bat.append(a,"2014-08-14 12:09:58":timestamp);
+bat.append(a,"2014-08-14 12:09:59":timestamp);
+bat.append(a,"2014-08-14 12:09:59":timestamp);
+bat.append(a,"2014-08-14 12:09:59":timestamp);
+bat.append(a,"2014-08-14 12:10:02":timestamp);
+bat.append(a,"2014-08-14 12:10:02":timestamp);
+bat.append(a,"2014-08-14 12:10:02":timestamp);
+bat.append(a,"2014-08-14 12:10:10":timestamp);
+bat.append(a,"2014-08-14 12:10:10":timestamp);
+bat.append(a,"2014-08-14 12:10:10":timestamp);
+bat.append(a,"2014-08-14 12:09:50":timestamp);
+bat.append(a,"2014-08-14 12:09:50":timestamp);
+bat.append(a,"2014-08-14 12:09:50":timestamp);
+bat.append(a,"2014-08-14 12:09:55":timestamp);
+bat.append(a,"2014-08-14 12:09:55":timestamp);
+bat.append(a,"2014-08-14 12:09:55":timestamp);
+bat.append(a,"2014-08-14 12:10:05":timestamp);
+bat.append(a,"2014-08-14 12:10:05":timestamp);
+bat.append(a,"2014-08-14 12:10:05":timestamp);
+mosaic.compress(a,"dictionary");
+c:= mosaic.decompress(a);
+io.print(a, c);
+
+sa:= algebra.select(a,nil:timestamp, nil:timestamp,false,false,false);
+sc:= mosaic.select (c,nil:timestamp, nil:timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,nil:timestamp, nil:timestamp,false,false,true);
+sc:= mosaic.select (c,nil:timestamp, nil:timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:10:00":timestamp, nil:timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:10:00":timestamp, nil:timestamp,false,false,false);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:10:00":timestamp, ">");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:10:00":timestamp, ">");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,nil:timestamp, "2014-08-14 12:10:00":timestamp,false,false,false);
+sc:= mosaic.select (c,nil:timestamp, "2014-08-14 12:10:00":timestamp,false,false,false);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:10:00":timestamp, "<");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:10:00":timestamp, "<");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:00":timestamp, nil:timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:00":timestamp, nil:timestamp,false,false,false);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:09:00":timestamp, ">");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:09:00":timestamp, ">");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,nil:timestamp, "2014-08-14 12:09:00":timestamp,false,false,false);
+sc:= mosaic.select (c,nil:timestamp, "2014-08-14 12:09:00":timestamp,false,false,false);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:09:00":timestamp, "<");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:09:00":timestamp, "<");
+#io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:00":timestamp, nil:timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:00":timestamp, nil:timestamp,true,false,false);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:09:00":timestamp, ">=");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:09:00":timestamp, ">=");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,nil:timestamp, "2014-08-14 12:09:00":timestamp,false,true,false);
+sc:= mosaic.select (c,nil:timestamp, "2014-08-14 12:09:00":timestamp,false,true,false);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:09:00":timestamp, "<=");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:09:00":timestamp, "<=");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-08-14 12:10:00":timestamp, nil:timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:10:00":timestamp, nil:timestamp,true,false,false);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:10:00":timestamp, ">=");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:10:00":timestamp, ">=");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,nil:timestamp, "2014-08-14 12:10:00":timestamp,false,true,false);
+sc:= mosaic.select (c,nil:timestamp, "2014-08-14 12:10:00":timestamp,false,true,false);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:10:00":timestamp, "<=");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:10:00":timestamp, "<=");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,true,true,false);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:10:00":timestamp, "==");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:10:00":timestamp, "==");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,true,true,true);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:10:00":timestamp, "!=");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:10:00":timestamp, "!=");
+io.print(sa, sc, tsa, tsc);
+
+
+sa:= algebra.select(a,"2014-08-14 12:10:03":timestamp, "2014-08-14 12:10:03":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:10:03":timestamp, "2014-08-14 12:10:03":timestamp,true,true,false);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:10:03":timestamp, "==");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:10:03":timestamp, "==");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-08-14 12:10:03":timestamp, "2014-08-14 12:10:03":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:10:03":timestamp, "2014-08-14 12:10:03":timestamp,true,true,true);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:10:03":timestamp, "!=");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:10:03":timestamp, "!=");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:00":timestamp, "2014-08-14 12:09:00":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:00":timestamp, "2014-08-14 12:09:00":timestamp,true,true,false);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:09:00":timestamp, "==");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:09:00":timestamp, "==");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:00":timestamp, "2014-08-14 12:09:00":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:00":timestamp, "2014-08-14 12:09:00":timestamp,true,true,true);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:09:00":timestamp, "!=");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:09:00":timestamp, "!=");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-08-14 12:11:00":timestamp, "2014-08-14 12:11:00":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:11:00":timestamp, "2014-08-14 12:11:00":timestamp,true,true,false);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:11:00":timestamp, "==");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:11:00":timestamp, "==");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-08-14 12:11:00":timestamp, "2014-08-14 12:11:00":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:11:00":timestamp, "2014-08-14 12:11:00":timestamp,true,true,true);
+tsa:= algebra.thetaselect(a,"2014-08-14 12:11:00":timestamp, "!=");
+tsc:= mosaic.thetaselect (c,"2014-08-14 12:11:00":timestamp, "!=");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:08":timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:08":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
+io.print(sa, sc);
+
+b:= bat.new(:timestamp);
+bat.append(b,"2014-08-14 12:10:00":timestamp);
+bat.append(b,"2014-08-14 12:10:01":timestamp);
+bat.append(b,"2014-08-14 12:09:59":timestamp);
+bat.append(b,"2014-08-14 12:10:03":timestamp);
+bat.append(b,"2014-08-14 12:09:57":timestamp);
+bat.append(b,"2014-08-14 12:10:10":timestamp);
+bat.append(b,"2014-08-14 12:09:51":timestamp);
+bat.append(b,"2014-08-14 12:09:52":timestamp);
+bat.append(b,"2014-08-14 12:09:53":timestamp);
+bat.append(b,"2014-08-14 12:10:00":timestamp);
+
+(l,r)   := algebra.join(a,b,nil:bat,nil:bat, false, 0:lng);
+(r, p) := algebra.sort(r, false:bit, false:bit, false:bit);
+l      := algebra.projection(p, l);
+
+(lc,rc) := mosaic.join (c,b,nil:bat,nil:bat, false, 0:lng);
+(rc, p) := algebra.sort(rc, false:bit, false:bit, false:bit);
+lc      := algebra.projection(p, lc);
+io.print(l,lc);
+io.print(r,rc);
+
+tsa:= mosaic.thetaselect(a,"2014-08-14 12:09:00":timestamp, ">");
+tsap    := algebra.projection(tsa, a);
+tsapc   := mosaic.projection(tsa, c);
+io.print(tsap, tsapc);
+
+sa:= algebra.select(a,"2014-08-14 12:09:00":timestamp, nil:timestamp,false,false,false);
+sap    := algebra.projection(tsa, a);
+sapc   := mosaic.projection(tsa, c);
+io.print(sap, sapc);
+
+pl  := algebra.projection(l, a);
+plc := mosaic.projection(l, c);
+io.print(pl, plc);

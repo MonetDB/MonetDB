@@ -1,0 +1,687 @@
+a:= bat.new(:date);
+bat.append(a,"2014-10-01":date);
+bat.append(a,"2014-10-01":date);
+bat.append(a,"2014-10-01":date);
+bat.append(a,"2014-10-02":date);
+bat.append(a,"2014-10-02":date);
+bat.append(a,"2014-10-02":date);
+bat.append(a,"2014-10-03":date);
+bat.append(a,"2014-10-03":date);
+bat.append(a,"2014-10-03":date);
+bat.append(a,"2014-09-29":date);
+bat.append(a,"2014-09-29":date);
+bat.append(a,"2014-09-29":date);
+bat.append(a,"2014-09-30":date);
+bat.append(a,"2014-09-30":date);
+bat.append(a,"2014-09-30":date);
+bat.append(a,"2014-10-03":date);
+bat.append(a,"2014-10-03":date);
+bat.append(a,"2014-10-03":date);
+bat.append(a,"2014-10-11":date);
+bat.append(a,"2014-10-11":date);
+bat.append(a,"2014-10-11":date);
+bat.append(a,"2014-09-21":date);
+bat.append(a,"2014-09-21":date);
+bat.append(a,"2014-09-21":date);
+bat.append(a,"2014-09-26":date);
+bat.append(a,"2014-09-26":date);
+bat.append(a,"2014-09-26":date);
+bat.append(a,"2014-10-06":date);
+bat.append(a,"2014-10-06":date);
+bat.append(a,"2014-10-06":date);
+mosaic.compress(a,"dictionary");
+c:= mosaic.decompress(a);
+io.print(a, c);
+
+sa:= algebra.select(a,nil:date, nil:date,false,false,false);
+sc:= mosaic.select (c,nil:date, nil:date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,nil:date, nil:date,false,false,true);
+sc:= mosaic.select (c,nil:date, nil:date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-10-01":date, nil:date,false,false,false);
+sc:= mosaic.select (c,"2014-10-01":date, nil:date,false,false,false);
+tsa:= algebra.thetaselect(a,"2014-10-01":date, ">");
+tsc:= mosaic.thetaselect (c,"2014-10-01":date, ">");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,nil:date, "2014-10-01":date,false,false,false);
+sc:= mosaic.select (c,nil:date, "2014-10-01":date,false,false,false);
+tsa:= algebra.thetaselect(a,"2014-10-01":date, "<");
+tsc:= mosaic.thetaselect (c,"2014-10-01":date, "<");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-09-01":date, nil:date,false,false,false);
+sc:= mosaic.select (c,"2014-09-01":date, nil:date,false,false,false);
+tsa:= algebra.thetaselect(a,"2014-09-01":date, ">");
+tsc:= mosaic.thetaselect (c,"2014-09-01":date, ">");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,nil:date, "2014-09-01":date,false,false,false);
+sc:= mosaic.select (c,nil:date, "2014-09-01":date,false,false,false);
+tsa:= algebra.thetaselect(a,"2014-09-01":date, "<");
+tsc:= mosaic.thetaselect (c,"2014-09-01":date, "<");
+#io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-09-01":date, nil:date,true,false,false);
+sc:= mosaic.select (c,"2014-09-01":date, nil:date,true,false,false);
+tsa:= algebra.thetaselect(a,"2014-09-01":date, ">=");
+tsc:= mosaic.thetaselect (c,"2014-09-01":date, ">=");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,nil:date, "2014-09-01":date,false,true,false);
+sc:= mosaic.select (c,nil:date, "2014-09-01":date,false,true,false);
+tsa:= algebra.thetaselect(a,"2014-09-01":date, "<=");
+tsc:= mosaic.thetaselect (c,"2014-09-01":date, "<=");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-10-01":date, nil:date,true,false,false);
+sc:= mosaic.select (c,"2014-10-01":date, nil:date,true,false,false);
+tsa:= algebra.thetaselect(a,"2014-10-01":date, ">=");
+tsc:= mosaic.thetaselect (c,"2014-10-01":date, ">=");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,nil:date, "2014-10-01":date,false,true,false);
+sc:= mosaic.select (c,nil:date, "2014-10-01":date,false,true,false);
+tsa:= algebra.thetaselect(a,"2014-10-01":date, "<=");
+tsc:= mosaic.thetaselect (c,"2014-10-01":date, "<=");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-10-01":date, "2014-10-01":date,true,true,false);
+sc:= mosaic.select (c,"2014-10-01":date, "2014-10-01":date,true,true,false);
+tsa:= algebra.thetaselect(a,"2014-10-01":date, "==");
+tsc:= mosaic.thetaselect (c,"2014-10-01":date, "==");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-10-01":date, "2014-10-01":date,true,true,true);
+sc:= mosaic.select (c,"2014-10-01":date, "2014-10-01":date,true,true,true);
+tsa:= algebra.thetaselect(a,"2014-10-01":date, "!=");
+tsc:= mosaic.thetaselect (c,"2014-10-01":date, "!=");
+io.print(sa, sc, tsa, tsc);
+
+
+sa:= algebra.select(a,"2014-10-04":date, "2014-10-04":date,true,true,false);
+sc:= mosaic.select (c,"2014-10-04":date, "2014-10-04":date,true,true,false);
+tsa:= algebra.thetaselect(a,"2014-10-04":date, "==");
+tsc:= mosaic.thetaselect (c,"2014-10-04":date, "==");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-10-04":date, "2014-10-04":date,true,true,true);
+sc:= mosaic.select (c,"2014-10-04":date, "2014-10-04":date,true,true,true);
+tsa:= algebra.thetaselect(a,"2014-10-04":date, "!=");
+tsc:= mosaic.thetaselect (c,"2014-10-04":date, "!=");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-09-01":date, "2014-09-01":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-01":date, "2014-09-01":date,true,true,false);
+tsa:= algebra.thetaselect(a,"2014-09-01":date, "==");
+tsc:= mosaic.thetaselect (c,"2014-09-01":date, "==");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-09-01":date, "2014-09-01":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-01":date, "2014-09-01":date,true,true,true);
+tsa:= algebra.thetaselect(a,"2014-09-01":date, "!=");
+tsc:= mosaic.thetaselect (c,"2014-09-01":date, "!=");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-11-01":date, "2014-11-01":date,true,true,false);
+sc:= mosaic.select (c,"2014-11-01":date, "2014-11-01":date,true,true,false);
+tsa:= algebra.thetaselect(a,"2014-11-01":date, "==");
+tsc:= mosaic.thetaselect (c,"2014-11-01":date, "==");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-11-01":date, "2014-11-01":date,true,true,true);
+sc:= mosaic.select (c,"2014-11-01":date, "2014-11-01":date,true,true,true);
+tsa:= algebra.thetaselect(a,"2014-11-01":date, "!=");
+tsc:= mosaic.thetaselect (c,"2014-11-01":date, "!=");
+io.print(sa, sc, tsa, tsc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-06":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-06":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-06":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-06":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-09":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-09":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-09":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-09":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-06":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-06":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-06":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-06":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-09":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-09":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-09":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-09":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-06":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-06":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-06":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-06":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-09":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-09":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-09":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-09":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-06":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-06":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-06":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-06":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-09":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-09":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-09":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-09":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-06":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-06":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-06":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-06":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-09":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-09":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-09":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-09":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-06":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-06":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-06":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-06":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-09":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-09":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-09":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-09":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-06":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-06":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-06":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-06":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-09":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-09":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-09":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-09":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-06":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-06":date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-06":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-06":date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-09":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-09":date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-09":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-09":date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-09":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-09":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-09":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-09":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-09":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-09":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-09":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-09":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-09":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-09":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-09":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-09":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-09":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-09":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-09":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-09":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-09":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-09":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-09":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-09":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-09":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-09":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-09":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-09":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-09":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-09":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-09":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-09":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-06":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-06":date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-09":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-09":date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-09":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-09":date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-22":date, "2014-10-21":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-22":date, "2014-10-21":date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-30":date, "2014-10-21":date,true,true,false);
+sc:= mosaic.select (c,"2014-09-30":date, "2014-10-21":date,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,true,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,true,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,false,false);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,true,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,true,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,true,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,true,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-09-11":date, "2014-10-21":date,false,false,true);
+sc:= mosaic.select (c,"2014-09-11":date, "2014-10-21":date,false,false,true);
+io.print(sa, sc);
+
+b:= bat.new(:date);
+bat.append(b,"2014-10-01":date);
+bat.append(b,"2014-10-02":date);
+bat.append(b,"2014-09-30":date);
+bat.append(b,"2014-10-04":date);
+bat.append(b,"2014-09-28":date);
+bat.append(b,"2014-10-11":date);
+bat.append(b,"2014-09-22":date);
+bat.append(b,"2014-09-23":date);
+bat.append(b,"2014-09-24":date);
+bat.append(b,"2014-10-01":date);
+
+(l,r)   := algebra.join(a,b,nil:bat,nil:bat, false, 0:lng);
+(r, p) := algebra.sort(r, false:bit, false:bit, false:bit);
+l      := algebra.projection(p, l);
+
+(lc,rc) := mosaic.join (c,b,nil:bat,nil:bat, false, 0:lng);
+(rc, p) := algebra.sort(rc, false:bit, false:bit, false:bit);
+lc      := algebra.projection(p, lc);
+io.print(l,lc);
+io.print(r,rc);
+
+tsa:= mosaic.thetaselect(a,"2014-10-01":date, ">");
+tsap    := algebra.projection(tsa, a);
+tsapc   := mosaic.projection(tsa, c);
+io.print(tsap, tsapc);
+
+sa:= algebra.select(a,"2014-10-01":date, nil:date,false,false,false);
+sap    := algebra.projection(tsa, a);
+sapc   := mosaic.projection(tsa, c);
+io.print(sap, sapc);
+
+pl  := algebra.projection(l, a);
+plc := mosaic.projection(l, c);
+io.print(pl, plc);

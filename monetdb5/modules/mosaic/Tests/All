@@ -40,6 +40,11 @@ mosaic_runlength_oid
 mosaic_runlength_date
 mosaic_runlength_timestamp
 
+mosaic_dictionary_lng
+mosaic_dictionary_oid
+mosaic_dictionary_date
+mosaic_dictionary_timestamp
+
 mosaic_frame_lng
 mosaic_frame_oid
 mosaic_frame_date
