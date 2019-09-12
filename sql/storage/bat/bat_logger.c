@@ -1114,7 +1114,9 @@ snapshot_bats(stream *plan, const char *db_dir)
 			goto end;
 		}
 		strcpy(alt_heapfile + alt_heapfile_pos, heapfile + heapfile_pos);
-		snapshot_one_bat(plan, heapfile, alt_heapfile, strlen(db_dir) + 1);
+		ret = snapshot_one_bat(plan, heapfile, alt_heapfile, strlen(db_dir) + 1);
+		if (ret != GDK_SUCCEED)
+			goto end;
 	}
 
 
