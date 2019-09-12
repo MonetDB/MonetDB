@@ -1068,10 +1068,9 @@ snapshot_bats(stream *plan, const char *db_dir)
 	stream *cat = NULL;
 	char line[1024];
 	int gdk_version;
-	char heapfile[FILENAME_MAX];
-	char alt_heapfile[FILENAME_MAX];
-	size_t heapfile_pos, alt_heapfile_pos;
-	int id;
+	char stable_heapfile[FILENAME_MAX];
+	char bak_heapfile[FILENAME_MAX];
+	size_t stable_heapfile_pos, bak_heapfile_pos;
 	gdk_return ret = GDK_FAIL;
 
 	snprintf(bbpdir, FILENAME_MAX, "%s/%s/%s", db_dir, BAKDIR, "BBP.dir");
@@ -1106,15 +1105,19 @@ snapshot_bats(stream *plan, const char *db_dir)
 		goto end;
 	}
 
-	heapfile_pos = snprintf(heapfile, FILENAME_MAX, "%s/%s/%s/", db_dir, BAKDIR, BATDIR);
-	alt_heapfile_pos = snprintf(alt_heapfile, FILENAME_MAX, "%s/%s/", db_dir, BATDIR);
+	bak_heapfile_pos = snprintf(bak_heapfile, FILENAME_MAX, "%s/%s/", db_dir, BAKDIR);
+	stable_heapfile_pos = snprintf(stable_heapfile, FILENAME_MAX, "%s/%s/", db_dir, BATDIR);
 	while (mnstr_readline(cat, line, sizeof(line)) > 0) {
-		if (sscanf(line, "%d %*s %*s %s", &id, heapfile + heapfile_pos) != 2) {
+		int scanned = sscanf(line, "%*s %*s %*s %s",
+				stable_heapfile + stable_heapfile_pos);
+		if (scanned != 1) {
 			GDKerror("Couldn't parse %s line: %s", bbpdir, line);
 			goto end;
 		}
-		strcpy(alt_heapfile + alt_heapfile_pos, heapfile + heapfile_pos);
-		ret = snapshot_one_bat(plan, heapfile, alt_heapfile, strlen(db_dir) + 1);
+		char *last_component = strrchr(stable_heapfile, '/');
+		assert(last_component);
+		strcpy(bak_heapfile + bak_heapfile_pos, last_component);
+		ret = snapshot_one_bat(plan, bak_heapfile, stable_heapfile, strlen(db_dir) + 1);
 		if (ret != GDK_SUCCEED)
 			goto end;
 	}
