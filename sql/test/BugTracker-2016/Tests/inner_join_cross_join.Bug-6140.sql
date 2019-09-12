@@ -19,7 +19,7 @@ SELECT t1.key_var, t1.value_var2, t2.key_var, t2.value_var1
 FROM 
 (
   SELECT t1."key_var" AS "key_var",
-  SUM(t2."value_var1") AS "value_var1"
+  CAST(SUM(t2."value_var1") AS BIGINT) AS "value_var1"
   FROM "bar" t2
   RIGHT OUTER JOIN 
   (
@@ -33,7 +33,7 @@ FROM
 INNER JOIN 
 (
   SELECT t3."key_var" AS "key_var",
-  SUM(t3."value_var2") AS "value_var2"
+  CAST(SUM(t3."value_var2") AS BIGINT) AS "value_var2"
   FROM "foo" t3
   GROUP BY t3."key_var"
 ) t1
