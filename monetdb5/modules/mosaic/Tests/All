@@ -50,6 +50,11 @@ mosaic_linear_oid
 mosaic_linear_date
 mosaic_linear_timestamp
 
+mosaic_prefix_lng
+mosaic_prefix_oid
+mosaic_prefix_date
+mosaic_prefix_timestamp
+
 mosaic_frame_lng
 mosaic_frame_oid
 mosaic_frame_date

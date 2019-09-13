@@ -23,9 +23,9 @@
 #include "gdk_bitvector.h"
 
 bool MOStypes_prefix(BAT* b) {
-	switch(ATOMbasetype(getBatType(b->ttype))){
-	case TYPE_bte: return true;
+	switch(b->ttype){
 	case TYPE_bit: return true;
+	case TYPE_bte: return true;
 	case TYPE_sht: return true;
 	case TYPE_int: return true;
 	case TYPE_lng: return true;
@@ -35,14 +35,10 @@ bool MOStypes_prefix(BAT* b) {
 #ifdef HAVE_HGE
 	case TYPE_hge: return true;
 #endif
-	case  TYPE_str:
-		switch(b->twidth){
-		case 1: return true;
-		case 2: return true;
-		case 4: return true;
-		case 8: return true;
-		}
-		break;
+	default:
+		if (b->ttype == TYPE_date) {return true;} // Will be mapped to int
+		if (b->ttype == TYPE_daytime) {return true;} // Will be mapped to lng
+		if (b->ttype == TYPE_timestamp) {return true;} // Will be mapped to lng
 	}
 
 	return false;
