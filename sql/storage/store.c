@@ -2433,22 +2433,17 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
 	return GDK_SUCCEED;
 }
 
+/* Write data to the stream, padding it with zeroes up to the next
+ * multiple of TAR_BLOCK_SIZE.  Make sure all writes are in multiples
+ * of TAR_BLOCK_SIZE.
+ */
 static gdk_return
-tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data, size_t size)
+tar_write(stream *outfile, const char *data, size_t size)
 {
-	int res;
+	const size_t tail = size % TAR_BLOCK_SIZE;
+	const size_t bulk = size - tail;
 
-	res = tar_write_header(tarfile, path, mtime, size);
-	if (res != GDK_SUCCEED)
-		return res;
-
-	// The spec requires us to only write complete blocks.
-	// So first we write all full blocks and then we copy the remainder
-	// into a buffer so we can write a tail block
-
-	size_t tail = size % TAR_BLOCK_SIZE;
-	size_t bulk = size - tail;
-	size_t written = mnstr_write(tarfile, data, 1, bulk);
+	size_t written = mnstr_write(outfile, data, 1, bulk);
 	if (written != bulk) {
 		GDKerror("Wrote only %ld bytes instead of first %ld", written, bulk);
 		return GDK_FAIL;
@@ -2457,7 +2452,7 @@ tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data
 	if (tail) {
 		char buf[TAR_BLOCK_SIZE] = {0};
 		memcpy(buf, data + bulk, tail);
-		written = mnstr_write(tarfile, buf, 1, TAR_BLOCK_SIZE);
+		written = mnstr_write(outfile, buf, 1, TAR_BLOCK_SIZE);
 		if (written != TAR_BLOCK_SIZE) {
 			GDKerror("Wrote only %ld tail bytes instead of %d", written, TAR_BLOCK_SIZE);
 			return GDK_FAIL;
@@ -2467,21 +2462,38 @@ tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data
 	return GDK_SUCCEED;
 }
 
+static gdk_return
+tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data, size_t size)
+{
+	int res;
+
+	res = tar_write_header(tarfile, path, mtime, size);
+	if (res != GDK_SUCCEED)
+		return res;
+	
+	return tar_write(tarfile, data, size);
+}
+
 
 static gdk_return
-tar_copy_data(stream *tarfile, const char *path, time_t mtime, stream *contents, ssize_t size)
+tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, ssize_t size)
 {
-	gdk_return ret = GDK_FAIL;
-	ssize_t file_size = getFileSize(contents);
 	const ssize_t bufsize = 64 * 1024;
-	char *buf = malloc(bufsize);
-	ssize_t nbytes;
+	gdk_return ret = GDK_FAIL;
+	ssize_t file_size;
+	char *buf;
+	ssize_t to_read;
 
+	file_size = getFileSize(contents);
 	if (file_size < size) {
 		GDKerror("Have to copy %ld bytes but only %ld exist in %s", size, file_size, path);
 		goto end;
 	}
 
+	assert( (bufsize % TAR_BLOCK_SIZE) == 0);
+	assert(bufsize > TAR_BLOCK_SIZE);
+
+	buf = malloc(bufsize);
 	if (!buf) {
 		GDKerror("could not allocate buffer");
 		goto end;
@@ -2490,41 +2502,19 @@ tar_copy_data(stream *tarfile, const char *path, time_t mtime, stream *contents,
 	if (tar_write_header(tarfile, path, mtime, size) != GDK_SUCCEED)
 		goto end;
 
-	assert(bufsize > TAR_BLOCK_SIZE);
-	assert(bufsize % TAR_BLOCK_SIZE == 0);
+	to_read = size;
 
-	// Again, we need to be careful to not write partial blocks.
-
-	while (size > TAR_BLOCK_SIZE) {
-		ssize_t chunk = size <= bufsize ? size : bufsize;
-		chunk -= chunk % TAR_BLOCK_SIZE;
-		assert(chunk > 0);
-		assert(chunk % TAR_BLOCK_SIZE == 0);
-		nbytes = mnstr_read(contents, buf, 1, chunk);
+	while (to_read > 0) {
+		ssize_t chunk = (to_read <= bufsize) ? to_read : bufsize;
+		ssize_t nbytes = mnstr_read(contents, buf, 1, chunk);
 		if (nbytes != chunk) {
 			GDKerror("Read only %ld/%ld bytes of component %s: %s", nbytes, chunk, path, mnstr_error(contents));
 			goto end;
 		}
-		nbytes = mnstr_write(tarfile, buf, 1, chunk);
-		if (nbytes != chunk){
-			GDKerror("Wrote only %ld/%ld bytes of component %s to tar file: %s", nbytes, chunk, path, mnstr_error(tarfile));
+		ret = tar_write(tarfile, buf, chunk);
+		if (ret != GDK_SUCCEED)
 			goto end;
-		}
-		size -= chunk;
-	}
-
-	if (size > 0) {
-		memset(buf, 0, TAR_BLOCK_SIZE);
-		nbytes = mnstr_read(contents, buf, 1, size);
-		if (nbytes != size) {
-			GDKerror("Read only %ld/%ld final bytes of component %s: %s", nbytes, size, path, mnstr_error(contents));
-			goto end;
-		}
-		nbytes = mnstr_write(tarfile, buf, 1, TAR_BLOCK_SIZE);
-		if (nbytes != TAR_BLOCK_SIZE) {
-			GDKerror("Only wrote %ld/%ld bytes of block of component %s to tar file: %s", nbytes, size, path, mnstr_error(tarfile));
-			goto end;
-		}
+		to_read -= chunk;
 	}
 
 	ret = GDK_SUCCEED;
@@ -2576,7 +2566,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 					GDKerror("Could not open %s", abs_src_path);
 					goto end;
 				}
-				if (tar_copy_data(out, dest_path, timestamp, infile, size) != GDK_SUCCEED)
+				if (tar_copy_stream(out, dest_path, timestamp, infile, size) != GDK_SUCCEED)
 					goto end;
 				mnstr_close(infile);
 				break;
