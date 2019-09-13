@@ -700,7 +700,7 @@ drop_seq(mvc *sql, char *sname, char *name)
 }
 
 static str
-drop_func(mvc *sql, char *sname, char *name, sqlid fid, int type, int action)
+drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int action)
 {
 	sql_schema *s = NULL;
 	char is_aggr = (type == F_AGGR);
@@ -1438,7 +1438,7 @@ SQLdrop_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1); 
 	char *fname = *getArgReference_str(stk, pci, 2);
 	sqlid fid = (sqlid)*getArgReference_int(stk, pci, 3);
-	int type = *getArgReference_int(stk, pci, 4);
+	sql_ftype type = (sql_ftype) *getArgReference_int(stk, pci, 4);
 	int action = *getArgReference_int(stk, pci, 5);
 
 	initcontext();

@@ -40,21 +40,21 @@ class SQLLogic:
 
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database='demo'):
-        self.__dbh = pymonetdb.connect(username=username,
+        self.dbh = pymonetdb.connect(username=username,
                                        password=password,
                                        hostname=hostname,
                                        port=port,
                                        database=database,
                                        autocommit=True)
-        self.__crs = self.__dbh.cursor()
+        self.crs = self.dbh.cursor()
 
     def drop(self):
         self.command('select name from tables where not system')
-        for row in self.__crs.fetchall():
+        for row in self.crs.fetchall():
             self.command('drop table %s cascade' % row[0])
 
     def command(self, cmd):
-        return self.__crs.execute(cmd)
+        return self.crs.execute(cmd)
 
     def exec_statement(self, statement, expectok):
         if skipidx.search(statement) is not None:
@@ -109,12 +109,13 @@ class SQLLogic:
         print(message)
         if exception:
             print(exception.rstrip('\n'))
-        print("query started on line %d fo file %s" % (self.qline, self.__name))
+        print("query started on line %d fo file %s" % (self.qline, self.name))
         print("query text:")
         print(query)
         print('')
 
-    def exec_query(self, query, columns, sorting, args, nresult, hash, expected):
+    def exec_query(self, query, columns, sorting, hashlabel, nresult, hash, expected):
+        err = False
         try:
             rows = self.command(query)
         except pymonetdb.DatabaseError as e:
@@ -123,7 +124,7 @@ class SQLLogic:
         if rows * len(columns) != nresult:
             self.query_error(query, 'wrong number of rows received')
             return
-        data = self.__crs.fetchall()
+        data = self.crs.fetchall()
         data = self.convertresult(query, columns, data)
         if data is None:
             return
@@ -139,6 +140,7 @@ class SQLLogic:
                 if expected is not None:
                     if col != expected[i]:
                         self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
+                        err = True
                     i += 1
                 m.update(bytes(col, encoding='ascii'))
                 m.update(b'\n')
@@ -150,21 +152,33 @@ class SQLLogic:
                     if expected is not None:
                         if col != expected[i]:
                             self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
+                            err = True
                         i += 1
                     m.update(bytes(col, encoding='ascii'))
                     m.update(b'\n')
         h = m.hexdigest()
-        if hash is not None and h != hash:
-            self.query_error(query, 'hash mismatch; received: "%s", expected: "%s"' % (h, hash))
+        if not err:
+            if hashlabel is not None and hashlabel in self.hashes and self.hashes[hashlabel][0] != h:
+                self.query_error(query, 'query hash differs from previous query at line %d' % self.hashes[hashlabel][1])
+                err = True
+            elif hash is not None and h != hash:
+                self.query_error(query, 'hash mismatch; received: "%s", expected: "%s"' % (h, hash))
+                err = True
+        if hashlabel is not None and hashlabel not in self.hashes:
+            if hash is not None:
+                self.hashes[hashlabel] = (hash, self.qline)
+            elif not err:
+                self.hashes[hashlabel] = (h, self.qline)
 
     def initfile(self, f):
-        self.__name = f
-        self.__file = open(f)
-        self.__line = 0
+        self.name = f
+        self.file = open(f)
+        self.line = 0
+        self.hashes = {}
 
     def readline(self):
-        self.__line += 1
-        return self.__file.readline()
+        self.line += 1
+        return self.file.readline()
 
     def parse(self, f):
         self.initfile(f)
@@ -182,12 +196,13 @@ class SQLLogic:
                 elif line[0] == 'onlyif' and line[1] != 'MonetDB':
                     skipping = True
                 line = self.readline().split()
+            hashlabel = None
             if line[0] == 'hash-threshold':
                 pass
             elif line[0] == 'statement':
                 expectok = line[1] == 'ok'
                 statement = []
-                self.qline = self.__line + 1
+                self.qline = self.line + 1
                 while True:
                     line = self.readline()
                     if not line or line == '\n':
@@ -199,12 +214,12 @@ class SQLLogic:
                 columns = line[1]
                 if len(line) > 2:
                     sorting = line[2]  # nosort,rowsort,valuesort
-                    args = line[3:]
+                    if len(line) > 3:
+                        hashlabel = line[3]
                 else:
                     sorting = 'nosort'
-                    args = []
                 query = []
-                self.qline = self.__line + 1
+                self.qline = self.line + 1
                 while True:
                     line = self.readline()
                     if not line or line == '\n' or line.startswith('----'):
@@ -228,7 +243,7 @@ class SQLLogic:
                         line = self.readline()
                     nresult = len(expected)
                 if not skipping:
-                    self.exec_query('\n'.join(query), columns, sorting, args, nresult, hash, expected)
+                    self.exec_query('\n'.join(query), columns, sorting, hashlabel, nresult, hash, expected)
 
 sql = SQLLogic()
 sql.connect(hostname=hostname, port=port, database=db)
