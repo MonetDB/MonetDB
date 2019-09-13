@@ -30,23 +30,23 @@ stderr of test 'parsing` in directory 'sql/test/json` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-26577/.s.monetdb.36138
 QUERY = insert into jsonparse values('{');
-ERROR = !JSON syntax error: '}' expected
-MAPI  = (monetdb) /var/tmp/mtest-31374/.s.monetdb.32129
+ERROR = !JSON syntax error: '}' expected at offset 1
+MAPI  = (monetdb) /var/tmp/mtest-16571/.s.monetdb.32712
 QUERY = insert into jsonparse values('}');
-ERROR = !JSON syntax error: value expected
-MAPI  = (monetdb) /var/tmp/mtest-17604/.s.monetdb.36346
+ERROR = !JSON syntax error: value expected at offset 0
+MAPI  = (monetdb) /var/tmp/mtest-16571/.s.monetdb.32712
 QUERY = insert into jsonparse values('{}  k');
 ERROR = !JSON syntax error: json parse failed
 MAPI  = (monetdb) /var/tmp/mtest-31374/.s.monetdb.32129
 QUERY = insert into jsonparse values('{:1}');
-ERROR = !JSON syntax error: value expected
-MAPI  = (monetdb) /var/tmp/mtest-31374/.s.monetdb.32129
+ERROR = !JSON syntax error: value expected at offset 0
+MAPI  = (monetdb) /var/tmp/mtest-16571/.s.monetdb.32712
 QUERY = insert into jsonparse values('{"k"}');
-ERROR = !JSON syntax error: element expected
-MAPI  = (monetdb) /var/tmp/mtest-31374/.s.monetdb.32129
+ERROR = !JSON syntax error: element expected at offset 1
+MAPI  = (monetdb) /var/tmp/mtest-16571/.s.monetdb.32712
 QUERY = insert into jsonparse values('{[}]');
-ERROR = !JSON syntax error: value expected
-MAPI  = (monetdb) /var/tmp/mtest-31374/.s.monetdb.32129
+ERROR = !JSON syntax error: value expected at offset 0
+MAPI  = (monetdb) /var/tmp/mtest-16571/.s.monetdb.32712
 QUERY = insert into jsonparse values('{} }');
 ERROR = !JSON syntax error: json parse failed
 MAPI  = (monetdb) /var/tmp/mtest-31374/.s.monetdb.32129
@@ -54,10 +54,10 @@ QUERY = insert into jsonparse values('{} }[1]');
 ERROR = !JSON syntax error: json parse failed
 MAPI  = (monetdb) /var/tmp/mtest-31374/.s.monetdb.32129
 QUERY = insert into jsonparse values('{"f1"::1}');
-ERROR = !JSON syntax error: value expected
-MAPI  = (monetdb) /var/tmp/mtest-31374/.s.monetdb.32129
+ERROR = !JSON syntax error: value expected at offset 0
+MAPI  = (monetdb) /var/tmp/mtest-16571/.s.monetdb.32712
 QUERY = insert into jsonparse values('{"f1":1,"f2":2 ');
-ERROR = !JSON syntax error: ','  or '}' expected
+ERROR = !JSON syntax error: ',' or '}' expected at offset 15
 
 
 # 19:12:47 >  
