@@ -991,6 +991,7 @@ handle_client(void *p)
 {
 	int msgsock = * (int *) p;
 
+	free(p);
 	ctl_handle_client("(local)", msgsock, NULL, NULL);
 	shutdown(msgsock, SHUT_RDWR);
 	closesocket(msgsock);
@@ -1006,8 +1007,13 @@ controlRunner(void *d)
 	struct timeval tv;
 	int msgsock;
 	pthread_t tid;
+	int *p;
 
 	do {
+		if ((p = malloc(sizeof(int))) == NULL) {
+			Mfprintf(_mero_ctlerr, "malloc failed");
+			break;
+		}
 		FD_ZERO(&fds);
 		FD_SET(usock, &fds);
 
@@ -1040,7 +1046,8 @@ controlRunner(void *d)
 		(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
 #endif
 
-		if (pthread_create(&tid, NULL, handle_client, &msgsock) != 0)
+		*p = msgsock;
+		if (pthread_create(&tid, NULL, handle_client, p) != 0)
 			closesocket(msgsock);
 		else
 			pthread_detach(tid);
