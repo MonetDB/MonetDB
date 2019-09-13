@@ -12,8 +12,8 @@
 #include "sql_relation.h"
 #include "sql_mvc.h"
 
-extern int exp_has_freevar( sql_exp *e);
-extern int rel_has_freevar( sql_rel *r);
+extern int exp_has_freevar(mvc *sql, sql_exp *e);
+extern int rel_has_freevar(mvc *sql, sql_rel *r);
 extern sql_rel *rel_unnest(mvc *sql, sql_rel *rel);
 
 #endif /*_REL_UNNEST_H_*/

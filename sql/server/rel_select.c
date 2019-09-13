@@ -1591,8 +1591,8 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		else
 			return sql_error(sql, 05, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(rs)) &&
-	   (!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(rs2))))) {
+	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(sql, rs)) &&
+	   (!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
 		if ((ls->card == rs->card && !rs2) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
@@ -1957,7 +1957,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	l = rel_value_exp(query, &left, lo, f, ek);
 	if (!l)
 		return NULL;
-	if (l && exp_has_freevar(l)) {
+	if (l && exp_has_freevar(sql, l)) {
 		l_is_value=0;
 	}
 	ek.card = card_set;
@@ -1997,7 +1997,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				left = rel_add_identity(sql, left, &id);
 				id = exp_ref(sql->sa, id);
 				left = rel_crossproduct(sql->sa, left, z, is_sql_sel(f)?op_left:op_join);
-				if (!l_is_value || rel_has_freevar(z))
+				if (!l_is_value || rel_has_freevar(sql, z))
 					set_dependent(left);
 
 				left = rel_groupby(sql, left, exp2list(sql->sa, id)); 
@@ -2049,7 +2049,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 					z = rel_add_identity(sql, z, &tid);
 					tid = exp_ref(sql->sa, tid);
 					left = rel_crossproduct(sql->sa, left, z, is_sql_sel(f)?op_left:op_join);
-					if (rel_has_freevar(z))
+					if (rel_has_freevar(sql, z))
 						set_dependent(left);
 
 					left = rel_groupby(sql, left, exp2list(sql->sa, id)); 
@@ -2489,7 +2489,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				le = exp_ref(sql->sa, le);
 			}
 			*rel = rel_crossproduct(sql->sa, *rel, sq, is_value?op_left:exists?op_semi:op_anti); 
-			if (rel_has_freevar(sq))
+			if (rel_has_freevar(sql, sq))
 				set_dependent(*rel);
 			if (*rel && needproj) {
 				*rel = rel_project(sql->sa, *rel, pexps);
@@ -2685,7 +2685,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!l)
 			return NULL;
 
-		if (l && exp_has_freevar(l)) {
+		if (l && exp_has_freevar(sql, l)) {
 			l_outer=1;
 			l_is_value=0;
 		}
@@ -2740,7 +2740,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			if (l_tuple && z) { /* later union them together (now just one) */
 				node *n, *m;
 
-				if (rel_has_freevar(z)) {
+				if (rel_has_freevar(sql, z)) {
 					if (z->op == op_join) {
 						if (!is_sql_sel(f))
 							z->op = sc->token==SQL_IN?op_semi:op_anti;
@@ -2787,7 +2787,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 									 (sc->token==SQL_IN?cmp_equal:cmp_notequal)); 
 					if (z) {
 						left = rel_crossproduct(sql->sa, left, z, sc->token==SQL_IN?op_semi:op_anti);
-						if (rel_has_freevar(z))
+						if (rel_has_freevar(sql, z))
 							set_dependent(left);
 					} else if (l_outer) {
 						left->op = sc->token==SQL_IN?op_semi:op_anti;
@@ -3997,7 +3997,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			gr->l = gl;
 		if (!e || !exp_subtype(e)) /* we also do not expect parameters here */
 			return NULL;
-		freevar &= exp_has_freevar(e);
+		freevar &= exp_has_freevar(sql, e);
 		list_append(exps, e);
 	}
 
