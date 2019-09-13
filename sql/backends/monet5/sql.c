@@ -283,7 +283,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 	int check = 0;
 
 	if (STORE_READONLY)
-		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
+		return sql_error(sql, 06, SQLSTATE(25006) "schema statements cannot be executed on a readonly database.");
 
 	if (!s)
 		return sql_message(SQLSTATE(3F000) "CREATE %s: schema '%s' doesn't exist", (t->query) ? "TABLE" : "VIEW", sname);
@@ -473,11 +473,11 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 	if (!sname)
 		sname = "sys";
 	if (!(s = mvc_bind_schema(sql, sname))) {
-		msg = sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
+		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
 		goto cleanup;
 	}
 	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0))) {
-		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not create table '%s'", tname);
+		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create table '%s'", tname);
 		goto cleanup;
 	}
 
@@ -487,13 +487,13 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		sql_column *col = NULL;
 
 		if (!tpe) {
-			msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not find type for column");
+			msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not find type for column");
 			goto cleanup;
 		}
 
 		col = mvc_create_column(sql, t, columns[i].name, tpe);
 		if (!col) {
-			msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not create column %s", columns[i].name);
+			msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create column %s", columns[i].name);
 			goto cleanup;
 		}
 	}
@@ -503,7 +503,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 	}
 	t = mvc_bind_table(sql, s, tname);
 	if (!t) {
-		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not bind table %s", tname);
+		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
 		goto cleanup;
 	}
 	for(i = 0; i < ncols; i++) {
@@ -512,7 +512,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 
 		col = mvc_bind_column(sql,t, columns[i].name);
 		if (!col) {
-			msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not bind column %s", columns[i].name);
+			msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
 			goto cleanup;
 		}
 		msg = mvc_append_column(sql->session->tr, col, b);
@@ -553,12 +553,12 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 	if (!sname)
 		sname = "sys";
 	if (!(s = mvc_bind_schema(sql, sname))) {
-		msg = sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
+		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
 		goto cleanup;
 	}
 	t = mvc_bind_table(sql, s, tname);
 	if (!t) {
-		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not bind table %s", tname);
+		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
 		goto cleanup;
 	}
 	for(i = 0; i < ncols; i++) {
@@ -567,7 +567,7 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 
 		col = mvc_bind_column(sql,t, columns[i].name);
 		if (!col) {
-			msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not bind column %s", columns[i].name);
+			msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
 			goto cleanup;
 		}
 		msg = mvc_append_column(sql->session->tr, col, b);

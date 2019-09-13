@@ -762,7 +762,7 @@ func_cmp(sql_allocator *sa, sql_func *f, const char *name, int nrargs)
 }
 
 sql_subfunc *
-sql_find_func_by_name(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, int type)
+sql_find_func_by_name(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, sql_ftype type)
 {
 	if (s && s->funcs.set)
 		for (node *n=s->funcs.set->h; n; n = n->next) {
@@ -785,13 +785,13 @@ sql_find_func_by_name(sql_allocator *sa, sql_schema *s, const char *name, int nr
 }
 
 sql_subfunc *
-sql_find_func(sql_allocator *sa, sql_schema *s, const char *sqlfname, int nrargs, int type, sql_subfunc *prev)
+sql_find_func(sql_allocator *sa, sql_schema *s, const char *sqlfname, int nrargs, sql_ftype type, sql_subfunc *prev)
 {
 	sql_subfunc *fres;
 	int key = hash_key(sqlfname);
 	sql_hash_e *he;
 	int found = 0;
-	int filt = (type == F_FUNC)?F_FILT:type;
+	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 
 	assert(nrargs);
 	MT_lock_set(&funcs->ht_lock);
@@ -863,12 +863,12 @@ sql_find_func(sql_allocator *sa, sql_schema *s, const char *sqlfname, int nrargs
 }
 
 list *
-sql_find_funcs(sql_allocator *sa, sql_schema *s, const char *sqlfname, int nrargs, int type)
+sql_find_funcs(sql_allocator *sa, sql_schema *s, const char *sqlfname, int nrargs, sql_ftype type)
 {
 	sql_subfunc *fres;
 	int key = hash_key(sqlfname);
 	sql_hash_e *he;
-	int filt = (type == F_FUNC)?F_FILT:type;
+	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 	list *res = sa_list(sa);
 
 	assert(nrargs);
@@ -966,7 +966,7 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subt
 }
 
 sql_subfunc *
-sql_bind_func(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, int type)
+sql_bind_func(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type)
 {
 	list *l = sa_list(sa);
 	sql_subfunc *fres;
@@ -981,7 +981,7 @@ sql_bind_func(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtyp
 }
 
 sql_subfunc *
-sql_bind_func3(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, int type)
+sql_bind_func3(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_ftype type)
 {
 	list *l = sa_list(sa);
 	sql_subfunc *fres;
@@ -998,10 +998,10 @@ sql_bind_func3(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subty
 }
 
 sql_subfunc *
-sql_bind_func_(sql_allocator *sa, sql_schema *s, const char *sqlfname, list *ops, int type)
+sql_bind_func_(sql_allocator *sa, sql_schema *s, const char *sqlfname, list *ops, sql_ftype type)
 {
 	node *n = funcs->h;
-	int filt = (type == F_FUNC)?F_FILT:type;
+	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 
 	(void)s;
 	for (; n; n = n->next) {
@@ -1178,7 +1178,7 @@ arg_dup(sql_allocator *sa, sql_arg *oa)
 }
 
 static sql_func *
-sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const char *imp, list *ops, sql_arg *res, bit side_effect, int type, int fix_scale)
+sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const char *imp, list *ops, sql_arg *res, bit side_effect, sql_ftype type, int fix_scale)
 {
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
