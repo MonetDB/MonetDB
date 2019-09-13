@@ -36,7 +36,7 @@ class SQLLogicSyntaxError(Exception):
 
 class SQLLogic:
     def __init__(self):
-        pass
+        self.hashes = {}
 
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database='demo'):
@@ -114,7 +114,8 @@ class SQLLogic:
         print(query)
         print('')
 
-    def exec_query(self, query, columns, sorting, args, nresult, hash, expected):
+    def exec_query(self, query, columns, sorting, hashlabel, nresult, hash, expected):
+        err = False
         try:
             rows = self.command(query)
         except pymonetdb.DatabaseError as e:
@@ -139,6 +140,7 @@ class SQLLogic:
                 if expected is not None:
                     if col != expected[i]:
                         self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
+                        err = True
                     i += 1
                 m.update(bytes(col, encoding='ascii'))
                 m.update(b'\n')
@@ -150,12 +152,23 @@ class SQLLogic:
                     if expected is not None:
                         if col != expected[i]:
                             self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
+                            err = True
                         i += 1
                     m.update(bytes(col, encoding='ascii'))
                     m.update(b'\n')
         h = m.hexdigest()
-        if hash is not None and h != hash:
-            self.query_error(query, 'hash mismatch; received: "%s", expected: "%s"' % (h, hash))
+        if not err:
+            if hashlabel is not None and hashlabel in self.hashes and self.hashes[hashlabel][0] != h:
+                self.query_error(query, 'query hash differs from previous query at line %d' % self.hashes[hashlabel][1])
+                err = True
+            elif hash is not None and h != hash:
+                self.query_error(query, 'hash mismatch; received: "%s", expected: "%s"' % (h, hash))
+                err = True
+        if hashlabel is not None and hashlabel not in self.hashes:
+            if hash is not None:
+                self.hashes[hashlabel] = (hash, self.qline)
+            elif not err:
+                self.hashes[hashlabel] = (h, self.qline)
 
     def initfile(self, f):
         self.__name = f
@@ -182,6 +195,7 @@ class SQLLogic:
                 elif line[0] == 'onlyif' and line[1] != 'MonetDB':
                     skipping = True
                 line = self.readline().split()
+            hashlabel = None
             if line[0] == 'hash-threshold':
                 pass
             elif line[0] == 'statement':
@@ -199,10 +213,10 @@ class SQLLogic:
                 columns = line[1]
                 if len(line) > 2:
                     sorting = line[2]  # nosort,rowsort,valuesort
-                    args = line[3:]
+                    if len(line) > 3:
+                        hashlabel = line[3]
                 else:
                     sorting = 'nosort'
-                    args = []
                 query = []
                 self.qline = self.__line + 1
                 while True:
@@ -228,7 +242,7 @@ class SQLLogic:
                         line = self.readline()
                     nresult = len(expected)
                 if not skipping:
-                    self.exec_query('\n'.join(query), columns, sorting, args, nresult, hash, expected)
+                    self.exec_query('\n'.join(query), columns, sorting, hashlabel, nresult, hash, expected)
 
 sql = SQLLogic()
 sql.connect(hostname=hostname, port=port, database=db)
