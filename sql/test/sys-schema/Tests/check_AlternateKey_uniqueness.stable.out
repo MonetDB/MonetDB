@@ -79,12 +79,12 @@ stdout of test 'check_AlternateKey_uniqueness` in directory 'sql/test/sys-schema
 % bigint,	int,	int # type
 % 1,	1,	1 # length
 #SELECT COUNT(*) AS duplicates, T.id FROM (SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions) T GROUP BY T.id HAVING COUNT(*) > 1;
-% .L22,	.t # table_name
+% .L24,	.t # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, T.id FROM (SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys.tables UNION ALL SELECT id FROM sys.columns UNION ALL SELECT id FROM sys.functions) T GROUP BY T.id HAVING COUNT(*) > 1;
-% .L46,	.t # table_name
+% .L50,	.t # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
