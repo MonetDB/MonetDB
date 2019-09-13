@@ -897,57 +897,53 @@ static gdk_return
 snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 {
 	gdk_return ret = GDK_FAIL;
+	const ssize_t bufsize = 64 * 1024;
 	struct stat statbuf;
 	char *buf = NULL;
-	FILE *f = NULL;
-	long size;
-	size_t bytes_read;
-	size_t bytes_written;
+	stream *s = NULL;
+	long to_copy;
 
 	if (stat(path, &statbuf) < 0) {
 		GDKerror("stat failed on %s: %s", path, strerror(errno));
 		goto end;
 	}
-	size = (long)statbuf.st_size;
+	to_copy = (long)statbuf.st_size;
 
-	// TODO we should really do this in pieces,
-	// not allocate memory for the whole file
-	buf = GDKmalloc(size);
+	s = open_rstream(path);
+	if (!s) {
+		GDKerror("could not open %s", path);
+		goto end;
+	}
+
+	buf = GDKmalloc(bufsize);
 	if (!buf) {
 		GDKerror("malloc failed");
 		goto end;
 	}
 
-	f = fopen(path, "rb");
-	if (!f) {
-		GDKerror("could not open %s: %s", path, strerror(errno));
-		goto end;
-	}
+	mnstr_printf(plan, "w %ld %s\n", to_copy, name);
 
-	bytes_read = fread(buf, 1, size, f);
-	if ((long)bytes_read < size) {
-		if (ferror(f))
-			GDKerror("could not open %s: %s", path, strerror(errno));
-		else if (feof(f))
-			GDKerror("file %s unexpectedly short, %ld rather than %ld bytes",
-				path, bytes_read, size);
-		else
-			GDKerror("read unexplainably truncated");
-		goto end;
-	}
+	while (to_copy > 0) {
+		ssize_t chunk = (to_copy <= bufsize) ? to_copy : bufsize;
+		ssize_t bytes_read = mnstr_read(s, buf, 1, chunk);
+		if (bytes_read < chunk) {
+			GDKerror("Read only %ld/%ld bytes of component %s: %s", bytes_read, chunk, path, mnstr_error(s));
+			goto end;
+		}
 
-	mnstr_printf(plan, "w %ld %s\n", size, name);
-	bytes_written = mnstr_write(plan, buf, 1, bytes_read);
-	if (bytes_written < bytes_read) {
-		GDKerror("write to plan truncated");
-		goto end;
+		ssize_t bytes_written = mnstr_write(plan, buf, 1, chunk);
+		if (bytes_written < chunk) {
+			GDKerror("write to plan truncated");
+			goto end;
+		}
+		to_copy -= chunk;
 	}
 
 	ret = GDK_SUCCEED;
 end:
 	GDKfree(buf);
-	if (f)
-		fclose(f);
+	if (s)
+		close_stream(s);
 	return ret;
 }
 
