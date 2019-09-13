@@ -36,25 +36,25 @@ class SQLLogicSyntaxError(Exception):
 
 class SQLLogic:
     def __init__(self):
-        self.hashes = {}
+        pass
 
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database='demo'):
-        self.__dbh = pymonetdb.connect(username=username,
+        self.dbh = pymonetdb.connect(username=username,
                                        password=password,
                                        hostname=hostname,
                                        port=port,
                                        database=database,
                                        autocommit=True)
-        self.__crs = self.__dbh.cursor()
+        self.crs = self.dbh.cursor()
 
     def drop(self):
         self.command('select name from tables where not system')
-        for row in self.__crs.fetchall():
+        for row in self.crs.fetchall():
             self.command('drop table %s cascade' % row[0])
 
     def command(self, cmd):
-        return self.__crs.execute(cmd)
+        return self.crs.execute(cmd)
 
     def exec_statement(self, statement, expectok):
         if skipidx.search(statement) is not None:
@@ -109,7 +109,7 @@ class SQLLogic:
         print(message)
         if exception:
             print(exception.rstrip('\n'))
-        print("query started on line %d fo file %s" % (self.qline, self.__name))
+        print("query started on line %d fo file %s" % (self.qline, self.name))
         print("query text:")
         print(query)
         print('')
@@ -124,7 +124,7 @@ class SQLLogic:
         if rows * len(columns) != nresult:
             self.query_error(query, 'wrong number of rows received')
             return
-        data = self.__crs.fetchall()
+        data = self.crs.fetchall()
         data = self.convertresult(query, columns, data)
         if data is None:
             return
@@ -171,13 +171,14 @@ class SQLLogic:
                 self.hashes[hashlabel] = (h, self.qline)
 
     def initfile(self, f):
-        self.__name = f
-        self.__file = open(f)
-        self.__line = 0
+        self.name = f
+        self.file = open(f)
+        self.line = 0
+        self.hashes = {}
 
     def readline(self):
-        self.__line += 1
-        return self.__file.readline()
+        self.line += 1
+        return self.file.readline()
 
     def parse(self, f):
         self.initfile(f)
@@ -201,7 +202,7 @@ class SQLLogic:
             elif line[0] == 'statement':
                 expectok = line[1] == 'ok'
                 statement = []
-                self.qline = self.__line + 1
+                self.qline = self.line + 1
                 while True:
                     line = self.readline()
                     if not line or line == '\n':
@@ -218,7 +219,7 @@ class SQLLogic:
                 else:
                     sorting = 'nosort'
                 query = []
-                self.qline = self.__line + 1
+                self.qline = self.line + 1
                 while True:
                     line = self.readline()
                     if not line or line == '\n' or line.startswith('----'):
