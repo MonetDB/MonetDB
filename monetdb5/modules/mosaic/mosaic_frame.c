@@ -184,7 +184,7 @@ do {\
 flt
 MOSestimate_frame(MOStask task) {
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: estimateFrame(task, bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 	case TYPE_sht: estimateFrame(task, sht, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 	case TYPE_int: estimateFrame(task, int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
@@ -225,7 +225,7 @@ MOScompress_frame(MOStask task)
 	MOSsetTag(blk,MOSAIC_FRAME);
 	MOSsetCnt(blk, 0);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: FRAMEcompress(task, bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 	case TYPE_sht: FRAMEcompress(task, sht, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 	case TYPE_int: FRAMEcompress(task, int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
@@ -259,7 +259,7 @@ do {\
 void
 MOSdecompress_frame(MOStask task)
 {
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: FRAMEdecompress(task, bte); break;
 	case TYPE_sht: FRAMEdecompress(task, sht); break;
 	case TYPE_int: FRAMEdecompress(task, int); break;
@@ -387,7 +387,7 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	}
 	o = task->lb;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: select_frame(task, bte, ulng); break;
 	case TYPE_sht: select_frame(task, sht, ulng); break;
 	case TYPE_int: select_frame(task, int, ulng); break;
@@ -524,7 +524,7 @@ MOSthetaselect_frame( MOStask task, void *val, str oper)
 	}
 	o = task->lb;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: thetaselect_frame(bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 	case TYPE_sht: thetaselect_frame(sht, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 	case TYPE_int: thetaselect_frame(int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
@@ -560,7 +560,7 @@ MOSprojection_frame( MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 		case TYPE_bte: projection_frame(bte); break;
 		case TYPE_sht: projection_frame(sht); break;
 		case TYPE_int: projection_frame(int); break;
@@ -599,7 +599,7 @@ MOSjoin_frame( MOStask task)
 	oid o, oo;
 
 	// set the oid range covered and advance scan range
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 		case TYPE_bte: join_frame(bte); break;
 		case TYPE_sht: join_frame(sht); break;
 		case TYPE_int: join_frame(int); break;

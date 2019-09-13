@@ -45,7 +45,7 @@ MOSadvance_delta(MOStask task)
 
 	task->start += MOSgetCnt(blk);
 	task->stop = task->stop;
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(sht) + MOSgetCnt(blk)-1,sht)); break ;
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(int) + MOSgetCnt(blk)-1,int)); break ;
 	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(oid) + MOSgetCnt(blk)-1,oid)); break ;
@@ -65,7 +65,7 @@ MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
 	input = cnt * ATOMsize(task->type);
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_sht: output = wordaligned(MosaicBlkSize + sizeof(sht) + MOSgetCnt(blk)-1,sht); break ;
 	case TYPE_int: output = wordaligned(MosaicBlkSize + sizeof(int) + MOSgetCnt(blk)-1,int); break ;
 	case TYPE_oid: output = wordaligned(MosaicBlkSize + sizeof(oid) + MOSgetCnt(blk)-1,oid); break ;
@@ -115,7 +115,7 @@ MOSestimate_delta(MOStask task)
 {	BUN i = 0;
 	flt factor = 1.0;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 		//case TYPE_bte: case TYPE_bit: no compression achievable
 		case TYPE_sht: Estimate_delta(sht,  (delta < -127 || delta >127)); break;
 		case TYPE_int: Estimate_delta(int,  (delta < -127 || delta >127)); break;
@@ -158,7 +158,7 @@ MOScompress_delta(MOStask task)
 
 	MOSsetTag(blk,MOSAIC_DELTA);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: DELTAcompress(sht,(delta < -127 || delta >127)); break;
 	case TYPE_int: DELTAcompress(int,(delta < -127 || delta >127)); break;
@@ -193,7 +193,7 @@ MOSdecompress_delta(MOStask task)
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	BUN i;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	//case TYPE_bte: case TYPE_bit: no compression achievable
 	case TYPE_sht: DELTAdecompress(sht); break;
 	case TYPE_int: DELTAdecompress(int); break;
@@ -291,7 +291,7 @@ MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	}
 	o = task->lb;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_sht: select_delta(sht); break;
 	case TYPE_int: select_delta(int); break;
 	case TYPE_lng: select_delta(lng); break;
@@ -362,7 +362,7 @@ MOSthetaselect_delta( MOStask task, void *val, str oper)
 	}
 	o = task->lb;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_sht: thetaselect_delta(sht); break;
 	case TYPE_int: thetaselect_delta(int); break;
 	case TYPE_lng: thetaselect_delta(lng); break;
@@ -399,7 +399,7 @@ MOSprojection_delta( MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 		case TYPE_sht: projection_delta(sht); break;
 		case TYPE_int: projection_delta(int); break;
 		case TYPE_lng: projection_delta(lng); break;
@@ -438,7 +438,7 @@ MOSjoin_delta( MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 		case TYPE_sht: join_delta(sht); break;
 		case TYPE_int: join_delta(int); break;
 		case TYPE_lng: join_delta(lng); break;

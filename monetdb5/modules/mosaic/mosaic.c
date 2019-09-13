@@ -45,11 +45,6 @@ bool type_allowed(int compression, BAT* b) {
 static bool
 MOSinitializeFilter(MOStask task, const char* compressions) {
 
-	if (ATOMbasetype(task->type) != ATOMstorage(task->type)) {
-		// don't compress if the storage and base types are not the same.
-		return false;
-	}
-
 	bool is_not_compressible = true;
 
 	if (!GDK_STRNIL(compressions)) {

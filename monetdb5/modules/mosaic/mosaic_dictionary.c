@@ -467,7 +467,7 @@ MOSselect_dictionary(MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *
 	}
 	o = task->lb;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: select_dictionary(bte); break;
 	case TYPE_sht: select_dictionary(sht); break;
 	case TYPE_int: select_dictionary(int); break;
@@ -546,7 +546,7 @@ MOSthetaselect_dictionary( MOStask task, void *val, str oper)
 	}
 	o = task->lb;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: thetaselect_dictionary(bte); break;
 	case TYPE_sht: thetaselect_dictionary(sht); break;
 	case TYPE_int: thetaselect_dictionary(int); break;

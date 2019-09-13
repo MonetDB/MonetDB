@@ -705,7 +705,7 @@ MOSselect_prefix( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *ant
 	}
 	o = task->lb;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: select_prefix(bte,unsigned char); break;
 	case TYPE_sht: select_prefix(sht,unsigned short); break;
 	case TYPE_int: select_prefix(int,unsigned int); break;
@@ -796,7 +796,7 @@ MOSthetaselect_prefix( MOStask task, void *input, str oper)
 	}
 	o = task->lb;
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: thetaselect_prefix(bte, unsigned char); break;
 	case TYPE_sht: thetaselect_prefix(sht, unsigned short); break;
 	case TYPE_int: thetaselect_prefix(int, unsigned int); break;
@@ -843,7 +843,7 @@ MOSprojection_prefix( MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 		case TYPE_bte: projection_prefix(bte, unsigned char); break;
 		case TYPE_sht: projection_prefix(sht, unsigned short); break;
 		case TYPE_int: projection_prefix(int, unsigned int); break;
@@ -911,7 +911,7 @@ MOSjoin_prefix( MOStask task)
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
-	switch(ATOMstorage(task->type)){
+	switch(ATOMbasetype(task->type)){
 		case TYPE_bte: join_prefix(bte,unsigned char); break;
 		case TYPE_sht: join_prefix(sht,unsigned short); break;
 		case TYPE_int: join_prefix(int,unsigned int); break;
