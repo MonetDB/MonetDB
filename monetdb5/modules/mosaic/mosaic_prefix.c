@@ -681,7 +681,7 @@ MOSdecompress_prefix(MOStask task)
 			}\
 		} else\
 		if( is_nil(TPE, *(TPE*) hgh) ){\
-			for( ; first < last; first++, val++,i++){\
+			for( ; first < last; first++,i++){\
 				MOSskipit();\
 				v = val | decompress(base,i,bits);\
 				value =  (TPE) ((TPE2)val |(TPE2) v);\
@@ -690,7 +690,7 @@ MOSdecompress_prefix(MOStask task)
 					*o++ = (oid) first;\
 			}\
 		} else{\
-			for( ; first < last; first++, val++,i++){\
+			for( ; first < last; first++,i++){\
 				MOSskipit();\
 				v = val | decompress(base,i,bits);\
 				value =  (TPE) ((TPE2)val |(TPE2) v);\
