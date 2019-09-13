@@ -2030,7 +2030,7 @@ rel_revoke_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *g
 }
 
 static sql_rel *
-rel_revoke_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *typelist, int type, dlist *grantees, int grant, int grantor)
+rel_revoke_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *typelist, sql_ftype type, dlist *grantees, int grant, int grantor)
 {
 	dnode *gn;
 	sql_rel *res = NULL;
@@ -2108,7 +2108,7 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 		dlist *r = obj->data.lval;
 		dlist *qname = r->h->data.lval;
 		dlist *typelist = r->h->next->data.lval;
-		int type = r->h->next->next->data.i_val;
+		sql_ftype type = (sql_ftype) r->h->next->next->data.i_val;
 
 		return rel_revoke_func(sql, cur, obj_privs, qname, typelist, type, grantees, grant, grantor);
 	}
