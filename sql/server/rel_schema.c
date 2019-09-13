@@ -1846,7 +1846,7 @@ rel_grant_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *gr
 }
 
 static sql_rel *
-rel_grant_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *typelist, int type, dlist *grantees, int grant, int grantor)
+rel_grant_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *typelist, sql_ftype type, dlist *grantees, int grant, int grantor)
 {
 	sql_rel *res = NULL;
 	dnode *gn;
@@ -1923,7 +1923,7 @@ rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int gr
 		dlist *r = obj->data.lval;
 		dlist *qname = r->h->data.lval;
 		dlist *typelist = r->h->next->data.lval;
-		int type = r->h->next->next->data.i_val;
+		sql_ftype type = (int) r->h->next->next->data.i_val;
 
 		return rel_grant_func(sql, cur, obj_privs, qname, typelist, type, grantees, grant, grantor);
 	}
