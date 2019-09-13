@@ -53,8 +53,6 @@ MOSlayout_prefix(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 	int size = ATOMsize(task->type);
 	char buf[32];
 
-	if( ATOMstorage(task->type == TYPE_str))
-			size =task->bsrc->twidth;
 	input = cnt * ATOMsize(task->type);
 	switch(size){
 	case 1:
@@ -111,8 +109,6 @@ MOSadvance_prefix(MOStask task)
 	int size;
 
 	size = ATOMsize(task->type);
-	if( ATOMstorage(task->type == TYPE_str))
-			size =task->bsrc->twidth;
 	task->start += MOSgetCnt(task->blk);
 	task->stop = task->stop;
 	switch(size){
@@ -292,8 +288,6 @@ MOSestimate_prefix(MOStask task)
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
 
 	size = ATOMsize(task->type);
-	if( ATOMstorage(task->type == TYPE_str))
-			size =task->bsrc->twidth;
 	if( task->stop >= 2)
 	switch(size){
 	case 1:
@@ -449,8 +443,6 @@ MOScompress_prefix(MOStask task)
 	MOSsetTag(blk, MOSAIC_PREFIX);
 
 	size = ATOMsize(task->type);
-	if( ATOMstorage(task->type == TYPE_str))
-			size =task->bsrc->twidth;
 	limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
 	if( task->stop >=2 )
 	switch(size){
@@ -549,8 +541,6 @@ MOSdecompress_prefix(MOStask task)
 	BitVector base;
 
 	size = ATOMsize(task->type);
-	if( ATOMstorage(task->type == TYPE_str))
-			size =task->bsrc->twidth;
 	lim= MOSgetCnt(blk);
 	switch(size){
 	case 1:
@@ -882,15 +872,6 @@ break;
 #ifdef HAVE_HGE
 		case TYPE_hge: projection_prefix(hge, unsigned long long); break;
 #endif
-	case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->bsrc->twidth){
-		case 1: projection_prefix(bte, unsigned char); break;
-		case 2: projection_prefix(sht, unsigned short); break;
-		case 4: projection_prefix(int, unsigned int); break;
-		case 8: projection_prefix(lng, ulng); break;
-		}
-		break;
 	}
 	MOSskip_prefix(task);
 	return MAL_SUCCEED;
@@ -941,14 +922,6 @@ MOSjoin_prefix( MOStask task)
 #ifdef HAVE_HGE
 		case TYPE_hge: join_prefix(hge,unsigned long long); break;
 #endif
-		case  TYPE_str:
-		// we only have to look at the index width, not the values
-		switch(task->bsrc->twidth){
-		case 1: join_prefix(bte, unsigned char); break;
-		case 2: join_prefix(sht, unsigned short); break;
-		case 4: join_prefix(int, unsigned int); break;
-		case 8: join_prefix(lng, ulng); break;
-		}
 	}
 	MOSskip_prefix(task);
 	return MAL_SUCCEED;

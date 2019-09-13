@@ -42,12 +42,21 @@ bool type_allowed(int compression, BAT* b) {
 	return false;
 }
 
-static void
+static bool
 MOSinitializeFilter(MOStask task, const char* compressions) {
+
+	if (ATOMbasetype(task->type) != ATOMstorage(task->type)) {
+		// don't compress if the storage and base types are not the same.
+		return false;
+	}
+
+	bool is_not_compressible = true;
+
 	if (!GDK_STRNIL(compressions)) {
 		for(int i = 0; i< MOSAIC_METHODS-1; i++) {
 				if ( (task->filter[i] = strstr(compressions, MOSfiltername[i]) != 0 && type_allowed(i, task->bsrc)) ) {
 					task->hdr->elms[i] = task->hdr->blks[i] = 0;
+					is_not_compressible = false;
 				}
 		}
 	}
@@ -55,9 +64,12 @@ MOSinitializeFilter(MOStask task, const char* compressions) {
 		for(int i = 0; i< MOSAIC_METHODS-1; i++) {
 				if ( (task->filter[i] = type_allowed(i, task->bsrc)) ) {
 					task->hdr->elms[i] = task->hdr->blks[i] = 0;
+					is_not_compressible = false;
 				}
 		}
 	}
+
+	return is_not_compressible;
 }
 
 static void
@@ -254,28 +266,8 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	MOStask task;
 	str msg = MAL_SUCCEED;
 	int cand;
-	int tpe, typewidth;
+	int typewidth;
 	lng t0,t1;
-
-	switch( tpe =ATOMbasetype(bsrc->ttype)){
-	case TYPE_bit:
-	case TYPE_bte:
-	case TYPE_sht:
-	case TYPE_int:
-	case TYPE_lng:
-#ifdef HAVE_HGE
-	case TYPE_hge:
-#endif
-	case TYPE_oid:
-	case TYPE_flt:
-	case TYPE_dbl:
-	case TYPE_str:
-		typewidth = ATOMsize(tpe) * 8; // size in bits
-		break;
-	default:
-		// don't compress it
-		return MAL_SUCCEED;
-	}
 
   if (BATcheckmosaic(bsrc)){
 		/* already compressed */
@@ -317,12 +309,13 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	MOSinit(task,bsrc);
 	task->blk->cnt= 0;
 	MOSinitHeader(task);
-	MOSinitializeFilter(task, compressions);
-
-	if( msg != MAL_SUCCEED){
-		GDKfree(task);
-		throw(MAL, "mosaic.compress", "Can not claim server");
+	if (MOSinitializeFilter(task, compressions)) {
+		msg = createException(MAL, "mosaic.compress", "No valid compression technique given or available for type: %s", ATOMname(task->type));
+		goto finalize;
 	}
+
+	typewidth = ATOMsize(task->type) * CHAR_BIT;
+
 	if( task->filter[MOSAIC_DICT])
 		MOScreatedictionary(task);
 	if( task->filter[MOSAIC_CALENDAR])
@@ -335,7 +328,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 		cand = MOSoptimizerCost( task, typewidth);
 		if( task->dst >= bsrc->tmosaic->base + bsrc->tmosaic->size - 2 * MosaicBlkSize ){
 			MOSdestroy(bsrc);
-			msg= createException(MAL,"mosaic","abort compression due to size");
+			msg= createException(MAL,"mosaic.compress","abort compression due to size");
 			task->hdr = 0;
 			goto finalize;
 		}
@@ -579,8 +572,6 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 		break;
 	case TYPE_dbl:
 		error = task->hdr->checksum.sumdbl != task->hdr->checksum2.sumdbl;
-		break;
-	case TYPE_str:
 		break;
 	}
 	if(error) {

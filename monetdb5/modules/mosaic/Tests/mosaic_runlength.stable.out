@@ -613,25 +613,6 @@ stdout of test 'mosaic_runlength` in directory 'monetdb5/modules/mosaic` itself:
 [ 12@0,	"goodbye"  ]
 [ 13@0,	"goodbye"  ]
 [ 14@0,	"goodbye"  ]
-#--------------------------#
-# h	t  # name
-# void	str  # type
-#--------------------------#
-[ 0@0,	"hello world"  ]
-[ 1@0,	"hello world"  ]
-[ 2@0,	"hello world"  ]
-[ 3@0,	"hello world"  ]
-[ 4@0,	"hello world"  ]
-[ 5@0,	"hello world"  ]
-[ 6@0,	"hello world"  ]
-[ 7@0,	"hello world"  ]
-[ 8@0,	"hello world"  ]
-[ 9@0,	"hello world"  ]
-[ 10@0,	"goodbye"  ]
-[ 11@0,	"goodbye"  ]
-[ 12@0,	"goodbye"  ]
-[ 13@0,	"goodbye"  ]
-[ 14@0,	"goodbye"  ]
 
 # 20:55:33 >  
 # 20:55:33 >  "Done."

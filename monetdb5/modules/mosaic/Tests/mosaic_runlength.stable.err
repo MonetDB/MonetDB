@@ -17,14 +17,237 @@ stderr of test 'mosaic_runlength` in directory 'monetdb5/modules/mosaic` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 37588
-# cmdline opt 	mapi_usock = /var/tmp/mtest-15513/.s.monetdb.37588
-# cmdline opt 	monet_prompt = 
-# cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbpath = /export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal
-# cmdline opt 	gdk_debug = 536870922
+# cmdline opt 	mapi_port = 30179
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1201/.s.monetdb.30179
+# cmdline opt 	gdk_dbpath = /home/aris/sources/monetdb/build/installation/var/MonetDB/mTests_monetdb5_modules_mosaic
+# cmdline opt 	embedded_c = true
+#client2:!ERROR:MALException:mosaic.compress:No valid compression technique given or available for type: str
 
-# 20:55:33 >  
-# 20:55:33 >  "Done."
-# 20:55:33 >  
+# 16:49:24 >  
+# 16:49:24 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-1201" "--port=30179"
+# 16:49:24 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1201/.s.monetdb.30179
+QUERY = # OID list compressions
+        
+        o := 19531025:int;
+        
+        b:= bat.new(:int);
+        bat.append(b,50);
+        bat.append(b,50);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,o);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        bat.append(b,9);
+        b:= bat.append(b,b);
+        base:= algebra.copy(b);
+        
+        io.print(base);
+        mosaic.compress(b,"runlength");
+        b:= mosaic.decompress(b);
+        io.print(b);
+        # OID list compressions
+        
+        
+        o := 19531025:int;
+        
+        f:= bat.new(:flt);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.317);
+        bat.append(f,0.317);
+        bat.append(f,0.317);
+        bat.append(f,0.317);
+        bat.append(f,0.317);
+        bat.append(f,0.317);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.314);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.316);
+        bat.append(f,0.317);
+        bat.append(f,0.317);
+        bat.append(f,0.317);
+        bat.append(f,0.317);
+        bat.append(f,0.317);
+        bat.append(f,0.317);
+        
+        
+        io.print(f);
+        mosaic.compress(f,"runlength");
+        f:= mosaic.decompress(f);
+        io.print(f);
+        
+        bs:= bat.new(:timestamp);
+        bat.append(bs,"2014-08-14 12:00:00":timestamp);
+        bat.append(bs,"2014-08-14 12:00:00":timestamp);
+        bat.append(bs,"2014-08-14 12:00:00":timestamp);
+        bat.append(bs,"2014-08-14 12:00:00":timestamp);
+        bat.append(bs,"2014-08-14 12:00:00":timestamp);
+        bat.append(bs,"2014-08-14 12:01:00":timestamp);
+        bat.append(bs,"2014-08-14 12:02:00":timestamp);
+        bs:= bat.append(bs,bs);
+        
+        io.print(bs);
+        mosaic.compress(bs,"runlength");
+        bs:= mosaic.decompress(bs);
+        io.print(bs);
+        
+        d:= bat.new(:date);
+        bat.append(d,"2014-08-14":date);
+        bat.append(d,"2014-08-14":date);
+        bat.append(d,"2014-08-14":date);
+        bat.append(d,"2014-08-14":date);
+        bat.append(d,"2014-08-15":date);
+        d:= bat.append(d,d);
+        
+        io.print(d);
+        mosaic.compress(d,"runlength");
+        d:= mosaic.decompress(d);
+        io.print(d);
+        
+        
+        # handle compression of strings
+        s:= bat.new(:str);
+        bat.append(s,"hello world");
+        bat.append(s,"hello world");
+        bat.append(s,"hello world");
+        bat.append(s,"hello world");
+        bat.append(s,"hello world");
+        bat.append(s,"hello world");
+        bat.append(s,"hello world");
+        bat.append(s,"hello world");
+        bat.append(s,"hello world");
+        bat.append(s,"hello world");
+        bat.append(s,"goodbye");
+        bat.append(s,"goodbye");
+        bat.append(s,"goodbye");
+        bat.append(s,"goodbye");
+        bat.append(s,"goodbye");
+        
+        io.print(s);
+        mosaic.compress(s);
+        s:= mosaic.decompress(s);
+        io.print(s);
+ERROR = !MALException:mosaic.compress:No valid compression technique given or available for type: str
+
+
+
+# 16:49:24 >  
+# 16:49:24 >  "Done."
+# 16:49:24 >  
 
