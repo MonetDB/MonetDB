@@ -82,7 +82,7 @@ BATmosaic(BAT *bn, BUN cap)
 			GDKfree(m);
 			return GDK_FAIL;
 		}
-	strncpy(m->filename, fname, sizeof(m->filename));
+	strncpy((char*) m->filename, fname, sizeof(m->filename));
 	
     if( HEAPalloc(m, cap, Tsize(bn)) != GDK_SUCCEED){
         return GDK_FAIL;
