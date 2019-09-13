@@ -13,7 +13,7 @@
 #include "mtime.h"
 
 /* (c) M.L. Kersten
- * The query runtime monitor facility is hardwired 
+ * The query runtime monitor facility is hardwired
 */
 
 str
@@ -177,7 +177,7 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "SYSMONresume", "type hge not handled, yet");
 #endif
 	default:
-		throw(MAL, "SYSMONpause", "Pause requires integer");
+		throw(MAL, "SYSMONresume", "Resume requires integer");
 	}
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; QRYqueue[i].tag; i++)
@@ -207,7 +207,7 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "SYSMONstop", "type hge not handled, yet");
 #endif
 	default:
-		throw(MAL, "SYSMONpause", "Pause requires integer");
+		throw(MAL, "SYSMONstop", "Stop requires integer");
 	}
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; QRYqueue[i].tag; i++)

@@ -177,6 +177,9 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
  * to see if forking makes sense, or whether it is necessary at all, or
  * forbidden by restart policy, e.g. when in maintenance.
  */
+
+#define MAX_NR_ARGS 511
+
 err
 forkMserver(char *database, sabdb** stats, int force)
 {
@@ -212,7 +215,9 @@ forkMserver(char *database, sabdb** stats, int force)
 	char *embeddedc = NULL;
 	char *ipv6 = NULL;
 	char *dbextra = NULL;
-	char *argv[512];	/* for the exec arguments */
+	char *mserver5_extra = NULL;
+	char *mserver5_extra_token = NULL;
+	char *argv[MAX_NR_ARGS+1];	/* for the exec arguments */
 	char property_other[1024];
 	int c = 0;
 	unsigned int mport;
@@ -601,6 +606,11 @@ forkMserver(char *database, sabdb** stats, int force)
 		}
 		list++;
 	}
+
+	/* Let's get extra mserver5 args from the environment */
+	mserver5_extra = getenv("MSERVER5_EXTRA_ARGS");
+	while (c < MAX_NR_ARGS && (mserver5_extra_token = strsep(&mserver5_extra, " ")))
+		argv[c++] = mserver5_extra_token;
 
 	argv[c++] = NULL;
 
