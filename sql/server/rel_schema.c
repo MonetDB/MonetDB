@@ -2226,12 +2226,12 @@ current_or_designated_schema(mvc *sql, char *name) {
 
 	s = mvc_bind_schema(sql, name);
 	if (!s) {
-		sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", name);
+		sql_error(sql, 02, SQLSTATE(3F000) "COMMENT ON:no such schema: %s", name);
 		return NULL;
 	}
 
 	if (strcmp(s->base.name, "tmp") == 0) {
-		sql_error(sql, 2, "3F000!COMMENT ON tmp object not allowed");
+		sql_error(sql, 2, SQLSTATE(3F000) "COMMENT ON tmp object not allowed");
 		return NULL;
 	}
 
@@ -2246,7 +2246,7 @@ rel_find_designated_schema(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	assert(sym->type == type_string);
 	sname = sym->data.sval;
 	if (!(s = mvc_bind_schema(sql, sname))) {
-		sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
+		sql_error(sql, 02, SQLSTATE(3F000) "COMMENT ON:no such schema: %s", sname);
 		return 0;
 	}
 
@@ -2273,7 +2273,7 @@ rel_find_designated_table(mvc *sql, symbol *sym, sql_schema **schema_out) {
 		return t->base.id;
 	}
 
-	sql_error(sql, 02, "42S02!COMMENT ON:no such %s: %s.%s",
+	sql_error(sql, 02, SQLSTATE(42S02) "COMMENT ON:no such %s: %s.%s",
 		want_table ? "table" : "view",
 		s->base.name, tname);
 	return 0;
@@ -2306,11 +2306,11 @@ rel_find_designated_column(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	if (!(s = current_or_designated_schema(sql, sname)))
 		return 0;
 	if (!(t = mvc_bind_table(sql, s, tname))) {
-		sql_error(sql, 02, "42S02!COMMENT ON:no such table: %s.%s", s->base.name, tname);
+		sql_error(sql, 02, SQLSTATE(42S02) "COMMENT ON:no such table: %s.%s", s->base.name, tname);
 		return 0;
 	}
 	if (!(c = mvc_bind_column(sql, t, cname))) {
-		sql_error(sql, 02, "42S22!COMMENT ON:no such column: %s.%s", tname, cname);
+		sql_error(sql, 02, SQLSTATE(42S12) "COMMENT ON:no such column: %s.%s", tname, cname);
 		return 0;
 	}
 	*schema_out = s;
@@ -2335,7 +2335,7 @@ rel_find_designated_index(mvc *sql, symbol *sym, sql_schema **schema_out) {
 		return idx->base.id;
 	}
 
-	sql_error(sql, 02, "42S12!COMMENT ON:no such index: %s.%s",
+	sql_error(sql, 02, SQLSTATE(42S12) "COMMENT ON:no such index: %s.%s",
 		s->base.name, iname);
 	return 0;
 }
@@ -2360,7 +2360,7 @@ rel_find_designated_sequence(mvc *sql, symbol *sym, sql_schema **schema_out) {
 		return seq->base.id;
 	}
 
-	sql_error(sql, 02, "42000!COMMENT ON:no such sequence: %s.%s",
+	sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON:no such sequence: %s.%s",
 		s->base.name, seqname);
 	return 0;
 }
@@ -2399,7 +2399,7 @@ rel_find_designated_routine(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	}
 
 	if (sql->errstr[0] == '\0')
-		sql_error(sql, 02, "42000!COMMENT ON:no such routine: %s.%s", s->base.name, fname);
+		sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON:no such routine: %s.%s", s->base.name, fname);
 	return 0;
 }
 
@@ -2426,7 +2426,7 @@ rel_find_designated_object(mvc *sql, symbol *sym, sql_schema **schema_out)
 	case SQL_ROUTINE:
 		return rel_find_designated_routine(sql, sym, schema_out);
 	default:
-		sql_error(sql, 2, "42000!COMMENT ON %s is not supported", token2string(sym->token));
+		sql_error(sql, 2, SQLSTATE(42000) "COMMENT ON %s is not supported", token2string(sym->token));
 		return 0;
 	}
 }
