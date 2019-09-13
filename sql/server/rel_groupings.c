@@ -14,12 +14,15 @@
 #include "rel_rel.h"
 #include "sql_relation.h"
 #include "sql_mvc.h"
+#include "mal_errors.h" /* for SQLSTATE() */
 
 sql_rel *
 rel_generate_groupings(mvc *sql, sql_rel *rel)
 {
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
 	if (!rel)
-		return rel;
+		return NULL;
 
 	switch (rel->op) {
 		case op_basetable:

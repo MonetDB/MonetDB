@@ -48,7 +48,7 @@ QUERY = SELECT
             Product_Category, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
         FROM tbl_ProductSales
         GROUP BY ROLLUP(Product_Category), 1+1; --error, group by with expressions and rollup/cube not possible right now
-ERROR = !Group by with expressions not possible with ROLLUP, CUBE, GROUPING SETS
+ERROR = !GROUP BY: grouping expressions not possible with ROLLUP, CUBE and GROUPING SETS
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-27686/.s.monetdb.30278
 QUERY = SELECT

@@ -4593,7 +4593,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 	list *exps = new_exp_list(sql->sa);
 
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return sql_error(sql, 10, SQLSTATE(42000) "SELECT: too many nested grouping clauses");
 
 	for (dnode *o = groupby->data.lval->h; o; o = o->next) {
 		symbol *grouping = o->data.sym;
@@ -4630,7 +4630,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 							return NULL;
 						if (e->type != e_column) { /* store group by expressions in the stack */
 							if (is_sql_group_totals(f)) {
-								(void) sql_error(sql, 02, SQLSTATE(42000) "Group by with expressions not possible with ROLLUP, CUBE, GROUPING SETS");
+								(void) sql_error(sql, 02, SQLSTATE(42000) "GROUP BY: grouping expressions not possible with ROLLUP, CUBE and GROUPING SETS");
 								return NULL;
 							}
 							if (!stack_push_groupby_expression(sql, grp, e))
