@@ -838,6 +838,7 @@ AS_VAR_IF([enable_assert], [no], [
 	AC_MSG_RESULT([no])],
 	[AC_MSG_RESULT([yes])])
 
+AM_CONDITIONAL([HAVE_MAL_DEBUGGER], [test "x$enable_assert" != xno])
 
 AC_MSG_CHECKING([for --enable-optimize])
 AS_CASE([$enable_optimize], [yes], [
