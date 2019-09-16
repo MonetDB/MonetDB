@@ -121,8 +121,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		char *nme;
 		struct stat st;
 
-		if(!(nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL))) {
-			GDKerror("HEAPalloc: malloc failure");
+		if ((nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL)) == NULL) {
 			return GDK_FAIL;
 		}
 		if (stat(nme, &st) < 0) {
