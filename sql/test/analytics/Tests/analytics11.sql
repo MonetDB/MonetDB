@@ -187,6 +187,51 @@ FROM another_T
 GROUP BY ROLLUP(col1);
 
 SELECT
+    col1 IN (SELECT SUM(ColID + col1) FROM tbl_ProductSales)
+FROM another_T
+GROUP BY ROLLUP(col1);
+
+SELECT
+    col3 > ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col4) > 30)
+FROM another_T
+GROUP BY ROLLUP(col3, col4);
+
+SELECT
+    col1 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col2) IS NULL)
+FROM another_T
+GROUP BY CUBE(col1, col2);
+
+SELECT
+    SUM(col1) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2)
+FROM another_T
+GROUP BY CUBE(col4);
+
+SELECT
+    GROUPING(col6, col7) IN (SELECT SUM(col2) FROM another_T GROUP BY col5),
+    NOT GROUPING(col7, col6) IN (SELECT col3 FROM another_T)
+FROM another_T
+GROUP BY CUBE(col7, col6);
+
+SELECT
+    NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2),
+    NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL),
+    NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col1) IS NOT NULL OR MIN(col1) < MIN(col2)),
+    CAST (NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) | CAST (col2 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER),
+    CAST (EXISTS (SELECT MAX(col5) * MAX(col4) FROM another_T GROUP BY col5, col4) AS INTEGER) & CAST (GROUPING(col1, col5) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2) AS INTEGER)
+FROM another_T
+GROUP BY CUBE(col1, col2, col5);
+
+SELECT
+    DISTINCT
+    NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2),
+    NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL),
+    NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col1) IS NOT NULL OR MIN(col1) < MIN(col2)),
+    CAST (NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) | CAST (col2 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER),
+    CAST (EXISTS (SELECT MAX(col5) * MAX(col4) FROM another_T GROUP BY col5, col4) AS INTEGER) & CAST (GROUPING(col1, col5) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2) AS INTEGER)
+FROM another_T
+GROUP BY CUBE(col1, col2, col5);
+
+SELECT
     GROUPING(col1, col2, col5, col8),
     col1 IN (SELECT ColID + col2 FROM tbl_ProductSales),
     col1 < ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales),
