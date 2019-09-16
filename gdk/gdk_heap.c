@@ -119,35 +119,12 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	}
 	if (!GDKinmemory() && h->base == NULL) {
 		char *nme;
-		struct stat st;
 
-		if ((nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL)) == NULL) {
+		nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
+		if (nme == NULL)
 			return GDK_FAIL;
-		}
-		if (stat(nme, &st) < 0) {
-			h->storage = STORE_MMAP;
-			h->base = HEAPcreatefile(NOFARM, &h->size, nme);
-		} else {
-			int fd;
-
-			fd = GDKfdlocate(NOFARM, nme, "wb", NULL);
-			if (fd >= 0) {
-				char of[sizeof(h->filename)];
-				char *ext;
-				close(fd);
-				strncpy(of, h->filename, sizeof(of));
-#ifdef STATIC_CODE_ANALYSIS
-				/* help coverity */
-				of[sizeof(h->filename) - 1] = 0;
-#endif
-				ext = decompose_filename(of);
-				h->newstorage = STORE_MMAP;
-				if (HEAPload(h, of, ext, false) != GDK_SUCCEED)
-					h->base = NULL; /* superfluous */
-				/* success checked by looking at
-				 * h->base below */
-			}
-		}
+		h->storage = STORE_MMAP;
+		h->base = HEAPcreatefile(NOFARM, &h->size, nme);
 		GDKfree(nme);
 	}
 	if (h->base == NULL) {
