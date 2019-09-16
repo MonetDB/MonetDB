@@ -1,0 +1,16 @@
+####technical depth####
+Check which compressions can handle bit/boolean types.
+Test null semantics
+Add test for float/double
+Add test for bit
+Remove task-factor and range->factor or refactor them.
+Somehow log/print which compression is being used.
+delta compression: check if the hardcoded compression expression are correct. See also (2)
+Use bit vectors more aggressively in mosaic_delta --- then resolve test mosaic_delta_timestamp --- and possibly other compression techniques as well.
+dictionary encoding should use the ordered property of its dictionary in the algebraic operators
+See if we can re-introduce landmark stuff somehow.
+
+####code issues####
+mosaic_prefix.c: prefix code does not use macro's!!!!
+mosaic_delta.c: improve the macro's: for instance get rid of hardcoded expression arguments in DELTAcompress. (2)
+mosaic_<compression>.c: for type macro's use macro-wised inline functions.
