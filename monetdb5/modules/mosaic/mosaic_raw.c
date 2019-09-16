@@ -50,8 +50,8 @@ MOSlayout_raw(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, 
 	case TYPE_bte: output = wordaligned( MosaicBlkSize + sizeof(bte)* MOSgetCnt(blk),bte); break;
 	case TYPE_sht: output = wordaligned( MosaicBlkSize + sizeof(sht)* MOSgetCnt(blk),sht); break;
 	case TYPE_int: output = wordaligned( MosaicBlkSize + sizeof(int)* MOSgetCnt(blk),int); break;
-	case TYPE_oid: output = wordaligned( MosaicBlkSize + sizeof(oid)* MOSgetCnt(blk),oid); break;
 	case TYPE_lng: output = wordaligned( MosaicBlkSize + sizeof(lng)* MOSgetCnt(blk),lng); break;
+	case TYPE_oid: output = wordaligned( MosaicBlkSize + sizeof(oid)* MOSgetCnt(blk),oid); break;
 	case TYPE_flt: output = wordaligned( MosaicBlkSize + sizeof(flt)* MOSgetCnt(blk),flt); break;
 	case TYPE_dbl: output = wordaligned( MosaicBlkSize + sizeof(dbl)* MOSgetCnt(blk),dbl); break;
 #ifdef HAVE_HGE
@@ -77,8 +77,8 @@ MOSadvance_raw(MOStask task)
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(bte)* MOSgetCnt(blk),bte)); break;
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(sht)* MOSgetCnt(blk),sht)); break;
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(int)* MOSgetCnt(blk),int)); break;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(oid)* MOSgetCnt(blk),oid)); break;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(lng)* MOSgetCnt(blk),lng)); break;
+	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(oid)* MOSgetCnt(blk),oid)); break;
 	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(flt)* MOSgetCnt(blk),flt)); break;
 	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(dbl)* MOSgetCnt(blk),dbl)); break;
 #ifdef HAVE_HGE
@@ -119,8 +119,8 @@ MOScompress_raw(MOStask task)
 	case TYPE_bte: RAWcompress(bte); break;
 	case TYPE_sht: RAWcompress(sht); break;
 	case TYPE_int: RAWcompress(int); break;
-	case TYPE_oid: RAWcompress(oid); break;
 	case TYPE_lng: RAWcompress(lng); break;
+	case TYPE_oid: RAWcompress(oid); break;
 	case TYPE_flt: RAWcompress(flt); break;
 	case TYPE_dbl: RAWcompress(dbl); break;
 #ifdef HAVE_HGE
@@ -153,8 +153,8 @@ MOSdecompress_raw(MOStask task)
 	case TYPE_bte: RAWdecompress(bte); break;
 	case TYPE_sht: RAWdecompress(sht); break;
 	case TYPE_int: RAWdecompress(int); break;
-	case TYPE_oid: RAWdecompress(oid); break;
 	case TYPE_lng: RAWdecompress(lng); break;
+	case TYPE_oid: RAWdecompress(oid); break;
 	case TYPE_flt: RAWdecompress(flt); break;
 	case TYPE_dbl: RAWdecompress(dbl); break;
 #ifdef HAVE_HGE
@@ -253,8 +253,8 @@ MOSselect_raw( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 	case TYPE_bte: select_raw(bte); break;
 	case TYPE_sht: select_raw(sht); break;
 	case TYPE_int: select_raw(int); break;
-	case TYPE_oid: select_raw(oid); break;
 	case TYPE_lng: select_raw(lng); break;
+	case TYPE_oid: select_raw(oid); break;
 	case TYPE_flt: select_raw(flt); break;
 	case TYPE_dbl: select_raw(dbl); break;
 #ifdef HAVE_HGE
@@ -329,8 +329,8 @@ MOSthetaselect_raw( MOStask task, void *val, str oper)
 	case TYPE_bte: thetaselect_raw(bte); break;
 	case TYPE_sht: thetaselect_raw(sht); break;
 	case TYPE_int: thetaselect_raw(int); break;
-	case TYPE_oid: thetaselect_raw(oid); break;
 	case TYPE_lng: thetaselect_raw(lng); break;
+	case TYPE_oid: thetaselect_raw(oid); break;
 	case TYPE_flt: thetaselect_raw(flt); break;
 	case TYPE_dbl: thetaselect_raw(dbl); break;
 #ifdef HAVE_HGE
@@ -367,8 +367,8 @@ MOSprojection_raw( MOStask task)
 		case TYPE_bte: projection_raw(bte); break;
 		case TYPE_sht: projection_raw(sht); break;
 		case TYPE_int: projection_raw(int); break;
-		case TYPE_oid: projection_raw(oid); break;
 		case TYPE_lng: projection_raw(lng); break;
+		case TYPE_oid: projection_raw(oid); break;
 		case TYPE_flt: projection_raw(flt); break;
 		case TYPE_dbl: projection_raw(dbl); break;
 #ifdef HAVE_HGE
@@ -407,8 +407,8 @@ MOSjoin_raw( MOStask task)
 		case TYPE_bte: join_raw(bte); break;
 		case TYPE_sht: join_raw(sht); break;
 		case TYPE_int: join_raw(int); break;
-		case TYPE_oid: join_raw(oid); break;
 		case TYPE_lng: join_raw(lng); break;
+		case TYPE_oid: join_raw(oid); break;
 		case TYPE_flt: join_raw(flt); break;
 		case TYPE_dbl: join_raw(dbl); break;
 #ifdef HAVE_HGE
