@@ -670,7 +670,7 @@ tablet_error(READERtask *task, lng row, int col, const char *msg, const char *fc
 			BUNappend(task->cntxt->error_msg, msg, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_input, fcn, false) != GDK_SUCCEED)
 			task->besteffort = 0;
-		if (!is_lng_nil(row) && task->rowerror)
+		if (!is_lng_nil(row) && task->rowerror && row < task->limit)
 			task->rowerror[row]++;
 	}
 	if (task->as->error == NULL) {

@@ -776,7 +776,7 @@ rel_create_function(sql_allocator *sa, const char *sname, sql_func *f)
 }
 
 static sql_rel *
-rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int type, int lang, int replace)
+rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, sql_ftype type, int lang, int replace)
 {
 	mvc *sql = query->sql;
 	const char *fname = qname_table(qname);
@@ -975,7 +975,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 }
 
 static sql_rel*
-rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr, int type, int action)
+rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr, sql_ftype type, int action)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -985,7 +985,7 @@ rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr
 	append(exps, exp_atom_clob(sa, sname));
 	append(exps, exp_atom_clob(sa, name));
 	append(exps, exp_atom_int(sa, nr));
-	append(exps, exp_atom_int(sa, type));
+	append(exps, exp_atom_int(sa, (int) type));
 	append(exps, exp_atom_int(sa, action));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -998,7 +998,7 @@ rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr
 }
 
 sql_func *
-resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int type, char *op, int if_exists)
+resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ftype type, char *op, int if_exists)
 {
 	sql_func *func = NULL;
 	list *list_func = NULL, *type_list = NULL;
@@ -1082,7 +1082,7 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int ty
 }
 
 static sql_rel* 
-rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type, int if_exists)
+rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftype type, int if_exists)
 {
 	const char *name = qname_table(qname);
 	const char *sname = qname_schema(qname);
@@ -1113,7 +1113,7 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 }
 
 static sql_rel* 
-rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, int type)
+rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 {
 	const char *name = qname_table(qname);
 	const char *sname = qname_schema(qname);
@@ -1469,7 +1469,7 @@ rel_psm(sql_query *query, symbol *s)
 	case SQL_CREATE_FUNC:
 	{
 		dlist *l = s->data.lval;
-		int type = l->h->next->next->next->next->next->data.i_val;
+		sql_ftype type = (sql_ftype) l->h->next->next->next->next->next->data.i_val;
 		int lang = l->h->next->next->next->next->next->next->data.i_val;
 		int repl = l->h->next->next->next->next->next->next->next->data.i_val;
 
@@ -1481,7 +1481,7 @@ rel_psm(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 		dlist *qname = l->h->data.lval;
 		dlist *typelist = l->h->next->data.lval;
-		int type = l->h->next->next->data.i_val;
+		sql_ftype type = (sql_ftype) l->h->next->next->data.i_val;
 		int if_exists = l->h->next->next->next->data.i_val;
 		int all = l->h->next->next->next->next->data.i_val;
 		int drop_action = l->h->next->next->next->next->next->data.i_val;

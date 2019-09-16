@@ -14,8 +14,9 @@
 #include "rel_prop.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
+#include "mal_errors.h" /* for SQLSTATE() */
 
-static int exps_have_freevar( list *exps );
+static int exps_have_freevar(mvc *sql, list *exps);
 
 /* check if the set is distinct for the set of free variables */
 static int
@@ -27,27 +28,32 @@ is_distinct_set(mvc *sql, sql_rel *rel, list *ad)
 }	
 
 int
-exp_has_freevar( sql_exp *e)
+exp_has_freevar(mvc *sql, sql_exp *e)
 {
+	if (THRhighwater()) {
+		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return 0;
+	}
+
 	if (is_freevar(e))
 		return 1;
 	switch(e->type) {
 	case e_cmp:
 		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
-			return (exps_have_freevar(e->l) || exps_have_freevar(e->r));
+			return (exps_have_freevar(sql, e->l) || exps_have_freevar(sql, e->r));
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			return (exp_has_freevar(e->l) || exps_have_freevar(e->r));
+			return (exp_has_freevar(sql, e->l) || exps_have_freevar(sql, e->r));
 		} else {
-			return (exp_has_freevar(e->l) || exp_has_freevar(e->r) || 
-			    (e->f && exp_has_freevar(e->f)));
+			return (exp_has_freevar(sql, e->l) || exp_has_freevar(sql, e->r) || 
+			    (e->f && exp_has_freevar(sql, e->f)));
 		}
 		break;
 	case e_convert: 
-		return exp_has_freevar(e->l);
+		return exp_has_freevar(sql, e->l);
 	case e_func: 
 	case e_aggr: 
 		if (e->l) 
-			return exps_have_freevar(e->l);
+			return exps_have_freevar(sql, e->l);
 		/* fall through */
 	case e_column: 
 	case e_atom: 
@@ -58,34 +64,43 @@ exp_has_freevar( sql_exp *e)
 }
 
 static int
-exps_have_freevar( list *exps )
+exps_have_freevar(mvc *sql, list *exps)
 {
 	node *n;
 
+	if (THRhighwater()) {
+		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return 0;
+	}
 	if (!exps)
 		return 0;
 	for(n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
-		if (exp_has_freevar(e))
+		if (exp_has_freevar(sql, e))
 			return 1;
 	}
 	return 0;
 }
 
 int
-rel_has_freevar( sql_rel *rel )
+rel_has_freevar(mvc *sql, sql_rel *rel)
 {
+	if (THRhighwater()) {
+		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return 0;
+	}
+
 	if (is_basetable(rel->op))
 		return 0;
 	else if (is_base(rel->op))
-		return exps_have_freevar(rel->exps) ||
-			(rel->l && rel_has_freevar(rel->l));
+		return exps_have_freevar(sql, rel->exps) ||
+			(rel->l && rel_has_freevar(sql, rel->l));
 	else if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op))
-		return exps_have_freevar(rel->exps) ||
-			(rel->l && rel_has_freevar(rel->l));
+		return exps_have_freevar(sql, rel->exps) ||
+			(rel->l && rel_has_freevar(sql, rel->l));
 	else if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op))
-		return exps_have_freevar(rel->exps) ||
-			rel_has_freevar(rel->l) || rel_has_freevar(rel->r);
+		return exps_have_freevar(sql, rel->exps) ||
+			rel_has_freevar(sql, rel->l) || rel_has_freevar(sql, rel->r);
 	return 0;
 }
 
@@ -104,6 +119,9 @@ static list * exps_freevar(mvc *sql, list *exps);
 static list *
 exp_freevar(mvc *sql, sql_exp *e)
 {
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+
 	switch(e->type) {
 	case e_column:
 		if (e->freevar)
@@ -150,6 +168,8 @@ exps_freevar(mvc *sql, list *exps)
 	node *n;
 	list *c = NULL;
 
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
 	if (!exps)
 		return NULL;
 	for (n = exps->h; n; n = n->next) {
@@ -165,6 +185,9 @@ static list *
 rel_freevar(mvc *sql, sql_rel *rel)
 {
 	list *lexps = NULL, *rexps = NULL, *exps = NULL;
+
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
 	if (!rel)
 		return NULL;
 	switch(rel->op) {
@@ -226,7 +249,7 @@ rel_dependent_var(mvc *sql, sql_rel *l, sql_rel *r)
 {
 	list *res = NULL;
 
-	if (rel_has_freevar(r)){
+	if (rel_has_freevar(sql, r)){
 		list *freevar = rel_freevar(sql, r);
 		if (freevar) {
 			node *n;
@@ -292,6 +315,9 @@ push_up_project_exps(mvc *sql, sql_rel *rel, list *exps)
 static sql_exp *
 push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 {
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+
 	switch(e->type) {
 	case e_cmp:
 		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
@@ -319,7 +345,7 @@ push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 		break;
 	case e_column: 
 		{
-		    	sql_exp *ne;
+			sql_exp *ne;
 
 			/* include project or just lookup */	
 			if (e->l) {
@@ -404,7 +430,7 @@ push_up_project(mvc *sql, sql_rel *rel)
 				sql_exp *e = m->data;
 
 				if (!e->freevar || exp_name(e)) { /* only skip full freevars */
-					if (exp_has_freevar(e)) 
+					if (exp_has_freevar(sql, e)) 
 						rel_bind_var(sql, rel->l, e);
 				}
 				append(n->exps, e);
@@ -474,7 +500,7 @@ push_up_select(mvc *sql, sql_rel *rel)
 				sql_exp *e = n->data;
 
 				e = exp_copy(sql->sa, e);
-				if (exp_has_freevar(e)) 
+				if (exp_has_freevar(sql, e)) 
 					rel_bind_var(sql, rel->l, e);
 				rel_join_add_exp(sql->sa, rel, e);
 			}
@@ -540,7 +566,7 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 					append(e->l=sa_list(sql->sa), col);
 					set_no_nil(e);
 				}
-				if (exp_has_freevar(e)) 
+				if (exp_has_freevar(sql, e)) 
 					rel_bind_var(sql, rel->l, e);
 			}
 			r->exps = list_merge(r->exps, a, (fdup)NULL);
@@ -595,11 +621,11 @@ move_join_exps(mvc *sql, sql_rel *j, sql_rel *rel)
 		sql_exp *e = n->data;
 
 		if (rel_find_exp(rel, e)) {
-			if (exp_has_freevar(e)) 
+			if (exp_has_freevar(sql, e))
 				rel_bind_var(sql, rel->l, e);
 			append(rel->exps, e);
 		} else {
-			if (exp_has_freevar(e)) 
+			if (exp_has_freevar(sql, e))
 				rel_bind_var(sql, j->l, e);
 			append(j->exps, e);
 		}
@@ -614,7 +640,7 @@ push_up_select_l(mvc *sql, sql_rel *rel)
 	if (rel && (is_join(rel->op) || is_semi(rel->op))) {
 		sql_rel *l = rel->l;
 
-		if (is_select(l->op) && rel_has_freevar(l) && !rel_is_ref(l) ) {
+		if (is_select(l->op) && rel_has_freevar(sql, l) && !rel_is_ref(l) ) {
 			/* push up select (above join) */
 			rel->l = l->l;
 			l->l = rel;
@@ -641,7 +667,7 @@ push_up_join(mvc *sql, sql_rel *rel)
 			 * */
 			list *rd = NULL, *ld = NULL; 
 
-			if (is_semi(j->op) && is_select(jl->op) && rel_has_freevar(jl) && !rel_is_ref(jl)) {
+			if (is_semi(j->op) && is_select(jl->op) && rel_has_freevar(sql, jl) && !rel_is_ref(jl)) {
 				rel->r = j = push_up_select_l(sql, j);
 				return rel; /* ie try again */
 			}
@@ -844,6 +870,9 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 {
 	sql_rel *nrel = rel;
 
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+
 	/* current unnest only possible for equality joins, <, <> etc needs more work */
 	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
 		/* howto find out the left is a set */
@@ -852,17 +881,17 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 		l = rel->l;
 		r = rel->r;
 
-		if (rel_has_freevar(l))
+		if (rel_has_freevar(sql, l))
 			rel->l = rel_unnest_dependent(sql, rel->l);
 
-		if (!rel_has_freevar(r)) {
+		if (!rel_has_freevar(sql, r)) {
 			reset_dependent(rel);
 			/* reintroduce selects, for freevar's of other dependent joins */
 			return push_down_select(sql, rel);
 		}
 
 		/* try to push dependent join down */
-		if (rel_has_freevar(r)){
+		if (rel_has_freevar(sql, r)){
 			list *ad = rel_dependent_var(sql, rel->l, rel->r);
 
 			if (r && is_simple_project(r->op)) {
@@ -925,6 +954,8 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 sql_rel *
 rel_unnest(mvc *sql, sql_rel *rel)
 {
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
 	if (!rel)
 		return rel;
 

@@ -55,16 +55,16 @@ extern sql_subaggr *sql_find_aggr(sql_allocator *sa, sql_schema *s, const char *
 extern int subaggr_cmp( sql_subaggr *a1, sql_subaggr *a2);
 
 extern int subfunc_cmp( sql_subfunc *f1, sql_subfunc *f2);
-extern sql_subfunc *sql_find_func_by_name(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, int type);
-extern sql_subfunc *sql_find_func(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, int type, sql_subfunc *prev);
-extern list *sql_find_funcs(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, int type);
+extern sql_subfunc *sql_find_func_by_name(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, sql_ftype type);
+extern sql_subfunc *sql_find_func(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, sql_ftype type, sql_subfunc *prev);
+extern list *sql_find_funcs(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, sql_ftype type);
 extern sql_subfunc *sql_bind_member(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *tp, int nrargs, sql_subfunc *prev);
-extern sql_subfunc *sql_bind_func(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *tp1, sql_subtype *tp2, int type);
-extern sql_subfunc *sql_bind_func3(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, int type);
+extern sql_subfunc *sql_bind_func(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type);
+extern sql_subfunc *sql_bind_func3(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_ftype type);
 extern sql_subfunc *sql_bind_func_result(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *res);
 extern sql_subfunc *sql_bind_func_result3(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_subtype *res);
 
-extern sql_subfunc *sql_bind_func_(sql_allocator *sa, sql_schema *s, const char *name, list *ops, int type);
+extern sql_subfunc *sql_bind_func_(sql_allocator *sa, sql_schema *s, const char *name, list *ops, sql_ftype type);
 
 extern sql_subfunc* sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member);
 
