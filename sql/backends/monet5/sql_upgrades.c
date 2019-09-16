@@ -82,7 +82,7 @@ sql_fix_system_tables(Client c, mvc *sql)
 				" %d, %d, %s, %s, %s, %d, %s);\n",
 				func->base.id, func->base.name,
 				func->imp, func->mod, FUNC_LANG_INT,
-				func->type,
+				(int) func->type,
 				func->side_effect ? "true" : "false",
 				func->varres ? "true" : "false",
 				func->vararg ? "true" : "false",
@@ -149,7 +149,7 @@ sql_fix_system_tables(Client c, mvc *sql)
 				" (%d, '%s', '%s', '%s', %d, %d, false,"
 				" %s, %s, %d, %s);\n",
 				aggr->base.id, aggr->base.name, aggr->imp,
-				aggr->mod, FUNC_LANG_INT, aggr->type,
+				aggr->mod, FUNC_LANG_INT, (int) aggr->type,
 				aggr->varres ? "true" : "false",
 				aggr->vararg ? "true" : "false",
 				aggr->s ? aggr->s->base.id : s->base.id,

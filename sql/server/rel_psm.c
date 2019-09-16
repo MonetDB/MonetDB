@@ -1469,7 +1469,7 @@ rel_psm(sql_query *query, symbol *s)
 	case SQL_CREATE_FUNC:
 	{
 		dlist *l = s->data.lval;
-		int type = l->h->next->next->next->next->next->data.i_val;
+		sql_ftype type = (sql_ftype) l->h->next->next->next->next->next->data.i_val;
 		int lang = l->h->next->next->next->next->next->next->data.i_val;
 		int repl = l->h->next->next->next->next->next->next->next->data.i_val;
 
