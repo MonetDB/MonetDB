@@ -305,6 +305,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	task->blk->cnt= 0;
 	MOSinitHeader(task);
 	if (MOSinitializeFilter(task, compressions)) {
+		MOSdestroy(bsrc);
 		msg = createException(MAL, "mosaic.compress", "No valid compression technique given or available for type: %s", ATOMname(task->type));
 		goto finalize;
 	}
