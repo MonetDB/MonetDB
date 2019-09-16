@@ -18,8 +18,8 @@
 
 bool MOStypes_runlength(BAT* b) {
 	switch(b->ttype){
-	case TYPE_bte: return true;
 	case TYPE_bit: return true;
+	case TYPE_bte: return true;
 	case TYPE_sht: return true;
 	case TYPE_int: return true;
 	case TYPE_lng: return true;
@@ -46,8 +46,8 @@ MOSlayout_runlength(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *bou
 
 	input = cnt * ATOMsize(task->type);
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: output = wordaligned( MosaicBlkSize + sizeof(bte),bte); break;
 	case TYPE_bit: output = wordaligned( MosaicBlkSize + sizeof(bit),bit); break;
+	case TYPE_bte: output = wordaligned( MosaicBlkSize + sizeof(bte),bte); break;
 	case TYPE_sht: output = wordaligned( MosaicBlkSize + sizeof(sht),sht); break;
 	case TYPE_int: output = wordaligned( MosaicBlkSize + sizeof(int),int); break;
 	case TYPE_lng: output = wordaligned( MosaicBlkSize + sizeof(lng),lng); break;
@@ -73,8 +73,8 @@ MOSadvance_runlength(MOStask task)
 	task->start += MOSgetCnt(task->blk);
 	//task->stop = task->stop;
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(bte),bte)); break;
 	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(bit),bit)); break;
+	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(bte),bte)); break;
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(sht),sht)); break;
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(int),int)); break;
 	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(lng),lng)); break;
@@ -120,35 +120,17 @@ MOSestimate_runlength(MOStask task)
 	flt factor = 0.0;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: Estimate(bte); break;
 	case TYPE_bit: Estimate(bit); break;
+	case TYPE_bte: Estimate(bte); break;
 	case TYPE_sht: Estimate(sht); break;
-	case TYPE_oid: Estimate(oid); break;
+	case TYPE_int: Estimate(int); break;
 	case TYPE_lng: Estimate(lng); break;
+	case TYPE_oid: Estimate(oid); break;
 	case TYPE_flt: Estimate(flt); break;
 	case TYPE_dbl: Estimate(dbl); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: Estimate(hge); break;
 #endif
-	case TYPE_int:
-		{	int *v = ((int*)task->src)+ task->start, val = *v;
-			BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
-			if( task->range[MOSAIC_RLE] > task->start+1){
-				if( (i= task->range[MOSAIC_RLE] - task->start) * sizeof(int) < wordaligned(MosaicBlkSize + sizeof(int),int))
-					return 0.0;
-				factor = ((flt) i * sizeof(int))/ wordaligned(MosaicBlkSize + sizeof(int),int);
-				return factor;
-			}
-			for(v++,i =1; i<limit; i++, v++)
-			if ( *v != val)
-				break;
-			if( i *sizeof(int) <= wordaligned( MosaicBlkSize + sizeof(int),int) )
-				return 0.0;
-			if( task->dst +  wordaligned(MosaicBlkSize + sizeof(int),sizeof(int)) >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)
-				return 0.0;
-			factor = ( (flt)i * sizeof(int))/ wordaligned( MosaicBlkSize + sizeof(int),int);
-		}
-		break;
 	}
 	task->factor[MOSAIC_RLE] = factor;
 	task->range[MOSAIC_RLE] = task->start + i;
@@ -179,9 +161,10 @@ MOScompress_runlength(MOStask task)
 		MOSsetTag(blk, MOSAIC_RLE);
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: RLEcompress(bte); break;
 	case TYPE_bit: RLEcompress(bit); break;
+	case TYPE_bte: RLEcompress(bte); break;
 	case TYPE_sht: RLEcompress(sht); break;
+	case TYPE_int: RLEcompress(int); break;
 	case TYPE_lng: RLEcompress(lng); break;
 	case TYPE_oid: RLEcompress(oid); break;
 	case TYPE_flt: RLEcompress(flt); break;
@@ -189,7 +172,6 @@ MOScompress_runlength(MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: RLEcompress(hge); break;
 #endif
-	case TYPE_int: RLEcompress(int); break;
 	}
 }
 
@@ -213,8 +195,8 @@ MOSdecompress_runlength(MOStask task)
 
 	compressed = (char*) blk + MosaicBlkSize;
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: RLEdecompress(bte); break ;
-	case TYPE_bit: RLEdecompress(bit); break ;
+	case TYPE_bit: RLEdecompress(bit); break;
+	case TYPE_bte: RLEdecompress(bte); break;
 	case TYPE_sht: RLEdecompress(sht); break;
 	case TYPE_lng: RLEdecompress(lng); break;
 	case TYPE_oid: RLEdecompress(oid); break;
