@@ -112,6 +112,15 @@ GROUP BY col1, col2, col5;
 	-- False False 1 0
 	-- True  False 1 0
 
+SELECT
+	SUM(col1) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2)
+FROM another_T
+GROUP BY col4;
+	-- False
+	-- False
+	-- False
+	-- False
+
 INSERT INTO tbl_ProductSales VALUES (0, 'a', 'b', 0);
 SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1; 
 	-- True
