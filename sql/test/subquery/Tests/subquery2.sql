@@ -40,6 +40,45 @@ SELECT col1 IN (SELECT SUM(ColID + col1) FROM tbl_ProductSales) FROM another_T G
 	-- False
 	-- False
 
+SELECT
+	EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1),
+	(SELECT ColID FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5))
+FROM another_T GROUP BY col1, col2, col5, col8;
+	-- True  True
+	-- False True
+	-- False True
+	-- False True
+
+SELECT
+    col1 IN (SELECT ColID FROM tbl_ProductSales),
+	col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col8) IS NULL)
+FROM another_T GROUP BY col1, col2, col5, col8;
+	-- True  True
+	-- False True
+	-- False True
+	-- False True
+
+SELECT
+    col1 + col5 = (SELECT MIN(ColID) FROM tbl_ProductSales),
+    CAST(SUM(DISTINCT CASE WHEN col5 - col8 = (SELECT MIN(ColID / col2) FROM tbl_ProductSales) THEN col2 - 5 ELSE ABS(col1) END) AS BIGINT),
+    (SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5))
+FROM another_T
+GROUP BY col1, col2, col5, col8;
+	-- False 1    6
+	-- False 11   26
+	-- False 111  226
+	-- False 1111 2226
+
+SELECT
+    col1 + col5 = (SELECT MIN(ColID) FROM tbl_ProductSales),
+    MIN(col8) OVER (PARTITION BY col5 ORDER BY col1 ROWS UNBOUNDED PRECEDING)
+FROM another_T
+GROUP BY col1, col2, col5, col8;
+	-- False 8
+	-- False 88
+	-- False 888
+	-- False 8888
+
 INSERT INTO tbl_ProductSales VALUES (0, 'a', 'b', 0);
 SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1; 
 	-- True
