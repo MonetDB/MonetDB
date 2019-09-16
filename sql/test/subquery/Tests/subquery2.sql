@@ -34,12 +34,24 @@ SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP 
 	-- False
 	-- False
 
+SELECT col1 IN (SELECT SUM(ColID + col1) FROM tbl_ProductSales) FROM another_T GROUP BY col1;
+	-- False
+	-- False
+	-- False
+	-- False
+
 INSERT INTO tbl_ProductSales VALUES (0, 'a', 'b', 0);
 SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1; 
 	-- True
 	-- True
 	-- True
 	-- True
+
+SELECT col1 IN (SELECT col1 * SUM(ColID + col1) FROM tbl_ProductSales) FROM another_T GROUP BY col1;
+	-- False
+	-- False
+	-- False
+	-- False
 
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
