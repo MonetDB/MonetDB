@@ -1,0 +1,100 @@
+stdout of test 'python-loader-string.Bug-6759` in directory 'sql/test/BugTracker-2019` itself:
+
+
+# 10:43:16 >  
+# 10:43:16 >  "/usr/bin/python2" "python-loader-string.Bug-6759.py" "python-loader-string.Bug-6759"
+# 10:43:16 >  
+
+#CREATE LOADER json_loader() LANGUAGE PYTHON {
+#	import json
+#	_emit.emit(json.loads('{"col1": ["apple", "peer"], "col2": ["orange", "banana nananana"]}'))
+#};CREATE TABLE tbl FROM LOADER json_loader();SELECT * FROM tbl;
+#CREATE LOADER json_loader() LANGUAGE PYTHON {
+#	import json
+#	_emit.emit(json.loads('{"col1": ["apple", "peer"], "col2": ["orange", "banana nananana"]}'))
+#};CREATE TABLE tbl FROM LOADER json_loader();SELECT * FROM tbl;
+#CREATE LOADER json_loader() LANGUAGE PYTHON {
+#	import json
+#	_emit.emit(json.loads('{"col1": ["apple", "peer"], "col2": ["orange", "banana nananana"]}'))
+#};CREATE TABLE tbl FROM LOADER json_loader();SELECT * FROM tbl;
+% sys.tbl,	sys.tbl # table_name
+% col1,	col2 # name
+% clob,	clob # type
+% 5,	15 # length
+[ "apple",	"orange"	]
+[ "peer",	"banana nananana"	]
+START TRANSACTION;
+SET SCHEMA "sys";
+CREATE LOADER "sys"."json_loader"() LANGUAGE PYTHON
+{
+	import json
+	_emit.emit(json.loads('{"col1": ["apple", "peer"], "col2": ["orange", "banana nananana"]}'))
+};
+CREATE TABLE "sys"."tbl" (
+	"col1" CHARACTER LARGE OBJECT,
+	"col2" CHARACTER LARGE OBJECT
+);
+COPY 2 RECORDS INTO "sys"."tbl" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"apple"	"orange"
+"peer"	"banana nananana"
+COMMIT;
+#DROP TABLE tbl;DROP LOADER json_loader;
+#DROP TABLE tbl;DROP LOADER json_loader;
+# MonetDB 5 server v11.33.12 (hg id: d4694fed4f7e)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2019', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.527 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:34149/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6899/.s.monetdb.34149
+# MonetDB/GIS module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+
+# 10:43:17 >  
+# 10:43:17 >  "Done."
+# 10:43:17 >  
+
