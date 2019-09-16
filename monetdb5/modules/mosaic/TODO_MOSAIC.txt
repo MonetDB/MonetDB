@@ -1,6 +1,7 @@
 ####technical depth####
 Check which compressions can handle bit/boolean types.
 Test null semantics
+mosaic.select (c,nil:any_1, nil:any_1,true,true,(true|false)) is not working correctly: should result in c == nil or c!=nil(anti).
 Add test for float/double
 Add test for bit
 Remove task-factor and range->factor or refactor them.
