@@ -218,6 +218,8 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 
 	if (strchr(mode, 'w')) {
 		flags |= O_WRONLY | O_CREAT;
+		if (strchr(mode, 'x'))
+			flags |= O_EXCL;
 	} else if (!strchr(mode, '+')) {
 		flags |= O_RDONLY;
 	} else {
