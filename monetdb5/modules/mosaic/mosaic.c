@@ -26,7 +26,7 @@
 
 char *MOSfiltername[]={"raw","runlength","dictionary","delta","linear","frame","prefix","calendar","EOL"};
 
-bool type_allowed(int compression, BAT* b) {
+bool MOSisTypeAllowed(int compression, BAT* b) {
 	switch (compression) {
 	case MOSAIC_RAW:		return MOStypes_raw(b);
 	case MOSAIC_RLE:		return MOStypes_runlength(b);
@@ -49,7 +49,7 @@ MOSinitializeFilter(MOStask task, const char* compressions) {
 
 	if (!GDK_STRNIL(compressions)) {
 		for(int i = 0; i< MOSAIC_METHODS-1; i++) {
-				if ( (task->filter[i] = strstr(compressions, MOSfiltername[i]) != 0 && type_allowed(i, task->bsrc)) ) {
+				if ( (task->filter[i] = strstr(compressions, MOSfiltername[i]) != 0 && MOSisTypeAllowed(i, task->bsrc)) ) {
 					task->hdr->elms[i] = task->hdr->blks[i] = 0;
 					is_not_compressible = false;
 				}
@@ -57,7 +57,7 @@ MOSinitializeFilter(MOStask task, const char* compressions) {
 	}
 	else {
 		for(int i = 0; i< MOSAIC_METHODS-1; i++) {
-				if ( (task->filter[i] = type_allowed(i, task->bsrc)) ) {
+				if ( (task->filter[i] = MOSisTypeAllowed(i, task->bsrc)) ) {
 					task->hdr->elms[i] = task->hdr->blks[i] = 0;
 					is_not_compressible = false;
 				}
@@ -1110,7 +1110,7 @@ makepatterns(int *patterns, int size, str compressions, BAT* b)
 	int candidate[MOSAIC_METHODS]= {0};
 
 	for( i = 0; i < MOSAIC_METHODS-1; i++)
-		candidate[i] = (compressions == NULL || strstr(compressions,MOSfiltername[i]) != 0) &&  type_allowed(i, b);
+		candidate[i] = (compressions == NULL || strstr(compressions,MOSfiltername[i]) != 0) &&  MOSisTypeAllowed(i, b);
 
 	for( k=0, i=0; i<lim && k <size; i++){
 		patterns[k]=0;
