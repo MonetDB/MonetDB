@@ -325,7 +325,6 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 		if( task->dst >= bsrc->tmosaic->base + bsrc->tmosaic->size - 2 * MosaicBlkSize ){
 			MOSdestroy(bsrc);
 			msg= createException(MAL,"mosaic.compress","abort compression due to size");
-			task->hdr = 0;
 			goto finalize;
 		}
 		assert (task->dst < bsrc->tmosaic->base + bsrc->tmosaic->size );
