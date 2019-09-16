@@ -29,6 +29,8 @@
 
 bool MOStypes_frame(BAT* b) {
 	switch (b->ttype){
+	case TYPE_bit: return true; // Will be mapped to bte
+	case TYPE_bte: return true;
 	case TYPE_sht: return true;
 	case TYPE_int: return true;
 	case TYPE_lng: return true;

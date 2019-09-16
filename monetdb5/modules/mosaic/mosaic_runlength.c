@@ -18,7 +18,7 @@
 
 bool MOStypes_runlength(BAT* b) {
 	switch(b->ttype){
-	case TYPE_bit: return true;
+	case TYPE_bit: return true; // Will be mapped to bte
 	case TYPE_bte: return true;
 	case TYPE_sht: return true;
 	case TYPE_int: return true;
@@ -46,7 +46,6 @@ MOSlayout_runlength(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *bou
 
 	input = cnt * ATOMsize(task->type);
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: output = wordaligned( MosaicBlkSize + sizeof(bit),bit); break;
 	case TYPE_bte: output = wordaligned( MosaicBlkSize + sizeof(bte),bte); break;
 	case TYPE_sht: output = wordaligned( MosaicBlkSize + sizeof(sht),sht); break;
 	case TYPE_int: output = wordaligned( MosaicBlkSize + sizeof(int),int); break;
@@ -73,7 +72,6 @@ MOSadvance_runlength(MOStask task)
 	task->start += MOSgetCnt(task->blk);
 	//task->stop = task->stop;
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(bit),bit)); break;
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(bte),bte)); break;
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(sht),sht)); break;
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(int),int)); break;
@@ -120,7 +118,6 @@ MOSestimate_runlength(MOStask task)
 	flt factor = 0.0;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: Estimate(bit); break;
 	case TYPE_bte: Estimate(bte); break;
 	case TYPE_sht: Estimate(sht); break;
 	case TYPE_int: Estimate(int); break;
@@ -161,7 +158,6 @@ MOScompress_runlength(MOStask task)
 		MOSsetTag(blk, MOSAIC_RLE);
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: RLEcompress(bit); break;
 	case TYPE_bte: RLEcompress(bte); break;
 	case TYPE_sht: RLEcompress(sht); break;
 	case TYPE_int: RLEcompress(int); break;
@@ -195,7 +191,6 @@ MOSdecompress_runlength(MOStask task)
 
 	compressed = (char*) blk + MosaicBlkSize;
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: RLEdecompress(bit); break;
 	case TYPE_bte: RLEdecompress(bte); break;
 	case TYPE_sht: RLEdecompress(sht); break;
 	case TYPE_lng: RLEdecompress(lng); break;
@@ -302,7 +297,6 @@ MOSselect_runlength( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: select_runlength(bit); break;
 	case TYPE_bte: select_runlength(bte); break;
 	case TYPE_sht: select_runlength(sht); break;
 	case TYPE_int: select_runlength(int); break;
@@ -377,7 +371,6 @@ MOSthetaselect_runlength( MOStask task, void *val, str oper)
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: thetaselect_runlength(bit); break;
 	case TYPE_bte: thetaselect_runlength(bte); break;
 	case TYPE_sht: thetaselect_runlength(sht); break;
 	case TYPE_int: thetaselect_runlength(int); break;
@@ -416,7 +409,6 @@ MOSprojection_runlength( MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bit: projection_runlength(bit); break;
 		case TYPE_bte: projection_runlength(bte); break;
 		case TYPE_sht: projection_runlength(sht); break;
 		case TYPE_int: projection_runlength(int); break;
@@ -456,7 +448,6 @@ MOSjoin_runlength( MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bit: join_runlength(bit); break;
 		case TYPE_bte: join_runlength(bte); break;
 		case TYPE_sht: join_runlength(sht); break;
 		case TYPE_int: join_runlength(int); break;

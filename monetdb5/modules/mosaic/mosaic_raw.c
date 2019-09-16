@@ -18,7 +18,7 @@
 
 bool MOStypes_raw(BAT* b) {
 	switch(b->ttype){
-	case TYPE_bit: return true;
+	case TYPE_bit: return true; // Will be mapped to bte
 	case TYPE_bte: return true;
 	case TYPE_sht: return true;
 	case TYPE_int: return true;
@@ -46,7 +46,6 @@ MOSlayout_raw(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, 
 
 		input = cnt * ATOMsize(task->type);
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: output = wordaligned( MosaicBlkSize + sizeof(bit)* MOSgetCnt(blk),bit); break;
 	case TYPE_bte: output = wordaligned( MosaicBlkSize + sizeof(bte)* MOSgetCnt(blk),bte); break;
 	case TYPE_sht: output = wordaligned( MosaicBlkSize + sizeof(sht)* MOSgetCnt(blk),sht); break;
 	case TYPE_int: output = wordaligned( MosaicBlkSize + sizeof(int)* MOSgetCnt(blk),int); break;
@@ -73,7 +72,6 @@ MOSadvance_raw(MOStask task)
 
 	task->start += MOSgetCnt(blk);
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(bit)* MOSgetCnt(blk),bit)); break;
 	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(bte)* MOSgetCnt(blk),bte)); break;
 	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(sht)* MOSgetCnt(blk),sht)); break;
 	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(int)* MOSgetCnt(blk),int)); break;
@@ -115,7 +113,6 @@ MOScompress_raw(MOStask task)
 		MOSsetTag(blk,MOSAIC_RAW);
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: RAWcompress(bit); break;
 	case TYPE_bte: RAWcompress(bte); break;
 	case TYPE_sht: RAWcompress(sht); break;
 	case TYPE_int: RAWcompress(int); break;
@@ -149,7 +146,6 @@ MOSdecompress_raw(MOStask task)
 
 	compressed = ((char*)blk) + MosaicBlkSize;
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: RAWdecompress(bit); break;
 	case TYPE_bte: RAWdecompress(bte); break;
 	case TYPE_sht: RAWdecompress(sht); break;
 	case TYPE_int: RAWdecompress(int); break;
@@ -249,7 +245,6 @@ MOSselect_raw( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: select_raw(bit); break;
 	case TYPE_bte: select_raw(bte); break;
 	case TYPE_sht: select_raw(sht); break;
 	case TYPE_int: select_raw(int); break;
@@ -325,7 +320,6 @@ MOSthetaselect_raw( MOStask task, void *val, str oper)
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bit: thetaselect_raw(bit); break;
 	case TYPE_bte: thetaselect_raw(bte); break;
 	case TYPE_sht: thetaselect_raw(sht); break;
 	case TYPE_int: thetaselect_raw(int); break;
@@ -363,7 +357,6 @@ MOSprojection_raw( MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bit: projection_raw(bit); break;
 		case TYPE_bte: projection_raw(bte); break;
 		case TYPE_sht: projection_raw(sht); break;
 		case TYPE_int: projection_raw(int); break;
@@ -403,7 +396,6 @@ MOSjoin_raw( MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bit: join_raw(bit); break;
 		case TYPE_bte: join_raw(bte); break;
 		case TYPE_sht: join_raw(sht); break;
 		case TYPE_int: join_raw(int); break;

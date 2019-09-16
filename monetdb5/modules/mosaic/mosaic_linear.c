@@ -19,6 +19,7 @@
 
 bool MOStypes_linear(BAT* b) {
 	switch(b->ttype){
+	case TYPE_bit: return true;
 	case TYPE_bte: return true;
 	case TYPE_sht: return true;
 	case TYPE_int: return true;

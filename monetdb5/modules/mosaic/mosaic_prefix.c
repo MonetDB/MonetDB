@@ -24,7 +24,7 @@
 
 bool MOStypes_prefix(BAT* b) {
 	switch(b->ttype){
-	case TYPE_bit: return true;
+	case TYPE_bit: return true; // Will be mapped to bte
 	case TYPE_bte: return true;
 	case TYPE_sht: return true;
 	case TYPE_int: return true;
@@ -166,7 +166,7 @@ MOSskip_prefix(MOStask task)
 // use static prefix mask attempts
 
 static void
-findPrefixBit(unsigned char *v, int limit, int *bits, unsigned char *prefixmask)
+findPrefixBte(unsigned char *v, int limit, int *bits, unsigned char *prefixmask)
 {
 	int i, step = 8, width = 0;
 	unsigned char prefix, mask;
@@ -292,7 +292,7 @@ MOSestimate_prefix(MOStask task)
 	switch(size){
 	case 1:
 		{	unsigned char *v = ((unsigned char*) task->src) + task->start, val= *v, mask;
-			findPrefixBit( v, LOOKAHEAD, &prefixbits, &mask);
+			findPrefixBte( v, LOOKAHEAD, &prefixbits, &mask);
 			if( prefixbits == 0)
 				break;
 
@@ -449,7 +449,7 @@ MOScompress_prefix(MOStask task)
 	case 1:
 		{	unsigned char *v = ((unsigned char*) task->src) + task->start, *wlimit= v + limit, val1 = *v, mask, bits;
 			unsigned char *dst = (unsigned char*) MOScodevector(task);
-			findPrefixBit( v, LOOKAHEAD, &prefixbits,&mask);
+			findPrefixBte( v, LOOKAHEAD, &prefixbits,&mask);
 			bits = 8-prefixbits;
 			base = (BitVector)( ((char*)dst) + wordaligned(2 * sizeof(unsigned char),int));
 			*dst++ = mask;

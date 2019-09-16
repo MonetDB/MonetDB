@@ -26,37 +26,43 @@ mosaic_linear_joins
 mosaic_prefix_joins
 mosaic_mix_joins
 
+mosaic_raw_bit
 mosaic_raw_lng
 mosaic_raw_oid
 mosaic_raw_date
 mosaic_raw_timestamp
 
+mosaic_runlength_bit
 mosaic_runlength_lng
 mosaic_runlength_oid
 mosaic_runlength_date
 mosaic_runlength_timestamp
 
+mosaic_dictionary_bit
 mosaic_dictionary_lng
 mosaic_dictionary_oid
 mosaic_dictionary_date
 mosaic_dictionary_timestamp
 
+mosaic_delta_oid
+mosaic_delta_lng
+mosaic_delta_date
+mosaic_delta_timestamp
+
+mosaic_linear_bit
 mosaic_linear_lng
 mosaic_linear_oid
 mosaic_linear_date
 mosaic_linear_timestamp
 
-mosaic_prefix_lng
-mosaic_prefix_oid
-mosaic_prefix_date
-mosaic_prefix_timestamp
-
+mosaic_frame_bit
 mosaic_frame_lng
 mosaic_frame_oid
 mosaic_frame_date
 mosaic_frame_timestamp
 
-mosaic_delta_oid
-mosaic_delta_lng
-mosaic_delta_date
-mosaic_delta_timestamp
+mosaic_prefix_bit
+mosaic_prefix_lng
+mosaic_prefix_oid
+mosaic_prefix_date
+mosaic_prefix_timestamp
