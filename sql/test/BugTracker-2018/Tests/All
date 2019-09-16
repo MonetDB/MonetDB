@@ -37,7 +37,7 @@ sqlitelogictest-groupby-having-not-in.Bug-6553
 sqlitelogictest-nested-case.Bug-6554
 sqlitelogictest-complex-case-extra-columns.Bug-6555
 sqlitelogictest-coalesce-division-by-zero.Bug-6556
-HAVE_MAL_DEBUGGER?sqlitelogictest-having-not-null-not-in.Bug-6557
+sqlitelogictest-having-not-null-not-in.Bug-6557
 sqlitelogictest-groupby-having-in.Bug-6560
 sqlitelogictest-groupby-having-in-cast.Bug-6561
 sqlitelogictest-groupby-having-not-null-not-in.Bug-6562
