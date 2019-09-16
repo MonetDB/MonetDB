@@ -34,12 +34,105 @@ SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP 
 	-- False
 	-- False
 
+SELECT col1 IN (SELECT SUM(ColID + col1) FROM tbl_ProductSales) FROM another_T GROUP BY col1;
+	-- False
+	-- False
+	-- False
+	-- False
+
+SELECT
+	EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1),
+	(SELECT ColID FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5))
+FROM another_T GROUP BY col1, col2, col5, col8;
+	-- True  True
+	-- False True
+	-- False True
+	-- False True
+
+SELECT
+	-col1 IN (SELECT ColID FROM tbl_ProductSales),
+	col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col8) IS NULL)
+FROM another_T GROUP BY col1, col2, col5, col8;
+	-- False True
+	-- False True
+	-- False True
+	-- False True
+
+SELECT
+	col1 + col5 = (SELECT MIN(ColID) FROM tbl_ProductSales),
+	CAST(SUM(DISTINCT CASE WHEN col5 - col8 = (SELECT MIN(ColID / col2) FROM tbl_ProductSales) THEN col2 - 5 ELSE ABS(col1) END) AS BIGINT),
+	(SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5))
+FROM another_T
+GROUP BY col1, col2, col5, col8;
+	-- False 1    6
+	-- False 11   26
+	-- False 111  226
+	-- False 1111 2226
+
+SELECT
+	col1 + col5 = (SELECT MIN(ColID) FROM tbl_ProductSales),
+	MIN(col8) OVER (PARTITION BY col5 ORDER BY col1 ROWS UNBOUNDED PRECEDING)
+FROM another_T
+GROUP BY col1, col2, col5, col8;
+	-- False 8
+	-- False 88
+	-- False 888
+	-- False 8888
+
+SELECT
+	EXISTS (SELECT 1 FROM tbl_ProductSales),
+	NOT EXISTS (SELECT 1 FROM tbl_ProductSales)
+FROM another_T
+GROUP BY col1;
+	-- True False
+	-- True False
+	-- True False
+	-- True False
+
+SELECT
+	NOT -SUM(col2) NOT IN (SELECT ColID FROM tbl_ProductSales GROUP BY ColID HAVING SUM(ColID - col8) <> col5),
+	NOT col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col8) > 2 AND MIN(col8) IS NOT NULL),
+	NOT col2 <> ANY (SELECT 20 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID),
+	NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col2) IS NULL OR NOT col8 <> 2 / col1)
+FROM another_T
+GROUP BY col1, col2, col5, col8;
+	-- False True True True True
+	-- False True True True True
+	-- False True True True True
+	-- False True True True True
+
+SELECT
+	DISTINCT
+	NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2),
+	NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NOT NULL OR MIN(col1) < MIN(col2)),
+	CAST (NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) | CAST (col2 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER),
+	CAST (EXISTS (SELECT MAX(col5) * MAX(col4) FROM another_T GROUP BY col5, col4) AS INTEGER) & CAST (AVG(col1) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2) AS INTEGER)
+FROM another_T
+GROUP BY col1, col2, col5;
+	-- False False 1 0
+	-- True  False 1 0
+
+SELECT
+	SUM(col1) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2)
+FROM another_T
+GROUP BY col4;
+	-- False
+	-- False
+	-- False
+	-- False
+
 INSERT INTO tbl_ProductSales VALUES (0, 'a', 'b', 0);
 SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1; 
 	-- True
 	-- True
 	-- True
 	-- True
+
+SELECT col1 IN (SELECT col1 * SUM(ColID + col1) FROM tbl_ProductSales) FROM another_T GROUP BY col1;
+	-- False
+	-- False
+	-- False
+	-- False
 
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
