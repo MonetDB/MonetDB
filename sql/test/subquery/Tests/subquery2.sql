@@ -101,6 +101,17 @@ GROUP BY col1, col2, col5, col8;
 	-- False True True True True
 	-- False True True True True
 
+SELECT
+	DISTINCT
+	NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2),
+	NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NOT NULL OR MIN(col1) < MIN(col2)),
+	CAST (NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) | CAST (col2 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER),
+	CAST (EXISTS (SELECT MAX(col5) * MAX(col4) FROM another_T GROUP BY col5, col4) AS INTEGER) & CAST (AVG(col1) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2) AS INTEGER)
+FROM another_T
+GROUP BY col1, col2, col5;
+	-- False False 1 0
+	-- True  False 1 0
+
 INSERT INTO tbl_ProductSales VALUES (0, 'a', 'b', 0);
 SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1; 
 	-- True
