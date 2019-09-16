@@ -518,64 +518,6 @@ MCawakeClient(int id)
 }
 
 /*
- * Server maintenance modes without stopping it completery calls for care.
- * Any new client connection should be temporily be refused
- * and all clients should stop at a MAL instruction.
- * In rare cases, all running queries should be aborted.
- */
-str 
-MCstartMaintenance(Client cntxt, lng timeout, int abort)
-{
-	int active=1;
-	Client c = mal_clients;
-	(void) abort;
-
-	MT_lock_set(&mal_contextLock);
-	for(c= mal_clients +1;  c < mal_clients+MAL_MAXCLIENTS; c++)
-	if( cntxt != c)
-		c-> itrace = 'S';
-	// wait for all running users to stop
-	while (active && timeout > 0){
-		active = 0;
-		for(c= mal_clients +1;  c < mal_clients+MAL_MAXCLIENTS; c++)
-		if( cntxt!= c && c->mode == RUNCLIENT){
-			if (abort ){
-				c->mode = FINISHCLIENT; 
-				active++;
-			} else
-			if( cntxt != c)
-				active += c->itrace == 'S';
-		} else
-		if (cntxt!= c &&  c->mode == FINISHCLIENT)
-			active++;
-		if( active == 0)
-			break;
-		MT_sleep_ms(1000);
-		timeout--;
-	}
-	if( timeout == 0 && active){
-		for(c= mal_clients +1;  c < mal_clients+MAL_MAXCLIENTS; c++)
-		if( c->itrace == 'W' || c->itrace == 'S')
-			c->itrace = 0;
-		throw(MAL,"clients.startmaintenance","timeout");
-	}
-	return MAL_SUCCEED;
-}
-
-str
-MCexitMaintenance(Client cntxt)
-{
-	Client c = mal_clients;
-	(void) cntxt;
-
-	for(c= mal_clients +1;  c < mal_clients+MAL_MAXCLIENTS; c++)
-	if( c->itrace == 'W' || c->itrace == 'S')
-		c->itrace = 0;
-	MT_lock_unset(&mal_contextLock);
-	return MAL_SUCCEED;
-}
-
-/*
  * Input to be processed is collected in a Client specific buffer.  It
  * is filled by reading information from a stream, a terminal, or by
  * scheduling strings constructed internally.  The latter involves
