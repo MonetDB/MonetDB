@@ -314,7 +314,7 @@ MOScompress_dictionary(MOStask task)
 	MOSsetCnt(blk,0);
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: DICTcompress(sht); break;
+	case TYPE_bte: DICTcompress(bte); break;
 	case TYPE_sht: DICTcompress(sht); break;
 	case TYPE_int: DICTcompress(int); break;
 	case TYPE_lng: DICTcompress(lng); break;
