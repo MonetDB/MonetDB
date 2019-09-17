@@ -58,7 +58,7 @@ bat.append(a,false:bit);
 bat.append(a,true:bit);
 bat.append(a,true:bit);
 bat.append(a,false:bit);
-mosaic.compress(a,"raw");
+mosaic.compress(a,"{compression_type}");
 c:= mosaic.decompress(a);
 io.print(a, c);
 

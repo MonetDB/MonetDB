@@ -26,19 +26,19 @@ mosaic_linear_joins
 mosaic_prefix_joins
 mosaic_mix_joins
 
-mosaic_raw_bit
+mosaic_bit_1.raw
 mosaic_lng_1.raw
 mosaic_raw_oid
 mosaic_raw_date
 mosaic_raw_timestamp
 
-mosaic_runlength_bit
+mosaic_bit_2.runlength
 mosaic_lng_2.runlength
 mosaic_runlength_oid
 mosaic_runlength_date
 mosaic_runlength_timestamp
 
-mosaic_dictionary_bit
+mosaic_bit_1.dictionary
 mosaic_lng_1.dictionary
 mosaic_dictionary_oid
 mosaic_dictionary_date
@@ -49,19 +49,19 @@ mosaic_lng_1.delta
 mosaic_delta_date
 mosaic_delta_timestamp
 
-mosaic_linear_bit
+mosaic_bit_2.linear
 mosaic_lng_2.linear
 mosaic_linear_oid
 mosaic_linear_date
 mosaic_linear_timestamp
 
-mosaic_frame_bit
+mosaic_bit_1.frame
 mosaic_lng_1.frame
 mosaic_frame_oid
 mosaic_frame_date
 mosaic_frame_timestamp
 
-mosaic_prefix_bit
+mosaic_bit_1.prefix
 mosaic_lng_1.prefix
 mosaic_prefix_oid
 mosaic_prefix_date
