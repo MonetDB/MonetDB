@@ -48,7 +48,11 @@ ERROR = !SELECT: subquery must return only one column
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-17217/.s.monetdb.30774
 QUERY = SELECT 1 FROM integers WHERE SUM(i) > 1; --aggregates not allowed in where clause
-ERROR = !SUM: not allowed in WHERE clause
+ERROR = !SUM: aggregate functions not allowed in WHERE clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-1030/.s.monetdb.36394
+QUERY = SELECT SUM(SUM(i)) FROM integers; -- aggregates cannot be nested
+ERROR = !SUM: aggregate functions cannot be nested
 CODE  = 42000
 
 # 17:27:37 >  
