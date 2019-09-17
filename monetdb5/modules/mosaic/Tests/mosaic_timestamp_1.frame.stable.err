@@ -1,0 +1,30 @@
+stderr of test 'mosaic_timestamp_1.frame` in directory 'monetdb5/modules/mosaic` itself:
+
+
+# 14:12:10 >  
+# 14:12:10 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30501" "--set" "mapi_usock=/var/tmp/mtest-21605/.s.monetdb.30501" "--forcemito" "--dbpath=/home/aris/sources/monetdb/build/installation/var/MonetDB/mTests_monetdb5_modules_mosaic" "--set" "embedded_c=true"
+# 14:12:10 >  
+
+# builtin opt 	gdk_dbpath = /home/aris/sources/monetdb/build/installation/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30501
+# cmdline opt 	mapi_usock = /var/tmp/mtest-21605/.s.monetdb.30501
+# cmdline opt 	gdk_dbpath = /home/aris/sources/monetdb/build/installation/var/MonetDB/mTests_monetdb5_modules_mosaic
+# cmdline opt 	embedded_c = true
+
+# 14:12:10 >  
+# 14:12:10 >  "/usr/bin/python3" "mosaic_timestamp_1.frame.MAL.py" "mosaic_timestamp_1.frame"
+# 14:12:10 >  
+
+
+# 14:12:10 >  
+# 14:12:10 >  "Done."
+# 14:12:10 >  
+

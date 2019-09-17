@@ -29,7 +29,7 @@ bat.append(a,"2014-08-14 12:09:55":timestamp);
 bat.append(a,"2014-08-14 12:10:05":timestamp);
 bat.append(a,"2014-08-14 12:10:05":timestamp);
 bat.append(a,"2014-08-14 12:10:05":timestamp);
-mosaic.compress(a,"runlength");
+mosaic.compress(a,"{compression_type}");
 c:= mosaic.decompress(a);
 io.print(a, c);
 

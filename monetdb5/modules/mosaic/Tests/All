@@ -30,39 +30,39 @@ mosaic_bit_1.raw
 mosaic_lng_1.raw
 mosaic_oid_1.raw
 mosaic_date_1.raw
-mosaic_raw_timestamp
+mosaic_timestamp_1.raw
 
 mosaic_bit_2.runlength
 mosaic_lng_2.runlength
 mosaic_oid_2.runlength
 mosaic_date_2.runlength
-mosaic_runlength_timestamp
+mosaic_timestamp_2.runlength
 
 mosaic_bit_1.dictionary
 mosaic_lng_1.dictionary
 mosaic_oid_1.dictionary
 mosaic_date_1.dictionary
-mosaic_dictionary_timestamp
+mosaic_timestamp_1.dictionary
 
 mosaic_lng_1.delta
 mosaic_oid_1.delta
 mosaic_date_1.delta
-mosaic_delta_timestamp
+#mosaic_timestamp_1.delta
 
 mosaic_bit_2.linear
 mosaic_lng_2.linear
 mosaic_oid_2.linear
 mosaic_date_2.linear
-mosaic_linear_timestamp
+mosaic_timestamp_2.linear
 
 mosaic_bit_1.frame
 mosaic_lng_1.frame
 mosaic_oid_1.frame
 mosaic_date_1.frame
-mosaic_frame_timestamp
+mosaic_timestamp_1.frame
 
 mosaic_bit_1.prefix
 mosaic_lng_1.prefix
 mosaic_oid_1.prefix
 mosaic_date_1.prefix
-mosaic_prefix_timestamp
+mosaic_timestamp_1.prefix
