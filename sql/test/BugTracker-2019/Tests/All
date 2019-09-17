@@ -6,7 +6,7 @@ KNOWNFAIL?subselect-contradiction.Bug-6683
 insert-replica-table.Bug-6684
 KNOWNFAIL?subselect-count.Bug-6686
 KNOWNFAIL?subselect.Bug-6688
-timestamptransformation.Bug-6695
+#timestamptransformation.Bug-6695
 KNOWNFAIL?duplicates-not-eliminated-long-CASE-stmt.Bug-6697
 KNOWNFAIL?subselect.Bug-6700
 alter_table_set_schema.Bug-6701

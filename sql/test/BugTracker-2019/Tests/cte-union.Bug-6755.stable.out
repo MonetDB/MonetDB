@@ -1,0 +1,113 @@
+stdout of test 'cte-union.Bug-6755` in directory 'sql/test/BugTracker-2019` itself:
+
+
+# 12:18:37 >  
+# 12:18:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39914" "--set" "mapi_usock=/var/tmp/mtest-1903/.s.monetdb.39914" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2019" "--set" "embedded_c=true"
+# 12:18:37 >  
+
+# MonetDB 5 server v11.33.12 (hg id: d4694fed4f7e)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2019', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.527 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:39914/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1903/.s.monetdb.39914
+# MonetDB/GIS module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 12:18:38 >  
+# 12:18:38 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1903" "--port=39914"
+# 12:18:38 >  
+
+#start transaction;
+#CREATE TABLE ontime (
+#        "Year"       SMALLINT,
+#        "Month"      TINYINT,
+#        "DayofMonth" TINYINT,
+#        "Carrier"    CHAR(2),
+#        "CRSDepTime" DECIMAL(8,2),
+#        "ArrDelay"   DECIMAL(8,2)
+#);
+#CREATE TABLE tmp (
+#        "Hour" TINYINT, 
+#        "PredictedArrDelay" DECIMAL(8,2) DEFAULT 0.0
+#);
+#INSERT INTO tmp ("Hour")
+#VALUES
+#    (0), (1), (2), (3), (4), (5), 
+#    (6), (7), (8), (9), (10), (11), 
+#    (12), (13), (14), (15), (16), (17), 
+#    (18), (19), (20), (21), (22), (23);
+[ 24	]
+#INSERT INTO ontime VALUES (2001, 9, 2, 'AA', 900.00, -6.00);
+[ 1	]
+#ALTER TABLE "ontime" SET READ ONLY;
+#WITH t1 AS (
+#    SELECT "Carrier", CAST (FLOOR("CRSDepTime"%2400/100) AS INT) AS "Hour", 
+#           CAST(AVG("ArrDelay") AS DECIMAL(8,2)) AS "PredictedArrDelay"
+#    FROM ontime
+#    WHERE "Year" = 2007 AND "Month" = 10 AND "DayofMonth" = 24
+#    GROUP BY "Carrier", "Hour"
+#),
+#t2 AS (
+#    SELECT t."Carrier", tmp.*
+#    FROM tmp, (SELECT DISTINCT "Carrier" FROM t1) AS t
+#)
+#SELECT "Carrier", "Hour", SUM("PredictedArrDelay")
+#FROM (SELECT * FROM t1 UNION SELECT * FROM t2) AS t
+#GROUP BY "Carrier", "Hour"
+% sys.t,	sys.t,	sys.L40 # table_name
+% Carrier,	Hour,	L40 # name
+% char,	int,	decimal # type
+% 2,	1,	20 # length
+#rollback;
+
+# 12:18:38 >  
+# 12:18:38 >  "Done."
+# 12:18:38 >  
+
