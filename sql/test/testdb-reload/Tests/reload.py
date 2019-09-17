@@ -38,8 +38,8 @@ c1 = process.client(lang='sql',
                     server=s1,
                     args=[os.path.join(tstsrcdir, os.pardir, os.pardir, 'testdb', 'Tests', 'load.sql')],
                     stdin=process.PIPE,
-                    stdout=process.PIPE,
-                    stderr=process.PIPE)
+                    stdout=process.DEVNULL,
+                    stderr=process.DEVNULL)
 c1out, c1err = c1.communicate()
 # start the second server
 s2 = process.server(dbname=tstdb2,
@@ -52,13 +52,13 @@ d1 = process.client(lang='sqldump',
                     server=s1,
                     stdin=process.PIPE,
                     stdout='PIPE',
-                    stderr=process.PIPE)
+                    stderr=process.DEVNULL)
 # and pipe it straight into the second server
 c2 = process.client(lang='sql',
                     server=s2,
                     stdin=d1.stdout,
-                    stdout=process.PIPE,
-                    stderr=process.PIPE)
+                    stdout=process.DEVNULL,
+                    stderr=process.DEVNULL)
 d1.stdout.close()
 d1.stdout = None
 c2out, c2err = c2.communicate()

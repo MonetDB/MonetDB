@@ -194,7 +194,7 @@ int
 GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension)
 {
 	char *path = NULL;
-	int fd, flags = 0;
+	int fd, flags = O_CLOEXEC;
 
 	assert(!GDKinmemory());
 	if (nme == NULL || *nme == 0)
@@ -212,12 +212,14 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 		mode++;
 #ifdef _CYGNUS_H_
 	} else {
-		flags = _FRDSEQ;	/* WIN32 CreateFile(FILE_FLAG_SEQUENTIAL_SCAN) */
+		flags |= _FRDSEQ;	/* WIN32 CreateFile(FILE_FLAG_SEQUENTIAL_SCAN) */
 #endif
 	}
 
 	if (strchr(mode, 'w')) {
 		flags |= O_WRONLY | O_CREAT;
+		if (strchr(mode, 'x'))
+			flags |= O_EXCL;
 	} else if (!strchr(mode, '+')) {
 		flags |= O_RDONLY;
 	} else {
@@ -226,11 +228,11 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 #ifdef WIN32
 	flags |= strchr(mode, 'b') ? O_BINARY : O_TEXT;
 #endif
-	fd = open(nme, flags | O_CLOEXEC, MONETDB_MODE);
+	fd = open(nme, flags, MONETDB_MODE);
 	if (fd < 0 && *mode == 'w') {
 		/* try to create the directory, in case that was the problem */
 		if (GDKcreatedir(nme) == GDK_SUCCEED) {
-			fd = open(nme, flags | O_CLOEXEC, MONETDB_MODE);
+			fd = open(nme, flags, MONETDB_MODE);
 			if (fd < 0)
 				GDKsyserror("GDKfdlocate: cannot open file %s\n", nme);
 		}
@@ -584,10 +586,12 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 			nme = path;
 		}
 		if (nme != NULL && GDKextend(nme, size) == GDK_SUCCEED) {
-			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
+			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL;
 
 			if (mode == STORE_PRIV)
 				mod |= MMAP_COPY;
+			else
+				mod |= MMAP_SYNC;
 			ret = GDKmmap(nme, mod, size);
 			if (ret != NULL) {
 				/* success: update allocated size */

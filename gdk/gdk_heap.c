@@ -61,7 +61,7 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 		fn = path;
 	}
 	/* round up to mulitple of GDK_mmap_pagesize */
-	fd = GDKfdlocate(NOFARM, fn, "wb", NULL);
+	fd = GDKfdlocate(NOFARM, fn, "wxb", NULL);
 	if (fd >= 0) {
 		close(fd);
 		base = GDKload(NOFARM, fn, NULL, *maxsz, maxsz, STORE_MMAP);
@@ -119,36 +119,12 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	}
 	if (!GDKinmemory() && h->base == NULL) {
 		char *nme;
-		struct stat st;
 
-		if(!(nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL))) {
-			GDKerror("HEAPalloc: malloc failure");
+		nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
+		if (nme == NULL)
 			return GDK_FAIL;
-		}
-		if (stat(nme, &st) < 0) {
-			h->storage = STORE_MMAP;
-			h->base = HEAPcreatefile(NOFARM, &h->size, nme);
-		} else {
-			int fd;
-
-			fd = GDKfdlocate(NOFARM, nme, "wb", NULL);
-			if (fd >= 0) {
-				char of[sizeof(h->filename)];
-				char *ext;
-				close(fd);
-				strncpy(of, h->filename, sizeof(of));
-#ifdef STATIC_CODE_ANALYSIS
-				/* help coverity */
-				of[sizeof(h->filename) - 1] = 0;
-#endif
-				ext = decompose_filename(of);
-				h->newstorage = STORE_MMAP;
-				if (HEAPload(h, of, ext, false) != GDK_SUCCEED)
-					h->base = NULL; /* superfluous */
-				/* success checked by looking at
-				 * h->base below */
-			}
-		}
+		h->storage = STORE_MMAP;
+		h->base = HEAPcreatefile(NOFARM, &h->size, nme);
 		GDKfree(nme);
 	}
 	if (h->base == NULL) {
@@ -270,6 +246,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 					HEAPfree(&bak, false);
 					return GDK_SUCCEED;
 				}
+				GDKclrerr();
 			}
 			fd = GDKfdlocate(h->farmid, nme, "wb", ext);
 			if (fd >= 0) {
@@ -445,7 +422,7 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 		const char *base = b->theap.base;
 
 		/* first save heap in file with extra .tmp extension */
-		if ((fd = GDKfdlocate(b->theap.farmid, b->theap.filename, "wb", "tmp")) < 0)
+		if ((fd = GDKfdlocate(b->theap.farmid, b->theap.filename, "wxb", "tmp")) < 0)
 			return GDK_FAIL;
 		while (size > 0) {
 			ret = write(fd, base, (unsigned) MIN(1 << 30, size));
