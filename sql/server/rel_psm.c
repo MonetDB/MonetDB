@@ -776,7 +776,7 @@ rel_create_function(sql_allocator *sa, const char *sname, sql_func *f)
 }
 
 static sql_rel *
-rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, sql_ftype type, int lang, int replace)
+rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, sql_ftype type, sql_flang lang, int replace)
 {
 	mvc *sql = query->sql;
 	const char *fname = qname_table(qname);
@@ -1470,7 +1470,7 @@ rel_psm(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 		sql_ftype type = (sql_ftype) l->h->next->next->next->next->next->data.i_val;
-		int lang = l->h->next->next->next->next->next->next->data.i_val;
+		sql_flang lang = (sql_flang) l->h->next->next->next->next->next->next->data.i_val;
 		int repl = l->h->next->next->next->next->next->next->next->data.i_val;
 
 		ret = rel_create_func(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type, lang, repl);

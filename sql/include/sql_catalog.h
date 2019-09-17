@@ -372,20 +372,22 @@ typedef enum sql_ftype {
 #define IS_ANALYTIC(f) (f->type == F_ANALYTIC)
 #define IS_LOADER(f) (f->type == F_LOADER)
 
-#define FUNC_LANG_INT 0	/* internal */
-#define FUNC_LANG_MAL 1 /* create sql external mod.func */
-#define FUNC_LANG_SQL 2 /* create ... sql function/procedure */
-#define FUNC_LANG_R   3 /* create .. language R */
-#define FUNC_LANG_C   4 /* create .. language C */
-#define FUNC_LANG_J   5
-// this should probably be done in a better way
-#define FUNC_LANG_PY  6 /* create .. language PYTHON */
-#define FUNC_LANG_MAP_PY  7 /* create .. language PYTHON_MAP */
-#define FUNC_LANG_PY2  8 /* create .. language PYTHON2 */
-#define FUNC_LANG_MAP_PY2  9 /* create .. language PYTHON2_MAP */
-#define FUNC_LANG_PY3  10 /* create .. language PYTHON3 */
-#define FUNC_LANG_MAP_PY3  11 /* create .. language PYTHON3_MAP */
-#define FUNC_LANG_CPP   12 /* create .. language CPP */
+typedef enum sql_flang {
+	FUNC_LANG_INT = 0, /* internal */
+	FUNC_LANG_MAL = 1, /* create sql external mod.func */
+	FUNC_LANG_SQL = 2, /* create ... sql function/procedure */
+	FUNC_LANG_R = 3,   /* create .. language R */
+	FUNC_LANG_C = 4,   /* create .. language C */
+	FUNC_LANG_J = 5,   /* create .. language JAVASCRIPT (not implemented) */
+	/* this should probably be done in a better way */
+	FUNC_LANG_PY = 6,       /* create .. language PYTHON */
+	FUNC_LANG_MAP_PY = 7,   /* create .. language PYTHON_MAP */
+	FUNC_LANG_PY2 = 8,      /* create .. language PYTHON2 */
+	FUNC_LANG_MAP_PY2 = 9,  /* create .. language PYTHON2_MAP */
+	FUNC_LANG_PY3 = 10,     /* create .. language PYTHON3 */
+	FUNC_LANG_MAP_PY3 = 11, /* create .. language PYTHON3_MAP */
+	FUNC_LANG_CPP = 12      /* create .. language CPP */
+} sql_flang;
 
 #define LANG_EXT(l)  (l>FUNC_LANG_SQL)
 
@@ -402,7 +404,7 @@ typedef struct sql_func {
 			   1 sql 
 			   2 sql instantiated proc 
 			*/
-	int lang;
+	sql_flang lang;
 	char *query;	/* sql code */
 	bit side_effect;
 	bit varres;	/* variable output result */
