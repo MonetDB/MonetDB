@@ -1,5 +1,4 @@
 ####technical depth####
-Check which compressions can handle bit/boolean types.
 Test null semantics
 mosaic.select (c,nil:any_1, nil:any_1,true,true,(true|false)) is not working correctly: should result in c == nil or c!=nil(anti).
 Add test for float/double
@@ -10,6 +9,7 @@ delta compression: check if the hardcoded compression expression are correct. Se
 Use bit vectors more aggressively in mosaic_delta --- then resolve test mosaic_delta_timestamp --- and possibly other compression techniques as well.
 dictionary encoding should use the ordered property of its dictionary in the algebraic operators
 See if we can re-introduce landmark stuff somehow.
+Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
 
 ####code issues####
 mosaic_prefix.c: prefix code does not use macro's!!!!
