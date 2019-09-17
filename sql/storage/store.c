@@ -4390,65 +4390,64 @@ sql_trans_commit(sql_trans *tr)
 }
 
 static int
-sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, sqlid id, sht type)
+sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, sqlid id, sql_dependency type)
 {
 	sqlid dep_id=0, t_id = -1;
 	sht dep_type = 0;
 	sql_table *t = NULL;
-
 	list *dep = sql_trans_get_dependencies(tr, id, type, NULL);
 	node *n;
 
-	if(!dep)
+	if (!dep)
 		return DEPENDENCY_CHECK_ERROR;
 
 	n = dep->h;
 
 	while (n) {
 		dep_id = *(sqlid*) n->data;
-		dep_type = *(sht*) n->next->data;
+		dep_type = *(sql_dependency*) n->next->data;
 
-		if (! list_find_id(tr->dropped, dep_id)) {
+		if (!list_find_id(tr->dropped, dep_id)) {
 
-			switch (dep_type){
-				case SCHEMA_DEPENDENCY :
-							//FIXME malloc failure scenario!
-							(void) sql_trans_drop_schema(tr, dep_id, DROP_CASCADE);
-							break;
-				case TABLE_DEPENDENCY :
-							(void) sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case COLUMN_DEPENDENCY :
-							if ((t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY)) > 0) {
-								t = find_sql_table_id(s, t_id);
-								if (t)
-									(void) sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
-							}
-							break;
-				case VIEW_DEPENDENCY :
-							(void) sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case TRIGGER_DEPENDENCY :
-							(void) sql_trans_drop_trigger(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case KEY_DEPENDENCY :
-							(void) sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case FKEY_DEPENDENCY :
-							(void) sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case INDEX_DEPENDENCY :
-							(void) sql_trans_drop_idx(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case PROC_DEPENDENCY :
-				case FUNC_DEPENDENCY :
-							(void) sql_trans_drop_func(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case TYPE_DEPENDENCY :
-							sql_trans_drop_type(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case USER_DEPENDENCY :  /*TODO schema and users dependencies*/
-							break;
+			switch (dep_type) {
+				case SCHEMA_DEPENDENCY:
+					//FIXME malloc failure scenario!
+					(void) sql_trans_drop_schema(tr, dep_id, DROP_CASCADE);
+					break;
+				case TABLE_DEPENDENCY:
+					(void) sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case COLUMN_DEPENDENCY:
+					if ((t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY)) > 0) {
+						t = find_sql_table_id(s, t_id);
+						if (t)
+							(void) sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
+					}
+					break;
+				case VIEW_DEPENDENCY:
+					(void) sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case TRIGGER_DEPENDENCY:
+					(void) sql_trans_drop_trigger(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case KEY_DEPENDENCY:
+					(void) sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case FKEY_DEPENDENCY:
+					(void) sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case INDEX_DEPENDENCY:
+					(void) sql_trans_drop_idx(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case PROC_DEPENDENCY:
+				case FUNC_DEPENDENCY:
+					(void) sql_trans_drop_func(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case TYPE_DEPENDENCY:
+					sql_trans_drop_type(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case USER_DEPENDENCY:  /*TODO schema and users dependencies*/
+					break;
 			}
 		}
 

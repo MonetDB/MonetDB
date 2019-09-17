@@ -41,21 +41,23 @@
 #define PRIV_COPYFROMFILE 1
 #define PRIV_COPYINTOFILE 2
 
-#define SCHEMA_DEPENDENCY 1
-#define TABLE_DEPENDENCY 2
-#define COLUMN_DEPENDENCY 3
-#define KEY_DEPENDENCY 4
-#define VIEW_DEPENDENCY 5
-#define USER_DEPENDENCY 6
-#define FUNC_DEPENDENCY 7
-#define TRIGGER_DEPENDENCY 8
-#define OWNER_DEPENDENCY 9
-#define INDEX_DEPENDENCY 10
-#define FKEY_DEPENDENCY 11
-#define SEQ_DEPENDENCY 12
-#define PROC_DEPENDENCY 13
-#define BEDROPPED_DEPENDENCY 14		/*The object must be dropped when the dependent object is dropped independently of the DROP type.*/
-#define TYPE_DEPENDENCY 15
+typedef enum sql_dependency { 
+	SCHEMA_DEPENDENCY = 1,
+	TABLE_DEPENDENCY = 2,
+	COLUMN_DEPENDENCY = 3,
+	KEY_DEPENDENCY = 4,
+	VIEW_DEPENDENCY = 5,
+	USER_DEPENDENCY = 6,
+	FUNC_DEPENDENCY = 7,
+	TRIGGER_DEPENDENCY = 8,
+	OWNER_DEPENDENCY = 9,
+	INDEX_DEPENDENCY = 10,
+	FKEY_DEPENDENCY = 11,
+	SEQ_DEPENDENCY = 12,
+	PROC_DEPENDENCY = 13,
+	BEDROPPED_DEPENDENCY = 14, /*The object must be dropped when the dependent object is dropped independently of the DROP type.*/
+	TYPE_DEPENDENCY = 15
+} sql_dependency;
 
 #define NO_DEPENDENCY 0
 #define HAS_DEPENDENCY 1

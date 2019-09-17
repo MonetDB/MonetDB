@@ -435,12 +435,12 @@ extern int sql_trans_begin(sql_session *s);
 extern void sql_trans_end(sql_session *s);
 
 extern list* sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id);
-extern void sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sht depend_type);
+extern void sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
 extern void sql_trans_drop_dependencies(sql_trans *tr, sqlid depend_id);
-extern void sql_trans_drop_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sht depend_type);
-extern list* sql_trans_get_dependencies(sql_trans *tr, sqlid id, sht depend_type, list *ignore_ids);
-extern int sql_trans_get_dependency_type(sql_trans *tr, sqlid depend_id, sht depend_type);
-extern int sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sht depend_type);
+extern void sql_trans_drop_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
+extern list* sql_trans_get_dependencies(sql_trans *tr, sqlid id, sql_dependency depend_type, list *ignore_ids);
+extern int sql_trans_get_dependency_type(sql_trans *tr, sqlid depend_id, sql_dependency depend_type);
+extern int sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
 extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, sqlid id);
 
 extern sql_table *create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, bit properties);

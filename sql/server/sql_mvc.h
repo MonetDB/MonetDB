@@ -218,11 +218,10 @@ extern sql_trigger * mvc_create_trigger(mvc *m, sql_table *t, const char *name, 
 extern sql_trigger * mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
 extern int mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
 
-
 /*dependency control*/
-extern void mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sht depend_type);
-extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sht dep_type);
-extern int mvc_check_dependency(mvc * m, sqlid id, sht type, list *ignore_ids);
+extern void mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sql_dependency depend_type);
+extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sql_dependency dep_type);
+extern int mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ignore_ids);
 
 /* variable management */
 extern sql_var* stack_push_var(mvc *sql, const char *name, sql_subtype *type);
