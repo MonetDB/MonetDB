@@ -32,7 +32,7 @@ bool MOSisTypeAllowed(int compression, BAT* b) {
 	case MOSAIC_RLE:		return MOStypes_runlength(b);
 	case MOSAIC_DICT:		return MOStypes_dictionary(b);
 	case MOSAIC_DELTA:		return MOStypes_delta(b);
-	case MOSAIC_LINEAR:		return MOStypes_runlength(b);
+	case MOSAIC_LINEAR:		return MOStypes_linear(b);
 	case MOSAIC_FRAME:		return MOStypes_frame(b);
 	case MOSAIC_PREFIX:		return MOStypes_prefix(b);
 	case MOSAIC_CALENDAR:	return MOStypes_calendar(b);
