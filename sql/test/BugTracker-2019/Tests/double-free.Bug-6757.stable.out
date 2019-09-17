@@ -58,11 +58,9 @@ stdout of test 'double-free.Bug-6757` in directory 'sql/test/BugTracker-2019` it
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
-
-# 19:54:41 >  
-# 19:54:41 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25888" "--port=32780"
-# 19:54:41 >  
+# 11:50:08 >  
+# 11:50:08 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24026" "--port=38133"
+# 11:50:08 >  
 
 #start transaction;
 #CREATE TABLE "sys"."params_str" (
