@@ -21,6 +21,38 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 # 13:19:02 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-5264" "--port=31486"
 # 13:19:02 >  
 
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+MOScompress_raw
+#BATmosaic: mosaic construction 17 usec
+MOSdecompress_raw
 #--------------------------#
 # t	t	t  # name
 # void	lng	lng  # type
@@ -55,6 +87,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	995,	995	]
 [ 28@0,	1005,	1005	]
 [ 29@0,	1002,	1002	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -89,10 +122,13 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
+MOSthetaselect_raw
 #--------------------------#
 # t	t	t	t	t  # name
 # void	oid	oid	oid	oid  # type
@@ -112,6 +148,8 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 12@0,	25@0,	25@0,	25@0,	25@0	]
 [ 13@0,	28@0,	28@0,	28@0,	28@0	]
 [ 14@0,	29@0,	29@0,	29@0,	29@0	]
+MOSselect_raw
+MOSthetaselect_raw
 #--------------------------#
 # t	t	t	t	t  # name
 # void	oid	oid	oid	oid  # type
@@ -128,6 +166,8 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 9@0,	24@0,	24@0,	24@0,	24@0	]
 [ 10@0,	26@0,	26@0,	26@0,	26@0	]
 [ 11@0,	27@0,	27@0,	27@0,	27@0	]
+MOSselect_raw
+MOSthetaselect_raw
 #--------------------------#
 # t	t	t	t	t  # name
 # void	void	oid	void	oid  # type
@@ -162,6 +202,10 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0,	29@0,	29@0	]
+MOSselect_raw
+MOSthetaselect_raw
+MOSselect_raw
+MOSthetaselect_raw
 #--------------------------#
 # t	t	t	t	t  # name
 # void	void	oid	void	oid  # type
@@ -196,10 +240,14 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0,	29@0,	29@0	]
+MOSselect_raw
+MOSthetaselect_raw
 #--------------------------#
 # t	t	t	t	t  # name
 # void	void	oid	void	oid  # type
 #--------------------------#
+MOSselect_raw
+MOSthetaselect_raw
 #--------------------------#
 # t	t	t	t	t  # name
 # void	oid	oid	oid	oid  # type
@@ -222,6 +270,8 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 15@0,	25@0,	25@0,	25@0,	25@0	]
 [ 16@0,	28@0,	28@0,	28@0,	28@0	]
 [ 17@0,	29@0,	29@0,	29@0,	29@0	]
+MOSselect_raw
+MOSthetaselect_raw
 #--------------------------#
 # t	t	t	t	t  # name
 # void	oid	oid	oid	oid  # type
@@ -241,6 +291,8 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 12@0,	24@0,	24@0,	24@0,	24@0	]
 [ 13@0,	26@0,	26@0,	26@0,	26@0	]
 [ 14@0,	27@0,	27@0,	27@0,	27@0	]
+MOSselect_raw
+MOSthetaselect_raw
 #--------------------------#
 # t	t	t	t	t  # name
 # void	oid	oid	oid	oid  # type
@@ -248,6 +300,8 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	0@0,	0@0,	0@0,	0@0	]
 [ 1@0,	10@0,	10@0,	10@0,	10@0	]
 [ 2@0,	20@0,	20@0,	20@0,	20@0	]
+MOSselect_raw
+MOSthetaselect_raw
 #--------------------------#
 # t	t	t	t	t  # name
 # void	oid	oid	oid	oid  # type
@@ -279,48 +333,14 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0,	29@0,	29@0	]
+MOSselect_raw
+MOSthetaselect_raw
 #--------------------------#
 # t	t	t	t	t  # name
 # void	void	oid	void	oid  # type
 #--------------------------#
-#--------------------------#
-# t	t	t	t	t  # name
-# void	void	oid	void	oid  # type
-#--------------------------#
-[ 0@0,	0@0,	0@0,	0@0,	0@0	]
-[ 1@0,	1@0,	1@0,	1@0,	1@0	]
-[ 2@0,	2@0,	2@0,	2@0,	2@0	]
-[ 3@0,	3@0,	3@0,	3@0,	3@0	]
-[ 4@0,	4@0,	4@0,	4@0,	4@0	]
-[ 5@0,	5@0,	5@0,	5@0,	5@0	]
-[ 6@0,	6@0,	6@0,	6@0,	6@0	]
-[ 7@0,	7@0,	7@0,	7@0,	7@0	]
-[ 8@0,	8@0,	8@0,	8@0,	8@0	]
-[ 9@0,	9@0,	9@0,	9@0,	9@0	]
-[ 10@0,	10@0,	10@0,	10@0,	10@0	]
-[ 11@0,	11@0,	11@0,	11@0,	11@0	]
-[ 12@0,	12@0,	12@0,	12@0,	12@0	]
-[ 13@0,	13@0,	13@0,	13@0,	13@0	]
-[ 14@0,	14@0,	14@0,	14@0,	14@0	]
-[ 15@0,	15@0,	15@0,	15@0,	15@0	]
-[ 16@0,	16@0,	16@0,	16@0,	16@0	]
-[ 17@0,	17@0,	17@0,	17@0,	17@0	]
-[ 18@0,	18@0,	18@0,	18@0,	18@0	]
-[ 19@0,	19@0,	19@0,	19@0,	19@0	]
-[ 20@0,	20@0,	20@0,	20@0,	20@0	]
-[ 21@0,	21@0,	21@0,	21@0,	21@0	]
-[ 22@0,	22@0,	22@0,	22@0,	22@0	]
-[ 23@0,	23@0,	23@0,	23@0,	23@0	]
-[ 24@0,	24@0,	24@0,	24@0,	24@0	]
-[ 25@0,	25@0,	25@0,	25@0,	25@0	]
-[ 26@0,	26@0,	26@0,	26@0,	26@0	]
-[ 27@0,	27@0,	27@0,	27@0,	27@0	]
-[ 28@0,	28@0,	28@0,	28@0,	28@0	]
-[ 29@0,	29@0,	29@0,	29@0,	29@0	]
-#--------------------------#
-# t	t	t	t	t  # name
-# void	void	oid	void	oid  # type
-#--------------------------#
+MOSselect_raw
+MOSthetaselect_raw
 #--------------------------#
 # t	t	t	t	t  # name
 # void	void	oid	void	oid  # type
@@ -355,10 +375,14 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0,	29@0,	29@0	]
+MOSselect_raw
+MOSthetaselect_raw
 #--------------------------#
 # t	t	t	t	t  # name
 # void	void	oid	void	oid  # type
 #--------------------------#
+MOSselect_raw
+MOSthetaselect_raw
 #--------------------------#
 # t	t	t	t	t  # name
 # void	void	oid	void	oid  # type
@@ -393,6 +417,49 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0,	29@0,	29@0	]
+MOSselect_raw
+MOSthetaselect_raw
+#--------------------------#
+# t	t	t	t	t  # name
+# void	void	oid	void	oid  # type
+#--------------------------#
+MOSselect_raw
+MOSthetaselect_raw
+#--------------------------#
+# t	t	t	t	t  # name
+# void	void	oid	void	oid  # type
+#--------------------------#
+[ 0@0,	0@0,	0@0,	0@0,	0@0	]
+[ 1@0,	1@0,	1@0,	1@0,	1@0	]
+[ 2@0,	2@0,	2@0,	2@0,	2@0	]
+[ 3@0,	3@0,	3@0,	3@0,	3@0	]
+[ 4@0,	4@0,	4@0,	4@0,	4@0	]
+[ 5@0,	5@0,	5@0,	5@0,	5@0	]
+[ 6@0,	6@0,	6@0,	6@0,	6@0	]
+[ 7@0,	7@0,	7@0,	7@0,	7@0	]
+[ 8@0,	8@0,	8@0,	8@0,	8@0	]
+[ 9@0,	9@0,	9@0,	9@0,	9@0	]
+[ 10@0,	10@0,	10@0,	10@0,	10@0	]
+[ 11@0,	11@0,	11@0,	11@0,	11@0	]
+[ 12@0,	12@0,	12@0,	12@0,	12@0	]
+[ 13@0,	13@0,	13@0,	13@0,	13@0	]
+[ 14@0,	14@0,	14@0,	14@0,	14@0	]
+[ 15@0,	15@0,	15@0,	15@0,	15@0	]
+[ 16@0,	16@0,	16@0,	16@0,	16@0	]
+[ 17@0,	17@0,	17@0,	17@0,	17@0	]
+[ 18@0,	18@0,	18@0,	18@0,	18@0	]
+[ 19@0,	19@0,	19@0,	19@0,	19@0	]
+[ 20@0,	20@0,	20@0,	20@0,	20@0	]
+[ 21@0,	21@0,	21@0,	21@0,	21@0	]
+[ 22@0,	22@0,	22@0,	22@0,	22@0	]
+[ 23@0,	23@0,	23@0,	23@0,	23@0	]
+[ 24@0,	24@0,	24@0,	24@0,	24@0	]
+[ 25@0,	25@0,	25@0,	25@0,	25@0	]
+[ 26@0,	26@0,	26@0,	26@0,	26@0	]
+[ 27@0,	27@0,	27@0,	27@0,	27@0	]
+[ 28@0,	28@0,	28@0,	28@0,	28@0	]
+[ 29@0,	29@0,	29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -421,6 +488,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 21@0,	27@0,	27@0	]
 [ 22@0,	28@0,	28@0	]
 [ 23@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -443,6 +511,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 15@0,	23@0,	23@0	]
 [ 16@0,	28@0,	28@0	]
 [ 17@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -471,6 +540,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 21@0,	27@0,	27@0	]
 [ 22@0,	28@0,	28@0	]
 [ 23@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -493,6 +563,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 15@0,	23@0,	23@0	]
 [ 16@0,	28@0,	28@0	]
 [ 17@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -521,6 +592,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 21@0,	27@0,	27@0	]
 [ 22@0,	28@0,	28@0	]
 [ 23@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -540,6 +612,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 12@0,	23@0,	23@0	]
 [ 13@0,	28@0,	28@0	]
 [ 14@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -568,6 +641,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 21@0,	27@0,	27@0	]
 [ 22@0,	28@0,	28@0	]
 [ 23@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -587,6 +661,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 12@0,	23@0,	23@0	]
 [ 13@0,	28@0,	28@0	]
 [ 14@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -612,6 +687,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 18@0,	24@0,	24@0	]
 [ 19@0,	27@0,	27@0	]
 [ 20@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -631,6 +707,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 12@0,	22@0,	22@0	]
 [ 13@0,	23@0,	23@0	]
 [ 14@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -659,6 +736,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 21@0,	27@0,	27@0	]
 [ 22@0,	28@0,	28@0	]
 [ 23@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -681,6 +759,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 15@0,	23@0,	23@0	]
 [ 16@0,	28@0,	28@0	]
 [ 17@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -706,6 +785,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 18@0,	24@0,	24@0	]
 [ 19@0,	27@0,	27@0	]
 [ 20@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -722,6 +802,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 9@0,	21@0,	21@0	]
 [ 10@0,	23@0,	23@0	]
 [ 11@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -750,6 +831,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 21@0,	27@0,	27@0	]
 [ 22@0,	28@0,	28@0	]
 [ 23@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -769,6 +851,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 12@0,	23@0,	23@0	]
 [ 13@0,	28@0,	28@0	]
 [ 14@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -779,6 +862,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 3@0,	16@0,	16@0	]
 [ 4@0,	25@0,	25@0	]
 [ 5@0,	26@0,	26@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -795,6 +879,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 9@0,	25@0,	25@0	]
 [ 10@0,	26@0,	26@0	]
 [ 11@0,	27@0,	27@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -805,6 +890,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 3@0,	16@0,	16@0	]
 [ 4@0,	25@0,	25@0	]
 [ 5@0,	26@0,	26@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -821,6 +907,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 9@0,	25@0,	25@0	]
 [ 10@0,	26@0,	26@0	]
 [ 11@0,	27@0,	27@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -831,6 +918,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 3@0,	16@0,	16@0	]
 [ 4@0,	25@0,	25@0	]
 [ 5@0,	26@0,	26@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -850,6 +938,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 12@0,	25@0,	25@0	]
 [ 13@0,	26@0,	26@0	]
 [ 14@0,	27@0,	27@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -860,6 +949,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 3@0,	16@0,	16@0	]
 [ 4@0,	25@0,	25@0	]
 [ 5@0,	26@0,	26@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -879,6 +969,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 12@0,	25@0,	25@0	]
 [ 13@0,	26@0,	26@0	]
 [ 14@0,	27@0,	27@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -892,6 +983,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 6@0,	25@0,	25@0	]
 [ 7@0,	26@0,	26@0	]
 [ 8@0,	28@0,	28@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -911,6 +1003,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 12@0,	26@0,	26@0	]
 [ 13@0,	27@0,	27@0	]
 [ 14@0,	28@0,	28@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -921,6 +1014,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 3@0,	16@0,	16@0	]
 [ 4@0,	25@0,	25@0	]
 [ 5@0,	26@0,	26@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -937,6 +1031,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 9@0,	25@0,	25@0	]
 [ 10@0,	26@0,	26@0	]
 [ 11@0,	27@0,	27@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -950,6 +1045,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 6@0,	25@0,	25@0	]
 [ 7@0,	26@0,	26@0	]
 [ 8@0,	28@0,	28@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -972,6 +1068,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 15@0,	26@0,	26@0	]
 [ 16@0,	27@0,	27@0	]
 [ 17@0,	28@0,	28@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -982,6 +1079,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 3@0,	16@0,	16@0	]
 [ 4@0,	25@0,	25@0	]
 [ 5@0,	26@0,	26@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1001,6 +1099,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 12@0,	25@0,	25@0	]
 [ 13@0,	26@0,	26@0	]
 [ 14@0,	27@0,	27@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1032,6 +1131,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1063,6 +1163,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1094,6 +1195,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1116,6 +1218,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 15@0,	23@0,	23@0	]
 [ 16@0,	28@0,	28@0	]
 [ 17@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1147,6 +1250,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1178,6 +1282,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1209,6 +1314,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1240,6 +1346,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1268,6 +1375,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 21@0,	26@0,	26@0	]
 [ 22@0,	27@0,	27@0	]
 [ 23@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1296,6 +1404,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 21@0,	26@0,	26@0	]
 [ 22@0,	27@0,	27@0	]
 [ 23@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1327,6 +1436,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1358,6 +1468,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1386,6 +1497,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 21@0,	26@0,	26@0	]
 [ 22@0,	27@0,	27@0	]
 [ 23@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1414,6 +1526,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 21@0,	26@0,	26@0	]
 [ 22@0,	27@0,	27@0	]
 [ 23@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1445,6 +1558,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1476,6 +1590,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1483,6 +1598,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	5@0,	5@0	]
 [ 1@0,	15@0,	15@0	]
 [ 2@0,	25@0,	25@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1490,6 +1606,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	5@0,	5@0	]
 [ 1@0,	15@0,	15@0	]
 [ 2@0,	25@0,	25@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1497,6 +1614,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	5@0,	5@0	]
 [ 1@0,	15@0,	15@0	]
 [ 2@0,	25@0,	25@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1504,6 +1622,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	5@0,	5@0	]
 [ 1@0,	15@0,	15@0	]
 [ 2@0,	25@0,	25@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1511,6 +1630,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	5@0,	5@0	]
 [ 1@0,	15@0,	15@0	]
 [ 2@0,	25@0,	25@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1518,6 +1638,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	5@0,	5@0	]
 [ 1@0,	15@0,	15@0	]
 [ 2@0,	25@0,	25@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1525,6 +1646,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	5@0,	5@0	]
 [ 1@0,	15@0,	15@0	]
 [ 2@0,	25@0,	25@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1532,6 +1654,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	5@0,	5@0	]
 [ 1@0,	15@0,	15@0	]
 [ 2@0,	25@0,	25@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1542,6 +1665,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 3@0,	18@0,	18@0	]
 [ 4@0,	25@0,	25@0	]
 [ 5@0,	28@0,	28@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1552,6 +1676,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 3@0,	18@0,	18@0	]
 [ 4@0,	25@0,	25@0	]
 [ 5@0,	28@0,	28@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1559,6 +1684,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	5@0,	5@0	]
 [ 1@0,	15@0,	15@0	]
 [ 2@0,	25@0,	25@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1566,6 +1692,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	5@0,	5@0	]
 [ 1@0,	15@0,	15@0	]
 [ 2@0,	25@0,	25@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1576,6 +1703,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 3@0,	18@0,	18@0	]
 [ 4@0,	25@0,	25@0	]
 [ 5@0,	28@0,	28@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1586,6 +1714,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 3@0,	18@0,	18@0	]
 [ 4@0,	25@0,	25@0	]
 [ 5@0,	28@0,	28@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1593,6 +1722,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	5@0,	5@0	]
 [ 1@0,	15@0,	15@0	]
 [ 2@0,	25@0,	25@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1600,6 +1730,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	5@0,	5@0	]
 [ 1@0,	15@0,	15@0	]
 [ 2@0,	25@0,	25@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1631,6 +1762,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1656,6 +1788,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 18@0,	25@0,	25@0	]
 [ 19@0,	28@0,	28@0	]
 [ 20@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1687,6 +1820,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1712,6 +1846,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 18@0,	25@0,	25@0	]
 [ 19@0,	28@0,	28@0	]
 [ 20@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1743,6 +1878,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1765,6 +1901,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 15@0,	25@0,	25@0	]
 [ 16@0,	28@0,	28@0	]
 [ 17@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1796,6 +1933,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1818,6 +1956,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 15@0,	25@0,	25@0	]
 [ 16@0,	28@0,	28@0	]
 [ 17@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1849,6 +1988,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1874,6 +2014,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 18@0,	25@0,	25@0	]
 [ 19@0,	28@0,	28@0	]
 [ 20@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1905,6 +2046,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1930,6 +2072,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 18@0,	25@0,	25@0	]
 [ 19@0,	28@0,	28@0	]
 [ 20@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1961,6 +2104,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -1983,6 +2127,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 15@0,	25@0,	25@0	]
 [ 16@0,	28@0,	28@0	]
 [ 17@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2014,6 +2159,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 24@0,	27@0,	27@0	]
 [ 25@0,	28@0,	28@0	]
 [ 26@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2036,6 +2182,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 15@0,	25@0,	25@0	]
 [ 16@0,	28@0,	28@0	]
 [ 17@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2043,6 +2190,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	6@0,	6@0	]
 [ 1@0,	16@0,	16@0	]
 [ 2@0,	26@0,	26@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2056,6 +2204,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 6@0,	24@0,	24@0	]
 [ 7@0,	26@0,	26@0	]
 [ 8@0,	27@0,	27@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2063,6 +2212,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	6@0,	6@0	]
 [ 1@0,	16@0,	16@0	]
 [ 2@0,	26@0,	26@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2076,6 +2226,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 6@0,	24@0,	24@0	]
 [ 7@0,	26@0,	26@0	]
 [ 8@0,	27@0,	27@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2083,6 +2234,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	6@0,	6@0	]
 [ 1@0,	16@0,	16@0	]
 [ 2@0,	26@0,	26@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2099,6 +2251,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 9@0,	24@0,	24@0	]
 [ 10@0,	26@0,	26@0	]
 [ 11@0,	27@0,	27@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2106,6 +2259,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	6@0,	6@0	]
 [ 1@0,	16@0,	16@0	]
 [ 2@0,	26@0,	26@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2122,6 +2276,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 9@0,	24@0,	24@0	]
 [ 10@0,	26@0,	26@0	]
 [ 11@0,	27@0,	27@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2129,6 +2284,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	6@0,	6@0	]
 [ 1@0,	16@0,	16@0	]
 [ 2@0,	26@0,	26@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2142,6 +2298,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 6@0,	24@0,	24@0	]
 [ 7@0,	26@0,	26@0	]
 [ 8@0,	27@0,	27@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2149,6 +2306,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	6@0,	6@0	]
 [ 1@0,	16@0,	16@0	]
 [ 2@0,	26@0,	26@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2162,6 +2320,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 6@0,	24@0,	24@0	]
 [ 7@0,	26@0,	26@0	]
 [ 8@0,	27@0,	27@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2169,6 +2328,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	6@0,	6@0	]
 [ 1@0,	16@0,	16@0	]
 [ 2@0,	26@0,	26@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2185,6 +2345,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 9@0,	24@0,	24@0	]
 [ 10@0,	26@0,	26@0	]
 [ 11@0,	27@0,	27@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2192,6 +2353,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 0@0,	6@0,	6@0	]
 [ 1@0,	16@0,	16@0	]
 [ 2@0,	26@0,	26@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2208,6 +2370,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 9@0,	24@0,	24@0	]
 [ 10@0,	26@0,	26@0	]
 [ 11@0,	27@0,	27@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -2242,6 +2405,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -2276,6 +2440,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -2310,6 +2475,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2335,6 +2501,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 18@0,	25@0,	25@0	]
 [ 19@0,	28@0,	28@0	]
 [ 20@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -2369,6 +2536,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -2403,6 +2571,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -2437,6 +2606,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -2471,6 +2641,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -2505,6 +2676,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -2539,6 +2711,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -2573,6 +2746,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -2607,6 +2781,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -2641,6 +2816,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -2675,6 +2851,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -2709,6 +2886,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
@@ -2743,70 +2921,87 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	27@0,	27@0	]
 [ 28@0,	28@0,	28@0	]
 [ 29@0,	29@0,	29@0	]
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSselect_raw
 #--------------------------#
 # t	t	t  # name
 # void	void	oid  # type
 #--------------------------#
+MOSjoin_raw
 #--------------------------#
 # t	t	t  # name
 # void	oid	oid  # type
@@ -2845,6 +3040,8 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 12@0,	9@0,	9@0	]
 [ 13@0,	9@0,	9@0	]
 [ 14@0,	9@0,	9@0	]
+MOSthetaselect_raw
+MOSprojection_raw
 #--------------------------#
 # t	t	t  # name
 # void	lng	lng  # type
@@ -2879,6 +3076,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 [ 27@0,	995,	995	]
 [ 28@0,	1005,	1005	]
 [ 29@0,	1002,	1002	]
+MOSprojection_raw
 #--------------------------#
 # t	t	t  # name
 # void	lng	lng  # type
