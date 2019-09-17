@@ -369,7 +369,7 @@ extern int sql_save_snapshots(sql_trans *tr);
 extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl);
 extern int sql_trans_drop_type(sql_trans *tr, sql_schema * s, sqlid id, int drop_action);
 
-extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args, list *res, sql_ftype type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
+extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 
 extern int sql_trans_drop_func(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 extern int sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action);
@@ -437,12 +437,12 @@ extern int sql_trans_begin(sql_session *s);
 extern void sql_trans_end(sql_session *s);
 
 extern list* sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id);
-extern void sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sht depend_type);
+extern void sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
 extern void sql_trans_drop_dependencies(sql_trans *tr, sqlid depend_id);
-extern void sql_trans_drop_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sht depend_type);
-extern list* sql_trans_get_dependencies(sql_trans *tr, sqlid id, sht depend_type, list *ignore_ids);
-extern int sql_trans_get_dependency_type(sql_trans *tr, sqlid depend_id, sht depend_type);
-extern int sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sht depend_type);
+extern void sql_trans_drop_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
+extern list* sql_trans_get_dependencies(sql_trans *tr, sqlid id, sql_dependency depend_type, list *ignore_ids);
+extern int sql_trans_get_dependency_type(sql_trans *tr, sqlid depend_id, sql_dependency depend_type);
+extern int sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
 extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, sqlid id);
 
 extern sql_table *create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, bit properties);
@@ -454,7 +454,7 @@ extern sql_key * key_create_done(sql_allocator *sa, sql_key *k);
 
 extern sql_idx *create_sql_idx(sql_allocator *sa, sql_table *t, const char *nme, idx_type it);
 extern sql_idx *create_sql_ic(sql_allocator *sa, sql_idx *i, sql_column *c);
-extern sql_func *create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, sql_ftype type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
+extern sql_func *create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 
 /* for alter we need to duplicate a table */
 extern sql_table *dup_sql_table(sql_allocator *sa, sql_table *t);
