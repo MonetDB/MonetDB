@@ -1,16 +1,16 @@
 ####technical depth####
-Somehow log/print which compression is being used. Potentially use (3)
+Add asserts for unknown compression strategies.
 Test null semantics
 mosaic.select (c,nil:any_1, nil:any_1,true,true,(true|false)) is not working correctly: should result in c == nil or c!=nil(anti).
 dictionary encoding should use the ordered property of its dictionary in the algebraic operators
 Use bit vectors more aggressively in mosaic_delta --- then resolve test mosaic_delta_timestamp --- and possibly other compression techniques as well.
-Somehow force mosaic to only use specified compressions even if inefficient.
+Somehow force mosaic to only use specified compressions even if inefficient. This poses a design problem for dictionary compression though.
 Add test for float/double
 delta compression: check if the hardcoded compression expression are correct. See also (2)
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
 Remove task-factor and range->factor or refactor them.
 See if we can re-introduce landmark stuff somehow.
-Fix/check/test MOSlayout. (3*)
+Fix/check/test MOSlayout.
 benchmark
 
 ####code issues####
