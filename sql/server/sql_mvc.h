@@ -125,7 +125,7 @@ typedef struct mvc {
 
 	sql_session *session;	
 
-	int type;		/* query type */
+	sql_query_t type;	/* query type */
 	int pushdown;		/* AND or OR query handling */
 	unsigned int label;	/* numbers for relational projection labels */
 	int remote;

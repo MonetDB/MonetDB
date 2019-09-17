@@ -11,6 +11,7 @@
 
 #include "sql_mem.h"
 #include "sql_list.h"
+#include "sql_querytype.h"
 #include "stream.h"
 
 #define tr_none		0
@@ -652,7 +653,7 @@ typedef struct res_col {
 typedef struct res_table {
 	int id;
 	oid query_id;
-	int query_type;
+	sql_query_t query_type;
 	int nr_cols;
 	int cur_col;
 	const char *tsep;
