@@ -22,9 +22,8 @@
 #include "mosaic_linear.h"
 #include "mosaic_frame.h"
 #include "mosaic_prefix.h"
-#include "mosaic_calendar.h"
 
-char *MOSfiltername[]={"raw","runlength","dictionary","delta","linear","frame","prefix","calendar","EOL"};
+char *MOSfiltername[]={"raw","runlength","dictionary","delta","linear","frame","prefix","EOL"};
 
 bool MOSisTypeAllowed(int compression, BAT* b) {
 	switch (compression) {
@@ -35,7 +34,6 @@ bool MOSisTypeAllowed(int compression, BAT* b) {
 	case MOSAIC_LINEAR:		return MOStypes_linear(b);
 	case MOSAIC_FRAME:		return MOStypes_frame(b);
 	case MOSAIC_PREFIX:		return MOStypes_prefix(b);
-	case MOSAIC_CALENDAR:	return MOStypes_calendar(b);
 	default: /* should not happen*/ assert(0);
 	}
 
@@ -127,8 +125,6 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 	}
 	if( task->hdr->blks[MOSAIC_DICT])
 		MOSlayout_dictionary_hdr(task,btech,bcount,binput,boutput,bproperties);
-	if( task->hdr->blks[MOSAIC_CALENDAR])
-		MOSlayout_calendar(task,btech,bcount,binput,boutput,bproperties);
 
 	if( BUNappend(btech, "========", false) != GDK_SUCCEED ||
 		BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
@@ -166,10 +162,6 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 		case MOSAIC_PREFIX:
 			MOSlayout_prefix(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_prefix(task);
-			break;
-		case MOSAIC_CALENDAR:
-			MOSlayout_calendar(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_calendar(task);
 			break;
 		default:
 			assert(0);
@@ -244,13 +236,6 @@ MOSoptimizerCost(MOStask task, int typewidth)
 			ratio = fac;
 		}
 	}
-	if (ratio < 64 && task->filter[MOSAIC_CALENDAR]){
-		fac = MOSestimate_calendar(task);
-		if (fac > ratio){
-			cand = MOSAIC_CALENDAR;
-			ratio = fac;
-		}
-	}
 	return cand;
 }
 
@@ -314,8 +299,6 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 
 	if( task->filter[MOSAIC_DICT])
 		MOScreatedictionary(task);
-	if( task->filter[MOSAIC_CALENDAR])
-		MOScreatecalendar(task);
 	// always start with an EOL block
 	MOSsetTag(task->blk,MOSAIC_EOL);
 
@@ -379,12 +362,6 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 			MOScompress_prefix(task);
 			MOSupdateHeader(task);
 			MOSadvance_prefix(task);
-			MOSnewBlk(task);
-			break;
-		case MOSAIC_CALENDAR:
-			MOScompress_calendar(task);
-			MOSupdateHeader(task);
-			MOSadvance_calendar(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_RAW: // This is basically the default case.
@@ -539,10 +516,6 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 		case MOSAIC_PREFIX:
 			MOSdecompress_prefix(task);
 			MOSskip_prefix(task);
-			break;
-		case MOSAIC_CALENDAR:
-			MOSdecompress_calendar(task);
-			MOSskip_calendar(task);
 			break;
 		default: assert(0);
 		}
@@ -733,9 +706,6 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case MOSAIC_LINEAR:
 			MOSselect_linear(task,low,hgh,li,hi,anti);
 			break;
-		case MOSAIC_CALENDAR:
-			MOSselect_calendar(task,low,hgh,li,hi,anti);
-			break;
 		case MOSAIC_RAW:
 		default:
 			MOSselect_raw(task,low,hgh,li,hi,anti);
@@ -839,9 +809,6 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		case MOSAIC_FRAME:
 			MOSthetaselect_frame(task,low,*oper);
-			break;
-		case MOSAIC_CALENDAR:
-			MOSthetaselect_calendar(task,low,*oper);
 			break;
 		case MOSAIC_RAW:
 		default:
@@ -955,9 +922,6 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case MOSAIC_LINEAR:
 			MOSprojection_linear( task);
 			break;
-		case MOSAIC_CALENDAR:
-			MOSprojection_calendar( task);
-			break;
 		case MOSAIC_RAW:
 			MOSprojection_raw( task);
 			break;
@@ -1069,9 +1033,6 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		case MOSAIC_LINEAR:
 			MOSjoin_linear( task);
-			break;
-		case MOSAIC_CALENDAR:
-			MOSjoin_calendar( task);
 			break;
 		case MOSAIC_RAW:
 			MOSjoin_raw( task);

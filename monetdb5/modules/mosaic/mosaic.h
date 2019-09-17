@@ -27,20 +27,19 @@
 #define MOSAIC_THRESHOLD 1
 
 /* The compressor kinds currently hardwired */
-#define MOSAIC_METHODS	9
-#define MOSAIC_RAW     0		// no compression at all
+#define MOSAIC_METHODS	8
+#define MOSAIC_RAW		0		// no compression at all
 #define MOSAIC_RLE      1		// use run-length encoding
 #define MOSAIC_DICT     2		// local dictionary encoding
 #define MOSAIC_DELTA	3		// use delta encoding
 #define MOSAIC_LINEAR 	4		// use an encoding for a linear sequence
 #define MOSAIC_FRAME	5		// delta dictionary for frame of reference value
 #define MOSAIC_PREFIX	6		// prefix/postfix bitwise compression
-#define MOSAIC_CALENDAR	7		// compression of temporal elements
-#define MOSAIC_EOL		8		// marker for the last block
+#define MOSAIC_EOL		7		// marker for the last block
 
 //Compression should have a significant reduction to apply.
 #define COMPRESS_THRESHOLD 50   //percent
-#define MOSAICINDEX 8  //> 2 elements
+#define MOSAICINDEX 7  //> 2 elements
 
 /*
  * The header is reserved for meta information, e.g. oid indices.
@@ -68,7 +67,7 @@ typedef struct MOSAICHEADER{
 	int top; // TODO: rename to e.g. nblocks because it is the number of blocks
 	// both dictionary and framebased compression require a global dictionary of frequent values
 	// Their size is purposely topped 
-	bte mask, bits, framebits;	// global compression type properties TODO: only used in calendar
+	bte mask, bits, framebits;	// global compression type properties
 	int dictsize;		// used by dictionary compression, it is a small table
 	union{
 		bte valbte[256];
