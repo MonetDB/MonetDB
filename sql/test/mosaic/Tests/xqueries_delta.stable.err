@@ -30,6 +30,12 @@ stderr of test 'xqueries_delta` in directory 'sql/test/mosaic` itself:
 # 21:39:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26302" "--port=38894"
 # 21:39:36 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-12023/.s.monetdb.37223
+QUERY = alter table dtmp3 alter column b set storage 'delta';
+ERROR = !No valid compression technique given or available for type: bit
+MAPI  = (monetdb) /var/tmp/mtest-12023/.s.monetdb.37223
+QUERY = alter table dtmp3 alter column f set storage 'delta';
+ERROR = !No valid compression technique given or available for type: flt
 
 # 21:39:36 >  
 # 21:39:36 >  "Done."
