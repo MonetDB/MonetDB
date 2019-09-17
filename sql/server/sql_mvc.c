@@ -612,7 +612,6 @@ str
 mvc_release(mvc *m, const char *name)
 {
 	int ok = SQL_OK;
-	int res = Q_TRANS;
 	sql_trans *tr = m->session->tr;
 	str msg = MAL_SUCCEED;
 
@@ -647,7 +646,7 @@ mvc_release(mvc *m, const char *name)
 	m->session->tr = tr;
 	m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 
-	m->type = res;
+	m->type = Q_TRANS;
 	return msg;
 }
 
@@ -1411,7 +1410,7 @@ void
 mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sql_dependency depend_type)
 {
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_create_dependency %d %d %d\n", id, depend_id, depend_type);
+		fprintf(stderr, "#mvc_create_dependency %d %d %d\n", id, depend_id, (int) depend_type);
 	if ( (id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) )
 		sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
 }
