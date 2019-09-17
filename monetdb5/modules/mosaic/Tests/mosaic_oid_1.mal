@@ -29,7 +29,7 @@ bat.append(a,990:oid);
 bat.append(a,995:oid);
 bat.append(a,1005:oid);
 bat.append(a,1002:oid);
-mosaic.compress(a,"raw");
+mosaic.compress(a,"{compression_type}");
 c:= mosaic.decompress(a);
 io.print(a, c);
 
