@@ -29,7 +29,7 @@ bat.append(a,"2014-09-20":date);
 bat.append(a,"2014-09-25":date);
 bat.append(a,"2014-10-05":date);
 bat.append(a,"2014-10-02":date);
-mosaic.compress(a,"prefix");
+mosaic.compress(a,"{compression_type}");
 c:= mosaic.decompress(a);
 eq  := batcalc.==(a,  c);
 io.print(a, c, eq);
