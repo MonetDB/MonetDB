@@ -849,25 +849,7 @@ MOSprojection_prefix( MOStask task)
 		case TYPE_int: projection_prefix(int, unsigned int); break;
 		case TYPE_lng: projection_prefix(lng, ulng); break;
 		case TYPE_oid: projection_prefix(oid, ulng); break;
-		case TYPE_flt: //projection_prefix(flt, unsigned int); break;
-{	flt *r;
-    unsigned int *dst =  (unsigned int*)  MOScodevector(task);
-    unsigned int mask = *dst++, val  =  *dst++,v;
-    flt value;
-	bits = (int) val & (~mask);
-	val = val & mask;
-	base = (BitVector) dst;
-	r= (flt*) task->src;
-	for(; first < last; first++,i++){
-		MOSskipit();
-		v = val | decompress(base,i,bits);
-		value =  (flt) ((unsigned int)val |(unsigned int) v);
-		*r++ = value;
-		task->cnt++;
-	}
-	task->src = (char*) r;
-}
-break;
+		case TYPE_flt: projection_prefix(flt, unsigned int); break;
 		case TYPE_dbl: projection_prefix(dbl, ulng); break;
 #ifdef HAVE_HGE
 		case TYPE_hge: projection_prefix(hge, unsigned long long); break;

@@ -142,22 +142,7 @@ MOSestimate_linear(MOStask task)
 	case TYPE_sht: Estimate(sht); break;
 	case TYPE_int: Estimate(int); break;
 	case TYPE_oid: Estimate(oid); break;
-	case TYPE_lng: {
-		lng *v = ((lng*) task->src)+task->start, val = *v++;
-		lng step = *v - val;
-		BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
-		if( task->range[MOSAIC_LINEAR] > task->start + 1){
-			i = task->range[MOSAIC_LINEAR] - task->start;
-			if (i * sizeof(lng) <= wordaligned( MosaicBlkSize + 2 * sizeof(lng),lng)) return 0.0;
-			factor = ((flt) i * sizeof(lng))/ wordaligned(MosaicBlkSize + 2 * sizeof(lng),lng);
-			return factor;
-		}
-		for( i=1; i < limit; i++, val = *v, v++) if ( *v - val != step) break;
-		if(i * sizeof(lng) <= wordaligned( MosaicBlkSize + 2 * sizeof(lng),lng)) return 0.0;
-		if( task->dst + wordaligned(MosaicBlkSize + 2 * sizeof(lng),lng) >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size) return 0.0;
-		factor = ( (flt)i * sizeof(lng))/wordaligned( MosaicBlkSize + 2 * sizeof(lng),lng);
-	}
-; break;
+	case TYPE_lng: Estimate(lng); break;
 	case TYPE_flt: Estimate(flt); break;
 	case TYPE_dbl: Estimate(dbl); break;
 #ifdef HAVE_HGE
