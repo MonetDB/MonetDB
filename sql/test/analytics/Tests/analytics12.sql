@@ -9,6 +9,15 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ROLLUP(Product_Category, Product_Name, ColID);
 
+SELECT
+    GROUPING(Product_Name, Product_Name),
+    GROUPING(Product_Category, ColID),
+    GROUPING(ColID, Product_Category),
+    GROUPING(Product_Category) + GROUPING(Product_Category, Product_Name) + GROUPING(Product_Category, Product_Name, ColID),
+    CAST(SUM(ColID) AS BIGINT)
+FROM tbl_ProductSales
+GROUP BY ROLLUP(Product_Category, Product_Name, ColID);
+
 WITH "groupings" AS (
     SELECT
         ROW_NUMBER() OVER (ORDER BY ColID) as "rows",

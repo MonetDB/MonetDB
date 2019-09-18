@@ -46,6 +46,29 @@ stdout of test 'analytics12` in directory 'sql/test/analytics` itself:
 [ 3,	5,	1,	2	]
 [ 3,	5,	1,	2	]
 [ 7,	7,	3,	3	]
+#SELECT
+#    GROUPING(Product_Name, Product_Name),
+#    GROUPING(Product_Category, ColID),
+#    GROUPING(ColID, Product_Category),
+#    GROUPING(Product_Category) + GROUPING(Product_Category, Product_Name) + GROUPING(Product_Category, Product_Name, ColID),
+#    CAST(SUM(ColID) AS BIGINT)
+#FROM tbl_ProductSales
+#GROUP BY ROLLUP(Product_Category, Product_Name, ColID);
+% .L1,	.L2,	.L3,	.L7,	.L11 # table_name
+% L1,	L2,	L3,	L7,	L11 # name
+% tinyint,	tinyint,	tinyint,	int,	bigint # type
+% 1,	1,	1,	2,	2 # length
+[ 0,	0,	0,	0,	1	]
+[ 0,	0,	0,	0,	2	]
+[ 0,	0,	0,	0,	3	]
+[ 0,	0,	0,	0,	4	]
+[ 0,	1,	2,	1,	1	]
+[ 0,	1,	2,	1,	2	]
+[ 0,	1,	2,	1,	3	]
+[ 0,	1,	2,	1,	4	]
+[ 3,	1,	2,	4,	3	]
+[ 3,	1,	2,	4,	7	]
+[ 3,	3,	3,	11,	10	]
 #WITH "groupings" AS (
 #    SELECT
 #        ROW_NUMBER() OVER (ORDER BY ColID) as "rows",
