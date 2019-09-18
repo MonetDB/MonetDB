@@ -4403,7 +4403,7 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, sqlid id, sql_depe
 
 	while (n) {
 		dep_id = *(sqlid*) n->data;
-		dep_type = *(sql_dependency*) n->next->data;
+		dep_type = (sql_dependency) *(sht*) n->next->data;
 
 		if (!list_find_id(tr->dropped, dep_id)) {
 
