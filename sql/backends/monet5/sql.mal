@@ -62,14 +62,6 @@ command flush_log( ) :void
 address SQLflush_log
 comment "start flushing the write ahead log";
 
-command resume_log_flushing( ) :void
-address SQLresume_log_flushing
-comment "Resume WAL log flushing";
-
-command suspend_log_flushing( ) :void
-address SQLsuspend_log_flushing
-comment "Suspend WAL log flushing";
-
 command hot_snapshot(tarfile:str) :void
 address SQLhot_snapshot
 comment "Write db snapshot to the given tar(.gz) file";
