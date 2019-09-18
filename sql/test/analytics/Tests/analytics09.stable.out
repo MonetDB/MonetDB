@@ -33,8 +33,8 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 % 1,	1,	1 # length
 [ 1,	1,	1	]
 #select avg(sum(aa) over ()) from analytics;
-% sys.L10 # table_name
-% L10 # name
+% sys.L7 # table_name
+% L7 # name
 % double # type
 % 24 # length
 [ 46	]
@@ -45,14 +45,14 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 % 1 # length
 [ 1	]
 #select cast(sum(aa) * count(*) over () as bigint) from analytics;
-% sys.L7 # table_name
-% L7 # name
+% sys.L6 # table_name
+% L6 # name
 % bigint # type
 % 2 # length
 [ 46	]
 #select cast(aa * count(1) over () as bigint) from analytics;
-% sys.L5 # table_name
-% L5 # name
+% sys.L4 # table_name
+% L4 # name
 % bigint # type
 % 3 # length
 [ 150	]
@@ -66,26 +66,26 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 [ 80	]
 [ NULL	]
 #select cast(sum(aa) * count(1) over () as bigint) from analytics;
-% sys.L7 # table_name
-% L7 # name
+% sys.L6 # table_name
+% L6 # name
 % bigint # type
 % 2 # length
 [ 46	]
 #select cast(sum(aa) * count(1 + aa) / avg(1) over () as bigint) from analytics;
-% sys.L10 # table_name
-% L10 # name
+% sys.L7 # table_name
+% L7 # name
 % bigint # type
 % 3 # length
 [ 368	]
 #select avg(sum(aa)) over () from analytics;
-% sys.L5 # table_name
-% L5 # name
+% sys.L4 # table_name
+% L4 # name
 % double # type
 % 24 # length
 [ 46	]
 #select sum(cast(aa as double)) over (rows unbounded preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 15	]
@@ -99,8 +99,8 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 [ 46	]
 [ 46	]
 #select sum(cast(aa as double)) over (range unbounded preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 46	]
@@ -114,32 +114,32 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 [ 46	]
 [ 46	]
 #select avg(avg(aa)) over (rows unbounded preceding) from analytics;
-% sys.L5 # table_name
-% L5 # name
+% sys.L4 # table_name
+% L4 # name
 % double # type
 % 24 # length
 [ 5.75	]
 #select avg(avg(aa)) over (range unbounded preceding) from analytics;
-% sys.L5 # table_name
-% L5 # name
+% sys.L4 # table_name
+% L4 # name
 % double # type
 % 24 # length
 [ 5.75	]
 #select avg(sum(aa)) over (rows unbounded preceding) from analytics;
-% sys.L5 # table_name
-% L5 # name
+% sys.L4 # table_name
+% L4 # name
 % double # type
 % 24 # length
 [ 46	]
 #select avg(sum(aa)) over (range unbounded preceding) from analytics;
-% sys.L5 # table_name
-% L5 # name
+% sys.L4 # table_name
+% L4 # name
 % double # type
 % 24 # length
 [ 46	]
 #select avg(sum(aa)) over (), avg(avg(aa)) over () from analytics;
-% sys.L5,	sys.L11 # table_name
-% L5,	L11 # name
+% sys.L4,	sys.L7 # table_name
+% L4,	L7 # name
 % double,	double # type
 % 24,	24 # length
 [ 46,	5.75	]
@@ -147,14 +147,14 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 #       cast(sum(aa) * count(case when bb < 2 then bb - 1 else bb + 1 end) / avg(1) over (rows between current row and current row) as bigint),
 #       avg(sum(aa)) over (rows unbounded preceding),
 #       avg(sum(aa)) over (range unbounded preceding) from analytics;
-% sys.L5,	sys.L15,	sys.L20,	sys.L24 # table_name
-% L5,	L15,	L20,	L24 # name
+% sys.L4,	sys.L13,	sys.L15,	sys.L20 # table_name
+% L4,	L13,	L15,	L20 # name
 % double,	bigint,	double,	double # type
 % 24,	3,	24,	24 # length
 [ 46,	460,	46,	46	]
 #select avg(sum(aa)) over () from analytics group by aa;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % double # type
 % 24 # length
 [ 6.571428571	]
@@ -166,8 +166,8 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 [ 6.571428571	]
 [ 6.571428571	]
 #select cast(sum(aa) * count(aa) / avg(aa) over (rows between current row and unbounded following) as bigint) from analytics group by aa;
-% sys.L6 # table_name
-% L6 # name
+% sys.L5 # table_name
+% L5 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -182,8 +182,8 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 #       avg(sum(aa)) over (rows unbounded preceding),
 #       cast(sum(aa) * count(aa) / avg(aa) over (rows between current row and unbounded following) as bigint),
 #       avg(sum(aa)) over (range unbounded preceding) from analytics group by aa;
-% sys.L3,	sys.L7,	sys.L16,	sys.L21 # table_name
-% L3,	L7,	L16,	L21 # name
+% sys.L2,	sys.L5,	sys.L13,	sys.L15 # table_name
+% L2,	L5,	L13,	L15 # name
 % double,	double,	bigint,	double # type
 % 24,	24,	1,	24 # length
 [ 6.571428571,	15,	2,	6.571428571	]
@@ -196,8 +196,8 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 [ 6.571428571,	6.571428571,	1,	6.571428571	]
 #select cast(sum(aa) * count(aa) over () as bigint),
 #       cast(sum(aa) over () as bigint) from analytics group by aa;
-% sys.L5,	sys.L11 # table_name
-% L5,	L11 # name
+% sys.L4,	sys.L7 # table_name
+% L4,	L7 # name
 % bigint,	bigint # type
 % 3,	2 # length
 [ 105,	43	]
@@ -210,8 +210,8 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 [ 56,	43	]
 #select cast(sum(sum(aa)) over () as bigint),
 #       cast(sum(aa) * count(count(aa)) over () as bigint) from analytics group by aa;
-% sys.L5,	sys.L13 # table_name
-% L5,	L13 # name
+% sys.L4,	sys.L11 # table_name
+% L4,	L11 # name
 % bigint,	bigint # type
 % 2,	3 # length
 [ 46,	120	]
@@ -224,8 +224,8 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 [ 46,	64	]
 #select count(aa) over (),
 #       avg(aa) over () * count(aa) from analytics group by aa;
-% sys.L2,	sys.L10 # table_name
-% L2,	L10 # name
+% sys.L1,	sys.L6 # table_name
+% L1,	L6 # name
 % bigint,	double # type
 % 1,	24 # length
 [ 7,	6.142857143	]
@@ -239,8 +239,8 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 #select cast(sum(aa) over () as bigint),
 #       cast(sum(aa) over () as bigint),
 #       cast(sum(aa) * count(aa) over () as bigint) from analytics group by aa;
-% sys.L4,	sys.L10,	sys.L15 # table_name
-% L4,	L10,	L15 # name
+% sys.L3,	sys.L6,	sys.L12 # table_name
+% L3,	L6,	L12 # name
 % bigint,	bigint,	bigint # type
 % 2,	2,	3 # length
 [ 43,	43,	105	]
@@ -254,8 +254,8 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 #select 21 - avg(sum(aa)) over (),
 #       avg(45 * count(aa) + sum(aa)) over (),
 #       cast(sum(aa) * count(aa) over () as bigint) from analytics group by aa;
-% .L5,	sys.L10,	sys.L16 # table_name
-% L5,	L10,	L16 # name
+% .L4,	sys.L6,	sys.L13 # table_name
+% L4,	L6,	L13 # name
 % double,	double,	bigint # type
 % 24,	24,	3 # length
 [ 14.42857143,	58,	105	]
@@ -267,8 +267,8 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 [ 14.42857143,	58,	42	]
 [ 14.42857143,	58,	56	]
 #select avg(sum(aa)) over (partition by bb) from analytics group by bb;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 9	]
@@ -276,14 +276,14 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ NULL	]
 #select cast(sum(aa) * 100 / sum(sum(aa)) over () as bigint) from analytics;
-% sys.L7 # table_name
-% L7 # name
+% sys.L6 # table_name
+% L6 # name
 % bigint # type
 % 3 # length
 [ 100	]
 #select cast(sum(aa) * 100 / sum(sum(aa)) over (partition by bb) as bigint) from analytics group by bb;
-% sys.L7 # table_name
-% L7 # name
+% sys.L6 # table_name
+% L6 # name
 % bigint # type
 % 3 # length
 [ 100	]
@@ -291,8 +291,8 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 [ 100	]
 [ NULL	]
 #select rank() over (partition by case when aa > 5 then aa else aa + 5 end) from analytics;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -306,20 +306,20 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select rank() over (partition by sum(aa)) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% int # type
+% 1 # length
+[ 1	]
+#select rank() over (partition by 12*sum(aa)) from analytics;
 % sys.L5 # table_name
 % L5 # name
 % int # type
 % 1 # length
 [ 1	]
-#select rank() over (partition by 12*sum(aa)) from analytics;
-% sys.L6 # table_name
-% L6 # name
-% int # type
-% 1 # length
-[ 1	]
 #select rank() over (partition by sum(aa)) from analytics group by aa;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -331,8 +331,8 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select rank() over (partition by sum(aa)) from analytics group by bb;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -340,20 +340,20 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select rank() over (partition by sum(aa)*sum(bb)) from analytics;
-% sys.L7 # table_name
-% L7 # name
-% int # type
-% 1 # length
-[ 1	]
-#select rank() over (partition by sum(aa), sum(bb)) from analytics;
 % sys.L6 # table_name
 % L6 # name
 % int # type
 % 1 # length
 [ 1	]
-#select rank() over (partition by sum(aa), sum(bb)) from analytics group by aa;
+#select rank() over (partition by sum(aa), sum(bb)) from analytics;
 % sys.L5 # table_name
 % L5 # name
+% int # type
+% 1 # length
+[ 1	]
+#select rank() over (partition by sum(aa), sum(bb)) from analytics group by aa;
+% sys.L4 # table_name
+% L4 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -365,27 +365,27 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select rank() over (order by sum(aa)) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.L5 # table_name
+% L5 # name
 % int # type
 % 1 # length
 [ 1	]
 #select rank() over (order by sum(aa), sum(bb)) from analytics;
-% sys.L7 # table_name
-% L7 # name
+% sys.L6 # table_name
+% L6 # name
 % int # type
 % 1 # length
 [ 1	]
 #select dense_rank() over (partition by sum(aa) order by avg(bb)) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.L5 # table_name
+% L5 # name
 % int # type
 % 1 # length
 [ 1	]
 #select avg(sum(aa)) over (rows unbounded preceding),
 #       rank() over (partition by sum(aa)) from analytics;
-% sys.L5,	sys.L12 # table_name
-% L5,	L12 # name
+% sys.L4,	sys.L10 # table_name
+% L4,	L10 # name
 % double,	int # type
 % 24,	1 # length
 [ 46,	1	]
