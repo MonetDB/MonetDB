@@ -202,6 +202,15 @@ GROUP BY col1;
 	-- 2
 	-- 2
 
+SELECT
+    t1.col1 IN (SELECT ColID FROM tbl_ProductSales GROUP BY t1.col1, tbl_ProductSales.ColID)
+FROM another_T t1
+GROUP BY col1;
+	-- True
+	-- False
+	-- False
+	-- False
+
 INSERT INTO tbl_ProductSales VALUES (0, 'a', 'b', 0);
 SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1; 
 	-- True
