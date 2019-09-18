@@ -5684,7 +5684,7 @@ rel_bin(backend *be, sql_rel *rel)
 {
 	mvc *sql = be->mvc;
 	list *refs = sa_list(sql->sa);
-	int sqltype = sql->type;
+	sql_query_t sqltype = sql->type;
 	stmt *s = subrel_bin(be, rel, refs);
 
 	if (sqltype == Q_SCHEMA)

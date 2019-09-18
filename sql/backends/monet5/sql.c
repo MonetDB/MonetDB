@@ -2249,7 +2249,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATdescriptor(bid);
 	if ( b == NULL)
 		throw(MAL,"sql.resultset", SQLSTATE(HY005) "Cannot access column descriptor");
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), 1, b);
+	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, b);
 	if (res < 0)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result table construction failed");
 	BBPunfix(b->batCacheid);
@@ -2340,7 +2340,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	order = BATdescriptor(bid);
 	if ( order == NULL)
 		throw(MAL,"sql.resultset", SQLSTATE(HY005) "Cannot access column descriptor");
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), 1, order);
+	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, order);
 	t = m->results;
 	if (res < 0){
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed");
@@ -2457,7 +2457,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), 1, NULL);
+	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, NULL);
 	if (res < 0)
 		throw(SQL, "sql.resultset", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
@@ -2542,7 +2542,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "sql.resultSet", "cannot transfer files to client");
 	}
 
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), 1, NULL);
+	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, NULL);
 
 	t = m->results;
 	if (res < 0){
@@ -2640,7 +2640,7 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	int *res_id;
 	int nr_cols;
-	int qtype;
+	sql_query_t qtype;
 	bat order_bid;
 
 	if ( pci->argc > 6)
@@ -2648,7 +2648,7 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	res_id = getArgReference_int(stk, pci, 0);
 	nr_cols = *getArgReference_int(stk, pci, 1);
-	qtype = *getArgReference_int(stk, pci, 2);
+	qtype = (sql_query_t) *getArgReference_int(stk, pci, 2);
 	order_bid = *getArgReference_bat(stk, pci, 3);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -2802,7 +2802,7 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = *(ptr *) p;
 
 	// scalar values are single-column result sets
-	if((res_id = mvc_result_table(b->mvc, mb->tag, 1, 1, NULL)) < 0)
+	if ((res_id = mvc_result_table(b->mvc, mb->tag, 1, Q_TABLE, NULL)) < 0)
 		throw(SQL, "sql.exportValue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if (mvc_result_value(b->mvc, tn, cn, type, digits, scale, p, mtype))
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed");
