@@ -11,6 +11,7 @@
 
 #include "sql_mem.h"
 #include "sql_list.h"
+#include "sql_querytype.h"
 #include "stream.h"
 
 #define tr_none		0
@@ -40,21 +41,23 @@
 #define PRIV_COPYFROMFILE 1
 #define PRIV_COPYINTOFILE 2
 
-#define SCHEMA_DEPENDENCY 1
-#define TABLE_DEPENDENCY 2
-#define COLUMN_DEPENDENCY 3
-#define KEY_DEPENDENCY 4
-#define VIEW_DEPENDENCY 5
-#define USER_DEPENDENCY 6
-#define FUNC_DEPENDENCY 7
-#define TRIGGER_DEPENDENCY 8
-#define OWNER_DEPENDENCY 9
-#define INDEX_DEPENDENCY 10
-#define FKEY_DEPENDENCY 11
-#define SEQ_DEPENDENCY 12
-#define PROC_DEPENDENCY 13
-#define BEDROPPED_DEPENDENCY 14		/*The object must be dropped when the dependent object is dropped independently of the DROP type.*/
-#define TYPE_DEPENDENCY 15
+typedef enum sql_dependency { 
+	SCHEMA_DEPENDENCY = 1,
+	TABLE_DEPENDENCY = 2,
+	COLUMN_DEPENDENCY = 3,
+	KEY_DEPENDENCY = 4,
+	VIEW_DEPENDENCY = 5,
+	USER_DEPENDENCY = 6,
+	FUNC_DEPENDENCY = 7,
+	TRIGGER_DEPENDENCY = 8,
+	OWNER_DEPENDENCY = 9,
+	INDEX_DEPENDENCY = 10,
+	FKEY_DEPENDENCY = 11,
+	SEQ_DEPENDENCY = 12,
+	PROC_DEPENDENCY = 13,
+	BEDROPPED_DEPENDENCY = 14, /*The object must be dropped when the dependent object is dropped independently of the DROP type.*/
+	TYPE_DEPENDENCY = 15
+} sql_dependency;
 
 #define NO_DEPENDENCY 0
 #define HAS_DEPENDENCY 1
@@ -351,13 +354,15 @@ typedef struct sql_arg {
 	sql_subtype type;
 } sql_arg;
 
-#define F_FUNC 1
-#define F_PROC 2
-#define F_AGGR 3
-#define F_FILT 4
-#define F_UNION 5
-#define F_ANALYTIC 6
-#define F_LOADER 7
+typedef enum sql_ftype {
+	F_FUNC = 1,
+	F_PROC = 2,
+	F_AGGR = 3,
+	F_FILT = 4,
+	F_UNION = 5,
+	F_ANALYTIC = 6,
+	F_LOADER = 7
+} sql_ftype;
 
 #define IS_FUNC(f) (f->type == F_FUNC)
 #define IS_PROC(f) (f->type == F_PROC)
@@ -367,20 +372,22 @@ typedef struct sql_arg {
 #define IS_ANALYTIC(f) (f->type == F_ANALYTIC)
 #define IS_LOADER(f) (f->type == F_LOADER)
 
-#define FUNC_LANG_INT 0	/* internal */
-#define FUNC_LANG_MAL 1 /* create sql external mod.func */
-#define FUNC_LANG_SQL 2 /* create ... sql function/procedure */
-#define FUNC_LANG_R   3 /* create .. language R */
-#define FUNC_LANG_C   4 /* create .. language C */
-#define FUNC_LANG_J   5
-// this should probably be done in a better way
-#define FUNC_LANG_PY  6 /* create .. language PYTHON */
-#define FUNC_LANG_MAP_PY  7 /* create .. language PYTHON_MAP */
-#define FUNC_LANG_PY2  8 /* create .. language PYTHON2 */
-#define FUNC_LANG_MAP_PY2  9 /* create .. language PYTHON2_MAP */
-#define FUNC_LANG_PY3  10 /* create .. language PYTHON3 */
-#define FUNC_LANG_MAP_PY3  11 /* create .. language PYTHON3_MAP */
-#define FUNC_LANG_CPP   12 /* create .. language CPP */
+typedef enum sql_flang {
+	FUNC_LANG_INT = 0, /* internal */
+	FUNC_LANG_MAL = 1, /* create sql external mod.func */
+	FUNC_LANG_SQL = 2, /* create ... sql function/procedure */
+	FUNC_LANG_R = 3,   /* create .. language R */
+	FUNC_LANG_C = 4,   /* create .. language C */
+	FUNC_LANG_J = 5,   /* create .. language JAVASCRIPT (not implemented) */
+	/* this should probably be done in a better way */
+	FUNC_LANG_PY = 6,       /* create .. language PYTHON */
+	FUNC_LANG_MAP_PY = 7,   /* create .. language PYTHON_MAP */
+	FUNC_LANG_PY2 = 8,      /* create .. language PYTHON2 */
+	FUNC_LANG_MAP_PY2 = 9,  /* create .. language PYTHON2_MAP */
+	FUNC_LANG_PY3 = 10,     /* create .. language PYTHON3 */
+	FUNC_LANG_MAP_PY3 = 11, /* create .. language PYTHON3_MAP */
+	FUNC_LANG_CPP = 12      /* create .. language CPP */
+} sql_flang;
 
 #define LANG_EXT(l)  (l>FUNC_LANG_SQL)
 
@@ -389,7 +396,7 @@ typedef struct sql_func {
 
 	char *imp;
 	char *mod;
-	int type;
+	sql_ftype type;
 	list *ops;	/* param list */
 	list *res;	/* list of results */
 	int nr;
@@ -397,7 +404,7 @@ typedef struct sql_func {
 			   1 sql 
 			   2 sql instantiated proc 
 			*/
-	int lang;
+	sql_flang lang;
 	char *query;	/* sql code */
 	bit side_effect;
 	bit varres;	/* variable output result */
@@ -650,7 +657,7 @@ typedef struct res_col {
 typedef struct res_table {
 	int id;
 	oid query_id;
-	int query_type;
+	sql_query_t query_type;
 	int nr_cols;
 	int cur_col;
 	const char *tsep;
@@ -710,7 +717,7 @@ extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, const char *n
 extern node *find_sql_type_node(sql_schema *s, sqlid id);
 
 extern sql_func *find_sql_func(sql_schema * s, const char *tname);
-extern list *find_all_sql_func(sql_schema * s, const char *tname, int type);
+extern list *find_all_sql_func(sql_schema * s, const char *tname, sql_ftype type);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
 extern sql_func *sql_trans_find_func(sql_trans *tr, sqlid id);
 extern node *find_sql_func_node(sql_schema *s, sqlid id);

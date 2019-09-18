@@ -393,7 +393,7 @@ query_exp_optname(sql_query *query, sql_rel *r, symbol *q)
 }
 
 static sql_subfunc *
-bind_func_(mvc *sql, sql_schema *s, char *fname, list *ops, int type )
+bind_func_(mvc *sql, sql_schema *s, char *fname, list *ops, sql_ftype type )
 {
 	sql_subfunc *sf = NULL;
 
@@ -408,7 +408,7 @@ bind_func_(mvc *sql, sql_schema *s, char *fname, list *ops, int type )
 }
 
 static sql_subfunc *
-bind_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t1, sql_subtype *t2, int type )
+bind_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t1, sql_subtype *t2, sql_ftype type )
 {
 	sql_subfunc *sf = NULL;
 
@@ -446,7 +446,7 @@ bind_member_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t, int nrarg
 }
 
 static sql_subfunc *
-find_func(mvc *sql, sql_schema *s, char *fname, int len, int type, sql_subfunc *prev )
+find_func(mvc *sql, sql_schema *s, char *fname, int len, sql_ftype type, sql_subfunc *prev )
 {
 	sql_subfunc *sf = NULL;
 
@@ -486,7 +486,7 @@ score_func( sql_subfunc *sf, list *tl)
 }
 
 static sql_exp *
-find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, int type, sql_subfunc **sf)
+find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, sql_ftype type, sql_subfunc **sf)
 {
 	sql_exp *e = NULL;
 	*sf = bind_func_(sql, s, fname, tl, type);
@@ -684,7 +684,7 @@ static sql_exp *
 rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
 {
 	sql_subfunc *f = NULL;
-	int type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
+	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
 		   ((ek.card == card_relation)?F_UNION:F_FUNC));
 
 	f = sql_bind_func(sql->sa, s, fname, NULL, NULL, type);
@@ -1591,8 +1591,8 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		else
 			return sql_error(sql, 05, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(rs)) &&
-	   (!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(rs2))))) {
+	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(sql, rs)) &&
+	   (!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
 		if ((ls->card == rs->card && !rs2) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
@@ -1839,9 +1839,9 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 {
 	sql_subfunc *f = NULL;
 	int table_func = (ek.card == card_relation);
-	int type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
+	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
 		   ((ek.card == card_relation)?F_UNION:F_FUNC));
-	int filt = (type == F_FUNC)?F_FILT:type;
+	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 
 	(void)filt;
 	(void)nr_args;
@@ -1957,7 +1957,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	l = rel_value_exp(query, &left, lo, f, ek);
 	if (!l)
 		return NULL;
-	if (l && exp_has_freevar(l)) {
+	if (l && exp_has_freevar(sql, l)) {
 		l_is_value=0;
 	}
 	ek.card = card_set;
@@ -1997,7 +1997,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				left = rel_add_identity(sql, left, &id);
 				id = exp_ref(sql->sa, id);
 				left = rel_crossproduct(sql->sa, left, z, is_sql_sel(f)?op_left:op_join);
-				if (!l_is_value || rel_has_freevar(z))
+				if (!l_is_value || rel_has_freevar(sql, z))
 					set_dependent(left);
 
 				left = rel_groupby(sql, left, exp2list(sql->sa, id)); 
@@ -2049,7 +2049,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 					z = rel_add_identity(sql, z, &tid);
 					tid = exp_ref(sql->sa, tid);
 					left = rel_crossproduct(sql->sa, left, z, is_sql_sel(f)?op_left:op_join);
-					if (rel_has_freevar(z))
+					if (rel_has_freevar(sql, z))
 						set_dependent(left);
 
 					left = rel_groupby(sql, left, exp2list(sql->sa, id)); 
@@ -2489,7 +2489,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				le = exp_ref(sql->sa, le);
 			}
 			*rel = rel_crossproduct(sql->sa, *rel, sq, is_value?op_left:exists?op_semi:op_anti); 
-			if (rel_has_freevar(sq))
+			if (rel_has_freevar(sql, sq))
 				set_dependent(*rel);
 			if (*rel && needproj) {
 				*rel = rel_project(sql->sa, *rel, pexps);
@@ -2685,7 +2685,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!l)
 			return NULL;
 
-		if (l && exp_has_freevar(l)) {
+		if (l && exp_has_freevar(sql, l)) {
 			l_outer=1;
 			l_is_value=0;
 		}
@@ -2740,7 +2740,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			if (l_tuple && z) { /* later union them together (now just one) */
 				node *n, *m;
 
-				if (rel_has_freevar(z)) {
+				if (rel_has_freevar(sql, z)) {
 					if (z->op == op_join) {
 						if (!is_sql_sel(f))
 							z->op = sc->token==SQL_IN?op_semi:op_anti;
@@ -2787,7 +2787,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 									 (sc->token==SQL_IN?cmp_equal:cmp_notequal)); 
 					if (z) {
 						left = rel_crossproduct(sql->sa, left, z, sc->token==SQL_IN?op_semi:op_anti);
-						if (rel_has_freevar(z))
+						if (rel_has_freevar(sql, z))
 							set_dependent(left);
 					} else if (l_outer) {
 						left->op = sc->token==SQL_IN?op_semi:op_anti;
@@ -3334,7 +3334,7 @@ rel_unop_(sql_query *query, sql_rel *rel, sql_exp *e, sql_schema *s, char *fname
 	mvc *sql = query->sql;
 	sql_subfunc *f = NULL;
 	sql_subtype *t = NULL;
-	int type = (card == card_loader)?F_LOADER:((card == card_none)?F_PROC:
+	sql_ftype type = (card == card_loader)?F_LOADER:((card == card_none)?F_PROC:
 		   ((card == card_relation)?F_UNION:F_FUNC));
 
 	if (!s)
@@ -3393,7 +3393,7 @@ rel_unop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	sql_exp *e = NULL;
 	sql_subfunc *f = NULL;
 	sql_subtype *t = NULL;
-	int type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
+	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
 
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
@@ -3465,7 +3465,7 @@ rel_binop_(sql_query *query, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s
 	sql_exp *res = NULL;
 	sql_subtype *t1, *t2;
 	sql_subfunc *f = NULL;
-	int type = (card == card_loader)?F_LOADER:((card == card_none)?F_PROC:((card == card_relation)?F_UNION:F_FUNC));
+	sql_ftype type = (card == card_loader)?F_LOADER:((card == card_none)?F_PROC:((card == card_relation)?F_UNION:F_FUNC));
 	if (card == card_loader)
 		card = card_none;
 	t1 = exp_subtype(l);
@@ -3702,7 +3702,7 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	char *sname = qname_schema(dl->data.lval);
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
-	int type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
+	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
 
 	sql_subfunc *sf = NULL;
 
@@ -3758,7 +3758,7 @@ rel_nop_(sql_query *query, sql_rel *rel, sql_exp *a1, sql_exp *a2, sql_exp *a3, 
 	mvc *sql = query->sql;
 	list *tl = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
-	int type = (card == card_none)?F_PROC:((card == card_relation)?F_UNION:F_FUNC);
+	sql_ftype type = (card == card_none)?F_PROC:((card == card_relation)?F_UNION:F_FUNC);
 
 	(void) rel;
 	append(tl, exp_subtype(a1));
@@ -3906,7 +3906,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		if (uaname)
 			GDKfree(uaname);
 		return e;
-	} else if(is_sql_groupby(f) || (is_sql_partitionby(f) && groupby->op != op_groupby)) {
+	} else if (is_sql_groupby(f) || (is_sql_partitionby(f) && groupby->op != op_groupby)) {
 		const char *clause = is_sql_groupby(f) ? "GROUP BY":"PARTITION BY";
 		char *uaname = GDKmalloc(strlen(aname) + 1);
 		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in %s clause",
@@ -3916,7 +3916,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		return e;
 	} else if (!query_has_outer(query) && is_sql_where(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
-		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: not allowed in WHERE clause",
+		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause",
+				       uaname ? toUpperCopy(uaname, aname) : aname);
+		if (uaname)
+			GDKfree(uaname);
+		return e;
+	} else if (is_sql_aggr(f)) {
+		char *uaname = GDKmalloc(strlen(aname) + 1);
+		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested",
 				       uaname ? toUpperCopy(uaname, aname) : aname);
 		if (uaname)
 			GDKfree(uaname);
@@ -3997,7 +4004,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			gr->l = gl;
 		if (!e || !exp_subtype(e)) /* we also do not expect parameters here */
 			return NULL;
-		freevar &= exp_has_freevar(e);
+		freevar &= exp_has_freevar(sql, e);
 		list_append(exps, e);
 	}
 

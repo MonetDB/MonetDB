@@ -329,9 +329,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		int mmap_count = 4 + pci->retc * 2;
 
 		// create initial shared memory
-		MT_lock_set(&pyapiLock);
 		mmap_id = GDKuniqueid(mmap_count);
-		MT_lock_unset(&pyapiLock);
 
 		mmap_ptrs = GDKzalloc(mmap_count * sizeof(void *));
 		mmap_sizes = GDKzalloc(mmap_count * sizeof(size_t));

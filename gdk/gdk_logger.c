@@ -3034,8 +3034,10 @@ pre_allocate(logger *lg)
 	p = (lng) getfilepos(getFile(lg->log));
 	if (p == -1)
 		return GDK_FAIL;
-	if (p > LOG_LARGE)
+	if (p > LOG_LARGE) {
+		lg->id++;
 		return logger_open(lg);
+	}
 	if (p + DBLKSZ > lg->end) {
 		p &= ~(DBLKSZ - 1);
 		p += SEGSZ;
