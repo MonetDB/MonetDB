@@ -2483,7 +2483,7 @@ tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *content
 	const ssize_t bufsize = 64 * 1024;
 	gdk_return ret = GDK_FAIL;
 	ssize_t file_size;
-	char *buf;
+	char *buf = NULL;
 	ssize_t to_read;
 
 	file_size = getFileSize(contents);
