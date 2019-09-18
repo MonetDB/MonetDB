@@ -1117,7 +1117,6 @@ snapshot_bats(stream *plan, const char *db_dir)
 			goto end;
 	}
 
-
 end:
 	if (cat) {
 		close_stream(cat);
@@ -1171,6 +1170,5 @@ bat_logger_init( logger_functions *lf )
 	lf->log_tend = bl_tend;
 	lf->log_sequence = bl_sequence;
 	lf->log_find_table_value = bl_find_table_value;
-
 	lf->get_snapshot_files = bl_snapshot;
 }

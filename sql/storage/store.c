@@ -2376,10 +2376,11 @@ tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 	vsnprintf(*cursor_ptr, size + 1, fmt, ap);
 	va_end(ap);
 
-	/* move *cursor_ptr to the start of the next field.
-	 * therefore, uncoditionally add `size` and ignore the return value
-	 * of vsnprintf, which only tells us how much we wrote into the
-	 * current field. */
+	/* At first reading you might wonder why add `size` instead
+	 * of the byte count returned by vsnprintf. The reason is
+	 * that we want to move `*cursor_ptr` to the start of the next
+	 * field, not to the unused part of this field.
+	 */
 	*cursor_ptr += size;
 }
 
@@ -2398,7 +2399,7 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
 	// owned by that user. When unpacking as root it is reasonable that
 	// the resulting files are owned by root.
 
-	// The following is taken directly from the definition
+	// The following is taken directly from the definition found
 	// in /usr/include/tar.h on a Linux system.
 	tar_write_header_field(&cursor, 100, "%s", path);   // name[100]
 	tar_write_header_field(&cursor, 8, "0000644");      // mode[8]
@@ -2533,7 +2534,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 	gdk_return ret;
 	const char *p = plan; // our cursor in the plan
 	time_t timestamp = time(NULL);
-	// We use _path for the absolute path
+	// Name convention: _path for the absolute path
 	// and _name for the corresponding local relative path
 	char abs_src_path[2 * FILENAME_MAX];
 	char *src_name = abs_src_path;
