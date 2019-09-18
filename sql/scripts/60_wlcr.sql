@@ -16,6 +16,9 @@ external name wlc.master;
 create procedure stopmaster()
 external name wlc.stopmaster;
 
+create procedure flush()
+external name wlc.flush;
+
 create procedure masterbeat( duration int)
 external name wlc."setmasterbeat";
 
@@ -26,30 +29,34 @@ create function masterTick() returns bigint
 external name wlc."getmastertick";
 
 -- Replica commands
-create procedure replicate()
-external name wlr.replicate;
-
-create procedure replicate(pointintime timestamp)
-external name wlr.replicate;
 
 create procedure replicate(dbname string)
 external name wlr.replicate;
 
-create procedure replicate(dbname string, pointintime timestamp)
+create procedure stopreplicate()
+external name wlr.stopreplicate;
+
+-- run it forever
+create procedure replicate()
 external name wlr.replicate;
 
-create procedure replicate(dbname string, id tinyint)
+-- run replicator until condition is met
+create procedure replicate(pointintime timestamp)
 external name wlr.replicate;
 
-create procedure replicate(dbname string, id smallint)
+create procedure replicate(id tinyint)
 external name wlr.replicate;
 
-create procedure replicate(dbname string, id integer)
+create procedure replicate(id smallint)
 external name wlr.replicate;
 
-create procedure replicate(dbname string, id bigint)
+create procedure replicate(id integer)
 external name wlr.replicate;
 
+create procedure replicate(id bigint)
+external name wlr.replicate;
+
+-- control the interval for replication 
 create procedure replicabeat(duration integer)
 external name wlr."setreplicabeat";
 

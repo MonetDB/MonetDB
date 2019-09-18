@@ -708,7 +708,6 @@ SQLinitClient(Client c)
 	msg = SQLprepareClient(c, 0);
 #endif
 	MT_lock_unset(&sql_contextLock);
-	WLRinit();
 	return msg;
 }
 

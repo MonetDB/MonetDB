@@ -25,6 +25,7 @@
  * Some systems also use the logical logs to REPLAY all (expensive) queries
  * against the database. We skip this for the time being, as those queries
  * can be captured already in the server.
+ * [A flag should be added to at least capture them]
  *
  * The goal of this module is to ease BACKUP and REPLICATION of a master database 
  * with a time-bounded delay. This means that both master and replica run at a certain beat
@@ -44,7 +45,7 @@
  * from most storage system related failures, e.g. using RAID disks or LSF systems.
  *
  * A database can be set into 'master' mode only once using the SQL command:
- * CALL master()
+ * CALL master() whose access permission is limited to the 'monetdb' user.[CHECK]
  * An optional path to the log record directory can be given to reduce the IO latency,
  * e.g. using a nearby SSD, or where there is ample of space to keep a long history,
  * e.g. a HDD or cold storage location.
@@ -62,19 +63,22 @@
  * A missing path to the snapshot denotes that we can start the clone with an empty database.
  * The log files are stored as master/<dbname>_<batchnumber>. They belong to the snapshot.
  * 
- * Each wlc log file contains a serial log of committed compound transactions.
+ * Each wlc log file contains a serial log of a number of committed compound transactions.
  * The log records are represented as ordinary MAL statement blocks, which
  * are executed in serial mode. (parallelism can be considered for large updates later)
- * Each transaction job is identified by a unique id, its starting time, and the user responsible..
- * The log-record should end with a commit to be allowed for re-execution.
- * Log records with a rollback tag are merely for analysis by the DBA.
+ * Each transaction job is identified by a unique id, its starting time, and the original responsible user.
+ * Each log-record should end with a commit to be allowed for re-execution.
+ * Log records with a rollback tag are merely for analysis by the DBA, their statements are ignored.
  *
  * A transaction log file is created by the master using a heartbeat (in seconds).
  * A new transaction log file is published when the system has been collecting transaction records for some time.
  * The beat can be set using a SQL command, e.g.
  * CALL masterbeat(duration)
- * Setting it to zero leads to a log file per transaction and may cause a large log directory.
+ * Setting it to zero leads to a log file per transaction and may cause a large log directory
+ * with thousands of small files.
  * A default of 5 minutes should balance polling overhead in most practical situations.
+ * Intermittent flushmaster() during this period ensures it the committed log records survive
+ * a crash.
  *
  * A minor problem here is that we should ensure that the log file is closed even if there
  * are no transactions running. It is solved with a separate monitor thread, which ensures
@@ -87,9 +91,15 @@
  * a large bulk load of the database, stopping logging avoids a double write into the
  * database. The database can only be brought back into master mode using a fresh snapshot.
  *
+ * [It is not advicable to temporarily stop logging and continue afterwards, because then there
+ * is no guarantee the user will see a consistent database.]
+ *
  * One of the key challenges for a DBA is to keep the log directory manageable, because it grows
  * with the speed up updates being applied to the database. This calls for regularly checking
  * for their disk footprint and taking a new snapshot as a frame of reference.
+ *
+ * [TODO A trigger should be added to stop logging and call for a fresh snapshot first]
+ * [TODO the batch files might include the snapshot id for ease of rebuild]
  *
  * The DBA tool 'monetdb' provides options to create a master and its replicas.
  * It will also maintain the list of replicas for inspection and managing their drift.
@@ -101,7 +111,7 @@
  * 	monetdb replicate <dbname> <mastername>
  *
  * Instead of using the monetdb command line we can use the SQL calls directly
- * master() and replicate(), provided we start with a fresh database.
+ * sys.master() and sys.replicate(), provided we start with a fresh database.
  *
  * CLONE
  *
@@ -142,7 +152,8 @@
  * The wlc files purposely have a textual format derived from the MAL statements.
  * This provides a stepping stone for remote execution later.
  *
- * [TODO] consider the roll forward of SQL session variables, i.e. optimizer_pipe
+ * [TODO consider the roll logging of SQL session variables, i.e. optimizer_pipe 
+ * as part of the log record]
  * For updates we don't need special care for this.
  */
 #include "monetdb_config.h"
@@ -159,7 +170,7 @@ static stream *wlc_fd = 0;
 char wlc_dir[FILENAME_MAX]; 	// The location in the global file store for the logs
 char wlc_name[IDLENGTH];  	// The master database name
 lng   wlc_id = 0;			// next transaction id
-int  wlc_state = 0;			// The current status of the in the life cycle
+int  wlc_state = 0;			// The current status of th logger in the life cycle
 char wlc_write[26];			// The timestamp of the last committed transaction
 int  wlc_batches = 0;		// identifier of next batch
 int  wlc_beat = 10;		// maximal period covered by a single log file in seconds
@@ -300,6 +311,21 @@ WLCcloselogger(void)
 	mnstr_fsync(wlc_fd);
 	close_stream(wlc_fd);
 	wlc_fd= NULL;
+	return WLCsetConfig();
+}
+
+/* force the current log file to its storage container, but dont create a new one yet */
+str
+WLCflush(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	if( wlc_fd == NULL)
+		return MAL_SUCCEED;
+	mnstr_flush(wlc_fd);
+	mnstr_fsync(wlc_fd);
 	return WLCsetConfig();
 }
 
@@ -487,7 +513,7 @@ WLCstopmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str call)
+WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str fcn)
 {
 	struct timeval clock;
 	time_t clk ;
@@ -496,7 +522,7 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str call)
 
 	(void) pci;
 	if(gettimeofday(&clock,NULL) == -1)
-		throw(MAL,call,"Unable to retrieve current time");
+		throw(MAL, fcn, "Unable to retrieve current time");
 	clk = clock.tv_sec;
 #ifdef HAVE_LOCALTIME_R
 	(void) localtime_r(&clk, &ctm);
@@ -505,24 +531,46 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str call)
 #endif
 	strftime(wlc_time, sizeof(wlc_time), "%Y-%m-%dT%H:%M:%S.000",&ctm);
 	if (pushStr(cntxt->wlc, p, wlc_time) == NULL)
-		throw(MAL, call, MAL_MALLOC_FAIL);
+		throw(MAL, fcn, MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
-#define WLCstart(P, K, MSG, CALL)\
-{\
-	if( cntxt->wlc == NULL){\
-		cntxt->wlc_kind = K;\
-		if((cntxt->wlc = newMalBlk(STMT_INCREMENT)) == NULL) \
-			throw(MAL,CALL, MAL_MALLOC_FAIL); \
-	}\
-	if( cntxt->wlc->stop == 0){\
-		P = newStmt(cntxt->wlc,"wlr","transaction");\
-		if((MSG = WLCsettime(cntxt,pci, P, CALL)) == MAL_SUCCEED) {\
-			P = pushStr(cntxt->wlc, P, cntxt->username);\
-			P->ticks = GDKms();\
-		} \
-	}\
+static str
+WLCstart(Client cntxt, int kind, str fcn)
+{
+	InstrPtr pci;
+	str msg = MAL_SUCCEED;
+	MalBlkPtr mb = cntxt->wlc;
+	lng tag;
+
+	if( cntxt->wlc == NULL){
+		cntxt->wlc_kind = kind;
+		if((cntxt->wlc = newMalBlk(STMT_INCREMENT)) == NULL) 
+			throw(MAL, fcn, MAL_MALLOC_FAIL); 
+		mb = cntxt->wlc;
+	}
+	/* Find a single transaction sequence ending with COMMIT or ROLLBACK */
+	if( mb->stop > 1 ){
+		pci = getInstrPtr(mb, mb->stop -1 );
+		if (  ! (strcmp( getFunctionId(pci), "commit") == 0 || strcmp( getFunctionId(pci), "rollback") == 0))
+			return msg;
+	}
+
+	/* create the start of a new transaction block */
+	MT_lock_set(&wlc_lock);
+	tag = wlc_id;
+	wlc_id++; // Update wlc administration
+
+	pci = newStmt(mb,"wlr", "transaction");
+	pci = pushLng(mb, pci, tag);
+	if((msg = WLCsettime(cntxt,pci, pci, fcn)) == MAL_SUCCEED) {
+		snprintf(wlc_write, 26, "%s", getVarConstant(cntxt->wlc, getArg(pci, 2)).val.sval);
+		pci = pushStr(mb, pci, cntxt->username);
+		pci->ticks = GDKms();
+	}
+	MT_lock_unset(&wlc_lock);
+
+	return msg;
 }
 
 str
@@ -545,7 +593,7 @@ WLCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	if ( strcmp("-- no query",getVarConstant(mb, getArg(pci,1)).val.sval) == 0)
 		return MAL_SUCCEED;	// ignore system internal queries.
-	WLCstart(p, WLC_QUERY, msg, "wlr.query");
+	msg = WLCstart(cntxt, WLC_QUERY, "wlr.query");
 	if(msg)
 		return msg;
 	p = newStmt(cntxt->wlc, "wlr","query");
@@ -560,7 +608,7 @@ WLCcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
-	WLCstart(p,WLC_CATALOG, msg, "wlr.catalog");
+	msg =  WLCstart(cntxt, WLC_CATALOG, "wlr.catalog");
 	if(msg)
 		return msg;
 	p = newStmt(cntxt->wlc, "wlr","catalog");
@@ -575,7 +623,7 @@ WLCaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
-	WLCstart(p, WLC_UPDATE, msg, "wlr.action");
+	msg = WLCstart(cntxt, WLC_UPDATE, "wlr.action");
 	if(msg)
 		return msg;
 	p = newStmt(cntxt->wlc, "wlr","action");
@@ -595,7 +643,7 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
-	WLCstart(p,WLC_IGNORE, msg, "wlr.generic");
+	msg = WLCstart(cntxt, WLC_IGNORE, "wlr.generic");
 	if(msg)
 		return msg;
 	p = newStmt(cntxt->wlc, "wlr",getFunctionId(pci));
@@ -719,7 +767,7 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) stk;
 	(void) mb;
-	WLCstart(p, WLC_UPDATE, msg, "wlr.append");
+	msg = WLCstart(cntxt, WLC_UPDATE, "wlr.append");
 	if(msg)
 		return msg;
 	p = newStmt(cntxt->wlc, "wlr","append");
@@ -762,7 +810,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b= BBPquickdesc(bid, false);
 	if( BATcount(b) == 0)
 		return MAL_SUCCEED;
-	WLCstart(p, WLC_UPDATE, msg, "wlr.delete");
+	msg = WLCstart(cntxt, WLC_UPDATE, "wlr.delete");
 	if(msg) {
 		BBPunfix(b->batCacheid);
 		return msg;
@@ -818,7 +866,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sch = *getArgReference_str(stk,pci,1);
 	tbl = *getArgReference_str(stk,pci,2);
 	col = *getArgReference_str(stk,pci,3);
-	WLCstart(p, WLC_UPDATE, msg, "wlr.update");
+	msg = WLCstart(cntxt, WLC_UPDATE, "wlr.update");
 	if(msg)
 		return msg;
 	tpe= getArgType(mb,pci,5);
@@ -891,7 +939,7 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p;
 	str msg = MAL_SUCCEED;
 	(void) stk;
-	WLCstart(p, WLC_UPDATE, msg, "wlr.clear_table");
+	msg = WLCstart(cntxt, WLC_UPDATE, "wlr.clear_table");
 	if(msg)
 		return msg;
 	p = newStmt(cntxt->wlc, "wlr","clear_table");
@@ -910,11 +958,8 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * collect the MAL instructions and flush them.
  */
 static str
-WLCwrite(Client cntxt)
+WLCpreparewrite(Client cntxt)
 {	str msg = MAL_SUCCEED;
-	InstrPtr p;
-	int  tag;
-	ValRecord cst;
 	// save the wlc record on a file 
 	if( cntxt->wlc == 0 || cntxt->wlc->stop <= 1 ||  cntxt->wlc_kind == WLC_QUERY )
 		return MAL_SUCCEED;
@@ -932,30 +977,17 @@ WLCwrite(Client cntxt)
 				return msg;
 		}
 		
-		p = getInstrPtr(cntxt->wlc,0);
 		MT_lock_set(&wlc_lock);
-		/* Find a single transaction sequence ending with COMMIT or ROLLBACK */
-		cst.vtype= TYPE_lng;
-		cst.val.lval = wlc_id;
-		tag = defConstant(cntxt->wlc,TYPE_lng, &cst);
-		p = getInstrPtr(cntxt->wlc,0);
-		p = setArgument(cntxt->wlc, p, p->retc, tag);
-
 		printFunction(wlc_fd, cntxt->wlc, 0, LIST_MAL_DEBUG );
 		(void) mnstr_flush(wlc_fd);
-		
-		// Update wlc administration
-		wlc_id++;
-		snprintf(wlc_write, 26, "%s", getVarConstant(cntxt->wlc, getArg(p, 2)).val.sval);
-
 		// close file if no delay is allowed
-		if( wlc_beat == 0 )
+		if( wlc_beat == 0 ){
 			msg = WLCcloselogger();
-
-		MT_lock_unset(&wlc_lock);
+		}
 		trimMalVariables(cntxt->wlc, NULL);
 		resetMalBlk(cntxt->wlc, 0);
 		cntxt->wlc_kind = WLC_QUERY;
+		MT_lock_unset(&wlc_lock);
 	} else
 			throw(MAL,"wlc.write","WLC log path missing ");
 
@@ -972,7 +1004,7 @@ WLCcommit(int clientid)
 {
 	if( mal_clients[clientid].wlc && mal_clients[clientid].wlc->stop > 1){
 		newStmt(mal_clients[clientid].wlc,"wlr","commit");
-		return WLCwrite( &mal_clients[clientid]);
+		return WLCpreparewrite( &mal_clients[clientid]);
 	}
 	return MAL_SUCCEED;
 }
@@ -991,7 +1023,7 @@ WLCrollback(int clientid)
 {
 	if( mal_clients[clientid].wlc){
 		newStmt(mal_clients[clientid].wlc,"wlr","rollback");
-		return WLCwrite( &mal_clients[clientid]);
+		return WLCpreparewrite( &mal_clients[clientid]);
 	}
 	return MAL_SUCCEED;
 }

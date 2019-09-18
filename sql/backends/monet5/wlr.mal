@@ -6,35 +6,31 @@
 
 module wlr;
 
-pattern replicate()
-address WLRreplicate
-comment "Roll the snapshot forward to an up-to-date clone";
+pattern replicate(dbname:str)
+address WLRstartreplicate
+comment "Initialize the replicator thread";
+
+pattern stopreplicate()
+address WLRstopreplicate
+comment "Stop the replicator thread";
 
 pattern replicate(ts:timestamp)
 address WLRreplicate
 comment "Roll the snapshot forward to an up-to-date clone";
 
-pattern replicate(dbname:str)
-address WLRreplicate
-comment "Roll the snapshot forward to an up-to-date clone";
-
-pattern replicate(dbname:str, ts:timestamp)
-address WLRreplicate
-comment "Roll the snapshot forward to the time TS";
-
-pattern replicate(dbname:str, id:bte)
+pattern replicate(id:bte)
 address WLRreplicate
 comment "Roll the snapshot forward to a specific transaction id";
 
-pattern replicate(dbname:str, id:sht)
+pattern replicate(id:sht)
 address WLRreplicate
 comment "Roll the snapshot forward to a specific transaction id";
 
-pattern replicate(dbname:str, id:int)
+pattern replicate(id:int)
 address WLRreplicate
 comment "Roll the snapshot forward to a specific transaction id";
 
-pattern replicate(dbname:str, id:lng)
+pattern replicate(id:lng)
 address WLRreplicate
 comment "Roll the snapshot forward to a specific transaction id";
 

@@ -22,8 +22,8 @@
 #define WLC_IGNORE		4
 
 /* WLC modes */
-#define WLC_STARTUP	0	// wlc not yet initialized
-#define WLC_RUN		1	// started for the current snapshot
+#define WLC_STARTUP		0	// wlc not yet initialized
+#define WLC_RUN			1	// started for the current snapshot
 #define WLC_STOP		2	// finished last log file for this snapsho
 #define WLC_CLONE		3	// logs used in replica construction
 
@@ -50,6 +50,7 @@ mal_export int WLCused(void);
 mal_export void WLCreset(void);
 mal_export str WLCgetConfig(void);
 mal_export str WLCreadConfig(FILE *fd);
+mal_export str WLCflush(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str WLCstopmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

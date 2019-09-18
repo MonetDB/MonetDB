@@ -22,6 +22,10 @@ pattern stopmaster()
 address WLCstopmaster
 comment "Stop capturing the logs";
 
+pattern flush()
+address WLCflush
+comment "Flush current log buffer";
+
 pattern setmasterbeat(duration:int)
 address WLCsetmasterbeat
 comment "Maximal delay for transaction log flushing";
