@@ -2493,7 +2493,7 @@ tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *content
 	}
 
 	assert( (bufsize % TAR_BLOCK_SIZE) == 0);
-	assert(bufsize > TAR_BLOCK_SIZE);
+	assert(bufsize >= TAR_BLOCK_SIZE);
 
 	buf = malloc(bufsize);
 	if (!buf) {
