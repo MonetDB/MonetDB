@@ -529,10 +529,6 @@ GDKinit(opt *set, int setlen)
 			char name[16];
 			snprintf(name, sizeof(name), "GDKswapLock%d", i);
 			MT_lock_init(&GDKbatLock[i].swap, name);
-			snprintf(name, sizeof(name), "GDKhashLock%d", i);
-			MT_lock_init(&GDKbatLock[i].hash, name);
-			snprintf(name, sizeof(name), "GDKimpsLock%d", i);
-			MT_lock_init(&GDKbatLock[i].imprints, name);
 		}
 		for (i = 0; i <= BBP_THREADMASK; i++) {
 			char name[16];

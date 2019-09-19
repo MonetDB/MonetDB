@@ -124,6 +124,9 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 		bn->tvheap->parentid = bn->batCacheid;
 		bn->tvheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
 	}
+	char name[16];
+	snprintf(name, sizeof(name), "BATlock%d", bn->batCacheid); /* fits */
+	MT_lock_init(&bn->batIdxLock, name);
 	bn->batDirtydesc = true;
 	return bn;
       bailout:
@@ -222,6 +225,7 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
   bailout:
 	BBPclear(bn->batCacheid);
 	HEAPfree(&bn->theap, true);
+	MT_lock_destroy(&bn->batIdxLock);
 	GDKfree(bn);
 	return NULL;
 }
@@ -579,6 +583,7 @@ BATdestroy(BAT *b)
 	if (b->tvheap)
 		GDKfree(b->tvheap);
 	PROPdestroy(b);
+	MT_lock_destroy(&b->batIdxLock);
 	GDKfree(b);
 }
 

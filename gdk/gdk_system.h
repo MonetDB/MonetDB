@@ -398,7 +398,7 @@ typedef struct MT_Lock {
 
 #define MT_lock_unset(l)						\
 	do {								\
-		_DBG_LOCK_UNLOCKER(l);		\
+		_DBG_LOCK_UNLOCKER(l);					\
 		pthread_mutex_unlock(&(l)->lock);			\
 	} while (0)
 

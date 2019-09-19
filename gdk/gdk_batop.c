@@ -685,14 +685,14 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	}
 
 	/* if growing too much, remove the hash, else we maintain it */
-	MT_lock_set(&GDKhashLock((b)->batCacheid));
+	MT_lock_set(&b->batIdxLock);
 	if (b->thash == (Hash *) 1 ||
 	    (b->thash != NULL &&
 	     (2 * b->thash->mask) < (BATcount(b) + cnt))) {
-		MT_lock_unset(&GDKhashLock((b)->batCacheid));
+		MT_lock_unset(&b->batIdxLock);
 		HASHdestroy(b);
 	} else {
-		MT_lock_unset(&GDKhashLock((b)->batCacheid));
+		MT_lock_unset(&b->batIdxLock);
 	}
 
 	r = BUNlast(b);
@@ -1094,7 +1094,7 @@ BATkeyed(BAT *b)
 	 * use a lock.  We reuse the hash lock for this, not because
 	 * this scanning interferes with hashes, but because it's
 	 * there, and not so likely to be used at the same time. */
-	MT_lock_set(&GDKhashLock(b->batCacheid));
+	MT_lock_set(&b->batIdxLock);
 	b->batDirtydesc = true;
 	if (!b->tkey && b->tnokey[0] == 0 && b->tnokey[1] == 0) {
 		if (b->tsorted || b->trevsorted) {
@@ -1202,7 +1202,7 @@ BATkeyed(BAT *b)
 		}
 	}
   doreturn:
-	MT_lock_unset(&GDKhashLock(b->batCacheid));
+	MT_lock_unset(&b->batIdxLock);
 	return b->tkey;
 }
 
@@ -1224,7 +1224,7 @@ BATordered(BAT *b)
 	 * use a lock.  We reuse the hash lock for this, not because
 	 * this scanning interferes with hashes, but because it's
 	 * there, and not so likely to be used at the same time. */
-	MT_lock_set(&GDKhashLock(b->batCacheid));
+	MT_lock_set(&b->batIdxLock);
 	if (!b->tsorted && b->tnosorted == 0) {
 		BATiter bi = bat_iterator(b);
 		int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
@@ -1291,7 +1291,7 @@ BATordered(BAT *b)
 		}
 	}
   doreturn:
-	MT_lock_unset(&GDKhashLock(b->batCacheid));
+	MT_lock_unset(&b->batIdxLock);
 	return b->tsorted;
 }
 
@@ -1313,7 +1313,7 @@ BATordered_rev(BAT *b)
 		return is_oid_nil(b->tseqbase);
 	if (BATtdense(b))
 		return false;
-	MT_lock_set(&GDKhashLock(b->batCacheid));
+	MT_lock_set(&b->batIdxLock);
 	if (!b->trevsorted && b->tnorevsorted == 0) {
 		BATiter bi = bat_iterator(b);
 		int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
@@ -1330,7 +1330,7 @@ BATordered_rev(BAT *b)
 		ALGODEBUG fprintf(stderr, "#BATordered_rev: fixed revsorted for %s#" BUNFMT " (" LLFMT " usec)\n", BATgetId(b), BATcount(b), GDKusec() - t0);
 	}
   doreturn:
-	MT_lock_unset(&GDKhashLock(b->batCacheid));
+	MT_lock_unset(&b->batIdxLock);
 	return b->trevsorted;
 }
 
@@ -1540,7 +1540,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	mkorderidx = (g == NULL && !reverse && !nilslast && pb != NULL && (order || !pb->batTransient));
 	if (g == NULL && !reverse && !nilslast &&
 	    pb != NULL && !BATcheckorderidx(pb)) {
-		MT_lock_set(&GDKhashLock(pb->batCacheid));
+		MT_lock_set(&pb->batIdxLock);
 		if (pb->torderidx == NULL) {
 			/* no index created while waiting for lock */
 			if (mkorderidx) /* keep lock when going to create */
@@ -1550,7 +1550,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			mkorderidx = false;
 		}
 		if (!orderidxlock)
-			MT_lock_unset(&GDKhashLock(pb->batCacheid));
+			MT_lock_unset(&pb->batIdxLock);
 	} else {
 		mkorderidx = false;
 	}
@@ -1777,7 +1777,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				GDKfree(m);
 			}
 			if (orderidxlock)
-				MT_lock_unset(&GDKhashLock(pb->batCacheid));
+				MT_lock_unset(&pb->batIdxLock);
 			goto error;
 		}
 		bn->tsorted = !reverse && !nilslast;
@@ -1800,7 +1800,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 	}
 	if (orderidxlock)
-		MT_lock_unset(&GDKhashLock(pb->batCacheid));
+		MT_lock_unset(&pb->batIdxLock);
 	bn->theap.dirty = true;
 	bn->tnosorted = 0;
 	bn->tnorevsorted = 0;
