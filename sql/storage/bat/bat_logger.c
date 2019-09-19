@@ -1019,7 +1019,7 @@ static gdk_return
 snapshot_one_bat(stream *plan, char *path_buffer, char *alt_path_buffer, size_t local_part_index)
 {
 	// M = mandatory, O = optional
-	static const char *suffixes[] = { "M.tail", "O.theap", "O.tvheap", "O.torderidx", "O.timprint", NULL };
+	static const char *suffixes[] = { "M.tail", "O.theap", NULL };
 	//TODO check the above
 	gdk_return ret = GDK_FAIL;
 	char *tail = path_buffer + strlen(path_buffer);
