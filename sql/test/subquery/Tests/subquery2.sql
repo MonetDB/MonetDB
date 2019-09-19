@@ -172,6 +172,45 @@ GROUP BY col4;
 	-- False
 	-- False
 
+SELECT
+    (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t1.col5 = t2.col1)
+FROM another_T t1;
+	-- NULL
+	-- NULL
+	-- NULL
+	-- NULL
+
+SELECT
+    (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t1.col7 <> SOME(SELECT MAX(t1.col1 + t3.col4) FROM another_T t3))
+FROM another_T t1;
+	-- 1
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
+    CASE WHEN 1 IN (SELECT (SELECT MAX(col7)) UNION ALL (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t2.col5 = t2.col1)) THEN 2 ELSE NULL END
+FROM another_T t1;	
+	-- NULL
+
+SELECT
+    CASE WHEN NOT col1 NOT IN (SELECT (SELECT MAX(col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON t2.col5 = t1.col1)) THEN 1 ELSE 2 END
+FROM another_T t1
+GROUP BY col1;
+	-- 1
+	-- 2
+	-- 2
+	-- 2
+
+SELECT
+    t1.col1 IN (SELECT ColID FROM tbl_ProductSales GROUP BY t1.col1, tbl_ProductSales.ColID)
+FROM another_T t1
+GROUP BY col1;
+	-- True
+	-- False
+	-- False
+	-- False
+
 INSERT INTO tbl_ProductSales VALUES (0, 'a', 'b', 0);
 SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1; 
 	-- True

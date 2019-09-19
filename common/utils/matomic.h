@@ -476,7 +476,7 @@ ATOMIC_CLEAR(ATOMIC_FLAG *var)
 	pthread_mutex_unlock(&var->lck);
 }
 
-#define USE_PTHREAD_LOCKS		/* must use pthread locks */
+#define USE_NATIVE_LOCKS		/* must use pthread locks */
 
 #endif
 

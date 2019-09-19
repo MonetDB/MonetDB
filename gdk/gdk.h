@@ -807,6 +807,8 @@ typedef struct BAT {
 
 	/* dynamic column properties */
 	COLrec T;		/* column info */
+
+	MT_Lock batIdxLock;	/* lock to manipulate indexes */
 } BAT;
 
 typedef struct BATiter {
