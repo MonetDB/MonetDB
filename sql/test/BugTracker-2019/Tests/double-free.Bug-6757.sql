@@ -616,7 +616,7 @@ CREATE TABLE "sys"."_cachedrel_128" (
 );
 CREATE TABLE "sys"."_cachedrel_130" (
 	"a1"   CHAR(1),
-	"prob" DECIMAL(38,3)
+	"prob" DECIMAL(18,3)
 );
 CREATE TABLE "sys"."_cachedrel_134" (
 	"a1"   INTEGER,
@@ -772,7 +772,7 @@ CREATE TABLE "sys"."_cachedrel_170" (
 );
 CREATE TABLE "sys"."_cachedrel_172" (
 	"a1"   CHAR(1),
-	"prob" DECIMAL(38,3)
+	"prob" DECIMAL(18,3)
 );
 CREATE TABLE "sys"."_cachedrel_173" (
 	"a1"   INTEGER,
@@ -801,7 +801,7 @@ CREATE TABLE "sys"."_cachedrel_178" (
 );
 CREATE TABLE "sys"."_cachedrel_180" (
 	"a1"   CHAR(1),
-	"prob" DECIMAL(38,3)
+	"prob" DECIMAL(18,3)
 );
 CREATE TABLE "sys"."_cachedrel_181" (
 	"a1"   INTEGER,
