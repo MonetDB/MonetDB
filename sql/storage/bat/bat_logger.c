@@ -1087,8 +1087,14 @@ snapshot_bats(stream *plan, const char *db_dir)
 		GDKerror("Invalid first line of %s", bbpdir);
 		goto end;
 	}
-	if (gdk_version != 25122) { // do not hardcode this
-		GDKerror("Cannot snapshot this gdk version");
+	if (gdk_version != 061042U) {
+		// If you see this failure, the structure of BBP.dir 
+		// may have changed. Update this function to take this
+		// into account. 
+		// Note: when startup has completed BBP.dir is guaranteed
+		// to the latest format so we don't have to support older
+		// formats in this function.
+		GDKerror("GDK version mismatch in snapshot yet");
 		goto end;
 	}
 	if (mnstr_readline(cat, line, sizeof(line)) < 0) {
