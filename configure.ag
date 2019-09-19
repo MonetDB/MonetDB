@@ -2258,6 +2258,7 @@ AC_CHECK_HEADERS([ \
 	mach-o/dyld.h \
 	netdb.h \
 	netinet/in.h \
+	poll.h \
 	procfs.h \
 	pwd.h \
 	strings.h \
@@ -2489,6 +2490,7 @@ AC_CHECK_FUNCS([\
 	nl_langinfo \
 	_NSGetExecutablePath \
 	pipe2 \
+	poll \
 	popen \
 	posix_fadvise \
 	posix_fallocate \
