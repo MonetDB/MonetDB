@@ -1,5 +1,6 @@
 ####technical depth####
-Add asserts for unknown compression strategies.
+Make dictionary variable-sized so it can always compress.
+Add asserts for unknown compression strategies. (1)
 Test null semantics
 mosaic.select (c,nil:any_1, nil:any_1,true,true,(true|false)) is not working correctly: should result in c == nil or c!=nil(anti).
 dictionary encoding should use the ordered property of its dictionary in the algebraic operators
@@ -17,4 +18,4 @@ benchmark
 mosaic_prefix.c: prefix code does not use macro's!!!!
 mosaic_delta.c: improve the macro's: for instance get rid of hardcoded expression arguments in DELTAcompress. (2*)
 mosaic_<compression>.c: for type macro's use macro-wised inline functions.
-Improve the administration of the various hard coded compression techniques.
+Improve the administration of the various hard coded compression techniques. (2*)
