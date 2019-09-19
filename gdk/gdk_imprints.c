@@ -467,7 +467,6 @@ BATimprints(BAT *b)
 			      1) != GDK_SUCCEED) {
 			MT_lock_unset(&b->batIdxLock);
 			GDKfree(imprints);
-			GDKerror("#BATimprints: memory allocation error");
 			BBPunfix(s1->batCacheid);
 			BBPunfix(s2->batCacheid);
 			BBPunfix(s3->batCacheid);

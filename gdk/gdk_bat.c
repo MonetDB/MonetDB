@@ -189,16 +189,10 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 		cap = (cap + BATTINY - 1) & ~(BATTINY - 1);
 	if (cap < BATTINY)
 		cap = BATTINY;
-	/* and in case we don't have assertions enabled: limit the size */
+	/* limit the size */
 	if (cap > BUN_MAX)
 		cap = BUN_MAX;
 
-	/* and in case we don't have assertions enabled: limit the size */
-	if (cap > BUN_MAX) {
-		/* shouldn't happen, but if it does... */
-		assert(0);
-		cap = BUN_MAX;
-	}
 	bn = BATcreatedesc(hseq, tt, tt != TYPE_void, role);
 	if (bn == NULL)
 		return NULL;
