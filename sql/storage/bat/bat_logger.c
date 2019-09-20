@@ -884,9 +884,9 @@ bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
  * That part of the file must remain unchanged until the plan is executed.
  */
 static void
-snapshot_lazy_copy_file(stream *plan, const char *name, long extent)
+snapshot_lazy_copy_file(stream *plan, const char *name, uint64_t extent)
 {
-	mnstr_printf(plan, "c %ld %s\n", extent, name);
+	mnstr_printf(plan, "c %" PRIu64 " %s\n", extent, name);
 }
 
 /* Write a plan entry to write the current contents of the given file.
@@ -965,94 +965,40 @@ snapshot_wal(stream *plan, const char *db_dir)
 	return GDK_SUCCEED;
 }
 
-/* If `path` exists, lazy copy it with name `name`.
- * Otherwise, if `alt_path` exists, lazy copy it with name `alt_name`.
- *
- * If `mandatory` is set, it is an error for both files not to exist.
- *
- * This interface is rather messy but of all I tried this ends up
- * being most readable.
- */
 static gdk_return
-snapshot_one_heap(stream *plan, bool mandatory, const char *path, const char *name, const char *alt_path, const char *alt_name)
+snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *filename, const char *suffix, uint64_t extent)
 {
+	char path1[FILENAME_MAX];
+	char path2[FILENAME_MAX];
+	const int offset = strlen(db_dir) + 1;
 	struct stat statbuf;
 
-	if (stat(path, &statbuf) == 0) {
-		snapshot_lazy_copy_file(plan, name, statbuf.st_size);
+	// first check the backup dir
+	snprintf(path1, FILENAME_MAX, "%s/%s/%" PRIo64 "%s", db_dir, BAKDIR, batid, suffix);
+	if (stat(path1, &statbuf) == 0) {
+		snapshot_lazy_copy_file(plan, path1 + offset, extent);
 		return GDK_SUCCEED;
 	}
 	if (errno != ENOENT) {
-		GDKerror("Error stat'ing %s: %s", path, strerror(errno));
+		GDKerror("Error stat'ing %s: %s", path1, strerror(errno));
 		return GDK_FAIL;
 	}
 
-	if (stat(alt_path, &statbuf) == 0) {
-		snapshot_lazy_copy_file(plan, alt_name, statbuf.st_size);
+	// then check the regular location
+	snprintf(path2, FILENAME_MAX, "%s/%s/%s%s", db_dir, BATDIR, filename, suffix);
+	if (stat(path2, &statbuf) == 0) {
+		snapshot_lazy_copy_file(plan, path2 + offset, extent);
 		return GDK_SUCCEED;
 	}
 	if (errno != ENOENT) {
-		GDKerror("Error stat'ing %s: %s", alt_path, strerror(errno));
+		GDKerror("Error stat'ing %s: %s", path2, strerror(errno));
 		return GDK_FAIL;
 	}
 
-	if (mandatory) {
-		GDKerror("One of %s and %s must exist", path, alt_path);
-		return GDK_FAIL;
-	}
-
-	return GDK_SUCCEED;
+	GDKerror("One of %s and %s must exist", path1, path2);
+	return GDK_FAIL;
 }
 
-/* Add plan entry for the heaps of one BAT.
- * path_buffer points at a buffer containing the initial part of
- * the absolute path of the heap file, for example /tmp/mydatabase/bat/07/726.
- * This function attempts to add suffixes such as .tail, .theap etc
- * and copies those files if they exist.
- * local_part_index is the number of bytes to skip to get to the local
- * part of the filename, in this example skipping the "/tmp/mydatabase/"
- *
- * Note: path_buffer must have room for this function to append the suffixes
- * in-place!
- */
-static gdk_return
-snapshot_one_bat(stream *plan, char *path_buffer, char *alt_path_buffer, size_t local_part_index)
-{
-	// M = mandatory, O = optional
-	static const char *suffixes[] = { "M.tail", "O.theap", NULL };
-	//TODO check the above
-	gdk_return ret = GDK_FAIL;
-	char *tail = path_buffer + strlen(path_buffer);
-	char *alt_tail = alt_path_buffer + strlen(alt_path_buffer);
-
-	for (const char **suf = &suffixes[0]; *suf; suf++) {
-		bool mandatory;
-		switch (**suf) {
-			case 'M':
-				mandatory = true;
-				break;
-			case 'O':
-				mandatory = false;
-				break;
-			default:
-				GDKfatal("%s does not start with either M or O", *suf);
-		}
-		strcpy(tail, *suf + 1);
-		strcpy(alt_tail, *suf + 1);
-		ret = snapshot_one_heap(
-			plan, mandatory,
-			path_buffer, path_buffer + local_part_index,
-			alt_path_buffer, alt_path_buffer + local_part_index);
-		if (ret != GDK_SUCCEED)
-			goto end;
-	}
-
-	ret = GDK_SUCCEED;
-end:
-	*tail = '\0';
-	*alt_tail = '\0';
-	return ret;
-}
 /* Add plan entries for all persistent BATs by looping over the BBP.dir.
  * Also include the BBP.dir itself.
  */
@@ -1063,9 +1009,6 @@ snapshot_bats(stream *plan, const char *db_dir)
 	stream *cat = NULL;
 	char line[1024];
 	int gdk_version;
-	char stable_heapfile[FILENAME_MAX];
-	char bak_heapfile[FILENAME_MAX];
-	size_t stable_heapfile_pos, bak_heapfile_pos;
 	gdk_return ret = GDK_FAIL;
 
 	snprintf(bbpdir, FILENAME_MAX, "%s/%s/%s", db_dir, BAKDIR, "BBP.dir");
@@ -1088,11 +1031,11 @@ snapshot_bats(stream *plan, const char *db_dir)
 		goto end;
 	}
 	if (gdk_version != 061042U) {
-		// If you see this failure, the structure of BBP.dir 
-		// may have changed. Update this function to take this
+		// If this version number has changed, the structure of BBP.dir 
+		// may have changed. Update this whole function to take this
 		// into account. 
 		// Note: when startup has completed BBP.dir is guaranteed
-		// to the latest format so we don't have to support older
+		// to the latest format so we don't have to support any older
 		// formats in this function.
 		GDKerror("GDK version mismatch in snapshot yet");
 		goto end;
@@ -1106,21 +1049,47 @@ snapshot_bats(stream *plan, const char *db_dir)
 		goto end;
 	}
 
-	bak_heapfile_pos = snprintf(bak_heapfile, FILENAME_MAX, "%s/%s/", db_dir, BAKDIR);
-	stable_heapfile_pos = snprintf(stable_heapfile, FILENAME_MAX, "%s/%s/", db_dir, BATDIR);
 	while (mnstr_readline(cat, line, sizeof(line)) > 0) {
-		int scanned = sscanf(line, "%*s %*s %*s %s",
-				stable_heapfile + stable_heapfile_pos);
-		if (scanned != 1) {
-			GDKerror("Couldn't parse %s line: %s", bbpdir, line);
-			goto end;
+		uint64_t batid;
+		uint64_t tail_free;
+		uint64_t theap_free;
+		char filename[20];
+		int scanned = sscanf(line,
+				// Taken from the sscanf in BBPreadEntries() in gdk_bbp.c.
+				// 8 fields, we need field 1 (batid) and field 4 (filename)
+				"%" SCNu64 " %*s %*s %19s %*s %*s %*s %*s"
+
+				// Taken from the sscanf in heapinit() in gdk_bbp.c.
+				// 12 fields, we need field 10 (free)
+				" %*s %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64 " %*s %*s"
+
+				// Taken from the sscanf in vheapinit() in gdk_bbp.c.
+				// 3 fields, we need field 1 (free).
+				"%" SCNu64 " %*s ^*s"
+				,
+				&batid, filename,
+				&tail_free,
+				&theap_free);
+		switch (scanned) {
+			default:
+				GDKerror("Couldn't parse (%d) %s line: %s", scanned, bbpdir, line);
+				goto end;
+			case 4:
+				// tail and theap
+				ret = snapshot_heap(plan, db_dir, batid, filename, ".theap", theap_free);
+				if (ret != GDK_SUCCEED)
+					goto end;
+				/* fallthrough */
+			case 3:
+				// tail only
+				snapshot_heap(plan, db_dir, batid, filename, ".tail", tail_free);
+				if (ret != GDK_SUCCEED)
+					goto end;
+				/* fallthrough */
+			case 2:
+				// no tail? 
+				break;
 		}
-		char *last_component = strrchr(stable_heapfile, '/');
-		assert(last_component);
-		strcpy(bak_heapfile + bak_heapfile_pos, last_component);
-		ret = snapshot_one_bat(plan, bak_heapfile, stable_heapfile, strlen(db_dir) + 1);
-		if (ret != GDK_SUCCEED)
-			goto end;
 	}
 
 end:
