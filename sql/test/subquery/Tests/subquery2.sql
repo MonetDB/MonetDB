@@ -211,6 +211,8 @@ GROUP BY col1;
 	-- False
 	-- False
 
+SELECT t1.col1 FROM another_T t1 WHERE t1.col1 >= ANY(SELECT t1.col1 + t2.col1 FROM another_T t2); --empty result
+
 INSERT INTO tbl_ProductSales VALUES (0, 'a', 'b', 0);
 SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1; 
 	-- True
