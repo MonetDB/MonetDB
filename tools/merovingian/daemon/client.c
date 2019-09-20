@@ -14,6 +14,9 @@
 #include <sys/un.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#ifdef HAVE_POLL_H
+#include <poll.h>
+#endif
 #ifdef HAVE_SYS_UIO_H
 # include <sys/uio.h>
 #endif
@@ -45,7 +48,7 @@ struct threads {
 };
 struct clientdata {
 	int sock;
-	int isusock;
+	bool isusock;
 	struct threads *self;
 };
 
@@ -71,7 +74,7 @@ handleClient(void *data)
 	sabdb redirs[24];  /* do we need more? */
 	int r = 0;
 	int sock;
-	char isusock;
+	bool isusock;
 	struct threads *self;
 
 	sock = ((struct clientdata *) data)->sock;
@@ -407,16 +410,29 @@ acceptConnections(int sock, int usock)
 {
 	char *msg;
 	int retval;
+#ifdef HAVE_POLL
+	struct pollfd pfd[2];
+#else
 	fd_set fds;
+	struct timeval tv;
+#endif
 	int msgsock;
 	void *e;
-	struct timeval tv;
 	struct clientdata *data;
 	struct threads *threads = NULL, **threadp, *p;
 	int errnr;					/* saved errno */
 
 	do {
 		/* handle socket connections */
+		bool isusock = false;
+
+#ifdef HAVE_POLL
+		pfd[0] = (struct pollfd) {.fd = sock, .events = POLLIN};
+		pfd[1] = (struct pollfd) {.fd = usock, .events = POLLIN};
+
+		/* Wait up to 5 seconds */
+		retval = poll(pfd, 2, 5000);
+#else
 		FD_ZERO(&fds);
 		FD_SET(sock, &fds);
 		FD_SET(usock, &fds);
@@ -426,6 +442,7 @@ acceptConnections(int sock, int usock)
 		tv.tv_usec = 0;
 		retval = select((sock > usock ? sock : usock) + 1,
 				&fds, NULL, NULL, &tv);
+#endif
 		errnr = errno;
 		/* join any handleClient threads that we started and that may
 		 * have finished by now */
@@ -469,7 +486,14 @@ acceptConnections(int sock, int usock)
 			}
 			continue;
 		}
-		if (FD_ISSET(sock, &fds)) {
+		if (
+#ifdef HAVE_POLL
+			pfd[0].revents & POLLIN
+#else
+			FD_ISSET(sock, &fds)
+#endif
+			) {
+			isusock = false;
 			if ((msgsock = accept4(sock, (SOCKPTR)0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
@@ -495,13 +519,20 @@ acceptConnections(int sock, int usock)
 #if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
 			(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
 #endif
-		} else if (FD_ISSET(usock, &fds)) {
+		} else if (
+#ifdef HAVE_POLL
+			pfd[1].revents & POLLIN
+#else
+			FD_ISSET(usock, &fds)
+#endif
+			) {
 			struct msghdr msgh;
 			struct iovec iov;
 			char buf[1];
 			int rv;
 			char ccmsg[CMSG_SPACE(sizeof(int))];
 
+			isusock = true;
 			if ((msgsock = accept4(usock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
@@ -590,7 +621,7 @@ acceptConnections(int sock, int usock)
 			continue;
 		}
 		data->sock = msgsock;
-		data->isusock = FD_ISSET(usock, &fds);
+		data->isusock = isusock;
 		p->dead = 0;
 		data->self = p;
 		if (pthread_create(&p->tid, NULL, handleClient, data) == 0) {

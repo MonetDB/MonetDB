@@ -2318,6 +2318,10 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				sql_rel *l = *rel;
 				sql_exp *rls = ls;
 
+				assert(is_project(r->op));
+				if (list_length(r->exps) != 1)
+					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column\n");
+
 				if (!l) {
 					l = *rel = rel_project(sql->sa, NULL, new_exp_list(sql->sa));
 					ls = rel_project_add_exp(sql, l, ls);
@@ -2415,7 +2419,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			*rel = orel->l;
 		}
 
-	       	le = rel_value_exp(query, &sq, lo, f, ek);
+		le = rel_value_exp(query, &sq, lo, f, ek);
 		if (!le && sql->session->status != -ERR_AMBIGUOUS) { /* correlated */
 			sql_subaggr *ea = NULL;
 

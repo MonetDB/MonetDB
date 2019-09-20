@@ -66,4 +66,6 @@ SELECT i, i >= ANY(SELECT i1.i FROM integers i1, integers i2, integers i3, integ
 	-- 2, true
 	-- 3, true
 
+SELECT 1 >= ANY(SELECT 2, 3); --error, subquery should output a single column 
+
 drop table integers;
