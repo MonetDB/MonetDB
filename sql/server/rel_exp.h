@@ -63,6 +63,7 @@ extern sql_exp * exp_atom_str(sql_allocator *sa, const char *s, sql_subtype *st)
 extern sql_exp * exp_atom_clob(sql_allocator *sa, const char *s);
 extern sql_exp * exp_atom_ptr(sql_allocator *sa, void *s);
 extern sql_exp * exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe);
+extern sql_exp * exp_null(sql_allocator *sa, sql_subtype *tpe);
 extern sql_exp * exp_param(sql_allocator *sa, const char *name, sql_subtype *tpe, int frame);
 extern atom * exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg);
 extern sql_exp * exp_values(sql_allocator *sa, list *exps);
