@@ -17,11 +17,162 @@ stderr of test 'wlr20` in directory 'sql/test/wlcr` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	monet_prompt = 
-# cmdline opt 	mapi_port = 58415
-# cmdline opt 	mapi_usock = /var/tmp/mtest-3357/.s.monetdb.58415
-# cmdline opt 	gdk_dbpath = /export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone
-# cmdline opt 	gdk_debug = 536870922
+# cmdline opt 	mapi_port = 34371
+# cmdline opt 	mapi_usock = /var/tmp/mtest-26489/.s.monetdb.34371
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr-clone
+#WLR scheduler forked
+#WLRgetConfig master=mTests_sql_test_wlcr
+#WLRgetConfig batches=0
+#WLRgetConfig tag=0
+#WLRgetConfig limit=-1
+#WLRgetConfig beat=0
+#Run the replicator 0 201
+#replicate: start call wlr_limit = -1 (tag 0) time 
+#WLRgetConfig master=mTests_sql_test_wlcr
+#WLRgetConfig batches=0
+#WLRgetConfig tag=0
+#WLRgetConfig limit=-1
+#WLRgetConfig beat=0
+#replicate: wait until wlr_limit = 4 (tag 0) time 
+#batches 0 tag 0 barrier 1
+#Ready to start the replay against batches state 101 wlr 0  wlc 7  taglimit 4
+#REPLAY LOG FILE:/export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000000
+#redo wlr_tag 0 wlr_limit 3
+#run against tlimit   tag 2019-09-21T23:00:45.000
+#redo wlr_tag 139661331631936 wlr_limit 3
+#redo wlr_tag 0 wlr_limit 3
+#process a transaction
+=function user.wlr():void;
+=    wlr.transaction(0:lng, "2019-09-21T23:00:45.000":str, "monetdb":str);
+=    wlr.catalog("create table tmp0(i int, s string);":str);
+=    wlr.commit();
+=end user.wlr;
+#WLRput: batches 0 tag 1 limit 3 beat 0 timelimit 
+#redo wlr_tag 0 wlr_limit 3
+#wlr.process:processed log file '/export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000000'
+#REPLAY LOG FILE:/export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000001
+#redo wlr_tag 1 wlr_limit 3
+#run against tlimit   tag 2019-09-21T23:00:45.000
+#redo wlr_tag 139661331742496 wlr_limit 3
+#redo wlr_tag 139661331722384 wlr_limit 3
+#redo wlr_tag 139661331722384 wlr_limit 3
+#redo wlr_tag 0 wlr_limit 3
+#process a transaction
+=function user.SQLstatement():void;
+=    wlr.transaction(1:lng, "2019-09-21T23:00:45.000":str, "monetdb":str);
+=    wlr.action("insert into tmp0 values(1,\\'gaap\\'), (2,\\'sleep\\');":str);
+=    wlr.append("sys":str, "tmp0":str, "i":str, 1:int, 2:int);
+=    wlr.append("sys":str, "tmp0":str, "s":str, "gaap":str, "sleep":str);
+=    wlr.commit();
+=end user.SQLstatement;
+#WLRput: batches 1 tag 2 limit 3 beat 0 timelimit 
+#redo wlr_tag 0 wlr_limit 3
+#wlr.process:processed log file '/export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000001'
+#REPLAY LOG FILE:/export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000002
+#redo wlr_tag 2 wlr_limit 3
+#run against tlimit   tag 2019-09-21T23:00:45.000
+#redo wlr_tag 139661331631680 wlr_limit 3
+#redo wlr_tag 0 wlr_limit 3
+#process a transaction
+=function user.SQLstatement():void;
+=    wlr.transaction(2:lng, "2019-09-21T23:00:45.000":str, "monetdb":str);
+=    wlr.catalog("drop table tmp0;":str);
+=    wlr.commit();
+=end user.SQLstatement;
+#WLRput: batches 2 tag 3 limit 3 beat 0 timelimit 
+#redo wlr_tag 0 wlr_limit 3
+#wlr.process:processed log file '/export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000002'
+#REPLAY LOG FILE:/export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000003
+#redo wlr_tag 3 wlr_limit 3
+#run against tlimit   tag 2019-09-21T23:00:45.000
+#redo wlr_tag 139661331637840 wlr_limit 3
+#redo wlr_tag 0 wlr_limit 3
+#process a transaction
+=function user.SQLstatement():void;
+=    wlr.transaction(3:lng, "2019-09-21T23:00:45.000":str, "monetdb":str);
+=    wlr.catalog("create table tmp(i int, s string);":str);
+=    wlr.commit();
+=end user.SQLstatement;
+#WLRput: batches 3 tag 4 limit 3 beat 0 timelimit 
+#redo wlr_tag 0 wlr_limit 3
+#wlr.process:processed log file '/export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000003'
+#replicate finished 4 (tag 4)
+#replicate: start call wlr_limit = 4 (tag 4) time 
+#WLRgetConfig master=mTests_sql_test_wlcr
+#WLRgetConfig batches=4
+#WLRgetConfig tag=4
+#WLRgetConfig limit=4
+#WLRgetConfig beat=0
+#replicate: wait until wlr_limit = 5 (tag 4) time 
+#batches 4 tag 4 barrier 1
+#Ready to start the replay against batches state 101 wlr 4  wlc 7  taglimit 5
+#REPLAY LOG FILE:/export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000004
+#redo wlr_tag 4 wlr_limit 6
+#run against tlimit   tag 2019-09-21T23:00:45.000
+#redo wlr_tag 139661331772128 wlr_limit 6
+#redo wlr_tag 139661331722544 wlr_limit 6
+#redo wlr_tag 139661331722544 wlr_limit 6
+#redo wlr_tag 0 wlr_limit 6
+#process a transaction
+=function user.wlr():void;
+=    wlr.transaction(4:lng, "2019-09-21T23:00:45.000":str, "monetdb":str);
+=    wlr.action("insert into tmp values(1,\\'hello\\'), (2,\\'world\\');":str);
+=    wlr.append("sys":str, "tmp":str, "i":str, 1:int, 2:int);
+=    wlr.append("sys":str, "tmp":str, "s":str, "hello":str, "world":str);
+=    wlr.commit();
+=end user.wlr;
+#WLRput: batches 4 tag 5 limit 6 beat 0 timelimit 
+#redo wlr_tag 0 wlr_limit 6
+#wlr.process:processed log file '/export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000004'
+#replicate finished 5 (tag 5)
+#replicate: start call wlr_limit = 5 (tag 5) time 
+#WLRgetConfig master=mTests_sql_test_wlcr
+#WLRgetConfig batches=5
+#WLRgetConfig tag=5
+#WLRgetConfig limit=5
+#WLRgetConfig beat=0
+#replicate: wait until wlr_limit = 7 (tag 5) time 
+#batches 5 tag 5 barrier 1
+#Ready to start the replay against batches state 101 wlr 5  wlc 7  taglimit 7
+#REPLAY LOG FILE:/export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000005
+#redo wlr_tag 5 wlr_limit 6
+#run against tlimit   tag 2019-09-21T23:00:47.000
+#redo wlr_tag 139661331772032 wlr_limit 6
+#redo wlr_tag 139661331768208 wlr_limit 6
+#redo wlr_tag 139661331768208 wlr_limit 6
+#redo wlr_tag 0 wlr_limit 6
+#process a transaction
+=function user.wlr():void;
+=    wlr.transaction(5:lng, "2019-09-21T23:00:47.000":str, "monetdb":str);
+=    wlr.action("insert into tmp values(3,\\'blah\\'),(4,\\'bloh\\');":str);
+=    wlr.append("sys":str, "tmp":str, "i":str, 3:int, 4:int);
+=    wlr.append("sys":str, "tmp":str, "s":str, "blah":str, "bloh":str);
+=    wlr.commit();
+=end user.wlr;
+#WLRput: batches 5 tag 6 limit 6 beat 0 timelimit 
+#redo wlr_tag 0 wlr_limit 6
+#wlr.process:processed log file '/export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000005'
+#REPLAY LOG FILE:/export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000006
+#redo wlr_tag 6 wlr_limit 6
+#run against tlimit   tag 2019-09-21T23:00:49.000
+#redo wlr_tag 139661331772128 wlr_limit 6
+#redo wlr_tag 139661331723168 wlr_limit 6
+#redo wlr_tag 139661331723168 wlr_limit 6
+#redo wlr_tag 0 wlr_limit 6
+#process a transaction
+=function user.wlr():void;
+=    wlr.transaction(6:lng, "2019-09-21T23:00:49.000":str, "monetdb":str);
+=    wlr.action("insert into tmp values(5,\\'red\\'),(6,\\'fox\\');":str);
+=    wlr.append("sys":str, "tmp":str, "i":str, 5:int, 6:int);
+=    wlr.append("sys":str, "tmp":str, "s":str, "red":str, "fox":str);
+=    wlr.commit();
+=end user.wlr;
+#WLRput: batches 6 tag 7 limit 6 beat 0 timelimit 
+#redo wlr_tag 0 wlr_limit 6
+#wlr.process:processed log file '/export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr/wlc_logs//mTests_sql_test_wlcr_000000000006'
+#replicate finished 7 (tag 7)
+#batches 7 tag 7 barrier 0
+#Replicator thread is accidentally stopped
 
 # 13:22:30 >  
 # 13:22:30 >  "Done."

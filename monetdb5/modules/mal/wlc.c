@@ -76,8 +76,8 @@
  * CALL masterbeat(duration)
  * Setting it to zero leads to a log file per transaction and may cause a large log directory
  * with thousands of small files.
- * A default of 5 minutes should balance polling overhead in most practical situations.
- * Intermittent flushmaster() during this period ensures it the committed log records survive
+ * The default of 5 minutes should balance polling overhead in most practical situations.
+ * Intermittent flush() during this period ensures the committed log records survive
  * a crash.
  *
  * A minor problem here is that we should ensure that the log file is closed even if there
@@ -119,8 +119,7 @@
  * A fresh database can be turned into a clone using the call
  *     CALL replicate('mastername')
  * It will grab the latest snapshot of the master and applies all
- * available log files before releasing the system. Progress of
- * the replication can be monitored using the -fraw option in mclient.
+ * available log files before releasing the system. 
  * The master has no knowledge about the number of clones and their whereabouts.
  *
  * The clone process will iterate in the background through the log files, 
@@ -130,12 +129,15 @@
  * apply the logs until a given moment. This is particularly handy when an unexpected 
  * desastrous user action (drop persistent table) has to be recovered from.
  *
- * CALL replicate('mastername');
- * CALL replicate('mastername',NOW()); -- stops after we are in sink
+ * CALL setmaster('mastername');  -- get logs from a specific master
  * ...
- * CALL replicate(NOW()); -- partial roll forward
+ * CALL replicate(tag); -- stops after we are in sink with tag
  * ...
- * CALL replicate(); --continue nondisturbed synchronisation
+ * CALL replicate(NOW()); -- stop after we sinked all transactions
+ * ...
+ * CALL replicate(); -- synchronize in background continuously
+ * ...
+ * CALL stopreplicate(); -- stop the synchroniation thread
  *
  * SELECT replicaClock();
  * returns the timestamp of the last replicated transaction.
@@ -161,6 +163,8 @@
 #include "mal_builder.h"
 #include "wlc.h"
 
+#undef _WLC_DEBUG_
+
 MT_Lock     wlc_lock = MT_LOCK_INITIALIZER("wlc_lock");
 
 static char wlc_snapshot[FILENAME_MAX]; // The location of the snapshot against which the logs work
@@ -169,8 +173,8 @@ static stream *wlc_fd = 0;
 // These properties are needed by the replica to direct the roll-forward.
 char wlc_dir[FILENAME_MAX]; 	// The location in the global file store for the logs
 char wlc_name[IDLENGTH];  	// The master database name
-lng   wlc_id = 0;			// next transaction id
-int  wlc_state = 0;			// The current status of th logger in the life cycle
+lng  wlc_tag = 0;			// next transaction id
+int  wlc_state = 0;			// The current status of the logger in the life cycle
 char wlc_write[26];			// The timestamp of the last committed transaction
 int  wlc_batches = 0;		// identifier of next batch
 int  wlc_beat = 10;		// maximal period covered by a single log file in seconds
@@ -212,8 +216,8 @@ WLCreadConfig(FILE *fd)
 				goto bailout;
 			}
 		}
-		if( strncmp("id=", path,3) == 0)
-			wlc_id = atol(path+ 3);
+		if( strncmp("tag=", path,4) == 0)
+			wlc_tag = atol(path+ 4);
 		if( strncmp("write=", path,6) == 0) {
 			len = snprintf(wlc_write, 26, "%s", path + 6);
 			if (len == -1 || len >= 26) {
@@ -262,7 +266,7 @@ str WLCsetConfig(void){
 	if( wlc_snapshot[0] )
 		mnstr_printf(fd,"snapshot=%s\n", wlc_snapshot);
 	mnstr_printf(fd,"logs=%s\n", wlc_dir);
-	mnstr_printf(fd,"id="LLFMT"\n", wlc_id );
+	mnstr_printf(fd,"tag="LLFMT"\n", wlc_tag );
 	mnstr_printf(fd,"write=%s\n", wlc_write );
 	mnstr_printf(fd,"state=%d\n", wlc_state );
 	mnstr_printf(fd,"batches=%d\n", wlc_batches );
@@ -436,7 +440,7 @@ WLCgetmastertick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	lng *ret = getArgReference_lng(stk,pci,0);
 	(void) cntxt;
 	(void) mb;
-	*ret = wlc_id;
+	*ret = wlc_tag;
 	return MAL_SUCCEED;
 }
 
@@ -445,10 +449,13 @@ WLCgetmastertick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 str 
 WLCsetmasterbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
+{	int beat;
 	(void) mb;
 	(void) cntxt;
-	wlc_beat = * getArgReference_int(stk,pci,1);
+	beat = * getArgReference_int(stk,pci,1);
+	if ( beat < 0)
+		throw(MAL, "wlc.setmasterbeat", "beat should be a positive number");
+	wlc_beat = beat;
 	return WLCcloselogger();
 }
 
@@ -535,8 +542,69 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str fcn)
 	return MAL_SUCCEED;
 }
 
+/* Beware that a client context can be used in parallel and
+ * that we don't want transaction interference caused by merging
+ * the MAL instructions accidentally.
+ * The effectively means that the SQL transaction record should
+ * collect the MAL instructions and flush them.
+ */
 static str
-WLCstart(Client cntxt, int kind, str fcn)
+WLCpreparewrite(Client cntxt)
+{	str msg = MAL_SUCCEED;
+	// save the wlc record on a file 
+#ifdef _WLC_DEBUG_
+	if( cntxt->wlc){
+		fprintf(stderr,"#WLCpreparewrite: %d %d\n", cntxt->wlc->stop , cntxt->wlc_kind);
+		fprintFunction(stderr, cntxt->wlc, 0, LIST_MAL_DEBUG );
+	}
+#endif
+	if( cntxt->wlc == 0 || cntxt->wlc->stop <= 1 ||  cntxt->wlc_kind == WLC_QUERY )
+		return MAL_SUCCEED;
+
+	if( wlc_state != WLC_RUN){
+#ifdef _WLC_DEBUG_
+		fprintf(stderr,"#WLCprepare: state %d\n", wlc_state);
+#endif
+		trimMalVariables(cntxt->wlc, NULL);
+		resetMalBlk(cntxt->wlc, 0);
+		cntxt->wlc_kind = WLC_QUERY;
+		return MAL_SUCCEED;
+	}
+	if( wlc_dir[0] ){	
+		if (wlc_fd == NULL){
+			msg = WLCsetlogger();
+			if( msg) {
+#ifdef _WLC_DEBUG_
+				fprintf(stderr,"#WLCprepare: setlogger %s \n", msg);
+#endif
+				return msg;
+			}
+		}
+		
+		MT_lock_set(&wlc_lock);
+		printFunction(wlc_fd, cntxt->wlc, 0, LIST_MAL_DEBUG );
+		(void) mnstr_flush(wlc_fd);
+		// close file if no delay is allowed
+		if( wlc_beat == 0 )
+			msg = WLCcloselogger();
+		
+		trimMalVariables(cntxt->wlc, NULL);
+		resetMalBlk(cntxt->wlc, 0);
+		cntxt->wlc_kind = WLC_QUERY;
+		MT_lock_unset(&wlc_lock);
+	} else
+			throw(MAL,"wlc.write","WLC log path missing ");
+
+#ifdef _WLC_DEBUG_
+	fprintFunction(stderr, cntxt->wlc, 0, LIST_MAL_ALL );
+#endif
+	if( wlc_state == WLC_STOP)
+		throw(MAL,"wlc.write","Logging for this snapshot has been stopped. Use a new snapshot to continue logging.");
+	return msg;
+}
+
+static str
+WLCstart(Client cntxt, str fcn)
 {
 	InstrPtr pci;
 	str msg = MAL_SUCCEED;
@@ -544,7 +612,6 @@ WLCstart(Client cntxt, int kind, str fcn)
 	lng tag;
 
 	if( cntxt->wlc == NULL){
-		cntxt->wlc_kind = kind;
 		if((cntxt->wlc = newMalBlk(STMT_INCREMENT)) == NULL) 
 			throw(MAL, fcn, MAL_MALLOC_FAIL); 
 		mb = cntxt->wlc;
@@ -553,13 +620,13 @@ WLCstart(Client cntxt, int kind, str fcn)
 	if( mb->stop > 1 ){
 		pci = getInstrPtr(mb, mb->stop -1 );
 		if (  ! (strcmp( getFunctionId(pci), "commit") == 0 || strcmp( getFunctionId(pci), "rollback") == 0))
-			return msg;
+			return MAL_SUCCEED;
 	}
 
 	/* create the start of a new transaction block */
 	MT_lock_set(&wlc_lock);
-	tag = wlc_id;
-	wlc_id++; // Update wlc administration
+	tag = wlc_tag;
+	wlc_tag++; // Update wlc administration
 
 	pci = newStmt(mb,"wlr", "transaction");
 	pci = pushLng(mb, pci, tag);
@@ -593,9 +660,10 @@ WLCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	if ( strcmp("-- no query",getVarConstant(mb, getArg(pci,1)).val.sval) == 0)
 		return MAL_SUCCEED;	// ignore system internal queries.
-	msg = WLCstart(cntxt, WLC_QUERY, "wlr.query");
+	msg = WLCstart(cntxt, "wlr.query");
 	if(msg)
 		return msg;
+	cntxt->wlc_kind = WLC_QUERY;
 	p = newStmt(cntxt->wlc, "wlr","query");
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	return msg;
@@ -608,9 +676,10 @@ WLCcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
-	msg =  WLCstart(cntxt, WLC_CATALOG, "wlr.catalog");
+	msg =  WLCstart(cntxt, "wlr.catalog");
 	if(msg)
 		return msg;
+	cntxt->wlc_kind = WLC_CATALOG;
 	p = newStmt(cntxt->wlc, "wlr","catalog");
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	return msg;
@@ -623,9 +692,10 @@ WLCaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
-	msg = WLCstart(cntxt, WLC_UPDATE, "wlr.action");
+	msg = WLCstart(cntxt, "wlr.action");
 	if(msg)
 		return msg;
+	cntxt->wlc_kind = WLC_UPDATE;
 	p = newStmt(cntxt->wlc, "wlr","action");
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	return msg;
@@ -643,9 +713,10 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
-	msg = WLCstart(cntxt, WLC_IGNORE, "wlr.generic");
+	msg = WLCstart(cntxt, "wlr.generic");
 	if(msg)
 		return msg;
+	cntxt->wlc_kind = WLC_IGNORE;
 	p = newStmt(cntxt->wlc, "wlr",getFunctionId(pci));
 	for( i = pci->retc; i< pci->argc; i++){
 		tpe =getArgType(mb, pci, i);
@@ -767,7 +838,7 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) stk;
 	(void) mb;
-	msg = WLCstart(cntxt, WLC_UPDATE, "wlr.append");
+	msg = WLCstart(cntxt, "wlr.append");
 	if(msg)
 		return msg;
 	p = newStmt(cntxt->wlc, "wlr","append");
@@ -810,11 +881,12 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b= BBPquickdesc(bid, false);
 	if( BATcount(b) == 0)
 		return MAL_SUCCEED;
-	msg = WLCstart(cntxt, WLC_UPDATE, "wlr.delete");
+	msg = WLCstart(cntxt, "wlr.delete");
 	if(msg) {
 		BBPunfix(b->batCacheid);
 		return msg;
 	}
+	cntxt->wlc_kind = WLC_UPDATE;
 	p = newStmt(cntxt->wlc, "wlr","delete");
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
@@ -866,9 +938,10 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sch = *getArgReference_str(stk,pci,1);
 	tbl = *getArgReference_str(stk,pci,2);
 	col = *getArgReference_str(stk,pci,3);
-	msg = WLCstart(cntxt, WLC_UPDATE, "wlr.update");
+	msg = WLCstart(cntxt, "wlr.update");
 	if(msg)
 		return msg;
+	cntxt->wlc_kind = WLC_UPDATE;
 	tpe= getArgType(mb,pci,5);
 	if (isaBatType(tpe) ){
 		BAT *b, *bval;
@@ -939,9 +1012,10 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p;
 	str msg = MAL_SUCCEED;
 	(void) stk;
-	msg = WLCstart(cntxt, WLC_UPDATE, "wlr.clear_table");
+	msg = WLCstart(cntxt, "wlr.clear_table");
 	if(msg)
 		return msg;
+	cntxt->wlc_kind = WLC_UPDATE;
 	p = newStmt(cntxt->wlc, "wlr","clear_table");
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 	p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
@@ -951,57 +1025,10 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-/* Beware that a client context can be used in parallel and
- * that we don't want transaction interference caused by merging
- * the MAL instructions accidentally.
- * The effectively means that the SQL transaction record should
- * collect the MAL instructions and flush them.
- */
-static str
-WLCpreparewrite(Client cntxt)
-{	str msg = MAL_SUCCEED;
-	// save the wlc record on a file 
-	if( cntxt->wlc == 0 || cntxt->wlc->stop <= 1 ||  cntxt->wlc_kind == WLC_QUERY )
-		return MAL_SUCCEED;
-
-	if( wlc_state != WLC_RUN){
-		trimMalVariables(cntxt->wlc, NULL);
-		resetMalBlk(cntxt->wlc, 0);
-		cntxt->wlc_kind = WLC_QUERY;
-		return MAL_SUCCEED;
-	}
-	if( wlc_dir[0] ){	
-		if (wlc_fd == NULL){
-			msg = WLCsetlogger();
-			if( msg) 
-				return msg;
-		}
-		
-		MT_lock_set(&wlc_lock);
-		printFunction(wlc_fd, cntxt->wlc, 0, LIST_MAL_DEBUG );
-		(void) mnstr_flush(wlc_fd);
-		// close file if no delay is allowed
-		if( wlc_beat == 0 ){
-			msg = WLCcloselogger();
-		}
-		trimMalVariables(cntxt->wlc, NULL);
-		resetMalBlk(cntxt->wlc, 0);
-		cntxt->wlc_kind = WLC_QUERY;
-		MT_lock_unset(&wlc_lock);
-	} else
-			throw(MAL,"wlc.write","WLC log path missing ");
-
-#ifdef _WLC_DEBUG_
-	printFunction(cntxt->fdout, cntxt->wlc, 0, LIST_MAL_ALL );
-#endif
-	if( wlc_state == WLC_STOP)
-		throw(MAL,"wlc.write","Logging for this snapshot has been stopped. Use a new snapshot to continue logging.");
-	return msg;
-}
 
 str
 WLCcommit(int clientid)
-{
+{	
 	if( mal_clients[clientid].wlc && mal_clients[clientid].wlc->stop > 1){
 		newStmt(mal_clients[clientid].wlc,"wlr","commit");
 		return WLCpreparewrite( &mal_clients[clientid]);
@@ -1011,10 +1038,14 @@ WLCcommit(int clientid)
 
 str
 WLCcommitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
+{	str msg = MAL_SUCCEED;
+	msg = WLCstart(cntxt, "wlr.commit");
+	if(msg)
+		return msg;
 	(void) mb;
 	(void) stk;
 	(void) pci;
+	cntxt->wlc_kind = WLC_UPDATE;
 	return WLCcommit(cntxt->idx);
 }
 
@@ -1029,9 +1060,13 @@ WLCrollback(int clientid)
 }
 str
 WLCrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
+{	str msg = MAL_SUCCEED;
+	msg = WLCstart(cntxt, "wlr.rollback");
+	if(msg)
+		return msg;
 	(void) mb;
 	(void) stk;
 	(void) pci;
+	cntxt->wlc_kind = WLC_UPDATE;
 	return WLCrollback(cntxt->idx);
 }

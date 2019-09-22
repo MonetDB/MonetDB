@@ -30,7 +30,7 @@ external name wlc."getmastertick";
 
 -- Replica commands
 
-create procedure replicate(dbname string)
+create procedure setmaster(dbname string)
 external name wlr.replicate;
 
 create procedure stopreplicate()

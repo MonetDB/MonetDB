@@ -14,6 +14,10 @@ pattern stopreplicate()
 address WLRstopreplicate
 comment "Stop the replicator thread";
 
+pattern replicate()
+address WLRreplicate
+comment "Continue to keep the replica in sink";
+
 pattern replicate(ts:timestamp)
 address WLRreplicate
 comment "Roll the snapshot forward to an up-to-date clone";

@@ -32,7 +32,9 @@ c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process
 
 cout, cerr = c.communicate('''\
 select * from tmp;
-call replicate('%s');
+call setmaster('%s');
+call replicate(-1);
+call replicate(8);
 select * from tmp;
 '''  %dbname)
 

@@ -32,12 +32,12 @@ c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process
 
 #two step roll forward, where first step shouldn't do anything because already in previous test
 cout, cerr = c.communicate('''\
-call replicate('%s');
-call replicate(2);
-select * from tmp;
+call setmaster('%s');
 call replicate(3);
 select * from tmp;
-call replicate(5);
+call replicate(4);
+select * from tmp;
+call replicate(6);
 select * from tmp;
 call stopreplicate();
 ''' % dbname)

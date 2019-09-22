@@ -42,6 +42,7 @@ mal_export char wlc_dir[FILENAME_MAX];
 mal_export lng wlc_id;
 mal_export int wlc_batches;
 mal_export int wlc_state;
+mal_export lng wlc_tag;
 mal_export int wlc_beat;
 mal_export char wlc_write[26];
 
