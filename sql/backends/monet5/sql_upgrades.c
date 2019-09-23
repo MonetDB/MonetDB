@@ -1955,13 +1955,15 @@ sql_update_apr2019_sp1(Client c)
 static str
 sql_update_nov2019(Client c, mvc *sql)
 {
-	size_t bufsize = 1000, pos = 0;
-	char *buf, *err;
+	size_t bufsize = 4096, pos = 0;
+	char *schema = NULL, *err = NULL;
+	char *buf = GDKmalloc(bufsize);
 	res_table *output;
 	BAT *b;
 
-	if ((buf = GDKmalloc(bufsize)) == NULL)
+	if (buf == NULL)
 		throw(SQL, "sql_update_nov2019", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	schema = stack_get_string(sql, "current_schema");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"select id from sys.args where func_id in (select id from sys.functions where schema_id = (select id from sys.schemas where name = 'sys') and name = 'second' and func = 'sql_seconds') and number = 0 and type_scale = 3;\n");
@@ -1978,21 +1980,8 @@ sql_update_nov2019(Client c, mvc *sql)
 		BBPunfix(b->batCacheid);
 	}
 	res_table_destroy(output);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
 
-static str
-sql_update_deltas(Client c, mvc *sql)
-{
-	size_t bufsize = 1600, pos = 0;
-	char *schema = NULL, *err = NULL;
-	char *buf = GDKmalloc(bufsize);
-
-	if (buf == NULL)
-		throw(SQL, "sql_update_deltas", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	schema = stack_get_string(sql, "current_schema");
-
+	pos = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
 			"create function sys.deltas (\"schema\" string)"
@@ -2004,8 +1993,67 @@ sql_update_deltas(Client c, mvc *sql)
 			"create function sys.deltas (\"schema\" string, \"table\" string, \"column\" string)"
 			" returns table (\"id\" int, \"cleared\" boolean, \"immutable\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)"
 			" external name \"sql\".\"deltas\";\n"
+			"create aggregate median_avg(val TINYINT) returns DOUBLE\n"
+			" external name \"aggr\".\"median_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE median_avg(TINYINT) TO PUBLIC;\n"
+			"create aggregate median_avg(val SMALLINT) returns DOUBLE\n"
+			" external name \"aggr\".\"median_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE median_avg(SMALLINT) TO PUBLIC;\n"
+			"create aggregate median_avg(val INTEGER) returns DOUBLE\n"
+			" external name \"aggr\".\"median_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE median_avg(INTEGER) TO PUBLIC;\n"
+			"create aggregate median_avg(val BIGINT) returns DOUBLE\n"
+			" external name \"aggr\".\"median_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE median_avg(BIGINT) TO PUBLIC;\n"
+			"create aggregate median_avg(val DECIMAL) returns DOUBLE\n"
+			" external name \"aggr\".\"median_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL) TO PUBLIC;\n"
+			"create aggregate median_avg(val REAL) returns DOUBLE\n"
+			" external name \"aggr\".\"median_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE median_avg(REAL) TO PUBLIC;\n"
+			"create aggregate median_avg(val DOUBLE) returns DOUBLE\n"
+			" external name \"aggr\".\"median_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE median_avg(DOUBLE) TO PUBLIC;\n"
+			"\n"
+			"create aggregate quantile_avg(val TINYINT, q DOUBLE) returns DOUBLE\n"
+			" external name \"aggr\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile_avg(TINYINT, DOUBLE) TO PUBLIC;\n"
+			"create aggregate quantile_avg(val SMALLINT, q DOUBLE) returns DOUBLE\n"
+			" external name \"aggr\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile_avg(SMALLINT, DOUBLE) TO PUBLIC;\n"
+			"create aggregate quantile_avg(val INTEGER, q DOUBLE) returns DOUBLE\n"
+			" external name \"aggr\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile_avg(INTEGER, DOUBLE) TO PUBLIC;\n"
+			"create aggregate quantile_avg(val BIGINT, q DOUBLE) returns DOUBLE\n"
+			" external name \"aggr\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile_avg(BIGINT, DOUBLE) TO PUBLIC;\n"
+			"create aggregate quantile_avg(val DECIMAL, q DOUBLE) returns DOUBLE\n"
+			" external name \"aggr\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL, DOUBLE) TO PUBLIC;\n"
+			"create aggregate quantile_avg(val REAL, q DOUBLE) returns DOUBLE\n"
+			" external name \"aggr\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile_avg(REAL, DOUBLE) TO PUBLIC;\n"
+			"create aggregate quantile_avg(val DOUBLE, q DOUBLE) returns DOUBLE\n"
+			" external name \"aggr\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile_avg(DOUBLE, DOUBLE) TO PUBLIC;\n");
+#ifdef HAVE_HGE
+	if (have_hge) {
+		pos += snprintf(buf + pos, bufsize - pos,
+				"create aggregate median_avg(val HUGEINT) returns DOUBLE\n"
+				" external name \"aggr\".\"median_avg\";\n"
+				"GRANT EXECUTE ON AGGREGATE median_avg(HUGEINT) TO PUBLIC;\n"
+				"create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE\n"
+				" external name \"aggr\".\"quantile_avg\";\n"
+				"GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n");
+	}
+#endif
+	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('deltas') and type = %d;\n", (int) F_UNION);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name in ('median_avg', 'quantile_avg') and type = %d;\n", (int) F_AGGR);
+
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
@@ -2232,14 +2280,9 @@ SQLupgrades(Client c, mvc *m)
 		freeException(err);
 	}
 
-	if ((err = sql_update_nov2019(c, m)) != NULL) {
-		fprintf(stderr, "!%s\n", err);
-		freeException(err);
-	}
-
 	sql_find_subtype(&tp, "string", 0, 0);
 	if (!sql_bind_func3(m->sa, s, "deltas", &tp, &tp, &tp, F_UNION)) {
-		if ((err = sql_update_deltas(c, m)) != NULL) {
+		if ((err = sql_update_nov2019(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
