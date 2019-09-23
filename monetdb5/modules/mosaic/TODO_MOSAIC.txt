@@ -1,20 +1,22 @@
 ####technical depth####
-Make dictionary variable-sized so it can always compress.
-Add asserts for unknown compression strategies. (1)
+Make dictionary variable-sized so it can always compress. We are going to use vheap for this.
+dictionary encoding should use the ordered property of its dictionary in the algebraic operators
+decouple estimation completely from compression: there should be two runs: one for estimating the blocks and one to actual compress according to the estimations.
 Test null semantics
 mosaic.select (c,nil:any_1, nil:any_1,true,true,(true|false)) is not working correctly: should result in c == nil or c!=nil(anti).
-dictionary encoding should use the ordered property of its dictionary in the algebraic operators
 Use bit vectors more aggressively in mosaic_delta --- then resolve test mosaic_delta_timestamp --- and possibly other compression techniques as well.
 Somehow force mosaic to only use specified compressions even if inefficient. This poses a design problem for dictionary compression though.
+fix layout call.
 Add test for float/double
 delta compression: check if the hardcoded compression expression are correct. See also (2)
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
-Remove task-factor and range->factor or refactor them.
+Fix the task-factor array.
 See if we can re-introduce landmark stuff somehow.
 Fix/check/test MOSlayout.
 benchmark
 
 ####code issues####
+move mask, bits, framebits from  MosaicHdr to MosaicBlkHeader_frame_t.
 mosaic_prefix.c: prefix code does not use macro's!!!!
 mosaic_delta.c: improve the macro's: for instance get rid of hardcoded expression arguments in DELTAcompress. (2*)
 mosaic_<compression>.c: for type macro's use macro-wised inline functions.
