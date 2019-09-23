@@ -93,10 +93,11 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 
 #define BINARY_3TYPE_FUNC(TYPE1, TYPE2, TYPE3, FUNC)			\
 	do {								\
-		for (k = 0; k < ci->ncand; k++) {			\
-			x = canditer_next(ci) - candoff;		\
-			i = x * incr1;					\
-			j = x * incr2;					\
+		for (k = 0; k < ci1->ncand; k++) {			\
+			x1 = canditer_next(ci1) - candoff1;		\
+			x2 = canditer_next(ci2) - candoff2;		\
+			i = x1 * incr1;					\
+			j = x2 * incr2;					\
 			TYPE1 v1 = ((const TYPE1 *) lft)[i];		\
 			TYPE2 v2 = ((const TYPE2 *) rgt)[j];		\
 			if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
@@ -112,10 +113,11 @@ checkbats(BAT *b1, BAT *b2, const char *func)
  * when it is set */
 #define BINARY_3TYPE_FUNC_nilmatch(TYPE1, TYPE2, TYPE3, FUNC)		\
 	do {								\
-		for (k = 0; k < ci->ncand; k++) {			\
-			x = canditer_next(ci) - candoff;		\
-			i = x * incr1;					\
-			j = x * incr2;					\
+		for (k = 0; k < ci1->ncand; k++) {			\
+			x1 = canditer_next(ci1) - candoff1;		\
+			x2 = canditer_next(ci2) - candoff2;		\
+			i = x1 * incr1;					\
+			j = x2 * incr2;					\
 			TYPE1 v1 = ((const TYPE1 *) lft)[i];		\
 			TYPE2 v2 = ((const TYPE2 *) rgt)[j];		\
 			if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
@@ -128,10 +130,11 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 
 #define BINARY_3TYPE_FUNC_nonil(TYPE1, TYPE2, TYPE3, FUNC)		\
 	do {								\
-		for (k = 0; k < ci->ncand; k++) {			\
-			x = canditer_next(ci) - candoff;		\
-			i = x * incr1;					\
-			j = x * incr2;					\
+		for (k = 0; k < ci1->ncand; k++) {			\
+			x1 = canditer_next(ci1) - candoff1;		\
+			x2 = canditer_next(ci2) - candoff2;		\
+			i = x1 * incr1;					\
+			j = x2 * incr2;					\
 			TYPE1 v1 = ((const TYPE1 *) lft)[i];		\
 			TYPE2 v2 = ((const TYPE2 *) rgt)[j];		\
 			((TYPE3 *) dst)[k] = FUNC(v1, v2);		\
@@ -140,10 +143,11 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 
 #define BINARY_3TYPE_FUNC_CHECK(TYPE1, TYPE2, TYPE3, FUNC, CHECK)	\
 	do {								\
-		for (k = 0; k < ci->ncand; k++) {			\
-			x = canditer_next(ci) - candoff;		\
-			i = x * incr1;					\
-			j = x * incr2;					\
+		for (k = 0; k < ci1->ncand; k++) {			\
+			x1 = canditer_next(ci1) - candoff1;		\
+			x2 = canditer_next(ci2) - candoff2;		\
+			i = x1 * incr1;					\
+			j = x2 * incr2;					\
 			TYPE1 v1 = ((const TYPE1 *) lft)[i];		\
 			TYPE2 v2 = ((const TYPE2 *) rgt)[j];		\
 			if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
@@ -925,43 +929,44 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 }
 
 BAT *
-BATcalcmin(BAT *b1, BAT *b2, BAT *s)
+BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
-	BUN i;
-	struct canditer ci;
-	oid x;
+	struct canditer ci1, ci2;
 	const void *restrict nil;
-	const void *p1, *p2;
 	BATiter b1i, b2i;
 	int (*cmp)(const void *, const void *);
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
 
-	if (checkbats(b1, b2, __func__) != GDK_SUCCEED)
-		return NULL;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("%s: inputs have incompatible types\n", __func__);
 		return NULL;
 	}
 
-	nil = ATOMnilptr(b1->ttype);
-	ncand = canditer_init(&ci, b1, s);
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
+		return NULL;
+	}
 
-	bn = COLnew(ci.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
+	nil = ATOMnilptr(b1->ttype);
+	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	cmp = ATOMcompare(b1->ttype);
 	b1i = bat_iterator(b1);
 	b2i = bat_iterator(b2);
 
-	for (i = 0; i < ci.ncand; i++) {
-		x = canditer_next(&ci) - b1->hseqbase;
-		p1 = BUNtail(b1i, x);
-		p2 = BUNtail(b2i, x);
+	for (BUN i = 0; i < ncand; i++) {
+		oid x1 = canditer_next(&ci1) - b1->hseqbase;
+		oid x2 = canditer_next(&ci2) - b2->hseqbase;
+		const void *p1 = BUNtail(b1i, x1);
+		const void *p2 = BUNtail(b2i, x2);
 		if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
 			nils++;
 			p1 = nil;
@@ -991,46 +996,44 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s)
 }
 
 BAT *
-BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s)
+BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
-	BUN i;
-	struct canditer ci;
-	oid x;
+	struct canditer ci1, ci2;
 	const void *restrict nil;
-	const void *p1, *p2;
 	BATiter b1i, b2i;
 	int (*cmp)(const void *, const void *);
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
 
-	if (checkbats(b1, b2, __func__) != GDK_SUCCEED)
-		return NULL;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("%s: inputs have incompatible types\n", __func__);
 		return NULL;
 	}
 
-	nil = ATOMnilptr(b1->ttype);
-	ncand = canditer_init(&ci, b1, s);
-	if (ncand == 0)
-		return BATconstantV(ci.hseq, b1->ttype,
-				    nil, ncand, TRANSIENT);
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
+		return NULL;
+	}
 
-	bn = COLnew(ci.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
+	nil = ATOMnilptr(b1->ttype);
+	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	cmp = ATOMcompare(b1->ttype);
 	b1i = bat_iterator(b1);
 	b2i = bat_iterator(b2);
 
-	for (i = 0; i < ci.ncand; i++) {
-		x = canditer_next(&ci) - b1->hseqbase;
-		p1 = BUNtail(b1i, x);
-		p2 = BUNtail(b2i, x);
+	for (BUN i = 0; i < ncand; i++) {
+		oid x1 = canditer_next(&ci1) - b1->hseqbase;
+		oid x2 = canditer_next(&ci2) - b2->hseqbase;
+		const void *p1 = BUNtail(b1i, x1);
+		const void *p2 = BUNtail(b2i, x2);
 		if (cmp(p1, nil) == 0) {
 			if (cmp(p2, nil) == 0) {
 				/* both values are nil */
@@ -1044,7 +1047,6 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s)
 		bunfastapp(bn, p1);
 	}
 
-	bn->theap.dirty = true;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (ncand <= 1) {
@@ -1219,43 +1221,44 @@ BATcalccstmin_no_nil(const ValRecord *v, BAT *b, BAT *s)
 }
 
 BAT *
-BATcalcmax(BAT *b1, BAT *b2, BAT *s)
+BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
-	BUN i;
-	struct canditer ci;
-	oid x;
+	struct canditer ci1, ci2;
 	const void *restrict nil;
-	const void *p1, *p2;
 	BATiter b1i, b2i;
 	int (*cmp)(const void *, const void *);
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
 
-	if (checkbats(b1, b2, __func__) != GDK_SUCCEED)
-		return NULL;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("%s: inputs have incompatible types\n", __func__);
 		return NULL;
 	}
 
-	nil = ATOMnilptr(b1->ttype);
-	ncand = canditer_init(&ci, b1, s);
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
+		return NULL;
+	}
 
-	bn = COLnew(ci.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
+	nil = ATOMnilptr(b1->ttype);
+	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	cmp = ATOMcompare(b1->ttype);
 	b1i = bat_iterator(b1);
 	b2i = bat_iterator(b2);
 
-	for (i = 0; i < ci.ncand; i++) {
-		x = canditer_next(&ci) - b1->hseqbase;
-		p1 = BUNtail(b1i, x);
-		p2 = BUNtail(b2i, x);
+	for (BUN i = 0; i < ncand; i++) {
+		oid x1 = canditer_next(&ci1) - b1->hseqbase;
+		oid x2 = canditer_next(&ci2) - b2->hseqbase;
+		const void *p1 = BUNtail(b1i, x1);
+		const void *p2 = BUNtail(b2i, x2);
 		if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
 			nils++;
 			p1 = nil;
@@ -1285,46 +1288,44 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s)
 }
 
 BAT *
-BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
+BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
-	BUN i;
-	struct canditer ci;
-	oid x;
+	struct canditer ci1, ci2;
 	const void *restrict nil;
-	const void *p1, *p2;
 	BATiter b1i, b2i;
 	int (*cmp)(const void *, const void *);
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
 
-	if (checkbats(b1, b2, __func__) != GDK_SUCCEED)
-		return NULL;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("%s: inputs have incompatible types\n", __func__);
 		return NULL;
 	}
 
-	nil = ATOMnilptr(b1->ttype);
-	ncand = canditer_init(&ci, b1, s);
-	if (ncand == 0)
-		return BATconstantV(ci.hseq, b1->ttype,
-				    nil, ncand, TRANSIENT);
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
+		return NULL;
+	}
 
-	bn = COLnew(ci.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
+	nil = ATOMnilptr(b1->ttype);
+	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	cmp = ATOMcompare(b1->ttype);
 	b1i = bat_iterator(b1);
 	b2i = bat_iterator(b2);
 
-	for (i = 0; i < ci.ncand; i++) {
-		x = canditer_next(&ci) - b1->hseqbase;
-		p1 = BUNtail(b1i, x);
-		p2 = BUNtail(b2i, x);
+	for (BUN i = 0; i < ncand; i++) {
+		oid x1 = canditer_next(&ci1) - b1->hseqbase;
+		oid x2 = canditer_next(&ci2) - b2->hseqbase;
+		const void *p1 = BUNtail(b1i, x1);
+		const void *p2 = BUNtail(b2i, x2);
 		if (cmp(p1, nil) == 0) {
 			if (cmp(p2, nil) == 0) {
 				/* both values are nil */
@@ -1338,7 +1339,6 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
 		bunfastapp(bn, p1);
 	}
 
-	bn->theap.dirty = true;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (ncand <= 1) {
@@ -1528,15 +1528,18 @@ static BUN								\
 add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
-				struct canditer *restrict ci,		\
-				oid candoff, bool abort_on_error)	\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci->ncand; k++) {				\
-		oid x = canditer_next(ci) - candoff;			\
-		BUN i = x * incr1;					\
-		BUN j = x * incr2;					\
+	for (BUN k = 0; k < ci1->ncand; k++) {				\
+		oid x1 = canditer_next(ci1) - candoff1;			\
+		oid x2 = canditer_next(ci2) - candoff2;			\
+		BUN i = x1 * incr1;					\
+		BUN j = x2 * incr2;					\
 		if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
@@ -1555,16 +1558,19 @@ static BUN								\
 add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
-				struct canditer *restrict ci,		\
-				oid candoff, bool abort_on_error)	\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
 									\
-	for (BUN k = 0; k < ci->ncand; k++) {				\
-		oid x = canditer_next(ci) - candoff;			\
-		BUN i = x * incr1;					\
-		BUN j = x * incr2;					\
+	for (BUN k = 0; k < ci1->ncand; k++) {				\
+		oid x1 = canditer_next(ci1) - candoff1;			\
+		oid x2 = canditer_next(ci2) - candoff2;			\
+		BUN i = x1 * incr1;					\
+		BUN j = x2 * incr2;					\
 		if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
@@ -1821,8 +1827,9 @@ static BUN
 add_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
 		   void *restrict dst, int tp,
-		   struct canditer *restrict ci, oid candoff,
-		   bool abort_on_error, const char *func)
+		   struct canditer *restrict ci1, struct canditer *restrict ci2,
+		   oid candoff1, oid candoff2, bool abort_on_error,
+		   const char *func)
 {
 	BUN nils;
 
@@ -1837,46 +1844,46 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_bte:
 				nils = add_bte_bte_bte(lft, incr1, rgt, incr2,
 						       dst, GDK_bte_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_sht:
 				nils = add_bte_bte_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
 				nils = add_bte_bte_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = add_bte_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = add_bte_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = add_bte_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_bte_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -1889,40 +1896,40 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_sht:
 				nils = add_bte_sht_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = add_bte_sht_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = add_bte_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = add_bte_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = add_bte_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_bte_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -1935,13 +1942,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = add_bte_int_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = add_bte_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -1949,20 +1956,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = add_bte_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = add_bte_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_bte_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -1975,14 +1982,14 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = add_bte_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = add_bte_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -1990,13 +1997,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_bte_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_bte_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2010,20 +2017,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = add_bte_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_bte_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_bte_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2037,13 +2044,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_bte_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_bte_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2055,7 +2062,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = add_bte_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2073,40 +2080,40 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_sht:
 				nils = add_sht_bte_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = add_sht_bte_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = add_sht_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = add_sht_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = add_sht_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_sht_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2119,40 +2126,40 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_sht:
 				nils = add_sht_sht_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = add_sht_sht_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = add_sht_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = add_sht_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = add_sht_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_sht_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2165,13 +2172,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = add_sht_int_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = add_sht_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -2179,20 +2186,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = add_sht_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = add_sht_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_sht_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2205,14 +2212,14 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = add_sht_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = add_sht_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2220,13 +2227,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_sht_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_sht_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2240,20 +2247,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = add_sht_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_sht_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_sht_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2267,13 +2274,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_sht_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_sht_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2285,7 +2292,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = add_sht_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2303,13 +2310,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = add_int_bte_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = add_int_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -2317,20 +2324,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = add_int_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = add_int_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_int_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2343,13 +2350,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = add_int_sht_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = add_int_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -2357,20 +2364,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = add_int_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = add_int_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_int_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2383,13 +2390,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = add_int_int_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = add_int_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -2397,20 +2404,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = add_int_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = add_int_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_int_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2423,14 +2430,14 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = add_int_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = add_int_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2438,13 +2445,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_int_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_int_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2458,20 +2465,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = add_int_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_int_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_int_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2485,13 +2492,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_int_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_int_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2503,7 +2510,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = add_int_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2521,14 +2528,14 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = add_lng_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = add_lng_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2536,13 +2543,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_lng_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_lng_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2555,14 +2562,14 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = add_lng_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = add_lng_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2570,13 +2577,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_lng_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_lng_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2589,14 +2596,14 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = add_lng_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = add_lng_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2604,13 +2611,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_lng_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_lng_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2623,14 +2630,14 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = add_lng_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = add_lng_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2638,13 +2645,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_lng_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_lng_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2658,20 +2665,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = add_lng_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_lng_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_lng_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2685,13 +2692,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_lng_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_lng_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2703,7 +2710,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = add_lng_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2722,20 +2729,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = add_hge_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_hge_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_hge_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2748,20 +2755,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = add_hge_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_hge_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_hge_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2774,20 +2781,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = add_hge_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_hge_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_hge_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2800,20 +2807,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = add_hge_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_hge_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_hge_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2826,20 +2833,20 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = add_hge_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = add_hge_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_hge_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -2852,13 +2859,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_hge_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_hge_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2870,7 +2877,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = add_hge_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2889,13 +2896,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_flt_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_flt_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2907,13 +2914,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_flt_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_flt_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2925,13 +2932,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_flt_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_flt_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2943,13 +2950,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_flt_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_flt_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2962,13 +2969,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_flt_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_flt_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2981,13 +2988,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = add_flt_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = add_flt_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -2999,7 +3006,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = add_flt_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -3017,7 +3024,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = add_dbl_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -3029,7 +3036,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = add_dbl_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -3041,7 +3048,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = add_dbl_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -3053,7 +3060,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = add_dbl_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -3066,7 +3073,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = add_dbl_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -3079,7 +3086,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = add_dbl_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -3091,7 +3098,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = add_dbl_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -3116,28 +3123,30 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 
 static BUN
 addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
-	    struct canditer *restrict ci)
+	    struct canditer *restrict ci1, struct canditer *restrict ci2)
 {
 	BUN nils = 0;
 	char *s;
 	size_t slen, llen, rlen;
 	BATiter b1i, b2i;
-	oid candoff;
+	oid candoff1, candoff2;
 
 	assert(b1 != NULL || b2 != NULL); /* at least one not NULL */
-	candoff = b1 ? b1->hseqbase : b2->hseqbase;
+	candoff1 = b1 ? b1->hseqbase : 0;
+	candoff2 = b2 ? b2->hseqbase : 0;
 	b1i = bat_iterator(b1);
 	b2i = bat_iterator(b2);
 	slen = 1024;
 	s = GDKmalloc(slen);
 	if (s == NULL)
 		return BUN_NONE;
-	for (BUN i = 0; i < ci->ncand; i++) {
-		oid x = canditer_next(ci) - candoff;
+	for (BUN i = 0; i < ci1->ncand; i++) {
+		oid x1 = canditer_next(ci1) - candoff1;
+		oid x2 = canditer_next(ci2) - candoff2;
 		if (b1)
-			l = BUNtvar(b1i, x);
+			l = BUNtvar(b1i, x1);
 		if (b2)
-			r = BUNtvar(b2i, x);
+			r = BUNtvar(b2i, x2);
 		if (strcmp(l, str_nil) == 0 || strcmp(r, str_nil) == 0) {
 			nils++;
 			tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn));
@@ -3165,36 +3174,39 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 }
 
 BAT *
-BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error)
+BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
-	struct canditer ci;
+	struct canditer ci1, ci2;
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
 
-	if (checkbats(b1, b2, __func__) != GDK_SUCCEED)
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
 		return NULL;
+	}
 
-	ncand = canditer_init(&ci, b1, s);
-
-	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, tp, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (ncand == 0)
 		return bn;
 
 	if (b1->ttype == TYPE_str && b2->ttype == TYPE_str && tp == TYPE_str) {
-		nils = addstr_loop(b1, NULL, b2, NULL, bn, &ci);
+		nils = addstr_loop(b1, NULL, b2, NULL, bn, &ci1, &ci2);
 	} else {
 		nils = add_typeswitchloop(Tloc(b1, 0),
 					  b1->ttype, 1,
 					  Tloc(b2, 0),
 					  b2->ttype, 1,
 					  Tloc(bn, 0), tp,
-					  &ci, b1->hseqbase,
+					  &ci1, &ci2,
+					  b1->hseqbase, b2->hseqbase,
 					  abort_on_error, __func__);
 	}
 
@@ -3238,12 +3250,14 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 		return bn;
 
 	if (b->ttype == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
-		nils = addstr_loop(b, NULL, NULL, v->val.sval, bn, &ci);
+		nils = addstr_loop(b, NULL, NULL, v->val.sval, bn, &ci, &(struct canditer){.tpe=cand_dense, .ncand=ncand});
 	} else {
 		nils = add_typeswitchloop(Tloc(b, 0), b->ttype, 1,
 					  VALptr(v), v->vtype, 0,
 					  Tloc(bn, 0), tp,
-					  &ci, b->hseqbase,
+					  &ci,
+					  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+					  b->hseqbase, 0,
 					  abort_on_error, __func__);
 	}
 
@@ -3287,12 +3301,14 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 		return bn;
 
 	if (b->ttype == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
-		nils = addstr_loop(NULL, v->val.sval, b, NULL, bn, &ci);
+		nils = addstr_loop(NULL, v->val.sval, b, NULL, bn, &(struct canditer){.tpe=cand_dense, .ncand=ncand}, &ci);
 	} else {
 		nils = add_typeswitchloop(VALptr(v), v->vtype, 0,
 					  Tloc(b, 0), b->ttype, 1,
 					  Tloc(bn, 0), tp,
-					  &ci, b->hseqbase,
+					  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+					  &ci,
+					  0, b->hseqbase,
 					  abort_on_error, __func__);
 	}
 
@@ -3325,7 +3341,8 @@ VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 			       VALptr(rgt), rgt->vtype, 0,
 			       VALget(ret), ret->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
-			       0, abort_on_error, __func__) == BUN_NONE)
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       0, 0, abort_on_error, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -3336,7 +3353,8 @@ BATcalcincrdecr(BAT *b, BAT *s, bool abort_on_error,
 				      const void *, int, int,
 				      void *, int,
 				      struct canditer *restrict,
-				      oid, bool, const char *),
+				      struct canditer *restrict,
+				      oid, oid, bool, const char *),
 		const char *func)
 {
 	BAT *bn;
@@ -3357,7 +3375,9 @@ BATcalcincrdecr(BAT *b, BAT *s, bool abort_on_error,
 	nils = (*typeswitchloop)(Tloc(b, 0), b->ttype, 1,
 				 &(bte){1}, TYPE_bte, 0,
 				 Tloc(bn, 0), bn->ttype,
-				 &ci, b->hseqbase,
+				 &(struct canditer){.tpe=cand_dense, .ncand=1},
+				 &ci,
+				 0, b->hseqbase,
 				 abort_on_error, func);
 
 	if (nils == BUN_NONE) {
@@ -3404,7 +3424,8 @@ VARcalcincr(ValPtr ret, const ValRecord *v, bool abort_on_error)
 			       &(bte){1}, TYPE_bte, 0,
 			       VALget(ret), ret->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
-			       0, abort_on_error, __func__) == BUN_NONE)
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       0, 0, abort_on_error, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -3417,15 +3438,18 @@ static BUN								\
 sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
-				struct canditer *restrict ci,		\
-				oid candoff, bool abort_on_error)	\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci->ncand; k++) {				\
-		oid x = canditer_next(ci) - candoff;			\
-		BUN i = x * incr1;					\
-		BUN j = x * incr2;					\
+	for (BUN k = 0; k < ci1->ncand; k++) {				\
+		oid x1 = canditer_next(ci1) - candoff1;			\
+		oid x2 = canditer_next(ci2) - candoff2;			\
+		BUN i = x1 * incr1;					\
+		BUN j = x2 * incr2;					\
 		if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
@@ -3444,16 +3468,19 @@ static BUN								\
 sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
-				struct canditer *restrict ci,		\
-				oid candoff, bool abort_on_error)	\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
 									\
-	for (BUN k = 0; k < ci->ncand; k++) {				\
-		oid x = canditer_next(ci) - candoff;			\
-		BUN i = x * incr1;					\
-		BUN j = x * incr2;					\
+	for (BUN k = 0; k < ci1->ncand; k++) {				\
+		oid x1 = canditer_next(ci1) - candoff1;			\
+		oid x2 = canditer_next(ci2) - candoff2;			\
+		BUN i = x1 * incr1;					\
+		BUN j = x2 * incr2;					\
 		if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
@@ -3710,7 +3737,8 @@ static BUN
 sub_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
 		   void *restrict dst, int tp,
-		   struct canditer *restrict ci, oid candoff,
+		   struct canditer *restrict ci1, struct canditer *restrict ci2,
+		   oid candoff1, oid candoff2,
 		   bool abort_on_error, const char *func)
 {
 	BUN nils;
@@ -3726,46 +3754,46 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_bte:
 				nils = sub_bte_bte_bte(lft, incr1, rgt, incr2,
 						       dst, GDK_bte_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_sht:
 				nils = sub_bte_bte_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
 				nils = sub_bte_bte_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = sub_bte_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = sub_bte_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = sub_bte_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_bte_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -3778,40 +3806,40 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_sht:
 				nils = sub_bte_sht_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = sub_bte_sht_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = sub_bte_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = sub_bte_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = sub_bte_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_bte_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -3824,13 +3852,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = sub_bte_int_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = sub_bte_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -3838,20 +3866,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = sub_bte_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = sub_bte_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_bte_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -3864,14 +3892,14 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = sub_bte_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = sub_bte_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -3879,13 +3907,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_bte_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_bte_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -3899,20 +3927,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = sub_bte_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_bte_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_bte_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -3926,13 +3954,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_bte_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_bte_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -3944,7 +3972,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = sub_bte_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -3962,40 +3990,40 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_sht:
 				nils = sub_sht_bte_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = sub_sht_bte_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = sub_sht_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = sub_sht_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = sub_sht_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_sht_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4008,40 +4036,40 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_sht:
 				nils = sub_sht_sht_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = sub_sht_sht_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = sub_sht_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = sub_sht_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = sub_sht_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_sht_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4054,13 +4082,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = sub_sht_int_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = sub_sht_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -4068,20 +4096,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = sub_sht_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = sub_sht_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_sht_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4094,14 +4122,14 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = sub_sht_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = sub_sht_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4109,13 +4137,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_sht_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_sht_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4129,20 +4157,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = sub_sht_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_sht_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_sht_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4156,13 +4184,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_sht_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_sht_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4174,7 +4202,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = sub_sht_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4192,13 +4220,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = sub_int_bte_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = sub_int_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -4206,20 +4234,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = sub_int_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = sub_int_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_int_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4232,13 +4260,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = sub_int_sht_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = sub_int_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -4246,20 +4274,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = sub_int_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = sub_int_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_int_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4272,13 +4300,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = sub_int_int_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = sub_int_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -4286,20 +4314,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = sub_int_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = sub_int_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_int_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4312,14 +4340,14 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = sub_int_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = sub_int_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4327,13 +4355,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_int_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_int_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4347,20 +4375,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = sub_int_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_int_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_int_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4374,13 +4402,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_int_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_int_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4392,7 +4420,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = sub_int_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4410,14 +4438,14 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = sub_lng_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = sub_lng_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4425,13 +4453,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_lng_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_lng_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4444,14 +4472,14 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = sub_lng_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = sub_lng_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4459,13 +4487,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_lng_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_lng_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4478,14 +4506,14 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = sub_lng_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = sub_lng_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4493,13 +4521,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_lng_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_lng_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4512,14 +4540,14 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = sub_lng_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = sub_lng_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4527,13 +4555,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_lng_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_lng_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4547,20 +4575,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = sub_lng_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_lng_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_lng_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4574,13 +4602,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_lng_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_lng_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4592,7 +4620,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = sub_lng_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4611,20 +4639,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = sub_hge_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_hge_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_hge_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4637,20 +4665,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = sub_hge_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_hge_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_hge_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4663,20 +4691,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = sub_hge_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_hge_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_hge_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4689,20 +4717,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = sub_hge_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_hge_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_hge_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4715,20 +4743,20 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = sub_hge_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = sub_hge_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_hge_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -4741,13 +4769,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_hge_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_hge_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4759,7 +4787,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = sub_hge_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4778,13 +4806,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_flt_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_flt_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4796,13 +4824,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_flt_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_flt_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4814,13 +4842,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_flt_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_flt_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4832,13 +4860,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_flt_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_flt_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4851,13 +4879,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_flt_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_flt_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4870,13 +4898,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = sub_flt_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = sub_flt_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4888,7 +4916,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = sub_flt_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4906,7 +4934,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = sub_dbl_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4918,7 +4946,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = sub_dbl_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4930,7 +4958,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = sub_dbl_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4942,7 +4970,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = sub_dbl_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4955,7 +4983,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = sub_dbl_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4968,7 +4996,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = sub_dbl_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -4980,7 +5008,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = sub_dbl_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -5004,22 +5032,24 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error)
+BATcalcsub(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
-	struct canditer ci;
+	struct canditer ci1, ci2;
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
 
-	if (checkbats(b1, b2, __func__) != GDK_SUCCEED)
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
 		return NULL;
+	}
 
-	ncand = canditer_init(&ci, b1, s);
-
-	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, tp, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (ncand == 0)
@@ -5028,7 +5058,8 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error)
 	nils = sub_typeswitchloop(Tloc(b1, 0), b1->ttype, 1,
 				  Tloc(b2, 0), b2->ttype, 1,
 				  Tloc(bn, 0), tp,
-				  &ci, b1->hseqbase,
+				  &ci1, &ci2,
+				  b1->hseqbase, b2->hseqbase,
 				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
@@ -5068,7 +5099,9 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	nils = sub_typeswitchloop(Tloc(b, 0), b->ttype, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, 0), tp,
-				  &ci, b->hseqbase,
+				  &ci,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  b->hseqbase, 0,
 				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
@@ -5113,7 +5146,9 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	nils = sub_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, 0), b->ttype, 1,
 				  Tloc(bn, 0), tp,
-				  &ci, b->hseqbase,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  &ci,
+				  0, b->hseqbase,
 				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
@@ -5146,7 +5181,8 @@ VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 			       VALptr(rgt), rgt->vtype, 0,
 			       VALget(ret), ret->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
-			       0, abort_on_error, __func__) == BUN_NONE)
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       0, 0, abort_on_error, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -5165,7 +5201,8 @@ VARcalcdecr(ValPtr ret, const ValRecord *v, bool abort_on_error)
 			       &(bte){1}, TYPE_bte, 0,
 			       VALget(ret), ret->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
-			       0, abort_on_error, __func__) == BUN_NONE)
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       0, 0, abort_on_error, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -5180,15 +5217,18 @@ static BUN								\
 mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
-				struct canditer *restrict ci,		\
-				oid candoff, bool abort_on_error)	\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci->ncand; k++) {				\
-		oid x = canditer_next(ci) - candoff;			\
-		BUN i = x * incr1;					\
-		BUN j = x * incr2;					\
+	for (BUN k = 0; k < ci1->ncand; k++) {				\
+		oid x1 = canditer_next(ci1) - candoff1;			\
+		oid x2 = canditer_next(ci2) - candoff2;			\
+		BUN i = x1 * incr1;					\
+		BUN j = x2 * incr2;					\
 		if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
@@ -5208,16 +5248,19 @@ static BUN								\
 mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
-				struct canditer *restrict ci,		\
-				oid candoff, bool abort_on_error)	\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max * (TYPE3) GDK_##TYPE2##_max); \
 									\
-	for (BUN k = 0; k < ci->ncand; k++) {				\
-		oid x = canditer_next(ci) - candoff;			\
-		BUN i = x * incr1;					\
-		BUN j = x * incr2;					\
+	for (BUN k = 0; k < ci1->ncand; k++) {				\
+		oid x1 = canditer_next(ci1) - candoff1;			\
+		oid x2 = canditer_next(ci2) - candoff2;			\
+		BUN i = x1 * incr1;					\
+		BUN j = x2 * incr2;					\
 		if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
@@ -5243,15 +5286,18 @@ static BUN								\
 mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 			    const TYPE2 *rgt, int incr2,		\
 			    hge *restrict dst, hge max,			\
-			    struct canditer *restrict ci,		\
-			    oid candoff, bool abort_on_error)		\
+			    struct canditer *restrict ci1,		\
+			    struct canditer *restrict ci2,		\
+			    oid candoff1, oid candoff2,			\
+			    bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci->ncand; k++) {				\
-		oid x = canditer_next(ci) - candoff;			\
-		BUN i = x * incr1;					\
-		BUN j = x * incr2;					\
+	for (BUN k = 0; k < ci1->ncand; k++) {				\
+		oid x1 = canditer_next(ci1) - candoff1;			\
+		oid x2 = canditer_next(ci2) - candoff2;			\
+		BUN i = x1 * incr1;					\
+		BUN j = x2 * incr2;					\
 		if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 			dst[k] = hge_nil;				\
 			nils++;						\
@@ -5272,15 +5318,18 @@ static BUN								\
 mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 			    const TYPE2 *rgt, int incr2,		\
 			    lng *restrict dst, lng max,			\
-			    struct canditer *restrict ci,		\
-			    oid candoff, bool abort_on_error)		\
+			    struct canditer *restrict ci1,		\
+			    struct canditer *restrict ci2,		\
+			    oid candoff1, oid candoff2,			\
+			    bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci->ncand; k++) {				\
-		oid x = canditer_next(ci) - candoff;			\
-		BUN i = x * incr1;					\
-		BUN j = x * incr2;					\
+	for (BUN k = 0; k < ci1->ncand; k++) {				\
+		oid x1 = canditer_next(ci1) - candoff1;			\
+		oid x2 = canditer_next(ci2) - candoff2;			\
+		BUN i = x1 * incr1;					\
+		BUN j = x2 * incr2;					\
 		if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 			dst[k] = lng_nil;				\
 			nils++;						\
@@ -5301,15 +5350,18 @@ static BUN								\
 mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
-				struct canditer *restrict ci,		\
-				oid candoff, bool abort_on_error)	\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)	\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci->ncand; k++) {				\
-		oid x = canditer_next(ci) - candoff;			\
-		BUN i = x * incr1;					\
-		BUN j = x * incr2;					\
+	for (BUN k = 0; k < ci1->ncand; k++) {				\
+		oid x1 = canditer_next(ci1) - candoff1;			\
+		oid x2 = canditer_next(ci2) - candoff2;			\
+		BUN i = x1 * incr1;					\
+		BUN j = x2 * incr2;					\
 		if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
@@ -5568,7 +5620,9 @@ static BUN
 mul_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
 		   void *restrict dst, int tp,
-		   struct canditer *restrict ci, oid candoff,
+		   struct canditer *restrict ci1,
+		   struct canditer *restrict ci2,
+		   oid candoff1, oid candoff2,
 		   bool abort_on_error, const char *func)
 {
 	BUN nils;
@@ -5584,46 +5638,46 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_bte:
 				nils = mul_bte_bte_bte(lft, incr1, rgt, incr2,
 						       dst, GDK_bte_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_sht:
 				nils = mul_bte_bte_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
 				nils = mul_bte_bte_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mul_bte_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mul_bte_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = mul_bte_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_bte_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -5636,40 +5690,40 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_sht:
 				nils = mul_bte_sht_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = mul_bte_sht_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = mul_bte_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mul_bte_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = mul_bte_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_bte_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -5682,13 +5736,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = mul_bte_int_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mul_bte_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -5696,20 +5750,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = mul_bte_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = mul_bte_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_bte_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -5722,14 +5776,14 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = mul_bte_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mul_bte_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -5737,13 +5791,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_bte_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_bte_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -5757,20 +5811,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = mul_bte_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_bte_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_bte_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -5784,13 +5838,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_bte_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_bte_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -5802,7 +5856,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = mul_bte_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -5820,40 +5874,40 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_sht:
 				nils = mul_sht_bte_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = mul_sht_bte_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = mul_sht_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mul_sht_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = mul_sht_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_sht_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -5866,40 +5920,40 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_sht:
 				nils = mul_sht_sht_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = mul_sht_sht_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = mul_sht_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mul_sht_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = mul_sht_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_sht_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -5912,13 +5966,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = mul_sht_int_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mul_sht_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -5926,20 +5980,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = mul_sht_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = mul_sht_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_sht_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -5952,14 +6006,14 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = mul_sht_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mul_sht_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -5967,13 +6021,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_sht_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_sht_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -5987,20 +6041,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = mul_sht_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_sht_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_sht_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6014,13 +6068,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_sht_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_sht_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6032,7 +6086,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = mul_sht_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6050,13 +6104,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = mul_int_bte_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mul_int_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -6064,20 +6118,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = mul_int_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = mul_int_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_int_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6090,13 +6144,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = mul_int_sht_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mul_int_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -6104,20 +6158,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = mul_int_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = mul_int_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_int_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6130,13 +6184,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = mul_int_int_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mul_int_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -6144,20 +6198,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = mul_int_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = mul_int_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_int_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6170,14 +6224,14 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = mul_int_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mul_int_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6185,13 +6239,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_int_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_int_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6205,20 +6259,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = mul_int_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_int_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_int_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6232,13 +6286,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_int_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_int_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6250,7 +6304,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = mul_int_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6268,14 +6322,14 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = mul_lng_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mul_lng_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6283,13 +6337,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_lng_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_lng_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6302,14 +6356,14 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = mul_lng_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mul_lng_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6317,13 +6371,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_lng_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_lng_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6336,14 +6390,14 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = mul_lng_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mul_lng_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6351,13 +6405,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_lng_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_lng_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6370,14 +6424,14 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = mul_lng_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mul_lng_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6385,13 +6439,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_lng_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_lng_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6405,20 +6459,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = mul_lng_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_lng_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_lng_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6432,13 +6486,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_lng_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_lng_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6450,7 +6504,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = mul_lng_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6469,20 +6523,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = mul_hge_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_hge_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_hge_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6495,20 +6549,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = mul_hge_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_hge_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_hge_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6521,20 +6575,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = mul_hge_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_hge_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_hge_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6547,20 +6601,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = mul_hge_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_hge_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_hge_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6574,20 +6628,20 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = mul_hge_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_flt:
 				nils = mul_hge_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_hge_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -6601,13 +6655,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_hge_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_hge_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6619,7 +6673,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = mul_hge_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6638,13 +6692,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_flt_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_flt_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6656,13 +6710,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_flt_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_flt_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6674,13 +6728,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_flt_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_flt_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6692,13 +6746,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_flt_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_flt_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6711,13 +6765,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_flt_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_flt_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6730,13 +6784,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = mul_flt_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = mul_flt_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6748,7 +6802,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = mul_flt_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6766,7 +6820,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = mul_dbl_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6778,7 +6832,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = mul_dbl_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6790,7 +6844,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = mul_dbl_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6802,7 +6856,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = mul_dbl_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6815,7 +6869,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = mul_dbl_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6828,7 +6882,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = mul_dbl_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6840,7 +6894,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = mul_dbl_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -6864,28 +6918,32 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 static BAT *
-BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error,
+BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp,
+		 bool abort_on_error,
 		 BUN (*typeswitchloop)(const void *, int, int,
 				       const void *, int, int,
 				       void *restrict, int,
 				       struct canditer *restrict,
-				       oid, bool, const char *),
+				       struct canditer *restrict,
+				       oid, oid, bool, const char *),
 		 const char *func)
 {
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
-	struct canditer ci;
+	struct canditer ci1, ci2;
 
 	BATcheck(b1, func, NULL);
 	BATcheck(b2, func, NULL);
 
-	if (checkbats(b1, b2, func) != GDK_SUCCEED)
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("%s: inputs not the same size.\n", func);
 		return NULL;
+	}
 
-	ncand = canditer_init(&ci, b1, s);
-
-	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, tp, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (ncand == 0)
@@ -6894,7 +6952,7 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error,
 	nils = (*typeswitchloop)(Tloc(b1, 0), b1->ttype, 1,
 				 Tloc(b2, 0), b2->ttype, 1,
 				 Tloc(bn, 0), tp,
-				 &ci, b1->hseqbase,
+				 &ci1, &ci2, b1->hseqbase, b2->hseqbase,
 				 abort_on_error, func);
 
 	if (nils >= BUN_NONE) {
@@ -6914,9 +6972,9 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error,
 }
 
 BAT *
-BATcalcmul(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error)
+BATcalcmul(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 {
-	return BATcalcmuldivmod(b1, b2, s, tp, abort_on_error,
+	return BATcalcmuldivmod(b1, b2, s1, s2, tp, abort_on_error,
 				mul_typeswitchloop, __func__);
 }
 
@@ -6941,7 +6999,9 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	nils = mul_typeswitchloop(Tloc(b, 0), b->ttype, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, 0), tp,
-				  &ci, b->hseqbase,
+				  &ci,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  b->hseqbase, 0,
 				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
@@ -6996,7 +7056,9 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	nils = mul_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, 0), b->ttype, 1,
 				  Tloc(bn, 0), tp,
-				  &ci, b->hseqbase,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  &ci,
+				  0, b->hseqbase,
 				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
@@ -7038,7 +7100,8 @@ VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 			       VALptr(rgt), rgt->vtype, 0,
 			       VALget(ret), ret->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
-			       0, abort_on_error, __func__) == BUN_NONE)
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       0, 0, abort_on_error, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -7051,15 +7114,18 @@ static BUN								\
 div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
-				struct canditer *restrict ci,		\
-				oid candoff, bool abort_on_error)	\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci->ncand; k++) {				\
-		oid x = canditer_next(ci) - candoff;			\
-		BUN i = x * incr1;					\
-		BUN j = x * incr2;					\
+	for (BUN k = 0; k < ci1->ncand; k++) {				\
+		oid x1 = canditer_next(ci1) - candoff1;			\
+		oid x2 = canditer_next(ci2) - candoff2;			\
+		BUN i = x1 * incr1;					\
+		BUN j = x2 * incr2;					\
 		if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
@@ -7086,15 +7152,18 @@ static BUN								\
 div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
 				TYPE3 *restrict dst, TYPE3 max,		\
-				struct canditer *restrict ci,		\
-				oid candoff, bool abort_on_error)	\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci->ncand; k++) {				\
-		oid x = canditer_next(ci) - candoff;			\
-		BUN i = x * incr1;					\
-		BUN j = x * incr2;					\
+	for (BUN k = 0; k < ci1->ncand; k++) {				\
+		oid x1 = canditer_next(ci1) - candoff1;			\
+		oid x2 = canditer_next(ci2) - candoff2;			\
+		BUN i = x1 * incr1;					\
+		BUN j = x2 * incr2;					\
 		if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
@@ -7373,7 +7442,8 @@ static BUN
 div_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
 		   void *restrict dst, int tp,
-		   struct canditer *restrict ci, oid candoff,
+		   struct canditer *restrict ci1, struct canditer *restrict ci2,
+		   oid candoff1, oid candoff2,
 		   bool abort_on_error, const char *func)
 {
 	BUN nils;
@@ -7389,33 +7459,33 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_bte:
 				nils = div_bte_bte_bte(lft, incr1, rgt, incr2,
 						       dst, GDK_bte_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_sht:
 				nils = div_bte_bte_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = div_bte_bte_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = div_bte_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = div_bte_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -7423,13 +7493,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_bte_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_bte_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -7441,33 +7511,33 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_bte:
 				nils = div_bte_sht_bte(lft, incr1, rgt, incr2,
 						       dst, GDK_bte_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_sht:
 				nils = div_bte_sht_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = div_bte_sht_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = div_bte_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = div_bte_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -7475,13 +7545,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_bte_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_bte_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -7493,33 +7563,33 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_bte:
 				nils = div_bte_int_bte(lft, incr1, rgt, incr2,
 						       dst, GDK_bte_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_sht:
 				nils = div_bte_int_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = div_bte_int_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = div_bte_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = div_bte_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -7527,13 +7597,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_bte_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_bte_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -7545,33 +7615,33 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_bte:
 				nils = div_bte_lng_bte(lft, incr1, rgt, incr2,
 						       dst, GDK_bte_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_sht:
 				nils = div_bte_lng_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = div_bte_lng_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = div_bte_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = div_bte_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -7579,13 +7649,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_bte_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_bte_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -7598,45 +7668,45 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_bte:
 				nils = div_bte_hge_bte(lft, incr1, rgt, incr2,
 						       dst, GDK_bte_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_sht:
 				nils = div_bte_hge_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = div_bte_hge_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = div_bte_hge_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_hge:
 				nils = div_bte_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = div_bte_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_bte_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -7649,13 +7719,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_bte_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_bte_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -7667,7 +7737,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = div_bte_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -7685,27 +7755,27 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_sht:
 				nils = div_sht_bte_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
 				nils = div_sht_bte_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = div_sht_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = div_sht_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -7713,13 +7783,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_sht_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_sht_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -7731,27 +7801,27 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_sht:
 				nils = div_sht_sht_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
 				nils = div_sht_sht_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = div_sht_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = div_sht_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -7759,13 +7829,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_sht_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_sht_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -7777,27 +7847,27 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_sht:
 				nils = div_sht_int_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
 				nils = div_sht_int_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = div_sht_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = div_sht_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -7805,13 +7875,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_sht_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_sht_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -7823,27 +7893,27 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_sht:
 				nils = div_sht_lng_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
 				nils = div_sht_lng_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = div_sht_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = div_sht_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -7851,13 +7921,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_sht_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_sht_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -7870,39 +7940,39 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_sht:
 				nils = div_sht_hge_sht(lft, incr1, rgt, incr2,
 						       dst, GDK_sht_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
 				nils = div_sht_hge_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = div_sht_hge_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_hge:
 				nils = div_sht_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = div_sht_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_sht_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -7915,13 +7985,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_sht_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_sht_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -7933,7 +8003,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = div_sht_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -7951,21 +8021,21 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = div_int_bte_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = div_int_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = div_int_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -7973,13 +8043,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_int_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_int_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -7991,21 +8061,21 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = div_int_sht_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = div_int_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = div_int_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -8013,13 +8083,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_int_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_int_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8031,21 +8101,21 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = div_int_int_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = div_int_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = div_int_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -8053,13 +8123,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_int_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_int_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8071,21 +8141,21 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = div_int_lng_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = div_int_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = div_int_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -8093,13 +8163,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_int_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_int_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8112,33 +8182,33 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_int:
 				nils = div_int_hge_int(lft, incr1, rgt, incr2,
 						       dst, GDK_int_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = div_int_hge_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_hge:
 				nils = div_int_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = div_int_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_int_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8151,13 +8221,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_int_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_int_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8169,7 +8239,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = div_int_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8187,7 +8257,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = div_lng_bte_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -8195,7 +8265,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = div_lng_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -8203,13 +8273,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_lng_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_lng_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8221,7 +8291,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = div_lng_sht_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -8229,7 +8299,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = div_lng_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -8237,13 +8307,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_lng_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_lng_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8255,7 +8325,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = div_lng_int_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -8263,7 +8333,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = div_lng_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -8271,13 +8341,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_lng_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_lng_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8289,7 +8359,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = div_lng_lng_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
@@ -8297,7 +8367,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = div_lng_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -8305,13 +8375,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_lng_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_lng_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8324,27 +8394,27 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_lng:
 				nils = div_lng_hge_lng(lft, incr1, rgt, incr2,
 						       dst, GDK_lng_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_hge:
 				nils = div_lng_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
 			case TYPE_flt:
 				nils = div_lng_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_lng_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8357,13 +8427,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_lng_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_lng_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8375,7 +8445,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = div_lng_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8394,19 +8464,19 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = div_hge_bte_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_flt:
 				nils = div_hge_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_hge_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8418,19 +8488,19 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = div_hge_sht_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_flt:
 				nils = div_hge_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_hge_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8442,19 +8512,19 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = div_hge_int_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_flt:
 				nils = div_hge_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_hge_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8466,19 +8536,19 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = div_hge_lng_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_flt:
 				nils = div_hge_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_hge_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8490,19 +8560,19 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_hge:
 				nils = div_hge_hge_hge(lft, incr1, rgt, incr2,
 						       dst, GDK_hge_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_flt:
 				nils = div_hge_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_hge_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8514,13 +8584,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_hge_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_hge_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8532,7 +8602,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = div_hge_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8551,13 +8621,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_flt_bte_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_flt_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8569,13 +8639,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_flt_sht_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_flt_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8587,13 +8657,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_flt_int_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_flt_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8605,13 +8675,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_flt_lng_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_flt_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8624,13 +8694,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_flt_hge_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_flt_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8643,13 +8713,13 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_flt:
 				nils = div_flt_flt_flt(lft, incr1, rgt, incr2,
 						       dst, GDK_flt_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_dbl:
 				nils = div_flt_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8661,7 +8731,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = div_flt_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8679,7 +8749,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = div_dbl_bte_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8691,7 +8761,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = div_dbl_sht_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8703,7 +8773,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = div_dbl_int_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8715,7 +8785,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = div_dbl_lng_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8728,7 +8798,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = div_dbl_hge_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8741,7 +8811,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = div_dbl_flt_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8753,7 +8823,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			case TYPE_dbl:
 				nils = div_dbl_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, GDK_dbl_max,
-						       ci, candoff,
+						       ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -8780,9 +8850,9 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalcdiv(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error)
+BATcalcdiv(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 {
-	return BATcalcmuldivmod(b1, b2, s, tp, abort_on_error,
+	return BATcalcmuldivmod(b1, b2, s1, s2, tp, abort_on_error,
 				div_typeswitchloop, __func__);
 }
 
@@ -8807,7 +8877,9 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	nils = div_typeswitchloop(Tloc(b, 0), b->ttype, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, 0), tp,
-				  &ci, b->hseqbase,
+				  &ci,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  b->hseqbase, 0,
 				  abort_on_error, __func__);
 
 	if (nils >= BUN_NONE) {
@@ -8868,7 +8940,9 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	nils = div_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, 0), b->ttype, 1,
 				  Tloc(bn, 0), tp,
-				  &ci, b->hseqbase,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  &ci,
+				  0, b->hseqbase,
 				  abort_on_error, __func__);
 
 	if (nils >= BUN_NONE) {
@@ -8895,7 +8969,8 @@ VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 			       VALptr(rgt), rgt->vtype, 0,
 			       VALget(ret), ret->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
-			       0, abort_on_error, __func__) >= BUN_NONE)
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       0, 0, abort_on_error, __func__) >= BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -8908,15 +8983,18 @@ static BUN								\
 mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
 				TYPE3 *restrict dst,			\
-				struct canditer *restrict ci,		\
-				oid candoff, bool abort_on_error)	\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci->ncand; k++) {				\
-		oid x = canditer_next(ci) - candoff;			\
-		BUN i = x * incr1;					\
-		BUN j = x * incr2;					\
+	for (BUN k = 0; k < ci1->ncand; k++) {				\
+		oid x1 = canditer_next(ci1) - candoff1;			\
+		oid x2 = canditer_next(ci2) - candoff2;			\
+		BUN i = x1 * incr1;					\
+		BUN j = x2 * incr2;					\
 		if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
@@ -8937,15 +9015,18 @@ static BUN								\
 mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				const TYPE2 *rgt, int incr2,		\
 				TYPE3 *restrict dst,			\
-				struct canditer *restrict ci,		\
-				oid candoff, bool abort_on_error)	\
+				struct canditer *restrict ci1,		\
+				struct canditer *restrict ci2,		\
+				oid candoff1, oid candoff2,		\
+				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci->ncand; k++) {				\
-		oid x = canditer_next(ci) - candoff;			\
-		BUN i = x * incr1;					\
-		BUN j = x * incr2;					\
+	for (BUN k = 0; k < ci1->ncand; k++) {				\
+		oid x1 = canditer_next(ci1) - candoff1;			\
+		oid x2 = canditer_next(ci2) - candoff2;			\
+		BUN i = x1 * incr1;					\
+		BUN j = x2 * incr2;					\
 		if (is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
@@ -9185,7 +9266,8 @@ static BUN
 mod_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
 		   void *restrict dst, int tp,
-		   struct canditer *restrict ci, oid candoff,
+		   struct canditer *restrict ci1, struct canditer *restrict ci2,
+		   oid candoff1, oid candoff2,
 		   bool abort_on_error, const char *func)
 {
 	BUN nils;
@@ -9200,29 +9282,29 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_bte:
 				nils = mod_bte_bte_bte(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_sht:
 				nils = mod_bte_bte_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = mod_bte_bte_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_bte_bte_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_bte_bte_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9235,29 +9317,29 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_bte:
 				nils = mod_bte_sht_bte(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_sht:
 				nils = mod_bte_sht_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = mod_bte_sht_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_bte_sht_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_bte_sht_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9270,29 +9352,29 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_bte:
 				nils = mod_bte_int_bte(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_sht:
 				nils = mod_bte_int_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = mod_bte_int_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_bte_int_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_bte_int_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9305,29 +9387,29 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_bte:
 				nils = mod_bte_lng_bte(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_sht:
 				nils = mod_bte_lng_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = mod_bte_lng_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_bte_lng_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_bte_lng_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9341,28 +9423,28 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_bte:
 				nils = mod_bte_hge_bte(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_sht:
 				nils = mod_bte_hge_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = mod_bte_hge_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_bte_hge_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_hge:
 				nils = mod_bte_hge_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9375,7 +9457,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_flt:
 				nils = mod_bte_flt_flt(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -9386,7 +9468,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_bte_dbl_dbl(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -9403,29 +9485,29 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_bte:
 				nils = mod_sht_bte_bte(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_sht:
 				nils = mod_sht_bte_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = mod_sht_bte_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_sht_bte_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_sht_bte_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9438,24 +9520,24 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_sht:
 				nils = mod_sht_sht_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
 				nils = mod_sht_sht_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_sht_sht_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_sht_sht_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9468,24 +9550,24 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_sht:
 				nils = mod_sht_int_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
 				nils = mod_sht_int_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_sht_int_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_sht_int_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9498,24 +9580,24 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_sht:
 				nils = mod_sht_lng_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
 				nils = mod_sht_lng_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_sht_lng_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_sht_lng_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9529,23 +9611,23 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_sht:
 				nils = mod_sht_hge_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
 				nils = mod_sht_hge_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_sht_hge_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_hge:
 				nils = mod_sht_hge_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9558,7 +9640,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_flt:
 				nils = mod_sht_flt_flt(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -9569,7 +9651,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_sht_dbl_dbl(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -9586,29 +9668,29 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_bte:
 				nils = mod_int_bte_bte(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_sht:
 				nils = mod_int_bte_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = mod_int_bte_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_int_bte_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_int_bte_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9621,24 +9703,24 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_sht:
 				nils = mod_int_sht_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
 				nils = mod_int_sht_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_int_sht_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_int_sht_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9651,19 +9733,19 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_int:
 				nils = mod_int_int_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = mod_int_int_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_int_int_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9676,19 +9758,19 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_int:
 				nils = mod_int_lng_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = mod_int_lng_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_int_lng_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9702,18 +9784,18 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_int:
 				nils = mod_int_hge_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = mod_int_hge_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_hge:
 				nils = mod_int_hge_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9726,7 +9808,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_flt:
 				nils = mod_int_flt_flt(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -9737,7 +9819,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_int_dbl_dbl(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -9754,29 +9836,29 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_bte:
 				nils = mod_lng_bte_bte(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_sht:
 				nils = mod_lng_bte_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = mod_lng_bte_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_lng_bte_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_lng_bte_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9789,24 +9871,24 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_sht:
 				nils = mod_lng_sht_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
 				nils = mod_lng_sht_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_lng_sht_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_lng_sht_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9819,19 +9901,19 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_int:
 				nils = mod_lng_int_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = mod_lng_int_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_lng_int_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9844,14 +9926,14 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_lng:
 				nils = mod_lng_lng_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				nils = mod_lng_lng_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9865,13 +9947,13 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_lng:
 				nils = mod_lng_hge_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_hge:
 				nils = mod_lng_hge_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9884,7 +9966,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_flt:
 				nils = mod_lng_flt_flt(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -9895,7 +9977,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_lng_dbl_dbl(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -9913,28 +9995,28 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_bte:
 				nils = mod_hge_bte_bte(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_sht:
 				nils = mod_hge_bte_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_int:
 				nils = mod_hge_bte_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_hge_bte_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_hge:
 				nils = mod_hge_bte_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9946,23 +10028,23 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_sht:
 				nils = mod_hge_sht_sht(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
 				nils = mod_hge_sht_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
 				nils = mod_hge_sht_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_hge:
 				nils = mod_hge_sht_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9974,18 +10056,18 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_int:
 				nils = mod_hge_int_int(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
 				nils = mod_hge_int_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			case TYPE_hge:
 				nils = mod_hge_int_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -9997,13 +10079,13 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_lng:
 				nils = mod_hge_lng_lng(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_hge:
 				nils = mod_hge_lng_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 #endif
@@ -10015,7 +10097,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_hge:
 				nils = mod_hge_hge_hge(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10026,7 +10108,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_flt:
 				nils = mod_hge_flt_flt(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10037,7 +10119,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_hge_dbl_dbl(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10055,7 +10137,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_flt:
 				nils = mod_flt_bte_flt(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10066,7 +10148,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_flt:
 				nils = mod_flt_sht_flt(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10077,7 +10159,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_flt:
 				nils = mod_flt_int_flt(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10088,7 +10170,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_flt:
 				nils = mod_flt_lng_flt(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10100,7 +10182,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_flt:
 				nils = mod_flt_hge_flt(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10112,7 +10194,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_flt:
 				nils = mod_flt_flt_flt(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10123,7 +10205,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_flt_dbl_dbl(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10140,7 +10222,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_dbl_bte_dbl(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10151,7 +10233,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_dbl_sht_dbl(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10162,7 +10244,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_dbl_int_dbl(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10173,7 +10255,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_dbl_lng_dbl(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10185,7 +10267,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_dbl_hge_dbl(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10197,7 +10279,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_dbl_flt_dbl(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10208,7 +10290,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (tp) {
 			case TYPE_dbl:
 				nils = mod_dbl_dbl_dbl(lft, incr1, rgt, incr2,
-						       dst, ci, candoff,
+						       dst, ci1, ci2, candoff1, candoff2,
 						       abort_on_error);
 				break;
 			default:
@@ -10235,9 +10317,9 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalcmod(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error)
+BATcalcmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp, bool abort_on_error)
 {
-	return BATcalcmuldivmod(b1, b2, s, tp, abort_on_error,
+	return BATcalcmuldivmod(b1, b2, s1, s2, tp, abort_on_error,
 				mod_typeswitchloop, __func__);
 }
 
@@ -10262,7 +10344,9 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error)
 	nils = mod_typeswitchloop(Tloc(b, 0), b->ttype, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, 0), tp,
-				  &ci, b->hseqbase,
+				  &ci,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  b->hseqbase, 0,
 				  abort_on_error, __func__);
 
 	if (nils >= BUN_NONE) {
@@ -10301,7 +10385,9 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error)
 	nils = mod_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, 0), b->ttype, 1,
 				  Tloc(bn, 0), tp,
-				  &ci, b->hseqbase,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  &ci,
+				  0, b->hseqbase,
 				  abort_on_error, __func__);
 
 	if (nils >= BUN_NONE) {
@@ -10328,7 +10414,8 @@ VARcalcmod(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 			       VALptr(rgt), rgt->vtype, 0,
 			       VALget(ret), ret->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
-			       0, abort_on_error, __func__) >= BUN_NONE)
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       0, 0, abort_on_error, __func__) >= BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -10343,10 +10430,12 @@ static BUN
 xor_typeswitchloop(const void *lft, int incr1,
 		   const void *rgt, int incr2,
 		   void *restrict dst, int tp,
-		   struct canditer *restrict ci, oid candoff,
+		   struct canditer *restrict ci1,
+		   struct canditer *restrict ci2,
+		   oid candoff1, oid candoff2,
 		   int nonil, const char *func)
 {
-	oid x;
+	oid x1, x2;
 	BUN i, j, k;
 	BUN nils = 0;
 
@@ -10399,27 +10488,29 @@ xor_typeswitchloop(const void *lft, int incr1,
 }
 
 BAT *
-BATcalcxor(BAT *b1, BAT *b2, BAT *s)
+BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
-	struct canditer ci;
+	struct canditer ci1, ci2;
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
-
-	if (checkbats(b1, b2, __func__) != GDK_SUCCEED)
-		return NULL;
 
 	if (ATOMbasetype(b1->ttype) != ATOMbasetype(b2->ttype)) {
 		GDKerror("%s: incompatible input types.\n", __func__);
 		return NULL;
 	}
 
-	ncand = canditer_init(&ci, b1, s);
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
+		return NULL;
+	}
 
-	bn = COLnew(ci.hseq, b1->ttype, ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, b1->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (ncand == 0)
@@ -10429,7 +10520,8 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s)
 				  Tloc(b2, 0), 1,
 				  Tloc(bn, 0),
 				  b1->ttype,
-				  &ci, b1->hseqbase,
+				  &ci1, &ci2,
+				  b1->hseqbase, b2->hseqbase,
 				  b1->tnonil && b2->tnonil,
 				  __func__);
 
@@ -10475,7 +10567,9 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 	nils = xor_typeswitchloop(Tloc(b, 0), 1,
 				  VALptr(v), 0,
 				  Tloc(bn, 0), b->ttype,
-				  &ci, b->hseqbase,
+				  &ci,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  b->hseqbase, 0,
 				  b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  __func__);
 
@@ -10513,7 +10607,8 @@ VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 			       VALptr(rgt), 0,
 			       VALget(ret), lft->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
-			       0, 0, __func__) == BUN_NONE)
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       0, 0, false, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -10529,10 +10624,12 @@ static BUN
 or_typeswitchloop(const void *lft, int incr1,
 		  const void *rgt, int incr2,
 		  void *restrict dst, int tp,
-		  struct canditer *restrict ci, oid candoff,
+		  struct canditer *restrict ci1,
+		  struct canditer *restrict ci2,
+		  oid candoff1, oid candoff2,
 		  int nonil, const char *func)
 {
-	oid x;
+	oid x1, x2;
 	BUN i, j, k;
 	BUN nils = 0;
 
@@ -10540,10 +10637,11 @@ or_typeswitchloop(const void *lft, int incr1,
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
-			for (k = 0; k < ci->ncand; k++) {
-				x = canditer_next(ci) - candoff;
-				i = x * incr1;
-				j = x * incr2;
+			for (k = 0; k < ci1->ncand; k++) {
+				x1 = canditer_next(ci1) - candoff1;
+				x2 = canditer_next(ci2) - candoff2;
+				i = x1 * incr1;
+				j = x2 * incr2;
 				bit v1 = ((const bit *) lft)[i];
 				bit v2 = ((const bit *) rgt)[j];
 				((bit *) dst)[k] = or3(v1, v2);
@@ -10591,27 +10689,29 @@ or_typeswitchloop(const void *lft, int incr1,
 }
 
 BAT *
-BATcalcor(BAT *b1, BAT *b2, BAT *s)
+BATcalcor(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
-	struct canditer ci;
+	struct canditer ci1, ci2;
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
-
-	if (checkbats(b1, b2, __func__) != GDK_SUCCEED)
-		return NULL;
 
 	if (ATOMbasetype(b1->ttype) != ATOMbasetype(b2->ttype)) {
 		GDKerror("%s: incompatible input types.\n", __func__);
 		return NULL;
 	}
 
-	ncand = canditer_init(&ci, b1, s);
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
+		return NULL;
+	}
 
-	bn = COLnew(ci.hseq, b1->ttype, ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, b1->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (ncand == 0)
@@ -10621,7 +10721,7 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s)
 				 Tloc(b2, 0), 1,
 				 Tloc(bn, 0),
 				 b1->ttype,
-				 &ci, b1->hseqbase,
+				 &ci1, &ci2, b1->hseqbase, b2->hseqbase,
 				 b1->tnonil && b2->tnonil,
 				 __func__);
 
@@ -10667,7 +10767,9 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 	nils = or_typeswitchloop(Tloc(b, 0), 1,
 				 VALptr(v), 0,
 				 Tloc(bn, 0), b->ttype,
-				 &ci, b->hseqbase,
+				 &ci,
+				 &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				 b->hseqbase, 0,
 				 b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				 __func__);
 
@@ -10705,7 +10807,8 @@ VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 			      VALptr(rgt), 0,
 			      VALget(ret), lft->vtype,
 			      &(struct canditer){.tpe=cand_dense, .ncand=1},
-			      0, 0, __func__) == BUN_NONE)
+			      &(struct canditer){.tpe=cand_dense, .ncand=1},
+			      0, 0, false, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -10721,10 +10824,12 @@ static BUN
 and_typeswitchloop(const void *lft, int incr1,
 		   const void *rgt, int incr2,
 		   void *restrict dst, int tp,
-		   struct canditer *restrict ci, oid candoff,
+		   struct canditer *restrict ci1,
+		   struct canditer *restrict ci2,
+		   oid candoff1, oid candoff2,
 		   int nonil, const char *func)
 {
-	oid x;
+	oid x1, x2;
 	BUN i, j, k;
 	BUN nils = 0;
 
@@ -10732,10 +10837,11 @@ and_typeswitchloop(const void *lft, int incr1,
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
 			/* implement tri-Boolean algebra */
-			for (k = 0; k < ci->ncand; k++) {
-				x = canditer_next(ci) - candoff;
-				i = x * incr1;
-				j = x * incr2;
+			for (k = 0; k < ci1->ncand; k++) {
+				x1 = canditer_next(ci1) - candoff1;
+				x2 = canditer_next(ci2) - candoff2;
+				i = x1 * incr1;
+				j = x2 * incr2;
 				bit v1 = ((const bit *) lft)[i];
 				bit v2 = ((const bit *) rgt)[j];
 				((bit *) dst)[k] = and3(v1, v2);
@@ -10783,27 +10889,29 @@ and_typeswitchloop(const void *lft, int incr1,
 }
 
 BAT *
-BATcalcand(BAT *b1, BAT *b2, BAT *s)
+BATcalcand(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
-	struct canditer ci;
+	struct canditer ci1, ci2;
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
-
-	if (checkbats(b1, b2, __func__) != GDK_SUCCEED)
-		return NULL;
 
 	if (ATOMbasetype(b1->ttype) != ATOMbasetype(b2->ttype)) {
 		GDKerror("%s: incompatible input types.\n", __func__);
 		return NULL;
 	}
 
-	ncand = canditer_init(&ci, b1, s);
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
+		return NULL;
+	}
 
-	bn = COLnew(ci.hseq, b1->ttype, ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, b1->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (ncand == 0)
@@ -10813,7 +10921,7 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s)
 				  Tloc(b2, 0), 1,
 				  Tloc(bn, 0),
 				  b1->ttype,
-				  &ci, b1->hseqbase,
+				  &ci1, &ci2, b1->hseqbase, b2->hseqbase,
 				  b1->tnonil && b2->tnonil,
 				  __func__);
 
@@ -10859,7 +10967,9 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 	nils = and_typeswitchloop(Tloc(b, 0), 1,
 				  VALptr(v), 0,
 				  Tloc(bn, 0), b->ttype,
-				  &ci, b->hseqbase,
+				  &ci,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  b->hseqbase, 0,
 				  b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  __func__);
 
@@ -10897,7 +11007,8 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 			       VALptr(rgt), 0,
 			       VALget(ret), lft->vtype,
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
-			       0, 0, __func__) == BUN_NONE)
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       0, 0, false, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -10927,10 +11038,12 @@ static BUN
 lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
 		   void *restrict dst,
-		   struct canditer *restrict ci, oid candoff,
+		   struct canditer *restrict ci1,
+		   struct canditer *restrict ci2,
+		   oid candoff1, oid candoff2,
 		   bool abort_on_error, const char *func)
 {
-	oid x;
+	oid x1, x2;
 	BUN i, j, k;
 	BUN nils = 0;
 
@@ -11091,22 +11204,24 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalclsh(BAT *b1, BAT *b2, BAT *s, bool abort_on_error)
+BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
-	struct canditer ci;
+	struct canditer ci1, ci2;
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
 
-	if (checkbats(b1, b2, __func__) != GDK_SUCCEED)
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
 		return NULL;
+	}
 
-	ncand = canditer_init(&ci, b1, s);
-
-	bn = COLnew(ci.hseq, b1->ttype, ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, b1->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (ncand == 0)
@@ -11115,7 +11230,7 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s, bool abort_on_error)
 	nils = lsh_typeswitchloop(Tloc(b1, 0), b1->ttype, 1,
 				  Tloc(b2, 0), b2->ttype, 1,
 				  Tloc(bn, 0),
-				  &ci, b1->hseqbase,
+				  &ci1, &ci2, b1->hseqbase, b2->hseqbase,
 				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
@@ -11155,7 +11270,9 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
 	nils = lsh_typeswitchloop(Tloc(b, 0), b->ttype, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, 0),
-				  &ci, b->hseqbase,
+				  &ci,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  b->hseqbase, 0,
 				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
@@ -11195,7 +11312,9 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
 	nils = lsh_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, 0), b->ttype, 1,
 				  Tloc(bn, 0),
-				  &ci, b->hseqbase,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  &ci,
+				  0, b->hseqbase,
 				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
@@ -11223,7 +11342,8 @@ VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 			       VALptr(rgt), rgt->vtype, 0,
 			       VALget(ret),
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
-			       0, abort_on_error, __func__) == BUN_NONE)
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       0, 0, abort_on_error, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -11237,10 +11357,12 @@ static BUN
 rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
 		   void *restrict dst,
-		   struct canditer *restrict ci, oid candoff,
+		   struct canditer *restrict ci1,
+		   struct canditer *restrict ci2,
+		   oid candoff1, oid candoff2,
 		   bool abort_on_error, const char *func)
 {
-	oid x;
+	oid x1, x2;
 	BUN i, j, k;
 	BUN nils = 0;
 
@@ -11401,22 +11523,24 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalcrsh(BAT *b1, BAT *b2, BAT *s, bool abort_on_error)
+BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, bool abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
-	struct canditer ci;
+	struct canditer ci1, ci2;
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
 
-	if (checkbats(b1, b2, __func__) != GDK_SUCCEED)
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
 		return NULL;
+	}
 
-	ncand = canditer_init(&ci, b1, s);
-
-	bn = COLnew(ci.hseq, b1->ttype, ncand, TRANSIENT);
+	bn = COLnew(ci1.hseq, b1->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (ncand == 0)
@@ -11425,7 +11549,7 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s, bool abort_on_error)
 	nils = rsh_typeswitchloop(Tloc(b1, 0), b1->ttype, 1,
 				  Tloc(b2, 0), b2->ttype, 1,
 				  Tloc(bn, 0),
-				  &ci, b1->hseqbase,
+				  &ci1, &ci2, b1->hseqbase, b2->hseqbase,
 				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
@@ -11465,7 +11589,9 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
 	nils = rsh_typeswitchloop(Tloc(b, 0), b->ttype, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, 0),
-				  &ci, b->hseqbase,
+				  &ci,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  b->hseqbase, 0,
 				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
@@ -11505,7 +11631,9 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
 	nils = rsh_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, 0), b->ttype, 1,
 				  Tloc(bn, 0),
-				   &ci, b->hseqbase,
+				  &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				  &ci,
+				  0, b->hseqbase,
 				  abort_on_error, __func__);
 
 	if (nils == BUN_NONE) {
@@ -11533,7 +11661,8 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 			       VALptr(rgt), rgt->vtype, 0,
 			       VALget(ret),
 			       &(struct canditer){.tpe=cand_dense, .ncand=1},
-			       0, abort_on_error, __func__) == BUN_NONE)
+			       &(struct canditer){.tpe=cand_dense, .ncand=1},
+			       0, 0, abort_on_error, __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -11768,10 +11897,12 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define BETWEEN_LOOP_TYPE(TYPE)						\
 	do {								\
 		for (l = 0; l < ci->ncand; l++) {			\
-			x = canditer_next(ci) - seqbase;		\
-			i = x * incr1;					\
-			j = x * incr2;					\
-			k = x * incr3;					\
+			x1 = canditer_next(ci) - seqbase1;		\
+			x2 = canditer_next(cilo) - seqbase2;		\
+			x3 = canditer_next(cihi) - seqbase3;		\
+			i = x1 * incr1;					\
+			j = x2 * incr2;					\
+			k = x3 * incr3;					\
 			dst[l] = BETWEEN(((const TYPE *) src)[i],	\
 					 ((const TYPE *) lo)[j],	\
 					 ((const TYPE *) hi)[k],	\
@@ -11784,8 +11915,12 @@ static BAT *
 BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 		      const void *lo, int incr2, const char *hp2, int wd2,
 		      const void *hi, int incr3, const char *hp3, int wd3,
-		      int tp, struct canditer *restrict ci,
-		      oid seqbase, bool symmetric, bool anti,
+		      int tp,
+		      struct canditer *restrict ci,
+		      struct canditer *restrict cilo,
+		      struct canditer *restrict cihi,
+		      oid seqbase1, oid seqbase2, oid seqbase3,
+		      bool symmetric, bool anti,
 		      bool linc, bool hinc, bool nils_false, const char *func)
 {
 	BAT *bn;
@@ -11794,9 +11929,9 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 	bit *restrict dst;
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
-	oid x;
+	oid x1, x2, x3;
 
-	bn = COLnew(seqbase, TYPE_bit, ci->ncand, TRANSIENT);
+	bn = COLnew(ci->hseq, TYPE_bit, ci->ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (ci->ncand == 0)
@@ -11841,10 +11976,12 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 		}
 		nil = ATOMnilptr(tp);
 		for (l = 0; l < ci->ncand; l++) {
-			x = canditer_next(ci) - seqbase;
-			i = x * incr1;
-			j = x * incr2;
-			k = x * incr3;
+			x1 = canditer_next(ci) - seqbase1;
+			x2 = canditer_next(cilo) - seqbase2;
+			x3 = canditer_next(cihi) - seqbase3;
+			i = x1 * incr1;
+			j = x2 * incr2;
+			k = x3 * incr3;
 			const void *p1, *p2, *p3;
 			p1 = hp1
 				? (const void *) (hp1 + VarHeapVal(src, i, wd1))
@@ -11873,23 +12010,28 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 }
 
 BAT *
-BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, bool symmetric,
-	       bool linc, bool hinc, bool nils_false, bool anti)
+BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi,
+	       bool symmetric, bool linc, bool hinc, bool nils_false, bool anti)
 {
 	BAT *bn;
 	BUN ncand;
-	struct canditer ci;
+	struct canditer ci, cilo, cihi;
 
 	BATcheck(b, __func__, NULL);
 	BATcheck(lo, __func__, NULL);
 	BATcheck(hi, __func__, NULL);
 
-	if (checkbats(b, lo, __func__) != GDK_SUCCEED)
-		return NULL;
-	if (checkbats(b, hi, __func__) != GDK_SUCCEED)
-		return NULL;
-
 	ncand = canditer_init(&ci, b, s);
+	if (canditer_init(&cilo, lo, slo) != ncand ||
+	    ci.hseq != cilo.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
+		return NULL;
+	}
+	if (canditer_init(&cihi, hi, shi) != ncand ||
+	    ci.hseq != cihi.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
+		return NULL;
+	}
 
 	if (BATtvoid(b) &&
 	    BATtvoid(lo) &&
@@ -11911,15 +12053,17 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, bool symmetric,
 				   hi->tvheap ? hi->tvheap->base : NULL,
 				   hi->twidth,
 				   b->ttype,
-				   &ci,
-				   b->hseqbase, symmetric, anti, linc, hinc,
+				   &ci, &cilo, &cihi,
+				   b->hseqbase, lo->hseqbase, hi->hseqbase,
+				   symmetric, anti, linc, hinc,
 				   nils_false, __func__);
 
 	return bn;
 }
 
 BAT *
-BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s,
+BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
+		     BAT *s,
 		     bool symmetric, bool linc, bool hinc, bool nils_false,
 		     bool anti)
 {
@@ -11942,17 +12086,20 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s,
 				     VALptr(hi), 0, NULL, 0,
 				     b->ttype,
 				     &ci,
-				     b->hseqbase, symmetric, anti,
+				     &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				     &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				     b->hseqbase, 0, 0, symmetric, anti,
 				     linc, hinc, nils_false,
 				     __func__);
 }
 
 BAT *
-BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s,
+BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo,
 		     bool symmetric, bool linc, bool hinc, bool nils_false,
 		     bool anti)
 {
-	struct canditer ci;
+	struct canditer ci, cilo;
+	BUN ncand;
 
 	BATcheck(b, __func__, NULL);
 	BATcheck(lo, __func__, NULL);
@@ -11965,7 +12112,12 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s,
 		return NULL;
 	}
 
-	canditer_init(&ci, b, s);
+	ncand = canditer_init(&ci, b, s);
+	if (canditer_init(&cilo, lo, slo) != ncand ||
+	    ci.hseq != cilo.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
+		return NULL;
+	}
 
 	return BATcalcbetween_intern(Tloc(b, 0), 1,
 				     b->tvheap ? b->tvheap->base : NULL,
@@ -11976,30 +12128,36 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s,
 				     VALptr(hi), 0, NULL, 0,
 				     b->ttype,
 				     &ci,
-				     b->hseqbase, symmetric, anti,
+				     &cilo,
+				     &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				     b->hseqbase, lo->hseqbase, 0,
+				     symmetric, anti,
 				     linc, hinc, nils_false,
 				     __func__);
 }
 
 BAT *
-BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s,
+BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi,
 		     bool symmetric, bool linc, bool hinc, bool nils_false,
 		     bool anti)
 {
-	struct canditer ci;
+	struct canditer ci, cihi;
+	BUN ncand;
 
 	BATcheck(b, __func__, NULL);
 	BATcheck(hi, __func__, NULL);
-
-	if (checkbats(b, hi, __func__) != GDK_SUCCEED)
-		return NULL;
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(lo->vtype)) {
 		GDKerror("%s: incompatible input types.\n", __func__);
 		return NULL;
 	}
 
-	canditer_init(&ci, b, s);
+	ncand = canditer_init(&ci, b, s);
+	if (canditer_init(&cihi, hi, shi) != ncand ||
+	    ci.hseq != cihi.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
+		return NULL;
+	}
 
 	return BATcalcbetween_intern(Tloc(b, 0), 1,
 				     b->tvheap ? b->tvheap->base : NULL,
@@ -12010,7 +12168,10 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s,
 				     hi->twidth,
 				     b->ttype,
 				     &ci,
-				     b->hseqbase, symmetric, anti,
+				     &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				     &cihi,
+				     b->hseqbase, 0, hi->hseqbase,
+				     symmetric, anti,
 				     linc, hinc, nils_false,
 				     __func__);
 }

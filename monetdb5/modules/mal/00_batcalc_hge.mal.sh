@@ -101,13 +101,13 @@ for func in +:ADD -:SUB \*:MUL; do
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
 address CMDbat${name}signal
 comment "Return B1 $op B2, signal error on overflow";
-pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
+pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid]) :bat[:$tp3]
 address CMDbat${name}signal
 comment "Return B1 $op B2 with candidates list, signal error on overflow";
 pattern ${name,,}_noerror(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
 address CMDbat${name}
 comment "Return B1 $op B2, overflow causes NIL value";
-pattern ${name,,}_noerror(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
+pattern ${name,,}_noerror(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid]) :bat[:$tp3]
 address CMDbat${name}
 comment "Return B1 $op B2 with candidates list, overflow causes NIL value";
 pattern $op(b:bat[:$tp1],v:$tp2) :bat[:$tp3]
@@ -141,7 +141,7 @@ EOF
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
 address CMDbat${name}enlarge
 comment "Return B1 $op B2, guarantee no overflow by returning larger type";
-pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
+pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid]) :bat[:$tp3]
 address CMDbat${name}enlarge
 comment "Return B1 $op B2 with candidates list, guarantee no overflow by returning larger type";
 pattern $op(b:bat[:$tp1],v:$tp2) :bat[:$tp3]
@@ -175,13 +175,13 @@ for ((i = 0; i < ${#numeric[@]}; i++)); do
 pattern /(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
 address CMDbatDIVsignal
 comment "Return B1 / B2, signal error on overflow";
-pattern /(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
+pattern /(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid]) :bat[:$tp3]
 address CMDbatDIVsignal
 comment "Return B1 / B2 with candidates list, signal error on overflow";
 pattern div_noerror(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
 address CMDbatDIV
 comment "Return B1 / B2, overflow causes NIL value";
-pattern div_noerror(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
+pattern div_noerror(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid]) :bat[:$tp3]
 address CMDbatDIV
 comment "Return B1 / B2 with candidates list, overflow causes NIL value";
 pattern /(b:bat[:$tp1],v:$tp2) :bat[:$tp3]
@@ -250,13 +250,13 @@ for ((i = 0; i < ${#numeric[@]}; i++)); do
 pattern %(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
 address CMDbatMODsignal
 comment "Return B1 % B2, signal error on divide by zero";
-pattern %(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
+pattern %(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid]) :bat[:$tp3]
 address CMDbatMODsignal
 comment "Return B1 % B2 with candidates list, signal error on divide by zero";
 pattern mod_noerror(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
 address CMDbatMOD
 comment "Return B1 % B2, divide by zero causes NIL value";
-pattern mod_noerror(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
+pattern mod_noerror(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid]) :bat[:$tp3]
 address CMDbatMOD
 comment "Return B1 % B2 with candidates list, divide by zero causes NIL value";
 pattern %(b:bat[:$tp1],v:$tp2) :bat[:$tp3]
@@ -296,7 +296,7 @@ for op in and or xor; do
 pattern ${op}(b1:bat[:$tp],b2:bat[:$tp]) :bat[:$tp]
 address CMDbat${op^^}
 comment "Return B1 ${op^^} B2";
-pattern ${op}(b1:bat[:$tp],b2:bat[:$tp],s:bat[:oid]) :bat[:$tp]
+pattern ${op}(b1:bat[:$tp],b2:bat[:$tp],s1:bat[:oid],s2:bat[:oid]) :bat[:$tp]
 address CMDbat${op^^}
 comment "Return B1 ${op^^} B2 with candidates list";
 pattern $op(b:bat[:$tp],v:$tp) :bat[:$tp]
@@ -330,13 +330,13 @@ for func in '<<:lsh' '>>:rsh'; do
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp1]
 address CMDbat${func^^}signal
 comment "Return B1 $op B2, raise error on out of range second operand";
-pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid]) :bat[:$tp1]
+pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid]) :bat[:$tp1]
 address CMDbat${func^^}signal
 comment "Return B1 $op B2 with candidates list, raise error on out of range second operand";
 pattern ${func}_noerror(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp1]
 address CMDbat${func^^}
 comment "Return B1 $op B2, out of range second operand causes NIL value";
-pattern ${func}_noerror(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid]) :bat[:$tp1]
+pattern ${func}_noerror(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid]) :bat[:$tp1]
 address CMDbat${func^^}
 comment "Return B1 $op B2 with candidates list, out of range second operand causes NIL value";
 pattern $op(b:bat[:$tp1],v:$tp2) :bat[:$tp1]
@@ -383,7 +383,7 @@ for func in '<:lt' '<=:le' '>:gt' '>=:ge' '==:eq' '!=:ne'; do
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B1 $op B2";
-pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid]) :bat[:bit]
+pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B1 $op B2 with candidates list";
 pattern $op(b:bat[:$tp1],v:$tp2) :bat[:bit]
@@ -406,7 +406,7 @@ EOF
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B1 $op B2";
-pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid],nil_matches:bit) :bat[:bit]
+pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B1 $op B2 with candidates list";
 pattern $op(b:bat[:$tp1],v:$tp2,nil_matches:bit) :bat[:bit]
@@ -442,7 +442,7 @@ for tp1 in ${numeric[@]}; do
 pattern cmp(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:bte]
 address CMDbatCMP
 comment "Return -1/0/1 if B1 </==/> B2";
-pattern cmp(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid]) :bat[:bte]
+pattern cmp(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid]) :bat[:bte]
 address CMDbatCMP
 comment "Return -1/0/1 if B1 </==/> B2 with candidates list";
 pattern cmp(b:bat[:$tp1],v:$tp2) :bat[:bte]
