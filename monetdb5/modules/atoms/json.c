@@ -733,6 +733,9 @@ JSONstringParser(const char *j, const char **next)
 				hex(j);
 				hex(j);
 				hex(j);
+				// Go back one character, because it would be skipped by the
+				// loop iterator otherwise.
+				j--;
 				break;
 			default:
 				*next = j;
