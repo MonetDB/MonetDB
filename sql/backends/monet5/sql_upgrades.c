@@ -1984,6 +1984,7 @@ sql_update_nov2019(Client c, mvc *sql)
 	pos = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
+			"drop procedure sys.times();\n"
 			"create function sys.deltas (\"schema\" string)"
 			" returns table (\"id\" int, \"cleared\" boolean, \"immutable\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)"
 			" external name \"sql\".\"deltas\";\n"

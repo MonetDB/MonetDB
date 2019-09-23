@@ -5901,6 +5901,7 @@ set schema "sys";
 
 Running database upgrade commands:
 set schema "sys";
+drop procedure sys.times();
 create function sys.deltas ("schema" string) returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int) external name "sql"."deltas";
 create function sys.deltas ("schema" string, "table" string) returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int) external name "sql"."deltas";
 create function sys.deltas ("schema" string, "table" string, "column" string) returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int) external name "sql"."deltas";
