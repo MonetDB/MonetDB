@@ -90,17 +90,20 @@ rel_has_freevar(mvc *sql, sql_rel *rel)
 		return 0;
 	}
 
-	if (is_basetable(rel->op))
+	if (is_basetable(rel->op)) {
 		return 0;
-	else if (is_base(rel->op))
+	} else if (is_base(rel->op)) {
 		return exps_have_freevar(sql, rel->exps) ||
 			(rel->l && rel_has_freevar(sql, rel->l));
-	else if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op))
+	} else if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
+		if (is_groupby(rel->op) && rel->r && exps_have_freevar(sql, rel->r)) 
+			return 1;
 		return exps_have_freevar(sql, rel->exps) ||
 			(rel->l && rel_has_freevar(sql, rel->l));
-	else if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op))
+	} else if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op)) {
 		return exps_have_freevar(sql, rel->exps) ||
 			rel_has_freevar(sql, rel->l) || rel_has_freevar(sql, rel->r);
+	}
 	return 0;
 }
 
@@ -233,7 +236,10 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		exps = exps_freevar(sql, rel->exps);
 		lexps = rel_freevar(sql, rel->l);
 		if (rel->r) {
-			rexps = rel_freevar(sql, rel->r);
+			if (is_groupby(rel->op))
+				rexps = exps_freevar(sql, rel->r);
+			else
+				rexps = rel_freevar(sql, rel->r);
 			lexps = merge_freevar(lexps, rexps);
 		}
 		exps = merge_freevar(exps, lexps);
@@ -547,7 +553,7 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 				sql_exp *e = n->data;
 
 				/* count_nil(* or constant) -> count(t.TID) */
-				if (e->type == e_aggr && strcmp(((sql_subaggr *)e->f)->aggr->base.name, "count") == 0 && (!e->l || exps_is_constant(e->l))) {
+				if (exp_aggr_is_count(e) && (!e->l || exps_is_constant(e->l))) {
 					sql_exp *col;
 					sql_rel *p = r->l; /* ugh */
 
@@ -575,8 +581,42 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 			else
 				r->r = list_distinct(list_merge(r->r, exps_copy(sql->sa, a), (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
 
-			rel->r = r->l; 
-			r->l = rel;
+			if (!r->l) {
+				r->l = rel->l;
+				rel->l = NULL;
+				rel->r = NULL;
+				rel_destroy(rel);
+				/* merge (distinct) projects / group by (over the same group by cols) */
+				while (r->l && exps_have_freevar(sql, r->exps)) {
+					sql_rel *l = r->l;
+
+					if (!is_project(l->op))
+						break;
+					if (l->op == op_project && need_distinct(l)) { /* TODO: check if group by exps and distinct list are equal */
+						r->l = rel_dup(l->l);
+						rel_destroy(l);
+					}
+					if (l->op == op_groupby) { /* TODO: check if group by exps and distinct list are equal */
+						/* add aggr exps of r too l, replace r by l */ 
+						node *n;
+						for(n = r->exps->h; n; n = n->next) {
+							sql_exp *e = n->data;
+
+							if (e->type == e_aggr)
+								append(l->exps, e);
+							if (exp_has_freevar(sql, e)) 
+								rel_bind_var(sql, l, e);
+						}
+						r->l = NULL;
+						rel_destroy(r);
+						r = l;
+					}
+				}
+				return r;
+			} else {
+				rel->r = r->l; 
+				r->l = rel;
+			}
 			/* check if a join expression needs to be moved above the group by (into a select) */
 			sexps = sa_list(sql->sa);
 			jexps = sa_list(sql->sa);

@@ -536,6 +536,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	default:
 		assert(0);
 	}
+	if (rel->single)
+		mnstr_printf(fout, " single ");
 	if (rel->p) {
 		prop *p = rel->p;
 		char *pv;

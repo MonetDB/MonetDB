@@ -40,14 +40,24 @@ SELECT col1 IN (SELECT SUM(ColID + col1) FROM tbl_ProductSales) FROM another_T G
 	-- False
 	-- False
 
+SELECT (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1) FROM another_T GROUP BY col1, col2;
+	-- NULL
+	-- NULL
+	-- 2
+	-- NULL
+
+SELECT
+	EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1)
+FROM another_T GROUP BY col1, col2, col5, col8;
+	-- True
+	-- False
+	-- False
+	-- False
+
 SELECT
 	EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1),
 	(SELECT ColID FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5))
-FROM another_T GROUP BY col1, col2, col5, col8;
-	-- True  True
-	-- False True
-	-- False True
-	-- False True
+FROM another_T GROUP BY col1, col2, col5, col8; --error, more than one row returned by a subquery used as an expression 
 
 SELECT
 	-col1 IN (SELECT ColID FROM tbl_ProductSales),
@@ -113,57 +123,6 @@ GROUP BY col1, col2, col5;
 	-- True  False 1 0
 
 SELECT
-	SUM(CAST(t1.col1 IN (SELECT t1.col1 FROM another_T) AS INTEGER))
-FROM another_T t1
-GROUP BY t1.col2;
-	-- 1
-	-- 1
-	-- 1
-	-- 1
-
-SELECT
-	DISTINCT
-	NOT MIN(col1 + 7) OVER (PARTITION BY SUM(DISTINCT col7 * col1) - AVG(col8 * NULL) ORDER BY MIN(col5 - col1) - MAX(DISTINCT col6) ROWS UNBOUNDED PRECEDING) 
-		NOT IN (SELECT MAX(col1 - 1) * MIN(DISTINCT col2) FROM another_T)
-FROM another_T
-GROUP BY col1; --this query is right, but I'm leaving it here
-	-- False
-
-SELECT
-	(SELECT MAX(col6) FROM tbl_ProductSales) IN (SELECT MIN(col3) FROM another_T)
-FROM another_T
-GROUP BY col1; --error, subquery returns more than 1 row
-
-SELECT
-	t1.col1 = ALL (SELECT col4 + SUM(t1.col5) FROM another_T INNER JOIN tbl_ProductSales ON another_T.col1 = tbl_ProductSales.ColID)
-FROM another_T t1
-GROUP BY t1.col1;
-	-- False
-	-- False
-	-- False
-	-- False
-
-SELECT
-	SUM(col3 + col2)
-FROM another_T
-GROUP BY col1
-HAVING NOT col1 = ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> AVG(col1));
-	-- 5
-	-- 55
-	-- 555
-	-- 5555
-
-SELECT
-	SUM(col3) * col1
-FROM another_T
-GROUP BY col1
-HAVING NOT col1 <> ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID);
-	-- 3
-	-- 363
-	-- 36963
-	-- 3702963
-
-SELECT
 	SUM(col1) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2)
 FROM another_T
 GROUP BY col4;
@@ -179,6 +138,49 @@ FROM another_T t1;
 	-- NULL
 	-- NULL
 	-- NULL
+
+SELECT
+	t1.col1 = ALL (SELECT col4 + SUM(t1.col5) FROM another_T INNER JOIN tbl_ProductSales ON another_T.col1 = tbl_ProductSales.ColID)
+FROM another_T t1
+GROUP BY t1.col1;
+	-- False
+	-- False
+	-- False
+	-- False
+
+SELECT
+	(SELECT MAX(col6) FROM tbl_ProductSales) IN (SELECT MIN(col3) FROM another_T)
+FROM another_T
+GROUP BY col1; --error, subquery returns more than 1 row
+
+SELECT
+	SUM(col3 + col2)
+FROM another_T
+GROUP BY col1
+HAVING NOT col1 = ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> AVG(col1));
+	-- 5
+	-- 555
+	-- 55
+	-- 5555
+
+SELECT
+	SUM(col3) * col1
+FROM another_T
+GROUP BY col1
+HAVING NOT col1 <> ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID);
+	-- 3
+	-- 36963
+	-- 363
+	-- 3702963
+
+SELECT
+	SUM(CAST(t1.col1 IN (SELECT t1.col1 FROM another_T) AS INTEGER))
+FROM another_T t1
+GROUP BY t1.col2;
+	-- 1
+	-- 1
+	-- 1
+	-- 1
 
 SELECT
     (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t1.col7 <> SOME(SELECT MAX(t1.col1 + t3.col4) FROM another_T t3))

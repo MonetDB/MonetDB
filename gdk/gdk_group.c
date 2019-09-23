@@ -746,8 +746,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		maxgrps += BATcount(h);
 	if (maxgrps < GROUPBATINCR)
 		maxgrps = GROUPBATINCR;
-	if (b->twidth <= 2 &&
-	    maxgrps > ((BUN) 1 << (8 << (b->twidth == 2))))
+	if (b->twidth <= 2)
 		maxgrps = (BUN) 1 << (8 << (b->twidth == 2));
 	if (extents) {
 		en = COLnew(0, TYPE_oid, maxgrps, TRANSIENT);

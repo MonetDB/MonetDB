@@ -21,10 +21,10 @@ stdout of test 'union_limitation.SF-921992` in directory 'sql/test/BugDay_2005-1
 #SELECT 'abc' AS c1, '123' AS c2
 #UNION ALL
 #SELECT val1 AS c1, val2 AS c2 FROM union_test;
-% .L15,	.L15 # table_name
+% .L13,	.L13 # table_name
 % c1,	c2 # name
-% varchar,	varchar # type
-% 6,	6 # length
+% char,	char # type
+% 3,	3 # length
 [ "abc",	"123"	]
 [ "abcdef",	"123456"	]
 

@@ -142,7 +142,7 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 % .ids,	.ids,	.ids,	.ids,	.ids,	.ids,	.ids # table_name
 % id,	name,	schema_id,	table_id,	table_name,	obj_type,	sys_table # name
 % int,	varchar,	int,	int,	varchar,	char,	char # type
-% 1,	0,	1,	1,	0,	13,	13 # length
+% 1,	0,	1,	1,	0,	6,	11 # length
 #SELECT * FROM sys.keys WHERE id NOT IN (SELECT id FROM sys.objects);
 % sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
 % id,	table_id,	type,	name,	rkey,	action # name

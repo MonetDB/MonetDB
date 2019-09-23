@@ -163,6 +163,8 @@ typedef enum operator_type {
 	(is_atom(e->flag) && !e->r && !e->f)
 #define is_func(et) \
 	(et == e_func)
+#define is_aggr(et) \
+	(et == e_aggr)
 #define is_map_op(et) \
 	(et == e_func || et == e_convert)
 #define is_column(et) \
@@ -317,6 +319,7 @@ typedef struct relation {
 	 flag:8,	/* EXP_DISTINCT */
 	 card:4,	/* 0, 1 (row), 2 aggr, 3 */
 	 dependent:1, 	/* dependent join */
+	 single:1,	/* single join operator */
 	 processed:1,   /* fully processed or still in the process of building */
 	 subquery:1;	/* is this part a subquery, this is needed for proper name binding */
 	void *p;	/* properties for the optimizer, distribution */
