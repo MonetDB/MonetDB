@@ -346,6 +346,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		*ci = (struct canditer) {
 			.tpe = cand_dense,
 			.seq = b->hseqbase,
+			.hseq = b->hseqbase,
 			.ncand = BATcount(b),
 		};
 		return ci->ncand;
@@ -370,6 +371,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 
 	*ci = (struct canditer) {
 		.seq = s->tseqbase,
+		.hseq = s->hseqbase,
 		.s = s,
 	};
 
@@ -540,6 +542,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		break;
 	}
 	ci->ncand = cnt;
+	ci->hseq += ci->offset;
 	return cnt;
 }
 
