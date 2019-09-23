@@ -41,19 +41,23 @@ SELECT col1 IN (SELECT SUM(ColID + col1) FROM tbl_ProductSales) FROM another_T G
 	-- False
 
 SELECT (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1) FROM another_T GROUP BY col1, col2;
+	-- NULL
+	-- NULL
+	-- 2
+	-- NULL
 
 SELECT
 	EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1)
 FROM another_T GROUP BY col1, col2, col5, col8;
+	-- True
+	-- False
+	-- False
+	-- False
 
 SELECT
 	EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1),
 	(SELECT ColID FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5))
-FROM another_T GROUP BY col1, col2, col5, col8;
-	-- True  True
-	-- False True
-	-- False True
-	-- False True
+FROM another_T GROUP BY col1, col2, col5, col8; --error, more than one row returned by a subquery used as an expression 
 
 SELECT
 	-col1 IN (SELECT ColID FROM tbl_ProductSales),
@@ -135,8 +139,49 @@ FROM another_T t1;
 	-- NULL
 	-- NULL
 
-/*
-*/
+SELECT
+	t1.col1 = ALL (SELECT col4 + SUM(t1.col5) FROM another_T INNER JOIN tbl_ProductSales ON another_T.col1 = tbl_ProductSales.ColID)
+FROM another_T t1
+GROUP BY t1.col1;
+	-- False
+	-- False
+	-- False
+	-- False
+
+SELECT
+	(SELECT MAX(col6) FROM tbl_ProductSales) IN (SELECT MIN(col3) FROM another_T)
+FROM another_T
+GROUP BY col1; --error, subquery returns more than 1 row
+
+SELECT
+	SUM(col3 + col2)
+FROM another_T
+GROUP BY col1
+HAVING NOT col1 = ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> AVG(col1));
+	-- 5
+	-- 555
+	-- 55
+	-- 5555
+
+SELECT
+	SUM(col3) * col1
+FROM another_T
+GROUP BY col1
+HAVING NOT col1 <> ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID);
+	-- 3
+	-- 36963
+	-- 363
+	-- 3702963
+
+SELECT
+	SUM(CAST(t1.col1 IN (SELECT t1.col1 FROM another_T) AS INTEGER))
+FROM another_T t1
+GROUP BY t1.col2;
+	-- 1
+	-- 1
+	-- 1
+	-- 1
+
 SELECT
     (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t1.col7 <> SOME(SELECT MAX(t1.col1 + t3.col4) FROM another_T t3))
 FROM another_T t1;
