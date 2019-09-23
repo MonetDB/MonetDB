@@ -1160,6 +1160,11 @@ tokenize(mvc * c, int cur)
 			    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
 				return scanner_string(c, scanner_getc(lc), true);
 			}
+			if ((cur == 'J' || cur == 'j') &&
+			    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
+				return scanner_string(c, scanner_getc(lc), false);
+			}
+
 			if ((cur == 'U' || cur == 'u') &&
 			    lc->rs->buf[lc->rs->pos + lc->yycur] == '&' &&
 			    (lc->rs->buf[lc->rs->pos + lc->yycur + 1] == '\'' ||
@@ -1252,7 +1257,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 	else if (token == STRING) {
 		char quote = *yylval->sval;
 		char *str = sa_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 + 1 );
-		assert(quote == '"' || quote == '\'' || quote == 'E' || quote == 'e' || quote == 'U' || quote == 'u' || quote == 'X' || quote == 'x');
+		assert(quote == '"' || quote == '\'' || quote == 'E' || quote == 'e' || quote == 'U' || quote == 'u' || quote == 'X' || quote == 'x' || quote == 'J' || quote == 'j');
 
 		lc->rs->buf[lc->rs->pos + lc->yycur - 1] = 0;
 		if (quote == '"') {
@@ -1283,6 +1288,14 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 			*dst = 0;
 			quote = '\'';
 			token = XSTRING;
+		} else if (quote == 'J' || quote == 'j') {
+			assert(yylval->sval[1] == '\'');
+			char *dst = str;
+			for (char *src = yylval->sval + 2; *src; dst++)
+				if ((*dst = *src++) == '\'' && *src == '\'')
+					src++;
+			quote = '\'';
+			*dst = 0;
 		} else {
 #if 0
 			char *dst = str;
