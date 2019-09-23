@@ -1,0 +1,37 @@
+stderr of test 'python-loader-string.Bug-6759` in directory 'sql/test/BugTracker-2019` itself:
+
+
+# 10:43:16 >  
+# 10:43:16 >  "/usr/bin/python2" "python-loader-string.Bug-6759.py" "python-loader-string.Bug-6759"
+# 10:43:16 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34149
+# cmdline opt 	mapi_usock = /var/tmp/mtest-6899/.s.monetdb.34149
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2019
+# cmdline opt 	embedded_py = 2
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_282:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_247:bat[:str], X_257:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_283:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_248:bat[:str], X_258:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_284:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_249:bat[:str], X_259:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_285:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_250:bat[:str], X_260:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_286:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_251:bat[:str], X_261:bat[:str]);
+
+# 10:43:17 >  
+# 10:43:17 >  "Done."
+# 10:43:17 >  
+

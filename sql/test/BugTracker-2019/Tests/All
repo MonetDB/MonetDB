@@ -33,3 +33,6 @@ alter_table_drop_column.Bug-6749
 HAVE_PYMONETDB?remote-table-non-existent-column.Bug-6750
 cte-union.Bug-6755
 merge-table-limit.Bug-6756
+double-free.Bug-6757
+HAVE_LIBPY3?python-loader-string.Bug-6759
+select-char.Bug-6761

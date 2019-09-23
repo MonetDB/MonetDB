@@ -838,6 +838,7 @@ AS_VAR_IF([enable_assert], [no], [
 	AC_MSG_RESULT([no])],
 	[AC_MSG_RESULT([yes])])
 
+AM_CONDITIONAL([HAVE_MAL_DEBUGGER], [test "x$enable_assert" != xno])
 
 AC_MSG_CHECKING([for --enable-optimize])
 AS_CASE([$enable_optimize], [yes], [
@@ -1012,7 +1013,7 @@ AC_PROG_LN_S
 AC_CHECK_PROGS([DIFF], [gdiff diff])
 AC_DEFINE_UNQUOTED([DIFF], ["$DIFF"], [Program to perform diffs])
 
-AC_CHECK_PROGS([RPMBUILD], [rpmbuild])
+AC_CHECK_PROG([RPMBUILD], [rpmbuild], [rpmbuild], [false])
 
 # This is how we use the various Python-related configuration variables.
 # PYTHON - the Python interpreter we use for testing.  This can either
@@ -2257,6 +2258,7 @@ AC_CHECK_HEADERS([ \
 	mach-o/dyld.h \
 	netdb.h \
 	netinet/in.h \
+	poll.h \
 	procfs.h \
 	pwd.h \
 	strings.h \
@@ -2267,7 +2269,6 @@ AC_CHECK_HEADERS([ \
 	sys/param.h \
 	sys/resource.h \
 	sys/socket.h \
-	sys/sysctl.h \
 	sys/time.h \
 	sys/times.h \
 	sys/types.h \
@@ -2282,12 +2283,14 @@ AC_CHECK_HEADERS([ \
 	])
 
 # on OpenBSD, sys/sysctl.h requires sys/param.h to be included beforehand
-AC_CHECK_HEADERS([sys/sysctl.h], [], [],
-[
-  @%:@ifdef HAVE_SYS_PARAM_H
-  @%:@ include <sys/param.h>
-  @%:@endif
-])
+AS_CASE([$host_os],
+	[linux*], [],
+	[AC_CHECK_HEADERS([sys/sysctl.h], [], [],
+		[
+		  @%:@ifdef HAVE_SYS_PARAM_H
+		  @%:@ include <sys/param.h>
+		  @%:@endif
+		])])
 
 
 SOCKET_LIBS=""
@@ -2487,6 +2490,7 @@ AC_CHECK_FUNCS([\
 	nl_langinfo \
 	_NSGetExecutablePath \
 	pipe2 \
+	poll \
 	popen \
 	posix_fadvise \
 	posix_fallocate \

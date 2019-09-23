@@ -173,7 +173,7 @@ BATcheckhash(BAT *b)
 	if (b->thash == (Hash *) 1) {
 		/* but when we want to change it, we need the lock */
 		ACCELDEBUG t = GDKusec();
-		MT_lock_set(&GDKhashLock(b->batCacheid));
+		MT_lock_set(&b->batIdxLock);
 		ACCELDEBUG t = GDKusec() - t;
 		/* if still 1 now that we have the lock, we can update */
 		if (b->thash == (Hash *) 1) {
@@ -231,7 +231,7 @@ BATcheckhash(BAT *b)
 							   &(oid){h->mask + 1});
 						b->thash = h;
 						ACCELDEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
-						MT_lock_unset(&GDKhashLock(b->batCacheid));
+						MT_lock_unset(&b->batIdxLock);
 						return true;
 					}
 					close(fd);
@@ -242,7 +242,7 @@ BATcheckhash(BAT *b)
 			GDKfree(h);
 			GDKclrerr();	/* we're not currently interested in errors */
 		}
-		MT_lock_unset(&GDKhashLock(b->batCacheid));
+		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->thash != NULL;
 	ACCELDEBUG if (ret) fprintf(stderr, "#BATcheckhash: already has hash %s, waited " LLFMT " usec\n", BATgetId(b), t);
@@ -263,7 +263,7 @@ BAThashsync(void *arg)
 	/* we could check whether b->thash == NULL before getting the
 	 * lock, and only lock if it isn't; however, it's very
 	 * unlikely that that is the case, so we don't */
-	MT_lock_set(&GDKhashLock(b->batCacheid));
+	MT_lock_set(&b->batIdxLock);
 	if (b->thash != NULL) {
 		Heap *hp = &b->thash->heap;
 		/* only persist if parent BAT hasn't changed in the
@@ -304,7 +304,7 @@ BAThashsync(void *arg)
 			ACCELDEBUG fprintf(stderr, "#BAThash: persisting hash %s (" LLFMT " usec)%s\n", hp->filename, GDKusec() - t0, failed);
 		}
 	}
-	MT_lock_unset(&GDKhashLock(b->batCacheid));
+	MT_lock_unset(&b->batIdxLock);
 	BBPunfix(b->batCacheid);
 }
 #endif
@@ -556,10 +556,10 @@ BAThash(BAT *b)
 	if (BATcheckhash(b)) {
 		return GDK_SUCCEED;
 	}
-	MT_lock_set(&GDKhashLock(b->batCacheid));
+	MT_lock_set(&b->batIdxLock);
 	if (b->thash == NULL) {
 		if ((b->thash = BAThash_impl(b, NULL, "thash")) == NULL) {
-			MT_lock_unset(&GDKhashLock(b->batCacheid));
+			MT_lock_unset(&b->batIdxLock);
 			return GDK_FAIL;
 		}
 #ifdef PERSISTENTHASH
@@ -568,7 +568,7 @@ BAThash(BAT *b)
 			BBPfix(b->batCacheid);
 			char name[16];
 			snprintf(name, sizeof(name), "hashsync%d", b->batCacheid);
-			MT_lock_unset(&GDKhashLock(b->batCacheid));
+			MT_lock_unset(&b->batIdxLock);
 			if (MT_create_thread(&tid, BAThashsync, b,
 					     MT_THR_DETACHED,
 					     name) < 0) {
@@ -580,7 +580,7 @@ BAThash(BAT *b)
 			ACCELDEBUG fprintf(stderr, "#BAThash: NOT persisting hash %d\n", b->batCacheid);
 #endif
 	}
-	MT_lock_unset(&GDKhashLock(b->batCacheid));
+	MT_lock_unset(&b->batIdxLock);
 	return GDK_SUCCEED;
 }
 
@@ -631,10 +631,10 @@ HASHdestroy(BAT *b)
 {
 	if (b && b->thash) {
 		Hash *hs;
-		MT_lock_set(&GDKhashLock(b->batCacheid));
+		MT_lock_set(&b->batIdxLock);
 		hs = b->thash;
 		b->thash = NULL;
-		MT_lock_unset(&GDKhashLock(b->batCacheid));
+		MT_lock_unset(&b->batIdxLock);
 		if (hs == (Hash *) 1) {
 			GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
 				  BATDIR,
@@ -661,7 +661,7 @@ void
 HASHfree(BAT *b)
 {
 	if (b && b->thash) {
-		MT_lock_set(&GDKhashLock(b->batCacheid));
+		MT_lock_set(&b->batIdxLock);
 		if (b->thash && b->thash != (Hash *) 1) {
 			bool rmheap = GDKinmemory() || b->thash->heap.dirty;
 
@@ -669,7 +669,7 @@ HASHfree(BAT *b)
 			GDKfree(b->thash);
 			b->thash = rmheap ? NULL : (Hash *) 1;
 		}
-		MT_lock_unset(&GDKhashLock(b->batCacheid));
+		MT_lock_unset(&b->batIdxLock);
 	}
 }
 

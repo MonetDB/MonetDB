@@ -20,7 +20,11 @@ else:
     import queue
 
 from subprocess import PIPE
-__all__ = ['PIPE', 'Popen', 'client', 'server']
+try:
+    from subprocess import DEVNULL
+except ImportError:
+    DEVNULL = os.open(os.devnull, os.O_RDWR)
+__all__ = ['PIPE', 'DEVNULL', 'Popen', 'client', 'server']
 
 try:
     # on Windows, also make this available

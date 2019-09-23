@@ -14,6 +14,9 @@
 #include <sys/wait.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#ifdef HAVE_POLL_H
+#include <poll.h>
+#endif
 #include <time.h>
 #include <string.h>  /* strerror */
 #include <unistd.h>  /* select */
@@ -113,9 +116,14 @@ anncdbS(sabdb *stats)
 inline static int
 recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 {
+	int retval;
+#ifdef HAVE_POLL
+	struct pollfd pfd = (struct pollfd) {.fd = msgsock, .events = POLLIN};
+
+	retval = poll(&pfd, 1, 1000);
+#else
 	fd_set fds;
 	struct timeval tv;
-	int retval;
 
 	FD_ZERO(&fds);
 	FD_SET(msgsock, &fds);
@@ -124,6 +132,7 @@ recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
 	retval = select(msgsock + 1, &fds, NULL, NULL, &tv);
+#endif
 	if (retval <= 0) {
 		/* nothing interesting has happened */
 		return(-2);
@@ -1001,6 +1010,7 @@ handle_client(void *p)
 {
 	int msgsock = * (int *) p;
 
+	free(p);
 	ctl_handle_client("(local)", msgsock, NULL, NULL);
 	shutdown(msgsock, SHUT_RDWR);
 	closesocket(msgsock);
@@ -1012,12 +1022,25 @@ controlRunner(void *d)
 {
 	int usock = *(int *)d;
 	int retval;
+#ifdef HAVE_POLL
+	struct pollfd pfd;
+#else
 	fd_set fds;
 	struct timeval tv;
+#endif
 	int msgsock;
 	pthread_t tid;
+	int *p;
 
 	do {
+		if ((p = malloc(sizeof(int))) == NULL) {
+			Mfprintf(_mero_ctlerr, "malloc failed");
+			break;
+		}
+#ifdef HAVE_POLL
+		pfd = (struct pollfd) {.fd = usock, .events = POLLIN};
+		retval = poll(&pfd, 1, 1000);
+#else
 		FD_ZERO(&fds);
 		FD_SET(usock, &fds);
 
@@ -1025,6 +1048,7 @@ controlRunner(void *d)
 		tv.tv_sec = 1;
 		tv.tv_usec = 0;
 		retval = select(usock + 1, &fds, NULL, NULL, &tv);
+#endif
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
@@ -1033,9 +1057,14 @@ controlRunner(void *d)
 			continue;
 		}
 
+#ifdef HAVE_POLL
+		if ((pfd.revents & POLLIN) == 0)
+			continue;
+#else
 		if (!FD_ISSET(usock, &fds)) {
 			continue;
 		}
+#endif
 
 		if ((msgsock = accept4(usock, (SOCKPTR) 0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
 			if (_mero_keep_listening == 0)
@@ -1050,7 +1079,8 @@ controlRunner(void *d)
 		(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
 #endif
 
-		if (pthread_create(&tid, NULL, handle_client, &msgsock) != 0)
+		*p = msgsock;
+		if (pthread_create(&tid, NULL, handle_client, p) != 0)
 			closesocket(msgsock);
 		else
 			pthread_detach(tid);

@@ -28,7 +28,7 @@
 #include <sys/sem.h>
 #include <time.h>
 
-static size_t interprocess_unique_id = 1;
+static ATOMIC_TYPE interprocess_unique_id = ATOMIC_VAR_INIT(1);
 static key_t base_key = 800000000;
 
 // Regular ftok produces too many collisions
@@ -46,12 +46,7 @@ ftok_enhanced(int id, key_t * return_key)
 size_t
 GDKuniqueid(size_t offset)
 {
-	// TODO: lock this here instead of in pyapi
-	size_t id;
-
-	id = interprocess_unique_id;
-	interprocess_unique_id += offset;
-	return id;
+	return (size_t) ATOMIC_ADD(&interprocess_unique_id, (ATOMIC_BASE_TYPE) offset);
 }
 
 //! Create a memory mapped file if it does not exist and open it
@@ -75,19 +70,21 @@ GDKinitmmap(size_t id, size_t size, size_t *return_size)
 	 size = (maxsize + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 	 if (size == 0)
 	 size = GDK_mmap_pagesize; */
-	fd = GDKfdlocate(0, address, "wb", "tmp");
-	if (fd < 0) {
-		return NULL;
-	}
 	path = GDKfilepath(0, BATDIR, address, "tmp");
 	if (path == NULL) {
 		return NULL;
 	}
-	close(fd);
-	if (GDKextend(path, size) != GDK_SUCCEED) {
+	fd = GDKfdlocate(NOFARM, path, "wb", NULL);
+	if (fd < 0) {
 		GDKfree(path);
 		return NULL;
 	}
+	if (GDKextendf(fd, size, path) != GDK_SUCCEED) {
+		close(fd);
+		GDKfree(path);
+		return NULL;
+	}
+	close(fd);
 	ptr = GDKmmap(path, mod, size);
 	GDKfree(path);
 	if (ptr == NULL) {

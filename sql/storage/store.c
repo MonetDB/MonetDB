@@ -948,10 +948,10 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "mod"), rid);
 	t->mod = (v)?sa_strdup(tr->sa, v):NULL;	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "language"), rid);
-	t->lang = *(int *)v;			_DELETE(v);
+	t->lang = (sql_flang) *(int *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "type"), rid);
 	t->sql = (t->lang==FUNC_LANG_SQL||t->lang==FUNC_LANG_MAL);
-	t->type = *(int *)v;			_DELETE(v);
+	t->type = (sql_ftype) *(int *)v;			_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "side_effect"), rid);
 	t->side_effect = *(bit *)v;		_DELETE(v);
 	if (t->type==F_FILT)
@@ -1423,16 +1423,15 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 
 	for (n = funcs->h; n; n = n->next) {
 		sql_func *f = n->data;
-		int lang = FUNC_LANG_INT;
 		bit se = f->side_effect;
 		sqlid id;
-		int number = 0;
+		int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
 		char arg_nme[7] = "arg_0";
 
 		if (f->s)
-			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &f->type, &se, &f->varres, &f->vararg, &f->s->base.id, &f->system);
+			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &se, &f->varres, &f->vararg, &f->s->base.id, &f->system);
 		else
-			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &f->type, &se, &f->varres, &f->vararg, &zero, &f->system);
+			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &se, &f->varres, &f->vararg, &zero, &f->system);
 
 		if (f->res) {
 			char res_nme[] = "res_0";
@@ -1469,8 +1468,7 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 static void
 insert_aggrs(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 {
-	int zero = 0;
-	int lang = FUNC_LANG_INT;
+	int zero = 0, lang = (int) FUNC_LANG_INT;
 	bit F = FALSE;
 	node *n = NULL;
 
@@ -1480,12 +1478,12 @@ insert_aggrs(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 		sql_arg *res = NULL;
 		sql_func *aggr = n->data;
 		sqlid id;
-		int number = 0;
+		int number = 0, atype = (int) aggr->type;
 
 		if (aggr->s)
-			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &aggr->type, &F, &aggr->varres, &aggr->vararg, &aggr->s->base.id, &aggr->system);
+			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &atype, &F, &aggr->varres, &aggr->vararg, &aggr->s->base.id, &aggr->system);
 		else
-			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &aggr->type, &F, &aggr->varres, &aggr->vararg, &zero, &aggr->system);
+			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &atype, &F, &aggr->varres, &aggr->vararg, &zero, &aggr->system);
 		
 		res = aggr->res->h->data;
 		id = next_oid();
@@ -2122,13 +2120,16 @@ flusher_should_run(void)
 {
 	// We will flush if we have a reason to and no reason not to.
 	char *reason_to = NULL, *reason_not_to = NULL;
+	int changes;
 
 	if (flusher.countdown_ms <= 0)
 		reason_to = "timer expired";
 
 	int many_changes = GDKdebug & FORCEMITOMASK ? 100 : 1000000;
-	if (logger_funcs.changes() >= many_changes)
+	if ((changes = logger_funcs.changes()) >= many_changes)
 		reason_to = "many changes";
+	else if (changes == 0)
+		reason_not_to = "no changes";
 
 	// Read and clear flush_now. If we decide not to flush
 	// we'll put it back.
@@ -4403,65 +4404,64 @@ sql_trans_commit(sql_trans *tr)
 }
 
 static int
-sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, sqlid id, sht type)
+sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, sqlid id, sql_dependency type)
 {
 	sqlid dep_id=0, t_id = -1;
 	sht dep_type = 0;
 	sql_table *t = NULL;
-
 	list *dep = sql_trans_get_dependencies(tr, id, type, NULL);
 	node *n;
 
-	if(!dep)
+	if (!dep)
 		return DEPENDENCY_CHECK_ERROR;
 
 	n = dep->h;
 
 	while (n) {
 		dep_id = *(sqlid*) n->data;
-		dep_type = *(sht*) n->next->data;
+		dep_type = (sql_dependency) *(sht*) n->next->data;
 
-		if (! list_find_id(tr->dropped, dep_id)) {
+		if (!list_find_id(tr->dropped, dep_id)) {
 
-			switch (dep_type){
-				case SCHEMA_DEPENDENCY :
-							//FIXME malloc failure scenario!
-							(void) sql_trans_drop_schema(tr, dep_id, DROP_CASCADE);
-							break;
-				case TABLE_DEPENDENCY :
-							(void) sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case COLUMN_DEPENDENCY :
-							if ((t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY)) > 0) {
-								t = find_sql_table_id(s, t_id);
-								if (t)
-									(void) sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
-							}
-							break;
-				case VIEW_DEPENDENCY :
-							(void) sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case TRIGGER_DEPENDENCY :
-							(void) sql_trans_drop_trigger(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case KEY_DEPENDENCY :
-							(void) sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case FKEY_DEPENDENCY :
-							(void) sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case INDEX_DEPENDENCY :
-							(void) sql_trans_drop_idx(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case PROC_DEPENDENCY :
-				case FUNC_DEPENDENCY :
-							(void) sql_trans_drop_func(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case TYPE_DEPENDENCY :
-							sql_trans_drop_type(tr, s, dep_id, DROP_CASCADE);
-							break;
-				case USER_DEPENDENCY :  /*TODO schema and users dependencies*/
-							break;
+			switch (dep_type) {
+				case SCHEMA_DEPENDENCY:
+					//FIXME malloc failure scenario!
+					(void) sql_trans_drop_schema(tr, dep_id, DROP_CASCADE);
+					break;
+				case TABLE_DEPENDENCY:
+					(void) sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case COLUMN_DEPENDENCY:
+					if ((t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY)) > 0) {
+						t = find_sql_table_id(s, t_id);
+						if (t)
+							(void) sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
+					}
+					break;
+				case VIEW_DEPENDENCY:
+					(void) sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case TRIGGER_DEPENDENCY:
+					(void) sql_trans_drop_trigger(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case KEY_DEPENDENCY:
+					(void) sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case FKEY_DEPENDENCY:
+					(void) sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case INDEX_DEPENDENCY:
+					(void) sql_trans_drop_idx(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case PROC_DEPENDENCY:
+				case FUNC_DEPENDENCY:
+					(void) sql_trans_drop_func(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case TYPE_DEPENDENCY:
+					sql_trans_drop_type(tr, s, dep_id, DROP_CASCADE);
+					break;
+				case USER_DEPENDENCY:  /*TODO schema and users dependencies*/
+					break;
 			}
 		}
 
@@ -4938,7 +4938,7 @@ sql_trans_drop_type(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 }
 
 sql_func *
-create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int type, int lang, const char *mod,
+create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod,
 				const char *impl, const char *query, bit varres, bit vararg, bit system)
 {
 	sql_func *t = SA_ZNEW(sa, sql_func);
@@ -4963,14 +4963,14 @@ create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int 
 }
 
 sql_func *
-sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *args, list *res, int type, int lang,
+sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args, list *res, sql_ftype type, sql_flang lang,
 					  const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system)
 {
 	sql_func *t = SA_ZNEW(tr->sa, sql_func);
 	sql_table *sysfunc = find_sql_table(find_sql_schema(tr, "sys"), "functions");
 	sql_table *sysarg = find_sql_table(find_sql_schema(tr, "sys"), "args");
 	node *n;
-	int number = 0;
+	int number = 0, ftype = (int) type, flang = (int) lang;
 	bit se;
 
 	base_init(tr->sa, &t->base, next_oid(), TR_NEW, func);
@@ -4986,18 +4986,18 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *arg
 	t->ops = sa_list(tr->sa);
 	t->fix_scale = SCALE_EQ;
 	t->system = system;
-	for(n=args->h; n; n = n->next) 
+	for (n=args->h; n; n = n->next) 
 		list_append(t->ops, arg_dup(tr->sa, n->data));
 	if (res) {
 		t->res = sa_list(tr->sa);
-		for(n=res->h; n; n = n->next) 
+		for (n=res->h; n; n = n->next)
 			list_append(t->res, arg_dup(tr->sa, n->data));
 	}
 	t->query = (query)?sa_strdup(tr->sa, query):NULL;
 	t->s = s;
 
 	cs_add(&s->funcs, t, TR_NEW);
-	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &lang, &type, &se,
+	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &flang, &ftype, &se,
 							 &t->varres, &t->vararg, &s->base.id, &t->system);
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
@@ -5064,7 +5064,7 @@ build_drop_func_list_item(sql_trans *tr, sql_schema *s, sqlid id)
 }
 
 int
-sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list * list_func, int drop_action)
+sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action)
 {
 	node *n = NULL;
 	sql_func *func = NULL;

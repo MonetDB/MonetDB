@@ -7955,7 +7955,7 @@ rel_reduce_casts(int *changes, mvc *sql, sql_rel *rel)
 				}
 			}
 			if (anti) set_anti(e);
-			n->data = e;	
+			n->data = e;
 		}
 	}
 	return rel;

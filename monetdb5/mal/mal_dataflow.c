@@ -234,26 +234,30 @@ q_dequeue(Queue *q, Client cntxt)
 
 		for (i = q->last - 1; i >= 0; i--) {
 			if (q->data[i]->flow->cntxt == cntxt) {
-				if(minpc < 0){
+				if (q->last > 1024) {
+					/* for long "queues", just grab the first eligible
+					 * entry we encounter */
+					minpc = i;
+					break;
+				}
+				/* for shorter "queues", find the oldest eligible entry */
+				if (minpc < 0) {
 					minpc = i;
 					s = q->data[i];
 				}
 				r = q->data[i];
-				if( s && r && s->pc > r->pc){
+				if (s && r && s->pc > r->pc) {
 					minpc = i;
 					s = r;
 				}
 			}
 		}
-		if( minpc >= 0){
+		if (minpc >= 0) {
 			r = q->data[minpc];
 			i = minpc;
 			q->last--;
-			while (i < q->last) {
-				q->data[i] = q->data[i + 1];
-				i++;
-			}
-		} else r = NULL;
+			memmove(q->data + i, q->data + i + 1, (q->last - i) * sizeof(q->data[0]));
+		}
 
 		MT_lock_unset(&q->l);
 		return r;

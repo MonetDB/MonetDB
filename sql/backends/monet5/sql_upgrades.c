@@ -81,8 +81,8 @@ sql_fix_system_tables(Client c, mvc *sql)
 				" (%d, '%s', '%s', '%s',"
 				" %d, %d, %s, %s, %s, %d, %s);\n",
 				func->base.id, func->base.name,
-				func->imp, func->mod, FUNC_LANG_INT,
-				func->type,
+				func->imp, func->mod, (int) FUNC_LANG_INT,
+				(int) func->type,
 				func->side_effect ? "true" : "false",
 				func->varres ? "true" : "false",
 				func->vararg ? "true" : "false",
@@ -149,7 +149,7 @@ sql_fix_system_tables(Client c, mvc *sql)
 				" (%d, '%s', '%s', '%s', %d, %d, false,"
 				" %s, %s, %d, %s);\n",
 				aggr->base.id, aggr->base.name, aggr->imp,
-				aggr->mod, FUNC_LANG_INT, aggr->type,
+				aggr->mod, (int) FUNC_LANG_INT, (int) aggr->type,
 				aggr->varres ? "true" : "false",
 				aggr->vararg ? "true" : "false",
 				aggr->s ? aggr->s->base.id : s->base.id,
@@ -1527,13 +1527,13 @@ sql_update_apr2019(Client c, mvc *sql)
 			"returns timestamp\n"
 			"external name sql.date_trunc;\n"
 			"grant execute on function sys.date_trunc(string, timestamp) to public;\n"
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'date_trunc' and type = %d;\n", F_FUNC);
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'date_trunc' and type = %d;\n", (int) F_FUNC);
 
 	/* 22_clients.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create procedure sys.setprinttimeout(\"timeout\" integer)\n"
 			"external name clients.setprinttimeout;\n"
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'setprinttimeout' and type = %d;\n", F_PROC);
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'setprinttimeout' and type = %d;\n", (int) F_PROC);
 
 	/* 26_sysmon.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1903,13 +1903,13 @@ sql_update_storagemodel(Client c, mvc *sql)
 		" and name in ('storage', 'tablestorage', 'schemastorage', 'storagemodelinput', 'storagemodel', 'tablestoragemodel');\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 		"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-		" and name in ('storage') and type = %d;\n", F_UNION);
+		" and name in ('storage') and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
 		"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-		" and name in ('storagemodelinit') and type = %d;\n", F_PROC);
+		" and name in ('storagemodelinit') and type = %d;\n", (int) F_PROC);
 	pos += snprintf(buf + pos, bufsize - pos,
 		"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-		" and name in ('columnsize', 'heapsize', 'hashsize', 'imprintsize') and type = %d;\n", F_FUNC);
+		" and name in ('columnsize', 'heapsize', 'hashsize', 'imprintsize') and type = %d;\n", (int) F_FUNC);
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
@@ -2005,7 +2005,7 @@ sql_update_deltas(Client c, mvc *sql)
 			" returns table (\"id\" int, \"cleared\" boolean, \"immutable\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)"
 			" external name \"sql\".\"deltas\";\n"
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('deltas') and type = %d;\n", F_UNION);
+			" and name in ('deltas') and type = %d;\n", (int) F_UNION);
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");

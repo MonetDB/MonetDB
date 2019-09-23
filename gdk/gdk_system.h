@@ -166,7 +166,13 @@ gdk_export int MT_join_thread(MT_Id t);
 
 /* define this if you want to use pthread (or Windows) locks instead
  * of atomic instructions for locking (latching) */
-/* #define USE_PTHREAD_LOCKS */
+#ifndef WIN32
+/* on Linux (and in general pthread using systems) use native locks;
+ * on Windows use locks based on atomic instructions and sleeps since
+ * the Windows lock implementations (Mutex and CriticalSection) are
+ * too heavy and impossible to initialize statically */
+#define USE_NATIVE_LOCKS 1
+#endif
 
 #ifdef LOCK_STATS
 
@@ -274,7 +280,7 @@ gdk_export int MT_join_thread(MT_Id t);
 
 #endif
 
-#ifdef USE_PTHREAD_LOCKS
+#ifdef USE_NATIVE_LOCKS
 
 #if !defined(HAVE_PTHREAD_H) && defined(WIN32)
 typedef struct MT_Lock {
@@ -381,6 +387,7 @@ typedef struct MT_Lock {
 
 #define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0)
 
+#ifdef LOCK_STATS
 #define MT_lock_set(l)							\
 	do {								\
 		_DBG_LOCK_COUNT_0(l);					\
@@ -395,10 +402,13 @@ typedef struct MT_Lock {
 		_DBG_LOCK_LOCKER(l);					\
 		_DBG_LOCK_COUNT_2(l);					\
 	} while (0)
+#else
+#define MT_lock_set(l)		pthread_mutex_lock(&(l)->lock)
+#endif
 
 #define MT_lock_unset(l)						\
 	do {								\
-		_DBG_LOCK_UNLOCKER(l);		\
+		_DBG_LOCK_UNLOCKER(l);					\
 		pthread_mutex_unlock(&(l)->lock);			\
 	} while (0)
 

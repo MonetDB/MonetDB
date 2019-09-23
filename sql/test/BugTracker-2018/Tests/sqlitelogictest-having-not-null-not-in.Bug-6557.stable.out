@@ -64,8 +64,6 @@ stdout of test 'sqlitelogictest-having-not-null-not-in.Bug-6557` in directory 's
 % 1 # length
 [ 0	]
 #DROP TABLE tab0;
-#debug SELECT CAST(SUM(col0) AS BIGINT) FROM (VALUES(83,0,38), (26,0,79), (43,81,24)) as tab0(col0,col1,col2) WHERE + + col0 NOT BETWEEN NULL AND + col2;
-mdb>#X_11=0@0:void := querylog.define("debug select cast(sum(col0) as bigint) from (values(83,0,38), (26,0,79), (43,81,24)) as tab0(col0,col1,col2) where + + col0 not between null and + col2;", "default_pipe", 27:int);
 
 # 12:32:58 >  
 # 12:32:58 >  "Done."

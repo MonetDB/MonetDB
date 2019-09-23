@@ -42,6 +42,7 @@ BITSMCHN=X64
 # force W_CFLAGS off in debug builds: using icc, you get way more
 # warnings about casts which results in the code being uncompilable
 W_CFLAGS =
+HAVE_MAL_DEBUGGER = 1
 !ENDIF
 !IFDEF ENABLE_STRICT
 # strict mode: treat warnings as errors
@@ -385,6 +386,11 @@ create_winconfig_conds_new_py:
 	$(ECHO) HAVE_SHP_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_SHP_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_MAL_DEBUGGER
+	$(ECHO) HAVE_MAL_DEBUGGER_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_MAL_DEBUGGER_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_SQL
 	$(ECHO) HAVE_SQL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"

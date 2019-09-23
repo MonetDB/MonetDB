@@ -776,7 +776,7 @@ rel_create_function(sql_allocator *sa, const char *sname, sql_func *f)
 }
 
 static sql_rel *
-rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int type, int lang, int replace)
+rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, sql_ftype type, sql_flang lang, int replace)
 {
 	mvc *sql = query->sql;
 	const char *fname = qname_table(qname);
@@ -818,17 +818,13 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	if ((sf = sql_bind_func_(sql->sa, s, fname, type_list, type)) != NULL && create) {
 		if (replace) {
 			sql_func *func = sf->func;
-			int action = 0;
-			if (!mvc_schema_privs(sql, s)) {
+			if (!mvc_schema_privs(sql, s))
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
-			}
 			if (mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, fn, func->base.name);
-			if (!func->s) {
+			if (!func->s)
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: not allowed to replace system %s%s %s;", KF, F, kf, fn, func->base.name);
-			}
-
-			if(mvc_drop_func(sql, s, func, action))
+			if (mvc_drop_func(sql, s, func, 0))
 				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			sf = NULL;
 		} else {
@@ -860,9 +856,8 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	}
 	list_destroy(type_list);
 	if (create && !mvc_schema_privs(sql, s)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s%s: insufficient privileges "
-				"for user '%s' in schema '%s'", KF, F,
-				stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s%s: insufficient privileges for user '%s' in schema '%s'", KF, F,
+						 stack_get_string(sql, "current_user"), s->base.name);
 	} else {
 		char *q = QUERY(sql->scanner);
 		list *l = NULL;
@@ -889,28 +884,42 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			if (!restype)
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: failed to get restype", KF, F);
 		}
-		if (body && lang > FUNC_LANG_SQL) {
-			char *lang_body = body->h->data.sval;
-			char *mod = 	
-					(lang == FUNC_LANG_R)?"rapi":
-					(lang == FUNC_LANG_C || lang == FUNC_LANG_CPP)?"capi":
-					(lang == FUNC_LANG_J)?"japi":
-					(lang == FUNC_LANG_PY)?"pyapi":
- 					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";
+		if (body && LANG_EXT(lang)) {
+			char *lang_body = body->h->data.sval, *mod = NULL, *slang = NULL;
+			switch (lang) {
+				case FUNC_LANG_R:
+					mod = "rapi";
+					slang = "R";
+					break;
+				case FUNC_LANG_C:
+					mod = "capi";
+					slang = "C";
+					break;
+				case FUNC_LANG_CPP:
+					mod = "capi";
+					slang = "CPP";
+					break;
+				case FUNC_LANG_J:
+					mod = "japi";
+					slang = "Javascript";
+					break;
+				case FUNC_LANG_PY:
+					mod = "pyapi";
+					slang = "Python";
+					break;
+				case FUNC_LANG_MAP_PY:
+					mod = "pyapimap";
+					slang = "Python";
+					break;
+				default:
+					assert(0);
+			}
 			sql->params = NULL;
 			if (create) {
-				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE);
+				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE);
 			} else if (!sf) {
-				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
-			} /*else {
-				sql_func *f = sf->func;
-				f->mod = _STRDUP("rapi");
-				f->imp = _STRDUP("eval");
-				if (res && restype)
-					f->res = restype;
-				f->sql = 0;
-				f->lang = FUNC_LANG_INT;
-			}*/
+				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: %s function %s.%s not bound", KF, F, slang, s->base.name, fname);
+			}
 		} else if (body) {
 			sql_arg *ra = (restype && !is_table)?restype->h->data:NULL;
 			list *b = NULL;
@@ -926,22 +935,17 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			sql->forward = NULL;
 			sql->session->schema = old_schema;
 			sql->params = NULL;
-			if (!b) 
+			if (!b)
 				return NULL;
 		
 			/* check if we have a return statement */
-			if (is_func && restype && !has_return(b)) {
+			if (is_func && restype && !has_return(b))
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: missing return statement", KF, F);
-			}
-			if (!is_func && !restype && has_return(b)) {
-				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: procedures "
-						"cannot have return statements", KF, F);
-			}
-
+			if (!is_func && !restype && has_return(b))
+				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: procedures cannot have return statements", KF, F);
 			/* in execute mode we instantiate the function */
-			if (instantiate || deps) {
+			if (instantiate || deps)
 				return rel_psm_block(sql->sa, b);
-			}
 		} else {
 			char *fmod = qname_module(ext_name);
 			char *fnme = qname_fname(ext_name);
@@ -975,7 +979,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 }
 
 static sql_rel*
-rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr, int type, int action)
+rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr, sql_ftype type, int action)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -985,7 +989,7 @@ rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr
 	append(exps, exp_atom_clob(sa, sname));
 	append(exps, exp_atom_clob(sa, name));
 	append(exps, exp_atom_int(sa, nr));
-	append(exps, exp_atom_int(sa, type));
+	append(exps, exp_atom_int(sa, (int) type));
 	append(exps, exp_atom_int(sa, action));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -998,7 +1002,7 @@ rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr
 }
 
 sql_func *
-resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int type, char *op, int if_exists)
+resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ftype type, char *op, int if_exists)
 {
 	sql_func *func = NULL;
 	list *list_func = NULL, *type_list = NULL;
@@ -1082,7 +1086,7 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int ty
 }
 
 static sql_rel* 
-rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type, int if_exists)
+rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftype type, int if_exists)
 {
 	const char *name = qname_table(qname);
 	const char *sname = qname_schema(qname);
@@ -1113,7 +1117,7 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 }
 
 static sql_rel* 
-rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, int type)
+rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 {
 	const char *name = qname_table(qname);
 	const char *sname = qname_schema(qname);
@@ -1469,8 +1473,8 @@ rel_psm(sql_query *query, symbol *s)
 	case SQL_CREATE_FUNC:
 	{
 		dlist *l = s->data.lval;
-		int type = l->h->next->next->next->next->next->data.i_val;
-		int lang = l->h->next->next->next->next->next->next->data.i_val;
+		sql_ftype type = (sql_ftype) l->h->next->next->next->next->next->data.i_val;
+		sql_flang lang = (sql_flang) l->h->next->next->next->next->next->next->data.i_val;
 		int repl = l->h->next->next->next->next->next->next->next->data.i_val;
 
 		ret = rel_create_func(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type, lang, repl);
@@ -1481,7 +1485,7 @@ rel_psm(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 		dlist *qname = l->h->data.lval;
 		dlist *typelist = l->h->next->data.lval;
-		int type = l->h->next->next->data.i_val;
+		sql_ftype type = (sql_ftype) l->h->next->next->data.i_val;
 		int if_exists = l->h->next->next->next->data.i_val;
 		int all = l->h->next->next->next->next->data.i_val;
 		int drop_action = l->h->next->next->next->next->next->data.i_val;

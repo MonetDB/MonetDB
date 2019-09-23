@@ -612,7 +612,6 @@ str
 mvc_release(mvc *m, const char *name)
 {
 	int ok = SQL_OK;
-	int res = Q_TRANS;
 	sql_trans *tr = m->session->tr;
 	str msg = MAL_SUCCEED;
 
@@ -647,7 +646,7 @@ mvc_release(mvc *m, const char *name)
 	m->session->tr = tr;
 	m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 
-	m->type = res;
+	m->type = Q_TRANS;
 	return msg;
 }
 
@@ -873,7 +872,7 @@ mvc_bind_func(mvc *sql, const char *name)
 }
 
 list *
-schema_bind_func(mvc *sql, sql_schema * s, const char *name, int type)
+schema_bind_func(mvc *sql, sql_schema * s, const char *name, sql_ftype type)
 {
 	list *func_list = find_all_sql_func(s, name, type);
 
@@ -1081,7 +1080,7 @@ mvc_drop_type(mvc *m, sql_schema *s, sql_type *t, int drop_action)
 }
 
 sql_func *
-mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, const char *name, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system)
+mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system)
 {
 	sql_func *f = NULL;
 
@@ -1408,22 +1407,22 @@ mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 }
 
 void
-mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sht depend_type)
+mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sql_dependency depend_type)
 {
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_create_dependency %d %d %d\n", id, depend_id, depend_type);
+		fprintf(stderr, "#mvc_create_dependency %d %d %d\n", id, depend_id, (int) depend_type);
 	if ( (id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) )
 		sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
 }
 
 void
-mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sht dep_type)
+mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sql_dependency dep_type)
 {
 	node *n = id_l->h;
 	int i;
 
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_create_dependencies on %d of type %d\n", depend_id, dep_type);
+		fprintf(stderr, "#mvc_create_dependencies on %d of type %d\n", depend_id, (int) dep_type);
 
 	for (i = 0; i < list_length(id_l); i++)
 	{
@@ -1433,38 +1432,38 @@ mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sht dep_type)
 }
 
 int
-mvc_check_dependency(mvc * m, sqlid id, sht type, list *ignore_ids)
+mvc_check_dependency(mvc * m, sqlid id, sql_dependency type, list *ignore_ids)
 {
 	list *dep_list = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_check_dependency on %d\n", id);
 
-	switch(type) {
-		case OWNER_DEPENDENCY : 
+	switch (type) {
+		case OWNER_DEPENDENCY: 
 			dep_list = sql_trans_owner_schema_dependencies(m->session->tr, id);
 			break;
-		case SCHEMA_DEPENDENCY :
+		case SCHEMA_DEPENDENCY:
 			dep_list = sql_trans_schema_user_dependencies(m->session->tr, id);
 			break;
-		case TABLE_DEPENDENCY : 
+		case TABLE_DEPENDENCY: 
 			dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
 			break;
-		case VIEW_DEPENDENCY : 
+		case VIEW_DEPENDENCY: 
 			dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
 			break;
-		case FUNC_DEPENDENCY : 
-		case PROC_DEPENDENCY :
+		case FUNC_DEPENDENCY: 
+		case PROC_DEPENDENCY:
 			dep_list = sql_trans_get_dependencies(m->session->tr, id, FUNC_DEPENDENCY, ignore_ids);
 			break;
 		default: 
 			dep_list =  sql_trans_get_dependencies(m->session->tr, id, COLUMN_DEPENDENCY, NULL);
 	}
 
-	if(!dep_list)
+	if (!dep_list)
 		return DEPENDENCY_CHECK_ERROR;
 
-	if ( list_length(dep_list) >= 2 ) {
+	if (list_length(dep_list) >= 2) {
 		list_destroy(dep_list);
 		return HAS_DEPENDENCY;
 	}
