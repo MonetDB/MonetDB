@@ -16,6 +16,7 @@ Fix/check/test MOSlayout.
 benchmark
 
 ####code issues####
+Update copyright.
 move mask, bits, framebits from  MosaicHdr to MosaicBlkHeader_frame_t.
 mosaic_prefix.c: prefix code does not use macro's!!!!
 mosaic_delta.c: improve the macro's: for instance get rid of hardcoded expression arguments in DELTAcompress. (2*)
