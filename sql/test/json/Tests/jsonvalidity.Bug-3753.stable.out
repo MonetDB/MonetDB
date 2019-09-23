@@ -172,7 +172,13 @@ stdout of test 'jsonvalidity.Bug-3753` in directory 'sql/test/json` itself:
 % boolean # type
 % 5 # length
 [ false	]
-#SELECT json.isValid('{"test":"\"\""}'); 	-- true
+#SELECT json.isValid(E'{"test":"\\"\\""}'); -- true
+% .L2 # table_name
+% L2 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT json.isValid(J'"\u003c\""');	-- true
 % .L2 # table_name
 % L2 # name
 % boolean # type
