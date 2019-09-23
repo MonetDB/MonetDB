@@ -81,9 +81,18 @@ BATmosaic(BAT *bn, BUN cap)
 				GDKfree(fname);
 			GDKfree(m);
 			return GDK_FAIL;
-		}
-	strncpy((char*) m->filename, fname, sizeof(m->filename));
-	
+	}
+
+	if (strlen(fname) >= sizeof(m->filename)) {
+		// TODO: check if this can actually happen.
+		GDKfree(fname);
+		GDKfree(m);
+		return GDK_FAIL;
+	}
+
+	strncpy(m->filename, fname, strlen(fname));
+	GDKfree(fname);
+
     if( HEAPalloc(m, cap, Tsize(bn)) != GDK_SUCCEED){
         return GDK_FAIL;
 	}
