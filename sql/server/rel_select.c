@@ -4016,8 +4016,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		if (uaname)
 			GDKfree(uaname);
 		return e;
-	} else if (is_grouping && !is_sql_group_totals(f))
-		return sql_error(sql, 02, SQLSTATE(42000) "GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY");
+	}
 
 	if (groupby->op != op_groupby) { 		/* implicit groupby */
 		sql_rel *np = rel_project2groupby(sql, groupby);
@@ -4093,12 +4092,6 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			gr->l = gl;
 		if (!e || !exp_subtype(e)) /* we also do not expect parameters here */
 			return NULL;
-		if (is_grouping && !exps_find_exp((list*)groupby->r, e)) {
-			const char *cname = exp_name(e);
-			assert(cname && e->type == e_column);
-			return sql_error(sql, 02, SQLSTATE(42000) "GROUPING: cannot use column %s without specifying it in the GROUP BY clause", cname);
-		}
-
 		freevar &= exp_has_freevar(sql, e);
 		list_append(exps, e);
 	}

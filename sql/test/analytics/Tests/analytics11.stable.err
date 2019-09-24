@@ -34,19 +34,7 @@ QUERY = SELECT
 ERROR = !syntax error, unexpected ')' in: "select
         !    grouping()"
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-19672/.s.monetdb.33540
-QUERY = SELECT
-            GROUPING(Product_Name)
-        FROM tbl_ProductSales GROUP BY (); --error, Product_Name it's not a grouping column
-ERROR = !GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-11452/.s.monetdb.32908
-QUERY = SELECT
-            GROUPING(Product_Name)
-        FROM tbl_ProductSales; --error, same as upper one
-ERROR = !GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-11452/.s.monetdb.32908
+MAPI  = (monetdb) /var/tmp/mtest-5184/.s.monetdb.34105
 QUERY = SELECT
             1
         FROM tbl_ProductSales
@@ -59,14 +47,14 @@ QUERY = SELECT
         FROM tbl_ProductSales
         WHERE GROUPING(Product_Category) > 1
         GROUP BY GROUPING SETS((Product_Category)); --error, "grouping" not allowed in where clause
-ERROR = !GROUPING: not allowed in WHERE clause
+ERROR = !GROUPING: aggregate functions not allowed in WHERE clause
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-11452/.s.monetdb.32908
 QUERY = SELECT 
             AVG(GROUPING(Product_Category))
         FROM tbl_ProductSales
         GROUP BY GROUPING SETS((Product_Category)); --error, "grouping" not allowed inside aggregation functions
-ERROR = !SELECT: subquery result missing
+ERROR = !GROUPING: aggregate functions cannot be nested
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-12109/.s.monetdb.39866
 QUERY = SELECT
@@ -76,33 +64,12 @@ QUERY = SELECT
 ERROR = !syntax error, unexpected sqlINT in: "select
         !    grouping(1"
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-2139/.s.monetdb.31788
-QUERY = SELECT
-            GROUPING(Product_Category) AS myalias
-        FROM tbl_ProductSales
-        GROUP BY Product_Category; --error, requires ROLLUP, CUBE or GROUPING SETS
-ERROR = !GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-2139/.s.monetdb.31788
-QUERY = SELECT
-            GROUPING(Product_Category) myalias
-        FROM tbl_ProductSales
-        GROUP BY Product_Category, Product_Name; --error, requires ROLLUP, CUBE or GROUPING SETS
-ERROR = !GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-2139/.s.monetdb.31788
-QUERY = SELECT
-            GROUPING(Product_Name, Product_Category)
-        FROM tbl_ProductSales
-        GROUP BY Product_Category, Product_Name; --error, requires ROLLUP, CUBE or GROUPING SETS
-ERROR = !GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-11458/.s.monetdb.34481
+MAPI  = (monetdb) /var/tmp/mtest-5184/.s.monetdb.34105
 QUERY = SELECT
             col1 IN (SELECT ColID + col2 FROM tbl_ProductSales)
         FROM another_T
         GROUP BY ROLLUP(col1); --error, col2 is not a grouping column
-ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
+ERROR = !SELECT: cannot use non GROUP BY column 'col2' in query results without an aggregate function
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-11458/.s.monetdb.34481
 QUERY = SELECT

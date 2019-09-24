@@ -45,6 +45,67 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 % 1 # length
 [ 1	]
 #SELECT
+#    GROUPING(Product_Name)
+#FROM tbl_ProductSales;
+% .L2 # table_name
+% L2 # name
+% tinyint # type
+% 1 # length
+[ 0	]
+#SELECT
+#    (SELECT GROUPING(t1.col1) FROM tbl_ProductSales)
+#FROM another_T t1;
+% .L3 # table_name
+% L3 # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+#SELECT
+#    GROUPING(Product_Name)
+#FROM tbl_ProductSales GROUP BY ();
+% .L1 # table_name
+% L1 # name
+% tinyint # type
+% 1 # length
+[ 0	]
+#SELECT
+#    GROUPING(Product_Category) AS myalias
+#FROM tbl_ProductSales
+#GROUP BY Product_Category;
+% .L2 # table_name
+% myalias # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 0	]
+#SELECT
+#    GROUPING(Product_Category) myalias
+#FROM tbl_ProductSales
+#GROUP BY Product_Category, Product_Name;
+% .L2 # table_name
+% myalias # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+#SELECT
+#    GROUPING(Product_Name, Product_Category)
+#FROM tbl_ProductSales
+#GROUP BY Product_Category, Product_Name;
+% .L1 # table_name
+% L1 # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+#SELECT
 #    GROUPING(Product_Category) AS myalias
 #FROM tbl_ProductSales
 #GROUP BY ROLLUP(Product_Category);
@@ -193,9 +254,12 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 [ 1	]
-#SELECT GROUPING(Product_Category), AVG(SUM(TotalSales)) OVER (ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
-% .L1,	.L3 # table_name
-% L1,	L3 # name
+#SELECT
+#    GROUPING(Product_Category), AVG(SUM(TotalSales)) OVER (ROWS UNBOUNDED PRECEDING)
+#FROM tbl_ProductSales
+#GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
+% .L1,	.L4 # table_name
+% L1,	L4 # name
 % tinyint,	double # type
 % 1,	24 # length
 [ 0,	600	]
@@ -251,8 +315,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    GROUPING(Product_Category), AVG(SUM(TotalSales)) OVER (ROWS UNBOUNDED PRECEDING), RANK() OVER (PARTITION BY SUM(TotalSales))
 #FROM tbl_ProductSales
 #GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
-% .L1,	.L3,	.L7 # table_name
-% L1,	L3,	L7 # name
+% .L1,	.L4,	.L7 # table_name
+% L1,	L4,	L7 # name
 % tinyint,	double,	int # type
 % 1,	24,	1 # length
 [ 1,	400,	1	]
@@ -272,8 +336,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    RANK() OVER (PARTITION BY SUM(ColID))
 #FROM tbl_ProductSales
 #GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
-% .L1,	.L3,	.L7 # table_name
-% L1,	L3,	L7 # name
+% .L1,	.L4,	.L7 # table_name
+% L1,	L4,	L7 # name
 % tinyint,	hugeint,	int # type
 % 1,	4,	1 # length
 [ 1,	4800,	1	]
@@ -322,19 +386,6 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 % tinyint # type
 % 1 # length
 [ 3	]
-#SELECT
-#    col1 IN (SELECT ColID FROM tbl_ProductSales)
-#FROM another_T
-#GROUP BY ROLLUP(col1);
-% .L10 # table_name
-% L10 # name
-% boolean # type
-% 5 # length
-[ true	]
-[ false	]
-[ false	]
-[ false	]
-[ NULL	]
 #DROP TABLE tbl_ProductSales;
 
 # 14:50:27 >  

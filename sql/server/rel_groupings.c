@@ -72,10 +72,11 @@ rel_generate_groupings(mvc *sql, sql_rel *rel)
 
 					for (node *m = rel->exps->h ; m ; m = m->next) {
 						sql_exp *e = (sql_exp*) m->data, *ne = NULL;
+						sql_subaggr *agr = (sql_subaggr*) e->f;
 
-						if (e->type == e_aggr && !strcmp(((sql_subaggr*) e->f)->aggr->base.name, "grouping")) {
+						if (e->type == e_aggr && !agr->aggr->s && !strcmp(agr->aggr->base.name, "grouping")) {
 							/* replace grouping aggregate calls with constants */
-							sql_subtype tpe = ((sql_arg*) ((sql_subaggr*) e->f)->aggr->res->h->data)->type;
+							sql_subtype tpe = ((sql_arg*) agr->aggr->res->h->data)->type;
 							list *groups = (list*) e->l;
 							atom *a = atom_int(sql->sa, &tpe, 0);
 #ifdef HAVE_HGE
@@ -140,6 +141,39 @@ rel_generate_groupings(mvc *sql, sql_rel *rel)
 						return unions;
 				}
 				return unions;
+			} else {
+				bool found_grouping = false;
+				for (node *n = rel->exps->h ; n ; n = n->next) {
+					sql_exp *e = (sql_exp*) n->data;
+					sql_subaggr *agr = (sql_subaggr*) e->f;
+
+					if (e->type == e_aggr && !agr->aggr->s && !strcmp(agr->aggr->base.name, "grouping")) {
+						found_grouping = true;
+						break;
+					}
+				}
+				if (found_grouping) {
+					/* replace grouping calls with constants of value 0 */
+					sql_rel *nrel = rel_groupby(sql, rel->l, rel->r);
+					list *exps = sa_list(sql->sa), *pexps = sa_list(sql->sa);
+					sql_subtype *bt = sql_bind_localtype("bte");
+
+					for (node *n = rel->exps->h ; n ; n = n->next) {
+						sql_exp *e = (sql_exp*) n->data, *ne;
+						sql_subaggr *agr = (sql_subaggr*) e->f;
+
+						if (e->type == e_aggr && !agr->aggr->s && !strcmp(agr->aggr->base.name, "grouping")) {
+							ne = exp_atom(sql->sa, atom_int(sql->sa, bt, 0));
+							exp_setname(sql->sa, ne, e->alias.rname, e->alias.name);
+						} else {
+							ne = exp_ref(sql->sa, e);
+							append(exps, e);
+						}
+						append(pexps, ne);
+					}
+					nrel->exps = exps;
+					return rel_project(sql->sa, nrel, pexps);
+				}
 			}
 		} break;
 	}
