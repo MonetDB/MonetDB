@@ -31,7 +31,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		assert(incr1 == 1);
 		assert(tp2 == TYPE_oid || incr2 == 1); /* if void, incr2==1 */
 		oid v = lft ? * (const oid *) lft : oid_nil;
-		for (k = 0; j < ci1->ncand; k++) {
+		for (k = 0; k < ci1->ncand; k++) {
 			TPE res;
 			x1 = canditer_next(ci1) - candoff1;
 			x2 = canditer_next(ci2) - candoff2;
