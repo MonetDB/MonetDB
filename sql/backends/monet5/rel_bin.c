@@ -565,7 +565,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	}	break;
 	case e_convert: {
 		/* if input is type any NULL or column of nulls, change type */
-		sql_exp *ll = (sql_exp *) e->l;
 		list *tps = e->r;
 		sql_subtype *from = tps->h->data;
 		sql_subtype *to = tps->h->next->data;
@@ -574,16 +573,11 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (from->type->localtype == 0) {
 			l = stmt_atom(be, atom_general(sql->sa, to, NULL));
 		} else {
-			l = exp_bin(be, ll, left, right, grp, ext, cnt, sel);
+			l = exp_bin(be, e->l, left, right, grp, ext, cnt, sel);
 		}
 		if (!l)
 			return NULL;
-		/* if attempting to convert between strings, no conversion is needed */
-		if (ll->type == e_column && EC_VARCHAR(from->type->eclass) && EC_VARCHAR(to->type->eclass)) {
-			s = l;
-		} else {
-			s = stmt_convert(be, l, from, to, sel);
-		}
+		s = stmt_convert(be, l, from, to, sel);
 	} 	break;
 	case e_func: {
 		node *en;
@@ -1293,6 +1287,8 @@ rel_parse_value(backend *be, char *query, char emode)
 	bstream_destroy(m->scanner.rs);
 
 	m->sym = NULL;
+	o.vars = m->vars;	/* may have been realloc'ed */
+	o.sizevars = m->sizevars;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
 		char errstr[ERRSIZE];

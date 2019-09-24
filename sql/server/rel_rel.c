@@ -100,6 +100,7 @@ rel_create( sql_allocator *sa )
 	r->flag = 0;
 	r->card = CARD_ATOM;
 	r->processed = 0;
+	r->single = 0;
 	r->dependent = 0;
 	r->subquery = 0;
 	r->p = NULL;

@@ -341,6 +341,10 @@ command null(b:bat[:any_1]) :bit
 address SQLnil
 comment "if b has a nil return true, else false";
 
+command subnull(l:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
+address SQLnil_grp
+comment "if any value in l is nil with in a group return true for that group, else false";
+
 command any(cmp:bit, nl:bit, nr:bit) :bit
 address SQLany_cmp
 comment "if cmp then true, (nl or nr) nil then nil, else false";

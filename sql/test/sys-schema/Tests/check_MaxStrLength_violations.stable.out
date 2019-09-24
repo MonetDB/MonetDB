@@ -104,30 +104,30 @@ stdout of test 'check_MaxStrLength_violations` in directory 'sql/test/sys-schema
 % char,	smallint,	int,	varchar # type
 % 27,	1,	1,	0 # length
 #SELECT '"sys"."dependencies_vw"."dependency_type_name"' as full_col_nm, 15 as max_allowed_length, length("dependency_type_name") as data_length, t."dependency_type_name" as data_value FROM "sys"."dependencies_vw" t WHERE "dependency_type_name" IS NOT NULL AND length("dependency_type_name") > (select type_digits from sys._columns where name = 'dependency_type_name' and table_id in (select id from tables where name = 'dependencies_vw' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L505,	.L506,	.L507,	.L510 # table_name
+% .L615,	.L616,	.L617,	.L620 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	tinyint,	int,	varchar # type
 % 46,	1,	1,	0 # length
 #SELECT '"sys"."dependencies_vw"."name"' as full_col_nm, 1024 as max_allowed_length, length("name") as data_length, t."name" as data_value FROM "sys"."dependencies_vw" t WHERE "name" IS NOT NULL AND length("name") > (select type_digits from sys._columns where name = 'name' and table_id in (select id from tables where name = 'dependencies_vw' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L505,	.L506,	.L507,	.L510 # table_name
+% .L615,	.L616,	.L617,	.L620 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 30,	1,	1,	0 # length
 #SELECT '"sys"."dependencies_vw"."obj_type"' as full_col_nm, 13 as max_allowed_length, length("obj_type") as data_length, t."obj_type" as data_value FROM "sys"."dependencies_vw" t WHERE "obj_type" IS NOT NULL AND length("obj_type") > (select type_digits from sys._columns where name = 'obj_type' and table_id in (select id from tables where name = 'dependencies_vw' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L505,	.L506,	.L507,	.L510 # table_name
+% .L615,	.L616,	.L617,	.L620 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	tinyint,	int,	char # type
-% 34,	1,	1,	13 # length
+% 34,	1,	1,	6 # length
 #SELECT '"sys"."dependencies_vw"."used_by_name"' as full_col_nm, 1024 as max_allowed_length, length("used_by_name") as data_length, t."used_by_name" as data_value FROM "sys"."dependencies_vw" t WHERE "used_by_name" IS NOT NULL AND length("used_by_name") > (select type_digits from sys._columns where name = 'used_by_name' and table_id in (select id from tables where name = 'dependencies_vw' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L505,	.L506,	.L507,	.L510 # table_name
+% .L615,	.L616,	.L617,	.L620 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 38,	1,	1,	0 # length
 #SELECT '"sys"."dependencies_vw"."used_by_obj_type"' as full_col_nm, 13 as max_allowed_length, length("used_by_obj_type") as data_length, t."used_by_obj_type" as data_value FROM "sys"."dependencies_vw" t WHERE "used_by_obj_type" IS NOT NULL AND length("used_by_obj_type") > (select type_digits from sys._columns where name = 'used_by_obj_type' and table_id in (select id from tables where name = 'dependencies_vw' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L505,	.L506,	.L507,	.L510 # table_name
+% .L615,	.L616,	.L617,	.L620 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	tinyint,	int,	char # type
-% 42,	1,	1,	13 # length
+% 42,	1,	1,	6 # length
 #SELECT '"sys"."dependency_args_on_types"."arg_name"' as full_col_nm, 256 as max_allowed_length, length("arg_name") as data_length, t."arg_name" as data_value FROM "sys"."dependency_args_on_types" t WHERE "arg_name" IS NOT NULL AND length("arg_name") > (select type_digits from sys._columns where name = 'arg_name' and table_id in (select id from tables where name = 'dependency_args_on_types' and schema_id in (select id from sys.schemas where name = 'sys')));
 % .L34,	.L35,	sys.L36,	sys.L37 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
@@ -309,12 +309,12 @@ stdout of test 'check_MaxStrLength_violations` in directory 'sql/test/sys-schema
 % char,	smallint,	int,	varchar # type
 % 50,	1,	1,	0 # length
 #SELECT '"sys"."dependency_schemas_on_users"."schema_name"' as full_col_nm, 1024 as max_allowed_length, length("schema_name") as data_length, t."schema_name" as data_value FROM "sys"."dependency_schemas_on_users" t WHERE "schema_name" IS NOT NULL AND length("schema_name") > (select type_digits from sys._columns where name = 'schema_name' and table_id in (select id from tables where name = 'dependency_schemas_on_users' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L33,	.L34,	sys.L35,	sys.L36 # table_name
+% .L35,	.L36,	sys.L37,	sys.L40 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 49,	1,	1,	0 # length
 #SELECT '"sys"."dependency_schemas_on_users"."user_name"' as full_col_nm, 2048 as max_allowed_length, length("user_name") as data_length, t."user_name" as data_value FROM "sys"."dependency_schemas_on_users" t WHERE "user_name" IS NOT NULL AND length("user_name") > (select type_digits from sys._columns where name = 'user_name' and table_id in (select id from tables where name = 'dependency_schemas_on_users' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L33,	.L34,	.L35,	.L36 # table_name
+% .L35,	.L36,	.L37,	.L40 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 47,	1,	1,	0 # length
@@ -359,12 +359,12 @@ stdout of test 'check_MaxStrLength_violations` in directory 'sql/test/sys-schema
 % char,	smallint,	int,	varchar # type
 % 52,	1,	1,	0 # length
 #SELECT '"sys"."dependency_tables_on_triggers"."table_name"' as full_col_nm, 1024 as max_allowed_length, length("table_name") as data_length, t."table_name" as data_value FROM "sys"."dependency_tables_on_triggers" t WHERE "table_name" IS NOT NULL AND length("table_name") > (select type_digits from sys._columns where name = 'table_name' and table_id in (select id from tables where name = 'dependency_tables_on_triggers' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L77,	.L100,	.L101,	.L102 # table_name
+% .L100,	.L101,	.L102,	.L103 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 50,	1,	1,	0 # length
 #SELECT '"sys"."dependency_tables_on_triggers"."trigger_name"' as full_col_nm, 1024 as max_allowed_length, length("trigger_name") as data_length, t."trigger_name" as data_value FROM "sys"."dependency_tables_on_triggers" t WHERE "trigger_name" IS NOT NULL AND length("trigger_name") > (select type_digits from sys._columns where name = 'trigger_name' and table_id in (select id from tables where name = 'dependency_tables_on_triggers' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L77,	.L100,	.L101,	.L102 # table_name
+% .L100,	.L101,	.L102,	.L103 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 52,	1,	1,	0 # length
@@ -459,22 +459,22 @@ stdout of test 'check_MaxStrLength_violations` in directory 'sql/test/sys-schema
 % char,	smallint,	int,	varchar # type
 % 24,	1,	1,	0 # length
 #SELECT '"sys"."ids"."name"' as full_col_nm, 1024 as max_allowed_length, length("name") as data_length, t."name" as data_value FROM "sys"."ids" t WHERE "name" IS NOT NULL AND length("name") > (select type_digits from sys._columns where name = 'name' and table_id in (select id from tables where name = 'ids' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L250,	.L251,	.L252,	.L253 # table_name
+% .L311,	.L312,	.L313,	.L314 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 18,	1,	1,	0 # length
 #SELECT '"sys"."ids"."obj_type"' as full_col_nm, 13 as max_allowed_length, length("obj_type") as data_length, t."obj_type" as data_value FROM "sys"."ids" t WHERE "obj_type" IS NOT NULL AND length("obj_type") > (select type_digits from sys._columns where name = 'obj_type' and table_id in (select id from tables where name = 'ids' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L250,	.L251,	.L252,	.L253 # table_name
+% .L311,	.L312,	.L313,	.L314 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	tinyint,	int,	char # type
-% 22,	1,	1,	13 # length
+% 22,	1,	1,	6 # length
 #SELECT '"sys"."ids"."sys_table"' as full_col_nm, 13 as max_allowed_length, length("sys_table") as data_length, t."sys_table" as data_value FROM "sys"."ids" t WHERE "sys_table" IS NOT NULL AND length("sys_table") > (select type_digits from sys._columns where name = 'sys_table' and table_id in (select id from tables where name = 'ids' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L250,	.L251,	.L252,	.L253 # table_name
+% .L311,	.L312,	.L313,	.L314 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	tinyint,	int,	char # type
-% 23,	1,	1,	13 # length
+% 23,	1,	1,	11 # length
 #SELECT '"sys"."ids"."table_name"' as full_col_nm, 1024 as max_allowed_length, length("table_name") as data_length, t."table_name" as data_value FROM "sys"."ids" t WHERE "table_name" IS NOT NULL AND length("table_name") > (select type_digits from sys._columns where name = 'table_name' and table_id in (select id from tables where name = 'ids' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L250,	.L251,	.L252,	.L253 # table_name
+% .L311,	.L312,	.L313,	.L314 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 24,	1,	1,	0 # length
@@ -534,7 +534,7 @@ stdout of test 'check_MaxStrLength_violations` in directory 'sql/test/sys-schema
 % char,	smallint,	int,	varchar # type
 % 22,	1,	1,	0 # length
 #SELECT '"sys"."schemastorage"."schema"' as full_col_nm, 1024 as max_allowed_length, length("schema") as data_length, t."schema" as data_value FROM "sys"."schemastorage" t WHERE "schema" IS NOT NULL AND length("schema") > (select type_digits from sys._columns where name = 'schema' and table_id in (select id from tables where name = 'schemastorage' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L63,	.L64,	.L65,	.L66 # table_name
+% .L65,	.L66,	.L67,	.L70 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 30,	1,	1,	0 # length
@@ -544,32 +544,32 @@ stdout of test 'check_MaxStrLength_violations` in directory 'sql/test/sys-schema
 % char,	smallint,	int,	varchar # type
 % 24,	1,	1,	0 # length
 #SELECT '"sys"."storage"."column"' as full_col_nm, 1024 as max_allowed_length, length("column") as data_length, t."column" as data_value FROM "sys"."storage" t WHERE "column" IS NOT NULL AND length("column") > (select type_digits from sys._columns where name = 'column' and table_id in (select id from tables where name = 'storage' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L44,	.L45,	.L46,	.L47 # table_name
+% .L46,	.L47,	.L50,	.L51 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 24,	1,	1,	0 # length
 #SELECT '"sys"."storage"."location"' as full_col_nm, 1024 as max_allowed_length, length("location") as data_length, t."location" as data_value FROM "sys"."storage" t WHERE "location" IS NOT NULL AND length("location") > (select type_digits from sys._columns where name = 'location' and table_id in (select id from tables where name = 'storage' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L44,	.L45,	.L46,	.L47 # table_name
+% .L46,	.L47,	.L50,	.L51 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 26,	1,	1,	0 # length
 #SELECT '"sys"."storage"."mode"' as full_col_nm, 15 as max_allowed_length, length("mode") as data_length, t."mode" as data_value FROM "sys"."storage" t WHERE "mode" IS NOT NULL AND length("mode") > (select type_digits from sys._columns where name = 'mode' and table_id in (select id from tables where name = 'storage' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L44,	.L45,	.L46,	.L47 # table_name
+% .L46,	.L47,	.L50,	.L51 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	tinyint,	int,	varchar # type
 % 22,	1,	1,	0 # length
 #SELECT '"sys"."storage"."schema"' as full_col_nm, 1024 as max_allowed_length, length("schema") as data_length, t."schema" as data_value FROM "sys"."storage" t WHERE "schema" IS NOT NULL AND length("schema") > (select type_digits from sys._columns where name = 'schema' and table_id in (select id from tables where name = 'storage' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L44,	.L45,	.L46,	.L47 # table_name
+% .L46,	.L47,	.L50,	.L51 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 24,	1,	1,	0 # length
 #SELECT '"sys"."storage"."table"' as full_col_nm, 1024 as max_allowed_length, length("table") as data_length, t."table" as data_value FROM "sys"."storage" t WHERE "table" IS NOT NULL AND length("table") > (select type_digits from sys._columns where name = 'table' and table_id in (select id from tables where name = 'storage' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L44,	.L45,	.L46,	.L47 # table_name
+% .L46,	.L47,	.L50,	.L51 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 23,	1,	1,	0 # length
 #SELECT '"sys"."storage"."type"' as full_col_nm, 1024 as max_allowed_length, length("type") as data_length, t."type" as data_value FROM "sys"."storage" t WHERE "type" IS NOT NULL AND length("type") > (select type_digits from sys._columns where name = 'type' and table_id in (select id from tables where name = 'storage' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L44,	.L45,	.L46,	.L47 # table_name
+% .L46,	.L47,	.L50,	.L51 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 22,	1,	1,	0 # length
@@ -634,12 +634,12 @@ stdout of test 'check_MaxStrLength_violations` in directory 'sql/test/sys-schema
 % char,	int,	int,	varchar # type
 % 22,	1,	1,	0 # length
 #SELECT '"sys"."tablestorage"."schema"' as full_col_nm, 1024 as max_allowed_length, length("schema") as data_length, t."schema" as data_value FROM "sys"."tablestorage" t WHERE "schema" IS NOT NULL AND length("schema") > (select type_digits from sys._columns where name = 'schema' and table_id in (select id from tables where name = 'tablestorage' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L65,	.L66,	.L67,	.L70 # table_name
+% .L67,	.L70,	.L71,	.L72 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 29,	1,	1,	0 # length
 #SELECT '"sys"."tablestorage"."table"' as full_col_nm, 1024 as max_allowed_length, length("table") as data_length, t."table" as data_value FROM "sys"."tablestorage" t WHERE "table" IS NOT NULL AND length("table") > (select type_digits from sys._columns where name = 'table' and table_id in (select id from tables where name = 'tablestorage' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L65,	.L66,	.L67,	.L70 # table_name
+% .L67,	.L70,	.L71,	.L72 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 28,	1,	1,	0 # length
@@ -699,12 +699,12 @@ stdout of test 'check_MaxStrLength_violations` in directory 'sql/test/sys-schema
 % char,	smallint,	int,	varchar # type
 % 26,	1,	1,	0 # length
 #SELECT '"sys"."users"."fullname"' as full_col_nm, 2024 as max_allowed_length, length("fullname") as data_length, t."fullname" as data_value FROM "sys"."users" t WHERE "fullname" IS NOT NULL AND length("fullname") > (select type_digits from sys._columns where name = 'fullname' and table_id in (select id from tables where name = 'users' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L23,	.L24,	.L25,	.L26 # table_name
+% .L25,	.L26,	.L27,	.L30 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 24,	1,	1,	0 # length
 #SELECT '"sys"."users"."name"' as full_col_nm, 1024 as max_allowed_length, length("name") as data_length, t."name" as data_value FROM "sys"."users" t WHERE "name" IS NOT NULL AND length("name") > (select type_digits from sys._columns where name = 'name' and table_id in (select id from tables where name = 'users' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L23,	.L24,	.L25,	.L26 # table_name
+% .L25,	.L26,	.L27,	.L30 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 20,	1,	1,	0 # length
@@ -714,15 +714,15 @@ stdout of test 'check_MaxStrLength_violations` in directory 'sql/test/sys-schema
 % char,	smallint,	int,	varchar # type
 % 32,	1,	1,	0 # length
 #SELECT '"sys"."var_values"."value"' as full_col_nm, 1024 as max_allowed_length, length("value") as data_length, t."value" as data_value FROM "sys"."var_values" t WHERE "value" IS NOT NULL AND length("value") > (select type_digits from sys._columns where name = 'value' and table_id in (select id from tables where name = 'var_values' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L150,	.L151,	.L152,	.L153 # table_name
+% .L160,	.L161,	.L162,	.L163 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 26,	1,	1,	0 # length
 #SELECT '"sys"."var_values"."var_name"' as full_col_nm, 16 as max_allowed_length, length("var_name") as data_length, t."var_name" as data_value FROM "sys"."var_values" t WHERE "var_name" IS NOT NULL AND length("var_name") > (select type_digits from sys._columns where name = 'var_name' and table_id in (select id from tables where name = 'var_values' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L150,	.L151,	.L152,	.L153 # table_name
+% .L160,	.L161,	.L162,	.L163 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	tinyint,	int,	char # type
-% 29,	1,	1,	16 # length
+% 29,	1,	1,	5 # length
 #SELECT '"tmp"."_columns"."default"' as full_col_nm, 2048 as max_allowed_length, length("default") as data_length, t."default" as data_value FROM "tmp"."_columns" t WHERE "default" IS NOT NULL AND length("default") > (select type_digits from sys._columns where name = 'default' and table_id in (select id from tables where name = '_columns' and schema_id in (select id from sys.schemas where name = 'tmp')));
 % .L21,	.L22,	tmp.L23,	tmp.L24 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name

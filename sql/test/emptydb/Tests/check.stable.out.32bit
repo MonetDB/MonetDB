@@ -203,6 +203,7 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSf sys."mbr"
 \dSf sys."md5"
 \dSf sys."median"
+\dSf sys."median_avg"
 \dSf sys."ms_round"
 \dSf sys."ms_str"
 \dSf sys."ms_stuff"
@@ -217,6 +218,7 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSf sys."password_hash"
 \dSf sys."pause"
 \dSf sys."quantile"
+\dSf sys."quantile_avg"
 \dSf sys."querycache"
 \dSf sys."querylog"
 \dSf sys."querylog_calls"
@@ -350,7 +352,6 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSf sys."str_to_timestamp"
 \dSf sys."text"
 \dSf sys."time_to_str"
-\dSf sys."times"
 \dSf sys."timestamp_to_str"
 \dSf sys."tracelog"
 \dSf sys."uuid"
@@ -620,6 +621,7 @@ SYSTEM FUNCTION         sys.mbr_overlap_or_right
 SYSTEM FUNCTION         sys.mbr_right
 SYSTEM FUNCTION         sys.md5
 SYSTEM AGGREGATE        sys.median
+SYSTEM AGGREGATE        sys.median_avg
 SYSTEM AGGREGATE        sys.min
 SYSTEM FUNCTION         sys.min
 SYSTEM FUNCTION         sys.minute
@@ -658,6 +660,7 @@ SYSTEM AGGREGATE        sys.prod
 SYSTEM FUNCTION         sys.prod
 SYSTEM FUNCTION         sys.qgramnormalize
 SYSTEM AGGREGATE        sys.quantile
+SYSTEM AGGREGATE        sys.quantile_avg
 SYSTEM FUNCTION         sys.quarter
 SYSTEM FUNCTION         sys.querycache
 SYSTEM PROCEDURE        sys.querylog
@@ -836,7 +839,6 @@ SYSTEM FUNCTION         sys.tan
 SYSTEM FUNCTION         sys.tanh
 SYSTEM FUNCTION         sys.text
 SYSTEM FUNCTION         sys.time_to_str
-SYSTEM PROCEDURE        sys.times
 SYSTEM FUNCTION         sys.timestamp_to_str
 SYSTEM FUNCTION         sys.tracelog
 SYSTEM FUNCTION         sys.trim
@@ -1063,6 +1065,13 @@ create aggregate median(val smallint) returns smallint external name "aggr"."med
 create aggregate median(val time) returns time external name "aggr"."median";
 create aggregate median(val timestamp) returns timestamp external name "aggr"."median";
 create aggregate median(val tinyint) returns tinyint external name "aggr"."median";
+create aggregate median_avg(val bigint) returns double external name "aggr"."median_avg";
+create aggregate median_avg(val decimal) returns double external name "aggr"."median_avg";
+create aggregate median_avg(val double) returns double external name "aggr"."median_avg";
+create aggregate median_avg(val integer) returns double external name "aggr"."median_avg";
+create aggregate median_avg(val real) returns double external name "aggr"."median_avg";
+create aggregate median_avg(val smallint) returns double external name "aggr"."median_avg";
+create aggregate median_avg(val tinyint) returns double external name "aggr"."median_avg";
 create function ms_round(num double, prc int, truncat int) returns double begin if (truncat = 0) then return round(num, prc); else return ms_trunc(num, prc); end if; end;
 create function ms_str(num float, prc int, truncat int) returns string begin return cast(num as string); end;
 create function ms_stuff(s1 varchar(32), st int, len int, s3 varchar(32)) returns varchar(32) begin declare res varchar(32), aux varchar(32); declare ofset int; if (st < 0 or st > length(s1)) then return ''; end if; set ofset = 1; set res = substring(s1,ofset,st-1); set res = res || s3; set ofset = st + len; set aux = substring(s1,ofset,length(s1)-ofset+1); set res = res || aux; return res; end;
@@ -1088,6 +1097,13 @@ create aggregate quantile(val smallint, q double) returns smallint external name
 create aggregate quantile(val time, q double) returns time external name "aggr"."quantile";
 create aggregate quantile(val timestamp, q double) returns timestamp external name "aggr"."quantile";
 create aggregate quantile(val tinyint, q double) returns tinyint external name "aggr"."quantile";
+create aggregate quantile_avg(val bigint, q double) returns double external name "aggr"."quantile_avg";
+create aggregate quantile_avg(val decimal, q double) returns double external name "aggr"."quantile_avg";
+create aggregate quantile_avg(val double, q double) returns double external name "aggr"."quantile_avg";
+create aggregate quantile_avg(val integer, q double) returns double external name "aggr"."quantile_avg";
+create aggregate quantile_avg(val real, q double) returns double external name "aggr"."quantile_avg";
+create aggregate quantile_avg(val smallint, q double) returns double external name "aggr"."quantile_avg";
+create aggregate quantile_avg(val tinyint, q double) returns double external name "aggr"."quantile_avg";
 create function sys.querycache() returns table (query string, count int) external name sql.dump_cache;
 create procedure sys.querylog(filename string) external name sql.logfile;
 create function sys.querylog_calls() returns table(id oid, "start" timestamp, "stop" timestamp, arguments string, tuples bigint, run bigint, ship bigint, cpu int, io int) external name sql.querylog_calls;
@@ -1277,7 +1293,6 @@ create function str_to_time(s string, format string) returns time external name 
 create function str_to_timestamp(s string, format string) returns timestamp external name mtime."str_to_timestamp";
 create function "text" (p inet) returns clob external name inet."text";
 create function time_to_str(d time, format string) returns string external name mtime."time_to_str";
-create procedure times() external name sql.times;
 create function timestamp_to_str(d timestamp, format string) returns string external name mtime."timestamp_to_str";
 create function sys.tracelog() returns table (event integer, clk varchar(20), pc varchar(50), thread int, ticks bigint, rrsmb bigint, vmmb bigint, reads bigint, writes bigint, minflt bigint, majflt bigint, nvcsw bigint, stmt string) external name sql.dump_trace;
 create function sys.uuid() returns uuid external name uuid."new";
@@ -2570,6 +2585,13 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"median",	"SYSTEM",	"create aggregate median(val time) returns time external name \"aggr\".\"median\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"time",	1,	0,	"out",	"val",	"time",	1,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"median",	"SYSTEM",	"create aggregate median(val timestamp) returns timestamp external name \"aggr\".\"median\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"timestamp",	7,	0,	"out",	"val",	"timestamp",	7,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"median",	"SYSTEM",	"create aggregate median(val tinyint) returns tinyint external name \"aggr\".\"median\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"tinyint",	8,	0,	"out",	"val",	"tinyint",	8,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"median_avg",	"SYSTEM",	"create aggregate median_avg(val bigint) returns double external name \"aggr\".\"median_avg\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"val",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"median_avg",	"SYSTEM",	"create aggregate median_avg(val decimal) returns double external name \"aggr\".\"median_avg\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"val",	"decimal",	18,	3,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"median_avg",	"SYSTEM",	"create aggregate median_avg(val double) returns double external name \"aggr\".\"median_avg\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"val",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"median_avg",	"SYSTEM",	"create aggregate median_avg(val integer) returns double external name \"aggr\".\"median_avg\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"val",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"median_avg",	"SYSTEM",	"create aggregate median_avg(val real) returns double external name \"aggr\".\"median_avg\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"val",	"real",	24,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"median_avg",	"SYSTEM",	"create aggregate median_avg(val smallint) returns double external name \"aggr\".\"median_avg\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"val",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"median_avg",	"SYSTEM",	"create aggregate median_avg(val tinyint) returns double external name \"aggr\".\"median_avg\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"val",	"tinyint",	8,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"min",	"SYSTEM",	"min",	"aggr",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"any",	0,	0,	"out",	"arg",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"min",	"SYSTEM",	"min",	"sql",	"Internal C",	"Analytic function",	false,	false,	false,	"res_0",	"any",	0,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"minute",	"SYSTEM",	"minutes",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"sec_interval",	13,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2680,6 +2702,13 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"quantile",	"SYSTEM",	"create aggregate quantile(val time, q double) returns time external name \"aggr\".\"quantile\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"time",	1,	0,	"out",	"val",	"time",	1,	0,	"in",	"q",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"quantile",	"SYSTEM",	"create aggregate quantile(val timestamp, q double) returns timestamp external name \"aggr\".\"quantile\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"timestamp",	7,	0,	"out",	"val",	"timestamp",	7,	0,	"in",	"q",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"quantile",	"SYSTEM",	"create aggregate quantile(val tinyint, q double) returns tinyint external name \"aggr\".\"quantile\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"tinyint",	8,	0,	"out",	"val",	"tinyint",	8,	0,	"in",	"q",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"quantile_avg",	"SYSTEM",	"create aggregate quantile_avg(val bigint, q double) returns double external name \"aggr\".\"quantile_avg\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"val",	"bigint",	64,	0,	"in",	"q",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"quantile_avg",	"SYSTEM",	"create aggregate quantile_avg(val decimal, q double) returns double external name \"aggr\".\"quantile_avg\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"val",	"decimal",	18,	3,	"in",	"q",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"quantile_avg",	"SYSTEM",	"create aggregate quantile_avg(val double, q double) returns double external name \"aggr\".\"quantile_avg\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"val",	"double",	53,	0,	"in",	"q",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"quantile_avg",	"SYSTEM",	"create aggregate quantile_avg(val integer, q double) returns double external name \"aggr\".\"quantile_avg\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"val",	"int",	32,	0,	"in",	"q",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"quantile_avg",	"SYSTEM",	"create aggregate quantile_avg(val real, q double) returns double external name \"aggr\".\"quantile_avg\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"val",	"real",	24,	0,	"in",	"q",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"quantile_avg",	"SYSTEM",	"create aggregate quantile_avg(val smallint, q double) returns double external name \"aggr\".\"quantile_avg\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"val",	"smallint",	16,	0,	"in",	"q",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"quantile_avg",	"SYSTEM",	"create aggregate quantile_avg(val tinyint, q double) returns double external name \"aggr\".\"quantile_avg\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"val",	"tinyint",	8,	0,	"in",	"q",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"quarter",	"SYSTEM",	"quarter",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"date",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"quarter",	"SYSTEM",	"quarter",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"timestamp",	7,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"quarter",	"SYSTEM",	"quarter",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"timestamptz",	7,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3735,7 +3764,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"tanh",	"SYSTEM",	"tanh",	"mmath",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"real",	24,	0,	"out",	"arg_1",	"real",	24,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"text",	"SYSTEM",	"create function \"text\" (p inet) returns clob external name inet.\"text\";",	"inet",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"p",	"inet",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"time_to_str",	"SYSTEM",	"create function time_to_str(d time, format string) returns string external name mtime.\"time_to_str\";",	"mtime",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"d",	"time",	1,	0,	"in",	"format",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"times",	"SYSTEM",	"create procedure times() external name sql.times;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"timestamp_to_str",	"SYSTEM",	"create function timestamp_to_str(d timestamp, format string) returns string external name mtime.\"timestamp_to_str\";",	"mtime",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"d",	"timestamp",	7,	0,	"in",	"format",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"tracelog",	"SYSTEM",	"create function sys.tracelog() returns table (event integer, clk varchar(20), pc varchar(50), thread int, ticks bigint, rrsmb bigint, vmmb bigint, reads bigint, writes bigint, minflt bigint, majflt bigint, nvcsw bigint, stmt string) external name sql.dump_trace;",	"sql",	"MAL",	"Function returning a table",	true,	false,	false,	"event",	"int",	32,	0,	"out",	"clk",	"varchar",	20,	0,	"out",	"pc",	"varchar",	50,	0,	"out",	"thread",	"int",	32,	0,	"out",	"ticks",	"bigint",	64,	0,	"out",	"rrsmb",	"bigint",	64,	0,	"out",	"vmmb",	"bigint",	64,	0,	"out",	"reads",	"bigint",	64,	0,	"out",	"writes",	"bigint",	64,	0,	"out",	"minflt",	"bigint",	64,	0,	"out",	"majflt",	"bigint",	64,	0,	"out",	"nvcsw",	"bigint",	64,	0,	"out",	"stmt",	"clob",	0,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"trim",	"SYSTEM",	"trim",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"char",	0,	0,	"out",	"arg_1",	"char",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4678,6 +4706,13 @@ drop function pcre_replace(string, string, string, string);
 [ "median",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "median",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "median",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "median_avg",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "median_avg",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "median_avg",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "median_avg",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "median_avg",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "median_avg",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "median_avg",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "ms_round",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "ms_str",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "ms_stuff",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -4700,6 +4735,13 @@ drop function pcre_replace(string, string, string, string);
 [ "quantile",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "quantile",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "quantile",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "quantile_avg",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "quantile_avg",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "quantile_avg",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "quantile_avg",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "quantile_avg",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "quantile_avg",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "quantile_avg",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "queue",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "radians",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "rejects",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -4852,7 +4894,6 @@ drop function pcre_replace(string, string, string, string);
 [ "text",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "text",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "time_to_str",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "times",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "timestamp_to_str",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "tojsonarray",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "tojsonarray",	"public",	"EXECUTE",	"monetdb",	0	]
