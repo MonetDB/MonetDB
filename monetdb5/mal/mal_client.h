@@ -181,7 +181,7 @@ typedef struct CLIENT {
 	size_t blocksize;
 	protocol_version protocol;
 	bool filetrans;			/* whether the client can read files for us */
-	char *query;			/* string, identify whatever we're working on */
+	const char *(*getquery)(struct CLIENT *);
 } *Client, ClientRec;
 
 mal_export bool    MCinit(void);
