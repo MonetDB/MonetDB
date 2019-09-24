@@ -819,7 +819,7 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 	} while (0)
 
 static BAT *
-BATcalcisnil_implementation(BAT *b, BAT *s, int notnil)
+BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 {
 	BAT *bn;
 	BUN i, ncand;
@@ -903,13 +903,13 @@ BATcalcisnil_implementation(BAT *b, BAT *s, int notnil)
 BAT *
 BATcalcisnil(BAT *b, BAT *s)
 {
-	return BATcalcisnil_implementation(b, s, 0);
+	return BATcalcisnil_implementation(b, s, false);
 }
 
 BAT *
 BATcalcisnotnil(BAT *b, BAT *s)
 {
-	return BATcalcisnil_implementation(b, s, 1);
+	return BATcalcisnil_implementation(b, s, true);
 }
 
 gdk_return
@@ -10433,7 +10433,7 @@ xor_typeswitchloop(const void *lft, int incr1,
 		   struct canditer *restrict ci1,
 		   struct canditer *restrict ci2,
 		   oid candoff1, oid candoff2,
-		   int nonil, const char *func)
+		   bool nonil, const char *func)
 {
 	oid x1, x2;
 	BUN i, j, k;
@@ -10627,7 +10627,7 @@ or_typeswitchloop(const void *lft, int incr1,
 		  struct canditer *restrict ci1,
 		  struct canditer *restrict ci2,
 		  oid candoff1, oid candoff2,
-		  int nonil, const char *func)
+		  bool nonil, const char *func)
 {
 	oid x1, x2;
 	BUN i, j, k;
@@ -10827,7 +10827,7 @@ and_typeswitchloop(const void *lft, int incr1,
 		   struct canditer *restrict ci1,
 		   struct canditer *restrict ci2,
 		   oid candoff1, oid candoff2,
-		   int nonil, const char *func)
+		   bool nonil, const char *func)
 {
 	oid x1, x2;
 	BUN i, j, k;
@@ -12270,9 +12270,9 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 static BAT *
 BATcalcifthenelse_intern(BAT *b,
 			 const void *col1, int incr1, const char *heap1,
-			 int width1, int nonil1, oid seq1,
+			 int width1, bool nonil1, oid seq1,
 			 const void *col2, int incr2, const char *heap2,
-			 int width2, int nonil2, oid seq2,
+			 int width2, bool nonil2, oid seq2,
 			 int tpe)
 {
 	BAT *bn;
