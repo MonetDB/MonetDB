@@ -77,6 +77,8 @@ SELECT (SELECT CAST(SUM(i) AS BIGINT) FROM integers), (SELECT 42);
 
 SELECT 1 FROM integers WHERE SUM(i) > 1; --aggregates not allowed in where clause
 
+SELECT SUM(SUM(i)) FROM integers; -- aggregates cannot be nested
+
 drop TABLE integers;
 
 -- varchar tests

@@ -116,6 +116,7 @@ sql5_export str zero_or_one_error_bat(ptr ret, const bat *bid, const bat *err );
 sql5_export str zero_or_one(ptr ret, const bat *bid);
 sql5_export str SQLall(ptr ret, const bat *bid);
 sql5_export str SQLnil(bit *ret, const bat *bid);
+sql5_export str SQLnil_grp(bat *ret, const bat *l, const bat *gp, const bat *gpe, bit *no_nil);
 sql5_export str SQLany_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr);
 sql5_export str SQLall_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr);
 sql5_export str SQLanyequal(bit *ret, const bat *l, const bat *r);

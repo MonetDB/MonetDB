@@ -2279,8 +2279,6 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exps_bind_column(f->exps, e->r, NULL);
 		if (!ne || (ne->type != e_column && ne->type != e_atom))
 			return NULL;
-		if (ne && list_position(f->exps, ne) >= list_position(f->exps, e)) 
-			return NULL;
 		while (ne && f->op == op_project && ne->type == e_column) {
 			sql_exp *oe = e, *one = ne;
 
@@ -7188,8 +7186,22 @@ rel_simplify_like_select(int *changes, mvc *sql, sql_rel *rel)
 	(void)sql;
 	if (is_select(rel->op) && rel->exps) {
 		node *n;
-		list *exps = sa_list(sql->sa);
+		list *exps;
+		int needed = 0;
 
+		for (n = rel->exps->h; n && !needed; n = n->next) {
+			sql_exp *e = n->data;
+			list *l = e->l;
+			list *r = e->r;
+
+			if (e->type == e_cmp && get_cmp(e) == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0 && list_length(l) == 1 && list_length(r) <= 2 && !is_anti(e))
+				needed = 1;
+		}
+
+		if (!needed)
+			return rel;
+	       
+		exps = sa_list(sql->sa);
 		if (exps == NULL)
 			return NULL;
 		for (n = rel->exps->h; n; n = n->next) {
@@ -7955,7 +7967,7 @@ rel_reduce_casts(int *changes, mvc *sql, sql_rel *rel)
 				}
 			}
 			if (anti) set_anti(e);
-			n->data = e;	
+			n->data = e;
 		}
 	}
 	return rel;
@@ -9086,7 +9098,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	if (gp.cnt[op_select] || gp.cnt[op_join])
 		rel = rewrite(sql, rel, &rel_use_index, &changes); 
 
-	if (gp.cnt[op_project]) 
+	if (gp.cnt[op_project])
 		rel = rewrite_topdown(sql, rel, &rel_push_project_down_union, &changes);
 
 	/* Remove unused expressions */

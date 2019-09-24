@@ -133,6 +133,7 @@ VIEWcreate(oid seq, BAT *b)
 			BBPunshare(tp);
 		if (bn->tvheap)
 			BBPunshare(bn->tvheap->parentid);
+		MT_lock_destroy(&bn->batIdxLock);
 		GDKfree(bn);
 		return NULL;
 	}

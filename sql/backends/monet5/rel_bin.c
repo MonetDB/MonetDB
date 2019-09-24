@@ -573,9 +573,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (from->type->localtype == 0) {
 			l = stmt_atom(be, atom_general(sql->sa, to, NULL));
 		} else {
-	       		l = exp_bin(be, e->l, left, right, grp, ext, cnt, sel);
+			l = exp_bin(be, e->l, left, right, grp, ext, cnt, sel);
 		}
-		if (!l) 
+		if (!l)
 			return NULL;
 		s = stmt_convert(be, l, from, to, sel);
 	} 	break;
@@ -1287,6 +1287,8 @@ rel_parse_value(backend *be, char *query, char emode)
 	bstream_destroy(m->scanner.rs);
 
 	m->sym = NULL;
+	o.vars = m->vars;	/* may have been realloc'ed */
+	o.sizevars = m->sizevars;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
 		char errstr[ERRSIZE];
@@ -5686,7 +5688,7 @@ rel_bin(backend *be, sql_rel *rel)
 {
 	mvc *sql = be->mvc;
 	list *refs = sa_list(sql->sa);
-	int sqltype = sql->type;
+	sql_query_t sqltype = sql->type;
 	stmt *s = subrel_bin(be, rel, refs);
 
 	if (sqltype == Q_SCHEMA)
@@ -5700,7 +5702,7 @@ output_rel_bin(backend *be, sql_rel *rel )
 {
 	mvc *sql = be->mvc;
 	list *refs = sa_list(sql->sa);
-	int sqltype = sql->type;
+	sql_query_t sqltype = sql->type;
 	stmt *s;
 
 	if (refs == NULL)

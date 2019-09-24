@@ -58,6 +58,9 @@
 # include <netdb.h>
 # include <netinet/in.h>
 #endif
+#ifdef HAVE_POLL_H
+#include <poll.h>
+#endif
 #ifdef HAVE_SYS_UIO_H
 # include <sys/uio.h>
 #endif
@@ -275,8 +278,13 @@ SERVERlistenThread(SOCKET *Sock)
 {
 	char *msg = 0;
 	int retval;
+#ifdef HAVE_POLL
+	struct pollfd pfd[2];
+	nfds_t npfd;
+#else
 	struct timeval tv;
 	fd_set fds;
+#endif
 	SOCKET sock = INVALID_SOCKET;
 	SOCKET usock = INVALID_SOCKET;
 	SOCKET msgsock = INVALID_SOCKET;
@@ -291,6 +299,17 @@ SERVERlistenThread(SOCKET *Sock)
 	(void) ATOMIC_INC(&nlistener);
 
 	do {
+#ifdef HAVE_POLL
+		npfd = 0;
+		if (sock != INVALID_SOCKET)
+			pfd[npfd++] = (struct pollfd) {.fd = sock, .events = POLLIN};
+#ifdef HAVE_SYS_UN_H
+		if (usock != INVALID_SOCKET)
+			pfd[npfd++] = (struct pollfd) {.fd = usock, .events = POLLIN};
+#endif
+		/* Wait up to 0.025 seconds (0.001 if testing) */
+		retval = poll(pfd, npfd, GDKdebug & FORCEMITOMASK ? 10 : 25);
+#else
 		FD_ZERO(&fds);
 		if (sock != INVALID_SOCKET)
 			FD_SET(sock, &fds);
@@ -298,7 +317,7 @@ SERVERlistenThread(SOCKET *Sock)
 		if (usock != INVALID_SOCKET)
 			FD_SET(usock, &fds);
 #endif
-		/* Wait up to 0.025 seconds (0.01 if testing) */
+		/* Wait up to 0.025 seconds (0.001 if testing) */
 		tv.tv_sec = 0;
 		tv.tv_usec = GDKdebug & FORCEMITOMASK ? 10000 : 25000;
 
@@ -309,6 +328,7 @@ SERVERlistenThread(SOCKET *Sock)
 			msgsock = usock;
 #endif
 		retval = select((int)msgsock + 1, &fds, NULL, NULL, &tv);
+#endif
 		if (ATOMIC_GET(&serverexiting) || GDKexiting())
 			break;
 		if (retval == 0) {
@@ -328,7 +348,13 @@ SERVERlistenThread(SOCKET *Sock)
 			}
 			continue;
 		}
-		if (sock != INVALID_SOCKET && FD_ISSET(sock, &fds)) {
+		if (sock != INVALID_SOCKET &&
+#ifdef HAVE_POLL
+			(npfd > 0 && pfd[0].fd == sock && pfd[0].revents & POLLIN)
+#else
+			FD_ISSET(sock, &fds)
+#endif
+			) {
 			if ((msgsock = accept4(sock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == INVALID_SOCKET) {
 				if (
 #ifdef _MSC_VER
@@ -346,7 +372,14 @@ SERVERlistenThread(SOCKET *Sock)
 			(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
 #endif
 #ifdef HAVE_SYS_UN_H
-		} else if (usock != INVALID_SOCKET && FD_ISSET(usock, &fds)) {
+		} else if (usock != INVALID_SOCKET &&
+#ifdef HAVE_POLL
+				   ((npfd > 0 && pfd[0].fd == usock && pfd[0].revents & POLLIN) ||
+					(npfd > 1 && pfd[1].fd == usock && pfd[1].revents & POLLIN))
+#else
+				   FD_ISSET(usock, &fds)
+#endif
+			) {
 			struct msghdr msgh;
 			struct iovec iov;
 			char buf[1];

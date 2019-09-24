@@ -164,7 +164,7 @@ uescape_xform(char *restrict s, const char *restrict esc)
 %lex-param { void *m }
 
 /* reentrant parser */
-%pure-parser
+%define api.pure
 %union {
 	int		i_val,bval;
 	lng		l_val,operation;

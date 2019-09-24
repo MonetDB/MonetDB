@@ -1,3 +1,5 @@
+start transaction;
+
 create table get_results (schem string, clust string, real_time bigint);
 create procedure save_times (schem string, clust string)
 BEGIN
@@ -14,3 +16,5 @@ select * from get_results;
 
 drop ALL procedure save_times;
 drop table get_results;
+
+rollback;

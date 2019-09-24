@@ -395,6 +395,13 @@ exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe)
 	return e;
 }
 
+sql_exp *
+exp_null(sql_allocator *sa, sql_subtype *tpe)
+{
+	atom *a = atom_general(sa, tpe, NULL);
+	return exp_atom(sa, a);
+}
+
 atom *
 exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg)
 {

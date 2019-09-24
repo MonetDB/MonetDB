@@ -40,14 +40,24 @@ SELECT col1 IN (SELECT SUM(ColID + col1) FROM tbl_ProductSales) FROM another_T G
 	-- False
 	-- False
 
+SELECT (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1) FROM another_T GROUP BY col1, col2;
+	-- NULL
+	-- NULL
+	-- 2
+	-- NULL
+
+SELECT
+	EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1)
+FROM another_T GROUP BY col1, col2, col5, col8;
+	-- True
+	-- False
+	-- False
+	-- False
+
 SELECT
 	EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1),
 	(SELECT ColID FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5))
-FROM another_T GROUP BY col1, col2, col5, col8;
-	-- True  True
-	-- False True
-	-- False True
-	-- False True
+FROM another_T GROUP BY col1, col2, col5, col8; --error, more than one row returned by a subquery used as an expression 
 
 SELECT
 	-col1 IN (SELECT ColID FROM tbl_ProductSales),
@@ -113,26 +123,21 @@ GROUP BY col1, col2, col5;
 	-- True  False 1 0
 
 SELECT
-	SUM(CAST(t1.col1 IN (SELECT t1.col1 FROM another_T) AS INTEGER))
-FROM another_T t1
-GROUP BY t1.col2;
-	-- 1
-	-- 1
-	-- 1
-	-- 1
-
-SELECT
-	DISTINCT
-	NOT MIN(col1 + 7) OVER (PARTITION BY SUM(DISTINCT col7 * col1) - AVG(col8 * NULL) ORDER BY MIN(col5 - col1) - MAX(DISTINCT col6) ROWS UNBOUNDED PRECEDING) 
-		NOT IN (SELECT MAX(col1 - 1) * MIN(DISTINCT col2) FROM another_T)
+	SUM(col1) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2)
 FROM another_T
-GROUP BY col1; --this query is right, but I'm leaving it here
+GROUP BY col4;
+	-- False
+	-- False
+	-- False
 	-- False
 
 SELECT
-	(SELECT MAX(col6) FROM tbl_ProductSales) IN (SELECT MIN(col3) FROM another_T)
-FROM another_T
-GROUP BY col1; --error, subquery returns more than 1 row
+    (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t1.col5 = t2.col1)
+FROM another_T t1;
+	-- NULL
+	-- NULL
+	-- NULL
+	-- NULL
 
 SELECT
 	t1.col1 = ALL (SELECT col4 + SUM(t1.col5) FROM another_T INNER JOIN tbl_ProductSales ON another_T.col1 = tbl_ProductSales.ColID)
@@ -144,13 +149,18 @@ GROUP BY t1.col1;
 	-- False
 
 SELECT
+	(SELECT MAX(col6) FROM tbl_ProductSales) IN (SELECT MIN(col3) FROM another_T)
+FROM another_T
+GROUP BY col1; --error, subquery returns more than 1 row
+
+SELECT
 	SUM(col3 + col2)
 FROM another_T
 GROUP BY col1
 HAVING NOT col1 = ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> AVG(col1));
 	-- 5
-	-- 55
 	-- 555
+	-- 55
 	-- 5555
 
 SELECT
@@ -159,18 +169,51 @@ FROM another_T
 GROUP BY col1
 HAVING NOT col1 <> ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID);
 	-- 3
-	-- 363
 	-- 36963
+	-- 363
 	-- 3702963
 
 SELECT
-	SUM(col1) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2)
-FROM another_T
-GROUP BY col4;
+	SUM(CAST(t1.col1 IN (SELECT t1.col1 FROM another_T) AS INTEGER))
+FROM another_T t1
+GROUP BY t1.col2;
+	-- 1
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
+    (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t1.col7 <> SOME(SELECT MAX(t1.col1 + t3.col4) FROM another_T t3))
+FROM another_T t1;
+	-- 1
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
+    CASE WHEN 1 IN (SELECT (SELECT MAX(col7)) UNION ALL (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t2.col5 = t2.col1)) THEN 2 ELSE NULL END
+FROM another_T t1;	
+	-- NULL
+
+SELECT
+    CASE WHEN NOT col1 NOT IN (SELECT (SELECT MAX(col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON t2.col5 = t1.col1)) THEN 1 ELSE 2 END
+FROM another_T t1
+GROUP BY col1;
+	-- 1
+	-- 2
+	-- 2
+	-- 2
+
+SELECT
+    t1.col1 IN (SELECT ColID FROM tbl_ProductSales GROUP BY t1.col1, tbl_ProductSales.ColID)
+FROM another_T t1
+GROUP BY col1;
+	-- True
 	-- False
 	-- False
 	-- False
-	-- False
+
+SELECT t1.col1 FROM another_T t1 WHERE t1.col1 >= ANY(SELECT t1.col1 + t2.col1 FROM another_T t2); --empty result
 
 INSERT INTO tbl_ProductSales VALUES (0, 'a', 'b', 0);
 SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1; 

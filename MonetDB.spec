@@ -84,9 +84,9 @@
 %bcond_without rintegration
 %endif
 
-# On Fedora and RHEL 7, create the MonetDB-python2 package.
+# On Fedora <= 30 and RHEL 7, create the MonetDB-python2 package.
 # On RHEL 6, numpy is too old.
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+%if 0%{?rhel} == 7 || %{!?fedora:1000}%{?fedora} <= 30
 %bcond_without py2integration
 %endif
 %if %{?rhel:0}%{!?rhel:1}
@@ -164,12 +164,7 @@ BuildRequires: python-devel
 # RedHat Enterprise Linux calls it simply numpy
 BuildRequires: numpy
 %else
-%if (0%{?fedora} >= 24)
 BuildRequires: python2-numpy
-%else
-# Fedora <= 23 doesn't have python2-numpy
-BuildRequires: numpy
-%endif
 %endif
 %endif
 %if %{with py3integration}
@@ -1053,7 +1048,12 @@ do
   install -p -m 644 buildtools/selinux/monetdb.pp.${selinuxvariant} \
     %{buildroot}%{_datadir}/selinux/${selinuxvariant}/monetdb.pp
 done
-/usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
+if [ -x /usr/sbin/hardlink ]; then
+    /usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
+else
+    # Fedora 31
+    /usr/bin/hardlink -cv %{buildroot}%{_datadir}/selinux
+fi
 %endif
 
 %post -p /sbin/ldconfig

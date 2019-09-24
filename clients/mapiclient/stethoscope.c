@@ -110,7 +110,7 @@ renderEvent(EventRecord *ev){
 		return;
 	fprintf(s, "[ ");
 	fprintf(s, "%"PRId64",	", ev->eventnr);
-	printf("\"%s\",	", ev->time);
+	fprintf(s, "\"%s\",	", ev->time);
 	if( ev->function && *ev->function)
 		fprintf(s, "\"%s[%d]%d\",	", ev->function, ev->pc, ev->tag);
 	else

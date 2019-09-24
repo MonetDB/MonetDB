@@ -765,17 +765,15 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 	if (!s)
 		s = cur_schema(sql);
 	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system);
-	if (nf && nf->query && nf->lang <= FUNC_LANG_SQL) {
+	if (nf && nf->query && !LANG_EXT(nf->lang)) {
 		char *buf;
 		sql_rel *r = NULL;
 		sql_allocator *sa = sql->sa;
 
-		sql->sa = sa_create();
-		if(!sql->sa)
-			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		buf = sa_strdup(sql->sa, nf->query);
-		if(!buf)
-			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		if (!(sql->sa = sa_create()))
+			throw(SQL, "sql.catalog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		if (!(buf = sa_strdup(sql->sa, nf->query)))
+			throw(SQL, "sql.catalog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0);
