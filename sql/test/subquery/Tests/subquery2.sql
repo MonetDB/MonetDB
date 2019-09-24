@@ -28,6 +28,7 @@ CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product
 INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Game',400),(3,'Fashion','Shirt',500),(4,'Fashion','Shorts',100);
 CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
 INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
+
 SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1; 
 	-- False
 	-- False
@@ -132,7 +133,7 @@ GROUP BY col4;
 	-- False
 
 SELECT
-    (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t1.col5 = t2.col1)
+	(SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t1.col5 = t2.col1)
 FROM another_T t1;
 	-- NULL
 	-- NULL
@@ -147,6 +148,18 @@ GROUP BY t1.col1;
 	-- False
 	-- False
 	-- False
+
+SELECT
+	SUM(t1.col6) NOT IN (SELECT t1.col7),
+	t1.col6 NOT IN (SELECT t1.col7),
+	t1.col6 IN (SELECT SUM(t1.col7)),
+	t1.col6 IN (SELECT SUM(t1.col7) FROM tbl_ProductSales)
+FROM another_T t1
+GROUP BY t1.col6, t1.col7;
+	-- True True False False
+	-- True True False False
+	-- True True False False
+	-- True True False False
 
 SELECT
 	(SELECT MAX(col6) FROM tbl_ProductSales) IN (SELECT MIN(col3) FROM another_T)
@@ -191,12 +204,12 @@ FROM another_T t1;
 	-- 1
 
 SELECT
-    CASE WHEN 1 IN (SELECT (SELECT MAX(col7)) UNION ALL (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t2.col5 = t2.col1)) THEN 2 ELSE NULL END
+	CASE WHEN 1 IN (SELECT (SELECT MAX(col7)) UNION ALL (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t2.col5 = t2.col1)) THEN 2 ELSE NULL END
 FROM another_T t1;	
 	-- NULL
 
 SELECT
-    CASE WHEN NOT col1 NOT IN (SELECT (SELECT MAX(col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON t2.col5 = t1.col1)) THEN 1 ELSE 2 END
+	CASE WHEN NOT col1 NOT IN (SELECT (SELECT MAX(col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON t2.col5 = t1.col1)) THEN 1 ELSE 2 END
 FROM another_T t1
 GROUP BY col1;
 	-- 1
@@ -205,7 +218,7 @@ GROUP BY col1;
 	-- 2
 
 SELECT
-    t1.col1 IN (SELECT ColID FROM tbl_ProductSales GROUP BY t1.col1, tbl_ProductSales.ColID)
+	t1.col1 IN (SELECT ColID FROM tbl_ProductSales GROUP BY t1.col1, tbl_ProductSales.ColID)
 FROM another_T t1
 GROUP BY col1;
 	-- True
