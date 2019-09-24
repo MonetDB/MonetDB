@@ -51,6 +51,8 @@ FROM another_T t1
 GROUP BY CUBE(t1.col1, t1.col2);
 
 SELECT
+    NOT GROUPING(t1.col6) IN (SELECT SUM(t1.col6) FROM tbl_ProductSales tp HAVING MAX(t1.col1) > MIN(tp.colID)),
+    GROUPING(t1.col6) IN (SELECT SUM(t1.col7) HAVING GROUPING(t1.col7) < SUM(t1.col4)),
     GROUPING(t1.col6) = ALL (SELECT 1),
     GROUPING(t1.col6) = ALL (SELECT SUM(t1.col7)),
     SUM(t1.col6) = ALL (SELECT GROUPING(t1.col7)),
@@ -61,6 +63,8 @@ GROUP BY CUBE(t1.col6, t1.col7);
 
 SELECT
     DISTINCT
+    NOT GROUPING(t1.col6) IN (SELECT SUM(t1.col6) FROM tbl_ProductSales tp HAVING MAX(t1.col1) > MIN(tp.colID)),
+    GROUPING(t1.col6) IN (SELECT SUM(t1.col7) HAVING GROUPING(t1.col7) < SUM(t1.col4)),
     GROUPING(t1.col6) = ALL (SELECT 1),
     GROUPING(t1.col6) = ALL (SELECT SUM(t1.col7)),
     SUM(t1.col6) = ALL (SELECT GROUPING(t1.col7)),
