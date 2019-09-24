@@ -4529,10 +4529,10 @@ list_power_set(sql_allocator *sa, list* input) /* cube */
 		for (node *n = input->h ; n ; n = n->next) {
 			/* if j'th bit of i is set, then append */
 			if (i & (1 << j))
-				list_append(ll, n->data);
+				list_prepend(ll, n->data);
 			j++;
 		}
-		list_append(res, ll);
+		list_prepend(res, ll);
 	}
 	return res;
 }

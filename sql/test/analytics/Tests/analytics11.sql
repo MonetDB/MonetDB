@@ -1,5 +1,7 @@
 CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product_Name  varchar(64), TotalSales int); 
+CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
 INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Game',400),(3,'Fashion','Shirt',500),(4,'Fashion','Shorts',100);
+INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
 
 SELECT 1
 FROM tbl_ProductSales
@@ -57,6 +59,15 @@ SELECT
     GROUPING(Product_Name, Product_Category)
 FROM tbl_ProductSales
 GROUP BY Product_Category, Product_Name; --error, requires ROLLUP, CUBE or GROUPING SETS
+
+SELECT
+    col1 IN (SELECT ColID + col2 FROM tbl_ProductSales)
+FROM another_T
+GROUP BY ROLLUP(col1); --error, col2 is not a grouping column
+
+SELECT
+    (SELECT GROUPING(t1.col1) FROM tbl_ProductSales)
+FROM another_T t1; --error, more than one row returned from subquery
 
 -- Valid GROUPING calls
 
@@ -173,9 +184,6 @@ GROUP BY CUBE(Product_Category, Product_Name, tbl_ProductSales.ColID), ROLLUP(tb
 ORDER BY SUM(TotalSales) DESC
 LIMIT 1;
 
-CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
-INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
-
 SELECT
     col1 IN (SELECT ColID FROM tbl_ProductSales)
 FROM another_T
@@ -224,6 +232,13 @@ FROM another_T t1
 GROUP BY CUBE(t1.col1, t1.col2);
 
 SELECT
+    GROUPING(t1.col6) = ALL (SELECT 1),
+    GROUPING(t1.col6) = ALL (SELECT GROUPING(t1.col7)),
+    GROUPING(t1.col6) = ALL (SELECT GROUPING(t1.col7) FROM tbl_ProductSales)
+FROM another_T t1
+GROUP BY CUBE(t1.col6, t1.col7);
+
+SELECT
     GROUPING(t1.col6, t1.col7) IN (SELECT SUM(t2.col2) FROM another_T t2 GROUP BY t2.col5),
     NOT 32 * GROUPING(t1.col7, t1.col6) IN (SELECT MAX(t2.col2) FROM another_T t2),
     GROUPING(t1.col6, t1.col7) NOT IN (SELECT MIN(t2.col2) FROM another_T t2 GROUP BY t1.col6),
@@ -268,11 +283,6 @@ SELECT
     col2 * NULL
 FROM another_T
 GROUP BY CUBE(col1, col2, col5, col8), GROUPING SETS (());
-
-SELECT
-    col1 IN (SELECT ColID + col2 FROM tbl_ProductSales)
-FROM another_T
-GROUP BY ROLLUP(col1); --error, col2 is not a grouping column
 
 SELECT
     GROUPING(col1, col2, col3, col4, col5, col6, col7, col8), AVG(col1), CAST(SUM(col2) * 3 AS BIGINT), col3 + col4,

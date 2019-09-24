@@ -97,7 +97,14 @@ QUERY = SELECT
         GROUP BY Product_Category, Product_Name; --error, requires ROLLUP, CUBE or GROUPING SETS
 ERROR = !GROUPING aggregate function requires ROLLUP, CUBE or GROUPING SETS clauses in GROUP BY
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-21690/.s.monetdb.30152
+MAPI  = (monetdb) /var/tmp/mtest-11458/.s.monetdb.34481
+QUERY = SELECT
+            col1 IN (SELECT ColID + col2 FROM tbl_ProductSales)
+        FROM another_T
+        GROUP BY ROLLUP(col1); --error, col2 is not a grouping column
+ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-11458/.s.monetdb.34481
 QUERY = SELECT
             GROUPING(ColID, ColID)
         FROM tbl_ProductSales
@@ -105,13 +112,6 @@ QUERY = SELECT
         ON tbl_ProductSales.ColID = tbl_X.ColID
         GROUP BY CUBE(tbl_ProductSales.Product_Category); --error, ambiguous identifier
 ERROR = !SELECT: identifier 'colid' ambiguous
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-12342/.s.monetdb.31583
-QUERY = SELECT
-            col1 IN (SELECT ColID + col2 FROM tbl_ProductSales)
-        FROM another_T
-        GROUP BY ROLLUP(col1); --error, col2 is not a grouping column
-ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
 CODE  = 42000
 
 # 14:50:27 >  
