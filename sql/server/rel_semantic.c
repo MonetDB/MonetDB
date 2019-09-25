@@ -90,6 +90,7 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	m->sym = NULL;
 	o.vars = m->vars;	/* may have been realloc'ed */
 	o.sizevars = m->sizevars;
+	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
 		char errstr[ERRSIZE];

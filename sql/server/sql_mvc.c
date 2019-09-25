@@ -840,6 +840,7 @@ mvc_destroy(mvc *m)
 	m->qc = NULL;
 
 	_DELETE(m->args);
+	_DELETE(m->query);
 	m->args = NULL;
 	_DELETE(m);
 }
