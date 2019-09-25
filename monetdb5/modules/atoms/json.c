@@ -130,14 +130,7 @@ JSONfromString(const char *src, size_t *len, json *j, bool external)
 			return -1;
 		*len = slen + 1;
 	}
-	if (external) {
-		if (GDKstrFromStr((unsigned char *) *j,
-						  (const unsigned char *) src, (ssize_t) slen) < 0)
-			return -1;
-		src = *j;
-	} else {
-		strcpy(*j, src);
-	}
+	strcpy(*j, src);
 	jt = JSONparse(*j);
 	if (jt == NULL)
 		return -1;
