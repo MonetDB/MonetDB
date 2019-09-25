@@ -90,14 +90,13 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	m->sym = NULL;
 	o.vars = m->vars;	/* may have been realloc'ed */
 	o.sizevars = m->sizevars;
+	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
-		char errstr[ERRSIZE];
 
-		strcpy(errstr, m->errstr);
+		memcpy(o.errstr, m->errstr, sizeof(o.errstr));
 		*m = o;
 		m->session->status = status;
-		strcpy(m->errstr, errstr);
 	} else {
 		int label = m->label;
 

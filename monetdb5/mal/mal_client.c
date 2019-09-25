@@ -266,7 +266,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->protocol = PROTOCOL_9;
 
 	c->filetrans = false;
-	c->query = NULL;
+	c->getquery = NULL;
 
 	char name[16];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));

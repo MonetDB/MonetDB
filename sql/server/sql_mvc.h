@@ -135,6 +135,7 @@ typedef struct mvc {
 
 	int result_id;
 	res_table *results;
+	char *query;		/* string, identify whatever we're working on */
 } mvc;
 
 extern int mvc_init(int debug, store_type store, int ro, int su, backend_stack stk);
