@@ -636,7 +636,7 @@ scanner_getc(struct scanner *lc)
 	int n, m, mask;
 
 	if (scanner_read_more(lc, 1) == EOF) {
-		lc->errstr = "end of input stream";
+		lc->errstr = SQLSTATE(42000) "end of input stream";
 		return EOF;
 	}
 	lc->errstr = NULL;
@@ -676,7 +676,7 @@ scanner_getc(struct scanner *lc)
 	}
 	if ((c & mask) == 0) {
 		/* incorrect UTF-8 sequence: not shortest possible */
-		lc->errstr = "!not shortest possible UTF-8 sequence";
+		lc->errstr = SQLSTATE(42000) "not shortest possible UTF-8 sequence";
 		goto error;
 	}
 
