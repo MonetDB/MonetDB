@@ -566,7 +566,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	case e_convert: {
 		/* if input is type any NULL or column of nulls, change type */
 		list *tps = e->r;
-		sql_exp *ll = (sql_exp *) e->l;
 		sql_subtype *from = tps->h->data;
 		sql_subtype *to = tps->h->next->data;
 		stmt *l;
@@ -574,19 +573,11 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (from->type->localtype == 0) {
 			l = stmt_atom(be, atom_general(sql->sa, to, NULL));
 		} else {
-			l = exp_bin(be, ll, left, right, grp, ext, cnt, sel);
+			l = exp_bin(be, e->l, left, right, grp, ext, cnt, sel);
 		}
 		if (!l)
 			return NULL;
-		/* if attempting to convert between strings, no conversion is needed */
-		if (ll->type == e_column && EC_VARCHAR(from->type->eclass) && EC_VARCHAR(to->type->eclass)) {
-			sql_subtype *tpe = tail_type(l);
-			assert(tpe->type->localtype == TYPE_str);
-			tpe->digits = MAX(from->digits, to->digits); /* set the number of digits as the max between the two */
-			s = l;
-		} else {
-			s = stmt_convert(be, l, from, to, sel);
-		}
+		s = stmt_convert(be, l, from, to, sel);
 	} 	break;
 	case e_func: {
 		node *en;
