@@ -2476,7 +2476,6 @@ tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data
 	return tar_write(tarfile, data, size);
 }
 
-
 static gdk_return
 tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, ssize_t size)
 {
@@ -2525,8 +2524,6 @@ end:
 		free(buf);
 	return ret;
 }
-
-
 
 static gdk_return
 hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
@@ -2596,6 +2593,10 @@ store_hot_snapshot(str tarfile)
 {
 	int locked = 0;
 	lng result = 0;
+	char tmppath[PATH_MAX];
+	char dirpath[PATH_MAX];
+	int do_unlink = 0;
+	int dir_fd = -1;
 	stream *tar_stream = NULL;
 	buffer *plan_buf = NULL;
 	stream *plan_stream = NULL;
@@ -2603,15 +2604,41 @@ store_hot_snapshot(str tarfile)
 
 	if (!logger_funcs.get_snapshot_files) {
 		GDKerror("backend does not support hot snapshots");
-		return 0;
-	}
-
-	// We should really write to a tempfile first..
-	tar_stream = open_wstream(tarfile);
-	if (!tar_stream) {
-		GDKerror("Failed to open %s for writing", tarfile);
 		goto end;
 	}
+
+	snprintf(tmppath, PATH_MAX, "%s.tmp", tarfile);
+	tar_stream = open_wstream(tmppath);
+	if (!tar_stream) {
+		GDKerror("Failed to open %s for writing", tmppath);
+		goto end;
+	}
+	do_unlink = 1;
+
+	// Set dirpath to the directory part of tarfile.
+	// Call realpath(2) to make the path absolute so it has at least
+	// one DIR_SEP in it.
+	if (realpath(tarfile, dirpath) == NULL) {
+		GDKerror("couldn't resolve path %s: %s", tarfile, strerror(errno));
+		goto end;
+	}
+	*strrchr(dirpath, DIR_SEP) = '\0';
+
+	// Open the directory so we can call fsync on it.
+	// We use raw posix calls because this is not available in the streams library
+	// and I'm not quite sure what a generic streams-api should look like.
+	dir_fd = open(dirpath, O_RDONLY);
+	if (dir_fd < 0) {
+		GDKerror("couldn't open directory %s: %s", dirpath, strerror(errno));
+		goto end;
+	}
+
+	// Fsync the directory. Postgres believes this is necessary for durability.
+	if (fsync(dir_fd) < 0) {
+		GDKerror("First fsync on %s failed: %s", dirpath, strerror(errno));
+		goto end;
+	}
+
 	plan_buf = buffer_create(64 * 1024);
 	if (!plan_buf) {
 		GDKerror("Failed to allocate plan buffer");
@@ -2638,9 +2665,26 @@ store_hot_snapshot(str tarfile)
 	if (r != GDK_SUCCEED)
 		goto end;
 
+	// Now sync and atomically rename the temp file to the real file,
+	// also fsync'ing the directory
+	mnstr_fsync(tar_stream);
+	mnstr_close(tar_stream);
+	tar_stream = NULL;
+	if (rename(tmppath, tarfile) < 0) {
+		GDKerror("rename %s to %s failed: %s", tmppath, tarfile, strerror(errno));
+		goto end;
+	}
+	do_unlink = 0;
+	if (fsync(dir_fd) < 0) {
+		GDKerror("fsync on dir %s failed: %s", dirpath, strerror(errno));
+		goto end;
+	}
+
 	result = 42; // figure out how we can do better than this
 
 end:
+	if (dir_fd >= 0)
+		close(dir_fd);
 	if (locked)
 		MT_lock_unset(&bs_lock);
 	if (tar_stream)
@@ -2649,6 +2693,8 @@ end:
 		close_stream(plan_stream);
 	if (plan_buf)
 		buffer_destroy(plan_buf);
+	if (do_unlink)
+		(void) unlink(tmppath);	// Best effort, ignore the result
 	return result;
 }
 
