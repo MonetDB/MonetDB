@@ -707,29 +707,37 @@ scanner_string(mvc *c, int quote, bool escapes)
 	bstream *rs = lc->rs;
 	int cur = quote;
 	bool escape = false;
+	const size_t limit = quote == '"' ? 1 << 11 : 1 << 30;
 
 	lc->started = 1;
 	while (cur != EOF) {
-		size_t pos = rs->pos + lc->yycur;
+		size_t pos = 0;
+		const size_t yycur = rs->pos + lc->yycur;
 
-		while (cur != EOF && (((cur = rs->buf[pos++]) & 0x80) == 0) && cur && (cur != quote || escape)) {
+		while (cur != EOF && pos < limit &&
+		       (((cur = rs->buf[yycur + pos++]) & 0x80) == 0) &&
+		       cur && (cur != quote || escape)) {
 			if (escapes && cur == '\\')
 				escape = !escape;
 			else
 				escape = false;
 		}
+		if (pos == limit) {
+			(void) sql_error(c, 2, SQLSTATE(42000) "string too long");
+			return LEX_ERROR;
+		}
 		if (cur == EOF)
 			break;
-		lc->yycur = pos - rs->pos;
+		lc->yycur += pos;
 		/* check for quote escaped quote: Obscure SQL Rule */
 		/* TODO also handle double "" */
-		if (cur == quote && rs->buf[pos] == quote) {
+		if (cur == quote && rs->buf[yycur + pos] == quote) {
 			if (escapes)
-				rs->buf[pos - 1] = '\\';
+				rs->buf[yycur + pos - 1] = '\\';
 			lc->yycur++;
 			continue;
 		}
-		assert(pos <= rs->len + 1);
+		assert(yycur + pos <= rs->len + 1);
 		if (cur == quote && !escape) {
 			return scanner_token(lc, STRING);
 		}
