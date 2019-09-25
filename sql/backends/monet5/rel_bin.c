@@ -1292,12 +1292,10 @@ rel_parse_value(backend *be, char *query, char emode)
 	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
-		char errstr[ERRSIZE];
 
-		strcpy(errstr, m->errstr);
+		memcpy(o.errstr, m->errstr, sizeof(o.errstr));
 		*m = o;
 		m->session->status = status;
-		strcpy(m->errstr, errstr);
 	} else {
 		*m = o;
 	}
