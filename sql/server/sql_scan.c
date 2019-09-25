@@ -709,7 +709,7 @@ scanner_string(mvc *c, int quote, bool escapes)
 	lc->started = 1;
 	while (cur != EOF) {
 		size_t pos = 0;
-		const size_t yycur = rs->pos + (size_t) lc->yycur;
+		const size_t yycur = rs->pos + lc->yycur;
 
 		while (cur != EOF && pos < limit &&
 		       (((cur = rs->buf[yycur + pos++]) & 0x80) == 0) &&
@@ -725,7 +725,7 @@ scanner_string(mvc *c, int quote, bool escapes)
 		}
 		if (cur == EOF)
 			break;
-		lc->yycur += (int)pos;
+		lc->yycur += pos;
 		/* check for quote escaped quote: Obscure SQL Rule */
 		/* TODO also handle double "" */
 		if (cur == quote && rs->buf[yycur + pos] == quote) {
@@ -768,9 +768,9 @@ scanner_body(mvc *c)
 	bool escape = false;
 
 	lc->started = 1;
-	assert(rs->buf[(int)rs->pos + lc->yycur-1] == '{');
+	assert(rs->buf[rs->pos + lc->yycur-1] == '{');
 	while (cur != EOF) {
-		unsigned int pos = (int)rs->pos + lc->yycur;
+		size_t pos = rs->pos + lc->yycur;
 
 		while ((((cur = rs->buf[pos++]) & 0x80) == 0) && cur && (blk || escape)) {
 			if (cur != '\\')
@@ -780,7 +780,7 @@ scanner_body(mvc *c)
 			blk += cur =='{';
 			blk -= cur =='}';
 		}
-		lc->yycur = pos - (int)rs->pos;
+		lc->yycur = pos - rs->pos;
 		assert(pos <= rs->len + 1);
 		if (blk == 0 && !escape){
 			lc->yycur--;	/* go back to current (possibly invalid) char */
@@ -1239,7 +1239,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 		return EOF;
 	token = tokenize(c, cur);
 
-	yylval->sval = (lc->rs->buf + (int)lc->rs->pos + lc->yysval);
+	yylval->sval = (lc->rs->buf + lc->rs->pos + lc->yysval);
 
 	/* This is needed as ALIAS and aTYPE get defined too late, see
 	   sql_keyword.h */
@@ -1318,10 +1318,10 @@ sqllex(YYSTYPE * yylval, void *parm)
 	int token;
 	mvc *c = (mvc *) parm;
 	struct scanner *lc = &c->scanner;
-	int pos;
+	size_t pos;
 
 	/* store position for when view's query ends */
-	pos = (int)lc->rs->pos + lc->yycur;
+	pos = lc->rs->pos + lc->yycur;
 
 	token = sql_get_next_token(yylval, parm);
 	
@@ -1359,7 +1359,6 @@ sqllex(YYSTYPE * yylval, void *parm)
 			/* skip the skipped stuff also in the buffer */
 			lc->rs->pos += prev;
 			lc->yycur -= prev;
-			assert(lc->yycur >= 0);
 		}
 	}
 

@@ -22,11 +22,11 @@ struct scanner {
 
 	int yynext;		/* next token, lr(1) isn't powerful enough for sql */
 	int yylast;		/* previous token, to detect superfluous semi-colons */
-	int yysval;		/* start of current token */
 	int yyval;		/* current token */
-	int yycur;		/* next char in the queue */
+	size_t yysval;		/* start of current token */
+	size_t yycur;		/* next char in the queue */
+	size_t as;		/* start of query part of view's etc */
 	char yybak;		/* sometimes it's needed to write an EOS marker */
-	int as;			/* start of query part of view's etc */
 	int key;		/* query hash */
 	int started;		/* found at least one token */
 	prot mode;		/* which mode (line (1,N), blocked) */
