@@ -806,7 +806,7 @@ keyword_or_ident(mvc * c, int cur)
 {
 	struct scanner *lc = &c->scanner;
 	keyword *k = NULL;
-	int s;
+	size_t s;
 
 	lc->started = 1;
 	utf8_putchar(lc, cur);
@@ -1352,7 +1352,7 @@ sqllex(YYSTYPE * yylval, void *parm)
 	} else if (token == SCOLON) {
 		/* ignore semi-colon(s) following a semi-colon */
 		if (lc->yylast == SCOLON) {
-			int prev = lc->yycur;
+			size_t prev = lc->yycur;
 			while ((token = sql_get_next_token(yylval, parm)) == SCOLON)
 				prev = lc->yycur;
 
