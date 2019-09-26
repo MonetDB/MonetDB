@@ -126,6 +126,7 @@ static void generateChallenge(str buf, int min, int max) {
 struct challengedata {
 	stream *in;
 	stream *out;
+	char challenge[13];
 };
 
 static void
@@ -145,15 +146,13 @@ doChallenge(void *data)
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
 #endif
+	memcpy(challenge, ((struct challengedata *) data)->challenge, sizeof(challenge));
 	GDKfree(data);
 	if (buf == NULL) {
 		close_stream(fdin);
 		close_stream(fdout);
 		return;
 	}
-
-	/* generate the challenge string */
-	generateChallenge(challenge, 8, 12);
 
 	// send the challenge over the block stream
 	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:",
@@ -503,6 +502,10 @@ SERVERlistenThread(SOCKET *Sock)
 		char name[16];
 		snprintf(name, sizeof(name), "client%d",
 				 (int) ATOMIC_INC(&threadno));
+
+		/* generate the challenge string */
+		generateChallenge(data->challenge, 8, 12);
+
 		if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, name)) == 0) {
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
@@ -1087,6 +1090,10 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 	char name[16];
 	snprintf(name, sizeof(name), "client%d",
 			 (int) ATOMIC_INC(&threadno));
+
+	/* generate the challenge string */
+	generateChallenge(data->challenge, 8, 12);
+
 	if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, name)) == 0) {
 		mnstr_destroy(data->in);
 		mnstr_destroy(data->out);

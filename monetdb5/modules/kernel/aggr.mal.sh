@@ -264,6 +264,31 @@ command subquantile(b:bat[:any_1],q:bat[:dbl],g:bat[:oid],e:bat[:any_2],s:bat[:o
 address AGGRsubquantilecand
 comment "Grouped quantile aggregate with candidate list";
 
+command median_avg(b:bat[:any_1]) :dbl
+address AGGRmedian_avg
+comment "Median aggregate";
+
+command submedian_avg(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],skip_nils:bit) :bat[:dbl]
+address AGGRsubmedian_avg
+comment "Grouped median aggregate";
+
+command submedian_avg(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],s:bat[:oid],skip_nils:bit) :bat[:dbl]
+address AGGRsubmediancand_avg
+comment "Grouped median aggregate with candidate list";
+
+
+command quantile_avg(b:bat[:any_1],q:bat[:dbl]) :dbl
+address AGGRquantile_avg
+comment "Quantile aggregate";
+
+command subquantile_avg(b:bat[:any_1],q:bat[:dbl],g:bat[:oid],e:bat[:any_2],skip_nils:bit) :bat[:dbl]
+address AGGRsubquantile_avg
+comment "Grouped quantile aggregate";
+
+command subquantile_avg(b:bat[:any_1],q:bat[:dbl],g:bat[:oid],e:bat[:any_2],s:bat[:oid],skip_nils:bit) :bat[:dbl]
+address AGGRsubquantilecand_avg
+comment "Grouped quantile aggregate with candidate list";
+
 EOF
 
 cat <<EOF

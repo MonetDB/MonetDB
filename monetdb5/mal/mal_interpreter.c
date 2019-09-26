@@ -567,9 +567,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* if still the same, replace lastprint with current
 				 * time and print the query */
 				if (ATOMIC_CAS(&cntxt->lastprint, &lp, t)) {
+					const char *q = cntxt->getquery ? cntxt->getquery(cntxt) : NULL;
 					fprintf(stderr, "#%s: query already running "LLFMT"s: %.200s\n",
-						cntxt->mythread->name, (lng) (time(0) - cntxt->lastcmd),
-						cntxt->query);
+							cntxt->mythread->name,
+							(lng) (time(0) - cntxt->lastcmd),
+							q ? q : "");
 				}
 			}
 		}

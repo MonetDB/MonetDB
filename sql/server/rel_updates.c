@@ -2204,6 +2204,8 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 	bstream_destroy(m->scanner.rs);
 
 	m->sym = NULL;
+	o.vars = m->vars;	/* may have been realloc'ed */
+	o.sizevars = m->sizevars;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
 		char errstr[ERRSIZE];

@@ -595,7 +595,9 @@ list_position(list *l, void *val)
 
 	for (n = l->h, i=0; n && val != n->data; n = n->next, i++)
 		;
-	return i;
+	if (n && n->data == val)
+		return i;
+	return -1;
 }
 
 void *
