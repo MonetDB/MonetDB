@@ -2136,8 +2136,7 @@ flusher_should_run(void)
 	bool my_flush_now = (bool) ATOMIC_XCG(&flusher.flush_now, 0);
 	if (my_flush_now)
 		reason_to = "user request";
-
-	if (ATOMIC_GET(&store_nr_active) > 0)
+	else if (ATOMIC_GET(&store_nr_active) > 0)
 		reason_not_to = "awaiting idle time";
 
 	if (!flusher.enabled)
@@ -2208,7 +2207,7 @@ store_exit(void)
 
 /* call locked! */
 int
-store_apply_deltas(bool locked)
+store_apply_deltas(bool not_locked)
 {
 	int res = LOG_OK;
 
@@ -2219,10 +2218,10 @@ store_apply_deltas(bool locked)
 		store_funcs.gtrans_update(gtrans);
 	res = logger_funcs.restart();
 	if (res == LOG_OK) {
-		if (!locked)
+		if (!not_locked)
 			MT_lock_unset(&bs_lock);
 		res = logger_funcs.cleanup();
-		if (!locked)
+		if (!not_locked)
 			MT_lock_set(&bs_lock);
 	}
 	flusher.working = false;
