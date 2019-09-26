@@ -6,11 +6,9 @@
 
 CREATE TABLE TIMESTAMP_TBL ( d1 timestamp(2) );
 DECLARE test_now timestamp(2);
-DECLARE test_current_timestamp timestamp(2);
 DECLARE test_current_date date;
 
 SET test_now = now;
-SET test_current_timestamp = current_timestamp;
 SET test_current_date = current_date;
 
 -- Shorthand values
@@ -22,7 +20,7 @@ SET test_current_date = current_date;
 --INSERT INTO TIMESTAMP_TBL VALUES ('now');
 INSERT INTO TIMESTAMP_TBL VALUES (test_now);
 --INSERT INTO TIMESTAMP_TBL VALUES ('current');
-INSERT INTO TIMESTAMP_TBL VALUES (cast(test_current_timestamp as timestamp));
+INSERT INTO TIMESTAMP_TBL VALUES (cast(test_now as timestamp));
 --INSERT INTO TIMESTAMP_TBL VALUES ('today');
 INSERT INTO TIMESTAMP_TBL VALUES (cast(test_current_date as timestamp));
 --INSERT INTO TIMESTAMP_TBL VALUES ('yesterday');
