@@ -2062,7 +2062,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			sql_rel *z = NULL;
 
 			r = rel_value_exp(query, &z, n->data.sym, f /* ie no result project */, ek);
-			if (l && !r && 0) {
+			if (l && !r && l_init) {
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = 0;
