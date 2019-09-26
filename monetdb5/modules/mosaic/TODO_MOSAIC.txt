@@ -6,6 +6,7 @@ Test null semantics
 mosaic.select (c,nil:any_1, nil:any_1,true,true,(true|false)) is not working correctly: should result in c == nil or c!=nil(anti).
 Use bit vectors more aggressively in mosaic_delta --- then resolve test mosaic_delta_timestamp --- and possibly other compression techniques as well.
 Somehow force mosaic to only use specified compressions even if inefficient. This poses a design problem for dictionary compression though.
+Be sure alignment is correct. Use asserts for this.
 fix layout call.
 Add test for float/double
 delta compression: check if the hardcoded compression expression are correct. See also (2)
