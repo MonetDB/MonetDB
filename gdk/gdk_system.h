@@ -159,10 +159,8 @@ gdk_export int MT_join_thread(MT_Id t);
  */
 #include "matomic.h"
 
-/* in non-debug builds, we don't keep lock statistics */
-#ifndef NDEBUG
-#define LOCK_STATS
-#endif
+/* define this to keep lock statistics (can be expensive) */
+/* #define LOCK_STATS */
 
 /* define this if you want to use pthread (or Windows) locks instead
  * of atomic instructions for locking (latching) */
