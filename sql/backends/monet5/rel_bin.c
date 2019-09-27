@@ -509,7 +509,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		if (!l)
 			return NULL;
-		s = stmt_convert(be, l, from, to, sel);
+		s = stmt_convert(be, l, from, to, NULL);
 	} 	break;
 	case e_func: {
 		node *en;
