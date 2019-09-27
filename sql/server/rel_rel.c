@@ -544,12 +544,15 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 			exp_label(sql->sa, e, ++sql->label);
 	}
 	if (rel->op == op_project) {
+		sql_rel *l = rel->l;
 		if (!rel->exps)
 			rel->exps = new_exp_list(sql->sa);
 		append(rel->exps, e);
 		rel->nrcols++;
 		if (e->card > rel->card)
 			rel->card = e->card;
+		if (l && is_groupby(l->op) && exp_card(e) <= CARD_ATOM && list_empty(l->exps)) 
+			rel_project_add_exp(sql, l, e);
 	} else if (rel->op == op_groupby) {
 		return rel_groupby_add_aggr(sql, rel, e);
 	}

@@ -5561,6 +5561,7 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
  * ) [e,f]( aggr1 a distinct, aggr2 b distinct, aggr3_phase2 c, aggr4_phase2 d)
  */
 
+#if 0
 static sql_rel *
 rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel) 
 {
@@ -5645,6 +5646,7 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 	(*changes)++;
 	return rel;
 }
+#endif
 
 static sql_rel *
 rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel) 
@@ -5685,7 +5687,7 @@ rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel)
 		if (nr < 1 || distinct->type != e_aggr)
 			return rel;
 		if ((nr > 1 || list_length(rel->r) + nr != list_length(rel->exps)))
-			return rel_groupby_distinct2(changes, sql, rel);
+			return rel;//rel_groupby_distinct2(changes, sql, rel);
 		arg = distinct->l;
 		if (list_length(arg) != 1 || list_length(rel->r) + nr != list_length(rel->exps)) 
 			return rel;

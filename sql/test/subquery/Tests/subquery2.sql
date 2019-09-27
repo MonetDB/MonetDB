@@ -60,6 +60,7 @@ SELECT
 	(SELECT ColID FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5))
 FROM another_T GROUP BY col1, col2, col5, col8; --error, more than one row returned by a subquery used as an expression 
 
+-- TODO incorrect output False, NULL 4x 
 SELECT
 	-col1 IN (SELECT ColID FROM tbl_ProductSales),
 	col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col8) IS NULL)
@@ -80,6 +81,7 @@ GROUP BY col1, col2, col5, col8;
 	-- False 111  226
 	-- False 1111 2226
 
+-- TODO gives error
 SELECT
 	col1 + col5 = (SELECT MIN(ColID) FROM tbl_ProductSales),
 	MIN(col8) OVER (PARTITION BY col5 ORDER BY col1 ROWS UNBOUNDED PRECEDING)
@@ -100,18 +102,22 @@ GROUP BY col1;
 	-- True False
 	-- True False
 
+-- TODO incorrect empty result
+SELECT NOT col2 <> ANY (SELECT 20 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID) FROM another_T GROUP BY col1, col2, col5, col8;
+
 SELECT
 	NOT -SUM(col2) NOT IN (SELECT ColID FROM tbl_ProductSales GROUP BY ColID HAVING SUM(ColID - col8) <> col5),
 	NOT col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col8) > 2 AND MIN(col8) IS NOT NULL),
-	NOT col2 <> ANY (SELECT 20 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID),
+--	NOT col2 <> ANY (SELECT 20 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID),
 	NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col2) IS NULL OR NOT col8 <> 2 / col1)
 FROM another_T
 GROUP BY col1, col2, col5, col8;
-	-- False True True True True
-	-- False True True True True
-	-- False True True True True
-	-- False True True True True
+	-- False True True True
+	-- False True True True
+	-- False True True True
+	-- False True True True
 
+-- TODO incorrect null vs false in first value, second row
 SELECT
 	DISTINCT
 	NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2),
@@ -132,6 +138,7 @@ GROUP BY col4;
 	-- False
 	-- False
 
+-- TODO incorrect 4x 1 ipv 4xnull
 SELECT
 	(SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t1.col5 = t2.col1)
 FROM another_T t1;
@@ -176,6 +183,7 @@ HAVING NOT col1 = ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT 
 	-- 55
 	-- 5555
 
+-- TODO incorrect empty result
 SELECT
 	SUM(col3) * col1
 FROM another_T
@@ -195,6 +203,7 @@ GROUP BY t1.col2;
 	-- 1
 	-- 1
 
+-- TODO incorrect empty result
 SELECT
     (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t1.col7 <> SOME(SELECT MAX(t1.col1 + t3.col4) FROM another_T t3))
 FROM another_T t1;
@@ -203,6 +212,7 @@ FROM another_T t1;
 	-- 1
 	-- 1
 
+-- 4x NULL vs postgress wrong with 1x NULL
 SELECT
 	CASE WHEN 1 IN (SELECT (SELECT MAX(col7)) UNION ALL (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t2.col5 = t2.col1)) THEN 2 ELSE NULL END
 FROM another_T t1;	
@@ -217,6 +227,7 @@ GROUP BY col1;
 	-- 2
 	-- 2
 
+-- TODO incorrect 4xtrue
 SELECT
 	t1.col1 IN (SELECT ColID FROM tbl_ProductSales GROUP BY t1.col1, tbl_ProductSales.ColID)
 FROM another_T t1

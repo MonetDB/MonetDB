@@ -77,13 +77,6 @@ stdout of test 'view-where-cast-error.Bug-6712` in directory 'sql/test/BugTracke
 #INSERT INTO x VALUES (3, 'executiontime', '96715');
 [ 1	]
 #create view executiontimes as select * from x where attribute = 'executiontime';
-#select id from executiontimes where cast(value as bigint) > 80000;
-% sys.executiontimes # table_name
-% id # name
-% int # type
-% 1 # length
-[ 1	]
-[ 3	]
 #rollback;
 
 # 19:39:23 >  
