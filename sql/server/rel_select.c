@@ -1122,7 +1122,9 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			if (rel && *rel && (*rel)->card <= CARD_AGGR && (is_sql_sel(f) || is_sql_having(f))) {
 				sql_rel *gb = *rel;
 
-				while(gb->l && !is_groupby(gb->op))
+				while (gb->l && !is_groupby(gb->op))
+					gb = gb->l;
+				if (gb && is_select(gb->op)) /* check for having clause generated selection */
 					gb = gb->l;
 				if (gb && gb->l && rel_bind_column(sql, gb->l, name, f)) 
 					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
@@ -1154,7 +1156,9 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			if (rel && *rel && (*rel)->card == CARD_AGGR && (is_sql_sel(f) || is_sql_having(f))) {
 				sql_rel *gb = *rel;
 
-				while(gb->l && !is_groupby(gb->op) && is_project(gb->op))
+				while (gb->l && !is_groupby(gb->op) && is_project(gb->op))
+					gb = gb->l;
+				if (gb && is_select(gb->op)) /* check for having clause generated selection */
 					gb = gb->l;
 				if (gb && is_groupby(gb->op) && gb->l && rel_bind_column2(sql, gb->l, tname, cname, f))
 					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
