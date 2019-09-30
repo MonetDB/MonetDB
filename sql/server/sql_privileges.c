@@ -466,6 +466,25 @@ table_privs(mvc *m, sql_table *t, int priv)
 }
 
 int
+column_privs(mvc *m, sql_column *c, int priv)
+{
+	/* only SELECT and UPDATE privileges for columns are available */
+	/* temporary tables are owned by the session user, so does it's columns */
+	if (c->t->persistence == SQL_DECLARED_TABLE ||
+	    (!c->t->system && c->t->persistence != SQL_PERSIST) ||
+	    (priv == PRIV_SELECT && (c->t->persistence != SQL_PERSIST || c->t->commit_action)))
+		return 1;
+	if (admin_privs(m->user_id) || admin_privs(m->role_id) ||
+	    (c->t->s && (m->user_id == c->t->s->auth_id || m->role_id == c->t->s->auth_id)) ||
+	    sql_privilege(m, m->user_id, c->base.id, priv, 0) == priv ||
+	    sql_privilege(m, m->role_id, c->base.id, priv, 0) == priv ||
+	    sql_privilege(m, ROLE_PUBLIC, c->base.id, priv, 0) == priv) {
+		return 1;
+	}
+	return 0;
+}
+
+int
 execute_priv(mvc *m, sql_func *f)
 {
 	int priv = PRIV_EXECUTE;
@@ -827,7 +846,6 @@ sql_rename_user(mvc *sql, char *olduser, char *newuser)
 	if (backend_rename_user(sql, olduser, newuser) == FALSE)
 		throw(SQL,"sql.rename_user", SQLSTATE(M1M05) "%s", sql->errstr);
 	return NULL;
-
 }
 
 int
