@@ -1,0 +1,38 @@
+stderr of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
+
+
+# 10:56:46 >  
+# 10:56:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36667" "--set" "mapi_usock=/var/tmp/mtest-13678/.s.monetdb.36667" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/MonetDB/mTests_sql_test_miscellaneous" "--set" "embedded_c=true"
+# 10:56:46 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36667
+# cmdline opt 	mapi_usock = /var/tmp/mtest-13678/.s.monetdb.36667
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/MonetDB/mTests_sql_test_miscellaneous
+# cmdline opt 	embedded_c = true
+#client2:!ERROR:ParseException:SQLparser:42000!SELECT: cannot use non GROUP BY column 'parent.number' in query results without an aggregate function
+#main thread:!ERROR:MALException:client.quit:Server stopped
+
+# 10:56:47 >  
+# 10:56:47 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13678" "--port=36667"
+# 10:56:47 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-13678/.s.monetdb.36667
+QUERY = SELECT parent."sys_id" FROM "kagami_dump"."test_task" parent INNER JOIN "kagami_dump"."test_task" child ON child."parent" = parent."sys_id" GROUP BY parent."sys_id" HAVING count(child."sys_id") >= 1 ORDER BY parent."number"; --error, parent."number" requires an aggregate function
+ERROR = !SELECT: cannot use non GROUP BY column 'parent.number' in query results without an aggregate function
+CODE  = 42000
+
+# 10:56:47 >  
+# 10:56:47 >  "Done."
+# 10:56:47 >  
+
