@@ -2084,7 +2084,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 					z = rel_label(sql, z, 0);
 					r = rel_lastexp(sql, z);
 				}
-				z = rel_add_identity(sql, z, &tid);
+				z = rel_add_identity2(sql, z, &tid);
 				tid = exp_ref(sql->sa, tid);
 				exps = rel_projections(sql, left, NULL, 1/*keep names */, 1);
 				left = rel_add_identity(sql, left, &id);
@@ -2139,7 +2139,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 					exps = rel_projections(sql, left, NULL, 1/*keep names */, 1);
 					left = rel_add_identity(sql, left, &id);
 					id = exp_ref(sql->sa, id);
-					z = rel_add_identity(sql, z, &tid);
+					z = rel_add_identity2(sql, z, &tid);
 					tid = exp_ref(sql->sa, tid);
 					left = rel_crossproduct(sql->sa, left, z, is_sql_sel(f)?op_left:op_join);
 					if (rel_has_freevar(sql, z))
@@ -2387,14 +2387,6 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				if (r) {
 					rs = rel_lastexp(sql, r);
 
-					if (is_sql_sel(f) && ek.card <= card_column && r->card > CARD_ATOM) {
-						sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
-						rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
-
-						r = rel_groupby(sql, r, NULL);
-						rs = rel_groupby_add_aggr(sql, r, rs);
-						rs = exp_ref(sql->sa, rs);
-					}
 					if (quantifier) {
 						/* flatten the quantifier */
 						sql_subaggr *a;
@@ -2416,6 +2408,13 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 							/* do not skip nulls in case of >,>=,<=,< */
 							//append(rs1->l, exp_atom_bool(sql->sa, 0));
 						rs = rel_groupby_add_aggr(sql, r, rs);
+					} else if (is_sql_sel(f) && ek.card <= card_column && r->card > CARD_ATOM) {
+						sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
+						rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
+
+						r = rel_groupby(sql, r, NULL);
+						rs = rel_groupby_add_aggr(sql, r, rs);
+						rs = exp_ref(sql->sa, rs);
 					}
 					/* remove empty projects */
 					if (!is_processed(*rel) && is_sql_sel(f) && (*rel)->op == op_project && list_length((*rel)->exps) == 0 && !(*rel)->r && (*rel)->l) 
@@ -2936,7 +2935,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 					}
 					set_freevar(l);
 					/* label to solve name conflicts with outer query */
-					z = rel_add_identity(sql, z, &tid);
+					z = rel_add_identity2(sql, z, &tid);
 					tid = exp_ref(sql->sa, tid);
 					if (!exp_is_atom(r) && exp_name(r)) {
 						z = rel_label(sql, z, 0);
@@ -4986,7 +4985,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 					} else if (e->type == e_atom) {
 						return sql_error(sql, 02, SQLSTATE(42000) "order not of type SQL_COLUMN");
 					}
-				} else if (e && exp_card(e) != rel->card) {
+				} else if (e && exp_card(e) > rel->card) {
 					if (e && exp_name(e)) {
 						return sql_error(sql, 05, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(e));
 					} else {
@@ -5001,7 +5000,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 				sql->errstr[0] = '\0';
 
 				e = rel_order_by_simple_column_exp(sql, rel, col);
-				if (e && e->card != rel->card) 
+				if (e && e->card > rel->card) 
 					e = NULL;
 				if (e)
 					e = rel_project_add_exp(sql, rel, e);
@@ -5021,7 +5020,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 						g = s->l;
 					if (is_groupby(g->op)) { /* check for is processed */
 						e = rel_order_by_column_exp(query, &g, col, sql_sel);
-						if (e && e->card != rel->card && e->card != CARD_ATOM)
+						if (e && e->card > rel->card && e->card != CARD_ATOM)
 							e = NULL;
 						if (e && !is_select(p->op)) {
 							e = rel_project_add_exp(sql, p, e);
@@ -5038,7 +5037,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 					e = rel_order_by_column_exp(query, &rel, col, f);
 				if (!e)
 					e = rel_order_by_column_exp(query, &rel, col, sql_sel);
-				if (e && e->card != rel->card && e->card != CARD_ATOM)
+				if (e && e->card > rel->card && e->card != CARD_ATOM)
 					e = NULL;
 			}
 			if (!e) 
