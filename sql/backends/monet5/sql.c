@@ -3512,6 +3512,7 @@ SQLnil_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
 	BAT *l, *g, *e, *res;
 	bit F = FALSE;
 	BUN offset = 0;
+	bit has_nil = 0;
 
 	(void)no_nil;
 	if ((l = BATdescriptor(*bid)) == NULL) {
@@ -3546,14 +3547,16 @@ SQLnil_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
 			oid id = *(oid*)BUNtail(gi, s);
 
 			if (ret[id] != TRUE) {
-				if (ocmp(lv, nilp) == 0)
-					ret[id] = TRUE;
+				if (ocmp(lv, nilp) == 0) {
+					ret[id] = bit_nil;
+					has_nil = 1;
+				}
 			}
 		}
 	}
 	res->hseqbase = g->hseqbase;
-	res->tnil = 0;
-	res->tnonil = 1;
+	res->tnil = has_nil != 0;
+	res->tnonil = has_nil == 0;
 	res->tsorted = res->trevsorted = 0;
 	res->tkey = 0;
 	BBPunfix(l->batCacheid);

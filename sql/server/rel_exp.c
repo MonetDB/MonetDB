@@ -991,7 +991,7 @@ exps_match_col_exps( sql_exp *e1, sql_exp *e2)
 	return 0;
 }
 
-static int 
+int 
 exp_match_list( list *l, list *r)
 {
 	node *n, *m;

@@ -66,10 +66,10 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 % i,	j # name
 % int,	boolean # type
 % 1,	5 # length
-[ NULL,	NULL	]
-[ 1,	NULL	]
-[ 2,	NULL	]
-[ 3,	NULL	]
+[ NULL,	false	]
+[ 1,	false	]
+[ 2,	false	]
+[ 3,	false	]
 #SELECT i, (SELECT 42 WHERE i1.i>2) AS j FROM integers i1 ORDER BY i;
 % .i1,	.L3 # table_name
 % i,	j # name
