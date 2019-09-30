@@ -36,3 +36,4 @@ merge-table-limit.Bug-6756
 double-free.Bug-6757
 HAVE_LIBPY?python-loader-string.Bug-6759
 select-char.Bug-6761
+next-get-value-bulk.Bug-6766
