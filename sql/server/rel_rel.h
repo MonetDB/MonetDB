@@ -95,6 +95,7 @@ extern sql_rel *rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oex
 extern sql_table *rel_ddl_table_get(sql_rel *r);
 
 extern sql_rel *rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp);
+extern sql_rel *rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp);
 extern sql_exp * rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname );
 
 extern int rel_in_rel(sql_rel *super, sql_rel *sub);

@@ -242,18 +242,18 @@ typedef enum operator_type {
 
 /* does the expression (possibly) have nils */
 #define has_nil(e) \
-	((e->flag&HAS_NO_NIL) == 0)
+	(((e)->flag&HAS_NO_NIL) == 0)
 #define set_has_no_nil(e) \
-	e->flag |= HAS_NO_NIL
+	(e)->flag |= HAS_NO_NIL
 #define set_has_nil(e) \
-	e->flag &= (~HAS_NO_NIL)
+	(e)->flag &= (~HAS_NO_NIL)
 
 #define is_ascending(e) \
-	((e->flag&ASCENDING)==ASCENDING)
+	(((e)->flag&ASCENDING)==ASCENDING)
 #define nulls_last(e) \
-	((e->flag&NULLS_LAST)==NULLS_LAST)
+	(((e)->flag&NULLS_LAST)==NULLS_LAST)
 #define set_direction(e, dir) \
-	e->flag |= ((dir&1)?ASCENDING:0) | ((dir&2)?NULLS_LAST:0)
+	(e)->flag |= ((dir&1)?ASCENDING:0) | ((dir&2)?NULLS_LAST:0)
 
 #define is_anti(e) \
 	((e)->anti)

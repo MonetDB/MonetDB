@@ -43,7 +43,7 @@ stdout of test 'leftjoin.Bug-3981` in directory 'sql/test/BugTracker-2016` itsel
 % .a,	.b,	.c # table_name
 % fruit,	fruit,	isyellow # name
 % char,	char,	tinyint # type
-% 5,	5,	1 # length
+% 6,	6,	1 # length
 [ "banana",	"banana",	1	]
 [ "apple",	"apple",	NULL	]
 
