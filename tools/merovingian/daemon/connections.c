@@ -71,11 +71,13 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 				break; /* working */
 		}
 		if (rp == NULL) {
+			int e = errno;
 			if (result)
 				freeaddrinfo(result);
 			if (sock != -1)
 				closesocket(sock);
-			return newErr("cannot bind to host %s", bindaddr);
+			errno = e;
+			return newErr("binding to stream socket port %hu failed: %s", port, strerror(errno));
 		}
 		server = rp->ai_addr;
 		length = rp->ai_addrlen;
