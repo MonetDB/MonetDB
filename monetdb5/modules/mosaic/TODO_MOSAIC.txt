@@ -18,6 +18,7 @@ benchmark
 
 ####code issues####
 Update copyright.
+create dedicated type for bitvector internal type which is currently unsignned int. E.g. introduce #define BitVectorChunkType unsigned int.
 move mask, bits, framebits from  MosaicHdr to MosaicBlkHeader_frame_t.
 mosaic_prefix.c: prefix code does not use macro's!!!!
 mosaic_delta.c: improve the macro's: for instance get rid of hardcoded expression arguments in DELTAcompress. (2*)
