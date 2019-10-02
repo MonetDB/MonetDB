@@ -2208,7 +2208,7 @@ store_exit(void)
 
 /* call locked! */
 int
-store_apply_deltas(bool locked)
+store_apply_deltas(bool not_locked)
 {
 	int res = LOG_OK;
 
@@ -2219,10 +2219,10 @@ store_apply_deltas(bool locked)
 		store_funcs.gtrans_update(gtrans);
 	res = logger_funcs.restart();
 	if (res == LOG_OK) {
-		if (!locked)
+		if (!not_locked)
 			MT_lock_unset(&bs_lock);
 		res = logger_funcs.cleanup();
-		if (!locked)
+		if (!not_locked)
 			MT_lock_set(&bs_lock);
 	}
 	flusher.working = false;

@@ -577,7 +577,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		if (!l)
 			return NULL;
-		s = stmt_convert(be, l, from, to, sel);
+		s = stmt_convert(be, l, from, to, NULL);
 	} 	break;
 	case e_func: {
 		node *en;
@@ -1289,14 +1289,13 @@ rel_parse_value(backend *be, char *query, char emode)
 	m->sym = NULL;
 	o.vars = m->vars;	/* may have been realloc'ed */
 	o.sizevars = m->sizevars;
+	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
-		char errstr[ERRSIZE];
 
-		strcpy(errstr, m->errstr);
+		memcpy(o.errstr, m->errstr, sizeof(o.errstr));
 		*m = o;
 		m->session->status = status;
-		strcpy(m->errstr, errstr);
 	} else {
 		*m = o;
 	}

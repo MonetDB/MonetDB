@@ -585,3 +585,11 @@ address SQLexist_val;
 command aggr.subexist(b:bat[:any_2], g:bat[:oid], e:bat[:oid], no_nil:bit):bat[:bit]
 address SQLsubexist;
 
+command aggr.not_exist(b:bat[:any_2]):bit
+address SQLnot_exist;
+
+pattern aggr.not_exist(v:any_2):bit
+address SQLnot_exist_val;
+
+command aggr.subnot_exist(b:bat[:any_2], g:bat[:oid], e:bat[:oid], no_nil:bit):bat[:bit]
+address SQLsubnot_exist;

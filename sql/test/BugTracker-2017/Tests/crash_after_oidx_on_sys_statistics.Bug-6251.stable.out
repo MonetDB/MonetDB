@@ -16,10 +16,6 @@ stdout of test 'crash_after_oidx_on_sys_statistics.Bug-6251` in directory 'sql/t
 # Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:32740/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1294/.s.monetdb.32740
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/Python module loaded
-# MonetDB/R   module loaded
-
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -71,11 +67,10 @@ stdout of test 'crash_after_oidx_on_sys_statistics.Bug-6251` in directory 'sql/t
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % type,	width,	sample,	count,	unique,	nils,	sorted,	revsorted # name
 % clob,	int,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean # type
-% 9,	1,	1,	1,	1,	1,	5,	5 # length
+% 7,	1,	1,	1,	1,	1,	5,	5 # length
 [ "int",	4,	0,	0,	0,	0,	true,	true	]
 [ "clob",	1,	0,	0,	0,	0,	true,	true	]
 [ "int",	4,	0,	0,	0,	0,	true,	true	]
-[ "timestamp",	8,	0,	0,	0,	0,	true,	true	]
 [ "bigint",	8,	0,	0,	0,	0,	true,	true	]
 [ "bigint",	8,	0,	0,	0,	0,	true,	true	]
 [ "bigint",	8,	0,	0,	0,	0,	true,	true	]
@@ -88,11 +83,10 @@ stdout of test 'crash_after_oidx_on_sys_statistics.Bug-6251` in directory 'sql/t
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % type,	width,	sample,	count,	unique,	nils,	sorted,	revsorted # name
 % clob,	int,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean # type
-% 9,	1,	2,	2,	2,	2,	5,	5 # length
+% 7,	1,	2,	2,	2,	2,	5,	5 # length
 [ "int",	4,	12,	12,	12,	0,	true,	false	]
 [ "clob",	1,	12,	12,	5,	0,	false,	false	]
 [ "int",	4,	12,	12,	3,	0,	false,	false	]
-[ "timestamp",	8,	12,	12,	12,	0,	true,	false	]
 [ "bigint",	8,	12,	12,	1,	0,	true,	true	]
 [ "bigint",	8,	12,	12,	1,	0,	true,	true	]
 [ "bigint",	8,	12,	12,	1,	0,	true,	true	]
@@ -106,11 +100,10 @@ stdout of test 'crash_after_oidx_on_sys_statistics.Bug-6251` in directory 'sql/t
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % type,	width,	sample,	count,	unique,	nils,	sorted,	revsorted # name
 % clob,	int,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean # type
-% 9,	1,	2,	2,	2,	2,	5,	5 # length
+% 7,	1,	2,	2,	2,	2,	5,	5 # length
 [ "int",	4,	12,	12,	12,	0,	true,	false	]
 [ "clob",	1,	12,	12,	5,	0,	false,	false	]
 [ "int",	4,	12,	12,	3,	0,	false,	false	]
-[ "timestamp",	8,	12,	12,	12,	0,	true,	false	]
 [ "bigint",	8,	12,	12,	1,	0,	true,	true	]
 [ "bigint",	8,	12,	12,	1,	0,	true,	true	]
 [ "bigint",	8,	12,	12,	1,	0,	true,	true	]

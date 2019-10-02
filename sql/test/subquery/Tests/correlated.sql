@@ -137,7 +137,7 @@ SELECT MIN(i), CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1; -- 1, 6
 SELECT CAST((SELECT SUM(i1.i)) AS BIGINT), CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1; -- 6, 6
 -- subquery inside aggregation
 SELECT CAST(SUM(i) AS BIGINT), CAST(SUM((SELECT i FROM integers WHERE i=i1.i)) AS BIGINT) FROM integers i1; -- 6, 6
-SELECT SUM(i), (SELECT SUM(i) FROM integers WHERE i>SUM(i1.i)) FROM integers i1; -- 6, NULL
+SELECT CAST(SUM(i) AS BIGINT), CAST((SELECT SUM(i) FROM integers WHERE i>SUM(i1.i)) AS BIGINT) FROM integers i1; -- 6, NULL
 -- subquery with aggregation inside aggregation should fail
 SELECT SUM((SELECT SUM(i))) FROM integers; -- error
 -- aggregate with correlation in filter

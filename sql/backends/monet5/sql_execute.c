@@ -296,7 +296,7 @@ SQLrun(Client c, backend *be, mvc *m)
 	}
 	if (m->emode == m_execute && be->q->paramlen != m->argc)
 		throw(SQL, "sql.prepare", SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", be->q->paramlen, m->argc);
-	MT_thread_setworking(c->query);
+	MT_thread_setworking(m->query);
 	// locate and inline the query template instruction
 	mb = copyMalBlk(c->curprg->def);
 	if (!mb) {
@@ -712,13 +712,9 @@ SQLengineIntern(Client c, backend *be)
 	str msg = MAL_SUCCEED;
 	char oldlang = be->language;
 	mvc *m = be->mvc;
-	char *q;
 
 	if (oldlang == 'X') {	/* return directly from X-commands */
 		sqlcleanup(be->mvc, 0);
-		q = c->query;
-		c->query = NULL;
-		GDKfree(q);
 		return MAL_SUCCEED;
 	}
 
@@ -738,9 +734,6 @@ SQLengineIntern(Client c, backend *be)
 			goto cleanup_engine;
 		}
 		sqlcleanup(be->mvc, 0);
-		q = c->query;
-		c->query = NULL;
-		GDKfree(q);
 		return MAL_SUCCEED;
 	}
 
@@ -786,9 +779,6 @@ cleanup_engine:
 	MSresetInstructions(c->curprg->def, 1);
 	freeVariables(c, c->curprg->def, NULL, be->vtop);
 	be->language = oldlang;
-	q = c->query;
-	c->query = NULL;
-	GDKfree(q);
 	/*
 	 * Any error encountered during execution should block further processing
 	 * unless auto_commit has been set.
