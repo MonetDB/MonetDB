@@ -1029,15 +1029,18 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		char *name = l->h->data.sval;
 		sql_arg *a = sql_bind_param(sql, name);
 		int var = stack_find_var(sql, name);
-		
+
 		if (!exp && rel && *rel)
 			exp = rel_bind_column(sql, *rel, name, f);
 		if (!exp && query && query_has_outer(query)) {
 			int i;
 			sql_rel *outer;
 
-			for (i=0; !exp && (outer = query_fetch_outer(query,i)); i++)
+			for (i=0; !exp && (outer = query_fetch_outer(query,i)); i++) {
 				exp = rel_bind_column(sql, outer, name, f);
+				if (!exp && is_sql_having(f) && is_groupby(outer->op))
+					exp = rel_bind_column(sql, outer->l, name, f);
+			}
 			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && !is_sql_aggr(f))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
 			if (exp) { 
@@ -1053,7 +1056,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", name);
 			exp = exp_param(sql->sa, a->name, &a->type, 0);
 		}
-		if (!exp && var) { 
+		if (!exp && var) {
 			sql_rel *r = stack_find_rel_var(sql, name);
 			if (r) {
 				*rel = r;
@@ -1074,10 +1077,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s' unknown", name);
 		}
-		if (exp && rel && *rel && (*rel)->card <= CARD_AGGR && exp->card > CARD_AGGR && is_sql_sel(f) && !is_sql_aggr(f)) {
+		if (exp && rel && *rel && (*rel)->card <= CARD_AGGR && exp->card > CARD_AGGR && is_sql_sel(f) && !is_sql_aggr(f))
 			return sql_error(sql, 05, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
-		}
-		
 	} else if (dlist_length(l) == 2) {
 		char *tname = l->h->data.sval;
 		char *cname = l->h->next->data.sval;
@@ -1088,11 +1089,14 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			int i;
 			sql_rel *outer;
 
-			for (i=0; !exp && (outer = query_fetch_outer(query,i)); i++)
+			for (i=0; !exp && (outer = query_fetch_outer(query,i)); i++) {
 				exp = rel_bind_column2(sql, outer, tname, cname, f);
+				if (!exp && is_sql_having(f) && is_groupby(outer->op))
+					exp = rel_bind_column2(sql, outer->l, tname, cname, f);
+			}
 			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && !is_sql_aggr(f))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
-			if (exp) { 
+			if (exp) {
 				set_freevar(exp);
 				exp->card = CARD_ATOM;
 			}
@@ -1112,7 +1116,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 		}
 		if (!exp) {
-			if (rel && *rel && (*rel)->card == CARD_AGGR && !is_sql_aggr(f) && (is_sql_sel(f) || is_sql_having(f))) {
+			if (rel && *rel && (*rel)->card <= CARD_AGGR && !is_sql_aggr(f) && (is_sql_sel(f) || is_sql_having(f))) {
 				sql_rel *gb = *rel;
 
 				while (gb->l && !is_groupby(gb->op) && is_project(gb->op))
@@ -1124,9 +1128,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 			return sql_error(sql, 02, SQLSTATE(42S22) "SELECT: no such column '%s.%s'", tname, cname);
 		}
-		if (exp && rel && *rel && (*rel)->card == CARD_AGGR && exp->card > CARD_AGGR && is_sql_sel(f) && !is_sql_aggr(f)) {
+		if (exp && rel && *rel && (*rel)->card <= CARD_AGGR && exp->card > CARD_AGGR && is_sql_sel(f) && !is_sql_aggr(f))
 			return sql_error(sql, 05, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
-		}
 	} else if (dlist_length(l) >= 3) {
 		return sql_error(sql, 02, SQLSTATE(42000) "TODO: column names of level >= 3");
 	}
@@ -6309,7 +6312,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			relation
 		 */
 		sql_rel *o_inner = inner;
-	       	list *te = NULL, *pre_prj = o_inner->exps;//*pre_prj = rel_projections(sql, o_inner, NULL, 1, 1);
+		list *te = NULL, *pre_prj = o_inner->exps;//*pre_prj = rel_projections(sql, o_inner, NULL, 1, 1);
 		sql_rel *pre_rel = o_inner;
 		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel);
 
@@ -6335,7 +6338,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			*/
 			if (!is_project(inner->op)) {
 				if (inner != o_inner && pre_prj) {
-	       				pre_prj = rel_projections(sql, pre_rel, NULL, 1, 1);
+					pre_prj = rel_projections(sql, pre_rel, NULL, 1, 1);
 					inner = rel_project(sql->sa, inner, pre_prj);
 					reset_processed(inner);
 				} else
