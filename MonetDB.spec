@@ -60,7 +60,7 @@
 # derivatives (CentOS, Scientific Linux), the liblas library is only
 # available if EPEL is enabled, and then only on version 7.
 %if %{fedpkgs}
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} == 7
 # By default create the MonetDB-lidar package on Fedora and RHEL 7
 %bcond_without lidar
 %endif
