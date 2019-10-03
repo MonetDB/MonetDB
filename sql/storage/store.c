@@ -2136,7 +2136,8 @@ flusher_should_run(void)
 	bool my_flush_now = (bool) ATOMIC_XCG(&flusher.flush_now, 0);
 	if (my_flush_now)
 		reason_to = "user request";
-	else if (ATOMIC_GET(&store_nr_active) > 0)
+
+	if (ATOMIC_GET(&store_nr_active) > 0)
 		reason_not_to = "awaiting idle time";
 
 	if (!flusher.enabled && !my_flush_now)

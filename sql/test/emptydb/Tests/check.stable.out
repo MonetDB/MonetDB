@@ -2023,7 +2023,7 @@ drop function pcre_replace(string, string, string, string);
 [ "storagemodel",	"heapsize",	"bigint",	64,	0,	NULL,	true,	6,	NULL	]
 [ "storagemodel",	"hashsize",	"bigint",	64,	0,	NULL,	true,	7,	NULL	]
 [ "storagemodel",	"imprintsize",	"bigint",	64,	0,	NULL,	true,	8,	NULL	]
-[ "storagemodel",	"orderidxsize",	"bigint",	63,	0,	NULL,	true,	9,	NULL	]
+[ "storagemodel",	"orderidxsize",	"bigint",	64,	0,	NULL,	true,	9,	NULL	]
 [ "storagemodel",	"sorted",	"boolean",	1,	0,	NULL,	true,	10,	NULL	]
 [ "storagemodel",	"unique",	"boolean",	1,	0,	NULL,	true,	11,	NULL	]
 [ "storagemodel",	"isacolumn",	"boolean",	1,	0,	NULL,	true,	12,	NULL	]

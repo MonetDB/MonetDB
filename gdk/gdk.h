@@ -1278,15 +1278,7 @@ BUNtoid(BAT *b, BUN p)
 	return o + hi;
 }
 
-static inline BATiter
-bat_iterator(BAT *b)
-{
-	BATiter bi;
-
-	bi.b = b;
-	bi.tvid = 0;
-	return bi;
-}
+#define bat_iterator(_b)	((BATiter) {.b = (_b), .tvid = 0})
 
 /*
  * @- BAT properties

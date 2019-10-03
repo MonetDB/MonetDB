@@ -316,13 +316,11 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		if (r)
 			r = rel_optimizer(sql, r, 0);
 		if (r) {
-			int i;
 			node *n, *found = NULL;
 			list *id_l = rel_dependencies(sql, r);
-			for(i = 0, n = id_l->h ; n ; n = n->next, i++) { //remove the table itself from the list of dependencies
-				if(*(int *) n->data == mt->base.id)
+			for (n = id_l->h ; n ; n = n->next) //remove the table itself from the list of dependencies
+				if(*(sqlid *) n->data == mt->base.id)
 					found = n;
-			}
 			assert(found);
 			list_remove_node(id_l, found);
 			mvc_create_dependencies(sql, id_l, mt->base.id, TABLE_DEPENDENCY);
