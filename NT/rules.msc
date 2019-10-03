@@ -397,11 +397,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) NOT_WIN32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF PROFILING
-	$(ECHO) PROFILING_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) PROFILING_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 
 update_winconfig_conds_py: create_winconfig_conds_new_py
 	if not exist "$(TOPDIR)\winconfig_conds.py" $(CP) "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
