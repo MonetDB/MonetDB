@@ -180,50 +180,12 @@ AC_ARG_ENABLE([odbc],
 	[enable_odbc=$enableval],
 	[enable_odbc=$dft_odbc])
 
-dft_gdk=yes
-AC_ARG_ENABLE([gdk],
-	[AS_HELP_STRING([--enable-gdk],
-		[enable support for GDK (default=yes)])],
-	[enable_gdk=$enableval],
-	[enable_gdk=$dft_gdk])
-
-dft_monetdb5=yes
-AC_ARG_ENABLE([monetdb5],
-	[AS_HELP_STRING([--enable-monetdb5],
-		[enable support for MonetDB5 (default=yes)])],
-	[enable_monetdb5=$enableval],
-	[enable_monetdb5=$dft_monetdb5])
-AS_CASE([$enable_gdk-$enable_monetdb5],
-	[no-yes], [AC_MSG_ERROR([MonetDB5 requires GDK.])],
-	[no-auto], [
-		enable_monetdb5=no
-		why_not_monetdb5="(MonetDB5 requires GDK.)"])
-
-dft_sql=yes
-AC_ARG_ENABLE([sql],
-	[AS_HELP_STRING([--enable-sql],
-		[enable support for MonetDB/SQL (default=yes)])],
-	[enable_sql=$enableval],
-	[enable_sql=$dft_sql])
-AS_CASE([$enable_monetdb5-$enable_sql],
-[no-yes], [
-	AC_MSG_ERROR([MonetDB/SQL requires MonetDB5.])],
-[no-auto], [
-	enable_sql=no
-	why_not_sql="(MonetDB/SQL requires MonetDB5.)"])
-
 dft_geom=auto
 AC_ARG_ENABLE([geom],
 	[AS_HELP_STRING([--enable-geom],
 		[enable support for geom module (default=auto)])],
 	[enable_geom=$enableval],
 	[enable_geom=$dft_geom])
-AS_CASE([$enable_monetdb5-$enable_geom],
-[no-yes], [
-	AC_MSG_ERROR([geom module requires MonetDB5])],
-[no-auto], [
-	enable_geom=no
-	why_not_geom="(geom module requires MonetDB5)"])
 
 dft_fits=auto
 AC_ARG_ENABLE([fits],
@@ -1166,13 +1128,9 @@ AS_CASE([$YACC],
 	],
 	[
 		# in embedded mode, we ship the bison-generated files
-		AS_VAR_IF([enable_embedded], [no], [
-			AS_VAR_IF([enable_sql], [yes], [
-				AC_MSG_ERROR([MonetDB/SQL requires bison])])
-			enable_sql=no
-			AS_VAR_IF([why_not_sql], [], [
-				why_not_sql="(MonetDB/SQL requires bison)"])], [
-			AC_MSG_WARN([ignoring missing bison in embedded configuration])])
+		AS_VAR_IF([enable_embedded], [no],
+			[AC_MSG_ERROR([MonetDB/SQL requires bison])],
+			[AC_MSG_WARN([ignoring missing bison in embedded configuration])])
 	])
 
 INSTALL_BACKUP=""
@@ -1557,30 +1515,15 @@ AS_CASE([$host],
 		PKG_CHECK_MODULES([openssl], [openssl],
 				[have_openssl=yes],
 				[have_openssl=no; why_not_openssl="(OpenSSL library not found)"])
-		AS_CASE([$enable_monetdb5-$have_openssl],
-		[yes-no], [
+		AS_VAR_IF([have_openssl], [no], [
 			AC_MSG_ERROR([OpenSSL library not found but required for MonetDB5])],
-		[auto-no], [
-			enable_monetdb5=no
-			AS_VAR_IF([why_not_monetdb5], [], [
-				why_not_monetdb5="(OpenSSL library not found but required for MonetDB5)"])],
-		[*-yes], [
+			[
 			save_LIBS="$LIBS"
 			LIBS="$LIBS $openssl_LIBS"
 			AC_CHECK_FUNCS([MD5_Update RIPEMD160_Update SHA1_Update SHA224_Update SHA256_Update SHA384_Update SHA512_Update])
 			LIBS="$save_LIBS"
 			AS_VAR_IF([ac_cv_func_${MONETDB5_PASSWDHASH}_Update], [yes], [], [
-				AS_CASE([$enable_monetdb5],
-				[yes], [
-					AC_MSG_ERROR([OpenSSL library found but checksum algorithm required for MonetDB5 not found])],
-				[auto], [
-					enable_monetdb5=no
-					AS_VAR_IF([why_not_monetdb5], [], [
-						why_not_monetdb5="(OpenSSL library found but checksum algorithm required for MonetDB5 not found)"])],
-				[
-					AC_MSG_WARN([OpenSSL library found but required checksum algorithm not found, so disabling])])
-				have_openssl=no
-				why_not_openssl="(OpenSSL library found but required checksum algorithm not found)"])])
+				AC_MSG_ERROR([OpenSSL library found but checksum algorithm required for MonetDB5 not found])])])
 		AS_VAR_IF([have_openssl], [yes], [
 			AC_DEFINE([HAVE_OPENSSL], 1, [Define if you have the OpenSSL library])])])])
 
@@ -1640,13 +1583,9 @@ AS_VAR_IF([have_pcre], [no], [
 		[AC_MSG_RESULT([no]); have_gnuregex=no])
 ])
 
-AS_CASE([$enable_monetdb5-$have_pcre-$have_gnuregex],
-[yes-no-no], [
-	AC_MSG_ERROR([PCRE library or GNU regex library not found but required for MonetDB5])],
-[auto-no-no], [
-	enable_monetdb5=no
-	AS_VAR_IF([why_not_monetdb5], [], [
-		why_not_monetdb5="(PCRE library or GNU regex library not found but required for MonetDB5)"])])
+AS_CASE([$have_pcre-$have_gnuregex],
+[no-no], [
+	AC_MSG_ERROR([PCRE library or GNU regex library not found but required for MonetDB5])])
 
 org_have_libxml2=yes
 have_libxml2=$org_have_libxml2
@@ -2558,20 +2497,7 @@ AS_VAR_IF([mn_cv_have__sys_siglist], [yes],
 
 AC_STRUCT_TIMEZONE
 
-# check dependencies (might need more than just SQL)
-AS_VAR_IF([enable_sql], [yes],
-	[AS_VAR_IF([enable_monetdb5], [no],
-		[AC_MSG_ERROR([MonetDB/SQL requires MonetDB5${why_not_monetdb5:+ $why_not_monetdb5}.])])])
-AS_VAR_IF([enable_sql], [auto],
-	[AS_VAR_IF([enable_monetdb5], [no],
-		[enable_sql=no
-		 AS_VAR_IF([why_not_sql], [],
-			[why_not_sql="(MonetDB/SQL requires MonetDB5)"])])])
-
 #    output
-AM_CONDITIONAL([HAVE_GDK], [test "x$enable_gdk" = xyes -o "x$enable_gdk" = xauto])
-AM_CONDITIONAL([HAVE_MONETDB5], [test "x$enable_monetdb5" = xyes -o "x$enable_monetdb5" = xauto])
-AM_CONDITIONAL([HAVE_SQL], [test "x$enable_sql" = xyes -o "x$enable_sql" = xauto])
 AM_CONDITIONAL([HAVE_GEOM], [test "x$enable_geom" = xyes -o "x$enable_geom" = xauto])
 AM_CONDITIONAL([HAVE_EMBEDDED], [test "x$enable_embedded" = xyes])
 AM_CONDITIONAL([HAVE_TESTING], [test "x$enable_testing" = xyes -o "x$enable_testing" = xauto])
@@ -2857,9 +2783,6 @@ done
 AS_ECHO([''])
 AS_ECHO(["* Enabled/disabled components:"])
 for comp in \
-	'gdk           ' \
-	'monetdb5      ' \
-	'sql           ' \
 	'geom          ' \
 	'py2integration' \
 	'py3integration' \
