@@ -973,6 +973,10 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* data load */
 	fits_get_num_rows(fptr, &rows, &status);
+	/* Nothing more to do */
+	if (rows == 0) {
+		goto bailout;
+	}
 	fprintf(stderr,"#Loading %ld rows in table %s\n", rows, tname);
 	for (j = 1; j <= cnum; j++) {
 		BAT *tmp = NULL;
