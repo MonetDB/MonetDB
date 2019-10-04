@@ -2001,6 +2001,36 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_default(Client c, mvc *sql, const char *prev_schema)
+{
+	size_t bufsize = 1024, pos = 0;
+	char *err = NULL, *buf = GDKmalloc(bufsize);
+
+	(void) sql;
+
+	if (buf == NULL)
+		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"set schema \"sys\";\n"
+			"create procedure suspend_log_flushing()\n"
+			" external name sql.suspend_log_flushing;\n"
+			"create procedure resume_log_flushing()\n"
+			" external name sql.resume_log_flushing;\n"
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name in ('suspend_log_flushing', 'resume_log_flushing') and type = %d;\n", (int) F_PROC);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -2224,6 +2254,13 @@ SQLupgrades(Client c, mvc *m)
 	sql_find_subtype(&tp, "string", 0, 0);
 	if (!sql_bind_func3(m->sa, s, "deltas", &tp, &tp, &tp, F_UNION)) {
 		if ((err = sql_update_nov2019(c, m, prev_schema)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	if (!sql_bind_func(m->sa, s, "suspend_log_flushing", NULL, NULL, F_PROC)) {
+		if ((err = sql_update_default(c, m, prev_schema)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
