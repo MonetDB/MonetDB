@@ -7,8 +7,11 @@
  */
 
 /* Author(s) M.L. Kersten
- * The MAL Runtime Profiler
+ * The MAL Runtime Profiler and system queue
  * This little helper module is used to perform instruction based profiling.
+ * We should actually keep a little list of recently executed queries to inspection.
+ * [TODO] It should be moved into the Client record for speed (>500 client connections)
+ * Long term archival is left to the SQL history management structure
  */
 
 #include "monetdb_config.h"
@@ -26,7 +29,16 @@
 // Keep a queue of running queries
 QueryQueue QRYqueue;
 int qtop;
-static int qsize, qtag= 1;
+static lng qsize, qtag= 1;
+
+#define QRYreset(I)\
+		if (QRYqueue[I].query) GDKfree(QRYqueue[I].query);\
+		QRYqueue[I].cntxt = 0; \
+		QRYqueue[I].tag = 0; \
+		QRYqueue[I].query = 0; \
+		QRYqueue[I].status =0; \
+		QRYqueue[I].stk =0; \
+		QRYqueue[I].mb =0; \
 
 void
 mal_runtime_reset(void)
@@ -63,9 +75,9 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	MT_lock_set(&mal_delayLock);
 	tmp = QRYqueue;
 	if ( QRYqueue == 0)
-		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 256));
+		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 1024));
 	else if ( qtop +1 == qsize )
-		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (qsize +=256));
+		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (qsize += 256));
 	if ( QRYqueue == NULL){
 		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
 		GDKfree(tmp);			/* may be NULL, but doesn't harm */
@@ -99,6 +111,8 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	MT_lock_unset(&mal_delayLock);
 }
 
+/* We should keep a short list of previously executed queries/client for inspection */
+
 void
 runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
@@ -120,16 +134,8 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		}
 		QRYqueue[i].mb->calls++;
 		QRYqueue[i].mb->runtime += (lng) ((lng)(time(0) - QRYqueue[i].start) * 1000.0/QRYqueue[i].mb->calls);
-
-		// reset entry
-		if (QRYqueue[i].query)
-			GDKfree(QRYqueue[i].query);
-		QRYqueue[i].cntxt = 0;
-		QRYqueue[i].tag = 0;
-		QRYqueue[i].query = 0;
-		QRYqueue[i].status =0;
-		QRYqueue[i].stk =0;
-		QRYqueue[i].mb =0;
+		QRYqueue[i].status = "finished";
+		QRYreset(i)
 	}
 
 	qtop = j;

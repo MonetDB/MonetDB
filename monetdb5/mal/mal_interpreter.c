@@ -560,6 +560,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			lastcheck = runtimeProfile.ticks;
 		}
 
+		/* Long running queries are traced in the logger. Use at least a couple of minutes
+		 * to avoid a larg log*/
 		if (qptimeout > 0) {
 			lng t = GDKusec();
 			ATOMIC_BASE_TYPE lp = ATOMIC_GET(&cntxt->lastprint);

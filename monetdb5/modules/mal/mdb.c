@@ -38,6 +38,7 @@
 
 #include "monetdb_config.h"
 #include "mdb.h"
+#include "mal_authorize.h"
 #include "mal_function.h"
 
 #define MDBstatus(X) \
@@ -70,6 +71,8 @@ MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		pid = *getArgReference_int(stk, p, 1);
 		if( pid< 0 || pid >= MAL_MAXCLIENTS || mal_clients[pid].mode <= FINISHCLIENT)
 			throw(MAL, "mdb.start", ILLEGAL_ARGUMENT " Illegal process id");
+		if( cntxt->user != MAL_ADMIN && mal_clients[pid].user != cntxt->user)
+			throw(MAL, "mdb.start", "Access violation");
 		c= mal_clients+pid;
 		/* make client aware of being debugged */
 		cntxt= c;

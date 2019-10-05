@@ -13,7 +13,7 @@
 #include "mtime.h"
 
 /* (c) M.L. Kersten
- * The query runtime monitor facility is hardwired 
+ * The query runtime monitor facility is hardwired for speed and evading the SQL transaction manager
 */
 
 str
@@ -58,14 +58,14 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; i< qtop; i++)
-	if( QRYqueue[i].query && (QRYqueue[i].cntxt->idx == 0 || cntxt->user == 0 || QRYqueue[i].cntxt->user == cntxt->user)) {
+	if( QRYqueue[i].query && (QRYqueue[i].cntxt->user == MAL_ADMIN || QRYqueue[i].cntxt->user == cntxt->user)) {
 		now= time(0);
 		if ( (now-QRYqueue[i].start) > QRYqueue[i].runtime)
 			prog =QRYqueue[i].runtime > 0 ? 100: int_nil;
 		else
 			// calculate progress based on past observations
 			prog = (int) ((now- QRYqueue[i].start) / (QRYqueue[i].runtime/100.0));
-		if (BUNappend(tag, &(lng){QRYqueue[i].tag}, false) != GDK_SUCCEED)
+		if (BUNappend(tag, &QRYqueue[i].tag, false) != GDK_SUCCEED)
 			goto bailout;
 		msg = AUTHgetUsername(&usr, QRYqueue[i].cntxt);
 		if (msg != MAL_SUCCEED)
@@ -151,7 +151,7 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; QRYqueue[i].tag; i++)
-	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->idx ==0)){
+	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
 		QRYqueue[i].stk->status = 'p';
 		QRYqueue[i].status = "paused";
 	}
@@ -181,7 +181,7 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; QRYqueue[i].tag; i++)
-	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->idx ==0)){
+	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
 		QRYqueue[i].stk->status = 0;
 		QRYqueue[i].status = "running";
 	}
@@ -211,7 +211,7 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; QRYqueue[i].tag; i++)
-	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->idx ==0)){
+	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
 		QRYqueue[i].stk->status = 'q';
 		QRYqueue[i].status = "stopping";
 	}
