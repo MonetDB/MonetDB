@@ -296,7 +296,6 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	 * enough
 	 */
 	cntxt->lastcmd= time(0);
-	ATOMIC_SET(&cntxt->lastprint, GDKusec());
 	if (env != NULL) {
 		int res = 1;
 		stk = env;
@@ -558,22 +557,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				break;
 			}
 			lastcheck = runtimeProfile.ticks;
-		}
-
-		if (qptimeout > 0) {
-			lng t = GDKusec();
-			ATOMIC_BASE_TYPE lp = ATOMIC_GET(&cntxt->lastprint);
-			if ((lng) lp + qptimeout < t) {
-				/* if still the same, replace lastprint with current
-				 * time and print the query */
-				if (ATOMIC_CAS(&cntxt->lastprint, &lp, t)) {
-					const char *q = cntxt->getquery ? cntxt->getquery(cntxt) : NULL;
-					fprintf(stderr, "#%s: query already running "LLFMT"s: %.200s\n",
-							cntxt->mythread->name,
-							(lng) (time(0) - cntxt->lastcmd),
-							q ? q : "");
-				}
-			}
 		}
 
 		if (cntxt->qtimeout && mb->starttime && GDKusec() - mb->starttime > cntxt->qtimeout) {

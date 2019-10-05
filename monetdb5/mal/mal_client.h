@@ -80,7 +80,6 @@ typedef struct CLIENT {
 	lng 		session;	/* usec since start of server */
 	lng 	    qtimeout;	/* query abort after x usec*/
 	lng	        stimeout;	/* session abort after x usec */
-	ATOMIC_TYPE	lastprint;	/* when we last printed the query */
 	/*
 	 * Communication channels for the interconnect are stored here.
 	 * It is perfectly legal to have a client without input stream.

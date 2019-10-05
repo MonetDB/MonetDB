@@ -42,7 +42,7 @@ static str isaSQLquery(MalBlkPtr mb){
 	int i;
 	InstrPtr p;
 	if (mb)
-	for ( i = 0; i< mb->stop; i++){
+	for ( i = 1; i< mb->stop; i++){
 		p = getInstrPtr(mb,i);
 		if ( getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0 && idcmp(getFunctionId(p),"define")==0)
 			return getVarConstant(mb,getArg(p,1)).val.sval;
@@ -193,6 +193,7 @@ void
 runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
 	int tid = THRgettid();
+	lng ticks = GDKusec();
 
 	/* keep track on the instructions in progress*/
 	if ( tid < THREADS) {
@@ -207,7 +208,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 
 	assert(prof);
 	/* always collect the MAL instruction execution time */
-	pci->ticks = GDKusec() - prof->ticks;
+	pci->ticks = ticks - prof->ticks;
 	pci->totticks += pci->ticks;
 	pci->calls++;
 	
@@ -219,9 +220,10 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 			malProfileMode = 1;
 	}
 	cntxt->active = FALSE;
-	/* reduce threads of non-admin long running transaction if needed */
-	if ( cntxt->idx > 1 )
-		MALresourceFairness(GDKusec()- mb->starttime);
+	/* Reduce worker threads of non-admin long running transaction if needed */
+	/* The super user can always proceed */
+	if ( cntxt->user != MAL_ADMIN )
+		MALresourceFairness(ticks - mb->starttime);
 }
 
 /*

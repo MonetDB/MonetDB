@@ -13,7 +13,7 @@
 #include "mtime.h"
 
 /* (c) M.L. Kersten
- * The query runtime monitor facility is hardwired
+ * The queries currently in execution are returned to the front-end for managing expensive ones.
 */
 
 str
