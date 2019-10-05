@@ -63,5 +63,5 @@ def listfiles(path):
             except IOError:
                 sys.stderr.write('Failure to read file ' + file + '\n')
 
-listfiles(os.path.join(dbfarm, tstdb)) 
+listfiles(os.path.join(dbfarm, tstdb))
 listfiles(os.path.join(dbfarm, tstdb, 'wlc_logs'))
