@@ -28,7 +28,7 @@
 
 // Keep a queue of running queries
 QueryQueue QRYqueue;
-int qtop;
+lng qtop;
 static lng qsize, qtag= 1;
 
 #define QRYreset(I)\
@@ -68,7 +68,7 @@ static str isaSQLquery(MalBlkPtr mb){
 void
 runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
-	int i;
+	lng i;
 	str q;
 	QueryQueue tmp;
 
@@ -76,7 +76,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	tmp = QRYqueue;
 	if ( QRYqueue == 0)
 		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 1024));
-	else if ( qtop +1 == qsize )
+	else if ( qtop + 1 == qsize )
 		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (qsize += 256));
 	if ( QRYqueue == NULL){
 		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
@@ -116,7 +116,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 void
 runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
-	int i,j;
+	lng i,j;
 
 	(void) cntxt;
 	(void) mb;
@@ -146,7 +146,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 void
 finishSessionProfiler(Client cntxt)
 {
-	int i,j;
+	lng i,j;
 
 	(void) cntxt;
 

@@ -29,7 +29,8 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *o = getArgReference_bat(stk,pci,6);
 	bat *q = getArgReference_bat(stk,pci,7);
 	time_t now;
-	int i, prog;
+	lng i;
+	int prog;
 	str usr;
 	timestamp tsn;
 	str msg = MAL_SUCCEED;
