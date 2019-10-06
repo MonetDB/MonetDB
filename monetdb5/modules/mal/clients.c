@@ -674,6 +674,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		    if (BUNappend(qtimeout, &timeout, false) != GDK_SUCCEED)
 				goto bailout;
 			MT_lock_set(&mal_delayLock);
+			cnt = 0;
 			for( i = 0; i < THREADS; i++)
 				if ( c->inprogress[i].mb){
 					cnt ++;
