@@ -551,6 +551,7 @@ openProfilerStream(stream *fd, int mode)
 	prettify = (mode & PROFSINGLELINE) ? "": "\n";
 
 	/* show all in progress instructions for stethoscope startup */
+	/* this code is not thread safe, because the inprogress administration may change concurrently */
 	if( (mode & PROFSHOWRUNNING) > 0){
 		for (i = 0; i < MAL_MAXCLIENTS; i++) {
 			c = mal_clients+i;
