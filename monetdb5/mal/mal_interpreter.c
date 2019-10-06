@@ -506,7 +506,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		runtimeProfileInit(cntxt, mb, stk);
 		runtimeProfileBegin(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
 		mb->starttime = GDKusec();
-		if (cntxt->stimeout && cntxt->session && GDKusec()- cntxt->session > cntxt->stimeout) {
+		if (cntxt->stimeout && mb->starttime - cntxt->session > cntxt->stimeout) {
 			if ( backup != backups) GDKfree(backup);
 			if ( garbage != garbages) GDKfree(garbage);
 			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_SESSION_TIMEOUT);
@@ -559,7 +559,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			lastcheck = runtimeProfile.ticks;
 		}
 
-		if (cntxt->qtimeout && mb->starttime && GDKusec() - mb->starttime > cntxt->qtimeout) {
+		// runtimeProfileBegin already sets the time in the instruction
+		if (cntxt->qtimeout && runtimeProfile.ticks - mb->starttime > cntxt->qtimeout) {
 			freeException(ret);	/* in case it's set */
 			ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 			break;
