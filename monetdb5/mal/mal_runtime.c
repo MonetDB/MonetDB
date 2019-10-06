@@ -180,10 +180,6 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	/* always collect the MAL instruction execution time */
 	pci->clock = prof->ticks = GDKusec();
 
-	/* keep track of actual running instructions over BATs */
-	if( isaBatType(getArgType(mb, pci, 0)) )
-		(void) ATOMIC_INC(&mal_running);
-
 	/* emit the instruction upon start as well */
 	if(malProfileMode > 0 )
 		profilerEvent(mb, stk, pci, TRUE, cntxt->username);
@@ -202,10 +198,6 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 		cntxt->inprogress[tid].pci = 0;
 	}
 
-	assert(pci);
-	if( isaBatType(getArgType(mb, pci, 0)) )
-		(void) ATOMIC_DEC(&mal_running);
-
 	assert(prof);
 	/* always collect the MAL instruction execution time */
 	pci->ticks = ticks - prof->ticks;
@@ -220,10 +212,10 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 			malProfileMode = 1;
 	}
 	cntxt->active = FALSE;
-	/* Reduce worker threads of non-admin long running transaction if needed */
-	/* The super user can always proceed */
-	if ( cntxt->user != MAL_ADMIN )
-		MALresourceFairness(ticks - mb->starttime);
+	/* Reduce worker threads of non-admin long running transaction if needed.
+ 	* the punishment is equal to the duration of the last instruction */
+	if ( cntxt->user != MAL_ADMIN && ticks - mb->starttime > LONGRUNNING )
+		MALresourceFairness(cntxt, mb, stk, pci, pci->ticks);
 }
 
 /*
