@@ -554,11 +554,10 @@ openProfilerStream(stream *fd, int mode)
 	if( (mode & PROFSHOWRUNNING) > 0){
 		for (i = 0; i < MAL_MAXCLIENTS; i++) {
 			c = mal_clients+i;
-			if ( c->active )
-				for(j = 0; j <THREADS; j++)
-				if( c->inprogress[j].mb)
-				/* show the event */
-					profilerEvent(c->inprogress[j].mb, c->inprogress[j].stk, c->inprogress[j].pci, 1, c->username);
+			for(j = 0; j <THREADS; j++)
+			if( c->inprogress[j].mb)
+			/* show the event */
+				profilerEvent(c->inprogress[j].mb, c->inprogress[j].stk, c->inprogress[j].pci, 1, c->username);
 		}
 	}
 	return MAL_SUCCEED;

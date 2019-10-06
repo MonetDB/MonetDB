@@ -169,8 +169,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	int tid = THRgettid();
 
 	assert(pci);
-	/* keep track on the instructions taken in progress */
-	cntxt->active = TRUE;
+	/* keep track on the instructions taken in progress for stethoscope*/
 	if( tid < THREADS){
 		cntxt->inprogress[tid].mb = mb;
 		cntxt->inprogress[tid].stk = stk;
@@ -198,7 +197,6 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 		cntxt->inprogress[tid].pci = 0;
 	}
 
-	assert(prof);
 	/* always collect the MAL instruction execution time */
 	pci->ticks = ticks - prof->ticks;
 	pci->totticks += pci->ticks;
@@ -211,7 +209,6 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 		if( getInstrPtr(mb,0) == pci)
 			malProfileMode = 1;
 	}
-	cntxt->active = FALSE;
 	/* Reduce worker threads of non-admin long running transaction if needed.
  	* the punishment is equal to the duration of the last instruction */
 	if ( cntxt->user != MAL_ADMIN && ticks - mb->starttime > LONGRUNNING )
