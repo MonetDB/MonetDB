@@ -28,6 +28,8 @@ stderr of test 'copy_into_fwf` in directory 'clients/R` itself:
 # 16:40:23 >  "R" "--vanilla" "--slave" "--args" "30658"
 # 16:40:23 >  
 
+Warning message:
+S3 methods ‘[.fun_list’, ‘[.grouped_df’, ‘all.equal.tbl_df’, ‘anti_join.data.frame’, ‘anti_join.tbl_df’, ‘arrange.data.frame’, ‘arrange.default’, ‘arrange.grouped_df’, ‘arrange.tbl_df’, ‘arrange_.data.frame’, ‘arrange_.tbl_df’, ‘as.data.frame.grouped_df’, ‘as.data.frame.rowwise_df’, ‘as.data.frame.tbl_cube’, ‘as.table.tbl_cube’, ‘as.tbl.data.frame’, ‘as.tbl.tbl’, ‘as.tbl_cube.array’, ‘as.tbl_cube.data.frame’, ‘as.tbl_cube.matrix’, ‘as.tbl_cube.table’, ‘as_tibble.grouped_df’, ‘as_tibble.tbl_cube’, ‘auto_copy.tbl_cube’, ‘auto_copy.tbl_df’, ‘cbind.grouped_df’, ‘collapse.data.frame’, ‘collect.data.frame’, ‘common_by.NULL’, ‘common_by.character’, ‘common_by.default’, ‘common_by.list’, ‘compute.data.frame’, ‘copy_to.DBIConnection’, ‘copy_to.src_local’, ‘default_missing.data.frame’, ‘default_missing.default’, ‘dim.tbl_cube’, ‘distinct.data.f [... truncated] 
 
 # 16:40:23 >  
 # 16:40:23 >  "Done."
