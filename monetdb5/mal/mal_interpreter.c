@@ -25,6 +25,7 @@ void
 setqptimeout(lng usecs)
 {
 	qptimeout = usecs;
+	(void) qptimeout;
 }
 
 inline
