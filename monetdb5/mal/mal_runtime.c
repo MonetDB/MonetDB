@@ -171,9 +171,11 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	assert(pci);
 	/* keep track on the instructions taken in progress for stethoscope*/
 	if( tid < THREADS){
+		MT_lock_set(&mal_delayLock);
 		cntxt->inprogress[tid].mb = mb;
 		cntxt->inprogress[tid].stk = stk;
 		cntxt->inprogress[tid].pci = pci;
+		MT_lock_unset(&mal_delayLock);
 	}
 
 	/* always collect the MAL instruction execution time */
@@ -192,9 +194,11 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 
 	/* keep track on the instructions in progress*/
 	if ( tid < THREADS) {
+		MT_lock_set(&mal_delayLock);
 		cntxt->inprogress[tid].mb = 0;
-		cntxt->inprogress[tid].stk =0;
+		cntxt->inprogress[tid].stk = 0;
 		cntxt->inprogress[tid].pci = 0;
+		MT_lock_unset(&mal_delayLock);
 	}
 
 	/* always collect the MAL instruction execution time */

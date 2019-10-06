@@ -624,6 +624,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	timestamp ret;
 	lng timeout;
 	str msg = NULL;
+	int i, cnt;
 
 	(void) cntxt;
 	(void) mb;
@@ -670,8 +671,16 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		    if (BUNappend(last, &ret, false) != GDK_SUCCEED)
 			    goto bailout;
 		    timeout = c->qtimeout / 1000000;
-		    if (BUNappend(qtimeout, &timeout, false) != GDK_SUCCEED ||
-			BUNappend(active, &c->active, false) != GDK_SUCCEED)
+		    if (BUNappend(qtimeout, &timeout, false) != GDK_SUCCEED)
+				goto bailout;
+			MT_lock_set(&mal_delayLock);
+			for( i = 0; i < THREADS; i++)
+				if ( c->inprogress[i].mb){
+					cnt ++;
+					break;
+				}
+			MT_lock_unset(&mal_delayLock);
+			if( BUNappend(active, &cnt, false) != GDK_SUCCEED)
 			    goto bailout;
 	    }
     }

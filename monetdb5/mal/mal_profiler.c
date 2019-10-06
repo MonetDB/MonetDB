@@ -555,10 +555,12 @@ openProfilerStream(stream *fd, int mode)
 	if( (mode & PROFSHOWRUNNING) > 0){
 		for (i = 0; i < MAL_MAXCLIENTS; i++) {
 			c = mal_clients+i;
+			MT_lock_set(&mal_delayLock);
 			for(j = 0; j <THREADS; j++)
 			if( c->inprogress[j].mb)
 			/* show the event */
 				profilerEvent(c->inprogress[j].mb, c->inprogress[j].stk, c->inprogress[j].pci, 1, c->username);
+			MT_lock_unset(&mal_delayLock);
 		}
 	}
 	return MAL_SUCCEED;
