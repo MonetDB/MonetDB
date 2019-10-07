@@ -37,9 +37,7 @@ QUERY = CALL "sys"."settimeout"(7, -9);
 ERROR = !Session time out should be >= 0
 MAPI  = (monetdb) /var/tmp/mtest-15044/.s.monetdb.30743
 QUERY = CALL "sys"."setsession"(-8);
-ERROR = !Query time out should be >= 0
-
-
+ERROR = !Session time out should be >= 0
 
 # 17:30:21 >  
 # 17:30:21 >  "Done."
