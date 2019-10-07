@@ -66,7 +66,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			// calculate progress based on past observations
 			prog = (int) ((now- QRYqueue[i].start) / (QRYqueue[i].runtime/100.0));
-		if (BUNappend(tag, &QRYqueue[i].tag, false) != GDK_SUCCEED)
+		if (BUNappend(tag, &(lng){QRYqueue[i].tag}, false) != GDK_SUCCEED)
 			goto bailout;
 		msg = AUTHgetUsername(&usr, QRYqueue[i].cntxt);
 		if (msg != MAL_SUCCEED)
@@ -152,10 +152,10 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; QRYqueue[i].tag; i++)
-	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
-		QRYqueue[i].stk->status = 'p';
-		QRYqueue[i].status = "paused";
-	}
+		if( (lng) QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
+			QRYqueue[i].stk->status = 'p';
+			QRYqueue[i].status = "paused";
+		}
 	MT_lock_unset(&mal_delayLock);
 	return MAL_SUCCEED;
 }
@@ -182,10 +182,10 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; QRYqueue[i].tag; i++)
-	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
-		QRYqueue[i].stk->status = 0;
-		QRYqueue[i].status = "running";
-	}
+		if( (lng)QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
+			QRYqueue[i].stk->status = 0;
+			QRYqueue[i].status = "running";
+		}
 	MT_lock_unset(&mal_delayLock);
 	return MAL_SUCCEED;
 }
@@ -212,10 +212,10 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; QRYqueue[i].tag; i++)
-	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
-		QRYqueue[i].stk->status = 'q';
-		QRYqueue[i].status = "stopping";
-	}
+		if( (lng) QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
+			QRYqueue[i].stk->status = 'q';
+			QRYqueue[i].status = "stopping";
+		}
 	MT_lock_unset(&mal_delayLock);
 	return MAL_SUCCEED;
 }

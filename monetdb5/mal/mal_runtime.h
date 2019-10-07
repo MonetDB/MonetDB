@@ -28,7 +28,7 @@ typedef struct QRYQUEUE{
 	Client cntxt;
 	MalBlkPtr mb;
 	MalStkPtr stk;
-	lng tag;
+	oid tag;
 	str query;
 	str status;
 	time_t start;

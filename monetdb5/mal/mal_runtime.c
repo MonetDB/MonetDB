@@ -29,7 +29,8 @@
 // Keep a queue of running queries
 QueryQueue QRYqueue;
 lng qtop;
-static lng qsize, qtag= 1;
+static lng qsize;
+static oid qtag= 1;
 
 #define QRYreset(I)\
 		if (QRYqueue[I].query) GDKfree(QRYqueue[I].query);\
