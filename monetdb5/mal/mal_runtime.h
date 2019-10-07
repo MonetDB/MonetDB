@@ -28,13 +28,13 @@ typedef struct QRYQUEUE{
 	Client cntxt;
 	MalBlkPtr mb;
 	MalStkPtr stk;
-	int tag;
+	lng tag;
 	str query;
 	str status;
 	time_t start;
 	lng runtime;
 } *QueryQueue;
-mal_export int qtop;
+mal_export lng qtop;
 
 mal_export void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 mal_export void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);

@@ -4,7 +4,7 @@ try:
     from MonetDBtesting import process
 except ImportError:
     import process
-import os, sys, socket
+import os, sys
 
 dbfarm = os.getenv('GDK_DBFARM')
 tstdb = os.getenv('TSTDB')
@@ -13,38 +13,25 @@ if not tstdb or not dbfarm:
     print('No TSTDB or GDK_DBFARM in environment')
     sys.exit(1)
 
-def freeport():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    return port
-
-cloneport = freeport()
-
+#clean up first
 dbname = tstdb
-dbnameclone = tstdb + 'clone'
 
-#master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+s = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
-c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+c = process.client('sql', server = s, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
-# Generate a wrong master record
+#continue logging
 cout, cerr = c.communicate('''\
-call wlr.master('demo');
-call wlr.replicate();
-select * from tmp;
-call wlr.stop();
-''' )
+call wlc.stop();
+create table tmp80(i int, s string);
+insert into tmp80 values(1,'thanks'), (2,'for the fish');
+select * from tmp70;
+''')
 
-sout, serr = slave.communicate()
-#mout, merr = master.communicate()
+sout, serr = s.communicate()
 
-#sys.stdout.write(mout)
 sys.stdout.write(sout)
 sys.stdout.write(cout)
-#sys.stderr.write(merr)
 sys.stderr.write(serr)
 sys.stderr.write(cerr)
 

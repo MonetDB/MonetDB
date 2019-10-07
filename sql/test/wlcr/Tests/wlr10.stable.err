@@ -1,4 +1,4 @@
-stderr of test 'wlr01` in directory 'sql/test/wlcr` itself:
+stderr of test 'wlr10` in directory 'sql/test/wlcr` itself:
 
 
 # 21:37:58 >  
@@ -17,9 +17,11 @@ stderr of test 'wlr01` in directory 'sql/test/wlcr` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 47157
-# cmdline opt 	mapi_usock = /var/tmp/mtest-16939/.s.monetdb.47157
-# cmdline opt 	gdk_dbpath = /export/scratch1/mk/branches/Nov2019//Linux/var/MonetDB/mTests_sql_test_wlcr-clone
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mapi_port = 36435
+# cmdline opt 	mapi_usock = /var/tmp/mtest-32399/.s.monetdb.36435
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone
+# cmdline opt 	gdk_debug = 536870922
 
 # 21:37:59 >  
 # 21:37:59 >  "Done."

@@ -35,6 +35,8 @@ stdout of test 'table_functions_fail_after_restart-0.Bug-3063` in directory 'sql
 [ "tmp"	]
 [ "json"	]
 [ "profiler"	]
+[ "wlc"	]
+[ "wlr"	]
 [ "bam"	]
 [ "ft"	]
 
