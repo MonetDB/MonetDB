@@ -175,7 +175,7 @@ typedef struct {
 typedef struct MALBLK {
 	char binding[IDLENGTH];	/* related C-function */
 	str help;				/* supportive commentary */
-	oid tag;				/* unique block tag */
+	lng tag;				/* unique block tag */
 	struct MALBLK *alternative;
 	int vtop;				/* next free slot */
 	int vsize;				/* size of variable arena */
@@ -229,7 +229,7 @@ typedef struct MALSTK {
 	char cmd;               /* debugger and runtime communication */
 	char status;	        /* srunning 'R' suspended 'S', quiting 'Q' */
 	int pcup;               /* saved pc upon a recursive all */
-	int tag;                /* unique invocation call tag */
+	lng tag;                /* unique invocation call tag */
 	struct MALSTK *up;      /* stack trace list */
 	struct MALBLK *blk;    	/* associated definition */
 	ValRecord stk[FLEXIBLE_ARRAY_MEMBER];

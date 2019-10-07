@@ -165,14 +165,14 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 
 	logadd("\"function\":\"%s.%s\",%s", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)), prettify);
 	logadd("\"pc\":%d,%s", mb?getPC(mb,pci):0, prettify);
-	logadd("\"tag\":%d,%s", stk?stk->tag:0, prettify);
+	logadd("\"tag\":"LLFMT",%s", stk?stk->tag:0, prettify);
 	logadd("\"module\":\"%s\",%s", pci->modname ? pci->modname : "", prettify);
 	if (pci->modname && strcmp(pci->modname, "user") == 0) {
-		int caller_tag = 0;
+		lng caller_tag = 0;
 		if(stk && stk->up) {
 			caller_tag = stk->up->tag;
 		}
-		logadd("\"caller\":%d,%s", caller_tag, prettify);
+		logadd("\"caller\":"LLFMT",%s", caller_tag, prettify);
 	}
 	logadd("\"instruction\":\"%s\",%s", pci->fcnname ? pci->fcnname : "", prettify);
 	if (!GDKinmemory()) {
@@ -551,14 +551,16 @@ openProfilerStream(stream *fd, int mode)
 	prettify = (mode & PROFSINGLELINE) ? "": "\n";
 
 	/* show all in progress instructions for stethoscope startup */
+	/* this code is not thread safe, because the inprogress administration may change concurrently */
 	if( (mode & PROFSHOWRUNNING) > 0){
 		for (i = 0; i < MAL_MAXCLIENTS; i++) {
 			c = mal_clients+i;
-			if ( c->active )
-				for(j = 0; j <THREADS; j++)
-				if( c->inprogress[j].mb)
-				/* show the event */
-					profilerEvent(c->inprogress[j].mb, c->inprogress[j].stk, c->inprogress[j].pci, 1, c->username);
+			MT_lock_set(&mal_delayLock);
+			for(j = 0; j <THREADS; j++)
+			if( c->inprogress[j].mb)
+			/* show the event */
+				profilerEvent(c->inprogress[j].mb, c->inprogress[j].stk, c->inprogress[j].pci, 1, c->username);
+			MT_lock_unset(&mal_delayLock);
 		}
 	}
 	return MAL_SUCCEED;
@@ -904,7 +906,7 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return;
 
 	/* update the Trace tables */
-	snprintf(buf, BUFSIZ, "%s.%s[%d]%d",
+	snprintf(buf, BUFSIZ, "%s.%s[%d]"LLFMT,
 	getModuleId(getInstrPtr(mb, 0)),
 	getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci), stk->tag);
 

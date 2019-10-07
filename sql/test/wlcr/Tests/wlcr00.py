@@ -14,7 +14,7 @@ if not tstdb or not dbfarm:
     sys.exit(1)
 
 dbname = tstdb
-dbnameclone = tstdb + '-clone'
+dbnameclone = tstdb + 'clone'
 
 # clean up before we start
 if os.path.exists(os.path.join(dbfarm, dbname)):

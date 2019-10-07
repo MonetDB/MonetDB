@@ -32,6 +32,7 @@ sys.stderr.write(serr)
 sys.stderr.write(cerr)
 
 def listfiles(path):
+    sys.stdout.write("#LISTING OF THE LOG FILES\n")
     for f in sorted(os.listdir(path)):
         if (f.find('wlc') >= 0 or f.find('wlr') >=0 ) and f != 'wlc_logs':
             file = path + os.path.sep + f

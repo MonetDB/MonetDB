@@ -10,10 +10,8 @@
  * author Martin Kersten, Fabian Groffen
  * Client Management
  * Each online client is represented with an entry in the clients table.
- * The client may inspect his record at run-time and partially change its
- * properties.
- * The administrator sees all client records and has the right to
- * adjust global properties.
+ * The client may inspect his record at run-time and partially change its properties.
+ * The administrator sees all client records and has the right to adjust global properties.
  */
 
 
@@ -202,90 +200,17 @@ CLTLogin(bat *nme, bat *ret)
 }
 
 str
-CLTLastCommand(bat *ret)
-{
-	BAT *b = COLnew(0, TYPE_str, 12, TRANSIENT);
-	int i;
-	char s[26];
-
-	if (b == 0)
-		throw(MAL, "clients.getLastCommand", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	for (i = 0; i < MAL_MAXCLIENTS; i++) {
-		Client c = mal_clients+i;
-		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user)) {
-			CLTtimeConvert((time_t) c->lastcmd,s);
-			if (BUNappend(b, s, false) != GDK_SUCCEED)
-				goto bailout;
-		}
-	}
-	if (pseudo(ret,b,"client","lastcommand"))
-		goto bailout;
-	return MAL_SUCCEED;
-
-  bailout:
-	BBPreclaim(b);
-	throw(MAL, "clients.getLastCommand", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-}
-
-str
-CLTActions(bat *ret)
-{
-	BAT *b = COLnew(0, TYPE_int, 12, TRANSIENT);
-	int i;
-
-	if (b == 0)
-		throw(MAL, "clients.getActions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	for (i = 0; i < MAL_MAXCLIENTS; i++) {
-		Client c = mal_clients+i;
-		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user)) {
-			if (BUNappend(b, &c->actions, false) != GDK_SUCCEED)
-				goto bailout;
-		}
-	}
-	if (pseudo(ret,b,"client","actions"))
-		goto bailout;
-	return MAL_SUCCEED;
-  bailout:
-	BBPreclaim(b);
-	throw(MAL, "clients.getActions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-}
-
-/*
- * Produce a list of clients currently logged in
- */
-str
-CLTusers(bat *ret)
-{
-	BAT *b = COLnew(0, TYPE_str, 12, TRANSIENT);
-	int i;
-
-	if (b == 0)
-		throw(MAL, "clients.users", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	for (i = 0; i < MAL_MAXCLIENTS; i++) {
-		Client c = mal_clients+i;
-		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user) &&
-			BUNappend(b, &i, false) != GDK_SUCCEED)
-			goto bailout;
-	}
-	if (pseudo(ret,b,"client","users"))
-		goto bailout;
-	return MAL_SUCCEED;
-  bailout:
-	BBPreclaim(b);
-	throw(MAL, "clients.users", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-}
-
-str
 CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int id;
 	(void) mb;		/* fool compiler */
 	
-	if ( pci->argc==2 && cntxt->idx != 0)
-		throw(MAL, "client.quit", INVCRED_ACCESS_DENIED);
 	if ( pci->argc==2)
 		id = *getArgReference_int(stk,pci,1);
 	else id =cntxt->idx;
+
+	if ( !(cntxt->user == MAL_ADMIN ||  mal_clients[id].user == cntxt->user) )
+		throw(MAL, "client.quit", INVCRED_ACCESS_DENIED);
 
 	/* A user can only quite a session under the same id */
 	if ( cntxt->idx == mal_clients[id].idx)
@@ -295,6 +220,7 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+/* Stopping a client in a softmanner by setting the time out marker */
 str
 CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -307,16 +233,26 @@ CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+/* Queries can be temporarily suspended */
 str
 CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *id=  getArgReference_int(stk,pci,1);
 	(void) cntxt;
 	(void) mb;
+	if ( !(cntxt->user == MAL_ADMIN ||  mal_clients[*id].user == cntxt->user) )
+		throw(MAL, "client.suspend", INVCRED_ACCESS_DENIED);
     return MCsuspendClient(*id);
 }
 
-//set time out based on seconds
+str
+CLTwakeup(void *ret, int *id)
+{
+    (void) ret;     /* fool compiler */
+    return MCawakeClient(*id);
+}
+
+/* set session time out based in minutes */
 str
 CLTsetSessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -325,10 +261,11 @@ CLTsetSessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sto=  *getArgReference_lng(stk,pci,1);
 	if( sto < 0)
 		throw(MAL,"timeout","Query time out should be >= 0");
-	cntxt->stimeout = sto * 1000 * 1000;
+	cntxt->stimeout = sto * 60 * 1000 * 1000;
     return MAL_SUCCEED;
 }
 
+/* Set the current query timeout in seconds */
 str
 CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -347,6 +284,7 @@ CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     return MAL_SUCCEED;
 }
 
+/* Retrieve the session time out */
 str
 CLTgetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -358,6 +296,9 @@ CLTgetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     return MAL_SUCCEED;
 }
 
+/* Long running queries are traced in the logger 
+ * with a message from the interpreter.
+ * This value should be set to minutes to avoid a lengthly log */
 str
 CLTsetPrintTimeout(void *ret, int *secs)
 {
@@ -365,15 +306,8 @@ CLTsetPrintTimeout(void *ret, int *secs)
 	if (is_int_nil(*secs))
 		setqptimeout(0);
 	else
-		setqptimeout((lng) *secs * 1000000);
+		setqptimeout((lng) *secs * 60 * 1000000);
 	return MAL_SUCCEED;
-}
-
-str
-CLTwakeup(void *ret, int *id)
-{
-    (void) ret;     /* fool compiler */
-    return MCawakeClient(*id);
 }
 
 str CLTmd5sum(str *ret, str *pw) {
@@ -592,7 +526,7 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		break;
 	}
 
-	if (mal_clients[0].user != MAL_ADMIN)
+	if (cntxt->user != MAL_ADMIN)
 		throw(MAL,"mal.shutdown", "Administrator rights required");
 	MCstopClients(cntxt);
 	do{
@@ -624,6 +558,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	timestamp ret;
 	lng timeout;
 	str msg = NULL;
+	int i, cnt;
 
 	(void) cntxt;
 	(void) mb;
@@ -670,8 +605,17 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		    if (BUNappend(last, &ret, false) != GDK_SUCCEED)
 			    goto bailout;
 		    timeout = c->qtimeout / 1000000;
-		    if (BUNappend(qtimeout, &timeout, false) != GDK_SUCCEED ||
-			BUNappend(active, &c->active, false) != GDK_SUCCEED)
+		    if (BUNappend(qtimeout, &timeout, false) != GDK_SUCCEED)
+				goto bailout;
+			MT_lock_set(&mal_delayLock);
+			cnt = 0;
+			for( i = 0; i < THREADS; i++)
+				if ( c->inprogress[i].mb){
+					cnt ++;
+					break;
+				}
+			MT_lock_unset(&mal_delayLock);
+			if( BUNappend(active, &cnt, false) != GDK_SUCCEED)
 			    goto bailout;
 	    }
     }

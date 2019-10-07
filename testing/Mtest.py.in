@@ -383,7 +383,6 @@ CONDITIONALS = {
     'HAVE_CURL'            : "@HAVE_CURL_FALSE@",
     'HAVE_DEVELOPER'       : "@HAVE_DEVELOPER_FALSE@",
     'HAVE_FITS'            : "@HAVE_FITS_FALSE@",
-    'HAVE_GDK'             : "@HAVE_GDK_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_HGE'             : "@HAVE_HGE_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
@@ -397,17 +396,14 @@ CONDITIONALS = {
     'HAVE_LIDAR'           : "@HAVE_LIDAR_FALSE@",
     'HAVE_SHP'             : "@HAVE_SHP_FALSE@",
     'HAVE_MAL_DEBUGGER'    : "@HAVE_MAL_DEBUGGER_FALSE@",
-    'HAVE_MONETDB5'        : "@HAVE_MONETDB5_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
     'HAVE_SAMTOOLS'        : "@HAVE_SAMTOOLS_FALSE@",
-    'HAVE_SQL'             : "@HAVE_SQL_FALSE@",
     'HAVE_TESTING'         : "@HAVE_TESTING_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
     'NOT_WIN32'            : "@NOT_WIN32_FALSE@",
-    'PROFILING'            : "@PROFILING_FALSE@",
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
     'KNOWNFAIL'            : "", # skip on release branch when not in testweb

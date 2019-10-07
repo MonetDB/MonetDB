@@ -1984,12 +1984,86 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema)
 				"GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n");
 	}
 #endif
+	/* 60/61_wlcr signatures migrations */
+	pos += snprintf(buf + pos, bufsize - pos,
+		"drop procedure master();\n"
+		"drop procedure master(path string);\n"
+		"drop procedure stopmaster();\n"
+		"drop procedure masterbeat( duration int);\n"
+		"drop function masterClock() returns string;\n"
+		"drop function masterTick() returns bigint;\n"
+		"drop procedure replicate();\n"
+		"drop procedure replicate(pointintime timestamp);\n"
+		"drop procedure replicate(dbname string);\n"
+		"drop procedure replicate(dbname string, pointintime timestamp);\n"
+		"drop procedure replicate(dbname string, id tinyint);\n"
+		"drop procedure replicate(dbname string, id smallint);\n"
+		"drop procedure replicate(dbname string, id integer);\n"
+		"drop procedure replicate(dbname string, id bigint);\n"
+		"drop procedure replicabeat(duration integer);\n"
+		"drop function replicaClock() returns string;\n"
+		"drop function replicaTick() returns bigint;\n"
+
+		"create schema wlc;\n"
+		"create procedure wlc.master();\n"
+		"create procedure wlc.master(path string);\n"
+		"create procedure wlc.stop();\n"
+		"create procedure wlc.flush();\n"
+		"create procedure wlc.beat( duration int);\n"
+		"create function wlc.clock() returns string;\n"
+		"create function wlc.tick() returns bigint;\n"
+
+		"create schema wlr;\n"
+		"create procedure wlr.master(dbname string);\n"
+		"create procedure wlr.stop();\n"
+		"create procedure wlr.accept();\n"
+		"create procedure wlr.replicate();\n"
+		"create procedure wlr.replicate(pointintime timestamp);\n"
+		"create procedure wlr.replicate(id tinyint);\n"
+		"create procedure wlr.replicate(id smallint);\n"
+		"create procedure wlr.replicate(id integer);\n"
+		"create procedure wlr.replicate(id bigint);\n"
+		"create procedure wlr.beat(duration integer);\n"
+		"create function wlr.clock() returns string;\n"
+		"create function wlr.tick() returns bigint;\n"
+	);
+
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('deltas') and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('median_avg', 'quantile_avg') and type = %d;\n", (int) F_AGGR);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_default(Client c, mvc *sql, const char *prev_schema)
+{
+	size_t bufsize = 1024, pos = 0;
+	char *err = NULL, *buf = GDKmalloc(bufsize);
+
+	(void) sql;
+
+	if (buf == NULL)
+		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"set schema \"sys\";\n"
+			"create procedure suspend_log_flushing()\n"
+			" external name sql.suspend_log_flushing;\n"
+			"create procedure resume_log_flushing()\n"
+			" external name sql.resume_log_flushing;\n"
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name in ('suspend_log_flushing', 'resume_log_flushing') and type = %d;\n", (int) F_PROC);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
@@ -2088,7 +2162,8 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-	if (!sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
+	if (mvc_bind_schema(m, "wlc") == NULL &&
+	    !sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
 		if ((err = sql_update_mar2018(c, m, prev_schema)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
@@ -2224,6 +2299,13 @@ SQLupgrades(Client c, mvc *m)
 	sql_find_subtype(&tp, "string", 0, 0);
 	if (!sql_bind_func3(m->sa, s, "deltas", &tp, &tp, &tp, F_UNION)) {
 		if ((err = sql_update_nov2019(c, m, prev_schema)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	if (!sql_bind_func(m->sa, s, "suspend_log_flushing", NULL, NULL, F_PROC)) {
+		if ((err = sql_update_default(c, m, prev_schema)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}

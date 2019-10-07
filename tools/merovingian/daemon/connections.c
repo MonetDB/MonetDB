@@ -71,11 +71,17 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 				break; /* working */
 		}
 		if (rp == NULL) {
+			int e = errno;
 			if (result)
 				freeaddrinfo(result);
 			if (sock != -1)
 				closesocket(sock);
-			return newErr("cannot bind to host %s", bindaddr);
+			if (result) { /* results found, tried socket, setsockopt and bind calls */
+				errno = e;
+				return newErr("binding to stream socket port %hu failed: %s", port, strerror(errno));
+			} else { /* no results found, could not translate address */
+				return newErr("cannot translate host %s", bindaddr);
+			}
 		}
 		server = rp->ai_addr;
 		length = rp->ai_addrlen;
