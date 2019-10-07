@@ -24,6 +24,9 @@ SELECT name, major FROM students s WHERE EXISTS(SELECT * FROM exams e WHERE e.si
 drop table students;
 drop table exams;
 
+SELECT 1 IN (1, (SELECT 2)), 1 NOT IN (1, (SELECT 2));
+	-- True, False
+
 CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product_Name  varchar(64), TotalSales int); 
 INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Game',400),(3,'Fashion','Shirt',500),(4,'Fashion','Shorts',100);
 CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
