@@ -165,14 +165,14 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 
 	logadd("\"function\":\"%s.%s\",%s", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)), prettify);
 	logadd("\"pc\":%d,%s", mb?getPC(mb,pci):0, prettify);
-	logadd("\"tag\":"LLFMT",%s", stk?stk->tag:0, prettify);
+	logadd("\"tag\":"OIDFMT",%s", stk?stk->tag:0, prettify);
 	logadd("\"module\":\"%s\",%s", pci->modname ? pci->modname : "", prettify);
 	if (pci->modname && strcmp(pci->modname, "user") == 0) {
-		lng caller_tag = 0;
+		oid caller_tag = 0;
 		if(stk && stk->up) {
 			caller_tag = stk->up->tag;
 		}
-		logadd("\"caller\":"LLFMT",%s", caller_tag, prettify);
+		logadd("\"caller\":"OIDFMT",%s", caller_tag, prettify);
 	}
 	logadd("\"instruction\":\"%s\",%s", pci->fcnname ? pci->fcnname : "", prettify);
 	if (!GDKinmemory()) {
@@ -906,9 +906,9 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return;
 
 	/* update the Trace tables */
-	snprintf(buf, BUFSIZ, "%s.%s[%d]"LLFMT,
-	getModuleId(getInstrPtr(mb, 0)),
-	getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci), stk->tag);
+	snprintf(buf, BUFSIZ, "%s.%s[%d]"OIDFMT,
+			 getModuleId(getInstrPtr(mb, 0)),
+			 getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci), stk->tag);
 
 	/* generate actual call statement */
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);

@@ -1893,7 +1893,7 @@ sql_update_apr2019_sp1(Client c)
 static str
 sql_update_nov2019(Client c, mvc *sql, const char *prev_schema)
 {
-	size_t bufsize = 4096, pos = 0;
+	size_t bufsize = 8192, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	res_table *output;
 	BAT *b;
@@ -1986,47 +1986,66 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema)
 #endif
 	/* 60/61_wlcr signatures migrations */
 	pos += snprintf(buf + pos, bufsize - pos,
-		"drop procedure master();\n"
-		"drop procedure master(path string);\n"
-		"drop procedure stopmaster();\n"
-		"drop procedure masterbeat( duration int);\n"
-		"drop function masterClock() returns string;\n"
-		"drop function masterTick() returns bigint;\n"
-		"drop procedure replicate();\n"
-		"drop procedure replicate(pointintime timestamp);\n"
-		"drop procedure replicate(dbname string);\n"
-		"drop procedure replicate(dbname string, pointintime timestamp);\n"
-		"drop procedure replicate(dbname string, id tinyint);\n"
-		"drop procedure replicate(dbname string, id smallint);\n"
-		"drop procedure replicate(dbname string, id integer);\n"
-		"drop procedure replicate(dbname string, id bigint);\n"
-		"drop procedure replicabeat(duration integer);\n"
-		"drop function replicaClock() returns string;\n"
-		"drop function replicaTick() returns bigint;\n"
+			"drop procedure master();\n"
+			"drop procedure master(string);\n"
+			"drop procedure stopmaster();\n"
+			"drop procedure masterbeat(int);\n"
+			"drop function masterClock();\n"
+			"drop function masterTick();\n"
+			"drop procedure replicate();\n"
+			"drop procedure replicate(timestamp);\n"
+			"drop procedure replicate(string);\n"
+			"drop procedure replicate(string, timestamp);\n"
+			"drop procedure replicate(string, tinyint);\n"
+			"drop procedure replicate(string, smallint);\n"
+			"drop procedure replicate(string, integer);\n"
+			"drop procedure replicate(string, bigint);\n"
+			"drop procedure replicabeat(integer);\n"
+			"drop function replicaClock();\n"
+			"drop function replicaTick();\n"
 
-		"create schema wlc;\n"
-		"create procedure wlc.master();\n"
-		"create procedure wlc.master(path string);\n"
-		"create procedure wlc.stop();\n"
-		"create procedure wlc.flush();\n"
-		"create procedure wlc.beat( duration int);\n"
-		"create function wlc.clock() returns string;\n"
-		"create function wlc.tick() returns bigint;\n"
+			"create schema wlc;\n"
+			"create procedure wlc.master()\n"
+			"external name wlc.master;\n"
+			"create procedure wlc.master(path string)\n"
+			"external name wlc.master;\n"
+			"create procedure wlc.stop()\n"
+			"external name wlc.stop;\n"
+			"create procedure wlc.flush()\n"
+			"external name wlc.flush;\n"
+			"create procedure wlc.beat( duration int)\n"
+			"external name wlc.\"setbeat\";\n"
+			"create function wlc.clock() returns string\n"
+			"external name wlc.\"getclock\";\n"
+			"create function wlc.tick() returns bigint\n"
+			"external name wlc.\"gettick\";\n"
 
-		"create schema wlr;\n"
-		"create procedure wlr.master(dbname string);\n"
-		"create procedure wlr.stop();\n"
-		"create procedure wlr.accept();\n"
-		"create procedure wlr.replicate();\n"
-		"create procedure wlr.replicate(pointintime timestamp);\n"
-		"create procedure wlr.replicate(id tinyint);\n"
-		"create procedure wlr.replicate(id smallint);\n"
-		"create procedure wlr.replicate(id integer);\n"
-		"create procedure wlr.replicate(id bigint);\n"
-		"create procedure wlr.beat(duration integer);\n"
-		"create function wlr.clock() returns string;\n"
-		"create function wlr.tick() returns bigint;\n"
-	);
+			"create schema wlr;\n"
+			"create procedure wlr.master(dbname string)\n"
+			"external name wlr.master;\n"
+			"create procedure wlr.stop()\n"
+			"external name wlr.stop;\n"
+			"create procedure wlr.accept()\n"
+			"external name wlr.accept;\n"
+			"create procedure wlr.replicate()\n"
+			"external name wlr.replicate;\n"
+			"create procedure wlr.replicate(pointintime timestamp)\n"
+			"external name wlr.replicate;\n"
+			"create procedure wlr.replicate(id tinyint)\n"
+			"external name wlr.replicate;\n"
+			"create procedure wlr.replicate(id smallint)\n"
+			"external name wlr.replicate;\n"
+			"create procedure wlr.replicate(id integer)\n"
+			"external name wlr.replicate;\n"
+			"create procedure wlr.replicate(id bigint)\n"
+			"external name wlr.replicate;\n"
+			"create procedure wlr.beat(duration integer)\n"
+			"external name wlr.\"setbeat\";\n"
+			"create function wlr.clock() returns string\n"
+			"external name wlr.\"getclock\";\n"
+			"create function wlr.tick() returns bigint\n"
+			"external name wlr.\"gettick\";\n"
+		);
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
@@ -2034,6 +2053,20 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('median_avg', 'quantile_avg') and type = %d;\n", (int) F_AGGR);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.schemas set system = true where name in ('wlc', 'wlr');\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlc')"
+			" and name in ('clock', 'tick') and type = %d;\n", (int) F_FUNC);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlc')"
+			" and name in ('master', 'stop', 'flush', 'beat') and type = %d;\n", (int) F_PROC);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlr')"
+			" and name in ('clock', 'tick') and type = %d;\n", (int) F_FUNC);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlr')"
+			" and name in ('master', 'stop', 'accept', 'replicate', 'beat') and type = %d;\n", (int) F_PROC);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");

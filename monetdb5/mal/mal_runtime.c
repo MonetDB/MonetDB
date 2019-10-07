@@ -29,7 +29,8 @@
 // Keep a queue of running queries
 QueryQueue QRYqueue;
 lng qtop;
-static lng qsize, qtag= 1;
+static lng qsize;
+static oid qtag= 1;
 
 #define QRYreset(I)\
 		if (QRYqueue[I].query) GDKfree(QRYqueue[I].query);\
@@ -75,9 +76,9 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	MT_lock_set(&mal_delayLock);
 	tmp = QRYqueue;
 	if ( QRYqueue == 0)
-		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 1024));
+		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (size_t) (qsize= 1024));
 	else if ( qtop + 1 == qsize )
-		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (qsize += 256));
+		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (size_t) (qsize += 256));
 	if ( QRYqueue == NULL){
 		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
 		GDKfree(tmp);			/* may be NULL, but doesn't harm */
