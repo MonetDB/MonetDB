@@ -59,10 +59,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fcn = putName(fcn);
 	if(mod == NULL || fcn == NULL)
 		throw(MAL, "optimizer.multiplex", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-#ifndef NDEBUG
 	fprintf(stderr,"#WARNING To speedup %s.%s a bulk operator implementation is needed\n#", mod,fcn);
-	fprintInstruction(stderr, mb, stk, pci, LIST_MAL_DEBUG);
-#endif
+	fprintInstruction(stderr, mb, stk, pci, LIST_MAL_ALL);
 
 	/* search the iterator bat */
 	for (i = pci->retc+2; i < pci->argc; i++)
@@ -73,7 +71,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( i == pci->argc)
 		throw(MAL, "optimizer.multiplex", SQLSTATE(HY002) "Iterator BAT type is missing");
 
-#ifdef DEBUG_OPT_MULTIPLEX
+    if( OPTdebug &  OPTmultiplex)
 	{	char *tpenme;
 		fprintf(stderr,"#calling the optimize multiplex script routine\n");
 		fprintFunction(stderr,mb, 0, LIST_MAL_ALL );
@@ -82,7 +80,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(tpenme);
 		fprintInstruction(stderr,mb, 0, pci,LIST_MAL_ALL);
 	}
-#endif
+
 	/*
 	 * Beware, the operator constant (arg=1) is passed along as well,
 	 * because in the end we issue a recursive function call that should
@@ -271,5 +269,9 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
+    if( OPTdebug &  OPTmultiplex){
+        fprintf(stderr, "#MULTIPLEX optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return msg;
 }

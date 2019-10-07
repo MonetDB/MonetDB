@@ -93,13 +93,11 @@ struct{
 };
 mal_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTIMIZERDEBUG if (0) 
-
 str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str modnme = "(NONE)";
 	str fcnnme = "(NONE)";
 	Symbol s= NULL;
-	int i, actions = 0;
+	int i;
 	char optimizer[256];
 	str msg = MAL_SUCCEED;
 	lng clk;
@@ -114,8 +112,6 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		throw(MAL, "opt_wrapper", SQLSTATE(42000) "MAL block contains errors");
 	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
 
-	OPTIMIZERDEBUG 
-		fprintf(stderr,"=APPLY OPTIMIZER %s\n",fcnnme);
 	if( p && p->argc > 1 ){
 		if( getArgType(mb,p,1) != TYPE_str ||
 			getArgType(mb,p,2) != TYPE_str ||
@@ -154,10 +150,6 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if (codes[i].nme == 0)
 		throw(MAL, optimizer, SQLSTATE(HY002) "Optimizer implementation '%s' missing", fcnnme);
 
-	OPTIMIZERDEBUG {
-		fprintf(stderr,"=FINISHED %s  %d\n",optimizer, actions);
-		fprintFunction(stderr,mb,0,LIST_MAL_DEBUG );
-	}
 	if ( mb->errors)
 		throw(MAL, optimizer, SQLSTATE(42000) PROGRAM_GENERAL ":%s.%s", modnme, fcnnme);
 	return MAL_SUCCEED;

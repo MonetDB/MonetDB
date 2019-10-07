@@ -14,6 +14,10 @@ char 	monet_cwd[FILENAME_MAX] = { 0 };
 size_t 	monet_memory = 0;
 char 	monet_characteristics[4096];
 
+/* The compile time debugging flags are turned into bit masks, akin to GDK */
+lng MALdebug;
+lng OPTdebug;
+
 #ifdef HAVE_HGE
 int have_hge;
 #endif

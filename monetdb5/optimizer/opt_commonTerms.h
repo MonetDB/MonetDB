@@ -14,6 +14,4 @@
 
 mal_export str OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-/* #define DEBUG_OPT_COMMONTERMS_MORE */
-
 #endif
