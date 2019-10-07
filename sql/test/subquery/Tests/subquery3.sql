@@ -33,5 +33,91 @@ GROUP BY col1, col2, col5;
 	-- 1	0
 	-- 1	0
 
+SELECT
+    (SELECT AVG(col1) OVER (PARTITION BY col5 ORDER BY col1 ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+FROM another_T t1; --error, more than one row returned by a subquery used as an expression
+
+SELECT
+    (SELECT SUM(col2) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1 + ColID) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+FROM another_T t1
+GROUP BY col1; --error, subquery uses ungrouped column "t1.col2" from outer query
+
+SELECT
+    (SELECT SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col2) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+FROM another_T t1
+GROUP BY col1; --error, more than one row returned by a subquery used as an expression
+
+SELECT
+    (SELECT DENSE_RANK() OVER (PARTITION BY col5 ORDER BY col1) FROM tbl_ProductSales)
+FROM another_T t1; --error, more than one row returned by a subquery used as an expression
+
+SELECT
+    (SELECT DENSE_RANK() OVER (PARTITION BY MIN(col5) ORDER BY MAX(col8)) FROM tbl_ProductSales)
+FROM another_T t1
+GROUP BY col6; --error, more than one row returned by a subquery used as an expression
+
+SELECT
+    (SELECT DENSE_RANK() OVER (PARTITION BY MIN(col5) ORDER BY col8 * ColID) FROM tbl_ProductSales)
+FROM another_T t1
+GROUP BY col6; --error, subquery uses ungrouped column "t1.col8" from outer query
+
+SELECT
+    (SELECT t2.col1 * SUM(SUM(t1.col2)) OVER (PARTITION BY SUM(t1.col2) ORDER BY MAX(t1.col1) ROWS UNBOUNDED PRECEDING) FROM another_T t2)
+FROM another_T t1
+GROUP BY col1; --error, more than one row returned by a subquery used as an expression
+
+SELECT
+    (SELECT t2.col1 * SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1) ROWS UNBOUNDED PRECEDING) FROM another_T t2)
+FROM another_T t1
+GROUP BY col1; --error, column "t2.col1" must appear in the GROUP BY clause or be used in an aggregate function
+
+SELECT
+    (SELECT SUM(AVG(ColID)) OVER (PARTITION BY SUM(ColID) ORDER BY MAX(ColID) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales GROUP BY t1.col1)
+FROM another_T t1;
+	-- 2,5000
+	-- 2,5000
+	-- 2,5000
+	-- 2,5000
+
+SELECT
+    (SELECT SUM(AVG(ColID + col1)) OVER (PARTITION BY SUM(ColID + col3) ORDER BY MAX(ColID) * col4 ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales GROUP BY t1.col1)
+FROM another_T t1;
+	-- 3,5000
+	-- 13,5000
+	-- 113,5000
+	-- 1113,5000
+
+SELECT
+    (SELECT MAX(t1.col2) * SUM(AVG(ColID)) OVER (PARTITION BY SUM(ColID) ORDER BY MAX(ColID) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+FROM another_T t1;
+	-- 5555
+
+SELECT
+    (SELECT SUM(AVG(ColID)) OVER (PARTITION BY MAX(t1.col2) * SUM(ColID) ORDER BY MAX(ColID) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+FROM another_T t1;
+	-- 2,5000
+
+SELECT
+    (SELECT SUM(AVG(ColID)) OVER (PARTITION BY SUM(ColID) ORDER BY MAX(t1.col2) * MAX(ColID) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+FROM another_T t1;
+	-- 2,5000
+
+SELECT
+    (SELECT MAX(ColID) * SUM(AVG(ColID)) OVER (PARTITION BY SUM(ColID) ORDER BY MAX(ColID) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+FROM another_T t1; --MonetDB outputs this one right, but we should leave it here, as it doesn't trigger an error
+	-- 10
+	-- 10
+	-- 10
+	-- 10
+
+SELECT
+    (SELECT SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1) ROWS UNBOUNDED PRECEDING) FROM another_T)
+FROM another_T t1
+GROUP BY col1; --MonetDB outputs this one right, but we should leave it here, as it doesn't trigger an error
+	-- 2468
+	-- 2468
+	-- 2468
+	-- 2468
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
