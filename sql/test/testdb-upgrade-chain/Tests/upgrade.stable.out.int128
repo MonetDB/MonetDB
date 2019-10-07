@@ -6004,8 +6004,70 @@ GRANT EXECUTE ON AGGREGATE median_avg(HUGEINT) TO PUBLIC;
 create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE
  external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;
+drop procedure master();
+drop procedure master(string);
+drop procedure stopmaster();
+drop procedure masterbeat(int);
+drop function masterClock();
+drop function masterTick();
+drop procedure replicate();
+drop procedure replicate(timestamp);
+drop procedure replicate(string);
+drop procedure replicate(string, timestamp);
+drop procedure replicate(string, tinyint);
+drop procedure replicate(string, smallint);
+drop procedure replicate(string, integer);
+drop procedure replicate(string, bigint);
+drop procedure replicabeat(integer);
+drop function replicaClock();
+drop function replicaTick();
+create schema wlc;
+create procedure wlc.master()
+external name wlc.master;
+create procedure wlc.master(path string)
+external name wlc.master;
+create procedure wlc.stop()
+external name wlc.stop;
+create procedure wlc.flush()
+external name wlc.flush;
+create procedure wlc.beat( duration int)
+external name wlc."setbeat";
+create function wlc.clock() returns string
+external name wlc."getclock";
+create function wlc.tick() returns bigint
+external name wlc."gettick";
+create schema wlr;
+create procedure wlr.master(dbname string)
+external name wlr.master;
+create procedure wlr.stop()
+external name wlr.stop;
+create procedure wlr.accept()
+external name wlr.accept;
+create procedure wlr.replicate()
+external name wlr.replicate;
+create procedure wlr.replicate(pointintime timestamp)
+external name wlr.replicate;
+create procedure wlr.replicate(id tinyint)
+external name wlr.replicate;
+create procedure wlr.replicate(id smallint)
+external name wlr.replicate;
+create procedure wlr.replicate(id integer)
+external name wlr.replicate;
+create procedure wlr.replicate(id bigint)
+external name wlr.replicate;
+create procedure wlr.beat(duration integer)
+external name wlr."setbeat";
+create function wlr.clock() returns string
+external name wlr."getclock";
+create function wlr.tick() returns bigint
+external name wlr."gettick";
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('deltas') and type = 5;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('median_avg', 'quantile_avg') and type = 3;
+update sys.schemas set system = true where name in ('wlc', 'wlr');
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlc') and name in ('clock', 'tick') and type = 1;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlc') and name in ('master', 'stop', 'flush', 'beat') and type = 2;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlr') and name in ('clock', 'tick') and type = 1;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlr') and name in ('master', 'stop', 'accept', 'replicate', 'beat') and type = 2;
 set schema "sys";
 commit;
 
