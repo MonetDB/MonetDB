@@ -1,19 +1,19 @@
 ####technical depth####
+Check if compressors are always called in tests. Use MOSdestroy trick for that.
 Make dictionary variable-sized so it can always compress. We are going to use vheap for this.
 dictionary encoding should use the ordered property of its dictionary in the algebraic operators
-decouple estimation completely from compression: there should be two runs: one for estimating the blocks and one to actual compress according to the estimations.
 Test null semantics
 mosaic.select (c,nil:any_1, nil:any_1,true,true,(true|false)) is not working correctly: should result in c == nil or c!=nil(anti).
 Use bit vectors more aggressively in mosaic_delta --- then resolve test mosaic_delta_timestamp --- and possibly other compression techniques as well.
 Somehow force mosaic to only use specified compressions even if inefficient. This poses a design problem for dictionary compression though.
 Be sure alignment is correct. Use asserts for this.
-fix layout call.
+Check MOSanalysis and its test.
+Fix/check/test MOSlayout.
 Add test for float/double
 delta compression: check if the hardcoded compression expression are correct. See also (2)
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
 Fix the task-factor array.
 See if we can re-introduce landmark stuff somehow.
-Fix/check/test MOSlayout.
 benchmark
 Do estimation before mosaic heap creation.That saves a potential heap extend.
 
