@@ -80,6 +80,8 @@ MCinit(void)
 		fprintf(stderr,"!MCinit:" MAL_MALLOC_FAIL);
 		return false;
 	}
+	for (int i = 0; i < MAL_MAXCLIENTS; i++)
+		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
 	return true;
 }
 
