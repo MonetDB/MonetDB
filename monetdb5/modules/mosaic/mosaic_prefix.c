@@ -279,13 +279,17 @@ findPrefixLng(ulng *v, int limit, int *bits, ulng *prefixmask)
 
 #define LOOKAHEAD  (int)(limit <10? limit:10)
 // calculate the expected reduction 
-flt
-MOSestimate_prefix(MOStask task)
-{	BUN i = 0;
+str
+MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
+{	
+	(void) previous;
+	BUN i = 0;
 	flt factor = 0.0;
 	int prefixbits = 0,size;
 	lng bits,store;
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
+	current->compression_strategy.tag = MOSAIC_PREFIX;
+	current->is_applicable = true;
 
 	size = ATOMsize(task->type);
 	if( task->stop >= 2)
@@ -295,17 +299,6 @@ MOSestimate_prefix(MOStask task)
 			findPrefixBte( v, LOOKAHEAD, &prefixbits, &mask);
 			if( prefixbits == 0)
 				break;
-
-			if( task->range[MOSAIC_PREFIX] > task->start +1 /* need at least two*/){
-				bits = (task->range[MOSAIC_PREFIX] - task->start) * (8-prefixbits);
-				store = wordaligned(2 * sizeof(unsigned char),int);
-				store += wordaligned(bits/8 + ((bits % 8) >0),int);
-				store = wordaligned( MosaicBlkSize + store,int);
-
-				if( store >= (flt)i * sizeof(bte))
-					return 0.0;
-				return task->factor[MOSAIC_PREFIX] = ( (flt)i * sizeof(bte))/ store;
-			}
 			
 			// calculate the number of values covered by this prefix
 			val = *v & mask;
@@ -317,10 +310,11 @@ MOSestimate_prefix(MOStask task)
 			store = wordaligned(2 * sizeof(unsigned char),int);
 			store += wordaligned(bits/8 + ((bits % 8) >0),int);
 			store = wordaligned( MosaicBlkSize + store,int);
-			if( store >= (flt)i * sizeof(bte))
-				return 0.0;
-			if( task->dst +  store >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)
-				return 0.0;
+			assert(i > 0);/*Should always compress.*/
+			current->is_applicable = true;
+
+			current->uncompressed_size += i * sizeof(bte);
+			current->compressed_size += store;
 			factor = ( (flt)i * sizeof(bte))/ store;
 		}
 		break;
@@ -330,16 +324,6 @@ MOSestimate_prefix(MOStask task)
 			if( prefixbits == 0)
 				break;
 
-			if( task->range[MOSAIC_PREFIX] > task->start + 1){
-				bits = (task->range[MOSAIC_PREFIX] - task->start) * (16-prefixbits);
-				store = wordaligned(2 * sizeof(unsigned short),int);
-				store += wordaligned(bits/8 + ((bits % 8) >0),int);
-				store = wordaligned( MosaicBlkSize + store,int);
-				if( store >= (flt)i * sizeof(sht))
-					return 0.0;
-				return task->factor[MOSAIC_PREFIX] = ( (flt)i * sizeof(sht))/ store;
-			}
-			
 			// calculate the number of values covered by this prefix
 			val = *v & mask;
 			for(i = 0; i < limit ; v++, i++){
@@ -350,10 +334,11 @@ MOSestimate_prefix(MOStask task)
 			store = wordaligned(2 * sizeof(unsigned short),int);
 			store += wordaligned(bits/8 + ((bits % 8) >0),int);
 			store = wordaligned( MosaicBlkSize + store,int);
-			if( store >= (flt)i * sizeof(sht))
-				return 0.0;
-			if( task->dst +  store >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)
-				return 0.0;
+			assert(i > 0);/*Should always compress.*/
+			current->is_applicable = true;
+
+			current->uncompressed_size += i * sizeof(sht);
+			current->compressed_size += store;
 			factor = ( (flt)i * sizeof(sht))/ store;
 		}
 		break;
@@ -362,16 +347,6 @@ MOSestimate_prefix(MOStask task)
 			findPrefixInt( v, LOOKAHEAD, &prefixbits,&mask);
 			if( prefixbits == 0)
 				break;
-
-			if( task->range[MOSAIC_PREFIX] > task->start + 1){
-				bits = (task->range[MOSAIC_PREFIX] - task->start) * (32-prefixbits);
-				store = wordaligned(2 * sizeof(unsigned int),int);
-				store += wordaligned(bits/8 + ((bits % 8) >0),int);
-				store = wordaligned( MosaicBlkSize + store,int);
-				if( store > (flt)i * sizeof(int))
-					return 0.0;
-				return task->factor[MOSAIC_PREFIX] = ( (flt)i * sizeof(int))/ store;
-			}
 			
 			// calculate the number of values covered by this prefix
 			val = *v & mask;
@@ -384,10 +359,11 @@ MOSestimate_prefix(MOStask task)
 			store = wordaligned(2 * sizeof(unsigned int),int);
 			store += wordaligned(bits/8 + ((bits % 8) >0),int);
 			store = wordaligned( MosaicBlkSize + store,int);
-			if( store >= (flt)i * sizeof(int))
-				return 0.0;
-			if( task->dst +  store >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)
-				return 0.0;
+			assert(i > 0);/*Should always compress.*/
+			current->is_applicable = true;
+
+			current->uncompressed_size += i * sizeof(int);
+			current->compressed_size += store;
 			factor = ( (flt)i * sizeof(int))/ store;
 		}
 		break;
@@ -396,16 +372,6 @@ MOSestimate_prefix(MOStask task)
 			findPrefixLng( v, LOOKAHEAD, &prefixbits, &mask);
 			if( prefixbits < 32 ) // residu should fit bitvector cell
 				break;
-
-			if( task->range[MOSAIC_PREFIX] > task->start + 1){
-				bits = (task->range[MOSAIC_PREFIX] - task->start) * (64-prefixbits);
-				store = wordaligned(2 * sizeof(ulng),int);
-				store += wordaligned(bits/8 + ((bits % 8) >0),int);
-				store = wordaligned( MosaicBlkSize + store,int);
-				if( store >= (flt)i * sizeof(lng))
-					return 0.0;
-				return task->factor[MOSAIC_PREFIX] = ( (flt)i * sizeof(lng))/ store;
-			}
 			
 			val = *v & mask;
 			for(i = 0; i < limit ; v++, i++){
@@ -416,16 +382,18 @@ MOSestimate_prefix(MOStask task)
 			store = wordaligned(2 * sizeof(ulng),int);
 			store += wordaligned(bits/8 + ((bits % 8) >0),int);
 			store = wordaligned( MosaicBlkSize + store,int);
-			if( store >= (flt)i * sizeof(lng))
-				return 0.0;
-			if( task->dst +  store >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)
-				return 0.0;
+			assert(i > 0);/*Should always compress.*/
+			current->is_applicable = true;
+
+			current->uncompressed_size += i * sizeof(lng);
+			current->compressed_size += store;
 			factor = ( (flt)i * sizeof(lng))/ store;
 		}
 	}
+	current->compression_strategy.cnt = i;
 	task->factor[MOSAIC_PREFIX] = factor;
 	task->range[MOSAIC_PREFIX] = task->start + i;
-	return factor;
+	return MAL_SUCCEED;
 }
 
 #define compress(Vector,I, Bits, Value) setBitVector(Vector,I,Bits,Value);

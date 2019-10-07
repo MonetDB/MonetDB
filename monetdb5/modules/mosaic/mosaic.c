@@ -187,6 +187,8 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 			MOSsetCnt(TASK->blk,0);\
 			TASK->dst = MOScodevector(TASK);
 
+#define getFactor(ESTIMATION) ((flt) (ESTIMATION).uncompressed_size / (ESTIMATION).compressed_size)
+
 /* The compression orchestration is dealt with here.
  * We assume that the estimates for each scheme returns
  * the number of elements it applies to. Moreover, we
@@ -194,56 +196,115 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
  * This allows us to avoid expensive estimate calls when a small
  * sequence is found with high compression factor.
  */
-static int
-MOSoptimizerCost(MOStask task, int typewidth)
-{
-	int cand = MOSAIC_RAW;
-	float ratio = 1.0, fac = 1.0;
+static str
+MOSoptimizerCost(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous) {
+	str result = MAL_SUCCEED;
+
+	MosaicEstimation estimations[MOSAICINDEX];
+	const int size = sizeof(estimations) / sizeof(MosaicEstimation);
+	for (int i = 0; i < size; i++) {
+		estimations[i].uncompressed_size = previous->uncompressed_size;
+		estimations[i].compressed_size = previous->compressed_size;
+		estimations[i].compression_strategy = previous->compression_strategy;
+		estimations[i].must_be_merged_with_previous = false;
+		estimations[i].is_applicable = false;
+	}
 
 	// select candidate amongst those
-	if ( task->filter[MOSAIC_RLE]){
-		fac = MOSestimate_runlength(task);
-		if (fac > ratio){
-			cand = MOSAIC_RLE;
-			ratio = fac;
+	if (task->filter[MOSAIC_RAW]){
+		if( (result = MOSestimate_raw(task, &estimations[MOSAIC_RAW], previous))) {
+			return result;
 		}
 	}
-	if ( task->filter[MOSAIC_LINEAR]){
-		fac = MOSestimate_linear(task);
-		if ( fac >ratio){
-			cand = MOSAIC_LINEAR;
-			ratio = fac;
+	if (task->filter[MOSAIC_RLE]){
+		if( (result = MOSestimate_runlength(task, &estimations[MOSAIC_RLE], previous))) {
+			return result;
 		}
 	}
-	if (ratio < typewidth && task->filter[MOSAIC_PREFIX]){
-		fac = MOSestimate_prefix(task);
-		if ( fac > ratio ){
-			cand = MOSAIC_PREFIX;
-			ratio = fac;
+	if (task->filter[MOSAIC_DICT]){
+		if( (result = MOSestimate_dictionary(task, &estimations[MOSAIC_DICT], previous))) {
+			return result;
 		}
 	}
-	if (ratio < 64 && task->filter[MOSAIC_DICT]){
-		fac = MOSestimate_dictionary(task);
-		if (fac > ratio){
-			cand = MOSAIC_DICT;
-			ratio = fac;
+	if (task->filter[MOSAIC_DELTA]){
+		if( (result = MOSestimate_delta(task, &estimations[MOSAIC_DELTA], previous))) {
+			return result;
 		}
 	}
-	if (ratio < 64 && task->filter[MOSAIC_FRAME]){
-		fac = MOSestimate_frame(task);
-		if (fac > ratio){
-			cand = MOSAIC_FRAME;
-			ratio = fac;
+	if (task->filter[MOSAIC_LINEAR]){
+		if( (result = MOSestimate_linear(task, &estimations[MOSAIC_LINEAR], previous))) {
+			return result;
 		}
 	}
-	if (ratio < 64 && task->filter[MOSAIC_DELTA]){
-		fac = MOSestimate_delta(task);
-		if ( fac > ratio ){
-			cand = MOSAIC_DELTA;
-			ratio = fac;
+	if (task->filter[MOSAIC_FRAME]){
+		if( (result = MOSestimate_frame(task, &estimations[MOSAIC_FRAME], previous))) {
+			return result;
 		}
 	}
-	return cand;
+	if (task->filter[MOSAIC_PREFIX]){
+		if( (result = MOSestimate_prefix(task, &estimations[MOSAIC_PREFIX], previous))) {
+			return result;
+		}
+	}
+
+	flt best_factor = 0.0;
+	current->is_applicable = false;
+
+	for (int i = 0; i < size; i++) {
+		flt factor = getFactor(estimations[i]);
+
+		if (estimations[i].is_applicable && best_factor < factor) {
+			*current = estimations[i];
+			best_factor = factor;
+		}
+	}
+
+	return result;
+}
+
+static
+str MOSestimate(MOStask task, BAT* estimates, size_t* compressed_size) {
+	str result = MAL_SUCCEED;
+
+	*compressed_size = 0;
+
+	MosaicEstimation previous = {
+		.is_applicable = false,
+		.uncompressed_size = 0,
+		.compressed_size = 0,
+		.compression_strategy = {.tag = MOSAIC_EOL, .cnt = 0},
+		.must_be_merged_with_previous = false
+	};
+
+	MosaicEstimation current;
+	MosaicBlkRec* cursor = Tloc(estimates,0);
+
+	while(task->start < task->stop ){
+		// default is to extend the non-compressed block with a single element
+		if ( (result = MOSoptimizerCost(task, &current, &previous)) ) {
+			return result;
+		}
+
+		if (!current.is_applicable) {
+			throw(MAL,"mosaic.compress", "Cannot compress BAT with given compression techniques.");
+		}
+
+		if (current.must_be_merged_with_previous) {
+			--cursor;
+			assert(* (int*)cursor == *(int*) &previous.compression_strategy);
+			task->start -= previous.compression_strategy.cnt;
+		}
+		else BATcount(estimates)++;
+
+		*cursor = current.compression_strategy;
+		++cursor;
+		previous = current;
+		task->start += current.compression_strategy.cnt;
+	}
+
+	(*compressed_size) = current.compressed_size;
+
+	return MAL_SUCCEED;
 }
 
 /* the source is extended with a BAT mosaic heap */
@@ -252,8 +313,6 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 {
 	MOStask task;
 	str msg = MAL_SUCCEED;
-	int cand;
-	int typewidth;
 	lng t0,t1;
 
   if (BATcheckmosaic(bsrc)){
@@ -283,12 +342,12 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	assert(bsrc->tmosaic->parentid == bsrc->batCacheid);
 
 	if((task = (MOStask) GDKzalloc(sizeof(*task))) == NULL) {
+		MOSdestroy(bsrc);
 		throw(MAL, "mosaic.compress", MAL_MALLOC_FAIL);
 	}
 	
 	// initialize the non-compressed read pointer
 	task->src = Tloc(bsrc, 0);
-	task->stop = BATcount(bsrc);
 	task->start = 0;
 	task->stop = BATcount(bsrc);
 	task->timer = GDKusec();
@@ -297,44 +356,50 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	task->blk->cnt= 0;
 	MOSinitHeader(task);
 	if (MOSinitializeFilter(task, compressions)) {
-		MOSdestroy(bsrc);
 		msg = createException(MAL, "mosaic.compress", "No valid compression technique given or available for type: %s", ATOMname(task->type));
+		MOSdestroy(bsrc);
 		goto finalize;
 	}
-
-	typewidth = ATOMsize(task->type) * CHAR_BIT;
 
 	if( task->filter[MOSAIC_DICT])
 		MOScreatedictionary(task);
 	// always start with an EOL block
 	MOSsetTag(task->blk,MOSAIC_EOL);
 
-	while(task->start < task->stop ){
-		// default is to extend the non-compressed block with a single element
-		cand = MOSoptimizerCost( task, typewidth);
-		if( task->dst >= bsrc->tmosaic->base + bsrc->tmosaic->size - 2 * MosaicBlkSize ){
-			MOSdestroy(bsrc);
-			msg= createException(MAL,"mosaic.compress","abort compression due to size");
-			goto finalize;
-		}
+	BAT* estimates;
+	
+	if (!(estimates = COLnew(0, TYPE_int, BATcount(bsrc), TRANSIENT)) ) {
+		msg = createException(MAL, "mosaic.compress", "Could not allocate temporary estimates BAT.\n");
+		MOSdestroy(bsrc);
+		goto finalize;
+	}
+
+	size_t compressed_size_bytes;
+	// First pass: estimation phase
+	if ( ( msg = MOSestimate(task, estimates, &compressed_size_bytes) ) != MAL_SUCCEED) {
+		BBPreclaim(estimates);
+		MOSdestroy(bsrc);
+		goto finalize;
+	}
+
+	// set the exact necessary capacity
+	if (HEAPextend(bsrc->tmosaic, compressed_size_bytes, true) != GDK_SUCCEED) {
+		BBPreclaim(estimates);
+		MOSdestroy(bsrc);
+		goto finalize;
+	}
+
+	MOSinit(task, bsrc);
+
+	task->start = 0;
+
+	// second pass: compression phase
+	for(BUN i = 0; i < BATcount(estimates); i++) {
 		assert (task->dst < bsrc->tmosaic->base + bsrc->tmosaic->size );
 
-		if ( MOSgetTag(task->blk) == MOSAIC_RAW) {
-			if( cand != MOSAIC_RAW ||  MOSgetCnt(task->blk) +1 == MOSAICMAXCNT) {
-				// We close the old MOSAIC_RAW block if estimation decides to use a different block type
-				// or when the current MOSAIC_RAW block has become too big.
-				task->start -= MOSgetCnt(task->blk);
-				MOSupdateHeader(task);
-				MOSadvance_raw(task);
-				// always start with an EOL block
-				task->dst = MOScodevector(task);
-				MOSsetTag(task->blk,MOSAIC_EOL);
-				MOSsetCnt(task->blk,0);
-			}
-		}
+		MosaicBlkRec* estimate = Tloc(estimates, i);
 
-		// apply the compression to a chunk
-		switch(cand){
+		switch(estimate->tag) {
 		case MOSAIC_RLE:
 			ALGODEBUG mnstr_printf(GDKout, "MOScompress_runlength\n");
 			MOScompress_runlength(task);
@@ -377,24 +442,16 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 			MOSadvance_prefix(task);
 			MOSnewBlk(task);
 			break;
-		case MOSAIC_RAW: // This is basically the default case.
-			/* This tries to insert the single value at task->start into this MOSAIC_RAW block.
-			 * After that compressions tries to re-evaluate through MOSoptimizerCost
-			 * from ++task->start and unwards to estimate a more efficient block type.
-			*/
+		case MOSAIC_RAW:
 			ALGODEBUG mnstr_printf(GDKout, "MOScompress_raw\n");
-			MOScompress_raw( task);
-				task->start++;
+			MOScompress_raw( task, estimate);
+			MOSupdateHeader(task);
+			MOSadvance_raw(task);
+			MOSnewBlk(task);
 			break;
 		default : // Unknown block type. Should not happen.
 			assert(0);
 		}
-	}
-
-	if( MOSgetTag(task->blk) == MOSAIC_RAW ) {
-		MOSupdateHeader(task);
-		MOSadvance_raw(task);
-		MOSnewBlk(task);
 	}
 
 	task->bsrc->tmosaic->free = (task->dst - (char*)task->hdr);
@@ -734,7 +791,6 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			MOSselect_linear(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_RAW:
-		default:
 			ALGODEBUG mnstr_printf(GDKout, "MOSselect_raw\n");
 			MOSselect_raw(task,low,hgh,li,hi,anti);
 		}

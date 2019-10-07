@@ -15,6 +15,7 @@ Fix the task-factor array.
 See if we can re-introduce landmark stuff somehow.
 Fix/check/test MOSlayout.
 benchmark
+Do estimation before mosaic heap creation.That saves a potential heap extend.
 
 ####code issues####
 Update copyright.

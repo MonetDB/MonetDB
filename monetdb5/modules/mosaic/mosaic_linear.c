@@ -112,31 +112,27 @@ MOSskip_linear(MOStask task)
 }
 
 #define Estimate(TYPE)\
-{	TYPE *v = ((TYPE*) task->src)+task->start, val = *v++;\
+{\
+	current->compression_strategy.tag = MOSAIC_LINEAR;\
+	TYPE *v = ((TYPE*) task->src)+task->start, val = *v++;\
 	TYPE step = *v - val;\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
-	if( task->range[MOSAIC_LINEAR] > task->start + 1){\
-		i = task->range[MOSAIC_LINEAR] - task->start;\
-		if (i * sizeof(TYPE) <= wordaligned( MosaicBlkSize + 2 * sizeof(TYPE),TYPE))\
-			return 0.0;\
-		factor = ((flt) i * sizeof(TYPE))/ wordaligned(MosaicBlkSize + 2 * sizeof(TYPE),TYPE);\
-		return factor;\
-	}\
 	for( i=1; i < limit; i++, val = *v, v++)\
 	if (  *v - val != step)\
 		break;\
-	if(i * sizeof(TYPE) <= wordaligned( MosaicBlkSize + 2 * sizeof(TYPE),TYPE))\
-		return 0.0;\
-	if( task->dst +  wordaligned(MosaicBlkSize + 2 * sizeof(TYPE),TYPE) >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)\
-		return 0.0;\
-	factor =  ( (flt)i * sizeof(TYPE))/wordaligned( MosaicBlkSize + 2 * sizeof(TYPE),TYPE);\
+	assert(i > 0);/*Should always compress.*/\
+	current->is_applicable = true;\
+	current->uncompressed_size += i * sizeof(TYPE);\
+	current->compressed_size += wordaligned( MosaicBlkSize + 2 * sizeof(TYPE),TYPE);\
+	current->compression_strategy.cnt = i;\
 }
 
 // calculate the expected reduction using LINEAR in terms of elements compressed
-flt
-MOSestimate_linear(MOStask task)
+str
+MOSestimate_linear(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
 {	BUN i = -1;
 	flt factor = 0.0;
+	(void) previous;
 
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: Estimate(bte); break;
@@ -152,7 +148,7 @@ MOSestimate_linear(MOStask task)
 	}
 	task->factor[MOSAIC_LINEAR] = factor;
 	task->range[MOSAIC_LINEAR] = task->start + i;
-	return factor;
+	return MAL_SUCCEED;
 }
 
 // insert a series of values into the compressor block using linear.

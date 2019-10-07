@@ -115,26 +115,22 @@ MOSskip_dictionary(MOStask task)
 }
 
 #define estimateDict(TPE)\
-{	TPE *val = ((TPE*)task->src) + task->start;\
+{\
+	current->compression_strategy.tag = MOSAIC_DICT;\
+	TPE *val = ((TPE*)task->src) + task->start;\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
-	if( task->range[MOSAIC_DICT] > task->start){\
-		i = task->range[MOSAIC_DICT] - task->start;\
-		if ( i > MOSAICMAXCNT ) i = MOSAICMAXCNT;\
-		if( i * sizeof(TPE) <= wordaligned( MosaicBlkSize + (i*hdr->bits)/8,TPE))\
-			return 0.0;\
-		if( task->dst +  wordaligned(MosaicBlkSize + (i*hdr->bits)/8,sizeof(TPE)) >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)\
-			return 0.0;\
-		if(i) factor = ((flt) i * sizeof(TPE))/ wordaligned(MosaicBlkSize + sizeof(int) + (i*hdr->bits)/8,TPE);\
-		return factor;\
-	}\
 	for(i =0; i<limit; i++, val++){\
 		MOSfind(j,hdr->dict.val##TPE,*val,0,hdr->dictsize);\
 		if( j == hdr->dictsize || hdr->dict.val##TPE[j] != *val )\
 			break;\
 	}\
-	if( i * sizeof(TPE) <= wordaligned( MosaicBlkSize + (i * hdr->bits)/8 ,TPE))\
-		return 0.0;\
-	if(i) factor = (flt) ((int)i * sizeof(TPE)) / wordaligned( MosaicBlkSize + (i * hdr->bits)/8,TPE);\
+	current->is_applicable = i > 0;\
+	if ( current->is_applicable ) {\
+		current->uncompressed_size += i * sizeof(TPE);\
+		size_t bytes = (i * hdr->bits)/CHAR_BIT;\
+		current->compressed_size += wordaligned( MosaicBlkSize, unsigned int) + bytes;\
+	}\
+	current->compression_strategy.cnt = i;\
 }
 
 // Create a larger dictionary buffer then we allow for in the mosaic header first
@@ -255,13 +251,14 @@ MOScreatedictionary(MOStask task)
 }
 
 // calculate the expected reduction using DICT in terms of elements compressed
-flt
-MOSestimate_dictionary(MOStask task)
+str
+MOSestimate_dictionary(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
 {	
 	BUN i = 0;
 	int j;
 	flt factor= 0.0;
 	MosaicHdr hdr = task->hdr;
+	(void) previous;
 
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: estimateDict(bte); break; 
@@ -277,7 +274,7 @@ MOSestimate_dictionary(MOStask task)
 	}
 	task->factor[MOSAIC_DICT] = factor;
 	task->range[MOSAIC_DICT] = task->start + i;
-	return factor; 
+	return MAL_SUCCEED; 
 }
 
 // insert a series of values into the compressor block using dictionary

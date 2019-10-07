@@ -22,36 +22,7 @@ stdout of test 'mosaic_lng_1.raw` in directory 'monetdb5/modules/mosaic` itself:
 # 13:19:02 >  
 
 MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-#BATmosaic: mosaic construction 17 usec
+#BATmosaic: mosaic construction 18 usec
 MOSdecompress_raw
 #--------------------------#
 # t	t	t  # name

@@ -21,7 +21,7 @@ bool MOStypes_linear(BAT* b);
 mal_export void MOSlayout_linear(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSadvance_linear(MOStask task);
 mal_export void MOSskip_linear(MOStask task);
-mal_export flt  MOSestimate_linear(MOStask task);
+mal_export str  MOSestimate_linear(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOScompress_linear(MOStask task);
 mal_export void MOSdecompress_linear(MOStask task);
 mal_export str MOSselect_linear( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);

@@ -96,26 +96,21 @@ MOSskip_runlength(MOStask task)
 #define Estimate(TYPE)\
 {	TYPE *v = ((TYPE*) task->src) + task->start, val = *v;\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
-	if( task->range[MOSAIC_RLE] > task->start+1 ){\
-		if( (i= task->range[MOSAIC_RLE] - task->start) * sizeof(TYPE) < wordaligned( MosaicBlkSize + sizeof(TYPE),TYPE) )return 0.0;\
-		factor = ((flt) i * sizeof(TYPE))/ wordaligned(MosaicBlkSize + sizeof(TYPE),TYPE);\
-		return factor;\
-	}\
-	for(v++,i = 1; i < limit; i++,v++)\
-	if ( *v != val)\
-		break;\
-	if( i * sizeof(TYPE) <= wordaligned( MosaicBlkSize + sizeof(TYPE),TYPE) )\
-		return 0.0;\
-	if( task->dst +  wordaligned(MosaicBlkSize + sizeof(TYPE),sizeof(TYPE)) >= task->bsrc->tmosaic->base + task->bsrc->tmosaic->size)\
-		return 0.0;\
-	factor = ( (flt)i * sizeof(TYPE))/ wordaligned( MosaicBlkSize + sizeof(TYPE),TYPE);\
+	for(v++,i = 1; i < limit; i++,v++) if ( *v != val) break;\
+	assert(i > 0);/*Should always compress.*/\
+	current->is_applicable = true;\
+	current->uncompressed_size += i * sizeof(TYPE);\
+	current->compressed_size += wordaligned( MosaicBlkSize, TYPE) + sizeof(TYPE);\
+	current->compression_strategy.cnt = i;\
 }
 
 // calculate the expected reduction using RLE in terms of elements compressed
-flt
-MOSestimate_runlength(MOStask task)
+str
+MOSestimate_runlength(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
 {	BUN i = 0;
 	flt factor = 0.0;
+	(void) previous;
+	current->compression_strategy.tag = MOSAIC_RLE;
 
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: Estimate(bte); break;
@@ -131,7 +126,7 @@ MOSestimate_runlength(MOStask task)
 	}
 	task->factor[MOSAIC_RLE] = factor;
 	task->range[MOSAIC_RLE] = task->start + i;
-	return factor;
+	return MAL_SUCCEED;
 }
 
 // insert a series of values into the compressor block using rle.

@@ -98,8 +98,10 @@ typedef struct MOSAICHEADER{
 #define MOSAICMAXCNT 100000
 /* allow for experiementation using different block sizes */
 
+#define CNT_BITS 24
+
 typedef struct MOSAICBLK{
-	unsigned int tag:8, cnt:24;
+	unsigned int tag:(32 - CNT_BITS), cnt:CNT_BITS;
 } MosaicBlkRec, *MosaicBlk;
 
 #define MOSgetTag(Blk) (Blk->tag)
@@ -153,6 +155,14 @@ typedef struct MOSTASK{
 	BAT *lbat, *rbat; // for the joins, where we dont know their size upfront
 
 } *MOStask;
+
+typedef struct _MosaicEstimation {
+	BUN compressed_size;
+	BUN uncompressed_size;
+	MosaicBlkRec compression_strategy;
+	bool is_applicable;
+	bool must_be_merged_with_previous;
+} MosaicEstimation;
 
 /* Run through a column to produce a compressed version */
 

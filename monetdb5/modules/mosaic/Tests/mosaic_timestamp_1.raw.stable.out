@@ -22,36 +22,7 @@ stdout of test 'mosaic_timestamp_1.raw` in directory 'monetdb5/modules/mosaic` i
 # 17:20:29 >  
 
 MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-MOScompress_raw
-#BATmosaic: mosaic construction 14 usec
+#BATmosaic: mosaic construction 17 usec
 MOSdecompress_raw
 #--------------------------#
 # t	t	t	t  # name

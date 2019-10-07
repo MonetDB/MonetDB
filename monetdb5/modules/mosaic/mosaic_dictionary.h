@@ -26,7 +26,7 @@ mal_export void MOSlayout_dictionary(MOStask task, BAT *btech, BAT *bcount, BAT 
 mal_export void MOSlayout_dictionary_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSadvance_dictionary(MOStask task);
 mal_export void MOSskip_dictionary(MOStask task);
-mal_export flt  MOSestimate_dictionary(MOStask task);
+mal_export str  MOSestimate_dictionary(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOScompress_dictionary(MOStask task);
 mal_export void MOSdecompress_dictionary(MOStask task);
 mal_export str MOSselect_dictionary( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);

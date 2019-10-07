@@ -24,7 +24,7 @@ mal_export void MOSlayout_frame_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *
 mal_export void MOSlayout_frame(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSadvance_frame(MOStask task);
 mal_export void MOSskip_frame(MOStask task);
-mal_export flt  MOSestimate_frame(MOStask task);
+mal_export str  MOSestimate_frame(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOScompress_frame(MOStask task);
 mal_export void MOSdecompress_frame(MOStask task);
 mal_export str MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);

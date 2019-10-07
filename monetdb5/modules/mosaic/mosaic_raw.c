@@ -93,24 +93,69 @@ MOSskip_raw( MOStask task)
 		task->blk = 0; // ENDOFLIST
 }
 
+#define Estimate(TPE)\
+{\
+	/*The raw compression technique is always applicable and only adds one item at a time.*/\
+	current->compression_strategy.tag = MOSAIC_RAW;\
+	current->is_applicable = true;\
+	current->uncompressed_size += sizeof(TPE);\
+	unsigned int cnt = previous->compression_strategy.cnt;\
+	if (previous->compression_strategy.tag == MOSAIC_RAW && cnt + 1 < (1 << CNT_BITS)) {\
+		current->must_be_merged_with_previous = true;\
+		cnt++;\
+		current->compressed_size += sizeof(TPE);\
+	}\
+	else {\
+		current->must_be_merged_with_previous = false;\
+		cnt = 1;\
+		current->compressed_size += wordaligned(MosaicBlkSize, TPE) + sizeof(TPE);\
+	}\
+	current->compression_strategy.cnt = cnt;\
+}
+
+str
+MOSestimate_raw(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous) {
+
+	switch(ATOMbasetype(task->type)){
+	case TYPE_bte: Estimate(bte); break;
+	case TYPE_sht: Estimate(sht); break;
+	case TYPE_int: Estimate(int); break;
+	case TYPE_lng: Estimate(lng); break;
+	case TYPE_oid: Estimate(oid); break;
+	case TYPE_flt: Estimate(flt); break;
+	case TYPE_dbl: Estimate(dbl); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: Estimate(hge); break;
+#endif
+	}
+
+	return MAL_SUCCEED;
+}
+
 
 // append a series of values into the non-compressed block
 
 #define RAWcompress(TYPE)\
-{	*(TYPE*) task->dst = ((TYPE*) task->src)[task->start];\
+{\
+	TYPE *v = ((TYPE*)task->src) + task->start;\
+	unsigned int cnt = estimate->cnt;\
+	TYPE *d = (TYPE*)task->dst;\
+	for(unsigned int i = 0; i<cnt; i++,v++){\
+		*d++ = (TYPE) *v;\
+	}\
 	hdr->checksum.sum##TYPE += *(TYPE*) task->dst;\
 	task->dst += sizeof(TYPE);\
-	MOSincCnt(blk,1);\
+	MOSsetCnt(blk,cnt);\
 }
 
 // rather expensive simple value non-compressed store
 void
-MOScompress_raw(MOStask task)
+MOScompress_raw(MOStask task, MosaicBlkRec* estimate)
 {
 	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = (MosaicBlk) task->blk;
 
-		MOSsetTag(blk,MOSAIC_RAW);
+	MOSsetTag(blk,MOSAIC_RAW);
 
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: RAWcompress(bte); break;

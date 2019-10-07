@@ -94,7 +94,9 @@ MOSskip_delta(MOStask task)
 
 // append a series of values into the non-compressed block
 #define Estimate_delta(TPE, EXPR)\
-{	TPE *v = ((TPE*)task->src) + task->start, val= *v, delta = 0;\
+{\
+	current->compression_strategy.tag = MOSAIC_DELTA;\
+	TPE *v = ((TPE*)task->src) + task->start, val= *v, delta = 0;\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop-task->start;\
 	for(v++,i =1; i<limit; i++,v++){\
 		delta = *v -val;\
@@ -102,18 +104,19 @@ MOSskip_delta(MOStask task)
 			break;\
 		val = *v;\
 	}\
-	if( i == 1 || i * sizeof(TPE) <= wordaligned(MosaicBlkSize + sizeof(TPE) + i-1,MosaicBlkRec))\
-		return 0.0;\
-	if( task->dst +  wordaligned(MosaicBlkSize + sizeof(int) + i-1,MosaicBlkRec) >=task->bsrc->tmosaic->base+ task->bsrc->tmosaic->size)\
-		return 0.0;\
-	factor = ((flt) i * sizeof(TPE))/ wordaligned(MosaicBlkSize + sizeof(TPE) + i-1,MosaicBlkRec);\
+	assert(i > 0);/*Should always compress.*/\
+	current->is_applicable = true;\
+	current->uncompressed_size += i * sizeof(TPE);\
+	current->compressed_size += wordaligned(MosaicBlkSize + sizeof(TPE) + i-1,MosaicBlkRec);\
+	current->compression_strategy.cnt = i;\
 }
 
 // estimate the compression level 
-flt
-MOSestimate_delta(MOStask task)
+str
+MOSestimate_delta(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
 {	BUN i = 0;
 	flt factor = 1.0;
+	(void) previous;
 
 	switch(ATOMbasetype(task->type)){
 		//case TYPE_bte: case TYPE_bit: no compression achievable
@@ -127,7 +130,7 @@ MOSestimate_delta(MOStask task)
 	}
 	task->factor[MOSAIC_DELTA] = factor;
 	task->range[MOSAIC_DELTA] = task->start + i;
-	return factor;
+	return MAL_SUCCEED;
 }
 
 #define DELTAcompress(TPE,EXPR)\
