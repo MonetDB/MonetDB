@@ -1984,6 +1984,50 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema)
 				"GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n");
 	}
 #endif
+	/* 60/61_wlcr signatures migrations */
+	pos += snprintf(buf + pos, bufsize - pos,
+		"drop procedure master();\n"
+		"drop procedure master(path string);\n"
+		"drop procedure stopmaster();\n"
+		"drop procedure masterbeat( duration int);\n"
+		"drop function masterClock() returns string;\n"
+		"drop function masterTick() returns bigint;\n"
+		"drop procedure replicate();\n"
+		"drop procedure replicate(pointintime timestamp);\n"
+		"drop procedure replicate(dbname string);\n"
+		"drop procedure replicate(dbname string, pointintime timestamp);\n"
+		"drop procedure replicate(dbname string, id tinyint);\n"
+		"drop procedure replicate(dbname string, id smallint);\n"
+		"drop procedure replicate(dbname string, id integer);\n"
+		"drop procedure replicate(dbname string, id bigint);\n"
+		"drop procedure replicabeat(duration integer);\n"
+		"drop function replicaClock() returns string;\n"
+		"drop function replicaTick() returns bigint;\n"
+
+		"create schema wlc;\n"
+		"create procedure wlc.master();\n"
+		"create procedure wlc.master(path string);\n"
+		"create procedure wlc.stop();\n"
+		"create procedure wlc.flush();\n"
+		"create procedure wlc.beat( duration int);\n"
+		"create function wlc.clock() returns string;\n"
+		"create function wlc.tick() returns bigint;\n"
+
+		"create schema wlr;\n"
+		"create procedure wlr.master(dbname string);\n"
+		"create procedure wlr.stop();\n"
+		"create procedure wlr.accept();\n"
+		"create procedure wlr.replicate();\n"
+		"create procedure wlr.replicate(pointintime timestamp);\n"
+		"create procedure wlr.replicate(id tinyint);\n"
+		"create procedure wlr.replicate(id smallint);\n"
+		"create procedure wlr.replicate(id integer);\n"
+		"create procedure wlr.replicate(id bigint);\n"
+		"create procedure wlr.beat(duration integer);\n"
+		"create function wlr.clock() returns string;\n"
+		"create function wlr.tick() returns bigint;\n"
+	);
+
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('deltas') and type = %d;\n", (int) F_UNION);
@@ -2088,7 +2132,8 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-	if (!sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
+	if (mvc_bind_schema(m, "wlc") == NULL &&
+	    !sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
 		if ((err = sql_update_mar2018(c, m, prev_schema)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);

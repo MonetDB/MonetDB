@@ -23,7 +23,7 @@ def freeport():
 cloneport = freeport()
 
 dbname = tstdb
-dbnameclone = tstdb + '-clone'
+dbnameclone = tstdb + 'clone'
 
 # master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
@@ -32,14 +32,14 @@ c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process
 
 #two step roll forward, where first step shouldn't do anything because already in previous test
 cout, cerr = c.communicate('''\
-call setmaster('%s');
-call replicate(3);
+call wlr.master('%s');
+call wlr.replicate(3);
 select * from tmp;
-call replicate(4);
+call wlr.replicate(4);
 select * from tmp;
-call replicate(6);
+call wlr.replicate(6);
 select * from tmp;
-call stopreplicate();
+call wlr.stop();
 ''' % dbname)
 
 sout, serr = slave.communicate()

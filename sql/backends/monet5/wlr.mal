@@ -6,13 +6,17 @@
 
 module wlr;
 
-pattern replicate(dbname:str)
-address WLRstartreplicate
+pattern master(dbname:str)
+address WLRmaster
 comment "Initialize the replicator thread";
 
-pattern stopreplicate()
-address WLRstopreplicate
+pattern stop()
+address WLRstop
 comment "Stop the replicator thread";
+
+pattern accept()
+address WLRaccept
+comment "Accept failing transaction";
 
 pattern replicate()
 address WLRreplicate
@@ -38,16 +42,16 @@ pattern replicate(id:lng)
 address WLRreplicate
 comment "Roll the snapshot forward to a specific transaction id";
 
-pattern setreplicabeat(dur:int)
-address WLRsetreplicabeat
+pattern setbeat(dur:int)
+address WLRsetbeat
 comment "Threshold (in seconds) for re-running queries";
 
-pattern getreplicaclock():str
-address WLRgetreplicaclock
+pattern getclock():str
+address WLRgetclock
 comment "Timestamp of last replicated transaction.";
 
-pattern getreplicatick():lng
-address WLRgetreplicatick
+pattern gettick():lng
+address WLRgettick
 comment "Transaction identifier of the last replicated transaction.";
 
 pattern transaction(tid:lng, started:str, user:str)

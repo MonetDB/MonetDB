@@ -23,7 +23,7 @@ def freeport():
 cloneport = freeport()
 
 dbname = tstdb
-dbnameclone = tstdb + '-clone'
+dbnameclone = tstdb + 'clone'
 
 #master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
@@ -32,10 +32,11 @@ c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process
 
 cout, cerr = c.communicate('''\
 select * from tmp;
-call setmaster('%s');
-call replicate(-1);
-call replicate(8);
+call wlr.master('%s');
+call wlr.replicate(-1);
+call wlr.replicate(8);
 select * from tmp;
+call wlr.stop();
 '''  %dbname)
 
 sout, serr = slave.communicate()
@@ -64,5 +65,5 @@ def listfiles(path):
             except IOError:
                 sys.stderr.write('Failure to read file ' + file + '\n')
 
-listfiles(os.path.join(dbfarm, tstdb))
-listfiles(os.path.join(dbfarm, tstdb, 'wlc_logs'))
+# listfiles(os.path.join(dbfarm, tstdb))
+# listfiles(os.path.join(dbfarm, tstdb, 'wlc_logs'))

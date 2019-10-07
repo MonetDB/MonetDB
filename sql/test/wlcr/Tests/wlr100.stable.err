@@ -17,11 +17,14 @@ stderr of test 'wlr100` in directory 'sql/test/wlcr` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	monet_prompt = 
-# cmdline opt 	mapi_port = 42547
-# cmdline opt 	mapi_usock = /var/tmp/mtest-30891/.s.monetdb.42547
-# cmdline opt 	gdk_dbpath = /export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone
-# cmdline opt 	gdk_debug = 536870922
+# cmdline opt 	mapi_port = 34573
+# cmdline opt 	mapi_usock = /var/tmp/mtest-22411/.s.monetdb.34573
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/branches/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcrclone
+#client1:!ERROR:SQLException:wlr.startreplicate:42000!Timeout to wait for replicator to catch up.Catched up until 8, 9223372036854775799 pending
+MAPI  = (monetdb) /var/tmp/mtest-22885/.s.monetdb.44647
+QUERY = call wlr.replicate();
+ERROR = !Timeout to wait for replicator to catch up.Catched up until 8, 9223372036854775799 pending
+CODE  = 42000
 
 # 21:26:05 >  
 # 21:26:05 >  "Done."

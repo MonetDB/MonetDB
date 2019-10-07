@@ -603,7 +603,9 @@ SQLinit(Client c)
 			throw(SQL, "SQLinit", SQLSTATE(42000) "Starting idle manager failed");
 		}
 	}
-	return WLCinit();
+	if( wlc_state == WLC_STARTUP)
+		return WLCinit();
+	return MAL_SUCCEED;
 }
 
 #define TRANS_ABORTED SQLSTATE(25005) "Current transaction is aborted (please ROLLBACK)\n"

@@ -45,7 +45,7 @@
  * from most storage system related failures, e.g. using RAID disks or LSF systems.
  *
  * A database can be set into 'master' mode only once using the SQL command:
- * CALL master() whose access permission is limited to the 'monetdb' user.[CHECK]
+ * CALL wrc_master.master() whose access permission is limited to the 'monetdb' user.[CHECK]
  * An optional path to the log record directory can be given to reduce the IO latency,
  * e.g. using a nearby SSD, or where there is ample of space to keep a long history,
  * e.g. a HDD or cold storage location.
@@ -73,7 +73,7 @@
  * A transaction log file is created by the master using a heartbeat (in seconds).
  * A new transaction log file is published when the system has been collecting transaction records for some time.
  * The beat can be set using a SQL command, e.g.
- * CALL masterbeat(duration)
+ * CALL wcr_master.beat(duration)
  * Setting it to zero leads to a log file per transaction and may cause a large log directory
  * with thousands of small files.
  * The default of 5 minutes should balance polling overhead in most practical situations.
@@ -86,7 +86,7 @@
  * After closing, the replicas can see from the master configuration file that a new log batch is available.
  *
  * The final step is to close stop transaction logging with the command
- * CALL stopmaster().
+ * CALL wcr_master.stop().
  * It typically is the end-of-life-time for a snapshot. For example, when planning to do
  * a large bulk load of the database, stopping logging avoids a double write into the
  * database. The database can only be brought back into master mode using a fresh snapshot.
@@ -117,7 +117,7 @@
  *
  * Every clone should start off with a copy of the binary snapshot identified by 'snapshot'.
  * A fresh database can be turned into a clone using the call
- *     CALL replicate('mastername')
+ *     CALL wcr_replica.master('mastername')
  * It will grab the latest snapshot of the master and applies all
  * available log files before releasing the system. 
  * The master has no knowledge about the number of clones and their whereabouts.
@@ -129,23 +129,23 @@
  * apply the logs until a given moment. This is particularly handy when an unexpected 
  * desastrous user action (drop persistent table) has to be recovered from.
  *
- * CALL setmaster('mastername');  -- get logs from a specific master
+ * CALL wcr_replica.master('mastername');  -- get logs from a specific master
  * ...
- * CALL replicate(tag); -- stops after we are in sink with tag
+ * CALL wcr_replicate.replicate(tag); -- stops after we are in sink with tag
  * ...
- * CALL replicate(NOW()); -- stop after we sinked all transactions
+ * CALL wcr_replicate.replicate(NOW()); -- stop after we sinked all transactions
  * ...
- * CALL replicate(); -- synchronize in background continuously
+ * CALL wcr_replicate.replicate(); -- synchronize in background continuously
  * ...
- * CALL stopreplicate(); -- stop the synchroniation thread
+ * CALL wcr_replicate.stop(); -- stop the synchroniation thread
  *
- * SELECT replicaClock();
+ * SELECT wcr_replica.clock();
  * returns the timestamp of the last replicated transaction.
- * SELECT replicaTick();
+ * SELECT wcr_replica.tick();
  * returns the transaction id of the last replicated transaction.
- * SELECT masterClock();
+ * SELECT wcr_master.clock();
  * return the timestamp of the last committed transaction in the master.
- * SELECT masterTick();
+ * SELECT wcr_master.tick();
  * return the transaction id of the last committed transaction in the master.
  *
  * Any failure encountered during a log replay terminates the replication process,
@@ -422,7 +422,7 @@ WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str 
-WLCgetmasterclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCgetclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str *ret = getArgReference_str(stk,pci,0);
 	(void) cntxt;
 	(void) mb;
@@ -431,12 +431,12 @@ WLCgetmasterclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		*ret = GDKstrdup(str_nil);
 	if(*ret == NULL)
-		throw(MAL,"wlc.getmasterclock", MAL_MALLOC_FAIL);
+		throw(MAL,"wlc.getclock", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
 str 
-WLCgetmastertick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCgettick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	lng *ret = getArgReference_lng(stk,pci,0);
 	(void) cntxt;
 	(void) mb;
@@ -448,19 +448,19 @@ WLCgetmastertick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * It forces a new log file
  */
 str 
-WLCsetmasterbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCsetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int beat;
 	(void) mb;
 	(void) cntxt;
 	beat = * getArgReference_int(stk,pci,1);
 	if ( beat < 0)
-		throw(MAL, "wlc.setmasterbeat", "beat should be a positive number");
+		throw(MAL, "wlc.setbeat", "beat should be a positive number");
 	wlc_beat = beat;
 	return WLCcloselogger();
 }
 
 str 
-WLCgetmasterbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCgetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int *ret = getArgReference_int(stk,pci,0);
 	(void) mb;
 	(void) cntxt;
@@ -507,14 +507,14 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str 
-WLCstopmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+WLCstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
 	if( wlc_state != WLC_RUN )
-		throw(MAL,"master","WARNING: master role not active");
+		throw(MAL,"wlc.stop","WARNING: master role not active");
 	wlc_state = WLC_STOP;
 	return WLCsetConfig();
 }
@@ -588,10 +588,10 @@ WLCpreparewrite(Client cntxt)
 		if( wlc_beat == 0 )
 			msg = WLCcloselogger();
 		
+		MT_lock_unset(&wlc_lock);
 		trimMalVariables(cntxt->wlc, NULL);
 		resetMalBlk(cntxt->wlc, 0);
 		cntxt->wlc_kind = WLC_QUERY;
-		MT_lock_unset(&wlc_lock);
 	} else
 			throw(MAL,"wlc.write","WLC log path missing ");
 

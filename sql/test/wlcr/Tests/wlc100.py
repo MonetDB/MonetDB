@@ -20,7 +20,7 @@ s = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE,
 c = process.client('sql', server = s, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 cout, cerr = c.communicate('''\
-call stopmaster();
+call wlc.stop();
 insert into tmp values(40,'after being stopped');
 select * from tmp;
 ''')
