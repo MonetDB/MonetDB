@@ -1269,7 +1269,6 @@ sql_create_funcSE(sql_allocator *sa, const char *name, const char *mod, const ch
 	return sql_create_func_(sa, name, mod, imp, l, sres, TRUE, F_FUNC, fix_scale);
 }
 
-
 static sql_func *
 sql_create_func3(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *res, int fix_scale)
 {
@@ -2195,4 +2194,3 @@ types_init(sql_allocator *sa, int debug)
 	MT_lock_unset(&funcs->ht_lock);
 	sqltypeinit( sa );
 }
-

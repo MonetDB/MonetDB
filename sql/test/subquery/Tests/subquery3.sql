@@ -119,5 +119,13 @@ GROUP BY col1; --MonetDB outputs this one right, but we should leave it here, as
 	-- 2468
 	-- 2468
 
+/* We shouldn't allow the following internal functions/procedures to be called from regular queries */
+SELECT "identity"(col1) FROM another_T;
+SELECT "rowid"(col1) FROM another_T;
+SELECT "in"(true, true) FROM another_T;
+SELECT "rotate_xor_hash"(1, 1, 1) FROM another_T;
+CALL sys_update_schemas();
+CALL sys_update_tables();
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
