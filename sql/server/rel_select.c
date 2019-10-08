@@ -122,6 +122,8 @@ rel_bound_exp(mvc *sql, sql_rel *rel )
 		for(n = rel->exps->h; n; n = n->next){
 			sql_exp *e = n->data;
 
+			if (exp_is_atom(e))
+				return e;
 			if (!is_freevar(e))
 				return exp_ref(sql->sa, e);
 		}
@@ -1792,6 +1794,9 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 	ls = rel_value_exp(query, &rel, lo, f, ek);
 	if (!ls)
 		return NULL;
+	if (ls && rel && exp_has_freevar(sql, ls) && (is_sql_sel(f) || is_sql_having(f))) {
+		ls = rel_project_add_exp(sql, rel, ls);
+	}
 	if (ro->token != SQL_SELECT) {
 		rs = rel_value_exp(query, &rel, ro, f, ek);
 		if (ro2) {
@@ -3821,6 +3826,22 @@ rel_check_card(sql_rel *rel, sql_exp *l , sql_exp *r)
 	return 0;
 }
 
+static sql_rel *
+rel_find_groupby(sql_rel *groupby)
+{
+	if (groupby && !is_processed(groupby) && !is_base(groupby->op)) { 
+		while(!is_processed(groupby) && !is_base(groupby->op)) {
+			if (groupby->op == op_groupby || !groupby->l)
+				break;
+			if (groupby->l)
+				groupby = groupby->l;
+		}
+		if (groupby && groupby->op == op_groupby)
+			return groupby;
+	}
+	return NULL;
+}
+
 static sql_exp *
 rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 {
@@ -3843,6 +3864,11 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 
 	l = rel_value_exp(query, rel, dl->next->data.sym, f, iek);
 	r = rel_value_exp(query, rel, dl->next->next->data.sym, f, iek);
+	if (l && *rel && exp_card(l) > CARD_AGGR && rel_find_groupby(*rel)) {
+		/* TODO fix error */
+		return NULL;
+	}
+
 	if (!l || !r) {
 		*rel = orel;
 		sf = find_func(sql, s, fname, 2, F_AGGR, NULL);
@@ -3861,7 +3887,6 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		sql->errstr[0] = '\0';
 		return rel_aggr(query, rel, se, f);
 	}
-
 	if (type == F_FUNC) {
 		sf = find_func(sql, s, fname, 2, F_AGGR, NULL);
 		if (sf) {
@@ -4014,18 +4039,10 @@ rel_aggr_intern(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, ch
 	/* find groupby */
 	if (groupby && !is_processed(groupby) && !is_base(groupby->op)) { 
 		og = groupby;
-		while(!is_processed(groupby) && !is_base(groupby->op)) {
-			if (groupby->op == op_groupby || !groupby->l)
-				break;
-			if (groupby->l)
-				groupby = groupby->l;
-		}
-		if (groupby && groupby->op == op_groupby) {
+		groupby = rel_find_groupby(groupby);
+		if (groupby)
 			group = 1;
-			/* At the end we switch back to the old projection relation og. 
-			 * During the partitioning and ordering we add the expressions to the intermediate relations. */
-		}
-		if (!group)
+		else
 			groupby = og;
 	}
 
@@ -5008,13 +5025,13 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 				if (e)
 					e = rel_project_add_exp(sql, rel, e);
 			}
-			if (!e && sql->session->status != -ERR_AMBIGUOUS) {
+			if (rel && !e && sql->session->status != -ERR_AMBIGUOUS) {
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
 
 				/* check for project->select->groupby */
-				if (is_project(rel->op) && is_sql_orderby(f)) {
+				if (rel && is_project(rel->op) && is_sql_orderby(f)) {
 					sql_rel *s = rel->l;
 					sql_rel *p = rel;
 					sql_rel *g = s;
@@ -5460,8 +5477,12 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		for(n = obe->h ; n ; n = n->next) {
 			sql_exp *oexp = n->data, *nexp;
 
-			if (is_sql_sel(f) && pp->op == op_project && !is_processed(pp) && !rel_find_exp(pp, oexp))
+			if (is_sql_sel(f) && pp->op == op_project && !is_processed(pp) && !rel_find_exp(pp, oexp)) {
 				append(pp->exps, oexp);
+				if (!exp_name(oexp))
+					exp_label(sql->sa, oexp, ++sql->label);
+				oexp = exp_ref(sql->sa, oexp);
+			}
 			n->data = nexp = opt_groupby_add_exp(sql, p, group?g:pp, oexp);
 			if (is_ascending(oexp))
 				set_direction(nexp, 1);
@@ -5772,7 +5793,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	call = exp_op(sql->sa, args, wf);
 	exp_label(sql->sa, call, ++sql->label);
 	r->l = p;
-	list_merge(p->exps, rel_projections(sql, p->l, NULL, 1, 1), NULL);
+	p->exps = list_merge(p->exps, rel_projections(sql, p->l, NULL, 1, 1), NULL);
 	append(p->exps, call);
 	call = exp_ref(sql->sa, call);
 	if (project_added) {

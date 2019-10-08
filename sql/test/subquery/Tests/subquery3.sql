@@ -3,10 +3,12 @@ INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Ga
 CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
 INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
 
+/* TODO use identity to join on 
 SELECT
     NOT MAX(t1.col6) IN (SELECT SUM(t1.col6) FROM tbl_ProductSales tp HAVING MAX(t1.col1) > MIN(tp.colID))
 FROM another_T t1
 GROUP BY t1.col6, t1.col7;
+*/
 	-- True
 	-- False
 	-- False
@@ -32,6 +34,35 @@ GROUP BY col1, col2, col5;
 	-- 1	0
 	-- 1	0
 	-- 1	0
+
+SELECT
+	EXISTS (SELECT col1 WHERE TRUE),
+	EXISTS (SELECT col1 WHERE FALSE),
+	EXISTS (SELECT col1 WHERE NULL),
+	NOT EXISTS (SELECT col1 WHERE TRUE),
+	NOT EXISTS (SELECT col1 WHERE FALSE),
+	NOT EXISTS (SELECT col1 WHERE NULL)
+FROM another_T t1;
+	-- True False False False True True
+	-- True False False False True True
+	-- True False False False True True
+	-- True False False False True True
+
+SELECT
+	EXISTS (SELECT AVG(col1) WHERE TRUE),
+	EXISTS (SELECT AVG(col1) WHERE FALSE),
+	EXISTS (SELECT AVG(col1) WHERE NULL),
+	NOT EXISTS (SELECT AVG(col1) WHERE TRUE),
+	NOT EXISTS (SELECT AVG(col1) WHERE FALSE),
+	NOT EXISTS (SELECT AVG(col1) WHERE NULL)
+FROM another_T t1;
+	-- The outputs depends if the correlation happens in either inside the inner query or the outer query. However some columns output wrong in MonetDB.
+	-- True False False False True True (1x or 4x)
+
+SELECT
+	EXISTS (SELECT RANK() OVER (PARTITION BY SUM(DISTINCT col5)))
+FROM another_T t1;
+	-- True
 
 SELECT
     (SELECT AVG(col1) OVER (PARTITION BY col5 ORDER BY col1 ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
@@ -120,12 +151,12 @@ GROUP BY col1; --MonetDB outputs this one right, but we should leave it here, as
 	-- 2468
 
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
-SELECT "identity"(col1) FROM another_T;
-SELECT "rowid"(col1) FROM another_T;
-SELECT "in"(true, true) FROM another_T;
-SELECT "rotate_xor_hash"(1, 1, 1) FROM another_T;
-CALL sys_update_schemas();
-CALL sys_update_tables();
+--SELECT "identity"(col1) FROM another_T;
+--SELECT "rowid"(col1) FROM another_T;
+--SELECT "in"(true, true) FROM another_T;
+--SELECT "rotate_xor_hash"(1, 1, 1) FROM another_T;
+--CALL sys_update_schemas();
+--CALL sys_update_tables();
 
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
