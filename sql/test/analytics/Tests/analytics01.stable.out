@@ -2522,6 +2522,34 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 8507,	0,	NULL,	NULL,	NULL	]
 [ 8507,	1,	0,	NULL,	NULL	]
 [ 8507,	2,	1,	0,	NULL	]
+#select lag(col2, -1) over (partition by col1 ORDER BY col2), lag(col2, 1) over (partition by col1 ORDER BY col2), lag(col2, 2) over (partition by col1 ORDER BY col2) from t1;
+% sys.L3,	sys.L7,	sys.L13 # table_name
+% L3,	L7,	L13 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+[ NULL,	NULL,	NULL	]
+[ 1,	NULL,	NULL	]
+[ NULL,	0,	NULL	]
+[ 1,	NULL,	NULL	]
+[ 2,	0,	NULL	]
+[ NULL,	1,	0	]
+[ 1,	NULL,	NULL	]
+[ 2,	0,	NULL	]
+[ NULL,	1,	0	]
+#select lead(col2, -1) over (partition by col1 ORDER BY col2), lead(col2, 1) over (partition by col1 ORDER BY col2), lead(col2, 2) over (partition by col1 ORDER BY col2) from t1;
+% sys.L3,	sys.L7,	sys.L13 # table_name
+% L3,	L7,	L13 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+[ NULL,	NULL,	NULL	]
+[ NULL,	1,	NULL	]
+[ 0,	NULL,	NULL	]
+[ NULL,	1,	2	]
+[ 0,	2,	NULL	]
+[ 1,	NULL,	NULL	]
+[ NULL,	1,	2	]
+[ 0,	2,	NULL	]
+[ 1,	NULL,	NULL	]
 #rollback;
 #drop table analytics;
 
