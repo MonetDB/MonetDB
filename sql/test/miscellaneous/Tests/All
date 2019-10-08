@@ -6,3 +6,4 @@ update_delete_aliases
 groupby_expressions
 with_update_stmts
 groupby_error
+alter_table_add_column
