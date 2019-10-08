@@ -44,17 +44,6 @@ typedef struct CLIENT_INPUT {
 	struct CLIENT_INPUT *next;    
 } ClientInput;
 
-#define THRRUNNING 0
-#define THRSUSPEND 1
-#define THRTOBESTOPPED 2
-
-typedef struct CURRENT_INSTR{
-	MalBlkPtr	mb;
-	MalStkPtr	stk;
-	InstrPtr	pci;
-	int			state;
-} Workset;
-
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients */
 	oid user;       /* user id in the auth administration */
