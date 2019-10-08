@@ -182,7 +182,7 @@ MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	bat *f = getArgReference_bat(stk,p,0);
     bat *v = getArgReference_bat(stk,p,1);
 	BAT *flg, *val;
-	int state = 0;
+	bit state = 0;
 
 	(void) cntxt;
 	(void) mb;
