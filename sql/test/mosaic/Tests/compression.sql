@@ -115,7 +115,7 @@ select * from tmp3;
 select cast(sum(i) as bigint) from tmp3;
 select sum(f) from tmp3;
 
-alter table tmp3 alter column i set storage 'runlength,dictionary';
+alter table tmp3 alter column i set storage 'runlength,capped';
 alter table tmp3 alter column b set storage 'mosaic';
 --explain select * from tmp3;
 --select * from tmp3;

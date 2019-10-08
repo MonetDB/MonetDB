@@ -38,11 +38,11 @@ mosaic_oid_2.runlength
 mosaic_date_2.runlength
 mosaic_timestamp_2.runlength
 
-mosaic_bit_1.dictionary
-mosaic_lng_1.dictionary
-mosaic_oid_1.dictionary
-mosaic_date_1.dictionary
-mosaic_timestamp_1.dictionary
+mosaic_bit_1.capped
+mosaic_lng_1.capped
+mosaic_oid_1.capped
+mosaic_date_1.capped
+mosaic_timestamp_1.capped
 
 mosaic_lng_1.delta
 mosaic_oid_1.delta

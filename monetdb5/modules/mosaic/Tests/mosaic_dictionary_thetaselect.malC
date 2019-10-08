@@ -9,7 +9,7 @@ b:= bat.append(b,b);
 base:= algebra.copy(b);
 
 io.print(base);
-mosaic.compress(b,"dictionary test 10");
+mosaic.compress(b,"capped test 10");
 b:= mosaic.decompress(b);
 io.print(b);
 

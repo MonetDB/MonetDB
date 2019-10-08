@@ -30,7 +30,7 @@
 #define MOSAIC_METHODS	8
 #define MOSAIC_RAW		0		// no compression at all
 #define MOSAIC_RLE      1		// use run-length encoding
-#define MOSAIC_DICT     2		// local dictionary encoding
+#define MOSAIC_CAPPED     2		// capped global dictionary encoding
 #define MOSAIC_DELTA	3		// use delta encoding
 #define MOSAIC_LINEAR 	4		// use an encoding for a linear sequence
 #define MOSAIC_FRAME	5		// delta dictionary for frame of reference value
@@ -68,7 +68,7 @@ typedef struct MOSAICHEADER{
 	// both dictionary and framebased compression require a global dictionary of frequent values
 	// Their size is purposely topped 
 	bte mask, bits, framebits;	// global compression type properties
-	int dictsize;		// used by dictionary compression, it is a small table
+	int dictsize;		// used by capped compression, it is a small table
 	union{
 		bte valbte[256];
 		sht valsht[256];

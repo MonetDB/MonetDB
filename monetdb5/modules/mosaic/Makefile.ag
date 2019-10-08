@@ -23,7 +23,7 @@ lib_mosaic = {
 		mosaic_hdr.c mosaic_hdr.h \
 		mosaic_raw.c mosaic_raw.h \
 		mosaic_runlength.c mosaic_runlength.h \
-		mosaic_dictionary.c mosaic_dictionary.h \
+		mosaic_capped.c mosaic_capped.h \
 		mosaic_delta.c mosaic_delta.h \
 		mosaic_linear.c mosaic_linear.h \
 		mosaic_frame.c mosaic_frame.h \

@@ -13,7 +13,7 @@
  * Index value zero is not used to easy detection of filler values
  * The dictionary index size is derived from the number of entries covered.
  * It leads to a compact n-bit representation.
- * Floating points are not expected to be replicated 
+ * Floating points are not expected to be replicated.
  * A limit of 256 elements is currently assumed.
  */
 
@@ -21,10 +21,10 @@
 #include "gdk.h"
 #include "gdk_bitvector.h"
 #include "mosaic.h"
-#include "mosaic_dictionary.h"
+#include "mosaic_capped.h"
 #include "mosaic_private.h"
 
-bool MOStypes_dictionary(BAT* b) {
+bool MOStypes_capped(BAT* b) {
 	switch (b->ttype){
 	case TYPE_bit: return true; // Will be mapped to bte
 	case TYPE_bte: return true;
@@ -47,7 +47,7 @@ bool MOStypes_dictionary(BAT* b) {
 }
 
 void
-MOSadvance_dictionary(MOStask task)
+MOSadvance_capped(MOStask task)
 {
 	int *dst = (int*)  MOScodevector(task);
 	BUN cnt = MOSgetCnt(task->blk);
@@ -57,11 +57,11 @@ MOSadvance_dictionary(MOStask task)
 	task->start += (oid) cnt;
 	task->stop = task->stop;
 	bytes =  (long) (cnt * task->hdr->bits)/8 + (((cnt * task->hdr->bits) %8) != 0);
-	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
+	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int));
 }
 
 void
-MOSlayout_dictionary_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_capped_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	lng zero=0;
 	int i;
@@ -69,7 +69,7 @@ MOSlayout_dictionary_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT
 	char bufv[BUFSIZ];
 
 	for(i=0; i< task->hdr->dictsize; i++){
-		snprintf(buf, BUFSIZ,"dictionary[%d]",i);
+		snprintf(buf, BUFSIZ,"capped[%d]",i);
 		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
 			BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
 			BUNappend(binput, &zero, false) != GDK_SUCCEED ||
@@ -81,14 +81,14 @@ MOSlayout_dictionary_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT
 
 
 void
-MOSlayout_dictionary(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_capped(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
 	input = cnt * ATOMsize(task->type);
 	output =  MosaicBlkSize + (cnt * task->hdr->bits)/8 + (((cnt * task->hdr->bits) %8) != 0);
-	if( BUNappend(btech, "dictionary blk", false) != GDK_SUCCEED ||
+	if( BUNappend(btech, "capped blk", false) != GDK_SUCCEED ||
 		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
 		BUNappend(binput, &input, false) != GDK_SUCCEED ||
 		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
@@ -97,9 +97,9 @@ MOSlayout_dictionary(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *bo
 }
 
 void
-MOSskip_dictionary(MOStask task)
+MOSskip_capped(MOStask task)
 {
-	MOSadvance_dictionary(task);
+	MOSadvance_capped(task);
 	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
@@ -116,7 +116,7 @@ MOSskip_dictionary(MOStask task)
 
 #define estimateDict(TPE)\
 {\
-	current->compression_strategy.tag = MOSAIC_DICT;\
+	current->compression_strategy.tag = MOSAIC_CAPPED;\
 	TPE *val = ((TPE*)task->src) + task->start;\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	for(i =0; i<limit; i++, val++){\
@@ -133,7 +133,7 @@ MOSskip_dictionary(MOStask task)
 	current->compression_strategy.cnt = i;\
 }
 
-// Create a larger dictionary buffer then we allow for in the mosaic header first
+// Create a larger capped buffer then we allow for in the mosaic header first
 // Store the most frequent ones in the compressed heap header directly based on estimated savings
 // Improve by using binary search rather then linear scan
 #define TMPDICT 16*256
@@ -252,8 +252,8 @@ MOScreatedictionary(MOStask task)
 
 // calculate the expected reduction using DICT in terms of elements compressed
 str
-MOSestimate_dictionary(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
-{	
+MOSestimate_capped(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
+{
 	BUN i = 0;
 	int j;
 	flt factor= 0.0;
@@ -261,7 +261,7 @@ MOSestimate_dictionary(MOStask task, MosaicEstimation* current, const MosaicEsti
 	(void) previous;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: estimateDict(bte); break; 
+	case TYPE_bte: estimateDict(bte); break;
 	case TYPE_sht: estimateDict(sht); break;
 	case TYPE_int: estimateDict(int); break;
 	case TYPE_oid: estimateDict(oid); break;
@@ -272,9 +272,9 @@ MOSestimate_dictionary(MOStask task, MosaicEstimation* current, const MosaicEsti
 	case TYPE_hge: estimateDict(hge); break;
 #endif
 	}
-	task->factor[MOSAIC_DICT] = factor;
-	task->range[MOSAIC_DICT] = task->start + i;
-	return MAL_SUCCEED; 
+	task->factor[MOSAIC_CAPPED] = factor;
+	task->range[MOSAIC_CAPPED] = task->start + i;
+	return MAL_SUCCEED;
 }
 
 // insert a series of values into the compressor block using dictionary
@@ -299,7 +299,7 @@ MOSestimate_dictionary(MOStask task, MosaicEstimation* current, const MosaicEsti
 
 
 void
-MOScompress_dictionary(MOStask task)
+MOScompress_capped(MOStask task)
 {
 	BUN i;
 	int j;
@@ -308,7 +308,7 @@ MOScompress_dictionary(MOStask task)
 
 	task->dst = MOScodevector(task);
 
-	MOSsetTag(blk,MOSAIC_DICT);
+	MOSsetTag(blk,MOSAIC_CAPPED);
 	MOSsetCnt(blk,0);
 
 	switch(ATOMbasetype(task->type)){
@@ -339,7 +339,7 @@ MOScompress_dictionary(MOStask task)
 }
 
 void
-MOSdecompress_dictionary(MOStask task)
+MOSdecompress_capped(MOStask task)
 {
 	MosaicBlk blk = task->blk;
 	MosaicHdr hdr = task->hdr;
@@ -373,9 +373,9 @@ MOSdecompress_dictionary(MOStask task)
  * hash based dictionary.
 */
 
-#define select_dictionary_str(TPE) \
-	throw(MAL,"mosaic.dictionary","TBD");
-#define select_dictionary(TPE) {\
+#define select_capped_str(TPE) \
+	throw(MAL,"mosaic.capped","TBD");
+#define select_capped(TPE) {\
 	base = (BitVector) MOScodevector(task);\
 	if( !*anti){\
 		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
@@ -446,7 +446,7 @@ MOSdecompress_dictionary(MOStask task)
 }
 
 str
-MOSselect_dictionary(MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
+MOSselect_capped(MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
 	oid *o;
 	BUN i, first,last;
@@ -460,32 +460,32 @@ MOSselect_dictionary(MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSskip_dictionary(task);
+		MOSskip_capped(task);
 		return MAL_SUCCEED;
 	}
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: select_dictionary(bte); break;
-	case TYPE_sht: select_dictionary(sht); break;
-	case TYPE_int: select_dictionary(int); break;
-	case TYPE_lng: select_dictionary(lng); break;
-	case TYPE_oid: select_dictionary(oid); break;
-	case TYPE_flt: select_dictionary(flt); break;
-	case TYPE_dbl: select_dictionary(dbl); break;
+	case TYPE_bte: select_capped(bte); break;
+	case TYPE_sht: select_capped(sht); break;
+	case TYPE_int: select_capped(int); break;
+	case TYPE_lng: select_capped(lng); break;
+	case TYPE_oid: select_capped(oid); break;
+	case TYPE_flt: select_capped(flt); break;
+	case TYPE_dbl: select_capped(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: select_dictionary(hge); break;
+	case TYPE_hge: select_capped(hge); break;
 #endif
 	}
-	MOSskip_dictionary(task);
+	MOSskip_capped(task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
 
-#define thetaselect_dictionary_str(TPE)\
-	throw(MAL,"mosaic.dictionary","TBD");
+#define thetaselect_capped_str(TPE)\
+	throw(MAL,"mosaic.capped","TBD");
 
-#define thetaselect_dictionary(TPE)\
+#define thetaselect_capped(TPE)\
 { 	TPE low,hgh;\
 	base = (BitVector) MOScodevector(task);\
 	low= hgh = TPE##_nil;\
@@ -522,10 +522,10 @@ MOSselect_dictionary(MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *
 				*o++ = (oid) first;\
 			}\
 	}\
-} 
+}
 
 str
-MOSthetaselect_dictionary( MOStask task, void *val, str oper)
+MOSthetaselect_capped( MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
@@ -533,37 +533,37 @@ MOSthetaselect_dictionary( MOStask task, void *val, str oper)
 	MosaicHdr hdr = task->hdr;
 	bte j;
 	BitVector base;
-	
+
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
 	if (task->cl && *task->cl > last){
-		MOSskip_dictionary(task);
+		MOSskip_capped(task);
 		return MAL_SUCCEED;
 	}
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: thetaselect_dictionary(bte); break;
-	case TYPE_sht: thetaselect_dictionary(sht); break;
-	case TYPE_int: thetaselect_dictionary(int); break;
-	case TYPE_lng: thetaselect_dictionary(lng); break;
-	case TYPE_oid: thetaselect_dictionary(oid); break;
-	case TYPE_flt: thetaselect_dictionary(flt); break;
-	case TYPE_dbl: thetaselect_dictionary(dbl); break;
+	case TYPE_bte: thetaselect_capped(bte); break;
+	case TYPE_sht: thetaselect_capped(sht); break;
+	case TYPE_int: thetaselect_capped(int); break;
+	case TYPE_lng: thetaselect_capped(lng); break;
+	case TYPE_oid: thetaselect_capped(oid); break;
+	case TYPE_flt: thetaselect_capped(flt); break;
+	case TYPE_dbl: thetaselect_capped(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: thetaselect_dictionary(hge); break;
+	case TYPE_hge: thetaselect_capped(hge); break;
 #endif
 	}
-	MOSskip_dictionary(task);
+	MOSskip_capped(task);
 	task->lb =o;
 	return MAL_SUCCEED;
 }
 
-#define projection_dictionary_str(TPE)\
-	throw(MAL,"mosaic.dictionary","TBD");
-#define projection_dictionary(TPE)\
+#define projection_capped_str(TPE)\
+	throw(MAL,"mosaic.capped","TBD");
+#define projection_capped(TPE)\
 {	TPE *v;\
 	base = (BitVector) MOScodevector(task);\
 	v= (TPE*) task->src;\
@@ -577,7 +577,7 @@ MOSthetaselect_dictionary( MOStask task, void *val, str oper)
 }
 
 str
-MOSprojection_dictionary( MOStask task)
+MOSprojection_capped( MOStask task)
 {
 	BUN i,first,last;
 	MosaicHdr hdr = task->hdr;
@@ -588,25 +588,25 @@ MOSprojection_dictionary( MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: projection_dictionary(bte); break;
-		case TYPE_sht: projection_dictionary(sht); break;
-		case TYPE_int: projection_dictionary(int); break;
-		case TYPE_lng: projection_dictionary(lng); break;
-		case TYPE_oid: projection_dictionary(oid); break;
-		case TYPE_flt: projection_dictionary(flt); break;
-		case TYPE_dbl: projection_dictionary(dbl); break;
+		case TYPE_bte: projection_capped(bte); break;
+		case TYPE_sht: projection_capped(sht); break;
+		case TYPE_int: projection_capped(int); break;
+		case TYPE_lng: projection_capped(lng); break;
+		case TYPE_oid: projection_capped(oid); break;
+		case TYPE_flt: projection_capped(flt); break;
+		case TYPE_dbl: projection_capped(dbl); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: projection_dictionary(hge); break;
+		case TYPE_hge: projection_capped(hge); break;
 #endif
 	}
-	MOSskip_dictionary(task);
+	MOSskip_capped(task);
 	return MAL_SUCCEED;
 }
 
-#define join_dictionary_str(TPE)\
-	throw(MAL,"mosaic.dictionary","TBD");
+#define join_capped_str(TPE)\
+	throw(MAL,"mosaic.capped","TBD");
 
-#define join_dictionary(TPE)\
+#define join_capped(TPE)\
 {	TPE  *w;\
 	BitVector base = (BitVector) MOScodevector(task);\
 	w = (TPE*) task->src;\
@@ -617,14 +617,14 @@ MOSprojection_dictionary( MOStask task)
 			if ( *w == task->hdr->dict.val##TPE[j]){\
 				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
 				BUNappend(task->rbat, &o, false) != GDK_SUCCEED)\
-				throw(MAL,"mosaic.dictionary",MAL_MALLOC_FAIL);\
+				throw(MAL,"mosaic.capped",MAL_MALLOC_FAIL);\
 			}\
 		}\
 	}\
 }
 
 str
-MOSjoin_dictionary( MOStask task)
+MOSjoin_capped( MOStask task)
 {
 	BUN i,n,limit;
 	oid o, oo;
@@ -633,17 +633,17 @@ MOSjoin_dictionary( MOStask task)
 
 	// set the oid range covered and advance scan range
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: join_dictionary(bte); break;
-		case TYPE_sht: join_dictionary(sht); break;
-		case TYPE_int: join_dictionary(int); break;
-		case TYPE_lng: join_dictionary(lng); break;
-		case TYPE_oid: join_dictionary(oid); break;
-		case TYPE_flt: join_dictionary(flt); break;
-		case TYPE_dbl: join_dictionary(dbl); break;
+		case TYPE_bte: join_capped(bte); break;
+		case TYPE_sht: join_capped(sht); break;
+		case TYPE_int: join_capped(int); break;
+		case TYPE_lng: join_capped(lng); break;
+		case TYPE_oid: join_capped(oid); break;
+		case TYPE_flt: join_capped(flt); break;
+		case TYPE_dbl: join_capped(dbl); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: join_dictionary(hge); break;
+		case TYPE_hge: join_capped(hge); break;
 #endif
 	}
-	MOSskip_dictionary(task);
+	MOSskip_capped(task);
 	return MAL_SUCCEED;
 }

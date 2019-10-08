@@ -17,19 +17,19 @@
 #include "mosaic_hdr.h"
 #include "mosaic_raw.h"
 #include "mosaic_runlength.h"
-#include "mosaic_dictionary.h"
+#include "mosaic_capped.h"
 #include "mosaic_delta.h"
 #include "mosaic_linear.h"
 #include "mosaic_frame.h"
 #include "mosaic_prefix.h"
 
-char *MOSfiltername[]={"raw","runlength","dictionary","delta","linear","frame","prefix","EOL"};
+char *MOSfiltername[]={"raw","runlength","capped","delta","linear","frame","prefix","EOL"};
 
 bool MOSisTypeAllowed(int compression, BAT* b) {
 	switch (compression) {
 	case MOSAIC_RAW:		return MOStypes_raw(b);
 	case MOSAIC_RLE:		return MOStypes_runlength(b);
-	case MOSAIC_DICT:		return MOStypes_dictionary(b);
+	case MOSAIC_CAPPED:		return MOStypes_capped(b);
 	case MOSAIC_DELTA:		return MOStypes_delta(b);
 	case MOSAIC_LINEAR:		return MOStypes_linear(b);
 	case MOSAIC_FRAME:		return MOStypes_frame(b);
@@ -123,8 +123,8 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 			BUNappend(bproperties, "", false) != GDK_SUCCEED)
 				throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
 	}
-	if( task->hdr->blks[MOSAIC_DICT])
-		MOSlayout_dictionary_hdr(task,btech,bcount,binput,boutput,bproperties);
+	if( task->hdr->blks[MOSAIC_CAPPED])
+		MOSlayout_capped_hdr(task,btech,bcount,binput,boutput,bproperties);
 
 	if( BUNappend(btech, "========", false) != GDK_SUCCEED ||
 		BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
@@ -145,10 +145,10 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 			MOSlayout_runlength(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_runlength(task);
 			break;
-		case MOSAIC_DICT:
-			ALGODEBUG mnstr_printf(GDKout, "MOSlayout_dictionary\n");
-			MOSlayout_dictionary(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_dictionary(task);
+		case MOSAIC_CAPPED:
+			ALGODEBUG mnstr_printf(GDKout, "MOSlayout_capped\n");
+			MOSlayout_capped(task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_capped(task);
 			break;
 		case MOSAIC_DELTA:
 			ALGODEBUG mnstr_printf(GDKout, "MOSlayout_delta\n");
@@ -221,8 +221,8 @@ MOSoptimizerCost(MOStask task, MosaicEstimation* current, const MosaicEstimation
 			return result;
 		}
 	}
-	if (task->filter[MOSAIC_DICT]){
-		if( (result = MOSestimate_dictionary(task, &estimations[MOSAIC_DICT], previous))) {
+	if (task->filter[MOSAIC_CAPPED]){
+		if( (result = MOSestimate_capped(task, &estimations[MOSAIC_CAPPED], previous))) {
 			return result;
 		}
 	}
@@ -361,7 +361,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 		goto finalize;
 	}
 
-	if( task->filter[MOSAIC_DICT])
+	if( task->filter[MOSAIC_CAPPED])
 		MOScreatedictionary(task);
 	// always start with an EOL block
 	MOSsetTag(task->blk,MOSAIC_EOL);
@@ -407,11 +407,11 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 			MOSadvance_runlength(task);
 			MOSnewBlk(task);
 			break;
-		case MOSAIC_DICT:
-			ALGODEBUG mnstr_printf(GDKout, "MOScompress_dictionary\n");
-			MOScompress_dictionary(task);
+		case MOSAIC_CAPPED:
+			ALGODEBUG mnstr_printf(GDKout, "MOScompress_capped\n");
+			MOScompress_capped(task);
 			MOSupdateHeader(task);
-			MOSadvance_dictionary(task);
+			MOSadvance_capped(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_DELTA:
@@ -570,10 +570,10 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 			MOSdecompress_runlength(task);
 			MOSskip_runlength(task);
 			break;
-		case MOSAIC_DICT:
-			ALGODEBUG mnstr_printf(GDKout, "MOSdecompress_dictionary\n");
-			MOSdecompress_dictionary(task);
-			MOSskip_dictionary(task);
+		case MOSAIC_CAPPED:
+			ALGODEBUG mnstr_printf(GDKout, "MOSdecompress_capped\n");
+			MOSdecompress_capped(task);
+			MOSskip_capped(task);
 			break;
 		case MOSAIC_DELTA:
 			ALGODEBUG mnstr_printf(GDKout, "MOSdecompress_delta\n");
@@ -770,9 +770,9 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ALGODEBUG mnstr_printf(GDKout, "MOSselect_runlength\n");
 			MOSselect_runlength(task,low,hgh,li,hi,anti);
 			break;
-		case MOSAIC_DICT:
-			ALGODEBUG mnstr_printf(GDKout, "MOSselect_dictionary\n");
-			MOSselect_dictionary(task,low,hgh,li,hi,anti);
+		case MOSAIC_CAPPED:
+			ALGODEBUG mnstr_printf(GDKout, "MOSselect_capped\n");
+			MOSselect_capped(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_FRAME:
 			ALGODEBUG mnstr_printf(GDKout, "MOSselect_frame\n");
@@ -892,9 +892,9 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ALGODEBUG mnstr_printf(GDKout, "MOSthetaselect_linear\n");
 			MOSthetaselect_linear(task,low,*oper);
 			break;
-		case MOSAIC_DICT:
-			ALGODEBUG mnstr_printf(GDKout, "MOSthetaselect_dictionary\n");
-			MOSthetaselect_dictionary(task,low,*oper);
+		case MOSAIC_CAPPED:
+			ALGODEBUG mnstr_printf(GDKout, "MOSthetaselect_capped\n");
+			MOSthetaselect_capped(task,low,*oper);
 			break;
 		case MOSAIC_FRAME:
 			ALGODEBUG mnstr_printf(GDKout, "MOSthetaselect_frame\n");
@@ -999,9 +999,9 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ALGODEBUG mnstr_printf(GDKout, "MOSprojection_runlength\n");
 			MOSprojection_runlength( task);
 			break;
-		case MOSAIC_DICT:
-			ALGODEBUG mnstr_printf(GDKout, "MOSprojection_dictionary\n");
-			MOSprojection_dictionary( task);
+		case MOSAIC_CAPPED:
+			ALGODEBUG mnstr_printf(GDKout, "MOSprojection_capped\n");
+			MOSprojection_capped( task);
 			break;
 		case MOSAIC_FRAME:
 			ALGODEBUG mnstr_printf(GDKout, "MOSprojection_frame\n");
@@ -1118,9 +1118,9 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ALGODEBUG mnstr_printf(GDKout, "MOSjoin_runlength\n");
 			MOSjoin_runlength( task);
 			break;
-		case MOSAIC_DICT:
-			ALGODEBUG mnstr_printf(GDKout, "MOSjoin_dictionary\n");
-			MOSjoin_dictionary( task);
+		case MOSAIC_CAPPED:
+			ALGODEBUG mnstr_printf(GDKout, "MOSjoin_capped\n");
+			MOSjoin_capped( task);
 			break;
 		case MOSAIC_FRAME:
 			ALGODEBUG mnstr_printf(GDKout, "MOSjoin_frame\n");
@@ -1159,7 +1159,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     return msg;
 }
 
-// The analyse routine runs through the BAT dictionary and assess
+// The analyse routine runs through the BAT capped and assess
 // all possible compression options.
 
 /*

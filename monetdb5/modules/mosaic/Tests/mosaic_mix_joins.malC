@@ -23,7 +23,7 @@ bat.append(b,9);
 base:=algebra.copy(b);
 
 io.print(base);
-mosaic.compress(b,"runlength dictionary delta linear frame");
+mosaic.compress(b,"runlength capped delta linear frame");
 
 c:= bat.new(:oid);
 bat.append(c,0@0);
