@@ -585,7 +585,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 
 #define ANALYTICAL_LAG_IMP(TPE)						\
 	do {								\
-		TPE *rp, *rb, *bp, *rend,				\
+		TPE *rp, *rb, *bp, *nbp, *rend,				\
 			def = *((TPE *) default_value), next;		\
 		bp = (TPE*)Tloc(b, 0);					\
 		rb = rp = (TPE*)Tloc(r, 0);				\
@@ -601,8 +601,9 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 				if (*np) {				\
 					ncnt = (np - pnp);		\
 					rp += ncnt;			\
+					nbp = bp + ncnt; \
 					ANALYTICAL_LAG_CALC(TPE);	\
-					bp += (lag < ncnt) ? lag : 0;	\
+					bp = nbp; \
 					pnp = np;			\
 				}					\
 			}						\

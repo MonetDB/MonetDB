@@ -29,8 +29,8 @@ Ready.
 [ 10	]
 #start transaction;
 #select percent_rank() over (partition by aa) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -44,8 +44,8 @@ Ready.
 [ 0	]
 [ 0	]
 #select percent_rank() over (partition by aa order by aa asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -59,8 +59,8 @@ Ready.
 [ 0	]
 [ 0	]
 #select percent_rank() over (partition by aa order by aa desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -74,8 +74,8 @@ Ready.
 [ 0	]
 [ 0	]
 #select percent_rank() over (order by aa) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -89,8 +89,8 @@ Ready.
 [ 0.8888888889	]
 [ 1	]
 #select percent_rank() over (order by aa desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -104,8 +104,8 @@ Ready.
 [ 0.8888888889	]
 [ 0.8888888889	]
 #select percent_rank() over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -119,8 +119,8 @@ Ready.
 [ 0	]
 [ 0	]
 #select percent_rank() over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -134,8 +134,8 @@ Ready.
 [ 0	]
 [ 0	]
 #select percent_rank() over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -149,8 +149,8 @@ Ready.
 [ 0	]
 [ 0	]
 #select percent_rank() over (order by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -164,8 +164,8 @@ Ready.
 [ 0.6666666667	]
 [ 1	]
 #select percent_rank() over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -179,8 +179,8 @@ Ready.
 [ 0.7777777778	]
 [ 0.7777777778	]
 #select cume_dist() over (partition by aa) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0.2	]
@@ -194,8 +194,8 @@ Ready.
 [ 0.9	]
 [ 1	]
 #select cume_dist() over (partition by aa order by aa asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0.2	]
@@ -209,8 +209,8 @@ Ready.
 [ 0.9	]
 [ 1	]
 #select cume_dist() over (partition by aa order by aa desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0.2	]
@@ -224,8 +224,8 @@ Ready.
 [ 0.9	]
 [ 1	]
 #select cume_dist() over (order by aa) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -239,8 +239,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select cume_dist() over (order by aa desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -254,8 +254,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select cume_dist() over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0.3	]
@@ -269,8 +269,8 @@ Ready.
 [ 0.9	]
 [ 1	]
 #select cume_dist() over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0.3	]
@@ -284,8 +284,8 @@ Ready.
 [ 0.9	]
 [ 1	]
 #select cume_dist() over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0.1	]
@@ -299,8 +299,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select cume_dist() over (order by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -314,8 +314,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select cume_dist() over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -329,8 +329,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select ntile(1) over (partition by aa) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -344,8 +344,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select ntile(1) over (partition by aa order by aa asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -359,8 +359,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select ntile(1) over (partition by aa order by aa desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -374,8 +374,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select ntile(1) over (order by aa) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -389,8 +389,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select ntile(1) over (order by aa desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -404,8 +404,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select ntile(3) over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -419,8 +419,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select ntile(3) over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -434,8 +434,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select ntile(3) over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -449,8 +449,8 @@ Ready.
 [ 2	]
 [ 3	]
 #select ntile(3) over (order by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -464,8 +464,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select ntile(3) over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -479,8 +479,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select ntile(10) over (partition by aa) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -494,8 +494,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select ntile(10) over (partition by aa order by aa asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -509,8 +509,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select ntile(10) over (partition by aa order by aa desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -524,8 +524,8 @@ Ready.
 [ 2	]
 [ 1	]
 #select ntile(10) over (order by aa) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 2 # length
 [ 1	]
@@ -539,8 +539,8 @@ Ready.
 [ 9	]
 [ 10	]
 #select ntile(10) over (order by aa desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 2 # length
 [ 1	]
@@ -554,8 +554,8 @@ Ready.
 [ 9	]
 [ 10	]
 #select first_value(aa) over (partition by aa) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
 [ NULL	]
@@ -569,8 +569,8 @@ Ready.
 [ 8	]
 [ 15	]
 #select first_value(aa) over (partition by aa order by aa asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
 [ NULL	]
@@ -584,8 +584,8 @@ Ready.
 [ 8	]
 [ 15	]
 #select first_value(aa) over (partition by aa order by aa desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
 [ NULL	]
@@ -599,8 +599,8 @@ Ready.
 [ 3	]
 [ 2	]
 #select first_value(aa) over (order by aa) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -614,8 +614,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select first_value(aa) over (order by aa desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
 [ 15	]
@@ -629,8 +629,8 @@ Ready.
 [ 15	]
 [ 15	]
 #select first_value(aa) over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
 [ 3	]
@@ -644,8 +644,8 @@ Ready.
 [ 15	]
 [ NULL	]
 #select first_value(aa) over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
 [ 3	]
@@ -659,8 +659,8 @@ Ready.
 [ 15	]
 [ NULL	]
 #select first_value(aa) over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
 [ NULL	]
@@ -674,8 +674,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select first_value(aa) over (order by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -689,8 +689,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select first_value(aa) over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -704,8 +704,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select nth_value(aa, 1) over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
 [ 3	]
@@ -719,8 +719,8 @@ Ready.
 [ 15	]
 [ NULL	]
 #select nth_value(aa, 1) over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
 [ 3	]
@@ -734,8 +734,8 @@ Ready.
 [ 15	]
 [ NULL	]
 #select nth_value(aa, 1) over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
 [ NULL	]
@@ -749,8 +749,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select nth_value(aa, 1) over (order by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -764,8 +764,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select nth_value(aa, 1) over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -779,8 +779,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select last_value(bb) over (partition by aa) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -794,8 +794,8 @@ Ready.
 [ 2	]
 [ 3	]
 #select last_value(bb) over (partition by aa order by aa asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -809,8 +809,8 @@ Ready.
 [ 2	]
 [ 3	]
 #select last_value(bb) over (partition by aa order by aa desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -824,8 +824,8 @@ Ready.
 [ 2	]
 [ 1	]
 #select last_value(bb) over (order by aa) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -839,8 +839,8 @@ Ready.
 [ 2	]
 [ 3	]
 #select last_value(bb) over (order by aa desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -854,8 +854,8 @@ Ready.
 [ 4	]
 [ 4	]
 #select last_value(bb) over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -869,8 +869,8 @@ Ready.
 [ 3	]
 [ 4	]
 #select last_value(bb) over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -884,8 +884,8 @@ Ready.
 [ 3	]
 [ 4	]
 #select last_value(bb) over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -899,8 +899,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select last_value(bb) over (order by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -914,8 +914,8 @@ Ready.
 [ 3	]
 [ 4	]
 #select last_value(bb) over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -929,8 +929,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select nth_value(bb, 3) over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -944,8 +944,8 @@ Ready.
 [ 3	]
 [ NULL	]
 #select nth_value(bb, 3) over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -959,8 +959,8 @@ Ready.
 [ 3	]
 [ NULL	]
 #select nth_value(bb, 3) over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -974,8 +974,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select nth_value(bb, 3) over (order by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -989,8 +989,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select nth_value(bb, 3) over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -1004,8 +1004,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select lag(bb) over (partition by aa) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -1019,8 +1019,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lag(bb) over (partition by aa order by aa asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -1034,8 +1034,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lag(bb) over (partition by aa order by aa desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -1046,11 +1046,11 @@ Ready.
 [ NULL	]
 [ NULL	]
 [ NULL	]
-[ 3	]
+[ 1	]
 [ NULL	]
 #select lag(bb) over (order by aa) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -1064,8 +1064,8 @@ Ready.
 [ 3	]
 [ 2	]
 #select lag(bb) over (order by aa desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -1079,8 +1079,8 @@ Ready.
 [ 1	]
 [ 2	]
 #select lead(bb) over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -1094,8 +1094,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lead(bb) over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -1109,8 +1109,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lead(bb) over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -1124,8 +1124,8 @@ Ready.
 [ 1	]
 [ NULL	]
 #select lead(bb) over (order by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -1139,8 +1139,8 @@ Ready.
 [ 4	]
 [ NULL	]
 #select lead(bb) over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -1154,8 +1154,8 @@ Ready.
 [ 1	]
 [ NULL	]
 #select percent_rank() over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -1169,8 +1169,8 @@ Ready.
 [ 0	]
 [ 0	]
 #select cume_dist() over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -1184,8 +1184,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select ntile(1) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -1199,8 +1199,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select ntile(2) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -1214,8 +1214,8 @@ Ready.
 [ 2	]
 [ 2	]
 #select ntile(5) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -1229,8 +1229,8 @@ Ready.
 [ 5	]
 [ 5	]
 #select ntile(11) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 2 # length
 [ 1	]
@@ -1244,8 +1244,8 @@ Ready.
 [ 9	]
 [ 10	]
 #select ntile(100) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 2 # length
 [ 1	]
@@ -1259,8 +1259,8 @@ Ready.
 [ 9	]
 [ 10	]
 #select first_value(aa) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
 [ 15	]
@@ -1274,8 +1274,8 @@ Ready.
 [ 15	]
 [ 15	]
 #select first_value(bb) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -1289,8 +1289,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select last_value(aa) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -1304,8 +1304,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select last_value(bb) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -1319,8 +1319,8 @@ Ready.
 [ 4	]
 [ 4	]
 #select nth_value(aa, 2) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -1334,8 +1334,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select nth_value(bb, 1) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -1349,8 +1349,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select nth_value(bb, 1000) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -1364,8 +1364,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lag(aa) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
 [ NULL	]
@@ -1379,8 +1379,8 @@ Ready.
 [ 6	]
 [ 8	]
 #select lead(bb) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -1394,8 +1394,8 @@ Ready.
 [ 4	]
 [ NULL	]
 #select lag(aa) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 2 # length
 [ NULL	]
@@ -1409,8 +1409,8 @@ Ready.
 [ 6	]
 [ 8	]
 #select lead(bb) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -1424,8 +1424,8 @@ Ready.
 [ 4	]
 [ NULL	]
 #select ntile(null) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ NULL	]
@@ -1439,8 +1439,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select first_value(null) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .L3 # table_name
+% L3 # name
 % char # type
 % 0 # length
 [ NULL	]
@@ -1454,8 +1454,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select last_value(null) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .L3 # table_name
+% L3 # name
 % char # type
 % 0 # length
 [ NULL	]
@@ -1469,8 +1469,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select nth_value(null, 1) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .L3 # table_name
+% L3 # name
 % char # type
 % 0 # length
 [ NULL	]
@@ -1484,8 +1484,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select nth_value(aa, null) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -1499,8 +1499,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select nth_value(1, null) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ NULL	]
@@ -1514,8 +1514,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select nth_value(null, null) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .L3 # table_name
+% L3 # name
 % char # type
 % 0 # length
 [ NULL	]
@@ -1529,8 +1529,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lag(null) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .L3 # table_name
+% L3 # name
 % char # type
 % 0 # length
 [ NULL	]
@@ -1544,8 +1544,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lag(null, null) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .L3 # table_name
+% L3 # name
 % char # type
 % 0 # length
 [ NULL	]
@@ -1559,8 +1559,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lag(null, null, null) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .L3 # table_name
+% L3 # name
 % char # type
 % 0 # length
 [ NULL	]
@@ -1574,8 +1574,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lead(null) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .L3 # table_name
+% L3 # name
 % char # type
 % 0 # length
 [ NULL	]
@@ -1589,8 +1589,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lead(null, null) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .L3 # table_name
+% L3 # name
 % char # type
 % 0 # length
 [ NULL	]
@@ -1604,8 +1604,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lead(null, null, null) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .L3 # table_name
+% L3 # name
 % char # type
 % 0 # length
 [ NULL	]
@@ -1622,8 +1622,8 @@ Ready.
 #insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 [ 9	]
 #select first_value(aa) over (partition by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 5 # length
 [ "one"	]
@@ -1636,8 +1636,8 @@ Ready.
 [ "check"	]
 [ NULL	]
 #select first_value(aa) over (partition by bb order by bb asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 5 # length
 [ "one"	]
@@ -1650,8 +1650,8 @@ Ready.
 [ "check"	]
 [ NULL	]
 #select first_value(aa) over (partition by bb order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 5 # length
 [ NULL	]
@@ -1664,8 +1664,8 @@ Ready.
 [ "one"	]
 [ "one"	]
 #select first_value(aa) over (order by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 3 # length
 [ "one"	]
@@ -1678,8 +1678,8 @@ Ready.
 [ "one"	]
 [ "one"	]
 #select first_value(aa) over (order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 0 # length
 [ NULL	]
@@ -1692,8 +1692,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select first_value(bb) over (partition by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -1706,8 +1706,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select first_value(bb) over (partition by aa order by aa asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -1720,8 +1720,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select first_value(bb) over (partition by aa order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -1734,8 +1734,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select first_value(bb) over (order by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -1748,8 +1748,8 @@ Ready.
 [ 2	]
 [ 2	]
 #select first_value(bb) over (order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -1762,8 +1762,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select last_value(aa) over (partition by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 6 # length
 [ "stress"	]
@@ -1776,8 +1776,8 @@ Ready.
 [ "please"	]
 [ NULL	]
 #select last_value(aa) over (partition by bb order by bb asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 6 # length
 [ "stress"	]
@@ -1790,8 +1790,8 @@ Ready.
 [ "please"	]
 [ NULL	]
 #select last_value(aa) over (partition by bb order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 6 # length
 [ NULL	]
@@ -1804,8 +1804,8 @@ Ready.
 [ "stress"	]
 [ "stress"	]
 #select last_value(aa) over (order by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 6 # length
 [ "stress"	]
@@ -1818,8 +1818,8 @@ Ready.
 [ "please"	]
 [ NULL	]
 #select last_value(aa) over (order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 6 # length
 [ NULL	]
@@ -1832,8 +1832,8 @@ Ready.
 [ "stress"	]
 [ "stress"	]
 #select last_value(bb) over (partition by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -1846,8 +1846,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select last_value(bb) over (partition by aa order by aa asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -1860,8 +1860,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select last_value(bb) over (partition by aa order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -1874,8 +1874,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select last_value(bb) over (order by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -1888,8 +1888,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select last_value(bb) over (order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -1902,8 +1902,8 @@ Ready.
 [ 4	]
 [ 4	]
 #select nth_value(aa, 1) over (partition by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 5 # length
 [ "one"	]
@@ -1916,8 +1916,8 @@ Ready.
 [ "check"	]
 [ NULL	]
 #select nth_value(aa, 1) over (partition by bb order by bb asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 5 # length
 [ "one"	]
@@ -1930,8 +1930,8 @@ Ready.
 [ "check"	]
 [ NULL	]
 #select nth_value(aa, 1) over (partition by bb order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 5 # length
 [ NULL	]
@@ -1944,8 +1944,8 @@ Ready.
 [ "one"	]
 [ "one"	]
 #select nth_value(aa, 1) over (order by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 3 # length
 [ "one"	]
@@ -1958,8 +1958,8 @@ Ready.
 [ "one"	]
 [ "one"	]
 #select nth_value(aa, 1) over (order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 0 # length
 [ NULL	]
@@ -1972,8 +1972,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select nth_value(aa, 5) over (partition by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 0 # length
 [ NULL	]
@@ -1986,8 +1986,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select nth_value(aa, 5) over (partition by bb order by bb asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 0 # length
 [ NULL	]
@@ -2000,8 +2000,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select nth_value(aa, 5) over (partition by bb order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 0 # length
 [ NULL	]
@@ -2014,8 +2014,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select nth_value(aa, 5) over (order by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 2 # length
 [ NULL	]
@@ -2028,8 +2028,8 @@ Ready.
 [ "ok"	]
 [ "ok"	]
 #select nth_value(aa, 5) over (order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 0 # length
 [ NULL	]
@@ -2042,8 +2042,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select nth_value(bb, 1) over (partition by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -2056,8 +2056,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select nth_value(bb, 1) over (partition by aa order by aa asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -2070,8 +2070,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select nth_value(bb, 1) over (partition by aa order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -2084,8 +2084,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select nth_value(bb, 1) over (order by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -2098,8 +2098,8 @@ Ready.
 [ 2	]
 [ 2	]
 #select nth_value(bb, 1) over (order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -2112,8 +2112,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select nth_value(bb, 5) over (partition by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -2126,8 +2126,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select nth_value(bb, 5) over (partition by aa order by aa asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -2140,8 +2140,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select nth_value(bb, 5) over (partition by aa order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -2154,8 +2154,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select nth_value(bb, 5) over (order by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -2168,8 +2168,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select nth_value(bb, 5) over (order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -2182,8 +2182,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select lag(aa) over (partition by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 7 # length
 [ NULL	]
@@ -2196,8 +2196,8 @@ Ready.
 [ "me"	]
 [ NULL	]
 #select lag(aa) over (partition by bb order by bb asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 7 # length
 [ NULL	]
@@ -2210,8 +2210,8 @@ Ready.
 [ "me"	]
 [ NULL	]
 #select lag(aa) over (partition by bb order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 7 # length
 [ NULL	]
@@ -2224,8 +2224,8 @@ Ready.
 [ "one"	]
 [ "another"	]
 #select lag(aa) over (order by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 7 # length
 [ NULL	]
@@ -2238,8 +2238,8 @@ Ready.
 [ "me"	]
 [ "please"	]
 #select lag(aa) over (order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 7 # length
 [ NULL	]
@@ -2252,8 +2252,8 @@ Ready.
 [ "one"	]
 [ "another"	]
 #select lead(aa) over (partition by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 7 # length
 [ "another"	]
@@ -2266,8 +2266,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lead(aa) over (partition by bb order by bb asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 7 # length
 [ "another"	]
@@ -2280,8 +2280,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lead(aa) over (partition by bb order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 7 # length
 [ NULL	]
@@ -2294,8 +2294,8 @@ Ready.
 [ "stress"	]
 [ NULL	]
 #select lead(aa) over (order by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 7 # length
 [ "another"	]
@@ -2308,8 +2308,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lead(aa) over (order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % varchar # type
 % 7 # length
 [ "check"	]
@@ -2322,8 +2322,8 @@ Ready.
 [ "stress"	]
 [ NULL	]
 #select lag(bb) over (partition by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -2336,8 +2336,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lag(bb) over (partition by aa order by aa asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -2350,8 +2350,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lag(bb) over (partition by aa order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -2364,8 +2364,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lag(bb) over (order by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -2378,8 +2378,8 @@ Ready.
 [ 1	]
 [ 3	]
 #select lag(bb) over (order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -2392,8 +2392,8 @@ Ready.
 [ 1	]
 [ 2	]
 #select lead(bb) over (partition by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -2406,8 +2406,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lead(bb) over (partition by aa order by aa asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -2420,8 +2420,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lead(bb) over (partition by aa order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -2434,8 +2434,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select lead(bb) over (order by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -2448,8 +2448,8 @@ Ready.
 [ 1	]
 [ NULL	]
 #select lead(bb) over (order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -2477,8 +2477,8 @@ Ready.
 [ 6,	3,	100,	100	]
 [ NULL,	4,	100,	100	]
 #select nth_value(aa, aa) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -2492,8 +2492,8 @@ Ready.
 [ 6	]
 [ NULL	]
 #select nth_value(1, aa) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .L3 # table_name
+% L3 # name
 % tinyint # type
 % 1 # length
 [ NULL	]
@@ -2506,6 +2506,23 @@ Ready.
 [ 1	]
 [ 1	]
 [ NULL	]
+#create table t1 (col1 int, col2 int);
+#insert into t1 values (8481, 0), (8489, 0), (8489, 1), (8498, 0), (8498, 1), (8498, 2), (8507, 0), (8507, 1), (8507, 2);
+[ 9	]
+#select col1, col2, lag(col2) over (partition by col1 ORDER BY col2), lag(col2, 2) over (partition by col1 ORDER BY col2), lag(col2, 3) over (partition by col1 ORDER BY col2) from t1;
+% sys.t1,	sys.t1,	sys.L6,	sys.L12,	sys.L16 # table_name
+% col1,	col2,	L6,	L12,	L16 # name
+% int,	int,	int,	int,	int # type
+% 4,	1,	1,	1,	1 # length
+[ 8481,	0,	NULL,	NULL,	NULL	]
+[ 8489,	0,	NULL,	NULL,	NULL	]
+[ 8489,	1,	0,	NULL,	NULL	]
+[ 8498,	0,	NULL,	NULL,	NULL	]
+[ 8498,	1,	0,	NULL,	NULL	]
+[ 8498,	2,	1,	0,	NULL	]
+[ 8507,	0,	NULL,	NULL,	NULL	]
+[ 8507,	1,	0,	NULL,	NULL	]
+[ 8507,	2,	1,	0,	NULL	]
 #rollback;
 #drop table analytics;
 
