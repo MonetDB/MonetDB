@@ -3865,8 +3865,9 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	l = rel_value_exp(query, rel, dl->next->data.sym, f, iek);
 	r = rel_value_exp(query, rel, dl->next->next->data.sym, f, iek);
 	if (l && *rel && exp_card(l) > CARD_AGGR && rel_find_groupby(*rel)) {
-		/* TODO fix error */
-		return NULL;
+		if (l && exp_relname(l) && exp_name(l))
+			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(l), exp_name(l));
+		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
 
 	if (!l || !r) {
@@ -5959,7 +5960,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 			*is_last=1;
 			return e;
 		}
-		if (!r && sql->session->status != -ERR_AMBIGUOUS) {
+		if (!r && mvc_error_retry(sql)) {
 			sql_exp *rs = NULL;
 			sql_rel *outerp = NULL;
 
