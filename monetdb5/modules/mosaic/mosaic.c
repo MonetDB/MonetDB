@@ -291,7 +291,7 @@ str MOSestimate(MOStask task, BAT* estimates, size_t* compressed_size) {
 
 		if (current.must_be_merged_with_previous) {
 			--cursor;
-			assert(* (int*)cursor == *(int*) &previous.compression_strategy);
+			assert(cursor->tag == previous.compression_strategy.tag && cursor->cnt == previous.compression_strategy.cnt);
 			task->start -= previous.compression_strategy.cnt;
 		}
 		else BATcount(estimates)++;

@@ -99,7 +99,7 @@ MOSskip_runlength(MOStask task)
 	for(v++,i = 1; i < limit; i++,v++) if ( *v != val) break;\
 	assert(i > 0);/*Should always compress.*/\
 	current->is_applicable = true;\
-	current->uncompressed_size += i * sizeof(TYPE);\
+	current->uncompressed_size += (BUN) (i * sizeof(TYPE));\
 	current->compressed_size += wordaligned( MosaicBlkSize, TYPE) + sizeof(TYPE);\
 	current->compression_strategy.cnt = i;\
 }
@@ -107,7 +107,7 @@ MOSskip_runlength(MOStask task)
 // calculate the expected reduction using RLE in terms of elements compressed
 str
 MOSestimate_runlength(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
-{	BUN i = 0;
+{	unsigned int i = 0;
 	flt factor = 0.0;
 	(void) previous;
 	current->compression_strategy.tag = MOSAIC_RLE;

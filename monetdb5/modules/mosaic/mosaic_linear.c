@@ -122,7 +122,7 @@ MOSskip_linear(MOStask task)
 		break;\
 	assert(i > 0);/*Should always compress.*/\
 	current->is_applicable = true;\
-	current->uncompressed_size += i * sizeof(TYPE);\
+	current->uncompressed_size += (BUN) (i * sizeof(TYPE));\
 	current->compressed_size += wordaligned( MosaicBlkSize + 2 * sizeof(TYPE),TYPE);\
 	current->compression_strategy.cnt = i;\
 }
@@ -130,7 +130,7 @@ MOSskip_linear(MOStask task)
 // calculate the expected reduction using LINEAR in terms of elements compressed
 str
 MOSestimate_linear(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
-{	BUN i = -1;
+{	unsigned int i = -1;
 	flt factor = 0.0;
 	(void) previous;
 

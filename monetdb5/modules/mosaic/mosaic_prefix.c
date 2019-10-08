@@ -283,7 +283,7 @@ str
 MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
 {	
 	(void) previous;
-	BUN i = 0;
+	unsigned int i = 0;
 	flt factor = 0.0;
 	int prefixbits = 0,size;
 	lng bits,store;
@@ -313,7 +313,7 @@ MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimati
 			assert(i > 0);/*Should always compress.*/
 			current->is_applicable = true;
 
-			current->uncompressed_size += i * sizeof(bte);
+			current->uncompressed_size += (BUN) (i * sizeof(bte));
 			current->compressed_size += store;
 			factor = ( (flt)i * sizeof(bte))/ store;
 		}
@@ -337,7 +337,7 @@ MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimati
 			assert(i > 0);/*Should always compress.*/
 			current->is_applicable = true;
 
-			current->uncompressed_size += i * sizeof(sht);
+			current->uncompressed_size += (BUN) (i * sizeof(sht));
 			current->compressed_size += store;
 			factor = ( (flt)i * sizeof(sht))/ store;
 		}
@@ -362,7 +362,7 @@ MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimati
 			assert(i > 0);/*Should always compress.*/
 			current->is_applicable = true;
 
-			current->uncompressed_size += i * sizeof(int);
+			current->uncompressed_size += (BUN) (i * sizeof(int));
 			current->compressed_size += store;
 			factor = ( (flt)i * sizeof(int))/ store;
 		}
@@ -385,7 +385,7 @@ MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimati
 			assert(i > 0);/*Should always compress.*/
 			current->is_applicable = true;
 
-			current->uncompressed_size += i * sizeof(lng);
+			current->uncompressed_size += (BUN) (i * sizeof(lng));
 			current->compressed_size += store;
 			factor = ( (flt)i * sizeof(lng))/ store;
 		}

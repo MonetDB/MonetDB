@@ -179,7 +179,7 @@ do {\
 	determineFrameParameters(parameters, src, limit, TPE, DELTA_TPE, GET_DELTA);\
 	assert(parameters.base.cnt > 0);/*Should always compress.*/\
 	current->is_applicable = true;\
-	current->uncompressed_size += (parameters.base.cnt) * sizeof(TPE);\
+	current->uncompressed_size += (BUN) (parameters.base.cnt * sizeof(TPE));\
 	current->compressed_size += wordaligned(sizeof(MosaicBlkHeader_frame_t), lng) + wordaligned((parameters.base.cnt * parameters.bits) / CHAR_BIT, lng);\
 	current->compression_strategy.cnt = parameters.base.cnt;\
 } while (0)

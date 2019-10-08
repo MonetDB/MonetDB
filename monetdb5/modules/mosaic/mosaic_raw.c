@@ -98,7 +98,7 @@ MOSskip_raw( MOStask task)
 	/*The raw compression technique is always applicable and only adds one item at a time.*/\
 	current->compression_strategy.tag = MOSAIC_RAW;\
 	current->is_applicable = true;\
-	current->uncompressed_size += sizeof(TPE);\
+	current->uncompressed_size += (BUN) sizeof(TPE);\
 	unsigned int cnt = previous->compression_strategy.cnt;\
 	if (previous->compression_strategy.tag == MOSAIC_RAW && cnt + 1 < (1 << CNT_BITS)) {\
 		current->must_be_merged_with_previous = true;\

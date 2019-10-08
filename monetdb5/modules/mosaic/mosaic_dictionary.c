@@ -126,7 +126,7 @@ MOSskip_dictionary(MOStask task)
 	}\
 	current->is_applicable = i > 0;\
 	if ( current->is_applicable ) {\
-		current->uncompressed_size += i * sizeof(TPE);\
+		current->uncompressed_size += (BUN) (i * sizeof(TPE));\
 		size_t bytes = (i * hdr->bits)/CHAR_BIT;\
 		current->compressed_size += wordaligned( MosaicBlkSize, unsigned int) + bytes;\
 	}\
@@ -205,7 +205,7 @@ MOSskip_dictionary(MOStask task)
 void
 MOScreatedictionary(MOStask task)
 {
-	BUN i;
+	unsigned int i;
 	int j, k, max;
 	MosaicHdr hdr = task->hdr;
     union{

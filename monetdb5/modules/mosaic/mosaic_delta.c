@@ -106,7 +106,7 @@ MOSskip_delta(MOStask task)
 	}\
 	assert(i > 0);/*Should always compress.*/\
 	current->is_applicable = true;\
-	current->uncompressed_size += i * sizeof(TPE);\
+	current->uncompressed_size += (BUN) (i * sizeof(TPE));\
 	current->compressed_size += wordaligned(MosaicBlkSize + sizeof(TPE) + i-1,MosaicBlkRec);\
 	current->compression_strategy.cnt = i;\
 }
@@ -114,7 +114,7 @@ MOSskip_delta(MOStask task)
 // estimate the compression level 
 str
 MOSestimate_delta(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
-{	BUN i = 0;
+{	unsigned int i = 0;
 	flt factor = 1.0;
 	(void) previous;
 
