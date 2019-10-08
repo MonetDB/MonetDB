@@ -69,6 +69,14 @@ Ready.
 #START TRANSACTION;
 #CREATE SCHEMA "snctest";
 #CREATE TABLE "snctest"."u_table" ("sys_id" CHAR(32));
+#INSERT INTO "snctest"."u_table" VALUES (NULL);
+[ 1	]
+#SELECT * FROM "snctest"."u_table";
+% snctest.u_table # table_name
+% sys_id # name
+% char # type
+% 32 # length
+[ NULL	]
 #ALTER TABLE "snctest"."u_table" ADD "u_flat_string" varchar(40);
 #ALTER TABLE "snctest"."u_table" ADD "sysc_u_flat_string" varchar(40);
 #ALTER TABLE "snctest"."u_table" ADD "u_flat_moved" varchar(40);
@@ -77,6 +85,12 @@ Ready.
 #ALTER TABLE "snctest"."u_table" DROP "sysc_u_flat_string";
 #ALTER TABLE "snctest"."u_table" ADD "u_flat_string" varchar(40);
 #ALTER TABLE "snctest"."u_table" ADD "sysc_u_flat_string" varchar(40);
+#SELECT * FROM "snctest"."u_table";
+% snctest.u_table,	snctest.u_table,	snctest.u_table,	snctest.u_table,	snctest.u_table # table_name
+% sys_id,	u_flat_moved,	sysc_u_flat_moved,	u_flat_string,	sysc_u_flat_string # name
+% char,	varchar,	varchar,	varchar,	varchar # type
+% 32,	0,	0,	0,	0 # length
+[ NULL,	NULL,	NULL,	NULL,	NULL	]
 #SELECT Columns.number, Columns.name, Columns.type, Columns.type_scale FROM sys.columns as Columns
 #WHERE Columns.table_id = (SELECT Tables.id FROM sys.tables as Tables 
 #                          WHERE Tables.schema_id = (SELECT Schema.id FROM sys.schemas as Schema WHERE Schema.name = 'snctest') AND Tables.name = 'u_table') 
@@ -90,6 +104,12 @@ Ready.
 [ 2,	"sysc_u_flat_moved",	"varchar",	0	]
 [ 3,	"u_flat_string",	"varchar",	0	]
 [ 4,	"sysc_u_flat_string",	"varchar",	0	]
+#SELECT * FROM "snctest"."u_table";
+% snctest.u_table,	snctest.u_table,	snctest.u_table,	snctest.u_table,	snctest.u_table # table_name
+% sys_id,	u_flat_moved,	sysc_u_flat_moved,	u_flat_string,	sysc_u_flat_string # name
+% char,	varchar,	varchar,	varchar,	varchar # type
+% 32,	0,	0,	0,	0 # length
+[ NULL,	NULL,	NULL,	NULL,	NULL	]
 #ROLLBACK;
 
 # 09:54:49 >  
