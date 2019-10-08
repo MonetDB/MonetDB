@@ -16,7 +16,6 @@
 #include <mal.h>
 #include "mal_interpreter.h"
 #include "mal_client.h"
-#include "mosaic_dictionary.h"
 
 bool MOStypes_frame(BAT* b);
 mal_export void MOScreateframeDictionary(MOStask task);
