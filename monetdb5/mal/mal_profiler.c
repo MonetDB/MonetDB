@@ -532,8 +532,7 @@ profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 str
 openProfilerStream(stream *fd, int mode)
 {
-	int i,j;
-	Client c;
+	int j;
 
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
@@ -553,15 +552,12 @@ openProfilerStream(stream *fd, int mode)
 	/* show all in progress instructions for stethoscope startup */
 	/* this code is not thread safe, because the inprogress administration may change concurrently */
 	if( (mode & PROFSHOWRUNNING) > 0){
-		for (i = 0; i < MAL_MAXCLIENTS; i++) {
-			c = mal_clients+i;
-			MT_lock_set(&mal_delayLock);
-			for(j = 0; j <THREADS; j++)
-			if( c->inprogress[j].mb)
+		MT_lock_set(&mal_delayLock);
+		for(j = 0; j <THREADS; j++)
+		if( workingset[j].mb)
 			/* show the event */
-				profilerEvent(c->inprogress[j].mb, c->inprogress[j].stk, c->inprogress[j].pci, 1, c->username);
-			MT_lock_unset(&mal_delayLock);
-		}
+			profilerEvent(workingset[j].mb, workingset[j].stk, workingset[j].pci, 1, workingset[j].cntxt->username);
+		MT_lock_unset(&mal_delayLock);
 	}
 	return MAL_SUCCEED;
 }

@@ -36,6 +36,15 @@ typedef struct QRYQUEUE{
 } *QueryQueue;
 mal_export lng qtop;
 
+typedef struct WORKINGSET{
+	Client		cntxt;
+    MalBlkPtr   mb;
+    MalStkPtr   stk;
+    InstrPtr    pci;
+} Workingset;
+
+mal_export Workingset workingset[THREADS];
+
 mal_export void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 mal_export void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 mal_export void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);

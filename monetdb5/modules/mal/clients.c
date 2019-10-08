@@ -20,6 +20,7 @@
 #include "mcrypt.h"
 #include "mal_scenario.h"
 #include "mal_instruction.h"
+#include "mal_runtime.h"
 #include "mal_client.h"
 #include "mal_authorize.h"
 #include "mal_private.h"
@@ -610,7 +611,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			MT_lock_set(&mal_delayLock);
 			cnt = 0;
 			for( i = 0; i < THREADS; i++)
-				if ( c->inprogress[i].mb){
+				if ( workingset[i].cntxt == c){
 					cnt ++;
 					break;
 				}

@@ -66,6 +66,7 @@ static str isaSQLquery(MalBlkPtr mb){
 /*
  * Manage the runtime profiling information
  */
+
 void
 runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
@@ -170,6 +171,13 @@ finishSessionProfiler(Client cntxt)
 	MT_lock_unset(&mal_delayLock);
 }
 
+/*
+ * Each MAL instruction is executed by a single thread, which means we can
+ * keep a simple working set around to make Stethscope attachement easy.
+ * It can also be used to later shutdown each thread safely.
+ */
+Workingset workingset[THREADS];
+
 void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
@@ -179,12 +187,12 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	/* keep track on the instructions taken in progress for stethoscope*/
 	if( tid < THREADS){
 		MT_lock_set(&mal_delayLock);
-		cntxt->inprogress[tid].mb = mb;
-		cntxt->inprogress[tid].stk = stk;
-		cntxt->inprogress[tid].pci = pci;
+		workingset[tid].cntxt = cntxt;
+		workingset[tid].mb = mb;
+		workingset[tid].stk = stk;
+		workingset[tid].pci = pci;
 		MT_lock_unset(&mal_delayLock);
 	}
-
 	/* always collect the MAL instruction execution time */
 	pci->clock = prof->ticks = GDKusec();
 
@@ -202,9 +210,9 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	/* keep track on the instructions in progress*/
 	if ( tid < THREADS) {
 		MT_lock_set(&mal_delayLock);
-		cntxt->inprogress[tid].mb = 0;
-		cntxt->inprogress[tid].stk = 0;
-		cntxt->inprogress[tid].pci = 0;
+		workingset[tid].mb = 0;
+		workingset[tid].stk = 0;
+		workingset[tid].pci = 0;
 		MT_lock_unset(&mal_delayLock);
 	}
 

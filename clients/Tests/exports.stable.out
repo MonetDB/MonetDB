@@ -2672,6 +2672,7 @@ int wlc_state;
 lng wlc_tag;
 char wlc_write[26];
 str wlrRef;
+Workingset workingset[THREADS];
 str zero_or_oneRef;
 
 # stream
