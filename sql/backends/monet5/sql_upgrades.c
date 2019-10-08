@@ -2068,12 +2068,12 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema)
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlr')"
 			" and name in ('master', 'stop', 'accept', 'replicate', 'beat') and type = %d;\n", (int) F_PROC);
 
-	/* Fix alter table drop column, missing column number update issue */
+	/* Fix alter table drop column, missing column number update issue 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update \"_columns\" set \"number\" = ("
 			"select \"rid\" from (select \"id\", row_number() over (partition by \"table_id\" order by \"id\") - 1 as \"rid\" from \"_columns\") as \"rids\""
 			" where rids.\"id\" = \"_columns\".\"id\")"
-			" where \"table_id\" in (select \"table_id\" from \"_columns\" group by \"table_id\", \"number\" having count(*) > 1);\n");
+			" where \"table_id\" in (select \"table_id\" from \"_columns\" group by \"table_id\", \"number\" having count(*) > 1);\n"); */
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
