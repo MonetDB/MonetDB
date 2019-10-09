@@ -520,6 +520,7 @@ WLRprocessScheduler(void *arg)
 		wlr_state = WLR_WAIT;
     MT_lock_unset(&wlr_lock);
 
+	MCcloseClient(cntxt);
 #ifdef _WLR_DEBUG_
 	fprintf(stderr, "#Replicator thread is stopped \n");
 #endif
