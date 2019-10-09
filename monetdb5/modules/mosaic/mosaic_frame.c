@@ -181,7 +181,7 @@ do {\
 	current->is_applicable = true;\
 	current->uncompressed_size += (BUN) (parameters.base.cnt * sizeof(TPE));\
 	current->compressed_size += wordaligned(sizeof(MosaicBlkHeader_frame_t), lng) + wordaligned((parameters.base.cnt * parameters.bits) / CHAR_BIT, lng);\
-	current->compression_strategy.cnt = parameters.base.cnt;\
+	current->compression_strategy.cnt = (unsigned int) parameters.base.cnt;\
 } while (0)
 
 // calculate the expected reduction using dictionary in terms of elements compressed

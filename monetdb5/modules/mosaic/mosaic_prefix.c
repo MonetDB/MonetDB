@@ -286,7 +286,7 @@ MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimati
 	unsigned int i = 0;
 	flt factor = 0.0;
 	int prefixbits = 0,size;
-	lng bits,store;
+	BUN bits,store;
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
 	current->compression_strategy.tag = MOSAIC_PREFIX;
 	current->is_applicable = true;

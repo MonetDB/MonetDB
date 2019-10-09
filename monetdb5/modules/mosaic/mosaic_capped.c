@@ -254,7 +254,7 @@ MOScreatedictionary(MOStask task)
 str
 MOSestimate_capped(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
 {
-	BUN i = 0;
+	unsigned int i = 0;
 	int j;
 	flt factor= 0.0;
 	MosaicHdr hdr = task->hdr;
