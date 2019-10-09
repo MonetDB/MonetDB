@@ -165,14 +165,14 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 
 	logadd("\"function\":\"%s.%s\",%s", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)), prettify);
 	logadd("\"pc\":%d,%s", mb?getPC(mb,pci):0, prettify);
-	logadd("\"tag\":%d,%s", stk?stk->tag:0, prettify);
+	logadd("\"tag\":"OIDFMT",%s", stk?stk->tag:0, prettify);
 	logadd("\"module\":\"%s\",%s", pci->modname ? pci->modname : "", prettify);
 	if (pci->modname && strcmp(pci->modname, "user") == 0) {
-		int caller_tag = 0;
+		oid caller_tag = 0;
 		if(stk && stk->up) {
 			caller_tag = stk->up->tag;
 		}
-		logadd("\"caller\":%d,%s", caller_tag, prettify);
+		logadd("\"caller\":"OIDFMT",%s", caller_tag, prettify);
 	}
 	logadd("\"instruction\":\"%s\",%s", pci->fcnname ? pci->fcnname : "", prettify);
 	if (!GDKinmemory()) {
@@ -532,8 +532,7 @@ profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 str
 openProfilerStream(stream *fd, int mode)
 {
-	int i,j;
-	Client c;
+	int j;
 
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
@@ -551,15 +550,14 @@ openProfilerStream(stream *fd, int mode)
 	prettify = (mode & PROFSINGLELINE) ? "": "\n";
 
 	/* show all in progress instructions for stethoscope startup */
+	/* this code is not thread safe, because the inprogress administration may change concurrently */
 	if( (mode & PROFSHOWRUNNING) > 0){
-		for (i = 0; i < MAL_MAXCLIENTS; i++) {
-			c = mal_clients+i;
-			if ( c->active )
-				for(j = 0; j <THREADS; j++)
-				if( c->inprogress[j].mb)
-				/* show the event */
-					profilerEvent(c->inprogress[j].mb, c->inprogress[j].stk, c->inprogress[j].pci, 1, c->username);
-		}
+		MT_lock_set(&mal_delayLock);
+		for(j = 0; j <THREADS; j++)
+		if( workingset[j].mb)
+			/* show the event */
+			profilerEvent(workingset[j].mb, workingset[j].stk, workingset[j].pci, 1, workingset[j].cntxt->username);
+		MT_lock_unset(&mal_delayLock);
 	}
 	return MAL_SUCCEED;
 }
@@ -904,9 +902,9 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return;
 
 	/* update the Trace tables */
-	snprintf(buf, BUFSIZ, "%s.%s[%d]%d",
-	getModuleId(getInstrPtr(mb, 0)),
-	getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci), stk->tag);
+	snprintf(buf, BUFSIZ, "%s.%s[%d]"OIDFMT,
+			 getModuleId(getInstrPtr(mb, 0)),
+			 getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci), stk->tag);
 
 	/* generate actual call statement */
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);

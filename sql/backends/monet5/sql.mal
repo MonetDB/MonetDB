@@ -337,6 +337,10 @@ command all( col:bat[:any_1]) :any_1
 address SQLall
 comment "if all values in col are equal return this, else nil";
 
+command suball(l:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1]
+address SQLall_grp
+comment "if all values in l are equal (per group) return the value, else nil";
+
 command null(b:bat[:any_1]) :bit
 address SQLnil
 comment "if b has a nil return true, else false";

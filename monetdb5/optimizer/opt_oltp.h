@@ -8,7 +8,6 @@
 
 #ifndef _OLTP_H
 #define _OLTP_H
-/* #define _OLTP_DEBUG*/
 
 #include "mal_interpreter.h"
 #include "mal_scenario.h"

@@ -80,8 +80,6 @@ MCinit(void)
 		fprintf(stderr,"#MCinit:" MAL_MALLOC_FAIL);
 		return false;
 	}
-	for (int i = 0; i < MAL_MAXCLIENTS; i++)
-		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
 	return true;
 }
 
@@ -228,7 +226,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->father = NULL;
 	c->login = c->lastcmd = time(0);
-	//c->active = 0;
 	c->session = GDKusec();
 	c->qtimeout = 0;
 	c->stimeout = 0;
@@ -407,7 +404,6 @@ MCfreeClient(Client c)
 	c->usermodule = c->curmodule = 0;
 	c->father = 0;
 	c->login = c->lastcmd = 0;
-	//c->active = 0;
 	c->qtimeout = 0;
 	c->stimeout = 0;
 	c->user = oid_nil;
@@ -477,16 +473,14 @@ MCstopClients(Client cntxt)
 int
 MCactiveClients(void)
 {
-	int freeclient=0, finishing=0, running=0, blocked = 0;
+	int finishing=0, running = 0;
 	Client cntxt = mal_clients;
 
 	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
-		freeclient += (cntxt->mode == FREECLIENT);
 		finishing += (cntxt->mode == FINISHCLIENT);
 		running += (cntxt->mode == RUNCLIENT);
-		blocked += (cntxt->mode == BLOCKCLIENT);
 	}
-	return finishing+running;
+	return finishing + running;
 }
 
 void

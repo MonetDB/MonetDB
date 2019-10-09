@@ -22,9 +22,15 @@ static int exps_have_freevar(mvc *sql, list *exps);
 static int
 is_distinct_set(mvc *sql, sql_rel *rel, list *ad)
 {
+	int distinct = 0;
 	if (ad && exps_unique(sql, rel, ad ))
 		return 1;
-	return need_distinct(rel);
+	if (ad && is_groupby(rel->op) && exp_match_list(rel->r, ad))
+		return 1;
+	distinct = need_distinct(rel);
+	if (is_project(rel->op) && rel->l && !distinct)
+		distinct = is_distinct_set(sql, rel->l, ad);
+	return distinct;
 }	
 
 int
@@ -441,7 +447,19 @@ push_up_project(mvc *sql, sql_rel *rel)
 				}
 				append(n->exps, e);
 			}
-			assert(!r->r);
+			if (r->r) {
+				list *exps = r->r, *oexps = n->r = sa_list(sql->sa);
+
+				for (m=exps->h; m; m = m->next) {
+					sql_exp *e = m->data;
+
+					if (!e->freevar || exp_name(e)) { /* only skip full freevars */
+						if (exp_has_freevar(sql, e)) 
+							rel_bind_var(sql, rel->l, e);
+					}
+					append(oexps, e);
+				}
+			}
 			/* remove old project */
 			rel->r = r->l;
 			r->l = NULL;
@@ -699,6 +717,7 @@ push_up_join(mvc *sql, sql_rel *rel)
 
 		/* left of rel should be a set */ 
 		if (d && is_distinct_set(sql, d, NULL) && j && (is_join(j->op) || is_semi(j->op))) {
+			int crossproduct = 0;
 			sql_rel *jl = j->l, *jr = j->r;
 			/* op_join if F(jl) intersect A(D) = empty -> jl join (D djoin jr) 
 			 * 	      F(jr) intersect A(D) = empty -> (D djoin jl) join jr
@@ -711,6 +730,7 @@ push_up_join(mvc *sql, sql_rel *rel)
 				rel->r = j = push_up_select_l(sql, j);
 				return rel; /* ie try again */
 			}
+			crossproduct = list_empty(j->exps);
 			rd = (j->op != op_full)?rel_dependent_var(sql, d, jr):(list*)1;
 			ld = (((j->op == op_join && rd) || j->op == op_right))?rel_dependent_var(sql, d, jl):(list*)1;
 
@@ -754,7 +774,31 @@ push_up_join(mvc *sql, sql_rel *rel)
 				move_join_exps(sql, j, rel);
 				return j;
 			}
-			if (!ld) {
+			if (!ld && is_left(rel->op) && crossproduct) {
+				sql_exp *l = exp_atom_int(sql->sa, 1);
+				sql_exp *r = exp_atom_int(sql->sa, 1);
+				rel->r = jr;
+				j->l = rel;
+				j->r = jl;
+
+				if (!is_simple_project(jr->op))
+			       		rel->r = jr = rel_project(sql->sa, jr, rel_projections(sql, jr, NULL, 1, 1));
+				if (!is_simple_project(jl->op))
+			       		j->r = jl = rel_project(sql->sa, jl, rel_projections(sql, jl, NULL, 1, 1));
+				l = exp_label(sql->sa, l, ++sql->label);
+				r = exp_label(sql->sa, r, ++sql->label);
+				append(jl->exps, l);
+				append(jr->exps, r);
+				l = exp_ref(sql->sa, l);
+				r = exp_ref(sql->sa, r);
+				l = exp_compare(sql->sa, r, l, cmp_equal_nil);
+				j->op = rel->op;
+				move_join_exps(sql, j, rel);
+				if (!j->exps)
+					j->exps = sa_list(sql->sa);
+				append(j->exps, l);
+				return j;
+			} else if (!ld) {
 				rel->r = jr;
 				j->l = jl;
 				j->r = rel;

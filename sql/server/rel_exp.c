@@ -230,7 +230,7 @@ exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 }
 
 sql_exp * 
-exp_aggr( sql_allocator *sa, list *l, sql_subaggr *a, int distinct, int no_nils, int card, int has_nils )
+exp_aggr( sql_allocator *sa, list *l, sql_subaggr *a, int distinct, int no_nils, unsigned int card, int has_nils )
 {
 	sql_exp *e = exp_create(sa, e_aggr);
 	if (e == NULL)
@@ -469,7 +469,7 @@ have_nil(list *exps)
 }
 
 sql_exp * 
-exp_column(sql_allocator *sa, const char *rname, const char *cname, sql_subtype *t, int card, int has_nils, int intern) 
+exp_column(sql_allocator *sa, const char *rname, const char *cname, sql_subtype *t, unsigned int card, int has_nils, int intern) 
 {
 	sql_exp *e = exp_create(sa, e_column);
 
@@ -504,7 +504,7 @@ exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
 }
 
 sql_exp * 
-exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, int card, int has_nils, int intern) 
+exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, unsigned int card, int has_nils, int intern) 
 {
 	sql_exp *e = exp_column(sa, org_rname, org_cname, t, card, has_nils, intern);
 
@@ -833,7 +833,7 @@ exp_find_rel_name(sql_exp *e)
 	return NULL;
 }
 
-int
+unsigned int
 exp_card( sql_exp *e )
 {
 	return e->card;
@@ -908,7 +908,7 @@ exps_find_exp( list *l, sql_exp *e)
 		return NULL;
 
 	for(n=l->h; n; n = n->next) {
-		if (exp_match(n->data, e))
+		if (exp_match(n->data, e) || exp_refers(n->data, e))
 			return n->data;
 	}
 	return NULL;
@@ -991,7 +991,7 @@ exps_match_col_exps( sql_exp *e1, sql_exp *e2)
 	return 0;
 }
 
-static int 
+int 
 exp_match_list( list *l, list *r)
 {
 	node *n, *m;
@@ -1809,20 +1809,20 @@ exps_card( list *l )
 }
 	
 void
-exps_fix_card( list *exps, int card)
+exps_fix_card( list *exps, unsigned int card)
 {
 	node *n;
 
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (e->card > (unsigned) card)
+		if (e->card > card)
 			e->card = card;
 	}
 }
 
 void
-exps_setcard( list *exps, int card)
+exps_setcard( list *exps, unsigned int card)
 {
 	node *n;
 

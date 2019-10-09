@@ -36,3 +36,5 @@ merge-table-limit.Bug-6756
 double-free.Bug-6757
 HAVE_LIBPY3?python-loader-string.Bug-6759
 select-char.Bug-6761
+grant-select-column.Bug-6765
+next-get-value-bulk.Bug-6766

@@ -207,6 +207,13 @@ select aa, bb, lead(aa, 2, 100) over (partition by bb), lead(aa, 1, '100') over 
 select nth_value(aa, aa) over () from analytics;
 select nth_value(1, aa) over () from analytics;
 
+create table t1 (col1 int, col2 int);
+insert into t1 values (8481, 0), (8489, 0), (8489, 1), (8498, 0), (8498, 1), (8498, 2), (8507, 0), (8507, 1), (8507, 2);
+select col1, col2, lag(col2) over (partition by col1 ORDER BY col2), lag(col2, 2) over (partition by col1 ORDER BY col2), lag(col2, 3) over (partition by col1 ORDER BY col2) from t1;
+
+select lag(col2, -1) over (partition by col1 ORDER BY col2), lag(col2, 1) over (partition by col1 ORDER BY col2), lag(col2, 2) over (partition by col1 ORDER BY col2) from t1;
+select lead(col2, -1) over (partition by col1 ORDER BY col2), lead(col2, 1) over (partition by col1 ORDER BY col2), lead(col2, 2) over (partition by col1 ORDER BY col2) from t1;
+
 rollback;
 
 select ntile(aa) over () from analytics; --error

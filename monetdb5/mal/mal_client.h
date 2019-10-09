@@ -44,12 +44,6 @@ typedef struct CLIENT_INPUT {
 	struct CLIENT_INPUT *next;    
 } ClientInput;
 
-typedef struct CURRENT_INSTR{
-	MalBlkPtr	mb;
-	MalStkPtr	stk;
-	InstrPtr	pci;
-} Workset;
-
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients */
 	oid user;       /* user id in the auth administration */
@@ -80,7 +74,6 @@ typedef struct CLIENT {
 	lng 		session;	/* usec since start of server */
 	lng 	    qtimeout;	/* query abort after x usec*/
 	lng	        stimeout;	/* session abort after x usec */
-	ATOMIC_TYPE	lastprint;	/* when we last printed the query */
 	/*
 	 * Communication channels for the interconnect are stored here.
 	 * It is perfectly legal to have a client without input stream.
@@ -157,11 +150,6 @@ typedef struct CLIENT {
 	 */
 	void *sqlcontext;
 
-	/*
-	 * keep track of which instructions are currently being executed
-	 */
-	bit		active;		/* processing a query or not */
-	Workset inprogress[THREADS];
 	/*
 	 * The workload for replication/replay is saved initially as a MAL block.
 	 * It is split into the capturing part (wlc) and the replay part (wlr).

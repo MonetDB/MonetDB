@@ -7,8 +7,11 @@
  */
 
 /* Author(s) M.L. Kersten
- * The MAL Runtime Profiler
+ * The MAL Runtime Profiler and system queue
  * This little helper module is used to perform instruction based profiling.
+ * We should actually keep a little list of recently executed queries to inspection.
+ * [TODO] It should be moved into the Client record for speed (>500 client connections)
+ * Long term archival is left to the SQL history management structure
  */
 
 #include "monetdb_config.h"
@@ -25,8 +28,18 @@
 
 // Keep a queue of running queries
 QueryQueue QRYqueue;
-int qtop;
-static int qsize, qtag= 1;
+lng qtop;
+static lng qsize;
+static oid qtag= 1;
+
+#define QRYreset(I)\
+		if (QRYqueue[I].query) GDKfree(QRYqueue[I].query);\
+		QRYqueue[I].cntxt = 0; \
+		QRYqueue[I].tag = 0; \
+		QRYqueue[I].query = 0; \
+		QRYqueue[I].status =0; \
+		QRYqueue[I].stk =0; \
+		QRYqueue[I].mb =0; \
 
 void
 mal_runtime_reset(void)
@@ -42,7 +55,7 @@ static str isaSQLquery(MalBlkPtr mb){
 	int i;
 	InstrPtr p;
 	if (mb)
-	for ( i = 0; i< mb->stop; i++){
+	for ( i = 1; i< mb->stop; i++){
 		p = getInstrPtr(mb,i);
 		if ( getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0 && idcmp(getFunctionId(p),"define")==0)
 			return getVarConstant(mb,getArg(p,1)).val.sval;
@@ -53,19 +66,20 @@ static str isaSQLquery(MalBlkPtr mb){
 /*
  * Manage the runtime profiling information
  */
+
 void
 runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
-	int i;
+	lng i;
 	str q;
 	QueryQueue tmp;
 
 	MT_lock_set(&mal_delayLock);
 	tmp = QRYqueue;
 	if ( QRYqueue == 0)
-		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 256));
-	else if ( qtop +1 == qsize )
-		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (qsize +=256));
+		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (size_t) (qsize= 1024));
+	else if ( qtop + 1 == qsize )
+		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (size_t) (qsize += 256));
 	if ( QRYqueue == NULL){
 		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
 		GDKfree(tmp);			/* may be NULL, but doesn't harm */
@@ -99,10 +113,12 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	MT_lock_unset(&mal_delayLock);
 }
 
+/* We should keep a short list of previously executed queries/client for inspection */
+
 void
 runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
-	int i,j;
+	lng i,j;
 
 	(void) cntxt;
 	(void) mb;
@@ -120,16 +136,8 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		}
 		QRYqueue[i].mb->calls++;
 		QRYqueue[i].mb->runtime += (lng) ((lng)(time(0) - QRYqueue[i].start) * 1000.0/QRYqueue[i].mb->calls);
-
-		// reset entry
-		if (QRYqueue[i].query)
-			GDKfree(QRYqueue[i].query);
-		QRYqueue[i].cntxt = 0;
-		QRYqueue[i].tag = 0;
-		QRYqueue[i].query = 0;
-		QRYqueue[i].status =0;
-		QRYqueue[i].stk =0;
-		QRYqueue[i].mb =0;
+		QRYqueue[i].status = "finished";
+		QRYreset(i)
 	}
 
 	qtop = j;
@@ -140,7 +148,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 void
 finishSessionProfiler(Client cntxt)
 {
-	int i,j;
+	lng i,j;
 
 	(void) cntxt;
 
@@ -163,26 +171,30 @@ finishSessionProfiler(Client cntxt)
 	MT_lock_unset(&mal_delayLock);
 }
 
+/*
+ * Each MAL instruction is executed by a single thread, which means we can
+ * keep a simple working set around to make Stethscope attachement easy.
+ * It can also be used to later shutdown each thread safely.
+ */
+Workingset workingset[THREADS];
+
 void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
 	int tid = THRgettid();
 
 	assert(pci);
-	/* keep track on the instructions taken in progress */
-	cntxt->active = TRUE;
+	/* keep track on the instructions taken in progress for stethoscope*/
 	if( tid < THREADS){
-		cntxt->inprogress[tid].mb = mb;
-		cntxt->inprogress[tid].stk = stk;
-		cntxt->inprogress[tid].pci = pci;
+		MT_lock_set(&mal_delayLock);
+		workingset[tid].cntxt = cntxt;
+		workingset[tid].mb = mb;
+		workingset[tid].stk = stk;
+		workingset[tid].pci = pci;
+		MT_lock_unset(&mal_delayLock);
 	}
-
 	/* always collect the MAL instruction execution time */
 	pci->clock = prof->ticks = GDKusec();
-
-	/* keep track of actual running instructions over BATs */
-	if( isaBatType(getArgType(mb, pci, 0)) )
-		(void) ATOMIC_INC(&mal_running);
 
 	/* emit the instruction upon start as well */
 	if(malProfileMode > 0 )
@@ -193,21 +205,19 @@ void
 runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
 	int tid = THRgettid();
+	lng ticks = GDKusec();
 
 	/* keep track on the instructions in progress*/
 	if ( tid < THREADS) {
-		cntxt->inprogress[tid].mb = 0;
-		cntxt->inprogress[tid].stk =0;
-		cntxt->inprogress[tid].pci = 0;
+		MT_lock_set(&mal_delayLock);
+		workingset[tid].mb = 0;
+		workingset[tid].stk = 0;
+		workingset[tid].pci = 0;
+		MT_lock_unset(&mal_delayLock);
 	}
 
-	assert(pci);
-	if( isaBatType(getArgType(mb, pci, 0)) )
-		(void) ATOMIC_DEC(&mal_running);
-
-	assert(prof);
 	/* always collect the MAL instruction execution time */
-	pci->ticks = GDKusec() - prof->ticks;
+	pci->ticks = ticks - prof->ticks;
 	pci->totticks += pci->ticks;
 	pci->calls++;
 	
@@ -218,10 +228,10 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 		if( getInstrPtr(mb,0) == pci)
 			malProfileMode = 1;
 	}
-	cntxt->active = FALSE;
-	/* reduce threads of non-admin long running transaction if needed */
-	if ( cntxt->idx > 1 )
-		MALresourceFairness(GDKusec()- mb->starttime);
+	/* Reduce worker threads of non-admin long running transaction if needed.
+ 	* the punishment is equal to the duration of the last instruction */
+	if ( cntxt->user != MAL_ADMIN && ticks - mb->starttime > LONGRUNNING )
+		MALresourceFairness(cntxt, mb, stk, pci, pci->ticks);
 }
 
 /*

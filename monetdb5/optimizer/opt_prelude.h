@@ -11,8 +11,6 @@
 #include "opt_support.h"
 
 /* cf., gdk/gdk.h */
-#define DEBUGoptimizers     if (GDKdebug & GRPoptimizers)
-
 /* ! please keep this list sorted for easier maintenance ! */
 mal_export  str abortRef;
 mal_export  str actionRef;

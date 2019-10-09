@@ -27,6 +27,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	// query log needed?
 	if ( !QLOGisset() )
 		return MAL_SUCCEED;
+
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 	(void) cntxt;
@@ -200,5 +201,9 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","querylog", usec);
 	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
+    if( OPTdebug &  OPTquerylog){
+        fprintf(stderr, "#QUERYLOG optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return msg;
 }

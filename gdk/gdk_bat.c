@@ -50,14 +50,9 @@
 
 #define ATOMneedheap(tpe) (BATatoms[tpe].atomHeap != NULL)
 
-static char *BATstring_h = "h";
 static char *BATstring_t = "t";
 
-static inline bool
-default_ident(char *s)
-{
-	return (s == BATstring_h || s == BATstring_t);
-}
+#define default_ident(s)	((s) == BATstring_t)
 
 void
 BATinit_idents(BAT *bn)

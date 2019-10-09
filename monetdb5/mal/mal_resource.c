@@ -158,16 +158,15 @@ MALadmission(lng argclaim, lng hotclaim)
 }
 #endif
 
-/* Delay threads if too much competition arises and memory becomes a scarce resource.
+/* Delay a thread if too much competition arises and memory becomes a scarce resource.
  * If in the mean time memory becomes free, or too many sleeping re-enable worker.
  * It may happen that all threads enter the wait state. So, keep one running at all time 
- * By keeping the query start time in the client record we can delay
- * them when resource stress occurs.
+ * By keeping the query start time in the client record we can delay them when resource stress occurs.
  */
 ATOMIC_TYPE mal_running = ATOMIC_VAR_INIT(0);
 
 void
-MALresourceFairness(lng usec)
+MALresourceFairness(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng usec)
 {
 #ifdef FAIRNESS_THRESHOLD
 	size_t rss;
@@ -175,14 +174,23 @@ MALresourceFairness(lng usec)
 	int delayed= 0;
 	int users = 2;
 
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
 
+
+	/* don't punish queries whose last instruction was fast to executed in the first place */
 	if ( usec <= TIMESLICE)
 		return;
+
 	/* use GDKmem_cursize as MT_getrss() is too expensive */
 	rss = GDKmem_cursize();
 	/* ample of memory available*/
 	if ( rss <= MEMORY_THRESHOLD )
 		return;
+
+	(void) ATOMIC_INC(&mal_running);
 
 	/* worker reporting time spent  in usec! */
 	clk =  usec / 1000;
@@ -193,7 +201,7 @@ MALresourceFairness(lng usec)
 #endif
 
 	/* always keep one running to avoid all waiting  */
-	while (clk > DELAYUNIT && users > 1 && (int) ATOMIC_GET(&mal_running) > GDKnr_threads && rss > MEMORY_THRESHOLD) {
+	while (clk > DELAYUNIT && users > 1 && rss > MEMORY_THRESHOLD && (int) ATOMIC_GET(&mal_running) > GDKnr_threads ) {
 		if ( delayed++ == 0){
 				PARDEBUG fprintf(stderr, "#delay initial ["LLFMT"] memory  %zu[%f]\n", clk, rss, MEMORY_THRESHOLD );
 		}
@@ -207,6 +215,7 @@ MALresourceFairness(lng usec)
 		rss = GDKmem_cursize();
 		clk -= DELAYUNIT;
 	}
+	(void) ATOMIC_DEC(&mal_running);
 #else
 (void) usec;
 #endif

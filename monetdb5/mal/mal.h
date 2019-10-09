@@ -38,6 +38,47 @@
  */
 #define MAXSCRIPT 64
 
+/* The compile time debugging flags are turned into bit masks, akin to GDK */
+mal_export lng OPTdebug;
+
+#define OPTaliases			(1 )
+#define OPTcandidates		((lng)1 << 1)
+#define OPTcoercion			((lng)1 << 2)
+#define OPTcommonterms		((lng)1 << 3)
+#define OPTconstants		((lng)1 << 4)
+#define OPTcostmodel		((lng)1 << 5)
+#define OPTdataflow			((lng)1 << 6)
+#define OPTdeadcode			((lng)1 << 7)
+#define OPTemptybind		((lng)1 << 8)
+#define OPTevaluate			((lng)1 << 9)
+#define OPTgarbagecollector	((lng)1 << 10)
+#define OPTgenerator		((lng)1 << 11)
+#define OPTinline			((lng)1 << 12)
+#define OPTjit				((lng)1 << 13)
+#define OPTjson				((lng)1 << 14)
+#define OPTmacros			((lng)1 << 15)
+#define OPTmatpack			((lng)1 << 15)
+#define OPTmergetable		((lng)1 << 16)
+#define OPTmitosis			((lng)1 << 17)
+#define OPTmultiplex		((lng)1 << 18)
+#define OPToltp				((lng)1 << 19)
+#define OPTpipes			((lng)1 << 20)
+#define OPTpostfix			((lng)1 << 21)
+#define OPTprelude			((lng)1 << 22)
+#define OPTprofiler			((lng)1 << 23)
+#define OPTprojectionpath	((lng)1 << 24)
+#define OPTpushselect		((lng)1 << 25)
+#define OPTquerylog			((lng)1 << 26)
+#define OPTreduce			((lng)1 << 27)
+#define OPTremap			((lng)1 << 28)
+#define OPTremotequeries	((lng)1 << 29)
+#define OPTreorder			((lng)1 << 30)
+#define OPTsupport			((lng)1 << 31)
+#define OPTvolcano			((lng)1 << 32)
+#define OPTwlc				((lng)1 << 33)
+
+mal_export lng MALdebug;
+
 /*
  * MonetDB assumes it can use most of the machines memory,
  * leaving a small portion for other programs.
@@ -229,7 +270,7 @@ typedef struct MALSTK {
 	char cmd;               /* debugger and runtime communication */
 	char status;	        /* srunning 'R' suspended 'S', quiting 'Q' */
 	int pcup;               /* saved pc upon a recursive all */
-	int tag;                /* unique invocation call tag */
+	oid tag;                /* unique invocation call tag */
 	struct MALSTK *up;      /* stack trace list */
 	struct MALBLK *blk;    	/* associated definition */
 	ValRecord stk[FLEXIBLE_ARRAY_MEMBER];

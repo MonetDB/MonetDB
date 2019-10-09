@@ -422,6 +422,10 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				}
 			}
 	}
+    if( OPTdebug &  OPTmacros){
+        fprintf(stderr, "#MACRO optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return MAL_SUCCEED;
 }
 /*
@@ -469,6 +473,10 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				}
 			}
 	}
+    if( OPTdebug &  OPTmacros){
+        fprintf(stderr, "#MACRO optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return msg;
 }
 
@@ -515,6 +523,10 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.macro", SQLSTATE(42000) PROGRAM_GENERAL);
+    if( OPTdebug &  OPTmacros){
+        fprintf(stderr, "#MACRO optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return msg;
 }
 
@@ -558,5 +570,9 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.orcam", SQLSTATE(42000) PROGRAM_GENERAL);
+    if( OPTdebug &  OPTmacros){
+        fprintf(stderr, "#MACRO optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return msg;
 }
