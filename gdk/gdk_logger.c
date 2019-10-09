@@ -2564,6 +2564,7 @@ logger_exit(logger *lg)
 
 	if (lg->inmemory || LOG_DISABLED(lg)) {
 		logger_close(lg);
+		lg->changes = 0;
 		return GDK_SUCCEED;
 	}
 
@@ -2942,7 +2943,7 @@ log_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 
 	l.tid = lg->tid;
 	l.nr = (BUNlast(b) - b->batInserted);
-	lg->changes += l.nr;
+	lg->changes += (b->batInserted)?l.nr:1; /* initial large inserts is counted as 1 change */
 
 	if (LOG_DISABLED(lg) || lg->inmemory) {
 		/* logging is switched off */
