@@ -155,7 +155,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < pci->retc; i++) {
 		InstrPtr a = newFcnCall(mb, batRef, appendRef);
 		a = pushArgument(mb, a, resB[i]);
-		(void) pushArgument(mb, a, getArg(q,i));
+		a = pushArgument(mb, a, getArg(q,i));
+		getArg(a,0) = resB[i];
 	}
 
 /* redo (h,r):= iterator.next(refBat); */
