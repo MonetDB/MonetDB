@@ -2137,8 +2137,10 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				query_push_outer(query, left);
 				r = rel_value_exp(query, &z, n->data.sym, f /* ie no result project */, ek);
 				query_pop_outer(query);
+				/*
 				if (z)
 					r = rel_lastexp(sql, z);
+					*/
 				if (z && r) {
 					sql_subaggr *ea = NULL;
 					sql_exp *a, *id, *tid;
