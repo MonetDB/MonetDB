@@ -25,7 +25,7 @@
 str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, limit, slimit;
+	int i, j, limit, slimit, vlimit;
 	InstrPtr p, *old;
 	int actions = 0;
 	char buf[256];
@@ -58,7 +58,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	old= mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
-	//vlimit = mb->vtop;
+	vlimit = mb->vtop;
 
 	/* rename all temporaries used for ease of debugging and profile interpretation */
 
@@ -167,12 +167,12 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	//GDKfree(stmtlnk);
 	GDKfree(old);
 	GDKfree(used);
-#ifdef DEBUG_OPT_GARBAGE
+    if( OPTdebug &  OPTgarbagecollector)
 	{ 	int k;
 		fprintf(stderr, "#Garbage collected BAT variables \n");
 		for ( k =0; k < vlimit; k++)
 		fprintf(stderr,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
-			getVarName(mb,k), mb->var[k]->eolife,
+			getVarName(mb,k), getVarEolife(mb,k),
 			getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
 		chkFlow(mb);
 		if ( mb->errors != MAL_SUCCEED ){
@@ -183,7 +183,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
 		fprintf(stderr, "End of GCoptimizer\n");
 	}
-#endif
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);
@@ -201,6 +200,10 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
+    if( OPTdebug &  OPTgarbagecollector){
+        fprintf(stderr, "#GARBAGECOLLECTOR optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return msg;
 }
 

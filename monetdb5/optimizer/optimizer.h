@@ -8,7 +8,6 @@
 
 #ifndef _OPTIMIZER_H
 #define _OPTIMIZER_H
-/* #define OPTIMIZER_DEBUG*/
 
 #include "mal_interpreter.h"
 #include "mal_scenario.h"

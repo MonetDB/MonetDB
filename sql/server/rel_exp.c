@@ -906,7 +906,7 @@ exps_find_exp( list *l, sql_exp *e)
 		return NULL;
 
 	for(n=l->h; n; n = n->next) {
-		if (exp_match(n->data, e))
+		if (exp_match(n->data, e) || exp_refers(n->data, e))
 			return n->data;
 	}
 	return NULL;

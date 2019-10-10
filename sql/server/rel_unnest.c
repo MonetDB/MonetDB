@@ -447,7 +447,19 @@ push_up_project(mvc *sql, sql_rel *rel)
 				}
 				append(n->exps, e);
 			}
-			assert(!r->r);
+			if (r->r) {
+				list *exps = r->r, *oexps = n->r = sa_list(sql->sa);
+
+				for (m=exps->h; m; m = m->next) {
+					sql_exp *e = m->data;
+
+					if (!e->freevar || exp_name(e)) { /* only skip full freevars */
+						if (exp_has_freevar(sql, e)) 
+							rel_bind_var(sql, rel->l, e);
+					}
+					append(oexps, e);
+				}
+			}
 			/* remove old project */
 			rel->r = r->l;
 			r->l = NULL;

@@ -2453,6 +2453,29 @@ exps_unique(mvc *sql, sql_rel *rel, list *exps)
 	return 0;
 }
 
+static int
+rel_is_join_on_pkey( sql_rel *rel ) 
+{
+	node *n;
+
+	if (!rel || !rel->exps)
+		return 0;
+	for (n = rel->exps->h; n; n = n->next){
+		sql_exp *je = n->data;
+
+		if (je->type == e_cmp && je->flag == cmp_equal &&
+		    find_prop(((sql_exp*)je->l)->p, PROP_HASHCOL)) { /* aligned PKEY JOIN */
+			fcmp cmp = (fcmp)&kc_column_cmp;
+			sql_exp *e = je->l;
+			sql_column *c = exp_find_column(rel, e, -2);
+
+			if (c && c->t->pkey && list_find(c->t->pkey->k.columns, c, cmp) != NULL)
+				return 1;
+		}
+	}
+	return 0;
+}
+
 
 static sql_rel *
 rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
@@ -2471,6 +2494,24 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
 	    (l->op == op_select || l->op == op_semi) && exps_unique(sql, rel, rel->exps)) 
 		set_nodistinct(rel);
+
+	/* rewrite distinct project ( join(p,f) [ p.pk = f.fk] ) [ p.pk ] ->
+	 * 	   project(p)[p.pk]
+	 */
+	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
+	    l && l->op == op_join && rel_is_join_on_pkey(l) /* [ pk == fk ] */) {
+		sql_rel *j = l;
+		sql_rel *p = j->l;
+		sql_exp *je = l->exps->h->data, *le = je->l;
+		int pside = (rel_find_exp(p, le) != NULL)?1:0;
+
+	       	p = (pside)?j->l:j->r;
+		rel->l = rel_dup(p);
+		rel_destroy(j);
+		*changes = 1;
+		set_nodistinct(rel);
+		return rel;
+	}
 	/* rewrite distinct project [ gbe ] ( select ( groupby [ gbe ] [ gbe, e ] )[ e op val ]) 
 	 * into project [ gbe ] ( select ( group etc ) */
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && 
@@ -4094,29 +4135,6 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 		return rel_inplace_groupby( rel, u, gbe, exps);
 	}
 	return rel;
-}
-
-static int
-rel_is_join_on_pkey( sql_rel *rel ) 
-{
-	node *n;
-
-	if (!rel || !rel->exps)
-		return 0;
-	for (n = rel->exps->h; n; n = n->next){
-		sql_exp *je = n->data;
-
-		if (je->type == e_cmp && je->flag == cmp_equal &&
-		    find_prop(((sql_exp*)je->l)->p, PROP_HASHCOL)) { /* aligned PKEY JOIN */
-			fcmp cmp = (fcmp)&kc_column_cmp;
-			sql_exp *e = je->l;
-			sql_column *c = exp_find_column(rel, e, -2);
-
-			if (c && c->t->p && c->t->pkey && list_find(c->t->pkey->k.columns, c, cmp) != NULL)
-				return 1;
-		}
-	}
-	return 0;
 }
 
 /*

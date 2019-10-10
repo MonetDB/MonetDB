@@ -122,6 +122,8 @@ rel_bound_exp(mvc *sql, sql_rel *rel )
 		for(n = rel->exps->h; n; n = n->next){
 			sql_exp *e = n->data;
 
+			if (exp_is_atom(e))
+				return e;
 			if (!is_freevar(e))
 				return exp_ref(sql->sa, e);
 		}
@@ -1792,6 +1794,9 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 	ls = rel_value_exp(query, &rel, lo, f, ek);
 	if (!ls)
 		return NULL;
+	if (ls && rel && exp_has_freevar(sql, ls) && (is_sql_sel(f) || is_sql_having(f))) {
+		ls = rel_project_add_exp(sql, rel, ls);
+	}
 	if (ro->token != SQL_SELECT) {
 		rs = rel_value_exp(query, &rel, ro, f, ek);
 		if (ro2) {
@@ -2132,8 +2137,10 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				query_push_outer(query, left);
 				r = rel_value_exp(query, &z, n->data.sym, f /* ie no result project */, ek);
 				query_pop_outer(query);
+				/*
 				if (z)
 					r = rel_lastexp(sql, z);
+					*/
 				if (z && r) {
 					sql_subaggr *ea = NULL;
 					sql_exp *a, *id, *tid;
@@ -3073,6 +3080,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 			lr = rel_select_copy(sql->sa, lr, sa_list(sql->sa));
 			lr = rel_logical_exp(query, lr, lo, f);
+			if (!lr)
+				return NULL;
 			rr = rel_select_copy(sql->sa, rr, sa_list(sql->sa));
 			rr = rel_logical_exp(query, rr, ro, f);
 			if (lr && rr && lr->l == rr->l) {
@@ -3085,6 +3094,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			sql->pushdown = pushdown;
 		} else {
 			lr = rel_logical_exp(query, lr, lo, f);
+			if (!lr)
+				return NULL;
 			rr = rel_logical_exp(query, rr, ro, f);
 		}
 
@@ -3821,6 +3832,22 @@ rel_check_card(sql_rel *rel, sql_exp *l , sql_exp *r)
 	return 0;
 }
 
+static sql_rel *
+rel_find_groupby(sql_rel *groupby)
+{
+	if (groupby && !is_processed(groupby) && !is_base(groupby->op)) { 
+		while(!is_processed(groupby) && !is_base(groupby->op)) {
+			if (groupby->op == op_groupby || !groupby->l)
+				break;
+			if (groupby->l)
+				groupby = groupby->l;
+		}
+		if (groupby && groupby->op == op_groupby)
+			return groupby;
+	}
+	return NULL;
+}
+
 static sql_exp *
 rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 {
@@ -3843,6 +3870,12 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 
 	l = rel_value_exp(query, rel, dl->next->data.sym, f, iek);
 	r = rel_value_exp(query, rel, dl->next->next->data.sym, f, iek);
+	if (l && *rel && exp_card(l) > CARD_AGGR && rel_find_groupby(*rel)) {
+		if (l && exp_relname(l) && exp_name(l))
+			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(l), exp_name(l));
+		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+	}
+
 	if (!l || !r) {
 		*rel = orel;
 		sf = find_func(sql, s, fname, 2, F_AGGR, NULL);
@@ -3861,7 +3894,6 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		sql->errstr[0] = '\0';
 		return rel_aggr(query, rel, se, f);
 	}
-
 	if (type == F_FUNC) {
 		sf = find_func(sql, s, fname, 2, F_AGGR, NULL);
 		if (sf) {
@@ -4015,18 +4047,10 @@ rel_aggr_intern(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, ch
 	/* find groupby */
 	if (groupby && !is_processed(groupby) && !is_base(groupby->op)) { 
 		og = groupby;
-		while(!is_processed(groupby) && !is_base(groupby->op)) {
-			if (groupby->op == op_groupby || !groupby->l)
-				break;
-			if (groupby->l)
-				groupby = groupby->l;
-		}
-		if (groupby && groupby->op == op_groupby) {
+		groupby = rel_find_groupby(groupby);
+		if (groupby)
 			group = 1;
-			/* At the end we switch back to the old projection relation og. 
-			 * During the partitioning and ordering we add the expressions to the intermediate relations. */
-		}
-		if (!group)
+		else
 			groupby = og;
 	}
 
@@ -5196,13 +5220,13 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 				if (e)
 					e = rel_project_add_exp(sql, rel, e);
 			}
-			if (!e && sql->session->status != -ERR_AMBIGUOUS) {
+			if (rel && !e && sql->session->status != -ERR_AMBIGUOUS) {
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
 
 				/* check for project->select->groupby */
-				if (is_project(rel->op) && is_sql_orderby(f)) {
+				if (rel && is_project(rel->op) && is_sql_orderby(f)) {
 					sql_rel *s = rel->l;
 					sql_rel *p = rel;
 					sql_rel *g = s;
@@ -5648,8 +5672,12 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		for(n = obe->h ; n ; n = n->next) {
 			sql_exp *oexp = n->data, *nexp;
 
-			if (is_sql_sel(f) && pp->op == op_project && !is_processed(pp) && !rel_find_exp(pp, oexp))
+			if (is_sql_sel(f) && pp->op == op_project && !is_processed(pp) && !rel_find_exp(pp, oexp)) {
 				append(pp->exps, oexp);
+				if (!exp_name(oexp))
+					exp_label(sql->sa, oexp, ++sql->label);
+				oexp = exp_ref(sql->sa, oexp);
+			}
 			n->data = nexp = opt_groupby_add_exp(sql, p, group?g:pp, oexp);
 			if (is_ascending(oexp))
 				set_direction(nexp, 1);
@@ -5960,7 +5988,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	call = exp_op(sql->sa, args, wf);
 	exp_label(sql->sa, call, ++sql->label);
 	r->l = p;
-	list_merge(p->exps, rel_projections(sql, p->l, NULL, 1, 1), NULL);
+	p->exps = list_merge(p->exps, rel_projections(sql, p->l, NULL, 1, 1), NULL);
 	append(p->exps, call);
 	call = exp_ref(sql->sa, call);
 	if (project_added) {
@@ -6126,7 +6154,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 			*is_last=1;
 			return e;
 		}
-		if (!r && sql->session->status != -ERR_AMBIGUOUS) {
+		if (!r && mvc_error_retry(sql)) {
 			sql_exp *rs = NULL;
 			sql_rel *outerp = NULL;
 
@@ -6308,36 +6336,163 @@ rel_column_exp(sql_query *query, sql_rel **rel, symbol *column_e, int f)
 	return NULL;
 }
 
-static sql_rel *
-rel_simple_select(sql_query *query, sql_rel *rel, symbol *where, dlist *selection, int distinct)
+static sql_rel*
+rel_where_groupby_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, int *group_totals)
 {
 	mvc *sql = query->sql;
-	dnode *n = 0;
+
+	if (sn->where) {
+		rel = rel_logical_exp(query, rel, sn->where, sql_where);
+		if (!rel) {
+			if (sql->errstr[0] == 0)
+				return sql_error(sql, 02, SQLSTATE(42000) "Subquery result missing");
+			return NULL;
+		}
+	}
+
+	if (rel && sn->groupby) {
+		list *gbe, *sets = NULL;
+		for (dnode *o = sn->groupby->data.lval->h; o ; o = o->next) {
+			symbol *grouping = o->data.sym;
+			if (grouping->token == SQL_ROLLUP || grouping->token == SQL_CUBE || grouping->token == SQL_GROUPING_SETS) {
+				*group_totals |= sql_group_totals;
+				break;
+			}
+		}
+		gbe = rel_groupings(query, &rel, sn->groupby, sn->selection, sql_sel | sql_groupby | *group_totals, false, &sets);
+		if (!gbe)
+			return NULL;
+		rel = rel_groupby(sql, rel, gbe);
+		if (sets && list_length(sets) > 1) { /* if there is only one combination, there is no reason to generate unions */
+			prop *p = prop_create(sql->sa, PROP_GROUPINGS, rel->p);
+			p->value = sets;
+			rel->p = p;
+		}
+	}
+
+	if (rel && sn->having) {
+		/* having implies group by, ie if not supplied do a group by */
+		if (rel->op != op_groupby)
+			rel = rel_groupby(sql, rel, NULL);
+	}
+
+	return rel;
+}
+
+static sql_rel*
+rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek, int group_totals)
+{
+	mvc *sql = query->sql;
 	sql_rel *inner;
 
-	if (!selection)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: the selection or from part is missing");
-	if (where) {
-		sql_rel *r;
+	if (sn->having) {
+		inner = rel->l;
+		assert(is_project(rel->op) && inner);
+	
+		if (inner && inner->op == op_groupby)
+			set_processed(inner);
+		inner = rel_logical_exp(query, inner, sn->having, sql_having | group_totals);
 
-		if(!rel)
-			rel = rel_project(sql->sa, NULL, list_append(new_exp_list(sql->sa), exp_atom_bool(sql->sa, 1)));
-		r = rel_logical_exp(query, rel, where, sql_where);
-		if (!r)
+		if (!inner)
 			return NULL;
-		rel = r;
+		if (inner->exps && exps_card(inner->exps) > CARD_AGGR)
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot compare sets with values, probably an aggregate function missing");
+		rel->l = inner;
 	}
+
+	if (rel && sn->distinct)
+		rel = rel_distinct(rel);
+
+	if (rel && sn->orderby) {
+		list *obe = NULL;
+
+		set_processed(rel);
+		rel = rel_orderby(sql, rel);
+		obe = rel_order_by(query, &rel, sn->orderby, sql_orderby | group_totals);
+		if (!obe)
+			return NULL;
+		rel->r = obe;
+	}
+	if (!rel)
+		return NULL;
+
+	if (sn->limit || sn->offset) {
+		sql_subtype *lng = sql_bind_localtype("lng");
+		list *exps = new_exp_list(sql->sa);
+
+		if (sn->limit) {
+			sql_exp *l = rel_value_exp(query, NULL, sn->limit, 0, ek);
+
+			if (!l || !(l=rel_check_type(sql, lng, NULL, l, type_equal)))
+				return NULL;
+			if ((ek.card != card_relation && sn->limit) &&
+				(ek.card == card_value && sn->limit)) {
+				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(l));
+				l = exp_aggr1(sql->sa, l, zero_or_one, 0, 0, CARD_ATOM, 0);
+			}
+			append(exps, l);
+		} else
+			append(exps, NULL);
+		if (sn->offset) {
+			sql_exp *o = rel_value_exp( query, NULL, sn->offset, 0, ek);
+			if (!o || !(o=rel_check_type(sql, lng, NULL, o, type_equal)))
+				return NULL;
+			append(exps, o);
+		}
+		rel = rel_topn(sql->sa, rel, exps);
+	}
+
+	if (sn->sample) {
+		list *exps = new_exp_list(sql->sa);
+		dlist* sample_parameters = sn->sample->data.lval;
+		sql_exp *sample_size = rel_value_exp(query, NULL, sample_parameters->h->data.sym, 0, ek);
+		if (!sample_size)
+			return NULL;
+		append(exps, sample_size);
+
+		if (sample_parameters->cnt == 2) {
+			sql_exp *seed_value = rel_value_exp(query, NULL, sample_parameters->h->next->data.sym, 0, ek);
+			if (!seed_value)
+				return NULL;
+			append(exps, seed_value);
+		}
+
+		rel = rel_sample(sql->sa, rel, exps);
+	}
+
+	if (rel)
+		set_processed(rel);
+	return rel;
+}
+
+static sql_rel *
+rel_simple_select(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
+{
+	mvc *sql = query->sql;
+	sql_rel *inner;
+	int group_totals = 0;
+
+	if (!sn->selection)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: the selection or from part is missing");
+
+	if ((sn->where || sn->groupby || sn->having) && !rel)
+		rel = rel_project(sql->sa, NULL, list_append(new_exp_list(sql->sa), exp_atom_bool(sql->sa, 1)));
+
+	rel = rel_where_groupby_nodes(query, rel, sn, &group_totals);
+	if (sql->session->status) /* rel might be NULL as input, so we have to check for the session status for errors */
+		return NULL;
+
 	if (!rel || rel->op != op_project || !list_empty(rel->exps))
 		rel = rel_project(sql->sa, rel, new_exp_list(sql->sa));
 	inner = rel;
-	for (n = selection->h; n; n = n->next ) {
+	for (dnode *n = sn->selection->h; n; n = n->next) {
 		/* Here we could get real column expressions (including single
 		 * atoms) but also table results. Therefore we try both
 		 * rel_column_exp and rel_table_exp.
 		 */
 		sql_rel *o_inner = inner;
-	       	list *te = NULL, *pre_prj = rel_projections(sql, o_inner, NULL, 1, 1);
-		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel);
+		list *te = NULL, *pre_prj = rel_projections(sql, o_inner, NULL, 1, 1);
+		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | group_totals);
 
 		if (inner != o_inner) {  /* relation got rewritten */
 			if (!inner)
@@ -6358,7 +6513,7 @@ rel_simple_select(sql_query *query, sql_rel *rel, symbol *where, dlist *selectio
 			rel = inner;
 			continue;
 		} else if (!ce) {
-			te = rel_table_exp(query, &rel, n->data.sym );
+			te = rel_table_exp(query, &rel, n->data.sym);
 		} else 
 			ce = NULL;
 		if (!ce && !te)
@@ -6366,14 +6521,10 @@ rel_simple_select(sql_query *query, sql_rel *rel, symbol *where, dlist *selectio
 		/* here we should merge the column expressions we obtained
 		 * so far with the table expression, ie t1.* or a subquery
 		 */
-		list_merge( rel->exps, te, (fdup)NULL);
+		list_merge(rel->exps, te, (fdup)NULL);
 	}
-	if (rel)
-		set_processed(rel);
 
-	if (rel && distinct)
-		rel = rel_distinct(rel);
-
+	rel = rel_having_limits_nodes(query, rel, sn, ek, group_totals);
 	return rel;
 }
 
@@ -6427,7 +6578,6 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 	return rel;
 }
 
-
 static int
 exp_is_not_intern(sql_exp *e)
 {
@@ -6448,8 +6598,6 @@ static sql_rel *
 rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 {
 	mvc *sql = query->sql;
-	dnode *n;
-	//int aggr = 0;
 	sql_rel *inner = NULL;
 	int group_totals = 0;
 
@@ -6458,51 +6606,16 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: the selection or from part is missing");
 
 	if (!sn->from)
-		return rel_simple_select(query, rel, sn->where, sn->selection, sn->distinct);
+		return rel_simple_select(query, rel, sn, ek);
 
-	if (sn->where) {
-		sql_rel *r = rel_logical_exp(query, rel, sn->where, sql_where);
-		if (!r) {
-			if (sql->errstr[0] == 0)
-				return sql_error(sql, 02, SQLSTATE(42000) "Subquery result missing");
-			return NULL;
-		}
-		rel = r;
-		set_processed(rel);
-	}
+	assert(rel);
+	rel = rel_where_groupby_nodes(query, rel, sn, &group_totals);
+	if (sql->session->status) /* rel might be NULL as input, so we have to check for the session status for errors */
+		return NULL;
 
-	if (rel) {
-		if (rel && sn->groupby) {
-			list *gbe, *sets = NULL;
-			for (dnode *o = sn->groupby->data.lval->h; o ; o = o->next) {
-				symbol *grouping = o->data.sym;
-				if (grouping->token == SQL_ROLLUP || grouping->token == SQL_CUBE || grouping->token == SQL_GROUPING_SETS) {
-					group_totals |= sql_group_totals;
-					break;
-				}
-			}
-			gbe = rel_groupings(query, &rel, sn->groupby, sn->selection, sql_sel | sql_groupby | group_totals, false, &sets);
-			if (!gbe)
-				return NULL;
-			rel = rel_groupby(sql, rel, gbe);
-			if (sets && list_length(sets) > 1) { /* if there is only one combination, there is no reason to generate unions */
-				prop *p = prop_create(sql->sa, PROP_GROUPINGS, rel->p);
-				p->value = sets;
-				rel->p = p;
-			}
-		}
-	}
-
-	if (sn->having) {
-		/* having implies group by, ie if not supplied do a group by */
-		if (rel->op != op_groupby)
-			rel = rel_groupby(sql, rel, NULL);
-	}
-
-	n = sn->selection->h;
 	rel = rel_project(sql->sa, rel, new_exp_list(sql->sa));
 	inner = rel;
-	for (; n; n = n->next) {
+	for (dnode *n = sn->selection->h; n; n = n->next) {
 		/* Here we could get real column expressions
 		 * (including single atoms) but also table results.
 		 * Therefor we try both rel_column_exp
@@ -6561,86 +6674,10 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		 * obtained so far with the table expression, ie
 		 * t1.* or a subquery.
 		 */
-		list_merge( rel->exps, te, (fdup)NULL);
+		list_merge(rel->exps, te, (fdup)NULL);
 	}
 
-	if (sn->having) {
-		inner = rel->l;
-		assert(is_project(rel->op) && inner);
-	
-		if (inner && inner->op == op_groupby)
-			set_processed(inner);
-		inner = rel_logical_exp(query, inner, sn->having, sql_having | group_totals);
-
-		if (!inner)
-			return NULL;
-		if (inner -> exps && exps_card(inner->exps) > CARD_AGGR)
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot compare sets with values, probably an aggregate function missing");
-		rel->l = inner;
-	}
-
-	if (rel && sn->orderby) {
-		list *obe = NULL;
-
-		set_processed(rel);
-		rel = rel_orderby(sql, rel);
-		obe = rel_order_by(query, &rel, sn->orderby, sql_orderby | group_totals);
-		if (!obe)
-			return NULL;
-		rel->r = obe;
-	}
-	if (!rel)
-		return NULL;
-
-	if (rel && sn->distinct)
-		rel = rel_distinct(rel);
-
-	if (sn->limit || sn->offset) {
-		sql_subtype *lng = sql_bind_localtype("lng");
-		list *exps = new_exp_list(sql->sa);
-
-		if (sn->limit) {
-			sql_exp *l = rel_value_exp( query, NULL, sn->limit, 0, ek);
-
-			if (!l || !(l=rel_check_type(sql, lng, NULL, l, type_equal)))
-				return NULL;
-			if ((ek.card != card_relation && sn->limit) &&
-				(ek.card == card_value && sn->limit)) {
-				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(l));
-				l = exp_aggr1(sql->sa, l, zero_or_one, 0, 0, CARD_ATOM, 0);
-			}
-			append(exps, l);
-		} else
-			append(exps, NULL);
-		if (sn->offset) {
-			sql_exp *o = rel_value_exp( query, NULL, sn->offset, 0, ek);
-			if (!o || !(o=rel_check_type(sql, lng, NULL, o, type_equal)))
-				return NULL;
-			append(exps, o);
-		}
-		rel = rel_topn(sql->sa, rel, exps);
-	}
-
-	if (sn->sample) {
-		list *exps = new_exp_list(sql->sa);
-		
-		dlist* sample_parameters = sn->sample->data.lval;
-
-		sql_exp *sample_size = rel_value_exp( query, NULL, sample_parameters->h->data.sym, 0, ek);
-		if (!sample_size)
-			return NULL;
-		append(exps, sample_size);
-
-		if (sample_parameters->cnt == 2) {
-			sql_exp *seed_value = rel_value_exp( query, NULL, sample_parameters->h->next->data.sym, 0, ek);
-			if (!seed_value)
-				return NULL;
-			append(exps, seed_value);
-		}
-
-		rel = rel_sample(sql->sa, rel, exps);
-	}
-	set_processed(rel);
+	rel = rel_having_limits_nodes(query, rel, sn, ek, group_totals);
 	return rel;
 }
 
@@ -6731,9 +6768,9 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 				rel_destroy(res);
 			return NULL;
 		}
-	} else if (toplevel || !res) {	/* only on top level query */
-		return rel_simple_select(query, rel, sn->where, sn->selection, sn->distinct);
-	}
+	} else if (toplevel || !res)	/* only on top level query */
+		return rel_simple_select(query, rel, sn, ek);
+
 	if (res)
 		rel = rel_select_exp(query, res, sn, ek);
 	if (!rel && res) 

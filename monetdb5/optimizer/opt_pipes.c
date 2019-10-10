@@ -26,8 +26,6 @@
 #include "mal_listing.h"
 #include "mal_linker.h"
 
-/*#define _DEBUG_OPT_PIPES_*/
-
 #define MAXOPTPIPES 64
 
 static struct PIPELINES {

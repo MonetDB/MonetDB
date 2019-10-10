@@ -255,6 +255,16 @@ mvc_status(mvc *m)
 }
 
 int
+mvc_error_retry(mvc *m)
+{
+	int res = m->session->status;
+
+	if (!res || res == -ERR_AMBIGUOUS || res == -ERR_GROUPBY)
+		return 0;
+	return res;
+}
+
+int
 mvc_type(mvc *m)
 {
 	int res = m->type;

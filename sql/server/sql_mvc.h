@@ -26,6 +26,8 @@
 #include "sql_symbol.h"
 
 #define ERRSIZE 8192
+#define ERR_AMBIGUOUS		050000
+#define ERR_GROUPBY		060000
 
 /* value vs predicate (boolean) */
 #define type_value	0
@@ -148,6 +150,7 @@ extern int mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 extern void mvc_destroy(mvc *c);
 
 extern int mvc_status(mvc *c);
+extern int mvc_error_retry(mvc *c); // error code on errors else 0, errors AMBIGUOUS and GROUPBY will also output 0
 extern int mvc_type(mvc *c);
 extern int mvc_debug_on(mvc *m, int flag);
 extern void mvc_cancel_session(mvc *m);
