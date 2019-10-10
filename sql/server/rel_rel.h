@@ -32,8 +32,6 @@
 #define is_sql_aggr(X)    ((X & sql_aggr) == sql_aggr)
 #define is_sql_farg(X)    ((X & sql_farg) == sql_farg)
 
-#define ERR_AMBIGUOUS		050000
-
 #define rel_groupby_gbe(m,r,e) rel_groupby(m, r, append(new_exp_list(m->sa), e))
 #define new_rel_list(sa) sa_list(sa)
 
