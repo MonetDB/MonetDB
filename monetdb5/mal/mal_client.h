@@ -13,7 +13,6 @@
 /*#define MAL_CLIENT_DEBUG */
 
 #include "mal_resolve.h"
-#include "mal_profiler.h"
 
 #define SCENARIO_PROPERTIES 8
 

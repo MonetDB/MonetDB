@@ -23,13 +23,13 @@ typedef struct rusage Rusage;
 mal_export int malProfileMode;
 
 mal_export void initProfiler(void);
-mal_export str openProfilerStream(stream *fd, int mode);
-mal_export str closeProfilerStream(void);
+mal_export str openProfilerStream(Client cntxt, stream *fd, int mode);
+mal_export str closeProfilerStream(Client cntxt);
 
-mal_export void profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname);
+mal_export void profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname);
 
-mal_export str startProfiler(void);
-mal_export str stopProfiler(void);
+mal_export str startProfiler(Client cntxt);
+mal_export str stopProfiler(Client cntxt);
 mal_export str startTrace(str path);
 mal_export str stopTrace(str path);
 mal_export void setHeartbeat(int delay);

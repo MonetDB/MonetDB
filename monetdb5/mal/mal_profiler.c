@@ -30,9 +30,7 @@
 
 #include <string.h>
 
-static void cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-stream *eventstream = 0;
+static void cachedProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 static int sqlProfiling = FALSE;
 static str myname = 0;	// avoid tracing the profiler module
@@ -86,10 +84,10 @@ static void logjsonInternal(char *logbuffer)
 	len = strlen(logbuffer);
 
 	MT_lock_set(&mal_profileLock);
-	if (eventstream) {
+	if (maleventstream) {
 	// upon request the log record is sent over the profile stream
-		(void) mnstr_write(eventstream, logbuffer, 1, len);
-		(void) mnstr_flush(eventstream);
+		(void) mnstr_write(maleventstream, logbuffer, 1, len);
+		(void) mnstr_flush(maleventstream);
 	}
 	MT_lock_unset(&mal_profileLock);
 }
@@ -136,9 +134,10 @@ EXAMPLE:
 }
 */
 static void
-renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
+renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 {
 	(void)usrname;
+	(void)cntxt;
 	char logbuffer[LOGLEN], *logbase;
 	size_t loglen;
 	str stmt, c;
@@ -460,7 +459,7 @@ profilerHeartbeatEvent(char *alter)
 	lng usec = GDKusec();
 	uint64_t microseconds = (uint64_t)startup_time.tv_sec*1000000 + (uint64_t)startup_time.tv_usec + (uint64_t)usec;
 
-	if (ATOMIC_GET(&hbdelay) == 0 || eventstream  == NULL)
+	if (ATOMIC_GET(&hbdelay) == 0 || maleventstream  == NULL)
 		return;
 
 	/* get CPU load on beat boundaries only */
@@ -502,18 +501,19 @@ profilerHeartbeatEvent(char *alter)
 }
 
 void
-profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
+profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 {
 	if (stk == NULL) return;
 	if (pci == NULL) return;
 	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
 		return;
 
-	if( sqlProfiling && !start )
-		cachedProfilerEvent(mb, stk, pci);
+	if( sqlProfiling && !start ){
+		cachedProfilerEvent(cntxt, mb, stk, pci);
+	}
 
-	if( eventstream) {
-		renderProfilerEvent(mb, stk, pci, start, usrname);
+	if( maleventstream) {
+		renderProfilerEvent(cntxt, mb, stk, pci, start, usrname);
 		if ( start && pci->pc ==0)
 			profilerHeartbeatEvent("ping");
 		if ( !start && pci->token == ENDsymbol)
@@ -530,7 +530,7 @@ profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 #define PROFSHOWRUNNING	1
 #define PROFSINGLELINE 2
 str
-openProfilerStream(stream *fd, int mode)
+openProfilerStream(Client cntxt, stream *fd, int mode)
 {
 	int j;
 
@@ -543,10 +543,10 @@ openProfilerStream(stream *fd, int mode)
 		eventcounter = 0;
 		logjsonInternal(monet_characteristics);
 	}
-	if( eventstream)
-		closeProfilerStream();
+	if( maleventstream)
+		closeProfilerStream(cntxt);
 	malProfileMode = -1;
-	eventstream = fd;
+	maleventstream = fd;
 	prettify = (mode & PROFSINGLELINE) ? "": "\n";
 
 	/* show all in progress instructions for stethoscope startup */
@@ -556,16 +556,17 @@ openProfilerStream(stream *fd, int mode)
 		for(j = 0; j <THREADS; j++)
 		if( workingset[j].mb)
 			/* show the event */
-			profilerEvent(workingset[j].mb, workingset[j].stk, workingset[j].pci, 1, workingset[j].cntxt->username);
+			profilerEvent(cntxt, workingset[j].mb, workingset[j].stk, workingset[j].pci, 1, workingset[j].cntxt->username);
 		MT_lock_unset(&mal_delayLock);
 	}
 	return MAL_SUCCEED;
 }
 
 str
-closeProfilerStream(void)
+closeProfilerStream(Client cntxt)
 {
-	eventstream = NULL;
+	(void) cntxt;
+	maleventstream = NULL;
 	malProfileMode = 0;
 	return MAL_SUCCEED;
 }
@@ -574,14 +575,15 @@ closeProfilerStream(void)
  * events in a local table for direct SQL inspection
  */
 str
-startProfiler(void)
+startProfiler(Client cntxt)
 {
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 	prevUsage = infoUsage;
 #endif
+	(void) cntxt;
 
-	if( eventstream){
+	if( maleventstream){
 		throw(MAL,"profiler.start","Profiler already running, stream not available");
 	}
 	MT_lock_set(&mal_profileLock );
@@ -609,11 +611,11 @@ startTrace(str path)
 	int len;
 	char buf[FILENAME_MAX];
 
-	if (path && eventstream == NULL){
+	if (path && maleventstream == NULL){
 		// create a file to keep the events, unless we
 		// already have a profiler stream
 		MT_lock_set(&mal_profileLock );
-		if(eventstream == NULL && offlinestore ==0){
+		if(maleventstream == NULL && offlinestore ==0){
 			len = snprintf(buf,FILENAME_MAX,"%s%c%s",GDKgetenv("gdk_dbpath"), DIR_SEP, path);
 			if (len == -1 || len >= FILENAME_MAX) {
 				MT_lock_unset(&mal_profileLock);
@@ -628,7 +630,7 @@ startTrace(str path)
 				MT_lock_unset(&mal_profileLock);
 				throw(MAL, "profiler.startTrace", SQLSTATE(HY001) "Profiler filename path is too large");
 			}
-			if ((eventstream = open_wastream(buf)) == NULL) {
+			if ((maleventstream = open_wastream(buf)) == NULL) {
 				MT_lock_unset(&mal_profileLock );
 				throw(MAL,"profiler.startTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
@@ -647,24 +649,25 @@ stopTrace(str path)
 {
 	MT_lock_set(&mal_profileLock );
 	if( path &&  offlinestore){
-		(void) close_stream(eventstream);
-		eventstream = 0;
+		(void) close_stream(maleventstream);
+		maleventstream = 0;
 		offlinestore =0;
 	}
 	MT_lock_unset(&mal_profileLock );
 
-	malProfileMode = eventstream != NULL;
+	malProfileMode = maleventstream != NULL;
 	sqlProfiling = FALSE;
 	return MAL_SUCCEED;
 }
 
 str
-stopProfiler(void)
+stopProfiler(Client cntxt)
 {
 	MT_lock_set(&mal_profileLock);
 	malProfileMode = 0;
 	setHeartbeat(0); // stop heartbeat
-	closeProfilerStream();
+	if( cntxt)
+		closeProfilerStream(cntxt);
 	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
 }
@@ -676,10 +679,10 @@ stopProfiler(void)
 void
 MPresetProfiler(stream *fdout)
 {
-	if (fdout != eventstream)
+	if (fdout != maleventstream)
 		return;
 	MT_lock_set(&mal_profileLock);
-	eventstream = 0;
+	maleventstream = 0;
 	MT_lock_unset(&mal_profileLock);
 }
 
@@ -883,7 +886,7 @@ cleanupTraces(void)
 }
 
 void
-cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+cachedProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[BUFSIZ]= {0};
 	int tid = (int)THRgettid();
@@ -894,6 +897,7 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng tmpspace = 0;
 	int errors = 0;
 
+	(void) cntxt;
 	clock = GDKusec();
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
@@ -1064,7 +1068,7 @@ static void profilerHeartbeat(void *dummy)
 	for (;;) {
 		/* wait until you need this info */
 		MT_thread_setworking("sleeping");
-		while (ATOMIC_GET(&hbdelay) == 0 || eventstream == NULL) {
+		while (ATOMIC_GET(&hbdelay) == 0 || maleventstream == NULL) {
 			if (GDKexiting() || !ATOMIC_GET(&hbrunning))
 				return;
 			MT_sleep_ms(timeout);

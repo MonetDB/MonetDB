@@ -42,14 +42,16 @@ CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	(void) mb;
 	(void) stk;
 	(void) pc;
-	return openProfilerStream(cntxt->fdout, *getArgReference_int(stk,pc,1));
+	return openProfilerStream(cntxt, cntxt->fdout, *getArgReference_int(stk,pc,1));
 }
 
 str
-CMDcloseProfilerStream(void *res)
+CMDcloseProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
-	(void) res;
-	return closeProfilerStream();
+	(void) mb;
+	(void) stk;
+	(void) pc;
+	return closeProfilerStream(cntxt);
 }
 
 // initialize SQL tracing
@@ -60,18 +62,17 @@ CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	(void) stk;
 	(void) pc;
 	(void) cntxt;
-	return startProfiler();
+	return startProfiler(cntxt);
 }
 
 str
 CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
 
-	return stopProfiler();
+	return stopProfiler(cntxt);
 }
 
 // called by the SQL front end.

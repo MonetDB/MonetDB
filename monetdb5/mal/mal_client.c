@@ -167,6 +167,21 @@ MCgetClient(int id)
 	return mal_clients + id;
 }
 
+/*
+ * The resetProfiler is called when the owner of the event stream
+ * leaves the scene. (Unclear if parallelism may cause errors)
+ */
+
+static void
+MCresetProfiler(stream *fdout)
+{
+    if (fdout != maleventstream)
+        return;
+    MT_lock_set(&mal_profileLock);
+    maleventstream = 0;
+    MT_lock_unset(&mal_profileLock);
+}
+
 void
 MCexitClient(Client c)
 {
@@ -174,7 +189,7 @@ MCexitClient(Client c)
 	fprintf(stderr,"# Exit client %d\n", c->idx);
 #endif
 	finishSessionProfiler(c);
-	MPresetProfiler(c->fdout);
+	MCresetProfiler(c->fdout);
 	if (c->father == NULL) { /* normal client */
 		if (c->fdout && c->fdout != GDKstdout) {
 			close_stream(c->fdout);
@@ -281,6 +296,7 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	return MCinitClientRecord(c, user, fin, fout);
 }
 
+
 /*
  * The administrator should be initialized to enable interpretation of
  * the command line arguments, before it starts servicing statements
@@ -292,7 +308,7 @@ MCinitClientThread(Client c)
 
 	t = MT_thread_getdata();	/* should succeed */
 	if (t == NULL) {
-		MPresetProfiler(c->fdout);
+		MCresetProfiler(c->fdout);
 		return -1;
 	}
 	/*
@@ -306,7 +322,7 @@ MCinitClientThread(Client c)
 	if (c->errbuf == NULL) {
 		char *n = GDKzalloc(GDKMAXERRLEN);
 		if ( n == NULL){
-			MPresetProfiler(c->fdout);
+			MCresetProfiler(c->fdout);
 			return -1;
 		}
 		GDKsetbuf(n);
@@ -615,17 +631,3 @@ MCvalid(Client tc)
 	MT_lock_unset(&mal_contextLock);
 	return 0;
 }
-
-str
-PROFinitClient(Client c){
-	(void) c;
-	return startProfiler();
-}
-
-str
-PROFexitClient(Client c){
-	(void) c;
-	return stopProfiler();
-}
-
-
