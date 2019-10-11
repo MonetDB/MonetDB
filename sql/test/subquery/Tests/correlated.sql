@@ -158,6 +158,8 @@ SELECT i, (SELECT MIN(i)+i1.i FROM integers WHERE i>i1.i) FROM integers i1 ORDER
 
 SELECT (SELECT SUM(i + i1.i), 1 FROM integers) FROM integers i1; --error, the subquery should output only one column
 
+SELECT (SELECT SUM(i1.i) FROM integers) AS k FROM integers i1 GROUP BY i ORDER BY i; --we should throw a better error message
+
 /*
 -- exit
 	// aggregate with correlation in GROUP BY
@@ -546,18 +548,20 @@ TEST_CASE("Test complex correlated subqueries", "[subquery]") {
 	// inner join on non-equality subquery
 	result = con.Query("SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT s1.i=s2.i) ORDER BY s1.i;");
 	REQUIRE(CHECK_COLUMN(result, 0, {1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {1, 2, 3}));
-	result = con.Query("SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT s1.i=i FROM integers WHERE s2.i=i) "
-	                   "ORDER BY s1.i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {1, 2, 3}));
-	// left outer join on correlated subquery
-	result = con.Query("SELECT * FROM integers s1 LEFT OUTER JOIN integers s2 ON (SELECT 2*SUM(i)*s1.i FROM "
-	                   "integers)=(SELECT SUM(i)*s2.i FROM integers) ORDER BY s1.i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 2, Value(), Value()}));
+	REQUIRE(CHECK_COLUMN(result, 1, {1, 2, 3}));*/
 
-	// left outer join in correlated expression
+SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT s1.i=i FROM integers WHERE s2.i=i) ORDER BY s1.i;
+--1	1
+--2	2
+--3	3
+
+SELECT * FROM integers s1 LEFT OUTER JOIN integers s2 ON (SELECT 2*SUM(i)*s1.i FROM integers)=(SELECT SUM(i)*s2.i FROM integers) ORDER BY s1.i;
+--1	2
+--2	NULL
+--3	NULL
+--NULL	NULL
+
+/*	// left outer join in correlated expression
 	REQUIRE_FAIL(con.Query("SELECT i, (SELECT SUM(s1.i) FROM integers s1 LEFT OUTER JOIN integers s2 ON s1.i=s2.i OR "
 	                       "s1.i=i1.i-1) AS j FROM integers i1 ORDER BY i;"));
 	// REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
@@ -610,11 +614,15 @@ TEST_CASE("Test window functions in correlated subqueries", "[subquery]") {
 	REQUIRE_NO_FAIL(con.Query("INSERT INTO integers VALUES (1), (2), (3), (NULL)"));
 
 	// window functions in correlated subquery
-	result = con.Query(
-	    "SELECT i, (SELECT row_number() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 1, 1}));
-	result = con.Query("SELECT i1.i, (SELECT rank() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1, "
+	result = con.Query(*/
+
+SELECT i, (SELECT row_number() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1 ORDER BY i;
+--1	1
+--2	1
+--3	1
+--NULL	NULL
+
+	/*result = con.Query("SELECT i1.i, (SELECT rank() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1, "
 	                   "integers i2 ORDER BY i1.i;");
 	REQUIRE(CHECK_COLUMN(result, 0, {Value(), Value(), Value(), Value(), 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3}));
 	REQUIRE(CHECK_COLUMN(result, 1, {Value(), Value(), Value(), Value(), 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}));
@@ -671,12 +679,15 @@ TEST_CASE("Test nested correlated subqueries", "[subquery]") {
 	                   "WHERE i2.i=i1.i))) AS j FROM integers i1 ORDER BY i;");
 	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
 	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 6, 12, 18}));
-	// explicit join on subquery
-	result = con.Query("SELECT i, (SELECT SUM(s1.i) FROM integers s1 INNER JOIN integers s2 ON (SELECT "
-	                   "i1.i+s1.i)=(SELECT i1.i+s2.i)) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 6, 6, 6}));
-	// nested aggregate queries
+	// explicit join on subquery*/
+
+SELECT i, (SELECT SUM(s1.i) FROM integers s1 INNER JOIN integers s2 ON (SELECT i1.i+s1.i)=(SELECT i1.i+s2.i)) AS j FROM integers i1 ORDER BY i;
+--1	6
+--2	6
+--3	6
+--NULL	NULL
+
+	/* nested aggregate queries
 	result = con.Query("SELECT i, SUM(i), (SELECT (SELECT SUM(i)+SUM(i1.i)+SUM(i2.i) FROM integers) FROM integers i2) "
 	                   "FROM integers i1 GROUP BY i ORDER BY i;");
 	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
@@ -691,15 +702,15 @@ TEST_CASE("Test nested correlated subqueries", "[subquery]") {
 	result = con.Query("SELECT i, (SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND i=ANY(SELECT i "
 	                   "FROM integers WHERE i=s1.i)) ss2) AS j FROM integers i1 ORDER BY i;");
 	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
+	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));*/
 
-	// left outer join on correlated subquery within subquery
-	// not supported yet: left outer join on JoinSide::BOTH
-	REQUIRE_FAIL(con.Query("SELECT i, (SELECT SUM(s1.i) FROM integers s1 LEFT OUTER JOIN integers s2 ON (SELECT "
-	                       "i1.i+s1.i)=(SELECT i1.i+s2.i)) AS j FROM integers i1 ORDER BY i;"));
-	// REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	// REQUIRE(CHECK_COLUMN(result, 1, {6, 6, 6, 6}));
-	result =
+SELECT i, (SELECT SUM(s1.i) FROM integers s1 LEFT OUTER JOIN integers s2 ON (SELECT i1.i+s1.i)=(SELECT i1.i+s2.i)) AS j FROM integers i1 ORDER BY i;
+--1	6
+--2	6
+--3	6
+--NULL	6
+
+	/*result =
 	    con.Query("SELECT i, (SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM "
 	              "integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN (SELECT i FROM integers s1 WHERE i=ANY(SELECT i FROM "
 	              "integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS j FROM integers i1 ORDER BY i;");
