@@ -5371,7 +5371,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	supports_frames = (window_function->token != SQL_RANK) || is_nth_value ||
 					  (strcmp(s->base.name, "sys") == 0 && ((strcmp(aname, "first_value") == 0) || strcmp(aname, "last_value") == 0));
 
-	if (is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_sql_orderby(f) || is_sql_partitionby(f)) {
+	if (is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_sql_partitionby(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
 		const char *clause = is_sql_where(f)?"WHERE":is_sql_groupby(f)?"GROUP BY":is_sql_having(f)?"HAVING":is_sql_orderby(f)?"ORDER BY":"PARTITION BY";
 		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed in %s clause",
@@ -5400,7 +5400,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		reset_processed(r);
 		project_added = 1;
 	}
-	if (!is_sql_sel(f) || !r || r->op != op_project || is_processed(r))
+	if (!is_sql_sel(f) || !r || !is_project(r->op))
 		return sql_error(sql, 02, SQLSTATE(42000) "OVER: only possible within the selection");
 
 	/* outer project (*rel) r  r->l will be rewritten!
