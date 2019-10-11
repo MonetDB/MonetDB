@@ -729,7 +729,6 @@ retryRead:
 			for (su = stk; su; su = su->up)
 				su->cmd = 0;
 			cntxt->itrace = 0;
-			cntxt->flags = 0;
 			mnstr_printf(out, "mdb>#EOD\n");
 			/* MDBstatus(0); */
 			cntxt->prompt = oldprompt;

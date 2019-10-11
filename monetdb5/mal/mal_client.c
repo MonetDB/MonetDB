@@ -245,7 +245,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->qtimeout = 0;
 	c->stimeout = 0;
 	c->itrace = 0;
-	c->flags = 0;
 	c->errbuf = 0;
 
 	prompt = PROMPT1;
