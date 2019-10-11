@@ -65,7 +65,6 @@ typedef struct CLIENT {
 	 * For program debugging we need information on the timer and memory
 	 * usage patterns.
 	 */
-	BUN	cnt;	/* bat count */
 
 	time_t      login;  
 	time_t      lastcmd;	/* set when input is received */
