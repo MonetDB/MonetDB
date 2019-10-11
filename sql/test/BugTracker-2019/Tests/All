@@ -38,5 +38,5 @@ HAVE_LIBPY?python-loader-string.Bug-6759
 select-char.Bug-6761
 grant-select-column.Bug-6765
 next-get-value-bulk.Bug-6766
-KNOWNFAIL?filter_json_null.Bug-6773
+filter_json_null.Bug-6773
 prod-decimals.Bug-6774
