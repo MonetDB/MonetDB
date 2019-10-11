@@ -72,6 +72,8 @@ select cast(sum(aa) * 100 / sum(sum(aa)) over (partition by bb) as bigint) from 
 
 select cast(prod(sum(aa)) * count(1 + aa) / avg(null) over () as bigint) from analytics; --error, nesting aggregation functions
 
+select avg(sum(aa) over ()) over () from analytics; --error, nesting window functions
+
 select rank() over (partition by case when aa > 5 then aa else aa + 5 end) from analytics;
 
 select rank() over (partition by sum(aa)) from analytics;

@@ -21,6 +21,7 @@
 #define sql_partitionby 64 //ORed
 #define sql_aggr 128 //ORed
 #define sql_farg 256 //ORed
+#define sql_window 512 //ORed
 
 #define is_sql_from(X)    ((X & sql_from) == sql_from)
 #define is_sql_where(X)   ((X & sql_where) == sql_where)
@@ -31,6 +32,7 @@
 #define is_sql_partitionby(X) ((X & sql_partitionby) == sql_partitionby)
 #define is_sql_aggr(X)    ((X & sql_aggr) == sql_aggr)
 #define is_sql_farg(X)    ((X & sql_farg) == sql_farg)
+#define is_sql_window(X)  ((X & sql_window) == sql_window)
 
 #define rel_groupby_gbe(m,r,e) rel_groupby(m, r, append(new_exp_list(m->sa), e))
 #define new_rel_list(sa) sa_list(sa)
