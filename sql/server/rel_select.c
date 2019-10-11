@@ -4060,11 +4060,10 @@ rel_aggr_intern(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, ch
 		if (uaname)
 			GDKfree(uaname);
 		return e;
-	} else if (is_sql_groupby(f) || (is_sql_partitionby(f) && groupby->op != op_groupby)) {
-		const char *clause = is_sql_groupby(f) ? "GROUP BY":"PARTITION BY";
+	} else if (is_sql_groupby(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
-		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in %s clause",
-							   uaname ? toUpperCopy(uaname, aname) : aname, aname, clause);
+		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause",
+							   uaname ? toUpperCopy(uaname, aname) : aname, aname);
 		if (uaname)
 			GDKfree(uaname);
 		return e;
@@ -5341,7 +5340,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	stack_clear_frame_visited_flag(sql); //clear visited flags before iterating
 
-	if(l->h->next->type == type_list) {
+	if (l->h->next->type == type_list) {
 		window_specification = l->h->next->data.lval;
 	} else if (l->h->next->type == type_string) {
 		const char* window_alias = l->h->next->data.sval;
@@ -5357,7 +5356,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	order_by_clause = window_specification->h->next->next->data.sym;
 	frame_clause = window_specification->h->next->next->next->data.sym;
 
-	if(window_ident && !get_window_clauses(sql, window_ident, &partition_by_clause, &order_by_clause, &frame_clause))
+	if (window_ident && !get_window_clauses(sql, window_ident, &partition_by_clause, &order_by_clause, &frame_clause))
 		return NULL;
 
 	frame_type = order_by_clause ? FRAME_RANGE : FRAME_ROWS;
@@ -5371,11 +5370,18 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	supports_frames = (window_function->token != SQL_RANK) || is_nth_value ||
 					  (strcmp(s->base.name, "sys") == 0 && ((strcmp(aname, "first_value") == 0) || strcmp(aname, "last_value") == 0));
 
-	if (is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_sql_orderby(f) || is_sql_partitionby(f)) {
+	if (is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
-		const char *clause = is_sql_where(f)?"WHERE":is_sql_groupby(f)?"GROUP BY":is_sql_having(f)?"HAVING":is_sql_orderby(f)?"ORDER BY":"PARTITION BY";
+		const char *clause = is_sql_where(f)?"WHERE":is_sql_groupby(f)?"GROUP BY":"HAVING";
 		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed in %s clause",
 						 uaname ? toUpperCopy(uaname, aname) : aname, aname, clause);
+		if (uaname)
+			GDKfree(uaname);
+		return NULL;
+	} else if (is_sql_window(f)) {
+		char *uaname = GDKmalloc(strlen(aname) + 1);
+		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window functions cannot be nested",
+						 uaname ? toUpperCopy(uaname, aname) : aname);
 		if (uaname)
 			GDKfree(uaname);
 		return NULL;
@@ -5393,7 +5399,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		reset_processed(r);
 		project_added = 1;
 	}
-	if (!is_sql_sel(f) || !r || r->op != op_project || is_processed(r))
+	if (!is_sql_sel(f) || !r || !is_project(r->op))
 		return sql_error(sql, 02, SQLSTATE(42000) "OVER: only possible within the selection");
 
 	/* outer project (*rel) r  r->l will be rewritten!
@@ -5403,7 +5409,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	 * op used to reset p
 	 */
 	p = r->l;
-	if(!p || (!is_joinop(p->op) && !p->exps->h)) { //no from clause, use a constant as the expression to project
+	if (!p || (!is_joinop(p->op) && !p->exps->h)) { //no from clause, use a constant as the expression to project
 		sql_exp *exp = exp_atom_lng(sql->sa, 0);
 		exp_label(sql->sa, exp, ++sql->label);
 		if (!p) {
@@ -5420,7 +5426,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	pp = p;
 
 	g = p;
-	while(g && !group) {
+	while (g && !group) {
 		if (g && g->op == op_groupby) {
 			group = 1;
 		} else if (g->l && !is_processed(g) && !is_base(g->op)) {
@@ -5431,14 +5437,14 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	}
 	/* Partition By */
 	if (partition_by_clause) {
-		gbe = rel_group_by(query, &pp, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, nf);
+		gbe = rel_group_by(query, &pp, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, nf | sql_window);
 		if (!gbe && !group) { /* try with implicit groupby */
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
 			p = pp = rel_project(sql->sa, p, sa_list(sql->sa));
 			reset_processed(p);
-			gbe = rel_group_by(query, &p, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, f);
+			gbe = rel_group_by(query, &p, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, f | sql_window);
 		}
 		if (!gbe)
 			return NULL;
@@ -5451,7 +5457,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			reset_processed(p);
 		}
 
-		for(n = gbe->h ; n ; n = n->next) {
+		for (n = gbe->h ; n ; n = n->next) {
 			sql_exp *en = n->data;
 
 			n->data = en = opt_groupby_add_exp(sql, p, group?g:pp, en);
@@ -5461,14 +5467,14 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	}
 	/* Order By */
 	if (order_by_clause) {
-		obe = rel_order_by(query, &pp, order_by_clause, nf);
+		obe = rel_order_by(query, &pp, order_by_clause, nf | sql_window);
 		if (!obe && !group && !gbe) { /* try with implicit groupby */
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
 			p = pp = rel_project(sql->sa, p, sa_list(sql->sa));
 			reset_processed(p);
-			obe = rel_order_by(query, &p, order_by_clause, f);
+			obe = rel_order_by(query, &p, order_by_clause, f | sql_window);
 		}
 		if (!obe)
 			return NULL;
@@ -5481,7 +5487,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			reset_processed(p);
 		}
 
-		for(n = obe->h ; n ; n = n->next) {
+		for (n = obe->h ; n ; n = n->next) {
 			sql_exp *oexp = n->data, *nexp;
 
 			if (is_sql_sel(f) && pp->op == op_project && !is_processed(pp) && !rel_find_exp(pp, oexp)) {
@@ -5529,7 +5535,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			 is_lead = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "lead") == 0);
 		int nfargs = 0;
 
-		if(!dnn || is_ntile) { //pass an input column for analytic functions that don't require it
+		if (!dnn || is_ntile) { //pass an input column for analytic functions that don't require it
 			sql_rel *lr = p;
 
 			if (!lr || !is_project(lr->op)) {
@@ -5544,11 +5550,11 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			append(fargs, in);
 			nfargs++;
 		}
-		if(dnn) {
+		if (dnn) {
 			for(dnode *nn = dnn->h ; nn ; nn = nn->next) {
 				is_last = 0;
 				exp_kind ek = {type_value, card_column, FALSE};
-				in = rel_value_exp2(query, &p, nn->data.sym, f, ek, &is_last);
+				in = rel_value_exp2(query, &p, nn->data.sym, f | sql_window, ek, &is_last);
 				if(!in)
 					return NULL;
 				if(is_ntile && nfargs == 1) { //ntile first argument null handling case
@@ -5600,14 +5606,14 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				 * all aggregations implemented in a window have 1 and only 1 argument only, so for now no further
 				 * symbol compilation is required
 				 */
-				in = rel_value_exp2(query, &p, n->next->data.sym, f, ek, &is_last);
+				in = rel_value_exp2(query, &p, n->next->data.sym, f | sql_window, ek, &is_last);
 				if (!in && !group && !obe && !gbe) { /* try with implicit groupby */
 					/* reset error */
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';
 					p = rel_project(sql->sa, lop, sa_list(sql->sa));
 					reset_processed(p);
-					in = rel_value_exp2(query, &p, n->next->data.sym, f, ek, &is_last);
+					in = rel_value_exp2(query, &p, n->next->data.sym, f | sql_window, ek, &is_last);
 				}
 				if(!in)
 					return NULL;
@@ -5684,7 +5690,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	}
 
 	/* Frame */
-	if(frame_clause) {
+	if (frame_clause) {
 		dnode *d = frame_clause->data.lval->h;
 		symbol *wstart = d->data.sym, *wend = d->next->data.sym, *rstart = wstart->data.lval->h->data.sym,
 			   *rend = wend->data.lval->h->data.sym;
@@ -5720,9 +5726,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			frame_type = FRAME_ALL; //special case, iterate the entire partition
 		}
 
-		if((fstart = calculate_window_bound(query, p, wstart->token, rstart, ie, frame_type, f)) == NULL)
+		if((fstart = calculate_window_bound(query, p, wstart->token, rstart, ie, frame_type, f | sql_window)) == NULL)
 			return NULL;
-		if((fend = calculate_window_bound(query, p, wend->token, rend, ie, frame_type, f)) == NULL)
+		if((fend = calculate_window_bound(query, p, wend->token, rend, ie, frame_type, f | sql_window)) == NULL)
 			return NULL;
 		if(generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, excl,
 									  wstart->token, wend->token) == NULL)
@@ -5758,7 +5764,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (!pe || !oe)
 		return NULL;
 
-	if(!supports_frames) {
+	if (!supports_frames) {
 		append(fargs, pe);
 		append(fargs, oe);
 	}
