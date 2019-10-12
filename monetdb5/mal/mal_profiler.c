@@ -37,7 +37,11 @@ static int eventcounter = 0;
  * each key:value pair or as a single line using ' '*/
 #define PRETTIFY	"\n"
 
-static int highwatermark = 5;	// conservative initialization
+/* When the MAL block contains a BARRIER block we may end up with tons
+ * of profiler events. To avoid this, we stop emitting the events
+ * when we reached the HIGHWATERMARK. Leaving a message in the log. */
+#define HIGHWATERMARK 5
+
 
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
 
@@ -50,10 +54,6 @@ struct rusage infoUsage;
 static struct rusage prevUsage;
 #endif
 
-static struct{
-	lng user, nice, system, idle, iowait;
-	double load;
-} corestat[256];
 
 
 /* the heartbeat process produces a ping event once every X milliseconds */
@@ -147,8 +147,11 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	 * they may appear when BARRIER blocks are executed
 	 * The default parameter should be sufficient for most practical cases.
 	*/
-	if( !start && pci->calls > highwatermark)
+	if( !start && pci->calls > HIGHWATERMARK){
+		if( pci->calls == 10000 || pci->calls == 100000 || pci->calls == 1000000 || pci->calls == 10000000)
+			fprintf(stderr, "#Profiler too many calls %d\n", pci->calls);
 		return;
+	}
 
 	/* make profile event tuple  */
 	lognew();
@@ -387,6 +390,15 @@ This information can be used to determine memory footprint and variable life tim
 	logadd("}\n"); // end marker
 	logjsonInternal(logbuffer);
 }
+
+/* the OS details on cpu load are read from /proc/stat
+ * We should use an OS define to react to the maximal cores
+ */
+
+static struct{
+	lng user, nice, system, idle, iowait;
+	double load;
+} corestat[256];
 
 static int
 getCPULoad(char cpuload[BUFSIZ]){
@@ -806,17 +818,6 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	MT_lock_unset(&mal_profileLock);
 	GDKfree(stmt);
-}
-
-int getprofilerlimit(void)
-{
-	return highwatermark;
-}
-
-void setprofilerlimit(int limit)
-{
-	// dont lock, it is advisary anyway
-	highwatermark = limit;
 }
 
 lng

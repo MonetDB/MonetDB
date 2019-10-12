@@ -160,21 +160,6 @@ CMDsetHeartbeat(void *res, int *ev)
 }
 
 str
-CMDgetprofilerlimit(int *res)
-{
-	*res = getprofilerlimit();
-	return MAL_SUCCEED;
-}
-
-str
-CMDsetprofilerlimit(void *res, int *ev)
-{
-	(void) res;
-	setprofilerlimit(*ev);
-	return MAL_SUCCEED;
-}
-
-str
 CMDgetDiskReads(lng *ret)
 {
 	*ret= getDiskReads();
