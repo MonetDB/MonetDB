@@ -30,9 +30,6 @@
 
 #include <string.h>
 
-static void cachedProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-static int sqlProfiling = FALSE;
 static str myname = 0;	// avoid tracing the profiler module
 static int eventcounter = 0;
 static str prettify = "\n"; /* or ' ' for single line json output */
@@ -134,9 +131,8 @@ EXAMPLE:
 }
 */
 static void
-renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
+renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
-	(void)usrname;
 	(void)cntxt;
 	char logbuffer[LOGLEN], *logbase;
 	size_t loglen;
@@ -146,7 +142,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	uint64_t microseconds = (uint64_t)startup_time.tv_sec*1000000 + (uint64_t)startup_time.tv_usec + (uint64_t)usec;
 
 	// ignore generation of events for instructions that are called too often
-	if(highwatermark && highwatermark + (start == 0) < pci->calls)
+	if( !start && pci->calls > highwatermark)
 		return;
 
 	/* make profile event tuple  */
@@ -501,19 +497,15 @@ profilerHeartbeatEvent(char *alter)
 }
 
 void
-profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
+profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
 	if (stk == NULL) return;
 	if (pci == NULL) return;
 	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
 		return;
 
-	if( sqlProfiling && !start ){
-		cachedProfilerEvent(cntxt, mb, stk, pci);
-	}
-
 	if( maleventstream) {
-		renderProfilerEvent(cntxt, mb, stk, pci, start, usrname);
+		renderProfilerEvent(cntxt, mb, stk, pci, start);
 		if ( start && pci->pc ==0)
 			profilerHeartbeatEvent("ping");
 		if ( !start && pci->token == ENDsymbol)
@@ -556,7 +548,7 @@ openProfilerStream(Client cntxt, stream *fd, int mode)
 		for(j = 0; j <THREADS; j++)
 		if( workingset[j].mb)
 			/* show the event */
-			profilerEvent(cntxt, workingset[j].mb, workingset[j].stk, workingset[j].pci, 1, workingset[j].cntxt->username);
+			profilerEvent(workingset[j].cntxt, workingset[j].mb, workingset[j].stk, workingset[j].pci, 1);
 		MT_lock_unset(&mal_delayLock);
 	}
 	return MAL_SUCCEED;
@@ -595,22 +587,23 @@ startProfiler(Client cntxt)
 	MT_lock_unset(&mal_profileLock);
 	logjsonInternal(monet_characteristics);
 	// reset the trace table
-	clearTrace();
+	clearTrace(cntxt);
 
 	return MAL_SUCCEED;
 }
 
-/* SQL queries can be traced without obstructing the stream */
-/* A hard limit is currently imposed */
+/* The trace information can be concurrently written to a file.
+ * A hard limit is currently imposed */
 #define MAXTRACEFILES 50
 static int offlinestore = 0;
 static int tracecounter = 0;
 str
-startTrace(str path)
+startTrace(Client cntxt, str path)
 {
 	int len;
 	char buf[FILENAME_MAX];
 
+	(void) cntxt;
 	if (path && maleventstream == NULL){
 		// create a file to keep the events, unless we
 		// already have a profiler stream
@@ -639,14 +632,15 @@ startTrace(str path)
 		MT_lock_unset(&mal_profileLock );
 	}
 	malProfileMode = 1;
-	sqlProfiling = TRUE;
-	clearTrace();
+	cntxt->sqlprofiler = TRUE;
+	clearTrace(cntxt);
 	return MAL_SUCCEED;
 }
 
 str
-stopTrace(str path)
+stopTrace(Client cntxt, str path)
 {
+	(void) cntxt;
 	MT_lock_set(&mal_profileLock );
 	if( path &&  offlinestore){
 		(void) close_stream(maleventstream);
@@ -656,7 +650,7 @@ stopTrace(str path)
 	MT_lock_unset(&mal_profileLock );
 
 	malProfileMode = maleventstream != NULL;
-	sqlProfiling = FALSE;
+	cntxt->sqlprofiler = FALSE;
 	return MAL_SUCCEED;
 }
 
@@ -670,20 +664,6 @@ stopProfiler(Client cntxt)
 		closeProfilerStream(cntxt);
 	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
-}
-
-/*
- * The resetProfiler is called when the owner of the event stream
- * leaves the scene. (Unclear if parallelism may cause errors)
- */
-void
-MPresetProfiler(stream *fdout)
-{
-	if (fdout != maleventstream)
-		return;
-	MT_lock_set(&mal_profileLock);
-	maleventstream = 0;
-	MT_lock_unset(&mal_profileLock);
 }
 
 /*
@@ -863,8 +843,9 @@ initTrace(void)
 }
 
 void
-clearTrace(void)
+clearTrace(Client cntxt)
 {
+	(void) cntxt; 
 	MT_lock_set(&mal_profileLock);
 	if (TRACE_init == 0) {
 		MT_lock_unset(&mal_profileLock);
@@ -879,9 +860,9 @@ clearTrace(void)
 }
 
 str
-cleanupTraces(void)
+cleanupTraces(Client cntxt)
 {
-	clearTrace();
+	clearTrace(cntxt);
 	return MAL_SUCCEED;
 }
 
@@ -949,7 +930,7 @@ cachedProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	errors += BUNappend(TRACE_id_stmt, c, false) != GDK_SUCCEED;
 	if (errors > 0) {
 		/* stop profiling if an error occurred */
-		sqlProfiling = FALSE;
+		cntxt->sqlprofiler = FALSE;
 	} else {
 		TRACE_event++;
 		eventcounter++;

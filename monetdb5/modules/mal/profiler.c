@@ -75,35 +75,43 @@ CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return stopProfiler(cntxt);
 }
 
-// called by the SQL front end.
+// called by the SQL front end optional a directory to keep the traces.
 str
-CMDstartTrace(void *res)
+CMDstartTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;
-	return startTrace(0);
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return startTrace(cntxt, 0);
 }
 
 // if you haven't started the stethoscope
 // then the output is saved in a file
 str
-CMDstartTracePath(void *res, str *path)
+CMDstartTracePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;
-	return startTrace(*path);
+	str path = *getArgReference_str(stk,pci,1);
+
+	(void) cntxt;
+	(void) mb;
+	return startTrace(cntxt, path);
 }
 
 str
-CMDstopTrace(void *res)
+CMDstopTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;
-	return stopTrace(0);
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return stopTrace(cntxt, 0);
 }
 
 str
-CMDstopTracePath(void *res, str *path)
+CMDstopTracePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;
-	return stopTrace(*path);
+	str path = *getArgReference_str(stk,pci,1);
+	(void) mb;
+	return stopTrace(cntxt, path);
 }
 
 str
@@ -114,35 +122,30 @@ CMDnoopProfiler(void *res)
 }
 
 str
-CMDcleanupTraces(void *res)
+CMDcleanupTraces(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;		/* fool compiler */
-	cleanupTraces();
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	cleanupTraces(cntxt);
 	return MAL_SUCCEED;
 }
 
-#if 0
 str
-CMDclearTrace(void *res)
+CMDgetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;		/* fool compiler */
-	clearTrace();
-	return MAL_SUCCEED;
-}
-#endif	/* unused */
-
-str
-CMDgetTrace(bat *res, str *ev)
-{
+	str path = *getArgReference_str(stk,pci,1);
+	bat *res =  getArgReference_bat(stk,pci,0);
 	BAT *bn;
 
-	(void) res;		/* fool compiler */
-	bn = getTrace(*ev);
+	(void) cntxt;		/* fool compiler */
+	(void) mb;
+	bn = getTrace(path);
 	if (bn) {
 		BBPkeepref(*res = bn->batCacheid);
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "getTrace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING  "%s",*ev);
+	throw(MAL, "getTrace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING  "%s", path);
 }
 /*
  * Tracing an active system.

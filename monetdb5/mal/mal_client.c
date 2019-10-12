@@ -264,6 +264,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->actions = 0;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
+	c->sqlprofiler = 0;
+	c->malprofiler = 0;
 	c->wlc_kind = 0;
 	c->wlc = NULL;
 #ifndef HAVE_EMBEDDED /* no authentication in embedded mode */
@@ -440,6 +442,8 @@ MCfreeClient(Client c)
 	}
 	if( c->wlc)
 		freeMalBlk(c->wlc);
+	c->sqlprofiler = 0;
+	c->malprofiler = 0;
 	c->wlc_kind = 0;
 	c->wlc = NULL;
 	MT_sema_destroy(&c->s);

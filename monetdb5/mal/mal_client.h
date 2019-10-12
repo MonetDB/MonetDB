@@ -62,7 +62,7 @@ typedef struct CLIENT {
 	char    itrace;    /* trace execution using interactive mdb */
 						/* if set to 'S' it will put the process to sleep */
 	/*
-	 * For program debugging we need information on the timer and memory
+	 * For program debugging and performance trace we need information on the timer and memory
 	 * usage patterns.
 	 */
 
@@ -71,6 +71,9 @@ typedef struct CLIENT {
 	lng 		session;	/* usec since start of server */
 	lng 	    qtimeout;	/* query abort after x usec*/
 	lng	        stimeout;	/* session abort after x usec */
+
+	bit			malprofiler;	/* control MAL performance monitoring */
+	bit			sqlprofiler;	/* control off-line sql performance monitoring */
 	/*
 	 * Communication channels for the interconnect are stored here.
 	 * It is perfectly legal to have a client without input stream.
