@@ -66,6 +66,14 @@ MAPI  = (monetdb) /var/tmp/mtest-6189/.s.monetdb.30805
 QUERY = select case when "aa" < 1 then "aa" else "aa" * 4 end from "groupings" group by case when "aa" > 1 then "aa" else "aa" * 4 end; --error
 ERROR = !SELECT: cannot use non GROUP BY column 'aa' in query results without an aggregate function
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30981/.s.monetdb.30479
+QUERY = select sum("aa") + sum("bb") from "groupings" order by "aa" between "bb" and NULL; --error
+ERROR = !SELECT: cannot use non GROUP BY column 'bb' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-315/.s.monetdb.35873
+QUERY = select 1 from "groupings" group by "aa" + "bb" order by "aa"; --error
+ERROR = !SELECT: cannot use non GROUP BY column 'aa' in query results without an aggregate function
+CODE  = 42000
 
 # 14:21:56 >  
 # 14:21:56 >  "Done."
