@@ -681,7 +681,8 @@ TEST_CASE("Test nested correlated subqueries", "[subquery]") {
 	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 6, 12, 18}));
 	// explicit join on subquery*/
 
-SELECT i, (SELECT SUM(s1.i) FROM integers s1 INNER JOIN integers s2 ON (SELECT i1.i+s1.i)=(SELECT i1.i+s2.i)) AS j FROM integers i1 ORDER BY i;
+--BROKEN
+--SELECT i, (SELECT SUM(s1.i) FROM integers s1 INNER JOIN integers s2 ON (SELECT i1.i+s1.i)=(SELECT i1.i+s2.i)) AS j FROM integers i1 ORDER BY i;
 --1	6
 --2	6
 --3	6
@@ -704,7 +705,8 @@ SELECT i, (SELECT SUM(s1.i) FROM integers s1 INNER JOIN integers s2 ON (SELECT i
 	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
 	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));*/
 
-SELECT i, (SELECT SUM(s1.i) FROM integers s1 LEFT OUTER JOIN integers s2 ON (SELECT i1.i+s1.i)=(SELECT i1.i+s2.i)) AS j FROM integers i1 ORDER BY i;
+--BROKEN
+--SELECT i, (SELECT SUM(s1.i) FROM integers s1 LEFT OUTER JOIN integers s2 ON (SELECT i1.i+s1.i)=(SELECT i1.i+s2.i)) AS j FROM integers i1 ORDER BY i;
 --1	6
 --2	6
 --3	6

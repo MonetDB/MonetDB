@@ -1024,7 +1024,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				} else if (!rel_val && r) {
 					query_push_outer(query, r);
 					rel_val = rel_subquery(query, NULL, a, ek);
-					query_pop_outer(query);
+					r = query_pop_outer(query);
 					if (/* DISABLES CODE */ (0) && r) {
 						list *val_exps = rel_projections(sql, r->r, NULL, 0, 1);
 

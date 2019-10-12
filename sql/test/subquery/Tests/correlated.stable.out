@@ -214,6 +214,12 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 % bigint,	bigint # type
 % 1,	1 # length
 [ 6,	NULL	]
+#SELECT CAST((SELECT SUM(i) FROM integers WHERE i>SUM(i1.i)) AS BIGINT) FROM integers i1; -- NULL
+% . # table_name
+% L # name
+% bigint # type
+% 1 # length
+[ NULL  ]
 #SELECT i, (SELECT MIN(i) FROM integers WHERE i>i1.i) FROM integers i1 ORDER BY i;
 % sys.i1,	.L2 # table_name
 % i,	L2 # name
