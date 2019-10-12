@@ -4584,14 +4584,14 @@ str
 dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	BAT *t[13];
+	BAT *t[2];
 	bat id;
 
 	(void) cntxt;
 	(void) mb;
-	if (TRACEtable(t) != 13)
+	if (TRACEtable(cntxt, t) != 2)
 		throw(SQL, "sql.dump_trace", SQLSTATE(3F000) "Profiler not started");
-	for(i=0; i< 13; i++)
+	for(i=0; i< 2; i++)
 	if( t[i]){
 		id = t[i]->batCacheid;
 		*getArgReference_bat(stk, pci, i) = id;

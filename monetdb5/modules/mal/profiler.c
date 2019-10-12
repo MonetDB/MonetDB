@@ -140,7 +140,7 @@ CMDgetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;		/* fool compiler */
 	(void) mb;
-	bn = getTrace(path);
+	bn = getTrace(cntxt, path);
 	if (bn) {
 		BBPkeepref(*res = bn->batCacheid);
 		return MAL_SUCCEED;

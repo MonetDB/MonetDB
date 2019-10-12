@@ -27,7 +27,7 @@ mal_export str openProfilerStream(Client cntxt, stream *fd, int mode);
 mal_export str closeProfilerStream(Client cntxt);
 
 mal_export void profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start);
-mal_export void cachedProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export void sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 mal_export str startProfiler(Client cntxt);
 mal_export str stopProfiler(Client cntxt);
@@ -42,10 +42,9 @@ mal_export void setprofilerlimit(int limit);
 mal_export void MPresetProfiler(stream *fdout);
 
 mal_export void clearTrace(Client cntxt);
-mal_export int TRACEtable(BAT **r);
-mal_export int initTrace(void);
+mal_export int TRACEtable(Client cntxt, BAT **r);
 mal_export str cleanupTraces(Client cntxt);
-mal_export BAT *getTrace(const char *ev);
+mal_export BAT *getTrace(Client cntxt, const char *nme);
 
 
 mal_export lng getDiskSpace(void);

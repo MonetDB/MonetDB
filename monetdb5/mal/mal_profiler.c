@@ -36,7 +36,6 @@ static str prettify = "\n"; /* or ' ' for single line json output */
 
 static int highwatermark = 5;	// conservative initialization
 
-static int TRACE_init = 0;
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
 
 static struct timeval startup_time;
@@ -667,179 +666,81 @@ stopProfiler(Client cntxt)
 }
 
 /*
- * Offline tracing
- * The events being captured are stored in separate BATs.
+ * SQL profile traces
+ * The events being captured are stored in client specific BATs.
  * They are made persistent to accumate information over
  * multiple sessions. This means it has to be explicitly reset
  * to avoid disc overflow using profiler.reset().
  *
- * All properties identified below are maintained, because this allows
- * for easy integration with SQL.
+ * The information returned for the trace is purposely limited
+ * to the ticks and the final MAL instruction.
+ * For more detailed analysis, the stethoscope should be used.
  */
-static int TRACE_event = 0;
-static BAT *TRACE_id_event = 0;
-static BAT *TRACE_id_time = 0;
-static BAT *TRACE_id_pc = 0;
-static BAT *TRACE_id_thread = 0;
-static BAT *TRACE_id_ticks = 0;
-static BAT *TRACE_id_inblock = 0;
-static BAT *TRACE_id_oublock = 0;
-static BAT *TRACE_id_rssMB = 0;
-static BAT *TRACE_id_tmpspace = 0;
-static BAT *TRACE_id_minflt = 0;
-static BAT *TRACE_id_majflt = 0;
-static BAT *TRACE_id_nvcsw = 0;
-static BAT *TRACE_id_stmt = 0;
+
+static void
+_cleanupProfiler(Client cntxt)
+{
+	BBPunfix(cntxt->profticks->batCacheid);
+	BBPunfix(cntxt->profstmt->batCacheid);
+	cntxt->profticks = cntxt->profstmt = NULL;
+}
+
+static BAT *
+TRACEcreate(int tt)
+{
+	BAT *b;
+
+	b = COLnew(0, tt, 1 << 10, TRANSIENT);
+	if (b == NULL)
+		return NULL;
+	return b;
+}
+
+static void
+initTrace(Client cntxt)
+{
+	MT_lock_set(&mal_profileLock);
+	if (cntxt->profticks) {
+		MT_lock_unset(&mal_profileLock);
+		return;       /* already initialized */
+	}
+	cntxt->profticks = TRACEcreate( TYPE_lng);
+	cntxt->profstmt = TRACEcreate( TYPE_str);
+	if ( cntxt->profticks == NULL || cntxt->profstmt == NULL )
+		_cleanupProfiler(cntxt);
+	MT_lock_unset(&mal_profileLock);
+}
 
 int
-TRACEtable(BAT **r)
+TRACEtable(Client cntxt, BAT **r)
 {
-	initTrace();
+	initTrace(cntxt);
 	MT_lock_set(&mal_profileLock);
-	if (TRACE_init == 0) {
+	if (cntxt->profticks == NULL) {
 		MT_lock_unset(&mal_profileLock);
 		return -1;       /* not initialized */
 	}
-	r[0] = COLcopy(TRACE_id_event, TRACE_id_event->ttype, false, TRANSIENT);
-	r[1] = COLcopy(TRACE_id_time, TRACE_id_time->ttype, false, TRANSIENT);
-	r[2] = COLcopy(TRACE_id_pc, TRACE_id_pc->ttype, false, TRANSIENT);
-	r[3] = COLcopy(TRACE_id_thread, TRACE_id_thread->ttype, false, TRANSIENT);
-	r[4] = COLcopy(TRACE_id_ticks, TRACE_id_ticks->ttype, false, TRANSIENT);
-	r[5] = COLcopy(TRACE_id_rssMB, TRACE_id_rssMB->ttype, false, TRANSIENT);
-	r[6] = COLcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->ttype, false, TRANSIENT);
-	r[7] = COLcopy(TRACE_id_inblock, TRACE_id_inblock->ttype, false, TRANSIENT);
-	r[8] = COLcopy(TRACE_id_oublock, TRACE_id_oublock->ttype, false, TRANSIENT);
-	r[9] = COLcopy(TRACE_id_minflt, TRACE_id_minflt->ttype, false, TRANSIENT);
-	r[10] = COLcopy(TRACE_id_majflt, TRACE_id_majflt->ttype, false, TRANSIENT);
-	r[11] = COLcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->ttype, false, TRANSIENT);
-	r[12] = COLcopy(TRACE_id_stmt, TRACE_id_stmt->ttype, false, TRANSIENT);
+	r[0] = COLcopy(cntxt->profticks, cntxt->profticks->ttype, false, TRANSIENT);
+	r[1] = COLcopy(cntxt->profstmt, cntxt->profstmt->ttype, false, TRANSIENT);
 	MT_lock_unset(&mal_profileLock);
-	return 13;
+	return 2;
 }
 
 BAT *
-getTrace(const char *nme)
+getTrace(Client cntxt, const char *nme)
 {
 	BAT *bn = NULL;
 
 	MT_lock_set(&mal_profileLock);
-	if (TRACE_init) {
-		if (strcmp(nme, "event") == 0)
-			bn = COLcopy(TRACE_id_event, TRACE_id_event->ttype, false, TRANSIENT);
-		else if (strcmp(nme, "time") == 0)
-			bn = COLcopy(TRACE_id_time, TRACE_id_time->ttype, false, TRANSIENT);
-		else if (strcmp(nme, "pc") == 0)
-			bn = COLcopy(TRACE_id_pc, TRACE_id_pc->ttype, false, TRANSIENT);
-		else if (strcmp(nme, "thread") == 0)
-			bn = COLcopy(TRACE_id_thread, TRACE_id_thread->ttype, false, TRANSIENT);
-		else if (strcmp(nme, "usec") == 0)
-			bn = COLcopy(TRACE_id_ticks, TRACE_id_ticks->ttype, false, TRANSIENT);
-		else if (strcmp(nme, "rssMB") == 0)
-			bn = COLcopy(TRACE_id_rssMB, TRACE_id_rssMB->ttype, false, TRANSIENT);
-		else if (strcmp(nme, "tmpspace") == 0)
-			bn = COLcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->ttype, false, TRANSIENT);
-		else if (strcmp(nme, "reads") == 0)
-			bn = COLcopy(TRACE_id_inblock, TRACE_id_inblock->ttype, false, TRANSIENT);
-		else if (strcmp(nme, "writes") == 0)
-			bn = COLcopy(TRACE_id_oublock, TRACE_id_oublock->ttype, false, TRANSIENT);
-		else if (strcmp(nme, "minflt") == 0)
-			bn = COLcopy(TRACE_id_minflt, TRACE_id_minflt->ttype, false, TRANSIENT);
-		else if (strcmp(nme, "majflt") == 0)
-			bn = COLcopy(TRACE_id_majflt, TRACE_id_majflt->ttype, false, TRANSIENT);
-		else if (strcmp(nme, "nvcsw") == 0)
-			bn = COLcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->ttype, false, TRANSIENT);
-		else if (strcmp(nme, "stmt") == 0)
-			bn = COLcopy(TRACE_id_stmt, TRACE_id_stmt->ttype, false, TRANSIENT);
+	if (cntxt->profticks) {
+		if (strcmp(nme, "usec") == 0){
+			bn = COLcopy(cntxt->profticks, cntxt->profticks->ttype, false, TRANSIENT);
+		} else if (strcmp(nme, "stmt") == 0){
+			bn = COLcopy(cntxt->profstmt, cntxt->profstmt->ttype, false, TRANSIENT);
+		}
 	}
 	MT_lock_unset(&mal_profileLock);
 	return bn;
-}
-
-static BAT *
-TRACEcreate(const char *hnme, const char *tnme, int tt)
-{
-	BAT *b;
-	char buf[BUFSIZ];
-
-	snprintf(buf, BUFSIZ, "trace_%s_%s", hnme, tnme);
-
-	b = COLnew(0, tt, 1 << 16, TRANSIENT);
-	if (b == NULL)
-		return NULL;
-	if (BBPrename(b->batCacheid, buf) != 0) {
-		BBPreclaim(b);
-		return NULL;
-	}
-	return b;
-}
-
-
-#define CLEANUPprofile(X)  if (X) { BBPunfix((X)->batCacheid); } (X) = NULL;
-
-static void
-_cleanupProfiler(void)
-{
-	CLEANUPprofile(TRACE_id_event);
-	CLEANUPprofile(TRACE_id_time);
-	CLEANUPprofile(TRACE_id_pc);
-	CLEANUPprofile(TRACE_id_thread);
-	CLEANUPprofile(TRACE_id_ticks);
-	CLEANUPprofile(TRACE_id_rssMB);
-	CLEANUPprofile(TRACE_id_tmpspace);
-	CLEANUPprofile(TRACE_id_inblock);
-	CLEANUPprofile(TRACE_id_oublock);
-	CLEANUPprofile(TRACE_id_minflt);
-	CLEANUPprofile(TRACE_id_majflt);
-	CLEANUPprofile(TRACE_id_nvcsw);
-	CLEANUPprofile(TRACE_id_stmt);
-	TRACE_init = 0;
-}
-
-int
-initTrace(void)
-{
-	int ret = -1;
-
-	MT_lock_set(&mal_profileLock);
-	if (TRACE_init) {
-		MT_lock_unset(&mal_profileLock);
-		return 0;       /* already initialized */
-	}
-	TRACE_id_event = TRACEcreate("id", "event", TYPE_int);
-	TRACE_id_time = TRACEcreate("id", "time", TYPE_str);
-	// TODO split pc into its components fcn,pc,tag
-	TRACE_id_pc = TRACEcreate("id", "pc", TYPE_str);
-	TRACE_id_thread = TRACEcreate("id", "thread", TYPE_int);
-	TRACE_id_ticks = TRACEcreate("id", "usec", TYPE_lng);
-	TRACE_id_rssMB = TRACEcreate("id", "rssMB", TYPE_lng);
-	// rename to size
-	TRACE_id_tmpspace = TRACEcreate("id", "tmpspace", TYPE_lng);
-	TRACE_id_inblock = TRACEcreate("id", "read", TYPE_lng);
-	TRACE_id_oublock = TRACEcreate("id", "write", TYPE_lng);
-	TRACE_id_minflt = TRACEcreate("id", "minflt", TYPE_lng);
-	TRACE_id_majflt = TRACEcreate("id", "majflt", TYPE_lng);
-	TRACE_id_nvcsw = TRACEcreate("id", "nvcsw", TYPE_lng);
-	TRACE_id_stmt = TRACEcreate("id", "stmt", TYPE_str);
-	if (TRACE_id_event == NULL ||
-		TRACE_id_time == NULL ||
-		TRACE_id_ticks == NULL ||
-		TRACE_id_pc == NULL ||
-		TRACE_id_stmt == NULL ||
-		TRACE_id_rssMB == NULL ||
-		TRACE_id_tmpspace == NULL ||
-		TRACE_id_inblock == NULL ||
-		TRACE_id_oublock == NULL ||
-		TRACE_id_minflt == NULL ||
-		TRACE_id_majflt == NULL ||
-		TRACE_id_nvcsw == NULL ||
-		TRACE_id_thread == NULL
-	)
-		_cleanupProfiler();
-	else
-		TRACE_init = 1;
-	ret = TRACE_init;
-	MT_lock_unset(&mal_profileLock);
-	return ret;
 }
 
 void
@@ -847,16 +748,15 @@ clearTrace(Client cntxt)
 {
 	(void) cntxt; 
 	MT_lock_set(&mal_profileLock);
-	if (TRACE_init == 0) {
+	if (cntxt->profticks == NULL) {
 		MT_lock_unset(&mal_profileLock);
-		initTrace();
+		initTrace(cntxt);
 		return;     /* not initialized */
 	}
 	/* drop all trace tables */
-	_cleanupProfiler();
-	TRACE_init = 0;
+	_cleanupProfiler(cntxt);
 	MT_lock_unset(&mal_profileLock);
-	initTrace();
+	initTrace(cntxt);
 }
 
 str
@@ -867,29 +767,13 @@ cleanupTraces(Client cntxt)
 }
 
 void
-cachedProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	char buf[BUFSIZ]= {0};
-	int tid = (int)THRgettid();
-	lng v1 = 0, v2= 0, v3=0, v4=0, v5=0;
 	str stmt, c;
-	lng clock;
-	lng rssMB = MT_getrss()/1024/1024;
-	lng tmpspace = 0;
 	int errors = 0;
 
-	(void) cntxt;
-	clock = GDKusec();
-#ifdef HAVE_SYS_RESOURCE_H
-	getrusage(RUSAGE_SELF, &infoUsage);
-#endif
-	if (TRACE_init == 0)
+	if (cntxt->profticks == NULL)
 		return;
-
-	/* update the Trace tables */
-	snprintf(buf, BUFSIZ, "%s.%s[%d]"OIDFMT,
-			 getModuleId(getInstrPtr(mb, 0)),
-			 getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci), stk->tag);
 
 	/* generate actual call statement */
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
@@ -898,43 +782,19 @@ cachedProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while (c && *c && (isspace((unsigned char)*c) || *c == '!'))
 		c++;
 
-#ifdef HAVE_SYS_RESOURCE_H
-	getrusage(RUSAGE_SELF, &infoUsage);
-	v1= infoUsage.ru_inblock - prevUsage.ru_inblock;
-	v2= infoUsage.ru_oublock - prevUsage.ru_oublock;
-	v3= infoUsage.ru_majflt - prevUsage.ru_majflt;
-	v4= infoUsage.ru_nswap - prevUsage.ru_nswap;
-	v5= infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw;
-	prevUsage = infoUsage;
-#endif
-
 	// keep it a short transaction
 	MT_lock_set(&mal_profileLock);
- 	if (TRACE_init == 0) {
+ 	if (cntxt->profticks == NULL) {
 		MT_lock_unset(&mal_profileLock);
 		return;
 	}
-	errors += BUNappend(TRACE_id_event, &TRACE_event, false) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_pc, buf, false) != GDK_SUCCEED;
-	snprintf(buf, sizeof(buf), LLFMT ".%06ld", clock / 1000000, (long) (clock % 1000000));
-	errors += BUNappend(TRACE_id_time, buf, false) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_thread, &tid, false) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_ticks, &pci->ticks, false) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_rssMB, &rssMB, false) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_tmpspace, &tmpspace, false) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_inblock, &v1, false) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_oublock, &v2, false) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_minflt, &v3, false) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_majflt, &v4, false) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_nvcsw, &v5, false) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_stmt, c, false) != GDK_SUCCEED;
+	errors += BUNappend(cntxt->profticks, &pci->ticks, false) != GDK_SUCCEED;
+	errors += BUNappend(cntxt->profstmt, c, false) != GDK_SUCCEED;
 	if (errors > 0) {
 		/* stop profiling if an error occurred */
 		cntxt->sqlprofiler = FALSE;
-	} else {
-		TRACE_event++;
-		eventcounter++;
-	}
+	} 
+	
 	MT_lock_unset(&mal_profileLock);
 	GDKfree(stmt);
 }

@@ -74,6 +74,8 @@ typedef struct CLIENT {
 
 	bit			malprofiler;	/* control MAL performance monitoring */
 	bit			sqlprofiler;	/* control off-line sql performance monitoring */
+	BAT *profticks;			/* The representation for the SQL TRACE */
+	BAT *profstmt;;
 	/*
 	 * Communication channels for the interconnect are stored here.
 	 * It is perfectly legal to have a client without input stream.

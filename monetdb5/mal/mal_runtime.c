@@ -224,7 +224,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	if(malProfileMode > 0 ){
 		profilerEvent(cntxt, mb, stk, pci, FALSE);
 		if( cntxt->sqlprofiler )
-			cachedProfilerEvent(cntxt, mb, stk, pci);
+			sqlProfilerEvent(cntxt, mb, stk, pci);
 	}
 	if( malProfileMode < 0){
 		/* delay profiling until you encounter start of MAL function */
