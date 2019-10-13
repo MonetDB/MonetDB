@@ -79,7 +79,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	str msg = MAL_SUCCEED;
 	int k;
 
-	if((msg = startTrace(cntxt, "sql_traces")) != MAL_SUCCEED)
+	if((msg = startTrace(cntxt)) != MAL_SUCCEED)
 		return msg;
 	clearTrace(cntxt);
 
@@ -89,7 +89,6 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	mb->stop=k;
 
 	q= newStmt(mb, profilerRef, stoptraceRef);
-	q= pushStr(mb,q,"sql_traces");
 
 	/* cook a new resultSet instruction */
 	resultset = newInstruction(mb,sqlRef, resultSetRef);
@@ -382,7 +381,7 @@ SQLrun(Client c, backend *be, mvc *m)
 		if( m->emod & mod_trace){
 			if((msg = SQLsetTrace(c,mb)) == MAL_SUCCEED) {
 				msg = runMAL(c, mb, 0, 0);
-				stopTrace(c, 0);
+				stopTrace(c);
 			}
 		} else {
 			msg = runMAL(c, mb, 0, 0);

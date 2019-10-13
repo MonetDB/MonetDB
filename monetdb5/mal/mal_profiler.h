@@ -23,7 +23,7 @@ typedef struct rusage Rusage;
 mal_export int malProfileMode;
 
 mal_export void initProfiler(void);
-mal_export str openProfilerStream(Client cntxt, stream *fd, int mode);
+mal_export str openProfilerStream(Client cntxt, int mode);
 mal_export str closeProfilerStream(Client cntxt);
 
 mal_export void profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start);
@@ -31,8 +31,8 @@ mal_export void sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 
 mal_export str startProfiler(Client cntxt);
 mal_export str stopProfiler(Client cntxt);
-mal_export str startTrace(Client cntxt, str path);
-mal_export str stopTrace(Client cntxt, str path);
+mal_export str startTrace(Client cntxt);
+mal_export str stopTrace(Client cntxt);
 mal_export void setHeartbeat(int delay);
 mal_export void initHeartbeat(void);
 mal_export void profilerHeartbeatEvent(char *alter);

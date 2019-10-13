@@ -232,7 +232,6 @@ usageStethoscope(void)
     fprintf(stderr, "  -h | --host=<hostname>\n");
     fprintf(stderr, "  -c | --convert=<old formated file>\n");
     fprintf(stderr, "  -j | --json\n");
-    fprintf(stderr, "  -y | --pretty (implies --json)\n");
     fprintf(stderr, "  -o | --output=<file>\n");
     fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
     fprintf(stderr, "  -D | --debug\n");
@@ -347,11 +346,7 @@ main(int argc, char **argv)
 			break;
 		case 'j':
 			json = 1;
-			stream_mode = 3;
-			break;
-		case 'y':
 			stream_mode = 1;
-			json = 1;
 			break;
 		case 'o':
 			filename = strdup(optarg);

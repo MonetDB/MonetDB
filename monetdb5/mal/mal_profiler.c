@@ -17,6 +17,7 @@
 #include "monetdb_config.h"
 #include "mutils.h"         /* mercurial_revision */
 #include "msabaoth.h"		/* msab_getUUID */
+#include "mal_authorize.h"
 #include "mal_function.h"
 #include "mal_listing.h"
 #include "mal_profiler.h"
@@ -31,7 +32,6 @@
 #include <string.h>
 
 static str myname = 0;	// avoid tracing the profiler module
-static int eventcounter = 0;
 
 /* The JSON rendering can be either using '\n' separators between
  * each key:value pair or as a single line using ' '*/
@@ -44,6 +44,7 @@ static int eventcounter = 0;
 
 
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
+static Client malprofileruser;
 
 static struct timeval startup_time;
 
@@ -53,10 +54,6 @@ static ATOMIC_TYPE hbdelay = ATOMIC_VAR_INIT(0);
 struct rusage infoUsage;
 static struct rusage prevUsage;
 #endif
-
-
-
-/* the heartbeat process produces a ping event once every X milliseconds */
 
 #define LOGLEN 8192
 #define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
@@ -79,7 +76,6 @@ static struct rusage prevUsage;
 static void logjsonInternal(char *logbuffer)
 {
 	size_t len;
-
 	len = strlen(logbuffer);
 
 	MT_lock_set(&mal_profileLock);
@@ -140,8 +136,8 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	size_t loglen;
 	str stmt, c;
 	str stmtq;
-	lng usec= GDKusec();
-	uint64_t microseconds = (uint64_t)startup_time.tv_sec*1000000 + (uint64_t)startup_time.tv_usec + (uint64_t)usec;
+	lng usec;
+	uint64_t microseconds;
 
 	/* ignore generation of events for instructions that are called too often
 	 * they may appear when BARRIER blocks are executed
@@ -153,6 +149,14 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 		return;
 	}
 
+/* The stream of events can be complete read by the DBA, 
+ * all other users can only see events assigned to their account
+ */
+	if( malprofileruser->user != MAL_ADMIN && malprofileruser->user != cntxt->user)
+		return;
+
+	usec= GDKusec();
+	microseconds = (uint64_t)startup_time.tv_sec*1000000 + (uint64_t)startup_time.tv_usec + (uint64_t)usec;
 	/* make profile event tuple  */
 	lognew();
 	logadd("{"PRETTIFY); // fill in later with the event counter
@@ -473,7 +477,7 @@ profilerHeartbeatEvent(char *alter)
 	lng usec = GDKusec();
 	uint64_t microseconds = (uint64_t)startup_time.tv_sec*1000000 + (uint64_t)startup_time.tv_usec + (uint64_t)usec;
 
-	if (ATOMIC_GET(&hbdelay) == 0 || maleventstream  == NULL)
+	if (ATOMIC_GET(&hbdelay) == 0 || malprofileruser  == NULL)
 		return;
 
 	/* get CPU load on beat boundaries only */
@@ -531,16 +535,12 @@ profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start
 	}
 }
 
-/* The first scheme dumps the events
- * on a stream (and in the pool)
- * The mode encodes two flags:
- * - showing all running instructions
- * - single line json
+/* The first scheme dumps the events on a stream (and in the pool)
  */
 #define PROFSHOWRUNNING	1
 #define PROFSINGLELINE 2
 str
-openProfilerStream(Client cntxt, stream *fd, int mode)
+openProfilerStream(Client cntxt, int mode)
 {
 	int j;
 
@@ -550,13 +550,18 @@ openProfilerStream(Client cntxt, stream *fd, int mode)
 #endif
 	if (myname == 0){
 		myname = putName("profiler");
-		eventcounter = 0;
 		logjsonInternal(monet_characteristics);
 	}
-	if( maleventstream)
-		closeProfilerStream(cntxt);
+	if( maleventstream){
+		/* The DBA can always grab the stream, others have to wait */
+		if ( cntxt->user == MAL_ADMIN)
+			closeProfilerStream(cntxt);
+		else
+			throw(MAL,"profiler.start","Profiler already running, stream not available");
+	}
 	malProfileMode = -1;
-	maleventstream = fd;
+	maleventstream = cntxt->fdout;
+	malprofileruser = cntxt;
 	(void) mode;
 	// Ignore the JSON rendering mode, use compiled time version
 	// prettify = (mode & PROFSINGLELINE) ? "": "\n";
@@ -580,6 +585,7 @@ closeProfilerStream(Client cntxt)
 	(void) cntxt;
 	maleventstream = NULL;
 	malProfileMode = 0;
+	malprofileruser = 0;
 	return MAL_SUCCEED;
 }
 
@@ -601,7 +607,6 @@ startProfiler(Client cntxt)
 	MT_lock_set(&mal_profileLock );
 	if (myname == 0){
 		myname = putName("profiler");
-		eventcounter = 0;
 	}
 	malProfileMode = 1;
 	MT_lock_unset(&mal_profileLock);
@@ -612,64 +617,19 @@ startProfiler(Client cntxt)
 	return MAL_SUCCEED;
 }
 
-/* The trace information can be concurrently written to a file.
- * A hard limit is currently imposed */
-#define MAXTRACEFILES 50
-static int offlinestore = 0;
-static int tracecounter = 0;
+/* SQL tracing is simplified, because it only collects the events in the temporary table.
+ */
 str
-startTrace(Client cntxt, str path)
+startTrace(Client cntxt)
 {
-	int len;
-	char buf[FILENAME_MAX];
-
-	(void) cntxt;
-	if (path && maleventstream == NULL){
-		// create a file to keep the events, unless we
-		// already have a profiler stream
-		MT_lock_set(&mal_profileLock );
-		if(maleventstream == NULL && offlinestore ==0){
-			len = snprintf(buf,FILENAME_MAX,"%s%c%s",GDKgetenv("gdk_dbpath"), DIR_SEP, path);
-			if (len == -1 || len >= FILENAME_MAX) {
-				MT_lock_unset(&mal_profileLock);
-				throw(MAL, "profiler.startTrace", SQLSTATE(HY001) "Profiler filename path is too large");
-			}
-			if (mkdir(buf, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
-				MT_lock_unset(&mal_profileLock);
-				throw(MAL, "profiler.startTrace", SQLSTATE(42000) "Failed to create directory %s", buf);
-			}
-			len = snprintf(buf,FILENAME_MAX,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbpath"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
-			if (len == -1 || len >= FILENAME_MAX) {
-				MT_lock_unset(&mal_profileLock);
-				throw(MAL, "profiler.startTrace", SQLSTATE(HY001) "Profiler filename path is too large");
-			}
-			if ((maleventstream = open_wastream(buf)) == NULL) {
-				MT_lock_unset(&mal_profileLock );
-				throw(MAL,"profiler.startTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			}
-			offlinestore++;
-		}
-		MT_lock_unset(&mal_profileLock );
-	}
-	malProfileMode = 1;
 	cntxt->sqlprofiler = TRUE;
 	clearTrace(cntxt);
 	return MAL_SUCCEED;
 }
 
 str
-stopTrace(Client cntxt, str path)
+stopTrace(Client cntxt)
 {
-	(void) cntxt;
-	MT_lock_set(&mal_profileLock );
-	if( path &&  offlinestore){
-		(void) close_stream(maleventstream);
-		maleventstream = 0;
-		offlinestore =0;
-	}
-	MT_lock_unset(&mal_profileLock );
-
-	malProfileMode = maleventstream != NULL;
 	cntxt->sqlprofiler = FALSE;
 	return MAL_SUCCEED;
 }
@@ -907,6 +867,7 @@ void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 	*iowait = corestat[255].iowait;
 }
 
+/* the heartbeat process produces a ping event once every X milliseconds */
 static MT_Id hbthread;
 static ATOMIC_TYPE hbrunning = ATOMIC_VAR_INIT(0);
 

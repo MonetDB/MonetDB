@@ -42,7 +42,7 @@ CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	(void) mb;
 	(void) stk;
 	(void) pc;
-	return openProfilerStream(cntxt, cntxt->fdout, *getArgReference_int(stk,pc,1));
+	return openProfilerStream(cntxt, *getArgReference_int(stk,pc,1));
 }
 
 str
@@ -82,19 +82,7 @@ CMDstartTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	return startTrace(cntxt, 0);
-}
-
-// if you haven't started the stethoscope
-// then the output is saved in a file
-str
-CMDstartTracePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str path = *getArgReference_str(stk,pci,1);
-
-	(void) cntxt;
-	(void) mb;
-	return startTrace(cntxt, path);
+	return startTrace(cntxt);
 }
 
 str
@@ -103,15 +91,7 @@ CMDstopTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	return stopTrace(cntxt, 0);
-}
-
-str
-CMDstopTracePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str path = *getArgReference_str(stk,pci,1);
-	(void) mb;
-	return stopTrace(cntxt, path);
+	return stopTrace(cntxt);
 }
 
 str
