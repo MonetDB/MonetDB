@@ -393,6 +393,8 @@ MCforkClient(Client father)
 void
 MCfreeClient(Client c)
 {
+	if( c->mode == FREECLIENT)
+		return;
 	c->mode = FINISHCLIENT;
 
 #ifdef MAL_CLIENT_DEBUG
