@@ -2105,6 +2105,18 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('suspend_log_flushing', 'resume_log_flushing') and type = %d;\n", (int) F_PROC);
 
+	
+	/* 16_tracelog */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function sys.tracelog();\n"
+			"create function sys.tracelog()\n"
+			"	returns table (\n"
+			"		ticks bigint,       -- time in microseconds\n"
+			"		stmt string     -- actual statement executed\n"
+			"	)\n"
+			"	external name sql.dump_trace;\n");
+
+
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	assert(pos < bufsize);
