@@ -142,6 +142,8 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	qtop = j;
 	QRYqueue[qtop].query = NULL; /* sentinel for SYSMONqueue() */
 	MT_lock_unset(&mal_delayLock);
+	/* When you exit a routine, also emit a heartbeat */
+	profilerHeartbeatEvent("wait");
 }
 
 void
