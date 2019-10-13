@@ -378,6 +378,18 @@ QLOGdefineNaive(void *ret, str *qry, str *opt, int *nr)
 }
 
 str
+QLOGcontextNaive(void *ret, str *release, str *version, str *revision, str *uri)
+{
+	// Nothing else to be done.
+	(void) ret;
+	(void) release;
+	(void) version;
+	(void) revision;
+	(void) uri;
+	return MAL_SUCCEED;
+}
+
+str
 QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	timestamp *tick1  = getArgReference_TYPE(stk,pci,1,timestamp);

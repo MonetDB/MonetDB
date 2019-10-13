@@ -131,7 +131,6 @@ EXAMPLE:
 static void
 renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
-	(void)cntxt;
 	char logbuffer[LOGLEN], *logbase;
 	size_t loglen;
 	str stmt, c;
@@ -166,6 +165,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	logadd("\"version\":\""VERSION" (hg id: %s)\","PRETTIFY, mercurial_revision());
 	logadd("\"source\":\"trace\","PRETTIFY);
 
+	logadd("\"oid\":"OIDFMT","PRETTIFY, cntxt->user);
 	logadd("\"clk\":"LLFMT","PRETTIFY, usec);
 	logadd("\"ctime\":%"PRIu64","PRETTIFY, microseconds);
 	logadd("\"thread\":%d,"PRETTIFY, THRgettid());

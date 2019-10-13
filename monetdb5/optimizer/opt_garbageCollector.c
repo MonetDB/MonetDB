@@ -25,7 +25,7 @@
 str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, limit, slimit, vlimit;
+	int i, limit, slimit, vlimit;
 	InstrPtr p, *old;
 	int actions = 0;
 	char buf[256];
@@ -33,23 +33,12 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	str msg = MAL_SUCCEED;
 	//str nme;
 	char *used;
-	//int *varlnk, *stmtlnk;
 
 	(void) pci;
 	(void) cntxt;
 	(void) stk;
 	if ( mb->inlineProp)
 		return 0;
-/*
-	varlnk = (int*) GDKzalloc(mb->vtop * sizeof(int));
-	if( varlnk == NULL)
-		return 0;
-	stmtlnk = (int*) GDKzalloc((mb->stop + 1) * sizeof(int));
-	if( stmtlnk == NULL){
-		GDKfree(varlnk);
-		return 0;
-	}
-*/
 	
 	used = (char*) GDKzalloc(sizeof(char) * mb->vtop);
 	if ( used == NULL)
@@ -63,10 +52,10 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	/* rename all temporaries used for ease of debugging and profile interpretation */
 
  	for( i = 0; i < mb->vtop; i++)
-		if( sscanf(getVarName(mb,i),"X_%d", &j) == 1)
+		if (getVarName(mb,i)[0] == 'X' && getVarName(mb,i)[1] == '_')
 			snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
 		else
-		if( sscanf(getVarName(mb,i),"C_%d", &j) == 1)
+		if (getVarName(mb,i)[0] == 'C' && getVarName(mb,i)[1] == '_')
 			snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
 
 	// move SQL query definition to the front for event profiling tools
@@ -85,16 +74,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 
 	// Actual garbage collection stuff
-	// Construct the linked list of variables based on end-of-scope
-/*
-	setVariableScope(mb);
-	for( i = 0; i < mb->vtop; i++){
-		assert(getEndScope(mb,i) >= 0);
-		assert(getEndScope(mb,i) <= mb->stop);
-	  varlnk[i] = stmtlnk[getEndScope(mb,i)];
-	  stmtlnk[getEndScope(mb,i)] = i;
-	}
-*/
 
 	if ( newMalBlkStmt(mb,mb->ssize) < 0) 
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -106,23 +85,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		p->typechk = TYPE_UNKNOWN;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
-		/* rename all temporaries used for ease of debugging and profile interpretation */
-/* lets check if this is the culprit for DS22 on april
- * Remove the use of 'used' and only looking at returns. 
- * It should be sufficient to look into the variable table
-		for( j = 0; j< p->retc; j++){
-			arg = getArg(p,j);
-			if( used[arg] ==0){
-				nme = getVarName(mb,arg);
-				if( nme[0] == 'X' && nme[1] == '_' )
-						snprintf(nme, IDLENGTH, "X_%d", arg);
-				else
-				if( nme[0] == 'C' && nme[1] == '_' )
-						snprintf(nme, IDLENGTH,"C_%d", arg);
-				used[arg] ++;
-			}
-		}
-*/
 
 		if ( p->barrier == RETURNsymbol){
 			pushInstruction(mb, p);

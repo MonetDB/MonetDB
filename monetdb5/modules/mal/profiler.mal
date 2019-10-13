@@ -22,10 +22,6 @@ pattern stoptrace():void
 address CMDstopTrace
 comment "Stop collecting trace information";
 
-pattern stoptrace(path:str):void
-address CMDstopTracePath
-comment "Stop collecting trace information";
-
 command setheartbeat(b:int):void
 address CMDsetHeartbeat
 comment "Set heart beat performance tracing";
