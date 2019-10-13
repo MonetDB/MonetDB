@@ -15933,7 +15933,6 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "profiler",	"starttrace",	"pattern profiler.starttrace():void ",	"CMDstartTrace;",	"Start collecting trace information"	]
 [ "profiler",	"stop",	"pattern profiler.stop():void ",	"CMDstopProfiler;",	"Stop offline performance profiling"	]
 [ "profiler",	"stoptrace",	"pattern profiler.stoptrace():void ",	"CMDstopTrace;",	"Stop collecting trace information"	]
-[ "profiler",	"stoptrace",	"pattern profiler.stoptrace(path:str):void ",	"CMDstopTracePath;",	""	]
 [ "pyapi",	"eval",	"unsafe pattern pyapi.eval(fptr:ptr, expr:str):any ",	"PYAPI2PyAPIevalStd;",	"Execute a simple Python script returning a single value"	]
 [ "pyapi",	"eval",	"unsafe pattern pyapi.eval(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI2PyAPIevalStd;",	"Execute a simple Python script value"	]
 [ "pyapi",	"eval_aggr",	"unsafe pattern pyapi.eval_aggr(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI2PyAPIevalAggr;",	"grouped aggregates through Python"	]
