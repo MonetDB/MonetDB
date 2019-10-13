@@ -42,7 +42,7 @@ CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	(void) mb;
 	(void) stk;
 	(void) pc;
-	return openProfilerStream(cntxt, *getArgReference_int(stk,pc,1));
+	return openProfilerStream(cntxt);
 }
 
 str

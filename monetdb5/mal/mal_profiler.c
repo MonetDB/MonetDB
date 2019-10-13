@@ -44,7 +44,7 @@ static str myname = 0;	// avoid tracing the profiler module
 
 
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
-static Client malprofileruser;
+static oid malprofileruser;	/* keep track on who has claimed the channel */
 
 static struct timeval startup_time;
 
@@ -152,7 +152,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 /* The stream of events can be complete read by the DBA, 
  * all other users can only see events assigned to their account
  */
-	if( malprofileruser->user != MAL_ADMIN && malprofileruser->user != cntxt->user)
+	if( malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
 		return;
 
 	usec= GDKusec();
@@ -474,11 +474,13 @@ profilerHeartbeatEvent(char *alter)
 	char cpuload[BUFSIZ];
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
-	lng usec = GDKusec();
-	uint64_t microseconds = (uint64_t)startup_time.tv_sec*1000000 + (uint64_t)startup_time.tv_usec + (uint64_t)usec;
+	lng usec;
+	uint64_t microseconds;
 
-	if (ATOMIC_GET(&hbdelay) == 0 || malprofileruser  == NULL)
+	if (ATOMIC_GET(&hbdelay) == 0 || maleventstream  == 0)
 		return;
+	usec = GDKusec();
+	microseconds = (uint64_t)startup_time.tv_sec*1000000 + (uint64_t)startup_time.tv_usec + (uint64_t)usec;
 
 	/* get CPU load on beat boundaries only */
 	if ( getCPULoad(cpuload) )
@@ -521,6 +523,7 @@ profilerHeartbeatEvent(char *alter)
 void
 profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
+	(void) cntxt;
 	if (stk == NULL) return;
 	if (pci == NULL) return;
 	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
@@ -537,10 +540,8 @@ profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start
 
 /* The first scheme dumps the events on a stream (and in the pool)
  */
-#define PROFSHOWRUNNING	1
-#define PROFSINGLELINE 2
 str
-openProfilerStream(Client cntxt, int mode)
+openProfilerStream(Client cntxt)
 {
 	int j;
 
@@ -561,21 +562,18 @@ openProfilerStream(Client cntxt, int mode)
 	}
 	malProfileMode = -1;
 	maleventstream = cntxt->fdout;
-	malprofileruser = cntxt;
-	(void) mode;
+	malprofileruser = cntxt->user;
+
 	// Ignore the JSON rendering mode, use compiled time version
-	// prettify = (mode & PROFSINGLELINE) ? "": "\n";
 
 	/* show all in progress instructions for stethoscope startup */
 	/* this code is not thread safe, because the inprogress administration may change concurrently */
-	if( (mode & PROFSHOWRUNNING) > 0){
-		MT_lock_set(&mal_delayLock);
-		for(j = 0; j <THREADS; j++)
-		if( workingset[j].mb)
-			/* show the event */
-			profilerEvent(workingset[j].cntxt, workingset[j].mb, workingset[j].stk, workingset[j].pci, 1);
-		MT_lock_unset(&mal_delayLock);
-	}
+	MT_lock_set(&mal_delayLock);
+	for(j = 0; j <THREADS; j++)
+	if( workingset[j].mb)
+		/* show the event */
+		profilerEvent(workingset[j].cntxt, workingset[j].mb, workingset[j].stk, workingset[j].pci, 1);
+	MT_lock_unset(&mal_delayLock);
 	return MAL_SUCCEED;
 }
 
@@ -890,8 +888,10 @@ static void profilerHeartbeat(void *dummy)
 				return;
 			MT_sleep_ms(t > timeout ? timeout : t);
 		}
+		if (GDKexiting() || !ATOMIC_GET(&hbrunning))
+			return;
 		MT_thread_setworking("pinging");
-		profilerHeartbeatEvent("ping");
+		profilerHeartbeatEvent( "ping");
 	}
 }
 

@@ -460,14 +460,6 @@ DFLOWworker(void *T)
 		MT_lock_unset(&flow->flowlock);
 
 		q_enqueue(flow->done, fe);
-		if ( fnxt == 0 && malProfileMode) {
-			int last;
-			MT_lock_set(&todo->l);
-			last = todo->last;
-			MT_lock_unset(&todo->l);
-			if (last == 0)
-				profilerHeartbeatEvent("wait");
-		}
 	}
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);

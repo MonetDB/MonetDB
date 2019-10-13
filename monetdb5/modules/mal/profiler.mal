@@ -30,7 +30,7 @@ command setheartbeat(b:int):void
 address CMDsetHeartbeat
 comment "Set heart beat performance tracing";
 
-pattern openstream(mode:int):void
+pattern openstream():void
 address CMDopenProfilerStream
 comment "Start profiling the events, send to output stream";
 
