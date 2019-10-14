@@ -191,7 +191,7 @@ rel_issubquery(sql_rel*r)
 }
 
 static sql_rel *
-rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
+rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname)
 {
 	int ambiguous = 0;
 	sql_rel *l = NULL, *r = NULL;
@@ -215,7 +215,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 			if (!r || !e || !is_freevar(e)) {
 				*p = rel;
 				l = rel_bind_column_(sql, p, rel->l, cname);
-				if (l && r && !rel_issubquery(r)) {
+				if (l && r && !rel_issubquery(r) && !is_dependent(rel)) {
 					(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 					return NULL;
 				}
@@ -244,7 +244,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 		if (is_processed(rel))
 			return NULL;
 		if (rel->l && !(is_base(rel->op)))
-			return rel_bind_column_(sql, p, rel->l, cname );
+			return rel_bind_column_(sql, p, rel->l, cname);
 		break;
 	case op_semi:
 	case op_anti:
@@ -265,7 +265,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 sql_exp *
 rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f )
 {
-	sql_rel *p = NULL;
+	sql_rel *p = NULL, *orel = rel;
 
 	if (is_sql_sel(f) && rel && is_simple_project(rel->op) && !is_processed(rel))
 		rel = rel->l;
@@ -276,7 +276,10 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f )
 	if ((is_project(rel->op) || is_base(rel->op)) && rel->exps) {
 		sql_exp *e = exps_bind_column(rel->exps, cname, NULL);
 		if (e)
-			return exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
+			e = exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
+		if (p && e && is_simple_project(p->op) && !is_processed(p) && is_sql_orderby(f) && orel != rel)
+			e = rel_project_add_exp(sql, p, e);
+		return e;
 	}
 	return NULL;
 }
@@ -291,6 +294,18 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 
 	if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
 		sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
+		/* in case of orderby we should also lookup the column in group by list (and use existing references) */
+		if (!e && is_sql_orderby(f) && is_groupby(rel->op) && rel->r) {
+			e = exps_bind_alias(rel->r, tname, cname);
+			if (e) { 
+				if (exp_relname(e))
+					e = exps_bind_column2(rel->exps, exp_relname(e), exp_name(e));
+				else
+					e = exps_bind_column(rel->exps, exp_name(e), NULL);
+				if (e)
+					return e;
+			}
+		}
 		if (e)
 			return exp_alias_or_copy(sql, tname, cname, rel, e);
 	}
