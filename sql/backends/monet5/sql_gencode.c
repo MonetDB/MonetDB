@@ -612,7 +612,6 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 	int old_mv = be->mvc_var;
 	MalBlkPtr old_mb = be->mb;
 	stmt *s;
-	str mr, mv, rev, uri;
 
 	// Always keep the SQL query around for monitoring
 
@@ -631,23 +630,17 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 		if (q == NULL) {
 			return -1;
 		}
-		mr = GDKstrdup(GDKgetenv("monet_release"));
-		mv = GDKstrdup(GDKgetenv("monet_version"));
-		rev = GDKstrdup(GDKgetenv("revision"));
-		uri = GDKstrdup(GDKgetenv("merovingian_uri"));
 
-		if ( mr && mv && rev && uri){
-			q = newStmt(mb, querylogRef, contextRef);
-			if (q == NULL) {
-				return -1;
-			}
-			setVarType(mb, getArg(q, 0), TYPE_void);
-			setVarUDFtype(mb, getArg(q, 0));
-			q = pushStr(mb, q, mr);
-			q = pushStr(mb, q, mv);
-			q = pushStr(mb, q, rev);
-			q = pushStr(mb, q, uri);
+		q = newStmt(mb, querylogRef, contextRef);
+		if (q == NULL) {
+			return -1;
 		}
+		setVarType(mb, getArg(q, 0), TYPE_void);
+		setVarUDFtype(mb, getArg(q, 0));
+		q = pushStr(mb, q, GDKgetenv("monet_release"));
+		q = pushStr(mb, q, GDKgetenv("monet_version"));
+		q = pushStr(mb, q, GDKgetenv("revision"));
+		q = pushStr(mb, q, GDKgetenv("merovingian_uri"));
 	}
 
 	/* announce the transaction mode */
