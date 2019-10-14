@@ -4069,6 +4069,13 @@ rel_aggr_intern(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, ch
 		if (uaname)
 			GDKfree(uaname);
 		return e;
+	} else if (is_sql_join(f)) { /* the is_sql_join test must come before is_sql_where, because the join conditions are handled with sql_where */
+		char *uaname = GDKmalloc(strlen(aname) + 1);
+		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in JOIN conditions",
+				       uaname ? toUpperCopy(uaname, aname) : aname);
+		if (uaname)
+			GDKfree(uaname);
+		return e;
 	} else if (!query_has_outer(query) && is_sql_where(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
 		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause",
@@ -5187,10 +5194,10 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	supports_frames = (window_function->token != SQL_RANK) || is_nth_value ||
 					  (strcmp(s->base.name, "sys") == 0 && ((strcmp(aname, "first_value") == 0) || strcmp(aname, "last_value") == 0));
 
-	if (is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f)) {
+	if (is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
-		const char *clause = is_sql_where(f)?"WHERE":is_sql_groupby(f)?"GROUP BY":"HAVING";
-		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed in %s clause",
+		const char *clause = is_sql_join(f)?"JOIN conditions":is_sql_where(f)?"WHERE clause":is_sql_groupby(f)?"GROUP BY clause":"HAVING clause";
+		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed in %s",
 						 uaname ? toUpperCopy(uaname, aname) : aname, aname, clause);
 		if (uaname)
 			GDKfree(uaname);
@@ -6573,7 +6580,7 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 	}
 
 	if (js && js->token != SQL_USING) {	/* On sql_logical_exp */
-		rel = rel_logical_exp(query, rel, js, sql_where);
+		rel = rel_logical_exp(query, rel, js, sql_where | sql_join);
 	} else if (js) {	/* using */
 		char rname[16], *rnme;
 		dnode *n = js->data.lval->h;
