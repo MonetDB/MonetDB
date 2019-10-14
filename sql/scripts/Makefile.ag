@@ -11,7 +11,6 @@ headers_sql = {
 	DIR = libdir/monetdb5/createdb
 	SOURCES = 09_like.sql \
 		10_math.sql \
-		11_times.sql \
 		12_url.sql \
 		13_date.sql \
 		14_inet.sql \
@@ -34,6 +33,7 @@ headers_sql = {
 		51_sys_schema_extension.sql \
 		58_hot_snapshot.sql \
 		60_wlcr.sql \
+		61_wlcr.sql \
 		75_storagemodel.sql \
 		80_statistics.sql \
 		99_system.sql

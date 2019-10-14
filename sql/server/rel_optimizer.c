@@ -2279,8 +2279,6 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exps_bind_column(f->exps, e->r, NULL);
 		if (!ne || (ne->type != e_column && ne->type != e_atom))
 			return NULL;
-		if (ne && list_position(f->exps, ne) >= list_position(f->exps, e)) 
-			return NULL;
 		while (ne && f->op == op_project && ne->type == e_column) {
 			sql_exp *oe = e, *one = ne;
 
@@ -2455,6 +2453,29 @@ exps_unique(mvc *sql, sql_rel *rel, list *exps)
 	return 0;
 }
 
+static int
+rel_is_join_on_pkey( sql_rel *rel ) 
+{
+	node *n;
+
+	if (!rel || !rel->exps)
+		return 0;
+	for (n = rel->exps->h; n; n = n->next){
+		sql_exp *je = n->data;
+
+		if (je->type == e_cmp && je->flag == cmp_equal &&
+		    find_prop(((sql_exp*)je->l)->p, PROP_HASHCOL)) { /* aligned PKEY JOIN */
+			fcmp cmp = (fcmp)&kc_column_cmp;
+			sql_exp *e = je->l;
+			sql_column *c = exp_find_column(rel, e, -2);
+
+			if (c && c->t->pkey && list_find(c->t->pkey->k.columns, c, cmp) != NULL)
+				return 1;
+		}
+	}
+	return 0;
+}
+
 
 static sql_rel *
 rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
@@ -2473,6 +2494,24 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
 	    (l->op == op_select || l->op == op_semi) && exps_unique(sql, rel, rel->exps)) 
 		set_nodistinct(rel);
+
+	/* rewrite distinct project ( join(p,f) [ p.pk = f.fk] ) [ p.pk ] ->
+	 * 	   project(p)[p.pk]
+	 */
+	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
+	    l && l->op == op_join && rel_is_join_on_pkey(l) /* [ pk == fk ] */) {
+		sql_rel *j = l;
+		sql_rel *p = j->l;
+		sql_exp *je = l->exps->h->data, *le = je->l;
+		int pside = (rel_find_exp(p, le) != NULL)?1:0;
+
+	       	p = (pside)?j->l:j->r;
+		rel->l = rel_dup(p);
+		rel_destroy(j);
+		*changes = 1;
+		set_nodistinct(rel);
+		return rel;
+	}
 	/* rewrite distinct project [ gbe ] ( select ( groupby [ gbe ] [ gbe, e ] )[ e op val ]) 
 	 * into project [ gbe ] ( select ( group etc ) */
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && 
@@ -4098,29 +4137,6 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-static int
-rel_is_join_on_pkey( sql_rel *rel ) 
-{
-	node *n;
-
-	if (!rel || !rel->exps)
-		return 0;
-	for (n = rel->exps->h; n; n = n->next){
-		sql_exp *je = n->data;
-
-		if (je->type == e_cmp && je->flag == cmp_equal &&
-		    find_prop(((sql_exp*)je->l)->p, PROP_HASHCOL)) { /* aligned PKEY JOIN */
-			fcmp cmp = (fcmp)&kc_column_cmp;
-			sql_exp *e = je->l;
-			sql_column *c = exp_find_column(rel, e, -2);
-
-			if (c && c->t->p && c->t->pkey && list_find(c->t->pkey->k.columns, c, cmp) != NULL)
-				return 1;
-		}
-	}
-	return 0;
-}
-
 /*
  * More general 
  * 	groupby(
@@ -5563,6 +5579,7 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
  * ) [e,f]( aggr1 a distinct, aggr2 b distinct, aggr3_phase2 c, aggr4_phase2 d)
  */
 
+#if 0
 static sql_rel *
 rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel) 
 {
@@ -5647,6 +5664,7 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 	(*changes)++;
 	return rel;
 }
+#endif
 
 static sql_rel *
 rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel) 
@@ -5687,7 +5705,7 @@ rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel)
 		if (nr < 1 || distinct->type != e_aggr)
 			return rel;
 		if ((nr > 1 || list_length(rel->r) + nr != list_length(rel->exps)))
-			return rel_groupby_distinct2(changes, sql, rel);
+			return rel;//rel_groupby_distinct2(changes, sql, rel);
 		arg = distinct->l;
 		if (list_length(arg) != 1 || list_length(rel->r) + nr != list_length(rel->exps)) 
 			return rel;
@@ -7188,8 +7206,22 @@ rel_simplify_like_select(int *changes, mvc *sql, sql_rel *rel)
 	(void)sql;
 	if (is_select(rel->op) && rel->exps) {
 		node *n;
-		list *exps = sa_list(sql->sa);
+		list *exps;
+		int needed = 0;
 
+		for (n = rel->exps->h; n && !needed; n = n->next) {
+			sql_exp *e = n->data;
+			list *l = e->l;
+			list *r = e->r;
+
+			if (e->type == e_cmp && get_cmp(e) == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0 && list_length(l) == 1 && list_length(r) <= 2 && !is_anti(e))
+				needed = 1;
+		}
+
+		if (!needed)
+			return rel;
+	       
+		exps = sa_list(sql->sa);
 		if (exps == NULL)
 			return NULL;
 		for (n = rel->exps->h; n; n = n->next) {
@@ -7955,7 +7987,7 @@ rel_reduce_casts(int *changes, mvc *sql, sql_rel *rel)
 				}
 			}
 			if (anti) set_anti(e);
-			n->data = e;	
+			n->data = e;
 		}
 	}
 	return rel;
@@ -9086,7 +9118,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	if (gp.cnt[op_select] || gp.cnt[op_join])
 		rel = rewrite(sql, rel, &rel_use_index, &changes); 
 
-	if (gp.cnt[op_project]) 
+	if (gp.cnt[op_project])
 		rel = rewrite_topdown(sql, rel, &rel_push_project_down_union, &changes);
 
 	/* Remove unused expressions */

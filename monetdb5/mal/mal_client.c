@@ -80,8 +80,6 @@ MCinit(void)
 		fprintf(stderr,"#MCinit:" MAL_MALLOC_FAIL);
 		return false;
 	}
-	for (int i = 0; i < MAL_MAXCLIENTS; i++)
-		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
 	return true;
 }
 
@@ -169,6 +167,21 @@ MCgetClient(int id)
 	return mal_clients + id;
 }
 
+/*
+ * The resetProfiler is called when the owner of the event stream
+ * leaves the scene. (Unclear if parallelism may cause errors)
+ */
+
+static void
+MCresetProfiler(stream *fdout)
+{
+    if (fdout != maleventstream)
+        return;
+    MT_lock_set(&mal_profileLock);
+    maleventstream = 0;
+    MT_lock_unset(&mal_profileLock);
+}
+
 void
 MCexitClient(Client c)
 {
@@ -176,7 +189,7 @@ MCexitClient(Client c)
 	fprintf(stderr,"# Exit client %d\n", c->idx);
 #endif
 	finishSessionProfiler(c);
-	MPresetProfiler(c->fdout);
+	MCresetProfiler(c->fdout);
 	if (c->father == NULL) { /* normal client */
 		if (c->fdout && c->fdout != GDKstdout) {
 			close_stream(c->fdout);
@@ -228,12 +241,10 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->father = NULL;
 	c->login = c->lastcmd = time(0);
-	//c->active = 0;
 	c->session = GDKusec();
 	c->qtimeout = 0;
 	c->stimeout = 0;
 	c->itrace = 0;
-	c->flags = 0;
 	c->errbuf = 0;
 
 	prompt = PROMPT1;
@@ -252,7 +263,10 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->promptlength = strlen(prompt);
 
 	c->actions = 0;
+	c->profticks = c->profstmt = NULL;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
+	c->sqlprofiler = 0;
+	c->malprofiler = 0;
 	c->wlc_kind = 0;
 	c->wlc = NULL;
 #ifndef HAVE_EMBEDDED /* no authentication in embedded mode */
@@ -266,7 +280,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->protocol = PROTOCOL_9;
 
 	c->filetrans = false;
-	c->query = NULL;
+	c->getquery = NULL;
 
 	char name[16];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
@@ -284,6 +298,7 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	return MCinitClientRecord(c, user, fin, fout);
 }
 
+
 /*
  * The administrator should be initialized to enable interpretation of
  * the command line arguments, before it starts servicing statements
@@ -295,7 +310,7 @@ MCinitClientThread(Client c)
 
 	t = MT_thread_getdata();	/* should succeed */
 	if (t == NULL) {
-		MPresetProfiler(c->fdout);
+		MCresetProfiler(c->fdout);
 		return -1;
 	}
 	/*
@@ -309,7 +324,7 @@ MCinitClientThread(Client c)
 	if (c->errbuf == NULL) {
 		char *n = GDKzalloc(GDKMAXERRLEN);
 		if ( n == NULL){
-			MPresetProfiler(c->fdout);
+			MCresetProfiler(c->fdout);
 			return -1;
 		}
 		GDKsetbuf(n);
@@ -378,6 +393,8 @@ MCforkClient(Client father)
 void
 MCfreeClient(Client c)
 {
+	if( c->mode == FREECLIENT)
+		return;
 	c->mode = FINISHCLIENT;
 
 #ifdef MAL_CLIENT_DEBUG
@@ -407,7 +424,6 @@ MCfreeClient(Client c)
 	c->usermodule = c->curmodule = 0;
 	c->father = 0;
 	c->login = c->lastcmd = 0;
-	//c->active = 0;
 	c->qtimeout = 0;
 	c->stimeout = 0;
 	c->user = oid_nil;
@@ -420,6 +436,11 @@ MCfreeClient(Client c)
 		freeStack(c->glb);
 		c->glb = NULL;
 	}
+	if( c->profticks){
+		BBPunfix(c->profticks->batCacheid);
+		BBPunfix(c->profstmt->batCacheid);
+		c->profticks = c->profstmt = NULL;
+	}
 	if( c->error_row){
 		BBPunfix(c->error_row->batCacheid);
 		BBPunfix(c->error_fld->batCacheid);
@@ -429,6 +450,8 @@ MCfreeClient(Client c)
 	}
 	if( c->wlc)
 		freeMalBlk(c->wlc);
+	c->sqlprofiler = 0;
+	c->malprofiler = 0;
 	c->wlc_kind = 0;
 	c->wlc = NULL;
 	MT_sema_destroy(&c->s);
@@ -477,16 +500,14 @@ MCstopClients(Client cntxt)
 int
 MCactiveClients(void)
 {
-	int freeclient=0, finishing=0, running=0, blocked = 0;
+	int finishing=0, running = 0;
 	Client cntxt = mal_clients;
 
 	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
-		freeclient += (cntxt->mode == FREECLIENT);
 		finishing += (cntxt->mode == FINISHCLIENT);
 		running += (cntxt->mode == RUNCLIENT);
-		blocked += (cntxt->mode == BLOCKCLIENT);
 	}
-	return finishing+running;
+	return finishing + running;
 }
 
 void
@@ -621,17 +642,3 @@ MCvalid(Client tc)
 	MT_lock_unset(&mal_contextLock);
 	return 0;
 }
-
-str
-PROFinitClient(Client c){
-	(void) c;
-	return startProfiler();
-}
-
-str
-PROFexitClient(Client c){
-	(void) c;
-	return stopProfiler();
-}
-
-

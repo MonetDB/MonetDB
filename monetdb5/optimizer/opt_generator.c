@@ -159,10 +159,6 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
     	GDKfree(old);
     	GDKfree(series);
 
-#ifdef VLT_DEBUG
-	fprintFunction(stderr,mb,0,LIST_MAL_ALL);
-#endif
-
     /* Defense line against incorrect plans */
 	/* all new/modified statements are already checked */
 	//chkTypes(cntxt->usermodule, mb, FALSE);
@@ -175,5 +171,9 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
+    if( OPTdebug &  OPTgenerator){
+        fprintf(stderr, "#GENERATOR optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return MAL_SUCCEED;
 }

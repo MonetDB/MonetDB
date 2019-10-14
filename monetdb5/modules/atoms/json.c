@@ -1845,8 +1845,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	}
 	tpe = bv->ttype;
 	cnt = BATcount(bv);
-	if (bk)
-		bki = bat_iterator(bk);
+	bki = bat_iterator(bk);
 	bvi = bat_iterator(bv);
 	if (id) {
 		bo = BATdescriptor(*id);

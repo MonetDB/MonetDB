@@ -57,8 +57,8 @@ stdout of test 'correlated-subquery-aggregation.Bug-6714` in directory 'sql/test
 [ 27	]
 #select func_id, (select name from functions_test f where f.id = func_id) as name, max(number), count(*) from args_test
 #group by func_id having count(*) > 8 order by func_id limit 12;
-% sys.args_test,	.L5,	sys.L7,	sys.L11 # table_name
-% func_id,	name,	L7,	L11 # name
+% .args_test,	.L2,	.L3,	.L4 # table_name
+% func_id,	name,	L3,	L4 # name
 % int,	varchar,	int,	bigint # type
 % 4,	14,	2,	2 # length
 [ 6743,	"querylog_calls",	8,	9	]

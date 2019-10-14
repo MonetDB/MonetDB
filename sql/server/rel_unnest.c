@@ -22,9 +22,15 @@ static int exps_have_freevar(mvc *sql, list *exps);
 static int
 is_distinct_set(mvc *sql, sql_rel *rel, list *ad)
 {
+	int distinct = 0;
 	if (ad && exps_unique(sql, rel, ad ))
 		return 1;
-	return need_distinct(rel);
+	if (ad && is_groupby(rel->op) && exp_match_list(rel->r, ad))
+		return 1;
+	distinct = need_distinct(rel);
+	if (is_project(rel->op) && rel->l && !distinct)
+		distinct = is_distinct_set(sql, rel->l, ad);
+	return distinct;
 }	
 
 int
@@ -90,17 +96,20 @@ rel_has_freevar(mvc *sql, sql_rel *rel)
 		return 0;
 	}
 
-	if (is_basetable(rel->op))
+	if (is_basetable(rel->op)) {
 		return 0;
-	else if (is_base(rel->op))
+	} else if (is_base(rel->op)) {
 		return exps_have_freevar(sql, rel->exps) ||
 			(rel->l && rel_has_freevar(sql, rel->l));
-	else if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op))
+	} else if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
+		if (is_groupby(rel->op) && rel->r && exps_have_freevar(sql, rel->r)) 
+			return 1;
 		return exps_have_freevar(sql, rel->exps) ||
 			(rel->l && rel_has_freevar(sql, rel->l));
-	else if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op))
+	} else if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op)) {
 		return exps_have_freevar(sql, rel->exps) ||
 			rel_has_freevar(sql, rel->l) || rel_has_freevar(sql, rel->r);
+	}
 	return 0;
 }
 
@@ -233,7 +242,10 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		exps = exps_freevar(sql, rel->exps);
 		lexps = rel_freevar(sql, rel->l);
 		if (rel->r) {
-			rexps = rel_freevar(sql, rel->r);
+			if (is_groupby(rel->op))
+				rexps = exps_freevar(sql, rel->r);
+			else
+				rexps = rel_freevar(sql, rel->r);
 			lexps = merge_freevar(lexps, rexps);
 		}
 		exps = merge_freevar(exps, lexps);
@@ -435,7 +447,19 @@ push_up_project(mvc *sql, sql_rel *rel)
 				}
 				append(n->exps, e);
 			}
-			assert(!r->r);
+			if (r->r) {
+				list *exps = r->r, *oexps = n->r = sa_list(sql->sa);
+
+				for (m=exps->h; m; m = m->next) {
+					sql_exp *e = m->data;
+
+					if (!e->freevar || exp_name(e)) { /* only skip full freevars */
+						if (exp_has_freevar(sql, e)) 
+							rel_bind_var(sql, rel->l, e);
+					}
+					append(oexps, e);
+				}
+			}
 			/* remove old project */
 			rel->r = r->l;
 			r->l = NULL;
@@ -547,7 +571,7 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 				sql_exp *e = n->data;
 
 				/* count_nil(* or constant) -> count(t.TID) */
-				if (e->type == e_aggr && strcmp(((sql_subaggr *)e->f)->aggr->base.name, "count") == 0 && (!e->l || exps_is_constant(e->l))) {
+				if (exp_aggr_is_count(e) && (!e->l || exps_is_constant(e->l))) {
 					sql_exp *col;
 					sql_rel *p = r->l; /* ugh */
 
@@ -575,8 +599,42 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 			else
 				r->r = list_distinct(list_merge(r->r, exps_copy(sql->sa, a), (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
 
-			rel->r = r->l; 
-			r->l = rel;
+			if (!r->l) {
+				r->l = rel->l;
+				rel->l = NULL;
+				rel->r = NULL;
+				rel_destroy(rel);
+				/* merge (distinct) projects / group by (over the same group by cols) */
+				while (r->l && exps_have_freevar(sql, r->exps)) {
+					sql_rel *l = r->l;
+
+					if (!is_project(l->op))
+						break;
+					if (l->op == op_project && need_distinct(l)) { /* TODO: check if group by exps and distinct list are equal */
+						r->l = rel_dup(l->l);
+						rel_destroy(l);
+					}
+					if (l->op == op_groupby) { /* TODO: check if group by exps and distinct list are equal */
+						/* add aggr exps of r too l, replace r by l */ 
+						node *n;
+						for(n = r->exps->h; n; n = n->next) {
+							sql_exp *e = n->data;
+
+							if (e->type == e_aggr)
+								append(l->exps, e);
+							if (exp_has_freevar(sql, e)) 
+								rel_bind_var(sql, l, e);
+						}
+						r->l = NULL;
+						rel_destroy(r);
+						r = l;
+					}
+				}
+				return r;
+			} else {
+				rel->r = r->l; 
+				r->l = rel;
+			}
 			/* check if a join expression needs to be moved above the group by (into a select) */
 			sexps = sa_list(sql->sa);
 			jexps = sa_list(sql->sa);
@@ -659,6 +717,7 @@ push_up_join(mvc *sql, sql_rel *rel)
 
 		/* left of rel should be a set */ 
 		if (d && is_distinct_set(sql, d, NULL) && j && (is_join(j->op) || is_semi(j->op))) {
+			int crossproduct = 0;
 			sql_rel *jl = j->l, *jr = j->r;
 			/* op_join if F(jl) intersect A(D) = empty -> jl join (D djoin jr) 
 			 * 	      F(jr) intersect A(D) = empty -> (D djoin jl) join jr
@@ -671,6 +730,7 @@ push_up_join(mvc *sql, sql_rel *rel)
 				rel->r = j = push_up_select_l(sql, j);
 				return rel; /* ie try again */
 			}
+			crossproduct = list_empty(j->exps);
 			rd = (j->op != op_full)?rel_dependent_var(sql, d, jr):(list*)1;
 			ld = (((j->op == op_join && rd) || j->op == op_right))?rel_dependent_var(sql, d, jl):(list*)1;
 
@@ -714,7 +774,31 @@ push_up_join(mvc *sql, sql_rel *rel)
 				move_join_exps(sql, j, rel);
 				return j;
 			}
-			if (!ld) {
+			if (!ld && is_left(rel->op) && crossproduct) {
+				sql_exp *l = exp_atom_int(sql->sa, 1);
+				sql_exp *r = exp_atom_int(sql->sa, 1);
+				rel->r = jr;
+				j->l = rel;
+				j->r = jl;
+
+				if (!is_simple_project(jr->op))
+			       		rel->r = jr = rel_project(sql->sa, jr, rel_projections(sql, jr, NULL, 1, 1));
+				if (!is_simple_project(jl->op))
+			       		j->r = jl = rel_project(sql->sa, jl, rel_projections(sql, jl, NULL, 1, 1));
+				l = exp_label(sql->sa, l, ++sql->label);
+				r = exp_label(sql->sa, r, ++sql->label);
+				append(jl->exps, l);
+				append(jr->exps, r);
+				l = exp_ref(sql->sa, l);
+				r = exp_ref(sql->sa, r);
+				l = exp_compare(sql->sa, r, l, cmp_equal_nil);
+				j->op = rel->op;
+				move_join_exps(sql, j, rel);
+				if (!j->exps)
+					j->exps = sa_list(sql->sa);
+				append(j->exps, l);
+				return j;
+			} else if (!ld) {
 				rel->r = jr;
 				j->l = jl;
 				j->r = rel;

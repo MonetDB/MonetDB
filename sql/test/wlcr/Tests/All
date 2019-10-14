@@ -1,11 +1,13 @@
 # This  is a scenario for continual replication
-# first create a master with some data
+# first create a master with some sampl edata
 wlcr00
-
 wlc01
 
-# create the clone synchronized with the master
+# check the log records without replication
 wlr01
+
+# create the first replica synchronized with the master
+wlr10
 
 # add two sets of tuples to the master
 wlc20
@@ -33,6 +35,7 @@ wlr50
 wlc70
 wlr70
 
+#
 #stop the master
 wlc100
 wlr100

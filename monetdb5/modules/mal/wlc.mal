@@ -18,24 +18,28 @@ pattern master(path:str)
 address WLCmaster
 comment "Activate the workload-capture-replay process. Use a different location for the logs.";
 
-pattern stopmaster()
-address WLCstopmaster
+pattern stop()
+address WLCstop
 comment "Stop capturing the logs";
 
-pattern setmasterbeat(duration:int)
-address WLCsetmasterbeat
+pattern flush()
+address WLCflush
+comment "Flush current log buffer";
+
+pattern setbeat(duration:int)
+address WLCsetbeat
 comment "Maximal delay for transaction log flushing";
 
-pattern getmasterbeat(duration:int):str
-address WLCgetmasterbeat
+pattern getbeat(duration:int):str
+address WLCgetbeat
 comment "Maximal delay for transaction log flushing";
 
-pattern getmasterclock():str
-address WLCgetmasterclock
+pattern getclock():str
+address WLCgetclock
 comment "Timestamp of last update transaction";
 
-pattern getmastertick():lng
-address WLCgetmastertick
+pattern gettick():lng
+address WLCgettick
 comment "Transaction identifier of the last committed transaction";
 
 pattern rollback()

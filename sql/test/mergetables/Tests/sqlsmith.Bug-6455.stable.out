@@ -42,7 +42,7 @@ stdout of test 'sqlsmith.Bug-6455` in directory 'sql/test/mergetables` itself:
 #          ref_4.index_type_id as c12, 
 #          ref_27.z as c13, 
 #          ref_1.dependency_type_name as c14, 
-% .L16,	.L230,	.L232,	.L234,	.L236,	.L240,	.L242,	.L244,	.L246 # table_name
+% .L46,	sys.L147,	.L150,	.L151,	.L152,	.L153,	.L154,	.L155,	.L156 # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8 # name
 % int,	int,	int,	int,	int,	varchar,	int,	varchar,	smallint # type
 % 1,	1,	1,	1,	1,	0,	1,	0,	1 # length

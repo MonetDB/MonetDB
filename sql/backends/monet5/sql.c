@@ -2249,7 +2249,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATdescriptor(bid);
 	if ( b == NULL)
 		throw(MAL,"sql.resultset", SQLSTATE(HY005) "Cannot access column descriptor");
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), 1, b);
+	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, b);
 	if (res < 0)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result table construction failed");
 	BBPunfix(b->batCacheid);
@@ -2340,7 +2340,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	order = BATdescriptor(bid);
 	if ( order == NULL)
 		throw(MAL,"sql.resultset", SQLSTATE(HY005) "Cannot access column descriptor");
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), 1, order);
+	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, order);
 	t = m->results;
 	if (res < 0){
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed");
@@ -2457,7 +2457,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), 1, NULL);
+	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, NULL);
 	if (res < 0)
 		throw(SQL, "sql.resultset", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
@@ -2542,7 +2542,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "sql.resultSet", "cannot transfer files to client");
 	}
 
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), 1, NULL);
+	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, NULL);
 
 	t = m->results;
 	if (res < 0){
@@ -2640,7 +2640,7 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	int *res_id;
 	int nr_cols;
-	int qtype;
+	sql_query_t qtype;
 	bat order_bid;
 
 	if ( pci->argc > 6)
@@ -2648,7 +2648,7 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	res_id = getArgReference_int(stk, pci, 0);
 	nr_cols = *getArgReference_int(stk, pci, 1);
-	qtype = *getArgReference_int(stk, pci, 2);
+	qtype = (sql_query_t) *getArgReference_int(stk, pci, 2);
 	order_bid = *getArgReference_bat(stk, pci, 3);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -2802,7 +2802,7 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = *(ptr *) p;
 
 	// scalar values are single-column result sets
-	if((res_id = mvc_result_table(b->mvc, mb->tag, 1, 1, NULL)) < 0)
+	if ((res_id = mvc_result_table(b->mvc, mb->tag, 1, Q_TABLE, NULL)) < 0)
 		throw(SQL, "sql.exportValue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if (mvc_result_value(b->mvc, tn, cn, type, digits, scale, p, mtype))
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed");
@@ -3398,6 +3398,84 @@ SQLall(ptr ret, const bat *bid)
 }
 
 str
+SQLall_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
+{
+	BAT *l, *g, *e, *res;
+	BATiter li;
+	ssize_t p, *pos = NULL;
+	int error = 0, has_nil = 0;
+	int (*ocmp) (const void *, const void *);
+
+	(void)no_nil;
+	if ((l = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "all =", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((g = BATdescriptor(*gp)) == NULL) {
+		BBPunfix(l->batCacheid);
+		throw(SQL, "all =", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((e = BATdescriptor(*gpe)) == NULL) {
+		BBPunfix(l->batCacheid);
+		BBPunfix(g->batCacheid);
+		throw(SQL, "all =", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	li = bat_iterator(l);
+	ocmp = ATOMcompare(l->ttype);
+	if (BATcount(g) > 0) {
+		BUN q, o, s, offset = 0;
+		BATiter gi = bat_iterator(g);
+
+		pos = GDKmalloc(sizeof(BUN)*BATcount(e)); 
+		for (s = 0; s < BATcount(e); s++) 
+			pos[s] = -1;
+
+		offset = g->hseqbase - l->hseqbase;
+		o = BUNlast(g);
+		for (q = offset, s = 0; s < o; q++, s++) {
+			oid id = *(oid*)BUNtail(gi, s);
+			if (pos[id] == -2)
+				continue;
+			else if (pos[id] == -1)
+				pos[id] = q;
+			else {
+				const void *lv = BUNtail(li, q);
+				const void *rv = BUNtail(li, pos[id]);
+
+				if (ocmp(lv, rv) != 0)
+					pos[id] = -2;
+			}
+		}
+	}
+	res = COLnew(e->hseqbase, l->ttype, BATcount(e), TRANSIENT);
+	const void *nilp = ATOMnilptr(l->ttype);
+	for (p = 0; p < (ssize_t)BATcount(e) && !error; p++) {
+		const void *v = nilp;
+		if (pos[p] >= 0) {
+			v = BUNtail(li, pos[p]);
+			if (ocmp(v, nilp) == 0)
+				has_nil = 1;
+		} else
+			has_nil = 1;
+		if (BUNappend(res, v, false) != GDK_SUCCEED)
+			error = 1;
+	}
+	GDKfree(pos);
+	if (error)
+		throw(SQL, "all =", SQLSTATE(HY005) "all append failed");
+
+	res->hseqbase = g->hseqbase;
+	res->tnil = (has_nil)?1:0;
+	res->tnonil = (has_nil)?0:1;
+	res->tsorted = res->trevsorted = 0;
+	res->tkey = 0;
+	BBPunfix(l->batCacheid);
+	BBPunfix(g->batCacheid);
+	BBPunfix(e->batCacheid);
+	BBPkeepref(*ret = res->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
 SQLnil(bit *ret, const bat *bid)
 {
 	BAT *b;
@@ -3425,6 +3503,66 @@ SQLnil(bit *ret, const bat *bid)
 		}
 	}
 	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+SQLnil_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
+{
+	BAT *l, *g, *e, *res;
+	bit F = FALSE;
+	BUN offset = 0;
+	bit has_nil = 0;
+
+	(void)no_nil;
+	if ((l = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "any =", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((g = BATdescriptor(*gp)) == NULL) {
+		BBPunfix(l->batCacheid);
+		throw(SQL, "any =", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((e = BATdescriptor(*gpe)) == NULL) {
+		BBPunfix(l->batCacheid);
+		BBPunfix(g->batCacheid);
+		throw(SQL, "any =", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	res = BATconstant(0, TYPE_bit, &F, BATcount(e), TRANSIENT);
+	BAThseqbase(res, e->hseqbase);
+	offset = g->hseqbase - l->hseqbase;
+	if (BATcount(g) > 0) {
+		BUN q, o, s;
+		int (*ocmp) (const void *, const void *);
+		BATiter li = bat_iterator(l);
+		BATiter gi = bat_iterator(g);
+		BATiter rt = bat_iterator(res);
+
+		bit *ret = BUNtail(rt, 0);
+		const void *nilp = ATOMnilptr(l->ttype);
+
+		o = BUNlast(g);
+		ocmp = ATOMcompare(l->ttype);
+		for (q = offset, s = 0; s < o; q++, s++) {
+			const void *lv = BUNtail(li, q);
+			oid id = *(oid*)BUNtail(gi, s);
+
+			if (ret[id] != TRUE) {
+				if (ocmp(lv, nilp) == 0) {
+					ret[id] = bit_nil;
+					has_nil = 1;
+				}
+			}
+		}
+	}
+	res->hseqbase = g->hseqbase;
+	res->tnil = has_nil != 0;
+	res->tnonil = has_nil == 0;
+	res->tsorted = res->trevsorted = 0;
+	res->tkey = 0;
+	BBPunfix(l->batCacheid);
+	BBPunfix(g->batCacheid);
+	BBPunfix(e->batCacheid);
+	BBPkeepref(*ret = res->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -3621,7 +3759,7 @@ SQLanyequal_grp2(bat *ret, const bat *bid1, const bat *bid2, const bat *Rid, con
 			oid id = *(oid*)BUNtail(gi, s);
 
 			if (ret[id] != TRUE) {
-				if (rid == oid_nil) {
+				if (rid == oid_nil) { /* empty */
 					ret[id] = FALSE;
 				} else if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
 					ret[id] = bit_nil;
@@ -3811,7 +3949,7 @@ SQLallnotequal_grp2(bat *ret, const bat *bid1, const bat *bid2, const bat *Rid, 
 			oid id = *(oid*)BUNtail(gi, s);
 
 			if (ret[id] != FALSE) {
-				if (rid == oid_nil) {
+				if (rid == oid_nil) { /* empty */
 					ret[id] = TRUE;
 				} else if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
 					ret[id] = bit_nil;
@@ -4446,14 +4584,14 @@ str
 dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	BAT *t[13];
+	BAT *t[2];
 	bat id;
 
 	(void) cntxt;
 	(void) mb;
-	if (TRACEtable(t) != 13)
+	if (TRACEtable(cntxt, t) != 2)
 		throw(SQL, "sql.dump_trace", SQLSTATE(3F000) "Profiler not started");
-	for(i=0; i< 13; i++)
+	for(i=0; i< 2; i++)
 	if( t[i]){
 		id = t[i]->batCacheid;
 		*getArgReference_bat(stk, pci, i) = id;
@@ -5723,7 +5861,7 @@ str
 SQLsubexist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
 {
 	BAT *b, *g, *e, *res;
-	bit F = FALSE, hasnil = 0;
+	bit T = TRUE;
 	BUN offset = 0;
 
 	(void)no_nil;
@@ -5738,6 +5876,101 @@ SQLsubexist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
 		throw(SQL, "exists", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	res = BATconstant(0, TYPE_bit, &T, BATcount(e), TRANSIENT);
+	BAThseqbase(res, e->hseqbase);
+	offset = g->hseqbase - b->hseqbase;
+	if (BATcount(g) > 0) {
+		BUN q, o, s;
+		int (*ocmp) (const void *, const void *);
+		BATiter bi = bat_iterator(b);
+		BATiter gi = bat_iterator(g);
+		BATiter rt = bat_iterator(res);
+
+		bit *ret = BUNtail(rt, 0);
+		const void *nilp = ATOMnilptr(b->ttype);
+
+		o = BUNlast(g);
+		ocmp = ATOMcompare(b->ttype);
+		for (q = offset, s = 0; s < o; q++, s++) {
+			const void *bv = BUNtail(bi, q);
+			oid id = *(oid*)BUNtail(gi, s);
+
+			if (ret[id] == TRUE) {
+				if (ocmp(bv, nilp) == 0) {
+					ret[id] = FALSE;
+				}
+			}
+		}
+	}
+	res->hseqbase = g->hseqbase;
+	res->tnil = 0;
+	res->tnonil = 1;
+	res->tsorted = res->trevsorted = 0;
+	res->tkey = 0;
+	BBPunfix(b->batCacheid);
+	BBPunfix(g->batCacheid);
+	BBPunfix(e->batCacheid);
+	BBPkeepref(*ret = res->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+SQLnot_exist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bit *res = getArgReference_bit(stk, pci, 0);
+	ptr v = getArgReference(stk, pci, 1);
+	int mtype = getArgType(mb, pci, 1);
+
+	(void)cntxt;
+	if ((mtype == TYPE_bat || mtype > GDKatomcnt)) {
+	       	BAT *b = BATdescriptor(*(bat *)v);
+
+		if (b)
+			*res = BATcount(b) == 0;
+		else
+			throw(SQL, "aggr.not_exist", SQLSTATE(HY005) "Cannot access column descriptor");
+	} else
+	//if (ATOMcmp(mtype, v, ATOMnilptr(mtype)) != 0)
+		*res = FALSE;
+		/*
+	else
+		*res = FALSE;
+		*/
+	return MAL_SUCCEED;
+}
+
+str
+SQLnot_exist(bit *res, bat *id)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*id)) == NULL)
+		throw(SQL, "aggr.not_exist", SQLSTATE(HY005) "Cannot access column descriptor");
+	*res = BATcount(b) == 0;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+SQLsubnot_exist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
+{
+	BAT *b, *g, *e, *res;
+	bit F = FALSE, hasnil = 0;
+	BUN offset = 0;
+
+	(void)no_nil;
+	if ((b = BATdescriptor(*bp)) == NULL) {
+		throw(SQL, "not_exists", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((g = BATdescriptor(*gp)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "not_exists", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((e = BATdescriptor(*gpe)) == NULL) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
+		throw(SQL, "not_exists", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	res = BATconstant(0, TYPE_bit, &F, BATcount(e), TRANSIENT);
 	BAThseqbase(res, e->hseqbase);

@@ -36,10 +36,10 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
-#ifdef DEBUG_OPT_CONSTANTS
-	fprintf(stderr,"#OPT_CONSTANTS: MATCHING CONSTANTS ELEMENTS\n");
-#endif
-
+    if( OPTdebug &  OPTconstants){
+        fprintf(stderr, "#CONSTANTS optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	alias= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	cst= (VarPtr*) GDKzalloc(sizeof(VarPtr) * mb->vtop);
 	index= (int*) GDKzalloc(sizeof(int) * mb->vtop);
@@ -66,9 +66,9 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					 x->rowcnt == y->rowcnt &&
 					 x->value.vtype == y->value.vtype &&
 					ATOMcmp(x->value.vtype, VALptr(&x->value), VALptr(&y->value)) == 0){
-#ifdef DEBUG_OPT_CONSTANTS
-					fprintf(stderr,"#opt_constants: matching elements %s %d %d\n", getVarName(mb,i), i,k);
-#endif
+					if( OPTdebug &  OPTconstants){
+						fprintf(stderr,"#opt_constants: matching elements %s %d %d\n", getVarName(mb,i), i,k);
+					}
 					/* re-use a constant */
 					alias[i]= index[k];
 					fnd=1;
@@ -77,9 +77,9 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				}
 			}
 			if ( fnd == 0){
-#ifdef DEBUG_OPT_CONSTANTS
-				fprintf(stderr,"swith elements %d %d\n", i,n);
-#endif
+				if( OPTdebug &  OPTconstants){
+					fprintf(stderr,"swith elements %d %d\n", i,n);
+				}
 				cst[n]= x;
 				index[n]= i;
 				n++;
@@ -110,5 +110,9 @@ wrapup:
 	if( alias) GDKfree(alias);
 	if( cst) GDKfree(cst);
 	if( index) GDKfree(index);
+    if( OPTdebug &  OPTconstants){
+        fprintf(stderr, "#CONSTANTS optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return msg;
 }

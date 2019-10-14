@@ -341,9 +341,17 @@ command all( col:bat[:any_1]) :any_1
 address SQLall
 comment "if all values in col are equal return this, else nil";
 
+command suball(l:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1]
+address SQLall_grp
+comment "if all values in l are equal (per group) return the value, else nil";
+
 command null(b:bat[:any_1]) :bit
 address SQLnil
 comment "if b has a nil return true, else false";
+
+command subnull(l:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
+address SQLnil_grp
+comment "if any value in l is nil with in a group return true for that group, else false";
 
 command any(cmp:bit, nl:bit, nr:bit) :bit
 address SQLany_cmp
@@ -443,18 +451,7 @@ address dump_opt_stats
 comment "dump the optimizer rewrite statistics";
 
 pattern dump_trace()(
-	event:bat[:int],
-	clk:bat[:str],
-	pc:bat[:str],
-	thread:bat[:int],
 	ticks:bat[:lng],
-	rssMB:bat[:lng],
-	vmMB:bat[:lng],
-	reads:bat[:lng],
-	writes:bat[:lng],
-	minflt:bat[:lng],
-	majflt:bat[:lng],
-	nvcsw:bat[:lng],
 	stmt:bat[:str])
 address dump_trace
 comment "dump the trace statistics";

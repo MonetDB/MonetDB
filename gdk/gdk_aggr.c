@@ -2704,13 +2704,6 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 /* ---------------------------------------------------------------------- */
 /* quantiles/median */
 
-BAT *
-BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	       bool skip_nils, bool abort_on_error)
-{
-	return BATgroupquantile(b,g,e,s,tp,0.5,skip_nils,abort_on_error);
-}
-
 #if SIZEOF_OID == SIZEOF_INT
 #define binsearch_oid(indir, offset, vals, lo, hi, v, ordering, last) binsearch_int(indir, offset, (const int *) vals, lo, hi, (int) (v), ordering, last)
 #endif
@@ -2718,9 +2711,9 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 #define binsearch_oid(indir, offset, vals, lo, hi, v, ordering, last) binsearch_lng(indir, offset, (const lng *) vals, lo, hi, (lng) (v), ordering, last)
 #endif
 
-BAT *
-BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
-		 bool skip_nils, bool abort_on_error)
+static BAT *
+doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
+		   bool skip_nils, bool abort_on_error, bool average)
 {
 	bool freeb = false, freeg = false;
 	oid min, max;
@@ -2733,10 +2726,30 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	BATiter bi;
 	const void *v;
 	const void *nil = ATOMnilptr(tp);
+	const void *dnil = nil;
+	dbl val;		/* only used for average */
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
 	const char *err;
 	(void) abort_on_error;
 
+	if (average) {
+		switch (ATOMbasetype(b->ttype)) {
+		case TYPE_bte:
+		case TYPE_sht:
+		case TYPE_int:
+		case TYPE_lng:
+#ifdef HAVE_HGE
+		case TYPE_hge:
+#endif
+		case TYPE_flt:
+		case TYPE_dbl:
+			break;
+		default:
+			GDKerror("BATgroupquantile: incompatible type\n");
+			return NULL;
+		}
+		dnil = &dbl_nil;
+	}
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATgroupquantile: %s\n", err);
 		return NULL;
@@ -2757,7 +2770,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		/* trivial: no values, thus also no quantiles,
 		 * so return bat aligned with e with nil in the tail
 		 * The same happens for a NULL quantile */
-		return BATconstant(ngrp == 0 ? 0 : min, tp, nil, ngrp, TRANSIENT);
+		return BATconstant(ngrp == 0 ? 0 : min, average ? TYPE_dbl : tp, dnil, ngrp, TRANSIENT);
 	}
 
 	if (s) {
@@ -2786,7 +2799,10 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		if (BATtdense(g)) {
 			/* singleton groups, so calculating quantile is
 			 * easy */
-			bn = COLcopy(b, tp, false, TRANSIENT);
+			if (average)
+				bn = BATconvert(b, NULL, TYPE_dbl, abort_on_error);
+			else
+				bn = COLcopy(b, tp, false, TRANSIENT);
 			BAThseqbase(bn, g->tseqbase); /* deals with NULL */
 			if (freeb)
 				BBPunfix(b->batCacheid);
@@ -2811,7 +2827,10 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		freeb = true;
 		BBPunfix(t2->batCacheid);
 
-		bn = COLnew(min, tp, ngrp, TRANSIENT);
+		if (average)
+			bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
+		else
+			bn = COLnew(min, tp, ngrp, TRANSIENT);
 		if (bn == NULL)
 			goto bunins_failed;
 
@@ -2835,8 +2854,38 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			}
 			if (r == p) {
 				/* no non-nils found */
-				v = nil;
+				v = dnil;
 				nils++;
+			} else if (average) {
+				double f = (p - r - 1) * quantile;
+				double lo = floor(f);
+				double hi = ceil(f);
+				switch (ATOMbasetype(tp)) {
+				case TYPE_bte:
+					val = (f - lo) * *(bte*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(bte*)BUNtail(bi, r + (BUN) lo);
+					break;
+				case TYPE_sht:
+					val = (f - lo) * *(sht*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(sht*)BUNtail(bi, r + (BUN) lo);
+					break;
+				case TYPE_int:
+					val = (f - lo) * *(int*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(int*)BUNtail(bi, r + (BUN) lo);
+					break;
+				case TYPE_lng:
+					val = (f - lo) * *(lng*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(lng*)BUNtail(bi, r + (BUN) lo);
+					break;
+#ifdef HAVE_HGE
+				case TYPE_hge:
+					val = (f - lo) * *(hge*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(hge*)BUNtail(bi, r + (BUN) lo);
+					break;
+#endif
+				case TYPE_flt:
+					val = (f - lo) * *(flt*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(flt*)BUNtail(bi, r + (BUN) lo);
+					break;
+				case TYPE_dbl:
+					val = (f - lo) * *(dbl*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(dbl*)BUNtail(bi, r + (BUN) lo);
+					break;
+				}
+				v = &val;
 			} else {
 				/* round *down* to nearest integer */
 				double f = (p - r - 1) * quantile;
@@ -2845,13 +2894,13 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				assert(qindex >= r && qindex <  p);
 				v = BUNtail(bi, qindex);
 				if (!skip_nils && !b->tnonil)
-					nils += (*atomcmp)(v, nil) == 0;
+					nils += (*atomcmp)(v, dnil) == 0;
 			}
 			bunfastapp_nocheck(bn, BUNlast(bn), v, Tsize(bn));
 		}
 		nils += ngrp - BATcount(bn);
 		while (BATcount(bn) < ngrp) {
-			bunfastapp_nocheck(bn, BUNlast(bn), nil, Tsize(bn));
+			bunfastapp_nocheck(bn, BUNlast(bn), dnil, Tsize(bn));
 		}
 		bn->theap.dirty = true;
 		BBPunfix(g->batCacheid);
@@ -2860,7 +2909,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		BAT *pb = NULL;
 		const oid *ords;
 
-		bn = COLnew(0, tp, 1, TRANSIENT);
+		bn = COLnew(0, average ? TYPE_dbl : tp, 1, TRANSIENT);
 		if (bn == NULL)
 			goto bunins_failed;
 
@@ -2891,13 +2940,43 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		else
 			r = 0;
 
+		bi = bat_iterator(b);
 		if (r == p) {
 			/* no non-nil values, so quantile is nil */
-			v = nil;
+			v = dnil;
 			nils++;
+		} else if (average) {
+			double f = (p - r - 1) * quantile;
+			double lo = floor(f);
+			double hi = ceil(f);
+			switch (ATOMbasetype(tp)) {
+			case TYPE_bte:
+				val = (f - lo) * *(bte*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(bte*)BUNtail(bi, r + (BUN) lo);
+				break;
+			case TYPE_sht:
+				val = (f - lo) * *(sht*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(sht*)BUNtail(bi, r + (BUN) lo);
+				break;
+			case TYPE_int:
+				val = (f - lo) * *(int*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(int*)BUNtail(bi, r + (BUN) lo);
+				break;
+			case TYPE_lng:
+				val = (f - lo) * *(lng*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(lng*)BUNtail(bi, r + (BUN) lo);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				val = (f - lo) * *(hge*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(hge*)BUNtail(bi, r + (BUN) lo);
+				break;
+#endif
+			case TYPE_flt:
+				val = (f - lo) * *(flt*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(flt*)BUNtail(bi, r + (BUN) lo);
+				break;
+			case TYPE_dbl:
+				val = (f - lo) * *(dbl*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(dbl*)BUNtail(bi, r + (BUN) lo);
+				break;
+			}
+			v = &val;
 		} else {
 			double f;
-			bi = bat_iterator(b);
 			/* round (p-r-1)*quantile *down* to nearest
 			 * integer (i.e., 1.49 and 1.5 are rounded to
 			 * 1, 1.51 is rounded to 2) */
@@ -2908,7 +2987,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			else
 				index = index + t1->tseqbase;
 			v = BUNtail(bi, index);
-			nils += (*atomcmp)(v, nil) == 0;
+			nils += (*atomcmp)(v, dnil) == 0;
 		}
 		if (t1)
 			BBPunfix(t1->batCacheid);
@@ -2934,6 +3013,38 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	if (bn)
 		BBPunfix(bn->batCacheid);
 	return NULL;
+}
+
+BAT *
+BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+	       bool skip_nils, bool abort_on_error)
+{
+	return doBATgroupquantile(b, g, e, s, tp, 0.5,
+				  skip_nils, abort_on_error, false);
+}
+
+BAT *
+BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
+		 bool skip_nils, bool abort_on_error)
+{
+	return doBATgroupquantile(b, g, e, s, tp, quantile,
+				  skip_nils, abort_on_error, false);
+}
+
+BAT *
+BATgroupmedian_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+		   bool skip_nils, bool abort_on_error)
+{
+	return doBATgroupquantile(b, g, e, s, tp, 0.5,
+				  skip_nils, abort_on_error, true);
+}
+
+BAT *
+BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
+		     bool skip_nils, bool abort_on_error)
+{
+	return doBATgroupquantile(b, g, e, s, tp, quantile,
+				  skip_nils, abort_on_error, true);
 }
 
 /* ---------------------------------------------------------------------- */

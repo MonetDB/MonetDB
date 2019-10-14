@@ -255,6 +255,16 @@ mvc_status(mvc *m)
 }
 
 int
+mvc_error_retry(mvc *m)
+{
+	int res = m->session->status;
+
+	if (!res || res == -ERR_AMBIGUOUS || res == -ERR_GROUPBY)
+		return 0;
+	return res;
+}
+
+int
 mvc_type(mvc *m)
 {
 	int res = m->type;
@@ -474,8 +484,10 @@ build up the hash (not copied in the trans dup)) */
 		if (mvc_debug)
 			fprintf(stderr, "#mvc_commit done\n");
 		if (GDKverbose >= 1)
-			fprintf(stderr, "#%s: commit done (no changes)\n",
-				MT_thread_getname());
+			fprintf(stderr, "#%s: commit done (no changes)%s%.200s\n",
+				MT_thread_getname(),
+				GDKverbose >= 2 && m->query ? ", query: " : "",
+				GDKverbose >= 2 && m->query ? m->query : "");
 		return msg;
 	}
 
@@ -534,8 +546,10 @@ build up the hash (not copied in the trans dup)) */
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_commit done\n");
 	if (GDKverbose >= 1)
-		fprintf(stderr, "#%s: commit done\n",
-			MT_thread_getname());
+		fprintf(stderr, "#%s: commit done%s%.200s\n",
+			MT_thread_getname(),
+			GDKverbose >= 2 && m->query ? ", query: " : "",
+			GDKverbose >= 2 && m->query ? m->query : "");
 	return msg;
 }
 
@@ -599,9 +613,11 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_rollback %s done\n", (name) ? name : "");
 	if (GDKverbose >= 1)
-		fprintf(stderr, "#%s: commit%s%s rolled back%s\n",
+		fprintf(stderr, "#%s: commit%s%s rolled back%s%s%.200s\n",
 			MT_thread_getname(), name ? " " : "", name ? name : "",
-			tr->wtime == 0 ? " (no changes)" : "");
+			tr->wtime == 0 ? " (no changes)" : "",
+			GDKverbose >= 2 && m->query ? ", query: " : "",
+			GDKverbose >= 2 && m->query ? m->query : "");
 	return msg;
 }
 
@@ -612,7 +628,6 @@ str
 mvc_release(mvc *m, const char *name)
 {
 	int ok = SQL_OK;
-	int res = Q_TRANS;
 	sql_trans *tr = m->session->tr;
 	str msg = MAL_SUCCEED;
 
@@ -647,7 +662,7 @@ mvc_release(mvc *m, const char *name)
 	m->session->tr = tr;
 	m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 
-	m->type = res;
+	m->type = Q_TRANS;
 	return msg;
 }
 
@@ -835,6 +850,7 @@ mvc_destroy(mvc *m)
 	m->qc = NULL;
 
 	_DELETE(m->args);
+	_DELETE(m->query);
 	m->args = NULL;
 	_DELETE(m);
 }
@@ -1411,7 +1427,7 @@ void
 mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sql_dependency depend_type)
 {
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_create_dependency %d %d %d\n", id, depend_id, depend_type);
+		fprintf(stderr, "#mvc_create_dependency %d %d %d\n", id, depend_id, (int) depend_type);
 	if ( (id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) )
 		sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
 }

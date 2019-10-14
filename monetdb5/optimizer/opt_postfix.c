@@ -89,6 +89,11 @@ finished:
 
 wrapup:
 	if(vars) GDKfree(vars);
+
+    if( OPTdebug &  OPTpostfix){
+        fprintf(stderr, "#POSTFIX optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return msg;
 #else
 	(void) cntxt;

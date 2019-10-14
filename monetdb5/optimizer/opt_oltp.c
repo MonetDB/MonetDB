@@ -19,17 +19,12 @@ addLock(Client cntxt, OLTPlocks locks, MalBlkPtr mb, InstrPtr p, int sch, int tb
 {	BUN hash;
 	char *r,*s;
 
+	(void) cntxt;
 	r =(sch?getVarConstant(mb, getArg(p,sch)).val.sval : "sqlcatalog");
 	s =(tbl? getVarConstant(mb, getArg(p,tbl)).val.sval : "");
 	hash = (strHash(r)  ^ strHash(s)) % MAXOLTPLOCKS ;
 	hash += (hash == 0);
 	locks[hash] = 1;
-#ifdef _DEBUG_OLP_
-	fprintf(stderr,"#addLock %s "BUNFMT", %s "BUNFMT" combined "BUNFMT"\n",
-		r, strHash(r), s, strHash(s),hash);
-#else
-	(void) cntxt;
-#endif
 }
 
 str
@@ -143,5 +138,9 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     newComment(mb,buf);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
+    if( OPTdebug &  OPToltp){
+        fprintf(stderr, "#OLTP optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return msg;
 }

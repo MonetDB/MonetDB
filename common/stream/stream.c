@@ -73,6 +73,9 @@
 # include <netinet/tcp.h>
 # include <netdb.h>
 #endif
+#ifdef HAVE_POLL_H
+#include <poll.h>
+#endif
 
 #ifdef NATIVE_WIN32
 #include <io.h>
@@ -2489,9 +2492,21 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 #endif
 	for (;;) {
 		if (s->timeout) {
+			int ret;
+#ifdef HAVE_POLL
+			struct pollfd pfd;
+
+			pfd = (struct pollfd) {.fd = s->stream_data.s,
+					       .events = POLLIN};
+
+			ret = poll(&pfd, 1, (int) s->timeout);
+			if (ret == -1 || (pfd.revents & POLLERR)) {
+				s->errnr = MNSTR_READ_ERROR;
+				return -1;
+			}
+#else
 			struct timeval tv;
 			fd_set fds;
-			int ret;
 
 			errno = 0;
 #ifdef _MSC_VER
@@ -2512,6 +2527,7 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 				s->errnr = MNSTR_READ_ERROR;
 				return -1;
 			}
+#endif
 			if (ret == 0) {
 				if (s->timeout_func == NULL || s->timeout_func()) {
 					s->errnr = MNSTR_TIMEOUT;
@@ -2520,7 +2536,11 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 				continue;
 			}
 			assert(ret == 1);
+#ifdef HAVE_POLL
+			assert(pfd.revents & (POLLIN|POLLHUP));
+#else
 			assert(FD_ISSET(s->stream_data.s, &fds));
+#endif
 		}
 #ifdef _MSC_VER
 		nr = recv(s->stream_data.s, buf, (int) size, 0);
@@ -2617,9 +2637,20 @@ static int
 socket_isalive(stream *s)
 {
 	SOCKET fd = s->stream_data.s;
-	char buffer[32];
+#ifdef HAVE_POLL
+	struct pollfd pfd;
+	int ret;
+	pfd = (struct pollfd){.fd = fd};
+	if ((ret = poll(&pfd, 1, 0)) == 0)
+		return 1;
+	if (ret < 0 || pfd.revents & (POLLERR | POLLHUP))
+		return 0;
+	assert(0);		/* unexpected revents value */
+	return 0;
+#else
 	fd_set fds;
 	struct timeval t;
+	char buffer[32];
 
 	t.tv_sec = 0;
 	t.tv_usec = 0;
@@ -2633,6 +2664,7 @@ socket_isalive(stream *s)
 #endif
 		&fds, NULL, NULL, &t) <= 0 ||
 		recv(fd, buffer, sizeof(buffer), MSG_PEEK | MSG_DONTWAIT) != 0;
+#endif
 }
 
 static stream *

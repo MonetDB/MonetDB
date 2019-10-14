@@ -38,6 +38,7 @@
 
 #include "monetdb_config.h"
 #include "mdb.h"
+#include "mal_authorize.h"
 #include "mal_function.h"
 
 #define MDBstatus(X) \
@@ -70,6 +71,8 @@ MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		pid = *getArgReference_int(stk, p, 1);
 		if( pid< 0 || pid >= MAL_MAXCLIENTS || mal_clients[pid].mode <= FINISHCLIENT)
 			throw(MAL, "mdb.start", ILLEGAL_ARGUMENT " Illegal process id");
+		if( cntxt->user != MAL_ADMIN && mal_clients[pid].user != cntxt->user)
+			throw(MAL, "mdb.start", "Access violation");
 		c= mal_clients+pid;
 		/* make client aware of being debugged */
 		cntxt= c;
@@ -141,46 +144,177 @@ MDBsetVarTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-MDBgetDebug(int *ret)
+MDBgetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	int *ret = getArgReference_int(stk,p,0);
+
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
     *ret = GDKdebug;
     return MAL_SUCCEED;
 }
 
 str
-MDBsetDebug(int *ret, int *flg)
+MDBsetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-    *ret = GDKdebug;
+	int *ret = getArgReference_int(stk,p,0);
+	int *flg = getArgReference_int(stk,p,1);
+
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
     GDKdebug = *flg;
+	*ret = GDKdebug;
     return MAL_SUCCEED;
 }
+
+#define addFlag(NME, FLG, DSET) \
+	state =  (DSET & FLG)  > 0;\
+	if (BUNappend(flg, (void*) NME, false) != GDK_SUCCEED) goto bailout;\
+	if (BUNappend(val, &state, false) != GDK_SUCCEED) goto bailout;
+
 str
-MDBsetDebugStr(int *ret, str *flg)
+MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	bat *f = getArgReference_bat(stk,p,0);
+    bat *v = getArgReference_bat(stk,p,1);
+	BAT *flg, *val;
+	bit state = 0;
+
+	(void) cntxt;
+	(void) mb;
+
+	flg = COLnew(0, TYPE_str, 256, TRANSIENT);
+	val = COLnew(0, TYPE_bit, 256, TRANSIENT);
+
+	if( flg == NULL || val == NULL){
+		BBPreclaim(flg);
+		BBPreclaim(val);
+		throw(MAL, "mdb.getDebugFlags",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+	addFlag("threads", GRPthreads, GDKdebug);
+	addFlag("memory", GRPmemory, GDKdebug);
+	addFlag("properties", GRPproperties, GDKdebug);
+	addFlag("io", GRPio, GDKdebug);
+	addFlag("heaps", GRPheaps, GDKdebug);
+	addFlag("transactions", GRPtransactions, GDKdebug);
+	addFlag("modules", GRPmodules, GDKdebug);
+	addFlag("algorithms", GRPalgorithms, GDKdebug);
+	addFlag("performance", GRPperformance, GDKdebug);
+	addFlag("forcemito", GRPforcemito, GDKdebug);
+
+    addFlag("aliases", OPTaliases, OPTdebug);
+	addFlag("candidates", OPTcandidates, OPTdebug);
+	addFlag("coercion", OPTcoercion, OPTdebug);
+	addFlag("commonterms", OPTcommonterms, OPTdebug);
+	addFlag("constants", OPTconstants, OPTdebug);
+	addFlag("costmodel", OPTcostmodel, OPTdebug);
+	addFlag("dataflow", OPTdataflow, OPTdebug);
+	addFlag("deadcode", OPTdeadcode, OPTdebug);
+	addFlag("emptybind", OPTemptybind, OPTdebug);
+	addFlag("evaluate", OPTevaluate, OPTdebug);
+	addFlag("garbagecollector", OPTgarbagecollector, OPTdebug);
+	addFlag("generator", OPTgenerator, OPTdebug);
+	addFlag("inline", OPTinline, OPTdebug);
+	addFlag("jit", OPTjit, OPTdebug);
+	addFlag("json", OPTjson, OPTdebug);
+	addFlag("macros", OPTmacros, OPTdebug);
+	addFlag("matpack", OPTmatpack, OPTdebug);
+	addFlag("mergetable", OPTmergetable, OPTdebug);
+	addFlag("mitosis", OPTmitosis, OPTdebug);
+	addFlag("multiplex", OPTmultiplex, OPTdebug);
+	addFlag("oltp", OPToltp, OPTdebug);
+	addFlag("pipes", OPTpipes, OPTdebug);
+	addFlag("postfix", OPTpostfix, OPTdebug);
+	addFlag("prelude", OPTprelude, OPTdebug);
+	addFlag("profiler", OPTprofiler, OPTdebug);
+	addFlag("projectionpath", OPTprojectionpath, OPTdebug);
+	addFlag("pushselect", OPTpushselect, OPTdebug);
+	addFlag("querylog", OPTquerylog, OPTdebug);
+	addFlag("reduce", OPTreduce, OPTdebug);
+	addFlag("remap", OPTremap, OPTdebug);
+	addFlag("remotequeries", OPTremotequeries, OPTdebug);
+	addFlag("reorder", OPTreorder, OPTdebug);
+	addFlag("support", OPTsupport, OPTdebug);
+	addFlag("volcano", OPTvolcano, OPTdebug);
+	addFlag("wlc", OPTwlc, OPTdebug);
+
+    BBPkeepref( *f = flg->batCacheid);
+    BBPkeepref( *v = val->batCacheid);
+	return MAL_SUCCEED;
+
+bailout:
+	BBPunfix(flg->batCacheid);
+	BBPunfix(val->batCacheid);
+	throw(MAL, "mdb.getDebugFlags",SQLSTATE(HY001) "Failed to append");
+}
+
+/* Toggle the debug flags on/off */
+static str
+MDBsetDebugStr_(int *ret, str *flg)
+{	
+	if( strcmp("threads",*flg)==0) GDKdebug ^= GRPthreads;
+	if( strcmp("memory",*flg)==0) GDKdebug ^= GRPmemory;
+	if( strcmp("properties",*flg)==0) GDKdebug ^= GRPproperties;
+	if( strcmp("io",*flg)==0) GDKdebug ^= GRPio;
+	if( strcmp("heaps",*flg)==0) GDKdebug ^= GRPheaps;
+	if( strcmp("transactions",*flg)==0) GDKdebug ^= GRPtransactions;
+	if( strcmp("modules",*flg)==0) GDKdebug ^= GRPmodules;
+	if( strcmp("algorithms",*flg)==0) GDKdebug ^= GRPalgorithms;
+	if( strcmp("performance",*flg)==0) GDKdebug ^= GRPperformance;
+	if( strcmp("forcemito",*flg)==0) GDKdebug ^= GRPforcemito;
 	*ret = GDKdebug;
-	if( strcmp("threads",*flg)==0)
-		GDKdebug |= GRPthreads;
-	if( strcmp("memory",*flg)==0)
-		GDKdebug |= GRPmemory;
-	if( strcmp("properties",*flg)==0)
-		GDKdebug |= GRPproperties;
-	if( strcmp("io",*flg)==0)
-		GDKdebug |= GRPio;
-	if( strcmp("heaps",*flg)==0)
-		GDKdebug |= GRPheaps;
-	if( strcmp("transactions",*flg)==0)
-		GDKdebug |= GRPtransactions;
-	if( strcmp("modules",*flg)==0)
-		GDKdebug |= GRPmodules;
-	if( strcmp("algorithms",*flg)==0)
-		GDKdebug |= GRPalgorithms;
-	if( strcmp("optimizers",*flg)==0)
-		GDKdebug |= GRPoptimizers;
-	if( strcmp("performance",*flg)==0)
-		GDKdebug |= GRPperformance;
-	if( strcmp("forcemito",*flg)==0)
-		GDKdebug |= GRPforcemito;
+
+    if( strcmp("aliases",*flg)==0) OPTdebug ^= OPTaliases;
+	if( strcmp("candidates", *flg) == 0) OPTdebug ^= OPTcandidates;
+	if( strcmp("coercion", *flg) == 0) OPTdebug ^= OPTcoercion;
+	if( strcmp("commonterms", *flg) == 0) OPTdebug ^= OPTcommonterms;
+	if( strcmp("constants", *flg) == 0) OPTdebug ^= OPTconstants;
+	if( strcmp("costmodel", *flg) == 0) OPTdebug ^= OPTcostmodel;
+	if( strcmp("dataflow", *flg) == 0) OPTdebug ^= OPTdataflow;
+	if( strcmp("deadcode", *flg) == 0) OPTdebug ^= OPTdeadcode;
+	if( strcmp("emptybind", *flg) == 0) OPTdebug ^= OPTemptybind;
+	if( strcmp("evaluate", *flg) == 0) OPTdebug ^= OPTevaluate;
+	if( strcmp("garbagecollector", *flg) == 0) OPTdebug ^= OPTgarbagecollector;
+	if( strcmp("generator", *flg) == 0) OPTdebug ^= OPTgenerator;
+	if( strcmp("inline", *flg) == 0) OPTdebug ^= OPTinline;
+	if( strcmp("jit", *flg) == 0) OPTdebug ^= OPTjit;
+	if( strcmp("json", *flg) == 0) OPTdebug ^= OPTjson;
+	if( strcmp("macros", *flg) == 0) OPTdebug ^= OPTmacros;
+	if( strcmp("matpack", *flg) == 0) OPTdebug ^= OPTmatpack;
+	if( strcmp("mergetable", *flg) == 0) OPTdebug ^= OPTmergetable;
+	if( strcmp("mitosis", *flg) == 0) OPTdebug ^= OPTmitosis;
+	if( strcmp("multiplex", *flg) == 0) OPTdebug ^= OPTmultiplex;
+	if( strcmp("oltp", *flg) == 0) OPTdebug ^= OPToltp;
+	if( strcmp("pipes", *flg) == 0) OPTdebug ^= OPTpipes;
+	if( strcmp("postfix", *flg) == 0) OPTdebug ^= OPTpostfix;
+	if( strcmp("prelude", *flg) == 0) OPTdebug ^= OPTprelude;
+	if( strcmp("profiler", *flg) == 0) OPTdebug ^= OPTprofiler;
+	if( strcmp("projectionpath", *flg) == 0) OPTdebug ^= OPTprojectionpath;
+	if( strcmp("pushselect", *flg) == 0) OPTdebug ^= OPTpushselect;
+	if( strcmp("querylog", *flg) == 0) OPTdebug ^= OPTquerylog;
+	if( strcmp("reduce", *flg) == 0) OPTdebug ^= OPTreduce;
+	if( strcmp("remap", *flg) == 0) OPTdebug ^= OPTremap;
+	if( strcmp("remotequeries", *flg) == 0) OPTdebug ^= OPTremotequeries;
+	if( strcmp("reorder", *flg) == 0) OPTdebug ^= OPTreorder;
+	if( strcmp("support", *flg) == 0) OPTdebug ^= OPTsupport;
+	if( strcmp("volcano", *flg) == 0) OPTdebug ^= OPTvolcano;
+	if( strcmp("wlc", *flg) == 0) OPTdebug ^= OPTwlc;
     return MAL_SUCCEED;
+}
+
+str
+MDBsetDebugStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	str *flg = (str*) getArgReference(stk, p, 1);
+	int *ret = (int*) getArgReference(stk, p, 0);
+
+	(void) cntxt;
+	(void) mb;
+	return MDBsetDebugStr_(ret, flg);
 }
 
 str
