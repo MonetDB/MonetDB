@@ -383,7 +383,7 @@ push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 }
 
 static sql_rel *
-push_up_project(mvc *sql, sql_rel *rel) 
+push_up_project(mvc *sql, sql_rel *rel, list *ad) 
 {
 	/* input rel is dependent outerjoin with on the right a project, we first try to push inner side expressions down (because these cannot be pushed up) */ 
 	if (rel && is_outerjoin(rel->op) && is_dependent(rel)) {
@@ -440,10 +440,40 @@ push_up_project(mvc *sql, sql_rel *rel)
 			/* only pass bound variables */
 			for (m=r->exps->h; m; m = m->next) {
 				sql_exp *e = m->data;
+				sql_subfunc *sf = e->f;
 
 				if (!e->freevar || exp_name(e)) { /* only skip full freevars */
 					if (exp_has_freevar(sql, e)) 
 						rel_bind_var(sql, rel->l, e);
+				}
+				/* window functions need to be run per freevars */
+				/* later recursively find functions */
+				if (e->type == e_func && sf->func->type == F_ANALYTIC) {
+					sql_subtype *bt = sql_bind_localtype("bit");
+					node *d;
+					list *rankopargs = e->l;
+					node *n = rankopargs->h->next; /* second arg */
+					sql_exp *pe = n->data;
+
+					/* find partition expression in rankfunc */
+					/* diff function */
+					if (exp_is_atom(pe))
+						pe = NULL;
+					for(d=ad->h; d; d=d->next) {
+						sql_subfunc *df;
+						sql_exp *e = d->data;
+						list *args = sa_list(sql->sa);
+						if (pe) { 
+							df = sql_bind_func(sql->sa, NULL, "diff", bt, exp_subtype(e), F_ANALYTIC);
+							append(args, pe);
+						} else {
+							df = sql_bind_func(sql->sa, NULL, "diff", exp_subtype(e), NULL, F_ANALYTIC);
+						}
+						assert(df);
+						append(args, e);
+						pe = exp_op(sql->sa, args, df);
+					}
+					n->data = pe;
 				}
 				append(n->exps, e);
 			}
@@ -979,7 +1009,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 			list *ad = rel_dependent_var(sql, rel->l, rel->r);
 
 			if (r && is_simple_project(r->op)) {
-				rel = push_up_project(sql, rel);
+				rel = push_up_project(sql, rel, ad);
 				return rel_unnest_dependent(sql, rel);
 			}
 

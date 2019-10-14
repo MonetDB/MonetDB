@@ -18,9 +18,9 @@
 #define sql_having   8
 #define sql_orderby 16
 #define sql_groupby 32 //ORed
-#define sql_partitionby 64 //ORed
-#define sql_aggr 128 //ORed
-#define sql_farg 256 //ORed
+#define sql_aggr    64 //ORed
+#define sql_farg   128 //ORed
+#define sql_window 256 //ORed
 #define sql_group_totals 512 //ORed
 
 #define is_sql_from(X)    ((X & sql_from) == sql_from)
@@ -29,9 +29,9 @@
 #define is_sql_having(X)  ((X & sql_having) == sql_having)
 #define is_sql_orderby(X) ((X & sql_orderby) == sql_orderby)
 #define is_sql_groupby(X) ((X & sql_groupby) == sql_groupby)
-#define is_sql_partitionby(X) ((X & sql_partitionby) == sql_partitionby)
 #define is_sql_aggr(X)    ((X & sql_aggr) == sql_aggr)
 #define is_sql_farg(X)    ((X & sql_farg) == sql_farg)
+#define is_sql_window(X)  ((X & sql_window) == sql_window)
 #define is_sql_group_totals(X) ((X & sql_group_totals) == sql_group_totals)
 
 #define rel_groupby_gbe(m,r,e) rel_groupby(m, r, append(new_exp_list(m->sa), e))

@@ -13,7 +13,6 @@
 /*#define MAL_CLIENT_DEBUG */
 
 #include "mal_resolve.h"
-#include "mal_profiler.h"
 
 #define SCENARIO_PROPERTIES 8
 
@@ -63,17 +62,20 @@ typedef struct CLIENT {
 	char    itrace;    /* trace execution using interactive mdb */
 						/* if set to 'S' it will put the process to sleep */
 	/*
-	 * For program debugging we need information on the timer and memory
+	 * For program debugging and performance trace we need information on the timer and memory
 	 * usage patterns.
 	 */
-	sht	flags;	 /* resource tracing flags, should be done using profiler */
-	BUN	cnt;	/* bat count */
 
 	time_t      login;  
 	time_t      lastcmd;	/* set when input is received */
 	lng 		session;	/* usec since start of server */
 	lng 	    qtimeout;	/* query abort after x usec*/
 	lng	        stimeout;	/* session abort after x usec */
+
+	bit			malprofiler;	/* control MAL performance monitoring */
+	bit			sqlprofiler;	/* control off-line sql performance monitoring */
+	BAT *profticks;			/* The representation for the SQL TRACE */
+	BAT *profstmt;
 	/*
 	 * Communication channels for the interconnect are stored here.
 	 * It is perfectly legal to have a client without input stream.

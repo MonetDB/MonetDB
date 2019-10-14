@@ -4,6 +4,10 @@ INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Ga
 INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
 
 SELECT
+    (SELECT GROUPING(colID) FROM tbl_ProductSales)
+FROM another_T t1;
+
+SELECT
     col1 IN (SELECT ColID FROM tbl_ProductSales)
 FROM another_T
 GROUP BY ROLLUP(col1);

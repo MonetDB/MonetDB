@@ -71,7 +71,13 @@ QUERY = SELECT
         GROUP BY ROLLUP(col1); --error, col2 is not a grouping column
 ERROR = !SELECT: cannot use non GROUP BY column 'col2' in query results without an aggregate function
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-11458/.s.monetdb.34481
+MAPI  = (monetdb) /var/tmp/mtest-3400/.s.monetdb.37634
+QUERY = SELECT
+            (SELECT GROUPING(t1.col1) FROM tbl_ProductSales)
+        FROM another_T t1; --error, PostgreSQL gives: arguments to GROUPING must be grouping expressions of the associated query level
+ERROR = !21000!zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-3400/.s.monetdb.37634
 QUERY = SELECT
             GROUPING(ColID, ColID)
         FROM tbl_ProductSales

@@ -42,14 +42,16 @@ CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	(void) mb;
 	(void) stk;
 	(void) pc;
-	return openProfilerStream(cntxt->fdout, *getArgReference_int(stk,pc,1));
+	return openProfilerStream(cntxt);
 }
 
 str
-CMDcloseProfilerStream(void *res)
+CMDcloseProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
-	(void) res;
-	return closeProfilerStream();
+	(void) mb;
+	(void) stk;
+	(void) pc;
+	return closeProfilerStream(cntxt);
 }
 
 // initialize SQL tracing
@@ -60,49 +62,36 @@ CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	(void) stk;
 	(void) pc;
 	(void) cntxt;
-	return startProfiler();
+	return startProfiler(cntxt);
 }
 
 str
 CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
 
-	return stopProfiler();
+	return stopProfiler(cntxt);
 }
 
-// called by the SQL front end.
+// called by the SQL front end optional a directory to keep the traces.
 str
-CMDstartTrace(void *res)
+CMDstartTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;
-	return startTrace(0);
-}
-
-// if you haven't started the stethoscope
-// then the output is saved in a file
-str
-CMDstartTracePath(void *res, str *path)
-{
-	(void) res;
-	return startTrace(*path);
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return startTrace(cntxt);
 }
 
 str
-CMDstopTrace(void *res)
+CMDstopTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;
-	return stopTrace(0);
-}
-
-str
-CMDstopTracePath(void *res, str *path)
-{
-	(void) res;
-	return stopTrace(*path);
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return stopTrace(cntxt);
 }
 
 str
@@ -113,35 +102,30 @@ CMDnoopProfiler(void *res)
 }
 
 str
-CMDcleanupTraces(void *res)
+CMDcleanupTraces(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;		/* fool compiler */
-	cleanupTraces();
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	cleanupTraces(cntxt);
 	return MAL_SUCCEED;
 }
 
-#if 0
 str
-CMDclearTrace(void *res)
+CMDgetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;		/* fool compiler */
-	clearTrace();
-	return MAL_SUCCEED;
-}
-#endif	/* unused */
-
-str
-CMDgetTrace(bat *res, str *ev)
-{
+	str path = *getArgReference_str(stk,pci,1);
+	bat *res =  getArgReference_bat(stk,pci,0);
 	BAT *bn;
 
-	(void) res;		/* fool compiler */
-	bn = getTrace(*ev);
+	(void) cntxt;		/* fool compiler */
+	(void) mb;
+	bn = getTrace(cntxt, path);
 	if (bn) {
 		BBPkeepref(*res = bn->batCacheid);
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "getTrace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING  "%s",*ev);
+	throw(MAL, "getTrace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING  "%s", path);
 }
 /*
  * Tracing an active system.
@@ -152,21 +136,6 @@ CMDsetHeartbeat(void *res, int *ev)
 {
 	(void) res;
 	setHeartbeat(*ev);
-	return MAL_SUCCEED;
-}
-
-str
-CMDgetprofilerlimit(int *res)
-{
-	*res = getprofilerlimit();
-	return MAL_SUCCEED;
-}
-
-str
-CMDsetprofilerlimit(void *res, int *ev)
-{
-	(void) res;
-	setprofilerlimit(*ev);
 	return MAL_SUCCEED;
 }
 

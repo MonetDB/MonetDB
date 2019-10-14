@@ -512,8 +512,6 @@ JSONgetValue(JSON *jt, int idx)
 
 	if (jt->elm[idx].valuelen == 0)
 		return GDKstrdup(str_nil);
-	if (strncmp(jt->elm[idx].value, "null", 4) == 0)
-		return GDKstrdup(str_nil);
 	s = GDKzalloc(jt->elm[idx].valuelen + 1);
 	if (s)
 		strncpy(s, jt->elm[idx].value, jt->elm[idx].valuelen);

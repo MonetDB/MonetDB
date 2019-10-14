@@ -53,17 +53,6 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 % 1 # length
 [ 0	]
 #SELECT
-#    (SELECT GROUPING(t1.col1) FROM tbl_ProductSales)
-#FROM another_T t1;
-% .L3 # table_name
-% L3 # name
-% tinyint # type
-% 1 # length
-[ 0	]
-[ 0	]
-[ 0	]
-[ 0	]
-#SELECT
 #    GROUPING(Product_Name)
 #FROM tbl_ProductSales GROUP BY ();
 % .L1 # table_name

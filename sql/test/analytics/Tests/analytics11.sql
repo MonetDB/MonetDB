@@ -42,15 +42,15 @@ SELECT
 FROM another_T
 GROUP BY ROLLUP(col1); --error, col2 is not a grouping column
 
+SELECT
+    (SELECT GROUPING(t1.col1) FROM tbl_ProductSales)
+FROM another_T t1; --error, PostgreSQL gives: arguments to GROUPING must be grouping expressions of the associated query level
+
 -- Valid GROUPING calls
 
 SELECT
     GROUPING(Product_Name)
 FROM tbl_ProductSales;
-
-SELECT
-    (SELECT GROUPING(t1.col1) FROM tbl_ProductSales)
-FROM another_T t1;
 
 SELECT
     GROUPING(Product_Name)
