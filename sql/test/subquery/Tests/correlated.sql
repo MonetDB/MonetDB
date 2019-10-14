@@ -165,145 +165,144 @@ SELECT i, (SELECT MIN(i)+i1.i FROM integers WHERE i>i1.i) FROM integers i1 ORDER
 	-- 2, 5
 	-- 3, NULL
 
-SELECT (SELECT SUM(i + i1.i), 1 FROM integers) FROM integers i1; --error, the subquery should output only one column
+SELECT (SELECT SUM(i + i1.i), 1 FROM integers) FROM integers i1; --error, the subquery must output only one column
 
 SELECT (SELECT SUM(i1.i) FROM integers) AS k FROM integers i1 GROUP BY i ORDER BY i; --cardinality violation, scalar expression expected
 
+SELECT i, (SELECT MIN(i) FROM integers GROUP BY i1.i) AS j FROM integers i1 ORDER BY i;
+--1	1
+--2	1
+--3	1
+--NULL	1
+
+SELECT i, (SELECT i FROM integers GROUP BY i HAVING i=i1.i) AS j FROM integers i1 ORDER BY i;
+--1	1
+--2	2
+--3	3
+--NULL	NULL
+
+SELECT i1.i, CAST(SUM(i) AS BIGINT) FROM integers i1 GROUP BY i1.i HAVING SUM(i)=(SELECT MIN(i) FROM integers WHERE i<>i1.i+1) ORDER BY 1;
+--1 1
+
+SELECT i % 2 AS j, CAST(SUM(i) AS BIGINT) FROM integers i1 GROUP BY j HAVING SUM(i)=(SELECT SUM(i) FROM integers WHERE i<>j+1) ORDER BY 1;
+--1 4
+
+SELECT CAST((SELECT i+SUM(i1.i) FROM integers WHERE i=1 LIMIT 1) AS BIGINT) FROM integers i1; --error, no LIMIT on subqueries
+
+SELECT CAST((SELECT SUM(i)+SUM(i1.i) FROM integers) AS BIGINT) FROM integers i1 ORDER BY 1;
+--12
+
+/*Wrong results
+SELECT CAST((SELECT SUM(i)+SUM((CASE WHEN i IS NOT NULL THEN i*0 ELSE 0 END)+i1.i) FROM integers) AS BIGINT) FROM integers i1 ORDER BY 1;*/
+--10
+--14
+--18
+--NULL
+
+SELECT i, CAST((SELECT i+SUM(i1.i) FROM integers WHERE i=1) AS BIGINT) FROM integers i1 GROUP BY i ORDER BY i;
+--1	2
+--2	3
+--3	4
+--NULL	NULL
+
+SELECT CAST(SUM((SELECT i+i1.i FROM integers WHERE i=1)) AS BIGINT) FROM integers i1;
+--9
+
+SELECT i, CAST(SUM(i1.i) AS BIGINT), CAST((SELECT SUM(i1.i) FROM integers) AS BIGINT) AS k FROM integers i1 GROUP BY i ORDER BY i; --error, cardinality violation, scalar expression expected
+
+SELECT i1.i AS j, CAST((SELECT SUM(j+i) FROM integers) AS BIGINT) AS k FROM integers i1 GROUP BY j ORDER BY j;
+--1	9
+--2	12
+--3	15
+--NULL	NULL
+
+/*BROKEN
+SELECT CAST((SELECT SUM(i1.i*i) FROM integers) AS BIGINT) FROM integers i1 ORDER BY i;*/
+--6
+--12
+--18
+--NULL
+
+SELECT i, CAST((SELECT SUM(i1.i)) AS BIGINT) AS k, CAST((SELECT SUM(i1.i)) AS BIGINT) AS l FROM integers i1 GROUP BY i ORDER BY i;
+--1	1	1
+--2	2	2
+--3	3	3
+--NULL	NULL	NULL
+
+SELECT i, CAST((SELECT SUM(i1.i)*SUM(i) FROM integers) AS BIGINT) AS k FROM integers i1 GROUP BY i ORDER BY i;
+--1	6
+--2	12
+--3	18
+--NULL	NULL
+
+SELECT i AS j, CAST((SELECT j*SUM(i) FROM integers) AS BIGINT) AS k FROM integers i1 GROUP BY j ORDER BY j;
+--1	6
+--2	12
+--3	18
+--NULL	NULL
+
+/*Wrong result, cannot find column
+SELECT i AS j, CAST((SELECT i1.i*SUM(i) FROM integers) AS BIGINT) AS k FROM integers i1 GROUP BY j ORDER BY j;*/
+--1	6
+--2	12
+--3	18
+--NULL	NULL
+
+SELECT i, CAST(SUM((SELECT SUM(i)*i1.i FROM integers)) AS BIGINT) AS k FROM integers i1 GROUP BY i ORDER BY i;
+--1	6
+--2	12
+--3	18
+--NULL	NULL
+
+/*Wrong results, aggregation functions cannot be nested
+SELECT i, SUM((SELECT SUM(i)*SUM(i1.i) FROM integers)) AS k FROM integers i1 GROUP BY i ORDER BY i; --error*/
+
+SELECT CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1;
+--6
+
+SELECT FIRST(i), CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1; --error, no first aggregate available yet
+
+SELECT i AS j, (SELECT MIN(i1.i) FROM integers GROUP BY i HAVING i=j) FROM integers i1 GROUP BY j ORDER BY j;
+--1	1
+--2	2
+--3	3
+--NULL	NULL
+
+SELECT i, SUM(i1.i) FROM integers i1 GROUP BY i ORDER BY (SELECT SUM(i1.i) FROM integers); --error, cardinality violation, scalar expression expected
+
+SELECT i, SUM((SELECT SUM(i)*i1.i FROM integers LIMIT 0)) AS k FROM integers i1 GROUP BY i ORDER BY i; --error, no LIMIT on subqueries
+
+SELECT (SELECT i+i1.i FROM integers WHERE i=1) AS k, CAST(SUM(i) AS BIGINT) AS j FROM integers i1 GROUP BY k ORDER BY 1;
+--2	1
+--3	2
+--4	3
+--NULL	NULL
+
+SELECT CAST(SUM(i) AS BIGINT) FROM integers i1 WHERE i>(SELECT (i+i1.i)/2 FROM integers WHERE i=1);
+--5
+
+SELECT CAST(SUM(i) AS BIGINT) FROM integers i1 WHERE i>(SELECT (SUM(i)+i1.i)/2 FROM integers WHERE i=1);
+--5
+
+SELECT i, (SELECT MIN(i) FROM integers WHERE i=i1.i) >= ALL(SELECT i FROM integers WHERE i IS NOT NULL) FROM integers i1 ORDER BY i;
+--1	False
+--2	False
+--3	True
+--NULL	NULL
+
+SELECT i, (SELECT MIN(i) FROM integers WHERE i<>i1.i) > ANY(SELECT i FROM integers WHERE i IS NOT NULL) FROM integers i1 ORDER BY i;
+--1	True
+--2	False
+--3	False
+--NULL	NULL
+
+SELECT i, NOT((SELECT MIN(i) FROM integers WHERE i<>i1.i) > ANY(SELECT i FROM integers WHERE i IS NOT NULL)) FROM integers i1 ORDER BY i;
+--1	False
+--2	True
+--3	True
+--NULL	NULL
+
 /*
--- exit
-	// aggregate with correlation in GROUP BY
-	result = con.Query("SELECT i, (SELECT MIN(i) FROM integers GROUP BY i1.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {1, 1, 1, 1}));
-	// aggregate with correlation in HAVING clause
-	result = con.Query("SELECT i, (SELECT i FROM integers GROUP BY i HAVING i=i1.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-	// correlated subquery in HAVING
-	result = con.Query("SELECT i1.i, SUM(i) FROM integers i1 GROUP BY i1.i HAVING SUM(i)=(SELECT MIN(i) FROM integers "
-	                   "WHERE i<>i1.i+1) ORDER BY 1;");
-	REQUIRE(CHECK_COLUMN(result, 0, {1}));
-	REQUIRE(CHECK_COLUMN(result, 1, {1}));
-	result = con.Query("SELECT i % 2 AS j, SUM(i) FROM integers i1 GROUP BY j HAVING SUM(i)=(SELECT SUM(i) FROM "
-	                   "integers WHERE i<>j+1) ORDER BY 1;");
-	REQUIRE(CHECK_COLUMN(result, 0, {1}));
-	REQUIRE(CHECK_COLUMN(result, 1, {4}));
-
-	// aggregate query with non-aggregate subquery without group by
-	result = con.Query("SELECT (SELECT i+SUM(i1.i) FROM integers WHERE i=1 LIMIT 1) FROM integers i1;");
-	REQUIRE(CHECK_COLUMN(result, 0, {7}));
-
-	result = con.Query("SELECT (SELECT SUM(i)+SUM(i1.i) FROM integers) FROM integers i1 ORDER BY 1;");
-	REQUIRE(CHECK_COLUMN(result, 0, {12}));
-	result = con.Query("SELECT (SELECT SUM(i)+SUM((CASE WHEN i IS NOT NULL THEN i*0 ELSE 0 END)+i1.i) FROM integers) "
-	                   "FROM integers i1 ORDER BY 1;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 10, 14, 18}));
-
-	// aggregate query with non-aggregate subquery with group by
-	result =
-	    con.Query("SELECT i, (SELECT i+SUM(i1.i) FROM integers WHERE i=1) FROM integers i1 GROUP BY i ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 2, 3, 4}));
-
-	// subquery inside aggregate
-	result = con.Query("SELECT SUM((SELECT i+i1.i FROM integers WHERE i=1)) FROM integers i1;");
-	REQUIRE(CHECK_COLUMN(result, 0, {9}));
-
-	result =
-	    con.Query("SELECT i, SUM(i1.i), (SELECT SUM(i1.i) FROM integers) AS k FROM integers i1 GROUP BY i ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 2, {Value(), 1, 2, 3}));
-
-	// aggregation of both entries inside subquery
-	// aggregate on group inside subquery
-	result =
-	    con.Query("SELECT i1.i AS j, (SELECT SUM(j+i) FROM integers) AS k FROM integers i1 GROUP BY j ORDER BY j;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 9, 12, 15}));
-	result = con.Query("SELECT (SELECT SUM(i1.i*i) FROM integers) FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 6, 12, 18}));
-	result =
-	    con.Query("SELECT i, (SELECT SUM(i1.i)) AS k, (SELECT SUM(i1.i)) AS l FROM integers i1 GROUP BY i ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 2, {Value(), 1, 2, 3}));
-	// refer aggregation inside subquery
-	result =
-	    con.Query("SELECT i, (SELECT SUM(i1.i)*SUM(i) FROM integers) AS k FROM integers i1 GROUP BY i ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 6, 12, 18}));
-	// refer to GROUP BY inside subquery
-	result = con.Query("SELECT i AS j, (SELECT j*SUM(i) FROM integers) AS k FROM integers i1 GROUP BY j ORDER BY j;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 6, 12, 18}));
-	// refer to GROUP BY without alias but with full name
-	result =
-	    con.Query("SELECT i AS j, (SELECT i1.i*SUM(i) FROM integers) AS k FROM integers i1 GROUP BY j ORDER BY j;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 6, 12, 18}));
-	// perform SUM on subquery
-	result =
-	    con.Query("SELECT i, SUM((SELECT SUM(i)*i1.i FROM integers)) AS k FROM integers i1 GROUP BY i ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 6, 12, 18}));
-
-	// aggregate subqueries cannot be nested
-	REQUIRE_FAIL(con.Query(
-	    "SELECT i, SUM((SELECT SUM(i)*SUM(i1.i) FROM integers)) AS k FROM integers i1 GROUP BY i ORDER BY i;"));
-
-	// aggregation but ONLY inside subquery results in implicit aggregation
-	result = con.Query("SELECT (SELECT SUM(i1.i)) FROM integers i1;");
-	REQUIRE(CHECK_COLUMN(result, 0, {6}));
-	result = con.Query("SELECT FIRST(i), (SELECT SUM(i1.i)) FROM integers i1;");
-	REQUIRE(CHECK_COLUMN(result, 0, {1}));
-	REQUIRE(CHECK_COLUMN(result, 1, {6}));
-
-	// aggregate that uses correlated column in aggregation
-	result = con.Query("SELECT i AS j, (SELECT MIN(i1.i) FROM integers GROUP BY i HAVING i=j) FROM integers i1 GROUP "
-	                   "BY j ORDER BY j;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-
-	// ORDER BY correlated subquery
-	result = con.Query("SELECT i, SUM(i1.i) FROM integers i1 GROUP BY i ORDER BY (SELECT SUM(i1.i) FROM integers);");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-
-	// LIMIT 0 on correlated subquery
-	result = con.Query(
-	    "SELECT i, SUM((SELECT SUM(i)*i1.i FROM integers LIMIT 0)) AS k FROM integers i1 GROUP BY i ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), Value(), Value(), Value()}));
-
-	// GROUP BY correlated subquery
-	result = con.Query(
-	    "SELECT (SELECT i+i1.i FROM integers WHERE i=1) AS k, SUM(i) AS j FROM integers i1 GROUP BY k ORDER BY 1;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 2, 3, 4}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-
-	// correlated subquery in WHERE
-	result = con.Query("SELECT SUM(i) FROM integers i1 WHERE i>(SELECT (i+i1.i)/2 FROM integers WHERE i=1);");
-	REQUIRE(CHECK_COLUMN(result, 0, {5}));
-	// correlated aggregate in WHERE
-	result = con.Query("SELECT SUM(i) FROM integers i1 WHERE i>(SELECT (SUM(i)+i1.i)/2 FROM integers WHERE i=1);");
-	REQUIRE(CHECK_COLUMN(result, 0, {5}));
-
-	// use scalar subquery as argument to ALL/ANY
-	result = con.Query("SELECT i, (SELECT MIN(i) FROM integers WHERE i=i1.i) >= ALL(SELECT i FROM integers WHERE i IS "
-	                   "NOT NULL) FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), false, false, true}));
-	result = con.Query("SELECT i, (SELECT MIN(i) FROM integers WHERE i<>i1.i) > ANY(SELECT i FROM integers WHERE i IS "
-	                   "NOT NULL) FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), true, false, false}));
-	result = con.Query("SELECT i, NOT((SELECT MIN(i) FROM integers WHERE i<>i1.i) > ANY(SELECT i FROM integers WHERE i "
-	                   "IS NOT NULL)) FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), false, true, true}));
-}
-
 TEST_CASE("Test correlated EXISTS subqueries", "[subquery]") {
 	unique_ptr<DuckDBResult> result;
 	DuckDB db(nullptr);
@@ -415,78 +414,104 @@ TEST_CASE("Test correlated ANY/ALL subqueries", "[subquery]") {
 	// zero results for all
 	result = con.Query("SELECT i=ANY(SELECT i FROM integers WHERE i=i1.i AND i>10) FROM integers i1 ORDER BY i;");
 	REQUIRE(CHECK_COLUMN(result, 0, {false, false, false, false}));
-}
-
-TEST_CASE("Test for COUNT(*) and SUM(i) IS NULL in subqueries", "[subquery]") {
-	unique_ptr<DuckDBResult> result;
-	DuckDB db(nullptr);
-	DuckDBConnection con(db);
-
-	con.EnableQueryVerification();
-	con.EnableProfiling();
-
-	REQUIRE_NO_FAIL(con.Query("CREATE TABLE integers(i INTEGER)"));
-	REQUIRE_NO_FAIL(con.Query("INSERT INTO integers VALUES (1), (2), (3), (NULL)"));
-
-	// COUNT(*) and SUM(i) IS NULL aggregates
-	result = con.Query("SELECT i, (SELECT i FROM integers i2 WHERE i=(SELECT SUM(i) FROM integers i2 WHERE i2.i>i1.i)) "
-	                   "FROM integers i1 ORDER BY 1;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), Value(), 3, Value()}));
-	result =
-	    con.Query("SELECT i, (SELECT SUM(i) IS NULL FROM integers i2 WHERE i2.i>i1.i) FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {true, false, false, true}));
-	result = con.Query("SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i) FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {0, 2, 1, 0}));
-	result = con.Query(
-	    "SELECT i, (SELECT COUNT(i) FROM integers i2 WHERE i2.i>i1.i OR i2.i IS NULL) FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {0, 2, 1, 0}));
-	result = con.Query(
-	    "SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i OR i2.i IS NULL) FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {1, 3, 2, 1}));
-	result = con.Query("SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i OR (i1.i IS NULL AND i2.i IS "
-	                   "NULL)) FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {1, 2, 1, 0}));
-	result =
-	    con.Query("SELECT i FROM integers i1 WHERE (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i)=0 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 3}));
-	result = con.Query("SELECT i, (SELECT i FROM integers i2 WHERE i-2=(SELECT COUNT(*) FROM integers i2 WHERE "
-	                   "i2.i>i1.i)) FROM integers i1 ORDER BY 1;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {2, Value(), 3, 2}));
-	result = con.Query(
-	    "SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i GROUP BY i1.i) FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 2, 1, Value()}));
-	result = con.Query("SELECT i, (SELECT CASE WHEN (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i)=0 THEN 1 ELSE 0 "
-	                   "END) FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {1, 0, 0, 1}));
-	result = con.Query("SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i) FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {0, 2, 1, 0}));
-}
 }*/
 
---The following string correlated queries are right
+/* Wrong results
+SELECT i, (SELECT i FROM integers i2 WHERE i=(SELECT SUM(i) FROM integers i2 WHERE i2.i>i1.i)) FROM integers i1 ORDER BY 1;*/
+--1	NULL
+--2	3
+--3	NULL
+--NULL	NULL
+
+SELECT i, CAST((SELECT SUM(i) IS NULL FROM integers i2 WHERE i2.i>i1.i) AS BIGINT) FROM integers i1 ORDER BY i;
+--1	False
+--2	False
+--3	True
+--NULL	True
+
+SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i) FROM integers i1 ORDER BY i;
+--1	2
+--2	1
+--3	0
+--NULL	0
+
+SELECT i, (SELECT COUNT(i) FROM integers i2 WHERE i2.i>i1.i OR i2.i IS NULL) FROM integers i1 ORDER BY i;
+--1	2
+--2	1
+--3	0
+--NULL	0
+
+SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i OR i2.i IS NULL) FROM integers i1 ORDER BY i;
+--1	3
+--2	2
+--3	1
+--NULL	1
+
+SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i OR (i1.i IS NULL AND i2.i IS NULL)) FROM integers i1 ORDER BY i;
+--1	2
+--2	1
+--3	0
+--NULL	1
+
+/*Wrong results
+SELECT i FROM integers i1 WHERE (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i)=0 ORDER BY i;*/
+--3
+--NULL
+
+/*Wrong results
+SELECT i, (SELECT i FROM integers i2 WHERE i-2=(SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i)) FROM integers i1 ORDER BY 1;*/
+--1	NULL
+--2	3
+--3	2
+--NULL	2
+
+/*Wrong results
+SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i GROUP BY i1.i) FROM integers i1 ORDER BY i;*/
+--1	2
+--2	1
+--3	NULL
+--NULL	NULL
+
+SELECT i, (SELECT CASE WHEN (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i)=0 THEN 1 ELSE 0 END) FROM integers i1 ORDER BY i;
+--1	0
+--2	0
+--3	1
+--NULL	1
+
+SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i) FROM integers i1 ORDER BY i;
+--1	2
+--2	1
+--3	0
+--NULL	0
 
 SELECT a, CAST(SUM(a) AS BIGINT), CAST((SELECT SUM(a)+SUM(t1.b) FROM test) AS BIGINT) FROM test t1 GROUP BY a ORDER BY a;
+--11	11	37
+--12	12	38
+--13	13	39
 
-SELECT CAST((SELECT test.a+test.b+SUM(test2.a) FROM test2 WHERE str=str2) AS BIGINT) FROM test ORDER BY 1;
+SELECT CAST((SELECT test.a+test.b+SUM(test2.a) FROM test2 WHERE "str"=str2) AS BIGINT) FROM test ORDER BY 1;
+--NULL
+--23
+--39
 
 SELECT * FROM test WHERE EXISTS(SELECT * FROM test2 WHERE test.a=test2.a AND test.b<>test2.c);
+--12	2	b
+--13	3	c
 
-SELECT a, a>=ANY(SELECT test2.a+c-b FROM test2 WHERE c>=b AND str=str2) FROM test ORDER BY 1;
+SELECT a, a>=ANY(SELECT test2.a+c-b FROM test2 WHERE c>=b AND "str"=str2) FROM test ORDER BY 1;
+--11	true
+--12	false
+--13	false
 
-SELECT str, str=ANY(SELECT str2 FROM test2) FROM test;
+SELECT "str", "str"=ANY(SELECT str2 FROM test2) FROM test;
+--a	true
+--b	true
+--c	false
 
-SELECT str, str=ANY(SELECT str2 FROM test2 WHERE test.a<>test2.a) FROM test;
-
+SELECT "str", "str"=ANY(SELECT str2 FROM test2 WHERE test.a<>test2.a) FROM test;
+--a	false
+--b	true
+--c	false
 
 SELECT i, (SELECT s1.i FROM (SELECT * FROM integers WHERE i=i1.i) s1) AS j FROM integers i1 ORDER BY i;
 --1	1
@@ -711,21 +736,48 @@ SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i A
 --3	6
 --NULL	6
 
---ok
 SELECT i, CAST((SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN (SELECT i FROM integers s1 WHERE i=ANY(SELECT i FROM
 integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	10
+--2	10
+--3	10
+--NULL	10
 
 SELECT i, CAST((SELECT SUM(s1.i) FROM (SELECT i FROM integers WHERE i=i1.i) s1 LEFT OUTER JOIN integers s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	1
+--2	2
+--3	3
+--NULL	NULL
 
 SELECT i, CAST((SELECT SUM(s1.i) FROM (SELECT i FROM integers WHERE i<>i1.i) s1 LEFT OUTER JOIN integers s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	5
+--2	4
+--3	3
+--NULL	NULL
 
 SELECT i, CAST((SELECT SUM(s2.i) FROM integers s1 LEFT OUTER JOIN (SELECT i FROM integers WHERE i=i1.i) s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	1
+--2	2
+--3	3
+--NULL	NULL
 
 SELECT i, CAST((SELECT SUM(s2.i) FROM integers s1 LEFT OUTER JOIN (SELECT i FROM integers WHERE i<>i1.i) s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	5
+--2	4
+--3	3
+--NULL	NULL
 
 SELECT i, CAST((SELECT SUM(s2.i) FROM integers s1 LEFT OUTER JOIN (SELECT i FROM integers WHERE i=i1.i) s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	1
+--2	2
+--3	3
+--NULL	NULL
 
 SELECT i, CAST((SELECT SUM(s2.i) FROM integers s1 LEFT OUTER JOIN (SELECT i FROM integers WHERE i<>i1.i) s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	5
+--2	4
+--3	3
+--NULL	NULL
 
 --BROKEN
 --SELECT i, (SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE CASE WHEN (i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) THEN true ELSE false END) ss2) AS j FROM integers i1 ORDER BY i;
@@ -829,14 +881,26 @@ SELECT i, (SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=
 --NULL	NULL
 
 SELECT NULL IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v;
+--NULL
+--NULL
+--False
 
-SELECT 3 IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v; --error
+SELECT 3 IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v; --error, cannot cast 3 into string
 
 SELECT 'hello' IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v;
+--True
+--False
+--False
 
 SELECT 'hello' IN (SELECT * FROM strings WHERE v=s1.v or v IS NULL) FROM strings s1 ORDER BY v;
+--True
+--NULL
+--NULL
 
 SELECT 'bla' IN (SELECT * FROM strings WHERE v=s1.v or v IS NULL) FROM strings s1 ORDER BY v;
+--NULL
+--NULL
+--NULL
 
 /*BROKEN
 SELECT * FROM strings WHERE EXISTS(SELECT NULL, v) ORDER BY v;*/
@@ -845,12 +909,23 @@ SELECT * FROM strings WHERE EXISTS(SELECT NULL, v) ORDER BY v;*/
 --NULL
 
 SELECT * FROM strings s1 WHERE EXISTS(SELECT v FROM strings WHERE v=s1.v OR v IS NULL) ORDER BY v;
+--hello
+--world
+--NULL
 
 SELECT * FROM strings s1 WHERE EXISTS(SELECT v FROM strings WHERE v=s1.v) ORDER BY v;
+--hello
+--world
 
 SELECT (SELECT v FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v;
+--hello
+--world
+--NULL
 
 SELECT (SELECT v FROM strings WHERE v=s1.v OR (v='hello' AND s1.v IS NULL)) FROM strings s1 ORDER BY v;
+--hello
+--hello
+--world
 
 DROP TABLE integers;
 DROP TABLE test;
