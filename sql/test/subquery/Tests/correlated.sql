@@ -1,6 +1,15 @@
 CREATE TABLE integers(i INTEGER);
 INSERT INTO integers VALUES (1), (2), (3), (NULL);
 
+CREATE TABLE test (a INTEGER, b INTEGER, str VARCHAR(32));
+INSERT INTO test VALUES (11, 1, 'a'), (12, 2, 'b'), (13, 3, 'c');
+
+CREATE TABLE test2 (a INTEGER, c INTEGER, str2 VARCHAR(32));
+INSERT INTO test2 VALUES (11, 1, 'a'), (12, 1, 'b'), (13, 4, 'b');
+
+CREATE TABLE strings(v VARCHAR(32));
+INSERT INTO strings VALUES ('hello'), ('world'), (NULL);
+
 -- scalar select with correlation
 SELECT i, (SELECT 42+i1.i) AS j FROM integers i1 ORDER BY i;
 	-- NULL, NULL
@@ -158,7 +167,7 @@ SELECT i, (SELECT MIN(i)+i1.i FROM integers WHERE i>i1.i) FROM integers i1 ORDER
 
 SELECT (SELECT SUM(i + i1.i), 1 FROM integers) FROM integers i1; --error, the subquery should output only one column
 
-SELECT (SELECT SUM(i1.i) FROM integers) AS k FROM integers i1 GROUP BY i ORDER BY i; --we should throw a better error message
+SELECT (SELECT SUM(i1.i) FROM integers) AS k FROM integers i1 GROUP BY i ORDER BY i; --cardinality violation, scalar expression expected
 
 /*
 -- exit
@@ -462,159 +471,116 @@ TEST_CASE("Test for COUNT(*) and SUM(i) IS NULL in subqueries", "[subquery]") {
 	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
 	REQUIRE(CHECK_COLUMN(result, 1, {0, 2, 1, 0}));
 }
+}*/
 
-TEST_CASE("Test multiple correlated columns and strings", "[subquery]") {
-	unique_ptr<DuckDBResult> result;
-	DuckDB db(nullptr);
-	DuckDBConnection con(db);
+--The following string correlated queries are right
 
-	con.EnableQueryVerification();
-	con.EnableProfiling();
+SELECT a, CAST(SUM(a) AS BIGINT), CAST((SELECT SUM(a)+SUM(t1.b) FROM test) AS BIGINT) FROM test t1 GROUP BY a ORDER BY a;
 
-	// multiple correlated columns and strings
-	REQUIRE_NO_FAIL(con.Query("CREATE TABLE test (a INTEGER, b INTEGER, str VARCHAR);"));
-	REQUIRE_NO_FAIL(con.Query("INSERT INTO test VALUES (11, 1, 'a'), (12, 2, 'b'), (13, 3, 'c')"));
+SELECT CAST((SELECT test.a+test.b+SUM(test2.a) FROM test2 WHERE str=str2) AS BIGINT) FROM test ORDER BY 1;
 
-	REQUIRE_NO_FAIL(con.Query("CREATE TABLE test2 (a INTEGER, c INTEGER, str2 VARCHAR);"));
-	REQUIRE_NO_FAIL(con.Query("INSERT INTO test2 VALUES (11, 1, 'a'), (12, 1, 'b'), (13, 4, 'b')"));
+SELECT * FROM test WHERE EXISTS(SELECT * FROM test2 WHERE test.a=test2.a AND test.b<>test2.c);
 
-	result = con.Query("SELECT a, SUM(a), (SELECT SUM(a)+SUM(t1.b) FROM test) FROM test t1 GROUP BY a ORDER BY a;");
-	REQUIRE(CHECK_COLUMN(result, 0, {11, 12, 13}));
-	REQUIRE(CHECK_COLUMN(result, 1, {11, 12, 13}));
-	REQUIRE(CHECK_COLUMN(result, 2, {37, 38, 39}));
+SELECT a, a>=ANY(SELECT test2.a+c-b FROM test2 WHERE c>=b AND str=str2) FROM test ORDER BY 1;
 
-	// scalar query with multiple correlated columns
-	result = con.Query("SELECT (SELECT test.a+test.b+SUM(test2.a) FROM test2 WHERE str=str2) FROM test ORDER BY 1;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 23, 39}));
+SELECT str, str=ANY(SELECT str2 FROM test2) FROM test;
 
-	// exists with multiple correlated columns
-	result = con.Query("SELECT * FROM test WHERE EXISTS(SELECT * FROM test2 "
-	                   "WHERE test.a=test2.a AND test.b<>test2.c);");
-	REQUIRE(CHECK_COLUMN(result, 0, {12, 13}));
-	REQUIRE(CHECK_COLUMN(result, 1, {2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 2, {"b", "c"}));
+SELECT str, str=ANY(SELECT str2 FROM test2 WHERE test.a<>test2.a) FROM test;
 
-	// ANY with multiple correlated columns
-	result = con.Query("SELECT a, a>=ANY(SELECT test2.a+c-b FROM test2 WHERE c>=b AND str=str2) FROM test ORDER BY 1;");
-	REQUIRE(CHECK_COLUMN(result, 0, {11, 12, 13}));
-	REQUIRE(CHECK_COLUMN(result, 1, {true, false, false}));
 
-	// string comparison
-	result = con.Query("SELECT str, str=ANY(SELECT str2 FROM test2) FROM test");
-	REQUIRE(CHECK_COLUMN(result, 0, {"a", "b", "c"}));
-	REQUIRE(CHECK_COLUMN(result, 1, {true, true, false}));
-	result = con.Query("SELECT str, str=ANY(SELECT str2 FROM test2 WHERE test.a<>test2.a) FROM test");
-	REQUIRE(CHECK_COLUMN(result, 0, {"a", "b", "c"}));
-	REQUIRE(CHECK_COLUMN(result, 1, {false, true, false}));
-}
+SELECT i, (SELECT s1.i FROM (SELECT * FROM integers WHERE i=i1.i) s1) AS j FROM integers i1 ORDER BY i;
+--1	1
+--2	2
+--3	3
+--NULL	NULL
 
-TEST_CASE("Test complex correlated subqueries", "[subquery]") {
-	unique_ptr<DuckDBResult> result;
-	DuckDB db(nullptr);
-	DuckDBConnection con(db);
+/*Wrong results
+SELECT i, (SELECT s1.i FROM (SELECT i FROM integers WHERE i=i1.i) s1 INNER JOIN (SELECT i FROM integers WHERE i=4-i1.i) s2 ON s1.i>s2.i) AS j FROM integers i1 ORDER BY i;*/
+--1	NULL
+--2	NULL
+--3	3
+--NULL	NULL
 
-	con.EnableQueryVerification();
-	con.EnableProfiling();
+/*Mitosis error I think (it runs fine without it)
+SELECT i, (SELECT s1.i FROM integers s1, integers s2 WHERE s1.i=s2.i AND s1.i=4-i1.i) AS j FROM integers i1 ORDER BY i;*/
+--1	3
+--2	2
+--3	1
 
-	REQUIRE_NO_FAIL(con.Query("CREATE TABLE integers(i INTEGER)"));
-	REQUIRE_NO_FAIL(con.Query("INSERT INTO integers VALUES (1), (2), (3), (NULL)"));
+/*Mitosis error I think (it runs fine without it)
+SELECT i, (SELECT s1.i FROM integers s1 INNER JOIN integers s2 ON s1.i=s2.i AND s1.i=4-i1.i) AS j FROM integers i1 ORDER BY i;*/
+--1	3
+--2	2
+--3	1
 
-	// correlated expression in subquery
-	result = con.Query(
-	    "SELECT i, (SELECT s1.i FROM (SELECT * FROM integers WHERE i=i1.i) s1) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-	// join on two subqueries that both have a correlated expression in them
-	result = con.Query("SELECT i, (SELECT s1.i FROM (SELECT i FROM integers WHERE i=i1.i) s1 INNER JOIN (SELECT i FROM "
-	                   "integers WHERE i=4-i1.i) s2 ON s1.i>s2.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), Value(), Value(), 3}));
+/*Extra projection
+SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT 2*SUM(i)*s1.i FROM integers)=(SELECT SUM(i)*s2.i FROM integers) ORDER BY s1.i;*/
+--1 2
 
-	// implicit join with correlated expression in filter
-	result = con.Query("SELECT i, (SELECT s1.i FROM integers s1, integers s2 WHERE s1.i=s2.i AND s1.i=4-i1.i) AS j "
-	                   "FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 3, 2, 1}));
-	// join with a correlated expression in the join condition
-	result = con.Query("SELECT i, (SELECT s1.i FROM integers s1 INNER JOIN integers s2 ON s1.i=s2.i AND s1.i=4-i1.i) "
-	                   "AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 3, 2, 1}));
-	// inner join on correlated subquery
-	result = con.Query("SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT 2*SUM(i)*s1.i FROM "
-	                   "integers)=(SELECT SUM(i)*s2.i FROM integers) ORDER BY s1.i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {1}));
-	REQUIRE(CHECK_COLUMN(result, 1, {2}));
-	// inner join on non-equality subquery
-	result = con.Query("SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT s1.i=s2.i) ORDER BY s1.i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {1, 2, 3}));*/
-
-SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT s1.i=i FROM integers WHERE s2.i=i) ORDER BY s1.i;
+SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT s1.i=s2.i) ORDER BY s1.i;
 --1	1
 --2	2
 --3	3
 
-SELECT * FROM integers s1 LEFT OUTER JOIN integers s2 ON (SELECT 2*SUM(i)*s1.i FROM integers)=(SELECT SUM(i)*s2.i FROM integers) ORDER BY s1.i;
+/*Extra projection
+SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT s1.i=i FROM integers WHERE s2.i=i) ORDER BY s1.i;*/
+--1	1
+--2	2
+--3	3
+
+/*Wrong results
+SELECT * FROM integers s1 LEFT OUTER JOIN integers s2 ON (SELECT 2*SUM(i)*s1.i FROM integers)=(SELECT SUM(i)*s2.i FROM integers) ORDER BY s1.i;*/
 --1	2
 --2	NULL
 --3	NULL
 --NULL	NULL
 
-/*	// left outer join in correlated expression
-	REQUIRE_FAIL(con.Query("SELECT i, (SELECT SUM(s1.i) FROM integers s1 LEFT OUTER JOIN integers s2 ON s1.i=s2.i OR "
-	                       "s1.i=i1.i-1) AS j FROM integers i1 ORDER BY i;"));
-	// REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	// REQUIRE(CHECK_COLUMN(result, 1, {Value(), 6, 9, 12}));
-	// full outer join: both sqlite and postgres actually cannot run this one
-	REQUIRE_FAIL(con.Query("SELECT i, (SELECT SUM(s1.i) FROM integers s1 FULL OUTER JOIN integers s2 ON s1.i=s2.i OR "
-	                       "s1.i=i1.i-1) AS j FROM integers i1 ORDER BY i;"));
-	// REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	// REQUIRE(CHECK_COLUMN(result, 1, {6, 6, 9, 12}));
+SELECT i, CAST((SELECT SUM(s1.i) FROM integers s1 LEFT OUTER JOIN integers s2 ON s1.i=s2.i OR s1.i=i1.i-1) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	6
+--2	9
+--3	12
+--NULL	6
 
-	// correlated expression inside window function not supported
-	REQUIRE_FAIL(con.Query("SELECT i, (SELECT row_number() OVER (ORDER BY i)) FROM integers i1 ORDER BY i;"));
+SELECT i, CAST((SELECT SUM(s1.i) FROM integers s1 FULL OUTER JOIN integers s2 ON s1.i=s2.i OR s1.i=i1.i-1) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	6
+--2	9
+--3	12
+--NULL	6
 
-	// union with correlated expression
-	result = con.Query("SELECT i, (SELECT i FROM integers WHERE i=i1.i UNION SELECT i FROM integers WHERE i=i1.i) AS j "
-	                   "FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-	// except with correlated expression
-	result = con.Query("SELECT i, (SELECT i FROM integers WHERE i IS NOT NULL EXCEPT SELECT i FROM integers WHERE "
-	                   "i<>i1.i) AS j FROM integers i1 WHERE i IS NOT NULL ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {1, 2, 3}));
-	// intersect with correlated expression
-	result = con.Query("SELECT i, (SELECT i FROM integers WHERE i=i1.i INTERSECT SELECT i FROM integers WHERE i=i1.i) "
-	                   "AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-	// multiple setops
-	result = con.Query("SELECT i, (SELECT i FROM integers WHERE i=i1.i UNION SELECT i FROM integers WHERE i<>i1.i "
-	                   "EXCEPT SELECT i FROM integers WHERE i<>i1.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
+--SELECT i, (SELECT row_number() OVER (ORDER BY i)) FROM integers i1 ORDER BY i; --Should we support correlated expressions inside PARTITION BY and ORDER BY on Window functions?
 
-	// uncorrelated query inside correlated query
-	result = con.Query("SELECT i, (SELECT (SELECT SUM(i) FROM integers)+42+i1.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 49, 50, 51}));
-}
+/* Extra projection
+SELECT i, (SELECT i FROM integers WHERE i=i1.i UNION SELECT i FROM integers WHERE i=i1.i) AS j FROM integers i1 ORDER BY i;*/
+--1	1
+--2	2
+--3	3
+--NULL	NULL
 
-TEST_CASE("Test window functions in correlated subqueries", "[subquery]") {
-	unique_ptr<DuckDBResult> result;
-	DuckDB db(nullptr);
-	DuckDBConnection con(db);
+/* Extra projection
+SELECT i, (SELECT i FROM integers WHERE i IS NOT NULL EXCEPT SELECT i FROM integers WHERE i<>i1.i) AS j FROM integers i1 WHERE i IS NOT NULL ORDER BY i;*/
+--1	1
+--2	2
+--3	3
 
-	con.EnableQueryVerification();
-	con.EnableProfiling();
+/* Extra projection
+SELECT i, (SELECT i FROM integers WHERE i=i1.i INTERSECT SELECT i FROM integers WHERE i=i1.i) AS j FROM integers i1 ORDER BY i;*/
+--1	1
+--2	2
+--3	3
+--NULL	NULL
 
-	REQUIRE_NO_FAIL(con.Query("CREATE TABLE integers(i INTEGER)"));
-	REQUIRE_NO_FAIL(con.Query("INSERT INTO integers VALUES (1), (2), (3), (NULL)"));
+/* Extra projection
+SELECT i, (SELECT i FROM integers WHERE i=i1.i UNION SELECT i FROM integers WHERE i<>i1.i EXCEPT SELECT i FROM integers WHERE i<>i1.i) AS j FROM integers i1 ORDER BY i;*/
+--1	1
+--2	2
+--3	3
+--NULL	NULL
 
-	// window functions in correlated subquery
-	result = con.Query(*/
+SELECT i, CAST((SELECT (SELECT SUM(i) FROM integers)+42+i1.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	49
+--2	50
+--3	51
+--NULL	NULL
 
 SELECT i, (SELECT row_number() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1 ORDER BY i;
 --1	1
@@ -622,64 +588,95 @@ SELECT i, (SELECT row_number() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FRO
 --3	1
 --NULL	NULL
 
-	/*result = con.Query("SELECT i1.i, (SELECT rank() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1, "
-	                   "integers i2 ORDER BY i1.i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), Value(), Value(), Value(), 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), Value(), Value(), Value(), 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}));
-	result = con.Query("SELECT i1.i, (SELECT row_number() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers "
-	                   "i1, integers i2 ORDER BY i1.i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), Value(), Value(), Value(), 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), Value(), Value(), Value(), 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}));
-	result = con.Query(
-	    "SELECT i, (SELECT SUM(i) OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-	result = con.Query("SELECT i, (SELECT SUM(s1.i) OVER (ORDER BY s1.i) FROM integers s1, integers s2 WHERE i1.i=s1.i "
-	                   "LIMIT 1) FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 4, 8, 12}));
-}
+/*Wrong results
+SELECT i1.i, (SELECT rank() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1, integers i2 ORDER BY i1.i;*/
+--NULL,	NULL
+--NULL,	NULL
+--NULL,	NULL
+--NULL,	NULL
+--1,	1
+--1,	1
+--1,	1
+--1,	1
+--2,	1
+--2,	1
+--2,	1
+--2,	1
+--3,	1
+--3,	1
+--3,	1
+--3,	1
 
-TEST_CASE("Test nested correlated subqueries", "[subquery]") {
-	unique_ptr<DuckDBResult> result;
-	DuckDB db(nullptr);
-	DuckDBConnection con(db);
+/*Wrong results
+SELECT i1.i, (SELECT row_number() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1, integers i2 ORDER BY i1.i;*/
+--1	1
+--1	1
+--1	1
+--1	1
+--2	1
+--2	1
+--2	1
+--2	1
+--3	1
+--3	1
+--3	1
+--3	1
+--NULL	NULL
+--NULL	NULL
+--NULL	NULL
+--NULL	NULL
 
-	con.EnableQueryVerification();
-	con.EnableProfiling();
+/*MAL error
+SELECT i, CAST((SELECT SUM(i) OVER (ORDER BY i) FROM integers WHERE i1.i=i) AS BIGINT) FROM integers i1 ORDER BY i;*/
+--1	1
+--2	2
+--3	3
+--NULL	NULL
 
-	REQUIRE_NO_FAIL(con.Query("CREATE TABLE integers(i INTEGER)"));
-	REQUIRE_NO_FAIL(con.Query("INSERT INTO integers VALUES (1), (2), (3), (NULL)"));
+SELECT i, (SELECT SUM(s1.i) OVER (ORDER BY s1.i) FROM integers s1, integers s2 WHERE i1.i=s1.i LIMIT 1) FROM integers i1 ORDER BY i; --error
 
-	// nested correlated queries
-	result = con.Query("SELECT i, (SELECT (SELECT 42+i1.i)+42+i1.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 86, 88, 90}));
-	result = con.Query("SELECT i, (SELECT (SELECT (SELECT (SELECT 42+i1.i)++i1.i)+42+i1.i)+42+i1.i) AS j FROM integers "
-	                   "i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 130, 134, 138}));
-	result = con.Query("SELECT i, (SELECT (SELECT i1.i+SUM(i2.i)) FROM integers i2) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 7, 8, 9}));
-	// correlated query inside uncorrelated query
-	result = con.Query(
-	    "SELECT i, (SELECT (SELECT (SELECT (SELECT i1.i+i1.i+i1.i+i1.i+i1.i)))) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 5, 10, 15}));
-	result = con.Query("SELECT i, (SELECT SUM(i)+(SELECT 42+i1.i) FROM integers) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 49, 50, 51}));
-	result = con.Query(
-	    "SELECT i, (SELECT ((SELECT ((SELECT ((SELECT SUM(i)+SUM(i4.i)+SUM(i3.i)+SUM(i2.i)+SUM(i1.i) FROM integers "
-	    "i5)) FROM integers i4)) FROM integers i3)) FROM integers i2) AS j FROM integers i1 GROUP BY i ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 25, 26, 27}));
-	result = con.Query("SELECT i, (SELECT (SELECT (SELECT (SELECT i1.i+i1.i+i1.i+i1.i+i1.i+i2.i) FROM integers i2 "
-	                   "WHERE i2.i=i1.i))) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 6, 12, 18}));
-	// explicit join on subquery*/
+SELECT i, CAST((SELECT (SELECT 42+i1.i)+42+i1.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	86
+--2	88
+--3	90
+--NULL	NULL
+
+SELECT i, CAST((SELECT (SELECT (SELECT (SELECT 42+i1.i)++i1.i)+42+i1.i)+42+i1.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	130
+--2	134
+--3	138
+--NULL	NULL
+
+SELECT i, CAST((SELECT (SELECT i1.i+SUM(i2.i)) FROM integers i2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	7
+--2	8
+--3	9
+--NULL	NULL
+
+SELECT i, CAST((SELECT (SELECT (SELECT (SELECT i1.i+i1.i+i1.i+i1.i+i1.i)))) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	5
+--2	10
+--3	15
+--NULL	NULL
+
+SELECT i, CAST((SELECT SUM(i)+(SELECT 42+i1.i) FROM integers) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	49
+--2	50
+--3	51
+--NULL	NULL
+
+/* BROKEN, cannot find column
+SELECT i, (SELECT ((SELECT ((SELECT ((SELECT SUM(i)+SUM(i4.i)+SUM(i3.i)+SUM(i2.i)+SUM(i1.i) FROM integers i5)) FROM integers i4)) FROM integers i3)) FROM integers i2) AS j FROM integers i1 GROUP BY i ORDER BY i;*/
+--1	25
+--2	26
+--3	27
+--NULL	NULL
+
+SELECT i, CAST((SELECT (SELECT (SELECT (SELECT i1.i+i1.i+i1.i+i1.i+i1.i+i2.i) FROM integers i2 WHERE i2.i=i1.i))) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	6
+--2	12
+--3	18
+--NULL	NULL
 
 --BROKEN
 --SELECT i, (SELECT SUM(s1.i) FROM integers s1 INNER JOIN integers s2 ON (SELECT i1.i+s1.i)=(SELECT i1.i+s2.i)) AS j FROM integers i1 ORDER BY i;
@@ -688,22 +685,24 @@ TEST_CASE("Test nested correlated subqueries", "[subquery]") {
 --3	6
 --NULL	NULL
 
-	/* nested aggregate queries
-	result = con.Query("SELECT i, SUM(i), (SELECT (SELECT SUM(i)+SUM(i1.i)+SUM(i2.i) FROM integers) FROM integers i2) "
-	                   "FROM integers i1 GROUP BY i ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 2, {Value(), 13, 14, 15}));
+--BROKEN
+--SELECT i, SUM(i), (SELECT (SELECT SUM(i)+SUM(i1.i)+SUM(i2.i) FROM integers) FROM integers i2) FROM integers i1 GROUP BY i ORDER BY i;
+--1	1 13
+--2	2 14
+--3	3 15
+--NULL	NULL	NULL
 
-	// correlated ANY inside subquery
-	result = con.Query("SELECT i, (SELECT SUM(ss1.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM "
-	                   "integers WHERE i<>s1.i)) ss1) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {5, 5, 5, 5}));
-	result = con.Query("SELECT i, (SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND i=ANY(SELECT i "
-	                   "FROM integers WHERE i=s1.i)) ss2) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));*/
+SELECT i, CAST((SELECT SUM(ss1.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	5
+--2	5
+--3	5
+--NULL	5
+
+SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	1
+--2	2
+--3	3
+--NULL	NULL
 
 --BROKEN
 --SELECT i, (SELECT SUM(s1.i) FROM integers s1 LEFT OUTER JOIN integers s2 ON (SELECT i1.i+s1.i)=(SELECT i1.i+s2.i)) AS j FROM integers i1 ORDER BY i;
@@ -712,158 +711,148 @@ TEST_CASE("Test nested correlated subqueries", "[subquery]") {
 --3	6
 --NULL	6
 
-	/*result =
-	    con.Query("SELECT i, (SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM "
-	              "integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN (SELECT i FROM integers s1 WHERE i=ANY(SELECT i FROM "
-	              "integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {10, 10, 10, 10}));
-	// left outer join with correlation on LHS
-	result = con.Query("SELECT i, (SELECT SUM(s1.i) FROM (SELECT i FROM integers WHERE i=i1.i) s1 LEFT OUTER JOIN "
-	                   "integers s2 ON s1.i=s2.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-	result = con.Query("SELECT i, (SELECT SUM(s1.i) FROM (SELECT i FROM integers WHERE i<>i1.i) s1 LEFT OUTER JOIN "
-	                   "integers s2 ON s1.i=s2.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 5, 4, 3}));
-	// left outer join with correlation on RHS
-	result = con.Query("SELECT i, (SELECT SUM(s2.i) FROM integers s1 LEFT OUTER JOIN (SELECT i FROM integers WHERE "
-	                   "i=i1.i) s2 ON s1.i=s2.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-	result = con.Query("SELECT i, (SELECT SUM(s2.i) FROM integers s1 LEFT OUTER JOIN (SELECT i FROM integers WHERE "
-	                   "i<>i1.i) s2 ON s1.i=s2.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 5, 4, 3}));
+--ok
+SELECT i, CAST((SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN (SELECT i FROM integers s1 WHERE i=ANY(SELECT i FROM
+integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
 
-	result = con.Query(
-	    "SELECT i, (SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE CASE WHEN (i=i1.i AND i=ANY(SELECT i FROM "
-	    "integers WHERE i=s1.i)) THEN true ELSE false END) ss2) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-	result = con.Query("SELECT i, (SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND i=ANY(SELECT i "
-	                   "FROM integers WHERE i=s1.i)) ss2) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
+SELECT i, CAST((SELECT SUM(s1.i) FROM (SELECT i FROM integers WHERE i=i1.i) s1 LEFT OUTER JOIN integers s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
 
-	result = con.Query("SELECT i, (SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i) ss2) AS j FROM "
-	                   "integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-	result = con.Query("SELECT i, (SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=ANY(SELECT i FROM "
-	                   "integers WHERE i=s1.i)) ss2) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {6, 6, 6, 6}));
-	result = con.Query("SELECT i, (SELECT i=ANY(SELECT i FROM integers WHERE i=s1.i) FROM integers s1 WHERE i=i1.i) AS "
-	                   "j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), true, true, true}));
-	result = con.Query("SELECT i, (SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i OR i=ANY(SELECT i "
-	                   "FROM integers WHERE i=s1.i)) ss2) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {6, 6, 6, 6}));
-	result = con.Query(
-	    "SELECT i, (SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE CASE WHEN (i=i1.i AND i=ANY(SELECT i FROM "
-	    "integers WHERE i=s1.i)) THEN true ELSE false END) ss2) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
-	result = con.Query("SELECT i, (SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND EXISTS(SELECT i "
-	                   "FROM integers WHERE i=s1.i)) ss2) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), 1, 2, 3}));
+SELECT i, CAST((SELECT SUM(s1.i) FROM (SELECT i FROM integers WHERE i<>i1.i) s1 LEFT OUTER JOIN integers s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
 
-	// complex left outer join with correlation on RHS
-	result = con.Query("SELECT i, (SELECT SUM(ss1.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM "
-	                   "integers WHERE i<>s1.i)) ss1) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {5, 5, 5, 5}));
-	result =
-	    con.Query("SELECT i, (SELECT SUM(ss1.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers "
-	              "WHERE i<>s1.i)) ss1 LEFT OUTER JOIN (SELECT i FROM integers s1 WHERE i=i1.i AND i=ANY(SELECT i FROM "
-	              "integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {5, 5, 5, 5}));
-	result =
-	    con.Query("SELECT i, (SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers "
-	              "WHERE i<>s1.i)) ss1 LEFT OUTER JOIN (SELECT i FROM integers s1 WHERE i=i1.i AND i=ANY(SELECT i FROM "
-	              "integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), Value(), 2, 3}));
-	result =
-	    con.Query("SELECT i, (SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM "
-	              "integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN (SELECT i FROM integers s1 WHERE i=i1.i AND "
-	              "i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), Value(), 7, 8}));
-	// complex left outer join with correlation on LHS
-	result =
-	    con.Query("SELECT i, (SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND "
-	              "i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN (SELECT i FROM integers s1 WHERE "
-	              "i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), Value(), 4, 6}));
-	// complex left outer join with correlation on both sides
-	result = con.Query(
-	    "SELECT i, (SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND i>ANY(SELECT i FROM "
-	    "integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN (SELECT i FROM integers s1 WHERE i<>i1.i OR i=ANY(SELECT i FROM "
-	    "integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS j FROM integers i1 ORDER BY i;");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), 1, 2, 3}));
-	REQUIRE(CHECK_COLUMN(result, 1, {Value(), Value(), 4, 6}));
-}
+SELECT i, CAST((SELECT SUM(s2.i) FROM integers s1 LEFT OUTER JOIN (SELECT i FROM integers WHERE i=i1.i) s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
 
-TEST_CASE("Test varchar correlated subqueries", "[subquery]") {
-	unique_ptr<DuckDBResult> result;
-	DuckDB db(nullptr);
-	DuckDBConnection con(db);
+SELECT i, CAST((SELECT SUM(s2.i) FROM integers s1 LEFT OUTER JOIN (SELECT i FROM integers WHERE i<>i1.i) s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
 
-	con.EnableQueryVerification();
-	con.EnableProfiling();
-	// varchar tests
-	REQUIRE_NO_FAIL(con.Query("CREATE TABLE strings(v VARCHAR)"));
-	REQUIRE_NO_FAIL(con.Query("INSERT INTO strings VALUES ('hello'), ('world'), (NULL)"));
-	// ANY
-	result = con.Query("SELECT NULL IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v");
-	REQUIRE(CHECK_COLUMN(result, 0, {false, Value(), Value()}));
-	result = con.Query("SELECT 3 IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v");
-	REQUIRE(CHECK_COLUMN(result, 0, {false, false, false}));
-	result = con.Query("SELECT 'hello' IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v");
-	REQUIRE(CHECK_COLUMN(result, 0, {false, true, false}));
-	result = con.Query("SELECT 'bla' IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v");
-	REQUIRE(CHECK_COLUMN(result, 0, {false, false, false}));
-	result =
-	    con.Query("SELECT 'hello' IN (SELECT * FROM strings WHERE v=s1.v or v IS NULL) FROM strings s1 ORDER BY v");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), true, Value()}));
-	result = con.Query("SELECT 'bla' IN (SELECT * FROM strings WHERE v=s1.v or v IS NULL) FROM strings s1 ORDER BY v");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), Value(), Value()}));
-	// EXISTS
-	result = con.Query("SELECT * FROM strings WHERE EXISTS(SELECT NULL, v) ORDER BY v");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), "hello", "world"}));
-	result =
-	    con.Query("SELECT * FROM strings s1 WHERE EXISTS(SELECT v FROM strings WHERE v=s1.v OR v IS NULL) ORDER BY v");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), "hello", "world"}));
-	result = con.Query("SELECT * FROM strings s1 WHERE EXISTS(SELECT v FROM strings WHERE v=s1.v) ORDER BY v");
-	REQUIRE(CHECK_COLUMN(result, 0, {"hello", "world"}));
-	// // scalar query
-	result = con.Query("SELECT (SELECT v FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v");
-	REQUIRE(CHECK_COLUMN(result, 0, {Value(), "hello", "world"}));
-	result = con.Query(
-	    "SELECT (SELECT v FROM strings WHERE v=s1.v OR (v='hello' AND s1.v IS NULL)) FROM strings s1 ORDER BY v");
-	REQUIRE(CHECK_COLUMN(result, 0, {"hello", "hello", "world"}));
-}
+SELECT i, CAST((SELECT SUM(s2.i) FROM integers s1 LEFT OUTER JOIN (SELECT i FROM integers WHERE i=i1.i) s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
 
-TEST_CASE("Test correlated subqueries based on TPC-DS", "[subquery]") {
-	unique_ptr<DuckDBResult> result;
-	DuckDB db(nullptr);
-	DuckDBConnection con(db);
-	con.EnableQueryVerification();
+SELECT i, CAST((SELECT SUM(s2.i) FROM integers s1 LEFT OUTER JOIN (SELECT i FROM integers WHERE i<>i1.i) s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
 
-	REQUIRE_NO_FAIL(con.Query("CREATE TABLE item(i_manufact INTEGER)"));
+--BROKEN
+--SELECT i, (SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE CASE WHEN (i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) THEN true ELSE false END) ss2) AS j FROM integers i1 ORDER BY i;
+--1	1
+--2	2
+--3	3
+--NULL	NULL
 
-	REQUIRE_NO_FAIL(con.Query(
-	    "SELECT * FROM item i1 WHERE (SELECT count(*) AS item_cnt FROM item WHERE (i_manufact = i1.i_manufact AND "
-	    "i_manufact=3) OR (i_manufact = i1.i_manufact AND i_manufact=3)) > 0 ORDER BY 1 LIMIT 100;"));
-	REQUIRE_NO_FAIL(con.Query(
-	    "SELECT * FROM item i1 WHERE (SELECT count(*) AS item_cnt FROM item WHERE (i_manufact = i1.i_manufact AND "
-	    "i_manufact=3) OR (i_manufact = i1.i_manufact AND i_manufact=3)) ORDER BY 1 LIMIT 100;"));
-}
+SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	1
+--2	2
+--3	3
+--NULL	NULL
+
+SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	1
+--2	2
+--3	3
+--NULL	NULL
+
+SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	6
+--2	6
+--3	6
+--NULL	6
+
+/*Wrong result
+SELECT i, (SELECT i=ANY(SELECT i FROM integers WHERE i=s1.i) FROM integers s1 WHERE i=i1.i) AS j FROM integers i1 ORDER BY i;*/
+--1	True
+--2	True
+--3	True
+--NULL	NULL
+
+SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i OR i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	6
+--2	6
+--3	6
+--NULL	6
+
+--BROKEN
+--SELECT i, (SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE CASE WHEN (i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) THEN true ELSE false END) ss2) AS j FROM integers i1 ORDER BY i;
+--1	1
+--2	2
+--3	3
+--NULL	NULL
+
+SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND EXISTS(SELECT i FROM integers WHERE i=s1.i)) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	1
+--2	2
+--3	3
+--NULL	NULL
+
+SELECT i, CAST((SELECT SUM(ss1.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	5
+--2	5
+--3	5
+--NULL	5
+
+SELECT i, CAST((SELECT SUM(ss1.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN (SELECT i FROM integers s1 
+	WHERE i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	5
+--2	5
+--3	5
+--NULL	5
+
+SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN 
+	(SELECT i FROM integers s1 WHERE i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	NULL
+--2	2
+--3	3
+--NULL	NULL
+
+SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN
+	(SELECT i FROM integers s1 WHERE i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	NULL
+--2	2
+--3	3
+--NULL	NULL
+
+SELECT i, CAST((SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN
+	(SELECT i FROM integers s1 WHERE i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+--1	NULL
+--2	7
+--3	8
+--NULL	NULL
+
+/*Wrong result
+SELECT i, CAST((SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN
+	(SELECT i FROM integers s1 WHERE i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;*/
+--1	NULL
+--2	4
+--3	6
+--NULL	NULL
+
+/*Wrong result
+SELECT i, (SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN
+	(SELECT i FROM integers s1 WHERE i<>i1.i OR i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS j FROM integers i1 ORDER BY i;*/
+--1	NULL
+--2	4
+--3	6
+--NULL	NULL
+
+SELECT NULL IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v;
+
+SELECT 3 IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v; --error
+
+SELECT 'hello' IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v;
+
+SELECT 'hello' IN (SELECT * FROM strings WHERE v=s1.v or v IS NULL) FROM strings s1 ORDER BY v;
+
+SELECT 'bla' IN (SELECT * FROM strings WHERE v=s1.v or v IS NULL) FROM strings s1 ORDER BY v;
+
+/*BROKEN
+SELECT * FROM strings WHERE EXISTS(SELECT NULL, v) ORDER BY v;*/
+--'hello'
+--'world'
+--NULL
+
+SELECT * FROM strings s1 WHERE EXISTS(SELECT v FROM strings WHERE v=s1.v OR v IS NULL) ORDER BY v;
+
+SELECT * FROM strings s1 WHERE EXISTS(SELECT v FROM strings WHERE v=s1.v) ORDER BY v;
+
+SELECT (SELECT v FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v;
+
+SELECT (SELECT v FROM strings WHERE v=s1.v OR (v='hello' AND s1.v IS NULL)) FROM strings s1 ORDER BY v;
+
+DROP TABLE integers;
+DROP TABLE test;
+DROP TABLE test2;
+DROP TABLE strings;

@@ -66,6 +66,18 @@ MAPI  = (monetdb) /var/tmp/mtest-11357/.s.monetdb.35326
 QUERY = SELECT (SELECT SUM(i + i1.i), 1 FROM integers) FROM integers i1; --error, the subquery should output only one column
 ERROR = !SELECT: subquery must return only one column
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-19820/.s.monetdb.36524
+QUERY = SELECT (SELECT SUM(i1.i) FROM integers) AS k FROM integers i1 GROUP BY i ORDER BY i; --cardinality violation, scalar expression expected
+ERROR = !21000!zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-17487/.s.monetdb.34450
+QUERY = SELECT i, (SELECT SUM(s1.i) OVER (ORDER BY s1.i) FROM integers s1, integers s2 WHERE i1.i=s1.i LIMIT 1) FROM integers i1 ORDER BY i; --error
+ERROR = !syntax error, unexpected LIMIT, expecting UNION or EXCEPT or INTERSECT or ')' in: "select i, (select sum(s1.i) over (order by s1.i) from integers s1, integers s2 w"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-26643/.s.monetdb.30775
+QUERY = SELECT 3 IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v; --error
+ERROR = !conversion of string 'hello' to type bte failed.
+CODE  = 22018
 
 # 20:30:33 >  
 # 20:30:33 >  "Done."
