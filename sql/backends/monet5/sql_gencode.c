@@ -631,6 +631,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 			return -1;
 		}
 
+/* Crashes
 		q = newStmt(mb, querylogRef, contextRef);
 		if (q == NULL) {
 			return -1;
@@ -641,6 +642,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 		q = pushStr(mb, q, GDKgetenv("monet_version"));
 		q = pushStr(mb, q, GDKgetenv("revision"));
 		q = pushStr(mb, q, GDKgetenv("merovingian_uri"));
+*/
 	}
 
 	/* announce the transaction mode */
