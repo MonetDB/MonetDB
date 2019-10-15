@@ -166,7 +166,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	logadd("\"version\":\""VERSION" (hg id: %s)\","PRETTIFY, mercurial_revision());
 	logadd("\"source\":\"trace\","PRETTIFY);
 
-	logadd("\"oid\":"OIDFMT","PRETTIFY, cntxt->user);
+	logadd("\"user_id\":"OIDFMT","PRETTIFY, cntxt->user);
 	logadd("\"clk\":"LLFMT","PRETTIFY, usec);
 	logadd("\"ctime\":%"PRIu64","PRETTIFY, microseconds);
 	logadd("\"thread\":%d,"PRETTIFY, THRgettid());
