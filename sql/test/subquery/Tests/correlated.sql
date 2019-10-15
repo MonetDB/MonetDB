@@ -150,6 +150,10 @@ SELECT CAST(SUM(i) AS BIGINT), CAST((SELECT SUM(i) FROM integers WHERE i>SUM(i1.
 
 SELECT CAST((SELECT SUM(i) FROM integers WHERE i>SUM(i1.i)) AS BIGINT) FROM integers i1; -- NULL
 
+SELECT i1.i FROM integers i1 INNER JOIN integers i ON SUM(i1.i) = SUM(i.i); --error, aggregations not allowed in join conditions
+
+SELECT i1.i FROM integers i1 INNER JOIN integers i ON RANK() OVER (); --error, window functions not allowed in join conditions
+
 -- subquery with aggregation inside aggregation should fail
 SELECT SUM((SELECT SUM(i))) FROM integers; -- error
 -- aggregate with correlation in filter

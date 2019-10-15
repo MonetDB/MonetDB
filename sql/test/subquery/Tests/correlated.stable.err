@@ -58,7 +58,15 @@ MAPI  = (monetdb) /var/tmp/mtest-8372/.s.monetdb.37437
 QUERY = SELECT i+1, (SELECT SUM(i1.i)) FROM integers i1;
 ERROR = !Cannot use non GROUP BY column in query results without an aggregate function
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-27844/.s.monetdb.31122
+MAPI  = (monetdb) /var/tmp/mtest-17692/.s.monetdb.32120
+QUERY = SELECT i1.i FROM integers i1 INNER JOIN integers i ON SUM(i1.i) = SUM(i.i); --error, aggregations not allowed in join conditions
+ERROR = !SUM: aggregate functions not allowed in JOIN conditions
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-23431/.s.monetdb.34452
+QUERY = SELECT i1.i FROM integers i1 INNER JOIN integers i ON RANK() OVER (); --error, window functions not allowed in join conditions
+ERROR = !RANK: window function 'rank' not allowed in JOIN conditions
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-23431/.s.monetdb.34452
 QUERY = SELECT SUM((SELECT SUM(i))) FROM integers; -- error
 ERROR = !SUM: aggregate functions cannot be nested
 CODE  = 42000
