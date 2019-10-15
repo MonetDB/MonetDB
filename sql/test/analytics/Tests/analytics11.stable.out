@@ -325,21 +325,21 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    RANK() OVER (PARTITION BY SUM(ColID))
 #FROM tbl_ProductSales
 #GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
-% .L1,	.L4,	.L7 # table_name
-% L1,	L4,	L7 # name
-% tinyint,	hugeint,	int # type
-% 1,	4,	1 # length
-[ 1,	4800,	1	]
-[ 0,	4800,	1	]
-[ 1,	4800,	1	]
-[ 0,	4800,	1	]
-[ 0,	4800,	1	]
-[ 1,	4800,	1	]
-[ 0,	4800,	1	]
-[ 1,	4800,	1	]
-[ 0,	4800,	1	]
-[ 0,	4800,	1	]
-[ 1,	4800,	1	]
+% .L1,	.L6,	.L12,	.L14 # table_name
+% L1,	L6,	L12,	L14 # name
+% tinyint,	bigint,	bigint,	int # type
+% 1,	4,	2,	1 # length
+[ 1,	4800,	13,	1	]
+[ 0,	4800,	13,	1	]
+[ 1,	4800,	13,	1	]
+[ 0,	4800,	13,	1	]
+[ 0,	4800,	13,	1	]
+[ 1,	4800,	13,	1	]
+[ 0,	4800,	13,	1	]
+[ 1,	4800,	13,	1	]
+[ 0,	4800,	13,	1	]
+[ 0,	4800,	13,	1	]
+[ 1,	4800,	13,	1	]
 #CREATE TABLE tbl_X (ColID int, NItems int); 
 #INSERT INTO tbl_X VALUES (1,1000),(2,500),(3,323),(4,0);
 [ 4	]

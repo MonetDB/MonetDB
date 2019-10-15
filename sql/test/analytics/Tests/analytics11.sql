@@ -147,8 +147,9 @@ FROM tbl_ProductSales
 GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
 
 SELECT
-    GROUPING(Product_Category), 
-    SUM(SUM(TotalSales)) OVER (RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING), 
+    GROUPING(Product_Category),
+    CAST(SUM(SUM(TotalSales)) OVER (RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS BIGINT),
+    CAST(SUM(GROUPING(Product_Category, Product_Name)) OVER (RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS BIGINT),
     RANK() OVER (PARTITION BY SUM(ColID))
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
@@ -183,7 +184,6 @@ WHERE tbl_X.NItems < 1000
 GROUP BY CUBE(Product_Category, Product_Name, tbl_ProductSales.ColID), ROLLUP(tbl_X.ColID, tbl_X.NItems)
 ORDER BY SUM(TotalSales) DESC
 LIMIT 1;
-
 
 DROP TABLE tbl_ProductSales;
 DROP TABLE tbl_X;
