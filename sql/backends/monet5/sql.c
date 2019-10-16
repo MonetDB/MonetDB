@@ -266,8 +266,8 @@ SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 
 	if ((msg = CLTshutdown(cntxt, mb, stk, pci)) == MAL_SUCCEED) {
-		/* administer the shutdown */
-		mnstr_printf(GDKstdout, "#%s\n", *getArgReference_str(stk, pci, 0));
+		/* administer the shutdown in the system log*/
+		fprintf(stderr, "#Shutdown:%s\n", *getArgReference_str(stk, pci, 0));
 	}
 	return msg;
 }
