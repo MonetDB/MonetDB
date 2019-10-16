@@ -51,9 +51,6 @@ static int logger_debug = 0;
 static sql_trans *spare_trans[MAX_SPARES];
 static int spares = 0;
 
-/* builtin functions have ids less than this */
-#define FUNC_OIDS 2000
-
 static int
 key_cmp(sql_key *k, sqlid *id)
 {

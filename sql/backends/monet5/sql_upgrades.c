@@ -17,6 +17,10 @@
 #include "mtime.h"
 #include <unistd.h>
 #include "sql_upgrades.h"
+#include "rel_rel.h"
+#include "rel_semantic.h"
+#include "rel_unnest.h"
+#include "rel_optimizer.h"
 
 #include "rel_remote.h"
 #include "mal_authorize.h"
@@ -46,7 +50,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 	for (n = types->h; n; n = n->next) {
 		sql_type *t = n->data;
 
-		if (t->base.id >= 2000)
+		if (t->base.id >= FUNC_OIDS)
 			continue;
 
 		pos += snprintf(buf + pos, bufsize - pos,
@@ -68,7 +72,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 		sql_arg *arg;
 		node *m;
 
-		if (func->base.id >= 2000)
+		if (func->base.id >= FUNC_OIDS)
 			continue;
 
 		pos += snprintf(buf + pos, bufsize - pos,
@@ -136,7 +140,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 		sql_func *aggr = n->data;
 		sql_arg *arg;
 
-		if (aggr->base.id >= 2000)
+		if (aggr->base.id >= FUNC_OIDS)
 			continue;
 
 		pos += snprintf(buf + pos, bufsize - pos,
@@ -283,7 +287,7 @@ sql_update_geom(Client c, mvc *sql, int olddb, const char *prev_schema)
 	for (n = types->h; n; n = n->next) {
 		sql_type *t = n->data;
 
-		if (t->base.id < 2000 &&
+		if (t->base.id < FUNC_OIDS &&
 		    (strcmp(t->base.name, "mbr") == 0 ||
 		     strcmp(t->base.name, "wkb") == 0 ||
 		     strcmp(t->base.name, "wkba") == 0))
@@ -1894,6 +1898,145 @@ sql_update_apr2019_sp1(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+#define FLUSH_INSERTS_IF_BUFFERFILLED /* Each new value should add about 20 bytes to the buffer, "flush" when is 200 bytes from being full */ \
+	if (pos > 7900) { \
+		pos += snprintf(buf + pos, bufsize - pos, ") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from dependencies where depend_id = t1.c2);\n"); \
+		assert(pos < bufsize); \
+		err = SQLstatementIntern(c, &buf, "update", true, false, NULL); \
+		if (err) \
+			goto bailout; \
+		pos = 0; \
+		pos += snprintf(buf + pos, bufsize - pos, "insert into sys.dependencies select c1, c2, c3 from (values"); \
+		ppos = pos; \
+		first = true; \
+	}
+
+static str
+sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
+{
+	size_t bufsize = 8192, pos = 0, ppos;
+	char *err = NULL, *buf = GDKmalloc(bufsize);
+	sql_allocator *old_sa = sql->sa;
+	bool first = true;
+
+	if (buf == NULL)
+		throw(SQL, "sql_update_nov2019_missing_dependencies", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	if (!(sql->sa = sa_create())) {
+		err = createException(SQL, "sql.catalog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.dependencies select c1, c2, c3 from (values");
+	ppos = pos; /* later check if found updatable database objects */
+
+	for (node *n = sql->session->tr->schemas.set->h; n; n = n->next) {
+		sql_schema *s = (sql_schema*) n->data;
+
+		if (s->funcs.set)
+			for (node *m = s->funcs.set->h; m; m = m->next) {
+				sql_func *f = (sql_func*) m->data;
+
+				if (f->query && !LANG_EXT(f->lang)) {
+					char *relt;
+					sql_rel *r = NULL;
+
+					if (!(relt = sa_strdup(sql->sa, f->query))) {
+						err = createException(SQL, "sql.catalog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+
+					r = rel_parse(sql, s, relt, m_deps);
+					if (r)
+						r = sql_processrelation(sql, r, 0);
+					if (r) {
+						list *id_l = rel_dependencies(sql, r);
+
+						for (node *o = id_l->h ; o ; o = o->next) {
+							sqlid next = *(sqlid*) o->data;
+							if (next != f->base.id) {
+								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next, f->base.id, (int)(!IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY));
+								first = false;
+								FLUSH_INSERTS_IF_BUFFERFILLED
+							}
+						}
+					}
+				}
+			}
+		if (s->tables.set)
+			for (node *m = s->tables.set->h; m; m = m->next) {
+				sql_table *t = (sql_table*) m->data;
+
+				if (t->query && isView(t)) {
+					char *relt;
+					sql_rel *r = NULL;
+
+					if (!(relt = sa_strdup(sql->sa, t->query))) {
+						err = createException(SQL, "sql.catalog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+
+					r = rel_parse(sql, s, relt, m_deps);
+					if (r)
+						r = sql_processrelation(sql, r, 0);
+					if (r) {
+						list *id_l = rel_dependencies(sql, r);
+
+						for (node *o = id_l->h ; o ; o = o->next) {
+							sqlid next = *(sqlid*) o->data;
+							if (next != t->base.id) {
+								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next, t->base.id, (int) VIEW_DEPENDENCY);
+								first = false;
+								FLUSH_INSERTS_IF_BUFFERFILLED
+							}
+						}
+					}
+				}
+				if (t->triggers.set)
+					for (node *mm = t->triggers.set->h; mm; mm = mm->next) {
+						sql_trigger *tr = (sql_trigger*) mm->data;
+						char *relt;
+						sql_rel *r = NULL;
+
+						if (!(relt = sa_strdup(sql->sa, tr->statement))) {
+							err = createException(SQL, "sql.catalog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							goto bailout;
+						}
+
+						r = rel_parse(sql, s, relt, m_deps);
+						if (r)
+							r = sql_processrelation(sql, r, 0);
+						if (r) {
+							list *id_l = rel_dependencies(sql, r);
+
+							for (node *o = id_l->h ; o ; o = o->next) {
+								sqlid next = *(sqlid*) o->data;
+								if (next != tr->base.id) {
+									pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next, tr->base.id, (int) TRIGGER_DEPENDENCY);
+									first = false;
+									FLUSH_INSERTS_IF_BUFFERFILLED
+								}
+							}
+						}
+					}
+			}
+	}
+
+	if (ppos != pos) { /* found updatable functions */
+		pos += snprintf(buf + pos, bufsize - pos, ") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from dependencies where depend_id = t1.c2);\n");
+
+		assert(pos < bufsize);
+		err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	}
+
+bailout:
+	if (sql->sa)
+		sa_destroy(sql->sa);
+	sql->sa = old_sa;
+	GDKfree(buf);
+	return err;
+}
+
 static str
 sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
@@ -2077,13 +2220,6 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlr')"
 			" and name in ('master', 'stop', 'accept', 'replicate', 'beat') and type = %d;\n", (int) F_PROC);
 
-	/* Fix alter table drop column, missing column number update issue 
-	pos += snprintf(buf + pos, bufsize - pos,
-			"update \"_columns\" set \"number\" = ("
-			"select \"rid\" from (select \"id\", row_number() over (partition by \"table_id\" order by \"id\") - 1 as \"rid\" from \"_columns\") as \"rids\""
-			" where rids.\"id\" = \"_columns\".\"id\")"
-			" where \"table_id\" in (select \"table_id\" from \"_columns\" group by \"table_id\", \"number\" having count(*) > 1);\n"); */
-
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	assert(pos < bufsize);
@@ -2097,6 +2233,7 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema)
 {
+	sql_table *t;
 	size_t bufsize = 1024, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 
@@ -2114,17 +2251,19 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('suspend_log_flushing', 'resume_log_flushing') and type = %d;\n", (int) F_PROC);
 
-	
 	/* 16_tracelog */
+	t = mvc_bind_table(sql, mvc_bind_schema(sql, "sys"), "tracelog");
+	t->system = 0; /* make it non-system else the drop view will fail */
 	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.tracelog;\n"
 			"drop function sys.tracelog();\n"
 			"create function sys.tracelog()\n"
 			"	returns table (\n"
-			"		ticks bigint,       -- time in microseconds\n"
-			"		stmt string     -- actual statement executed\n"
+			"		ticks bigint, -- time in microseconds\n"
+			"		stmt string  -- actual statement executed\n"
 			"	)\n"
-			"	external name sql.dump_trace;\n");
-
+			"	external name sql.dump_trace;\n"
+			"create view sys.tracelog as select * from sys.tracelog();\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
@@ -2359,6 +2498,10 @@ SQLupgrades(Client c, mvc *m)
 
 	sql_find_subtype(&tp, "string", 0, 0);
 	if (!sql_bind_func3(m->sa, s, "deltas", &tp, &tp, &tp, F_UNION)) {
+		if ((err = sql_update_nov2019_missing_dependencies(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
 		if (!systabfixed &&
 		    (err = sql_fix_system_tables(c, m, prev_schema)) != NULL) {
 			fprintf(stderr, "!%s\n", err);

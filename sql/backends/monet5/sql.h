@@ -55,7 +55,6 @@
 #include "bat/bat_utils.h"
 
 extern int sqlcleanup(mvc *c, int err);
-extern sql_rel *sql_processrelation(mvc *m, sql_rel* rel, int value_based_opt);
 extern sql_rel *sql_symbol2relation(mvc *m, symbol *sym);
 
 extern BAT *mvc_bind(mvc *m, const char *sname, const char *tname, const char *cname, int access);

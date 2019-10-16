@@ -34,9 +34,13 @@
 static str myname = 0;	// avoid tracing the profiler module
 
 /* The JSON rendering can be either using '\n' separators between
- * each key:value pair or as a single line */
-//#define PRETTIFY	"\n"
-#define PRETTIFY	
+ * each key:value pair or as a single line.
+ * The current stethoscope implementation requires the first option and
+ * also the term rendering PRET to be set to ''
+ */
+
+#define PRETTIFY	"\n"
+//#define PRETTIFY
 
 /* When the MAL block contains a BARRIER block we may end up with tons
  * of profiler events. To avoid this, we stop emitting the events
@@ -149,14 +153,14 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 		return;
 	}
 
-/* The stream of events can be complete read by the DBA, 
+/* The stream of events can be complete read by the DBA,
  * all other users can only see events assigned to their account
  */
 	if( malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
 		return;
 
 	usec= GDKusec();
-	microseconds = (uint64_t)startup_time.tv_sec*1000000 + (uint64_t)startup_time.tv_usec + (uint64_t)usec;
+	microseconds = (uint64_t)usec - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 	/* make profile event tuple  */
 	lognew();
 	logadd("{"PRETTIFY); // fill in later with the event counter
@@ -166,7 +170,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	logadd("\"version\":\""VERSION" (hg id: %s)\","PRETTIFY, mercurial_revision());
 	logadd("\"source\":\"trace\","PRETTIFY);
 
-	logadd("\"oid\":"OIDFMT","PRETTIFY, cntxt->user);
+	logadd("\"user_id\":"OIDFMT","PRETTIFY, cntxt->user);
 	logadd("\"clk\":"LLFMT","PRETTIFY, usec);
 	logadd("\"ctime\":%"PRIu64","PRETTIFY, microseconds);
 	logadd("\"thread\":%d,"PRETTIFY, THRgettid());
@@ -313,7 +317,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 This information can be used to determine memory footprint and variable life times.
  */
 
-#define PRET 
+#define PRET
 #ifdef MALARGUMENTDETAILS
 		// Also show details of the arguments for modelling
 		if(mb){
@@ -532,9 +536,9 @@ profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start
 
 	if( maleventstream) {
 		renderProfilerEvent(cntxt, mb, stk, pci, start);
-		if ( start && pci->pc ==0)
+		if ( !start && pci->pc ==0)
 			profilerHeartbeatEvent("ping");
-		if ( !start && pci->token == ENDsymbol)
+		if ( start && pci->token == ENDsymbol)
 			profilerHeartbeatEvent("ping");
 	}
 }
@@ -726,7 +730,7 @@ getTrace(Client cntxt, const char *nme)
 void
 clearTrace(Client cntxt)
 {
-	(void) cntxt; 
+	(void) cntxt;
 	MT_lock_set(&mal_profileLock);
 	if (cntxt->profticks == NULL) {
 		MT_lock_unset(&mal_profileLock);
@@ -773,8 +777,8 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (errors > 0) {
 		/* stop profiling if an error occurred */
 		cntxt->sqlprofiler = FALSE;
-	} 
-	
+	}
+
 	MT_lock_unset(&mal_profileLock);
 	GDKfree(stmt);
 }

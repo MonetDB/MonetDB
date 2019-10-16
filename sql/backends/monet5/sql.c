@@ -115,18 +115,6 @@ rel_need_distinct_query(sql_rel *rel)
 }
 
 sql_rel *
-sql_processrelation(mvc *sql, sql_rel* rel, int value_based_opt)
-{
-	if (rel)
-		rel = rel_unnest(sql, rel);
-	if (rel)
-		rel = rel_generate_groupings(sql, rel);
-	if (rel)
-		rel = rel_optimizer(sql, rel, value_based_opt);
-	return rel;
-}
-
-sql_rel *
 sql_symbol2relation(mvc *sql, symbol *sym)
 {
 	sql_rel *rel;
@@ -233,7 +221,6 @@ SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*res = 0;
 	return MAL_SUCCEED;
 }
-
 
 str
 SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -629,7 +616,6 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *varname = *getArgReference_str(stk, pci, 2);
 	int mtype = getArgType(mb, pci, 3);
 	ValRecord *src;
-	char buf[BUFSIZ];
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -642,6 +628,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strcmp("optimizer", varname) == 0) {
 		const char *newopt = *getArgReference_str(stk, pci, 3);
 		if (newopt) {
+			char buf[BUFSIZ];
 			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0) {
 				throw(SQL, "sql.setVariable", SQLSTATE(42100) "optimizer '%s' unknown", newopt);
 			}
@@ -673,8 +660,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(!stack_set_var(m, varname, src))
 			throw(SQL, "sql.setVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
-		snprintf(buf, BUFSIZ, "variable '%s' unknown", varname);
-		throw(SQL, "sql.setVariable", SQLSTATE(42100) "%s", buf);
+		throw(SQL, "sql.setVariable", SQLSTATE(42100) "variable '%s' unknown", varname);
 	}
 	return MAL_SUCCEED;
 }
@@ -696,12 +682,8 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable type error");
-	a = stack_get_var(m, varname);
-	if (!a) {
-		char buf[BUFSIZ];
-		snprintf(buf, BUFSIZ, "variable '%s' unknown", varname);
-		throw(SQL, "sql.getVariable", SQLSTATE(42100) "%s", buf);
-	}
+	if (!(a = stack_get_var(m, varname)))
+		throw(SQL, "sql.getVariable", SQLSTATE(42100) "variable '%s' unknown", varname);
 	src = &a->data;
 	dst = &stk->stk[getArg(pci, 0)];
 	if (VALcopy(dst, src) == NULL)
@@ -1610,10 +1592,10 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.clear_table", "3F000!Schema missing %s", sname);
+		throw(SQL, "sql.clear_table", SQLSTATE(3F000) "Schema missing %s", sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.clear_table", "42S02!Table missing %s.%s", sname,tname);
+		throw(SQL, "sql.clear_table", SQLSTATE(42S02) "Table missing %s.%s", sname,tname);
 	*res = mvc_clear_table(m, t);
 	return MAL_SUCCEED;
 }

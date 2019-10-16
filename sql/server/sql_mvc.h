@@ -194,6 +194,7 @@ extern BUN mvc_clear_table(mvc *m, sql_table *t);
 extern str mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
 extern sql_table *mvc_create_table(mvc *c, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
 extern sql_table *mvc_create_view(mvc *c, sql_schema *s, const char *name, int persistence, const char *sql, bit system);
+extern sql_table *mvc_bootstrap_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
 extern sql_table *mvc_create_remote(mvc *c, sql_schema *s, const char *name, int persistence, const char *loc);
 
 extern int mvc_drop_column(mvc *c, sql_table *t, sql_column *col, int drop_action);
@@ -278,6 +279,8 @@ extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k);
 extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i);
 extern sql_trigger *mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr);
 extern sql_part *mvc_copy_part(mvc *m, sql_table *t, sql_part *pt);
+
+extern sql_rel *sql_processrelation(mvc *m, sql_rel* rel, int value_based_opt);
 
 extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
