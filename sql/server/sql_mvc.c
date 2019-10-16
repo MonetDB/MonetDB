@@ -21,6 +21,9 @@
 #include "sql_querytype.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
+#include "rel_semantic.h"
+#include "rel_unnest.h"
+#include "rel_optimizer.h"
 #include "gdk_logger.h"
 #include "wlc.h"
 
@@ -99,7 +102,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	m->sizeheader = false;
 
 	if (first || catalog_version) {
-		if(mvc_trans(m) < 0) {
+		if (mvc_trans(m) < 0) {
 			mvc_destroy(m);
 			fprintf(stderr, "!mvc_init: failed to start transaction\n");
 			return -1;
@@ -114,7 +117,13 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			MVC_INIT_DROP_TABLE(cid,  "columns")
 		}
 
-		t = mvc_create_view(m, s, "tables", SQL_PERSIST, "SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(CASE WHEN \"system\" THEN \"type\" + 10 /* system table/view */ ELSE (CASE WHEN \"commit_action\" = 0 THEN \"type\" /* table/view */ ELSE \"type\" + 20 /* global temp table */ END) END AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", CASE WHEN (NOT \"system\" AND \"commit_action\" > 0) THEN 1 ELSE 0 END AS \"temporary\" FROM \"sys\".\"_tables\" WHERE \"type\" <> 2 UNION ALL SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(\"type\" + 30 /* local temp table */ AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", 1 AS \"temporary\" FROM \"tmp\".\"_tables\";", 1);
+		t = mvc_bootstrap_create_view(m, s, "tables", "SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(CASE WHEN \"system\" THEN \"type\" + 10 /* system table/view */ ELSE (CASE WHEN \"commit_action\" = 0 THEN \"type\" /* table/view */ ELSE \"type\" + 20 /* global temp table */ END) END AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", CASE WHEN (NOT \"system\" AND \"commit_action\" > 0) THEN 1 ELSE 0 END AS \"temporary\" FROM \"sys\".\"_tables\" WHERE \"type\" <> 2 UNION ALL SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(\"type\" + 30 /* local temp table */ AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", 1 AS \"temporary\" FROM \"tmp\".\"_tables\";");
+		if (!t) {
+			mvc_destroy(m);
+			fprintf(stderr, "!mvc_init: failed to create 'tables' view\n");
+			return -1;
+		}
+
 		ntid = t->base.id;
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
@@ -144,7 +153,12 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			table_funcs.rids_destroy(rs);
 		}
 
-		t = mvc_create_view(m, s, "columns", SQL_PERSIST, "SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;", 1);
+		t = mvc_bootstrap_create_view(m, s, "columns", "SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;");
+		if (!t) {
+			mvc_destroy(m);
+			fprintf(stderr, "!mvc_init: failed to create 'columns' view\n");
+			return -1;
+		}
 		ncid = t->base.id;
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
@@ -1328,6 +1342,45 @@ mvc_create_view(mvc *m, sql_schema *s, const char *name, int persistence, const 
 	} else {
 		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0, 0);
 	}
+	return t;
+}
+
+sql_table *
+mvc_bootstrap_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
+{
+	sql_allocator *old_sa = m->sa;
+	sql_table *t = mvc_create_view(m, s, name, SQL_PERSIST, query, 1);
+
+	if (t) {
+		char *buf;
+		sql_rel *r = NULL;
+
+		if (!(m->sa = sa_create())) {
+			t = NULL;
+			(void) sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+
+		if (!(buf = sa_strdup(m->sa, t->query))) {
+			t = NULL;
+			(void) sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+
+		r = rel_parse(m, s, buf, m_deps);
+		if (r)
+			r = rel_unnest(m, r);
+		if (r)
+			r = rel_optimizer(m, r, 0);
+		if (r) {
+			list *id_l = rel_dependencies(m, r);
+			mvc_create_dependencies(m, id_l, t->base.id, VIEW_DEPENDENCY);
+		}
+	}
+bailout:
+	if (m->sa)
+		sa_destroy(m->sa);
+	m->sa = old_sa;
 	return t;
 }
 
