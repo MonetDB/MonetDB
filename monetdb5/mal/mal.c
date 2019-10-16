@@ -79,7 +79,7 @@ int mal_init(void){
 #ifndef NDEBUG
 		mdbExit();
 #endif
-		dumpExceptionsToStream(NULL, err);
+		fprintf(stderr, "%s", err);
 		freeException(err);
 		return -1;
 	}
