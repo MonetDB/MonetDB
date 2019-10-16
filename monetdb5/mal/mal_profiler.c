@@ -34,9 +34,13 @@
 static str myname = 0;	// avoid tracing the profiler module
 
 /* The JSON rendering can be either using '\n' separators between
- * each key:value pair or as a single line */
-//#define PRETTIFY	"\n"
-#define PRETTIFY
+ * each key:value pair or as a single line.
+ * The current stethoscope implementation requires the first option and
+ * also the term rendering PRET to be set to ''
+ */
+
+#define PRETTIFY	"\n"
+//#define PRETTIFY
 
 /* When the MAL block contains a BARRIER block we may end up with tons
  * of profiler events. To avoid this, we stop emitting the events
