@@ -1055,7 +1055,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	r = rel_parse(m, f->s, f->query, m_instantiate);
 	if (r) {
 		r = rel_unnest(m, r);
-		r = rel_optimizer(m, r, 0);
+		r = rel_optimizer(m, r, 1);
 		r = rel_distribute(m, r);
 		r = rel_partition(m, r);
 	}
