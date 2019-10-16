@@ -229,7 +229,7 @@ keyvalueparser(char *txt, EventRecord *ev)
 		curr_time = *localtime(&sec);
 #endif
 		ev->time = malloc(DATETIME_CHAR_LENGTH*sizeof(char));
-		snprintf(ev->time, DATETIME_CHAR_LENGTH, "%d/%02d/%02d %02d:%02d:%02d.%lu",
+		snprintf(ev->time, DATETIME_CHAR_LENGTH, "%d/%02d/%02d %02d:%02d:%02d.%"PRIu64,
 				 curr_time.tm_year + 1900, curr_time.tm_mon, curr_time.tm_mday,
 			 curr_time.tm_hour, curr_time.tm_min, curr_time.tm_sec, microsec);
 		ev->clkticks = sec * 1000000;
