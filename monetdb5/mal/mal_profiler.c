@@ -536,9 +536,9 @@ profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start
 
 	if( maleventstream) {
 		renderProfilerEvent(cntxt, mb, stk, pci, start);
-		if ( start && pci->pc ==0)
+		if ( !start && pci->pc ==0)
 			profilerHeartbeatEvent("ping");
-		if ( !start && pci->token == ENDsymbol)
+		if ( start && pci->token == ENDsymbol)
 			profilerHeartbeatEvent("ping");
 	}
 }
