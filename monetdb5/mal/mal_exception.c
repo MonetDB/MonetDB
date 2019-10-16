@@ -56,15 +56,20 @@ static str createExceptionInternal(enum malexception type, const char *fcn, cons
 static str
 createExceptionInternal(enum malexception type, const char *fcn, const char *format, va_list ap)
 {
-	char *message;
+	char *message, local[GDKMAXERRLEN];
 	int len;
 	// if there is an error we allow memory allocation once again
 #ifndef NDEBUG
 	GDKsetmallocsuccesscount(-1);
 #endif
 	message = GDKmalloc(GDKMAXERRLEN);
-	if (message == NULL)
+	if (message == NULL){
+		/* Leave a message behind in the logging system */
+		len = snprintf(local, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
+		len = vsnprintf(local + len, GDKMAXERRLEN, format, ap);
+		fprintf(stderr, "%s", local);
 		return M5OutOfMemory;	/* last resort */
+	}
 	len = snprintf(message, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
 	if (len >= GDKMAXERRLEN)	/* shouldn't happen */
 		return message;
