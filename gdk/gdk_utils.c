@@ -1091,6 +1091,9 @@ GDKaddbuf(const char *message)
 
 	if (message == NULL || *message == '\0')	/* empty message, nothing to do */
 		return;
+	/* filter out duplicate messages */
+	if (GDKerrbuf && strstr(GDKerrbuf , message))
+		return;
 	p = message;
 	strcpy(prefix, "!");	/* default prefix */
 	while (p && *p) {
@@ -1154,8 +1157,10 @@ GDKerror(const char *format, ...)
 		strcpy(message, GDKERROR);
 	}
 	va_start(ap, format);
-	if (vsnprintf(message + len, sizeof(message) - (len + 2), format, ap) < 0)
+	if (vsnprintf(message + len, sizeof(message) - (len + 2), format, ap) < 0){
+		fprintf(stderr,GDKERROR "an error occurred within GDKerror.\n");
 		strcpy(message, GDKERROR "an error occurred within GDKerror.\n");
+	}
 	va_end(ap);
 
 	GDKaddbuf(message);
