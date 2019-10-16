@@ -5746,7 +5746,7 @@ id_cmp(int *id1, int *id2)
 static list *
 cond_append(list *l, int *id)
 {
-	if (*id >= 2000 && !list_find(l, id, (fcmp) &id_cmp))
+	if (*id >= FUNC_OIDS && !list_find(l, id, (fcmp) &id_cmp))
 		 list_append(l, id);
 	return l;
 }
@@ -5856,37 +5856,32 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 
 		if (!t && c)
 			t = c->t;
+
 		cond_append(l, &t->base.id);
-		if (isTable(t)) {
-			/* find all used columns */
-			node *en;
-			for( en = r->exps->h; en; en = en->next ) {
-				sql_exp *exp = en->data;
-				const char *oname = exp->r;
+		/* find all used columns */
+		for (node *en = r->exps->h; en; en = en->next) {
+			sql_exp *exp = en->data;
+			const char *oname = exp->r;
 
-				if (is_func(exp->type)) {
-					list *exps = exp->l;
-					sql_exp *cexp = exps->h->data;
-					const char *cname = cexp->r;
-
-		       			c = find_sql_column(t, cname);
-					cond_append(l, &c->base.id);
-				} else if (oname[0] == '%' && strcmp(oname, TID) == 0) {
-					continue;
-				} else if (oname[0] == '%') { 
-					sql_idx *i = find_sql_idx(t, oname+1);
-
-					cond_append(l, &i->base.id);
-				} else {
-					sql_column *c = find_sql_column(t, oname);
-					cond_append(l, &c->base.id);
-				}
+			assert(!is_func(exp->type));
+			if (oname[0] == '%' && strcmp(oname, TID) == 0) {
+				continue;
+			} else if (oname[0] == '%') { 
+				sql_idx *i = find_sql_idx(t, oname+1);
+				cond_append(l, &i->base.id);
+			} else {
+				sql_column *c = find_sql_column(t, oname);
+				cond_append(l, &c->base.id);
 			}
 		}
-	}	break;
-	case op_table:
-		/* */ 
-		break;
+	} break;
+	case op_table: {
+		if ((r->flag == 0 || r->flag == 1) && r->r) { /* table producing function, excluding rel_relational_func cases */
+			sql_exp *op = r->r;
+			sql_subfunc *f = op->f;
+			cond_append(l, &f->func->base.id);
+		}
+	} break;
 	case op_join: 
 	case op_left: 
 	case op_right: 
@@ -5933,7 +5928,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 		}
 		break;
 	}
-	if (r->exps) {
+	if (!is_base(r->op) && r->exps) {
 		if (exps_deps(sql, r->exps, refs, l) != 0)
 			return -1;
 	}

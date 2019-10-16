@@ -46,7 +46,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 	for (n = types->h; n; n = n->next) {
 		sql_type *t = n->data;
 
-		if (t->base.id >= 2000)
+		if (t->base.id >= FUNC_OIDS)
 			continue;
 
 		pos += snprintf(buf + pos, bufsize - pos,
@@ -68,7 +68,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 		sql_arg *arg;
 		node *m;
 
-		if (func->base.id >= 2000)
+		if (func->base.id >= FUNC_OIDS)
 			continue;
 
 		pos += snprintf(buf + pos, bufsize - pos,
@@ -136,7 +136,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 		sql_func *aggr = n->data;
 		sql_arg *arg;
 
-		if (aggr->base.id >= 2000)
+		if (aggr->base.id >= FUNC_OIDS)
 			continue;
 
 		pos += snprintf(buf + pos, bufsize - pos,
@@ -283,7 +283,7 @@ sql_update_geom(Client c, mvc *sql, int olddb, const char *prev_schema)
 	for (n = types->h; n; n = n->next) {
 		sql_type *t = n->data;
 
-		if (t->base.id < 2000 &&
+		if (t->base.id < FUNC_OIDS &&
 		    (strcmp(t->base.name, "mbr") == 0 ||
 		     strcmp(t->base.name, "wkb") == 0 ||
 		     strcmp(t->base.name, "wkba") == 0))

@@ -9137,7 +9137,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		changes = 0;
 	}
 
-	rel = rewrite_topdown(sql, rel, &rel_merge_table_rewrite, &changes);
+	if (value_based_opt)
+		rel = rewrite_topdown(sql, rel, &rel_merge_table_rewrite, &changes);
 	if (level <= 0 && mvc_debug_on(sql,8))
 		rel = rewrite_topdown(sql, rel, &rel_add_dicts, &changes);
 	*g_changes = changes;
