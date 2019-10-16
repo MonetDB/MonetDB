@@ -9189,7 +9189,7 @@ rel_reset_subquery(sql_rel *rel)
 
 }
 
-static sql_rel *x<
+static sql_rel *
 optimize(mvc *sql, sql_rel *rel, int value_based_opt) 
 {
 	list *refs = sa_list(sql->sa);
