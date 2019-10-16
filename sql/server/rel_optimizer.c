@@ -9137,7 +9137,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		changes = 0;
 	}
 
-	rel = rewrite_topdown(sql, rel, &rel_merge_table_rewrite, &changes);
+	if (value_based_opt)
+		rel = rewrite_topdown(sql, rel, &rel_merge_table_rewrite, &changes);
 	if (level <= 0 && mvc_debug_on(sql,8))
 		rel = rewrite_topdown(sql, rel, &rel_add_dicts, &changes);
 	*g_changes = changes;
@@ -9188,7 +9189,7 @@ rel_reset_subquery(sql_rel *rel)
 
 }
 
-static sql_rel *
+static sql_rel *x<
 optimize(mvc *sql, sql_rel *rel, int value_based_opt) 
 {
 	list *refs = sa_list(sql->sa);

@@ -5876,7 +5876,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 		}
 	} break;
 	case op_table: {
-		if (r->flag == 0 || r->flag == 1) { /* table producing function */
+		if ((r->flag == 0 || r->flag == 1) && r->r) { /* table producing function, excluding rel_relational_func cases */
 			sql_exp *op = r->r;
 			sql_subfunc *f = op->f;
 			cond_append(l, &f->func->base.id);
