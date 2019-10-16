@@ -693,7 +693,7 @@ static void showFlowEvent(DataFlow flow, int pc)
 	for (i = 0; i < flow->stop - flow->start; i++)
 		if (fe[i].state != DFLOWwrapup && fe[i].pc >= 0) {
 			fprintf(stderr, "#missed pc %d status %d %d  blocks %d", fe[i].state, i, fe[i].pc, fe[i].blocks);
-			printInstruction(GDKstdout, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), LIST_MAL_MAPI);
+			fprintInstruction(stderr, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), LIST_MAL_MAPI);
 		}
 }
 */
