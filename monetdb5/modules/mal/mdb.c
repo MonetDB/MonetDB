@@ -131,6 +131,31 @@ MDBsetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
+MDBgetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	lng *ret = getArgReference_lng(stk, p, 0);
+
+	(void) cntxt;
+	(void) mb;		/* still unused */
+	*ret = GDK_vm_maxsize / 1024/1024;
+	return MAL_SUCCEED;
+}
+
+/* Set the max VM in MBs */
+str
+MDBsetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	lng *ret = getArgReference_lng(stk, p, 0);
+
+	(void) cntxt;
+	(void) mb;		/* still unused */
+	*ret = GDK_vm_maxsize;
+	if( *getArgReference_lng(stk, p, 1) > 1024 )
+		GDK_vm_maxsize = *getArgReference_lng(stk, p, 1) * 1024 * 1024;
+	return MAL_SUCCEED;
+}
+
+str
 MDBsetVarTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str v;
