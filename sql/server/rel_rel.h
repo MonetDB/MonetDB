@@ -84,7 +84,6 @@ extern sql_rel *rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *e
 extern sql_rel *rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps);
 extern sql_rel *rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind);
 
-
 extern list *_rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern, int basecol);
 extern list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern);
 
@@ -99,4 +98,7 @@ extern sql_rel *rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp);
 extern sql_exp * rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname );
 
 extern int rel_in_rel(sql_rel *super, sql_rel *sub);
+
+extern list *rel_dependencies(mvc *sql, sql_rel *r);
+
 #endif /* _REL_REL_H_ */
