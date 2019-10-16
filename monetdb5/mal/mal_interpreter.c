@@ -560,13 +560,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			lastcheck = runtimeProfile.ticks;
 		}
 
-		// runtimeProfileBegin already sets the time in the instruction
-		if (cntxt->qtimeout && runtimeProfile.ticks - mb->starttime > cntxt->qtimeout) {
-			freeException(ret);	/* in case it's set */
-			ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
-			break;
-		}
-
 		/* The interpreter loop
 		 * The interpreter is geared towards execution a MAL
 		 * procedure together with all its descendant
@@ -795,6 +788,13 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			} else {
 				ret = createException(MAL,"interpreter", "failed instruction2str");
 			}
+			// runtimeProfileBegin already sets the time in the instruction
+			if (cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout){
+				freeException(ret);	/* in case it's set */
+				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				break;
+			}
+
 			stkpc= mb->stop;
 			continue;
 		}	}
@@ -911,6 +911,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 			/* unknown exceptions lead to propagation */
 			if (exceptionVar == -1) {
+                if (cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout)
+                    ret= createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 				stkpc = mb->stop;
 				continue;
 			}
