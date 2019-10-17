@@ -1898,6 +1898,45 @@ sql_update_apr2019_sp1(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_apr2019_sp2(Client c)
+{
+	/* Determine if system function sys.prod(decimal) exists in sys.functions, if so remove them.
+	 * see also https://dev.monetdb.org/hg/MonetDB?cmd=changeset;node=f93d5290abe4
+	 */
+	char *err = NULL;
+	char *qry = "select f.id from sys.functions f where f.name = 'prod' and func = 'prod'"
+		" and mod in ('sql', 'aggr') and language = 0 and f.type in (3,6) and f.system"
+		" and schema_id in (select s.id from sys.schemas s where s.name = 'sys')"
+		" and f.id in (select a.func_id from sys.args a where a.type = 'decimal'"
+		" and type_digits in (2,4,9,18,38) and a.name in ('arg','arg_1') and inout = 1 and number = 1);";
+	res_table *output = NULL;
+
+	err = SQLstatementIntern(c, &qry, "update", true, false, &output);
+	if (err == NULL) {
+		BAT *b = BATdescriptor(output->cols[0].b);
+		if (b) {
+			if (BATcount(b) > 0) {
+				/* found entries, we need to remove them sys.functions and sys.args */
+				char *upd = "delete from sys.functions f where f.name = 'prod' and func = 'prod'"
+					" and mod in ('sql', 'aggr') and language = 0 and f.type in (3,6) and f.system"
+					" and schema_id in (select s.id from sys.schemas s where s.name = 'sys')"
+					" and f.id in (select a.func_id from sys.args a where a.type = 'decimal'"
+					" and type_digits in (2,4,9,18,38) and a.name in ('arg','arg_1') and inout = 1 and number = 1);\n"
+					"delete from sys.args where func_id not in (select id from sys.functions);\n";
+
+				printf("Running database upgrade commands:\n%s\n", upd);
+				err = SQLstatementIntern(c, &upd, "update", true, false, NULL);
+			}
+			BBPunfix(b->batCacheid);
+		}
+	}
+	if (output != NULL)
+		res_tables_destroy(output);
+
+	return err;		/* usually MAL_SUCCEED */
+}
+
 #define FLUSH_INSERTS_IF_BUFFERFILLED /* Each new value should add about 20 bytes to the buffer, "flush" when is 200 bytes from being full */ \
 	if (pos > 7900) { \
 		pos += snprintf(buf + pos, bufsize - pos, ") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from dependencies where depend_id = t1.c2);\n"); \
@@ -2453,6 +2492,10 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_apr2019_sp1(c)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		freeException(err);
+	}
+	if ((err = sql_update_apr2019_sp2(c)) != NULL) {
 		fprintf(stderr, "!%s\n", err);
 		freeException(err);
 	}
