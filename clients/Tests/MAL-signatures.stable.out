@@ -11138,7 +11138,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "iterator",	"next",	"command iterator.next(step:sht, last:sht):sht ",	"ITRnext_sht;",	""	]
 [ "json",	"#fromstr",	"command json.#fromstr():void ",	"JSONfromString;",	"Validate a string to be JSON compliant. A NOOP if valid json, NULL otherwise."	]
 [ "json",	"#tostr",	"command json.#tostr():void ",	"JSONtoString;",	"Convert JSON to its string equivalent. Dealing with escape characters"	]
-[ "json",	"dump",	"command json.dump(j:json):void ",	"JSONdump;",	""	]
+[ "json",	"dump",	"pattern json.dump(j:json):void ",	"JSONdump;",	""	]
 [ "json",	"filter",	"command json.filter(name:json, pathexpr:str):json ",	"JSONfilter;",	"Filter all members of an object by a path expression, returning an array.\nNon-matching elements are skipped."	]
 [ "json",	"filter",	"command json.filter(name:json, idx:bte, other:str):json ",	"JSONfilterArrayDefault_bte;",	""	]
 [ "json",	"filter",	"command json.filter(name:json, idx:int, other:str):json ",	"JSONfilterArrayDefault_int;",	""	]
