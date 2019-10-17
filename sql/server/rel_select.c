@@ -1823,7 +1823,8 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 			/* get inner queries result value, ie
 			   get last expression of r */
 			if (r) {
-				if (list_length(r->exps) != 1) 
+				assert(is_project(r->op));
+				if (list_length(r->exps) != 1)
 					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column\n");
 				rs = rel_lastexp(sql, r);
 
@@ -1881,7 +1882,8 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 				}
 			}
 		} else if (r) {
-			if (list_length(r->exps) != 1) 
+			assert(is_project(r->op));
+			if (list_length(r->exps) != 1)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column\n");
 
 			rs = rel_lastexp(sql, r);
