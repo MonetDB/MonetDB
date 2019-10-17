@@ -15521,7 +15521,6 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "io",	"printf",	"pattern io.printf(filep:streams, fmt:str):void ",	"IOprintfStream;",	"Select default format "	]
 [ "io",	"printf",	"pattern io.printf(filep:streams, fmt:str, val:any...):void ",	"IOprintfStream;",	"Select default format "	]
 [ "io",	"setmallocsuccesscount",	"command io.setmallocsuccesscount(count:lng):void ",	"IOsetmallocsuccesscount;",	"Set number of mallocs that are allowed to succeed."	]
-[ "io",	"stderr",	"pattern io.stderr():streams ",	"io_stderr;",	"return the error stream for the database console"	]
 [ "io",	"stdin",	"pattern io.stdin():bstream ",	"io_stdin;",	"return the input stream to the database client"	]
 [ "io",	"stdout",	"pattern io.stdout():streams ",	"io_stdout;",	"return the output stream for the database client"	]
 [ "iterator",	"filter",	"command iterator.filter(name:json, idx:hge, other:str):json ",	"JSONfilterArrayDefault_hge;",	""	]

@@ -2261,7 +2261,6 @@ str intRef;
 str intersectRef;
 str intersectcandRef;
 str ioRef;
-str io_stderr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str io_stdout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int isBlocking(InstrPtr p);

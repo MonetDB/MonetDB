@@ -61,16 +61,6 @@ io_stdout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
-io_stderr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	stream **ret= (stream**) getArgReference(stk,pci,0);
-	(void) cntxt;
-	(void) mb;
-	*ret = GDKerr;
-	return MAL_SUCCEED;
-}
-
 static str
 IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl, int nobat)
 {

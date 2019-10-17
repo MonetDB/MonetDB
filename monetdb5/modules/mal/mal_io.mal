@@ -8,9 +8,6 @@ module io;
 pattern stdin():bstream
 address io_stdin
 comment "return the input stream to the database client";
-pattern stderr():streams
-address io_stderr
-comment "return the error stream for the database console";
 pattern stdout():streams
 address io_stdout
 comment "return the output stream for the database client";
