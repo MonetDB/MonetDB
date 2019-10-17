@@ -1064,8 +1064,7 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 		}
 		*dst = '\0';
 	} else {
-		mnstr_printf(GDKout, "%s%.*s%s", prefix,
-			     (int) messagelen, message, suffix);
+		fprintf(stderr, "%s%.*s%s", prefix, (int) messagelen, message, suffix);
 	}
 	fprintf(stderr, "#%s:%s%.*s%s",
 		MT_thread_getname(),
