@@ -1433,7 +1433,7 @@ gdk_export void OIDXdestroy(BAT *b);
  *
  */
 gdk_export gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
-gdk_export gdk_return BATprint(BAT *b);
+gdk_export gdk_return BATprint(stream *s, BAT *b);
 
 /*
  * @- BAT clustering

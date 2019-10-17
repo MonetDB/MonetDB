@@ -137,7 +137,7 @@ MDBgetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	(void) mb;		/* still unused */
-	*ret = GDK_vm_maxsize / 1024/1024;
+	*ret = (lng) GDK_vm_maxsize / 1024/1024;
 	return MAL_SUCCEED;
 }
 
@@ -149,9 +149,9 @@ MDBsetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	(void) mb;		/* still unused */
-	*ret = GDK_vm_maxsize;
+	*ret = (lng) GDK_vm_maxsize;
 	if( *getArgReference_lng(stk, p, 1) > 1024 )
-		GDK_vm_maxsize = *getArgReference_lng(stk, p, 1) * 1024 * 1024;
+		GDK_vm_maxsize = (size_t) (*getArgReference_lng(stk, p, 1) * 1024 * 1024);
 	return MAL_SUCCEED;
 }
 
@@ -869,4 +869,3 @@ CMDmodules(bat *bid)
 	BBPkeepref(*bid);
 	return MAL_SUCCEED;
 }
-

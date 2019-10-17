@@ -140,6 +140,7 @@ typedef struct mvc {
 	char *query;		/* string, identify whatever we're working on */
 } mvc;
 
+extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
 extern int mvc_init(int debug, store_type store, int ro, int su, backend_stack stk);
 extern void mvc_exit(void);
 extern void mvc_logmanager(void);
@@ -194,7 +195,6 @@ extern BUN mvc_clear_table(mvc *m, sql_table *t);
 extern str mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
 extern sql_table *mvc_create_table(mvc *c, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
 extern sql_table *mvc_create_view(mvc *c, sql_schema *s, const char *name, int persistence, const char *sql, bit system);
-extern sql_table *mvc_bootstrap_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
 extern sql_table *mvc_create_remote(mvc *c, sql_schema *s, const char *name, int persistence, const char *loc);
 
 extern int mvc_drop_column(mvc *c, sql_table *t, sql_column *col, int drop_action);

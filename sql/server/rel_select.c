@@ -1822,11 +1822,10 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 
 			/* get inner queries result value, ie
 			   get last expression of r */
-			/*
-			if (r && list_length(r->exps) != 2) 
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column\n");
-				*/
 			if (r) {
+				assert(is_project(r->op));
+				if (list_length(r->exps) != 1)
+					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column\n");
 				rs = rel_lastexp(sql, r);
 
 				if (r->card <= CARD_ATOM) {
@@ -1883,7 +1882,8 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 				}
 			}
 		} else if (r) {
-			if (list_length(r->exps) != 1) 
+			assert(is_project(r->op));
+			if (list_length(r->exps) != 1)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column\n");
 
 			rs = rel_lastexp(sql, r);
@@ -2397,6 +2397,9 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				/* get inner queries result value, ie
 				   get last expression of r */
 				if (r) {
+					assert(is_project(r->op));
+					if (list_length(r->exps) != 1)
+						return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column\n");
 					rs = rel_lastexp(sql, r);
 
 					if (quantifier) {
@@ -6971,7 +6974,7 @@ rel_selects(sql_query *query, symbol *s)
 		exp_kind ek = {type_value, card_relation, TRUE};
 		SelectNode *sn = (SelectNode *) s;
 
-		if(!stack_push_frame(sql, "SELECT"))
+		if (!stack_push_frame(sql, "SELECT"))
 			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 		if (sn->into) {

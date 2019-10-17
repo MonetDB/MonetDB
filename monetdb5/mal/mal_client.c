@@ -69,7 +69,7 @@ MCinit(void)
 	if (maxclients <= 0) {
 		maxclients = 64;
 		if (GDKsetenv("max_clients", "64") != GDK_SUCCEED) {
-			fprintf(stderr,"#MCinit: GDKsetenv failed");
+			fprintf(stderr, "!MCinit: GDKsetenv failed");
 			return false;
 		}
 	}
@@ -77,7 +77,7 @@ MCinit(void)
 	MAL_MAXCLIENTS = /* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 	if( mal_clients == NULL){
-		fprintf(stderr,"#MCinit:" MAL_MALLOC_FAIL);
+		fprintf(stderr,"!MCinit:" MAL_MALLOC_FAIL);
 		return false;
 	}
 	return true;
@@ -223,7 +223,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 		MT_lock_set(&mal_contextLock);
 		c->mode = FREECLIENT;
 		MT_lock_unset(&mal_contextLock);
-		showException(GDKout, MAL, "initClientRecord", MAL_MALLOC_FAIL);
+		fprintf(stderr,"!initClientRecord:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	c->yycur = 0;
@@ -257,7 +257,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 			c->mode = FREECLIENT;
 			MT_lock_unset(&mal_contextLock);
 		}
-		showException(GDKout, MAL, "initClientRecord", MAL_MALLOC_FAIL);
+		fprintf(stderr, "!initClientRecord:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	c->promptlength = strlen(prompt);
