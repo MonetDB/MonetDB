@@ -2618,7 +2618,7 @@ store_hot_snapshot(str tarfile)
 	// Set dirpath to the directory part of tarfile.
 	// Call realpath(2) to make the path absolute so it has at least
 	// one DIR_SEP in it.
-	if (realpath(tarfile, dirpath) == NULL) {
+	if (realpath(tmppath, dirpath) == NULL) {
 		GDKerror("couldn't resolve path %s: %s", tarfile, strerror(errno));
 		goto end;
 	}
