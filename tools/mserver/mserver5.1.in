@@ -74,15 +74,6 @@ This file can contain all options as can be set with the --set flag.
 See
 .IR "CONFIG FILE FORMAT" .
 .TP
-.B \-\-daemon=yes
-.PD 0
-.TP
-.B \-\-daemon=no
-.PD
-Disable the console prompt, do not read commands from standard input.
-Default:
-.BR no .
-.TP
 \fB\-\-set\fP \fIoption\fP\fB=\fP\fIvalue\fP
 Set individual configuration option.
 For possible options, see
