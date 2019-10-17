@@ -423,7 +423,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 	if (!s)
 		s = cur_schema(sql);
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	if (mvc_bind_trigger(sql, s, triggername) != NULL)
 		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: name '%s' already in use", triggername);
 
