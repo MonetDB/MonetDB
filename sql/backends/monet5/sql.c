@@ -779,7 +779,7 @@ static str
 mvc_bat_sequence_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int (*bulk_func)(seqbulk *, lng *), str call)
 {
 	mvc *m = NULL;
-	str msg;
+	str msg = MAL_SUCCEED;
 	BAT *b, *r;
 	BUN p, q;
 	sql_schema *s = NULL;
@@ -799,16 +799,12 @@ mvc_bat_sequence_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 		throw(SQL, call, SQLSTATE(HY005) "Cannot access column descriptor");
 
 	if (!(r = COLnew(b->hseqbase, TYPE_lng, BATcount(b), TRANSIENT))) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, call, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(SQL, call, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
 	}
 
-	if (!BATcount(b)) {
-		BBPunfix(b->batCacheid);
-		BBPkeepref(r->batCacheid);
-		*res = r->batCacheid;
-		return MAL_SUCCEED;
-	}
+	if (!BATcount(b))
+		goto bailout; /* Success case */
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
@@ -816,35 +812,37 @@ mvc_bat_sequence_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 		lng l;
 
 		if (!s || strcmp(s->base.name, sname) != 0) {
-			if (sb)
+			if (sb) {
 				seqbulk_destroy(sb);
+				sb = NULL;
+			}
 			s = mvc_bind_schema(m, sname);
 			seq = NULL;
 			if (!s || (seq = find_sql_sequence(s, seqname)) == NULL || !(sb = seqbulk_create(seq, BATcount(b)))) {
-				BBPunfix(b->batCacheid);
-				BBPunfix(r->batCacheid);
-				throw(SQL, call, SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname,seqname);
+				msg = createException(SQL, call, SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname,seqname);
+				goto bailout;
 			}
 		}
 		if (!bulk_func(sb, &l)) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(r->batCacheid);
-			seqbulk_destroy(sb);
-			throw(SQL, call, SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
+			msg = createException(SQL, call, SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
+			goto bailout;
 		}
 		if (BUNappend(r, &l, false) != GDK_SUCCEED) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(r->batCacheid);
-			seqbulk_destroy(sb);
-			throw(SQL, call, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			msg = createException(SQL, call, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto bailout;
 		}
 	}
+
+bailout:
 	if (sb)
 		seqbulk_destroy(sb);
-	BBPunfix(b->batCacheid);
-	BBPkeepref(r->batCacheid);
-	*res = r->batCacheid;
-	return MAL_SUCCEED;
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (msg)
+		BBPreclaim(r);
+	else
+		BBPkeepref(*res = r->batCacheid);
+	return msg;
 }
 
 /* str mvc_get_value(lng *res, str *sname, str *seqname); */
