@@ -64,15 +64,49 @@ stdout of test 'next-get-value-bulk.Bug-6766` in directory 'sql/test/BugTracker-
 
 #start transaction;
 #create sequence myseq as int;
-#select next_value_for('sys', seq.name), next_value_for(s.name, 'myseq'), next_value_for(s.name, seq.name),
-#       get_value_for('sys', seq.name), get_value_for(s.name, 'myseq'), get_value_for(s.name, seq.name)
-#from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name;
-% .L1,	sys.L2,	sys.L3,	.L4,	sys.L5,	sys.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6 # name
-% bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
-% 1,	1,	1,	1,	1,	1 # length
-[ 2,	3,	1,	1,	1,	1	]
-[ 4,	2,	1,	1,	1,	1	]
+#create sequence myotherseq as int;
+#select 'sys', seq.name, next_value_for('sys', seq.name) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name;
+% .L1,	sys.seq,	.L2 # table_name
+% L1,	name,	L2 # name
+% char,	varchar,	bigint # type
+% 3,	10,	1 # length
+[ "sys",	"myotherseq",	1	]
+[ "sys",	"myseq",	1	]
+#select s.name, 'myseq', next_value_for(s.name, 'myseq') from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name;
+% sys.s,	.L1,	sys.L2 # table_name
+% name,	L1,	L2 # name
+% varchar,	char,	bigint # type
+% 3,	5,	1 # length
+[ "sys",	"myseq",	3	]
+[ "sys",	"myseq",	2	]
+#select s.name, seq.name, next_value_for(s.name, seq.name) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name;
+% sys.s,	sys.seq,	sys.L1 # table_name
+% name,	name,	L1 # name
+% varchar,	varchar,	bigint # type
+% 3,	10,	1 # length
+[ "sys",	"myotherseq",	2	]
+[ "sys",	"myseq",	4	]
+#select 'sys', seq.name, get_value_for('sys', seq.name) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name;
+% .L1,	sys.seq,	.L2 # table_name
+% L1,	name,	L2 # name
+% char,	varchar,	bigint # type
+% 3,	10,	1 # length
+[ "sys",	"myotherseq",	3	]
+[ "sys",	"myseq",	5	]
+#select s.name, 'myseq', get_value_for(s.name, 'myseq') from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name;
+% sys.s,	.L1,	sys.L2 # table_name
+% name,	L1,	L2 # name
+% varchar,	char,	bigint # type
+% 3,	5,	1 # length
+[ "sys",	"myseq",	5	]
+[ "sys",	"myseq",	5	]
+#select s.name, seq.name, get_value_for(s.name, seq.name) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name;
+% sys.s,	sys.seq,	sys.L1 # table_name
+% name,	name,	L1 # name
+% varchar,	varchar,	bigint # type
+% 3,	10,	1 # length
+[ "sys",	"myotherseq",	3	]
+[ "sys",	"myseq",	5	]
 #rollback;
 
 # 09:54:58 >  
