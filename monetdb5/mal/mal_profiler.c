@@ -831,6 +831,7 @@ getSystemTime(void)
 #endif
 }
 
+/* Calculate a pessimistic size of the disk storage */
 lng
 getDiskSpace(void)
 {
@@ -849,9 +850,14 @@ getDiskSpace(void)
 					size += tailsize(b, cnt);
 					/* the upperbound is used for the heaps */
 					if (b->tvheap)
-						size += b->tvheap->size;
+						size += HEAPvmsize(b->tvheap);
 					if (b->thash)
 						size += sizeof(BUN) * cnt;
+					/* also add the size of an imprint, ordered index or mosaic */
+					if( b->timprints)
+						size += IMPSimprintsize(b);
+					if( b->torderidx)
+						size += HEAPvmsize(b->torderidx);
 				}
 				BBPunfix(i);
 			}
