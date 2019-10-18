@@ -775,8 +775,8 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /* str mvc_bat_next_value(bat *res, int *sid, str *seqname); */
-str
-mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+mvc_bat_sequence_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int (*bulk_func)(seqbulk *, lng *), str call)
 {
 	mvc *m = NULL;
 	str msg;
@@ -796,12 +796,11 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if ((b = BATdescriptor(sid)) == NULL)
-		throw(SQL, "sql.next_value", SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, call, SQLSTATE(HY005) "Cannot access column descriptor");
 
-	r = COLnew(b->hseqbase, TYPE_lng, BATcount(b), TRANSIENT);
-	if (!r) {
+	if (!(r = COLnew(b->hseqbase, TYPE_lng, BATcount(b), TRANSIENT))) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.next_value", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, call, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	if (!BATcount(b)) {
@@ -824,20 +823,20 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!s || (seq = find_sql_sequence(s, seqname)) == NULL || !(sb = seqbulk_create(seq, BATcount(b)))) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(r->batCacheid);
-				throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname,seqname);
+				throw(SQL, call, SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname,seqname);
 			}
 		}
-		if (!seqbulk_next_value(sb, &l)) {
+		if (!bulk_func(sb, &l)) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(r->batCacheid);
 			seqbulk_destroy(sb);
-			throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
+			throw(SQL, call, SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
 		}
 		if (BUNappend(r, &l, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(r->batCacheid);
 			seqbulk_destroy(sb);
-			throw(SQL, "sql.next_value", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, call, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	if (sb)
@@ -871,6 +870,18 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return MAL_SUCCEED;
 	}
 	throw(SQL, "sql.get_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
+}
+
+str
+mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return mvc_bat_sequence_value(cntxt, mb, stk, pci, seqbulk_next_value, "sql.next_value");
+}
+
+str
+mvc_bat_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return mvc_bat_sequence_value(cntxt, mb, stk, pci, seqbulk_get_value, "sql.get_value");
 }
 
 str

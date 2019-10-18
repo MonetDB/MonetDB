@@ -26,13 +26,15 @@ sequence_destroy( store_sequence *s )
 	_DELETE(s);
 }
 
-void* sequences_init(void)
+void*
+sequences_init(void)
 {
 	sql_seqs = list_create( (fdestroy)sequence_destroy );
 	return (void*) sql_seqs;
 }
 
-void sequences_exit(void)
+void
+sequences_exit(void)
 {
 	if(sql_seqs) {
 		list_destroy(sql_seqs);
@@ -68,7 +70,8 @@ sql_create_sequence(sql_sequence *seq )
 	return s;
 }
 
-int seq_restart(sql_sequence *seq, lng start)
+int
+seq_restart(sql_sequence *seq, lng start)
 {
 	node *n = NULL;
 	store_sequence *s;
@@ -104,7 +107,6 @@ int seq_restart(sql_sequence *seq, lng start)
 	store_unlock(); 
 	return 1;
 }
-
 
 int
 seq_next_value(sql_sequence *seq, lng *val)
@@ -160,7 +162,8 @@ seq_next_value(sql_sequence *seq, lng *val)
 	return 1;
 }
 
-seqbulk *seqbulk_create(sql_sequence *seq, BUN cnt)
+seqbulk *
+seqbulk_create(sql_sequence *seq, BUN cnt)
 {
 	seqbulk *sb = MNEW(seqbulk);
 	store_sequence *s;
@@ -194,7 +197,8 @@ seqbulk *seqbulk_create(sql_sequence *seq, BUN cnt)
 	return sb;
 }
 
-void seqbulk_destroy(seqbulk *sb)
+void
+seqbulk_destroy(seqbulk *sb)
 {
 	if (sb->save) {
 		sql_sequence *seq = sb->seq;
@@ -206,7 +210,8 @@ void seqbulk_destroy(seqbulk *sb)
 	store_unlock();
 }
 
-int seqbulk_next_value(seqbulk *sb, lng *val)
+int
+seqbulk_next_value(seqbulk *sb, lng *val)
 {
 	lng nr = 0;
 	store_sequence *s = sb->internal_seq;
@@ -278,5 +283,29 @@ seq_get_value(sql_sequence *seq, lng *val)
 		}
 	}
 	store_unlock();
+	return 1;
+}
+
+int
+seqbulk_get_value(seqbulk *sb, lng *val)
+{
+	store_sequence *s = sb->internal_seq;
+	sql_sequence *seq = sb->seq;
+
+	*val = s->cur;
+	if (s->called)
+		*val += seq->increment;
+	/* handle min/max and cycle */
+	if ((seq->maxvalue && s->cur > seq->maxvalue) ||
+	    (seq->minvalue && s->cur < seq->minvalue))
+	{
+		if (seq->cycle) {
+			/* cycle to the min value again */
+			s->cur = seq->minvalue;
+			sb->save = 1;
+		} else { /* we're out of numbers */
+			return 0;
+		}
+	}
 	return 1;
 }

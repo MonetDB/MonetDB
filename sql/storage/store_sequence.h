@@ -14,6 +14,7 @@
 extern void* sequences_init(void);
 extern void sequences_exit(void);
 
+extern int seq_get_value(sql_sequence *seq, lng *val);
 extern int seq_next_value(sql_sequence *seq, lng *val);
 
 /* for bulk next values, the API is split in 3 parts */
@@ -26,10 +27,10 @@ typedef struct seqbulk {
 } seqbulk;
 
 extern seqbulk *seqbulk_create(sql_sequence *seq, BUN cnt);
+extern int seqbulk_get_value(seqbulk *seq, lng *val);
 extern int seqbulk_next_value(seqbulk *seq, lng *val);
 extern void seqbulk_destroy(seqbulk *seq);
 
-extern int seq_get_value(sql_sequence *seq, lng *val);
 extern int seq_restart(sql_sequence *seq, lng start);
 
 #endif /* STORE_SEQ_H */

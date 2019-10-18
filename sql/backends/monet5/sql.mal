@@ -96,6 +96,10 @@ pattern get_value( sname:str, sequence:str ):lng
 address mvc_get_value
 comment "return the current value of the sequence";
 
+pattern batsql.get_value( sname:bat[:str], sequence:str ) :bat[:lng]
+address mvc_bat_get_value
+comment "return the current value of the sequence";
+
 unsafe pattern restart( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
