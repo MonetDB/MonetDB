@@ -104,9 +104,29 @@ pattern batsql.next_value( sname:bat[:str], sequence:str ) :bat[:lng]
 address mvc_bat_next_value
 comment "return the next value of the sequence";
 
+pattern batsql.next_value( sname:str, sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_schema_sequences_next_value
+comment "return the next value of sequences";
+
+pattern batsql.next_value( sname:bat[:str], sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_schemas_sequences_next_value
+comment "return the next value of sequences";
+
 pattern get_value( sname:str, sequence:str ):lng
 address mvc_get_value
 comment "return the current value of the sequence";
+
+pattern batsql.get_value( sname:bat[:str], sequence:str ) :bat[:lng]
+address mvc_bat_get_value
+comment "return the current value of the sequence";
+
+pattern batsql.get_value( sname:str, sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_schema_sequences_get_value
+comment "return the current value of sequences";
+
+pattern batsql.get_value( sname:bat[:str], sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_schemas_sequences_get_value
+comment "return the current value of sequences";
 
 unsafe pattern restart( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
