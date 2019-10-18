@@ -898,17 +898,17 @@ static gdk_return
 snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 {
 	gdk_return ret = GDK_FAIL;
-	const ssize_t bufsize = 64 * 1024;
+	const uint64_t bufsize = 64 * 1024;
 	struct stat statbuf;
 	char *buf = NULL;
 	stream *s = NULL;
-	long to_copy;
+	uint64_t to_copy;
 
 	if (stat(path, &statbuf) < 0) {
 		GDKerror("stat failed on %s: %s", path, strerror(errno));
 		goto end;
 	}
-	to_copy = (long)statbuf.st_size;
+	to_copy = (uint64_t)statbuf.st_size;
 
 	s = open_rstream(path);
 	if (!s) {
@@ -922,7 +922,7 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 		goto end;
 	}
 
-	mnstr_printf(plan, "w %ld %s\n", to_copy, name);
+	mnstr_printf(plan, "w %" PRIu64 " %s\n", to_copy, name);
 
 	while (to_copy > 0) {
 		ssize_t chunk = (to_copy <= bufsize) ? to_copy : bufsize;
