@@ -6701,8 +6701,6 @@ sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start)
 				  &seq->base.id, NULL);
 		sql_column *c = find_sql_column(seqs, "start");
 
-		if (is_oid_nil(rid))
-			return -1;
 		assert(!is_oid_nil(rid));
 		seq->start = start; 
 		table_funcs.column_update_value(tr, c, rid, &seq->start);
