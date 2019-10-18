@@ -2363,7 +2363,7 @@ store_unlock(void)
 }
 
 // Helper function for tar_write_header.
-// stream.h makes sure __attribute__ exists.
+// Our stream.h makes sure __attribute__ exists.
 static void tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
 static void
@@ -2372,7 +2372,7 @@ tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	vsnprintf(*cursor_ptr, size + 1, fmt, ap);
+	(void)vsnprintf(*cursor_ptr, size + 1, fmt, ap);
 	va_end(ap);
 
 	/* At first reading you might wonder why add `size` instead
@@ -2614,9 +2614,10 @@ store_hot_snapshot(str tarfile)
 	}
 	do_unlink = 1;
 
-	// Set dirpath to the directory part of tarfile.
+	// Set dirpath to the directory containing the tar file.
 	// Call realpath(2) to make the path absolute so it has at least
-	// one DIR_SEP in it.
+	// one DIR_SEP in it. Realpath requires the file to exist so
+	// we feed it tmppath rather than tarfile.
 	if (realpath(tmppath, dirpath) == NULL) {
 		GDKerror("couldn't resolve path %s: %s", tarfile, strerror(errno));
 		goto end;
@@ -2679,7 +2680,14 @@ store_hot_snapshot(str tarfile)
 		goto end;
 	}
 
-	result = 42; // figure out how we can do better than this
+	// the original idea was to return a sort of sequence number of the
+	// database that identifies exactly which version has been snapshotted
+	// but no such number is available:
+	// logger_functions.read_last_transaction_id is not implemented
+	// anywhere.
+	//
+	// So we return a random positive integer instead.
+	result = 42;
 
 end:
 	if (dir_fd >= 0)

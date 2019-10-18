@@ -1055,6 +1055,10 @@ snapshot_bats(stream *plan, const char *db_dir)
 		uint64_t tail_free;
 		uint64_t theap_free;
 		char filename[20];
+		// The lines in BBP.dir come in various lengths.
+		// we try to parse the longest variant then check
+		// the return value of sscanf to see which fields
+		// were actually present.
 		int scanned = sscanf(line,
 				// Taken from the sscanf in BBPreadEntries() in gdk_bbp.c.
 				// 8 fields, we need field 1 (batid) and field 4 (filename)
@@ -1071,6 +1075,9 @@ snapshot_bats(stream *plan, const char *db_dir)
 				&batid, filename,
 				&tail_free,
 				&theap_free);
+
+		// The following switch uses fallthroughs to make
+		// the larger cases include the work of the smaller cases.
 		switch (scanned) {
 			default:
 				GDKerror("Couldn't parse (%d) %s line: %s", scanned, bbpdir, line);
@@ -1137,7 +1144,7 @@ bl_snapshot(stream *plan)
 	char *db_dir = NULL;
 	size_t db_dir_len;
 
-	// Assume farmid 0 is the persistent farm.
+	// Farm 0 is always the persistent farm.
 	db_dir = GDKfilepath(0, NULL, "", NULL);
 	db_dir_len = strlen(db_dir);
 	if (db_dir[db_dir_len - 1] == DIR_SEP)
