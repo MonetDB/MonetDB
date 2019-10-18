@@ -1375,7 +1375,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 
 	/* read blockmode flush */
 	while (mnstr_read(in, &tmp, 1, 1) > 0) {
-		mnstr_printf(GDKout, "!MALexception:remote.bincopyfrom: expected flush, got: %c\n", tmp);
+		fprintf(stderr, "!MALexception:remote.bincopyfrom: expected flush, got: %c\n", tmp);
 	}
 
 	BATsettrivprop(b);

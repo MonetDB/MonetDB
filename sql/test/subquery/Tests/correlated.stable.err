@@ -58,14 +58,54 @@ MAPI  = (monetdb) /var/tmp/mtest-8372/.s.monetdb.37437
 QUERY = SELECT i+1, (SELECT SUM(i1.i)) FROM integers i1;
 ERROR = !Cannot use non GROUP BY column in query results without an aggregate function
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-27844/.s.monetdb.31122
+MAPI  = (monetdb) /var/tmp/mtest-17692/.s.monetdb.32120
+QUERY = SELECT i1.i FROM integers i1 INNER JOIN integers i ON SUM(i1.i) = SUM(i.i); --error, aggregations not allowed in join conditions
+ERROR = !SUM: aggregate functions not allowed in JOIN conditions
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-23431/.s.monetdb.34452
+QUERY = SELECT i1.i FROM integers i1 INNER JOIN integers i ON RANK() OVER (); --error, window functions not allowed in join conditions
+ERROR = !RANK: window function 'rank' not allowed in JOIN conditions
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-23431/.s.monetdb.34452
 QUERY = SELECT SUM((SELECT SUM(i))) FROM integers; -- error
 ERROR = !SUM: aggregate functions cannot be nested
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-11357/.s.monetdb.35326
-QUERY = SELECT (SELECT SUM(i + i1.i), 1 FROM integers) FROM integers i1; --error, the subquery should output only one column
+MAPI  = (monetdb) /var/tmp/mtest-29225/.s.monetdb.38739
+QUERY = SELECT (SELECT SUM(i + i1.i), 1 FROM integers) FROM integers i1; --error, the subquery must output only one column
 ERROR = !SELECT: subquery must return only one column
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-19820/.s.monetdb.36524
+QUERY = SELECT (SELECT SUM(i1.i) FROM integers) AS k FROM integers i1 GROUP BY i ORDER BY i; --cardinality violation, scalar expression expected
+ERROR = !21000!zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-31859/.s.monetdb.35446
+QUERY = SELECT CAST((SELECT i+SUM(i1.i) FROM integers WHERE i=1 LIMIT 1) AS BIGINT) FROM integers i1; --error, no LIMIT on subqueries
+ERROR = !syntax error, unexpected LIMIT, expecting UNION or EXCEPT or INTERSECT or ')' in: "select cast((select i+sum(i1.i) from integers where i=1 limit"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-31859/.s.monetdb.35446
+QUERY = SELECT i, CAST(SUM(i1.i) AS BIGINT), CAST((SELECT SUM(i1.i) FROM integers) AS BIGINT) AS k FROM integers i1 GROUP BY i ORDER BY i; --error, cardinality violation, scalar expression expected
+ERROR = !21000!zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-31859/.s.monetdb.35446
+QUERY = SELECT FIRST(i), CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1; --error, no first aggregate available yet
+ERROR = !SELECT: no such unary operator 'first(int)'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-31859/.s.monetdb.35446
+QUERY = SELECT i, SUM(i1.i) FROM integers i1 GROUP BY i ORDER BY (SELECT SUM(i1.i) FROM integers); --error, cardinality violation, scalar expression expected
+ERROR = !21000!zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-31859/.s.monetdb.35446
+QUERY = SELECT i, SUM((SELECT SUM(i)*i1.i FROM integers LIMIT 0)) AS k FROM integers i1 GROUP BY i ORDER BY i; --error, no LIMIT on subqueries
+ERROR = !syntax error, unexpected LIMIT, expecting UNION or EXCEPT or INTERSECT or ')' in: "select i, sum((select sum(i)*i1.i from integers limit"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-31859/.s.monetdb.35446
+QUERY = SELECT i, (SELECT SUM(s1.i) OVER (ORDER BY s1.i) FROM integers s1, integers s2 WHERE i1.i=s1.i LIMIT 1) FROM integers i1 ORDER BY i; --error
+ERROR = !syntax error, unexpected LIMIT, expecting UNION or EXCEPT or INTERSECT or ')' in: "select i, (select sum(s1.i) over (order by s1.i) from integers s1, integers s2 w"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-324/.s.monetdb.38129
+QUERY = SELECT 3 IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v; --error, cannot cast 3 into string
+ERROR = !conversion of string 'hello' to type bte failed.
+CODE  = 22018
 
 # 20:30:33 >  
 # 20:30:33 >  "Done."

@@ -140,6 +140,7 @@ typedef struct mvc {
 	char *query;		/* string, identify whatever we're working on */
 } mvc;
 
+extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
 extern int mvc_init(int debug, store_type store, int ro, int su, backend_stack stk);
 extern void mvc_exit(void);
 extern void mvc_logmanager(void);

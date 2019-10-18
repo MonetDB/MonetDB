@@ -225,13 +225,17 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	   with the approriate scenario (sql) */
 	mvc_create_func(m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE, TRUE);
 
-	t = mvc_create_view(m, s, "users", SQL_PERSIST,
+	t = mvc_init_create_view(m, s, "users",
 			    "SELECT u.\"name\" AS \"name\", "
 			    "ui.\"fullname\", ui.\"default_schema\" "
 			    "FROM db_users() AS u LEFT JOIN "
 			    "\"sys\".\"db_user_info\" AS ui "
-			    "ON u.\"name\" = ui.\"name\" "
-			    ";", 1);
+			    "ON u.\"name\" = ui.\"name\";");
+	if (!t) {
+		fprintf(stderr, "!monet5_create_privileges: failed to create 'users' view\n");
+		return ;
+	}
+
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2024);
 	mvc_create_column_(m, t, "default_schema", "int", 9);

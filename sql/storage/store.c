@@ -51,9 +51,6 @@ static int logger_debug = 0;
 static sql_trans *spare_trans[MAX_SPARES];
 static int spares = 0;
 
-/* builtin functions have ids less than this */
-#define FUNC_OIDS 2000
-
 static int
 key_cmp(sql_key *k, sqlid *id)
 {
@@ -2134,8 +2131,10 @@ flusher_should_run(void)
 	// Read and clear flush_now. If we decide not to flush
 	// we'll put it back.
 	bool my_flush_now = (bool) ATOMIC_XCG(&flusher.flush_now, 0);
-	if (my_flush_now)
+	if (my_flush_now) {
 		reason_to = "user request";
+		reason_not_to = NULL;
+	}
 
 	if (ATOMIC_GET(&store_nr_active) > 0)
 		reason_not_to = "awaiting idle time";

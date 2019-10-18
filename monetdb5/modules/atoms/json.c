@@ -232,11 +232,10 @@ JSONtoString(str *s, size_t *len, const char *src, bool external)
 	} while (0)
 
 static void
-JSONdumpInternal(JSON *jt, int depth)
+JSONdumpInternal(stream *fd, JSON *jt, int depth)
 {
 	int i, idx;
 	JSONterm *je;
-	stream *fd = GDKout;
 
 	for (idx = 0; idx < jt->free; idx++) {
 		je = jt->elm + idx;
@@ -284,13 +283,15 @@ JSONdumpInternal(JSON *jt, int depth)
 }
 
 str
-JSONdump(void *ret, json *val)
+JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) mb;
+
+	json *val = (json*) getArgReference(stk, pci, 1);
 	JSON *jt = JSONparse(*val);
 
 	CHECK_JSON(jt);
-	(void) ret;
-	JSONdumpInternal(jt, 0);
+	JSONdumpInternal(cntxt->fdout, jt, 0);
 	JSONfree(jt);
 	return MAL_SUCCEED;
 }
@@ -511,8 +512,6 @@ JSONgetValue(JSON *jt, int idx)
 	str s;
 
 	if (jt->elm[idx].valuelen == 0)
-		return GDKstrdup(str_nil);
-	if (strncmp(jt->elm[idx].value, "null", 4) == 0)
 		return GDKstrdup(str_nil);
 	s = GDKzalloc(jt->elm[idx].valuelen + 1);
 	if (s)

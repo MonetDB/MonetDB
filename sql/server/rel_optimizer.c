@@ -6727,7 +6727,7 @@ flatten_dep_graph(mvc *sql, char *deps, list *refs)
 }
 
 static list *
-rel_dependencies(mvc *sql, list *refs)
+rel_opt_dependencies(mvc *sql, list *refs)
 {
 	int n = list_length(refs);
 
@@ -9137,7 +9137,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		changes = 0;
 	}
 
-	rel = rewrite_topdown(sql, rel, &rel_merge_table_rewrite, &changes);
+	if (value_based_opt)
+		rel = rewrite_topdown(sql, rel, &rel_merge_table_rewrite, &changes);
 	if (level <= 0 && mvc_debug_on(sql,8))
 		rel = rewrite_topdown(sql, rel, &rel_add_dicts, &changes);
 	*g_changes = changes;
@@ -9202,7 +9203,7 @@ optimize(mvc *sql, sql_rel *rel, int value_based_opt)
 
 	rel_dce_refs(sql, rel, refs);
 	if (refs) {
-		refs = rel_dependencies(sql, refs);
+		refs = rel_opt_dependencies(sql, refs);
 		for (n = refs->h; n; n = n->next)
 			n->data = optimize_rel(sql, n->data, &changes, 0, value_based_opt);
 	}
