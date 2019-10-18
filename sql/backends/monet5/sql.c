@@ -5801,6 +5801,19 @@ SQLsuspend_log_flushing(void *ret)
 	store_suspend_log();
 	return MAL_SUCCEED;
 }
+
+str
+SQLhot_snapshot(void *ret, const str *tarfile_arg)
+{
+	(void)ret;
+	char *tarfile = *tarfile_arg;
+	lng result = store_hot_snapshot(tarfile);
+	if (result)
+		return MAL_SUCCEED;
+	else
+		throw(SQL, "sql.hot_snapshot", GDK_EXCEPTION);
+}
+
 str
 SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {

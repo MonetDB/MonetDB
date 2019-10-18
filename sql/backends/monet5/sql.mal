@@ -60,7 +60,11 @@ comment "Compile the relational statement (rel_smt) and register it as mal funct
 
 command flush_log( ) :void
 address SQLflush_log
-comment "flush the log now";
+comment "start flushing the write ahead log";
+
+command hot_snapshot(tarfile:str) :void
+address SQLhot_snapshot
+comment "Write db snapshot to the given tar(.gz) file";
 
 command resume_log_flushing( ) :void
 address SQLresume_log_flushing

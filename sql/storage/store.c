@@ -2235,11 +2235,23 @@ store_flush_log(void)
 	ATOMIC_SET(&flusher.flush_now, 1);
 }
 
+/* Call while holding bs_lock */
+static void
+wait_until_flusher_idle(void)
+{
+	while (flusher.working) {
+		const int sleeptime = 100;
+		MT_lock_unset(&bs_lock);
+		MT_sleep_ms(sleeptime);
+		MT_lock_set(&bs_lock);
+	}
+}
 void
 store_suspend_log(void)
 {
 	MT_lock_set(&bs_lock);
 	flusher.enabled = false;
+	wait_until_flusher_idle();
 	MT_lock_unset(&bs_lock);
 }
 
@@ -2348,6 +2360,349 @@ store_unlock(void)
 	fprintf(stderr, "#unlocked\n");
 #endif
 	MT_lock_unset(&bs_lock);
+}
+
+// Helper function for tar_write_header.
+// Our stream.h makes sure __attribute__ exists.
+static void tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
+	__attribute__((__format__(__printf__, 3, 4)));
+static void
+tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	(void)vsnprintf(*cursor_ptr, size + 1, fmt, ap);
+	va_end(ap);
+
+	/* At first reading you might wonder why add `size` instead
+	 * of the byte count returned by vsnprintf. The reason is
+	 * that we want to move `*cursor_ptr` to the start of the next
+	 * field, not to the unused part of this field.
+	 */
+	*cursor_ptr += size;
+}
+
+#define TAR_BLOCK_SIZE (512)
+
+// Write a tar header to the given stream.
+static gdk_return
+tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
+{
+	char buf[TAR_BLOCK_SIZE] = {0};
+	char *cursor = buf;
+	char *chksum;
+
+	// We set the uid/gid fields to 0 and the uname/gname fields to "".
+	// When unpacking as a normal user, they are ignored and the files are
+	// owned by that user. When unpacking as root it is reasonable that
+	// the resulting files are owned by root.
+
+	// The following is taken directly from the definition found
+	// in /usr/include/tar.h on a Linux system.
+	tar_write_header_field(&cursor, 100, "%s", path);   // name[100]
+	tar_write_header_field(&cursor, 8, "0000644");      // mode[8]
+	tar_write_header_field(&cursor, 8, "%07o", 0);      // uid[8]
+	tar_write_header_field(&cursor, 8, "%07o", 0);      // gid[8]
+	tar_write_header_field(&cursor, 12, "%011zo", size);      // size[12]
+	tar_write_header_field(&cursor, 12, "%011lo", (long)mtime); // mtime[12]
+	chksum = cursor; // use this later to set the computed checksum
+	tar_write_header_field(&cursor, 8, "%8s", ""); // chksum[8]
+	*cursor++ = '0'; // typeflag REGTYPE
+	tar_write_header_field(&cursor, 100, "%s", "");  // linkname[100]
+	tar_write_header_field(&cursor, 6, "%s", "ustar"); // magic[6]
+	tar_write_header_field(&cursor, 2, "%02o", 0); // version, not null terminated
+	tar_write_header_field(&cursor, 32, "%s", ""); // uname[32]
+	tar_write_header_field(&cursor, 32, "%s", ""); // gname[32]
+	tar_write_header_field(&cursor, 8, "%07o", 0); // devmajor[8]
+	tar_write_header_field(&cursor, 8, "%07o", 0); // devminor[8]
+	tar_write_header_field(&cursor, 155, "%s", ""); // prefix[155]
+
+	assert(cursor - buf == 500);
+
+	int sum = 0;
+	for (int i = 0; i < TAR_BLOCK_SIZE; i++)
+		sum += buf[i];
+
+	tar_write_header_field(&chksum, 8, "%06o", sum);
+
+	if (mnstr_write(tarfile, buf, TAR_BLOCK_SIZE, 1) != 1) {
+		GDKerror("error writing tar header %s: %s", path, mnstr_error(tarfile));
+		return GDK_FAIL;
+	}
+
+	return GDK_SUCCEED;
+}
+
+/* Write data to the stream, padding it with zeroes up to the next
+ * multiple of TAR_BLOCK_SIZE.  Make sure all writes are in multiples
+ * of TAR_BLOCK_SIZE.
+ */
+static gdk_return
+tar_write(stream *outfile, const char *data, size_t size)
+{
+	const size_t tail = size % TAR_BLOCK_SIZE;
+	const size_t bulk = size - tail;
+
+	size_t written = mnstr_write(outfile, data, 1, bulk);
+	if (written != bulk) {
+		GDKerror("Wrote only %ld bytes instead of first %ld", written, bulk);
+		return GDK_FAIL;
+	}
+
+	if (tail) {
+		char buf[TAR_BLOCK_SIZE] = {0};
+		memcpy(buf, data + bulk, tail);
+		written = mnstr_write(outfile, buf, 1, TAR_BLOCK_SIZE);
+		if (written != TAR_BLOCK_SIZE) {
+			GDKerror("Wrote only %ld tail bytes instead of %d", written, TAR_BLOCK_SIZE);
+			return GDK_FAIL;
+		}
+	}
+
+	return GDK_SUCCEED;
+}
+
+static gdk_return
+tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data, size_t size)
+{
+	int res;
+
+	res = tar_write_header(tarfile, path, mtime, size);
+	if (res != GDK_SUCCEED)
+		return res;
+	
+	return tar_write(tarfile, data, size);
+}
+
+static gdk_return
+tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, ssize_t size)
+{
+	const ssize_t bufsize = 64 * 1024;
+	gdk_return ret = GDK_FAIL;
+	ssize_t file_size;
+	char *buf = NULL;
+	ssize_t to_read;
+
+	file_size = getFileSize(contents);
+	if (file_size < size) {
+		GDKerror("Have to copy %ld bytes but only %ld exist in %s", size, file_size, path);
+		goto end;
+	}
+
+	assert( (bufsize % TAR_BLOCK_SIZE) == 0);
+	assert(bufsize >= TAR_BLOCK_SIZE);
+
+	buf = malloc(bufsize);
+	if (!buf) {
+		GDKerror("could not allocate buffer");
+		goto end;
+	}
+
+	if (tar_write_header(tarfile, path, mtime, size) != GDK_SUCCEED)
+		goto end;
+
+	to_read = size;
+
+	while (to_read > 0) {
+		ssize_t chunk = (to_read <= bufsize) ? to_read : bufsize;
+		ssize_t nbytes = mnstr_read(contents, buf, 1, chunk);
+		if (nbytes != chunk) {
+			GDKerror("Read only %ld/%ld bytes of component %s: %s", nbytes, chunk, path, mnstr_error(contents));
+			goto end;
+		}
+		ret = tar_write(tarfile, buf, chunk);
+		if (ret != GDK_SUCCEED)
+			goto end;
+		to_read -= chunk;
+	}
+
+	ret = GDK_SUCCEED;
+end:
+	if (buf)
+		free(buf);
+	return ret;
+}
+
+static gdk_return
+hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
+{
+	gdk_return ret;
+	const char *p = plan; // our cursor in the plan
+	time_t timestamp = time(NULL);
+	// Name convention: _path for the absolute path
+	// and _name for the corresponding local relative path
+	char abs_src_path[2 * FILENAME_MAX];
+	char *src_name = abs_src_path;
+	char dest_path[100]; // size imposed by tar format.
+	char *dest_name = dest_path + snprintf(dest_path, sizeof(dest_path), "%s/", prefix);
+	stream *infile = NULL;
+
+	int len;
+	if (sscanf(p, "%[^\n]\n%n", abs_src_path, &len) != 1) {
+		GDKerror("internal error: first line of plan is malformed");
+		ret = GDK_FAIL;
+		goto end;
+	}
+	p += len;
+	src_name = abs_src_path + len - 1; // - 1 because len includes the trailing newline
+	*src_name++ = DIR_SEP;
+
+	char command;
+	long size;
+	while (sscanf(p, "%c %ld %100s\n%n", &command, &size, src_name, &len) == 3) {
+		p += len;
+		strcpy(dest_name, src_name);
+		if (size < 0) {
+			GDKerror("malformed snapshot plan for %s: size %ld < 0", src_name, size);
+			goto end;
+		}
+		switch (command) {
+			case 'c':
+				infile = open_rstream(abs_src_path);
+				if (!infile) {
+					GDKerror("Could not open %s", abs_src_path);
+					goto end;
+				}
+				if (tar_copy_stream(out, dest_path, timestamp, infile, size) != GDK_SUCCEED)
+					goto end;
+				mnstr_close(infile);
+				break;
+			case 'w':
+				if (tar_write_data(out, dest_path, timestamp, p, size) != GDK_SUCCEED)
+					goto end;
+				p += size;
+				break;
+			default:
+				GDKerror("Unknown command in snapshot plan: %c (%s)", command, src_name);
+				ret = GDK_FAIL;
+				goto end;
+		}
+	}
+	ret = GDK_SUCCEED;
+
+end:
+	if (infile)
+		mnstr_close(infile);
+	return ret;
+}
+
+extern lng
+store_hot_snapshot(str tarfile)
+{
+	int locked = 0;
+	lng result = 0;
+	char tmppath[PATH_MAX];
+	char dirpath[PATH_MAX];
+	int do_unlink = 0;
+	int dir_fd = -1;
+	stream *tar_stream = NULL;
+	buffer *plan_buf = NULL;
+	stream *plan_stream = NULL;
+	gdk_return r;
+
+	if (!logger_funcs.get_snapshot_files) {
+		GDKerror("backend does not support hot snapshots");
+		goto end;
+	}
+
+	snprintf(tmppath, PATH_MAX, "%s.tmp", tarfile);
+	tar_stream = open_wstream(tmppath);
+	if (!tar_stream) {
+		GDKerror("Failed to open %s for writing", tmppath);
+		goto end;
+	}
+	do_unlink = 1;
+
+	// Set dirpath to the directory containing the tar file.
+	// Call realpath(2) to make the path absolute so it has at least
+	// one DIR_SEP in it. Realpath requires the file to exist so
+	// we feed it tmppath rather than tarfile.
+	if (realpath(tmppath, dirpath) == NULL) {
+		GDKerror("couldn't resolve path %s: %s", tarfile, strerror(errno));
+		goto end;
+	}
+	*strrchr(dirpath, DIR_SEP) = '\0';
+
+	// Open the directory so we can call fsync on it.
+	// We use raw posix calls because this is not available in the streams library
+	// and I'm not quite sure what a generic streams-api should look like.
+	dir_fd = open(dirpath, O_RDONLY);
+	if (dir_fd < 0) {
+		GDKerror("couldn't open directory %s: %s", dirpath, strerror(errno));
+		goto end;
+	}
+
+	// Fsync the directory. Postgres believes this is necessary for durability.
+	if (fsync(dir_fd) < 0) {
+		GDKerror("First fsync on %s failed: %s", dirpath, strerror(errno));
+		goto end;
+	}
+
+	plan_buf = buffer_create(64 * 1024);
+	if (!plan_buf) {
+		GDKerror("Failed to allocate plan buffer");
+		goto end;
+	}
+	plan_stream = buffer_wastream(plan_buf, "write_snapshot_plan");
+	if (!plan_stream) {
+		GDKerror("Failed to allocate buffer stream");
+		goto end;
+	}
+
+	MT_lock_set(&bs_lock);
+	locked = 1;
+	wait_until_flusher_idle();
+	if (GDKexiting())
+		goto end;
+
+	r = logger_funcs.get_snapshot_files(plan_stream);
+	if (r != GDK_SUCCEED)
+		goto end; // should already have set a GDK error
+	close_stream(plan_stream);
+	plan_stream = NULL;
+	r = hot_snapshot_write_tar(tar_stream, GDKgetenv("gdk_dbname"), buffer_get_buf(plan_buf));
+	if (r != GDK_SUCCEED)
+		goto end;
+
+	// Now sync and atomically rename the temp file to the real file,
+	// also fsync'ing the directory
+	mnstr_fsync(tar_stream);
+	mnstr_close(tar_stream);
+	tar_stream = NULL;
+	if (rename(tmppath, tarfile) < 0) {
+		GDKerror("rename %s to %s failed: %s", tmppath, tarfile, strerror(errno));
+		goto end;
+	}
+	do_unlink = 0;
+	if (fsync(dir_fd) < 0) {
+		GDKerror("fsync on dir %s failed: %s", dirpath, strerror(errno));
+		goto end;
+	}
+
+	// the original idea was to return a sort of sequence number of the
+	// database that identifies exactly which version has been snapshotted
+	// but no such number is available:
+	// logger_functions.read_last_transaction_id is not implemented
+	// anywhere.
+	//
+	// So we return a random positive integer instead.
+	result = 42;
+
+end:
+	if (dir_fd >= 0)
+		close(dir_fd);
+	if (locked)
+		MT_lock_unset(&bs_lock);
+	if (tar_stream)
+		close_stream(tar_stream);
+	if (plan_stream)
+		close_stream(plan_stream);
+	if (plan_buf)
+		buffer_destroy(plan_buf);
+	if (do_unlink)
+		(void) unlink(tmppath);	// Best effort, ignore the result
+	return result;
 }
 
 static sql_kc *
