@@ -6594,8 +6594,8 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 		for (; n; n = n->next) {
 			char *nm = n->data.sval;
 			sql_exp *cond;
-			sql_exp *ls = rel_bind_column(sql, t1, nm, sql_where);
-			sql_exp *rs = rel_bind_column(sql, t2, nm, sql_where);
+			sql_exp *ls = rel_bind_column(sql, t1, nm, sql_where | sql_join);
+			sql_exp *rs = rel_bind_column(sql, t2, nm, sql_where | sql_join);
 
 			if (!ls || !rs) {
 				sql_error(sql, 02, SQLSTATE(42000) "JOIN: tables '%s' and '%s' do not have a matching column '%s'\n", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"", nm);
@@ -6603,7 +6603,7 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 				return NULL;
 			}
 			rel = rel_compare_exp(query, rel, ls, rs, "=", NULL, TRUE, 0, 0);
-			if (op != op_join) {
+			if (!is_joinop(rel->op)) {
 				cond = rel_unop_(query, rel, ls, NULL, "isnull", card_value);
 				if (rel_convert_types(sql, t1, t2, &ls, &rs, 1, type_equal) < 0)
 					return NULL;
