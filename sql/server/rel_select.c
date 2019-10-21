@@ -6161,17 +6161,17 @@ rel_simple_select(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 }
 
 static sql_rel *
-join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, int l_nil, int r_nil)
+join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, int l_nil, int r_nil)
 {
 	mvc *sql = query->sql;
-	int nr = ++sql->label, found = 0, full = (op != op_join);
+	int nr = ++sql->label, found = 0;
 	char name[16], *nme;
 	list *exps = rel_projections(sql, t1, NULL, 1, 0);
 	list *r_exps = rel_projections(sql, t2, NULL, 1, 0);
 	list *outexps = new_exp_list(sql->sa);
 	node *n;
 
-	nme = number2name(name, 16, nr);
+	nme = number2name(name, sizeof(name), nr);
 	if (!exps)
 		return NULL;
 	for (n = exps->h; n; n = n->next) {
@@ -6182,10 +6182,6 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 		if (re) {
 			found = 1;
 			rel = rel_compare_exp(query, rel, le, re, "=", NULL, TRUE, 0, 0);
-			if (full) {
-				sql_exp *cond = rel_unop_(query, rel, le, NULL, "isnull", card_value);
-				le = rel_nop_(query, rel, cond, re, le, NULL, NULL, "ifthenelse", card_value);
-			}
 			exp_setname(sql->sa, le, nme, sa_strdup(sql->sa, nm));
 			append(outexps, le);
 			list_remove_data(r_exps, re);
@@ -6590,10 +6586,9 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 		list *outexps = new_exp_list(sql->sa), *exps;
 		node *m;
 
-		rnme = number2name(rname, 16, ++sql->label);
+		rnme = number2name(rname, sizeof(rname), ++sql->label);
 		for (; n; n = n->next) {
 			char *nm = n->data.sval;
-			sql_exp *cond;
 			sql_exp *ls = rel_bind_column(sql, t1, nm, sql_where | sql_join);
 			sql_exp *rs = rel_bind_column(sql, t2, nm, sql_where | sql_join);
 
@@ -6603,12 +6598,6 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 				return NULL;
 			}
 			rel = rel_compare_exp(query, rel, ls, rs, "=", NULL, TRUE, 0, 0);
-			if (!is_joinop(rel->op)) {
-				cond = rel_unop_(query, rel, ls, NULL, "isnull", card_value);
-				if (rel_convert_types(sql, t1, t2, &ls, &rs, 1, type_equal) < 0)
-					return NULL;
-				ls = rel_nop_(query, rel, cond, rs, ls, NULL, NULL, "ifthenelse", card_value);
-			}
 			exp_setname(sql->sa, ls, rnme, nm);
 			append(outexps, ls);
 			if (!rel) 
@@ -6652,7 +6641,7 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 		}
 		rel = rel_project(sql->sa, rel, outexps);
 	} else {		/* ! js -> natural join */
-		rel = join_on_column_name(query, rel, t1, t2, op, l_nil, r_nil);
+		rel = join_on_column_name(query, rel, t1, t2, l_nil, r_nil);
 	}
 	if (!rel)
 		return NULL;
