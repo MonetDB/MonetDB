@@ -523,22 +523,30 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
 
-	cnt = mapi_fetch_row(hdl);
-	while (cnt != 0) {
-		const char *c_psname = mapi_fetch_field(hdl, 0);
-		const char *c_ptname = mapi_fetch_field(hdl, 1);
-		const char *c_pcolumn = mapi_fetch_field(hdl, 2);
-		const char *c_fcolumn = mapi_fetch_field(hdl, 3);
-		const char *c_nr = mapi_fetch_field(hdl, 4);
-		const char *c_fkname = mapi_fetch_field(hdl, 5);
-		const char *c_faction = mapi_fetch_field(hdl, 6);
-		const char *c_fsname = mapi_fetch_field(hdl, 7);
-		const char *c_ftname = mapi_fetch_field(hdl, 8);
+	while ((cnt = mapi_fetch_row(hdl)) != 0) {
+		char *c_psname = strdup(mapi_fetch_field(hdl, 0));
+		char *c_ptname = strdup(mapi_fetch_field(hdl, 1));
+		char *c_pcolumn = strdup(mapi_fetch_field(hdl, 2));
+		char *c_fcolumn = strdup(mapi_fetch_field(hdl, 3));
+		char *c_nr = mapi_fetch_field(hdl, 4); /* no need to strdup, because it's not used */
+		char *c_fkname = strdup(mapi_fetch_field(hdl, 5));
+		char *c_faction = strdup(mapi_fetch_field(hdl, 6));
+		char *c_fsname = strdup(mapi_fetch_field(hdl, 7));
+		char *c_ftname = strdup(mapi_fetch_field(hdl, 8));
 		const char **fkeys, **pkeys;
 		int nkeys = 0;
 
-		if (mapi_error(mid))
+		if (mapi_error(mid) || !c_psname || !c_ptname || !c_pcolumn || !c_fcolumn || !c_fkname || !c_faction || !c_fsname || !c_ftname) {
+			free(c_psname);
+			free(c_ptname);
+			free(c_pcolumn);
+			free(c_fcolumn);
+			free(c_fkname);
+			free(c_faction);
+			free(c_fsname);
+			free(c_ftname);
 			goto bailout;
+		}
 		assert(strcmp(c_nr, "0") == 0);
 		(void) c_nr;	/* pacify compilers in case assertions are disabled */
 		nkeys = 1;
@@ -549,6 +557,14 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 				free((void *) fkeys);
 			if (pkeys)
 				free((void *) pkeys);
+			free(c_psname);
+			free(c_ptname);
+			free(c_pcolumn);
+			free(c_fcolumn);
+			free(c_fkname);
+			free(c_faction);
+			free(c_fsname);
+			free(c_ftname);
 			goto bailout;
 		}
 		pkeys[nkeys - 1] = c_pcolumn;
@@ -560,6 +576,14 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			if (tkeys == NULL) {
 				free((void *) pkeys);
 				free((void *) fkeys);
+				free(c_psname);
+				free(c_ptname);
+				free(c_pcolumn);
+				free(c_fcolumn);
+				free(c_fkname);
+				free(c_faction);
+				free(c_fsname);
+				free(c_ftname);
 				goto bailout;
 			}
 			pkeys = tkeys;
@@ -567,6 +591,14 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			if (tkeys == NULL) {
 				free((void *) pkeys);
 				free((void *) fkeys);
+				free(c_psname);
+				free(c_ptname);
+				free(c_pcolumn);
+				free(c_fcolumn);
+				free(c_fkname);
+				free(c_faction);
+				free(c_fsname);
+				free(c_ftname);
 				goto bailout;
 			}
 			fkeys = tkeys;
@@ -599,8 +631,6 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			dquoted_print(toConsole, pkeys[i], NULL);
 		}
 		mnstr_printf(toConsole, ")");
-		free((void *) fkeys);
-		free((void *) pkeys);
 		if (c_faction) {
 			int action = atoi(c_faction);
 			int on_update;
@@ -617,6 +647,17 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 				mnstr_printf(toConsole, " ON UPDATE %s",
 					     actions[on_update]);
 		}
+		free(c_psname);
+		free(c_ptname);
+		free(c_pcolumn);
+		free(c_fcolumn);
+		free(c_fkname);
+		free(c_faction);
+		free(c_fsname);
+		free(c_ftname);
+		free((void *) fkeys);
+		free((void *) pkeys);
+
 		if (tname == NULL && tid == NULL)
 			mnstr_printf(toConsole, ";\n");
 
