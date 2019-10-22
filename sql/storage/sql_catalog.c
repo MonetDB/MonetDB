@@ -75,7 +75,6 @@ _cs_find_name(changeset * cs, const char *name)
 	return _list_find_name(cs->set, name);
 }
 
-
 node *
 cs_find_name(changeset * cs, const char *name)
 {

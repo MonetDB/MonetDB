@@ -76,6 +76,7 @@ seq_restart(sql_sequence *seq, lng start)
 	node *n = NULL;
 	store_sequence *s;
 
+	assert(!is_lng_nil(start));
 	store_lock();
 	for ( n = sql_seqs->h; n; n = n ->next ) {
 		s = n->data;
@@ -307,5 +308,25 @@ seqbulk_get_value(seqbulk *sb, lng *val)
 			return 0;
 		}
 	}
+	return 1;
+}
+
+int
+seqbulk_restart(seqbulk *sb, lng start)
+{
+	store_sequence *s = sb->internal_seq;
+	sql_sequence *seq = sb->seq;
+
+	assert(!is_lng_nil(start));
+	s->called = 0;
+	s->cur = start;
+	s->cached = start;
+	/* handle min/max and cycle */
+	if ((seq->maxvalue && s->cur > seq->maxvalue) ||
+	    (seq->minvalue && s->cur < seq->minvalue))
+	{
+		return 0;
+	}
+	sql_update_sequence_cache(seq, s->cached);
 	return 1;
 }
