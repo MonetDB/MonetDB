@@ -120,6 +120,34 @@ unsafe pattern restart( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
 
+unsafe pattern batsql.restart( sname:bat[:str], sequence:str, start:lng ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:str, sequence:bat[:str], start:lng ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:str, sequence:str, start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:bat[:str], sequence:bat[:str], start:lng ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:bat[:str], sequence:str, start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:str, sequence:bat[:str], start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:bat[:str], sequence:bat[:str], start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
 pattern deltas( schema:str )(ids:bat[:int],cleared:bat[:bit],readonly:bat[:lng],inserted:bat[:lng],updated:bat[:lng],deleted:bat[:lng],tr_level:bat[:int])
 address mvc_delta_values
 comment "Return the delta values sizes of all columns of the schema's tables, plus the current transaction level";
