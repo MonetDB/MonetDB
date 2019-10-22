@@ -916,15 +916,19 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 	cnt = 0;
 	while ((mapi_fetch_row(hdl)) != 0) {
 		const char *c_name = mapi_fetch_field(hdl, 0);
-		const char *c_type = mapi_fetch_field(hdl, 1);
-		const char *c_type_digits = mapi_fetch_field(hdl, 2);
-		const char *c_type_scale = mapi_fetch_field(hdl, 3);
+		char *c_type = strdup(mapi_fetch_field(hdl, 1)); /* copy variables used outside this scope (look for possible mapi cache incoherency) */
+		char *c_type_digits = strdup(mapi_fetch_field(hdl, 2));
+		char *c_type_scale = strdup(mapi_fetch_field(hdl, 3));
 		const char *c_null = mapi_fetch_field(hdl, 4);
 		const char *c_default = mapi_fetch_field(hdl, 5);
 		int space;
 
-		if (mapi_error(mid))
+		if (mapi_error(mid) || !c_type || !c_type_digits || !c_type_scale) {
+			free(c_type);
+			free(c_type_digits);
+			free(c_type_scale);
 			goto bailout;
+		}
 		if (cnt)
 			mnstr_printf(toConsole, ",\n");
 
@@ -942,6 +946,9 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 					CAP(13 - space), "", c_default);
 
 		cnt++;
+		free(c_type);
+		free(c_type_digits);
+		free(c_type_scale);
 		if (mnstr_errnr(toConsole))
 			goto bailout;
 	}
@@ -1208,7 +1215,7 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		mnstr_printf(toConsole, "%s\n", view);
 		comment_on(toConsole, "VIEW", schema, tname, NULL, remark);
 	} else {
-		if(!databaseDump) { //if it is not a database dump the table might depend on UDFs that must be dumped first
+		if (!databaseDump) { //if it is not a database dump the table might depend on UDFs that must be dumped first
 			assert(table_id);
 			snprintf(query, maxquerylen,
 					 "SELECT f.id, s.name, f.name "
@@ -1219,11 +1226,23 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 					 table_id);
 			if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 				goto bailout;
-			while(mapi_fetch_row(hdl) != 0) {
-				const char* function_id = mapi_fetch_field(hdl, 0);
-				const char* schema_name = mapi_fetch_field(hdl, 1);
-				const char* function_name = mapi_fetch_field(hdl, 2);
-				dump_functions(mid, toConsole, 0, schema_name, function_name, function_id);
+			while (mapi_fetch_row(hdl) != 0) {
+				bool failure = false;
+				char *function_id = strdup(mapi_fetch_field(hdl, 0));
+				char *schema_name = strdup(mapi_fetch_field(hdl, 1));
+				char *function_name = strdup(mapi_fetch_field(hdl, 2));
+
+				if (function_id && schema_name && function_name)
+					dump_functions(mid, toConsole, 0, schema_name, function_name, function_id);
+				else
+					failure = true;
+
+				free(function_id);
+				free(schema_name);
+				free(function_name);
+
+				if (failure)
+					goto bailout;
 			}
 			mapi_close_handle(hdl);
 			hdl = NULL;
@@ -1932,13 +1951,16 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 		sep = "";
 		while (mapi_fetch_row(hdl) != 0) {
 			const char *aname = mapi_fetch_field(hdl, 0);
-			const char *atype = mapi_fetch_field(hdl, 1);
-			const char *adigs = mapi_fetch_field(hdl, 2);
-			const char *ascal = mapi_fetch_field(hdl, 3);
+			char *atype = strdup(mapi_fetch_field(hdl, 1));
+			char *adigs = strdup(mapi_fetch_field(hdl, 2));
+			char *ascal = strdup(mapi_fetch_field(hdl, 3));
 			const char *ainou = mapi_fetch_field(hdl, 4);
 
 			if (strcmp(ainou, "0") == 0) {
 				/* end of arguments */
+				free(atype);
+				free(adigs);
+				free(ascal);
 				break;
 			}
 
@@ -1946,6 +1968,10 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 			dquoted_print(toConsole, aname, " ");
 			dump_type(mid, toConsole, atype, adigs, ascal, hashge);
 			sep = ", ";
+
+			free(atype);
+			free(adigs);
+			free(ascal);
 		}
 		mnstr_printf(toConsole, ")");
 		if (ftype == 1 || ftype == 3 || ftype == 5) {
@@ -1953,9 +1979,9 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 			mnstr_printf(toConsole, " RETURNS ");
 			do {
 				const char *aname = mapi_fetch_field(hdl, 0);
-				const char *atype = mapi_fetch_field(hdl, 1);
-				const char *adigs = mapi_fetch_field(hdl, 2);
-				const char *ascal = mapi_fetch_field(hdl, 3);
+				char *atype = strdup(mapi_fetch_field(hdl, 1));
+				char *adigs = strdup(mapi_fetch_field(hdl, 2));
+				char *ascal = strdup(mapi_fetch_field(hdl, 3));
 
 				assert(strcmp(mapi_fetch_field(hdl, 4), "0") == 0);
 				if (ftype == 5) {
@@ -1964,6 +1990,10 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 					sep = ", ";
 				}
 				dump_type(mid, toConsole, atype, adigs, ascal, hashge);
+
+				free(atype);
+				free(adigs);
+				free(ascal);
 			} while (mapi_fetch_row(hdl) != 0);
 		}
 		if (flkey) {
@@ -1989,18 +2019,25 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 		free(ftkey);
 		sep = "";
 		while (mapi_fetch_row(hdl) != 0) {
-			const char *atype = mapi_fetch_field(hdl, 1);
-			const char *adigs = mapi_fetch_field(hdl, 2);
-			const char *ascal = mapi_fetch_field(hdl, 3);
+			char *atype = strdup(mapi_fetch_field(hdl, 1));
+			char *adigs = strdup(mapi_fetch_field(hdl, 2));
+			char *ascal = strdup(mapi_fetch_field(hdl, 3));
 			const char *ainou = mapi_fetch_field(hdl, 4);
 
 			if (strcmp(ainou, "0") == 0) {
 				/* end of arguments */
+				free(atype);
+				free(adigs);
+				free(ascal);
 				break;
 			}
 			mnstr_printf(toConsole, "%s", sep);
 			dump_type(mid, toConsole, atype, adigs, ascal, hashge);
 			sep = ", ";
+
+			free(atype);
+			free(adigs);
+			free(ascal);
 		}
 		mnstr_printf(toConsole, ") IS ");
 		squoted_print(toConsole, remark, '\'');
@@ -2094,13 +2131,19 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
 		long sid = strtol(mapi_fetch_field(hdl, 0), NULL, 10);
 		const char *schema = mapi_fetch_field(hdl, 1);
-		const char *fid = mapi_fetch_field(hdl, 2);
-		if (set_schema && sid != prev_sid) {
-			mnstr_printf(toConsole, "SET SCHEMA ");
-			dquoted_print(toConsole, schema, ";\n");
-			prev_sid = sid;
+		char *fid = strdup(mapi_fetch_field(hdl, 2));
+
+		if (fid) {
+			if (set_schema && sid != prev_sid) {
+				mnstr_printf(toConsole, "SET SCHEMA ");
+				dquoted_print(toConsole, schema, ";\n");
+				prev_sid = sid;
+			}
+			dump_function(mid, toConsole, fid, hashge);
+			free(fid);
+		} else {
+			goto bailout;
 		}
-		dump_function(mid, toConsole, fid, hashge);
 	}
 	if (mapi_error(mid))
 		goto bailout;
@@ -2600,21 +2643,28 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 	while (rc == 0 &&
 	       !mnstr_errnr(toConsole) &&
 	       mapi_fetch_row(hdl) != 0) {
-		const char *id = mapi_fetch_field(hdl, 0);
-		char *schema = mapi_fetch_field(hdl, 1);
-		char *name = mapi_fetch_field(hdl, 2);
+		char *id = strdup(mapi_fetch_field(hdl, 0));
+		char *nschema = mapi_fetch_field(hdl, 1), *schema = NULL; /* the fetched value might be null, so do this */
+		char *name = strdup(mapi_fetch_field(hdl, 2));
 		const char *query = mapi_fetch_field(hdl, 3);
 		const char *remark = mapi_fetch_field(hdl, 4);
 		const char *type = mapi_fetch_field(hdl, 5);
 
-		if (mapi_error(mid))
+		if (nschema)
+			schema = strdup(nschema);
+
+		if (mapi_error(mid) || !id || (nschema && !schema) || !name) {
+			free(id);
+			free(schema);
+			free(name);
 			goto bailout;
-		if (schema == NULL) {
-			/* cannot happen, but make analysis tools happy */
+		}
+		if (sname != NULL && strcmp(schema, sname) != 0) {
+			free(id);
+			free(schema);
+			free(name);
 			continue;
 		}
-		if (sname != NULL && strcmp(schema, sname) != 0)
-			continue;
 		if (curschema == NULL || strcmp(schema, curschema) != 0) {
 			if (curschema)
 				free(curschema);
@@ -2624,11 +2674,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 		}
 		if (type) { /* table */
 			int ptype = atoi(type), dont_describe = (ptype == 3 || ptype == 5);
-			schema = strdup(schema);
-			name = strdup(name);
 			rc = dump_table(mid, schema, name, toConsole, dont_describe || describe, describe, useInserts, true);
-			free(schema);
-			free(name);
 		} else if (query) {
 			/* view or trigger */
 			mnstr_printf(toConsole, "%s\n", query);
@@ -2638,6 +2684,9 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 			/* procedure */
 			dump_functions(mid, toConsole, 0, schema, name, id);
 		}
+		free(id);
+		free(schema);
+		free(name);
 	}
 	mapi_close_handle(hdl);
 	hdl = NULL;
