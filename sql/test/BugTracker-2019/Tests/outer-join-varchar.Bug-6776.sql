@@ -8,4 +8,14 @@ create table dummy6 as select "key", dummy4.val as "val4", dummy5.val as "val5" 
 select t.name as "table_name", c.name as "column_name", c.type, c.type_digits 
 from sys.tables t join sys.columns c on c.table_id = t.id where t.name = 'dummy6';
 
+create table dummy7 as select "key", val as "val4", val as "val5" from dummy4 natural full outer join dummy5;
+
+select t.name as "table_name", c.name as "column_name", c.type, c.type_digits 
+from sys.tables t join sys.columns c on c.table_id = t.id where t.name = 'dummy7';
+
+create table dummy8 as select dummy4."key" as "key4", dummy5."key" as "key5", dummy4.val as "val4", dummy5.val as "val5" from dummy4 full outer join dummy5 ON dummy4."key" = dummy5."key";
+
+select t.name as "table_name", c.name as "column_name", c.type, c.type_digits 
+from sys.tables t join sys.columns c on c.table_id = t.id where t.name = 'dummy8';
+
 rollback;
