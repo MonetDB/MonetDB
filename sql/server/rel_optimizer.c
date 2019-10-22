@@ -3690,7 +3690,7 @@ rel_select_cse(int *changes, mvc *sql, sql_rel *rel)
 		for (n=rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (e->type == e_cmp && e->flag == cmp_or) {
+			if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
 				/* split the common expressions */
 				*changes += exps_cse(sql, nexps, e->l, e->r);
 			} else {
