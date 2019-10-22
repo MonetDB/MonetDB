@@ -644,6 +644,12 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 			   is_lng_nil(seq->increment) || is_lng_nil(seq->cacheinc) || is_bit_nil(seq->cycle)) {
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: sequence properties must be non-NULL");
 	}
+	if (seq->minvalue && seq->start < seq->minvalue)
+		throw(SQL, "sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: start value is lesser than the minimum ("LLFMT" < "LLFMT")", seq->start, seq->minvalue);
+	if (seq->maxvalue && seq->start > seq->maxvalue)
+		throw(SQL, "sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: start value is higher than the maximum ("LLFMT" > "LLFMT")", seq->start, seq->maxvalue);
+	if (seq->minvalue && seq->maxvalue && seq->maxvalue < seq->minvalue)
+		throw(SQL, "sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: maximum value is lesser than the minimum ("LLFMT" < "LLFMT")", seq->maxvalue, seq->minvalue);
 	sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped);
 	return NULL;
 }
@@ -666,6 +672,8 @@ alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, const lng *va
 	/* if seq properties hold NULL values, then they should be ignored during the update */
 	/* first alter the known values */
 	sql_trans_alter_sequence(sql->session->tr, nseq, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle);
+	if (nseq->minvalue && nseq->maxvalue && nseq->maxvalue < seq->minvalue)
+		throw(SQL, "sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: maximum value is lesser than the minimum ("LLFMT" < "LLFMT")", nseq->maxvalue, nseq->minvalue);
 	if (val) {
 		if (is_lng_nil(*val))
 			throw(SQL, "sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: sequence value must be non-NULL");
