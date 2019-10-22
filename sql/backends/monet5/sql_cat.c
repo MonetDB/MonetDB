@@ -659,18 +659,23 @@ alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, const lng *va
 		throw(SQL,"sql.alter_seq", SQLSTATE(3F000) "ALTER SEQUENCE: no such schema '%s'", sname);
 	if (s == NULL)
 		s = cur_schema(sql);
-	if (!(nseq = find_sql_sequence(s, seq->base.name))) {
+	if (!(nseq = find_sql_sequence(s, seq->base.name)))
 		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: no such sequence '%s'", seq->base.name);
-	} else if (!mvc_schema_privs(sql, s)) {
+	else if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
-	} else if (val && is_lng_nil(*val)) {
-		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: sequence value must be non-NULL");
-	}
 	/* if seq properties hold NULL values, then they should be ignored during the update */
 	/* first alter the known values */
 	sql_trans_alter_sequence(sql->session->tr, nseq, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle);
-	if (val)
-		sql_trans_sequence_restart(sql->session->tr, nseq, *val);
+	if (val) {
+		if (is_lng_nil(*val))
+			throw(SQL, "sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: sequence value must be non-NULL");
+		else if (nseq->minvalue && *val < nseq->minvalue)
+			throw(SQL, "sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: cannot set sequence start to a value lesser than the minimum ("LLFMT" < "LLFMT")", *val, nseq->minvalue);
+		else if (nseq->maxvalue && *val > nseq->maxvalue)
+			throw(SQL, "sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: cannot set sequence start to a value higher than the maximum ("LLFMT" > "LLFMT")", *val, nseq->maxvalue);
+		else if (!sql_trans_sequence_restart(sql->session->tr, nseq, *val))
+			throw(SQL, "sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: failed to restart sequence %s.%s", sname, nseq->base.name);
+	}
 	return MAL_SUCCEED;
 }
 

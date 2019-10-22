@@ -5001,7 +5001,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 	int found;
 	struct tablelist* new_node, *node_check;
 
-	if(*error)
+	if (*error)
 		return;
 
 	if (t->keys.set) { /* Check for foreign key references */
@@ -5028,14 +5028,14 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 								*error = 1;
 								return;
 							}
-						} else if(k->t != t) {
+						} else if (k->t != t) {
 							found = 0;
 							for (node_check = list; node_check; node_check = node_check->next) {
-								if(node_check->table == k->t)
+								if (node_check->table == k->t)
 									found = 1;
 							}
-							if(!found) {
-								if((new_node = MNEW(struct tablelist)) == NULL) {
+							if (!found) {
+								if ((new_node = MNEW(struct tablelist)) == NULL) {
 									sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 									*error = 1;
 									return;
@@ -5071,7 +5071,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	int error = 0;
 	struct tablelist* new_list = MNEW(struct tablelist), *list_node, *aux;
 
-	if(!new_list) {
+	if (!new_list) {
 		sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		error = 1;
 		goto finalize;
@@ -5080,19 +5080,19 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	new_list->table = t;
 	new_list->next = NULL;
 	check_for_foreign_key_references(sql, new_list, new_list, t, cascade, &error);
-	if(error)
+	if (error)
 		goto finalize;
 
 	for (list_node = new_list; list_node; list_node = list_node->next) {
 		next = list_node->table;
 		sche = next->s;
 
-		if(restart_sequences) { /* restart the sequences if it's the case */
+		if (restart_sequences) { /* restart the sequences if it's the case */
 			for (n = next->columns.set->h; n; n = n->next) {
 				col = n->data;
 				if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
 					seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
-					if(!seq_name) {
+					if (!seq_name) {
 						sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						error = 1;
 						goto finalize;
@@ -5100,7 +5100,11 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 					seq_name[strlen(seq_name)-1] = '\0';
 					seq = find_sql_sequence(sche, seq_name);
 					if (seq) {
-						sql_trans_sequence_restart(tr, seq, seq->start);
+						if (!sql_trans_sequence_restart(tr, seq, seq->start)) {
+							sql_error(sql, 02, SQLSTATE(HY005) "Could not restart sequence %s.%s", sche->base.name, seq_name);
+							error = 1;
+							goto finalize;
+						}
 						seq->base.wtime = sche->base.wtime = tr->wtime = tr->wstime;
 						tr->schema_updates++;
 					}
@@ -5112,8 +5116,8 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		v = stmt_tid(be, next, 0);
 
 		/* before */
-		if(be->cur_append && !be->first_statement_generated) {
-			for(sql_table *up = t->p ; up ; up = up->p) {
+		if (be->cur_append && !be->first_statement_generated) {
+			for (sql_table *up = t->p ; up ; up = up->p) {
 				if (!sql_delete_triggers(be, up, v, 0, 3, 4)) {
 					sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", up->base.name);
 					error = 1;
@@ -5135,12 +5139,12 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 
 		other = stmt_table_clear(be, next);
 		list_append(l, other);
-		if(next == t)
+		if (next == t)
 			ret = other;
 
 		/* after */
-		if(be->cur_append && !be->first_statement_generated) {
-			for(sql_table *up = t->p ; up ; up = up->p) {
+		if (be->cur_append && !be->first_statement_generated) {
+			for (sql_table *up = t->p ; up ; up = up->p) {
 				if (!sql_delete_triggers(be, up, v, 1, 3, 4)) {
 					sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", up->base.name);
 					error = 1;
@@ -5154,7 +5158,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			goto finalize;
 		}
 
-		if(be->cur_append) //building the total number of rows affected across all tables
+		if (be->cur_append) //building the total number of rows affected across all tables
 			other->nr = add_to_merge_partitions_accumulator(be, other->nr);
 	}
 
@@ -5165,7 +5169,7 @@ finalize:
 		list_node = aux;
 	}
 
-	if(error)
+	if (error)
 		return NULL;
 	return ret;
 }

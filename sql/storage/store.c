@@ -6691,25 +6691,23 @@ sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng
 	return seq;
 }
 
-lng 
+sql_sequence *
 sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start)
 {
-	if (seq->start != start) {
+	if (!is_lng_nil(start) && seq->start != start) { /* new valid value, change */
 		sql_schema *syss = find_sql_schema(tr, "sys"); 
 		sql_table *seqs = find_sql_table(syss, "sequences");
-		oid rid = table_funcs.column_find_row(tr, find_sql_column(seqs, "id"),
-				  &seq->base.id, NULL);
+		oid rid = table_funcs.column_find_row(tr, find_sql_column(seqs, "id"), &seq->base.id, NULL);
 		sql_column *c = find_sql_column(seqs, "start");
 
 		assert(!is_oid_nil(rid));
 		seq->start = start; 
-		table_funcs.column_update_value(tr, c, rid, &seq->start);
+		table_funcs.column_update_value(tr, c, rid, &start);
 
 		seq->base.wtime = seq->s->base.wtime = tr->wtime = tr->wstime;
 		tr->schema_updates ++;
 	}
-	seq_restart(seq, seq->start);
-	return seq->start;
+	return seq_restart(seq, start) ? seq : NULL;
 }
 
 sql_session *
