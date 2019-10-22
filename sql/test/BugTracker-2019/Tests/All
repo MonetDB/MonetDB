@@ -40,3 +40,6 @@ grant-select-column.Bug-6765
 next-get-value-bulk.Bug-6766
 filter_json_null.Bug-6773
 prod-decimals.Bug-6774
+NOT_IN-AND-OR-wrong-results.Bug-6775
+outer-join-varchar.Bug-6776
+msqldump-mapi-cache.Bug-6777
