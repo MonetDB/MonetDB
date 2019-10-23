@@ -20,16 +20,6 @@ stderr of test 'python-loader-string.Bug-6759` in directory 'sql/test/BugTracker
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2019
 # cmdline opt 	embedded_py = 2
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_282:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_247:bat[:str], X_257:bat[:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_283:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_248:bat[:str], X_258:bat[:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_284:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_249:bat[:str], X_259:bat[:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_285:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_250:bat[:str], X_260:bat[:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_286:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_251:bat[:str], X_261:bat[:str]);
 
 # 10:43:17 >  
 # 10:43:17 >  "Done."
