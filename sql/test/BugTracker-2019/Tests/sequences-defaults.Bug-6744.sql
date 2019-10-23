@@ -14,3 +14,5 @@ create sequence seq0 CYCLE;
 select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
 where name in ('seq', 'seq1', 'seq2', 'seq3', 'seq4', 'seq5', 'seq6', 'seq7', 'seq8', 'seq9', 'seq0');
 rollback;
+
+create sequence seq6 MAXVALUE -3; --error, the default values don't match

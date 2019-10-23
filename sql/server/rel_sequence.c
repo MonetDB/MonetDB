@@ -227,6 +227,8 @@ list_create_seq(
 		if (!is_lng_nil(min) && !is_lng_nil(max) && max < min)
 			return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MAXVALUE value is lesser than MINVALUE ("LLFMT" < "LLFMT")", max, min);
 	}
+	if (is_lng_nil(start) && !is_lng_nil(min) && min) /* if start value not set, set it to the minimum if available */
+		start = min;
 	return rel_create_seq(sql, ss, qname, t, start, inc, min, max, cache, cycle, bedropped);
 }
 
