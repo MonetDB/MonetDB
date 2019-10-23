@@ -2593,7 +2593,7 @@ store_hot_snapshot(str tarfile)
 	lng result = 0;
 	char tmppath[FILENAME_MAX];
 	char dirpath[FILENAME_MAX];
-	int do_unlink = 0;
+	int do_remove = 0;
 	int dir_fd = -1;
 	stream *tar_stream = NULL;
 	buffer *plan_buf = NULL;
@@ -2611,7 +2611,13 @@ store_hot_snapshot(str tarfile)
 		GDKerror("Failed to open %s for writing", tmppath);
 		goto end;
 	}
-	do_unlink = 1;
+	do_remove = 1;
+
+#ifdef HAVE_FSYNC
+	// The following only makes sense on POSIX, where fsync'ing a file
+	// guarantees the bytes of the file to go to disk, but not necessarily
+	// guarantees the existence of the file in a directory to be persistent.
+	// Hence the fsync-the-parent ceremony.
 
 	// Set dirpath to the directory containing the tar file.
 	// Call realpath(2) to make the path absolute so it has at least
@@ -2637,6 +2643,10 @@ store_hot_snapshot(str tarfile)
 		GDKerror("First fsync on %s failed: %s", dirpath, strerror(errno));
 		goto end;
 	}
+#else
+	(void)dirpath;
+#endif
+
 
 	plan_buf = buffer_create(64 * 1024);
 	if (!plan_buf) {
@@ -2673,12 +2683,14 @@ store_hot_snapshot(str tarfile)
 		GDKerror("rename %s to %s failed: %s", tmppath, tarfile, strerror(errno));
 		goto end;
 	}
-	do_unlink = 0;
+	do_remove = 0;
+#ifdef HAVE_FSYNC
+	// More POSIX fsync-the-parent-dir ceremony
 	if (fsync(dir_fd) < 0) {
 		GDKerror("fsync on dir %s failed: %s", dirpath, strerror(errno));
 		goto end;
 	}
-
+#endif
 	// the original idea was to return a sort of sequence number of the
 	// database that identifies exactly which version has been snapshotted
 	// but no such number is available:
@@ -2699,8 +2711,8 @@ end:
 		close_stream(plan_stream);
 	if (plan_buf)
 		buffer_destroy(plan_buf);
-	if (do_unlink) // ERROR no unlink
-		(void) unlink(tmppath);	// Best effort, ignore the result
+	if (do_remove) // ERROR no unlink
+		(void) remove(tmppath);	// Best effort, ignore the result
 	return result;
 }
 
