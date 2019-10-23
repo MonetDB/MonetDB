@@ -2527,7 +2527,7 @@ end:
 static gdk_return
 hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 {
-	gdk_return ret;
+	gdk_return ret = GDK_FAIL;
 	const char *p = plan; // our cursor in the plan
 	time_t timestamp = time(NULL);
 	// Name convention: _path for the absolute path
@@ -2541,7 +2541,6 @@ hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 	int len;
 	if (sscanf(p, "%[^\n]\n%n", abs_src_path, &len) != 1) {
 		GDKerror("internal error: first line of plan is malformed");
-		ret = GDK_FAIL;
 		goto end;
 	}
 	p += len;
@@ -2575,7 +2574,6 @@ hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 				break;
 			default:
 				GDKerror("Unknown command in snapshot plan: %c (%s)", command, src_name);
-				ret = GDK_FAIL;
 				goto end;
 		}
 	}
