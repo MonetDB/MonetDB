@@ -1941,6 +1941,7 @@ sql_update_apr2019_sp2(Client c)
 	if (pos > 7900) { \
 		pos += snprintf(buf + pos, bufsize - pos, ") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from dependencies where depend_id = t1.c2);\n"); \
 		assert(pos < bufsize); \
+		printf("Running database upgrade commands:\n%s\n", buf); \
 		err = SQLstatementIntern(c, &buf, "update", true, false, NULL); \
 		if (err) \
 			goto bailout; \
@@ -2071,6 +2072,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 		pos += snprintf(buf + pos, bufsize - pos, ") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from dependencies where depend_id = t1.c2);\n");
 
 		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%s\n", buf);
 		err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
 	}
 

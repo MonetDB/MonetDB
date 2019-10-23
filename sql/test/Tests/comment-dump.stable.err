@@ -23,36 +23,6 @@ stderr of test 'comment-dump` in directory 'sql/test` itself:
 # cmdline opt 	gdk_dbpath = /Users/joeri/monets/default/var/MonetDB/mTests_sql_test
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_233:bat[:str] := mal.multiplex("sql":str, "password":str, X_208:bat[:str]);
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_234:bat[:str] := mal.multiplex("sql":str, "password":str, X_209:bat[:str]);
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_235:bat[:str] := mal.multiplex("sql":str, "password":str, X_210:bat[:str]);
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_236:bat[:str] := mal.multiplex("sql":str, "password":str, X_211:bat[:str]);
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_237:bat[:str] := mal.multiplex("sql":str, "password":str, X_212:bat[:str]);
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_233:bat[:str] := mal.multiplex("sql":str, "password":str, X_208:bat[:str]);
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_234:bat[:str] := mal.multiplex("sql":str, "password":str, X_209:bat[:str]);
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_235:bat[:str] := mal.multiplex("sql":str, "password":str, X_210:bat[:str]);
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_236:bat[:str] := mal.multiplex("sql":str, "password":str, X_211:bat[:str]);
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_237:bat[:str] := mal.multiplex("sql":str, "password":str, X_212:bat[:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_281:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_246:bat[:str], X_256:bat[:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_282:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_247:bat[:str], X_257:bat[:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_283:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_248:bat[:str], X_258:bat[:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_284:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_249:bat[:str], X_259:bat[:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_285:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_250:bat[:str], X_260:bat[:str]);
 
 # 17:19:14 >  
 # 17:19:14 >  "/usr/local/opt/python/bin/python2.7" "comment-dump.SQL.py" "comment-dump"
