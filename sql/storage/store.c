@@ -2566,6 +2566,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 				if (tar_copy_stream(out, dest_path, timestamp, infile, size) != GDK_SUCCEED)
 					goto end;
 				mnstr_close(infile);
+				infile = NULL;
 				break;
 			case 'w':
 				if (tar_write_data(out, dest_path, timestamp, p, size) != GDK_SUCCEED)
