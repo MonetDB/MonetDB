@@ -1167,11 +1167,8 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 	t = sescape(tname);
 	maxquerylen = 5120 + strlen(t) + strlen(s);
 	query = malloc(maxquerylen);
-	if (query == NULL) {
-		if (sname != NULL)
-			free(sname);
+	if (query == NULL)
 		goto bailout;
-	}
 
 	snprintf(query, maxquerylen,
 		 "%s "
@@ -1485,7 +1482,7 @@ int
 describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toConsole)
 {
 	MapiHdl hdl = NULL;
-	char *query;
+	char *query = NULL;
 	size_t maxquerylen;
 	char *sname = NULL;
 	const char *comments_clause = get_comments_clause(mid);
@@ -1509,11 +1506,8 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 	maxquerylen = 5120 + strlen(tname) + strlen(schema);
 
 	query = malloc(maxquerylen);
-	if (query == NULL) {
-		if (sname != NULL)
-			free(sname);
+	if (query == NULL)
 		goto bailout;
-	}
 
 	snprintf(query, maxquerylen,
 		"%s "
@@ -1959,8 +1953,12 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 	if (flkey) {
 		char* nflkey = flkey ? strdup(flkey) : NULL;
 		if (!nflkey) {
-			if (remark)
+			if (remark) {
 				free(remark);
+				free(sname);
+				free(fname);
+				free(ftkey);
+			}
 			goto bailout;
 		} else
 			flkey = nflkey;
@@ -1976,8 +1974,12 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 	if (!ffunc || query_len < 0 || query_len >= (int) query_size) {
 		free(ffunc);
 		free(flkey);
-		if (remark)
+		if (remark) {
 			free(remark);
+			free(sname);
+			free(fname);
+			free(ftkey);
+		}
 		free(query);
 		goto bailout;
 	}
@@ -1987,8 +1989,12 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 	if (hdl == NULL || mapi_error(mid)) {
 		free(ffunc);
 		free(flkey);
-		if (remark)
+		if (remark) {
 			free(remark);
+			free(sname);
+			free(fname);
+			free(ftkey);
+		}
 		goto bailout;
 	}
 	if (flang != 1 && flang != 2) {
@@ -2006,8 +2012,12 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 				free(ascal);
 				free(ffunc);
 				free(flkey);
-				if (remark)
+				if (remark) {
 					free(remark);
+					free(sname);
+					free(fname);
+					free(ftkey);
+				}
 				goto bailout;
 			}
 			if (strcmp(ainou, "0") == 0) {
@@ -2043,8 +2053,12 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 					free(ascal);
 					free(ffunc);
 					free(flkey);
-					if (remark)
+					if (remark) {
 						free(remark);
+						free(sname);
+						free(fname);
+						free(ftkey);
+					}
 					goto bailout;
 				}
 
@@ -2139,7 +2153,7 @@ int
 dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, const char *fname, const char *id)
 {
 	MapiHdl hdl = NULL;
-	char *query;
+	char *query = NULL;
 	size_t query_size;
 	int query_len;
 	bool hashge;
@@ -2204,8 +2218,10 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	}
 	query_len += snprintf(query + query_len, query_size - query_len, "ORDER BY f.func, f.id");
 	assert(query_len < (int) query_size);
-	if (query_len >= (int) query_size)
+	if (query_len >= (int) query_size) {
+		free(query);
 		goto bailout;
+	}
 
 	hdl = mapi_query(mid, query);
 	free(query);
