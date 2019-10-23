@@ -117,11 +117,15 @@ MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 str																\
 MATHunary##NAME##dbl(dbl *res , const dbl *a)					\
 {																\
+	(void)res;	\
+	(void)a;	\
 	throw(MAL, "mmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
 }																\
 str																\
 MATHunary##NAME##flt(flt *res , const flt *a)					\
 {																\
+	(void)res;	\
+	(void)a;	\
 	throw(MAL, "mmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
 }
 
