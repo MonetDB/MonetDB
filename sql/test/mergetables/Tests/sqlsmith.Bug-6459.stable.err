@@ -22,16 +22,6 @@ stderr of test 'sqlsmith.Bug-6459` in directory 'sql/test/mergetables` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables
 # cmdline opt 	gdk_debug = 536870922
-#WARNING To speedup aggr.exist a bulk operator implementation is needed
-#    X_621:bat[:bit] := mal.multiplex("aggr":str, "exist":str, X_609:bat[:hge]);
-#WARNING To speedup aggr.exist a bulk operator implementation is needed
-#    X_628:bat[:bit] := mal.multiplex("aggr":str, "exist":str, X_609:bat[:hge]);
-#WARNING To speedup aggr.exist a bulk operator implementation is needed
-#    X_996:bat[:bit] := mal.multiplex("aggr":str, "exist":str, X_984:bat[:sht]);
-#WARNING To speedup aggr.exist a bulk operator implementation is needed
-#    X_1003:bat[:bit] := mal.multiplex("aggr":str, "exist":str, X_984:bat[:sht]);
-#WARNING To speedup aggr.exist a bulk operator implementation is needed
-#    X_478:bat[:bit] := mal.multiplex("aggr":str, "exist":str, X_467:bat[:int]);
 
 # 18:45:51 >  
 # 18:45:51 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30179" "--port=30960"
