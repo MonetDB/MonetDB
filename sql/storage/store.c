@@ -2591,8 +2591,8 @@ store_hot_snapshot(str tarfile)
 {
 	int locked = 0;
 	lng result = 0;
-	char tmppath[PATH_MAX];
-	char dirpath[PATH_MAX];
+	char tmppath[FILENAME_MAX];
+	char dirpath[FILENAME_MAX];
 	int do_unlink = 0;
 	int dir_fd = -1;
 	stream *tar_stream = NULL;
@@ -2605,7 +2605,7 @@ store_hot_snapshot(str tarfile)
 		goto end;
 	}
 
-	snprintf(tmppath, PATH_MAX, "%s.tmp", tarfile);
+	snprintf(tmppath, sizeof(tmppath), "%s.tmp", tarfile);
 	tar_stream = open_wstream(tmppath);
 	if (!tar_stream) {
 		GDKerror("Failed to open %s for writing", tmppath);
@@ -2617,7 +2617,7 @@ store_hot_snapshot(str tarfile)
 	// Call realpath(2) to make the path absolute so it has at least
 	// one DIR_SEP in it. Realpath requires the file to exist so
 	// we feed it tmppath rather than tarfile.
-	if (realpath(tmppath, dirpath) == NULL) {
+	if (realpath(tmppath, dirpath) == NULL) { // ERROR no realpath
 		GDKerror("couldn't resolve path %s: %s", tarfile, strerror(errno));
 		goto end;
 	}
@@ -2626,14 +2626,14 @@ store_hot_snapshot(str tarfile)
 	// Open the directory so we can call fsync on it.
 	// We use raw posix calls because this is not available in the streams library
 	// and I'm not quite sure what a generic streams-api should look like.
-	dir_fd = open(dirpath, O_RDONLY);
+	dir_fd = open(dirpath, O_RDONLY); // ERROR no o_rdonly
 	if (dir_fd < 0) {
 		GDKerror("couldn't open directory %s: %s", dirpath, strerror(errno));
 		goto end;
 	}
 
 	// Fsync the directory. Postgres believes this is necessary for durability.
-	if (fsync(dir_fd) < 0) {
+	if (fsync(dir_fd) < 0) { // ERROR no fsync
 		GDKerror("First fsync on %s failed: %s", dirpath, strerror(errno));
 		goto end;
 	}
@@ -2699,7 +2699,7 @@ end:
 		close_stream(plan_stream);
 	if (plan_buf)
 		buffer_destroy(plan_buf);
-	if (do_unlink)
+	if (do_unlink) // ERROR no unlink
 		(void) unlink(tmppath);	// Best effort, ignore the result
 	return result;
 }
