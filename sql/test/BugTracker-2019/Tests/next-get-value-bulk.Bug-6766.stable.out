@@ -107,6 +107,13 @@ stdout of test 'next-get-value-bulk.Bug-6766` in directory 'sql/test/BugTracker-
 % 3,	10,	1 # length
 [ "sys",	"myotherseq",	3	]
 [ "sys",	"myseq",	5	]
+#select s.name, seq.name, "restart"(s.name, seq.name, 1) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name;
+% sys.s,	sys.seq,	sys.L1 # table_name
+% name,	name,	L1 # name
+% varchar,	varchar,	bigint # type
+% 3,	10,	1 # length
+[ "sys",	"myotherseq",	1	]
+[ "sys",	"myseq",	1	]
 #rollback;
 
 # 09:54:58 >  
