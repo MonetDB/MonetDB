@@ -2085,7 +2085,15 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 
 		/* numeric types are fixed length */
 		if (ares->type.type->eclass == EC_NUM) {
-			sql_find_numeric(&t, ares->type.type->localtype, res->digits);
+#ifdef HAVE_HGE
+			if (have_hge && ares->type.type->localtype == TYPE_hge && res->digits == 128)
+				t = *sql_bind_localtype("hge");
+			else
+#endif
+			if (ares->type.type->localtype == TYPE_lng && res->digits == 64)
+				t = *sql_bind_localtype("lng");
+			else
+				sql_find_numeric(&t, ares->type.type->localtype, res->digits);
 		} else {
 			sql_find_subtype(&t, ares->type.type->sqlname, res->digits, res->scale);
 		}
