@@ -50,11 +50,7 @@
 		return msg;														\
 	}
 
-#define SEPARATOR ' '
-
 int TYPE_json;
-
-#define JSONlast(J) ((J)->free-1)
 
 /* Internal constructors. */
 static int jsonhint = 8;
