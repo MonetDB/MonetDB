@@ -1,0 +1,26 @@
+b:= bat.new(:timestamp);
+bat.append(b,"2014-08-14 12:00:00":timestamp);
+bat.append(b,"2014-08-14 12:00:00":timestamp);
+bat.append(b,"2014-08-14 12:01:00":timestamp);
+bat.append(b,"2014-08-14 12:02:00":timestamp);
+bat.append(b,"2014-08-14 12:00:00":timestamp);
+b:= bat.append(b,b);
+base:= algebra.copy(b);
+
+io.print(base);
+mosaic.compress(b,"capped");
+b:= mosaic.decompress(b);
+io.print(b);
+
+d:= bat.new(:date);
+bat.append(d,"2014-08-14":date);
+bat.append(d,"2014-08-14":date);
+bat.append(d,"2014-08-14":date);
+bat.append(d,"2014-08-14":date);
+bat.append(d,"2014-08-15":date);
+d:= bat.append(d,d);
+
+io.print(d);
+mosaic.compress(d,"capped");
+d:= mosaic.decompress(d);
+io.print(d);

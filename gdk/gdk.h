@@ -769,6 +769,7 @@ typedef struct {
 	Imprints *imprints;	/* column imprints index */
 	Heap *orderidx;		/* order oid index */
 	Heap *mosaic;		/* compressed representation */
+	Heap *vmosaic;		/* global dictionary for mosaic dictionary compression. */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
@@ -839,6 +840,7 @@ typedef struct BATiter {
 #define timprints	T.imprints
 #define tprops		T.props
 #define tmosaic		T.mosaic
+#define tvmosaic	T.vmosaic
 
 
 
@@ -1874,8 +1876,8 @@ gdk_export gdk_return BAThash(BAT *b);
 /* support routines for the mosaic approach */
 #define MOSAIC_VERSION 20140808
 gdk_export gdk_return BATmosaic(BAT *b, BUN cap);
-gdk_export void MOSdestroy(BAT *b);
 gdk_export int BATcheckmosaic(BAT *b);
+gdk_export void MOSdestroy(BAT *b);
 gdk_export void MOSsetLock(BAT* b);
 gdk_export void MOSunsetLock(BAT* b);
 
@@ -2610,6 +2612,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 #define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
 // TODO check if this part of the check "(x)->tmosaic->parentid == (x)->batCacheid"  is necessary.
 #define VIEWmosaictparent(x)	((x)->tmosaic == NULL || (x)->tmosaic->parentid == (x)->batCacheid ? 0 : (x)->tmosaic->parentid)
+#define VIEWvmosaictparent(x)	((x)->tvmosaic == NULL || (x)->tvmosaic->parentid == (x)->batCacheid ? 0 : (x)->tvmosaic->parentid)
 
 /*
  * @+ BAT Iterators

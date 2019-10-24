@@ -34,14 +34,14 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 [ "delta ",	3.994	]
 [ "frame prefix ",	2.284	]
 [ "prefix ",	2.284	]
-[ "dictionary ",	0.999	]
+[ "var ",	0.999	]
 [ "runlength ",	0.999	]
-#select technique, factor from mosaic.analysis('sys', 'tmp4', 'i', 'dictionary, runlength') order by factor desc, technique;
+#select technique, factor from mosaic.analysis('sys', 'tmp4', 'i', 'var, runlength') order by factor desc, technique;
 % .L5,	.L5 # table_name
 % technique,	factor # name
 % clob,	double # type
 % 11,	24 # length
-[ "dictionary ",	0.999	]
+[ "var ",	0.999	]
 [ "runlength ",	0.999	]
 #insert into tmp4 select 10000000 from tmp4;
 [ 10000000	]
@@ -63,7 +63,7 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 [ "prefix ",	4.263	]
 [ "delta ",	3.997	]
 [ "runlength ",	1.999	]
-[ "dictionary ",	1.454	]
+[ "var ",	1.454	]
 #select technique, factor from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runlength') order by factor desc, technique;
 % .L5,	.L5 # table_name
 % technique,	factor # name
@@ -73,7 +73,7 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 [ "linear ",	5312.084	]
 [ "runlength ",	1.999	]
 #set optimizer='mosaic_pipe';
-#alter table tmp4 alter column i set storage 'dictionary';
+#alter table tmp4 alter column i set storage 'var';
 #select technique, factor from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runlength') order by factor desc, technique;
 % .L5,	.L5 # table_name
 % technique,	factor # name

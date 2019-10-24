@@ -27,19 +27,20 @@
 #define MOSAIC_THRESHOLD 1
 
 /* The compressor kinds currently hardwired */
-#define MOSAIC_METHODS	8
-#define MOSAIC_RAW		0		// no compression at all
+#define MOSAIC_METHODS	9
+#define MOSAIC_RAW	0		// no compression at all
 #define MOSAIC_RLE      1		// use run-length encoding
-#define MOSAIC_CAPPED     2		// capped global dictionary encoding
-#define MOSAIC_DELTA	3		// use delta encoding
-#define MOSAIC_LINEAR 	4		// use an encoding for a linear sequence
-#define MOSAIC_FRAME	5		// delta dictionary for frame of reference value
-#define MOSAIC_PREFIX	6		// prefix/postfix bitwise compression
-#define MOSAIC_EOL		7		// marker for the last block
+#define MOSAIC_CAPPED   2		// capped global dictionary encoding
+#define MOSAIC_VAR      3		// variable global dictionary encoding
+#define MOSAIC_DELTA	4		// use delta encoding
+#define MOSAIC_LINEAR 	5		// use an encoding for a linear sequence
+#define MOSAIC_FRAME	6		// delta dictionary for frame of reference value
+#define MOSAIC_PREFIX	7		// prefix/postfix bitwise compression
+#define MOSAIC_EOL	8		// marker for the last block
 
 //Compression should have a significant reduction to apply.
 #define COMPRESS_THRESHOLD 50   //percent
-#define MOSAICINDEX 7  //> 2 elements
+#define MOSAICINDEX 8  //> 2 elements
 
 /*
  * The header is reserved for meta information, e.g. oid indices.
@@ -68,11 +69,31 @@ typedef struct MOSAICHEADER{
 	// both dictionary and framebased compression require a global dictionary of frequent values
 	// Their size is purposely topped 
 	bte mask, bits, framebits;	// global compression type properties
+	int dictsize;		// used by capped compression, it is a small table
+	union{
+		bte valbte[256];
+		sht valsht[256];
+		int valint[256];
+		lng vallng[256];
+		oid valoid[256];
+		flt valflt[256];
+		dbl valdbl[256];
+#ifdef HAVE_HGE
+		hge valhge[256];
+#endif
+	}dict;
+	lng dictfreq[256];// keep track on their use
 	// collect compression statistics for the particular task
 	// A value of METHOD_NOT_AVAILABLE in blks or elms indicates that the corresponding method wasn't considered as candidate.
 	flt ratio;	//compresion ratio
 	lng blks[MOSAIC_METHODS]; // number of blks per method.
 	lng elms[MOSAIC_METHODS]; // number of compressed values in all blocks for this method.
+	bte bits_var;
+	ulng pos_var;
+	ulng length_var;
+	bte bits_capped;
+	ulng pos_capped;
+	ulng length_capped;
 } * MosaicHdr;
 
 
@@ -115,6 +136,9 @@ typedef struct MOSAICBLK{
 
 #define getSrc(TPE, TASK) (((TPE*)TASK->src) + TASK->start)
 
+typedef struct _GlobalCappedInfo GlobalCappedInfo;
+typedef struct _GlobalVarInfo GlobalVarInfo;
+
 /* The (de) compression task descriptor */
 typedef struct MOSTASK{
 	int type;		// one of the permissible compression types
@@ -126,6 +150,8 @@ typedef struct MOSTASK{
 
 	MosaicHdr hdr;	// header block with index/synopsis information
 	MosaicBlk blk;	// current block header in scan
+	GlobalVarInfo* var_info;
+	GlobalCappedInfo* capped_info;
 	char 	 *dst;		// write pointer into current compressed blocks
 	oid 	start;		// oid of first element in current blk
 	oid		stop;		// last oid of range to be scanned
@@ -150,6 +176,10 @@ typedef struct _MosaicEstimation {
 	MosaicBlkRec compression_strategy;
 	bool is_applicable;
 	bool must_be_merged_with_previous;
+	size_t nr_var_encoded_elements;
+	size_t nr_var_encoded_blocks;
+	size_t nr_capped_encoded_elements;
+	size_t nr_capped_encoded_blocks;
 } MosaicEstimation;
 
 /* Run through a column to produce a compressed version */

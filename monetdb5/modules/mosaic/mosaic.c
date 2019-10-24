@@ -18,18 +18,20 @@
 #include "mosaic_raw.h"
 #include "mosaic_runlength.h"
 #include "mosaic_capped.h"
+#include "mosaic_var.h"
 #include "mosaic_delta.h"
 #include "mosaic_linear.h"
 #include "mosaic_frame.h"
 #include "mosaic_prefix.h"
 
-char *MOSfiltername[]={"raw","runlength","capped","delta","linear","frame","prefix","EOL"};
+char *MOSfiltername[]={"raw","runlength","capped","var","delta","linear","frame","prefix","EOL"};
 
 bool MOSisTypeAllowed(int compression, BAT* b) {
 	switch (compression) {
 	case MOSAIC_RAW:		return MOStypes_raw(b);
 	case MOSAIC_RLE:		return MOStypes_runlength(b);
 	case MOSAIC_CAPPED:		return MOStypes_capped(b);
+	case MOSAIC_VAR:		return MOStypes_var(b);
 	case MOSAIC_DELTA:		return MOStypes_delta(b);
 	case MOSAIC_LINEAR:		return MOStypes_linear(b);
 	case MOSAIC_FRAME:		return MOStypes_frame(b);
@@ -80,6 +82,8 @@ MOSinit(MOStask task, BAT *b) {
 	base += MosaicHdrSize;
 	task->blk = (MosaicBlk)  base;
 	task->dst = MOScodevector(task);
+	task->capped_info = NULL;
+	task->var_info = NULL;
 }
 
 void MOSblk(MosaicBlk blk)
@@ -125,6 +129,8 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 	}
 	if( task->hdr->blks[MOSAIC_CAPPED])
 		MOSlayout_capped_hdr(task,btech,bcount,binput,boutput,bproperties);
+	if( task->hdr->blks[MOSAIC_VAR])
+		MOSlayout_var_hdr(task,btech,bcount,binput,boutput,bproperties);
 
 	if( BUNappend(btech, "========", false) != GDK_SUCCEED ||
 		BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
@@ -149,6 +155,11 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 			ALGODEBUG mnstr_printf(GDKout, "MOSlayout_capped\n");
 			MOSlayout_capped(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_capped(task);
+			break;
+		case MOSAIC_VAR:
+			ALGODEBUG mnstr_printf(GDKout, "MOSlayout_var\n");
+			MOSlayout_var(task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_var(task);
 			break;
 		case MOSAIC_DELTA:
 			ALGODEBUG mnstr_printf(GDKout, "MOSlayout_delta\n");
@@ -189,6 +200,26 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 
 #define getFactor(ESTIMATION) ((flt) (ESTIMATION).uncompressed_size / (ESTIMATION).compressed_size)
 
+
+static str
+MOSprepareEstimate(MOStask task) {
+
+	str error;
+	if (task->filter[MOSAIC_CAPPED]){
+		if ( (error = MOSprepareEstimate_capped(task))) {
+			return error;
+		}
+	}
+
+	if (task->filter[MOSAIC_VAR]){
+		if ( (error = MOSprepareEstimate_var(task))) {
+			return error;
+		}
+	}
+
+	return MAL_SUCCEED;
+}
+
 /* The compression orchestration is dealt with here.
  * We assume that the estimates for each scheme returns
  * the number of elements it applies to. Moreover, we
@@ -206,6 +237,10 @@ MOSoptimizerCost(MOStask task, MosaicEstimation* current, const MosaicEstimation
 		estimations[i].uncompressed_size = previous->uncompressed_size;
 		estimations[i].compressed_size = previous->compressed_size;
 		estimations[i].compression_strategy = previous->compression_strategy;
+		estimations[i].nr_var_encoded_blocks = previous->nr_var_encoded_blocks;
+		estimations[i].nr_var_encoded_elements = previous->nr_var_encoded_elements;
+		estimations[i].nr_capped_encoded_elements = previous->nr_capped_encoded_elements;
+		estimations[i].nr_capped_encoded_blocks = previous->nr_capped_encoded_blocks;
 		estimations[i].must_be_merged_with_previous = false;
 		estimations[i].is_applicable = false;
 	}
@@ -223,6 +258,11 @@ MOSoptimizerCost(MOStask task, MosaicEstimation* current, const MosaicEstimation
 	}
 	if (task->filter[MOSAIC_CAPPED]){
 		if( (result = MOSestimate_capped(task, &estimations[MOSAIC_CAPPED], previous))) {
+			return result;
+		}
+	}
+	if (task->filter[MOSAIC_VAR]){
+		if( (result = MOSestimate_var(task, &estimations[MOSAIC_VAR], previous))) {
 			return result;
 		}
 	}
@@ -259,6 +299,9 @@ MOSoptimizerCost(MOStask task, MosaicEstimation* current, const MosaicEstimation
 		}
 	}
 
+	if (current->compression_strategy.tag == MOSAIC_CAPPED)	MOSpostEstimate_capped(task);
+	if (current->compression_strategy.tag == MOSAIC_VAR)	MOSpostEstimate_var(task);
+
 	return result;
 }
 
@@ -272,6 +315,10 @@ str MOSestimate(MOStask task, BAT* estimates, size_t* compressed_size) {
 		.is_applicable = false,
 		.uncompressed_size = 0,
 		.compressed_size = 0,
+		.nr_var_encoded_elements = 0,
+		.nr_var_encoded_blocks = 0,
+		.nr_capped_encoded_elements = 0,
+		.nr_capped_encoded_blocks = 0,
 		.compression_strategy = {.tag = MOSAIC_EOL, .cnt = 0},
 		.must_be_merged_with_previous = false
 	};
@@ -303,6 +350,25 @@ str MOSestimate(MOStask task, BAT* estimates, size_t* compressed_size) {
 	}
 
 	(*compressed_size) = current.compressed_size;
+
+	return MAL_SUCCEED;
+}
+
+static str
+MOSfinalizeDictionary(MOStask task) {
+
+	str error;
+
+	if (task->filter[MOSAIC_VAR]) {
+		if ((error = finalizeDictionary_var(task))) {
+			return error;
+		}
+	}
+	if (task->filter[MOSAIC_CAPPED]) {
+		if ((error = finalizeDictionary_capped(task))) {
+			return error;
+		}
+	}
 
 	return MAL_SUCCEED;
 }
@@ -361,13 +427,16 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 		goto finalize;
 	}
 
-	if( task->filter[MOSAIC_CAPPED])
-		MOScreatedictionary(task);
 	// always start with an EOL block
 	MOSsetTag(task->blk,MOSAIC_EOL);
 
+	// Zero pass: estimation preparation phase
+	if ((msg = MOSprepareEstimate(task))) {
+		MOSdestroy(bsrc);
+		goto finalize;
+	}
+
 	BAT* estimates;
-	
 	if (!(estimates = COLnew(0, TYPE_int, BATcount(bsrc), TRANSIENT)) ) {
 		msg = createException(MAL, "mosaic.compress", "Could not allocate temporary estimates BAT.\n");
 		MOSdestroy(bsrc);
@@ -376,7 +445,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 
 	size_t compressed_size_bytes;
 	// First pass: estimation phase
-	if ( ( msg = MOSestimate(task, estimates, &compressed_size_bytes) ) != MAL_SUCCEED) {
+	if ( ( msg = MOSestimate(task, estimates, &compressed_size_bytes) )) {
 		BBPreclaim(estimates);
 		MOSdestroy(bsrc);
 		goto finalize;
@@ -384,6 +453,12 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 
 	// set the exact necessary capacity
 	if (HEAPextend(bsrc->tmosaic, compressed_size_bytes, true) != GDK_SUCCEED) {
+		BBPreclaim(estimates);
+		MOSdestroy(bsrc);
+		goto finalize;
+	}
+
+	if ((msg = MOSfinalizeDictionary(task))) {
 		BBPreclaim(estimates);
 		MOSdestroy(bsrc);
 		goto finalize;
@@ -412,6 +487,13 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 			MOScompress_capped(task);
 			MOSupdateHeader(task);
 			MOSadvance_capped(task);
+			MOSnewBlk(task);
+			break;
+		case MOSAIC_VAR:
+			ALGODEBUG mnstr_printf(GDKout, "MOScompress_var\n");
+			MOScompress_var(task);
+			MOSupdateHeader(task);
+			MOSadvance_var(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_DELTA:
@@ -535,6 +617,7 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 	*res = COLnew(0, bsrc->ttype, bsrc->batCapacity, TRANSIENT);
 	BATsetcount(*res, bsrc->batCount);
 	(*res)->tmosaic = bsrc->tmosaic;
+	(*res)->tvmosaic = bsrc->tvmosaic;
 
  	// TODO: We should also compress the string heap itself somehow.
 	// For now we just share the string heap of the original compressed bat.
@@ -574,6 +657,11 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 			ALGODEBUG mnstr_printf(GDKout, "MOSdecompress_capped\n");
 			MOSdecompress_capped(task);
 			MOSskip_capped(task);
+			break;
+		case MOSAIC_VAR:
+			ALGODEBUG mnstr_printf(GDKout, "MOSdecompress_var\n");
+			MOSdecompress_var(task);
+			MOSskip_var(task);
 			break;
 		case MOSAIC_DELTA:
 			ALGODEBUG mnstr_printf(GDKout, "MOSdecompress_delta\n");
@@ -774,6 +862,10 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ALGODEBUG mnstr_printf(GDKout, "MOSselect_capped\n");
 			MOSselect_capped(task,low,hgh,li,hi,anti);
 			break;
+		case MOSAIC_VAR:
+			ALGODEBUG mnstr_printf(GDKout, "MOSselect_var\n");
+			MOSselect_var(task,low,hgh,li,hi,anti);
+			break;
 		case MOSAIC_FRAME:
 			ALGODEBUG mnstr_printf(GDKout, "MOSselect_frame\n");
 			MOSselect_frame(task,low,hgh,li,hi,anti);
@@ -896,6 +988,10 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ALGODEBUG mnstr_printf(GDKout, "MOSthetaselect_capped\n");
 			MOSthetaselect_capped(task,low,*oper);
 			break;
+		case MOSAIC_VAR:
+			ALGODEBUG mnstr_printf(GDKout, "MOSthetaselect_var\n");
+			MOSthetaselect_var(task,low,*oper);
+			break;
 		case MOSAIC_FRAME:
 			ALGODEBUG mnstr_printf(GDKout, "MOSthetaselect_frame\n");
 			MOSthetaselect_frame(task,low,*oper);
@@ -1002,6 +1098,10 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case MOSAIC_CAPPED:
 			ALGODEBUG mnstr_printf(GDKout, "MOSprojection_capped\n");
 			MOSprojection_capped( task);
+			break;
+		case MOSAIC_VAR:
+			ALGODEBUG mnstr_printf(GDKout, "MOSprojection_var\n");
+			MOSprojection_var( task);
 			break;
 		case MOSAIC_FRAME:
 			ALGODEBUG mnstr_printf(GDKout, "MOSprojection_frame\n");
@@ -1122,6 +1222,10 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ALGODEBUG mnstr_printf(GDKout, "MOSjoin_capped\n");
 			MOSjoin_capped( task);
 			break;
+		case MOSAIC_VAR:
+			ALGODEBUG mnstr_printf(GDKout, "MOSjoin_var\n");
+			MOSjoin_var( task);
+			break;
 		case MOSAIC_FRAME:
 			ALGODEBUG mnstr_printf(GDKout, "MOSjoin_frame\n");
 			MOSjoin_frame( task);
@@ -1159,7 +1263,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     return msg;
 }
 
-// The analyse routine runs through the BAT capped and assess
+// The analyse routine runs through the BAT dictionary and assess
 // all possible compression options.
 
 /*

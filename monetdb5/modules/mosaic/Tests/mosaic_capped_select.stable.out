@@ -1,9 +1,9 @@
-stdout of test 'mosaic_dictionary_thetaselect` in directory 'monetdb5/modules/mosaic` itself:
+stdout of test 'mosaic_capped_select` in directory 'monetdb5/modules/mosaic` itself:
 
 
-# 07:31:37 >  
-# 07:31:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33117" "--set" "mapi_usock=/var/tmp/mtest-11096/.s.monetdb.33117" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_dict_thetasubselect.mal"
-# 07:31:37 >  
+# 23:13:20 >  
+# 23:13:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33063" "--set" "mapi_usock=/var/tmp/mtest-10820/.s.monetdb.33063" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "mosaic_dict_subselect.mal"
+# 23:13:20 >  
 
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
@@ -13,15 +13,15 @@ stdout of test 'mosaic_dictionary_thetaselect` in directory 'monetdb5/modules/mo
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33117/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11096/.s.monetdb.33117
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33063/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10820/.s.monetdb.33063
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-# 11:50:51 >  
-# 11:50:51 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-30332" "--port=39586"
-# 11:50:51 >  
+# 11:50:50 >  
+# 11:50:50 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-30332" "--port=39586"
+# 11:50:50 >  
 
 #--------------------------#
 # h	t  # name
@@ -55,22 +55,14 @@ stdout of test 'mosaic_dictionary_thetaselect` in directory 'monetdb5/modules/mo
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	4@0  ]
-[ 3@0,	5@0  ]
-[ 4@0,	6@0  ]
-[ 5@0,	9@0  ]
+[ 0@0,	2@0  ]
+[ 1@0,	7@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	1@0  ]
-[ 2@0,	4@0  ]
-[ 3@0,	5@0  ]
-[ 4@0,	6@0  ]
-[ 5@0,	9@0  ]
+[ 0@0,	2@0  ]
+[ 1@0,	7@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
@@ -99,18 +91,6 @@ stdout of test 'mosaic_dictionary_thetaselect` in directory 'monetdb5/modules/mo
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-[ 0@0,	3@0  ]
-[ 1@0,	8@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	3@0  ]
-[ 1@0,	8@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
 [ 0@0,	2@0  ]
 [ 1@0,	3@0  ]
 [ 2@0,	7@0  ]
@@ -127,14 +107,30 @@ stdout of test 'mosaic_dictionary_thetaselect` in directory 'monetdb5/modules/mo
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-[ 0@0,	2@0  ]
-[ 1@0,	7@0  ]
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	2@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	4@0  ]
+[ 5@0,	5@0  ]
+[ 6@0,	6@0  ]
+[ 7@0,	7@0  ]
+[ 8@0,	8@0  ]
+[ 9@0,	9@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-[ 0@0,	2@0  ]
-[ 1@0,	7@0  ]
+[ 0@0,	0@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	2@0  ]
+[ 3@0,	3@0  ]
+[ 4@0,	4@0  ]
+[ 5@0,	5@0  ]
+[ 6@0,	6@0  ]
+[ 7@0,	7@0  ]
+[ 8@0,	8@0  ]
+[ 9@0,	9@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
@@ -163,70 +159,44 @@ stdout of test 'mosaic_dictionary_thetaselect` in directory 'monetdb5/modules/mo
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	0@0  ]
+[ 0@0,	3@0  ]
+[ 1@0,	8@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
 [ 0@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-[ 0@0,	3@0  ]
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
-#--------------------------#
-# h	t  # name
-# void	oid  # type
-#--------------------------#
+[ 1@0,	8@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
 [ 0@0,	0@0  ]
-[ 1@0,	3@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	4@0  ]
+[ 3@0,	5@0  ]
+[ 4@0,	6@0  ]
+[ 5@0,	9@0  ]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
 [ 0@0,	0@0  ]
-[ 1@0,	3@0  ]
+[ 1@0,	1@0  ]
+[ 2@0,	4@0  ]
+[ 3@0,	5@0  ]
+[ 4@0,	6@0  ]
+[ 5@0,	9@0  ]
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+#--------------------------#
+# h	t  # name
+# void	oid  # type
+#--------------------------#
 
-# 07:31:37 >  
-# 07:31:37 >  "Done."
-# 07:31:37 >  
+# 23:13:20 >  
+# 23:13:20 >  "Done."
+# 23:13:20 >  
 
