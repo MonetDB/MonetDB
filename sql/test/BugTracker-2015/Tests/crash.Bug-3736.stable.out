@@ -141,11 +141,12 @@ project (
 % id,	open_auction_id,	date,	time,	personref,	increase # name
 % int,	varchar,	varchar,	varchar,	varchar,	double # type
 % 2,	13,	10,	8,	8,	24 # length
+[ 3,	"open_auction0",	"01/07/1998",	"10:23:59",	"person14",	18	]
 [ 11,	"open_auction1",	"05/21/2001",	"08:02:16",	"person5",	12	]
+[ 1,	"open_auction0",	"06/13/2001",	"13:16:15",	"person0",	18	]
 [ 8,	"open_auction1",	"06/22/1999",	"12:43:47",	"person19",	15	]
-[ 29,	"open_auction5",	"07/07/2000",	"08:53:00",	"person15",	6	]
-[ 30,	"open_auction5",	"08/06/2001",	"10:16:15",	"person13",	4.5	]
-[ 31,	"open_auction5",	"08/23/1999",	"08:26:06",	"person17",	30	]
+[ 4,	"open_auction0",	"07/10/2001",	"14:00:39",	"person16",	4.5	]
+[ 2,	"open_auction0",	"09/18/2000",	"11:29:44",	"person23",	12	]
 [ 6,	"open_auction1",	"10/02/2000",	"22:48:00",	"person4",	15	]
 [ 5,	"open_auction1",	"11/12/1998",	"11:23:38",	"person20",	4.5	]
 [ 10,	"open_auction1",	"11/12/2001",	"04:50:27",	"person9",	6	]
