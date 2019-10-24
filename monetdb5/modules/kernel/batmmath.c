@@ -312,10 +312,14 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 #define scienceNotImpl(FUNC)									\
 str CMDscience_bat_flt_##FUNC(bat *ret, const bat *bid)			\
 {																\
+	(void)ret;	\
+	(void)bid;	\
 	throw(MAL, "batmmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
 }																\
 str CMDscience_bat_dbl_##FUNC(bat *ret, const bat *bid)			\
 {																\
+	(void)ret;	\
+	(void)bid;	\
 	throw(MAL, "batmmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
 }
 

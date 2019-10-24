@@ -1004,7 +1004,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 }
 
 gdk_return
-BATprint(BAT *b)
+BATprint(stream *fdout, BAT *b)
 {
 	BAT *argv[2];
 	gdk_return ret = GDK_FAIL;
@@ -1014,7 +1014,7 @@ BATprint(BAT *b)
 	if (argv[0] && argv[1]) {
 		ret = BATroles(argv[0], "h");
 		if (ret == GDK_SUCCEED)
-			ret = BATprintcolumns(GDKstdout, 2, argv);
+			ret = BATprintcolumns(fdout, 2, argv);
 	}
 	if (argv[0])
 		BBPunfix(argv[0]->batCacheid);

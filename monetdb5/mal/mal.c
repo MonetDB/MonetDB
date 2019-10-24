@@ -13,6 +13,7 @@
 char 	monet_cwd[FILENAME_MAX] = { 0 };
 size_t 	monet_memory = 0;
 char 	monet_characteristics[4096];
+stream *maleventstream = 0;
 
 /* The compile time debugging flags are turned into bit masks, akin to GDK */
 lng MALdebug;
@@ -30,10 +31,10 @@ int have_hge;
 #include "mal_parser.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"  /* for initNamespace() */
+#include "mal_profiler.h"
 #include "mal_client.h"
 #include "msabaoth.h"
 #include "mal_dataflow.h"
-#include "mal_profiler.h"
 #include "mal_private.h"
 #include "mal_runtime.h"
 #include "mal_resource.h"
@@ -78,7 +79,7 @@ int mal_init(void){
 #ifndef NDEBUG
 		mdbExit();
 #endif
-		dumpExceptionsToStream(NULL, err);
+		fprintf(stderr, "%s", err);
 		freeException(err);
 		return -1;
 	}
@@ -104,7 +105,7 @@ void mserver_reset(void)
 	WLCreset();
 	MCstopClients(0);
 	setHeartbeat(-1);
-	stopProfiler();
+	stopProfiler(0);
 	AUTHreset();
 	if (!GDKinmemory()) {
 		if ((err = msab_wildRetreat()) != NULL) {

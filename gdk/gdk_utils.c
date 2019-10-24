@@ -402,39 +402,76 @@ MT_init(void)
 # error "don't know how to get the amount of physical memory for your OS"
 #endif
 
-#ifndef WIN32
+#ifdef __linux__
 	/* limit values to whatever cgroups gives us */
-	FILE *f;
-	/* limit of memory usage */
-	f = fopen("/sys/fs/cgroup/memory/memory.limit_in_bytes", "r");
-	if (f != NULL) {
-		uint64_t mem;
-		if (fscanf(f, "%" SCNu64, &mem) == 1
-		    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
-			_MT_npages = (size_t) (mem / _MT_pagesize);
+	FILE *fc;
+	fc = fopen("/proc/self/cgroup", "r");
+	if (fc != NULL) {
+		char buf[1024];
+		while (fgets(buf, (int) sizeof(buf), fc) != NULL) {
+			char *p, *q;
+			p = strchr(buf, ':');
+			if (p == NULL)
+				break;
+			q = p + 1;
+			p = strchr(q, ':');
+			if (p == NULL)
+				break;
+			*p++ = 0;
+			if (strstr(q, "memory") != NULL) {
+				char pth[1024];
+				FILE *f;
+				q = strchr(p, '\n');
+				if (q == NULL)
+					break;
+				*q = 0;
+				q = stpconcat(pth, "/sys/fs/cgroup/memory",
+					      p, NULL);
+				/* sometimes the path in
+				 * /proc/self/cgroup ends in "/" (or
+				 * actually, is "/"); in all other
+				 * cases add one */
+				if (q[-1] != '/')
+					*q++ = '/';
+				/* limit of memory usage */
+				strcpy(q, "memory.limit_in_bytes");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					uint64_t mem;
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+						_MT_npages = (size_t) (mem / _MT_pagesize);
+					}
+					fclose(f);
+				}
+				/* soft limit of memory usage */
+				strcpy(q, "memory.soft_limit_in_bytes");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					uint64_t mem;
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+						_MT_npages = (size_t) (mem / _MT_pagesize);
+					}
+					fclose(f);
+				}
+				/* limit of memory+swap usage
+				 * we use this as maximum virtual memory size */
+				strcpy(q, "memory.memsw.limit_in_bytes");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					uint64_t mem;
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem < (uint64_t) GDK_vm_maxsize) {
+						GDK_vm_maxsize = (size_t) mem;
+					}
+					fclose(f);
+				}
+				break;
+
+			}
 		}
-		fclose(f);
-	}
-	/* soft limit of memory usage */
-	f = fopen("/sys/fs/cgroup/memory/memory.soft_limit_in_bytes", "r");
-	if (f != NULL) {
-		uint64_t mem;
-		if (fscanf(f, "%" SCNu64, &mem) == 1
-		    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
-			_MT_npages = (size_t) (mem / _MT_pagesize);
-		}
-		fclose(f);
-	}
-	/* limit of memory+swap usage
-	 * we use this as maximum virtual memory size */
-	f = fopen("/sys/fs/cgroup/memory/memory.memsw.limit_in_bytes", "r");
-	if (f != NULL) {
-		uint64_t mem;
-		if (fscanf(f, "%" SCNu64, &mem) == 1
-		    && mem < (uint64_t) GDK_vm_maxsize) {
-			GDK_vm_maxsize = (size_t) mem;
-		}
-		fclose(f);
+		fclose(fc);
 	}
 #endif
 
@@ -1027,8 +1064,7 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 		}
 		*dst = '\0';
 	} else {
-		mnstr_printf(GDKout, "%s%.*s%s", prefix,
-			     (int) messagelen, message, suffix);
+		fprintf(stderr, "%s%.*s%s", prefix, (int) messagelen, message, suffix);
 	}
 	fprintf(stderr, "#%s:%s%.*s%s",
 		MT_thread_getname(),
@@ -1053,6 +1089,9 @@ GDKaddbuf(const char *message)
 	char prefix[16];
 
 	if (message == NULL || *message == '\0')	/* empty message, nothing to do */
+		return;
+	/* filter out duplicate messages */
+	if (GDKerrbuf && strstr(GDKerrbuf , message))
 		return;
 	p = message;
 	strcpy(prefix, "!");	/* default prefix */
@@ -1117,8 +1156,10 @@ GDKerror(const char *format, ...)
 		strcpy(message, GDKERROR);
 	}
 	va_start(ap, format);
-	if (vsnprintf(message + len, sizeof(message) - (len + 2), format, ap) < 0)
+	if (vsnprintf(message + len, sizeof(message) - (len + 2), format, ap) < 0){
+		fprintf(stderr,GDKERROR "an error occurred within GDKerror.\n");
 		strcpy(message, GDKERROR "an error occurred within GDKerror.\n");
+	}
 	va_end(ap);
 
 	GDKaddbuf(message);

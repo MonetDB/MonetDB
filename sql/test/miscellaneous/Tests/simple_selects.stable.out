@@ -110,6 +110,39 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % tinyint # type
 % 1 # length
 [ NULL	]
+#select count(*) having -1 > 0;
+% .L2 # table_name
+% L2 # name
+% bigint # type
+% 1 # length
+#select cast(sum(42) as bigint) group by 1;
+% .L4 # table_name
+% L4 # name
+% bigint # type
+% 2 # length
+[ 42	]
+#select cast(sum(42) as bigint) limit 2;
+% .L4 # table_name
+% L4 # name
+% bigint # type
+% 2 # length
+[ 42	]
+#select cast(sum(42) as bigint) having 42>80;
+% .L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+#select 1 having false;
+% .L2 # table_name
+% L2 # name
+% tinyint # type
+% 1 # length
+#select 1 having true;
+% .L2 # table_name
+% L2 # name
+% tinyint # type
+% 1 # length
+[ 1	]
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."

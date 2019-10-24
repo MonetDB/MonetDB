@@ -218,7 +218,17 @@ list_create_seq(
 				assert(0);
 			}
 		}
+		if (!is_lng_nil(start)) {
+			if (!is_lng_nil(min) && start < min)
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: START value is lesser than MINVALUE ("LLFMT" < "LLFMT")", start, min);
+			if (!is_lng_nil(max) && start > max)
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: START value is higher than MAXVALUE ("LLFMT" > "LLFMT")", start, max);
+		}
+		if (!is_lng_nil(min) && !is_lng_nil(max) && max < min)
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MAXVALUE value is lesser than MINVALUE ("LLFMT" < "LLFMT")", max, min);
 	}
+	if (is_lng_nil(start) && !is_lng_nil(min) && min) /* if start value not set, set it to the minimum if available */
+		start = min;
 	return rel_create_seq(sql, ss, qname, t, start, inc, min, max, cache, cycle, bedropped);
 }
 
@@ -367,6 +377,8 @@ list_alter_seq(
 			assert(0);
 		}
 	}
+	if (!is_lng_nil(min) && !is_lng_nil(max) && max < min)
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MAXVALUE value is lesser than MINVALUE ("LLFMT" < "LLFMT")", max, min);
 	return rel_alter_seq(query, ss, qname, t, start, inc, min, max, cache, cycle);
 }
 

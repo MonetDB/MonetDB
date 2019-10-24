@@ -1433,7 +1433,7 @@ gdk_export void OIDXdestroy(BAT *b);
  *
  */
 gdk_export gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
-gdk_export gdk_return BATprint(BAT *b);
+gdk_export gdk_return BATprint(stream *s, BAT *b);
 
 /*
  * @- BAT clustering
@@ -2360,11 +2360,8 @@ gdk_export void *THRdata[THREADDATA];
 #define GDKstdout	((stream*)THRdata[0])
 #define GDKstdin	((stream*)THRdata[1])
 
-#define GDKout		((stream*)THRgetdata(0))
-#define GDKin		((stream*)THRgetdata(1))
 #define GDKerrbuf	((char*)THRgetdata(2))
 #define GDKsetbuf(x)	THRsetdata(2,(void *)(x))
-#define GDKerr		GDKout
 
 #define THRget_errbuf(t)	((char*)t->data[2])
 #define THRset_errbuf(t,b)	(t->data[2] = b)

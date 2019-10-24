@@ -1622,8 +1622,9 @@ sqltypeinit( sql_allocator *sa)
 	if (HAVE_HGE)
 		sql_create_aggr(sa, "prod", "aggr", "prod", HGE, LargestINT);
 #endif
-	/*sql_create_aggr(sa, "prod", "aggr", "prod", LNG, LNG);*/
 
+#if 0
+	/* prod for decimals introduce errors in the output scales */
 	t = decimals; /* BTE */
 	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), LargestDEC);
 	t++; /* SHT */
@@ -1637,6 +1638,7 @@ sqltypeinit( sql_allocator *sa)
 		t++; /* HGE */
 		sql_create_aggr(sa, "prod", "aggr", "prod", *(t), LargestDEC);
 	}
+#endif
 #endif
 
 	for (t = numerical; t < dates; t++) {
@@ -1819,6 +1821,8 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "prod", "sql", "prod", HGE, LargestINT, SCALE_NONE);
 #endif
 
+#if 0
+	/* prod for decimals introduce errors in the output scales */
 	t = decimals; // BTE
 	sql_create_analytic(sa, "prod", "sql", "prod", *(t), LargestDEC, SCALE_NONE);
 	t++; // SHT
@@ -1832,6 +1836,7 @@ sqltypeinit( sql_allocator *sa)
 		t++; // HGE
 		sql_create_analytic(sa, "prod", "sql", "prod", *(t), LargestDEC, SCALE_NONE);
 	}
+#endif
 #endif
 
 	for (t = floats; t < dates; t++) {

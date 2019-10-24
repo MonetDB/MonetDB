@@ -67,6 +67,9 @@
  * The trace operation collects the events in the BATs
  * and creates a secondary result set upon termination
  * of the query. 
+ *
+ * SQLsetTrace extends the MAL plan with code to collect the events.
+ * from the profile cache and returns it as a secondary resultset.
  */
 static str
 SQLsetTrace(Client cntxt, MalBlkPtr mb)
@@ -76,9 +79,9 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	str msg = MAL_SUCCEED;
 	int k;
 
-	if((msg = startTrace("sql_traces")) != MAL_SUCCEED)
+	if((msg = startTrace(cntxt)) != MAL_SUCCEED)
 		return msg;
-	clearTrace();
+	clearTrace(cntxt);
 
 	for(k= mb->stop-1; k>0; k--)
 		if( getInstrPtr(mb,k)->token ==ENDsymbol)
@@ -86,7 +89,6 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	mb->stop=k;
 
 	q= newStmt(mb, profilerRef, stoptraceRef);
-	q= pushStr(mb,q,"sql_traces");
 
 	/* cook a new resultSet instruction */
 	resultset = newInstruction(mb,sqlRef, resultSetRef);
@@ -379,7 +381,7 @@ SQLrun(Client c, backend *be, mvc *m)
 		if( m->emod & mod_trace){
 			if((msg = SQLsetTrace(c,mb)) == MAL_SUCCEED) {
 				msg = runMAL(c, mb, 0, 0);
-				stopTrace(0);
+				stopTrace(c);
 			}
 		} else {
 			msg = runMAL(c, mb, 0, 0);

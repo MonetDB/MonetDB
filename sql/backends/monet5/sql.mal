@@ -60,7 +60,11 @@ comment "Compile the relational statement (rel_smt) and register it as mal funct
 
 command flush_log( ) :void
 address SQLflush_log
-comment "flush the log now";
+comment "start flushing the write ahead log";
+
+command hot_snapshot(tarfile:str) :void
+address SQLhot_snapshot
+comment "Write db snapshot to the given tar(.gz) file";
 
 command resume_log_flushing( ) :void
 address SQLresume_log_flushing
@@ -100,12 +104,60 @@ pattern batsql.next_value( sname:bat[:str], sequence:str ) :bat[:lng]
 address mvc_bat_next_value
 comment "return the next value of the sequence";
 
+pattern batsql.next_value( sname:str, sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_next_value
+comment "return the next value of sequences";
+
+pattern batsql.next_value( sname:bat[:str], sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_next_value
+comment "return the next value of sequences";
+
 pattern get_value( sname:str, sequence:str ):lng
 address mvc_get_value
 comment "return the current value of the sequence";
 
+pattern batsql.get_value( sname:bat[:str], sequence:str ) :bat[:lng]
+address mvc_bat_get_value
+comment "return the current value of the sequence";
+
+pattern batsql.get_value( sname:str, sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_get_value
+comment "return the current value of sequences";
+
+pattern batsql.get_value( sname:bat[:str], sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_get_value
+comment "return the current value of sequences";
+
 unsafe pattern restart( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:bat[:str], sequence:str, start:lng ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:str, sequence:bat[:str], start:lng ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:str, sequence:str, start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:bat[:str], sequence:bat[:str], start:lng ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:bat[:str], sequence:str, start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:str, sequence:bat[:str], start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:bat[:str], sequence:bat[:str], start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
 comment "restart the sequence with value start";
 
 pattern deltas( schema:str )(ids:bat[:int],cleared:bat[:bit],readonly:bat[:lng],inserted:bat[:lng],updated:bat[:lng],deleted:bat[:lng],tr_level:bat[:int])
@@ -447,18 +499,7 @@ address dump_opt_stats
 comment "dump the optimizer rewrite statistics";
 
 pattern dump_trace()(
-	event:bat[:int],
-	clk:bat[:str],
-	pc:bat[:str],
-	thread:bat[:int],
 	ticks:bat[:lng],
-	rssMB:bat[:lng],
-	vmMB:bat[:lng],
-	reads:bat[:lng],
-	writes:bat[:lng],
-	minflt:bat[:lng],
-	majflt:bat[:lng],
-	nvcsw:bat[:lng],
 	stmt:bat[:str])
 address dump_trace
 comment "dump the trace statistics";

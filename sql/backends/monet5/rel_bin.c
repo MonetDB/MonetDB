@@ -5001,7 +5001,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 	int found;
 	struct tablelist* new_node, *node_check;
 
-	if(*error)
+	if (*error)
 		return;
 
 	if (t->keys.set) { /* Check for foreign key references */
@@ -5028,14 +5028,14 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 								*error = 1;
 								return;
 							}
-						} else if(k->t != t) {
+						} else if (k->t != t) {
 							found = 0;
 							for (node_check = list; node_check; node_check = node_check->next) {
-								if(node_check->table == k->t)
+								if (node_check->table == k->t)
 									found = 1;
 							}
-							if(!found) {
-								if((new_node = MNEW(struct tablelist)) == NULL) {
+							if (!found) {
+								if ((new_node = MNEW(struct tablelist)) == NULL) {
 									sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 									*error = 1;
 									return;
@@ -5071,7 +5071,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	int error = 0;
 	struct tablelist* new_list = MNEW(struct tablelist), *list_node, *aux;
 
-	if(!new_list) {
+	if (!new_list) {
 		sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		error = 1;
 		goto finalize;
@@ -5080,19 +5080,19 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	new_list->table = t;
 	new_list->next = NULL;
 	check_for_foreign_key_references(sql, new_list, new_list, t, cascade, &error);
-	if(error)
+	if (error)
 		goto finalize;
 
 	for (list_node = new_list; list_node; list_node = list_node->next) {
 		next = list_node->table;
 		sche = next->s;
 
-		if(restart_sequences) { /* restart the sequences if it's the case */
+		if (restart_sequences) { /* restart the sequences if it's the case */
 			for (n = next->columns.set->h; n; n = n->next) {
 				col = n->data;
 				if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
 					seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
-					if(!seq_name) {
+					if (!seq_name) {
 						sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						error = 1;
 						goto finalize;
@@ -5100,7 +5100,11 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 					seq_name[strlen(seq_name)-1] = '\0';
 					seq = find_sql_sequence(sche, seq_name);
 					if (seq) {
-						sql_trans_sequence_restart(tr, seq, seq->start);
+						if (!sql_trans_sequence_restart(tr, seq, seq->start)) {
+							sql_error(sql, 02, SQLSTATE(HY005) "Could not restart sequence %s.%s", sche->base.name, seq_name);
+							error = 1;
+							goto finalize;
+						}
 						seq->base.wtime = sche->base.wtime = tr->wtime = tr->wstime;
 						tr->schema_updates++;
 					}
@@ -5112,8 +5116,8 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		v = stmt_tid(be, next, 0);
 
 		/* before */
-		if(be->cur_append && !be->first_statement_generated) {
-			for(sql_table *up = t->p ; up ; up = up->p) {
+		if (be->cur_append && !be->first_statement_generated) {
+			for (sql_table *up = t->p ; up ; up = up->p) {
 				if (!sql_delete_triggers(be, up, v, 0, 3, 4)) {
 					sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", up->base.name);
 					error = 1;
@@ -5135,12 +5139,12 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 
 		other = stmt_table_clear(be, next);
 		list_append(l, other);
-		if(next == t)
+		if (next == t)
 			ret = other;
 
 		/* after */
-		if(be->cur_append && !be->first_statement_generated) {
-			for(sql_table *up = t->p ; up ; up = up->p) {
+		if (be->cur_append && !be->first_statement_generated) {
+			for (sql_table *up = t->p ; up ; up = up->p) {
 				if (!sql_delete_triggers(be, up, v, 1, 3, 4)) {
 					sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", up->base.name);
 					error = 1;
@@ -5154,7 +5158,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			goto finalize;
 		}
 
-		if(be->cur_append) //building the total number of rows affected across all tables
+		if (be->cur_append) //building the total number of rows affected across all tables
 			other->nr = add_to_merge_partitions_accumulator(be, other->nr);
 	}
 
@@ -5165,7 +5169,7 @@ finalize:
 		list_node = aux;
 	}
 
-	if(error)
+	if (error)
 		return NULL;
 	return ret;
 }
@@ -5719,242 +5723,4 @@ output_rel_bin(backend *be, sql_rel *rel )
 		s = stmt_affected_rows(be, s);
 	}
 	return s;
-}
-
-static int exp_deps(mvc *sql, sql_exp *e, list *refs, list *l);
-
-static int
-exps_deps(mvc *sql, list *exps, list *refs, list *l)
-{
-	node *n;
-
-	for(n = exps->h; n; n = n->next) {
-		if (exp_deps(sql, n->data, refs, l) != 0)
-			return -1;
-	}
-	return 0;
-}
-
-static int
-id_cmp(int *id1, int *id2)
-{
-	if (*id1 == *id2)
-		return 0;
-	return -1;
-}
-
-static list *
-cond_append(list *l, int *id)
-{
-	if (*id >= 2000 && !list_find(l, id, (fcmp) &id_cmp))
-		 list_append(l, id);
-	return l;
-}
-
-static int rel_deps(mvc *sql, sql_rel *r, list *refs, list *l);
-
-static int
-exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
-{
-	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
-		return -1;
-	}
-
-	switch(e->type) {
-	case e_psm:
-		if (e->flag & PSM_SET || e->flag & PSM_RETURN) {
-			return exp_deps(sql, e->l, refs, l);
-		} else if (e->flag & PSM_VAR) {
-			return 0;
-		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
-			if (exp_deps(sql, e->l, refs, l) != 0 ||
-		            exps_deps(sql, e->r, refs, l) != 0)
-				return -1;
-			if (e->flag == PSM_IF && e->f)
-		            return exps_deps(sql, e->r, refs, l);
-		} else if (e->flag & PSM_REL) {
-			sql_rel *rel = e->l;
-			return rel_deps(sql, rel, refs, l);
-		} else if (e->flag & PSM_EXCEPTION) {
-			return exps_deps(sql, e->l, refs, l);
-		}
-	case e_atom: 
-	case e_column: 
-		break;
-	case e_convert: 
-		return exp_deps(sql, e->l, refs, l);
-	case e_func: {
-			sql_subfunc *f = e->f;
-
-			if (e->l && exps_deps(sql, e->l, refs, l) != 0)
-				return -1;
-			cond_append(l, &f->func->base.id);
-			if (e->l && list_length(e->l) == 2 && strcmp(f->func->base.name, "next_value_for") == 0) {
-				/* add dependency on seq nr */
-				list *nl = e->l;
-				sql_exp *schname = nl->h->data;
-				sql_exp *seqname = nl->t->data;
-
-				char *sch_name = ((atom*)schname->l)->data.val.sval;
-				char *seq_name = ((atom*)seqname->l)->data.val.sval;
-				sql_schema *sche = mvc_bind_schema(sql, sch_name);
-				sql_sequence *seq = find_sql_sequence(sche, seq_name);
-
-				cond_append(l, &seq->base.id);
-			}
-		} break;
-	case e_aggr: {
-			sql_subaggr *a = e->f;
-
-			if (e->l &&exps_deps(sql, e->l, refs, l) != 0)
-				return -1;
-			cond_append(l, &a->aggr->base.id);
-		} break;
-	case e_cmp: {
-			if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
-				if (get_cmp(e) == cmp_filter) {
-					sql_subfunc *f = e->f;
-					cond_append(l, &f->func->base.id);
-				}
-				if (exps_deps(sql, e->l, refs, l) != 0 ||
-			    	    exps_deps(sql, e->r, refs, l) != 0)
-					return -1;
-			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-				if (exp_deps(sql, e->l, refs, l) != 0 ||
-			            exps_deps(sql, e->r, refs, l) != 0)
-					return -1;
-			} else {
-				if (exp_deps(sql, e->l, refs, l) != 0 ||
-				    exp_deps(sql, e->r, refs, l) != 0)
-					return -1;
-				if (e->f)
-					return exp_deps(sql, e->f, refs, l);
-			}
-		}	break;
-	}
-	return 0;
-}
-
-static int
-rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
-{
-	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
-		return -1;
-	}
-
-	if (!r)
-		return 0;
-
-	if (rel_is_ref(r) && refs_find_rel(refs, r)) /* allready handled */
-		return 0;
-	switch (r->op) {
-	case op_basetable: {
-		sql_table *t = r->l;
-		sql_column *c = r->r;
-
-		if (!t && c)
-			t = c->t;
-		cond_append(l, &t->base.id);
-		if (isTable(t)) {
-			/* find all used columns */
-			node *en;
-			for( en = r->exps->h; en; en = en->next ) {
-				sql_exp *exp = en->data;
-				const char *oname = exp->r;
-
-				if (is_func(exp->type)) {
-					list *exps = exp->l;
-					sql_exp *cexp = exps->h->data;
-					const char *cname = cexp->r;
-
-		       			c = find_sql_column(t, cname);
-					cond_append(l, &c->base.id);
-				} else if (oname[0] == '%' && strcmp(oname, TID) == 0) {
-					continue;
-				} else if (oname[0] == '%') { 
-					sql_idx *i = find_sql_idx(t, oname+1);
-
-					cond_append(l, &i->base.id);
-				} else {
-					sql_column *c = find_sql_column(t, oname);
-					cond_append(l, &c->base.id);
-				}
-			}
-		}
-	}	break;
-	case op_table:
-		/* */ 
-		break;
-	case op_join: 
-	case op_left: 
-	case op_right: 
-	case op_full: 
-	case op_semi:
-	case op_anti:
-	case op_union: 
-	case op_except: 
-	case op_inter: 
-		if (rel_deps(sql, r->l, refs, l) != 0 ||
-		    rel_deps(sql, r->r, refs, l) != 0)
-			return -1;
-		break;
-	case op_project:
-	case op_select: 
-	case op_groupby: 
-	case op_topn: 
-	case op_sample:
-		if (rel_deps(sql, r->l, refs, l) != 0)
-			return -1;
-		break;
-	case op_insert: 
-	case op_update: 
-	case op_delete:
-	case op_truncate:
-		if (rel_deps(sql, r->l, refs, l) != 0 ||
-		    rel_deps(sql, r->r, refs, l) != 0)
-			return -1;
-		break;
-	case op_ddl:
-		if (r->flag == ddl_output) {
-			if (r->l)
-				return rel_deps(sql, r->l, refs, l);
-		} else if (r->flag == ddl_list || r->flag == ddl_exception) {
-			if (r->l)
-				return rel_deps(sql, r->l, refs, l);
-			if (r->r)
-				return rel_deps(sql, r->r, refs, l);
-		} else if (r->flag == ddl_psm) {
-			break;
-		} else if (r->flag == ddl_create_seq || r->flag == ddl_alter_seq) {
-			if (r->l)
-				return rel_deps(sql, r->l, refs, l);
-		}
-		break;
-	}
-	if (r->exps) {
-		if (exps_deps(sql, r->exps, refs, l) != 0)
-			return -1;
-	}
-	if (is_groupby(r->op) && r->r) {
-		if (exps_deps(sql, r->r, refs, l) != 0)
-			return -1;
-	}
-	if (rel_is_ref(r)) {
-		list_append(refs, r);
-		list_append(refs, l);
-	}
-	return 0;
-}
-
-list *
-rel_dependencies(mvc *sql, sql_rel *r)
-{
-	list *refs = sa_list(sql->sa);
-	list *l = sa_list(sql->sa);
-
-	if (rel_deps(sql, r, refs, l) != 0)
-		return NULL;
-	return l;
 }

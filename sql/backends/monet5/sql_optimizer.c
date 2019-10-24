@@ -108,7 +108,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				space += size;	// accumulate once per table
 				//lasttable = tname;	 invalidate this attempt
 				if( !prepare && size == 0  && ! t->system){
-					//mnstr_printf(GDKout,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,cname,prepare,size);
+					//fprintf(stderr,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,cname,prepare,size);
 					setFunctionId(p, emptybindRef);
 				}
 			}
@@ -135,7 +135,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 
 						if( !prepare && size == 0 && ! i->t->system){
 							setFunctionId(p, emptybindidxRef);
-							//mnstr_printf(GDKout,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,idxname,prepare,size);
+							//fprintf(stderr,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,idxname,prepare,size);
 						}
 						BBPunfix(b->batCacheid);
 					}
@@ -178,7 +178,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 	if(space && (pipe == NULL || strcmp(pipe,"default_pipe")== 0)){
 		if( space > (lng)(0.8 * MT_npages() * MT_pagesize())  && GDKnr_threads > 1){
 			pipe = "volcano_pipe";
-			//mnstr_printf(GDKout, "#use volcano optimizer pipeline? %zu\n", space);
+			//fprintf(stderr, "#use volcano optimizer pipeline? %zu\n", space);
 		}else
 			pipe = "default_pipe";
 	} else

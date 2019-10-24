@@ -9,9 +9,7 @@
 /* Author(s) M.L. Kersten
  * The MAL Runtime Profiler and system queue
  * This little helper module is used to perform instruction based profiling.
- * We should actually keep a little list of recently executed queries to inspection.
- * [TODO] It should be moved into the Client record for speed (>500 client connections)
- * Long term archival is left to the SQL history management structure
+ * The QRYqueue is only update at the start/finish of a query. 
  */
 
 #include "monetdb_config.h"
@@ -26,7 +24,6 @@
 #include "mal_private.h"
 
 
-// Keep a queue of running queries
 QueryQueue QRYqueue;
 lng qtop;
 static lng qsize;
@@ -198,7 +195,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 
 	/* emit the instruction upon start as well */
 	if(malProfileMode > 0 )
-		profilerEvent(mb, stk, pci, TRUE, cntxt->username);
+		profilerEvent(cntxt, mb, stk, pci, TRUE);
 }
 
 void
@@ -222,7 +219,9 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	pci->calls++;
 	
 	if(malProfileMode > 0 )
-		profilerEvent(mb, stk, pci, FALSE, cntxt->username);
+		profilerEvent(cntxt, mb, stk, pci, FALSE);
+	if( cntxt->sqlprofiler )
+		sqlProfilerEvent(cntxt, mb, stk, pci);
 	if( malProfileMode < 0){
 		/* delay profiling until you encounter start of MAL function */
 		if( getInstrPtr(mb,0) == pci)

@@ -115,18 +115,6 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 	 0, 0,
 	 "MALengine", (MALfcn) &MALengine,
 	 "MALcallback", (MALfcn) &MALcallback },
-	{"profiler","profiler",			/* name */
-	 0, 0,			/* initClient */
-	 0, 0,			/* exitClient */
-	 "PROFinitClient", (MALfcn) &PROFinitClient,			/* initClient */
-	 "PROFexitClient", (MALfcn) &PROFexitClient,			/* exitClient */
-	 "MALreader", (MALfcn) &MALreader,		/* reader */
-	 "MALparser", (MALfcn) &MALparser,		/* parser */
-	 0, 0,		/* optimizer */
-	 0, 0,		/* scheduler */
-	 0, 0,		/* callback */
-	 0, 0		/* engine */
-	 },
 	{0, 0,		/* name */
 	 0, 0,		/* init */
 	 0, 0,		/* exit */

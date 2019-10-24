@@ -28,6 +28,14 @@ command modules():bat[:str]
 address CMDmodules
 comment "List available modules";
 
+pattern getVMsize():lng
+address MDBgetVMsize
+comment "Retrieve the max VM size";
+
+pattern setVMsize(l:lng):lng
+address MDBsetVMsize
+comment "Manipulate the VM max size in MBs";
+
 pattern setTrace(b:bit):void
 address MDBsetTrace
 comment "Turn on/off tracing of current routine";

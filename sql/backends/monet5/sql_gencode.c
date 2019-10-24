@@ -630,6 +630,19 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 		if (q == NULL) {
 			return -1;
 		}
+
+/* Crashes
+		q = newStmt(mb, querylogRef, contextRef);
+		if (q == NULL) {
+			return -1;
+		}
+		setVarType(mb, getArg(q, 0), TYPE_void);
+		setVarUDFtype(mb, getArg(q, 0));
+		q = pushStr(mb, q, GDKgetenv("monet_release"));
+		q = pushStr(mb, q, GDKgetenv("monet_version"));
+		q = pushStr(mb, q, GDKgetenv("revision"));
+		q = pushStr(mb, q, GDKgetenv("merovingian_uri"));
+*/
 	}
 
 	/* announce the transaction mode */
@@ -1042,7 +1055,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	r = rel_parse(m, f->s, f->query, m_instantiate);
 	if (r) {
 		r = rel_unnest(m, r);
-		r = rel_optimizer(m, r, 0);
+		r = rel_optimizer(m, r, 1);
 		r = rel_distribute(m, r);
 		r = rel_partition(m, r);
 	}

@@ -56,3 +56,5 @@ create view s0_mix_source_string_result_result as with q0_x0 as (select a1, prob
 -- The INSERT INTO fails
 insert into resultbuffer_int_str (q, i1,s1, prob) select cast(0 as int) as q,a1, a2, prob from s0_mix_source_string_result_result as r;
 
+ROLLBACK;
+

@@ -79,6 +79,7 @@ str columnRef;
 str comment_onRef;
 str commitRef;
 str connectRef;
+str contextRef;
 str copy_fromRef;
 str copyRef;
 str count_no_nilRef;
@@ -381,6 +382,7 @@ void optimizerInit(void)
 	comment_onRef = putName("comment_on");
 	commitRef = putName("commit");
 	connectRef = putName("connect");
+	contextRef = putName("context");
 	copy_fromRef = putName("copy_from");
 	copyRef = putName("copy");
 	count_no_nilRef = putName("count_no_nil");

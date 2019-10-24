@@ -259,8 +259,6 @@ find_expression_type(sql_exp *e, sql_subtype *tpe)
 	return NULL;
 }
 
-extern list *rel_dependencies(mvc *sql, sql_rel *r);
-
 str
 bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int instantiate)
 {

@@ -1666,12 +1666,22 @@ AS_VAR_IF([enable_rintegration], [no], [], [
 			 enable_rintegration=no
 			 why_not_rintegration="(libR library not found)"])],
 		[AS_IF([RHOME=`$RCMD RHOME` && libr_CFLAGS=`$RCMD CMD config --cppflags` && libr_LIBS=`$RCMD CMD config --ldflags | sed -e 's|-fopenmp |-fopenmp=libgomp |'`],
-			[have_libr=yes
-			 AC_DEFINE([HAVE_LIBR], 1, [Define if you have libR installed])
-			 AC_SUBST([libr_CFLAGS], [$libr_CFLAGS])
-			 AC_SUBST([libr_LIBS], [$libr_LIBS])
-			 AC_SUBST([RHOME], [$RHOME])
-			 AC_DEFINE_UNQUOTED([RHOME], ["$RHOME"], [The home of R])])])])
+			[save_CPPFLAGS="$CPPFLAGS"
+			 CPPFLAGS="$CPPFLAGS $libr_CFLAGS"
+			 AC_CHECK_HEADER([Rembedded.h],
+				[have_libr=yes
+				 AC_DEFINE([HAVE_LIBR], 1, [Define if you have libR installed])
+				 AC_SUBST([libr_CFLAGS], [$libr_CFLAGS])
+				 AC_SUBST([libr_LIBS], [$libr_LIBS])
+				 AC_SUBST([RHOME], [$RHOME])
+				 AC_DEFINE_UNQUOTED([RHOME], ["$RHOME"], [The home of R])],
+				[AS_VAR_IF([enable_rintegration], [yes],
+					[AC_MSG_ERROR([libR library required for R integration support])],
+					[have_libr=no
+					 why_not_libr="(Rembedded.h not found)"
+					 enable_rintegration=no
+					 why_not_rintegration="(Rembedded.h not found)"])])
+			 CPPFLAGS="$save_CPPFLAGS"])])])
 AM_CONDITIONAL([HAVE_LIBR], [test x"$have_libr" != xno])
 
 # Python API (Python UDFs)

@@ -85,7 +85,7 @@ stdout of test 'sequences-defaults.Bug-6744` in directory 'sql/test/BugTracker-2
 [ "seq1",	1,	0,	0,	1,	1,	false	]
 [ "seq2",	2,	0,	0,	1,	1,	false	]
 [ "seq3",	1,	0,	0,	3,	1,	false	]
-[ "seq4",	1,	4,	0,	1,	1,	false	]
+[ "seq4",	4,	4,	0,	1,	1,	false	]
 [ "seq5",	1,	0,	0,	1,	1,	false	]
 [ "seq6",	1,	0,	6,	1,	1,	false	]
 [ "seq7",	1,	0,	0,	1,	1,	false	]

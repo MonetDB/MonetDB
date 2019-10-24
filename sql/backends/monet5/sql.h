@@ -108,8 +108,10 @@ sql5_export str mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 sql5_export str mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_bat_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_getVersion(lng *r, const int *clientid);
 sql5_export str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str zero_or_one_error(ptr ret, const bat *bid, const bit *err );
 sql5_export str zero_or_one_error_bat(ptr ret, const bat *bid, const bat *err );
 sql5_export str zero_or_one(ptr ret, const bat *bid);
@@ -323,6 +325,7 @@ sql5_export str BATSTRstrings(bat *res, const bat *src);
 sql5_export str SQLflush_log(void *ret);
 sql5_export str SQLsuspend_log_flushing(void *ret);
 sql5_export str SQLresume_log_flushing(void *ret);
+sql5_export str SQLhot_snapshot(void *ret, const str *tarfile);
 
 sql5_export str SQLexist(bit *res, bat *id);
 sql5_export str SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

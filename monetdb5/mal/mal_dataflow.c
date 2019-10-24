@@ -415,7 +415,7 @@ DFLOWworker(void *T)
 			void *null = NULL;
 			/* only collect one error (from one thread, needed for stable testing) */
 			if (!ATOMIC_PTR_CAS(&flow->error, &null, error))
-				GDKfree(error);
+				freeException(error);
 			/* after an error we skip the rest of the block */
 			q_enqueue(flow->done, fe);
 			continue;
@@ -460,14 +460,6 @@ DFLOWworker(void *T)
 		MT_lock_unset(&flow->flowlock);
 
 		q_enqueue(flow->done, fe);
-		if ( fnxt == 0 && malProfileMode) {
-			int last;
-			MT_lock_set(&todo->l);
-			last = todo->last;
-			MT_lock_unset(&todo->l);
-			if (last == 0)
-				profilerHeartbeatEvent("wait");
-		}
 	}
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);
@@ -701,7 +693,7 @@ static void showFlowEvent(DataFlow flow, int pc)
 	for (i = 0; i < flow->stop - flow->start; i++)
 		if (fe[i].state != DFLOWwrapup && fe[i].pc >= 0) {
 			fprintf(stderr, "#missed pc %d status %d %d  blocks %d", fe[i].state, i, fe[i].pc, fe[i].blocks);
-			printInstruction(GDKstdout, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), LIST_MAL_MAPI);
+			fprintInstruction(stderr, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), LIST_MAL_MAPI);
 		}
 }
 */

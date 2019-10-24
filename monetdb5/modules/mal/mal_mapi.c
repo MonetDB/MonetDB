@@ -149,6 +149,7 @@ doChallenge(void *data)
 	memcpy(challenge, ((struct challengedata *) data)->challenge, sizeof(challenge));
 	GDKfree(data);
 	if (buf == NULL) {
+		fprintf(stderr, "#doChallenge" MAL_MALLOC_FAIL);
 		close_stream(fdin);
 		close_stream(fdout);
 		return;
@@ -459,8 +460,7 @@ SERVERlistenThread(SOCKET *Sock)
 				default:
 					/* some unknown state */
 					closesocket(msgsock);
-					fprintf(stderr, "!mal_mapi.listen: "
-							"unknown command type in first byte\n");
+					fprintf(stderr, "!mal_mapi.listen: unknown command type in first byte\n");
 					continue;
 			}
 #endif
@@ -474,7 +474,7 @@ SERVERlistenThread(SOCKET *Sock)
 		data = GDKmalloc(sizeof(*data));
 		if( data == NULL){
 			closesocket(msgsock);
-			showException(GDKstdout, MAL, "initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			fprintf(stderr, "#initClient " SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			continue;
 		}
 		data->in = socket_rstream(msgsock, "Server read");
@@ -485,8 +485,7 @@ SERVERlistenThread(SOCKET *Sock)
 			mnstr_destroy(data->out);
 			GDKfree(data);
 			closesocket(msgsock);
-			showException(GDKstdout, MAL, "initClient",
-						  "cannot allocate stream");
+			fprintf(stderr, "!initClient cannot allocate stream");
 			continue;
 		}
 		s = block_stream(data->in);
@@ -511,8 +510,7 @@ SERVERlistenThread(SOCKET *Sock)
 			mnstr_destroy(data->out);
 			GDKfree(data);
 			closesocket(msgsock);
-			showException(GDKstdout, MAL, "initClient",
-						  "cannot fork new client thread");
+			fprintf(stderr, "!initClient:cannot fork new client thread");
 			continue;
 		}
 	} while (!ATOMIC_GET(&serverexiting) && !GDKexiting());
