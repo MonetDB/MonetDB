@@ -1939,7 +1939,8 @@ sql_update_apr2019_sp2(Client c)
 
 #define FLUSH_INSERTS_IF_BUFFERFILLED /* Each new value should add about 20 bytes to the buffer, "flush" when is 200 bytes from being full */ \
 	if (pos > 7900) { \
-		pos += snprintf(buf + pos, bufsize - pos, ") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from dependencies where depend_id = t1.c2);\n"); \
+		pos += snprintf(buf + pos, bufsize - pos, \
+						") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from sys.dependencies where depend_id = t1.c2);\n"); \
 		assert(pos < bufsize); \
 		printf("Running database upgrade commands:\n%s\n", buf); \
 		err = SQLstatementIntern(c, &buf, "update", true, false, NULL); \
@@ -1997,7 +1998,8 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 						for (node *o = id_l->h ; o ; o = o->next) {
 							sqlid next = *(sqlid*) o->data;
 							if (next != f->base.id) {
-								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next, f->base.id, (int)(!IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY));
+								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next,
+												f->base.id, (int)(!IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY));
 								first = false;
 								FLUSH_INSERTS_IF_BUFFERFILLED
 							}
@@ -2029,7 +2031,8 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 						for (node *o = id_l->h ; o ; o = o->next) {
 							sqlid next = *(sqlid*) o->data;
 							if (next != t->base.id) {
-								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next, t->base.id, (int) VIEW_DEPENDENCY);
+								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",",
+												next, t->base.id, (int) VIEW_DEPENDENCY);
 								first = false;
 								FLUSH_INSERTS_IF_BUFFERFILLED
 							}
@@ -2058,7 +2061,8 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 							for (node *o = id_l->h ; o ; o = o->next) {
 								sqlid next = *(sqlid*) o->data;
 								if (next != tr->base.id) {
-									pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next, tr->base.id, (int) TRIGGER_DEPENDENCY);
+									pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",",
+													next, tr->base.id, (int) TRIGGER_DEPENDENCY);
 									first = false;
 									FLUSH_INSERTS_IF_BUFFERFILLED
 								}
@@ -2069,7 +2073,8 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 	}
 
 	if (ppos != pos) { /* found updatable functions */
-		pos += snprintf(buf + pos, bufsize - pos, ") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from dependencies where depend_id = t1.c2);\n");
+		pos += snprintf(buf + pos, bufsize - pos,
+						") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from sys.dependencies where depend_id = t1.c2);\n");
 
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
