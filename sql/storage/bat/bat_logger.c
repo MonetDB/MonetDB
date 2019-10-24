@@ -898,17 +898,17 @@ static gdk_return
 snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 {
 	gdk_return ret = GDK_FAIL;
-	const uint64_t bufsize = 64 * 1024;
+	const size_t bufsize = 64 * 1024;
 	struct stat statbuf;
 	char *buf = NULL;
 	stream *s = NULL;
-	uint64_t to_copy;
+	size_t to_copy;
 
 	if (stat(path, &statbuf) < 0) {
 		GDKerror("stat failed on %s: %s", path, strerror(errno));
 		goto end;
 	}
-	to_copy = (uint64_t)statbuf.st_size;
+	to_copy = (size_t) statbuf.st_size;
 
 	s = open_rstream(path);
 	if (!s) {
@@ -922,18 +922,24 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 		goto end;
 	}
 
-	mnstr_printf(plan, "w %" PRIu64 " %s\n", to_copy, name);
+	mnstr_printf(plan, "w %zu %s\n", to_copy, name);
 
 	while (to_copy > 0) {
-		ssize_t chunk = (to_copy <= bufsize) ? to_copy : bufsize;
+		size_t chunk = (to_copy <= bufsize) ? to_copy : bufsize;
 		ssize_t bytes_read = mnstr_read(s, buf, 1, chunk);
-		if (bytes_read < chunk) {
-			GDKerror("Read only %ld/%ld bytes of component %s: %s", bytes_read, chunk, path, mnstr_error(s));
+		if (bytes_read < 0) {
+			GDKerror("Reading bytes of component %s failed: %s", path, mnstr_error(s));
+			goto end;
+		} else if (bytes_read < (ssize_t) chunk) {
+			GDKerror("Read only %zu/%zu bytes of component %s: %s", (size_t) bytes_read, chunk, path, mnstr_error(s));
 			goto end;
 		}
 
 		ssize_t bytes_written = mnstr_write(plan, buf, 1, chunk);
-		if (bytes_written < chunk) {
+		if (bytes_written < 0) {
+			GDKerror("Writing to plan failed");
+			goto end;
+		} else if (bytes_written < (ssize_t) chunk) {
 			GDKerror("write to plan truncated");
 			goto end;
 		}
@@ -971,7 +977,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 {
 	char path1[FILENAME_MAX];
 	char path2[FILENAME_MAX];
-	const int offset = strlen(db_dir) + 1;
+	const size_t offset = strlen(db_dir) + 1;
 	struct stat statbuf;
 
 	// first check the backup dir

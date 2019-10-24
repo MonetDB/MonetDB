@@ -2466,7 +2466,7 @@ tar_write(stream *outfile, const char *data, size_t size)
 static gdk_return
 tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data, size_t size)
 {
-	int res;
+	gdk_return res;
 
 	res = tar_write_header(tarfile, path, mtime, size);
 	if (res != GDK_SUCCEED)
