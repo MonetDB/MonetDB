@@ -473,7 +473,7 @@ drop_trigger(mvc *sql, char *sname, char *tname, int if_exists)
 		s = cur_schema(sql);
 	assert(s);
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.drop_trigger",SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.drop_trigger",SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 
 	if ((tri = mvc_bind_trigger(sql, s, tname)) == NULL) {
 		if(if_exists)
@@ -510,7 +510,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	} else if (t->system) {
 		throw(SQL,"sql.droptable", SQLSTATE(42000) "DROP TABLE: cannot drop system table '%s'", tname);
 	} else if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)) {
-		throw(SQL,"sql.droptable",SQLSTATE(42000) "DROP TABLE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.droptable",SQLSTATE(42000) "DROP TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	if (!drop_action && t->keys.set) {
 		for (n = t->keys.set->h; n; n = n->next) {
@@ -602,7 +602,7 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 	if (!i) {
 		throw(SQL,"sql.drop_index", SQLSTATE(42S12) "DROP INDEX: no such index '%s'", iname);
 	} else if (!mvc_schema_privs(sql, s)) {
-		throw(SQL,"sql.drop_index", SQLSTATE(42000) "DROP INDEX: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.drop_index", SQLSTATE(42000) "DROP INDEX: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else {
 		if (i->type == ordered_idx) {
 			sql_kc *ic = i->columns->h->data;
@@ -730,7 +730,7 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 			sql_func *func = n->data;
 
 			if (!mvc_schema_privs(sql, s)) {
-				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
+				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: access denied for %s to schema '%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 			}
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
@@ -747,7 +747,7 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 
 		if (!mvc_schema_privs(sql, s)) {
 			list_destroy(list_func);
-			throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
+			throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: access denied for %s to schema '%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 		}
 		for (n = list_func->h; n; n = n->next) {
 			sql_func *func = n->data;
@@ -1055,7 +1055,7 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(!if_exists)
 			throw(SQL,"sql.drop_schema",SQLSTATE(3F000) "DROP SCHEMA: name %s does not exist", sname);
 	} else if (!mvc_schema_privs(sql, s)) {
-		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (s == cur_schema(sql)) {
 		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: cannot drop current schema");
 	} else if (s->system) {
