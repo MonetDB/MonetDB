@@ -1179,7 +1179,7 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 		s = cur_schema(sql);
 
 	if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP))) {
-		return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: access denied for %s to schema ;'%s'", base, stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: access denied for %s to schema '%s'", base, stack_get_string(sql, "current_user"), s->base.name);
 	}
 
 	if (create && (t = mvc_bind_table(sql, s, name)) != NULL) {
@@ -1312,7 +1312,7 @@ rel_drop_type(mvc *sql, dlist *qname, int drop_action)
 	if (schema_bind_type(sql, s, name) == NULL) {
 		return sql_error(sql, 02, SQLSTATE(42S01) "DROP TYPE: type '%s' does not exist", name);
 	} else if (!mvc_schema_privs(sql, s)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "DROP TYPE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "DROP TYPE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	return rel_schema2(sql->sa, ddl_drop_type, s->base.name, name, drop_action);
 }
@@ -1332,7 +1332,7 @@ rel_create_type(mvc *sql, dlist *qname, char *impl)
 	if (schema_bind_type(sql, s, name) != NULL) {
 		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TYPE: name '%s' already in use", name);
 	} else if (!mvc_schema_privs(sql, s)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TYPE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TYPE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	return rel_schema3(sql->sa, ddl_create_type, s->base.name, name, impl);
 }

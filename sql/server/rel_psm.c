@@ -819,7 +819,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		if (replace) {
 			sql_func *func = sf->func;
 			if (!mvc_schema_privs(sql, s))
-				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: access denied for %s to schema '%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 			if (mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, fn, func->base.name);
 			if (!func->s)
@@ -1223,7 +1223,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	}
 
 	if (create && !mvc_schema_privs(sql, ss))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema ;'%s'", base, stack_get_string(sql, "current_user"), ss->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema '%s'", base, stack_get_string(sql, "current_user"), ss->base.name);
 	if (create && !(t = mvc_bind_table(sql, ss, tname)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: unknown table '%s'", base, tname);
 	if (create && isView(t))
@@ -1345,7 +1345,7 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: no such schema '%s'", sname);
 
 	if (!mvc_schema_privs(sql, ss)) 
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
+		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
 	return rel_drop_trigger(sql, ss->base.name, tname, if_exists);
 }
 
