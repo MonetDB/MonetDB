@@ -2003,8 +2003,7 @@ table_constraint_type:
  ;
 
 domain_constraint_type:
-/*    CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }*/
-    CHECK '(' search_condition ')' { $$ = NULL; }
+    CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
 
 ident_commalist:

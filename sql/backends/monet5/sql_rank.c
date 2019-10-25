@@ -63,7 +63,7 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #define CHECK_NEGATIVES_COLUMN(TPE) \
-	for(TPE *lp = (TPE*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++) { \
+	for (TPE *lp = (TPE*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++) { \
 		is_negative |= !is_##TPE##_nil(*lp) && (*lp < 0); \
 	} \
 
@@ -113,7 +113,7 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		is_a_bat = isaBatType(tp2);
-		if(is_a_bat)
+		if (is_a_bat)
 			tp2 = getBatType(tp2);
 
 		voidresultBAT(r, TYPE_lng, BATcount(b), b, "sql.window_bound");
@@ -122,6 +122,11 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!l) {
 				BBPunfix(b->batCacheid);
 				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
+			}
+			if ((unit == 0 || unit == 2) && l->tnil) {
+				BBPunfix(b->batCacheid);
+				BBPunfix(l->batCacheid);
+				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "All values on %s boundary must be non-null for %s frame", preceding ? "PRECEDING" : "FOLLOWING", (unit == 0) ? "ROWS" : "GROUPS");
 			}
 			switch (tp2) {
 				case TYPE_bte:
@@ -153,7 +158,7 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "sql.window_bound", SQLSTATE(42000) "%s limit not available for %s", "sql.window_bound", ATOMname(tp2));
 				}
 			}
-			if(is_negative) {
+			if (is_negative) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(l->batCacheid);
 				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "All values on %s boundary must be non-negative", preceding ? "PRECEDING" : "FOLLOWING");
@@ -190,7 +195,7 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "sql.window_bound", SQLSTATE(42000) "%s limit is not available for %s", "sql.window_bound", ATOMname(tp2));
 				}
 			}
-			if(is_negative)
+			if (is_negative)
 				throw(SQL, "sql.window_bound", SQLSTATE(42000) "The %s boundary must be non-negative", preceding ? "PRECEDING" : "FOLLOWING");
 		}
 		if (part_offset) {

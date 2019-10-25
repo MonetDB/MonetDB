@@ -226,6 +226,10 @@ table_constraint_name(symbol *s, sql_table *t)
 			suffix = "_fkey";
 			nms = s->data.lval->h->next->data.lval->h;	/* list of colums */
 			break;
+		case SQL_CHECK:
+			suffix = "_check";
+			nms = s->data.lval->h;	/* list of check constraint conditions */
+			break;
 		default:
 			suffix = "_?";
 			nms = NULL;
@@ -293,6 +297,9 @@ column_constraint_name(symbol *s, sql_column *sc, sql_table *t)
 			break;
 		case SQL_FOREIGN_KEY:
 			suffix = "fkey";
+			break;
+		case SQL_CHECK:
+			suffix = "check";
 			break;
 		default:
 			suffix = "?";
@@ -394,6 +401,10 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 		mvc_null(sql, cs, null);
 		res = SQL_OK;
 	} 	break;
+	case SQL_CHECK: {
+		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT CHECK: check constraints not supported\n");
+		return SQL_ERR;
+	} 	break;
 	default:{
 		res = SQL_ERR;
 	}
@@ -422,8 +433,6 @@ column_option(
 		char *opt_name = l->h->data.sval;
 		symbol *sym = l->h->next->data.sym;
 
-		if (!sym) /* For now we only parse CHECK Constraints */
-			return SQL_OK;
 		if (!opt_name)
 			opt_name = column_constraint_name(sym, cs, t);
 		res = column_constraint_type(sql, opt_name, sym, ss, t, cs);
@@ -625,6 +634,10 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 	case SQL_FOREIGN_KEY:
 		res = table_foreign_key(sql, name, s, ss, t);
 		break;
+	case SQL_CHECK: {
+		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT CHECK: check constraints not supported\n");
+		return SQL_ERR;
+	} 	break;
 	default:
 		res = SQL_ERR;
 	}

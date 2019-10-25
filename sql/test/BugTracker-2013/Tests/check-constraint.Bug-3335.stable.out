@@ -48,11 +48,7 @@ stdout of test 'check-constraint.Bug-3335` in directory 'sql/test/BugTracker-201
 # 15:34:30 >  
 
 #start transaction;
-#create table t3335(x integer check(x > 0 and x < 2));
-#insert into t3335 values(1);
-[ 1	]
-#insert into t3335 values(0);
-We expect an error here.
+#rollback;
 
 # 15:34:31 >  
 # 15:34:31 >  "Done."
