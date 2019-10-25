@@ -218,7 +218,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->srcFile = NULL;
 	c->blkmode = 0;
 
-	c->fdin = fin ? fin : bstream_create(GDKin, 0);
+	c->fdin = fin ? fin : bstream_create(GDKstdin, 0);
 	if ( c->fdin == NULL){
 		MT_lock_set(&mal_contextLock);
 		c->mode = FREECLIENT;

@@ -256,14 +256,12 @@ tablet_skip_string(char *s, char quote)
 static int
 TABLET_error(stream *s)
 {
-	if (!mnstr_errnr(GDKerr)) {
-		char *err = mnstr_error(s);
+	char *err = mnstr_error(s);
 
-		fprintf(stderr, "#Stream error %s\n", err);
-		/* use free as stream allocates out side GDK */
-		if (err)
-			free(err);
-	}
+	fprintf(stderr, "#Stream error %s\n", err);
+	/* use free as stream allocates out side GDK */
+	if (err)
+		free(err);
 	return -1;
 }
 

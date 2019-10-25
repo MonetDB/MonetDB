@@ -24,7 +24,6 @@ wlr30
 
 #delete some tupples
 wlc40
-#KNOWNFAIL?wlr40
 wlr40
 
 #clear the complete table

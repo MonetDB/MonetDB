@@ -234,6 +234,37 @@ CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+str
+CLTstopSession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+    int idx;
+
+    (void) mb;
+	switch( getArgType(mb,pci,1)){
+	case TYPE_bte:
+		idx = *getArgReference_bte(stk,pci,1);
+		break;
+	case TYPE_sht:
+		idx = *getArgReference_sht(stk,pci,1);
+		break;
+	case TYPE_int:
+		idx = *getArgReference_int(stk,pci,1);
+		break;
+	default:
+		throw(MAL,"stopSession","Unexpected index type");
+	}
+	if( idx < 0 || idx > MAL_MAXCLIENTS)
+		throw(MAL,"timeout","Illegal session id");
+	if (mal_clients[idx].mode == FREECLIENT)
+		throw(MAL,"timeout","Session not active anymore ");
+    if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
+        mal_clients[idx].qtimeout = 1; /* stop client in one microsecond */
+        mal_clients[idx].stimeout = 1; /* stop client session */
+	}
+    /* this forces the designated client to stop at the next instruction */
+    return MAL_SUCCEED;
+}
+
 /* Queries can be temporarily suspended */
 str
 CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -270,18 +301,87 @@ CLTsetSessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng qto,sto;
+	lng qto;
 	(void) mb;
 	qto=  *getArgReference_lng(stk,pci,1);
 	if( qto < 0)
 		throw(MAL,"timeout","Query time out should be >= 0");
-	if ( pci->argc == 3){
-		sto=  *getArgReference_lng(stk,pci,2);
-		if( sto < 0)
-			throw(MAL,"timeout","Session time out should be >= 0");
-		cntxt->stimeout = sto * 1000 * 1000;
-	}
 	cntxt->qtimeout = qto * 1000 * 1000;
+    return MAL_SUCCEED;
+}
+
+str
+CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	lng qto;
+	int idx = -1;
+	(void) cntxt;
+	(void) mb;
+	switch( getArgType(mb,pci,1)){
+	case TYPE_bte:
+		idx = *getArgReference_bte(stk,pci,1);
+		break;
+	case TYPE_sht:
+		idx = *getArgReference_sht(stk,pci,1);
+		break;
+	case TYPE_int:
+		idx = *getArgReference_int(stk,pci,1);
+		break;
+	default:
+		throw(MAL,"sessionTimeout","Unexpected index type");
+	}
+	qto=  *getArgReference_lng(stk,pci,2);
+	if( qto < 0)
+		throw(MAL,"timeout","Query time out should be >= 0");
+	mal_clients[idx].qtimeout = qto * 1000 * 1000;
+    return MAL_SUCCEED;
+}
+
+/* Set the current session timeout in seconds */
+str
+CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	lng sto = -1;
+	int idx = -1;
+	(void) cntxt;
+	(void) mb;
+	switch( getArgType(mb,pci,1)){
+	case TYPE_bte:
+		idx = *getArgReference_bte(stk,pci,1);
+		break;
+	case TYPE_sht:
+		idx = *getArgReference_sht(stk,pci,1);
+		break;
+	case TYPE_int:
+		idx = *getArgReference_int(stk,pci,1);
+		break;
+	default:
+		throw(MAL,"sessionTimeout","Unexpected index type");
+	}
+	switch( getArgType(mb,pci,2)){
+	case TYPE_bte:
+		sto = *getArgReference_bte(stk,pci,2);
+		break;
+	case TYPE_sht:
+		sto = *getArgReference_sht(stk,pci,2);
+		break;
+	case TYPE_int:
+		sto = *getArgReference_int(stk,pci,2);
+		break;
+	case TYPE_lng:
+		sto = *getArgReference_lng(stk,pci,2);
+		break;
+	default:
+		throw(MAL,"sessionTimeout","Unexpected index type");
+	}
+	sto=  *getArgReference_lng(stk,pci,2);
+	if( sto < 0)
+		throw(MAL,"timeout","Query time out should be >= 0");
+	if( idx < 0 || idx > MAL_MAXCLIENTS)
+		throw(MAL,"timeout","Illegal session id");
+	if (mal_clients[idx].mode == FREECLIENT)
+		throw(MAL,"timeout","Session not active anymore ");
+	mal_clients[idx].stimeout = sto * 1000 * 1000;
     return MAL_SUCCEED;
 }
 
@@ -548,13 +648,14 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 str
 CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *user = NULL, *login = NULL, *stimeout = NULL, *qtimeout = NULL, *last= NULL, *active= NULL;
-	bat *userId = getArgReference_bat(stk,pci,0);
-	bat *loginId = getArgReference_bat(stk,pci,1);
-	bat *stimeoutId = getArgReference_bat(stk,pci,2);
-	bat *lastId = getArgReference_bat(stk,pci,3);
-	bat *qtimeoutId = getArgReference_bat(stk,pci,4);
-	bat *activeId = getArgReference_bat(stk,pci,5);
+	BAT *id = NULL, *user = NULL, *login = NULL, *stimeout = NULL, *qtimeout = NULL, *last= NULL, *active= NULL;
+	bat *idId = getArgReference_bat(stk,pci,0);
+	bat *userId = getArgReference_bat(stk,pci,1);
+	bat *loginId = getArgReference_bat(stk,pci,2);
+	bat *stimeoutId = getArgReference_bat(stk,pci,3);
+	bat *lastId = getArgReference_bat(stk,pci,4);
+	bat *qtimeoutId = getArgReference_bat(stk,pci,5);
+	bat *activeId = getArgReference_bat(stk,pci,6);
     Client c;
 	timestamp ret;
 	lng timeout;
@@ -564,13 +665,15 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
+	id = COLnew(0, TYPE_int, 0, TRANSIENT);
 	user = COLnew(0, TYPE_str, 0, TRANSIENT);
 	login = COLnew(0, TYPE_timestamp, 0, TRANSIENT);
 	stimeout = COLnew(0, TYPE_lng, 0, TRANSIENT);
 	last = COLnew(0, TYPE_timestamp, 0, TRANSIENT);
 	qtimeout = COLnew(0, TYPE_lng, 0, TRANSIENT);
-	active = COLnew(0, TYPE_bit, 0, TRANSIENT);
-	if ( user == NULL || login == NULL || stimeout == NULL || last == NULL || qtimeout == NULL || active == NULL){
+	active = COLnew(0, TYPE_int, 0, TRANSIENT);
+	if (id == NULL || user == NULL || login == NULL || stimeout == NULL || last == NULL || qtimeout == NULL || active == NULL){
+		if ( id) BBPunfix(id->batCacheid);
 		if ( user) BBPunfix(user->batCacheid);
 		if ( login) BBPunfix(login->batCacheid);
 		if ( stimeout) BBPunfix(stimeout->batCacheid);
@@ -592,6 +695,8 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						  SQLSTATE(22003) "cannot convert time");
 			    goto bailout;
 		    }
+		    if (BUNappend(id, &c->idx, false) != GDK_SUCCEED)
+			    goto bailout;
 		    if (BUNappend(login, &ret, false) != GDK_SUCCEED)
 			    goto bailout;
 		    timeout = c->stimeout / 1000000;
@@ -621,6 +726,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	    }
     }
     MT_lock_unset(&mal_contextLock);
+	BBPkeepref(*idId = id->batCacheid);
 	BBPkeepref(*userId = user->batCacheid);
 	BBPkeepref(*loginId = login->batCacheid);
 	BBPkeepref(*stimeoutId = stimeout->batCacheid);
@@ -631,6 +737,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
   bailout:
     MT_lock_unset(&mal_contextLock);
+	BBPunfix(id->batCacheid);
 	BBPunfix(user->batCacheid);
 	BBPunfix(login->batCacheid);
 	BBPunfix(stimeout->batCacheid);

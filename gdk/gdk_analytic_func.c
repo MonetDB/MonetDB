@@ -25,12 +25,37 @@
 			}					\
 		} else {					\
 			for (; bp < end; bp++, rb++) {		\
-				if (*bp != prev) {		\
+				if (*bp == prev) { \
+					*rb = FALSE;		\
+				} else {		\
+					*rb = TRUE;	\
+					prev = *bp;	\
+				} \
+			}					\
+		}						\
+	} while (0)
+
+/* We use NaN for floating point null values, which always output false on equality tests */
+#define ANALYTICAL_DIFF_FLOAT_IMP(TPE)				\
+	do {							\
+		TPE *bp = (TPE*)Tloc(b, 0);			\
+		TPE prev = *bp, *end = bp + cnt;		\
+		if (np) {					\
+			for (; bp < end; bp++, rb++, np++) {	\
+				*rb = *np;			\
+				if (*bp != prev && (!is_##TPE##_nil(*bp) || !is_##TPE##_nil(prev))) { \
 					*rb = TRUE;		\
 					prev = *bp;		\
-				} else {			\
-					*rb = FALSE;		\
 				}				\
+			}					\
+		} else {					\
+			for (; bp < end; bp++, rb++) {		\
+				if (*bp == prev || (is_##TPE##_nil(*bp) && is_##TPE##_nil(prev))) { \
+					*rb = FALSE; \
+				} else {		\
+					*rb = TRUE;	\
+					prev = *bp;	\
+				} \
 			}					\
 		}						\
 	} while (0)
@@ -63,10 +88,10 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		break;
 #endif
 	case TYPE_flt:
-		ANALYTICAL_DIFF_IMP(flt);
+		ANALYTICAL_DIFF_FLOAT_IMP(flt);
 		break;
 	case TYPE_dbl:
-		ANALYTICAL_DIFF_IMP(dbl);
+		ANALYTICAL_DIFF_FLOAT_IMP(dbl);
 		break;
 	default:{
 		BATiter it = bat_iterator(b);

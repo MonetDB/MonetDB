@@ -4,7 +4,7 @@
 * Mon Sep 23 2019 Sjoerd Mullender <sjoerd@acm.org>
 - There are new aggregate functions sys.median_avg and sys.quantile_avg
   that return the interpolated value if the median/quantile doesn't fall
-  exactly on a partticular row.  These functions always return a value
+  exactly on a particular row.  These functions always return a value
   of type DOUBLE and only work for numeric types (various width integers
   and floating point).
 

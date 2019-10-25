@@ -1939,8 +1939,10 @@ sql_update_apr2019_sp2(Client c)
 
 #define FLUSH_INSERTS_IF_BUFFERFILLED /* Each new value should add about 20 bytes to the buffer, "flush" when is 200 bytes from being full */ \
 	if (pos > 7900) { \
-		pos += snprintf(buf + pos, bufsize - pos, ") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from dependencies where depend_id = t1.c2);\n"); \
+		pos += snprintf(buf + pos, bufsize - pos, \
+						") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from sys.dependencies where depend_id = t1.c2);\n"); \
 		assert(pos < bufsize); \
+		printf("Running database upgrade commands:\n%s\n", buf); \
 		err = SQLstatementIntern(c, &buf, "update", true, false, NULL); \
 		if (err) \
 			goto bailout; \
@@ -1994,7 +1996,8 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 						for (node *o = id_l->h ; o ; o = o->next) {
 							sqlid next = *(sqlid*) o->data;
 							if (next != f->base.id) {
-								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next, f->base.id, (int)(!IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY));
+								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next,
+												f->base.id, (int)(!IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY));
 								first = false;
 								FLUSH_INSERTS_IF_BUFFERFILLED
 							}
@@ -2024,7 +2027,8 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 						for (node *o = id_l->h ; o ; o = o->next) {
 							sqlid next = *(sqlid*) o->data;
 							if (next != t->base.id) {
-								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next, t->base.id, (int) VIEW_DEPENDENCY);
+								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",",
+												next, t->base.id, (int) VIEW_DEPENDENCY);
 								first = false;
 								FLUSH_INSERTS_IF_BUFFERFILLED
 							}
@@ -2051,7 +2055,8 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 							for (node *o = id_l->h ; o ; o = o->next) {
 								sqlid next = *(sqlid*) o->data;
 								if (next != tr->base.id) {
-									pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next, tr->base.id, (int) TRIGGER_DEPENDENCY);
+									pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",",
+													next, tr->base.id, (int) TRIGGER_DEPENDENCY);
 									first = false;
 									FLUSH_INSERTS_IF_BUFFERFILLED
 								}
@@ -2062,9 +2067,11 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 	}
 
 	if (ppos != pos) { /* found updatable functions */
-		pos += snprintf(buf + pos, bufsize - pos, ") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from dependencies where depend_id = t1.c2);\n");
+		pos += snprintf(buf + pos, bufsize - pos,
+						") as t1(c1,c2,c3) where t1.c1 not in (select \"id\" from sys.dependencies where depend_id = t1.c2);\n");
 
 		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%s\n", buf);
 		err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
 	}
 
@@ -2273,10 +2280,9 @@ static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema)
 {
 	sql_table *t;
-	size_t bufsize = 1024, pos = 0;
+	size_t bufsize = 4096, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
-
-	(void) sql;
+	sql_schema *sys = mvc_bind_schema(sql, "sys");
 
 	if (buf == NULL)
 		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -2287,11 +2293,13 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			" external name sql.suspend_log_flushing;\n"
 			"create procedure resume_log_flushing()\n"
 			" external name sql.resume_log_flushing;\n"
+			"create procedure hot_snapshot(tarfile string)\n"
+			" external name sql.hot_snapshot;\n"
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('suspend_log_flushing', 'resume_log_flushing') and type = %d;\n", (int) F_PROC);
+			" and name in ('suspend_log_flushing', 'resume_log_flushing', 'hot_snapshot') and type = %d;\n", (int) F_PROC);
 
 	/* 16_tracelog */
-	t = mvc_bind_table(sql, mvc_bind_schema(sql, "sys"), "tracelog");
+	t = mvc_bind_table(sql, sys, "tracelog");
 	t->system = 0; /* make it non-system else the drop view will fail */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"drop view sys.tracelog;\n"
@@ -2303,6 +2311,75 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"	)\n"
 			"	external name sql.dump_trace;\n"
 			"create view sys.tracelog as select * from sys.tracelog();\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name = 'tracelog' and type = %d;\n", (int) F_UNION);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name = 'tracelog';\n");
+
+	/* 22_clients */
+	t = mvc_bind_table(sql, sys, "sessions");
+	t->system = 0; /* make it non-system else the drop view will fail */
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.sessions;\n"
+			"drop function sys.sessions;\n"
+ 			"create function sys.sessions()\n"
+ 			" returns table (\"sessionid\" int, \"user\" string, \"login\" timestamp, \"sessiontimeout\" bigint, \"lastcommand\" timestamp, \"querytimeout\" bigint, \"threads\" int)\n"
+ 			" external name sql.sessions;\n"
+			"create view sys.sessions as select * from sys.sessions();\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop procedure sys.settimeout(bigint,bigint);\n"
+			"create procedure sys.querytimeout(\"sessionid\" int, \"query\" bigint)\n"
+			"external name clients.querytimeout;\n"
+			"create procedure sys.sessiontimeout(\"sessionid\" int, \"query\" bigint)\n"
+			"external name clients.sessiontimeout;\n"
+			"create procedure sys.stopsession(\"sessionid\" int)\n"
+			"external name clients.stopsession;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name = 'sessions' and type = %d;\n", (int) F_UNION);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name = 'sessions';\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name in ('settimeout', 'querytimeout', 'sessiontimeout', 'stopsession') and type = %d;\n", (int) F_PROC);
+
+	/* 26_sysmon */
+	t = mvc_bind_table(sql, sys, "queue");
+	t->system = 0; /* make it non-system else the drop view will fail */
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.queue;\n"
+			"drop function sys.queue;\n"
+			"create function sys.queue()\n"
+			"returns table(\n"
+			"	qtag bigint,\n"
+			"	sessionid int,\n"
+			"	\"user\" string,\n"
+			"	started timestamp,\n"
+			"	estimate timestamp,\n"
+			"	progress int,\n"
+			"	status string,\n"
+			"	tag oid,\n"
+			"	query string\n"
+			")\n"
+			"external name sql.sysmon_queue;\n"
+			"grant execute on function sys.queue to public;\n"
+			"create view sys.queue as select * from sys.queue();\n"
+			"grant select on sys.queue to public;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name = 'queue' and type = %d;\n", (int) F_UNION);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name = 'queue';\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");

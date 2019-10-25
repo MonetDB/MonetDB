@@ -16,7 +16,7 @@
 		lng calc1, calc2;					\
 		j = k;							\
 		for (; k < i; k++, rb++) {				\
-			lng rlimit = (lng) LIMIT;			\
+			lng rlimit = LIMIT;			\
 			SUB_WITH_CHECK(k, rlimit, lng, calc1, GDK_lng_max, goto calc_overflow); \
 			ADD_WITH_CHECK(calc1, !first_half, lng, calc2, GDK_lng_max, goto calc_overflow); \
 			*rb = MAX(calc2, j);				\
@@ -27,7 +27,7 @@
 	do {								\
 		lng calc1, calc2;					\
 		for (; k < i; k++, rb++) {				\
-			lng rlimit = (lng) LIMIT;			\
+			lng rlimit = LIMIT;		\
 			ADD_WITH_CHECK(rlimit, k, lng, calc1, GDK_lng_max, goto calc_overflow); \
 			ADD_WITH_CHECK(calc1, !first_half, lng, calc2, GDK_lng_max, goto calc_overflow); \
 			*rb = MIN(calc2, i);				\
@@ -489,39 +489,50 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 		case TYPE_bte:{
 			bte *restrict limit = (bte *) Tloc(l, 0);
 			if (preceding) {
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, limit[k]);
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, (lng) limit[k]);
 			} else {
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, limit[k]);
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, (lng) limit[k]);
 			}
 			break;
 		}
 		case TYPE_sht:{
 			sht *restrict limit = (sht *) Tloc(l, 0);
 			if (preceding) {
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, limit[k]);
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, (lng) limit[k]);
 			} else {
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, limit[k]);
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, (lng) limit[k]);
 			}
 			break;
 		}
 		case TYPE_int:{
 			int *restrict limit = (int *) Tloc(l, 0);
 			if (preceding) {
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, limit[k]);
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, (lng) limit[k]);
 			} else {
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, limit[k]);
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, (lng) limit[k]);
 			}
 			break;
 		}
 		case TYPE_lng:{
 			lng *restrict limit = (lng *) Tloc(l, 0);
 			if (preceding) {
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, limit[k]);
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, (lng) limit[k]);
 			} else {
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, limit[k]);
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, (lng) limit[k]);
 			}
 			break;
 		}
+#ifdef HAVE_HGE
+		case TYPE_hge:{
+			hge *restrict limit = (hge *) Tloc(l, 0);
+			if (preceding) {
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, (limit[k] > (hge) GDK_lng_max) ? GDK_lng_max : (lng) limit[k]);
+			} else {
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, (limit[k] > (hge) GDK_lng_max) ? GDK_lng_max : (lng) limit[k]);
+			}
+			break;
+		}
+#endif
 		default:
 			goto bound_not_supported;
 		}
@@ -540,6 +551,13 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 		case TYPE_lng:
 			limit = (lng) (*(lng *) bound);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge: {
+			hge nval = *(hge *) bound;
+			limit = is_hge_nil(nval) ? lng_nil : (nval > (hge) GDK_lng_max) ? GDK_lng_max : (lng) nval;
+			break;
+		}
+#endif
 		default:
 			goto bound_not_supported;
 		}
@@ -797,6 +815,17 @@ GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 			}
 			break;
 		}
+#ifdef HAVE_HGE
+		case TYPE_hge:{
+			hge *restrict limit = (hge *) Tloc(l, 0);
+			if (preceding) {
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_PRECEDING, (limit[k] > (hge) GDK_lng_max) ? GDK_lng_max : (lng) limit[k]);
+			} else {
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_FOLLOWING, (limit[k] > (hge) GDK_lng_max) ? GDK_lng_max : (lng) limit[k]);
+			}
+			break;
+		}
+#endif
 		default:
 			goto bound_not_supported;
 		}
@@ -815,6 +844,13 @@ GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 		case TYPE_lng:
 			limit = (lng) (*(lng *) bound);
 			break;
+#ifdef HAVE_HGE
+		case TYPE_hge: {
+			hge nval = *(hge *) bound;
+			limit = is_hge_nil(nval) ? lng_nil : (nval > (hge) GDK_lng_max) ? GDK_lng_max : (lng) nval;
+			break;
+		}
+#endif
 		default:
 			goto bound_not_supported;
 		}

@@ -359,20 +359,20 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 % oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
 #SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(qtag as oid) FROM sys.queue);
-% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
-% qtag,	user,	started,	estimate,	progress,	status,	tag,	query # name
-% bigint,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
-% 1,	0,	26,	26,	1,	0,	3,	0 # length
+% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
+% qtag,	sessionid,	user,	started,	estimate,	progress,	status,	tag,	query # name
+% bigint,	int,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
+% 1,	1,	0,	26,	26,	1,	0,	3,	0 # length
 #SELECT * FROM sys.queue WHERE "user" NOT IN (SELECT name FROM sys.users);
-% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
-% qtag,	user,	started,	estimate,	progress,	status,	tag,	query # name
-% bigint,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
-% 1,	0,	26,	26,	1,	0,	3,	0 # length
+% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
+% qtag,	sessionid,	user,	started,	estimate,	progress,	status,	tag,	query # name
+% bigint,	int,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
+% 1,	1,	0,	26,	26,	1,	0,	3,	0 # length
 #SELECT * FROM sys.sessions WHERE "user" NOT IN (SELECT name FROM sys.users);
-% .sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions # table_name
-% user,	login,	sessiontimeout,	lastcommand,	querytimeout,	active # name
-% clob,	timestamp,	bigint,	timestamp,	bigint,	boolean # type
-% 0,	26,	1,	26,	1,	5 # length
+% .sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions # table_name
+% sessionid,	user,	login,	sessiontimeout,	lastcommand,	querytimeout,	threads # name
+% int,	clob,	timestamp,	bigint,	timestamp,	bigint,	int # type
+% 1,	0,	26,	1,	26,	1,	1 # length
 #SELECT * FROM sys.statistics WHERE column_id NOT IN (SELECT id FROM sys._columns UNION ALL SELECT id FROM tmp._columns);
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
