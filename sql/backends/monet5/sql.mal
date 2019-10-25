@@ -656,7 +656,7 @@ command querylog_disable()
 address QLOGdisable;
 
 
-pattern sysmon_queue()(qtag:bat[:lng], user:bat[:str],started:bat[:timestamp],estimate:bat[:timestamp],progress:bat[:int], status:bat[:str], tag:bat[:oid], query:bat[:str])
+pattern sysmon_queue()(qtag:bat[:lng], sessionid:bat[:int], user:bat[:str],started:bat[:timestamp],estimate:bat[:timestamp],progress:bat[:int], status:bat[:str], tag:bat[:oid], query:bat[:str])
 address SYSMONqueue;
 
 pattern sysmon_pause(tag:sht)

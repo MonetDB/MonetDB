@@ -10,6 +10,7 @@
 create function sys.queue()
 returns table(
 	qtag bigint,
+	sessionid int,
 	"user" string,
 	started timestamp,
 	estimate timestamp,

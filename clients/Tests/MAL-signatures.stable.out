@@ -11791,7 +11791,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "sql",	"sysmon_pause",	"pattern sql.sysmon_pause(tag:int):void ",	"SYSMONpause;",	""	]
 [ "sql",	"sysmon_pause",	"pattern sql.sysmon_pause(tag:lng):void ",	"SYSMONpause;",	""	]
 [ "sql",	"sysmon_pause",	"pattern sql.sysmon_pause(tag:sht):void ",	"SYSMONpause;",	""	]
-[ "sql",	"sysmon_queue",	"pattern sql.sysmon_queue() (qtag:bat[:lng], user:bat[:str], started:bat[:timestamp], estimate:bat[:timestamp], progress:bat[:int], status:bat[:str], tag:bat[:oid], query:bat[:str]) ",	"SYSMONqueue;",	""	]
+[ "sql",	"sysmon_queue",	"pattern sql.sysmon_queue() (qtag:bat[:lng], sessionid:bat[:int], user:bat[:str], started:bat[:timestamp], estimate:bat[:timestamp], progress:bat[:int], status:bat[:str], tag:bat[:oid], query:bat[:str]) ",	"SYSMONqueue;",	""	]
 [ "sql",	"sysmon_resume",	"pattern sql.sysmon_resume(tag:int):void ",	"SYSMONresume;",	""	]
 [ "sql",	"sysmon_resume",	"pattern sql.sysmon_resume(tag:lng):void ",	"SYSMONresume;",	""	]
 [ "sql",	"sysmon_resume",	"pattern sql.sysmon_resume(tag:sht):void ",	"SYSMONresume;",	""	]

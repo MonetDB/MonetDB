@@ -1,6 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Fri Oct 25 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Added 'sessionid' column to system function sys.queue(), so each query
+  gets tagged with the current session identifier
+
 * Thu Oct 24 2019 Martin Kersten <mk@cwi.nl>
 - Allow monetdb user to control session and query time out and selective
   stopping a client sessions with a soft termination request.

@@ -2344,6 +2344,32 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"create procedure sys.stopsession(\"sessionid\" int)\n"
 			"external name clients.stopsession;\n");
 
+	/* 26_sysmon */
+	t = mvc_bind_table(sql, sys, "queue");
+	t->system = 0; /* make it non-system else the drop view will fail */
+	f = sql_bind_func_(sql->sa, sys, "queue", NULL, F_UNION);
+	f->func->system = 0; /* make it non-system else the drop function will fail */
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.queue;\n"
+			"drop function sys.queue;\n"
+			"create function sys.queue()\n"
+			"returns table(\n"
+			"	qtag bigint,\n"
+			"	sessionid int,\n"
+			"	\"user\" string,\n"
+			"	started timestamp,\n"
+			"	estimate timestamp,\n"
+			"	progress int,\n"
+			"	status string,\n"
+			"	tag oid,\n"
+			"	query string\n"
+			")\n"
+			"external name sql.sysmon_queue;\n"
+			"grant execute on function sys.queue to public;\n"
+			"create view sys.queue as select * from sys.queue();\n"
+			"grant select on sys.queue to public;\n");
+
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	assert(pos < bufsize);

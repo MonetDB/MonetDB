@@ -359,15 +359,15 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 % oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
 #SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(qtag as oid) FROM sys.queue);
-% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
-% qtag,	user,	started,	estimate,	progress,	status,	tag,	query # name
-% bigint,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
-% 1,	0,	26,	26,	1,	0,	3,	0 # length
+% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
+% qtag,	sessionid,	user,	started,	estimate,	progress,	status,	tag,	query # name
+% bigint,	int,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
+% 1,	1,	0,	26,	26,	1,	0,	3,	0 # length
 #SELECT * FROM sys.queue WHERE "user" NOT IN (SELECT name FROM sys.users);
-% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
-% qtag,	user,	started,	estimate,	progress,	status,	tag,	query # name
-% bigint,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
-% 1,	0,	26,	26,	1,	0,	3,	0 # length
+% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
+% qtag,	sessionid,	user,	started,	estimate,	progress,	status,	tag,	query # name
+% bigint,	int,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
+% 1,	1,	0,	26,	26,	1,	0,	3,	0 # length
 #SELECT * FROM sys.sessions WHERE "user" NOT IN (SELECT name FROM sys.users);
 % .sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions # table_name
 % sessionid,	user,	login,	sessiontimeout,	lastcommand,	querytimeout,	threads # name
