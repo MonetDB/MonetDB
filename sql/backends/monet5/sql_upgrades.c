@@ -2286,10 +2286,11 @@ static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema)
 {
 	sql_table *t;
-	size_t bufsize = 1024, pos = 0;
+	sql_subfunc *f;
+	sql_subtype tp;
+	size_t bufsize = 2048, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
-
-	(void) sql;
+	sql_schema *sys = mvc_bind_schema(sql, "sys");
 
 	if (buf == NULL)
 		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -2304,7 +2305,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			" and name in ('suspend_log_flushing', 'resume_log_flushing') and type = %d;\n", (int) F_PROC);
 
 	/* 16_tracelog */
-	t = mvc_bind_table(sql, mvc_bind_schema(sql, "sys"), "tracelog");
+	t = mvc_bind_table(sql, sys, "tracelog");
 	t->system = 0; /* make it non-system else the drop view will fail */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"drop view sys.tracelog;\n"
@@ -2316,6 +2317,32 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"	)\n"
 			"	external name sql.dump_trace;\n"
 			"create view sys.tracelog as select * from sys.tracelog();\n");
+
+	/* 22_clients */
+	t = mvc_bind_table(sql, sys, "sessions");
+	t->system = 0; /* make it non-system else the drop view will fail */
+	f = sql_bind_func_(sql->sa, sys, "sessions", NULL, F_UNION);
+	f->func->system = 0; /* make it non-system else the drop function will fail */
+	sql_find_subtype(&tp, "bigint", 0, 0);
+	f = sql_bind_func(sql->sa, sys, "settimeout", &tp, &tp, F_PROC);
+	f->func->system = 0; /* make it non-system else the drop procedure will fail */
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.sessions;\n"
+			"drop function sys.sessions;\n"
+ 			"create function sys.sessions()\n"
+ 			" returns table (\"sessionid\" int, \"user\" string, \"login\" timestamp, \"sessiontimeout\" bigint, \"lastcommand\" timestamp, \"querytimeout\" bigint, \"threads\" int)\n"
+ 			" external name sql.sessions;\n"
+			"create view sys.sessions as select * from sys.sessions();\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop procedure sys.settimeout(bigint,bigint);\n"
+			"create procedure sys.querytimeout(\"sessionid\" int, \"query\" bigint)\n"
+			"external name clients.querytimeout;\n"
+			"create procedure sys.sessiontimeout(\"sessionid\" int, \"query\" bigint)\n"
+			"external name clients.sessiontimeout;\n"
+			"create procedure sys.stopsession(\"sessionid\" int)\n"
+			"external name clients.stopsession;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
