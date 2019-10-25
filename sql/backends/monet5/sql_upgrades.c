@@ -2299,6 +2299,8 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			" external name sql.suspend_log_flushing;\n"
 			"create procedure resume_log_flushing()\n"
 			" external name sql.resume_log_flushing;\n"
+			"create procedure hot_snapshot(tarfile string)\n"
+			" external name sql.hot_snapshot;\n"
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('suspend_log_flushing', 'resume_log_flushing') and type = %d;\n", (int) F_PROC);
 
