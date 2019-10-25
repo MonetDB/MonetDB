@@ -13,23 +13,34 @@ returns table ("uri" string, "username" string, "hash" string)
 external name sql.rt_credentials;
 
 create function sys.sessions()
-returns table("user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "active" bool)
+returns table("sessionid" int, "user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "threads" int)
 external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
 
+-- routines to bring the system down quickly
 create procedure sys.shutdown(delay tinyint)
 external name sql.shutdown;
 
 create procedure sys.shutdown(delay tinyint, force bool)
 external name sql.shutdown;
 
--- control the query and session time out
+-- control the query and session time out for the current user.
+-- measured in seconds
 create procedure sys.settimeout("query" bigint)
 	external name clients.settimeout;
-create procedure sys.settimeout("query" bigint, "session" bigint)
-	external name clients.settimeout;
+
 create procedure sys.setsession("timeout" bigint)
 	external name clients.setsession;
+
+-- The super user can change the properties of all sessions
+create procedure sys.querytimeout("sessionid" int, "query" bigint)
+    external name clients.querytimeout;
+
+create procedure sys.sessiontimeout("sessionid" int, "query" bigint)
+    external name clients.sessiontimeout;
+
+create procedure sys.stopsession("sessionid" int)
+    external name clients.stopsession;
 
 create procedure sys.setprinttimeout("timeout" integer)
 	external name clients.setprinttimeout;

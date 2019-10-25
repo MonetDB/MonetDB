@@ -62,10 +62,6 @@ comment "Abort a session after  n seconds.";
 
 pattern settimeout(n:lng):void
 address CLTsetTimeout
-comment "Abort a query after  n seconds.";
-
-pattern settimeout(q:lng,s:lng):void
-address CLTsetTimeout
 comment "Abort a query after q seconds (q=0 means run undisturbed).
 The session timeout aborts the connection after spending too
 many seconds on query processing.";
@@ -75,6 +71,33 @@ address CLTgetTimeout
 comment "A query is aborted after q milliseconds (q=0 means run undisturbed).
 The session timeout aborts the connection after spending too
 many seconds on query processing.";
+
+pattern querytimeout(sid:bte, n:lng):void
+address CLTqueryTimeout;
+pattern querytimeout(sid:sht, n:lng):void
+address CLTqueryTimeout;
+pattern querytimeout(sid:int, n:lng):void
+address CLTqueryTimeout;
+
+pattern stopsession(sid:bte):void
+address CLTstopSession
+comment "Stop a particular session";
+pattern stopsession(sid:sht):void
+address CLTstopSession
+comment "Stop a particular session";
+pattern stopsession(sid:int):void
+address CLTstopSession
+comment "Stop a particular session";
+
+pattern sessiontimeout(sid:bte, n:lng):void
+address CLTsessionTimeout
+comment "Set the session timeout for a particulat session id";
+pattern sessiontimeout(sid:sht, n:lng):void
+address CLTsessionTimeout
+comment "Set the session timeout for a particulat session id";
+pattern sessiontimeout(sid:int, n:lng):void
+address CLTsessionTimeout
+comment "Set the session timeout for a particulat session id";
 
 command setprinttimeout(n:int):void
 address CLTsetPrintTimeout
