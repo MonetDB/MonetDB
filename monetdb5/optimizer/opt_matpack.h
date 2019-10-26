@@ -16,8 +16,4 @@
 
 mal_export str OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-/* #define _DEBUG_OPT_MATPACK_ */
-#undef DEBUG_OPT_MATPACK
-#define DEBUG_OPT_MATPACK 1
-
 #endif

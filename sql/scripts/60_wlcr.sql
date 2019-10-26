@@ -7,55 +7,26 @@
 -- Workload Capture and Replay
 
 -- Master commands
-create procedure master()
+create schema wlc;
+
+create procedure wlc.master()
 external name wlc.master;
 
-create procedure master(path string)
+create procedure wlc.master(path string)
 external name wlc.master;
 
-create procedure stopmaster()
-external name wlc.stopmaster;
+create procedure wlc.stop()
+external name wlc.stop;
 
-create procedure masterbeat( duration int)
-external name wlc."setmasterbeat";
+create procedure wlc.flush()
+external name wlc.flush;
 
-create function masterClock() returns string
-external name wlc."getmasterclock";
+create procedure wlc.beat( duration int)
+external name wlc."setbeat";
 
-create function masterTick() returns bigint
-external name wlc."getmastertick";
+create function wlc.clock() returns string
+external name wlc."getclock";
 
--- Replica commands
-create procedure replicate()
-external name wlr.replicate;
-
-create procedure replicate(pointintime timestamp)
-external name wlr.replicate;
-
-create procedure replicate(dbname string)
-external name wlr.replicate;
-
-create procedure replicate(dbname string, pointintime timestamp)
-external name wlr.replicate;
-
-create procedure replicate(dbname string, id tinyint)
-external name wlr.replicate;
-
-create procedure replicate(dbname string, id smallint)
-external name wlr.replicate;
-
-create procedure replicate(dbname string, id integer)
-external name wlr.replicate;
-
-create procedure replicate(dbname string, id bigint)
-external name wlr.replicate;
-
-create procedure replicabeat(duration integer)
-external name wlr."setreplicabeat";
-
-create function replicaClock() returns string
-external name wlr."getreplicaclock";
-
-create function replicaTick() returns bigint
-external name wlr."getreplicatick";
+create function wlc.tick() returns bigint
+external name wlc."gettick";
 

@@ -23,7 +23,7 @@ def freeport():
 cloneport = freeport()
 
 dbname = tstdb
-dbnameclone = tstdb + '-clone'
+dbnameclone = tstdb + 'clone'
 
 #master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
@@ -33,8 +33,9 @@ c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process
 # be aware that the replication thread may be running behind
 # For testing we need to wait for it.
 cout, cerr = c.communicate('''\
-call replicate();
+call wlr.replicate(9);
 select * from tmp;
+call wlr.stop();
 ''' )
 
 sout, serr = slave.communicate()
@@ -48,10 +49,11 @@ sys.stderr.write(serr)
 sys.stderr.write(cerr)
 
 def listfiles(path):
-    for f in os.listdir(path):
-        if (f.find('wlc') >= 0 or f.find('wlr') >=0 ) and f != 'wlc_logs':
+    sys.stdout.write("#LISTING OF THE LOG FILES\n")
+    for f in sorted(os.listdir(path)):
+        if f.find('wlc') >= 0 and f != 'wlc_logs':
             file = path + os.path.sep + f
-            sys.stdout.write(file + "\n")
+            sys.stdout.write('#' + file + "\n")
             try:
                 x = open(file)
                 s = x.read()
@@ -62,6 +64,5 @@ def listfiles(path):
             except IOError:
                 sys.stderr.write('Failure to read file ' + file + '\n')
 
-listfiles(dbfarm + os.path.sep + tstdb)
-listfiles(dbfarm + os.path.sep + tstdb + os.path.sep + 'wlc_logs')
-
+# listfiles(os.path.join(dbfarm, tstdb))
+# listfiles(os.path.join(dbfarm, tstdb, 'wlc_logs'))

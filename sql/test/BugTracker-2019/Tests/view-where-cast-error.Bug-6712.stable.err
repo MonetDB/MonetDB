@@ -26,6 +26,10 @@ stderr of test 'view-where-cast-error.Bug-6712` in directory 'sql/test/BugTracke
 # 19:39:23 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12898" "--port=32246"
 # 19:39:23 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-30594/.s.monetdb.31804
+QUERY = select id from executiontimes where cast(value as bigint) > 80000;
+ERROR = !conversion of string '3.15.0' to type lng failed.
+CODE  = 22018
 
 # 19:39:23 >  
 # 19:39:23 >  "Done."

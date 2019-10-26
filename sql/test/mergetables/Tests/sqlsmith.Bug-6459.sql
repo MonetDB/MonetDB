@@ -13,7 +13,7 @@ where EXISTS (
     from 
       sys.spatial_ref_sys as ref_4
         right join sys.tracelog as ref_5
-        on (ref_4.proj4text = ref_5.clk )
+        on (ref_4.proj4text = ref_5.stmt )
     where case when EXISTS (
           select  
               subq_0.c0 as c0
@@ -37,16 +37,16 @@ where EXISTS (
       ref_4.auth_srid as c1,
       37 as c2,
       subq_0.c0 as c3,
-      ref_5.minflt as c4
+      ref_5.stmt as c4
     from
       sys.spatial_ref_sys as ref_4
         right join sys.tracelog as ref_5
-        on (ref_4.proj4text = ref_5.clk )
+        on (ref_4.proj4text = ref_5.stmt )
     where case when EXISTS (
           select
               subq_0.c0 as c0,
               ref_4.proj4text as c1,
-              ref_5.thread as c2,
+              ref_5.stmt as c2,
               subq_0.c0 as c3,
               ref_6.commit_action as c4
             from

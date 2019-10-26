@@ -513,7 +513,7 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"UPDATE",
 	 "",
-	 "[ WITH cte_list ] UPDATE qname [ [AS] ident ] SET assignment_list [ WHERE search_condition ]",
+	 "[ WITH cte_list ] UPDATE qname [ [AS] ident ] SET assignment_list [ FROM from_item ] [ WHERE search_condition ]",
 	 "cte_list,assignment_list,search_condition",
 	 NULL},
 	{"VALUES",

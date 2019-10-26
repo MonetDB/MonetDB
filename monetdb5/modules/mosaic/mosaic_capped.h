@@ -30,7 +30,7 @@ mal_export str MOSprepareEstimate_capped(MOStask task);
 mal_export str  MOSestimate_capped(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOSpostEstimate_capped(MOStask task);
 mal_export str finalizeDictionary_capped(MOStask task);
-mal_export void MOScompress_capped(MOStask task);
+mal_export void MOScompress_capped(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_capped(MOStask task);
 mal_export str MOSselect_capped( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
 mal_export str MOSthetaselect_capped( MOStask task, void *val, str oper);

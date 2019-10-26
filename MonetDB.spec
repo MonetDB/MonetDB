@@ -19,15 +19,16 @@
 %global _hardened_build 1
 
 # On RedHat Enterprise Linux and derivatives, if the Extra Packages
-# for Enterprise Linux (EPEL) repository is available, you can enable
-# its use by providing rpmbuild or mock with the "--with epel" option.
+# for Enterprise Linux (EPEL) repository is not available, you can
+# disable its use by providing rpmbuild or mock with the "--without
+# epel" option.
 # If the EPEL repository is availabe, or if building for Fedora, most
 # optional sub packages can be built.  We indicate that here by
 # setting the macro fedpkgs to 1.  If the EPEL repository is not
 # available and we are not building for Fedora, we set fedpkgs to 0.
 %if %{?rhel:1}%{!?rhel:0}
 # RedHat Enterprise Linux (or CentOS or Scientific Linux)
-%bcond_with epel
+%bcond_without epel
 %if %{with epel}
 # EPEL is enabled through the command line
 %global fedpkgs 1
@@ -59,7 +60,7 @@
 # derivatives (CentOS, Scientific Linux), the liblas library is only
 # available if EPEL is enabled, and then only on version 7.
 %if %{fedpkgs}
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} == 7
 # By default create the MonetDB-lidar package on Fedora and RHEL 7
 %bcond_without lidar
 %endif
@@ -84,9 +85,9 @@
 %bcond_without rintegration
 %endif
 
-# On Fedora and RHEL 7, create the MonetDB-python2 package.
+# On Fedora <= 30 and RHEL 7, create the MonetDB-python2 package.
 # On RHEL 6, numpy is too old.
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+%if 0%{?rhel} == 7 || %{!?fedora:1000}%{?fedora} <= 30
 %bcond_without py2integration
 %endif
 %if %{?rhel:0}%{!?rhel:1}
@@ -164,12 +165,7 @@ BuildRequires: python-devel
 # RedHat Enterprise Linux calls it simply numpy
 BuildRequires: numpy
 %else
-%if (0%{?fedora} >= 24)
 BuildRequires: python2-numpy
-%else
-# Fedora <= 23 doesn't have python2-numpy
-BuildRequires: numpy
-%endif
 %endif
 %endif
 %if %{with py3integration}
@@ -963,12 +959,10 @@ export CFLAGS
 	--enable-embedded=no \
 	--enable-embedded-r=no \
 	--enable-fits=%{?with_fits:yes}%{!?with_fits:no} \
-	--enable-gdk=yes \
 	--enable-geom=%{?with_geos:yes}%{!?with_geos:no} \
 	--enable-int128=%{?with_hugeint:yes}%{!?with_hugeint:no} \
 	--enable-lidar=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--enable-mapi=yes \
-	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
 	--enable-py2integration=%{?with_py2integration:yes}%{!?with_py2integration:no} \
@@ -976,7 +970,6 @@ export CFLAGS
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
 	--enable-sanitizer=no \
 	--enable-shp=no \
-	--enable-sql=yes \
 	--enable-static-analysis=no \
 	--enable-strict=no \
 	--enable-testing=yes \
@@ -1053,7 +1046,12 @@ do
   install -p -m 644 buildtools/selinux/monetdb.pp.${selinuxvariant} \
     %{buildroot}%{_datadir}/selinux/${selinuxvariant}/monetdb.pp
 done
-/usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
+if [ -x /usr/sbin/hardlink ]; then
+    /usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
+else
+    # Fedora 31
+    /usr/bin/hardlink -cv %{buildroot}%{_datadir}/selinux
+fi
 %endif
 
 %post -p /sbin/ldconfig

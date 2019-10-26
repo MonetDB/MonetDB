@@ -1,3 +1,8 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Sat Oct 12 2019 Martin Kersten <mk@cwi.nl>
+- The MAL profiler now assigns the SQL TRACE output to the client record
+  thereby avoiding the interaction with other queries, but loosing
+  insight of competing queries. The stethoscope should be used for that.
+

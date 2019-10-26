@@ -79,7 +79,7 @@ handler(int sig)
 
 /* we're not using a lock for setting, reading and clearing this flag
  * (deadlock!), but we should use atomic instructions */
-static volatile int hupflag = 0;
+static volatile sig_atomic_t hupflag = 0;
 
 /**
  * Handler for SIGHUP, causes a re-read of the .merovingian_properties

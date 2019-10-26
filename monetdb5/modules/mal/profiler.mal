@@ -14,39 +14,23 @@ pattern stop():void
 address CMDstopProfiler
 comment "Stop offline performance profiling";
 
-command starttrace()
+pattern starttrace()
 address CMDstartTrace
 comment "Start collecting trace information";
 
-command starttrace(path:str)
-address CMDstartTracePath
-comment "Start collecting trace information and keep around in 'path' directory";
-
-command stoptrace():void
+pattern stoptrace():void
 address CMDstopTrace
-comment "Stop collecting trace information";
-
-command stoptrace(path:str):void
-address CMDstopTracePath
 comment "Stop collecting trace information";
 
 command setheartbeat(b:int):void
 address CMDsetHeartbeat
 comment "Set heart beat performance tracing";
 
-command getlimit():int
-address CMDgetprofilerlimit
-comment "Avoid floading of events";
-
-command setlimit(i:int)
-address CMDsetprofilerlimit
-comment "Change the profiler event limit counter";
-
-pattern openstream(mode:int):void
+pattern openstream():void
 address CMDopenProfilerStream
 comment "Start profiling the events, send to output stream";
 
-command closestream():void
+pattern closestream():void
 address CMDcloseProfilerStream
 comment "Stop offline proviling";
 
@@ -54,11 +38,11 @@ command noop():void
 address CMDnoopProfiler
 comment "Fetch any pending performance events";
 
-command getTrace(e:str):bat[:any_1]
+pattern getTrace(e:str):bat[:any_1]
 address CMDgetTrace
 comment "Get the trace details of a specific event";
 
-command cleanup():void
+pattern cleanup():void
 address CMDcleanupTraces
 comment "Remove the temporary tables for profiling";
 

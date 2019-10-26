@@ -30,27 +30,27 @@ DDL 	(card 0!, top of the tree always)
 	-> r		used in ddl_list and ddl_exception
 
 SELECT 	(card MULTI or same ...?) 
-	-> exps		selection expressions (ie all e_cmp)
+	-> exps		selection expressions (ie all e_cmp or e_atom of type bit)
 	-> l		is relation
 
 LEFT|RIGHT|FULL
 JOIN 	(card MULTI)
-	-> exps		join expressions (ie all e_cmp)
+	-> exps		join expressions (ie all e_cmp or e_atom of type bit)
 	-> l		is left relation
-	-> r		is rigth relation
+	-> r		is right relation
 	-> flag		LEFT (keep left order, only used during code generation)
 
 SEMI/ANTI 
 	(card MULTI)
-	-> exps		join expressions (ie all e_cmp)
+	-> exps		join expressions (ie all e_cmp or e_atom of type bit)
 	-> l		is left relation
-	-> r		is rigth relation
+	-> r		is right relation
 
 UNION|EXCEPT|INTERSECT 
 	(card ATOM, AGGR or MULTI (same card as lower relation))
 	-> exps 	is list of projection expressions
 	-> l		is left relation
-	-> r		is rigth relation
+	-> r		is right relation
 
 PROJECT  (card ATOM, AGGR or MULTI (same card as lower relation))
 	-> exps 	is list of projection expressions

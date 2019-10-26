@@ -9,7 +9,7 @@ from
       where true
       limit 134) as subq_0
 where (true)
-  or ((select pc from sys.tracelog)
+  or ((select stmt from sys.tracelog)
        is not NULL);
 
 select

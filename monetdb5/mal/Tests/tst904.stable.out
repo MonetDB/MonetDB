@@ -41,7 +41,7 @@ exit i:lng;                             	#[7] (0)  5
     X_13:bat[:lng] := bat.new(nil:lng); 	#[10] (0) CMDBATnew 18 <- 19 
 barrier (X_16:oid, X_17:lng) := iterator.new(b:bat[:lng]);	#[11] (0) ITRbunIterator 21 22 <- 3 
     X_19:lng := calc.+(X_17:lng, c:int);	#[12] (0) CMDvarADDsignal 24 <- 22 12 
-    bat.append(X_13:bat[:lng], X_19:lng);	#[13] (0) BKCappend_val_wrap 25 <- 18 24 
+    X_13:bat[:lng] := bat.append(X_13:bat[:lng], X_19:lng);	#[13] (0) BKCappend_val_wrap 18 <- 18 24 
     redo (X_16:oid, X_17:lng) := iterator.next(b:bat[:lng]);	#[14] (0) ITRbunNext 21 22 <- 3 
 exit (X_16:oid, X_17:lng);              	#[15] (0)  21 22 
     xz:bat[:lng] := X_13:bat[:lng];     	#[16] (0)  14 <- 18 

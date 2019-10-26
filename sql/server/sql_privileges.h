@@ -26,7 +26,7 @@ extern int mvc_set_schema(mvc *m, char *schema);
 extern int global_privs(mvc *m, int privs);
 extern int mvc_schema_privs(mvc *m, sql_schema *t);
 extern int table_privs(mvc *m, sql_table *t, int privs);
-
+extern int column_privs(mvc *m, sql_column *c, int privs);
 extern int execute_priv(mvc *m, sql_func *f);
 
 extern int sql_privilege(mvc *m, sqlid auth_id, sqlid obj_id, int privs, int sub);
@@ -45,4 +45,5 @@ extern char * sql_create_user(mvc *sql, char *user, char *passwd, char enc, char
 extern char * sql_drop_user(mvc *sql, char *user);
 extern char * sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *oldpasswd);
 extern char * sql_rename_user(mvc *sql, char *olduser, char *newuser);
+
 #endif /*_SQL_PRIV_H_ */

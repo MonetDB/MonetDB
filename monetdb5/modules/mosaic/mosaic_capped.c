@@ -110,7 +110,17 @@ DictionaryClass(TPE, GlobalCappedInfo, GetBase, GetCount, GetDeltaCount, GetBits
 
 DerivedDictionaryClass(bte)
 DerivedDictionaryClass(sht)
-DerivedDictionaryClass(int)
+PresentInTempDictFuncDef(int)static inline BUN _findValue_int(int* dict, BUN dict_count, int val) { int m, f= 0, l = dict_count; while( l-f > 0 ) { m = f + (l-f)/2; if ( val < dict[m]) l=m-1; else f= m; if ( val > dict[m]) f=m+1; else l= m; } return f;}static inline int _getValue_int(GlobalCappedInfo* info, BUN key) { return GetValue(info, key, int);}static str estimateDict_int(BUN* nr_compressed, BUN* delta_count, BUN limit, GlobalCappedInfo* info, int* val) { size_t buffer_size = 256; int* dict = (int*) GetBase(info, int); BUN dict_cnt = GetCount(info); int* delta = dict + dict_cnt; *delta_count = 0; for((*nr_compressed) = 0; (*nr_compressed)< limit; (*nr_compressed)++, val++) { BUN pos = _findValue_int(dict, dict_cnt, *val); if (pos == dict_cnt || _getValue_int(info, pos) != *val) { ; if (PresentInTempDict(info, *val, int)) { BUN key = _findValue_int(delta, (*delta_count), *val); if (key < *delta_count && delta[key] == *val) { continue; } if (dict_cnt + *delta_count + 1 == GetCap(info)) { if( !Extend(info, dict_cnt + *delta_count + (buffer_size <<=1)) ) throw(MAL, "mosaic.var", MAL_MALLOC_FAIL); dict = GetBase(info, int); delta = dict + dict_cnt; } int w = *val; for( ; key< *delta_count; key++) { if (delta[key] > w){ int v = delta[key]; delta[key] = w; w = v; } } delta[key] = w; (*delta_count)++; } else break; } } GetDeltaCount(info) = (*delta_count); BUN new_count = dict_cnt + GetDeltaCount(info); GetBitsExtended(info) = calculateBits(new_count); return MAL_SUCCEED;}static void _mergeDeltaIntoDictionary_int(GlobalCappedInfo* info) { int* delta = (int*) GetBase(info, int) + GetCount(info); if (GetCount(info) == 0) { ++delta; GetCount(info)++; GetDeltaCount(info)--; } BUN limit = GetDeltaCount(info); for (BUN i = 0; i < limit; i++) { BUN key = _findValue_int(GetBase(info, int), GetCount(info), delta[i]); if (key < GetCount(info) && GetValue(info, key, int) == delta[i]) { continue; } int w = delta[i]; for( ; key< GetCount(info); key++) { if (GetValue(info, key, int) > w){ int v =GetValue(info, key, int); GetValue(info, key, int)= w; w = v; } } GetCount(info)++; GetValue(info, key, int)= w; } GetBits(info) = GetBitsExtended(info);}
+static void _compress_dictionary_int(int* dict, BUN dict_size, BUN* i, int* val, BUN limit, BitVector base, bte bits) {
+	for((*i) = 0; (*i) < limit; (*i)++, val++) {
+		BUN key = _findValue_int(dict, dict_size, *val);
+		assert(key < dict_size);
+		setBitVector(base, (*i), bits, (unsigned int) key);
+	}
+}
+static void _decompress_dictionary_int(int* dict, bte bits, BitVector base, BUN limit, int** dest) { for(BUN i = 0; i < limit; i++){ size_t key = getBitVector(base,i,(int) bits); (*dest)[i] = dict[key]; } *dest += limit;}
+
+
 DerivedDictionaryClass(oid)
 DerivedDictionaryClass(lng)
 DerivedDictionaryClass(flt)
@@ -129,7 +139,7 @@ MOSadvance_capped(MOStask task)
 	assert(cnt > 0);
 	task->start += (oid) cnt;
 	task->stop = task->stop;
-	bytes =  (long) (cnt * task->hdr->bits)/8 + (((cnt * task->hdr->bits) %8) != 0);
+	bytes =  (long) (cnt * task->hdr->bits_capped)/8 + (((cnt * task->hdr->bits_capped) %8) != 0);
 	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int));
 }
 
@@ -160,7 +170,7 @@ MOSlayout_capped(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
 
 	input = cnt * ATOMsize(task->type);
-	output =  MosaicBlkSize + (cnt * task->hdr->bits)/8 + (((cnt * task->hdr->bits) %8) != 0);
+	output =  MosaicBlkSize + (cnt * task->hdr->bits_capped)/8 + (((cnt * task->hdr->bits_capped) %8) != 0);
 	if( BUNappend(btech, "capped blk", false) != GDK_SUCCEED ||
 		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
 		BUNappend(binput, &input, false) != GDK_SUCCEED ||
@@ -201,9 +211,16 @@ MOSprepareEstimate_capped(MOStask task)
 
 	BAT *ngid, *next, *freq;
 
-	if (BATgroup(&ngid, &next, &freq, source, NULL, NULL, NULL, NULL) != GDK_SUCCEED) {
+	BAT * source_view;
+	if ((source_view = VIEWcreate(source->hseqbase, source)) == NULL) {
+		throw(MAL, "mosaic.createGlobalDictInfo.VIEWcreate", GDK_EXCEPTION);
+	}
+
+	if (BATgroup(&ngid, &next, &freq, source_view, NULL, NULL, NULL, NULL) != GDK_SUCCEED) {
+		BBPunfix(source_view->batCacheid);
 		throw(MAL, "mosaic.createGlobalDictInfo.BATgroup", GDK_EXCEPTION);
 	}
+	BBPunfix(source_view->batCacheid);
 	BBPunfix(ngid->batCacheid);
 
 	BAT *cand_capped_dict;
@@ -259,7 +276,7 @@ do {\
 	/*TODO*/\
 	GlobalCappedInfo* info = TASK->capped_info;\
 	BUN limit = (TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start;\
-	TPE* val = ((TPE*)task->src);\
+	TPE* val = getSrc(TPE, (TASK));\
 	BUN delta_count;\
 	BUN nr_compressed;\
 \
@@ -337,12 +354,12 @@ _finalizeDictionary(BAT* b, GlobalCappedInfo* info, ulng* pos_dict, ulng* length
 	char* dst = vmh->base + vmh->free;
 	char* src = info->dict->theap.base;
 	/* TODO: consider optimizing this by swapping heaps instead of copying them.*/
-	memcpy(dst, src, size_in_bytes);
+	memcpy(dst, src, GetSizeInBytes(info));
 
 	assert(vmh->free % GetTypeWidth(info) == 0);
 	*pos_dict = (vmh->free / GetTypeWidth(info));
 
-	vmh->free += info->dict->theap.free;
+	vmh->free += GetSizeInBytes(info);
 	vmh->dirty = true;
 
 	*length_dict = GetCount(info);
@@ -372,7 +389,7 @@ finalizeDictionary_capped(MOStask task) {
 
 #define DICTcompress(TASK, TPE) {\
 	TPE *val = getSrc(TPE, (TASK));\
-	BUN limit = (TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT:(TASK)->stop - (TASK)->start;\
+	unsigned int limit = estimate->cnt;\
 	(TASK)->dst = MOScodevectorDict(TASK);\
 	BitVector base = (BitVector) ((TASK)->dst);\
 	BUN i;\
@@ -384,7 +401,7 @@ finalizeDictionary_capped(MOStask task) {
 }
 
 void
-MOScompress_capped(MOStask task)
+MOScompress_capped(MOStask task, MosaicBlkRec* estimate)
 {
 	MosaicBlk blk = task->blk;
 

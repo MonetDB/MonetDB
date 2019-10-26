@@ -35,6 +35,25 @@ select cast(sum(distinct "aa"+3452) as bigint) from "groupings" group by "aa"+"b
 
 select count(*) from "groupings" having count("aa"-54) > 2;
 select count(*) from "groupings" order by count("bb"+1);
+select cast(sum("aa") as bigint), cast(sum("bb") as bigint), cast(sum("aa" + "bb") as bigint) from "groupings" group by "aa", "bb", "aa" + "bb" having sum("aa" + "bb") < 4;
+
+-- Order by expressions
+select count(*) from "groupings" order by rank() over ();
+select "aa" + "bb" from "groupings" order by case when "aa" > 1 then "aa" else "aa" + 10 end;
+select cast(sum("aa") + sum("bb") as bigint) from "groupings" order by sum("aa" + "bb");
+select "aa" + "bb" from "groupings" order by "aa" between "bb" and NULL;
+select "aa", "bb" from "groupings" order by "aa" > "bb" + 10, "aa";
+select "aa", "bb" from "groupings" order by "aa" > all(select count("bb") from "groupings");
+select cast(sum("aa"+"bb") as bigint) from "groupings" order by 1;
+select distinct "aa", "bb" from "groupings" order by "aa" > "bb";
+select count(*) from "groupings" having count("aa") <= count("aa" + "bb") order by sum("aa") > sum("bb");
+select "aa" + "bb" from "groupings" group by "aa" + "bb" order by sum("aa");
+select 1 from "groupings" group by "aa" + "bb" order by "aa" + "bb";
+select cast(sum("aa") as bigint), cast(sum("bb") as bigint), cast(sum("aa" + "bb") as bigint) from "groupings" group by "aa", "bb", "aa" + "bb" order by "aa" + "bb";
+select sumints("aa","bb") from "groupings" order by "aa" > "bb" or "aa" < "bb", sumints("aa","bb");
+select 1 order by 1 < any(select sum("bb") from "groupings");
+select "aa", "bb" from "groupings" order by "aa" - "bb";
+select "aa", "bb" from "groupings" order by "aa" - "bb" desc nulls last;
 
 select 1 group by 1;
 select 1 group by 2;
@@ -50,10 +69,11 @@ select "aa"+3452 from "groupings" group by "aa"+"bb"; --error
 select count(*) from "groupings" group by count("aa"); --error
 select count(*) from "groupings" group by rank() over (); --error
 select count(*) from "groupings" having rank() over (); --error
-select count(*) from "groupings" order by rank() over (); --error TODO?
 select cast("aa"+1 as bigint) from "groupings" group by "aa"+1 having "bb"+1 > 2; --error
 select cast("aa"+1 as bigint) from "groupings" group by "aa"+1 order by "bb"+1; --error
 select case when "aa" > 2 then "aa" else "aa" * 4 end from "groupings" group by case when "aa" > 1 then "aa" else "aa" * 4 end; --error
 select case when "aa" < 1 then "aa" else "aa" * 4 end from "groupings" group by case when "aa" > 1 then "aa" else "aa" * 4 end; --error
+select sum("aa") + sum("bb") from "groupings" order by "aa" between "bb" and NULL; --error
+select 1 from "groupings" group by "aa" + "bb" order by "aa"; --error
 
 drop table "groupings";

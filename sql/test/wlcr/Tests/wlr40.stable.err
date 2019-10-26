@@ -17,11 +17,13 @@ stderr of test 'wlr40` in directory 'sql/test/wlcr` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	monet_prompt = 
-# cmdline opt 	mapi_port = 49945
-# cmdline opt 	mapi_usock = /var/tmp/mtest-24794/.s.monetdb.49945
-# cmdline opt 	gdk_dbpath = /export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone
-# cmdline opt 	gdk_debug = 536870922
+# cmdline opt 	mapi_port = 47971
+# cmdline opt 	mapi_usock = /var/tmp/mtest-32073/.s.monetdb.47971
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/branches/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone
+#client1:!ERROR:MALException:sql.replicate:Replicator not started, call setmaster() first 
+MAPI  = (monetdb) /var/tmp/mtest-32073/.s.monetdb.47971
+QUERY = call wlr.replicate(9);
+ERROR = !Replicator not started, call wlr.master() first 
 
 # 13:02:55 >  
 # 13:02:55 >  "Done."

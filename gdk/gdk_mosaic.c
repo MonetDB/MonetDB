@@ -15,11 +15,11 @@
 #include "gdk_private.h"
 
 void MOSsetLock(BAT* b) {
-	MT_lock_set(&GDKmosaicLock(b->batCacheid));
+	MT_lock_set(&b->batIdxLock);
 }
 
 void MOSunsetLock(BAT* b) {
-	MT_lock_unset(&GDKmosaicLock(b->batCacheid));
+	MT_lock_unset(&b->batIdxLock);
 }
 
 static inline void
@@ -60,7 +60,8 @@ MOS_##HEAP##_sync(void *arg) {\
     if (HEAPsave(hp, hp->filename, NULL) != GDK_SUCCEED ||\
         (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) < 0) {\
         BBPunfix(bn->batCacheid);\
-        GDKfree(arg);\
+        GDKfree(hp);\
+		bn->t##HEAP = NULL;\
         return;\
     }\
     ((oid *) hp->base)[0] |= (oid) 1 << 24;\
@@ -72,7 +73,6 @@ MOS_##HEAP##_sync(void *arg) {\
     close(fd);\
     BBPunfix(bn->batCacheid);\
     ALGODEBUG fprintf(stderr, "#%s: persisting " #HEAP " %s (" LLFMT " usec)\n", "BAT" #HEAP, hp->filename, GDKusec() - t0);\
-    GDKfree(arg);\
 }\
 \
 static gdk_return \
@@ -111,9 +111,9 @@ BATmosaic_##HEAP(BAT *bn, BUN cap)\
 	}\
     m->parentid = bn->batCacheid;\
 \
+	bn->t##HEAP = m;\
 	PERSIST_MOSAIC(HEAP, bn);\
 	bn->batDirtydesc = TRUE;\
-	bn->t##HEAP = m;\
     return GDK_SUCCEED;\
 }\
 \

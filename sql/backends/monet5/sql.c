@@ -224,7 +224,6 @@ SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-
 str
 SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -268,8 +267,8 @@ SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 
 	if ((msg = CLTshutdown(cntxt, mb, stk, pci)) == MAL_SUCCEED) {
-		/* administer the shutdown */
-		mnstr_printf(GDKstdout, "#%s\n", *getArgReference_str(stk, pci, 0));
+		/* administer the shutdown in the system log*/
+		fprintf(stderr, "#Shutdown:%s\n", *getArgReference_str(stk, pci, 0));
 	}
 	return msg;
 }
@@ -622,7 +621,6 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *varname = *getArgReference_str(stk, pci, 2);
 	int mtype = getArgType(mb, pci, 3);
 	ValRecord *src;
-	char buf[BUFSIZ];
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -635,6 +633,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strcmp("optimizer", varname) == 0) {
 		const char *newopt = *getArgReference_str(stk, pci, 3);
 		if (newopt) {
+			char buf[BUFSIZ];
 			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0) {
 				throw(SQL, "sql.setVariable", SQLSTATE(42100) "optimizer '%s' unknown", newopt);
 			}
@@ -666,8 +665,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(!stack_set_var(m, varname, src))
 			throw(SQL, "sql.setVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
-		snprintf(buf, BUFSIZ, "variable '%s' unknown", varname);
-		throw(SQL, "sql.setVariable", SQLSTATE(42100) "%s", buf);
+		throw(SQL, "sql.setVariable", SQLSTATE(42100) "variable '%s' unknown", varname);
 	}
 	return MAL_SUCCEED;
 }
@@ -689,12 +687,8 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable type error");
-	a = stack_get_var(m, varname);
-	if (!a) {
-		char buf[BUFSIZ];
-		snprintf(buf, BUFSIZ, "variable '%s' unknown", varname);
-		throw(SQL, "sql.getVariable", SQLSTATE(42100) "%s", buf);
-	}
+	if (!(a = stack_get_var(m, varname)))
+		throw(SQL, "sql.getVariable", SQLSTATE(42100) "variable '%s' unknown", varname);
 	src = &a->data;
 	dst = &stk->stk[getArg(pci, 0)];
 	if (VALcopy(dst, src) == NULL)
@@ -761,6 +755,7 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg;
 	sql_schema *s;
+	sql_sequence *seq;
 	lng *res = getArgReference_lng(stk, pci, 0);
 	const char *sname = *getArgReference_str(stk, pci, 1);
 	const char *seqname = *getArgReference_str(stk, pci, 2);
@@ -769,91 +764,17 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	s = mvc_bind_schema(m, sname);
-	if (s) {
-		sql_sequence *seq = find_sql_sequence(s, seqname);
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+	if (!(seq = find_sql_sequence(s, seqname)))
+		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 
-		if (seq && seq_next_value(seq, res)) {
-			m->last_id = *res;
-			stack_set_number(m, "last_id", m->last_id);
-			return MAL_SUCCEED;
-		}
-	}
-	throw(SQL, "sql.next_value", SQLSTATE(42000) "Error in fetching next value");
-}
-
-/* str mvc_bat_next_value(bat *res, int *sid, str *seqname); */
-str
-mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	str msg;
-	BAT *b, *r;
-	BUN p, q;
-	sql_schema *s = NULL;
-	sql_sequence *seq = NULL;
-	seqbulk *sb = NULL;
-	BATiter bi;
-	bat *res = getArgReference_bat(stk, pci, 0);
-	bat sid = *getArgReference_bat(stk, pci, 1);
-	const char *seqname = *getArgReference_str(stk, pci, 2);
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-
-	if ((b = BATdescriptor(sid)) == NULL)
-		throw(SQL, "sql.next_value", SQLSTATE(HY005) "Cannot access column descriptor");
-
-	r = COLnew(b->hseqbase, TYPE_lng, BATcount(b), TRANSIENT);
-	if (!r) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.next_value", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-
-	if (!BATcount(b)) {
-		BBPunfix(b->batCacheid);
-		BBPkeepref(r->batCacheid);
-		*res = r->batCacheid;
+	if (seq_next_value(seq, res)) {
+		m->last_id = *res;
+		stack_set_number(m, "last_id", m->last_id);
 		return MAL_SUCCEED;
 	}
-
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		str sname = BUNtvar(bi, p);
-		lng l;
-
-		if (!s || strcmp(s->base.name, sname) != 0) {
-			if (sb)
-				seqbulk_destroy(sb);
-			s = mvc_bind_schema(m, sname);
-			seq = NULL;
-			if (!s || (seq = find_sql_sequence(s, seqname)) == NULL || !(sb = seqbulk_create(seq, BATcount(b)))) {
-				BBPunfix(b->batCacheid);
-				BBPunfix(r->batCacheid);
-				throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname,seqname);
-			}
-		}
-		if (!seqbulk_next_value(sb, &l)) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(r->batCacheid);
-			seqbulk_destroy(sb);
-			throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
-		}
-		if (BUNappend(r, &l, false) != GDK_SUCCEED) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(r->batCacheid);
-			seqbulk_destroy(sb);
-			throw(SQL, "sql.next_value", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-	}
-	if (sb)
-		seqbulk_destroy(sb);
-	BBPunfix(b->batCacheid);
-	BBPkeepref(r->batCacheid);
-	*res = r->batCacheid;
-	return MAL_SUCCEED;
+	throw(SQL, "sql.next_value", SQLSTATE(42000) "Error in fetching next value for sequence %s.%s", sname, seqname);
 }
 
 /* str mvc_get_value(lng *res, str *sname, str *seqname); */
@@ -863,6 +784,7 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg;
 	sql_schema *s;
+	sql_sequence *seq;
 	lng *res = getArgReference_lng(stk, pci, 0);
 	const char *sname = *getArgReference_str(stk, pci, 1);
 	const char *seqname = *getArgReference_str(stk, pci, 2);
@@ -871,14 +793,130 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	s = mvc_bind_schema(m, sname);
-	if (s) {
-		sql_sequence *seq = find_sql_sequence(s, seqname);
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.get_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+	if (!(seq = find_sql_sequence(s, seqname)))
+		throw(SQL, "sql.get_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 
-		if (seq && seq_get_value(seq, res))
-			return MAL_SUCCEED;
+	if (seq_get_value(seq, res))
+		return MAL_SUCCEED;
+	throw(SQL, "sql.get_value", SQLSTATE(42000) "Error in fetching current value for sequence %s.%s", sname, seqname);
+}
+
+static str
+mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int (*bulk_func)(seqbulk *, lng *), const char *call, const char *action)
+{
+	mvc *m = NULL;
+	str msg = MAL_SUCCEED, sname = NULL, seqname = NULL;
+	BAT *b = NULL, *c = NULL, *r = NULL, *it;
+	BUN p, q;
+	sql_schema *s = NULL;
+	sql_sequence *seq = NULL;
+	seqbulk *sb = NULL;
+	BATiter bi, ci;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat schid = 0, seqid = 0;
+
+	if (isaBatType(getArgType(mb, pci, 1)))
+		schid = *getArgReference_bat(stk, pci, 1);
+	else
+		sname = *getArgReference_str(stk, pci, 1);
+	if (isaBatType(getArgType(mb, pci, 2)))
+		seqid = *getArgReference_bat(stk, pci, 2);
+	else
+		seqname = *getArgReference_str(stk, pci, 2);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	if (schid && !(b = BATdescriptor(schid))) {
+		msg = createException(SQL, call, SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
 	}
-	throw(SQL, "sql.get_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
+	if (seqid && !(c = BATdescriptor(seqid))) {
+		msg = createException(SQL, call, SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
+	}
+	assert(b || c);
+	it = b ? b : c; /* Either b or c must be set */
+
+	if (!(r = COLnew(it->hseqbase, TYPE_lng, BATcount(it), TRANSIENT))) {
+		msg = createException(SQL, call, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	if (!BATcount(it))
+		goto bailout; /* Success case */
+
+	if (b)
+		bi = bat_iterator(b);
+	if (c)
+		ci = bat_iterator(c);
+
+	BATloop(it, p, q) {
+		str nsname, nseqname;
+		lng l;
+
+		if (b)
+			nsname = BUNtvar(bi, p);
+		else
+			nsname = sname;
+		if (c)
+			nseqname = BUNtvar(ci, p);
+		else
+			nseqname = seqname;
+
+		if (!s || strcmp(s->base.name, nsname) != 0 || !seq || strcmp(seq->base.name, nseqname) != 0) {
+			if (sb) {
+				seqbulk_destroy(sb);
+				sb = NULL;
+			}
+			seq = NULL;
+			if ((!s || strcmp(s->base.name, nsname) != 0) && !(s = mvc_bind_schema(m, nsname))) {
+				msg = createException(SQL, call, SQLSTATE(3F000) "Cannot find the schema %s", nsname);
+				goto bailout;
+			}
+			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(seq, BATcount(it)))) {
+				msg = createException(SQL, call, SQLSTATE(HY050) "Cannot find the sequence %s.%s", nsname, nseqname);
+				goto bailout;
+			}
+		}
+		if (!bulk_func(sb, &l)) {
+			msg = createException(SQL, call, SQLSTATE(HY050) "Cannot %s sequence value %s.%s", action, nsname, nseqname);
+			goto bailout;
+		}
+		if (BUNappend(r, &l, false) != GDK_SUCCEED) {
+			msg = createException(SQL, call, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+	}
+
+bailout:
+	if (sb)
+		seqbulk_destroy(sb);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (c)
+		BBPunfix(c->batCacheid);
+	if (msg)
+		BBPreclaim(r);
+	else
+		BBPkeepref(*res = r->batCacheid);
+	return msg;
+}
+
+str
+mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return mvc_bat_next_get_value(cntxt, mb, stk, pci, seqbulk_next_value, "sql.next_value", "generate next");
+}
+
+str
+mvc_bat_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return mvc_bat_next_get_value(cntxt, mb, stk, pci, seqbulk_get_value, "sql.get_value", "get");
 }
 
 str
@@ -905,6 +943,7 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg;
 	sql_schema *s;
+	sql_sequence *seq;
 	lng *res = getArgReference_lng(stk, pci, 0);
 	const char *sname = *getArgReference_str(stk, pci, 1);
 	const char *seqname = *getArgReference_str(stk, pci, 2);
@@ -914,18 +953,154 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.restart", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+	if (!(seq = find_sql_sequence(s, seqname)))
+		throw(SQL, "sql.restart", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 	if (is_lng_nil(start))
-		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot (re)start sequence %s.%s with NULL",sname,seqname);
-	s = mvc_bind_schema(m, sname);
-	if (s) {
-		sql_sequence *seq = find_sql_sequence(s, seqname);
+		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot (re)start sequence %s.%s with NULL", sname, seqname);
+	if (seq->minvalue && start < seq->minvalue)
+		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value lesser than the minimum ("LLFMT" < "LLFMT")", sname, seqname, start, seq->minvalue);
+	if (seq->maxvalue && start > seq->maxvalue)
+		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value higher than the maximum ("LLFMT" > "LLFMT")", sname, seqname, start, seq->maxvalue);
+	if (sql_trans_sequence_restart(m->session->tr, seq, start)) {
+		*res = start;
+		return MAL_SUCCEED;
+	}
+	throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot (re)start sequence %s.%s", sname, seqname);
+}
 
-		if (seq) {
-			*res = sql_trans_sequence_restart(m->session->tr, seq, start);
-			return MAL_SUCCEED;
+str
+mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = MAL_SUCCEED, sname = NULL, seqname = NULL;
+	BAT *b = NULL, *c = NULL, *d = NULL, *r = NULL, *it;
+	BUN p, q;
+	sql_schema *s = NULL;
+	sql_sequence *seq = NULL;
+	seqbulk *sb = NULL;
+	BATiter bi, ci;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat schid = 0, seqid = 0, startid = 0;
+	lng start = 0, *di = NULL;
+
+	if (isaBatType(getArgType(mb, pci, 1)))
+		schid = *getArgReference_bat(stk, pci, 1);
+	else
+		sname = *getArgReference_str(stk, pci, 1);
+	if (isaBatType(getArgType(mb, pci, 2)))
+		seqid = *getArgReference_bat(stk, pci, 2);
+	else
+		seqname = *getArgReference_str(stk, pci, 2);
+	if (isaBatType(getArgType(mb, pci, 3)))
+		startid = *getArgReference_bat(stk, pci, 3);
+	else
+		start = *getArgReference_lng(stk, pci, 3);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	if (schid && !(b = BATdescriptor(schid))) {
+		msg = createException(SQL, "sql.restart", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
+	}
+	if (seqid && !(c = BATdescriptor(seqid))) {
+		msg = createException(SQL, "sql.restart", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
+	}
+	if (startid && !(d = BATdescriptor(startid))) {
+		msg = createException(SQL, "sql.restart", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
+	}
+	assert(b || c || d);
+	it = b ? b : c ? c : d; /* Either b, c or d must be set */
+
+	if (!(r = COLnew(it->hseqbase, TYPE_lng, BATcount(it), TRANSIENT))) {
+		msg = createException(SQL, "sql.restart", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	if (!BATcount(it))
+		goto bailout; /* Success case */
+
+	if (b)
+		bi = bat_iterator(b);
+	if (c)
+		ci = bat_iterator(c);
+	if (d)
+		di = (lng *) Tloc(d, 0);
+
+	BATloop(it, p, q) {
+		str nsname, nseqname;
+		lng nstart;
+
+		if (b)
+			nsname = BUNtvar(bi, p);
+		else
+			nsname = sname;
+		if (c)
+			nseqname = BUNtvar(ci, p);
+		else
+			nseqname = seqname;
+		if (di)
+			nstart = di[p];
+		else
+			nstart = start;
+
+		if (!s || strcmp(s->base.name, nsname) != 0 || !seq || strcmp(seq->base.name, nseqname) != 0) {
+			if (sb) {
+				seqbulk_destroy(sb);
+				sb = NULL;
+			}
+			seq = NULL;
+			if ((!s || strcmp(s->base.name, nsname) != 0) && !(s = mvc_bind_schema(m, nsname))) {
+				msg = createException(SQL, "sql.restart", SQLSTATE(3F000) "Cannot find the schema %s", nsname);
+				goto bailout;
+			}
+			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(seq, BATcount(it)))) {
+				msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot find the sequence %s.%s", nsname, nseqname);
+				goto bailout;
+			}
+		}
+		if (is_lng_nil(nstart)) {
+			msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot (re)start sequence %s.%s with NULL", sname, seqname);
+			goto bailout;
+		}	
+		if (seq->minvalue && nstart < seq->minvalue) {
+			msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value lesser than the minimum ("LLFMT" < "LLFMT")", sname, seqname, start, seq->minvalue);
+			goto bailout;
+		}
+		if (seq->maxvalue && nstart > seq->maxvalue) {
+			msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot set sequence %s.%s start to a value higher than the maximum ("LLFMT" > "LLFMT")", sname, seqname, start, seq->maxvalue);
+			goto bailout;
+		}
+		if (!sql_trans_seqbulk_restart(m->session->tr, sb, nstart)) {
+			msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot restart sequence %s.%s", nsname, nseqname);
+			goto bailout;
+		}
+		if (BUNappend(r, &nstart, false) != GDK_SUCCEED) {
+			msg = createException(SQL, "sql.restart", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto bailout;
 		}
 	}
-	throw(SQL, "sql.restart", SQLSTATE(HY050) "Sequence %s.%s not found", sname, seqname);
+
+bailout:
+	if (sb)
+		seqbulk_destroy(sb);
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (c)
+		BBPunfix(c->batCacheid);
+	if (d)
+		BBPunfix(d->batCacheid);
+	if (msg)
+		BBPreclaim(r);
+	else
+		BBPkeepref(*res = r->batCacheid);
+	return msg;
 }
 
 static BAT *
@@ -1603,10 +1778,10 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.clear_table", "3F000!Schema missing %s", sname);
+		throw(SQL, "sql.clear_table", SQLSTATE(3F000) "Schema missing %s", sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.clear_table", "42S02!Table missing %s.%s", sname,tname);
+		throw(SQL, "sql.clear_table", SQLSTATE(42S02) "Table missing %s.%s", sname,tname);
 	*res = mvc_clear_table(m, t);
 	return MAL_SUCCEED;
 }
@@ -2250,7 +2425,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATdescriptor(bid);
 	if ( b == NULL)
 		throw(MAL,"sql.resultset", SQLSTATE(HY005) "Cannot access column descriptor");
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), 1, b);
+	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, b);
 	if (res < 0)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result table construction failed");
 	BBPunfix(b->batCacheid);
@@ -2341,7 +2516,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	order = BATdescriptor(bid);
 	if ( order == NULL)
 		throw(MAL,"sql.resultset", SQLSTATE(HY005) "Cannot access column descriptor");
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), 1, order);
+	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, order);
 	t = m->results;
 	if (res < 0){
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed");
@@ -2458,7 +2633,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), 1, NULL);
+	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, NULL);
 	if (res < 0)
 		throw(SQL, "sql.resultset", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
@@ -2543,7 +2718,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "sql.resultSet", "cannot transfer files to client");
 	}
 
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), 1, NULL);
+	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), Q_TABLE, NULL);
 
 	t = m->results;
 	if (res < 0){
@@ -2641,7 +2816,7 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	int *res_id;
 	int nr_cols;
-	int qtype;
+	sql_query_t qtype;
 	bat order_bid;
 
 	if ( pci->argc > 6)
@@ -2649,7 +2824,7 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	res_id = getArgReference_int(stk, pci, 0);
 	nr_cols = *getArgReference_int(stk, pci, 1);
-	qtype = *getArgReference_int(stk, pci, 2);
+	qtype = (sql_query_t) *getArgReference_int(stk, pci, 2);
 	order_bid = *getArgReference_bat(stk, pci, 3);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -2803,7 +2978,7 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = *(ptr *) p;
 
 	// scalar values are single-column result sets
-	if((res_id = mvc_result_table(b->mvc, mb->tag, 1, 1, NULL)) < 0)
+	if ((res_id = mvc_result_table(b->mvc, mb->tag, 1, Q_TABLE, NULL)) < 0)
 		throw(SQL, "sql.exportValue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if (mvc_result_value(b->mvc, tn, cn, type, digits, scale, p, mtype))
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed");
@@ -3399,6 +3574,84 @@ SQLall(ptr ret, const bat *bid)
 }
 
 str
+SQLall_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
+{
+	BAT *l, *g, *e, *res;
+	BATiter li;
+	ssize_t p, *pos = NULL;
+	int error = 0, has_nil = 0;
+	int (*ocmp) (const void *, const void *);
+
+	(void)no_nil;
+	if ((l = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "all =", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((g = BATdescriptor(*gp)) == NULL) {
+		BBPunfix(l->batCacheid);
+		throw(SQL, "all =", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((e = BATdescriptor(*gpe)) == NULL) {
+		BBPunfix(l->batCacheid);
+		BBPunfix(g->batCacheid);
+		throw(SQL, "all =", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	li = bat_iterator(l);
+	ocmp = ATOMcompare(l->ttype);
+	if (BATcount(g) > 0) {
+		BUN q, o, s, offset = 0;
+		BATiter gi = bat_iterator(g);
+
+		pos = GDKmalloc(sizeof(BUN)*BATcount(e)); 
+		for (s = 0; s < BATcount(e); s++) 
+			pos[s] = -1;
+
+		offset = g->hseqbase - l->hseqbase;
+		o = BUNlast(g);
+		for (q = offset, s = 0; s < o; q++, s++) {
+			oid id = *(oid*)BUNtail(gi, s);
+			if (pos[id] == -2)
+				continue;
+			else if (pos[id] == -1)
+				pos[id] = q;
+			else {
+				const void *lv = BUNtail(li, q);
+				const void *rv = BUNtail(li, pos[id]);
+
+				if (ocmp(lv, rv) != 0)
+					pos[id] = -2;
+			}
+		}
+	}
+	res = COLnew(e->hseqbase, l->ttype, BATcount(e), TRANSIENT);
+	const void *nilp = ATOMnilptr(l->ttype);
+	for (p = 0; p < (ssize_t)BATcount(e) && !error; p++) {
+		const void *v = nilp;
+		if (pos[p] >= 0) {
+			v = BUNtail(li, pos[p]);
+			if (ocmp(v, nilp) == 0)
+				has_nil = 1;
+		} else
+			has_nil = 1;
+		if (BUNappend(res, v, false) != GDK_SUCCEED)
+			error = 1;
+	}
+	GDKfree(pos);
+	if (error)
+		throw(SQL, "all =", SQLSTATE(HY005) "all append failed");
+
+	res->hseqbase = g->hseqbase;
+	res->tnil = (has_nil)?1:0;
+	res->tnonil = (has_nil)?0:1;
+	res->tsorted = res->trevsorted = 0;
+	res->tkey = 0;
+	BBPunfix(l->batCacheid);
+	BBPunfix(g->batCacheid);
+	BBPunfix(e->batCacheid);
+	BBPkeepref(*ret = res->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
 SQLnil(bit *ret, const bat *bid)
 {
 	BAT *b;
@@ -3426,6 +3679,66 @@ SQLnil(bit *ret, const bat *bid)
 		}
 	}
 	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+SQLnil_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
+{
+	BAT *l, *g, *e, *res;
+	bit F = FALSE;
+	BUN offset = 0;
+	bit has_nil = 0;
+
+	(void)no_nil;
+	if ((l = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "any =", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((g = BATdescriptor(*gp)) == NULL) {
+		BBPunfix(l->batCacheid);
+		throw(SQL, "any =", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((e = BATdescriptor(*gpe)) == NULL) {
+		BBPunfix(l->batCacheid);
+		BBPunfix(g->batCacheid);
+		throw(SQL, "any =", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	res = BATconstant(0, TYPE_bit, &F, BATcount(e), TRANSIENT);
+	BAThseqbase(res, e->hseqbase);
+	offset = g->hseqbase - l->hseqbase;
+	if (BATcount(g) > 0) {
+		BUN q, o, s;
+		int (*ocmp) (const void *, const void *);
+		BATiter li = bat_iterator(l);
+		BATiter gi = bat_iterator(g);
+		BATiter rt = bat_iterator(res);
+
+		bit *ret = BUNtail(rt, 0);
+		const void *nilp = ATOMnilptr(l->ttype);
+
+		o = BUNlast(g);
+		ocmp = ATOMcompare(l->ttype);
+		for (q = offset, s = 0; s < o; q++, s++) {
+			const void *lv = BUNtail(li, q);
+			oid id = *(oid*)BUNtail(gi, s);
+
+			if (ret[id] != TRUE) {
+				if (ocmp(lv, nilp) == 0) {
+					ret[id] = bit_nil;
+					has_nil = 1;
+				}
+			}
+		}
+	}
+	res->hseqbase = g->hseqbase;
+	res->tnil = has_nil != 0;
+	res->tnonil = has_nil == 0;
+	res->tsorted = res->trevsorted = 0;
+	res->tkey = 0;
+	BBPunfix(l->batCacheid);
+	BBPunfix(g->batCacheid);
+	BBPunfix(e->batCacheid);
+	BBPkeepref(*ret = res->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -3622,7 +3935,7 @@ SQLanyequal_grp2(bat *ret, const bat *bid1, const bat *bid2, const bat *Rid, con
 			oid id = *(oid*)BUNtail(gi, s);
 
 			if (ret[id] != TRUE) {
-				if (rid == oid_nil) {
+				if (rid == oid_nil) { /* empty */
 					ret[id] = FALSE;
 				} else if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
 					ret[id] = bit_nil;
@@ -3812,7 +4125,7 @@ SQLallnotequal_grp2(bat *ret, const bat *bid1, const bat *bid2, const bat *Rid, 
 			oid id = *(oid*)BUNtail(gi, s);
 
 			if (ret[id] != FALSE) {
-				if (rid == oid_nil) {
+				if (rid == oid_nil) { /* empty */
 					ret[id] = TRUE;
 				} else if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
 					ret[id] = bit_nil;
@@ -4447,14 +4760,14 @@ str
 dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	BAT *t[13];
+	BAT *t[2];
 	bat id;
 
 	(void) cntxt;
 	(void) mb;
-	if (TRACEtable(t) != 13)
+	if (TRACEtable(cntxt, t) != 2)
 		throw(SQL, "sql.dump_trace", SQLSTATE(3F000) "Profiler not started");
-	for(i=0; i< 13; i++)
+	for(i=0; i< 2; i++)
 	if( t[i]){
 		id = t[i]->batCacheid;
 		*getArgReference_bat(stk, pci, i) = id;
@@ -5681,6 +5994,19 @@ SQLsuspend_log_flushing(void *ret)
 	store_suspend_log();
 	return MAL_SUCCEED;
 }
+
+str
+SQLhot_snapshot(void *ret, const str *tarfile_arg)
+{
+	(void)ret;
+	char *tarfile = *tarfile_arg;
+	lng result = store_hot_snapshot(tarfile);
+	if (result)
+		return MAL_SUCCEED;
+	else
+		throw(SQL, "sql.hot_snapshot", GDK_EXCEPTION);
+}
+
 str
 SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -5722,7 +6048,7 @@ str
 SQLsubexist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
 {
 	BAT *b, *g, *e, *res;
-	bit F = FALSE, hasnil = 0;
+	bit T = TRUE;
 	BUN offset = 0;
 
 	(void)no_nil;
@@ -5737,6 +6063,101 @@ SQLsubexist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
 		throw(SQL, "exists", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	res = BATconstant(0, TYPE_bit, &T, BATcount(e), TRANSIENT);
+	BAThseqbase(res, e->hseqbase);
+	offset = g->hseqbase - b->hseqbase;
+	if (BATcount(g) > 0) {
+		BUN q, o, s;
+		int (*ocmp) (const void *, const void *);
+		BATiter bi = bat_iterator(b);
+		BATiter gi = bat_iterator(g);
+		BATiter rt = bat_iterator(res);
+
+		bit *ret = BUNtail(rt, 0);
+		const void *nilp = ATOMnilptr(b->ttype);
+
+		o = BUNlast(g);
+		ocmp = ATOMcompare(b->ttype);
+		for (q = offset, s = 0; s < o; q++, s++) {
+			const void *bv = BUNtail(bi, q);
+			oid id = *(oid*)BUNtail(gi, s);
+
+			if (ret[id] == TRUE) {
+				if (ocmp(bv, nilp) == 0) {
+					ret[id] = FALSE;
+				}
+			}
+		}
+	}
+	res->hseqbase = g->hseqbase;
+	res->tnil = 0;
+	res->tnonil = 1;
+	res->tsorted = res->trevsorted = 0;
+	res->tkey = 0;
+	BBPunfix(b->batCacheid);
+	BBPunfix(g->batCacheid);
+	BBPunfix(e->batCacheid);
+	BBPkeepref(*ret = res->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+SQLnot_exist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bit *res = getArgReference_bit(stk, pci, 0);
+	ptr v = getArgReference(stk, pci, 1);
+	int mtype = getArgType(mb, pci, 1);
+
+	(void)cntxt;
+	if ((mtype == TYPE_bat || mtype > GDKatomcnt)) {
+	       	BAT *b = BATdescriptor(*(bat *)v);
+
+		if (b)
+			*res = BATcount(b) == 0;
+		else
+			throw(SQL, "aggr.not_exist", SQLSTATE(HY005) "Cannot access column descriptor");
+	} else
+	//if (ATOMcmp(mtype, v, ATOMnilptr(mtype)) != 0)
+		*res = FALSE;
+		/*
+	else
+		*res = FALSE;
+		*/
+	return MAL_SUCCEED;
+}
+
+str
+SQLnot_exist(bit *res, bat *id)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*id)) == NULL)
+		throw(SQL, "aggr.not_exist", SQLSTATE(HY005) "Cannot access column descriptor");
+	*res = BATcount(b) == 0;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+SQLsubnot_exist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
+{
+	BAT *b, *g, *e, *res;
+	bit F = FALSE, hasnil = 0;
+	BUN offset = 0;
+
+	(void)no_nil;
+	if ((b = BATdescriptor(*bp)) == NULL) {
+		throw(SQL, "not_exists", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((g = BATdescriptor(*gp)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "not_exists", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((e = BATdescriptor(*gpe)) == NULL) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
+		throw(SQL, "not_exists", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	res = BATconstant(0, TYPE_bit, &F, BATcount(e), TRANSIENT);
 	BAThseqbase(res, e->hseqbase);

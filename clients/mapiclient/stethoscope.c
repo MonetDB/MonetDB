@@ -71,7 +71,6 @@ static char hostname[128];
 static char *filename = NULL;
 static int beat = 0;
 static int json = 0;
-static int stream_mode = 1;
 static Mapi dbh;
 static MapiHdl hdl = NULL;
 static FILE *trace = NULL;
@@ -110,7 +109,7 @@ renderEvent(EventRecord *ev){
 		return;
 	fprintf(s, "[ ");
 	fprintf(s, "%"PRId64",	", ev->eventnr);
-	printf("\"%s\",	", ev->time);
+	fprintf(s, "\"%s\",	", ev->time);
 	if( ev->function && *ev->function)
 		fprintf(s, "\"%s[%d]%d\",	", ev->function, ev->pc, ev->tag);
 	else
@@ -232,7 +231,6 @@ usageStethoscope(void)
     fprintf(stderr, "  -h | --host=<hostname>\n");
     fprintf(stderr, "  -c | --convert=<old formated file>\n");
     fprintf(stderr, "  -j | --json\n");
-    fprintf(stderr, "  -y | --pretty (implies --json)\n");
     fprintf(stderr, "  -o | --output=<file>\n");
     fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
     fprintf(stderr, "  -D | --debug\n");
@@ -347,11 +345,6 @@ main(int argc, char **argv)
 			break;
 		case 'j':
 			json = 1;
-			stream_mode = 3;
-			break;
-		case 'y':
-			stream_mode = 1;
-			json = 1;
 			break;
 		case 'o':
 			filename = strdup(optarg);
@@ -427,7 +420,7 @@ main(int argc, char **argv)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
 
-	snprintf(buf, BUFSIZ, "profiler.openstream(%d);", stream_mode);
+	snprintf(buf, BUFSIZ, "profiler.openstream();");
 	if( debug)
 		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);

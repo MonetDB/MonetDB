@@ -857,17 +857,14 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 
 	if (!bs) {
 		sql_error(m, 500, "no stream (pointer) provided");
-		m->type = -1;
 		return NULL;
 	}
 	if (mnstr_errnr(bs->s)) {
 		sql_error(m, 500, "stream not open %d", mnstr_errnr(bs->s));
-		m->type = -1;
 		return NULL;
 	}
 	if (offset < 0 || offset > (lng) BUN_MAX) {
 		sql_error(m, 500, "offset out of range");
-		m->type = -1;
 		return NULL;
 	}
 
@@ -2601,7 +2598,7 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 
 
 int
-mvc_result_table(mvc *m, oid query_id, int nr_cols, int type, BAT *order)
+mvc_result_table(mvc *m, oid query_id, int nr_cols, sql_query_t type, BAT *order)
 {
 	res_table *t = res_table_create(m->session->tr, m->result_id++, query_id, nr_cols, type, m->results, order);
 	m->results = t;

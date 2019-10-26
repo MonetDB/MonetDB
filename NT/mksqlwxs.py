@@ -114,8 +114,8 @@ def main():
     print(r'    <Property Id="ARPPRODUCTICON" Value="monetdb.ico"/>')
     print(r'    <Media Id="1" Cabinet="monetdb.cab" EmbedCab="yes"/>')
     print(r'    <Directory Id="TARGETDIR" Name="SourceDir">')
-    if vs == '17':
-        msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Redist\MSVC'
+    if vs in ('17', '19'):
+        msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\20%s\Community\VC\Redist\MSVC' % vs
         d = sorted(os.listdir(msvc))[-1]
         msm = '_CRT_%s.msm' % arch
         for f in sorted(os.listdir(os.path.join(msvc, d, 'MergeModules'))):

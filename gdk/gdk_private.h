@@ -310,9 +310,6 @@ struct Imprints {
 
 typedef struct {
 	MT_Lock swap;
-	MT_Lock hash;
-	MT_Lock imprints;
-	MT_Lock mosaic;
 } batlock_t;
 
 typedef struct {
@@ -359,10 +356,6 @@ extern MT_Lock GDKtmLock;
 	} while (0)
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
-#define GDKhashLock(x)  GDKbatLock[(x)&BBP_BATMASK].hash
-#define GDKimprintsLock(x)  GDKbatLock[(x)&BBP_BATMASK].imprints
-#define GDKmosaicLock(x)  GDKbatLock[(x)&BBP_BATMASK].mosaic
-
 #if SIZEOF_SIZE_T == 8
 #define threadmask(y)	((int) ((mix_int((unsigned int) y) ^ mix_int((unsigned int) (y >> 32))) & BBP_THREADMASK))
 #else

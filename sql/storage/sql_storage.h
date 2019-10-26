@@ -11,6 +11,7 @@
 
 #include "sql_catalog.h"
 #include "gdk_logger.h"
+#include "store_sequence.h"
 
 #define COLSIZE	1024
 
@@ -35,6 +36,9 @@ typedef enum store_type {
 } store_type;
 
 #define STORE_READONLY (store_readonly)
+
+/* builtin functions have ids less than this */
+#define FUNC_OIDS 2000
 
 extern sql_trans *gtrans;
 extern list *active_sessions;
@@ -312,6 +316,21 @@ typedef int (*log_tstart_fptr) (void);
 typedef int (*log_tend_fptr) (void);
 typedef int (*log_sequence_fptr) (int seq, lng id);
 
+/*
+-- List which parts of which files must be included in a hot snapshot.
+-- This is written to the given stream in the following format:
+-- - The first line is the absolute path of the db dir. All other paths
+--   are relative to this.
+-- - Every other line is either "c %ld %s\n" or "w %ld %s\n". The long
+--   is always the number of bytes to write. The %s is the relative path of the
+--   destination. For "c" lines (copy), it is also the relative path of the
+--   source file. For "w" lines (write), the %ld bytes to write follow directly
+--   after the newline.
+-- Using a stream (buffer) instead of a list data structure simplifies debugging
+-- and avoids a lot of tiny allocations and pointer manipulations.
+*/
+typedef gdk_return (*logger_get_snapshot_files_fptr)(stream *plan);
+
 typedef void *(*log_find_table_value_fptr)(const char *, const char *, const void *, ...);
 typedef struct logger_functions {
 	logger_create_fptr create;
@@ -325,6 +344,8 @@ typedef struct logger_functions {
 	logger_read_last_transaction_id_fptr read_last_transaction_id;
 	logger_get_transaction_drift_fptr get_transaction_drift;
 
+	logger_get_snapshot_files_fptr get_snapshot_files;
+
 	log_isnew_fptr log_isnew;
 	log_needs_update_fptr log_needs_update;
 	log_tstart_fptr log_tstart;
@@ -337,7 +358,7 @@ sqlstore_export logger_functions logger_funcs;
 
 /* we need to add an interface for result_tables later */
 
-extern res_table *res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, int querytype, res_table *next, void *order);
+extern res_table *res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, sql_query_t querytype, res_table *next, void *order);
 extern res_col *res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, int mtype, void *v);
 
 extern void res_table_destroy(res_table *t);
@@ -353,6 +374,8 @@ extern int store_apply_deltas(bool locked);
 extern void store_flush_log(void);
 extern void store_suspend_log(void);
 extern void store_resume_log(void);
+extern lng store_hot_snapshot(str tarfile);
+
 extern void store_manager(void);
 extern void idle_manager(void);
 
@@ -369,7 +392,7 @@ extern int sql_save_snapshots(sql_trans *tr);
 extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl);
 extern int sql_trans_drop_type(sql_trans *tr, sql_schema * s, sqlid id, int drop_action);
 
-extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args, list *res, sql_ftype type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
+extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 
 extern int sql_trans_drop_func(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 extern int sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action);
@@ -428,7 +451,8 @@ extern sql_sequence *create_sql_sequence(sql_allocator *sa, sql_schema *s, const
 extern sql_sequence * sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle, bit bedropped);
 extern void sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int drop_action);
 extern sql_sequence *sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, bit cycle);
-extern lng sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
+extern sql_sequence *sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
+extern sql_sequence *sql_trans_seqbulk_restart(sql_trans *tr, seqbulk *sb, lng start);
 
 extern sql_session * sql_session_create(backend_stack stk, int autocommit);
 extern void sql_session_destroy(sql_session *s);
@@ -437,12 +461,12 @@ extern int sql_trans_begin(sql_session *s);
 extern void sql_trans_end(sql_session *s);
 
 extern list* sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id);
-extern void sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sht depend_type);
+extern void sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
 extern void sql_trans_drop_dependencies(sql_trans *tr, sqlid depend_id);
-extern void sql_trans_drop_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sht depend_type);
-extern list* sql_trans_get_dependencies(sql_trans *tr, sqlid id, sht depend_type, list *ignore_ids);
-extern int sql_trans_get_dependency_type(sql_trans *tr, sqlid depend_id, sht depend_type);
-extern int sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sht depend_type);
+extern void sql_trans_drop_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
+extern list* sql_trans_get_dependencies(sql_trans *tr, sqlid id, sql_dependency depend_type, list *ignore_ids);
+extern int sql_trans_get_dependency_type(sql_trans *tr, sqlid depend_id, sql_dependency depend_type);
+extern int sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
 extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, sqlid id);
 
 extern sql_table *create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, bit properties);
@@ -454,7 +478,7 @@ extern sql_key * key_create_done(sql_allocator *sa, sql_key *k);
 
 extern sql_idx *create_sql_idx(sql_allocator *sa, sql_table *t, const char *nme, idx_type it);
 extern sql_idx *create_sql_ic(sql_allocator *sa, sql_idx *i, sql_column *c);
-extern sql_func *create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, sql_ftype type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
+extern sql_func *create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 
 /* for alter we need to duplicate a table */
 extern sql_table *dup_sql_table(sql_allocator *sa, sql_table *t);

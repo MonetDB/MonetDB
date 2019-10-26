@@ -51,8 +51,10 @@ estimateDict_##TPE(BUN* nr_compressed, BUN* delta_count, BUN limit, DICTIONARY_T
 					/*This delta value is already in the dictionary hence we can skip it.*/\
 					continue;\
 				}\
-				if (*delta_count + 1 == GET_CAP(info) && !EXTEND(info, dict_cnt + (buffer_size <<=1))) {\
-					throw(MAL, "mosaic.var", MAL_MALLOC_FAIL);\
+				if (dict_cnt + *delta_count + 1 == GetCap(info)) {\
+					if( !Extend(info, dict_cnt + *delta_count + (buffer_size <<=1)) ) throw(MAL, "mosaic.var", MAL_MALLOC_FAIL);\
+					dict = GetBase(info, TPE);\
+					delta = dict + dict_cnt;\
 				}\
 				TPE w = *val;\
 				for( ; key< *delta_count; key++) {\
@@ -127,6 +129,6 @@ typedef struct {
 	 * It should always be after the global Mosaic header.*/
 } MOSBlkHdr_dictionary_t;
 
-#define MOScodevectorDict(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MOSBlkHdr_dictionary_t), BitVector))
+#define MOScodevectorDict(Task) (((char*) (Task)->blk) + wordaligned(sizeof(MOSBlkHdr_dictionary_t), unsigned int))
 
 #endif /* _MOSAIC_DICTIONARY_  */

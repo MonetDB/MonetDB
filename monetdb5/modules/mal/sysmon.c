@@ -13,7 +13,7 @@
 #include "mtime.h"
 
 /* (c) M.L. Kersten
- * The query runtime monitor facility is hardwired
+ * The queries currently in execution are returned to the front-end for managing expensive ones.
 */
 
 str
@@ -29,7 +29,8 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *o = getArgReference_bat(stk,pci,6);
 	bat *q = getArgReference_bat(stk,pci,7);
 	time_t now;
-	int i, prog;
+	lng i;
+	int prog;
 	str usr;
 	timestamp tsn;
 	str msg = MAL_SUCCEED;
@@ -58,7 +59,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; i< qtop; i++)
-	if( QRYqueue[i].query && (QRYqueue[i].cntxt->idx == 0 || cntxt->user == 0 || QRYqueue[i].cntxt->user == cntxt->user)) {
+	if( QRYqueue[i].query && (QRYqueue[i].cntxt->user == MAL_ADMIN || QRYqueue[i].cntxt->user == cntxt->user)) {
 		now= time(0);
 		if ( (now-QRYqueue[i].start) > QRYqueue[i].runtime)
 			prog =QRYqueue[i].runtime > 0 ? 100: int_nil;
@@ -151,10 +152,10 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; QRYqueue[i].tag; i++)
-	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->idx ==0)){
-		QRYqueue[i].stk->status = 'p';
-		QRYqueue[i].status = "paused";
-	}
+		if( (lng) QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
+			QRYqueue[i].stk->status = 'p';
+			QRYqueue[i].status = "paused";
+		}
 	MT_lock_unset(&mal_delayLock);
 	return MAL_SUCCEED;
 }
@@ -181,10 +182,10 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; QRYqueue[i].tag; i++)
-	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->idx ==0)){
-		QRYqueue[i].stk->status = 0;
-		QRYqueue[i].status = "running";
-	}
+		if( (lng)QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
+			QRYqueue[i].stk->status = 0;
+			QRYqueue[i].status = "running";
+		}
 	MT_lock_unset(&mal_delayLock);
 	return MAL_SUCCEED;
 }
@@ -211,10 +212,10 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; QRYqueue[i].tag; i++)
-	if( QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->idx ==0)){
-		QRYqueue[i].stk->status = 'q';
-		QRYqueue[i].status = "stopping";
-	}
+		if( (lng) QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
+			QRYqueue[i].stk->status = 'q';
+			QRYqueue[i].status = "stopping";
+		}
 	MT_lock_unset(&mal_delayLock);
 	return MAL_SUCCEED;
 }

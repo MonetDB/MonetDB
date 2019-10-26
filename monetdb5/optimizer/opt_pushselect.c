@@ -142,9 +142,6 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if( mb->errors)
 		return MAL_SUCCEED;
 
-#ifdef DEBUG_OPT_PUSHSELECT
-	fprintf(stderr,"#Push select optimizer started\n");
-#endif
 	(void) stk;
 	(void) pci;
 	vars= (int*) GDKzalloc(sizeof(int)* mb->vtop);
@@ -706,5 +703,9 @@ wrapup:
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
+    if( OPTdebug &  OPTpushselect){
+        fprintf(stderr, "#PUSHSELECT optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return MAL_SUCCEED;
 }

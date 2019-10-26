@@ -142,42 +142,42 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 	while(task->start< task->stop){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKout, "MOSlayout_raw\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_raw\n");
 			MOSlayout_raw(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_raw(task);
 			break;
 		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKout, "MOSlayout_runlength\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_runlength\n");
 			MOSlayout_runlength(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_runlength(task);
 			break;
 		case MOSAIC_CAPPED:
-			ALGODEBUG mnstr_printf(GDKout, "MOSlayout_capped\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_capped\n");
 			MOSlayout_capped(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_capped(task);
 			break;
 		case MOSAIC_VAR:
-			ALGODEBUG mnstr_printf(GDKout, "MOSlayout_var\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_var\n");
 			MOSlayout_var(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_var(task);
 			break;
 		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKout, "MOSlayout_delta\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_delta\n");
 			MOSlayout_delta(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_delta(task);
 			break;
 		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKout, "MOSlayout_linear\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_linear\n");
 			MOSlayout_linear(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_linear(task);
 			break;
 		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKout, "MOSlayout_frame\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_frame\n");
 			MOSlayout_frame(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_frame(task);
 			break;
 		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKout, "MOSlayout_prefix\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_prefix\n");
 			MOSlayout_prefix(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_prefix(task);
 			break;
@@ -451,14 +451,14 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 		goto finalize;
 	}
 
-	// set the exact necessary capacity
-	if (HEAPextend(bsrc->tmosaic, compressed_size_bytes, true) != GDK_SUCCEED) {
+	if ((msg = MOSfinalizeDictionary(task))) {
 		BBPreclaim(estimates);
 		MOSdestroy(bsrc);
 		goto finalize;
 	}
 
-	if ((msg = MOSfinalizeDictionary(task))) {
+	// set the exact necessary capacity
+	if (HEAPextend(bsrc->tmosaic, compressed_size_bytes, true) != GDK_SUCCEED) {
 		BBPreclaim(estimates);
 		MOSdestroy(bsrc);
 		goto finalize;
@@ -476,56 +476,56 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 
 		switch(estimate->tag) {
 		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKout, "MOScompress_runlength\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_runlength\n");
 			MOScompress_runlength(task);
 			MOSupdateHeader(task);
 			MOSadvance_runlength(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_CAPPED:
-			ALGODEBUG mnstr_printf(GDKout, "MOScompress_capped\n");
-			MOScompress_capped(task);
+			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_capped\n");
+			MOScompress_capped(task, estimate);
 			MOSupdateHeader(task);
 			MOSadvance_capped(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_VAR:
-			ALGODEBUG mnstr_printf(GDKout, "MOScompress_var\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_var\n");
 			MOScompress_var(task);
 			MOSupdateHeader(task);
 			MOSadvance_var(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKout, "MOScompress_delta\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_delta\n");
 			MOScompress_delta(task);
 			MOSupdateHeader(task);
 			MOSadvance_delta(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKout, "MOScompress_linear\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_linear\n");
 			MOScompress_linear(task);
 			MOSupdateHeader(task);
 			MOSadvance_linear(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKout, "MOScompress_frame\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_frame\n");
 			MOScompress_frame(task);
 			MOSupdateHeader(task);
 			MOSadvance_frame(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKout, "MOScompress_prefix\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_prefix\n");
 			MOScompress_prefix(task);
 			MOSupdateHeader(task);
 			MOSadvance_prefix(task);
 			MOSnewBlk(task);
 			break;
 		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKout, "MOScompress_raw\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_raw\n");
 			MOScompress_raw( task, estimate);
 			MOSupdateHeader(task);
 			MOSadvance_raw(task);
@@ -547,7 +547,7 @@ finalize:
 	GDKfree(task);
 
 	t1 = GDKusec();
-	ALGODEBUG mnstr_printf(GDKout, "#BATmosaic: mosaic construction " LLFMT " usec\n", t1 - t0);
+	ALGODEBUG mnstr_printf(GDKstdout, "#BATmosaic: mosaic construction " LLFMT " usec\n", t1 - t0);
 
 	return msg;
 }
@@ -644,42 +644,42 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 	while(task->blk){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKout, "MOSdecompress_raw\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_raw\n");
 			MOSdecompress_raw(task);
 			MOSskip_raw(task);
 			break;
 		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKout, "MOSdecompress_runlength\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_runlength\n");
 			MOSdecompress_runlength(task);
 			MOSskip_runlength(task);
 			break;
 		case MOSAIC_CAPPED:
-			ALGODEBUG mnstr_printf(GDKout, "MOSdecompress_capped\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_capped\n");
 			MOSdecompress_capped(task);
 			MOSskip_capped(task);
 			break;
 		case MOSAIC_VAR:
-			ALGODEBUG mnstr_printf(GDKout, "MOSdecompress_var\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_var\n");
 			MOSdecompress_var(task);
 			MOSskip_var(task);
 			break;
 		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKout, "MOSdecompress_delta\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_delta\n");
 			MOSdecompress_delta(task);
 			MOSskip_delta(task);
 			break;
 		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKout, "MOSdecompress_linear\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_linear\n");
 			MOSdecompress_linear(task);
 			MOSskip_linear(task);
 			break;
 		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKout, "MOSdecompress_frame\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_frame\n");
 			MOSdecompress_frame(task);
 			MOSskip_frame(task);
 			break;
 		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKout, "MOSdecompress_prefix\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_prefix\n");
 			MOSdecompress_prefix(task);
 			MOSskip_prefix(task);
 			break;
@@ -855,35 +855,35 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while(task->start < task->stop ){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKout, "MOSselect_runlength\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_runlength\n");
 			MOSselect_runlength(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_CAPPED:
-			ALGODEBUG mnstr_printf(GDKout, "MOSselect_capped\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_capped\n");
 			MOSselect_capped(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_VAR:
-			ALGODEBUG mnstr_printf(GDKout, "MOSselect_var\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_var\n");
 			MOSselect_var(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKout, "MOSselect_frame\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_frame\n");
 			MOSselect_frame(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKout, "MOSselect_delta\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_delta\n");
 			MOSselect_delta(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKout, "MOSselect_prefix\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_prefix\n");
 			MOSselect_prefix(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKout, "MOSselect_linear\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_linear\n");
 			MOSselect_linear(task,low,hgh,li,hi,anti);
 			break;
 		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKout, "MOSselect_raw\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_raw\n");
 			MOSselect_raw(task,low,hgh,li,hi,anti);
 		}
 	}
@@ -969,36 +969,36 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while(task->start < task->stop ){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKout, "MOSthetaselect_runlength\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_runlength\n");
 			MOSthetaselect_runlength(task,low,*oper);
 			break;
 		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKout, "MOSthetaselect_delta\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_delta\n");
 			MOSthetaselect_delta(task,low,*oper);
 			break;
 		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKout, "MOSthetaselect_prefix\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_prefix\n");
 			MOSthetaselect_prefix(task,low,*oper);
 			break;
 		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKout, "MOSthetaselect_linear\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_linear\n");
 			MOSthetaselect_linear(task,low,*oper);
 			break;
 		case MOSAIC_CAPPED:
-			ALGODEBUG mnstr_printf(GDKout, "MOSthetaselect_capped\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_capped\n");
 			MOSthetaselect_capped(task,low,*oper);
 			break;
 		case MOSAIC_VAR:
-			ALGODEBUG mnstr_printf(GDKout, "MOSthetaselect_var\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_var\n");
 			MOSthetaselect_var(task,low,*oper);
 			break;
 		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKout, "MOSthetaselect_frame\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_frame\n");
 			MOSthetaselect_frame(task,low,*oper);
 			break;
 		case MOSAIC_RAW:
 		default:
-			ALGODEBUG mnstr_printf(GDKout, "MOSthetaselect_raw\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_raw\n");
 			MOSthetaselect_raw(task,low,*oper);
 		}
 	}
@@ -1092,35 +1092,35 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while(task->start<task->stop )
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKout, "MOSprojection_runlength\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_runlength\n");
 			MOSprojection_runlength( task);
 			break;
 		case MOSAIC_CAPPED:
-			ALGODEBUG mnstr_printf(GDKout, "MOSprojection_capped\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_capped\n");
 			MOSprojection_capped( task);
 			break;
 		case MOSAIC_VAR:
-			ALGODEBUG mnstr_printf(GDKout, "MOSprojection_var\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_var\n");
 			MOSprojection_var( task);
 			break;
 		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKout, "MOSprojection_frame\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_frame\n");
 			MOSprojection_frame( task);
 			break;
 		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKout, "MOSprojection_delta\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_delta\n");
 			MOSprojection_delta( task);
 			break;
 		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKout, "MOSprojection_prefix\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_prefix\n");
 			MOSprojection_prefix( task);
 			break;
 		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKout, "MOSprojection_linear\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_linear\n");
 			MOSprojection_linear( task);
 			break;
 		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKout, "MOSprojection_raw\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_raw\n");
 			MOSprojection_raw( task);
 			break;
 		default:
@@ -1215,35 +1215,35 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while(task->blk )
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKout, "MOSjoin_runlength\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_runlength\n");
 			MOSjoin_runlength( task);
 			break;
 		case MOSAIC_CAPPED:
-			ALGODEBUG mnstr_printf(GDKout, "MOSjoin_capped\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_capped\n");
 			MOSjoin_capped( task);
 			break;
 		case MOSAIC_VAR:
-			ALGODEBUG mnstr_printf(GDKout, "MOSjoin_var\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_var\n");
 			MOSjoin_var( task);
 			break;
 		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKout, "MOSjoin_frame\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_frame\n");
 			MOSjoin_frame( task);
 			break;
 		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKout, "MOSjoin_delta\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_delta\n");
 			MOSjoin_delta( task);
 			break;
 		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKout, "MOSjoin_prefix\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_prefix\n");
 			MOSjoin_prefix( task);
 			break;
 		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKout, "MOSjoin_linear\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_linear\n");
 			MOSjoin_linear( task);
 			break;
 		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKout, "MOSjoin_raw\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_raw\n");
 			MOSjoin_raw( task);
 			break;
 		default:
@@ -1297,19 +1297,19 @@ makepatterns(int *patterns, int size, str compressions, BAT* b)
 		if( j < k ) continue;
 		
 #ifdef _MOSAIC_DEBUG_
-		mnstr_printf(GDKout,"#");
+		mnstr_printf(GDKstdout,"#");
 		for(j=0, bit=1; j < MOSAIC_METHODS-1; j++){
-			mnstr_printf(GDKout,"%d", (patterns[k] & bit) > 0);
+			mnstr_printf(GDKstdout,"%d", (patterns[k] & bit) > 0);
 			bit *=2;
 		}
-		mnstr_printf(GDKout,"\n");
+		mnstr_printf(GDKstdout,"\n");
 #else
 		(void) bit;
 #endif
 		k++;
 	}
 #ifdef _MOSAIC_DEBUG_
-	mnstr_printf(GDKout,"lim %d k %d\n",lim,k);
+	mnstr_printf(GDKstdout,"lim %d k %d\n",lim,k);
 #endif
 	return k;
 }

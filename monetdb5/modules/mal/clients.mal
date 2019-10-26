@@ -42,18 +42,6 @@ command getLogins( )(user:bat[:oid],start:bat[:str] )
 address CLTLogin
 comment "Pseudo bat of client id and login time.";
 
-command getLastCommand( ):bat[:str] 
-address CLTLastCommand
-comment "Pseudo bat of client's last command time.";
-
-command getActions( ):bat[:int] 
-address CLTActions
-comment "Pseudo bat of client's command counts.";
-
-command getUsers( ):bat[:str] 
-address CLTusers
-comment "Pseudo bat of users id and name.";
-
 pattern stop(id:int)
 address CLTstop
 comment "Stop the query execution at the next eligble statement.";

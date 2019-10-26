@@ -659,7 +659,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				i + 1 - prefix_size);
 		memcpy(buf + prefix_size, SO_PREFIX, sizeof(char) * strlen(SO_PREFIX));
 		path =
-			GDKfilepath(0, BATDIR, buf, SO_EXT[0] == '.' ? SO_EXT + 1 : SO_EXT);
+			GDKfilepath(0, BATDIR, buf, SO_EXT[0] == '.' ? &SO_EXT[1] : SO_EXT);
 		if (!path) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;

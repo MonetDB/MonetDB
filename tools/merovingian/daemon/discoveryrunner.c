@@ -11,6 +11,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#ifdef HAVE_POLL_H
+#include <poll.h>
+#endif
 #include <fcntl.h>
 #include <time.h>
 
@@ -281,8 +284,12 @@ discoveryRunner(void *d)
 	int s = -1;
 	struct sockaddr_storage peer_addr;
 	socklen_t peer_addr_len;
+#ifdef HAVE_POLL
+	struct pollfd pfd;
+#else
 	fd_set fds;
 	struct timeval tv;
+#endif
 	/* avoid first announce, the HELO will cause an announce when it's
 	 * received by ourself */
 	time_t deadline = 1;
@@ -393,11 +400,16 @@ discoveryRunner(void *d)
 		peer_addr_len = sizeof(struct sockaddr_storage);
 		/* Wait up to 5 seconds. */
 		for (s = 0; s < 5; s++) {
+#ifdef HAVE_POLL
+			pfd = (struct pollfd) {.fd = sock, .events = POLLIN};
+			nread = poll(&pfd, 1, 1000);
+#else
 			FD_ZERO(&fds);
 			FD_SET(sock, &fds);
 			tv.tv_sec = 1;
 			tv.tv_usec = 0;
 			nread = select(sock + 1, &fds, NULL, NULL, &tv);
+#endif
 			if (nread != 0)
 				break;
 			if (!_mero_keep_listening)

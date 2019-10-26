@@ -201,14 +201,16 @@ forkMserver(char *database, sabdb** stats, int force)
 	char *sabdbfarm;
 	char dbpath[1024];
 	char dbextra_path[1024];
-	char port[24];
+	char port[32];
 	char listenaddr[512];
 	char muri[512]; /* possibly undersized */
 	char usock[512];
 	char mydoproxy;
-	char nthreads[24];
-	char nclients[24];
+	char nthreads[32];
+	char nclients[32];
 	char pipeline[512];
+	char memmaxsize[64];
+	char vmmaxsize[64];
 	char *readonly = NULL;
 	char *embeddedr = NULL;
 	char *embeddedpy = NULL;
@@ -475,6 +477,20 @@ forkMserver(char *database, sabdb** stats, int force)
 		pipeline[0] = '\0';
 	}
 
+	kv = findConfKey(ckv, "memmaxsize");
+	if (kv->val != NULL) {
+		snprintf(memmaxsize, sizeof(memmaxsize), "gdk_mem_maxsize=%s", kv->val);
+	} else {
+		memmaxsize[0] = '\0';
+	}
+
+	kv = findConfKey(ckv, "vmmaxsize");
+	if (kv->val != NULL) {
+		snprintf(vmmaxsize, sizeof(vmmaxsize), "gdk_vm_maxsize=%s", kv->val);
+	} else {
+		vmmaxsize[0] = '\0';
+	}
+
 	kv = findConfKey(ckv, "readonly");
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 		readonly = "--readonly";
@@ -583,6 +599,12 @@ forkMserver(char *database, sabdb** stats, int force)
 	}
 	if (pipeline[0] != '\0') {
 		argv[c++] = "--set"; argv[c++] = pipeline;
+	}
+	if (memmaxsize[0] != '\0') {
+		argv[c++] = "--set"; argv[c++] = memmaxsize;
+	}
+	if (vmmaxsize[0] != '\0') {
+		argv[c++] = "--set"; argv[c++] = vmmaxsize;
 	}
 	if (embeddedr != NULL) {
 		argv[c++] = "--set"; argv[c++] = embeddedr;
