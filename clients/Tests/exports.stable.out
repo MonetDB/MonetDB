@@ -1513,7 +1513,7 @@ void MOSadvance_var(MOStask task);
 void MOSblk(MosaicBlk blk);
 str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MOScompressInternal(BAT *bsrc, const char *compressions);
-void MOScompress_capped(MOStask task);
+void MOScompress_capped(MOStask task, MosaicBlkRec *estimate);
 void MOScompress_delta(MOStask task);
 void MOScompress_frame(MOStask task);
 void MOScompress_linear(MOStask task);

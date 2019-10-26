@@ -88,6 +88,7 @@ Dependencies between database objects
 % 7,	8,	10 # length
 [ "monetdb",	"bam",	"DEP_SCHEMA"	]
 [ "monetdb",	"json",	"DEP_SCHEMA"	]
+[ "monetdb",	"mosaic",	"DEP_SCHEMA"	]
 [ "monetdb",	"profiler",	"DEP_SCHEMA"	]
 [ "monetdb",	"sys",	"DEP_SCHEMA"	]
 [ "monetdb",	"test",	"DEP_SCHEMA"	]
@@ -344,9 +345,9 @@ Cleanup
 % 7,	8,	10 # length
 [ "monetdb",	"bam",	"DEP_SCHEMA"	]
 [ "monetdb",	"json",	"DEP_SCHEMA"	]
+[ "monetdb",	"mosaic",	"DEP_SCHEMA"	]
 [ "monetdb",	"profiler",	"DEP_SCHEMA"	]
 [ "monetdb",	"sys",	"DEP_SCHEMA"	]
-[ "monetdb",	"mosaic",	"DEP_SCHEMA"	]
 [ "monetdb",	"tmp",	"DEP_SCHEMA"	]
 [ "monetdb",	"wlc",	"DEP_SCHEMA"	]
 [ "monetdb",	"wlr",	"DEP_SCHEMA"	]

@@ -38,9 +38,9 @@ stdout of test 'groupby_having_charlength-bug-sf-943566` in directory 'sql/test/
 [ "tmp",	3,	10	]
 [ "json",	4,	10	]
 [ "profiler",	8,	10	]
-[ "mosaic",	6,	10	]
 [ "wlc",	3,	10	]
 [ "wlr",	3,	10	]
+[ "mosaic",	6,	10	]
 [ "bam",	3,	10	]
 
 # 12:48:35 >  
