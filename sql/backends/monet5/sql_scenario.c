@@ -565,9 +565,11 @@ SQLinit(Client c)
 		} else if (maybeupgrade) {
 			if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
 				SQLupgrades(c,m);
-				/* sometimes the upgrade ends in a COMMIT,
-				 * sometimes not */
-				if (m->session->tr->active)
+				/* Commit at the end of the upgrade */
+				assert(m->session->tr->active);
+				if (mvc_status(m) < 0)
+					msg = mvc_rollback(m, 0, NULL, false);
+				else
 					msg = mvc_commit(m, 0, NULL, false);
 			}
 		}
