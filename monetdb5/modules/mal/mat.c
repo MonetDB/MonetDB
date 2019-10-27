@@ -190,11 +190,11 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	if (ATOMextern(type)) {
 		for(i = first; i < p->argc; i++)
-			if (BUNappend(bn, stk->stk[getArg(p,i)].val.pval, true) != GDK_SUCCEED)
+			if (BUNappend(bn, stk->stk[getArg(p,i)].val.pval, false) != GDK_SUCCEED)
 				goto bailout;
 	} else {
 		for(i = first; i < p->argc; i++)
-			if (BUNappend(bn, getArgReference(stk, p, i), true) != GDK_SUCCEED)
+			if (BUNappend(bn, getArgReference(stk, p, i), false) != GDK_SUCCEED)
 				goto bailout;
 	}
 	ret= getArgReference_bat(stk,p,0);
