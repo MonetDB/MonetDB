@@ -2357,7 +2357,15 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"external name sql.sysmon_queue;\n"
 			"grant execute on function sys.queue to public;\n"
 			"create view sys.queue as select * from sys.queue();\n"
-			"grant select on sys.queue to public;\n");
+			"grant select on sys.queue to public;\n"
+
+			"create procedure sys.pause(tag tinyint)\n"
+			"external name sql.sysmon_pause;\n"
+			"create procedure sys.resume(tag tinyint)\n"
+			"external name sql.sysmon_resume;\n"
+			"create procedure sys.stop(tag tinyint)\n"
+			"external name sql.sysmon_stop;\n"
+			);
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"

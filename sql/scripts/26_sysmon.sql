@@ -26,6 +26,13 @@ create view sys.queue as select * from sys.queue();
 grant select on sys.queue to public;
 
 -- operations to manipulate the state of havoc queries
+create procedure sys.pause(tag tinyint)
+external name sql.sysmon_pause;
+create procedure sys.resume(tag tinyint)
+external name sql.sysmon_resume;
+create procedure sys.stop(tag tinyint)
+external name sql.sysmon_stop;
+
 create procedure sys.pause(tag int)
 external name sql.sysmon_pause;
 create procedure sys.resume(tag int)
