@@ -6048,7 +6048,9 @@ create procedure suspend_log_flushing()
  external name sql.suspend_log_flushing;
 create procedure resume_log_flushing()
  external name sql.resume_log_flushing;
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('suspend_log_flushing', 'resume_log_flushing') and type = 2;
+create procedure hot_snapshot(tarfile string)
+ external name sql.hot_snapshot;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('suspend_log_flushing', 'resume_log_flushing', 'hot_snapshot') and type = 2;
 set schema "sys";
 commit;
 
