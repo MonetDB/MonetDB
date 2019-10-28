@@ -89,56 +89,7 @@ typedef struct _GlobalVarInfo {
 
 DerivedDictionaryClass(bte)
 DerivedDictionaryClass(sht)
-static inline BUN _findValue_int(int* dict, BUN dict_count, int val) { int m, f= 0, l = dict_count; while( l-f > 0 ) { m = f + (l-f)/2; if ( val < dict[m]) l=m-1; else f= m; if ( val > dict[m]) f=m+1; else l= m; } return f;}
-static inline int _getValue_int(GlobalVarInfo* info, BUN key) { return GetValue(info, key, int);}
-static str estimateDict_int(BUN* nr_compressed, BUN* delta_count, BUN limit, GlobalVarInfo* info, int* val) {
-	size_t buffer_size = 256;
-	int* dict = (int*) GetBase(info, int);
-	BUN dict_cnt = GetCount(info);
-	int* delta = dict + dict_cnt;
-	*delta_count = 0;
-	for((*nr_compressed) = 0; (*nr_compressed)< limit; (*nr_compressed)++, val++) {
-		BUN pos = _findValue_int(dict, dict_cnt, *val);
-		if (pos == dict_cnt || _getValue_int(info, pos) != *val) {
-				if (InsertCondition(info, *val, int)) {
-					BUN key = _findValue_int(delta, (*delta_count), *val);
-					if (key < *delta_count && delta[key] == *val) { continue; }
-					if (dict_cnt + *delta_count + 1 == GetCap(info)) {
-						if( !Extend(info, dict_cnt + *delta_count + (buffer_size <<=1)) ) throw(MAL, "mosaic.var", MAL_MALLOC_FAIL);
-						dict = GetBase(info, int);
-						delta = dict + dict_cnt;
-					}
-					int w = *val;
-					for( ; key< *delta_count; key++) {
-						if (delta[key] > w){ int v = delta[key]; delta[key] = w; w = v; } 
-					}
-					delta[key] = w; (*delta_count)++; 
-				}
-				else break;
-		}
-	}
-	GetDeltaCount(info) = (*delta_count);
-	BUN new_count = dict_cnt + GetDeltaCount(info);
-	GetBitsExtended(info) = calculateBits(new_count);
-	return MAL_SUCCEED;
-}
-static void _mergeDeltaIntoDictionary_int(GlobalVarInfo* info) { int* delta = (int*) GetBase(info, int) + GetCount(info); if (GetCount(info) == 0) { ++delta; GetCount(info)++; GetDeltaCount(info)--; } BUN limit = GetDeltaCount(info); for (BUN i = 0; i < limit; i++) { BUN key = _findValue_int(GetBase(info, int), GetCount(info), delta[i]); if (key < GetCount(info) && GetValue(info, key, int) == delta[i]) { continue; } int w = delta[i]; for( ; key< GetCount(info); key++) { if (GetValue(info, key, int) > w){ int v =GetValue(info, key, int); GetValue(info, key, int)= w; w = v; } } GetCount(info)++; GetValue(info, key, int)= w; } GetBits(info) = GetBitsExtended(info);}
-static void
-_compress_dictionary_int(int* dict, BUN dict_size, BUN* i, int* val, BUN limit, BitVector base, bte bits) {
-	for((*i) = 0; (*i) < limit; (*i)++, val++) {
-		BUN key = _findValue_int(dict, dict_size, *val);
-		assert(key < dict_size);
-		setBitVector(base, (*i), bits, (unsigned int) key);
-}}
-static void
-_decompress_dictionary_int(int* dict, bte bits, BitVector base, BUN limit, int** dest) {
-	for(BUN i = 0; i < limit; i++){
-		size_t key = getBitVector(base,i,(int) bits);
-		(*dest)[i] = dict[key];
-	}
-	*dest += limit;
-}
-
+DerivedDictionaryClass(int)
 DerivedDictionaryClass(oid)
 DerivedDictionaryClass(lng)
 DerivedDictionaryClass(flt)
