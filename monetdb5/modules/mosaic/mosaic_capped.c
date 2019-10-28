@@ -137,21 +137,23 @@ void
 MOSlayout_capped_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	lng zero=0;
-	int i;
+	unsigned int i;
 	char buf[BUFSIZ];
 	char bufv[BUFSIZ];
+	(void) boutput;
 
-	for(i=0; i< task->hdr->dictsize; i++){
+	BUN dictsize = GetCount(task->capped_info);
+
+	for(i=0; i< dictsize; i++){
 		snprintf(buf, BUFSIZ,"capped[%d]",i);
 		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
 			BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
 			BUNappend(binput, &zero, false) != GDK_SUCCEED ||
-			BUNappend(boutput, &task->hdr->dictfreq[i], false) != GDK_SUCCEED ||
+			// BUNappend(boutput, MOSgetDictFreq(dict_hdr, i), false) != GDK_SUCCEED ||
 			BUNappend(bproperties, bufv, false) != GDK_SUCCEED)
 		return;
 	}
 }
-
 
 void
 MOSlayout_capped(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
