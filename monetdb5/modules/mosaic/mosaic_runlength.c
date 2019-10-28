@@ -108,7 +108,6 @@ MOSskip_runlength(MOStask task)
 str
 MOSestimate_runlength(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
 {	unsigned int i = 0;
-	flt factor = 0.0;
 	(void) previous;
 	current->compression_strategy.tag = MOSAIC_RLE;
 
@@ -124,8 +123,6 @@ MOSestimate_runlength(MOStask task, MosaicEstimation* current, const MosaicEstim
 	case TYPE_hge: Estimate(hge); break;
 #endif
 	}
-	task->factor[MOSAIC_RLE] = factor;
-	task->range[MOSAIC_RLE] = task->start + i;
 	return MAL_SUCCEED;
 }
 

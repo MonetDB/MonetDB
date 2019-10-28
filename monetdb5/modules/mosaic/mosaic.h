@@ -131,10 +131,6 @@ typedef struct MOSTASK{
 	int type;		// one of the permissible compression types
 	int filter[MOSAIC_METHODS];// algorithmic (de)compression mix
 
-	/* collect the range being applied for the last compression call */
-	BUN range[MOSAIC_METHODS]; // end of compression range
-	float factor[MOSAIC_METHODS];// compression factor of last range. // TODO: This doesn't seem to be used. It also has some design flaws to it. Like what is its value if there are two blocks of the same compression type.
-
 	MosaicHdr hdr;	// header block with index/synopsis information
 	MosaicBlk blk;	// current block header in scan
 	GlobalVarInfo* var_info;

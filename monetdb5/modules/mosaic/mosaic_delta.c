@@ -115,7 +115,6 @@ MOSskip_delta(MOStask task)
 str
 MOSestimate_delta(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
 {	unsigned int i = 0;
-	flt factor = 1.0;
 	(void) previous;
 
 	switch(ATOMbasetype(task->type)){
@@ -128,8 +127,6 @@ MOSestimate_delta(MOStask task, MosaicEstimation* current, const MosaicEstimatio
 		case TYPE_hge: Estimate_delta(hge,  (delta < -127 || delta >127)); break;
 	#endif
 	}
-	task->factor[MOSAIC_DELTA] = factor;
-	task->range[MOSAIC_DELTA] = task->start + i;
 	return MAL_SUCCEED;
 }
 

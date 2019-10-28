@@ -39,8 +39,6 @@ MOSinitHeader(MOStask task)
 	int i;
 	for(i=0; i < MOSAIC_METHODS; i++){
 		hdr->elms[i] = hdr->blks[i] = METHOD_NOT_AVAILABLE;
-		task->range[i]=0;
-		task->factor[i]=0.0;
 	}
 	hdr->ratio = 0;
 	hdr->version = MOSAIC_VERSION;

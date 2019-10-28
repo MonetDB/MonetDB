@@ -284,7 +284,6 @@ MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimati
 {	
 	(void) previous;
 	unsigned int i = 0;
-	flt factor = 0.0;
 	int prefixbits = 0,size;
 	BUN bits,store;
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
@@ -315,7 +314,6 @@ MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimati
 
 			current->uncompressed_size += (BUN) (i * sizeof(bte));
 			current->compressed_size += store;
-			factor = ( (flt)i * sizeof(bte))/ store;
 		}
 		break;
 	case 2:
@@ -339,7 +337,6 @@ MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimati
 
 			current->uncompressed_size += (BUN) (i * sizeof(sht));
 			current->compressed_size += store;
-			factor = ( (flt)i * sizeof(sht))/ store;
 		}
 		break;
 	case 4:
@@ -364,7 +361,6 @@ MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimati
 
 			current->uncompressed_size += (BUN) (i * sizeof(int));
 			current->compressed_size += store;
-			factor = ( (flt)i * sizeof(int))/ store;
 		}
 		break;
 	case 8:
@@ -387,12 +383,9 @@ MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimati
 
 			current->uncompressed_size += (BUN) (i * sizeof(lng));
 			current->compressed_size += store;
-			factor = ( (flt)i * sizeof(lng))/ store;
 		}
 	}
 	current->compression_strategy.cnt = i;
-	task->factor[MOSAIC_PREFIX] = factor;
-	task->range[MOSAIC_PREFIX] = task->start + i;
 	return MAL_SUCCEED;
 }
 

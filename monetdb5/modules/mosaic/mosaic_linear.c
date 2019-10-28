@@ -131,7 +131,6 @@ MOSskip_linear(MOStask task)
 str
 MOSestimate_linear(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
 {	unsigned int i = -1;
-	flt factor = 0.0;
 	(void) previous;
 
 	switch(ATOMbasetype(task->type)){
@@ -146,8 +145,6 @@ MOSestimate_linear(MOStask task, MosaicEstimation* current, const MosaicEstimati
 	case TYPE_hge: Estimate(hge); break;
 #endif
 	}
-	task->factor[MOSAIC_LINEAR] = factor;
-	task->range[MOSAIC_LINEAR] = task->start + i;
 	return MAL_SUCCEED;
 }
 
