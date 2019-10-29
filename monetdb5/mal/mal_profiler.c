@@ -174,15 +174,11 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
     if (!GDKinmemory()) {
         char *uuid;
 		str c;
-		if( cntxt->uuid)
-				logadd("\"session\":\"%s\","PRETTIFY, cntxt->uuid);
-		else{
-			if ((c = msab_getUUID(&uuid)) == NULL) {
-				logadd("\"session\":\"%s\","PRETTIFY, uuid);
-				cntxt->uuid = uuid;
-			} else
-				free(c);
-		}
+		if ((c = msab_getUUID(&uuid)) == NULL) {
+			logadd("\"session\":\"%s\","PRETTIFY, uuid);
+			free(uuid);
+		} else
+			free(c);
     }
 	logadd("\"state\":\"%s\","PRETTIFY, start?"start":"done");
 	logadd("\"usec\":"LLFMT","PRETTIFY, pci->ticks);

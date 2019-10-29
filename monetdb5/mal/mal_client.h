@@ -47,7 +47,6 @@ typedef struct CLIENT {
 	int idx;        /* entry in mal_clients */
 	oid user;       /* user id in the auth administration */
 	str username;	/* for event processor */
-	str uuid;		/* unique session marker */
 	/*
 	 * The actions for a client is separated into several stages:
 	 * parsing, strategic optimization, tactical optimization, and
