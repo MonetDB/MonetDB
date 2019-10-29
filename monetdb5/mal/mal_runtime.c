@@ -214,6 +214,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	}
 
 	/* always collect the MAL instruction execution time */
+	pci->clock = ticks;
 	pci->ticks = ticks - prof->ticks;
 	pci->totticks += pci->ticks;
 	pci->calls++;

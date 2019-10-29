@@ -21,6 +21,3 @@ update sys.schemas set system = true;
 -- correct invalid FK schema ids, set them to schema id 2000 (the "sys" schema)
 UPDATE sys.types     SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas);
 UPDATE sys.functions SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas);
-
--- make sure all gets commited
-COMMIT;

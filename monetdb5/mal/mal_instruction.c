@@ -444,6 +444,36 @@ prepareMalBlk(MalBlkPtr mb, str s)
  * Allocation of an instruction should always succeed.
  */
 InstrPtr
+newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args)
+{
+	InstrPtr p = NULL;
+
+	p = GDKzalloc(args * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
+	if (p == NULL) {
+		/* We are facing an hard problem.
+		 * The hack is to re-use an already allocated instruction.
+		 * The marking of the block as containing errors should protect further actions.
+		 */
+		if( mb){
+			mb->errors = createMalException(mb,0, TYPE, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+		return NULL;
+	}
+	p->maxarg = args;
+	p->typechk = TYPE_UNKNOWN;
+	setModuleId(p, modnme);
+	setFunctionId(p, fcnnme);
+	p->argc = 1;
+	p->retc = 1;
+	p->mitosis = -1;
+	p->argv[0] = -1;			/* watch out for direct use in variable table */
+	/* Flow of control instructions are always marked as an assignment
+	 * with modifier */
+	p->token = ASSIGNsymbol;
+	return p;
+
+}
+InstrPtr
 newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
 {
 	InstrPtr p = NULL;

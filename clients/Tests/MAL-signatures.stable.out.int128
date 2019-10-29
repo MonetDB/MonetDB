@@ -766,6 +766,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "bat",	"orderidx",	"pattern bat.orderidx(bv:bat[:any_1]):void ",	"OIDXcreate;",	"Introduces the OID index arrangement of ordered values"	]
 [ "bat",	"orderidx",	"pattern bat.orderidx(bv:bat[:any_1], pieces:int):void ",	"OIDXcreate;",	"Introduces the OID index arrangement of ordered values"	]
 [ "bat",	"orderidx",	"pattern bat.orderidx(bv:bat[:any_1], l:bat[:any_1]...):void ",	"OIDXmerge;",	"Consolidates the OID index arrangement"	]
+[ "bat",	"pack",	"pattern bat.pack(X_0:any_2...):bat[:any_2] ",	"MATpackValues;",	"Materialize the values into a BAT. Avoiding a clash with mat.pack() in mergetable"	]
 [ "bat",	"partition",	"pattern bat.partition(b:bat[:any_1], pieces:int, n:int):bat[:any_1] ",	"CMDBATpartition2;",	"Create the n-th slice over the BAT broken into several pieces."	]
 [ "bat",	"partition",	"pattern bat.partition(b:bat[:any_1]):bat[:any_1]... ",	"CMDBATpartition;",	"Create a serie of slices over the BAT argument. The BUNs are distributed evenly."	]
 [ "bat",	"replace",	"command bat.replace(b:bat[:any_1], rid:bat[:oid], val:bat[:any_1]):bat[:any_1] ",	"BKCbat_inplace;",	"Perform replace for all BUNs of the second BAT into the first."	]

@@ -205,10 +205,6 @@ stdout of test 'alter_table` in directory 'sql/test/pg_regress` itself:
 #insert into atacc1 (test,test2,test3) values (4,4,5);
 [ 1	]
 #drop table atacc1;
-#create table atacc1 (test int check (test>3), test2 int);
-#insert into atacc1 (test2, test) values (3, 4);
-[ 1	]
-#drop table atacc1;
 #create table atacc1 (test int);
 #create table atacc2 (test2 int);
 #create table atacc3 (test int, test2 int, test3 int); -- inherits (atacc1, atacc2)
@@ -608,22 +604,16 @@ stdout of test 'alter_table` in directory 'sql/test/pg_regress` itself:
 #create table c1 (f1 int, f2 text, f3 int); -- inherits (p1)
 #alter table p1 add column a1 int check (a1 > 0);
 #alter table p1 add column f2 text;
-#insert into p1 values (1,2,'abc');
-[ 1	]
 #select * from p1;
-% sys.p1,	sys.p1,	sys.p1 # table_name
-% f1,	a1,	f2 # name
-% int,	int,	clob # type
-% 1,	1,	3 # length
-[ 1,	2,	"abc"	]
-#update p1 set a1 = a1 + 1, f2 = upper(f2);
-[ 1	]
+% sys.p1,	sys.p1 # table_name
+% f1,	f2 # name
+% int,	clob # type
+% 1,	0 # length
 #select * from p1;
-% sys.p1,	sys.p1,	sys.p1 # table_name
-% f1,	a1,	f2 # name
-% int,	int,	clob # type
-% 1,	1,	3 # length
-[ 1,	3,	"ABC"	]
+% sys.p1,	sys.p1 # table_name
+% f1,	f2 # name
+% int,	clob # type
+% 1,	0 # length
 #drop table c1 cascade;
 #drop table p1 cascade;
 #create temp table foo (f1 text, f2 text, f3 text) on commit preserve rows;
@@ -666,77 +656,6 @@ stdout of test 'alter_table` in directory 'sql/test/pg_regress` itself:
 % 2,	2 # length
 [ "zz",	"qq"	]
 #drop table foo;
-#create table anothertab (atcol1 bigint GENERATED ALWAYS AS IDENTITY check (atcol1 <= 3), atcol2 boolean);
-#insert into anothertab (atcol1, atcol2) values (default, true);
-[ 1	]
-#insert into anothertab (atcol1, atcol2) values (default, false);
-[ 1	]
-#insert into anothertab (atcol2) values (true);
-[ 1	]
-#insert into anothertab (atcol2) values (false);
-[ 1	]
-#select * from anothertab;
-% sys.anothertab,	sys.anothertab # table_name
-% atcol1,	atcol2 # name
-% bigint,	boolean # type
-% 1,	5 # length
-[ 1,	true	]
-[ 2,	false	]
-[ 3,	true	]
-[ 4,	false	]
-#select * from anothertab;
-% sys.anothertab,	sys.anothertab # table_name
-% atcol1,	atcol2 # name
-% bigint,	boolean # type
-% 1,	5 # length
-[ 1,	true	]
-[ 2,	false	]
-[ 3,	true	]
-[ 4,	false	]
-#insert into anothertab (atcol1, atcol2) values (45, null); -- fails
-[ 1	]
-#insert into anothertab (atcol1, atcol2) values (default, null);
-[ 1	]
-#insert into anothertab (atcol2) values (null);
-[ 1	]
-#select * from anothertab;
-% sys.anothertab,	sys.anothertab # table_name
-% atcol1,	atcol2 # name
-% bigint,	boolean # type
-% 2,	5 # length
-[ 1,	true	]
-[ 2,	false	]
-[ 3,	true	]
-[ 4,	false	]
-[ 45,	NULL	]
-[ 5,	NULL	]
-[ 6,	NULL	]
-#select * from anothertab;
-% sys.anothertab,	sys.anothertab # table_name
-% atcol1,	atcol2 # name
-% bigint,	boolean # type
-% 2,	5 # length
-[ 1,	true	]
-[ 2,	false	]
-[ 3,	true	]
-[ 4,	false	]
-[ 45,	NULL	]
-[ 5,	NULL	]
-[ 6,	NULL	]
-#alter table anothertab alter column atcol1 drop default;
-#select * from anothertab;
-% sys.anothertab,	sys.anothertab # table_name
-% atcol1,	atcol2 # name
-% bigint,	boolean # type
-% 2,	5 # length
-[ 1,	true	]
-[ 2,	false	]
-[ 3,	true	]
-[ 4,	false	]
-[ 45,	NULL	]
-[ 5,	NULL	]
-[ 6,	NULL	]
-#drop table anothertab;
 #create table another (f1 int, f2 text);
 #insert into another values(1, 'one');
 [ 1	]

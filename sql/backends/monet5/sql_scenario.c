@@ -507,8 +507,8 @@ SQLinit(Client c)
 		slash_2_dir_sep(path);
 		fullname = MSP_locate_sqlscript(path, 1);
 		if (fullname) {
-			str filename = fullname;
-			str p, n, newmsg= MAL_SUCCEED;
+			str filename = fullname, p, n;
+
 			fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
 			do {
 				stream *fd = NULL;
@@ -531,31 +531,40 @@ SQLinit(Client c)
 					sz = getFileSize(fd);
 					if (sz > (size_t) 1 << 29) {
 						close_stream(fd);
-						newmsg = createException(MAL, "createdb", SQLSTATE(42000) "File %s too large to process", filename);
+						msg = createException(MAL, "createdb", SQLSTATE(42000) "File %s too large to process", filename);
 					} else {
 						bstream *bfd = NULL;
 
-						if((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
+						if ((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
 							close_stream(fd);
-							newmsg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							msg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						} else {
 							if (bstream_next(bfd) >= 0)
-								newmsg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE, NULL);
+								msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE, NULL);
 							bstream_destroy(bfd);
 						}
 					}
-					if (m->sa)
-						sa_destroy(m->sa);
-					m->sa = NULL;
-					if (newmsg){
-						fprintf(stderr,"%s",newmsg);
-						freeException(newmsg);
-					}
-				}
-			} while (p);
+				} else
+					msg = createException(MAL, "createdb", SQLSTATE(HY001) "Couldn't open file %s", filename);
+			} while (p && msg == MAL_SUCCEED);
 			GDKfree(fullname);
 		} else
-			fprintf(stderr, "!could not read createdb.sql\n");
+			msg = createException(MAL, "createdb", SQLSTATE(HY001) "Could not read createdb.sql");
+
+		/* Commit after all the startup scripts have been processed */
+		assert(m->session->tr->active);
+		if (mvc_status(m) < 0 || msg)
+			other = mvc_rollback(m, 0, NULL, false);
+		else
+			other = mvc_commit(m, 0, NULL, false);
+
+		if (other && !msg) /* 'msg' variable might be set or not, as well as 'other'. Throw the earliest one */
+			msg = other;
+		else if (other)
+			freeException(other);
+
+		if (msg)
+			fprintf(stderr, "%s", msg);
 #endif
 	} else {		/* handle upgrades */
 		if (!m->sa)
@@ -564,10 +573,12 @@ SQLinit(Client c)
 			msg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		} else if (maybeupgrade) {
 			if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
-				SQLupgrades(c,m);
-				/* sometimes the upgrade ends in a COMMIT,
-				 * sometimes not */
-				if (m->session->tr->active)
+				int res = SQLupgrades(c, m);
+				/* Commit at the end of the upgrade */
+				assert(m->session->tr->active);
+				if (mvc_status(m) < 0 || res)
+					msg = mvc_rollback(m, 0, NULL, false);
+				else
 					msg = mvc_commit(m, 0, NULL, false);
 			}
 		}

@@ -509,7 +509,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 	char tname[16], *tnme;
 	char cname[16], *cnme = NULL;
 
-	tnme = number2name(tname, 16, nr);
+	tnme = number2name(tname, sizeof(tname), nr);
 	if (!is_project(r->op)) {
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 		set_processed(r);
@@ -524,7 +524,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 			if (!e->freevar) {
 				if (all) {
 					nr = ++sql->label;
-					cnme = number2name(cname, 16, nr);
+					cnme = number2name(cname, sizeof(cname), nr);
 				}
 				exp_setname(sql->sa, e, tnme, cnme );
 			}
@@ -539,7 +539,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 		for (; ne; ne = ne->next) {
 			if (all) {
 				nr = ++sql->label;
-				cnme = number2name(cname, 16, nr);
+				cnme = number2name(cname, sizeof(cname), nr);
 			}
 			exp_setname(sql->sa, ne->data, tnme, cnme );
 		}
@@ -664,7 +664,7 @@ rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 
 	if ((m=exps_find_match_exp(rel->exps, e)) == NULL) {
 		if (!exp_name(e)) {
-			nme = number2name(name, 16, ++sql->label);
+			nme = number2name(name, sizeof(name), ++sql->label);
 			exp_setname(sql->sa, e, nme, nme);
 		}
 		append(rel->exps, e);

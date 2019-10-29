@@ -13,7 +13,7 @@ stderr of test 'trigger_owner` in directory 'sql/test/Triggers` itself:
 MAPI  = user_test@sofia:38256
 QUERY = create trigger test_6_1 after insert on t_6_1
         	insert into t_6_1 values(12);
-ERROR = !CREATE TRIGGER: access denied for user_test to schema ;'sys'
+ERROR = !CREATE TRIGGER: access denied for user_test to schema 'sys'
 CODE  = 42000
 MAPI  = (user_test) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create table t_6_2(age int);
