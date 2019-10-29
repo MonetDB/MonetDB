@@ -7,3 +7,4 @@ groupby_expressions
 with_update_stmts
 groupby_error
 alter_table_add_column
+select_groupby

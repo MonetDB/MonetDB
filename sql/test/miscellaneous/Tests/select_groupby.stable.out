@@ -1,0 +1,115 @@
+stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
+
+
+# 13:54:02 >  
+# 13:54:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35668" "--set" "mapi_usock=/var/tmp/mtest-18773/.s.monetdb.35668" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/MonetDB/mTests_sql_test_miscellaneous" "--set" "embedded_c=true"
+# 13:54:02 >  
+
+# MonetDB 5 server v11.33.12 (hg id: b17dafcdef40)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_miscellaneous', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.504 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:35668/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18773/.s.monetdb.35668
+# MonetDB/GIS module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:54:02 >  
+# 13:54:02 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18773" "--port=35668"
+# 13:54:02 >  
+
+#start transaction;
+#create schema "myschema";
+#create sequence "myschema"."myseq";
+#create table myschema.mytable
+#(
+#	"first" char(100),
+#	"second" double,
+#	"third" double,
+#	"fourth" clob,
+#	"fifth" clob,
+#	"sixth" double,
+#	"seventh" clob,
+#	"eighth" date,
+#	"ninth" double,
+#	"tenth" double,
+#	"eleventh" char(100),
+#	"tweelfth" char(4),
+#	"thirteenth" char(50),
+#	"fourteenth" char(50),
+#	"fifteenth" clob,
+#	"sixteenth" char(100),
+#	"seventeenth" char(100),
+#	"eighteenth" char(30),
+#	"nineteenth" double,
+#	"twentieth" char(100),
+#	"twentieth-first" clob,
+#	"twentieth-second" double,
+#	"twentieth-third" double,
+#INSERT INTO myschema.mytable ("first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "eleventh", "tweelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", 
+#							  "seventeenth", "eighteenth", "nineteenth", "twentieth", "twentieth-first", "twentieth-second", "twentieth-third", "twentieth-fourth", "twentieth-fifth", "twentieth-sixth", 
+#							  "twentieth-seventh", "twentieth-eighth", "twentieth-ninth", "thirtieth", "thirtieth-first", "thirtieth-second", "thirtieth-third", "thirtieth-fourth", "thirtieth-fifth", 
+[ 1	]
+#SELECT
+#mytable."eighth" AS "first-projection",
+#mytable."twentieth", mytable."twentieth-seventh",
+#mytable."twentieth-third", mytable."twentieth-second"
+#FROM myschema.mytable
+#WHERE ("first" = '227 / 0' AND "eleventh" = 'Lekker' AND (EXTRACT(YEAR FROM mytable."eighth")*100 + EXTRACT(MONTH FROM mytable."eighth"))/100.0 = '2014.030')
+#GROUP BY "first-projection", "twentieth", "twentieth-seventh", "twentieth-third", "twentieth-second" LIMIT 1001;
+% myschema.mytable,	myschema.mytable,	myschema.mytable,	myschema.mytable,	myschema.mytable # table_name
+% first-projection,	twentieth,	twentieth-seventh,	twentieth-third,	twentieth-second # name
+% date,	char,	char,	double,	double # type
+% 10,	100,	100,	24,	24 # length
+#rollback;
+
+# 13:54:02 >  
+# 13:54:02 >  "Done."
+# 13:54:02 >  
+
