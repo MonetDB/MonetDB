@@ -213,6 +213,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->user = user;
 	c->username = 0;
+	c->uuid = NULL;
 	c->scenario = NULL;
 	c->oldscenario = NULL;
 	c->srcFile = NULL;
@@ -431,6 +432,8 @@ MCfreeClient(Client c)
 		GDKfree(c->username);
 		c->username = 0;
 	}
+	GDKfree(c->uuid);
+	c->uuid = NULL;
 	c->mythread = 0;
 	if (c->glb) {
 		freeStack(c->glb);

@@ -126,11 +126,6 @@ EXAMPLE:
 "state":"start",
 "usec":0,
 "rss":215,
-"size":0,
-"oublock":8,
-"stmt":"X_41=0@0:void := querylog.define(\"select count(*) from tables;\":str,\"default_pipe\":str,30:int);",
-"short":"define( \"select count(*) from tables;\",\"default_pipe\",30 )",
-"prereq":[]
 }
 */
 static void
@@ -138,9 +133,8 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 {
 	char logbuffer[LOGLEN], *logbase;
 	size_t loglen;
-	str stmt, c;
-	str stmtq;
 	lng usec;
+	str stmtq;
 	uint64_t microseconds;
 
 	/* ignore generation of events for instructions that are called too often
@@ -159,7 +153,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	if( malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
 		return;
 
-	usec= GDKusec();
+	usec= pci->clock;
 	microseconds = (uint64_t)usec - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 	/* make profile event tuple  */
 	lognew();
@@ -168,143 +162,21 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	 * function call to mercurial_revision().
 	 */
 	logadd("\"version\":\""VERSION" (hg id: %s)\","PRETTIFY, mercurial_revision());
-	logadd("\"source\":\"trace\","PRETTIFY);
-
 	logadd("\"user_id\":"OIDFMT","PRETTIFY, cntxt->user);
 	logadd("\"clk\":"LLFMT","PRETTIFY, usec);
 	logadd("\"ctime\":%"PRIu64","PRETTIFY, microseconds);
 	logadd("\"thread\":%d,"PRETTIFY, THRgettid());
-
 	logadd("\"function\":\"%s.%s\","PRETTIFY, getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));
 	logadd("\"pc\":%d,"PRETTIFY, mb?getPC(mb,pci):0);
 	logadd("\"tag\":"OIDFMT","PRETTIFY, stk?stk->tag:0);
 	logadd("\"module\":\"%s\","PRETTIFY, pci->modname ? pci->modname : "" );
-	if (pci->modname && strcmp(pci->modname, "user") == 0) {
-		oid caller_tag = 0;
-		if(stk && stk->up) {
-			caller_tag = stk->up->tag;
-		}
-		logadd("\"caller\":"OIDFMT","PRETTIFY, caller_tag);
-	}
 	logadd("\"instruction\":\"%s\","PRETTIFY, pci->fcnname ? pci->fcnname : "");
-	if (!GDKinmemory()) {
-		char *uuid;
-		if ((c = msab_getUUID(&uuid)) == NULL) {
-			logadd("\"session\":\"%s\","PRETTIFY, uuid);
-			free(uuid);
-		} else
-			free(c);
-	}
-
-	if( start){
-		logadd("\"state\":\"start\","PRETTIFY);
-		// determine the Estimated Time of Completion
-		if ( pci->calls){
-			logadd("\"usec\":"LLFMT","PRETTIFY, pci->totticks/pci->calls);
-		} else{
-			logadd("\"usec\":"LLFMT","PRETTIFY, pci->ticks);
-		}
-	} else {
-		logadd("\"state\":\"done\","PRETTIFY);
-		logadd("\"usec\":"LLFMT","PRETTIFY, pci->ticks);
-	}
-	logadd("\"rss\":%zu,"PRETTIFY, MT_getrss()/1024/1024);
-	logadd("\"size\":"LLFMT ","PRETTIFY, pci? pci->wbytes/1024/1024:0);	// result size
-
-#ifdef NUMAprofiling
-		logadd("\"numa\":[");
-		if(mb)
-		for( i= pci->retc ; i < pci->argc; i++)
-		if( !isVarConstant(mb, getArg(pci,i)) && mb->var[getArg(pci,i)]->worker)
-			logadd("%c %d", (i?',':' '), mb->var[getArg(pci,i)]->worker);
-		logadd("],"PRETTIFY);
-#endif
-
-#ifdef HAVE_SYS_RESOURCE_H
-	getrusage(RUSAGE_SELF, &infoUsage);
-	if(infoUsage.ru_inblock - prevUsage.ru_inblock)
-		logadd("\"inblock\":%ld,"PRETTIFY, infoUsage.ru_inblock - prevUsage.ru_inblock);
-	if(infoUsage.ru_oublock - prevUsage.ru_oublock)
-		logadd("\"oublock\":%ld,"PRETTIFY, infoUsage.ru_oublock - prevUsage.ru_oublock);
-	if(infoUsage.ru_majflt - prevUsage.ru_majflt)
-		logadd("\"majflt\":%ld,"PRETTIFY, infoUsage.ru_majflt - prevUsage.ru_majflt);
-	if(infoUsage.ru_nswap - prevUsage.ru_nswap)
-		logadd("\"nswap\":%ld,"PRETTIFY, infoUsage.ru_nswap - prevUsage.ru_nswap);
-	if(infoUsage.ru_nvcsw - prevUsage.ru_nvcsw)
-		logadd("\"nvcsw\":%ld,"PRETTIFY, infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
-	prevUsage = infoUsage;
-#endif
-
-	if( mb){
-		char prereq[BUFSIZ];
-		size_t len;
-		int i,j,k,comma;
-		InstrPtr q;
-		char *truncated;
-
-		/* generate actual call statement */
-		stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
-		if (stmt) {
-			c = stmt;
-
-			while (*c && isspace((unsigned char)*c))
-				c++;
-			if( *c){
-				stmtq = mal_quote(c, strlen(c));
-				if (stmtq && strlen(stmtq) > LOGLEN/2) {
-					truncated = truncate_string(stmtq);
-					GDKfree(stmtq);
-					stmtq = truncated;
-				}
-				if (stmtq != NULL) {
-					logadd("\"stmt\":\"%s\","PRETTIFY, stmtq);
-					GDKfree(stmtq);
-				}
-			}
-			GDKfree(stmt);
-		}
-
-		// ship the beautified version as well
-
-		stmt = shortStmtRendering(mb, stk, pci);
-		stmtq = mal_quote(stmt, strlen(stmt));
-		if (stmtq && strlen(stmtq) > LOGLEN/2) {
-			truncated = truncate_string(stmtq);
-			GDKfree(stmtq);
-			stmtq = truncated;
-		}
-		if (stmtq != NULL) {
-			logadd("\"short\":\"%s\","PRETTIFY, stmtq);
-			GDKfree(stmtq);
-		}
-		GDKfree(stmt);
-
-
-		// collect the prerequisite pre-requisite statements
-		prereq[0]='[';
-		prereq[1]=0;
-		len = 1;
-		comma=0;
-		for(i= pci->retc; i < pci->argc; i++){
-			for( j = pci->pc-1; j > 0; j--){
-				q= getInstrPtr(mb,j);
-				for( k=0; k < q->retc; k++)
-					if( getArg(q,k) == getArg(pci,i))
-						break;
-				if( k < q->retc){
-					snprintf(prereq + len, BUFSIZ-len,"%s%d", (comma?",":""), j);
-					len = strlen(prereq);
-					comma++;
-					break;
-				}
-			}
-		}
-#define MALARGUMENTDETAILS
-#ifdef MALARGUMENTDETAILS
-		logadd("\"prereq\":%s],"PRETTIFY, prereq);
-#else
-		logadd("\"prereq\":%s]"PRETTIFY, prereq);
-#endif
+	if( cntxt->uuid == 0)
+		cntxt->uuid = msab_getUUID(&cntxt->uuid);
+	logadd("\"session\":\"%s\","PRETTIFY, cntxt->uuid);
+	logadd("\"state\":\"%s\","PRETTIFY, start?"start":"done");
+	logadd("\"usec\":"LLFMT","PRETTIFY, pci->ticks);
+	
 
 /* EXAMPLE MAL statement argument decomposition
  * The eventparser may assume this layout for ease of parsing
@@ -318,9 +190,11 @@ This information can be used to determine memory footprint and variable life tim
  */
 
 #define PRET
+#define MALARGUMENTDETAILS
 #ifdef MALARGUMENTDETAILS
 		// Also show details of the arguments for modelling
 		if(mb){
+			int j;
 			logadd("\"ret\":[");
 			for( j=0; j< pci->argc; j++){
 				int tpe = getVarType(mb, getArg(pci,j));
@@ -328,7 +202,6 @@ This information can be used to determine memory footprint and variable life tim
 				lng total = 0;
 				BUN cnt = 0;
 				bat bid=0;
-				int p = getPC(mb,pci);
 
 				if( j == pci->retc ){
 					logadd("],"PRETTIFY"\"arg\":[");
@@ -360,6 +233,12 @@ This information can be used to determine memory footprint and variable life tim
 							logadd("\"kind\":\"%s\","PRET, (v &&  !v->batTransient ? "persistent" : "transient"));
 						} else
 							logadd("\"kind\":\"%s\","PRET, ( d->batTransient ? "transient" : "persistent"));
+						logadd("\"sorted\":%d,"PRET, d->tsorted);
+						logadd("\"revsorted\":%d,"PRET, d->trevsorted);
+						logadd("\"nonil\":%d,"PRET, d->tnonil);
+						logadd("\"nil\":%d,"PRET, d->tnil);
+						logadd("\"key\":%d,"PRET, d->tkey);
+						logadd("\"unique\":%d,"PRET, d->tunique);
 						total += cnt * d->twidth;
 						total += heapinfo(d->tvheap, d->batCacheid);
 						total += hashinfo(d->thash, d->batCacheid);
@@ -388,13 +267,11 @@ This information can be used to determine memory footprint and variable life tim
 					GDKfree(cv);
 					GDKfree(stmtq);
 				}
-				logadd("\"eol\":%d"PRET, p == getEndScope(mb,getArg(pci,j)));
 				GDKfree(tname);
 				logadd("}%s", (j< pci->argc-1 && j != pci->retc -1?",":""));
 			}
 			logadd("]"PRETTIFY); // end marker for arguments
 		}
-	}
 #endif
 	logadd("}\n"); // end marker
 	logjsonInternal(logbuffer);
@@ -493,7 +370,6 @@ profilerHeartbeatEvent(char *alter)
 
 	lognew();
 	logadd("{"PRETTIFY); // fill in later with the event counter
-	logadd("\"source\":\"heartbeat\","PRETTIFY);
 	if (GDKinmemory()) {
 		char *uuid, *err;
 		if ((err = msab_getUUID(&uuid)) == NULL) {
