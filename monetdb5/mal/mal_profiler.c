@@ -171,9 +171,19 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	logadd("\"tag\":"OIDFMT","PRETTIFY, stk?stk->tag:0);
 	logadd("\"module\":\"%s\","PRETTIFY, pci->modname ? pci->modname : "" );
 	logadd("\"instruction\":\"%s\","PRETTIFY, pci->fcnname ? pci->fcnname : "");
-	if( cntxt->uuid == 0)
-		cntxt->uuid = msab_getUUID(&cntxt->uuid);
-	logadd("\"session\":\"%s\","PRETTIFY, cntxt->uuid);
+    if (!GDKinmemory()) {
+        char *uuid;
+		str c;
+		if( cntxt->uuid)
+				logadd("\"session\":\"%s\","PRETTIFY, cntxt->uuid);
+		else{
+			if ((c = msab_getUUID(&uuid)) == NULL) {
+				logadd("\"session\":\"%s\","PRETTIFY, uuid);
+				cntxt->uuid = uuid;
+			} else
+				free(c);
+		}
+    }
 	logadd("\"state\":\"%s\","PRETTIFY, start?"start":"done");
 	logadd("\"usec\":"LLFMT","PRETTIFY, pci->ticks);
 	
