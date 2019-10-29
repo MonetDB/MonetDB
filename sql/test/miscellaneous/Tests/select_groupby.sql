@@ -61,4 +61,51 @@ mytable."twentieth-third", mytable."twentieth-second"
 FROM myschema.mytable
 WHERE ("first" = '227 / 0' AND "eleventh" = 'Lekker' AND (EXTRACT(YEAR FROM mytable."eighth")*100 + EXTRACT(MONTH FROM mytable."eighth"))/100.0 = '2014.030')
 GROUP BY "first-projection", "twentieth", "twentieth-seventh", "twentieth-third", "twentieth-second" LIMIT 1001;
+
+PREPARE SELECT
+mytable."eighth" AS "first-projection",
+mytable."twentieth", mytable."twentieth-seventh",
+mytable."twentieth-third", mytable."twentieth-second"
+FROM myschema.mytable
+WHERE ("first" = '227 / 0' AND "eleventh" = 'Lekker' AND (EXTRACT(YEAR FROM mytable."eighth")*100 + EXTRACT(MONTH FROM mytable."eighth"))/100.0 = '2014.030')
+GROUP BY "first-projection", "twentieth", "twentieth-seventh", "twentieth-third", "twentieth-second" LIMIT 1001;
+exec ** ();
+
+PREPARE SELECT
+mytable."eighth" AS "first-projection",
+mytable."twentieth", mytable."twentieth-seventh",
+mytable."twentieth-third", mytable."twentieth-second"
+FROM myschema.mytable
+WHERE ("first" = ? AND "eleventh" = ? AND (EXTRACT(YEAR FROM mytable."eighth") * cast(? as bigint) + EXTRACT(MONTH FROM mytable."eighth")) / cast(? as bigint) = cast(? as bigint))
+GROUP BY "first-projection", "twentieth", "twentieth-seventh", "twentieth-third", "twentieth-second" LIMIT ?;
+exec ** ('a', 'b', 923, 51, 942, 544);
+
+TRUNCATE myschema.mytable;
+
+SELECT
+mytable."eighth" AS "first-projection",
+mytable."twentieth", mytable."twentieth-seventh",
+mytable."twentieth-third", mytable."twentieth-second"
+FROM myschema.mytable
+WHERE ("first" = '227 / 0' AND "eleventh" = 'Lekker' AND (EXTRACT(YEAR FROM mytable."eighth")*100 + EXTRACT(MONTH FROM mytable."eighth"))/100.0 = '2014.030')
+GROUP BY "first-projection", "twentieth", "twentieth-seventh", "twentieth-third", "twentieth-second" LIMIT 1001;
+
+PREPARE SELECT
+mytable."eighth" AS "first-projection",
+mytable."twentieth", mytable."twentieth-seventh",
+mytable."twentieth-third", mytable."twentieth-second"
+FROM myschema.mytable
+WHERE ("first" = '227 / 0' AND "eleventh" = 'Lekker' AND (EXTRACT(YEAR FROM mytable."eighth")*100 + EXTRACT(MONTH FROM mytable."eighth"))/100.0 = '2014.030')
+GROUP BY "first-projection", "twentieth", "twentieth-seventh", "twentieth-third", "twentieth-second" LIMIT 1001;
+exec ** ();
+
+PREPARE SELECT
+mytable."eighth" AS "first-projection",
+mytable."twentieth", mytable."twentieth-seventh",
+mytable."twentieth-third", mytable."twentieth-second"
+FROM myschema.mytable
+WHERE ("first" = ? AND "eleventh" = ? AND (EXTRACT(YEAR FROM mytable."eighth") * cast(? as bigint) + EXTRACT(MONTH FROM mytable."eighth")) / cast(? as bigint) = cast(? as bigint))
+GROUP BY "first-projection", "twentieth", "twentieth-seventh", "twentieth-third", "twentieth-second" LIMIT ?;
+exec ** ('a', 'b', 923, 51, 942, 544);
+
 rollback;
