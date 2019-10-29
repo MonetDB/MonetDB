@@ -485,7 +485,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			char name[16];
 
 			if (!cname)
-				cname = sa_strdup(sql->sa, number2name(name, 16, ++sql->label));
+				cname = sa_strdup(sql->sa, number2name(name, sizeof(name), ++sql->label));
 			if (!isproject) 
 				e = exp_ref(sql->sa, e);
 			e = rel_check_type(sql, &ce->type, oexps_rel, e, type_equal);

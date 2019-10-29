@@ -757,7 +757,7 @@ static sql_rel *
 rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 {
 	int nr = ++sql->label;
-	char name[16], *nme = number2name(name, 16, nr);
+	char name[16], *nme = number2name(name, sizeof(name), nr);
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 
 	int need_nulls = 0;
