@@ -8330,13 +8330,13 @@ rel_dicttable(mvc *sql, sql_column *c, const char *tname, int de)
 
 	ie = exp_indexcol(sql, e, tname, c->base.name, de, 1);
         nr = ++sql->label;
-	nme = sa_strdup(sql->sa, number2name(name, 16, nr));
+	nme = sa_strdup(sql->sa, number2name(name, sizeof(name), nr));
 	exp_setname(sql->sa, ie, nme, nme);
 	append(rel->exps, ie);
 
 	ie = exp_stringscol(sql, e, tname, c->base.name);
         nr = ++sql->label;
-	nme = sa_strdup(sql->sa, number2name(name, 16, nr));
+	nme = sa_strdup(sql->sa, number2name(name, sizeof(name), nr));
 	exp_setname(sql->sa, ie, nme, nme);
 	append(rel->exps, ie);
 	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
@@ -8369,7 +8369,7 @@ rel_add_dicts(int *changes, mvc *sql, sql_rel *rel)
 					char name[16], *nme;
 					sql_rel *vt = rel_dicttable(sql, c, rname, de);
 
-					nme = sa_strdup(sql->sa, number2name(name, 16, nr));
+					nme = sa_strdup(sql->sa, number2name(name, sizeof(name), nr));
 					if (!vcols)
 						vcols = sa_list(sql->sa);
 					append(vcols, vt);
