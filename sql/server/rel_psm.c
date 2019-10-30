@@ -920,7 +920,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			} else if (!sf) {
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: %s function %s.%s not bound", KF, F, slang, s->base.name, fname);
 			}
-		} else if (body) {
+		} else if (body) { /* SQL implementation */
 			sql_arg *ra = (restype && !is_table)?restype->h->data:NULL;
 			list *b = NULL;
 			sql_schema *old_schema = cur_schema(sql);

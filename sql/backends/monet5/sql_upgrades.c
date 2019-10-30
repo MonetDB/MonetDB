@@ -1958,7 +1958,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 			for (node *m = s->funcs.set->h; m; m = m->next) {
 				sql_func *f = (sql_func*) m->data;
 
-				if (f->query && !LANG_EXT(f->lang)) {
+				if (f->query && f->lang == FUNC_LANG_SQL) {
 					char *relt;
 					sql_rel *r = NULL;
 
