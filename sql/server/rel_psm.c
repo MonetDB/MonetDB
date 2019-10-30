@@ -931,7 +931,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			if (instantiate || deps) {
 				return rel_psm_block(sql->sa, b);
 			}
-		} else {
+		} else { /* MAL implementation */
 			char *fmod = qname_module(ext_name);
 			char *fnme = qname_fname(ext_name);
 
@@ -950,7 +950,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					f->mod = _STRDUP(fmod);
 				if (!f->imp || strcmp(f->imp, fnme)) 
 					f->imp = (f->sa)?sa_strdup(f->sa, fnme):_STRDUP(fnme);
-				if(!f->mod || !f->imp) {
+				if (!f->mod || !f->imp) {
 					_DELETE(f->mod);
 					_DELETE(f->imp);
 					return sql_error(sql, 02, SQLSTATE(HY001) "CREATE %s%s: could not allocate space", KF, F);
@@ -958,6 +958,11 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				f->sql = 0; /* native */
 				f->lang = FUNC_LANG_INT;
 			}
+			if (!f)
+				f = sf->func;
+			assert(f);
+			if (!backend_resolve_function(sql, f))
+				return sql_error(sql, 01, SQLSTATE(3F000) "CREATE %s%s: external name %s.%s not bound (%s.%s)", KF, F, fmod, fnme, s->base.name, fname );
 		}
 	}
 	return rel_create_function(sql->sa, s->base.name, f);

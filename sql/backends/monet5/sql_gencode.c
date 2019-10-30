@@ -860,17 +860,9 @@ backend_call(backend *be, Client c, cq *cq)
 int
 monet5_resolve_function(ptr M, sql_func *f)
 {
-	mvc *sql = (mvc *) M;
-	Client c = MCgetClient(sql->clientid);
-	Module m;
+	(void) M;
 
-	/*
-	   fails to search outer modules!
-	   if (!findSymbol(c->usermodule, f->mod, f->imp))
-	   return 0;
-	 */
-
-	for (m = findModule(c->usermodule, f->mod); m; m = m->link) {
+	for (Module m = getModule(f->mod); m; m = m->link) {
 		if (strcmp(m->name, f->mod) == 0) {
 			Symbol s = m->space[(int) (getSymbolIndex(f->imp))];
 			for (; s; s = s->peer) {

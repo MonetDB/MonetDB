@@ -1,4 +1,3 @@
-start transaction;
 create schema "myschema";
 create sequence "myschema"."myseq";
 create table myschema.mytable
@@ -108,4 +107,7 @@ WHERE ("first" = ? AND "eleventh" = ? AND (EXTRACT(YEAR FROM mytable."eighth") *
 GROUP BY "first-projection", "twentieth", "twentieth-seventh", "twentieth-third", "twentieth-second" LIMIT ?;
 exec ** ('a', 'b', 923, 51, 942, 544);
 
-rollback;
+create function "sys"."dummy"("col1" blob, "col2" blob, "col3" integer) returns boolean external name "unknown"."idontexist"; --error, MAL implementation of sys.dummy doesn't exist.
+SELECT "sys"."dummy"("fortieth-second", blob '', '0') AS "alias1", "fortieth-third" FROM "myschema"."mytable"; --error, function doesn't exist
+
+drop schema "myschema" cascade;
