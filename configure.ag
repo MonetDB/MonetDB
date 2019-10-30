@@ -2417,7 +2417,6 @@ AC_CHECK_HEADERS([ \
 	sys/param.h \
 	sys/resource.h \
 	sys/socket.h \
-	sys/sysctl.h \
 	sys/time.h \
 	sys/times.h \
 	sys/types.h \

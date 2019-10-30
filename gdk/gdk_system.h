@@ -98,7 +98,7 @@
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>	   /* prerequisite of sys/sysctl on OpenBSD */
 #endif
-#ifdef HAVE_SYS_SYSCTL_H
+#ifdef BSD /* BSD macro is defined in sys/param.h */
 # include <sys/sysctl.h>
 #endif
 
