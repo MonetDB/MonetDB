@@ -113,15 +113,12 @@ static void addModuleToIndex(Module cur){
 	moduleIndex[index] = cur;
 }
 
-
 Module getModule(str name) {
 	int index = getModuleIndex(name);
 	Module m = moduleIndex[index];
 	while(m) {
-		//if (strcmp(name, m->name) == 0) {
-		if (name == m->name) {
+		if (strcmp(name, m->name) == 0)
 			return m;
-		}
 		m = m->link;
 	}
 	return NULL;
