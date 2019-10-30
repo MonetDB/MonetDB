@@ -860,19 +860,19 @@ backend_call(backend *be, Client c, cq *cq)
 int
 monet5_resolve_function(ptr M, sql_func *f)
 {
+	str mname = getName(f->mod), fname = getName(f->imp);
 	(void) M;
 
-	for (Module m = getModule(f->mod); m; m = m->link) {
-		if (strcmp(m->name, f->mod) == 0) {
-			Symbol s = m->space[(int) (getSymbolIndex(f->imp))];
-			for (; s; s = s->peer) {
-				InstrPtr sig = getSignature(s);
-				int argc = sig->argc - sig->retc;
+	if (!mname || !fname)
+		return 0;
 
-				if (strcmp(s->name, f->imp) == 0 && ((!f->ops && argc == 0) || list_length(f->ops) == argc || (sig->varargs & VARARGS) == VARARGS))
-					return 1;
+	for (Module m = getModule(mname); m; m = m->link) {
+		for (Symbol s = findSymbolInModule(m, fname); s; s = s->peer) {
+			InstrPtr sig = getSignature(s);
+			int argc = sig->argc - sig->retc;
 
-			}
+			if ((!f->ops && argc == 0) || list_length(f->ops) == argc || (sig->varargs & VARARGS) == VARARGS)
+				return 1;
 		}
 	}
 	return 0;
