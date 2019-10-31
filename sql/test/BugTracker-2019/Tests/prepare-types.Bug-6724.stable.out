@@ -58,8 +58,6 @@ stdout of test 'prepare-types.Bug-6724` in directory 'sql/test/BugTracker-2019` 
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
-
 # 11:53:57 >  
 # 11:53:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26605" "--port=30297"
 # 11:53:57 >  

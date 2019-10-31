@@ -29,7 +29,11 @@ stderr of test 'create_function.Bug-3172` in directory 'sql/test/BugTracker-2012
 # 16:07:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27661" "--port=38365"
 # 16:07:20 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+MAPI  = (monetdb) /var/tmp/mtest-23748/.s.monetdb.37404
+QUERY = create function x(a int, b int) returns table (c int,d int) external name sql.x; --error, sql.x doesn't exist
+ERROR = !CREATE FUNCTION: external name sql.x not bound (sys.x)
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-23748/.s.monetdb.37404
 QUERY = select * from x((select id from _tables), (select schema_id from _tables));
 ERROR = !SELECT: 'x' requires a single sub query
 CODE  = 42000

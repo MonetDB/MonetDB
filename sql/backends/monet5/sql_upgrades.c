@@ -1879,41 +1879,31 @@ sql_update_apr2019_sp1(Client c)
 }
 
 static str
-sql_update_apr2019_sp2(Client c)
+sql_update_apr2019_sp2(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
-	/* Determine if system function sys.prod(decimal) exists in sys.functions, if so remove them.
-	 * see also https://dev.monetdb.org/hg/MonetDB?cmd=changeset;node=f93d5290abe4
-	 */
-	char *err = NULL;
-	char *qry = "select f.id from sys.functions f where f.name = 'prod' and func = 'prod'"
-		" and mod in ('sql', 'aggr') and language = 0 and f.type in (3,6) and f.system"
-		" and schema_id in (select s.id from sys.schemas s where s.name = 'sys')"
-		" and f.id in (select a.func_id from sys.args a where a.type = 'decimal'"
-		" and type_digits in (2,4,9,18,38) and a.name in ('arg','arg_1') and inout = 1 and number = 1);";
-	res_table *output = NULL;
+	size_t bufsize = 1000, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err;
 
-	err = SQLstatementIntern(c, &qry, "update", true, false, &output);
-	if (err == NULL) {
-		BAT *b = BATdescriptor(output->cols[0].b);
-		if (b) {
-			if (BATcount(b) > 0) {
-				/* found entries, we need to remove them sys.functions and sys.args */
-				char *upd = "delete from sys.functions f where f.name = 'prod' and func = 'prod'"
-					" and mod in ('sql', 'aggr') and language = 0 and f.type in (3,6) and f.system"
-					" and schema_id in (select s.id from sys.schemas s where s.name = 'sys')"
-					" and f.id in (select a.func_id from sys.args a where a.type = 'decimal'"
-					" and type_digits in (2,4,9,18,38) and a.name in ('arg','arg_1') and inout = 1 and number = 1);\n"
-					"delete from sys.args where func_id not in (select id from sys.functions);\n";
+	if (buf == NULL)
+		throw(SQL, "sql_update_apr2019_sp2", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
-				printf("Running database upgrade commands:\n%s\n", upd);
-				err = SQLstatementIntern(c, &upd, "update", true, false, NULL);
-			}
-			BBPunfix(b->batCacheid);
-		}
+	if (!*systabfixed) {
+		sql_fix_system_tables(c, sql, prev_schema);
+		*systabfixed = true;
 	}
-	if (output != NULL)
-		res_tables_destroy(output);
 
+	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+
+	/* 11_times.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop procedure sys.times();\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
 
@@ -2104,7 +2094,6 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	pos = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
-			"drop procedure sys.times();\n"
 			"create function sys.deltas (\"schema\" string)"
 			" returns table (\"id\" int, \"cleared\" boolean, \"immutable\" bigint, \"inserted\" bigint, \"updates\" bigint, \"deletes\" bigint, \"level\" int)"
 			" external name \"sql\".\"deltas\";\n"
@@ -2503,10 +2492,13 @@ SQLupgrades(Client c, mvc *m)
 		freeException(err);
 		res = -1;
 	}
-	if (!res && (err = sql_update_apr2019_sp2(c)) != NULL) {
-		fprintf(stderr, "!%s\n", err);
-		freeException(err);
-		res = -1;
+
+	if (!res && sql_bind_func(m->sa, s, "times", NULL, NULL, F_PROC)) {
+		if (!res && (err = sql_update_apr2019_sp2(c, m, prev_schema, &systabfixed)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+			res = -1;
+		}
 	}
 
 	sql_find_subtype(&tp, "string", 0, 0);
