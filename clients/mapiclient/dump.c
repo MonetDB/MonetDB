@@ -2575,8 +2575,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 		goto bailout;
 
 	/* start a transaction for the dump */
-	if (!describe)
-		mnstr_printf(toConsole, "%s;\n", start_trx);
+	mnstr_printf(toConsole, "%s;\n", start_trx);
 
 	if ((hdl = mapi_query(mid, start_trx)) == NULL || mapi_error(mid))
 		goto bailout;
@@ -3095,8 +3094,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 	mapi_close_handle(hdl);
 
 	/* finally commit the whole transaction */
-	if (!describe)
-		mnstr_printf(toConsole, "COMMIT;\n");
+	mnstr_printf(toConsole, "COMMIT;\n");
 	if (sname)
 		free(sname);
 	if (query)

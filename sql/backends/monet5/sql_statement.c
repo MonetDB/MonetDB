@@ -2192,8 +2192,8 @@ stmt_rs_column(backend *be, stmt *rs, int i, sql_subtype *tpe)
  */
 #define NEWRESULTSET
 
-#define meta(P, Id, Tpe) \
-P = newStmt(mb, batRef, packRef);\
+#define meta(P, Id, Tpe, Args) \
+P = newStmtArgs(mb, batRef, packRef, Args);\
 Id = getArg(P,0);\
 setVarType(mb, Id, newBatType(Tpe));\
 setVarFixed(mb, Id);\
@@ -2209,10 +2209,15 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 	node *n;
 	bool error = false;
 	int ret = -1;
+	int args;
+
 	// gather the meta information
 	int tblId, nmeId, tpeId, lenId, scaleId;
 	InstrPtr list;
 	InstrPtr tblPtr, nmePtr, tpePtr, lenPtr, scalePtr;
+
+	args = 4;
+	for (n = l->h; n; n = n->next)  args ++;
 
 	list = newInstruction(mb, sqlRef, export_tableRef);
 	getArg(list,0) = newTmpVariable(mb,TYPE_int);
@@ -2225,11 +2230,11 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 		list = pushStr(mb, list, ns);
 		list = pushInt(mb, list, onclient);
 	}
-	meta(tblPtr, tblId, TYPE_str);
-	meta(nmePtr, nmeId, TYPE_str);
-	meta(tpePtr, tpeId, TYPE_str);
-	meta(lenPtr, lenId, TYPE_int);
-	meta(scalePtr, scaleId, TYPE_int);
+	meta(tblPtr, tblId, TYPE_str, args);
+	meta(nmePtr, nmeId, TYPE_str, args);
+	meta(tpePtr, tpeId, TYPE_str, args);
+	meta(lenPtr, lenId, TYPE_int, args);
+	meta(scalePtr, scaleId, TYPE_int, args);
 	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL)
 		return -1;
 
@@ -2479,19 +2484,23 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 	bool error = false;
 	// gather the meta information
 	int tblId, nmeId, tpeId, lenId, scaleId;
+	int args;
 	InstrPtr list;
 	InstrPtr tblPtr, nmePtr, tpePtr, lenPtr, scalePtr;
+
+	args = 4;
+	for (n = l->h; n; n = n->next) args++;
 
 	list = newInstruction(mb,sqlRef, resultSetRef);
 	if(!list) {
 		return NULL;
 	}
 	getArg(list,0) = newTmpVariable(mb,TYPE_int);
-	meta(tblPtr, tblId, TYPE_str);
-	meta(nmePtr, nmeId, TYPE_str);
-	meta(tpePtr, tpeId, TYPE_str);
-	meta(lenPtr, lenId, TYPE_int);
-	meta(scalePtr, scaleId, TYPE_int);
+	meta(tblPtr, tblId, TYPE_str, args);
+	meta(nmePtr, nmeId, TYPE_str, args);
+	meta(tpePtr, tpeId, TYPE_str, args);
+	meta(lenPtr, lenId, TYPE_int, args);
+	meta(scalePtr, scaleId, TYPE_int, args);
 	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL)
 		return NULL;
 

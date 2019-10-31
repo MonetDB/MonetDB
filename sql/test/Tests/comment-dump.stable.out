@@ -118,6 +118,7 @@ COMMIT;
 # 17:23:05 >  Mtimeout -timeout 60 msqldump -q --host=/var/tmp/mtest-32624 --port=37130 --database=mTests_sql_test -f
 # 17:23:05 >  
 
+START TRANSACTION;
 SET SCHEMA "foo";
 create function f() returns int begin return 42; end;
 COMMENT ON FUNCTION "foo"."f"() IS '0 parms';
@@ -129,6 +130,7 @@ create function f(i int, j int, k int) returns int begin return 45; end;
 create function f(i int, j int, k int, l int) returns int begin return 45; end;
 create procedure g() begin delete from tab where false; end;
 COMMENT ON PROCEDURE "foo"."g"() IS 'proc';
+COMMIT;
 
 # 17:23:05 >  
 # 17:23:05 >  "Done."

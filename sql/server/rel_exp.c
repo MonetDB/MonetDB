@@ -516,7 +516,7 @@ exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char 
 }
 
 sql_exp *
-exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel, sql_exp *old)
+exp_alias_or_copy(mvc *sql, const char *tname, const char *cname, sql_rel *orel, sql_exp *old)
 {
 	sql_exp *ne = NULL;
 
@@ -526,12 +526,12 @@ exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel
 	if (!tname && old->type == e_column)
 		tname = old->l;
 
-	if (!cname && exp_name(old) && exp_name(old)[0] == 'L') {
+	if (!cname && exp_name(old) && has_label(old)) {
 		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
 		return exp_propagate(sql->sa, ne, old);
 	} else if (!cname) {
 		char name[16], *nme;
-		nme = number2name(name, 16, ++sql->label);
+		nme = number2name(name, sizeof(name), ++sql->label);
 
 		exp_setname(sql->sa, old, nme, nme);
 		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
@@ -701,7 +701,7 @@ exp_setrelname(sql_allocator *sa, sql_exp *e, int nr)
 {
 	char name[16], *nme;
 
-	nme = number2name(name, 16, nr);
+	nme = number2name(name, sizeof(name), nr);
 	e->alias.label = 0;
 	e->alias.rname = sa_strdup(sa, nme);
 }
@@ -711,7 +711,7 @@ make_label(sql_allocator *sa, int nr)
 {
 	char name[16], *nme;
 
-	nme = number2name(name, 16, nr);
+	nme = number2name(name, sizeof(name), nr);
 	return sa_strdup(sa, nme);
 }
 
@@ -1880,7 +1880,7 @@ is_identity( sql_exp *e, sql_rel *r)
 			sql_exp *re = NULL;
 			if (e->l)
 				re = exps_bind_column2(r->exps, e->l, e->r);
-			if (!re && ((char*)e->r)[0] == 'L')
+			if (!re && has_label(e))
 				re = exps_bind_column(r->exps, e->r, NULL);
 			if (re)
 				return is_identity(re, r->l);

@@ -26,6 +26,14 @@ command setheartbeat(b:int):void
 address CMDsetHeartbeat
 comment "Set heart beat performance tracing";
 
+command getlimit():int
+address CMDgetprofilerlimit
+comment "Set profiler limit";
+
+command setlimit(l:int):void
+address CMDsetprofilerlimit
+comment "Get profiler limit";
+
 pattern openstream():void
 address CMDopenProfilerStream
 comment "Start profiling the events, send to output stream";

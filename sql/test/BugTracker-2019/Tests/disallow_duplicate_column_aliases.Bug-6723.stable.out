@@ -18,8 +18,6 @@ stdout of test 'disallow_duplicate_column_aliases.Bug-6723` in directory 'sql/te
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
-
 # 13:22:43 >  
 # 13:22:43 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15745" "--port=33477"
 # 13:22:43 >  

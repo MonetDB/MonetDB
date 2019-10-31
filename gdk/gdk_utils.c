@@ -39,7 +39,7 @@ int GDKverbose = 0;
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>  /* prerequisite of sys/sysctl on OpenBSD */
 #endif
-#ifdef HAVE_SYS_SYSCTL_H
+#ifdef BSD /* BSD macro is defined in sys/param.h */
 # include <sys/sysctl.h>
 #endif
 #if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT)
@@ -317,7 +317,7 @@ MT_init(void)
 		GetSystemInfo(&sysInfo);
 		_MT_pagesize = sysInfo.dwPageSize;
 	}
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_PAGESIZE)
+#elif defined(BSD) && defined(HW_PAGESIZE)
 	{
 		int size;
 		size_t len = sizeof(int);
@@ -344,7 +344,7 @@ MT_init(void)
 		if (GlobalMemoryStatusEx(&memStatEx))
 			_MT_npages = (size_t) (memStatEx.ullTotalPhys / _MT_pagesize);
 	}
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_MEMSIZE) && SIZEOF_SIZE_T == SIZEOF_LNG
+#elif defined(BSD) && defined(HW_MEMSIZE) && SIZEOF_SIZE_T == SIZEOF_LNG
 	/* Darwin, 64-bits */
 	{
 		uint64_t size = 0;
@@ -358,7 +358,7 @@ MT_init(void)
 		sysctl(mib, 2, &size, &len, NULL, 0);
 		_MT_npages = size / _MT_pagesize;
 	}
-#elif defined(HAVE_SYS_SYSCTL_H) && defined (HW_PHYSMEM64) && SIZEOF_SIZE_T == SIZEOF_LNG
+#elif defined(BSD) && defined (HW_PHYSMEM64) && SIZEOF_SIZE_T == SIZEOF_LNG
 	/* OpenBSD, 64-bits */
 	{
 		int64_t size = 0;
@@ -372,7 +372,7 @@ MT_init(void)
 		sysctl(mib, 2, &size, &len, NULL, 0);
 		_MT_npages = size / _MT_pagesize;
 	}
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_PHYSMEM)
+#elif defined(BSD) && defined(HW_PHYSMEM)
 	/* NetBSD, OpenBSD, Darwin, 32-bits; FreeBSD 32 & 64-bits */
 	{
 # ifdef __FreeBSD__
@@ -1181,23 +1181,12 @@ GDKsyserror(const char *format, ...)
 	va_start(ap, format);
 	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
 	va_end(ap);
-#ifndef NATIVE_WIN32
-	if (err > 0 && err < 1024)
-#endif
-	{
+	if (err > 0 && err < 1024) {
 		size_t len1;
 		size_t len2;
 		size_t len3;
 		char *osmsg;
-#ifdef NATIVE_WIN32
-		char osmsgbuf[256];
-		osmsg = osmsgbuf;
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
-			      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			      (LPTSTR) osmsgbuf, sizeof(osmsgbuf), NULL);
-#else
 		osmsg = strerror(err);
-#endif
 		len1 = strlen(message);
 		len2 = len1 + strlen(GDKMESSAGE);
 		len3 = len2 + strlen(osmsg);
@@ -1215,6 +1204,51 @@ GDKsyserror(const char *format, ...)
 
 	errno = 0;
 }
+
+#ifdef NATIVE_WIN32
+void
+GDKwinerror(const char *format, ...)
+{
+	int err = GetLastError();
+	char message[GDKERRLEN];
+	size_t len = strlen(GDKERROR);
+	va_list ap;
+
+	if (strncmp(format, GDKERROR, len) == 0) {
+		len = 0;
+	} else {
+		strncpy(message, GDKERROR, sizeof(message));
+	}
+	va_start(ap, format);
+	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
+	va_end(ap);
+
+	size_t len1;
+	size_t len2;
+	size_t len3;
+	char *osmsg;
+	char osmsgbuf[256];
+	osmsg = osmsgbuf;
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
+		      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		      (LPTSTR) osmsgbuf, sizeof(osmsgbuf), NULL);
+	len1 = strlen(message);
+	len2 = len1 + strlen(GDKMESSAGE);
+	len3 = len2 + strlen(osmsg);
+
+	if (len3 + 2 < sizeof(message)) {
+		strcpy(message + len1, GDKMESSAGE);
+		strcpy(message + len2, osmsg);
+		if (len3 > 0 && message[len3 - 1] != '\n') {
+			message[len3] = '\n';
+			message[len3 + 1] = 0;
+		}
+	}
+	GDKaddbuf(message);
+
+	SetLastError(0);
+}
+#endif
 
 void
 GDKclrerr(void)

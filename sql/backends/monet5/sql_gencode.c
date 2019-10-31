@@ -846,7 +846,7 @@ backend_call(backend *be, Client c, cq *cq)
 			sql_subtype *pt = cq->params + i;
 
 			if (!atom_cast(m->sa, a, pt)) {
-				sql_error(m, 003, SQLSTATE(42000) "wrong type for argument %d of " "function call: %s, expected %s\n", i + 1, atom_type(a)->type->sqlname, pt->type->sqlname);
+				sql_error(m, 003, SQLSTATE(42000) "wrong type for argument %d of function call: %s, expected %s\n", i + 1, atom_type(a)->type->sqlname, pt->type->sqlname);
 				break;
 			}
 			if (atom_null(a)) {
@@ -868,39 +868,33 @@ backend_call(backend *be, Client c, cq *cq)
 int
 monet5_resolve_function(ptr M, sql_func *f)
 {
-	mvc *sql = (mvc *) M;
-	Client c = MCgetClient(sql->clientid);
+	Client c;
 	Module m;
+	mvc *sql = (mvc *) M;
+	str mname = getName(f->mod), fname = getName(f->imp);
 
-	/*
-	   fails to search outer modules!
-	   if (!findSymbol(c->usermodule, f->mod, f->imp))
-	   return 0;
-	 */
+	if (!mname || !fname)
+		return 0;
 
-	for (m = findModule(c->usermodule, f->mod); m; m = m->link) {
-		if (strcmp(m->name, f->mod) == 0) {
-			Symbol s = m->space[(int) (getSymbolIndex(f->imp))];
-			for (; s; s = s->peer) {
-				InstrPtr sig = getSignature(s);
-				int argc = sig->argc - sig->retc;
+	/* Some SQL functions MAL mapping such as count(*) aggregate, the number or arguments don't match */
+	if (mname == calcRef && fname == getName("="))
+		return 1;
+	if (mname == aggrRef && fname == countRef)
+		return 1;
+	if (mname == sqlRef && (fname == first_valueRef || fname ==  minRef || fname == maxRef))
+		return 1;
 
-				if (strcmp(s->name, f->imp) == 0 && ((!f->ops && argc == 0) || list_length(f->ops) == argc || (sig->varargs & VARARGS) == VARARGS))
-					return 1;
+	c = MCgetClient(sql->clientid);
+	for (m = findModule(c->usermodule, mname); m; m = m->link) {
+		for (Symbol s = findSymbolInModule(m, fname); s; s = s->peer) {
+			InstrPtr sig = getSignature(s);
+			int argc = sig->argc - sig->retc, fargs = list_length(f->ops);
 
-			}
+			if (fargs == argc || (sig->varargs & VARARGS) == VARARGS)
+				return 1;
 		}
 	}
 	return 0;
-/*
-	node *n;
-	newFcnCall(f->mod, f->imp);
-	for (n = f->ops->h; n; n = n->next) {
-		sql_arg *a = n->data;
-
-		q = push ?type? (mb, q, a->);
-	}
-*/
 }
 
 static int
@@ -1036,6 +1030,83 @@ backend_create_c_func(backend *be, sql_func *f)
 	return 0;
 }
 
+/* Parse the SQL query from the function, and extract the MAL function from the generated abstract syntax tree */
+static int
+mal_function_find_implementation_address(mvc *m, sql_func *f)
+{
+	mvc *o = m;
+	buffer *b = NULL;
+	bstream *bs = NULL;
+	stream *buf = NULL;
+	char *n = NULL;
+	int len = _strlen(f->query);
+	sql_schema *s = cur_schema(m);
+	dlist *l, *ext_name;
+
+	if (!(m = ZNEW(mvc))) {
+		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	m->type = Q_PARSE;
+	m->user_id = m->role_id = USER_MONETDB;
+
+	if (!(m->session = sql_session_create(0, 0))) {
+		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (s)
+		m->session->schema = s;
+
+	if (!(m->sa = sa_create())) {
+		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(b = (buffer*)GDKmalloc(sizeof(buffer)))) {
+		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(n = GDKmalloc(len + 2))) {
+		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	snprintf(n, len + 2, "%s\n", f->query);
+	len++;
+	buffer_init(b, n, len);
+	if (!(buf = buffer_rastream(b, "sqlstatement"))) {
+		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	if (!(bs = bstream_create(buf, b->len))) {
+		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	scanner_init(&m->scanner, bs, NULL);
+	m->scanner.mode = LINE_1; 
+	bstream_next(m->scanner.rs);
+
+	(void) sqlparse(m); /* blindly ignore errors */
+	assert(m->sym->token == SQL_CREATE_FUNC);
+	l = m->sym->data.lval;
+	ext_name = l->h->next->next->next->data.lval;
+	f->imp = sa_strdup(f->sa, qname_fname(ext_name)); /* found the implementation, set it */
+
+bailout:
+	if (m) {
+		bstream_destroy(m->scanner.rs);
+		if (m->session)
+			sql_session_destroy(m->session); 
+		if (m->sa)
+			sa_destroy(m->sa);
+		_DELETE(m);
+	}
+	m = o;
+	if (n)
+		GDKfree(n);
+	if (b)
+		GDKfree(b);
+	return m->errstr[0] == '\0'; /* m was set back to o */
+}
+
 static int
 backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
@@ -1047,7 +1118,18 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0;
 	sql_rel *r;
 
-	/* nothing to do for internal and ready (not recompiling) functions */
+	/* nothing to do for internal and ready (not recompiling) functions, besides finding respective MAL implementation */
+	if (!f->sql && (f->lang == FUNC_LANG_INT || f->lang == FUNC_LANG_MAL)) {
+		if (f->lang == FUNC_LANG_MAL && !f->imp && !mal_function_find_implementation_address(m, f))
+			return -1;
+		if (!backend_resolve_function(be->mvc, f)) {
+			if (f->lang == FUNC_LANG_INT)
+				(void) sql_error(m, 02, SQLSTATE(HY005) "Implementation for function %s.%s not found", f->mod, f->imp);
+			else
+				(void) sql_error(m, 02, SQLSTATE(HY005) "Implementation for function %s.%s not found (%s.%s)", f->mod, f->imp, f->s->base.name, f->base.name);
+			return -1;
+		}
+	}
 	if (!f->sql || (!vararg && f->sql > 1))
 		return 0;
 	if (!vararg)

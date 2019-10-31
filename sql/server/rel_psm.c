@@ -485,7 +485,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			char name[16];
 
 			if (!cname)
-				cname = sa_strdup(sql->sa, number2name(name, 16, ++sql->label));
+				cname = sa_strdup(sql->sa, number2name(name, sizeof(name), ++sql->label));
 			if (!isproject) 
 				e = exp_ref(sql->sa, e);
 			e = rel_check_type(sql, &ce->type, oexps_rel, e, type_equal);
@@ -920,7 +920,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			} else if (!sf) {
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: %s function %s.%s not bound", KF, F, slang, s->base.name, fname);
 			}
-		} else if (body) {
+		} else if (body) { /* SQL implementation */
 			sql_arg *ra = (restype && !is_table)?restype->h->data:NULL;
 			list *b = NULL;
 			sql_schema *old_schema = cur_schema(sql);
@@ -946,7 +946,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			/* in execute mode we instantiate the function */
 			if (instantiate || deps)
 				return rel_psm_block(sql->sa, b);
-		} else {
+		} else { /* MAL implementation */
 			char *fmod = qname_module(ext_name);
 			char *fnme = qname_fname(ext_name);
 
@@ -965,7 +965,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 					f->mod = _STRDUP(fmod);
 				if (!f->imp || strcmp(f->imp, fnme)) 
 					f->imp = (f->sa)?sa_strdup(f->sa, fnme):_STRDUP(fnme);
-				if(!f->mod || !f->imp) {
+				if (!f->mod || !f->imp) {
 					_DELETE(f->mod);
 					_DELETE(f->imp);
 					return sql_error(sql, 02, SQLSTATE(HY001) "CREATE %s%s: could not allocate space", KF, F);
@@ -973,6 +973,11 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				f->sql = 0; /* native */
 				f->lang = FUNC_LANG_INT;
 			}
+			if (!f)
+				f = sf->func;
+			assert(f);
+			if (!backend_resolve_function(sql, f))
+				return sql_error(sql, 01, SQLSTATE(3F000) "CREATE %s%s: external name %s.%s not bound (%s.%s)", KF, F, fmod, fnme, s->base.name, fname );
 		}
 	}
 	return rel_create_function(sql->sa, s->base.name, f);

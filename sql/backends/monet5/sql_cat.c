@@ -781,11 +781,21 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 	if (!s)
 		s = cur_schema(sql);
 	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system);
-	if (nf && nf->query && !LANG_EXT(nf->lang)) {
+	assert(nf);
+	switch (nf->lang) {
+	case FUNC_LANG_INT:
+	case FUNC_LANG_MAL: /* shouldn't be reachable, but leave it here */
+		if (!backend_resolve_function(sql, nf))
+			throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s%s: external name %s.%s not bound", KF, F, nf->mod, nf->base.name);
+		if (nf->query == NULL)
+			break;
+		/* fall through */
+	case FUNC_LANG_SQL: {
 		char *buf;
 		sql_rel *r = NULL;
 		sql_allocator *sa = sql->sa;
 
+		assert(nf->query);
 		if (!(sql->sa = sa_create()))
 			throw(SQL, "sql.catalog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		if (!(buf = sa_strdup(sql->sa, nf->query)))
@@ -819,9 +829,9 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		}
 		sa_destroy(sql->sa);
 		sql->sa = sa;
-	} else if (nf->lang == FUNC_LANG_MAL) {
-		if (!backend_resolve_function(sql, nf))
-			throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s%s: external name %s.%s not bound", KF, F, nf->mod, nf->base.name);
+	}
+	default:
+		break;
 	}
 	return MAL_SUCCEED;
 }
