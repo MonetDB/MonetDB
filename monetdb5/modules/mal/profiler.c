@@ -127,6 +127,22 @@ CMDgetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	throw(MAL, "getTrace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING  "%s", path);
 }
+
+str
+CMDgetprofilerlimit(int *res)
+{
+	*res = getprofilerlimit();
+	return MAL_SUCCEED;
+}
+
+str
+CMDsetprofilerlimit(void *res, int *lim)
+{
+	(void) res;
+	setprofilerlimit(*lim);
+	return MAL_SUCCEED;
+}
+
 /*
  * Tracing an active system.
  */

@@ -919,6 +919,18 @@ void setHeartbeat(int delay)
 	ATOMIC_SET(&hbdelay, delay);
 }
 
+/* TODO getprofilerlimit and setprofilerlimit functions */
+
+int getprofilerlimit(void)
+{
+	return 0;
+}
+
+void setprofilerlimit(int limit)
+{
+	(void) limit;
+}
+
 void initProfiler(void)
 {
 	gettimeofday(&startup_time, NULL);
