@@ -156,6 +156,11 @@ __hidden gdk_return GDKssort(void *restrict h, void *restrict t, const void *res
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
+#ifdef NATIVE_WIN32
+__hidden void GDKwinerror(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)))
+	__attribute__((__visibility__("hidden")));
+#endif
 __hidden void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden bool HASHgonebad(BAT *b, const void *v)

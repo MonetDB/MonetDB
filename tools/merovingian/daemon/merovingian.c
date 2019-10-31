@@ -427,7 +427,7 @@ main(int argc, char *argv[])
 #if defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
 		/* this works on Linux, Solaris and AIX */
 		ncpus = sysconf(_SC_NPROCESSORS_ONLN);
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_NCPU)   /* BSD */
+#elif defined(HW_NCPU)   /* BSD */
 		size_t len = sizeof(int);
 		int mib[3];
 
