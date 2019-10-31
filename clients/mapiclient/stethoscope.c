@@ -103,7 +103,7 @@ static void
 stopListening(int i)
 {
 	fprintf(stderr,"stethoscope: signal %d received\n",i);
-	if( dbh)
+	if(dbh)
 		doQ("profiler.stop();");
 stop_disconnect:
 	// show follow up action only once
@@ -148,7 +148,7 @@ main(int argc, char **argv)
 		{ 0, 0, 0, 0 }
 	};
 
-	if( ev == NULL) {
+	if(ev == NULL) {
 		fprintf(stderr,"could not allocate space\n");
 		exit(-1);
 	}
@@ -264,19 +264,19 @@ main(int argc, char **argv)
 		fprintf(stderr,"-- connection with server %s\n", uri ? uri : host);
 
 	snprintf(buf,BUFSIZ-1,"profiler.setheartbeat(%d);",beat);
-	if( debug)
+	if(debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
 
 	snprintf(buf, BUFSIZ, "profiler.openstream();");
-	if( debug)
+	if(debug)
 		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);
 
 	if(filename != NULL) {
 		trace = fopen(filename,"w");
 
-		if( trace == NULL) {
+		if(trace == NULL) {
 			fprintf(stderr,"Could not create file '%s', printing to stdout instead...\n", filename);
 			filename = NULL;
 		}
@@ -285,12 +285,12 @@ main(int argc, char **argv)
 	len = 0;
 	buflen = BUFSIZ;
 	buffer = (char *) malloc(buflen);
-	if( buffer == NULL){
+	if(buffer == NULL){
 		fprintf(stderr,"Could not create input buffer\n");
 		exit(-1);
 	}
 	conn = mapi_get_from(dbh);
-	if( !trace)
+	if(!trace)
 		trace = stdout;
 	if(!json)
 		renderHeader(trace);
@@ -300,7 +300,7 @@ main(int argc, char **argv)
 			break;
 		buffer[len + n] = 0;
 		response = buffer;
-		if( debug)
+		if(debug)
 				printf("%s", response);
 		if(json) {
 			if(trace != NULL) {
@@ -319,7 +319,7 @@ main(int argc, char **argv)
 				if (debug)
 					printf("%s\n", response);
 				done= keyvalueparser(response,ev);
-				if( done== 1){
+				if(done== 1){
 					renderSummary(trace, ev, "");
 					first = 0;
 				}
@@ -329,9 +329,9 @@ main(int argc, char **argv)
 
 		/* handle the case that the line is too long to
 		 * fit in the buffer */
-		if( response == buffer){
+		if(response == buffer){
 			char *new =  (char *) realloc(buffer, buflen + BUFSIZ);
-			if( new == NULL){
+			if(new == NULL){
 				fprintf(stderr,"Could not extend input buffer\n");
 				exit(-1);
 			}
