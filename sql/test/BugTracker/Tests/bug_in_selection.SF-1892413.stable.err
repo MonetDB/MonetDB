@@ -18,7 +18,7 @@ ERROR = !syntax error, unexpected LIMIT, expecting UNION or EXCEPT or INTERSECT 
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT date, (SELECT date from test_subquery where date > t1892413a.date) as dtNext from test_subquery t1892413a;
-ERROR = !21000!zero_or_one: cardinality violation, scalar expression expected
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
 CODE  = M0M29
 
 # 10:24:35 >  
