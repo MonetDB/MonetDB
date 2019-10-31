@@ -23,7 +23,7 @@ atmreg = re.compile(r'\batom\s+(?P<atom>[a-zA-Z_][a-zA-Z0-9_]*)(?:\s*[:=]\s*(?P<
 treg = re.compile(r':\s*(bat\[[^]]*\]|[a-zA-Z_][a-zA-Z_0-9]*)')
 
 expre = re.compile(r'\b[a-zA-Z_0-9]+export\s+(?P<decl>[^;]*;)', re.MULTILINE)
-nmere = re.compile(r'\b(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)\s*[[(;]')
+nmere = re.compile(r'\b(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)\s*[\[\(;]')
 
 freg = re.compile(r'(?P<rtype>(?:const\s+)?\w+(?:\s*\*)*)\s*\b(?P<name>\w+)\((?P<args>[^()]*)\)')
 creg = re.compile(r'\bconst\b')
