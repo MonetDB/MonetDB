@@ -51,43 +51,6 @@ bool MOStypes_frame(BAT* b) {
 // we use longs as the basis for bit vectors
 #define chunk_size(Task, Cnt) wordaligned(MosaicBlkSize + (Cnt * Task->hdr->framebits)/8 + (((Cnt * Task->hdr->framebits) %8) != 0), lng)
 
-void
-MOSadvance_frame(MOStask task)
-{
-	int *dst = (int*)  (((char*) task->blk) + MosaicBlkSize);
-	long cnt = MOSgetCnt(task->blk);
-	long bytes;
-
-	assert(cnt > 0);
-	task->start += (oid) cnt;
-	bytes =  (cnt * task->hdr->framebits)/8 + (((cnt * task->hdr->framebits) %8) != 0) + sizeof(ulng);
-	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, lng)); 
-}
-
-void
-MOSlayout_frame(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
-{
-	MosaicBlk blk = task->blk;
-	lng cnt = MOSgetCnt(blk), input=0, output= 0;
-
-	input = cnt * ATOMsize(task->type);
-	output = chunk_size(task,cnt);
-	if( BUNappend(btech, "frame blk", false) != GDK_SUCCEED ||
-		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
-		BUNappend(binput, &input, false) != GDK_SUCCEED ||
-		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", false) != GDK_SUCCEED)
-		return;
-}
-
-void
-MOSskip_frame(MOStask task)
-{
-	MOSadvance_frame( task);
-	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
-		task->blk = 0; // ENDOFLIST
-}
-
 typedef struct _FrameParameters_t {
 	MosaicBlkRec base;
 	int bits;
@@ -114,7 +77,46 @@ typedef struct _FrameParameters_t {
 
 } MosaicBlkHeader_frame_t;
 
-#define MOScodevectorFrame(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_frame_t), BitVector))
+#define toEndOfBitVector(CNT, BITS) wordaligned(((CNT) * (BITS) / CHAR_BIT) + ( ((CNT) * (BITS)) % CHAR_BIT != 0 ), lng)
+
+void
+MOSadvance_frame(MOStask task)
+{
+	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) (task)->blk;
+	int *dst = (int*)  (((char*) task->blk) + wordaligned(sizeof(MosaicBlkHeader_frame_t), unsigned int));
+	long cnt = parameters->base.cnt;
+	long bytes = toEndOfBitVector(cnt, parameters->bits);
+
+	assert(cnt > 0);
+	task->start += (oid) cnt;
+	task->blk = (MosaicBlk) (((char*) dst)  + bytes);
+}
+
+void
+MOSlayout_frame(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+{
+	MosaicBlk blk = task->blk;
+	lng cnt = MOSgetCnt(blk), input=0, output= 0;
+
+	input = cnt * ATOMsize(task->type);
+	output = chunk_size(task,cnt);
+	if( BUNappend(btech, "frame blk", false) != GDK_SUCCEED ||
+		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
+		BUNappend(binput, &input, false) != GDK_SUCCEED ||
+		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
+		BUNappend(bproperties, "", false) != GDK_SUCCEED)
+		return;
+}
+
+void
+MOSskip_frame(MOStask task)
+{
+	MOSadvance_frame( task);
+	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
+		task->blk = 0; // ENDOFLIST
+}
+
+#define MOScodevectorFrame(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_frame_t), unsigned int))
 
 /* Use ternary operator because (in theory) we have to be careful not to get overflow's*/\
 #define GET_DELTA_FOR_SIGNED_TYPE(DELTA_TPE, max, min) (min < 0? max < 0?(DELTA_TPE) (max - min) : (DELTA_TPE)(max) + (DELTA_TPE)(-1 * min) : (DELTA_TPE) (max - min))
@@ -129,17 +131,19 @@ do {\
 	min = *val;\
 	/*TODO: add additional loop to find best bit wise upper bound*/\
 	for(i = 0; i < LIMIT; i++, val++){\
+		TPE current_max = max;\
+		TPE current_min = min;\
 		bool evaluate_bits = false;\
-		if (*val > max) {\
-			max = *val;\
+		if (*val > current_max) {\
+			current_max = *val;\
 			evaluate_bits = true;\
 		}\
-		if (*val < min) {\
-			min = *val;\
+		if (*val < current_min) {\
+			current_min = *val;\
 			evaluate_bits = true;\
 		}\
 		if (evaluate_bits) {\
-		 	DELTA_TPE width = GET_DELTA(DELTA_TPE, max, min);\
+		 	DELTA_TPE width = GET_DELTA(DELTA_TPE, current_max, current_min);\
 			int current_bits = bits;\
 			while (width > ((DELTA_TPE)(-1)) >> (sizeof(DELTA_TPE) * CHAR_BIT - current_bits) ) {/*keep track of number of BITS necessary to store difference*/\
 				current_bits++;\
@@ -150,6 +154,8 @@ do {\
 				/*If we can from here on not compress better then the half of the original data type, we give up. */\
 				break;\
 			}\
+			max = current_max;\
+			min = current_min;\
 			bits = current_bits;\
 		}\
 	}\
@@ -198,7 +204,7 @@ do {\
 	TPE *src = getSrc(TPE, (TASK));\
 	TPE delta;\
 	BUN i = 0;\
-	BUN limit = (TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start;\
+	BUN limit = estimate->cnt;\
 	BitVector base;\
 	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((TASK))->blk;\
 	determineFrameParameters(*parameters, src, limit, TPE, DELTA_TPE, GET_DELTA);\
@@ -209,23 +215,23 @@ do {\
 		delta = *src - parameters->min.min##TPE;\
 		setBitVector(base, i, parameters->bits, (unsigned int) /*TODO: fix this once we have increased capacity of bitvector*/ delta);\
 	}\
-	(TASK)->dst += wordaligned((i * parameters->bits / CHAR_BIT) + ( (i * parameters->bits) % CHAR_BIT ) != 0, lng);\
+	(TASK)->dst += toEndOfBitVector(i, parameters->bits);\
 } while(0)
 
 void
-MOScompress_frame(MOStask task)
+MOScompress_frame(MOStask task, MosaicBlkRec* estimate)
 {
 	MosaicBlk blk = task->blk;
 
 	MOSsetTag(blk,MOSAIC_FRAME);
 	MOSsetCnt(blk, 0);
 
-	switch(ATOMbasetype(task->type)){
+	switch(ATOMbasetype(task->type)) {
 	case TYPE_bte: FRAMEcompress(task, bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 	case TYPE_sht: FRAMEcompress(task, sht, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 	case TYPE_int: FRAMEcompress(task, int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 	case TYPE_lng: FRAMEcompress(task, lng, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_oid: FRAMEcompress(task, oid, oid, GET_DELTA_FOR_UNSIGNED_TYPE); break;
+	case TYPE_oid: FRAMEcompress(task, oid, oid,  GET_DELTA_FOR_UNSIGNED_TYPE); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: FRAMEcompress(task, hge, uhge, GET_DELTA_FOR_SIGNED_TYPE); break;
 #endif

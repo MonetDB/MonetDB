@@ -512,7 +512,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 			break;
 		case MOSAIC_FRAME:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_frame\n");
-			MOScompress_frame(task);
+			MOScompress_frame(task, estimate);
 			MOSupdateHeader(task);
 			MOSadvance_frame(task);
 			MOSnewBlk(task);
