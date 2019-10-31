@@ -1712,7 +1712,7 @@ def GetBitsAndModsAndThreads(env) :
     proc.killed = False
     proc.onechild = True
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
-    qOut = None
+    qOut = qErr = None
     try:
         t.start()
         while True:
