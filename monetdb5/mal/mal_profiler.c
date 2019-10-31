@@ -36,11 +36,8 @@ static str myname = 0;	// avoid tracing the profiler module
 /* The JSON rendering can be either using '\n' separators between
  * each key:value pair or as a single line.
  * The current stethoscope implementation requires the first option and
- * also the term rendering PRET to be set to ''
+ * also the term rendering  to be set to ''
  */
-
-#define PRETTIFY	"\n"
-//#define PRETTIFY
 
 /* When the MAL block contains a BARRIER block we may end up with tons
  * of profiler events. To avoid this, we stop emitting the events
@@ -132,7 +129,8 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 {
 	char logbuffer[LOGLEN], *logbase;
 	size_t loglen;
-	str stmt, c;
+	str c;
+	str stmt;
 	str stmtq;
 	lng usec;
 	uint64_t microseconds;
@@ -141,8 +139,8 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	 * they may appear when BARRIER blocks are executed
 	 * The default parameter should be sufficient for most practical cases.
 	*/
-	if( !start && pci->calls > HIGHWATERMARK){
-		if( pci->calls == 10000 || pci->calls == 100000 || pci->calls == 1000000 || pci->calls == 10000000)
+	if(!start && pci->calls > HIGHWATERMARK){
+		if(pci->calls == 10000 || pci->calls == 100000 || pci->calls == 1000000 || pci->calls == 10000000)
 			fprintf(stderr, "#Profiler too many calls %d\n", pci->calls);
 		return;
 	}
@@ -150,38 +148,38 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 /* The stream of events can be complete read by the DBA,
  * all other users can only see events assigned to their account
  */
-	if( malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
+	if(malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
 		return;
 
 	usec= pci->clock;
 	microseconds = (uint64_t)usec - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 	/* make profile event tuple  */
 	lognew();
-	logadd("{"PRETTIFY); // fill in later with the event counter
+	logadd("{"); // fill in later with the event counter
 	/* TODO: This could probably be optimized somehow to avoid the
 	 * function call to mercurial_revision().
 	 */
-	logadd("\"version\":\""VERSION" (hg id: %s)\","PRETTIFY, mercurial_revision());
-	logadd("\"user\":"OIDFMT","PRETTIFY, cntxt->user);
-	logadd("\"clk\":"LLFMT","PRETTIFY, usec);
-	logadd("\"mclk\":%"PRIu64","PRETTIFY, microseconds);
-	logadd("\"thread\":%d,"PRETTIFY, THRgettid());
-	logadd("\"function\":\"%s.%s\","PRETTIFY, getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));
-	logadd("\"pc\":%d,"PRETTIFY, mb?getPC(mb,pci):0);
-	logadd("\"tag\":"OIDFMT","PRETTIFY, stk?stk->tag:0);
-	logadd("\"module\":\"%s\","PRETTIFY, pci->modname ? pci->modname : "" );
-	logadd("\"instruction\":\"%s\","PRETTIFY, pci->fcnname ? pci->fcnname : "");
+	logadd("\"version\":\""VERSION" (hg id: %s)\",", mercurial_revision());
+	logadd("\"user\":"OIDFMT",", cntxt->user);
+	logadd("\"clk\":"LLFMT",", usec);
+	logadd("\"mclk\":%"PRIu64",", microseconds);
+	logadd("\"thread\":%d,", THRgettid());
+	logadd("\"function\":\"%s.%s\",", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));
+	logadd("\"pc\":%d,", mb?getPC(mb,pci):0);
+	logadd("\"tag\":"OIDFMT",", stk?stk->tag:0);
+	logadd("\"module\":\"%s\",", pci->modname ? pci->modname : "");
+	logadd("\"instruction\":\"%s\",", pci->fcnname ? pci->fcnname : "");
     if (!GDKinmemory()) {
         char *uuid;
 		str c;
 		if ((c = msab_getUUID(&uuid)) == NULL) {
-			logadd("\"session\":\"%s\","PRETTIFY, uuid);
+			logadd("\"session\":\"%s\",", uuid);
 			free(uuid);
 		} else
 			free(c);
     }
-	logadd("\"state\":\"%s\","PRETTIFY, start?"start":"done");
-	logadd("\"usec\":"LLFMT","PRETTIFY, pci->ticks);
+	logadd("\"state\":\"%s\",", start?"start":"done");
+	logadd("\"usec\":"LLFMT",", pci->ticks);
 	
 	/* generate actual call statement */
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
@@ -191,7 +189,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 
 		while (*c && isspace((unsigned char)*c))
 			c++;
-		if( *c){
+		if(*c){
 			stmtq = mal_quote(c, strlen(c));
 			if (stmtq && strlen(stmtq) > LOGLEN/2) {
 				truncated = truncate_string(stmtq);
@@ -199,7 +197,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 				stmtq = truncated;
 			}
 			if (stmtq != NULL) {
-				logadd("\"stmt\":\"%s\","PRETTIFY, stmtq);
+				logadd("\"stmt\":\"%s\",", stmtq);
 				GDKfree(stmtq);
 			}
 		}
@@ -217,7 +215,6 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 This information can be used to determine memory footprint and variable life times.
  */
 
-#define PRET  "\t"
 #define MALARGUMENTDETAILS
 #ifdef MALARGUMENTDETAILS
 		// Also show details of the arguments for modelling
@@ -225,7 +222,7 @@ This information can be used to determine memory footprint and variable life tim
 			int j;
 
 			logadd("\"args\":[");
-			for( j=0; j< pci->argc; j++){
+			for(j=0; j< pci->argc; j++){
 				int tpe = getVarType(mb, getArg(pci,j));
 				str tname = 0, cv;
 				lng total = 0;
@@ -233,60 +230,60 @@ This information can be used to determine memory footprint and variable life tim
 				bat bid=0;
 
 				logadd("{");
-				if( j < pci->retc )
-					logadd("\"ret\":%d,"PRET, j);
+				if(j < pci->retc)
+					logadd("\"ret\":%d,", j);
 				else
-					logadd("\"arg\":%d,"PRET, j);
+					logadd("\"arg\":%d,", j);
 				c =getVarName(mb, getArg(pci,j));
-				if( getVarSTC(mb,getArg(pci,j))){
+				if(getVarSTC(mb,getArg(pci,j))){
 					InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
 					if(stc && strcmp(getModuleId(stc),"sql") ==0  && strncmp(getFunctionId(stc),"bind",4)==0)
-						logadd("\"alias\":\"%s.%s.%s\","PRET,
+						logadd("\"alias\":\"%s.%s.%s\",",
 							getVarConstant(mb, getArg(stc,stc->retc +1)).val.sval,
 							getVarConstant(mb, getArg(stc,stc->retc +2)).val.sval,
 							getVarConstant(mb, getArg(stc,stc->retc +3)).val.sval);
 				}
-				if( isaBatType(tpe) ){
-					BAT *d= BATdescriptor( bid = stk->stk[getArg(pci,j)].val.bval);
+				if(isaBatType(tpe)){
+					BAT *d= BATdescriptor(bid = stk->stk[getArg(pci,j)].val.bval);
 					tname = getTypeName(getBatType(tpe));
-					logadd("\"type\":\"bat[:%s]\","PRET, tname);
-					if( d) {
+					logadd("\"type\":\"bat[:%s]\",", tname);
+					if(d) {
 						BAT *v;
 						cnt = BATcount(d);
-						if( isVIEW(d)){
-							logadd("\"view\":\"true\","PRET);
-							logadd("\"parent\":%d,"PRET, VIEWtparent(d));
-							logadd("\"seqbase\":"BUNFMT","PRET, d->hseqbase);
+						if(isVIEW(d)){
+							logadd("\"view\":\"true\",");
+							logadd("\"parent\":%d,", VIEWtparent(d));
+							logadd("\"seqbase\":"BUNFMT",", d->hseqbase);
 							v= BBPquickdesc(VIEWtparent(d), false);
-							logadd("\"persistence\":\"%s\","PRET, (v &&  !v->batTransient ? "persistent" : "transient"));
+							logadd("\"persistence\":\"%s\",", (v &&  !v->batTransient ? "persistent" : "transient"));
 						} else
-							logadd("\"persistence\":\"%s\","PRET, ( d->batTransient ? "transient" : "persistent"));
-						logadd("\"sorted\":%d,"PRET, d->tsorted);
-						logadd("\"revsorted\":%d,"PRET, d->trevsorted);
-						logadd("\"nonil\":%d,"PRET, d->tnonil);
-						logadd("\"nil\":%d,"PRET, d->tnil);
-						logadd("\"key\":%d,"PRET, d->tkey);
-						logadd("\"unique\":%d,"PRET, d->tunique);
+							logadd("\"persistence\":\"%s\",", (d->batTransient ? "transient" : "persistent"));
+						logadd("\"sorted\":%d,", d->tsorted);
+						logadd("\"revsorted\":%d,", d->trevsorted);
+						logadd("\"nonil\":%d,", d->tnonil);
+						logadd("\"nil\":%d,", d->tnil);
+						logadd("\"key\":%d,", d->tkey);
+						logadd("\"unique\":%d,", d->tunique);
 						cv = VALformat(&stk->stk[getArg(pci,j)]);
 						c = strchr(cv, '>');
 						*c = 0;
-						logadd("\"file\":\"%s\","PRET, cv + 1);
+						logadd("\"file\":\"%s\",", cv + 1);
 						GDKfree(cv);
 						total += cnt * d->twidth;
 						total += heapinfo(d->tvheap, d->batCacheid);
 						total += hashinfo(d->thash, d->batCacheid);
 						total += IMPSimprintsize(d);
-					/* logadd("\"debug\":\"%s\""PRET, d->debugmessages); */
+					/* logadd("\"debug\":\"%s\"", d->debugmessages); */
 						BBPunfix(d->batCacheid);
 					}
-					logadd("\"bid\":%d,"PRET, bid);
-					logadd("\"count\":"BUNFMT","PRET, cnt);
-					logadd("\"size\":" LLFMT","PRET, total);
+					logadd("\"bid\":%d,", bid);
+					logadd("\"count\":"BUNFMT",", cnt);
+					logadd("\"size\":" LLFMT, total);
 				} else{
 					char *truncated = NULL;
 					tname = getTypeName(tpe);
-					logadd("\"type\":\"%s\","PRET, tname);
-					logadd("\"const\":%d,"PRET, isVarConstant(mb, getArg(pci,j)));
+					logadd("\"type\":\"%s\",", tname);
+					logadd("\"const\":%d", isVarConstant(mb, getArg(pci,j)));
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					stmtq = cv ? mal_quote(cv, strlen(cv)) : NULL;
 					if (stmtq != NULL && strlen(stmtq) > LOGLEN/2) {
@@ -294,15 +291,15 @@ This information can be used to determine memory footprint and variable life tim
 						GDKfree(stmtq);
 						stmtq = truncated;
 					}
-					if (stmtq )
-						logadd("\"value\":\"%s\","PRET, stmtq);
+					if (stmtq)
+						logadd(",\"value\":\"%s\"", stmtq);
 					GDKfree(cv);
 					GDKfree(stmtq);
 				}
 				GDKfree(tname);
-				logadd("}%s", (j< pci->argc-1 && j != pci->retc -1?",":""));
+				logadd("}%s", (j< pci->argc-1?",":""));
 			}
-			logadd("]"PRETTIFY); // end marker for arguments
+			logadd("]"); // end marker for arguments
 		}
 #endif
 	logadd("}\n"); // end marker
@@ -335,7 +332,7 @@ getCPULoad(char cpuload[BUFSIZ]){
 		return -1;
 	}
 	/* read complete file to avoid concurrent write issues */
-	if ((n = fread(buf, 1, BUFSIZ,proc)) == 0 )
+	if ((n = fread(buf, 1, BUFSIZ,proc)) == 0)
 		return -1;
 	buf[n] = 0;
 	for (s= buf; *s; s++) {
@@ -353,12 +350,12 @@ getCPULoad(char cpuload[BUFSIZ]){
 			if (s == NULL)		/* unexpected format of file */
 				break;
 
-			while( *s && isspace((unsigned char)*s)) s++;
+			while(*s && isspace((unsigned char)*s)) s++;
 			i= sscanf(s,LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT,  &user, &nice, &system, &idle, &iowait);
-			if ( i != 5 )
+			if (i != 5)
 				goto skip;
 			newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
-			if (  newload)
+			if ( newload)
 				corestat[cpu].load = (double) newload / (newload + idle - corestat[cpu].idle + iowait - corestat[cpu].iowait);
 			corestat[cpu].user = user;
 			corestat[cpu].nice = nice;
@@ -397,38 +394,38 @@ profilerHeartbeatEvent(char *alter)
 	microseconds = (uint64_t)startup_time.tv_sec*1000000 + (uint64_t)startup_time.tv_usec + (uint64_t)usec;
 
 	/* get CPU load on beat boundaries only */
-	if ( getCPULoad(cpuload) )
+	if (getCPULoad(cpuload))
 		return;
 
 	lognew();
-	logadd("{"PRETTIFY); // fill in later with the event counter
+	logadd("{"); // fill in later with the event counter
 	if (GDKinmemory()) {
 		char *uuid, *err;
 		if ((err = msab_getUUID(&uuid)) == NULL) {
-			logadd("\"session\":\"%s\","PRETTIFY, uuid);
+			logadd("\"session\":\"%s\",", uuid);
 			free(uuid);
 		} else
 			free(err);
 	}
-	logadd("\"clk\":"LLFMT","PRETTIFY,usec);
-	logadd("\"ctime\":%"PRIu64","PRETTIFY, microseconds);
-	logadd("\"rss\":%zu,"PRETTIFY, MT_getrss()/1024/1024);
+	logadd("\"clk\":"LLFMT",",usec);
+	logadd("\"ctime\":%"PRIu64",", microseconds);
+	logadd("\"rss\":%zu,", MT_getrss()/1024/1024);
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 	if(infoUsage.ru_inblock - prevUsage.ru_inblock)
-		logadd("\"inblock\":%ld,"PRETTIFY, infoUsage.ru_inblock - prevUsage.ru_inblock);
+		logadd("\"inblock\":%ld,", infoUsage.ru_inblock - prevUsage.ru_inblock);
 	if(infoUsage.ru_oublock - prevUsage.ru_oublock)
-		logadd("\"oublock\":%ld,"PRETTIFY, infoUsage.ru_oublock - prevUsage.ru_oublock);
+		logadd("\"oublock\":%ld,", infoUsage.ru_oublock - prevUsage.ru_oublock);
 	if(infoUsage.ru_majflt - prevUsage.ru_majflt)
-		logadd("\"majflt\":%ld,"PRETTIFY, infoUsage.ru_majflt - prevUsage.ru_majflt);
+		logadd("\"majflt\":%ld,", infoUsage.ru_majflt - prevUsage.ru_majflt);
 	if(infoUsage.ru_nswap - prevUsage.ru_nswap)
-		logadd("\"nswap\":%ld,"PRETTIFY, infoUsage.ru_nswap - prevUsage.ru_nswap);
+		logadd("\"nswap\":%ld,", infoUsage.ru_nswap - prevUsage.ru_nswap);
 	if(infoUsage.ru_nvcsw - prevUsage.ru_nvcsw)
-		logadd("\"nvcsw\":%ld,"PRETTIFY, infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+		logadd("\"nvcsw\":%ld,", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
 	prevUsage = infoUsage;
 #endif
-	logadd("\"state\":\"%s\","PRETTIFY,alter);
-	logadd("\"cpuload\":%s"PRETTIFY,cpuload);
+	logadd("\"state\":\"%s\",",alter);
+	logadd("\"cpuload\":%s",cpuload);
 	logadd("}\n"); // end marker
 	logjsonInternal(logbuffer);
 }
@@ -442,11 +439,11 @@ profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start
 	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
 		return;
 
-	if( maleventstream) {
+	if(maleventstream) {
 		renderProfilerEvent(cntxt, mb, stk, pci, start);
-		if ( !start && pci->pc ==0)
+		if (!start && pci->pc ==0)
 			profilerHeartbeatEvent("ping");
-		if ( start && pci->token == ENDsymbol)
+		if (start && pci->token == ENDsymbol)
 			profilerHeartbeatEvent("ping");
 	}
 }
@@ -466,9 +463,9 @@ openProfilerStream(Client cntxt)
 		myname = putName("profiler");
 		logjsonInternal(monet_characteristics);
 	}
-	if( maleventstream){
+	if(maleventstream){
 		/* The DBA can always grab the stream, others have to wait */
-		if ( cntxt->user == MAL_ADMIN)
+		if (cntxt->user == MAL_ADMIN)
 			closeProfilerStream(cntxt);
 		else
 			throw(MAL,"profiler.start","Profiler already running, stream not available");
@@ -483,7 +480,7 @@ openProfilerStream(Client cntxt)
 	/* this code is not thread safe, because the inprogress administration may change concurrently */
 	MT_lock_set(&mal_delayLock);
 	for(j = 0; j <THREADS; j++)
-	if( workingset[j].mb)
+	if(workingset[j].mb)
 		/* show the event */
 		profilerEvent(workingset[j].cntxt, workingset[j].mb, workingset[j].stk, workingset[j].pci, 1);
 	MT_lock_unset(&mal_delayLock);
@@ -512,10 +509,10 @@ startProfiler(Client cntxt)
 #endif
 	(void) cntxt;
 
-	if( maleventstream){
+	if(maleventstream){
 		throw(MAL,"profiler.start","Profiler already running, stream not available");
 	}
-	MT_lock_set(&mal_profileLock );
+	MT_lock_set(&mal_profileLock);
 	if (myname == 0){
 		myname = putName("profiler");
 	}
@@ -551,7 +548,7 @@ stopProfiler(Client cntxt)
 	MT_lock_set(&mal_profileLock);
 	malProfileMode = 0;
 	setHeartbeat(0); // stop heartbeat
-	if( cntxt)
+	if(cntxt)
 		closeProfilerStream(cntxt);
 	MT_lock_unset(&mal_profileLock);
 	return MAL_SUCCEED;
@@ -596,9 +593,9 @@ initTrace(Client cntxt)
 		MT_lock_unset(&mal_profileLock);
 		return;       /* already initialized */
 	}
-	cntxt->profticks = TRACEcreate( TYPE_lng);
-	cntxt->profstmt = TRACEcreate( TYPE_str);
-	if ( cntxt->profticks == NULL || cntxt->profstmt == NULL )
+	cntxt->profticks = TRACEcreate(TYPE_lng);
+	cntxt->profstmt = TRACEcreate(TYPE_str);
+	if (cntxt->profticks == NULL || cntxt->profstmt == NULL)
 		_cleanupProfiler(cntxt);
 	MT_lock_unset(&mal_profileLock);
 }
@@ -762,9 +759,9 @@ getDiskSpace(void)
 					if (b->thash)
 						size += sizeof(BUN) * cnt;
 					/* also add the size of an imprint, ordered index or mosaic */
-					if( b->timprints)
+					if(b->timprints)
 						size += IMPSimprintsize(b);
-					if( b->torderidx)
+					if(b->torderidx)
 						size += HEAPvmsize(b->torderidx);
 				}
 				BBPunfix(i);
@@ -810,19 +807,19 @@ static void profilerHeartbeat(void *dummy)
 		if (GDKexiting() || !ATOMIC_GET(&hbrunning))
 			return;
 		MT_thread_setworking("pinging");
-		profilerHeartbeatEvent( "ping");
+		profilerHeartbeatEvent("ping");
 	}
 }
 
 void setHeartbeat(int delay)
 {
-	if (delay < 0 ){
+	if (delay < 0){
 		ATOMIC_SET(&hbrunning, 0);
 		if (hbthread)
 			MT_join_thread(hbthread);
 		return;
 	}
-	if ( delay > 0 &&  delay <= 10)
+	if (delay > 0 &&  delay <= 10)
 		delay = 10;
 	ATOMIC_SET(&hbdelay, delay);
 }
