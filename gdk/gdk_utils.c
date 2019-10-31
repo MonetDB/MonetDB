@@ -1177,23 +1177,12 @@ GDKsyserror(const char *format, ...)
 	va_start(ap, format);
 	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
 	va_end(ap);
-#ifndef NATIVE_WIN32
-	if (err > 0 && err < 1024)
-#endif
-	{
+	if (err > 0 && err < 1024) {
 		size_t len1;
 		size_t len2;
 		size_t len3;
 		char *osmsg;
-#ifdef NATIVE_WIN32
-		char osmsgbuf[256];
-		osmsg = osmsgbuf;
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
-			      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			      (LPTSTR) osmsgbuf, sizeof(osmsgbuf), NULL);
-#else
 		osmsg = strerror(err);
-#endif
 		len1 = strlen(message);
 		len2 = len1 + strlen(GDKMESSAGE);
 		len3 = len2 + strlen(osmsg);
@@ -1211,6 +1200,51 @@ GDKsyserror(const char *format, ...)
 
 	errno = 0;
 }
+
+#ifdef NATIVE_WIN32
+void
+GDKwinerror(const char *format, ...)
+{
+	int err = GetLastError();
+	char message[GDKERRLEN];
+	size_t len = strlen(GDKERROR);
+	va_list ap;
+
+	if (strncmp(format, GDKERROR, len) == 0) {
+		len = 0;
+	} else {
+		strncpy(message, GDKERROR, sizeof(message));
+	}
+	va_start(ap, format);
+	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
+	va_end(ap);
+
+	size_t len1;
+	size_t len2;
+	size_t len3;
+	char *osmsg;
+	char osmsgbuf[256];
+	osmsg = osmsgbuf;
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
+		      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		      (LPTSTR) osmsgbuf, sizeof(osmsgbuf), NULL);
+	len1 = strlen(message);
+	len2 = len1 + strlen(GDKMESSAGE);
+	len3 = len2 + strlen(osmsg);
+
+	if (len3 + 2 < sizeof(message)) {
+		strcpy(message + len1, GDKMESSAGE);
+		strcpy(message + len2, osmsg);
+		if (len3 > 0 && message[len3 - 1] != '\n') {
+			message[len3] = '\n';
+			message[len3 + 1] = 0;
+		}
+	}
+	GDKaddbuf(message);
+
+	SetLastError(0);
+}
+#endif
 
 void
 GDKclrerr(void)
