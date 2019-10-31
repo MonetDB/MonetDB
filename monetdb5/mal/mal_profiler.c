@@ -118,23 +118,23 @@ truncate_string(char *inp)
 EXAMPLE:
 {
 "event":6        ,
-"time":"15:37:13.799706",
 "thread":3,
 "function":"user.s3_1",
 "pc":1,
 "tag":10397,
 "state":"start",
 "usec":0,
-"rss":215,
 }
+"stmt":"X_41=0@0:void := querylog.define(\"select count(*) from tables;\":str,\"default_pipe\":str,30:int);",
 */
 static void
 renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
 	char logbuffer[LOGLEN], *logbase;
 	size_t loglen;
-	lng usec;
+	str stmt, c;
 	str stmtq;
+	lng usec;
 	uint64_t microseconds;
 
 	/* ignore generation of events for instructions that are called too often
@@ -162,9 +162,9 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	 * function call to mercurial_revision().
 	 */
 	logadd("\"version\":\""VERSION" (hg id: %s)\","PRETTIFY, mercurial_revision());
-	logadd("\"user_id\":"OIDFMT","PRETTIFY, cntxt->user);
+	logadd("\"user\":"OIDFMT","PRETTIFY, cntxt->user);
 	logadd("\"clk\":"LLFMT","PRETTIFY, usec);
-	logadd("\"ctime\":%"PRIu64","PRETTIFY, microseconds);
+	logadd("\"mclk\":%"PRIu64","PRETTIFY, microseconds);
 	logadd("\"thread\":%d,"PRETTIFY, THRgettid());
 	logadd("\"function\":\"%s.%s\","PRETTIFY, getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));
 	logadd("\"pc\":%d,"PRETTIFY, mb?getPC(mb,pci):0);
@@ -183,6 +183,28 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	logadd("\"state\":\"%s\","PRETTIFY, start?"start":"done");
 	logadd("\"usec\":"LLFMT","PRETTIFY, pci->ticks);
 	
+	/* generate actual call statement */
+	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
+	if (stmt) {
+		char *truncated;
+		c = stmt;
+
+		while (*c && isspace((unsigned char)*c))
+			c++;
+		if( *c){
+			stmtq = mal_quote(c, strlen(c));
+			if (stmtq && strlen(stmtq) > LOGLEN/2) {
+				truncated = truncate_string(stmtq);
+				GDKfree(stmtq);
+				stmtq = truncated;
+			}
+			if (stmtq != NULL) {
+				logadd("\"stmt\":\"%s\","PRETTIFY, stmtq);
+				GDKfree(stmtq);
+			}
+		}
+		GDKfree(stmt);
+	}
 
 /* EXAMPLE MAL statement argument decomposition
  * The eventparser may assume this layout for ease of parsing
@@ -195,13 +217,14 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 This information can be used to determine memory footprint and variable life times.
  */
 
-#define PRET
+#define PRET  "\t"
 #define MALARGUMENTDETAILS
 #ifdef MALARGUMENTDETAILS
 		// Also show details of the arguments for modelling
 		if(mb){
 			int j;
-			logadd("\"ret\":[");
+
+			logadd("\"args\":[");
 			for( j=0; j< pci->argc; j++){
 				int tpe = getVarType(mb, getArg(pci,j));
 				str tname = 0, cv;
@@ -209,12 +232,12 @@ This information can be used to determine memory footprint and variable life tim
 				BUN cnt = 0;
 				bat bid=0;
 
-				if( j == pci->retc ){
-					logadd("],"PRETTIFY"\"arg\":[");
-				}
 				logadd("{");
-				logadd("\"index\":%d,"PRET, j);
-				logadd("\"name\":\"%s\","PRET, getVarName(mb, getArg(pci,j)));
+				if( j < pci->retc )
+					logadd("\"ret\":%d,"PRET, j);
+				else
+					logadd("\"arg\":%d,"PRET, j);
+				c =getVarName(mb, getArg(pci,j));
 				if( getVarSTC(mb,getArg(pci,j))){
 					InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
 					if(stc && strcmp(getModuleId(stc),"sql") ==0  && strncmp(getFunctionId(stc),"bind",4)==0)
@@ -234,21 +257,26 @@ This information can be used to determine memory footprint and variable life tim
 							logadd("\"view\":\"true\","PRET);
 							logadd("\"parent\":%d,"PRET, VIEWtparent(d));
 							logadd("\"seqbase\":"BUNFMT","PRET, d->hseqbase);
-							logadd("\"hghbase\":"BUNFMT","PRET, d->hseqbase + cnt);
 							v= BBPquickdesc(VIEWtparent(d), false);
-							logadd("\"kind\":\"%s\","PRET, (v &&  !v->batTransient ? "persistent" : "transient"));
+							logadd("\"persistence\":\"%s\","PRET, (v &&  !v->batTransient ? "persistent" : "transient"));
 						} else
-							logadd("\"kind\":\"%s\","PRET, ( d->batTransient ? "transient" : "persistent"));
+							logadd("\"persistence\":\"%s\","PRET, ( d->batTransient ? "transient" : "persistent"));
 						logadd("\"sorted\":%d,"PRET, d->tsorted);
 						logadd("\"revsorted\":%d,"PRET, d->trevsorted);
 						logadd("\"nonil\":%d,"PRET, d->tnonil);
 						logadd("\"nil\":%d,"PRET, d->tnil);
 						logadd("\"key\":%d,"PRET, d->tkey);
 						logadd("\"unique\":%d,"PRET, d->tunique);
+						cv = VALformat(&stk->stk[getArg(pci,j)]);
+						c = strchr(cv, '>');
+						*c = 0;
+						logadd("\"file\":\"%s\","PRET, cv + 1);
+						GDKfree(cv);
 						total += cnt * d->twidth;
 						total += heapinfo(d->tvheap, d->batCacheid);
 						total += hashinfo(d->thash, d->batCacheid);
 						total += IMPSimprintsize(d);
+					/* logadd("\"debug\":\"%s\""PRET, d->debugmessages); */
 						BBPunfix(d->batCacheid);
 					}
 					logadd("\"bid\":%d,"PRET, bid);
@@ -258,6 +286,7 @@ This information can be used to determine memory footprint and variable life tim
 					char *truncated = NULL;
 					tname = getTypeName(tpe);
 					logadd("\"type\":\"%s\","PRET, tname);
+					logadd("\"const\":%d,"PRET, isVarConstant(mb, getArg(pci,j)));
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					stmtq = cv ? mal_quote(cv, strlen(cv)) : NULL;
 					if (stmtq != NULL && strlen(stmtq) > LOGLEN/2) {
@@ -265,11 +294,8 @@ This information can be used to determine memory footprint and variable life tim
 						GDKfree(stmtq);
 						stmtq = truncated;
 					}
-					if (stmtq == NULL) {
-						logadd("\"value\":\"(null)\","PRET);
-					} else {
-						logadd("\"value\":\"%s\",", stmtq);
-					}
+					if (stmtq )
+						logadd("\"value\":\"%s\","PRET, stmtq);
 					GDKfree(cv);
 					GDKfree(stmtq);
 				}

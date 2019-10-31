@@ -38,21 +38,22 @@ bin_stethoscope = {
 		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
-bin_tachograph = {
-	SOURCES = tachograph.c
-	LIBS = libmcutil ../../common/utils/libmutils \
-		../mapilib/libmapi \
-		../../common/stream/libstream \
-		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
-}
-
-bin_tomograph = {
-	SOURCES = tomograph.c
-	LIBS = libmcutil ../../common/utils/libmutils \
-		../mapilib/libmapi \
-		../../common/stream/libstream \
-		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
-}
+# disabled: the console should be enough
+#bin_tachograph = {
+#	SOURCES = tachograph.c
+#	LIBS = libmcutil ../../common/utils/libmutils \
+#		../mapilib/libmapi \
+#		../../common/stream/libstream \
+#		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
+#}
+#
+#bin_tomograph = {
+#	SOURCES = tomograph.c
+#	LIBS = libmcutil ../../common/utils/libmutils \
+#		../mapilib/libmapi \
+#		../../common/stream/libstream \
+#		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
+#}
 
 # disabled: it's not really a tool for users, more to debug mapi
 # problems, or measure performance

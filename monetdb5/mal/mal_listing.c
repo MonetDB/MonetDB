@@ -65,7 +65,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	int nameused = 0;
 	size_t len = 0, maxlen = BUFSIZ;
 	ValRecord *val = 0;
-	char *cv =0;
+	char *cv =0, *c;
 	str tpe;
 	int showtype = 0, closequote=0;
 	int varid = getArg(p,idx);
@@ -124,8 +124,14 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 				strcat(buf+len,"\"");
 				len++;
 			}
-			strcat(buf+len,cv);
-			len += strlen(buf+len);
+			if ( isaBatType(getVarType(mb,varid))){
+				c = strchr(cv, '>');
+				strcat(buf+len,c+1);
+				len += strlen(buf+len);
+			} else {
+				strcat(buf+len,cv);
+				len += strlen(buf+len);
+			}
 			GDKfree(cv);
 
 			if( closequote ){
@@ -260,7 +266,7 @@ operatorName(int i)
 	case COMMANDsymbol: return "command";
 	case PATTERNsymbol: return "pattern";
 	}
-	return "Undefined";
+	return "";
 }
 
 str
