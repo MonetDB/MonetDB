@@ -1544,7 +1544,7 @@ sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema)
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, "sql_update_storagemodel", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	
+
 	/* set views and tables internally to non-system to allow drop commands to succeed without error */
 	if ((t = mvc_bind_table(sql, s, "storage")) != NULL)
 		t->system = 0;
