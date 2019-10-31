@@ -110,4 +110,77 @@ exec ** ('a', 'b', 923, 51, 942, 544);
 create function "sys"."dummy"("col1" blob, "col2" blob, "col3" integer) returns boolean external name "unknown"."idontexist"; --error, MAL implementation of sys.dummy doesn't exist.
 SELECT "sys"."dummy"("fortieth-second", blob '', '0') AS "alias1", "fortieth-third" FROM "myschema"."mytable"; --error, function doesn't exist
 
+create table "myschema"."mytable2"
+(
+"'col1'" date,
+"'col2'" int,
+"'col3'" varchar(256),
+"'col4'" clob,
+"'col5'" clob,
+"'col6'" decimal,
+"'col7'" decimal,
+"'col8'" date,
+"'col9'" date,
+"'col10'" int,
+"'col11'" int,
+"'col12'" decimal,
+"'col13'" int,
+"'col14'" varchar(256),
+"'col15'" varchar(256),
+"'col16'" int,
+"'col17'" varchar(256),
+"'col18'" int,
+"'col19'" varchar(256),
+"'col20'" bigint,
+"'col21'" varchar(256),
+"'col22'" varchar(256),
+"'col23'" varchar(256),
+"'col24'" varchar(256),
+"'col25'" int,
+"'col26'" varchar(256),
+"'col27'" clob,
+"'col28'" varchar(256),
+"'col29'" decimal,
+"'col30'" decimal,
+"'col31'" decimal,
+"'col32'" decimal,
+"'col33'" clob,
+"'col34'" clob,
+"'col35'" int,
+"'col36'" int
+);
+
+insert into "myschema"."mytable2" values (
+'1998-01-03', 2239, 'col3', 'col4', 'col5', 73.28, 68.29, '2005-05-12', '2010-03-03', 563, 63, 56.3, 852, 'col14',
+'col15', 134, 'col17', 892, 'col19', 9348, 'col21', 'col22', 'col23', 'col24', 934, 'col26', 'col27', 'col28', 849.2739, 1742.718,
+395.824, 39.824, 'col33', 'col34', 395824, 3789);
+
+SELECT "'col26'" FROM "myschema"."mytable2" WHERE 
+( ( ("'col19'"='Some information of my hobby')) AND 
+( ("'col9'"='' AND "'col3'"='ABCDE' AND (EXTRACT(YEAR FROM "'col1'")*100 + EXTRACT(MONTH FROM "'col1'"))/100.0='2011.040' 
+AND "'col14'"='A description of something' AND "'col8'"='2015-08-07')) AND  ( ("'col34'"='home to')) AND  ( ("'col36'"='2013'))) GROUP BY "'col26'"
+LIMIT 1001 OFFSET 0; --error, from the condition "'col9'"='', it fails to covert '' to date
+
+PREPARE SELECT "'col26'" FROM "myschema"."mytable2" WHERE 
+( ( ("'col19'"='Some information of my hobby')) AND 
+( ("'col9'"='' AND "'col3'"='ABCDE' AND (EXTRACT(YEAR FROM "'col1'")*100 + EXTRACT(MONTH FROM "'col1'"))/100.0='2011.040' 
+AND "'col14'"='A description of something' AND "'col8'"='2015-08-07')) AND  ( ("'col34'"='home to')) AND  ( ("'col36'"='2013'))) GROUP BY "'col26'"
+LIMIT 1001 OFFSET 0;
+
+exec ** (); --error, from the condition "'col9'"='', it fails to covert '' to date
+
+SELECT "'col26'" FROM "myschema"."mytable2" WHERE 
+( ( ("'col19'"='Some information of my hobby')) AND 
+( ("'col9'"='2015-06-11' AND "'col3'"='ABCDE' AND (EXTRACT(YEAR FROM "'col1'")*100 + EXTRACT(MONTH FROM "'col1'"))/100.0='2011.040' 
+AND "'col14'"='A description of something' AND "'col8'"='2015-08-07')) AND  ( ("'col34'"='home to')) AND  ( ("'col36'"='2013'))) GROUP BY "'col26'"
+LIMIT 1001 OFFSET 0;
+
+PREPARE SELECT "'col26'" FROM "myschema"."mytable2" WHERE 
+( ( ("'col19'"='Some information of my hobby')) AND 
+( ("'col9'"='2015-06-11' AND "'col3'"='ABCDE' AND (EXTRACT(YEAR FROM "'col1'")*100 + EXTRACT(MONTH FROM "'col1'"))/100.0='2011.040' 
+AND "'col14'"='A description of something' AND "'col8'"='2015-08-07')) AND  ( ("'col34'"='home to')) AND  ( ("'col36'"='2013'))) GROUP BY "'col26'"
+LIMIT 1001 OFFSET 0;
+
+exec ** ();
+
 drop schema "myschema" cascade;
