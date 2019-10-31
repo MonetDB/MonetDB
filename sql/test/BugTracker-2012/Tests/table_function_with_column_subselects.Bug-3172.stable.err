@@ -27,7 +27,11 @@ stderr of test 'table_function_with_column_subselects.Bug-3172` in directory 'sq
 # 13:48:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=32735"
 # 13:48:49 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+MAPI  = (monetdb) /var/tmp/mtest-23419/.s.monetdb.31192
+QUERY = create function x(a int, b int) returns table (c int,d int) external name sql.x; --error, sql.x doesn't exist
+ERROR = !CREATE FUNCTION: external name sql.x not bound (sys.x)
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-23419/.s.monetdb.31192
 QUERY = select * from x((select id from _tables), (select schema_id from _tables));
 ERROR = !SELECT: 'x' requires a single sub query
 CODE  = 42000
