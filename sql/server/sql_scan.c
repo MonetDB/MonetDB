@@ -753,7 +753,7 @@ scanner_string(mvc *c, int quote, bool escapes)
 			cur = scanner_getc(lc);
 		}
 	}
-	(void) sql_error(c, 2, SQLSTATE(42000) "%s", lc->errstr ? lc->errstr : "unexpected end of input");
+	(void) sql_error(c, 2, "%s", lc->errstr ? lc->errstr : SQLSTATE(42000) "unexpected end of input");
 	return LEX_ERROR;
 }
 
