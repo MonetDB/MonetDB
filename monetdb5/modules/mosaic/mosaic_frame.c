@@ -271,139 +271,272 @@ MOSdecompress_frame(MOStask task)
 #endif
 	}
 }
-
-#define ANTI(Boolean) !(Boolean)
-#define PRO(Boolean) (Boolean)
-
-#define non_trivial_select_frame(TASK, TPE, DELTA_TPE, CMP_FLAVOR) \
+#define ANTI_SELECT(Boolean) !(Boolean)
+#define SELECT(Boolean) (Boolean)
+/* generic range select
+ *
+ * Return a BAT with the OID values of b for qualifying tuples.  The
+ * return BAT is sorted (i.e. in the same order as the input BAT).
+ *
+ * If s is non-NULL, it is a list of candidates.  s must be sorted.
+ *
+ * tl may not be NULL, li, hi, and anti must be either 0 or 1.
+ *
+ * If th is NULL, hi is ignored.
+ *
+ * If anti is 0, qualifying tuples are those whose value is between tl
+ * and th (as in x >[=] tl && x <[=] th, where equality depends on li
+ * and hi--so if tl > th, nothing will be returned).  If li or hi is
+ * 1, the respective boundary is inclusive, otherwise exclusive.  If
+ * th is NULL it is taken to be equal to tl, turning this into an
+ * equi- or point-select.  Note that for a point select to return
+ * anything, li (and hi if th was not NULL) must be 1.  There is a
+ * special case if tl is nil and th is NULL.  This is the only way to
+ * select for nil values.
+ *
+ * If anti is 1, the result is the complement of what the result would
+ * be if anti were 0, except that nils are filtered out.
+ *
+ * In brief:
+ * - if tl==nil and th==NULL and anti==0, return all nils (only way to
+ *   get nils);
+ * - it tl==nil and th==nil, return all but nils;
+ * - if tl==nil and th!=NULL, no lower bound;
+ * - if th==NULL or tl==th, point (equi) select;
+ * - if th==nil, no upper bound
+ *
+ * A complete breakdown of the various arguments follows.  Here, v, v1
+ * and v2 are values from the appropriate domain, and
+ * v != nil, v1 != nil, v2 != nil, v1 < v2.
+ *	tl	th	li	hi	anti	result list of OIDs for values
+ *	-----------------------------------------------------------------
+ *	nil	nil	true	true	false	x == nil (only way to get nil)
+ *	nil	nil	true	true	true	x != nil
+ *	nil	nil	A*		B*		false	x != nil *it must hold that A && B == false.
+ *	nil	nil	A*		B*		true	NOTHING *it must hold that A && B == false.
+ *	v	v	A*		B*		true	x != nil *it must hold that A && B == false.
+ *	v	v	A*		B*		false	NOTHING *it must hold that A && B == false.
+ *	v2	v1	ignored	ignored	ignored	NOTHING
+ *	nil	v	ignored	false	false	x < v
+ *	nil	v	ignored	true	false	x <= v
+ *	nil	v	ignored	false	true	x >= v
+ *	nil	v	ignored	true	true	x > v
+ *	v	nil	false	ignored	false	x > v
+ *	v	nil	true	ignored	false	x >= v
+ *	v	nil	false	ignored	true	x <= v
+ *	v	nil	true	ignored	true	x < v
+ *	v	v	true	true	false	x == v
+ *	v	v	true	true	true	x != v
+ *	v1	v2	false	false	false	v1 < x < v2
+ *	v1	v2	true	false	false	v1 <= x < v2
+ *	v1	v2	false	true	false	v1 < x <= v2
+ *	v1	v2	true	true	false	v1 <= x <= v2
+ *	v1	v2	false	false	true	x <= v1 or x >= v2
+ *	v1	v2	true	false	true	x < v1 or x >= v2
+ *	v1	v2	false	true	true	x <= v1 or x > v2
+ *	v1	v2
+ */
+#define select_frame_general(RESULT, BASE, BITS, HSEQBASE, CNT, MIN, MAX, LOW, HIGH, LI, HI, NIL_DELTA, HAS_NIL, ANTI, TPE, DELTA_TPE)\
 do {\
-    MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((TASK))->blk;\
-	TPE min =  parameters->min.min##TPE;\
-	TPE max =  parameters->max.max##TPE;\
-	BitVector base = (BitVector) MOScodevectorFrame(TASK);\
-	if( is_nil(TPE, *(TPE*) low)) {\
-		DELTA_TPE hgh2;\
-		bool hi2 = *hi;\
-		if (*(TPE*) hgh < min) {\
-			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();*o++ = (oid) first;}\
-		}\
-		else if (*(TPE*) hgh > max || (*(TPE*) hgh == max && hi2) ) {\
-			if (CMP_FLAVOR(true) /* AKA NOT ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();*o++ = (oid) first;}\
-		}\
-		else { /* min >= *(TPE*) hgh <= max */\
-			hgh2 = *(TPE*) hgh - min;\
-			for(i=0 ; first < last; first++, i++){\
-				MOSskipit();\
-				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
-				bool cmp  =  ((hi2 && delta <= hgh2 ) || (!hi2 && delta < hgh2 ));\
-				if (CMP_FLAVOR(cmp) ) *o++ = (oid) first;\
+\
+	if		( is_nil(TPE, (LOW)) &&  is_nil(TPE, (HIGH)) && (LI) && (HI) && !(ANTI)) {\
+		if(HAS_NIL) {\
+			for(i=0; i < (CNT); i++){\
+				DELTA_TPE delta = getBitVector(BASE, i, BITS);\
+				if (delta == (NIL_DELTA)) {*(RESULT)++ = (oid) (i + (HSEQBASE));}\
 			}\
 		}\
 	}\
-	else if( is_nil(TPE, *(TPE*) hgh)){\
+	else if	( is_nil(TPE, (LOW)) &&  is_nil(TPE, (HIGH)) && (LI) && (HI) && (ANTI)) {\
+		if(HAS_NIL) {\
+			for(i=0; i < (CNT); i++){\
+				DELTA_TPE delta = getBitVector(BASE, i, BITS);\
+				if (delta != (NIL_DELTA)) {*(RESULT)++ = (oid) (i + (HSEQBASE));}\
+			}\
+		}\
+		else for(i=0; i < (CNT); i++) {*(RESULT)++ = (oid) (i + (HSEQBASE));}\
+	}\
+	else if	( is_nil(TPE, (LOW)) &&  is_nil(TPE, (HIGH)) && !((LI) && (HI)) && !(ANTI)) {\
+		if(HAS_NIL) {\
+			for(i=0; i < (CNT); i++){\
+				DELTA_TPE delta = getBitVector(BASE, i, BITS);\
+				if (delta != (NIL_DELTA)) {*(RESULT)++ = (oid) (i + (HSEQBASE));}\
+			}\
+		}\
+		else for(i=0; i < (CNT); i++) {*(RESULT)++ = (oid) (i + (HSEQBASE));}\
+	}\
+	else if	( is_nil(TPE, (LOW)) &&  is_nil(TPE, (HIGH)) && !((LI) && (HI)) && (ANTI)) {\
+			/*Empty result set.*/\
+	}\
+	else if( is_nil(TPE, (LOW))) {\
+		DELTA_TPE hgh2;\
+		bool hi2 = (HI);\
+		if ((HIGH) < (MIN)) {\
+			if ((ANTI) /* AKA ANTI_SELECT */) for(i=0; i < (CNT); i++) {\
+				if (HAS_NIL) { DELTA_TPE delta = getBitVector(BASE, i, BITS); if (delta == (NIL_DELTA)) { continue;}}\
+				*(RESULT)++ = (oid) (i + (HSEQBASE));\
+			}\
+		}\
+		else if ((HIGH) > (MAX) || ((HIGH) == (MAX) && hi2) ) {\
+			if (!(ANTI) /* AKA SELECT */) for(i=0; i < (CNT); i++) {\
+				if (HAS_NIL) { DELTA_TPE delta = getBitVector(BASE, i, BITS); if (delta == (NIL_DELTA)) { continue;}}\
+				*(RESULT)++ = (oid) (i + (HSEQBASE));\
+			}\
+		}\
+		else { /* MIN >= HIGH <= MAX */\
+			hgh2 = (HIGH) - (MIN);\
+			for(i=0; i < (CNT); i++){\
+				DELTA_TPE delta = getBitVector(BASE, i, BITS);\
+				if ((HAS_NIL) && delta == (NIL_DELTA)) {continue;}\
+				bool cmp  =  ((hi2 && delta <= hgh2 ) || (!hi2 && delta < hgh2 ));\
+				if (cmp == !(ANTI)) *(RESULT)++ = (oid) (i + (HSEQBASE));\
+			}\
+		}\
+	}\
+	else if( is_nil(TPE, (HIGH))){\
 		DELTA_TPE low2;\
-		bool li2 = *li;\
-		if (*(TPE*) low > max) {\
-			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();*o++ = (oid) first;}\
+		bool li2 = (LI);\
+		if ((LOW) > (MAX)) {\
+			if ((ANTI) /* AKA ANTI_SELECT */) for(i=0; i < (CNT); i++) {\
+				if (HAS_NIL) { DELTA_TPE delta = getBitVector(BASE, i, BITS); if (delta == (NIL_DELTA)) { continue;}}\
+				*(RESULT)++ = (oid) (i + (HSEQBASE));\
+			}\
 		} else\
-		if (*(TPE*) low < min || (*(TPE*) low == min && li2) )  {\
-			if (CMP_FLAVOR(true) /* AKA NOT ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();*o++ = (oid) first;}\
+		if ((LOW) < (MIN) || ((LOW) == (MIN) && li2) )  {\
+			if (!(ANTI) /* AKA SELECT */) for(i=0; i < (CNT); i++) {\
+				if (HAS_NIL) { DELTA_TPE delta = getBitVector(BASE, i, BITS); if (delta == (NIL_DELTA)) { continue;}}\
+				*(RESULT)++ = (oid) (i + (HSEQBASE));\
+			}\
 		} else  {\
-			low2 = *(TPE*) low - min;\
-			for(i=0; first < last; first++, i++){\
-				MOSskipit();\
-				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+			low2 = (LOW) - (MIN);\
+			for(i=0; i < (CNT); i++){\
+				DELTA_TPE delta = getBitVector(BASE, i, BITS);\
+				if ((HAS_NIL) && delta == (NIL_DELTA)) {continue;}\
 				bool cmp  =  ((li2 && delta >= low2 ) || (!li2 && delta > low2 ));\
-				if (CMP_FLAVOR(cmp) )\
-					*o++ = (oid) first;\
+				if (cmp == !(ANTI))\
+					*(RESULT)++ = (oid) (i + (HSEQBASE));\
 			}\
 		}\
 	}\
 	else {\
 		DELTA_TPE low2;\
 		DELTA_TPE hgh2;\
-		bool li2 = *li;\
-		bool hi2 = *hi;\
-		assert(!is_nil(TPE, *(TPE*) low) && !is_nil(TPE, *(TPE*) hgh));\
-		if (*(TPE*) hgh < min) {\
-			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();*o++ = (oid) first;}\
+		bool li2 = (LI);\
+		bool hi2 = (HI);\
+		assert(!is_nil(TPE, (LOW)) && !is_nil(TPE, (HIGH)));\
+ /*	v	v	A*		B*		true	x != HAS_NIL *it must hold that A && B == false.
+ *	v	v	A*		B*		false	NOTHING *it must hold that A && B == false.
+ *	v2	v1	ignored	ignored	ignored	NOTHING*/\
+\
+		if (LOW == HIGH && !(LI && HI) && !(ANTI)) {\
+			/*Empty result set.*/\
 		}\
-		else if (*(TPE*) low > max) {\
-			if (CMP_FLAVOR(false) /* AKA ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();*o++ = (oid) first;}\
+		else if (LOW == HIGH && !(LI && HI) && (ANTI)) {\
+			if(HAS_NIL) {\
+				for(i=0; i < (CNT); i++){\
+					DELTA_TPE delta = getBitVector(BASE, i, BITS);\
+					if (delta != (NIL_DELTA)) {*(RESULT)++ = (oid) (i + (HSEQBASE));}\
+				}\
+			}\
+			else for(i=0; i < (CNT); i++) {*(RESULT)++ = (oid) (i + (HSEQBASE));}\
 		}\
-		else if ( (*(TPE*) hgh > max || (*(TPE*) hgh == max && hi2)) && (*(TPE*) low < min || (*(TPE*) low == min && li2) ) ) {\
-			if (CMP_FLAVOR(true) /* AKA NOT ANTI */) for(i=0 ; first < last; first++, i++) {MOSskipit();*o++ = (oid) first;}\
+		else if (LOW > HIGH && !(LI && HI) && (ANTI)) {\
+			/*Empty result set.*/\
+		}\
+		else if ((HIGH) < (MIN)) {\
+			if ((ANTI) /* AKA ANTI_SELECT */) for(i=0; i < (CNT); i++) {\
+				if (HAS_NIL) { DELTA_TPE delta = getBitVector(BASE, i, BITS); if (delta == (NIL_DELTA)) { continue;}}\
+				*(RESULT)++ = (oid) (i + (HSEQBASE));\
+			}\
+		}\
+		else if ((LOW) > (MAX)) {\
+			if ((ANTI) /* AKA ANTI_SELECT */) for(i=0; i < (CNT); i++) {\
+				if (HAS_NIL) { DELTA_TPE delta = getBitVector(BASE, i, BITS); if (delta == (NIL_DELTA)) { continue;}}\
+				*(RESULT)++ = (oid) (i + (HSEQBASE));\
+			}\
+		}\
+		else if ( ((HIGH) > (MAX) || ((HIGH) == (MAX) && hi2)) && ((LOW) < (MIN) || ((LOW) == (MIN) && li2) ) ) {\
+			if (!(ANTI) /* AKA SELECT */) for(i=0; i < (CNT); i++) {*(RESULT)++ = (oid) (i + (HSEQBASE));}\
 		}\
 		else {\
-		 	hgh2	= *(TPE*) hgh > max ? max - min : *(TPE*) hgh - min;\
-			hi2		= *(TPE*) hgh > max ? true : hi2;\
-			low2	= *(TPE*) low < min ? 0 : *(TPE*) low - min;\
-			li2		= *(TPE*) low < min ? true : li2;\
-			for(i=0 ; first < last; first++, i++){\
-				MOSskipit();\
-				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+		 	hgh2	= (HIGH) > (MAX) ? (MAX) - (MIN) : (HIGH) - (MIN);\
+			hi2		= (HIGH) > (MAX) ? true : hi2;\
+			low2	= (LOW) < (MIN) ? 0 : (LOW) - (MIN);\
+			li2		= (LOW) < (MIN) ? true : li2;\
+			for(i=0; i < (CNT); i++){\
+				DELTA_TPE delta = getBitVector(BASE, i, BITS);\
+				if ((HAS_NIL) && delta == (NIL_DELTA)) {continue;}\
 				bool cmp  =  ((hi2 && delta <= hgh2 ) || (!hi2 && delta < hgh2 )) &&\
 						((li2 && delta >= low2 ) || (!li2 && delta > low2 ));\
-				if (CMP_FLAVOR(cmp))\
-					*o++ = (oid) first;\
+				if (cmp == !(ANTI))\
+					*(RESULT)++ = (oid) (i + (HSEQBASE));\
 			}\
 		}\
 	}\
 } while(0)
 
 // TODO: Simplify (deduplication) and optimize (control deps to data deps) this macro
-#define select_frame(TASK, TPE, DELTA_TPE) {\
-	if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
-		if (!*anti) {\
-			for( ; first < last; first++){\
-				MOSskipit();\
-				*o++ = (oid) first;\
-			}\
-		}\
-		else {\
-			/* nothing is matching */\
-		}\
+#define select_frame(RESULT, PARAMETERS, BASE, HSEQBASE, CNT, NONIL, LOW, HIGH, LI, HI, ANTI, TPE, DELTA_TPE, GET_DELTA) {\
+    TPE min =	(PARAMETERS)->min.min##TPE;\
+	TPE max =	(PARAMETERS)->max.max##TPE;\
+	int bits=	(PARAMETERS)->bits;\
+\
+	bool nil = false;\
+	DELTA_TPE nil_delta;\
+	if (!NONIL && (min == TPE##_nil || max == TPE##_nil)) {\
+		/*TODO: this is a strong assumption that nil values are always the highest or the lowest value in a GDK type domain.*/\
+		if	 	( (nil = (min == TPE##_nil)) ) { nil_delta = 0; }\
+		else if ( (nil = (max == TPE##_nil)) ) { nil_delta = GET_DELTA(TPE, max, min); }\
 	}\
-	else if( !*anti){\
-		non_trivial_select_frame(TASK, TPE, DELTA_TPE, PRO);\
+	if( nil && *(ANTI)){\
+		select_frame_general(RESULT, BASE, bits, HSEQBASE, CNT, min, max, *(TPE*) LOW, *(TPE*) HIGH, *LI, *HI, nil_delta, true, true, TPE, DELTA_TPE);\
 	}\
-	else {\
-		non_trivial_select_frame(TASK, TPE, DELTA_TPE, ANTI);\
+	if( !nil && *(ANTI)){\
+		select_frame_general(RESULT, BASE, bits, HSEQBASE, CNT, min, max, *(TPE*) LOW, *(TPE*) HIGH, *LI, *HI, nil_delta, false, true, TPE, DELTA_TPE);\
+	}\
+	if( nil && !*(ANTI)){\
+		select_frame_general(RESULT, BASE, bits, HSEQBASE, CNT, min, max, *(TPE*) LOW, *(TPE*) HIGH, *LI, *HI, nil_delta, true, false, TPE, DELTA_TPE);\
+	}\
+	if( !nil && !*(ANTI)){\
+		select_frame_general(RESULT, BASE, bits, HSEQBASE, CNT, min, max, *(TPE*) LOW, *(TPE*) HIGH, *LI, *HI, nil_delta, false, false, TPE, DELTA_TPE);\
 	}\
 }
 
 str
 MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
-	oid *o;
-	BUN i, first,last;
+	oid *result;
+	BUN i, hseqbase,cnt;
+	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) (task)->blk;
+	BitVector base = (BitVector) MOScodevectorFrame(task);
+	bool nonil = task->bsrc->tnonil;
 
 	// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
+	hseqbase = task->start;
+	cnt = MOSgetCnt(task->blk);
 
-	if (task->cl && *task->cl > last){
+	if (task->cl && *task->cl > cnt){
 		MOSskip_frame(task);
 		return MAL_SUCCEED;
 	}
-	o = task->lb;
+	result = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: select_frame(task, bte, ulng); break;
-	case TYPE_sht: select_frame(task, sht, ulng); break;
-	case TYPE_int: select_frame(task, int, ulng); break;
-	case TYPE_lng: select_frame(task, lng, ulng); break;
-	case TYPE_oid: select_frame(task, oid, oid); break;
+	case TYPE_bte: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, bte, ulng,	GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_sht: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, sht, ulng,	GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_int: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, int, ulng,	GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_lng: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, lng, ulng,	GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_oid: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, oid, oid,	GET_DELTA_FOR_UNSIGNED_TYPE); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: select_frame(task, hge, uhge); break;
+	case TYPE_hge: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, hge, uhge,	GET_DELTA_FOR_SIGNED_TYPE); break;
 #endif
 	}
+	task->lb = result;
 	MOSskip_frame(task);
-	task->lb = o;
 	return MAL_SUCCEED;
 }
 
-#define thetaselect_frame(TPE, DELTA_TPE, GET_DELTA)\
+#define thetaselect_frame_general(TPE, DELTA_TPE, NIL_DELTA, HAS_NIL, GET_DELTA)\
 {\
     MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
 	TPE min =  parameters->min.min##TPE;\
@@ -413,8 +546,8 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 		if (hgh >= min) {\
 			DELTA_TPE hgh2 = GET_DELTA(DELTA_TPE, hgh, min);\
 			for(int i=0; first < last; first++, i++){\
-				MOSskipit();\
 				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+				if (HAS_NIL) { if (delta == (NIL_DELTA)) { continue;}}\
 				if( (delta < hgh2 ) ){\
 					*o++ = (oid) first;\
 				}\
@@ -427,8 +560,8 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 		if (hgh >= min) {\
 			DELTA_TPE hgh2 = GET_DELTA(DELTA_TPE, hgh, min);\
 			for(int i=0; first < last; first++, i++){\
-				MOSskipit();\
 				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+				if (HAS_NIL) { if (delta == (NIL_DELTA)) { continue;}}\
 				if( (delta <= hgh2 ) ){\
 					*o++ = (oid) first;\
 				}\
@@ -441,8 +574,8 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 		if (low >= min) {\
 			DELTA_TPE low2 = GET_DELTA(DELTA_TPE, low, min);\
 			for(int i=0; first < last; first++, i++){\
-				MOSskipit();\
 				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+				if (HAS_NIL) { if (delta == (NIL_DELTA)) { continue;}}\
 				if( (delta > low2 ) ){\
 					*o++ = (oid) first;\
 				}\
@@ -450,7 +583,10 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 		}\
 		else /*everything matches*/ {\
 			for(int i=0; first < last; first++, i++){\
-				MOSskipit();\
+				if (HAS_NIL) {\
+					DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+					if (delta == (NIL_DELTA)) { continue;}\
+				}\
 				*o++ = (oid) first;\
 			}\
 		}\
@@ -460,8 +596,8 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 		if (low >= min) {\
 			DELTA_TPE low2 = GET_DELTA(DELTA_TPE, low, min);\
 			for(int i=0; first < last; first++, i++){\
-				MOSskipit();\
 				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+				if (HAS_NIL) { if (delta == (NIL_DELTA)) { continue;}}\
 				if( (delta >= low2 ) ){\
 					*o++ = (oid) first;\
 				}\
@@ -479,8 +615,8 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 		if (cmprnd >= min) {\
 			DELTA_TPE low2 = GET_DELTA(DELTA_TPE, cmprnd, min);\
 			for(int i=0; first < last; first++, i++){\
-				MOSskipit();\
 				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+				if (HAS_NIL) { if (delta == (NIL_DELTA)) { continue;}}\
 				if( (delta != low2 ) ){\
 					*o++ = (oid) first;\
 				}\
@@ -498,8 +634,8 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 		if (cmprnd >= min) {\
 			DELTA_TPE low2 = GET_DELTA(DELTA_TPE, cmprnd, min);\
 			for(int i=0; first < last; first++, i++){\
-				MOSskipit();\
 				DELTA_TPE delta = getBitVector(base, i, parameters->bits);\
+				if (HAS_NIL) { if (delta == (NIL_DELTA)) { continue;}}\
 				if( (delta == low2 ) ){\
 					*o++ = (oid) first;\
 				}\
@@ -509,11 +645,33 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	}\
 }
 
+#define thetaselect_frame(TPE, DELTA_TPE, GET_DELTA)\
+{\
+    TPE min =	parameters->min.min##TPE;\
+	TPE max =	parameters->max.max##TPE;\
+\
+	bool nil = false;\
+	DELTA_TPE nil_delta;\
+	if (!task->bsrc->tnonil && (min == TPE##_nil || max == TPE##_nil)) {\
+		/*TODO: this is a strong assumption that nil values are always the highest or the lowest value in a GDK type domain.*/\
+		if	 	( (nil = (min == TPE##_nil)) ) { nil_delta = 0; }\
+		else if ( (nil = (max == TPE##_nil)) ) { nil_delta = GET_DELTA(TPE, max, min); }\
+	}\
+\
+	if (nil) {\
+		thetaselect_frame_general(TPE, DELTA_TPE, nil_delta, true, GET_DELTA);\
+	}\
+	else /*!nil*/ {\
+		thetaselect_frame_general(TPE, DELTA_TPE, nil_delta, false, GET_DELTA);\
+	}\
+}
+
 str
 MOSthetaselect_frame( MOStask task, void *val, str oper)
 {
 	oid *o;
 	BUN first,last;
+	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) (task)->blk;
 	
 	// set the oid range covered and advance scan range
 	first = task->start;
@@ -540,7 +698,7 @@ MOSthetaselect_frame( MOStask task, void *val, str oper)
 	return MAL_SUCCEED;
 }
 
-#define projection_frame(TPE)\
+#define projection_frame(TPE, DELTA_TPE)\
 {	TPE *v;\
     MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
 	TPE frame =  parameters->min.min##TPE;\
@@ -548,9 +706,12 @@ MOSthetaselect_frame( MOStask task, void *val, str oper)
 	v= (TPE*) task->src;\
 	for(i=0; first < last; first++,i++) {\
 		MOSskipit();\
-		*v++ = frame + getBitVector(base, i, parameters->bits);\
+		TPE w = (TPE) ((DELTA_TPE) frame + (DELTA_TPE) getBitVector(base, i, parameters->bits));\
+		*v++ = w;\
 		task->cnt++;\
 	}\
+\
+	task->src = (char*) v;\
 }
 
 str
@@ -562,29 +723,32 @@ MOSprojection_frame( MOStask task)
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: projection_frame(bte); break;
-		case TYPE_sht: projection_frame(sht); break;
-		case TYPE_int: projection_frame(int); break;
-		case TYPE_lng: projection_frame(lng); break;
-		case TYPE_oid: projection_frame(oid); break;
+		case TYPE_bte: projection_frame(bte, ulng); break;
+		case TYPE_sht: projection_frame(sht, ulng); break;
+		case TYPE_int: projection_frame(int, ulng); break;
+		case TYPE_lng: projection_frame(lng, ulng); break;
+		case TYPE_oid: projection_frame(oid, oid); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: projection_frame(hge); break;
+		case TYPE_hge: projection_frame(hge, ulng); break;
 #endif
 	}
 	MOSskip_frame(task);
 	return MAL_SUCCEED;
 }
 
-#define join_frame(TPE)\
+
+#define join_frame_general(NIL_MATCHES, TPE, DELTA_TPE)\
 {	TPE *w;\
-    MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
-	TPE frame =  parameters->min.min##TPE;\
 	BitVector base = (BitVector) MOScodevectorFrame(task);\
 	w = (TPE*) task->src;\
 	limit= MOSgetCnt(task->blk);\
 	for( o=0, n= task->stop; n-- > 0; o++,w++ ){\
 		for(oo = task->start,i=0; i < limit; i++,oo++){\
-			if ( *w == frame + getBitVector(base, i, parameters->bits)){\
+			TPE v = (TPE) ((DELTA_TPE) min + (DELTA_TPE) getBitVector(base, i, parameters->bits));\
+			if (!NIL_MATCHES) {\
+				if ((is_nil(TPE, v))) {continue;};\
+			}\
+			if ( *w == v){\
 				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
 				BUNappend(task->rbat, &o, false)!= GDK_SUCCEED)\
 				throw(MAL,"mosaic.frame",MAL_MALLOC_FAIL);\
@@ -593,21 +757,39 @@ MOSprojection_frame( MOStask task)
 	}\
 }
 
+#define join_frame(TPE, DELTA_TPE, GET_DELTA)\
+{\
+    MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
+	TPE min =  parameters->min.min##TPE;\
+	TPE max =	parameters->max.max##TPE;\
+	bool nil = false;\
+	if (nil_matches && !task->bsrc->tnonil && (min == TPE##_nil || max == TPE##_nil)) {\
+		/*TODO: this is a strong assumption that nil values are always the highest or the lowest value in a GDK type domain.*/\
+		nil = (min == TPE##_nil) || (max == TPE##_nil);\
+	}\
+	if (nil && !nil_matches) {\
+		join_frame_general(false, TPE, DELTA_TPE);\
+	}\
+	else /*no nils or they are allowed to match match*/ {\
+		join_frame_general(true, TPE, DELTA_TPE);\
+	}\
+}
+
 str
-MOSjoin_frame( MOStask task)
+MOSjoin_frame( MOStask task, bit nil_matches)
 {
 	BUN i,n,limit;
 	oid o, oo;
 
 	// set the oid range covered and advance scan range
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: join_frame(bte); break;
-		case TYPE_sht: join_frame(sht); break;
-		case TYPE_int: join_frame(int); break;
-		case TYPE_lng: join_frame(lng); break;
-		case TYPE_oid: join_frame(oid); break;
+		case TYPE_bte: join_frame(bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+		case TYPE_sht: join_frame(sht, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+		case TYPE_int: join_frame(int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+		case TYPE_lng: join_frame(lng, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+		case TYPE_oid: join_frame(oid, oid, GET_DELTA_FOR_UNSIGNED_TYPE); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: join_frame(hge); break;
+		case TYPE_hge: join_frame(hge, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
 #endif
 		}
 	MOSskip_frame(task);

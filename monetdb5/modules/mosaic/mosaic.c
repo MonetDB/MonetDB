@@ -1228,7 +1228,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		case MOSAIC_FRAME:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_frame\n");
-			MOSjoin_frame( task);
+			MOSjoin_frame( task, *nil_matches);
 			break;
 		case MOSAIC_DELTA:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_delta\n");

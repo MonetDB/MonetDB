@@ -29,5 +29,5 @@ mal_export void MOSdecompress_frame(MOStask task);
 mal_export str MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
 mal_export str MOSthetaselect_frame( MOStask task, void *val, str oper);
 mal_export str MOSprojection_frame( MOStask task);
-mal_export str MOSjoin_frame( MOStask task);
+mal_export str MOSjoin_frame( MOStask task, bit nil_matches);
 #endif /* _MOSAIC_FRAME_ */
