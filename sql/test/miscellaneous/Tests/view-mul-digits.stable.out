@@ -56,9 +56,11 @@ stdout of test 'view-mul-digits` in directory 'sql/test/miscellaneous` itself:
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-# 09:17:15 >  
-# 09:17:15 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19962" "--port=38624"
-# 09:17:15 >  
+Ready.
+
+# 09:21:41 >  
+# 09:21:41 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13533" "--port=36695"
+# 09:21:41 >  
 
 #START TRANSACTION;
 #create temp table mytable(b bigint);
