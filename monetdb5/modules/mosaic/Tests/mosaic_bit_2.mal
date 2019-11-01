@@ -84,10 +84,6 @@ tsa:= algebra.thetaselect(a,false:bit, "<");
 tsc:= mosaic.thetaselect (c,false:bit, "<");
 io.print(sa, sc, tsa, tsc);
 
-sa:= algebra.select(a,true:bit, false:bit,false,false,false);
-sc:= mosaic.select (c,true:bit, false:bit,false,false,false);
-io.print(sa, sc);
-
 sa:= algebra.select(a,false:bit, false:bit,false,false,false);
 sc:= mosaic.select (c,false:bit, false:bit,false,false,false);
 io.print(sa, sc);
@@ -126,10 +122,6 @@ sa:= algebra.select(a,nil:bit, false:bit,true,false,false);
 sc:= mosaic.select (c,nil:bit, false:bit,true,false,false);
 tsa:= algebra.thetaselect(a,false:bit, "<");
 tsc:= mosaic.thetaselect (c,false:bit, "<");
-io.print(sa, sc);
-
-sa:= algebra.select(a,true:bit, false:bit,true,false,false);
-sc:= mosaic.select (c,true:bit, false:bit,true,false,false);
 io.print(sa, sc);
 
 sa:= algebra.select(a,false:bit, false:bit,true,false,false);
@@ -172,10 +164,6 @@ tsa:= algebra.thetaselect(a,false:bit, "<=");
 tsc:= mosaic.thetaselect (c,false:bit, "<=");
 io.print(sa, sc, tsa, tsc);
 
-sa:= algebra.select(a,true:bit, false:bit,false,true,false);
-sc:= mosaic.select (c,true:bit, false:bit,false,true,false);
-io.print(sa, sc);
-
 sa:= algebra.select(a,false:bit, false:bit,false,true,false);
 sc:= mosaic.select (c,false:bit, false:bit,false,true,false);
 io.print(sa, sc);
@@ -212,10 +200,6 @@ tsa:= algebra.thetaselect(a,false:bit, "<=");
 tsc:= mosaic.thetaselect (c,false:bit, "<=");
 io.print(sa, sc);
 
-sa:= algebra.select(a,true:bit, false:bit,true,true,false);
-sc:= mosaic.select (c,true:bit, false:bit,true,true,false);
-io.print(sa, sc);
-
 sa:= algebra.select(a,false:bit, false:bit,true,true,false);
 sc:= mosaic.select (c,false:bit, false:bit,true,true,false);
 io.print(sa, sc);
@@ -234,8 +218,6 @@ sa:= algebra.select(a,false:bit, true:bit,true,true,false);
 sc:= mosaic.select (c,false:bit, true:bit,true,true,false);
 io.print(sa, sc);
 
-####################################################################
-
 sa:= algebra.select(a,nil:bit, nil:bit,false,false,true);
 sc:= mosaic.select (c,nil:bit, nil:bit,false,false,true);
 io.print(sa, sc);
@@ -250,10 +232,6 @@ io.print(sa, sc);
 
 sa:= algebra.select(a,nil:bit, false:bit,false,false,true);
 sc:= mosaic.select (c,nil:bit, false:bit,false,false,true);
-io.print(sa, sc);
-
-sa:= algebra.select(a,true:bit, false:bit,false,false,true);
-sc:= mosaic.select (c,true:bit, false:bit,false,false,true);
 io.print(sa, sc);
 
 sa:= algebra.select(a,false:bit, false:bit,false,false,true);
@@ -288,10 +266,6 @@ sa:= algebra.select(a,nil:bit, false:bit,true,false,true);
 sc:= mosaic.select (c,nil:bit, false:bit,true,false,true);
 io.print(sa, sc);
 
-sa:= algebra.select(a,true:bit, false:bit,true,false,true);
-sc:= mosaic.select (c,true:bit, false:bit,true,false,true);
-io.print(sa, sc);
-
 sa:= algebra.select(a,false:bit, false:bit,true,false,true);
 sc:= mosaic.select (c,false:bit, false:bit,true,false,true);
 io.print(sa, sc);
@@ -324,10 +298,6 @@ sa:= algebra.select(a,nil:bit, false:bit,false,true,true);
 sc:= mosaic.select (c,nil:bit, false:bit,false,true,true);
 io.print(sa, sc);
 
-sa:= algebra.select(a,true:bit, false:bit,false,true,true);
-sc:= mosaic.select (c,true:bit, false:bit,false,true,true);
-io.print(sa, sc);
-
 sa:= algebra.select(a,false:bit, false:bit,false,true,true);
 sc:= mosaic.select (c,false:bit, false:bit,false,true,true);
 io.print(sa, sc);
@@ -354,10 +324,6 @@ io.print(sa, sc);
 
 sa:= algebra.select(a,nil:bit, false:bit,true,true,true);
 sc:= mosaic.select (c,nil:bit, false:bit,true,true,true);
-io.print(sa, sc);
-
-sa:= algebra.select(a,true:bit, false:bit,true,true,true);
-sc:= mosaic.select (c,true:bit, false:bit,true,true,true);
 io.print(sa, sc);
 
 sa:= algebra.select(a,false:bit, false:bit,true,true,true);
