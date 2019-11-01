@@ -2503,14 +2503,17 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 		sql_rel *j = l;
 		sql_rel *p = j->l;
 		sql_exp *je = l->exps->h->data, *le = je->l;
-		int pside = (rel_find_exp(p, le) != NULL)?1:0;
 
-	       	p = (pside)?j->l:j->r;
-		rel->l = rel_dup(p);
-		rel_destroy(j);
-		*changes = 1;
-		set_nodistinct(rel);
-		return rel;
+		if (exps_find_exp(rel->exps, le)) { /* rel must have the same primary key on the projection list */
+			int pside = (rel_find_exp(p, le) != NULL)?1:0;
+
+			p = (pside)?j->l:j->r;
+			rel->l = rel_dup(p);
+			rel_destroy(j);
+			*changes = 1;
+			set_nodistinct(rel);
+			return rel;
+		}
 	}
 	/* rewrite distinct project [ gbe ] ( select ( groupby [ gbe ] [ gbe, e ] )[ e op val ]) 
 	 * into project [ gbe ] ( select ( group etc ) */
