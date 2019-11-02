@@ -13,7 +13,19 @@ returns table ("uri" string, "username" string, "hash" string)
 external name sql.rt_credentials;
 
 create function sys.sessions()
-returns table("sessionid" int, "user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "threads" int)
+returns table(
+	"sessionid" int, 
+	"user" string, 
+	"login" timestamp, 
+	"optimizer" string,
+	"sessiontimeout" bigint, 
+	"querytimeout" bigint, 
+	"workerlimit" int,
+	"memorylimit" bigint,
+	"lastcommand" timestamp, 
+	"workers" int,
+	"memoryclaim" bigint
+	)
 external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
 

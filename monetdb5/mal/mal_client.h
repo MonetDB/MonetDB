@@ -61,6 +61,7 @@ typedef struct CLIENT {
 	MALfcn  phase[SCENARIO_PROPERTIES], oldphase[SCENARIO_PROPERTIES];
 	char    itrace;    /* trace execution using interactive mdb */
 						/* if set to 'S' it will put the process to sleep */
+	bit		sqlprofiler;		/* control off-line sql performance monitoring */
 	/*
 	 * Each session comes with resource limitations and predefined settings.
 	 */
@@ -69,13 +70,12 @@ typedef struct CLIENT {
 	lng		memorylimit;		/* Memory claim highwater mark, 0 = no limit */
 	lng 	querytimeout;		/* query abort after x usec, 0 = no limit*/
 	lng	    sessiontimeout;		/* session abort after x usec, 0 = no limit */
-	bit		sqlprofiler;		/* control off-line sql performance monitoring */
 
 	/*
 	 * For program debugging and performance trace we keep the actual resource claims.
 	 */
 	int		workers;		/* Actual number of concurrent workers */
-	lng		memory;			/* Actual memory claim highwater mark */
+	lng		memoryclaim;	/* Actual memory claim highwater mark */
 
 	time_t      login;  
 	time_t      lastcmd;	/* set when input is received */

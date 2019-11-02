@@ -648,19 +648,23 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 str
 CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *id = NULL, *user = NULL, *login = NULL, *sessiontimeout = NULL, *querytimeout = NULL, *last= NULL, *active= NULL;
+	BAT *id = NULL, *user = NULL, *login = NULL, *sessiontimeout = NULL, *querytimeout = NULL, *lastcmd= NULL;
+	BAT *opt = NULL, *wlimit = NULL, *mlimit = NULL, *workers = NULL, *memoryclaim = NULL;
 	bat *idId = getArgReference_bat(stk,pci,0);
 	bat *userId = getArgReference_bat(stk,pci,1);
 	bat *loginId = getArgReference_bat(stk,pci,2);
-	bat *sessiontimeoutId = getArgReference_bat(stk,pci,3);
-	bat *lastId = getArgReference_bat(stk,pci,4);
+	bat *optId = getArgReference_bat(stk,pci,3);
+	bat *sessiontimeoutId = getArgReference_bat(stk,pci,4);
 	bat *querytimeoutId = getArgReference_bat(stk,pci,5);
-	bat *activeId = getArgReference_bat(stk,pci,6);
+	bat *wlimitId = getArgReference_bat(stk,pci,6);
+	bat *mlimitId = getArgReference_bat(stk,pci,7);
+	bat *lastcmdId = getArgReference_bat(stk,pci,8);
+	bat *workersId = getArgReference_bat(stk,pci,9);
+	bat *memoryclaimId = getArgReference_bat(stk,pci,10);
     Client c;
 	timestamp ret;
 	lng timeout;
 	str msg = NULL;
-	int i, cnt;
 
 	(void) cntxt;
 	(void) mb;
@@ -668,18 +672,29 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	id = COLnew(0, TYPE_int, 0, TRANSIENT);
 	user = COLnew(0, TYPE_str, 0, TRANSIENT);
 	login = COLnew(0, TYPE_timestamp, 0, TRANSIENT);
+	opt = COLnew(0, TYPE_str, 0, TRANSIENT);
 	sessiontimeout = COLnew(0, TYPE_lng, 0, TRANSIENT);
-	last = COLnew(0, TYPE_timestamp, 0, TRANSIENT);
 	querytimeout = COLnew(0, TYPE_lng, 0, TRANSIENT);
-	active = COLnew(0, TYPE_int, 0, TRANSIENT);
-	if (id == NULL || user == NULL || login == NULL || sessiontimeout == NULL || last == NULL || querytimeout == NULL || active == NULL){
+	wlimit = COLnew(0, TYPE_int, 0, TRANSIENT);
+	mlimit = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	lastcmd = COLnew(0, TYPE_timestamp, 0, TRANSIENT);
+	workers = COLnew(0, TYPE_int, 0, TRANSIENT);
+	memoryclaim = COLnew(0, TYPE_lng, 0, TRANSIENT);
+
+	if (id == NULL || user == NULL || login == NULL || sessiontimeout == NULL || lastcmd == NULL || querytimeout == NULL ||
+	   opt == NULL || wlimit == NULL || mlimit == NULL || workers == NULL || memoryclaim == NULL){
 		if ( id) BBPunfix(id->batCacheid);
 		if ( user) BBPunfix(user->batCacheid);
 		if ( login) BBPunfix(login->batCacheid);
 		if ( sessiontimeout) BBPunfix(sessiontimeout->batCacheid);
 		if ( querytimeout) BBPunfix(querytimeout->batCacheid);
-		if ( last) BBPunfix(last->batCacheid);
-		if ( active) BBPunfix(active->batCacheid);
+		if ( lastcmd) BBPunfix(lastcmd->batCacheid);
+
+		if ( opt) BBPunfix(opt->batCacheid);
+		if ( wlimit) BBPunfix(wlimit->batCacheid);
+		if ( mlimit) BBPunfix(mlimit->batCacheid);
+		if ( workers) BBPunfix(workers->batCacheid);
+		if ( memoryclaim) BBPunfix(memoryclaim->batCacheid);
 		throw(SQL,"sql.sessions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
@@ -702,27 +717,27 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		    timeout = c->sessiontimeout / 1000000;
 		    if (BUNappend(sessiontimeout, &timeout, false) != GDK_SUCCEED)
 			    goto bailout;
+		    timeout = c->querytimeout / 1000000;
+		    if (BUNappend(querytimeout, &timeout, false) != GDK_SUCCEED)
+				goto bailout;
 		    ret = timestamp_fromtime(c->lastcmd);
 		    if (is_timestamp_nil(ret)) {
 			    msg = createException(SQL, "sql.sessions",
 						  SQLSTATE(22003) "cannot convert time");
 			    goto bailout;
 		    }
-		    if (BUNappend(last, &ret, false) != GDK_SUCCEED)
+		    if (BUNappend(lastcmd, &ret, false) != GDK_SUCCEED)
 			    goto bailout;
-		    timeout = c->querytimeout / 1000000;
-		    if (BUNappend(querytimeout, &timeout, false) != GDK_SUCCEED)
-				goto bailout;
-			MT_lock_set(&mal_delayLock);
-			cnt = 0;
-			for( i = 0; i < THREADS; i++)
-				if ( workingset[i].cntxt == c){
-					cnt ++;
-					break;
-				}
-			MT_lock_unset(&mal_delayLock);
-			if( BUNappend(active, &cnt, false) != GDK_SUCCEED)
+		    if (BUNappend(opt, c->optimizer, false) != GDK_SUCCEED)
 			    goto bailout;
+            if (BUNappend(wlimit, &c->workerlimit, false) != GDK_SUCCEED)
+                goto bailout;
+            if (BUNappend(workers, &c->workers, false) != GDK_SUCCEED)
+                goto bailout;
+            if (BUNappend(mlimit, &c->memorylimit, false) != GDK_SUCCEED)
+                goto bailout;
+            if (BUNappend(memoryclaim, &c->memoryclaim, false) != GDK_SUCCEED)
+                goto bailout;
 	    }
     }
     MT_lock_unset(&mal_contextLock);
@@ -731,8 +746,13 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*loginId = login->batCacheid);
 	BBPkeepref(*sessiontimeoutId = sessiontimeout->batCacheid);
 	BBPkeepref(*querytimeoutId = querytimeout->batCacheid);
-	BBPkeepref(*lastId = last->batCacheid);
-	BBPkeepref(*activeId = active->batCacheid);
+	BBPkeepref(*lastcmdId = lastcmd->batCacheid);
+
+	BBPkeepref(*optId = opt->batCacheid);
+	BBPkeepref(*wlimitId = wlimit->batCacheid);
+	BBPkeepref(*mlimitId = mlimit->batCacheid);
+	BBPkeepref(*workersId = workers->batCacheid);
+	BBPkeepref(*memoryclaimId = memoryclaim->batCacheid);
 	return MAL_SUCCEED;
 
   bailout:
@@ -742,7 +762,12 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(login->batCacheid);
 	BBPunfix(sessiontimeout->batCacheid);
 	BBPunfix(querytimeout->batCacheid);
-	BBPunfix(last->batCacheid);
-	BBPunfix(active->batCacheid);
+	BBPunfix(lastcmd->batCacheid);
+
+	BBPunfix(opt->batCacheid);
+	BBPunfix(wlimit->batCacheid);
+	BBPunfix(mlimit->batCacheid);
+	BBPunfix(workers->batCacheid);
+	BBPunfix(memoryclaim->batCacheid);
 	return msg;
 }
