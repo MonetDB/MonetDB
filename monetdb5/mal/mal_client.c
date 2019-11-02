@@ -244,8 +244,11 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->father = NULL;
 	c->login = c->lastcmd = time(0);
 	c->session = GDKusec();
-	c->qtimeout = 0;
-	c->stimeout = 0;
+	strncpy(c->optimizer, "default_pipe", IDLENGTH);
+	c->workerlimit = 0;
+	c->memorylimit = 0;
+	c->querytimeout = 0;
+	c->sessiontimeout = 0;
 	c->itrace = 0;
 	c->errbuf = 0;
 
@@ -268,7 +271,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->profticks = c->profstmt = NULL;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	c->sqlprofiler = 0;
-	c->malprofiler = 0;
 	c->wlc_kind = 0;
 	c->wlc = NULL;
 #ifndef HAVE_EMBEDDED /* no authentication in embedded mode */
@@ -363,6 +365,12 @@ MCforkClient(Client father)
 		son->yycur = 0;
 		son->father = father;
 		son->scenario = father->scenario;
+		strcpy(father->optimizer, son->optimizer);
+		son->workerlimit = father->workerlimit;
+		son->memorylimit = father->memorylimit;
+		son->querytimeout = father->querytimeout;
+		son->sessiontimeout = father->sessiontimeout;
+
 		if (son->prompt)
 			GDKfree(son->prompt);
 		son->prompt = prompt;
@@ -426,8 +434,11 @@ MCfreeClient(Client c)
 	c->usermodule = c->curmodule = 0;
 	c->father = 0;
 	c->login = c->lastcmd = 0;
-	c->qtimeout = 0;
-	c->stimeout = 0;
+	strncpy(c->optimizer, "default_pipe", IDLENGTH);
+	c->workerlimit = 0;
+	c->memorylimit = 0;
+	c->querytimeout = 0;
+	c->sessiontimeout = 0;
 	c->user = oid_nil;
 	if( c->username){
 		GDKfree(c->username);
@@ -453,7 +464,6 @@ MCfreeClient(Client c)
 	if( c->wlc)
 		freeMalBlk(c->wlc);
 	c->sqlprofiler = 0;
-	c->malprofiler = 0;
 	c->wlc_kind = 0;
 	c->wlc = NULL;
 	MT_sema_destroy(&c->s);
