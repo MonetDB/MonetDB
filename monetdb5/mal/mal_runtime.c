@@ -27,7 +27,7 @@
 QueryQueue QRYqueue;
 lng qtop;
 static lng qsize;
-static oid qtag= 1;
+static oid qtag= 1;		// A unique query identifier
 
 #define QRYreset(I)\
 		if (QRYqueue[I].query) GDKfree(QRYqueue[I].query);\
@@ -139,6 +139,10 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 
 	qtop = j;
 	QRYqueue[qtop].query = NULL; /* sentinel for SYSMONqueue() */
+	cntxt->idle = time(0);
+	cntxt->lastcmd = 0;
+	cntxt->workers = 0;
+	cntxt->memoryclaim = 0;
 	MT_lock_unset(&mal_delayLock);
 }
 

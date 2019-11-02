@@ -56,48 +56,56 @@ command wakeup(id:int):void
 address CLTwakeup
 comment "Wakeup a client process";
 
-pattern setsession(n:lng):void
-address CLTsetSessionTimeout
-comment "Abort a session after  n seconds.";
+pattern getprofile()(opt:str, q:lng, s:lng, w:int, m:lng)
+address CLTgetProfile
+comment "Retrieve the profile settings for a client";
 
-pattern settimeout(n:lng):void
-address CLTsetTimeout
-comment "Abort a query after q seconds (q=0 means run undisturbed).
-The session timeout aborts the connection after spending too
-many seconds on query processing.";
+# set properties of others
+pattern setquerytimeout(n:lng):void
+address CLTqueryTimeout;
+pattern setquerytimeout(sid:bte, n:lng):void
+address CLTqueryTimeout;
+pattern setquerytimeout(sid:sht, n:lng):void
+address CLTqueryTimeout;
+pattern setquerytimeout(sid:sht, n:lng):void
+address CLTqueryTimeout
+comment "A query is aborted after q milliseconds (q=0 means run undisturbed).";
 
-pattern getTimeout()(q:lng,s:lng)
-address CLTgetTimeout
-comment "A query is aborted after q milliseconds (q=0 means run undisturbed).
-The session timeout aborts the connection after spending too
-many seconds on query processing.";
+pattern setsessiontimeout(n:lng):void
+address CLTsessionTimeout;
+pattern setsessiontimeout(sid:bte, n:lng):void
+address CLTsessionTimeout;
+pattern setsessiontimeout(sid:sht, n:lng):void
+address CLTsessionTimeout;
+pattern setsessiontimeout(sid:sht, n:lng):void
+address CLTsessionTimeout
+comment "Set the session timeout for a particulat session id";
 
-pattern querytimeout(sid:bte, n:lng):void
-address CLTqueryTimeout;
-pattern querytimeout(sid:sht, n:lng):void
-address CLTqueryTimeout;
-pattern querytimeout(sid:int, n:lng):void
-address CLTqueryTimeout;
+pattern setoptimizer(opt:str):void
+address CLTsetoptimizer;
+pattern setoptimizer(sid:sht, opt:str):void
+address CLTsetoptimizer
+comment "Set the session optimizer";
+
+pattern setworkerlimit(n:int):void
+address CLTsetworkerlimit;
+pattern setworkerlimit(sid:sht, n:int):void
+address CLTsetworkerlimit
+comment "Limit the number of worker threads per query";
+
+pattern setmemorylimit(n:int):void
+address CLTsetmemorylimit;
+pattern setmemorylimit(sid:sht, n:int):void
+address CLTsetmemorylimit
+comment "Limit the memory claim in MB per query";
 
 pattern stopsession(sid:bte):void
-address CLTstopSession
-comment "Stop a particular session";
+address CLTstopSession;
 pattern stopsession(sid:sht):void
-address CLTstopSession
-comment "Stop a particular session";
+address CLTstopSession;
 pattern stopsession(sid:int):void
 address CLTstopSession
 comment "Stop a particular session";
-
-pattern sessiontimeout(sid:bte, n:lng):void
-address CLTsessionTimeout
-comment "Set the session timeout for a particulat session id";
-pattern sessiontimeout(sid:sht, n:lng):void
-address CLTsessionTimeout
-comment "Set the session timeout for a particulat session id";
-pattern sessiontimeout(sid:int, n:lng):void
-address CLTsessionTimeout
-comment "Set the session timeout for a particulat session id";
 
 command setprinttimeout(n:int):void
 address CLTsetPrintTimeout

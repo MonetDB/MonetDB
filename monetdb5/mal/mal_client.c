@@ -242,7 +242,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->usermodule = c->curmodule = 0;
 
 	c->father = NULL;
-	c->login = c->lastcmd = time(0);
+	c->idle  = c->login = c->lastcmd = time(0);
 	c->session = GDKusec();
 	strncpy(c->optimizer, "default_pipe", IDLENGTH);
 	c->workerlimit = 0;
@@ -366,6 +366,8 @@ MCforkClient(Client father)
 		son->bak = NULL;
 		son->yycur = 0;
 		son->father = father;
+		son->login = father->login;
+		son->idle = father->idle;
 		son->scenario = father->scenario;
 		strcpy(father->optimizer, son->optimizer);
 		son->workerlimit = father->workerlimit;
@@ -437,7 +439,7 @@ MCfreeClient(Client c)
 		freeModule(c->usermodule);
 	c->usermodule = c->curmodule = 0;
 	c->father = 0;
-	c->login = c->lastcmd = 0;
+	c->idle = c->login = c->lastcmd = 0;
 	strncpy(c->optimizer, "default_pipe", IDLENGTH);
 	c->workerlimit = 0;
 	c->memorylimit = 0;

@@ -2305,14 +2305,12 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 				"\"sessionid\" int,\n"
 				"\"user\" string,\n"
 				"\"login\" timestamp,\n"
+				"\"idle\" timestamp,\n"
 				"\"optimizer\" string,\n"
 				"\"sessiontimeout\" bigint,\n"
 				"\"querytimeout\" bigint,\n"
 				"\"workerlimit\" int,\n"
-				"\"memorylimit\" bigint,\n"
-				"\"lastcommand\" timestamp,\n"
-				"\"workers\" int,\n"
-				"\"memoryclaim\" bigint)\n"
+				"\"memorylimit\" bigint)\n"
  			" external name sql.sessions;\n"
 			"create view sys.sessions as select * from sys.sessions();\n");
 
