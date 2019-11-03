@@ -2337,6 +2337,22 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"external name sql.setworkerlimit;\n"
 			"create procedure sys.setmemorylimit(\"sessionid\" int, \"limit\" int)\n"
 	);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function sys.queue();\n"
+			"create function sys.queue()\n"
+			"returns table(\n"
+			"tag bigint,\n"
+			"sessionid int,\n"
+    		"\"user\" string,\n"
+    		"started timestamp,\n"
+    		"status string,  -- paused, running\n"
+    		"query string,\n"
+			"progress int,   -- percentage of MAL instructions handled\n"
+			"workers int,\n"
+			"memory int)\n"
+			"external name sql.sysmon_queue;\n"
+			"grant execute on function sys.queue to public;\n"
+	);
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"

@@ -9,15 +9,15 @@
 -- show status of all active SQL queries.
 create function sys.queue()
 returns table(
-	qtag bigint,
+	tag bigint,
 	sessionid int,
 	"user" string,
 	started timestamp,
-	estimate timestamp,
-	progress int,
-	status string,
-	tag oid,
-	query string
+	status string,	-- paused, running
+	query string,
+	progress int,	-- percentage of MAL instructions handled
+	workers int,
+	memory int
 )
 external name sql.sysmon_queue;
 grant execute on function sys.queue to public;

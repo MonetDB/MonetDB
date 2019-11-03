@@ -35,6 +35,7 @@ static oid qtag= 1;		// A unique query identifier
 		QRYqueue[I].tag = 0; \
 		QRYqueue[I].query = 0; \
 		QRYqueue[I].status =0; \
+		QRYqueue[I].progress =0; \
 		QRYqueue[I].stk =0; \
 		QRYqueue[I].mb =0; \
 
@@ -142,7 +143,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	cntxt->idle = time(0);
 	cntxt->lastcmd = 0;
 	QRYqueue[qtop].workers = 0;
-	QRYqueue[qtop].memoryclaim = 0;
+	QRYqueue[qtop].memory= 0;
 	MT_lock_unset(&mal_delayLock);
 }
 
