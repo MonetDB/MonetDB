@@ -79,8 +79,6 @@ typedef struct CLIENT {
 	 * For program debugging and performance trace we keep the actual resource claims.
 	 */
 	time_t  lastcmd;		/* set when query is received */
-	int		workers;		/* Actual number of concurrent workers */
-	lng		memoryclaim;	/* Actual memory claim highwater mark */
 
 	/* The user can request a TRACE SQL statement, calling for collecting the events locally */
 	BAT *profticks;				

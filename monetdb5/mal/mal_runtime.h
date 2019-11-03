@@ -32,6 +32,8 @@ typedef struct QRYQUEUE{
 	str query;
 	str status;
 	time_t start;
+	int		workers;		/* Actual number of concurrent workers */
+	lng		memoryclaim;	/* Actual memory claim highwater mark */
 	lng runtime;
 } *QueryQueue;
 mal_export lng qtop;

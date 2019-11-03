@@ -471,7 +471,7 @@ address sql_variables
 comment "return the table with session variables";
 
 pattern sessions() (id:bat[:int], user:bat[:str], 
-start:bat[:timestamp], idle:bat[:timestamp], optmizer:bat[:str], stimeout:bat[:lng], qtimeout:bat[:lng], wlimit:bat[:int], mlimit:bat[:lng])
+start:bat[:timestamp], idle:bat[:timestamp], optmizer:bat[:str], stimeout:bat[:int], qtimeout:bat[:int], wlimit:bat[:int], mlimit:bat[:int])
 address sql_sessions_wrap
 comment "SQL export table of active sessions, their timeouts and idle status";
 
