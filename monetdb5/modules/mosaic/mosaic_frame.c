@@ -118,11 +118,11 @@ MOSskip_frame(MOStask task)
 
 #define MOScodevectorFrame(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_frame_t), unsigned int))
 
-/* Use ternary operator because (in theory) we have to be careful not to get overflow's*/\
-#define GET_DELTA_FOR_SIGNED_TYPE(DELTA_TPE, max, min) (min < 0? max < 0?(DELTA_TPE) (max - min) : (DELTA_TPE)(max) + (DELTA_TPE)(-1 * min) : (DELTA_TPE) (max - min))
-#define GET_DELTA_FOR_UNSIGNED_TYPE(DELTA_TPE, max, min) ((DELTA_TPE) (max - min))
+/* Use standard unsigned integer operations because (in theory) we have to be careful not to get overflow's and undefined behavior*/\
+#define GET_DELTA(DELTA_TPE, max, min)  ((DELTA_TPE) max - (DELTA_TPE) min)
+#define ADD_DELTA(TPE, DELTA_TPE, min, delta)  (TPE) ((DELTA_TPE) min + (DELTA_TPE) delta)
 
-#define determineFrameParameters(PARAMETERS, SRC, LIMIT, TPE, DELTA_TPE, GET_DELTA) \
+#define determineFrameParameters(PARAMETERS, SRC, LIMIT, TPE, DELTA_TPE) \
 do {\
 	TPE *val = SRC, max, min;\
 	int bits = 1;\
@@ -165,12 +165,12 @@ do {\
 	(PARAMETERS).base.cnt = i;\
 } while(0)
 
-#define estimateFrame(TASK, TPE, DELTA_TPE, GET_DELTA)\
+#define estimateFrame(TASK, TPE, DELTA_TPE)\
 do {\
 	TPE *src = getSrc(TPE, (TASK));\
 	BUN limit = (TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start;\
 	MosaicBlkHeader_frame_t parameters;\
-	determineFrameParameters(parameters, src, limit, TPE, DELTA_TPE, GET_DELTA);\
+	determineFrameParameters(parameters, src, limit, TPE, DELTA_TPE);\
 	assert(parameters.base.cnt > 0);/*Should always compress.*/\
 	current->is_applicable = true;\
 	current->uncompressed_size += (BUN) (parameters.base.cnt * sizeof(TPE));\
@@ -186,20 +186,20 @@ MOSestimate_frame(MOStask task, MosaicEstimation* current, const MosaicEstimatio
 	current->compression_strategy.tag = MOSAIC_FRAME;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: estimateFrame(task, bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_sht: estimateFrame(task, sht, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_int: estimateFrame(task, int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_lng: estimateFrame(task, lng, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_oid: estimateFrame(task, oid,  oid, GET_DELTA_FOR_UNSIGNED_TYPE); break;
+	case TYPE_bte: estimateFrame(task, bte, ulng); break;
+	case TYPE_sht: estimateFrame(task, sht, ulng); break;
+	case TYPE_int: estimateFrame(task, int, ulng); break;
+	case TYPE_lng: estimateFrame(task, lng, ulng); break;
+	case TYPE_oid: estimateFrame(task, oid,  oid); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: estimateFrame(task, hge, uhge, GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_hge: estimateFrame(task, hge, uhge); break;
 #endif
 	}
 
 	return MAL_SUCCEED;
 }
 
-#define FRAMEcompress(TASK, TPE, DELTA_TPE, GET_DELTA)\
+#define FRAMEcompress(TASK, TPE, DELTA_TPE)\
 do {\
 	TPE *src = getSrc(TPE, (TASK));\
 	TPE delta;\
@@ -207,7 +207,7 @@ do {\
 	BUN limit = estimate->cnt;\
 	BitVector base;\
 	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((TASK))->blk;\
-	determineFrameParameters(*parameters, src, limit, TPE, DELTA_TPE, GET_DELTA);\
+	determineFrameParameters(*parameters, src, limit, TPE, DELTA_TPE);\
 	(TASK)->dst = MOScodevectorFrame(TASK);\
 	base = (BitVector) ((TASK)->dst);\
 	for(i = 0; i < parameters->base.cnt; i++, src++) {\
@@ -227,13 +227,13 @@ MOScompress_frame(MOStask task, MosaicBlkRec* estimate)
 	MOSsetCnt(blk, 0);
 
 	switch(ATOMbasetype(task->type)) {
-	case TYPE_bte: FRAMEcompress(task, bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_sht: FRAMEcompress(task, sht, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_int: FRAMEcompress(task, int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_lng: FRAMEcompress(task, lng, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_oid: FRAMEcompress(task, oid, oid,  GET_DELTA_FOR_UNSIGNED_TYPE); break;
+	case TYPE_bte: FRAMEcompress(task, bte, ulng); break;
+	case TYPE_sht: FRAMEcompress(task, sht, ulng); break;
+	case TYPE_int: FRAMEcompress(task, int, ulng); break;
+	case TYPE_lng: FRAMEcompress(task, lng, ulng); break;
+	case TYPE_oid: FRAMEcompress(task, oid, oid); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: FRAMEcompress(task, hge, uhge, GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_hge: FRAMEcompress(task, hge, uhge); break;
 #endif
 	}
 }
@@ -476,7 +476,7 @@ do {\
 } while(0)
 
 // TODO: Simplify (deduplication) and optimize (control deps to data deps) this macro
-#define select_frame(RESULT, PARAMETERS, BASE, HSEQBASE, CNT, NONIL, LOW, HIGH, LI, HI, ANTI, TPE, DELTA_TPE, GET_DELTA) {\
+#define select_frame(RESULT, PARAMETERS, BASE, HSEQBASE, CNT, NONIL, LOW, HIGH, LI, HI, ANTI, TPE, DELTA_TPE) {\
     TPE min =	(PARAMETERS)->min.min##TPE;\
 	TPE max =	(PARAMETERS)->max.max##TPE;\
 	int bits=	(PARAMETERS)->bits;\
@@ -486,7 +486,7 @@ do {\
 	if (!NONIL && (min == TPE##_nil || max == TPE##_nil)) {\
 		/*TODO: this is a strong assumption that nil values are always the highest or the lowest value in a GDK type domain.*/\
 		if	 	( (nil = (min == TPE##_nil)) ) { nil_delta = 0; }\
-		else if ( (nil = (max == TPE##_nil)) ) { nil_delta = GET_DELTA(TPE, max, min); }\
+		else if ( (nil = (max == TPE##_nil)) ) { nil_delta = GET_DELTA(DELTA_TPE, max, min); }\
 	}\
 	if( nil && *(ANTI)){\
 		select_frame_general(RESULT, BASE, bits, HSEQBASE, CNT, min, max, *(TPE*) LOW, *(TPE*) HIGH, *LI, *HI, nil_delta, true, true, TPE, DELTA_TPE);\
@@ -522,13 +522,13 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	result = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, bte, ulng,	GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_sht: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, sht, ulng,	GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_int: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, int, ulng,	GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_lng: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, lng, ulng,	GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_oid: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, oid, oid,	GET_DELTA_FOR_UNSIGNED_TYPE); break;
+	case TYPE_bte: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, bte, ulng); break;
+	case TYPE_sht: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, sht, ulng); break;
+	case TYPE_int: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, int, ulng); break;
+	case TYPE_lng: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, lng, ulng); break;
+	case TYPE_oid: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, oid, oid); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, hge, uhge,	GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_hge: select_frame(result, parameters, base, hseqbase, cnt, nonil, low, hgh, li, hi, anti, hge, uhge); break;
 #endif
 	}
 	task->lb = result;
@@ -536,7 +536,7 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	return MAL_SUCCEED;
 }
 
-#define thetaselect_frame_general(TPE, DELTA_TPE, NIL_DELTA, HAS_NIL, GET_DELTA)\
+#define thetaselect_frame_general(TPE, DELTA_TPE, NIL_DELTA, HAS_NIL)\
 {\
     MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
 	TPE min =  parameters->min.min##TPE;\
@@ -645,7 +645,7 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	}\
 }
 
-#define thetaselect_frame(TPE, DELTA_TPE, GET_DELTA)\
+#define thetaselect_frame(TPE, DELTA_TPE)\
 {\
     TPE min =	parameters->min.min##TPE;\
 	TPE max =	parameters->max.max##TPE;\
@@ -655,14 +655,14 @@ MOSselect_frame( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	if (!task->bsrc->tnonil && (min == TPE##_nil || max == TPE##_nil)) {\
 		/*TODO: this is a strong assumption that nil values are always the highest or the lowest value in a GDK type domain.*/\
 		if	 	( (nil = (min == TPE##_nil)) ) { nil_delta = 0; }\
-		else if ( (nil = (max == TPE##_nil)) ) { nil_delta = GET_DELTA(TPE, max, min); }\
+		else if ( (nil = (max == TPE##_nil)) ) { nil_delta = GET_DELTA(DELTA_TPE, max, min); }\
 	}\
 \
 	if (nil) {\
-		thetaselect_frame_general(TPE, DELTA_TPE, nil_delta, true, GET_DELTA);\
+		thetaselect_frame_general(TPE, DELTA_TPE, nil_delta, true);\
 	}\
 	else /*!nil*/ {\
-		thetaselect_frame_general(TPE, DELTA_TPE, nil_delta, false, GET_DELTA);\
+		thetaselect_frame_general(TPE, DELTA_TPE, nil_delta, false);\
 	}\
 }
 
@@ -684,13 +684,13 @@ MOSthetaselect_frame( MOStask task, void *val, str oper)
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: thetaselect_frame(bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_sht: thetaselect_frame(sht, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_int: thetaselect_frame(int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_lng: thetaselect_frame(lng, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-	case TYPE_oid: thetaselect_frame(oid, oid, GET_DELTA_FOR_UNSIGNED_TYPE); break;
+	case TYPE_bte: thetaselect_frame(bte, ulng); break;
+	case TYPE_sht: thetaselect_frame(sht, ulng); break;
+	case TYPE_int: thetaselect_frame(int, ulng); break;
+	case TYPE_lng: thetaselect_frame(lng, ulng); break;
+	case TYPE_oid: thetaselect_frame(oid, oid); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: thetaselect_frame(hge, uhge, GET_DELTA_FOR_SIGNED_TYPE); break;
+	case TYPE_hge: thetaselect_frame(hge, uhge); break;
 #endif
 	}
 	MOSskip_frame(task);
@@ -706,7 +706,7 @@ MOSthetaselect_frame( MOStask task, void *val, str oper)
 	v= (TPE*) task->src;\
 	for(i=0; first < last; first++,i++) {\
 		MOSskipit();\
-		TPE w = (TPE) ((DELTA_TPE) frame + (DELTA_TPE) getBitVector(base, i, parameters->bits));\
+		TPE w = ADD_DELTA(TPE, DELTA_TPE, frame, getBitVector(base, i, parameters->bits));\
 		*v++ = w;\
 		task->cnt++;\
 	}\
@@ -744,7 +744,7 @@ MOSprojection_frame( MOStask task)
 	limit= MOSgetCnt(task->blk);\
 	for( o=0, n= task->stop; n-- > 0; o++,w++ ){\
 		for(oo = task->start,i=0; i < limit; i++,oo++){\
-			TPE v = (TPE) ((DELTA_TPE) min + (DELTA_TPE) getBitVector(base, i, parameters->bits));\
+			TPE v = ADD_DELTA(TPE, DELTA_TPE, min, getBitVector(base, i, parameters->bits));\
 			if (!NIL_MATCHES) {\
 				if ((is_nil(TPE, v))) {continue;};\
 			}\
@@ -757,7 +757,7 @@ MOSprojection_frame( MOStask task)
 	}\
 }
 
-#define join_frame(TPE, DELTA_TPE, GET_DELTA)\
+#define join_frame(TPE, DELTA_TPE)\
 {\
     MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
 	TPE min =  parameters->min.min##TPE;\
@@ -783,13 +783,13 @@ MOSjoin_frame( MOStask task, bit nil_matches)
 
 	// set the oid range covered and advance scan range
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: join_frame(bte, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-		case TYPE_sht: join_frame(sht, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-		case TYPE_int: join_frame(int, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-		case TYPE_lng: join_frame(lng, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
-		case TYPE_oid: join_frame(oid, oid, GET_DELTA_FOR_UNSIGNED_TYPE); break;
+		case TYPE_bte: join_frame(bte, ulng); break;
+		case TYPE_sht: join_frame(sht, ulng); break;
+		case TYPE_int: join_frame(int, ulng); break;
+		case TYPE_lng: join_frame(lng, ulng); break;
+		case TYPE_oid: join_frame(oid, oid); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: join_frame(hge, ulng, GET_DELTA_FOR_SIGNED_TYPE); break;
+		case TYPE_hge: join_frame(hge, ulng); break;
 #endif
 		}
 	MOSskip_frame(task);
