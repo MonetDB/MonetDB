@@ -237,12 +237,12 @@ CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CLTsetoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    int idx;
+	int idx;
 	str opt;
 
-    (void) mb;
+	(void) mb;
 	if( pci->argc == 3){
-	idx = *getArgReference_sht(stk,pci,1);
+	idx = *getArgReference_int(stk,pci,1);
 	opt = *getArgReference_str(stk,pci,2);
 	} else {
 		idx = cntxt->idx;
@@ -253,20 +253,20 @@ CLTsetoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"setoptimizer","Illegal session id");
 	if (mal_clients[idx].mode == FREECLIENT)
 		throw(MAL,"setoptimizer","Session not active anymore ");
-    if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
-        strncpy(mal_clients[idx].optimizer, opt, IDLENGTH);
+	if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
+		strncpy(mal_clients[idx].optimizer, opt, IDLENGTH);
 	}
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 str
 CLTsetworkerlimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    int idx, limit;
+	int idx, limit;
 
-    (void) mb;
+	(void) mb;
 	if(pci->argc == 3){
-		idx = *getArgReference_sht(stk,pci,1);
+		idx = *getArgReference_int(stk,pci,1);
 		limit = *getArgReference_int(stk,pci,2);
 	} else {
 		idx = cntxt->idx;
@@ -277,34 +277,35 @@ CLTsetworkerlimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"setworkerlimit","Illegal session id");
 	if (mal_clients[idx].mode == FREECLIENT)
 		throw(MAL,"setworkerlimit","Session not active anymore ");
-    if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
-        mal_clients[idx].workerlimit = limit; 
+	if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
+		mal_clients[idx].workerlimit = limit; 
 	}
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 str
 CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    int idx, limit;
+	int idx;
+	lng limit;
 
-    (void) mb;
+	(void) mb;
 	if(pci->argc == 3){
 		idx = *getArgReference_sht(stk,pci,1);
-		limit = *getArgReference_int(stk,pci,2);
+		limit = *getArgReference_lng(stk,pci,2);
 	} else{
 		idx = cntxt->idx;
-		limit = *getArgReference_int(stk,pci,1);
+		limit = *getArgReference_lng(stk,pci,1);
 	}
 
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"setmemorylimit","Illegal session id");
 	if (mal_clients[idx].mode == FREECLIENT)
 		throw(MAL,"setmemorylimit","Session not active anymore ");
-    if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
-        mal_clients[idx].memorylimit = limit; 
+	if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
+		mal_clients[idx].memorylimit = limit; 
 	}
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 str
