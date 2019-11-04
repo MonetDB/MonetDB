@@ -110,7 +110,7 @@ MOSlayout_var_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 	BUN dictsize = GetCount(task->var_info);
 
 	for(i=0; i< dictsize; i++){
-		snprintf(buf, BUFSIZ,"var[%d]",i);
+		snprintf(buf, BUFSIZ,"var[%u]",i);
 		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
 			BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
 			BUNappend(binput, &zero, false) != GDK_SUCCEED ||
@@ -195,7 +195,7 @@ do {\
 	size_t new_bytes		= new_keys_size + new_dict_size + new_headers_size;\
 \
 	(CURRENT)->compression_strategy.tag = MOSAIC_VAR;\
-	(CURRENT)->compression_strategy.cnt = nr_compressed;\
+	(CURRENT)->compression_strategy.cnt = (unsigned int) nr_compressed;\
 \
 	(CURRENT)->uncompressed_size	+= (BUN) ( nr_compressed * sizeof(TPE));\
 	(CURRENT)->compressed_size		+= (wordaligned( MosaicBlkSize, BitVector) + new_bytes - old_bytes);\
@@ -255,7 +255,7 @@ _finalizeDictionary(BAT* b, GlobalVarInfo* info, ulng* pos_dict, ulng* length_di
 	vmh->dirty = true;
 
 	*pos_dict = 0;
-	*length_dict = GetCount(info);
+	*length_dict = (ulng) GetCount(info);
 	*bits_dict = calculateBits(*length_dict);
 
 	BBPreclaim(info->dict);
