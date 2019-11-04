@@ -881,17 +881,54 @@ monet5_resolve_function(ptr M, sql_func *f)
 		return 1;
 	if (mname == aggrRef && fname == countRef)
 		return 1;
-	if (mname == sqlRef && (fname == first_valueRef || fname ==  minRef || fname == maxRef))
+	if (mname == sqlRef && (fname == first_valueRef || fname == lagRef || fname == leadRef || fname == nth_valueRef || fname == ntileRef ||
+		fname ==  minRef || fname == maxRef || fname == countRef || fname == prodRef || fname == sumRef || fname == avgRef))
 		return 1;
 
 	c = MCgetClient(sql->clientid);
 	for (m = findModule(c->usermodule, mname); m; m = m->link) {
 		for (Symbol s = findSymbolInModule(m, fname); s; s = s->peer) {
 			InstrPtr sig = getSignature(s);
-			int argc = sig->argc - sig->retc, fargs = list_length(f->ops);
+			int argc = sig->argc - sig->retc, nfargs = list_length(f->ops), nfres = list_length(f->res);
 
-			if (fargs == argc || (sig->varargs & VARARGS) == VARARGS)
+			if ((sig->varargs & VARARGS) == VARARGS || f->vararg || f->varres)
 				return 1;
+			else if (nfargs == argc && (nfres == sig->retc || (sig->retc == 1 && (IS_FILT(f) || IS_PROC(f))))) {
+				/* I removed this code because, it was triggering many errors on te SQL <-> MAL translation */
+				/* Check for types of inputs and outputs. SQL procedures and filter functions always return 1 value in the MAL implementation
+				bool all_match = true;
+				if (nfres != 0) { if function has output variables, test types are equivalent
+					int i = 0;
+					for (node *n = f->res->h; n && all_match; n = n->next, i++) {
+						sql_arg *arg = (sql_arg *) n->data;
+						int nsql_tpe = arg->type.type->localtype;
+						int nmal_tpe = getArgType(s->def, sig, i);
+						if (isaBatType(nmal_tpe) || (nmal_tpe & 0377) == TYPE_any) any type is excluded from isaBatType 
+							nmal_tpe = getBatType(nmal_tpe);
+
+						 any/void types allways match 
+						if (nsql_tpe != TYPE_any && nmal_tpe != TYPE_any && nsql_tpe != TYPE_void && nmal_tpe != TYPE_void)
+							all_match = nsql_tpe == nmal_tpe;
+					}
+				}
+
+				if (all_match && nfargs != 0) {  if function has arguments, test types are equivalent
+					int i = sig->retc;
+					for (node *n = f->ops->h; n && all_match; n = n->next, i++) {
+						sql_arg *arg = (sql_arg *) n->data;
+						int nsql_tpe = arg->type.type->localtype;
+						int nmal_tpe = getArgType(s->def, sig, i);
+						if (isaBatType(nmal_tpe) || (nmal_tpe & 0377) == TYPE_any)  any type is excluded from isaBatType
+							nmal_tpe = getBatType(nmal_tpe);
+
+						 any/void types allways match 
+						if (nsql_tpe != TYPE_any && nmal_tpe != TYPE_any && nsql_tpe != TYPE_void && nmal_tpe != TYPE_void)
+							all_match = nsql_tpe == nmal_tpe;
+					}
+				}
+				if (all_match)*/
+					return 1;
+			}
 		}
 	}
 	return 0;

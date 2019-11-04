@@ -44,3 +44,4 @@ NOT_IN-AND-OR-wrong-results.Bug-6775
 outer-join-varchar.Bug-6776
 msqldump-mapi-cache.Bug-6777
 rank-nan.Bug-6780
+index-insert-crash.Bug-6781
