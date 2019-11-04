@@ -275,35 +275,8 @@ MOSdecompress_frame(MOStask task)
 #define SELECT(Boolean) (Boolean)
 /* generic range select
  *
- * Return a BAT with the OID values of b for qualifying tuples.  The
- * return BAT is sorted (i.e. in the same order as the input BAT).
- *
- * If s is non-NULL, it is a list of candidates.  s must be sorted.
- *
- * tl may not be NULL, li, hi, and anti must be either 0 or 1.
- *
- * If th is NULL, hi is ignored.
- *
- * If anti is 0, qualifying tuples are those whose value is between tl
- * and th (as in x >[=] tl && x <[=] th, where equality depends on li
- * and hi--so if tl > th, nothing will be returned).  If li or hi is
- * 1, the respective boundary is inclusive, otherwise exclusive.  If
- * th is NULL it is taken to be equal to tl, turning this into an
- * equi- or point-select.  Note that for a point select to return
- * anything, li (and hi if th was not NULL) must be 1.  There is a
- * special case if tl is nil and th is NULL.  This is the only way to
- * select for nil values.
- *
- * If anti is 1, the result is the complement of what the result would
- * be if anti were 0, except that nils are filtered out.
- *
- * In brief:
- * - if tl==nil and th==NULL and anti==0, return all nils (only way to
- *   get nils);
- * - it tl==nil and th==nil, return all but nils;
- * - if tl==nil and th!=NULL, no lower bound;
- * - if th==NULL or tl==th, point (equi) select;
- * - if th==nil, no upper bound
+ * This macro is based on the combined behavior of ALGselect2 and BATselect.
+ * It should return the same output on the same input.
  *
  * A complete breakdown of the various arguments follows.  Here, v, v1
  * and v2 are values from the appropriate domain, and
