@@ -2241,6 +2241,16 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlr')"
 			" and name in ('master', 'stop', 'accept', 'replicate', 'beat') and type = %d;\n", (int) F_PROC);
 
+	/* The MAL implementation of functions json.text(string) and json.text(int) do not exist */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function json.text(string);\n"
+			"drop function json.text(int);\n");
+
+	/* The first argument to copyfrom is a PTR type */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update \"sys\".\"args\" set \"type\" = 'ptr' where"
+			" \"func_id\" = (select \"id\" from \"sys\".\"functions\" where \"name\" = 'copyfrom' and \"func\" = 'copy_from' and \"mod\" = 'sql') and \"name\" = 'arg_1';\n");
+
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
 
