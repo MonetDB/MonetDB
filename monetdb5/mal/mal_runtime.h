@@ -34,7 +34,7 @@ typedef struct QRYQUEUE{
 	time_t start;
 	int		progress;		/* percentage of MAL instructions handled */
 	int		workers;		/* Actual number of concurrent workers */
-	lng		memory;	/* Actual memory claim highwater mark */
+	int		memory;	/* Actual memory claim highwater mark */
 	lng runtime;
 } *QueryQueue;
 mal_export lng qtop;
