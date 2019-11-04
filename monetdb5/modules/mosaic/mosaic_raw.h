@@ -27,5 +27,5 @@ mal_export void MOSdecompress_raw(MOStask task);
 mal_export str MOSselect_raw( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
 mal_export str MOSthetaselect_raw( MOStask task, void *val, str oper);
 mal_export str MOSprojection_raw( MOStask task);
-mal_export str MOSjoin_raw( MOStask task);
+mal_export str MOSjoin_raw( MOStask task, bit nil_matches);
 #endif /* _MOSAIC_RAW_ */

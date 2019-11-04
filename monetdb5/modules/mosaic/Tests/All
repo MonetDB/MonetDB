@@ -35,6 +35,11 @@ mosaic_lng_1.raw
 mosaic_oid_1.raw
 mosaic_date_1.raw
 mosaic_timestamp_1.raw
+mosaic_bit_with_nills_1.raw
+mosaic_lng_with_nills_1.raw
+mosaic_oid_with_nills_1.raw
+mosaic_date_with_nills_1.raw
+mosaic_timestamp_with_nills_1.raw
 
 mosaic_bit_2.runlength
 mosaic_lng_2.runlength

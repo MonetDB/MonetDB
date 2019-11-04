@@ -1244,7 +1244,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		case MOSAIC_RAW:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_raw\n");
-			MOSjoin_raw( task);
+			MOSjoin_raw( task, *nil_matches);
 			break;
 		default:
 			assert(0);
