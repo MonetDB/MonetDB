@@ -1347,7 +1347,7 @@ str LIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, c
 str LIKEjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
 str MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t);
 int MAL_MAXCLIENTS;
-int MALadmission(lng argclaim, lng hotclaim);
+int MALadmission(Client cntxt, lng argclaim, lng hotclaim);
 str MALassertBit(void *ret, bit *val, str *msg);
 str MALassertHge(void *ret, hge *val, str *msg);
 str MALassertInt(void *ret, int *val, str *msg);
@@ -2356,8 +2356,6 @@ int mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict);
 void mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str mdbRef;
 void mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd);
-int memoryclaims;
-lng memorypool;
 str mergecandRef;
 str mergepackRef;
 str minRef;

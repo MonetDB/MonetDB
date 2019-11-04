@@ -21,10 +21,7 @@
 #define heapinfo(X,Id)	(((X) && (X)->base ) ? (X)->free : 0)
 #define hashinfo(X,Id) ((X) && (X) != (Hash *) 1 ? heapinfo(&(X)->heap, Id) : 0)
 
-#define USE_MAL_ADMISSION
-#ifdef USE_MAL_ADMISSION
-mal_export int MALadmission(lng argclaim, lng hotclaim);
-#endif
+mal_export int MALadmission(Client cntxt, lng argclaim, lng hotclaim);
 
 #define FAIRNESS_THRESHOLD (MAX_DELAYS * DELAYUNIT)
 

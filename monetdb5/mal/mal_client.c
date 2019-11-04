@@ -249,6 +249,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->memorylimit = 0;
 	c->querytimeout = 0;
 	c->sessiontimeout = 0;
+	c->workers = c->memory = 0;
 	c->itrace = 0;
 	c->errbuf = 0;
 
@@ -372,6 +373,8 @@ MCforkClient(Client father)
 		son->memorylimit = father->memorylimit;
 		son->querytimeout = father->querytimeout;
 		son->sessiontimeout = father->sessiontimeout;
+		son->workers = father->workers;
+		son->memory = father->memory;
 
 		if (son->prompt)
 			GDKfree(son->prompt);
@@ -441,6 +444,7 @@ MCfreeClient(Client c)
 	c->memorylimit = 0;
 	c->querytimeout = 0;
 	c->sessiontimeout = 0;
+	c->workers = c->memory = 0;
 	c->user = oid_nil;
 	if( c->username){
 		GDKfree(c->username);

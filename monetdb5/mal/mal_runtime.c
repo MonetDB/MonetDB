@@ -11,6 +11,7 @@
  * This little helper module is used to perform instruction based profiling.
  * The QRYqueue is only update at the start/finish of a query. 
  * It is also the place to keep track on the number of workers
+ * The current could relies on a scan rather than a hash.
  */
 
 #include "monetdb_config.h"
@@ -96,7 +97,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		QRYqueue[i].query = q? GDKstrdup(q):0;
 		QRYqueue[i].status = "running";
 		QRYqueue[i].cntxt = cntxt;
-		QRYqueue[i].workers++;
+		cntxt->workers++;
 		stk->tag = mb->tag = QRYqueue[i].tag;
 	}
 	qtop += i == qtop;
@@ -140,8 +141,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 
 	qtop = j;
 	QRYqueue[qtop].query = NULL; /* sentinel for SYSMONqueue() */
-	QRYqueue[qtop].workers--;
-	QRYqueue[qtop].memory= 0;
+	cntxt->workers--;
 	MT_lock_unset(&mal_delayLock);
 }
 
@@ -191,7 +191,6 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 		workingset[tid].mb = mb;
 		workingset[tid].stk = stk;
 		workingset[tid].pci = pci;
-		QRYqueue[qtop].workers ++;
 		MT_lock_unset(&mal_delayLock);
 	}
 	/* always collect the MAL instruction execution time */
@@ -214,7 +213,6 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 		workingset[tid].mb = 0;
 		workingset[tid].stk = 0;
 		workingset[tid].pci = 0;
-		QRYqueue[qtop].workers --;
 		MT_lock_unset(&mal_delayLock);
 	}
 
@@ -233,10 +231,11 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 		if( getInstrPtr(mb,0) == pci)
 			malProfileMode = 1;
 	}
+	/* Postpone active worker threads */
 	/* Reduce worker threads of non-admin long running transaction if needed.
  	* the punishment is equal to the duration of the last instruction */
 	if ( cntxt->user != MAL_ADMIN && ticks - mb->starttime > LONGRUNNING )
-		MALresourceFairness(cntxt, mb, stk, pci, pci->ticks);
+			MALresourceFairness(cntxt, mb, stk, pci, pci->ticks);
 }
 
 /*

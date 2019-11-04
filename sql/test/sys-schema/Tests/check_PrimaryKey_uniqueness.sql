@@ -49,7 +49,7 @@ SELECT COUNT(*) AS duplicates, obj_id, auth_id FROM sys.privileges GROUP BY obj_
 SELECT COUNT(*) AS duplicates, id FROM sys.querylog_catalog GROUP BY id HAVING COUNT(*) >1;
 SELECT COUNT(*) AS duplicates, id FROM sys.querylog_calls GROUP BY id HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, id FROM sys.querylog_history GROUP BY id HAVING COUNT(*) >1;
-SELECT COUNT(*) AS duplicates, qtag FROM sys.queue GROUP BY qtag HAVING COUNT(*) > 1;
+SELECT COUNT(*) AS duplicates, tag FROM sys.queue GROUP BY tag HAVING COUNT(*) > 1;
 
 SELECT COUNT(*) AS duplicates, name FROM sys.optimizers GROUP BY name HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, name FROM sys.environment GROUP BY name HAVING COUNT(*) > 1;

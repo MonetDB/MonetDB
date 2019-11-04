@@ -13,8 +13,8 @@
 #include "mal_private.h"
 
 /* MEMORY admission does not seem to have a major impact */
-lng memorypool = 0;      /* memory claimed by concurrent threads */
-int memoryclaims = 0;    /* number of threads active with expensive operations */
+static lng memorypool = 0;      /* memory claimed by concurrent threads */
+static int memoryclaims = 0;
 
 void
 mal_resource_reset(void)
@@ -88,53 +88,45 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 }
 
 /*
- * A consequence of multiple threads is that they may claim more
- * space than available. This may cause GDKmalloc to fail.
- * In many cases this situation will be temporary, because
- * threads will ultimately release resources.
- * Therefore, we wait for it.
- *
- * Alternatively, a front-end can set the flow administration
- * program counter to -1, which leads to a soft abort.
- * [UNFORTUNATELY this approach does not (yet) work
- * because there seem to a possibility of a deadlock
- * between incref and bbptrim. Furthermore, we have
- * to be assured that the partial executed instruction
- * does not lead to ref-count errors.]
- *
- * The worker produces a result which will potentially unblock
- * instructions. This it can find itself without the help of the scheduler
- * and without the need for a lock. (does it?, parallel workers?)
- * It could also give preference to an instruction that eats away the object
- * just produced. THis way it need not be saved on disk for a long time.
- */
-/*
- * The hotclaim indicates the amount of data recentely written.
- * as a result of an operation. The argclaim is the sum over the hotclaims
- * for all arguments.
+ * The hotclaim indicates the amount of data recentely written as a result of an operation. 
  * The argclaim provides a hint on how much we actually may need to execute
- * The hotclaim is a hint how large the result would be.
+ * The argclaim is the sum over the hotclaims for all arguments.
+ * The hotclaim is a hint on how large the result could be.
+ *
+ * The client context also keeps bounds on the memory claim/client.
+ * Surpassing this bound may be a reason to not admit the instruction to proceed.
  */
-#ifdef USE_MAL_ADMISSION
 static MT_Lock admissionLock = MT_LOCK_INITIALIZER("admissionLock");
+ATOMIC_TYPE mal_running = ATOMIC_VAR_INIT(0);
 
 /* experiments on sf-100 on small machine showed no real improvement */
+
 int
-MALadmission(lng argclaim, lng hotclaim)
+MALadmission(Client cntxt, lng argclaim, lng hotclaim)
 {
+	(void) cntxt;
 	/* optimistically set memory */
 	if (argclaim == 0)
 		return 0;
 
 	MT_lock_set(&admissionLock);
-	if (memoryclaims < 0)
+	/* Check if we are allowed a spawn another thread for this client */
+	/* It is somewhat tricky, because we may be in a recursion, each of which is counted for.
+	 * The MAL interpreter should trim the worker thread count as soon as we call a FUNCTION/PATTERN recursively
+	 */
+	if( cntxt->workerlimit && cntxt->workerlimit <= cntxt->workers){
+			PARDEBUG
+			fprintf(stderr, "#DFLOWadmit check workers %d <= %d\n", cntxt->workerlimit, cntxt->workers);
+	}
+	/* Determine if the total memory resource is exhausted */
+	if ( memoryclaims < 0)
 		memoryclaims = 0;
-	if (memorypool <= 0 && memoryclaims == 0)
+	if ( memorypool <= 0 && memoryclaims == 0)
 		memorypool = (lng)(MEMORY_THRESHOLD );
 
 	if (argclaim > 0) {
-		if (memoryclaims == 0 || memorypool > argclaim + hotclaim) {
-			memorypool -= (argclaim + hotclaim);
+		if ( memoryclaims == 0 || memorypool > argclaim + hotclaim) {
+			memorypool -= (lng) (argclaim + hotclaim);
 			memoryclaims++;
 			PARDEBUG
 			fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT "claims " LLFMT "," LLFMT "\n",
@@ -143,12 +135,13 @@ MALadmission(lng argclaim, lng hotclaim)
 			return 0;
 		}
 		PARDEBUG
-		fprintf(stderr, "#Delayed due to lack of memory " LLFMT " requested " LLFMT " memoryclaims %d\n", memorypool, argclaim + hotclaim, memoryclaims);
+		fprintf(stderr, "#Delayed due to lack of memory " LLFMT " requested " LLFMT " memoryclaims %d\n", 
+			memorypool, argclaim + hotclaim, memoryclaims);
 		MT_lock_unset(&admissionLock);
 		return -1;
 	}
 	/* release memory claimed before */
-	memorypool += -argclaim - hotclaim;
+	memorypool += (lng) (-argclaim - hotclaim);
 	memoryclaims--;
 	PARDEBUG
 	fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT " claims " LLFMT "," LLFMT "\n",
@@ -156,19 +149,17 @@ MALadmission(lng argclaim, lng hotclaim)
 	MT_lock_unset(&admissionLock);
 	return 0;
 }
-#endif
 
-/* Delay a thread if too much competition arises and memory becomes a scarce resource.
- * If in the mean time memory becomes free, or too many sleeping re-enable worker.
- * It may happen that all threads enter the wait state. So, keep one running at all time 
- * By keeping the query start time in the client record we can delay them when resource stress occurs.
+/* The Dataflow by default activates GDnr_thread workers per query.
+ * To control their spawning we would have to complicate the Dataflow scheduler.
+ * After an instruction has been choosen for execution we have to decide if the thread
+ * may continue with its processing.
+ * If there is too much contention, we should push the instruction back onto the queue.
  */
-ATOMIC_TYPE mal_running = ATOMIC_VAR_INIT(0);
 
 void
 MALresourceFairness(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng usec)
 {
-#ifdef FAIRNESS_THRESHOLD
 	size_t rss;
 	lng clk;
 	int delayed= 0;
@@ -216,9 +207,6 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng
 		clk -= DELAYUNIT;
 	}
 	(void) ATOMIC_DEC(&mal_running);
-#else
-(void) usec;
-#endif
 }
 
 // Get a hint on the parallel behavior

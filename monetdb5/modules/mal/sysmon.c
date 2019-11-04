@@ -91,8 +91,8 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (BUNappend(started, &tsn, false) != GDK_SUCCEED)
 			goto bailout;
 		if (BUNappend(progress, &QRYqueue[i].progress, false) != GDK_SUCCEED ||
-		    BUNappend(workers, &QRYqueue[i].workers, false) != GDK_SUCCEED ||
-			BUNappend(memory, &QRYqueue[i].memory, false) != GDK_SUCCEED)
+		    BUNappend(workers, &QRYqueue[i].cntxt->workers, false) != GDK_SUCCEED ||
+			BUNappend(memory, &QRYqueue[i].cntxt->memory, false) != GDK_SUCCEED)
 			goto bailout;
 	}
 	MT_lock_unset(&mal_delayLock);
