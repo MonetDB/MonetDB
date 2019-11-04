@@ -47,6 +47,7 @@ mosaic_lng_1.var
 mosaic_oid_1.var
 mosaic_date_1.var
 mosaic_timestamp_1.var
+
 mosaic_bit_1.capped
 mosaic_lng_1.capped
 mosaic_oid_1.capped
