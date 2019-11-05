@@ -14,17 +14,14 @@
 static inline size_t
 strcpy_len(char *restrict dst, const char *restrict src, size_t n)
 {
-	size_t i = 0;
-	if (dst) {
-		while (i < n) {
+	if (dst != NULL && n != 0) {
+		for (size_t i = 0; i < n; i++) {
 			if ((dst[i] = src[i]) == 0)
 				return i;
-			i++;
 		}
-		if (i > 0)
-			dst[i - 1] = 0;
+		dst[n - 1] = 0;
 	}
-	return i + strlen(src + i);
+	return strlen(src);
 }
 
 /* copy the NULL terminated list of src strings with a maximum of n
