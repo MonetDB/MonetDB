@@ -170,6 +170,12 @@ control_authorise(
 
 	pwd = mcrypt_hashPassword(algo,
 			getConfVal(_mero_props, "passphrase"), chal);
+	if (!pwd) {
+		Mfprintf(_mero_ctlout, "%s: Allocation failure during authentication\n", host);
+		mnstr_printf(fout, "!allocation failure\n");
+		mnstr_flush(fout);
+		return 0;
+	}
 	if (strcmp(pwd, passwd) != 0) {
 		free(pwd);
 		Mfprintf(_mero_ctlout, "%s: permission denied "
