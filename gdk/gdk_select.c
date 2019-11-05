@@ -1201,7 +1201,8 @@ ilog2(BUN x)
  *	v1	v2	true	false	true	x < v1 or x >= v2
  *	v1	v2	false	true	true	x <= v1 or x > v2
  *	v1	v2	true	true	true	x < v1 or x > v2
- *	v2	v1	ignored	ignored	ignored	NOTHING
+ *	v2	v1	ignored	ignored	false	NOTHING
+ *	v2	v1	ignored	ignored	true	x != nil
  */
 BAT *
 BATselect(BAT *b, BAT *s, const void *tl, const void *th,
