@@ -111,7 +111,7 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_POS */	{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
 /* EC_NUM */	{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
 /* EC_MONTH*/   { 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0 },
-/* EC_SEC*/     { 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0 },
+/* EC_SEC*/     { 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0 },
 /* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0 },
 /* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 1, 1, 0, 3, 1, 1, 0, 0, 0, 0, 0 },
 /* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 },
@@ -1665,7 +1665,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "avg", "aggr", "avg", FLT, DBL);
 
 	sql_create_aggr(sa, "avg", "aggr", "avg", MONINT, DBL);
-	sql_create_aggr(sa, "avg", "aggr", "avg", SECINT, DBL);
+	//sql_create_aggr(sa, "avg", "aggr", "avg", SECINT, DBL);
 
 	sql_create_aggr(sa, "count_no_nil", "aggr", "count_no_nil", NULL, LNG);
 	sql_create_aggr(sa, "count", "aggr", "count", NULL, LNG);

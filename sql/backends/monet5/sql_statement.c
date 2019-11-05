@@ -2796,9 +2796,13 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *sel)
 		q = pushInt(mb, q, f->digits);
 		q = pushInt(mb, q, f->scale);
 		q = pushInt(mb, q, type_has_tz(f));
-	} else if (f->type->eclass == EC_DEC)
+	} else if (f->type->eclass == EC_DEC) {
 		/* scale of the current decimal */
 		q = pushInt(mb, q, f->scale);
+	} else if (f->type->eclass == EC_SEC && t->type->eclass == EC_FLT) {
+		/* scale of the current decimal */
+		q = pushInt(mb, q, 3);
+	}
 	q = pushArgument(mb, q, v->nr);
 	if (sel && v->nrcols && f->type->eclass != EC_DEC && !EC_TEMP_FRAC(t->type->eclass) && !EC_INTERVAL(t->type->eclass))
 		q = pushArgument(mb, q, sel->nr);
