@@ -6,6 +6,8 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
+#include <stdarg.h>		/* va_list etc. */
+#include <string.h>		/* strlen */
 
 /* copy at most (n-1) bytes from src to dst and add a terminating NULL
  * byte; return length of src (i.e. can be more than what is copied) */
