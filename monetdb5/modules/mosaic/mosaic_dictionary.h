@@ -22,7 +22,7 @@ typedef struct _EstimationParameters {
 #define DictionaryClass(TPE, DICTIONARY_TYPE, GET_BASE, GET_COUNT, GET_DELTA_COUNT, GET_BITS, GET_BITS_EXTENDED, GET_CAP, GET_VALUE, EXTEND, CONDITIONAL_INSERT)\
 static inline \
 BUN _findValue_##TPE(TPE* dict, BUN dict_count, TPE val) {\
-	int m, f= 0, l = dict_count;\
+	BUN m, f= 0, l = dict_count;\
 	while( l-f > 0 ) {\
 		m = f + (l-f)/2;\
 		if ( val < dict[m]) l=m-1; else f= m;\
