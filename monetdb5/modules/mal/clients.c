@@ -242,19 +242,23 @@ CLTsetoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	if( pci->argc == 3){
-	idx = *getArgReference_int(stk,pci,1);
-	opt = *getArgReference_str(stk,pci,2);
+		idx = *getArgReference_int(stk,pci,1);
+		opt = *getArgReference_str(stk,pci,2);
 	} else {
 		idx = cntxt->idx;
 		opt = *getArgReference_str(stk,pci,1);
 	}
 
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
-		throw(MAL,"setoptimizer","Illegal session id");
+		throw(MAL,"clients.setoptimizer","Illegal session id");
 	if (mal_clients[idx].mode == FREECLIENT)
-		throw(MAL,"setoptimizer","Session not active anymore ");
+		throw(MAL,"clients.setoptimizer","Session not active anymore ");
 	if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
-		strncpy(mal_clients[idx].optimizer, opt, IDLENGTH);
+		if (strcmp(opt, str_nil) == 0)
+			throw(MAL,"clients.setoptimizer","Input string cannot be NULL");
+		if (strlen(opt) > (IDLENGTH - 1))
+			throw(MAL,"clients.setoptimizer","Input string is too large");
+		strcpy(mal_clients[idx].optimizer, opt);
 	}
 	return MAL_SUCCEED;
 }
@@ -274,9 +278,9 @@ CLTsetworkerlimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
-		throw(MAL,"setworkerlimit","Illegal session id");
+		throw(MAL,"clients.setworkerlimit","Illegal session id");
 	if (mal_clients[idx].mode == FREECLIENT)
-		throw(MAL,"setworkerlimit","Session not active anymore ");
+		throw(MAL,"clients.setworkerlimit","Session not active anymore");
 	if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
 		mal_clients[idx].workerlimit = limit; 
 	}
@@ -299,9 +303,9 @@ CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
-		throw(MAL,"setmemorylimit","Illegal session id");
+		throw(MAL,"clients.setmemorylimit","Illegal session id");
 	if (mal_clients[idx].mode == FREECLIENT)
-		throw(MAL,"setmemorylimit","Session not active anymore ");
+		throw(MAL,"clients.setmemorylimit","Session not active anymore");
 	if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
 		mal_clients[idx].memorylimit = limit; 
 	}
@@ -325,12 +329,12 @@ CLTstopSession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		idx = *getArgReference_int(stk,pci,1);
 		break;
 	default:
-		throw(MAL,"stopSession","Unexpected index type");
+		throw(MAL,"clients.stopSession","Unexpected index type");
 	}
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
-		throw(MAL,"timeout","Illegal session id");
+		throw(MAL,"clients.stopSession","Illegal session id");
 	if (mal_clients[idx].mode == FREECLIENT)
-		throw(MAL,"timeout","Session not active anymore ");
+		throw(MAL,"clients.stopSession","Session not active anymore ");
     if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
         mal_clients[idx].querytimeout = 1; /* stop client in one microsecond */
         mal_clients[idx].sessiontimeout = 1; /* stop client session */
@@ -378,7 +382,7 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			idx = *getArgReference_int(stk,pci,1);
 			break;
 		default:
-			throw(MAL,"sessionTimeout","Unexpected index type");
+			throw(MAL,"clients.queryTimeout","Unexpected index type");
 		}
 		qto=  *getArgReference_lng(stk,pci,2);
 	} else {
@@ -386,7 +390,7 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		qto=  *getArgReference_lng(stk,pci,1);
 	}
 	if( qto < 0)
-		throw(MAL,"timeout","Query time out should be >= 0");
+		throw(MAL,"clients.queryTimeout","Query time out should be >= 0");
 	mal_clients[idx].querytimeout = qto * 1000 * 1000;
     return MAL_SUCCEED;
 }
@@ -412,7 +416,7 @@ CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			idx = *getArgReference_int(stk,pci,i);
 			break;
 		default:
-			throw(MAL,"sessionTimeout","Unexpected index type");
+			throw(MAL,"clients.sessionTimeout","Unexpected index type");
 		}
 		i++;
 	} 
@@ -430,14 +434,14 @@ CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sto = *getArgReference_lng(stk,pci,i);
 		break;
 	default:
-		throw(MAL,"sessionTimeout","Unexpected index type");
+		throw(MAL,"clients.sessionTimeout","Unexpected index type");
 	}
 	if( sto < 0)
-		throw(MAL,"sessiontimeout","Query time out should be >= 0");
+		throw(MAL,"clients.sessionTimeout","Query time out should be >= 0");
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
-		throw(MAL,"sessiontimeout","Illegal session id");
+		throw(MAL,"clients.sessionTimeout","Illegal session id");
 	if (mal_clients[idx].mode == FREECLIENT)
-		throw(MAL,"sessiontimeout","Session not active anymore ");
+		throw(MAL,"clients.sessionTimeout","Session not active anymore ");
 	mal_clients[idx].sessiontimeout = sto * 1000 * 1000;
     return MAL_SUCCEED;
 }
@@ -452,7 +456,8 @@ CLTgetProfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *wlim=  getArgReference_int(stk,pci,3);
 	lng *mlim=  getArgReference_lng(stk,pci,4);
 	(void) mb;
-	*opt = strdup(cntxt->optimizer);
+	if (!(*opt = GDKstrdup(cntxt->optimizer)))
+		throw(MAL, "clients.getProfile", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*qto = cntxt->querytimeout;
 	*sto = cntxt->sessiontimeout;
 	*wlim = cntxt->workerlimit;
