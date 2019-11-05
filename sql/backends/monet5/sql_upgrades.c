@@ -2264,7 +2264,7 @@ static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema)
 {
 	sql_table *t;
-	size_t bufsize = 4096, pos = 0;
+	size_t bufsize = 8192, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 
@@ -2325,13 +2325,32 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"create view sys.sessions as select * from sys.sessions();\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
+			"drop procedure sys.settimeout(bigint);\n"
 			"drop procedure sys.settimeout(bigint,bigint);\n"
-			"create procedure sys.querytimeout(\"sessionid\" int, \"query\" bigint)\n"
-			"external name clients.querytimeout;\n"
-			"create procedure sys.sessiontimeout(\"sessionid\" int, \"query\" bigint)\n"
-			"external name clients.sessiontimeout;\n"
+			"drop procedure sys.setsession(bigint);\n"
+
+			"create procedure sys.setoptimizer(\"optimizer\" string)\n"
+			" external name clients.setoptimizer;\n"
+			"create procedure sys.setquerytimeout(\"query\" bigint)\n"
+			" external name clients.setquerytimeout;\n"
+			"create procedure sys.setsessiontimeout(\"timeout\" bigint)\n"
+			" external name clients.setsessiontimeout;\n"
+			"create procedure sys.setworkerlimit(\"limit\" int)\n"
+			" external name clients.setworkerlimit;\n"
+			"create procedure sys.setmemorylimit(\"limit\" bigint)\n"
+			" external name clients.setmemorylimit;\n"
+			"create procedure sys.setoptimizer(\"sessionid\" int, \"optimizer\" string)\n"
+			" external name clients.setoptimizer;\n"
+			"create procedure sys.setquerytimeout(\"sessionid\" int, \"query\" bigint)\n"
+			" external name clients.setquerytimeout;\n"
+			"create procedure sys.setsessiontimeout(\"sessionid\" int, \"query\" bigint)\n"
+			" external name clients.setsessiontimeout;\n"
+			"create procedure sys.setworkerlimit(\"sessionid\" int, \"limit\" int)\n"
+			" external name clients.setworkerlimit;\n"
+			"create procedure sys.setmemorylimit(\"sessionid\" int, \"limit\" bigint)\n"
+			" external name clients.setmemorylimit;\n"
 			"create procedure sys.stopsession(\"sessionid\" int)\n"
-			"external name clients.stopsession;\n");
+			" external name clients.stopsession;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
@@ -2341,7 +2360,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			" and name = 'sessions';\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('querytimeout', 'sessiontimeout', 'stopsession') and type = %d;\n", (int) F_PROC);
+			" and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = %d;\n", (int) F_PROC);
 
 	/* 26_sysmon */
 	t = mvc_bind_table(sql, sys, "queue");

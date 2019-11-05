@@ -240,9 +240,12 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSf sys."sessions"
 \dSf sys."sessiontimeout"
 \dSf sys."setmasklen"
+\dSf sys."setmemorylimit"
+\dSf sys."setoptimizer"
 \dSf sys."setprinttimeout"
-\dSf sys."setsession"
-\dSf sys."settimeout"
+\dSf sys."setquerytimeout"
+\dSf sys."setsessiontimeout"
+\dSf sys."setworkerlimit"
 \dSf sys."shpattach"
 \dSf sys."shpload"
 \dSf sys."shrink"
@@ -698,9 +701,12 @@ SYSTEM FUNCTION         sys.second
 SYSTEM FUNCTION         sys.sessions
 SYSTEM PROCEDURE        sys.sessiontimeout
 SYSTEM FUNCTION         sys.setmasklen
+SYSTEM PROCEDURE        sys.setmemorylimit
+SYSTEM PROCEDURE        sys.setoptimizer
 SYSTEM PROCEDURE        sys.setprinttimeout
-SYSTEM PROCEDURE        sys.setsession
-SYSTEM PROCEDURE        sys.settimeout
+SYSTEM PROCEDURE        sys.setquerytimeout
+SYSTEM PROCEDURE        sys.setsessiontimeout
+SYSTEM PROCEDURE        sys.setworkerlimit
 SYSTEM PROCEDURE        sys.shpattach
 SYSTEM PROCEDURE        sys.shpload
 SYSTEM PROCEDURE        sys.shrink

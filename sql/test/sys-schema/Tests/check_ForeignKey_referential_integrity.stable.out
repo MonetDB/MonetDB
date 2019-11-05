@@ -369,10 +369,10 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 % bigint,	int,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
 % 1,	1,	0,	26,	26,	1,	0,	3,	0 # length
 #SELECT * FROM sys.sessions WHERE "user" NOT IN (SELECT name FROM sys.users);
-% .sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions # table_name
-% sessionid,	user,	login,	sessiontimeout,	lastcommand,	querytimeout,	threads # name
-% int,	clob,	timestamp,	bigint,	timestamp,	bigint,	int # type
-% 1,	0,	26,	1,	26,	1,	1 # length
+% .sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions # table_name
+% sessionid,	user,	login,	idle,	optimizer,	sessiontimeout,	querytimeout,	workerlimit,	memorylimit # name
+% int,	clob,	timestamp,	timestamp,	clob,	bigint,	bigint,	int,	bigint # type
+% 1,	0,	26,	26,	0,	1,	1,	1,	1 # length
 #SELECT * FROM sys.statistics WHERE column_id NOT IN (SELECT id FROM sys._columns UNION ALL SELECT id FROM tmp._columns);
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
