@@ -423,7 +423,7 @@ getCPULoad(char cpuload[BUFSIZ]){
 				break;
 
 			while( *s && isspace((unsigned char)*s)) s++;
-			i= sscanf(s,LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT,  &user, &nice, &system, &idle, &iowait);
+			i= sscanf(s,LLSCN" "LLSCN" "LLSCN" "LLSCN" "LLSCN,  &user, &nice, &system, &idle, &iowait);
 			if ( i != 5 )
 				goto skip;
 			newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);

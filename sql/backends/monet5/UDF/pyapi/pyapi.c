@@ -1403,7 +1403,7 @@ char *PyError_CreateException(char *error_text, char *pycall)
 				// no traceback info, this means we are dealing with a parsing
 				// error
 				// line information should be in the error message
-				sscanf(py_error_string, "%*[^0-9]" LLFMT, &line_number);
+				sscanf(py_error_string, "%*[^0-9]" LLSCN, &line_number);
 				if (line_number < 0)
 					goto finally;
 			} else {
