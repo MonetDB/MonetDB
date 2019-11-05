@@ -256,7 +256,7 @@ _finalizeDictionary(BAT* b, GlobalVarInfo* info, ulng* pos_dict, ulng* length_di
 
 	*pos_dict = 0;
 	*length_dict = (ulng) GetCount(info);
-	*bits_dict = calculateBits(*length_dict);
+	*bits_dict = calculateBits((BUN) *length_dict);
 
 	BBPreclaim(info->dict);
 

@@ -355,7 +355,7 @@ _finalizeDictionary(BAT* b, GlobalCappedInfo* info, ulng* pos_dict, ulng* length
 	vmh->dirty = true;
 
 	*length_dict = (ulng) GetCount(info);
-	*bits_dict = calculateBits(*length_dict);
+	*bits_dict = calculateBits((BUN) *length_dict);
 
 	BBPreclaim(info->dict);
 	BBPreclaim(info->temp_dict);
