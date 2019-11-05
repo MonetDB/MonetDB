@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "mutils.h"
+#include "mstring.h"
 
 #if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
 #include <execinfo.h>

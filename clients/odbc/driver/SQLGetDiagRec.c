@@ -110,7 +110,7 @@ MNDBGetDiagRec(SQLSMALLINT HandleType,
 	 * required by the ODBC spec and used to
 	 * determine where the error originated
 	 */
-	msgLen = strconcat_len((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, msg, NULL);
+	msgLen = (SQLSMALLINT) strconcat_len((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, msg, NULL);
 	if (MessageText == NULL || msgLen >= BufferLength) {
 		/* it didn't fit */
 		retCode = SQL_SUCCESS_WITH_INFO;

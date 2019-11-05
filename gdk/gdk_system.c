@@ -29,6 +29,7 @@
  * @- Mthreads Routine implementations
  */
 #include "monetdb_config.h"
+#include "mstring.h"
 #include "gdk_system.h"
 #include "gdk_system_private.h"
 
