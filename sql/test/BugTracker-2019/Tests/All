@@ -45,3 +45,4 @@ outer-join-varchar.Bug-6776
 msqldump-mapi-cache.Bug-6777
 rank-nan.Bug-6780
 index-insert-crash.Bug-6781
+avg-changes-value-scale.Bug-6783
