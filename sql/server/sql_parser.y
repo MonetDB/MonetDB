@@ -2003,8 +2003,7 @@ table_constraint_type:
  ;
 
 domain_constraint_type:
-/*    CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }*/
-    CHECK '(' search_condition ')' { $$ = NULL; }
+    CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
 
 ident_commalist:
@@ -2067,12 +2066,10 @@ external_function_name:
 	ident '.' ident { $$ = append_string(append_string(L(), $1), $3); }
  ;
 
-
 function_body:
 	X_BODY
 |	string
 ;
-
 
 func_def:
     create_or_replace FUNCTION qname

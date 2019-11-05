@@ -2476,6 +2476,51 @@ rel_is_join_on_pkey( sql_rel *rel )
 	return 0;
 }
 
+/* if all arguments to a distinct aggregate are unique, remove 'distinct' property */
+static sql_rel *
+rel_distinct_aggregate_on_unique_values(int *changes, mvc *sql, sql_rel *rel)
+{
+	sql_rel *l = (sql_rel*) rel->l;
+
+	(void) sql;
+	if (rel->op == op_groupby && (!l || is_base(l->op))) {
+		for (node *n = rel->exps->h; n; n = n->next) {
+			sql_exp *exp = (sql_exp*) n->data;
+
+			if (exp->type == e_aggr && need_distinct(exp)) {
+				bool all_unique = true;
+
+				for (node *m = ((list*)exp->l)->h; m && all_unique; m = m->next) {
+					sql_exp *arg = (sql_exp*) m->data;
+
+					if (arg->card == CARD_ATOM) /* constants are always unique */
+						continue;
+					else if (arg->type == e_column) {
+						fcmp cmp = (fcmp)&kc_column_cmp;
+						sql_column *c = exp_find_column(rel, arg, -2);
+
+						if (c) {
+							/* column is the only primary key column of its table */
+							if (find_prop(arg->p, PROP_HASHCOL) && c->t->pkey && list_find(c->t->pkey->k.columns, c, cmp) != NULL && list_length(c->t->pkey->k.columns) == 1)
+								continue;
+							else if (c->unique == 1) /* column has unique constraint */
+								continue;
+							else
+								all_unique = false;
+						} else
+							all_unique = false;
+					} else
+						all_unique = false;
+				}
+				if (all_unique) {
+					set_nodistinct(exp);
+					*changes = 1;
+				}
+			}
+		}
+	}
+	return rel;
+}
 
 static sql_rel *
 rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
@@ -2503,14 +2548,17 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 		sql_rel *j = l;
 		sql_rel *p = j->l;
 		sql_exp *je = l->exps->h->data, *le = je->l;
-		int pside = (rel_find_exp(p, le) != NULL)?1:0;
 
-	       	p = (pside)?j->l:j->r;
-		rel->l = rel_dup(p);
-		rel_destroy(j);
-		*changes = 1;
-		set_nodistinct(rel);
-		return rel;
+		if (exps_find_exp(rel->exps, le)) { /* rel must have the same primary key on the projection list */
+			int pside = (rel_find_exp(p, le) != NULL)?1:0;
+
+			p = (pside)?j->l:j->r;
+			rel->l = rel_dup(p);
+			rel_destroy(j);
+			*changes = 1;
+			set_nodistinct(rel);
+			return rel;
+		}
 	}
 	/* rewrite distinct project [ gbe ] ( select ( groupby [ gbe ] [ gbe, e ] )[ e op val ]) 
 	 * into project [ gbe ] ( select ( group etc ) */
@@ -8330,13 +8378,13 @@ rel_dicttable(mvc *sql, sql_column *c, const char *tname, int de)
 
 	ie = exp_indexcol(sql, e, tname, c->base.name, de, 1);
         nr = ++sql->label;
-	nme = sa_strdup(sql->sa, number2name(name, 16, nr));
+	nme = sa_strdup(sql->sa, number2name(name, sizeof(name), nr));
 	exp_setname(sql->sa, ie, nme, nme);
 	append(rel->exps, ie);
 
 	ie = exp_stringscol(sql, e, tname, c->base.name);
         nr = ++sql->label;
-	nme = sa_strdup(sql->sa, number2name(name, 16, nr));
+	nme = sa_strdup(sql->sa, number2name(name, sizeof(name), nr));
 	exp_setname(sql->sa, ie, nme, nme);
 	append(rel->exps, ie);
 	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
@@ -8369,7 +8417,7 @@ rel_add_dicts(int *changes, mvc *sql, sql_rel *rel)
 					char name[16], *nme;
 					sql_rel *vt = rel_dicttable(sql, c, rname, de);
 
-					nme = sa_strdup(sql->sa, number2name(name, 16, nr));
+					nme = sa_strdup(sql->sa, number2name(name, sizeof(name), nr));
 					if (!vcols)
 						vcols = sa_list(sql->sa);
 					append(vcols, vt);
@@ -9002,6 +9050,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 			rel = rel_case_fixup(&changes, sql, rel, 1);
 			if (value_based_opt)
 				rel = rewrite(sql, rel, &rel_simplify_math, &changes);
+			rel = rewrite(sql, rel, &rel_distinct_aggregate_on_unique_values, &changes);
 			rel = rewrite(sql, rel, &rel_distinct_project2groupby, &changes);
 		}
 	}

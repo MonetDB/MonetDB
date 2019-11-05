@@ -25,12 +25,37 @@
 			}					\
 		} else {					\
 			for (; bp < end; bp++, rb++) {		\
-				if (*bp != prev) {		\
+				if (*bp == prev) { \
+					*rb = FALSE;		\
+				} else {		\
+					*rb = TRUE;	\
+					prev = *bp;	\
+				} \
+			}					\
+		}						\
+	} while (0)
+
+/* We use NaN for floating point null values, which always output false on equality tests */
+#define ANALYTICAL_DIFF_FLOAT_IMP(TPE)				\
+	do {							\
+		TPE *bp = (TPE*)Tloc(b, 0);			\
+		TPE prev = *bp, *end = bp + cnt;		\
+		if (np) {					\
+			for (; bp < end; bp++, rb++, np++) {	\
+				*rb = *np;			\
+				if (*bp != prev && (!is_##TPE##_nil(*bp) || !is_##TPE##_nil(prev))) { \
 					*rb = TRUE;		\
 					prev = *bp;		\
-				} else {			\
-					*rb = FALSE;		\
 				}				\
+			}					\
+		} else {					\
+			for (; bp < end; bp++, rb++) {		\
+				if (*bp == prev || (is_##TPE##_nil(*bp) && is_##TPE##_nil(prev))) { \
+					*rb = FALSE; \
+				} else {		\
+					*rb = TRUE;	\
+					prev = *bp;	\
+				} \
 			}					\
 		}						\
 	} while (0)
@@ -62,12 +87,20 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		ANALYTICAL_DIFF_IMP(hge);
 		break;
 #endif
-	case TYPE_flt:
-		ANALYTICAL_DIFF_IMP(flt);
-		break;
-	case TYPE_dbl:
-		ANALYTICAL_DIFF_IMP(dbl);
-		break;
+	case TYPE_flt: {
+		if (b->tnonil) {
+			ANALYTICAL_DIFF_IMP(flt);
+		} else { /* Because of NaN values, use this path */
+			ANALYTICAL_DIFF_FLOAT_IMP(flt);
+		}
+	} break;
+	case TYPE_dbl: {
+		if (b->tnonil) {
+			ANALYTICAL_DIFF_IMP(dbl);
+		} else { /* Because of NaN values, use this path */
+			ANALYTICAL_DIFF_FLOAT_IMP(dbl);
+		}
+	} break;
 	default:{
 		BATiter it = bat_iterator(b);
 		ptr v = BUNtail(it, 0), next;
@@ -372,14 +405,14 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		}							\
 	} while (0)
 
-#define ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, TPE2)			\
+#define ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, TPE2, TPE3)			\
 	do {								\
 		TPE2 *restrict lp = (TPE2*)Tloc(l, 0);			\
 		for (; i < cnt; i++, rb++) {				\
 			TPE2 lnth = lp[i];				\
 			bs = bp + start[i];				\
 			be = bp + end[i];				\
-			if (is_##TPE2##_nil(lnth) || be <= bs || (lng)(lnth - 1) > (end[i] - start[i])) \
+			if (is_##TPE2##_nil(lnth) || be <= bs || (TPE3)(lnth - 1) > (TPE3)(end[i] - start[i])) \
 				curval = TPE1##_nil;			\
 			else						\
 				curval = *(bs + lnth - 1);		\
@@ -389,6 +422,15 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		}							\
 	} while (0)
 
+#ifdef HAVE_HGE
+#define ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1)			\
+	case TYPE_hge:							\
+		ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, hge, hge); \
+		break;
+#else
+#define ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1)
+#endif
+
 #define ANALYTICAL_NTHVALUE_CALC_FIXED(TPE1)				\
 	do {								\
 		TPE1 *bp, *bs, *be, curval, *restrict rb;		\
@@ -396,28 +438,29 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		rb = (TPE1*)Tloc(r, 0);					\
 		switch (tp2) {						\
 		case TYPE_bte:						\
-			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, bte); \
+			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, bte, lng); \
 			break;						\
 		case TYPE_sht:						\
-			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, sht); \
+			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, sht, lng); \
 			break;						\
 		case TYPE_int:						\
-			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, int); \
+			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, int, lng); \
 			break;						\
 		case TYPE_lng:						\
-			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, lng); \
+			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, lng, lng); \
 			break;						\
+		ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1) \
 		default:						\
 			goto nosupport;					\
 		}							\
 	} while (0)
 
-#define ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(TPE2)			\
+#define ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(TPE1, TPE2)			\
 	do {								\
-		TPE2 *restrict lp = (TPE2*)Tloc(l, 0);			\
+		TPE1 *restrict lp = (TPE1*)Tloc(l, 0);			\
 		for (; i < cnt; i++) {					\
-			TPE2 lnth = lp[i];				\
-			if (is_##TPE2##_nil(lnth) || end[i] <= start[i] || (lng)(lnth - 1) > (end[i] - start[i])) \
+			TPE1 lnth = lp[i];				\
+			if (is_##TPE1##_nil(lnth) || end[i] <= start[i] || (TPE2)(lnth - 1) > (TPE2)(end[i] - start[i])) \
 				curval = (void *) nil;			\
 			else						\
 				curval = BUNtail(bpi, (BUN) (start[i] + lnth - 1)); \
@@ -459,6 +502,12 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 		case TYPE_lng:{
 			nth = *(lng *) bound;
 		} break;
+#ifdef HAVE_HGE
+		case TYPE_hge:{
+			hge nval = *(hge *) bound;
+			nth = is_hge_nil(nval) ? lng_nil : (nval > (hge) GDK_lng_max) ? GDK_lng_max : (lng) nval;
+		} break;
+#endif
 		default:
 			goto nosupport;
 		}
@@ -540,17 +589,22 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 			BATiter bpi = bat_iterator(b);
 			switch (tp2) {
 			case TYPE_bte:
-				ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(bte);
+				ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(bte, lng);
 				break;
 			case TYPE_sht:
-				ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(sht);
+				ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(sht, lng);
 				break;
 			case TYPE_int:
-				ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(int);
+				ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(int, lng);
 				break;
 			case TYPE_lng:
-				ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(lng);
+				ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(lng, lng);
 				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(hge, hge);
+				break;
+#endif
 			default:
 				goto nosupport;
 			}

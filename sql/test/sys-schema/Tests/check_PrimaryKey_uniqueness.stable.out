@@ -164,7 +164,7 @@ stdout of test 'check_PrimaryKey_uniqueness` in directory 'sql/test/sys-schema` 
 % bigint,	int,	int # type
 % 1,	1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.ids GROUP BY id HAVING COUNT(*) > 1;
-% .L231,	.ids # table_name
+% .L272,	.ids # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
@@ -174,7 +174,7 @@ stdout of test 'check_PrimaryKey_uniqueness` in directory 'sql/test/sys-schema` 
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, name FROM sys.users GROUP BY name HAVING COUNT(*) > 1;
-% .L4,	.users # table_name
+% .L6,	.users # table_name
 % duplicates,	name # name
 % bigint,	varchar # type
 % 1,	0 # length
@@ -233,11 +233,11 @@ stdout of test 'check_PrimaryKey_uniqueness` in directory 'sql/test/sys-schema` 
 % duplicates,	name # name
 % bigint,	varchar # type
 % 1,	0 # length
-#SELECT COUNT(*) AS duplicates, "user", login, active FROM sys.sessions GROUP BY "user", login, active HAVING COUNT(*) > 1;  -- is this really always unique?
-% .L6,	.sessions,	.sessions,	.sessions # table_name
-% duplicates,	user,	login,	active # name
-% bigint,	clob,	timestamp,	boolean # type
-% 1,	0,	26,	5 # length
+#SELECT COUNT(*) AS duplicates, "user", login FROM sys.sessions GROUP BY "user", login HAVING COUNT(*) > 1;  -- is this really always unique?
+% .L6,	.sessions,	.sessions # table_name
+% duplicates,	user,	login # name
+% bigint,	clob,	timestamp # type
+% 1,	0,	26 # length
 #SELECT COUNT(*) AS duplicates, column_id FROM sys.statistics GROUP BY column_id HAVING COUNT(*) > 1;
 % sys.L2,	sys.statistics # table_name
 % duplicates,	column_id # name
@@ -249,12 +249,12 @@ stdout of test 'check_PrimaryKey_uniqueness` in directory 'sql/test/sys-schema` 
 % bigint,	bigint # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, schema FROM sys.schemastorage GROUP BY schema HAVING COUNT(*) > 1;
-% .L44,	.schemastorage # table_name
+% .L46,	.schemastorage # table_name
 % duplicates,	schema # name
 % bigint,	varchar # type
 % 1,	0 # length
 #SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storage GROUP BY schema, table, column HAVING COUNT(*) > 1;
-% .L25,	.storage,	.storage,	.storage # table_name
+% .L27,	.storage,	.storage,	.storage # table_name
 % duplicates,	schema,	table,	column # name
 % bigint,	varchar,	varchar,	varchar # type
 % 1,	0,	0,	0 # length
@@ -269,7 +269,7 @@ stdout of test 'check_PrimaryKey_uniqueness` in directory 'sql/test/sys-schema` 
 % bigint,	varchar,	varchar,	varchar # type
 % 1,	0,	0,	0 # length
 #SELECT COUNT(*) AS duplicates, schema, table FROM sys.tablestorage GROUP BY schema, table HAVING COUNT(*) > 1;
-% .L46,	.tablestorage,	.tablestorage # table_name
+% .L50,	.tablestorage,	.tablestorage # table_name
 % duplicates,	schema,	table # name
 % bigint,	varchar,	varchar # type
 % 1,	0,	0 # length

@@ -13,7 +13,7 @@ where (true)
        is not NULL);
 
 select
-      (select active from sys.sessions) as c3,
+      (select cast("sessionid" + 1 as boolean) from sys.sessions) as c3,
        subq_0.c0 as c9
 from
   (select sample_0.proj4text as c0, 7 as c1

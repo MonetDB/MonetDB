@@ -2446,7 +2446,7 @@ tar_write(stream *outfile, const char *data, size_t size)
 
 	size_t written = mnstr_write(outfile, data, 1, bulk);
 	if (written != bulk) {
-		GDKerror("Wrote only %ld bytes instead of first %ld", written, bulk);
+		GDKerror("Wrote only %zu bytes instead of first %zu", written, bulk);
 		return GDK_FAIL;
 	}
 
@@ -2455,7 +2455,7 @@ tar_write(stream *outfile, const char *data, size_t size)
 		memcpy(buf, data + bulk, tail);
 		written = mnstr_write(outfile, buf, 1, TAR_BLOCK_SIZE);
 		if (written != TAR_BLOCK_SIZE) {
-			GDKerror("Wrote only %ld tail bytes instead of %d", written, TAR_BLOCK_SIZE);
+			GDKerror("Wrote only %zu tail bytes instead of %d", written, TAR_BLOCK_SIZE);
 			return GDK_FAIL;
 		}
 	}
@@ -2486,7 +2486,7 @@ tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *content
 
 	file_size = getFileSize(contents);
 	if (file_size < size) {
-		GDKerror("Have to copy %ld bytes but only %ld exist in %s", size, file_size, path);
+		GDKerror("Have to copy %zd bytes but only %zd exist in %s", size, file_size, path);
 		goto end;
 	}
 
@@ -2508,7 +2508,7 @@ tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *content
 		ssize_t chunk = (to_read <= bufsize) ? to_read : bufsize;
 		ssize_t nbytes = mnstr_read(contents, buf, 1, chunk);
 		if (nbytes != chunk) {
-			GDKerror("Read only %ld/%ld bytes of component %s: %s", nbytes, chunk, path, mnstr_error(contents));
+			GDKerror("Read only %zd/%zd bytes of component %s: %s", nbytes, chunk, path, mnstr_error(contents));
 			goto end;
 		}
 		ret = tar_write(tarfile, buf, chunk);

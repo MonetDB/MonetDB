@@ -965,7 +965,7 @@ snapshot_wal(stream *plan, const char *db_dir)
 	snapshot_immediate_copy_file(plan, log_file, log_file + strlen(db_dir) + 1);
 
 	snprintf(log_file, sizeof(log_file), "%s%s." LLFMT, bat_logger->dir, LOGFILE, bat_logger->id);
-	long extent = getFileSize(log);
+	uint64_t extent = getFileSize(log);
 
 	snapshot_lazy_copy_file(plan, log_file, extent);
 

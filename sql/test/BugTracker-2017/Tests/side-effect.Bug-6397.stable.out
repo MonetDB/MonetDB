@@ -42,13 +42,13 @@ stdout of test 'side-effect.Bug-6397` in directory 'sql/test/BugTracker-2017` it
 % clob # type
 % 161 # length
 function user.s4_0():void;
-    X_5:void := querylog.define("explain select count(*) from my_generate_series(1,5) as t1,\nmy_generate_series(1,100) as t2;":str, "default_pipe":str, 33:int);
-barrier X_99:bit := language.dataflow();
-    X_31:bat[:str] := bat.new(nil:str);
-    X_37:bat[:int] := bat.new(nil:int);
-    X_35:bat[:int] := bat.new(nil:int);
-    X_34:bat[:str] := bat.new(nil:str);
-    X_33:bat[:str] := bat.new(nil:str);
+    X_5:void := querylog.define("explain select count(*) from my_generate_series(1,5) as t1,\nmy_generate_series(1,100) as t2;":str, "default_pipe":str, 28:int);
+barrier X_92:bit := language.dataflow();
+    X_31:bat[:str] := bat.pack(".L6":str);
+    X_32:bat[:str] := bat.pack("L6":str);
+    X_33:bat[:str] := bat.pack("bigint":str);
+    X_34:bat[:int] := bat.pack(64:int);
+    X_35:bat[:int] := bat.pack(0:int);
     X_13:bat[:int] := user.my_generate_series(1:int, 5:int);
     X_14:lng := aggr.count(X_13:bat[:int]);
     X_21:bat[:lng] := sql.single(X_14:lng);
@@ -59,15 +59,10 @@ barrier X_99:bit := language.dataflow();
     X_25:bat[:lng] := algebra.projection(X_23:bat[:oid], X_21:bat[:lng]);
     X_26:bat[:lng] := algebra.projection(X_24:bat[:oid], X_22:bat[:lng]);
     X_27:bat[:lng] := batcalc.*(X_25:bat[:lng], X_26:bat[:lng]);
-    X_38:bat[:str] := bat.append(X_31:bat[:str], ".L6":str);
-    X_40:bat[:str] := bat.append(X_33:bat[:str], "L6":str);
-    X_42:bat[:str] := bat.append(X_34:bat[:str], "bigint":str);
-    X_44:bat[:int] := bat.append(X_35:bat[:int], 64:int);
-    X_46:bat[:int] := bat.append(X_37:bat[:int], 0:int);
     language.pass(X_21:bat[:lng]);
     language.pass(X_22:bat[:lng]);
-exit X_99:bit;
-    sql.resultSet(X_38:bat[:str], X_40:bat[:str], X_42:bat[:str], X_44:bat[:int], X_46:bat[:int], X_27:bat[:lng]);
+exit X_92:bit;
+    sql.resultSet(X_31:bat[:str], X_32:bat[:str], X_33:bat[:str], X_34:bat[:int], X_35:bat[:int], X_27:bat[:lng]);
 end user.s4_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 1 time=32 usec 

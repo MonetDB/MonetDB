@@ -61,21 +61,32 @@ typedef struct CLIENT {
 	MALfcn  phase[SCENARIO_PROPERTIES], oldphase[SCENARIO_PROPERTIES];
 	char    itrace;    /* trace execution using interactive mdb */
 						/* if set to 'S' it will put the process to sleep */
+	bit		sqlprofiler;		/* control off-line sql performance monitoring */
 	/*
-	 * For program debugging and performance trace we need information on the timer and memory
-	 * usage patterns.
+	 * Each session comes with resource limitations and predefined settings.
 	 */
+	char	optimizer[IDLENGTH];/* The optimizer pipe preferred for this session */
+	int 	workerlimit;		/* maximum number of workthreads processing a query */
+	lng		memorylimit;		/* Memory claim highwater mark, 0 = no limit */
+	lng 	querytimeout;		/* query abort after x usec, 0 = no limit*/
+	lng	    sessiontimeout;		/* session abort after x usec, 0 = no limit */
 
-	time_t      login;  
-	time_t      lastcmd;	/* set when input is received */
-	lng 		session;	/* usec since start of server */
-	lng 	    qtimeout;	/* query abort after x usec*/
-	lng	        stimeout;	/* session abort after x usec */
+	time_t  login;  	/* Time when this session started */
+	lng 	session;	/* usec since start of server */
+	time_t  idle;		/* Time when the session became idle */  
 
-	bit			malprofiler;	/* control MAL performance monitoring */
-	bit			sqlprofiler;	/* control off-line sql performance monitoring */
-	BAT *profticks;			/* The representation for the SQL TRACE */
+	/*
+	 * For program debugging and performance trace we keep the actual resource claims.
+	 */
+	time_t  lastcmd;		/* set when query is received */
+	int		workers;		/* Actual number of concurrent workers */
+	lng		memoryclaim;	/* Actual memory claim highwater mark */
+
+	/* The user can request a TRACE SQL statement, calling for collecting the events locally */
+	BAT *profticks;				
 	BAT *profstmt;
+
+	ATOMIC_TYPE	lastprint;	/* when we last printed the query, to be depricated */
 	/*
 	 * Communication channels for the interconnect are stored here.
 	 * It is perfectly legal to have a client without input stream.

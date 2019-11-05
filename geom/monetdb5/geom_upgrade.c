@@ -130,9 +130,9 @@ geom_catalog_upgrade(void *lg, int olddb)
 			scale = 0;
 		}
 
-		if (BUNappend(cnt, type, true) != GDK_SUCCEED ||
-		    BUNappend(cnd, &digits, true) != GDK_SUCCEED ||
-		    BUNappend(cns, &scale, true) != GDK_SUCCEED) {
+		if (BUNappend(cnt, type, false) != GDK_SUCCEED ||
+		    BUNappend(cnd, &digits, false) != GDK_SUCCEED ||
+		    BUNappend(cns, &scale, false) != GDK_SUCCEED) {
 			BBPreclaim(cnt);
 			BBPreclaim(cnd);
 			BBPreclaim(cns);

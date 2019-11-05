@@ -54,15 +54,6 @@ bin_tomograph = {
 		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
-# disabled: it's not really a tool for users, more to debug mapi
-# problems, or measure performance
-#bin_mnc = {
-#	SOURCES = mnc.c
-#	LIBS = ../../common/stream/libstream \
-#		../mapilib/libmapi \
-#		$(curl_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(SOCKET_LIBS)
-#}
-
 man_MANS = mclient.1 msqldump.1
 
 EXTRA_DIST = $(man_MANS)

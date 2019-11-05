@@ -57,6 +57,27 @@ newStmt(MalBlkPtr mb, const char *module, const char *name)
 }
 
 InstrPtr
+newStmtArgs(MalBlkPtr mb, const char *module, const char *name, int args)
+{
+	InstrPtr q;
+	str mName = putName(module), nName = putName(name);
+
+	if(mName == NULL || nName == NULL) {
+		return NULL;
+	}
+	q = newInstructionArgs(mb, mName, nName, args);
+	if ( q == NULL)
+		return NULL;
+	setDestVar(q, newTmpVariable(mb, TYPE_any));
+	if (getDestVar(q) < 0 || mb->errors != MAL_SUCCEED) {
+		freeInstruction(q);
+		return NULL;
+	}
+	pushInstruction(mb, q);
+	return q;
+}
+
+InstrPtr
 newReturnStmt(MalBlkPtr mb)
 {
 	InstrPtr q = newInstruction(mb, NULL, NULL);

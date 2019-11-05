@@ -1123,6 +1123,9 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		bn->batCount = (BUN) count;
 		bn->batInserted = bn->batCount;
 		bn->batCapacity = (BUN) capacity;
+		char name[16];
+		snprintf(name, sizeof(name), "BATlock%d", bn->batCacheid); /* fits */
+		MT_lock_init(&bn->batIdxLock, name);
 
 		if (base > (uint64_t) GDK_oid_max) {
 			BATdestroy(bn);

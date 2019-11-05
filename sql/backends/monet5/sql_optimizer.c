@@ -183,7 +183,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 			pipe = "default_pipe";
 	} else
 	*/
-		pipe = pipe? pipe: "default_pipe";
+	pipe = pipe? pipe: "default_pipe";
 	msg = addOptimizerPipe(c, mb, pipe);
 	if (msg){
 		return msg;

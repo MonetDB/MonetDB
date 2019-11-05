@@ -19,15 +19,16 @@
 str
 SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *tag, *user, *query, *estimate, *started, *progress, *activity, *oids;
+	BAT *tag, *sessionid, *user, *query, *estimate, *started, *progress, *activity, *oids;
 	bat *t = getArgReference_bat(stk,pci,0);
-	bat *u = getArgReference_bat(stk,pci,1);
-	bat *s = getArgReference_bat(stk,pci,2);
-	bat *e = getArgReference_bat(stk,pci,3);
-	bat *p = getArgReference_bat(stk,pci,4);
-	bat *a = getArgReference_bat(stk,pci,5);
-	bat *o = getArgReference_bat(stk,pci,6);
-	bat *q = getArgReference_bat(stk,pci,7);
+	bat *d = getArgReference_bat(stk,pci,1);
+	bat *u = getArgReference_bat(stk,pci,2);
+	bat *s = getArgReference_bat(stk,pci,3);
+	bat *e = getArgReference_bat(stk,pci,4);
+	bat *p = getArgReference_bat(stk,pci,5);
+	bat *a = getArgReference_bat(stk,pci,6);
+	bat *o = getArgReference_bat(stk,pci,7);
+	bat *q = getArgReference_bat(stk,pci,8);
 	time_t now;
 	lng i;
 	int prog;
@@ -38,6 +39,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	tag = COLnew(0, TYPE_lng, 256, TRANSIENT);
+	sessionid = COLnew(0, TYPE_int, 256, TRANSIENT);
 	user = COLnew(0, TYPE_str, 256, TRANSIENT);
 	started = COLnew(0, TYPE_timestamp, 256, TRANSIENT);
 	estimate = COLnew(0, TYPE_timestamp, 256, TRANSIENT);
@@ -45,8 +47,9 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	activity = COLnew(0, TYPE_str, 256, TRANSIENT);
 	oids = COLnew(0, TYPE_oid, 256, TRANSIENT);
 	query = COLnew(0, TYPE_str, 256, TRANSIENT);
-	if ( tag == NULL || user == NULL || query == NULL || started == NULL || estimate == NULL || progress == NULL || activity == NULL || oids == NULL){
+	if ( tag == NULL || sessionid == NULL || user == NULL || query == NULL || started == NULL || estimate == NULL || progress == NULL || activity == NULL || oids == NULL){
 		BBPreclaim(tag);
+		BBPreclaim(sessionid);
 		BBPreclaim(user);
 		BBPreclaim(query);
 		BBPreclaim(activity);
@@ -71,6 +74,11 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = AUTHgetUsername(&usr, QRYqueue[i].cntxt);
 		if (msg != MAL_SUCCEED)
 			goto bailout;
+
+		if (BUNappend(sessionid, &(QRYqueue[i].cntxt->idx), false) != GDK_SUCCEED) {
+			GDKfree(usr);
+			goto bailout;
+		}
 
 		if (BUNappend(user, usr, false) != GDK_SUCCEED) {
 			GDKfree(usr);
@@ -108,6 +116,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	MT_lock_unset(&mal_delayLock);
 	BBPkeepref( *t =tag->batCacheid);
+	BBPkeepref( *d =sessionid->batCacheid);
 	BBPkeepref( *u =user->batCacheid);
 	BBPkeepref( *s =started->batCacheid);
 	BBPkeepref( *e = estimate->batCacheid);
@@ -120,6 +129,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout:
 	MT_lock_unset(&mal_delayLock);
 	BBPunfix(tag->batCacheid);
+	BBPunfix(sessionid->batCacheid);
 	BBPunfix(user->batCacheid);
 	BBPunfix(query->batCacheid);
 	BBPunfix(activity->batCacheid);
