@@ -86,13 +86,11 @@ CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-static char*
-CLTtimeConvert(time_t l, char *s, size_t len)
+static void
+CLTtimeConvert(time_t l, char *s)
 {
-	char *converted = NULL;
 	struct tm localt;
 
-	(void) len;
 #ifdef HAVE_LOCALTIME_R
 	(void) localtime_r(&l, &localt);
 #else
@@ -103,22 +101,19 @@ CLTtimeConvert(time_t l, char *s, size_t len)
 #endif
 
 #ifdef HAVE_ASCTIME_R3
-	converted = asctime_r(&localt, s, 26);
+	asctime_r(&localt, s, 26);
 #else
 #ifdef HAVE_ASCTIME_R
-	converted = asctime_r(&localt, s);
+	asctime_r(&localt, s);
 #else
 	/* race condition: return value could be
 	 * overwritten in parallel thread before copy
 	 * complete, however on Windows, asctime is
 	 * thread-safe */
-	converted = asctime(&localt);
-	if (!converted || strlen(converted) > (len - 1))
-		return NULL;
-	strcpy(s, converted);
+	strcpy(s, asctime(&localt)); /* asctime produces string of length 25 */
 #endif
 #endif
-	return converted;
+	s[24] = 0;		/* remove newline */
 }
 
 str
@@ -156,8 +151,7 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNappend(bn, buf, false) != GDK_SUCCEED)
 		goto bailout;
 
-	if (!CLTtimeConvert(cntxt->login, buf, sizeof(buf)))
-		goto bailout;
+	CLTtimeConvert(cntxt->login, buf);
 	if (BUNappend(b, "login", false) != GDK_SUCCEED ||
 		BUNappend(bn, buf, false) != GDK_SUCCEED)
 		goto bailout;
@@ -186,8 +180,7 @@ CLTLogin(bat *nme, bat *ret)
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user)) {
-			if (!CLTtimeConvert(c->login, s, sizeof(s)))
-				goto bailout;
+			CLTtimeConvert(c->login, s);
 			if (BUNappend(b, s, false) != GDK_SUCCEED ||
 				BUNappend(u, &c->user, false) != GDK_SUCCEED)
 				goto bailout;
