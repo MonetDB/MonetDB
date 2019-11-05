@@ -261,7 +261,7 @@ CLTsetoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
 		if (strcmp(opt, str_nil) == 0)
 			throw(MAL,"clients.setoptimizer","Input string cannot be NULL");
-		if (strlen(opt) > (IDLENGTH - 1))
+		if (strlen(opt) > (sizeof(mal_clients[idx].optimizer) - 1))
 			throw(MAL,"clients.setoptimizer","Input string is too large");
 		strcpy(mal_clients[idx].optimizer, opt);
 	}
