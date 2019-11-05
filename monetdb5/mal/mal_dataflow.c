@@ -380,7 +380,7 @@ DFLOWworker(void *T)
 			continue;
 		}
 
-		if (MALrunningThreads() > 2 && MALadmission(cntxt, fe->argclaim, fe->hotclaim)) {
+		if (MALrunningThreads() > 2 && MALadmission(flow->cntxt, flow->stk, fe->argclaim, fe->hotclaim)) {
 			// never block on deblockdataflow()
 			p= getInstrPtr(flow->mb,fe->pc);
 			if( p->fcn != (MALfcn) deblockdataflow){
@@ -392,11 +392,13 @@ DFLOWworker(void *T)
 				continue;
 			}
 		}
+		(void) ATOMIC_INC(&flow->stk->workers);
 		error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
+		(void) ATOMIC_DEC(&flow->stk->workers);
 		PARDEBUG fprintf(stderr, "#executed pc= %d wrk= %d claim= " LLFMT "," LLFMT "," LLFMT " %s\n",
 						 fe->pc, id, fe->argclaim, fe->hotclaim, fe->maxclaim, error ? error : "");
 		/* release the memory claim */
-		MALadmission(cntxt, -fe->argclaim, -fe->hotclaim);
+		MALadmission(flow->cntxt, flow->stk, -fe->argclaim, -fe->hotclaim);
 		/* update the numa information. keep the thread-id producing the value */
 		p= getInstrPtr(flow->mb,fe->pc);
 		for( i = 0; i < p->argc; i++)

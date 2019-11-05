@@ -264,6 +264,8 @@ prepareMALstack(MalBlkPtr mb, int size)
 	//stk->stksize = size;
 	stk->stktop = mb->vtop;
 	stk->blk = mb;
+	stk->workers = ATOMIC_VAR_INIT(0);
+	stk->memory = ATOMIC_VAR_INIT(0);;
 
 	initStack(0, res);
 	if(!res) {

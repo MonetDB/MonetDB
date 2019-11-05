@@ -102,21 +102,28 @@ ATOMIC_TYPE mal_running = ATOMIC_VAR_INIT(0);
 /* experiments on sf-100 on small machine showed no real improvement */
 
 int
-MALadmission(Client cntxt, lng argclaim, lng hotclaim)
+MALadmission(Client cntxt, MalStkPtr stk, lng argclaim, lng hotclaim)
 {
-	(void) cntxt;
+	int workers;
+
+	(void) stk;
 	/* optimistically set memory */
 	if (argclaim == 0)
 		return 0;
 
 	MT_lock_set(&admissionLock);
 	/* Check if we are allowed a spawn another thread for this client */
-	/* It is somewhat tricky, because we may be in a recursion, each of which is counted for.
-	 * The MAL interpreter should trim the worker thread count as soon as we call a FUNCTION/PATTERN recursively
+	/* It is somewhat tricky, because we may be in a dataflow recursion, each of which is counted for.
+	 * A way out is to attach the thread count to the MAL stacks instead.
 	 */
-	if( cntxt->workerlimit && cntxt->workerlimit <= cntxt->workers){
+	workers = (int) ATOMIC_GET(&stk->workers);
+	if( cntxt->workerlimit){
+		if(cntxt->workerlimit <= workers){
 			PARDEBUG
-			fprintf(stderr, "#DFLOWadmit check workers %d <= %d\n", cntxt->workerlimit, cntxt->workers);
+			fprintf(stderr, "#DFLOWadmit check workers, not allowed %d <= %d\n", cntxt->workerlimit, workers);
+			MT_lock_unset(&admissionLock);
+			return 0;
+		}
 	}
 	/* Determine if the total memory resource is exhausted */
 	if ( memoryclaims < 0)

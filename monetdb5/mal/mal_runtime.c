@@ -97,7 +97,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		QRYqueue[i].query = q? GDKstrdup(q):0;
 		QRYqueue[i].status = "running";
 		QRYqueue[i].cntxt = cntxt;
-		cntxt->workers++;
 		stk->tag = mb->tag = QRYqueue[i].tag;
 	}
 	qtop += i == qtop;
@@ -141,7 +140,6 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 
 	qtop = j;
 	QRYqueue[qtop].query = NULL; /* sentinel for SYSMONqueue() */
-	cntxt->workers--;
 	MT_lock_unset(&mal_delayLock);
 }
 

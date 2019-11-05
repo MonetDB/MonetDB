@@ -30,6 +30,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *w = getArgReference_bat(stk,pci,7);
 	bat *m = getArgReference_bat(stk,pci,8);
 	lng i, qtag;
+	int wrk, mem;
 	str usr;
 	timestamp tsn;
 	str msg = MAL_SUCCEED;
@@ -90,9 +91,12 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if (BUNappend(started, &tsn, false) != GDK_SUCCEED)
 			goto bailout;
+		
+		wrk = (int) ATOMIC_GET(&QRYqueue[i].stk->workers);
+		mem = (int) ATOMIC_GET(&QRYqueue[i].stk->memory);
 		if (BUNappend(progress, &QRYqueue[i].progress, false) != GDK_SUCCEED ||
-		    BUNappend(workers, &QRYqueue[i].cntxt->workers, false) != GDK_SUCCEED ||
-			BUNappend(memory, &QRYqueue[i].cntxt->memory, false) != GDK_SUCCEED)
+		    BUNappend(workers, &wrk, false) != GDK_SUCCEED ||
+			BUNappend(memory, &mem, false) != GDK_SUCCEED)
 			goto bailout;
 	}
 	MT_lock_unset(&mal_delayLock);
