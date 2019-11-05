@@ -336,7 +336,7 @@ copyMalBlk(MalBlkPtr old)
 		GDKfree(mb);
 		return NULL;
 	}
-	strncpy(mb->binding,  old->binding, IDLENGTH);
+	strcpy_len(mb->binding,  old->binding, sizeof(mb->binding));
 	mb->errors = old->errors? GDKstrdup(old->errors):0;
 	mb->tag = old->tag;
 	mb->runtime = old->runtime;
@@ -794,8 +794,7 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 	if( name == 0 || len == 0)
 		(void) snprintf(getVarName(mb,n), IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
 	else{
-		(void) strncpy( getVarName(mb,n), name,len);
-		getVarName(mb,n)[len]=0;
+		(void) strcpy_len( getVarName(mb,n), name, len + 1);
 	}
 
 	setRowCnt(mb,n,0);

@@ -615,9 +615,8 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, 
 
 	if (!external) {
 		size_t sz = strLen(src);
-		atommem(sz + 1);
-		strncpy(*dst, src, sz + 1);
-		return (ssize_t) sz;
+		atommem(sz);
+		return (ssize_t) strcpy_len(*dst, src, sz);
 	}
 
 	if (GDK_STRNIL(src)) {
@@ -774,9 +773,8 @@ strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bo
 
 	if (!external) {
 		sz = strLen(src);
-		atommem(sz + 1);
-		strncpy(*dst, src, sz + 1);
-		return (ssize_t) sz;
+		atommem(sz);
+		return (ssize_t) strcpy_len(*dst, src, sz);
 	}
 	if (GDK_STRNIL(src)) {
 		atommem(4);

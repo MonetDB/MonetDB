@@ -178,7 +178,8 @@ BATmaterialize(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 
-	stpconcat(b->theap.filename, BBP_physical(b->batCacheid), ".tail", NULL);
+	strconcat_len(b->theap.filename, sizeof(b->theap.filename),
+		      BBP_physical(b->batCacheid), ".tail", NULL);
 	if (HEAPalloc(&b->theap, cnt, sizeof(oid)) != GDK_SUCCEED) {
 		b->theap = tail;
 		return GDK_FAIL;
@@ -292,7 +293,8 @@ VIEWreset(BAT *b)
 		assert(tp || tvp || !b->ttype);
 
 		tail.farmid = BBPselectfarm(b->batRole, b->ttype, offheap);
-		stpconcat(tail.filename, nme, ".tail", NULL);
+		strconcat_len(tail.filename, sizeof(tail.filename),
+			      nme, ".tail", NULL);
 		if (b->ttype && HEAPalloc(&tail, cnt, Tsize(b)) != GDK_SUCCEED)
 			goto bailout;
 		if (b->tvheap) {
@@ -300,7 +302,8 @@ VIEWreset(BAT *b)
 			if (th == NULL)
 				goto bailout;
 			th->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
-			stpconcat(th->filename, nme, ".tail", NULL);
+			strconcat_len(th->filename, sizeof(th->filename),
+				      nme, ".tail", NULL);
 			if (ATOMheap(b->ttype, th, cnt) != GDK_SUCCEED)
 				goto bailout;
 		}

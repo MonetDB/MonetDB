@@ -6,9 +6,10 @@
 
 DEFS = @DEFS@
 
-INCLUDES = $(ODBC_INCS)
+INCLUDES = $(ODBC_INCS) ../../../common/utils
 
 lib_MonetODBCs = {
 	MODULE
+	LIBS = ../../../common/utils/libmutils
 	SOURCES = drvcfg.c drvcfg.h
 }

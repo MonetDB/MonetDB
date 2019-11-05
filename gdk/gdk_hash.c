@@ -185,7 +185,9 @@ BATcheckhash(BAT *b)
 			if ((h = GDKzalloc(sizeof(*h))) != NULL &&
 			    (h->heap.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0) {
 				const char *nme = BBP_physical(b->batCacheid);
-				stpconcat(h->heap.filename, nme, ".thash", NULL);
+				strconcat_len(h->heap.filename,
+					      sizeof(h->heap.filename),
+					      nme, ".thash", NULL);
 
 				/* check whether a persisted hash can be found */
 				if ((fd = GDKfdlocate(h->heap.farmid, nme, "rb+", "thash")) >= 0) {
@@ -383,7 +385,8 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		return NULL;
 	}
 	h->heap.dirty = true;
-	stpconcat(h->heap.filename, nme, ".", ext, NULL);
+	strconcat_len(h->heap.filename, sizeof(h->heap.filename),
+		      nme, ".", ext, NULL);
 
 	/* determine hash mask size */
 	cnt1 = 0;

@@ -6,6 +6,7 @@
 
 INCLUDES = \
 	../../mapilib \
+	../../../common/utils \
 	$(ODBC_INCS)
 
 DEFS = @DEFS@
@@ -106,7 +107,7 @@ lib_MonetODBC = {
 	SQLTransact.c \
 	driver.rc \
 	ODBC.syms
-	LIBS = ../../mapilib/libmapi ../../../common/stream/libstream $(LTLIBICONV) $(ODBCINST_LIBS) $(SOCKET_LIBS) $(openssl_LIBS)
+	LIBS = ../../mapilib/libmapi ../../../common/stream/libstream ../../../common/utils/libmutils $(LTLIBICONV) $(ODBCINST_LIBS) $(SOCKET_LIBS) $(openssl_LIBS)
 }
 
 EXTRA_DIST = Copyright

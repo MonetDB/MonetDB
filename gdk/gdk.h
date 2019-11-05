@@ -334,6 +334,7 @@
 #include "gdk_system.h"
 #include "gdk_posix.h"
 #include "stream.h"
+#include "mstring.h"
 
 #undef MIN
 #undef MAX

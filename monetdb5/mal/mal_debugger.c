@@ -657,7 +657,7 @@ retryRead:
 		c = strchr(b, '\n');
 		if (c) {
 			*c = 0;
-			strncpy(oldcmd, b, 1023);
+			strcpy_len(oldcmd, b, sizeof(oldcmd));
 			cntxt->fdin->pos += (c - b) + 1;
 		} else
 			cntxt->fdin->pos = cntxt->fdin->len;

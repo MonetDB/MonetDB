@@ -399,7 +399,10 @@ BATproject(BAT *l, BAT *r)
 				goto bailout;
 			bn->tvheap->parentid = bn->batCacheid;
 			bn->tvheap->farmid = BBPselectfarm(bn->batRole, TYPE_str, varheap);
-			stpconcat(bn->tvheap->filename, BBP_physical(bn->batCacheid), ".theap", NULL);
+			strconcat_len(bn->tvheap->filename,
+				      sizeof(bn->tvheap->filename),
+				      BBP_physical(bn->batCacheid), ".theap",
+				      NULL);
 			if (HEAPcopy(bn->tvheap, r->tvheap) != GDK_SUCCEED)
 				goto bailout;
 		}
