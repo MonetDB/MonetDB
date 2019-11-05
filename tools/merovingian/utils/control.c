@@ -303,6 +303,14 @@ char* control_send(
 					return(strdup(sbuf));
 				}
 
+				if (!phash) {
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
+							"allocation failure while establishing connection");
+					close_stream(fdout);
+					close_stream(fdin);
+					return(strdup(sbuf));
+				}
+
 				/* now hash the password hash with the provided
 				 * challenge */
 				for (; *algs != NULL; algs++) {

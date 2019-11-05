@@ -318,6 +318,9 @@ CLTsetPrintTimeout(void *ret, int *secs)
 str CLTmd5sum(str *ret, str *pw) {
 #ifdef HAVE_MD5_UPDATE
 	char *mret = mcrypt_MD5Sum(*pw, strlen(*pw));
+
+	if (!mret)
+		throw(MAL, "clients.md5sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*ret = GDKstrdup(mret);
 	free(mret);
 	if(*ret == NULL)
@@ -333,6 +336,9 @@ str CLTmd5sum(str *ret, str *pw) {
 str CLTsha1sum(str *ret, str *pw) {
 #ifdef HAVE_SHA1_UPDATE
 	char *mret = mcrypt_SHA1Sum(*pw, strlen(*pw));
+
+	if (!mret)
+		throw(MAL, "clients.sha1sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*ret = GDKstrdup(mret);
 	free(mret);
 	if(*ret == NULL)
@@ -348,6 +354,9 @@ str CLTsha1sum(str *ret, str *pw) {
 str CLTripemd160sum(str *ret, str *pw) {
 #ifdef HAVE_RIPEMD160_UPDATE
 	char *mret = mcrypt_RIPEMD160Sum(*pw, strlen(*pw));
+
+	if (!mret)
+		throw(MAL, "clients.ripemd160sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*ret = GDKstrdup(mret);
 	free(mret);
 	if(*ret == NULL)
@@ -387,6 +396,9 @@ str CLTsha2sum(str *ret, str *pw, int *bits) {
 			throw(ILLARG, "clients.sha2sum", "wrong number of bits "
 					"for SHA2 sum: %d", *bits);
 	}
+
+	if (!mret)
+		throw(MAL, "clients.sha2sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*ret = GDKstrdup(mret);
 	free(mret);
 	if(*ret == NULL)
@@ -478,7 +490,8 @@ str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 
 	(void)mb;
 
-	pwd = mcrypt_SHA1Sum(*pw, strlen(*pw));
+	if (!(pwd = mcrypt_SHA1Sum(*pw, strlen(*pw))))
+		throw(MAL, "clients.checkPermission", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	msg = AUTHcheckCredentials(&id, cntxt, *usr, pwd, ch, algo);
 	free(pwd);
 	return msg;
