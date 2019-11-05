@@ -138,6 +138,14 @@ tsa:= algebra.thetaselect(a,1100:oid, "!=");
 tsc:= mosaic.thetaselect (c,1100:oid, "!=");
 io.print(sa, sc, tsa, tsc);
 
+sa:= algebra.select(a,1005:oid, 991:oid,true,true,false);
+sc:= mosaic.select (c,1005:oid, 991:oid,true,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,1005:oid, 991:oid,true,true,true);
+sc:= mosaic.select (c,1005:oid, 991:oid,true,true,true);
+io.print(sa, sc);
+
 sa:= algebra.select(a,991:oid, 1005:oid,true,true,false);
 sc:= mosaic.select (c,991:oid, 1005:oid,true,true,false);
 io.print(sa, sc);

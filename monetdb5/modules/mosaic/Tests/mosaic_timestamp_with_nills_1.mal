@@ -202,6 +202,16 @@ eq2  := batcalc.==(tsa, tsc);
 eq3  := batcalc.==(sc, tsc);
 io.print(sa, sc, tsa, tsc, eq1, eq2, eq3);
 
+sa:= algebra.select(a,"2014-08-14 12:10:05":timestamp, "2014-08-14 12:09:51":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:10:05":timestamp, "2014-08-14 12:09:51":timestamp,true,true,false);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,"2014-08-14 12:10:05":timestamp, "2014-08-14 12:09:51":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:10:05":timestamp, "2014-08-14 12:09:51":timestamp,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
 sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
 sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
 eq  := batcalc.==(sa,  sc);

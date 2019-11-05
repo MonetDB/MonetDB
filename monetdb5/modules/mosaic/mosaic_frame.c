@@ -289,7 +289,8 @@ MOSdecompress_frame(MOStask task)
  *	nil	nil	A*		B*		true	NOTHING *it must hold that A && B == false.
  *	v	v	A*		B*		true	x != nil *it must hold that A && B == false.
  *	v	v	A*		B*		false	NOTHING *it must hold that A && B == false.
- *	v2	v1	ignored	ignored	ignored	NOTHING
+ *	v2	v1	ignored	ignored	false	NOTHING
+ *	v2	v1	ignored	ignored	true	x != nil
  *	nil	v	ignored	false	false	x < v
  *	nil	v	ignored	true	false	x <= v
  *	nil	v	ignored	false	true	x >= v
@@ -307,7 +308,6 @@ MOSdecompress_frame(MOStask task)
  *	v1	v2	false	false	true	x <= v1 or x >= v2
  *	v1	v2	true	false	true	x < v1 or x >= v2
  *	v1	v2	false	true	true	x <= v1 or x > v2
- *	v1	v2
  */
 #define select_frame_general(RESULT, BASE, BITS, HSEQBASE, CNT, MIN, MAX, LOW, HIGH, LI, HI, NIL_DELTA, HAS_NIL, ANTI, TPE, DELTA_TPE)\
 do {\
@@ -397,10 +397,6 @@ do {\
 		bool li2 = (LI);\
 		bool hi2 = (HI);\
 		assert(!is_nil(TPE, (LOW)) && !is_nil(TPE, (HIGH)));\
- /*	v	v	A*		B*		true	x != HAS_NIL *it must hold that A && B == false.
- *	v	v	A*		B*		false	NOTHING *it must hold that A && B == false.
- *	v2	v1	ignored	ignored	ignored	NOTHING*/\
-\
 		if (LOW == HIGH && !(LI && HI) && !(ANTI)) {\
 			/*Empty result set.*/\
 		}\
@@ -413,8 +409,17 @@ do {\
 			}\
 			else for(i=0; i < (CNT); i++) {*(RESULT)++ = (oid) (i + (HSEQBASE));}\
 		}\
-		else if (LOW > HIGH && !(LI && HI) && (ANTI)) {\
+		else if (LOW > HIGH && !(LI && HI) && !(ANTI)) {\
 			/*Empty result set.*/\
+		}\
+		else if (LOW > HIGH && !(LI && HI) && (ANTI)) {\
+			if(HAS_NIL) {\
+				for(i=0; i < (CNT); i++){\
+					DELTA_TPE delta = getBitVector(BASE, i, BITS);\
+					if (delta != (NIL_DELTA)) {*(RESULT)++ = (oid) (i + (HSEQBASE));}\
+				}\
+			}\
+			else for(i=0; i < (CNT); i++) {*(RESULT)++ = (oid) (i + (HSEQBASE));}\
 		}\
 		else if ((HIGH) < (MIN)) {\
 			if ((ANTI) /* AKA ANTI_SELECT */) for(i=0; i < (CNT); i++) {\

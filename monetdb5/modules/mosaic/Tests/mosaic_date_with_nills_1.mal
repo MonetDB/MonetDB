@@ -204,6 +204,16 @@ eq2  := batcalc.==(tsa, tsc);
 eq3  := batcalc.==(sc, tsc);
 io.print(sa, sc, tsa, tsc, eq1, eq2, eq3);
 
+sa:= algebra.select(a,"2014-10-05":date, "2014-09-21":date,true,true,false);
+sc:= mosaic.select (c,"2014-10-05":date, "2014-09-21":date,true,true,false);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,"2014-10-05":date, "2014-09-21":date,true,true,true);
+sc:= mosaic.select (c,"2014-10-05":date, "2014-09-21":date,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
 sa:= algebra.select(a,"2014-09-21":date, "2014-10-05":date,true,true,false);
 sc:= mosaic.select (c,"2014-09-21":date, "2014-10-05":date,true,true,false);
 eq  := batcalc.==(sa,  sc);

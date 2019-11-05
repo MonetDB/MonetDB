@@ -224,7 +224,8 @@ MOSdecompress_raw(MOStask task)
  *	nil	nil	A*		B*		true	NOTHING *it must hold that A && B == false.
  *	v	v	A*		B*		true	x != nil *it must hold that A && B == false.
  *	v	v	A*		B*		false	NOTHING *it must hold that A && B == false.
- *	v2	v1	ignored	ignored	ignored	NOTHING
+ *	v2	v1	ignored	ignored	false	NOTHING
+ *	v2	v1	ignored	ignored	true	x != nil
  *	nil	v	ignored	false	false	x < v
  *	nil	v	ignored	true	false	x <= v
  *	nil	v	ignored	false	true	x >= v
@@ -242,7 +243,6 @@ MOSdecompress_raw(MOStask task)
  *	v1	v2	false	false	true	x <= v1 or x >= v2
  *	v1	v2	true	false	true	x < v1 or x >= v2
  *	v1	v2	false	true	true	x <= v1 or x > v2
- *	v1	v2
  */
 #define select_raw_general(LOW, HIGH, LI, HI, HAS_NIL, ANTI, TPE) {\
 	TPE *val= (TPE*) (((char*) task->blk) + MosaicBlkSize);\
@@ -290,10 +290,20 @@ MOSdecompress_raw(MOStask task)
 		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
 	}\
 	else if	( !is_nil(TPE, (LOW)) &&  !is_nil(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && (ANTI)) {\
-			/*Empty result set.*/\
+		/*Empty result set.*/\
 	}\
-	else if	( !is_nil(TPE, (LOW)) &&  !is_nil(TPE, (HIGH)) && (LOW) > (HIGH)) {\
-			/*Empty result set.*/\
+	else if	( !is_nil(TPE, (LOW)) &&  !is_nil(TPE, (HIGH)) && (LOW) > (HIGH) && !(ANTI)) {\
+		/*Empty result set.*/\
+	}\
+	else if	( !is_nil(TPE, (LOW)) &&  !is_nil(TPE, (HIGH)) && (LOW) > (HIGH) && (ANTI)) {\
+		if(HAS_NIL) {\
+			for( ; first < last; first++, val++){\
+				MOSskipit();\
+				if (!is_nil(TPE, *(TPE*)val))\
+					*o++ = (oid) first;\
+			}\
+		}\
+		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
 	}\
 	else {\
 		/*normal cases.*/\

@@ -169,6 +169,16 @@ tsa:= algebra.thetaselect(a,"2014-08-14 12:11:00":timestamp, "!=");
 tsc:= mosaic.thetaselect (c,"2014-08-14 12:11:00":timestamp, "!=");
 io.print(sa, sc, tsa, tsc);
 
+sa:= algebra.select(a,"2014-08-14 12:10:05":timestamp, "2014-08-14 12:09:51":timestamp,true,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:10:05":timestamp, "2014-08-14 12:09:51":timestamp,true,true,false);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,"2014-08-14 12:10:05":timestamp, "2014-08-14 12:09:51":timestamp,true,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:10:05":timestamp, "2014-08-14 12:09:51":timestamp,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
 sa:= algebra.select(a,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
 sc:= mosaic.select (c,"2014-08-14 12:09:51":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
 io.print(sa, sc);

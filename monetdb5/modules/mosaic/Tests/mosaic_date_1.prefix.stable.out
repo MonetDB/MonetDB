@@ -188,6 +188,8 @@ MOSselect_prefix
 MOSselect_prefix
 MOSselect_prefix
 MOSselect_prefix
+MOSselect_prefix
+MOSselect_prefix
 MOSjoin_prefix
 MOSthetaselect_prefix
 MOSprojection_prefix
@@ -573,6 +575,44 @@ MOSprojection_prefix
 [ 27@0,	27@0,	27@0,	27@0,	27@0,	true,	true,	true	]
 [ 28@0,	28@0,	28@0,	28@0,	28@0,	true,	true,	true	]
 [ 29@0,	29@0,	29@0,	29@0,	29@0,	true,	true,	true	]
+#--------------------------#
+# t	t	t	t  # name
+# void	void	oid	bit  # type
+#--------------------------#
+#--------------------------#
+# t	t	t	t  # name
+# void	void	oid	bit  # type
+#--------------------------#
+[ 0@0,	0@0,	0@0,	true	]
+[ 1@0,	1@0,	1@0,	true	]
+[ 2@0,	2@0,	2@0,	true	]
+[ 3@0,	3@0,	3@0,	true	]
+[ 4@0,	4@0,	4@0,	true	]
+[ 5@0,	5@0,	5@0,	true	]
+[ 6@0,	6@0,	6@0,	true	]
+[ 7@0,	7@0,	7@0,	true	]
+[ 8@0,	8@0,	8@0,	true	]
+[ 9@0,	9@0,	9@0,	true	]
+[ 10@0,	10@0,	10@0,	true	]
+[ 11@0,	11@0,	11@0,	true	]
+[ 12@0,	12@0,	12@0,	true	]
+[ 13@0,	13@0,	13@0,	true	]
+[ 14@0,	14@0,	14@0,	true	]
+[ 15@0,	15@0,	15@0,	true	]
+[ 16@0,	16@0,	16@0,	true	]
+[ 17@0,	17@0,	17@0,	true	]
+[ 18@0,	18@0,	18@0,	true	]
+[ 19@0,	19@0,	19@0,	true	]
+[ 20@0,	20@0,	20@0,	true	]
+[ 21@0,	21@0,	21@0,	true	]
+[ 22@0,	22@0,	22@0,	true	]
+[ 23@0,	23@0,	23@0,	true	]
+[ 24@0,	24@0,	24@0,	true	]
+[ 25@0,	25@0,	25@0,	true	]
+[ 26@0,	26@0,	26@0,	true	]
+[ 27@0,	27@0,	27@0,	true	]
+[ 28@0,	28@0,	28@0,	true	]
+[ 29@0,	29@0,	29@0,	true	]
 #--------------------------#
 # t	t	t	t  # name
 # void	oid	oid	bit  # type

@@ -180,6 +180,16 @@ tsa:= algebra.thetaselect(a,"2014-11-01":date, "!=");
 tsc:= mosaic.thetaselect (c,"2014-11-01":date, "!=");
 io.print(sa, sc, tsa, tsc);
 
+sa:= algebra.select(a,"2014-10-05":date, "2014-09-21":date,true,true,false);
+sc:= mosaic.select (c,"2014-10-05":date, "2014-09-21":date,true,true,false);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,"2014-10-05":date, "2014-09-21":date,true,true,true);
+sc:= mosaic.select (c,"2014-10-05":date, "2014-09-21":date,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
 sa:= algebra.select(a,"2014-09-22":date, "2014-10-06":date,true,true,false);
 sc:= mosaic.select (c,"2014-09-22":date, "2014-10-06":date,true,true,false);
 io.print(sa, sc);
