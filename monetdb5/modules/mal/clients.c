@@ -86,42 +86,39 @@ CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-static char *
-local_itoa(int i)
+static char*
+CLTtimeConvert(time_t l, char *s, size_t len)
 {
-	static char buf[32];
+	char *converted = NULL;
+	struct tm localt;
 
-	sprintf(buf, "%d", i);
-	return buf;
-}
-
-static void
-CLTtimeConvert(time_t l, char *s){
-			struct tm localt;
-
+	(void) len;
 #ifdef HAVE_LOCALTIME_R
-			(void) localtime_r(&l, &localt);
+	(void) localtime_r(&l, &localt);
 #else
-			/* race condition: return value could be
-			 * overwritten in parallel thread before
-			 * assignment complete */
-			localt = *localtime(&l);
+	/* race condition: return value could be
+	 * overwritten in parallel thread before
+	 * assignment complete */
+	localt = *localtime(&l);
 #endif
 
 #ifdef HAVE_ASCTIME_R3
-			asctime_r(&localt, s, 26);
+	converted = asctime_r(&localt, s, 26);
 #else
 #ifdef HAVE_ASCTIME_R
-			asctime_r(&localt, s);
+	converted = asctime_r(&localt, s);
 #else
-			/* race condition: return value could be
-			 * overwritten in parallel thread before copy
-			 * complete, however on Windows, asctime is
-			 * thread-safe */
-			strncpy(s, asctime(&localt), 26);
+	/* race condition: return value could be
+	 * overwritten in parallel thread before copy
+	 * complete, however on Windows, asctime is
+	 * thread-safe */
+	converted = asctime(&localt);
+	if (!converted || strlen(converted) > (len - 1))
+		return NULL;
+	strcpy(s, converted);
 #endif
 #endif
-			s[24] = 0;
+	return converted;
 }
 
 str
@@ -131,7 +128,7 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *ret2=  getArgReference_bat(stk,pci,0);
 	BAT *b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	BAT *bn = COLnew(0, TYPE_str, 12, TRANSIENT);
-	char s[26];
+	char buf[32]; /* 32 bytes are enough */
 
 	(void) mb;
 	if (b == 0 || bn == 0){
@@ -140,29 +137,36 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "clients.info", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
+	(void) sprintf(buf, ""LLFMT"", (lng) cntxt->user);
 	if (BUNappend(b, "user", false) != GDK_SUCCEED ||
-		BUNappend(bn, local_itoa((int)cntxt->user), false) != GDK_SUCCEED ||
-
-		BUNappend(b, "scenario", false) != GDK_SUCCEED ||
-		BUNappend(bn, cntxt->scenario, false) != GDK_SUCCEED ||
-
-		BUNappend(b, "listing", false) != GDK_SUCCEED ||
-		BUNappend(bn, local_itoa(cntxt->listing), false) != GDK_SUCCEED ||
-
-		BUNappend(b, "debug", false) != GDK_SUCCEED ||
-		BUNappend(bn, local_itoa(cntxt->debug), false) != GDK_SUCCEED)
+		BUNappend(bn, buf, false) != GDK_SUCCEED)
 		goto bailout;
 
-	CLTtimeConvert(cntxt->login, s);
+	if (BUNappend(b, "scenario", false) != GDK_SUCCEED ||
+		BUNappend(bn, cntxt->scenario, false) != GDK_SUCCEED)
+		goto bailout;
+
+	(void) sprintf(buf, "%d", cntxt->listing);
+	if (BUNappend(b, "listing", false) != GDK_SUCCEED ||
+		BUNappend(bn, buf, false) != GDK_SUCCEED)
+		goto bailout;
+
+	(void) sprintf(buf, "%d", cntxt->debug);
+	if (BUNappend(b, "debug", false) != GDK_SUCCEED ||
+		BUNappend(bn, buf, false) != GDK_SUCCEED)
+		goto bailout;
+
+	if (!CLTtimeConvert(cntxt->login, buf, sizeof(buf)))
+		goto bailout;
 	if (BUNappend(b, "login", false) != GDK_SUCCEED ||
-		BUNappend(bn, s, false) != GDK_SUCCEED)
+		BUNappend(bn, buf, false) != GDK_SUCCEED)
 		goto bailout;
 	if (pseudo(ret,b,"client","info"))
 		goto bailout;
 	BBPkeepref(*ret2= bn->batCacheid);
 	return MAL_SUCCEED;
 
-  bailout:
+bailout:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "clients.info", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -174,7 +178,7 @@ CLTLogin(bat *nme, bat *ret)
 	BAT *b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	BAT *u = COLnew(0, TYPE_oid, 12, TRANSIENT);
 	int i;
-	char s[26];
+	char s[32];
 
 	if (b == 0 || u == 0)
 		goto bailout;
@@ -182,7 +186,8 @@ CLTLogin(bat *nme, bat *ret)
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user)) {
-			CLTtimeConvert(c->login, s);
+			if (!CLTtimeConvert(c->login, s, sizeof(s)))
+				goto bailout;
 			if (BUNappend(b, s, false) != GDK_SUCCEED ||
 				BUNappend(u, &c->user, false) != GDK_SUCCEED)
 				goto bailout;
@@ -193,7 +198,7 @@ CLTLogin(bat *nme, bat *ret)
 		goto bailout;
 	return MAL_SUCCEED;
 
-  bailout:
+bailout:
 	BBPreclaim(b);
 	BBPreclaim(u);
 	throw(MAL, "clients.getLogins", SQLSTATE(HY001) MAL_MALLOC_FAIL);
