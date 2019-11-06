@@ -380,9 +380,9 @@ DFLOWworker(void *T)
 			continue;
 		}
 
-		if (MALadmission(flow->cntxt, flow->mb, flow->stk, fe->argclaim)) {
+		p= getInstrPtr(flow->mb,fe->pc);
+		if (MALadmission(flow->cntxt, flow->mb, flow->stk, p, fe->argclaim)) {
 			// never block on deblockdataflow()
-			p= getInstrPtr(flow->mb,fe->pc);
 			if( p->fcn != (MALfcn) deblockdataflow){
 				fe->hotclaim = 0;   /* don't assume priority anymore */
 				fe->maxclaim = 0;
@@ -396,7 +396,7 @@ DFLOWworker(void *T)
 		PARDEBUG fprintf(stderr, "#executed pc= %d wrk= %d claim= " LLFMT "," LLFMT "," LLFMT " %s\n",
 						 fe->pc, id, fe->argclaim, fe->hotclaim, fe->maxclaim, error ? error : "");
 		/* release the memory claim */
-		MALadmission(flow->cntxt, flow->mb, flow->stk, -fe->argclaim);
+		MALadmission(flow->cntxt, flow->mb, flow->stk, p,  -fe->argclaim);
 		/* update the numa information. keep the thread-id producing the value */
 		p= getInstrPtr(flow->mb,fe->pc);
 		for( i = 0; i < p->argc; i++)

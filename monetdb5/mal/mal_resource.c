@@ -12,7 +12,7 @@
 #include "mal_resource.h"
 #include "mal_private.h"
 
-/* MEMORY admission does not seem to have a major impact */
+/* MEMORY admission does not seem to have a major impact sofar. */
 static lng memorypool = 0;      /* memory claimed by concurrent threads */
 static int memoryclaims = 0;
 
@@ -109,16 +109,18 @@ static MT_Lock admissionLock = MT_LOCK_INITIALIZER("admissionLock");
 /* experiments on sf-100 on small machine showed no real improvement */
 
 int
-MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, lng argclaim)
+MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim)
 {
 	int workers;
 	lng mbytes;
 
 	(void) mb;
-	(void) stk;
+	(void) pci;
 	/* optimistically set memory */
 	if (argclaim == 0)
 		return 0;
+	/* if we are dealing with a check instruction, just continue */
+	/* TOBEDONE */
 
 	MT_lock_set(&admissionLock);
 	/* Check if we are allowed to allocate another worker thread for this client */
