@@ -510,8 +510,14 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			mnstr_printf(fout, "update(");
 		else if (rel->op == op_delete)
 			mnstr_printf(fout, "delete(");
-		else if (rel->op == op_truncate)
-			mnstr_printf(fout, "truncate(");
+		else if (rel->op == op_truncate) {
+			assert(list_length(rel->exps) == 2);
+			sql_exp *first = (sql_exp*) rel->exps->h->data, *second = (sql_exp*) rel->exps->h->next->data;
+			int restart_sequences = ((atom*)first->l)->data.val.ival,
+				drop_action = ((atom*)second->l)->data.val.ival;
+			mnstr_printf(fout, "truncate %s identity, %s(", restart_sequences ? "restart" : "continue", 
+												   drop_action ? "cascade" : "restrict");
+		}
 
 		if (rel_is_ref(rel->l)) {
 			int nr = find_ref(refs, rel->l);
@@ -530,7 +536,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		}
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
-		if (rel->exps)
+		if (rel->op != op_truncate && rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 	} 	break;
 	default:
@@ -1279,15 +1285,27 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 	}
 
 	if (r[*pos] == 't' && r[*pos+1] == 'r' && r[*pos+2] == 'u') {
-		*pos += (int) strlen("truncate");
+		int restart_sequences = 0, drop_action = 0;
+		*pos += (int) strlen("truncate ");
+		if (r[*pos] == 'r') {
+			restart_sequences = 1;
+			*pos += (int) strlen("restart identity, ");
+		} else {
+			*pos += (int) strlen("continue identity, ");
+		}
+		if (r[*pos] == 'c') {
+			drop_action = 1;
+			*pos += (int) strlen("cascade");
+		} else {
+			*pos += (int) strlen("restrict");
+		}
 		skipWS(r, pos);
 		(*pos)++; /* ( */
 		lrel = rel_read(sql, r, pos, refs); /* to be truncated relation */
 		skipWS(r,pos);
 		(*pos)++; /* ) */
 
-		/* TODO drop_action and check_identity options */
-		return rel_truncate(sql->sa, lrel, 0, 0);
+		return rel_truncate(sql->sa, lrel, drop_action, restart_sequences);
 	}
 
 	if (r[*pos] == 'u' && r[*pos+1] == 'p' && r[*pos+2] == 'd') {
