@@ -58,12 +58,16 @@ mal_resource_reset(void)
 
 /*
  * The memory claim is the estimate for the amount of memory hold.
- * Views are consider cheap and ignored
+ * Views are consider cheap and ignored.
+ * Given that auxiliary structures are important for performance, 
+ * we use their maximum as an indication of the memory footprint.
+ * An alternative would be to focus solely on the base table cost.
+ * (Good for a MSc study)
  */
 lng
 getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 {
-	lng total = 0;
+	lng total = 0, itotal = 0, t;
 	BAT *b;
 
 	(void)mb;
@@ -76,22 +80,26 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 			return 0;
 		}
 
+		/* calculate the basic scan size */
 		total += BATcount(b) * b->twidth;
-		// string heaps can be shared, consider them as space-less views
 		total += heapinfo(b->tvheap, b->batCacheid); 
-		total += hashinfo(b->thash, d->batCacheid); 
-		total += IMPSimprintsize(b);
+
+		/* indices should help, find their maximum footprint */
+		itotal = hashinfo(b->thash, d->batCacheid); 
+		t = IMPSimprintsize(b);
+		if( t > itotal)
+			itotal = t;
+		/* We should also consider the ordered index and mosaic */
 		//total = total > (lng)(MEMORY_THRESHOLD ) ? (lng)(MEMORY_THRESHOLD ) : total;
 		BBPunfix(b->batCacheid);
+		if ( total < itotal)
+			total = itotal;
 	}
 	return total;
 }
 
 /*
- * The hotclaim indicates the amount of data recentely written as a result of an operation. 
  * The argclaim provides a hint on how much we actually may need to execute
- * The argclaim is the sum over the hotclaims for all arguments.
- * The hotclaim is a hint on how large the result could be.
  *
  * The client context also keeps bounds on the memory claim/client.
  * Surpassing this bound may be a reason to not admit the instruction to proceed.
@@ -102,66 +110,98 @@ ATOMIC_TYPE mal_running = ATOMIC_VAR_INIT(0);
 /* experiments on sf-100 on small machine showed no real improvement */
 
 int
-MALadmission(Client cntxt, MalStkPtr stk, lng argclaim, lng hotclaim)
+MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, lng argclaim)
 {
 	int workers;
+	lng mbytes;
 
+	(void) mb;
 	(void) stk;
 	/* optimistically set memory */
 	if (argclaim == 0)
 		return 0;
 
 	MT_lock_set(&admissionLock);
-	/* Check if we are allowed a spawn another thread for this client */
-	/* It is somewhat tricky, because we may be in a dataflow recursion, each of which is counted for.
-	 * A way out is to attach the thread count to the MAL stacks instead.
+	/* Check if we are allowed to allocate another worker thread for this client */
+	/* It is somewhat tricky, because we may be in a dataflow recursion, each of which should be counted for.
+	 * A way out is to attach the thread count to the MAL stacks instead, which just limits the level
+	 * of parallism for a single dataflow graph.
 	 */
-	workers = (int) ATOMIC_GET(&stk->workers);
-	if( cntxt->workerlimit){
-		if(cntxt->workerlimit <= workers){
-			PARDEBUG
-			fprintf(stderr, "#DFLOWadmit check workers, not allowed %d <= %d\n", cntxt->workerlimit, workers);
-			MT_lock_unset(&admissionLock);
-			return 0;
-		}
+	workers = stk->workers;
+	if( cntxt->workerlimit && cntxt->workerlimit <= workers){
+		PARDEBUG
+			fprintf(stderr, "#DFLOWadmit worker limit reached, %d <= %d\n", cntxt->workerlimit, workers);
+		MT_lock_unset(&admissionLock);
+		return -1;
 	}
-	/* Determine if the total memory resource is exhausted */
-	if ( memoryclaims < 0)
+	/* Determine if the total memory resource is exhausted, because it is overall limitation.
+	 */
+	if ( memoryclaims < 0){
+		PARDEBUG
+			fprintf(stderr, "#DFLOWadmit memoryclaim reset ");
 		memoryclaims = 0;
-	if ( memorypool <= 0 && memoryclaims == 0)
+	}
+	if ( memorypool <= 0 && memoryclaims == 0){
+		PARDEBUG
+			fprintf(stderr, "#DFLOWadmit memorypool reset ");
 		memorypool = (lng)(MEMORY_THRESHOLD );
+	}
 
+	/* the argument claim is based on the input for an instruction */
 	if (argclaim > 0) {
-		if ( memoryclaims == 0 || memorypool > argclaim + hotclaim) {
-			memorypool -= (lng) (argclaim + hotclaim);
+		if ( memoryclaims == 0 || memorypool > argclaim ) {
+			/* If we are low on memory resources, limit the user if he exceeds his memory budget 
+			 * but make sure there is at least one thread active */
+			if( cntxt->memorylimit){
+				mbytes = cntxt->memorylimit * 1024 * 1024;
+				if (argclaim + stk->memory > mbytes){
+					MT_lock_unset(&admissionLock);
+					PARDEBUG
+					fprintf(stderr, "#Delayed due to lack of session memory " LLFMT " requested "LLFMT"\n", 
+						stk->memory, argclaim);
+					return -1;
+				}
+			}
+			memorypool -= (lng) (argclaim);
+			stk->memory += argclaim;
 			memoryclaims++;
 			PARDEBUG
-			fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT "claims " LLFMT "," LLFMT "\n",
-						 memoryclaims, THRgettid(), memorypool, argclaim, hotclaim);
+			fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT "claims " LLFMT "\n",
+						 memoryclaims, THRgettid(), memorypool, argclaim);
 			MT_lock_unset(&admissionLock);
+			stk->workers++;
 			return 0;
 		}
 		PARDEBUG
 		fprintf(stderr, "#Delayed due to lack of memory " LLFMT " requested " LLFMT " memoryclaims %d\n", 
-			memorypool, argclaim + hotclaim, memoryclaims);
+			memorypool, argclaim, memoryclaims);
 		MT_lock_unset(&admissionLock);
 		return -1;
 	}
+	
+	/* return the session budget */
+	if(cntxt->memorylimit){
+		PARDEBUG
+			fprintf(stderr, "#Return memory to session budget " LLFMT "\n", stk->memory);
+		stk->memory += -argclaim;
+	}
 	/* release memory claimed before */
-	memorypool += (lng) (-argclaim - hotclaim);
+	memorypool += (lng) -argclaim ;
 	memoryclaims--;
+	stk->workers--;
+
 	PARDEBUG
-	fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT " claims " LLFMT "," LLFMT "\n",
-				 memoryclaims, THRgettid(), memorypool, argclaim, hotclaim);
+	fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT " claims " LLFMT "\n",
+				 memoryclaims, THRgettid(), memorypool, argclaim);
 	MT_lock_unset(&admissionLock);
 	return 0;
 }
 
 /* The Dataflow by default activates GDnr_thread workers per query.
- * To control their spawning we would have to complicate the Dataflow scheduler.
- * After an instruction has been choosen for execution we have to decide if the thread
- * may continue with its processing.
- * If there is too much contention, we should push the instruction back onto the queue.
+ * For long running queries this blocks progress of competing queries.
+ * A level of fairness is created to watch for long running queries and slow them down.
+ * The 'problem' with this code is that it also reduces the number of active workers,
+ * while we merely want to punish one query.
  */
 
 void
