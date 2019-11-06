@@ -88,7 +88,7 @@ static void
 rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 {
 	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return;
 	}
 
@@ -140,7 +140,7 @@ static void
 exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 {
 	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return;
 	}
 

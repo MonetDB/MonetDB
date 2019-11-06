@@ -611,7 +611,7 @@ sequential_block (sql_query *query, sql_subtype *restype, list *restypelist, dli
 	assert(!restype || !restypelist);
 
  	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "SELECT: too many nested operators");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (blk->h)
  		l = sa_list(sql->sa);

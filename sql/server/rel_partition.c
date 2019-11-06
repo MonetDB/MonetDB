@@ -45,7 +45,7 @@ static void
 find_basetables(mvc *sql, sql_rel *rel, list *tables )
 {
 	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return;
 	}
 
@@ -143,7 +143,7 @@ sql_rel *
 rel_partition(mvc *sql, sql_rel *rel) 
 {
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 	(void)sql;
 	if (rel->op == op_basetable) {
 		rel->flag = REL_PARTITION;

@@ -453,7 +453,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	stmt *s = NULL;
 
  	if (THRhighwater())
-		return sql_error(be->mvc, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return sql_error(be->mvc, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!e) {
 		assert(0);
@@ -1441,7 +1441,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 	mvc *sql = be->mvc;
 
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!e)
 		return args;
@@ -1519,7 +1519,7 @@ static list *
 rel2bin_args(backend *be, sql_rel *rel, list *args)
 {
 	if (THRhighwater())
-		return sql_error(be->mvc, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return sql_error(be->mvc, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel)
 		return args;
@@ -3220,7 +3220,7 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 	bstream * bst;
 
  	if (THRhighwater())
-		return sql_error(m, 10, SQLSTATE(42000) "SELECT: too many nested operators");
+		return sql_error(m, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	o = MNEW(mvc);
 	if (!o)
@@ -5593,7 +5593,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 	stmt *s = NULL;
 
 	if (THRhighwater())
-		return sql_error(be->mvc, 10, SQLSTATE(42000) "query too complex: running out of stack space");;
+		return sql_error(be->mvc, 10, SQLSTATE(42000) "Query too complex: running out of stack space");;
 
 	if (!rel)
 		return s;
