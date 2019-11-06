@@ -44,6 +44,40 @@ bool MOStypes_prefix(BAT* b) {
 	return false;
 }
 
+#define Prefixbte uint8_t
+#define Prefixsht uint16_t
+#define Prefixint uint32_t
+#define Prefixlng uint64_t
+#define Prefixoid uint64_t
+#define Prefixflt uint32_t
+#define Prefixdbl uint64_t
+#ifdef HAVE_HGE
+#define Prefixhge uhge
+#endif
+
+#define PrefixTpe(TPE) Prefix##TPE
+
+typedef struct MosaicBlkHeader_prefix_t_ {
+	MosaicBlkRec base;
+	int suffix_bits;
+	union {
+		PrefixTpe(bte) prefixbte;
+		PrefixTpe(sht) prefixsht;
+		PrefixTpe(int) prefixint;
+		PrefixTpe(lng) prefixlng;
+		PrefixTpe(oid) prefixoid;
+		PrefixTpe(flt) prefixflt;
+		PrefixTpe(dbl) prefixdbl;
+#ifdef HAVE_HGE
+		PrefixTpe(hge) prefixhge;
+#endif
+	} prefix;
+
+} MosaicBlkHeader_prefix_t;
+
+#define MOScodevectorPrefix(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_prefix_t), unsigned int))
+#define toEndOfBitVector(CNT, BITS) wordaligned(((CNT) * (BITS) / CHAR_BIT) + ( ((CNT) * (BITS)) % CHAR_BIT != 0 ), lng)
+
 void
 MOSlayout_prefix(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
@@ -104,54 +138,14 @@ MOSlayout_prefix(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 void
 MOSadvance_prefix(MOStask task)
 {
-	int bits = 0;
-	size_t bytes= 0;
-	int size;
+	MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) (task)->blk;
+	int *dst = (int*)  (((char*) task->blk) + wordaligned(sizeof(MosaicBlkHeader_prefix_t), unsigned int));
+	long cnt = parameters->base.cnt;
+	long bytes = toEndOfBitVector(cnt, parameters->suffix_bits);
 
-	size = ATOMsize(task->type);
-	task->start += MOSgetCnt(task->blk);
-	task->stop = task->stop;
-	switch(size){
-	case 1:
-		{	unsigned char *dst = (unsigned char*)  MOScodevector(task);
-			unsigned char mask = *dst++;
-			unsigned char val = *dst++;
-			bits = (int)(val & (~mask));
-			bytes = wordaligned(2 * sizeof(unsigned char),int);
-			bytes += wordaligned(getBitVectorSize(MOSgetCnt(task->blk),bits), int);
-			task->blk = (MosaicBlk) (((char*) dst)  + bytes); 
-		}
-		break;
-	case 2:
-		{	unsigned short *dst = (unsigned short*)  MOScodevector(task);
-			unsigned short mask = *dst++;
-			unsigned short val = *dst++;
-			bits = (int)(val & (~mask));
-			bytes = wordaligned(2 * sizeof(unsigned short),int);
-			bytes += wordaligned(getBitVectorSize(MOSgetCnt(task->blk),bits), int);
-			task->blk = (MosaicBlk) (((char*) dst)  + bytes); 
-		}
-		break;
-	case 4:
-		{	unsigned int *dst = (unsigned int*)  MOScodevector(task);
-			unsigned int mask = *dst++;
-			unsigned int val = *dst++;
-			bits = (int)(val & (~mask));
-			bytes = wordaligned(2 * sizeof(unsigned int),int);
-			bytes += wordaligned(getBitVectorSize(MOSgetCnt(task->blk),bits), int);
-			task->blk = (MosaicBlk) (((char*) dst)  + bytes); 
-		}
-		break;
-	case 8:
-		{	ulng *dst = (ulng*)  MOScodevector(task);
-			ulng mask = *dst++;
-			ulng val = *dst++;
-			bits = (int)(val & (~mask));
-			bytes = wordaligned(2 * sizeof(ulng),int);
-			bytes += wordaligned(getBitVectorSize(MOSgetCnt(task->blk),bits), int);
-			task->blk = (MosaicBlk) (((char*) dst)  + bytes); 
-		}
-	}
+	assert(cnt > 0);
+	task->start += (oid) cnt;
+	task->blk = (MosaicBlk) (((char*) dst)  + bytes);
 }
 
 void
@@ -162,503 +156,403 @@ MOSskip_prefix(MOStask task)
 		task->blk = 0; // ENDOFLIST
 }
 
-// logarithmic search for common prefix in a given block
-// use static prefix mask attempts
+// types for safe Integer Promotion for the bitwise operations in getSuffixMask
+#define IPbte uint32_t
+#define IPsht uint32_t
+#define IPint uint32_t
+#define IPlng uint64_t
+#define IPoid uint64_t
+#define IPflt uint64_t
+#define IPdbl uint64_t
+#ifdef HAVE_HGE
+#define IPhge uhge
+#endif
 
-static void
-findPrefixBte(unsigned char *v, int limit, int *bits, unsigned char *prefixmask)
-{
-	int i, step = 8, width = 0;
-	unsigned char prefix, mask;
-	*bits = 0;
-	*prefixmask = 0;
-	do{
-		step /=2;
-		mask = 1 ;
-		for( i=0; i < 8 - 1 - (width +step); i++)
-			mask = (mask <<1) | 1;
-		mask = ~mask;
-		prefix = v[0] & mask;
-		for(i=0; i< limit; i++)
-			if( (v[i] & mask) != prefix)
-				break;
-		if( i ==  limit){
-			width += step;
-			*bits = width;
-			*prefixmask = mask;
-		}
-	} while (step > 1);
-}
+#define IPTpe(TPE) IP##TPE
+#define OverShift(TPE) ((sizeof(IPTpe(TPE)) - sizeof(PrefixTpe(TPE))) * CHAR_BIT)
+#define getSuffixMask(SUFFIX_BITS, TPE) ((PrefixTpe(TPE)) (~(~((IPTpe(TPE)) (0)) << (SUFFIX_BITS))))
+#define getPrefixMask(PREFIX_BITS, TPE) ((PrefixTpe(TPE)) ( (~(~((IPTpe(TPE)) (0)) >> (PREFIX_BITS))) >> OverShift(TPE)))
 
-static void
-findPrefixSht(unsigned short *v, int limit, int *bits, unsigned short *prefixmask)
-{
-	int i, step = 16, width = 0;
-	unsigned short prefix, mask;
-	*bits = 0;
-	*prefixmask = 0;
-	do{
-		step /=2;
-		mask = 1 ;
-		for( i=0; i < 16-1 - (width +step); i++)
-			mask = (mask <<1) | 1;
-		mask = ~mask;
-		prefix = v[0] & mask;
-		for(i=0; i< limit; i++)
-			if( (v[i] & mask) != prefix)
-				break;
-		if( i ==  limit){
-			width += step;
-			*bits = width;
-			*prefixmask = mask;
-		}
-	} while (step > 1);
-}
+#define determinePrefixParameters(PARAMETERS, SRC, LIMIT, TPE) \
+do {\
+	PrefixTpe(TPE) *val = (PrefixTpe(TPE)*) (SRC);\
+	const int type_size_in_bits = sizeof(PrefixTpe(TPE))  * CHAR_BIT;\
+	int suffix_bits = 1;\
+	int prefix_bits = type_size_in_bits - suffix_bits;\
+	PrefixTpe(TPE) prefix_mask = getPrefixMask(prefix_bits, TPE);\
+	PrefixTpe(TPE) prefix = *val & prefix_mask;\
+	/*TODO: add additional loop to find best bit wise upper bound*/\
+	BUN i;\
+	for(i = 0; i < (LIMIT); i++, val++){\
+		int current_prefix_bits = prefix_bits;\
+		int current_suffix_bits = suffix_bits;\
+		PrefixTpe(TPE) current_prefix = prefix;\
+		PrefixTpe(TPE) current_prefix_mask =  prefix_mask;\
+\
+		while ((current_prefix) != (current_prefix_mask & (*val))) {\
+			current_prefix_bits--;\
+			current_prefix_mask = getPrefixMask(current_prefix_bits, TPE);\
+			current_prefix = prefix & current_prefix_mask;\
+			current_suffix_bits++;\
+		}\
+\
+		if (current_suffix_bits >= (int) ((sizeof(PrefixTpe(TPE)) * CHAR_BIT) / 2)) {\
+			/*If we can not compress better then the half of the original data type, we give up. */\
+			break;\
+		}\
+		if ((current_suffix_bits > (int) sizeof(unsigned int) * CHAR_BIT)) {\
+			/*TODO: this extra condition should be removed once bitvector is extended to int64's*/\
+			break;\
+		}\
+\
+		prefix = current_prefix;\
+		prefix_mask = current_prefix_mask;\
+		prefix_bits = current_prefix_bits;\
+		suffix_bits = current_suffix_bits;\
+\
+		assert (suffix_bits + prefix_bits == type_size_in_bits);\
+		assert( (prefix | (getSuffixMask(suffix_bits, TPE) & (*val))) == *val);\
+	}\
+\
+	(PARAMETERS).base.cnt = i;\
+	(PARAMETERS).suffix_bits = suffix_bits;\
+	(PARAMETERS).prefix.prefix##TPE = prefix;\
+} while(0)
 
-static void
-findPrefixInt(unsigned int *v, int limit, int *bits, unsigned int *prefixmask)
-{
-	int i, step = 32, width = 0;
-	unsigned int prefix, mask;
-	*bits = 0;
-	*prefixmask = 0;
-	do{
-		step /=2;
-		mask = 1 ;
-		for( i=0; i < 32-1 - (width +step); i++)
-			mask = (mask <<1) | 1;
-		mask = ~mask;
-		prefix = v[0] & mask;
-		for(i=0; i< limit; i++)
-			if( (v[i] & mask) != prefix)
-				break;
-		if( i ==  limit){
-			width += step;
-			*bits = width;
-			*prefixmask = mask;
-		}
-	} while (step > 1);
-}
+#define estimate_prefix(TASK, TPE)\
+do {\
+	PrefixTpe(TPE) *src = ((PrefixTpe(TPE)*) (TASK)->src) + (TASK)->start;\
+	BUN limit = (TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start;\
+	MosaicBlkHeader_prefix_t parameters;\
+	determinePrefixParameters(parameters, src, limit, TPE);\
+	assert(parameters.base.cnt > 0);/*Should always compress.*/\
+\
+	BUN store;\
+	int bits;\
+	int i = parameters.base.cnt;\
+	bits = i * parameters.suffix_bits;\
+	store = wordaligned(sizeof(MosaicBlkHeader_prefix_t),int);\
+	store += wordaligned(bits/8 + ((bits % 8) >0),int);\
+	assert(i > 0);/*Should always compress.*/\
+	current->is_applicable = true;\
+\
+	current->uncompressed_size += (BUN) (i * sizeof(TPE));\
+	current->compressed_size += store;\
+	current->compression_strategy.cnt = (unsigned int) parameters.base.cnt;\
+} while (0)
 
-static void
-findPrefixLng(ulng *v, int limit, int *bits, ulng *prefixmask)
-{
-	int i, step = 64, width = 0;
-	ulng prefix, mask;
-	*bits = 0;
-	*prefixmask = 0;
-	do{
-		step /=2;
-		mask = 1 ;
-		for( i=0; i < 64 - 1 - (width +step); i++)
-			mask = (mask <<1) | 1;
-		mask = ~mask;
-		prefix = v[0] & mask;
-		for(i=0; i< limit; i++)
-			if( (v[i] & mask) != prefix)
-				break;
-		if( i ==  limit){
-			width += step;
-			*bits = width;
-			*prefixmask = mask;
-		}
-	} while (step > 1 && *bits < 32);
-	// we only use at most 32 bits as prefix due to bitvector implementation
-}
-
-#define Prefix(Prefix,Mask,X,Y,N) \
-{ int k, m = 1; \
-  for(k=0; k<N; k+=1, X>>=1, Y>>=1){\
-	if( X == Y) break;\
-	m= (m<<1)|1; \
-  }\
-  Prefix = N-k;\
-  Mask = ~(m >> 1);\
-} 
-
-
-#define LOOKAHEAD  (int)(limit <10? limit:10)
 // calculate the expected reduction 
 str
 MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
-{	
+{
 	(void) previous;
-	unsigned int i = 0;
-	int prefixbits = 0,size;
-	BUN bits,store;
-	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
-	current->compression_strategy.tag = MOSAIC_PREFIX;
 	current->is_applicable = true;
+	current->compression_strategy.tag = MOSAIC_PREFIX;
 
-	size = ATOMsize(task->type);
-	if( task->stop >= 2)
-	switch(size){
-	case 1:
-		{	unsigned char *v = ((unsigned char*) task->src) + task->start, val= *v, mask;
-			findPrefixBte( v, LOOKAHEAD, &prefixbits, &mask);
-			if( prefixbits == 0)
-				break;
-			
-			// calculate the number of values covered by this prefix
-			val = *v & mask;
-			for( i = 0; i < limit ; v++, i++){
-				if ( val != (*v & mask) )
-					break;
-			}
-			bits = i * (8-prefixbits);
-			store = wordaligned(2 * sizeof(unsigned char),int);
-			store += wordaligned(bits/8 + ((bits % 8) >0),int);
-			store = wordaligned( MosaicBlkSize + store,int);
-			assert(i > 0);/*Should always compress.*/
-			current->is_applicable = true;
-
-			current->uncompressed_size += (BUN) (i * sizeof(bte));
-			current->compressed_size += store;
-		}
-		break;
-	case 2:
-		{	unsigned short *v = ((unsigned short*) task->src) + task->start, val= *v, mask;
-			findPrefixSht( v, LOOKAHEAD, &prefixbits, &mask);
-			if( prefixbits == 0)
-				break;
-
-			// calculate the number of values covered by this prefix
-			val = *v & mask;
-			for(i = 0; i < limit ; v++, i++){
-				if ( val != (*v & mask) )
-					break;
-			}
-			bits = i * (16-prefixbits);
-			store = wordaligned(2 * sizeof(unsigned short),int);
-			store += wordaligned(bits/8 + ((bits % 8) >0),int);
-			store = wordaligned( MosaicBlkSize + store,int);
-			assert(i > 0);/*Should always compress.*/
-			current->is_applicable = true;
-
-			current->uncompressed_size += (BUN) (i * sizeof(sht));
-			current->compressed_size += store;
-		}
-		break;
-	case 4:
-		{	unsigned int *v = ((unsigned int*) task->src) + task->start, val= *v, mask;
-			findPrefixInt( v, LOOKAHEAD, &prefixbits,&mask);
-			if( prefixbits == 0)
-				break;
-			
-			// calculate the number of values covered by this prefix
-			val = *v & mask;
-			for(i = 0; i < limit; v++, i++){
-				if ( val != (*v & mask) )
-					break;
-			}
-			bits = i * (32-prefixbits);
-			// calculate the bitvector size
-			store = wordaligned(2 * sizeof(unsigned int),int);
-			store += wordaligned(bits/8 + ((bits % 8) >0),int);
-			store = wordaligned( MosaicBlkSize + store,int);
-			assert(i > 0);/*Should always compress.*/
-			current->is_applicable = true;
-
-			current->uncompressed_size += (BUN) (i * sizeof(int));
-			current->compressed_size += store;
-		}
-		break;
-	case 8:
-		{	ulng *v = ((ulng*) task->src) + task->start, val= *v, mask;
-			findPrefixLng( v, LOOKAHEAD, &prefixbits, &mask);
-			if( prefixbits < 32 ) // residu should fit bitvector cell
-				break;
-			
-			val = *v & mask;
-			for(i = 0; i < limit ; v++, i++){
-				if ( val != (*v & mask) )
-					break;
-			}
-			bits = (int)(i * (64-prefixbits));
-			store = wordaligned(2 * sizeof(ulng),int);
-			store += wordaligned(bits/8 + ((bits % 8) >0),int);
-			store = wordaligned( MosaicBlkSize + store,int);
-			assert(i > 0);/*Should always compress.*/
-			current->is_applicable = true;
-
-			current->uncompressed_size += (BUN) (i * sizeof(lng));
-			current->compressed_size += store;
-		}
+	switch(ATOMbasetype(task->type)) {
+		case TYPE_bte: estimate_prefix(task, bte); break;
+		case TYPE_sht: estimate_prefix(task, sht); break;
+		case TYPE_int: estimate_prefix(task, int); break;
+		case TYPE_lng: estimate_prefix(task, lng); break;
+		case TYPE_oid: estimate_prefix(task, oid); break;
+		case TYPE_flt: estimate_prefix(task, flt);	break;
+		case TYPE_dbl: estimate_prefix(task, dbl); break;
+	#ifdef HAVE_HGE
+		case TYPE_hge: estimate_prefix(task, hge); break;
+	#endif
 	}
-	current->compression_strategy.cnt = i;
 	return MAL_SUCCEED;
 }
 
-#define compress(Vector,I, Bits, Value) setBitVector(Vector,I,Bits,Value);
+#define compress_prefix(TASK, TPE)\
+do {\
+	PrefixTpe(TPE)* src = (PrefixTpe(TPE)*) getSrc(TPE, TASK);\
+	BUN i = 0;\
+	BUN limit = estimate->cnt;\
+	BitVector base;\
+	MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) ((TASK))->blk;\
+	determinePrefixParameters(*parameters, src, limit, TPE);\
+	(TASK)->dst = MOScodevectorPrefix(TASK);\
+	base = (BitVector) ((TASK)->dst);\
+	PrefixTpe(TPE) suffix_mask = getSuffixMask(parameters->suffix_bits, TPE);\
+	for(i = 0; i < parameters->base.cnt; i++, src++) {\
+		/*TODO: assert that delta's actually does not cause an overflow. */\
+		PrefixTpe(TPE) suffix = *src & suffix_mask;\
+		setBitVector(base, i, parameters->suffix_bits, (unsigned int) /*TODO: fix this once we have increased capacity of bitvector*/ suffix);\
+	}\
+	(TASK)->dst += toEndOfBitVector(i, parameters->suffix_bits);\
+} while(0)
 
 void
-MOScompress_prefix(MOStask task)
+MOScompress_prefix(MOStask task, MosaicBlkRec* estimate)
 {
-	BUN limit,  j =0 ;
-	int prefixbits;
-	lng size;
-	BitVector base;
-	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = task->blk;
 
-	MOSsetTag(blk, MOSAIC_PREFIX);
+	MOSsetTag(blk,MOSAIC_PREFIX);
+	MOSsetCnt(blk, 0);
 
-	size = ATOMsize(task->type);
-	limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
-	if( task->stop >=2 )
-	switch(size){
-	case 1:
-		{	unsigned char *v = ((unsigned char*) task->src) + task->start, *wlimit= v + limit, val1 = *v, mask, bits;
-			unsigned char *dst = (unsigned char*) MOScodevector(task);
-			findPrefixBte( v, LOOKAHEAD, &prefixbits,&mask);
-			bits = 8-prefixbits;
-			base = (BitVector)( ((char*)dst) + wordaligned(2 * sizeof(unsigned char),int));
-			*dst++ = mask;
-			val1 = *v & mask;	//reference value
-			*dst++ = val1 | bits; // bits outside mask
-			
-			for(j=0  ; v < wlimit; v++, j++){
-				if ( val1  != (*v & mask) )
-					break;
-				compress(base, j, (int) bits, (int) (*v & (~mask))); 
-				hdr->checksum.sumbte += *v;
-			}
-			MOSsetCnt(blk,j);
-		}
-		break;
-	case 2:
-		{	unsigned short *v = ((unsigned short*) task->src) + task->start, *wlimit= v + limit, val1, mask, bits;
-			unsigned short *dst = (unsigned short*) MOScodevector(task);
-
-			findPrefixSht( v, LOOKAHEAD, &prefixbits,&mask);
-			bits = 16-prefixbits;
-			base = (BitVector)( ((char*)dst) + wordaligned(2 * sizeof(unsigned short),int));
-			*dst++ = mask;
-			val1 = *v & mask;	//reference value
-			*dst++ = val1 | bits; // bits outside mask
-			
-			for(j=0  ; v < wlimit; v++, j++){
-				if ( val1  != (*v & mask) )
-					break;
-				compress(base, j, (int) bits, (int) (*v & (~mask))); 
-				hdr->checksum.sumsht += *v;
-			}
-			MOSsetCnt(blk,j);
-		}
-		break;
-	case 4:
-		{	unsigned int *v = ((unsigned int*) task->src) + task->start, *wlimit=  v + limit, val1, mask, bits;
-			unsigned int *dst = (unsigned int*)  MOScodevector(task);
-
-			findPrefixInt( v, LOOKAHEAD, &prefixbits,&mask);
-			bits = 32-prefixbits;
-			base = (BitVector)(((char*)dst) + wordaligned(2 * sizeof(unsigned int),int));
-			*dst++ = mask;
-			val1 = *v & mask ;		//reference value 
-			*dst++ = val1 | bits;	// and keep bits
-			
-			for(j=0  ; v < wlimit; v++, j++){
-				if ( val1  != (*v & mask) )
-					break;
-				compress(base, j, bits, (int) (*v & (~mask))); 
-				hdr->checksum.sumint += *v;
-			}
-			MOSsetCnt(blk,j);
-		}
-		break;
-	case 8:
-		{	ulng *v = ((ulng*) task->src) + task->start, *wlimit = v + limit,  val1, mask, bits;
-			ulng *dst = (ulng*)  MOScodevector(task);
-			
-			findPrefixLng( v, LOOKAHEAD, &prefixbits,&mask);
-			bits = 64-prefixbits;
-			base = (BitVector)(((char*)dst) + wordaligned(2 * sizeof(ulng),int));
-			if (bits <= 32){
-				*dst++ = mask;
-				val1 = *v & mask;	//reference value
-				*dst++ = val1 | (ulng) bits; // bits outside mask
-				
-				for(j=0 ; v < wlimit ; v++, j++){
-					if ( val1  != (*v & mask) )
-						break;
-					compress(base,j, (int) bits, (int)(*v  & (ulng)UINT_MAX & (~mask))); // at most 32 bits
-					hdr->checksum.sumlng += *v;
-				}
-			}
-			MOSsetCnt(blk,j);
-		}
+	switch(ATOMbasetype(task->type)) {
+		case TYPE_bte: compress_prefix(task, bte); break;
+		case TYPE_sht: compress_prefix(task, sht); break;
+		case TYPE_int: compress_prefix(task, int); break;
+		case TYPE_lng: compress_prefix(task, lng); break;
+		case TYPE_oid: compress_prefix(task, oid); break;
+		case TYPE_flt: compress_prefix(task, flt); break;
+		case TYPE_dbl: compress_prefix(task, dbl); break;
+	#ifdef HAVE_HGE
+		case TYPE_hge: compress_prefix(task, hge); break;
+	#endif
 	}
 }
 
-#define decompress(Vector,I,Bits) getBitVector(Vector,I,Bits)
+// the inverse operator, extend the src
+
+#define decompress_prefix(TASK, TPE)\
+do {\
+	MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) ((TASK))->blk;\
+	BUN lim = parameters->base.cnt;\
+    PrefixTpe(TPE) prefix = parameters->prefix.prefix##TPE;\
+	BitVector base = (BitVector) MOScodevectorPrefix(TASK);\
+	BUN i;\
+	for(i = 0; i < lim; i++){\
+		PrefixTpe(TPE) suffix = getBitVector(base, i, parameters->suffix_bits);\
+		/*TODO: assert that suffix's actually does not cause an overflow. */\
+		PrefixTpe(TPE) val = prefix | suffix;\
+		((PrefixTpe(TPE)*)(TASK)->src)[i] = val;\
+	}\
+	(TASK)->src += i * sizeof(TPE);\
+} while(0)
 
 void
 MOSdecompress_prefix(MOStask task)
 {
-	MosaicHdr hdr = task->hdr;
-	MosaicBlk blk =  ((MosaicBlk) task->blk);
-	BUN i,lim;
-	int bits,size;
-	BitVector base;
-
-	size = ATOMsize(task->type);
-	lim= MOSgetCnt(blk);
-	switch(size){
-	case 1:
-		{	unsigned char *dst =  (unsigned char*)  MOScodevector(task);
-			unsigned char mask = *dst++, val  =  *dst++, v;
-
-			base = (BitVector)((char*)MOScodevector(task) + wordaligned(2 * sizeof(unsigned char),int));
-			bits =(int) (val & (~mask));
-			val = val & mask;
-			for(i = 0; i < lim; i++){
-				v = val | decompress(base,i,bits);
-				hdr->checksum2.sumsht += v;
-				((unsigned char*) task->src)[i] = v;
-			}
-			task->src += i * sizeof(unsigned char);
-		}
-		break;
-	case 2:
-		{	unsigned short *dst =  (unsigned short*)   MOScodevector(task);
-			unsigned short mask = *dst++, val  =  *dst++, v;
-
-			base = (BitVector)((char*)MOScodevector(task) + wordaligned(2 * sizeof(unsigned short),int));
-			bits = (int) (val & (~mask));
-			val = val & mask;
-			for(i = 0; i < lim; i++){
-				v = val | decompress(base,i,bits);
-				hdr->checksum2.sumsht += v;
-				((unsigned short*) task->src)[i] = v;
-			}
-			task->src += i * sizeof(unsigned short);
-		}
-		break;
-	case 4:
-		{	unsigned int *dst =  (unsigned int*)  MOScodevector(task);
-			unsigned int mask = *dst++, val  =  *dst++, v;
-
-			base = (BitVector)(MOScodevector(task) + wordaligned(2 * sizeof(unsigned int),int));
-			bits = (int)(val & (~mask));
-			val = val & mask;
-			for(i = 0; i < lim; i++){
-				v = val | decompress(base,i,bits);
-				hdr->checksum2.sumint += v;
-				((unsigned int*) task->src)[i] = v;
-			}
-			task->src += i * sizeof(unsigned int);
-		}
-		break;
-	case 8:
-		{	ulng *dst =  (ulng*)  MOScodevector(task);
-			ulng mask = *dst++, val  =  *dst++, v;
-
-			base = (BitVector)((char*)MOScodevector(task) + wordaligned(2 * sizeof(ulng),int));
-			bits = (int)(val & (~mask));
-			val = val & mask;
-			for(i = 0; i < lim; i++){
-				v= val | decompress(base,i,bits);
-				hdr->checksum2.sumlng += v;
-				((ulng*) task->src)[i] = v;
-			}
-			task->src += i * sizeof(ulng);
-		}
+	switch(ATOMbasetype(task->type)) {
+		case TYPE_bte: decompress_prefix(task, bte); break;
+		case TYPE_sht: decompress_prefix(task, sht); break;
+		case TYPE_int: decompress_prefix(task, int); break;
+		case TYPE_lng: decompress_prefix(task, lng); break;
+		case TYPE_oid: decompress_prefix(task, oid); break;
+		case TYPE_flt: decompress_prefix(task, flt); break;
+		case TYPE_dbl: decompress_prefix(task, dbl); break;
+	#ifdef HAVE_HGE
+		case TYPE_hge: decompress_prefix(task, hge); break;
+	#endif
 	}
 }
 
 // perform relational algebra operators over non-compressed chunks
 // They are bound by an oid range and possibly a candidate list
 
-#define  select_prefix(TPE, TPE2) \
-{	TPE2 *dst =  (TPE2*)  MOScodevector(task);\
-	TPE2 mask = *dst++, val = *dst++,v;\
-	TPE value;\
-	base = (BitVector)(MOScodevector(task) + wordaligned(2 * sizeof(TPE),int));\
-	bits = (int) (val & (~mask));\
-	val = val & mask;\
-	if( !*anti){\
-		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
+/* generic range select
+ *
+ * This macro is based on the combined behavior of ALGselect2 and BATselect.
+ * It should return the same output on the same input.
+ *
+ * A complete breakdown of the various arguments follows.  Here, v, v1
+ * and v2 are values from the appropriate domain, and
+ * v != nil, v1 != nil, v2 != nil, v1 < v2.
+ *	tl	th	li	hi	anti	result list of OIDs for values
+ *	-----------------------------------------------------------------
+ *	nil	nil	true	true	false	x == nil (only way to get nil)
+ *	nil	nil	true	true	true	x != nil
+ *	nil	nil	A*		B*		false	x != nil *it must hold that A && B == false.
+ *	nil	nil	A*		B*		true	NOTHING *it must hold that A && B == false.
+ *	v	v	A*		B*		true	x != nil *it must hold that A && B == false.
+ *	v	v	A*		B*		false	NOTHING *it must hold that A && B == false.
+ *	v2	v1	ignored	ignored	false	NOTHING
+ *	v2	v1	ignored	ignored	true	x != nil
+ *	nil	v	ignored	false	false	x < v
+ *	nil	v	ignored	true	false	x <= v
+ *	nil	v	ignored	false	true	x >= v
+ *	nil	v	ignored	true	true	x > v
+ *	v	nil	false	ignored	false	x > v
+ *	v	nil	true	ignored	false	x >= v
+ *	v	nil	false	ignored	true	x <= v
+ *	v	nil	true	ignored	true	x < v
+ *	v	v	true	true	false	x == v
+ *	v	v	true	true	true	x != v
+ *	v1	v2	false	false	false	v1 < x < v2
+ *	v1	v2	true	false	false	v1 <= x < v2
+ *	v1	v2	false	true	false	v1 < x <= v2
+ *	v1	v2	true	true	false	v1 <= x <= v2
+ *	v1	v2	false	false	true	x <= v1 or x >= v2
+ *	v1	v2	true	false	true	x < v1 or x >= v2
+ *	v1	v2	false	true	true	x <= v1 or x > v2
+ */
+#define  select_prefix_general(LOW, HIGH, LI, HI, HAS_NIL, ANTI, TPE, IS_TPE_NIL) \
+{\
+	MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) task->blk;\
+	BitVector base = (BitVector) MOScodevectorPrefix(task);\
+	PrefixTpe(TPE) prefix = parameters->prefix.prefix##TPE;\
+	int suffix_bits = parameters->suffix_bits;\
+	if		( IS_TPE_NIL(TPE, (LOW)) &&  IS_TPE_NIL(TPE, (HIGH)) && (LI) && (HI) && !(ANTI)) {\
+		if(HAS_NIL) {\
 			for( ; first < last; first++){\
 				MOSskipit();\
-				*o++ = (oid) first;\
-			}\
-		} else\
-		if( is_nil(TPE, *(TPE*) low) ){\
-			for( ; first < last; first++,i++){\
-				MOSskipit();\
-				v = val | decompress(base,i,bits);\
-				value =  (TPE) ((TPE2)val |(TPE2) v);\
-				cmp  =  ((*hi && value <= * (TPE*)hgh ) || (!*hi && value < *(TPE*)hgh ));\
-				if (cmp )\
-					*o++ = (oid) first;\
-			}\
-		} else\
-		if( is_nil(TPE, *(TPE*) hgh) ){\
-			for( ; first < last; first++,i++){\
-				MOSskipit();\
-				v = val | decompress(base,i,bits);\
-				value =  (TPE) ((TPE2)val |(TPE2) v);\
-				cmp  =  ((*li && value >= * (TPE*)low ) || (!*li && value > *(TPE*)low ));\
-				if (cmp )\
-					*o++ = (oid) first;\
-			}\
-		} else{\
-			for( ; first < last; first++,i++){\
-				MOSskipit();\
-				v = val | decompress(base,i,bits);\
-				value =  (TPE) ((TPE2)val |(TPE2) v);\
-				cmp  =  ((*hi && value <= * (TPE*)hgh ) || (!*hi && value < *(TPE*)hgh )) &&\
-						((*li && value >= * (TPE*)low ) || (!*li && value > *(TPE*)low ));\
-				if (cmp )\
+				PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+				TPE* value =  (TPE*) &pvalue;\
+				if (IS_TPE_NIL(TPE, *value))\
 					*o++ = (oid) first;\
 			}\
 		}\
-	} else {\
-		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
-			/* nothing is matching */\
-		} else\
-		if( is_nil(TPE, *(TPE*) low) ){\
-			for( ; first < last; first++,i++){\
+	}\
+	else if	( IS_TPE_NIL(TPE, (LOW)) &&  IS_TPE_NIL(TPE, (HIGH)) && (LI) && (HI) && (ANTI)) {\
+		if(HAS_NIL) {\
+			for( ; first < last; first++){\
 				MOSskipit();\
-				v = val | decompress(base,i,bits);\
-				value =  (TPE) ((TPE2)val |(TPE2) v);\
-				cmp  =  ((*hi && value <= * (TPE*)hgh ) || (!*hi && value < *(TPE*)hgh ));\
-				if ( !cmp )\
+				PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+				TPE* value =  (TPE*) &pvalue;\
+				if (!IS_TPE_NIL(TPE, *value))\
 					*o++ = (oid) first;\
 			}\
-		} else\
-		if( is_nil(TPE, *(TPE*) hgh) ){\
-			for( ; first < last; first++,i++){\
+		}\
+		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
+	}\
+	else if	( IS_TPE_NIL(TPE, (LOW)) &&  IS_TPE_NIL(TPE, (HIGH)) && !((LI) && (HI)) && !(ANTI)) {\
+		if(HAS_NIL) {\
+			for( ; first < last; first++){\
 				MOSskipit();\
-				v = val | decompress(base,i,bits);\
-				value =  (TPE) ((TPE2)val |(TPE2) v);\
-				cmp  =  ((*li && value >= * (TPE*)low ) || (!*li && value > *(TPE*)low ));\
-				if ( !cmp )\
+				PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+				TPE* value =  (TPE*) &pvalue;\
+				if (!IS_TPE_NIL(TPE, *value))\
 					*o++ = (oid) first;\
 			}\
-		} else{\
-			for( ; first < last; first++,i++){\
+		}\
+		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
+	}\
+	else if	( IS_TPE_NIL(TPE, (LOW)) &&  IS_TPE_NIL(TPE, (HIGH)) && !((LI) && (HI)) && (ANTI)) {\
+			/*Empty result set.*/\
+	}\
+	else if	( !IS_TPE_NIL(TPE, (LOW)) &&  !IS_TPE_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && (ANTI)) {\
+		if(HAS_NIL) {\
+			for( ; first < last; first++){\
 				MOSskipit();\
-				v = val | decompress(base,i,bits);\
-				value =  (TPE) ((TPE2)val |(TPE2) v);\
-				cmp  =  ((*hi && value <= * (TPE*)hgh ) || (!*hi && value < *(TPE*)hgh )) &&\
-						((*li && value >= * (TPE*)low ) || (!*li && value > *(TPE*)low ));\
-				if (!cmp)\
+				PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+				TPE* value =  (TPE*) &pvalue;\
+				if (!IS_TPE_NIL(TPE, *value))\
 					*o++ = (oid) first;\
+			}\
+		}\
+		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
+	}\
+	else if	( !IS_TPE_NIL(TPE, (LOW)) &&  !IS_TPE_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && (ANTI)) {\
+		/*Empty result set.*/\
+	}\
+	else if	( !IS_TPE_NIL(TPE, (LOW)) &&  !IS_TPE_NIL(TPE, (HIGH)) && (LOW) > (HIGH) && !(ANTI)) {\
+		/*Empty result set.*/\
+	}\
+	else if	( !IS_TPE_NIL(TPE, (LOW)) &&  !IS_TPE_NIL(TPE, (HIGH)) && (LOW) > (HIGH) && (ANTI)) {\
+		if(HAS_NIL) {\
+			for( ; first < last; first++){\
+				MOSskipit();\
+				PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+				TPE* value =  (TPE*) &pvalue;\
+				if (!IS_TPE_NIL(TPE, *value))\
+					*o++ = (oid) first;\
+			}\
+		}\
+		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
+	}\
+	else {\
+		/*normal cases.*/\
+		if( !*anti){\
+			if( IS_TPE_NIL(TPE, (LOW)) ){\
+				for( ; first < last; first++,i++){\
+					MOSskipit();\
+					PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+					TPE* value =  (TPE*) &pvalue;\
+					if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
+					bool cmp  =  (((HI) && *value <= (HIGH) ) || (!(HI) && *value < (HIGH) ));\
+					if (cmp )\
+						*o++ = (oid) first;\
+				}\
+			} else\
+			if( IS_TPE_NIL(TPE, (HIGH)) ){\
+				for( ; first < last; first++,i++){\
+					MOSskipit();\
+					PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+					TPE* value =  (TPE*) &pvalue;\
+					if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
+					bool cmp  =  (((LI) && *value >= (LOW) ) || (!(LI) && *value > (LOW) ));\
+					if (cmp )\
+						*o++ = (oid) first;\
+				}\
+			} else{\
+				for( ; first < last; first++,i++){\
+					MOSskipit();\
+					PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+					TPE* value =  (TPE*) &pvalue;\
+					if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
+					bool cmp  =  (((HI) && *value <= (HIGH) ) || (!(HI) && *value < (HIGH) )) &&\
+							(((LI) && *value >= (LOW) ) || (!(LI) && *value > (LOW) ));\
+					if (cmp )\
+						*o++ = (oid) first;\
+				}\
+			}\
+		} else {\
+			if( IS_TPE_NIL(TPE, (LOW)) ){\
+				for( ; first < last; first++,i++){\
+					MOSskipit();\
+					PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+					TPE* value =  (TPE*) &pvalue;\
+					if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
+					bool cmp  =  (((HI) && *value <= (HIGH) ) || (!(HI) && *value < (HIGH) ));\
+					if ( !cmp )\
+						*o++ = (oid) first;\
+				}\
+			} else\
+			if( IS_TPE_NIL(TPE, (HIGH)) ){\
+				for( ; first < last; first++,i++){\
+					MOSskipit();\
+					PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+					TPE* value =  (TPE*) &pvalue;\
+					if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
+					bool cmp  =  (((LI) && *value >= (LOW) ) || (!(LI) && *value > (LOW) ));\
+					if ( !cmp )\
+						*o++ = (oid) first;\
+				}\
+			} else{\
+				for( ; first < last; first++,i++){\
+					MOSskipit();\
+					PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+					TPE* value =  (TPE*) &pvalue;\
+					if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
+					bool cmp  =  (((HI) && *value <= (HIGH) ) || (!(HI) && *value < (HIGH) )) &&\
+							(((LI) && *value >= (LOW) ) || (!(LI) && *value > (LOW) ));\
+					if (!cmp)\
+						*o++ = (oid) first;\
+				}\
 			}\
 		}\
 	}\
 }
 
+#define select_prefix(TPE, IS_TPE_NIL) {\
+	if( nil && *anti){\
+		select_prefix_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, true, true, TPE, IS_TPE_NIL);\
+	}\
+	if( !nil && *anti){\
+		select_prefix_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, false, true, TPE, IS_TPE_NIL);\
+	}\
+	if( nil && !*anti){\
+		select_prefix_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, true, false, TPE, IS_TPE_NIL);\
+	}\
+	if( !nil && !*anti){\
+		select_prefix_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, false, false, TPE, IS_TPE_NIL);\
+	}\
+}
+
+
+#define IS_FLT_OR_DBL_NIL(TPE, VAL) is_##TPE##_nil(VAL)
+
 str
 MOSselect_prefix( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti){
 	oid *o;
-	int bits,cmp;
 	BUN i = 0,first,last;
-	BitVector base;
 	// set the oid range covered
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
+	bool nil = !task->bsrc->tnonil;
 
 		if (task->cl && *task->cl > last){
 		MOSadvance_prefix(task);
@@ -667,37 +561,28 @@ MOSselect_prefix( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *ant
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: select_prefix(bte,unsigned char); break;
-	case TYPE_sht: select_prefix(sht,unsigned short); break;
-	case TYPE_int: select_prefix(int,unsigned int); break;
-	case TYPE_lng: select_prefix(lng,ulng); break;
-	case TYPE_oid: select_prefix(oid,ulng); break;
-	case TYPE_flt: select_prefix(flt,unsigned int); break;
-	case TYPE_dbl: select_prefix(dbl,ulng); break;
+	case TYPE_bte: select_prefix(bte, is_nil); break;
+	case TYPE_sht: select_prefix(sht, is_nil); break;
+	case TYPE_int: select_prefix(int, is_nil); break;
+	case TYPE_lng: select_prefix(lng, is_nil); break;
+	case TYPE_oid: select_prefix(oid, is_nil); break;
+	case TYPE_flt: select_prefix(flt, IS_FLT_OR_DBL_NIL); break;
+	case TYPE_dbl: select_prefix(dbl, IS_FLT_OR_DBL_NIL); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: select_prefix(hge,unsigned long long); break;
+	case TYPE_hge: select_prefix(hge, is_nil); break;
 #endif
-	default:
-		if( task->type == TYPE_date)
-			select_prefix(date,unsigned int); 
-		if( task->type == TYPE_daytime)
-			select_prefix(daytime,unsigned int); 
-		if( task->type == TYPE_timestamp)
-			select_prefix(lng,ulng); 
 	}
 	MOSadvance_prefix(task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
 
-#define thetaselect_prefix(TPE, TPE2)\
+#define thetaselect_prefix_general(HAS_NIL, TPE, IS_TPE_NIL)\
 { 	TPE low,hgh;\
-    TPE2 *dst =  (TPE2*)  (((char*) blk) + MosaicBlkSize);\
-    TPE2 mask = *dst++, val = *dst++,v;\
-    TPE value;\
-	base = (BitVector)(MOScodevector(task) + wordaligned(2 * sizeof(TPE),int));\
-	bits = (int)( val & (~mask));\
-	val = val & mask;\
+    MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) task->blk;\
+	BitVector base = (BitVector) MOScodevectorPrefix(task);\
+	PrefixTpe(TPE) prefix = parameters->prefix.prefix##TPE;\
+	int suffix_bits = parameters->suffix_bits;\
 	low= hgh = TPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
 		hgh= *(TPE*) input;\
@@ -723,33 +608,43 @@ MOSselect_prefix( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *ant
 	if ( !anti)\
 		for( ; first < last; first++,i++){\
 			MOSskipit();\
-			v = val | decompress(base,i,bits);\
-			value =  (TPE) ((TPE2)val |(TPE2) v);\
-			if( (is_nil(TPE, low) || value >= low) && (value <= hgh || is_nil(TPE, hgh)) )\
+			PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+			TPE* value =  (TPE*) &pvalue;\
+			if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
+			if( (is_nil(TPE, low) || *value >= low) && (*value <= hgh || is_nil(TPE, hgh)) )\
 			*o++ = (oid) first;\
 		}\
 	else\
 		for( ; first < last; first++,i++){\
 			MOSskipit();\
-			v = val | decompress(base,i,bits);\
-			value =  (TPE) ((TPE2)val |(TPE2) v);\
-			if( !( (is_nil(TPE, low) || value >= low) && (value <= hgh || is_nil(TPE, hgh)) ))\
+			PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+			TPE* value =  (TPE*) &pvalue;\
+			if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
+			if( !( (is_nil(TPE, low) || *value >= low) && (*value <= hgh || is_nil(TPE, hgh)) ))\
 				*o++ = (oid) first;\
 		}\
+}
+
+#define thetaselect_prefix(TPE, IS_TPE_NIL) {\
+	if( nil ){\
+		thetaselect_prefix_general(true, TPE, IS_TPE_NIL);\
+	}\
+	else /*!nil*/{\
+		thetaselect_prefix_general(false, TPE, IS_TPE_NIL);\
+	}\
 }
 
 str
 MOSthetaselect_prefix( MOStask task, void *input, str oper)
 {
 	oid *o;
-	int bits, anti=0;
+	int anti=0;
 	BUN i=0,first,last;
-	MosaicBlk blk = task->blk;
-    BitVector base;
 
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
+	bool nil = !task->bsrc->tnonil;
 
 	if (task->cl && *task->cl > last){
 		MOSskip_prefix(task);
@@ -758,15 +653,15 @@ MOSthetaselect_prefix( MOStask task, void *input, str oper)
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: thetaselect_prefix(bte, unsigned char); break;
-	case TYPE_sht: thetaselect_prefix(sht, unsigned short); break;
-	case TYPE_int: thetaselect_prefix(int, unsigned int); break;
-	case TYPE_lng: thetaselect_prefix(lng, ulng); break;
-	case TYPE_oid: thetaselect_prefix(oid, ulng); break;
-	case TYPE_flt: thetaselect_prefix(flt, unsigned int); break;
-	case TYPE_dbl: thetaselect_prefix(dbl, ulng); break;
+	case TYPE_bte: thetaselect_prefix(bte, is_nil); break;
+	case TYPE_sht: thetaselect_prefix(sht, is_nil); break;
+	case TYPE_int: thetaselect_prefix(int, is_nil); break;
+	case TYPE_lng: thetaselect_prefix(lng, is_nil); break;
+	case TYPE_oid: thetaselect_prefix(oid, is_nil); break;
+	case TYPE_flt: thetaselect_prefix(flt, IS_FLT_OR_DBL_NIL); break;
+	case TYPE_dbl: thetaselect_prefix(dbl, IS_FLT_OR_DBL_NIL); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: thetaselect_prefix(hge, unsigned long long); break;
+	case TYPE_hge: thetaselect_prefix(hge, is_nil); break;
 #endif
 	}
 	MOSskip_prefix(task);
@@ -774,66 +669,63 @@ MOSthetaselect_prefix( MOStask task, void *input, str oper)
 	return MAL_SUCCEED;
 }
 
-#define projection_prefix(TPE, TPE2)\
-{	TPE *r;\
-    TPE2 *dst =  (TPE2*)  MOScodevector(task);\
-    TPE2 mask = *dst++, val = *dst++,v;\
-    TPE value;\
-	base = (BitVector)(MOScodevector(task) + wordaligned(2 * sizeof(TPE),int));\
-	bits = (int) (val & (~mask));\
-	val = val & mask;\
-	r= (TPE*) task->src;\
+#define projection_prefix(TPE)\
+{	TPE *v;\
+    MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) task->blk;\
+	BitVector base = (BitVector) MOScodevectorPrefix(task);\
+	PrefixTpe(TPE) prefix = parameters->prefix.prefix##TPE;\
+	int suffix_bits = parameters->suffix_bits;\
+	v= (TPE*) task->src;\
 	for(; first < last; first++,i++){\
 		MOSskipit();\
-		v = val | decompress(base,i,bits);\
-		value =  (TPE) ((TPE2)val |(TPE2) v);\
-		*r++ = value;\
+		PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+		TPE* value =  (TPE*) &pvalue;\
+		*v++ = *value;\
 		task->cnt++;\
 	}\
-	task->src = (char*) r;\
+	task->src = (char*) v;\
 }
 
 str
 MOSprojection_prefix( MOStask task)
-{
-	int bits; 
+{ 
 	BUN i=0, first,last;
-    BitVector base;
 
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: projection_prefix(bte, unsigned char); break;
-		case TYPE_sht: projection_prefix(sht, unsigned short); break;
-		case TYPE_int: projection_prefix(int, unsigned int); break;
-		case TYPE_lng: projection_prefix(lng, ulng); break;
-		case TYPE_oid: projection_prefix(oid, ulng); break;
-		case TYPE_flt: projection_prefix(flt, unsigned int); break;
-		case TYPE_dbl: projection_prefix(dbl, ulng); break;
+		case TYPE_bte: projection_prefix(bte); break;
+		case TYPE_sht: projection_prefix(sht); break;
+		case TYPE_int: projection_prefix(int); break;
+		case TYPE_lng: projection_prefix(lng); break;
+		case TYPE_oid: projection_prefix(oid); break;
+		case TYPE_flt: projection_prefix(flt); break;
+		case TYPE_dbl: projection_prefix(dbl); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: projection_prefix(hge, unsigned long long); break;
+		case TYPE_hge: projection_prefix(hge); break;
 #endif
 	}
 	MOSskip_prefix(task);
 	return MAL_SUCCEED;
 }
 
-#define join_prefix(TPE,TPE2)\
+#define join_prefix_general(NIL_MATCHES, TPE, IS_TPE_NIL)\
 {   TPE *w;\
-	TPE2 *dst =  (TPE2*)  MOScodevector(task);\
-	TPE2 mask = *dst++, val = *dst++,v;\
-	TPE value;\
-	base = (BitVector)(MOScodevector(task) + wordaligned(2 * sizeof(TPE),int));\
-	bits = (int) (val & (~mask));\
-	val = val & mask;\
+    MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) task->blk;\
+	BitVector base = (BitVector) MOScodevectorPrefix(task);\
+	PrefixTpe(TPE) prefix = parameters->prefix.prefix##TPE;\
+	int suffix_bits = parameters->suffix_bits;\
 	w = (TPE*) task->src;\
 	for(n = task->stop, o = 0; n -- > 0; w++,o++){\
-		for(i=0, oo= (oid) first; oo < (oid) last; v++, oo++,i++){\
-			v = val | decompress(base,i,bits);\
-			value =  (TPE) ((TPE2)val |(TPE2) v);\
-			if ( *w == value){\
+		for(i=0, oo= (oid) first; oo < (oid) last; oo++,i++){\
+			PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+			TPE* value =  (TPE*) &pvalue;\
+			if (!NIL_MATCHES) {\
+				if (IS_TPE_NIL(TPE, *value)) { continue;}\
+			}\
+			if ( *w == *value){\
 				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
 				BUNappend(task->rbat, &o, false) != GDK_SUCCEED )\
 				throw(MAL,"mosaic.prefix",MAL_MALLOC_FAIL);\
@@ -842,28 +734,36 @@ MOSprojection_prefix( MOStask task)
 	}\
 }
 
+#define join_prefix(TPE, IS_TPE_NIL) {\
+	if( nil && !nil_matches ){\
+		join_prefix_general(false, TPE, IS_TPE_NIL);\
+	}\
+	else /*!nil*/{\
+		join_prefix_general(true, TPE, IS_TPE_NIL);\
+	}\
+}
+
 str
-MOSjoin_prefix( MOStask task)
+MOSjoin_prefix( MOStask task, bit nil_matches)
 {
-	int bits;
 	BUN i= 0,n,first,last;
 	oid o, oo;
-	BitVector base;
 
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
+	bool nil = !task->bsrc->tnonil;
 
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: join_prefix(bte,unsigned char); break;
-		case TYPE_sht: join_prefix(sht,unsigned short); break;
-		case TYPE_int: join_prefix(int,unsigned int); break;
-		case TYPE_lng: join_prefix(lng,ulng); break;
-		case TYPE_oid: join_prefix(oid,BUN); break;
-		case TYPE_flt: join_prefix(flt,unsigned int); break;
-		case TYPE_dbl: join_prefix(dbl,ulng); break;
+		case TYPE_bte: join_prefix(bte, is_nil); break;
+		case TYPE_sht: join_prefix(sht, is_nil); break;
+		case TYPE_int: join_prefix(int, is_nil); break;
+		case TYPE_lng: join_prefix(lng, is_nil); break;
+		case TYPE_oid: join_prefix(oid, is_nil); break;
+		case TYPE_flt: join_prefix(flt, IS_FLT_OR_DBL_NIL); break;
+		case TYPE_dbl: join_prefix(dbl, IS_FLT_OR_DBL_NIL); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: join_prefix(hge,unsigned long long); break;
+		case TYPE_hge: join_prefix(hge, is_nil); break;
 #endif
 	}
 	MOSskip_prefix(task);

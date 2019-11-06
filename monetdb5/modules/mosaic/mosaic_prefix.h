@@ -24,10 +24,10 @@ mal_export void MOSlayout_prefix(MOStask task, BAT *btech, BAT *bcount, BAT *bin
 mal_export void MOSadvance_prefix(MOStask task);
 mal_export void MOSskip_prefix(MOStask task);
 mal_export str  MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
-mal_export void MOScompress_prefix(MOStask task);
+mal_export void MOScompress_prefix(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_prefix(MOStask task);
 mal_export str MOSselect_prefix( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
 mal_export str MOSthetaselect_prefix( MOStask task, void *val, str oper);
 mal_export str MOSprojection_prefix( MOStask task);
-mal_export str MOSjoin_prefix( MOStask task);
+mal_export str MOSjoin_prefix( MOStask task, bit nil_matches);
 #endif /* _MOSAIC_PREFIX_ */

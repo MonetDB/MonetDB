@@ -86,3 +86,8 @@ mosaic_lng_1.prefix
 mosaic_oid_1.prefix
 mosaic_date_1.prefix
 mosaic_timestamp_1.prefix
+mosaic_bit_with_nills_1.prefix
+mosaic_lng_with_nills_1.prefix
+mosaic_oid_with_nills_1.prefix
+mosaic_date_with_nills_1.prefix
+mosaic_timestamp_with_nills_1.prefix
