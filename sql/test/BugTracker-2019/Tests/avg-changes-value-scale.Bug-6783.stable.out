@@ -69,7 +69,8 @@ stdout of test 'avg-changes-value-scale.Bug-6783` in directory 'sql/test/BugTrac
 % L2 # name
 % double # type
 % 24 # length
-[ 1.75e+02	]
+[ 175	]
+#ROLLBACK;
 
 # 16:29:22 >  
 # 16:29:22 >  "Done."
