@@ -1,11 +1,13 @@
 ####technical depth####
-Test null semantics
-mosaic.select (c,nil:any_1, nil:any_1,true,true,(true|false)) is not working correctly: should result in c == nil or c!=nil(anti).
+null semantics plus tests
+make sure candidate lists are working properly for select, theta_select and join
 Use bit vectors more aggressively in mosaic_delta --- then resolve test mosaic_delta_timestamp --- and possibly other compression techniques as well.
 Be sure alignment is correct. Use asserts for this.
+consider packing mosaic_block_header's more efficiently.
 Check MOSanalysis and its test.
 Fix/check/test MOSlayout.
 Add test for float/double
+Add test for huge
 delta compression: check if the hardcoded compression expression are correct. See also (2)
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
 See if we can re-introduce landmark stuff somehow.
@@ -15,7 +17,6 @@ benchmark
 Update copyright.
 create dedicated type for bitvector internal type which is currently unsignned int. E.g. introduce #define BitVectorChunkType unsigned int.
 move mask, bits, framebits from  MosaicHdr to MosaicBlkHeader_frame_t.
-mosaic_prefix.c: prefix code does not use macro's!!!!
 mosaic_delta.c: improve the macro's: for instance get rid of hardcoded expression arguments in DELTAcompress. (2*)
 mosaic_<compression>.c: for type macro's use macro-wised inline functions.
 Improve the administration of the various hard coded compression techniques. (2*)
