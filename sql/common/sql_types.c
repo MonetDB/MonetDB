@@ -1858,7 +1858,7 @@ sqltypeinit( sql_allocator *sa)
 #endif
 
 	sql_create_analytic(sa, "avg", "sql", "avg", MONINT, DBL, SCALE_NONE);
-	sql_create_analytic(sa, "avg", "sql", "avg", SECINT, DBL, SCALE_NONE);
+	//sql_create_analytic(sa, "avg", "sql", "avg", SECINT, DBL, SCALE_NONE);
 
 #if 0
 	t = decimals; // BTE
