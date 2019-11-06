@@ -332,16 +332,13 @@ def msc_dep(fd, tar, deplist, msc):
         x, de = split_filename(deplist[0])
         of = b + '.' + de
         fd.write('\t$(YACC) $(YFLAGS) $(AM_YFLAGS) "%s"\n' % of)
-    elif ext == "yy.c":
-        fd.write(getsrc)
-        fd.write('\t$(LEX) $(LFLAGS) $(AM_LFLAGS) "%s.l"\n' % b)
-    elif ext in ("obj", "tab.obj", "yy.obj"):
+    elif ext in ("obj", "tab.obj"):
         target, name = msc_find_target(tar, msc)
         if name[0] == '_':
             name = name[1:]
         if target == "LIB":
             d, dext = split_filename(deplist[0])
-            if dext in ("c", "cpp", "yy.c", "tab.c"):
+            if dext in ("c", "tab.c"):
                 fd.write('\t$(CC) /EHsc $(CFLAGS) $(%s_CFLAGS) $(GENDLL) -D_CRT_SECURE_NO_WARNINGS -DLIB%s "-Fo%s" -c "%s"\n' %
                          (split_filename(msc_basename(src))[0], name, t, src))
     elif ext == 'res':
@@ -569,8 +566,6 @@ def msc_binary(fd, var, binmap, msc):
             srcs = srcs + " " + t + ".obj"
         elif ext == "tab.o":
             srcs = srcs + " " + t + ".tab.obj"
-        elif ext == "yy.o":
-            srcs = srcs + " " + t + ".yy.obj"
         elif ext == 'def':
             srcs = srcs + ' ' + target
         elif ext == 'res':
@@ -665,8 +660,6 @@ def msc_bins(fd, var, binsmap, msc):
                     srcs = srcs + " " + t + ".obj"
                 elif ext == "tab.o":
                     srcs = srcs + " " + t + ".tab.obj"
-                elif ext == "yy.o":
-                    srcs = srcs + " " + t + ".yy.obj"
                 elif ext == 'res':
                     srcs = srcs + " " + t + ".res"
                 elif ext in hdrs_ext:
@@ -809,10 +802,6 @@ def msc_library(fd, var, libmap, msc):
                 srcs = srcs + " " + t + ".obj"
             elif ext == "tab.o":
                 srcs = srcs + " " + t + ".tab.obj"
-            elif ext == "yy.o":
-                srcs = srcs + " " + t + ".yy.obj"
-            elif ext == "pm.o":
-                srcs = srcs + " " + t + ".pm.obj"
             elif ext == 'res':
                 srcs = srcs + " " + t + ".res"
             elif ext in hdrs_ext:

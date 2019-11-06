@@ -23,18 +23,6 @@ MV=mv
 	[ ! -f y.tab.c ] || $(RM) y.tab.c
 	$(RM) waiting
 
-%.yy.c: %.l
-	touch waiting.$$$$ && until ln waiting.$$$$ waiting 2>/dev/null; do sleep 1; done && rm waiting.$$$$
-	$(LEX) $(LFLAGS) $(AM_LFLAGS) $< || { $(RM) waiting ; exit 1 ; }
-	[ -f $*.yy.h ] && $(RM) $*.yy.h
-	$(RM) waiting
-
-%.yy.h: %.l
-	touch waiting.$$$$ && until ln waiting.$$$$ waiting 2>/dev/null; do sleep 1; done && rm waiting.$$$$
-	$(LEX) $(LFLAGS) $(AM_LFLAGS) $< || { $(RM) waiting ; exit 1 ; }
-	[ -f $*.yy.c ] && $(RM) $*.yy.c
-	$(RM) waiting
-
 %.def: %.syms
 	case `(uname -s) 2> /dev/null || echo unknown` in CYGWIN*) cat $<;; *) sed '/DllMain/d;s/=.*//' $<;; esac > $@
 
