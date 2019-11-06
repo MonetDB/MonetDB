@@ -26,7 +26,5 @@ mal_export int MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, lng argcl
 #define FAIRNESS_THRESHOLD (MAX_DELAYS * DELAYUNIT)
 
 mal_export lng getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag);
-mal_export void MALresourceFairness(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng usec);
-mal_export size_t MALrunningThreads(void);
 
 #endif /*  _MAL_RESOURCE_H*/

@@ -229,11 +229,6 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 		if( getInstrPtr(mb,0) == pci)
 			malProfileMode = 1;
 	}
-	/* Postpone active worker threads */
-	/* Reduce worker threads of non-admin long running transaction if needed.
- 	* the punishment is equal to the duration of the last instruction */
-	if ( cntxt->user != MAL_ADMIN && ticks - mb->starttime > LONGRUNNING )
-			MALresourceFairness(cntxt, mb, stk, pci, pci->ticks);
 }
 
 /*

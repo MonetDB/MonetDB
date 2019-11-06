@@ -105,7 +105,6 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
  * Surpassing this bound may be a reason to not admit the instruction to proceed.
  */
 static MT_Lock admissionLock = MT_LOCK_INITIALIZER("admissionLock");
-ATOMIC_TYPE mal_running = ATOMIC_VAR_INIT(0);
 
 /* experiments on sf-100 on small machine showed no real improvement */
 
@@ -186,7 +185,7 @@ MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, lng argclaim)
 		stk->memory += -argclaim;
 	}
 	/* release memory claimed before */
-	memorypool += (lng) -argclaim ;
+	memorypool += -argclaim ;
 	memoryclaims--;
 	stk->workers--;
 
@@ -195,76 +194,4 @@ MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, lng argclaim)
 				 memoryclaims, THRgettid(), memorypool, argclaim);
 	MT_lock_unset(&admissionLock);
 	return 0;
-}
-
-/* The Dataflow by default activates GDnr_thread workers per query.
- * For long running queries this blocks progress of competing queries.
- * A level of fairness is created to watch for long running queries and slow them down.
- * The 'problem' with this code is that it also reduces the number of active workers,
- * while we merely want to punish one query.
- */
-
-void
-MALresourceFairness(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng usec)
-{
-	size_t rss;
-	lng clk;
-	int delayed= 0;
-	int users = 2;
-
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-
-
-	/* don't punish queries whose last instruction was fast to executed in the first place */
-	if ( usec <= TIMESLICE)
-		return;
-
-	/* use GDKmem_cursize as MT_getrss() is too expensive */
-	rss = GDKmem_cursize();
-	/* ample of memory available*/
-	if ( rss <= MEMORY_THRESHOLD )
-		return;
-
-	(void) ATOMIC_INC(&mal_running);
-
-	/* worker reporting time spent  in usec! */
-	clk =  usec / 1000;
-
-#if FAIRNESS_THRESHOLD < 1000	/* it's actually 2000 */
-	/* cap the maximum penalty */
-	clk = clk > FAIRNESS_THRESHOLD? FAIRNESS_THRESHOLD:clk;
-#endif
-
-	/* always keep one running to avoid all waiting  */
-	while (clk > DELAYUNIT && users > 1 && rss > MEMORY_THRESHOLD && (int) ATOMIC_GET(&mal_running) > GDKnr_threads ) {
-		if ( delayed++ == 0){
-				PARDEBUG fprintf(stderr, "#delay initial ["LLFMT"] memory  %zu[%f]\n", clk, rss, MEMORY_THRESHOLD );
-		}
-		if ( delayed == MAX_DELAYS){
-				PARDEBUG fprintf(stderr, "#delay abort ["LLFMT"] memory  %zu[%f]\n", clk, rss, MEMORY_THRESHOLD );
-				PARDEBUG fflush(stderr);
-				break;
-		}
-		MT_sleep_ms(DELAYUNIT);
-		users= MCactiveClients();
-		rss = GDKmem_cursize();
-		clk -= DELAYUNIT;
-	}
-	(void) ATOMIC_DEC(&mal_running);
-}
-
-// Get a hint on the parallel behavior
-size_t
-MALrunningThreads(void)
-{
-	return ATOMIC_GET(&mal_running);
-}
-
-void
-initResource(void)
-{
-	ATOMIC_SET(&mal_running, GDKnr_threads);
 }

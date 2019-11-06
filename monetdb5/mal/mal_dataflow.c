@@ -380,7 +380,7 @@ DFLOWworker(void *T)
 			continue;
 		}
 
-		if (MALrunningThreads() > 2 && MALadmission(flow->cntxt, flow->mb, flow->stk, fe->argclaim)) {
+		if (MALadmission(flow->cntxt, flow->mb, flow->stk, fe->argclaim)) {
 			// never block on deblockdataflow()
 			p= getInstrPtr(flow->mb,fe->pc);
 			if( p->fcn != (MALfcn) deblockdataflow){
