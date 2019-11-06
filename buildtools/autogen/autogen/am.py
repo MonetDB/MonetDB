@@ -150,6 +150,8 @@ def am_find_srcs(target, deps, am, cond):
                 am['CLEAN'].append(pf)
     b, ext = split_filename(pf)
     if ext in automake_ext:
+        if ext in ['tab.c', 'tab.h']:
+            dist = True
         return dist, pf
     return dist, ""
 
