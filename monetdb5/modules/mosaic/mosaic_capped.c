@@ -597,9 +597,9 @@ MOSselect_capped(MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	if ( strcmp(oper,"==") == 0){\
 		hgh= low= *(TPE*) val;\
 	} \
-	for( ; first < last; first++){\
+	for(int i=0 ; first < last; first++, i++){\
 		MOSskipit();\
-		j= getBitVector(base, first, bits); \
+		j= getBitVector(base, i, bits); \
 		if( (is_nil(TPE, low) || dict[j] >= low) && (dict[j] <= hgh || is_nil(TPE, hgh)) ){\
 			if ( !anti) {\
 				*o++ = (oid) first;\
