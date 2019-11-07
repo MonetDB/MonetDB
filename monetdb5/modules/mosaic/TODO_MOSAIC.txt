@@ -1,16 +1,21 @@
 ####technical depth####
-null semantics plus tests
+Look into select cases *	v	v	A*		B*		(false|false) they some to be wrong & not tested
+Finish null semantics plus tests
 make sure candidate lists are working properly for select, theta_select and join
+make mitosis work with mosaic and see how this relates to the previous landmark stuff.
+Be sure alignment is correct. Use asserts for this.
 Add test for float/double
 Add test for huge
-Use bit vectors more aggressively in mosaic_delta --- then resolve test mosaic_delta_timestamp --- and possibly other compression techniques as well.
-Be sure alignment is correct. Use asserts for this.
-consider packing mosaic_block_header's more efficiently.
 Check MOSanalysis and its test.
 Fix/check/test MOSlayout.
-delta compression: check if the hardcoded compression expression are correct. See also (2)
+Use bit vectors in mosaic_delta --- then resolve test mosaic_delta_timestamp --- and possibly other compression techniques as well.(2)
+Remove floating point support in prefix compression and use prefix-like-frame semantics
+Apply compressed operations directly on keys in dictionary compression.
+
+consider packing mosaic_block_header's more efficiently.
+delta compression: check if the hardcoded compression expression are correct. (2*)
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
-See if we can re-introduce landmark stuff somehow.
+
 benchmark
 
 ####code issues####
@@ -20,6 +25,6 @@ create a common header/source file for mosaic for common tasks e.g. to house a g
 Introduce FrameTpe similar to PrefixTpe.
 share more code between capped and var.
 move mask, bits, framebits from  MosaicHdr to MosaicBlkHeader_frame_t.
-mosaic_delta.c: improve the macro's: for instance get rid of hardcoded expression arguments in DELTAcompress. (2*)
+mosaic_delta.c: improve the macro's: for instance get rid of hardcoded expression arguments in DELTAcompress. (2)
 mosaic_<compression>.c: for type macro's use macro-wised inline functions.
 Improve the administration of the various hard coded compression techniques. (2*)
