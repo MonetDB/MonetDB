@@ -1814,57 +1814,63 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 	BAT *bn;
 	void *restrict p;
 	BUN i;
+	lng t0 = 0;
+
+	ALGODEBUG t0 = GDKusec();
 
 	if (v == NULL)
 		return NULL;
 	bn = COLnew(hseq, tailtype, n, role);
-	if (bn == NULL)
-		return NULL;
-	p = Tloc(bn, 0);
-	switch (ATOMstorage(tailtype)) {
-	case TYPE_void:
-		v = &oid_nil;
-		BATtseqbase(bn, oid_nil);
-		break;
-	case TYPE_bte:
-		for (i = 0; i < n; i++)
-			((bte *) p)[i] = *(bte *) v;
-		break;
-	case TYPE_sht:
-		for (i = 0; i < n; i++)
-			((sht *) p)[i] = *(sht *) v;
-		break;
-	case TYPE_int:
-	case TYPE_flt:
-		assert(sizeof(int) == sizeof(flt));
-		for (i = 0; i < n; i++)
-			((int *) p)[i] = *(int *) v;
-		break;
-	case TYPE_lng:
-	case TYPE_dbl:
-		assert(sizeof(lng) == sizeof(dbl));
-		for (i = 0; i < n; i++)
-			((lng *) p)[i] = *(lng *) v;
-		break;
+	if (bn != NULL && n > 0) {
+		p = Tloc(bn, 0);
+		switch (ATOMstorage(tailtype)) {
+		case TYPE_void:
+			v = &oid_nil;
+			BATtseqbase(bn, oid_nil);
+			break;
+		case TYPE_bte:
+			for (i = 0; i < n; i++)
+				((bte *) p)[i] = *(bte *) v;
+			break;
+		case TYPE_sht:
+			for (i = 0; i < n; i++)
+				((sht *) p)[i] = *(sht *) v;
+			break;
+		case TYPE_int:
+		case TYPE_flt:
+			assert(sizeof(int) == sizeof(flt));
+			for (i = 0; i < n; i++)
+				((int *) p)[i] = *(int *) v;
+			break;
+		case TYPE_lng:
+		case TYPE_dbl:
+			assert(sizeof(lng) == sizeof(dbl));
+			for (i = 0; i < n; i++)
+				((lng *) p)[i] = *(lng *) v;
+			break;
 #ifdef HAVE_HGE
-	case TYPE_hge:
-		for (i = 0; i < n; i++)
-			((hge *) p)[i] = *(hge *) v;
-		break;
+		case TYPE_hge:
+			for (i = 0; i < n; i++)
+				((hge *) p)[i] = *(hge *) v;
+			break;
 #endif
-	default:
-		for (i = 0, n += i; i < n; i++)
-			tfastins_nocheck(bn, i, v, Tsize(bn));
-		break;
+		default:
+			for (i = 0, n += i; i < n; i++)
+				tfastins_nocheck(bn, i, v, Tsize(bn));
+			break;
+		}
+		bn->theap.dirty = true;
+		bn->tnil = n >= 1 && (*ATOMcompare(tailtype))(v, ATOMnilptr(tailtype)) == 0;
+		BATsetcount(bn, n);
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tnonil = !bn->tnil;
+		bn->tkey = BATcount(bn) <= 1;
 	}
-	bn->theap.dirty = true;
-	bn->tnil = n >= 1 && (*ATOMcompare(tailtype))(v, ATOMnilptr(tailtype)) == 0;
-	BATsetcount(bn, n);
-	bn->tsorted = true;
-	bn->trevsorted = true;
-	bn->tnonil = !bn->tnil;
-	bn->tkey = BATcount(bn) <= 1;
-	ALGODEBUG fprintf(stderr, "#BATconstant()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
+	ALGODEBUG fprintf(stderr, "#%s: %s()=" ALGOOPTBATFMT
+			  " (" LLFMT "usec)\n",
+			  MT_thread_getname(), __func__,
+			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
 
   bunins_failed:
