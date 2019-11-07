@@ -554,7 +554,7 @@ batToStr(char **dst, size_t *len, const bat *src, bool external)
 	}
 	i = strlen(s) + 3;
 	atommem(i);
-	return (ssize_t) strconcat_len(*dst, sizeof(*dst), "<", s, ">", NULL);
+	return (ssize_t) strconcat_len(*dst, *len, "<", s, ">", NULL);
 }
 
 
