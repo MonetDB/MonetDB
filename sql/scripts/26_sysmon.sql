@@ -33,6 +33,13 @@ external name sql.sysmon_resume;
 create procedure sys.stop(tag tinyint)
 external name sql.sysmon_stop;
 
+create procedure sys.pause(tag smallint)
+external name sql.sysmon_pause;
+create procedure sys.resume(tag smallint)
+external name sql.sysmon_resume;
+create procedure sys.stop(tag smallint)
+external name sql.sysmon_stop;
+
 create procedure sys.pause(tag int)
 external name sql.sysmon_pause;
 create procedure sys.resume(tag int)

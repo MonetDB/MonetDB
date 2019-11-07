@@ -2391,6 +2391,13 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"create procedure sys.resume(tag tinyint)\n"
 			"external name sql.sysmon_resume;\n"
 			"create procedure sys.stop(tag tinyint)\n"
+			"external name sql.sysmon_stop;\n"
+
+			"create procedure sys.pause(tag smallint)\n"
+			"external name sql.sysmon_pause;\n"
+			"create procedure sys.resume(tag smallint)\n"
+			"external name sql.sysmon_resume;\n"
+			"create procedure sys.stop(tag smallint)\n"
 			"external name sql.sysmon_stop;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,

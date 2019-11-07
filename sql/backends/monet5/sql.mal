@@ -661,6 +661,8 @@ pattern sysmon_queue()(tag:bat[:lng], sessionid:bat[:int], user:bat[:str], start
 status:bat[:str], query:bat[:str], progress:bat[:int], workers:bat[:int], memory:bat[:int])
 address SYSMONqueue;
 
+pattern sysmon_pause(tag:bte)
+address SYSMONpause;
 pattern sysmon_pause(tag:sht)
 address SYSMONpause;
 pattern sysmon_pause(tag:int)
@@ -668,6 +670,8 @@ address SYSMONpause;
 pattern sysmon_pause(tag:lng)
 address SYSMONpause;
 
+pattern sysmon_resume(tag:bte)
+address SYSMONresume;
 pattern sysmon_resume(tag:sht)
 address SYSMONresume;
 pattern sysmon_resume(tag:int)
@@ -675,6 +679,8 @@ address SYSMONresume;
 pattern sysmon_resume(tag:lng)
 address SYSMONresume;
 
+pattern sysmon_stop(tag:bte)
+address SYSMONstop;
 pattern sysmon_stop(tag:sht)
 address SYSMONstop;
 pattern sysmon_stop(tag:int)

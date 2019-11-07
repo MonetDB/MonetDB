@@ -38,7 +38,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	tag = COLnew(0, TYPE_lng, 256, TRANSIENT);
-	sessionid = COLnew(2, TYPE_int, 256, TRANSIENT);
+	sessionid = COLnew(0, TYPE_int, 256, TRANSIENT);
 	user = COLnew(0, TYPE_str, 256, TRANSIENT);
 	started = COLnew(0, TYPE_timestamp, 256, TRANSIENT);
 	status = COLnew(0, TYPE_str, 256, TRANSIENT);
@@ -62,7 +62,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; i< qtop; i++)
 	if( QRYqueue[i].query && (QRYqueue[i].cntxt->user == MAL_ADMIN || QRYqueue[i].cntxt->user == cntxt->user)) {
-		qtag= QRYqueue[i].tag;
+		qtag = (lng) QRYqueue[i].tag;
 		if (BUNappend(tag, &qtag, false) != GDK_SUCCEED)
 			goto bailout;
 		msg = AUTHgetUsername(&usr, QRYqueue[i].cntxt);
@@ -133,6 +133,7 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	
 	switch( getArgType(mb,pci,1)){
+	case TYPE_bte: tag = *getArgReference_bte(stk,pci,1); break;
 	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
 	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
 	case TYPE_lng: tag = *getArgReference_lng(stk,pci,1); break;
@@ -163,6 +164,7 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	
 	switch( getArgType(mb,pci,1)){
+	case TYPE_bte: tag = *getArgReference_bte(stk,pci,1); break;
 	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
 	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
 	case TYPE_lng: tag = *getArgReference_lng(stk,pci,1); break;
@@ -193,6 +195,7 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	
 	switch( getArgType(mb,pci,1)){
+	case TYPE_bte: tag = *getArgReference_bte(stk,pci,1); break;
 	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
 	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
 	case TYPE_lng: tag = *getArgReference_lng(stk,pci,1); break;
