@@ -4494,18 +4494,18 @@ sql_stack_add_updated(mvc *sql, const char *on, const char *nn, sql_table *t, st
 		sql_column *c = n->data;
 
 		if (updates[c->colnr]) {
-			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, c->null, 0);
-			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			sql_exp *oe = exp_alias(sql->sa, on, c->base.name, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			sql_exp *ne = exp_alias(sql->sa, nn, c->base.name, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 
 			append(exps, oe);
 			append(exps, ne);
-		} else { /* later select correct updated rows only ? */
-			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, c->null, 0);
-			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+		} /*else {  later select correct updated rows only ? 
+			sql_exp *oe = exp_alias(sql->sa, on, c->base.name, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			sql_exp *ne = exp_alias(sql->sa, nn, c->base.name, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 
 			append(exps, oe);
 			append(exps, ne);
-		}
+		}*/
 	}
 	r = rel_table_func(sql->sa, NULL, NULL, exps, 2);
 	r->l = ti;

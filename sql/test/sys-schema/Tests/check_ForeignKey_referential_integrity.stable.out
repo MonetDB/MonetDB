@@ -363,6 +363,11 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 % qtag,	user,	started,	estimate,	progress,	status,	tag,	query # name
 % bigint,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
 % 1,	0,	26,	26,	1,	0,	3,	0 # length
+#SELECT * FROM sys.queue WHERE tag NOT IN (SELECT cast(tag as oid) FROM sys.queue); 
+% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
+% qtag,	user,	started,	estimate,	progress,	status,	tag,	query # name
+% bigint,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
+% 1,	0,	26,	26,	1,	0,	3,	0 # length
 #SELECT * FROM sys.queue WHERE "user" NOT IN (SELECT name FROM sys.users);
 % .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
 % qtag,	user,	started,	estimate,	progress,	status,	tag,	query # name
