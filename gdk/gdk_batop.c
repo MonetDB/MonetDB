@@ -1957,45 +1957,18 @@ PROPdestroy(BAT *b)
 }
 
 PROPrec *
-BATgetprop(BAT *b, enum prop_t idx)
+BATgetprop_nolock(BAT *b, enum prop_t idx)
 {
-	PROPrec *p = b->tprops;
+	PROPrec *p;
 
-	while (p) {
-		if (p->id == idx)
-			return p;
+	p = b->tprops;
+	while (p && p->id != idx)
 		p = p->next;
-	}
-	return NULL;
+	return p;
 }
 
-void
-BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
-{
-	PROPrec *p = BATgetprop(b, idx);
-
-	if (p == NULL) {
-		if ((p = GDKmalloc(sizeof(PROPrec))) == NULL) {
-			/* properties are hints, so if we can't create
-			 * one we ignore the error */
-			return;
-		}
-		p->id = idx;
-		p->next = b->tprops;
-		p->v.vtype = 0;
-		b->tprops = p;
-	} else {
-		VALclear(&p->v);
-	}
-	if (VALinit(&p->v, type, v) == NULL) {
-		/* failed to initialize, so remove property */
-		BATrmprop(b, idx);
-	}
-	b->batDirtydesc = true;
-}
-
-void
-BATrmprop(BAT *b, enum prop_t idx)
+static void
+BATrmprop_nolock(BAT *b, enum prop_t idx)
 {
 	PROPrec *prop = b->tprops, *prev = NULL;
 
@@ -2012,6 +1985,63 @@ BATrmprop(BAT *b, enum prop_t idx)
 		prev = prop;
 		prop = prop->next;
 	}
+}
+
+void
+BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
+{
+	PROPrec *p;
+
+	p = b->tprops;
+	while (p && p->id != idx)
+		p = p->next;
+	if (p == NULL) {
+		if ((p = GDKmalloc(sizeof(PROPrec))) == NULL) {
+			/* properties are hints, so if we can't create
+			 * one we ignore the error */
+			GDKclrerr();
+			return;
+		}
+		p->id = idx;
+		p->next = b->tprops;
+		p->v.vtype = 0;
+		b->tprops = p;
+	} else {
+		VALclear(&p->v);
+	}
+	if (VALinit(&p->v, type, v) == NULL) {
+		/* failed to initialize, so remove property */
+		BATrmprop_nolock(b, idx);
+		GDKclrerr();
+	}
+	b->batDirtydesc = true;
+}
+
+PROPrec *
+BATgetprop(BAT *b, enum prop_t idx)
+{
+	PROPrec *p;
+
+	MT_lock_set(&b->batIdxLock);
+	p = BATgetprop_nolock(b, idx);
+	MT_lock_unset(&b->batIdxLock);
+	return p;
+}
+
+void
+BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
+{
+	MT_lock_set(&b->batIdxLock);
+	BATsetprop_nolock(b, idx, type, v);
+	MT_lock_unset(&b->batIdxLock);
+}
+
+void
+BATrmprop(BAT *b, enum prop_t idx)
+{
+	MT_lock_set(&b->batIdxLock);
+	BATrmprop_nolock(b, idx);
+	MT_lock_unset(&b->batIdxLock);
 }
 
 

@@ -62,6 +62,8 @@ __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden PROPrec *BATgetprop(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
+__hidden PROPrec * BATgetprop_nolock(BAT *b, enum prop_t idx)
+	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
@@ -79,6 +81,8 @@ __hidden void BATrmprop(BAT *b, enum prop_t idx)
 __hidden void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
+	__attribute__((__visibility__("hidden")));
+__hidden void BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__warn_unused_result__))

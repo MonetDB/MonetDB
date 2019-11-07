@@ -227,9 +227,11 @@ BATcheckhash(BAT *b)
 						close(fd);
 						h->heap.parentid = b->batCacheid;
 						h->heap.dirty = false;
-						BATsetprop(b, GDK_HASH_MASK,
-							   TYPE_oid,
-							   &(oid){h->mask + 1});
+						BATsetprop_nolock(
+							b,
+							GDK_HASH_MASK,
+							TYPE_oid,
+							&(oid){h->mask + 1});
 						b->thash = h;
 						ACCELDEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
 						MT_lock_unset(&b->batIdxLock);
@@ -421,7 +423,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
 		mask = HASHmask(cnt);
- 	} else if (s == NULL && (prop = BATgetprop(b, GDK_HASH_MASK)) != NULL) {
+ 	} else if (s == NULL && (prop = BATgetprop_nolock(b, GDK_HASH_MASK)) != NULL) {
 		assert(prop->v.vtype == TYPE_oid);
 		mask = prop->v.val.oval;
 		assert((mask & (mask - 1)) == 0); /* power of two */
@@ -574,7 +576,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		break;
 	}
 	if (s == NULL)
-		BATsetprop(b, GDK_HASH_MASK, TYPE_oid, &(oid){h->mask + 1});
+		BATsetprop_nolock(b, GDK_HASH_MASK, TYPE_oid, &(oid){h->mask + 1});
 	((size_t *) h->heap.base)[5] = (size_t) nslots;
 #ifndef NDEBUG
 	/* clear unused part of Link array */
