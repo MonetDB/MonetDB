@@ -154,7 +154,7 @@ MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argcla
 			/* If we are low on memory resources, limit the user if he exceeds his memory budget 
 			 * but make sure there is at least one thread active */
 			if( cntxt->memorylimit){
-				mbytes = cntxt->memorylimit * 1024 * 1024;
+				mbytes = ((lng) cntxt->memorylimit) * 1024 * 1024;
 				if (argclaim + stk->memory > mbytes){
 					MT_lock_unset(&admissionLock);
 					PARDEBUG

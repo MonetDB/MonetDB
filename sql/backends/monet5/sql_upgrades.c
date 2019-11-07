@@ -2320,7 +2320,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 				"\"sessiontimeout\" int,\n"
 				"\"querytimeout\" int,\n"
 				"\"workerlimit\" int,\n"
-				"\"memorylimit\" bigint)\n"
+				"\"memorylimit\" int)\n"
  			" external name sql.sessions;\n"
 			"create view sys.sessions as select * from sys.sessions();\n");
 

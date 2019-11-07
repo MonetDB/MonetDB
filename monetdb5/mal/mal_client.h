@@ -67,7 +67,7 @@ typedef struct CLIENT {
 	 */
 	char	optimizer[IDLENGTH];/* The optimizer pipe preferred for this session */
 	int 	workerlimit;		/* maximum number of workthreads processing a query */
-	lng		memorylimit;		/* Memory claim highwater mark, 0 = no limit */
+	int		memorylimit;		/* Memory claim highwater mark, 0 = no limit */
 	lng 	querytimeout;		/* query abort after x usec, 0 = no limit*/
 	lng	    sessiontimeout;		/* session abort after x usec, 0 = no limit */
 
