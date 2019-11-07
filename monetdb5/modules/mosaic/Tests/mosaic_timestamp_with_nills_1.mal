@@ -202,6 +202,32 @@ eq2  := batcalc.==(tsa, tsc);
 eq3  := batcalc.==(sc, tsc);
 io.print(sa, sc, tsa, tsc, eq1, eq2, eq3);
 
+# Should give empty result
+sa:= algebra.select(a,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,false,true,false);
+sc:= mosaic.select (c,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,true,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,false,false,false);
+sc:= mosaic.select (c,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,false,false,false);
+io.print(sa, sc);
+
+# Should give all non-nil value
+sa:= algebra.select(a,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,false,true,true);
+sc:= mosaic.select (c,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,true,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,false,false,true);
+sc:= mosaic.select (c,"2014-08-14 12:10:00":timestamp, "2014-08-14 12:10:00":timestamp,false,false,true);
+io.print(sa, sc);
+
 sa:= algebra.select(a,"2014-08-14 12:10:05":timestamp, "2014-08-14 12:09:51":timestamp,true,true,false);
 sc:= mosaic.select (c,"2014-08-14 12:10:05":timestamp, "2014-08-14 12:09:51":timestamp,true,true,false);
 eq  := batcalc.==(sa,  sc);

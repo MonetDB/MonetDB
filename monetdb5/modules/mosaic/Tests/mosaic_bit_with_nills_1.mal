@@ -145,6 +145,32 @@ tsa:= algebra.thetaselect(a,true:bit, "<");
 tsc:= mosaic.thetaselect (c,true:bit, "<");
 io.print(sa, sc);
 
+# Should give empty result
+sa:= algebra.select(a,false:bit, false:bit,false,true,false);
+sc:= mosaic.select (c,false:bit, false:bit,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,false:bit, false:bit,true,false,false);
+sc:= mosaic.select (c,false:bit, false:bit,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,false:bit, false:bit,false,false,false);
+sc:= mosaic.select (c,false:bit, false:bit,false,false,false);
+io.print(sa, sc);
+
+# Should give all non-nil value
+sa:= algebra.select(a,false:bit, false:bit,false,true,true);
+sc:= mosaic.select (c,false:bit, false:bit,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,false:bit, false:bit,true,false,true);
+sc:= mosaic.select (c,false:bit, false:bit,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,false:bit, false:bit,false,false,true);
+sc:= mosaic.select (c,false:bit, false:bit,false,false,true);
+io.print(sa, sc);
+
 sa:= algebra.select(a,true:bit, true:bit,true,false,false);
 sc:= mosaic.select (c,true:bit, true:bit,true,false,false);
 io.print(sa, sc);

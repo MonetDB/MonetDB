@@ -289,7 +289,7 @@ MOSdecompress_raw(MOStask task)
 		}\
 		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
 	}\
-	else if	( !is_nil(TPE, (LOW)) &&  !is_nil(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && (ANTI)) {\
+	else if	( !is_nil(TPE, (LOW)) &&  !is_nil(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && !(ANTI)) {\
 		/*Empty result set.*/\
 	}\
 	else if	( !is_nil(TPE, (LOW)) &&  !is_nil(TPE, (HIGH)) && (LOW) > (HIGH) && !(ANTI)) {\

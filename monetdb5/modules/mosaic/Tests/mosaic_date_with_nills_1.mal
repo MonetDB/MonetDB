@@ -204,6 +204,58 @@ eq2  := batcalc.==(tsa, tsc);
 eq3  := batcalc.==(sc, tsc);
 io.print(sa, sc, tsa, tsc, eq1, eq2, eq3);
 
+# Should give empty result
+sa:= algebra.select(a,"2014-10-01":date, "2014-10-01":date,false,true,false);
+sc:= mosaic.select (c,"2014-10-01":date, "2014-10-01":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-10-01":date, "2014-10-01":date,true,false,false);
+sc:= mosaic.select (c,"2014-10-01":date, "2014-10-01":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-10-01":date, "2014-10-01":date,false,false,false);
+sc:= mosaic.select (c,"2014-10-01":date, "2014-10-01":date,false,false,false);
+io.print(sa, sc);
+
+# Should give all non-nil value
+sa:= algebra.select(a,"2014-10-01":date, "2014-10-01":date,false,true,true);
+sc:= mosaic.select (c,"2014-10-01":date, "2014-10-01":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-10-01":date, "2014-10-01":date,true,false,true);
+sc:= mosaic.select (c,"2014-10-01":date, "2014-10-01":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-10-01":date, "2014-10-01":date,false,false,true);
+sc:= mosaic.select (c,"2014-10-01":date, "2014-10-01":date,false,false,true);
+io.print(sa, sc);
+
+# Should give empty result
+sa:= algebra.select(a,"2014-10-01":date, "2014-10-01":date,false,true,false);
+sc:= mosaic.select (c,"2014-10-01":date, "2014-10-01":date,false,true,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-10-01":date, "2014-10-01":date,true,false,false);
+sc:= mosaic.select (c,"2014-10-01":date, "2014-10-01":date,true,false,false);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-10-01":date, "2014-10-01":date,false,false,false);
+sc:= mosaic.select (c,"2014-10-01":date, "2014-10-01":date,false,false,false);
+io.print(sa, sc);
+
+# Should give all non-nil value
+sa:= algebra.select(a,"2014-10-01":date, "2014-10-01":date,false,true,true);
+sc:= mosaic.select (c,"2014-10-01":date, "2014-10-01":date,false,true,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-10-01":date, "2014-10-01":date,true,false,true);
+sc:= mosaic.select (c,"2014-10-01":date, "2014-10-01":date,true,false,true);
+io.print(sa, sc);
+
+sa:= algebra.select(a,"2014-10-01":date, "2014-10-01":date,false,false,true);
+sc:= mosaic.select (c,"2014-10-01":date, "2014-10-01":date,false,false,true);
+io.print(sa, sc);
+
 sa:= algebra.select(a,"2014-10-05":date, "2014-09-21":date,true,true,false);
 sc:= mosaic.select (c,"2014-10-05":date, "2014-09-21":date,true,true,false);
 eq  := batcalc.==(sa,  sc);

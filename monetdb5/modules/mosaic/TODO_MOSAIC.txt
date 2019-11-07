@@ -1,5 +1,4 @@
 ####technical depth####
-Look into select cases *	v	v	A*		B*		(false|false) they some to be wrong & not tested
 Finish null semantics plus tests
 make sure candidate lists are working properly for select, theta_select and join
 make mitosis work with mosaic and see how this relates to the previous landmark stuff.

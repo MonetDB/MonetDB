@@ -435,7 +435,7 @@ MOSdecompress_prefix(MOStask task)
 		}\
 		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
 	}\
-	else if	( !IS_TPE_NIL(TPE, (LOW)) &&  !IS_TPE_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && (ANTI)) {\
+	else if	( !IS_TPE_NIL(TPE, (LOW)) &&  !IS_TPE_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && !(ANTI)) {\
 		/*Empty result set.*/\
 	}\
 	else if	( !IS_TPE_NIL(TPE, (LOW)) &&  !IS_TPE_NIL(TPE, (HIGH)) && (LOW) > (HIGH) && !(ANTI)) {\
@@ -606,6 +606,7 @@ MOSselect_prefix( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *ant
 		hgh= low= *(TPE*) input;\
 	} \
 	if ( !anti)\
+		/*TODO: simplify this similar to mosaic_capped*/\
 		for( ; first < last; first++,i++){\
 			MOSskipit();\
 			PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
