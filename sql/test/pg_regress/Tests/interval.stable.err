@@ -144,11 +144,7 @@ QUERY = SELECT '' AS nine, INTERVAL_TBL.* FROM INTERVAL_TBL
            WHERE INTERVAL_TBL.f1 > cast('@ 3 seconds ago' as interval second);
 ERROR = !Wrong format (@ 3 seconds ago)
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-3604/.s.monetdb.35433
-QUERY = select avg(cast(f1 as double)) from interval_tbl;
-ERROR = !types sec_interval(13,0) and double(53,0) are not equal for column 'f1'
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-3604/.s.monetdb.35433
+MAPI  = (monetdb) /var/tmp/mtest-45764/.s.monetdb.39324
 QUERY = select avg(cast(f1 as decimal(22,3))) from interval_tbl;
 ERROR = !Decimal(22,3) isn't supported because P=22 > 18 in: "select avg(cast(f1 as decimal(22,3)"
         !syntax error, unexpected ')' in: ")"
