@@ -2717,11 +2717,6 @@ enum prop_t {
 	GDK_HASH_MASK,		/* last used hash mask */
 };
 
-gdk_export void PROPdestroy(BAT *b);
-gdk_export PROPrec *BATgetprop(BAT *b, enum prop_t idx);
-gdk_export void BATsetprop(BAT *b, enum prop_t idx, int type, const void *v);
-gdk_export void BATrmprop(BAT *b, enum prop_t idx);
-
 /*
  * @- BAT relational operators
  *

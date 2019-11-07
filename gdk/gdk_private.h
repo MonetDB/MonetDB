@@ -60,6 +60,10 @@ __hidden void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
+__hidden PROPrec *BATgetprop(BAT *b, enum prop_t idx)
+	__attribute__((__visibility__("hidden")));
+__hidden PROPrec * BATgetprop_nolock(BAT *b, enum prop_t idx)
+	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
@@ -72,7 +76,13 @@ __hidden BAT *BATload_intern(bat bid, bool lock)
 __hidden gdk_return BATmaterialize(BAT *b)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
+__hidden void BATrmprop(BAT *b, enum prop_t idx)
+	__attribute__((__visibility__("hidden")));
 __hidden void BATsetdims(BAT *b)
+	__attribute__((__visibility__("hidden")));
+__hidden void BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
+	__attribute__((__visibility__("hidden")));
+__hidden void BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__warn_unused_result__))
@@ -209,6 +219,8 @@ __hidden int MT_msync(void *p, size_t len)
 __hidden void OIDXfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void persistOIDX(BAT *b)
+	__attribute__((__visibility__("hidden")));
+__hidden void PROPdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, BUN maxsize)
 	__attribute__((__warn_unused_result__))
