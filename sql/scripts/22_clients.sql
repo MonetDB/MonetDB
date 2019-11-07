@@ -14,15 +14,15 @@ external name sql.rt_credentials;
 
 create function sys.sessions()
 returns table(
-	"sessionid" int, 
-	"user" string, 
-	"login" timestamp, 
+	"sessionid" int,
+	"user" string,
+	"login" timestamp,
 	"idle" timestamp,
 	"optimizer" string,
-	"sessiontimeout" bigint, 
-	"querytimeout" bigint, 
+	"sessiontimeout" int,
+	"querytimeout" int,
 	"workerlimit" int,
-	"memorylimit" bigint
+	"memorylimit" int
 	)
 external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
@@ -38,36 +38,36 @@ external name sql.shutdown;
 create procedure sys.setoptimizer("optimizer" string)
 	external name clients.setoptimizer;
 
-create procedure sys.setquerytimeout("query" bigint)
+create procedure sys.setquerytimeout("query" int)
 	external name clients.setquerytimeout;
 
-create procedure sys.setsessiontimeout("timeout" bigint)
+create procedure sys.setsessiontimeout("timeout" int)
 	external name clients.setsessiontimeout;
 
 create procedure sys.setworkerlimit("limit" int)
 	external name clients.setworkerlimit;
 
-create procedure sys.setmemorylimit("limit" bigint)
+create procedure sys.setmemorylimit("limit" int)
 	external name clients.setmemorylimit;
 
 -- The super user can change the properties of all sessions
 create procedure sys.setoptimizer("sessionid" int, "optimizer" string)
 	external name clients.setoptimizer;
 
-create procedure sys.setquerytimeout("sessionid" int, "query" bigint)
-    external name clients.setquerytimeout;
+create procedure sys.setquerytimeout("sessionid" int, "query" int)
+	external name clients.setquerytimeout;
 
-create procedure sys.setsessiontimeout("sessionid" int, "query" bigint)
-    external name clients.setsessiontimeout;
+create procedure sys.setsessiontimeout("sessionid" int, "query" int)
+	external name clients.setsessiontimeout;
 
 create procedure sys.setworkerlimit("sessionid" int, "limit" int)
 	external name clients.setworkerlimit;
 
-create procedure sys.setmemorylimit("sessionid" int, "limit" bigint)
+create procedure sys.setmemorylimit("sessionid" int, "limit" int)
 	external name clients.setmemorylimit;
 
 create procedure sys.stopsession("sessionid" int)
-    external name clients.stopsession;
+	external name clients.stopsession;
 
 create procedure sys.setprinttimeout("timeout" integer)
 	external name clients.setprinttimeout;

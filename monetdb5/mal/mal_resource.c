@@ -12,9 +12,9 @@
 #include "mal_resource.h"
 #include "mal_private.h"
 
-/* MEMORY admission does not seem to have a major impact */
-lng memorypool = 0;      /* memory claimed by concurrent threads */
-int memoryclaims = 0;    /* number of threads active with expensive operations */
+/* MEMORY admission does not seem to have a major impact sofar. */
+static lng memorypool = 0;      /* memory claimed by concurrent threads */
+static int memoryclaims = 0;
 
 void
 mal_resource_reset(void)
@@ -58,12 +58,16 @@ mal_resource_reset(void)
 
 /*
  * The memory claim is the estimate for the amount of memory hold.
- * Views are consider cheap and ignored
+ * Views are consider cheap and ignored.
+ * Given that auxiliary structures are important for performance, 
+ * we use their maximum as an indication of the memory footprint.
+ * An alternative would be to focus solely on the base table cost.
+ * (Good for a MSc study)
  */
 lng
 getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 {
-	lng total = 0;
+	lng total = 0, itotal = 0, t;
 	BAT *b;
 
 	(void)mb;
@@ -76,160 +80,120 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 			return 0;
 		}
 
+		/* calculate the basic scan size */
 		total += BATcount(b) * b->twidth;
-		// string heaps can be shared, consider them as space-less views
 		total += heapinfo(b->tvheap, b->batCacheid); 
-		total += hashinfo(b->thash, d->batCacheid); 
-		total += IMPSimprintsize(b);
+
+		/* indices should help, find their maximum footprint */
+		itotal = hashinfo(b->thash, d->batCacheid); 
+		t = IMPSimprintsize(b);
+		if( t > itotal)
+			itotal = t;
+		/* We should also consider the ordered index and mosaic */
 		//total = total > (lng)(MEMORY_THRESHOLD ) ? (lng)(MEMORY_THRESHOLD ) : total;
 		BBPunfix(b->batCacheid);
+		if ( total < itotal)
+			total = itotal;
 	}
 	return total;
 }
 
 /*
- * A consequence of multiple threads is that they may claim more
- * space than available. This may cause GDKmalloc to fail.
- * In many cases this situation will be temporary, because
- * threads will ultimately release resources.
- * Therefore, we wait for it.
- *
- * Alternatively, a front-end can set the flow administration
- * program counter to -1, which leads to a soft abort.
- * [UNFORTUNATELY this approach does not (yet) work
- * because there seem to a possibility of a deadlock
- * between incref and bbptrim. Furthermore, we have
- * to be assured that the partial executed instruction
- * does not lead to ref-count errors.]
- *
- * The worker produces a result which will potentially unblock
- * instructions. This it can find itself without the help of the scheduler
- * and without the need for a lock. (does it?, parallel workers?)
- * It could also give preference to an instruction that eats away the object
- * just produced. THis way it need not be saved on disk for a long time.
- */
-/*
- * The hotclaim indicates the amount of data recentely written.
- * as a result of an operation. The argclaim is the sum over the hotclaims
- * for all arguments.
  * The argclaim provides a hint on how much we actually may need to execute
- * The hotclaim is a hint how large the result would be.
+ *
+ * The client context also keeps bounds on the memory claim/client.
+ * Surpassing this bound may be a reason to not admit the instruction to proceed.
  */
-#ifdef USE_MAL_ADMISSION
 static MT_Lock admissionLock = MT_LOCK_INITIALIZER("admissionLock");
 
 /* experiments on sf-100 on small machine showed no real improvement */
+
 int
-MALadmission(lng argclaim, lng hotclaim)
+MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim)
 {
+	int workers;
+	lng mbytes;
+
+	(void) mb;
+	(void) pci;
 	/* optimistically set memory */
 	if (argclaim == 0)
 		return 0;
+	/* if we are dealing with a check instruction, just continue */
+	/* TOBEDONE */
 
 	MT_lock_set(&admissionLock);
-	if (memoryclaims < 0)
-		memoryclaims = 0;
-	if (memorypool <= 0 && memoryclaims == 0)
-		memorypool = (lng)(MEMORY_THRESHOLD );
-
-	if (argclaim > 0) {
-		if (memoryclaims == 0 || memorypool > argclaim + hotclaim) {
-			memorypool -= (argclaim + hotclaim);
-			memoryclaims++;
-			PARDEBUG
-			fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT "claims " LLFMT "," LLFMT "\n",
-						 memoryclaims, THRgettid(), memorypool, argclaim, hotclaim);
-			MT_lock_unset(&admissionLock);
-			return 0;
-		}
+	/* Check if we are allowed to allocate another worker thread for this client */
+	/* It is somewhat tricky, because we may be in a dataflow recursion, each of which should be counted for.
+	 * A way out is to attach the thread count to the MAL stacks instead, which just limits the level
+	 * of parallism for a single dataflow graph.
+	 */
+	workers = stk->workers;
+	if( cntxt->workerlimit && cntxt->workerlimit <= workers){
 		PARDEBUG
-		fprintf(stderr, "#Delayed due to lack of memory " LLFMT " requested " LLFMT " memoryclaims %d\n", memorypool, argclaim + hotclaim, memoryclaims);
+			fprintf(stderr, "#DFLOWadmit worker limit reached, %d <= %d\n", cntxt->workerlimit, workers);
 		MT_lock_unset(&admissionLock);
 		return -1;
 	}
+	/* Determine if the total memory resource is exhausted, because it is overall limitation.
+	 */
+	if ( memoryclaims < 0){
+		PARDEBUG
+			fprintf(stderr, "#DFLOWadmit memoryclaim reset ");
+		memoryclaims = 0;
+	}
+	if ( memorypool <= 0 && memoryclaims == 0){
+		PARDEBUG
+			fprintf(stderr, "#DFLOWadmit memorypool reset ");
+		memorypool = (lng)(MEMORY_THRESHOLD );
+	}
+
+	/* the argument claim is based on the input for an instruction */
+	if (argclaim > 0) {
+		if ( memoryclaims == 0 || memorypool > argclaim ) {
+			/* If we are low on memory resources, limit the user if he exceeds his memory budget 
+			 * but make sure there is at least one thread active */
+			if( cntxt->memorylimit){
+				mbytes = cntxt->memorylimit * 1024 * 1024;
+				if (argclaim + stk->memory > mbytes){
+					MT_lock_unset(&admissionLock);
+					PARDEBUG
+					fprintf(stderr, "#Delayed due to lack of session memory " LLFMT " requested "LLFMT"\n", 
+						stk->memory, argclaim);
+					return -1;
+				}
+			}
+			memorypool -= (lng) (argclaim);
+			stk->memory += argclaim;
+			memoryclaims++;
+			PARDEBUG
+			fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT "claims " LLFMT "\n",
+						 memoryclaims, THRgettid(), memorypool, argclaim);
+			MT_lock_unset(&admissionLock);
+			stk->workers++;
+			return 0;
+		}
+		PARDEBUG
+		fprintf(stderr, "#Delayed due to lack of memory " LLFMT " requested " LLFMT " memoryclaims %d\n", 
+			memorypool, argclaim, memoryclaims);
+		MT_lock_unset(&admissionLock);
+		return -1;
+	}
+	
+	/* return the session budget */
+	if(cntxt->memorylimit){
+		PARDEBUG
+			fprintf(stderr, "#Return memory to session budget " LLFMT "\n", stk->memory);
+		stk->memory += -argclaim;
+	}
 	/* release memory claimed before */
-	memorypool += -argclaim - hotclaim;
+	memorypool += -argclaim ;
 	memoryclaims--;
+	stk->workers--;
+
 	PARDEBUG
-	fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT " claims " LLFMT "," LLFMT "\n",
-				 memoryclaims, THRgettid(), memorypool, argclaim, hotclaim);
+	fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT " claims " LLFMT "\n",
+				 memoryclaims, THRgettid(), memorypool, argclaim);
 	MT_lock_unset(&admissionLock);
 	return 0;
-}
-#endif
-
-/* Delay a thread if too much competition arises and memory becomes a scarce resource.
- * If in the mean time memory becomes free, or too many sleeping re-enable worker.
- * It may happen that all threads enter the wait state. So, keep one running at all time 
- * By keeping the query start time in the client record we can delay them when resource stress occurs.
- */
-ATOMIC_TYPE mal_running = ATOMIC_VAR_INIT(0);
-
-void
-MALresourceFairness(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng usec)
-{
-#ifdef FAIRNESS_THRESHOLD
-	size_t rss;
-	lng clk;
-	int delayed= 0;
-	int users = 2;
-
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-
-
-	/* don't punish queries whose last instruction was fast to executed in the first place */
-	if ( usec <= TIMESLICE)
-		return;
-
-	/* use GDKmem_cursize as MT_getrss() is too expensive */
-	rss = GDKmem_cursize();
-	/* ample of memory available*/
-	if ( rss <= MEMORY_THRESHOLD )
-		return;
-
-	(void) ATOMIC_INC(&mal_running);
-
-	/* worker reporting time spent  in usec! */
-	clk =  usec / 1000;
-
-#if FAIRNESS_THRESHOLD < 1000	/* it's actually 2000 */
-	/* cap the maximum penalty */
-	clk = clk > FAIRNESS_THRESHOLD? FAIRNESS_THRESHOLD:clk;
-#endif
-
-	/* always keep one running to avoid all waiting  */
-	while (clk > DELAYUNIT && users > 1 && rss > MEMORY_THRESHOLD && (int) ATOMIC_GET(&mal_running) > GDKnr_threads ) {
-		if ( delayed++ == 0){
-				PARDEBUG fprintf(stderr, "#delay initial ["LLFMT"] memory  %zu[%f]\n", clk, rss, MEMORY_THRESHOLD );
-		}
-		if ( delayed == MAX_DELAYS){
-				PARDEBUG fprintf(stderr, "#delay abort ["LLFMT"] memory  %zu[%f]\n", clk, rss, MEMORY_THRESHOLD );
-				PARDEBUG fflush(stderr);
-				break;
-		}
-		MT_sleep_ms(DELAYUNIT);
-		users= MCactiveClients();
-		rss = GDKmem_cursize();
-		clk -= DELAYUNIT;
-	}
-	(void) ATOMIC_DEC(&mal_running);
-#else
-(void) usec;
-#endif
-}
-
-// Get a hint on the parallel behavior
-size_t
-MALrunningThreads(void)
-{
-	return ATOMIC_GET(&mal_running);
-}
-
-void
-initResource(void)
-{
-	ATOMIC_SET(&mal_running, GDKnr_threads);
 }

@@ -262,6 +262,9 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 	}
 
 	pipe = getSQLoptimizer(be->mvc);
+	if( strcmp(pipe, "default_pipe") == 0 && c->optimizer)
+		pipe= strdup(c->optimizer);
+
 	msg = addOptimizers(c, mb, pipe, FALSE);
 	if (msg)
 		return msg;

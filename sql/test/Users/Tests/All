@@ -26,3 +26,5 @@ grantRole.Bug-3772
 grantMonetdb
 copyinto
 schemaRights
+
+sessioncontrol

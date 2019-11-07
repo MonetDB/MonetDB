@@ -10,6 +10,8 @@
  * The MAL Runtime Profiler and system queue
  * This little helper module is used to perform instruction based profiling.
  * The QRYqueue is only update at the start/finish of a query. 
+ * It is also the place to keep track on the number of workers
+ * The current could relies on a scan rather than a hash.
  */
 
 #include "monetdb_config.h"
@@ -29,15 +31,6 @@ lng qtop;
 static lng qsize;
 static oid qtag= 1;		// A unique query identifier
 
-#define QRYreset(I)\
-		if (QRYqueue[I].query) GDKfree(QRYqueue[I].query);\
-		QRYqueue[I].cntxt = 0; \
-		QRYqueue[I].tag = 0; \
-		QRYqueue[I].query = 0; \
-		QRYqueue[I].status =0; \
-		QRYqueue[I].stk =0; \
-		QRYqueue[I].mb =0; \
-
 void
 mal_runtime_reset(void)
 {
@@ -48,7 +41,8 @@ mal_runtime_reset(void)
 	qtag= 1;
 }
 
-static str isaSQLquery(MalBlkPtr mb){
+static str 
+isaSQLquery(MalBlkPtr mb){
 	int i;
 	InstrPtr p;
 	if (mb)
@@ -57,7 +51,7 @@ static str isaSQLquery(MalBlkPtr mb){
 		if ( getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0 && idcmp(getFunctionId(p),"define")==0)
 			return getVarConstant(mb,getArg(p,1)).val.sval;
 	}
-	return 0;
+	return NULL;
 }
 
 /*
@@ -79,15 +73,15 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (size_t) (qsize += 256));
 	if ( QRYqueue == NULL){
 		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
-		GDKfree(tmp);			/* may be NULL, but doesn't harm */
+		GDKfree(tmp);			
 		MT_lock_unset(&mal_delayLock);
 		return;
 	}
-	// check for recursive call
+	// check for recursive call, which does not change the number of workers
 	for( i = 0; i < qtop; i++)
 		if ( QRYqueue[i].mb == mb &&  stk->up == QRYqueue[i].stk){
 			QRYqueue[i].stk = stk;
-			stk->tag = QRYqueue[i].tag;
+			mb->tag = stk->tag = qtag++;
 			MT_lock_unset(&mal_delayLock);
 			return;
 		}
@@ -96,7 +90,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	if (i == qtop) {
 		QRYqueue[i].mb = mb;
 		QRYqueue[i].tag = qtag++;
-		mb->tag = QRYqueue[i].tag;
 		QRYqueue[i].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
 		QRYqueue[i].start = time(0);
 		QRYqueue[i].runtime = mb->runtime; 	// the estimated execution time
@@ -104,13 +97,15 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		QRYqueue[i].query = q? GDKstrdup(q):0;
 		QRYqueue[i].status = "running";
 		QRYqueue[i].cntxt = cntxt;
+		stk->tag = mb->tag = QRYqueue[i].tag;
 	}
-	stk->tag = QRYqueue[i].tag;
 	qtop += i == qtop;
 	MT_lock_unset(&mal_delayLock);
 }
 
-/* We should keep a short list of previously executed queries/client for inspection */
+/* We should keep a short list of previously executed queries/client for inspection.
+ * Returning from a recursive call does not change the number of workers.
+ */
 
 void
 runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
@@ -128,24 +123,27 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		if( stk->up){
 			// recursive call
 			QRYqueue[i].stk = stk->up;
+			mb->tag = stk->tag;
 			MT_lock_unset(&mal_delayLock);
 			return;
 		}
-		QRYqueue[i].mb->calls++;
-		QRYqueue[i].mb->runtime += (lng) ((lng)(time(0) - QRYqueue[i].start) * 1000.0/QRYqueue[i].mb->calls);
 		QRYqueue[i].status = "finished";
-		QRYreset(i)
+		GDKfree(QRYqueue[i].query);
+		QRYqueue[i].cntxt = 0;
+		QRYqueue[i].tag = 0;
+		QRYqueue[i].query = 0;
+		QRYqueue[i].status =0;
+		QRYqueue[i].progress =0;
+		QRYqueue[i].stk =0;
+		QRYqueue[i].mb =0;
 	}
 
 	qtop = j;
 	QRYqueue[qtop].query = NULL; /* sentinel for SYSMONqueue() */
-	cntxt->idle = time(0);
-	cntxt->lastcmd = 0;
-	cntxt->workers = 0;
-	cntxt->memoryclaim = 0;
 	MT_lock_unset(&mal_delayLock);
 }
 
+/* When the client connection is closed, then also the queue should be updated */
 void
 finishSessionProfiler(Client cntxt)
 {
@@ -158,12 +156,11 @@ finishSessionProfiler(Client cntxt)
 	if ( QRYqueue[i].cntxt != cntxt)
 		QRYqueue[j++] = QRYqueue[i];
 	else  {
-		//reset entry
-		if (QRYqueue[i].query)
-			GDKfree(QRYqueue[i].query);
+		GDKfree(QRYqueue[i].query);
 		QRYqueue[i].cntxt = 0;
 		QRYqueue[i].tag = 0;
 		QRYqueue[i].query = 0;
+		QRYqueue[i].progress =0;
 		QRYqueue[i].status =0;
 		QRYqueue[i].stk =0;
 		QRYqueue[i].mb =0;
@@ -192,7 +189,6 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 		workingset[tid].mb = mb;
 		workingset[tid].stk = stk;
 		workingset[tid].pci = pci;
-		cntxt->workers ++;
 		MT_lock_unset(&mal_delayLock);
 	}
 	/* always collect the MAL instruction execution time */
@@ -215,7 +211,6 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 		workingset[tid].mb = 0;
 		workingset[tid].stk = 0;
 		workingset[tid].pci = 0;
-		cntxt->workers --;
 		MT_lock_unset(&mal_delayLock);
 	}
 
@@ -234,10 +229,6 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 		if( getInstrPtr(mb,0) == pci)
 			malProfileMode = 1;
 	}
-	/* Reduce worker threads of non-admin long running transaction if needed.
- 	* the punishment is equal to the duration of the last instruction */
-	if ( cntxt->user != MAL_ADMIN && ticks - mb->starttime > LONGRUNNING )
-		MALresourceFairness(cntxt, mb, stk, pci, pci->ticks);
 }
 
 /*
