@@ -543,6 +543,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 	return cnt;
 }
 
+/* return the next candidate without advancing */
 oid
 canditer_peek(struct canditer *ci)
 {
@@ -567,6 +568,7 @@ canditer_peek(struct canditer *ci)
 	return o;
 }
 
+/* return the previous candidate */
 oid
 canditer_prev(struct canditer *ci)
 {
@@ -588,6 +590,7 @@ canditer_prev(struct canditer *ci)
 	return o;
 }
 
+/* return the previous candidate without retreating */
 oid
 canditer_peekprev(struct canditer *ci)
 {
@@ -609,6 +612,7 @@ canditer_peekprev(struct canditer *ci)
 	return o;
 }
 
+/* return the last candidate */
 oid
 canditer_last(struct canditer *ci)
 {
@@ -627,6 +631,7 @@ canditer_last(struct canditer *ci)
 	return ci->seq + ci->ncand + ci->noids - 1;
 }
 
+/* return the candidate at the given index */
 oid
 canditer_idx(struct canditer *ci, BUN p)
 {
@@ -658,6 +663,7 @@ canditer_idx(struct canditer *ci, BUN p)
 	return o + hi;
 }
 
+/* set the index for the next candidate to be returned */
 void
 canditer_setidx(struct canditer *ci, BUN p)
 {
@@ -674,6 +680,7 @@ canditer_setidx(struct canditer *ci, BUN p)
 	}
 }
 
+/* reset */
 void
 canditer_reset(struct canditer *ci)
 {
@@ -681,6 +688,9 @@ canditer_reset(struct canditer *ci)
 	ci->add = 0;
 }
 
+/* return index of given candidate if it occurs; if the candidate does
+ * not occur, if next is set, return index of next larger candidate,
+ * if next is not set, return BUN_NONE */
 BUN
 canditer_search(struct canditer *ci, oid o, bool next)
 {
@@ -775,6 +785,7 @@ canditer_slice(struct canditer *ci, BUN lo, BUN hi)
 	return virtualize(bn);
 }
 
+/* return the combination of two slices */
 BAT *
 canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
 {
