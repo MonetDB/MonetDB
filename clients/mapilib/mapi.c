@@ -889,10 +889,6 @@ struct MapiStatement {
 #define debugprint(fmt,arg)	((void) 0)
 #endif
 
-#ifdef HAVE_EMBEDDED
-#define printf(...)	((void)0)
-#endif
-
 /*
  * All external calls to the library should pass the mapi-check
  * routine. It assures a working connection and proper reset of
