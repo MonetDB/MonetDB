@@ -22,7 +22,6 @@ Update copyright.
 create dedicated type for bitvector internal type which is currently unsignned int. E.g. introduce #define BitVectorChunkType unsigned int.
 create a common header/source file for mosaic for common tasks e.g. to house a generic IS_NIL macro.
 Introduce FrameTpe similar to PrefixTpe.
-share more code between capped and var.
 move mask, bits, framebits from  MosaicHdr to MosaicBlkHeader_frame_t.
 mosaic_delta.c: improve the macro's: for instance get rid of hardcoded expression arguments in DELTAcompress. (2)
 mosaic_<compression>.c: for type macro's use macro-wised inline functions.

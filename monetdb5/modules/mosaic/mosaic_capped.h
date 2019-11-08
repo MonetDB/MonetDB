@@ -35,5 +35,5 @@ mal_export void MOSdecompress_capped(MOStask task);
 mal_export str MOSselect_capped( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
 mal_export str MOSthetaselect_capped( MOStask task, void *val, str oper);
 mal_export str MOSprojection_capped( MOStask task);
-mal_export str MOSjoin_capped( MOStask task);
+mal_export str MOSjoin_capped( MOStask task, bit nil_matches);
 #endif /* _MOSAIC_CAPPED_ */

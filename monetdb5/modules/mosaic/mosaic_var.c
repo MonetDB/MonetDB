@@ -74,29 +74,43 @@ typedef struct _GlobalVarInfo {
 	EstimationParameters parameters;
 } GlobalVarInfo;
 
-#define GetBase(INFO, TPE)				((TPE*) Tloc((INFO)->dict, 0))
-#define GetCount(INFO)					(BATcount((INFO)->dict))
-#define GetSizeInBytes(INFO)			(BATcount((INFO)->dict) * (INFO)->dict->twidth)
-#define GetCap(INFO)					(BATcapacity((INFO)->dict))
-#define GetDeltaCount(INFO)				((INFO)->parameters.delta_count)
-#define GetBits(INFO)					((INFO)->parameters.bits)
-#define GetBitsExtended(INFO)			((INFO)->parameters.bits_extended)
-#define Extend(INFO, new_capacity)		(BATextend((INFO)->dict, new_capacity) == GDK_SUCCEED)
-#define GetValue(info, key, TPE) 		((GetBase(info, TPE))[key])
-#define InsertCondition(INFO, VAL, TPE)	(true)
+#define GET_BASE(INFO, TPE)				((TPE*) Tloc((INFO)->dict, 0))
+#define GET_COUNT(INFO)					(BATcount((INFO)->dict))
+#define GET_CAP(INFO)					(BATcapacity((INFO)->dict))
+#define GET_DELTA_COUNT(INFO)				((INFO)->parameters.delta_count)
+#define GET_BITS(INFO)					((INFO)->parameters.bits)
+#define GET_BITS_EXTENDED(INFO)			((INFO)->parameters.bits_extended)
+#define EXTEND(INFO, new_capacity)		(BATextend((INFO)->dict, new_capacity) == GDK_SUCCEED)
+#define CONDITIONAL_INSERT(INFO, VAL, TPE)	(true)
 
-#define DerivedDictionaryClass(TPE) DictionaryClass(TPE, GlobalVarInfo, GetBase, GetCount, GetDeltaCount, GetBits, GetBitsExtended, GetCap, GetValue, Extend, InsertCondition)
+// task dependent macro's
+#define GET_FINAL_DICT(TASK, TPE) (((TPE*) (TASK)->bsrc->tvmosaic->base) + (TASK)->hdr->pos_var)
+#define GET_FINAL_BITS(TASK) ((TASK)->hdr->bits_var)
+#define GET_FINAL_DICT_COUNT(TASK) ((TASK)->hdr->length_var);\
 
-DerivedDictionaryClass(bte)
-DerivedDictionaryClass(sht)
-DerivedDictionaryClass(int)
-DerivedDictionaryClass(oid)
-DerivedDictionaryClass(lng)
-DerivedDictionaryClass(flt)
-DerivedDictionaryClass(dbl)
+#define DictionaryClass(TPE) \
+find_value_DEF(TPE)\
+insert_into_dict_DEF(TPE)\
+extend_delta_DEF(TPE, GlobalVarInfo)\
+merge_delta_Into_dictionary_DEF(TPE, GlobalVarInfo)\
+compress_dictionary_DEF(TPE)\
+decompress_dictionary_DEF(TPE)\
+select_dictionary_DEF(TPE)\
+thetaselect_dictionary_DEF(TPE)\
+join_dictionary_DEF(TPE)
+
+DictionaryClass(bte)
+DictionaryClass(sht)
+DictionaryClass(int)
+DictionaryClass(oid)
+DictionaryClass(lng)
+DictionaryClass(flt)
+DictionaryClass(dbl)
 #ifdef HAVE_HGE
-DerivedDictionaryClass(hge)
+DictionaryClass(hge)
 #endif
+
+#define GetSizeInBytes(INFO) (BATcount((INFO)->dict) * (INFO)->dict->twidth)
 
 void
 MOSlayout_var_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
@@ -107,7 +121,7 @@ MOSlayout_var_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 	char bufv[BUFSIZ];
 	(void) boutput;
 
-	BUN dictsize = GetCount(task->var_info);
+	BUN dictsize = GET_COUNT(task->var_info);
 
 	for(i=0; i< dictsize; i++){
 		snprintf(buf, BUFSIZ,"var[%u]",i);
@@ -176,12 +190,12 @@ do {\
 	BUN delta_count;\
 	BUN nr_compressed;\
 \
-	size_t old_keys_size	= ((CURRENT)->nr_var_encoded_elements * GetBitsExtended(info)) / CHAR_BIT;\
-	size_t old_dict_size	= GetCount(info) * sizeof(TPE);\
+	size_t old_keys_size	= ((CURRENT)->nr_var_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
+	size_t old_dict_size	= GET_COUNT(info) * sizeof(TPE);\
 	size_t old_headers_size	= (CURRENT)->nr_var_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
 	size_t old_bytes		= old_keys_size + old_dict_size + old_headers_size;\
 \
-	if (estimateDict_##TPE(&nr_compressed, &delta_count, limit, info, val)) {\
+	if (extend_delta_##TPE(&nr_compressed, &delta_count, limit, info, val)) {\
 		throw(MAL, "mosaic.var", MAL_MALLOC_FAIL);\
 	}\
 \
@@ -189,8 +203,8 @@ do {\
 	(CURRENT)->nr_var_encoded_elements += nr_compressed;\
 	(CURRENT)->nr_var_encoded_blocks++;\
 \
-	size_t new_keys_size	= ((CURRENT) -> nr_var_encoded_elements * GetBitsExtended(info)) / CHAR_BIT;\
-	size_t new_dict_size	= (delta_count + GetCount(info)) * sizeof(TPE);\
+	size_t new_keys_size	= ((CURRENT) -> nr_var_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
+	size_t new_dict_size	= (delta_count + GET_COUNT(info)) * sizeof(TPE);\
 	size_t new_headers_size	= (CURRENT)->nr_var_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
 	size_t new_bytes		= new_keys_size + new_dict_size + new_headers_size;\
 \
@@ -221,7 +235,7 @@ MOSestimate_var(MOStask task, MosaicEstimation* current, const MosaicEstimation*
 	return MAL_SUCCEED;
 }
 
-#define postEstimate(TASK, TPE) _mergeDeltaIntoDictionary_##TPE( (TASK)->var_info)
+#define postEstimate(TASK, TPE) merge_delta_Into_dictionary_##TPE( (TASK)->var_info)
 
 void
 MOSpostEstimate_var(MOStask task) {
@@ -255,7 +269,7 @@ _finalizeDictionary(BAT* b, GlobalVarInfo* info, ulng* pos_dict, ulng* length_di
 	vmh->dirty = true;
 
 	*pos_dict = 0;
-	*length_dict = (ulng) GetCount(info);
+	*length_dict = (ulng) GET_COUNT(info);
 	*bits_dict = calculateBits((BUN) *length_dict);
 
 	BBPreclaim(info->dict);
@@ -275,23 +289,8 @@ finalizeDictionary_var(MOStask task) {
 		&task->hdr->bits_var);
 }
 
-#define GetFinalVarDict(TASK, TPE) (((TPE*) (TASK)->bsrc->tvmosaic->base) + (TASK)->hdr->pos_var)
-
-#define DICTcompress(TASK, TPE) {\
-	TPE *val = getSrc(TPE, (TASK));\
-	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT:task->stop - task->start;\
-	(TASK)->dst = MOScodevectorDict(TASK);\
-	BitVector base = (BitVector) ((TASK)->dst);\
-	BUN i;\
-	TPE* dict = GetFinalVarDict(TASK, TPE);\
-	BUN dict_size = (BUN) task->hdr->length_var;\
-	bte bits = task->hdr->bits_var;\
-	_compress_dictionary_##TPE(dict, dict_size, &i, val, limit, base, bits);\
-	MOSsetCnt((TASK)->blk, i);\
-}
-
 void
-MOScompress_var(MOStask task)
+MOScompress_var(MOStask task, MosaicBlkRec* estimate)
 {
 	MosaicBlk blk = task->blk;
 	task->dst = MOScodevectorDict(task);
@@ -311,17 +310,6 @@ MOScompress_var(MOStask task)
 	}
 }
 
-// the inverse operator, extend the src
-
-#define DICTdecompress(TASK, TPE)\
-{	BUN lim = MOSgetCnt((TASK)->blk);\
-	BitVector base = (BitVector) MOScodevectorDict(TASK);\
-	bte bits	= (TASK)->hdr->bits_var;\
-	TPE* dict = GetFinalVarDict(TASK, TPE);\
-	TPE* dest = (TPE*) (TASK)->src;\
-	_decompress_dictionary_##TPE(dict, bits, base, lim, &dest);\
-}
-
 void
 MOSdecompress_var(MOStask task)
 {
@@ -339,285 +327,77 @@ MOSdecompress_var(MOStask task)
 	}
 }
 
-// perform relational algebra operators over non-compressed chunks
-// They are bound by an oid range and possibly a candidate list
-
-/* TODO: the select_operator for dictionaries doesn't use
- * the ordered property of the actual global info.
- * Which is a shame because it could in this select operator
- * safe on the info look ups by using the info itself
- * as a reverse index for the ranges of your select predicate.
- * Or if we want to stick to this set up, then we should use a
- * hash based info.
-*/
-
-#define select_var(TASK, TPE)\
-do {\
-	BitVector base = (BitVector) MOScodevectorDict(TASK);\
-	bte bits	= (TASK)->hdr->bits_var;\
-	TPE* dict = GetFinalVarDict(TASK, TPE);\
-	if( !*anti){\
-		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
-			for( ; first < last; first++){\
-				MOSskipit();\
-				*o++ = (oid) first;\
-			}\
-		} else\
-		if( is_nil(TPE, *(TPE*) low) ){\
-			for(i=0 ; first < last; first++, i++){\
-				MOSskipit();\
-				j= getBitVector(base,i,bits); \
-				cmp  =  ((*hi && dict[j] <= * (TPE*)hgh ) || (!*hi && dict[j] < *(TPE*)hgh ));\
-				if (cmp )\
-					*o++ = (oid) first;\
-			}\
-		} else\
-		if( is_nil(TPE, *(TPE*) hgh) ){\
-			for(i=0; first < last; first++, i++){\
-				MOSskipit();\
-				j= getBitVector(base,i,bits); \
-				cmp  =  ((*li && dict[j] >= * (TPE*)low ) || (!*li && dict[j] > *(TPE*)low ));\
-				if (cmp )\
-					*o++ = (oid) first;\
-			}\
-		} else{\
-			for(i=0 ; first < last; first++, i++){\
-				MOSskipit();\
-				j= getBitVector(base,i,bits); \
-				cmp  =  ((*hi && dict[j] <= * (TPE*)hgh ) || (!*hi && dict[j] < *(TPE*)hgh )) &&\
-						((*li && dict[j] >= * (TPE*)low ) || (!*li && dict[j] > *(TPE*)low ));\
-				if (cmp )\
-					*o++ = (oid) first;\
-			}\
-		}\
-	} else {\
-		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
-			/* nothing is matching */\
-		} else\
-		if( is_nil(TPE, *(TPE*) low) ){\
-			for(i=0 ; first < last; first++, i++){\
-				MOSskipit();\
-				j= getBitVector(base,i,bits); \
-				cmp  =  ((*hi && dict[j] <= * (TPE*)hgh ) || (!*hi && dict[j] < *(TPE*)hgh ));\
-				if ( !cmp )\
-					*o++ = (oid) first;\
-			}\
-		} else\
-		if( is_nil(TPE, *(TPE*) hgh) ){\
-			for(i=0 ; first < last; first++, i++){\
-				MOSskipit();\
-				j= getBitVector(base,i,bits); \
-				cmp  =  ((*li && dict[j] >= * (TPE*)low ) || (!*li && dict[j] > *(TPE*)low ));\
-				if ( !cmp )\
-					*o++ = (oid) first;\
-			}\
-		} else{\
-			for(i=0 ; first < last; first++, i++){\
-				MOSskipit();\
-				j= getBitVector(base,i,bits); \
-				cmp  =  ((*hi && dict[j] <= * (TPE*)hgh ) || (!*hi && dict[j] < *(TPE*)hgh )) &&\
-						((*li && dict[j] >= * (TPE*)low ) || (!*li && dict[j] > *(TPE*)low ));\
-				if ( !cmp )\
-					*o++ = (oid) first;\
-			}\
-		}\
-	}\
-} while(0)
-
 str
 MOSselect_var(MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 {
-	oid *o;
-	BUN i, first,last;
-	int cmp;
-	bte j;
-
-	// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
-
-	if (task->cl && *task->cl > last){
-		MOSskip_var(task);
-		return MAL_SUCCEED;
-	}
-	o = task->lb;
-
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: select_var(task, bte); break;
-	case TYPE_sht: select_var(task, sht); break;
-	case TYPE_int: select_var(task, int); break;
-	case TYPE_lng: select_var(task, lng); break;
-	case TYPE_oid: select_var(task, oid); break;
-	case TYPE_flt: select_var(task, flt); break;
-	case TYPE_dbl: select_var(task, dbl); break;
+		case TYPE_bte: DICTselect(bte); break;
+		case TYPE_sht: DICTselect(sht); break;
+		case TYPE_int: DICTselect(int); break;
+		case TYPE_lng: DICTselect(lng); break;
+		case TYPE_oid: DICTselect(oid); break;
+		case TYPE_flt: DICTselect(flt); break;
+		case TYPE_dbl: DICTselect(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: select_var(task, hge); break;
+		case TYPE_hge: DICTselect(hge); break;
 #endif
 	}
 	MOSskip_var(task);
-	task->lb = o;
 	return MAL_SUCCEED;
 }
-
-#define thetaselect_var_str(TPE)\
-	throw(MAL,"mosaic.var","TBD");
-
-#define thetaselect_var(TPE)\
-{ 	TPE low,hgh;\
-	BitVector base = (BitVector) MOScodevectorDict(task);\
-	bte bits	= task->hdr->bits_var;\
-	TPE* dict = GetFinalVarDict(task, TPE);\
-	low= hgh = TPE##_nil;\
-	if ( strcmp(oper,"<") == 0){\
-		hgh= *(TPE*) val;\
-		hgh = PREVVALUE##TPE(hgh);\
-	} else\
-	if ( strcmp(oper,"<=") == 0){\
-		hgh= *(TPE*) val;\
-	} else\
-	if ( strcmp(oper,">") == 0){\
-		low = *(TPE*) val;\
-		low = NEXTVALUE##TPE(low);\
-	} else\
-	if ( strcmp(oper,">=") == 0){\
-		low = *(TPE*) val;\
-	} else\
-	if ( strcmp(oper,"!=") == 0){\
-		hgh= low= *(TPE*) val;\
-		anti++;\
-	} else\
-	if ( strcmp(oper,"==") == 0){\
-		hgh= low= *(TPE*) val;\
-	} \
-	for(int i=0 ; first < last; first++, i++){\
-		MOSskipit();\
-		j= getBitVector(base,i,bits); \
-		if( (is_nil(TPE, low) || dict[j] >= low) && (dict[j] <= hgh || is_nil(TPE, hgh)) ){\
-			if ( !anti) {\
-				*o++ = (oid) first;\
-			}\
-		} else\
-			if( anti){\
-				*o++ = (oid) first;\
-			}\
-	}\
-} 
 
 str
 MOSthetaselect_var( MOStask task, void *val, str oper)
 {
-	oid *o;
-	int anti=0;
-	BUN first,last;
-	bte j;
-	
-	// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
-
-	if (task->cl && *task->cl > last){
-		MOSskip_var(task);
-		return MAL_SUCCEED;
-	}
-	o = task->lb;
-
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: thetaselect_var(bte); break;
-	case TYPE_sht: thetaselect_var(sht); break;
-	case TYPE_int: thetaselect_var(int); break;
-	case TYPE_lng: thetaselect_var(lng); break;
-	case TYPE_oid: thetaselect_var(oid); break;
-	case TYPE_flt: thetaselect_var(flt); break;
-	case TYPE_dbl: thetaselect_var(dbl); break;
+	case TYPE_bte: DICTthetaselect(bte); break;
+	case TYPE_sht: DICTthetaselect(sht); break;
+	case TYPE_int: DICTthetaselect(int); break;
+	case TYPE_lng: DICTthetaselect(lng); break;
+	case TYPE_oid: DICTthetaselect(oid); break;
+	case TYPE_flt: DICTthetaselect(flt); break;
+	case TYPE_dbl: DICTthetaselect(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: thetaselect_var(hge); break;
+	case TYPE_hge: DICTthetaselect(hge); break;
 #endif
 	}
 	MOSskip_var(task);
-	task->lb =o;
 	return MAL_SUCCEED;
-}
-
-#define projection_var(TPE)\
-{	TPE *v;\
-	BitVector base = (BitVector) MOScodevectorDict(task);\
-	bte bits	= task->hdr->bits_var;\
-	TPE* dict = GetFinalVarDict(task, TPE);\
-	v= (TPE*) task->src;\
-	for(i=0; first < last; first++,i++){\
-		MOSskipit();\
-		j= getBitVector(base,i,bits); \
-		*v++ = dict[j];\
-		task->cnt++;\
-	}\
-	task->src = (char*) v;\
 }
 
 str
 MOSprojection_var( MOStask task)
 {
-	BUN i,first,last;
-	unsigned short j;
-	// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
-
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: projection_var(bte); break;
-		case TYPE_sht: projection_var(sht); break;
-		case TYPE_int: projection_var(int); break;
-		case TYPE_lng: projection_var(lng); break;
-		case TYPE_oid: projection_var(oid); break;
-		case TYPE_flt: projection_var(flt); break;
-		case TYPE_dbl: projection_var(dbl); break;
+		case TYPE_bte: DICTprojection(bte); break;
+		case TYPE_sht: DICTprojection(sht); break;
+		case TYPE_int: DICTprojection(int); break;
+		case TYPE_lng: DICTprojection(lng); break;
+		case TYPE_oid: DICTprojection(oid); break;
+		case TYPE_flt: DICTprojection(flt); break;
+		case TYPE_dbl: DICTprojection(dbl); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: projection_var(hge); break;
+		case TYPE_hge: DICTprojection(hge); break;
 #endif
 	}
 	MOSskip_var(task);
 	return MAL_SUCCEED;
 }
 
-#define join_var_str(TPE)\
-	throw(MAL,"mosaic.var","TBD");
-
-#define join_var(TPE)\
-{	TPE  *w;\
-	BitVector base = (BitVector) MOScodevectorDict(task);\
-	bte bits	= task->hdr->bits_var;\
-	TPE* dict = GetFinalVarDict(task, TPE);\
-	w = (TPE*) task->src;\
-	limit= MOSgetCnt(task->blk);\
-	for( o=0, n= task->stop; n-- > 0; o++,w++ ){\
-		for(oo = task->start,i=0; i < limit; i++,oo++){\
-			j= getBitVector(base,i,bits); \
-			if ( *w == dict[j]){\
-				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
-				BUNappend(task->rbat, &o, false) != GDK_SUCCEED)\
-				throw(MAL,"mosaic.var",MAL_MALLOC_FAIL);\
-			}\
-		}\
-	}\
-}
-
 str
-MOSjoin_var( MOStask task)
+MOSjoin_var( MOStask task, bit nil_matches)
 {
-	BUN i,n,limit;
-	oid o, oo;
-	int j;
-
 	// set the oid range covered and advance scan range
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: join_var(bte); break;
-		case TYPE_sht: join_var(sht); break;
-		case TYPE_int: join_var(int); break;
-		case TYPE_lng: join_var(lng); break;
-		case TYPE_oid: join_var(oid); break;
-		case TYPE_flt: join_var(flt); break;
-		case TYPE_dbl: join_var(dbl); break;
+	switch(ATOMbasetype(task->type)) {
+		case TYPE_bte: DICTjoin(bte); break;
+		case TYPE_sht: DICTjoin(sht); break;
+		case TYPE_int: DICTjoin(int); break;
+		case TYPE_lng: DICTjoin(lng); break;
+		case TYPE_oid: DICTjoin(oid); break;
+		case TYPE_flt: DICTjoin(flt); break;
+		case TYPE_dbl: DICTjoin(dbl); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: join_var(hge); break;
+		case TYPE_hge: DICTjoin(hge); break;
 #endif
 	}
 	MOSskip_var(task);

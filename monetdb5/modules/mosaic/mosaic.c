@@ -491,7 +491,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 			break;
 		case MOSAIC_VAR:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_var\n");
-			MOScompress_var(task);
+			MOScompress_var(task, estimate);
 			MOSupdateHeader(task);
 			MOSadvance_var(task);
 			MOSnewBlk(task);
@@ -1220,11 +1220,11 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		case MOSAIC_CAPPED:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_capped\n");
-			MOSjoin_capped( task);
+			MOSjoin_capped( task, *nil_matches);
 			break;
 		case MOSAIC_VAR:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_var\n");
-			MOSjoin_var( task);
+			MOSjoin_var( task, *nil_matches);
 			break;
 		case MOSAIC_FRAME:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_frame\n");
