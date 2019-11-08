@@ -133,12 +133,11 @@ MOSadvance_capped(MOStask task)
 {
 	int *dst = (int*)  MOScodevectorDict(task);
 	BUN cnt = MOSgetCnt(task->blk);
-	long bytes;
+	BUN bytes;
 
 	assert(cnt > 0);
 	task->start += (oid) cnt;
-	task->stop = task->stop;
-	bytes =  (long) (cnt * GET_FINAL_BITS(task))/8 + (((cnt * GET_FINAL_BITS(task)) %8) != 0);
+	bytes =  (cnt * GET_FINAL_BITS(task))/8 + (((cnt * GET_FINAL_BITS(task)) %8) != 0);
 	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int));
 }
 
@@ -168,7 +167,7 @@ void
 MOSlayout_capped(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;
-	lng cnt = MOSgetCnt(blk), input=0, output= 0;
+	BUN cnt = MOSgetCnt(blk), input=0, output= 0;
 
 	input = cnt * ATOMsize(task->type);
 	output =  MosaicBlkSize + (cnt * GET_FINAL_BITS(task))/8 + (((cnt * GET_FINAL_BITS(task)) %8) != 0);
@@ -266,15 +265,15 @@ MOSprepareEstimate_capped(MOStask task)
 do {\
 	/*TODO*/\
 	GlobalCappedInfo* info = TASK->capped_info;\
-	BUN limit = (TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start;\
+	BUN limit = (BUN) ((TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start);\
 	TPE* val = getSrc(TPE, (TASK));\
 	BUN delta_count;\
 	BUN nr_compressed;\
 \
-	size_t old_keys_size	= ((CURRENT)->nr_capped_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
-	size_t old_dict_size	= GET_COUNT(info) * sizeof(TPE);\
-	size_t old_headers_size	= (CURRENT)->nr_capped_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
-	size_t old_bytes		= old_keys_size + old_dict_size + old_headers_size;\
+	BUN old_keys_size	= ((CURRENT)->nr_capped_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
+	BUN old_dict_size	= GET_COUNT(info) * sizeof(TPE);\
+	BUN old_headers_size	= (CURRENT)->nr_capped_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
+	BUN old_bytes		= old_keys_size + old_dict_size + old_headers_size;\
 \
 	if (extend_delta_##TPE(&nr_compressed, &delta_count, limit, info, val)) {\
 		throw(MAL, "mosaic.capped", MAL_MALLOC_FAIL);\
@@ -284,16 +283,16 @@ do {\
 	(CURRENT)->nr_capped_encoded_elements += nr_compressed;\
 	(CURRENT)->nr_capped_encoded_blocks++;\
 \
-	size_t new_keys_size	= ((CURRENT)->nr_capped_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
-	size_t new_dict_size	= (delta_count + GET_COUNT(info)) * sizeof(TPE);\
-	size_t new_headers_size	= (CURRENT)->nr_capped_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
-	size_t new_bytes		= new_keys_size + new_dict_size + new_headers_size;\
+	BUN new_keys_size	= ((CURRENT)->nr_capped_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
+	BUN new_dict_size	= (delta_count + GET_COUNT(info)) * sizeof(TPE);\
+	BUN new_headers_size	= (CURRENT)->nr_capped_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
+	BUN new_bytes		= new_keys_size + new_dict_size + new_headers_size;\
 \
 	(CURRENT)->compression_strategy.tag = MOSAIC_CAPPED;\
 	(CURRENT)->compression_strategy.cnt = (unsigned int) nr_compressed;\
 \
 	(CURRENT)->uncompressed_size	+= (BUN) ( nr_compressed * sizeof(TPE));\
-	(CURRENT)->compressed_size		+= (wordaligned( MosaicBlkSize, BitVector) + new_bytes - old_bytes);\
+	(CURRENT)->compressed_size		+= (BUN) (wordaligned( MosaicBlkSize, BitVector) + new_bytes - old_bytes);\
 } while (0)
 
 // calculate the expected reduction using DICT in terms of elements compressed
@@ -336,7 +335,7 @@ MOSpostEstimate_capped(MOStask task) {
 }
 
 static str
-_finalizeDictionary(BAT* b, GlobalCappedInfo* info, ulng* pos_dict, ulng* length_dict, bte* bits_dict) {
+_finalizeDictionary(BAT* b, GlobalCappedInfo* info, BUN* pos_dict, BUN* length_dict, bte* bits_dict) {
 	Heap* vmh = b->tvmosaic;
 	BUN size_in_bytes = vmh->free + GetSizeInBytes(info);
 	if (HEAPextend(vmh, size_in_bytes, true) != GDK_SUCCEED) {
@@ -350,11 +349,11 @@ _finalizeDictionary(BAT* b, GlobalCappedInfo* info, ulng* pos_dict, ulng* length
 	assert(vmh->free % GetTypeWidth(info) == 0);
 	*pos_dict = (vmh->free / GetTypeWidth(info));
 
-	vmh->free += GetSizeInBytes(info);
+	vmh->free += (size_t) GetSizeInBytes(info);
 	vmh->dirty = true;
 
-	*length_dict = (ulng) GET_COUNT(info);
-	*bits_dict = calculateBits((BUN) *length_dict);
+	*length_dict = GET_COUNT(info);
+	*bits_dict = calculateBits(*length_dict);
 
 	BBPreclaim(info->dict);
 	BBPreclaim(info->temp_dict);

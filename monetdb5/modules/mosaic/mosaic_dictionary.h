@@ -72,7 +72,7 @@ void insert_into_dict_##TPE(TPE* dict, BUN* dict_count, BUN key, TPE val)\
 #define extend_delta_DEF(TPE, DICTIONARY_TYPE) \
 static str \
 extend_delta_##TPE(BUN* nr_compressed, BUN* delta_count, BUN limit, DICTIONARY_TYPE* info, TPE* val) {\
-	size_t buffer_size = 256;\
+	BUN buffer_size = 256;\
 	TPE* dict		= (TPE*) GET_BASE(info, TPE);\
 	BUN dict_count	= GET_COUNT(info);\
 	TPE* delta		= dict + dict_count;\
@@ -141,7 +141,7 @@ compress_dictionary_##TPE(TPE* dict, BUN dict_size, BUN* i, TPE* val, BUN limit,
 static void \
 decompress_dictionary_##TPE(TPE* dict, bte bits, BitVector base, BUN limit, TPE** dest) {\
 	for(BUN i = 0; i < limit; i++){\
-		size_t key = getBitVector(base,i,(int) bits);\
+		BUN key = getBitVector(base,i,(int) bits);\
 		(*dest)[i] = dict[key];\
 	}\
 	*dest += limit;\
