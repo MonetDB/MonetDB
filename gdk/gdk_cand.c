@@ -436,9 +436,9 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				const oid o = b->hseqbase;
 				/* loop invariant:
 				 * ci->oids[lo] < o <= ci->oids[hi] */
-				while (lo + 1 < hi) {
+				while (hi - lo > 1) {
 					BUN mid = (lo + hi) / 2;
-					if (ci->oids[mid] > o)
+					if (ci->oids[mid] >= o)
 						hi = mid;
 					else
 						lo = mid;
@@ -454,9 +454,9 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				const oid o = b->hseqbase + BATcount(b);
 				/* loop invariant:
 				 * ci->oids[lo] < o <= ci->oids[hi] */
-				while (lo + 1 < hi) {
+				while (hi - lo > 1) {
 					BUN mid = (lo + hi) / 2;
-					if (ci->oids[mid] > o)
+					if (ci->oids[mid] >= o)
 						hi = mid;
 					else
 						lo = mid;
