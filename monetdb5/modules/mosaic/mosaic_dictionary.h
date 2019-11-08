@@ -402,7 +402,7 @@ bool has_nil, bool nil_matches)\
 // insert a series of values into the compressor block using dictionary
 #define DICTcompress(TASK, TPE) {\
 	TPE *val = getSrc(TPE, (TASK));\
-	unsigned int limit = estimate->cnt;\
+	BUN limit = estimate->cnt;\
 	(TASK)->dst = MOScodevectorDict(TASK);\
 	BitVector base = (BitVector) ((TASK)->dst);\
 	BUN i;\
