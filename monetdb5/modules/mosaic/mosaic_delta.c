@@ -213,13 +213,13 @@ MOSdecompress_delta(MOStask task)
 		TPE val= * (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 		task->dst = MOScodevector(task)  + sizeof(TPE);\
 		if( !*anti){\
-			if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh) ){\
+			if( IS_NIL(TPE, *(TPE*) low) && IS_NIL(TPE, *(TPE*) hgh) ){\
 				for( ; first < last; first++){\
 					MOSskipit();\
 					*o++ = (oid) first;\
 				}\
 			} else\
-			if( is_nil(TPE, *(TPE*) low) ){\
+			if( IS_NIL(TPE, *(TPE*) low) ){\
 				for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){\
 					MOSskipit();\
 					cmp  =  ((*hi && val <= * (TPE*)hgh ) || (!*hi && val < *(TPE*)hgh ));\
@@ -227,7 +227,7 @@ MOSdecompress_delta(MOStask task)
 						*o++ = (oid) first;\
 				}\
 			} else\
-			if( is_nil(TPE, *(TPE*) hgh) ){\
+			if( IS_NIL(TPE, *(TPE*) hgh) ){\
 				for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){\
 					MOSskipit();\
 					cmp  =  ((*li && val >= * (TPE*)low ) || (!*li && val > *(TPE*)low ));\
@@ -244,10 +244,10 @@ MOSdecompress_delta(MOStask task)
 				}\
 			}\
 		} else {\
-			if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
+			if( IS_NIL(TPE, *(TPE*) low) && IS_NIL(TPE, *(TPE*) hgh)){\
 				/* nothing is matching */\
 			} else\
-			if( is_nil(TPE, *(TPE*) low) ){\
+			if( IS_NIL(TPE, *(TPE*) low) ){\
 				for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){\
 					MOSskipit();\
 					cmp  =  ((*hi && val <= * (TPE*)hgh ) || (!*hi && val < *(TPE*)hgh ));\
@@ -255,7 +255,7 @@ MOSdecompress_delta(MOStask task)
 						*o++ = (oid) first;\
 				}\
 			} else\
-			if( is_nil(TPE, *(TPE*) hgh) ){\
+			if( IS_NIL(TPE, *(TPE*) hgh) ){\
 				for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){\
 					MOSskipit();\
 					cmp  =  ((*li && val >= * (TPE*)low ) || (!*li && val > *(TPE*)low ));\
@@ -332,7 +332,7 @@ MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	v= *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
 	task->dst = MOScodevector(task) + sizeof(TPE);\
 	for( ; first < last; first++, v+= *(bte*)task->dst, task->dst++){\
-		if( (is_nil(TPE, low) || v >= low) && (v <= hgh || is_nil(TPE, hgh)) ){\
+		if( (IS_NIL(TPE, low) || v >= low) && (v <= hgh || IS_NIL(TPE, hgh)) ){\
 			if ( !anti) {\
 				MOSskipit();\
 				*o++ = (oid) first;\

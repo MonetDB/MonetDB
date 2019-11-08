@@ -50,6 +50,9 @@ typedef Heap *mosaic;	// compressed data is stored on a heap.
 
 #define METHOD_NOT_AVAILABLE -1
 
+#define IS_NIL(TPE, VAL) is_##TPE##_nil(VAL)
+#define ARE_EQUAL(v, w, HAS_NIL, TPE) ((v == w || (HAS_NIL && IS_NIL(TPE, v) && IS_NIL(TPE, w)) ) )
+
 typedef struct MOSAICHEADER{
 	int version;
 	union{
@@ -116,10 +119,6 @@ typedef struct MOSAICBLK{
 // alignment is focused on mosaichdr size
 #define MosaicHdrSize  wordaligned(sizeof(struct MOSAICHEADER),sizeof(struct MOSAICBLK))
 #define MosaicBlkSize  sizeof(MosaicBlkRec)
-
-// helper function to check if a value is equal to the nil value of its type.
-// TODO: check if this function can be added to gdk_atoms.h
-#define is_nil(TPE, v) (ATOMcmp( TYPE_##TPE , (void*) &(v), (void*) ATOMnilptr(TYPE_##TPE) ) == 0)
 
 #define getSrc(TPE, TASK) (((TPE*)TASK->src) + TASK->start)
 

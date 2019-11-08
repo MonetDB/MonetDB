@@ -247,59 +247,59 @@ MOSdecompress_raw(MOStask task)
 #define select_raw_general(LOW, HIGH, LI, HI, HAS_NIL, ANTI, TPE) {\
 	TPE *val= (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 \
-	if		( is_nil(TPE, (LOW)) &&  is_nil(TPE, (HIGH)) && (LI) && (HI) && !(ANTI)) {\
+	if		( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && (LI) && (HI) && !(ANTI)) {\
 		if(HAS_NIL) {\
 			for( ; first < last; first++, val++){\
 				MOSskipit();\
-				if (is_nil(TPE, *(TPE*)val))\
+				if (IS_NIL(TPE, *(TPE*)val))\
 					*o++ = (oid) first;\
 			}\
 		}\
 	}\
-	else if	( is_nil(TPE, (LOW)) &&  is_nil(TPE, (HIGH)) && (LI) && (HI) && (ANTI)) {\
+	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && (LI) && (HI) && (ANTI)) {\
 		if(HAS_NIL) {\
 			for( ; first < last; first++, val++){\
 				MOSskipit();\
-				if (!is_nil(TPE, *(TPE*)val))\
-					*o++ = (oid) first;\
-			}\
-		}\
-		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
-	}\
-	else if	( is_nil(TPE, (LOW)) &&  is_nil(TPE, (HIGH)) && !((LI) && (HI)) && !(ANTI)) {\
-		if(HAS_NIL) {\
-			for( ; first < last; first++, val++){\
-				MOSskipit();\
-				if (!is_nil(TPE, *(TPE*)val))\
+				if (!IS_NIL(TPE, *(TPE*)val))\
 					*o++ = (oid) first;\
 			}\
 		}\
 		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
 	}\
-	else if	( is_nil(TPE, (LOW)) &&  is_nil(TPE, (HIGH)) && !((LI) && (HI)) && (ANTI)) {\
+	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && !((LI) && (HI)) && !(ANTI)) {\
+		if(HAS_NIL) {\
+			for( ; first < last; first++, val++){\
+				MOSskipit();\
+				if (!IS_NIL(TPE, *(TPE*)val))\
+					*o++ = (oid) first;\
+			}\
+		}\
+		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
+	}\
+	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && !((LI) && (HI)) && (ANTI)) {\
 			/*Empty result set.*/\
 	}\
-	else if	( !is_nil(TPE, (LOW)) &&  !is_nil(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && (ANTI)) {\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && (ANTI)) {\
 		if(HAS_NIL) {\
 			for( ; first < last; first++, val++){\
 				MOSskipit();\
-				if (!is_nil(TPE, *(TPE*)val))\
+				if (!IS_NIL(TPE, *(TPE*)val))\
 					*o++ = (oid) first;\
 			}\
 		}\
 		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
 	}\
-	else if	( !is_nil(TPE, (LOW)) &&  !is_nil(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && !(ANTI)) {\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && !(ANTI)) {\
 		/*Empty result set.*/\
 	}\
-	else if	( !is_nil(TPE, (LOW)) &&  !is_nil(TPE, (HIGH)) && (LOW) > (HIGH) && !(ANTI)) {\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) > (HIGH) && !(ANTI)) {\
 		/*Empty result set.*/\
 	}\
-	else if	( !is_nil(TPE, (LOW)) &&  !is_nil(TPE, (HIGH)) && (LOW) > (HIGH) && (ANTI)) {\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) > (HIGH) && (ANTI)) {\
 		if(HAS_NIL) {\
 			for( ; first < last; first++, val++){\
 				MOSskipit();\
-				if (!is_nil(TPE, *(TPE*)val))\
+				if (!IS_NIL(TPE, *(TPE*)val))\
 					*o++ = (oid) first;\
 			}\
 		}\
@@ -308,19 +308,19 @@ MOSdecompress_raw(MOStask task)
 	else {\
 		/*normal cases.*/\
 		if( !(ANTI)){\
-			if( is_nil(TPE, LOW) ){\
+			if( IS_NIL(TPE, LOW) ){\
 				for( ; first < last; first++, val++){\
 					MOSskipit();\
-					if (HAS_NIL && is_nil(TPE, *(TPE*)val)) { continue;}\
+					if (HAS_NIL && IS_NIL(TPE, *(TPE*)val)) { continue;}\
 					cmp  =  (((HI) && *(TPE*)val <= (HIGH) ) || (!(HI) && *(TPE*)val < (HIGH) ));\
 					if (cmp )\
 						*o++ = (oid) first;\
 				}\
 			} else\
-			if( is_nil(TPE, HIGH) ){\
+			if( IS_NIL(TPE, HIGH) ){\
 				for( ; first < last; first++, val++){\
 					MOSskipit();\
-					if (HAS_NIL && is_nil(TPE, *(TPE*)val)) { continue;}\
+					if (HAS_NIL && IS_NIL(TPE, *(TPE*)val)) { continue;}\
 					cmp  =  (((LI) && *(TPE*)val >= (LOW) ) || (!(LI) && *(TPE*)val > (LOW) ));\
 					if (cmp )\
 						*o++ = (oid) first;\
@@ -328,7 +328,7 @@ MOSdecompress_raw(MOStask task)
 			} else{\
 				for( ; first < last; first++, val++){\
 					MOSskipit();\
-					if (HAS_NIL && is_nil(TPE, *(TPE*)val)) { continue;}\
+					if (HAS_NIL && IS_NIL(TPE, *(TPE*)val)) { continue;}\
 					cmp  =  (((HI) && *(TPE*)val <= (HIGH) ) || (!(HI) && *(TPE*)val < (HIGH) )) &&\
 							(((LI) && *(TPE*)val >= (LOW) ) || (!(LI) && *(TPE*)val > (LOW) ));\
 					if (cmp )\
@@ -336,19 +336,19 @@ MOSdecompress_raw(MOStask task)
 				}\
 			}\
 		} else {\
-			if( is_nil(TPE, LOW) ){\
+			if( IS_NIL(TPE, LOW) ){\
 				for( ; first < last; first++, val++){\
 					MOSskipit();\
-					if (HAS_NIL && is_nil(TPE, *(TPE*)val)) { continue;}\
+					if (HAS_NIL && IS_NIL(TPE, *(TPE*)val)) { continue;}\
 					cmp  =  (((HI) && *(TPE*)val <= (HIGH) ) || (!(HI) && *(TPE*)val < (HIGH) ));\
 					if ( !cmp )\
 						*o++ = (oid) first;\
 				}\
 			} else\
-			if( is_nil(TPE, HIGH) ){\
+			if( IS_NIL(TPE, HIGH) ){\
 				for( ; first < last; first++, val++){\
 					MOSskipit();\
-					if (HAS_NIL && is_nil(TPE, *(TPE*)val)) { continue;}\
+					if (HAS_NIL && IS_NIL(TPE, *(TPE*)val)) { continue;}\
 					cmp  =  (((LI) && *(TPE*)val >= (LOW) ) || (!(LI) && *(TPE*)val > (LOW) ));\
 					if ( !cmp )\
 						*o++ = (oid) first;\
@@ -356,7 +356,7 @@ MOSdecompress_raw(MOStask task)
 			} else{\
 				for( ; first < last; first++, val++){\
 					MOSskipit();\
-					if (HAS_NIL && is_nil(TPE, *(TPE*)val)) { continue;}\
+					if (HAS_NIL && IS_NIL(TPE, *(TPE*)val)) { continue;}\
 					cmp  =  (((HI) && *(TPE*)val <= (HIGH) ) || (!(HI) && *(TPE*)val < (HIGH) )) &&\
 							(((LI) && *(TPE*)val >= (LOW) ) || (!(LI) && *(TPE*)val > (LOW) ));\
 					if ( !cmp )\
@@ -443,8 +443,8 @@ MOSselect_raw( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 	} \
 	v = (TPE*) (((char*)task->blk) + MosaicBlkSize);\
 	for( ; first < last; first++, v++){\
-		if (HAS_NIL && is_nil(TPE, *(TPE*)v)) { continue;}\
-		if( (is_nil(TPE, low) || * v >= low) && (is_nil(TPE, hgh)  || * v <= hgh) ){\
+		if (HAS_NIL && IS_NIL(TPE, *(TPE*)v)) { continue;}\
+		if( (IS_NIL(TPE, low) || * v >= low) && (IS_NIL(TPE, hgh)  || * v <= hgh) ){\
 			if ( !anti) {\
 				MOSskipit();\
 				*o++ = (oid) first;\
@@ -539,16 +539,16 @@ MOSprojection_raw( MOStask task)
 	return MAL_SUCCEED;
 }
 
-#define join_raw_general(NIL_MATCHES, TPE)\
+#define join_raw_general(HAS_NIL, NIL_MATCHES, TPE)\
 {	TPE *v, *w;\
 	v = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 	for(oo= (oid) first; first < last; first++, v++, oo++){\
 		if (!NIL_MATCHES) {\
-			if ((is_nil(TPE, v))) {continue;};\
+			if ((IS_NIL(TPE, *v))) {continue;};\
 		}\
 		w = (TPE*) task->src;\
 		for(n = task->stop, o = 0; n -- > 0; w++,o++) {\
-			if ( *w == *v){\
+			if (ARE_EQUAL(*w, *v, HAS_NIL, TPE)){\
 				if( BUNappend(task->lbat, &oo, false)!= GDK_SUCCEED ||\
 				BUNappend(task->rbat, &o, false) != GDK_SUCCEED)\
 				throw(MAL,"mosaic.raw",MAL_MALLOC_FAIL);\
@@ -558,13 +558,22 @@ MOSprojection_raw( MOStask task)
 }
 
 #define join_raw(TPE) {\
-	if( nil && !nil_matches ){\
-		join_raw_general(false, TPE);\
+	if( nil && nil_matches){\
+		join_raw_general(true, true, TPE);\
 	}\
-	else /*!nil*/{\
-		join_raw_general(true, TPE);\
+	if( !nil && nil_matches){\
+		join_raw_general(false, true, TPE);\
+	}\
+	if( !nil_matches){\
+		/* We don't need to check nil because !nil_matches
+		 * excludes a direct comparison with a nill value
+		   on the other side anyway.
+		 */\
+	join_raw_general(false, false, TPE);\
 	}\
 }
+
+
 
 str
 MOSjoin_raw( MOStask task, bit nil_matches)

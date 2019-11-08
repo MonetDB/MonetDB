@@ -1,5 +1,6 @@
 ####technical depth####
 Finish null semantics plus tests
+Add test for join nil_matches set for non-nill tests.
 make sure candidate lists are working properly for select, theta_select and join
 make mitosis work with mosaic and see how this relates to the previous landmark stuff.
 Be sure alignment is correct. Use asserts for this.

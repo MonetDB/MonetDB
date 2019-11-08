@@ -311,7 +311,7 @@ MOSdecompress_frame(MOStask task)
 #define select_frame_general(RESULT, BASE, BITS, HSEQBASE, CNT, MIN, MAX, LOW, HIGH, LI, HI, NIL_DELTA, HAS_NIL, ANTI, TPE, DELTA_TPE)\
 do {\
 \
-	if		( is_nil(TPE, (LOW)) &&  is_nil(TPE, (HIGH)) && (LI) && (HI) && !(ANTI)) {\
+	if		( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && (LI) && (HI) && !(ANTI)) {\
 		if(HAS_NIL) {\
 			for(i=0; i < (CNT); i++){\
 				DELTA_TPE delta = getBitVector(BASE, i, BITS);\
@@ -319,7 +319,7 @@ do {\
 			}\
 		}\
 	}\
-	else if	( is_nil(TPE, (LOW)) &&  is_nil(TPE, (HIGH)) && (LI) && (HI) && (ANTI)) {\
+	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && (LI) && (HI) && (ANTI)) {\
 		if(HAS_NIL) {\
 			for(i=0; i < (CNT); i++){\
 				DELTA_TPE delta = getBitVector(BASE, i, BITS);\
@@ -328,7 +328,7 @@ do {\
 		}\
 		else for(i=0; i < (CNT); i++) {*(RESULT)++ = (oid) (i + (HSEQBASE));}\
 	}\
-	else if	( is_nil(TPE, (LOW)) &&  is_nil(TPE, (HIGH)) && !((LI) && (HI)) && !(ANTI)) {\
+	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && !((LI) && (HI)) && !(ANTI)) {\
 		if(HAS_NIL) {\
 			for(i=0; i < (CNT); i++){\
 				DELTA_TPE delta = getBitVector(BASE, i, BITS);\
@@ -337,10 +337,10 @@ do {\
 		}\
 		else for(i=0; i < (CNT); i++) {*(RESULT)++ = (oid) (i + (HSEQBASE));}\
 	}\
-	else if	( is_nil(TPE, (LOW)) &&  is_nil(TPE, (HIGH)) && !((LI) && (HI)) && (ANTI)) {\
+	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && !((LI) && (HI)) && (ANTI)) {\
 			/*Empty result set.*/\
 	}\
-	else if( is_nil(TPE, (LOW))) {\
+	else if( IS_NIL(TPE, (LOW))) {\
 		DELTA_TPE hgh2;\
 		bool hi2 = (HI);\
 		if ((HIGH) < (MIN)) {\
@@ -365,7 +365,7 @@ do {\
 			}\
 		}\
 	}\
-	else if( is_nil(TPE, (HIGH))){\
+	else if( IS_NIL(TPE, (HIGH))){\
 		DELTA_TPE low2;\
 		bool li2 = (LI);\
 		if ((LOW) > (MAX)) {\
@@ -395,7 +395,7 @@ do {\
 		DELTA_TPE hgh2;\
 		bool li2 = (LI);\
 		bool hi2 = (HI);\
-		assert(!is_nil(TPE, (LOW)) && !is_nil(TPE, (HIGH)));\
+		assert(!IS_NIL(TPE, (LOW)) && !IS_NIL(TPE, (HIGH)));\
 		if (LOW == HIGH && !(LI && HI) && !(ANTI)) {\
 			/*Empty result set.*/\
 		}\
@@ -714,7 +714,7 @@ MOSprojection_frame( MOStask task)
 }
 
 
-#define join_frame_general(NIL_MATCHES, TPE, DELTA_TPE)\
+#define join_frame_general(HAS_NIL, NIL_MATCHES, TPE, DELTA_TPE)\
 {	TPE *w;\
 	BitVector base = (BitVector) MOScodevectorFrame(task);\
 	w = (TPE*) task->src;\
@@ -723,9 +723,9 @@ MOSprojection_frame( MOStask task)
 		for(oo = task->start,i=0; i < limit; i++,oo++){\
 			TPE v = ADD_DELTA(TPE, DELTA_TPE, min, getBitVector(base, i, parameters->bits));\
 			if (!NIL_MATCHES) {\
-				if ((is_nil(TPE, v))) {continue;};\
+				if ((IS_NIL(TPE, v))) {continue;};\
 			}\
-			if ( *w == v){\
+			if (ARE_EQUAL(*w, v, HAS_NIL, TPE)){\
 				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
 				BUNappend(task->rbat, &o, false)!= GDK_SUCCEED)\
 				throw(MAL,"mosaic.frame",MAL_MALLOC_FAIL);\
@@ -744,11 +744,18 @@ MOSprojection_frame( MOStask task)
 		/*TODO: this is a strong assumption that nil values are always the highest or the lowest value in a GDK type domain.*/\
 		nil = (min == TPE##_nil) || (max == TPE##_nil);\
 	}\
-	if (nil && !nil_matches) {\
-		join_frame_general(false, TPE, DELTA_TPE);\
+	if( nil && nil_matches){\
+		join_frame_general(true, true, TPE, DELTA_TPE);\
 	}\
-	else /*no nils or they are allowed to match match*/ {\
-		join_frame_general(true, TPE, DELTA_TPE);\
+	if( !nil && nil_matches){\
+		join_frame_general(false, true, TPE, DELTA_TPE);\
+	}\
+	if( !nil_matches){\
+		/* We don't need to check nil because !nil_matches
+		 * excludes a direct comparison with a nill value
+		   on the other side anyway.
+		 */\
+		join_frame_general(false, false, TPE, DELTA_TPE);\
 	}\
 }
 

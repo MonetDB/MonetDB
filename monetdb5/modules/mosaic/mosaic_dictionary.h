@@ -17,16 +17,12 @@ calculateBits(BUN count) {
 	return bits;
 }
 
-#define IS_NIL(TPE, VAL) is_##TPE##_nil(VAL)
-
 typedef struct _EstimationParameters {
 	BUN count;
 	unsigned char bits;
 	BUN delta_count;
 	unsigned char bits_extended; // number of bits required to index the info after the delta would have been merged.
 } EstimationParameters;
-
-#define ARE_EQUAL(v, w, HAS_NIL, TPE) ((v == w || (HAS_NIL && IS_NIL(TPE, v) && IS_NIL(TPE, w)) ) )
 
 #define find_value_DEF(TPE) \
 static inline \
@@ -337,7 +333,7 @@ void select_dictionary_##TPE(\
 	for(unsigned int i = 0; i < cnt; i++){\
 		unsigned int j = getBitVector(base, i, bits); \
 		if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
-		if( (is_nil(TPE, low) || dict[j] >= low) && (dict[j] <= hgh || is_nil(TPE, hgh)) ){\
+		if( (IS_NIL(TPE, low) || dict[j] >= low) && (dict[j] <= hgh || IS_NIL(TPE, hgh)) ){\
 			if ( !anti) {\
 				*(*result)++ = (oid) (i + hseqbase);\
 			}\
@@ -361,7 +357,7 @@ void thetaselect_dictionary_##TPE(\
 	}\
 }
 
-#define join_dictionary_general(NIL_MATCHES, TPE) {\
+#define join_dictionary_general(HAS_NIL, NIL_MATCHES, TPE) {\
 	BUN i, n;\
 	oid hr, hl; /*The right and left head values respectively.*/\
 	for(hr=0, n= rcnt; n-- > 0; hr++,tr++ ){\
@@ -370,7 +366,7 @@ void thetaselect_dictionary_##TPE(\
 			if (!NIL_MATCHES) {\
 				if (IS_NIL(TPE, dict[j])) { continue;}\
 			}\
-			if ( *tr == dict[j]){\
+			if (ARE_EQUAL(*tr, dict[j], HAS_NIL, TPE)){\
 				if(BUNappend(lres, &hl, false) != GDK_SUCCEED ||\
 				BUNappend(rres, &hr, false) != GDK_SUCCEED)\
 				throw(MAL,"mosaic.dictionary",MAL_MALLOC_FAIL);\
@@ -386,13 +382,20 @@ BAT* lres, BAT* rres,\
 BUN hseqbase, BUN lcnt, TPE* dict, BitVector base, bte bits, TPE* tr, BUN rcnt,\
 bool has_nil, bool nil_matches)\
 {\
-	if( has_nil && !nil_matches){\
-		join_dictionary_general(false, TPE);\
-	}\
-	else /*!has_nil*/{\
-		join_dictionary_general(true, TPE);\
-	}\
-	return MAL_SUCCEED;\
+if( has_nil && nil_matches){\
+	join_dictionary_general(true, true, TPE);\
+}\
+if( !has_nil && nil_matches){\
+	join_dictionary_general(false, true, TPE);\
+}\
+if( !nil_matches){\
+	/* We don't need to check has_nil because !nil_matches
+		* excludes a direct comparison with a nill value
+		on the other side anyway.
+		*/\
+	join_dictionary_general(false, false, TPE);\
+}\
+return MAL_SUCCEED;\
 }
 
 // MOStask object dependent macro's

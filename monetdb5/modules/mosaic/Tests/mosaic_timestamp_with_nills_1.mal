@@ -884,10 +884,14 @@ bat.append(b,"2014-08-14 12:10:01":timestamp);
 bat.append(b,"2014-08-14 12:09:59":timestamp);
 bat.append(b,"2014-08-14 12:10:03":timestamp);
 bat.append(b,"2014-08-14 12:09:57":timestamp);
+bat.append(b,nil:timestamp);
 bat.append(b,"2014-08-14 12:10:10":timestamp);
 bat.append(b,"2014-08-14 12:09:51":timestamp);
 bat.append(b,"2014-08-14 12:09:52":timestamp);
 bat.append(b,"2014-08-14 12:09:53":timestamp);
+bat.append(b,nil:timestamp);
+bat.append(b,nil:timestamp);
+bat.append(b,nil:timestamp);
 bat.append(b,"2014-08-14 12:10:00":timestamp);
 
 (l,r)   := algebra.join(a,b,nil:bat,nil:bat, false, 0:lng);
@@ -895,6 +899,18 @@ bat.append(b,"2014-08-14 12:10:00":timestamp);
 l      := algebra.projection(p, l);
 
 (lc,rc) := mosaic.join (c,b,nil:bat,nil:bat, false, 0:lng);
+(rc, p) := algebra.sort(rc, false:bit, false:bit, false:bit);
+lc      := algebra.projection(p, lc);
+eq  := batcalc.==(l, lc);
+io.print(l,lc, eq);
+eq  := batcalc.==(r, rc);
+io.print(r,rc, eq);
+
+(l,r)   := algebra.join(a,b,nil:bat,nil:bat, true, 0:lng);
+(r, p) := algebra.sort(r, false:bit, false:bit, false:bit);
+l      := algebra.projection(p, l);
+
+(lc,rc) := mosaic.join (c,b,nil:bat,nil:bat, true, 0:lng);
 (rc, p) := algebra.sort(rc, false:bit, false:bit, false:bit);
 lc      := algebra.projection(p, lc);
 eq  := batcalc.==(l, lc);

@@ -379,75 +379,75 @@ MOSdecompress_prefix(MOStask task)
  *	v1	v2	true	false	true	x < v1 or x >= v2
  *	v1	v2	false	true	true	x <= v1 or x > v2
  */
-#define  select_prefix_general(LOW, HIGH, LI, HI, HAS_NIL, ANTI, TPE, IS_TPE_NIL) \
+#define  select_prefix_general(LOW, HIGH, LI, HI, HAS_NIL, ANTI, TPE) \
 {\
 	MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorPrefix(task);\
 	PrefixTpe(TPE) prefix = parameters->prefix.prefix##TPE;\
 	int suffix_bits = parameters->suffix_bits;\
-	if		( IS_TPE_NIL(TPE, (LOW)) &&  IS_TPE_NIL(TPE, (HIGH)) && (LI) && (HI) && !(ANTI)) {\
+	if		( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && (LI) && (HI) && !(ANTI)) {\
 		if(HAS_NIL) {\
 			for( ; first < last; first++){\
 				MOSskipit();\
 				PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
 				TPE* value =  (TPE*) &pvalue;\
-				if (IS_TPE_NIL(TPE, *value))\
+				if (IS_NIL(TPE, *value))\
 					*o++ = (oid) first;\
 			}\
 		}\
 	}\
-	else if	( IS_TPE_NIL(TPE, (LOW)) &&  IS_TPE_NIL(TPE, (HIGH)) && (LI) && (HI) && (ANTI)) {\
+	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && (LI) && (HI) && (ANTI)) {\
 		if(HAS_NIL) {\
 			for( ; first < last; first++){\
 				MOSskipit();\
 				PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
 				TPE* value =  (TPE*) &pvalue;\
-				if (!IS_TPE_NIL(TPE, *value))\
-					*o++ = (oid) first;\
-			}\
-		}\
-		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
-	}\
-	else if	( IS_TPE_NIL(TPE, (LOW)) &&  IS_TPE_NIL(TPE, (HIGH)) && !((LI) && (HI)) && !(ANTI)) {\
-		if(HAS_NIL) {\
-			for( ; first < last; first++){\
-				MOSskipit();\
-				PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
-				TPE* value =  (TPE*) &pvalue;\
-				if (!IS_TPE_NIL(TPE, *value))\
+				if (!IS_NIL(TPE, *value))\
 					*o++ = (oid) first;\
 			}\
 		}\
 		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
 	}\
-	else if	( IS_TPE_NIL(TPE, (LOW)) &&  IS_TPE_NIL(TPE, (HIGH)) && !((LI) && (HI)) && (ANTI)) {\
+	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && !((LI) && (HI)) && !(ANTI)) {\
+		if(HAS_NIL) {\
+			for( ; first < last; first++){\
+				MOSskipit();\
+				PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
+				TPE* value =  (TPE*) &pvalue;\
+				if (!IS_NIL(TPE, *value))\
+					*o++ = (oid) first;\
+			}\
+		}\
+		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
+	}\
+	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && !((LI) && (HI)) && (ANTI)) {\
 			/*Empty result set.*/\
 	}\
-	else if	( !IS_TPE_NIL(TPE, (LOW)) &&  !IS_TPE_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && (ANTI)) {\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && (ANTI)) {\
 		if(HAS_NIL) {\
 			for( ; first < last; first++){\
 				MOSskipit();\
 				PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
 				TPE* value =  (TPE*) &pvalue;\
-				if (!IS_TPE_NIL(TPE, *value))\
+				if (!IS_NIL(TPE, *value))\
 					*o++ = (oid) first;\
 			}\
 		}\
 		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
 	}\
-	else if	( !IS_TPE_NIL(TPE, (LOW)) &&  !IS_TPE_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && !(ANTI)) {\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && !(ANTI)) {\
 		/*Empty result set.*/\
 	}\
-	else if	( !IS_TPE_NIL(TPE, (LOW)) &&  !IS_TPE_NIL(TPE, (HIGH)) && (LOW) > (HIGH) && !(ANTI)) {\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) > (HIGH) && !(ANTI)) {\
 		/*Empty result set.*/\
 	}\
-	else if	( !IS_TPE_NIL(TPE, (LOW)) &&  !IS_TPE_NIL(TPE, (HIGH)) && (LOW) > (HIGH) && (ANTI)) {\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) > (HIGH) && (ANTI)) {\
 		if(HAS_NIL) {\
 			for( ; first < last; first++){\
 				MOSskipit();\
 				PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
 				TPE* value =  (TPE*) &pvalue;\
-				if (!IS_TPE_NIL(TPE, *value))\
+				if (!IS_NIL(TPE, *value))\
 					*o++ = (oid) first;\
 			}\
 		}\
@@ -456,23 +456,23 @@ MOSdecompress_prefix(MOStask task)
 	else {\
 		/*normal cases.*/\
 		if( !*anti){\
-			if( IS_TPE_NIL(TPE, (LOW)) ){\
+			if( IS_NIL(TPE, (LOW)) ){\
 				for( ; first < last; first++,i++){\
 					MOSskipit();\
 					PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
 					TPE* value =  (TPE*) &pvalue;\
-					if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
+					if (HAS_NIL && IS_NIL(TPE, *value)) { continue;}\
 					bool cmp  =  (((HI) && *value <= (HIGH) ) || (!(HI) && *value < (HIGH) ));\
 					if (cmp )\
 						*o++ = (oid) first;\
 				}\
 			} else\
-			if( IS_TPE_NIL(TPE, (HIGH)) ){\
+			if( IS_NIL(TPE, (HIGH)) ){\
 				for( ; first < last; first++,i++){\
 					MOSskipit();\
 					PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
 					TPE* value =  (TPE*) &pvalue;\
-					if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
+					if (HAS_NIL && IS_NIL(TPE, *value)) { continue;}\
 					bool cmp  =  (((LI) && *value >= (LOW) ) || (!(LI) && *value > (LOW) ));\
 					if (cmp )\
 						*o++ = (oid) first;\
@@ -482,7 +482,7 @@ MOSdecompress_prefix(MOStask task)
 					MOSskipit();\
 					PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
 					TPE* value =  (TPE*) &pvalue;\
-					if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
+					if (HAS_NIL && IS_NIL(TPE, *value)) { continue;}\
 					bool cmp  =  (((HI) && *value <= (HIGH) ) || (!(HI) && *value < (HIGH) )) &&\
 							(((LI) && *value >= (LOW) ) || (!(LI) && *value > (LOW) ));\
 					if (cmp )\
@@ -490,23 +490,23 @@ MOSdecompress_prefix(MOStask task)
 				}\
 			}\
 		} else {\
-			if( IS_TPE_NIL(TPE, (LOW)) ){\
+			if( IS_NIL(TPE, (LOW)) ){\
 				for( ; first < last; first++,i++){\
 					MOSskipit();\
 					PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
 					TPE* value =  (TPE*) &pvalue;\
-					if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
+					if (HAS_NIL && IS_NIL(TPE, *value)) { continue;}\
 					bool cmp  =  (((HI) && *value <= (HIGH) ) || (!(HI) && *value < (HIGH) ));\
 					if ( !cmp )\
 						*o++ = (oid) first;\
 				}\
 			} else\
-			if( IS_TPE_NIL(TPE, (HIGH)) ){\
+			if( IS_NIL(TPE, (HIGH)) ){\
 				for( ; first < last; first++,i++){\
 					MOSskipit();\
 					PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
 					TPE* value =  (TPE*) &pvalue;\
-					if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
+					if (HAS_NIL && IS_NIL(TPE, *value)) { continue;}\
 					bool cmp  =  (((LI) && *value >= (LOW) ) || (!(LI) && *value > (LOW) ));\
 					if ( !cmp )\
 						*o++ = (oid) first;\
@@ -516,7 +516,7 @@ MOSdecompress_prefix(MOStask task)
 					MOSskipit();\
 					PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
 					TPE* value =  (TPE*) &pvalue;\
-					if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
+					if (HAS_NIL && IS_NIL(TPE, *value)) { continue;}\
 					bool cmp  =  (((HI) && *value <= (HIGH) ) || (!(HI) && *value < (HIGH) )) &&\
 							(((LI) && *value >= (LOW) ) || (!(LI) && *value > (LOW) ));\
 					if (!cmp)\
@@ -527,23 +527,20 @@ MOSdecompress_prefix(MOStask task)
 	}\
 }
 
-#define select_prefix(TPE, IS_TPE_NIL) {\
+#define select_prefix(TPE) {\
 	if( nil && *anti){\
-		select_prefix_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, true, true, TPE, IS_TPE_NIL);\
+		select_prefix_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, true, true, TPE);\
 	}\
 	if( !nil && *anti){\
-		select_prefix_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, false, true, TPE, IS_TPE_NIL);\
+		select_prefix_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, false, true, TPE);\
 	}\
 	if( nil && !*anti){\
-		select_prefix_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, true, false, TPE, IS_TPE_NIL);\
+		select_prefix_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, true, false, TPE);\
 	}\
 	if( !nil && !*anti){\
-		select_prefix_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, false, false, TPE, IS_TPE_NIL);\
+		select_prefix_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, false, false, TPE);\
 	}\
 }
-
-
-#define IS_FLT_OR_DBL_NIL(TPE, VAL) is_##TPE##_nil(VAL)
 
 str
 MOSselect_prefix( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti){
@@ -561,15 +558,15 @@ MOSselect_prefix( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *ant
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: select_prefix(bte, is_nil); break;
-	case TYPE_sht: select_prefix(sht, is_nil); break;
-	case TYPE_int: select_prefix(int, is_nil); break;
-	case TYPE_lng: select_prefix(lng, is_nil); break;
-	case TYPE_oid: select_prefix(oid, is_nil); break;
-	case TYPE_flt: select_prefix(flt, IS_FLT_OR_DBL_NIL); break;
-	case TYPE_dbl: select_prefix(dbl, IS_FLT_OR_DBL_NIL); break;
+	case TYPE_bte: select_prefix(bte); break;
+	case TYPE_sht: select_prefix(sht); break;
+	case TYPE_int: select_prefix(int); break;
+	case TYPE_lng: select_prefix(lng); break;
+	case TYPE_oid: select_prefix(oid); break;
+	case TYPE_flt: select_prefix(flt); break;
+	case TYPE_dbl: select_prefix(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: select_prefix(hge, is_nil); break;
+	case TYPE_hge: select_prefix(hge); break;
 #endif
 	}
 	MOSadvance_prefix(task);
@@ -577,7 +574,7 @@ MOSselect_prefix( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *ant
 	return MAL_SUCCEED;
 }
 
-#define thetaselect_prefix_general(HAS_NIL, TPE, IS_TPE_NIL)\
+#define thetaselect_prefix_general(HAS_NIL, TPE)\
 { 	TPE low,hgh;\
     MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorPrefix(task);\
@@ -611,8 +608,8 @@ MOSselect_prefix( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *ant
 			MOSskipit();\
 			PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
 			TPE* value =  (TPE*) &pvalue;\
-			if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
-			if( (is_nil(TPE, low) || *value >= low) && (*value <= hgh || is_nil(TPE, hgh)) )\
+			if (HAS_NIL && IS_NIL(TPE, *value)) { continue;}\
+			if( (IS_NIL(TPE, low) || *value >= low) && (*value <= hgh || IS_NIL(TPE, hgh)) )\
 			*o++ = (oid) first;\
 		}\
 	else\
@@ -620,18 +617,18 @@ MOSselect_prefix( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *ant
 			MOSskipit();\
 			PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
 			TPE* value =  (TPE*) &pvalue;\
-			if (HAS_NIL && IS_TPE_NIL(TPE, *value)) { continue;}\
-			if( !( (is_nil(TPE, low) || *value >= low) && (*value <= hgh || is_nil(TPE, hgh)) ))\
+			if (HAS_NIL && IS_NIL(TPE, *value)) { continue;}\
+			if( !( (IS_NIL(TPE, low) || *value >= low) && (*value <= hgh || IS_NIL(TPE, hgh)) ))\
 				*o++ = (oid) first;\
 		}\
 }
 
-#define thetaselect_prefix(TPE, IS_TPE_NIL) {\
+#define thetaselect_prefix(TPE) {\
 	if( nil ){\
-		thetaselect_prefix_general(true, TPE, IS_TPE_NIL);\
+		thetaselect_prefix_general(true, TPE);\
 	}\
 	else /*!nil*/{\
-		thetaselect_prefix_general(false, TPE, IS_TPE_NIL);\
+		thetaselect_prefix_general(false, TPE);\
 	}\
 }
 
@@ -654,15 +651,15 @@ MOSthetaselect_prefix( MOStask task, void *input, str oper)
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: thetaselect_prefix(bte, is_nil); break;
-	case TYPE_sht: thetaselect_prefix(sht, is_nil); break;
-	case TYPE_int: thetaselect_prefix(int, is_nil); break;
-	case TYPE_lng: thetaselect_prefix(lng, is_nil); break;
-	case TYPE_oid: thetaselect_prefix(oid, is_nil); break;
-	case TYPE_flt: thetaselect_prefix(flt, IS_FLT_OR_DBL_NIL); break;
-	case TYPE_dbl: thetaselect_prefix(dbl, IS_FLT_OR_DBL_NIL); break;
+	case TYPE_bte: thetaselect_prefix(bte); break;
+	case TYPE_sht: thetaselect_prefix(sht); break;
+	case TYPE_int: thetaselect_prefix(int); break;
+	case TYPE_lng: thetaselect_prefix(lng); break;
+	case TYPE_oid: thetaselect_prefix(oid); break;
+	case TYPE_flt: thetaselect_prefix(flt); break;
+	case TYPE_dbl: thetaselect_prefix(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: thetaselect_prefix(hge, is_nil); break;
+	case TYPE_hge: thetaselect_prefix(hge); break;
 #endif
 	}
 	MOSskip_prefix(task);
@@ -712,7 +709,7 @@ MOSprojection_prefix( MOStask task)
 	return MAL_SUCCEED;
 }
 
-#define join_prefix_general(NIL_MATCHES, TPE, IS_TPE_NIL)\
+#define join_prefix_general(HAS_NIL, NIL_MATCHES, TPE)\
 {   TPE *w;\
     MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorPrefix(task);\
@@ -724,9 +721,9 @@ MOSprojection_prefix( MOStask task)
 			PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
 			TPE* value =  (TPE*) &pvalue;\
 			if (!NIL_MATCHES) {\
-				if (IS_TPE_NIL(TPE, *value)) { continue;}\
+				if (IS_NIL(TPE, *value)) { continue;}\
 			}\
-			if ( *w == *value){\
+			if (ARE_EQUAL(*w, *value, HAS_NIL, TPE)){\
 				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
 				BUNappend(task->rbat, &o, false) != GDK_SUCCEED )\
 				throw(MAL,"mosaic.prefix",MAL_MALLOC_FAIL);\
@@ -735,12 +732,19 @@ MOSprojection_prefix( MOStask task)
 	}\
 }
 
-#define join_prefix(TPE, IS_TPE_NIL) {\
-	if( nil && !nil_matches ){\
-		join_prefix_general(false, TPE, IS_TPE_NIL);\
+#define join_prefix(TPE) {\
+	if( nil && nil_matches){\
+		join_prefix_general(true, true, TPE);\
 	}\
-	else /*!nil*/{\
-		join_prefix_general(true, TPE, IS_TPE_NIL);\
+	if( !nil && nil_matches){\
+		join_prefix_general(false, true, TPE);\
+	}\
+	if( !nil_matches){\
+		/* We don't need to check nil because !nil_matches
+		 * excludes a direct comparison with a nill value
+		   on the other side anyway.
+		 */\
+	join_prefix_general(false, false, TPE);\
 	}\
 }
 
@@ -756,15 +760,15 @@ MOSjoin_prefix( MOStask task, bit nil_matches)
 	bool nil = !task->bsrc->tnonil;
 
 	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: join_prefix(bte, is_nil); break;
-		case TYPE_sht: join_prefix(sht, is_nil); break;
-		case TYPE_int: join_prefix(int, is_nil); break;
-		case TYPE_lng: join_prefix(lng, is_nil); break;
-		case TYPE_oid: join_prefix(oid, is_nil); break;
-		case TYPE_flt: join_prefix(flt, IS_FLT_OR_DBL_NIL); break;
-		case TYPE_dbl: join_prefix(dbl, IS_FLT_OR_DBL_NIL); break;
+		case TYPE_bte: join_prefix(bte); break;
+		case TYPE_sht: join_prefix(sht); break;
+		case TYPE_int: join_prefix(int); break;
+		case TYPE_lng: join_prefix(lng); break;
+		case TYPE_oid: join_prefix(oid); break;
+		case TYPE_flt: join_prefix(flt); break;
+		case TYPE_dbl: join_prefix(dbl); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: join_prefix(hge, is_nil); break;
+		case TYPE_hge: join_prefix(hge); break;
 #endif
 	}
 	MOSskip_prefix(task);

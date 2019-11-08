@@ -700,8 +700,12 @@ bat.append(b,1000:oid);
 bat.append(b,1001:oid);
 bat.append(b,999:oid);
 bat.append(b,1003:oid);
+bat.append(b,nil:oid);
 bat.append(b,997:oid);
 bat.append(b,1010:oid);
+bat.append(b,nil:oid);
+bat.append(b,nil:oid);
+bat.append(b,nil:oid);
 bat.append(b,991:oid);
 bat.append(b,992:oid);
 bat.append(b,993:oid);
@@ -713,6 +717,16 @@ bat.append(b,1000:oid);
 l      := algebra.projection(p, l);
 
 (lc,rc) := mosaic.join (c,b,nil:bat,nil:bat, false, 0:lng);
+(rc, p) := algebra.sort(rc, false:bit, false:bit, false:bit);
+lc      := algebra.projection(p, lc);
+io.print(l,lc);
+io.print(r,rc);
+
+(l,r)   := algebra.join(a,b,nil:bat,nil:bat, true, 0:lng);
+(r, p) := algebra.sort(r, false:bit, false:bit, false:bit);
+l      := algebra.projection(p, l);
+
+(lc,rc) := mosaic.join (c,b,nil:bat,nil:bat, true, 0:lng);
 (rc, p) := algebra.sort(rc, false:bit, false:bit, false:bit);
 lc      := algebra.projection(p, lc);
 io.print(l,lc);
