@@ -271,8 +271,8 @@ typedef struct MALSTK {
 	char status;			/* srunning 'R' suspended 'S', quiting 'Q' */
 	int pcup;				/* saved pc upon a recursive all */
 	oid tag;				/* unique invocation call tag */
-	ATOMIC_TYPE	workers;	/* Actual number of concurrent workers */
-	ATOMIC_TYPE	memory;		/* Actual memory claim highwater mark */
+	int	workers;			/* Actual number of concurrent workers */
+	lng	memory;				/* Actual memory claim highwater mark */
 
 	struct MALSTK *up;		/* stack trace list */
 	struct MALBLK *blk;		/* associated definition */

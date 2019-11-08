@@ -128,7 +128,7 @@ MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argcla
 	 * A way out is to attach the thread count to the MAL stacks instead, which just limits the level
 	 * of parallism for a single dataflow graph.
 	 */
-	workers = (int) ATOMIC_GET(&stk->workers);
+	workers = stk->workers;
 	if( cntxt->workerlimit && cntxt->workerlimit <= workers){
 		PARDEBUG
 			fprintf(stderr, "#DFLOWadmit worker limit reached, %d <= %d\n", cntxt->workerlimit, workers);
@@ -154,24 +154,23 @@ MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argcla
 			/* If we are low on memory resources, limit the user if he exceeds his memory budget 
 			 * but make sure there is at least one thread active */
 			if ( cntxt->memorylimit) {
-				lng stack_memory = (lng) ATOMIC_GET(&stk->memory);
-				mbytes = (lng) cntxt->memorylimit * 1024 * 1024;
-				if (argclaim + stack_memory > mbytes){
+				mbytes = (lng) cntxt->memorylimit * LL_CONSTANT(1048576);
+				if (argclaim + stk->memory > mbytes){
 					MT_lock_unset(&admissionLock);
 					PARDEBUG
 						fprintf(stderr, "#Delayed due to lack of session memory " LLFMT " requested "LLFMT"\n", 
-								stack_memory, argclaim);
+								stk->memory, argclaim);
 					return -1;
 				}
 			}
 			memorypool -= argclaim;
-			(void) ATOMIC_ADD(&stk->memory, argclaim);
+			stk->memory += argclaim;
 			memoryclaims++;
 			PARDEBUG
 				fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT "claims " LLFMT "\n",
 						 memoryclaims, THRgettid(), memorypool, argclaim);
+			stk->workers++;
 			MT_lock_unset(&admissionLock);
-			(void) ATOMIC_INC(&stk->workers);
 			return 0;
 		}
 		PARDEBUG
@@ -183,15 +182,14 @@ MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argcla
 	
 	/* return the session budget */
 	if (cntxt->memorylimit) {
-		lng stack_memory = (lng) ATOMIC_GET(&stk->memory);
 		PARDEBUG
-			fprintf(stderr, "#Return memory to session budget " LLFMT "\n", stack_memory);
-		(void) ATOMIC_SUB(&stk->memory, argclaim);
+			fprintf(stderr, "#Return memory to session budget " LLFMT "\n", stk->memory);
+		stk->memory -= argclaim;
 	}
 	/* release memory claimed before */
 	memorypool -= argclaim;
 	memoryclaims--;
-	(void) ATOMIC_DEC(&stk->workers);
+	stk->workers--;
 
 	PARDEBUG
 		fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT " claims " LLFMT "\n",
