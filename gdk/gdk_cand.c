@@ -896,8 +896,13 @@ BATnegcands(BAT *dense_cands, BAT *odels)
         	return GDK_FAIL;
 	}
     	dels->parentid = dense_cands->batCacheid;
-	memcpy(dels->base, Tloc(odels, lo), sizeof(oid) * (hi - lo));
-	dels->free += sizeof(oid) * (hi - lo);
+	dels->free = sizeof(oid) * (hi - lo);
+	if (odels->ttype == TYPE_void) {
+		for (BUN x = lo; x < hi; x++)
+			((oid *) dels->base)[x - lo] = x + odels->tseqbase;
+	} else {
+		memcpy(dels->base, Tloc(odels, lo), dels->free);
+	}
 	dense_cands->batDirtydesc = true;
 	dense_cands->tvheap = dels;
 	BATsetcount(dense_cands, dense_cands->batCount - (hi - lo));
