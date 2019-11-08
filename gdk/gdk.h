@@ -1259,25 +1259,18 @@ BUNtoid(BAT *b, BUN p)
 		return o;
 	}
 	const oid *exc = (oid *) b->tvheap->base;
-	BUN hi = 0;
-	if (nexc > 1024) {
-		BUN lo = 0;
-		hi = nexc - 1;
-		while (hi > lo + 1) {
-			BUN mid = (lo + hi) / 2;
-			if (exc[mid] == o) {
-				hi = mid;
-				break;
-			}
-			if (exc[mid] < o)
-				lo = mid;
-			else
-				hi = mid;
-		}
+	if (o < exc[0])
+		return o;
+	if (o + nexc > exc[nexc - 1])
+		return o + nexc;
+	BUN lo = 0, hi = nexc - 1;
+	while (hi - lo > 1) {
+		BUN mid = (hi + lo) / 2;
+		if (exc[mid] - mid > o)
+			hi = mid;
+		else
+			lo = mid;
 	}
-	for (; hi < nexc; hi++)
-		if (o + hi < exc[hi])
-			break;
 	return o + hi;
 }
 

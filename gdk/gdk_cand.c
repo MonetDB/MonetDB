@@ -647,13 +647,15 @@ canditer_idx(struct canditer *ci, BUN p)
 		return o;
 	if (o + ci->noids > ci->oids[ci->noids - 1])
 		return o + ci->noids;
-	BUN i = 0;
-	if (ci->noids > 1024)
-		i = binsearchcand(ci->oids, ci->noids, o);
-	for (; i < ci->noids; i++)
-		if (o + i < ci->oids[i])
-			return o + i;
-	return o + ci->noids;
+	BUN lo = 0, hi = ci->noids - 1;
+	while (hi - lo > 1) {
+		BUN mid = (hi + lo) / 2;
+		if (ci->oids[mid] - mid > o)
+			hi = mid;
+		else
+			lo = mid;
+	}
+	return o + hi;
 }
 
 void
