@@ -402,25 +402,25 @@ bool has_nil, bool nil_matches)\
 // insert a series of values into the compressor block using dictionary
 #define DICTcompress(TASK, TPE) {\
 	TPE *val = getSrc(TPE, (TASK));\
-	BUN limit = estimate->cnt;\
+	BUN cnt = estimate->cnt;\
 	(TASK)->dst = MOScodevectorDict(TASK);\
 	BitVector base = (BitVector) ((TASK)->dst);\
 	BUN i;\
 	TPE* dict = GET_FINAL_DICT(TASK, TPE);\
 	BUN dict_size = GET_FINAL_DICT_COUNT(TASK);\
 	bte bits = GET_FINAL_BITS(task);\
-	compress_dictionary_##TPE(dict, dict_size, &i, val, limit, base, bits);\
+	compress_dictionary_##TPE(dict, dict_size, &i, val, cnt, base, bits);\
 	MOSsetCnt((TASK)->blk, i);\
 }
 
 // the inverse operator, extend the src
 #define DICTdecompress(TASK, TPE)\
-{	BUN lim = MOSgetCnt((TASK)->blk);\
+{	BUN cnt = MOSgetCnt((TASK)->blk);\
 	BitVector base = (BitVector) MOScodevectorDict(TASK);\
 	bte bits = GET_FINAL_BITS(task);\
 	TPE* dict = GET_FINAL_DICT(TASK, TPE);\
 	TPE* dest = (TPE*) (TASK)->src;\
-	decompress_dictionary_##TPE(dict, bits, base, lim, &dest);\
+	decompress_dictionary_##TPE(dict, bits, base, cnt, &dest);\
 }
 
 #define DICTselect(TPE) {\
