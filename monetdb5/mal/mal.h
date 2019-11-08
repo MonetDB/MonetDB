@@ -266,16 +266,16 @@ typedef struct MALSTK {
  * It is handy to administer the timing in the stack frame
  * for use in profiling instructions.
  */
-	struct timeval clock;   /* time this stack was created */
-	char cmd;               /* debugger and runtime communication */
-	char status;	        /* srunning 'R' suspended 'S', quiting 'Q' */
-	int pcup;               /* saved pc upon a recursive all */
-	oid tag;                /* unique invocation call tag */
-	int	workers;			/* Actual number of concurrent workers */
-	lng	memory;				/* Actual memory claim highwater mark */
+	struct timeval clock;	/* time this stack was created */
+	char cmd;				/* debugger and runtime communication */
+	char status;			/* srunning 'R' suspended 'S', quiting 'Q' */
+	int pcup;				/* saved pc upon a recursive all */
+	oid tag;				/* unique invocation call tag */
+	ATOMIC_TYPE	workers;	/* Actual number of concurrent workers */
+	ATOMIC_TYPE	memory;		/* Actual memory claim highwater mark */
 
-	struct MALSTK *up;      /* stack trace list */
-	struct MALBLK *blk;    	/* associated definition */
+	struct MALSTK *up;		/* stack trace list */
+	struct MALBLK *blk;		/* associated definition */
 	ValRecord stk[FLEXIBLE_ARRAY_MEMBER];
 } MalStack, *MalStkPtr;
 

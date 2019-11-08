@@ -93,7 +93,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		
 		wrk = (int) ATOMIC_GET(&QRYqueue[i].stk->workers);
-		mem = (int) ATOMIC_GET(&QRYqueue[i].stk->memory);
+		mem = (int) ATOMIC_GET(&QRYqueue[i].stk->memory); /* TODO it should cast to lng */
 		if (BUNappend(progress, &QRYqueue[i].progress, false) != GDK_SUCCEED ||
 		    BUNappend(workers, &wrk, false) != GDK_SUCCEED ||
 			BUNappend(memory, &mem, false) != GDK_SUCCEED)

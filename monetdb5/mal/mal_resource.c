@@ -12,7 +12,7 @@
 #include "mal_resource.h"
 #include "mal_private.h"
 
-/* MEMORY admission does not seem to have a major impact sofar. */
+/* MEMORY admission does not seem to have a major impact so far. */
 static lng memorypool = 0;      /* memory claimed by concurrent threads */
 static int memoryclaims = 0;
 
@@ -128,7 +128,7 @@ MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argcla
 	 * A way out is to attach the thread count to the MAL stacks instead, which just limits the level
 	 * of parallism for a single dataflow graph.
 	 */
-	workers = stk->workers;
+	workers = (int) ATOMIC_GET(&stk->workers);
 	if( cntxt->workerlimit && cntxt->workerlimit <= workers){
 		PARDEBUG
 			fprintf(stderr, "#DFLOWadmit worker limit reached, %d <= %d\n", cntxt->workerlimit, workers);
@@ -145,7 +145,7 @@ MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argcla
 	if ( memorypool <= 0 && memoryclaims == 0){
 		PARDEBUG
 			fprintf(stderr, "#DFLOWadmit memorypool reset ");
-		memorypool = (lng)(MEMORY_THRESHOLD );
+		memorypool = (lng) MEMORY_THRESHOLD;
 	}
 
 	/* the argument claim is based on the input for an instruction */
@@ -153,46 +153,48 @@ MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argcla
 		if ( memoryclaims == 0 || memorypool > argclaim ) {
 			/* If we are low on memory resources, limit the user if he exceeds his memory budget 
 			 * but make sure there is at least one thread active */
-			if( cntxt->memorylimit){
-				mbytes = ((lng) cntxt->memorylimit) * 1024 * 1024;
-				if (argclaim + stk->memory > mbytes){
+			if ( cntxt->memorylimit) {
+				lng stack_memory = (lng) ATOMIC_GET(&stk->memory);
+				mbytes = (lng) cntxt->memorylimit * 1024 * 1024;
+				if (argclaim + stack_memory > mbytes){
 					MT_lock_unset(&admissionLock);
 					PARDEBUG
-					fprintf(stderr, "#Delayed due to lack of session memory " LLFMT " requested "LLFMT"\n", 
-						stk->memory, argclaim);
+						fprintf(stderr, "#Delayed due to lack of session memory " LLFMT " requested "LLFMT"\n", 
+								stack_memory, argclaim);
 					return -1;
 				}
 			}
-			memorypool -= (lng) (argclaim);
-			stk->memory += argclaim;
+			memorypool -= argclaim;
+			(void) ATOMIC_ADD(&stk->memory, argclaim);
 			memoryclaims++;
 			PARDEBUG
-			fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT "claims " LLFMT "\n",
+				fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT "claims " LLFMT "\n",
 						 memoryclaims, THRgettid(), memorypool, argclaim);
 			MT_lock_unset(&admissionLock);
-			stk->workers++;
+			(void) ATOMIC_INC(&stk->workers);
 			return 0;
 		}
 		PARDEBUG
-		fprintf(stderr, "#Delayed due to lack of memory " LLFMT " requested " LLFMT " memoryclaims %d\n", 
-			memorypool, argclaim, memoryclaims);
+			fprintf(stderr, "#Delayed due to lack of memory " LLFMT " requested " LLFMT " memoryclaims %d\n", 
+				memorypool, argclaim, memoryclaims);
 		MT_lock_unset(&admissionLock);
 		return -1;
 	}
 	
 	/* return the session budget */
-	if(cntxt->memorylimit){
+	if (cntxt->memorylimit) {
+		lng stack_memory = (lng) ATOMIC_GET(&stk->memory);
 		PARDEBUG
-			fprintf(stderr, "#Return memory to session budget " LLFMT "\n", stk->memory);
-		stk->memory += -argclaim;
+			fprintf(stderr, "#Return memory to session budget " LLFMT "\n", stack_memory);
+		(void) ATOMIC_SUB(&stk->memory, argclaim);
 	}
 	/* release memory claimed before */
-	memorypool += -argclaim ;
+	memorypool -= argclaim;
 	memoryclaims--;
-	stk->workers--;
+	(void) ATOMIC_DEC(&stk->workers);
 
 	PARDEBUG
-	fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT " claims " LLFMT "\n",
+		fprintf(stderr, "#DFLOWadmit %3d thread %d pool " LLFMT " claims " LLFMT "\n",
 				 memoryclaims, THRgettid(), memorypool, argclaim);
 	MT_lock_unset(&admissionLock);
 	return 0;
