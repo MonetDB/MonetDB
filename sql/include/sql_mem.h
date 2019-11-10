@@ -74,6 +74,7 @@ extern size_t sa_size( sql_allocator *sa );
 #define SA_NEW( sa, type ) ((type*)sa_alloc( sa, sizeof(type)) )
 #define SA_ZNEW( sa, type ) ((type*)sa_zalloc( sa, sizeof(type)) )
 #define SA_NEW_ARRAY( sa, type, size ) (type*)sa_alloc( sa, ((size)*sizeof(type)))
+#define SA_ZNEW_ARRAY( sa, type, size ) (type*)sa_zalloc( sa, ((size)*sizeof(type)))
 #define SA_RENEW_ARRAY( sa, type, ptr, sz, osz ) (type*)sa_realloc( sa, ptr, ((sz)*sizeof(type)), ((osz)*sizeof(type)))
 
 #define _strlen(s) (int)strlen(s)

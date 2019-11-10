@@ -1605,7 +1605,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 
 		/* new columns need update with default values */
 		updates = table_update_array(sql, nt);
-		e = exp_column(sql->sa, nt->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 		if (nt->columns.nelm) {
 			list *cols = new_exp_list(sql->sa);
@@ -2177,7 +2177,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 
 	/* new columns need update with default values */
 	updates = table_update_array(sql, nt); 
-	e = exp_column(sql->sa, nt->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 	res = rel_update(sql, res, r, updates, NULL); 
