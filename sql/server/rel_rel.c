@@ -1379,27 +1379,6 @@ rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	return _rel_add_identity(sql, rel, exp);
 }
 
-static sql_rel *
-_rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp)
-{
-	list *exps = rel_projections(sql, rel, NULL, 1, 2);
-	sql_exp *e;
-
-	if (list_length(exps) == 0) {
-		*exp = NULL;
-		return rel;
-	}
-	rel = rel_project(sql->sa, rel, exps);
-	e = rel->exps->h->data;
-	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_intern(e));
-	e = exp_unop(sql->sa, e, sql_bind_func(sql->sa, NULL, "identity", exp_subtype(e), NULL, F_FUNC));
-	set_intern(e);
-	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
-	*exp = exp_label(sql->sa, e, ++sql->label);
-	(void) rel_project_add_exp(sql, rel, e);
-	return rel;
-}
-
 sql_rel *
 rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp)
 {
@@ -1415,7 +1394,7 @@ rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp)
 		sql_rel *o = rel;
 		sql_exp *id;
 
-		p->l = _rel_add_identity2(sql, l, exp);
+		p->l = _rel_add_identity(sql, l, exp);
 		l = p->l;
 		id = exp_ref(sql->sa, *exp);
 		while (o && o != l) {
@@ -1426,7 +1405,7 @@ rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp)
 		}
 		return rel;
 	}
-	return _rel_add_identity2(sql, rel, exp);
+	return _rel_add_identity(sql, rel, exp);
 }
 
 sql_exp *
