@@ -284,6 +284,7 @@ str
 ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown)
 {
 	BAT *b, *s = NULL, *bn;
+	const void *nilptr;
 
 	if (!*unknown)
 		return ALGselect2(result, bid, sid, low, high, li, hi, anti);
@@ -302,6 +303,12 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 	}
 	derefStr(b, low);
 	derefStr(b, high);
+	/* here we don't need open ended parts with nil */
+	nilptr = ATOMnilptr(b->ttype);
+	if (*li == 1 && ATOMcmp(b->ttype, low, nilptr) == 0) 
+		low = high; 
+	else if (*hi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0)
+		high = low;
 	bn = BATselect(b, s, low, high, *li, *hi, *anti);
 	BBPunfix(b->batCacheid);
 	if (s)
