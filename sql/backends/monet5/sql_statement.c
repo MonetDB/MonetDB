@@ -1589,7 +1589,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 	if (op1->nr < 0 && (sub && sub->nr < 0))
 		return NULL;
 	l = op1->nr;
-	if (((cmp & CMP_BETWEEN) || op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
+	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
 		int k;
 
 		if (op2->nr < 0 || op3->nr < 0)
@@ -1691,8 +1691,8 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 			q = pushNil(mb, q, TYPE_lng); /* estimate */
 		if (type == st_uselect2) {
 			q = pushBit(mb, q, anti);
-			if (q == NULL)
-				return NULL;
+			if (cmp & CMP_BETWEEN)
+				q = pushBit(mb, q, TRUE); /* all nil's are != */
 		}
 		if (q == NULL)
 			return NULL;

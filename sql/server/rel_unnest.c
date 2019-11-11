@@ -590,6 +590,7 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 		if (l && is_distinct_set(sql, l, ad) && r && r->op == op_groupby) {
 			list *sexps, *jexps;
 			node *n;
+			/* TODO if list of left columns is large, use a identity column of left and add the columns to the groups (aggr) expression list */
 			/* move groupby up, ie add attributes of left + the old expression list */
 			list *a = rel_projections(sql, rel->l, NULL, 1, 1);
 		
