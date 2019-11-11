@@ -79,11 +79,11 @@ typedef struct MOSAICHEADER{
 	lng blks[MOSAIC_METHODS]; // number of blks per method.
 	lng elms[MOSAIC_METHODS]; // number of compressed values in all blocks for this method.
 	bte bits_var;
-	ulng pos_var;
-	ulng length_var;
+	BUN pos_var;
+	BUN length_var;
 	bte bits_capped;
-	ulng pos_capped;
-	ulng length_capped;
+	BUN pos_capped;
+	BUN length_capped;
 } * MosaicHdr;
 
 

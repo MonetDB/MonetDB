@@ -214,7 +214,7 @@ do {\
 		assert( (prefix | (getSuffixMask(suffix_bits, TPE) & (*val))) == *val);\
 	}\
 \
-	(PARAMETERS).base.cnt = i;\
+	(PARAMETERS).base.cnt = (unsigned int) i;\
 	(PARAMETERS).suffix_bits = suffix_bits;\
 	(PARAMETERS).prefix.prefix##TPE = prefix;\
 } while(0)
