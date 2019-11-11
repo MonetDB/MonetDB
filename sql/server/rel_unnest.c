@@ -588,11 +588,16 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 
 		/* left of rel should be a set */ 
 		if (l && is_distinct_set(sql, l, ad) && r && r->op == op_groupby) {
-			list *sexps, *jexps;
+			list *sexps, *jexps, *a = rel_projections(sql, rel->l, NULL, 1, 1);
 			node *n;
-			/* TODO if list of left columns is large, use a identity column of left and add the columns to the groups (aggr) expression list */
+			sql_exp *id = NULL;
+
 			/* move groupby up, ie add attributes of left + the old expression list */
-			list *a = rel_projections(sql, rel->l, NULL, 1, 1);
+
+			if (l && list_length(a) > 1 && !need_distinct(l)) { /* add identity call only if there's more than one column in the groupby */
+				rel->l = rel_add_identity(sql, l, &id); /* add identity call for group by */
+				assert(id);
+			}
 		
 			assert(rel->op != op_anti);
 			if (rel->op == op_semi && !need_distinct(l))
@@ -625,10 +630,17 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 					rel_bind_var(sql, rel->l, e);
 			}
 			r->exps = list_merge(r->exps, a, (fdup)NULL);
-			if (!r->r)
-				r->r = exps_copy(sql->sa, a);
-			else
-				r->r = list_distinct(list_merge(r->r, exps_copy(sql->sa, a), (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
+			if (!r->r) {
+				if (id)
+					r->r = list_append(sa_list(sql->sa), exp_ref(sql->sa, id));
+				else
+					r->r = exps_copy(sql->sa, a);
+			} else {
+				if (id)
+					list_append(r->r, exp_ref(sql->sa, id));
+				else
+					r->r = list_distinct(list_merge(r->r, exps_copy(sql->sa, a), (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
+			}
 
 			if (!r->l) {
 				r->l = rel->l;
