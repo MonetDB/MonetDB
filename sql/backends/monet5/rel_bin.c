@@ -330,6 +330,27 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 			s = stmt_uselect(be, 
 				stmt_const(be, bin_first_column(be, left), s), 
 				stmt_bool(be, 1), cmp_equal, sel, 0); 
+	} else if (list_length(nl) < 16) {
+		comp_type cmp = (in)?cmp_equal:cmp_notequal;
+
+		if (!in)
+			s = sel;
+		for( n = nl->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			stmt *i = exp_bin(be, use_r?e->r:e, left, right, grp, ext, cnt, NULL);
+			if(!i)
+				return NULL;
+
+			if (in) { 
+				i = stmt_uselect(be, c, i, cmp, sel, 0); 
+				if (s)
+					s = stmt_tunion(be, s, i); 
+				else
+					s = i;
+			} else {
+				s = stmt_uselect(be, c, i, cmp, s, 0); 
+			}
+		}
 	} else {
 		// TODO: handle_in_exps should contain all necessary logic for in-expressions to be SQL compliant.
 		// For non-SQL-standard compliant behavior, e.g. PostgreSQL backwards compatibility, we should
@@ -379,7 +400,6 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 			s = stmt_result(be, s, 0);
 		}
 	}
-
 	return s;
 }
 
