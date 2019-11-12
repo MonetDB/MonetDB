@@ -5268,7 +5268,7 @@ rel_find_joins(mvc *sql, sql_rel *parent, sql_rel *rel, list *l)
 		case op_full:
 		case op_semi:
 		case op_anti: {
-			found_join *fl = MNEW(found_join);
+			found_join *fl = SA_NEW(sql->sa, found_join);
 			fl->p = parent;
 			fl->j = rel;
 			list_append(l, fl);
@@ -5308,43 +5308,41 @@ rel_find_joins(mvc *sql, sql_rel *parent, sql_rel *rel, list *l)
 static sql_rel *
 rel_merge_identical_joins(int *changes, mvc *sql, sql_rel *rel) 
 {
-	if (is_joinop(rel->op)) {
+	if (is_joinop(rel->op) && rel->l && rel->r) {
 		list *l1 = sa_list(sql->sa), *l2 = sa_list(sql->sa);
 
-		if (rel->l && rel->r) {
-			rel_find_joins(sql, rel, rel->l, l1);
-			rel_find_joins(sql, rel, rel->r, l2);
+		rel_find_joins(sql, rel, rel->l, l1);
+		rel_find_joins(sql, rel, rel->r, l2);
 
-			if (list_length(l1) && list_length(l2)) { /* found joins on both */
-				for (node *n1 = l1->h ; n1; n1 = n1->next) {
-					found_join *f1 = (found_join*) n1->data;
-					for (node *n2 = l2->h ; n2; n2 = n2->next) {
-						found_join *f2 = (found_join*) n2->data;
-						sql_rel *j1 = f1->j, *j2 = f2->j, *j1_l = j1->l, *j1_r = j1->r, *j2_l = j2->l, *j2_r = j2->r;
-						bool sides_equal = false;
+		if (list_length(l1) && list_length(l2)) { /* found joins on both */
+			for (node *n1 = l1->h ; n1; n1 = n1->next) {
+				found_join *f1 = (found_join*) n1->data;
+				for (node *n2 = l2->h ; n2; n2 = n2->next) {
+					found_join *f2 = (found_join*) n2->data;
+					sql_rel *j1 = f1->j, *j2 = f2->j, *j1_l = j1->l, *j1_r = j1->r, *j2_l = j2->l, *j2_r = j2->r;
+					bool sides_equal = false;
 
-						if (j1 != j2) {
-							const char *j1_ln = rel_name(j1_l), *j1_rn = rel_name(j1_r), *j2_ln = rel_name(j2_l), *j2_rn = rel_name(j2_r);
+					if (j1 != j2) {
+						const char *j1_ln = rel_name(j1_l), *j1_rn = rel_name(j1_r), *j2_ln = rel_name(j2_l), *j2_rn = rel_name(j2_r);
 
-							/* So far it looks on identical relations and common basetable relations */
-							if ((j1_l == j2_l || (is_basetable(j1_l->op) && is_basetable(j2_l->op) && strcmp(j1_ln, j2_ln) == 0 && j1_l->l == j2_l->l)) && 
-								(j1_r == j2_r || (is_basetable(j1_r->op) && is_basetable(j2_r->op) && strcmp(j1_rn, j2_rn) == 0 && j1_r->l == j2_r->l)))
-								sides_equal = true;
-							else if ((j1_l == j2_r || (is_basetable(j1_l->op) && is_basetable(j2_r->op) && strcmp(j1_ln, j2_rn) == 0 && j1_l->l == j2_r->l)) && 
-								(j1_r == j2_l || (is_basetable(j1_r->op) && is_basetable(j2_l->op) && strcmp(j1_rn, j2_ln) == 0 && j1_r->l == j2_l->l)))
-								sides_equal = true;
+						/* So far it looks on identical relations and common basetable relations */
+						if ((j1_l == j2_l || (is_basetable(j1_l->op) && is_basetable(j2_l->op) && strcmp(j1_ln, j2_ln) == 0 && j1_l->l == j2_l->l)) && 
+							(j1_r == j2_r || (is_basetable(j1_r->op) && is_basetable(j2_r->op) && strcmp(j1_rn, j2_rn) == 0 && j1_r->l == j2_r->l)))
+							sides_equal = true;
+						else if ((j1_l == j2_r || (is_basetable(j1_l->op) && is_basetable(j2_r->op) && strcmp(j1_ln, j2_rn) == 0 && j1_l->l == j2_r->l)) && 
+							(j1_r == j2_l || (is_basetable(j1_r->op) && is_basetable(j2_l->op) && strcmp(j1_rn, j2_ln) == 0 && j1_r->l == j2_l->l)))
+							sides_equal = true;
 
-							/* the left and right sides are equal */
-							if (sides_equal && exp_match_list(j1->exps, j2->exps)) {
-								sql_rel *p2 = f2->p;
+						/* the left and right sides are equal */
+						if (sides_equal && exp_match_list(j1->exps, j2->exps)) {
+							sql_rel *p2 = f2->p;
 
-								if (p2->l == j2) /* replace j2's parent join with j1 */
-									p2->l = rel_dup(j1);
-								else
-									p2->r = rel_dup(j1);
-								(*changes)++;
-								return rel;
-							}
+							if (p2->l == j2) /* replace j2's parent join with j1 */
+								p2->l = rel_dup(j1);
+							else
+								p2->r = rel_dup(j1);
+							(*changes)++;
+							return rel;
 						}
 					}
 				}
