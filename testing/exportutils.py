@@ -10,9 +10,6 @@ defre = re.compile(r'^[ \t]*#[ \t]*define[ \t]+'            # #define
 # line starting with a "#"
 cldef = re.compile(r'^[ \t]*#', re.MULTILINE)
 
-ifdef = re.compile(r'^[ \t]*#[ \t]*if')
-endif = re.compile(r'^[ \t]*#[ \t]*endif')
-
 # white space
 spcre = re.compile(r'\s+')
 
@@ -44,7 +41,6 @@ def preprocess(data, printdef=False):
 
     defines = {}
     ndata = []
-    nifdef = 0
     for line in data.split('\n'):
         res = defre.match(line)
         if res is not None:
@@ -53,16 +49,11 @@ def preprocess(data, printdef=False):
             if len(args) == 1 and args[0] == '':
                 args = ()       # empty argument list
             if name not in ('__attribute__', '__format__', '__alloc_size__') and \
-               (name not in defines or not defines[name][1].strip()) and \
-               nifdef == 0:
+               (name not in defines or not defines[name][1].strip()):
                 defines[name] = (args, body)
             if printdef:
                 ndata.append(line)
         else:
-            if ifdef.match(line):
-                nifdef += 1
-            elif endif.match(line) and nifdef > 0:
-                nifdef -= 1
             changed = True
             while changed:
                 line, changed = replace(line, defines, [])

@@ -1484,11 +1484,9 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", tname, s->base.name);
 	} else {
-		int i;
-		node *n;
 		sql_rel *res = NULL, *r;
 		sql_table *nt = NULL;
-		sql_exp ** updates, *e;
+		sql_exp **updates, *e;
 
 		assert(te);
 		if (t->persistence != SQL_DECLARED_TABLE)
@@ -1604,21 +1602,17 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		if (!isTable(nt))
 			return res;
 
-		/* new columns need update with default values */
-		updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, list_length(nt->columns.set));
-		for (n = nt->columns.set->h, i = 0; n; n = n->next, i++) {
-			sql_column *c = n->data;
-			c->colnr = i;
-		}
+		/* New columns need update with default values. Add one more element for new column */
+		updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, (list_length(nt->columns.set) + 1));
 		e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 		if (nt->columns.nelm) {
 			list *cols = new_exp_list(sql->sa);
-			for (n = nt->columns.nelm; n; n = n->next) {
+			for (node *n = nt->columns.nelm; n; n = n->next) {
 				sql_column *c = n->data;
 				if (c->def) {
 					char *d, *typestr = subtype2string2(&c->type);
-					if(!typestr)
+					if (!typestr)
 						return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					d = sql_message("select cast(%s as %s);", c->def, typestr);
 					_DELETE(typestr);
