@@ -1047,12 +1047,6 @@ BATkeyed(BAT *b)
 		return false;
 	}
 
-	/* In order that multiple threads don't scan the same BAT at
-	 * the same time (happens a lot with mitosis/mergetable), we
-	 * use a lock.  We reuse the hash lock for this, not because
-	 * this scanning interferes with hashes, but because it's
-	 * there, and not so likely to be used at the same time. */
-	MT_lock_set(&b->batIdxLock);
 	b->batDirtydesc = true;
 	if (!b->tkey && b->tnokey[0] == 0 && b->tnokey[1] == 0) {
 		if (b->tsorted || b->trevsorted) {
@@ -1160,7 +1154,6 @@ BATkeyed(BAT *b)
 		}
 	}
   doreturn:
-	MT_lock_unset(&b->batIdxLock);
 	return b->tkey;
 }
 

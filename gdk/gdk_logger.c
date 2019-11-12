@@ -81,10 +81,6 @@
 #define LOG_USE_ID	15
 #define LOG_CLEAR_ID	16
 
-#ifdef HAVE_EMBEDDED
-#define printf(fmt,...) ((void) 0)
-#endif
-
 #ifdef NATIVE_WIN32
 #define getfilepos _ftelli64
 #else

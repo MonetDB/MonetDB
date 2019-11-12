@@ -3621,20 +3621,8 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 static stmt ** 
 table_update_stmts(mvc *sql, sql_table *t, int *Len)
 {
-	stmt **updates;
-	int i, len = list_length(t->columns.set);
-	node *m;
-
-	*Len = len;
-	updates = SA_NEW_ARRAY(sql->sa, stmt *, len);
-	for (m = t->columns.set->h, i = 0; m; m = m->next, i++) {
-		sql_column *c = m->data;
-
-		/* update the column number, for correct array access */
-		c->colnr = i;
-		updates[i] = NULL;
-	}
-	return updates;
+	*Len = list_length(t->columns.set);
+	return SA_ZNEW_ARRAY(sql->sa, stmt *, *Len);
 }
 
 static stmt *
@@ -4499,7 +4487,7 @@ sql_stack_add_updated(mvc *sql, const char *on, const char *nn, sql_table *t, st
 
 			append(exps, oe);
 			append(exps, ne);
-		} else { /* later select correct updated rows only ? */
+		} else {
 			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 

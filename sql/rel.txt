@@ -130,6 +130,7 @@ e_cmp
 
         		cmp_all = 14,		cross product
 			cmp_project = 15, 	special case for projection joins
+
 		)
 
 e_func

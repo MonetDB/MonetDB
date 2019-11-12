@@ -358,7 +358,17 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 % id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
 % oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
-#SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(qtag as oid) FROM sys.queue);
+#SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT tag FROM sys.queue);
+% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
+% tag,	sessionid,	user,	started,	status,	query,	progress,	workers,	memory # name
+% bigint,	int,	clob,	timestamp,	clob,	clob,	int,	int,	int # type
+% 1,	1,	0,	26,	0,	0,	1,	1,	1 # length
+#SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(tag as oid) FROM sys.queue);
+% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
+% tag,	sessionid,	user,	started,	status,	query,	progress,	workers,	memory # name
+% bigint,	int,	clob,	timestamp,	clob,	clob,	int,	int,	int # type
+% 1,	1,	0,	26,	0,	0,	1,	1,	1 # length
+#SELECT * FROM sys.queue WHERE tag NOT IN (SELECT cast(tag as oid) FROM sys.queue); 
 % .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
 % tag,	sessionid,	user,	started,	status,	query,	progress,	workers,	memory # name
 % bigint,	int,	clob,	timestamp,	clob,	clob,	int,	int,	int # type

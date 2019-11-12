@@ -281,9 +281,55 @@ ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low, const v
 }
 
 str
+ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown)
+{
+	BAT *b, *s = NULL, *bn;
+	const void *nilptr;
+
+	if (!*unknown)
+		return ALGselect2(result, bid, sid, low, high, li, hi, anti);
+
+	if ((*li != 0 && *li != 1) ||
+		(*hi != 0 && *hi != 1) ||
+		(*anti != 0 && *anti != 1)) {
+		throw(MAL, "algebra.select", ILLEGAL_ARGUMENT);
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "algebra.select", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "algebra.select", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	derefStr(b, low);
+	derefStr(b, high);
+	/* here we don't need open ended parts with nil */
+	nilptr = ATOMnilptr(b->ttype);
+	if (*li == 1 && ATOMcmp(b->ttype, low, nilptr) == 0) 
+		low = high; 
+	else if (*hi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0)
+		high = low;
+	bn = BATselect(b, s, low, high, *li, *hi, *anti);
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "algebra.select", GDK_EXCEPTION);
+	*result = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
 ALGselect1(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti)
 {
 	return ALGselect2(result, bid, NULL, low, high, li, hi, anti);
+}
+
+str
+ALGselect1nil(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown)
+{
+	return ALGselect2nil(result, bid, NULL, low, high, li, hi, anti, unknown);
 }
 
 str

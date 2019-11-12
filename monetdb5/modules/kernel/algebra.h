@@ -26,6 +26,8 @@ mal_export str ALGgroupby(bat *res, const bat *gids, const bat *cnts);
 mal_export str ALGcard(lng *result, const bat *bid);
 mal_export str ALGselect1(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
 mal_export str ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
+mal_export str ALGselect1nil(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown);
+mal_export str ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown);
 mal_export str ALGthetaselect1(bat *result, const bat *bid, const void *val, const char **op);
 mal_export str ALGthetaselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op);
 
