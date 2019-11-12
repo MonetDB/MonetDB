@@ -1,0 +1,37 @@
+stderr of test 'isaUUID.Bug-6784` in directory 'sql/test/BugTracker-2019` itself:
+
+
+# 12:59:22 >  
+# 12:59:22 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36427" "--set" "mapi_usock=/var/tmp/mtest-16881/.s.monetdb.36427" "--forcemito" "--dbpath=/home/kutsurak/work/src/monet/workdirs/MonetDB_Nov2019/build/install/var/MonetDB/mTests_sql_test_BugTracker-2019" "--set" "embedded_c=true"
+# 12:59:22 >  
+
+# builtin opt 	gdk_dbpath = /home/kutsurak/work/src/monet/workdirs/MonetDB_Nov2019/build/install/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36427
+# cmdline opt 	mapi_usock = /var/tmp/mtest-16881/.s.monetdb.36427
+# cmdline opt 	gdk_dbpath = /home/kutsurak/work/src/monet/workdirs/MonetDB_Nov2019/build/install/var/MonetDB/mTests_sql_test_BugTracker-2019
+# cmdline opt 	embedded_c = true
+#client2:!ERROR:MALException:uuid.uuid:Not a UUID
+#client2:!ERROR:MALException:uuid.uuid:Not a UUID
+
+# 12:59:22 >  
+# 12:59:22 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16881" "--port=36427"
+# 12:59:22 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-16881/.s.monetdb.36427
+QUERY = select cast('XYZaee1a538-aca1-381b-d9f4-8c29ef3f5' as uuid); -- error: Not a UUID
+ERROR = !Not a UUID
+
+
+
+# 12:59:22 >  
+# 12:59:22 >  "Done."
+# 12:59:22 >  
+
