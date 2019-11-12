@@ -2351,7 +2351,6 @@ BATassertProps(BAT *b)
 			const char *nme = BBP_physical(b->batCacheid);
 			Hash *hs = NULL;
 			BUN mask;
-			int len;
 
 			if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
 				fprintf(stderr,
@@ -2359,8 +2358,8 @@ BATassertProps(BAT *b)
 					"hash table\n");
 				goto abort_check;
 			}
-			len = snprintf(hs->heap.filename, sizeof(hs->heap.filename), "%s.hash%d", nme, THRgettid());
-			if (len == -1 || len > (int) sizeof(hs->heap.filename)) {
+			if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshprpl%x", nme, THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
+			    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshprpb%x", nme, THRgettid()) >= (int) sizeof(hs->heapbckt.filename)) {
 				GDKfree(hs);
 				fprintf(stderr,
 					"#BATassertProps: heap filename "
@@ -2373,10 +2372,12 @@ BATassertProps(BAT *b)
 				mask = (BUN) 1 << 16;
 			else
 				mask = HASHmask(b->batCount);
-			if ((hs->heap.farmid = BBPselectfarm(TRANSIENT, b->ttype,
-							hashheap)) < 0 ||
+			if ((hs->heaplink.farmid = BBPselectfarm(
+				     TRANSIENT, b->ttype, hashheap)) < 0 ||
+			    (hs->heapbckt.farmid = BBPselectfarm(
+				    TRANSIENT, b->ttype, hashheap)) < 0 ||
 			    HASHnew(hs, b->ttype, BUNlast(b),
-				    mask, BUN_NONE) != GDK_SUCCEED) {
+				    mask, BUN_NONE, false) != GDK_SUCCEED) {
 				GDKfree(hs);
 				fprintf(stderr,
 					"#BATassertProps: cannot allocate "
@@ -2409,7 +2410,8 @@ BATassertProps(BAT *b)
 				assert(!b->tnonil || !isnil);
 				seennil |= isnil;
 			}
-			HEAPfree(&hs->heap, true);
+			HEAPfree(&hs->heaplink, true);
+			HEAPfree(&hs->heapbckt, true);
 			GDKfree(hs);
 		}
 	  abort_check:

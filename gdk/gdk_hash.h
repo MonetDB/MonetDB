@@ -246,15 +246,16 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 			MT_lock_set(&(b)->batIdxLock);			\
 			if ((b)->thash == (Hash *) 1 ||			\
 			    ((b)->thash != NULL &&			\
-			     (((size_t *) (b)->thash->heap.base)[0] & (1 << 24) || \
-			      ((size_t *) (b)->thash->heap.base)[2] * 2 < b->batCount)) || \
+			     (((size_t *) (b)->thash->heapbckt.base)[0] & (1 << 24) || \
+			      ((size_t *) (b)->thash->heapbckt.base)[2] * 2 < b->batCount)) || \
 			    (((i) & 1023) == 1023 && HASHgonebad((b), (v)))) { \
 				MT_lock_unset(&(b)->batIdxLock);	\
 				HASHdestroy(b);				\
 			} else {					\
 				BUN _c = HASHprobe((b)->thash, (v));	\
 				HASHputall((b)->thash, (i), _c);	\
-				(b)->thash->heap.dirty = true;		\
+				(b)->thash->heapbckt.dirty = true;	\
+				(b)->thash->heaplink.dirty = true;	\
 				MT_lock_unset(&(b)->batIdxLock);	\
 			}						\
 		}							\

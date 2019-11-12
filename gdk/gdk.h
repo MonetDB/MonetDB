@@ -599,11 +599,11 @@ typedef struct {
 	int type;		/* type of index entity */
 	int width;		/* width of hash entries */
 	BUN nil;		/* nil representation */
-	BUN lim;		/* collision list size */
 	BUN mask;		/* number of hash buckets-1 (power of 2) */
 	void *Hash;		/* hash table */
 	void *Link;		/* collision list */
-	Heap heap;		/* heap where the hash is stored */
+	Heap heaplink;		/* heap where the hash links are stored */
+	Heap heapbckt;		/* heap where the hash buckets are stored */
 } Hash;
 
 typedef struct Imprints Imprints;

@@ -1972,16 +1972,15 @@ BBPdump(void)
 			}
 		}
 		if (b->thash && b->thash != (Hash *) 1) {
-			fprintf(stderr,
-				" Thash=[%zu,%zu]",
-				HEAPmemsize(&b->thash->heap),
-				HEAPvmsize(&b->thash->heap));
+			size_t m = HEAPmemsize(&b->thash->heaplink) + HEAPmemsize(&b->thash->heapbckt);
+			size_t v = HEAPvmsize(&b->thash->heaplink) + HEAPvmsize(&b->thash->heapbckt);
+			fprintf(stderr, " Thash=[%zu,%zu]", m, v);
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += HEAPmemsize(&b->thash->heap);
-				cvm += HEAPvmsize(&b->thash->heap);
+				cmem += m;
+				cvm += v;
 			} else {
-				mem += HEAPmemsize(&b->thash->heap);
-				vm += HEAPvmsize(&b->thash->heap);
+				mem += m;
+				vm += v;
 			}
 		}
 		fprintf(stderr, " role: %s, persistence: %s\n",
@@ -3794,7 +3793,8 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			} else if (strncmp(p + 1, "theap", 5) == 0) {
 				BAT *b = getdesc(bid);
 				delete = (b == NULL || !b->tvheap || !b->batCopiedtodisk);
-			} else if (strncmp(p + 1, "thash", 5) == 0) {
+			} else if (strncmp(p + 1, "thashl", 6) == 0 ||
+				   strncmp(p + 1, "thashb", 6) == 0) {
 #ifdef PERSISTENTHASH
 				BAT *b = getdesc(bid);
 				delete = b == NULL;
@@ -3803,6 +3803,10 @@ BBPdiskscan(const char *parent, size_t baseoff)
 #else
 				delete = true;
 #endif
+			} else if (strncmp(p + 1, "thash", 5) == 0) {
+				/* older versions used .thash which we
+				 * can simply ignore */
+				delete = true;
 			} else if (strncmp(p + 1, "timprints", 9) == 0) {
 				BAT *b = getdesc(bid);
 				delete = b == NULL;

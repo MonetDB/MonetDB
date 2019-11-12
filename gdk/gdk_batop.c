@@ -568,7 +568,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	} while (prop);
 #endif
 	if (b->thash == (Hash *) 1 || BATcount(b) == 0 ||
-	    (b->thash && ((size_t *) b->thash->heap.base)[0] & (1 << 24))) {
+	    (b->thash && ((size_t *) b->thash->heapbckt.base)[0] & (1 << 24))) {
 		/* don't bother first loading the hash to then change
 		 * it, or updating the hash if we replace the heap,
 		 * also, we cannot maintain persistent hashes */
@@ -1385,7 +1385,6 @@ BATkeyed(BAT *b)
 			const char *nme;
 			BUN prb;
 			BUN mask;
-			int len;
 
 			GDKclrerr(); /* not interested in BAThash errors */
 			nme = BBP_physical(b->batCacheid);
@@ -1402,9 +1401,9 @@ BATkeyed(BAT *b)
 			}
 			if ((hs = GDKzalloc(sizeof(Hash))) == NULL)
 				goto doreturn;
-			len = snprintf(hs->heap.filename, sizeof(hs->heap.filename), "%s.hash%d", nme, THRgettid());
-			if (len == -1 || len >= (int) sizeof(hs->heap.filename) ||
-			    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE) != GDK_SUCCEED) {
+			if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshkeyl%x", nme, THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
+			    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshkeyb%x", nme, THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
+			    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
 				GDKfree(hs);
 				/* err on the side of caution: not keyed */
 				goto doreturn;
@@ -1428,7 +1427,8 @@ BATkeyed(BAT *b)
 				HASHput(hs, prb, p);
 			}
 		  doreturn_free:
-			HEAPfree(&hs->heap, true);
+			HEAPfree(&hs->heaplink, true);
+			HEAPfree(&hs->heapbckt, true);
 			GDKfree(hs);
 			if (p == q) {
 				/* we completed the complete scan: no

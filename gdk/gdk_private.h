@@ -177,7 +177,7 @@ __hidden bool HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN HASHmask(BUN cnt)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count)
+__hidden gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	__attribute__((__warn_unused_result__))

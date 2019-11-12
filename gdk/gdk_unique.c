@@ -196,7 +196,6 @@ BATunique(BAT *b, BAT *s)
 		BUN prb;
 		BUN p;
 		BUN mask;
-		int len;
 
 		GDKclrerr();	/* not interested in BAThash errors */
 		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
@@ -221,9 +220,9 @@ BATunique(BAT *b, BAT *s)
 			GDKerror("BATunique: cannot allocate hash table\n");
 			goto bunins_failed;
 		}
-		len = snprintf(hs->heap.filename, sizeof(hs->heap.filename), "%s.hash%d", nme, THRgettid());
-		if (len == -1 || len >= (int) sizeof(hs->heap.filename) ||
-		    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE) != GDK_SUCCEED) {
+		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshunil%x", nme, THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
+		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshunib%x", nme, THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
+		    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("BATunique: cannot allocate hash table\n");
@@ -247,7 +246,8 @@ BATunique(BAT *b, BAT *s)
 				HASHput(hs, prb, p);
 			}
 		}
-		HEAPfree(&hs->heap, true);
+		HEAPfree(&hs->heaplink, true);
+		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);
 	}
 
@@ -276,7 +276,8 @@ BATunique(BAT *b, BAT *s)
 	if (seen)
 		GDKfree(seen);
 	if (hs != NULL && hs != b->thash) {
-		HEAPfree(&hs->heap, true);
+		HEAPfree(&hs->heaplink, true);
+		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);
 	}
 	BBPreclaim(bn);

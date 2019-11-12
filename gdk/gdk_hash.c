@@ -91,18 +91,22 @@ HASHclear(Hash *h)
 #define HASH_HEADER_SIZE	6 /* nr of size_t fields in header */
 
 gdk_return
-HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count)
+HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 {
-	Heap *hp = &h->heap;
-	int width = HASHwidth(size);
+	if (h->width == 0)
+		h->width = HASHwidth(size);
 
-	if (HEAPalloc(hp, mask + size + HASH_HEADER_SIZE * SIZEOF_SIZE_T / width, width) != GDK_SUCCEED)
+	if (!bcktonly) {
+		if (HEAPalloc(&h->heaplink, size, h->width) != GDK_SUCCEED)
+			return GDK_FAIL;
+		h->heaplink.free = size * h->width;
+		h->Link = h->heaplink.base;
+	}
+	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width) != GDK_SUCCEED)
 		return GDK_FAIL;
-	h->heap.free = (mask + size) * width + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
-	h->lim = size;
+	h->heapbckt.free = mask * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	h->mask = mask - 1;
-	h->width = width;
-	switch (width) {
+	switch (h->width) {
 	case BUN2:
 		h->nil = (BUN) BUN2_NONE;
 		break;
@@ -117,17 +121,16 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count)
 	default:
 		assert(0);
 	}
-	h->Link = h->heap.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
-	h->Hash = (void *) ((char *) h->Link + h->lim * width);
+	h->Hash = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	h->type = tpe;
 	HASHclear(h);		/* zero the mask */
-	((size_t *) h->heap.base)[0] = HASH_VERSION;
-	((size_t *) h->heap.base)[1] = size;
-	((size_t *) h->heap.base)[2] = mask;
-	((size_t *) h->heap.base)[3] = width;
-	((size_t *) h->heap.base)[4] = count;
-	((size_t *) h->heap.base)[5] = 0; /* # filled slots (chain heads) */
-	ACCELDEBUG fprintf(stderr, "#HASHnew: create hash(size " BUNFMT ", mask " BUNFMT ", width %d, total " BUNFMT " bytes);\n", size, mask, width, (size + mask) * width);
+	((size_t *) h->heapbckt.base)[0] = HASH_VERSION;
+	((size_t *) h->heapbckt.base)[1] = size;
+	((size_t *) h->heapbckt.base)[2] = mask;
+	((size_t *) h->heapbckt.base)[3] = h->width;
+	((size_t *) h->heapbckt.base)[4] = count;
+	((size_t *) h->heapbckt.base)[5] = 0; /* # filled slots (chain heads) */
+	ACCELDEBUG fprintf(stderr, "#HASHnew: create hash(size " BUNFMT ", mask " BUNFMT ", width %d, total " BUNFMT " bytes);\n", size, mask, h->width, (size + mask) * h->width);
 	return GDK_SUCCEED;
 }
 
@@ -183,14 +186,18 @@ BATcheckhash(BAT *b)
 			assert(!GDKinmemory());
 			b->thash = NULL;
 			if ((h = GDKzalloc(sizeof(*h))) != NULL &&
-			    (h->heap.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0) {
+			    (h->heaplink.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0 &&
+			    (h->heapbckt.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0) {
 				const char *nme = BBP_physical(b->batCacheid);
-				strconcat_len(h->heap.filename,
-					      sizeof(h->heap.filename),
-					      nme, ".thash", NULL);
+				strconcat_len(h->heaplink.filename,
+					      sizeof(h->heaplink.filename),
+					      nme, ".thashl", NULL);
+				strconcat_len(h->heapbckt.filename,
+					      sizeof(h->heapbckt.filename),
+					      nme, ".thashb", NULL);
 
 				/* check whether a persisted hash can be found */
-				if ((fd = GDKfdlocate(h->heap.farmid, nme, "rb+", "thash")) >= 0) {
+				if ((fd = GDKfdlocate(h->heapbckt.farmid, nme, "rb+", "thashb")) >= 0) {
 					size_t hdata[HASH_HEADER_SIZE];
 					struct stat st;
 
@@ -202,9 +209,13 @@ BATcheckhash(BAT *b)
 						    HASH_VERSION) &&
 					    hdata[4] == (size_t) BATcount(b) &&
 					    fstat(fd, &st) == 0 &&
-					    st.st_size >= (off_t) (h->heap.size = h->heap.free = (hdata[1] + hdata[2]) * hdata[3] + HASH_HEADER_SIZE * SIZEOF_SIZE_T) &&
-					    HEAPload(&h->heap, nme, "thash", false) == GDK_SUCCEED) {
-						h->lim = (BUN) hdata[1];
+					    st.st_size >= (off_t) (h->heapbckt.size = h->heapbckt.free = hdata[2] * hdata[3] + HASH_HEADER_SIZE * SIZEOF_SIZE_T) &&
+					    close(fd) == 0 &&
+					    (fd = GDKfdlocate(h->heaplink.farmid, nme, "rb+", "thashl")) >= 0 &&
+					    fstat(fd, &st) == 0 &&
+					    st.st_size >= (off_t) (h->heaplink.size = h->heaplink.free = hdata[1] * hdata[3]) &&
+					    HEAPload(&h->heaplink, nme, "thashl", false) == GDK_SUCCEED &&
+					    HEAPload(&h->heapbckt, nme, "thashb", false) == GDK_SUCCEED) {
 						h->type = ATOMtype(b->ttype);
 						h->mask = (BUN) (hdata[2] - 1);
 						h->width = (int) hdata[3];
@@ -223,11 +234,12 @@ BATcheckhash(BAT *b)
 						default:
 							assert(0);
 						}
-						h->Link = h->heap.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
-						h->Hash = (void *) ((char *) h->Link + h->lim * h->width);
-						close(fd);
-						h->heap.parentid = b->batCacheid;
-						h->heap.dirty = false;
+						h->Link = h->heaplink.base;
+						h->Hash = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
+						h->heaplink.parentid = b->batCacheid;
+						h->heapbckt.parentid = b->batCacheid;
+						h->heaplink.dirty = false;
+						h->heapbckt.dirty = false;
 						BATsetprop_nolock(
 							b,
 							GDK_HASH_MASK,
@@ -240,7 +252,8 @@ BATcheckhash(BAT *b)
 					}
 					close(fd);
 					/* unlink unusable file */
-					GDKunlink(h->heap.farmid, BATDIR, nme, "thash");
+					GDKunlink(h->heaplink.farmid, BATDIR, nme, "thashl");
+					GDKunlink(h->heapbckt.farmid, BATDIR, nme, "thashb");
 				}
 			}
 			GDKfree(h);
@@ -269,11 +282,12 @@ BAThashsync(void *arg)
 	 * unlikely that that is the case, so we don't */
 	MT_lock_set(&b->batIdxLock);
 	if (b->thash != NULL) {
-		Heap *hp = &b->thash->heap;
+		Heap *hp = &b->thash->heapbckt;
 		/* only persist if parent BAT hasn't changed in the
 		 * mean time */
 		if (!b->theap.dirty &&
 		    ((size_t *) hp->base)[4] == b->batCount &&
+		    HEAPsave(&b->thash->heaplink, b->thash->heaplink.filename, NULL) == GDK_SUCCEED &&
 		    HEAPsave(hp, hp->filename, NULL) == GDK_SUCCEED) {
 			if (hp->storage == STORE_MEM) {
 				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
@@ -382,13 +396,31 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	cnt = canditer_init(&ci, b, s);
 
 	if ((h = GDKzalloc(sizeof(*h))) == NULL ||
-	    (h->heap.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) < 0) {
+	    (h->heaplink.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) < 0 ||
+	    (h->heapbckt.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) < 0) {
 		GDKfree(h);
 		return NULL;
 	}
-	h->heap.dirty = true;
-	strconcat_len(h->heap.filename, sizeof(h->heap.filename),
-		      nme, ".", ext, NULL);
+	h->width = HASHwidth(BATcapacity(b));
+	h->heaplink.dirty = true;
+	h->heapbckt.dirty = true;
+	strconcat_len(h->heaplink.filename, sizeof(h->heaplink.filename),
+		      nme, ".", ext, "l", NULL);
+	strconcat_len(h->heapbckt.filename, sizeof(h->heapbckt.filename),
+		      nme, ".", ext, "b", NULL);
+	if (HEAPalloc(&h->heaplink, s ? cnt : BATcapacity(b),
+		      h->width) != GDK_SUCCEED) {
+		GDKfree(h);
+		return NULL;
+	}
+	h->heaplink.free = cnt * h->width;
+	h->Link = h->heaplink.base;
+#ifndef NDEBUG
+	/* clear unused part of Link array */
+	if (h->heaplink.size > h->heaplink.free)
+		memset(h->heaplink.base + h->heaplink.free, 0,
+		       h->heaplink.size - h->heaplink.free);
+#endif
 
 	/* determine hash mask size */
 	cnt1 = 0;
@@ -430,11 +462,11 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 
 		nslots = 0;
 		p = 0;
-		HEAPfree(&h->heap, true);
+		HEAPfree(&h->heapbckt, true);
 		/* create the hash structures */
-		if (HASHnew(h, ATOMtype(b->ttype), s ? cnt : BATcapacity(b),
-			    mask, cnt) != GDK_SUCCEED) {
-
+		if (HASHnew(h, ATOMtype(b->ttype), BATcapacity(b),
+			    mask, cnt, true) != GDK_SUCCEED) {
+			HEAPfree(&h->heaplink, true);
 			GDKfree(h);
 			return NULL;
 		}
@@ -535,12 +567,9 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	}
 	if (s == NULL)
 		BATsetprop_nolock(b, GDK_HASH_MASK, TYPE_oid, &(oid){h->mask + 1});
-	((size_t *) h->heap.base)[5] = (size_t) nslots;
-#ifndef NDEBUG
-	/* clear unused part of Link array */
-	memset((char *) h->Link + cnt * h->width, 0, (h->lim - cnt) * h->width);
-#endif
-	h->heap.parentid = b->batCacheid;
+	((size_t *) h->heapbckt.base)[5] = (size_t) nslots;
+	h->heapbckt.parentid = b->batCacheid;
+	h->heaplink.parentid = b->batCacheid;
 	/* if the number of occupied slots is equal to the bat count,
 	 * all values are necessarily distinct */
 	if (nslots == BATcount(b) && !b->tkey) {
@@ -653,9 +682,10 @@ HASHdestroy(BAT *b)
 				hp = BBP_cache(p);
 
 			if (!hp || hs != hp->thash) {
-				ACCELDEBUG if (*(size_t *) hs->heap.base & (1 << 24))
+				ACCELDEBUG if (*(size_t *) hs->heapbckt.base & (1 << 24))
 					fprintf(stderr, "#HASHdestroy: removing persisted hash %d\n", b->batCacheid);
-				HEAPfree(&hs->heap, true);
+				HEAPfree(&hs->heapbckt, true);
+				HEAPfree(&hs->heaplink, true);
 				GDKfree(hs);
 			}
 		}
@@ -668,9 +698,10 @@ HASHfree(BAT *b)
 	if (b && b->thash) {
 		MT_lock_set(&b->batIdxLock);
 		if (b->thash && b->thash != (Hash *) 1) {
-			bool rmheap = GDKinmemory() || b->thash->heap.dirty;
+			bool rmheap = GDKinmemory() || b->thash->heaplink.dirty || b->thash->heapbckt.dirty;
 
-			HEAPfree(&b->thash->heap, rmheap);
+			HEAPfree(&b->thash->heapbckt, rmheap);
+			HEAPfree(&b->thash->heaplink, rmheap);
 			GDKfree(b->thash);
 			b->thash = rmheap ? NULL : (Hash *) 1;
 		}

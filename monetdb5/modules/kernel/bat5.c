@@ -92,7 +92,7 @@ HASHinfo(BAT *bk, BAT *bv, Hash *h, str s)
 	if (BUNappend(bk, pre(s, "type"), false) != GDK_SUCCEED ||
 	    BUNappend(bv, ATOMname(h->type),false) != GDK_SUCCEED ||
 	    BUNappend(bk, pre(s, "mask"), false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(h->lim),false) != GDK_SUCCEED)
+	    BUNappend(bv, local_utoa(h->mask),false) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	for (i = 0; i < COLLISION + 1; i++) {

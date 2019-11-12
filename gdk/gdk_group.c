@@ -1047,7 +1047,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		bool gc = g != NULL && (BATordered(g) || BATordered_rev(g));
 		const char *nme;
 		BUN prb;
-		int bits, len;
+		int bits;
 		BUN mask;
 		oid grp;
 
@@ -1075,15 +1075,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * which power of two */
 		bits = 8 * SIZEOF_OID - pop(mask - 1);
 		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
-		    (hs->heap.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0) {
+		    (hs->heaplink.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
+		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("BATgroup: cannot allocate hash table\n");
 			goto error;
 		}
-		len = snprintf(hs->heap.filename, sizeof(hs->heap.filename), "%s.hash%d", nme, THRgettid());
-		if (len < 0 || len >= (int) sizeof(hs->heap.filename) ||
-		    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE) != GDK_SUCCEED) {
+		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshgrpl%x", nme, THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
+		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshgrpb%x", nme, THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
+		    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("BATgroup: cannot allocate hash table\n");
@@ -1173,7 +1174,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GRP_create_partial_hash_table_any();
 		}
 
-		HEAPfree(&hs->heap, true);
+		HEAPfree(&hs->heapbckt, true);
+		HEAPfree(&hs->heaplink, true);
 		GDKfree(hs);
 	}
 	if (extents) {
@@ -1210,7 +1212,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	return GDK_SUCCEED;
   error:
 	if (hs != NULL && hs != b->thash) {
-		HEAPfree(&hs->heap, true);
+		HEAPfree(&hs->heaplink, true);
+		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);
 	}
 	if (gn)
