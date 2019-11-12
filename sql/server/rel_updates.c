@@ -51,22 +51,11 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 	}
 }
 
-static sql_exp ** 
+static sql_exp **
 insert_exp_array(mvc *sql, sql_table *t, int *Len)
 {
-	sql_exp **inserts;
-	int i, len = list_length(t->columns.set);
-	node *m;
-
-	*Len = len;
-	inserts = SA_NEW_ARRAY(sql->sa, sql_exp *, len);
-	for (m = t->columns.set->h, i = 0; m; m = m->next, i++) {
-		sql_column *c = m->data;
-
-		c->colnr = i;
-		inserts[i] = NULL;
-	}
-	return inserts;
+	*Len = list_length(t->columns.set);
+	return SA_ZNEW_ARRAY(sql->sa, sql_exp*, *Len);
 }
 
 #define get_basetable(rel) rel->l
@@ -350,7 +339,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 					size_t j = 0;
 					sql_exp *exps = NULL;
 
-					for(j = 0; j < rowcount; j++) {
+					for (j = 0; j < rowcount; j++) {
 						sql_exp *e = NULL;
 
 						if (c->def) {
@@ -889,24 +878,6 @@ rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 	return relup;
 }
 
-sql_exp ** 
-table_update_array(mvc *sql, sql_table *t)
-{
-	sql_exp **updates;
-	int i, len = list_length(t->columns.set);
-	node *m;
-
-	updates = SA_NEW_ARRAY(sql->sa, sql_exp *, len);
-	for (m = t->columns.set->h, i = 0; m; m = m->next, i++) {
-		sql_column *c = m->data;
-
-		/* update the column number, for correct array access */
-		c->colnr = i;
-		updates[i] = NULL;
-	}
-	return updates;
-}
-
 sql_rel *
 rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 {
@@ -960,29 +931,29 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 {
 	mvc *sql = query->sql;
 	sql_table *mt = NULL;
-	sql_exp *e = NULL, **updates;
+	sql_exp *e = NULL, **updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, list_length(t->columns.set));
 	list *exps, *pcols = NULL;
 	dnode *n;
 	const char *rname = NULL;
 
-	if(isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t)) {
+	if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
 		mt = t;
-	} else if(t->p && (isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p))) {
+	else if (t->p && (isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p)))
 		mt = t->p;
-	}
-	if(mt && isPartitionedByColumnTable(mt)) {
+
+	if (mt && isPartitionedByColumnTable(mt)) {
 		pcols = sa_list(sql->sa);
 		int *nid = sa_alloc(sql->sa, sizeof(int));
 		*nid = mt->part.pcol->colnr;
 		list_append(pcols, nid);
-	} else if(mt && isPartitionedByExpressionTable(mt)) {
+	} else if (mt && isPartitionedByExpressionTable(mt)) {
 		pcols = mt->part.pexp->cols;
 	}
 	/* first create the project */
 	e = exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	exps = new_exp_list(sql->sa);
 	append(exps, e);
-	updates = table_update_array(sql, t);
+
 	for (n = assignmentlist->h; n; n = n->next) {
 		symbol *a = NULL;
 		sql_exp *v = NULL;
@@ -1070,20 +1041,20 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: too many columns specified", action);
 			}
 			nr = (list_length(rel_val->exps)-dlist_length(cols));
-			for(n=rel_val->exps->h; nr; nr--, n = n->next)
+			for (n=rel_val->exps->h; nr; nr--, n = n->next)
 				;
-			for(m = cols->h; n && m; n = n->next, m = m->next) {
+			for (m = cols->h; n && m; n = n->next, m = m->next) {
 				char *cname = m->data.sval;
 				sql_column *c = mvc_bind_column(sql, t, cname);
 				sql_exp *v = n->data;
 
-				if(mt && pcols) {
-					for(node *nn = pcols->h; nn; nn = n->next) {
+				if (mt && pcols) {
+					for (node *nn = pcols->h; nn; nn = n->next) {
 						int next = *(int*) nn->data;
-						if(next == c->colnr) {
-							if(isPartitionedByColumnTable(mt)) {
+						if (next == c->colnr) {
+							if (isPartitionedByColumnTable(mt)) {
 								return sql_error(sql, 02, SQLSTATE(42000) "%s: Update on the partitioned column is not possible at the moment", action);
-							} else if(isPartitionedByExpressionTable(mt)) {
+							} else if (isPartitionedByExpressionTable(mt)) {
 								return sql_error(sql, 02, SQLSTATE(42000) "%s: Update a column used by the partition's expression is not possible at the moment", action);
 							}
 						}
@@ -1107,13 +1078,13 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 			char *cname = assignment->h->next->data.sval;
 			sql_column *c = mvc_bind_column(sql, t, cname);
 
-			if(mt && pcols) {
-				for(node *nn = pcols->h; nn; nn = nn->next) {
+			if (mt && pcols) {
+				for (node *nn = pcols->h; nn; nn = nn->next) {
 					int next = *(int*) nn->data;
-					if(next == c->colnr) {
-						if(isPartitionedByColumnTable(mt)) {
+					if (next == c->colnr) {
+						if (isPartitionedByColumnTable(mt)) {
 							return sql_error(sql, 02, SQLSTATE(42000) "%s: Update on the partitioned column is not possible at the moment", action);
-						} else if(isPartitionedByExpressionTable(mt)) {
+						} else if (isPartitionedByExpressionTable(mt)) {
 							return sql_error(sql, 02, SQLSTATE(42000) "%s: Update a column used by the partition's expression is not possible at the moment", action);
 						}
 					}
@@ -1490,7 +1461,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 	if (rel_name(bt) && rel_name(joined) && strcmp(rel_name(bt), rel_name(joined)) == 0)
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: '%s' on both sides of the joining condition", rel_name(bt));
 
-	for(dnode *m = merge_list->h; m; m = m->next) {
+	for (dnode *m = merge_list->h; m; m = m->next) {
 		symbol *sym = m->data.sym, *opt_search, *action;
 		tokens token = sym->token;
 		dlist* dl = sym->data.lval, *sts;
@@ -1606,13 +1577,13 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 		}
 	}
 
-	if(processed == (MERGE_UPDATE_DELETE | MERGE_INSERT)) {
+	if (processed == (MERGE_UPDATE_DELETE | MERGE_INSERT)) {
 		res = rel_list(sql->sa, insert, upd_del);
 		res->p = prop_create(sql->sa, PROP_DISTRIBUTE, res->p);
-	} else if((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE) {
+	} else if ((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE) {
 		res = upd_del;
 		res->p = prop_create(sql->sa, PROP_DISTRIBUTE, res->p);
-	} else if((processed & MERGE_INSERT) == MERGE_INSERT) {
+	} else if ((processed & MERGE_INSERT) == MERGE_INSERT) {
 		res = insert;
 	} else {
 		assert(0);
@@ -1982,7 +1953,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 		exp_atom_int(sql->sa, onclient));
 
 	// create the list of files that is passed to the function as parameter
-	for(i = 0; i < list_length(t->columns.set); i++) {
+	for (i = 0; i < list_length(t->columns.set); i++) {
 		// we have one file per column, however, because we have column selection that file might be NULL
 		// first, check if this column number is present in the passed in the parameters
 		int found = 0;
@@ -2048,7 +2019,7 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) {
 		return NULL;
-	} else if(isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t)) {
+	} else if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t)) {
 		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY LOADER INTO: not possible for partitioned tables at the moment");
 		return NULL;
 	} else if (t->p && (isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p))) {
