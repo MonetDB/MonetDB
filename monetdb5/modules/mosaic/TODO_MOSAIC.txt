@@ -1,4 +1,5 @@
 ####technical depth####
+FIX HAS_NIL optimization in join algorithms
 Use bit vectors in mosaic_delta --- then resolve test mosaic_delta_timestamp --- and possibly other compression techniques as well.(2)
 Finish null semantics plus tests
 Add test for join nil_matches set for non-nill tests.
@@ -21,7 +22,7 @@ benchmark
 ####code issues####
 Update copyright.
 create dedicated type for bitvector internal type which is currently unsignned int. E.g. introduce #define BitVectorChunkType unsigned int.
-create a common header/source file for mosaic for common tasks e.g. to house a generic IS_NIL macro.
+create a common header/source file for mosaic for common tasks e.g. to house a generic IS_NIL macro, IPtpe, etc.
 move mask, bits, framebits from  MosaicHdr to MosaicBlkHeader_frame_t.
 mosaic_delta.c: improve the macro's: for instance get rid of hardcoded expression arguments in DELTAcompress. (2)
 mosaic_<compression>.c: for type macro's use macro-wised inline functions.
