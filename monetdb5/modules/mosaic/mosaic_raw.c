@@ -307,61 +307,31 @@ MOSdecompress_raw(MOStask task)
 	}\
 	else {\
 		/*normal cases.*/\
-		if( !(ANTI)){\
-			if( IS_NIL(TPE, LOW) ){\
-				for( ; first < last; first++, val++){\
-					MOSskipit();\
-					if (HAS_NIL && IS_NIL(TPE, *(TPE*)val)) { continue;}\
-					cmp  =  (((HI) && *(TPE*)val <= (HIGH) ) || (!(HI) && *(TPE*)val < (HIGH) ));\
-					if (cmp )\
-						*o++ = (oid) first;\
-				}\
-			} else\
-			if( IS_NIL(TPE, HIGH) ){\
-				for( ; first < last; first++, val++){\
-					MOSskipit();\
-					if (HAS_NIL && IS_NIL(TPE, *(TPE*)val)) { continue;}\
-					cmp  =  (((LI) && *(TPE*)val >= (LOW) ) || (!(LI) && *(TPE*)val > (LOW) ));\
-					if (cmp )\
-						*o++ = (oid) first;\
-				}\
-			} else{\
-				for( ; first < last; first++, val++){\
-					MOSskipit();\
-					if (HAS_NIL && IS_NIL(TPE, *(TPE*)val)) { continue;}\
-					cmp  =  (((HI) && *(TPE*)val <= (HIGH) ) || (!(HI) && *(TPE*)val < (HIGH) )) &&\
-							(((LI) && *(TPE*)val >= (LOW) ) || (!(LI) && *(TPE*)val > (LOW) ));\
-					if (cmp )\
-						*o++ = (oid) first;\
-				}\
+		if( IS_NIL(TPE, LOW) ){\
+			for( ; first < last; first++, val++){\
+				MOSskipit();\
+				if (HAS_NIL && IS_NIL(TPE, *(TPE*)val)) { continue;}\
+				cmp  =  (((HI) && *(TPE*)val <= (HIGH) ) || (!(HI) && *(TPE*)val < (HIGH) ));\
+				if (cmp == !(ANTI))\
+					*o++ = (oid) first;\
 			}\
-		} else {\
-			if( IS_NIL(TPE, LOW) ){\
-				for( ; first < last; first++, val++){\
-					MOSskipit();\
-					if (HAS_NIL && IS_NIL(TPE, *(TPE*)val)) { continue;}\
-					cmp  =  (((HI) && *(TPE*)val <= (HIGH) ) || (!(HI) && *(TPE*)val < (HIGH) ));\
-					if ( !cmp )\
-						*o++ = (oid) first;\
-				}\
-			} else\
-			if( IS_NIL(TPE, HIGH) ){\
-				for( ; first < last; first++, val++){\
-					MOSskipit();\
-					if (HAS_NIL && IS_NIL(TPE, *(TPE*)val)) { continue;}\
-					cmp  =  (((LI) && *(TPE*)val >= (LOW) ) || (!(LI) && *(TPE*)val > (LOW) ));\
-					if ( !cmp )\
-						*o++ = (oid) first;\
-				}\
-			} else{\
-				for( ; first < last; first++, val++){\
-					MOSskipit();\
-					if (HAS_NIL && IS_NIL(TPE, *(TPE*)val)) { continue;}\
-					cmp  =  (((HI) && *(TPE*)val <= (HIGH) ) || (!(HI) && *(TPE*)val < (HIGH) )) &&\
-							(((LI) && *(TPE*)val >= (LOW) ) || (!(LI) && *(TPE*)val > (LOW) ));\
-					if ( !cmp )\
-						*o++ = (oid) first;\
-				}\
+		} else\
+		if( IS_NIL(TPE, HIGH) ){\
+			for( ; first < last; first++, val++){\
+				MOSskipit();\
+				if (HAS_NIL && IS_NIL(TPE, *(TPE*)val)) { continue;}\
+				cmp  =  (((LI) && *(TPE*)val >= (LOW) ) || (!(LI) && *(TPE*)val > (LOW) ));\
+				if (cmp == !(ANTI))\
+					*o++ = (oid) first;\
+			}\
+		} else{\
+			for( ; first < last; first++, val++){\
+				MOSskipit();\
+				if (HAS_NIL && IS_NIL(TPE, *(TPE*)val)) { continue;}\
+				cmp  =  (((HI) && *(TPE*)val <= (HIGH) ) || (!(HI) && *(TPE*)val < (HIGH) )) &&\
+						(((LI) && *(TPE*)val >= (LOW) ) || (!(LI) && *(TPE*)val > (LOW) ));\
+				if (cmp == !(ANTI))\
+					*o++ = (oid) first;\
 			}\
 		}\
 	}\
@@ -417,6 +387,16 @@ MOSselect_raw( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 	return MAL_SUCCEED;
 }
 
+#define thetaselect_raw_normalized(HAS_NIL, ANTI, TPE) \
+for( ; first < last; first++, v++){\
+	if	(HAS_NIL && IS_NIL(TPE, *(TPE*)v)) { continue;}\
+	bool cmp = (IS_NIL(TPE, low) || * v >= low) && (IS_NIL(TPE, hgh)  || * v <= hgh);\
+	if (cmp == !(ANTI)) {\
+		MOSskipit();\
+		*o++ = (oid) first;\
+	}\
+}\
+
 #define thetaselect_raw_general(HAS_NIL, TPE)\
 { 	TPE low,hgh, *v;\
 	low= hgh = TPE##_nil;\
@@ -442,18 +422,11 @@ MOSselect_raw( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
 		hgh= low= *(TPE*) val;\
 	} \
 	v = (TPE*) (((char*)task->blk) + MosaicBlkSize);\
-	for( ; first < last; first++, v++){\
-		if (HAS_NIL && IS_NIL(TPE, *(TPE*)v)) { continue;}\
-		if( (IS_NIL(TPE, low) || * v >= low) && (IS_NIL(TPE, hgh)  || * v <= hgh) ){\
-			if ( !anti) {\
-				MOSskipit();\
-				*o++ = (oid) first;\
-			}\
-		} else\
-		if( anti){\
-			MOSskipit();\
-			*o++ = (oid) first;\
-		}\
+	if (!anti) {\
+		thetaselect_raw_normalized(HAS_NIL, false, TPE);\
+	}\
+	else {\
+		thetaselect_raw_normalized(HAS_NIL, true, TPE);\
 	}\
 }
 

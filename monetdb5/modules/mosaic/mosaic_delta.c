@@ -409,73 +409,37 @@ MOSdecompress_delta(MOStask task)
 	}\
 	else {\
 		/*normal cases.*/\
-		if( !*anti){\
-			if( IS_NIL(TPE, (LOW)) ){\
-				for( ; first < last; first++,i++){\
-					DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-					TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-					MOSskipit();\
-					if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
-					bool cmp  =  (((HI) && value <= (HIGH) ) || (!(HI) && value < (HIGH) ));\
-					if (cmp )\
-						*o++ = (oid) first;\
-				}\
-			} else\
-			if( IS_NIL(TPE, (HIGH)) ){\
-				for( ; first < last; first++,i++){\
-					DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-					TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-					MOSskipit();\
-					if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
-					bool cmp  =  (((LI) && value >= (LOW) ) || (!(LI) && value > (LOW) ));\
-					if (cmp )\
-						*o++ = (oid) first;\
-				}\
-			} else{\
-				for( ; first < last; first++,i++){\
-					DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-					TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-					MOSskipit();\
-					if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
-					bool cmp  =  (((HI) && value <= (HIGH) ) || (!(HI) && value < (HIGH) )) &&\
-							(((LI) && value >= (LOW) ) || (!(LI) && value > (LOW) ));\
-					if (cmp )\
-						*o++ = (oid) first;\
-				}\
+		if( IS_NIL(TPE, (LOW)) ){\
+			for( ; first < last; first++,i++){\
+				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
+				MOSskipit();\
+				if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
+				bool cmp  =  (((HI) && value <= (HIGH) ) || (!(HI) && value < (HIGH) ));\
+				if (cmp == !(ANTI))\
+					*o++ = (oid) first;\
 			}\
-		} else {\
-			if( IS_NIL(TPE, (LOW)) ){\
-				for( ; first < last; first++,i++){\
-					DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-					TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-					MOSskipit();\
-					if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
-					bool cmp  =  (((HI) && value <= (HIGH) ) || (!(HI) && value < (HIGH) ));\
-					if ( !cmp )\
-						*o++ = (oid) first;\
-				}\
-			} else\
-			if( IS_NIL(TPE, (HIGH)) ){\
-				for( ; first < last; first++,i++){\
-					DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-					TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-					MOSskipit();\
-					if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
-					bool cmp  =  (((LI) && value >= (LOW) ) || (!(LI) && value > (LOW) ));\
-					if ( !cmp )\
-						*o++ = (oid) first;\
-				}\
-			} else{\
-				for( ; first < last; first++,i++){\
-					DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-					TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-					MOSskipit();\
-					if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
-					bool cmp  =  (((HI) && value <= (HIGH) ) || (!(HI) && value < (HIGH) )) &&\
-							(((LI) && value >= (LOW) ) || (!(LI) && value > (LOW) ));\
-					if (!cmp)\
-						*o++ = (oid) first;\
-				}\
+		} else\
+		if( IS_NIL(TPE, (HIGH)) ){\
+			for( ; first < last; first++,i++){\
+				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
+				MOSskipit();\
+				if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
+				bool cmp  =  (((LI) && value >= (LOW) ) || (!(LI) && value > (LOW) ));\
+				if (cmp == !(ANTI))\
+					*o++ = (oid) first;\
+			}\
+		} else{\
+			for( ; first < last; first++,i++){\
+				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
+				MOSskipit();\
+				if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
+				bool cmp  =  (((HI) && value <= (HIGH) ) || (!(HI) && value < (HIGH) )) &&\
+						(((LI) && value >= (LOW) ) || (!(LI) && value > (LOW) ));\
+				if (cmp == !(ANTI))\
+					*o++ = (oid) first;\
 			}\
 		}\
 	}\
@@ -526,6 +490,17 @@ MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	return MAL_SUCCEED;
 }
 
+#define thetaselect_delta_normalized(HAS_NIL, ANTI, TPE) \
+for( ; first < last; first++,i++){\
+	DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+	TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
+	MOSskipit();\
+	if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
+	bool cmp =  (IS_NIL(TPE, low) || value >= low) && (value <= hgh || IS_NIL(TPE, hgh)) ;\
+	if (cmp == !(ANTI))\
+		*o++ = (oid) first;\
+}\
+
 #define thetaselect_delta_general(HAS_NIL, TPE)\
 { 	TPE low,hgh;\
     MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
@@ -555,25 +530,12 @@ MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	if ( strcmp(oper,"==") == 0){\
 		hgh= low= *(TPE*) val;\
 	} \
-	if ( !anti)\
-		/*TODO: simplify this similar to mosaic_capped*/\
-		for( ; first < last; first++,i++){\
-			DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-			TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-			MOSskipit();\
-			if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
-			if( (IS_NIL(TPE, low) || value >= low) && (value <= hgh || IS_NIL(TPE, hgh)) )\
-			*o++ = (oid) first;\
-		}\
-	else\
-		for( ; first < last; first++,i++){\
-			DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-			TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-			MOSskipit();\
-			if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
-			if( !( (IS_NIL(TPE, low) || value >= low) && (value <= hgh || IS_NIL(TPE, hgh)) ))\
-				*o++ = (oid) first;\
-		}\
+	if (!anti) {\
+		thetaselect_delta_normalized(HAS_NIL, false, TPE);\
+	}\
+	else {\
+		thetaselect_delta_normalized(HAS_NIL, true, TPE);\
+	}\
 }
 
 #define thetaselect_delta(TPE) {\

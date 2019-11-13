@@ -211,64 +211,31 @@ typedef struct {
 	}\
 	else {\
 		/*normal cases.*/\
-		if( !ANTI){\
-			if( IS_NIL(TPE, low) ){\
-				for(unsigned int i = 0; i < cnt; i++){\
-					unsigned int j = getBitVector(base,i,bits); \
-					if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
-					bool cmp  =  ((hi && dict[j] <= hgh ) || (!hi && dict[j] < hgh ));\
-					if (cmp )\
-						*(*result)++ = (oid) (i + hseqbase);\
-				}\
-			} else\
-			if( IS_NIL(TPE, hgh) ){\
-				for(unsigned int i = 0; i < cnt; i++){\
-					unsigned int j = getBitVector(base,i,bits); \
-					if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
-					bool cmp  =  ((li && dict[j] >= low ) || (!li && dict[j] > low ));\
-					if (cmp )\
-						*(*result)++ = (oid) (i + hseqbase);\
-				}\
-			} else{\
-				for(unsigned int i = 0; i < cnt; i++){\
-					unsigned int j = getBitVector(base,i,bits); \
-					if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
-					bool cmp  =  ((hi && dict[j] <= hgh ) || (!hi && dict[j] < hgh )) &&\
-							((li && dict[j] >= low ) || (!li && dict[j] > low ));\
-					if (cmp )\
-						*(*result)++ = (oid) (i + hseqbase);\
-				}\
+		if( IS_NIL(TPE, low) ){\
+			for(unsigned int i = 0; i < cnt; i++){\
+				unsigned int j = getBitVector(base,i,bits); \
+				if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
+				bool cmp  =  ((hi && dict[j] <= hgh ) || (!hi && dict[j] < hgh ));\
+				if (cmp == !(ANTI))\
+					*(*result)++ = (oid) (i + hseqbase);\
 			}\
-		} else {\
-			if( IS_NIL(TPE, low) && IS_NIL(TPE, hgh)){\
-				/* nothing is matching */\
-			} else\
-			if( IS_NIL(TPE, low) ){\
-				for(unsigned int i = 0; i < cnt; i++){\
-					unsigned int j = getBitVector(base,i,bits); \
-					if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
-					bool cmp  =  ((hi && dict[j] <= hgh ) || (!hi && dict[j] < hgh ));\
-					if ( !cmp )\
-						*(*result)++ = (oid) (i + hseqbase);\
-				}\
-			} else\
-			if( IS_NIL(TPE, hgh) ){\
-				for(unsigned int i = 0; i < cnt; i++){\
-					unsigned int j = getBitVector(base,i,bits); \
-					if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
-					bool cmp  =  ((li && dict[j] >= low ) || (!li && dict[j] > low ));\
-					if ( !cmp )\
-						*(*result)++ = (oid) (i + hseqbase);\
-				}\
-			} else{\
-				for(unsigned int i = 0; i < cnt; i++){\
-					unsigned int j = getBitVector(base,i,bits); \
-					if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
-					bool cmp  =  ((hi && dict[j] <= hgh ) || (!hi && dict[j] < hgh )) &&\
-							((li && dict[j] >= low ) || (!li && dict[j] > low ));\
-					if ( !cmp )\
-						*(*result)++ = (oid) (i + hseqbase);\
-				}\
+		} else\
+		if( IS_NIL(TPE, hgh) ){\
+			for(unsigned int i = 0; i < cnt; i++){\
+				unsigned int j = getBitVector(base,i,bits); \
+				if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
+				bool cmp  =  ((li && dict[j] >= low ) || (!li && dict[j] > low ));\
+				if (cmp == !(ANTI))\
+					*(*result)++ = (oid) (i + hseqbase);\
+			}\
+		} else{\
+			for(unsigned int i = 0; i < cnt; i++){\
+				unsigned int j = getBitVector(base,i,bits); \
+				if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
+				bool cmp  =  ((hi && dict[j] <= hgh ) || (!hi && dict[j] < hgh )) &&\
+						((li && dict[j] >= low ) || (!li && dict[j] > low ));\
+				if (cmp == !(ANTI))\
+					*(*result)++ = (oid) (i + hseqbase);\
 			}\
 		}\
 	}\
@@ -304,6 +271,16 @@ void select_dictionary_##TPE(\
 	}\
 }
 
+#define thetaselect_dictionary_normalized(HAS_NIL, ANTI, TPE) \
+for(unsigned int i = 0; i < cnt; i++){\
+	unsigned int j = getBitVector(base, i, bits); \
+	if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
+	bool cmp = (IS_NIL(TPE, low) || dict[j] >= low) && (dict[j] <= hgh || IS_NIL(TPE, hgh));\
+	if (cmp == !(ANTI)) {\
+		*(*result)++ = (oid) (i + hseqbase);\
+	}\
+}\
+
 #define thetaselect_dictionary_general(HAS_NIL, TPE)\
 {\
 	TPE low,hgh;\
@@ -330,17 +307,11 @@ void select_dictionary_##TPE(\
 	if ( strcmp(oper,"==") == 0){\
 		hgh= low= val;\
 	} \
-	for(unsigned int i = 0; i < cnt; i++){\
-		unsigned int j = getBitVector(base, i, bits); \
-		if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
-		if( (IS_NIL(TPE, low) || dict[j] >= low) && (dict[j] <= hgh || IS_NIL(TPE, hgh)) ){\
-			if ( !anti) {\
-				*(*result)++ = (oid) (i + hseqbase);\
-			}\
-		} else\
-			if( anti){\
-				*(*result)++ = (oid) (i + hseqbase);\
-			}\
+	if (!anti) {\
+		thetaselect_dictionary_normalized(HAS_NIL, false, TPE);\
+	}\
+	else {\
+		thetaselect_dictionary_normalized(HAS_NIL, true, TPE);\
 	}\
 }
 

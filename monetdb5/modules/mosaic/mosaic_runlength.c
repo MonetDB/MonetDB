@@ -287,11 +287,10 @@ do {\
 	}\
 	else {\
 		/*normal cases.*/\
-		if( !*anti){\
 			if( IS_NIL(TPE, (LOW)) ){\
 				if (HAS_NIL && IS_NIL(TPE, val)) { continue;}\
 				bool cmp  =  (((HI) && val <= (HIGH) ) || (!(HI) && val < (HIGH) ));\
-				if (cmp ) {\
+				if (cmp == !(ANTI)) {\
 					for( ; first < last; first++){\
 						MOSskipit();\
 						*o++ = (oid) first;\
@@ -301,7 +300,7 @@ do {\
 			if( IS_NIL(TPE, (HIGH)) ) {\
 				if (HAS_NIL && IS_NIL(TPE, val)) { continue;}\
 				bool cmp  =  (((LI) && val >= (LOW) ) || (!(LI) && val > (LOW) ));\
-				if (cmp ) {\
+				if (cmp == !(ANTI)) {\
 					for( ; first < last; first++){\
 						MOSskipit();\
 						*o++ = (oid) first;\
@@ -311,45 +310,13 @@ do {\
 				if (HAS_NIL && IS_NIL(TPE, val)) { continue;}\
 				bool cmp  =  (((HI) && val <= (HIGH) ) || (!(HI) && val < (HIGH) )) &&\
 						(((LI) && val >= (LOW) ) || (!(LI) && val > (LOW) ));\
-				if (cmp ) {\
+				if (cmp == !(ANTI)) {\
 					for( ; first < last; first++){\
 						MOSskipit();\
 						*o++ = (oid) first;\
 					}\
 				}\
 			}\
-		} else {\
-			if( IS_NIL(TPE, (LOW)) ){\
-				if (HAS_NIL && IS_NIL(TPE, val)) { continue;}\
-				bool cmp  =  (((HI) && val <= (HIGH) ) || (!(HI) && val < (HIGH) ));\
-				if ( !cmp ) {\
-					for( ; first < last; first++){\
-						MOSskipit();\
-						*o++ = (oid) first;\
-					}\
-				}\
-			} else\
-			if( IS_NIL(TPE, (HIGH)) ){\
-				if (HAS_NIL && IS_NIL(TPE, val)) { continue;}\
-				bool cmp  =  (((LI) && val >= (LOW) ) || (!(LI) && val > (LOW) ));\
-				if ( !cmp ) {\
-					for( ; first < last; first++){\
-						MOSskipit();\
-						*o++ = (oid) first;\
-					}\
-				}\
-			} else{\
-				if (HAS_NIL && IS_NIL(TPE, val)) { continue;}\
-				bool cmp  =  (((HI) && val <= (HIGH) ) || (!(HI) && val < (HIGH) )) &&\
-						(((LI) && val >= (LOW) ) || (!(LI) && val > (LOW) ));\
-				if (!cmp) {\
-					for( ; first < last; first++){\
-						MOSskipit();\
-						*o++ = (oid) first;\
-					}\
-				}\
-			}\
-		}\
 	}\
 } while(0)
 
@@ -401,6 +368,16 @@ MOSselect_runlength( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *
 	return MAL_SUCCEED;
 }
 
+#define thetaselect_runlength_normalized(HAS_NIL, ANTI, TPE) \
+if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
+bool cmp =  (IS_NIL(TPE, low) || value >= low) && (value <= hgh || IS_NIL(TPE, hgh)) ;\
+if (cmp == !(ANTI)) {\
+	for( ; first < last; first++){\
+		MOSskipit();\
+		*o++ = (oid) first;\
+	}\
+}\
+
 #define thetaselect_runlength_general(HAS_NIL, TPE)\
 do { 	TPE low,hgh;\
 	const TPE value = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
@@ -426,23 +403,11 @@ do { 	TPE low,hgh;\
 	if ( strcmp(oper,"==") == 0){\
 		hgh= low= *(TPE*) val;\
 	} \
-	if ( !anti) {\
-		if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
-		if( (IS_NIL(TPE, low) || value >= low) && (value <= hgh || IS_NIL(TPE, hgh)) ) {\
-			for( ; first < last; first++){\
-				MOSskipit();\
-				*o++ = (oid) first;\
-			}\
-		}\
+	if (!anti) {\
+		thetaselect_runlength_normalized(HAS_NIL, false, TPE);\
 	}\
 	else {\
-		if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
-		if( !( (IS_NIL(TPE, low) || value >= low) && (value <= hgh || IS_NIL(TPE, hgh)) )) {\
-			for( ; first < last; first++){\
-				MOSskipit();\
-				*o++ = (oid) first;\
-			}\
-		}\
+		thetaselect_runlength_normalized(HAS_NIL, true, TPE);\
 	}\
 } while (0)
 
