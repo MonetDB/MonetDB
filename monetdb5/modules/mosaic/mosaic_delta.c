@@ -13,6 +13,7 @@
 
 #include "monetdb_config.h"
 #include "mosaic.h"
+#include "gdk_bitvector.h"
 #include "mosaic_delta.h"
 #include "mosaic_private.h"
 
@@ -20,12 +21,12 @@
 
 bool MOStypes_delta(BAT* b) {
 	switch(b->ttype) {
+	case TYPE_bit: return true; // Will be mapped to bte
+	case TYPE_bte: return true;
 	case TYPE_sht: return true;
 	case TYPE_int: return true;
 	case TYPE_lng: return true;
 	case TYPE_oid: return true;
-	/* TODO: case TYPE_flt: return true; */
-	/* TODO: case TYPE_dbl: return true; */
 #ifdef HAVE_HGE
 	case TYPE_hge: return true;
 #endif
@@ -38,23 +39,34 @@ bool MOStypes_delta(BAT* b) {
 	return false;
 }
 
+typedef struct _DeltaParameters_t {
+	MosaicBlkRec base;
+	int bits;
+	union {
+		bte valbte;
+		sht valsht;
+		int valint;
+		lng vallng;
+		oid valoid;
+#ifdef HAVE_HGE
+		hge valhge;
+#endif
+	} init;
+} MosaicBlkHeader_delta_t;
+
+#define toEndOfBitVector(CNT, BITS) wordaligned(((CNT) * (BITS) / CHAR_BIT) + ( ((CNT) * (BITS)) % CHAR_BIT != 0 ), lng)
+
 void
 MOSadvance_delta(MOStask task)
 {
-	MosaicBlk blk = task->blk;
+	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) (task)->blk;
+	int *dst = (int*)  (((char*) task->blk) + wordaligned(sizeof(MosaicBlkHeader_delta_t), unsigned int));
+	long cnt = parameters->base.cnt;
+	long bytes = toEndOfBitVector(cnt, parameters->bits);
 
-	task->start += MOSgetCnt(blk);
-	task->stop = task->stop;
-	switch(ATOMbasetype(task->type)){
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(sht) + MOSgetCnt(blk)-1,sht)); break ;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(int) + MOSgetCnt(blk)-1,int)); break ;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(oid) + MOSgetCnt(blk)-1,oid)); break ;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(lng) + MOSgetCnt(blk)-1,lng)); break ;
-	//case TYPE_flt: case TYPE_dbl: to be looked into.
-#ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) blk)+ wordaligned(MosaicBlkSize + sizeof(hge) + MOSgetCnt(blk)-1,hge)); break ;	
-#endif
-	}
+	assert(cnt > 0);
+	task->start += (oid) cnt;
+	task->blk = (MosaicBlk) (((char*) dst)  + bytes);
 }
 
 
@@ -66,11 +78,11 @@ MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 
 	input = cnt * ATOMsize(task->type);
 	switch(ATOMbasetype(task->type)){
+	case TYPE_bte: output = wordaligned(MosaicBlkSize + sizeof(bte) + MOSgetCnt(blk)-1,bte); break ;
 	case TYPE_sht: output = wordaligned(MosaicBlkSize + sizeof(sht) + MOSgetCnt(blk)-1,sht); break ;
 	case TYPE_int: output = wordaligned(MosaicBlkSize + sizeof(int) + MOSgetCnt(blk)-1,int); break ;
-	case TYPE_oid: output = wordaligned(MosaicBlkSize + sizeof(oid) + MOSgetCnt(blk)-1,oid); break ;
 	case TYPE_lng: output = wordaligned(MosaicBlkSize + sizeof(lng) + MOSgetCnt(blk)-1,lng); break ;
-	//case TYPE_flt: case TYPE_dbl: to be looked into.
+	case TYPE_oid: output = wordaligned(MosaicBlkSize + sizeof(oid) + MOSgetCnt(blk)-1,oid); break ;
 #ifdef HAVE_HGE
 	case TYPE_hge: output = wordaligned(MosaicBlkSize + sizeof(hge) + MOSgetCnt(blk)-1,hge); break ;
 #endif
@@ -91,207 +103,416 @@ MOSskip_delta(MOStask task)
 		task->blk = 0; // ENDOFLIST
 }
 
+#define MOScodevectorDelta(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_delta_t), unsigned int))
 
-// append a series of values into the non-compressed block
-#define Estimate_delta(TPE, EXPR)\
-{\
-	current->compression_strategy.tag = MOSAIC_DELTA;\
-	TPE *v = ((TPE*)task->src) + task->start, val= *v, delta = 0;\
-	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop-task->start;\
-	for(v++,i =1; i<limit; i++,v++){\
-		delta = *v -val;\
-		if ( EXPR)\
-			break;\
-		val = *v;\
+#define Deltabte uint8_t
+#define Deltasht uint16_t
+#define Deltaint uint32_t
+#define Deltalng uint64_t
+#define Deltaoid uint64_t
+#ifdef HAVE_HGE
+#define Deltahge uhge
+#endif
+
+#define DeltaTpe(TPE) Delta##TPE
+
+/* Use standard unsigned integer operations because (in theory) we have to be careful not to get overflow's and undefined behavior*/\
+#define GET_DELTA(TPE, max, val)  ((DeltaTpe(TPE)) max - (DeltaTpe(TPE)) val)
+#define ADD_DELTA(TPE, val, delta)  (TPE) ((DeltaTpe(TPE)) val + (DeltaTpe(TPE)) delta)
+
+#define determineDeltaParameters(PARAMETERS, SRC, LIMIT, TPE) \
+do {\
+	TPE *val = SRC;\
+	int bits = 1;\
+	unsigned int i;\
+	DeltaTpe(TPE) unsigned_delta = 0;\
+	TPE prev_val;\
+	(PARAMETERS).init.val##TPE = *val;\
+\
+	for(i = 1; i < LIMIT; i++){\
+		prev_val = *val++;\
+		DeltaTpe(TPE) current_unsigned_delta;\
+		if (*val > prev_val) {\
+			current_unsigned_delta = GET_DELTA(TPE, *val, prev_val);\
+		}\
+		else {\
+			current_unsigned_delta = GET_DELTA(TPE, prev_val, *val);\
+		}\
+\
+		if (current_unsigned_delta > unsigned_delta) {\
+			int current_bits = bits;\
+			while (current_unsigned_delta > ((DeltaTpe(TPE))(-1)) >> (sizeof(DeltaTpe(TPE)) * CHAR_BIT - current_bits) ) {\
+				/*keep track of number of BITS necessary to store the difference*/\
+				current_bits++;\
+			}\
+			int current_bits_with_sign_bit = current_bits + 1;\
+			if ( (current_bits_with_sign_bit >= (int) ((sizeof(TPE) * CHAR_BIT) / 2))\
+				/*If we can from here on not compress better then the half of the original data type, we give up. */\
+				|| (current_bits_with_sign_bit > (int) sizeof(unsigned int) * CHAR_BIT) ) {\
+				/*TODO: this extra condition should be removed once bitvector is extended to int64's*/\
+				break;\
+			}\
+			bits = current_bits;\
+			unsigned_delta = current_unsigned_delta;\
+		}\
 	}\
-	assert(i > 0);/*Should always compress.*/\
-	current->is_applicable = true;\
-	current->uncompressed_size += (BUN) (i * sizeof(TPE));\
-	current->compressed_size += wordaligned(MosaicBlkSize + sizeof(TPE) + i-1,MosaicBlkRec);\
-	current->compression_strategy.cnt = i;\
-}
+\
+	/*Add the additional sign bit to the bit count.*/\
+	bits++;\
+	(PARAMETERS).base.cnt = i;\
+	(PARAMETERS).bits = bits;\
+} while(0)
 
-// estimate the compression level 
+#define estimateDelta(TASK, TPE)\
+do {\
+	TPE *src = getSrc(TPE, (TASK));\
+	BUN limit = (TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start;\
+	MosaicBlkHeader_delta_t parameters;\
+	determineDeltaParameters(parameters, src, limit, TPE);\
+	assert(parameters.base.cnt > 0);/*Should always compress.*/\
+	current->uncompressed_size += (BUN) (parameters.base.cnt * sizeof(TPE));\
+	current->compressed_size += wordaligned(sizeof(MosaicBlkHeader_delta_t), lng) + wordaligned((parameters.base.cnt * parameters.bits) / CHAR_BIT, lng);\
+	current->compression_strategy.cnt = (unsigned int) parameters.base.cnt;\
+} while (0)
+
+// calculate the expected reduction using dictionary in terms of elements compressed
 str
-MOSestimate_delta(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
-{	unsigned int i = 0;
+MOSestimate_delta(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous) {
 	(void) previous;
+	current->is_applicable = true;
+	current->compression_strategy.tag = MOSAIC_DELTA;
 
 	switch(ATOMbasetype(task->type)){
-		//case TYPE_bte: case TYPE_bit: no compression achievable
-		case TYPE_sht: Estimate_delta(sht,  (delta < -127 || delta >127)); break;
-		case TYPE_int: Estimate_delta(int,  (delta < -127 || delta >127)); break;
-		case TYPE_oid: Estimate_delta(oid,  (delta > 255)); break;
-		case TYPE_lng: Estimate_delta(lng,  (delta < -127 || delta >127)); break;
-	#ifdef HAVE_HGE
-		case TYPE_hge: Estimate_delta(hge,  (delta < -127 || delta >127)); break;
-	#endif
+	case TYPE_bte: estimateDelta(task, bte); break;
+	case TYPE_sht: estimateDelta(task, sht); break;
+	case TYPE_int: estimateDelta(task, int); break;
+	case TYPE_lng: estimateDelta(task, lng); break;
+	case TYPE_oid: estimateDelta(task, oid); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: estimateDelta(task, hge); break;
+#endif
 	}
+
 	return MAL_SUCCEED;
 }
 
-#define DELTAcompress(TPE,EXPR)\
-{	TPE *v = ((TPE*)task->src) + task->start, val= *v, delta =0;\
-	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT:task->stop - task->start;\
-	task->dst = MOScodevector(task); \
-	*(TPE*)task->dst = val;\
-	hdr->checksum.sum##TPE += *v;\
-	task->dst += sizeof(TPE);\
-	for(v++,i =1; i<limit; i++,v++){\
-		delta = *v -val;\
-		if ( EXPR )\
-			break;\
-		hdr->checksum.sum##TPE += *v;\
-		*(bte*)task->dst++ = (bte) delta;\
-		val = *v;\
-	}\
-	MOSsetCnt(blk,i);\
-}
+// types for safe Integer Promotion for the bitwise operations in getSuffixMask
+#define IPbte uint32_t
+#define IPsht uint32_t
+#define IPint uint32_t
+#define IPlng uint64_t
+#define IPoid uint64_t
+#ifdef HAVE_HGE
+#define IPhge uhge
+#endif
 
-// rather expensive simple value non-compressed store
+#define IPTpe(TPE) IP##TPE
+
+#define DELTAcompress(TASK, TPE)\
+do {\
+	TPE *src = getSrc(TPE, (TASK));\
+	BUN i = 0;\
+	BUN limit = estimate->cnt;\
+	BitVector base;\
+	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) ((TASK))->blk;\
+	determineDeltaParameters(*parameters, src, limit, TPE);\
+	(TASK)->dst = MOScodevectorDelta(TASK);\
+	base = (BitVector) ((TASK)->dst);\
+	TPE pv = parameters->init.val##TPE; /*previous value*/\
+	/*Initial delta is zero.*/\
+	setBitVector(base, 0, parameters->bits, (unsigned int) 0);\
+	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (parameters->bits - 1);\
+\
+	for(i = 1; i < parameters->base.cnt; i++) {\
+		/*TODO: assert that delta's actually does not cause an overflow. */\
+		TPE cv = *++src; /*current value*/\
+		DeltaTpe(TPE) delta = (DeltaTpe(TPE)) (cv > pv ? (IPTpe(TPE)) (cv - pv) : (IPTpe(TPE)) ((sign_mask) | (IPTpe(TPE)) (pv - cv)));\
+		setBitVector(base, i, parameters->bits, (unsigned int) /*TODO: fix this once we have increased capacity of bitvector*/ delta);\
+		pv = cv;\
+	}\
+	(TASK)->dst += toEndOfBitVector(i, parameters->bits);\
+} while(0)
+
 void
-MOScompress_delta(MOStask task)
+MOScompress_delta(MOStask task, MosaicBlkRec* estimate)
 {
-	MosaicHdr hdr = (MosaicHdr) task->hdr;
-	MosaicBlk blk = (MosaicBlk) task->blk;
-	BUN i = 0;
+	MosaicBlk blk = task->blk;
 
 	MOSsetTag(blk,MOSAIC_DELTA);
+	MOSsetCnt(blk, 0);
 
-	switch(ATOMbasetype(task->type)){
-	//case TYPE_bte: case TYPE_bit: no compression achievable
-	case TYPE_sht: DELTAcompress(sht,(delta < -127 || delta >127)); break;
-	case TYPE_int: DELTAcompress(int,(delta < -127 || delta >127)); break;
-	case TYPE_oid: DELTAcompress(oid,(delta > 255)); break;
-	case TYPE_lng: DELTAcompress(lng,(delta < -127 || delta >127)); break;
+	switch(ATOMbasetype(task->type)) {
+	case TYPE_bte: DELTAcompress(task, bte); break;
+	case TYPE_sht: DELTAcompress(task, sht); break;
+	case TYPE_int: DELTAcompress(task, int); break;
+	case TYPE_lng: DELTAcompress(task, lng); break;
+	case TYPE_oid: DELTAcompress(task, oid); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: DELTAcompress(hge,(delta < -127 || delta < -127 || delta >127)); break;
+	case TYPE_hge: DELTAcompress(task, hge); break;
 #endif
 	}
 }
 
-// the inverse operator, extend the src
-#define DELTAdecompress(TPE)\
-{ 	TPE val;\
-	BUN lim = MOSgetCnt(blk);\
-	task->dst = MOScodevector(task);\
-	val = *(TPE*)task->dst ;\
-	task->dst += sizeof(TPE);\
+#define ACCUMULATE(acc, delta, sign_mask, TPE) \
+(\
+	(TPE) (\
+		( (sign_mask) & (delta) )?\
+			((acc) -= (DeltaTpe(TPE)) (~(IPTpe(TPE)) (sign_mask) & (IPTpe(TPE)) (delta))) :\
+			((acc) += (DeltaTpe(TPE)) (~(IPTpe(TPE)) (sign_mask) & (IPTpe(TPE)) (delta)))  \
+	)\
+)
+
+#define DELTAdecompress(TASK, TPE)\
+do {\
+	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) ((TASK))->blk;\
+	BUN lim = parameters->base.cnt;\
+	((TPE*)(TASK)->src)[0] = parameters->init.val##TPE; /*previous value*/\
+	BitVector base = (BitVector) MOScodevectorDelta(TASK);\
+	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (parameters->bits - 1);\
+	DeltaTpe(TPE) acc = (DeltaTpe(TPE)) parameters->init.val##TPE /*unsigned accumulating value*/;\
+	BUN i;\
 	for(i = 0; i < lim; i++) {\
-		hdr->checksum2.sum##TPE += val;\
-		((TPE*)task->src)[i] = val;\
-		val = val + *(bte*) (task->dst);\
-		task->dst++;\
+		DeltaTpe(TPE) delta = getBitVector(base, i, parameters->bits);\
+		((TPE*)(TASK)->src)[i] = ACCUMULATE(acc, delta, sign_mask, TPE);\
 	}\
-	task->src += i * sizeof(TPE);\
-}
+	(TASK)->src += i * sizeof(TPE);\
+} while(0)
 
 void
 MOSdecompress_delta(MOStask task)
 {
-	MosaicHdr hdr = (MosaicHdr) task->hdr;
-	MosaicBlk blk = (MosaicBlk) task->blk;
-	BUN i;
-
 	switch(ATOMbasetype(task->type)){
-	//case TYPE_bte: case TYPE_bit: no compression achievable
-	case TYPE_sht: DELTAdecompress(sht); break;
-	case TYPE_int: DELTAdecompress(int); break;
-	case TYPE_oid: DELTAdecompress(oid); break;
+	case TYPE_bte: DELTAdecompress(task, bte); break;
+	case TYPE_sht: DELTAdecompress(task, sht); break;
+	case TYPE_int: DELTAdecompress(task, int); break;
+	case TYPE_lng: DELTAdecompress(task, lng); break;
+	case TYPE_oid: DELTAdecompress(task, oid); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: DELTAdecompress(hge); break;
+	case TYPE_hge: DELTAdecompress(task, hge); break;
 #endif
-	case TYPE_lng: DELTAdecompress(lng); break;
 	}
 }
 
-// The remainder should provide the minimal algebraic framework
-//  to apply the operator to a DELTA compressed chunk
+// perform relational algebra operators over non-compressed chunks
+// They are bound by an oid range and possibly a candidate list
 
-	
-#define select_delta(TPE) {\
-		TPE val= * (TPE*) (((char*) task->blk) + MosaicBlkSize);\
-		task->dst = MOScodevector(task)  + sizeof(TPE);\
-		if( !*anti){\
-			if( IS_NIL(TPE, *(TPE*) low) && IS_NIL(TPE, *(TPE*) hgh) ){\
-				for( ; first < last; first++){\
-					MOSskipit();\
+/* generic range select
+ *
+ * This macro is based on the combined behavior of ALGselect2 and BATselect.
+ * It should return the same output on the same input.
+ *
+ * A complete breakdown of the various arguments follows.  Here, v, v1
+ * and v2 are values from the appropriate domain, and
+ * v != nil, v1 != nil, v2 != nil, v1 < v2.
+ *	tl	th	li	hi	anti	result list of OIDs for values
+ *	-----------------------------------------------------------------
+ *	nil	nil	true	true	false	x == nil (only way to get nil)
+ *	nil	nil	true	true	true	x != nil
+ *	nil	nil	A*		B*		false	x != nil *it must hold that A && B == false.
+ *	nil	nil	A*		B*		true	NOTHING *it must hold that A && B == false.
+ *	v	v	A*		B*		true	x != nil *it must hold that A && B == false.
+ *	v	v	A*		B*		false	NOTHING *it must hold that A && B == false.
+ *	v2	v1	ignored	ignored	false	NOTHING
+ *	v2	v1	ignored	ignored	true	x != nil
+ *	nil	v	ignored	false	false	x < v
+ *	nil	v	ignored	true	false	x <= v
+ *	nil	v	ignored	false	true	x >= v
+ *	nil	v	ignored	true	true	x > v
+ *	v	nil	false	ignored	false	x > v
+ *	v	nil	true	ignored	false	x >= v
+ *	v	nil	false	ignored	true	x <= v
+ *	v	nil	true	ignored	true	x < v
+ *	v	v	true	true	false	x == v
+ *	v	v	true	true	true	x != v
+ *	v1	v2	false	false	false	v1 < x < v2
+ *	v1	v2	true	false	false	v1 <= x < v2
+ *	v1	v2	false	true	false	v1 < x <= v2
+ *	v1	v2	true	true	false	v1 <= x <= v2
+ *	v1	v2	false	false	true	x <= v1 or x >= v2
+ *	v1	v2	true	false	true	x < v1 or x >= v2
+ *	v1	v2	false	true	true	x <= v1 or x > v2
+ */
+#define  select_delta_general(LOW, HIGH, LI, HI, HAS_NIL, ANTI, TPE) \
+{\
+	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
+	BitVector base = (BitVector) MOScodevectorDelta(task);\
+	TPE acc = parameters->init.val##TPE; /*previous value*/\
+	int bits = parameters->bits;\
+	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
+	if		( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && (LI) && (HI) && !(ANTI)) {\
+		if(HAS_NIL) {\
+			for( ; first < last; first++){\
+				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
+				MOSskipit();\
+				if (IS_NIL(TPE, value))\
 					*o++ = (oid) first;\
-				}\
-			} else\
-			if( IS_NIL(TPE, *(TPE*) low) ){\
-				for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){\
+			}\
+		}\
+	}\
+	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && (LI) && (HI) && (ANTI)) {\
+		if(HAS_NIL) {\
+			for( ; first < last; first++){\
+				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
+				MOSskipit();\
+				if (!IS_NIL(TPE, value))\
+					*o++ = (oid) first;\
+			}\
+		}\
+		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
+	}\
+	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && !((LI) && (HI)) && !(ANTI)) {\
+		if(HAS_NIL) {\
+			for( ; first < last; first++){\
+				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
+				MOSskipit();\
+				if (!IS_NIL(TPE, value))\
+					*o++ = (oid) first;\
+			}\
+		}\
+		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
+	}\
+	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && !((LI) && (HI)) && (ANTI)) {\
+			/*Empty result set.*/\
+	}\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && (ANTI)) {\
+		if(HAS_NIL) {\
+			for( ; first < last; first++) {\
+				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
+				MOSskipit();\
+				if (!IS_NIL(TPE, value))\
+					*o++ = (oid) first;\
+			}\
+		}\
+		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
+	}\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && !(ANTI)) {\
+		/*Empty result set.*/\
+	}\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) > (HIGH) && !(ANTI)) {\
+		/*Empty result set.*/\
+	}\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) > (HIGH) && (ANTI)) {\
+		if(HAS_NIL) {\
+			for( ; first < last; first++){\
+				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
+				MOSskipit();\
+				if (!IS_NIL(TPE, value))\
+					*o++ = (oid) first;\
+			}\
+		}\
+		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
+	}\
+	else {\
+		/*normal cases.*/\
+		if( !*anti){\
+			if( IS_NIL(TPE, (LOW)) ){\
+				for( ; first < last; first++,i++){\
+					DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+					TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
 					MOSskipit();\
-					cmp  =  ((*hi && val <= * (TPE*)hgh ) || (!*hi && val < *(TPE*)hgh ));\
+					if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
+					bool cmp  =  (((HI) && value <= (HIGH) ) || (!(HI) && value < (HIGH) ));\
 					if (cmp )\
 						*o++ = (oid) first;\
 				}\
 			} else\
-			if( IS_NIL(TPE, *(TPE*) hgh) ){\
-				for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){\
+			if( IS_NIL(TPE, (HIGH)) ){\
+				for( ; first < last; first++,i++){\
+					DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+					TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
 					MOSskipit();\
-					cmp  =  ((*li && val >= * (TPE*)low ) || (!*li && val > *(TPE*)low ));\
+					if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
+					bool cmp  =  (((LI) && value >= (LOW) ) || (!(LI) && value > (LOW) ));\
 					if (cmp )\
 						*o++ = (oid) first;\
 				}\
 			} else{\
-				for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){\
+				for( ; first < last; first++,i++){\
+					DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+					TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
 					MOSskipit();\
-					cmp  =  ((*hi && val <= * (TPE*)hgh ) || (!*hi && val < *(TPE*)hgh )) &&\
-							((*li && val >= * (TPE*)low ) || (!*li && val > *(TPE*)low ));\
+					if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
+					bool cmp  =  (((HI) && value <= (HIGH) ) || (!(HI) && value < (HIGH) )) &&\
+							(((LI) && value >= (LOW) ) || (!(LI) && value > (LOW) ));\
 					if (cmp )\
 						*o++ = (oid) first;\
 				}\
 			}\
 		} else {\
-			if( IS_NIL(TPE, *(TPE*) low) && IS_NIL(TPE, *(TPE*) hgh)){\
-				/* nothing is matching */\
-			} else\
-			if( IS_NIL(TPE, *(TPE*) low) ){\
-				for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){\
+			if( IS_NIL(TPE, (LOW)) ){\
+				for( ; first < last; first++,i++){\
+					DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+					TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
 					MOSskipit();\
-					cmp  =  ((*hi && val <= * (TPE*)hgh ) || (!*hi && val < *(TPE*)hgh ));\
+					if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
+					bool cmp  =  (((HI) && value <= (HIGH) ) || (!(HI) && value < (HIGH) ));\
 					if ( !cmp )\
 						*o++ = (oid) first;\
 				}\
 			} else\
-			if( IS_NIL(TPE, *(TPE*) hgh) ){\
-				for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){\
+			if( IS_NIL(TPE, (HIGH)) ){\
+				for( ; first < last; first++,i++){\
+					DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+					TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
 					MOSskipit();\
-					cmp  =  ((*li && val >= * (TPE*)low ) || (!*li && val > *(TPE*)low ));\
+					if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
+					bool cmp  =  (((LI) && value >= (LOW) ) || (!(LI) && value > (LOW) ));\
 					if ( !cmp )\
 						*o++ = (oid) first;\
 				}\
 			} else{\
-				for( ; first < last; first++, val+= *(bte*)task->dst, task->dst++){\
+				for( ; first < last; first++,i++){\
+					DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+					TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
 					MOSskipit();\
-					cmp  =  ((*hi && val <= * (TPE*)hgh ) || (!*hi && val < *(TPE*)hgh )) &&\
-							((*li && val >= * (TPE*)low ) || (!*li && val > *(TPE*)low ));\
-					if ( !cmp )\
+					if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
+					bool cmp  =  (((HI) && value <= (HIGH) ) || (!(HI) && value < (HIGH) )) &&\
+							(((LI) && value >= (LOW) ) || (!(LI) && value > (LOW) ));\
+					if (!cmp)\
 						*o++ = (oid) first;\
 				}\
 			}\
 		}\
-	}
+	}\
+}
+
+#define select_delta(TPE) {\
+	if( nil && *anti) {\
+		select_delta_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, true, true, TPE);\
+	}\
+	if( !nil && *anti) {\
+		select_delta_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, false, true, TPE);\
+	}\
+	if( nil && !*anti) {\
+		select_delta_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, true, false, TPE);\
+	}\
+	if( !nil && !*anti) {\
+		select_delta_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, false, false, TPE);\
+	}\
+}
 
 str
-MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
-{
+MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti) {
 	oid *o;
-	BUN first,last;
-	int cmp;
-
-	// set the oid range covered and advance scan range
+	BUN i = 0,first,last;
+	// set the oid range covered
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
+	bool nil = !task->bsrc->tnonil;
 
-	if (task->cl && *task->cl > last){
-		MOSskip_delta(task);
+		if (task->cl && *task->cl > last){
+		MOSadvance_delta(task);
 		return MAL_SUCCEED;
 	}
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
+	case TYPE_bte: select_delta(bte); break;
 	case TYPE_sht: select_delta(sht); break;
 	case TYPE_int: select_delta(int); break;
 	case TYPE_lng: select_delta(lng); break;
@@ -300,13 +521,18 @@ MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 	case TYPE_hge: select_delta(hge); break;
 #endif
 	}
-	MOSskip_delta(task);
+	MOSadvance_delta(task);
 	task->lb = o;
 	return MAL_SUCCEED;
 }
 
-#define thetaselect_delta(TPE)\
-{ 	TPE low,hgh, v;\
+#define thetaselect_delta_general(HAS_NIL, TPE)\
+{ 	TPE low,hgh;\
+    MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
+	BitVector base = (BitVector) MOScodevectorDelta(task);\
+	TPE acc = parameters->init.val##TPE; /*previous value*/\
+	int bits = parameters->bits;\
+	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
 	low= hgh = TPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
 		hgh= *(TPE*) val;\
@@ -323,38 +549,53 @@ MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti
 		low = *(TPE*) val;\
 	} else\
 	if ( strcmp(oper,"!=") == 0){\
-		hgh= low= *(TPE*) val;\
+		low = hgh = *(TPE*) val;\
 		anti++;\
 	} else\
 	if ( strcmp(oper,"==") == 0){\
 		hgh= low= *(TPE*) val;\
 	} \
-	v= *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
-	task->dst = MOScodevector(task) + sizeof(TPE);\
-	for( ; first < last; first++, v+= *(bte*)task->dst, task->dst++){\
-		if( (IS_NIL(TPE, low) || v >= low) && (v <= hgh || IS_NIL(TPE, hgh)) ){\
-			if ( !anti) {\
-				MOSskipit();\
-				*o++ = (oid) first;\
-			}\
-		} else\
-		if( anti){\
+	if ( !anti)\
+		/*TODO: simplify this similar to mosaic_capped*/\
+		for( ; first < last; first++,i++){\
+			DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+			TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
 			MOSskipit();\
+			if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
+			if( (IS_NIL(TPE, low) || value >= low) && (value <= hgh || IS_NIL(TPE, hgh)) )\
 			*o++ = (oid) first;\
 		}\
+	else\
+		for( ; first < last; first++,i++){\
+			DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+			TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
+			MOSskipit();\
+			if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
+			if( !( (IS_NIL(TPE, low) || value >= low) && (value <= hgh || IS_NIL(TPE, hgh)) ))\
+				*o++ = (oid) first;\
+		}\
+}
+
+#define thetaselect_delta(TPE) {\
+	if( nil ){\
+		thetaselect_delta_general(true, TPE);\
 	}\
-} 
+	else /*!nil*/{\
+		thetaselect_delta_general(false, TPE);\
+	}\
+}
 
 str
 MOSthetaselect_delta( MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
-	BUN first,last;
-	
+	BUN i=0,first,last;
+
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
+	bool nil = !task->bsrc->tnonil;
 
 	if (task->cl && *task->cl > last){
 		MOSskip_delta(task);
@@ -363,6 +604,7 @@ MOSthetaselect_delta( MOStask task, void *val, str oper)
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
+	case TYPE_bte: thetaselect_delta(bte); break;
 	case TYPE_sht: thetaselect_delta(sht); break;
 	case TYPE_int: thetaselect_delta(int); break;
 	case TYPE_lng: thetaselect_delta(lng); break;
@@ -377,14 +619,18 @@ MOSthetaselect_delta( MOStask task, void *val, str oper)
 }
 
 #define projection_delta(TPE)\
-{	TPE val, *v;\
-	bte *delta;\
+{	TPE *v;\
 	v= (TPE*) task->src;\
-	val = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
-	delta = (bte*) (((char*)task->blk + MosaicBlkSize) + sizeof(TPE));\
-	for(; first < last; first++, val+= *delta,delta++){\
+    MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
+	TPE acc = parameters->init.val##TPE; /*previous value*/\
+	int bits = parameters->bits;\
+	BitVector base = (BitVector) MOScodevectorDelta(task);\
+	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
+	for(; first < last; first++,i++){\
+		DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+		TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
 		MOSskipit();\
-		*v++ = val;\
+		*v++ = value;\
 		task->cnt++;\
 	}\
 	task->src = (char*) v;\
@@ -393,13 +639,14 @@ MOSthetaselect_delta( MOStask task, void *val, str oper)
 str
 MOSprojection_delta( MOStask task)
 {
-	BUN first, last;
+	BUN i=0, first, last;
 
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 
 	switch(ATOMbasetype(task->type)){
+		case TYPE_bte: projection_delta(bte); break;
 		case TYPE_sht: projection_delta(sht); break;
 		case TYPE_int: projection_delta(int); break;
 		case TYPE_lng: projection_delta(lng); break;
@@ -412,33 +659,59 @@ MOSprojection_delta( MOStask task)
 	return MAL_SUCCEED;
 }
 
-#define join_delta(TPE)\
-{	TPE *w,base;\
-	bte *v;\
-	base = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
-	v = (bte*) (((char*) task->blk) + MosaicBlkSize + sizeof(TPE));\
-	for(oo= (oid) first; first < last; first++, base += *v,v++, oo++){\
-		w = (TPE*) task->src;\
-		for(n = task->stop, o = 0; n -- > 0; w++,o++)\
-		if ( *w == base){\
-			if( BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
-			BUNappend(task->rbat, &o, false) !=GDK_SUCCEED) \
-			throw(MAL,"mosaic.delta",MAL_MALLOC_FAIL);\
+#define join_delta_general(HAS_NIL, NIL_MATCHES, TPE)\
+{   TPE *w;\
+    MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
+	BitVector base = (BitVector) MOScodevectorDelta(task);\
+	TPE acc;\
+	int bits = parameters->bits;\
+	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
+	w = (TPE*) task->src;\
+	for(n = task->stop, o = 0; n -- > 0; w++,o++){\
+		for(acc = parameters->init.val##TPE, i=0, oo= (oid) first; oo < (oid) last; oo++,i++){\
+			DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
+			TPE value 			= ACCUMULATE(acc, delta, sign_mask, TPE);\
+			if (!NIL_MATCHES) {\
+				if (IS_NIL(TPE, value)) { continue;}\
+			}\
+			if (ARE_EQUAL(*w, value, HAS_NIL, TPE)){\
+				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
+				BUNappend(task->rbat, &o, false) != GDK_SUCCEED )\
+				throw(MAL,"mosaic.delta",MAL_MALLOC_FAIL);\
+			}\
 		}\
 	}\
 }
 
+#define join_delta(TPE) {\
+	if( nil && nil_matches){\
+		join_delta_general(true, true, TPE);\
+	}\
+	if( !nil && nil_matches){\
+		join_delta_general(false, true, TPE);\
+	}\
+	if( !nil_matches){\
+		/* We don't need to check nil because !nil_matches
+		 * excludes a direct comparison with a nill value
+		   on the other side anyway.
+		 */\
+	join_delta_general(false, false, TPE);\
+	}\
+}
+
 str
-MOSjoin_delta( MOStask task)
+MOSjoin_delta( MOStask task, bit nil_matches)
 {
-	BUN n, first, last;
+	BUN i= 0,n,first,last;
 	oid o, oo;
 
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
+	bool nil = !task->bsrc->tnonil;
 
 	switch(ATOMbasetype(task->type)){
+		case TYPE_bte: join_delta(bte); break;
 		case TYPE_sht: join_delta(sht); break;
 		case TYPE_int: join_delta(int); break;
 		case TYPE_lng: join_delta(lng); break;

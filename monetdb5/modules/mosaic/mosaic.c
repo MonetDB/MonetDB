@@ -498,7 +498,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 			break;
 		case MOSAIC_DELTA:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_delta\n");
-			MOScompress_delta(task);
+			MOScompress_delta(task, estimate);
 			MOSupdateHeader(task);
 			MOSadvance_delta(task);
 			MOSnewBlk(task);
@@ -1232,7 +1232,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		case MOSAIC_DELTA:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_delta\n");
-			MOSjoin_delta( task);
+			MOSjoin_delta( task, *nil_matches);
 			break;
 		case MOSAIC_PREFIX:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_prefix\n");

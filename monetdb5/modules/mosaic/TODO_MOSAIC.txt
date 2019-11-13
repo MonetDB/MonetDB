@@ -1,9 +1,8 @@
 ####technical depth####
 FIX HAS_NIL optimization in join algorithms
-Use bit vectors in mosaic_delta --- then resolve test mosaic_delta_timestamp --- and possibly other compression techniques as well.(2)
 Finish null semantics plus tests
 Add test for join nil_matches set for non-nill tests.
-make sure candidate lists are working properly for select, theta_select and join
+make sure candidate lists are working properly for select, theta_select and join (2)
 Be sure alignment is correct. Use asserts for this.
 Add test for float/double
 Add test for huge
@@ -14,7 +13,6 @@ Remove floating point support in prefix compression and use prefix-like-frame se
 Apply compressed operations directly on keys in dictionary compression.
 
 consider packing mosaic_block_header's more efficiently.
-delta compression: check if the hardcoded compression expression are correct. (2*)
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
 
 benchmark
@@ -24,6 +22,5 @@ Update copyright.
 create dedicated type for bitvector internal type which is currently unsignned int. E.g. introduce #define BitVectorChunkType unsigned int.
 create a common header/source file for mosaic for common tasks e.g. to house a generic IS_NIL macro, IPtpe, etc.
 move mask, bits, framebits from  MosaicHdr to MosaicBlkHeader_frame_t.
-mosaic_delta.c: improve the macro's: for instance get rid of hardcoded expression arguments in DELTAcompress. (2)
 mosaic_<compression>.c: for type macro's use macro-wised inline functions.
-Improve the administration of the various hard coded compression techniques. (2*)
+Improve the administration of the various hard coded compression techniques, e.g. MOSskipit skip (2*)

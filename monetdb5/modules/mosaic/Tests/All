@@ -69,10 +69,16 @@ mosaic_oid_with_nills_1.capped
 mosaic_date_with_nills_1.capped
 mosaic_timestamp_with_nills_1.capped
 
+mosaic_bit_1.delta
 mosaic_lng_1.delta
 mosaic_oid_1.delta
 mosaic_date_1.delta
-#mosaic_timestamp_1.delta
+mosaic_timestamp_1.delta
+mosaic_bit_with_nills_1.delta
+mosaic_lng_with_nills_1.delta
+mosaic_oid_with_nills_1.delta
+mosaic_date_with_nills_1.delta
+mosaic_timestamp_with_nills_1.delta
 
 mosaic_bit_2.linear
 mosaic_lng_2.linear
