@@ -1,6 +1,7 @@
 ####technical depth####
+FIX anti stuff in select and antiselect
 Finish null semantics plus tests
-Add test for join nil_matches set for non-nill tests.
+Add test for join nil_matches set for non-nill tests in combination with (1)
 make sure candidate lists are working properly for select, theta_select and join (2)
 Be sure alignment is correct. Use asserts for this.
 Add test for float/double
@@ -17,6 +18,8 @@ Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng 
 benchmark
 
 ####code issues####
+FIX multi column sort in join tests(1)
+rename test files like (.*)nills(.*) to $1nils$2
 Update copyright.
 create dedicated type for bitvector internal type which is currently unsignned int. E.g. introduce #define BitVectorChunkType unsigned int.
 create a common header/source file for mosaic for common tasks e.g. to house a generic IS_NIL macro, IPtpe, etc.
