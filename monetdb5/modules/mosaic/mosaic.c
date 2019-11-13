@@ -1216,7 +1216,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_runlength\n");
-			MOSjoin_runlength( task);
+			MOSjoin_runlength( task, *nil_matches);
 			break;
 		case MOSAIC_CAPPED:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_capped\n");

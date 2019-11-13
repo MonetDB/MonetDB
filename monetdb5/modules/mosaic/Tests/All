@@ -46,6 +46,11 @@ mosaic_lng_2.runlength
 mosaic_oid_2.runlength
 mosaic_date_2.runlength
 mosaic_timestamp_2.runlength
+mosaic_bit_with_nils_2.runlength
+mosaic_lng_with_nils_2.runlength
+mosaic_oid_with_nils_2.runlength
+mosaic_date_with_nils_2.runlength
+mosaic_timestamp_with_nils_2.runlength
 
 mosaic_bit_1.var
 mosaic_lng_1.var

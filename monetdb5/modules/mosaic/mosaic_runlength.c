@@ -93,14 +93,14 @@ MOSskip_runlength(MOStask task)
 		task->blk = 0; // ENDOFLIST
 }
 
-#define Estimate(TYPE)\
-{	TYPE *v = ((TYPE*) task->src) + task->start, val = *v;\
+#define Estimate(TPE)\
+{	TPE *v = ((TPE*) task->src) + task->start, val = *v;\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
-	for(v++,i = 1; i < limit; i++,v++) if ( *v != val) break;\
+	for(v++,i = 1; i < limit; i++,v++) if ( !ARE_EQUAL(*v, val, nil, TPE) ) break;\
 	assert(i > 0);/*Should always compress.*/\
 	current->is_applicable = true;\
-	current->uncompressed_size += (BUN) (i * sizeof(TYPE));\
-	current->compressed_size += wordaligned( MosaicBlkSize, TYPE) + sizeof(TYPE);\
+	current->uncompressed_size += (BUN) (i * sizeof(TPE));\
+	current->compressed_size += wordaligned( MosaicBlkSize, TPE) + sizeof(TPE);\
 	current->compression_strategy.cnt = i;\
 }
 
@@ -110,6 +110,7 @@ MOSestimate_runlength(MOStask task, MosaicEstimation* current, const MosaicEstim
 {	unsigned int i = 0;
 	(void) previous;
 	current->compression_strategy.tag = MOSAIC_RLE;
+	bool nil = !task->bsrc->tnonil;
 
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: Estimate(bte); break;
@@ -127,25 +128,24 @@ MOSestimate_runlength(MOStask task, MosaicEstimation* current, const MosaicEstim
 }
 
 // insert a series of values into the compressor block using rle.
-#define RLEcompress(TYPE)\
-{	TYPE *v = ((TYPE*) task->src)+task->start, val = *v;\
-	TYPE *dst = (TYPE*) task->dst;\
+#define RLEcompress(TPE)\
+{	TPE *v = ((TPE*) task->src)+task->start, val = *v;\
+	TPE *dst = (TPE*) task->dst;\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT ? MOSAICMAXCNT: task->stop - task->start;\
 	*dst = val;\
 	for(v++, i =1; i<limit; i++,v++)\
-	if ( *v != val)\
+	if ( !ARE_EQUAL(*v, val, nil, TPE))\
 		break;\
-	hdr->checksum.sum##TYPE += (TYPE) (i * val);\
 	MOSsetCnt(blk, i);\
-	task->dst +=  sizeof(TYPE);\
+	task->dst +=  sizeof(TPE);\
 }
 
 void
 MOScompress_runlength(MOStask task)
 {
 	BUN i ;
-	MosaicHdr hdr  = task->hdr;
 	MosaicBlk blk = task->blk;
+	bool nil = !task->bsrc->tnonil;
 
 		MOSsetTag(blk, MOSAIC_RLE);
 
@@ -164,19 +164,17 @@ MOScompress_runlength(MOStask task)
 }
 
 // the inverse operator, extend the src
-#define RLEdecompress(TYPE)\
-{	TYPE val = *(TYPE*) compressed;\
+#define RLEdecompress(TPE)\
+{	TPE val = *(TPE*) compressed;\
 	BUN lim = MOSgetCnt(blk);\
 	for(i = 0; i < lim; i++)\
-		((TYPE*)task->src)[i] = val;\
-	hdr->checksum2.sum##TYPE += (TYPE)(i * val);\
-	task->src += i * sizeof(TYPE);\
+		((TPE*)task->src)[i] = val;\
+	task->src += i * sizeof(TPE);\
 }
 
 void
 MOSdecompress_runlength(MOStask task)
 {
-	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk =  ((MosaicBlk) task->blk);
 	BUN i;
 	char *compressed;
@@ -185,6 +183,7 @@ MOSdecompress_runlength(MOStask task)
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: RLEdecompress(bte); break;
 	case TYPE_sht: RLEdecompress(sht); break;
+	case TYPE_int: RLEdecompress(int); break;
 	case TYPE_lng: RLEdecompress(lng); break;
 	case TYPE_oid: RLEdecompress(oid); break;
 	case TYPE_flt: RLEdecompress(flt); break;
@@ -192,95 +191,192 @@ MOSdecompress_runlength(MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: RLEdecompress(hge); break;
 #endif
-	case TYPE_int:
-		{	int val = *(int*) compressed ;
-			BUN lim= MOSgetCnt(blk);
-			for(i = 0; i < lim; i++)
-				((int*)task->src)[i] = val;
-			hdr->checksum2.sumint += (int) (i * val);
-			task->src += i * sizeof(int);
-		}
-		break;
 	}
 }
 
 // perform relational algebra operators over non-compressed chunks
 // They are bound by an oid range and possibly a candidate list
 
-#define  select_runlength(TPE) \
-{ 	TPE *val= (TPE*) (((char*) task->blk) + MosaicBlkSize);\
-\
-	if( !*anti){\
-		if( IS_NIL(TPE, *(TPE*) low) && IS_NIL(TPE, *(TPE*) hgh)){\
-			for( ; first < last; first++){\
-				MOSskipit();\
-				*o++ = (oid) first;\
-			}\
-		} else\
-		if( IS_NIL(TPE, *(TPE*) low) ){\
-			cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh ));\
-			if (cmp )\
-			for( ; first < last; first++){\
-				MOSskipit();\
-				*o++ = (oid) first;\
-			}\
-		} else\
-		if( IS_NIL(TPE, *(TPE*) hgh) ){\
-			cmp  =  ((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
-			if (cmp )\
-			for( ; first < last; first++){\
-				MOSskipit();\
-				*o++ = (oid) first;\
-			}\
-		} else{\
-			cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh )) &&\
-					((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
-			if (cmp )\
+/* generic range select
+ *
+ * This macro is based on the combined behavior of ALGselect2 and BATselect.
+ * It should return the same output on the same input.
+ *
+ * A complete breakdown of the various arguments follows.  Here, v, v1
+ * and v2 are values from the appropriate domain, and
+ * v != nil, v1 != nil, v2 != nil, v1 < v2.
+ *	tl	th	li	hi	anti	result list of OIDs for values
+ *	-----------------------------------------------------------------
+ *	nil	nil	true	true	false	x == nil (only way to get nil)
+ *	nil	nil	true	true	true	x != nil
+ *	nil	nil	A*		B*		false	x != nil *it must hold that A && B == false.
+ *	nil	nil	A*		B*		true	NOTHING *it must hold that A && B == false.
+ *	v	v	A*		B*		true	x != nil *it must hold that A && B == false.
+ *	v	v	A*		B*		false	NOTHING *it must hold that A && B == false.
+ *	v2	v1	ignored	ignored	false	NOTHING
+ *	v2	v1	ignored	ignored	true	x != nil
+ *	nil	v	ignored	false	false	x < v
+ *	nil	v	ignored	true	false	x <= v
+ *	nil	v	ignored	false	true	x >= v
+ *	nil	v	ignored	true	true	x > v
+ *	v	nil	false	ignored	false	x > v
+ *	v	nil	true	ignored	false	x >= v
+ *	v	nil	false	ignored	true	x <= v
+ *	v	nil	true	ignored	true	x < v
+ *	v	v	true	true	false	x == v
+ *	v	v	true	true	true	x != v
+ *	v1	v2	false	false	false	v1 < x < v2
+ *	v1	v2	true	false	false	v1 <= x < v2
+ *	v1	v2	false	true	false	v1 < x <= v2
+ *	v1	v2	true	true	false	v1 <= x <= v2
+ *	v1	v2	false	false	true	x <= v1 or x >= v2
+ *	v1	v2	true	false	true	x < v1 or x >= v2
+ *	v1	v2	false	true	true	x <= v1 or x > v2
+ */
+#define  select_runglength_general(LOW, HIGH, LI, HI, HAS_NIL, ANTI, TPE) \
+do {\
+	const TPE val= *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
+	if		( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && (LI) && (HI) && !(ANTI)) {\
+		if(HAS_NIL && IS_NIL(TPE, val)) {\
 			for( ; first < last; first++){\
 				MOSskipit();\
 				*o++ = (oid) first;\
 			}\
 		}\
-	} else {\
-		if( IS_NIL(TPE, *(TPE*) low) && IS_NIL(TPE, *(TPE*) hgh)){\
-			/* nothing is matching */\
-		} else\
-		if( IS_NIL(TPE, *(TPE*) low) ){\
-			cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh ));\
-			if ( !cmp )\
+	}\
+	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && (LI) && (HI) && (ANTI)) {\
+		if(!HAS_NIL || (HAS_NIL && !IS_NIL(TPE, val))) {\
 			for( ; first < last; first++){\
 				MOSskipit();\
 				*o++ = (oid) first;\
 			}\
-		} else\
-		if( IS_NIL(TPE, *(TPE*) hgh) ){\
-			cmp  =  ((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
-			if ( !cmp )\
-			for( ; first < last; first++, val++){\
-				MOSskipit();\
-				*o++ = (oid) first;\
-			}\
-		} else{\
-			cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh )) &&\
-					((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
-			if (!cmp)\
-			for( ; first < last; first++, val++){\
+		}\
+	}\
+	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && !((LI) && (HI)) && !(ANTI)) {\
+		if(!HAS_NIL || (HAS_NIL && !IS_NIL(TPE, val))) {\
+			for( ; first < last; first++){\
 				MOSskipit();\
 				*o++ = (oid) first;\
 			}\
 		}\
+	}\
+	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && !((LI) && (HI)) && (ANTI)) {\
+			/*Empty result set.*/\
+	}\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && (ANTI)) {\
+		if(!HAS_NIL || (HAS_NIL && !IS_NIL(TPE, val))) {\
+			for( ; first < last; first++){\
+				MOSskipit();\
+				*o++ = (oid) first;\
+			}\
+		}\
+	}\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && !(ANTI)) {\
+		/*Empty result set.*/\
+	}\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) > (HIGH) && !(ANTI)) {\
+		/*Empty result set.*/\
+	}\
+	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) > (HIGH) && (ANTI)) {\
+		if(!HAS_NIL || (HAS_NIL && !IS_NIL(TPE, val))) {\
+			for( ; first < last; first++){\
+				MOSskipit();\
+				*o++ = (oid) first;\
+			}\
+		}\
+	}\
+	else {\
+		/*normal cases.*/\
+		if( !*anti){\
+			if( IS_NIL(TPE, (LOW)) ){\
+				if (HAS_NIL && IS_NIL(TPE, val)) { continue;}\
+				bool cmp  =  (((HI) && val <= (HIGH) ) || (!(HI) && val < (HIGH) ));\
+				if (cmp ) {\
+					for( ; first < last; first++){\
+						MOSskipit();\
+						*o++ = (oid) first;\
+					}\
+				}\
+			} else\
+			if( IS_NIL(TPE, (HIGH)) ) {\
+				if (HAS_NIL && IS_NIL(TPE, val)) { continue;}\
+				bool cmp  =  (((LI) && val >= (LOW) ) || (!(LI) && val > (LOW) ));\
+				if (cmp ) {\
+					for( ; first < last; first++){\
+						MOSskipit();\
+						*o++ = (oid) first;\
+					}\
+				}\
+			} else{\
+				if (HAS_NIL && IS_NIL(TPE, val)) { continue;}\
+				bool cmp  =  (((HI) && val <= (HIGH) ) || (!(HI) && val < (HIGH) )) &&\
+						(((LI) && val >= (LOW) ) || (!(LI) && val > (LOW) ));\
+				if (cmp ) {\
+					for( ; first < last; first++){\
+						MOSskipit();\
+						*o++ = (oid) first;\
+					}\
+				}\
+			}\
+		} else {\
+			if( IS_NIL(TPE, (LOW)) ){\
+				if (HAS_NIL && IS_NIL(TPE, val)) { continue;}\
+				bool cmp  =  (((HI) && val <= (HIGH) ) || (!(HI) && val < (HIGH) ));\
+				if ( !cmp ) {\
+					for( ; first < last; first++){\
+						MOSskipit();\
+						*o++ = (oid) first;\
+					}\
+				}\
+			} else\
+			if( IS_NIL(TPE, (HIGH)) ){\
+				if (HAS_NIL && IS_NIL(TPE, val)) { continue;}\
+				bool cmp  =  (((LI) && val >= (LOW) ) || (!(LI) && val > (LOW) ));\
+				if ( !cmp ) {\
+					for( ; first < last; first++){\
+						MOSskipit();\
+						*o++ = (oid) first;\
+					}\
+				}\
+			} else{\
+				if (HAS_NIL && IS_NIL(TPE, val)) { continue;}\
+				bool cmp  =  (((HI) && val <= (HIGH) ) || (!(HI) && val < (HIGH) )) &&\
+						(((LI) && val >= (LOW) ) || (!(LI) && val > (LOW) ));\
+				if (!cmp) {\
+					for( ; first < last; first++){\
+						MOSskipit();\
+						*o++ = (oid) first;\
+					}\
+				}\
+			}\
+		}\
+	}\
+} while(0)
+
+#define select_runglength(TPE) {\
+	if( nil && *anti) {\
+		select_runglength_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, true, true, TPE);\
+	}\
+	if( !nil && *anti) {\
+		select_runglength_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, false, true, TPE);\
+	}\
+	if( nil && !*anti) {\
+		select_runglength_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, true, false, TPE);\
+	}\
+	if( !nil && !*anti) {\
+		select_runglength_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, false, false, TPE);\
 	}\
 }
 
 str
 MOSselect_runlength( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti){
 	oid *o;
-	int cmp;
 	BUN first,last;
 
 	// set the oid range covered
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
+	bool nil = !task->bsrc->tnonil;
 
 	if (task->cl && *task->cl > last){
 		MOSadvance_runlength(task);
@@ -289,15 +385,15 @@ MOSselect_runlength( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *
 	o = task->lb;
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: select_runlength(bte); break;
-	case TYPE_sht: select_runlength(sht); break;
-	case TYPE_int: select_runlength(int); break;
-	case TYPE_lng: select_runlength(lng); break;
-	case TYPE_oid: select_runlength(oid); break;
-	case TYPE_flt: select_runlength(flt); break;
-	case TYPE_dbl: select_runlength(dbl); break;
+	case TYPE_bte: select_runglength(bte); break;
+	case TYPE_sht: select_runglength(sht); break;
+	case TYPE_int: select_runglength(int); break;
+	case TYPE_lng: select_runglength(lng); break;
+	case TYPE_oid: select_runglength(oid); break;
+	case TYPE_flt: select_runglength(flt); break;
+	case TYPE_dbl: select_runglength(dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: select_runlength(hge); break;
+	case TYPE_hge: select_runglength(hge); break;
 #endif
 	}
 	MOSadvance_runlength(task);
@@ -305,8 +401,9 @@ MOSselect_runlength( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *
 	return MAL_SUCCEED;
 }
 
-#define thetaselect_runlength(TPE)\
-{ 	TPE low,hgh,*v;\
+#define thetaselect_runlength_general(HAS_NIL, TPE)\
+do { 	TPE low,hgh;\
+	const TPE value = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
 	low= hgh = TPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
 		hgh= *(TPE*) val;\
@@ -329,20 +426,33 @@ MOSselect_runlength( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *
 	if ( strcmp(oper,"==") == 0){\
 		hgh= low= *(TPE*) val;\
 	} \
-	v = (TPE*) (((char*)task->blk) + MosaicBlkSize);\
-	if( (IS_NIL(TPE, low) || * v >= low) && (* v <= hgh || IS_NIL(TPE, hgh)) ){\
-			if ( !anti) {\
-				for( ; first < last; first++){\
-					MOSskipit();\
-					*o++ = (oid) first;\
-				}\
+	if ( !anti) {\
+		if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
+		if( (IS_NIL(TPE, low) || value >= low) && (value <= hgh || IS_NIL(TPE, hgh)) ) {\
+			for( ; first < last; first++){\
+				MOSskipit();\
+				*o++ = (oid) first;\
 			}\
-	} else\
-	if( anti)\
-		for( ; first < last; first++){\
-			MOSskipit();\
-			*o++ = (oid) first;\
 		}\
+	}\
+	else {\
+		if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
+		if( !( (IS_NIL(TPE, low) || value >= low) && (value <= hgh || IS_NIL(TPE, hgh)) )) {\
+			for( ; first < last; first++){\
+				MOSskipit();\
+				*o++ = (oid) first;\
+			}\
+		}\
+	}\
+} while (0)
+
+#define thetaselect_runlength(TPE) {\
+	if( nil ){\
+		thetaselect_runlength_general(true, TPE);\
+	}\
+	else /*!nil*/{\
+		thetaselect_runlength_general(false, TPE);\
+	}\
 }
 
 str
@@ -355,6 +465,7 @@ MOSthetaselect_runlength( MOStask task, void *val, str oper)
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
+	bool nil = !task->bsrc->tnonil;
 
 	if (task->cl && *task->cl > last){
 		MOSskip_runlength(task);
@@ -416,21 +527,40 @@ MOSprojection_runlength( MOStask task)
 	return MAL_SUCCEED;
 }
 
-#define join_runlength(TPE)\
-{	TPE *v, *w;\
-	v = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
+#define join_runlength_general(HAS_NIL, NIL_MATCHES, TPE)\
+do {	TPE v, *w;\
+	v = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
 	w = (TPE*) task->src;\
-	for(n = task->stop, o = 0; n -- > 0; w++,o++)\
-	if ( *w == *v)\
-		for(oo= (oid) first; oo < (oid) last; oo++){\
-			if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
-			BUNappend(task->rbat, &o, false) != GDK_SUCCEED )\
-			throw(MAL,"mosaic.runlength",MAL_MALLOC_FAIL);\
-		}\
+	if (HAS_NIL && !NIL_MATCHES) {\
+		if (IS_NIL(TPE, v)) { continue;}\
+	}\
+	for(n = task->stop, o = 0; n -- > 0; w++,o++) {\
+		if (ARE_EQUAL(*w, v, HAS_NIL, TPE))\
+			for(oo= (oid) first; oo < (oid) last; oo++){\
+				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
+				BUNappend(task->rbat, &o, false) != GDK_SUCCEED )\
+				throw(MAL,"mosaic.runlength",MAL_MALLOC_FAIL);\
+			}\
+	}\
+} while (0);
+
+#define join_runlength(TPE) {\
+	if( nil && nil_matches){\
+		join_runlength_general(true, true, TPE);\
+	}\
+	if( !nil && nil_matches){\
+		join_runlength_general(false, true, TPE);\
+	}\
+	if( nil && !nil_matches){\
+		join_runlength_general(true, false, TPE);\
+	}\
+	if( !nil && !nil_matches){\
+		join_runlength_general(false, false, TPE);\
+	}\
 }
 
 str
-MOSjoin_runlength( MOStask task)
+MOSjoin_runlength( MOStask task, bit nil_matches)
 {
 	BUN n,first,last;
 	oid o, oo;
@@ -438,6 +568,7 @@ MOSjoin_runlength( MOStask task)
 	// set the oid range covered and advance scan range
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
+	bool nil = !task->bsrc->tnonil;
 
 	switch(ATOMbasetype(task->type)){
 		case TYPE_bte: join_runlength(bte); break;
