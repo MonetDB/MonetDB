@@ -62,7 +62,7 @@ leavedbS(sabdb *stats)
 	char *shared;
 	readProps(props, stats->path);
 	shared = getConfVal(props, "shared");
-	if (stats->locked != 1 && (shared == NULL || strcmp(shared, "no") != 0))
+	if (!stats->locked && (shared == NULL || strcmp(shared, "no") != 0))
 		leavedb(stats->dbname);
 	freeConfFile(props);
 	free(props);
@@ -76,7 +76,7 @@ setURI(sabdb *stats)
 	char *shared;
 	readProps(props, stats->path);
 	shared = getConfVal(props, "shared");
-	if (stats->locked != 1 && (shared == NULL || strcmp(shared, "no") != 0)) {
+	if (!stats->locked && (shared == NULL || strcmp(shared, "no") != 0)) {
 		snprintf(_internal_uri_buf, sizeof(_internal_uri_buf),
 				"mapi:monetdb://%s:%u/%s%s%s",
 				_mero_hostname,
@@ -98,7 +98,7 @@ anncdbS(sabdb *stats)
 	char *shared;
 	readProps(props, stats->path);
 	shared = getConfVal(props, "shared");
-	if (stats->locked != 1 && (shared == NULL || strcmp(shared, "no") != 0)) {
+	if (!stats->locked && (shared == NULL || strcmp(shared, "no") != 0)) {
 		snprintf(buf, sizeof(buf),
 				"ANNC %s%s%s mapi:monetdb://%s:%u/ %d",
 				stats->dbname,

@@ -276,7 +276,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	if (kv->val == NULL)
 		kv = findConfKey(_mero_db_props, "type");
 
-	if ((*stats)->locked == 1) {
+	if ((*stats)->locked) {
 		if (force == 0) {
 			Mfprintf(stdout, "%s '%s' is under maintenance\n",
 					 kv->val, database);
@@ -808,7 +808,7 @@ forkMserver(char *database, sabdb** stats, int force)
 			}
 		}
 
-		if ((*stats)->locked == 1) {
+		if ((*stats)->locked) {
 			Mfprintf(stdout, "database '%s' has been put into maintenance "
 					 "mode during startup\n", database);
 		}
