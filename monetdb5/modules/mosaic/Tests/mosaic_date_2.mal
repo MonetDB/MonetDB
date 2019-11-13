@@ -730,25 +730,43 @@ io.print(sa, sc);
 
 b:= bat.new(:date);
 bat.append(b,"2014-10-01":date);
-bat.append(b,"2014-10-02":date);
-bat.append(b,"2014-09-30":date);
-bat.append(b,"2014-10-04":date);
-bat.append(b,"2014-09-28":date);
-bat.append(b,"2014-10-11":date);
+bat.append(b,"2014-10-01":date);
+bat.append(b,"2014-09-29":date);
+bat.append(b,"2014-10-03":date);
+bat.append(b,nil:date);
+bat.append(b,"2014-09-27":date);
+bat.append(b,"2014-10-10":date);
+bat.append(b,"2014-09-21":date);
 bat.append(b,"2014-09-22":date);
+bat.append(b,nil:date);
+bat.append(b,nil:date);
+bat.append(b,nil:date);
 bat.append(b,"2014-09-23":date);
-bat.append(b,"2014-09-24":date);
 bat.append(b,"2014-10-01":date);
 
-(l,r)   := algebra.join(a,b,nil:bat,nil:bat, false, 0:lng);
-(r, p) := algebra.sort(r, false:bit, false:bit, false:bit);
-l      := algebra.projection(p, l);
+(l,r)       := algebra.join(a,b,nil:bat,nil:bat, false, 0:lng);
+(r, o, g)   := algebra.sort(r, false:bit, false:bit, false:bit);
+(l, o, g)   := algebra.sort(l, o, g, false:bit, false:bit, false:bit);
 
 (lc,rc) := mosaic.join (c,b,nil:bat,nil:bat, false, 0:lng);
-(rc, p) := algebra.sort(rc, false:bit, false:bit, false:bit);
-lc      := algebra.projection(p, lc);
-io.print(l,lc);
-io.print(r,rc);
+(rc, o, g)   := algebra.sort(rc, false:bit, false:bit, false:bit);
+(lc, o, g)   := algebra.sort(lc, o, g, false:bit, false:bit, false:bit);
+eq  := batcalc.==(l, lc);
+io.print(l, lc, eq);
+eq  := batcalc.==(r, rc);
+io.print(r, rc, eq);
+
+(l,r)       := algebra.join(a,b,nil:bat,nil:bat, true, 0:lng);
+(r, o, g)   := algebra.sort(r, false:bit, false:bit, false:bit);
+(l, o, g)   := algebra.sort(l, o, g, false:bit, false:bit, false:bit);
+
+(lc,rc) := mosaic.join (c,b,nil:bat,nil:bat, true, 0:lng);
+(rc, o, g)   := algebra.sort(rc, false:bit, false:bit, false:bit);
+(lc, o, g)   := algebra.sort(lc, o, g, false:bit, false:bit, false:bit);
+eq  := batcalc.==(l, lc);
+io.print(l, lc, eq);
+eq  := batcalc.==(r, rc);
+io.print(r, rc, eq);
 
 tsa:= mosaic.thetaselect(a,"2014-10-01":date, ">");
 tsap    := algebra.projection(tsa, a);
