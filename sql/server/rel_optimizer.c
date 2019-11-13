@@ -3980,7 +3980,7 @@ rel_merge_rse(int *changes, mvc *sql, sql_rel *rel)
 	/* only execute once per select */
 	(void)*changes;
 
-	if (is_select(rel->op) && rel->exps) { 
+	if ((is_select(rel->op) || is_join(rel->op)) && rel->exps) { 
 		node *n, *o;
 		list *nexps = new_exp_list(sql->sa);
 
@@ -4541,7 +4541,8 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 		for (n = exps->h; n; n = n->next) { 
 			sql_exp *e = n->data;
 
-			if (exp_is_join_exp(e) == 0) {
+			//if (exp_is_join_exp(e) == 0) {
+			if (exp_is_join(e, NULL) == 0) {
 				append(r->exps, e);
 				(*changes)++;
 			} else {
@@ -4647,8 +4648,7 @@ rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel)
 
 	if ((is_join(rel->op) || is_semi(rel->op) || is_select(rel->op) || is_project(rel->op) || is_topn(rel->op) || is_sample(rel->op)) && rel->l) {
 		sql_rel *l = rel->l;
-		if (is_select(l->op) && !(rel_is_ref(l)) &&
-		   (!l->exps || list_length(l->exps) == 0)) {
+		if (is_select(l->op) && !(rel_is_ref(l)) && list_empty(l->exps)) {
 			rel->l = l->l;
 			l->l = NULL;
 			rel_destroy(l);
@@ -4657,16 +4657,15 @@ rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel)
 	}
 	if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) && rel->r) {
 		sql_rel *r = rel->r;
-		if (is_select(r->op) && !(rel_is_ref(r)) &&
-	   	   (!r->exps || list_length(r->exps) == 0)) {
+		if (is_select(r->op) && !(rel_is_ref(r)) && list_empty(r->exps)) {
 			rel->r = r->l;
 			r->l = NULL;
 			rel_destroy(r);
 			(*changes)++;
 		}
 	} 
-	if (is_join(rel->op) && rel->exps && list_length(rel->exps) == 0) 
-		rel->exps = NULL;
+	if (is_join(rel->op) && list_empty(rel->exps)) 
+		rel->exps = NULL; /* crossproduct */
 	return rel;
 }
 
@@ -7295,37 +7294,6 @@ rel_use_index(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-/* TODO CSE */
-#if 0
-static list *
-exp_merge(list *exps)
-{
-	node *n, *m;
-	for (n=exps->h; n && n->next; n = n->next) {
-		sql_exp *e = n->data;
-		/*sql_exp *le = e->l;*/
-		sql_exp *re = e->r;
-
-		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e))
-			continue;
-
-		/* only look for gt, gte, lte, lt */
-		if (re->card == CARD_ATOM && e->flag < cmp_equal) {
-			for (m=n->next; m; m = m->next) {
-				sql_exp *f = m->data;
-				/*sql_exp *lf = f->l;*/
-				sql_exp *rf = f->r;
-
-				if (rf->card == CARD_ATOM && f->flag < cmp_equal) {
-					printf("possible candidate\n");
-				}
-			}
-		}
-	}
-	return exps;
-}
-#endif
-
 static int
 score_se( mvc *sql, sql_rel *rel, sql_exp *e)
 {
@@ -7945,7 +7913,7 @@ static sql_rel *
 rel_find_range(int *changes, mvc *sql, sql_rel *rel) 
 {
 	(void)changes;
-	if ((is_join(rel->op) || is_select(rel->op)) && rel->exps && list_length(rel->exps)>1) 
+	if ((is_join(rel->op) || is_select(rel->op)) && rel->exps && !list_empty(rel->exps)) 
 		rel->exps = exp_merge_range(sql->sa, rel->exps);
 	return rel;
 }
