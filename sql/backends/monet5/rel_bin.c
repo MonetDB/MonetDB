@@ -2231,7 +2231,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
  	 * 	first cheap join(s) (equality or idx) 
  	 * 	second selects/filters 
 	 */
-	
+
 #if 0
 	if (rel->exps && rel->op == op_anti && need_no_nil(rel)) {
 		sql_subtype *lng = sql_bind_localtype("lng");
