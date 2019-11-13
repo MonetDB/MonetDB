@@ -98,10 +98,10 @@ project (
 | | | | | | | & REF 2  
 | | | | | | ) [ "b3a"."open_auction_id" NOT NULL = "o"."open_auction_id" NOT NULL ]
 | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ sys.min no nil ("b3a"."id" NOT NULL HASHCOL ) NOT NULL as "L2"."L2", "o"."open_auction_id" NOT NULL ]
-| | | | ) [ "L2"."L2" NOT NULL, "o"."open_auction_id" NOT NULL as "L26"."L26" ]
-| | | ) [ "b3"."id" NOT NULL HASHCOL  = "L2"."L2" NOT NULL, "o"."open_auction_id" NOT NULL =* "L26"."L26" NOT NULL ]
-| | ) [ "b3"."increase" NOT NULL, "o"."open_auction_id" NOT NULL as "L20"."L20" ]
-| ) [ "o"."open_auction_id" NOT NULL = "L20"."L20" NOT NULL ]
+| | | | ) [ "L2"."L2" NOT NULL as "L3"."L3", "o"."open_auction_id" NOT NULL as "L30"."L30" ]
+| | | ) [ "b3"."id" NOT NULL HASHCOL  = "L3"."L3" NOT NULL, "o"."open_auction_id" NOT NULL =* "L30"."L30" NOT NULL ]
+| | ) [ "b3"."increase" NOT NULL, "o"."open_auction_id" NOT NULL as "L22"."L22" ]
+| ) [ "o"."open_auction_id" NOT NULL = "L22"."L22" NOT NULL ]
 ) [ "o"."id" NOT NULL HASHCOL , "o"."open_auction_id" NOT NULL, "o"."initial" NOT NULL, "o"."reserve" NOT NULL, "o"."aktuell" NOT NULL, "o"."privacy" NOT NULL, "o"."itemref" NOT NULL, "o"."seller" NOT NULL, "o"."quantity" NOT NULL, "o"."type" NOT NULL, "o"."start" NOT NULL, "o"."ende" NOT NULL, "o"."%TID%" NOT NULL, "b"."id" NOT NULL HASHCOL , "b"."open_auction_id" NOT NULL, "b"."date" NOT NULL, "b"."time" NOT NULL, "b"."personref" NOT NULL, "b"."increase" NOT NULL, "b"."%TID%" NOT NULL, "b3"."increase" NOT NULL ]
 REF 4 (2)
 group by (
@@ -128,13 +128,13 @@ project (
 | | | | | | | | | table(sys.bidder) [ "bidder"."id" NOT NULL HASHCOL  as "b2a"."id", "bidder"."open_auction_id" NOT NULL as "b2a"."open_auction_id" ] COUNT ,
 | | | | | | | | | & REF 4  
 | | | | | | | | ) [ "b2a"."open_auction_id" NOT NULL = "o"."open_auction_id" NOT NULL ]
-| | | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ sys.max no nil ("b2a"."id" NOT NULL HASHCOL ) NOT NULL as "L4"."L4", "o"."open_auction_id" NOT NULL ]
-| | | | | | ) [ "L4"."L4" NOT NULL, "o"."open_auction_id" NOT NULL as "L51"."L51" ]
-| | | | | ) [ "b2"."id" NOT NULL HASHCOL  = "L4"."L4" NOT NULL, "o"."open_auction_id" NOT NULL =* "L51"."L51" NOT NULL ]
-| | | | ) [ "o"."open_auction_id" NOT NULL, "b2"."increase" NOT NULL as "L5"."L5" ]
-| | | ) [ "o"."open_auction_id" NOT NULL ] [ sys.zero_or_one("L5"."L5" NOT NULL) NOT NULL as "L6"."L6", "o"."open_auction_id" NOT NULL ]
-| | ) [ "L6"."L6" NOT NULL, "o"."open_auction_id" NOT NULL as "L37"."L37" ]
-| ) [ sys.sql_mul("b3"."increase" NOT NULL, double "2") <= "L6"."L6" NOT NULL, "o"."open_auction_id" NOT NULL = "L37"."L37" NOT NULL ]
+| | | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ sys.max no nil ("b2a"."id" NOT NULL HASHCOL ) NOT NULL as "L5"."L5", "o"."open_auction_id" NOT NULL ]
+| | | | | | ) [ "L5"."L5" NOT NULL as "L6"."L6", "o"."open_auction_id" NOT NULL as "L53"."L53" ]
+| | | | | ) [ "b2"."id" NOT NULL HASHCOL  = "L6"."L6" NOT NULL, "o"."open_auction_id" NOT NULL =* "L53"."L53" NOT NULL ]
+| | | | ) [ "o"."open_auction_id" NOT NULL, "b2"."increase" NOT NULL as "L7"."L7" ]
+| | | ) [ "o"."open_auction_id" NOT NULL ] [ sys.zero_or_one("L7"."L7" NOT NULL) NOT NULL as "L10"."L10", "o"."open_auction_id" NOT NULL ]
+| | ) [ "L10"."L10" NOT NULL, "o"."open_auction_id" NOT NULL as "L41"."L41" ]
+| ) [ sys.sql_mul("b3"."increase" NOT NULL, double "2") <= "L10"."L10" NOT NULL, "o"."open_auction_id" NOT NULL = "L41"."L41" NOT NULL ]
 ) [ "b"."id" NOT NULL HASHCOL , "b"."open_auction_id" NOT NULL, "b"."date" NOT NULL, "b"."time" NOT NULL, "b"."personref" NOT NULL, "b"."increase" NOT NULL ]
 #Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min(b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX(b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id order by date, time;
 % sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b # table_name
