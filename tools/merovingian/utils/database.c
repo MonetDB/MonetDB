@@ -315,7 +315,7 @@ char* db_lock(char *dbname) {
 		return(strdup(buf));
 	}
 
-	if (stats->locked == 1) {
+	if (stats->locked) {
 		msab_freeStatus(&stats);
 		snprintf(buf, sizeof(buf), "database '%s' already is "
 				"under maintenance", dbname);
@@ -354,7 +354,7 @@ char *db_release(char *dbname) {
 		return(strdup(buf));
 	}
 
-	if (stats->locked != 1) {
+	if (!stats->locked) {
 		msab_freeStatus(&stats);
 		snprintf(buf, sizeof(buf), "database '%s' is not "
 				"under maintenance", dbname);

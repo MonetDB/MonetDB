@@ -964,6 +964,9 @@ exps_match_col_exps( sql_exp *e1, sql_exp *e2)
 	if (!is_complex_exp(e1->flag) && e1_r && e1_r->card == CARD_ATOM &&
 	    (e2->flag == cmp_in || e2->flag == cmp_notin))
  		return exp_match_exp(e1->l, e2->l); 
+	if ((e1->flag == cmp_in || e1->flag == cmp_notin) &&
+	    !is_complex_exp(e2->flag) && e2_r && e2_r->card == CARD_ATOM)
+ 		return exp_match_exp(e1->l, e2->l); 
 
 	if ((e1->flag == cmp_in || e1->flag == cmp_notin) &&
 	    (e2->flag == cmp_in || e2->flag == cmp_notin))
