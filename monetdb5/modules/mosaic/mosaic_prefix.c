@@ -720,7 +720,7 @@ MOSprojection_prefix( MOStask task)
 		for(i=0, oo= (oid) first; oo < (oid) last; oo++,i++){\
 			PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
 			TPE* value =  (TPE*) &pvalue;\
-			if (!NIL_MATCHES) {\
+			if (HAS_NIL && !NIL_MATCHES) {\
 				if (IS_NIL(TPE, *value)) { continue;}\
 			}\
 			if (ARE_EQUAL(*w, *value, HAS_NIL, TPE)){\
@@ -739,12 +739,11 @@ MOSprojection_prefix( MOStask task)
 	if( !nil && nil_matches){\
 		join_prefix_general(false, true, TPE);\
 	}\
-	if( !nil_matches){\
-		/* We don't need to check nil because !nil_matches
-		 * excludes a direct comparison with a nill value
-		   on the other side anyway.
-		 */\
-	join_prefix_general(false, false, TPE);\
+	if( nil && !nil_matches){\
+		join_prefix_general(true, false, TPE);\
+	}\
+	if( !nil && !nil_matches){\
+		join_prefix_general(false, false, TPE);\
 	}\
 }
 

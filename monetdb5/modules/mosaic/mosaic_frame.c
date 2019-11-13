@@ -733,7 +733,7 @@ MOSprojection_frame( MOStask task)
 	for( o=0, n= task->stop; n-- > 0; o++,w++ ){\
 		for(oo = task->start,i=0; i < limit; i++,oo++){\
 			TPE v = ADD_DELTA(TPE, min, getBitVector(base, i, parameters->bits));\
-			if (!NIL_MATCHES) {\
+			if (HAS_NIL && !NIL_MATCHES) {\
 				if ((IS_NIL(TPE, v))) {continue;};\
 			}\
 			if (ARE_EQUAL(*w, v, HAS_NIL, TPE)){\
@@ -749,23 +749,16 @@ MOSprojection_frame( MOStask task)
 {\
     MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
 	TPE min =  parameters->min.min##TPE;\
-	TPE max =	parameters->max.max##TPE;\
-	bool nil = false;\
-	if (nil_matches && !task->bsrc->tnonil && (min == TPE##_nil || max == TPE##_nil)) {\
-		/*TODO: this is a strong assumption that nil values are always the highest or the lowest value in a GDK type domain.*/\
-		nil = (min == TPE##_nil) || (max == TPE##_nil);\
-	}\
 	if( nil && nil_matches){\
 		join_frame_general(true, true, TPE);\
 	}\
 	if( !nil && nil_matches){\
 		join_frame_general(false, true, TPE);\
 	}\
-	if( !nil_matches){\
-		/* We don't need to check nil because !nil_matches
-		 * excludes a direct comparison with a nill value
-		   on the other side anyway.
-		 */\
+	if( nil && !nil_matches){\
+		join_frame_general(true, false, TPE);\
+	}\
+	if( !nil && !nil_matches){\
 		join_frame_general(false, false, TPE);\
 	}\
 }
@@ -775,6 +768,7 @@ MOSjoin_frame( MOStask task, bit nil_matches)
 {
 	BUN i,n,limit;
 	oid o, oo;
+	bool nil = !task->bsrc->tnonil;
 
 	// set the oid range covered and advance scan range
 	switch(ATOMbasetype(task->type)){

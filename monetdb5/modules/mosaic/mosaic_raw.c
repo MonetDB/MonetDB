@@ -543,7 +543,7 @@ MOSprojection_raw( MOStask task)
 {	TPE *v, *w;\
 	v = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 	for(oo= (oid) first; first < last; first++, v++, oo++){\
-		if (!NIL_MATCHES) {\
+		if (HAS_NIL && !NIL_MATCHES) {\
 			if ((IS_NIL(TPE, *v))) {continue;};\
 		}\
 		w = (TPE*) task->src;\
@@ -564,12 +564,11 @@ MOSprojection_raw( MOStask task)
 	if( !nil && nil_matches){\
 		join_raw_general(false, true, TPE);\
 	}\
-	if( !nil_matches){\
-		/* We don't need to check nil because !nil_matches
-		 * excludes a direct comparison with a nill value
-		   on the other side anyway.
-		 */\
-	join_raw_general(false, false, TPE);\
+	if( nil && !nil_matches){\
+		join_raw_general(true, false, TPE);\
+	}\
+	if( !nil && !nil_matches){\
+		join_raw_general(false, false, TPE);\
 	}\
 }
 

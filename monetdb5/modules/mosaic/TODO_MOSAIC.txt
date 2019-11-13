@@ -1,5 +1,4 @@
 ####technical depth####
-FIX HAS_NIL optimization in join algorithms
 Finish null semantics plus tests
 Add test for join nil_matches set for non-nill tests.
 make sure candidate lists are working properly for select, theta_select and join (2)

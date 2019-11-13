@@ -671,7 +671,7 @@ MOSprojection_delta( MOStask task)
 		for(acc = parameters->init.val##TPE, i=0, oo= (oid) first; oo < (oid) last; oo++,i++){\
 			DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
 			TPE value 			= ACCUMULATE(acc, delta, sign_mask, TPE);\
-			if (!NIL_MATCHES) {\
+			if (HAS_NIL && !NIL_MATCHES) {\
 				if (IS_NIL(TPE, value)) { continue;}\
 			}\
 			if (ARE_EQUAL(*w, value, HAS_NIL, TPE)){\
@@ -690,12 +690,11 @@ MOSprojection_delta( MOStask task)
 	if( !nil && nil_matches){\
 		join_delta_general(false, true, TPE);\
 	}\
-	if( !nil_matches){\
-		/* We don't need to check nil because !nil_matches
-		 * excludes a direct comparison with a nill value
-		   on the other side anyway.
-		 */\
-	join_delta_general(false, false, TPE);\
+	if( nil && !nil_matches){\
+		join_delta_general(true, false, TPE);\
+	}\
+	if( !nil && !nil_matches){\
+		join_delta_general(false, false, TPE);\
 	}\
 }
 

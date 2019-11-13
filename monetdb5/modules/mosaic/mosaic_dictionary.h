@@ -6,7 +6,7 @@
 #include "mal_exception.h"
 
  /*TODO: assuming (for now) that bats have nils during compression*/
-static const bool has_nil = true;
+static const bool nil = true;
 
 static unsigned char
 calculateBits(BUN count) {
@@ -75,11 +75,11 @@ extend_delta_##TPE(BUN* nr_compressed, BUN* delta_count, BUN limit, DICTIONARY_T
 	*delta_count	= 0;\
 	for((*nr_compressed) = 0; (*nr_compressed)< limit; (*nr_compressed)++, val++) {\
 		BUN pos = find_value_##TPE(dict, dict_count, *val);\
-		if (pos == dict_count || !ARE_EQUAL(delta[pos], *val, has_nil, TPE)) {\
+		if (pos == dict_count || !ARE_EQUAL(delta[pos], *val, nil, TPE)) {\
 			/*This value is not in the base dictionary. See if we can add it to the delta dictionary.*/;\
 			if (CONDITIONAL_INSERT(info, *val, TPE)) {\
 				BUN key = find_value_##TPE(delta, (*delta_count), *val);\
-				if (key < *delta_count && ARE_EQUAL(delta[key], *val, has_nil, TPE)) {\
+				if (key < *delta_count && ARE_EQUAL(delta[key], *val, nil, TPE)) {\
 					/*This delta value is already in the dictionary hence we can skip it.*/\
 					continue;\
 				}\
@@ -116,7 +116,7 @@ void merge_delta_Into_dictionary_##TPE(DICTIONARY_TYPE* info) {\
 \
 	for (BUN i = 0; i < delta_count; i++) {\
 		BUN key = find_value_##TPE(dict, *dict_count, delta[i]);\
-		if (key < *dict_count && ARE_EQUAL(dict[key], delta[i], has_nil, TPE)) {\
+		if (key < *dict_count && ARE_EQUAL(dict[key], delta[i], nil, TPE)) {\
 			/*This delta value is already in the dictionary hence we can skip it.*/\
 			continue;\
 		}\
@@ -363,7 +363,7 @@ void thetaselect_dictionary_##TPE(\
 	for(hr=0, n= rcnt; n-- > 0; hr++,tr++ ){\
 		for(hl = (oid) hseqbase, i = 0; i < lcnt; i++,hl++){\
 			unsigned int j= getBitVector(base,i,bits);\
-			if (!NIL_MATCHES) {\
+			if (HAS_NIL && !NIL_MATCHES) {\
 				if (IS_NIL(TPE, dict[j])) { continue;}\
 			}\
 			if (ARE_EQUAL(*tr, dict[j], HAS_NIL, TPE)){\
@@ -380,19 +380,18 @@ static \
 str join_dictionary_##TPE(\
 BAT* lres, BAT* rres,\
 BUN hseqbase, BUN lcnt, TPE* dict, BitVector base, bte bits, TPE* tr, BUN rcnt,\
-bool has_nil, bool nil_matches)\
+bool nil, bool nil_matches)\
 {\
-if( has_nil && nil_matches){\
+if( nil && nil_matches){\
 	join_dictionary_general(true, true, TPE);\
 }\
-if( !has_nil && nil_matches){\
+if( !nil && nil_matches){\
 	join_dictionary_general(false, true, TPE);\
 }\
-if( !nil_matches){\
-	/* We don't need to check has_nil because !nil_matches
-		* excludes a direct comparison with a nill value
-		on the other side anyway.
-		*/\
+if( nil && !nil_matches){\
+	join_dictionary_general(true, false, TPE);\
+}\
+if( !nil && !nil_matches){\
 	join_dictionary_general(false, false, TPE);\
 }\
 return MAL_SUCCEED;\
@@ -483,13 +482,13 @@ return MAL_SUCCEED;\
 	BAT* lres = task->lbat;\
 	BAT* rres = task->rbat;\
 	TPE* tr = (TPE*) task->src;/*right tail value, i.e. the non-mosaic side. */\
-	bool has_nil = !task->bsrc->tnonil;\
+	bool nil = !task->bsrc->tnonil;\
 	BUN rcnt = task->stop;\
 	str result = join_dictionary_##TPE(\
 		lres, rres,\
 	 	hseqbase, lcnt, dict, base, bits, /*left mosaic side*/\
 		tr, rcnt, /*right (treated as) non-mosaic side*/\
-		has_nil, nil_matches);\
+		nil, nil_matches);\
 	if (result != MAL_SUCCEED) return result;\
 }
 
