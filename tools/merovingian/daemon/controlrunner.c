@@ -327,7 +327,7 @@ static void ctl_handle_client(
 
 					msab_freeStatus(&stats);
 				}
-				if ((e = forkMserver(q, &stats, 1)) != NO_ERR) {
+				if ((e = forkMserver(q, &stats, true)) != NO_ERR) {
 					Mfprintf(_mero_ctlerr, "%s: failed to fork mserver: "
 							"%s\n", origin, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2),

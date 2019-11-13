@@ -181,7 +181,7 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
 #define MAX_NR_ARGS 511
 
 err
-forkMserver(char *database, sabdb** stats, int force)
+forkMserver(char *database, sabdb** stats, bool force)
 {
 	pid_t pid;
 	char *er;
@@ -205,7 +205,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	char listenaddr[512];
 	char muri[512]; /* possibly undersized */
 	char usock[512];
-	char mydoproxy;
+	bool mydoproxy;
 	char nthreads[32];
 	char nclients[32];
 	char pipeline[512];
@@ -277,7 +277,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		kv = findConfKey(_mero_db_props, "type");
 
 	if ((*stats)->locked) {
-		if (force == 0) {
+		if (!force) {
 			Mfprintf(stdout, "%s '%s' is under maintenance\n",
 					 kv->val, database);
 			freeConfFile(ckv);
@@ -525,7 +525,7 @@ forkMserver(char *database, sabdb** stats, int force)
 
 	kv = findConfKey(ckv, "listenaddr");
 	if (kv->val != NULL) {
-		if (mydoproxy == 1) {
+		if (mydoproxy) {
 			// listenaddr is only available on forwarding method
 			freeConfFile(ckv);
 			free(ckv);
@@ -557,7 +557,7 @@ forkMserver(char *database, sabdb** stats, int force)
 				 "--dbextra=%s", dbextra);
 		argv[c++] = dbextra_path;
 	}
-	if (mydoproxy == 1) {
+	if (mydoproxy) {
 		struct sockaddr_un s; /* only for sizeof(s.sun_path) :( */
 		argv[c++] = "--set"; argv[c++] = "mapi_open=false";
 		/* we "proxy", so we can just solely use UNIX domain sockets
