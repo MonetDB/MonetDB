@@ -32,7 +32,9 @@ mal_export str ALGthetaselect1(bat *result, const bat *bid, const void *val, con
 mal_export str ALGthetaselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op);
 
 mal_export str ALGjoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
+mal_export str ALGjoin1(bat *r1, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
 mal_export str ALGleftjoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
+mal_export str ALGleftjoin1(bat *r1, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
 mal_export str ALGouterjoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
 mal_export str ALGsemijoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
 mal_export str ALGthetajoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const int *op, const bit *nil_matches, const lng *estimate);

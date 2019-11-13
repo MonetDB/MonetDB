@@ -191,9 +191,17 @@ command join(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:b
 address ALGjoin
 comment "Join";
 
+command join(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) :bat[:oid]
+address ALGjoin1
+comment "Join; only produce left output";
+
 command leftjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGleftjoin
 comment "Left join with candidate lists";
+
+command leftjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) :bat[:oid]
+address ALGleftjoin1
+comment "Left join with candidate lists; only produce left output";
 
 command outerjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGouterjoin

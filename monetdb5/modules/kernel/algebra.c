@@ -516,10 +516,28 @@ ALGjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const
 }
 
 str
+ALGjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
+		   const bit *nil_matches, const lng *estimate)
+{
+	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
+				   false, false, nil_matches, NULL, estimate,
+				   BATjoin, NULL, NULL, NULL, NULL, NULL, "algebra.join");
+}
+
+str
 ALGleftjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 			   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL,
+				   false, false, nil_matches, NULL, estimate,
+				   BATleftjoin, NULL, NULL, NULL, NULL, NULL, "algebra.leftjoin");
+}
+
+str
+ALGleftjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
+			   const bit *nil_matches, const lng *estimate)
+{
+	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
 				   false, false, nil_matches, NULL, estimate,
 				   BATleftjoin, NULL, NULL, NULL, NULL, NULL, "algebra.leftjoin");
 }

@@ -1724,9 +1724,9 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 	assert(ATOMtype(l->ttype) == ATOMtype(rh->ttype));
 	assert(BATcount(rl) == BATcount(rh));
 	assert(rl->hseqbase == rh->hseqbase);
-	assert(BATcount(r1) == BATcount(r2));
 	assert(r1->ttype == TYPE_oid);
-	assert(r2->ttype == TYPE_oid);
+	assert(r2 == NULL || r2->ttype == TYPE_oid);
+	assert(r2 == NULL || BATcount(r1) == BATcount(r2));
 
 	ALGODEBUG fprintf(stderr, "#%s: %s(l=" ALGOBATFMT ","
 			  "rl=" ALGOBATFMT ",rh=" ALGOBATFMT ","
@@ -1757,7 +1757,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 	rlwidth = rl->twidth;
 	rhwidth = rh->twidth;
 	dst1 = (oid *) Tloc(r1, 0);
-	dst2 = (oid *) Tloc(r2, 0);
+	dst2 = r2 ? (oid *) Tloc(r2, 0) : NULL;
 
 	t = ATOMtype(l->ttype);
 	t = ATOMbasetype(t);
@@ -1846,18 +1846,23 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 					if (cnt > maxsize)
 						cnt = maxsize;
 					BATsetcount(r1, BATcount(r1));
-					BATsetcount(r2, BATcount(r2));
-					if (BATextend(r1, cnt) != GDK_SUCCEED ||
-					    BATextend(r2, cnt) != GDK_SUCCEED)
+					if (BATextend(r1, cnt) != GDK_SUCCEED)
 						goto bailout;
-					assert(BATcapacity(r1) == BATcapacity(r2));
 					dst1 = (oid *) Tloc(r1, 0);
-					dst2 = (oid *) Tloc(r2, 0);
+					if (r2) {
+						BATsetcount(r2, BATcount(r2));
+						if (BATextend(r2, cnt) != GDK_SUCCEED)
+							goto bailout;
+						assert(BATcapacity(r1) == BATcapacity(r2));
+						dst2 = (oid *) Tloc(r2, 0);
+					}
 				}
 				canditer_setidx(&lci, low);
 				while (low < high) {
 					dst1[r1->batCount++] = canditer_next(&lci);
-					dst2[r2->batCount++] = ro;
+					if (r2) {
+						dst2[r2->batCount++] = ro;
+					}
 					low++;
 				}
 			} else {
@@ -1871,26 +1876,31 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 					if (cnt > maxsize)
 						cnt = maxsize;
 					BATsetcount(r1, BATcount(r1));
-					BATsetcount(r2, BATcount(r2));
-					if (BATextend(r1, cnt) != GDK_SUCCEED ||
-					    BATextend(r2, cnt) != GDK_SUCCEED)
+					if (BATextend(r1, cnt) != GDK_SUCCEED)
 						goto bailout;
-					assert(BATcapacity(r1) == BATcapacity(r2));
 					dst1 = (oid *) Tloc(r1, 0);
-					dst2 = (oid *) Tloc(r2, 0);
+					if (r2) {
+						BATsetcount(r2, BATcount(r2));
+						if (BATextend(r2, cnt) != GDK_SUCCEED)
+							goto bailout;
+						assert(BATcapacity(r1) == BATcapacity(r2));
+						dst2 = (oid *) Tloc(r2, 0);
+					}
 				}
 
 				while (low < high) {
 					if (canditer_search(&lci, ord[low], false) != BUN_NONE) {
 						dst1[r1->batCount++] = ord[low];
-						dst2[r2->batCount++] = ro;
+						if (r2) {
+							dst2[r2->batCount++] = ro;
+						}
 					}
 					low++;
 				}
 			}
 		}
 		cnt = BATcount(r1);
-		assert(BATcount(r1) == BATcount(r2));
+		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
 	} else if ((BATcount(rl) > 2 ||
 		    !l->batTransient ||
 		    (VIEWtparent(l) != 0 &&
@@ -2156,14 +2166,18 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 			assert(ncnt >= cnt || ncnt == 0);
 			if (ncnt == cnt || ncnt == 0)
 				continue;
-			if (BATcapacity(r2) < ncnt) {
-				BATsetcount(r2, cnt);
-				if (BATextend(r2, BATcapacity(r1)) != GDK_SUCCEED)
-					goto bailout;
-				dst2 = (oid *) Tloc(r2, 0);
+			if (r2) {
+				if (BATcapacity(r2) < ncnt) {
+					BATsetcount(r2, cnt);
+					if (BATextend(r2, BATcapacity(r1)) != GDK_SUCCEED)
+						goto bailout;
+					dst2 = (oid *) Tloc(r2, 0);
+				}
+				while (cnt < ncnt)
+					dst2[cnt++] = ro;
+			} else {
+				cnt = ncnt;
 			}
-			while (cnt < ncnt)
-				dst2[cnt++] = ro;
 		}
 	} else {
 		/* nested loop implementation */
@@ -2218,29 +2232,32 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 					if (newcap > maxsize)
 						newcap = maxsize;
 					BATsetcount(r1, BATcount(r1));
-					BATsetcount(r2, BATcount(r2));
-					if (BATextend(r1, newcap) != GDK_SUCCEED ||
-					    BATextend(r2, newcap) != GDK_SUCCEED)
+					if (BATextend(r1, newcap) != GDK_SUCCEED)
 						goto bailout;
-					assert(BATcapacity(r1) == BATcapacity(r2));
 					dst1 = (oid *) Tloc(r1, 0);
-					dst2 = (oid *) Tloc(r2, 0);
+					if (r2) {
+						BATsetcount(r2, BATcount(r2));
+						if (BATextend(r2, newcap) != GDK_SUCCEED)
+							goto bailout;
+						assert(BATcapacity(r1) == BATcapacity(r2));
+						dst2 = (oid *) Tloc(r2, 0);
+					}
 				}
 				dst1[r1->batCount++] = lo;
-				dst2[r2->batCount++] = ro;
+				if (r2) {
+					dst2[r2->batCount++] = ro;
+				}
 			}
 		}
 		cnt = BATcount(r1);
-		assert(BATcount(r1) == BATcount(r2));
+		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
 	}
 
 	/* also set other bits of heap to correct value to indicate size */
 	BATsetcount(r1, cnt);
-	BATsetcount(r2, cnt);
 
 	/* set properties using an extra scan (usually not complete) */
 	dst1 = (oid *) Tloc(r1, 0);
-	dst2 = (oid *) Tloc(r2, 0);
 	r1->tkey = true;
 	r1->tsorted = true;
 	r1->trevsorted = true;
@@ -2266,36 +2283,40 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 	}
 	if (BATtdense(r1))
 		r1->tseqbase = cnt > 0 ? dst1[0] : 0;
-	r2->tkey = true;
-	r2->tsorted = true;
-	r2->trevsorted = true;
-	r2->tseqbase = 0;
-	r2->tnil = false;
-	r2->tnonil = true;
-	for (ncnt = 1; ncnt < cnt; ncnt++) {
-		if (dst2[ncnt - 1] == dst2[ncnt]) {
-			r2->tseqbase = oid_nil;
-			r2->tkey = false;
-		} else if (dst2[ncnt - 1] < dst2[ncnt]) {
-			r2->trevsorted = false;
-			if (dst2[ncnt - 1] + 1 != dst2[ncnt])
+	if (r2) {
+		BATsetcount(r2, cnt);
+		dst2 = (oid *) Tloc(r2, 0);
+		r2->tkey = true;
+		r2->tsorted = true;
+		r2->trevsorted = true;
+		r2->tseqbase = 0;
+		r2->tnil = false;
+		r2->tnonil = true;
+		for (ncnt = 1; ncnt < cnt; ncnt++) {
+			if (dst2[ncnt - 1] == dst2[ncnt]) {
 				r2->tseqbase = oid_nil;
-		} else {
-			assert(sorted != 2);
-			r2->tsorted = false;
-			r2->tseqbase = oid_nil;
-			r2->tkey = false;
+				r2->tkey = false;
+			} else if (dst2[ncnt - 1] < dst2[ncnt]) {
+				r2->trevsorted = false;
+				if (dst2[ncnt - 1] + 1 != dst2[ncnt])
+					r2->tseqbase = oid_nil;
+			} else {
+				assert(sorted != 2);
+				r2->tsorted = false;
+				r2->tseqbase = oid_nil;
+				r2->tkey = false;
+			}
+			if (!(r2->trevsorted | BATtdense(r2) | r2->tkey | ((sorted != 2) & r2->tsorted)))
+				break;
 		}
-		if (!(r2->trevsorted | BATtdense(r2) | r2->tkey | ((sorted != 2) & r2->tsorted)))
-			break;
+		if (BATtdense(r2))
+			r2->tseqbase = cnt > 0 ? dst2[0] : 0;
 	}
-	if (BATtdense(r2))
-		r2->tseqbase = cnt > 0 ? dst2[0] : 0;
 	ALGODEBUG fprintf(stderr, "#%s: %s(l=%s,rl=%s,rh=%s)="
-			  "(" ALGOBATFMT "," ALGOBATFMT ")\n",
+			  "(" ALGOBATFMT "," ALGOOPTBATFMT ")\n",
 			  MT_thread_getname(), __func__,
 			  BATgetId(l), BATgetId(rl), BATgetId(rh),
-			  ALGOBATPAR(r1), ALGOBATPAR(r2));
+			  ALGOBATPAR(r1), ALGOOPTBATPAR(r2));
 	return GDK_SUCCEED;
 
   bailout:
