@@ -17,7 +17,6 @@ Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng 
 benchmark
 
 ####code issues####
-rename test files like (.*)nills(.*) to $1nils$2
 Update copyright.
 create dedicated type for bitvector internal type which is currently unsignned int. E.g. introduce #define BitVectorChunkType unsigned int.
 create a common header/source file for mosaic for common tasks e.g. to house a generic IS_NIL macro, IPtpe, etc.
