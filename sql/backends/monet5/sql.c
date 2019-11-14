@@ -3507,6 +3507,41 @@ zero_or_one(ptr ret, const bat *bid)
 }
 
 str
+SQLsubzero_or_one(bat *ret, const bat *bid, const bat *gid, const bat *eid, bit *no_nil)
+{
+	gdk_return r;
+	BAT *ng = NULL, *h = NULL, *g, *b;
+
+	(void)no_nil;
+	(void)eid;
+
+	g = gid ? BATdescriptor(*gid) : NULL;
+	if (g == NULL) {
+		if (g)
+			BBPunfix(g->batCacheid);
+		throw(MAL, "sql.subzero_or_one", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	if ((r = BATgroup(&ng, NULL, &h, g, NULL, NULL, NULL, NULL)) == GDK_SUCCEED) {
+		lng max = 0;
+
+		if (ng)
+			BBPunfix(ng->batCacheid);
+		BATmax(h, &max);
+		BBPunfix(h->batCacheid);
+		if (max != lng_nil && max > 1)
+			throw(SQL, "assert", SQLSTATE(M0M29) "zero_or_one: cardinality violation, scalar expression expected");
+
+	}
+	BBPunfix(g->batCacheid);
+	if (r == GDK_SUCCEED) {
+		b = bid ? BATdescriptor(*bid) : NULL;
+		BBPkeepref(*ret = b->batCacheid);
+	}
+	return MAL_SUCCEED;
+}
+
+str
 SQLall(ptr ret, const bat *bid)
 {
 	BAT *b;

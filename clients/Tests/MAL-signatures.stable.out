@@ -11804,7 +11804,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "sql",	"subdelta",	"command sql.subdelta(col:bat[:oid], cand:bat[:oid], uid:bat[:oid], uval:bat[:oid]):bat[:oid] ",	"DELTAsub2;",	"Return a single bat of selected delta."	]
 [ "sql",	"subdelta",	"command sql.subdelta(col:bat[:oid], cand:bat[:oid], uid:bat[:oid], uval:bat[:oid], ins:bat[:oid]):bat[:oid] ",	"DELTAsub;",	"Return a single bat of selected delta."	]
 [ "sql",	"subnull",	"command sql.subnull(l:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit):bat[:bit] ",	"SQLnil_grp;",	"if any value in l is nil with in a group return true for that group, else false"	]
-[ "sql",	"subzero_or_one",	"inline function sql.subzero_or_one(b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit):bat[:any_1];",	"",	""	]
+[ "sql",	"subzero_or_one",	"command sql.subzero_or_one(b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit):bat[:any_1] ",	"SQLsubzero_or_one;",	""	]
 [ "sql",	"sum",	"pattern sql.sum(b:bte, s:lng, e:lng):lng ",	"SQLsum;",	"return the sum of groups"	]
 [ "sql",	"sum",	"pattern sql.sum(b:dbl, s:lng, e:lng):dbl ",	"SQLsum;",	"return the sum of groups"	]
 [ "sql",	"sum",	"pattern sql.sum(b:flt, s:lng, e:lng):dbl ",	"SQLsum;",	"return the sum of groups"	]

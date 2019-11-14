@@ -5,10 +5,6 @@
 
 %SQL_CLIENT% < "%TSTSRCDIR%\check0.sql"
 
-%SQL_CLIENT% < "%TSTSRCBASE%\%TSTDIR%\insert_MODEL.flt.sql"
-
-%SQL_CLIENT% < "%TSTSRCBASE%\%TSTDIR%\insert_ATOM.flt.sql"
-
-%SQL_CLIENT% < "%TSTSRCBASE%\%TSTDIR%\insert_BOND.flt.sql"
+%SQL_CLIENT% < "%TSTSRCBASE%\%TSTDIR%\inserts.flt.sql"
 
 %SQL_CLIENT% < "%TSTSRCDIR%\check0.sql"
