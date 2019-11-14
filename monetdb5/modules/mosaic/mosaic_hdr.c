@@ -43,8 +43,6 @@ MOSinitHeader(MOStask task)
 	hdr->ratio = 0;
 	hdr->version = MOSAIC_VERSION;
 	hdr->top = 0;
-	hdr->checksum.sumlng = 0;
-	hdr->checksum2.sumlng = 0;
 	hdr->bits_var = 0;
 	hdr->pos_var = 0;
 	hdr->length_var = 0;

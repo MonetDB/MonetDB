@@ -594,7 +594,6 @@ static str
 MOSdecompressInternal(BAT** res, BAT* bsrc)
 {	
 	MOStask task;
-	int error;
 
 	if (BATcheckmosaic(bsrc) == 0 ){
 		*res = bsrc;
@@ -685,31 +684,6 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 			break;
 		default: assert(0);
 		}
-	}
-
-	error = 0;
-	switch( ATOMbasetype(task->type)){
-	case TYPE_bte:
-		error = task->hdr->checksum.sumbte != task->hdr->checksum2.sumbte;
-		break;
-	case TYPE_sht:
-		error = task->hdr->checksum.sumsht != task->hdr->checksum2.sumsht;
-		break;
-	case TYPE_int:
-		error = task->hdr->checksum.sumint != task->hdr->checksum2.sumint;
-		break;
-	case TYPE_lng:
-		error = task->hdr->checksum.sumlng != task->hdr->checksum2.sumlng;
-		break;
-	case TYPE_flt:
-		error = task->hdr->checksum.sumflt != task->hdr->checksum2.sumflt;
-		break;
-	case TYPE_dbl:
-		error = task->hdr->checksum.sumdbl != task->hdr->checksum2.sumdbl;
-		break;
-	}
-	if(error) {
-		// TODO: handle error
 	}
 
 	task->timer = GDKusec() - task->timer;

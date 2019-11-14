@@ -18,7 +18,6 @@ benchmark
 ####code issues####
 create dedicated type for bitvector internal type which is currently unsignned int. E.g. introduce #define BitVectorChunkType unsigned int.
 create a common header/source file for mosaic for common tasks e.g. to house a generic IS_NIL macro, IPtpe, etc.
-move mask, bits, framebits from  MosaicHdr to MosaicBlkHeader_frame_t.
 mosaic_<compression>.c: for type macro's use macro-wised inline functions. (1)
 Factor out more boilerplate code in various compression techniques. All compression follow similar patterns. (1*)
 Improve the administration of the various hard coded compression techniques, e.g. MOSskipit skip (2*)

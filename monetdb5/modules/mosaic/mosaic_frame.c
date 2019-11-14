@@ -47,10 +47,6 @@ bool MOStypes_frame(BAT* b) {
 	return false;
 }
 
-// TODO: Revisit the whole layout stuffchunk_size is no longer correct
-// we use longs as the basis for bit vectors
-#define chunk_size(Task, Cnt) wordaligned(MosaicBlkSize + (Cnt * Task->hdr->framebits)/8 + (((Cnt * Task->hdr->framebits) %8) != 0), lng)
-
 typedef struct _FrameParameters_t {
 	MosaicBlkRec base;
 	int bits;
@@ -95,15 +91,14 @@ MOSadvance_frame(MOStask task)
 void
 MOSlayout_frame(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
+	(void) boutput;
 	MosaicBlk blk = task->blk;
-	lng cnt = MOSgetCnt(blk), input=0, output= 0;
+	lng cnt = MOSgetCnt(blk), input=0;
 
 	input = cnt * ATOMsize(task->type);
-	output = chunk_size(task,cnt);
 	if( BUNappend(btech, "frame blk", false) != GDK_SUCCEED ||
 		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
 		BUNappend(binput, &input, false) != GDK_SUCCEED ||
-		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
 		BUNappend(bproperties, "", false) != GDK_SUCCEED)
 		return;
 }
@@ -262,7 +257,6 @@ do {\
 		/*TODO: assert that delta's actually does not cause an overflow. */\
 		TPE val = min + delta;\
 		((TPE*)(TASK)->src)[i] = val;\
-		(TASK)->hdr->checksum2.sum##TPE += val;\
 	}\
 	(TASK)->src += i * sizeof(TPE);\
 } while(0)

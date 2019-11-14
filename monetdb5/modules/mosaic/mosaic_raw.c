@@ -143,7 +143,6 @@ MOSestimate_raw(MOStask task, MosaicEstimation* current, const MosaicEstimation*
 	for(unsigned int i = 0; i<cnt; i++,v++){\
 		*d++ = (TYPE) *v;\
 	}\
-	hdr->checksum.sum##TYPE += *(TYPE*) task->dst;\
 	task->dst += sizeof(TYPE);\
 	MOSsetCnt(blk,cnt);\
 }
@@ -152,7 +151,6 @@ MOSestimate_raw(MOStask task, MosaicEstimation* current, const MosaicEstimation*
 void
 MOScompress_raw(MOStask task, MosaicBlkRec* estimate)
 {
-	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = (MosaicBlk) task->blk;
 
 	MOSsetTag(blk,MOSAIC_RAW);
@@ -176,7 +174,6 @@ MOScompress_raw(MOStask task, MosaicBlkRec* estimate)
 { BUN lim = MOSgetCnt(blk); \
 	for(i = 0; i < lim; i++) {\
 	((TYPE*)task->src)[i] = ((TYPE*)compressed)[i]; \
-	hdr->checksum2.sum##TYPE += ((TYPE*)compressed)[i]; \
 	}\
 	task->src += i * sizeof(TYPE);\
 }
@@ -184,7 +181,6 @@ MOScompress_raw(MOStask task, MosaicBlkRec* estimate)
 void
 MOSdecompress_raw(MOStask task)
 {
-	MosaicHdr hdr = task->hdr;
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	BUN i;
 	char *compressed;

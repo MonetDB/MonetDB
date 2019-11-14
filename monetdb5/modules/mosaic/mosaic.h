@@ -55,29 +55,16 @@ typedef Heap *mosaic;	// compressed data is stored on a heap.
 
 typedef struct MOSAICHEADER{
 	int version;
-	union{
-		bte sumbte;
-		bit sumbit;
-		sht sumsht;
-		int sumint;
-		oid sumoid;
-		lng sumlng;
-#ifdef HAVE_HGE
-		hge sumhge;
-#endif
-		flt sumflt;
-		dbl sumdbl;
-	} checksum, checksum2;	// for validity checks
 	int top; // TODO: rename to e.g. nblocks because it is the number of blocks
-	// both dictionary and framebased compression require a global dictionary of frequent values
-	// Their size is purposely topped 
-	bte mask, bits, framebits;	// global compression type properties
-	lng dictfreq[256];// keep track on their use
-	// collect compression statistics for the particular task
-	// A value of METHOD_NOT_AVAILABLE in blks or elms indicates that the corresponding method wasn't considered as candidate.
 	flt ratio;	//compresion ratio
+	/* Collect compression statistics for the particular task
+	 * A value of METHOD_NOT_AVAILABLE in blks or elms indicates that the corresponding method wasn't considered as candidate.
+	 */
 	lng blks[MOSAIC_METHODS]; // number of blks per method.
 	lng elms[MOSAIC_METHODS]; // number of compressed values in all blocks for this method.
+	/* The var(iable sized) and capped dictionary compression techniques are the only
+	 * compression techniques that have global properties which are stored in mosaic global header.
+	 */
 	bte bits_var;
 	BUN pos_var;
 	BUN length_var;
@@ -86,19 +73,11 @@ typedef struct MOSAICHEADER{
 	BUN length_capped;
 } * MosaicHdr;
 
-
-
-/* limit the number of elements to consider in a block
- * It should always be smaller then: ~(0377<<MOSshift)
-*/
-
-#define MOSAICMAXCNT 100000
-/* allow for experiementation using different block sizes */
-
 #define CNT_BITS 24
+#define MOSAICMAXCNT (1 << CNT_BITS)
 
 typedef struct MOSAICBLK{
-	unsigned int tag:(32 - CNT_BITS), cnt:CNT_BITS;
+	unsigned int tag:((sizeof(unsigned int) * CHAR_BIT) - CNT_BITS), cnt:CNT_BITS;
 } MosaicBlkRec, *MosaicBlk;
 
 #define MOSgetTag(Blk) (Blk->tag)
