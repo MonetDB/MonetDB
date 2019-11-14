@@ -595,17 +595,7 @@ typedef struct {
 	bat parentid;		/* cache id of VIEW parent bat */
 } Heap;
 
-typedef struct {
-	int type;		/* type of index entity */
-	int width;		/* width of hash entries */
-	BUN nil;		/* nil representation */
-	BUN mask;		/* number of hash buckets-1 (power of 2) */
-	void *Hash;		/* hash table */
-	void *Link;		/* collision list */
-	Heap heaplink;		/* heap where the hash links are stored */
-	Heap heapbckt;		/* heap where the hash buckets are stored */
-} Hash;
-
+typedef struct Hash Hash;
 typedef struct Imprints Imprints;
 
 /*
@@ -1838,24 +1828,6 @@ gdk_export char *ATOMformat(int id, const void *val);
 gdk_export void *ATOMdup(int id, const void *val);
 
 /*
- * @- Built-in Accelerator Functions
- *
- * @multitable @columnfractions 0.08 0.7
- * @item BAT*
- * @tab
- *  BAThash (BAT *b)
- * @end multitable
- *
- * The current BAT implementation supports three search accelerators:
- * hashing, imprints, and ordered index.
- *
- * The routine BAThash makes sure that a hash accelerator on the tail of the
- * BAT exists. GDK_FAIL is returned upon failure to create the supportive
- * structures.
- */
-gdk_export gdk_return BAThash(BAT *b);
-
-/*
  * @- Column Imprints Functions
  *
  * @multitable @columnfractions 0.08 0.7
@@ -2641,55 +2613,6 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * out the `hb'-th BUN.
  */
 #define GDK_STREQ(l,r) (*(char*) (l) == *(char*) (r) && !strcmp(l,r))
-
-#define HASHloop(bi, h, hb, v)					\
-	for (hb = HASHget(h, HASHprobe((h), v));		\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
-#define HASHloop_str_hv(bi, h, hb, v)				\
-	for (hb = HASHget((h),((BUN *) (v))[-1]&(h)->mask);	\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (GDK_STREQ(v, BUNtvar(bi, hb)))
-#define HASHloop_str(bi, h, hb, v)			\
-	for (hb = HASHget((h),strHash(v)&(h)->mask);	\
-	     hb != HASHnil(h);				\
-	     hb = HASHgetlink(h,hb))			\
-		if (GDK_STREQ(v, BUNtvar(bi, hb)))
-
-/*
- * HASHloops come in various flavors, from the general HASHloop, as
- * above, to specialized versions (for speed) where the type is known
- * (e.g. HASHloop_int), or the fact that the atom is fixed-sized
- * (HASHlooploc) or variable-sized (HASHloopvar).
- */
-#define HASHlooploc(bi, h, hb, v)				\
-	for (hb = HASHget(h, HASHprobe(h, v));			\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNtloc(bi, hb)) == 0)
-#define HASHloopvar(bi, h, hb, v)				\
-	for (hb = HASHget(h,HASHprobe(h, v));			\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNtvar(bi, hb)) == 0)
-
-#define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
-	for (hb = HASHget(h, hash_##TYPE(h, v));		\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
-
-#define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
-#define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)
-#define HASHloop_int(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, int)
-#define HASHloop_lng(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, lng)
-#ifdef HAVE_HGE
-#define HASHloop_hge(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, hge)
-#endif
-#define HASHloop_flt(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, flt)
-#define HASHloop_dbl(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, dbl)
 
 /*
  * @+ Common BAT Operations

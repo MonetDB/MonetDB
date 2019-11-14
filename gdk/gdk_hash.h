@@ -8,6 +8,7 @@
 
 #ifndef _GDK_SEARCH_H_
 #define _GDK_SEARCH_H_
+
 /*
  * @+ Hash indexing
  *
@@ -18,6 +19,19 @@
  * of mean size 4.  This was shown to be inferior to direct hashing
  * with integer anding. The new implementation reflects this.
  */
+
+typedef struct Hash {
+	int type;		/* type of index entity */
+	int width;		/* width of hash entries */
+	BUN nil;		/* nil representation */
+	BUN mask;		/* number of hash buckets-1 (power of 2) */
+	void *Hash;		/* hash table */
+	void *Link;		/* collision list */
+	Heap heaplink;		/* heap where the hash links are stored */
+	Heap heapbckt;		/* heap where the hash buckets are stored */
+} Hash;
+
+gdk_export gdk_return BAThash(BAT *b);
 gdk_export void HASHdestroy(BAT *b);
 gdk_export BUN HASHprobe(const Hash *h, const void *v);
 gdk_export BUN HASHlist(Hash *h, BUN i);
@@ -260,5 +274,48 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 			}						\
 		}							\
 	} while (0)
+
+#define HASHloop(bi, h, hb, v)					\
+	for (hb = HASHget(h, HASHprobe((h), v));		\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
+		if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
+#define HASHloop_str_hv(bi, h, hb, v)				\
+	for (hb = HASHget((h),((BUN *) (v))[-1]&(h)->mask);	\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
+		if (GDK_STREQ(v, BUNtvar(bi, hb)))
+#define HASHloop_str(bi, h, hb, v)			\
+	for (hb = HASHget((h),strHash(v)&(h)->mask);	\
+	     hb != HASHnil(h);				\
+	     hb = HASHgetlink(h,hb))			\
+		if (GDK_STREQ(v, BUNtvar(bi, hb)))
+
+#define HASHlooploc(bi, h, hb, v)				\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
+		if (ATOMcmp(h->type, v, BUNtloc(bi, hb)) == 0)
+#define HASHloopvar(bi, h, hb, v)				\
+	for (hb = HASHget(h,HASHprobe(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
+		if (ATOMcmp(h->type, v, BUNtvar(bi, hb)) == 0)
+
+#define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
+	for (hb = HASHget(h, hash_##TYPE(h, v));		\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
+		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
+
+#define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
+#define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)
+#define HASHloop_int(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, int)
+#define HASHloop_lng(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, lng)
+#ifdef HAVE_HGE
+#define HASHloop_hge(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, hge)
+#endif
+#define HASHloop_flt(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, flt)
+#define HASHloop_dbl(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, dbl)
 
 #endif /* _GDK_SEARCH_H_ */
