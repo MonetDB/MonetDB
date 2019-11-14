@@ -4951,11 +4951,13 @@ rel_join_push_exps_down(int *changes, mvc *sql, sql_rel *rel)
 			int le = rel_has_cmp_exp(l, e);
 			int re = rel_has_cmp_exp(r, e);
 
-			if (le && !re) {
+			/* select expressions on left */
+			if (le && !re) { 
 				if (!lexps)
 					lexps=sa_list(sql->sa);
 				append(lexps, e);
-			} else if (!le && re && rel->op != op_anti) {
+			/* select expressions on right */
+			} else if (!le && re && (rel->op != op_anti || (e->flag != mark_notin && e->flag != mark_in))) { 
 				if (!rexps)
 					rexps=sa_list(sql->sa);
 				append(rexps, e);
