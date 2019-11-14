@@ -138,7 +138,7 @@ MOSadvance_capped(MOStask task)
 	assert(cnt > 0);
 	task->start += (oid) cnt;
 	bytes =  (cnt * GET_FINAL_BITS(task))/8 + (((cnt * GET_FINAL_BITS(task)) %8) != 0);
-	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int));
+	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, BitVectorChunk));
 }
 
 void
@@ -292,7 +292,7 @@ do {\
 	(CURRENT)->compression_strategy.cnt = (unsigned int) nr_compressed;\
 \
 	(CURRENT)->uncompressed_size	+= (BUN) ( nr_compressed * sizeof(TPE));\
-	(CURRENT)->compressed_size		+= (BUN) (wordaligned( MosaicBlkSize, BitVector) + new_bytes - old_bytes);\
+	(CURRENT)->compressed_size		+= (BUN) (wordaligned( MosaicBlkSize, BitVectorChunk) + new_bytes - old_bytes);\
 } while (0)
 
 // calculate the expected reduction using DICT in terms of elements compressed

@@ -93,7 +93,7 @@ getBitVector(BitVector vector, BUN i, int bits)
 
 // set the bits of cell idx to the lower number of bits of the value
 void
-setBitVector(BitVector vector, const BUN i, const int bits, const unsigned int value)
+setBitVector(BitVector vector, const BUN i, const int bits, const BitVectorChunk value)
 {
 	BUN cid;
 	unsigned int m1,  shift;

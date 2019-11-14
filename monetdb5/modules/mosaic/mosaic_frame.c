@@ -79,7 +79,7 @@ void
 MOSadvance_frame(MOStask task)
 {
 	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) (task)->blk;
-	int *dst = (int*)  (((char*) task->blk) + wordaligned(sizeof(MosaicBlkHeader_frame_t), unsigned int));
+	int *dst = (int*)  (((char*) task->blk) + wordaligned(sizeof(MosaicBlkHeader_frame_t), BitVectorChunk));
 	long cnt = parameters->base.cnt;
 	long bytes = toEndOfBitVector(cnt, parameters->bits);
 
@@ -111,7 +111,7 @@ MOSskip_frame(MOStask task)
 		task->blk = 0; // ENDOFLIST
 }
 
-#define MOScodevectorFrame(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_frame_t), unsigned int))
+#define MOScodevectorFrame(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_frame_t), BitVectorChunk))
 
 #define determineFrameParameters(PARAMETERS, SRC, LIMIT, TPE) \
 do {\
@@ -141,7 +141,7 @@ do {\
 			}\
 			if ( (current_bits >= (int) ((sizeof(TPE) * CHAR_BIT) / 2))\
 				/*TODO: this extra condition should be removed once bitvector is extended to int64's*/\
-				|| (current_bits > (int) sizeof(unsigned int) * CHAR_BIT) ) {\
+				|| (current_bits > (int) sizeof(BitVectorChunk) * CHAR_BIT) ) {\
 				/*If we can from here on not compress better then the half of the original data type, we give up. */\
 				break;\
 			}\
@@ -203,7 +203,7 @@ do {\
 	for(i = 0; i < parameters->base.cnt; i++, src++) {\
 		/*TODO: assert that delta's actually does not cause an overflow. */\
 		delta = *src - parameters->min.min##TPE;\
-		setBitVector(base, i, parameters->bits, (unsigned int) /*TODO: fix this once we have increased capacity of bitvector*/ delta);\
+		setBitVector(base, i, parameters->bits, (BitVectorChunk) /*TODO: fix this once we have increased capacity of bitvector*/ delta);\
 	}\
 	(TASK)->dst += toEndOfBitVector(i, parameters->bits);\
 } while(0)

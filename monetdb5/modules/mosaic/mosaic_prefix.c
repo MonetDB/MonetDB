@@ -75,7 +75,7 @@ typedef struct MosaicBlkHeader_prefix_t_ {
 
 } MosaicBlkHeader_prefix_t;
 
-#define MOScodevectorPrefix(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_prefix_t), unsigned int))
+#define MOScodevectorPrefix(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_prefix_t), BitVectorChunk))
 #define toEndOfBitVector(CNT, BITS) wordaligned(((CNT) * (BITS) / CHAR_BIT) + ( ((CNT) * (BITS)) % CHAR_BIT != 0 ), lng)
 
 void
@@ -94,8 +94,8 @@ MOSlayout_prefix(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 			unsigned char mask = *dst++;
 			unsigned char val = *dst;
 			bits = (int)(val & (~mask));
-			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned char),int);
-			bytes += wordaligned(getBitVectorSize(cnt,bits), int);
+			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned char),BitVectorChunk);
+			bytes += wordaligned(getBitVectorSize(cnt,bits), lng);
 		}
 		break;
 	case 2:
@@ -103,8 +103,8 @@ MOSlayout_prefix(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 			unsigned short mask = *dst++;
 			unsigned short val = *dst;
 			bits = (int)(val & (~mask));
-			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned short),int);
-			bytes += wordaligned(getBitVectorSize(cnt,bits) , int);
+			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned short),BitVectorChunk);
+			bytes += wordaligned(getBitVectorSize(cnt,bits) , lng);
 		}
 		break;
 	case 4:
@@ -112,8 +112,8 @@ MOSlayout_prefix(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 			unsigned int mask = *dst++;
 			unsigned int val = *dst;
 			bits = (int)(val & (~mask));
-			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned int),int);
-			bytes += wordaligned(getBitVectorSize(cnt,bits) , int);
+			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned int),BitVectorChunk);
+			bytes += wordaligned(getBitVectorSize(cnt,bits) , lng);
 		}
 		break;
 	case 8:
@@ -121,8 +121,8 @@ MOSlayout_prefix(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 			ulng mask = *dst++;
 			ulng val = *dst;
 			bits = (int)(val & (~mask));
-			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(ulng),int);
-			bytes += wordaligned(getBitVectorSize(cnt,bits) , int);
+			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(ulng),BitVectorChunk);
+			bytes += wordaligned(getBitVectorSize(cnt,bits) , lng);
 		}
 	}
 	output = wordaligned(bytes, int); 
@@ -139,7 +139,7 @@ void
 MOSadvance_prefix(MOStask task)
 {
 	MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) (task)->blk;
-	int *dst = (int*)  (((char*) task->blk) + wordaligned(sizeof(MosaicBlkHeader_prefix_t), unsigned int));
+	int *dst = (int*)  (((char*) task->blk) + wordaligned(sizeof(MosaicBlkHeader_prefix_t), BitVectorChunk));
 	long cnt = parameters->base.cnt;
 	long bytes = toEndOfBitVector(cnt, parameters->suffix_bits);
 
@@ -186,7 +186,7 @@ do {\
 			/*If we can not compress better then the half of the original data type, we give up. */\
 			break;\
 		}\
-		if ((current_suffix_bits > (int) sizeof(unsigned int) * CHAR_BIT)) {\
+		if ((current_suffix_bits > (int) sizeof(BitVectorChunk) * CHAR_BIT)) {\
 			/*TODO: this extra condition should be removed once bitvector is extended to int64's*/\
 			break;\
 		}\
@@ -217,8 +217,8 @@ do {\
 	int bits;\
 	int i = parameters.base.cnt;\
 	bits = i * parameters.suffix_bits;\
-	store = wordaligned(sizeof(MosaicBlkHeader_prefix_t),int);\
-	store += wordaligned(bits/8 + ((bits % 8) >0),int);\
+	store = wordaligned(sizeof(MosaicBlkHeader_prefix_t), BitVectorChunk);\
+	store += wordaligned(bits/CHAR_BIT + ((bits % CHAR_BIT) > 0), lng);\
 	assert(i > 0);/*Should always compress.*/\
 	current->is_applicable = true;\
 \
@@ -264,7 +264,7 @@ do {\
 	for(i = 0; i < parameters->base.cnt; i++, src++) {\
 		/*TODO: assert that delta's actually does not cause an overflow. */\
 		PrefixTpe(TPE) suffix = *src & suffix_mask;\
-		setBitVector(base, i, parameters->suffix_bits, (unsigned int) /*TODO: fix this once we have increased capacity of bitvector*/ suffix);\
+		setBitVector(base, i, parameters->suffix_bits, (BitVectorChunk) /*TODO: fix this once we have increased capacity of bitvector*/ suffix);\
 	}\
 	(TASK)->dst += toEndOfBitVector(i, parameters->suffix_bits);\
 } while(0)

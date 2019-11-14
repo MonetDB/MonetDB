@@ -54,13 +54,13 @@ typedef struct _DeltaParameters_t {
 	} init;
 } MosaicBlkHeader_delta_t;
 
-#define toEndOfBitVector(CNT, BITS) wordaligned(((CNT) * (BITS) / CHAR_BIT) + ( ((CNT) * (BITS)) % CHAR_BIT != 0 ), lng)
+#define toEndOfBitVector(CNT, BITS) wordaligned(((CNT) * (BITS) / CHAR_BIT) + ( ((CNT) * (BITS)) % CHAR_BIT != 0 ), BitVectorChunk)
 
 void
 MOSadvance_delta(MOStask task)
 {
 	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) (task)->blk;
-	int *dst = (int*)  (((char*) task->blk) + wordaligned(sizeof(MosaicBlkHeader_delta_t), unsigned int));
+	int *dst = (int*)  (((char*) task->blk) + wordaligned(sizeof(MosaicBlkHeader_delta_t), BitVectorChunk));
 	long cnt = parameters->base.cnt;
 	long bytes = toEndOfBitVector(cnt, parameters->bits);
 
@@ -103,7 +103,7 @@ MOSskip_delta(MOStask task)
 		task->blk = 0; // ENDOFLIST
 }
 
-#define MOScodevectorDelta(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_delta_t), unsigned int))
+#define MOScodevectorDelta(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_delta_t), BitVectorChunk))
 
 #define determineDeltaParameters(PARAMETERS, SRC, LIMIT, TPE) \
 do {\
@@ -133,7 +133,7 @@ do {\
 			int current_bits_with_sign_bit = current_bits + 1;\
 			if ( (current_bits_with_sign_bit >= (int) ((sizeof(TPE) * CHAR_BIT) / 2))\
 				/*If we can from here on not compress better then the half of the original data type, we give up. */\
-				|| (current_bits_with_sign_bit > (int) sizeof(unsigned int) * CHAR_BIT) ) {\
+				|| (current_bits_with_sign_bit > (int) sizeof(BitVectorChunk) * CHAR_BIT) ) {\
 				/*TODO: this extra condition should be removed once bitvector is extended to int64's*/\
 				break;\
 			}\
@@ -193,14 +193,14 @@ do {\
 	base = (BitVector) ((TASK)->dst);\
 	TPE pv = parameters->init.val##TPE; /*previous value*/\
 	/*Initial delta is zero.*/\
-	setBitVector(base, 0, parameters->bits, (unsigned int) 0);\
+	setBitVector(base, 0, parameters->bits, (BitVectorChunk) 0);\
 	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (parameters->bits - 1);\
 \
 	for(i = 1; i < parameters->base.cnt; i++) {\
 		/*TODO: assert that delta's actually does not cause an overflow. */\
 		TPE cv = *++src; /*current value*/\
 		DeltaTpe(TPE) delta = (DeltaTpe(TPE)) (cv > pv ? (IPTpe(TPE)) (cv - pv) : (IPTpe(TPE)) ((sign_mask) | (IPTpe(TPE)) (pv - cv)));\
-		setBitVector(base, i, parameters->bits, (unsigned int) /*TODO: fix this once we have increased capacity of bitvector*/ delta);\
+		setBitVector(base, i, parameters->bits, (BitVectorChunk) /*TODO: fix this once we have increased capacity of bitvector*/ delta);\
 		pv = cv;\
 	}\
 	(TASK)->dst += toEndOfBitVector(i, parameters->bits);\

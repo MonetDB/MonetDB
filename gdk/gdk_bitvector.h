@@ -17,12 +17,14 @@
 #ifndef _GDK_MASK_H_
 #define _GDK_MASK_H_
 
-typedef unsigned int *BitVector;
+typedef unsigned int BitVectorChunk;
+
+typedef BitVectorChunk *BitVector;
 
 gdk_export void initBitMasks(void);
 gdk_export size_t getBitVectorSize(const BUN cnt, const int width);
 gdk_export BitVector newBitVector(BUN cnt, int width);
-gdk_export void setBitVector(BitVector vector, const BUN i, const int bits, const unsigned int value);
+gdk_export void setBitVector(BitVector vector, const BUN i, const int bits, const BitVectorChunk value);
 gdk_export void clrBitVector(BitVector vector, BUN i, int bits);
 gdk_export int tstBitVector(BitVector vector, BUN i, int bits);
 gdk_export int getBitVector(BitVector vector, BUN i, int bits);

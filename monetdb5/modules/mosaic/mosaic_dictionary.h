@@ -130,7 +130,7 @@ compress_dictionary_##TPE(TPE* dict, BUN dict_size, BUN* i, TPE* val, BUN limit,
 	for((*i) = 0; (*i) < limit; (*i)++, val++) {\
 		BUN key = find_value_##TPE(dict, dict_size, *val);\
 		assert(key < dict_size);\
-		setBitVector(base, (*i), bits, (unsigned int) key);\
+		setBitVector(base, (*i), bits, (BitVectorChunk) key);\
 	}\
 }
 #define decompress_dictionary_DEF(TPE) \
@@ -154,7 +154,7 @@ typedef struct {
 	if		( IS_NIL(TPE, low) &&  IS_NIL(TPE, hgh) && li && hi && !(ANTI)) {\
 		if(HAS_NIL) {\
 			for(unsigned int i = 0; i < cnt; i++){\
-				unsigned int j = getBitVector(base,i,bits);\
+				BitVectorChunk j = getBitVector(base,i,bits);\
 				if (IS_NIL(TPE, dict[j]))\
 					*(*result)++ = (oid) (i + hseqbase);\
 			}\
@@ -163,7 +163,7 @@ typedef struct {
 	else if	( IS_NIL(TPE, low) &&  IS_NIL(TPE, hgh) && li && hi && (ANTI)) {\
 		if(HAS_NIL) {\
 			for(unsigned int i = 0; i < cnt; i++){\
-				unsigned int j = getBitVector(base,i,bits);\
+				BitVectorChunk j = getBitVector(base,i,bits);\
 				if (!IS_NIL(TPE, dict[j]))\
 					*(*result)++ = (oid) (i + hseqbase);\
 			}\
@@ -173,7 +173,7 @@ typedef struct {
 	else if	( IS_NIL(TPE, low) &&  IS_NIL(TPE, hgh) && !(li && hi) && !(ANTI)) {\
 		if(HAS_NIL) {\
 			for(unsigned int i = 0; i < cnt; i++){\
-				unsigned int j = getBitVector(base,i,bits);\
+				BitVectorChunk j = getBitVector(base,i,bits);\
 				if (!IS_NIL(TPE, dict[j]))\
 					*(*result)++ = (oid) (i + hseqbase);\
 			}\
@@ -186,7 +186,7 @@ typedef struct {
 	else if	( !IS_NIL(TPE, low) &&  !IS_NIL(TPE, hgh) && low == hgh && !(li && hi) && (ANTI)) {\
 		if(HAS_NIL) {\
 			for(unsigned int i = 0; i < cnt; i++){\
-				unsigned int j = getBitVector(base,i,bits);\
+				BitVectorChunk j = getBitVector(base,i,bits);\
 				if (!IS_NIL(TPE, dict[j]))\
 					*(*result)++ = (oid) (i + hseqbase);\
 			}\
@@ -202,7 +202,7 @@ typedef struct {
 	else if	( !IS_NIL(TPE, low) &&  !IS_NIL(TPE, hgh) && low > hgh && (ANTI)) {\
 		if(HAS_NIL) {\
 			for(unsigned int i = 0; i < cnt; i++){\
-				unsigned int j = getBitVector(base,i,bits);\
+				BitVectorChunk j = getBitVector(base,i,bits);\
 				if (!IS_NIL(TPE, dict[j]))\
 					*(*result)++ = (oid) (i + hseqbase);\
 			}\
@@ -213,7 +213,7 @@ typedef struct {
 		/*normal cases.*/\
 		if( IS_NIL(TPE, low) ){\
 			for(unsigned int i = 0; i < cnt; i++){\
-				unsigned int j = getBitVector(base,i,bits); \
+				BitVectorChunk j = getBitVector(base,i,bits); \
 				if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
 				bool cmp  =  ((hi && dict[j] <= hgh ) || (!hi && dict[j] < hgh ));\
 				if (cmp == !(ANTI))\
@@ -222,7 +222,7 @@ typedef struct {
 		} else\
 		if( IS_NIL(TPE, hgh) ){\
 			for(unsigned int i = 0; i < cnt; i++){\
-				unsigned int j = getBitVector(base,i,bits); \
+				BitVectorChunk j = getBitVector(base,i,bits); \
 				if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
 				bool cmp  =  ((li && dict[j] >= low ) || (!li && dict[j] > low ));\
 				if (cmp == !(ANTI))\
@@ -230,7 +230,7 @@ typedef struct {
 			}\
 		} else{\
 			for(unsigned int i = 0; i < cnt; i++){\
-				unsigned int j = getBitVector(base,i,bits); \
+				BitVectorChunk j = getBitVector(base,i,bits); \
 				if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
 				bool cmp  =  ((hi && dict[j] <= hgh ) || (!hi && dict[j] < hgh )) &&\
 						((li && dict[j] >= low ) || (!li && dict[j] > low ));\
@@ -273,7 +273,7 @@ void select_dictionary_##TPE(\
 
 #define thetaselect_dictionary_normalized(HAS_NIL, ANTI, TPE) \
 for(unsigned int i = 0; i < cnt; i++){\
-	unsigned int j = getBitVector(base, i, bits); \
+	BitVectorChunk j = getBitVector(base, i, bits); \
 	if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
 	bool cmp = (IS_NIL(TPE, low) || dict[j] >= low) && (dict[j] <= hgh || IS_NIL(TPE, hgh));\
 	if (cmp == !(ANTI)) {\
@@ -333,7 +333,7 @@ void thetaselect_dictionary_##TPE(\
 	oid hr, hl; /*The right and left head values respectively.*/\
 	for(hr=0, n= rcnt; n-- > 0; hr++,tr++ ){\
 		for(hl = (oid) hseqbase, i = 0; i < lcnt; i++,hl++){\
-			unsigned int j= getBitVector(base,i,bits);\
+			BitVectorChunk j= getBitVector(base,i,bits);\
 			if (HAS_NIL && !NIL_MATCHES) {\
 				if (IS_NIL(TPE, dict[j])) { continue;}\
 			}\
@@ -370,7 +370,7 @@ return MAL_SUCCEED;\
 
 // MOStask object dependent macro's
 
-#define MOScodevectorDict(Task) (((char*) (Task)->blk) + wordaligned(sizeof(MOSBlkHdr_dictionary_t), unsigned int))
+#define MOScodevectorDict(Task) (((char*) (Task)->blk) + wordaligned(sizeof(MOSBlkHdr_dictionary_t), BitVectorChunk))
 
 // insert a series of values into the compressor block using dictionary
 #define DICTcompress(TASK, TPE) {\

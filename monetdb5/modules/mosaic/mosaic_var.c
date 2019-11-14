@@ -57,7 +57,7 @@ MOSadvance_var(MOStask task)
 	task->start += (oid) cnt;
 	task->stop = task->stop;
 	bytes =  (long) (cnt * task->hdr->bits_var)/8 + (((cnt * task->hdr->bits_var) %8) != 0);
-	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
+	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, BitVectorChunk)); 
 }
 
 typedef struct {
