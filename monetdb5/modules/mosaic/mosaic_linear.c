@@ -37,17 +37,6 @@ bool MOStypes_linear(BAT* b) {
 	return false;
 }
 
-#define Deltabte uint8_t
-#define Deltasht uint16_t
-#define Deltaint uint32_t
-#define Deltalng uint64_t
-#define Deltaoid uint64_t
-#ifdef HAVE_HGE
-#define Deltahge uhge
-#endif
-
-#define DeltaTpe(TPE) Delta##TPE
-
 #define linear_base(BLK) ((void*)(((char*) BLK)+ MosaicBlkSize))
 
 static void*
@@ -122,9 +111,9 @@ MOSskip_linear(MOStask task)
 	BUN i = 1;\
 	if (limit > 1 ){\
 		TPE *p = c++; /*(p)revious value*/\
-		DeltaTpe(TPE) step = (DeltaTpe(TPE)) *c - (DeltaTpe(TPE)) *p;\
+		DeltaTpe(TPE) step = GET_DELTA(TPE, *c, *p);\
 		for( ; i < limit; i++, p++, c++) {\
-			DeltaTpe(TPE) current_step = (DeltaTpe(TPE)) *c - (DeltaTpe(TPE)) *p;\
+			DeltaTpe(TPE) current_step = GET_DELTA(TPE, *c, *p);\
 			if (  current_step != step)\
 				break;\
 		}\
@@ -164,7 +153,7 @@ MOSestimate_linear(MOStask task, MosaicEstimation* current, const MosaicEstimati
 	*(TPE*) linear_base(blk) = *c;\
 	if (limit > 1 ){\
 		TPE *p = c++; /*(p)revious value*/\
-		step = (TPE) (DeltaTpe(TPE)) *c - (DeltaTpe(TPE)) *p;\
+		step = (TPE) GET_DELTA(TPE, *c, *p);\
 	}\
 	MOSsetCnt(blk, limit);\
 	*(TPE*) linear_step(task,blk) = step;\
@@ -193,11 +182,11 @@ MOScompress_linear(MOStask task, MosaicBlkRec* estimate)
 
 // the inverse operator, extend the src
 #define LINEARdecompress(TPE)\
-{	TPE val = *(TPE*) linear_base(blk);\
-	TPE step = *(TPE*) linear_step(task,blk);\
+{	DeltaTpe(TPE) val = *(TPE*) linear_base(blk);\
+	DeltaTpe(TPE) step = *(TPE*) linear_step(task,blk);\
 	BUN lim = MOSgetCnt(blk);\
-	for(i = 0; i < lim; i++) {\
-		((TPE*)task->src)[i] = (TPE) ((DeltaTpe(TPE)) val + (TPE) (i * (DeltaTpe(TPE)) step));\
+	for(i = 0; i < lim; i++, val += step) {\
+		((TPE*)task->src)[i] = (TPE) val;\
 	}\
 	task->src += i * sizeof(TPE);\
 }

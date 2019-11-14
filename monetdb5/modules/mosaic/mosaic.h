@@ -53,6 +53,37 @@ typedef Heap *mosaic;	// compressed data is stored on a heap.
 #define IS_NIL(TPE, VAL) is_##TPE##_nil(VAL)
 #define ARE_EQUAL(v, w, HAS_NIL, TPE) ((v == w || (HAS_NIL && IS_NIL(TPE, v) && IS_NIL(TPE, w)) ) )
 
+#define Deltabte uint8_t
+#define Deltasht uint16_t
+#define Deltaint uint32_t
+#define Deltalng uint64_t
+#define Deltaoid uint64_t
+#ifdef HAVE_HGE
+#define Deltahge uhge
+#endif
+
+#define DeltaTpe(TPE) Delta##TPE
+
+/* Use standard unsigned integer operations 
+ * to avoid undefined behavior due to overflow's
+ */
+#define GET_DELTA(TPE, x, y)  ((DeltaTpe(TPE)) x - (DeltaTpe(TPE)) y)
+#define ADD_DELTA(TPE, x, d)  (TPE) ((DeltaTpe(TPE)) x + (DeltaTpe(TPE)) d)
+
+// types for safe Integer Promotion for the bitwise operations in getSuffixMask
+#define IPbte uint32_t
+#define IPsht uint32_t
+#define IPint uint32_t
+#define IPlng uint64_t
+#define IPoid uint64_t
+#define IPflt uint64_t
+#define IPdbl uint64_t
+#ifdef HAVE_HGE
+#define IPhge uhge
+#endif
+
+#define IPTpe(TPE) IP##TPE
+
 typedef struct MOSAICHEADER{
 	int version;
 	int top; // TODO: rename to e.g. nblocks because it is the number of blocks

@@ -155,20 +155,6 @@ MOSskip_prefix(MOStask task)
 	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
 		task->blk = 0; // ENDOFLIST
 }
-
-// types for safe Integer Promotion for the bitwise operations in getSuffixMask
-#define IPbte uint32_t
-#define IPsht uint32_t
-#define IPint uint32_t
-#define IPlng uint64_t
-#define IPoid uint64_t
-#define IPflt uint64_t
-#define IPdbl uint64_t
-#ifdef HAVE_HGE
-#define IPhge uhge
-#endif
-
-#define IPTpe(TPE) IP##TPE
 #define OverShift(TPE) ((sizeof(IPTpe(TPE)) - sizeof(PrefixTpe(TPE))) * CHAR_BIT)
 #define getSuffixMask(SUFFIX_BITS, TPE) ((PrefixTpe(TPE)) (~(~((IPTpe(TPE)) (0)) << (SUFFIX_BITS))))
 #define getPrefixMask(PREFIX_BITS, TPE) ((PrefixTpe(TPE)) ( (~(~((IPTpe(TPE)) (0)) >> (PREFIX_BITS))) >> OverShift(TPE)))

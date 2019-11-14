@@ -113,21 +113,6 @@ MOSskip_frame(MOStask task)
 
 #define MOScodevectorFrame(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_frame_t), unsigned int))
 
-#define Deltabte uint8_t
-#define Deltasht uint16_t
-#define Deltaint uint32_t
-#define Deltalng uint64_t
-#define Deltaoid uint64_t
-#ifdef HAVE_HGE
-#define Deltahge uhge
-#endif
-
-#define DeltaTpe(TPE) Delta##TPE
-
-/* Use standard unsigned integer operations because (in theory) we have to be careful not to get overflow's and undefined behavior*/\
-#define GET_DELTA(TPE, max, min)  ((DeltaTpe(TPE)) max - (DeltaTpe(TPE)) min)
-#define ADD_DELTA(TPE, min, delta)  (TPE) ((DeltaTpe(TPE)) min + (DeltaTpe(TPE)) delta)
-
 #define determineFrameParameters(PARAMETERS, SRC, LIMIT, TPE) \
 do {\
 	TPE *val = SRC, max, min;\

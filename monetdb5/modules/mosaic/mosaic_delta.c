@@ -105,20 +105,6 @@ MOSskip_delta(MOStask task)
 
 #define MOScodevectorDelta(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_delta_t), unsigned int))
 
-#define Deltabte uint8_t
-#define Deltasht uint16_t
-#define Deltaint uint32_t
-#define Deltalng uint64_t
-#define Deltaoid uint64_t
-#ifdef HAVE_HGE
-#define Deltahge uhge
-#endif
-
-#define DeltaTpe(TPE) Delta##TPE
-
-/* Use standard unsigned integer operations because (in theory) we have to be careful not to get overflow's and undefined behavior*/\
-#define GET_DELTA(TPE, max, val)  ((DeltaTpe(TPE)) max - (DeltaTpe(TPE)) val)
-
 #define determineDeltaParameters(PARAMETERS, SRC, LIMIT, TPE) \
 do {\
 	TPE *val = SRC;\
@@ -194,18 +180,6 @@ MOSestimate_delta(MOStask task, MosaicEstimation* current, const MosaicEstimatio
 
 	return MAL_SUCCEED;
 }
-
-// types for safe Integer Promotion for the bitwise operations in getSuffixMask
-#define IPbte uint32_t
-#define IPsht uint32_t
-#define IPint uint32_t
-#define IPlng uint64_t
-#define IPoid uint64_t
-#ifdef HAVE_HGE
-#define IPhge uhge
-#endif
-
-#define IPTpe(TPE) IP##TPE
 
 #define DELTAcompress(TASK, TPE)\
 do {\
