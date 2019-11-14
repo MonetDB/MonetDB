@@ -74,6 +74,7 @@ bat.append(a,"2014-08-14 12:10:05":timestamp);
 bat.append(a,"2014-08-14 12:10:05":timestamp);
 bat.append(a,"2014-08-14 12:10:05":timestamp);
 bat.append(a,"2014-08-14 12:10:05":timestamp);
+bat.append(a,nil:timestamp);
 bat.append(a,"2014-08-14 12:10:05":timestamp);
 mosaic.compress(a,"{compression_type}");
 c:= mosaic.decompress(a);

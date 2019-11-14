@@ -57,6 +57,7 @@ bat.append(a,nil:oid);
 bat.append(a,1005:oid);
 bat.append(a,1005:oid);
 bat.append(a,1005:oid);
+bat.append(a,nil:oid);
 bat.append(a,1005:oid);
 mosaic.compress(a,"{compression_type}");
 c:= mosaic.decompress(a);

@@ -86,6 +86,7 @@ bat.append(a,"2014-10-06":date);
 bat.append(a,"2014-10-06":date);
 bat.append(a,"2014-10-06":date);
 bat.append(a,"2014-10-06":date);
+bat.append(a,nil:date);
 bat.append(a,"2014-10-06":date);
 mosaic.compress(a,"{compression_type}");
 c:= mosaic.decompress(a);
