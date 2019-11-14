@@ -22,10 +22,10 @@ mal_export void MOSlayout_linear(MOStask task, BAT *btech, BAT *bcount, BAT *bin
 mal_export void MOSadvance_linear(MOStask task);
 mal_export void MOSskip_linear(MOStask task);
 mal_export str  MOSestimate_linear(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
-mal_export void MOScompress_linear(MOStask task);
+mal_export void MOScompress_linear(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_linear(MOStask task);
 mal_export str MOSselect_linear( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
 mal_export str MOSthetaselect_linear( MOStask task, void *val, str oper);
 mal_export str MOSprojection_linear( MOStask task);
-mal_export str MOSjoin_linear( MOStask task);
+mal_export str MOSjoin_linear( MOStask task, bit nil_matches);
 #endif /* _MOSAIC_LINEAR_ */

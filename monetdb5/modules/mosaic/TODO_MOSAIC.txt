@@ -1,5 +1,4 @@
 ####technical depth####
-Finish null semantics plus tests
 make sure candidate lists are working properly for select, theta_select and join (2)
 Be sure alignment is correct. Use asserts for this.
 Add test for float/double

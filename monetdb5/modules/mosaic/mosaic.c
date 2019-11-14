@@ -505,7 +505,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 			break;
 		case MOSAIC_LINEAR:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_linear\n");
-			MOScompress_linear(task);
+			MOScompress_linear(task, estimate);
 			MOSupdateHeader(task);
 			MOSadvance_linear(task);
 			MOSnewBlk(task);
@@ -1240,7 +1240,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		case MOSAIC_LINEAR:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_linear\n");
-			MOSjoin_linear( task);
+			MOSjoin_linear( task, *nil_matches);
 			break;
 		case MOSAIC_RAW:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_raw\n");

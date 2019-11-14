@@ -90,6 +90,11 @@ mosaic_lng_2.linear
 mosaic_oid_2.linear
 mosaic_date_2.linear
 mosaic_timestamp_2.linear
+mosaic_bit_with_nils_2.linear
+mosaic_lng_with_nils_2.linear
+mosaic_oid_with_nils_2.linear
+mosaic_date_with_nils_2.linear
+mosaic_timestamp_with_nils_2.linear
 
 mosaic_bit_1.frame
 mosaic_lng_1.frame
