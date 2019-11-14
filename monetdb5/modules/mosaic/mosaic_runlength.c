@@ -141,8 +141,9 @@ MOSestimate_runlength(MOStask task, MosaicEstimation* current, const MosaicEstim
 }
 
 void
-MOScompress_runlength(MOStask task)
+MOScompress_runlength(MOStask task, MosaicBlkRec* estimate)
 {
+	(void) estimate;
 	BUN i ;
 	MosaicBlk blk = task->blk;
 	bool nil = !task->bsrc->tnonil;

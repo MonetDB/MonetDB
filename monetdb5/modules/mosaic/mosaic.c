@@ -477,7 +477,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 		switch(estimate->tag) {
 		case MOSAIC_RLE:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_runlength\n");
-			MOScompress_runlength(task);
+			MOScompress_runlength(task, estimate);
 			MOSupdateHeader(task);
 			MOSadvance_runlength(task);
 			MOSnewBlk(task);
