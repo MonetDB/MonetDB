@@ -1,5 +1,5 @@
 ####technical depth####
-make sure candidate lists are working properly for select, theta_select and join (2)
+make sure candidate lists are working properly (2)
 Be sure alignment is correct. Use asserts for this.
 Add test for float/double
 Add test for huge
@@ -7,17 +7,19 @@ Check MOSanalysis and its test.
 Fix/check/test MOSlayout.
 make mitosis work with mosaic and see how this relates to the previous landmark stuff.
 Remove floating point support in prefix compression and use prefix-like-frame semantics
-Apply compressed operations directly on keys in dictionary compression.
-
+Apply compressed operations more directly: on keys in dictionary compression (1)
+Apply compressed operations more directly: on prefix|suffix in prefix compression (1)
+Apply compressed operations more directly: on linear in prefix compression (1)
 consider packing mosaic_block_header's more efficiently.
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
 
 benchmark
 
 ####code issues####
-Update copyright.
 create dedicated type for bitvector internal type which is currently unsignned int. E.g. introduce #define BitVectorChunkType unsigned int.
 create a common header/source file for mosaic for common tasks e.g. to house a generic IS_NIL macro, IPtpe, etc.
 move mask, bits, framebits from  MosaicHdr to MosaicBlkHeader_frame_t.
-mosaic_<compression>.c: for type macro's use macro-wised inline functions.
+mosaic_<compression>.c: for type macro's use macro-wised inline functions. (1)
+Factor out more boilerplate code in various compression techniques. All compression follow similar patterns. (1*)
 Improve the administration of the various hard coded compression techniques, e.g. MOSskipit skip (2*)
+Update copyright in 2020.
