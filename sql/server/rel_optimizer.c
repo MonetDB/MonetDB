@@ -5197,11 +5197,10 @@ rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel)
 static int 
 rel_is_empty( sql_rel *rel )
 {
-	(void)rel;
 	if ((is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
 		sql_rel *l = rel->l, *r = rel->r;
 
-		if (rel_is_empty(l) || (is_join(rel->op) && rel_is_empty(r)))
+		if (rel_is_empty(l) || ((is_join(rel->op) || is_semi(rel->op)) && rel_is_empty(r)))
 			return 1;
 		/* check */
 		if (rel_is_join_on_pkey(rel)) {
@@ -5212,9 +5211,19 @@ rel_is_empty( sql_rel *rel )
 				return 1;
 		}
 	}
-	if (!is_union(rel->op) && 
-			(is_project(rel->op) || is_topn(rel->op)) && rel->l)
-		return rel_is_empty(rel->l);
+	if (!is_union(rel->op)) {
+		if (is_simple_project(rel->op) || is_topn(rel->op) || is_select(rel->op) || is_sample(rel->op))
+			if (rel->l)
+				return rel_is_empty(rel->l);
+		else if (is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) {
+			int empty = 1;
+			if (rel->l)
+				empty &= rel_is_empty(rel->l);
+			if (empty && rel->r)
+				empty &= rel_is_empty(rel->r);
+			return empty;
+		}
+	}
 	return 0;
 }
 
@@ -5237,12 +5246,15 @@ rel_remove_empty_join(mvc *sql, sql_rel *rel, int *changes)
 			(*changes)++;
 			return rel_inplace_project(sql->sa, rel, rel_dup(l), rel->exps);
 		}
-	} else if ((is_project(rel->op) || is_topn(rel->op) || is_select(rel->op)
-				|| is_sample(rel->op)) && rel->l) {
-		rel->l = rel_remove_empty_join(sql, rel->l, changes);
-	} else if (is_join(rel->op)) {
-		rel->l = rel_remove_empty_join(sql, rel->l, changes);
-		rel->r = rel_remove_empty_join(sql, rel->r, changes);
+	} else if ((is_simple_project(rel->op) || is_groupby(rel->op) || is_topn(rel->op) || 
+				is_select(rel->op) || is_sample(rel->op))) {
+		if (rel->l)
+			rel->l = rel_remove_empty_join(sql, rel->l, changes);
+	} else if (is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) {
+		if (rel->l)
+			rel->l = rel_remove_empty_join(sql, rel->l, changes);
+		if (rel->r)
+			rel->r = rel_remove_empty_join(sql, rel->r, changes);
 	}
 	return rel;
 }
@@ -5830,7 +5842,7 @@ rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel)
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-	    		if (exp_aggr_is_count(e) && need_distinct(e)) {
+			if (exp_aggr_is_count(e) && need_distinct(e)) {
 				/* if count over unique values (ukey/pkey) */
 				if (e->l && exps_unique(sql, rel, e->l))
 					set_nodistinct(e);
