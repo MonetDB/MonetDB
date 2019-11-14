@@ -5212,10 +5212,10 @@ rel_is_empty( sql_rel *rel )
 		}
 	}
 	if (!is_union(rel->op)) {
-		if (is_simple_project(rel->op) || is_topn(rel->op) || is_select(rel->op) || is_sample(rel->op))
+		if (is_simple_project(rel->op) || is_topn(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
 			if (rel->l)
 				return rel_is_empty(rel->l);
-		else if (is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) {
+		} else if (is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) {
 			int empty = 1;
 			if (rel->l)
 				empty &= rel_is_empty(rel->l);
@@ -5350,10 +5350,13 @@ rel_merge_identical_joins(int *changes, mvc *sql, sql_rel *rel)
 						if (sides_equal && exp_match_list(j1->exps, j2->exps)) {
 							sql_rel *p2 = f2->p;
 
-							if (p2->l == j2) /* replace j2's parent join with j1 */
+							if (p2->l == j2) {/* replace j2's parent join with j1 */
+								rel_destroy(p2->l);
 								p2->l = rel_dup(j1);
-							else
+							} else {
+								rel_destroy(p2->r);
 								p2->r = rel_dup(j1);
+							}
 							(*changes)++;
 							return rel;
 						}
