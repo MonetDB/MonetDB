@@ -118,7 +118,6 @@ MOSskip_delta(MOStask task)
 
 /* Use standard unsigned integer operations because (in theory) we have to be careful not to get overflow's and undefined behavior*/\
 #define GET_DELTA(TPE, max, val)  ((DeltaTpe(TPE)) max - (DeltaTpe(TPE)) val)
-#define ADD_DELTA(TPE, val, delta)  (TPE) ((DeltaTpe(TPE)) val + (DeltaTpe(TPE)) delta)
 
 #define determineDeltaParameters(PARAMETERS, SRC, LIMIT, TPE) \
 do {\
@@ -254,7 +253,7 @@ MOScompress_delta(MOStask task, MosaicBlkRec* estimate)
 }
 
 #define ACCUMULATE(acc, delta, sign_mask, TPE) \
-(\
+( /*code assumes that acc is of type DeltaTpe(TPE)*/\
 	(TPE) (\
 		( (sign_mask) & (delta) )?\
 			((acc) -= (DeltaTpe(TPE)) (~(IPTpe(TPE)) (sign_mask) & (IPTpe(TPE)) (delta))) :\
@@ -336,7 +335,7 @@ MOSdecompress_delta(MOStask task)
 {\
 	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorDelta(task);\
-	TPE acc = parameters->init.val##TPE; /*previous value*/\
+	DeltaTpe(TPE) acc = parameters->init.val##TPE; /*previous value*/\
 	int bits = parameters->bits;\
 	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
 	if		( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && (LI) && (HI) && !(ANTI)) {\
@@ -505,7 +504,7 @@ for( ; first < last; first++,i++){\
 { 	TPE low,hgh;\
     MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorDelta(task);\
-	TPE acc = parameters->init.val##TPE; /*previous value*/\
+	DeltaTpe(TPE) acc = parameters->init.val##TPE; /*previous value*/\
 	int bits = parameters->bits;\
 	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
 	low= hgh = TPE##_nil;\
@@ -584,7 +583,7 @@ MOSthetaselect_delta( MOStask task, void *val, str oper)
 {	TPE *v;\
 	v= (TPE*) task->src;\
     MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
-	TPE acc = parameters->init.val##TPE; /*previous value*/\
+	DeltaTpe(TPE) acc = parameters->init.val##TPE; /*previous value*/\
 	int bits = parameters->bits;\
 	BitVector base = (BitVector) MOScodevectorDelta(task);\
 	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
@@ -625,7 +624,7 @@ MOSprojection_delta( MOStask task)
 {   TPE *w;\
     MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorDelta(task);\
-	TPE acc;\
+	DeltaTpe(TPE) acc;\
 	int bits = parameters->bits;\
 	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
 	w = (TPE*) task->src;\
