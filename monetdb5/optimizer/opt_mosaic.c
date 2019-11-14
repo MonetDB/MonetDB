@@ -50,7 +50,7 @@ str
 OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p,q, *old;
-    int limit,i,j, k, actions =0;
+    int limit, slimit,i,j, k, actions =0;
 	signed char *check;
 	char buf[256];
     lng usec = GDKusec();
@@ -65,7 +65,8 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mnstr_printf(cntxt->fdout,"#mosaic implementation\n");
     printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #endif
-	limit = mb->stop;
+	limit  = mb->stop;
+	slimit = mb->ssize;
 	old = mb->stmt;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0){
 		GDKfree(check);
@@ -145,6 +146,9 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( p )
 			pushInstruction(mb,p);
     }
+	for (; i<slimit; i++)
+		if (old[i])
+			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(check);
 	chkTypes(cntxt->usermodule, mb, FALSE);

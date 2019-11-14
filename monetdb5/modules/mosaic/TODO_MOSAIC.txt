@@ -1,5 +1,4 @@
 ####technical depth####
-Fix memory leak
 make sure candidate lists are working properly (2)
 Be sure alignment is correct. Use asserts for this.
 Add test for float/double

@@ -278,6 +278,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (; i<limit; i++) 
 		if (old[i])
 			pushInstruction(mb,old[i]);
+			
 	for (; i<slimit; i++) 
 		if (old[i])
 			freeInstruction(old[i]);

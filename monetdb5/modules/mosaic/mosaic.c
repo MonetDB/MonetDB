@@ -103,8 +103,10 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 	if( task == NULL)
 		throw(SQL,"mosaic",MAL_MALLOC_FAIL);
 
-	if( b->tmosaic == NULL)
+	if( b->tmosaic == NULL) {
+			GDKfree(task);
 			throw(MAL,"mosaic.layout","Compression heap missing");
+	}
 
 	MOSinit(task,b);
 	MOSinitializeScan(task, b);

@@ -107,12 +107,24 @@ sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							continue;
 						// perform the analysis
 						bn = store_funcs.bind_col(m->session->tr, c, 0);
-						MOSlayout(bn, btech, bcount, binput, boutput, bproperties);
+
+						if ((msg = MOSlayout(bn, btech, bcount, binput, boutput, bproperties)) != MAL_SUCCEED) {
+							break;
+						}
 						BBPunfix(bn->batCacheid);
 						(void) c;
 					}
 			}
 	}
+
+	if (msg != MAL_SUCCEED) {
+		BBPunfix(btech->batCacheid);
+		BBPunfix(bcount->batCacheid);
+		BBPunfix(binput->batCacheid);
+		BBPunfix(boutput->batCacheid);
+		return msg;
+	}
+
 	BBPkeepref(*tech);
 	BBPkeepref(*count);
 	BBPkeepref(*input);
