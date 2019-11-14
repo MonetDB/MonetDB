@@ -37,7 +37,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 	list *exps;
 
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel)
 		return NULL;
@@ -2253,7 +2253,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		return NULL;
 
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "SELECT: too many nested operators");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	switch (sc->token) {
 	case SQL_OR:
@@ -3059,7 +3059,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		return NULL;
 
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "SELECT: too many nested operators");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	switch (sc->token) {
 	case SQL_OR:
@@ -5063,7 +5063,7 @@ get_window_clauses(mvc *sql, char* ident, symbol **partition_by_clause, symbol *
 	int pos;
 
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "SELECT: too many nested window definitions");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if((window_specification = stack_get_window_def(sql, ident, &pos)) == NULL)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window '%s' not found", ident);
@@ -5651,7 +5651,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 		return NULL;
 
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "SELECT: too many nested operators");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (rel && *rel && (*rel)->card == CARD_AGGR) { //group by expression case, handle it before
 		sql_exp *exp = stack_get_groupby_expression(sql, se);
@@ -5915,7 +5915,7 @@ rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return NULL;
 
 	if (THRhighwater())
-		return sql_error(query->sql, 10, SQLSTATE(42000) "SELECT: too many nested operators");
+		return sql_error(query->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	e = rel_value_exp2(query, rel, se, f, ek, &is_last);
 	if (e && (se->token == SQL_SELECT || se->token == SQL_TABLE) && !is_last) {

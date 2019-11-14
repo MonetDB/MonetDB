@@ -15,6 +15,7 @@ lib_mapi = {
 	LIBS = ../../common/options/libmoptions \
 		../../common/utils/libmcrypt \
 		WIN32?../../common/stream/libstream \
+		WIN32?../../common/utils/libmutils \
 		WIN32?$(SOCKET_LIBS) \
 		WIN32?$(openssl_LIBS)
 }

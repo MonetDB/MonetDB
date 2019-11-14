@@ -2264,7 +2264,7 @@ static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema)
 {
 	sql_table *t;
-	size_t bufsize = 4096, pos = 0;
+	size_t bufsize = 8192, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 
@@ -2317,21 +2317,40 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 				"\"login\" timestamp,\n"
 				"\"idle\" timestamp,\n"
 				"\"optimizer\" string,\n"
-				"\"sessiontimeout\" bigint,\n"
-				"\"querytimeout\" bigint,\n"
+				"\"sessiontimeout\" int,\n"
+				"\"querytimeout\" int,\n"
 				"\"workerlimit\" int,\n"
-				"\"memorylimit\" bigint)\n"
+				"\"memorylimit\" int)\n"
  			" external name sql.sessions;\n"
 			"create view sys.sessions as select * from sys.sessions();\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
+			"drop procedure sys.settimeout(bigint);\n"
 			"drop procedure sys.settimeout(bigint,bigint);\n"
-			"create procedure sys.querytimeout(\"sessionid\" int, \"query\" bigint)\n"
-			"external name clients.querytimeout;\n"
-			"create procedure sys.sessiontimeout(\"sessionid\" int, \"query\" bigint)\n"
-			"external name clients.sessiontimeout;\n"
+			"drop procedure sys.setsession(bigint);\n"
+
+			"create procedure sys.setoptimizer(\"optimizer\" string)\n"
+			" external name clients.setoptimizer;\n"
+			"create procedure sys.setquerytimeout(\"query\" int)\n"
+			" external name clients.setquerytimeout;\n"
+			"create procedure sys.setsessiontimeout(\"timeout\" int)\n"
+			" external name clients.setsessiontimeout;\n"
+			"create procedure sys.setworkerlimit(\"limit\" int)\n"
+			" external name clients.setworkerlimit;\n"
+			"create procedure sys.setmemorylimit(\"limit\" int)\n"
+			" external name clients.setmemorylimit;\n"
+			"create procedure sys.setoptimizer(\"sessionid\" int, \"optimizer\" string)\n"
+			" external name clients.setoptimizer;\n"
+			"create procedure sys.setquerytimeout(\"sessionid\" int, \"query\" int)\n"
+			" external name clients.setquerytimeout;\n"
+			"create procedure sys.setsessiontimeout(\"sessionid\" int, \"query\" int)\n"
+			" external name clients.setsessiontimeout;\n"
+			"create procedure sys.setworkerlimit(\"sessionid\" int, \"limit\" int)\n"
+			" external name clients.setworkerlimit;\n"
+			"create procedure sys.setmemorylimit(\"sessionid\" int, \"limit\" int)\n"
+			" external name clients.setmemorylimit;\n"
 			"create procedure sys.stopsession(\"sessionid\" int)\n"
-			"external name clients.stopsession;\n");
+			" external name clients.stopsession;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
@@ -2341,7 +2360,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			" and name = 'sessions';\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('querytimeout', 'sessiontimeout', 'stopsession') and type = %d;\n", (int) F_PROC);
+			" and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = %d;\n", (int) F_PROC);
 
 	/* 26_sysmon */
 	t = mvc_bind_table(sql, sys, "queue");
@@ -2352,15 +2371,15 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"drop function sys.queue;\n"
 			"create function sys.queue()\n"
 			"returns table(\n"
-			"	qtag bigint,\n"
-			"	sessionid int,\n"
+			"	\"tag\" bigint,\n"
+			"	\"sessionid\" int,\n"
 			"	\"user\" string,\n"
-			"	started timestamp,\n"
-			"	estimate timestamp,\n"
-			"	progress int,\n"
-			"	status string,\n"
-			"	tag oid,\n"
-			"	query string\n"
+			"	\"started\" timestamp,\n"
+			"	\"status\" string,\n"
+			"	\"query\" string,\n"
+			"	\"progress\" int, -- percentage of MAL instructions handled\n"
+			"	\"workers\" int,\n"
+			"	\"memory\" int\n"
 			")\n"
 			"external name sql.sysmon_queue;\n"
 			"grant execute on function sys.queue to public;\n"
@@ -2372,6 +2391,13 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"create procedure sys.resume(tag tinyint)\n"
 			"external name sql.sysmon_resume;\n"
 			"create procedure sys.stop(tag tinyint)\n"
+			"external name sql.sysmon_stop;\n"
+
+			"create procedure sys.pause(tag smallint)\n"
+			"external name sql.sysmon_pause;\n"
+			"create procedure sys.resume(tag smallint)\n"
+			"external name sql.sysmon_resume;\n"
+			"create procedure sys.stop(tag smallint)\n"
 			"external name sql.sysmon_stop;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,

@@ -554,7 +554,7 @@ batToStr(char **dst, size_t *len, const bat *src, bool external)
 	}
 	i = strlen(s) + 3;
 	atommem(i);
-	return stpconcat(*dst, "<", s, ">", NULL) - *dst;
+	return (ssize_t) strconcat_len(*dst, *len, "<", s, ">", NULL);
 }
 
 
@@ -873,8 +873,7 @@ hgeToStr(char **dst, size_t *len, const hge *src, bool external)
 	atommem(hgeStrlen);
 	if (is_hge_nil(*src)) {
 		if (external) {
-			strncpy(*dst, "nil", 4);
-			return 3;
+			return (ssize_t) strcpy_len(*dst, "nil", 4);
 		}
 		strcpy(*dst, str_nil);
 		return 1;

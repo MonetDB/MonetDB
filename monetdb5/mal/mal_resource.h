@@ -21,15 +21,10 @@
 #define heapinfo(X,Id)	(((X) && (X)->base ) ? (X)->free : 0)
 #define hashinfo(X,Id) ((X) && (X) != (Hash *) 1 ? heapinfo(&(X)->heap, Id) : 0)
 
-#define USE_MAL_ADMISSION
-#ifdef USE_MAL_ADMISSION
-mal_export int MALadmission(lng argclaim, lng hotclaim);
-#endif
+mal_export int MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim);
 
 #define FAIRNESS_THRESHOLD (MAX_DELAYS * DELAYUNIT)
 
 mal_export lng getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag);
-mal_export void MALresourceFairness(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng usec);
-mal_export size_t MALrunningThreads(void);
 
 #endif /*  _MAL_RESOURCE_H*/

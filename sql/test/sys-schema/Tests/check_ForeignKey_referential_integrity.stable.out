@@ -358,21 +358,31 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 % id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
 % oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
-#SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(qtag as oid) FROM sys.queue);
+#SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT tag FROM sys.queue);
 % .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
-% qtag,	sessionid,	user,	started,	estimate,	progress,	status,	tag,	query # name
-% bigint,	int,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
-% 1,	1,	0,	26,	26,	1,	0,	3,	0 # length
+% tag,	sessionid,	user,	started,	status,	query,	progress,	workers,	memory # name
+% bigint,	int,	clob,	timestamp,	clob,	clob,	int,	int,	int # type
+% 1,	1,	0,	26,	0,	0,	1,	1,	1 # length
+#SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(tag as oid) FROM sys.queue);
+% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
+% tag,	sessionid,	user,	started,	status,	query,	progress,	workers,	memory # name
+% bigint,	int,	clob,	timestamp,	clob,	clob,	int,	int,	int # type
+% 1,	1,	0,	26,	0,	0,	1,	1,	1 # length
+#SELECT * FROM sys.queue WHERE tag NOT IN (SELECT cast(tag as oid) FROM sys.queue); 
+% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
+% tag,	sessionid,	user,	started,	status,	query,	progress,	workers,	memory # name
+% bigint,	int,	clob,	timestamp,	clob,	clob,	int,	int,	int # type
+% 1,	1,	0,	26,	0,	0,	1,	1,	1 # length
 #SELECT * FROM sys.queue WHERE "user" NOT IN (SELECT name FROM sys.users);
 % .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
-% qtag,	sessionid,	user,	started,	estimate,	progress,	status,	tag,	query # name
-% bigint,	int,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
-% 1,	1,	0,	26,	26,	1,	0,	3,	0 # length
+% tag,	sessionid,	user,	started,	status,	query,	progress,	workers,	memory # name
+% bigint,	int,	clob,	timestamp,	clob,	clob,	int,	int,	int # type
+% 1,	1,	0,	26,	0,	0,	1,	1,	1 # length
 #SELECT * FROM sys.sessions WHERE "user" NOT IN (SELECT name FROM sys.users);
-% .sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions # table_name
-% sessionid,	user,	login,	sessiontimeout,	lastcommand,	querytimeout,	threads # name
-% int,	clob,	timestamp,	bigint,	timestamp,	bigint,	int # type
-% 1,	0,	26,	1,	26,	1,	1 # length
+% .sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions # table_name
+% sessionid,	user,	login,	idle,	optimizer,	sessiontimeout,	querytimeout,	workerlimit,	memorylimit # name
+% int,	clob,	timestamp,	timestamp,	clob,	int,	int,	int,	int # type
+% 1,	0,	26,	26,	0,	1,	1,	1,	1 # length
 #SELECT * FROM sys.statistics WHERE column_id NOT IN (SELECT id FROM sys._columns UNION ALL SELECT id FROM tmp._columns);
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name

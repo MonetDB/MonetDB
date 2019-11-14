@@ -79,22 +79,16 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	path = GDKmalloc(pathlen);
 	if (path == NULL)
 		return NULL;
-	if (farmid == NOFARM) {
-		char *p = path;
-		if (dir)
-			p = stpcpy(p, dir);
-		p = stpconcat(p, sep, name, NULL);
-		if (ext)
-			p = stpconcat(p, ".", ext, NULL);
-	} else {
-		char *p = path;
-		p = stpconcat(p, BBPfarms[farmid].dirname, DIR_SEP_STR, NULL);
-		if (dir)
-			p = stpcpy(p, dir);
-		p = stpconcat(p, sep, name, NULL);
-		if (ext)
-			p = stpconcat(p, ".", ext, NULL);
-	}
+ 	if (farmid == NOFARM) {
+		strconcat_len(path, pathlen,
+			      dir ? dir : "", sep, name,
+			      ext ? "." : NULL, ext, NULL);
+ 	} else {
+		strconcat_len(path, pathlen,
+			      BBPfarms[farmid].dirname, DIR_SEP_STR,
+			      dir ? dir : "", sep, name,
+			      ext ? "." : NULL, ext, NULL);
+ 	}
 	return path;
 }
 

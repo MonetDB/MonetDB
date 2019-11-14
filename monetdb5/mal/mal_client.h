@@ -67,7 +67,7 @@ typedef struct CLIENT {
 	 */
 	char	optimizer[IDLENGTH];/* The optimizer pipe preferred for this session */
 	int 	workerlimit;		/* maximum number of workthreads processing a query */
-	lng		memorylimit;		/* Memory claim highwater mark, 0 = no limit */
+	int		memorylimit;		/* Memory claim highwater mark, 0 = no limit */
 	lng 	querytimeout;		/* query abort after x usec, 0 = no limit*/
 	lng	    sessiontimeout;		/* session abort after x usec, 0 = no limit */
 
@@ -78,9 +78,7 @@ typedef struct CLIENT {
 	/*
 	 * For program debugging and performance trace we keep the actual resource claims.
 	 */
-	time_t  lastcmd;		/* set when query is received */
-	int		workers;		/* Actual number of concurrent workers */
-	lng		memoryclaim;	/* Actual memory claim highwater mark */
+	time_t  lastcmd;	/* set when query is received */
 
 	/* The user can request a TRACE SQL statement, calling for collecting the events locally */
 	BAT *profticks;				

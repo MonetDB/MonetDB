@@ -1589,7 +1589,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 	if (op1->nr < 0 && (sub && sub->nr < 0))
 		return NULL;
 	l = op1->nr;
-	if (((cmp & CMP_BETWEEN) || op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
+	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
 		int k;
 
 		if (op2->nr < 0 || op3->nr < 0)
@@ -1691,8 +1691,8 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 			q = pushNil(mb, q, TYPE_lng); /* estimate */
 		if (type == st_uselect2) {
 			q = pushBit(mb, q, anti);
-			if (q == NULL)
-				return NULL;
+			if (cmp & CMP_BETWEEN)
+				q = pushBit(mb, q, TRUE); /* all nil's are != */
 		}
 		if (q == NULL)
 			return NULL;
@@ -2795,9 +2795,13 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *sel)
 		q = pushInt(mb, q, f->digits);
 		q = pushInt(mb, q, f->scale);
 		q = pushInt(mb, q, type_has_tz(f));
-	} else if (f->type->eclass == EC_DEC)
+	} else if (f->type->eclass == EC_DEC) {
 		/* scale of the current decimal */
 		q = pushInt(mb, q, f->scale);
+	} else if (f->type->eclass == EC_SEC && t->type->eclass == EC_FLT) {
+		/* scale of the current decimal */
+		q = pushInt(mb, q, 3);
+	}
 	q = pushArgument(mb, q, v->nr);
 	if (sel && v->nrcols && f->type->eclass != EC_DEC && !EC_TEMP_FRAC(t->type->eclass) && !EC_INTERVAL(t->type->eclass))
 		q = pushArgument(mb, q, sel->nr);

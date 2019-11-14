@@ -2525,7 +2525,7 @@ end:
 }
 
 static gdk_return
-hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
+hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 {
 	gdk_return ret = GDK_FAIL;
 	const char *p = plan; // our cursor in the plan
@@ -2565,7 +2565,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 				}
 				if (tar_copy_stream(out, dest_path, timestamp, infile, size) != GDK_SUCCEED)
 					goto end;
-				mnstr_close(infile);
+				close_stream(infile);
 				infile = NULL;
 				break;
 			case 'w':
@@ -2581,8 +2581,9 @@ hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 	ret = GDK_SUCCEED;
 
 end:
+	free(plan);
 	if (infile)
-		mnstr_close(infile);
+		close_stream(infile);
 	return ret;
 }
 
@@ -2677,7 +2678,7 @@ store_hot_snapshot(str tarfile)
 	// Now sync and atomically rename the temp file to the real file,
 	// also fsync'ing the directory
 	mnstr_fsync(tar_stream);
-	mnstr_close(tar_stream);
+	close_stream(tar_stream);
 	tar_stream = NULL;
 	if (rename(tmppath, tarfile) < 0) {
 		GDKerror("rename %s to %s failed: %s", tmppath, tarfile, strerror(errno));

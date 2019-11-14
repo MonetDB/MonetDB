@@ -266,8 +266,7 @@ getExceptionPlace(const char *exception)
 			if ((t = strchr(s, ':')) != NULL) {
 				if ((ret = GDKmalloc(t - s + 1)) == NULL)
 					return NULL;
-				strncpy(ret, s, t - s);
-				ret[t - s] = 0;
+				strcpy_len(ret, s, t - s + 1);
 				return ret;
 			}
 			break;

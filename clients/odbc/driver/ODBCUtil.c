@@ -64,8 +64,7 @@ dupODBCstring(const SQLCHAR *inStr, size_t length)
 
 	if (tmp == NULL)
 		return NULL;
-	strncpy(tmp, (const char *) inStr, length);
-	tmp[length] = '\0';	/* make it null terminated */
+	strcpy_len(tmp, (const char *) inStr, length + 1);
 	return tmp;
 }
 

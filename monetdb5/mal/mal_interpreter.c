@@ -264,7 +264,8 @@ prepareMALstack(MalBlkPtr mb, int size)
 	//stk->stksize = size;
 	stk->stktop = mb->vtop;
 	stk->blk = mb;
-
+	stk->workers = 0;
+	stk->memory = 0;
 	initStack(0, res);
 	if(!res) {
 		freeStack(stk);

@@ -37,7 +37,7 @@
 #endif
 
 #ifndef HAVE_SQLGETPRIVATEPROFILESTRING
-#define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	(strncpy(buffer,default,bufferlen), buffer[bufferlen-1]=0, strlen(buffer))
+#define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	((int) strcpy_len(buffer,default,bufferlen))
 #endif
 
 
@@ -183,50 +183,17 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 						  dbname);
 		}
 	} else {
-		if (uid == NULL) {
-			if (BufferLength > 0)
-				strncpy((char *) OutConnectionString, "UID:Login ID=?;", BufferLength);
-			len += 15;
-			OutConnectionString += 15;
-			BufferLength -= 15;
-		}
-		if (pwd == NULL) {
-			if (BufferLength > 0)
-				strncpy((char *) OutConnectionString, "PWD:Password=?;", BufferLength);
-			len += 15;
-			OutConnectionString += 15;
-			BufferLength -= 15;
-		}
-		if (host == NULL) {
-			if (BufferLength > 0)
-				strncpy((char *) OutConnectionString, "*HOST:Server=?;", BufferLength);
-			len += 15;
-			OutConnectionString += 15;
-			BufferLength -= 15;
-		}
-		if (port == 0) {
-			if (BufferLength > 0)
-				strncpy((char *) OutConnectionString, "*PORT:Port=?;", BufferLength);
-			len += 13;
-			OutConnectionString += 13;
-			BufferLength -= 13;
-		}
-		if (dbname == NULL) {
-			if (BufferLength > 0)
-				strncpy((char *) OutConnectionString, "*DATABASE:Database=?;", BufferLength);
-			len += 21;
-			OutConnectionString += 21;
-			BufferLength -= 21;
-		}
+		len = (SQLSMALLINT) strconcat_len(
+			(char *) OutConnectionString, BufferLength,
+			uid ? "" : "UID:Login ID=?;",
+			pwd ? "" : "PWD:Password=?;",
+			host ? "" : "*HOST:Server=?;",
+			port ? "" : "*PORT:Port=?;",
+			dbname ? "" : "*DATABASE:Database=?;",
 #ifdef ODBCDEBUG
-		if (ODBCdebug == NULL) {
-			if (BufferLength > 0)
-				strncpy((char *) OutConnectionString, "*LOGFILE:Debug log file=?;", BufferLength);
-			len += 26;
-			OutConnectionString += 26;
-			BufferLength -= 26;
-		}
+			ODBCdebug ? "" : "*LOGFILE:Debug log file=?;",
 #endif
+			NULL);
 
 		if (StringLength2Ptr)
 			*StringLength2Ptr = len;

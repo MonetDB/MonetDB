@@ -436,9 +436,9 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				const oid o = b->hseqbase;
 				/* loop invariant:
 				 * ci->oids[lo] < o <= ci->oids[hi] */
-				while (lo + 1 < hi) {
+				while (hi - lo > 1) {
 					BUN mid = (lo + hi) / 2;
-					if (ci->oids[mid] > o)
+					if (ci->oids[mid] >= o)
 						hi = mid;
 					else
 						lo = mid;
@@ -454,9 +454,9 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				const oid o = b->hseqbase + BATcount(b);
 				/* loop invariant:
 				 * ci->oids[lo] < o <= ci->oids[hi] */
-				while (lo + 1 < hi) {
+				while (hi - lo > 1) {
 					BUN mid = (lo + hi) / 2;
-					if (ci->oids[mid] > o)
+					if (ci->oids[mid] >= o)
 						hi = mid;
 					else
 						lo = mid;
@@ -543,6 +543,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 	return cnt;
 }
 
+/* return the next candidate without advancing */
 oid
 canditer_peek(struct canditer *ci)
 {
@@ -567,6 +568,7 @@ canditer_peek(struct canditer *ci)
 	return o;
 }
 
+/* return the previous candidate */
 oid
 canditer_prev(struct canditer *ci)
 {
@@ -588,6 +590,7 @@ canditer_prev(struct canditer *ci)
 	return o;
 }
 
+/* return the previous candidate without retreating */
 oid
 canditer_peekprev(struct canditer *ci)
 {
@@ -609,6 +612,7 @@ canditer_peekprev(struct canditer *ci)
 	return o;
 }
 
+/* return the last candidate */
 oid
 canditer_last(struct canditer *ci)
 {
@@ -627,6 +631,7 @@ canditer_last(struct canditer *ci)
 	return ci->seq + ci->ncand + ci->noids - 1;
 }
 
+/* return the candidate at the given index */
 oid
 canditer_idx(struct canditer *ci, BUN p)
 {
@@ -647,15 +652,18 @@ canditer_idx(struct canditer *ci, BUN p)
 		return o;
 	if (o + ci->noids > ci->oids[ci->noids - 1])
 		return o + ci->noids;
-	BUN i = 0;
-	if (ci->noids > 1024)
-		i = binsearchcand(ci->oids, ci->noids, o);
-	for (; i < ci->noids; i++)
-		if (o + i < ci->oids[i])
-			return o + i;
-	return o + ci->noids;
+	BUN lo = 0, hi = ci->noids - 1;
+	while (hi - lo > 1) {
+		BUN mid = (hi + lo) / 2;
+		if (ci->oids[mid] - mid > o)
+			hi = mid;
+		else
+			lo = mid;
+	}
+	return o + hi;
 }
 
+/* set the index for the next candidate to be returned */
 void
 canditer_setidx(struct canditer *ci, BUN p)
 {
@@ -672,6 +680,7 @@ canditer_setidx(struct canditer *ci, BUN p)
 	}
 }
 
+/* reset */
 void
 canditer_reset(struct canditer *ci)
 {
@@ -679,6 +688,9 @@ canditer_reset(struct canditer *ci)
 	ci->add = 0;
 }
 
+/* return index of given candidate if it occurs; if the candidate does
+ * not occur, if next is set, return index of next larger candidate,
+ * if next is not set, return BUN_NONE */
 BUN
 canditer_search(struct canditer *ci, oid o, bool next)
 {
@@ -773,6 +785,7 @@ canditer_slice(struct canditer *ci, BUN lo, BUN hi)
 	return virtualize(bn);
 }
 
+/* return the combination of two slices */
 BAT *
 canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
 {
@@ -886,15 +899,21 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 		GDKfree(dels);
 		return GDK_FAIL;
 	}
-	stpconcat(dels->filename, nme, ".theap", NULL);
+	strconcat_len(dels->filename, sizeof(dels->filename),
+		      nme, ".theap", NULL);
 
     	if (HEAPalloc(dels, hi - lo, sizeof(oid)) != GDK_SUCCEED) {
 		GDKfree(dels);
         	return GDK_FAIL;
 	}
     	dels->parentid = dense_cands->batCacheid;
-	memcpy(dels->base, Tloc(odels, lo), sizeof(oid) * (hi - lo));
-	dels->free += sizeof(oid) * (hi - lo);
+	dels->free = sizeof(oid) * (hi - lo);
+	if (odels->ttype == TYPE_void) {
+		for (BUN x = lo; x < hi; x++)
+			((oid *) dels->base)[x - lo] = x + odels->tseqbase;
+	} else {
+		memcpy(dels->base, Tloc(odels, lo), dels->free);
+	}
 	dense_cands->batDirtydesc = true;
 	dense_cands->tvheap = dels;
 	BATsetcount(dense_cands, dense_cands->batCount - (hi - lo));

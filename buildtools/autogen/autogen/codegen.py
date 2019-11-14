@@ -21,25 +21,15 @@ from filesplit import split_filename
 # direct rules
 code_gen = {'y':        [ '.tab.c', '.tab.h' ],
             'tab.c':    [ '.tab.o' ],
-            'l':        [ '.yy.c', '.yy.h' ],
-            'yy.c':     [ '.yy.o' ],
             'mt':       [ '.symbols.h', '.c' ],
-            'brg':      [ '.c' ],
             't':        [ '.c' ],
             'c':        [ '.o' ],
-            'cpp':      [ '.o' ],
-#            'java':     [ '.class' ],
-            #'tex':      [ '.html', '.dvi', '.pdf' ],
-            #'dvi':      [ '.ps' ],
-            #'fig':      [ '.eps' ],
-            #'feps':     [ '.eps' ],
             'in':       [ '' ],
             '1.in':     [ '.1' ],  # TODO: add more manpage sections as needed
             'cfg.in':   [ '.cfg' ],
             'java.in':  [ '.java' ],
             'mal.in':   [ '.mal' ],
             'py.in':    [ '.py' ],
-            'pl.in':    [ '.pl' ],
             'bat.in':   [ '.bat' ],
             'mt.sed':   [ '.mt' ],
             'c.sed':    [ '.c' ],
@@ -69,15 +59,8 @@ t_inc = re.compile(t_inc, re.MULTILINE)
 
 scan_map = {
     'c': [ c_inc, None, '' ],
-    'cpp': [ c_inc, None, '' ],
     'h': [ c_inc, None, '' ],
     'y': [ c_inc, None, '' ],
-    'l': [ c_inc, None, '' ],
-    'mt': [ c_inc, None, '' ],
-    'brg': [ c_inc, None, '' ],
-    't': [ t_inc, None, '' ],
-    'xsl': [ xsl_inc, None, '' ],
-    'tex': [ tex_inc, None, '' ],
 }
 
 def readfile(f):

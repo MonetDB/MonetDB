@@ -29,6 +29,7 @@
  * @- Mthreads Routine implementations
  */
 #include "monetdb_config.h"
+#include "mstring.h"
 #include "gdk_system.h"
 #include "gdk_system_private.h"
 
@@ -386,8 +387,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		.detached = (d == MT_THR_DETACHED),
 	};
 	ATOMIC_INIT(&w->exited, 0);
-	strncpy(w->threadname, threadname, sizeof(w->threadname));
-	w->threadname[sizeof(w->threadname) - 1] = 0;
+	strcpy_len(w->threadname, threadname, sizeof(w->threadname));
 	THRDDEBUG fprintf(stderr, "#create \"%s\" \"%s\"\n", MT_thread_getname(), threadname);
 	EnterCriticalSection(&winthread_cs);
 	w->hdl = CreateThread(NULL, THREAD_STACK_SIZE, thread_starter, w,

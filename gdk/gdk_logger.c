@@ -81,10 +81,6 @@
 #define LOG_USE_ID	15
 #define LOG_CLEAR_ID	16
 
-#ifdef HAVE_EMBEDDED
-#define printf(fmt,...) ((void) 0)
-#endif
-
 #ifdef NATIVE_WIN32
 #define getfilepos _ftelli64
 #else
@@ -1462,7 +1458,7 @@ logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 	if (BBPrename(old->batCacheid, bak) != 0) {
 		return GDK_FAIL;
 	}
-	stpconcat(bak, fn, "_", name, NULL);
+	strconcat_len(bak, sizeof(bak), fn, "_", name, NULL);
 	if (BBPrename(new->batCacheid, bak) != 0) {
 		return GDK_FAIL;
 	}
@@ -1714,10 +1710,10 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		fp = fopen(filename, "r");
 	}
 
-	stpconcat(bak, fn, "_catalog", NULL);
+	strconcat_len(bak, sizeof(bak), fn, "_catalog", NULL);
 	bid = BBPindex(bak);
 
-	stpconcat(bak, fn, "_catalog_bid", NULL);
+	strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL);
 	catalog_bid = BBPindex(bak);
 
 	if (bid != 0 && catalog_bid == 0) {
@@ -1755,27 +1751,27 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 
 		/* give the catalog bats names so we can find them
 		 * next time */
-		stpconcat(bak, fn, "_catalog_bid", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL);
 		if (BBPrename(lg->catalog_bid->batCacheid, bak) < 0) {
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_catalog_nme", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_catalog_nme", NULL);
 		if (BBPrename(lg->catalog_nme->batCacheid, bak) < 0) {
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_catalog_tpe", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_catalog_tpe", NULL);
 		if (BBPrename(lg->catalog_tpe->batCacheid, bak) < 0) {
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_catalog_oid", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_catalog_oid", NULL);
 		if (BBPrename(lg->catalog_oid->batCacheid, bak) < 0) {
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_dcatalog", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL);
 		if (BBPrename(lg->dcatalog->batCacheid, bak) < 0) {
 			goto error;
 		}
@@ -1848,7 +1844,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_catalog_nme", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_catalog_nme", NULL);
 		catalog_nme = BBPindex(bak);
 		n = BATdescriptor(catalog_nme);
 		if (n == NULL) {
@@ -1857,7 +1853,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_catalog_tpe", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_catalog_tpe", NULL);
 		catalog_tpe = BBPindex(bak);
 		t = BATdescriptor(catalog_tpe);
 		if (t == NULL) {
@@ -1879,7 +1875,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			lg->with_ids = false;
 		}
 
-		stpconcat(bak, fn, "_catalog_oid", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_catalog_oid", NULL);
 		catalog_oid = BBPindex(bak);
 		o = BATdescriptor(catalog_oid);
 		if (o == NULL) {
@@ -1902,7 +1898,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			lg->with_ids = false;
 		}
 
-		stpconcat(bak, fn, "_dcatalog", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL);
 		dcatalog = BBPindex(bak);
 		d = BATdescriptor(dcatalog);
 		if (d == NULL) {
@@ -1970,7 +1966,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		GDKerror("Logger_new: failed to create freed bat");
 		goto error;
 	}
-	stpconcat(bak, fn, "_freed", NULL);
+	strconcat_len(bak, sizeof(bak), fn, "_freed", NULL);
 	if (BBPrename(lg->freed->batCacheid, bak) < 0) {
 		goto error;
 	}
@@ -1986,7 +1982,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_snapshots_bid", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_snapshots_bid", NULL);
 		if (BBPrename(lg->snapshots_bid->batCacheid, bak) < 0) {
 			goto error;
 		}
@@ -1996,7 +1992,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_snapshots_tid", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_snapshots_tid", NULL);
 		if (BBPrename(lg->snapshots_tid->batCacheid, bak) < 0) {
 			goto error;
 		}
@@ -2006,7 +2002,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_dsnapshots", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_dsnapshots", NULL);
 		if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0) {
 			goto error;
 		}
@@ -2049,7 +2045,8 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				GDKerror("Logger_new: cannot create dsnapshot bat");
 				goto error;
 			}
-			stpconcat(bak, fn, "_dsnapshots", NULL);
+			strconcat_len(bak, sizeof(bak),
+				      fn, "_dsnapshots", NULL);
 			if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0) {
 				goto error;
 			}
@@ -2061,12 +2058,12 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			needcommit = true;
 		}
 	}
-	stpconcat(bak, fn, "_seqs_id", NULL);
+	strconcat_len(bak, sizeof(bak), fn, "_seqs_id", NULL);
 	if (BBPindex(bak)) {
 		lg->seqs_id = BATdescriptor(BBPindex(bak));
-		stpconcat(bak, fn, "_seqs_val", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_seqs_val", NULL);
 		lg->seqs_val = BATdescriptor(BBPindex(bak));
-		stpconcat(bak, fn, "_dseqs", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_dseqs", NULL);
 		lg->dseqs = BATdescriptor(BBPindex(bak));
 	} else {
 		lg->seqs_id = logbat_new(TYPE_int, 1, PERSISTENT);
@@ -2079,17 +2076,17 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_seqs_id", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_seqs_id", NULL);
 		if (BBPrename(lg->seqs_id->batCacheid, bak) < 0) {
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_seqs_val", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_seqs_val", NULL);
 		if (BBPrename(lg->seqs_val->batCacheid, bak) < 0) {
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_dseqs", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_dseqs", NULL);
 		if (BBPrename(lg->dseqs->batCacheid, bak) < 0) {
 			goto error;
 		}
@@ -2821,7 +2818,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name, char tpe, oid id)
 
 	ha = "vid";
 	ta = ATOMname(b->ttype);
-	len = (int) (stpconcat(buf, ha, ",", ta, NULL) - buf);
+	len = (int) strconcat_len(buf, sizeof(buf), ha, ",", ta, NULL);
 	len++;			/* include EOS */
 	if (!mnstr_writeInt(lg->log, len) ||
 	    mnstr_write(lg->log, buf, 1, len) != (ssize_t) len) {
