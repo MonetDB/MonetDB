@@ -12,10 +12,10 @@ Apply compressed operations more directly: on prefix|suffix in prefix compressio
 Apply compressed operations more directly: on linear in prefix compression (1)
 consider packing mosaic_block_header's more efficiently.
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
-
 benchmark
 
 ####code issues####
+Refactor frame compressions code to be more inline with the other compression algortihm code.(1)
 create a common header/source file for mosaic for common tasks e.g. to house a generic IS_NIL macro, IPtpe, etc.
 mosaic_<compression>.c: for type macro's use macro-wised inline functions. (1)
 Factor out more boilerplate code in various compression techniques. All compression follow similar patterns. (1*)
