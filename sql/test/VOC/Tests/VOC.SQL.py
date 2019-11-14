@@ -17,7 +17,6 @@ def client(file, user, passwd):
 
 client('VOCcreate_user.sql', 'monetdb', 'monetdb')
 client('VOCschema.sql', 'voc', 'voc')
-client('VOCinsert.sql', 'voc', 'voc')
 client('VOCquery.sql', 'voc', 'voc')
 client('VOCmanual_examples.sql', 'voc', 'voc')
 client('VOCdrop.sql', 'voc', 'voc')
