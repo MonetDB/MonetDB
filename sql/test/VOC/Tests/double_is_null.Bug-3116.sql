@@ -1,3 +1,5 @@
+START TRANSACTION;
+
 CREATE TABLE "voyages" (
 	"number"            integer	NOT NULL,
 	"number_sup"        char(1)	NOT NULL,
@@ -26,5 +28,4 @@ CREATE TABLE "voyages" (
 SELECT hired, count(*)  FROM voyages WHERE   true  AND hired IS NOT NULL AND
 hired is not null GROUP BY hired ORDER BY hired;
 
-drop table voyages;
-
+ROLLBACK;

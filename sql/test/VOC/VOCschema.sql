@@ -1,5 +1,13 @@
 START TRANSACTION;
 
+--VOCcreate_user
+CREATE USER "voc" WITH PASSWORD 'voc' NAME 'VOC_EXPLORER' SCHEMA "sys";
+CREATE SCHEMA "voc" AUTHORIZATION "voc";
+ALTER USER "voc" SET SCHEMA "voc";
+
+SET SCHEMA "voc";
+
+--VOCschema
 CREATE TABLE "voyages" (
 	"number"            integer	NOT NULL,
 	"number_sup"        char(1)	NOT NULL,
@@ -112,6 +120,7 @@ CREATE TABLE "total" (
 	"onboard_at_arrival"   integer
 );
 
+--VOCinserts
 COPY 8115 RECORDS INTO "voc"."voyages" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 1	""	1	""	"AMSTERDAM"	"Jan Jakobsz. Schellinger"	260	NULL	"1594"	NULL	NULL	"A"	NULL	1595-04-02	"Texel"	NULL	NULL	true	1596-06-06	"Engano"	NULL	"from 04-08 till 11-08 in the Mosselbaai; from 13-09 till 07-10 in the Ampalazabaai; from 09-10 till 13-12 in S. Augustins Bay, where before departure 127 of the 249 men were still alive; 11-01 till 21-01 at Ste. Marie I.; from 23-01 till 12-02 in the Bay of Antongil. The AMSTERDAM was set on fire near Bawean, 11-01-1597."
 2	""	1	""	"DUIFJE"	"Simon Lambrechtsz. Mau"	50	"pinas"	"1594"	NULL	NULL	"A"	NULL	1595-04-02	"Texel"	NULL	NULL	true	1596-06-06	"Engano"	5001	"HOLLANDIA on 26-10-1595; he was succeeded by Hendrik Jansz."
@@ -29247,4 +29256,70 @@ ALTER TABLE "soldiers" ADD FOREIGN KEY ("number", "number_sup")
 ALTER TABLE "total" ADD FOREIGN KEY ("number", "number_sup")
 	REFERENCES "voyages" ("number", "number_sup");
 
-commit;
+--VOCquery
+select boatname from "voyages";
+select distinct boatname from "voyages";
+
+select count(*) from craftsmen c, passengers p
+where c.trip = p.trip and exists
+(select 1 from voyages v
+where c.trip = v.trip and v.boatname = 'AMSTERDAM'
+and v.departure_harbour ='Texel');
+
+select count(*) from craftsmen c, passengers p
+where c.trip = p.trip and exists (select 1) ;
+
+select count(*) from craftsmen c ;
+select count(*) from craftsmen c where exists (select 1) ;
+
+--VOCmanual_examples
+CREATE VIEW onboard_people AS
+SELECT * FROM (
+   SELECT 'craftsmen' AS type, craftsmen.* FROM craftsmen
+   UNION ALL
+   SELECT 'impotenten' AS type, impotenten.* FROM impotenten
+   UNION ALL
+   SELECT 'passengers' AS type, passengers.* FROM passengers
+   UNION ALL
+   SELECT 'seafarers' AS type, seafarers.* FROM seafarers
+   UNION ALL
+   SELECT 'soldiers' AS type, soldiers.* FROM soldiers
+   UNION ALL
+   SELECT 'total' AS type, total.* FROM total
+) AS onboard_people_table;
+
+SELECT type, COUNT(*) AS total FROM onboard_people GROUP BY type ORDER BY type;
+
+select count(*) from impotenten;
+
+SELECT COUNT(*) FROM voyages WHERE particulars LIKE '%_recked%';
+
+SELECT chamber, CAST(AVG(invoice) AS integer) AS average
+FROM invoices
+WHERE invoice IS NOT NULL
+GROUP BY chamber
+ORDER BY average DESC;
+
+CREATE VIEW extended_onboard AS
+SELECT number, number_sup, trip, trip_sup, onboard_at_departure, death_at_cape, 
+   left_at_cape, onboard_at_cape, death_during_voyage, onboard_at_arrival,
+   death_during_voyage - left_at_cape AS death_at_arrival 
+FROM onboard_people;
+
+--VOCdrop
+drop table total cascade;
+drop table soldiers cascade;
+drop table seafarers cascade;
+drop table passengers cascade;
+drop table invoices cascade;
+drop table impotenten cascade;
+drop table craftsmen cascade;
+drop table voyages cascade;
+
+--VOCdrop_user
+ALTER USER "voc" SET SCHEMA "sys";
+SET SCHEMA "sys";
+DROP SCHEMA "voc";
+DROP USER "voc";
+
+rollback;
