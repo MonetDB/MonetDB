@@ -122,7 +122,7 @@ MOSskip_linear(MOStask task)
 	current->is_applicable = true;\
 	current->uncompressed_size += (BUN) (i * sizeof(TPE));\
 	current->compressed_size += wordaligned( MosaicBlkSize + 2 * sizeof(TPE),TPE);\
-	current->compression_strategy.cnt = i;\
+	current->compression_strategy.cnt = (unsigned int) i;\
 }
 
 // calculate the expected reduction using LINEAR in terms of elements compressed
