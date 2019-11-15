@@ -628,6 +628,9 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 				cnt++;
 			}
 		}
+		break;
+	default:
+		res = NULL;
 	}
 	return res;
 }
@@ -1202,6 +1205,9 @@ JSONjson2number(dbl *ret, json *js)
 			if (rest && (size_t) (rest - jt->elm[2].value) !=jt->elm[2].valuelen)
 				*ret = dbl_nil;
 		}
+		break;
+	default:
+		*ret = dbl_nil;
 	}
 	JSONfree(jt);
 	return MAL_SUCCEED;
@@ -1235,6 +1241,9 @@ JSONjson2integer(lng *ret, json *js)
 			if (rest && (size_t) (rest - jt->elm[2].value) !=jt->elm[2].valuelen)
 				*ret = lng_nil;
 		}
+		break;
+	default:
+		*ret = lng_nil;
 	}
 	JSONfree(jt);
 	return MAL_SUCCEED;

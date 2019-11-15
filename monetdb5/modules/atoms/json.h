@@ -15,25 +15,28 @@
 #include "mal_instruction.h"
 #include "mal_exception.h"
 
-#define JSON_OBJECT 1
-#define JSON_ARRAY 2
-#define JSON_ELEMENT 3
-#define JSON_VALUE 4
-#define JSON_STRING 5
-#define JSON_NUMBER 6
-#define JSON_BOOL 7
-#define JSON_NULL 8
+typedef enum JSONkind {
+  JSON_OBJECT=1,
+  JSON_ARRAY,
+  JSON_ELEMENT,
+  JSON_VALUE,
+  JSON_STRING,
+  JSON_NUMBER,
+  JSON_BOOL,
+  JSON_NULL
+} JSONkind;
 
 /* The JSON index structure is meant for short lived versions */
 typedef struct JSONterm {
-    short kind;
-    char *name; /* exclude the quotes */
-    size_t namelen;
-    const char *value; /* start of string rep */
-    size_t valuelen;
-    int child, next, tail; /* next offsets allow you to walk array/object chains and append quickly */
-    /* An array or object item has a number of components */
-} JSONterm; 
+  JSONkind kind;
+  char *name; /* exclude the quotes */
+  size_t namelen;
+  const char *value; /* start of string rep */
+  size_t valuelen;
+  int child, next, tail; /* next offsets allow you to walk array/object chains
+													and append quickly */
+  /* An array or object item has a number of components */
+} JSONterm;
 
 typedef struct JSON{
     JSONterm *elm;
