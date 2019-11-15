@@ -32,6 +32,7 @@
 #define _H_ODBCGLOBAL
 
 #include "monetdb_config.h"
+#include "mstring.h"
 
 /**** Define the ODBC Version this ODBC driver complies with ****/
 #define ODBCVER 0x0352		/* Important: this must be defined before include of sqlext.h */

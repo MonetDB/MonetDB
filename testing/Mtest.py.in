@@ -48,6 +48,8 @@ quiet = False
 
 releaserun = False
 
+initdb = None
+
 global_timeout = 0
 start_time = time.time()
 
@@ -1319,6 +1321,26 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     #TODO:
                     # add "something" to HTML output
                     return td, elem, max(FdOut, FdErr), interrupted
+            if initdb:
+                import zipfile
+                try:
+                    z = zipfile.ZipFile(initdb)
+                except IOError:
+                    Warn("initial database '%s` cannot be opened; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
+                    #TODO:
+                    # add "something" to HTML output
+                    return td, elem, max(FdOut, FdErr), interrupted
+                try:
+                    z.extractall(LogDBdir)
+                except:
+                    Warn("initial database '%s` cannot be extracted; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
+                    #TODO:
+                    # add "something" to HTML output
+                    return td, elem, max(FdOut, FdErr), interrupted
+                z.close()
+                pSrvr = ServerClass()
+                pSrvr.LaunchIt(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
+                pSrvr.terminate()
         if not os.path.exists(TSTTRGDIR):
             #TODO: set mode to umask
             os.makedirs(TSTTRGDIR)
@@ -1690,7 +1712,7 @@ def GetBitsAndModsAndThreads(env) :
     proc.killed = False
     proc.onechild = True
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
-    qOut = None
+    qOut = qErr = None
     try:
         t.start()
         while True:
@@ -3675,6 +3697,7 @@ def main(argv) :
         parser.add_argument('--global_timeout', '-T', action='store', dest='global_timeout', type=int, default=global_timeout, metavar='<sec>', help='global timeout')
         parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing')
         parser.add_argument('--alltests', action='store_true', dest='alltests', help='also run tests that are known to fail')
+        parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
     elif THISFILE == 'Mapprove.py':
         f = _configure(os.path.join('@QXprefix@',dftTSTPREF,'.Mapprove.rc'))
         v = ReadMapproveRc(f)
@@ -3757,6 +3780,8 @@ def main(argv) :
         a = opts.data_path
         if a is not None:
             env['TSTDATAPATH'] = a
+        global initdb
+        initdb = opts.initdb
     if THISFILE == 'Mapprove.py':
         a = opts.ext
         if a is None:

@@ -14219,6 +14219,7 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error)
 
 	if (cnt == ncand && tp != TYPE_bit &&
 	    ATOMbasetype(b->ttype) == ATOMbasetype(tp) &&
+	    (tp != TYPE_oid || b->ttype == TYPE_oid) &&
 	    (tp != TYPE_str ||
 	     BATatoms[b->ttype].atomToStr == BATatoms[TYPE_str].atomToStr)) {
 		return COLcopy(b, tp, false, TRANSIENT);

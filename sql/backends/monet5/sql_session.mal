@@ -1,0 +1,40 @@
+module sql;
+pattern  sql.setquerytimeout(n:int):void
+address SQLqueryTimeout;
+pattern  sql.setquerytimeout(sid:bte, n:int):void
+address SQLqueryTimeout;
+pattern  sql.setquerytimeout(sid:sht, n:int):void
+address SQLqueryTimeout;
+pattern  sql.setquerytimeout(sid:int, n:int):void
+address SQLqueryTimeout
+comment "A query is aborted after q seconds (q=0 means run undisturbed).";
+        
+pattern  sql.setsessiontimeout(n:int):void
+address SQLsessionTimeout;
+pattern  sql.setsessiontimeout(sid:bte, n:int):void
+address SQLsessionTimeout;
+pattern  sql.setsessiontimeout(sid:sht, n:int):void
+address SQLsessionTimeout;
+pattern  sql.setsessiontimeout(sid:int, n:int):void
+address SQLsessionTimeout
+comment "Set the session timeout for a particulat session id";
+
+pattern  sql.setoptimizer(opt:str):void
+address SQLsetoptimizer;
+pattern  sql.setoptimizer(sid:int, opt:str):void
+address SQLsetoptimizer
+comment "Set the session optimizer";
+        
+pattern  sql.setworkerlimit(n:int):void
+address SQLsetworkerlimit;
+pattern  sql.setworkerlimit(sid:int, n:int):void
+address SQLsetworkerlimit
+comment "Limit the number of worker threads per query";
+
+pattern  sql.setmemorylimit(n:int):void
+address SQLsetmemorylimit;
+pattern  sql.setmemorylimit(sid:sht, n:int):void
+address SQLsetmemorylimit
+comment "Limit the memory claim in MB per query";
+
+

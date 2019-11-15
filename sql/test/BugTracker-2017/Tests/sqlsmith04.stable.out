@@ -37,10 +37,10 @@ stdout of test 'sqlsmith04` in directory 'sql/test/BugTracker-2017` itself:
 #          on (ref_695.storage = ref_698.name )
 #        on (ref_678.language = ref_698.default_schema )
 #      left join sys.queue as ref_699
-% .L146,	.L150 # table_name
+% .L77,	.L100 # table_name
 % c0,	c1 # name
-% int,	oid # type
-% 1,	3 # length
+% int,	bigint # type
+% 1,	1 # length
 
 # 17:13:52 >  
 # 17:13:52 >  "Done."

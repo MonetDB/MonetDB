@@ -1,5 +1,4 @@
 
-
 CREATE TABLE open_auctions (
 	  id int NOT NULL AUTO_INCREMENT,
 	  open_auction_id varchar(255) NOT NULL,
@@ -16,7 +15,7 @@ CREATE TABLE open_auctions (
 	  PRIMARY KEY (id)
 );
 
-INSERT INTO "open_auctions" ("id", "open_auction_id", "initial", "reserve", "aktuell", "privacy", "itemref", "seller", "quantity", "type", "start", "ende") VALUES
+INSERT INTO open_auctions (id, open_auction_id, initial, reserve, aktuell, privacy, itemref, seller, quantity, type, start, ende) VALUES
 (1, 'open_auction0', 210.62, 1540.75, 263.12, 'No', 'item0', 'person11', 1, 'Regular', '02/27/1998', '03/09/1999'),
 (2, 'open_auction1', 69.64, 398.65, 168.64, '', 'item2', 'person10', 1, 'Featured', '06/14/1998', '02/27/1999'),
 (3, 'open_auction2', 13.9, 0, 16.9, 'No', 'item3', 'person11', 1, 'Featured', '07/16/2000', '10/22/2000'),
@@ -43,7 +42,7 @@ CREATE TABLE bidder (
 -- Daten für Tabelle "bidder"
 --
 
-INSERT INTO "bidder" ("id", "open_auction_id", "date", "time", "personref", "increase") VALUES
+INSERT INTO bidder (id, open_auction_id, date, time, personref, increase) VALUES
 (1, 'open_auction0', '06/13/2001', '13:16:15', 'person0', 18),
 (2, 'open_auction0', '09/18/2000', '11:29:44', 'person23', 12),
 (3, 'open_auction0', '01/07/1998', '10:23:59', 'person14', 18),
@@ -106,9 +105,36 @@ INSERT INTO "bidder" ("id", "open_auction_id", "date", "time", "personref", "inc
 (60, 'open_auction11', '10/22/2001', '15:34:49', 'person4', 15);
 
 Select b.* FROM open_auctions o, b bidder WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min (b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX (b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id order by date, time;
+-- should return: ERROR = !SELECT: no such table 'b'
 
-plan Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min (b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX (b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id;
-Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min (b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX (b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id order by date, time;
+plan
+Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min (b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX (b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id;
+
+Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min(b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX(b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id order by date, time;
+-- note that the ordering is done on two varchar columns, so not chronological on date and time.
+/* should output 10 rows (according to PostgreSQL and MySQL):
+[ 11,	"open_auction1",	"05/21/2001",	"08:02:16",	"person5",	12	]
+[ 8,	"open_auction1",	"06/22/1999",	"12:43:47",	"person19",	15	]
+[ 29,	"open_auction5",	"07/07/2000",	"08:53:00",	"person15",	6	]
+[ 30,	"open_auction5",	"08/06/2001",	"10:16:15",	"person13",	4.5	]
+[ 31,	"open_auction5",	"08/23/1999",	"08:26:06",	"person17",	30	]
+[ 6,	"open_auction1",	"10/02/2000",	"22:48:00",	"person4",	15	]
+[ 5,	"open_auction1",	"11/12/1998",	"11:23:38",	"person20",	4.5	]
+[ 10,	"open_auction1",	"11/12/2001",	"04:50:27",	"person9",	6	]
+[ 9,	"open_auction1",	"12/02/2001",	"13:38:51",	"person15",	45	]
+[ 7,	"open_auction1",	"12/04/1998",	"22:29:38",	"person23",	1.5	]
+*/
+
+-- alternative way to write the query, but giving the correct output
+select * from (
+ Select b.*
+ , (select b3.INCREASE from bidder b3 where b3.id = (select min(b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) as b3_increase
+ , (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX(b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) as b2_increase
+  FROM open_auctions o, bidder b
+ WHERE o.open_auction_id = b.open_auction_id
+) t
+where b3_increase * 2 <= b2_increase
+order by date, time;
 
 drop table bidder;
 drop table open_auctions;

@@ -119,6 +119,94 @@ stdout of test 'keys` in directory 'sql/test` itself:
 [ "pg_pkey_id_file_id",	0,	"pg_pkey_id_file_id",	0	]
 [ "pg_fkey_file_id",	1,	"pg_fkey_file_id",	2	]
 [ "unique_key",	0,	"unique_key",	1	]
+#create table dummyme (a int primary key, b int);
+#insert into dummyme values (1,1), (2,1), (3,1);
+[ 3	]
+#plan select count(distinct a) from dummyme;
+% .plan # table_name
+% rel # name
+% clob # type
+% 85 # length
+project (
+| group by (
+| | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
+| ) [  ] [ sys.count no nil ("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "L2"."L2" ]
+) [ "L2"."L2" NOT NULL ]
+#plan select count(distinct a) from dummyme group by b;
+% .plan # table_name
+% rel # name
+% clob # type
+% 113 # length
+project (
+| group by (
+| | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL , "dummyme"."b" ] COUNT 
+| ) [ "dummyme"."b" ] [ "dummyme"."b", sys.count no nil ("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "L1"."L1" ]
+) [ "L1"."L1" NOT NULL ]
+#plan select count(distinct b) from dummyme;
+% .plan # table_name
+% rel # name
+% clob # type
+% 54 # length
+project (
+| group by (
+| | group by (
+| | | table(sys.dummyme) [ "dummyme"."b" ] COUNT 
+| | ) [ "dummyme"."b" as "L3"."L3" ] [ "L3"."L3" ]
+| ) [  ] [ sys.count no nil ("L3"."L3") as "L2"."L2" ]
+) [ "L2"."L2" ]
+#plan select count(distinct a + 1) from dummyme;
+% .plan # table_name
+% rel # name
+% clob # type
+% 148 # length
+project (
+| group by (
+| | group by (
+| | | project (
+| | | | project (
+| | | | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
+| | | | ) [ "dummyme"."a" NOT NULL HASHCOL , bigint["dummyme"."a" NOT NULL HASHCOL ] as "L4"."L4", sys.sql_add("L4"."L4", bigint "1") as "L5"."L5" ]
+| | | ) [ "L5"."L5" ]
+| | ) [ "L5"."L5" as "L7"."L7" ] [ "L7"."L7" ]
+| ) [  ] [ sys.count no nil ("L7"."L7") as "L2"."L2" ]
+) [ "L2"."L2" ]
+#plan select count(distinct a + b) from dummyme;
+% .plan # table_name
+% rel # name
+% clob # type
+% 198 # length
+project (
+| group by (
+| | group by (
+| | | project (
+| | | | project (
+| | | | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL , "dummyme"."b" ] COUNT 
+| | | | ) [ "dummyme"."a" NOT NULL HASHCOL , "dummyme"."b", bigint["dummyme"."a" NOT NULL HASHCOL ] as "L4"."L4", bigint["dummyme"."b"] as "L5"."L5", sys.sql_add("L4"."L4", "L5"."L5") as "L6"."L6" ]
+| | | ) [ "L6"."L6" ]
+| | ) [ "L6"."L6" as "L10"."L10" ] [ "L10"."L10" ]
+| ) [  ] [ sys.count no nil ("L10"."L10") as "L2"."L2" ]
+) [ "L2"."L2" ]
+#plan select count(distinct abs(a)) from dummyme;
+% .plan # table_name
+% rel # name
+% clob # type
+% 100 # length
+project (
+| group by (
+| | group by (
+| | | project (
+| | | | project (
+| | | | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
+| | | | ) [ "dummyme"."a" NOT NULL HASHCOL , sys.abs("dummyme"."a" NOT NULL HASHCOL ) as "L4"."L4" ]
+| | | ) [ "L4"."L4" ]
+| | ) [ "L4"."L4" as "L6"."L6" ] [ "L6"."L6" ]
+| ) [  ] [ sys.count no nil ("L6"."L6") as "L2"."L2" ]
+) [ "L2"."L2" ]
+#ROLLBACK;
+
+# 15:20:15 >  
+# 15:20:15 >  "Done."
+# 15:20:15 >  
 
 # 16:23:54 >  
 # 16:23:54 >  "Done."

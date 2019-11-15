@@ -35,6 +35,7 @@ lib__sql = {
 		sql_statement.c sql_statement.h \
 		sql_statistics.c sql_statistics.h \
 		sql_gencode.c sql_gencode.h \
+		sql_session.c sql_session.h \
 		sql_optimizer.c sql_optimizer.h \
 		sql_result.c sql_result.h \
 		sql_cast.c sql_cast.h \
@@ -64,7 +65,7 @@ headers_mal = {
 	DIR = libdir/monetdb5
 	SOURCES = sql_aggr_bte.mal  sql_aggr_flt.mal sql_aggr_dbl.mal  sql_aggr_int.mal  sql_aggr_lng.mal \
 		sql_aggr_sht.mal  sql_decimal.mal  sql_inspect.mal wlr.mal \
-		sql_rank.mal sqlcatalog.mal sql_transaction.mal  sql.mal
+		sql_rank.mal sqlcatalog.mal sql_transaction.mal  sql.mal sql_session.mal
 }
 
 headers_mal_hge = {

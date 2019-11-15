@@ -1,7 +1,7 @@
 --this test only tests the sintax
 --the semantic should also be tested after the syntax test
 
-create table t_4_1 (id int, name varchar(1024));
+create table t_4_1 ("id" int, "name" varchar(1024));
 
 --test FOR EACH STATMENT (default one)
 insert into t_4_1 values(10, 'monetdb');
@@ -27,30 +27,30 @@ create trigger test_4_4
 create trigger test_4_5
 	after update on t_4_1
 	for each statement 
-	when (id>0) insert into t_4_1 values(4, 'update_when_statement_true');
+	when ("id">0) insert into t_4_1 values(4, 'update_when_statement_true');
 
 --test WHEN clause
 
 create trigger test_4_6
 	after update on t_4_1 referencing new row as new_row
 	for each row 
-	when (new_row.id>0) insert into t_4_1 values(5, 'update_when_row_true');
+	when (new_row."id">0) insert into t_4_1 values(5, 'update_when_row_true');
 
 create trigger test_4_7
 	after update on t_4_1
 	for each statement 
-	when (id >1000) insert into t_4_1 values(6, 'update_when_statement_false');
+	when ("id" >1000) insert into t_4_1 values(6, 'update_when_statement_false');
 
 create trigger test_4_8
 	after update on t_4_1 referencing new row as new_row
 	for each row 
-	when (new_row.id>1000) insert into t_4_1 values(7, 'update_when_row_false');
+	when (new_row."id">1000) insert into t_4_1 values(7, 'update_when_row_false');
 
-update t_4_1 set name = 'mo' where id = 10;
+update t_4_1 set "name" = 'mo' where "id" = 10;
 
 select * from t_4_1;
 
-delete from t_4_1 where id >-1;
+delete from t_4_1 where "id" >-1;
 
 drop trigger test_4_1;
 drop trigger test_4_2;
@@ -87,7 +87,7 @@ create trigger test_4_3
 	END;
 
 
-update t_4_1 set name = 'mo' where id = 10;
+update t_4_1 set "name" = 'mo' where "id" = 10;
 
 select * from t_4_1;
 

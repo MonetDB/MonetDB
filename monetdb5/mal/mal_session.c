@@ -295,7 +295,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				GDKfree(command);
 				return;
 			}
-			if (stats->locked == 1) {
+			if (stats->locked) {
 				if (uid == 0) {
 					mnstr_printf(fout, "#server is running in "
 								 "maintenance mode\n");

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# NEEDS UPDATES
+
 iter=5
 tsts="base tst400a tst400bHuge tst400cHuge tst400d tst400e tst901a tst901b"
 

@@ -114,16 +114,13 @@ def main():
     print(r'    <Property Id="ARPPRODUCTICON" Value="monetdb.ico"/>')
     print(r'    <Media Id="1" Cabinet="monetdb.cab" EmbedCab="yes"/>')
     print(r'    <Directory Id="TARGETDIR" Name="SourceDir">')
-    if vs in ('17', '19'):
-        msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\20%s\Community\VC\Redist\MSVC' % vs
-        d = sorted(os.listdir(msvc))[-1]
-        msm = '_CRT_%s.msm' % arch
-        for f in sorted(os.listdir(os.path.join(msvc, d, 'MergeModules'))):
-            if msm in f:
-                fn = f
-        print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="%s\%s\MergeModules\%s"/>' % (msvc, d, fn))
-    else:
-        print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC%s0_CRT_%s.msm"/>' % (vs, arch))
+    msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\20%s\Community\VC\Redist\MSVC' % vs
+    d = sorted(os.listdir(msvc))[-1]
+    msm = '_CRT_%s.msm' % arch
+    for f in sorted(os.listdir(os.path.join(msvc, d, 'MergeModules'))):
+        if msm in f:
+            fn = f
+    print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="%s\%s\MergeModules\%s"/>' % (msvc, d, fn))
     print(r'      <Directory Id="%s">' % folder)
     print(r'        <Directory Id="ProgramFilesMonetDB" Name="MonetDB">')
     print(r'          <Directory Id="INSTALLDIR" Name="MonetDB5">')

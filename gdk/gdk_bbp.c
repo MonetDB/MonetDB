@@ -419,7 +419,8 @@ fixfltheap(BAT *b)
 	}
 	/* load old heap */
 	h1 = b->theap;
-	stpconcat(h1.filename, filename, ".tail", NULL);
+	strconcat_len(h1.filename, sizeof(h1.filename),
+		      filename, ".tail", NULL);
 	h1.base = NULL;
 	h1.dirty = false;
 	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED) {
@@ -431,7 +432,7 @@ fixfltheap(BAT *b)
 
 	/* create new heap */
 	h2 = b->theap;
-	stpconcat(h2.filename, nme, ".tail", NULL);
+	strconcat_len(h2.filename, sizeof(h2.filename), nme, ".tail", NULL);
 	if (HEAPalloc(&h2, b->batCapacity, b->twidth) != GDK_SUCCEED) {
 		GDKfree(srcdir);
 		HEAPfree(&h1, false);
@@ -706,7 +707,8 @@ fixdateheap(BAT *b, const char *anme)
 	}
 	/* load old heap */
 	h1 = b->theap;
-	stpconcat(h1.filename, filename, ".tail", NULL);
+	strconcat_len(h1.filename, sizeof(h1.filename),
+		      filename, ".tail", NULL);
 	h1.base = NULL;
 	h1.dirty = false;
 	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED) {
@@ -718,7 +720,7 @@ fixdateheap(BAT *b, const char *anme)
 
 	/* create new heap */
 	h2 = b->theap;
-	stpconcat(h2.filename, nme, ".tail", NULL);
+	strconcat_len(h2.filename, sizeof(h2.filename), nme, ".tail", NULL);
 	if (HEAPalloc(&h2, b->batCapacity, strcmp(anme, "date") == 0 ? 4 : 8) != GDK_SUCCEED) {
 		GDKfree(srcdir);
 		HEAPfree(&h1, false);
@@ -968,7 +970,8 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	b->theap.free = (size_t) free;
 	b->theap.size = (size_t) size;
 	b->theap.base = NULL;
-	stpconcat(b->theap.filename, filename, ".tail", NULL);
+	strconcat_len(b->theap.filename, sizeof(b->theap.filename),
+		      filename, ".tail", NULL);
 	b->theap.storage = (storage_t) storage;
 	b->theap.copied = false;
 	b->theap.newstorage = (storage_t) storage;
@@ -1011,7 +1014,8 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename)
 		b->tvheap->free = (size_t) free;
 		b->tvheap->size = (size_t) size;
 		b->tvheap->base = NULL;
-		stpconcat(b->tvheap->filename, filename, ".theap", NULL);
+		strconcat_len(b->tvheap->filename, sizeof(b->tvheap->filename),
+			      filename, ".theap", NULL);
 		b->tvheap->storage = (storage_t) storage;
 		b->tvheap->copied = false;
 		b->tvheap->hashash = hashash != 0;
@@ -1123,6 +1127,9 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		bn->batCount = (BUN) count;
 		bn->batInserted = bn->batCount;
 		bn->batCapacity = (BUN) capacity;
+		char name[16];
+		snprintf(name, sizeof(name), "BATlock%d", bn->batCacheid); /* fits */
+		MT_lock_init(&bn->batIdxLock, name);
 
 		if (base > (uint64_t) GDK_oid_max) {
 			BATdestroy(bn);
@@ -1158,7 +1165,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		} else {
 			if (s)
 				*s = 0;
-			strncpy(logical, headname, sizeof(logical));
+			strcpy_len(logical, headname, sizeof(logical));
 		}
 		s = logical;
 		BBP_logical(bid) = GDKstrdup(s);
@@ -1167,7 +1174,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 			return GDK_FAIL;
 		}
 		/* tailname is ignored */
-		strncpy(BBP_physical(bid), filename, sizeof(BBP_physical(bid)));
+		strcpy_len(BBP_physical(bid), filename, sizeof(BBP_physical(bid)));
 #ifdef STATIC_CODE_ANALYSIS
 		/* help coverity */
 		BBP_physical(bid)[sizeof(BBP_physical(bid)) - 1] = 0;
@@ -3103,7 +3110,7 @@ heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, con
 		long_str kill_ext;
 		char *path;
 
-		stpconcat(kill_ext, ext, ".kill", NULL);
+		strconcat_len(kill_ext, sizeof(kill_ext), ext, ".kill", NULL);
 		path = GDKfilepath(hp->farmid, dstdir, nme, kill_ext);
 		if (path == NULL)
 			return GDK_FAIL;
@@ -3226,7 +3233,7 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 		char extnew[16];
 		gdk_return mvret = GDK_SUCCEED;
 
-		stpconcat(extnew, ext, ".new", NULL);
+		strconcat_len(extnew, sizeof(extnew), ext, ".new", NULL);
 		if (dirty &&
 		    !file_exists(h->farmid, BAKDIR, nme, extnew) &&
 		    !file_exists(h->farmid, BAKDIR, nme, ext)) {
@@ -3265,7 +3272,8 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 		    (h->storage == STORE_PRIV || h->newstorage == STORE_PRIV)) {
 			long_str kill_ext;
 
-			stpconcat(kill_ext, ext, ".new.kill", NULL);
+			strconcat_len(kill_ext, sizeof(kill_ext),
+				      ext, ".new.kill", NULL);
 			if (file_exists(h->farmid, BAKDIR, nme, kill_ext) &&
 			    file_move(h->farmid, BAKDIR, SUBDIR, nme, kill_ext) != GDK_SUCCEED) {
 				ret = GDK_FAIL;

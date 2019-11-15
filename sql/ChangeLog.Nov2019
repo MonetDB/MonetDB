@@ -1,6 +1,11 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon Nov  4 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Removed functions json.text(string) returns string and json.text(int)
+  returns string. Their MAL implementation didn't exist, so they were
+  meaningless.
+
 * Mon Sep 23 2019 Sjoerd Mullender <sjoerd@acm.org>
 - There are new aggregate functions sys.median_avg and sys.quantile_avg
   that return the interpolated value if the median/quantile doesn't fall

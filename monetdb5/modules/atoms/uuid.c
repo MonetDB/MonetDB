@@ -163,7 +163,7 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external)
 	return (ssize_t) (s - svalue);
 
   bailout:
-	GDKerror("Syntax error in UUID.\n");
+	**retval = uuid_nil;
 	return -1;
 }
 

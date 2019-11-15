@@ -1589,7 +1589,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 	if (op1->nr < 0 && (sub && sub->nr < 0))
 		return NULL;
 	l = op1->nr;
-	if (((cmp & CMP_BETWEEN) || op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
+	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
 		int k;
 
 		if (op2->nr < 0 || op3->nr < 0)
@@ -1691,8 +1691,8 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 			q = pushNil(mb, q, TYPE_lng); /* estimate */
 		if (type == st_uselect2) {
 			q = pushBit(mb, q, anti);
-			if (q == NULL)
-				return NULL;
+			if (cmp & CMP_BETWEEN)
+				q = pushBit(mb, q, TRUE); /* all nil's are != */
 		}
 		if (q == NULL)
 			return NULL;
@@ -2192,28 +2192,32 @@ stmt_rs_column(backend *be, stmt *rs, int i, sql_subtype *tpe)
  */
 #define NEWRESULTSET
 
-#define meta(Id,Tpe) \
-q = newStmt(mb, batRef, newRef);\
-q= pushType(mb,q, Tpe);\
-Id = getArg(q,0); \
-list = pushArgument(mb,list,Id);
+#define meta(P, Id, Tpe, Args) \
+P = newStmtArgs(mb, batRef, packRef, Args);\
+Id = getArg(P,0);\
+setVarType(mb, Id, newBatType(Tpe));\
+setVarFixed(mb, Id);\
+list = pushArgument(mb, list, Id);
 
-#define metaInfo(Id,Tpe,Val)\
-p = newStmt(mb, batRef, appendRef);\
-p = pushArgument(mb,p, Id);\
-p = push##Tpe(mb,p, Val);\
-Id = getArg(p,0);
+#define metaInfo(P,Tpe,Val)\
+P = push##Tpe(mb, P, Val);
 
 
 static int
 dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * format, const char * sep,const char * rsep,const char * ssep,const char * ns, int onclient)
 {
 	node *n;
-	InstrPtr q = NULL;
+	bool error = false;
 	int ret = -1;
+	int args;
+
 	// gather the meta information
-	int tblId, nmeId, tpeId, lenId, scaleId, k;
-	InstrPtr p= NULL, list;
+	int tblId, nmeId, tpeId, lenId, scaleId;
+	InstrPtr list;
+	InstrPtr tblPtr, nmePtr, tpePtr, lenPtr, scalePtr;
+
+	args = 4;
+	for (n = l->h; n; n = n->next)  args ++;
 
 	list = newInstruction(mb, sqlRef, export_tableRef);
 	getArg(list,0) = newTmpVariable(mb,TYPE_int);
@@ -2226,12 +2230,13 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 		list = pushStr(mb, list, ns);
 		list = pushInt(mb, list, onclient);
 	}
-	k = list->argc;
-	meta(tblId,TYPE_str);
-	meta(nmeId,TYPE_str);
-	meta(tpeId,TYPE_str);
-	meta(lenId,TYPE_int);
-	meta(scaleId,TYPE_int);
+	meta(tblPtr, tblId, TYPE_str, args);
+	meta(nmePtr, nmeId, TYPE_str, args);
+	meta(tpePtr, tpeId, TYPE_str, args);
+	meta(lenPtr, lenId, TYPE_int, args);
+	meta(scalePtr, scaleId, TYPE_int, args);
+	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL)
+		return -1;
 
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
@@ -2251,28 +2256,22 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 			fqtn = NEW_ARRAY(char, fqtnl);
 			if(fqtn) {
 				snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
-				metaInfo(tblId, Str, fqtn);
-				metaInfo(nmeId, Str, cn);
-				metaInfo(tpeId, Str, (t->type->localtype == TYPE_void ? "char" : t->type->sqlname));
-				metaInfo(lenId, Int, t->digits);
-				metaInfo(scaleId, Int, t->scale);
+				metaInfo(tblPtr, Str, fqtn);
+				metaInfo(nmePtr, Str, cn);
+				metaInfo(tpePtr, Str, (t->type->localtype == TYPE_void ? "char" : t->type->sqlname));
+				metaInfo(lenPtr, Int, t->digits);
+				metaInfo(scalePtr, Int, t->scale);
 				list = pushArgument(mb, list, c->nr);
 				_DELETE(fqtn);
 			} else
-				q = NULL;
+				error = true;
 		} else
-			q = NULL;
+			error = true; 
 		c_delete(ntn);
 		c_delete(nsn);
-		if (q == NULL)
+		if(error)
 			return -1;
 	}
-	// add the correct variable ids
-	getArg(list,k++) = tblId;
-	getArg(list,k++) = nmeId;
-	getArg(list,k++) = tpeId;
-	getArg(list,k++) = lenId;
-	getArg(list,k) = scaleId;
 	ret = getArg(list,0);
 	pushInstruction(mb,list);
 	return ret;
@@ -2482,22 +2481,28 @@ static InstrPtr
 dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 {
 	node *n;
-	InstrPtr q = NULL;
+	bool error = false;
 	// gather the meta information
-	int tblId, nmeId, tpeId, lenId, scaleId, k;
-	InstrPtr p = NULL, list;
+	int tblId, nmeId, tpeId, lenId, scaleId;
+	int args;
+	InstrPtr list;
+	InstrPtr tblPtr, nmePtr, tpePtr, lenPtr, scalePtr;
+
+	args = 4;
+	for (n = l->h; n; n = n->next) args++;
 
 	list = newInstruction(mb,sqlRef, resultSetRef);
 	if(!list) {
 		return NULL;
 	}
 	getArg(list,0) = newTmpVariable(mb,TYPE_int);
-	k = list->argc;
-	meta(tblId,TYPE_str);
-	meta(nmeId,TYPE_str);
-	meta(tpeId,TYPE_str);
-	meta(lenId,TYPE_int);
-	meta(scaleId,TYPE_int);
+	meta(tblPtr, tblId, TYPE_str, args);
+	meta(nmePtr, nmeId, TYPE_str, args);
+	meta(tpePtr, tpeId, TYPE_str, args);
+	meta(lenPtr, lenId, TYPE_int, args);
+	meta(scalePtr, scaleId, TYPE_int, args);
+	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL)
+		return NULL;
 
 	(void) s;
 
@@ -2519,28 +2524,22 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 			fqtn = NEW_ARRAY(char, fqtnl);
 			if(fqtn) {
 				snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
-				metaInfo(tblId,Str,fqtn);
-				metaInfo(nmeId,Str,cn);
-				metaInfo(tpeId,Str,(t->type->localtype == TYPE_void ? "char" : t->type->sqlname));
-				metaInfo(lenId,Int,t->digits);
-				metaInfo(scaleId,Int,t->scale);
+				metaInfo(tblPtr,Str,fqtn);
+				metaInfo(nmePtr,Str,cn);
+				metaInfo(tpePtr,Str,(t->type->localtype == TYPE_void ? "char" : t->type->sqlname));
+				metaInfo(lenPtr,Int,t->digits);
+				metaInfo(scalePtr,Int,t->scale);
 				list = pushArgument(mb,list,c->nr);
 				_DELETE(fqtn);
 			} else
-				q = NULL;
+				error = true;
 		} else
-			q = NULL;
+			error = true;
 		c_delete(ntn);
 		c_delete(nsn);
-		if (q == NULL)
+		if (error)
 			return NULL;
 	}
-	// add the correct variable ids
-	getArg(list,k++) = tblId;
-	getArg(list,k++) = nmeId;
-	getArg(list,k++) = tpeId;
-	getArg(list,k++) = lenId;
-	getArg(list,k) = scaleId;
 	pushInstruction(mb,list);
 	return list;
 }
@@ -2796,9 +2795,13 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *sel)
 		q = pushInt(mb, q, f->digits);
 		q = pushInt(mb, q, f->scale);
 		q = pushInt(mb, q, type_has_tz(f));
-	} else if (f->type->eclass == EC_DEC)
+	} else if (f->type->eclass == EC_DEC) {
 		/* scale of the current decimal */
 		q = pushInt(mb, q, f->scale);
+	} else if (f->type->eclass == EC_SEC && t->type->eclass == EC_FLT) {
+		/* scale of the current decimal */
+		q = pushInt(mb, q, 3);
+	}
 	q = pushArgument(mb, q, v->nr);
 	if (sel && v->nrcols && f->type->eclass != EC_DEC && !EC_TEMP_FRAC(t->type->eclass) && !EC_INTERVAL(t->type->eclass))
 		q = pushArgument(mb, q, sel->nr);

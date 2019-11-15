@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "mapi.h"
 #include "stream.h"
+#include "mstring.h"
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
@@ -1147,14 +1148,13 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname;
+			size_t len = sname - tname + 1;
 
-			sname = malloc(len + 1);
+			sname = malloc(len);
 			if (sname == NULL)
 				goto bailout;
-			strncpy(sname, tname, len);
-			sname[len] = 0;
-			tname += len + 1;
+			strcpy_len(sname, tname, len);
+			tname += len;
 		} else if ((sname = get_schema(mid)) == NULL) {
 			return 1;
 		}
@@ -1489,14 +1489,13 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname;
+			size_t len = sname - tname + 1;
 
-			sname = malloc(len + 1);
+			sname = malloc(len);
 			if (sname == NULL)
 				goto bailout;
-			strncpy(sname, tname, len);
-			sname[len] = 0;
-			tname += len + 1;
+			strcpy_len(sname, tname, len);
+			tname += len;
 		} else if ((sname = get_schema(mid)) == NULL) {
 			return 1;
 		}
@@ -1657,14 +1656,13 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname;
+			size_t len = sname - tname + 1;
 
-			sname = malloc(len + 1);
+			sname = malloc(len);
 			if (sname == NULL)
 				goto bailout;
-			strncpy(sname, tname, len);
-			sname[len] = 0;
-			tname += len + 1;
+			strcpy_len(sname, tname, len);
+			tname += len;
 		} else if ((sname = get_schema(mid)) == NULL) {
 			goto bailout;
 		}
@@ -2169,14 +2167,13 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 			/* no schema given, so figure it out */
 			const char *dot = strchr(fname, '.');
 			if (dot != NULL) {
-				size_t len = dot - fname;
+				size_t len = dot - fname + 1;
 
-				to_free = malloc(len + 1);
+				to_free = malloc(len);
 				if (to_free == NULL)
 					goto bailout;
-				strncpy(to_free, fname, len);
-				to_free[len] = 0;
-				fname += len + 1;
+				strcpy_len(to_free, fname, len);
+				fname += len;
 			} else if ((to_free = get_schema(mid)) == NULL) {
 				return 1;
 			}
@@ -2575,8 +2572,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 		goto bailout;
 
 	/* start a transaction for the dump */
-	if (!describe)
-		mnstr_printf(toConsole, "%s;\n", start_trx);
+	mnstr_printf(toConsole, "%s;\n", start_trx);
 
 	if ((hdl = mapi_query(mid, start_trx)) == NULL || mapi_error(mid))
 		goto bailout;
@@ -3095,8 +3091,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 	mapi_close_handle(hdl);
 
 	/* finally commit the whole transaction */
-	if (!describe)
-		mnstr_printf(toConsole, "COMMIT;\n");
+	mnstr_printf(toConsole, "COMMIT;\n");
 	if (sname)
 		free(sname);
 	if (query)
