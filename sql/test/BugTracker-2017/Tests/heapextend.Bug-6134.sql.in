@@ -1526,5 +1526,8 @@ SELECT loc.code
     AND ( s1.code = '03' OR cat.subcategory_code = 25 )
     AND d.month_code BETWEEN '2016.01' AND '2016.10';
 
+SELECT 1 FROM location loc,segment1 s1,fact f WHERE s1.id = f.s1_id AND loc.id = f.location_id;
+
+SELECT 1 FROM location loc,segment1 s1,fact f WHERE s1.id = f.s1_id AND loc.id = f.location_id AND ( s1.code = '03' OR loc.code = '0010094' );
 
 ROLLBACK;
