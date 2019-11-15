@@ -64,6 +64,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 	size_t off;		/* offset within n's string heap */
 	struct canditer ci;
 	BUN cnt;
+	BUN oldcnt = BATcount(b);
 
 	assert(b->ttype == TYPE_str);
 	/* only transient bats can use some other bat's string heap */
@@ -75,7 +76,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 	cnt = canditer_init(&ci, n, s);
 	if (cnt == 0)
 		return GDK_SUCCEED;
-	if ((!GDK_ELIMDOUBLES(b->tvheap) || b->batCount == 0) &&
+	if ((!GDK_ELIMDOUBLES(b->tvheap) || oldcnt == 0) &&
 	    !GDK_ELIMDOUBLES(n->tvheap) &&
 	    b->tvheap->hashash == n->tvheap->hashash) {
 		if (b->batRole == TRANSIENT || b->tvheap == n->tvheap) {
@@ -99,7 +100,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			 * wholesale copying of n's offset heap, but
 			 * we may still be able to share the string
 			 * heap */
-			if (b->batCount == 0 &&
+			if (oldcnt == 0 &&
 			    b->tvheap != n->tvheap &&
 			    ci.tpe == cand_dense) {
 				if (b->tvheap->parentid != bid) {
@@ -154,7 +155,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			}
 			if (match < 768 && (size_t) (BATcount(n) * (double) len / 1024) >= n->tvheap->free / 2) {
 				/* append string heaps */
-				toff = b->batCount == 0 ? 0 : b->tvheap->free;
+				toff = oldcnt == 0 ? 0 : b->tvheap->free;
 				/* make sure we get alignment right */
 				toff = (toff + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 				/* if in "force" mode, the heap may be
@@ -197,7 +198,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 		/* we don't need to do any translation of offset
 		 * values, so we can use fast memcpy */
 		memcpy(Tloc(b, BUNlast(b)), Tloc(n, ci.seq - n->hseqbase), cnt << n->tshift);
-		BATsetcount(b, BATcount(b) + cnt);
+		BATsetcount(b, oldcnt + cnt);
 	} else if (toff != ~(size_t) 0) {
 		/* we don't need to insert any actual strings since we
 		 * have already made sure that they are all in b's
@@ -315,7 +316,6 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			p = canditer_next(&ci) - hseq;
 			tp = BUNtvar(ni, p);
 			bunfastappVAR(b, tp);
-			HASHins(b, r, tp);
 			r++;
 		}
 	} else {
@@ -376,11 +376,17 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			} else {
 				bunfastappVAR(b, tp);
 			}
-			HASHins(b, r, tp);
 			r++;
 		}
 	}
 	b->theap.dirty = true;
+	if (b->thash) {
+		/* maintain hash */
+		for (r = oldcnt, cnt = BATcount(b); r < cnt; r++) {
+			tp = Tbase(b) + VarHeapVal(b->theap.base, r, b->twidth);
+			HASHins(b, r, tp);
+		}
+	}
 	return GDK_SUCCEED;
       bunins_failed:
 	b->tvarsized = true;
@@ -426,7 +432,6 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 	if (b->tvheap == n->tvheap) {
 		/* if b and n use the same vheap, we only need to copy
 		 * the offsets from n to b */
-		HASHdestroy(b);	/* not maintaining, so destroy it */
 		if (ci.tpe == cand_dense) {
 			/* fast memcpy since we copy a consecutive
 			 * chunk of memory */
@@ -443,6 +448,15 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 		}
 		b->theap.dirty = true;
 		BATsetcount(b, BATcount(b) + ci.ncand);
+		if (b->thash) {
+			/* maintain hash table */
+			for (BUN i = BATcount(b) - ci.ncand;
+			     i < BATcount(b);
+			     i++) {
+				const void *v = (void *) (b->tvheap->base + ((var_t *) b->theap.base)[i]);
+				HASHins(b, i, v);
+			}
+		}
 		return GDK_SUCCEED;
 	}
 	/* b and n do not share their vheap, so we need to copy data */
@@ -606,17 +620,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 			goto bunins_failed;
 	}
 
-	/* if growing too much, remove the hash, else we maintain it */
-	MT_lock_set(&b->batIdxLock);
-	if (b->thash == (Hash *) 1 ||
-	    (b->thash != NULL &&
-	     (2 * NHASHBUCKETS(b->thash)) < (BATcount(b) + cnt))) {
-		MT_lock_unset(&b->batIdxLock);
-		HASHdestroy(b);
-	} else {
-		MT_lock_unset(&b->batIdxLock);
-	}
-
 	r = BUNlast(b);
 
 	if (BATcount(b) == 0) {
@@ -687,12 +690,17 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		    b->ttype != TYPE_void &&
 		    n->ttype != TYPE_void &&
 		    ci.tpe == cand_dense) {
-			/* use fast memcpy if we can, but then we
-			 * can't maintain the hash */
-			HASHdestroy(b);
+			/* use fast memcpy if we can */
 			memcpy(Tloc(b, BUNlast(b)),
 			       Tloc(n, ci.seq - hseq),
 			       cnt * Tsize(n));
+			if (b->thash) {
+				for (BUN i = 0; i < cnt; i++) {
+					const void *v = b->theap.base + r * b->twidth;
+					HASHins(b, r, v);
+					r++;
+				}
+			}
 			BATsetcount(b, BATcount(b) + cnt);
 		} else {
 			BATiter ni = bat_iterator(n);

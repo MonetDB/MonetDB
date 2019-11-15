@@ -15,8 +15,7 @@
  * array; hence the hash link array has the same size as
  * BATcapacity(b) (not BATcount(b)). This allows us in the BUN insert
  * and delete to assume that there is hash space iff there is BUN
- * space. If there is no BUN space, the BATextend now destroys the
- * hash table.
+ * space.
  *
  * The hash mask size is a power of two, so we can do bitwise AND on
  * the hash (integer) number to quickly find the head of the bucket
