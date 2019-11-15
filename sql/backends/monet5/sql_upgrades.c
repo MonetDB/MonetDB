@@ -2062,7 +2062,7 @@ bailout:
 static str
 sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
-	size_t bufsize = 8192, pos = 0;
+	size_t bufsize = 16384, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	res_table *output;
 	BAT *b;
@@ -2240,6 +2240,51 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlr')"
 			" and name in ('master', 'stop', 'accept', 'replicate', 'beat') and type = %d;\n", (int) F_PROC);
+
+	/* 39_analytics.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create aggregate stddev_samp(val INTERVAL SECOND) returns DOUBLE\n"
+			"external name \"aggr\".\"stdev\";\n"
+			"GRANT EXECUTE ON AGGREGATE stddev_samp(INTERVAL SECOND) TO PUBLIC;\n"
+			"create aggregate stddev_samp(val INTERVAL MONTH) returns DOUBLE\n"
+			"external name \"aggr\".\"stdev\";\n"
+			"GRANT EXECUTE ON AGGREGATE stddev_samp(INTERVAL MONTH) TO PUBLIC;\n"
+
+			"create aggregate stddev_pop(val INTERVAL SECOND) returns DOUBLE\n"
+			"external name \"aggr\".\"stdevp\";\n"
+			"GRANT EXECUTE ON AGGREGATE stddev_pop(INTERVAL SECOND) TO PUBLIC;\n"
+			"create aggregate stddev_pop(val INTERVAL MONTH) returns DOUBLE\n"
+			"external name \"aggr\".\"stdevp\";\n"
+			"GRANT EXECUTE ON AGGREGATE stddev_pop(INTERVAL MONTH) TO PUBLIC;\n"
+
+			"create aggregate var_samp(val INTERVAL SECOND) returns DOUBLE\n"
+			"external name \"aggr\".\"variance\";\n"
+			"GRANT EXECUTE ON AGGREGATE var_samp(INTERVAL SECOND) TO PUBLIC;\n"
+			"create aggregate var_samp(val INTERVAL MONTH) returns DOUBLE\n"
+			"external name \"aggr\".\"variance\";\n"
+			"GRANT EXECUTE ON AGGREGATE var_samp(INTERVAL MONTH) TO PUBLIC;\n"
+
+			"create aggregate var_pop(val INTERVAL SECOND) returns DOUBLE\n"
+			"external name \"aggr\".\"variancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE var_pop(INTERVAL SECOND) TO PUBLIC;\n"
+			"create aggregate var_pop(val INTERVAL MONTH) returns DOUBLE\n"
+			"external name \"aggr\".\"variancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE var_pop(INTERVAL MONTH) TO PUBLIC;\n"
+
+			"create aggregate median(val INTERVAL SECOND) returns INTERVAL SECOND\n"
+			"external name \"aggr\".\"median\";\n"
+			"GRANT EXECUTE ON AGGREGATE median(INTERVAL SECOND) TO PUBLIC;\n"
+			"create aggregate median(val INTERVAL MONTH) returns INTERVAL MONTH\n"
+			"external name \"aggr\".\"median\";\n"
+			"GRANT EXECUTE ON AGGREGATE median(INTERVAL MONTH) TO PUBLIC;\n"
+
+			"create aggregate quantile(val INTERVAL SECOND, q DOUBLE) returns INTERVAL SECOND\n"
+			"external name \"aggr\".\"quantile\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile(INTERVAL SECOND, DOUBLE) TO PUBLIC;\n"
+			"create aggregate quantile(val INTERVAL MONTH, q DOUBLE) returns INTERVAL MONTH\n"
+			"external name \"aggr\".\"quantile\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile(INTERVAL MONTH, DOUBLE) TO PUBLIC;\n"
+		);
 
 	/* The MAL implementation of functions json.text(string) and json.text(int) do not exist */
 	pos += snprintf(buf + pos, bufsize - pos,

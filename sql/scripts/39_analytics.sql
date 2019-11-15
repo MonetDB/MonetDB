@@ -32,6 +32,12 @@ GRANT EXECUTE ON AGGREGATE stddev_samp(TIME) TO PUBLIC;
 create aggregate stddev_samp(val TIMESTAMP) returns DOUBLE
 	external name "aggr"."stdev";
 GRANT EXECUTE ON AGGREGATE stddev_samp(TIMESTAMP) TO PUBLIC;
+create aggregate stddev_samp(val INTERVAL SECOND) returns DOUBLE
+	external name "aggr"."stdev";
+GRANT EXECUTE ON AGGREGATE stddev_samp(INTERVAL SECOND) TO PUBLIC;
+create aggregate stddev_samp(val INTERVAL MONTH) returns DOUBLE
+	external name "aggr"."stdev";
+GRANT EXECUTE ON AGGREGATE stddev_samp(INTERVAL MONTH) TO PUBLIC;
 
 create aggregate stddev_pop(val TINYINT) returns DOUBLE
 	external name "aggr"."stdevp";
@@ -61,6 +67,12 @@ GRANT EXECUTE ON AGGREGATE stddev_pop(TIME) TO PUBLIC;
 create aggregate stddev_pop(val TIMESTAMP) returns DOUBLE
 	external name "aggr"."stdevp";
 GRANT EXECUTE ON AGGREGATE stddev_pop(TIMESTAMP) TO PUBLIC;
+create aggregate stddev_pop(val INTERVAL SECOND) returns DOUBLE
+	external name "aggr"."stdevp";
+GRANT EXECUTE ON AGGREGATE stddev_pop(INTERVAL SECOND) TO PUBLIC;
+create aggregate stddev_pop(val INTERVAL MONTH) returns DOUBLE
+	external name "aggr"."stdevp";
+GRANT EXECUTE ON AGGREGATE stddev_pop(INTERVAL MONTH) TO PUBLIC;
 
 create aggregate var_samp(val TINYINT) returns DOUBLE
 	external name "aggr"."variance";
@@ -90,6 +102,12 @@ GRANT EXECUTE ON AGGREGATE var_samp(TIME) TO PUBLIC;
 create aggregate var_samp(val TIMESTAMP) returns DOUBLE
 	external name "aggr"."variance";
 GRANT EXECUTE ON AGGREGATE var_samp(TIMESTAMP) TO PUBLIC;
+create aggregate var_samp(val INTERVAL SECOND) returns DOUBLE
+	external name "aggr"."variance";
+GRANT EXECUTE ON AGGREGATE var_samp(INTERVAL SECOND) TO PUBLIC;
+create aggregate var_samp(val INTERVAL MONTH) returns DOUBLE
+	external name "aggr"."variance";
+GRANT EXECUTE ON AGGREGATE var_samp(INTERVAL MONTH) TO PUBLIC;
 
 create aggregate var_pop(val TINYINT) returns DOUBLE
 	external name "aggr"."variancep";
@@ -119,6 +137,12 @@ GRANT EXECUTE ON AGGREGATE var_pop(TIME) TO PUBLIC;
 create aggregate var_pop(val TIMESTAMP) returns DOUBLE
 	external name "aggr"."variancep";
 GRANT EXECUTE ON AGGREGATE var_pop(TIMESTAMP) TO PUBLIC;
+create aggregate var_pop(val INTERVAL SECOND) returns DOUBLE
+	external name "aggr"."variancep";
+GRANT EXECUTE ON AGGREGATE var_pop(INTERVAL SECOND) TO PUBLIC;
+create aggregate var_pop(val INTERVAL MONTH) returns DOUBLE
+	external name "aggr"."variancep";
+GRANT EXECUTE ON AGGREGATE var_pop(INTERVAL MONTH) TO PUBLIC;
 
 create aggregate median(val TINYINT) returns TINYINT
 	external name "aggr"."median";
@@ -151,6 +175,12 @@ GRANT EXECUTE ON AGGREGATE median(TIME) TO PUBLIC;
 create aggregate median(val TIMESTAMP) returns TIMESTAMP
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(TIMESTAMP) TO PUBLIC;
+create aggregate median(val INTERVAL SECOND) returns INTERVAL SECOND
+	external name "aggr"."median";
+GRANT EXECUTE ON AGGREGATE median(INTERVAL SECOND) TO PUBLIC;
+create aggregate median(val INTERVAL MONTH) returns INTERVAL MONTH
+	external name "aggr"."median";
+GRANT EXECUTE ON AGGREGATE median(INTERVAL MONTH) TO PUBLIC;
 
 create aggregate quantile(val TINYINT, q DOUBLE) returns TINYINT
 	external name "aggr"."quantile";
@@ -174,7 +204,6 @@ create aggregate quantile(val DOUBLE, q DOUBLE) returns DOUBLE
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(DOUBLE, DOUBLE) TO PUBLIC;
 
-
 create aggregate quantile(val DATE, q DOUBLE) returns DATE
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(DATE, DOUBLE) TO PUBLIC;
@@ -184,6 +213,12 @@ GRANT EXECUTE ON AGGREGATE quantile(TIME, DOUBLE) TO PUBLIC;
 create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(TIMESTAMP, DOUBLE) TO PUBLIC;
+create aggregate quantile(val INTERVAL SECOND, q DOUBLE) returns INTERVAL SECOND
+	external name "aggr"."quantile";
+GRANT EXECUTE ON AGGREGATE quantile(INTERVAL SECOND, DOUBLE) TO PUBLIC;
+create aggregate quantile(val INTERVAL MONTH, q DOUBLE) returns INTERVAL MONTH
+	external name "aggr"."quantile";
+GRANT EXECUTE ON AGGREGATE quantile(INTERVAL MONTH, DOUBLE) TO PUBLIC;
 
 create aggregate median_avg(val TINYINT) returns DOUBLE
 	external name "aggr"."median_avg";
