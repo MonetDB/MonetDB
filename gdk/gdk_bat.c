@@ -452,9 +452,6 @@ BATextend(BAT *b, BUN newcap)
 	if (b->theap.base &&
 	    HEAPextend(&b->theap, theap_size, b->batRestricted == BAT_READ) != GDK_SUCCEED)
 		return GDK_FAIL;
-	HASHdestroy(b);
-	IMPSdestroy(b);
-	OIDXdestroy(b);
 	return GDK_SUCCEED;
 }
 
@@ -1082,7 +1079,7 @@ BUNappend(BAT *b, const void *t, bool force)
 		for (prop = b->tprops; prop; prop = prop->next)
 			if (prop->id != GDK_MAX_VALUE &&
 			    prop->id != GDK_MIN_VALUE &&
-			    prop->id != GDK_HASH_MASK) {
+			    prop->id != GDK_HASH_BUCKETS) {
 				BATrmprop(b, prop->id);
 				break;
 			}
@@ -1164,7 +1161,7 @@ BUNdelete(BAT *b, oid o)
 		for (prop = b->tprops; prop; prop = prop->next)
 			if (prop->id != GDK_MAX_VALUE &&
 			    prop->id != GDK_MIN_VALUE &&
-			    prop->id != GDK_HASH_MASK) {
+			    prop->id != GDK_HASH_BUCKETS) {
 				BATrmprop(b, prop->id);
 				break;
 			}
@@ -1252,7 +1249,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 			for (prop = b->tprops; prop; prop = prop->next)
 				if (prop->id != GDK_MAX_VALUE &&
 				    prop->id != GDK_MIN_VALUE &&
-				    prop->id != GDK_HASH_MASK) {
+				    prop->id != GDK_HASH_BUCKETS) {
 					BATrmprop(b, prop->id);
 					break;
 				}
@@ -2400,13 +2397,13 @@ BATassertProps(BAT *b)
 					seenmin |= cmp == 0;
 				}
 				prb = HASHprobe(hs, valp);
-				for (hb = HASHget(hs,prb);
+				for (hb = HASHget(hs, prb);
 				     hb != HASHnil(hs);
-				     hb = HASHgetlink(hs,hb))
+				     hb = HASHgetlink(hs, hb))
 					if (cmpf(valp, BUNtail(bi, hb)) == 0)
 						assert(!b->tkey);
-				HASHputlink(hs,p, HASHget(hs,prb));
-				HASHput(hs,prb,p);
+				HASHputlink(hs, p, HASHget(hs, prb));
+				HASHput(hs, prb, p);
 				assert(!b->tnonil || !isnil);
 				seennil |= isnil;
 			}

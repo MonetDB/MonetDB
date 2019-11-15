@@ -344,7 +344,7 @@ TKNZRappend(oid *pos, str *s)
 		}
 		if (tokenBAT[i].val->thash == NULL ||
 			tokenBAT[i].val->thash == (Hash *) 1 ||
-			BATcount(tokenBAT[i].val) > 4 * tokenBAT[i].val->thash->mask) {
+			BATcount(tokenBAT[i].val) > 4 * NHASHBUCKETS(tokenBAT[i].val->thash)) {
 			HASHdestroy(tokenBAT[i].val);
 			BAThash(tokenBAT[i].val);
 		}
@@ -366,7 +366,7 @@ TKNZRappend(oid *pos, str *s)
 	}
 	if (tokenBAT[INDEX].val->thash == NULL ||
 		tokenBAT[INDEX].val->thash == (Hash *) 1 ||
-		BATcount(tokenBAT[INDEX].val) > 4 * tokenBAT[INDEX].val->thash->mask) {
+		BATcount(tokenBAT[INDEX].val) > 4 * NHASHBUCKETS(tokenBAT[INDEX].val->thash)) {
 		HASHdestroy(tokenBAT[INDEX].val);
 		BAThash(tokenBAT[INDEX].val);
 	}

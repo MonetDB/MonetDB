@@ -561,19 +561,14 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		for (prop = b->tprops; prop; prop = prop->next)
 			if (prop->id != GDK_MAX_VALUE &&
 			    prop->id != GDK_MIN_VALUE &&
-			    prop->id != GDK_HASH_MASK) {
+			    prop->id != GDK_HASH_BUCKETS) {
 				BATrmprop(b, prop->id);
 				break;
 			}
 	} while (prop);
 #endif
-	if (b->thash == (Hash *) 1 || BATcount(b) == 0 ||
-	    (b->thash && ((size_t *) b->thash->heapbckt.base)[0] & (1 << 24))) {
-		/* don't bother first loading the hash to then change
-		 * it, or updating the hash if we replace the heap,
-		 * also, we cannot maintain persistent hashes */
-		HASHdestroy(b);
-	}
+	/* load hash so that we can maintain it */
+	(void) BATcheckhash(b);
 
 	if (b->ttype == TYPE_void) {
 		/* b does not have storage, keep it that way if we can */
@@ -615,7 +610,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	MT_lock_set(&b->batIdxLock);
 	if (b->thash == (Hash *) 1 ||
 	    (b->thash != NULL &&
-	     (2 * b->thash->mask) < (BATcount(b) + cnt))) {
+	     (2 * NHASHBUCKETS(b->thash)) < (BATcount(b) + cnt))) {
 		MT_lock_unset(&b->batIdxLock);
 		HASHdestroy(b);
 	} else {
