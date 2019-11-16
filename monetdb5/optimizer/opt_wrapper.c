@@ -151,7 +151,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		throw(MAL, optimizer, SQLSTATE(HY002) "Optimizer implementation '%s' missing", fcnnme);
 
 	if ( mb->errors)
-		throw(MAL, optimizer, SQLSTATE(42000) PROGRAM_GENERAL ":%s.%s", modnme, fcnnme);
+		throw(MAL, optimizer, SQLSTATE(42000) PROGRAM_GENERAL ":%s.%s %s", modnme, fcnnme, mb->errors);
 	return MAL_SUCCEED;
 }
 
