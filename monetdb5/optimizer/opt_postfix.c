@@ -13,12 +13,88 @@
 #include "monetdb_config.h"
 #include "mal_instruction.h"
 #include "opt_postfix.h"
+#include "algebra.h"
 
 #define isCandidateList(M,P,I) ((M)->var[getArg(P,I)].id[0]== 'C')
 str
 OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	int i, slimit, actions = 0;
+	lng usec = GDKusec();
+	char buf[256];
+
+	(void) cntxt;
+	(void) stk;
+	
+	slimit = mb->stop;
+	setVariableScope(mb);
+	if( OPTdebug & OPTpostfix){
+		fprintf(stderr,"POSTFIX start\n");
+		fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+	}
+	/* Remove the result from any join/group instruction when it is not used later on */
+	for( i = 0; i< slimit; i++){
+/* POSTFIX ACTION FOR THE JOIN CASE  */
+		p= getInstrPtr(mb, i);
+		if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
+			delArgument(p, p->retc -1);
+			/* The typechecker is overruled here, because we only change the function binding */
+			p->fcn = ALGjoin1; 
+			//typeChecker(cntxt->usermodule, mb, p, TRUE);
+			actions++;
+			continue;
+		}
+		if ( getModuleId(p) == algebraRef && getFunctionId(p) == leftjoinRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
+			delArgument(p, p->retc -1);
+			/* The typechecker is overruled here, because we only change the function binding */
+			p->fcn = ALGleftjoin1; 
+			//typeChecker(cntxt->usermodule, mb, p, TRUE);
+			actions++;
+			continue;
+		}
+/* POSTFIX ACTION FOR THE EXTENT CASE  */
+		if ( getModuleId(p) == groupRef && getFunctionId(p) == groupRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
+			delArgument(p, p->retc -1);
+			typeChecker(cntxt->usermodule, mb, p, TRUE);
+			actions++;
+			continue;
+		}
+		if ( getModuleId(p) == groupRef && getFunctionId(p) == subgroupRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
+			delArgument(p, p->retc -1);
+			typeChecker(cntxt->usermodule, mb, p, TRUE);
+			actions++;
+			continue;
+		}
+		if ( getModuleId(p) == groupRef && getFunctionId(p) == subgroupdoneRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
+			delArgument(p, p->retc -1);
+			typeChecker(cntxt->usermodule, mb, p, TRUE);
+			actions++;
+			continue;
+		}
+		if ( getModuleId(p) == groupRef && getFunctionId(p) == groupdoneRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
+			delArgument(p, p->retc -1);
+			typeChecker(cntxt->usermodule, mb, p, TRUE);
+			actions++;
+			continue;
+		}
+	}
+	/* Defense line against incorrect plans */
+	if( actions ){
+		//chkTypes(cntxt->usermodule, mb, FALSE);
+		//chkFlow(mb);
+		//chkDeclarations(mb);
+	}
+	usec= GDKusec() - usec;
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec", "postfix", actions, usec);
+    newComment(mb,buf);
+	if( OPTdebug & OPTpostfix){
+		fprintf(stderr,"POSTFIX done\n");
+		fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+	}
+	addtoMalBlkHistory(mb);
+	return MAL_SUCCEED;
 #if 0							// Don't use this right now
+/* OLD FIX FOR PUSHING THE CANDIDATE INTO BATCALC, AWAITING SEMANTICS */
 	int i, j, slimit, limit, actions=0;
 	InstrPtr *old = 0;
     InstrPtr q, *vars = 0;
@@ -95,11 +171,5 @@ wrapup:
         fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
     }
 	return msg;
-#else
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) p;
-	return MAL_SUCCEED;
 #endif
 }
