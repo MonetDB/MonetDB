@@ -87,8 +87,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
@@ -123,8 +123,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.oltp();"
 	 "optimizer.wlc();"
@@ -160,8 +160,8 @@ static struct PIPELINES {
 	 "optimizer.volcano();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
@@ -201,8 +201,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
@@ -241,8 +241,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
