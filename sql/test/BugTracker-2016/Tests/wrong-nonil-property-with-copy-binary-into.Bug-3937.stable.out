@@ -76,8 +76,8 @@ stdout of test 'wrong-nonil-property-with-copy-binary-into.Bug-3937` in director
 [ 1	]
 [ 2	]
 #select count(*), count(x) from "noNULLtinyint";
-% .L3,	sys.L5 # table_name
-% L3,	L5 # name
+% .%1,	sys.%2 # table_name
+% %1,	%2 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 3,	3	]
@@ -106,8 +106,8 @@ stdout of test 'wrong-nonil-property-with-copy-binary-into.Bug-3937` in director
 [ 2	]
 [ NULL	]
 #select count(*), count(x) from "noNULLtinyint";
-% .L3,	sys.L5 # table_name
-% L3,	L5 # name
+% .%1,	sys.%2 # table_name
+% %1,	%2 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 4,	3	]
@@ -137,8 +137,8 @@ stdout of test 'wrong-nonil-property-with-copy-binary-into.Bug-3937` in director
 [ NULL	]
 [ 2	]
 #select count(*), count(x) from "NULLtinyint";
-% .L3,	sys.L5 # table_name
-% L3,	L5 # name
+% .%1,	sys.%2 # table_name
+% %1,	%2 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 3,	2	]
