@@ -24,8 +24,8 @@ stdout of test 'T35` in directory 'geom/sql/conformance` itself:
 # 15:05:53 >  
 
 #SELECT ST_Contains(shores, ST_PointOnSurface(shores)) FROM ponds WHERE fid = 120;
-% sys.L1 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

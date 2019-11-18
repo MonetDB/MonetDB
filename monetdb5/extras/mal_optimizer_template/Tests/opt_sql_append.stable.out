@@ -50,7 +50,7 @@ stdout of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_temp
 % 15 # length
 [ "sequential_pipe"	]
 #select def from optimizers() where name = optimizer;
-% .L1 # table_name
+% .%1 # table_name
 % def # name
 % clob # type
 % 580 # length
@@ -109,7 +109,7 @@ end user.s10_0;
 % 6 # length
 [ "user_0"	]
 #select def from optimizers() where name = optimizer;
-% .L1 # table_name
+% .%1 # table_name
 % def # name
 % clob # type
 % 603 # length

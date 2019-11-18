@@ -24,8 +24,8 @@ stdout of test 'T40` in directory 'geom/sql/conformance` itself:
 # 15:15:52 >  
 
 #SELECT ST_Within(boundary, footprint) FROM named_places, buildings WHERE named_places.name = 'Ashton' AND buildings.address = '215 Main Street';
-% sys.L1 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ false	]

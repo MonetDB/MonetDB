@@ -65,7 +65,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 # 16:10:29 >  
 
 #select * from sys.malfunctions() order by module, "function", address, signature, comment;
-% .L1,	.L1,	.L1,	.L1,	.L1 # table_name
+% .%1,	.%1,	.%1,	.%1,	.%1 # table_name
 % module,	function,	signature,	address,	comment # name
 % clob,	clob,	clob,	clob,	clob # type
 % 11,	28,	364,	38,	874 # length
