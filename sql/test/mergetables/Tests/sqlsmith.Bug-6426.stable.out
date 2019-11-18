@@ -39,7 +39,7 @@ stdout of test 'sqlsmith.Bug-6426` in directory 'sql/test/mergetables` itself:
 #    left join sys.netcdf_files as sample_6
 #          inner join sys.netcdf_dims as ref_1
 #            inner join sys.s1 as ref_2
-% .L2,	.L4 # table_name
+% .sample_4,	.sample_0 # table_name
 % c0,	c1 # name
 % int,	char # type
 % 1,	256 # length

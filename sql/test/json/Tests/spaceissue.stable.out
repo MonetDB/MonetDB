@@ -61,14 +61,14 @@ stdout of test 'spaceissue` in directory 'sql/test/json` itself:
 % 137 # length
 [ "{\"message\" : \"indoorDeviceLocation\", \"id\" : \"00:1b:21:02:30:cd\", \"dateTime\" : \"2007-04-05T14:30\", \"position\" : {\"X\" : \"10\", \"Y\" : \"10\" }}"	]
 #select json.text(json.filter(js, 'message')) from txt;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % clob # type
 % 20 # length
 [ "indoorDeviceLocation"	]
 #select json.text(json.filter(js, 'message')) = 'indoorDeviceLocation' from txt;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

@@ -77,7 +77,7 @@ stdout of test 'coercions` in directory 'sql/test/json` itself:
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
 #select cast (j as json) as j from nosql_string;
-% sys.L3 # table_name
+% sys.%2 # table_name
 % j # name
 % json # type
 % 29 # length
@@ -120,7 +120,7 @@ stdout of test 'coercions` in directory 'sql/test/json` itself:
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
 #select cast (j as string) as j from tmpsql_json;
-% sys.L3 # table_name
+% sys.%2 # table_name
 % j # name
 % clob # type
 % 29 # length

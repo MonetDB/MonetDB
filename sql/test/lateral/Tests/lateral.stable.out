@@ -164,7 +164,7 @@ stdout of test 'lateral` in directory 'sql/test/lateral` itself:
 #	return TABLE(select employee_name from employees e where e.department_id = dep_id);
 #end;
 #select department_name, employee_name from departments as d, LATERAL emps(d.department_id) order by department_name, employee_name;
-% sys.d,	.L1 # table_name
+% sys.d,	.%1 # table_name
 % department_name,	employee_name # name
 % varchar,	clob # type
 % 10,	6 # length
