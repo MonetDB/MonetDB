@@ -41,26 +41,26 @@ stdout of test 'median_stdev` in directory 'sql/test` itself:
 #INSERT INTO sampleData VALUES ( 5,   0 );
 [ 1	]
 #SELECT count(*) from sampleData;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 17	]
 #SELECT median(numValue) FROM sampleData;  -- should return 6
-% sys.L3 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 6	]
 #SELECT median(groupID) FROM sampleData;  -- should return 2
-% sys.L3 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 2	]
 #SELECT groupID, median(numValue) FROM sampleData GROUP BY groupID ORDER BY groupId;  -- should return (6, 5, 17, 18,  0)
-% sys.sampledata,	sys.L3 # table_name
-% groupid,	L3 # name
+% sys.sampledata,	sys.%1 # table_name
+% groupid,	%1 # name
 % int,	int # type
 % 1,	2 # length
 [ 1,	6	]
@@ -80,7 +80,7 @@ stdout of test 'median_stdev` in directory 'sql/test` itself:
 #) G
 #ON R.GroupID = G.GroupID AND R.rowNo BETWEEN N/2 AND N/2+N%2
 #GROUP BY R.groupID ORDER by R.groupID;
-% sys.r,	.L20 # table_name
+% sys.r,	sys.%5 # table_name
 % groupid,	medianvalue # name
 % int,	double # type
 % 1,	24 # length
@@ -101,7 +101,7 @@ stdout of test 'median_stdev` in directory 'sql/test` itself:
 #) G
 #ON R.GroupID = G.GroupID 
 #GROUP BY R.groupID ORDER BY R.groupID;
-% sys.r,	sys.L14 # table_name
+% sys.r,	sys. # table_name
 % groupid,	stdev # name
 % int,	double # type
 % 1,	24 # length

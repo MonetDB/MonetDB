@@ -28,7 +28,7 @@ stdout of test 'marcin3` in directory 'sql/test` itself:
 [ 1	]
 #commit;
 #select id, cast(sum(val) as bigint) AS valsum from nutki group by id having sum(val)>1;
-% sys.nutki,	sys.L4 # table_name
+% sys.nutki,	sys.%5 # table_name
 % id,	valsum # name
 % int,	bigint # type
 % 1,	1 # length

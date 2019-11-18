@@ -91,8 +91,8 @@ stdout of test 'ifexists` in directory 'sql/test` itself:
 #DROP TABLE IF EXISTS hello;
 #DROP TABLE IF EXISTS hello;
 #SELECT 1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -138,8 +138,8 @@ stdout of test 'ifexists` in directory 'sql/test` itself:
 #DROP SCHEMA IF EXISTS hello;
 #DROP SCHEMA IF EXISTS hello;
 #SELECT 1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]

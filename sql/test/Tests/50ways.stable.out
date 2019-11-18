@@ -27,8 +27,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 #create table s ( snr int, sname varchar(30) );
 #create table sp ( snr int, pnr varchar(30) );
 #select 1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -37,8 +37,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 2; 
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 2	]
@@ -47,8 +47,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 10;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 10	]
@@ -57,28 +57,40 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 11;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 11	]
-% sys.s # table_name
+#SELECT DISTINCT S.SNAME
+#      FROM   S
+#     WHERE (SELECT COUNT(*)
+#                      FROM     SP
+#                      WHERE  SP.SNR = S.SNR 
+#                      AND        SP.PNR = 'P2' ) > 0;
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
 #select 12;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 12	]
-% sys.s # table_name
+#SELECT DISTINCT S.SNAME
+#      FROM    S
+#      WHERE (SELECT COUNT(*)
+#                       FROM     SP
+#                       WHERE  SP.SNR = S.SNR 
+#                       AND        SP.PNR = 'P2' ) = 1;
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
 #select 21;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 21	]
@@ -87,8 +99,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 22;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 22	]
@@ -97,8 +109,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 23;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 23	]
@@ -107,8 +119,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 24;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 24	]
@@ -117,8 +129,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 25;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 25	]
@@ -127,8 +139,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 26;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 26	]
@@ -137,8 +149,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 27;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 27	]
@@ -147,8 +159,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 28;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 28	]
@@ -157,8 +169,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 29;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 29	]
@@ -167,8 +179,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 30;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 30	]
@@ -177,8 +189,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 31;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 31	]
@@ -187,8 +199,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 32;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 32	]
@@ -197,8 +209,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 33;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 33	]
@@ -207,8 +219,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 34;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 34	]
@@ -217,8 +229,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 35;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 35	]
@@ -227,8 +239,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 36;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 36	]
@@ -237,8 +249,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 37;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 37	]
@@ -247,8 +259,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 38;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 38	]
@@ -257,8 +269,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 39;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 39	]
@@ -267,8 +279,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 41;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 41	]
@@ -277,8 +289,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 42;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 42	]
@@ -287,8 +299,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 44;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 44	]
@@ -297,8 +309,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 45;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 45	]
@@ -307,8 +319,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 47;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 47	]
@@ -317,8 +329,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 48;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 48	]
@@ -327,8 +339,8 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 50;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 50	]
@@ -337,14 +349,14 @@ stdout of test '50ways` in directory 'sql/test` itself:
 % varchar # type
 % 0 # length
 #select 51;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 51	]
 #select 52;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 52	]
