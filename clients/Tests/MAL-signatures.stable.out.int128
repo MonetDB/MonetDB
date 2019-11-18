@@ -70,6 +70,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 % clob,	clob,	clob,	clob,	clob # type
 % 11,	28,	364,	38,	874 # length
 [ "aggr",	"allnotequal",	"command aggr.allnotequal(l:bat[:any_1], r:bat[:any_1]):bit ",	"SQLallnotequal;",	"if all values in r are not equal to l return true, else if r has nil nil else false"	]
+[ "aggr",	"anyequal",	"pattern aggr.anyequal(l:any_1, r:any_1):bit ",	"CMDvarEQ;",	""	]
 [ "aggr",	"anyequal",	"command aggr.anyequal(l:bat[:any_1], r:bat[:any_1]):bit ",	"SQLanyequal;",	"if any value in r is equal to l return true, else if r has nil nil else false"	]
 [ "aggr",	"avg",	"command aggr.avg(b:bat[:bte], g:bat[:oid], e:bat[:any_1]):bat[:dbl] ",	"AGGRavg13_dbl;",	"Grouped tail average on bte"	]
 [ "aggr",	"avg",	"command aggr.avg(b:bat[:dbl], g:bat[:oid], e:bat[:any_1]):bat[:dbl] ",	"AGGRavg13_dbl;",	"Grouped tail average on dbl"	]
@@ -136,6 +137,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "aggr",	"min",	"command aggr.min(b:bat[:any_1], g:bat[:oid], e:bat[:any_2]):bat[:any_1] ",	"AGGRmin3;",	""	]
 [ "aggr",	"min",	"command aggr.min(b:bat[:any_2]):any_2 ",	"ALGminany;",	"Return the lowest tail value or nil."	]
 [ "aggr",	"min",	"command aggr.min(b:bat[:any_2], skipnil:bit):any_2 ",	"ALGminany_skipnil;",	"Return the lowest tail value or nil."	]
+[ "aggr",	"not_anyequal",	"pattern aggr.not_anyequal(l:any_1, r:any_1):bit ",	"CMDvarNE;",	""	]
 [ "aggr",	"not_exist",	"command aggr.not_exist(b:bat[:any_2]):bit ",	"SQLnot_exist;",	""	]
 [ "aggr",	"not_exist",	"pattern aggr.not_exist(v:any_2):bit ",	"SQLnot_exist_val;",	""	]
 [ "aggr",	"prod",	"command aggr.prod(b:bat[:bte], g:bat[:oid], e:bat[:any_1]):bat[:bte] ",	"AGGRprod3_bte;",	"Grouped tail product on bte"	]
