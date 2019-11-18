@@ -740,6 +740,15 @@ list_hash_add(list *l, void *data, fcmp cmp)
 	return data;
 }
 
+void
+list_hash_clear(list *l)
+{
+	MT_lock_set(&l->ht_lock);
+        l->ht = NULL;
+        MT_lock_unset(&l->ht_lock);
+
+}
+
 #ifdef TEST
 #include <string.h>
 

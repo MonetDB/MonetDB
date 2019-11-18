@@ -56,6 +56,20 @@ sql_stack_peek(sql_stack *s, int p)
 	return s->values[(s->top-1)-p];
 }
 
+void *
+sql_stack_fetch(sql_stack *s, int p)
+{
+	if (p>=s->top)
+		return NULL;
+	return s->values[p];
+}
+
+int
+sql_stack_top(sql_stack *s)
+{
+	return s->top;
+}
+
 int
 sql_stack_empty(sql_stack *s)
 {

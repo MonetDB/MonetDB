@@ -121,11 +121,13 @@ list_find_column(backend *be, list *l, const char *rname, const char *name )
 
 		for (n = l->h; n; n = n->next) {
 			const char *nme = column_name(be->mvc->sa, n->data);
-			int key = hash_key(nme);
+			if (nme) {
+				int key = hash_key(nme);
 
-			if (hash_add(l->ht, key, n->data) == NULL) {
-				MT_lock_unset(&l->ht_lock);
-				return NULL;
+				if (hash_add(l->ht, key, n->data) == NULL) {
+					MT_lock_unset(&l->ht_lock);
+					return NULL;
+				}
 			}
 		}
 	}
@@ -486,6 +488,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			stmt *r = exp_bin(be, e->l, left, right, grp, ext, cnt, sel);
 			if(!r)
 				return NULL;
+			if (e->card <= CARD_ATOM && r->nrcols > 0) /* single value, get result from bat */
+				r = stmt_fetch(be, r);
 			return stmt_assign(be, exp_name(e), r, GET_PSM_LEVEL(e->flag));
 		} else if (e->flag & PSM_VAR) {
 			if (e->f)
@@ -501,7 +505,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			/* handle table returning functions */
 			if (l->type == e_psm && l->flag & PSM_REL) {
 				stmt *lst = r->op1;
-				if (r->type == st_table && lst->nrcols == 0 && lst->key) {
+				if (r->type == st_table && lst->nrcols == 0 && lst->key && e->card > CARD_ATOM) {
 					node *n;
 					list *l = sa_list(sql->sa);
 
@@ -549,20 +553,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		} else if (e->flag & PSM_REL) {
 			sql_rel *rel = e->l;
 			stmt *r = rel_bin(be, rel);
-			if(!r)
+
+			if (!r)
 				return NULL;
-
-#if 0
-			if (r->type == st_list && r->nrcols == 0 && r->key) {
-				/* row to columns */
-				node *n;
-				list *l = sa_list(sql->sa);
-
-				for(n=r->op4.lval->h; n; n = n->next)
-					list_append(l, const_column(be, (stmt*)n->data));
-				r = stmt_list(be, l);
-			}
-#endif
 			if (is_modify(rel->op) || is_ddl(rel->op)) 
 				return r;
 			return stmt_table(be, r, 1);
@@ -674,6 +667,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			s = stmt_func(be, stmt_list(be, l), sa_strdup(sql->sa, f->func->base.name), f->func->rel, (f->func->type == F_UNION));
 		else
 			s = stmt_Nop(be, stmt_list(be, l), e->f); 
+		if (!s)
+			return NULL;
 		if (cond_execution) {
 			/* var_x = s */
 			(void)stmt_assign(be, nme, s, 2);
@@ -747,10 +742,13 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			fprintf(stderr, "could not find %s.%s\n", (char*)e->l, (char*)e->r);
 			print_stmtlist(sql->sa, left);
 			print_stmtlist(sql->sa, right);
+			if (!s) {
+				fprintf(stderr, "query: '%s'\n", sql->query);
+			}
 			assert(s);
 			return NULL;
 		}
-	 }	break;
+	}	break;
 	case e_cmp: {
 		stmt *l = NULL, *r = NULL, *r2 = NULL;
 		int swapped = 0, is_select = 0;
@@ -917,7 +915,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
  			r2 = exp_bin(be, re2, left, right, grp, ext, cnt, sel);
 
 		if (!l || !r || (re2 && !r2)) {
-			assert(0);
+			//assert(0);
+			fprintf(stderr, "query: '%s'\n", sql->query);
 			return NULL;
 		}
 
@@ -1924,29 +1923,44 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
  	 * 	first cheap join(s) (equality or idx) 
  	 * 	second selects/filters 
 	 */
-	if (rel->exps) {
+	if (!list_empty(rel->exps)) {
 		int used_hash = 0;
-		int idx = 0;
+		int idx = 0, i;
 		list *jexps = sa_list(sql->sa);
 		list *lje = sa_list(sql->sa);
 		list *rje = sa_list(sql->sa);
+		char *handled = SA_ZNEW_ARRAY(sql->sa, char, list_length(rel->exps));
 
 		/* get equi-joins/filters first */
+		/* TODO handle select expressions!! */
 		if (list_length(rel->exps) > 1) {
-			for( en = rel->exps->h; en; en = en->next ) {
+			for( en = rel->exps->h, i=0; en; en = en->next, i++) {
 				sql_exp *e = en->data;
-				if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_filter))
-					append(jexps, e);
+				if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_filter)) {
+					if ( !((rel_find_exp(rel->l, e->l) && rel_find_exp(rel->l, e->r))  ||
+					       (rel_find_exp(rel->r, e->l) && rel_find_exp(rel->r, e->r)))) {
+						append(jexps, e);
+						handled[i] = 1;
+					}
+				}
 			}
-			for( en = rel->exps->h; en; en = en->next ) {
+			if (list_empty(jexps)) {
+				stmt *l = bin_first_column(be, left);
+				stmt *r = bin_first_column(be, right);
+				join = stmt_join(be, l, r, 0, cmp_all); 
+			}
+			for( en = rel->exps->h, i=0; en; en = en->next, i++) {
 				sql_exp *e = en->data;
-				if (e->type != e_cmp || (e->flag != cmp_equal && e->flag != cmp_filter))
+				if (!handled[i])
 					append(jexps, e);
 			}
 			rel->exps = jexps;
 		}
 
 		/* generate a relational join */
+		if (join)
+			en = rel->exps->h;
+		else
 		for( en = rel->exps->h; en; en = en->next ) {
 			int join_idx = sql->opt_stats[0];
 			sql_exp *e = en->data;
@@ -2847,8 +2861,10 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	psub = stmt_list(be, pl);
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
-		stmt *s = exp_bin(be, exp, sub, psub, NULL, NULL, NULL, NULL);
+		stmt *s = exp_bin(be, exp, sub, NULL /*psub*/, NULL, NULL, NULL, NULL);
 
+		if (!s) /* try with own projection as well */
+			s = exp_bin(be, exp, sub, psub, NULL, NULL, NULL, NULL);
 		if (!s) /* error */
 			return NULL;
 		/* single value with limit */
@@ -2917,7 +2933,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		stmt *distinct = NULL;
 		psub = rel2bin_distinct(be, psub, &distinct);
 		/* also rebuild sub as multiple orderby expressions may use the sub table (ie aren't part of the result columns) */
-		if (sub) {
+		if (sub && distinct) {
 			list *npl = sa_list(sql->sa);
 			
 			pl = sub->op4.lval;
@@ -3025,7 +3041,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			}
 			sel = stmt_uselect(be, predicate, s, cmp_equal, sel, 0);
 		} else if (e->type != e_cmp) {
-			sel = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, NULL, 0);
+			sel = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, sel, 0);
 		} else {
 			sel = s;
 		}
@@ -3128,7 +3144,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		   therefore we pass the group by columns too 
 		 */
 		if (!aggrstmt) 
-			aggrstmt = exp_bin(be, aggrexp, sub, cursub, NULL, NULL, NULL, NULL); 
+			aggrstmt = exp_bin(be, aggrexp, sub, cursub, grp, ext, cnt, NULL); 
 		if (!aggrstmt) {
 			assert(0);
 			return NULL;

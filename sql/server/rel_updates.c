@@ -170,7 +170,9 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 			exp_label(sql->sa, _is, ++sql->label);
 		_is = exp_ref(sql->sa, _is);
 		lnl = exp_unop(sql->sa, _is, isnil);
+		set_has_no_nil(lnl);
 		rnl = exp_unop(sql->sa, _is, isnil);
+		set_has_no_nil(rnl);
 		if (need_nulls) {
 			if (lnll_exps) {
 				lnll_exps = exp_binop(sql->sa, lnll_exps, lnl, or);
@@ -778,7 +780,9 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		/* Currently only the default MATCH SIMPLE is supported */
 		upd = exp_ref(sql->sa, upd);
 		lnl = exp_unop(sql->sa, upd, isnil);
+		set_has_no_nil(lnl);
 		rnl = exp_unop(sql->sa, upd, isnil);
+		set_has_no_nil(rnl);
 		if (need_nulls) {
 			if (lnll_exps) {
 				lnll_exps = exp_binop(sql->sa, lnll_exps, lnl, or);
@@ -993,7 +997,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				if (single) {
 					v = rel_value_exp(query, &r, a, sql_sel, ek);
 				} else if (!rel_val && r) {
-					query_push_outer(query, r);
+					query_push_outer(query, r, sql_sel);
 					rel_val = rel_subquery(query, NULL, a, ek);
 					r = query_pop_outer(query);
 					if (/* DISABLES CODE */ (0) && r) {
@@ -1137,52 +1141,6 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			for (node *nn = res->exps->h ; nn ; nn = nn->next)
 				exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
 		}
-#if 0
-			dlist *selection = dlist_create(sql->sa);
-			dlist *from_list = dlist_create(sql->sa);
-			symbol *sym;
-			sql_rel *sq;
-
-			dlist_append_list(sql->sa, from_list, qname);
-			dlist_append_symbol(sql->sa, from_list, NULL);
-			sym = symbol_create_list(sql->sa, SQL_NAME, from_list);
-			from_list = dlist_create(sql->sa);
-			dlist_append_symbol(sql->sa, from_list, sym);
-
-			{
-				dlist *l = dlist_create(sql->sa);
-
-
-				dlist_append_string(sql->sa, l, tname);
-				dlist_append_string(sql->sa, l, TID);
-				sym = symbol_create_list(sql->sa, SQL_COLUMN, l);
-
-				l = dlist_create(sql->sa);
-				dlist_append_symbol(sql->sa, l, sym);
-				dlist_append_string(sql->sa, l, TID);
-				dlist_append_symbol(sql->sa, selection, 
-				  symbol_create_list(sql->sa, SQL_COLUMN, l));
-			}
-			for (n = assignmentlist->h; n; n = n->next) {
-				dlist *assignment = n->data.sym->data.lval, *l;
-				int single = (assignment->h->next->type == type_string);
-				symbol *a = assignment->h->data.sym;
-
-				l = dlist_create(sql->sa);
-				dlist_append_symbol(sql->sa, l, a);
-				dlist_append_string(sql->sa, l, (single)?assignment->h->next->data.sval:NULL);
-				a = symbol_create_list(sql->sa, SQL_COLUMN, l);
-				dlist_append_symbol(sql->sa, selection, a);
-			}
-		       
-			sym = newSelectNode(sql->sa, 0, selection, NULL, symbol_create_list(sql->sa, SQL_FROM, from_list), opt_where, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-			sq = rel_selects(sql, sym);
-			if (sq)
-				sq = rel_unnest(sql, sq);
-			if (sq)
-				sq = rel_optimizer(sql, sq, 0);
-		}
-#endif
 
 		if (opt_from) {
 			dlist *fl = opt_from->data.lval;
@@ -1212,22 +1170,12 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			if (!table_privs(sql, t, PRIV_SELECT)) 
 				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'", stack_get_string(sql, "current_user"), tname);
 			r = rel_logical_exp(query, NULL, opt_where, sql_where);
-			if (r) { /* simple predicate which is not using the to 
-				    be updated table. We add a select all */
-				//r = rel_crossproduct(sql->sa, NULL, r, op_semi);
-				//r = res;
-				printf("#simple select\n");
-			} else {
+			if (!r) { 
 				sql->errstr[0] = 0;
 				sql->session->status = status;
-				//query->outer = res;
-				//r = rel_logical_exp(query, NULL, opt_where, sql_where);
-				//query->outer = NULL;
 				r = rel_logical_exp(query, res, opt_where, sql_where);
 				if (!r)
 					return NULL;
-				//r = rel_crossproduct(sql->sa, res, r, op_semi);
-				//set_dependent(r);
 				/* handle join */
 				if (!opt_from && r && is_join(r->op))
 					r->op = op_semi;
@@ -1499,7 +1447,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				//select bt values which are not null (they had a match in the join)
 				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
 				project_first = exp_ref(sql->sa, project_first);
-				nils = rel_unop_(query, extra_project, project_first, NULL, "isnull", card_value);
+				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
+				set_has_no_nil(nils);
 				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_notequal));
 
 				//the update statement requires a projection on the right side
@@ -1527,7 +1476,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				//select bt values which are not null (they had a match in the join)
 				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
 				project_first = exp_ref(sql->sa, project_first);
-				nils = rel_unop_(query, extra_project, project_first, NULL, "isnull", card_value);
+				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
+				set_has_no_nil(nils);
 				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_notequal));
 
 				//the delete statement requires a projection on the right side, which will be the oid values
@@ -1563,7 +1513,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			//select bt values which are null (they didn't have match in the join)
 			project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
 			project_first = exp_ref(sql->sa, project_first);
-			nils = rel_unop_(query, extra_project, project_first, NULL, "isnull", card_value);
+			nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
+			set_has_no_nil(nils);
 			extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal));
 
 			//project only values from the joined relation
@@ -1863,10 +1814,10 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				append(args, exp_atom_clob(sql->sa, format));
 				ne = exp_op(sql->sa, args, f);
 				exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
-				append(nexps, ne);
 			} else {
-				append(nexps, e);
+				ne = exp_ref(sql->sa, e); 
 			}
+			append(nexps, ne);
 			m = m->next;
 		}
 		rel = rel_project(sql->sa, rel, nexps);
@@ -2236,8 +2187,10 @@ rel_updates(sql_query *query, symbol *s)
 	    dlist *l = s->data.lval;
 	    dlist *qname = l->h->data.lval;
 	    symbol *sym = l->h->next->data.sym;
+	    sql_rel *rel = copyfromloader(query, qname, sym);
 
-	    ret = rel_psm_stmt(sql->sa, exp_rel(sql, copyfromloader(query, qname, sym)));
+	    if (rel)
+	    	ret = rel_psm_stmt(sql->sa, exp_rel(sql, rel));
 	    sql->type = Q_SCHEMA;
 	}
 		break;

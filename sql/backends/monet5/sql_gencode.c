@@ -1152,7 +1152,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	InstrPtr curInstr = NULL;
 	Client c = be->client;
 	Symbol backup = NULL, curPrg = NULL;
-	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0;
+	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0, result = 0;
 	sql_rel *r;
 
 	/* nothing to do for internal and ready (not recompiling) functions, besides finding respective MAL implementation */
@@ -1202,9 +1202,9 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			curInstr = table_func_create_result(curBlk, curInstr, f, restypes);
 			if( curInstr == NULL)
 				goto cleanup;
-		}
-		else
+		} else {
 			setArgType(curBlk, curInstr, 0, res->type.type->localtype);
+		}
 	} else {
 		setArgType(curBlk, curInstr, 0, TYPE_void);
 	}
@@ -1253,7 +1253,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	/* for the time being we only inline scalar functions */
 	/* and only if we see a single return value */
 	/* check the function for side effects and make that explicit */
-	sideeffects = 0;
+	sideeffects = f->side_effect;
 	for (i = 1; i < curBlk->stop; i++) {
 		InstrPtr p = getInstrPtr(curBlk, i);
 		if (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef)
@@ -1271,6 +1271,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	SQLaddQueryToCache(c);
 	if( curBlk->inlineProp == 0 && !c->curprg->def->errors) {
 		c->curprg->def->errors = SQLoptimizeFunction(c, c->curprg->def);
+		result = (c->curprg->def->errors)?-1:0;
 	} else if(curBlk->inlineProp != 0){
 		chkProgram(c->usermodule, c->curprg->def);
 		if(!c->curprg->def->errors)
@@ -1278,7 +1279,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	}
 	if (backup)
 		c->curprg = backup;
-	return 0;
+	return result;
 cleanup:
 	freeSymbol(curPrg);
 	if (backup)

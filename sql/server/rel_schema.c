@@ -107,21 +107,16 @@ static sql_rel *
 view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 {
 	dnode *n = column_spec->h;
-	node *m = sq->exps->h;
-	list *l = new_exp_list(sql->sa);
+	node *m = sq->exps->h, *p = m;
 
-	for (; n && m; n = n->next, m = m->next) {
+	assert(is_project(sq->op));
+	for (; n && m; n = n->next, p = m, m = m->next) {
 		char *cname = n->data.sval;
 		sql_exp *e = m->data;
-		sql_exp *n;
-	       
-		if (!exp_is_atom(e) && !exp_name(e))
-			exp_setname(sql->sa, e, NULL, cname);
-		n = exp_is_atom(e)?e:exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), sq->card, has_nil(e), is_intern(e));
+		sql_exp *n = e;
 
-		exp_setname(sql->sa, n, NULL, cname);
+		exp_setname(sql->sa, n, name, cname);
 		set_basecol(n);
-		list_append(l, n);
 	}
 	/* skip any intern columns */
 	for (; m; m = m->next) {
@@ -129,10 +124,10 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 		if (!is_intern(e))
 			break;
 	}
+	if (p)
+		p->next = 0;
 	if (n || m) 
 		return sql_error(sql, 02, SQLSTATE(M0M03) "Column lists do not match");
-	(void)name;
-	sq = rel_project(sql->sa, sq, l);
 	set_processed(sq);
 	return sq;
 }
@@ -1139,25 +1134,6 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 	/*return NULL;*/ /* never reached as all branches of the above if() end with return ... */
 }
 
-static void
-rel_add_intern(mvc *sql, sql_rel *rel)
-{
-	if (rel->op == op_project && rel->l && rel->exps && !need_distinct(rel)) {
-		list *prjs = rel_projections(sql, rel->l, NULL, 1, 1);
-		node *n;
-	
-		for(n=prjs->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			if (is_intern(e)) {
-				append(rel->exps, e);
-				n->data = NULL;
-			}
-		}
-	}
-}
-
-
 static sql_rel *
 rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *ast, int check, int persistent, int replace)
 {
@@ -1230,7 +1206,7 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 					return NULL;
 				}
 			}
-			rel_add_intern(sql, sq);
+			//rel_add_intern(sql, sq);
 		}
 
 		if (create) {
