@@ -1307,9 +1307,9 @@ rel_numeric_supertype(mvc *sql, sql_exp *e )
 }
 
 sql_exp *
-rel_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, int tpe)
+rel_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe)
 {
-	int err = 0;
+	int c, err = 0;
 	sql_exp* nexp = NULL;
 	sql_subtype *fromtype = exp_subtype(exp);
 
@@ -1321,12 +1321,15 @@ rel_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, int tpe)
 		return nexp;
 
 	if (fromtype && subtype_cmp(t, fromtype) != 0) {
-		int c = sql_type_convert(fromtype->type->eclass, t->type->eclass);
-		if (!c ||
-		   (c == 2 && tpe == type_set) || (c == 3 && tpe != type_cast)){
-			err = 1;
+		if (EC_INTERVAL(fromtype->type->eclass) && (t->type->eclass == EC_NUM || t->type->eclass == EC_POS) && t->digits < fromtype->digits) {
+			err = 1; /* conversion from interval to num depends on the number of digits */
 		} else {
-			exp = exp_convert(sql->sa, exp, fromtype, t);
+			c = sql_type_convert(fromtype->type->eclass, t->type->eclass);
+			if (!c || (c == 2 && tpe == type_set) || (c == 3 && tpe != type_cast)) {
+				err = 1;
+			} else {
+				exp = exp_convert(sql->sa, exp, fromtype, t);
+			}
 		}
 	}
 	if (err) {
@@ -1390,7 +1393,7 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 }
 
 int
-rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, int scale_fixing, int tpe)
+rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, int scale_fixing, check_type tpe)
 {
 	sql_exp *ls = *L;
 	sql_exp *rs = *R;
