@@ -114,7 +114,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Apr2019-SP1/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Nov2019/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -1059,6 +1059,146 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Nov 18 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- Rebuilt.
+- BZ#6134: Query produces error: HEAPalloc: Insufficient space for HEAP
+  of 1168033427456 bytes.
+- BZ#6613: LATERAL crash /.../rel_bin.c:1473: rel2bin_table: Assertion
+  `0' failed.
+- BZ#6683: Bug in subselect
+- BZ#6686: Bug in subselect (count function)
+- BZ#6688: Bug in subselect (or condition)
+- BZ#6689: Trying to improve the performance of SQL queries with a large
+  list of members in IN clause.
+- BZ#6695: timestamp transformation
+- BZ#6700: Monetdb Bugs in Subselect statements:
+- BZ#6722: window functions issues
+- BZ#6740: while upgrading the database from verison (MonetDB-11.27.13)
+  to (MonetDB-11.33.3) we are unable to bring up the database
+- BZ#6754: in mclient a strang msg is reported after issueing command:
+  set schema sys;
+- BZ#6755: Assertion failure in rel_bin.c
+- BZ#6756: Error in optimizer garbageCollector on merge tables select
+- BZ#6757: Double free or corruption (out)
+- BZ#6758: SIGSEGV in __strcmp_sse2_unaligned()
+- BZ#6759: Python JSON loader creates invalid data type for strings
+- BZ#6761: Error: Program contains errors.:(NONE).multiplex
+- BZ#6762: mserver5 crashes on (re-)start
+- BZ#6764: mserver5 crashes with corruption, double free, invalid size
+  or invalid pointer
+- BZ#6766: Missing bulk implementation for get_value and next_value calls
+- BZ#6769: ProfilerStart is not threadsafe
+- BZ#6771: R-devel
+- BZ#6773: json.filter returns corrupted string when selecting JSON
+  null value
+- BZ#6774: PROD aggregation gives wrong result
+- BZ#6775: NOT IN with an AND containing an OR gives wrong result
+- BZ#6776: Creating a table with a full outer join query gives type with
+  wrong digits on the joined key.
+- BZ#6779: Using Windows Messages translation for errno error codes.
+- BZ#6780: Wrong value of the rank function
+- BZ#6781: Insert after index creation crash
+- BZ#6782: JDBC IsValid(int) does not reset lastquerytimeout on server
+- BZ#6783: AVG changes scale of its results
+- BZ#6784: function sys.isauuid(string) should return false if string
+  value cannot be converted to a UUID
+
+* Mon Nov  4 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.35.1-20191118
+- sql: Removed functions json.text(string) returns string and json.text(int)
+  returns string. Their MAL implementation didn't exist, so they were
+  meaningless.
+
+* Thu Oct 17 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.35.1-20191118
+- merovingian: Added "vmmaxsize" and "memmaxsize" mserver5 options to the daemon in
+  order to set mserver5's maximum virtual and committed memory
+  respectively.
+
+* Wed Sep 25 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- sql: Strings are now limited to 1GB, double-quoted tokens are limited to 2kB.
+  These sizes are bytes of (UTF-8 encoded) input data.
+
+* Mon Sep 23 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- sql: There are new aggregate functions sys.median_avg and sys.quantile_avg
+  that return the interpolated value if the median/quantile doesn't fall
+  exactly on a particular row.  These functions always return a value
+  of type DOUBLE and only work for numeric types (various width integers
+  and floating point).
+
+* Sun Sep  8 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- gdk: BATcalcbetween and all its variants now have an extra bool parameter
+  "anti" to invert the test.
+
+* Thu Sep  5 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- monetdb5: The server "console" has been removed, as has the --daemon option.
+  The server now doesn't read from standard input anymore.  The way to
+  stop a server is by sending it a TERM signal (on Linux/Unix) or by
+  sending it an interrupt signal (usually control-C -- on all
+  systems).
+
+* Fri Aug 30 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.35.1-20191118
+- sql: Added sys.deltas ("schema" string, "table" string, "column" string)
+  returns table ("values" bigint) system function which returns a single
+  column with 6 values: a flag indicating if the column's upper table is
+  cleared or not, the count of the RDONLY, RD_INS and RD_UPD_ID deltas
+  of the column itself, the number of deleted values of the column's
+  table, as well as the level of the current transaction in the
+  transaction level tree. It should be used for debugging purposes only.
+
+* Fri Aug 30 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- monetdb5: Implemented a function bat.diffcand to calculate difference of two
+  candidate lists.
+
+* Fri Aug 30 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- monetdb5: The mtime module was completely rewritten, the atom types date,
+  daytime, and timestamp were changed.  Upgrade code for BATs
+  containing these types has been implemented.  The old daytime type
+  used a 32 bit integer to record milliseconds since the start of the
+  day.  The new daytime type uses a 64 bit integer to record
+  microseconds since the start of the day.  The old date type recorded
+  days since or before the year 1.  The new daytime type records the
+  day of the month and the number of months since the year -4712
+  separately in a single 32 bit integer of which only 26 bits are
+  used.  Dates now use the proleptic Gregorian calendar, meaning the
+  normal Gregorian callendar has been extended backward, and before
+  the year 1, we have the year 0.  Both the old and new timestamp
+  types are a combination of a daytime and a date value, but since
+  those types have changed, the timestamp type has also changed.  The
+  new date type has a smaller range than the old.  The new date range
+  is from the year -4712 to the year 170049.  During conversion of
+  date and timestamp columns, the dates are clamped to this range.
+- monetdb5: The tzone and rule atom types have been removed.  They were not used
+  by any code, and they were defined in a non-portable way.
+
+* Fri Aug 30 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.35.1-20191118
+- sql: Added "VALUES row_list" statement as a top SQL projection statement.
+
+* Fri Aug 30 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.35.1-20191118
+- merovingian: Added ipv6 property to monetdbd properties to force IPv6 addresses
+  binding only.  By default this property is false to allow IPv4
+  addresses as well.
+
+* Fri Aug 30 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.35.1-20191118
+- monetdb5: Added "mapi_ipv6" property to monet_options to force ipv6 address
+  binding only.  This property is inherited while forking from
+  monetdbd if it is also set there.
+
+* Fri Aug 30 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- gdk: All forms of BATcalcbetween and VARcalcbetween have extra bool arguments
+  for low inclusive, high inclusive and nils false.  The latter causes
+  the result to be false instead of nil if the value being checked is nil.
+
+* Fri Aug 30 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- monetdb5: Removed (bat)calc.between_symmetric and changed (bat)calc.between
+  by adding a number of extra arguments, all of type :bit: symmetric,
+  low inclusive, high inclusive, nils false.
+
+* Fri Aug 30 2019 Aris Koning <aris.koning@monetdbsolutions.com> - 11.35.1-20191118
+- sql: The implementation of in-expression now follows a join-based approach
+  instead of using iterative union/selects. This greatly improves
+  performance for large in-value-lists. Furthermore the old approach has
+  large in-value-lists generate large MAL plans. This is now no longer
+  the case.
+
 * Fri Aug 30 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.11-20190830
 - Rebuilt.
 - BZ#6749: mserver5 restart aborts/segfaults after dropping column
