@@ -1882,13 +1882,6 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 	return e;
 }
 
-#define is_compare_func(sf) (!sf->func->s && \
-	(strcmp(sf->func->base.name, "<") == 0 || strcmp(sf->func->base.name, "<=") == 0 || \
- 	 strcmp(sf->func->base.name, "=") == 0 || strcmp(sf->func->base.name, "<>") == 0 || \
- 	 strcmp(sf->func->base.name, ">") == 0 || strcmp(sf->func->base.name, ">=") == 0) )
-
-#define is_notequal_func(sf) (!sf->func->s && strcmp(sf->func->base.name, "<>") == 0)
-
 static const char *
 compare_aggr_op( char *compare, int quantifier) 
 {

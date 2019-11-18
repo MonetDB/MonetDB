@@ -172,7 +172,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			for(node *n = l->h; n; n = n->next) 
 				exps_print(sql, fout, n->data, depth, refs, alias, 1);
 		}
-		if (e->flag) 
+		if (e->flag && is_compare_func(f)) 
 			mnstr_printf(fout, " %s", e->flag==1?"ANY":"ALL");
 	} 	break;
 	case e_aggr: {
@@ -1083,6 +1083,17 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		(*pos)+= (int) strlen("ASC");
 		skipWS(r, pos);
 		set_direction(exp, 1);
+	}
+	/* [ ANY|ALL ] */
+	if (strncmp(r+*pos, "ANY",  strlen("ANY")) == 0) {
+		(*pos)+= (int) strlen("ANY");
+		skipWS(r, pos);
+		exp->flag = 1;
+	}
+	if (strncmp(r+*pos, "ALL",  strlen("ALL")) == 0) {
+		(*pos)+= (int) strlen("ALL");
+		skipWS(r, pos);
+		exp->flag = 2;
 	}
 	/* [ NOT ] NULL */
 	if (strncmp(r+*pos, "NOT",  strlen("NOT")) == 0) {
