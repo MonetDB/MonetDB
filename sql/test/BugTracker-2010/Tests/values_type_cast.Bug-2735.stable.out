@@ -24,7 +24,7 @@ stdout of test 'values_type_cast.Bug-2735` in directory 'sql/test/BugTracker-201
 
 #select * from ( values(100,1), (200,2)) as bla;
 % .bla,	.bla # table_name
-% L1,	L2 # name
+% %1,	%2 # name
 % smallint,	tinyint # type
 % 3,	1 # length
 [ 100,	1	]

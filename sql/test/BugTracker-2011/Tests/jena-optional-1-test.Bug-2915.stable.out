@@ -94,7 +94,7 @@ stdout of test 'jena-optional-1-test.Bug-2915` in directory 'sql/test/BugTracker
 #    Nodes AS R_1
 #  ON ( T_1.X_1 = R_1.hash )
 #  LEFT OUTER JOIN
-% .L4,	.L6,	.L10,	.L12,	.L14,	.L16,	.L20,	.L22 # table_name
+% .r_1,	.r_1,	.r_1,	.r_1,	.r_2,	.r_2,	.r_2,	.r_2 # table_name
 % v_1_lex,	v_1_datatype,	v_1_lang,	v_1_type,	v_2_lex,	v_2_datatype,	v_2_lang,	v_2_type # name
 % clob,	varchar,	varchar,	int,	clob,	varchar,	varchar,	int # type
 % 16,	0,	0,	1,	0,	0,	0,	1 # length

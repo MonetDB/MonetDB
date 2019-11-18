@@ -41,7 +41,7 @@ stdout of test 'UDF_in_schema.Bug-2817` in directory 'sql/test/BugTracker-2011` 
 % int,	timestamp,	int # type
 % 1,	26,	1 # length
 #select * from datacell.basket_X();
-% .L1,	.L1,	.L1 # table_name
+% .%1,	.%1,	.%1 # table_name
 % id,	tag,	payload # name
 % int,	timestamp,	int # type
 % 1,	26,	1 # length
@@ -65,7 +65,7 @@ stdout of test 'UDF_in_schema.Bug-2817` in directory 'sql/test/BugTracker-2011` 
 % int,	timestamp,	int # type
 % 1,	26,	1 # length
 #select * from schema_2817.function_2817();
-% .L1,	.L1,	.L1 # table_name
+% .%1,	.%1,	.%1 # table_name
 % id,	tag,	payload # name
 % int,	timestamp,	int # type
 % 1,	26,	1 # length

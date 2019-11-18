@@ -28,8 +28,8 @@ stdout of test 'aggregate-in-subquery.Bug-2739` in directory 'sql/test/BugTracke
 #insert into bug2739 values (1), (2);
 [ 2	]
 #select avg(val - (select avg(val) from bug2739)) from bug2739;
-% .L6 # table_name
-% L6 # name
+% .%2 # table_name
+% %2 # name
 % double # type
 % 24 # length
 [ 0	]

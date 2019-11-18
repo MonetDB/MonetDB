@@ -37,7 +37,7 @@ stdout of test 'mal_syntax_error.Bug-2949` in directory 'sql/test/BugTracker-201
 #               );
 #END;
 #select * from refine();
-% .L1,	.L1,	.L1 # table_name
+% .%1,	.%1,	.%1 # table_name
 % u,	v,	r # name
 % varchar,	varchar,	varchar # type
 % 0,	0,	0 # length
