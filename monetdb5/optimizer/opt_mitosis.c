@@ -275,7 +275,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (upd)
 			pushInstruction(mb, matr);
 	}
-	assert (i == limit) /*TODO: remove after succesful nightly testweb run*/;
 	for (; i<slimit; i++) 
 		if (old[i])
 			freeInstruction(old[i]);
