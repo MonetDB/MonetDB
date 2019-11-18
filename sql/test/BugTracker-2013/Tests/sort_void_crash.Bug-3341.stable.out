@@ -43,8 +43,8 @@ stdout of test 'sort_void_crash.Bug-3341` in directory 'sql/test/BugTracker-2013
 #5|44485|F|144659.20|1994-07-30|5-LOW|Clerk#000000925|0|quickly. bold deposits sleep slyly. packages use slyly|
 [ 28	]
 #select rank() over(partition by o_custkey) from orders;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % int # type
 % 1 # length
 [ 1	]

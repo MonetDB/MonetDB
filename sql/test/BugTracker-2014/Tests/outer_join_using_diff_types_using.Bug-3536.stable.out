@@ -27,12 +27,12 @@ stdout of test 'outer_join_using_diff_types_using.Bug-3536` in directory 'sql/te
 #create table test_a (a integer);
 #create table test_b (a smallint);
 #select * from test_a join test_b using (a);
-% sys.L1 # table_name
+% sys.%1 # table_name
 % a # name
 % int # type
 % 1 # length
 #select * from test_a left outer join test_b using (a);
-% .L1 # table_name
+% .%1 # table_name
 % a # name
 % int # type
 % 1 # length

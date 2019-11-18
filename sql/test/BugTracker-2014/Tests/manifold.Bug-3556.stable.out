@@ -63,8 +63,8 @@ stdout of test 'manifold.Bug-3556` in directory 'sql/test/BugTracker-2014` itsel
 % 206 # length
 function user.s4_0():void;
     X_3:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id as id \n from sys.functions\n) as x;":str, "sequential_pipe":str, 24:int);
-    X_33:bat[:str] := bat.pack("sys.L5":str, "sys.x":str);
-    X_34:bat[:str] := bat.pack("L5":str, "id":str);
+    X_33:bat[:str] := bat.pack("sys.%1":str, "sys.x":str);
+    X_34:bat[:str] := bat.pack("%1":str, "id":str);
     X_35:bat[:str] := bat.pack("varchar":str, "int":str);
     X_36:bat[:int] := bat.pack(0:int, 32:int);
     X_37:bat[:int] := bat.pack(0:int, 0:int);
@@ -118,12 +118,12 @@ end user.s4_0;
 % clob # type
 % 210 # length
 function user.s6_0():void;
-    X_4:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n from sys.functions\n) as x;":str, "sequential_pipe":str, 31:int);
-    X_43:bat[:str] := bat.pack("sys.L5":str, "sys.x":str);
-    X_44:bat[:str] := bat.pack("L5":str, "id":str);
-    X_45:bat[:str] := bat.pack("varchar":str, "bigint":str);
-    X_46:bat[:int] := bat.pack(0:int, 64:int);
-    X_47:bat[:int] := bat.pack(0:int, 0:int);
+    X_4:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n from sys.functions\n) as x;":str, "sequential_pipe":str, 30:int);
+    X_42:bat[:str] := bat.pack("sys.%2":str, "sys.x":str);
+    X_43:bat[:str] := bat.pack("%2":str, "id":str);
+    X_44:bat[:str] := bat.pack("varchar":str, "bigint":str);
+    X_45:bat[:int] := bat.pack(0:int, 64:int);
+    X_46:bat[:int] := bat.pack(0:int, 0:int);
     X_7:int := sql.mvc();
     C_8:bat[:oid] := sql.tid(X_7:int, "sys":str, "functions":str);
     X_21:bat[:str] := sql.bind(X_7:int, "sys":str, "functions":str, "name":str, 0:int);
@@ -138,11 +138,10 @@ function user.s6_0():void;
     X_20:bat[:int] := algebra.projection(C_8:bat[:oid], X_19:bat[:int]);
     X_29:bat[:str] := algebra.project(X_20:bat[:int], "a":str);
     X_31:bat[:str] := algebra.project(X_20:bat[:int], "A":str);
-    X_39:bat[:str] := mal.manifold("str":str, "replace":str, X_27:bat[:str], X_29:bat[:str], X_31:bat[:str]);
+    X_38:bat[:str] := mal.manifold("str":str, "replace":str, X_27:bat[:str], X_29:bat[:str], X_31:bat[:str]);
     X_32:bat[:lng] := batcalc.lng(X_20:bat[:int]);
-    X_35:bat[:lng] := algebra.project(X_20:bat[:int], 1:lng);
-    X_36:bat[:lng] := batcalc.+(X_32:bat[:lng], X_35:bat[:lng]);
-    sql.resultSet(X_43:bat[:str], X_44:bat[:str], X_45:bat[:str], X_46:bat[:int], X_47:bat[:int], X_39:bat[:str], X_36:bat[:lng]);
+    X_35:bat[:lng] := batcalc.+(X_32:bat[:lng], 1:lng);
+    sql.resultSet(X_42:bat[:str], X_43:bat[:str], X_44:bat[:str], X_45:bat[:int], X_46:bat[:int], X_38:bat[:str], X_35:bat[:lng]);
 end user.s6_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 1 time=33 usec 
@@ -180,8 +179,8 @@ end user.s6_0;
 % 211 # length
 function user.s8_0():void;
     X_3:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, abs(id) as id \n from sys.functions\n) as x;":str, "sequential_pipe":str, 27:int);
-    X_38:bat[:str] := bat.pack("sys.L5":str, "sys.x":str);
-    X_39:bat[:str] := bat.pack("L5":str, "id":str);
+    X_38:bat[:str] := bat.pack("sys.%1":str, "sys.x":str);
+    X_39:bat[:str] := bat.pack("%1":str, "id":str);
     X_40:bat[:str] := bat.pack("varchar":str, "int":str);
     X_41:bat[:int] := bat.pack(0:int, 32:int);
     X_42:bat[:int] := bat.pack(0:int, 0:int);
