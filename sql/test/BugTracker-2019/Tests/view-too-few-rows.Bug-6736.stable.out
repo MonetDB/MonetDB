@@ -296,7 +296,7 @@ stdout of test 'view-too-few-rows.Bug-6736` in directory 'sql/test/BugTracker-20
 #where "facts_costi"."periodo_id" = "dim_periodi"."id"
 #and "facts_costi"."classe_movimento_id" = "classi"."id"
 #and "classi"."id" = "bri_classi_gruppi_movimenti"."classe_movimento_id"
-% .L37,	.L40,	.L42 # table_name
+% .dim_periodi,	.gruppi,	.%1 # table_name
 % c0,	c1,	m0 # name
 % int,	varchar,	bigint # type
 % 4,	4,	1 # length
