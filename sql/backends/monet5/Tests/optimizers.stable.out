@@ -44,32 +44,32 @@ stdout of test 'optimizers` in directory 'sql/backends/monet5` itself:
 # 03:16:16 >  
 
 #select 'optimizer test:',optimizer;
-% .L2,	.L4 # table_name
-% L2,	L4 # name
+% .,	. # table_name
+% single_value,	single_value # name
 % char,	varchar # type
 % 15,	12 # length
 [ "optimizer test:",	"default_pipe"	]
 #select 'optimizer off test:',optimizer;
-% .L2,	.L4 # table_name
-% L2,	L4 # name
+% .,	. # table_name
+% single_value,	single_value # name
 % char,	varchar # type
 % 19,	12 # length
 [ "optimizer off test:",	"default_pipe"	]
 #select 'optimizer on test:',optimizer;
-% .L2,	.L4 # table_name
-% L2,	L4 # name
+% .,	. # table_name
+% single_value,	single_value # name
 % char,	varchar # type
 % 18,	12 # length
 [ "optimizer on test:",	"default_pipe"	]
 #select 'optimizer <empty> test:',optimizer;
-% .L2,	.L4 # table_name
-% L2,	L4 # name
+% .,	. # table_name
+% single_value,	single_value # name
 % char,	varchar # type
 % 23,	12 # length
 [ "optimizer <empty> test:",	"default_pipe"	]
 #select 'done';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 4 # length
 [ "done"	]
