@@ -18,8 +18,8 @@ merge-statement-aliases.Bug-6715
 insert-into-select.Bug-6718
 copy-into-unicode-quote.Bug-6716
 select_window_function_and_asterisk.Bug-6722
-disallow_duplicate_column_aliases.Bug-6723
-prepare-types.Bug-6724
+KNOWNFAIL?disallow_duplicate_column_aliases.Bug-6723
+KNOWNFAIL?prepare-types.Bug-6724
 prepare-non-existing-function.Bug-6725
 select-distinct.Bug-6728
 table-duplicate-column.Bug-6729
@@ -30,13 +30,13 @@ sequence-first-next-value.Bug-6743
 sequences-defaults.Bug-6744
 sequences-types.Bug-6745
 alter_table_drop_column.Bug-6749
-HAVE_PYMONETDB?remote-table-non-existent-column.Bug-6750
+KNOWNFAIL&HAVE_PYMONETDB?remote-table-non-existent-column.Bug-6750
 cte-union.Bug-6755
 merge-table-limit.Bug-6756
 double-free.Bug-6757
 HAVE_LIBPY3?python-loader-string.Bug-6759
 select-char.Bug-6761
-grant-select-column.Bug-6765
+KNOWNFAIL?grant-select-column.Bug-6765
 next-get-value-bulk.Bug-6766
 filter_json_null.Bug-6773
 prod-decimals.Bug-6774
