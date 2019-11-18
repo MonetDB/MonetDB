@@ -43,7 +43,7 @@ stdout of test 'query2.5` in directory 'sql/backends/monet5/vaults/bam` itself:
 #    SELECT COUNT(*) AS count_qnames1
 #    FROM qnames1
 #) AS qnames1_sub, (
-% .insct_sub,	.L36,	.L40 # table_name
+% .insct_sub,	.%30,	.%31 # table_name
 % count_a_insct_b,	count_a_minus_b,	count_b_minus_a # name
 % bigint,	bigint,	bigint # type
 % 2,	1,	1 # length
@@ -67,7 +67,7 @@ stdout of test 'query2.5` in directory 'sql/backends/monet5/vaults/bam` itself:
 #    ) AS a_insct_b
 #) AS insct_sub, (
 #    SELECT COUNT(*) AS count_qnames1
-% .insct_sub,	.L420,	.L422 # table_name
+% .insct_sub,	.%110,	.%111 # table_name
 % count_a_insct_b,	count_a_minus_b,	count_b_minus_a # name
 % bigint,	bigint,	bigint # type
 % 2,	1,	1 # length
