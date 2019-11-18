@@ -75,7 +75,7 @@ MAPI  = (monetdb) /var/tmp/mtest-3400/.s.monetdb.37634
 QUERY = SELECT
             (SELECT GROUPING(t1.col1) FROM tbl_ProductSales)
         FROM another_T t1; --error, PostgreSQL gives: arguments to GROUPING must be grouping expressions of the associated query level
-ERROR = !21000!zero_or_one: cardinality violation, scalar expression expected
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
 CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-3400/.s.monetdb.37634
 QUERY = SELECT
