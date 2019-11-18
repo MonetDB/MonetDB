@@ -35,8 +35,14 @@ stdout of test '42` in directory 'sql/benchmarks/tpcds` itself:
 #  AND item.i_manager_id = 1
 #  AND dt.d_moy=11
 #  AND dt.d_year=2000
-% sys.dt,	sys.item,	sys.item,	sys.L5 # table_name
-% d_year,	i_category_id,	i_category,	L5 # name
+#GROUP BY dt.d_year,
+#         item.i_category_id,
+#         item.i_category
+#ORDER BY sum(ss_ext_sales_price) DESC,dt.d_year,
+#                                      item.i_category_id,
+#                                      item.i_category
+% sys.dt,	sys.item,	sys.item,	sys.%1 # table_name
+% d_year,	i_category_id,	i_category,	%1 # name
 % int,	int,	char,	decimal # type
 % 4,	2,	50,	20 # length
 [ 2000,	7,	"Home",	458017.85	]

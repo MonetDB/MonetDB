@@ -35,7 +35,16 @@ stdout of test '60` in directory 'sql/benchmarks/tpcds` itself:
 #        FROM item
 #        WHERE i_category ='Music')
 #     AND ss_item_sk = i_item_sk
-% .tmp1,	.L60 # table_name
+#     AND ss_sold_date_sk = d_date_sk
+#     AND d_year = 1998
+#     AND d_moy = 9
+#     AND ss_addr_sk = ca_address_sk
+#     AND ca_gmt_offset = -5
+#   GROUP BY i_item_id),
+#     cs AS
+#  (SELECT i_item_id,
+#          sum(cs_ext_sales_price) total_sales
+% .tmp1,	.%31 # table_name
 % i_item_id,	total_sales # name
 % char,	decimal # type
 % 16,	20 # length

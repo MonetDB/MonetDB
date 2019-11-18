@@ -35,7 +35,13 @@ stdout of test '83` in directory 'sql/benchmarks/tpcds` itself:
 #        FROM date_dim
 #        WHERE d_week_seq IN
 #            (SELECT d_week_seq
-% sys.sr_items,	sys.sr_items,	sys.L64,	sys.cr_items,	sys.L67,	sys.wr_items,	sys.L72,	sys.L74 # table_name
+#             FROM date_dim
+#             WHERE d_date IN ('2000-06-30',
+#                              '2000-09-27',
+#                              '2000-11-17')))
+#     AND sr_returned_date_sk = d_date_sk
+#   GROUP BY i_item_id),
+% sys.sr_items,	sys.sr_items,	sys.,	sys.cr_items,	sys.,	sys.wr_items,	sys.,	sys. # table_name
 % item_id,	sr_item_qty,	sr_dev,	cr_item_qty,	cr_dev,	wr_item_qty,	wr_dev,	average # name
 % char,	hugeint,	decimal,	hugeint,	decimal,	hugeint,	decimal,	decimal # type
 % 16,	2,	40,	2,	40,	2,	40,	40 # length

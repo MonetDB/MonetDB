@@ -35,7 +35,12 @@ stdout of test '97` in directory 'sql/benchmarks/tpcds` itself:
 #     csci as
 #  ( SELECT cs_bill_customer_sk customer_sk ,cs_item_sk item_sk
 #   FROM catalog_sales,date_dim
-% .L20,	.L23,	.L26 # table_name
+#   WHERE cs_sold_date_sk = d_date_sk
+#     AND d_month_seq BETWEEN 1200 AND 1200 + 11
+#   GROUP BY cs_bill_customer_sk ,cs_item_sk)
+#SELECT sum(CASE
+#               WHEN ssci.customer_sk IS NOT NULL
+% .%5,	.%6,	.%7 # table_name
 % store_only,	catalog_only,	store_and_catalog # name
 % hugeint,	hugeint,	hugeint # type
 % 6,	6,	3 # length
