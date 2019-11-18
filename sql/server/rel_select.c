@@ -4913,12 +4913,9 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 			found = 1;
 			rel = rel_compare_exp(query, rel, le, re, "=", NULL, TRUE, 0, 0);
 			if (full) {
-				sql_subtype *t = exp_subtype(le);
 				sql_exp *cond = rel_unop_(sql, rel, le, NULL, "isnull", card_value);
 				set_has_no_nil(cond);
 				le = rel_nop_(sql, rel, cond, re, le, NULL, NULL, "ifthenelse", card_value);
-				/* ugh overwrite res type */
-				((sql_subfunc*)le->f)->res->h->data = sql_create_subtype(sql->sa, t->type, t->digits, t->scale);
 			}
 			exp_setname(sql->sa, le, nme, sa_strdup(sql->sa, nm));
 			append(outexps, le);
@@ -5294,15 +5291,11 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 			}
 			rel = rel_compare_exp(query, rel, ls, rs, "=", NULL, TRUE, 0, 0);
 			if (op != op_join) {
-				sql_subtype *t;
 				cond = rel_unop_(sql, rel, ls, NULL, "isnull", card_value);
 				set_has_no_nil(cond);
 				if (rel_convert_types(sql, t1, t2, &ls, &rs, 1, type_equal) < 0)
 					return NULL;
 				ls = rel_nop_(sql, rel, cond, rs, ls, NULL, NULL, "ifthenelse", card_value);
-				/* ugh overwrite res type */
-				t = exp_subtype(rs);
-				((sql_subfunc*)ls->f)->res->h->data = sql_create_subtype(sql->sa, t->type, t->digits, t->scale);
 			}
 			exp_setname(sql->sa, ls, rnme, nm);
 			append(outexps, ls);
