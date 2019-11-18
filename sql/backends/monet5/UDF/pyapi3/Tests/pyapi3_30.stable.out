@@ -66,19 +66,19 @@ stdout of test 'pyapi3_30` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 #	_emit.emit({'a':42,'d':1})
 #};
 #SELECT * FROM pyapi32();
-% .L1,	.L1 # table_name
+% .%1,	.%1 # table_name
 % i,	j # name
 % int,	double # type
 % 1,	24 # length
 [ NULL,	NULL	]
 #SELECT * FROM pyapi32() WHERE i IS NULL;
-% .L1,	.L1 # table_name
+% .%1,	.%1 # table_name
 % i,	j # name
 % int,	double # type
 % 1,	24 # length
 [ NULL,	NULL	]
 #SELECT * FROM pyapi32() WHERE j IS NULL;
-% .L1,	.L1 # table_name
+% .%1,	.%1 # table_name
 % i,	j # name
 % int,	double # type
 % 1,	24 # length

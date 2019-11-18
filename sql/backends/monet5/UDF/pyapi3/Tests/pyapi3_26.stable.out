@@ -41,20 +41,20 @@ stdout of test 'pyapi3_26` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 #    return 1
 #};
 #SELECT * FROM create_file();
-% .L1 # table_name
+% .%1 # table_name
 % i # name
 % int # type
 % 1 # length
 [ 1	]
 #CREATE FUNCTION integers() RETURNS TABLE(i INTEGER) LANGUAGE PYTHON { return numpy.arange(10000) + 1 };
 #SELECT average(i) FROM integers();
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 4 # length
 [ 5000	]
 #SELECT * FROM delete_file();
-% .L1 # table_name
+% .%1 # table_name
 % i # name
 % int # type
 % 1 # length
