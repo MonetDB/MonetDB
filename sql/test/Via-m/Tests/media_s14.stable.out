@@ -32,8 +32,8 @@ stdout of test 'media_s14` in directory 'sql/test/Via-m` itself:
 #set id_event1 = (select event_id from event where event_name = 'event 2');
 #set id_media_description1 = (select max(media_description_id) from media_description);
 #select id_media1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 11 # length
 [ -1234567890	]
