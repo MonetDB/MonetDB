@@ -1,4 +1,5 @@
 ####technical depth####
+make sure that dense candidate lists are not transparently skipped and pushed to algebra module operators. Perhaps improve this on an optimizer level.
 make sure candidate lists are working properly (2)
 Be sure alignment is correct. Use asserts for this.
 Add test for float/double
@@ -13,6 +14,7 @@ Apply compressed operations more directly: on linear in prefix compression (1)
 consider packing mosaic_block_header's more efficiently.
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
 benchmark
+DO nil checking more efficient similar to gdk_select
 
 ####code issues####
 Refactor frame compressions code to be more inline with the other compression algortihm code.(1)
