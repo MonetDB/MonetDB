@@ -37,7 +37,7 @@ stdout of test 'sqlsmith02` in directory 'sql/test/BugTracker-2017` itself:
 #                on (ref_77.proj4text = ref_78.name )
 #              on (ref_76.srid = ref_78.id )
 #            on (ref_72.id = ref_75.srid )
-% .L141,	.L143 # table_name
+% .ref_78,	.ref_79 # table_name
 % c0,	c1 # name
 % varchar,	varchar # type
 % 0,	0 # length

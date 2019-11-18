@@ -39,7 +39,7 @@ stdout of test 'sqlsmith.Bug-6424` in directory 'sql/test/BugTracker-2017` itsel
 #    inner join sys.netcdf_vardim as ref_3
 #    on (true)
 #where ref_2.commit_action is NULL;
-% .L76,	.L100 # table_name
+% .%66,	.%67 # table_name
 % c0,	c1 # name
 % varchar,	int # type
 % 0,	1 # length

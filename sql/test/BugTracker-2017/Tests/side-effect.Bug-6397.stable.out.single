@@ -88,22 +88,22 @@ end user.s4_0;
 #total                actions=29 time=257 usec 
 #select count(*) from my_generate_series(1,5) as t1,
 #my_generate_series(1,100) as t2;
-% .L6 # table_name
-% L6 # name
+% .%5 # table_name
+% %5 # name
 % bigint # type
 % 3 # length
 [ 500	]
 #select count(*) from my_generate_series(1,5) as t1,
 #my_generate_series(1,100) as t2;
-% .L6 # table_name
-% L6 # name
+% .%5 # table_name
+% %5 # name
 % bigint # type
 % 3 # length
 [ 500	]
 #select count(*) from my_generate_series(1,5) as t1,
 #my_generate_series(1,100) as t2;
-% .L6 # table_name
-% L6 # name
+% .%5 # table_name
+% %5 # name
 % bigint # type
 % 3 # length
 [ 500	]

@@ -25,7 +25,7 @@ stdout of test 'sqlitelogictest-aggregation-distinct.Bug-6411` in directory 'sql
 
 #CREATE TABLE tab0 (col0 INTEGER, col1 INTEGER, col2 INTEGER);
 #SELECT DISTINCT + 38 AS col2 FROM tab0 AS cor0 WHERE NOT NULL IS NOT NULL OR NULL IN ( + col1, col0, - 97, + col2 ) GROUP BY col1;
-% .L10 # table_name
+% . # table_name
 % col2 # name
 % tinyint # type
 % 1 # length
