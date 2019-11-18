@@ -794,8 +794,7 @@ number2name(str s, int len, int i)
 		s[--len] = '0' + (i & 7);
 		i >>= 3;
 	}
-//	s[--len] = '%';
-	s[--len] = 'L';
+	s[--len] = '%';
 	return s + len;
 }
 
