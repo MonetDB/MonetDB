@@ -14,14 +14,14 @@ stdout of test 'string_quotes.SF-919539` in directory 'sql/test/BugDay_2005-10-0
 
 
 #select 'a' 'a';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 2 # length
 [ "aa"	]
 #select 'a''a';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 3 # length
 [ "a'a"	]
