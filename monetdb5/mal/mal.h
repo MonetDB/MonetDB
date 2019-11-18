@@ -89,8 +89,6 @@ mal_export lng MALdebug;
 mal_export char     monet_cwd[FILENAME_MAX];
 mal_export size_t	monet_memory;
 mal_export char 	monet_characteristics[4096];
-mal_export lng 		memorypool;      /* memory claimed by concurrent threads */
-mal_export int 		memoryclaims;    /* number of threads active with expensive operations */
 mal_export stream	*maleventstream;
 
 #ifdef HAVE_HGE
@@ -268,13 +266,16 @@ typedef struct MALSTK {
  * It is handy to administer the timing in the stack frame
  * for use in profiling instructions.
  */
-	struct timeval clock;   /* time this stack was created */
-	char cmd;               /* debugger and runtime communication */
-	char status;	        /* srunning 'R' suspended 'S', quiting 'Q' */
-	int pcup;               /* saved pc upon a recursive all */
-	oid tag;                /* unique invocation call tag */
-	struct MALSTK *up;      /* stack trace list */
-	struct MALBLK *blk;    	/* associated definition */
+	struct timeval clock;	/* time this stack was created */
+	char cmd;				/* debugger and runtime communication */
+	char status;			/* srunning 'R' suspended 'S', quiting 'Q' */
+	int pcup;				/* saved pc upon a recursive all */
+	oid tag;				/* unique invocation call tag */
+	int	workers;			/* Actual number of concurrent workers */
+	lng	memory;				/* Actual memory claim highwater mark */
+
+	struct MALSTK *up;		/* stack trace list */
+	struct MALBLK *blk;		/* associated definition */
 	ValRecord stk[FLEXIBLE_ARRAY_MEMBER];
 } MalStack, *MalStkPtr;
 

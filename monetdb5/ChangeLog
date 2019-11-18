@@ -1,3 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Nov 13 2019 Sjoerd Mullender <sjoerd@acm.org>
+- There are now versions of group.(sub)group(done) that produce a single
+  output containing just the groups.
+- algebra.join and algebra.leftjoin now have forms which return a single
+  column.  The column that is returned is the left column of the two
+  column version.
+

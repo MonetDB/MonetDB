@@ -273,7 +273,7 @@ handleClient(void *data)
 		}
 	}
 
-	if ((e = forkMserver(database, &top, 0)) != NO_ERR) {
+	if ((e = forkMserver(database, &top, false)) != NO_ERR) {
 		if (top == NULL) {
 			mnstr_printf(fout, "!monetdbd: no such database '%s', please create it first\n", database);
 		} else {

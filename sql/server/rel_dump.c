@@ -447,19 +447,23 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		if (need_distinct(rel))
 			mnstr_printf(fout, "distinct ");
 		mnstr_printf(fout, "%s (", r);
-		if (rel_is_ref(rel->l)) {
-			int nr = find_ref(refs, rel->l);
-			print_indent(sql, fout, depth+1, decorate);
-			mnstr_printf(fout, "& REF %d ", nr);
-		} else
-			rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
+		if (rel->l) {
+			if (rel_is_ref(rel->l)) {
+				int nr = find_ref(refs, rel->l);
+				print_indent(sql, fout, depth+1, decorate);
+				mnstr_printf(fout, "& REF %d ", nr);
+			} else
+				rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
+		}
 		mnstr_printf(fout, ",");
-		if (rel_is_ref(rel->r)) {
-			int nr = find_ref(refs, rel->r);
-			print_indent(sql, fout, depth+1, decorate);
-			mnstr_printf(fout, "& REF %d  ", nr);
-		} else
-			rel_print_(sql, fout, rel->r, depth+1, refs, decorate);
+		if (rel->r) {
+			if (rel_is_ref(rel->r)) {
+				int nr = find_ref(refs, rel->r);
+				print_indent(sql, fout, depth+1, decorate);
+				mnstr_printf(fout, "& REF %d  ", nr);
+			} else
+				rel_print_(sql, fout, rel->r, depth+1, refs, decorate);
+		}
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
 		exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
@@ -510,16 +514,23 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			mnstr_printf(fout, "update(");
 		else if (rel->op == op_delete)
 			mnstr_printf(fout, "delete(");
-		else if (rel->op == op_truncate)
-			mnstr_printf(fout, "truncate(");
+		else if (rel->op == op_truncate) {
+			assert(list_length(rel->exps) == 2);
+			sql_exp *first = (sql_exp*) rel->exps->h->data, *second = (sql_exp*) rel->exps->h->next->data;
+			int restart_sequences = ((atom*)first->l)->data.val.ival,
+				drop_action = ((atom*)second->l)->data.val.ival;
+			mnstr_printf(fout, "truncate %s identity, %s(", restart_sequences ? "restart" : "continue", 
+												   drop_action ? "cascade" : "restrict");
+		}
 
-		if (rel_is_ref(rel->l)) {
-			int nr = find_ref(refs, rel->l);
-			print_indent(sql, fout, depth+1, decorate);
-			mnstr_printf(fout, "& REF %d ", nr);
-		} else
-			rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
-
+		if (rel->l) {
+			if (rel_is_ref(rel->l)) {
+				int nr = find_ref(refs, rel->l);
+				print_indent(sql, fout, depth+1, decorate);
+				mnstr_printf(fout, "& REF %d ", nr);
+			} else
+				rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
+		}
 		if (rel->r) {
 			if (rel_is_ref(rel->r)) {
 				int nr = find_ref(refs, rel->r);
@@ -530,7 +541,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		}
 		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, ")");
-		if (rel->exps)
+		if (rel->op != op_truncate && rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 	} 	break;
 	default:
@@ -560,23 +571,23 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 	case op_table:
 		break;
 	case op_ddl:
-		if(rel->flag == ddl_list ||rel->flag == ddl_exception) {
-			if(rel->l) {
+		if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			if (rel->l) {
 				rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
-				if(rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
+				if (rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
 					rel_print_(sql, fout, rel->l, depth, refs, decorate);
 					list_append(refs, rel->l);
 				}
 			}
-			if(rel->r) {
+			if (rel->r) {
 				rel_print_refs(sql, fout, rel->r, depth, refs, decorate);
-				if(rel_is_ref(rel->r) && !find_ref(refs, rel->r)) {
+				if (rel_is_ref(rel->r) && !find_ref(refs, rel->r)) {
 					rel_print_(sql, fout, rel->r, depth, refs, decorate);
 					list_append(refs, rel->r);
 				}
 			}
 		}
-	break;
+		break;
 	case op_join:
 	case op_left:
 	case op_right:
@@ -586,13 +597,15 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 	case op_union:
 	case op_inter:
 	case op_except:
-		rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
-		rel_print_refs(sql, fout, rel->r, depth, refs, decorate);
-		if (rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
+		if (rel->l)
+			rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
+		if (rel->r)
+			rel_print_refs(sql, fout, rel->r, depth, refs, decorate);
+		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
 			rel_print_(sql, fout, rel->l, depth, refs, decorate);
 			list_append(refs, rel->l);
 		}
-		if (rel_is_ref(rel->r) && !find_ref(refs, rel->r)) {
+		if (rel->r && rel_is_ref(rel->r) && !find_ref(refs, rel->r)) {
 			rel_print_(sql, fout, rel->r, depth, refs, decorate);
 			list_append(refs, rel->r);
 		}
@@ -602,7 +615,8 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 	case op_groupby:
 	case op_topn:
 	case op_sample:
-		rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
+		if (rel->l)
+			rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
 		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
 			rel_print_(sql, fout, rel->l, depth, refs, decorate);
 			list_append(refs, rel->l);
@@ -612,12 +626,14 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 	case op_update:
 	case op_delete:
 	case op_truncate:
-		rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
+		if (rel->l)
+			rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
 		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
 			rel_print_(sql, fout, rel->l, depth, refs, decorate);
 			list_append(refs, rel->l);
 		}
-		rel_print_refs(sql, fout, rel->r, depth, refs, decorate);
+		if (rel->r)
+			rel_print_refs(sql, fout, rel->r, depth, refs, decorate);
 		if (rel->r && rel_is_ref(rel->r) && !find_ref(refs, rel->r)) {
 			rel_print_(sql, fout, rel->r, depth, refs, decorate);
 			list_append(refs, rel->r);
@@ -1279,15 +1295,27 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 	}
 
 	if (r[*pos] == 't' && r[*pos+1] == 'r' && r[*pos+2] == 'u') {
-		*pos += (int) strlen("truncate");
+		int restart_sequences = 0, drop_action = 0;
+		*pos += (int) strlen("truncate ");
+		if (r[*pos] == 'r') {
+			restart_sequences = 1;
+			*pos += (int) strlen("restart identity, ");
+		} else {
+			*pos += (int) strlen("continue identity, ");
+		}
+		if (r[*pos] == 'c') {
+			drop_action = 1;
+			*pos += (int) strlen("cascade");
+		} else {
+			*pos += (int) strlen("restrict");
+		}
 		skipWS(r, pos);
 		(*pos)++; /* ( */
 		lrel = rel_read(sql, r, pos, refs); /* to be truncated relation */
 		skipWS(r,pos);
 		(*pos)++; /* ) */
 
-		/* TODO drop_action and check_identity options */
-		return rel_truncate(sql->sa, lrel, 0, 0);
+		return rel_truncate(sql->sa, lrel, drop_action, restart_sequences);
 	}
 
 	if (r[*pos] == 'u' && r[*pos+1] == 'p' && r[*pos+2] == 'd') {

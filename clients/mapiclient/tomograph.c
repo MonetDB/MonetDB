@@ -1688,7 +1688,7 @@ main(int argc, char **argv)
 				break;
 			if( *optarg == '=')
 				optarg++;
-			cnt = sscanf(optarg,"%"PRId64"-%"PRId64, &startrange,&endrange);
+			cnt = sscanf(optarg,"%"SCNd64"-%"SCNd64, &startrange,&endrange);
 			if( cnt != 2)
 				usageTomograph();
 				

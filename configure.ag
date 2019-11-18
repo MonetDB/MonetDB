@@ -1113,25 +1113,7 @@ XPYTHON_LIBDIR=`$translatepath "$QPYTHON_LIBDIR"`
 QXPYTHON_LIBDIR=`AS_ECHO(["$XPYTHON_LIBDIR"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([QXPYTHON_LIBDIR])
 
-AC_PROG_YACC
-AS_CASE([$YACC],
-	[bison*],
-	[
-		# Ubuntu still comes with an ancient bison that uses defines
-		# without checking if they are defined.  This triggers a warning
-		# from gcc with -Wundef.  If we have a bison < 2.4.3, then
-		# disable the warning.
-		BISON_VER=`$YACC --version | head -n1 | sed -e 's/^.* //'`
-		AS_VERSION_COMPARE([$BISON_VER],
-			[2.4.3],
-			[X_CFLAGS=`AS_ECHO(["${X_CFLAGS}"]) | sed -e 's/-Wundef//g'`])
-	],
-	[
-		# in embedded mode, we ship the bison-generated files
-		AS_VAR_IF([enable_embedded], [no],
-			[AC_MSG_ERROR([MonetDB/SQL requires bison])],
-			[AC_MSG_WARN([ignoring missing bison in embedded configuration])])
-	])
+AC_CHECK_PROG([BISON], [bison], [bison], [:])
 
 INSTALL_BACKUP=""
 AC_MSG_CHECKING([$INSTALL --backup option])

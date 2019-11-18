@@ -2,13 +2,14 @@
 # This file is updated with Maddlog
 
 * Fri Oct 25 2019 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
-- Added SQL function sql.hot_snapshot() which can be used to make write
+- Added SQL function sys.hot_snapshot() which can be used to write
   a snapshot of the database to a tar file. For example,
   sys.hot_snapshot('/tmp/snapshot.tar'). If compression support is
   compiled in, snapshots can also be compressed ('/tmp/snapshot.tar.gz').
   The tar file expands to a single directory with the same name as the
   database that was snapshotted. This directory can be passed directly
-  as the --dbpath argument of mserver5.
+  as the --dbpath argument of mserver5 or it can be copied into an
+  existing dbfarm and started from monetdbd.
 
 * Sat Oct 12 2019 Martin Kersten <mk@cwi.nl>
 - The MAL profiler now assigns the SQL TRACE output to the client record

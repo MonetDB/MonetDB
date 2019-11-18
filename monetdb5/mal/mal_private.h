@@ -60,8 +60,6 @@ __hidden Symbol cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr 
 #endif
 __hidden int getBarrierEnvelop(MalBlkPtr mb)
 	__attribute__((__visibility__("hidden")));
-__hidden void malGarbageCollector(MalBlkPtr mb)
-	__attribute__((__visibility__("hidden")));
 __hidden void listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int step)
 	__attribute__((__visibility__("hidden")));
 
@@ -96,5 +94,3 @@ __hidden mal_export void mal_resource_reset(void)
 
 __hidden mal_export void mal_runtime_reset(void)
 	__attribute__((__visibility__("hidden")));
-
-extern ATOMIC_TYPE mal_running;

@@ -39,7 +39,7 @@ int GDKverbose = 0;
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>  /* prerequisite of sys/sysctl on OpenBSD */
 #endif
-#ifdef HAVE_SYS_SYSCTL_H
+#ifdef BSD /* BSD macro is defined in sys/param.h */
 # include <sys/sysctl.h>
 #endif
 #if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT)
@@ -317,7 +317,7 @@ MT_init(void)
 		GetSystemInfo(&sysInfo);
 		_MT_pagesize = sysInfo.dwPageSize;
 	}
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_PAGESIZE)
+#elif defined(BSD) && defined(HW_PAGESIZE)
 	{
 		int size;
 		size_t len = sizeof(int);
@@ -344,7 +344,7 @@ MT_init(void)
 		if (GlobalMemoryStatusEx(&memStatEx))
 			_MT_npages = (size_t) (memStatEx.ullTotalPhys / _MT_pagesize);
 	}
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_MEMSIZE) && SIZEOF_SIZE_T == SIZEOF_LNG
+#elif defined(BSD) && defined(HW_MEMSIZE) && SIZEOF_SIZE_T == SIZEOF_LNG
 	/* Darwin, 64-bits */
 	{
 		uint64_t size = 0;
@@ -358,7 +358,7 @@ MT_init(void)
 		sysctl(mib, 2, &size, &len, NULL, 0);
 		_MT_npages = size / _MT_pagesize;
 	}
-#elif defined(HAVE_SYS_SYSCTL_H) && defined (HW_PHYSMEM64) && SIZEOF_SIZE_T == SIZEOF_LNG
+#elif defined(BSD) && defined (HW_PHYSMEM64) && SIZEOF_SIZE_T == SIZEOF_LNG
 	/* OpenBSD, 64-bits */
 	{
 		int64_t size = 0;
@@ -372,7 +372,7 @@ MT_init(void)
 		sysctl(mib, 2, &size, &len, NULL, 0);
 		_MT_npages = size / _MT_pagesize;
 	}
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_PHYSMEM)
+#elif defined(BSD) && defined(HW_PHYSMEM)
 	/* NetBSD, OpenBSD, Darwin, 32-bits; FreeBSD 32 & 64-bits */
 	{
 # ifdef __FreeBSD__
@@ -408,68 +408,127 @@ MT_init(void)
 	fc = fopen("/proc/self/cgroup", "r");
 	if (fc != NULL) {
 		char buf[1024];
+		/* each line is of the form:
+		 * hierarchy-ID:controller-list:cgroup-path
+		 *
+		 * For cgroup v1, the hierarchy-ID refers to the
+		 * second column in /proc/cgroups (which we ignore)
+		 * and the controller-list is a comma-separated list
+		 * of the controllers bound to the hierarchy.  We look
+		 * for the "memory" controller and use its
+		 * cgroup-path.  We ignore the other lines.
+		 *
+		 * For cgroup v2, the hierarchy-ID is 0 and the
+		 * controller-list is empty.  We just use the
+		 * cgroup-path.
+		 *
+		 * We use the first line that we can match (either v1
+		 * or v2) and for which we can open any of the files
+		 * that we are looking for.
+		 */
 		while (fgets(buf, (int) sizeof(buf), fc) != NULL) {
+			char pth[1024];
 			char *p, *q;
-			p = strchr(buf, ':');
+			bool success = false; /* true if we can open any file */
+			FILE *f;
+			uint64_t mem;
+			size_t l;
+
+			p = strchr(buf, '\n');
 			if (p == NULL)
 				break;
-			q = p + 1;
-			p = strchr(q, ':');
-			if (p == NULL)
-				break;
-			*p++ = 0;
-			if (strstr(q, "memory") != NULL) {
-				char pth[1024];
-				FILE *f;
-				q = strchr(p, '\n');
-				if (q == NULL)
-					break;
-				*q = 0;
-				q = stpconcat(pth, "/sys/fs/cgroup/memory",
-					      p, NULL);
-				/* sometimes the path in
-				 * /proc/self/cgroup ends in "/" (or
-				 * actually, is "/"); in all other
-				 * cases add one */
-				if (q[-1] != '/')
-					*q++ = '/';
-				/* limit of memory usage */
-				strcpy(q, "memory.limit_in_bytes");
+			*p = 0;
+			if (strncmp(buf, "0::", 3) == 0) {
+				/* cgroup v2 entry */
+				l = strconcat_len(pth, sizeof(pth),
+						  "/sys/fs/cgroup",
+						  buf + 3, "/", NULL);
+				/* hard limit */
+				strcpy(pth + l, "memory.max");
 				f = fopen(pth, "r");
 				if (f != NULL) {
-					uint64_t mem;
-					if (fscanf(f, "%" SCNu64, &mem) == 1
-					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
 					}
+					success = true;
+					/* assume "max" if not a number */
 					fclose(f);
 				}
-				/* soft limit of memory usage */
-				strcpy(q, "memory.soft_limit_in_bytes");
+				/* soft limit */
+				strcpy(pth + l, "memory.high");
 				f = fopen(pth, "r");
 				if (f != NULL) {
-					uint64_t mem;
-					if (fscanf(f, "%" SCNu64, &mem) == 1
-					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
 					}
+					success = true;
+					/* assume "max" if not a number */
 					fclose(f);
 				}
 				/* limit of memory+swap usage
 				 * we use this as maximum virtual memory size */
-				strcpy(q, "memory.memsw.limit_in_bytes");
+				strcpy(pth + l, "memory.swap.max");
 				f = fopen(pth, "r");
 				if (f != NULL) {
-					uint64_t mem;
 					if (fscanf(f, "%" SCNu64, &mem) == 1
 					    && mem < (uint64_t) GDK_vm_maxsize) {
 						GDK_vm_maxsize = (size_t) mem;
 					}
+					success = true;
 					fclose(f);
 				}
-				break;
-
+			} else {
+				/* cgroup v1 entry */
+				p = strchr(buf, ':');
+				if (p == NULL)
+					break;
+				q = p + 1;
+				p = strchr(q, ':');
+				if (p == NULL)
+					break;
+				*p++ = 0;
+				if (strstr(q, "memory") == NULL)
+					continue;
+				l = strconcat_len(pth, sizeof(pth),
+						  "/sys/fs/cgroup/", q,
+						  p, "/", NULL);
+				/* limit of memory usage */
+				strcpy(pth + l, "memory.limit_in_bytes");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+						_MT_npages = (size_t) (mem / _MT_pagesize);
+					}
+					success = true;
+					fclose(f);
+				}
+				/* soft limit of memory usage */
+				strcpy(pth + l, "memory.soft_limit_in_bytes");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+						_MT_npages = (size_t) (mem / _MT_pagesize);
+					}
+					success = true;
+					fclose(f);
+				}
+				/* limit of memory+swap usage
+				 * we use this as maximum virtual memory size */
+				strcpy(pth + l, "memory.memsw.limit_in_bytes");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem < (uint64_t) GDK_vm_maxsize) {
+						GDK_vm_maxsize = (size_t) mem;
+					}
+					success = true;
+					fclose(f);
+				}
 			}
+			if (success)
+				break;
 		}
 		fclose(fc);
 	}
@@ -1181,23 +1240,12 @@ GDKsyserror(const char *format, ...)
 	va_start(ap, format);
 	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
 	va_end(ap);
-#ifndef NATIVE_WIN32
-	if (err > 0 && err < 1024)
-#endif
-	{
+	if (err > 0 && err < 1024) {
 		size_t len1;
 		size_t len2;
 		size_t len3;
 		char *osmsg;
-#ifdef NATIVE_WIN32
-		char osmsgbuf[256];
-		osmsg = osmsgbuf;
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
-			      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			      (LPTSTR) osmsgbuf, sizeof(osmsgbuf), NULL);
-#else
 		osmsg = strerror(err);
-#endif
 		len1 = strlen(message);
 		len2 = len1 + strlen(GDKMESSAGE);
 		len3 = len2 + strlen(osmsg);
@@ -1215,6 +1263,51 @@ GDKsyserror(const char *format, ...)
 
 	errno = 0;
 }
+
+#ifdef NATIVE_WIN32
+void
+GDKwinerror(const char *format, ...)
+{
+	int err = GetLastError();
+	char message[GDKERRLEN];
+	size_t len = strlen(GDKERROR);
+	va_list ap;
+
+	if (strncmp(format, GDKERROR, len) == 0) {
+		len = 0;
+	} else {
+		strncpy(message, GDKERROR, sizeof(message));
+	}
+	va_start(ap, format);
+	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
+	va_end(ap);
+
+	size_t len1;
+	size_t len2;
+	size_t len3;
+	char *osmsg;
+	char osmsgbuf[256];
+	osmsg = osmsgbuf;
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
+		      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		      (LPTSTR) osmsgbuf, sizeof(osmsgbuf), NULL);
+	len1 = strlen(message);
+	len2 = len1 + strlen(GDKMESSAGE);
+	len3 = len2 + strlen(osmsg);
+
+	if (len3 + 2 < sizeof(message)) {
+		strcpy(message + len1, GDKMESSAGE);
+		strcpy(message + len2, osmsg);
+		if (len3 > 0 && message[len3 - 1] != '\n') {
+			message[len3] = '\n';
+			message[len3 + 1] = 0;
+		}
+	}
+	GDKaddbuf(message);
+
+	SetLastError(0);
+}
+#endif
 
 void
 GDKclrerr(void)

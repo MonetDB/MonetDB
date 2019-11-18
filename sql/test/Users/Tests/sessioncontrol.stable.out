@@ -1,0 +1,53 @@
+stdout of test 'sessioncontrol` in directory 'sql/test/Users` itself:
+
+
+# 18:15:20 >  
+# 18:15:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30383" "--set" "mapi_usock=/var/tmp/mtest-5773/.s.monetdb.30383" "--forcemito" "--dbpath=/export/scratch1/mk/branches/default//Linux/var/MonetDB/mTests_sql_test_Users" "--set" "embedded_c=true"
+# 18:15:20 >  
+
+# MonetDB 5 server v11.36.0 (hg id: 160567eeb3fb+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_Users', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 31.307 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toke.da.cwi.nl:30383/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5773/.s.monetdb.30383
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 18:15:20 >  
+# 18:15:20 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5773" "--port=30383"
+# 18:15:20 >  
+
+#select sessionid, s."user", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s;
+% .s,	.s,	.s,	.s,	.s,	.s,	.s # table_name
+% sessionid,	user,	optimizer,	sessiontimeout,	querytimeout,	workerlimit,	memorylimit # name
+% int,	clob,	clob,	int,	int,	int,	int # type
+% 1,	7,	12,	1,	1,	1,	1 # length
+[ 0,	"monetdb",	"default_pipe",	0,	0,	0,	0	]
+#select sessionid, s."user", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s;
+% .s,	.s,	.s,	.s,	.s,	.s,	.s # table_name
+% sessionid,	user,	optimizer,	sessiontimeout,	querytimeout,	workerlimit,	memorylimit # name
+% int,	clob,	clob,	int,	int,	int,	int # type
+% 1,	7,	12,	4,	3,	2,	4 # length
+[ 0,	"monetdb",	"minimal_pipe",	5000,	123,	12,	8000	]
+#select sessionid, s."user", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s;
+% .s,	.s,	.s,	.s,	.s,	.s,	.s # table_name
+% sessionid,	user,	optimizer,	sessiontimeout,	querytimeout,	workerlimit,	memorylimit # name
+% int,	clob,	clob,	int,	int,	int,	int # type
+% 1,	7,	0,	4,	3,	2,	4 # length
+[ 0,	"monetdb",	"",	5000,	123,	12,	8000	]
+#select sessionid, s."user", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s;
+% .s,	.s,	.s,	.s,	.s,	.s,	.s # table_name
+% sessionid,	user,	optimizer,	sessiontimeout,	querytimeout,	workerlimit,	memorylimit # name
+% int,	clob,	clob,	int,	int,	int,	int # type
+% 1,	7,	15,	4,	2,	1,	4 # length
+[ 0,	"monetdb",	"sequential_pipe",	1000,	60,	8,	2000	]
+
+# 18:15:20 >  
+# 18:15:20 >  "Done."
+# 18:15:20 >  
+

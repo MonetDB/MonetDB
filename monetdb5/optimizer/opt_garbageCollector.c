@@ -25,17 +25,15 @@
 str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, limit, slimit, vlimit;
-	InstrPtr p, *old;
+	int i, limit;
+	InstrPtr p;
 	int actions = 0;
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
-	//str nme;
 	char *used;
 
 	(void) pci;
-	(void) cntxt;
 	(void) stk;
 	if ( mb->inlineProp)
 		return 0;
@@ -44,25 +42,29 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	if ( used == NULL)
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
-	old= mb->stmt;
 	limit = mb->stop;
-	slimit = mb->ssize;
-	vlimit = mb->vtop;
 
-	/* rename all temporaries used for ease of debugging and profile interpretation */
-
- 	for( i = 0; i < mb->vtop; i++)
+	/* variables get their name from the position */
+	/* rename all temporaries used for ease of variable table interpretation */
+	/* this code should not be necessary is variables always keep their position */
+ 	for( i = 0; i < mb->vtop; i++){
+		//strcpy(buf, getVarName(mb,i));
 		if (getVarName(mb,i)[0] == 'X' && getVarName(mb,i)[1] == '_')
 			snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
 		else
 		if (getVarName(mb,i)[0] == 'C' && getVarName(mb,i)[1] == '_')
 			snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
+		//if(strcmp(buf, getVarName(mb,i)) )
+			//fprintf(stderr, "non-matching name/entry %s %s\n", buf, getVarName(mb,i));
+	}
 
 	// move SQL query definition to the front for event profiling tools
 	p = NULL;
 	for(i = 0; i < limit; i++)
 		if(mb->stmt[i] && getModuleId(mb->stmt[i]) == querylogRef && getFunctionId(mb->stmt[i]) == defineRef ){
 			p = getInstrPtr(mb,i);
+			if( i != 1)
+				fprintf(stderr, "define statement not in expected place %d\n", i);
 			break;
 		}
 	
@@ -73,66 +75,27 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		actions =1;
 	}
 
-	// Actual garbage collection stuff
-
-	if ( newMalBlkStmt(mb,mb->ssize) < 0) 
-		throw(MAL, "optimizer.garbagecollector", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-
+	// Actual garbage collection stuff, just mark them for re-assessment
 	p = NULL;
 	for (i = 0; i < limit; i++) {
-		p = old[i];
+		p = getInstrPtr(mb, i);
 		p->gc &=  ~GARBAGECONTROL;
 		p->typechk = TYPE_UNKNOWN;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
-
-		if ( p->barrier == RETURNsymbol){
-			pushInstruction(mb, p);
-			continue;
-		}
 		if ( p->token == ENDsymbol)
 			break;
-		
-		pushInstruction(mb, p);
-
-		/* A block exit is never within a parallel block,
-		 * otherwise we could not inject the assignment */
-		/* force garbage collection of all declared within output block and ending here  */
-		/* ignore for the time being, it requires a more thorough analysis of dependencies.
-		if (blockExit(p) ){
-			for( k = stmtlnk[i]; k; k = varlnk[k])
-			if( isaBatType(getVarType(mb,k)) ){
-				q = newAssignment(mb);
-				getArg(q,0)= k;
-				q= pushNil(mb,q, getVarType(mb,k));
-				setVarUDFtype(mb,k);
-				setVarFixed(mb,k);
-				q->gc |= GARBAGECONTROL;
-				setVarEolife(mb,k,mb->stop-1);
-				actions++;
-			}
-		}
-		*/
 	}
 	/* A good MAL plan should end with an END instruction */
-	pushInstruction(mb, p);
 	if( p && p->token != ENDsymbol){
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
-	for (i++; i < limit; i++) 
-		pushInstruction(mb, old[i]);
-	for (; i < slimit; i++) 
-		if (old[i])
-			freeInstruction(old[i]);
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
-	//GDKfree(varlnk);
-	//GDKfree(stmtlnk);
-	GDKfree(old);
 	GDKfree(used);
     if( OPTdebug &  OPTgarbagecollector)
 	{ 	int k;
 		fprintf(stderr, "#Garbage collected BAT variables \n");
-		for ( k =0; k < vlimit; k++)
+		for ( k =0; k < mb->vtop; k++)
 		fprintf(stderr,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
 			getVarName(mb,k), getVarEolife(mb,k),
 			getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));

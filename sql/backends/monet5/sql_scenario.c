@@ -993,7 +993,7 @@ SQLreader(Client c)
 #endif
 		}
 	}
-	if ( (c->stimeout && (GDKusec() - c->session) > c->stimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
+	if ( (c->sessiontimeout && (GDKusec() - c->session) > c->sessiontimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
 		c->mode = FINISHCLIENT;
 		return msg;

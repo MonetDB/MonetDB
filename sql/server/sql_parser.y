@@ -2072,12 +2072,10 @@ external_function_name:
 	ident '.' ident { $$ = append_string(append_string(L(), $1), $3); }
  ;
 
-
 function_body:
 	X_BODY
 |	string
 ;
-
 
 func_def:
     create_or_replace FUNCTION qname

@@ -187,7 +187,7 @@ getRemoteDB(char *database)
 			}
 			walk->dbname = strdup(rdb->dbname);
 			walk->path = walk->dbname; /* only freed by sabaoth */
-			walk->locked = 0;
+			walk->locked = false;
 			walk->state = SABdbRunning;
 			walk->scens = malloc(sizeof(sablist));
 			walk->scens->val = strdup("sql");
@@ -343,7 +343,7 @@ discoveryRunner(void *d)
 				kv = findConfKey(ckv, "shared");
 				val = kv->val == NULL ? "" : kv->val;
 				/* skip databases under maintenance */
-				if (strcmp(val, "no") != 0 && stats->locked != 1) {
+				if (strcmp(val, "no") != 0 && !stats->locked) {
 					/* craft ANNC message for this db */
 					if (strcmp(val, "yes") == 0)
 						val = "";

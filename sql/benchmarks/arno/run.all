@@ -15,14 +15,8 @@ fi
 echo "creating"
 $SQL < create_tables.int.isql
 
-echo "insert BONDs"
-$SQL < insert_BOND.int.sql   
-echo $?
-echo "insert ATOMs"
-$SQL < insert_ATOM.int.sql    
-echo $?
-echo "insert MODELs"
-$SQL < insert_MODEL.int.sql
+echo "inserts"
+$SQL < inserts.sql
 echo $?
 echo "check0"
 $SQL < check0.sql

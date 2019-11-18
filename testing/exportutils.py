@@ -72,8 +72,9 @@ def replace(line, defines, tried):
     for name, (args, body) in defines.items():
         if name in tried:
             continue
-        pat = r'\b%s\b' % name
-        sep = r'\('
+        args, body = defines[name]
+        pat = r'\b%s\b\(' % name
+        sep = r''
         for arg in args:
             pat = pat + sep + r'([^,()]*(?:\([^()]*' + nested + r'\)[^,()]*)*)'
             sep = ','

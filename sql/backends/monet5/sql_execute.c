@@ -376,18 +376,26 @@ SQLrun(Client c, backend *be, mvc *m)
 		if (c->curprg->def)
 			printFunction(c->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE  | LIST_MAL_TYPE |  LIST_MAL_MAPI);
 	} else if( m->emod & mod_debug) {
+		c->idle = 0;
+		c->lastcmd = time(0);
 		msg = runMALDebugger(c, mb);
 	} else {
 		if( m->emod & mod_trace){
 			if((msg = SQLsetTrace(c,mb)) == MAL_SUCCEED) {
+				c->idle = 0;
+				c->lastcmd = time(0);
 				msg = runMAL(c, mb, 0, 0);
 				stopTrace(c);
 			}
 		} else {
+				c->idle = 0;
+				c->lastcmd = time(0);
 			msg = runMAL(c, mb, 0, 0);
 		}
 	}
-
+	/* after the query has been finished we enter the idle state */
+	c->idle = time(0);
+	c->lastcmd = 0;
 	// release the resources
 	freeMalBlk(mb);
 	MT_thread_setworking(NULL);
