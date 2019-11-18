@@ -46,7 +46,7 @@ lib__sql = {
 		sql_orderidx.c sql_orderidx.h \
 		wlr.c wlr.h \
 		sql_datetrunc.c \
-		sql_rank.c sql_rank.h
+		sql_rank.c sql_rank.h sql_subquery.c sql_subquery.h
 	# libmapi on Windows for mcrypt_*
 	LIBS = ../../server/libsqlserver \
 		../../storage/libstore \
@@ -64,7 +64,7 @@ headers_mal = {
 	DIR = libdir/monetdb5
 	SOURCES = sql_aggr_bte.mal  sql_aggr_flt.mal sql_aggr_dbl.mal  sql_aggr_int.mal  sql_aggr_lng.mal \
 		sql_aggr_sht.mal  sql_decimal.mal  sql_inspect.mal wlr.mal \
-		sql_rank.mal sqlcatalog.mal sql_transaction.mal  sql.mal
+		sql_subquery.mal sql_rank.mal sqlcatalog.mal sql_transaction.mal  sql.mal
 }
 
 headers_mal_hge = {
