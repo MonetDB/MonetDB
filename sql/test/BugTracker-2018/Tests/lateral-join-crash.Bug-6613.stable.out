@@ -84,8 +84,8 @@ stdout of test 'lateral-join-crash.Bug-6613` in directory 'sql/test/BugTracker-2
 [ 16,	9,	9	]
 [ 17,	9,	9	]
 [ 18,	9,	9	]
-#select * from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1);
-% sys.s,	sys.s,	sys.s,	.L2 # table_name
+#select *                            from segments as s, lateral generate_series(s.meter, cast(s.meter+s.distance+1 as int));
+% sys.s,	sys.s,	sys.s,	.%2 # table_name
 % meter,	distance,	speed,	value # name
 % int,	int,	int,	int # type
 % 1,	1,	1,	2 # length

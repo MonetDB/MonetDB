@@ -26,7 +26,7 @@ stdout of test 'sqlitelogictest-complex-expression.Bug-6589` in directory 'sql/t
 #SELECT DISTINCT + - 82 * + 26 - 12 * + - 27 * + + CASE WHEN NOT NULL
 #IN ( - 69, ( + SUM ( DISTINCT CAST ( NULL AS INTEGER ) ) ) + + MAX ( - 6 ) + + - COUNT ( * ) / - - ( + 77 ) + 37, + 44,
 #- - 0 * + + 23, - - 86, 3, 12 ) THEN + 41 WHEN NOT - 21 / - 95 IS NOT NULL THEN 63 END AS col0;
-% .L42 # table_name
+% .%7 # table_name
 % col0 # name
 % int # type
 % 1 # length

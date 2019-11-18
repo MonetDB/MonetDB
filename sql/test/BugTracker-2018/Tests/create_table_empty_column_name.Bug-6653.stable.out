@@ -67,7 +67,7 @@ stdout of test 'create_table_empty_column_name.Bug-6653` in directory 'sql/test/
 #INSERT INTO selectme VALUES ('');
 [ 1	]
 #SELECT a AS "othera" FROM (SELECT a FROM selectme) AS "other";
-% sys.L3 # table_name
+% sys.selectme # table_name
 % othera # name
 % clob # type
 % 0 # length

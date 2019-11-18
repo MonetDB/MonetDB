@@ -67,21 +67,21 @@ stdout of test 'alter-sequence-subquery.Bug-6657` in directory 'sql/test/BugTrac
 
 #create sequence "testme" as integer start with 2;
 #select get_value_for('sys', 'testme');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #alter sequence "testme" restart with (select count(*));
 #select get_value_for('sys', 'testme');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select get_value_for('sys', 'testme');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]

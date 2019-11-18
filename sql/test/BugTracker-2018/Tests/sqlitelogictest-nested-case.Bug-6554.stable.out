@@ -24,8 +24,8 @@ stdout of test 'sqlitelogictest-nested-case.Bug-6554` in directory 'sql/test/Bug
 # 16:08:28 >  
 
 #SELECT 50, CASE WHEN NOT - COUNT ( * ) IN ( - - 41 * + 92 * + + ( + + 10 ) + - MAX ( DISTINCT + 74 ), + 14, + 11 * + COUNT ( * ) * + ( - + CASE + 77 WHEN - 52 THEN + + 43 + + 71 + - AVG ( ALL + + 93 ) + 12 / - - COUNT ( * ) ELSE NULL END ), COUNT ( - 91 ) + + + 71 * + + CASE - + 53 WHEN - + 94 + - 39 - + - 10 + 13 + SUM ( DISTINCT - + 24 ) THEN NULL WHEN - AVG ( ALL 53 ) THEN 76 ELSE - 17 END ) THEN - AVG ( ALL - ( + 63 ) ) END * + 62 AS col0;
-% .L2,	.L36 # table_name
-% L2,	col0 # name
+% .%12,	.%13 # table_name
+% %12,	col0 # name
 % tinyint,	double # type
 % 2,	24 # length
 [ 50,	NULL	]
