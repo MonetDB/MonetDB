@@ -23,7 +23,7 @@ def freeport():
 cloneport = freeport()
 
 dbname = tstdb
-dbnameclone = tstdb + '-clone'
+dbnameclone = tstdb + 'clone'
 
 # master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
@@ -32,13 +32,15 @@ c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process
 
 #two step roll forward, where first step shouldn't do anything because already in previous test
 cout, cerr = c.communicate('''\
-call replicate('%s',1);
+call wlr.master('%s');
+call wlr.replicate(3);
 select * from tmp;
-call replicate('%s',2);
+call wlr.replicate(4);
 select * from tmp;
-call replicate('%s',4);
+call wlr.replicate(6);
 select * from tmp;
-''' % (dbname,dbname,dbname))
+call wlr.stop();
+''' % dbname)
 
 sout, serr = slave.communicate()
 #mout, merr = master.communicate()
@@ -51,10 +53,11 @@ sys.stderr.write(serr)
 sys.stderr.write(cerr)
 
 def listfiles(path):
-    for f in os.listdir(path):
-        if (f.find('wlc') >= 0 or f.find('wlr') >=0 ) and f != 'wlc_logs':
+    sys.stdout.write("#LISTING OF THE LOG FILES\n")
+    for f in sorted(os.listdir(path)):
+        if f.find('wlc') >= 0 and f != 'wlc_logs':
             file = path + os.path.sep + f
-            sys.stdout.write(file + "\n")
+            sys.stdout.write('#' + file + "\n")
             try:
                 x = open(file)
                 s = x.read()
@@ -65,6 +68,5 @@ def listfiles(path):
             except IOError:
                 sys.stderr.write('Failure to read file ' + file + '\n')
 
-listfiles(dbfarm + os.path.sep + tstdb)
-listfiles(dbfarm + os.path.sep + tstdb + os.path.sep + 'wlc_logs')
-
+listfiles(os.path.join(dbfarm, tstdb))
+listfiles(os.path.join(dbfarm, tstdb, 'wlc_logs'))

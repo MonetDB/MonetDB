@@ -653,16 +653,6 @@ stdout of test 'check_MaxStrLength_violations` in directory 'sql/test/sys-schema
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 33,	1,	1,	0 # length
-#SELECT '"sys"."tracelog"."clk"' as full_col_nm, 20 as max_allowed_length, length("clk") as data_length, t."clk" as data_value FROM "sys"."tracelog" t WHERE "clk" IS NOT NULL AND length("clk") > (select type_digits from sys._columns where name = 'clk' and table_id in (select id from tables where name = 'tracelog' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L25,	.L26,	.L27,	.L30 # table_name
-% full_col_nm,	max_allowed_length,	data_length,	data_value # name
-% char,	tinyint,	int,	varchar # type
-% 22,	1,	1,	0 # length
-#SELECT '"sys"."tracelog"."pc"' as full_col_nm, 50 as max_allowed_length, length("pc") as data_length, t."pc" as data_value FROM "sys"."tracelog" t WHERE "pc" IS NOT NULL AND length("pc") > (select type_digits from sys._columns where name = 'pc' and table_id in (select id from tables where name = 'tracelog' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L25,	.L26,	.L27,	.L30 # table_name
-% full_col_nm,	max_allowed_length,	data_length,	data_value # name
-% char,	tinyint,	int,	varchar # type
-% 21,	1,	1,	0 # length
 #SELECT '"sys"."triggers"."condition"' as full_col_nm, 2048 as max_allowed_length, length("condition") as data_length, t."condition" as data_value FROM "sys"."triggers" t WHERE "condition" IS NOT NULL AND length("condition") > (select type_digits from sys._columns where name = 'condition' and table_id in (select id from tables where name = 'triggers' and schema_id in (select id from sys.schemas where name = 'sys')));
 % .L21,	.L22,	sys.L23,	sys.L24 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name

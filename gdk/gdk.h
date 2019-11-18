@@ -334,6 +334,7 @@
 #include "gdk_system.h"
 #include "gdk_posix.h"
 #include "stream.h"
+#include "mstring.h"
 
 #undef MIN
 #undef MAX
@@ -508,6 +509,8 @@ typedef char *str;
 #define LL_CONSTANT(val)	INT64_C(val)
 #define LLFMT			"%" PRId64
 #define ULLFMT			"%" PRIu64
+#define LLSCN			"%" SCNd64
+#define ULLSCN			"%" SCNu64
 
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define SIZEOF_VAR_T	SIZEOF_OID
@@ -1256,25 +1259,18 @@ BUNtoid(BAT *b, BUN p)
 		return o;
 	}
 	const oid *exc = (oid *) b->tvheap->base;
-	BUN hi = 0;
-	if (nexc > 1024) {
-		BUN lo = 0;
-		hi = nexc - 1;
-		while (hi > lo + 1) {
-			BUN mid = (lo + hi) / 2;
-			if (exc[mid] == o) {
-				hi = mid;
-				break;
-			}
-			if (exc[mid] < o)
-				lo = mid;
-			else
-				hi = mid;
-		}
+	if (o < exc[0])
+		return o;
+	if (o + nexc > exc[nexc - 1])
+		return o + nexc;
+	BUN lo = 0, hi = nexc - 1;
+	while (hi - lo > 1) {
+		BUN mid = (hi + lo) / 2;
+		if (exc[mid] - mid > o)
+			hi = mid;
+		else
+			lo = mid;
 	}
-	for (; hi < nexc; hi++)
-		if (o + hi < exc[hi])
-			break;
 	return o + hi;
 }
 
@@ -1433,7 +1429,7 @@ gdk_export void OIDXdestroy(BAT *b);
  *
  */
 gdk_export gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
-gdk_export gdk_return BATprint(BAT *b);
+gdk_export gdk_return BATprint(stream *s, BAT *b);
 
 /*
  * @- BAT clustering
@@ -2360,11 +2356,8 @@ gdk_export void *THRdata[THREADDATA];
 #define GDKstdout	((stream*)THRdata[0])
 #define GDKstdin	((stream*)THRdata[1])
 
-#define GDKout		((stream*)THRgetdata(0))
-#define GDKin		((stream*)THRgetdata(1))
 #define GDKerrbuf	((char*)THRgetdata(2))
 #define GDKsetbuf(x)	THRsetdata(2,(void *)(x))
-#define GDKerr		GDKout
 
 #define THRget_errbuf(t)	((char*)t->data[2])
 #define THRset_errbuf(t,b)	(t->data[2] = b)
@@ -2716,11 +2709,6 @@ enum prop_t {
 	GDK_MAX_VALUE,		/* largest non-nil value in BAT */
 	GDK_HASH_MASK,		/* last used hash mask */
 };
-
-gdk_export void PROPdestroy(BAT *b);
-gdk_export PROPrec *BATgetprop(BAT *b, enum prop_t idx);
-gdk_export void BATsetprop(BAT *b, enum prop_t idx, int type, const void *v);
-gdk_export void BATrmprop(BAT *b, enum prop_t idx);
 
 /*
  * @- BAT relational operators

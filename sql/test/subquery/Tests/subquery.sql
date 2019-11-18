@@ -79,6 +79,8 @@ SELECT 1 FROM integers WHERE SUM(i) > 1; --aggregates not allowed in where claus
 
 SELECT SUM(SUM(i)) FROM integers; -- aggregates cannot be nested
 
+SELECT i1.i FROM integers i1 WHERE i1.i >= (SELECT i1.i, i2.i FROM integers i2 WHERE i2.i > 1); --error, subquery must return a single column
+
 drop TABLE integers;
 
 -- varchar tests

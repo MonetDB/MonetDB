@@ -516,7 +516,7 @@ exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char 
 }
 
 sql_exp *
-exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel, sql_exp *old)
+exp_alias_or_copy(mvc *sql, const char *tname, const char *cname, sql_rel *orel, sql_exp *old)
 {
 	sql_exp *ne = NULL;
 
@@ -526,12 +526,12 @@ exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel
 	if (!tname && old->type == e_column)
 		tname = old->l;
 
-	if (!cname && exp_name(old) && exp_name(old)[0] == 'L') {
+	if (!cname && exp_name(old) && has_label(old)) {
 		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
 		return exp_propagate(sql->sa, ne, old);
 	} else if (!cname) {
 		char name[16], *nme;
-		nme = number2name(name, 16, ++sql->label);
+		nme = number2name(name, sizeof(name), ++sql->label);
 
 		exp_setname(sql->sa, old, nme, nme);
 		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
@@ -701,7 +701,7 @@ exp_setrelname(sql_allocator *sa, sql_exp *e, int nr)
 {
 	char name[16], *nme;
 
-	nme = number2name(name, 16, nr);
+	nme = number2name(name, sizeof(name), nr);
 	e->alias.label = 0;
 	e->alias.rname = sa_strdup(sa, nme);
 }
@@ -711,7 +711,7 @@ make_label(sql_allocator *sa, int nr)
 {
 	char name[16], *nme;
 
-	nme = number2name(name, 16, nr);
+	nme = number2name(name, sizeof(name), nr);
 	return sa_strdup(sa, nme);
 }
 
@@ -908,7 +908,7 @@ exps_find_exp( list *l, sql_exp *e)
 		return NULL;
 
 	for(n=l->h; n; n = n->next) {
-		if (exp_match(n->data, e))
+		if (exp_match(n->data, e) || exp_refers(n->data, e))
 			return n->data;
 	}
 	return NULL;
@@ -963,6 +963,9 @@ exps_match_col_exps( sql_exp *e1, sql_exp *e2)
 
 	if (!is_complex_exp(e1->flag) && e1_r && e1_r->card == CARD_ATOM &&
 	    (e2->flag == cmp_in || e2->flag == cmp_notin))
+ 		return exp_match_exp(e1->l, e2->l); 
+	if ((e1->flag == cmp_in || e1->flag == cmp_notin) &&
+	    !is_complex_exp(e2->flag) && e2_r && e2_r->card == CARD_ATOM)
  		return exp_match_exp(e1->l, e2->l); 
 
 	if ((e1->flag == cmp_in || e1->flag == cmp_notin) &&
@@ -1068,6 +1071,9 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 		            exp_match_exp(e1->l, e2->l) && 
 			    exp_match_list(e1->r, e2->r))
 				return 1;
+			else if (e1->flag == e2->flag && (e1->flag == cmp_equal || e1->flag == cmp_notequal) &&
+				exp_match_exp(e1->l, e2->r) && exp_match_exp(e1->r, e2->l))
+				return 1; /* = and <> operations are reflective, so exp_match_exp can be called crossed */
 			break;
 		case e_convert:
 			if (!subtype_cmp(exp_totype(e1), exp_totype(e2)) &&
@@ -1880,7 +1886,7 @@ is_identity( sql_exp *e, sql_rel *r)
 			sql_exp *re = NULL;
 			if (e->l)
 				re = exps_bind_column2(r->exps, e->l, e->r);
-			if (!re && ((char*)e->r)[0] == 'L')
+			if (!re && has_label(e))
 				re = exps_bind_column(r->exps, e->r, NULL);
 			if (re)
 				return is_identity(re, r->l);
@@ -2085,7 +2091,15 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 
 		/* numeric types are fixed length */
 		if (ares->type.type->eclass == EC_NUM) {
-			sql_find_numeric(&t, ares->type.type->localtype, res->digits);
+#ifdef HAVE_HGE
+			if (have_hge && ares->type.type->localtype == TYPE_hge && res->digits == 128)
+				t = *sql_bind_localtype("hge");
+			else
+#endif
+			if (ares->type.type->localtype == TYPE_lng && res->digits == 64)
+				t = *sql_bind_localtype("lng");
+			else
+				sql_find_numeric(&t, ares->type.type->localtype, res->digits);
 		} else {
 			sql_find_subtype(&t, ares->type.type->sqlname, res->digits, res->scale);
 		}
@@ -2209,7 +2223,7 @@ static int
 exp_set_list_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relname, const char** expname)
 {
 	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return -1;
 	}
 	assert(*relname && *expname);
@@ -2235,7 +2249,7 @@ static int
 exp_set_type_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relname, const char** expname)
 {
 	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return -1;
 	}
 	assert(*relname && *expname);
@@ -2325,7 +2339,7 @@ int
 rel_set_type_recurse(mvc *sql, sql_subtype *type, sql_rel *rel, const char **relname, const char **expname)
 {
 	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return -1;
 	}
 	assert(*relname && *expname);

@@ -10,11 +10,13 @@ TRUNCATE testing4; --error
 SELECT a FROM testing4;
 SELECT abc FROM testing5;
 
+PLAN TRUNCATE testing4 RESTRICT;
 TRUNCATE testing4  RESTRICT; --error
 SELECT a FROM testing4;
 SELECT abc FROM testing5;
 
-TRUNCATE testing4  CASCADE;
+PLAN TRUNCATE testing4 CASCADE;
+TRUNCATE testing4 CASCADE;
 SELECT a FROM testing4;
 SELECT abc FROM testing5;
 
@@ -24,16 +26,22 @@ CREATE TABLE testing6 (a INT AUTO_INCREMENT, b INT);
 INSERT INTO testing6 (b) VALUES (1);
 INSERT INTO testing6 (b) VALUES (1);
 SELECT a, b FROM testing6;
+
+PLAN TRUNCATE testing6;
 TRUNCATE testing6;
 
 INSERT INTO testing6 (b) VALUES (3);
 INSERT INTO testing6 (b) VALUES (4);
 SELECT a, b FROM testing6;
+
+PLAN TRUNCATE testing6 CONTINUE IDENTITY;
 TRUNCATE testing6 CONTINUE IDENTITY;
 
 INSERT INTO testing6 (b) VALUES (5);
 INSERT INTO testing6 (b) VALUES (6);
 SELECT a, b FROM testing6;
+
+PLAN TRUNCATE testing6 RESTART IDENTITY;
 TRUNCATE testing6 RESTART IDENTITY;
 
 INSERT INTO testing6 (b) VALUES (7);

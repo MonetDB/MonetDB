@@ -761,8 +761,6 @@ possible:
 - ``DEBUG=1`` - compile with extra debugging information
 - ``NDEBUG=1`` - compile without extra debugging information (this is
   used for creating a binary release);
-- ``HAVE_MONETDB5=1`` - include the MonetDB5 component;
-- ``HAVE_SQL=1`` - include the sql component;
 - ``HAVE_GEOM=1`` - include the geom component;
 - ``HAVE_TESTING=1`` - include the testing component;
 - ``HAVE_PYTHON=1`` - include the Python component;

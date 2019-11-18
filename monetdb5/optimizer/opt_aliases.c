@@ -31,7 +31,6 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) stk;
 	(void) cntxt;
 
-
 	limit = mb->stop;
 	for (i = 1; i < limit; i++){
 		p= getInstrPtr(mb,i);
@@ -85,5 +84,9 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
+	if( OPTdebug &  OPTaliases){
+		fprintf(stderr, "#ALIASES optimizer  result\n");
+		fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+	}
 	return MAL_SUCCEED;
 }

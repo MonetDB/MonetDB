@@ -1,5 +1,10 @@
-# ChangeLog file for sql/src/backends/monet5/merovingian
-# This file is updated with mchangelog
+# ChangeLog file for merovingian
+# This file is updated with Maddlog
+
+* Thu Oct 17 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Added "vmmaxsize" and "memmaxsize" mserver5 options to the daemon in
+  order to set mserver5's maximum virtual and committed memory
+  respectively.
 
 * Thu May  2 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Added ipv6 property to monetdbd properties to force IPv6 addresses

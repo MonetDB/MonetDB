@@ -54,6 +54,10 @@ MAPI  = (monetdb) /var/tmp/mtest-1030/.s.monetdb.36394
 QUERY = SELECT SUM(SUM(i)) FROM integers; -- aggregates cannot be nested
 ERROR = !SUM: aggregate functions cannot be nested
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-8966/.s.monetdb.37628
+QUERY = SELECT i1.i FROM integers i1 WHERE i1.i >= (SELECT i1.i, i2.i FROM integers i2 WHERE i2.i > 1); --error, subquery must return a single column
+ERROR = !SELECT: subquery must return only one column
+CODE  = 42000
 
 # 17:27:37 >  
 # 17:27:37 >  "Done."

@@ -83,9 +83,11 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		 */
 		barrier |= getFunctionId(p) == assertRef;
 		if (barrier || p->token == NOOPsymbol || p->token == ASSIGNsymbol) {
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-			fprintf(stderr, "#COMMON SKIPPED[%d] %d %d\n",i, barrier, p->retc == p->argc);
-#endif
+
+			if( OPTdebug & OPTcommonterms){
+				fprintf(stderr, "#COMMON SKIPPED[%d] %d %d\n",i, barrier, p->retc == p->argc);
+			}
+
 			pushInstruction(mb,p);
 			continue;
 		}
@@ -98,24 +100,29 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		/* side-effect producing operators can never be replaced */
 		/* the same holds for function calls without an argument, it is unclear where the results comes from (e.g. clock()) */
 		if ( mayhaveSideEffects(cntxt, mb, p,TRUE) || p->argc == p->retc){
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-			fprintf(stderr, "#COMMON SKIPPED[%d] side-effect %d\n", i, p->retc == p->argc);
-#endif
+
+			if( OPTdebug & OPTcommonterms){
+				fprintf(stderr, "#COMMON SKIPPED[%d] side-effect %d\n", i, p->retc == p->argc);
+			}
+
 			pushInstruction(mb,p);
 			continue;
 		}
 
 		/* from here we have a candidate to look for a match */
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-		fprintf(stderr,"#CANDIDATE[%d] look at list[%d]=>%d\n",
+
+		if( OPTdebug & OPTcommonterms){
+			fprintf(stderr,"#CANDIDATE[%d] look at list[%d]=>%d\n",
 				i, HASHinstruction(p), hash[HASHinstruction(p)]);
-		fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-#endif
+			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
+		}
+
 		/* Look into the hash structure for matching instructions */
 		for (j = hash[HASHinstruction(p)];  j > 0  ; j = list[j]) 
 			if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-				fprintf(stderr,"#CANDIDATE[%d->%d] %d %d :%d %d %d=%d %d %d %d ",
+
+				if( OPTdebug & OPTcommonterms){
+					fprintf(stderr,"#CANDIDATE[%d->%d] %d %d :%d %d %d=%d %d %d %d ",
 						j, list[j], 
 						hasSameSignature(mb, p, q), 
 						hasSameArguments(mb, p, q),
@@ -125,8 +132,9 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 						!isUnsafeFunction(q),
 						!isUpdateInstruction(q),
 						isLinearFlow(q));
-				fprintInstruction(stderr, mb, 0, q, LIST_MAL_ALL);
-#endif
+					fprintInstruction(stderr, mb, 0, q, LIST_MAL_ALL);
+				}
+
 				/*
 				 * Simple assignments are not replaced either. They should be
 				 * handled by the alias removal part. All arguments should
@@ -140,9 +148,11 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					 isLinearFlow(q) 
 					) {
 					if (safetyBarrier(p, q) ){
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-						fprintf(stderr,"#safetybarrier reached\n");
-#endif
+
+						if( OPTdebug & OPTcommonterms){
+							fprintf(stderr,"#safetybarrier reached\n");
+						}
+
 						break;
 					}
 					duplicate = 1;
@@ -152,30 +162,34 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 						alias[getArg(p,k)] = getArg(q,k);
 						p= pushArgument(mb,p, getArg(q,k));
 					}
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-					fprintf(stderr, "#MODIFIED EXPRESSION %d -> %d ",getArg(p,0),getArg(p,1));
-					fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-#endif
+
+					if( OPTdebug & OPTcommonterms){
+						fprintf(stderr, "#MODIFIED EXPRESSION %d -> %d ",getArg(p,0),getArg(p,1));
+						fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
+					}
+
 					actions++;
 					break; /* end of search */
 				}
 			}
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-			else if ( isUpdateInstruction(p)){
+
+			else if( OPTdebug & OPTcommonterms && isUpdateInstruction(p)){
 				fprintf(stderr, "#COMMON SKIPPED %d %d ", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
 				fprintInstruction(stderr, mb, 0, q, LIST_MAL_ALL);
 			}
-#endif
+
 		if (duplicate){
 			pushInstruction(mb,p);
 			continue;
 		} 
 		/* update the hash structure with another candidate for re-use */
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-		fprintf(stderr,"#UPDATE HASH[%d] look at  arg %d hash %d list %d\n",
+
+		if( OPTdebug & OPTcommonterms){
+			fprintf(stderr,"#UPDATE HASH[%d] look at  arg %d hash %d list %d\n",
 				i, getArg(p,p->argc-1), HASHinstruction(p), hash[HASHinstruction(p)]);
-		fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-#endif
+			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
+		}
+
 		if ( !mayhaveSideEffects(cntxt, mb, p, TRUE) && p->argc != p->retc &&  isLinearFlow(p) && !isUnsafeFunction(p) && !isUpdateInstruction(p)){
 			list[i] = hash[HASHinstruction(p)];
 			hash[HASHinstruction(p)] = i;
@@ -203,5 +217,9 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	if(list) GDKfree(list);
 	if(hash) GDKfree(hash);
 	if(old) GDKfree(old);
+    if( OPTdebug &  OPTcommonterms){
+        fprintf(stderr, "#COMMONTERMS optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return msg;
 }

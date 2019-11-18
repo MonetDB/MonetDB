@@ -337,7 +337,7 @@ TKNZRappend(oid *pos, str *s)
 			throw(MAL, "tokenizer.append",
 					OPERATION_FAILED " no more free oid's");
 		}
-		if (BUNappend(tokenBAT[i].val, parts[i], true) != GDK_SUCCEED) {
+		if (BUNappend(tokenBAT[i].val, parts[i], false) != GDK_SUCCEED) {
 			GDKfree(url);
 			throw(MAL, "tokenizer.append",
 					OPERATION_FAILED " could not append");
@@ -349,7 +349,7 @@ TKNZRappend(oid *pos, str *s)
 			BAThash(tokenBAT[i].val);
 		}
 
-		if (BUNappend(tokenBAT[i].idx, (ptr) & prv, true) != GDK_SUCCEED) {
+		if (BUNappend(tokenBAT[i].idx, (ptr) & prv, false) != GDK_SUCCEED) {
 			GDKfree(url);
 			throw(MAL, "tokenizer.append",
 					OPERATION_FAILED " could not append");
@@ -360,7 +360,7 @@ TKNZRappend(oid *pos, str *s)
 
 	*pos = (oid) BATcount(tokenBAT[INDEX].val);
 	comp = COMP(prv, depth);
-	if (BUNappend(tokenBAT[INDEX].val, &comp, true) != GDK_SUCCEED) {
+	if (BUNappend(tokenBAT[INDEX].val, &comp, false) != GDK_SUCCEED) {
 		GDKfree(url);
 		throw(MAL, "tokenizer.append", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}

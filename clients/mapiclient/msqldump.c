@@ -204,7 +204,7 @@ main(int argc, char **argv)
 #ifdef HAVE_CTIME_R
 		ctime_r(&t, buf);
 #else
-		strncpy(buf, ctime(&t), sizeof(buf));
+		strcpy_len(buf, ctime(&t), sizeof(buf));
 #endif
 #endif
 		if ((p = strrchr(buf, '\n')) != NULL)
@@ -226,11 +226,15 @@ main(int argc, char **argv)
 		dump_version(mid, out, "-- server:");
 		mnstr_printf(out, "-- %s\n", buf);
 	}
-	if (functions)
+	if (functions) {
+		mnstr_printf(out, "START TRANSACTION;\n");
 		c = dump_functions(mid, out, true, NULL, NULL, NULL);
-	else if (table)
+		mnstr_printf(out, "COMMIT;\n");
+	} else if (table) {
+		mnstr_printf(out, "START TRANSACTION;\n");
 		c = dump_table(mid, NULL, table, out, describe, true, useinserts, false);
-	else
+		mnstr_printf(out, "COMMIT;\n");
+	} else
 		c = dump_database(mid, out, describe, useinserts);
 	mnstr_flush(out);
 

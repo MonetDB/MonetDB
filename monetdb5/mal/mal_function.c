@@ -704,26 +704,6 @@ getBlockExit(MalBlkPtr mb,int pc){
 	return 0;
 }
 /*
- * Garbage collection
- * Variables are marked with their last line of use. At that point they
- * can be garbage collected by the interpreter. Care should be taken
- * for variables defined within a barrier block, they can be garbage collected
- * at the end only due to possible redo-statements.
- */
-void
-malGarbageCollector(MalBlkPtr mb)
-{
-	int i;
-
-	setVariableScope(mb);
-
-	for (i = 0; i < mb->vtop; i++)
-		if( isVarCleanup(mb,i) && getEndScope(mb,i) >= 0) {
-			setVarEolife(mb,i, getEndScope(mb,i));
-			mb->stmt[getVarEolife(mb,i)]->gc |= GARBAGECONTROL;
-		}
-}
-/*
  * Variable declaration
  * Variables are implicitly declared upon first use.
  * This feature may become a source of runtime errors and

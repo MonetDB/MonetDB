@@ -657,7 +657,7 @@ retryRead:
 		c = strchr(b, '\n');
 		if (c) {
 			*c = 0;
-			strncpy(oldcmd, b, 1023);
+			strcpy_len(oldcmd, b, sizeof(oldcmd));
 			cntxt->fdin->pos += (c - b) + 1;
 		} else
 			cntxt->fdin->pos = cntxt->fdin->len;
@@ -729,7 +729,6 @@ retryRead:
 			for (su = stk; su; su = su->up)
 				su->cmd = 0;
 			cntxt->itrace = 0;
-			cntxt->flags = 0;
 			mnstr_printf(out, "mdb>#EOD\n");
 			/* MDBstatus(0); */
 			cntxt->prompt = oldprompt;

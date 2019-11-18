@@ -37,7 +37,7 @@ int
 exp_has_freevar(mvc *sql, sql_exp *e)
 {
 	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return 0;
 	}
 
@@ -75,7 +75,7 @@ exps_have_freevar(mvc *sql, list *exps)
 	node *n;
 
 	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return 0;
 	}
 	if (!exps)
@@ -92,7 +92,7 @@ int
 rel_has_freevar(mvc *sql, sql_rel *rel)
 {
 	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return 0;
 	}
 
@@ -129,7 +129,7 @@ static list *
 exp_freevar(mvc *sql, sql_exp *e)
 {
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	switch(e->type) {
 	case e_column:
@@ -178,7 +178,7 @@ exps_freevar(mvc *sql, list *exps)
 	list *c = NULL;
 
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 	if (!exps)
 		return NULL;
 	for (n = exps->h; n; n = n->next) {
@@ -196,7 +196,7 @@ rel_freevar(mvc *sql, sql_rel *rel)
 	list *lexps = NULL, *rexps = NULL, *exps = NULL;
 
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 	if (!rel)
 		return NULL;
 	switch(rel->op) {
@@ -328,7 +328,7 @@ static sql_exp *
 push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	switch(e->type) {
 	case e_cmp:
@@ -383,7 +383,7 @@ push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 }
 
 static sql_rel *
-push_up_project(mvc *sql, sql_rel *rel) 
+push_up_project(mvc *sql, sql_rel *rel, list *ad) 
 {
 	/* input rel is dependent outerjoin with on the right a project, we first try to push inner side expressions down (because these cannot be pushed up) */ 
 	if (rel && is_outerjoin(rel->op) && is_dependent(rel)) {
@@ -440,14 +440,56 @@ push_up_project(mvc *sql, sql_rel *rel)
 			/* only pass bound variables */
 			for (m=r->exps->h; m; m = m->next) {
 				sql_exp *e = m->data;
+				sql_subfunc *sf = e->f;
 
 				if (!e->freevar || exp_name(e)) { /* only skip full freevars */
 					if (exp_has_freevar(sql, e)) 
 						rel_bind_var(sql, rel->l, e);
 				}
+				/* window functions need to be run per freevars */
+				/* later recursively find functions */
+				if (e->type == e_func && sf->func->type == F_ANALYTIC) {
+					sql_subtype *bt = sql_bind_localtype("bit");
+					node *d;
+					list *rankopargs = e->l;
+					node *n = rankopargs->h->next; /* second arg */
+					sql_exp *pe = n->data;
+
+					/* find partition expression in rankfunc */
+					/* diff function */
+					if (exp_is_atom(pe))
+						pe = NULL;
+					for(d=ad->h; d; d=d->next) {
+						sql_subfunc *df;
+						sql_exp *e = d->data;
+						list *args = sa_list(sql->sa);
+						if (pe) { 
+							df = sql_bind_func(sql->sa, NULL, "diff", bt, exp_subtype(e), F_ANALYTIC);
+							append(args, pe);
+						} else {
+							df = sql_bind_func(sql->sa, NULL, "diff", exp_subtype(e), NULL, F_ANALYTIC);
+						}
+						assert(df);
+						append(args, e);
+						pe = exp_op(sql->sa, args, df);
+					}
+					n->data = pe;
+				}
 				append(n->exps, e);
 			}
-			assert(!r->r);
+			if (r->r) {
+				list *exps = r->r, *oexps = n->r = sa_list(sql->sa);
+
+				for (m=exps->h; m; m = m->next) {
+					sql_exp *e = m->data;
+
+					if (!e->freevar || exp_name(e)) { /* only skip full freevars */
+						if (exp_has_freevar(sql, e)) 
+							rel_bind_var(sql, rel->l, e);
+					}
+					append(oexps, e);
+				}
+			}
 			/* remove old project */
 			rel->r = r->l;
 			r->l = NULL;
@@ -546,10 +588,16 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 
 		/* left of rel should be a set */ 
 		if (l && is_distinct_set(sql, l, ad) && r && r->op == op_groupby) {
-			list *sexps, *jexps;
+			list *sexps, *jexps, *a = rel_projections(sql, rel->l, NULL, 1, 1);
 			node *n;
+			sql_exp *id = NULL;
+
 			/* move groupby up, ie add attributes of left + the old expression list */
-			list *a = rel_projections(sql, rel->l, NULL, 1, 1);
+
+			if (l && list_length(a) > 1 && !need_distinct(l)) { /* add identity call only if there's more than one column in the groupby */
+				rel->l = rel_add_identity(sql, l, &id); /* add identity call for group by */
+				assert(id);
+			}
 		
 			assert(rel->op != op_anti);
 			if (rel->op == op_semi && !need_distinct(l))
@@ -582,10 +630,17 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 					rel_bind_var(sql, rel->l, e);
 			}
 			r->exps = list_merge(r->exps, a, (fdup)NULL);
-			if (!r->r)
-				r->r = exps_copy(sql->sa, a);
-			else
-				r->r = list_distinct(list_merge(r->r, exps_copy(sql->sa, a), (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
+			if (!r->r) {
+				if (id)
+					r->r = list_append(sa_list(sql->sa), exp_ref(sql->sa, id));
+				else
+					r->r = exps_copy(sql->sa, a);
+			} else {
+				if (id)
+					list_append(r->r, exp_ref(sql->sa, id));
+				else
+					r->r = list_distinct(list_merge(r->r, exps_copy(sql->sa, a), (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
+			}
 
 			if (!r->l) {
 				r->l = rel->l;
@@ -871,7 +926,7 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 
 		r = rel_crossproduct(sql->sa, D, r, rel->op);
 		if (is_semi(rel->op)) /* keep semi/anti only on the outer side */
-                	r->op = op_join;
+			r->op = op_join;
 		move_join_exps(sql, rel, r);
 		set_dependent(r);
 		r = rel_project(sql->sa, r, (is_semi(r->op))?sa_list(sql->sa):rel_projections(sql, r->r, NULL, 1, 1));
@@ -892,7 +947,7 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 		list_merge(r->exps, fd, (fdup)NULL);
 		rel->r = r;
 		if (rel->op == op_left) /* only needed once (inner side) */
-       	        	rel->op = op_join;
+			rel->op = op_join;
 		reset_dependent(rel);
 		return rel;
 	}
@@ -943,7 +998,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 	sql_rel *nrel = rel;
 
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	/* current unnest only possible for equality joins, <, <> etc needs more work */
 	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
@@ -967,7 +1022,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 			list *ad = rel_dependent_var(sql, rel->l, rel->r);
 
 			if (r && is_simple_project(r->op)) {
-				rel = push_up_project(sql, rel);
+				rel = push_up_project(sql, rel, ad);
 				return rel_unnest_dependent(sql, rel);
 			}
 
@@ -1027,7 +1082,7 @@ sql_rel *
 rel_unnest(mvc *sql, sql_rel *rel)
 {
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 	if (!rel)
 		return rel;
 

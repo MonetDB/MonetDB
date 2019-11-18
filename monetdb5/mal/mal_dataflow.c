@@ -187,7 +187,6 @@ q_enqueue(Queue *q, FlowEvent d)
  * that want to use a big recent result
  */
 
-#ifdef USE_MAL_ADMISSION
 static void
 q_requeue_(Queue *q, FlowEvent d)
 {
@@ -216,7 +215,6 @@ q_requeue(Queue *q, FlowEvent d)
 	MT_lock_unset(&q->l);
 	MT_sema_up(&q->s);
 }
-#endif
 
 static FlowEvent
 q_dequeue(Queue *q, Client cntxt)
@@ -382,10 +380,9 @@ DFLOWworker(void *T)
 			continue;
 		}
 
-#ifdef USE_MAL_ADMISSION
-		if (MALrunningThreads() > 2 && MALadmission(fe->argclaim, fe->hotclaim)) {
+		p= getInstrPtr(flow->mb,fe->pc);
+		if (MALadmission(flow->cntxt, flow->mb, flow->stk, p, fe->argclaim)) {
 			// never block on deblockdataflow()
-			p= getInstrPtr(flow->mb,fe->pc);
 			if( p->fcn != (MALfcn) deblockdataflow){
 				fe->hotclaim = 0;   /* don't assume priority anymore */
 				fe->maxclaim = 0;
@@ -395,14 +392,11 @@ DFLOWworker(void *T)
 				continue;
 			}
 		}
-#endif
 		error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
 		PARDEBUG fprintf(stderr, "#executed pc= %d wrk= %d claim= " LLFMT "," LLFMT "," LLFMT " %s\n",
 						 fe->pc, id, fe->argclaim, fe->hotclaim, fe->maxclaim, error ? error : "");
-#ifdef USE_MAL_ADMISSION
 		/* release the memory claim */
-		MALadmission(-fe->argclaim, -fe->hotclaim);
-#endif
+		MALadmission(flow->cntxt, flow->mb, flow->stk, p,  -fe->argclaim);
 		/* update the numa information. keep the thread-id producing the value */
 		p= getInstrPtr(flow->mb,fe->pc);
 		for( i = 0; i < p->argc; i++)
@@ -415,7 +409,7 @@ DFLOWworker(void *T)
 			void *null = NULL;
 			/* only collect one error (from one thread, needed for stable testing) */
 			if (!ATOMIC_PTR_CAS(&flow->error, &null, error))
-				GDKfree(error);
+				freeException(error);
 			/* after an error we skip the rest of the block */
 			q_enqueue(flow->done, fe);
 			continue;
@@ -428,7 +422,6 @@ DFLOWworker(void *T)
 		 * because we hold the logical lock.
 		 * All eligible instructions are queued
 		 */
-#ifdef USE_MAL_ADMISSION
 	{
 		InstrPtr p = getInstrPtr(flow->mb, fe->pc);
 		assert(p);
@@ -442,7 +435,6 @@ DFLOWworker(void *T)
 			if( footprint > fe->maxclaim) fe->maxclaim = footprint;
 		}
 	}
-#endif
 		MT_lock_set(&flow->flowlock);
 
 		for (last = fe->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
@@ -460,14 +452,14 @@ DFLOWworker(void *T)
 		MT_lock_unset(&flow->flowlock);
 
 		q_enqueue(flow->done, fe);
-		if ( fnxt == 0 && malProfileMode) {
-			int last;
-			MT_lock_set(&todo->l);
-			last = todo->last;
-			MT_lock_unset(&todo->l);
-			if (last == 0)
-				profilerHeartbeatEvent("wait");
-		}
+        if ( fnxt == 0 && malProfileMode) {
+            int last;
+            MT_lock_set(&todo->l);
+            last = todo->last;
+            MT_lock_unset(&todo->l);
+            if (last == 0)
+                profilerHeartbeatEvent("wait");
+        }
 	}
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);
@@ -676,9 +668,6 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 			fprintf(stderr, "\n");
 		}
 	}
-#ifdef USE_MAL_ADMISSION
-	memorypool = memoryclaims = 0;
-#endif
 	return MAL_SUCCEED;
 }
 
@@ -701,7 +690,7 @@ static void showFlowEvent(DataFlow flow, int pc)
 	for (i = 0; i < flow->stop - flow->start; i++)
 		if (fe[i].state != DFLOWwrapup && fe[i].pc >= 0) {
 			fprintf(stderr, "#missed pc %d status %d %d  blocks %d", fe[i].state, i, fe[i].pc, fe[i].blocks);
-			printInstruction(GDKstdout, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), LIST_MAL_MAPI);
+			fprintInstruction(stderr, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), LIST_MAL_MAPI);
 		}
 }
 */
@@ -711,10 +700,8 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 {
 	int last;
 	int i;
-#ifdef USE_MAL_ADMISSION
 	int j;
 	InstrPtr p;
-#endif
 	int tasks=0, actions;
 	str ret = MAL_SUCCEED;
 	FlowEvent fe, f = 0;
@@ -730,7 +717,6 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	MT_lock_set(&flow->flowlock);
 	for (i = 0; i < actions; i++)
 		if (fe[i].blocks == 0) {
-#ifdef USE_MAL_ADMISSION
 			p = getInstrPtr(flow->mb,fe[i].pc);
 			if (p == NULL) {
 				MT_lock_unset(&flow->flowlock);
@@ -738,7 +724,6 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 			}
 			for (j = p->retc; j < p->argc; j++)
 				fe[i].argclaim = getMemoryClaim(fe[0].flow->mb, fe[0].flow->stk, p, j, FALSE);
-#endif
 			q_enqueue(todo, flow->status + i);
 			flow->status[i].state = DFLOWrunning;
 			PARDEBUG fprintf(stderr, "#enqueue pc=%d claim=" LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);

@@ -24,6 +24,9 @@ SELECT name, major FROM students s WHERE EXISTS(SELECT * FROM exams e WHERE e.si
 drop table students;
 drop table exams;
 
+SELECT 1 IN (1, (SELECT 2)), 1 NOT IN (1, (SELECT 2));
+	-- True, False
+
 CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product_Name  varchar(64), TotalSales int); 
 INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Game',400),(3,'Fashion','Shirt',500),(4,'Fashion','Shorts',100);
 CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
@@ -103,6 +106,7 @@ GROUP BY col1;
 -- TODO incorrect empty result
 SELECT NOT col2 <> ANY (SELECT 20 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID) FROM another_T GROUP BY col1, col2, col5, col8;
 
+/* BROKEN
 SELECT
 	NOT -SUM(col2) NOT IN (SELECT ColID FROM tbl_ProductSales GROUP BY ColID HAVING SUM(ColID - col8) <> col5),
 	NOT col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col8) > 2 AND MIN(col8) IS NOT NULL),
@@ -110,6 +114,7 @@ SELECT
 	NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col2) IS NULL OR NOT col8 <> 2 / col1)
 FROM another_T
 GROUP BY col1, col2, col5, col8;
+*/
 	-- False True True True
 	-- False True True True
 	-- False True True True
@@ -212,6 +217,32 @@ FROM another_T t1;
 SELECT
 	CASE WHEN 1 IN (SELECT (SELECT MAX(col7)) UNION ALL (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t2.col5 = t2.col1)) THEN 2 ELSE NULL END
 FROM another_T t1;	
+	-- NULL
+
+SELECT
+	CASE WHEN 1 IN (SELECT MAX(col7) UNION ALL (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t2.col5 = t2.col1)) THEN 2 ELSE NULL END
+FROM another_T t1;
+	-- NULL
+	-- NULL
+	-- NULL
+	-- NULL
+
+/* BROKEN
+SELECT
+	CASE WHEN 1 IN (SELECT (SELECT MAX(col7))) THEN 2 ELSE NULL END
+FROM another_T t1;
+*/
+	-- NULL
+	-- NULL
+	-- NULL
+	-- NULL
+
+SELECT
+	CASE WHEN 1 IN (SELECT (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t2.col5 = t2.col1) UNION ALL (SELECT MAX(col7))) THEN 2 ELSE NULL END
+FROM another_T t1;
+	-- NULL
+	-- NULL
+	-- NULL
 	-- NULL
 
 SELECT

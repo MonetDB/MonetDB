@@ -10,6 +10,6 @@
 #define _SQL_UPGRADES_H_
 #include "sql.h"
 
-sql5_export void SQLupgrades(Client c, mvc *m);
+sql5_export int SQLupgrades(Client c, mvc *m);
 
 #endif /* _SQL_UPGRADES_H_ */

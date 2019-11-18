@@ -11,8 +11,6 @@
 #include "opt_support.h"
 
 /* cf., gdk/gdk.h */
-#define DEBUGoptimizers     if (GDKdebug & GRPoptimizers)
-
 /* ! please keep this list sorted for easier maintenance ! */
 mal_export  str abortRef;
 mal_export  str actionRef;
@@ -121,6 +119,7 @@ mal_export  str drop_viewRef;
 mal_export  str emptybindidxRef;
 mal_export  str emptybindRef;
 mal_export  str eqRef;
+mal_export  str contextRef;
 mal_export  str evalRef;
 mal_export  str execRef;
 mal_export  str expandRef;

@@ -1,9 +1,7 @@
 create
 check0
 #load
-insert_MODEL
-insert_ATOM
-insert_BOND
+inserts
 check1
 01
 02

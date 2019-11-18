@@ -108,7 +108,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				space += size;	// accumulate once per table
 				//lasttable = tname;	 invalidate this attempt
 				if( !prepare && size == 0  && ! t->system){
-					//mnstr_printf(GDKout,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,cname,prepare,size);
+					//fprintf(stderr,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,cname,prepare,size);
 					setFunctionId(p, emptybindRef);
 				}
 			}
@@ -135,7 +135,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 
 						if( !prepare && size == 0 && ! i->t->system){
 							setFunctionId(p, emptybindidxRef);
-							//mnstr_printf(GDKout,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,idxname,prepare,size);
+							//fprintf(stderr,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,idxname,prepare,size);
 						}
 						BBPunfix(b->batCacheid);
 					}
@@ -178,12 +178,12 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 	if(space && (pipe == NULL || strcmp(pipe,"default_pipe")== 0)){
 		if( space > (lng)(0.8 * MT_npages() * MT_pagesize())  && GDKnr_threads > 1){
 			pipe = "volcano_pipe";
-			//mnstr_printf(GDKout, "#use volcano optimizer pipeline? %zu\n", space);
+			//fprintf(stderr, "#use volcano optimizer pipeline? %zu\n", space);
 		}else
 			pipe = "default_pipe";
 	} else
 	*/
-		pipe = pipe? pipe: "default_pipe";
+	pipe = pipe? pipe: "default_pipe";
 	msg = addOptimizerPipe(c, mb, pipe);
 	if (msg){
 		return msg;
@@ -228,8 +228,8 @@ str
 SQLoptimizeQuery(Client c, MalBlkPtr mb)
 {
 	backend *be;
-	str msg = 0;
-	str pipe;
+	str msg = 0, pipe = 0;
+	bool free_pipe = false;
 
 	if (mb->stop > 0 &&
 	    mb->stmt[mb->stop-1]->token == REMsymbol &&
@@ -262,7 +262,15 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 	}
 
 	pipe = getSQLoptimizer(be->mvc);
+	if( strcmp(pipe, "default_pipe") == 0 && strcmp(c->optimizer, "default_pipe") != 0) {
+		if (!(pipe = GDKstrdup(c->optimizer)))
+			throw(MAL, "sql.optimizeQuery", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		free_pipe = true;
+	}
+
 	msg = addOptimizers(c, mb, pipe, FALSE);
+	if (free_pipe)
+		GDKfree(pipe);
 	if (msg)
 		return msg;
 	mb->keephistory |= be->mvc->emod & mod_debug;

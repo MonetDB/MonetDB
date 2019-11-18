@@ -79,22 +79,16 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	path = GDKmalloc(pathlen);
 	if (path == NULL)
 		return NULL;
-	if (farmid == NOFARM) {
-		char *p = path;
-		if (dir)
-			p = stpcpy(p, dir);
-		p = stpconcat(p, sep, name, NULL);
-		if (ext)
-			p = stpconcat(p, ".", ext, NULL);
-	} else {
-		char *p = path;
-		p = stpconcat(p, BBPfarms[farmid].dirname, DIR_SEP_STR, NULL);
-		if (dir)
-			p = stpcpy(p, dir);
-		p = stpconcat(p, sep, name, NULL);
-		if (ext)
-			p = stpconcat(p, ".", ext, NULL);
-	}
+ 	if (farmid == NOFARM) {
+		strconcat_len(path, pathlen,
+			      dir ? dir : "", sep, name,
+			      ext ? "." : NULL, ext, NULL);
+ 	} else {
+		strconcat_len(path, pathlen,
+			      BBPfarms[farmid].dirname, DIR_SEP_STR,
+			      dir ? dir : "", sep, name,
+			      ext ? "." : NULL, ext, NULL);
+ 	}
 	return path;
 }
 
@@ -1004,7 +998,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 }
 
 gdk_return
-BATprint(BAT *b)
+BATprint(stream *fdout, BAT *b)
 {
 	BAT *argv[2];
 	gdk_return ret = GDK_FAIL;
@@ -1014,7 +1008,7 @@ BATprint(BAT *b)
 	if (argv[0] && argv[1]) {
 		ret = BATroles(argv[0], "h");
 		if (ret == GDK_SUCCEED)
-			ret = BATprintcolumns(GDKstdout, 2, argv);
+			ret = BATprintcolumns(fdout, 2, argv);
 	}
 	if (argv[0])
 		BBPunfix(argv[0]->batCacheid);

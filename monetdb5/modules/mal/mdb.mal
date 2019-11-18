@@ -28,6 +28,14 @@ command modules():bat[:str]
 address CMDmodules
 comment "List available modules";
 
+pattern getVMsize():lng
+address MDBgetVMsize
+comment "Retrieve the max VM size";
+
+pattern setVMsize(l:lng):lng
+address MDBsetVMsize
+comment "Manipulate the VM max size in MBs";
+
 pattern setTrace(b:bit):void
 address MDBsetTrace
 comment "Turn on/off tracing of current routine";
@@ -40,17 +48,21 @@ pattern setCatch(b:bit):void
 address MDBsetCatch
 comment "Turn on/off catching exceptions";
 
-command getDebug():int
+pattern getDebugFlags()(flg:bat[:str], val:bat[:bit])
+address MDBgetDebugFlags
+comment "Get the kernel debugging flags bit-set";
+
+pattern getDebug():int
 address MDBgetDebug
 comment "Get the kernel debugging bit-set.
 See the MonetDB configuration file for details";
 
-command setDebug(flg:str):int
+pattern setDebug(flg:str):int
 address MDBsetDebugStr
 comment "Set the kernel debugging bit-set and return its previous value.
 The recognized options are: threads, memory, properties,
 io, transactions, modules, algorithms, estimates.";
-command setDebug(flg:int):int
+pattern setDebug(flg:int):int
 address MDBsetDebug
 comment "Set the kernel debugging bit-set and return its previous value.";
 

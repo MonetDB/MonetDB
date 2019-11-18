@@ -29,8 +29,8 @@ unshare_string_heap(BAT *b)
 			return GDK_FAIL;
 		h->parentid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
-		stpconcat(h->filename, BBP_physical(b->batCacheid),
-			  ".theap", NULL);
+		strconcat_len(h->filename, sizeof(h->filename),
+			      BBP_physical(b->batCacheid), ".theap", NULL);
 		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
 			HEAPfree(h, true);
 			GDKfree(h);
@@ -453,8 +453,8 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 			return GDK_FAIL;
 		h->parentid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
-		stpconcat(h->filename, BBP_physical(b->batCacheid),
-			  ".theap", NULL);
+		strconcat_len(h->filename, sizeof(h->filename),
+			      BBP_physical(b->batCacheid), ".theap", NULL);
 		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
 			HEAPfree(h, true);
 			GDKfree(h);
@@ -1047,12 +1047,6 @@ BATkeyed(BAT *b)
 		return false;
 	}
 
-	/* In order that multiple threads don't scan the same BAT at
-	 * the same time (happens a lot with mitosis/mergetable), we
-	 * use a lock.  We reuse the hash lock for this, not because
-	 * this scanning interferes with hashes, but because it's
-	 * there, and not so likely to be used at the same time. */
-	MT_lock_set(&b->batIdxLock);
 	b->batDirtydesc = true;
 	if (!b->tkey && b->tnokey[0] == 0 && b->tnokey[1] == 0) {
 		if (b->tsorted || b->trevsorted) {
@@ -1160,7 +1154,6 @@ BATkeyed(BAT *b)
 		}
 	}
   doreturn:
-	MT_lock_unset(&b->batIdxLock);
 	return b->tkey;
 }
 
@@ -1814,57 +1807,63 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 	BAT *bn;
 	void *restrict p;
 	BUN i;
+	lng t0 = 0;
+
+	ALGODEBUG t0 = GDKusec();
 
 	if (v == NULL)
 		return NULL;
 	bn = COLnew(hseq, tailtype, n, role);
-	if (bn == NULL)
-		return NULL;
-	p = Tloc(bn, 0);
-	switch (ATOMstorage(tailtype)) {
-	case TYPE_void:
-		v = &oid_nil;
-		BATtseqbase(bn, oid_nil);
-		break;
-	case TYPE_bte:
-		for (i = 0; i < n; i++)
-			((bte *) p)[i] = *(bte *) v;
-		break;
-	case TYPE_sht:
-		for (i = 0; i < n; i++)
-			((sht *) p)[i] = *(sht *) v;
-		break;
-	case TYPE_int:
-	case TYPE_flt:
-		assert(sizeof(int) == sizeof(flt));
-		for (i = 0; i < n; i++)
-			((int *) p)[i] = *(int *) v;
-		break;
-	case TYPE_lng:
-	case TYPE_dbl:
-		assert(sizeof(lng) == sizeof(dbl));
-		for (i = 0; i < n; i++)
-			((lng *) p)[i] = *(lng *) v;
-		break;
+	if (bn != NULL && n > 0) {
+		p = Tloc(bn, 0);
+		switch (ATOMstorage(tailtype)) {
+		case TYPE_void:
+			v = &oid_nil;
+			BATtseqbase(bn, oid_nil);
+			break;
+		case TYPE_bte:
+			for (i = 0; i < n; i++)
+				((bte *) p)[i] = *(bte *) v;
+			break;
+		case TYPE_sht:
+			for (i = 0; i < n; i++)
+				((sht *) p)[i] = *(sht *) v;
+			break;
+		case TYPE_int:
+		case TYPE_flt:
+			assert(sizeof(int) == sizeof(flt));
+			for (i = 0; i < n; i++)
+				((int *) p)[i] = *(int *) v;
+			break;
+		case TYPE_lng:
+		case TYPE_dbl:
+			assert(sizeof(lng) == sizeof(dbl));
+			for (i = 0; i < n; i++)
+				((lng *) p)[i] = *(lng *) v;
+			break;
 #ifdef HAVE_HGE
-	case TYPE_hge:
-		for (i = 0; i < n; i++)
-			((hge *) p)[i] = *(hge *) v;
-		break;
+		case TYPE_hge:
+			for (i = 0; i < n; i++)
+				((hge *) p)[i] = *(hge *) v;
+			break;
 #endif
-	default:
-		for (i = 0, n += i; i < n; i++)
-			tfastins_nocheck(bn, i, v, Tsize(bn));
-		break;
+		default:
+			for (i = 0, n += i; i < n; i++)
+				tfastins_nocheck(bn, i, v, Tsize(bn));
+			break;
+		}
+		bn->theap.dirty = true;
+		bn->tnil = n >= 1 && (*ATOMcompare(tailtype))(v, ATOMnilptr(tailtype)) == 0;
+		BATsetcount(bn, n);
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tnonil = !bn->tnil;
+		bn->tkey = BATcount(bn) <= 1;
 	}
-	bn->theap.dirty = true;
-	bn->tnil = n >= 1 && (*ATOMcompare(tailtype))(v, ATOMnilptr(tailtype)) == 0;
-	BATsetcount(bn, n);
-	bn->tsorted = true;
-	bn->trevsorted = true;
-	bn->tnonil = !bn->tnil;
-	bn->tkey = BATcount(bn) <= 1;
-	ALGODEBUG fprintf(stderr, "#BATconstant()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
+	ALGODEBUG fprintf(stderr, "#%s: %s()=" ALGOOPTBATFMT
+			  " (" LLFMT "usec)\n",
+			  MT_thread_getname(), __func__,
+			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
 
   bunins_failed:
@@ -1915,45 +1914,18 @@ PROPdestroy(BAT *b)
 }
 
 PROPrec *
-BATgetprop(BAT *b, enum prop_t idx)
+BATgetprop_nolock(BAT *b, enum prop_t idx)
 {
-	PROPrec *p = b->tprops;
+	PROPrec *p;
 
-	while (p) {
-		if (p->id == idx)
-			return p;
+	p = b->tprops;
+	while (p && p->id != idx)
 		p = p->next;
-	}
-	return NULL;
+	return p;
 }
 
-void
-BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
-{
-	PROPrec *p = BATgetprop(b, idx);
-
-	if (p == NULL) {
-		if ((p = GDKmalloc(sizeof(PROPrec))) == NULL) {
-			/* properties are hints, so if we can't create
-			 * one we ignore the error */
-			return;
-		}
-		p->id = idx;
-		p->next = b->tprops;
-		p->v.vtype = 0;
-		b->tprops = p;
-	} else {
-		VALclear(&p->v);
-	}
-	if (VALinit(&p->v, type, v) == NULL) {
-		/* failed to initialize, so remove property */
-		BATrmprop(b, idx);
-	}
-	b->batDirtydesc = true;
-}
-
-void
-BATrmprop(BAT *b, enum prop_t idx)
+static void
+BATrmprop_nolock(BAT *b, enum prop_t idx)
 {
 	PROPrec *prop = b->tprops, *prev = NULL;
 
@@ -1970,6 +1942,63 @@ BATrmprop(BAT *b, enum prop_t idx)
 		prev = prop;
 		prop = prop->next;
 	}
+}
+
+void
+BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
+{
+	PROPrec *p;
+
+	p = b->tprops;
+	while (p && p->id != idx)
+		p = p->next;
+	if (p == NULL) {
+		if ((p = GDKmalloc(sizeof(PROPrec))) == NULL) {
+			/* properties are hints, so if we can't create
+			 * one we ignore the error */
+			GDKclrerr();
+			return;
+		}
+		p->id = idx;
+		p->next = b->tprops;
+		p->v.vtype = 0;
+		b->tprops = p;
+	} else {
+		VALclear(&p->v);
+	}
+	if (VALinit(&p->v, type, v) == NULL) {
+		/* failed to initialize, so remove property */
+		BATrmprop_nolock(b, idx);
+		GDKclrerr();
+	}
+	b->batDirtydesc = true;
+}
+
+PROPrec *
+BATgetprop(BAT *b, enum prop_t idx)
+{
+	PROPrec *p;
+
+	MT_lock_set(&b->batIdxLock);
+	p = BATgetprop_nolock(b, idx);
+	MT_lock_unset(&b->batIdxLock);
+	return p;
+}
+
+void
+BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
+{
+	MT_lock_set(&b->batIdxLock);
+	BATsetprop_nolock(b, idx, type, v);
+	MT_lock_unset(&b->batIdxLock);
+}
+
+void
+BATrmprop(BAT *b, enum prop_t idx)
+{
+	MT_lock_set(&b->batIdxLock);
+	BATrmprop_nolock(b, idx);
+	MT_lock_unset(&b->batIdxLock);
 }
 
 

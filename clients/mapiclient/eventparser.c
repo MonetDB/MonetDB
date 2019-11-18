@@ -205,12 +205,13 @@ keyvalueparser(char *txt, EventRecord *ev)
 		*c = 0;
 	} else val =c;
 
-	if( strstr(key,"clk")){
+	if( strstr(key,"ctime")){
 		ev->usec = atol(val);
 		return 0;
 	}
-	if( strstr(key,"ctime")){
+	if( strstr(key,"clk")){
 		time_t sec;
+		uint64_t microsec;
 		struct tm curr_time;
 
 		c = strchr(val,'.');
@@ -220,16 +221,17 @@ keyvalueparser(char *txt, EventRecord *ev)
 		}
 
 		sec = atol(val);
+		microsec = sec % 1000000;
+		sec /= 1000000;
 #ifdef HAVE_LOCALTIME_R
 		(void)localtime_r(&sec, &curr_time);
 #else
 		curr_time = *localtime(&sec);
 #endif
 		ev->time = malloc(DATETIME_CHAR_LENGTH*sizeof(char));
-		snprintf(ev->time, DATETIME_CHAR_LENGTH, "%d/%02d/%02d %02d:%02d:%02d.%s",
+		snprintf(ev->time, DATETIME_CHAR_LENGTH, "%d/%02d/%02d %02d:%02d:%02d.%"PRIu64,
 				 curr_time.tm_year + 1900, curr_time.tm_mon, curr_time.tm_mday,
-				 curr_time.tm_hour, curr_time.tm_min, curr_time.tm_sec,
-				 c);
+			 curr_time.tm_hour, curr_time.tm_min, curr_time.tm_sec, microsec);
 		ev->clkticks = sec * 1000000;
 		if (c != NULL) {
 			int64_t usec;

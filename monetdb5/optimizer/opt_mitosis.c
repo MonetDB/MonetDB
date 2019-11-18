@@ -171,15 +171,16 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (mito_size > 0) 
 		pieces = (int) ((rowcnt * row_size) / (mito_size * 1024));
 
-#ifdef DEBUG_OPT_MITOSIS
-	fprintf(stderr, "#opt_mitosis: target is %s.%s "
+    if( OPTdebug &  OPTmitosis){
+		fprintf(stderr, "#opt_mitosis: target is %s.%s "
 							   " with " BUNFMT " rows of size %d into %zu"
 								" rows/piece %d threads %d pieces"
 								" fixed parts %d fixed size %d\n",
 				 getVarConstant(mb, getArg(target, 2)).val.sval,
 				 getVarConstant(mb, getArg(target, 3)).val.sval,
 				 rowcnt, row_size, m, threads, pieces, mito_parts, mito_size);
-#endif
+	}
+
 	if (pieces <= 1)
 		return 0;
 
@@ -274,9 +275,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (upd)
 			pushInstruction(mb, matr);
 	}
-	for (; i<limit; i++) 
-		if (old[i])
-			pushInstruction(mb,old[i]);
+	assert (i == limit) /*TODO: remove after succesful nightly testweb run*/;
 	for (; i<slimit; i++) 
 		if (old[i])
 			freeInstruction(old[i]);
@@ -294,5 +293,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
     newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 
+    if( OPTdebug &  OPTmitosis){
+        fprintf(stderr, "#MITOSIS optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return msg;
 }

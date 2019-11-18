@@ -36,7 +36,15 @@ MAPI  = (monetdb) /var/tmp/mtest-1389/.s.monetdb.37694
 QUERY = select cast(prod(sum(aa)) * count(1 + aa) / avg(null) over () as bigint) from analytics; --error, nesting aggregation functions
 ERROR = !SUM: aggregate functions cannot be nested
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-17541/.s.monetdb.31437
+MAPI  = (monetdb) /var/tmp/mtest-13033/.s.monetdb.39583
+QUERY = select avg(sum(aa) over ()) over () from analytics; --error, nesting window functions
+ERROR = !SUM: window functions cannot be nested
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-31020/.s.monetdb.34916
+QUERY = select avg(aa) over (partition by sum(aa) over ()) from analytics; --error, window function in partition by
+ERROR = !SUM: window functions cannot be nested
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-31020/.s.monetdb.34916
 QUERY = select rank() over (partition by sum(aa), bb) from analytics group by aa; --error
 ERROR = !SELECT: cannot use non GROUP BY column 'bb' in query results without an aggregate function
 CODE  = 42000
@@ -55,6 +63,10 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-9623/.s.monetdb.34265
 QUERY = select min(aa) over (order by sum(bb)) from analytics; --error
 ERROR = !SELECT: cannot use non GROUP BY column 'aa' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-4073/.s.monetdb.36366
+QUERY = select 1 from analytics having sum(aa) over (); --error, window function not allowed in having clause
+ERROR = !SUM: window function 'sum' not allowed in HAVING clause
 CODE  = 42000
 
 # 13:13:17 >  

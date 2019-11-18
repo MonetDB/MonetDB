@@ -704,9 +704,8 @@ parse_daytime(const char *buf, daytime *dt, bool external)
 #endif
 				 buf[pos] == ':')) &&
 			GDKisdigit(buf[pos + 1])) {
-			int i;
 			pos++;
-			for (i = 0; i < 6; i++) {
+			for (int i = 0; i < 6; i++) {
 				usec *= 10;
 				if (GDKisdigit(buf[pos])) {
 					usec += buf[pos] - '0';
@@ -828,7 +827,7 @@ daytime_precision_tostr(str *buf, size_t *len, const daytime dt,
 	if (precision == 0)
 		return snprintf(*buf, *len, "%02d:%02d:%02d", hour, min, sec);
 	else if (precision < 6) {
-		for (int i = 0; i < precision; i++)
+		for (int i = 6; i > precision; i--)
 			usec /= 10;
 		return snprintf(*buf, *len, "%02d:%02d:%02d.%0*d", hour, min, sec, precision, usec);
 	} else {

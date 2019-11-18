@@ -25,6 +25,8 @@ _all: update_winconfig_conds_py "$(srcdir)\Makefile.msc" monetdb_config.h unistd
 install: targetdirs all
 	$(MAKE) /nologo /f "$(srcdir)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	$(INSTALL) .monetdb "$(sysconfdir)"
+
+makewxs:
 	$(PYTHON) $(NT)\mksqlwxs.py $(VERSION) "$(MAKE_INCLUDEFILE)" "$(prefix)" > "$(prefix)\MonetDB5-SQL-Installer.wxs"
 	$(PYTHON) $(NT)\mkodbcwxs.py $(VERSION) "$(MAKE_INCLUDEFILE)" "$(prefix)" > "$(prefix)\MonetDB-ODBC-Installer.wxs"
 

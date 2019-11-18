@@ -304,7 +304,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 			break;
 		}
 		/* override if locked for brevity */
-		if (stats->locked == 1)
+		if (stats->locked)
 			locked = 'L';
 
 		info[0] = '\0';
@@ -388,7 +388,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		printf("  connection uri: %s\n", stats->uri);
 		printf("  database name: %s\n", stats->dbname);
 		printf("  state: %s\n", state);
-		printf("  locked: %s\n", stats->locked == 1 ? "yes" : "no");
+		printf("  locked: %s\n", stats->locked ? "yes" : "no");
 		entry = stats->scens;
 		printf("  scenarios:");
 		if (entry == NULL) {
@@ -470,7 +470,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 				snprintf(buf, sizeof(buf), "unknown");
 			break;
 		}
-		if (stats->locked == 1)
+		if (stats->locked)
 			strcat(buf, ", locked");
 		printf("database %s, %s\n", stats->dbname, buf);
 		printf("  crash average: %d.00 %.2f %.2f (over 1, 15, 30 starts) "
@@ -759,7 +759,7 @@ command_status(int argc, char *argv[])
 
 	/* perform selection based on state (and order at the same time) */
 	for (p = &state[strlen(state) - 1]; p >= state; p--) {
-		int curLock = 0;
+		bool curLock = false;
 		SABdbState curMode = SABdbIllegal;
 		switch (*p) {
 			case 'b':
@@ -775,15 +775,15 @@ command_status(int argc, char *argv[])
 				curMode = SABdbCrashed;
 			break;
 			case 'l':
-				curLock = 1;
+				curLock = true;
 			break;
 		}
 		stats = orig;
 		prev = NULL;
 		while (stats != NULL) {
 			if (stats->locked == curLock &&
-					(curLock == 1 ||
-					 (curLock == 0 && stats->state == curMode)))
+					(curLock ||
+					 (!curLock && stats->state == curMode)))
 			{
 				sabdb *next = stats->next;
 				stats->next = neworig;

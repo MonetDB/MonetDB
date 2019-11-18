@@ -57,10 +57,12 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if( p == 0)
 			continue; //left behind by others?
 
+	/* catched by the hasSideEffects
 		if( getModuleId(p)== sqlRef && getFunctionId(p)== assertRef ){
 			varused[getArg(p,0)]++; // force keeping 
 			continue;
 		}
+*/
 		if ( getModuleId(p) == batRef && isUpdateInstruction(p) && !p->barrier){
 			/* bat.append and friends are intermediates that need not be retained 
 			 * unless they are not used outside of an update */
@@ -141,5 +143,9 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 wrapup:
 	if(old) GDKfree(old);
 	if(varused) GDKfree(varused);
+    if( OPTdebug &  OPTdeadcode){
+        fprintf(stderr, "#DEADCODE optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return msg;
 }

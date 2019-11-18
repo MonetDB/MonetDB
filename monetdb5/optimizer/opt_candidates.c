@@ -89,5 +89,9 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","candidates",usec);
 	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
+	if( OPTdebug &  OPTaliases){
+		fprintf(stderr, "#CANDIDATES optimizer exit\n");
+		fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+	}
 	return MAL_SUCCEED;
 }

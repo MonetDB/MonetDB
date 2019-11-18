@@ -72,6 +72,10 @@ select cast(sum(aa) * 100 / sum(sum(aa)) over (partition by bb) as bigint) from 
 
 select cast(prod(sum(aa)) * count(1 + aa) / avg(null) over () as bigint) from analytics; --error, nesting aggregation functions
 
+select avg(sum(aa) over ()) over () from analytics; --error, nesting window functions
+
+select avg(aa) over (partition by sum(aa) over ()) from analytics; --error, window function in partition by
+
 select rank() over (partition by case when aa > 5 then aa else aa + 5 end) from analytics;
 
 select rank() over (partition by sum(aa)) from analytics;
@@ -106,5 +110,9 @@ select dense_rank() over (partition by sum(aa) order by avg(bb)) from analytics;
 
 select avg(sum(aa)) over (rows unbounded preceding),
        rank() over (partition by sum(aa)) from analytics;
+
+select 1 from analytics order by sum(sum(aa)) over ();
+
+select 1 from analytics having sum(aa) over (); --error, window function not allowed in having clause
 
 drop table analytics;
