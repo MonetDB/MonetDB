@@ -893,7 +893,7 @@ str
 CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *bid, *sid;
-	BAT *bn, *b, *lo = NULL, *hi = NULL, *s = NULL, *slo = NULL, *shi = NULL;
+	BAT *bn, *b = NULL, *lo = NULL, *hi = NULL, *s = NULL, *slo = NULL, *shi = NULL;
 	int tp1, tp2, tp3;
 	int bc = 3;					/* number of BAT arguments */
 	bool symmetric, linc, hinc, nils_false, anti;
