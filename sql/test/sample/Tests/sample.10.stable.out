@@ -23,7 +23,7 @@ stdout of test 'sample.10` in directory 'sql/test/sample` itself:
 # 10:58:46 >  
 
 #select * from GENERATE_SERIES(1,41) sample 0.25 seed 1234;  --10 samples
-% .L3 # table_name
+% .%3 # table_name
 % value # name
 % tinyint # type
 % 2 # length

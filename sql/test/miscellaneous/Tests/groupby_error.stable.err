@@ -29,8 +29,8 @@ stderr of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-13678/.s.monetdb.36667
 QUERY = SELECT parent."sys_id" FROM "kagami_dump"."test_task" parent INNER JOIN "kagami_dump"."test_task" child ON child."parent" = parent."sys_id" GROUP BY parent."sys_id" HAVING count(child."sys_id") >= 1 ORDER BY parent."number"; --error, parent."number" requires an aggregate function
-ERROR = !SELECT: cannot use non GROUP BY column 'parent.number' in query results without an aggregate function
-CODE  = 42000
+ERROR = !SELECT: no such column 'parent.number'
+CODE  = 42S22
 
 # 10:56:47 >  
 # 10:56:47 >  "Done."
