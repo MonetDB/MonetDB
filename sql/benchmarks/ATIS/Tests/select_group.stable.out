@@ -19,8 +19,8 @@ stdout of test 'select_group` in directory 'sql/benchmarks/ATIS` itself:
 #end main;
 
 #select day_name.day_name,day_name.day_code,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by day_name.day_name,day_name.day_code order by day_code;
-% sys.day_name,	sys.day_name,	sys.L5 # table_name
-% day_name,	day_code,	L4 # name
+% sys.day_name,	sys.day_name,	sys.%1 # table_name
+% day_name,	day_code,	%1 # name
 % char,	decimal,	bigint # type
 % 9,	2,	2 # length
 [ "MONDAY",	1,	64	]
@@ -31,8 +31,8 @@ stdout of test 'select_group` in directory 'sql/benchmarks/ATIS` itself:
 [ "SATURDAY",	6,	64	]
 [ "SUNDAY",	7,	64	]
 #select day_name.day_name,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by day_name.day_name;
-% sys.day_name,	sys.L4 # table_name
-% day_name,	L3 # name
+% sys.day_name,	sys.%1 # table_name
+% day_name,	%1 # name
 % char,	bigint # type
 % 9,	2 # length
 [ "MONDAY",	64	]
@@ -51,8 +51,8 @@ stdout of test 'select_group` in directory 'sql/benchmarks/ATIS` itself:
 [ "JUNE",	"SATURDAY"	]
 [ "JULY",	"SUNDAY"	]
 #select day_name.day_name,flight_day.day_code,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by flight_day.day_code,day_name.day_name order by day_code;
-% sys.day_name,	sys.flight_day,	sys.L5 # table_name
-% day_name,	day_code,	L4 # name
+% sys.day_name,	sys.flight_day,	sys.%1 # table_name
+% day_name,	day_code,	%1 # name
 % char,	decimal,	bigint # type
 % 9,	2,	2 # length
 [ "MONDAY",	1,	64	]
@@ -139,8 +139,8 @@ stdout of test 'select_group` in directory 'sql/benchmarks/ATIS` itself:
 [ "WWAS",	12	]
 [ "BBWI",	5	]
 #select count(*), ground_service.city_code from ground_service group by ground_service.city_code;
-% sys.L3,	sys.ground_service # table_name
-% L2,	city_code # name
+% sys.%1,	sys.ground_service # table_name
+% %1,	city_code # name
 % bigint,	char # type
 % 1,	4 # length
 [ 3,	"MATL"	]
@@ -156,7 +156,7 @@ stdout of test 'select_group` in directory 'sql/benchmarks/ATIS` itself:
 [ 3,	"BBWI"	]
 [ 1,	""	]
 #select category,count(*) as totalnr from aircraft where engines=2 group by category having count(*)>4 order by category;
-% sys.aircraft,	sys.L4 # table_name
+% sys.aircraft,	sys.%1 # table_name
 % category,	totalnr # name
 % char,	bigint # type
 % 10,	2 # length
@@ -164,8 +164,8 @@ stdout of test 'select_group` in directory 'sql/benchmarks/ATIS` itself:
 [ "PROPELLER",	16	]
 [ "TURBOPROP",	32	]
 #select category,count(*) from aircraft where engines=2 group by category having count(*)>4 order by category;
-% sys.aircraft,	sys.L4 # table_name
-% category,	L3 # name
+% sys.aircraft,	sys.%1 # table_name
+% category,	%1 # name
 % char,	bigint # type
 % 10,	2 # length
 [ "JET",	15	]

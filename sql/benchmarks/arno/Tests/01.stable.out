@@ -23,8 +23,8 @@ stdout of test '01` in directory 'sql/benchmarks/arno` itself:
 # 11:47:02 >  
 
 #SELECT MODEL1.is_mutagen, count(distinct MODEL1.model_id ) FROM MODEL MODEL1, ATOM T1008290346560  WHERE MODEL1.model_id=T1008290346560.model_id group by MODEL1.is_mutagen;
-% sys.model1,	sys.L1 # table_name
-% is_mutagen,	L1 # name
+% sys.model1,	sys.%1 # table_name
+% is_mutagen,	%1 # name
 % char,	bigint # type
 % 3,	3 # length
 [ "T",	125	]
