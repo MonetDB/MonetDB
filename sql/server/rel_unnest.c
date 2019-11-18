@@ -517,6 +517,27 @@ exp_rewrite(mvc *sql, sql_rel *rel, sql_exp *e, list *ad)
 }
 
 static sql_exp *
+rel_reduce2one_exp(mvc *sql, sql_rel *sq)
+{
+	sql_exp *e = NULL;
+	
+	if (list_empty(sq->exps))
+		return NULL;
+	if (list_length(sq->exps) == 1)
+		return sq->exps->t->data;
+	for(node *n = sq->exps->h; n && !e; n = n->next) {
+		sql_exp *t = n->data;
+
+		if (!is_freevar(t))
+			e = t;
+	}
+	if (!e)
+		e = sq->exps->t->data;
+	sq->exps = append(sa_list(sql->sa), e);
+	return e;
+}
+
+static sql_exp *
 rel_bound_exp(mvc *sql, sql_rel *rel )
 {
 	while (rel->l) {
@@ -2169,7 +2190,7 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 
 			sq = exp_rel_get_rel(sql->sa, ie); /* get subquery */
 
-			le = sq->exps->t->data;
+			le = rel_reduce2one_exp(sql, sq);
 			if (!exp_name(le))
 				le = exp_label(sql->sa, le, ++sql->label);
 			le = exp_ref(sql->sa, le);
