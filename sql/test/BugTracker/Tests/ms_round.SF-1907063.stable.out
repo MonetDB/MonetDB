@@ -28,8 +28,8 @@ stdout of test 'ms_round.SF-1907063` in directory 'sql/test/BugTracker` itself:
 
 #create table t23(id float);
 #select round(id,8) from t23; 
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 #drop table t23;

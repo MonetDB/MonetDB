@@ -59,13 +59,13 @@ stdout of test 'with_only_once.SF-1720293` in directory 'sql/test/BugTracker` it
 [ 16	]
 #WITH t AS ( SELECT count(*) FROM withonlybug ) SELECT * FROM t;
 % .t # table_name
-% L3 # name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 32	]
 #WITH t AS ( SELECT count(*) FROM withonlybug ) SELECT * FROM t;
 % .t # table_name
-% L3 # name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 32	]
