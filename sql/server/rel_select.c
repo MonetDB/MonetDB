@@ -1953,10 +1953,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		n = n->data.lval->h;
 
 		for (; n; n = n->next) {
-			sql_rel *orel = rel;
-
 			re = rel_value_exp(query, &rel, n->data.sym, f, ek);
-			assert(orel==rel);
 			if (!re)
 				return NULL;
 			if (is_tuple && !exp_is_rel(re)) 

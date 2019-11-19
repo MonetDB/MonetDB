@@ -308,7 +308,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		/* in case of orderby we should also lookup the column in group by list (and use existing references) */
 		if (!list_empty(rel->exps)) {
 			e = exps_bind_column2(rel->exps, tname, cname);
-			if (!e && (1 || is_sql_orderby(f) || (0 && is_sql_outer(f))) && is_groupby(rel->op) && rel->r) {
+			if (!e && is_groupby(rel->op) && rel->r) {
 				e = exps_bind_alias(rel->r, tname, cname);
 				if (e) { 
 					if (exp_relname(e))
