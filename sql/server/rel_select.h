@@ -24,7 +24,7 @@ extern sql_exp * rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int 
 extern sql_exp * rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_last);
 
 /* TODO rename to exp_check_type + move to rel_exp.c */
-extern sql_exp *rel_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, int tpe);
+extern sql_exp *rel_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe);
 
 extern sql_exp *rel_unop_(sql_query *query, sql_rel *rel, sql_exp *e, sql_schema *s, char *fname, int card);
 extern sql_exp *rel_binop_(sql_query *query, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *fname, int card);
