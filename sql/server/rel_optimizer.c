@@ -2279,7 +2279,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exps_bind_column(f->exps, e->r, NULL);
 		if (!ne || (ne->type != e_column && ne->type != e_atom))
 			return NULL;
-		while (ne && f->op == op_project && ne->type == e_column) {
+		while (ne && has_label(ne) && f->op == op_project && ne->type == e_column) {
 			sql_exp *oe = e, *one = ne;
 
 			e = ne;
@@ -3764,7 +3764,7 @@ rel_project_cse(int *changes, mvc *sql, sql_rel *rel)
 		for (n=rel->exps->h; n && !needed; n = n->next) {
 			sql_exp *e1 = n->data;
 
-			if (e1->type != e_column && e1->type != e_atom && exp_name(e1)) {
+			if (e1->type != e_column && !exp_is_atom(e1) && exp_name(e1)) {
 				for (m=n->next; m; m = m->next){
 					sql_exp *e2 = m->data;
 				
@@ -3781,7 +3781,7 @@ rel_project_cse(int *changes, mvc *sql, sql_rel *rel)
 		for (n=rel->exps->h; n; n = n->next) {
 			sql_exp *e1 = n->data;
 
-			if (e1->type != e_column && e1->type != e_atom && exp_name(e1)) {
+			if (e1->type != e_column && !exp_is_atom(e1) && exp_name(e1)) {
 				for (m=nexps->h; m; m = m->next){
 					sql_exp *e2 = m->data;
 				
