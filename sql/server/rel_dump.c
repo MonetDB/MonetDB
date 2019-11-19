@@ -1225,17 +1225,18 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 				return exp_in(sql->sa, exp, exps, f);
 		} else {
 			int sym = 0, between = 0;
-			if (strncmp(r+*pos, "SYM",  strlen("SYM")) == 0) {
-				(*pos)+= (int) strlen("SYM");
-				skipWS(r,pos);
-				sym = 1;
-			}
+			sql_exp *e = exp_read(sql, lrel, rrel, pexps, r, pos, 0);
+
 			if (strncmp(r+*pos, "BETWEEN",  strlen("BETWEEN")) == 0) {
 				(*pos)+= (int) strlen("BETWEEN");
 				skipWS(r,pos);
 				between = 1;
 			}
-			sql_exp *e = exp_read(sql, lrel, rrel, pexps, r, pos, 0);
+			if (strncmp(r+*pos, "SYM",  strlen("SYM")) == 0) {
+				(*pos)+= (int) strlen("SYM");
+				skipWS(r,pos);
+				sym = 1;
+			}
 			if (e && e->type == e_cmp) {
 				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag));
 				if (sym)
