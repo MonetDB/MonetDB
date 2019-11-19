@@ -2374,10 +2374,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"create view sys.sessions as select * from sys.sessions();\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop procedure sys.settimeout(bigint);\n"
-			"drop procedure sys.settimeout(bigint,bigint);\n"
-			"drop procedure sys.setsession(bigint);\n"
-
 			"create procedure sys.setoptimizer(\"optimizer\" string)\n"
 			" external name clients.setoptimizer;\n"
 			"create procedure sys.setquerytimeout(\"query\" int)\n"

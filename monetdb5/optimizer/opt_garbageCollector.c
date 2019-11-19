@@ -63,8 +63,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	for(i = 0; i < limit; i++)
 		if(mb->stmt[i] && getModuleId(mb->stmt[i]) == querylogRef && getFunctionId(mb->stmt[i]) == defineRef ){
 			p = getInstrPtr(mb,i);
-			if( i != 1)
-				fprintf(stderr, "define statement not in expected place %d\n", i);
 			break;
 		}
 	

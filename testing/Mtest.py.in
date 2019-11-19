@@ -46,8 +46,6 @@ procdebug = False
 verbose = False
 quiet = False
 
-releaserun = False
-
 initdb = None
 
 global_timeout = 0
@@ -3724,16 +3722,13 @@ def main(argv) :
         ErrExit('--verbose and --quiet are mutually exclusive')
     global procdebug
     procdebug = opts.procdebug
-    global releaserun
-    releaserun = False
     nomito = False
-    CONDITIONALS['RELEASERUN'] = releaserun
     jenkins = False
     addreqs = False
     all_tests = False
     if THISFILE == "Mtest.py":
         testweb = opts.testweb
-        releaserun = opts.releaserun
+        CONDITIONALS['RELEASERUN'] = opts.releaserun
         nomito = opts.nomito
         par['IGNORE'] = opts.ignore
         par['CONTEXT'] = str(opts.context)

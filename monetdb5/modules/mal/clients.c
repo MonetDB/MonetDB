@@ -364,6 +364,50 @@ CLTwakeup(void *ret, int *id)
 	return MCawakeClient(*id);
 }
 
+/* Set session time out based in seconds. As of December 2019, this function is deprecated */
+str
+CLTsetSessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	lng sto;
+	int idx = cntxt->idx;
+
+	(void) mb;
+	if( idx < 0 || idx > MAL_MAXCLIENTS)
+		throw(MAL,"clients.setsession","Illegal session id %d", idx);
+	if (mal_clients[idx].mode == FREECLIENT)
+		throw(MAL,"clients.setsession","Session not active anymore");
+	sto =  *getArgReference_lng(stk,pci,1);
+	if (sto < 0)
+		throw(MAL,"clients.setsession","Session timeout should be >= 0");
+	mal_clients[idx].sessiontimeout = sto * 1000000;
+	return MAL_SUCCEED;
+}
+
+/* Set the current query timeout in seconds. As of December 2019, this function is deprecated */
+str
+CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	lng qto,sto;
+	int idx = cntxt->idx;
+
+	(void) mb;
+	if( idx < 0 || idx > MAL_MAXCLIENTS)
+		throw(MAL,"clients.settimeout","Illegal session id %d", idx);
+	if (mal_clients[idx].mode == FREECLIENT)
+		throw(MAL,"clients.settimeout","Session not active anymore");
+	qto = *getArgReference_lng(stk,pci,1);
+	if (qto < 0)
+		throw(MAL,"clients.settimeout","Query timeout should be >= 0");
+	if (pci->argc == 3) {
+		sto = *getArgReference_lng(stk,pci,2);
+		if( sto < 0)
+			throw(MAL,"clients.settimeout","Session timeout should be >= 0");
+		mal_clients[idx].sessiontimeout = sto * 1000000;
+	}
+	mal_clients[idx].querytimeout = qto * 1000000;
+	return MAL_SUCCEED;
+}
+
 /* set session time out based in seconds, converted into microseconds */
 str
 CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

@@ -3391,8 +3391,6 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	/* only_misses implies left output only */
 	assert(!only_misses || r2p == NULL);
-	/* only no right output allowed for semijoin and diff */
-	assert(r2p != NULL || (semi | only_misses));
 	/* if nil_on_miss is set, we really need a right output */
 	assert(!nil_on_miss || r2p != NULL);
 	/* if not_in is set, then so is only_misses */

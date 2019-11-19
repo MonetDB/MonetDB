@@ -34,11 +34,10 @@ stdout of test 'duplicates-not-eliminated-long-CASE-stmt.Bug-6697` in directory 
 % 1023 # length
 function user.s4_0():void;
     X_142:void := querylog.define("explain select sys.timestamp_to_str(case when task0.\"sys_created_on\" >= \\'1999-10-31 09:00:00\\' and task0.\"sys_created_on\" < \\'2000-04-02 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2000-04-02 10:00:00\\' and task0.\"sys_created_on\" < \\'2000-10-29 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2000-10-29 09:00:00\\' and task0.\"sys_created_on\" < \\'2001-04-01 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2001-04-01 10:00:00\\' and task0.\"sys_created_on\" < \\'2001-10-28 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2001-10-28 09:00:00\\' and task0.\"sys_created_on\" < \\'2002-04-07 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2002-04-07 10:00:00\\' and
-    X_1608:bat[:str] := bat.new(nil:str);
-    X_1614:bat[:int] := bat.new(nil:int);
-    X_1612:bat[:int] := bat.new(nil:int);
-    X_1611:bat[:str] := bat.new(nil:str);
-    X_1610:bat[:str] := bat.new(nil:str);
+    X_1608:bat[:str] := bat.pack("sys.L1":str);
+    X_1609:bat[:str] := bat.pack("yearref":str);
+    X_1610:bat[:str] := bat.pack("clob":str);
+    X_1611:bat[:int] := bat.pack(0:int);
     X_188:bat[:timestamp] := bat.new(nil:timestamp);
     X_200:bat[:bit] := batcalc.between(X_188:bat[:timestamp], "1999-10-31 09:00:00.000000":timestamp, "2000-04-02 10:00:00.000000":timestamp, false:bit, true:bit, false:bit, false:bit, false:bit);
     X_203:bat[:bit] := batcalc.isnil(X_200:bat[:bit]);
@@ -227,12 +226,7 @@ function user.s4_0():void;
     X_1601:bat[:timestamp] := batcalc.ifthenelse(X_245:bat[:bit], X_1458:bat[:timestamp], X_1600:bat[:timestamp]);
     X_1602:bat[:timestamp] := batcalc.ifthenelse(X_217:bat[:bit], X_1454:bat[:timestamp], X_1601:bat[:timestamp]);
     X_1604:bat[:str] := mal.manifold("mtime":str, "timestamp_to_str":str, X_1602:bat[:timestamp], "%Y":str);
-    X_1615:bat[:str] := bat.append(X_1608:bat[:str], "sys.L1":str);
-    X_1617:bat[:str] := bat.append(X_1610:bat[:str], "yearref":str);
-    X_1619:bat[:str] := bat.append(X_1611:bat[:str], "clob":str);
-    X_1621:bat[:int] := bat.append(X_1612:bat[:int], 0:int);
-    X_1623:bat[:int] := bat.append(X_1614:bat[:int], 0:int);
-    sql.resultSet(X_1615:bat[:str], X_1617:bat[:str], X_1619:bat[:str], X_1621:bat[:int], X_1623:bat[:int], X_1604:bat[:str]);
+    sql.resultSet(X_1608:bat[:str], X_1609:bat[:str], X_1610:bat[:str], X_1611:bat[:int], X_1611:bat[:int], X_1604:bat[:str]);
 end user.s4_0;
 #inline               actions= 0 time=24 usec 
 #remap                actions=230 time=419 usec 

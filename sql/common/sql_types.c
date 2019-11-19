@@ -409,7 +409,7 @@ subtype2string(sql_subtype *t)
 			snprintf(buf, BUFSIZ, "%s(%u)", 
 				t->type->sqlname, t->digits);
 	} else {
-			snprintf(buf, BUFSIZ, "%s", t->type->sqlname);
+		snprintf(buf, BUFSIZ, "%s", t->type->sqlname);
 	}
 	return _STRDUP(buf);
 }
@@ -440,7 +440,7 @@ int
 subaggr_cmp( sql_subaggr *a1, sql_subaggr *a2)
 {
 	if (a1->aggr == a2->aggr) 
-	    return list_cmp(a1->res, a2->res, (fcmp) &subtype_cmp);
+		return list_cmp(a1->res, a2->res, (fcmp) &subtype_cmp);
 	return -1;
 }
 
@@ -448,7 +448,7 @@ int
 subfunc_cmp( sql_subfunc *f1, sql_subfunc *f2)
 {
 	if (f1->func == f2->func) 
-	    return list_cmp(f1->res, f2->res, (fcmp) &subtype_cmp);
+		return list_cmp(f1->res, f2->res, (fcmp) &subtype_cmp);
 	return -1;
 }
 
@@ -459,7 +459,6 @@ arg_subtype_cmp(sql_arg *a, sql_subtype *t)
 		return 0;
 	return (is_subtype(t, &a->type )?0:-1);
 }
-
 
 static sql_subaggr *
 _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
@@ -507,8 +506,8 @@ sql_bind_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql_subtyp
 			arg = a->ops->h->data;
 
 		if (strcmp(a->base.name, sqlaname) == 0 && (!arg ||
-		    arg->type.type->eclass == EC_ANY || 
-		    (type && is_subtype(type, &arg->type )))) 
+			arg->type.type->eclass == EC_ANY || 
+			(type && is_subtype(type, &arg->type )))) 
 			return _dup_subaggr(sa, a, type);
 		n = n->next;
 	}
@@ -526,8 +525,8 @@ sql_bind_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql_subtyp
 				arg = a->ops->h->data;
 
 			if (strcmp(a->base.name, sqlaname) == 0 && (!arg ||
-		    	 	arg->type.type->eclass == EC_ANY || 
-		    		(type && is_subtype(type, &arg->type )))) 
+				arg->type.type->eclass == EC_ANY || 
+				(type && is_subtype(type, &arg->type )))) 
 				return _dup_subaggr(sa, a, type);
 		}
 	}
@@ -547,7 +546,7 @@ sql_bind_aggr_(sql_allocator *sa, sql_schema *s, const char *sqlaname, list *ops
 		sql_func *a = n->data;
 
 		if (strcmp(a->base.name, sqlaname) == 0 &&  
-		    list_cmp(a->ops, ops, (fcmp) &arg_subtype_cmp) == 0)
+			list_cmp(a->ops, ops, (fcmp) &arg_subtype_cmp) == 0)
 			return _dup_subaggr(sa, a, type);
 		n = n->next;
 	}
@@ -561,7 +560,7 @@ sql_bind_aggr_(sql_allocator *sa, sql_schema *s, const char *sqlaname, list *ops
 				continue;
 
 			if (strcmp(a->base.name, sqlaname) == 0 &&  
-		    	    list_cmp(a->ops, ops, (fcmp) &arg_subtype_cmp) == 0)
+				list_cmp(a->ops, ops, (fcmp) &arg_subtype_cmp) == 0)
 				return _dup_subaggr(sa, a, type);
 		}
 	}
@@ -577,7 +576,7 @@ sql_bind_member_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql
 		sql_func *a = n->data;
 
 		if (strcmp(a->base.name, sqlaname) == 0 && list_length(a->ops) == nrargs &&
-		    arg_subtype_cmp(a->ops->h->data, type) == 0)
+			arg_subtype_cmp(a->ops->h->data, type) == 0)
 			return _dup_subaggr(sa, a, NULL);
 		n = n->next;
 	}
@@ -591,7 +590,7 @@ sql_bind_member_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql
 				continue;
 
 			if (strcmp(a->base.name, sqlaname) == 0 && list_length(a->ops) == nrargs &&
-		    	    arg_subtype_cmp(a->ops->h->data, type) == 0)
+				arg_subtype_cmp(a->ops->h->data, type) == 0)
 				return _dup_subaggr(sa, a, NULL);
 		}
 	}
@@ -603,7 +602,6 @@ sql_find_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname)
 {
 	node *n = aggrs->h;
 
-	(void)s;
 	while (n) {
 		sql_func *a = n->data;
 
@@ -915,7 +913,6 @@ sql_find_funcs(sql_allocator *sa, sql_schema *s, const char *sqlfname, int nrarg
 	return res;
 }
 
-
 /* find function based on first argument */
 sql_subfunc *
 sql_bind_member(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtype *tp, int nrargs, sql_subfunc *prev)
@@ -1003,7 +1000,6 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, const char *sqlfname, list *ops
 	node *n = funcs->h;
 	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 
-	(void)s;
 	for (; n; n = n->next) {
 		sql_func *f = n->data;
 
@@ -1092,7 +1088,6 @@ sql_bind_func_result3(sql_allocator *sa, sql_schema *s, const char *sqlfname, sq
 	fres = sql_bind_func_result_(sa, s, sqlfname, l, res);
 	return fres;
 }
-
 
 static void
 sql_create_alias(sql_allocator *sa, const char *name, const char *alias)

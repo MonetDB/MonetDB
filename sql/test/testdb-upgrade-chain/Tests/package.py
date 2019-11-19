@@ -12,12 +12,12 @@ if not os.path.exists(db):
     sys.exit(1)
 
 try:
-    f = open(os.path.join(db, 'bat', 'BACKUP', 'SUBCOMMIT', 'BBP.dir'), 'rU')
+    f = open(os.path.join(db, 'bat', 'BACKUP', 'SUBCOMMIT', 'BBP.dir'), 'r')
 except IOError:
     try:
-        f = open(os.path.join(db, 'bat', 'BACKUP', 'BBP.dir'), 'rU')
+        f = open(os.path.join(db, 'bat', 'BACKUP', 'BBP.dir'), 'r')
     except IOError:
-        f = open(os.path.join(db, 'bat', 'BBP.dir'), 'rU')
+        f = open(os.path.join(db, 'bat', 'BBP.dir'), 'r')
 hdr = f.readline()
 ptroid = f.readline()
 ptr, oid, hge = ptroid.split()
@@ -41,7 +41,7 @@ else:
     revcomment = ''
 if hge == '16' and 'largest integer size 16' not in comment:
     revcomment = ' with largest integer size 16' + revcomment
-z.comment = comment + 'Chained on host %s%s.\n' % (os.getenv('HOSTNAME', 'unknown'), revcomment)
+z.comment = comment + ('Chained on host %s%s.\n' % (os.getenv('HOSTNAME', 'unknown'), revcomment)).encode('utf-8')
 
 for root, dirs, files in os.walk(db):
     for f in files:
