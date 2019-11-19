@@ -34,6 +34,16 @@ external name sql.shutdown;
 create procedure sys.shutdown(delay tinyint, force bool)
 external name sql.shutdown;
 
+-- control the query and session time out. 
+-- As of December 2019, the procedures settimeout and setsession are deprecated.
+-- Use setquerytimeout and setsessiontimeout instead.
+create procedure sys.settimeout("query" bigint)
+	external name clients.settimeout;
+create procedure sys.settimeout("query" bigint, "session" bigint)
+	external name clients.settimeout;
+create procedure sys.setsession("timeout" bigint)
+	external name clients.setsession;
+
 -- control the session properties  session time out for the current user.
 create procedure sys.setoptimizer("optimizer" string)
 	external name clients.setoptimizer;
