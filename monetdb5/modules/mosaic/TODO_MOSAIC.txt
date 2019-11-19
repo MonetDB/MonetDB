@@ -1,5 +1,7 @@
 ####technical depth####
-make sure that dense candidate lists are not transparently skipped and pushed to algebra module operators. Perhaps improve this on an optimizer level.
+Factor out boilerplate code mosaic code: resulting mosaic boilerplate is for testing purposes.
+make sure that dense candidate lists are not transparently skipped and pushed to algebra module operators.
+Introduce mosaic into gdk: create hooks in pointselect and scanselect functions/macro's.
 make sure candidate lists are working properly (2)
 Be sure alignment is correct. Use asserts for this.
 Add test for float/double
@@ -17,6 +19,10 @@ benchmark
 DO nil checking more efficient similar to gdk_select
 
 ####code issues####
+Replace the MOSskip functions by MOSadvance functions
+Make block headers specific by having type parametrized blockheader struct's.
+atomic base type of an oid bat is lng. So we can remove that one.
+It is a bit cleaner if MOSadvance call's are done outside of select functions.
 Refactor frame compressions code to be more inline with the other compression algortihm code.(1)
 create a common header/source file for mosaic for common tasks e.g. to house a generic IS_NIL macro, IPtpe, etc.
 mosaic_<compression>.c: for type macro's use macro-wised inline functions. (1)
