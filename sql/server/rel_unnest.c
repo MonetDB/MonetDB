@@ -41,8 +41,8 @@ exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
 	case e_func: 
 	case e_aggr: 
 		if (e->l) 
-			return exps_set_freevar(sql, e->l, r);
-		/* fall through */
+			exps_set_freevar(sql, e->l, r);
+		break;
 	case e_column: 
 		if ((e->l && rel_bind_column2(sql, r, e->l, e->r, 0)) ||
 		    (!e->l && rel_bind_column(sql, r, e->r, 0)))
@@ -1402,7 +1402,7 @@ rel_reset_subquery(sql_rel *rel)
 }
 
 static sql_exp *
-rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, int op)
+rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op)
 {
 	sql_rel *d = NULL;
 

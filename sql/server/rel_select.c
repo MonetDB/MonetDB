@@ -1529,7 +1529,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 			if (anti)
 				set_anti(e);
 		} else {
-			e = exp_compare_func(sql, ls, rs, rs2, compare_func(type, quantifier?0:anti), quantifier);
+			e = exp_compare_func(sql, ls, rs, rs2, compare_func((comp_type)type, quantifier?0:anti), quantifier);
 			if (anti && quantifier)
 				e = rel_unop_(sql, NULL, e, NULL, "not", card_value);
 		}
