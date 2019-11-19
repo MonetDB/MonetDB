@@ -98,7 +98,7 @@ stdout of test 'sqlsmith.Bug-6459` in directory 'sql/test/mergetables` itself:
 #            select
 #                ref_0.x as c0,
 #                ref_1.type as c1,
-% .%55,	.%56,	.%57,	.%60,	.%61,	.%62,	.%63,	.%64,	.%65,	.%66,	.%67 # table_name
+% .%45,	.%46,	.%47,	.%50,	.%51,	.%52,	.%53,	.%54,	.%55,	.%56,	.%57 # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8,	c9,	c10 # name
 % clob,	int,	int,	int,	int,	int,	int,	int,	clob,	int,	int # type
 % 0,	1,	1,	1,	1,	1,	1,	1,	0,	1,	1 # length
