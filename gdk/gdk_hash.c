@@ -152,14 +152,14 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	h->type = tpe;
 	HASHclear(h);		/* zero the mask */
-	((size_t *) h->heapbckt.base)[0] = HASH_VERSION;
-	((size_t *) h->heapbckt.base)[1] = size;
-	((size_t *) h->heapbckt.base)[2] = h->level;
-	((size_t *) h->heapbckt.base)[3] = h->split;
-	((size_t *) h->heapbckt.base)[4] = h->width;
-	((size_t *) h->heapbckt.base)[5] = count;
-	((size_t *) h->heapbckt.base)[6] = h->nunique;
-	((size_t *) h->heapbckt.base)[7] = h->nheads;
+	((size_t *) h->heapbckt.base)[0] = (size_t) HASH_VERSION;
+	((size_t *) h->heapbckt.base)[1] = (size_t) size;
+	((size_t *) h->heapbckt.base)[2] = (size_t) h->level;
+	((size_t *) h->heapbckt.base)[3] = (size_t) h->split;
+	((size_t *) h->heapbckt.base)[4] = (size_t) h->width;
+	((size_t *) h->heapbckt.base)[5] = (size_t) count;
+	((size_t *) h->heapbckt.base)[6] = (size_t) h->nunique;
+	((size_t *) h->heapbckt.base)[7] = (size_t) h->nheads;
 	ACCELDEBUG fprintf(stderr, "#HASHnew: create hash(size " BUNFMT ", mask " BUNFMT ", width %d, total " BUNFMT " bytes);\n", size, mask, h->width, (size + mask) * h->width);
 	return GDK_SUCCEED;
 }
@@ -420,14 +420,14 @@ BAThashsave(BAT *b, bool dosync)
 		rc = GDK_FAIL;
 		/* only persist if parent BAT hasn't changed in the
 		 * mean time */
-		((size_t *) hp->base)[0] = HASH_VERSION;
-		((size_t *) hp->base)[1] = h->heaplink.free / h->width;
-		((size_t *) hp->base)[2] = h->level;
-		((size_t *) hp->base)[3] = h->split;
-		((size_t *) hp->base)[4] = h->width;
-		((size_t *) hp->base)[5] = BATcount(b);
-		((size_t *) hp->base)[6] = h->nunique;
-		((size_t *) hp->base)[7] = h->nheads;
+		((size_t *) hp->base)[0] = (size_t) HASH_VERSION;
+		((size_t *) hp->base)[1] = (size_t) (h->heaplink.free / h->width);
+		((size_t *) hp->base)[2] = (size_t) h->level;
+		((size_t *) hp->base)[3] = (size_t) h->split;
+		((size_t *) hp->base)[4] = (size_t) h->width;
+		((size_t *) hp->base)[5] = (size_t) BATcount(b);
+		((size_t *) hp->base)[6] = (size_t) h->nunique;
+		((size_t *) hp->base)[7] = (size_t) h->nheads;
 		if (!b->theap.dirty &&
 		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync) == GDK_SUCCEED &&
 		    HEAPsave(hp, hp->filename, NULL, dosync) == GDK_SUCCEED) {
