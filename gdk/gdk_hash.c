@@ -350,6 +350,7 @@ BATcheckhash(BAT *b)
 					    close(fd) == 0 &&
 					    (fd = GDKfdlocate(h->heaplink.farmid, nme, "rb+", "thashl")) >= 0 &&
 					    fstat(fd, &st) == 0 &&
+					    st.st_size > 0 &&
 					    st.st_size >= (off_t) (h->heaplink.size = h->heaplink.free = hdata[1] * h->width) &&
 					    HEAPload(&h->heaplink, nme, "thashl", false) == GDK_SUCCEED &&
 					    HEAPload(&h->heapbckt, nme, "thashb", false) == GDK_SUCCEED) {
