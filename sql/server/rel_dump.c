@@ -1222,14 +1222,24 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			if (f == cmp_in || f == cmp_notin)
 				return exp_in(sql->sa, exp, exps, f);
 		} else {
+			int sym = 0;
+			if (strncmp(r+*pos, "SYM",  strlen("SYM")) == 0) {
+				(*pos)+= (int) strlen("SYM");
+				skipWS(r,pos);
+				sym = 1;
+			}
 			sql_exp *e = exp_read(sql, lrel, rrel, pexps, r, pos, 0);
 			if (e && e->type == e_cmp) {
 				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag));
+				if (sym)
+					ne->flag |= CMP_SYMMETRIC;
 				if (is_anti(exp))
 					set_anti(ne);
 				return ne;
 			} else if (e) {
 				sql_exp *ne = exp_compare(sql->sa, exp, e, f);
+				if (sym)
+					ne->flag |= CMP_SYMMETRIC;
 				if (is_anti(exp))
 					set_anti(ne);
 				return ne;

@@ -3127,8 +3127,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	sql_rel *subquery = NULL;
 	list *exps = NULL;
 
-	if (!groupby && !query_has_outer(query))
-		return NULL;
+	if (!groupby && !query_has_outer(query)) {
+		char *uaname = GDKmalloc(strlen(aname) + 1);
+		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by",
+				       uaname ? toUpperCopy(uaname, aname) : aname);
+		if (uaname)
+			GDKfree(uaname);
+		return e;
+	}
 
 	if (is_sql_groupby(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
