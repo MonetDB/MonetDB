@@ -1,3 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Nov 19 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Updated user session procedures by adding te possibility to set properties
+  based on a session identifier. The optimizer pipeline, number of worker
+  threads and memory limits can be set per user session. As a consequence,
+  the procedures sys.settimeout(bigint), sys.settimeout(bigint,bigint)
+  and sys.session(bigint) are now deprecated.
+
