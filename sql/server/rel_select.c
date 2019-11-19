@@ -1882,7 +1882,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 {
 	exp_kind ek = {type_value, card_column, FALSE};
 	mvc *sql = query->sql;
-	sql_exp *le, *e;
+	sql_exp *le, *e = NULL;
 	dlist *dl = sc->data.lval;
 	symbol *lo = dl->h->data.sym;
 	dnode *n = dl->h->next;
@@ -4795,7 +4795,7 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 	mvc *sql = query->sql;
 
 	if (sn->having) {
-		sql_rel *inner;
+		sql_rel *inner = NULL;
 		int single_value = 1;
 
 		if (is_project(rel->op) && rel->l) {
