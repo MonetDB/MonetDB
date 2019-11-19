@@ -244,7 +244,9 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSf sys."setoptimizer"
 \dSf sys."setprinttimeout"
 \dSf sys."setquerytimeout"
+\dSf sys."setsession"
 \dSf sys."setsessiontimeout"
+\dSf sys."settimeout"
 \dSf sys."setworkerlimit"
 \dSf sys."shpattach"
 \dSf sys."shpload"
@@ -705,7 +707,9 @@ SYSTEM PROCEDURE        sys.setmemorylimit
 SYSTEM PROCEDURE        sys.setoptimizer
 SYSTEM PROCEDURE        sys.setprinttimeout
 SYSTEM PROCEDURE        sys.setquerytimeout
+SYSTEM PROCEDURE        sys.setsession
 SYSTEM PROCEDURE        sys.setsessiontimeout
+SYSTEM PROCEDURE        sys.settimeout
 SYSTEM PROCEDURE        sys.setworkerlimit
 SYSTEM PROCEDURE        sys.shpattach
 SYSTEM PROCEDURE        sys.shpload

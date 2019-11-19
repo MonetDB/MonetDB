@@ -4405,6 +4405,8 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"stddev_samp",	1,	"sec_interval",	""	]
 [ "sys",	"stddev_samp",	0,	"double",	"create aggregate stddev_samp(val interval month) returns double\n external name \"aggr\".\"stdev\";"	]
 [ "sys",	"stddev_samp",	1,	"month_interval",	""	]
+[ "sys",	"stop",	0,	"tinyint",	"create procedure sys.stop(tag tinyint)\nexternal name sql.sysmon_stop;"	]
+[ "sys",	"stop",	0,	"smallint",	"create procedure sys.stop(tag smallint)\nexternal name sql.sysmon_stop;"	]
 [ "sys",	"stop",	0,	"int",	"create procedure sys.stop(tag int)\nexternal name sql.sysmon_stop;"	]
 [ "sys",	"stop",	0,	"bigint",	"create procedure sys.stop(tag bigint)\nexternal name sql.sysmon_stop;"	]
 [ "sys",	"stopsession",	0,	"int",	"create procedure sys.stopsession(\"sessionid\" int)\n external name clients.stopsession;"	]
