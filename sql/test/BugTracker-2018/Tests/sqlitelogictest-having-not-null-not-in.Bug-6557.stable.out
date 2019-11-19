@@ -31,21 +31,6 @@ stdout of test 'sqlitelogictest-having-not-null-not-in.Bug-6557` in directory 's
 % col2 # name
 % int # type
 % 1 # length
-#SELECT 1 FROM tab0 HAVING tab0.col1 IN ( 1 ); --error
-% . # table_name
-% single_value # name
-% tinyint # type
-% 1 # length
-#SELECT 1 FROM tab0 HAVING col1 IN ( 1 ); --error
-% . # table_name
-% single_value # name
-% tinyint # type
-% 1 # length
-#SELECT 1 FROM tab0 HAVING NULL IN ( tab0.col2 ); --error
-% . # table_name
-% single_value # name
-% tinyint # type
-% 1 # length
 #SELECT DISTINCT * FROM tab0 AS cor0 GROUP BY cor0.col1, cor0.col2, cor0.col0;
 % sys.cor0,	sys.cor0,	sys.cor0 # table_name
 % col1,	col2,	col0 # name
