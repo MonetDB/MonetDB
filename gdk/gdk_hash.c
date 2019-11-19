@@ -177,98 +177,97 @@ HASHgrowbucket(BAT *b)
 	}
 
 	Hash *h = b->thash;
-	BUN nbucket = NHASHBUCKETS(h);
+	BUN nbucket;
 
-	if (h->nunique < nbucket * 3 / 4)
-		return GDK_SUCCEED;
+	while (h->nunique >= (nbucket = NHASHBUCKETS(h)) * 3 / 4) {
+		BUN old = h->split;
+		BUN new = ((BUN) 1 << h->level) + h->split;
+		BATiter bi = bat_iterator(b);
+		BUN msk = (BUN) 1 << h->level;
 
-	BUN old = h->split;
-	BUN new = ((BUN) 1 << h->level) + h->split;
-	BATiter bi = bat_iterator(b);
-	BUN msk = (BUN) 1 << h->level;
-
-	ACCELDEBUG fprintf(stderr, "#%s: %s(" ALGOBATFMT ") -> " BUNFMT " buckets\n",
-			   MT_thread_getname(), __func__, ALGOBATPAR(b), nbucket + 1);
-	assert(h->heapbckt.free == nbucket * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T);
-	h->heapbckt.dirty = true;
-	if (((size_t *) h->heapbckt.base)[0] & (size_t) 1 << 24) {
-		/* persistent hash: remove persistency */
-		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
-		if (h->heapbckt.storage == STORE_MEM) {
-			int fd;
-			if ((fd = GDKfdlocate(h->heapbckt.farmid,
-					      h->heapbckt.filename,
-					      "rb+", NULL)) >= 0) {
-				if (write(fd, h->heapbckt.base, SIZEOF_SIZE_T) >= 0) {
-					if (!(GDKdebug & NOSYNCMASK)) {
+		ACCELDEBUG fprintf(stderr, "#%s: %s(" ALGOBATFMT ") -> " BUNFMT " buckets\n",
+				   MT_thread_getname(), __func__, ALGOBATPAR(b), nbucket + 1);
+		assert(h->heapbckt.free == nbucket * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T);
+		h->heapbckt.dirty = true;
+		if (((size_t *) h->heapbckt.base)[0] & (size_t) 1 << 24) {
+			/* persistent hash: remove persistency */
+			((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
+			if (h->heapbckt.storage == STORE_MEM) {
+				int fd;
+				if ((fd = GDKfdlocate(h->heapbckt.farmid,
+						      h->heapbckt.filename,
+						      "rb+", NULL)) >= 0) {
+					if (write(fd, h->heapbckt.base, SIZEOF_SIZE_T) >= 0) {
+						if (!(GDKdebug & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
-						_commit(fd);
+							_commit(fd);
 #elif defined(HAVE_FDATASYNC)
-						fdatasync(fd);
+							fdatasync(fd);
 #elif defined(HAVE_FSYNC)
-						fsync(fd);
+							fsync(fd);
 #endif
+						}
 					}
+					close(fd);
 				}
-				close(fd);
-			}
-		} else {
-			if (!(GDKdebug & NOSYNCMASK))
-				MT_msync(h->heapbckt.base, SIZEOF_SIZE_T);
-		}
-	}
-	if (h->heapbckt.free + h->width > h->heapbckt.size) {
-		if (HEAPextend(&h->heapbckt,
-			       h->heapbckt.size + GDK_mmap_pagesize,
-			       true) != GDK_SUCCEED) {
-			return GDK_FAIL;
-		}
-		h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
-	}
-	assert(h->heapbckt.free + h->width <= h->heapbckt.size);
-	if (++h->split == ((BUN) 1 << h->level)) {
-		h->level++;
-		h->split = 0;
-	}
-	h->heapbckt.free += h->width;
-	BUN lold, lnew, hb;
-	lold = lnew = HASHnil(h);
-	if ((hb = HASHget(h, old)) != HASHnil(h)) {
-		h->nheads--;
-		do {
-			const void *v = BUNtail(bi, hb);
-			BUN hsh = ATOMhash(h->type, v);
-			assert((hsh & (msk - 1)) == old);
-			if (hsh & msk) {
-				/* move to new list */
-				if (lnew == HASHnil(h)) {
-					HASHput(h, new, hb);
-					h->nheads++;
-				} else
-					HASHputlink(h, lnew, hb);
-				lnew = hb;
 			} else {
-				/* move to old list */
-				if (lold == HASHnil(h)) {
-					h->nheads++;
-					HASHput(h, old, hb);
-				} else
-					HASHputlink(h, lold, hb);
-				lold = hb;
+				if (!(GDKdebug & NOSYNCMASK))
+					MT_msync(h->heapbckt.base, SIZEOF_SIZE_T);
 			}
-			hb = HASHgetlink(h, hb);
-		} while (hb != HASHnil(h));
+		}
+		if (h->heapbckt.free + h->width > h->heapbckt.size) {
+			if (HEAPextend(&h->heapbckt,
+				       h->heapbckt.size + GDK_mmap_pagesize,
+				       true) != GDK_SUCCEED) {
+				return GDK_FAIL;
+			}
+			h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
+		}
+		assert(h->heapbckt.free + h->width <= h->heapbckt.size);
+		if (++h->split == ((BUN) 1 << h->level)) {
+			h->level++;
+			h->split = 0;
+		}
+		h->heapbckt.free += h->width;
+		BUN lold, lnew, hb;
+		lold = lnew = HASHnil(h);
+		if ((hb = HASHget(h, old)) != HASHnil(h)) {
+			h->nheads--;
+			do {
+				const void *v = BUNtail(bi, hb);
+				BUN hsh = ATOMhash(h->type, v);
+				assert((hsh & (msk - 1)) == old);
+				if (hsh & msk) {
+					/* move to new list */
+					if (lnew == HASHnil(h)) {
+						HASHput(h, new, hb);
+						h->nheads++;
+					} else
+						HASHputlink(h, lnew, hb);
+					lnew = hb;
+				} else {
+					/* move to old list */
+					if (lold == HASHnil(h)) {
+						h->nheads++;
+						HASHput(h, old, hb);
+					} else
+						HASHputlink(h, lold, hb);
+					lold = hb;
+				}
+				hb = HASHgetlink(h, hb);
+			} while (hb != HASHnil(h));
+		}
+		if (lnew == HASHnil(h))
+			HASHput(h, new, HASHnil(h));
+		else
+			HASHputlink(h, lnew, HASHnil(h));
+		if (lold == HASHnil(h))
+			HASHput(h, old, HASHnil(h));
+		else
+			HASHputlink(h, lold, HASHnil(h));
+		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid,
+				  &(oid){NHASHBUCKETS(h)});
 	}
-	if (lnew == HASHnil(h))
-		HASHput(h, new, HASHnil(h));
-	else
-		HASHputlink(h, lnew, HASHnil(h));
-	if (lold == HASHnil(h))
-		HASHput(h, old, HASHnil(h));
-	else
-		HASHputlink(h, lold, HASHnil(h));
-	BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid,
-			  &(oid){NHASHBUCKETS(h)});
 	return GDK_SUCCEED;
 }
 
