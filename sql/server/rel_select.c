@@ -3121,7 +3121,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_column, FALSE};
 	sql_subaggr *a = NULL;
-	int no_nil = 0, group = 0, has_freevar = 0, all_freevar = 0;
+	int no_nil = 0, group = 0, has_freevar = 0;
+	unsigned int all_freevar = 0;
 	sql_rel *groupby = *rel, *sel = NULL, *gr, *og = NULL, *res = groupby;
 	sql_rel *subquery = NULL;
 	list *exps = NULL;
