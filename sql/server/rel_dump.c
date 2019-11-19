@@ -235,6 +235,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				mnstr_printf(fout, " !");
 			cmp_print(sql, fout, range2rcompare(e->flag) );
 			exp_print(sql, fout, e->f, depth+1, refs, 0, 0);
+			if (e->flag & CMP_BETWEEN)
+				mnstr_printf(fout, " BETWEEN ");
 			if (e->flag & CMP_SYMMETRIC)
 				mnstr_printf(fout, " SYM ");
 		} else {
@@ -249,7 +251,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	default:
 		;
 	}
-	if (e->type != e_atom && is_ascending(e))
+	if (e->type != e_atom && e->type != e_cmp && is_ascending(e))
 		mnstr_printf(fout, " ASC");
 	if (e->type != e_atom && e->type != e_cmp && !has_nil(e))
 		mnstr_printf(fout, " NOT NULL");
@@ -1222,17 +1224,24 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			if (f == cmp_in || f == cmp_notin)
 				return exp_in(sql->sa, exp, exps, f);
 		} else {
-			int sym = 0;
+			int sym = 0, between = 0;
 			if (strncmp(r+*pos, "SYM",  strlen("SYM")) == 0) {
 				(*pos)+= (int) strlen("SYM");
 				skipWS(r,pos);
 				sym = 1;
+			}
+			if (strncmp(r+*pos, "BETWEEN",  strlen("BETWEEN")) == 0) {
+				(*pos)+= (int) strlen("BETWEEN");
+				skipWS(r,pos);
+				between = 1;
 			}
 			sql_exp *e = exp_read(sql, lrel, rrel, pexps, r, pos, 0);
 			if (e && e->type == e_cmp) {
 				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag));
 				if (sym)
 					ne->flag |= CMP_SYMMETRIC;
+				if (between)
+					ne->flag |= CMP_BETWEEN;
 				if (is_anti(exp))
 					set_anti(ne);
 				return ne;
@@ -1240,6 +1249,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 				sql_exp *ne = exp_compare(sql->sa, exp, e, f);
 				if (sym)
 					ne->flag |= CMP_SYMMETRIC;
+				if (between)
+					ne->flag |= CMP_BETWEEN;
 				if (is_anti(exp))
 					set_anti(ne);
 				return ne;
