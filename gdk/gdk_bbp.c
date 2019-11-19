@@ -513,7 +513,7 @@ fixfltheap(BAT *b)
 	} else {
 		/* heap was fixed */
 		b->batDirtydesc = true;
-		if (HEAPsave(&h2, nme, "tail") != GDK_SUCCEED) {
+		if (HEAPsave(&h2, nme, "tail", true) != GDK_SUCCEED) {
 			HEAPfree(&h2, false);
 			GDKfree(srcdir);
 			GDKerror("fixfltheap: saving heap failed\n");
@@ -799,7 +799,7 @@ fixdateheap(BAT *b, const char *anme)
 	} else {
 		/* heap was fixed */
 		b->batDirtydesc = true;
-		if (HEAPsave(&h2, nme, "tail") != GDK_SUCCEED) {
+		if (HEAPsave(&h2, nme, "tail", true) != GDK_SUCCEED) {
 			HEAPfree(&h2, false);
 			GDKfree(srcdir);
 			GDKerror("fixdateheap: saving heap failed\n");
@@ -2850,10 +2850,13 @@ BBPsave(BAT *b)
 	bat bid = b->batCacheid;
 	gdk_return ret = GDK_SUCCEED;
 
-	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirty(b))
+	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirty(b)) {
 		/* do nothing */
+		if (b->thash && b->thash != (Hash *) 1 &&
+		    (b->thash->heaplink.dirty || b->thash->heapbckt.dirty))
+			BAThashsave(b, (BBP_status(bid) & BBPPERSISTENT) != 0);
 		return GDK_SUCCEED;
-
+	}
 	if (lock)
 		MT_lock_set(&GDKswapLock(bid));
 

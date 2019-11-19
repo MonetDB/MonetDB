@@ -403,25 +403,20 @@ BATcheckhash(BAT *b)
 	return ret;
 }
 
-#ifdef PERSISTENTHASH
-static void
-BAThashsync(void *arg)
+gdk_return
+BAThashsave(BAT *b, bool dosync)
 {
-	BAT *b = arg;
 	int fd;
-	lng t0 = 0;
-	const char *failed = " failed";
+	gdk_return rc = GDK_SUCCEED;
 	Hash *h;
+	lng t0 = 0;
 
 	ACCELDEBUG t0 = GDKusec();
 
-	/* we could check whether b->thash == NULL before getting the
-	 * lock, and only lock if it isn't; however, it's very
-	 * unlikely that that is the case, so we don't */
-	MT_lock_set(&b->batIdxLock);
 	if ((h = b->thash) != NULL) {
 		Heap *hp = &h->heapbckt;
 
+		rc = GDK_FAIL;
 		/* only persist if parent BAT hasn't changed in the
 		 * mean time */
 		((size_t *) hp->base)[0] = HASH_VERSION;
@@ -433,15 +428,16 @@ BAThashsync(void *arg)
 		((size_t *) hp->base)[6] = h->nunique;
 		((size_t *) hp->base)[7] = h->nheads;
 		if (!b->theap.dirty &&
-		    ((size_t *) hp->base)[4] == b->batCount &&
-		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL) == GDK_SUCCEED &&
-		    HEAPsave(hp, hp->filename, NULL) == GDK_SUCCEED) {
+		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync) == GDK_SUCCEED &&
+		    HEAPsave(hp, hp->filename, NULL, dosync) == GDK_SUCCEED) {
+			h->heaplink.dirty = false;
 			if (hp->storage == STORE_MEM) {
 				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
 					((size_t *) hp->base)[0] |= (size_t) 1 << 24;
 					if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
-						failed = ""; /* not failed */
-						if (!(GDKdebug & NOSYNCMASK)) {
+						rc = GDK_SUCCEED;
+						if (dosync &&
+						    !(GDKdebug & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
 							_commit(fd);
 #elif defined(HAVE_FDATASYNC)
@@ -458,17 +454,31 @@ BAThashsync(void *arg)
 				}
 			} else {
 				((size_t *) hp->base)[0] |= (size_t) 1 << 24;
-				if (!(GDKdebug & NOSYNCMASK) &&
+				if (dosync && !(GDKdebug & NOSYNCMASK) &&
 				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0) {
 					((size_t *) hp->base)[0] &= ~((size_t) 1 << 24);
 				} else {
 					hp->dirty = false;
-					failed = ""; /* not failed */
+					rc = GDK_SUCCEED;
 				}
 			}
-			ACCELDEBUG fprintf(stderr, "#BAThash: persisting hash %s (" LLFMT " usec)%s\n", hp->filename, GDKusec() - t0, failed);
+			ACCELDEBUG fprintf(stderr, "#%s: %s: "ALGOBATFMT" persisting hash %s%s (" LLFMT " usec)%s\n", MT_thread_getname(), __func__, ALGOBATPAR(b), hp->filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
 		}
 	}
+	return rc;
+}
+
+#ifdef PERSISTENTHASH
+static void
+BAThashsync(void *arg)
+{
+	BAT *b = arg;
+
+	/* we could check whether b->thash == NULL before getting the
+	 * lock, and only lock if it isn't; however, it's very
+	 * unlikely that that is the case, so we don't */
+	MT_lock_set(&b->batIdxLock);
+	BAThashsave(b, true);
 	MT_lock_unset(&b->batIdxLock);
 	BBPunfix(b->batCacheid);
 }
@@ -875,14 +885,19 @@ void
 HASHfree(BAT *b)
 {
 	if (b && b->thash) {
+		Hash *h;
 		MT_lock_set(&b->batIdxLock);
-		if (b->thash && b->thash != (Hash *) 1) {
-			bool rmheap = GDKinmemory() || b->thash->heaplink.dirty || b->thash->heapbckt.dirty;
+		if ((h = b->thash) != NULL && h != (Hash *) 1) {
+			bool rmheap = GDKinmemory() || h->heaplink.dirty || h->heapbckt.dirty;
+			ACCELDEBUG fprintf(stderr, "#%s: %s: "ALGOBATFMT" free hash %s\n",
+					   MT_thread_getname(), __func__,
+					   ALGOBATPAR(b),
+					   rmheap ? "removing" : "keeping");
 
-			HEAPfree(&b->thash->heapbckt, rmheap);
-			HEAPfree(&b->thash->heaplink, rmheap);
-			GDKfree(b->thash);
 			b->thash = rmheap ? NULL : (Hash *) 1;
+			HEAPfree(&h->heapbckt, rmheap);
+			HEAPfree(&h->heaplink, rmheap);
+			GDKfree(h);
 		}
 		MT_lock_unset(&b->batIdxLock);
 	}

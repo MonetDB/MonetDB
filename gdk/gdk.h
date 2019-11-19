@@ -851,7 +851,7 @@ typedef struct BATiter {
  *  HEAPload (Heap *h, str nme,ext, bool trunc);
  * @item int
  * @tab
- *  HEAPsave (Heap *h, str nme,ext);
+ *  HEAPsave (Heap *h, str nme,ext, bool dosync);
  * @item int
  * @tab
  *  HEAPcopy (Heap *dst,*src);
