@@ -164,6 +164,30 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	return GDK_SUCCEED;
 }
 
+/* collect HASH statistics for analysis */
+static void
+HASHcollisions(BAT *b, Hash *h)
+{
+	lng cnt, entries = 0, max = 0;
+	double total = 0;
+	BUN p, i, j, nil;
+
+	if (b == 0 || h == 0)
+		return;
+	nil = HASHnil(h);
+	for (i = 0, j = NHASHBUCKETS(h); i < j; i++)
+		if ((p = HASHget(h, i)) != nil) {
+			entries++;
+			cnt = 0;
+			for (; p != nil; p = HASHgetlink(h, p))
+				cnt++;
+			if (cnt > max)
+				max = cnt;
+			total += cnt;
+		}
+	fprintf(stderr, "#BAThash: statistics (" BUNFMT ", entries " LLFMT ", nunique " BUNFMT ", nbuckets " BUNFMT ", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->nunique, NHASHBUCKETS(h), max, entries == 0 ? 0 : total / entries);
+}
+
 gdk_return
 HASHgrowbucket(BAT *b)
 {
@@ -178,15 +202,16 @@ HASHgrowbucket(BAT *b)
 
 	Hash *h = b->thash;
 	BUN nbucket;
+	BUN onbucket = NHASHBUCKETS(h);
+	lng t0 = 0;
 
+	ACCELDEBUG t0 = GDKusec();
 	while (h->nunique >= (nbucket = NHASHBUCKETS(h)) * 3 / 4) {
 		BUN old = h->split;
 		BUN new = ((BUN) 1 << h->level) + h->split;
 		BATiter bi = bat_iterator(b);
 		BUN msk = (BUN) 1 << h->level;
 
-		ACCELDEBUG fprintf(stderr, "#%s: %s(" ALGOBATFMT ") -> " BUNFMT " buckets\n",
-				   MT_thread_getname(), __func__, ALGOBATPAR(b), nbucket + 1);
 		assert(h->heapbckt.free == nbucket * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T);
 		h->heapbckt.dirty = true;
 		if (((size_t *) h->heapbckt.base)[0] & (size_t) 1 << 24) {
@@ -268,31 +293,13 @@ HASHgrowbucket(BAT *b)
 		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid,
 				  &(oid){NHASHBUCKETS(h)});
 	}
+	ACCELDEBUG if (NHASHBUCKETS(h) > onbucket) {
+		fprintf(stderr, "#%s: %s(" ALGOBATFMT ") -> " BUNFMT " buckets (" LLFMT " usec)\n",
+			MT_thread_getname(), __func__, ALGOBATPAR(b),
+			NHASHBUCKETS(h), GDKusec() - t0);
+		HASHcollisions(b, h);
+	}
 	return GDK_SUCCEED;
-}
-
-/* collect HASH statistics for analysis */
-static void
-HASHcollisions(BAT *b, Hash *h)
-{
-	lng cnt, entries = 0, max = 0;
-	double total = 0;
-	BUN p, i, j, nil;
-
-	if (b == 0 || h == 0)
-		return;
-	nil = HASHnil(h);
-	for (i = 0, j = NHASHBUCKETS(h); i < j; i++)
-		if ((p = HASHget(h, i)) != nil) {
-			entries++;
-			cnt = 0;
-			for (; p != nil; p = HASHgetlink(h, p))
-				cnt++;
-			if (cnt > max)
-				max = cnt;
-			total += cnt;
-		}
-	fprintf(stderr, "#BAThash: statistics (" BUNFMT ", entries " LLFMT ", nbuckets " BUNFMT ", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, NHASHBUCKETS(h), max, entries == 0 ? 0 : total / entries);
 }
 
 /* Return TRUE if we have a hash on the tail, even if we need to read
