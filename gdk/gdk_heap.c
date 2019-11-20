@@ -601,9 +601,6 @@ HEAPfree(Heap *h, bool rmheap)
  * @- HEAPload
  *
  * If we find file X.new, we move it over X (if present) and open it.
- *
- * This routine initializes the h->filename without deallocating its
- * previous contents.
  */
 static gdk_return
 HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool trunc)
