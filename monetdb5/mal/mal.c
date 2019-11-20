@@ -61,7 +61,6 @@ int mal_init(void){
 		return -1;
 	}
 #endif
-	monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
 	initParser();
 #ifndef HAVE_EMBEDDED
@@ -126,7 +125,6 @@ void mserver_reset(void)
 #endif
 
 	memset((char*)monet_cwd, 0, sizeof(monet_cwd));
-	monet_memory = 0;
 	memset((char*)monet_characteristics,0, sizeof(monet_characteristics));
 	mal_namespace_reset();
 	/* No need to clean up the namespace, it will simply be extended

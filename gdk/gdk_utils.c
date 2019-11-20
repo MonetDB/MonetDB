@@ -712,7 +712,6 @@ GDKinit(opt *set, int setlen)
 		if (strcmp("gdk_mem_maxsize", n[i].name) == 0) {
 			GDK_mem_maxsize = (size_t) strtoll(n[i].value, NULL, 10);
 			GDK_mem_maxsize = MAX(1 << 26, GDK_mem_maxsize);
-			_MT_npages = (size_t) (GDK_mem_maxsize / (0.815 * MT_pagesize()));
 		} else if (strcmp("gdk_vm_maxsize", n[i].name) == 0) {
 			GDK_vm_maxsize = (size_t) strtoll(n[i].value, NULL, 10);
 			GDK_vm_maxsize = MAX(1 << 30, GDK_vm_maxsize);
