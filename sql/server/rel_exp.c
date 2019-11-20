@@ -1482,6 +1482,17 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 	case e_psm:	
 		return NULL;
 	case e_atom:
+		if (e->f) { /* values */
+			list *l = e->f;
+			node *n = l->h;
+	
+			ne = n->data;
+			while (ne != NULL && n != NULL) {
+				ne = rel_find_exp_(rel, n->data);
+				n = n->next;
+			}
+			return ne;
+		}
 		return e;
 	}
 	return ne;
