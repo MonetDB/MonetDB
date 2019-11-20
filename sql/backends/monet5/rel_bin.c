@@ -505,7 +505,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			/* handle table returning functions */
 			if (l->type == e_psm && l->flag & PSM_REL) {
 				stmt *lst = r->op1;
-				if (r->type == st_table && lst->nrcols == 0 && lst->key && e->card > CARD_ATOM) {
+				if (r->type == st_table && lst->nrcols == 0 && lst->key) {
 					node *n;
 					list *l = sa_list(sql->sa);
 
@@ -1395,7 +1395,8 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 
 	if (!t && c)
 		t = c->t;
-       	dels = stmt_tid(be, t, rel->flag == REL_PARTITION);
+
+	dels = stmt_tid(be, t, rel->flag == REL_PARTITION);
 
 	/* add aliases */
 	assert(rel->exps);
@@ -1411,7 +1412,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			const char *cname = cexp->r;
 			list *l = sa_list(sql->sa);
 
-		       	c = find_sql_column(t, cname);
+			c = find_sql_column(t, cname);
 			s = stmt_col(be, c, dels);
 			append(l, s);
 			if (exps->h->next) {
