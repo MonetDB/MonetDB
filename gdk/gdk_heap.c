@@ -110,7 +110,6 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		return GDK_FAIL;
 	}
 	if (GDKinmemory() ||
-	    h->size < 4 * GDK_mmap_pagesize ||
 	    (GDKmem_cursize() + h->size < GDK_mem_maxsize &&
 	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
 		h->storage = STORE_MEM;
@@ -200,7 +199,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		/* extend a malloced heap, possibly switching over to
 		 * file-mapped storage */
 		Heap bak = *h;
-		bool exceeds_swap = size >= 4 * GDK_mmap_pagesize && size + GDKmem_cursize() >= GDK_mem_maxsize;
+		bool exceeds_swap = size + GDKmem_cursize() >= GDK_mem_maxsize;
 		bool must_mmap = !GDKinmemory() && (exceeds_swap || h->newstorage != STORE_MEM || size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient));
 
 		h->size = size;
@@ -597,9 +596,6 @@ HEAPfree(Heap *h, bool rmheap)
  * @- HEAPload
  *
  * If we find file X.new, we move it over X (if present) and open it.
- *
- * This routine initializes the h->filename without deallocating its
- * previous contents.
  */
 static gdk_return
 HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool trunc)
@@ -609,7 +605,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	char *srcpath, *dstpath, *tmp;
 	int t0;
 
-	h->storage = h->newstorage = h->size < 4 * GDK_mmap_pagesize ? STORE_MEM : STORE_MMAP;
+	h->storage = h->newstorage = h->size < GDK_mmap_minsize_persistent ? STORE_MEM : STORE_MMAP;
 
 	minsize = (h->size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 	if (h->storage != STORE_MEM && minsize != h->size)

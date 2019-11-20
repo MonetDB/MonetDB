@@ -84,7 +84,7 @@ mal_export lng MALdebug;
  * leaving a small portion for other programs.
  */
 #define GB (((lng)1024)*1024*1024)
-#define MEMORY_THRESHOLD  (0.2 * monet_memory > 8 * GB?  monet_memory - 8 * GB: 0.8 * monet_memory)
+#define MEMORY_THRESHOLD  (0.2 * GDK_mem_maxsize > 8 * GB?  GDK_mem_maxsize - 8 * GB: 0.8 * GDK_mem_maxsize)
 
 mal_export char     monet_cwd[FILENAME_MAX];
 mal_export size_t	monet_memory;

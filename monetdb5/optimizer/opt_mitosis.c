@@ -123,10 +123,10 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 * Take into account the number of client connections, 
 	 * because all user together are responsible for resource contentions
 	 */
-	m = monet_memory / argsize;
+	m = GDK_mem_maxsize / argsize;
 	/* if data exceeds memory size,
-	 * i.e., (rowcnt*argsize > monet_memory),
-	 * i.e., (rowcnt > monet_memory/argsize = m) */
+	 * i.e., (rowcnt*argsize > GDK_mem_maxsize),
+	 * i.e., (rowcnt > GDK_mem_maxsize/argsize = m) */
 	assert(threads > 0);
 	assert(activeClients > 0);
 	if (rowcnt > m && m / threads / activeClients > 0) {
