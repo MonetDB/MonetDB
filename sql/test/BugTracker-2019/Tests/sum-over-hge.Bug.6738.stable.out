@@ -72,8 +72,8 @@ stdout of test 'sum-over-hge.Bug.6738` in directory 'sql/test/BugTracker-2019` i
 #select foo,
 #       sum(foo) over () / 2
 #  from (select 7 as foo union all select 3 as foo) as t;
-% .t,	.L16 # table_name
-% foo,	L16 # name
+% .t,	.%10 # table_name
+% foo,	%10 # name
 % tinyint,	bigint # type
 % 1,	1 # length
 [ 7,	5	]

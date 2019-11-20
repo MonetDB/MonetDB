@@ -25,14 +25,14 @@ stdout of test 'groupby_with_alias.SF-1520575` in directory 'sql/test/BugTracker
 #START TRANSACTION;
 #create table test_grp(a int);
 #select a as b from test_grp group by b; 
-% sys.L1 # table_name
+% sys.test_grp # table_name
 % b # name
 % int # type
 % 1 # length
 #create table a(f1 varchar(20), f2 int);
 #select coalesce(f1,'EMPTY') as bug_alias, sum(f2) from a group by bug_alias;
-% sys.L1,	sys.L2 # table_name
-% bug_alias,	L2 # name
+% sys.,	sys.%1 # table_name
+% bug_alias,	%1 # name
 % varchar,	bigint # type
 % 0,	1 # length
 

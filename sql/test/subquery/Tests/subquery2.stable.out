@@ -128,9 +128,9 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #	(SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5))
 #FROM another_T
 #GROUP BY col1, col2, col5, col8;
-% .%57,	.%4,	.%61 # table_name
-% %57,	%4,	%61 # name
-% boolean,	bigint,	hugeint # type
+% .%60,	.%4,	.%10 # table_name
+% %60,	%4,	%10 # name
+% boolean,	bigint,	bigint # type
 % 5,	4,	4 # length
 [ false,	1,	6	]
 [ false,	11,	26	]
@@ -238,8 +238,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #FROM another_T
 #GROUP BY col1
 #HAVING NOT col1 = ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> AVG(col1));
-% sys.%1 # table_name
-% %1 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 4 # length
 [ 5	]
@@ -251,9 +251,9 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #FROM another_T
 #GROUP BY col1
 #HAVING NOT col1 <> ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID);
-% .%34 # table_name
-% %34 # name
-% hugeint # type
+% .%2 # table_name
+% %2 # name
+% bigint # type
 % 7 # length
 [ 3	]
 [ 363	]
@@ -263,9 +263,9 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #	SUM(CAST(t1.col1 IN (SELECT t1.col1 FROM another_T) AS INTEGER))
 #FROM another_T t1
 #GROUP BY t1.col2;
-% .%3 # table_name
-% %3 # name
-% hugeint # type
+% .%4 # table_name
+% %4 # name
+% bigint # type
 % 1 # length
 [ 1	]
 [ 1	]

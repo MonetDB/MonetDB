@@ -46,9 +46,9 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #    MAX(col3) / 10 + SUM(col1) * 10
 #FROM another_T
 #GROUP BY col1, col2, col5, col8;
-% .%34,	.%35,	.%36 # table_name
-% %34,	evil,	%36 # name
-% hugeint,	double,	hugeint # type
+% .%4,	.%37,	.%10 # table_name
+% %4,	evil,	%10 # name
+% bigint,	double,	bigint # type
 % 4,	24,	5 # length
 [ 6,	8,	10	]
 [ 26,	968,	113	]
@@ -165,9 +165,9 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #    (SELECT SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1) ROWS UNBOUNDED PRECEDING) FROM another_T)
 #FROM another_T t1
 #GROUP BY col1; --MonetDB outputs this one right, but we should leave it here, as it doesn't trigger an error
-% .%4 # table_name
-% %4 # name
-% hugeint # type
+% .%5 # table_name
+% %5 # name
+% bigint # type
 % 4 # length
 [ 2468	]
 [ 2468	]

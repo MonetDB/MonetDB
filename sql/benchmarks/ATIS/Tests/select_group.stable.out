@@ -63,68 +63,68 @@ stdout of test 'select_group` in directory 'sql/benchmarks/ATIS` itself:
 [ "SATURDAY",	6,	64	]
 [ "SUNDAY",	7,	64	]
 #select sum(engines) from aircraft;
-% sys.L4 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % decimal # type
 % 19 # length
 [ 278	]
 #select avg(engines) from aircraft;
-% sys.L4 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 2.059259259	]
 #select avg(engines) from aircraft where engines>0;
-% sys.L4 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 2.376068376	]
 #select count(*),min(pay_load),max(pay_load) from aircraft where pay_load>0;
-% sys.L4,	sys.L7,	sys.L12 # table_name
-% L3,	L6,	L11 # name
+% sys.%1,	sys.%2,	sys.%3 # table_name
+% %1,	%2,	%3 # name
 % bigint,	int,	int # type
 % 2,	3,	6 # length
 [ 94,	240,	165710	]
 #select min(flight_code),min(flight_code) from flight;
-% sys.L4,	sys.L7 # table_name
-% L3,	L6 # name
+% sys.%1,	sys.%2 # table_name
+% %1,	%2 # name
 % int,	int # type
 % 6,	6 # length
 [ 101908,	101908	]
 #select min(from_airport),min(to_airport) from flight;
-% sys.L4,	sys.L7 # table_name
-% L3,	L6 # name
+% sys.%1,	sys.%2 # table_name
+% %1,	%2 # name
 % char,	char # type
 % 3,	3 # length
 [ "ATL",	"ATL"	]
 #select count(*) from aircraft where pay_load>10000;
-% sys.L4 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 50	]
 #select count(*) from aircraft where pay_load<>0;
-% sys.L4 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 94	]
 #select count(*) from flight where flight_code >= 112793;
-% sys.L4 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 279	]
 #SELECT from_airport,to_airport,avg(time_elapsed) FROM flight WHERE from_airport='ATL' AND to_airport='BOS' group by from_airport,to_airport;
-% sys.flight,	sys.flight,	sys.L5 # table_name
-% from_airport,	to_airport,	L4 # name
+% sys.flight,	sys.flight,	sys.%1 # table_name
+% from_airport,	to_airport,	%1 # name
 % char,	char,	double # type
 % 3,	3,	24 # length
 [ "ATL",	"BOS",	154.3684211	]
 #select city_code, avg(ground_fare) from ground_service where ground_fare<>0 group by city_code;
-% sys.ground_service,	sys.L4 # table_name
-% city_code,	L3 # name
+% sys.ground_service,	sys.%1 # table_name
+% city_code,	%1 # name
 % char,	double # type
 % 4,	24 # length
 [ "MATL",	9	]
