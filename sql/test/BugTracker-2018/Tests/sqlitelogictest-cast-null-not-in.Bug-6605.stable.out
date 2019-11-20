@@ -83,6 +83,14 @@ stdout of test 'sqlitelogictest-cast-null-not-in.Bug-6605` in directory 'sql/tes
 % col0,	col1,	col2,	col0,	col1,	col2 # name
 % int,	int,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1,	1 # length
+#SELECT DISTINCT MAX ( DISTINCT CAST ( NULL AS INTEGER ) ) * COUNT ( * ) + COUNT ( * ) * + ( - COUNT ( * ) ) + - 
+#COUNT ( * ) + ( CAST ( NULL AS INTEGER ) ) + + MAX ( DISTINCT 20 ) / 55 + - COUNT ( * ) AS col1 
+#FROM tab1 AS cor0; --Single null value
+% .L14 # table_name
+% col1 # name
+% bigint # type
+% 1 # length
+[ NULL	]
 #ROLLBACK;
 
 # 13:53:34 >  

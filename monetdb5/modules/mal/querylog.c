@@ -150,7 +150,8 @@ QLOGcalls(BAT **r)
 	throw(MAL,"catalog_calls", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
-static bat commitlist[32];
+#define MAXCOMMITLIST 32
+static bat commitlist[MAXCOMMITLIST];
 static int committop=1;
 
 static BAT *
@@ -174,7 +175,7 @@ QLOGcreate(str hnme, str tnme, int tt)
 		return NULL;
 	}
 	commitlist[committop++]= b->batCacheid;
-	assert(committop < 32);
+	assert(committop < MAXCOMMITLIST);
 	return b;
 }
 
@@ -373,6 +374,18 @@ QLOGdefineNaive(void *ret, str *qry, str *opt, int *nr)
 	(void) qry;
 	(void) opt;
 	(void) nr;
+	return MAL_SUCCEED;
+}
+
+str
+QLOGcontextNaive(void *ret, str *release, str *version, str *revision, str *uri)
+{
+	// Nothing else to be done.
+	(void) ret;
+	(void) release;
+	(void) version;
+	(void) revision;
+	(void) uri;
 	return MAL_SUCCEED;
 }
 

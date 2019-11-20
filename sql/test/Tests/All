@@ -128,3 +128,5 @@ NOT_WIN32&HAVE_LIBLZ4?copy-from-lz4
 unicode
 
 window_functions
+
+HAVE_PYMONETDB?hot-snapshot

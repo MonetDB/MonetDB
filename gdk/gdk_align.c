@@ -133,6 +133,7 @@ VIEWcreate(oid seq, BAT *b)
 			BBPunshare(tp);
 		if (bn->tvheap)
 			BBPunshare(bn->tvheap->parentid);
+		MT_lock_destroy(&bn->batIdxLock);
 		GDKfree(bn);
 		return NULL;
 	}
@@ -177,7 +178,8 @@ BATmaterialize(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 
-	stpconcat(b->theap.filename, BBP_physical(b->batCacheid), ".tail", NULL);
+	strconcat_len(b->theap.filename, sizeof(b->theap.filename),
+		      BBP_physical(b->batCacheid), ".tail", NULL);
 	if (HEAPalloc(&b->theap, cnt, sizeof(oid)) != GDK_SUCCEED) {
 		b->theap = tail;
 		return GDK_FAIL;
@@ -195,6 +197,22 @@ BATmaterialize(BAT *b)
 	if (is_oid_nil(t)) {
 		while (p < q)
 			x[p++] = oid_nil;
+	} else if (b->tvheap) {
+		assert(b->batRole == TRANSIENT);
+		assert(b->tvheap->free % SIZEOF_OID == 0);
+		BUN nexc = (BUN) (b->tvheap->free / SIZEOF_OID);
+		const oid *exc = (const oid *) b->tvheap->base;
+		BUN i = 0;
+		while (p < q) {
+			while (i < nexc && t == exc[i]) {
+				i++;
+				t++;
+			}
+			x[p++] = t++;
+		}
+		b->tseqbase = oid_nil;
+		HEAPfree(b->tvheap, true);
+		b->tvheap = NULL;
 	} else {
 		while (p < q)
 			x[p++] = t++;
@@ -275,7 +293,8 @@ VIEWreset(BAT *b)
 		assert(tp || tvp || !b->ttype);
 
 		tail.farmid = BBPselectfarm(b->batRole, b->ttype, offheap);
-		stpconcat(tail.filename, nme, ".tail", NULL);
+		strconcat_len(tail.filename, sizeof(tail.filename),
+			      nme, ".tail", NULL);
 		if (b->ttype && HEAPalloc(&tail, cnt, Tsize(b)) != GDK_SUCCEED)
 			goto bailout;
 		if (b->tvheap) {
@@ -283,7 +302,8 @@ VIEWreset(BAT *b)
 			if (th == NULL)
 				goto bailout;
 			th->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
-			stpconcat(th->filename, nme, ".tail", NULL);
+			strconcat_len(th->filename, sizeof(th->filename),
+				      nme, ".tail", NULL);
 			if (ATOMheap(b->ttype, th, cnt) != GDK_SUCCEED)
 				goto bailout;
 		}

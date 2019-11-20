@@ -33,7 +33,7 @@ stderr of test 'backslash_predecing_separator.Bug-3775` in directory 'sql/test/B
 MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
 QUERY = COPY 1 RECORDS INTO whatgoodisadatabaseifyoucannotimport FROM STDIN USING DELIMITERS ' ', E'\n', '';
         asdf\ 42
-ERROR = !Failed to import table 'whatgoodisadatabaseifyoucannotimport', Column value 1 missing
+ERROR = !Failed to import table 'whatgoodisadatabaseifyoucannotimport', line 1: column 1: Column value missing
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT * FROM whatgoodisadatabaseifyoucannotimport;

@@ -7,7 +7,8 @@
  */
 
 /* author M.Kersten
- * This optimizer prepares the code for workload-capture-replay processing.
+ * This optimizer prepares the code for workload-capture-replay processing
+ * by injection of the proper calls.
  */
 #include "monetdb_config.h"
 #include "opt_wlc.h"
@@ -144,12 +145,13 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	chkFlow(mb);
 	//chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
-#ifdef _WLCR_DEBUG_
-	printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
-#endif
 
 wrapup:
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","wlc",updates,GDKusec() - usec);
     newComment(mb,buf);
+    if( OPTdebug &  OPTwlc){
+        fprintf(stderr, "#wlc optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return MAL_SUCCEED;
 }

@@ -10,6 +10,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
+#ifdef HAVE_POLL_H
+#include <poll.h>
+#endif
 
 #include "mapi.h"
 #include "mutils.h" /* MT_lockf */
@@ -60,12 +63,21 @@ MFconnectionManager(void *d)
 	char buf[1024];
 	size_t len;
 	char *msg;
+#ifdef HAVE_POLL
+	struct pollfd pfd;
+#else
 	struct timeval tv;
 	fd_set fds;
+#endif
 
 	(void)d;
 
 	while (_mero_keep_listening == 1) {
+#ifdef HAVE_POLL
+		pfd = (struct pollfd) {.fd = mfpipe[0], .events = POLLIN};
+		/* wait up to 5 seconds */
+		i = poll(&pfd, 1, 5000);
+#else
 		FD_ZERO(&fds);
 		FD_SET(mfpipe[0], &fds);
 
@@ -73,6 +85,7 @@ MFconnectionManager(void *d)
 		tv.tv_sec = 5;
 		tv.tv_usec = 0;
 		i = select(mfpipe[0] + 1, &fds, NULL, NULL, &tv);
+#endif
 		if (i == 0)
 			continue;
 		if (i == -1 && errno != EINTR) {
@@ -684,8 +697,12 @@ static void *
 multiplexThread(void *d)
 {
 	multiplex *m = (multiplex *)d;
+#ifdef HAVE_POLL
+	struct pollfd *pfd;
+#else
 	struct timeval tv;
 	fd_set fds;
+#endif
 	multiplex_client *c;
 	int msock = -1;
 	char buf[10 * BLOCK + 1];
@@ -697,6 +714,19 @@ multiplexThread(void *d)
 	 * union all results, send back, and restart cycle. */
 	
 	while (m->shutdown == 0) {
+#ifdef HAVE_POLL
+		msock = 0;
+		for (c = m->clients; c != NULL; c = c->next) {
+			msock++;
+		}
+		pfd = malloc(msock * sizeof(struct pollfd));
+		msock = 0;
+		for (c = m->clients; c != NULL; c = c->next) {
+			pfd[msock++] = (struct pollfd) {.fd = c->sock, .events = POLLIN};
+		}
+		/* wait up to 1 second. */
+		r = poll(pfd, msock, 1000);
+#else
 		FD_ZERO(&fds);
 		for (c = m->clients; c != NULL; c = c->next) {
 			FD_SET(c->sock, &fds);
@@ -708,6 +738,7 @@ multiplexThread(void *d)
 		tv.tv_sec = 1;
 		tv.tv_usec = 0;
 		r = select(msock + 1, &fds, NULL, NULL, &tv);
+#endif
 
 		/* evaluate if connections have to be switched */
 		for (i = 0; i < m->dbcc; i++) {
@@ -743,11 +774,24 @@ multiplexThread(void *d)
 		}
 
 		/* nothing interesting has happened */
-		if (r <= 0)
+		if (r <= 0) {
+#ifdef HAVE_POLL
+			free(pfd);
+#endif
 			continue;
+		}
 		for (c = m->clients; c != NULL; c = c->next) {
+#ifdef HAVE_POLL
+			for (i = 0; i < msock; i++) {
+				if (pfd[i].fd == c->sock)
+					break;
+			}
+			if (i == msock || (pfd[i].revents & POLLIN) == 0)
+				continue;
+#else
 			if (!FD_ISSET(c->sock, &fds))
 				continue;
+#endif
 			if ((len = mnstr_read(c->fdin, buf, 1, 10 * BLOCK)) < 0) {
 				/* error, or some garbage */
 				multiplexRemoveClient(m, c);
@@ -782,6 +826,9 @@ multiplexThread(void *d)
 			 * any idea what it is */
 			multiplexQuery(m, buf + 1, c->fout);
 		}
+#ifdef HAVE_POLL
+		free(pfd);
+#endif
 	}
 
 	Mfprintf(stdout, "stopping mfunnel '%s'\n", m->name);

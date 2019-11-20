@@ -9,8 +9,9 @@
 #ifndef _REL_REL_H_
 #define _REL_REL_H_
 
-#include "sql_relation.h"
 #include "sql_mvc.h"
+#include "sql_relation.h"
+#include "sql_semantic.h"
 
 #define sql_from     1
 #define sql_where    2
@@ -18,9 +19,10 @@
 #define sql_having   8
 #define sql_orderby 16
 #define sql_groupby 32 //ORed
-#define sql_partitionby 64 //ORed
-#define sql_aggr 128 //ORed
-#define sql_farg 256 //ORed
+#define sql_aggr    64 //ORed
+#define sql_farg   128 //ORed
+#define sql_window 256 //ORed
+#define sql_join   512 //ORed
 
 #define is_sql_from(X)    ((X & sql_from) == sql_from)
 #define is_sql_where(X)   ((X & sql_where) == sql_where)
@@ -28,11 +30,10 @@
 #define is_sql_having(X)  ((X & sql_having) == sql_having)
 #define is_sql_orderby(X) ((X & sql_orderby) == sql_orderby)
 #define is_sql_groupby(X) ((X & sql_groupby) == sql_groupby)
-#define is_sql_partitionby(X) ((X & sql_partitionby) == sql_partitionby)
 #define is_sql_aggr(X)    ((X & sql_aggr) == sql_aggr)
 #define is_sql_farg(X)    ((X & sql_farg) == sql_farg)
-
-#define ERR_AMBIGUOUS		050000
+#define is_sql_window(X)  ((X & sql_window) == sql_window)
+#define is_sql_join(X)    ((X & sql_join) == sql_join)
 
 #define rel_groupby_gbe(m,r,e) rel_groupby(m, r, append(new_exp_list(m->sa), e))
 #define new_rel_list(sa) sa_list(sa)
@@ -57,7 +58,7 @@ extern sql_rel *rel_inplace_setop(sql_rel *rel, sql_rel *l, sql_rel *r, operator
 extern sql_rel *rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e);
 extern sql_rel *rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps );
 
-extern int rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, int scale_fixing, int tpe);
+extern int rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, int scale_fixing, check_type tpe);
 extern sql_rel *rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop);
 extern sql_rel *rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
 extern sql_rel *rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join);
@@ -84,7 +85,6 @@ extern sql_rel *rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *e
 extern sql_rel *rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps);
 extern sql_rel *rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind);
 
-
 extern list *_rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern, int basecol);
 extern list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern);
 
@@ -95,7 +95,11 @@ extern sql_rel *rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oex
 extern sql_table *rel_ddl_table_get(sql_rel *r);
 
 extern sql_rel *rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp);
+extern sql_rel *rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp);
 extern sql_exp * rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname );
 
 extern int rel_in_rel(sql_rel *super, sql_rel *sub);
+
+extern list *rel_dependencies(mvc *sql, sql_rel *r);
+
 #endif /* _REL_REL_H_ */

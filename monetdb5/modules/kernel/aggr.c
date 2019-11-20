@@ -57,7 +57,10 @@ AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const ba
 		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (tp == TYPE_any &&
-		(grpfunc1 == BATgroupmedian || quantilefunc == BATgroupquantile))
+		(grpfunc1 == BATgroupmedian ||
+		 grpfunc1 == BATgroupmedian_avg ||
+		 quantilefunc == BATgroupquantile ||
+		 quantilefunc == BATgroupquantile_avg))
 		tp = b->ttype;
 
 	if (grpfunc1) {
@@ -919,6 +922,75 @@ AGGRsubquantilecand(bat *retval, const bat *bid, const bat *quantile, const bat 
 	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, 0, TYPE_any, NULL, NULL, BATgroupquantile,
 					   quantile, "aggr.subquantile");
+}
+
+mal_export str AGGRmedian_avg(dbl *retval, const bat *bid);
+str
+AGGRmedian_avg(dbl *retval, const bat *bid)
+{
+	str err;
+	bat rval;
+	if ((err = AGGRgrouped(&rval, NULL, bid, NULL, NULL, NULL, 1,
+						   0, 0, TYPE_any, BATgroupmedian_avg, NULL,
+						   NULL, NULL, "aggr.submedian_avg")) == MAL_SUCCEED) {
+		oid pos = 0;
+		err = ALGfetchoid(retval, &rval, &pos);
+		BBPrelease(rval);
+	}
+	return err;
+}
+
+mal_export str AGGRsubmedian_avg(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
+str
+AGGRsubmedian_avg(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
+{
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+					   0, 0, TYPE_any, BATgroupmedian_avg, NULL,
+					   NULL, NULL, "aggr.submedian_avg");
+}
+
+mal_export str AGGRsubmediancand_avg(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils);
+str
+AGGRsubmediancand_avg(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
+{
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+					   0, 0, TYPE_any, BATgroupmedian_avg, NULL,
+					   NULL, NULL, "aggr.submedian_avg");
+}
+
+/* quantile functions, could make median functions obsolete completely */
+mal_export str AGGRquantile_avg(dbl *retval, const bat *bid, const bat *qid);
+str
+AGGRquantile_avg(dbl *retval, const bat *bid, const bat *qid)
+{
+	str err;
+	bat rval;
+	if ((err = AGGRgrouped(&rval, NULL, bid, NULL, NULL, NULL, 1,
+						   0, 0, TYPE_any, NULL, NULL, BATgroupquantile_avg,
+						   qid, "aggr.subquantile_avg")) == MAL_SUCCEED) {
+		oid pos = 0;
+		err = ALGfetchoid(retval, &rval, &pos);
+		BBPrelease(rval);
+	}
+	return err;
+}
+
+mal_export str AGGRsubquantile_avg(bat *retval, const bat *bid, const bat *quantile, const bat *gid, const bat *eid, const bit *skip_nils);
+str
+AGGRsubquantile_avg(bat *retval, const bat *bid, const bat *quantile, const bat *gid, const bat *eid, const bit *skip_nils)
+{
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
+					   0, 0, TYPE_any, NULL, NULL, BATgroupquantile_avg,
+					   quantile, "aggr.subquantile_avg");
+}
+
+mal_export str AGGRsubquantilecand_avg(bat *retval, const bat *bid, const bat *quantile, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils);
+str
+AGGRsubquantilecand_avg(bat *retval, const bat *bid, const bat *quantile, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
+{
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
+					   0, 0, TYPE_any, NULL, NULL, BATgroupquantile_avg,
+					   quantile, "aggr.subquantile_avg");
 }
 
 static str

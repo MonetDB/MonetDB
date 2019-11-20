@@ -13,7 +13,4 @@
 
 mal_export str OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGemptybind  if ( optDebug & ((lng) 1 <<DEBUG_OPT_EMPTYBIND) )
-//#define OPTDEBUGemptybind  if (1)
-
 #endif

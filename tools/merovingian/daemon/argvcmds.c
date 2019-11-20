@@ -15,6 +15,7 @@
 
 #include "mutils.h" /* MT_lockf */
 #include "mcrypt.h" /* mcrypt_BackendSum */
+#include "mstring.h"
 #include "utils/utils.h"
 #include "utils/properties.h"
 #include "utils/control.h"
@@ -94,8 +95,7 @@ command_create(int argc, char *argv[])
 	dbfarm = argv[1];
 
 	/* check if dbfarm actually exists */
-	strncpy(path, dbfarm, sizeof(path) - 1);
-	path[sizeof(path) - 1] = '\0';
+	strcpy_len(path, dbfarm, sizeof(path));
 	p = path;
 	while ((p = strchr(p + 1, '/')) != NULL) {
 		*p = '\0';

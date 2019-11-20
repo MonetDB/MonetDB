@@ -6,17 +6,15 @@
 
 CREATE TABLE TIMESTAMPTZ_TBL ( d1 timestamp(2) with time zone);
 DECLARE test_now timestamp(2) with time zone;
-DECLARE test_current_timestamp timestamp(2) with time zone;
 DECLARE test_current_date date;
 
 SET test_now = now;
-SET test_current_timestamp = current_timestamp;
 SET test_current_date = current_date;
 
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('now');
 INSERT INTO TIMESTAMPTZ_TBL VALUES (test_now);
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('current');
-INSERT INTO TIMESTAMPTZ_TBL VALUES (test_current_timestamp);
+INSERT INTO TIMESTAMPTZ_TBL VALUES (test_now);
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('today');
 INSERT INTO TIMESTAMPTZ_TBL VALUES (cast(test_current_date as timestamptz));
 --INSERT INTO TIMESTAMPTZ_TBL VALUES ('yesterday');

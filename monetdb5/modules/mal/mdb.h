@@ -28,11 +28,15 @@ mal_export str MDBstartFactory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 mal_export str MDBstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str MDBinspect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str CMDmodules(bat *bid);
+mal_export str MDBsetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str MDBgetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str MDBsetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str MDBsetVarTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str MDBgetDebug(int *ret);
-mal_export str MDBsetDebug(int *ret, int *flg);
-mal_export str MDBsetDebugStr(int *ret, str *nme);
+mal_export str MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str MDBgetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str MDBsetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str MDBsetDebugStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str MDBgetDebugStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str MDBsetCatch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str MDBgetExceptionVariable(str *ret, str *msg);
 mal_export str MDBgetExceptionReason(str *ret, str *msg);

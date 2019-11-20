@@ -46,7 +46,7 @@ command integer(j:json):lng
 address JSONjson2integer
 comment "Convert simple JSON values to an integer, return nil upon error.";
 
-command dump(j:json):void
+pattern dump(j:json):void
 address JSONdump;
 
 command filter(name:json, pathexpr:str) :json

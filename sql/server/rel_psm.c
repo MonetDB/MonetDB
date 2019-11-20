@@ -485,7 +485,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			char name[16];
 
 			if (!cname)
-				cname = sa_strdup(sql->sa, number2name(name, 16, ++sql->label));
+				cname = sa_strdup(sql->sa, number2name(name, sizeof(name), ++sql->label));
 			if (!isproject) 
 				e = exp_ref(sql->sa, e);
 			e = rel_check_type(sql, &ce->type, oexps_rel, e, type_equal);
@@ -611,7 +611,7 @@ sequential_block (sql_query *query, sql_subtype *restype, list *restypelist, dli
 	assert(!restype || !restypelist);
 
  	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "SELECT: too many nested operators");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (blk->h)
  		l = sa_list(sql->sa);
@@ -776,7 +776,7 @@ rel_create_function(sql_allocator *sa, const char *sname, sql_func *f)
 }
 
 static sql_rel *
-rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int type, int lang, int replace)
+rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, sql_ftype type, sql_flang lang, int replace)
 {
 	mvc *sql = query->sql;
 	const char *fname = qname_table(qname);
@@ -818,17 +818,13 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	if ((sf = sql_bind_func_(sql->sa, s, fname, type_list, type)) != NULL && create) {
 		if (replace) {
 			sql_func *func = sf->func;
-			int action = 0;
-			if (!mvc_schema_privs(sql, s)) {
-				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
-			}
+			if (!mvc_schema_privs(sql, s))
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: access denied for %s to schema '%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 			if (mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, fn, func->base.name);
-			if (!func->s) {
+			if (!func->s)
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: not allowed to replace system %s%s %s;", KF, F, kf, fn, func->base.name);
-			}
-
-			if(mvc_drop_func(sql, s, func, action))
+			if (mvc_drop_func(sql, s, func, 0))
 				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			sf = NULL;
 		} else {
@@ -860,9 +856,8 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	}
 	list_destroy(type_list);
 	if (create && !mvc_schema_privs(sql, s)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s%s: insufficient privileges "
-				"for user '%s' in schema '%s'", KF, F,
-				stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s%s: insufficient privileges for user '%s' in schema '%s'", KF, F,
+						 stack_get_string(sql, "current_user"), s->base.name);
 	} else {
 		char *q = QUERY(sql->scanner);
 		list *l = NULL;
@@ -889,29 +884,43 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			if (!restype)
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: failed to get restype", KF, F);
 		}
-		if (body && lang > FUNC_LANG_SQL) {
-			char *lang_body = body->h->data.sval;
-			char *mod = 	
-					(lang == FUNC_LANG_R)?"rapi":
-					(lang == FUNC_LANG_C || lang == FUNC_LANG_CPP)?"capi":
-					(lang == FUNC_LANG_J)?"japi":
-					(lang == FUNC_LANG_PY)?"pyapi":
- 					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";
+		if (body && LANG_EXT(lang)) {
+			char *lang_body = body->h->data.sval, *mod = NULL, *slang = NULL;
+			switch (lang) {
+				case FUNC_LANG_R:
+					mod = "rapi";
+					slang = "R";
+					break;
+				case FUNC_LANG_C:
+					mod = "capi";
+					slang = "C";
+					break;
+				case FUNC_LANG_CPP:
+					mod = "capi";
+					slang = "CPP";
+					break;
+				case FUNC_LANG_J:
+					mod = "japi";
+					slang = "Javascript";
+					break;
+				case FUNC_LANG_PY:
+					mod = "pyapi";
+					slang = "Python";
+					break;
+				case FUNC_LANG_MAP_PY:
+					mod = "pyapimap";
+					slang = "Python";
+					break;
+				default:
+					assert(0);
+			}
 			sql->params = NULL;
 			if (create) {
-				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE);
+				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE);
 			} else if (!sf) {
-				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
-			} /*else {
-				sql_func *f = sf->func;
-				f->mod = _STRDUP("rapi");
-				f->imp = _STRDUP("eval");
-				if (res && restype)
-					f->res = restype;
-				f->sql = 0;
-				f->lang = FUNC_LANG_INT;
-			}*/
-		} else if (body) {
+				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: %s function %s.%s not bound", KF, F, slang, s->base.name, fname);
+			}
+		} else if (body) { /* SQL implementation */
 			sql_arg *ra = (restype && !is_table)?restype->h->data:NULL;
 			list *b = NULL;
 			sql_schema *old_schema = cur_schema(sql);
@@ -926,23 +935,18 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			sql->forward = NULL;
 			sql->session->schema = old_schema;
 			sql->params = NULL;
-			if (!b) 
+			if (!b)
 				return NULL;
 		
 			/* check if we have a return statement */
-			if (is_func && restype && !has_return(b)) {
+			if (is_func && restype && !has_return(b))
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: missing return statement", KF, F);
-			}
-			if (!is_func && !restype && has_return(b)) {
-				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: procedures "
-						"cannot have return statements", KF, F);
-			}
-
+			if (!is_func && !restype && has_return(b))
+				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: procedures cannot have return statements", KF, F);
 			/* in execute mode we instantiate the function */
-			if (instantiate || deps) {
+			if (instantiate || deps)
 				return rel_psm_block(sql->sa, b);
-			}
-		} else {
+		} else { /* MAL implementation */
 			char *fmod = qname_module(ext_name);
 			char *fnme = qname_fname(ext_name);
 
@@ -961,7 +965,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 					f->mod = _STRDUP(fmod);
 				if (!f->imp || strcmp(f->imp, fnme)) 
 					f->imp = (f->sa)?sa_strdup(f->sa, fnme):_STRDUP(fnme);
-				if(!f->mod || !f->imp) {
+				if (!f->mod || !f->imp) {
 					_DELETE(f->mod);
 					_DELETE(f->imp);
 					return sql_error(sql, 02, SQLSTATE(HY001) "CREATE %s%s: could not allocate space", KF, F);
@@ -969,13 +973,18 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				f->sql = 0; /* native */
 				f->lang = FUNC_LANG_INT;
 			}
+			if (!f)
+				f = sf->func;
+			assert(f);
+			if (!backend_resolve_function(sql, f))
+				return sql_error(sql, 01, SQLSTATE(3F000) "CREATE %s%s: external name %s.%s not bound (%s.%s)", KF, F, fmod, fnme, s->base.name, fname );
 		}
 	}
 	return rel_create_function(sql->sa, s->base.name, f);
 }
 
 static sql_rel*
-rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr, int type, int action)
+rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr, sql_ftype type, int action)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -985,7 +994,7 @@ rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr
 	append(exps, exp_atom_clob(sa, sname));
 	append(exps, exp_atom_clob(sa, name));
 	append(exps, exp_atom_int(sa, nr));
-	append(exps, exp_atom_int(sa, type));
+	append(exps, exp_atom_int(sa, (int) type));
 	append(exps, exp_atom_int(sa, action));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -998,7 +1007,7 @@ rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr
 }
 
 sql_func *
-resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int type, char *op, int if_exists)
+resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ftype type, char *op, int if_exists)
 {
 	sql_func *func = NULL;
 	list *list_func = NULL, *type_list = NULL;
@@ -1082,7 +1091,7 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int ty
 }
 
 static sql_rel* 
-rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type, int if_exists)
+rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftype type, int if_exists)
 {
 	const char *name = qname_table(qname);
 	const char *sname = qname_schema(qname);
@@ -1113,7 +1122,7 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 }
 
 static sql_rel* 
-rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, int type)
+rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 {
 	const char *name = qname_table(qname);
 	const char *sname = qname_schema(qname);
@@ -1219,7 +1228,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	}
 
 	if (create && !mvc_schema_privs(sql, ss))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema ;'%s'", base, stack_get_string(sql, "current_user"), ss->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema '%s'", base, stack_get_string(sql, "current_user"), ss->base.name);
 	if (create && !(t = mvc_bind_table(sql, ss, tname)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: unknown table '%s'", base, tname);
 	if (create && isView(t))
@@ -1341,7 +1350,7 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: no such schema '%s'", sname);
 
 	if (!mvc_schema_privs(sql, ss)) 
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
+		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
 	return rel_drop_trigger(sql, ss->base.name, tname, if_exists);
 }
 
@@ -1360,10 +1369,12 @@ psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, s
 	append(tl, exp_subtype(mm_exp));
 	if (sample) {
 		sql_subtype *tpe = sql_bind_localtype("lng");
+		dlist* sample_parameters = sample->data.lval;
 
-		sample_exp = rel_value_exp( query, NULL, sample, 0, ek);
-		if (sample_exp)
+		if (sample_parameters->cnt == 1 && (sample_exp = rel_value_exp(query, NULL, sample_parameters->h->data.sym, 0, ek)))
 			sample_exp = rel_check_type(sql, tpe, NULL, sample_exp, type_cast);
+		else
+			return sql_error(sql, 01, SQLSTATE(42000) "Analyze sample size incorrect");
 	} else {
 		sample_exp = exp_atom_lng(sql->sa, 0);
 	}
@@ -1467,8 +1478,8 @@ rel_psm(sql_query *query, symbol *s)
 	case SQL_CREATE_FUNC:
 	{
 		dlist *l = s->data.lval;
-		int type = l->h->next->next->next->next->next->data.i_val;
-		int lang = l->h->next->next->next->next->next->next->data.i_val;
+		sql_ftype type = (sql_ftype) l->h->next->next->next->next->next->data.i_val;
+		sql_flang lang = (sql_flang) l->h->next->next->next->next->next->next->data.i_val;
 		int repl = l->h->next->next->next->next->next->next->next->data.i_val;
 
 		ret = rel_create_func(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type, lang, repl);
@@ -1479,7 +1490,7 @@ rel_psm(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 		dlist *qname = l->h->data.lval;
 		dlist *typelist = l->h->next->data.lval;
-		int type = l->h->next->next->data.i_val;
+		sql_ftype type = (sql_ftype) l->h->next->next->data.i_val;
 		int if_exists = l->h->next->next->next->data.i_val;
 		int all = l->h->next->next->next->next->data.i_val;
 		int drop_action = l->h->next->next->next->next->next->data.i_val;

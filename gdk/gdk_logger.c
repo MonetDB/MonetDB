@@ -81,10 +81,6 @@
 #define LOG_USE_ID	15
 #define LOG_CLEAR_ID	16
 
-#ifdef HAVE_EMBEDDED
-#define printf(fmt,...) ((void) 0)
-#endif
-
 #ifdef NATIVE_WIN32
 #define getfilepos _ftelli64
 #else
@@ -96,6 +92,8 @@
 #endif
 
 #define NAME(name,tpe,id) (name?name:"tpe id")
+
+#define LOG_DISABLED(lg) ((lg)->debug&128)
 
 static const char *log_commands[] = {
 	NULL,
@@ -1047,8 +1045,10 @@ logger_open(logger *lg)
 	char id[BUFSIZ];
 	char *filename;
 
-	if (lg->inmemory) {
+	if (lg->inmemory || LOG_DISABLED(lg)) {
 		lg->end = 0;
+		if (lg->id) /* go back too last used id */
+			lg->id--;
 		return GDK_SUCCEED;
 	}
 	len = snprintf(id, sizeof(id), LLFMT, lg->id);
@@ -1458,7 +1458,7 @@ logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 	if (BBPrename(old->batCacheid, bak) != 0) {
 		return GDK_FAIL;
 	}
-	stpconcat(bak, fn, "_", name, NULL);
+	strconcat_len(bak, sizeof(bak), fn, "_", name, NULL);
 	if (BBPrename(new->batCacheid, bak) != 0) {
 		return GDK_FAIL;
 	}
@@ -1666,7 +1666,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 	bool needcommit = false;
 	int dbg = GDKdebug;
 
-	if (!lg->inmemory) {
+	if (!lg->inmemory && !LOG_DISABLED(lg)) {
 		if ((filenamestr = GDKfilepath(farmid, lg->dir, LOGFILE, NULL)) == NULL)
 			goto error;
 		len = snprintf(filename, FILENAME_MAX, "%s", filenamestr);
@@ -1696,7 +1696,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 	lg->seqs_val = NULL;
 	lg->dseqs = NULL;
 
-	if (!lg->inmemory) {
+	if (!lg->inmemory && !LOG_DISABLED(lg)) {
 		/* try to open logfile backup, or failing that, the file
 		 * itself. we need to know whether this file exists when
 		 * checking the database consistency later on */
@@ -1710,10 +1710,10 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		fp = fopen(filename, "r");
 	}
 
-	stpconcat(bak, fn, "_catalog", NULL);
+	strconcat_len(bak, sizeof(bak), fn, "_catalog", NULL);
 	bid = BBPindex(bak);
 
-	stpconcat(bak, fn, "_catalog_bid", NULL);
+	strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL);
 	catalog_bid = BBPindex(bak);
 
 	if (bid != 0 && catalog_bid == 0) {
@@ -1751,32 +1751,32 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 
 		/* give the catalog bats names so we can find them
 		 * next time */
-		stpconcat(bak, fn, "_catalog_bid", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL);
 		if (BBPrename(lg->catalog_bid->batCacheid, bak) < 0) {
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_catalog_nme", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_catalog_nme", NULL);
 		if (BBPrename(lg->catalog_nme->batCacheid, bak) < 0) {
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_catalog_tpe", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_catalog_tpe", NULL);
 		if (BBPrename(lg->catalog_tpe->batCacheid, bak) < 0) {
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_catalog_oid", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_catalog_oid", NULL);
 		if (BBPrename(lg->catalog_oid->batCacheid, bak) < 0) {
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_dcatalog", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL);
 		if (BBPrename(lg->dcatalog->batCacheid, bak) < 0) {
 			goto error;
 		}
 
-		if (!lg->inmemory) {
+		if (!lg->inmemory && !LOG_DISABLED(lg)) {
 			if (GDKcreatedir(filename) != GDK_SUCCEED) {
 				GDKerror("logger_load: cannot create directory for log file %s\n",
 					 filename);
@@ -1844,7 +1844,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_catalog_nme", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_catalog_nme", NULL);
 		catalog_nme = BBPindex(bak);
 		n = BATdescriptor(catalog_nme);
 		if (n == NULL) {
@@ -1853,7 +1853,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_catalog_tpe", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_catalog_tpe", NULL);
 		catalog_tpe = BBPindex(bak);
 		t = BATdescriptor(catalog_tpe);
 		if (t == NULL) {
@@ -1875,7 +1875,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			lg->with_ids = false;
 		}
 
-		stpconcat(bak, fn, "_catalog_oid", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_catalog_oid", NULL);
 		catalog_oid = BBPindex(bak);
 		o = BATdescriptor(catalog_oid);
 		if (o == NULL) {
@@ -1898,7 +1898,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			lg->with_ids = false;
 		}
 
-		stpconcat(bak, fn, "_dcatalog", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL);
 		dcatalog = BBPindex(bak);
 		d = BATdescriptor(dcatalog);
 		if (d == NULL) {
@@ -1924,7 +1924,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		}
 
 		/* the catalog exists, and so should the log file */
-		if (fp == NULL) {
+		if (fp == NULL && !LOG_DISABLED(lg)) {
 			GDKerror("logger_load: there is a logger catalog, but no log file.\n"
 				 "Are you sure you are using the correct combination of database\n"
 				 "(--dbpath) and log directory (--set %s_logdir)?\n"
@@ -1966,7 +1966,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		GDKerror("Logger_new: failed to create freed bat");
 		goto error;
 	}
-	stpconcat(bak, fn, "_freed", NULL);
+	strconcat_len(bak, sizeof(bak), fn, "_freed", NULL);
 	if (BBPrename(lg->freed->batCacheid, bak) < 0) {
 		goto error;
 	}
@@ -1982,7 +1982,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_snapshots_bid", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_snapshots_bid", NULL);
 		if (BBPrename(lg->snapshots_bid->batCacheid, bak) < 0) {
 			goto error;
 		}
@@ -1992,7 +1992,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_snapshots_tid", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_snapshots_tid", NULL);
 		if (BBPrename(lg->snapshots_tid->batCacheid, bak) < 0) {
 			goto error;
 		}
@@ -2002,7 +2002,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_dsnapshots", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_dsnapshots", NULL);
 		if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0) {
 			goto error;
 		}
@@ -2045,7 +2045,8 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				GDKerror("Logger_new: cannot create dsnapshot bat");
 				goto error;
 			}
-			stpconcat(bak, fn, "_dsnapshots", NULL);
+			strconcat_len(bak, sizeof(bak),
+				      fn, "_dsnapshots", NULL);
 			if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0) {
 				goto error;
 			}
@@ -2057,12 +2058,12 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			needcommit = true;
 		}
 	}
-	stpconcat(bak, fn, "_seqs_id", NULL);
+	strconcat_len(bak, sizeof(bak), fn, "_seqs_id", NULL);
 	if (BBPindex(bak)) {
 		lg->seqs_id = BATdescriptor(BBPindex(bak));
-		stpconcat(bak, fn, "_seqs_val", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_seqs_val", NULL);
 		lg->seqs_val = BATdescriptor(BBPindex(bak));
-		stpconcat(bak, fn, "_dseqs", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_dseqs", NULL);
 		lg->dseqs = BATdescriptor(BBPindex(bak));
 	} else {
 		lg->seqs_id = logbat_new(TYPE_int, 1, PERSISTENT);
@@ -2075,17 +2076,17 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_seqs_id", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_seqs_id", NULL);
 		if (BBPrename(lg->seqs_id->batCacheid, bak) < 0) {
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_seqs_val", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_seqs_val", NULL);
 		if (BBPrename(lg->seqs_val->batCacheid, bak) < 0) {
 			goto error;
 		}
 
-		stpconcat(bak, fn, "_dseqs", NULL);
+		strconcat_len(bak, sizeof(bak), fn, "_dseqs", NULL);
 		if (BBPrename(lg->dseqs->batCacheid, bak) < 0) {
 			goto error;
 		}
@@ -2558,8 +2559,9 @@ logger_exit(logger *lg)
 	char filename[FILENAME_MAX];
 	int len, farmid;
 
-	if (lg->inmemory) {
+	if (lg->inmemory || LOG_DISABLED(lg)) {
 		logger_close(lg);
+		lg->changes = 0;
 		return GDK_SUCCEED;
 	}
 
@@ -2664,7 +2666,7 @@ logger_cleanup(logger *lg)
 	char buf[BUFSIZ];
 	FILE *fp = NULL;
 
-	if (lg->inmemory)
+	if (lg->inmemory || LOG_DISABLED(lg))
 		return GDK_SUCCEED;
 
 	farmid = BBPselectfarm(PERSISTENT, 0, offheap);
@@ -2778,7 +2780,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name, char tpe, oid id)
 		l.flag = (l.flag == LOG_USE)?LOG_USE_ID:LOG_CREATE_ID;
 	l.tid = lg->tid;
 	lg->changes++;
-	if (!lg->inmemory) {
+	if (!lg->inmemory && !LOG_DISABLED(lg)) {
 		if (log_write_format(lg, &l) != GDK_SUCCEED ||
 		    log_write_string(lg, name) != GDK_SUCCEED ||
 		    (tpe && log_write_id(lg, tpe, id) != GDK_SUCCEED))
@@ -2811,12 +2813,12 @@ log_bat_persists(logger *lg, BAT *b, const char *name, char tpe, oid id)
 		}
 		return GDK_SUCCEED;
 	}
-	if (lg->inmemory)
+	if (lg->inmemory || LOG_DISABLED(lg))
 		return GDK_SUCCEED;
 
 	ha = "vid";
 	ta = ATOMname(b->ttype);
-	len = (int) (stpconcat(buf, ha, ",", ta, NULL) - buf);
+	len = (int) strconcat_len(buf, sizeof(buf), ha, ",", ta, NULL);
 	len++;			/* include EOS */
 	if (!mnstr_writeInt(lg->log, len) ||
 	    mnstr_write(lg->log, buf, 1, len) != (ssize_t) len) {
@@ -2870,7 +2872,7 @@ log_bat_transient(logger *lg, const char *name, char tpe, oid id)
 		//	assert(lg->tid == tid);
 	}
 
-	if (lg->inmemory)
+	if (lg->inmemory || LOG_DISABLED(lg))
 		return GDK_SUCCEED;
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
@@ -2892,14 +2894,15 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name, char tpe, oid id)
 	BUN p;
 
 	assert(uid->ttype == TYPE_oid || uid->ttype == TYPE_void);
-	if (lg->debug & 128 || lg->inmemory) {
-		/* logging is switched off */
-		return GDK_SUCCEED;
-	}
 
 	l.tid = lg->tid;
 	l.nr = (BUNlast(uval));
 	lg->changes += l.nr;
+
+	if (LOG_DISABLED(lg) || lg->inmemory) {
+		/* logging is switched off */
+		return GDK_SUCCEED;
+	}
 
 	if (l.nr) {
 		BATiter vi = bat_iterator(uval);
@@ -2935,14 +2938,14 @@ log_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 	logformat l;
 	BUN p;
 
-	if (lg->debug & 128 || lg->inmemory) {
+	l.tid = lg->tid;
+	l.nr = (BUNlast(b) - b->batInserted);
+	lg->changes += (b->batInserted)?l.nr:1; /* initial large inserts is counted as 1 change */
+
+	if (LOG_DISABLED(lg) || lg->inmemory) {
 		/* logging is switched off */
 		return GDK_SUCCEED;
 	}
-
-	l.tid = lg->tid;
-	l.nr = (BUNlast(b) - b->batInserted);
-	lg->changes += l.nr;
 
 	if (l.nr) {
 		BATiter bi = bat_iterator(b);
@@ -2981,14 +2984,14 @@ log_bat_clear(logger *lg, const char *name, char tpe, oid id)
 {
 	logformat l;
 
-	if (lg->debug & 128 || lg->inmemory) {
-		/* logging is switched off */
-		return GDK_SUCCEED;
-	}
-
 	l.nr = 1;
 	l.tid = lg->tid;
 	lg->changes += l.nr;
+
+	if (LOG_DISABLED(lg) || lg->inmemory) {
+		/* logging is switched off */
+		return GDK_SUCCEED;
+	}
 
 	l.flag = (tpe)?LOG_CLEAR_ID:LOG_CLEAR;
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
@@ -3006,7 +3009,7 @@ log_tstart(logger *lg)
 {
 	logformat l;
 
-	if (lg->inmemory)
+	if (LOG_DISABLED(lg) || lg->inmemory)
 		return GDK_SUCCEED;
 
 	l.flag = LOG_START;
@@ -3028,14 +3031,16 @@ static gdk_return
 pre_allocate(logger *lg)
 {
 	// FIXME: this causes serious issues on Windows at least with MinGW
-	assert(!lg->inmemory);
+	assert(!lg->inmemory && !LOG_DISABLED(lg));
 #ifndef WIN32
 	lng p;
 	p = (lng) getfilepos(getFile(lg->log));
 	if (p == -1)
 		return GDK_FAIL;
-	if (p > LOG_LARGE)
+	if (p > LOG_LARGE) {
+		lg->id++;
 		return logger_open(lg);
+	}
 	if (p + DBLKSZ > lg->end) {
 		p &= ~(DBLKSZ - 1);
 		p += SEGSZ;
@@ -3084,7 +3089,7 @@ log_tend(logger *lg)
 				   lg->snapshots_tid, NULL, NULL, lg->dsnapshots, NULL, lg->debug);
 		BBPunfix(bids->batCacheid);
 	}
-	if (lg->inmemory)
+	if (LOG_DISABLED(lg) || lg->inmemory)
 		return GDK_SUCCEED;
 	l.flag = LOG_END;
 	l.tid = lg->tid;
@@ -3106,7 +3111,7 @@ log_abort(logger *lg)
 {
 	logformat l;
 
-	if (lg->inmemory)
+	if (LOG_DISABLED(lg) || lg->inmemory)
 		return GDK_SUCCEED;
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_abort %d\n", lg->tid);
@@ -3126,7 +3131,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 {
 	logformat l;
 
-	if (lg->inmemory)
+	if (LOG_DISABLED(lg) || lg->inmemory)
 		return GDK_SUCCEED;
 	l.flag = LOG_SEQ;
 	l.tid = lg->tid;

@@ -13,7 +13,6 @@
 /*#define MAL_CLIENT_DEBUG */
 
 #include "mal_resolve.h"
-#include "mal_profiler.h"
 
 #define SCENARIO_PROPERTIES 8
 
@@ -44,12 +43,6 @@ typedef struct CLIENT_INPUT {
 	struct CLIENT_INPUT *next;    
 } ClientInput;
 
-typedef struct CURRENT_INSTR{
-	MalBlkPtr	mb;
-	MalStkPtr	stk;
-	InstrPtr	pci;
-} Workset;
-
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients */
 	oid user;       /* user id in the auth administration */
@@ -68,19 +61,30 @@ typedef struct CLIENT {
 	MALfcn  phase[SCENARIO_PROPERTIES], oldphase[SCENARIO_PROPERTIES];
 	char    itrace;    /* trace execution using interactive mdb */
 						/* if set to 'S' it will put the process to sleep */
+	bit		sqlprofiler;		/* control off-line sql performance monitoring */
 	/*
-	 * For program debugging we need information on the timer and memory
-	 * usage patterns.
+	 * Each session comes with resource limitations and predefined settings.
 	 */
-	sht	flags;	 /* resource tracing flags, should be done using profiler */
-	BUN	cnt;	/* bat count */
+	char	optimizer[IDLENGTH];/* The optimizer pipe preferred for this session */
+	int 	workerlimit;		/* maximum number of workthreads processing a query */
+	int		memorylimit;		/* Memory claim highwater mark, 0 = no limit */
+	lng 	querytimeout;		/* query abort after x usec, 0 = no limit*/
+	lng	    sessiontimeout;		/* session abort after x usec, 0 = no limit */
 
-	time_t      login;  
-	time_t      lastcmd;	/* set when input is received */
-	lng 		session;	/* usec since start of server */
-	lng 	    qtimeout;	/* query abort after x usec*/
-	lng	        stimeout;	/* session abort after x usec */
-	ATOMIC_TYPE	lastprint;	/* when we last printed the query */
+	time_t  login;  	/* Time when this session started */
+	lng 	session;	/* usec since start of server */
+	time_t  idle;		/* Time when the session became idle */  
+
+	/*
+	 * For program debugging and performance trace we keep the actual resource claims.
+	 */
+	time_t  lastcmd;	/* set when query is received */
+
+	/* The user can request a TRACE SQL statement, calling for collecting the events locally */
+	BAT *profticks;				
+	BAT *profstmt;
+
+	ATOMIC_TYPE	lastprint;	/* when we last printed the query, to be depricated */
 	/*
 	 * Communication channels for the interconnect are stored here.
 	 * It is perfectly legal to have a client without input stream.
@@ -158,11 +162,6 @@ typedef struct CLIENT {
 	void *sqlcontext;
 
 	/*
-	 * keep track of which instructions are currently being executed
-	 */
-	bit		active;		/* processing a query or not */
-	Workset inprogress[THREADS];
-	/*
 	 * The workload for replication/replay is saved initially as a MAL block.
 	 * It is split into the capturing part (wlc) and the replay part (wlr).
 	 * This allows a single server to act as both a master and a replica.
@@ -181,7 +180,7 @@ typedef struct CLIENT {
 	size_t blocksize;
 	protocol_version protocol;
 	bool filetrans;			/* whether the client can read files for us */
-	char *query;			/* string, identify whatever we're working on */
+	const char *(*getquery)(struct CLIENT *);
 } *Client, ClientRec;
 
 mal_export bool    MCinit(void);

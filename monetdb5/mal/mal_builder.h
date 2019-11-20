@@ -13,6 +13,7 @@
 #include "mal_instruction.h"
 
 mal_export InstrPtr newStmt(MalBlkPtr mb, const char *module, const char *name);
+mal_export InstrPtr newStmtArgs(MalBlkPtr mb, const char *module, const char *name, int args);
 mal_export InstrPtr newAssignment(MalBlkPtr mb);
 mal_export InstrPtr newComment(MalBlkPtr mb, const char *val);
 mal_export InstrPtr newCatchStmt(MalBlkPtr mb, str nme);

@@ -34,7 +34,7 @@ exit X_3:bit;                           	#[4] (0)  9
 barrier (X_10:oid, X_11:dbl) := iterator.new(b:bat[:dbl]);	#[6] (0) ITRbunIterator 16 17 <- 1 
     X_13:dbl := algebra.fetch(b2:bat[:dbl], X_10:oid);	#[7] (0) ALGfetchoid 19 <- 2 16 
     X_15:dbl := calc.max(X_11:dbl, X_13:dbl);	#[8] (0) CALCmax 21 <- 17 19 
-    bat.append(X_7:bat[:dbl], X_15:dbl);	#[9] (0) BKCappend_val_wrap 22 <- 13 21 
+    X_7:bat[:dbl] := bat.append(X_7:bat[:dbl], X_15:dbl);	#[9] (0) BKCappend_val_wrap 13 <- 13 21 
     redo (X_10:oid, X_11:dbl) := iterator.next(b:bat[:dbl]);	#[10] (0) ITRbunNext 16 17 <- 1 
 exit (X_10:oid, X_11:dbl);              	#[11] (0)  16 17 
     z:bat[:dbl] := X_7:bat[:dbl];       	#[12] (0)  5 <- 13 
@@ -63,7 +63,7 @@ exit X_3:bit;                           	#[4] (0)  9
 barrier (X_10:oid, X_11:dbl) := iterator.new(b:bat[:dbl]);	#[6] (0) ITRbunIterator 16 17 <- 1 
     X_13:dbl := algebra.fetch(b2:bat[:dbl], X_10:oid);	#[7] (0) ALGfetchoid 19 <- 2 16 
     X_15:dbl := calc.max(X_11:dbl, X_13:dbl);	#[8] (0) CALCmax 21 <- 17 19 
-    bat.append(X_7:bat[:dbl], X_15:dbl);	#[9] (0) BKCappend_val_wrap 22 <- 13 21 
+    X_7:bat[:dbl] := bat.append(X_7:bat[:dbl], X_15:dbl);	#[9] (0) BKCappend_val_wrap 13 <- 13 21 
     redo (X_10:oid, X_11:dbl) := iterator.next(b:bat[:dbl]);	#[10] (0) ITRbunNext 16 17 <- 1 
 exit (X_10:oid, X_11:dbl);              	#[11] (0)  16 17 
     z:bat[:dbl] := X_7:bat[:dbl];       	#[12] (0)  5 <- 13 

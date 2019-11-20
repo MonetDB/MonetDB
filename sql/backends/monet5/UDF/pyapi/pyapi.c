@@ -329,9 +329,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		int mmap_count = 4 + pci->retc * 2;
 
 		// create initial shared memory
-		MT_lock_set(&pyapiLock);
 		mmap_id = GDKuniqueid(mmap_count);
-		MT_lock_unset(&pyapiLock);
 
 		mmap_ptrs = GDKzalloc(mmap_count * sizeof(void *));
 		mmap_sizes = GDKzalloc(mmap_count * sizeof(size_t));
@@ -1405,7 +1403,7 @@ char *PyError_CreateException(char *error_text, char *pycall)
 				// no traceback info, this means we are dealing with a parsing
 				// error
 				// line information should be in the error message
-				sscanf(py_error_string, "%*[^0-9]" LLFMT, &line_number);
+				sscanf(py_error_string, "%*[^0-9]" LLSCN, &line_number);
 				if (line_number < 0)
 					goto finally;
 			} else {

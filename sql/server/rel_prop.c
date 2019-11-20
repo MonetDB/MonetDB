@@ -11,7 +11,7 @@
 #include "rel_prop.h"
 
 prop *
-prop_create( sql_allocator *sa, int kind, prop *pre )
+prop_create( sql_allocator *sa, rel_prop kind, prop *pre )
 {
 	prop *p = SA_NEW(sa, prop);
 	
@@ -50,7 +50,7 @@ prop_remove( prop *plist, prop *p )
 }
 
 prop *
-find_prop( prop *p, int kind)
+find_prop( prop *p, rel_prop kind)
 {
 	while(p) {
 		if (p->kind == kind)

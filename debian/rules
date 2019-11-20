@@ -19,11 +19,9 @@ override_dh_auto_configure:
 	--enable-embedded=no \
 	--enable-embedded-r=no \
 	--enable-fits=yes \
-	--enable-gdk=yes \
 	--enable-geom=yes \
 	--enable-lidar=yes \
 	--enable-mapi=yes \
-	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
 	--enable-optimize=yes \
@@ -32,7 +30,6 @@ override_dh_auto_configure:
 	--enable-rintegration=yes \
 	--enable-sanitizer=no \
 	--enable-shp=no \
-	--enable-sql=yes \
 	--enable-static-analysis=no \
 	--enable-strict=no \
 	--enable-testing=yes \

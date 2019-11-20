@@ -1,0 +1,34 @@
+stderr of test 'aggregates-intervals.Bug-3533` in directory 'sql/test/BugTracker-2014` itself:
+
+
+# 16:49:00 >  
+# 16:49:00 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34676" "--set" "mapi_usock=/var/tmp/mtest-284678/.s.monetdb.34676" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Nov2019/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2014" "--set" "embedded_c=true"
+# 16:49:00 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Nov2019/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34676
+# cmdline opt 	mapi_usock = /var/tmp/mtest-284678/.s.monetdb.34676
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Nov2019/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2014
+# cmdline opt 	embedded_c = true
+
+# 16:49:00 >  
+# 16:49:00 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-284678" "--port=34676"
+# 16:49:00 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-281202/.s.monetdb.31954
+QUERY = SELECT median_avg(f1) from INTERVAL_TBL; --error, median_avg is not available yet for sec_interval
+ERROR = !SELECT: no such unary operator 'median_avg(sec_interval)'
+CODE  = 42000
+
+# 16:49:01 >  
+# 16:49:01 >  "Done."
+# 16:49:01 >  
+

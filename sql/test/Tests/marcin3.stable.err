@@ -21,7 +21,7 @@ ERROR = !SELECT: cannot use non GROUP BY column 'val' in query results without a
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-26937/.s.monetdb.35713
 QUERY = select id, cast(sum(val) as bigint) AS valsum from nutki group by id having valsum>3;
-ERROR = !SELECT: cannot use non GROUP BY column 'valsum' in query results without an aggregate function
+ERROR = !SELECT: identifier 'valsum' unknown
 CODE  = 42000
 
 # 21:15:41 >  

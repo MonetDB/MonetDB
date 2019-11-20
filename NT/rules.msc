@@ -6,7 +6,7 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
-VERSION=11.34.0
+VERSION=11.36.0
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -42,6 +42,7 @@ BITSMCHN=X64
 # force W_CFLAGS off in debug builds: using icc, you get way more
 # warnings about casts which results in the code being uncompilable
 W_CFLAGS =
+HAVE_MAL_DEBUGGER = 1
 !ENDIF
 !IFDEF ENABLE_STRICT
 # strict mode: treat warnings as errors
@@ -185,8 +186,7 @@ libpy3_CFLAGS = -DHAVE_LIBPY3 "-I$(PYTHON3DIR)\include" "-I$(PYTHON3DIR)\Lib\sit
 # PYTHON may be either a version 2 or a version 3
 # here we let %Path% determine which version we get
 PYTHON = python
-YACC = bison
-LEX = flex
+BISON = bison
 
 ARCHIVER = lib /nologo
 GENDLL =
@@ -296,11 +296,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_FITS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_GDK
-	$(ECHO) HAVE_GDK_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_GDK_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_GEOM
 	$(ECHO) HAVE_GEOM_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -351,11 +346,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_LIDAR_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_MONETDB5
-	$(ECHO) HAVE_MONETDB5_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_MONETDB5_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_NETCDF
 	$(ECHO) HAVE_NETCDF_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -386,10 +376,10 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_SHP_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_SQL
-	$(ECHO) HAVE_SQL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF HAVE_MAL_DEBUGGER
+	$(ECHO) HAVE_MAL_DEBUGGER_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) HAVE_SQL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_MAL_DEBUGGER_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_TESTING
 	$(ECHO) HAVE_TESTING_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
@@ -405,11 +395,6 @@ create_winconfig_conds_new_py:
 	$(ECHO) NOT_WIN32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) NOT_WIN32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF PROFILING
-	$(ECHO) PROFILING_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) PROFILING_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 
 update_winconfig_conds_py: create_winconfig_conds_new_py

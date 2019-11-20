@@ -85,7 +85,10 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPunfix(b->batCacheid);
 		}
 	}
-	assert(!bn->tnil || !bn->tnonil);
+	if( !(!bn->tnil || !bn->tnonil)){
+		BBPkeepref(*ret = bn->batCacheid);
+		throw(MAL, "mat.pack", "INTERNAL ERROR" "bn->tnil or  bn->tnonil fails ");
+	}
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -131,10 +134,11 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", GDK_EXCEPTION);
 		}
-		assert(!bn->tnil || !bn->tnonil);
 		bn->unused = (pieces-1); /* misuse "unused" field */
 		BBPkeepref(*ret = bn->batCacheid);
 		BBPunfix(b->batCacheid);
+		if( !(!bn->tnil || !bn->tnonil))
+			throw(MAL, "mat.packIncrement", "INTERNAL ERROR" " bn->tnil %d bn->tnonil %d", bn->tnil, bn->tnonil);
 	} else {
 		/* remaining steps */
 		bb = BATdescriptor(stk->stk[getArg(p,2)].val.ival);
@@ -156,7 +160,10 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				BBPunfix(b->batCacheid);
 				throw(MAL, "mat.pack", GDK_EXCEPTION);
 			}
-		assert(!b->tnil || !b->tnonil);
+		if( !(!b->tnil || !b->tnonil)){
+			BBPkeepref(*ret = b->batCacheid);
+			throw(MAL, "mat.pack", "INTERNAL ERROR" " b->tnil or  b->tnonil fails ");
+		}
 		BBPkeepref(*ret = b->batCacheid);
 	}
 	return MAL_SUCCEED;
@@ -183,11 +190,11 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	if (ATOMextern(type)) {
 		for(i = first; i < p->argc; i++)
-			if (BUNappend(bn, stk->stk[getArg(p,i)].val.pval, true) != GDK_SUCCEED)
+			if (BUNappend(bn, stk->stk[getArg(p,i)].val.pval, false) != GDK_SUCCEED)
 				goto bailout;
 	} else {
 		for(i = first; i < p->argc; i++)
-			if (BUNappend(bn, getArgReference(stk, p, i), true) != GDK_SUCCEED)
+			if (BUNappend(bn, getArgReference(stk, p, i), false) != GDK_SUCCEED)
 				goto bailout;
 	}
 	ret= getArgReference_bat(stk,p,0);

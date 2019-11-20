@@ -145,9 +145,10 @@ ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 			* (ptr *) result = p = BATmin_skipnil(b, NULL, *skipnil);
 		} else {
 			p = BATmin_skipnil(b, result, *skipnil);
-			assert(p == result);
+			if ( p != result )
+				msg = createException(MAL, "algebra.min", SQLSTATE(HY002) "INTERNAL ERROR");
 		}
-		if (p == NULL)
+		if (msg == MAL_SUCCEED && p == NULL)
 			msg = createException(MAL, "algebra.min", GDK_EXCEPTION);
 	}
 	BBPunfix(b->batCacheid);
@@ -180,9 +181,10 @@ ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 			* (ptr *) result = p = BATmax_skipnil(b, NULL, *skipnil);
 		} else {
 			p = BATmax_skipnil(b, result, *skipnil);
-			assert(p == result);
+			if ( p != result )
+				msg = createException(MAL, "algebra.max", SQLSTATE(HY002) "INTERNAL ERROR");
 		}
-		if (p == NULL)
+		if ( msg == MAL_SUCCEED && p == NULL)
 			msg = createException(MAL, "algebra.max", GDK_EXCEPTION);
 	}
 	BBPunfix(b->batCacheid);
@@ -279,9 +281,55 @@ ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low, const v
 }
 
 str
+ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown)
+{
+	BAT *b, *s = NULL, *bn;
+	const void *nilptr;
+
+	if (!*unknown)
+		return ALGselect2(result, bid, sid, low, high, li, hi, anti);
+
+	if ((*li != 0 && *li != 1) ||
+		(*hi != 0 && *hi != 1) ||
+		(*anti != 0 && *anti != 1)) {
+		throw(MAL, "algebra.select", ILLEGAL_ARGUMENT);
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "algebra.select", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "algebra.select", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	derefStr(b, low);
+	derefStr(b, high);
+	/* here we don't need open ended parts with nil */
+	nilptr = ATOMnilptr(b->ttype);
+	if (*li == 1 && ATOMcmp(b->ttype, low, nilptr) == 0) 
+		low = high; 
+	else if (*hi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0)
+		high = low;
+	bn = BATselect(b, s, low, high, *li, *hi, *anti);
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "algebra.select", GDK_EXCEPTION);
+	*result = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
 ALGselect1(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti)
 {
 	return ALGselect2(result, bid, NULL, low, high, li, hi, anti);
+}
+
+str
+ALGselect1nil(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown)
+{
+	return ALGselect2nil(result, bid, NULL, low, high, li, hi, anti, unknown);
 }
 
 str
@@ -390,7 +438,7 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 		assert(rangefunc == NULL);
 		assert(difffunc == NULL);
 		assert(interfunc == NULL);
-		if ((*thetafunc)(&result1, &result2, left, right, candleft, candright, op, *nil_matches, est) != GDK_SUCCEED)
+		if ((*thetafunc)(&result1, r2 ? &result2 : NULL, left, right, candleft, candright, op, *nil_matches, est) != GDK_SUCCEED)
 			goto fail;
 	} else if (joinfunc) {
 		assert(bandfunc == NULL);
@@ -404,7 +452,7 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 		assert(rangefunc == NULL);
 		assert(difffunc == NULL);
 		assert(interfunc == NULL);
-		if ((*bandfunc)(&result1, &result2, left, right, candleft, candright, c1, c2, li, hi, est) != GDK_SUCCEED)
+		if ((*bandfunc)(&result1, r2 ? &result2 : NULL, left, right, candleft, candright, c1, c2, li, hi, est) != GDK_SUCCEED)
 			goto fail;
 	} else if (rangefunc) {
 		assert(difffunc == NULL);
@@ -413,7 +461,7 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 			err = SQLSTATE(HY002) RUNTIME_OBJECT_MISSING;
 			goto fail;
 		}
-		if ((*rangefunc)(&result1, &result2, left, right, right2, candleft, candright, li, hi, est) != GDK_SUCCEED)
+		if ((*rangefunc)(&result1, r2 ? &result2 : NULL, left, right, right2, candleft, candright, li, hi, est) != GDK_SUCCEED)
 			goto fail;
 		BBPunfix(right2->batCacheid);
 	} else if (difffunc) {
@@ -468,10 +516,28 @@ ALGjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const
 }
 
 str
+ALGjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
+		   const bit *nil_matches, const lng *estimate)
+{
+	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
+				   false, false, nil_matches, NULL, estimate,
+				   BATjoin, NULL, NULL, NULL, NULL, NULL, "algebra.join");
+}
+
+str
 ALGleftjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
 			   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL,
+				   false, false, nil_matches, NULL, estimate,
+				   BATleftjoin, NULL, NULL, NULL, NULL, NULL, "algebra.leftjoin");
+}
+
+str
+ALGleftjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid,
+			   const bit *nil_matches, const lng *estimate)
+{
+	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
 				   false, false, nil_matches, NULL, estimate,
 				   BATleftjoin, NULL, NULL, NULL, NULL, NULL, "algebra.leftjoin");
 }

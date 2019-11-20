@@ -1,7 +1,9 @@
 subquery
 any
 all
-subquery2
+KNOWNFAIL?subquery2
+KNOWNFAIL?subquery3
 scalar
 any_all
+exists
 correlated

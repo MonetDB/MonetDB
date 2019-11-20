@@ -1,6 +1,5 @@
-select1.test
-select2.test
-select3.test
-select4.test
-select5.test
-
+HAVE_PY3MONETDB?test1
+HAVE_PY3MONETDB?test2
+HAVE_PY3MONETDB?test3
+HAVE_PY3MONETDB?test4
+HAVE_PY3MONETDB?test5

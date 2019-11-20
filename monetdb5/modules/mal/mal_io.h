@@ -27,7 +27,6 @@ mal_export str IOexport(void *ret, bat *bid, str *fnme);
 mal_export str IOimport(void *ret, bat *bid, str *fnme);
 mal_export str io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str io_stdout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str io_stderr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 mal_export str IOsetmallocsuccesscount(void *res, lng *nbytes);
 

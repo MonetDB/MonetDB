@@ -8,7 +8,6 @@
 
 #ifndef _OPT_WLCR_H
 #define _OPT_WLCR_H
-/* #define _OPT_WLCR_DEBUG_*/
 
 #include "mal_interpreter.h"
 #include "mal_scenario.h"

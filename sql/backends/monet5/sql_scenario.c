@@ -262,6 +262,20 @@ global_variables(mvc *sql, const char *user, const char *schema)
 	return failure;
 }
 
+static const char *
+SQLgetquery(Client c)
+{
+	if (c) {
+		backend *be = c->sqlcontext;
+		if (be) {
+			mvc *m = be->mvc;
+			if (m)
+				return m->query;
+		}
+	}
+	return NULL;
+}
+
 static char*
 SQLprepareClient(Client c, int login)
 {
@@ -269,6 +283,7 @@ SQLprepareClient(Client c, int login)
 	str schema;
 	backend *be;
 
+	c->getquery = SQLgetquery;
 	if (c->sqlcontext == 0) {
 		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
 		if( m == NULL) {
@@ -492,8 +507,8 @@ SQLinit(Client c)
 		slash_2_dir_sep(path);
 		fullname = MSP_locate_sqlscript(path, 1);
 		if (fullname) {
-			str filename = fullname;
-			str p, n, newmsg= MAL_SUCCEED;
+			str filename = fullname, p, n;
+
 			fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
 			do {
 				stream *fd = NULL;
@@ -516,31 +531,40 @@ SQLinit(Client c)
 					sz = getFileSize(fd);
 					if (sz > (size_t) 1 << 29) {
 						close_stream(fd);
-						newmsg = createException(MAL, "createdb", SQLSTATE(42000) "File %s too large to process", filename);
+						msg = createException(MAL, "createdb", SQLSTATE(42000) "File %s too large to process", filename);
 					} else {
 						bstream *bfd = NULL;
 
-						if((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
+						if ((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
 							close_stream(fd);
-							newmsg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							msg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						} else {
 							if (bstream_next(bfd) >= 0)
-								newmsg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE, NULL);
+								msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE, NULL);
 							bstream_destroy(bfd);
 						}
 					}
-					if (m->sa)
-						sa_destroy(m->sa);
-					m->sa = NULL;
-					if (newmsg){
-						fprintf(stderr,"%s",newmsg);
-						freeException(newmsg);
-					}
-				}
-			} while (p);
+				} else
+					msg = createException(MAL, "createdb", SQLSTATE(HY001) "Couldn't open file %s", filename);
+			} while (p && msg == MAL_SUCCEED);
 			GDKfree(fullname);
 		} else
-			fprintf(stderr, "!could not read createdb.sql\n");
+			msg = createException(MAL, "createdb", SQLSTATE(HY001) "Could not read createdb.sql");
+
+		/* Commit after all the startup scripts have been processed */
+		assert(m->session->tr->active);
+		if (mvc_status(m) < 0 || msg)
+			other = mvc_rollback(m, 0, NULL, false);
+		else
+			other = mvc_commit(m, 0, NULL, false);
+
+		if (other && !msg) /* 'msg' variable might be set or not, as well as 'other'. Throw the earliest one */
+			msg = other;
+		else if (other)
+			freeException(other);
+
+		if (msg)
+			fprintf(stderr, "%s", msg);
 #endif
 	} else {		/* handle upgrades */
 		if (!m->sa)
@@ -549,10 +573,12 @@ SQLinit(Client c)
 			msg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		} else if (maybeupgrade) {
 			if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
-				SQLupgrades(c,m);
-				/* sometimes the upgrade ends in a COMMIT,
-				 * sometimes not */
-				if (m->session->tr->active)
+				int res = SQLupgrades(c, m);
+				/* Commit at the end of the upgrade */
+				assert(m->session->tr->active);
+				if (mvc_status(m) < 0 || res)
+					msg = mvc_rollback(m, 0, NULL, false);
+				else
 					msg = mvc_commit(m, 0, NULL, false);
 			}
 		}
@@ -588,7 +614,9 @@ SQLinit(Client c)
 			throw(SQL, "SQLinit", SQLSTATE(42000) "Starting idle manager failed");
 		}
 	}
-	return WLCinit();
+	if( wlc_state == WLC_STARTUP)
+		return WLCinit();
+	return MAL_SUCCEED;
 }
 
 #define TRANS_ABORTED SQLSTATE(25005) "Current transaction is aborted (please ROLLBACK)\n"
@@ -684,10 +712,6 @@ SQLinitClient(Client c)
 
 	MT_lock_set(&sql_contextLock);
 	if (SQLinitialized == 0) {// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
-		MT_lock_unset(&sql_contextLock);
-		return msg;
-	}
-	if ((msg = WLRinit()) != MAL_SUCCEED) {
 		MT_lock_unset(&sql_contextLock);
 		return msg;
 	}
@@ -892,7 +916,7 @@ SQLreader(Client c)
 		   B \n C; -- statements in one block   S
 		 */
 		/* auto_commit on end of statement */
-		if (m->scanner.mode == LINE_N && !commit_done) {
+		if (language != 'D' && m->scanner.mode == LINE_N && !commit_done) {
 			msg = SQLautocommit(m);
 			go = msg == MAL_SUCCEED;
 			commit_done = true;
@@ -912,11 +936,12 @@ SQLreader(Client c)
 				c->yycur = 0;
 			}
 			if (in->eof || !blocked) {
-				language = 0;
+				if (language != 'D')
+					language = 0;
 
 				/* The rules of auto_commit require us to finish
 				   and start a transaction on the start of a new statement (s A;B; case) */
-				if (!(m->emod & mod_debug) && !commit_done) {
+				if (language != 'D' && !(m->emod & mod_debug) && !commit_done) {
 					msg = SQLautocommit(m);
 					go = msg == MAL_SUCCEED;
 					commit_done = true;
@@ -935,8 +960,10 @@ SQLreader(Client c)
 #ifdef _SQL_READER_DEBUG
 				fprintf(stderr, "#rd %d  language %d eof %d\n", rd, language, in->eof);
 #endif
-				if (be->language == 'D' && !in->eof)
+				if (be->language == 'D' && !in->eof) {
+					in->pos++;// skip 's' or 'S'
 					return msg;
+				}
 
 				if (rd == 0 && language !=0 && in->eof) {
 					/* we hadn't seen the EOF before, so just try again
@@ -958,13 +985,15 @@ SQLreader(Client c)
 				} else if (be->language == 'S') {
 					m->scanner.mode = LINE_N;
 				}
+			} else if (go && language == 'D' && !in->eof) {
+				in->pos++;// skip 's' or 'S'
 			}
 #ifdef _SQL_READER_DEBUG
 			fprintf(stderr, "#SQL blk:%s\n", in->buf + in->pos);
 #endif
 		}
 	}
-	if ( (c->stimeout && (GDKusec() - c->session) > c->stimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
+	if ( (c->sessiontimeout && (GDKusec() - c->session) > c->sessiontimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
 		c->mode = FINISHCLIENT;
 		return msg;
@@ -1026,11 +1055,6 @@ SQLparser(Client c)
 	int err = 0, opt = 0;
 	char *q = NULL;
 
-	/* clean up old stuff */
-	q = c->query;
-	c->query = NULL;
-	GDKfree(q);		/* may be NULL */
-
 	be = (backend *) c->sqlcontext;
 	if (be == 0) {
 		/* leave a message in the log */
@@ -1049,6 +1073,11 @@ SQLparser(Client c)
 #endif
 	m = be->mvc;
 	m->type = Q_PARSE;
+	/* clean up old stuff */
+	q = m->query;
+	m->query = NULL;
+	GDKfree(q);		/* may be NULL */
+
 	if (be->language != 'X') {
 		if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
 			c->mode = FINISHCLIENT;
@@ -1174,7 +1203,7 @@ SQLparser(Client c)
 	 */
 	be->q = NULL;
 	q = query_cleaned(QUERY(m->scanner));
-	c->query = q;
+	m->query = q;
 
 	if (q == NULL) {
 		err = 1;
@@ -1326,8 +1355,8 @@ SQLparser(Client c)
 finalize:
 	if (msg) {
 		sqlcleanup(m, 0);
-		q = c->query;
-		c->query = NULL;
+		q = m->query;
+		m->query = NULL;
 		GDKfree(q);
 	}
 	return msg;

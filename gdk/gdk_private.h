@@ -52,8 +52,6 @@ __hidden bool BATcheckimprints(BAT *b)
 __hidden gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden bool BATcheckorderidx(BAT *b)
-	__attribute__((__visibility__("hidden")));
 __hidden BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATdelete(BAT *b)
@@ -61,6 +59,10 @@ __hidden void BATdelete(BAT *b)
 __hidden void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATfree(BAT *b)
+	__attribute__((__visibility__("hidden")));
+__hidden PROPrec *BATgetprop(BAT *b, enum prop_t idx)
+	__attribute__((__visibility__("hidden")));
+__hidden PROPrec * BATgetprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
@@ -74,7 +76,13 @@ __hidden BAT *BATload_intern(bat bid, bool lock)
 __hidden gdk_return BATmaterialize(BAT *b)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
+__hidden void BATrmprop(BAT *b, enum prop_t idx)
+	__attribute__((__visibility__("hidden")));
 __hidden void BATsetdims(BAT *b)
+	__attribute__((__visibility__("hidden")));
+__hidden void BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
+	__attribute__((__visibility__("hidden")));
+__hidden void BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__warn_unused_result__))
@@ -117,10 +125,6 @@ __hidden gdk_return BUNreplace(BAT *b, oid left, const void *right, bool force)
 	__attribute__((__visibility__("hidden")));
 __hidden Heap *createOIDXheap(BAT *b, bool stable)
 	__attribute__((__visibility__("hidden")));
-__hidden BAT *doublerange(oid l1, oid h1, oid l2, oid h2)
-	__attribute__((__visibility__("hidden")));
-__hidden BAT *doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
-	__attribute__((__visibility__("hidden")));
 __hidden void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKextend(const char *fn, size_t size)
@@ -162,6 +166,11 @@ __hidden gdk_return GDKssort(void *restrict h, void *restrict t, const void *res
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
+#ifdef NATIVE_WIN32
+__hidden void GDKwinerror(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)))
+	__attribute__((__visibility__("hidden")));
+#endif
 __hidden void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden bool HASHgonebad(BAT *b, const void *v)
@@ -211,22 +220,11 @@ __hidden void OIDXfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void persistOIDX(BAT *b)
 	__attribute__((__visibility__("hidden")));
+__hidden void PROPdestroy(BAT *b)
+	__attribute__((__visibility__("hidden")));
 __hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, BUN maxsize)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-static inline char *
-stpconcat(char *restrict dst, const char *src, ...)
-{
-	va_list ap;
-
-	va_start(ap, src);
-	while (src) {
-		dst = stpcpy(dst, src);
-		src = va_arg(ap, const char *);
-	}
-	va_end(ap);
-	return dst;
-}
 __hidden void strCleanHash(Heap *hp, bool rebuild)
 	__attribute__((__visibility__("hidden")));
 __hidden int strCmp(const char *l, const char *r)
@@ -263,7 +261,7 @@ __hidden BAT *virtualize(BAT *bn)
 			b->hseqbase,			\
 			ATOMname(b->ttype),		\
 			!b->batTransient ? "P" : isVIEW(b) ? "V" : "T", \
-			BATtdense(b) ? "D" : "",	\
+			BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" :"", \
 			b->tsorted ? "S" : "",		\
 			b->trevsorted ? "R" : "",	\
 			b->tkey ? "K" : "",		\
@@ -283,7 +281,7 @@ __hidden BAT *virtualize(BAT *bn)
 			b ? ATOMname(b->ttype) : "",	\
 			b ? "]" : "",			\
 			b ? !b->batTransient ? "P" : isVIEW(b) ? "V" : "T" : "", \
-			b && BATtdense(b) ? "D" : "",	\
+			b && BATtdense(b) ? "D" : b && b->ttype == TYPE_void && b->tvheap ? "X" :"", \
 			b && b->tsorted ? "S" : "",	\
 			b && b->trevsorted ? "R" : "",	\
 			b && b->tkey ? "K" : "",	\
@@ -314,8 +312,6 @@ struct Imprints {
 
 typedef struct {
 	MT_Lock swap;
-	MT_Lock hash;
-	MT_Lock imprints;
 } batlock_t;
 
 typedef struct {
@@ -362,8 +358,6 @@ extern MT_Lock GDKtmLock;
 	} while (0)
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
-#define GDKhashLock(x)  GDKbatLock[(x)&BBP_BATMASK].hash
-#define GDKimprintsLock(x)  GDKbatLock[(x)&BBP_BATMASK].imprints
 #if SIZEOF_SIZE_T == 8
 #define threadmask(y)	((int) ((mix_int((unsigned int) y) ^ mix_int((unsigned int) (y >> 32))) & BBP_THREADMASK))
 #else

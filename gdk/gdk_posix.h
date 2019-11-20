@@ -130,16 +130,16 @@ gdk_export bool MT_path_absolute(const char *path);
 
 #ifdef NATIVE_WIN32
 typedef struct {
-    bool first:1, opened:1;
-    HANDLE hFind;
-    WIN32_FIND_DATA fData;
+	bool first:1, opened:1;
+	HANDLE hFind;
+	WIN32_FIND_DATA fData;
 } MT_glob;
 #else
 #include <glob.h>
 typedef struct {
-    bool opened;
-    glob_t glob; 
-    size_t cur;
+	bool opened;
+	glob_t glob; 
+	size_t cur;
 } MT_glob;
 #endif
 

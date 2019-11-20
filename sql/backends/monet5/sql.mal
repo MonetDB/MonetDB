@@ -60,7 +60,19 @@ comment "Compile the relational statement (rel_smt) and register it as mal funct
 
 command flush_log( ) :void
 address SQLflush_log
-comment "flush the log now";
+comment "start flushing the write ahead log";
+
+command hot_snapshot(tarfile:str) :void
+address SQLhot_snapshot
+comment "Write db snapshot to the given tar(.gz) file";
+
+command resume_log_flushing( ) :void
+address SQLresume_log_flushing
+comment "Resume WAL log flushing";
+
+command suspend_log_flushing( ) :void
+address SQLsuspend_log_flushing
+comment "Suspend WAL log flushing";
 
 pattern assert(b:bit,msg:str):void
 address SQLassert
@@ -92,12 +104,60 @@ pattern batsql.next_value( sname:bat[:str], sequence:str ) :bat[:lng]
 address mvc_bat_next_value
 comment "return the next value of the sequence";
 
+pattern batsql.next_value( sname:str, sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_next_value
+comment "return the next value of sequences";
+
+pattern batsql.next_value( sname:bat[:str], sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_next_value
+comment "return the next value of sequences";
+
 pattern get_value( sname:str, sequence:str ):lng
 address mvc_get_value
 comment "return the current value of the sequence";
 
+pattern batsql.get_value( sname:bat[:str], sequence:str ) :bat[:lng]
+address mvc_bat_get_value
+comment "return the current value of the sequence";
+
+pattern batsql.get_value( sname:str, sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_get_value
+comment "return the current value of sequences";
+
+pattern batsql.get_value( sname:bat[:str], sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_get_value
+comment "return the current value of sequences";
+
 unsafe pattern restart( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:bat[:str], sequence:str, start:lng ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:str, sequence:bat[:str], start:lng ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:str, sequence:str, start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:bat[:str], sequence:bat[:str], start:lng ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:bat[:str], sequence:str, start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:str, sequence:bat[:str], start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:bat[:str], sequence:bat[:str], start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
 comment "restart the sequence with value start";
 
 pattern deltas( schema:str )(ids:bat[:int],cleared:bat[:bit],readonly:bat[:lng],inserted:bat[:lng],updated:bat[:lng],deleted:bat[:lng],tr_level:bat[:int])
@@ -304,83 +364,6 @@ unsafe pattern importTable( sname:str, tname:str, onclient:int, fname:str... )(:
 address mvc_bin_import_table_wrap
 comment "Import a table from the files (fname)";
 
-command zero_or_one( col:bat[:any_1]) :any_1
-address zero_or_one
-comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
-command zero_or_one( col:bat[:any_1], err:bit) :any_1
-address zero_or_one_error
-comment "if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil";
-command zero_or_one( col:bat[:any_1], err:bat[:bit]) :any_1
-address zero_or_one_error_bat
-comment "if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil";
-
-inline function sql.subzero_or_one( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
-	(g,e,h) := group.group(gp);
-	m := aggr.max(h);
-	c0 := calc.isnil(m);
-	c01 := calc.not(c0);
-	c1 := calc.>(m,1:lng);
-	c11 := calc.and(c01,c1);
-	sql.assert(c11, "21000!zero_or_one: cardinality violation, scalar expression expected");
-	return zero_or_one := b;
-end sql.subzero_or_one;
-
-command all( col:bat[:any_1]) :any_1
-address SQLall
-comment "if all values in col are equal return this, else nil";
-
-command null(b:bat[:any_1]) :bit
-address SQLnil
-comment "if b has a nil return true, else false";
-
-command any(cmp:bit, nl:bit, nr:bit) :bit
-address SQLany_cmp
-comment "if cmp then true, (nl or nr) nil then nil, else false";
-
-command all(cmp:bit, nl:bit, nr:bit) :bit
-address SQLall_cmp
-comment "if !cmp then false, (nl or nr) then nil, else true";
-
-module aggr;
-
-command anyequal(l:bat[:any_1], r:bat[:any_1]) :bit
-address SQLanyequal
-comment "if any value in r is equal to l return true, else if r has nil nil else false";
-
-command allnotequal(l:bat[:any_1], r:bat[:any_1]) :bit
-address SQLallnotequal
-comment "if all values in r are not equal to l return true, else if r has nil nil else false";
-
-command subanyequal(l:bat[:any_1], r:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
-address SQLanyequal_grp
-comment "if any value in r is equal to l return true, else if r has nil nil else false";
-
-command subanyequal(l:bat[:any_1], r:bat[:any_1], rid:bat[:oid], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
-address SQLanyequal_grp2
-comment "if any value in r is equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then false";
-
-command suballnotequal(l:bat[:any_1], r:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
-address SQLallnotequal_grp
-comment "if all values in r are not equal to l return true, else if r has nil nil else false";
-
-command suballnotequal(l:bat[:any_1], r:bat[:any_1], rid:bat[:oid], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
-address SQLallnotequal_grp2
-comment "if all values in r are not equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then true";
-
-module sql;
-
-# todo implement = all aggregator (ie keep last value and compare status)
-inline function sql.all( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
-	(g,e,h) := group.group(gp);
-	m := aggr.max(h);
-	c0 := calc.isnil(m);
-	c01 := calc.not(c0);
-	c1 := calc.>(m,1:lng);
-	c11 := calc.and(c01,c1);
-	sql.assert(c11, "21000!zero_or_one: cardinality violation, scalar expression expected ");
-	return all := b;
-end sql.all;
-
 command not_unique( b:bat[:oid]) :bit 
 address not_unique 
 comment "check if the tail sorted bat b doesn't have unique tail values" ;
@@ -402,7 +385,8 @@ pattern sql_variables():bat[:str]
 address sql_variables
 comment "return the table with session variables";
 
-pattern sessions() ( user:bat[:str], start:bat[:timestamp],stimeout:bat[:lng], lastcmd:bat[:timestamp], qtimeout:bat[:lng], idle:bat[:bit])
+pattern sessions() (id:bat[:int], user:bat[:str], 
+start:bat[:timestamp], idle:bat[:timestamp], optmizer:bat[:str], stimeout:bat[:int], qtimeout:bat[:int], wlimit:bat[:int], mlimit:bat[:int])
 address sql_sessions_wrap
 comment "SQL export table of active sessions, their timeouts and idle status";
 
@@ -431,18 +415,7 @@ address dump_opt_stats
 comment "dump the optimizer rewrite statistics";
 
 pattern dump_trace()(
-	event:bat[:int],
-	clk:bat[:str],
-	pc:bat[:str],
-	thread:bat[:int],
 	ticks:bat[:lng],
-	rssMB:bat[:lng],
-	vmMB:bat[:lng],
-	reads:bat[:lng],
-	writes:bat[:lng],
-	minflt:bat[:lng],
-	majflt:bat[:lng],
-	nvcsw:bat[:lng],
 	stmt:bat[:str])
 address dump_trace
 comment "dump the trace statistics";
@@ -599,9 +572,12 @@ command querylog_disable()
 address QLOGdisable;
 
 
-pattern sysmon_queue()(qtag:bat[:lng], user:bat[:str],started:bat[:timestamp],estimate:bat[:timestamp],progress:bat[:int], status:bat[:str], tag:bat[:oid], query:bat[:str])
+pattern sysmon_queue()(tag:bat[:lng], sessionid:bat[:int], user:bat[:str], started:bat[:timestamp], 
+status:bat[:str], query:bat[:str], progress:bat[:int], workers:bat[:int], memory:bat[:int])
 address SYSMONqueue;
 
+pattern sysmon_pause(tag:bte)
+address SYSMONpause;
 pattern sysmon_pause(tag:sht)
 address SYSMONpause;
 pattern sysmon_pause(tag:int)
@@ -609,6 +585,8 @@ address SYSMONpause;
 pattern sysmon_pause(tag:lng)
 address SYSMONpause;
 
+pattern sysmon_resume(tag:bte)
+address SYSMONresume;
 pattern sysmon_resume(tag:sht)
 address SYSMONresume;
 pattern sysmon_resume(tag:int)
@@ -616,6 +594,8 @@ address SYSMONresume;
 pattern sysmon_resume(tag:lng)
 address SYSMONresume;
 
+pattern sysmon_stop(tag:bte)
+address SYSMONstop;
 pattern sysmon_stop(tag:sht)
 address SYSMONstop;
 pattern sysmon_stop(tag:int)
@@ -1145,5 +1125,6 @@ include sql_aggr_lng;
 include sql_aggr_flt;
 include sql_aggr_dbl;
 include sql_inspect;
+include sql_subquery;
 
 sql.prelude();

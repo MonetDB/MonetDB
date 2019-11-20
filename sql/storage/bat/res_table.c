@@ -22,9 +22,8 @@ bat_decref(bat bid)
 	BBPrelease(bid);
 }
 
-
 res_table *
-res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, int type, res_table *next, void *O)
+res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, sql_query_t type, res_table *next, void *O)
 {
 	BAT *order = (BAT*)O;
 	res_table *t = ZNEW(res_table);
@@ -122,7 +121,6 @@ res_col_destroy(res_col *c)
 	_DELETE(c->name);
 	_DELETE(c->tn);
 }
-
 
 void
 res_table_destroy(res_table *t)

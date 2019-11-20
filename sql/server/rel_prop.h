@@ -9,29 +9,29 @@
 #ifndef _REL_PROP_H_
 #define _REL_PROP_H_
 
+typedef enum rel_prop { 
+	PROP_COUNT,
+	PROP_JOINIDX,   /* could use join idx */
+	PROP_HASHIDX,   /* is hash idx */
+	PROP_SORTIDX,   /* is sorted */
+	PROP_HASHCOL,   /* could use hash idx */
+	PROP_FETCH,     /* fetchjoin */
+	PROP_REMOTE,    /* uri for remote execution */
+	PROP_USED,      /* number of times exp is used */
+	PROP_DISTRIBUTE /* used by merge tables when sql.affectedRows is the sum of several insert/update/delete statements */
+} rel_prop;
+
 typedef struct prop {
-	int kind;	/* kind of property */
-	void *value;	/* property value */
-	struct prop *p;	/* some relations may have many properties, 
-			   which are kept in a chain list */
+	rel_prop kind;  /* kind of property */
+	void *value;    /* property value */
+	struct prop *p; /* some relations may have many properties, which are kept in a chain list */
 } prop;
 
-#define PROP_COUNT	0
-#define PROP_JOINIDX	1	/* could use join idx */
-#define PROP_HASHIDX	2	/* is hash idx */
-#define PROP_SORTIDX	3	/* is sorted */
-#define PROP_HASHCOL	4	/* could use hash idx */
-#define PROP_FETCH	5	/* fetchjoin */
-#define PROP_REMOTE     6	/* uri for remote execution */
-#define PROP_USED	10	/* number of times exp is used */
-#define PROP_DISTRIBUTE	11	/* number of times exp is used */
-
-extern prop * prop_create( sql_allocator *sa, int kind, prop *pre );
+extern prop * prop_create( sql_allocator *sa, rel_prop kind, prop *pre );
 extern prop * prop_copy( sql_allocator *sa, prop *p);
 extern prop * prop_remove( prop *plist, prop *p);
-extern prop * find_prop( prop *p, int kind);
+extern prop * find_prop( prop *p, rel_prop kind);
 extern const char * propkind2string( prop *p);
 extern char * propvalue2string( prop *p);
 
 #endif /* _REL_PROP_H_ */
-

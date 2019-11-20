@@ -163,6 +163,8 @@ typedef enum operator_type {
 	(is_atom(e->flag) && !e->r && !e->f)
 #define is_func(et) \
 	(et == e_func)
+#define is_aggr(et) \
+	(et == e_aggr)
 #define is_map_op(et) \
 	(et == e_func || et == e_convert)
 #define is_column(et) \
@@ -240,18 +242,18 @@ typedef enum operator_type {
 
 /* does the expression (possibly) have nils */
 #define has_nil(e) \
-	((e->flag&HAS_NO_NIL) == 0)
+	(((e)->flag&HAS_NO_NIL) == 0)
 #define set_has_no_nil(e) \
-	e->flag |= HAS_NO_NIL
+	(e)->flag |= HAS_NO_NIL
 #define set_has_nil(e) \
-	e->flag &= (~HAS_NO_NIL)
+	(e)->flag &= (~HAS_NO_NIL)
 
 #define is_ascending(e) \
-	((e->flag&ASCENDING)==ASCENDING)
+	(((e)->flag&ASCENDING)==ASCENDING)
 #define nulls_last(e) \
-	((e->flag&NULLS_LAST)==NULLS_LAST)
+	(((e)->flag&NULLS_LAST)==NULLS_LAST)
 #define set_direction(e, dir) \
-	e->flag |= ((dir&1)?ASCENDING:0) | ((dir&2)?NULLS_LAST:0)
+	(e)->flag |= ((dir&1)?ASCENDING:0) | ((dir&2)?NULLS_LAST:0)
 
 #define is_anti(e) \
 	((e)->anti)
@@ -317,6 +319,7 @@ typedef struct relation {
 	 flag:8,	/* EXP_DISTINCT */
 	 card:4,	/* 0, 1 (row), 2 aggr, 3 */
 	 dependent:1, 	/* dependent join */
+	 single:1,	/* single join operator */
 	 processed:1,   /* fully processed or still in the process of building */
 	 subquery:1;	/* is this part a subquery, this is needed for proper name binding */
 	void *p;	/* properties for the optimizer, distribution */

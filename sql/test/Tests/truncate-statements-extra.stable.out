@@ -82,6 +82,14 @@ stdout of test 'truncate-statements-extra` in directory 'sql/test` itself:
 % int # type
 % 1 # length
 [ 1	]
+#PLAN TRUNCATE testing4 RESTRICT;
+% .plan # table_name
+% rel # name
+% clob # type
+% 87 # length
+truncate continue identity, restrict(
+| table(sys.testing4) [ "testing4"."a" NOT NULL HASHCOL , "testing4"."%TID%" NOT NULL ]
+)
 #SELECT a FROM testing4;
 % sys.testing4 # table_name
 % a # name
@@ -94,7 +102,15 @@ stdout of test 'truncate-statements-extra` in directory 'sql/test` itself:
 % int # type
 % 1 # length
 [ 1	]
-#TRUNCATE testing CASCADE;
+#PLAN TRUNCATE testing4 CASCADE;
+% .plan # table_name
+% rel # name
+% clob # type
+% 87 # length
+truncate continue identity, cascade(
+| table(sys.testing4) [ "testing4"."a" NOT NULL HASHCOL , "testing4"."%TID%" NOT NULL ]
+)
+#TRUNCATE testing4 CASCADE;
 [ 1	]
 #SELECT a FROM testing4;
 % sys.testing4 # table_name
@@ -118,7 +134,15 @@ stdout of test 'truncate-statements-extra` in directory 'sql/test` itself:
 % 1,	1 # length
 [ 1,	1	]
 [ 2,	1	]
-#TRUNCATE testing3;
+#PLAN TRUNCATE testing6;
+% .plan # table_name
+% rel # name
+% clob # type
+% 85 # length
+truncate continue identity, restrict(
+| table(sys.testing6) [ "testing6"."a", "testing6"."b", "testing6"."%TID%" NOT NULL ]
+)
+#TRUNCATE testing6;
 [ 2	]
 #INSERT INTO testing3 (b) VALUES (3);
 [ 1	]
@@ -131,7 +155,15 @@ stdout of test 'truncate-statements-extra` in directory 'sql/test` itself:
 % 1,	1 # length
 [ 3,	3	]
 [ 4,	4	]
-#TRUNCATE testing3 CONTINUE IDENTITY;
+#PLAN TRUNCATE testing6 CONTINUE IDENTITY;
+% .plan # table_name
+% rel # name
+% clob # type
+% 85 # length
+truncate continue identity, restrict(
+| table(sys.testing6) [ "testing6"."a", "testing6"."b", "testing6"."%TID%" NOT NULL ]
+)
+#TRUNCATE testing6 CONTINUE IDENTITY;
 [ 2	]
 #INSERT INTO testing3 (b) VALUES (5);
 [ 1	]
@@ -144,7 +176,15 @@ stdout of test 'truncate-statements-extra` in directory 'sql/test` itself:
 % 1,	1 # length
 [ 5,	5	]
 [ 6,	6	]
-#TRUNCATE testing3 RESTART IDENTITY;
+#PLAN TRUNCATE testing6 RESTART IDENTITY;
+% .plan # table_name
+% rel # name
+% clob # type
+% 85 # length
+truncate restart identity, restrict(
+| table(sys.testing6) [ "testing6"."a", "testing6"."b", "testing6"."%TID%" NOT NULL ]
+)
+#TRUNCATE testing6 RESTART IDENTITY;
 [ 2	]
 #INSERT INTO testing3 (b) VALUES (7);
 [ 1	]

@@ -34,8 +34,8 @@ stdout of test 'sqlsmith-semijoin-constant.bug-6417` in directory 'sql/test/BugT
 #limit 106;
 % .L7 # table_name
 % c0 # name
-% boolean # type
-% 5 # length
+% int # type
+% 1 # length
 
 # 19:24:14 >  
 # 19:24:14 >  "Done."

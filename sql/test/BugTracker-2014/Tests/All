@@ -30,6 +30,7 @@ union_with_subqueries.Bug-3518
 unsafe_project_push_down.Bug-3523
 non_groupby_column.Bug-3524
 orderby_count.Bug-3526
+aggregates-intervals.Bug-3533
 outer_join_using_diff_types_using.Bug-3536
 select-distinct-order-limit.Bug-3527
 round.Bug-3542

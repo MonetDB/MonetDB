@@ -1,0 +1,35 @@
+stderr of test 'test1` in directory 'sql/test/SQLite_regress/sqllogictest` itself:
+
+
+# 15:45:40 >  
+# 15:45:40 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35669" "--set" "mapi_usock=/var/tmp/mtest-31665/.s.monetdb.35669" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-candidate/var/MonetDB/mTests_sql_test_SQLite_regress_sqllogictest" "--set" "embedded_c=true"
+# 15:45:40 >  
+
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/@Monet-candidate/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35669
+# cmdline opt 	mapi_usock = /var/tmp/mtest-31665/.s.monetdb.35669
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/@Monet-candidate/var/MonetDB/mTests_sql_test_SQLite_regress_sqllogictest
+# cmdline opt 	embedded_c = true
+
+# 15:45:41 >  
+# 15:45:41 >  "./test1.SQL.sh" "test1"
+# 15:45:41 >  
+
+
+# 15:45:41 >  
+# 15:45:41 >  python3 /net/methuselah/export/scratch1/sjoerd/src/MonetDB/candidate/sql/test/SQLite_regress/sqllogictest/sqllogictest.py --host=localhost --port=35669 --database=mTests_sql_test_SQLite_regress_sqllogictest /net/methuselah/export/scratch1/sjoerd/src/MonetDB/candidate/sql/test/SQLite_regress/sqllogictest/select2.test
+# 15:45:41 >  
+
+
+# 15:45:50 >  
+# 15:45:50 >  "Done."
+# 15:45:50 >  
+

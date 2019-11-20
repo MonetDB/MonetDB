@@ -1933,9 +1933,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter ||
 			    formatter == ROWCOUNTformatter)
-				mnstr_printf(toConsole,
-					     "auto commit mode: %s\n",
-					     mapi_get_autocommit(mid) ? "on" : "off");
+				mnstr_printf(toConsole, "operation successful\n");
 			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_PREPARE:
@@ -3665,6 +3663,9 @@ main(int argc, char **argv)
 
 		if (mode == SQL)
 			dump_version(mid, toConsole, "Database:");
+
+		mnstr_printf(toConsole, "FOLLOW US on https://twitter.com/MonetDB ");
+		mnstr_printf(toConsole, "or https://github.com/MonetDB/MonetDB\n");
 
 		mnstr_printf(toConsole, "Type \\q to quit, \\? for a list of available commands\n");
 		if (mode == SQL)

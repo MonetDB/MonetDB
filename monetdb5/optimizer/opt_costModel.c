@@ -45,6 +45,10 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) stk;
 	(void) pci;
 
+    if( OPTdebug &  OPTcostmodel){
+        fprintf(stderr, "#COSTMODEL optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	if ( mb->inlineProp )
 		return MAL_SUCCEED;
 
@@ -153,5 +157,9 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
     newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 
+    if( OPTdebug &  OPTcostmodel){
+        fprintf(stderr, "#COSTMODEL optimizer exit\n");
+        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
+    }
 	return MAL_SUCCEED;
 }

@@ -6,48 +6,52 @@
 
 module wlr;
 
+pattern master(dbname:str)
+address WLRmaster
+comment "Initialize the replicator thread";
+
+pattern stop()
+address WLRstop
+comment "Stop the replicator thread";
+
+pattern accept()
+address WLRaccept
+comment "Accept failing transaction";
+
 pattern replicate()
 address WLRreplicate
-comment "Roll the snapshot forward to an up-to-date clone";
+comment "Continue to keep the replica in sink";
 
 pattern replicate(ts:timestamp)
 address WLRreplicate
 comment "Roll the snapshot forward to an up-to-date clone";
 
-pattern replicate(dbname:str)
-address WLRreplicate
-comment "Roll the snapshot forward to an up-to-date clone";
-
-pattern replicate(dbname:str, ts:timestamp)
-address WLRreplicate
-comment "Roll the snapshot forward to the time TS";
-
-pattern replicate(dbname:str, id:bte)
+pattern replicate(id:bte)
 address WLRreplicate
 comment "Roll the snapshot forward to a specific transaction id";
 
-pattern replicate(dbname:str, id:sht)
+pattern replicate(id:sht)
 address WLRreplicate
 comment "Roll the snapshot forward to a specific transaction id";
 
-pattern replicate(dbname:str, id:int)
+pattern replicate(id:int)
 address WLRreplicate
 comment "Roll the snapshot forward to a specific transaction id";
 
-pattern replicate(dbname:str, id:lng)
+pattern replicate(id:lng)
 address WLRreplicate
 comment "Roll the snapshot forward to a specific transaction id";
 
-pattern setreplicabeat(dur:int)
-address WLRsetreplicabeat
+pattern setbeat(dur:int)
+address WLRsetbeat
 comment "Threshold (in seconds) for re-running queries";
 
-pattern getreplicaclock():str
-address WLRgetreplicaclock
+pattern getclock():str
+address WLRgetclock
 comment "Timestamp of last replicated transaction.";
 
-pattern getreplicatick():lng
-address WLRgetreplicatick
+pattern gettick():lng
+address WLRgettick
 comment "Transaction identifier of the last replicated transaction.";
 
 pattern transaction(tid:lng, started:str, user:str)

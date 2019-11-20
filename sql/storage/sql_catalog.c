@@ -75,7 +75,6 @@ _cs_find_name(changeset * cs, const char *name)
 	return _list_find_name(cs->set, name);
 }
 
-
 node *
 cs_find_name(changeset * cs, const char *name)
 {
@@ -292,7 +291,7 @@ find_sql_func(sql_schema * s, const char *tname)
 }
 
 list *
-find_all_sql_func(sql_schema * s, const char *name, int type)
+find_all_sql_func(sql_schema * s, const char *name, sql_ftype type)
 {
 	list *l = s->funcs.set, *res = NULL;
 	node *n = NULL;

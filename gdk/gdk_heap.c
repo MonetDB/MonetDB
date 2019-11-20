@@ -61,7 +61,7 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 		fn = path;
 	}
 	/* round up to mulitple of GDK_mmap_pagesize */
-	fd = GDKfdlocate(NOFARM, fn, "wb", NULL);
+	fd = GDKfdlocate(NOFARM, fn, "wxb", NULL);
 	if (fd >= 0) {
 		close(fd);
 		base = GDKload(NOFARM, fn, NULL, *maxsz, maxsz, STORE_MMAP);
@@ -119,36 +119,12 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	}
 	if (!GDKinmemory() && h->base == NULL) {
 		char *nme;
-		struct stat st;
 
-		if(!(nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL))) {
-			GDKerror("HEAPalloc: malloc failure");
+		nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
+		if (nme == NULL)
 			return GDK_FAIL;
-		}
-		if (stat(nme, &st) < 0) {
-			h->storage = STORE_MMAP;
-			h->base = HEAPcreatefile(NOFARM, &h->size, nme);
-		} else {
-			int fd;
-
-			fd = GDKfdlocate(NOFARM, nme, "wb", NULL);
-			if (fd >= 0) {
-				char of[sizeof(h->filename)];
-				char *ext;
-				close(fd);
-				strncpy(of, h->filename, sizeof(of));
-#ifdef STATIC_CODE_ANALYSIS
-				/* help coverity */
-				of[sizeof(h->filename) - 1] = 0;
-#endif
-				ext = decompose_filename(of);
-				h->newstorage = STORE_MMAP;
-				if (HEAPload(h, of, ext, false) != GDK_SUCCEED)
-					h->base = NULL; /* superfluous */
-				/* success checked by looking at
-				 * h->base below */
-			}
-		}
+		h->storage = STORE_MMAP;
+		h->base = HEAPcreatefile(NOFARM, &h->size, nme);
 		GDKfree(nme);
 	}
 	if (h->base == NULL) {
@@ -184,14 +160,10 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 	const char *failure = "None";
 
 	if (GDKinmemory()) {
-		strncpy(nme, ":inmemory", sizeof(nme));
+		strcpy_len(nme, ":inmemory", sizeof(nme));
 		ext = "ext";
 	} else {
-		strncpy(nme, h->filename, sizeof(nme));
-#ifdef STATIC_CODE_ANALYSIS
-		/* help coverity */
-		nme[sizeof(nme) - 1] = 0;
-#endif
+		strcpy_len(nme, h->filename, sizeof(nme));
 		ext = decompose_filename(nme);
 	}
 	if (size <= h->size)
@@ -270,6 +242,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 					HEAPfree(&bak, false);
 					return GDK_SUCCEED;
 				}
+				GDKclrerr();
 			}
 			fd = GDKfdlocate(h->farmid, nme, "wb", ext);
 			if (fd >= 0) {
@@ -445,7 +418,7 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 		const char *base = b->theap.base;
 
 		/* first save heap in file with extra .tmp extension */
-		if ((fd = GDKfdlocate(b->theap.farmid, b->theap.filename, "wb", "tmp")) < 0)
+		if ((fd = GDKfdlocate(b->theap.farmid, b->theap.filename, "wxb", "tmp")) < 0)
 			return GDK_FAIL;
 		while (size > 0) {
 			ret = write(fd, base, (unsigned) MIN(1 << 30, size));
@@ -735,7 +708,7 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM;
 		assert(strlen(ext) + strlen(suffix) < sizeof(extension));
-		stpconcat(extension, ext, suffix, NULL);
+		strconcat_len(extension, sizeof(extension), ext, suffix, NULL);
 		ext = extension;
 	} else if (store != STORE_MEM) {
 		store = h->storage;
@@ -772,7 +745,7 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 		return GDK_SUCCEED;
 	}
 	assert(strlen(ext) + strlen(".new") < sizeof(ext2));
-	stpconcat(ext2, ext, ".new", NULL);
+	strconcat_len(ext2, sizeof(ext2), ext, ".new", NULL);
 	return (GDKunlink(h->farmid, BATDIR, o, ext) == GDK_SUCCEED) | (GDKunlink(h->farmid, BATDIR, o, ext2) == GDK_SUCCEED) ? GDK_SUCCEED : GDK_FAIL;
 }
 

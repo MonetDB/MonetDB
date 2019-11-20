@@ -17,6 +17,7 @@
 #include <fcntl.h>
 #include <string.h> /* strerror */
 
+#include "mstring.h"
 #include "stream.h"
 #include "stream_socket.h"
 
@@ -71,11 +72,17 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 				break; /* working */
 		}
 		if (rp == NULL) {
+			int e = errno;
 			if (result)
 				freeaddrinfo(result);
 			if (sock != -1)
 				closesocket(sock);
-			return newErr("cannot bind to host %s", bindaddr);
+			if (result) { /* results found, tried socket, setsockopt and bind calls */
+				errno = e;
+				return newErr("binding to stream socket port %hu failed: %s", port, strerror(errno));
+			} else { /* no results found, could not translate address */
+				return newErr("cannot translate host %s", bindaddr);
+			}
 		}
 		server = rp->ai_addr;
 		length = rp->ai_addrlen;
@@ -241,7 +248,7 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	server = (struct sockaddr_un) {
 		.sun_family = AF_UNIX,
 	};
-	strncpy(server.sun_path, path, sizeof(server.sun_path) - 1);
+	strcpy_len(server.sun_path, path, sizeof(server.sun_path));
 
 	/* have to use umask to restrict permissions to avoid a race
 	 * condition */

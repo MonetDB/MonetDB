@@ -98,7 +98,7 @@
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>	   /* prerequisite of sys/sysctl on OpenBSD */
 #endif
-#ifdef HAVE_SYS_SYSCTL_H
+#ifdef BSD /* BSD macro is defined in sys/param.h */
 # include <sys/sysctl.h>
 #endif
 
@@ -159,14 +159,18 @@ gdk_export int MT_join_thread(MT_Id t);
  */
 #include "matomic.h"
 
-/* in non-debug builds, we don't keep lock statistics */
-#ifndef NDEBUG
-#define LOCK_STATS
-#endif
+/* define this to keep lock statistics (can be expensive) */
+/* #define LOCK_STATS */
 
 /* define this if you want to use pthread (or Windows) locks instead
  * of atomic instructions for locking (latching) */
-/* #define USE_PTHREAD_LOCKS */
+#ifndef WIN32
+/* on Linux (and in general pthread using systems) use native locks;
+ * on Windows use locks based on atomic instructions and sleeps since
+ * the Windows lock implementations (Mutex and CriticalSection) are
+ * too heavy and impossible to initialize statically */
+#define USE_NATIVE_LOCKS 1
+#endif
 
 #ifdef LOCK_STATS
 
@@ -274,7 +278,7 @@ gdk_export int MT_join_thread(MT_Id t);
 
 #endif
 
-#ifdef USE_PTHREAD_LOCKS
+#ifdef USE_NATIVE_LOCKS
 
 #if !defined(HAVE_PTHREAD_H) && defined(WIN32)
 typedef struct MT_Lock {
@@ -302,8 +306,7 @@ typedef struct MT_Lock {
 	do {							\
 		assert((l)->lock == NULL);			\
 		(l)->lock = CreateMutex(NULL, 0, NULL);		\
-		strncpy((l)->name, (n), sizeof((l)->name));	\
-		(l)->name[sizeof((l)->name) - 1] = 0;		\
+		strcpy_len((l)->name, (n), sizeof((l)->name));	\
 		_DBG_LOCK_INIT(l);				\
 	} while (0)
 
@@ -374,13 +377,13 @@ typedef struct MT_Lock {
 #define MT_lock_init(l, n)					\
 	do {							\
 		pthread_mutex_init(&(l)->lock, 0);		\
-		strncpy((l)->name, (n), sizeof((l)->name));	\
-		(l)->name[sizeof((l)->name) - 1] = 0;		\
+		strcpy_len((l)->name, (n), sizeof((l)->name));	\
 		_DBG_LOCK_INIT(l);				\
 	} while (0)
 
 #define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0)
 
+#ifdef LOCK_STATS
 #define MT_lock_set(l)							\
 	do {								\
 		_DBG_LOCK_COUNT_0(l);					\
@@ -395,10 +398,13 @@ typedef struct MT_Lock {
 		_DBG_LOCK_LOCKER(l);					\
 		_DBG_LOCK_COUNT_2(l);					\
 	} while (0)
+#else
+#define MT_lock_set(l)		pthread_mutex_lock(&(l)->lock)
+#endif
 
 #define MT_lock_unset(l)						\
 	do {								\
-		_DBG_LOCK_UNLOCKER(l);		\
+		_DBG_LOCK_UNLOCKER(l);					\
 		pthread_mutex_unlock(&(l)->lock);			\
 	} while (0)
 
@@ -501,8 +507,7 @@ typedef struct {
 #define MT_sema_init(s, nr, n)						\
 	do {								\
 		assert((s)->sema == NULL);				\
-		strncpy((s)->name, (n), sizeof((s)->name));		\
-		(s)->name[sizeof((s)->name) - 1] = 0;			\
+		strcpy_len((s)->name, (n), sizeof((s)->name));		\
 		(s)->sema = CreateSemaphore(NULL, nr, 0x7fffffff, NULL); \
 	} while (0)
 
@@ -539,8 +544,7 @@ typedef struct {
 
 #define MT_sema_init(s, nr, n)						\
 	do {								\
-		strncpy((s)->name, (n), sizeof((s)->name));		\
-		(s)->name[sizeof((s)->name) - 1] = 0;			\
+		strcpy_len((s)->name, (n), sizeof((s)->name));		\
 		(s)->sema = dispatch_semaphore_create((long) (nr));	\
 	} while (0)
 
@@ -561,8 +565,7 @@ typedef struct {
 
 #define MT_sema_init(s, nr, n)					\
 	do {							\
-		strncpy((s)->name, (n), sizeof((s)->name));	\
-		(s)->name[sizeof((s)->name) - 1] = 0;		\
+		strcpy_len((s)->name, (n), sizeof((s)->name));	\
 		(s)->cnt = (nr);				\
 		pthread_mutex_init(&(s)->mutex, 0);		\
 		pthread_cond_init(&(s)->cond, 0);		\
@@ -610,8 +613,7 @@ typedef struct {
 
 #define MT_sema_init(s, nr, n)					\
 	do {							\
-		strncpy((s)->name, (n), sizeof((s)->name));	\
-		(s)->name[sizeof((s)->name) - 1] = 0;		\
+		strcpy_len((s)->name, (n), sizeof((s)->name));	\
 		sem_init(&(s)->sema, 0, nr);			\
 	} while (0)
 

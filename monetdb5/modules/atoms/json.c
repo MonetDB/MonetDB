@@ -167,8 +167,7 @@ JSONtoString(str *s, size_t *len, const char *src, bool external)
 				return -1;
 		}
 		if (external) {
-			strncpy(*s, "nil", 4);
-			return 3;
+			return (ssize_t) strcpy_len(*s, "nil", 4);
 		}
 		strcpy(*s, str_nil);
 		return 1;
@@ -232,11 +231,10 @@ JSONtoString(str *s, size_t *len, const char *src, bool external)
 	} while (0)
 
 static void
-JSONdumpInternal(JSON *jt, int depth)
+JSONdumpInternal(stream *fd, JSON *jt, int depth)
 {
 	int i, idx;
 	JSONterm *je;
-	stream *fd = GDKout;
 
 	for (idx = 0; idx < jt->free; idx++) {
 		je = jt->elm + idx;
@@ -284,13 +282,15 @@ JSONdumpInternal(JSON *jt, int depth)
 }
 
 str
-JSONdump(void *ret, json *val)
+JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) mb;
+
+	json *val = (json*) getArgReference(stk, pci, 1);
 	JSON *jt = JSONparse(*val);
 
 	CHECK_JSON(jt);
-	(void) ret;
-	JSONdumpInternal(jt, 0);
+	JSONdumpInternal(cntxt->fdout, jt, 0);
 	JSONfree(jt);
 	return MAL_SUCCEED;
 }
@@ -511,8 +511,6 @@ JSONgetValue(JSON *jt, int idx)
 	str s;
 
 	if (jt->elm[idx].valuelen == 0)
-		return GDKstrdup(str_nil);
-	if (strncmp(jt->elm[idx].value, "null", 4) == 0)
 		return GDKstrdup(str_nil);
 	s = GDKzalloc(jt->elm[idx].valuelen + 1);
 	if (s)
@@ -1845,8 +1843,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	}
 	tpe = bv->ttype;
 	cnt = BATcount(bv);
-	if (bk)
-		bki = bat_iterator(bk);
+	bki = bat_iterator(bk);
 	bvi = bat_iterator(bv);
 	if (id) {
 		bo = BATdescriptor(*id);
@@ -2112,10 +2109,11 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	BAT *bn = NULL, *t1, *t2 = NULL;
 	BATiter bi;
 	oid min, max;
-	BUN ngrp, start, end;
+	BUN ngrp;
 	BUN nils = 0;
 	int isnil;
-	const oid *cand = NULL, *candend = NULL;
+	struct canditer ci;
+	BUN ncand;
 	const char *v = NULL;
 	const oid *grps, *map;
 	oid mapoff = 0;
@@ -2129,7 +2127,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	const double *val = NULL;
 
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end, &cand, &candend)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		return err;
 	}
 	if (BATcount(b) == 0 || ngrp == 0) {

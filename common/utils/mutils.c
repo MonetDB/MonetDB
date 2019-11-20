@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "mutils.h"
+#include "mstring.h"
 
 #if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
 #include <execinfo.h>
@@ -25,10 +26,10 @@
 #include <limits.h>		/* PATH_MAX on Solaris */
 
 #ifdef HAVE_SYS_PARAM_H
-# include <sys/param.h>  /* realpath on OSX, prerequisite of sys/sysctl on OpenBSD */
+# include <sys/param.h>  /* realpath on OSX */
 #endif
 
-#ifdef HAVE_SYS_SYSCTL_H
+#ifdef BSD /* BSD macro is defined in sys/param.h */
 # include <sys/sysctl.h>  /* KERN_PROC_PATHNAME on BSD */
 #endif
 
@@ -214,8 +215,7 @@ readdir(DIR *dir)
 	else if (!FindNextFile(dir->find_file_handle,
 			       (LPWIN32_FIND_DATA) dir->find_file_data))
 		return NULL;
-	strncpy(result.d_name, basename(((LPWIN32_FIND_DATA) dir->find_file_data)->cFileName), sizeof(result.d_name));
-	result.d_name[sizeof(result.d_name) - 1] = '\0';
+	strcpy_len(result.d_name, basename(((LPWIN32_FIND_DATA) dir->find_file_data)->cFileName), sizeof(result.d_name));
 	result.d_namelen = (int) strlen(result.d_name);
 
 	return &result;
@@ -454,7 +454,7 @@ get_bin_path(void)
 	if (_NSGetExecutablePath(buf, &size) == 0 &&
 			realpath(buf, _bin_path) != NULL)
 	return _bin_path;
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(KERN_PROC_PATHNAME)  /* BSD */
+#elif defined(BSD) && defined(KERN_PROC_PATHNAME)  /* BSD */
 	int mib[4];
 	size_t cb = sizeof(_bin_path);
 	mib[0] = CTL_KERN;

@@ -10,7 +10,7 @@
 #define SQL_TOKENS_H
 
 typedef enum tokens {
-	// Please keep this list sorted for easy of maintenance
+	// Please keep this list sorted for ease of maintenance
 	SQL_AGGR,
 	SQL_ALTER_SEQ,
 	SQL_ALTER_TABLE,
@@ -172,7 +172,7 @@ typedef enum tokens {
 	TR_ROLLBACK,
 	TR_SAVEPOINT,
 	TR_START
-	// Please keep this list sorted for easy of maintenance
+	// Please keep this list sorted for ease of maintenance
 } tokens;
 
 typedef enum jt {

@@ -18,7 +18,9 @@ stdout of test 'vacuum` in directory 'sql/test/pg_regress` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
+# 10:08:09 >  
+# 10:08:09 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27355" "--port=35936"
+# 10:08:09 >  
 
 # 17:11:19 >  
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
@@ -55,21 +57,21 @@ Ready.
 #INSERT INTO vactst VALUES (0);
 [ 1 ]
 #SELECT count(*) FROM vactst;
-% .L3 # table_name
-% L3 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 4 # length
 [ 2049 ]
 #SELECT i, count(*) AS count FROM vactst GROUP BY i ORDER BY i;
-% sys.vactst,	sys.L4 # table_name
+% sys.vactst,	sys.L2 # table_name
 % i,	count # name
 % int,	bigint # type
 % 1,	4 # length
 [ 0,	1	]
 [ 1,	2048	]
 #SELECT count(*) FROM vactst WHERE i <> 0;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 4 # length
 [ 2048	]
@@ -138,21 +140,21 @@ Ready.
 #INSERT INTO vactst VALUES (0);
 [ 1	]
 #SELECT count(*) FROM vactst;
-% .L3 # table_name
-% L3 # name
+% .L2 # table_name
+% L2 # name
 % bigint # type
 % 7 # length
 [ 1048577	]
 #SELECT i, count(*) AS count FROM vactst GROUP BY i ORDER BY i;
-% sys.vactst,	sys.L4 # table_name
+% sys.vactst,	sys.L2 # table_name
 % i,	count # name
 % int,	bigint # type
 % 1,	7 # length
 [ 0,	1	]
 [ 1,	1048576	]
 #SELECT count(*) FROM vactst WHERE i <> 0;
-% sys.L3 # table_name
-% L3 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 7 # length
 [ 1048576	]

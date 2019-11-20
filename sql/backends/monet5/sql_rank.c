@@ -63,7 +63,7 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #define CHECK_NEGATIVES_COLUMN(TPE) \
-	for(TPE *lp = (TPE*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++) { \
+	for (TPE *lp = (TPE*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++) { \
 		is_negative |= !is_##TPE##_nil(*lp) && (*lp < 0); \
 	} \
 
@@ -113,7 +113,7 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		is_a_bat = isaBatType(tp2);
-		if(is_a_bat)
+		if (is_a_bat)
 			tp2 = getBatType(tp2);
 
 		voidresultBAT(r, TYPE_lng, BATcount(b), b, "sql.window_bound");
@@ -122,6 +122,11 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!l) {
 				BBPunfix(b->batCacheid);
 				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
+			}
+			if ((unit == 0 || unit == 2) && l->tnil) {
+				BBPunfix(b->batCacheid);
+				BBPunfix(l->batCacheid);
+				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "All values on %s boundary must be non-null for %s frame", preceding ? "PRECEDING" : "FOLLOWING", (unit == 0) ? "ROWS" : "GROUPS");
 			}
 			switch (tp2) {
 				case TYPE_bte:
@@ -153,7 +158,7 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "sql.window_bound", SQLSTATE(42000) "%s limit not available for %s", "sql.window_bound", ATOMname(tp2));
 				}
 			}
-			if(is_negative) {
+			if (is_negative) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(l->batCacheid);
 				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "All values on %s boundary must be non-negative", preceding ? "PRECEDING" : "FOLLOWING");
@@ -190,7 +195,7 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "sql.window_bound", SQLSTATE(42000) "%s limit is not available for %s", "sql.window_bound", ATOMname(tp2));
 				}
 			}
-			if(is_negative)
+			if (is_negative)
 				throw(SQL, "sql.window_bound", SQLSTATE(42000) "The %s boundary must be non-negative", preceding ? "PRECEDING" : "FOLLOWING");
 		}
 		if (part_offset) {
@@ -996,19 +1001,25 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define CHECK_L_VALUE(TPE)                                                                     \
-	do {                                                                                       \
-		TPE rval = *getArgReference_##TPE(stk, pci, 2);                                        \
-		l_value = is_##TPE##_nil(rval) ? BUN_NONE : (rval > 0 ? (BUN)rval : (BUN)(-1 * rval)); \
+#define CHECK_L_VALUE(TPE) \
+	do { \
+		TPE rval = *getArgReference_##TPE(stk, pci, 2); \
+		if (!is_##TPE##_nil(rval) && rval < 0) { \
+			gdk_call = dual; \
+			rval *= -1; \
+		} \
+		l_value = is_##TPE##_nil(rval) ? BUN_NONE : (BUN)rval; \
 	} while(0);
 
-static str /* the variable m is used to fix the multiplier */
+static str
 do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* desc,
-			gdk_return (*func)(BAT *, BAT *, BAT *, BUN, const void* restrict, int))
+			gdk_return (*func)(BAT *, BAT *, BAT *, BUN, const void* restrict, int),
+			gdk_return (*dual)(BAT *, BAT *, BAT *, BUN, const void* restrict, int))
 {
 	int tp1, tp2, tp3, base = 2;
 	BUN l_value = 1;
 	const void *restrict default_value;
+	gdk_return (*gdk_call)(BAT *, BAT *, BAT *, BUN, const void* restrict, int) = func;
 
 	(void)cntxt;
 	if (pci->argc < 4 || pci->argc > 6)
@@ -1079,11 +1090,11 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char*
 			}
 		}
 
-		gdk_code = func(r, b, p, l_value, default_value, tp1);
+		gdk_code = gdk_call(r, b, p, l_value, default_value, tp1);
 
 		BATsetcount(r, cnt);
 		BBPunfix(b->batCacheid);
-		if(gdk_code == GDK_SUCCEED)
+		if (gdk_code == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
 			throw(SQL, op, GDK_EXCEPTION);
@@ -1103,13 +1114,13 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char*
 str
 SQLlag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_lead_lag(cntxt, mb, stk, pci, "sql.lag", "lag", GDKanalyticallag);
+	return do_lead_lag(cntxt, mb, stk, pci, "sql.lag", "lag", GDKanalyticallag, GDKanalyticallead);
 }
 
 str
 SQLlead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_lead_lag(cntxt, mb, stk, pci, "sql.lead", "lead", GDKanalyticallead);
+	return do_lead_lag(cntxt, mb, stk, pci, "sql.lead", "lead", GDKanalyticallead, GDKanalyticallag);
 }
 
 /* we will keep the ordering bat here although is not needed, but maybe later with varied sized windows */

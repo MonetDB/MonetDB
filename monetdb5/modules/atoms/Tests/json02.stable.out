@@ -95,7 +95,7 @@ stdout of test 'json02` in directory 'monetdb5/modules/atoms` itself:
 #-------------------------#
 [ 0@0,	  "1"		  ]
 [ 1@0,	  "2"		  ]
-[ 2@0,	  nil		  ]
+[ 2@0,	"null"	]
 [ 3@0,	  "true"	  ]
 [ 4@0,	  "false"	  ]
 [ 5 ]

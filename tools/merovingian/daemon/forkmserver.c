@@ -177,8 +177,11 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
  * to see if forking makes sense, or whether it is necessary at all, or
  * forbidden by restart policy, e.g. when in maintenance.
  */
+
+#define MAX_NR_ARGS 511
+
 err
-forkMserver(char *database, sabdb** stats, int force)
+forkMserver(char *database, sabdb** stats, bool force)
 {
 	pid_t pid;
 	char *er;
@@ -198,21 +201,25 @@ forkMserver(char *database, sabdb** stats, int force)
 	char *sabdbfarm;
 	char dbpath[1024];
 	char dbextra_path[1024];
-	char port[24];
+	char port[32];
 	char listenaddr[512];
 	char muri[512]; /* possibly undersized */
 	char usock[512];
-	char mydoproxy;
-	char nthreads[24];
-	char nclients[24];
+	bool mydoproxy;
+	char nthreads[32];
+	char nclients[32];
 	char pipeline[512];
+	char memmaxsize[64];
+	char vmmaxsize[64];
 	char *readonly = NULL;
 	char *embeddedr = NULL;
 	char *embeddedpy = NULL;
 	char *embeddedc = NULL;
 	char *ipv6 = NULL;
 	char *dbextra = NULL;
-	char *argv[512];	/* for the exec arguments */
+	char *mserver5_extra = NULL;
+	char *mserver5_extra_token = NULL;
+	char *argv[MAX_NR_ARGS+1];	/* for the exec arguments */
 	char property_other[1024];
 	int c = 0;
 	unsigned int mport;
@@ -269,8 +276,8 @@ forkMserver(char *database, sabdb** stats, int force)
 	if (kv->val == NULL)
 		kv = findConfKey(_mero_db_props, "type");
 
-	if ((*stats)->locked == 1) {
-		if (force == 0) {
+	if ((*stats)->locked) {
+		if (!force) {
 			Mfprintf(stdout, "%s '%s' is under maintenance\n",
 					 kv->val, database);
 			freeConfFile(ckv);
@@ -470,6 +477,20 @@ forkMserver(char *database, sabdb** stats, int force)
 		pipeline[0] = '\0';
 	}
 
+	kv = findConfKey(ckv, "memmaxsize");
+	if (kv->val != NULL) {
+		snprintf(memmaxsize, sizeof(memmaxsize), "gdk_mem_maxsize=%s", kv->val);
+	} else {
+		memmaxsize[0] = '\0';
+	}
+
+	kv = findConfKey(ckv, "vmmaxsize");
+	if (kv->val != NULL) {
+		snprintf(vmmaxsize, sizeof(vmmaxsize), "gdk_vm_maxsize=%s", kv->val);
+	} else {
+		vmmaxsize[0] = '\0';
+	}
+
 	kv = findConfKey(ckv, "readonly");
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 		readonly = "--readonly";
@@ -504,7 +525,7 @@ forkMserver(char *database, sabdb** stats, int force)
 
 	kv = findConfKey(ckv, "listenaddr");
 	if (kv->val != NULL) {
-		if (mydoproxy == 1) {
+		if (mydoproxy) {
 			// listenaddr is only available on forwarding method
 			freeConfFile(ckv);
 			free(ckv);
@@ -536,7 +557,7 @@ forkMserver(char *database, sabdb** stats, int force)
 				 "--dbextra=%s", dbextra);
 		argv[c++] = dbextra_path;
 	}
-	if (mydoproxy == 1) {
+	if (mydoproxy) {
 		struct sockaddr_un s; /* only for sizeof(s.sun_path) :( */
 		argv[c++] = "--set"; argv[c++] = "mapi_open=false";
 		/* we "proxy", so we can just solely use UNIX domain sockets
@@ -579,6 +600,12 @@ forkMserver(char *database, sabdb** stats, int force)
 	if (pipeline[0] != '\0') {
 		argv[c++] = "--set"; argv[c++] = pipeline;
 	}
+	if (memmaxsize[0] != '\0') {
+		argv[c++] = "--set"; argv[c++] = memmaxsize;
+	}
+	if (vmmaxsize[0] != '\0') {
+		argv[c++] = "--set"; argv[c++] = vmmaxsize;
+	}
 	if (embeddedr != NULL) {
 		argv[c++] = "--set"; argv[c++] = embeddedr;
 	}
@@ -601,6 +628,11 @@ forkMserver(char *database, sabdb** stats, int force)
 		}
 		list++;
 	}
+
+	/* Let's get extra mserver5 args from the environment */
+	mserver5_extra = getenv("MSERVER5_EXTRA_ARGS");
+	while (c < MAX_NR_ARGS && (mserver5_extra_token = strsep(&mserver5_extra, " ")))
+		argv[c++] = mserver5_extra_token;
 
 	argv[c++] = NULL;
 
@@ -776,7 +808,7 @@ forkMserver(char *database, sabdb** stats, int force)
 			}
 		}
 
-		if ((*stats)->locked == 1) {
+		if ((*stats)->locked) {
 			Mfprintf(stdout, "database '%s' has been put into maintenance "
 					 "mode during startup\n", database);
 		}

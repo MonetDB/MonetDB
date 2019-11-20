@@ -286,7 +286,7 @@ done
 echo
 
 cat <<EOF
-pattern between(b:any_1,lo:any_1,hi:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit) :bit
+pattern between(b:any_1,lo:any_1,hi:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bit
 address CMDvarBETWEEN
 comment "B between LO and HI inclusive";
 

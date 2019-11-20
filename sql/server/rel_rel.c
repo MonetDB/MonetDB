@@ -11,6 +11,7 @@
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_remote.h"
+#include "rel_unnest.h"
 #include "sql_semantic.h"
 #include "sql_mvc.h"
 
@@ -100,6 +101,7 @@ rel_create( sql_allocator *sa )
 	r->flag = 0;
 	r->card = CARD_ATOM;
 	r->processed = 0;
+	r->single = 0;
 	r->dependent = 0;
 	r->subquery = 0;
 	r->p = NULL;
@@ -189,13 +191,13 @@ rel_issubquery(sql_rel*r)
 }
 
 static sql_rel *
-rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
+rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname)
 {
 	int ambiguous = 0;
 	sql_rel *l = NULL, *r = NULL;
 
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	switch(rel->op) {
 	case op_join:
@@ -213,7 +215,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 			if (!r || !e || !is_freevar(e)) {
 				*p = rel;
 				l = rel_bind_column_(sql, p, rel->l, cname);
-				if (l && r && !rel_issubquery(r)) {
+				if (l && r && !rel_issubquery(r) && !is_dependent(rel)) {
 					(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 					return NULL;
 				}
@@ -242,7 +244,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 		if (is_processed(rel))
 			return NULL;
 		if (rel->l && !(is_base(rel->op)))
-			return rel_bind_column_(sql, p, rel->l, cname );
+			return rel_bind_column_(sql, p, rel->l, cname);
 		break;
 	case op_semi:
 	case op_anti:
@@ -263,7 +265,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 sql_exp *
 rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f )
 {
-	sql_rel *p = NULL;
+	sql_rel *p = NULL, *orel = rel;
 
 	if (is_sql_sel(f) && rel && is_simple_project(rel->op) && !is_processed(rel))
 		rel = rel->l;
@@ -274,7 +276,10 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f )
 	if ((is_project(rel->op) || is_base(rel->op)) && rel->exps) {
 		sql_exp *e = exps_bind_column(rel->exps, cname, NULL);
 		if (e)
-			return exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
+			e = exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
+		if (p && e && is_simple_project(p->op) && !is_processed(p) && is_sql_orderby(f) && orel != rel)
+			e = rel_project_add_exp(sql, p, e);
+		return e;
 	}
 	return NULL;
 }
@@ -289,6 +294,18 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 
 	if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
 		sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
+		/* in case of orderby we should also lookup the column in group by list (and use existing references) */
+		if (!e && is_sql_orderby(f) && is_groupby(rel->op) && rel->r) {
+			e = exps_bind_alias(rel->r, tname, cname);
+			if (e) { 
+				if (exp_relname(e))
+					e = exps_bind_column2(rel->exps, exp_relname(e), exp_name(e));
+				else
+					e = exps_bind_column(rel->exps, exp_name(e), NULL);
+				if (e)
+					return e;
+			}
+		}
 		if (e)
 			return exp_alias_or_copy(sql, tname, cname, rel, e);
 	}
@@ -310,7 +327,6 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 	}
 	return NULL;
 }
-
 
 sql_rel *
 rel_inplace_setop(sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps)
@@ -493,7 +509,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 	char tname[16], *tnme;
 	char cname[16], *cnme = NULL;
 
-	tnme = number2name(tname, 16, nr);
+	tnme = number2name(tname, sizeof(tname), nr);
 	if (!is_project(r->op)) {
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 		set_processed(r);
@@ -508,7 +524,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 			if (!e->freevar) {
 				if (all) {
 					nr = ++sql->label;
-					cnme = number2name(cname, 16, nr);
+					cnme = number2name(cname, sizeof(cname), nr);
 				}
 				exp_setname(sql->sa, e, tnme, cnme );
 			}
@@ -523,7 +539,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 		for (; ne; ne = ne->next) {
 			if (all) {
 				nr = ++sql->label;
-				cnme = number2name(cname, 16, nr);
+				cnme = number2name(cname, sizeof(cname), nr);
 			}
 			exp_setname(sql->sa, ne->data, tnme, cnme );
 		}
@@ -543,12 +559,15 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 			exp_label(sql->sa, e, ++sql->label);
 	}
 	if (rel->op == op_project) {
+		sql_rel *l = rel->l;
 		if (!rel->exps)
 			rel->exps = new_exp_list(sql->sa);
-		append(rel->exps, e);
-		rel->nrcols++;
+		if (l && is_groupby(l->op) && exp_card(e) <= CARD_ATOM && list_empty(l->exps)) 
+			e = rel_project_add_exp(sql, l, e);
 		if (e->card > rel->card)
 			rel->card = e->card;
+		append(rel->exps, e);
+		rel->nrcols++;
 	} else if (rel->op == op_groupby) {
 		return rel_groupby_add_aggr(sql, rel, e);
 	}
@@ -645,7 +664,7 @@ rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 
 	if ((m=exps_find_match_exp(rel->exps, e)) == NULL) {
 		if (!exp_name(e)) {
-			nme = number2name(name, 16, ++sql->label);
+			nme = number2name(name, sizeof(name), ++sql->label);
 			exp_setname(sql->sa, e, nme, nme);
 		}
 		append(rel->exps, e);
@@ -915,7 +934,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	int include_subquery = (intern==2)?1:0;
 
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel || (!include_subquery && is_subquery(rel) && rel->op == op_project))
 		return new_exp_list(sql->sa);
@@ -1004,7 +1023,7 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 	int found = 0;
 
 	if (THRhighwater()) {
-		sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return 0;
 	}
 
@@ -1360,6 +1379,35 @@ rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	return _rel_add_identity(sql, rel, exp);
 }
 
+sql_rel *
+rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp)
+{
+	sql_rel *l = rel, *p = rel;
+
+	if (rel && is_project(rel->op) && (*exp = exps_find_identity(rel->exps, rel->l)) != NULL)
+		return rel;
+	while(l && !is_set(l->op) && rel_has_freevar(sql, l) && l->l) {
+		p = l;
+		l = l->l;
+	}
+	if (l != p) {
+		sql_rel *o = rel;
+		sql_exp *id;
+
+		p->l = _rel_add_identity(sql, l, exp);
+		l = p->l;
+		id = exp_ref(sql->sa, *exp);
+		while (o && o != l) {
+			*exp = id;
+			if (is_project(o->op))
+				rel_project_add_exp(sql, o, id);
+			o = o->l;
+		}
+		return rel;
+	}
+	return _rel_add_identity(sql, rel, exp);
+}
+
 sql_exp *
 rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname )
 {
@@ -1403,4 +1451,252 @@ rel_in_rel(sql_rel *super, sql_rel *sub)
 	if (is_select(super->op) || is_project(super->op) || is_topn(super->op) || is_sample(super->op))
 		return rel_in_rel(super->l, sub);
 	return 0;
+}
+
+static sql_rel *
+refs_find_rel(list *refs, sql_rel *rel)
+{
+	node *n;
+
+	for(n=refs->h; n; n = n->next->next) {
+		sql_rel *ref = n->data;
+		sql_rel *s = n->next->data;
+		
+		if (rel == ref) 
+			return s;
+	}
+	return NULL;
+}
+
+static int exp_deps(mvc *sql, sql_exp *e, list *refs, list *l);
+
+static int
+exps_deps(mvc *sql, list *exps, list *refs, list *l)
+{
+	node *n;
+
+	for(n = exps->h; n; n = n->next) {
+		if (exp_deps(sql, n->data, refs, l) != 0)
+			return -1;
+	}
+	return 0;
+}
+
+static int
+id_cmp(int *id1, int *id2)
+{
+	if (*id1 == *id2)
+		return 0;
+	return -1;
+}
+
+static list *
+cond_append(list *l, int *id)
+{
+	if (*id >= FUNC_OIDS && !list_find(l, id, (fcmp) &id_cmp))
+		 list_append(l, id);
+	return l;
+}
+
+static int rel_deps(mvc *sql, sql_rel *r, list *refs, list *l);
+
+static int
+exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
+{
+	if (THRhighwater()) {
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return -1;
+	}
+
+	switch(e->type) {
+	case e_psm:
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN) {
+			return exp_deps(sql, e->l, refs, l);
+		} else if (e->flag & PSM_VAR) {
+			return 0;
+		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
+			if (exp_deps(sql, e->l, refs, l) != 0 ||
+		            exps_deps(sql, e->r, refs, l) != 0)
+				return -1;
+			if (e->flag == PSM_IF && e->f)
+		            return exps_deps(sql, e->r, refs, l);
+		} else if (e->flag & PSM_REL) {
+			sql_rel *rel = e->l;
+			return rel_deps(sql, rel, refs, l);
+		} else if (e->flag & PSM_EXCEPTION) {
+			return exps_deps(sql, e->l, refs, l);
+		}
+	case e_atom: 
+	case e_column: 
+		break;
+	case e_convert: 
+		return exp_deps(sql, e->l, refs, l);
+	case e_func: {
+			sql_subfunc *f = e->f;
+
+			if (e->l && exps_deps(sql, e->l, refs, l) != 0)
+				return -1;
+			cond_append(l, &f->func->base.id);
+			if (e->l && list_length(e->l) == 2 && strcmp(f->func->base.name, "next_value_for") == 0) {
+				/* add dependency on seq nr */
+				list *nl = e->l;
+				sql_exp *schname = nl->h->data;
+				sql_exp *seqname = nl->t->data;
+
+				char *sch_name = ((atom*)schname->l)->data.val.sval;
+				char *seq_name = ((atom*)seqname->l)->data.val.sval;
+				sql_schema *sche = mvc_bind_schema(sql, sch_name);
+				sql_sequence *seq = find_sql_sequence(sche, seq_name);
+
+				cond_append(l, &seq->base.id);
+			}
+		} break;
+	case e_aggr: {
+			sql_subaggr *a = e->f;
+
+			if (e->l &&exps_deps(sql, e->l, refs, l) != 0)
+				return -1;
+			cond_append(l, &a->aggr->base.id);
+		} break;
+	case e_cmp: {
+			if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
+				if (get_cmp(e) == cmp_filter) {
+					sql_subfunc *f = e->f;
+					cond_append(l, &f->func->base.id);
+				}
+				if (exps_deps(sql, e->l, refs, l) != 0 ||
+			    	    exps_deps(sql, e->r, refs, l) != 0)
+					return -1;
+			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+				if (exp_deps(sql, e->l, refs, l) != 0 ||
+			            exps_deps(sql, e->r, refs, l) != 0)
+					return -1;
+			} else {
+				if (exp_deps(sql, e->l, refs, l) != 0 ||
+				    exp_deps(sql, e->r, refs, l) != 0)
+					return -1;
+				if (e->f)
+					return exp_deps(sql, e->f, refs, l);
+			}
+		}	break;
+	}
+	return 0;
+}
+
+static int
+rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
+{
+	if (THRhighwater()) {
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return -1;
+	}
+
+	if (!r)
+		return 0;
+
+	if (rel_is_ref(r) && refs_find_rel(refs, r)) /* allready handled */
+		return 0;
+	switch (r->op) {
+	case op_basetable: {
+		sql_table *t = r->l;
+		sql_column *c = r->r;
+
+		if (!t && c)
+			t = c->t;
+
+		cond_append(l, &t->base.id);
+		/* find all used columns */
+		for (node *en = r->exps->h; en; en = en->next) {
+			sql_exp *exp = en->data;
+			const char *oname = exp->r;
+
+			assert(!is_func(exp->type));
+			if (oname[0] == '%' && strcmp(oname, TID) == 0) {
+				continue;
+			} else if (oname[0] == '%') { 
+				sql_idx *i = find_sql_idx(t, oname+1);
+				cond_append(l, &i->base.id);
+			} else {
+				sql_column *c = find_sql_column(t, oname);
+				cond_append(l, &c->base.id);
+			}
+		}
+	} break;
+	case op_table: {
+		if ((r->flag == 0 || r->flag == 1) && r->r) { /* table producing function, excluding rel_relational_func cases */
+			sql_exp *op = r->r;
+			sql_subfunc *f = op->f;
+			cond_append(l, &f->func->base.id);
+		}
+	} break;
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+	case op_semi:
+	case op_anti:
+	case op_union: 
+	case op_except: 
+	case op_inter: 
+		if (rel_deps(sql, r->l, refs, l) != 0 ||
+		    rel_deps(sql, r->r, refs, l) != 0)
+			return -1;
+		break;
+	case op_project:
+	case op_select: 
+	case op_groupby: 
+	case op_topn: 
+	case op_sample:
+		if (rel_deps(sql, r->l, refs, l) != 0)
+			return -1;
+		break;
+	case op_insert: 
+	case op_update: 
+	case op_delete:
+	case op_truncate:
+		if (rel_deps(sql, r->l, refs, l) != 0 ||
+		    rel_deps(sql, r->r, refs, l) != 0)
+			return -1;
+		break;
+	case op_ddl:
+		if (r->flag == ddl_output) {
+			if (r->l)
+				return rel_deps(sql, r->l, refs, l);
+		} else if (r->flag == ddl_list || r->flag == ddl_exception) {
+			if (r->l)
+				return rel_deps(sql, r->l, refs, l);
+			if (r->r)
+				return rel_deps(sql, r->r, refs, l);
+		} else if (r->flag == ddl_psm) {
+			break;
+		} else if (r->flag == ddl_create_seq || r->flag == ddl_alter_seq) {
+			if (r->l)
+				return rel_deps(sql, r->l, refs, l);
+		}
+		break;
+	}
+	if (!is_base(r->op) && r->exps) {
+		if (exps_deps(sql, r->exps, refs, l) != 0)
+			return -1;
+	}
+	if (is_groupby(r->op) && r->r) {
+		if (exps_deps(sql, r->r, refs, l) != 0)
+			return -1;
+	}
+	if (rel_is_ref(r)) {
+		list_append(refs, r);
+		list_append(refs, l);
+	}
+	return 0;
+}
+
+list *
+rel_dependencies(mvc *sql, sql_rel *r)
+{
+	list *refs = sa_list(sql->sa);
+	list *l = sa_list(sql->sa);
+
+	if (rel_deps(sql, r, refs, l) != 0)
+		return NULL;
+	return l;
 }

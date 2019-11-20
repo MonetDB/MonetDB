@@ -973,6 +973,10 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* data load */
 	fits_get_num_rows(fptr, &rows, &status);
+	/* Nothing more to do */
+	if (rows == 0) {
+		goto bailout;
+	}
 	fprintf(stderr,"#Loading %ld rows in table %s\n", rows, tname);
 	for (j = 1; j <= cnum; j++) {
 		BAT *tmp = NULL;
@@ -1022,7 +1026,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				fits_read_col(fptr, tpcode[j - 1], j, i + 1, 1, rep[j - 1], (void *)nilptr,
 					      (void *)v[i]->data, &anynull, &status);
 				v[i]->nitems = nbytes;
-				if (BUNappend(tmp, v[i], true) != GDK_SUCCEED) {
+				if (BUNappend(tmp, v[i], false) != GDK_SUCCEED) {
 					BBPreclaim(tmp);
 					msg = createException(MAL, "fits.loadtable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					GDKfree(tpcode);
@@ -1057,7 +1061,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				tloadtm += GDKms() - tm0;
 				tm0 = GDKms();
 				for(k = 0; k < batch ; k++)
-					if (BUNappend(tmp, v[k], true) != GDK_SUCCEED) {
+					if (BUNappend(tmp, v[k], false) != GDK_SUCCEED) {
 						BBPreclaim(tmp);
 						msg = createException(MAL, "fits.loadtable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						goto bailout;

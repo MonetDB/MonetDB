@@ -11,6 +11,10 @@ address MATpack
 comment "Define a Merge Association Table (MAT). Fall back to the pack operation
 when this is called ";
 
+pattern bat.pack(:any_2...):bat[:any_2]
+address MATpackValues
+comment "Materialize the values into a BAT. Avoiding a clash with mat.pack() in mergetable";
+
 pattern pack(:any_2...):bat[:any_2]
 address MATpackValues
 comment "Materialize the MAT (of values) into a BAT";

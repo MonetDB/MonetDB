@@ -20,7 +20,7 @@ headers_h = {
 
 lib_mutils  =  {
 	NOINST
-	SOURCES = mutils.h mutils.c prompt.c mprompt.h revision.c
+	SOURCES = mutils.h mutils.c prompt.c mprompt.h revision.c mstring.h
 }
 
 lib_mcrypt = {

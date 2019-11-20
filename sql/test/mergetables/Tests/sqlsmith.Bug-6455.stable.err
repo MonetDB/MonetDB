@@ -30,8 +30,6 @@ stderr of test 'sqlsmith.Bug-6455` in directory 'sql/test/mergetables` itself:
 #    X_115:bat[:lng] := mal.multiplex("user":str, "hashsize":str, X_81:bat[:bit], X_60:bat[:lng]);
 #WARNING To speedup user.imprintsize a bulk operator implementation is needed
 #    X_117:bat[:lng] := mal.multiplex("user":str, "imprintsize":str, X_60:bat[:lng], X_46:bat[:str]);
-#WARNING To speedup aggr.exist a bulk operator implementation is needed
-#    X_1489:bat[:bit] := mal.multiplex("aggr":str, "exist":str, X_1474:bat[:int]);
 
 # 13:19:14 >  
 # 13:19:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3545" "--port=31757"

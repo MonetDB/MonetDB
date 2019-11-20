@@ -11,6 +11,7 @@
 
 #include <netinet/in.h> /* struct sockaddr_in */
 #include <pthread.h> /* pthread_mutex_t */
+#include <signal.h>	 /* sig_atomic_t */
 
 #include "utils/utils.h" /* confkeyval */
 
@@ -65,7 +66,7 @@ extern char *_mero_mserver;
 extern dpair _mero_topdp;
 extern pthread_mutex_t _mero_topdp_lock;
 extern volatile int _mero_keep_logging;
-extern volatile char _mero_keep_listening;
+extern volatile sig_atomic_t _mero_keep_listening;
 extern FILE *_mero_logfile;
 extern unsigned short _mero_port;
 extern FILE *_mero_discout;

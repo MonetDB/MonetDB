@@ -86,9 +86,9 @@ stdout of test 'incorrect_columns` in directory 'sql/test/copy` itself:
 % .L1,	.L1,	.L1,	.L1 # table_name
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
-% 1,	1,	22,	11 # length
-[ 0,	0,	"Column value 1 missing",	"2\n"	]
-[ 0,	0,	"Column value 1 missing",	"no tag\n"	]
+% 1,	1,	20,	11 # length
+[ 0,	0,	"Column value missing",	"2\n"	]
+[ 0,	0,	"Column value missing",	"no tag\n"	]
 [ 0,	2,	"Leftover data 'xyz'",	"3,too much\n"	]
 #drop table t_columns;
 

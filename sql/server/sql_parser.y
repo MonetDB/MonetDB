@@ -164,7 +164,7 @@ uescape_xform(char *restrict s, const char *restrict esc)
 %lex-param { void *m }
 
 /* reentrant parser */
-%pure-parser
+%define api.pure
 %union {
 	int		i_val,bval;
 	lng		l_val,operation;
@@ -2003,8 +2003,7 @@ table_constraint_type:
  ;
 
 domain_constraint_type:
-/*    CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }*/
-    CHECK '(' search_condition ')' { $$ = NULL; }
+    CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
 
 ident_commalist:
@@ -2067,12 +2066,10 @@ external_function_name:
 	ident '.' ident { $$ = append_string(append_string(L(), $1), $3); }
  ;
 
-
 function_body:
 	X_BODY
 |	string
 ;
-
 
 func_def:
     create_or_replace FUNCTION qname
@@ -3695,7 +3692,6 @@ opt_having_clause:
  |  HAVING search_condition	 { $$ = $2; }
  ;
 
-
 search_condition:
     search_condition OR and_exp
 		{ dlist *l = L();
@@ -3780,16 +3776,15 @@ sort_specification_list:
  ;
 
 ordering_spec:
-    scalar_exp opt_asc_desc opt_nulls_first_last
+    search_condition opt_asc_desc opt_nulls_first_last
 	{ dlist *l = L();
 	  append_symbol(l, $1);
 	  append_int(l, $2 | (($3 == -1 ? !$2 : $3) << 1));
 	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
-
  ;
 
 opt_asc_desc:
-    /* empty */ 	{ $$ = TRUE; }
+    /* empty */ { $$ = TRUE; }
  |  ASC			{ $$ = TRUE; }
  |  DESC		{ $$ = FALSE; }
  ;

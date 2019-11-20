@@ -34,7 +34,7 @@
 #ifdef HAVE_MACH_MACH_INIT_H
 # include <mach/mach_init.h>
 #endif
-#if defined(HAVE_KVM_H) && defined(HAVE_SYS_SYSCTL_H)
+#if defined(HAVE_KVM_H)
 # include <kvm.h>
 # include <sys/param.h>
 # include <sys/sysctl.h>
@@ -297,7 +297,7 @@ MT_getrss(void)
 
 	if (task_info(task, TASK_BASIC_INFO_64, (task_info_t)&t_info, &t_info_count) != KERN_INVALID_POLICY)
 		return t_info.resident_size;  /* bytes */
-#elif defined(HAVE_KVM_H) && defined(HAVE_SYS_SYSCTL_H)
+#elif defined(HAVE_KVM_H)
 	/* get RSS on FreeBSD and NetBSD */
 	struct kinfo_proc *ki;
 	int ski = 1;
@@ -840,8 +840,7 @@ MT_mmap(const char *path, int mode, size_t len)
 		(void) SetFileAttributes(path, FILE_ATTRIBUTE_NORMAL);
 		h1 = CreateFile(path, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
 		if (h1 == INVALID_HANDLE_VALUE) {
-			errno = winerror(GetLastError());
-			GDKsyserror("MT_mmap: CreateFile('%s', %lu, %lu, &sa, %lu, %lu, NULL) failed\n",
+			GDKwinerror("MT_mmap: CreateFile('%s', %lu, %lu, &sa, %lu, %lu, NULL) failed\n",
 				    path, mode0, mode1, (DWORD) OPEN_ALWAYS, mode2);
 			return NULL;
 		}
@@ -849,8 +848,7 @@ MT_mmap(const char *path, int mode, size_t len)
 
 	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) (((__int64) len >> 32) & LL_CONSTANT(0xFFFFFFFF)), (DWORD) (len & LL_CONSTANT(0xFFFFFFFF)), NULL);
 	if (h2 == NULL) {
-		errno = winerror(GetLastError());
-		GDKsyserror("MT_mmap: CreateFileMapping(%p, &sa, %lu, %lu, %lu, NULL) failed\n",
+		GDKwinerror("MT_mmap: CreateFileMapping(%p, &sa, %lu, %lu, %lu, NULL) failed\n",
 			    h1, mode3,
 			    (DWORD) (((__int64) len >> 32) & LL_CONSTANT(0xFFFFFFFF)),
 			    (DWORD) (len & LL_CONSTANT(0xFFFFFFFF)));
@@ -877,8 +875,7 @@ MT_munmap(void *p, size_t dummy)
 	 * while Unix's   munmap          returns success==0, error==-1. */
 	ret = UnmapViewOfFile(p);
 	if (ret == 0) {
-		errno = winerror(GetLastError());
-		GDKsyserror("MT_munmap failed\n");
+		GDKwinerror("MT_munmap failed\n");
 		return -1;
 	}
 	return 0;
@@ -927,8 +924,7 @@ MT_msync(void *p, size_t len)
 	 * while Unix's   munmap          returns success==0, error==-1. */
 	ret = FlushViewOfFile(p, len);
 	if (ret == 0) {
-		errno = winerror(GetLastError());
-		GDKsyserror("MT_msync: FlushViewOfFile failed\n");
+		GDKwinerror("MT_msync: FlushViewOfFile failed\n");
 		return -1;
 	}
 	return 0;
@@ -953,7 +949,7 @@ MT_glob_start(const char *pattern, MT_glob *res)
 	res->hFind = FindFirstFileEx(pattern, FindExInfoStandard, &(res->fData), FindExSearchNameMatch, NULL, 0);
 
 	if (res->hFind == INVALID_HANDLE_VALUE) {
-		GDKsyserror("MT_glob_start: FindFirstFileEx failed\n");
+		GDKwinerror("MT_glob_start: FindFirstFileEx failed\n");
 		FindClose(res->hFind);
 		res->opened = false;
 		return -1;
@@ -974,7 +970,7 @@ MT_glob_next(MT_glob *glob, char **res)
 	} else if (FindNextFile(glob->hFind, &(glob->fData))) {
 		*res = glob->fData.cFileName;
 	} else if (GetLastError() != ERROR_NO_MORE_FILES) {
-		GDKsyserror("MT_glob_next: FindNextFile failed\n");
+		GDKwinerror("MT_glob_next: FindNextFile failed\n");
 		return -1;
 	}
 	return 0;

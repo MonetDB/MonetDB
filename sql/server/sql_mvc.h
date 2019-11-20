@@ -26,6 +26,8 @@
 #include "sql_symbol.h"
 
 #define ERRSIZE 8192
+#define ERR_AMBIGUOUS		050000
+#define ERR_GROUPBY		060000
 
 /* value vs predicate (boolean) */
 #define type_value	0
@@ -54,8 +56,6 @@
    dependency generation */
 #define m_instantiate 	5
 #define m_deps 		6
-
-#define QUERY_MODE(m) (m==m_normal || m==m_instantiate || m==m_deps)
 
 /* different query execution modifiers (emod) */
 #define mod_none 	0
@@ -127,7 +127,7 @@ typedef struct mvc {
 
 	sql_session *session;	
 
-	int type;		/* query type */
+	sql_query_t type;	/* query type */
 	int pushdown;		/* AND or OR query handling */
 	unsigned int label;	/* numbers for relational projection labels */
 	int remote;
@@ -137,8 +137,10 @@ typedef struct mvc {
 
 	int result_id;
 	res_table *results;
+	char *query;		/* string, identify whatever we're working on */
 } mvc;
 
+extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
 extern int mvc_init(int debug, store_type store, int ro, int su, backend_stack stk);
 extern void mvc_exit(void);
 extern void mvc_logmanager(void);
@@ -149,6 +151,7 @@ extern int mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 extern void mvc_destroy(mvc *c);
 
 extern int mvc_status(mvc *c);
+extern int mvc_error_retry(mvc *c); // error code on errors else 0, errors AMBIGUOUS and GROUPBY will also output 0
 extern int mvc_type(mvc *c);
 extern int mvc_debug_on(mvc *m, int flag);
 extern void mvc_cancel_session(mvc *m);
@@ -168,7 +171,7 @@ extern str mvc_release(mvc *c, const char *name);
 extern sql_type *mvc_bind_type(mvc *sql, const char *name);
 extern sql_type *schema_bind_type(mvc *sql, sql_schema * s, const char *name);
 extern sql_func *mvc_bind_func(mvc *sql, const char *name);
-extern list *schema_bind_func(mvc *sql, sql_schema * s, const char *name, int type);
+extern list *schema_bind_func(mvc *sql, sql_schema * s, const char *name, sql_ftype type);
 
 extern sql_schema *mvc_bind_schema(mvc *c, const char *sname);
 extern sql_table *mvc_bind_table(mvc *c, sql_schema *s, const char *tname);
@@ -182,7 +185,7 @@ extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, const char *tname);
 extern sql_type *mvc_create_type(mvc *sql, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl);
 extern int mvc_drop_type(mvc *sql, sql_schema *s, sql_type *t, int drop_action);
 
-extern sql_func *mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
+extern sql_func *mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 extern int mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action);
 extern int mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
 
@@ -220,11 +223,10 @@ extern sql_trigger * mvc_create_trigger(mvc *m, sql_table *t, const char *name, 
 extern sql_trigger * mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
 extern int mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
 
-
 /*dependency control*/
-extern void mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sht depend_type);
-extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sht dep_type);
-extern int mvc_check_dependency(mvc * m, sqlid id, sht type, list *ignore_ids);
+extern void mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sql_dependency depend_type);
+extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sql_dependency dep_type);
+extern int mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ignore_ids);
 
 /* variable management */
 extern sql_var* stack_push_var(mvc *sql, const char *name, sql_subtype *type);

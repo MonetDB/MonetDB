@@ -29,6 +29,7 @@
  * @- Mthreads Routine implementations
  */
 #include "monetdb_config.h"
+#include "mstring.h"
 #include "gdk_system.h"
 #include "gdk_system_private.h"
 
@@ -386,8 +387,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		.detached = (d == MT_THR_DETACHED),
 	};
 	ATOMIC_INIT(&w->exited, 0);
-	strncpy(w->threadname, threadname, sizeof(w->threadname));
-	w->threadname[sizeof(w->threadname) - 1] = 0;
+	strcpy_len(w->threadname, threadname, sizeof(w->threadname));
 	THRDDEBUG fprintf(stderr, "#create \"%s\" \"%s\"\n", MT_thread_getname(), threadname);
 	EnterCriticalSection(&winthread_cs);
 	w->hdl = CreateThread(NULL, THREAD_STACK_SIZE, thread_starter, w,
@@ -847,7 +847,7 @@ MT_check_nr_cores(void)
 #if defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
 	/* this works on Linux, Solaris and AIX */
 	ncpus = sysconf(_SC_NPROCESSORS_ONLN);
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_NCPU)   /* BSD */
+#elif defined(HW_NCPU)   /* BSD */
 	size_t len = sizeof(int);
 	int mib[3];
 
@@ -870,14 +870,53 @@ MT_check_nr_cores(void)
 	if (ncpus <= 0)
 		ncpus = 1;
 #if SIZEOF_SIZE_T == SIZEOF_INT
-	/* On 32-bits systems with large amounts of cpus/cores, we quickly
-	 * run out of space due to the amount of threads in use.  Since it
-	 * is questionable whether many cores on a 32-bits system are going
-	 * to beneficial due to this, we simply limit the auto-detected
-	 * cores to 16 on 32-bits systems.  The user can always override
-	 * this via gdk_nr_threads. */
+	/* On 32-bits systems with large numbers of cpus/cores, we
+	 * quickly run out of space due to the number of threads in
+	 * use.  Since it is questionable whether many cores on a
+	 * 32-bits system are going to be beneficial due to this, we
+	 * simply limit the auto-detected cores to 16 on 32-bits
+	 * systems.  The user can always override this via
+	 * gdk_nr_threads. */
 	if (ncpus > 16)
 		ncpus = 16;
+#endif
+
+#ifndef WIN32
+	/* get the number of allocated cpus from the cgroup settings */
+	FILE *f = fopen("/sys/fs/cgroup/cpuset/cpuset.cpus", "r");
+	if (f != NULL) {
+		char buf[512];
+		char *p = fgets(buf, 512, f);
+		fclose(f);
+		if (p != NULL) {
+			/* syntax is: ranges of CPU numbers separated
+			 * by comma; a range is either a single CPU
+			 * id, or two IDs separated by a minus; any
+			 * deviation causes the file to be ignored */
+			int ncpu = 0;
+			for (;;) {
+				char *q;
+				unsigned fst = strtoul(p, &q, 10);
+				if (q == p)
+					return ncpus;
+				ncpu++;
+				if (*q == '-') {
+					p = q + 1;
+					unsigned lst = strtoul(p, &q, 10);
+					if (q == p || lst <= fst)
+						return ncpus;
+					ncpu += lst - fst;
+				}
+				if (*q == '\n')
+					break;
+				if (*q != ',')
+					return ncpus;
+				p = q + 1;
+			}
+			if (ncpu < ncpus)
+				return ncpu;
+		}
+	}
 #endif
 
 	return ncpus;

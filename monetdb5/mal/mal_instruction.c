@@ -336,7 +336,7 @@ copyMalBlk(MalBlkPtr old)
 		GDKfree(mb);
 		return NULL;
 	}
-	strncpy(mb->binding,  old->binding, IDLENGTH);
+	strcpy_len(mb->binding,  old->binding, sizeof(mb->binding));
 	mb->errors = old->errors? GDKstrdup(old->errors):0;
 	mb->tag = old->tag;
 	mb->runtime = old->runtime;
@@ -443,6 +443,36 @@ prepareMalBlk(MalBlkPtr mb, str s)
  * which leads to growing records as a result of pushArguments
  * Allocation of an instruction should always succeed.
  */
+InstrPtr
+newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args)
+{
+	InstrPtr p = NULL;
+
+	p = GDKzalloc(args * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
+	if (p == NULL) {
+		/* We are facing an hard problem.
+		 * The hack is to re-use an already allocated instruction.
+		 * The marking of the block as containing errors should protect further actions.
+		 */
+		if( mb){
+			mb->errors = createMalException(mb,0, TYPE, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+		return NULL;
+	}
+	p->maxarg = args;
+	p->typechk = TYPE_UNKNOWN;
+	setModuleId(p, modnme);
+	setFunctionId(p, fcnnme);
+	p->argc = 1;
+	p->retc = 1;
+	p->mitosis = -1;
+	p->argv[0] = -1;			/* watch out for direct use in variable table */
+	/* Flow of control instructions are always marked as an assignment
+	 * with modifier */
+	p->token = ASSIGNsymbol;
+	return p;
+
+}
 InstrPtr
 newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
 {
@@ -764,8 +794,7 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 	if( name == 0 || len == 0)
 		(void) snprintf(getVarName(mb,n), IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
 	else{
-		(void) strncpy( getVarName(mb,n), name,len);
-		getVarName(mb,n)[len]=0;
+		(void) strcpy_len( getVarName(mb,n), name, len + 1);
 	}
 
 	setRowCnt(mb,n,0);

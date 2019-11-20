@@ -508,9 +508,6 @@
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define HAVE_SYS_STAT_H 1
 
-/* Define to 1 if you have the <sys/sysctl.h> header file. */
-/* #undef HAVE_SYS_SYSCTL_H */
-
 /* Define to 1 if you have the <sys/times.h> header file. */
 /* #undef HAVE_SYS_TIMES_H */
 
@@ -662,7 +659,7 @@
 #define PACKAGE_URL "https://www.monetdb.org/"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "11.34.0"
+#define PACKAGE_VERSION "11.36.0"
 
 /* Path separator */
 #define PATH_SEP ';'
