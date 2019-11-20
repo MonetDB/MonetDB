@@ -2104,7 +2104,7 @@ rewrite_join2semi(mvc *sql, sql_rel *rel)
 			sql_exp *e = n->data;
 			sql_subfunc *sf = e->f;
 
-			if (is_func(e->type) && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l))
+			if (is_func(e->type) && exp_card(e) > CARD_ATOM && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l))
 				needed = 1;
 		}
 		if (needed) {
@@ -2115,7 +2115,7 @@ rewrite_join2semi(mvc *sql, sql_rel *rel)
 				sql_exp *e = n->data;
 				sql_subfunc *sf = e->f;
 
-				if (is_func(e->type) && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l))
+				if (is_func(e->type) && exp_card(e) > CARD_ATOM && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l))
 					append(exps, e);
 				else
 					append(jexps, e);
