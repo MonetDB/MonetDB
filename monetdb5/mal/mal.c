@@ -11,7 +11,6 @@
 #include "mal.h"
 
 char 	monet_cwd[FILENAME_MAX] = { 0 };
-size_t 	monet_memory = 0;
 char 	monet_characteristics[4096];
 stream *maleventstream = 0;
 
