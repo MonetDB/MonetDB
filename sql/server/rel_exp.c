@@ -588,7 +588,9 @@ exp_column(sql_allocator *sa, const char *rname, const char *cname, sql_subtype 
 sql_exp *
 exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
 {
-	if (has_label(oe) && oe->alias.rname == ne->alias.rname && oe->alias.name == ne->alias.name)
+	if (has_label(oe) && 
+	   (oe->alias.rname == ne->alias.rname || (oe->alias.rname && ne->alias.rname && strcmp(oe->alias.rname, ne->alias.rname) == 0)) &&
+	   (oe->alias.name == ne->alias.name || (oe->alias.name && ne->alias.name && strcmp(oe->alias.name, ne->alias.name) == 0)))
 		ne->alias.label = oe->alias.label;
 	if (is_intern(oe))
 		set_intern(ne);
@@ -1526,27 +1528,6 @@ rel_find_exp( sql_rel *rel, sql_exp *e)
 		}
 	}
 	return ne;
-}
-
-int 
-exp_is_correlation(sql_exp *e, sql_rel *r )
-{
-	if (e->type == e_cmp && !is_complex_exp(e->flag)) {
-		sql_exp *le = rel_find_exp(r->l, e->l);
-		sql_exp *re = rel_find_exp(r->r, e->r);
-
-		if (le && re)
-			return 0;
-		le = rel_find_exp(r->r, e->l);
-		re = rel_find_exp(r->l, e->r);
-		if (le && re) {
-			/* for future processing we depend on 
-			   the correct order of the expression, ie swap here */
-			exp_swap(e);
-			return 0;
-		}
-	}
-	return -1;
 }
 
 int

@@ -2099,6 +2099,33 @@ rewrite_join2semi(mvc *sql, sql_rel *rel)
 
 		if (!j || (!is_join(j->op) && !is_semi(j->op)) || !list_empty(j->exps))
 			return rel;
+		/* if needed first push select exps down under the join */
+		for(node *n = rel->exps->h; n && !needed; n = n->next) {
+			sql_exp *e = n->data;
+			sql_subfunc *sf = e->f;
+
+			if (is_func(e->type) && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l))
+				needed = 1;
+		}
+		if (needed) {
+			list *exps = sa_list(sql->sa), *jexps = sa_list(sql->sa);
+			sql_rel *l = j->l = rel_select(sql->sa, j->l, NULL);
+
+			for(node *n = rel->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				sql_subfunc *sf = e->f;
+
+				if (is_func(e->type) && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l))
+					append(exps, e);
+				else
+					append(jexps, e);
+			}
+			rel->exps = jexps;
+			l->exps = exps;
+			j->l = rewrite_join2semi(sql, j->l);
+		}
+
+		needed = 0;
 		for(node *n = rel->exps->h; n && !needed; n = n->next) {
 			sql_exp *e = n->data;
 			sql_subfunc *sf = e->f;

@@ -1155,6 +1155,15 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	}
 	skipWS(r, pos);
 	switch(r[*pos]) {
+	case 'a':
+		if (strncmp(r+*pos, "any =",  strlen("any =")) == 0) {
+			(*pos)+= (int) strlen("any =");
+			f = mark_in;
+		} else if (strncmp(r+*pos, "all <>",  strlen("all <>")) == 0) {
+			(*pos)+= (int) strlen("all <>");
+			f = mark_notin;
+		}
+		break;
 	case 'n':
 		if (strncmp(r+*pos, "notin",  strlen("notin")) == 0) {
 			(*pos)+= (int) strlen("notin");
