@@ -1889,6 +1889,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 						sql_exp *re = m->data;
 
 						append(l, le);
+						re = exp_ref(sql->sa, re);
 						append(r, re);
 					}
 					return exp_in_func(sql, exp_values(sql->sa, l), exp_values(sql->sa, r), is_anyequal(sf), 1);

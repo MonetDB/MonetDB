@@ -1831,6 +1831,17 @@ exp_rel_update_exp(sql_allocator *sa, sql_exp *e)
 	return e;
 }
 
+sql_exp *
+exp_rel_label(mvc *sql, sql_exp *e)
+{
+	if (exp_is_rel(e)) {
+		sql_rel *r = e->l;
+
+		e->l = r = rel_label(sql, r, 1);
+	}
+	return e;
+}
+
 int
 exps_are_atoms( list *exps)
 {

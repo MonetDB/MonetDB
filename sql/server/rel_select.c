@@ -2000,6 +2000,8 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 				return NULL;
 			if (is_tuple && !exp_is_rel(re)) 
 				return NULL;
+			if (is_tuple)
+				re = exp_rel_label(sql, re);
 			append(vals, re);
 		}
 	}

@@ -146,6 +146,7 @@ extern int exp_has_rel(sql_exp *e);
 extern int exps_have_rel_exp(list *exps);
 extern sql_rel *exp_rel_get_rel(sql_allocator *sa, sql_exp *e);
 extern sql_exp *exp_rel_update_exp(sql_allocator *sa, sql_exp *e);
+extern sql_exp *exp_rel_label(mvc *sql, sql_exp *e);
 extern int exps_are_atoms(list *exps);
 extern int exp_has_func(sql_exp *e);
 extern int exp_unsafe(sql_exp *e, int allow_identity);
