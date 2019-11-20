@@ -72,16 +72,42 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 	case op_table:
 	case op_basetable:
 		if (rel->exps) {
+			int rename = 0;
 			node *en;
+
+			/* first check alias */
+			if (!is_base(rel->op) && !level) {
+				list *exps = sa_list(sql->sa);
+
+				for (en = rel->exps->h; en && !rename; en = en->next) {
+					sql_exp *e = en->data;;
+
+					if ((is_basecol(e) && exp_relname(e) && strcmp(exp_relname(e), tname) == 0) ||
+					    (is_basecol(e) && !exp_relname(e) && e->l && strcmp(e->l, tname) == 0)) {
+						if (exp_name(e) && exps_bind_column2(exps, tname, exp_name(e)))
+							rename = 1;
+						else
+							append(exps, e);
+					}
+				}
+			}
 
 			exps = new_exp_list(sql->sa);
 			for (en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
-				/* first check alias */
-				if (is_basecol(e) && exp_relname(e) && strcmp(exp_relname(e), tname) == 0)
-					append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e));
-				if (is_basecol(e) && !exp_relname(e) && e->l && strcmp(e->l, tname) == 0)
-					append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e));
+				if (is_basecol(e) && exp_relname(e) && strcmp(exp_relname(e), tname) == 0) {
+					if (rename)
+						append(exps, exp_alias_ref(sql, e));
+					else 
+						append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e));
+				}
+				if (is_basecol(e) && !exp_relname(e) && e->l && strcmp(e->l, tname) == 0) {
+					if (rename)
+						append(exps, exp_alias_ref(sql, e));
+					else
+						append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e));
+				}
+
 			}
 			if (exps && list_length(exps))
 				return exps;
@@ -198,8 +224,10 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			for (; ne; ne = ne->next) {
 				sql_exp *e = ne->data;
 
+				/*
 				if (exp_name(e) && exps_bind_column2(l, tname, exp_name(e)))
 					return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: Duplicate column name '%s.%s'", tname, exp_name(e));
+					*/
 				noninternexp_setname(sql->sa, e, tname, NULL );
 				if (!is_intern(e))
 					set_basecol(e);
@@ -813,14 +841,25 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 		}
 		if (temp_table && !t) {
 			node *n;
-			list *exps = rel_projections(sql, temp_table, NULL, 1, 1);
+			int needed = !is_simple_project(temp_table->op);
 
-			temp_table = rel_project(sql->sa, temp_table, exps);
-			for (n = exps->h; n; n = n->next) {
+			for (n = temp_table->exps->h; n && !needed; n = n->next) {
 				sql_exp *e = n->data;
 
-				noninternexp_setname(sql->sa, e, tname, NULL);
-				set_basecol(e);
+				if (!exp_relname(e) || strcmp(exp_relname(e), tname) != 0)
+					needed = 1;
+			}
+
+			if (needed) {
+				list *exps = rel_projections(sql, temp_table, NULL, 1, 1);
+
+				temp_table = rel_project(sql->sa, temp_table, exps);
+				for (n = exps->h; n; n = n->next) {
+					sql_exp *e = n->data;
+
+					noninternexp_setname(sql->sa, e, tname, NULL);
+					set_basecol(e);
+				}
 			}
 			return temp_table;
 		} else if (isView(t)) {

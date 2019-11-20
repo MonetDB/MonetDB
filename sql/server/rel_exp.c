@@ -635,6 +635,20 @@ exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel
 }
 
 sql_exp *
+exp_alias_ref(mvc *sql, sql_exp *e)
+{
+	sql_exp *ne = NULL;
+	const char *tname = exp_relname(e);
+	const char *cname = exp_name(e);
+
+	if (!has_label(e)) 
+		exp_label(sql->sa, e, ++sql->label);
+	ne = exp_ref(sql->sa, e);
+	exp_setname(sql->sa, ne, tname, cname);
+	return exp_propagate(sql->sa, ne, e);
+}
+
+sql_exp *
 exp_set(sql_allocator *sa, const char *name, sql_exp *val, int level)
 {
 	sql_exp *e = exp_create(sa, e_psm);
