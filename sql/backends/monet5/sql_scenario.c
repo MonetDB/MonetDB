@@ -1344,7 +1344,7 @@ SQLparser(Client c)
 				else
 					msg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", m->errstr);
 				*m->errstr = 0;
-			} else if(msg) {
+			} else if (msg) {
 				str newmsg;
 				newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
 				freeException(msg);
