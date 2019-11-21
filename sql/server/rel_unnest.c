@@ -1830,6 +1830,8 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					re = exp_label(sql->sa, re, ++sql->label); /* unique name */
 					list_hash_clear(rsq->exps);
 					re = exp_ref(sql->sa, re);
+				} else if (has_label(re)) {
+					re = exp_ref(sql->sa, re);
 				}
 			}
 
