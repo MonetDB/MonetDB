@@ -312,12 +312,12 @@ list_remove_node(list *l, node *n)
 	}
 	if (n == l->t)
 		l->t = p;
-	node_destroy(l, n);
-	l->cnt--;
 	MT_lock_set(&l->ht_lock);
 	if (l->ht && data)
 		hash_delete(l->ht, data);
 	MT_lock_unset(&l->ht_lock);
+	node_destroy(l, n);
+	l->cnt--;
 	return p;
 }
 
