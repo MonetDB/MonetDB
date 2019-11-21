@@ -1,3 +1,4 @@
+START TRANSACTION;
 -- create our table to test with
 CREATE TABLE liketable (
 	str varchar(20)
@@ -71,3 +72,4 @@ SELECT * FROM liketable WHERE str LIKE 'tt' ESCAPE 't';
 
 -- clean up mess we made
 drop table liketable;
+ROLLBACK;

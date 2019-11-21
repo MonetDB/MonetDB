@@ -1,3 +1,4 @@
+start transaction;
 create table copyouttest ( str VARCHAR(20), str2 VARCHAR(20));
 insert into copyouttest values ('', 'test');
 insert into copyouttest values ('test', '');
@@ -12,5 +13,4 @@ create table copyintest ( str VARCHAR(20), str2 VARCHAR(20));
 copy into copyintest from E'$QTSTTRGDIR/x.dat' delimiters '[]', E'\n', '"';
 
 select * from copyintest;
-drop table copyintest;
-
+rollback;
