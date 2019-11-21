@@ -206,7 +206,7 @@ stdout of test 'window_functions` in directory 'sql/test` itself:
 #  FROM tutorial.dc_bikeshare_q1_2012;
 % tutorial.dc_bikeshare_q1_2012,	tutorial.%6 # table_name
 % duration_seconds,	running_total # name
-% int,	bigint # type
+% int,	int # type
 % 3,	3 # length
 [ 155,	320	]
 [ 165,	320	]
@@ -223,7 +223,7 @@ stdout of test 'window_functions` in directory 'sql/test` itself:
 # WHERE start_time < '2012-01-08';
 % tutorial.dc_bikeshare_q1_2012,	tutorial.dc_bikeshare_q1_2012,	tutorial.%7 # table_name
 % start_terminal,	duration_seconds,	running_total # name
-% varchar,	int,	bigint # type
+% varchar,	int,	int # type
 % 6,	3,	3 # length
 [ "AMS",	55,	120	]
 [ "AMS",	65,	120	]
@@ -239,7 +239,7 @@ stdout of test 'window_functions` in directory 'sql/test` itself:
 # WHERE start_time < '2012-01-08';
 % tutorial.dc_bikeshare_q1_2012,	tutorial.dc_bikeshare_q1_2012,	tutorial.%7 # table_name
 % start_terminal,	duration_seconds,	start_terminal_total # name
-% varchar,	int,	bigint # type
+% varchar,	int,	int # type
 % 6,	3,	3 # length
 [ "AMS",	55,	120	]
 [ "AMS",	65,	120	]
@@ -259,7 +259,7 @@ stdout of test 'window_functions` in directory 'sql/test` itself:
 # WHERE start_time < '2012-01-08';
 % tutorial.dc_bikeshare_q1_2012,	tutorial.dc_bikeshare_q1_2012,	tutorial.%13,	tutorial.%14,	tutorial.%15 # table_name
 % start_terminal,	duration_seconds,	running_total,	running_count,	running_avg # name
-% varchar,	int,	bigint,	bigint,	double # type
+% varchar,	int,	int,	bigint,	double # type
 % 6,	3,	3,	1,	24 # length
 [ "AMS",	55,	120,	2,	60	]
 [ "AMS",	65,	120,	2,	60	]
@@ -282,7 +282,7 @@ stdout of test 'window_functions` in directory 'sql/test` itself:
 # WHERE start_time < '2012-01-08';
 % tutorial.dc_bikeshare_q1_2012,	tutorial.dc_bikeshare_q1_2012,	tutorial.%13,	tutorial.%14,	tutorial.%15 # table_name
 % start_terminal,	duration_seconds,	running_total,	running_count,	running_avg # name
-% varchar,	int,	bigint,	bigint,	double # type
+% varchar,	int,	int,	bigint,	double # type
 % 6,	3,	3,	1,	24 # length
 [ "AMS",	55,	120,	2,	60	]
 [ "AMS",	65,	120,	2,	60	]
