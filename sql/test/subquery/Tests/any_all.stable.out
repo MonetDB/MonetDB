@@ -156,6 +156,24 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 [ true	]
 [ true	]
 [ true	]
+#SELECT i>ALL(SELECT (i+i1.i-1)/2 FROM integers WHERE i IS NOT NULL) FROM integers i1 ORDER BY i;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+[ false	]
+[ false	]
+[ true	]
+#SELECT i=ALL(SELECT i FROM integers WHERE i<>i1.i) FROM integers i1 ORDER BY i;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ false	]
+[ false	]
+[ false	]
 #SELECT i FROM integers i1 WHERE i=ANY(SELECT i FROM integers WHERE i=i1.i) ORDER BY i;
 % sys.i1 # table_name
 % i # name
@@ -164,6 +182,11 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 [ 1	]
 [ 2	]
 [ 3	]
+#SELECT i FROM integers i1 WHERE i<>ANY(SELECT i FROM integers WHERE i=i1.i) ORDER BY i;
+% .i1 # table_name
+% i # name
+% int # type
+% 1 # length
 #SELECT i FROM integers i1 WHERE i=ANY(SELECT i FROM integers WHERE i<>i1.i) ORDER BY i;
 % sys.i1 # table_name
 % i # name
@@ -236,6 +259,24 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 [ false	]
 [ true	]
 [ true	]
+#SELECT i>ALL(SELECT (i+i1.i-1)/2 FROM integers) FROM integers i1 ORDER BY i;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+[ false	]
+[ false	]
+[ NULL	]
+#SELECT i>ALL(SELECT (i+i1.i-1)/2 FROM integers WHERE i IS NOT NULL) FROM integers i1 ORDER BY i;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+[ false	]
+[ false	]
+[ true	]
 #SELECT i=ANY(SELECT i FROM integers WHERE i=i1.i OR i IS NULL) FROM integers i1 ORDER BY i;
 % .%3 # table_name
 % %3 # name
@@ -245,6 +286,15 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 [ true	]
 [ true	]
 [ true	]
+#SELECT i=ALL(SELECT i FROM integers WHERE i=i1.i OR i IS NULL) FROM integers i1 ORDER BY i;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #SELECT MIN(i)>ANY(SELECT i FROM integers WHERE i>MIN(i1.i)) FROM integers i1;
 % .%21 # table_name
 % %21 # name
@@ -254,6 +304,12 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 #SELECT SUM(i)>ANY(SELECT i FROM integers WHERE i>MIN(i1.i)) FROM integers i1;
 % .%21 # table_name
 % %21 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT (SELECT SUM(i)+SUM(i1.i) FROM integers)>ANY(SELECT i FROM integers WHERE i>MIN(i1.i)) FROM integers i1;
+% .%36 # table_name
+% %36 # name
 % boolean # type
 % 5 # length
 [ true	]
