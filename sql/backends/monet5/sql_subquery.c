@@ -32,6 +32,8 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 		throw(SQL, "sql.zero_or_one", SQLSTATE(21000) "Cardinality violation, scalar value expected");
 	}
 	_s = ATOMsize(ATOMtype(b->ttype));
+	if (b->ttype == TYPE_void)
+		p = &oid_nil;
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
 		*(ptr *) ret = GDKmalloc(_s);
@@ -42,7 +44,7 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 		memcpy(*(ptr *) ret, p, _s);
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
-		if((*(BAT **) ret = BATdescriptor(bid)) == NULL){
+		if ((*(BAT **) ret = BATdescriptor(bid)) == NULL){
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql.zero_or_one", SQLSTATE(HY005) "Cannot access column descriptor");
 		}
