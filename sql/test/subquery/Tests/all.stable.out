@@ -103,9 +103,6 @@ stdout of test 'all` in directory 'sql/test/subquery` itself:
 % i # name
 % int # type
 % 1 # length
-[ 1	]
-[ 2	]
-[ 3	]
 #SELECT i FROM integers WHERE i <> ALL(SELECT i FROM integers WHERE i IS NOT NULL); -- empty
 % sys.integers # table_name
 % i # name
