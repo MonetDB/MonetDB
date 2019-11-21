@@ -34,7 +34,7 @@ stdout of test 'duplicates-not-eliminated-long-CASE-stmt.Bug-6697` in directory 
 % 1023 # length
 function user.s4_0():void;
     X_142:void := querylog.define("explain select sys.timestamp_to_str(case when task0.\"sys_created_on\" >= \\'1999-10-31 09:00:00\\' and task0.\"sys_created_on\" < \\'2000-04-02 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2000-04-02 10:00:00\\' and task0.\"sys_created_on\" < \\'2000-10-29 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2000-10-29 09:00:00\\' and task0.\"sys_created_on\" < \\'2001-04-01 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2001-04-01 10:00:00\\' and task0.\"sys_created_on\" < \\'2001-10-28 09:00:00\\' then task0.\"sys_created_on\" + interval \\'-25200\\' second when task0.\"sys_created_on\" >= \\'2001-10-28 09:00:00\\' and task0.\"sys_created_on\" < \\'2002-04-07 10:00:00\\' then task0.\"sys_created_on\" + interval \\'-28800\\' second when task0.\"sys_created_on\" >= \\'2002-04-07 10:00:00\\' and
-    X_1608:bat[:str] := bat.pack("sys.L1":str);
+    X_1608:bat[:str] := bat.pack("sys.%2":str);
     X_1609:bat[:str] := bat.pack("yearref":str);
     X_1610:bat[:str] := bat.pack("clob":str);
     X_1611:bat[:int] := bat.pack(0:int);
