@@ -1,3 +1,4 @@
+START TRANSACTION;
 create table mtcars (
     mpg DOUBLE PRECISION,
     cyl DOUBLE PRECISION,
@@ -16,4 +17,4 @@ copy into mtcars from E'$QTSTSRCDIR/mtcars' using delimiters 'a','b','c' null as
 
 select * from mtcars;
 
-drop table mtcars;
+ROLLBACK;

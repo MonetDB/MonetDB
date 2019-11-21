@@ -127,7 +127,7 @@ function user.s8_0():void;
     X_23:bat[:oid] := sql.delta(X_18:bat[:oid], X_21:bat[:oid], X_22:bat[:oid], X_20:bat[:oid]);
     X_24:bat[:oid] := algebra.projection(C_5:bat[:oid], X_23:bat[:oid]);
     C_32:bat[:oid] := sql.tid(X_4:int, "sys":str, "pk1":str);
-    (X_34:bat[:oid], X_35:bat[:oid]) := algebra.join(X_24:bat[:oid], C_32:bat[:oid], nil:BAT, nil:BAT, false:bit, nil:lng);
+    X_34:bat[:oid] := algebra.join(X_24:bat[:oid], C_32:bat[:oid], nil:BAT, nil:BAT, false:bit, nil:lng);
     X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "fk":str, "id":str, 0:int);
     X_17:bat[:int] := algebra.projection(C_5:bat[:oid], X_8:bat[:int]);
     X_42:bat[:int] := algebra.projection(X_34:bat[:oid], X_17:bat[:int]);

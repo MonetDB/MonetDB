@@ -1374,7 +1374,7 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
 			list *l, *r;
 
-		       	l = exps_push_down(sql, e->l, f, t);
+			l = exps_push_down(sql, e->l, f, t);
 			if (!l)
 				return NULL;
 			r = exps_push_down(sql, e->r, f, t);
@@ -1447,7 +1447,6 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 {
 	return _exp_push_down(sql, e, f, t);
 }
-
 
 /* some projections results are order dependend (row_number etc) */
 static int 
@@ -1760,13 +1759,13 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 	if (!is_groupby(rel->op))
 		return rel;
 
-       	r = rel->l;
+	r = rel->l;
 
 	if (is_groupby(rel->op) && !rel_is_ref(rel) &&
-            r && !r->exps && r->op == op_join && !(rel_is_ref(r)) && 
-	    /* currently only single count aggregation is handled, no other projects or aggregation */
-	    list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
-	    	sql_exp *nce, *oce;
+		r && !r->exps && r->op == op_join && !(rel_is_ref(r)) && 
+		/* currently only single count aggregation is handled, no other projects or aggregation */
+		list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
+		sql_exp *nce, *oce;
 		sql_rel *gbl, *gbr;		/* Group By */
 		sql_rel *cp;			/* Cross Product */
 		sql_subfunc *mult;
@@ -1780,7 +1779,7 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 		rname = exp_relname(oce);
 		name  = exp_name(oce);
 
- 		args = new_exp_list(sql->sa);
+		args = new_exp_list(sql->sa);
 		srel = r->l;
 		{
 			sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
@@ -5266,7 +5265,7 @@ typedef struct {
 static void
 rel_find_joins(mvc *sql, sql_rel *parent, sql_rel *rel, list *l, int depth)
 {
-	if (!rel || depth == 20) /* limit to 20 relations bellow in the tree */
+	if (!rel || depth == 5) /* limit to 5 relations bellow in the tree */
 		return;
 
 	switch (rel->op) {
@@ -6069,7 +6068,7 @@ exps_remove_dictexps(mvc *sql, list *exps, sql_rel *r)
 static sql_rel *
 rel_remove_join(int *changes, mvc *sql, sql_rel *rel)
 {
-	if (is_join(rel->op) && !is_outerjoin(rel->op) && /* DISABLES CODE */ (0)) {
+	if (is_join(rel->op) && !is_outerjoin(rel->op)) {
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;
 		int lconst = 0, rconst = 0;
@@ -6100,7 +6099,7 @@ rel_remove_join(int *changes, mvc *sql, sql_rel *rel)
 			list_merge(rel->exps, r->exps, (fdup)NULL);
 		}
 	}
-	if (is_join(rel->op) && /* DISABLES CODE */ (0)) {
+	if (is_join(rel->op)) {
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;
 		int ldict = 0, rdict = 0;
@@ -6137,7 +6136,7 @@ rel_remove_join(int *changes, mvc *sql, sql_rel *rel)
 	 * where non of the project_cols are from B and x=y is a foreign key join (B is the unique side)
 	 * and there are no filters on B
 	 */
-	if (/* DISABLES CODE */ (0) && is_project(rel->op)) {
+	if (is_project(rel->op)) {
 		sql_rel *j = rel->l;
 
 		if (is_join(j->op)) {
@@ -8354,7 +8353,7 @@ add_nulls(mvc *sql, sql_rel *rel, sql_rel *r)
 static sql_rel *
 rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 {
-	if (/* DISABLES CODE */ (0) && (rel->op == op_left || rel->op == op_right || rel->op == op_full) &&
+	if ((rel->op == op_left || rel->op == op_right || rel->op == op_full) &&
 	    list_length(rel->exps) == 1 && exps_nr_of_or(rel->exps) == list_length(rel->exps)) { 
 		sql_rel *l = rel->l, *nl, *nll, *nlr;
 		sql_rel *r = rel->r, *nr;
@@ -9153,13 +9152,13 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	 * also joins between a relation and a DICT (which isn't used)
 	 * could be removed.
 	 * */
-	if (gp.cnt[op_join] && gp.cnt[op_project])
+	if (gp.cnt[op_join] && gp.cnt[op_project] && /* DISABLES CODE */ (0))
 		rel = rewrite(sql, rel, &rel_remove_join, &changes); 
 
 	if (gp.cnt[op_join] || 
-	    gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
-	    gp.cnt[op_semi] || gp.cnt[op_anti] ||
-	    gp.cnt[op_select]) {
+		gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
+		gp.cnt[op_semi] || gp.cnt[op_anti] ||
+		gp.cnt[op_select]) {
 		rel = rewrite(sql, rel, &rel_find_range, &changes);
 		if (value_based_opt) {
 			rel = rel_project_reduce_casts(&changes, sql, rel);
@@ -9179,44 +9178,24 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 
 	rel = rewrite(sql, rel, &rel_rewrite_types, &changes); 
 
-	if (gp.cnt[op_anti] || gp.cnt[op_semi]) {
-		/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
-		rel = rewrite(sql, rel, &rel_rewrite_semijoin, &changes);
-		/* push semijoin through join */
-		rel = rewrite(sql, rel, &rel_push_semijoin_down, &changes);
-		/* antijoin(a, union(b,c)) -> antijoin(antijoin(a,b), c) */
-		rel = rewrite(sql, rel, &rel_rewrite_antijoin, &changes);
-		if (level <= 0)
-			rel = rewrite_topdown(sql, rel, &rel_semijoin_use_fk, &changes);
-	}
-
-	if (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) 
+	if ((gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) && /* DISABLES CODE */ (0)) 
 		rel = rewrite_topdown(sql, rel, &rel_split_outerjoin, &changes);
 
 	if (gp.cnt[op_select] || gp.cnt[op_project]) 
 		if (level == 1) /* only once */
 			rel = rewrite(sql, rel, &rel_merge_rse, &changes); 
 
-	if (gp.cnt[op_select] && gp.cnt[op_join]) {
-		if (/* DISABLES CODE */ (0)) rel = rewrite_topdown(sql, rel, &rel_push_select_down_join, &changes); 
-		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
-	}
-
-	if (gp.cnt[op_join] && gp.cnt[op_groupby]) {
-		rel = rewrite_topdown(sql, rel, &rel_push_count_down, &changes);
-		if (level <= 0)
-			rel = rewrite_topdown(sql, rel, &rel_push_join_down, &changes); 
-
-		/* push_join_down introduces semijoins */
-		/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
-		rel = rewrite(sql, rel, &rel_rewrite_semijoin, &changes);
-	}
+	if (gp.cnt[op_select] && gp.cnt[op_join] && /* DISABLES CODE */ (0))
+		rel = rewrite_topdown(sql, rel, &rel_push_select_down_join, &changes); 
 
 	if (gp.cnt[op_select])
 		rel = rewrite_topdown(sql, rel, &rel_push_select_down_union, &changes); 
 
 	if (gp.cnt[op_union] && gp.cnt[op_select])
 		rel = rewrite(sql, rel, &rel_remove_union_partitions, &changes); 
+
+	if (gp.cnt[op_select])
+		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 
 	if (gp.cnt[op_groupby]) {
 		rel = rewrite_topdown(sql, rel, &rel_push_aggr_down, &changes);
@@ -9238,6 +9217,28 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 			rel = rewrite(sql, rel, &rel_join_push_exps_down, &changes);
 
 		rel = rewrite(sql, rel, &rel_merge_identical_joins, &e_changes);
+	}
+
+	/* Important -> Re-write semijoins after rel_join_order */
+	if ((gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) && gp.cnt[op_groupby]) {
+		rel = rewrite_topdown(sql, rel, &rel_push_count_down, &changes);
+		if (level <= 0)
+			rel = rewrite_topdown(sql, rel, &rel_push_join_down, &changes); 
+
+		/* push_join_down introduces semijoins */
+		/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
+		rel = rewrite(sql, rel, &rel_rewrite_semijoin, &changes);
+	}
+
+	if (gp.cnt[op_anti] || gp.cnt[op_semi]) {
+		/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
+		rel = rewrite(sql, rel, &rel_rewrite_semijoin, &changes);
+		/* push semijoin through join */
+		rel = rewrite(sql, rel, &rel_push_semijoin_down, &changes);
+		/* antijoin(a, union(b,c)) -> antijoin(antijoin(a,b), c) */
+		rel = rewrite(sql, rel, &rel_rewrite_antijoin, &changes);
+		if (level <= 0)
+			rel = rewrite_topdown(sql, rel, &rel_semijoin_use_fk, &changes);
 	}
 
 	/* Important -> Make sure rel_push_select_down gets called after rel_join_order,

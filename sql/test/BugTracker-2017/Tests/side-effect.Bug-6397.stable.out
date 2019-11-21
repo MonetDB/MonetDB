@@ -43,7 +43,7 @@ stdout of test 'side-effect.Bug-6397` in directory 'sql/test/BugTracker-2017` it
 % 161 # length
 function user.s4_0():void;
     X_5:void := querylog.define("explain select count(*) from my_generate_series(1,5) as t1,\nmy_generate_series(1,100) as t2;":str, "default_pipe":str, 28:int);
-barrier X_92:bit := language.dataflow();
+barrier X_93:bit := language.dataflow();
     X_31:bat[:str] := bat.pack(".L6":str);
     X_32:bat[:str] := bat.pack("L6":str);
     X_33:bat[:str] := bat.pack("bigint":str);
@@ -61,7 +61,7 @@ barrier X_92:bit := language.dataflow();
     X_27:bat[:lng] := batcalc.*(X_25:bat[:lng], X_26:bat[:lng]);
     language.pass(X_21:bat[:lng]);
     language.pass(X_22:bat[:lng]);
-exit X_92:bit;
+exit X_93:bit;
     sql.resultSet(X_31:bat[:str], X_32:bat[:str], X_33:bat[:str], X_34:bat[:int], X_35:bat[:int], X_27:bat[:lng]);
 end user.s4_0;
 #inline               actions= 0 time=1 usec 

@@ -64,7 +64,7 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 
 	(void) sql;
 	cst.vtype = 0;
-	if(VALcopy(&cst, vr) == NULL)
+	if (VALcopy(&cst, vr) == NULL)
 		return -1;
 	idx = defConstant(mb, vr->vtype, &cst);
 	return idx;
@@ -140,7 +140,8 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0;
 	Symbol backup = NULL, curPrg = NULL;
-	int old_argc = be->mvc->argc;
+	int old_argc = be->mvc->argc, res = 0;
+	str msg = MAL_SUCCEED;
 
 	backup = c->curprg;
 	curPrg = c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
@@ -208,21 +209,31 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 		return -1;
 	}
 	be->mvc->argc = old_argc;
-	/* SQL function definitions meant for inlineing should not be optimized before */
+	/* SQL function definitions meant for inlining should not be optimized before */
 	if (inline_func)
 		curBlk->inlineProp = 1;
 	/* optimize the code */
 	SQLaddQueryToCache(c);
 	if (curBlk->inlineProp == 0 && !c->curprg->def->errors) {
-		c->curprg->def->errors = SQLoptimizeQuery(c, c->curprg->def);
-	} else if(curBlk->inlineProp != 0) {
+		msg = SQLoptimizeQuery(c, c->curprg->def);
+	} else if (curBlk->inlineProp != 0) {
 		chkProgram(c->usermodule, c->curprg->def);
-		if(!c->curprg->def->errors)
-			c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
+		if (!c->curprg->def->errors)
+			msg = SQLoptimizeFunction(c,c->curprg->def);
+	}
+	if (msg) {
+		if (c->curprg->def->errors)
+			GDKfree(msg);
+		else
+			c->curprg->def->errors = msg;
+	}
+	if (c->curprg->def->errors) {
+		freeSymbol(curPrg);
+		res = -1;
 	}
 	if (backup)
 		c->curprg = backup;
-	return 0;
+	return res;
 }
 
 static str
@@ -269,7 +280,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	Symbol backup = NULL;
 	const char *local_tbl = prp->value;
 	node *n;
-	int i, q, v;
+	int i, q, v, res = 0;
 	int *lret, *rret;
 	char *lname;
 	sql_rel *r = rel;
@@ -547,9 +558,9 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	/* catch exceptions */
 	p = newCatchStmt(curBlk,"MALexception");
-        p = newExitStmt(curBlk,"MALexception");
-        p = newCatchStmt(curBlk,"SQLexception");
-        p = newExitStmt(curBlk,"SQLexception");
+	p = newExitStmt(curBlk,"MALexception");
+	p = newCatchStmt(curBlk,"SQLexception");
+	p = newExitStmt(curBlk,"SQLexception");
 	/* remote.disconnect(q); */
 	p = newStmt(curBlk, remoteRef, disconnectRef);
 	p = pushArgument(curBlk, p, q);
@@ -562,12 +573,14 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	SQLaddQueryToCache(c);
 	//chkProgram(c->usermodule, c->curprg->def);
-	if(!c->curprg->def->errors)
+	if (!c->curprg->def->errors)
 		c->curprg->def->errors = SQLoptimizeFunction(c, c->curprg->def);
+	if (c->curprg->def->errors)
+		res = -1;
 	if (backup)
 		c->curprg = backup;
 	GDKfree(lname);		/* make sure stub is called */
-	return 0;
+	return res;
 }
 
 int
@@ -794,12 +807,14 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if (backend_dumpstmt(be, mb, r, 1, 1, be->q?be->q->codestring:NULL) < 0) 
 		goto cleanup;
 
-	if (cq){
+	if (cq) {
 		SQLaddQueryToCache(c);
 		// optimize this code the 'old' way
-		if ( (m->emode == m_prepare || !qc_isaquerytemplate(getFunctionId(getInstrPtr(c->curprg->def,0)))) && !c->curprg->def->errors )
+		if ((m->emode == m_prepare || !qc_isaquerytemplate(getFunctionId(getInstrPtr(c->curprg->def,0)))) && !c->curprg->def->errors)
 			c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
 	}
+	if (c->curprg->def->errors)
+		goto cleanup;
 
 	// restore the context for the wrapper code
 	curPrg = c->curprg;
@@ -1154,6 +1169,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	Symbol backup = NULL, curPrg = NULL;
 	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0;
 	sql_rel *r;
+	str msg = MAL_SUCCEED;
 
 	/* nothing to do for internal and ready (not recompiling) functions, besides finding respective MAL implementation */
 	if (!f->sql && (f->lang == FUNC_LANG_INT || f->lang == FUNC_LANG_MAL)) {
@@ -1269,13 +1285,21 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		curBlk->unsafeProp = 1;
 	/* optimize the code */
 	SQLaddQueryToCache(c);
-	if( curBlk->inlineProp == 0 && !c->curprg->def->errors) {
-		c->curprg->def->errors = SQLoptimizeFunction(c, c->curprg->def);
-	} else if(curBlk->inlineProp != 0){
+	if (curBlk->inlineProp == 0 && !c->curprg->def->errors) {
+		msg = SQLoptimizeFunction(c, c->curprg->def);
+	} else if (curBlk->inlineProp != 0) {
 		chkProgram(c->usermodule, c->curprg->def);
-		if(!c->curprg->def->errors)
-			c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
+		if (!c->curprg->def->errors)
+			msg = SQLoptimizeFunction(c,c->curprg->def);
 	}
+	if (msg) {
+		if (c->curprg->def->errors)
+			GDKfree(msg);
+		else
+			c->curprg->def->errors = msg;
+	}
+	if (c->curprg->def->errors)
+		goto cleanup;
 	if (backup)
 		c->curprg = backup;
 	return 0;
@@ -1398,4 +1422,3 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	close_stream(s);
 	buffer_destroy(b);
 }
-

@@ -514,14 +514,13 @@ MCstopClients(Client cntxt)
 int
 MCactiveClients(void)
 {
-	int finishing=0, running = 0;
+	int idles = 0;
 	Client cntxt = mal_clients;
 
 	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
-		finishing += (cntxt->mode == FINISHCLIENT);
-		running += (cntxt->mode == RUNCLIENT);
+		idles += (cntxt->idle != 0 && cntxt->mode == RUNCLIENT);
 	}
-	return finishing + running;
+	return idles;
 }
 
 void

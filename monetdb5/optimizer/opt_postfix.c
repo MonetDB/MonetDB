@@ -38,17 +38,13 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		p= getInstrPtr(mb, i);
 		if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
 			delArgument(p, p->retc -1);
-			/* The typechecker is overruled here, because we only change the function binding */
-			p->fcn = ALGjoin1; 
-			//typeChecker(cntxt->usermodule, mb, p, TRUE);
+			typeChecker(cntxt->usermodule, mb, p, TRUE);
 			actions++;
 			continue;
 		}
 		if ( getModuleId(p) == algebraRef && getFunctionId(p) == leftjoinRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
 			delArgument(p, p->retc -1);
-			/* The typechecker is overruled here, because we only change the function binding */
-			p->fcn = ALGleftjoin1; 
-			//typeChecker(cntxt->usermodule, mb, p, TRUE);
+			typeChecker(cntxt->usermodule, mb, p, TRUE);
 			actions++;
 			continue;
 		}
