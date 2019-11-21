@@ -199,7 +199,9 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	}
 
 	/* add return statement */
-	r = rel_psm_stmt(m->sa, exp_return(m->sa,  exp_rel(m, r), 0));
+	sql_exp *e;
+	r = rel_psm_stmt(m->sa, e = exp_return(m->sa,  exp_rel(m, r), 0));
+	e->card = CARD_MULTI;
 	be->mvc->argc = 0;
 	if (backend_dumpstmt(be, curBlk, r, 0, 1, NULL) < 0) {
 		freeSymbol(curPrg);

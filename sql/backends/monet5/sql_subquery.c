@@ -155,6 +155,8 @@ SQLall(ptr ret, const bat *bid)
 		}
 	}
 	_s = ATOMsize(ATOMtype(b->ttype));
+	if (b->ttype == TYPE_void)
+		p = &oid_nil;
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
 		*(ptr *) ret = GDKmalloc(_s);
