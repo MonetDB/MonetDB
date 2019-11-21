@@ -1166,11 +1166,6 @@ check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe)
 	int c = 0;
 	sql_subtype *t = NULL, *st = NULL;
 
-	/*
-	if (ct->types) 
-		return check_table_types(sql, ct->types, s, tpe);
-		*/
-
  	st = tail_type(s);
 	if ((!st || !st->type) && stmt_set_type_param(sql, ct, s) == 0) {
 		return s;
@@ -1188,14 +1183,17 @@ check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe)
 	}
 
 	if (!t) {	/* try to convert if needed */
-		c = sql_type_convert(st->type->eclass, ct->type->eclass);
-		if (!c || (c == 2 && tpe == type_set) || 
-                   (c == 3 && tpe != type_cast)) { 
-			s = NULL;
+		if (EC_INTERVAL(st->type->eclass) && (ct->type->eclass == EC_NUM || ct->type->eclass == EC_POS) && ct->digits < st->digits) {
+			s = NULL; /* conversion from interval to num depends on the number of digits */
 		} else {
-			s = stmt_convert(be, s, st, ct, NULL);
+			c = sql_type_convert(st->type->eclass, ct->type->eclass);
+			if (!c || (c == 2 && tpe == type_set) || (c == 3 && tpe != type_cast)) { 
+				s = NULL;
+			} else {
+				s = stmt_convert(be, s, st, ct, NULL);
+			}
 		}
-	} 
+	}
 	if (!s) {
 		stmt *res = sql_error(
 			sql, 03,

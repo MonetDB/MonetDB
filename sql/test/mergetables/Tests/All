@@ -31,5 +31,5 @@ HAVE_NETCDF?sqlsmith-exist-lateral
 HAVE_NETCDF?sqlsmith-apply-outer-join-or
 HAVE_NETCDF?sqlsmith.Bug-6472
 sqlsmith.Bug-6480
-sqlsmith-exists
+KNOWNFAIL?sqlsmith-exists
 mergedb_drop

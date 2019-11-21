@@ -81,7 +81,14 @@ stdout of test 'aggregates-intervals.Bug-3533` in directory 'sql/test/BugTracker
 % bigint,	bigint,	double,	month_interval,	month_interval,	month_interval # type
 % 1,	2,	24,	1,	1,	1 # length
 [ 4,	10,	2.5,	2,	4,	1	]
-#ROLLBACK;
+#SELECT median_avg(f1) from INTERVAL_TBL2;
+% sys.L2 # table_name
+% L2 # name
+% double # type
+% 24 # length
+[ 2.5	]
+#DROP TABLE INTERVAL_TBL;
+#DROP TABLE INTERVAL_TBL2;
 
 # 16:49:01 >  
 # 16:49:01 >  "Done."

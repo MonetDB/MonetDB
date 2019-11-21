@@ -1744,7 +1744,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 		assert(subcommit[n - 1] < subcommit[n]);
 #endif
 
-	if ((nbbpf = GDKfilelocate(0, "BBP", "wx", "dir")) == NULL)
+	if ((nbbpf = GDKfilelocate(0, "BBP", "w", "dir")) == NULL)
 		return GDK_FAIL;
 
 	n = (bat) ATOMIC_GET(&BBPsize);
@@ -1856,7 +1856,7 @@ BBPdir(int cnt, bat *subcommit)
 		return BBPdir_subcommit(cnt, subcommit);
 
 	IODEBUG fprintf(stderr, "#BBPdir: writing BBP.dir (%d bats).\n", (int) (bat) ATOMIC_GET(&BBPsize));
-	if ((fp = GDKfilelocate(0, "BBP", "wx", "dir")) == NULL) {
+	if ((fp = GDKfilelocate(0, "BBP", "w", "dir")) == NULL) {
 		goto bailout;
 	}
 

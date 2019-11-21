@@ -11,23 +11,6 @@
 #include "mal_interpreter.h"
 #include "gdk_utils.h"
 
-static int
-eligible(MalBlkPtr mb)
-{
-	InstrPtr p;
-	int i;
-	for (i = 1; i < mb->stop; i++) {
-		p = getInstrPtr(mb, i);
-		if (getModuleId(p) == sqlRef && getFunctionId(p) == assertRef &&
-			p->argc > 2 && getArgType(mb, p, 2) == TYPE_str &&
-			isVarConstant(mb, getArg(p, 2)) &&
-			getVarConstant(mb, getArg(p, 2)).val.sval != NULL &&
-			(strstr(getVarConstant(mb, getArg(p, 2)).val.sval, "PRIMARY KEY constraint") ||
-			 strstr(getVarConstant(mb, getArg(p, 2)).val.sval, "UNIQUE constraint")))
-			return 0;
-	}
-	return 1;
-}
 
 str
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -48,13 +31,19 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		//return 0;
 	(void) cntxt;
 	(void) stk;
-	if (!eligible(mb))
-		return MAL_SUCCEED;
 
 	activeClients = mb->activeClients = MCactiveClients();
 	old = mb->stmt;
 	for (i = 1; i < mb->stop; i++) {
 		InstrPtr p = old[i];
+
+		if (getModuleId(p) == sqlRef && getFunctionId(p) == assertRef &&
+			p->argc > 2 && getArgType(mb, p, 2) == TYPE_str &&
+			isVarConstant(mb, getArg(p, 2)) &&
+			getVarConstant(mb, getArg(p, 2)).val.sval != NULL &&
+			(strstr(getVarConstant(mb, getArg(p, 2)).val.sval, "PRIMARY KEY constraint") ||
+			 strstr(getVarConstant(mb, getArg(p, 2)).val.sval, "UNIQUE constraint")))
+			goto bailout;
 
 		/* mitosis/mergetable bailout conditions */
 		
@@ -72,7 +61,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		    	getFunctionId(p) != avgRef &&
 		    	getFunctionId(p) != sumRef &&
 		    	getFunctionId(p) != prodRef)
-			return 0;
+			goto bailout;
 
 		/* do not split up floating point bat that is being summed */
 		if (p->retc == 1 &&
@@ -85,15 +74,15 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			isaBatType(getArgType(mb, p, p->retc)) &&
 			(getBatType(getArgType(mb, p, p->retc)) == TYPE_flt ||
 			 getBatType(getArgType(mb, p, p->retc)) == TYPE_dbl))
-			return 0;
+			goto bailout;
 
 		if (p->argc > 2 && (getModuleId(p) == capiRef || getModuleId(p) == rapiRef || getModuleId(p) == pyapiRef || getModuleId(p) == pyapi3Ref) && 
 		        getFunctionId(p) == subeval_aggrRef)
-			return 0;
+			goto bailout;
 
 		/* Mergetable cannot handle intersect/except's for now */
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == groupbyRef) 
-			return 0;
+			goto bailout;
 
 		/* locate the largest non-partitioned table */
 		if (getModuleId(p) != sqlRef || (getFunctionId(p) != bindRef && getFunctionId(p) != bindidxRef))
@@ -119,7 +108,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 	if (target == 0)
-		return 0;
+		goto bailout;
 	/*
 	 * The number of pieces should be based on the footprint of the
 	 * queryplan, such that preferrably it can be handled without
@@ -134,10 +123,10 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 * Take into account the number of client connections, 
 	 * because all user together are responsible for resource contentions
 	 */
-	m = monet_memory / argsize;
+	m = GDK_mem_maxsize / argsize;
 	/* if data exceeds memory size,
-	 * i.e., (rowcnt*argsize > monet_memory),
-	 * i.e., (rowcnt > monet_memory/argsize = m) */
+	 * i.e., (rowcnt*argsize > GDK_mem_maxsize),
+	 * i.e., (rowcnt > GDK_mem_maxsize/argsize = m) */
 	assert(threads > 0);
 	assert(activeClients > 0);
 	if (rowcnt > m && m / threads / activeClients > 0) {
@@ -275,7 +264,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (upd)
 			pushInstruction(mb, matr);
 	}
-	assert (i == limit) /*TODO: remove after succesful nightly testweb run*/;
 	for (; i<slimit; i++) 
 		if (old[i])
 			freeInstruction(old[i]);
@@ -288,6 +276,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
         chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
+bailout:
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","mitosis", usec);
     newComment(mb,buf);

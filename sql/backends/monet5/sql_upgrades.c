@@ -2286,6 +2286,10 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"GRANT EXECUTE ON AGGREGATE quantile(INTERVAL MONTH, DOUBLE) TO PUBLIC;\n"
 		);
 
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile') and type = %d;\n", (int) F_AGGR);
+
 	/* The MAL implementation of functions json.text(string) and json.text(int) do not exist */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"drop function json.text(string);\n"
@@ -2370,10 +2374,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"create view sys.sessions as select * from sys.sessions();\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop procedure sys.settimeout(bigint);\n"
-			"drop procedure sys.settimeout(bigint,bigint);\n"
-			"drop procedure sys.setsession(bigint);\n"
-
 			"create procedure sys.setoptimizer(\"optimizer\" string)\n"
 			" external name clients.setoptimizer;\n"
 			"create procedure sys.setquerytimeout(\"query\" int)\n"

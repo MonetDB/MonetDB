@@ -284,6 +284,7 @@ stdout of test 'heapextend.Bug-6134` in directory 'sql/test/BugTracker-2017` its
 % code,	subcategory_code,	category_code,	code,	code,	code,	code,	d_date,	month_code # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	date,	varchar # type
 % 5,	3,	2,	2,	4,	4,	5,	10,	7 # length
+[ "(n/z)",	"301",	"30",	"10",	"1300",	"7422",	"00000",	2016-01-16,	"2016.01"	]
 [ "(n/z)",	"301",	"30",	"10",	"1300",	"7422",	"00000",	2016-02-16,	"2016.02"	]
 [ "(n/z)",	"301",	"30",	"10",	"1300",	"7422",	"00000",	2016-03-16,	"2016.03"	]
 [ "(n/z)",	"301",	"30",	"10",	"1300",	"7422",	"00000",	2016-04-16,	"2016.04"	]
@@ -293,7 +294,6 @@ stdout of test 'heapextend.Bug-6134` in directory 'sql/test/BugTracker-2017` its
 [ "(n/z)",	"301",	"30",	"10",	"1300",	"7422",	"00000",	2016-08-16,	"2016.08"	]
 [ "(n/z)",	"301",	"30",	"10",	"1300",	"7422",	"00000",	2016-09-16,	"2016.09"	]
 [ "(n/z)",	"301",	"30",	"10",	"1300",	"7422",	"00000",	2016-10-16,	"2016.10"	]
-[ "(n/z)",	"301",	"30",	"10",	"1300",	"7422",	"00000",	2016-01-16,	"2016.01"	]
 #SELECT loc.code
 #      ,cat.subcategory_code
 #      ,cat.category_code

@@ -328,7 +328,6 @@ This information can be used to determine memory footprint and variable life tim
 				lng total = 0;
 				BUN cnt = 0;
 				bat bid=0;
-				int p = getPC(mb,pci);
 
 				if( j == pci->retc ){
 					logadd("],"PRETTIFY"\"arg\":[");
@@ -388,7 +387,10 @@ This information can be used to determine memory footprint and variable life tim
 					GDKfree(cv);
 					GDKfree(stmtq);
 				}
-				logadd("\"eol\":%d"PRET, p == getEndScope(mb,getArg(pci,j)));
+				logadd("\"eol\":%d"PRET, getVarEolife(mb,getArg(pci,j)));
+				logadd("\"used\":%d"PRET, isVarUsed(mb,getArg(pci,j)));
+				logadd("\"fixed\":%d"PRET, isVarFixed(mb,getArg(pci,j)));
+				logadd("\"udf\":%d"PRET, isVarUDFtype(mb,getArg(pci,j)));
 				GDKfree(tname);
 				logadd("}%s", (j< pci->argc-1 && j != pci->retc -1?",":""));
 			}

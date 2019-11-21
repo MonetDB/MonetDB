@@ -60,8 +60,6 @@ __hidden Symbol cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr 
 #endif
 __hidden int getBarrierEnvelop(MalBlkPtr mb)
 	__attribute__((__visibility__("hidden")));
-__hidden void malGarbageCollector(MalBlkPtr mb)
-	__attribute__((__visibility__("hidden")));
 __hidden void listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int step)
 	__attribute__((__visibility__("hidden")));
 
