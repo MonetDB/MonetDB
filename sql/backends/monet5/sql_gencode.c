@@ -140,7 +140,8 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0;
 	Symbol backup = NULL, curPrg = NULL;
-	int old_argc = be->mvc->argc;
+	int old_argc = be->mvc->argc, res = 0;
+	str msg = MAL_SUCCEED;
 
 	backup = c->curprg;
 	curPrg = c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
@@ -210,21 +211,31 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 		return -1;
 	}
 	be->mvc->argc = old_argc;
-	/* SQL function definitions meant for inlineing should not be optimized before */
+	/* SQL function definitions meant for inlining should not be optimized before */
 	if (inline_func)
 		curBlk->inlineProp = 1;
 	/* optimize the code */
 	SQLaddQueryToCache(c);
 	if (curBlk->inlineProp == 0 && !c->curprg->def->errors) {
-		c->curprg->def->errors = SQLoptimizeQuery(c, c->curprg->def);
-	} else if(curBlk->inlineProp != 0) {
+		msg = SQLoptimizeQuery(c, c->curprg->def);
+	} else if (curBlk->inlineProp != 0) {
 		chkProgram(c->usermodule, c->curprg->def);
-		if(!c->curprg->def->errors)
-			c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
+		if (!c->curprg->def->errors)
+			msg = SQLoptimizeFunction(c,c->curprg->def);
+	}
+	if (msg) {
+		if (c->curprg->def->errors)
+			GDKfree(msg);
+		else
+			c->curprg->def->errors = msg;
+	}
+	if (c->curprg->def->errors) {
+		freeSymbol(curPrg);
+		res = -1;
 	}
 	if (backup)
 		c->curprg = backup;
-	return 0;
+	return res;
 }
 
 static str

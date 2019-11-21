@@ -96,7 +96,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	/* assume the type and flow have been checked already */
 	/* SQL functions intended to be inlined should not be optimized */
 	if ( mb->inlineProp)
-        	return 0;
+		return 0;
 
 	mb->optimize = 0;
 	if (mb->errors)
@@ -105,9 +105,9 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	// strong defense line, assure that MAL plan is initially correct
 	if( mb->errors == 0 && mb->stop > 1){
 		resetMalBlk(mb, mb->stop);
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
+		chkTypes(cntxt->usermodule, mb, FALSE);
+		chkFlow(mb);
+		chkDeclarations(mb);
 		if( msg) 
 			return msg;
 		if( mb->errors != MAL_SUCCEED){
@@ -132,7 +132,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				if (msg) {
 					str place = getExceptionPlace(msg);
 					str nmsg = NULL;
-				       	if(place){
+					if (place){
 						nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessageAndState(msg));
 						GDKfree(place);
 					}

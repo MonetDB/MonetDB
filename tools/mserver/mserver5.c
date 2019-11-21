@@ -125,13 +125,6 @@ monet_hello(void)
 	char  *qc = " kMGTPE";
 	int qi = 0;
 
-	monet_memory = MT_npages() * MT_pagesize();
-	sz_mem_h = (dbl) monet_memory;
-	while (sz_mem_h >= 1000.0 && qi < 6) {
-		sz_mem_h /= 1024.0;
-		qi++;
-	}
-
 	printf("# MonetDB 5 server v%s", GDKversion());
 	{
 #ifdef MONETDB_RELEASE
@@ -156,7 +149,20 @@ monet_hello(void)
 			""
 #endif
 			);
-	printf("# Found %.3f %ciB available main-memory.\n",
+	sz_mem_h = (dbl) (MT_npages() * MT_pagesize());
+	while (sz_mem_h >= 1000.0 && qi < 6) {
+		sz_mem_h /= 1024.0;
+		qi++;
+	}
+	printf("# Found %.3f %ciB available main-memory",
+			sz_mem_h, qc[qi]);
+	sz_mem_h = (dbl) GDK_mem_maxsize;
+	qi = 0;
+	while (sz_mem_h >= 1000.0 && qi < 6) {
+		sz_mem_h /= 1024.0;
+		qi++;
+	}
+	printf(" of which we use %.3f %ciB\n",
 			sz_mem_h, qc[qi]);
 #ifdef MONET_GLOBAL_DEBUG
 	printf("# Database path:%s\n", GDKgetenv("gdk_dbpath"));
