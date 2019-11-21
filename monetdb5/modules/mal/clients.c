@@ -306,8 +306,6 @@ CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"clients.setmemorylimit","Illegal session id");
 	if (mal_clients[idx].mode == FREECLIENT)
 		throw(MAL,"clients.setmemorylimit","Session not active anymore");
-	if( limit < 100)
-		throw(MAL, "clients.setmemorylimit", "At least 100 MB needed");
 	if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
 		mal_clients[idx].memorylimit = limit;
 	}
