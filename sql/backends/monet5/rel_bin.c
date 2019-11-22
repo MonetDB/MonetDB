@@ -1953,7 +1953,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 
 			/* only handle simple joins here */
 			if ((exp_has_func(e) && get_cmp(e) != cmp_filter) ||
-			    get_cmp(e) == cmp_or || (e->f || e->anti)) {
+			    get_cmp(e) == cmp_or || (e->f && e->anti)) {
 				if (!join && !list_length(lje)) {
 					stmt *l = bin_first_column(be, left);
 					stmt *r = bin_first_column(be, right);
