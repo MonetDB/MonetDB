@@ -1974,6 +1974,9 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 								FLUSH_INSERTS_IF_BUFFERFILLED
 							}
 						}
+					} else if (sql->session->status == -1) {
+						sql->session->status = 0;
+						sql->errstr[0] = 0;
 					}
 				}
 			}
