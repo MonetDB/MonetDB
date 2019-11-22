@@ -70,6 +70,16 @@ FROM another_T t1
 GROUP BY CUBE(t1.col6, t1.col7);
 
 SELECT
+    NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2) AS a1,
+    NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL) AS a2,
+    NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col1) IS NOT NULL OR MIN(col1) < MIN(col2)) AS a3,
+    CAST (NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) | CAST (col2 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) AS a4,
+    CAST (EXISTS (SELECT MAX(col5) * MAX(col4) FROM another_T GROUP BY col5, col4) AS INTEGER) & CAST (GROUPING(col1, col5) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2) AS INTEGER) AS a5
+FROM another_T
+GROUP BY CUBE(col1, col2, col5)
+ORDER BY a1 NULLS FIRST, a2 NULLS FIRST, a3 NULLS FIRST, a4 NULLS FIRST, a5 NULLS FIRST;
+
+SELECT
     DISTINCT
     NOT GROUPING(t1.col6) IN (SELECT SUM(t1.col6) FROM tbl_ProductSales tp HAVING MAX(t1.col1) > MIN(tp.colID)),
     GROUPING(t1.col6) IN (SELECT SUM(t1.col7) HAVING GROUPING(t1.col7) < SUM(t1.col4)),
@@ -80,6 +90,17 @@ SELECT
     GROUPING(t1.col6) = ALL (SELECT GROUPING(t1.col7) FROM tbl_ProductSales)
 FROM another_T t1
 GROUP BY CUBE(t1.col6, t1.col7);
+
+SELECT
+    DISTINCT
+    NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2) AS a1,
+    NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL) AS a2,
+    NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col1) IS NOT NULL OR MIN(col1) < MIN(col2)) AS a3,
+    CAST (NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) | CAST (col2 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) AS a4,
+    CAST (EXISTS (SELECT MAX(col5) * MAX(col4) FROM another_T GROUP BY col5, col4) AS INTEGER) & CAST (GROUPING(col1, col5) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2) AS INTEGER) AS a5
+FROM another_T
+GROUP BY CUBE(col1, col2, col5)
+ORDER BY a1 NULLS FIRST, a2 NULLS FIRST, a3 NULLS FIRST, a4 NULLS FIRST, a5 NULLS FIRST;
 
 SELECT
     GROUPING(t1.col6, t1.col7) IN (SELECT SUM(t2.col2) FROM another_T t2 GROUP BY t2.col5),
