@@ -1689,13 +1689,14 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 			q = pushBit(mb, q, TRUE);
 			break;
 		}
-		if (type == st_join2)
-			q = pushNil(mb, q, TYPE_lng); /* estimate */
+		q = pushBit(mb, q, anti);
 		if (type == st_uselect2) {
-			q = pushBit(mb, q, anti);
 			if (cmp & CMP_BETWEEN)
 				q = pushBit(mb, q, TRUE); /* all nil's are != */
-		}
+		} else
+			q = pushBit(mb, q, FALSE);
+		if (type == st_join2)
+			q = pushNil(mb, q, TYPE_lng); /* estimate */
 		if (q == NULL)
 			return NULL;
 		if (swapped) {
