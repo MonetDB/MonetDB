@@ -35,7 +35,13 @@ stdout of test '03` in directory 'sql/benchmarks/tpcds` itself:
 #  AND item.i_manufact_id = 128
 #  AND dt.d_moy=11
 #GROUP BY dt.d_year,
-% sys.dt,	sys.L3,	sys.L5,	sys.L10 # table_name
+#         item.i_brand,
+#         item.i_brand_id
+#ORDER BY dt.d_year,
+#         sum_agg DESC,
+#         brand_id
+#LIMIT 100;
+% sys.dt,	sys.item,	sys.item,	sys.%1 # table_name
 % d_year,	brand_id,	brand,	sum_agg # name
 % int,	int,	char,	decimal # type
 % 4,	8,	50,	40 # length

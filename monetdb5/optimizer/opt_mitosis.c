@@ -126,7 +126,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	if( cntxt->memorylimit){
 		/* the new mitosis scheme uses a maximum chunck size in MB from the client context */
-		m = (cntxt->memorylimit * 1024 *1024) / row_size;
+		m = (size_t) ((cntxt->memorylimit * 1024 *1024) / row_size);
 		pieces = rowcnt / m + (rowcnt - m * pieces > 0);
 	}
 	if( cntxt->memorylimit == 0 || pieces <= 1){

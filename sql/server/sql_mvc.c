@@ -24,7 +24,6 @@
 #include "rel_semantic.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
-#include "rel_groupings.h"
 #include "gdk_logger.h"
 #include "wlc.h"
 
@@ -2116,8 +2115,6 @@ sql_processrelation(mvc *sql, sql_rel* rel, int value_based_opt)
 {
 	if (rel)
 		rel = rel_unnest(sql, rel);
-	if (rel)
-		rel = rel_generate_groupings(sql, rel);
 	if (rel)
 		rel = rel_optimizer(sql, rel, value_based_opt);
 	return rel;

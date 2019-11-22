@@ -26,8 +26,8 @@ stdout of test 'explain_gives_crash.SF-2741829` in directory 'sql/test/BugTracke
 #set optimizer='sequential_pipe';
 #create table blabla(id integer);
 #select '~BeginProfilingOutput~';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 22 # length
 [ "~BeginProfilingOutput~"	]
@@ -35,20 +35,20 @@ stdout of test 'explain_gives_crash.SF-2741829` in directory 'sql/test/BugTracke
 % .explain # table_name
 % mal # name
 % clob # type
-% 122 # length
-function user.s8_1():void;
-    X_1:void := querylog.define("explain alter table blabla add constraint dada unique (id);", "sequential_pipe", 40:int);
-    sqlcatalog.alter_table("sys", "blabla", nil:ptr, 0:int);
-    X_46 := bat.new(nil:int);
-    (X_47, C_48, X_49) := group.groupdone(X_46);
-    X_50:lng := aggr.sum(X_49);
-    X_54 := aggr.count(X_49);
-    X_52:bit := calc.isnil(X_50);
-    X_53:lng := calc.ifthenelse(X_52, 0:lng, X_50);
-    X_55:bit := calc.!=(X_54, X_53);
-    sql.assert(X_55, "UPDATE: UNIQUE constraint 'blabla.dada' violated");
+% 130 # length
+function user.s8_0():void;
+    X_1:void := querylog.define("explain alter table blabla add constraint dada unique (id);":str, "sequential_pipe":str, 40:int);
+    sqlcatalog.alter_table("sys":str, "blabla":str, nil:ptr, 0:int);
+    X_46:bat[:int] := bat.new(nil:int);
+    (X_47:bat[:oid], C_48:bat[:oid], X_49:bat[:lng]) := group.groupdone(X_46:bat[:int]);
+    X_50:lng := aggr.sum(X_49:bat[:lng]);
+    X_54:lng := aggr.count(X_49:bat[:lng]);
+    X_52:bit := calc.isnil(X_50:lng);
+    X_53:lng := calc.ifthenelse(X_52:bit, 0:lng, X_50:lng);
+    X_55:bit := calc.!=(X_54:lng, X_53:lng);
+    sql.assert(X_55:bit, "UPDATE: UNIQUE constraint 'blabla.dada' violated":str);
     sql.exportOperation();
-end user.s8_1;
+end user.s8_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=3 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -74,22 +74,22 @@ end user.s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 122 # length
-function user.s10_1():void;
-    X_1:void := querylog.define("explain alter table blabla add constraint dada unique (id);", "sequential_pipe", 40:int);
-    sqlcatalog.alter_table("sys", "blabla", nil:ptr, 0:int);
-    X_46 := bat.new(nil:int);
-    (X_47, C_48, X_49) := group.groupdone(X_46);
-    X_50:lng := aggr.sum(X_49);
-    X_54 := aggr.count(X_49);
-    X_52:bit := calc.isnil(X_50);
-    X_53:lng := calc.ifthenelse(X_52, 0:lng, X_50);
-    X_55:bit := calc.!=(X_54, X_53);
-    sql.assert(X_55, "UPDATE: UNIQUE constraint 'blabla.dada' violated");
+% 130 # length
+function user.s10_0():void;
+    X_1:void := querylog.define("explain alter table blabla add constraint dada unique (id);":str, "sequential_pipe":str, 40:int);
+    sqlcatalog.alter_table("sys":str, "blabla":str, nil:ptr, 0:int);
+    X_46:bat[:int] := bat.new(nil:int);
+    (X_47:bat[:oid], C_48:bat[:oid], X_49:bat[:lng]) := group.groupdone(X_46:bat[:int]);
+    X_50:lng := aggr.sum(X_49:bat[:lng]);
+    X_54:lng := aggr.count(X_49:bat[:lng]);
+    X_52:bit := calc.isnil(X_50:lng);
+    X_53:lng := calc.ifthenelse(X_52:bit, 0:lng, X_50:lng);
+    X_55:bit := calc.!=(X_54:lng, X_53:lng);
+    sql.assert(X_55:bit, "UPDATE: UNIQUE constraint 'blabla.dada' violated":str);
     sql.exportOperation();
-end user.s10_1;
-#inline               actions= 0 time=1 usec 
-#remap                actions= 0 time=3 usec 
+end user.s10_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 7 time=7 usec 
 #evaluate             actions= 0 time=3 usec 
@@ -110,14 +110,14 @@ end user.s10_1;
 #candidates           actions= 1 time=1 usec 
 #garbagecollector     actions= 1 time=9 usec 
 #select '~EndProfilingOutput~';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 20 # length
 [ "~EndProfilingOutput~"	]
 #select '~BeginProfilingOutput~';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 22 # length
 [ "~BeginProfilingOutput~"	]
@@ -125,21 +125,21 @@ end user.s10_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 122 # length
-function user.s18_1():void;
-    X_1:void := querylog.define("explain alter table blabla add constraint dada unique (id);", "sequential_pipe", 40:int);
-    sqlcatalog.alter_table("sys", "blabla", nil:ptr, 0:int);
-    X_46 := bat.new(nil:int);
-    (X_47, C_48, X_49) := group.groupdone(X_46);
-    X_50:lng := aggr.sum(X_49);
-    X_54 := aggr.count(X_49);
-    X_52:bit := calc.isnil(X_50);
-    X_53:lng := calc.ifthenelse(X_52, 0:lng, X_50);
-    X_55:bit := calc.!=(X_54, X_53);
-    sql.assert(X_55, "UPDATE: UNIQUE constraint 'blabla.dada' violated");
+% 130 # length
+function user.s18_0():void;
+    X_1:void := querylog.define("explain alter table blabla add constraint dada unique (id);":str, "sequential_pipe":str, 40:int);
+    sqlcatalog.alter_table("sys":str, "blabla":str, nil:ptr, 0:int);
+    X_46:bat[:int] := bat.new(nil:int);
+    (X_47:bat[:oid], C_48:bat[:oid], X_49:bat[:lng]) := group.groupdone(X_46:bat[:int]);
+    X_50:lng := aggr.sum(X_49:bat[:lng]);
+    X_54:lng := aggr.count(X_49:bat[:lng]);
+    X_52:bit := calc.isnil(X_50:lng);
+    X_53:lng := calc.ifthenelse(X_52:bit, 0:lng, X_50:lng);
+    X_55:bit := calc.!=(X_54:lng, X_53:lng);
+    sql.assert(X_55:bit, "UPDATE: UNIQUE constraint 'blabla.dada' violated":str);
     sql.exportOperation();
-end user.s18_1;
-#inline               actions= 0 time=1 usec 
+end user.s18_0;
+#inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 7 time=7 usec 
@@ -161,8 +161,8 @@ end user.s18_1;
 #candidates           actions= 1 time=1 usec 
 #garbagecollector     actions= 1 time=8 usec 
 #select '~EndProfilingOutput~';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 20 # length
 [ "~EndProfilingOutput~"	]

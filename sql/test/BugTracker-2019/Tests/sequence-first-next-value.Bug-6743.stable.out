@@ -69,62 +69,62 @@ stdout of test 'sequence-first-next-value.Bug-6743` in directory 'sql/test/BugTr
 #start transaction;
 #create sequence seq as int;
 #select get_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select get_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select next_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select next_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select get_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 3	]
 #select get_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 3	]
 #select next_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 3	]
 #select get_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 4	]
 #SELECT NEXT VALUE FOR sys.seq;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 4	]
 #select get_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 5	]
@@ -132,62 +132,62 @@ stdout of test 'sequence-first-next-value.Bug-6743` in directory 'sql/test/BugTr
 #start transaction;
 #create sequence seq as int;
 #select get_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select get_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select next_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select next_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select get_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 3	]
 #select get_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 3	]
 #select next_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 3	]
 #select get_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 4	]
 #SELECT NEXT VALUE FOR sys.seq;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 4	]
 #select get_value_for('sys','seq');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 5	]

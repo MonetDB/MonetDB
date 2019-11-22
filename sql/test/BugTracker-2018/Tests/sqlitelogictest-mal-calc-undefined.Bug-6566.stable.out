@@ -27,24 +27,24 @@ stdout of test 'sqlitelogictest-mal-calc-undefined.Bug-6566` in directory 'sql/t
 #INSERT INTO tab0 VALUES(97,1,99), (15,81,47), (87,21,10);
 [ 3	]
 #SELECT CAST ( - col0 - - - col0 * + CAST ( NULL AS INTEGER ) AS BIGINT ) FROM tab0;
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
 #SELECT ALL - CAST ( col1 * - 16 * + CAST ( NULL AS INTEGER ) AS BIGINT ) FROM tab0 cor0;
-% .L4 # table_name
-% L4 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
 #SELECT ALL + CAST ( CAST ( NULL AS INTEGER ) / + COUNT ( DISTINCT - 55 ) * + MIN ( DISTINCT 0 ) AS BIGINT ) FROM tab0 AS cor0; -- NULL
-% .L6 # table_name
-% L6 # name
+% .%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ NULL	]

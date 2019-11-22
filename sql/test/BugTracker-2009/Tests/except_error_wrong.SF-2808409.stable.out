@@ -30,7 +30,7 @@ stdout of test 'except_error_wrong.SF-2808409` in directory 'sql/test/BugTracker
 #create table kvk (kvk bigint, bedrijfsnaam varchar(255), adres varchar(64), postcode varchar(6), plaats varchar(32), type varchar(16));
 #create table anbi (naam varchar(256), vestigingsplaats varchar(32), beschikking timestamp, intrekking timestamp);
 #select naam, vestigingsplaats, beschikking from anbi except select naam, vestigingsplaats, beschikking from anbi, kvk where lower(naam) = lower(bedrijfsnaam) and lower(plaats) = lower(vestigingsplaats);
-% sys.L13,	sys.L13,	sys.L13 # table_name
+% sys.%5,	sys.%5,	sys.%5 # table_name
 % naam,	vestigingsplaats,	beschikking # name
 % varchar,	varchar,	timestamp # type
 % 0,	0,	26 # length

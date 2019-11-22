@@ -24,7 +24,7 @@ stdout of test 'dce_bug-6177` in directory 'sql/test/BugTracker-2017` itself:
 # 14:13:06 >  
 
 #select distinct 14 as c0 from  sys.querylog_calls as ref_0 where ref_0.cpu is not NULL limit 141;
-% .L7 # table_name
+% . # table_name
 % c0 # name
 % tinyint # type
 % 1 # length

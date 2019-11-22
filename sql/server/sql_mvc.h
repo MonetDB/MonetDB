@@ -39,10 +39,11 @@
 #define card_row 	1 /* needed for subqueries on single value tables (select (select 1))*/
 #define card_column 	2
 #define card_set	3 /* some operators require only a set (IN/EXISTS) */
-#define card_relation 	4
-#define card_loader 	5
+#define card_exists	4
+#define card_relation 	5
+#define card_loader 	6
 
-#define CARD_VALUE(card) (card == card_value || card == card_row || card == card_column || card == card_set)
+#define CARD_VALUE(card) (card == card_value || card == card_row || card == card_column || card == card_set || card == card_exists)
 
 /* allowed to reduce (in the where and having parts we can reduce) */
 

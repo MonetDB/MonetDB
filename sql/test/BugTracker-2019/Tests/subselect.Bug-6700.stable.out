@@ -92,8 +92,8 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #      from "testTable1" "inner"
 #      where ("inner"."B" = "outer"."A")
 #) from "testTable1" "outer";
-% sys.outer,	sys.outer,	.L6 # table_name
-% A,	B,	L6 # name
+% .outer,	.outer,	.%1 # table_name
+% A,	B,	%1 # name
 % varchar,	varchar,	bigint # type
 % 4,	4,	1 # length
 [ "Cat1",	"Cat1",	2	]
@@ -104,8 +104,8 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #      from "testTable1" "inner"
 #      where ("inner"."B" = "outer"."A")
 #) from "testTable1" "outer";
-% sys.outer,	sys.outer,	.L6 # table_name
-% A,	B,	L6 # name
+% .outer,	.outer,	.%1 # table_name
+% A,	B,	%1 # name
 % varchar,	varchar,	bigint # type
 % 4,	4,	1 # length
 [ "Cat1",	"Cat1",	2	]
@@ -116,8 +116,8 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #	from "testTable1" "inner"
 #	where ("inner"."B" = "outer"."A") and ("outer"."A" is not null)
 #) from "testTable1" "outer";
-% sys.outer,	sys.outer,	.L6 # table_name
-% A,	B,	L6 # name
+% .outer,	.outer,	.%1 # table_name
+% A,	B,	%1 # name
 % varchar,	varchar,	bigint # type
 % 4,	4,	1 # length
 [ "Cat1",	"Cat1",	2	]
@@ -128,8 +128,8 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #	from "testTable1" "inner"
 #	where ("inner"."B" = "outer"."A") and ("outer"."A" is not null)
 #) from "testTable1" "outer";
-% sys.outer,	sys.outer,	.L6 # table_name
-% A,	B,	L6 # name
+% .outer,	.outer,	.%1 # table_name
+% A,	B,	%1 # name
 % varchar,	varchar,	bigint # type
 % 4,	4,	1 # length
 [ "Cat1",	"Cat1",	2	]
@@ -143,8 +143,8 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #         ("inner"."A" is null and  "outer"."A" is null)
 #      )
 #) from "testTable2" "outer";
-% sys.outer,	sys.outer,	.L6 # table_name
-% A,	B,	L6 # name
+% .outer,	.outer,	.%1 # table_name
+% A,	B,	%1 # name
 % varchar,	double,	double # type
 % 4,	24,	24 # length
 [ "Cat1",	2,	2	]
@@ -159,8 +159,8 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #         ("inner"."A" is null and  "outer"."A" is null)
 #      ) and ("A" = 'Cat7')
 #) from "testTable2" "outer";
-% sys.outer,	sys.outer,	.L6 # table_name
-% A,	B,	L6 # name
+% .outer,	.outer,	.%1 # table_name
+% A,	B,	%1 # name
 % varchar,	double,	double # type
 % 4,	24,	24 # length
 [ "Cat1",	2,	NULL	]
@@ -175,8 +175,8 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #         ("inner"."A" is null and  "outer"."A" is null)
 #      ) and (true = false)
 #) from "testTable2" "outer";
-% sys.outer,	sys.outer,	.L6 # table_name
-% A,	B,	L6 # name
+% .outer,	.outer,	.%1 # table_name
+% A,	B,	%1 # name
 % varchar,	double,	double # type
 % 4,	24,	24 # length
 [ "Cat1",	2,	NULL	]

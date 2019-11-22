@@ -24,7 +24,7 @@ stdout of test 'union-bug-sf-978045` in directory 'sql/test/bugs` itself:
 
 [ 3	]
 #select name from t978045 union select name from t978045;
-% .L7 # table_name
+% .%5 # table_name
 % name # name
 % varchar # type
 % 6 # length
@@ -32,7 +32,7 @@ stdout of test 'union-bug-sf-978045` in directory 'sql/test/bugs` itself:
 [ "fabian"	]
 [ "martin"	]
 #select name from t978045 union all select name from t978045;
-% .L7 # table_name
+% .%5 # table_name
 % name # name
 % varchar # type
 % 6 # length

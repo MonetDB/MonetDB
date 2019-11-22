@@ -48,7 +48,7 @@ stdout of test 'mitosis-floor.Bug-3330` in directory 'sql/test/BugTracker-2013` 
 #	tiley,
 #	intensity
 #;
-% sys.image,	sys.image,	sys.image,	sys.L13 # table_name
+% sys.image,	sys.image,	sys.image,	sys.%1 # table_name
 % tilex,	tiley,	intensity,	count # name
 % double,	double,	int,	bigint # type
 % 24,	24,	1,	1 # length

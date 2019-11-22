@@ -27,6 +27,17 @@ stderr of test 'groupby_assertion.Bug-6338` in directory 'sql/test/BugTracker-20
 # 16:45:11 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16821" "--port=39210"
 # 16:45:11 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-31432/.s.monetdb.38083
+QUERY = insert into source_attr select  'src_0',
+                  (select count(*) from source_attr where sat_id = 'source_ac_0'),
+                  c.name,c.name,
+                  (select count(*) from source_ac_0  where  c.name is null),
+                  (select count(distinct c.name) from source_ac_0),
+                  c.type,null 
+                       from sys.tables as T, sys.columns as C 
+                       where T.id = C.table_id and T.name = 'source_ac_0';
+ERROR = !SELECT: no such column 'c.type'
+CODE  = 42S22
 
 # 16:45:11 >  
 # 16:45:11 >  "Done."

@@ -20,15 +20,15 @@ stdout of test 'cast_varchar2int-bug-sf-964165` in directory 'sql/test/bugs` its
 [ 1	]
 [ 1	]
 #select cast(x as integer) from t2;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
 [ 2	]
 #select cast('1' as integer);
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]

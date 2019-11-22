@@ -43,8 +43,8 @@ stdout of test 'query2.6` in directory 'sql/backends/monet5/vaults/bam` itself:
 #    FROM qnames_insct
 #)
 #ORDER BY qname, 1, flag, cigar, pos;
-% .L62,	.L62,	.L62,	.L62,	.L62,	.L62,	.L62,	.L62,	.L62,	.L62,	.L62,	.L62 # table_name
-% L17,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% .%22,	.%22,	.%22,	.%22,	.%22,	.%22,	.%22,	.%22,	.%22,	.%22,	.%22,	.%22 # table_name
+% %15,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 2,	11,	3,	5,	9,	3,	27,	1,	8,	1,	100,	100 # length
 [ "f1",	"sim_22_1_1",	83,	"chr22",	39996429,	255,	"62=1X37=",	"=",	39996217,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]
@@ -208,8 +208,8 @@ stdout of test 'query2.6` in directory 'sql/backends/monet5/vaults/bam` itself:
 #WHERE qname IN (
 #    SELECT *
 #    FROM qnames_insct
-% .L1026,	.L1026,	.L1026,	.L1026,	.L1026,	.L1026,	.L1026,	.L1026,	.L1026,	.L1026,	.L1026,	.L1026 # table_name
-% L572,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% .%162,	.%162,	.%162,	.%162,	.%162,	.%162,	.%162,	.%162,	.%162,	.%162,	.%162,	.%162 # table_name
+% %155,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 2,	11,	3,	5,	9,	3,	27,	1,	8,	1,	100,	100 # length
 [ "f1",	"sim_22_1_1",	83,	"chr22",	39996429,	255,	"62=1X37=",	"=",	39996217,	0,	"ACTCTGTCGCCCAGGCCGGGGCGTAGCCATGCAAACACGGCTCACTGCAGCCTCGACCTCCCCGGCTCAAGCCATCCTCCCACCTCAACCTCCCAAGTAG",	"##?#-@=#?D5?EBC##=2#E6A=E8A:F5+F>=CF8#BDFDF?7B8BAGC2EF?FFFG>EE*F=GDBGDGFEFEFG=FBGFFBFFBGEDCF5EFGGGDG"	]

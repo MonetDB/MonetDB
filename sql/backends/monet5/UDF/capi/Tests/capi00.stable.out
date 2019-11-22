@@ -73,8 +73,8 @@ stdout of test 'capi00` in directory 'sql/backends/monet5/UDF/capi` itself:
 #INSERT INTO integers VALUES (1), (2), (3), (4), (5);
 [ 5	]
 #SELECT i, capi00(i) FROM integers;
-% sys.integers,	sys.L3 # table_name
-% i,	L3 # name
+% sys.integers,	sys.%2 # table_name
+% i,	%2 # name
 % int,	int # type
 % 1,	2 # length
 [ 1,	2	]

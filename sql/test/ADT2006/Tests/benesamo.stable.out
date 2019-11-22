@@ -189,20 +189,20 @@ stdout of test 'benesamo` in directory 'sql/test/ADT2006` itself:
 [ "Ada",	"Wilson",	"(survived the attack on 1888-28-03)"	]
 [ "Annie",	"Farmer",	"(survived the attack on 1888-11-20)"	]
 #select count(*) from scene_witness where scene_id IN ( select scene_id from scene where victim_id IN ( select victim_id from victim where surname='Stride'));
-% sys.L14 # table_name
-% L14 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from scene_inspector where inspector_id IN (Select inspector_id from inspector where surname='Monro') Group by inspector_id;
-% sys.L5 # table_name
-% L5 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from victim where eyes='blue';
-% sys.L3 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -256,8 +256,8 @@ stdout of test 'benesamo` in directory 'sql/test/ADT2006` itself:
 % 3,	6,	6,	8 # length
 [ "Dr.",	"George",	"Baxter",	"Phillips"	]
 #SELECT count(*) FROM victim;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 18	]

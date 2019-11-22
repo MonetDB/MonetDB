@@ -68,8 +68,8 @@ stdout of test 'convert-key.Bug-6648` in directory 'sql/test/BugTracker-2018` it
 #insert into bug6648 values (1), (0), (-1), (-127), (127), (0.12), (-3.1415629);
 [ 7	]
 #select cast(d as tinyint) from bug6648;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % tinyint # type
 % 4 # length
 [ 1	]

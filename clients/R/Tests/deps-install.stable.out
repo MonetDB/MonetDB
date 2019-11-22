@@ -22,9 +22,145 @@ stdout of test 'deps-install` in directory 'clients/R` itself:
 # MonetDB/R   module loaded
 
 
-# 16:13:02 >  
-# 16:13:02 >  "R" "--vanilla" "--slave" "--args" "35560"
-# 16:13:02 >  
+#~BeginProfilingOutput~#
+g++ -m64 -std=gnu++11 -I"/usr/include/R" -DNDEBUG   -I/usr/local/include  -fpic  -O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection  -c SpookyV2.cpp -o SpookyV2.o
+gcc -m64 -I"/usr/include/R" -DNDEBUG   -I/usr/local/include  -fpic  -O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection  -c aes.c -o aes.o
+gcc -m64 -I"/usr/include/R" -DNDEBUG   -I/usr/local/include  -fpic  -O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection  -c crc32.c -o crc32.o
+gcc -m64 -I"/usr/include/R" -DNDEBUG   -I/usr/local/include  -fpic  -O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection  -c digest.c -o digest.o
+gcc -m64 -I"/usr/include/R" -DNDEBUG   -I/usr/local/include  -fpic  -O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection  -c digest2int.c -o digest2int.o
+gcc -m64 -I"/usr/include/R" -DNDEBUG   -I/usr/local/include  -fpic  -O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection  -c init.c -o init.o
+gcc -m64 -I"/usr/include/R" -DNDEBUG   -I/usr/local/include  -fpic  -O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection  -c md5.c -o md5.o
+gcc -m64 -I"/usr/include/R" -DNDEBUG   -I/usr/local/include  -fpic  -O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection  -c pmurhash.c -o pmurhash.o
+gcc -m64 -I"/usr/include/R" -DNDEBUG   -I/usr/local/include  -fpic  -O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection  -c raes.c -o raes.o
+gcc -m64 -I"/usr/include/R" -DNDEBUG   -I/usr/local/include  -fpic  -O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection  -c sha1.c -o sha1.o
+gcc -m64 -I"/usr/include/R" -DNDEBUG   -I/usr/local/include  -fpic  -O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection  -c sha2.c -o sha2.o
+gcc -m64 -I"/usr/include/R" -DNDEBUG   -I/usr/local/include  -fpic  -O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection  -c sha256.c -o sha256.o
+g++ -m64 -std=gnu++11 -I"/usr/include/R" -DNDEBUG   -I/usr/local/include  -fpic  -O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection  -c spooky_serialize.cpp -o spooky_serialize.o
+gcc -m64 -I"/usr/include/R" -DNDEBUG   -I/usr/local/include  -fpic  -O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -fcf-protection  -c xxhash.c -o xxhash.o
+g++ -m64 -std=gnu++11 -shared -L/usr/lib64/R/lib -Wl,-z,relro -Wl,--as-needed -Wl,-z,now -specs=/usr/lib/rpm/redhat/redhat-hardened-ld -o digest.so SpookyV2.o aes.o crc32.o digest.o digest2int.o init.o md5.o pmurhash.o raes.o sha1.o sha2.o sha256.o spooky_serialize.o xxhash.o -L/usr/lib64/R/lib -lR
+  converting help for package ‘digest’
+    AES                                     html  
+    digest                                  html  
+    digest2int                              html  
+    hmac                                    html  
+    makeRaw                                 html  
+    sha1                                    html  
+    vdigest                                 html  
+  converting help for package ‘DBI’
+    ANSI                                    html  
+    DBI-package                             html  
+    DBIConnection-class                     html  
+    DBIDriver-class                         html  
+    DBIObject-class                         html  
+    DBIResult-class                         html  
+    Id                                      html  
+    SQL                                     html  
+    dbAppendTable                           html  
+    dbBind                                  html  
+    dbCallProc                              html  
+    dbCanConnect                            html  
+    dbClearResult                           html  
+    dbColumnInfo                            html  
+    dbConnect                               html  
+    dbCreateTable                           html  
+    dbDataType                              html  
+    dbDisconnect                            html  
+    dbDriver                                html  
+    dbExecute                               html  
+    dbExistsTable                           html  
+    dbFetch                                 html  
+Rd warning: /tmp/RtmpbIEpj5/R.INSTALL2d1e3f1ed975/DBI/man/dbFetch.Rd:90: file link ‘as.hms’ in package ‘hms’ does not exist and so has been treated as a topic
+    dbGetDBIVersion                         html  
+    dbGetException                          html  
+    dbGetInfo                               html  
+    dbGetQuery                              html  
+    dbGetRowCount                           html  
+    dbGetRowsAffected                       html  
+    dbGetStatement                          html  
+    dbHasCompleted                          html  
+    dbIsReadOnly                            html  
+    dbIsValid                               html  
+    dbListConnections                       html  
+    dbListFields                            html  
+    dbListObjects                           html  
+    dbListResults                           html  
+    dbListTables                            html  
+    dbQuoteIdentifier                       html  
+    dbQuoteLiteral                          html  
+    dbQuoteString                           html  
+    dbReadTable                             html  
+    dbRemoveTable                           html  
+    dbSendQuery                             html  
+    dbSendStatement                         html  
+    dbSetDataMappings                       html  
+    dbUnquoteIdentifier                     html  
+    dbWithTransaction                       html  
+    dbWriteTable                            html  
+    hidden_aliases                          html  
+    make.db.names                           html  
+    rownames                                html  
+    sqlAppendTable                          html  
+    sqlCreateTable                          html  
+    sqlData                                 html  
+    sqlInterpolate                          html  
+    sqlParseVariables                       html  
+    transactions                            html  
+  converting help for package ‘devtools’
+    as.package                              html  
+    bash                                    html  
+    build                                   html  
+    build_manual                            html  
+    build_readme                            html  
+    build_site                              html  
+    build_vignettes                         html  
+    check                                   html  
+    check_failures                          html  
+    check_man                               html  
+    check_rhub                              html  
+    check_win                               html  
+    clean_vignettes                         html  
+    create                                  html  
+    dev_mode                                html  
+    dev_packages                            html  
+    dev_sitrep                              html  
+    devtest                                 html  
+    devtools-deprecated                     html  
+    devtools                                html  
+Rd warning: /tmp/RtmpluYevw/R.INSTALL2d3f4c779df2/devtools/man/devtools.Rd:28: file link ‘as.person’ in package ‘utils’ does not exist and so has been treated as a topic
+    document                                html  
+    git_checks                              html  
+    github_pat                              html  
+    has_tests                               html  
+    install                                 html  
+    install_deps                            html  
+    is.package                              html  
+    lint                                    html  
+    load_all                                html  
+    loaded_packages                         html  
+    missing_s3                              html  
+    package_file                            html  
+    r_env_vars                              html  
+    reexports                               html  
+Rd warning: /tmp/RtmpluYevw/R.INSTALL2d3f4c779df2/devtools/man/reexports.Rd:26: file link ‘has_devel’ in package ‘pkgbuild’ does not exist and so has been treated as a topic
+Rd warning: /tmp/RtmpluYevw/R.INSTALL2d3f4c779df2/devtools/man/reexports.Rd:26: file link ‘find_rtools’ in package ‘pkgbuild’ does not exist and so has been treated as a topic
+Rd warning: /tmp/RtmpluYevw/R.INSTALL2d3f4c779df2/devtools/man/reexports.Rd:30: file link ‘github_pull’ in package ‘remotes’ does not exist and so has been treated as a topic
+Rd warning: /tmp/RtmpluYevw/R.INSTALL2d3f4c779df2/devtools/man/reexports.Rd:30: file link ‘github_release’ in package ‘remotes’ does not exist and so has been treated as a topic
+    release                                 html  
+    release_checks                          html  
+    reload                                  html  
+    remote-reexports                        html  
+    revdep                                  html  
+    run_examples                            html  
+    save_all                                html  
+    show_news                               html  
+    source_gist                             html  
+    source_url                              html  
+    spell_check                             html  
+    submit_cran                             html  
+    test                                    html  
+    uninstall                               html  
+    wd                                      html  
+#~EndProfilingOutput~#
 
 
 # 16:13:03 >  

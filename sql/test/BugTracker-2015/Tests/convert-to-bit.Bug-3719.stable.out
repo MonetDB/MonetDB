@@ -64,14 +64,14 @@ stdout of test 'convert-to-bit.Bug-3719` in directory 'sql/test/BugTracker-2015`
 #INSERT INTO t1(d,c,e,a,b) VALUES(116,119,117,115,118);
 [ 1	]
 #SELECT count(*) FROM t1 AS x;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 4	]
 #SELECT count(*) FROM t1 AS x WHERE x.c;
-% sys.L3 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 4	]

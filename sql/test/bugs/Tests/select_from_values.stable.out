@@ -24,7 +24,7 @@ stdout of test 'select_from_values` in directory 'sql/test/bugs` itself:
 # 23:25:51 >  
 
 % .t,	.t # table_name
-% L1,	L2 # name
+% %1,	%2 # name
 % tinyint,	char # type
 % 1,	6 # length
 [ 0,	"Promo0"	]

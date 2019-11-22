@@ -31,8 +31,8 @@ stdout of test 'file_s10` in directory 'sql/test/Via-m` itself:
 #                 from   media
 #                 where  identifier = 'identifier1');
 #select id_file1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 11 # length
 [ -1234567890	]

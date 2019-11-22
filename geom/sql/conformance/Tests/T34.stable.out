@@ -25,8 +25,8 @@ stdout of test 'T34` in directory 'geom/sql/conformance` itself:
 # 15:05:52 >  
 
 #SELECT ST_AsText(ST_Centroid(shores)) FROM ponds WHERE fid = 120;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % clob # type
 % 13 # length
 [ "POINT (25 42)"	]

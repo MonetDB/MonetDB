@@ -89,8 +89,8 @@ stdout of test 'many_union_all.Bug-3879` in directory 'sql/test/BugTracker-2015`
 #      SELECT 0 FROM foo
 #      UNION ALL
 #      SELECT 0 FROM foo) AS t;
-% .L120 # table_name
-% L120 # name
+% .%117 # table_name
+% %117 # name
 % tinyint # type
 % 1 # length
 #INSERT INTO foo VALUES (3), (6), (7);

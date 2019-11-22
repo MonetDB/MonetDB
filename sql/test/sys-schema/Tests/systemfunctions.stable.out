@@ -25,7 +25,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 #   and f.id = a.func_id
 #   and f.system
 # order by s.name, f.name, f.id, a.number;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
+% sys.s,	sys.f,	sys.a,	sys.a,	sys. # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
 % 8,	24,	2,	14,	705 # length
@@ -3526,6 +3526,9 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"sql_add",	0,	"timetz",	"time_add_msec_interval"	]
 [ "sys",	"sql_add",	1,	"timetz",	""	]
 [ "sys",	"sql_add",	2,	"sec_interval",	""	]
+[ "sys",	"sql_anyequal",	0,	"boolean",	"anyequal"	]
+[ "sys",	"sql_anyequal",	1,	"any",	""	]
+[ "sys",	"sql_anyequal",	2,	"any",	""	]
 [ "sys",	"sql_div",	0,	"smallint",	"/"	]
 [ "sys",	"sql_div",	1,	"smallint",	""	]
 [ "sys",	"sql_div",	2,	"tinyint",	""	]
@@ -3914,6 +3917,9 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"sql_neg",	1,	"month_interval",	""	]
 [ "sys",	"sql_neg",	0,	"sec_interval",	"-"	]
 [ "sys",	"sql_neg",	1,	"sec_interval",	""	]
+[ "sys",	"sql_not_anyequal",	0,	"boolean",	"not_anyequal"	]
+[ "sys",	"sql_not_anyequal",	1,	"any",	""	]
+[ "sys",	"sql_not_anyequal",	2,	"any",	""	]
 [ "sys",	"sql_not_exists",	0,	"boolean",	"not_exist"	]
 [ "sys",	"sql_not_exists",	1,	"any",	""	]
 [ "sys",	"sql_sub",	0,	"oid",	"-"	]

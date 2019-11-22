@@ -41,7 +41,7 @@ stdout of test 'sqlsmith.Bug-6423` in directory 'sql/test/BugTracker-2017` itsel
 #        left join bam.rg as sample_4
 #          right join sys.key_types as ref_8
 #          on (true)
-% .L53,	.L55,	.L57,	.L61 # table_name
+% .%71,	.%72,	.%73,	.%74 # table_name
 % c0,	c1,	c2,	c3 # name
 % clob,	varchar,	clob,	tinyint # type
 % 0,	0,	0,	1 # length

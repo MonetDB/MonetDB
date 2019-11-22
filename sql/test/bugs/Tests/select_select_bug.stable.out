@@ -26,8 +26,8 @@ stdout of test 'select_select_bug` in directory 'sql/test/bugs` itself:
 
 #CREATE TABLE vessels (implicit_timestamp timestamp, mmsi int, lat real, lon real, nav_status tinyint, cog real, sog real, true_heading smallint, rotais smallint);
 #SELECT (SELECT 1), count(DISTINCT mmsi) FROM vessels;
-% .L3,	sys.L7 # table_name
-% L3,	L6 # name
+% .%1,	.%2 # table_name
+% %1,	%2 # name
 % tinyint,	bigint # type
 % 1,	1 # length
 [ 1,	0	]

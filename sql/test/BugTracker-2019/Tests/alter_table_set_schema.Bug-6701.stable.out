@@ -61,76 +61,76 @@ stdout of test 'alter_table_set_schema.Bug-6701` in directory 'sql/test/BugTrack
 % 1,	1,	1 # length
 #create table sys.test2 (col1 serial);
 #select count(*) as count_rows from tables where name = 'test2';
-% .L42 # table_name
+% .%10 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from keys where table_id in (select id from tables where name = 'test2');
-% sys.L44 # table_name
+% sys.%11 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from objects where id in (select id from keys where table_id in (select id from tables where name = 'test2'));
-% sys.L46 # table_name
+% sys.%12 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
 [ 1	]
 #ALTER TABLE sys.test2 SET SCHEMA profiler;
 #select count(*) as count_rows from tables where name = 'test2';
-% .L42 # table_name
+% .%10 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from keys where table_id in (select id from tables where name = 'test2');
-% sys.L44 # table_name
+% sys.%11 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from objects where id in (select id from keys where table_id in (select id from tables where name = 'test2'));
-% sys.L46 # table_name
+% sys.%12 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
 [ 1	]
 #ALTER TABLE profiler.test2 SET SCHEMA json;
 #select count(*) as count_rows from tables where name = 'test2';
-% .L42 # table_name
+% .%10 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from keys where table_id in (select id from tables where name = 'test2');
-% sys.L44 # table_name
+% sys.%11 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from objects where id in (select id from keys where table_id in (select id from tables where name = 'test2'));
-% sys.L46 # table_name
+% sys.%12 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
 [ 1	]
 #ALTER TABLE json.test2 SET SCHEMA sys;
 #select count(*) as count_rows from tables where name = 'test2';
-% .L42 # table_name
+% .%10 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from keys where table_id in (select id from tables where name = 'test2');
-% sys.L44 # table_name
+% sys.%11 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from objects where id in (select id from keys where table_id in (select id from tables where name = 'test2'));
-% sys.L46 # table_name
+% sys.%12 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length

@@ -41,8 +41,8 @@ stdout of test 'drop_constraint_bug` in directory 'sql/test/osm` itself:
 #WHERE
 #        k = 'highway' AND
 #        v = 'secondary';
-% .L4 # table_name
-% L3 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]

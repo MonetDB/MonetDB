@@ -72,7 +72,7 @@ stdout of test 'int_notation_1e5` in directory 'sql/backends/monet5` itself:
 #-42E36|-42000000000000000000000000000000000000|
 [ 7	]
 #SELECT *, a-b AS diff FROM t1e4;
-% sys.t1e4,	sys.t1e4,	sys.L4 # table_name
+% sys.t1e4,	sys.t1e4,	sys.%4 # table_name
 % a,	b,	diff # name
 % hugeint,	hugeint,	hugeint # type
 % 39,	39,	1 # length

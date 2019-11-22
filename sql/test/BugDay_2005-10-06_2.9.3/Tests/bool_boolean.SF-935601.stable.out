@@ -24,20 +24,20 @@ stdout of test 'bool_boolean.SF-935601` in directory 'sql/test/BugDay_2005-10-06
 # 11:50:34 >  
 
 #select isnull(1);
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #select isnull(1)=false;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select (1=1)=true;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

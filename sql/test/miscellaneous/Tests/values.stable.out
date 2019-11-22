@@ -23,85 +23,85 @@ stdout of test 'values` in directory 'sql/test/miscellaneous` itself:
 # 16:16:11 >  
 
 #values (1);
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #values (NULL);
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % smallint # type
 % 1 # length
 [ NULL	]
 #values (1,2,3);
-% .L1,	.L2,	.L3 # table_name
-% L1,	L2,	L3 # name
+% .%1,	.%2,	.%3 # table_name
+% %1,	%2,	%3 # name
 % tinyint,	tinyint,	tinyint # type
 % 1,	1,	1 # length
 [ 1,	2,	3	]
 #values (1,2,3), (4,NULL,6), (7,8,NULL);
-% .L1,	.L2,	.L3 # table_name
-% L1,	L2,	L3 # name
+% .%1,	.%2,	.%3 # table_name
+% %1,	%2,	%3 # name
 % tinyint,	tinyint,	tinyint # type
 % 1,	1,	1 # length
 [ 1,	2,	3	]
 [ 4,	NULL,	6	]
 [ 7,	8,	NULL	]
 #values (1), ('ok');
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % char # type
 % 2 # length
 [ "1"	]
 [ "ok"	]
 #values (1) union values (3);
-% .L7 # table_name
-% L1 # name
+% .%7 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 [ 3	]
 #values (1,1) union values (1,1);
-% .L11,	.L11 # table_name
-% L1,	L2 # name
+% .%11,	.%11 # table_name
+% %1,	%2 # name
 % tinyint,	tinyint # type
 % 1,	1 # length
 [ 1,	1	]
 #values (1,2,3) union all values (1,2,3);
-% .L13,	.L13,	.L13 # table_name
-% L1,	L2,	L3 # name
+% .%13,	.%13,	.%13 # table_name
+% %1,	%2,	%3 # name
 % tinyint,	tinyint,	tinyint # type
 % 1,	1,	1 # length
 [ 1,	2,	3	]
 [ 1,	2,	3	]
 #values (3), (2) intersect values (3);
-% .L7 # table_name
-% L1 # name
+% .%7 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 3	]
 #values (1,2,3), (4,5,6) except select 1,2,4;
-% .L16,	.L16,	.L16 # table_name
-% L1,	L2,	L3 # name
+% .%13,	.%13,	.%13 # table_name
+% %1,	%2,	%3 # name
 % tinyint,	tinyint,	tinyint # type
 % 1,	1,	1 # length
 [ 1,	2,	3	]
 [ 4,	5,	6	]
 #values (1,2,3), (4,5,6) except select 1,2,3;
-% .L16,	.L16,	.L16 # table_name
-% L1,	L2,	L3 # name
+% .%13,	.%13,	.%13 # table_name
+% %1,	%2,	%3 # name
 % tinyint,	tinyint,	tinyint # type
 % 1,	1,	1 # length
 [ 4,	5,	6	]
 #select 'a', 'c' union select 'b', 'c' except values ('a', 'c'), ('b', 'c');
-% .L24,	.L24 # table_name
-% L2,	L4 # name
+% .%21,	.%21 # table_name
+% %2,	%3 # name
 % char,	char # type
 % 1,	1 # length
 #select 'a', 'c' union select 'b', 'c' except values ('a', 'c'), ('b', 'd');
-% .L24,	.L24 # table_name
-% L2,	L4 # name
+% .%21,	.%21 # table_name
+% %2,	%3 # name
 % char,	char # type
 % 1,	1 # length
 [ "b",	"c"	]
@@ -120,22 +120,22 @@ stdout of test 'values` in directory 'sql/test/miscellaneous` itself:
 % 1,	1,	1,	1 # length
 [ 2,	2,	2,	4	]
 #with t1 as (select 1) values (2);
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 2	]
 #with t1 as (select 1) values (3,4,5,6,7,'ok'), (6,8,1,2,'still','ok');
-% .L3,	.L4,	.L5,	.L6,	.L7,	.L10 # table_name
-% L3,	L4,	L5,	L6,	L7,	L10 # name
+% .%1,	.%2,	.%3,	.%4,	.%5,	.%6 # table_name
+% %1,	%2,	%3,	%4,	%5,	%6 # name
 % tinyint,	tinyint,	tinyint,	tinyint,	char,	char # type
 % 1,	1,	1,	1,	5,	2 # length
 [ 3,	4,	5,	6,	"7",	"ok"	]
 [ 6,	8,	1,	2,	"still",	"ok"	]
 #create function foo() returns table (aa int, bb int) begin return table(values (1,2)); end;
 #select aa, bb + 1 from foo();
-% .L1,	.L4 # table_name
-% aa,	L4 # name
+% .%1,	.%3 # table_name
+% aa,	%3 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 1,	3	]

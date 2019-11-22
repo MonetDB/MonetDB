@@ -25,50 +25,50 @@ stdout of test 'inet-funcs.Bug-3645` in directory 'sql/test/BugTracker-2015` its
 # 18:30:57 >  
 
 #SELECT inet'192.168.0.1' << inet'192.168.0.0/24';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT inet'192.168.0.1' <<= inet'192.168.0.0/24';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT inet'192.168.0.1' >> inet'192.168.0.0/24';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT inet'192.168.0.1' >>= inet'192.168.0.0/24';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT inet'192.168.0.1' << inet'192.168.0.1/24';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT inet'192.168.0.1' <<= inet'192.168.0.1/24';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT inet'192.168.0.1' >> inet'192.168.0.1/24';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT inet'192.168.0.1' >>= inet'192.168.0.1/24';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ false	]

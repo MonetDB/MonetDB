@@ -27,8 +27,8 @@ stdout of test 'media_s08` in directory 'sql/test/Via-m` itself:
 #set id_media_description = -1234567890;
 #set id_media_description =  add_media_description('description 1');
 #select id_media_description;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 1 # length
 [ 2	]

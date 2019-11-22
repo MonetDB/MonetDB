@@ -25,8 +25,8 @@ stdout of test 'T23` in directory 'geom/sql/conformance` itself:
 # 14:52:43 >  
 
 #SELECT ST_AsText(ST_PointN(centerline, 1)) FROM road_segments WHERE fid = 102;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % clob # type
 % 13 # length
 [ "POINT (10 21)"	]

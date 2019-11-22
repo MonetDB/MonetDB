@@ -57,7 +57,7 @@ stdout of test 'rapi09` in directory 'sql/backends/monet5` itself:
 #	as.integer(42)
 #};
 #SELECT * FROM throwwarning();
-% .L1 # table_name
+% .%1 # table_name
 % i # name
 % int # type
 % 2 # length
@@ -76,8 +76,8 @@ stdout of test 'rapi09` in directory 'sql/backends/monet5` itself:
 #CREATE FUNCTION suicide3() RETURNS TABLE (i integer) LANGUAGE R {.Internal(quit("no", 0,F))};
 #ROLLBACK;
 #SELECT 1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]

@@ -69,7 +69,7 @@ stdout of test 'subselect-contradiction.Bug-6683` in directory 'sql/test/BugTrac
 #  as "c2_f1"
 #from
 #  "c3_t";
-% .L20 # table_name
+% .%4 # table_name
 % c2_f1 # name
 % bigint # type
 % 2 # length
@@ -109,7 +109,7 @@ stdout of test 'subselect-contradiction.Bug-6683` in directory 'sql/test/BugTrac
 #  as "c2_f1"
 #from
 #  "c3_t";
-% .L20 # table_name
+% .%4 # table_name
 % c2_f1 # name
 % bigint # type
 % 2 # length

@@ -35,7 +35,13 @@ stdout of test '71` in directory 'sql/benchmarks/tpcds` itself:
 #          ws_sold_time_sk AS time_sk
 #   FROM web_sales,
 #        date_dim
-% .L45,	.L47,	.time_dim,	.time_dim,	.L54 # table_name
+#   WHERE d_date_sk = ws_sold_date_sk
+#     AND d_moy=11
+#     AND d_year=1999
+#   UNION ALL SELECT cs_ext_sales_price AS ext_price,
+#                    cs_sold_date_sk AS sold_date_sk,
+#                    cs_item_sk AS sold_item_sk,
+% .item,	.item,	.time_dim,	.time_dim,	.%15 # table_name
 % brand_id,	brand,	t_hour,	t_minute,	ext_price # name
 % int,	char,	int,	int,	decimal # type
 % 8,	50,	2,	2,	20 # length

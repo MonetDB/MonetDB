@@ -44,8 +44,8 @@ stdout of test 'side-effect.Bug-6397` in directory 'sql/test/BugTracker-2017` it
 function user.s4_0():void;
     X_5:void := querylog.define("explain select count(*) from my_generate_series(1,5) as t1,\nmy_generate_series(1,100) as t2;":str, "default_pipe":str, 28:int);
 barrier X_93:bit := language.dataflow();
-    X_31:bat[:str] := bat.pack(".L6":str);
-    X_32:bat[:str] := bat.pack("L6":str);
+    X_31:bat[:str] := bat.pack(".%5":str);
+    X_32:bat[:str] := bat.pack("%5":str);
     X_33:bat[:str] := bat.pack("bigint":str);
     X_34:bat[:int] := bat.pack(64:int);
     X_35:bat[:int] := bat.pack(0:int);
@@ -92,22 +92,22 @@ end user.s4_0;
 #total                actions=29 time=257 usec 
 #select count(*) from my_generate_series(1,5) as t1,
 #my_generate_series(1,100) as t2;
-% .L6 # table_name
-% L6 # name
+% .%5 # table_name
+% %5 # name
 % bigint # type
 % 3 # length
 [ 500	]
 #select count(*) from my_generate_series(1,5) as t1,
 #my_generate_series(1,100) as t2;
-% .L6 # table_name
-% L6 # name
+% .%5 # table_name
+% %5 # name
 % bigint # type
 % 3 # length
 [ 500	]
 #select count(*) from my_generate_series(1,5) as t1,
 #my_generate_series(1,100) as t2;
-% .L6 # table_name
-% L6 # name
+% .%5 # table_name
+% %5 # name
 % bigint # type
 % 3 # length
 [ 500	]

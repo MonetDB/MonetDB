@@ -30,8 +30,8 @@ stdout of test 'unop_vs_aggr.Bug-3885` in directory 'sql/test/BugTracker-2013` i
 #insert into err_stddev2 values(2.6);
 [ 1	]
 #SELECT sys.stddev_pop(col1) * sys.stddev_pop(col1) FROM err_stddev2;
-% sys.L5 # table_name
-% L5 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 0.01	]

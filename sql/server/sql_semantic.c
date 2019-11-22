@@ -245,6 +245,9 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 				rdigits = digits2bits(rdigits);
 		}
 	}
+	/* handle OID horror */
+	if (i->type->radix == r->type->radix && i->type->base.id < r->type->base.id && strcmp(i->type->sqlname, "oid") == 0)
+		tpe = i->type->sqlname;
 	if (scale == 0 && (idigits == 0 || rdigits == 0)) {
 		sql_find_subtype(&lsuper, tpe, 0, 0);
 	} else {

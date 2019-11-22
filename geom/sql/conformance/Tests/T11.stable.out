@@ -24,8 +24,8 @@ stdout of test 'T11` in directory 'geom/sql/conformance` itself:
 # 14:23:22 >  
 
 #SELECT ST_IsEmpty(centerline) FROM road_segments WHERE name = 'Route 5' AND aliases = 'Main Street';
-% sys.L1 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ false	]

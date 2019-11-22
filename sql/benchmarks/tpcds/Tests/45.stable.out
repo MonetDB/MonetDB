@@ -35,8 +35,14 @@ stdout of test '45` in directory 'sql/benchmarks/tpcds` itself:
 #  AND c_current_addr_sk = ca_address_sk
 #  AND ws_item_sk = i_item_sk
 #  AND (SUBSTRING(ca_zip,1,5) IN ('85669',
-% .customer_address,	.customer_address,	.L24 # table_name
-% ca_zip,	ca_city,	L24 # name
+#                              '86197',
+#                              '88274',
+#                              '83405',
+#                              '86475',
+#                              '85392',
+#                              '85460',
+% .customer_address,	.customer_address,	.%2 # table_name
+% ca_zip,	ca_city,	%2 # name
 % char,	varchar,	decimal # type
 % 10,	15,	20 # length
 [ "10150",	"Bunker Hill",	20.25	]

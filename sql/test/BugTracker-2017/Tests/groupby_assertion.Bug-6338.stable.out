@@ -55,15 +55,6 @@ stdout of test 'groupby_assertion.Bug-6338` in directory 'sql/test/BugTracker-20
 [ 4,	5,	8	]
 #INSERT INTO sources VALUES ('src_0', 'ac_0', 'source_ac_0', 'source_ac_0', (select count(*) from source_ac_0), '',now());
 [ 1	]
-#insert into source_attr select  'src_0',
-#          (select count(*) from source_attr where sat_id = 'source_ac_0'),
-#          c.name,c.name,
-#          (select count(*) from source_ac_0  where  c.name is null),
-#          (select count(distinct c.name) from source_ac_0),
-#          c.type,null 
-#               from sys.tables as T, sys.columns as C 
-#               where T.id = C.table_id and T.name = 'source_ac_0';
-[ 3	]
 
 # 16:45:11 >  
 # 16:45:11 >  "Done."

@@ -23,38 +23,38 @@ stdout of test 'boolean_coersion.Bug-3012` in directory 'sql/test/BugTracker-201
 # 14:35:38 >  
 
 #select 16 and 16;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select cast(16 as smallint) and cast(16 as smallint);
-% .L4 # table_name
-% L4 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select bit_and(cast(16 as smallint), cast(16 as smallint)) = cast(16 as smallint);
-% .L5 # table_name
-% L5 # name
+% .%4 # table_name
+% %4 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select bit_and(16,16) ;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 2 # length
 [ 16	]
 #select 16 and cast(16 as int);
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select bit_and(16,cast(16 as int)) ;
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 2 # length
 [ 16	]

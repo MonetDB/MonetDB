@@ -24,8 +24,8 @@ stdout of test 'T15` in directory 'geom/sql/conformance` itself:
 # 14:23:22 >  
 
 #SELECT ST_X("position") FROM bridges WHERE name = 'Cam Bridge';
-% sys.L1 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 44	]

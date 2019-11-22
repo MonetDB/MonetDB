@@ -97,5 +97,6 @@ extern list *list_flaten(list *l);
 
 extern void list_hash_delete(list *l, void *data, fcmp cmp);
 extern void* list_hash_add(list *l, void *data, fcmp cmp);
+extern void list_hash_clear(list *l);
 
 #endif /* LIST_H */

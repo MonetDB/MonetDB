@@ -38,19 +38,19 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('1.2345678901234e-200');
 [ 1 ]
 #SELECT cast('10e-400' as double);
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0	]
 #SELECT cast('-10e-400' as double);
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0	]
 #SELECT '' AS five, FLOAT8_TBL.* FROM FLOAT8_TBL;
-% .L1,	sys.float8_tbl # table_name
+% .,	sys.float8_tbl # table_name
 % five,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -60,7 +60,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 [ "",	1.23456789e+200	]
 [ "",	1.23456789e-200	]
 #SELECT '' AS four, f.* FROM FLOAT8_TBL f WHERE f.f1 <> '1004.3';
-% .L2,	sys.f # table_name
+% .,	sys.f # table_name
 % four,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -69,13 +69,13 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 [ "",	1.23456789e+200	]
 [ "",	1.23456789e-200	]
 #SELECT '' AS one, f.* FROM FLOAT8_TBL f WHERE f.f1 = '1004.3';
-% .L2,	sys.f # table_name
+% .,	sys.f # table_name
 % one,	f1 # name
 % char,	double # type
 % 0,	24 # length
 [ "",	1004.3	]
 #SELECT '' AS three, f.* FROM FLOAT8_TBL f WHERE '1004.3' > f.f1;
-% .L2,	sys.f # table_name
+% .,	sys.f # table_name
 % three,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -83,7 +83,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 [ "",	-34.84	]
 [ "",	1.23456789e-200	]
 #SELECT '' AS three, f.* FROM FLOAT8_TBL f WHERE  f.f1 < '1004.3';
-% .L2,	sys.f # table_name
+% .,	sys.f # table_name
 % three,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -91,7 +91,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 [ "",	-34.84	]
 [ "",	1.23456789e-200	]
 #SELECT '' AS four, f.* FROM FLOAT8_TBL f WHERE '1004.3' >= f.f1;
-% .L2,	sys.f # table_name
+% .,	sys.f # table_name
 % four,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -100,7 +100,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 [ "",	-34.84	]
 [ "",	1.23456789e-200	]
 #SELECT '' AS four, f.* FROM FLOAT8_TBL f WHERE  f.f1 <= '1004.3';
-% .L2,	sys.f # table_name
+% .,	sys.f # table_name
 % four,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -111,7 +111,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 #SELECT '' AS three, f.f1, f.f1 * '-10' AS x 
 #   FROM FLOAT8_TBL f
 #   WHERE f.f1 > '0.0';
-% .L2,	sys.f,	sys.L5 # table_name
+% .%1,	sys.f,	sys.%3 # table_name
 % three,	f1,	x # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -121,7 +121,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 #SELECT '' AS three, f.f1, f.f1 + '-10' AS x
 #   FROM FLOAT8_TBL f
 #   WHERE f.f1 > '0.0';
-% .L2,	sys.f,	sys.L5 # table_name
+% .%1,	sys.f,	sys.%3 # table_name
 % three,	f1,	x # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -131,7 +131,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 #SELECT '' AS three, f.f1, f.f1 / '-10' AS x
 #   FROM FLOAT8_TBL f
 #   WHERE f.f1 > '0.0';
-% .L2,	sys.f,	sys.L5 # table_name
+% .%1,	sys.f,	sys.%3 # table_name
 % three,	f1,	x # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -141,7 +141,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 #SELECT '' AS three, f.f1, f.f1 - '-10' AS x
 #   FROM FLOAT8_TBL f
 #   WHERE f.f1 > '0.0';
-% .L2,	sys.f,	sys.L5 # table_name
+% .%1,	sys.f,	sys.%3 # table_name
 % three,	f1,	x # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -150,7 +150,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 [ "",	1.23456789e-200,	10	]
 #SELECT '' AS five, f.f1, abs(f1) AS abs_f1 
 #   FROM FLOAT8_TBL f;
-% .L2,	sys.f,	sys.L5 # table_name
+% .%1,	sys.f,	sys.%3 # table_name
 % five,	f1,	abs_f1 # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -161,7 +161,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 [ "",	1.23456789e-200,	1.23456789e-200	]
 #SELECT '' AS five, f.f1, round(f.f1, 0) AS round_f1
 #   FROM FLOAT8_TBL f;
-% .L2,	sys.f,	sys.L5 # table_name
+% .%1,	sys.f,	sys.%3 # table_name
 % five,	f1,	round_f1 # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -171,7 +171,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 [ "",	1.23456789e+200,	1.23456789e+200	]
 [ "",	1.23456789e-200,	0	]
 #select ceil(f1) as ceil_f1 from float8_tbl f;
-% sys.L2 # table_name
+% sys.%1 # table_name
 % ceil_f1 # name
 % double # type
 % 24 # length
@@ -181,7 +181,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 [ 1.23456789e+200	]
 [ 1	]
 #select ceiling(f1) as ceiling_f1 from float8_tbl f;
-% sys.L2 # table_name
+% sys.%1 # table_name
 % ceiling_f1 # name
 % double # type
 % 24 # length
@@ -191,7 +191,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 [ 1.23456789e+200	]
 [ 1	]
 #select floor(f1) as floor_f1 from float8_tbl f;
-% sys.L2 # table_name
+% sys.%1 # table_name
 % floor_f1 # name
 % double # type
 % 24 # length
@@ -201,7 +201,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 [ 1.23456789e+200	]
 [ 0 ]
 #select sign(f1) as sign_f1 from float8_tbl f;
-% sys.L2 # table_name
+% sys.%1 # table_name
 % sign_f1 # name
 % tinyint # type
 % 2 # length
@@ -211,7 +211,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 [ 1 ]
 [ 1 ]
 #SELECT sqrt(cast('64' as double)) AS eight;
-% .L3 # table_name
+% .%2 # table_name
 % eight # name
 % double # type
 % 24 # length
@@ -219,7 +219,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 #SELECT '' AS three, f.f1, sqrt(f.f1) AS sqrt_f1
 #   FROM FLOAT8_TBL f
 #   WHERE f.f1 > '0.0';
-% .L2,	sys.f,	sys.L5 # table_name
+% .%1,	sys.f,	sys.%3 # table_name
 % three,	f1,	sqrt_f1 # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -227,15 +227,15 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 [ "",	1.23456789e+200,	1.111111106e+100	]
 [ "",	1.23456789e-200,	1.111111106e-100	]
 #SELECT power(cast('144' as double), cast('0.5' as double));
-% .L4 # table_name
-% L4 # name
+% .%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 12	]
 #SELECT '' AS three, f.f1, exp(ln(f.f1)) AS exp_ln_f1
 #   FROM FLOAT8_TBL f
 #   WHERE f.f1 > '0.0';
-% .L2,	sys.f,	sys.L5 # table_name
+% .%1,	sys.f,	sys.%3 # table_name
 % three,	f1,	exp_ln_f1 # name
 % char,	double,	double # type
 % 0,	24,	24 # length
@@ -243,7 +243,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 [ "",	1.23456789e+200,	1.23456789e+200	]
 [ "",	1.23456789e-200,	1.23456789e-200	]
 #SELECT '' AS five, * FROM FLOAT8_TBL;
-% .L2,	sys.float8_tbl # table_name
+% .,	sys.float8_tbl # table_name
 % five,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -257,8 +257,8 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 #   WHERE FLOAT8_TBL.f1 > '0.0';
 [ 3	]
 #SELECT '' AS bad, log(-f.f1) from FLOAT8_TBL f where f.f1 < '0.0' ;
-% .L2,	sys.L4 # table_name
-% bad,	L4 # name
+% .%1,	sys.%2 # table_name
+% bad,	%2 # name
 % char, double # type
 % 0,    24 # length
 [ "",   6.91204606      ]
@@ -266,15 +266,15 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 [ "",   460.7277396     ]
 [ "",   -460.3062976    ]
 #SELECT '' AS bad, exp(-f.f1) from FLOAT8_TBL f where f.f1 > '-1000.0';
-% .L2,	sys.L4 # table_name
-% bad,	L4 # name
+% .%1,	sys.%2 # table_name
+% bad,	%2 # name
 % char, double # type
 % 0,    24 # length
 [ "",   1       ]
 [ "",   1.351511513e+15 ]
 [ "",   1       ]
 #SELECT '' AS five, * FROM FLOAT8_TBL;
-% .L2,	sys.float8_tbl # table_name
+% .,	sys.float8_tbl # table_name
 % five,	f1 # name
 % char,	double # type
 % 0,	24 # length
@@ -300,7 +300,7 @@ stdout of test 'float8` in directory 'sql/test/pg_regress` itself:
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('-1.2345678901234e-200');
 [ 1 ]
 #SELECT '' AS five, * FROM FLOAT8_TBL;
-% .L2,	sys.float8_tbl # table_name
+% .,	sys.float8_tbl # table_name
 % five,	f1 # name
 % char,	double # type
 % 0,	24 # length

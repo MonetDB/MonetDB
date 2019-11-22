@@ -36,26 +36,26 @@ stdout of test 'components` in directory 'sql/test/json` itself:
 #declare js json;
 #set js = '{"myBoolean":true,"myList":["a","b"],"myMap":{"c":"d","a":"b"},"myObject":"myClass","myJsonObject":{"myString":"myStringValue"}}';
 #select json.keyarray(js);
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % json # type
 % 56 # length
 [ "[\"myBoolean\",\"myList\",\"myMap\",\"myObject\",\"myJsonObject\"]"	]
 #select json.valuearray(js);
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % json # type
 % 73 # length
 [ "[true,[\"a\",\"b\"],{\"c\":\"d\",\"a\":\"b\"},\"myClass\",{\"myString\":\"myStringValue\"}]"	]
 #select json.keyarray(j) from jsoncomp;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % json # type
 % 56 # length
 [ "[\"myBoolean\",\"myList\",\"myMap\",\"myObject\",\"myJsonObject\"]"	]
 #select json.valuearray(j) from jsoncomp;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % json # type
 % 73 # length
 [ "[true,[\"a\",\"b\"],{\"c\":\"d\",\"a\":\"b\"},\"myClass\",{\"myString\":\"myStringValue\"}]"	]

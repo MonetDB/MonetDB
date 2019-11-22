@@ -83,7 +83,7 @@ stdout of test 'incorrect_columns` in directory 'sql/test/copy` itself:
 [ 5,	"wereld"	]
 [ 6,	"maan"	]
 #select * from sys.rejects();
-% .L1,	.L1,	.L1,	.L1 # table_name
+% .%1,	.%1,	.%1,	.%1 # table_name
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
 % 1,	1,	20,	11 # length

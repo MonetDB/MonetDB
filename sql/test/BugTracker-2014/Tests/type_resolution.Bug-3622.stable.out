@@ -54,7 +54,7 @@ stdout of test 'type_resolution.Bug-3622` in directory 'sql/test/BugTracker-2014
 #GROUP BY refpos
 #ORDER BY cnt DESC
 #LIMIT 10;
-% .L3,	.L5 # table_name
+% .s,	.%5 # table_name
 % refpos,	cnt # name
 % smallint,	bigint # type
 % 1,	1 # length

@@ -151,7 +151,7 @@ select count(*) from sys.storagemodelinput;
 -- triggers
 select t.name, g.name, case g.time when 0 then 'BEFORE' when 1 then 'AFTER' when 2 then 'INSTEAD OF' end as time, case g.orientation when 0 then 'ROW' when 1 then 'STATEMENT' end as orientation, case g.event when 0 then 'insert' when 1 then 'DELETE' when 2 then 'UPDATE' end as event, g.old_name, g.new_name, g.condition, g.statement from sys.triggers g left outer join sys._tables t on g.table_id = t.id order by t.name, g.name;
 -- types
-select s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, et.value as eclass from sys.types t left outer join sys.schemas s on s.id = t.schema_id left outer join (values (0, 'ANY'), (1, 'TABLE'), (2, 'BIT'), (3, 'CHAR'), (4, 'STRING'), (5, 'BLOB'), (6, 'POS'), (7, 'NUM'), (8, 'MONTH'), (9, 'SEC'), (10, 'DEC'), (11, 'FLT'), (12, 'TIME'), (13, 'DATE'), (14, 'TIMESTAMP'), (15, 'GEOM'), (16, 'EXTERNAL')) as et (id, value) on t.eclass = et.id order by s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass;
+select s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, et.value as eclass from sys.types t left outer join sys.schemas s on s.id = t.schema_id left outer join (values (0, 'ANY'), (1, 'TABLE'), (2, 'BIT'), (3, 'CHAR'), (4, 'STRING'), (5, 'BLOB'), (6, 'POS'), (7, 'NUM'), (8, 'MONTH'), (9, 'SEC'), (10, 'DEC'), (11, 'FLT'), (12, 'TIME'), (13, 'DATE'), (14, 'TIMESTAMP'), (15, 'GEOM'), (16, 'EXTERNAL')) as et (id, value) on t.eclass = et.id order by s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, eclass;
 -- user_role
 select a1.name, a2.name from sys.auths a1, sys.auths a2, sys.user_role ur where a1.id = ur.login_id and a2.id = ur.role_id order by a1.name, a2.name;
 -- keywords

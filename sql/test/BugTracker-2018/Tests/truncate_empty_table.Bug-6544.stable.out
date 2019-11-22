@@ -105,20 +105,20 @@ stdout of test 'truncate_empty_table.Bug-6544` in directory 'sql/test/BugTracker
 #	CONSTRAINT "rg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES bam_files ("file_id")
 #);
 #SELECT COUNT(*) FROM bam_files;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) FROM bam_sq;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) FROM bam_rg;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -129,20 +129,20 @@ stdout of test 'truncate_empty_table.Bug-6544` in directory 'sql/test/BugTracker
 #TRUNCATE TABLE bam_files;
 [ 0	]
 #SELECT COUNT(*) FROM bam_files;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) FROM bam_sq;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) FROM bam_rg;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]

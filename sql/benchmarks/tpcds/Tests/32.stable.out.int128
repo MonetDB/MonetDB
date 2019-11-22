@@ -35,7 +35,10 @@ stdout of test '32` in directory 'sql/benchmarks/tpcds` itself:
 #    ( SELECT 1.3 * avg(cs_ext_discount_amt)
 #     FROM catalog_sales ,
 #          date_dim
-% .L15 # table_name
+#     WHERE cs_item_sk = i_item_sk
+#       AND d_date BETWEEN '2000-01-27' AND cast('2000-04-26' AS date)
+#       AND d_date_sk = cs_sold_date_sk )
+% .%5 # table_name
 % "excess discount amount" # name
 % decimal # type
 % 40 # length

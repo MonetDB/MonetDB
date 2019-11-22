@@ -83,8 +83,8 @@ stdout of test 'marcin1` in directory 'sql/test` itself:
 [ 5,	2	]
 [ 5,	3	]
 #select t1marcin1.id, (select t2marcin2.id from t2marcin2 where t1marcin1.id=t2marcin2.id) from t1marcin1;
-% sys.t1marcin1,	.L4 # table_name
-% id,	L4 # name
+% .t1marcin1,	.%2 # table_name
+% id,	%2 # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	1	]
@@ -93,8 +93,8 @@ stdout of test 'marcin1` in directory 'sql/test` itself:
 [ 4,	NULL	]
 [ 5,	NULL	]
 #select t1marcin1.id, (select t2marcin2.id from t2marcin2 where t2marcin2.id>2) from t1marcin1;
-% sys.t1marcin1,	.L4 # table_name
-% id,	L4 # name
+% .t1marcin1,	.%2 # table_name
+% id,	%2 # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	3	]

@@ -35,7 +35,9 @@ stdout of test '93` in directory 'sql/benchmarks/tpcds` itself:
 #          END act_sales
 #   FROM store_sales
 #   LEFT OUTER JOIN store_returns ON (sr_item_sk = ss_item_sk
-% .t,	.L11 # table_name
+#                                     AND sr_ticket_number = ss_ticket_number) ,reason
+#   WHERE sr_reason_sk = r_reason_sk
+% .t,	.%3 # table_name
 % ss_customer_sk,	sumsales # name
 % int,	decimal # type
 % 5,	20 # length

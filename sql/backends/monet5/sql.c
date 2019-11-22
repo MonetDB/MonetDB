@@ -25,7 +25,6 @@
 #include "sql_datetime.h"
 #include "sql_partition.h"
 #include "rel_unnest.h"
-#include "rel_groupings.h"
 #include "rel_optimizer.h"
 #include "rel_partition.h"
 #include "rel_distribute.h"

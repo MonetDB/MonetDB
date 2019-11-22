@@ -25,8 +25,8 @@ stdout of test 'T48` in directory 'geom/sql/conformance` itself:
 # 15:15:54 >  
 
 #SELECT ST_AsText(ST_Difference(named_places.boundary, forests.boundary)) FROM named_places, forests WHERE named_places.name = 'Ashton' AND forests.name = 'Green Forest';
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % clob # type
 % 45 # length
 [ "POLYGON ((62 48, 84 48, 84 42, 56 34, 62 48))"	]
