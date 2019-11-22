@@ -4774,12 +4774,39 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
  *
  * also push simple expressions of a semijoin down if they only
  * involve the left sided of the semijoin.
+ *
+ * in some cases the other way is usefull, ie push join down
+ * semijoin. When the join reduces (ie when there are selects on it).
  */
 static sql_rel *
-rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel) 
+rel_push_semijoin_down_or_up(int *changes, mvc *sql, sql_rel *rel) 
 {
 	(void)*changes;
 
+	if (rel->op == op_join && rel->exps && rel->l) {
+		sql_rel *l = rel->l, *r = rel->r;
+
+		if (is_semi(l->op) && !rel_is_ref(l) && is_select(r->op) && !rel_is_ref(r)) {
+			rel->l = l->l;
+			l->l = rel;
+			return l;
+		}
+	}
+	/* also case with 2 joins */
+	/* join ( join ( semijoin(), table), select (table)); */
+	if (rel->op == op_join && rel->exps && rel->l) {
+		sql_rel *l = rel->l, *r = rel->r;
+		sql_rel *ll;
+
+		if (is_join(l->op) && !rel_is_ref(l) && is_select(r->op) && !rel_is_ref(r)) {
+			ll = l->l;
+			if (is_semi(ll->op) && !rel_is_ref(ll)) {
+				l->l = ll->l;
+				ll->l = rel;
+				return ll;
+			}
+		}
+	}
 	/* first push down the expressions involving only A */
 	if (rel->op == op_semi && rel->exps && rel->l) {
 		list *exps = rel->exps, *nexps = sa_list(sql->sa);
@@ -9234,7 +9261,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
 		rel = rewrite(sql, rel, &rel_rewrite_semijoin, &changes);
 		/* push semijoin through join */
-		rel = rewrite(sql, rel, &rel_push_semijoin_down, &changes);
+		rel = rewrite(sql, rel, &rel_push_semijoin_down_or_up, &changes);
 		/* antijoin(a, union(b,c)) -> antijoin(antijoin(a,b), c) */
 		rel = rewrite(sql, rel, &rel_rewrite_antijoin, &changes);
 		if (level <= 0)

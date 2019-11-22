@@ -1953,7 +1953,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 
 			/* only handle simple joins here */
 			if ((exp_has_func(e) && get_cmp(e) != cmp_filter) ||
-			    get_cmp(e) == cmp_or || e->f) {
+			    get_cmp(e) == cmp_or || (e->f || e->anti)) {
 				if (!join && !list_length(lje)) {
 					stmt *l = bin_first_column(be, left);
 					stmt *r = bin_first_column(be, right);
@@ -2228,65 +2228,6 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
  	 * 	first cheap join(s) (equality or idx) 
  	 * 	second selects/filters 
 	 */
-
-#if 0
-	if (rel->exps && rel->op == op_anti && need_no_nil(rel)) {
-		sql_subtype *lng = sql_bind_localtype("lng");
-		stmt *nilcnt = NULL;
-
-		for( en = rel->exps->h; en; en = en->next ) {
-			sql_exp *e = en->data, *r, *l;
-			stmt *s;
-
-			if (e->type != e_cmp || e->flag != cmp_equal)
-				break;
-			l = e->l;
-			r = e->r;
-
-			/* for each equality join add a rel_select(r is NULL) */
-			s = exp_bin(be, r, right, NULL, NULL, NULL, NULL, NULL);
-			if (!s) {
-				s = exp_bin(be, l, right, NULL, NULL, NULL, NULL, NULL);
-				if(!s)
-					return NULL;
-			}
-			if (s && !exp_is_atom(r)) {
-				sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
-				sql_subfunc *add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", lng, lng, lng);
-
-				s = stmt_selectnil(be, s);
-				s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
-				if (nilcnt) {
-					nilcnt = stmt_binop(be, nilcnt, s, add);
-				} else {
-					nilcnt = s;
-				}
-			}
-		}
-		if (nilcnt) {
-			sql_subtype *bt = sql_bind_localtype("bit");
-			sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", lng, lng, bt);
-			stmt *ls = bin_first_column(be, left), *s, *sel;
-			list *l;
-
-			s = stmt_binop(be, nilcnt, stmt_atom_lng(be, 0), ne);
-			/* keep if no nulls are in the right side */
-			ls = stmt_const(be, ls, stmt_bool(be,0));
-			sel = stmt_uselect(be, ls, s, cmp_equal, NULL, 0);
-			l = sa_list(sql->sa);
-			for( n = left->op4.lval->h; n; n = n->next ) {
-				stmt *col = n->data;
-	
-				if (col->nrcols == 0) /* constant */
-					col = stmt_const(be, sel, col);
-				else
-					col = stmt_project(be, sel, col);
-				list_append(l, col);
-			}
-			left = stmt_list(be, l);
-		}
-	}
-#endif
 	if (rel->exps) {
 		int idx = 0;
 		list *jexps = sa_list(sql->sa);
@@ -2315,7 +2256,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 			/* only handle simple joins here */
 			if ((exp_has_func(e) && get_cmp(e) != cmp_filter) ||
-			    get_cmp(e) == cmp_or || e->f) {
+			    get_cmp(e) == cmp_or || (e->f && e->anti)) {
 				if (!join && !list_length(lje)) {
 					stmt *l = bin_first_column(be, left);
 					stmt *r = bin_first_column(be, right);
