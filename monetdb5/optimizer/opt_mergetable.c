@@ -2135,7 +2135,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		/* delta* operator have a ins bat as last argument, we move the inserts into the last delta statement, ie
   		 * all but last need to remove one argument */
-		if (match == 3 && (bats == 4 /*|| bats == 5*/) && isDelta(p) && 
+		if (match == 3 && bats == 4 && isDelta(p) && 
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&
 		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0 &&
 		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0){
@@ -2166,7 +2166,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (match == 1 && fm == 2 && isSelect(p) && p->retc == 1 &&
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 && 
 		   !ml.v[m].packed && /* not packed yet */ 
-		   !was_a_mat(getArg(p,fm-1), &ml)){ /* not previously packed */
+		   was_a_mat(getArg(p,fm-1), &ml) < 0){ /* not previously packed */
 			if((r = copyInstruction(p)) == NULL) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto cleanup;
