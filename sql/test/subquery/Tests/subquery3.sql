@@ -148,6 +148,16 @@ GROUP BY col1; --MonetDB outputs this one right, but we should leave it here, as
 	-- 2468
 	-- 2468
 
+SELECT
+    NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL) AS a1
+FROM another_T
+GROUP BY col1, col2, col5
+ORDER BY a1 NULLS FIRST;
+	-- True
+	-- True
+	-- True
+	-- True
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
