@@ -25,15 +25,15 @@ stdout of test 'orderby_on_constant.Bug-3554` in directory 'sql/test/BugTracker-
 # 19:40:07 >  
 
 #select a+b from (select 1 as a,1 as b) as q order by a limit 1;
-% .L6 # table_name
-% L6 # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 2	]
 #select a+b from (select 1 as a,1 as b union select 1,1) as q order by a limit
 #1;
-% .L17 # table_name
-% L17 # name
+% .%12 # table_name
+% %12 # name
 % tinyint # type
 % 1 # length
 [ 2	]

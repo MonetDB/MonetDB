@@ -95,5 +95,6 @@ extern list *list_merge_destroy(list *l, list *data, fdup dup);
 
 extern void list_hash_delete(list *l, void *data, fcmp cmp);
 extern void* list_hash_add(list *l, void *data, fcmp cmp);
+extern void list_hash_clear(list *l);
 
 #endif /* LIST_H */

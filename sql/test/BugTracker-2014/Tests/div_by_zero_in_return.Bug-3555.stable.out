@@ -29,8 +29,8 @@ stdout of test 'div_by_zero_in_return.Bug-3555` in directory 'sql/test/BugTracke
 #    RETURN CASE WHEN cnt <> 0 THEN total / cnt ELSE -1 END;
 #END;
 #SELECT my_avg(0, 0);
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ -1	]

@@ -35,7 +35,15 @@ stdout of test '10` in directory 'sql/benchmarks/tpcds` itself:
 #       count(*) cnt4,
 #       cd_dep_employed_count,
 #       count(*) cnt5,
-% .customer_demographics,	.customer_demographics,	.customer_demographics,	.L42,	.customer_demographics,	.L46,	.customer_demographics,	.L52,	.customer_demographics,	.L56,	.customer_demographics,	.L62,	.customer_demographics,	.L66 # table_name
+#       cd_dep_college_count,
+#       count(*) cnt6
+#FROM customer c,
+#     customer_address ca,
+#     customer_demographics
+#WHERE c.c_current_addr_sk = ca.ca_address_sk
+#  AND ca_county IN ('Rush County',
+#                    'Toole County',
+% .customer_demographics,	.customer_demographics,	.customer_demographics,	.%20,	.customer_demographics,	.%21,	.customer_demographics,	.%22,	.customer_demographics,	.%23,	.customer_demographics,	.%24,	.customer_demographics,	.%25 # table_name
 % cd_gender,	cd_marital_status,	cd_education_status,	cnt1,	cd_purchase_estimate,	cnt2,	cd_credit_rating,	cnt3,	cd_dep_count,	cnt4,	cd_dep_employed_count,	cnt5,	cd_dep_college_count,	cnt6 # name
 % char,	char,	char,	bigint,	int,	bigint,	char,	bigint,	int,	bigint,	int,	bigint,	int,	bigint # type
 % 1,	1,	20,	1,	4,	1,	10,	1,	1,	1,	1,	1,	1,	1 # length

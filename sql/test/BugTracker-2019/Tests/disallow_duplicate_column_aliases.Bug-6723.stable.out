@@ -22,6 +22,42 @@ stdout of test 'disallow_duplicate_column_aliases.Bug-6723` in directory 'sql/te
 # 13:22:43 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15745" "--port=33477"
 # 13:22:43 >  
 
+#select 1 as T, 2 as T;
+% .,	. # table_name
+% t,	t # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 1,	2	]
+#select a.* from (select 1 as T, 2 as T) a;
+% .a,	.a # table_name
+% t,	t # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 1,	2	]
+#with wa as (select 1 as T, 2 as T) select wa.* from wa;
+% .wa,	.wa # table_name
+% t,	t # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 1,	2	]
+#select 1,2,3 as "L2";
+% .,	.,	. # table_name
+% single_value,	single_value,	L2 # name
+% tinyint,	tinyint,	tinyint # type
+% 1,	1,	1 # length
+[ 1,	2,	3	]
+#select a.* from (select 1,2,3 as "L2") a;
+% .%1,	.%2,	.a # table_name
+% %1,	%2,	L2 # name
+% tinyint,	tinyint,	tinyint # type
+% 1,	1,	1 # length
+[ 1,	2,	3	]
+#with wa as (select 1,2,3 as "L2") select wa.* from wa;
+% .%1,	.%2,	.wa # table_name
+% %1,	%2,	L2 # name
+% tinyint,	tinyint,	tinyint # type
+% 1,	1,	1 # length
+[ 1,	2,	3	]
 
 # 13:22:43 >  
 # 13:22:43 >  "Done."

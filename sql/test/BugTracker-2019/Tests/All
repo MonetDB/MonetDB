@@ -18,7 +18,7 @@ merge-statement-aliases.Bug-6715
 insert-into-select.Bug-6718
 copy-into-unicode-quote.Bug-6716
 select_window_function_and_asterisk.Bug-6722
-KNOWNFAIL?disallow_duplicate_column_aliases.Bug-6723
+disallow_duplicate_column_aliases.Bug-6723
 KNOWNFAIL?prepare-types.Bug-6724
 prepare-non-existing-function.Bug-6725
 select-distinct.Bug-6728

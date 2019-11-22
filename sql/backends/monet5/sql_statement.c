@@ -468,6 +468,8 @@ stmt_table(backend *be, stmt *cols, int temp)
 
 		s->op1 = cols;
 		s->flag = temp;
+		s->nr = cols->nr;
+		s->nrcols = cols->nrcols;
 		return s;
 	}
 	return NULL;
@@ -573,7 +575,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		s->nr = l[c->colnr+1];
 		return s;
 	}
-       	q = newStmt(mb, sqlRef, bindRef);
+	q = newStmt(mb, sqlRef, bindRef);
 	if (q == NULL)
 		return NULL;
 	if (access == RD_UPD_ID) {
@@ -2460,6 +2462,7 @@ stmt_set_nrcols(stmt *s)
 		if (f->nrcols > nrcols)
 			nrcols = f->nrcols;
 		key &= f->key;
+		s->nr = f->nr;
 	}
 	s->nrcols = nrcols;
 	s->key = key;
@@ -3403,7 +3406,9 @@ _column_name(sql_allocator *sa, stmt *st)
 		return func_name(sa, st->op4.aggrval->aggr->base.name, cn);
 	}
 	case st_alias:
-		return column_name(sa, st->op3);
+		if (st->op3)
+			return column_name(sa, st->op3);
+		break;
 	case st_bat:
 		return st->op4.cval->base.name;
 	case st_atom:
@@ -3426,6 +3431,7 @@ _column_name(sql_allocator *sa, stmt *st)
 	default:
 		return NULL;
 	}
+	return NULL;
 }
 
 const char *_table_name(sql_allocator *sa, stmt *st);

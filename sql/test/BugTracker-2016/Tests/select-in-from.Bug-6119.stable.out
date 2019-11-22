@@ -116,8 +116,8 @@ stdout of test 'select-in-from.Bug-6119` in directory 'sql/test/BugTracker-2016`
 #CREATE TABLE subt (A1 BIGINT);
 #CREATE TABLE t (B BIGINT);
 #SELECT (B IN (SELECT A1 FROM subt)) FROM t;
-% .L5 # table_name
-% L5 # name
+% .%11 # table_name
+% %11 # name
 % boolean # type
 % 5 # length
 #ROLLBACK;

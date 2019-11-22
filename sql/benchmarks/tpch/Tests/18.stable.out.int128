@@ -59,8 +59,8 @@ stdout of test '18` in directory 'sql/benchmarks/tpch` itself:
 #	o_totalprice desc,
 #	o_orderdate
 #limit 100;
-% sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.L22 # table_name
-% c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L21 # name
+% sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.%3 # table_name
+% c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	%3 # name
 % varchar,	int,	int,	date,	decimal,	decimal # type
 % 18,	3,	5,	10,	17,	40 # length
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305.00	]

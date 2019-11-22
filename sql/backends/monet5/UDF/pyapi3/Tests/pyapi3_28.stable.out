@@ -42,8 +42,8 @@ stdout of test 'pyapi3_28` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 #    return True  
 #};
 #SELECT test_duplicates(s) FROM duplicate_strings();
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % boolean # type
 % 5 # length
 [ true	]

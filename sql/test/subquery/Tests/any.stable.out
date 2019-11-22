@@ -41,8 +41,8 @@ stdout of test 'any` in directory 'sql/test/subquery` itself:
 [ 2	]
 [ 3	]
 #SELECT i, i > ANY(SELECT i FROM integers) FROM integers ORDER BY i;
-% sys.integers,	sys.L4 # table_name
-% i,	L4 # name
+% .integers,	.%3 # table_name
+% i,	%3 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	NULL	]
@@ -50,8 +50,8 @@ stdout of test 'any` in directory 'sql/test/subquery` itself:
 [ 2,	true	]
 [ 3,	true	]
 #SELECT i, i > ANY(SELECT i FROM integers WHERE i IS NOT NULL) FROM integers ORDER BY i;
-% sys.integers,	sys.L4 # table_name
-% i,	L4 # name
+% .integers,	.%3 # table_name
+% i,	%3 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	NULL	]
@@ -59,8 +59,8 @@ stdout of test 'any` in directory 'sql/test/subquery` itself:
 [ 2,	true	]
 [ 3,	true	]
 #SELECT i, NULL > ANY(SELECT i FROM integers) FROM integers ORDER BY i;
-% sys.integers,	.L6 # table_name
-% i,	L6 # name
+% .integers,	.%3 # table_name
+% i,	%3 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	NULL	]
@@ -68,8 +68,8 @@ stdout of test 'any` in directory 'sql/test/subquery` itself:
 [ 2,	NULL	]
 [ 3,	NULL	]
 #SELECT i, NULL > ANY(SELECT i FROM integers WHERE i IS NOT NULL) FROM integers ORDER BY i;
-% sys.integers,	.L6 # table_name
-% i,	L6 # name
+% .integers,	.%3 # table_name
+% i,	%3 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	NULL	]
@@ -85,8 +85,8 @@ stdout of test 'any` in directory 'sql/test/subquery` itself:
 [ 2	]
 [ 3	]
 #SELECT i, i = ANY(SELECT i FROM integers WHERE i>2) FROM integers ORDER BY i;
-% .integers,	.L10 # table_name
-% i,	L10 # name
+% .integers,	.%3 # table_name
+% i,	%3 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	NULL	]
@@ -94,8 +94,8 @@ stdout of test 'any` in directory 'sql/test/subquery` itself:
 [ 2,	false	]
 [ 3,	true	]
 #SELECT i, i = ANY(SELECT i FROM integers WHERE i>2 OR i IS NULL) FROM integers ORDER BY i;
-% .integers,	.L10 # table_name
-% i,	L10 # name
+% .integers,	.%3 # table_name
+% i,	%3 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	NULL	]
@@ -103,8 +103,8 @@ stdout of test 'any` in directory 'sql/test/subquery` itself:
 [ 2,	NULL	]
 [ 3,	true	]
 #SELECT i, i <> ANY(SELECT i FROM integers WHERE i>2) FROM integers ORDER BY i;
-% sys.integers,	sys.L4 # table_name
-% i,	L4 # name
+% .integers,	.%3 # table_name
+% i,	%3 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	NULL	]
@@ -112,8 +112,8 @@ stdout of test 'any` in directory 'sql/test/subquery` itself:
 [ 2,	true	]
 [ 3,	false	]
 #SELECT i, i <> ANY(SELECT i FROM integers WHERE i>2 OR i IS NULL) FROM integers ORDER BY i;
-% sys.integers,	sys.L4 # table_name
-% i,	L4 # name
+% .integers,	.%3 # table_name
+% i,	%3 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	NULL	]
@@ -121,8 +121,8 @@ stdout of test 'any` in directory 'sql/test/subquery` itself:
 [ 2,	true	]
 [ 3,	NULL	]
 #SELECT i, i = ANY(SELECT i1.i FROM integers i1, integers i2, integers i3, integers i4, integers i5, integers i6 WHERE i1.i IS NOT NULL) FROM integers ORDER BY i;
-% .integers,	.L10 # table_name
-% i,	L10 # name
+% .integers,	.%3 # table_name
+% i,	%3 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	NULL	]
@@ -130,8 +130,8 @@ stdout of test 'any` in directory 'sql/test/subquery` itself:
 [ 2,	true	]
 [ 3,	true	]
 #SELECT i, i = ANY(SELECT i1.i FROM integers i1, integers i2, integers i3, integers i4, integers i5, integers i6 WHERE i1.i IS NOT NULL AND i1.i <> 2) FROM integers ORDER BY i;
-% .integers,	.L10 # table_name
-% i,	L10 # name
+% .integers,	.%3 # table_name
+% i,	%3 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	NULL	]
@@ -139,8 +139,8 @@ stdout of test 'any` in directory 'sql/test/subquery` itself:
 [ 2,	false	]
 [ 3,	true	]
 #SELECT i, i >= ANY(SELECT i1.i FROM integers i1, integers i2, integers i3, integers i4, integers i5, integers i6 WHERE i1.i IS NOT NULL) FROM integers ORDER BY i;
-% sys.integers,	sys.L4 # table_name
-% i,	L4 # name
+% .integers,	.%3 # table_name
+% i,	%3 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	NULL	]

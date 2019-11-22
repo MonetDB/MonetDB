@@ -24,8 +24,8 @@ stdout of test 'T25` in directory 'geom/sql/conformance` itself:
 # 14:52:44 >  
 
 #SELECT ST_Contains(boundary, ST_PointOnSurface(boundary)) FROM named_places WHERE name = 'Goose Island';
-% sys.L1 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

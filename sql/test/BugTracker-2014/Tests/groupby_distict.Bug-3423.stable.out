@@ -36,8 +36,8 @@ stdout of test 'groupby_distict.Bug-3423` in directory 'sql/test/BugTracker-2014
 #INSERT into a3423 values (5,21);
 [ 1	]
 #SELECT k as c,count(distinct b) from a3423 group by c;
-% sys.L1,	sys.L2 # table_name
-% c,	L2 # name
+% sys.a3423,	sys.%1 # table_name
+% c,	%1 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 1,	1	]

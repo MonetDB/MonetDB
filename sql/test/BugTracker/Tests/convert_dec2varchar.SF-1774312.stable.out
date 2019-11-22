@@ -14,8 +14,8 @@ stdout of test 'convert_dec2varchar.SF-1774312` in directory 'sql/test/BugTracke
 
 
 #select tr, cast(tr as varchar(10)) from (select 11.34555 as tr) as foo;
-% .foo,	.L5 # table_name
-% tr,	L5 # name
+% .foo,	.%1 # table_name
+% tr,	%1 # name
 % decimal,	varchar # type
 % 9,	8 # length
 [ 11.34555,	"11.34555"	]

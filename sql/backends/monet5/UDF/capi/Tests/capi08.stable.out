@@ -69,8 +69,8 @@ stdout of test 'capi08` in directory 'sql/backends/monet5/UDF/capi` itself:
 #INSERT INTO integers VALUES (1), (2), (3), (4), (5);
 [ 5	]
 #SELECT capi08(i) FROM integers;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 2	]
@@ -79,8 +79,8 @@ stdout of test 'capi08` in directory 'sql/backends/monet5/UDF/capi` itself:
 [ 8	]
 [ 10	]
 #SELECT capi08(i) FROM integers;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 2	]
@@ -96,8 +96,8 @@ stdout of test 'capi08` in directory 'sql/backends/monet5/UDF/capi` itself:
 #    }
 #};
 #SELECT capi08(i) FROM integers;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 2	]
@@ -106,8 +106,8 @@ stdout of test 'capi08` in directory 'sql/backends/monet5/UDF/capi` itself:
 [ 8	]
 [ 10	]
 #SELECT capi08(i) FROM integers;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 2	]
@@ -123,8 +123,8 @@ stdout of test 'capi08` in directory 'sql/backends/monet5/UDF/capi` itself:
 #    }
 #};
 #SELECT capi08(i * 2, i) FROM integers;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -140,8 +140,8 @@ stdout of test 'capi08` in directory 'sql/backends/monet5/UDF/capi` itself:
 #    }
 #};
 #SELECT capi08(i, i * 2) FROM integers;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 2	]

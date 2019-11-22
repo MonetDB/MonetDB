@@ -35,7 +35,7 @@ stdout of test 'query2.1` in directory 'sql/backends/monet5/vaults/bam` itself:
 #    FROM alig
 #    WHERE qname IN (
 #        SELECT qname
-% bam.L21,	bam.L22,	bam.L23,	bam.L24,	bam.L25 # table_name
+% bam.l,	bam.l,	bam.l,	bam.r,	bam.r # table_name
 % qname,	l_seq,	qual1,	r_seq,	qual2 # name
 % clob,	clob,	clob,	clob,	clob # type
 % 0,	0,	0,	0,	0 # length
@@ -48,7 +48,7 @@ stdout of test 'query2.1` in directory 'sql/backends/monet5/vaults/bam` itself:
 #WHERE l_mapq < 100
 #  AND r_mapq < 100
 #ORDER BY qname;
-% bam.paired_primary_alignments_3,	bam.L1,	bam.L2,	bam.L3,	bam.L4 # table_name
+% bam.paired_primary_alignments_3,	bam.,	bam.,	bam.,	bam. # table_name
 % qname,	l_seq,	l_qual,	r_seq,	r_qual # name
 % clob,	clob,	clob,	clob,	clob # type
 % 0,	0,	0,	0,	0 # length

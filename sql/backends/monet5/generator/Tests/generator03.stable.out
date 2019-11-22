@@ -24,14 +24,14 @@ stdout of test 'generator03` in directory 'sql/backends/monet5/generator` itself
 # 09:47:33 >  
 
 #select timestamp '2008-03-01 00:00';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % timestamp # type
 % 26 # length
 [ 2008-03-01 00:00:00.000000	]
 #select cast( '10' as interval hour);
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % sec_interval # type
 % 9 # length
 [ 36000.000	]
@@ -39,7 +39,7 @@ stdout of test 'generator03` in directory 'sql/backends/monet5/generator` itself
 #	timestamp '2008-03-01 00:00',
 #	timestamp '2008-03-04 12:00',
 #							  cast( '10' as interval hour));
-% .L4 # table_name
+% .%4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -55,7 +55,7 @@ stdout of test 'generator03` in directory 'sql/backends/monet5/generator` itself
 #	cast( '2008-03-01 00:00' as timestamp),
 #                              cast( '2008-03-04 12:00' as timestamp), 
 #							  cast( '1' as interval day));
-% .L4 # table_name
+% .%4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -66,7 +66,7 @@ stdout of test 'generator03` in directory 'sql/backends/monet5/generator` itself
 #	timestamp '2008-03-04 12:00',
 #	timestamp '2008-03-01 00:00',
 #	cast( '-1' as interval day));
-% .L4 # table_name
+% .%4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -78,7 +78,7 @@ stdout of test 'generator03` in directory 'sql/backends/monet5/generator` itself
 #	timestamp '2008-03-04 12:00',
 #	cast( '10' as interval hour))
 #where value < timestamp '2008-03-03 00:00';
-% .L4 # table_name
+% .%4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -92,7 +92,7 @@ stdout of test 'generator03` in directory 'sql/backends/monet5/generator` itself
 #	timestamp '2008-03-01 00:00',
 #	cast( '-10' as interval hour))
 #where value < timestamp '2008-03-02 00:00';
-% .L4 # table_name
+% .%4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -103,7 +103,7 @@ stdout of test 'generator03` in directory 'sql/backends/monet5/generator` itself
 #	cast( '10' as interval hour))
 #where value > timestamp '2008-03-01 00:00'
 #and value < timestamp '2008-03-03 00:00';
-% .L4 # table_name
+% .%4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -115,7 +115,7 @@ stdout of test 'generator03` in directory 'sql/backends/monet5/generator` itself
 #	timestamp '2008-03-04 18:00',
 #	timestamp '2008-03-01 00:00',
 #	cast( '-10' as interval hour));
-% .L4 # table_name
+% .%4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -133,7 +133,7 @@ stdout of test 'generator03` in directory 'sql/backends/monet5/generator` itself
 #	timestamp '2008-03-01 00:00',
 #	cast( '-10' as interval hour)) 
 #where value > timestamp '2008-03-01 11:00' ;
-% .L4 # table_name
+% .%4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -150,7 +150,7 @@ stdout of test 'generator03` in directory 'sql/backends/monet5/generator` itself
 #	timestamp '2008-03-01 00:00',
 #	cast( '-10' as interval hour)) 
 #where value = timestamp '2008-03-01 10:00' ;
-% .L4 # table_name
+% .%4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -160,7 +160,7 @@ stdout of test 'generator03` in directory 'sql/backends/monet5/generator` itself
 #	timestamp '2008-03-01 00:00',
 #	cast( '-10' as interval hour)) 
 #where value < timestamp '2008-03-01 11:00' ;
-% .L4 # table_name
+% .%4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -171,7 +171,7 @@ stdout of test 'generator03` in directory 'sql/backends/monet5/generator` itself
 #	cast( '-10' as interval hour)) 
 #where value > timestamp '2008-03-01 11:00' 
 #and value < timestamp '2008-03-01 21:00';
-% .L4 # table_name
+% .%4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -183,7 +183,7 @@ stdout of test 'generator03` in directory 'sql/backends/monet5/generator` itself
 #where value > timestamp '2008-03-01 00:00'
 #and value < timestamp '2008-03-03 00:00' 
 #and value > timestamp '2008-03-01 11:00';
-% .L4 # table_name
+% .%4 # table_name
 % value # name
 % timestamp # type
 % 26 # length

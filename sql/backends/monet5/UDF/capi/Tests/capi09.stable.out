@@ -37,8 +37,8 @@ stdout of test 'capi09` in directory 'sql/backends/monet5/UDF/capi` itself:
 #INSERT INTO uuids VALUES ('ad887b3d-08f7-c308-7285-354a1857cbc8'), (NULL);
 [ 2	]
 #SELECT capi12(d) FROM uuids;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % uuid # type
 % 36 # length
 [ ad887b3d-08f7-c308-7285-354a1857cbc8	]

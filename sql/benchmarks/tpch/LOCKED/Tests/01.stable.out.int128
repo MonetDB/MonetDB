@@ -47,7 +47,7 @@ stdout of test '01` in directory 'sql/benchmarks/tpch/LOCKED` itself:
 #order by
 #	l_returnflag,
 #	l_linestatus;
-% sys.lineitem,	sys.lineitem,	sys.L5,	sys.L10,	sys.L13,	sys.L16,	sys.L21,	sys.L24,	sys.L27,	sys.L32 # table_name
+% sys.lineitem,	sys.lineitem,	sys.%1,	sys.%2,	sys.%3,	sys.%4,	sys.%5,	sys.%6,	sys.%7,	sys.%10 # table_name
 % l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
 % char,	char,	decimal,	decimal,	decimal,	decimal,	double,	double,	double,	bigint # type
 % 1,	1,	40,	40,	40,	40,	24,	24,	24,	5 # length

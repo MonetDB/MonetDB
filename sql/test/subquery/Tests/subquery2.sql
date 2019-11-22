@@ -75,7 +75,7 @@ FROM another_T GROUP BY col1, col2, col5, col8;
 SELECT
 	col1 + col5 = (SELECT MIN(ColID) FROM tbl_ProductSales),
 	CAST(SUM(DISTINCT CASE WHEN col5 - col8 = (SELECT MIN(ColID / col2) FROM tbl_ProductSales) THEN col2 - 5 ELSE ABS(col1) END) AS BIGINT),
-	(SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5))
+	CAST((SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5)) AS BIGINT)
 FROM another_T
 GROUP BY col1, col2, col5, col8;
 	-- False 1    6
@@ -175,7 +175,7 @@ FROM another_T
 GROUP BY col1; --error, subquery returns more than 1 row
 
 SELECT
-	SUM(col3 + col2)
+	CAST(SUM(col3 + col2) AS BIGINT)
 FROM another_T
 GROUP BY col1
 HAVING NOT col1 = ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> AVG(col1));
@@ -186,7 +186,7 @@ HAVING NOT col1 = ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT 
 
 -- TODO incorrect empty result
 SELECT
-	SUM(col3) * col1
+	CAST(SUM(col3) * col1 AS BIGINT)
 FROM another_T
 GROUP BY col1
 HAVING NOT col1 <> ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID);
@@ -196,7 +196,7 @@ HAVING NOT col1 <> ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT
 	-- 3702963
 
 SELECT
-	SUM(CAST(t1.col1 IN (SELECT t1.col1 FROM another_T) AS INTEGER))
+	CAST(SUM(CAST(t1.col1 IN (SELECT t1.col1 FROM another_T) AS INTEGER)) AS BIGINT)
 FROM another_T t1
 GROUP BY t1.col2;
 	-- 1

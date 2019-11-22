@@ -45,7 +45,7 @@ stdout of test 'sqlsmith.Bug-6449` in directory 'sql/test/BugTracker-2017` itsel
 #          from 
 #            tmp._columns as ref_5
 #              left join bam.rg as ref_6
-% .L44,	sys.L46,	.L50,	.L52 # table_name
+% .ref_3,	sys.ref_4,	.ref_3,	.ref_3 # table_name
 % c0,	c1,	c2,	c3 # name
 % varchar,	varchar,	varchar,	varchar # type
 % 0,	0,	0,	0 # length

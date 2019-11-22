@@ -35,7 +35,12 @@ stdout of test '91` in directory 'sql/benchmarks/tpcds` itself:
 #     customer_demographics,
 #     household_demographics
 #WHERE cr_call_center_sk = cc_call_center_sk
-% sys.L2,	sys.L4,	sys.L6,	sys.L11 # table_name
+#  AND cr_returned_date_sk = d_date_sk
+#  AND cr_returning_customer_sk= c_customer_sk
+#  AND cd_demo_sk = c_current_cdemo_sk
+#  AND hd_demo_sk = c_current_hdemo_sk
+#  AND ca_address_sk = c_current_addr_sk
+% sys.call_center,	sys.call_center,	sys.call_center,	sys.%1 # table_name
 % call_center,	call_center_name,	manager,	returns_loss # name
 % char,	varchar,	varchar,	decimal # type
 % 16,	12,	14,	20 # length

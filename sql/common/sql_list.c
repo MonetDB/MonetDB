@@ -312,12 +312,12 @@ list_remove_node(list *l, node *n)
 	}
 	if (n == l->t)
 		l->t = p;
-	node_destroy(l, n);
-	l->cnt--;
 	MT_lock_set(&l->ht_lock);
 	if (l->ht && data)
 		hash_delete(l->ht, data);
 	MT_lock_unset(&l->ht_lock);
+	node_destroy(l, n);
+	l->cnt--;
 	return p;
 }
 
@@ -738,4 +738,12 @@ list_hash_add(list *l, void *data, fcmp cmp)
 		}
 	}
 	return data;
+}
+
+void
+list_hash_clear(list *l)
+{
+	MT_lock_set(&l->ht_lock);
+	l->ht = NULL;
+	MT_lock_unset(&l->ht_lock);
 }

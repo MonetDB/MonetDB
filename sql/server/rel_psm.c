@@ -88,16 +88,8 @@ psm_set_exp(sql_query *query, dnode *n)
 		e = rel_check_type(sql, tpe, rel, e, type_cast);
 		if (!e)
 			return NULL;
-		if (rel) {
-			sql_exp *er = exp_rel(sql, rel);
-			list *b = sa_list(sql->sa);
 
-			append(b, er);
-			append(b, exp_set(sql->sa, name, e, level));
-			res = exp_rel(sql, rel_psm_block(sql->sa, b));
-		} else {
-			res = exp_set(sql->sa, name, e, level);
-		}
+		res = exp_set(sql->sa, name, e, level);
 	} else { /* multi assignment */
 		exp_kind ek = {type_value, card_relation, FALSE};
 		sql_rel *rel_val = rel_subquery(query, NULL, val, ek);
@@ -256,6 +248,7 @@ rel_psm_while_do( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 		if (sql->session->status || !cond || !whilestmts) 
 			return NULL;
 		if (rel) {
+			assert(0);
 			sql_exp *er = exp_rel(sql, rel);
 			list *b = sa_list(sql->sa);
 
@@ -295,6 +288,7 @@ psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 		if (sql->session->status || !cond || !ifstmts) 
 			return NULL;
 		if (rel) {
+			assert(0);
 			sql_exp *er = exp_rel(sql, rel);
 			list *b = sa_list(sql->sa);
 
@@ -332,6 +326,7 @@ rel_psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dno
 		if (sql->session->status || !cond || !ifstmts) 
 			return NULL;
 		if (rel) {
+			assert(0);
 			sql_exp *er = exp_rel(sql, rel);
 			list *b = sa_list(sql->sa);
 
@@ -395,7 +390,7 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 			sql_exp *case_stmt = NULL;
 
 			if (!when_value || rel ||
-			   (cond = rel_binop_(query, rel, v, when_value, NULL, "=", card_value)) == NULL ||
+			   (cond = rel_binop_(sql, rel, v, when_value, NULL, "=", card_value)) == NULL ||
 			   (if_stmts = sequential_block( query, res, restypelist, m->next->data.lval, NULL, is_func)) == NULL ) {
 				if (rel)
 					return sql_error(sql, 02, SQLSTATE(42000) "CASE: No SELECT statements allowed within the CASE condition");
@@ -461,14 +456,14 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 	res = rel_value_exp2(query, &rel, return_sym, sql_sel, ek, &is_last);
 	if (!res)
 		return NULL;
+	if (!rel && exp_is_rel(res))
+		rel = exp_rel_get_rel(sql->sa, res);
 	if (ek.card != card_relation && (!restype || (res = rel_check_type(sql, restype, rel, res, type_equal)) == NULL))
 		return (!restype)?sql_error(sql, 02, SQLSTATE(42000) "RETURN: return type does not match"):NULL;
 	else if (ek.card == card_relation && !rel)
 		return NULL;
 
-	if (rel && ek.card != card_relation)
-		append(l, exp_rel(sql, rel));
-	else if (rel && !is_ddl(rel->op)) {
+	if (rel && !is_ddl(rel->op) && ek.card == card_relation) {
 		list *exps = sa_list(sql->sa), *oexps = rel->exps;
 		node *n, *m;
 		int isproject = (rel->op == op_project);
@@ -519,7 +514,11 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		rel = rel_project(sql->sa, rel, exps);
 		res = exp_rel(sql, rel);
 	}
-	append(l, exp_return(sql->sa, res, stack_nr_of_declared_tables(sql)));
+	append(l, res = exp_return(sql->sa, res, stack_nr_of_declared_tables(sql)));
+	if (ek.card != card_relation) 
+		res->card = CARD_ATOM;
+	else
+		res->card = CARD_MULTI;
 	return l;
 }
 

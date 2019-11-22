@@ -26,8 +26,8 @@ stdout of test 'having_or_bug` in directory 'sql/test/BugTracker-2009` itself:
 [ 1	]
 #select count(*) from htest group by links having count(links) > 0 or
 #count(links) < 3;
-% sys.L3 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]

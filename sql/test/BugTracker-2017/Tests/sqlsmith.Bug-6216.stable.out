@@ -42,7 +42,7 @@ stdout of test 'sqlsmith.Bug-6216` in directory 'sql/test/BugTracker-2017` itsel
 #    on (subq_0.c5 = ref_11.id )
 #where ref_9.table_id is NULL
 #limit 146;
-% .L30 # table_name
+% .p # table_name
 % c0 # name
 % int # type
 % 1 # length

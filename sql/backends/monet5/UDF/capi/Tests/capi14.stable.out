@@ -81,8 +81,8 @@ stdout of test 'capi14` in directory 'sql/backends/monet5/UDF/capi` itself:
 #INSERT INTO vals VALUES (1, NULL, 1), (NULL, 2, 2), (3, 3, NULL), (NULL, NULL, NULL), (5, 5, 5);
 [ 5	]
 #SELECT i, j, k, capi14(i, j, k) FROM vals;
-% sys.vals,	sys.vals,	sys.vals,	sys.L5 # table_name
-% i,	j,	k,	L5 # name
+% sys.vals,	sys.vals,	sys.vals,	sys.%4 # table_name
+% i,	j,	k,	%4 # name
 % int,	real,	double,	double # type
 % 1,	15,	24,	24 # length
 [ 1,	NULL,	1,	1	]

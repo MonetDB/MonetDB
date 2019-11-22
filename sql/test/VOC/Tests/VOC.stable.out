@@ -9938,27 +9938,27 @@ stdout of test 'VOC` in directory 'sql/test/VOC` itself:
 #(select 1 from voyages v
 #where c.trip = v.trip and v.boatname = 'AMSTERDAM'
 #and v.departure_harbour ='Texel');
-% voc.L3 # table_name
-% L3 # name
+% voc.%1 # table_name
+% %1 # name
 % bigint # type
 % 7 # length
 [ 1305366	]
 #select count(*) from craftsmen c, passengers p
 #where c.trip = p.trip and exists (select 1) ;
-% voc.L4 # table_name
-% L4 # name
+% voc.%1 # table_name
+% %1 # name
 % bigint # type
 % 7 # length
 [ 1308285	]
 #select count(*) from craftsmen c ;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ 2349	]
 #select count(*) from craftsmen c where exists (select 1) ;
-% voc.L4 # table_name
-% L4 # name
+% voc.%1 # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ 2349	]
@@ -9983,7 +9983,7 @@ stdout of test 'VOC` in directory 'sql/test/VOC` itself:
 #   SELECT 'total' AS type, total.* FROM total
 #) AS onboard_people_table;
 #SELECT type, COUNT(*) AS total FROM onboard_people GROUP BY type ORDER BY type;
-% .onboard_people,	.L51 # table_name
+% .onboard_people,	.%40 # table_name
 % type,	total # name
 % char,	bigint # type
 % 10,	4 # length
@@ -9994,14 +9994,14 @@ stdout of test 'VOC` in directory 'sql/test/VOC` itself:
 [ "soldiers",	4177	]
 [ "total",	2454	]
 #select count(*) from impotenten;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 938	]
 #SELECT COUNT(*) FROM voyages WHERE particulars LIKE '%_recked%';
-% voc.L2 # table_name
-% L2 # name
+% voc.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 358	]
@@ -10010,7 +10010,7 @@ stdout of test 'VOC` in directory 'sql/test/VOC` itself:
 #WHERE invoice IS NOT NULL
 #GROUP BY chamber
 #ORDER BY average DESC;
-% voc.invoices,	voc.L3 # table_name
+% voc.invoices,	voc. # table_name
 % chamber,	average # name
 % char,	int # type
 % 1,	6 # length

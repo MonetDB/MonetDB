@@ -24,7 +24,7 @@ stdout of test 'sqlitelogictest-coalesce-division-by-zero.Bug-6556` in directory
 # 19:24:33 >  
 
 #SELECT CAST(COALESCE ( + 55, + 71 * - 23 + 20 + 74 / - COUNT ( ALL - 0 ) / + 75, - 85 / - 71 ) - + - 62 + - - CAST ( + 88 AS INTEGER ) * + + 83 AS BIGINT) AS col0;
-% .L6 # table_name
+% .%4 # table_name
 % col0 # name
 % bigint # type
 % 4 # length

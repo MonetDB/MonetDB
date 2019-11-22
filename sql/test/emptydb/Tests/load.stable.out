@@ -61,8 +61,8 @@ stdout of test 'load` in directory 'sql/test/emptydb` itself:
 # 14:10:08 >  
 
 #select 1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]

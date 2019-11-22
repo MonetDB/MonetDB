@@ -80,7 +80,7 @@ stdout of test 'strptime.Bug-6626` in directory 'sql/test/BugTracker-2018` itsel
 #'01-09-2008 06:12' as DATE5,
 #'2008 May 12' as DATE6
 #) A;
-% .L16,	.L20,	.L22,	.L24,	.L26,	.L30 # table_name
+% .%1,	.%2,	.%3,	.%4,	.%5,	.%6 # table_name
 % date1,	date2,	date3,	date4,	date5,	date6 # name
 % date,	date,	date,	date,	date,	date # type
 % 10,	10,	10,	10,	10,	10 # length

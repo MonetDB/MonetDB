@@ -46,10 +46,8 @@ stdout of test 'ambiguous.Bug-3803` in directory 'sql/test/BugTracker-2015` itse
 #INSERT INTO t1(a,d,b,e,c) VALUES(138,136,139,135,137);
 [ 1     ]
 #SELECT CASE a+1 WHEN b THEN 111 WHEN c THEN 222 WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END, CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222 WHEN a<b+3 THEN 333 ELSE 444 END, cast(a+b*2+c*3+d*4 as bigint), cast(a+b*2+c*3 as bigint), c, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, abs(b-c) FROM t1 WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b) OR b>c OR d NOT BETWEEN 110 AND 150 ORDER BY 4,1,5,2,6,3,7;
-% .,    .,      .,      .,      .t1,    .,      . # table_name
-# .L16, .L20,   .L22,   .L24,   .t1,    .L33,   .L35 # table_name
-% L,    L,      L,      L,      c,      L,      L # name
-# L16,  L20,    L22,    L24,    c,      L33,    L35 # name
+% .%17,	.%20,	.%13,	.%14,	.t1,	.%21,	.%22 # table_name
+% %17,	%20,	%13,	%14,	c,	%21,	%22 # name
 % smallint,     smallint,       bigint, bigint, int,    bigint, bigint # type
 % 3,    3,      4,      3,      3,      4,      1 # length
 [ 555,  444,    1014,   610,    102,    1000,   2       ]
@@ -61,10 +59,8 @@ stdout of test 'ambiguous.Bug-3803` in directory 'sql/test/BugTracker-2015` itse
 [ 444,  333,    1325,   793,    134,    262,    4       ]
 [ 111,  222,    1371,   827,    137,    276,    2       ]
 #SELECT a, cast(a+b*2+c*3+d*4+e*5 as bigint), c-d, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, b-c, a+b*2 FROM t1 ORDER BY 6,2,4,5,3,1;
-% sys.t1,       sys.,   sys.,   sys.,   sys.,   sys. # table_name
-# sys.t1,       sys.L3, sys.L5, sys.L13,        sys.L15,        sys.L17 # table_name
-% a,    L,      L,      L,      L,      L # name
-# a,    L3,     L5,     L13,    L15,    L17 # name
+% .t1,	.%1,	.%4,	.%5,	.%6,	.%7 # table_name
+% a,	%1,	%4,	%5,	%6,	%7 # name
 % int,  bigint, bigint, bigint, bigint, bigint # type
 % 3,    4,      2,      4,      2,      3 # length
 [ 104,  1529,   1,      1000,   -2,     304     ]
@@ -76,10 +72,8 @@ stdout of test 'ambiguous.Bug-3803` in directory 'sql/test/BugTracker-2015` itse
 [ 131,  1985,   1,      262,    -4,     391     ]
 [ 138,  2046,   1,      276,    2,      416     ]
 #SELECT cast(a+b*2+c*3+d*4+e*5 as bigint), CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222 WHEN a<b+3 THEN 333 ELSE 444 END, a, abs(b-c), a+b*2, d, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END FROM t1 WHERE (e>c OR e<d) OR a>b ORDER BY 4,5,3,7,1,6,2;
-% sys., sys.,   sys.t1, sys.,   sys.,   sys.t1, sys. # table_name
-# sys.L2,       sys.L4, sys.t1, sys.L7, sys.L11,        sys.t1, sys.L20 # table_name
-% L,    L,      a,      L,      L,      d,      L # name
-# L2,   L4,     a,      L7,     L11,    d,      L20 # name
+% .%1,	.%4,	.t1,	.%5,	.%6,	.t1,	.%7 # table_name
+% %1,	%4,	a,	%5,	%6,	d,	%7 # name
 % bigint,       smallint,       int,    bigint, bigint, int,    bigint # type
 % 4,    3,      3,      1,      3,      3,      4 # length
 [ 1612, 333,    107,    1,      317,    108,    1050    ]
@@ -90,10 +84,8 @@ stdout of test 'ambiguous.Bug-3803` in directory 'sql/test/BugTracker-2015` itse
 [ 1902, 222,    127,    4,      385,    128,    254     ]
 [ 1985, 333,    131,    4,      391,    133,    262     ]
 #SELECT a, e, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, a-b FROM t1 ORDER BY 2,4,3,1;
-% sys.t1,       sys.t1, sys.,   sys. # table_name
-# sys.t1,       sys.t1, sys.L10,        sys.L12 # table_name
-% a,    e,      L,      L # name
-# a,    e,      L10,    L12 # name
+% .t1,	.t1,	.%3,	.%4 # table_name
+% a,	e,	%3,	%4 # name
 % int,  int,    bigint, bigint # type
 % 3,    3,      4,      2 # length
 [ 104,  103,    1000,   4       ]
@@ -105,10 +97,8 @@ stdout of test 'ambiguous.Bug-3803` in directory 'sql/test/BugTracker-2015` itse
 [ 131,  132,    262,    1       ]
 [ 138,  135,    276,    -1      ]
 #SELECT d, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, abs(b-c), cast(a+b*2+c*3+d*4+e*5 as bigint), CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222 WHEN a<b+3 THEN 333 ELSE 444 END, d-e FROM t1 ORDER BY 1,6,2,3,5,4;
-% sys.t1,       sys.,   sys.,   sys.,   sys.,   sys. # table_name
-# sys.t1,       sys.L7, sys.L11,        sys.L13,        sys.L15,        sys.L17 # table_name
-% d,    L,      L,      L,      L,      L # name
-# d,    L7,     L11,    L13,    L15,    L17 # name
+% .t1,	.%4,	.%5,	.%2,	.%6,	.%7 # table_name
+% d,	%4,	%5,	%2,	%6,	%7 # name
 % int,  bigint, bigint, bigint, smallint,       bigint # type
 % 3,    4,      1,      4,      3,      2 # length
 [ 101,  1000,   2,      1529,   444,    -2      ]
@@ -120,34 +110,26 @@ stdout of test 'ambiguous.Bug-3803` in directory 'sql/test/BugTracker-2015` itse
 [ 133,  262,    4,      1985,   333,    1       ]
 [ 136,  276,    2,      2046,   222,    1       ]
 #SELECT cast(a+b*2+c*3+d*4+e*5 as bigint), a, abs(a), a-b, d-e, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END FROM t1 WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b) AND b>c ORDER BY 4,6,3,1,5,2;
-% sys., sys.t1, sys.,   sys.,   sys.,   sys. # table_name
-# sys.L4,       sys.t1, sys.L7, sys.L11,        sys.L13,        sys.L21 # table_name
-% L,    a,      L,      L,      L,      L # name
-# L4,   a,      L7,     L11,    L13,    L21 # name
+% .%1,	.t1,	.%4,	.%5,	.%6,	.%7 # table_name
+% %1,	a,	%4,	%5,	%6,	%7 # name
 % bigint,       int,    int,    bigint, bigint, bigint # type
 % 4,    3,      3,      2,      1,      3 # length
 [ 1826, 121,    121,    -3,     2,      242     ]
 [ 1902, 127,    127,    -2,     2,      254     ]
 [ 2046, 138,    138,    -1,     1,      276     ]
 #SELECT CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222 WHEN a<b+3 THEN 333 ELSE 444 END, cast(a+b*2+c*3+d*4+e*5 as bigint), a, CASE a+1 WHEN b THEN 111 WHEN c THEN 222 WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d), d FROM t1 WHERE a>b AND (e>a AND e<b) ORDER BY 7,2,4,6,1,3,5;
-% sys., sys.,   sys.t1, sys.,   sys.,   .,      sys.t1 # table_name
-# sys.L2,       sys.L4, sys.t1, sys.L7, sys.L15,        .L21,   sys.t1 # table_name
-% L,    L,      a,      L,      L,      L,      d # name
-# L2,   L4,     a,      L7,     L15,    L21,    d # name
+% .%5,	.%1,	.t1,	.%6,	.%7,	.%3,	.t1 # table_name
+% %5,	%1,	a,	%6,	%7,	%3,	d # name
 % smallint,     bigint, int,    smallint,       bigint, bigint, int # type
 % 1,    1,      1,      1,      1,      1,      1 # length
 #SELECT e, (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b), CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, CASE a+1 WHEN b THEN 111 WHEN c THEN 222 WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END, a-b, (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d) FROM t1 WHERE a>b AND (c<=d-2 OR c>=d+2) AND c>d ORDER BY 6,5,4,2,3,1;
-% sys.t1,       .,      sys.,   sys.,   sys.,   . # table_name
-# sys.t1,       .L5,    sys.L14,        sys.L16,        sys.L20,        .L24 # table_name
-% e,    L,      L,      L,      L,      L # name
-# e,    L5,     L14,    L16,    L20,    L24 # name
+% .t1,	.%1,	.%5,	.%6,	.%7,	.%3 # table_name
+% e,	%1,	%5,	%6,	%7,	%3 # name
 % int,  bigint, bigint, smallint,       bigint, bigint # type
 % 1,    1,      1,      1,      1,      1 # length
 #SELECT b, a-b, c, abs(b-c), d-e, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, b-c FROM t1 WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b) ORDER BY 1,6,4,5,2,7,3;
-% sys.t1,       sys.,   sys.t1, sys.,   sys.,   sys.,   sys. # table_name
-# sys.t1,       sys.L5, sys.t1, sys.L10,        sys.L12,        sys.L20,        sys.L22 # table_name
-% b,    L,      c,      L,      L,      L,      L # name
-# b,    L5,     c,      L10,    L12,    L20,    L22 # name
+% .t1,	.%3,	.t1,	.%4,	.%5,	.%6,	.%7 # table_name
+% b,	%3,	c,	%4,	%5,	%6,	%7 # name
 % int,  bigint, int,    bigint, bigint, bigint, bigint # type
 % 3,    2,      3,      1,      2,      4,      2 # length
 [ 105,  2,      106,    1,      -1,     1050,   -1      ]
@@ -158,20 +140,16 @@ stdout of test 'ambiguous.Bug-3803` in directory 'sql/test/BugTracker-2015` itse
 [ 130,  1,      134,    4,      1,      262,    -4      ]
 [ 139,  -1,     137,    2,      1,      276,    2       ]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d), b, a, cast(a+b*2+c*3+d*4+e*5 as bigint), CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, CASE a+1 WHEN b THEN 111 WHEN c THEN 222 WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END, cast(a+b*2+c*3 as bigint) FROM t1 WHERE a>b AND (e>c OR e<d) ORDER BY 3,7,2,5,6,4,1;
-% .,    sys.t1, sys.t1, sys.,   sys.,   sys.,   sys. # table_name
-# .L4,  sys.t1, sys.t1, sys.L10,        sys.L17,        sys.L21,        sys.L23 # table_name
-% L,    b,      a,      L,      L,      L,      L # name
-# L4,   b,      a,      L10,    L17,    L21,    L23 # name
+% .%1,	.t1,	.t1,	.%2,	.%6,	.%7,	.%4 # table_name
+% %1,	b,	a,	%2,	%6,	%7,	%4 # name
 % bigint,       int,    int,    bigint, bigint, smallint,       bigint # type
 % 1,    3,      3,      4,      4,      3,      3 # length
 [ 0,    100,    104,    1529,   1000,   555,    610     ]
 [ 0,    105,    107,    1612,   1050,   333,    635     ]
 [ 0,    130,    131,    1985,   262,    444,    793     ]
 #SELECT c-d, a-b, b, b-c, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, c, a+b*2 FROM t1 ORDER BY 1,5,4,3,2,6,7;
-% sys., sys.,   sys.t1, sys.,   sys.,   sys.t1, sys. # table_name
-# sys.L2,       sys.L4, sys.t1, sys.L7, sys.L15,        sys.t1, sys.L20 # table_name
-% L,    L,      b,      L,      L,      c,      L # name
-# L2,   L4,     b,      L7,     L15,    c,      L20 # name
+% .%3,	.%4,	.t1,	.%5,	.%6,	.t1,	.%7 # table_name
+% %3,	%4,	b,	%5,	%6,	c,	%7 # name
 % bigint,       bigint, int,    bigint, bigint, int,    bigint # type
 % 2,    2,      3,      2,      4,      3,      3 # length
 [ -3,   -2,     129,    4,      254,    125,    385     ]
@@ -183,10 +161,8 @@ stdout of test 'ambiguous.Bug-3803` in directory 'sql/test/BugTracker-2015` itse
 [ 1,    4,      100,    -2,     1000,   102,    304     ]
 [ 3,    -3,     118,    -1,     1180,   119,    351     ]
 #SELECT cast(a+b*2+c*3+d*4 as bigint), a, c-d, abs(b-c), b, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END FROM t1 WHERE (e>c OR e<d) OR (c<=d-2 OR c>=d+2) ORDER BY 4,3,2,5,1,6;
-% sys., sys.t1, sys.,   sys.,   sys.t1, sys. # table_name
-# sys.L2,       sys.t1, sys.L5, sys.L7, sys.t1, sys.L16 # table_name
-% L,    a,      L,      L,      b,      L # name
-# L2,   a,      L5,     L7,     b,      L16 # name
+% .%1,	.t1,	.%4,	.%5,	.t1,	.%6 # table_name
+% %1,	a,	%4,	%5,	b,	%6 # name
 % bigint,       int,    bigint, bigint, int,    bigint # type
 % 4,    3,      2,      1,      3,      4 # length
 [ 1067, 107,    -2,     1,      105,    1050    ]
@@ -198,10 +174,8 @@ stdout of test 'ambiguous.Bug-3803` in directory 'sql/test/BugTracker-2015` itse
 [ 1272, 127,    -3,     4,      129,    254     ]
 [ 1325, 131,    1,      4,      130,    262     ]
 #SELECT a, cast(a+b*2+c*3+d*4+e*5 as bigint), b, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, e, a-b FROM t1 ORDER BY 1,4,5,3,6,2;
-% sys.t1,       sys.,   sys.t1, sys.,   sys.t1, sys. # table_name
-# sys.t1,       sys.L3, sys.t1, sys.L12,        sys.t1, sys.L15 # table_name
-% a,    L,      b,      L,      e,      L # name
-# a,    L3,     b,      L12,    e,      L15 # name
+% .t1,	.%1,	.t1,	.%4,	.t1,	.%5 # table_name
+% a,	%1,	b,	%4,	e,	%5 # name
 % int,  bigint, int,    bigint, int,    bigint # type
 % 3,    4,      3,      4,      3,      2 # length
 [ 104,  1529,   100,    1000,   103,    4       ]
@@ -213,10 +187,8 @@ stdout of test 'ambiguous.Bug-3803` in directory 'sql/test/BugTracker-2015` itse
 [ 131,  1985,   130,    262,    132,    1       ]
 [ 138,  2046,   139,    276,    135,    -1      ]
 #SELECT d, d-e, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, a+b*2, cast(a+b*2+c*3+d*4+e*5 as bigint), CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222 WHEN a<b+3 THEN 333 ELSE 444 END, cast(a+b*2+c*3 as bigint) FROM t1 ORDER BY 3,2,4,5,7,1,6;
-% sys.t1,       sys.,   sys.,   sys.,   sys.,   sys.,   sys. # table_name
-# sys.t1,       sys.L3, sys.L11,        sys.L13,        sys.L15,        sys.L17,        sys.L21 # table_name
-% d,    L,      L,      L,      L,      L,      L # name
-# d,    L3,     L11,    L13,    L15,    L17,    L21 # name
+% .t1,	.%5,	.%6,	.%7,	.%2,	.%10,	.%3 # table_name
+% d,	%5,	%6,	%7,	%2,	%10,	%3 # name
 % int,  bigint, bigint, bigint, bigint, smallint,       bigint # type
 % 3,    2,      4,      3,      4,      3,      3 # length
 [ 122,  2,      242,    369,    1826,   222,    738     ]
@@ -228,10 +200,8 @@ stdout of test 'ambiguous.Bug-3803` in directory 'sql/test/BugTracker-2015` itse
 [ 114,  4,      1120,   335,    1680,   222,    674     ]
 [ 116,  -1,     1180,   351,    1757,   222,    708     ]
 #SELECT a, CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d), cast(a+b*2+c*3+d*4 as bigint), b FROM t1 WHERE c>d OR d>e ORDER BY 2,5,1,3,4;
-% sys.t1,       sys.,   .,      sys.,   sys.t1 # table_name
-# sys.t1,       sys.L7, .L13,   sys.L15,        sys.t1 # table_name
-% a,    L,      L,      L,      b # name
-# a,    L7,     L13,    L15,    b # name
+% .t1,	.%5,	.%2,	.%3,	.t1 # table_name
+% a,	%5,	%2,	%3,	b # name
 % int,  bigint, bigint, bigint, int # type
 % 3,    4,      1,      4,      3 # length
 [ 121,  242,    0,      1226,   124     ]
@@ -242,10 +212,8 @@ stdout of test 'ambiguous.Bug-3803` in directory 'sql/test/BugTracker-2015` itse
 [ 111,  1120,   0,      1130,   112     ]
 [ 115,  1180,   0,      1172,   118     ]
 #SELECT c, (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d), CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, cast(a+b*2+c*3+d*4 as bigint) FROM t1 WHERE b>c OR (e>c OR e<d) OR d NOT BETWEEN 110 AND 150 ORDER BY 3,2,1,4;
-% sys.t1,       .,      sys.,   sys. # table_name
-# sys.t1,       .L5,    sys.L14,        sys.L16 # table_name
-% c,    L,      L,      L # name
-# c,    L5,     L14,    L16 # name
+% .t1,	.%1,	.%5,	.%3 # table_name
+% c,	%1,	%5,	%3 # name
 % int,  bigint, bigint, bigint # type
 % 3,    1,      4,      4 # length
 [ 123,  0,      242,    1226    ]

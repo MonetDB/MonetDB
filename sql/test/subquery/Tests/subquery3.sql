@@ -13,9 +13,9 @@ GROUP BY t1.col6, t1.col7;
 	-- False
 
 SELECT
-    (SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5)),
+    CAST((SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5)) AS BIGINT),
     AVG(col1) * MIN(col8) OVER (PARTITION BY col5 ORDER BY col1 ROWS UNBOUNDED PRECEDING) evil,
-    MAX(col3) / 10 + SUM(col1) * 10
+    CAST(MAX(col3) / 10 + SUM(col1) * 10 AS BIGINT)
 FROM another_T
 GROUP BY col1, col2, col5, col8;
 	-- 6    8       10
@@ -140,7 +140,7 @@ FROM another_T t1; --MonetDB outputs this one right, but we should leave it here
 	-- 10
 
 SELECT
-    (SELECT SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1) ROWS UNBOUNDED PRECEDING) FROM another_T)
+    CAST((SELECT SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1) ROWS UNBOUNDED PRECEDING) FROM another_T) AS BIGINT)
 FROM another_T t1
 GROUP BY col1; --MonetDB outputs this one right, but we should leave it here, as it doesn't trigger an error
 	-- 2468

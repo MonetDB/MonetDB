@@ -54,7 +54,7 @@ stdout of test 'column-with-comma.Bug-3616` in directory 'sql/test/BugTracker-20
 # 17:14:21 >  
 
 #select 1 as "a,b", 2 as c;
-% .L2,	.L4 # table_name
+% .,	. # table_name
 % "a,b",	c # name
 % tinyint,	tinyint # type
 % 1,	1 # length

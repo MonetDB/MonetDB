@@ -72,8 +72,8 @@ stdout of test 'analytics04` in directory 'sql/test/analytics` itself:
 #       count(*) over (rows between current row and current row),
 #       count(*) over (rows between 0 following and 0 following),
 #       count(*) over (rows between 0 preceding and 0 preceding) from analytics;
-% sys.L4,	sys.L10,	sys.L14,	sys.L20,	sys.L24,	sys.L30,	sys.L34 # table_name
-% L4,	L10,	L14,	L20,	L24,	L30,	L34 # name
+% sys.%10,	sys.%11,	sys.%12,	sys.%13,	sys.%14,	sys.%15,	sys.%16 # table_name
+% %10,	%11,	%12,	%13,	%14,	%15,	%16 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	1,	1,	1,	1 # length
 [ 0,	2,	0,	0,	1,	1,	1	]
@@ -92,8 +92,8 @@ stdout of test 'analytics04` in directory 'sql/test/analytics` itself:
 #       count(aa) over (partition by bb order by bb rows between 3 preceding and 9 preceding),
 #       count(aa) over (partition by bb order by bb rows between current row and current row),
 #       count(aa) over (partition by bb order by bb rows between 0 following and 0 following),
-% sys.L4,	sys.L10,	sys.L14,	sys.L20,	sys.L24,	sys.L30,	sys.L34 # table_name
-% L4,	L10,	L14,	L20,	L24,	L30,	L34 # name
+% sys.%3,	sys.%6,	sys.%11,	sys.%14,	sys.%17,	sys.%22,	sys.%25 # table_name
+% %3,	%6,	%11,	%14,	%17,	%22,	%25 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	1,	1,	1,	1 # length
 [ 0,	1,	0,	0,	1,	1,	1	]
@@ -113,8 +113,8 @@ stdout of test 'analytics04` in directory 'sql/test/analytics` itself:
 #       cast(sum(aa) over (rows between current row and current row) as bigint),
 #       cast(sum(aa) over (rows between 0 following and 0 following) as bigint),
 #       cast(sum(aa) over (rows between 0 preceding and 0 preceding) as bigint) from analytics;
-% sys.L6,	sys.L13,	sys.L20,	sys.L25,	sys.L32,	sys.L37,	sys.L44 # table_name
-% L6,	L13,	L20,	L25,	L32,	L37,	L44 # name
+% sys.%1,	sys.%2,	sys.%3,	sys.%4,	sys.%5,	sys.%6,	sys.%7 # table_name
+% %1,	%2,	%3,	%4,	%5,	%6,	%7 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 2,	2,	2,	1,	2,	2,	2 # length
 [ NULL,	7,	NULL,	NULL,	15,	15,	15	]
@@ -132,8 +132,8 @@ stdout of test 'analytics04` in directory 'sql/test/analytics` itself:
 #       cast(sum(aa) over (partition by bb order by bb rows between 3 preceding and 3 preceding) as bigint),
 #       cast(sum(aa) over (partition by bb order by bb rows between 3 preceding and 9 preceding) as bigint),
 #       cast(sum(aa) over (partition by bb order by bb rows between current row and current row) as bigint),
-% sys.L6,	sys.L13,	sys.L20,	sys.L25,	sys.L32,	sys.L37,	sys.L44 # table_name
-% L6,	L13,	L20,	L25,	L32,	L37,	L44 # name
+% sys.%1,	sys.%2,	sys.%3,	sys.%4,	sys.%5,	sys.%6,	sys.%7 # table_name
+% %1,	%2,	%3,	%4,	%5,	%6,	%7 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 2,	1,	1,	1,	2,	2,	2 # length
 [ NULL,	4,	NULL,	NULL,	3,	3,	3	]

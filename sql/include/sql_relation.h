@@ -40,7 +40,7 @@ typedef struct expression {
 	unsigned int
 	 flag:18,	/* EXP_DISTINCT, NO_NIL, ASCENDING, NULLS_LAST, cmp types */
 	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
-	 freevar:1,	/* free variable, ie binds to the upper dependent join */
+	 freevar:4,	/* free variable, ie binds to the upper dependent join */
 	 intern:1,
 	 anti:1,
 	 base:1,
@@ -160,13 +160,19 @@ typedef enum operator_type {
 	(et == e_atom)
 /* a simple atom is a literal or on the query stack */
 #define is_simple_atom(e) \
-	(is_atom(e->flag) && !e->r && !e->f)
+	(is_atom(e->type) && !e->r && !e->f)
+#define is_values(e) \
+	((e)->type == e_atom && (e)->f)
 #define is_func(et) \
 	(et == e_func)
 #define is_aggr(et) \
 	(et == e_aggr)
+#define is_convert(et) \
+	(et == e_convert)
 #define is_map_op(et) \
 	(et == e_func || et == e_convert)
+#define is_compare(et) \
+	(et == e_cmp)
 #define is_column(et) \
 	(et != e_cmp)
 #define is_alias(et) \
@@ -179,8 +185,6 @@ typedef enum operator_type {
 	(op == op_basetable)
 #define is_ddl(op) \
 	(op == op_ddl)
-#define is_output(rel) \
-	(rel->op == op_ddl && rel->flag == DDL_OUTPUT)
 #define is_outerjoin(op) \
 	(op == op_left || op == op_right || op == op_full)
 #define is_left(op) \
@@ -300,8 +304,8 @@ typedef enum operator_type {
 
 #define is_freevar(e) \
 	((e)->freevar)
-#define set_freevar(e) \
-	(e)->freevar = 1
+#define set_freevar(e,level) \
+	(e)->freevar = level+1
 #define reset_freevar(e) \
 	(e)->freevar = 0
 

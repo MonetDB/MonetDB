@@ -324,8 +324,8 @@ stdout of test 'heapextend.Bug-6134` in directory 'sql/test/BugTracker-2017` its
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	date,	varchar # type
 % 0,	0,	0,	0,	0,	0,	0,	10,	0 # length
 #SELECT 1 FROM location loc,segment1 s1,fact f WHERE s1.id = f.s1_id AND loc.id = f.location_id;
-% .L1 # table_name
-% L1 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -351,8 +351,8 @@ stdout of test 'heapextend.Bug-6134` in directory 'sql/test/BugTracker-2017` its
 [ 1	]
 [ 1	]
 #SELECT 1 FROM location loc,segment1 s1,fact f WHERE s1.id = f.s1_id AND loc.id = f.location_id AND ( s1.code = '03' OR loc.code = '0010094' );
-% .L1 # table_name
-% L1 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 #ROLLBACK;

@@ -30,8 +30,8 @@ stdout of test 'set_and_arg_null.SF-2812729` in directory 'sql/test/BugTracker-2
 #declare a int;
 #set a = null;
 #select a;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -42,8 +42,8 @@ stdout of test 'set_and_arg_null.SF-2812729` in directory 'sql/test/BugTracker-2
 #	return b;
 #end;
 #select call_function(NULL);
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ NULL	]

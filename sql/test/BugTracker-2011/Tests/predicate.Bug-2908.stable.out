@@ -29,7 +29,7 @@ stdout of test 'predicate.Bug-2908` in directory 'sql/test/BugTracker-2011` itse
 #1 then cast('VIEW' as varchar(20)) when t."type" = 0 and t."system" = false and
 #t."temporary" = 1 then cast('LOCAL TEMPORARY' as varchar(20)) else
 #cast('INTERNAL TABLE TYPE' as varchar(20)) end as table_type, cast('' as
-% .L41,	.L43,	.L45,	.L54,	.L57 # table_name
+% .,	.s,	.t,	.,	. # table_name
 % table_cat,	table_schem,	table_name,	table_type,	remarks # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
 % 0,	0,	0,	0,	0 # length

@@ -78,8 +78,8 @@ stdout of test 'pyapi12` in directory 'sql/backends/monet5` itself:
 #	return(numpy.array(['Hello', 'Hello'], dtype=object))
 #};
 #SELECT pyapi12(i,2) FROM rval;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % clob # type
 % 5 # length
 [ "Hello"	]

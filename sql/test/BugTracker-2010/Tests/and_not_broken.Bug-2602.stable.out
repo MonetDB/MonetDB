@@ -23,12 +23,12 @@ stdout of test 'and_not_broken.Bug-2602` in directory 'sql/test/BugTracker-2010`
 
 [ 1	]
 #SELECT (1) as "a" FROM tbl1 WHERE id1 = 2;
-% .L2 # table_name
+% . # table_name
 % a # name
 % tinyint # type
 % 1 # length
 #SELECT (1) as "a" FROM tbl1 WHERE ( id1 = 1 AND name = 'one' AND NOT id = 1);
-% .L2 # table_name
+% . # table_name
 % a # name
 % tinyint # type
 % 1 # length

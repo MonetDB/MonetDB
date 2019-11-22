@@ -24,8 +24,8 @@ stdout of test 'T51` in directory 'geom/sql/conformance` itself:
 # 15:20:22 >  
 
 #SELECT count(*) FROM buildings, bridges WHERE ST_Contains(ST_Buffer(bridges."position", 15.0), buildings.footprint) = 1;
-% sys.L2 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]

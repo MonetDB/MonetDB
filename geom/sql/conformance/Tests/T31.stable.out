@@ -25,8 +25,8 @@ stdout of test 'T31` in directory 'geom/sql/conformance` itself:
 # 15:05:52 >  
 
 #SELECT ST_AsText(ST_GeometryN(centerlines, 2)) FROM divided_routes WHERE name = 'Route 75';
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % clob # type
 % 31 # length
 [ "LINESTRING (16 0, 16 23, 16 48)"	]

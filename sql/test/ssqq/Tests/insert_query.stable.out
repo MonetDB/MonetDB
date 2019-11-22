@@ -41,8 +41,8 @@ stdout of test 'insert_query` in directory 'sql/test/ssqq` itself:
 % int,	int,	timestamp,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	26,	1,	0,	0,	26,	26 # length
 #select id_result;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 1 # length
 [ 1	]
@@ -53,8 +53,8 @@ stdout of test 'insert_query` in directory 'sql/test/ssqq` itself:
 % 1,	1,	21,	1,	5,	5,	0,	1,	0,	0 # length
 [ 1,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select id_result;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 1 # length
 [ 2	]
@@ -67,8 +67,8 @@ stdout of test 'insert_query` in directory 'sql/test/ssqq` itself:
 [ 2,	2,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #set id_result = -1;
 #select id_result;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 2 # length
 [ -1	]
@@ -82,8 +82,8 @@ stdout of test 'insert_query` in directory 'sql/test/ssqq` itself:
 #set id_result = -1;
 #set id_result = insert_query(NULL, 'select * from example', 0, NULL);
 #select id_result;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 1 # length
 [ 4	]

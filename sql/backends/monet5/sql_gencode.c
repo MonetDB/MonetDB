@@ -200,7 +200,9 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	}
 
 	/* add return statement */
-	r = rel_psm_stmt(m->sa, exp_return(m->sa,  exp_rel(m, r), 0));
+	sql_exp *e;
+	r = rel_psm_stmt(m->sa, e = exp_return(m->sa,  exp_rel(m, r), 0));
+	e->card = CARD_MULTI;
 	be->mvc->argc = 0;
 	if (backend_dumpstmt(be, curBlk, r, 0, 1, NULL) < 0) {
 		freeSymbol(curPrg);
@@ -1218,9 +1220,9 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			curInstr = table_func_create_result(curBlk, curInstr, f, restypes);
 			if( curInstr == NULL)
 				goto cleanup;
-		}
-		else
+		} else {
 			setArgType(curBlk, curInstr, 0, res->type.type->localtype);
+		}
 	} else {
 		setArgType(curBlk, curInstr, 0, TYPE_void);
 	}
@@ -1269,7 +1271,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	/* for the time being we only inline scalar functions */
 	/* and only if we see a single return value */
 	/* check the function for side effects and make that explicit */
-	sideeffects = 0;
+	sideeffects = f->side_effect;
 	for (i = 1; i < curBlk->stop; i++) {
 		InstrPtr p = getInstrPtr(curBlk, i);
 		if (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef)

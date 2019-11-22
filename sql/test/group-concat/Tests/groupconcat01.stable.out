@@ -69,16 +69,16 @@ stdout of test 'groupconcat01` in directory 'sql/test/group-concat` itself:
 #insert into testme values (1, 'another'), (1, 'testing'), (1, 'todo');
 [ 3	]
 #select a, group_concat(b) from testme group by a;
-% sys.testme,	sys.L3 # table_name
-% a,	L3 # name
+% sys.testme,	sys.%1 # table_name
+% a,	%1 # name
 % int,	clob # type
 % 1,	20 # length
 [ 1,	"another,testing,todo"	]
 #insert into testme values (2, 'lets'), (2, 'get'), (2, 'harder');
 [ 3	]
 #select a, group_concat(b) from testme group by a;
-% sys.testme,	sys.L3 # table_name
-% a,	L3 # name
+% sys.testme,	sys.%1 # table_name
+% a,	%1 # name
 % int,	clob # type
 % 1,	20 # length
 [ 1,	"another,testing,todo"	]
@@ -86,8 +86,8 @@ stdout of test 'groupconcat01` in directory 'sql/test/group-concat` itself:
 #insert into testme values (3, 'even'), (2, 'more'), (1, 'serious');
 [ 3	]
 #select a, group_concat(b) from testme group by a;
-% sys.testme,	sys.L3 # table_name
-% a,	L3 # name
+% sys.testme,	sys.%1 # table_name
+% a,	%1 # name
 % int,	clob # type
 % 1,	28 # length
 [ 1,	"another,testing,todo,serious"	]
@@ -96,8 +96,8 @@ stdout of test 'groupconcat01` in directory 'sql/test/group-concat` itself:
 #insert into testme values (3, ''), (3, 'more'), (3, ''), (3, 'stress'), (4, NULL);
 [ 5	]
 #select a, group_concat(b) from testme group by a;
-% sys.testme,	sys.L3 # table_name
-% a,	L3 # name
+% sys.testme,	sys.%1 # table_name
+% a,	%1 # name
 % int,	clob # type
 % 1,	28 # length
 [ 1,	"another,testing,todo,serious"	]
@@ -107,8 +107,8 @@ stdout of test 'groupconcat01` in directory 'sql/test/group-concat` itself:
 #insert into testme values (3, NULL), (4, NULL);
 [ 2	]
 #select a, group_concat(b) from testme group by a;
-% sys.testme,	sys.L3 # table_name
-% a,	L3 # name
+% sys.testme,	sys.%1 # table_name
+% a,	%1 # name
 % int,	clob # type
 % 1,	28 # length
 [ 1,	"another,testing,todo,serious"	]
@@ -118,8 +118,8 @@ stdout of test 'groupconcat01` in directory 'sql/test/group-concat` itself:
 #insert into testme values (5, ''), (4, 'nothing'), (5, ''), (3, '');
 [ 4	]
 #select a, group_concat(b) from testme group by a;
-% sys.testme,	sys.L3 # table_name
-% a,	L3 # name
+% sys.testme,	sys.%1 # table_name
+% a,	%1 # name
 % int,	clob # type
 % 1,	28 # length
 [ 1,	"another,testing,todo,serious"	]
@@ -128,8 +128,8 @@ stdout of test 'groupconcat01` in directory 'sql/test/group-concat` itself:
 [ 4,	"nothing"	]
 [ 5,	","	]
 #select a, group_concat(a) from testme group by a;
-% sys.testme,	sys.L3 # table_name
-% a,	L3 # name
+% sys.testme,	sys.%1 # table_name
+% a,	%1 # name
 % int,	clob # type
 % 1,	13 # length
 [ 1,	"1,1,1,1"	]

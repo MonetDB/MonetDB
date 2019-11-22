@@ -35,8 +35,12 @@ stdout of test '15` in directory 'sql/benchmarks/tpcds` itself:
 #                                '86197',
 #                                '88274',
 #                                '83405',
-% sys.customer_address,	sys.L3 # table_name
-% ca_zip,	L3 # name
+#                                '86475',
+#                                '85392',
+#                                '85460',
+#                                '80348',
+% sys.customer_address,	sys.%1 # table_name
+% ca_zip,	%1 # name
 % char,	decimal # type
 % 10,	20 # length
 [ NULL,	4723.12	]

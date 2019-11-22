@@ -24,20 +24,20 @@ stdout of test 'in_operator.SF-1211925` in directory 'sql/test/BugDay_2005-12-19
 # 11:51:00 >  
 
 #select 1 in ('1', '2', '3');
-% .L14 # table_name
-% L14 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select 1 in ((select 1 union select 2));
-% .L14 # table_name
-% L14 # name
+% .%20 # table_name
+% %20 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select 1 in (select * from (select 1 union select 2) as a);
-% .L16 # table_name
-% L16 # name
+% .%23 # table_name
+% %23 # name
 % boolean # type
 % 5 # length
 [ true	]

@@ -24,8 +24,8 @@ stdout of test 'sql_server_crash.SF-1080024` in directory 'sql/test/BugDay_2005-
 # 11:50:54 >  
 
 #select NULLIF(NULLIF('first', 'second'), 'first');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % char # type
 % 5 # length
 [ NULL	]

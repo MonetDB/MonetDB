@@ -40,41 +40,41 @@ stdout of test 'sqlitelogictest-select-not-in-wrong.Bug-6602` in directory 'sql/
 #	SELECT NULL;
 [ 4	]
 #SELECT 'Found Montreal' WHERE 'Montreal' IN (SELECT city from CITIES);
-% .L4 # table_name
-% L4 # name
+% . # table_name
+% single_value # name
 % char # type
 % 14 # length
 [ "Found Montreal"	]
 #SELECT 'Found Sidney' WHERE 'Sidney' IN (SELECT city from CITIES);
-% .L4 # table_name
-% L4 # name
+% . # table_name
+% single_value # name
 % char # type
 % 12 # length
 #SELECT 'Sidney Not Found' WHERE 'Sidney' NOT IN (SELECT city from CITIES);
-% .L4 # table_name
-% L4 # name
+% . # table_name
+% single_value # name
 % char # type
 % 16 # length
 #SELECT 'Sidney Not Found' WHERE 'Sidney' NOT IN ('Paris','Montreal','New York');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 16 # length
 [ "Sidney Not Found"	]
 #SELECT 'Sidney Not Found' WHERE 'Sidney' NOT IN ('Paris','Montreal','New York', NULL);
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 16 # length
 #SELECT 'Sidney Not Found' WHERE 'Sidney'<>'Paris' AND 'Sidney'<>'Montreal';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 16 # length
 [ "Sidney Not Found"	]
 #SELECT 'Sidney Not Found' WHERE 'Sidney'<>'Paris' AND 'Sidney'<>'Montreal' AND 'Sidney'<>null;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 16 # length
 #SELECT city from CITIES WHERE city in (select city from CITIES);

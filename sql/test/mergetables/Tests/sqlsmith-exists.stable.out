@@ -1,0 +1,59 @@
+stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
+
+
+# 19:56:21 >  
+# 19:56:21 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33829" "--set" "mapi_usock=/var/tmp/mtest-3703/.s.monetdb.33829" "--forcemito" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables" "--set" "embedded_c=true"
+# 19:56:21 >  
+
+# MonetDB 5 server v11.36.0 (hg id: 1d18bd8860b4+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.384 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:33829/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3703/.s.monetdb.33829
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 19:56:21 >  
+# 19:56:21 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3703" "--port=33829"
+# 19:56:21 >  
+
+#START TRANSACTION;
+#CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
+#INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
+[ 4	]
+#select
+#cast(coalesce(ref_0.id, ref_0.owner) as int) as c0, ref_0.system as c1,
+#50 as c2,
+#ref_0.name as c3
+#from
+#sys.schemas as ref_0
+#where (false)
+#or (exists (
+#    select
+#    ref_0.system as c0,
+#    ref_0.id as c1,
+#    ref_1.type_name as c2,
+#    ref_2.owner as c3,
+#    ref_2.optimize as c4,
+#    ref_1.function_type as c5,
+#    cast(nullif(ref_1.function_type, ref_1.function_id) as int) as c6,
+#    ref_1.type_name as c7,
+#    73 as c8,
+#    ref_2.query as c9,
+#    ref_1.function_name as c10,
+#    ref_1.function_id as c11,
+% .%41,	.%42,	.%43,	.%44 # table_name
+% c0,	c1,	c2,	c3 # name
+% int,	boolean,	tinyint,	varchar # type
+% 1,	5,	1,	0 # length
+#ROLLBACK;
+
+# 19:56:32 >  
+# 19:56:32 >  "Done."
+# 19:56:32 >  
+

@@ -26,7 +26,7 @@ stdout of test 'singleton_view.SF-933573` in directory 'sql/test/BugDay_2005-10-
 #create view v_sv as select count(*) from t_sv;
 #select * from v_sv;
 % .v_sv # table_name
-% L3 # name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 4	]

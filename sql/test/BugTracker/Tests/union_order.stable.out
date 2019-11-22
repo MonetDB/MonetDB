@@ -32,7 +32,7 @@ stdout of test 'union_order` in directory 'sql/test/BugTracker` itself:
 #union
 #select data from tmp_two
 #;
-% .L7 # table_name
+% .%5 # table_name
 % data # name
 % decimal # type
 % 6 # length
@@ -41,7 +41,7 @@ stdout of test 'union_order` in directory 'sql/test/BugTracker` itself:
 #select data from tmp_two
 #order by data
 #;
-% .L7 # table_name
+% .%5 # table_name
 % data # name
 % decimal # type
 % 6 # length

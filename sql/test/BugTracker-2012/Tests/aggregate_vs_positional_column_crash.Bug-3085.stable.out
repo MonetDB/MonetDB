@@ -47,14 +47,14 @@ stdout of test 'aggregate_vs_positional_column_crash.Bug-3085` in directory 'sql
 #2086	"idxs"	2000	NULL	0	true	0	false	0
 [ 40	]
 #SELECT 1, (SELECT count(*) FROM tbls);
-% .L2,	.L7 # table_name
-% L2,	L7 # name
+% .,	.%1 # table_name
+% single_value,	%1 # name
 % tinyint,	bigint # type
 % 1,	2 # length
 [ 1,	40	]
 #SELECT (SELECT count(*) FROM tbls), 1;
-% .L5,	.L7 # table_name
-% L5,	L7 # name
+% .%1,	. # table_name
+% %1,	single_value # name
 % bigint,	tinyint # type
 % 2,	1 # length
 [ 40,	1	]

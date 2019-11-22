@@ -33,7 +33,7 @@ stdout of test 'limit_clause.Bug-6312` in directory 'sql/test/BugTracker-2017` i
 #                sys.auths as ref_0
 #              ) as subq_0
 #        where subq_0.c1 is NULL;
-% sys.L6 # table_name
+% sys.ref_0 # table_name
 % c1 # name
 % int # type
 % 1 # length

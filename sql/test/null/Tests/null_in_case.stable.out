@@ -25,8 +25,8 @@ stdout of test 'null_in_case` in directory 'sql/test/null` itself:
 # 10:16:15 >  
 
 #SELECT CASE WHEN 1 = 1 THEN NULL END;
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % char # type
 % 0 # length
 [ NULL	]

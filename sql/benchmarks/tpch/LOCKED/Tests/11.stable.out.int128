@@ -39,7 +39,7 @@ stdout of test '11` in directory 'sql/benchmarks/tpch/LOCKED` itself:
 #		from
 #			partsupp,
 #			supplier,
-% sys.partsupp,	sys.L4 # table_name
+% sys.partsupp,	sys.%1 # table_name
 % ps_partkey,	value # name
 % int,	decimal # type
 % 4,	40 # length

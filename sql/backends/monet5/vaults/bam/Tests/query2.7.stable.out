@@ -34,8 +34,8 @@ stdout of test 'query2.7` in directory 'sql/backends/monet5/vaults/bam` itself:
 #    FROM bam.alignments_2
 #)
 #ORDER BY qname;
-% .L22,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1 # table_name
-% L22,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% .%7,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1 # table_name
+% %7,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 2,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
 #SELECT 'f1', qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
@@ -48,8 +48,8 @@ stdout of test 'query2.7` in directory 'sql/backends/monet5/vaults/bam` itself:
 #    FROM bam.unpaired_all_alignments_4
 #)
 #ORDER BY qname;
-% .L1157,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3 # table_name
-% L1157,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% .%117,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3,	.unpaired_all_alignments_3 # table_name
+% %117,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % char,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 2,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
 

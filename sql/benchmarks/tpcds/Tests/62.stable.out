@@ -35,7 +35,10 @@ stdout of test '62` in directory 'sql/benchmarks/tpcds` itself:
 #                    AND (ws_ship_date_sk - ws_sold_date_sk <= 60) THEN 1
 #               ELSE 0
 #           END) AS "31-60 days",
-% sys.sq1,	sys.ship_mode,	sys.web_site,	sys.L12,	sys.L15,	sys.L20,	sys.L23,	sys.L26 # table_name
+#       sum(CASE
+#               WHEN (ws_ship_date_sk - ws_sold_date_sk > 60)
+#                    AND (ws_ship_date_sk - ws_sold_date_sk <= 90) THEN 1
+% sys.sq1,	sys.ship_mode,	sys.web_site,	sys.%2,	sys.%3,	sys.%4,	sys.%5,	sys.%6 # table_name
 % w_substr,	sm_type,	web_name,	"30 days",	"31-60 days",	"61-90 days",	"91-120 days",	">120 days" # name
 % clob,	char,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 20,	30,	6,	3,	3,	3,	3,	1 # length

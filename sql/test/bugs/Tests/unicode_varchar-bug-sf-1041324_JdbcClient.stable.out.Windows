@@ -24,13 +24,13 @@ stdout of test 'unicode_varchar-bug-sf-1041324_JdbcClient` in directory 'sql/tes
 
 #  1:18:14.82 >  call java nl.cwi.monetdb.client.JdbcClient -h LAB03 -p 30476 -d mTests_sql_test_bugs -f "..\..\..\..\..\..\MonetDB\sql\test\bugs\Tests\..\unicode_varchar-bug-sf-1041324.sql" 
 =+----------------------------------------------------------------------------------------------------------------------------------+
-| L2                                                                                                                               |
+| single_value                                                                                                                      |
 =+==================================================================================================================================+
 | http://shopping.b92.net/index.php?IDS=11&ID_Group=39&ID_prod=754&PROD_NAME=Belgrade+Coffee+Shop+4&GROUP_NAME=Muzi�a+produkcija |
 =+----------------------------------------------------------------------------------------------------------------------------------+
 1 row
 =+------------------------+
-| L2                     |
+| single_value            |
 =+========================+
 | SAVE 25¢ ON ICE CREAM |
 =+------------------------+

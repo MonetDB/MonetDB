@@ -42,7 +42,7 @@ stdout of test 'between.Bug-3259` in directory 'sql/test/BugTracker-2013` itself
 #SELECT t1.subject as id1, t2.subject as id2
 #FROM  treeitems t1, treeitems t2
 #WHERE t2.pre between t1.pre and t1.pre + t1.size;
-% sys.L2,	sys.L4 # table_name
+% sys.t1,	sys.t2 # table_name
 % id1,	id2 # name
 % int,	int # type
 % 1,	1 # length
