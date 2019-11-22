@@ -1,3 +1,4 @@
+START TRANSACTION;
 declare epsilon double;
 set epsilon=0.00001;
 
@@ -153,3 +154,4 @@ drop table alphatest;
 drop table zonetest;
 drop table zoneindex;
 
+ROLLBACK;

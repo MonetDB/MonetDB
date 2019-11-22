@@ -1,3 +1,4 @@
+START TRANSACTION;
 -- generate a simple table with an auto-generated key (id)
 CREATE TABLE gen_keys (
 	"id" serial,
@@ -17,3 +18,4 @@ UPDATE gen_keys SET "x" = 'bla' WHERE "id" = 12;
 
 -- ok, cleanup a bit
 DROP TABLE gen_keys;
+ROLLBACK;

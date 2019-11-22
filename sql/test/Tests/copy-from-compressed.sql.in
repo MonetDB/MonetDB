@@ -1,3 +1,4 @@
+start transaction;
 create table compression_schemes (
 	name varchar(20),
 	extension varchar(5)
@@ -23,4 +24,4 @@ using delimiters ',', E'\n';
 
 select * from compression_schemes order by extension;
 
-drop table compression_schemes;
+rollback;
