@@ -30,8 +30,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #SELECT 1
 #FROM tbl_ProductSales
 #GROUP BY Product_Category;
-% .L1 # table_name
-% L1 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -39,24 +39,24 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #SELECT 1
 #FROM tbl_ProductSales
 #GROUP BY ();
-% .L1 # table_name
-% L1 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT
 #    GROUPING(Product_Name)
 #FROM tbl_ProductSales;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 0	]
 #SELECT
 #    GROUPING(Product_Name)
 #FROM tbl_ProductSales GROUP BY ();
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 0	]
@@ -64,7 +64,7 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    GROUPING(Product_Category) AS myalias
 #FROM tbl_ProductSales
 #GROUP BY Product_Category;
-% .L2 # table_name
+% . # table_name
 % myalias # name
 % tinyint # type
 % 1 # length
@@ -74,7 +74,7 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    GROUPING(Product_Category) myalias
 #FROM tbl_ProductSales
 #GROUP BY Product_Category, Product_Name;
-% .L2 # table_name
+% . # table_name
 % myalias # name
 % tinyint # type
 % 1 # length
@@ -86,8 +86,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    GROUPING(Product_Name, Product_Category)
 #FROM tbl_ProductSales
 #GROUP BY Product_Category, Product_Name;
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 0	]
@@ -98,7 +98,7 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    GROUPING(Product_Category) AS myalias
 #FROM tbl_ProductSales
 #GROUP BY ROLLUP(Product_Category);
-% .L2 # table_name
+% .%1 # table_name
 % myalias # name
 % tinyint # type
 % 1 # length
@@ -109,7 +109,7 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    GROUPING(Product_Category) AS myalias
 #FROM tbl_ProductSales
 #GROUP BY Product_Category, ROLLUP(Product_Category);
-% .L2 # table_name
+% .%1 # table_name
 % myalias # name
 % tinyint # type
 % 1 # length
@@ -121,8 +121,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    GROUPING(Product_Category, Product_Name, ColID)
 #FROM tbl_ProductSales
 #GROUP BY ROLLUP(Product_Category, Product_Name, ColID);
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 0	]
@@ -140,8 +140,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    GROUPING(Product_Category, Product_Name, ColID)
 #FROM tbl_ProductSales
 #GROUP BY ROLLUP((Product_Category, Product_Name, ColID));
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 0	]
@@ -153,8 +153,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    GROUPING(Product_Category, ColID)
 #FROM tbl_ProductSales
 #GROUP BY ROLLUP((Product_Category, Product_Name, ColID));
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 0	]
@@ -166,8 +166,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    GROUPING(Product_Category, ColID)
 #FROM tbl_ProductSales
 #GROUP BY CUBE((Product_Category, Product_Name, ColID));
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 0	]
@@ -180,8 +180,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #FROM tbl_ProductSales
 #GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ())
 #ORDER BY GROUPING(Product_Category);
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 0	]
@@ -200,8 +200,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #FROM tbl_ProductSales
 #GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ())
 #HAVING GROUPING(Product_Category) = 0;
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 0	]
@@ -215,8 +215,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #FROM tbl_ProductSales
 #GROUP BY CUBE((Product_Category, Product_Name, ColID))
 #ORDER BY GROUPING(Product_Category, ColID);
-% .L1,	.L2 # table_name
-% L1,	L2 # name
+% .%1,	.%2 # table_name
+% %1,	%2 # name
 % tinyint,	tinyint # type
 % 1,	1 # length
 [ 0,	0	]
@@ -230,8 +230,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #GROUP BY ROLLUP(Product_Category, Product_Name, ColID)
 #HAVING GROUPING(Product_Category, Product_Name, ColID) <> 3
 #ORDER BY GROUPING(Product_Category, Product_Name, ColID) DESC;
-% .L2 # table_name
-% L2 # name
+% .%4 # table_name
+% %4 # name
 % smallint # type
 % 1 # length
 [ 8	]
@@ -247,8 +247,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    GROUPING(Product_Category), AVG(SUM(TotalSales)) OVER (ROWS UNBOUNDED PRECEDING)
 #FROM tbl_ProductSales
 #GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
-% .L1,	.L4 # table_name
-% L1,	L4 # name
+% .%1,	.%7 # table_name
+% %1,	%7 # name
 % tinyint,	double # type
 % 1,	24 # length
 [ 0,	600	]
@@ -266,8 +266,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    GROUPING(Product_Category), RANK() OVER (PARTITION BY SUM(TotalSales))
 #FROM tbl_ProductSales
 #GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
-% .L1,	.L4 # table_name
-% L1,	L4 # name
+% .%1,	.%6 # table_name
+% %1,	%6 # name
 % tinyint,	int # type
 % 1,	1 # length
 [ 1,	1	]
@@ -285,8 +285,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    CASE WHEN GROUPING(Product_Category, Product_Name, ColID) * 10 = 30 THEN 2 ELSE NULL END
 #FROM tbl_ProductSales
 #GROUP BY ROLLUP(Product_Category, Product_Name, ColID);
-% .L2 # table_name
-% L2 # name
+% .%5 # table_name
+% %5 # name
 % tinyint # type
 % 1 # length
 [ NULL	]
@@ -304,20 +304,20 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    GROUPING(Product_Category), AVG(SUM(TotalSales)) OVER (ROWS UNBOUNDED PRECEDING), RANK() OVER (PARTITION BY SUM(TotalSales))
 #FROM tbl_ProductSales
 #GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
-% .L1,	.L4,	.L7 # table_name
-% L1,	L4,	L7 # name
+% .%1,	.%14,	.%7 # table_name
+% %1,	%14,	%7 # name
 % tinyint,	double,	int # type
 % 1,	24,	1 # length
-[ 1,	400,	1	]
+[ 1,	100,	1	]
+[ 0,	100,	1	]
+[ 1,	133.3333333,	1	]
+[ 0,	150,	1	]
+[ 1,	200,	1	]
+[ 0,	233.3333333,	1	]
+[ 1,	271.4285714,	1	]
+[ 0,	300,	1	]
+[ 0,	333.3333333,	1	]
 [ 0,	360,	1	]
-[ 1,	466.6666667,	1	]
-[ 0,	371.4285714,	1	]
-[ 1,	450,	1	]
-[ 0,	375,	1	]
-[ 1,	460,	1	]
-[ 0,	388.8888889,	1	]
-[ 0,	600,	1	]
-[ 0,	600,	1	]
 [ 1,	436.3636364,	1	]
 #SELECT
 #    GROUPING(Product_Category), 
@@ -325,8 +325,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    RANK() OVER (PARTITION BY SUM(ColID))
 #FROM tbl_ProductSales
 #GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ());
-% .L1,	.L6,	.L12,	.L14 # table_name
-% L1,	L6,	L12,	L14 # name
+% .%1,	.%3,	.%5,	.%12 # table_name
+% %1,	%3,	%5,	%12 # name
 % tinyint,	bigint,	bigint,	int # type
 % 1,	4,	2,	1 # length
 [ 1,	4800,	13,	1	]
@@ -353,8 +353,8 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #    WHERE tbl_X.NItems < 1000
 #    GROUP BY CUBE(tbl_ProductSales.Product_Category, tbl_ProductSales.Product_Name, tbl_ProductSales.ColID), ROLLUP(tbl_X.ColID, tbl_X.NItems)
 #) AS SubTables GROUP BY myalias ORDER BY myalias;
-% .subtables,	.L5 # table_name
-% myalias,	L5 # name
+% .subtables,	.%4 # table_name
+% myalias,	%4 # name
 % tinyint,	bigint # type
 % 1,	2 # length
 [ 0,	24	]
@@ -370,7 +370,7 @@ stdout of test 'analytics11` in directory 'sql/test/analytics` itself:
 #GROUP BY CUBE(Product_Category, Product_Name, tbl_ProductSales.ColID), ROLLUP(tbl_X.ColID, tbl_X.NItems)
 #ORDER BY SUM(TotalSales) DESC
 #LIMIT 1;
-% .L4 # table_name
+% .%3 # table_name
 % myalias # name
 % tinyint # type
 % 1 # length

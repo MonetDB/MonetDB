@@ -24,7 +24,7 @@
 #define sql_window 256 //ORed
 #define sql_join   512 //ORed
 #define sql_outer 1024 //ORed
-#define sql_group_totals 2056 //ORed
+#define sql_group_totals 2048 //ORed
 
 #define is_sql_from(X)    ((X & sql_from) == sql_from)
 #define is_sql_where(X)   ((X & sql_where) == sql_where)
