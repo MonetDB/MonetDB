@@ -2135,7 +2135,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		/* delta* operator have a ins bat as last argument, we move the inserts into the last delta statement, ie
   		 * all but last need to remove one argument */
-		if (match == 3 && (bats == 4 || bats == 5) && isDelta(p) && 
+		if (match == 3 && (bats == 4 /*|| bats == 5*/) && isDelta(p) && 
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&
 		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0 &&
 		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0){
