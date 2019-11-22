@@ -173,6 +173,19 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 [ 2468	]
 [ 2468	]
 [ 2468	]
+#SELECT
+#    NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL) AS a1
+#FROM another_T
+#GROUP BY col1, col2, col5
+#ORDER BY a1 NULLS FIRST;
+% . # table_name
+% a1 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+[ true	]
+[ true	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 

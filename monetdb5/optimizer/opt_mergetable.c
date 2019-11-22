@@ -312,7 +312,7 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 					if(!q)
 						return NULL;
 
-					/* remove last argument */
+					/* remove last argument (inserts only on last part) */
 					if (k < mat[m].mi->argc-1)
 						q->argc--;
 					/* make sure to resolve again */
@@ -344,7 +344,7 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 			if(!q)
 				return NULL;
 
-			/* remove last argument */
+			/* remove last argument (inserts only on last part) */
 			if (k < mat[m].mi->argc-1)
 				q->argc--;
 			/* make sure to resolve again */
@@ -2135,7 +2135,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		/* delta* operator have a ins bat as last argument, we move the inserts into the last delta statement, ie
   		 * all but last need to remove one argument */
-		if (match == 3 && bats == 4 && isDelta(p) && 
+		if (match == 3 && (bats == 4 || bats == 5) && isDelta(p) && 
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&
 		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0 &&
 		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0){

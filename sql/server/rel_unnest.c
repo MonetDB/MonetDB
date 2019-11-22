@@ -1479,7 +1479,10 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		if (is_func(ie->type) && list_length(ie->l) == 1 && is_not_func(sf)) {
 			args = ie->l;
 
-			return args->h->data;	
+			ie = args->h->data;	
+			if (exp_name(e))
+				exp_prop_alias(sql->sa, ie, e);
+			return ie;
 		}
 	}
 	return e;
