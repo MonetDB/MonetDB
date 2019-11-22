@@ -185,7 +185,11 @@ HASHcollisions(BAT *b, Hash *h)
 				max = cnt;
 			total += cnt;
 		}
-	fprintf(stderr, "#BAThash: statistics (" BUNFMT ", entries " LLFMT ", nunique " BUNFMT ", nbuckets " BUNFMT ", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->nunique, NHASHBUCKETS(h), max, entries == 0 ? 0 : total / entries);
+	fprintf(stderr,
+		"#BAThash: statistics (" BUNFMT ", entries " LLFMT ", nunique "
+		BUNFMT ", nbuckets " BUNFMT ", max " LLFMT ", avg %2.6f);\n",
+		BATcount(b), entries, h->nunique, NHASHBUCKETS(h), max,
+		entries == 0 ? 0 : total / entries);
 }
 
 gdk_return
@@ -206,6 +210,16 @@ HASHgrowbucket(BAT *b)
 	lng t0 = 0;
 
 	ACCELDEBUG t0 = GDKusec();
+	h->heapbckt.dirty = true;
+	h->heaplink.dirty = true;
+	if (((size_t *) h->heapbckt.base)[0] & (size_t) 1 << 24) {
+		/* persistent hash: remove persistency */
+		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
+		if (h->heapbckt.storage != STORE_MEM) {
+			if (!(GDKdebug & NOSYNCMASK))
+				MT_msync(h->heapbckt.base, SIZEOF_SIZE_T);
+		}
+	}
 	while (h->nunique >= (nbucket = NHASHBUCKETS(h)) * 3 / 4) {
 		BUN old = h->split;
 		BUN new = ((BUN) 1 << h->level) + h->split;
@@ -213,33 +227,6 @@ HASHgrowbucket(BAT *b)
 		BUN msk = (BUN) 1 << h->level;
 
 		assert(h->heapbckt.free == nbucket * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T);
-		h->heapbckt.dirty = true;
-		if (((size_t *) h->heapbckt.base)[0] & (size_t) 1 << 24) {
-			/* persistent hash: remove persistency */
-			((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
-			if (h->heapbckt.storage == STORE_MEM) {
-				int fd;
-				if ((fd = GDKfdlocate(h->heapbckt.farmid,
-						      h->heapbckt.filename,
-						      "rb+", NULL)) >= 0) {
-					if (write(fd, h->heapbckt.base, SIZEOF_SIZE_T) >= 0) {
-						if (!(GDKdebug & NOSYNCMASK)) {
-#if defined(NATIVE_WIN32)
-							_commit(fd);
-#elif defined(HAVE_FDATASYNC)
-							fdatasync(fd);
-#elif defined(HAVE_FSYNC)
-							fsync(fd);
-#endif
-						}
-					}
-					close(fd);
-				}
-			} else {
-				if (!(GDKdebug & NOSYNCMASK))
-					MT_msync(h->heapbckt.base, SIZEOF_SIZE_T);
-			}
-		}
 		if (h->heapbckt.free + h->width > h->heapbckt.size) {
 			if (HEAPextend(&h->heapbckt,
 				       h->heapbckt.size + GDK_mmap_pagesize,
