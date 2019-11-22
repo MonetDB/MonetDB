@@ -2444,7 +2444,7 @@ rewrite_groupings(mvc *sql, sql_rel *rel)
 
 						ne = exp_atom(sql->sa, a);
 						exp_setname(sql->sa, ne, e->alias.rname, e->alias.name);
-					} else if (e->type == e_column && !exps_find_exp(l, e)) { 
+					} else if (e->type == e_column && !exps_find_exp(l, e) && !has_label(e)) { 
 						/* do not include in the output of the group by, but add to the project as null */
 						ne = exp_atom(sql->sa, atom_null_value(sql->sa, &(e->tpe)));
 						exp_setname(sql->sa, ne, e->alias.rname, e->alias.name);
@@ -2462,7 +2462,7 @@ rewrite_groupings(mvc *sql, sql_rel *rel)
 					unions = nrel;
 				else {
 					unions = rel_setop(sql->sa, unions, nrel, op_union);
-					unions->exps = rel_projections(sql, rel, NULL, 1, 0);
+					unions->exps = rel_projections(sql, rel, NULL, 1, 1);
 					set_processed(unions);
 				}
 				if (!unions)

@@ -5,7 +5,7 @@ INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,
 
 SELECT
     (SELECT GROUPING(colID) FROM tbl_ProductSales)
-FROM another_T t1;
+FROM another_T t1; --Postgresql doesn't support this one
 
 SELECT
     col1 IN (SELECT ColID FROM tbl_ProductSales)
@@ -41,6 +41,10 @@ SELECT
     CASE WHEN NOT col1 NOT IN (SELECT (SELECT MAX(col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON t2.col5 = t2.col1)) THEN 1 ELSE 2 END
 FROM another_T t1
 GROUP BY col1;
+
+SELECT 
+    1 IN (SELECT 1 FROM tbl_ProductSales GROUP BY CUBE(t1.col1, tbl_ProductSales.ColID))
+FROM another_T t1;
 
 SELECT
     t1.col1 IN (SELECT ColID FROM tbl_ProductSales GROUP BY CUBE(t1.col1, tbl_ProductSales.ColID))
