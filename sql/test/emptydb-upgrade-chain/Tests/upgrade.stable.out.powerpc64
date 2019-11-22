@@ -5265,8 +5265,91 @@ create procedure resume_log_flushing()
 create procedure hot_snapshot(tarfile string)
  external name sql.hot_snapshot;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('suspend_log_flushing', 'resume_log_flushing', 'hot_snapshot') and type = 2;
+drop view sys.tracelog;
+drop function sys.tracelog();
+create function sys.tracelog()
+	returns table (
+		ticks bigint, -- time in microseconds
+		stmt string  -- actual statement executed
+	)
+	external name sql.dump_trace;
+create view sys.tracelog as select * from sys.tracelog();
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'tracelog' and type = 5;
+update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'tracelog';
+drop view sys.sessions;
+drop function sys.sessions;
+create function sys.sessions()
+returns table(
+"sessionid" int,
+"user" string,
+"login" timestamp,
+"idle" timestamp,
+"optimizer" string,
+"sessiontimeout" int,
+"querytimeout" int,
+"workerlimit" int,
+"memorylimit" int)
+ external name sql.sessions;
+create view sys.sessions as select * from sys.sessions();
+create procedure sys.setoptimizer("optimizer" string)
+ external name clients.setoptimizer;
+create procedure sys.setquerytimeout("query" int)
+ external name clients.setquerytimeout;
+create procedure sys.setsessiontimeout("timeout" int)
+ external name clients.setsessiontimeout;
+create procedure sys.setworkerlimit("limit" int)
+ external name clients.setworkerlimit;
+create procedure sys.setmemorylimit("limit" int)
+ external name clients.setmemorylimit;
+create procedure sys.setoptimizer("sessionid" int, "optimizer" string)
+ external name clients.setoptimizer;
+create procedure sys.setquerytimeout("sessionid" int, "query" int)
+ external name clients.setquerytimeout;
+create procedure sys.setsessiontimeout("sessionid" int, "query" int)
+ external name clients.setsessiontimeout;
+create procedure sys.setworkerlimit("sessionid" int, "limit" int)
+ external name clients.setworkerlimit;
+create procedure sys.setmemorylimit("sessionid" int, "limit" int)
+ external name clients.setmemorylimit;
+create procedure sys.stopsession("sessionid" int)
+ external name clients.stopsession;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'sessions' and type = 5;
+update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'sessions';
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = 2;
+drop view sys.queue;
+drop function sys.queue;
+create function sys.queue()
+returns table(
+	"tag" bigint,
+	"sessionid" int,
+	"user" string,
+	"started" timestamp,
+	"status" string,
+	"query" string,
+	"progress" int, -- percentage of MAL instructions handled
+	"workers" int,
+	"memory" int
+)
+external name sql.sysmon_queue;
+grant execute on function sys.queue to public;
+create view sys.queue as select * from sys.queue();
+grant select on sys.queue to public;
+create procedure sys.pause(tag tinyint)
+external name sql.sysmon_pause;
+create procedure sys.resume(tag tinyint)
+external name sql.sysmon_resume;
+create procedure sys.stop(tag tinyint)
+external name sql.sysmon_stop;
+create procedure sys.pause(tag smallint)
+external name sql.sysmon_pause;
+create procedure sys.resume(tag smallint)
+external name sql.sysmon_resume;
+create procedure sys.stop(tag smallint)
+external name sql.sysmon_stop;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue' and type = 5;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('pause', 'resume', 'stop') and type = 2;
+update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue';
 set schema "sys";
-commit;
 
 # MonetDB/SQL module loaded
 
@@ -5275,8 +5358,8 @@ commit;
 # 15:55:37 >  
 
 #select 1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
