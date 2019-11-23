@@ -3611,6 +3611,7 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 						sql_column *c = j->data; 
 
 						if (pc->base.id == c->base.id) {
+							c->colnr = pc->colnr;
 							c->base.rtime = c->base.wtime = 0;
 							c->base.stime = pc->base.wtime;
 							if (!istmp && !c->base.allocated)
@@ -4468,6 +4469,7 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 				return LOG_ERR;
 		}
 
+		fc->colnr = pfc->colnr;
 		fc->null = pfc->null;
 		fc->unique = pfc->unique;
 		fc->storage_type = NULL;
