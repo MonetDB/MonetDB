@@ -19,12 +19,12 @@
 
 #include "gdk.h"
 #include "gdk_private.h"
+#include "gdk_tracer.h"
 #include "mutils.h"
 
 static BAT *GDKkey = NULL;
 static BAT *GDKval = NULL;
 int GDKdebug = 0;
-int GDKverbose = 0;
 
 #include <signal.h>
 
@@ -576,12 +576,6 @@ GDKsetdebug(int debug)
 	GDKdebug = debug;
 }
 
-void
-GDKsetverbose(int verbose)
-{
-	GDKverbose = verbose;
-}
-
 gdk_return
 GDKinit(opt *set, int setlen)
 {
@@ -837,6 +831,10 @@ GDKinit(opt *set, int setlen)
 		return GDK_FAIL;
 	}
 
+	/* initialize GDKtracer */
+	if (!GDKtracer_init())
+		return GDK_FAIL;
+
 	return GDK_SUCCEED;
 }
 
@@ -951,6 +949,9 @@ GDKreset(int status)
 		MT_lock_unset(&GDKthreadLock);
 	}
 	ATOMunknown_clean();
+
+	/* stop GDKtracer */
+	GDKtracer_stop();
 }
 
 /* coverity[+kill] */
@@ -961,6 +962,9 @@ GDKexit(int status)
 #ifdef HAVE_EMBEDDED
 		return;
 #else
+		/* stop GDKtracer */
+		GDKtracer_stop();
+
 		/* no database lock, so no threads, so exit now */
 		exit(status);
 #endif
@@ -1686,6 +1690,12 @@ const char *
 GDKversion(void)
 {
 	return (_gdk_version_string);
+}
+
+void
+GDKtracerinfo(void)
+{
+	GDKtracer_show_info();
 }
 
 size_t
