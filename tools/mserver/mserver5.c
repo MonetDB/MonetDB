@@ -96,6 +96,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "    --set <option>=<value>    Set configuration option\n");
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
+	fprintf(stderr, "    --verbose[=value]         Set or increase verbosity level\n");
 
 	fprintf(stderr, "The debug, testing & trace options:\n");
 	fprintf(stderr, "     --threads\n");
@@ -107,6 +108,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "     --modules\n");
 	fprintf(stderr, "     --algorithms\n");
 	fprintf(stderr, "     --performance\n");
+	fprintf(stderr, "     --optimizers\n");
 	fprintf(stderr, "     --forcemito\n");
 	fprintf(stderr, "     --debug=<bitmask>\n");
 
@@ -259,6 +261,7 @@ main(int argc, char **av)
 	char *binpath = NULL;
 	char *dbpath = NULL;
 	char *dbextra = NULL;
+	int verbosity = 0;
 	bool inmemory = false;
 	static struct option long_options[] = {
 		{ "config", required_argument, NULL, 'c' },
@@ -267,6 +270,7 @@ main(int argc, char **av)
 		{ "debug", optional_argument, NULL, 'd' },
 		{ "help", no_argument, NULL, '?' },
 		{ "version", no_argument, NULL, 0 },
+		{ "verbose", optional_argument, NULL, 'v' },
 		{ "readonly", no_argument, NULL, 'r' },
 		{ "single-user", no_argument, NULL, 0 },
 		{ "set", required_argument, NULL, 's' },
@@ -277,6 +281,7 @@ main(int argc, char **av)
 		{ "transactions", no_argument, NULL, 0 },
 		{ "modules", no_argument, NULL, 0 },
 		{ "algorithms", no_argument, NULL, 0 },
+		{ "optimizers", no_argument, NULL, 0 },
 		{ "performance", no_argument, NULL, 0 },
 		{ "forcemito", no_argument, NULL, 0 },
 		{ "heaps", no_argument, NULL, 0 },
@@ -367,6 +372,10 @@ main(int argc, char **av)
 				grpdebug |= GRPalgorithms;
 				break;
 			}
+			if (strcmp(long_options[option_index].name, "optimizers") == 0) {
+				grpdebug |= GRPoptimizers;
+				break;
+			}
 			if (strcmp(long_options[option_index].name, "forcemito") == 0) {
 				grpdebug |= GRPforcemito;
 				break;
@@ -433,6 +442,19 @@ main(int argc, char **av)
 				fprintf(stderr, "ERROR: wrong format %s\n", optarg);
 			}
 			break;
+		case 'v':
+			if (optarg) {
+				char *endarg;
+				verbosity = (int) strtol(optarg, &endarg, 10);
+				if (*endarg != '\0') {
+					fprintf(stderr, "ERROR: wrong format for --verbose=%s\n",
+							optarg);
+					usage(prog, -1);
+				}
+			} else {
+				verbosity++;
+			}
+			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
@@ -454,6 +476,7 @@ main(int argc, char **av)
 	GDKsetdebug(debug | grpdebug);  /* add the algorithm tracers */
 	if (debug)
 		mo_print_options(set, setlen);
+	GDKsetverbose(verbosity);
 
 	if (dbpath && inmemory) {
 		fprintf(stderr, "!ERROR: both dbpath and in-memory must not be set at the same time\n");
@@ -674,9 +697,6 @@ main(int argc, char **av)
 			msab_registerStop();
 		return 0;
 	}
-
-	/* show log level per component and available layers */
-	GDKtracerinfo();
 
 	emergencyBreakpoint();
 
