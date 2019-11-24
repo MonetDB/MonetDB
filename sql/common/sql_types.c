@@ -2183,9 +2183,8 @@ sqltypeinit( sql_allocator *sa)
 }
 
 void
-types_init(sql_allocator *sa, int debug)
+types_init(sql_allocator *sa)
 {
-	(void)debug;
 	aliases = sa_list(sa);
 	types = sa_list(sa);
 	localtypes = sa_list(sa);

@@ -40,8 +40,7 @@ static MT_Lock mt_lidar_lock = MT_LOCK_INITIALIZER("mt_lidar_lock");
 
 #ifndef NDEBUG
 static
-void print_lidar_header(FILE *file, LASHeaderH header, const char* file_name, int bSkipVLR, int bWKT) {
-
+void print_lidar_header(LASHeaderH header, const char* file_name, int bSkipVLR, int bWKT) {
     char *pszSignature = NULL;
     char *pszProjectId = NULL;
     char *pszSystemId = NULL;
@@ -72,94 +71,93 @@ void print_lidar_header(FILE *file, LASHeaderH header, const char* file_name, in
     major = LASHeader_GetVersionMajor(header);
     minor = LASHeader_GetVersionMinor(header);
 
-    fprintf(file, "\n---------------------------------------------------------\n");
-    fprintf(file, "  Header Summary\n");
-    fprintf(file, "---------------------------------------------------------\n");
+    DEBUG(LIDAR, "---------------------------------------------------------\n");
+    DEBUG(LIDAR, "  Header Summary\n");
+    DEBUG(LIDAR, "---------------------------------------------------------\n");
 
-    fprintf(file, "  File Name: %s\n", file_name);
+    DEBUG(LIDAR, "  File Name: %s\n", file_name);
 
     if (strcmp(pszSignature,"LASF") !=0) {
         LASError_Print("File signature is not 'LASF'... aborting");
         exit(1);
     }
-    fprintf(file, "  Version:                    %hhu.%hhu\n", major, minor);
+    DEBUG(LIDAR, "  Version:                    %hhu.%hhu\n", major, minor);
 
-    fprintf(file, "  Source ID:                  %hu\n", 
-                    LASHeader_GetFileSourceId(header) ) ;
+    DEBUG(LIDAR, "  Source ID:                  %hu\n", 
+                	LASHeader_GetFileSourceId(header));
 
-    fprintf(file, "  Reserved:                   %hu\n", 
-                    LASHeader_GetReserved(header) );
+    DEBUG(LIDAR, "  Reserved:                   %hu\n", 
+                    LASHeader_GetReserved(header));
 
-    fprintf(file, "  Project ID/GUID:           '%s'\n", 
-                    pszProjectId);
+    DEBUG(LIDAR, "  Project ID/GUID:           '%s'\n", 
+					pszProjectId);
 
-    fprintf(file, "  System Identifier:         '%s'\n", 
+    DEBUG(LIDAR, "  System Identifier:         '%s'\n", 
                     pszSystemId);
 
-    fprintf(file, "  Generating Software:       '%s'\n", 
+    DEBUG(LIDAR, "  Generating Software:       '%s'\n", 
                     pszSoftwareId);
 
-    fprintf(file, "  File Creation Day/Year:    %hu/%hu\n", 
+    DEBUG(LIDAR, "  File Creation Day/Year:    %hu/%hu\n", 
                     LASHeader_GetCreationDOY(header), 
                     LASHeader_GetCreationYear(header));
 
-    fprintf(file, "  Header Size                %hu\n", 
+    DEBUG(LIDAR, "  Header Size                %hu\n", 
                     LASHeader_GetHeaderSize(header));
 
-    fprintf(file, "  Offset to Point Data       %u\n", 
+    DEBUG(LIDAR, "  Offset to Point Data       %u\n", 
                     LASHeader_GetDataOffset(header));
 
-    fprintf(file, "  Number Var. Length Records %u\n", 
+    DEBUG(LIDAR, "  Number Var. Length Records %u\n", 
                     LASHeader_GetRecordsCount(header));
 
-    fprintf(file, "  Point Data Format          %hhu\n", 
+    DEBUG(LIDAR, "  Point Data Format          %hhu\n", 
                     LASHeader_GetDataFormatId(header));
 
-    fprintf(file, "  Point Data Record Length   %hu\n", 
+    DEBUG(LIDAR, "  Point Data Record Length   %hu\n", 
                     LASHeader_GetDataRecordLength(header));
 
-    fprintf(file, "  Number of Point Records    %u\n", 
+    DEBUG(LIDAR, "  Number of Point Records    %u\n", 
                     LASHeader_GetPointRecordsCount(header));
 
-    fprintf(file, "  Number of Points by Return %u %u %u %u %u\n", 
+    DEBUG(LIDAR, "  Number of Points by Return %u %u %u %u %u\n", 
                     LASHeader_GetPointRecordsByReturnCount(header, 0), 
                     LASHeader_GetPointRecordsByReturnCount(header, 1), 
                     LASHeader_GetPointRecordsByReturnCount(header, 2), 
                     LASHeader_GetPointRecordsByReturnCount(header, 3), 
                     LASHeader_GetPointRecordsByReturnCount(header, 4));
 
-    fprintf(file, "  Scale Factor X Y Z         %.6g %.6g %.6g\n", 
+    DEBUG(LIDAR, "  Scale Factor X Y Z         %.6g %.6g %.6g\n", 
                     LASHeader_GetScaleX(header), 
                     LASHeader_GetScaleY(header),
                     LASHeader_GetScaleZ(header));
 
-    fprintf(file, "  Offset X Y Z               %.6f %.6f %.6f\n", 
+    DEBUG(LIDAR, "  Offset X Y Z               %.6f %.6f %.6f\n", 
                     LASHeader_GetOffsetX(header), 
                     LASHeader_GetOffsetY(header), 
                     LASHeader_GetOffsetZ(header));
 
-    fprintf(file, "  Min X Y Z                  %.6f %.6f %.6f\n",
+    DEBUG(LIDAR, "  Min X Y Z                  %.6f %.6f %.6f\n",
                     LASHeader_GetMinX(header), 
                     LASHeader_GetMinY(header), 
                     LASHeader_GetMinZ(header));
 
-    fprintf(file, "  Max X Y Z                  %.6f %.6f %.6f\n", 
+    DEBUG(LIDAR, "  Max X Y Z                  %.6f %.6f %.6f\n", 
                     LASHeader_GetMaxX(header), 
                     LASHeader_GetMaxY(header), 
                     LASHeader_GetMaxZ(header));
     
-    fprintf(file, " Spatial Reference           %s\n",
+    DEBUG(LIDAR, " Spatial Reference           %s\n",
                     pszProj4);
     if (bWKT)
     {
-        fprintf(file, "%s", pszWKT);
-        fprintf(file, "%s", "\n");
+        DEBUG(LIDAR, "%s\n", pszWKT);
     }
     if (nVLR && !bSkipVLR) {
         
-    fprintf(file, "\n---------------------------------------------------------\n");
-    fprintf(file, "  VLR Summary\n");
-    fprintf(file, "---------------------------------------------------------\n");
+    DEBUG(LIDAR, "---------------------------------------------------------\n");
+    DEBUG(LIDAR, "  VLR Summary\n");
+    DEBUG(LIDAR, "---------------------------------------------------------\n");
 
         for (i = 0; i < (int)nVLR; i++) {
             pVLR = LASHeader_GetVLR(header, i);
@@ -174,9 +172,10 @@ void print_lidar_header(FILE *file, LASHeaderH header, const char* file_name, in
             nVLRLength = LASVLR_GetRecordLength(pVLR);
             nVLRRecordId = LASVLR_GetRecordId(pVLR);
             
-
-            fprintf(file, "   User: '%s' - Description: '%s'\n", pszVLRUser, pszVLRDescription);
-            fprintf(file, "   ID: %hu Length: %hu\n\n", nVLRRecordId, nVLRLength);
+            DEBUG(LIDAR, "   User          : '%s'\n", pszVLRUser);
+			DEBUG(LIDAR, "   Description   : '%s'\n", pszVLRDescription);
+			DEBUG(LIDAR, "   ID            : '%hu'\n", nVLRRecordId);
+            DEBUG(LIDAR, "   Length        : %hu\n", , nVLRLength);
            
             MT_lock_set(&mt_lidar_lock); 
             LASVLR_Destroy(pVLR);
@@ -542,7 +541,7 @@ return MAL_SUCCEED;
 	snprintf(fulldirectory, BUFSIZ, "%s%s", dir, pat);
 	glob(fulldirectory, GLOB_DOOFFS, NULL, &globbuf);
 
-	/*	fprintf(stderr,"#fulldir: %s \nSize: %lu\n",fulldirectory, globbuf.gl_pathc);*/
+	INFO(LIDAR, "Fulldir: %s - Size: %lu\n", fulldirectory, globbuf.gl_pathc);
 
 	if (globbuf.gl_pathc == 0)
 		throw(MAL, "listdir", SQLSTATE(LI000) "Couldn't open the directory or there are no files that match the pattern");
@@ -655,7 +654,7 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	}
 #ifndef NDEBUG
-	print_lidar_header(stderr, header, fname, 0, 0);
+	print_lidar_header(header, fname, 0, 0);
 #endif
 	/* if needed, instantiate the schema and gather all appropriate tables */
 	tr = m->session->tr;
@@ -953,10 +952,10 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* data load */
 	col = mvc_bind_column(m, lidar_tbl, "PointRecordsCount");
 	rows = *(int*)table_funcs.column_find_value(m->session->tr, col, rid);
-#ifndef NDEBUG
-	fprintf(stderr,"#Loading %ld rows in table %s\n", rows, tname);
+
+	DEBUG(LIDAR, "Loading '%ld' rows in table '%s'\n", rows, tname);
 	time0 = GDKms();
-#endif
+
 	colx = mvc_bind_column(m, tbl, "x");
 	coly = mvc_bind_column(m, tbl, "y");
 	colz = mvc_bind_column(m, tbl, "z");
@@ -1003,25 +1002,20 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			double t = LASPoint_GetTime(p);
 			char anglerank = LASPoint_GetScanAngleRank (p);
 			unsigned short sourceid = LASPoint_GetPointSourceId (p);
-			fprintf(stderr,
-				"(point # %d)"
-				"X (raw)           : %f (%ld)\n"
-				"Z (raw)           : %f (%ld)\n"
-				"Z (raw)           : %f (%ld)\n"
-				"intensity         : %hu\n"
-				"return number     : %hu\n"
-				"number of returns : %hu\n"
-				"scan direction    : %hu\n"
-				"flight line edge  : %hu\n"
-				"scan flags        : %hhu\n"
-				"classification    : %hhu\n"
-				"time              : %f\n"
-				"scan angle rank   : %hhd\n"
-				"point source id   : %hu\n",
-			i, x, rawx, y, rawy, z, rawz,
-			intensity, returnno, noofreturns, 
-			scandir, flightline, flags, class, 
-			t, (signed char) anglerank, sourceid);
+			DEBUG(LIDAR, "Point # %d)\n", i);
+			DEBUG(LIDAR, "X (raw)               : %f (%ld)\n", x, rawx);
+			DEBUG(LIDAR, "Z (raw)               : %f (%ld)\n", y, rawy);
+			DEBUG(LIDAR, "Z (raw)               : %f (%ld)\n", z, rawz);
+			DEBUG(LIDAR, "Intensity             : %hu\n", intensity);
+			DEBUG(LIDAR, "Return number         : %hu\n", returnno);
+			DEBUG(LIDAR, "Number of returns     : %hu\n", noofreturns);
+			DEBUG(LIDAR, "Scan direction        : %hu\n", scandir);
+			DEBUG(LIDAR, "Flight line edge      : %hu\n", flightline);
+			DEBUG(LIDAR, "Scan flags            : %hhu\n", flags);
+			DEBUG(LIDAR, "Classification        : %hhu\n", class);
+			DEBUG(LIDAR, "Time                  : %f\n", t);
+			DEBUG(LIDAR, "Scan angle rank       : %hhd\n", (signed char) anglerank);
+			DEBUG(LIDAR, "Point source id       : %hu\n", sourceid);
 		}
 #endif
 		//TODO: Add a flag that indicates whether LiDAR points should be validited up front
@@ -1043,18 +1037,18 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	y->trevsorted = false;
 	z->tsorted = false;
 	z->trevsorted = false;
-#ifndef NDEBUG
-	fprintf(stderr,"#File loaded in %d ms\t", GDKms() - time0);
-#endif
+
+	DEBUG(LIDAR, "File loaded in: %d ms\n", GDKms() - time0);
+
 	BATmode(x, false);
 	BATmode(y, false);
 	BATmode(z, false);
 	store_funcs.append_col(m->session->tr, colx, x, TYPE_bat);
 	store_funcs.append_col(m->session->tr, coly, y, TYPE_bat);
 	store_funcs.append_col(m->session->tr, colz, z, TYPE_bat);
-#ifndef NDEBUG
-	fprintf(stderr,"#Total time %d ms\n", GDKms() - time0);
-#endif
+
+	DEBUG(LIDAR, "Total time: %d ms\n", GDKms() - time0);
+	
 	BBPrelease(x->batCacheid);
 	BBPrelease(y->batCacheid);
 	BBPrelease(z->batCacheid);

@@ -72,6 +72,6 @@ extern char *sql_func_imp(sql_func *f);
 extern char *sql_func_mod(sql_func *f);
 extern int is_sqlfunc(sql_func *f);
 
-extern void types_init(sql_allocator *sa, int debug);
+extern void types_init(sql_allocator *sa);
 
 #endif /* SQL_TYPES_H */

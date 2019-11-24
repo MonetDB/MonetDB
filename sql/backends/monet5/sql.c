@@ -41,6 +41,7 @@
 #include "mal_resource.h"
 #include "mal_authorize.h"
 #include "gdk_cand.h"
+#include "gdk_tracer.h"
 
 static int
 rel_is_table(sql_rel *rel)
@@ -266,8 +267,8 @@ SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 
 	if ((msg = CLTshutdown(cntxt, mb, stk, pci)) == MAL_SUCCEED) {
-		/* administer the shutdown in the system log*/
-		fprintf(stderr, "#Shutdown:%s\n", *getArgReference_str(stk, pci, 0));
+		/* administer the shutdown in the system log */
+		INFO(SQL_MVC, "Shutdown: %s\n", *getArgReference_str(stk, pci, 0));
 	}
 	return msg;
 }

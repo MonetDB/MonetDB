@@ -36,6 +36,7 @@ headers_sql = {
 		61_wlcr.sql \
 		75_storagemodel.sql \
 		80_statistics.sql \
+		81_tracer.sql \
 		99_system.sql
 }
 

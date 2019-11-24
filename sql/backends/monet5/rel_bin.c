@@ -19,6 +19,7 @@
 #include "rel_optimizer.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
+#include "gdk_tracer.h"
 
 #define OUTER_ZERO 64
 
@@ -98,7 +99,7 @@ print_stmtlist(sql_allocator *sa, stmt *l)
 			const char *rnme = table_name(sa, n->data);
 			const char *nme = column_name(sa, n->data);
 
-			fprintf(stderr, "%s.%s\n", rnme ? rnme : "(null!)", nme ? nme : "(null!)");
+			INFO(SQL_RELATION, "%s.%s\n", rnme ? rnme : "(null!)", nme ? nme : "(null!)");
 		}
 	}
 }
@@ -554,7 +555,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		} else if (e->flag & PSM_REL) {
 			sql_rel *rel = e->l;
 			stmt *r = rel_bin(be, rel);
-
+			
 			if (!r)
 				return NULL;
 			if (is_modify(rel->op) || is_ddl(rel->op)) 
@@ -740,16 +741,16 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (s && grp)
 			s = stmt_project(be, ext, s);
 		if (!s && right) {
-			fprintf(stderr, "could not find %s.%s\n", (char*)e->l, (char*)e->r);
+			CRITICAL(SQL_RELATION, "Could not find %s.%s\n", (char*)e->l, (char*)e->r);
 			print_stmtlist(sql->sa, left);
 			print_stmtlist(sql->sa, right);
 			if (!s) {
-				fprintf(stderr, "query: '%s'\n", sql->query);
+				ERROR(SQL_RELATION, "Query: '%s'\n", sql->query);
 			}
 			assert(s);
 			return NULL;
 		}
-	}	break;
+	 }	break;
 	case e_cmp: {
 		stmt *l = NULL, *r = NULL, *r2 = NULL;
 		int swapped = 0, is_select = 0;
@@ -917,7 +918,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 		if (!l || !r || (re2 && !r2)) {
 			//assert(0);
-			fprintf(stderr, "query: '%s'\n", sql->query);
+			ERROR(SQL_RELATION, "Query: '%s'\n", sql->query);
 			return NULL;
 		}
 
@@ -1397,7 +1398,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 	if (!t && c)
 		t = c->t;
 
-	dels = stmt_tid(be, t, rel->flag == REL_PARTITION);
+       	dels = stmt_tid(be, t, rel->flag == REL_PARTITION);
 
 	/* add aliases */
 	assert(rel->exps);
@@ -1413,7 +1414,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			const char *cname = cexp->r;
 			list *l = sa_list(sql->sa);
 
-			c = find_sql_column(t, cname);
+		       	c = find_sql_column(t, cname);
 			s = stmt_col(be, c, dels);
 			append(l, s);
 			if (exps->h->next) {
@@ -1960,7 +1961,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			}
 			rel->exps = jexps;
 		}
-
+		
 		/* generate a relational join */
 		if (join)
 			en = rel->exps->h;

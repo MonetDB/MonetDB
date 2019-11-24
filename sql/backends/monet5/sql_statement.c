@@ -22,6 +22,8 @@
 #include "mal_debugger.h"
 #include "opt_prelude.h"
 
+#include "gdk_tracer.h"
+
 #include <string.h>
 
 /*
@@ -575,7 +577,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		s->nr = l[c->colnr+1];
 		return s;
 	}
-	q = newStmt(mb, sqlRef, bindRef);
+       	q = newStmt(mb, sqlRef, bindRef);
 	if (q == NULL)
 		return NULL;
 	if (access == RD_UPD_ID) {
@@ -1442,7 +1444,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			op = ">=";
 			break;
 		default:
-			fprintf(stderr, "!SQL Unknown operator");
+			ERROR(SQL_STATEMENT, "Unknown operator\n");
 		}
 
 		if ((q = multiplex2(mb, mod, convertOperator(op), l, r, TYPE_bit)) == NULL) 
@@ -1503,7 +1505,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 				q = pushStr(mb, q, anti?"<":">=");
 				break;
 			default:
-				fprintf(stderr, "!SQL2MAL: error impossible select compare\n");
+				ERROR(SQL_STATEMENT, "Impossible select compare\n");
 				if (q)
 					freeInstruction(q);
 				q = NULL;
@@ -1958,7 +1960,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 		q = op1->q;
 		break;
 	default:
-		fprintf(stderr, "!SQL2MAL: error impossible\n");
+		ERROR(SQL_STATEMENT, "Impossible action\n");
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
@@ -2347,7 +2349,7 @@ stmt_trans(backend *be, int type, stmt *chain, stmt *name)
 		q = newStmt(mb, sqlRef, transaction_beginRef);
 		break;
 	default:
-		fprintf(stderr, "!SQL transaction unknown type");
+		ERROR(SQL_STATEMENT, "Unknown transaction type\n");
 	}
 	q = pushArgument(mb, q, chain->nr);
 	if (name)
@@ -2422,7 +2424,7 @@ stmt_catalog(backend *be, int type, stmt *args)
 	case ddl_rename_table: q = newStmt(mb, sqlcatalogRef, rename_tableRef); break;
 	case ddl_rename_column: q = newStmt(mb, sqlcatalogRef, rename_columnRef); break;
 	default:
-		fprintf(stderr, "!SQL catalog operation unknown\n");
+		ERROR(SQL_STATEMENT, "Unknown catalog operation\n");
 	}
 	// pass all arguments as before
 	for (n = args->op4.lval->h; n; n = n->next) {

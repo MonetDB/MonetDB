@@ -10,8 +10,6 @@
 #ifndef _SQL_STATISTICS_DEF
 #define _SQL_STATISTICS_DEF
 
-/* #define DEBUG_SQL_STATISTICS */
-
 #include "sql.h"
 
 #ifdef WIN32

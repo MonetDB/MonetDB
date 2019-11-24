@@ -23,6 +23,7 @@
 #include "sql_semantic.h"
 #include "sql_parser.h"
 #include "mal_exception.h"
+#include "gdk_tracer.h"
 
 #define PRIV_ROLE_ADMIN 0
 
@@ -714,8 +715,7 @@ mvc_set_role(mvc *m, char *role)
 	sql_column *auths_name = find_sql_column(auths, "name");
 	sqlid res = 0;
 
-	if (m->debug&1)
-		fprintf(stderr, "mvc_set_role %s\n", role);
+	DEBUG(SQL_MVC, "Set role: %s\n", role);
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, role, NULL);
 	if (!is_oid_nil(rid)) {

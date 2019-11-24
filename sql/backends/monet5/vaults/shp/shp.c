@@ -24,6 +24,7 @@
 #include <cpl_conv.h>		/* for CPLFree */
 #include "sql_execute.h"
 #include "mal_exception.h"
+#include "gdk_tracer.h"
 
 #include "geom.h"
 
@@ -68,7 +69,7 @@ GDALWConnection * GDALWConnect(char * source) {
 	OGRRegisterAll();
 	conn = malloc(sizeof(GDALWConnection));
 	if (conn == NULL) {
-		fprintf(stderr, "Could not allocate memory\n");
+		CRITICAL(SHP, "Could not allocate memory\n");
 		return NULL;
 	}
 	conn->handler = OGROpen(source, 0 , &(conn->driver));
@@ -94,7 +95,7 @@ GDALWConnection * GDALWConnect(char * source) {
 	if (conn->fieldDefinitions == NULL) {
 		OGRReleaseDataSource(conn->handler);
 		free(conn);
-		fprintf(stderr, "Could not allocate memory\n");
+		CRITICAL(SHP, "Could not allocate memory\n");
 		return NULL;
 	}
 	for (i=0 ; i<fieldCount ; i++) {
@@ -119,7 +120,7 @@ GDALWSimpleFieldDef * GDALWGetSimpleFieldDefinitions(GDALWConnection conn) {
 	}*/
 	columns = malloc(conn.numFieldDefinitions * sizeof(GDALWSimpleFieldDef));
 	if (columns == NULL) {
-		//fprintf(stderr, "Could not allocate memory\n");
+		CRITICAL(SHP, "Could not allocate memory\n");
 		return NULL;
 	}
 	for (i=0 ; i<conn.numFieldDefinitions ; i++) {

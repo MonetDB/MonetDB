@@ -10,6 +10,7 @@
 #include "bat_table.h"
 #include "bat_utils.h"
 #include "bat_storage.h"
+#include "gdk_tracer.h"
 
 static BAT *
 _delta_cands(sql_trans *tr, sql_table *t)
@@ -257,7 +258,8 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	}
 	va_end(va);
 	if (n) {
-		fprintf(stderr, "called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
+		// This part of the code should never get reached  
+		ERROR(SQL_BAT, "Called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
 		assert(0);
 		return LOG_ERR;
 	}

@@ -22,22 +22,23 @@
 
 
 /* Macro that enables writing to a log. If the debug flag is not set,
- * it does not do anything */
+ * it does not do anything 
 #ifndef NDEBUG
-#define BAM_DEBUG /* We are in 'debug-mode' if --enable-assert was set during configuration, since in that case NDEBUG will not be set. */
+#define BAM_DEBUG // We are in 'debug-mode' if --enable-assert was set during configuration, since in that case NDEBUG will not be set.
 #endif
 
 
 #ifdef BAM_DEBUG
+*/
 
 /**
  * Function prepares a string for the log by adding hashes in front of every line
  * Returned string has to be freed
- */
+
 static inline char *
 prepare_for_log(const char *str, bit first_line_hash) {
 	int l = strlen(str);
-	char *prepared = (char *)GDKmalloc(3 * l * sizeof(char)); /* Worst case: every character is newline */
+	char *prepared = (char *)GDKmalloc(3 * l * sizeof(char)); // Worst case: every character is newline 
 	int i, j = 0;
 
 	if(prepared == NULL) return NULL;
@@ -56,8 +57,9 @@ prepare_for_log(const char *str, bit first_line_hash) {
 	prepared[j] = '\0';
 	return prepared;
 }
+*/
 
-/* Function that adds a hash before every printed line, so Mtest.py will not notice a difference in whether or not we are debugging. Arguments to this function should  */
+/* Function that adds a hash before every printed line, so Mtest.py will not notice a difference in whether or not we are debugging. Arguments to this function should  
 static inline int
 hash_fprintf(FILE *f, const char *format, ...) __attribute__ ((format (printf, 2, 3) ));
 
@@ -77,16 +79,16 @@ hash_fprintf(FILE *f, const char *format, ...) {
 	GDKfree(format_prepared);
 	return done;
 }
+*/
 
-
-/* Macro that enables writing to a log. If the debug flag is not set, it does not do anything */
-#define TO_LOG(...) hash_fprintf(stderr, __VA_ARGS__)
+/* Macro that enables writing to a log. If the debug flag is not set, it does not do anything 
+#define TO_LOG(...) hash_fprintf(stderr, __VA_ARGS__) */
 
 /* We are in 'debug-mode' if --enable-assert was set during
- * configuration, since in that case NDEBUG will not be set. */
+ * configuration, since in that case NDEBUG will not be set. 
 #else
 #define TO_LOG(...) (void)0
-#endif
+#endif */
 
 /* Macro to create an exception that uses a previously allocated
  * exception as format parameter. Makes sure that the old one is freed

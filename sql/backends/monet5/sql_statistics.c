@@ -20,6 +20,7 @@ analysis by optimizers.
 #include "monetdb_config.h"
 #include "sql_statistics.h"
 #include "sql_execute.h"
+#include "gdk_tracer.h"
 
 str
 sql_drop_statistics(mvc *m, sql_table *t)
@@ -102,9 +103,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case 4:
 		sch = *getArgReference_str(stk, pci, 3);
 	}
-#ifdef DEBUG_SQL_STATISTICS
-	fprintf(stderr, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
-#endif
+
+	DEBUG(SQL_STATISTICS, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
+
 	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
 		sql_base *b = nsch->data;
 		sql_schema *s = (sql_schema *) nsch->data;
