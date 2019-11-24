@@ -85,8 +85,7 @@ extern size_t sa_size( sql_allocator *sa );
 		sql_allocator *_sa = (sa);			\
 		size_t _sz = (sz);				\
 		void *_res = sa_alloc(_sa, _sz);		\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
+		DEBUG(ALLOC,				\
 				"#sa_alloc(%p,%zu) -> %p"	\
 				" %s[%s:%d]\n",			\
 				_sa, _sz, _res,			\
@@ -98,8 +97,7 @@ extern size_t sa_size( sql_allocator *sa );
 		sql_allocator *_sa = (sa);			\
 		size_t _sz = (sz);				\
 		void *_res = sa_zalloc(_sa, _sz);		\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
+		DEBUG(ALLOC,				\
 				"#sa_zalloc(%p,%zu) -> %p"	\
 				" %s[%s:%d]\n",			\
 				_sa, _sz, _res,			\
@@ -113,8 +111,7 @@ extern size_t sa_size( sql_allocator *sa );
 		size_t _sz = (sz);					\
 		size_t _osz = (osz);					\
 		void *_res = sa_realloc(_sa, _ptr, _sz, _osz);		\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
+		DEBUG(ALLOC,				\
 				"#sa_realloc(%p,%p,%zu,%zu) -> %p"	\
 				" %s[%s:%d]\n",				\
 				_sa, _ptr, _sz, _osz,			\
@@ -127,8 +124,7 @@ extern size_t sa_size( sql_allocator *sa );
 		sql_allocator *_sa = (sa);			\
 		const char *_s = (s);				\
 		char *_res = sa_strdup(_sa, _s);		\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
+		DEBUG(ALLOC,				\
 				"#sa_strdup(%p,len=%zu) -> %p"	\
 				" %s[%s:%d]\n",			\
 				_sa, strlen(_s), _res,		\
@@ -141,8 +137,7 @@ extern size_t sa_size( sql_allocator *sa );
 		const char *_s = (s);				\
 		size_t _l = (l);				\
 		char *_res = sa_strndup(_sa, _s, _l);		\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
+		DEBUG(ALLOC,				\
 				"#sa_strndup(%p,len=%zu) -> %p"	\
 				" %s[%s:%d]\n",			\
 				_sa, _l, _res,			\
