@@ -43,6 +43,7 @@
 #include "monetdb_config.h"
 #include "groupby.h"
 #include "group.h"
+#include "gdk_tracer.h"
 
 /*
  * The implementation is based on a two-phase process. In phase 1, we estimate
@@ -108,10 +109,11 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		a->size = BATcount(b);
 	}
 
-#ifdef _DEBUG_GROUPBY_
+	/* CHECK */
+	// The for-loop is in DEBUG MAL_GROUPBY
 	for(i=0; i<a->last; i++)
-		fprintf(stderr,"#group %d unique "BUNFMT "\n", i, a->unique[i]);
-#endif
+		DEBUG(MAL_GROUPBY, "Group '%d' unique "BUNFMT "\n", i, a->unique[i]);
+
 	return a;
 }
 

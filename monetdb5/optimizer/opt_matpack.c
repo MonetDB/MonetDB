@@ -28,6 +28,9 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
+
+	DEBUG(MAL_OPT_MATPACK, "MATPACK optimizer enter\n");
+	
 	for( i = 1; i < mb->stop; i++)
 		if( getModuleId(getInstrPtr(mb,i)) == matRef  && getFunctionId(getInstrPtr(mb,i)) == packRef && isaBatType(getArgType(mb,getInstrPtr(mb,i),1))) 
 			break;
@@ -85,9 +88,8 @@ wrapup:
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-    if( OPTdebug &  OPTmatpack){
-        fprintf(stderr, "#MATPACK optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+	debugFunction(MAL_OPT_MATPACK, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_MATPACK, "MATPACK optimizer exit\n");
+
 	return MAL_SUCCEED;
 }

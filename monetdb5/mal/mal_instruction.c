@@ -15,6 +15,7 @@
 #include "mal_function.h"		/* for getPC() */
 #include "mal_utils.h"
 #include "mal_exception.h"
+#include "gdk_tracer.h"
 
 void
 addMalException(MalBlkPtr mb, str msg)
@@ -903,9 +904,8 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 
 	/* build the alias table */
 	for (i = 0; i < mb->vtop; i++) {
-#ifdef DEBUG_REDUCE
-		fprintf(stderr,"used %s %d\n", getVarName(mb,i), isVarUsed(mb,i));
-#endif
+		DEBUG(MAL_REDUCE, "Used: %s %d\n", getVarName(mb,i), isVarUsed(mb,i));
+
 		if ( isVarUsed(mb,i) == 0) {
 			if (glb && isVarConstant(mb, i))
 				VALclear(&glb->stk[i]);
@@ -928,20 +928,19 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 		}
 		cnt++;
 	}
-#ifdef DEBUG_REDUCE
-	fprintf(stderr, "Variable reduction %d -> %d\n", mb->vtop, cnt);
+
+	/* CHECK */
+	// The 1st DEBUG message and the for loop are both in DEBUG MAL_REDUCE
+	DEBUG(MAL_REDUCE, "Variable reduction %d -> %d\n", mb->vtop, cnt);
 	for (i = 0; i < mb->vtop; i++)
-		fprintf(stderr, "map %d->%d\n", i, alias[i]);
-#endif
+		DEBUG(MAL_REDUCE, "map %d -> %d\n", i, alias[i]);
 
 	/* remap all variable references to their new position. */
 	if (cnt < mb->vtop) {
 		for (i = 0; i < mb->stop; i++) {
 			q = getInstrPtr(mb, i);
 			for (j = 0; j < q->argc; j++){
-#ifdef DEBUG_REDUCE
-				fprintf(stderr, "map %d->%d\n", getArg(q,j), alias[getArg(q,j)]);
-#endif
+				DEBUG(MAL_REDUCE, "map %d -> %d\n", getArg(q,j), alias[getArg(q,j)]);
 				getArg(q, j) = alias[getArg(q, j)];
 			}
 		}
@@ -952,10 +951,9 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 	if( isTmpVar(mb,i))
         (void) snprintf(mb->var[i].id, IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
 	
-#ifdef DEBUG_REDUCE
-	fprintf(stderr, "After reduction \n");
-	fprintFunction(stderr, mb, 0, 0);
-#endif
+	DEBUG(MAL_REDUCE, "After reduction\n");
+	debugFunction(MAL_REDUCE, mb, 0, 0);
+
 	GDKfree(alias);
 	mb->vtop = cnt;
 }

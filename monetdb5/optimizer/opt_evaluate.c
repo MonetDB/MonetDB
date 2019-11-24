@@ -133,11 +133,9 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if ( mb->inlineProp )
 		return MAL_SUCCEED;
 
+	DEBUG(MAL_OPT_EVALUATE, "EVALUATE optimizer enter\n");
+	
 	cntxt->itrace = 0;
-
-    if( OPTdebug &  OPTevaluate){
-		fprintf(stderr, "Constant expression optimizer started\n");
-	}
 
 	assigned = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	if (assigned == NULL)
@@ -171,9 +169,9 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		for (k = p->retc; k < p->argc; k++)
 			if (alias[getArg(p, k)])
 				getArg(p, k) = alias[getArg(p, k)];
-		if( OPTdebug &  OPTevaluate){
-			fprintInstruction(stderr , mb, 0, p, LIST_MAL_ALL);
-		}
+				
+		debugInstruction(MAL_OPT_EVALUATE, mb, 0, p, LIST_MAL_ALL);
+	
 		/* be aware that you only assign once to a variable */
 		if (use && p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
 			barrier = p->barrier;
@@ -193,10 +191,9 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			malProfileMode= profiler;
 			cntxt->sqlprofiler = sqlprofiler;
 			p->barrier = barrier;
-			if( OPTdebug &  OPTevaluate){
-				fprintf(stderr, "#retc var %s\n", getVarName(mb, getArg(p, 0)));
-				fprintf(stderr, "#result:%s\n", msg == MAL_SUCCEED ? "ok" : msg);
-			}
+			
+			DEBUG(MAL_OPT_EVALUATE, "Retc var: %s - Result: %s\n", getVarName(mb, getArg(p, 0)), msg == MAL_SUCCEED ? "ok" : msg);
+
 			if (msg == MAL_SUCCEED) {
 				int nvar;
 				ValRecord cst;
@@ -219,18 +216,12 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				/* freeze the type */
 				setVarFixed(mb,getArg(p,1));
 				setVarUDFtype(mb,getArg(p,1));
-				if( OPTdebug &  OPTevaluate){
-					str tpename;
-					fprintf(stderr, "Evaluated new constant=%d -> %d:%s\n",
-						getArg(p, 0), getArg(p, 1), tpename = getTypeName(getArgType(mb, p, 1)));
-					GDKfree(tpename);
-				}
+				DEBUG(MAL_OPT_EVALUATE, "Evaluated new constant=%d -> %d:%s\n",
+										getArg(p, 0), getArg(p, 1), getTypeName(getArgType(mb, p, 1)));
 			} else {
 				/* if there is an error, we should postpone message handling,
 					as the actual error (eg. division by zero ) may not happen) */
-				if( OPTdebug &  OPTevaluate){
-					fprintf(stderr, "Evaluated %s\n", msg);
-				}
+				DEBUG(MAL_OPT_EVALUATE, "Evaluated: %s\n", msg);
 				freeException(msg);
 				msg= MAL_SUCCEED;
 				mb->errors = 0;
@@ -260,9 +251,9 @@ wrapup:
 	if ( env) freeStack(env);
 	if(assigned) GDKfree(assigned);
 	if(alias)	GDKfree(alias);
-    if( OPTdebug &  OPTevaluate){
-        fprintf(stderr, "#EVALUATE optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+
+	debugFunction(MAL_OPT_EVALUATE, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_EVALUATE, "EVALUATE optimizer exit\n");
+
 	return msg;
 }

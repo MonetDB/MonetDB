@@ -25,6 +25,7 @@
 #include "mal_function.h"
 #include "mal_listing.h"
 #include "mal_linker.h"
+#include "gdk_tracer.h"
 
 #define MAXOPTPIPES 64
 
@@ -488,7 +489,7 @@ compileOptimizer(Client cntxt, const char *name)
 						compiled = findSymbol(cntxt->usermodule,getName("optimizer"), getName(pipes[j].name));
 						if( compiled){
 							pipes[j].mb = compiled->def;
-							//fprintFunction(stderr, pipes[j].mb, 0, LIST_MAL_ALL);
+							debugFunction(MAL_OPT_PIPES, pipes[j].mb, 0, LIST_MAL_ALL);
 						}
 					}
 				}

@@ -128,6 +128,7 @@
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "opt_prelude.h"
 #include "opt_macro.h"
+#include "gdk_tracer.h"
 
 /*
  * The implementation approach of the scheduler aligns with that of the
@@ -212,10 +213,10 @@ RUNsqlbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			p->token = NOOPsymbol;
 		}
 	}
-#ifdef DEBUG_MAL_SCHEDULER
-	fprintf(stderr, "scheduler.sqlbind results\n");
-	fprintFunction(stderr, mb, stk, LIST_MAL_ALL);
-#endif
+
+	debugFunction(MAL_SCHEDULER, mb, stk, LIST_MAL_ALL);
+	DEBUG(MAL_SCHEDULER, "Results from scheduler.sqlbind");
+
 	return msg;
 }
 #endif

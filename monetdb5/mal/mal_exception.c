@@ -13,6 +13,7 @@
 #include "monetdb_config.h"
 #include "mal_exception.h"
 #include "mal_private.h"
+#include "gdk_tracer.h"
 
 static char *exceptionNames[] = {
 /* 0 */	"MALException",
@@ -67,7 +68,7 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 		/* Leave a message behind in the logging system */
 		len = snprintf(local, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
 		len = vsnprintf(local + len, GDKMAXERRLEN, format, ap);
-		fprintf(stderr, "%s", local);
+		CRITICAL(MAL_EXCEPTION, "%s\n", local);
 		return M5OutOfMemory;	/* last resort */
 	}
 	len = snprintf(message, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
@@ -86,9 +87,9 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 	}
 	char *q = message;
 	for (char *p = strchr(q, '\n'); p; q = p + 1, p = strchr(q, '\n'))
-		fprintf(stderr, "#%s:!ERROR:%.*s\n", MT_thread_getname(), (int) (p - q), q);
+		ERROR(MAL_EXCEPTION, "%.*s\n", (int) (p - q), q);
 	if (*q)
-		fprintf(stderr, "#%s:!ERROR:%s\n", MT_thread_getname(), q);
+		ERROR(MAL_EXCEPTION, "%s\n", q);
 	return message;
 }
 

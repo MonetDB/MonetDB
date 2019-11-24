@@ -137,11 +137,13 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	subselect_t subselects;
 	char buf[256];
 	lng usec = GDKusec();
-
+	
 	subselects = (subselect_t) {0};
 	if( mb->errors)
 		return MAL_SUCCEED;
 
+	DEBUG(MAL_OPT_PUSHSELECT, "PUSHSELECT optimizer enter\n");
+	
 	(void) stk;
 	(void) pci;
 	vars= (int*) GDKzalloc(sizeof(int)* mb->vtop);
@@ -703,9 +705,8 @@ wrapup:
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-    if( OPTdebug &  OPTpushselect){
-        fprintf(stderr, "#PUSHSELECT optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+	debugFunction(MAL_OPT_PUSHSELECT, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_PUSHSELECT, "PUSHSELECT optimizer exit\n");
+
 	return MAL_SUCCEED;
 }

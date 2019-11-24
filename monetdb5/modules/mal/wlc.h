@@ -14,8 +14,6 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
-/* #define _WLC_DEBUG_ */
-
 #define WLC_QUERY		1
 #define WLC_UPDATE 		2
 #define WLC_CATALOG 	3

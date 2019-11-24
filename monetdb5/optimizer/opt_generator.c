@@ -75,6 +75,8 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) stk;
 	(void) pci;
 
+	DEBUG(MAL_OPT_GENERATOR, "GENERATOR optimizer enter\n");
+
 	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
 	if(series == NULL)
 		throw(MAL,"optimizer.generator", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -171,9 +173,8 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-    if( OPTdebug &  OPTgenerator){
-        fprintf(stderr, "#GENERATOR optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+	debugFunction(MAL_OPT_GENERATOR, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_GENERATOR, "GENERATOR optimizer exit\n");
+
 	return MAL_SUCCEED;
 }

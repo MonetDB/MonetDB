@@ -38,6 +38,8 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
     if ( mb->inlineProp )
         return MAL_SUCCEED;
 
+	DEBUG(MAL_OPT_VOLCANO, "VOLCANO optimizer enter\n");
+
     limit= mb->stop;
     if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
 		throw(MAL,"optimizer.volcano", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -104,9 +106,8 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	if( count >= 0)
 		addtoMalBlkHistory(mb);
 
-    if( OPTdebug &  OPTvolcano){
-        fprintf(stderr, "#volcano optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+	debugFunction(MAL_OPT_VOLCANO, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_VOLCANO, "VOLCANO optimizer exit\n");
+
 	return msg;
 }

@@ -16,6 +16,7 @@
 #include "mal_utils.h"
 #include "mal_exception.h"
 #include "mal_listing.h"
+#include "gdk_tracer.h"
 
 /* 
  * Since MAL programs can be created on the fly by linked-in query
@@ -582,9 +583,7 @@ mal2str(MalBlkPtr mb, int first, int last)
 			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_NAME | LIST_MAL_TYPE  | LIST_MAL_PROPS);
 		else
 			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_CALL | LIST_MAL_PROPS | LIST_MAL_REMOTE);
-#ifdef _DEBUG_LISTING_
-		fprintf(stderr,"%s\n",txt[i]);
-#endif
+		DEBUG(MAL_LISTING, "%s\n", txt[i]);
 
 		if ( txt[i])
 			totlen += len[i] = strlen(txt[i]);
@@ -641,21 +640,21 @@ printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 }
 
 void
-fprintInstruction(FILE *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
+debugInstruction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 {
 	str ps;
 
-	if (fd == 0)
-		return;
 	ps = instruction2str(mb, stk, p, flg);
 	/* ps[strlen(ps)-1] = 0; remove '\n' */
 	if ( ps ){
-		fprintf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
+		DEBUG(comp, "%s%s\n", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
 		GDKfree(ps);
 	} else {
-		fprintf(fd,"#failed instruction2str()");
+		DEBUG(comp, "Failed instruction2str()\n");
 	}
-	fprintf(fd, "\n");
+
+	/* compiler complains about unused parameter */
+	(void) comp; 
 }
 
 void

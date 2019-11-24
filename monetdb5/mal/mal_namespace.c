@@ -14,6 +14,7 @@
 #include "mal_namespace.h"
 #include "mal_exception.h"
 #include "mal_private.h"
+#include "gdk_tracer.h"
 
 #define MAXIDENTIFIERS 4096
 #define HASHMASK  4095
@@ -120,7 +121,7 @@ static str findName(const char *nme, size_t len, int allocate)
 		struct namespace *ns = GDKmalloc(sizeof(struct namespace));
 		if (ns == NULL) {
 			/* error we cannot recover from */
-			fprintf(stderr, "!findName" SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			CRITICAL(MAL_NAMESPACE, SQLSTATE(HY001) MAL_MALLOC_FAIL "\n");
 			mal_exit(1);
 		}
 		ns->next = namespace;

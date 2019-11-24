@@ -9,6 +9,7 @@
 /* (author) M. Kersten */
 #include "monetdb_config.h"
 #include "mal.h"
+#include "gdk_tracer.h"
 
 char 	monet_cwd[FILENAME_MAX] = { 0 };
 char 	monet_characteristics[4096];
@@ -16,7 +17,6 @@ stream *maleventstream = 0;
 
 /* The compile time debugging flags are turned into bit masks, akin to GDK */
 lng MALdebug;
-lng OPTdebug;
 
 #ifdef HAVE_HGE
 int have_hge;
@@ -76,7 +76,7 @@ int mal_init(void){
 #ifndef NDEBUG
 		mdbExit();
 #endif
-		fprintf(stderr, "%s", err);
+		ERROR(MAL_MAL, "%s\n", err);
 		freeException(err);
 		return -1;
 	}
@@ -106,11 +106,11 @@ void mserver_reset(void)
 	AUTHreset();
 	if (!GDKinmemory()) {
 		if ((err = msab_wildRetreat()) != NULL) {
-			fprintf(stderr, "!%s", err);
+			ERROR(MAL_MAL, "%s\n", err);
 			free(err);
 		}
 		if ((err = msab_registerStop()) != NULL) {
-			fprintf(stderr, "!%s", err);
+			ERROR(MAL_MAL, "%s\n", err);
 			free(err);
 		}
 	}

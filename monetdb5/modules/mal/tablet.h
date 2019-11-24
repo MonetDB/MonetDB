@@ -17,8 +17,6 @@
 #ifndef _TABLET_IO2_H_
 #define _TABLET_IO2_H_
 
-/* #define _DEBUG_TABLET_ */
-
 #include "gdk.h"
 #include "mal_exception.h"
 #include "mal_client.h"

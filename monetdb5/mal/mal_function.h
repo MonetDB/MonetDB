@@ -12,13 +12,11 @@
 #include "mal_instruction.h"
 #include "mal_module.h"
 #include "mal_resolve.h"
+#include "gdk_tracer.h"
 
 #define getLastUpdate(L,I)	((L)->var[I].updated)
 #define getEndScope(L,I)	((L)->var[I].eolife)
 #define getBeginScope(L,I)	((L)->var[I].declared)
-
-/* #define DEBUG_MAL_FCN */
-/* #define DEBUG_CLONE */
 
 mal_export Symbol   newFunction(str mod, str nme,int kind);
 mal_export int      getPC(MalBlkPtr mb, InstrPtr p);
@@ -33,8 +31,8 @@ mal_export int getBlockBegin(MalBlkPtr mb,int pc);
 mal_export void setVariableScope(MalBlkPtr mb);
 
 mal_export void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
-mal_export void fprintFunction(FILE *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
-mal_export void debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size);
+mal_export void debugFunction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, int flg);
+mal_export void snprintFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size);
 
 #include "mal_exception.h"
 

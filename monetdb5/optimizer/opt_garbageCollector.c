@@ -38,6 +38,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	if ( mb->inlineProp)
 		return 0;
 	
+	DEBUG(MAL_OPT_GC, "GARBAGECOLLECTOR optimizer enter\n");
+
 	used = (char*) GDKzalloc(sizeof(char) * mb->vtop);
 	if ( used == NULL)
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -55,7 +57,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		if (getVarName(mb,i)[0] == 'C' && getVarName(mb,i)[1] == '_')
 			snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
 		//if(strcmp(buf, getVarName(mb,i)) )
-			//fprintf(stderr, "non-matching name/entry %s %s\n", buf, getVarName(mb,i));
+			//ERROR(MAL_OPT_GC, "Non-matching name/entry: %s %s\n", buf, getVarName(mb,i));
 	}
 
 	// move SQL query definition to the front for event profiling tools
@@ -90,22 +92,22 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
 	GDKfree(used);
-    if( OPTdebug &  OPTgarbagecollector)
-	{ 	int k;
-		fprintf(stderr, "#Garbage collected BAT variables \n");
-		for ( k =0; k < mb->vtop; k++)
-		fprintf(stderr,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
-			getVarName(mb,k), getVarEolife(mb,k),
-			getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
-		chkFlow(mb);
-		if ( mb->errors != MAL_SUCCEED ){
-			fprintf(stderr,"%s\n",mb->errors);
-			freeException(mb->errors);
-			mb->errors = MAL_SUCCEED;
-		}
-		fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
-		fprintf(stderr, "End of GCoptimizer\n");
+
+	/* CHECK */
+	// From here
+	int k;
+	DEBUG(MAL_OPT_GC, "Garbage collected BAT variables\n");
+	for ( k =0; k < mb->vtop; k++)
+	DEBUG(MAL_OPT_GC, "%10s eolife %3d begin %3d lastupd %3d end %3d\n",
+					getVarName(mb,k), getVarEolife(mb,k),
+					getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
+	chkFlow(mb);
+	if ( mb->errors != MAL_SUCCEED ){
+		DEBUG(MAL_OPT_GC, "%s\n", mb->errors);
+		freeException(mb->errors);
+		mb->errors = MAL_SUCCEED;
 	}
+	// To here is in DEBUG MAL_OPT_GC
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);
@@ -123,10 +125,9 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-    if( OPTdebug &  OPTgarbagecollector){
-        fprintf(stderr, "#GARBAGECOLLECTOR optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+	debugFunction(MAL_OPT_GC, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_GC, "GARBAGECOLLECTOR optimizer exit\n");
+
 	return msg;
 }
 

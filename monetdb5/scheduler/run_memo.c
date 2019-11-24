@@ -96,6 +96,7 @@
 #include "monetdb_config.h"
 #include "run_memo.h"
 #include "mal_runtime.h"
+#include "gdk_tracer.h"
 
 static void
 propagateNonTarget(MalBlkPtr mb, int pc)
@@ -175,11 +176,10 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		}
 	}
-#ifdef DEBUG_RUN_MEMORUN
-	fprintf(stderr, "#function target %s cost %d\n", getVarName(mb, target), mincost);
-#else
+
+	DEBUG(MAL_MEMO, "Function target '%s' cost: %lld\n", getVarName(mb, target), mincost);
 	(void) cntxt;
-#endif
+
 	/* remove non-qualifying variables */
 	for (i = 2; i < p->argc; i += 2)
 		if (getArg(p, i) != target) {
@@ -188,11 +188,11 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 
 	propagateNonTarget(mb, pc + 1);
-#ifdef DEBUG_RUN_MEMORUN
-	fprintf(stderr, "#cost choice selected %s %d\n",
-			getVarName(mb, target), mincost);
-	fprintFunction(stderr, mb, 1);
-#endif
+
+	DEBUG(MAL_MEMO, "Cost choice selected: %s %lld\n", getVarName(mb, target), mincost);
+	debugFunction(MAL_MEMO, mb, stk, 1);
+
+
 	return MAL_SUCCEED;
 }
 /*

@@ -31,6 +31,9 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
+
+	DEBUG(MAL_OPT_JSON, "JSON optimizer enter\n");
+
 	old= mb->stmt;
 	limit= mb->stop;
 	slimit = mb->ssize;
@@ -88,9 +91,8 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-    if( OPTdebug &  OPTjson){
-        fprintf(stderr, "#JIT optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+	debugFunction(MAL_OPT_JSON, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_JSON, "JSON optimizer exit\n");
+
 	return msg;
 }

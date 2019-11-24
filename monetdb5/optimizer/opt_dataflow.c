@@ -97,10 +97,7 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 
 	if (p->token == ENDsymbol || p->barrier || isUnsafeFunction(p) || 
 		(isMultiplex(p) && MANIFOLDtypecheck(cntxt,mb,p,0) == NULL) ){
-
-			if( OPTdebug &  OPTdataflow){
-				fprintf(stderr,"#breakpoint on instruction\n");
-			}
+			DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on instruction\n");
 			return TRUE;
 		}
 
@@ -110,11 +107,7 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 	*/
 	for(j=0; j<p->retc; j++)
 		if ( getState(states,p,j) & (VARWRITE | VARREAD | VARBLOCK)){
-
-			if( OPTdebug &  OPTdataflow){
-				fprintf(stderr,"#breakpoint on argument %s state %d\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
-			}
-
+			DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on argument '%s' state '%d'\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
 			return 1;
 		}
 
@@ -128,26 +121,26 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 		if (getModuleId(p) == sqlRef)
 			return 1;
 
-		if( OPTdebug &  OPTdataflow){
-			if( getState(states,p,1) & (VARREAD | VARBLOCK))
-				fprintf(stderr,"#breakpoint on update %s state %d\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
-		}
+		/* CHECK */
+		// If is in DEBUG MAL_OPT_DATAFLOW
+		if( getState(states,p,1) & (VARREAD | VARBLOCK))
+			DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on update '%s' state '%d'\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
 		return getState(states,p,p->retc) & (VARREAD | VARBLOCK);
 	}
 
 	for(j=p->retc; j < p->argc; j++){
 		if ( getState(states,p,j) & VARBLOCK){
-			if( OPTdebug &  OPTdataflow){
-				if( getState(states,p,j) & VARREAD)
-					fprintf(stderr,"#breakpoint on blocked var %s state %d\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
-			}
+			/* CHECK */
+			// If is in DEBUG MAL_OPT_DATAFLOW
+			if( getState(states,p,j) & VARREAD)
+				DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on blocked var '%s' state '%d'\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
 			return 1;
 		}
 
-		if( OPTdebug &  OPTdataflow){
-			if( hasSideEffects(mb,p,FALSE))
-				fprintf(stderr,"#breakpoint on sideeffect var %s %s.%s\n", getVarName(mb,getArg(p,j)), getModuleId(p), getFunctionId(p));
-		}
+		/* CHECK */
+		// If is in DEBUG MAL_OPT_DATAFLOW
+		if( hasSideEffects(mb,p,FALSE))
+			DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on side-effect var '%s' '%s.%s'\n", getVarName(mb,getArg(p,j)), getModuleId(p), getFunctionId(p));
 	}
 	return hasSideEffects(mb,p,FALSE);
 }
@@ -198,10 +191,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( mb->inlineProp)
 		return MAL_SUCCEED;
 
-	if( OPTdebug &  OPTdataflow){
-		fprintf(stderr,"#dataflow input\n");
-		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
-	}
+	DEBUG(MAL_OPT_DATAFLOW, "DATAFLOW optimizer enter\n");
 
 	vlimit = mb->vsize;
 	states = (States) GDKzalloc(vlimit * sizeof(char));
@@ -231,10 +221,9 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if ( breakpoint ){
 			/* close previous flow block */
 			simple = simpleFlow(old,start,i);
-
-			if( OPTdebug &  OPTdataflow){
-				fprintf(stderr,"#breakpoint pc %d  %s\n",i, (simple?"simple":"") );
-			}
+			
+			DEBUG(MAL_OPT_DATAFLOW, "Breakpoint pc: %d %s\n", i, (simple?"simple":""));
+			
 			if ( !simple){
 				flowblock = newTmpVariable(mb,TYPE_bit);
 				q= newFcnCall(mb,languageRef,dataflowRef);
@@ -313,12 +302,13 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				setState(states, p ,k, VARREAD);
 		}
 
-		if( OPTdebug &  OPTdataflow){
-			fprintf(stderr,"# variable states\n");
-			fprintInstruction(stderr,mb, 0, p , LIST_MAL_ALL);
-			for(k = 0; k < p->argc; k++)
-				fprintf(stderr,"#%s %d\n", getVarName(mb,getArg(p,k)), states[getArg(p,k)] );
-		}
+		/* CHECK */
+		// From here
+		DEBUG(MAL_OPT_DATAFLOW, "Variable states\n");
+		debugInstruction(MAL_OPT_DATAFLOW, mb, 0, p, LIST_MAL_ALL);
+		for(k = 0; k < p->argc; k++)
+			DEBUG(MAL_OPT_DATAFLOW, "%s %d\n", getVarName(mb,getArg(p,k)), states[getArg(p,k)]);
+		// To here - is in DEBUG MAL_OPT_DATAFLOW
 
 	}
 	/* take the remainder as is */
@@ -342,10 +332,9 @@ wrapup:
 	if(states) GDKfree(states);
 	if(sink)   GDKfree(sink);
 	if(old)    GDKfree(old);
-    if( OPTdebug &  OPTdataflow){
-        fprintf(stderr, "#DATAFLOW optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+
+	debugFunction(MAL_OPT_DATAFLOW, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_DATAFLOW, "DATAFLOW optimizer exit\n");
 
 	return msg;
 }

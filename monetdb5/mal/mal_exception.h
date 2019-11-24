@@ -10,8 +10,6 @@
 #define _MAL_EXCEPTION_H
 #include "mal_instruction.h"
 
-/* #define _DEBUG_EXCEPTION_		trace the exception handling */
-
 /* These are the exceptions known, adding new ones here requires to also
  * add the "full" name to the exceptionNames array in mal_exception.c */
 enum malexception {

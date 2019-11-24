@@ -393,6 +393,8 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	(void) stk;
 
+	DEBUG(MAL_OPT_MACRO, "MACRO optimizer enter\n");
+
 	if( p->argc == 3){
 		mod= getArgDefault(mb,p,1);
 		fcn= getArgDefault(mb,p,2);
@@ -422,10 +424,10 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				}
 			}
 	}
-    if( OPTdebug &  OPTmacros){
-        fprintf(stderr, "#MACRO optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+
+	debugFunction(MAL_OPT_MACRO, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_MACRO, "MACRO optimizer exit\n");
+
 	return MAL_SUCCEED;
 }
 /*
@@ -446,6 +448,8 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	(void) stk;
+
+	DEBUG(MAL_OPT_MACRO, "ORCAM optimizer enter\n");
 
 	if( p->argc == 3){
 		mod= getArgDefault(mb,p,1);
@@ -473,10 +477,10 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				}
 			}
 	}
-    if( OPTdebug &  OPTmacros){
-        fprintf(stderr, "#MACRO optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+
+	debugFunction(MAL_OPT_MACRO, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_MACRO, "ORCAM optimizer exit\n");
+
 	return msg;
 }
 
@@ -486,6 +490,8 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng clk= GDKusec();
 	char buf[256];
 	lng usec = GDKusec();
+
+	DEBUG(MAL_OPT_MACRO, "MACRO optimizer enter\n");
 
 	if( p ==NULL )
 		return 0;
@@ -523,10 +529,10 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.macro", SQLSTATE(42000) PROGRAM_GENERAL);
-    if( OPTdebug &  OPTmacros){
-        fprintf(stderr, "#MACRO optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+
+	debugFunction(MAL_OPT_MACRO, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_MACRO, "MACRO optimizer exit\n");
+	
 	return msg;
 }
 
@@ -537,6 +543,8 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
+	
+	DEBUG(MAL_OPT_MACRO, "ORCAM optimizer enter\n");
 
 	if( p ==NULL )
 		return 0;
@@ -570,9 +578,9 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.orcam", SQLSTATE(42000) PROGRAM_GENERAL);
-    if( OPTdebug &  OPTmacros){
-        fprintf(stderr, "#MACRO optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+
+	debugFunction(MAL_OPT_MACRO, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_MACRO, "ORCAM optimizer exit\n");
+
 	return msg;
 }

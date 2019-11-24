@@ -10,7 +10,6 @@
 #define _MAL_CLIENT_H_
 
 #include "mal.h"
-/*#define MAL_CLIENT_DEBUG */
 
 #include "mal_resolve.h"
 

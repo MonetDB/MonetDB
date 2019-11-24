@@ -33,6 +33,8 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (varused == NULL)
 		return MAL_SUCCEED;
 
+	DEBUG(MAL_OPT_DEADCODE, "DEADCODE optimizer enter\n");
+	
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
@@ -143,9 +145,9 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 wrapup:
 	if(old) GDKfree(old);
 	if(varused) GDKfree(varused);
-    if( OPTdebug &  OPTdeadcode){
-        fprintf(stderr, "#DEADCODE optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+
+	debugFunction(MAL_OPT_DEADCODE, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_DEADCODE, "DEADCODE optimizer exit\n");
+
 	return msg;
 }

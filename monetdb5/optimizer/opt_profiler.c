@@ -28,6 +28,8 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) stk;
 	(void) cntxt;
 
+	DEBUG(MAL_OPT_PROFILER, "PROFILER optimizer enter\n");
+	
 	for( i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		if( p == NULL)
@@ -84,9 +86,9 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","profiler", usec);
 	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
-    if( OPTdebug &  OPTprofiler){
-        fprintf(stderr, "#PROFILER optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+
+	debugFunction(MAL_OPT_PROFILER, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_PROFILER, "PROFILER optimizer exit\n");
+
 	return MAL_SUCCEED;
 }

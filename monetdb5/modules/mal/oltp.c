@@ -16,6 +16,7 @@
 #include "monetdb_config.h"
 #include "oltp.h"
 #include "mtime.h"
+#include "gdk_tracer.h"
 
 #define LOCKTIMEOUT (20 * 1000)
 #define LOCKDELAY 20
@@ -54,9 +55,8 @@ OLTPreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	
 	MT_lock_set(&mal_oltpLock);
-#ifdef _DEBUG_OLTP_
-	fprintf(stderr,"#OLTP %6d reset locktable\n", GDKms());
-#endif
+	DEBUG(MAL_OLTP, "Reset locktable: %6d\n", GDKms());
+
 	for( i=0; i<MAXOLTPLOCKS; i++){
 		oltp_locks[i].locked = 0;
 		oltp_locks[i].cntxt = 0;
@@ -75,9 +75,8 @@ OLTPenable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 	(void) cntxt;
-#ifdef _DEBUG_OLTP_
-	fprintf(stderr,"#OLTP %6d enabled\n",GDKms());
-#endif
+
+	DEBUG(MAL_OLTP, "Enabled: %6d\n", GDKms());
 	oltp_delay = TRUE;
 	return MAL_SUCCEED;
 }
@@ -87,11 +86,8 @@ OLTPdisable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	OLTPreset(cntxt, mb, stk,pci);
 	oltp_delay = FALSE;
-#ifdef _DEBUG_OLTP_
-	fprintf(stderr,"#OLTP %6d disabled\n",GDKms());
-#else
+	DEBUG(MAL_OLTP, "Disabled: %6d\n", GDKms());
 	(void) cntxt;
-#endif
 	return MAL_SUCCEED;
 }
 
@@ -118,10 +114,8 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( oltp_delay == FALSE )
 		return MAL_SUCCEED;
 
-#ifdef _DEBUG_OLTP_
-	fprintf(stderr,"#OLTP %6d lock request for client %d:", GDKms(), cntxt->idx);
-	fprintInstruction(stderr,mb,stk,pci, LIST_MAL_ALL);
-#endif
+	DEBUG(MAL_OLTP, "%6d lock request for client: %d", GDKms(), cntxt->idx);
+	debugInstruction(MAL_OLTP, mb, stk, pci, LIST_MAL_ALL);
 	do{
 		MT_lock_set(&mal_oltpLock);
 		clk = GDKms();
@@ -134,9 +128,8 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		if( i  == pci->argc ){
-#ifdef _DEBUG_OLTP_
-			fprintf(stderr,"#OLTP %6d set lock for client %d\n", GDKms(), cntxt->idx);
-#endif
+			DEBUG(MAL_OLTP, "OLTP '%6d' set lock for client: %d\n", GDKms(), cntxt->idx);
+
 			for( i=1; i< pci->argc; i++){
 				lck= getVarConstant(mb, getArg(pci,i)).val.ival;
 				// only set the write locks
@@ -151,25 +144,20 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return MAL_SUCCEED;
 		} else {
 			MT_lock_unset(&mal_oltpLock);
-#ifdef _DEBUG_OLTP_
-			fprintf(stderr,"#OLTP %d delay imposed for client %d\n", GDKms(), cntxt->idx);
-#endif
+			DEBUG(MAL_OLTP, "%d delay imposed for client: %d\n", GDKms(), cntxt->idx);
 			MT_sleep_ms(LOCKDELAY);
 		}
 	} while( clk - wait < LOCKTIMEOUT);
 
-#ifdef _DEBUG_OLTP_
-	fprintf(stderr,"#OLTP %6d proceed query for client %d\n", GDKms(), cntxt->idx);
-#endif
+	DEBUG(MAL_OLTP, "%6d proceed query for client: %d\n", GDKms(), cntxt->idx);
+
 	// if the time out is related to a copy_from query, we should not start it either.
 	sql = getName("sql");
 	cpy = getName("copy_from");
 
 	for( i = 0; i < mb->stop; i++)
 		if( getFunctionId(getInstrPtr(mb,i)) == cpy && getModuleId(getInstrPtr(mb,i)) == sql ){
-#ifdef _DEBUG_OLTP_
-			fprintf(stderr,"#OLTP %6d bail out a concurrent copy into %d\n", GDKms(), cntxt->idx);
-#endif
+			DEBUG(MAL_OLTP, "%6d bail out a concurrent copy into: %d\n", GDKms(), cntxt->idx);
 			throw(SQL,"oltp.lock","Conflicts with other write operations\n");
 		}
 	return MAL_SUCCEED;
@@ -188,10 +176,10 @@ OLTPrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	MT_lock_set(&mal_oltpLock);
 	clk = GDKusec();
-#ifdef _DEBUG_OLTP_
-	fprintf(stderr,"#OLTP %6d release the locks %d:", GDKms(), cntxt->idx);
-	fprintInstruction(stderr,mb,stk,pci, LIST_MAL_ALL);
-#endif
+
+	DEBUG(MAL_OLTP, "%6d release the locks: %d", GDKms(), cntxt->idx);
+	debugInstruction(MAL_OLTP, mb, stk, pci, LIST_MAL_ALL);
+
 	for( i=1; i< pci->argc; i++){
 		lck= getVarConstant(mb, getArg(pci,i)).val.ival;
 		if( lck > 0){
@@ -204,9 +192,7 @@ OLTPrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if( delay > LOCKDELAY || delay < LOCKDELAY/10)
 					delay = LOCKDELAY;
 				oltp_locks[lck].retention = clk + delay;
-#ifdef _DEBUG_OLTP_
-				fprintf(stderr,"#OLTP  retention period for lock %d: "LLFMT"\n", lck,delay);
-#endif
+				DEBUG(MAL_OLTP, "Retention period for lock: %d " LLFMT"\n", lck, delay);
 			}
 	}
 	MT_lock_unset(&mal_oltpLock);

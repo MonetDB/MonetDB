@@ -14,9 +14,6 @@
 #include "mal_listing.h"
 #include "mal_exception.h"
 
-/*
-#define DEBUG_MAL_RESOLVE 1
-*/
 #define MAXTYPEVAR  10
 
 mal_export void chkProgram(Module s, MalBlkPtr mb);

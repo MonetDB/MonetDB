@@ -24,6 +24,7 @@
 #include "mal_runtime.h"
 #include "mal_utils.h"
 #include "mal_resource.h"
+#include "gdk_tracer.h"
 
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
@@ -149,7 +150,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	*/
 	if( !start && pci->calls > HIGHWATERMARK){
 		if( pci->calls == 10000 || pci->calls == 100000 || pci->calls == 1000000 || pci->calls == 10000000)
-			fprintf(stderr, "#Profiler too many calls %d\n", pci->calls);
+			ERROR(MAL_PROFILER, "Too many calls: %d\n", pci->calls);
 		return;
 	}
 

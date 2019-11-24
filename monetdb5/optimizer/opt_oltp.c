@@ -42,6 +42,8 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
+	DEBUG(MAL_OPT_OLTP, "OLTP optimizer enter\n");
+	
 	old= mb->stmt;
 	limit= mb->stop;
 	slimit = mb->ssize;
@@ -138,9 +140,9 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     newComment(mb,buf);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
-    if( OPTdebug &  OPToltp){
-        fprintf(stderr, "#OLTP optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+
+	debugFunction(MAL_OPT_OLTP, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_OLTP, "OLTP optimizer exit\n");
+
 	return msg;
 }

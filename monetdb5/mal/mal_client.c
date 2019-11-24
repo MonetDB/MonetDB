@@ -46,6 +46,7 @@
 #include "mal_private.h"
 #include "mal_runtime.h"
 #include "mal_authorize.h"
+#include "gdk_tracer.h"
 
 int MAL_MAXCLIENTS = 0;
 ClientRec *mal_clients;
@@ -69,7 +70,7 @@ MCinit(void)
 	if (maxclients <= 0) {
 		maxclients = 64;
 		if (GDKsetenv("max_clients", "64") != GDK_SUCCEED) {
-			fprintf(stderr, "!MCinit: GDKsetenv failed");
+			CRITICAL(MAL_CLIENT, "GDKsetenv failed\n");
 			return false;
 		}
 	}
@@ -77,7 +78,7 @@ MCinit(void)
 	MAL_MAXCLIENTS = /* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 	if( mal_clients == NULL){
-		fprintf(stderr,"!MCinit:" MAL_MALLOC_FAIL);
+		CRITICAL(MAL_CLIENT, "Initialization failed: " MAL_MALLOC_FAIL "\n");
 		return false;
 	}
 	for (int i = 0; i < MAL_MAXCLIENTS; i++)
@@ -144,9 +145,7 @@ MCnewClient(void)
 	if (c == mal_clients + MAL_MAXCLIENTS)
 		return NULL;
 	c->idx = (int) (c - mal_clients);
-#ifdef MAL_CLIENT_DEBUG
-	fprintf(stderr,"New client created %d\n", (int) (c - mal_clients));
-#endif
+	DEBUG(MAL_CLIENT, "New client created: %d\n", (int) (c - mal_clients));
 	return c;
 }
 
@@ -187,9 +186,7 @@ MCresetProfiler(stream *fdout)
 void
 MCexitClient(Client c)
 {
-#ifdef MAL_CLIENT_DEBUG
-	fprintf(stderr,"# Exit client %d\n", c->idx);
-#endif
+	DEBUG(MAL_CLIENT, "Exit client: %d\n", c->idx);
 	finishSessionProfiler(c);
 	MCresetProfiler(c->fdout);
 	if (c->father == NULL) { /* normal client */
@@ -225,7 +222,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 		MT_lock_set(&mal_contextLock);
 		c->mode = FREECLIENT;
 		MT_lock_unset(&mal_contextLock);
-		fprintf(stderr,"!initClientRecord:" MAL_MALLOC_FAIL);
+		CRITICAL(MAL_CLIENT, "Initialization failed: " MAL_MALLOC_FAIL "\n");
 		return NULL;
 	}
 	c->yycur = 0;
@@ -262,7 +259,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 			c->mode = FREECLIENT;
 			MT_lock_unset(&mal_contextLock);
 		}
-		fprintf(stderr, "!initClientRecord:" MAL_MALLOC_FAIL);
+		CRITICAL(MAL_CLIENT, "Initialization failed: " MAL_MALLOC_FAIL "\n");
 		return NULL;
 	}
 	c->promptlength = strlen(prompt);
@@ -409,9 +406,7 @@ MCfreeClient(Client c)
 		return;
 	c->mode = FINISHCLIENT;
 
-#ifdef MAL_CLIENT_DEBUG
-	fprintf(stderr,"# Free client %d\n", c->idx);
-#endif
+	DEBUG(MAL_CLIENT, "Free client: %d\n", c->idx);
 	MCexitClient(c);
 
 	/* scope list and curprg can not be removed, because the client may
@@ -526,9 +521,7 @@ MCactiveClients(void)
 void
 MCcloseClient(Client c)
 {
-#ifdef MAL_DEBUG_CLIENT
-	fprintf(stderr,"closeClient %d " OIDFMT "\n", (int) (c - mal_clients), c->user);
-#endif
+	DEBUG(MAL_CLIENT, "Close client: %d " OIDFMT "\n", (int) (c - mal_clients), c->user);
 	/* free resources of a single thread */
 	MCfreeClient(c);
 }
@@ -578,10 +571,7 @@ MCreadClient(Client c)
 {
 	bstream *in = c->fdin;
 
-#ifdef MAL_CLIENT_DEBUG
-	fprintf(stderr,"# streamClient %d %d\n", c->idx, isa_block_stream(in->s));
-#endif
-
+	DEBUG(MAL_CLIENT, "Stream client: %d %d\n", c->idx, isa_block_stream(in->s));
 	while (in->pos < in->len &&
 		   (isspace((unsigned char) (in->buf[in->pos])) ||
 			in->buf[in->pos] == ';' || !in->buf[in->pos]))
@@ -613,15 +603,11 @@ MCreadClient(Client c)
 			if (p != in->buf + in->len - 1)
 				in->len++;
 		}
-#ifdef MAL_CLIENT_DEBUG
-		fprintf(stderr, "# simple stream received %d sum %zu\n", c->idx, sum);
-#endif
+		DEBUG(MAL_CLIENT, "Received simple stream: %d - sum %zu\n", c->idx, sum);
 	}
 	if (in->pos >= in->len) {
 		/* end of stream reached */
-#ifdef MAL_CLIENT_DEBUG
-		fprintf(stderr,"# end of stream received %d %d\n", c->idx, c->bak == 0);
-#endif
+		DEBUG(MAL_CLIENT, "End of received stream: %d %d\n", c->idx, c->bak == 0);
 		if (c->bak) {
 			MCpopClientInput(c);
 			if (c->fdin == NULL)
@@ -630,10 +616,8 @@ MCreadClient(Client c)
 		}
 		return 0;
 	}
-#ifdef MAL_CLIENT_DEBUG
-	fprintf(stderr,"# finished stream read %d %d\n", (int) in->pos, (int) in->len);
-	printf("#%s\n", in->buf);
-#endif
+	DEBUG(MAL_CLIENT, "Finished reading stream: %d %d\n", (int) in->pos, (int) in->len);
+	DEBUG(MAL_CLIENT, "%s\n", in->buf);
 	return 1;
 }
 

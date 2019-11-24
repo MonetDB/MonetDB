@@ -23,7 +23,6 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
-
 	// query log needed?
 	if ( !QLOGisset() )
 		return MAL_SUCCEED;
@@ -31,6 +30,9 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 	(void) cntxt;
+
+	DEBUG(MAL_OPT_QUERYLOG, "QUERYLOG optimizer enter\n");
+
 	/* gather information */
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb,i);
@@ -201,9 +203,9 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","querylog", usec);
 	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
-    if( OPTdebug &  OPTquerylog){
-        fprintf(stderr, "#QUERYLOG optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+	
+	debugFunction(MAL_OPT_QUERYLOG, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_QUERYLOG, "QUERYLOG optimizer exit\n");
+
 	return msg;
 }

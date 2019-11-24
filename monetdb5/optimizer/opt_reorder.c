@@ -277,9 +277,13 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	(void) stk;
+
 	dep = OPTdependencies(cntxt,mb,&uselist);
 	if ( dep == NULL)
 		return MAL_SUCCEED;
+
+	DEBUG(MAL_OPT_REORDER, "REORDER optimizer enter\n");
+	
 	limit= mb->stop;
 	slimit= mb->ssize;
 	old = mb->stmt;
@@ -313,12 +317,11 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* collect all seen sofar by backward grouping */
 			/* since p has side-effects, we should secure all seen sofar */
 			for(j=i-1; j>=start;j--) {
-
-				if( OPTdebug &  OPTreorder){
-					if( old[j]){
-						fprintf(stderr,"leftover: %d",start+1);
-						fprintInstruction(stderr,mb,0,old[j],LIST_MAL_ALL);
-					}
+				/* CHECK */
+				// The whole if-statement is in DEBUG MAL_OPT_REORDER
+				if(old[j]){
+					DEBUG(MAL_OPT_REORDER, "Leftover: %d\n", start+1);
+					debugInstruction(MAL_OPT_REORDER, mb, 0, old[j], LIST_MAL_ALL);
 				}
 
 				if (OPTbreadthfirst(cntxt, mb, j, i, old, dep, uselist) < 0) {
@@ -354,9 +357,8 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
     newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 
-    if( OPTdebug &  OPTreorder){
-        fprintf(stderr, "#reorder optimizer entry\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+	debugFunction(MAL_OPT_REORDER, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_REORDER, "REORDER optimizer exit\n");
+
 	return msg;
 }

@@ -9,7 +9,6 @@
 #ifndef SERVER_H
 #define SERVER_H
 #ifdef HAVE_MAPI
-/* #define DEBUG_SERVER */
 
 #include "mal_client.h"
 #include "mal_session.h"

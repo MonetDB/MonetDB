@@ -162,8 +162,7 @@
 #include <time.h>
 #include "mal_builder.h"
 #include "wlc.h"
-
-#undef _WLC_DEBUG_
+#include "gdk_tracer.h"
 
 MT_Lock     wlc_lock = MT_LOCK_INITIALIZER("wlc_lock");
 
@@ -295,7 +294,7 @@ WLCsetlogger(void)
 	wlc_fd = open_wastream(path);
 	if( wlc_fd == 0){
 		MT_lock_unset(&wlc_lock);
-		fprintf(stderr, "wlc.logger:Could not create %s\n",path);
+		ERROR(MAL_WLC, "Cloud not create: %s\n", path);
 		throw(MAL,"wlc.logger","Could not create %s\n",path);
 	}
 
@@ -366,7 +365,7 @@ WLClogger(void *arg)
 		if( wlc_dir[0] && wlc_fd ){
 			MT_lock_set(&wlc_lock);
 			if((msg = WLCcloselogger()) != MAL_SUCCEED) {
-				fprintf(stderr, "%s",msg);
+				ERROR(MAL_WLC, "%s\n", msg);
 				freeException(msg);
 			}
 			MT_lock_unset(&wlc_lock);
@@ -402,10 +401,10 @@ WLCinit(void)
 
 		msg =  WLCgetConfig();
 		if( msg)
-			fprintf(stderr, "%s",msg);
+			INFO(MAL_WLC, "%s\n", msg);
 		if (MT_create_thread(&wlc_logger, WLClogger , (void*) 0,
 							 MT_THR_DETACHED, "WLClogger") < 0) {
-			fprintf(stderr, "wlc.logger thread could not be spawned");
+			ERROR(MAL_WLC, "Thread could not be spawned\n");
 		}
 	}
 	return MAL_SUCCEED;
@@ -552,19 +551,18 @@ static str
 WLCpreparewrite(Client cntxt)
 {	str msg = MAL_SUCCEED;
 	// save the wlc record on a file 
-#ifdef _WLC_DEBUG_
+	/* CHECK */
+	// The whole if is in MAL_WLC DEBUG
 	if( cntxt->wlc){
-		fprintf(stderr,"#WLCpreparewrite: %d %d\n", cntxt->wlc->stop , cntxt->wlc_kind);
-		fprintFunction(stderr, cntxt->wlc, 0, LIST_MAL_DEBUG );
+		DEBUG(MAL_WLC, "Prepare for writing: %d %d\n", cntxt->wlc->stop , cntxt->wlc_kind);
+		debugFunction(MAL_WLC, cntxt->wlc, 0, LIST_MAL_DEBUG );
 	}
-#endif
+
 	if( cntxt->wlc == 0 || cntxt->wlc->stop <= 1 ||  cntxt->wlc_kind == WLC_QUERY )
 		return MAL_SUCCEED;
 
 	if( wlc_state != WLC_RUN){
-#ifdef _WLC_DEBUG_
-		fprintf(stderr,"#WLCprepare: state %d\n", wlc_state);
-#endif
+		DEBUG(MAL_WLC, "State: %d\n", wlc_state);
 		trimMalVariables(cntxt->wlc, NULL);
 		resetMalBlk(cntxt->wlc, 0);
 		cntxt->wlc_kind = WLC_QUERY;
@@ -574,9 +572,7 @@ WLCpreparewrite(Client cntxt)
 		if (wlc_fd == NULL){
 			msg = WLCsetlogger();
 			if( msg) {
-#ifdef _WLC_DEBUG_
-				fprintf(stderr,"#WLCprepare: setlogger %s \n", msg);
-#endif
+				DEBUG(MAL_WLC, "Set logger: %s\n", msg);
 				return msg;
 			}
 		}
@@ -594,10 +590,8 @@ WLCpreparewrite(Client cntxt)
 		cntxt->wlc_kind = WLC_QUERY;
 	} else
 			throw(MAL,"wlc.write","WLC log path missing ");
+	debugFunction(MAL_WLC, cntxt->wlc, 0, LIST_MAL_ALL );
 
-#ifdef _WLC_DEBUG_
-	fprintFunction(stderr, cntxt->wlc, 0, LIST_MAL_ALL );
-#endif
 	if( wlc_state == WLC_STOP)
 		throw(MAL,"wlc.write","Logging for this snapshot has been stopped. Use a new snapshot to continue logging.");
 	return msg;
@@ -815,7 +809,7 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 		} }
 		break;
 	default:
-		fprintf(stderr, "#wlc datashipping, non-supported type %d\n", ATOMstorage(b->ttype));
+		ERROR(MAL_WLC, "Non-supported type: %d\n", ATOMstorage(b->ttype));
 		cntxt->wlc_kind = WLC_CATALOG;
 	}
 finish:

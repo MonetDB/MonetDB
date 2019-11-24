@@ -36,10 +36,7 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) pci;
 
-    if( OPTdebug &  OPTjit){
-		fprintf(stderr, "#Optimize JIT\n");
-		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
-	}
+	DEBUG(MAL_OPT_JIT, "JIT optimizer enter\n");
 
 	setVariableScope(mb);
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
@@ -66,10 +63,9 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if( q && getArg(q,0) == getArg(p,2) && getModuleId(q) == algebraRef && getFunctionId(q) == projectionRef ){
 				getArg(p,2)=  getArg(q,2);
 				p= pushArgument(mb,p, getArg(q,1));
-				if( OPTdebug &  OPTjit){
-					fprintf(stderr, "#Optimize JIT case 1\n");
-					fprintInstruction(stderr, mb,0,p,LIST_MAL_ALL);
-				}
+
+				DEBUG(MAL_OPT_JIT, "Optimize JIT case 1\n");
+				debugInstruction(MAL_OPT_JIT, mb, 0, p, LIST_MAL_ALL);
 			}
 		}
 		pushInstruction(mb,p);
@@ -87,9 +83,8 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-    if( OPTdebug &  OPTjit){
-        fprintf(stderr, "#JIT optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+	debugFunction(MAL_OPT_JIT, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_JIT, "JIT optimizer exit\n");
+
 	return msg;
 }

@@ -44,14 +44,11 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) cntxt;
 	(void) stk;
 	(void) pci;
-
-    if( OPTdebug &  OPTcostmodel){
-        fprintf(stderr, "#COSTMODEL optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	if ( mb->inlineProp )
 		return MAL_SUCCEED;
 
+	DEBUG(MAL_OPT_COSTMODEL, "COSTMODEL optimizer enter\n");
+    
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if (getModuleId(p)==algebraRef) {
@@ -157,9 +154,8 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
     newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 
-    if( OPTdebug &  OPTcostmodel){
-        fprintf(stderr, "#COSTMODEL optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+	debugFunction(MAL_OPT_COSTMODEL, mb, 0, LIST_MAL_ALL);
+	DEBUG(MAL_OPT_COSTMODEL, "COSTMODEL optimizer exit\n");
+        
 	return MAL_SUCCEED;
 }

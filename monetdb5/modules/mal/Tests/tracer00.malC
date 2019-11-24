@@ -1,0 +1,101 @@
+# Test SQL API for TRACER
+
+# logging.setcomplevel(...)
+logging.setcomplevel(-1, 1);    # Should raise an error
+                                # Component -1 does not exist
+
+logging.setcomplevel(3, -1);    # Should raise an error
+                                # Log level -1 does not exist
+
+logging.setcomplevel(-10, -1);  # Should raise an error
+                                # Component -10 does not exist
+                                # Log level -1 does not exist
+
+logging.setcomplevel(84, 2);    # Should raise an error
+                                # The last component is used for enum count
+
+logging.setcomplevel(1, 5);     # Should raise an error
+                                # The last level is used for enum count
+
+logging.setcomplevel(84, 5);    # Should raise an error
+                                # The last component is used for enum count
+                                # The last level is used for enum count
+
+logging.setcomplevel(1, 4);     # OK
+
+
+
+# logging.resetcomplevel(...)
+logging.resetcomplevel(-1);     # Should raise an error
+                                # Component -1 does not exist
+
+logging.resetcomplevel(84);     # Should raise an error
+                                # The last component is used for enum count
+
+logging.resetcomplevel(1);      # OK
+
+
+
+# logging.setlayerlevel(...)
+logging.setlayerlevel(-1, 1);   # Should raise an error
+                                # Layer -1 does not exist
+
+logging.setlayerlevel(2, -1);   # Should raise an error
+                                # Log level -1 does not exist
+
+logging.setlayerlevel(-10, -1); # Should raise an error
+                                # Layer -10 does not exist
+                                # Log level -1 does not exist
+
+logging.setlayerlevel(4, 2);    # Should raise an error
+                                # The last layer is used for enum count
+
+logging.setlayerlevel(1, 5);    # Should raise an error
+                                # The last level is used for enum count
+
+logging.setlayerlevel(4, 5);    # Should raise an error
+                                # The last layer is used for enum count
+                                # The last level is used for enum count
+
+logging.setlayerlevel(1, 3);    # OK
+
+
+
+# logging.resetlayerlevel(...)
+logging.resetlayerlevel(-1);    # Should raise an error
+                                # Layer -1 does not exist
+
+logging.resetlayerlevel(4);     # Should raise an error
+                                # The last layer is used for enum count   
+
+logging.resetlayerlevel(1);     # OK
+
+
+
+# logging.setflushlevel(...)
+logging.setflushlevel(-1);     # Should raise an error
+                               # Level -1 does not exist
+
+logging.setflushlevel(5);      # Should raise an error
+                               # The last level is used for enum count
+
+logging.setflushlevel(3);      # OK
+
+
+
+logging.resetflushlevel();
+
+
+
+# logging.setadapter(...)
+logging.setadapter(-1);        # Should raise an error
+                               # Adapter -1 does not exist
+
+logging.setadapter(2);         # Should raise an error
+                               # The last adapter is used for enum count
+
+logging.setadapter(1);         # OK
+
+
+
+logging.resetadapter();

@@ -21,6 +21,7 @@
 #include "mal_builder.h"
 #include "mal_type.h"
 #include "mal_private.h"
+#include "gdk_tracer.h"
 
 #define FATALINPUT MAXERRORS+1
 #define NL(X) ((X)=='\n' || (X)=='\r')
@@ -991,9 +992,7 @@ parseModule(Client cntxt)
 		// ignore this module definition
 	} else 
 	if( getModule(modnme) == NULL){
-#ifdef _DEBUG_PARSER_
-		fprintf(stderr,"Module create %s\n",modnme);
-#endif
+		DEBUG(MAL_PARSER, "Module create %s\n", modnme);
 		if( globalModule(modnme) == NULL)
 			parseError(cntxt,"<module> could not be created");
 	}

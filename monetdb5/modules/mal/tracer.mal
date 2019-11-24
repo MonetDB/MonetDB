@@ -1,0 +1,43 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+
+module logging;
+
+command flush()
+address TRACERflush_buffer
+comment "Flush the buffer";
+
+command setcomplevel(comp:int, lvl:int)
+address TRACERset_component_level
+comment "Set the log level for a specific component";
+
+command resetcomplevel(comp:int)
+address TRACERreset_component_level
+comment "Reset the log level for a specific component";
+
+command setlayerlevel(layer:int, lvl:int)
+address TRACERset_layer_level
+comment "Set the log level for a specific layer";
+
+command resetlayerlevel(layer:int)
+address TRACERreset_layer_level
+comment "Reset the log level for a specific layer";
+
+command setflushlevel(lvl:int)
+address TRACERset_flush_level
+comment "Set the flush level";
+
+command resetflushlevel()
+address TRACERreset_flush_level
+comment "Reset the flush level";
+
+command setadapter(adapter:int)
+address TRACERset_adapter
+comment "Set the adapter";
+
+command resetadapter()
+address TRACERreset_adapter
+comment "Reset the adapter";
