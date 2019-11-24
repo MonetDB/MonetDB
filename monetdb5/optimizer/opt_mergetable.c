@@ -2164,7 +2164,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (match == 1 && fm == 2 && isSelect(p) && p->retc == 1 &&
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 && 
 		   !ml.v[m].packed && /* not packed yet */ 
-		   		   was_a_mat(getArg(p,fm-1), &ml) < 0){ /* not previously packed */
+			was_a_mat(getArg(p,fm-1), &ml) < 0){ /* not previously packed */
 			if((r = copyInstruction(p)) == NULL) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto cleanup;
