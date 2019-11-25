@@ -37,6 +37,7 @@ lib_gdk = {
 		gdk_firstn.c \
 		gdk_analytic_bounds.c \
 		gdk_analytic_func.c gdk_analytic.h \
+		gdk_tracer.c gdk_tracer.h \
 		libbat.rc
 	LIBS = ../common/options/libmoptions \
 		../common/utils/libmutils \
