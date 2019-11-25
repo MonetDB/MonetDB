@@ -41,6 +41,14 @@ static LOG_LEVEL CUR_FLUSH_LEVEL = DEFAULT_FLUSH_LEVEL;
 LOG_LEVEL LVL_PER_COMPONENT[COMPONENTS_COUNT];
 static bool GDK_TRACER_STOP = false;
 
+static const char *LAYER_STR[] = {
+    FOREACH_LAYER(GENERATE_STRING)
+};
+
+static const char *ADAPTER_STR[] = {
+    FOREACH_ADPTR(GENERATE_STRING)
+};
+
 
 // Output error from snprintf of vsnprintf
 static void 

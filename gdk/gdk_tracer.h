@@ -39,9 +39,6 @@ typedef enum {
     FOREACH_ADPTR(GENERATE_ENUM)
 } ADAPTER;
 
-static const char *ADAPTER_STR[] = {
-    FOREACH_ADPTR(GENERATE_STRING)
-};
 
 
 // LOG LEVELS
@@ -63,6 +60,7 @@ static const char *LEVEL_STR[] = {
 };
 
 
+
 // LAYERS
 #define FOREACH_LAYER(LAYER)      \
         LAYER( MDB_ALL )          \
@@ -76,9 +74,6 @@ typedef enum {
     FOREACH_LAYER(GENERATE_ENUM)
 } LAYER;
 
-static const char *LAYER_STR[] = {
-    FOREACH_LAYER(GENERATE_STRING)
-};
 
 
 // COMPONENTS
