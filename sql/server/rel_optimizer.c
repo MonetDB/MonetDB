@@ -6,8 +6,6 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
-/*#define DEBUG*/
-
 #include "monetdb_config.h"
 #include "rel_optimizer.h"
 #include "rel_rel.h"
@@ -9121,15 +9119,12 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	gp = (global_props) {.cnt = {0},};
 	rel_properties(sql, &gp, rel);
 
-#ifdef DEBUG
-{
 	int i;
 	for (i = 0; i < ddl_maxops; i++) {
 		if (gp.cnt[i]> 0)
-			printf("%s %d\n", op2string((operator_type)i), gp.cnt[i]);
+			DEBUG(SQL_OPTIMIZER, "%s %d\n", op2string((operator_type)i), gp.cnt[i]);
 	}
-}
-#endif
+
 	if (level <= 0 && gp.cnt[op_select]) 
 		rel = rel_split_select(&changes, sql, rel, 1);
 
