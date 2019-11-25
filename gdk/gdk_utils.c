@@ -81,15 +81,15 @@ static bool
 GDKenvironment(const char *dbpath)
 {
 	if (dbpath == NULL) {
-		fprintf(stderr, "!GDKenvironment: database name missing.\n");
+		ERROR(GDK_UTILS, "Database name missing.\n");
 		return false;
 	}
 	if (strlen(dbpath) >= FILENAME_MAX) {
-		fprintf(stderr, "!GDKenvironment: database name too long.\n");
+		ERROR(GDK_UTILS, "Database name too long.\n")
 		return false;
 	}
 	if (!MT_path_absolute(dbpath)) {
-		fprintf(stderr, "!GDKenvironment: directory not an absolute path: %s.\n", dbpath);
+		ERROR(GDK_UTILS, "Directory not an absolute path: %s.\n", dbpath);
 		return false;
 	}
 	return true;
@@ -233,6 +233,8 @@ GDKlog(FILE *lockFile, const char *format, ...)
 	ctm = ctime(&tm);
 #endif
 #endif
+	/* CHECK */
+	// This should also go to the tracer?
 	fprintf(lockFile, "USR=%d PID=%d TIME=%.24s @ %s\n", (int) getuid(), (int) getpid(), ctm, buf);
 	fflush(lockFile);
 }
@@ -888,7 +890,7 @@ GDKreset(int status)
 
 					killed = true;
 					e = MT_kill_thread(victim);
-					fprintf(stderr, "#GDKexit: killing thread %d\n", e);
+					INFO(GDK_UTILS, "Killing thread: %d\n", e);
 					(void) ATOMIC_DEC(&GDKnrofthreads);
 				}
 				GDKfree(t->name);
@@ -1127,12 +1129,11 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 		}
 		*dst = '\0';
 	} else {
-		fprintf(stderr, "%s%.*s%s", prefix, (int) messagelen, message, suffix);
+		INFO(GDK_UTILS, "%s%.*s%s", prefix, (int) messagelen, message, suffix);
 	}
-	fprintf(stderr, "#%s:%s%.*s%s",
-		MT_thread_getname(),
-		prefix[0] == '#' ? prefix + 1 : prefix,
-		(int) messagelen, message, suffix);
+	INFO(GDK_UTILS, "%s%.*s%s\n",
+					prefix[0] == '#' ? prefix + 1 : prefix,
+					(int) messagelen, message, suffix);
 }
 
 /* print an error or warning message, making sure the message ends in
@@ -1220,7 +1221,7 @@ GDKerror(const char *format, ...)
 	}
 	va_start(ap, format);
 	if (vsnprintf(message + len, sizeof(message) - (len + 2), format, ap) < 0){
-		fprintf(stderr,GDKERROR "an error occurred within GDKerror.\n");
+		ERROR(GDK_UTILS, GDKERROR "an error occurred within GDKerror.\n");
 		strcpy(message, GDKERROR "an error occurred within GDKerror.\n");
 	}
 	va_end(ap);
@@ -1473,7 +1474,7 @@ THRnew(const char *name, MT_Id pid)
 	char *nme = GDKstrdup(name);
 
 	if (nme == NULL) {
-		IODEBUG fprintf(stderr, "#THRnew: malloc failure\n");
+		DEBUG(IO, "Malloc failure\n");
 		GDKerror("THRnew: malloc failure\n");
 		return NULL;
 	}
@@ -1485,17 +1486,17 @@ THRnew(const char *name, MT_Id pid)
 			s->data[1] = THRdata[1];
 			s->sp = THRsp();
 			s->name = nme;
-			PARDEBUG fprintf(stderr, "#%x %zu sp = %zu\n",
-					 (unsigned) s->tid,
-					 (size_t) ATOMIC_GET(&s->pid),
-					 (size_t) s->sp);
-			PARDEBUG fprintf(stderr, "#nrofthreads %d\n",
-					 (int) ATOMIC_GET(&GDKnrofthreads) + 1);
+			DEBUG(PAR, "%x %zu sp = %zu\n",
+					 	(unsigned) s->tid,
+					 	(size_t) ATOMIC_GET(&s->pid),
+					 	(size_t) s->sp);
+			DEBUG(PAR, "Number of threads: %d\n",
+					 	(int) ATOMIC_GET(&GDKnrofthreads) + 1);
 			return s;
 		}
 	}
 	GDKfree(nme);
-	IODEBUG fprintf(stderr, "#THRnew: too many threads\n");
+	DEBUG(IO, "Too many threads\n");
 	GDKerror("THRnew: too many threads\n");
 	return NULL;
 }
@@ -1546,7 +1547,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	};
 	len = snprintf(semname, sizeof(semname), "THRcreate%" PRIu64, (uint64_t) ATOMIC_INC(&ctr));
 	if (len == -1 || len > (int) sizeof(semname)) {
-		IODEBUG fprintf(stderr, "#THRcreate: semaphore name is too large\n");
+		DEBUG(IO, "Semaphore name is too large\n");
 		GDKerror("THRcreate: semaphore name is too large\n");
 		GDKfree(t);
 		GDKfree(s->name);
@@ -1577,9 +1578,9 @@ THRdel(Thread t)
 {
 	assert(GDKthreads <= t && t < GDKthreads + THREADS);
 	MT_thread_setdata(NULL);
-	PARDEBUG fprintf(stderr, "#pid = %zu, disconnected, %d left\n",
-			 (size_t) ATOMIC_GET(&t->pid),
-			 (int) ATOMIC_GET(&GDKnrofthreads));
+	DEBUG(PAR, "pid = %zu, disconnected, %d left\n",
+			 	(size_t) ATOMIC_GET(&t->pid),
+			 	(int) ATOMIC_GET(&GDKnrofthreads));
 
 	GDKfree(t->name);
 	t->name = NULL;
@@ -1743,7 +1744,7 @@ GDKmemfail(const char *s, size_t len)
 	   }
 	 */
 
-	fprintf(stderr, "#%s(%zu) fails, try to free up space [memory in use=%zu,virtual memory in use=%zu]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
+	ERROR(GDK_UTILS, "%s(%zu) fails, try to free up space [memory in use=%zu,virtual memory in use=%zu]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
 }
 
 /* Memory allocation

@@ -10,6 +10,7 @@
 #define _SQL_MEM_H_
 
 #include "gdk.h"
+#include "gdk_tracer.h"
 
 #define SQL_OK 	1
 #define SQL_ERR 0
