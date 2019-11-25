@@ -3787,7 +3787,7 @@ BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 	struct canditer lci, rci;
 	BAT *r1, *r2;
 	BUN maxsize;
-	lng t0;
+	lng t0 = 0;
 
 	ALGODEBUG t0 = GDKusec();
 	*r1p = NULL;
