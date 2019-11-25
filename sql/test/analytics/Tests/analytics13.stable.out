@@ -380,6 +380,44 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 [ 127,	111,	666,	NULL,	369630,	NULL,	false,	NULL	]
 [ 127,	1111,	6666,	NULL,	37029630,	NULL,	false,	NULL	]
 [ 255,	308.5,	7404,	NULL,	33330,	NULL,	NULL,	NULL	]
+#SELECT
+#    DISTINCT
+#    NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2),
+#    NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL),
+#    NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col1) IS NOT NULL OR MIN(col1) < MIN(col2)),
+#    CAST (NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) | CAST (col2 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER),
+#    CAST (EXISTS (SELECT MAX(col5) * MAX(col4) FROM another_T GROUP BY col5, col4) AS INTEGER) & CAST (GROUPING(col1, col5) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2) AS INTEGER)
+% .%211,	.%212,	.%213,	.%214,	.%215 # table_name
+% %211,	%212,	%213,	%214,	%215 # name
+% boolean,	boolean,	boolean,	int,	int # type
+% 5,	5,	5,	1,	1 # length
+[ true,	true,	false,	1,	0	]
+[ NULL,	true,	false,	NULL,	1	]
+[ true,	true,	false,	NULL,	0	]
+[ NULL,	true,	false,	1,	0	]
+[ NULL,	true,	false,	NULL,	0	]
+[ false,	true,	false,	1,	0	]
+[ false,	true,	false,	NULL,	1	]
+[ false,	true,	false,	NULL,	0	]
+#SELECT
+#    DISTINCT
+#    NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2) AS a1,
+#    NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL) AS a2,
+#    NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col1) IS NOT NULL OR MIN(col1) < MIN(col2)) AS a3,
+#    CAST (NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) | CAST (col2 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) AS a4,
+#    CAST (EXISTS (SELECT MAX(col5) * MAX(col4) FROM another_T GROUP BY col5, col4) AS INTEGER) & CAST (GROUPING(col1, col5) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2) AS INTEGER) AS a5
+% .,	.,	.,	.,	. # table_name
+% a1,	a2,	a3,	a4,	a5 # name
+% boolean,	boolean,	boolean,	int,	int # type
+% 5,	5,	5,	1,	1 # length
+[ NULL,	true,	false,	NULL,	0	]
+[ NULL,	true,	false,	NULL,	1	]
+[ NULL,	true,	false,	1,	0	]
+[ false,	true,	false,	NULL,	0	]
+[ false,	true,	false,	NULL,	1	]
+[ false,	true,	false,	1,	0	]
+[ true,	true,	false,	NULL,	0	]
+[ true,	true,	false,	1,	0	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 
