@@ -114,8 +114,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #	-col1 IN (SELECT ColID FROM tbl_ProductSales),
 #	col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col8) IS NULL)
 #FROM another_T GROUP BY col1, col2, col5, col8;
-% .%13,	.%42 # table_name
-% %13,	%42 # name
+% .%13,	.%37 # table_name
+% %13,	%37 # name
 % boolean,	boolean # type
 % 5,	5 # length
 [ false,	true	]
@@ -163,8 +163,8 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 [ true,	false	]
 [ true,	false	]
 #SELECT NOT col2 <> ANY (SELECT 20 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID) FROM another_T GROUP BY col1, col2, col5, col8;
-% .%32 # table_name
-% %32 # name
+% .%33 # table_name
+% %33 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -172,13 +172,28 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 [ true	]
 [ true	]
 #SELECT
+#	NOT -SUM(col2) NOT IN (SELECT ColID FROM tbl_ProductSales GROUP BY ColID HAVING SUM(ColID - col8) <> col5),
+#	NOT col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col8) > 2 AND MIN(col8) IS NOT NULL),
+#	NOT col2 <> ANY (SELECT 20 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID),
+#	NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col2) IS NULL OR NOT col8 <> 2 / col1)
+#FROM another_T
+#GROUP BY col1, col2, col5, col8;
+% .%26,	.%170,	.%171,	.%172 # table_name
+% %26,	%170,	%171,	%172 # name
+% boolean,	boolean,	boolean,	boolean # type
+% 5,	5,	5,	5 # length
+[ false,	true,	true,	true	]
+[ false,	true,	true,	true	]
+[ false,	true,	true,	true	]
+[ false,	true,	true,	true	]
+#SELECT
 #	DISTINCT
 #	NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2),
 #	NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NOT NULL OR MIN(col1) < MIN(col2)),
 #	CAST (NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) | CAST (col2 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER),
 #	CAST (EXISTS (SELECT MAX(col5) * MAX(col4) FROM another_T GROUP BY col5, col4) AS INTEGER) & CAST (AVG(col1) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2) AS INTEGER)
-% .%135,	.%136,	.%137,	.%140 # table_name
-% %135,	%136,	%137,	%140 # name
+% .%137,	.%140,	.%141,	.%142 # table_name
+% %137,	%140,	%141,	%142 # name
 % boolean,	boolean,	int,	int # type
 % 5,	5,	1,	1 # length
 [ true,	false,	1,	0	]
@@ -295,6 +310,14 @@ stdout of test 'subquery2` in directory 'sql/test/subquery` itself:
 #FROM another_T t1;
 % .%43 # table_name
 % %43 # name
+% tinyint # type
+% 1 # length
+[ NULL	]
+#SELECT
+#	CASE WHEN 1 IN (SELECT (SELECT MAX(col7))) THEN 2 ELSE NULL END
+#FROM another_T t1;
+% .%41 # table_name
+% %41 # name
 % tinyint # type
 % 1 # length
 [ NULL	]
