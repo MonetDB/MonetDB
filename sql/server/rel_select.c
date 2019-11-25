@@ -1947,10 +1947,8 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		}
 		e =  exp_in_func(sql, le, exp_values(sql->sa, vals), (sc->token == SQL_IN), 0);
 	}
-	if (e) {
-		/* only freevar should have CARD_AGGR */
-		e->card = CARD_ATOM;
-	}
+	if (e)
+		e->card = le->card;
 	return e;
 }
 

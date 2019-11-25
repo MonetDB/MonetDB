@@ -158,6 +158,15 @@ ORDER BY a1 NULLS FIRST;
 	-- True
 	-- True
 
+SELECT
+    NOT SUM(t1.col2) * MIN(t1.col6 + t1.col6 - t1.col6 * t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 + MIN(t2.col8) < MAX(t2.col7 - t1.col6))
+FROM another_T t1
+GROUP BY t1.col7, t1.col6;
+	-- False
+	-- False
+	-- False
+	-- False
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
