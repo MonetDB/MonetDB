@@ -1059,6 +1059,13 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Nov 25 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.3-20191125
+- Rebuilt.
+- BZ#3533: SQL aggregate functions avg(), sum() and median() return an
+  error when used on a column with datatype interval second
+- BZ#6723: columns aliases duplicates should not be allowed. automatic
+  aliasing required.
+
 * Mon Nov 18 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
 - Rebuilt.
 - BZ#6134: Query produces error: HEAPalloc: Insufficient space for HEAP
