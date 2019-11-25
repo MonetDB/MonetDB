@@ -562,6 +562,77 @@ rel_bound_exp(mvc *sql, sql_rel *rel )
 	return NULL;
 }
 
+/*
+ * join j was just rewriten, but some join expressions may now 
+ * be too low in de relation rel. These need to move up.
+ * */
+static void
+move_join_exps(mvc *sql, sql_rel *j, sql_rel *rel)
+{
+	node *n;
+	list *exps = rel->exps;
+	
+	if (!exps)
+		return;
+	rel->exps = sa_list(sql->sa);
+	if (!j->exps)
+		j->exps = sa_list(sql->sa);
+	for(n = exps->h; n; n = n->next){
+		sql_exp *e = n->data;
+
+		if (rel_find_exp(rel, e)) {
+			if (exp_has_freevar(sql, e))
+				rel_bind_var(sql, rel->l, e);
+			append(rel->exps, e);
+		} else {
+			if (exp_has_freevar(sql, e))
+				rel_bind_var(sql, j->l, e);
+			append(j->exps, e);
+		}
+	}
+}
+
+static sql_rel *
+rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
+{
+	/* current unnest only possible for equality joins, <, <> etc needs more work */
+	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel) && ad) {
+		list *fd;
+		node *n, *m;
+		int nr;
+
+		sql_rel *l = rel->l, *r = rel->r;
+		/* rewrite T1 dependent join T2 -> T1 join D dependent join T2, where the T1/D join adds (equality) predicates (for the Domain (ad)) and D is are the distinct(projected(ad) from T1)  */
+		sql_rel *D = rel_project(sql->sa, rel_dup(l), exps_copy(sql, ad));
+		set_distinct(D);
+
+		r = rel_crossproduct(sql->sa, D, r, rel->op);
+		r->op = /*is_semi(rel->op)?op_left:*/op_join;
+		move_join_exps(sql, rel, r);
+		set_dependent(r);
+		r = rel_project(sql->sa, r, (is_semi(r->op))?sa_list(sql->sa):rel_projections(sql, r->r, NULL, 1, 1));
+		/* append ad + rename */
+		nr = sql->label+1;
+		sql->label += list_length(ad);
+		fd = exps_label(sql->sa, exps_copy(sql, ad), nr);
+		for (n = ad->h, m = fd->h; n && m; n = n->next, m = m->next) {
+			sql_exp *l = n->data, *r = m->data, *e;
+
+			l = exp_ref(sql->sa, l);
+			r = exp_ref(sql->sa, r);
+			e = exp_compare(sql->sa, l, r, (is_outerjoin(rel->op)|is_semi(rel->op))?cmp_equal_nil:cmp_equal);
+			if (!rel->exps)
+				rel->exps = sa_list(sql->sa);
+			append(rel->exps, e);
+		}
+		list_merge(r->exps, fd, (fdup)NULL);
+		rel->r = r;
+		reset_dependent(rel);
+		return rel;
+	}
+	return rel;
+}
+
 static sql_rel *
 push_up_project(mvc *sql, sql_rel *rel, list *ad) 
 {
@@ -734,10 +805,25 @@ push_up_topn(mvc *sql, sql_rel *rel)
 }
 
 static sql_rel *
-push_up_select(mvc *sql, sql_rel *rel) 
+push_up_select(mvc *sql, sql_rel *rel, list *ad) 
 {
-	/* input rel is dependent join with on the right a project */ 
-	if (rel && /*(is_join(rel->op) ||*/( is_semi(rel->op)) && is_dependent(rel)) {
+	sql_rel *d = rel->l;
+	sql_rel *r = rel->r;
+	int inner = 0;
+
+	if (rel && is_dependent(rel) && r && r->op == op_select) {
+		sql_rel *rl = r->l;
+
+		if (rl && rel_has_freevar(sql, rl)) {
+			list *inner_ad = rel_dependent_var(sql, d, rl);
+
+			inner = !list_empty(inner_ad);
+		}
+	}
+	if (inner && is_left(rel->op) && !need_distinct(d)) 
+		return rel_general_unnest(sql, rel, ad);
+	/* input rel is dependent join with on the right a select */ 
+	if ((!inner || is_semi(rel->op)) && rel && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
 		if (r && r->op == op_select) { /* move into join */
@@ -754,9 +840,10 @@ push_up_select(mvc *sql, sql_rel *rel)
 			/* remove select */
 			rel->r = rel_dup(r->l);
 			rel_destroy(r);
+			if (!inner)
+				reset_dependent(rel);
 		}
-	}
-	if (rel && is_join(rel->op) && is_dependent(rel)) {
+	} else if (rel && is_join(rel->op) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 		list *exps = r->exps;
 
@@ -918,36 +1005,6 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 		}
 	}
 	return rel;
-}
-
-/*
- * join j was just rewriten, but some join expressions may now 
- * be too low in de relation rel. These need to move up.
- * */
-static void
-move_join_exps(mvc *sql, sql_rel *j, sql_rel *rel)
-{
-	node *n;
-	list *exps = rel->exps;
-	
-	if (!exps)
-		return;
-	rel->exps = sa_list(sql->sa);
-	if (!j->exps)
-		j->exps = sa_list(sql->sa);
-	for(n = exps->h; n; n = n->next){
-		sql_exp *e = n->data;
-
-		if (rel_find_exp(rel, e)) {
-			if (exp_has_freevar(sql, e))
-				rel_bind_var(sql, rel->l, e);
-			append(rel->exps, e);
-		} else {
-			if (exp_has_freevar(sql, e))
-				rel_bind_var(sql, j->l, e);
-			append(j->exps, e);
-		}
-	}
 }
 
 static sql_rel *
@@ -1131,47 +1188,6 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 	return rel;
 }
 
-static sql_rel *
-rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
-{
-	/* current unnest only possible for equality joins, <, <> etc needs more work */
-	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel) && ad) {
-		list *fd;
-		node *n, *m;
-		int nr;
-
-		sql_rel *l = rel->l, *r = rel->r;
-		/* rewrite T1 dependent join T2 -> T1 join D dependent join T2, where the T1/D join adds (equality) predicates (for the Domain (ad)) and D is are the distinct(projected(ad) from T1)  */
-		sql_rel *D = rel_project(sql->sa, rel_dup(l), exps_copy(sql, ad));
-		set_distinct(D);
-
-		r = rel_crossproduct(sql->sa, D, r, rel->op);
-		r->op = /*is_semi(rel->op)?op_left:*/op_join;
-		move_join_exps(sql, rel, r);
-		set_dependent(r);
-		r = rel_project(sql->sa, r, (is_semi(r->op))?sa_list(sql->sa):rel_projections(sql, r->r, NULL, 1, 1));
-		/* append ad + rename */
-		nr = sql->label+1;
-		sql->label += list_length(ad);
-		fd = exps_label(sql->sa, exps_copy(sql, ad), nr);
-		for (n = ad->h, m = fd->h; n && m; n = n->next, m = m->next) {
-			sql_exp *l = n->data, *r = m->data, *e;
-
-			l = exp_ref(sql->sa, l);
-			r = exp_ref(sql->sa, r);
-			e = exp_compare(sql->sa, l, r, (is_outerjoin(rel->op)|is_semi(rel->op))?cmp_equal_nil:cmp_equal);
-			if (!rel->exps)
-				rel->exps = sa_list(sql->sa);
-			append(rel->exps, e);
-		}
-		list_merge(r->exps, fd, (fdup)NULL);
-		rel->r = r;
-		reset_dependent(rel);
-		return rel;
-	}
-	return rel;
-}
-
 /* reintroduce selects, for freevar's of other dependent joins */
 static sql_rel *
 push_down_select(mvc *sql, sql_rel *rel)
@@ -1251,8 +1267,8 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && is_select(r->op)) {
-				rel = push_up_select(sql, rel);
+			if (r && is_select(r->op) && ad) {
+				rel = push_up_select(sql, rel, ad);
 				return rel_unnest_dependent(sql, rel);
 			}
 
@@ -1456,6 +1472,7 @@ rewrite_exp_rel(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 }
 
 #define is_not_func(sf) (strcmp(sf->func->base.name, "not") == 0) 
+#define is_not_anyequal(sf) (strcmp(sf->func->base.name, "sql_not_anyequal") == 0)
 
 /* simplify expressions, such as not(not(x)) */
 /* exp visitor */
@@ -1480,6 +1497,17 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 			args = ie->l;
 
 			ie = args->h->data;	
+			if (exp_name(e))
+				exp_prop_alias(sql->sa, ie, e);
+			return ie;
+		}
+		if (is_func(ie->type) && list_length(ie->l) == 2 && is_not_anyequal(sf)) {
+			args = ie->l;
+
+			sql_exp *l = args->h->data;
+			sql_exp *vals = args->h->next->data;
+
+			ie = exp_in_func(sql, l, vals, 1, 0);
 			if (exp_name(e))
 				exp_prop_alias(sql->sa, ie, e);
 			return ie;

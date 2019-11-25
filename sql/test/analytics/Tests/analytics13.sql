@@ -154,15 +154,6 @@ ORDER BY
     a6 DESC NULLS LAST, a7 ASC NULLS FIRST, a8 ASC NULLS LAST, a9 ASC NULLS FIRST, a10 DESC NULLS LAST, 
     a11 ASC NULLS FIRST, a12 DESC NULLS LAST, a13 ASC NULLS FIRST, a14 DESC NULLS LAST;
 
----Queries bellow give wrong results and errors
-
-SELECT
-    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON t2.col5 = t1.col1)) THEN 1 ELSE 2 END,
-    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON MIN(t1.col5) = t1.col1)) THEN 1 ELSE 2 END,
-    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2)) THEN 1 ELSE 2 END
-FROM another_T t1
-GROUP BY CUBE(t1.col1, t1.col2);
-
 SELECT
     GROUPING(t1.col6, t1.col7) IN (SELECT SUM(t2.col2) FROM another_T t2 GROUP BY t2.col5),
     NOT 32 * GROUPING(t1.col7, t1.col6) IN (SELECT MAX(t2.col2) FROM another_T t2),
@@ -172,6 +163,15 @@ SELECT
     GROUPING(t1.col7) = ALL (SELECT GROUPING(t1.col6) UNION ALL SELECT 10 * MIN(t1.col8))
 FROM another_T t1
 GROUP BY CUBE(t1.col7, t1.col6);
+
+---Queries bellow give wrong results and errors
+
+SELECT
+    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON t2.col5 = t1.col1)) THEN 1 ELSE 2 END,
+    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON MIN(t1.col5) = t1.col1)) THEN 1 ELSE 2 END,
+    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2)) THEN 1 ELSE 2 END
+FROM another_T t1
+GROUP BY CUBE(t1.col1, t1.col2);
 
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;

@@ -42,7 +42,6 @@ timestamp_dbat( sql_dbat *d, int ts)
 	return d;
 }
 
-
 static BAT *
 delta_bind_del(sql_dbat *bat, int access) 
 {
@@ -1539,7 +1538,6 @@ log_create_col(sql_trans *tr, sql_column *c)
 	return log_create_delta( c->data, c->t->bootstrap?0:LOG_COL, c->base.id);
 }
 
-
 static int
 snapshot_create_col(sql_trans *tr, sql_column *c)
 {
@@ -1655,7 +1653,6 @@ load_dbat(sql_dbat *bat, int bid)
 		return LOG_ERR;
 	}
 }
-
 
 static int
 create_del(sql_trans *tr, sql_table *t)
@@ -2246,7 +2243,6 @@ gtr_update_dbat(sql_trans *tr, sql_dbat *d, int *changes, char tpe, oid id)
 	return ok;
 }
 
-
 static int
 gtr_update_table(sql_trans *tr, sql_table *t, int *tchanges)
 {
@@ -2795,17 +2791,17 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		oc->null = cc->null;
 		oc->unique = cc->unique;
 		if (cc->storage_type && (!oc->storage_type || strcmp(cc->storage_type, oc->storage_type) != 0))
-			oc->storage_type = sa_strdup(tr->sa, cc->storage_type);
+			oc->storage_type = sa_strdup(tr->parent->sa, cc->storage_type);
 		if (!cc->storage_type)
 			oc->storage_type = NULL;
 		if (cc->def && (!oc->def || strcmp(cc->def, oc->def) != 0))
-			oc->def = sa_strdup(tr->sa, cc->def);
+			oc->def = sa_strdup(tr->parent->sa, cc->def);
 		if (!cc->def)
 			oc->def = NULL;
 
 		if (isRenamed(cc)) { /* apply possible renaming */
 			list_hash_delete(oc->t->columns.set, oc, NULL);
-			oc->base.name = sa_strdup(tr->sa, cc->base.name);
+			oc->base.name = sa_strdup(tr->parent->sa, cc->base.name);
 			if (!list_hash_add(oc->t->columns.set, oc, NULL))
 				ok = LOG_ERR;
 			setRenamedFlag(oc); /* propagate the change to the upper transaction */
