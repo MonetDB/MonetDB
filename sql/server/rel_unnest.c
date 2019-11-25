@@ -24,10 +24,10 @@ exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
 	case e_cmp:
 		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
 			exps_set_freevar(sql, e->l, r);
-		       	exps_set_freevar(sql, e->r, r);
+			exps_set_freevar(sql, e->r, r);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			exp_set_freevar(sql, e->l, r);
-		       	exps_set_freevar(sql, e->r, r);
+			exps_set_freevar(sql, e->r, r);
 		} else {
 			exp_set_freevar(sql, e->l, r);
 			exp_set_freevar(sql, e->r, r);
@@ -46,7 +46,7 @@ exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
 	case e_column: 
 		if ((e->l && rel_bind_column2(sql, r, e->l, e->r, 0)) ||
 		    (!e->l && rel_bind_column(sql, r, e->r, 0)))
-		     return;
+			return;
 		set_freevar(e, 0);
 		break;
 	case e_atom: 
@@ -61,7 +61,7 @@ exps_set_freevar(mvc *sql, list *exps, sql_rel *r)
 	node *n;
 
 	if (list_empty(exps))
-	       return;	
+		return;	
 	for(n = exps->h; n; n = n->next)
 		exp_set_freevar(sql, n->data, r);
 }
@@ -471,7 +471,7 @@ exp_rewrite(mvc *sql, sql_rel *rel, sql_exp *e, list *ad)
 	if (e->type != e_func)
 		return e;
 	e->l = exps_rewrite(sql, rel, e->l, ad);
-       	sf = e->f;
+	sf = e->f;
 	/* window functions need to be run per freevars */
 	if (sf->func->type == F_ANALYTIC && list_length(sf->func->ops) > 2) {
 		sql_subtype *bt = sql_bind_localtype("bit");
@@ -1043,9 +1043,9 @@ push_up_join(mvc *sql, sql_rel *rel)
 				j->r = jl;
 
 				if (!is_simple_project(jr->op))
-			       		rel->r = jr = rel_project(sql->sa, jr, rel_projections(sql, jr, NULL, 1, 1));
+					rel->r = jr = rel_project(sql->sa, jr, rel_projections(sql, jr, NULL, 1, 1));
 				if (!is_simple_project(jl->op))
-			       		j->r = jl = rel_project(sql->sa, jl, rel_projections(sql, jl, NULL, 1, 1));
+					j->r = jl = rel_project(sql->sa, jl, rel_projections(sql, jl, NULL, 1, 1));
 				l = exp_label(sql->sa, l, ++sql->label);
 				r = exp_label(sql->sa, r, ++sql->label);
 				append(jl->exps, l);
@@ -1146,7 +1146,7 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 		set_distinct(D);
 
 		r = rel_crossproduct(sql->sa, D, r, rel->op);
-                r->op = /*is_semi(rel->op)?op_left:*/op_join;
+		r->op = /*is_semi(rel->op)?op_left:*/op_join;
 		move_join_exps(sql, rel, r);
 		set_dependent(r);
 		r = rel_project(sql->sa, r, (is_semi(r->op))?sa_list(sql->sa):rel_projections(sql, r->r, NULL, 1, 1));
@@ -1798,7 +1798,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 
 		if (list_length(l) == 2) { /* input is a set */
 
-		        sql_exp *ile = l->h->data, *le, *re = l->h->next->data;
+			sql_exp *ile = l->h->data, *le, *re = l->h->next->data;
 			sql_rel *lsq = NULL, *rsq = NULL;
 			int is_tuple = 0;
 
@@ -1869,7 +1869,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					lsq->exps = exps; 
 
 				sql_subaggr *ea = sql_bind_aggr(sql->sa, sql->session->schema, is_anyequal(sf)?"anyequal":"allnotequal", exp_subtype(re));
-				sql_exp *a = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_ATOM, 0);
+				sql_exp *a = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_AGGR, 0);
 				append(a->l, re);
 				append(a->l, rid);
 				le = rel_groupby_add_aggr(sql, lsq, a);
@@ -1942,7 +1942,7 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		if (list_length(l) == 2) { /* input is a set */
 			char *op = sf->func->base.name;
 
-		        sql_exp *ile = l->h->data, *le, *re = l->h->next->data, *rnull = NULL;
+			sql_exp *ile = l->h->data, *le, *re = l->h->next->data, *rnull = NULL;
 			sql_rel *lsq = NULL, *rsq = NULL;
 			int is_tuple = 0; /* TODO add this feature, ie select (1,2) = (1,2) etc */
 					 /* cleanup tuple handling by introducing an expression for tuples */
@@ -2018,34 +2018,34 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 
 					rsq = rel_groupby(sql, rsq, NULL); 
 					a = sql_bind_aggr(sql->sa, NULL, "null", exp_subtype(re));
-					rnull = exp_aggr1(sql->sa, re, a, 0, 1, CARD_ATOM, 0);
+					rnull = exp_aggr1(sql->sa, re, a, 0, 1, CARD_AGGR, 0);
 					rnull = rel_groupby_add_aggr(sql, rsq, rnull);
 
 					if (is_notequal_func(sf))
 						op = "=";
 					if (op[0] == '<') {
-					      	a = sql_bind_aggr(sql->sa, sql->session->schema, (quantifier==1)?"max":"min", exp_subtype(re));
+						a = sql_bind_aggr(sql->sa, sql->session->schema, (quantifier==1)?"max":"min", exp_subtype(re));
 					} else if (op[0] == '>') {
-					      	a = sql_bind_aggr(sql->sa, sql->session->schema, (quantifier==1)?"min":"max", exp_subtype(re));
+						a = sql_bind_aggr(sql->sa, sql->session->schema, (quantifier==1)?"min":"max", exp_subtype(re));
 					} else /* (op[0] == '=')*/ /* only = ALL */ {
 						a = sql_bind_aggr(sql->sa, sql->session->schema, "all", exp_subtype(re));
 						is_cnt = 1;
 					}
-					re = exp_aggr1(sql->sa, re, a, 0, 1, CARD_ATOM, 0);
+					re = exp_aggr1(sql->sa, re, a, 0, 1, CARD_AGGR, 0);
 					re = rel_groupby_add_aggr(sql, rsq, re);
 				} else if (rsq && exp_card(re) > CARD_ATOM) { 
 					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, NULL, compare_aggr_op(op, quantifier), exp_subtype(re));
 	
 					rsq = rel_groupby(sql, rsq, NULL);
 	
-					re = exp_aggr1(sql->sa, re, zero_or_one, 0, 0, CARD_ATOM, 0);
+					re = exp_aggr1(sql->sa, re, zero_or_one, 0, 0, CARD_AGGR, 0);
 					re = rel_groupby_add_aggr(sql, rsq, re);
 				}
 				if (rsq) 
 					(void)rewrite_inner(sql, rel, rsq, is_cnt?op_left:op_join);
 
 				if (rel_convert_types(sql, NULL, NULL, &le, &re, 1, type_equal) < 0)
-                                	return NULL;
+					return NULL;
 				if (rnull) { /* complex compare operator */
 					sql_exp *lnull = rel_unop_(sql, rel, le, NULL, "isnull", card_value);
 					set_has_no_nil(lnull);
@@ -2086,7 +2086,7 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					if (exp_has_freevar(sql, le))
 						rel_bind_var(sql, rel, le);
 					if (rel_convert_types(sql, NULL, NULL, &le, &re, 1, type_equal) < 0)
-                                		return NULL;
+						return NULL;
 					return exp_compare(sql->sa, le, re, compare_str2type(op));
 				}
 			}
@@ -2215,7 +2215,7 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		list *l = e->l;
 
 		if (list_length(l) == 1) { /* exp_values */
-		        sql_exp *ne = NULL, *ie = l->h->data, *le;
+			sql_exp *ne = NULL, *ie = l->h->data, *le;
 			sql_rel *sq = NULL;
 
 			if (!exp_is_rel(ie)) /* already fine */
@@ -2244,7 +2244,7 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 			if (exp_is_rel(ie)) /* TODO add set rel function */
 				ie->l = sq;
 			ea = sql_bind_aggr(sql->sa, sql->session->schema, is_exists(sf)?"exist":"not_exist", exp_subtype(le));
-			le = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_ATOM, 0);
+			le = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_AGGR, 0);
 			le = rel_groupby_add_aggr(sql, sq, le);
 			if (rel_has_freevar(sql, sq))
 				ne = le;
