@@ -27,6 +27,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "xoshiro256starstar.h"
+#include "gdk_tracer.h"
 
 /* this is a straightforward implementation of a binary tree */
 struct oidtreenode {
@@ -155,9 +156,9 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 		bn->tkey = true;
 		bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? *(oid *) Tloc(bn, 0) : oid_nil;
 	}
-	ALGODEBUG fprintf(stderr, "#BATsample(" ALGOBATFMT "," BUNFMT ")="
-			  ALGOOPTBATFMT "\n",
-			  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
+	DEBUG(ALGO, "BATsample(" ALGOBATFMT "," BUNFMT ")="
+			  	ALGOOPTBATFMT "\n",
+			 	ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
 	return bn;
 }
 
