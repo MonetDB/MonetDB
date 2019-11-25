@@ -214,3 +214,8 @@ BATmosaic(BAT *b, BUN cap) {
 
 	return GDK_SUCCEED;
 }
+
+void
+MOSvirtualize(BAT *bn) {
+	virtualize(bn);
+}

@@ -1,3 +1,14 @@
+mosaic_bit_1.var
+mosaic_lng_1.var
+mosaic_oid_1.var
+mosaic_date_1.var
+mosaic_timestamp_1.var
+mosaic_bit_with_nils_1.var
+mosaic_lng_with_nils_1.var
+mosaic_oid_with_nils_1.var
+mosaic_date_with_nils_1.var
+mosaic_timestamp_with_nils_1.var
+
 mosaic_runlength
 mosaic_mix
 mosaic_var
@@ -30,17 +41,6 @@ mosaic_linear_joins
 mosaic_prefix_joins
 mosaic_mix_joins
 
-mosaic_bit_1.raw
-mosaic_lng_1.raw
-mosaic_oid_1.raw
-mosaic_date_1.raw
-mosaic_timestamp_1.raw
-mosaic_bit_with_nils_1.raw
-mosaic_lng_with_nils_1.raw
-mosaic_oid_with_nils_1.raw
-mosaic_date_with_nils_1.raw
-mosaic_timestamp_with_nils_1.raw
-
 mosaic_bit_2.runlength
 mosaic_lng_2.runlength
 mosaic_oid_2.runlength
@@ -51,17 +51,6 @@ mosaic_lng_with_nils_2.runlength
 mosaic_oid_with_nils_2.runlength
 mosaic_date_with_nils_2.runlength
 mosaic_timestamp_with_nils_2.runlength
-
-mosaic_bit_1.var
-mosaic_lng_1.var
-mosaic_oid_1.var
-mosaic_date_1.var
-mosaic_timestamp_1.var
-mosaic_bit_with_nils_1.var
-mosaic_lng_with_nils_1.var
-mosaic_oid_with_nils_1.var
-mosaic_date_with_nils_1.var
-mosaic_timestamp_with_nils_1.var
 
 mosaic_bit_1.capped
 mosaic_lng_1.capped
@@ -117,3 +106,14 @@ mosaic_lng_with_nils_1.prefix
 mosaic_oid_with_nils_1.prefix
 mosaic_date_with_nils_1.prefix
 mosaic_timestamp_with_nils_1.prefix
+
+mosaic_bit_1.raw
+mosaic_lng_1.raw
+mosaic_oid_1.raw
+mosaic_date_1.raw
+mosaic_timestamp_1.raw
+mosaic_bit_with_nils_1.raw
+mosaic_lng_with_nils_1.raw
+mosaic_oid_with_nils_1.raw
+mosaic_date_with_nils_1.raw
+mosaic_timestamp_with_nils_1.raw

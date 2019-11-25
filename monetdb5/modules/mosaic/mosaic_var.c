@@ -95,8 +95,6 @@ extend_delta_DEF(TPE, GlobalVarInfo)\
 merge_delta_Into_dictionary_DEF(TPE, GlobalVarInfo)\
 compress_dictionary_DEF(TPE)\
 decompress_dictionary_DEF(TPE)\
-select_dictionary_DEF(TPE)\
-thetaselect_dictionary_DEF(TPE)\
 join_dictionary_DEF(TPE)
 
 DictionaryClass(bte)
@@ -327,43 +325,19 @@ MOSdecompress_var(MOStask task)
 	}
 }
 
-str
-MOSselect_var(MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
-{
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: DICTselect(bte); break;
-		case TYPE_sht: DICTselect(sht); break;
-		case TYPE_int: DICTselect(int); break;
-		case TYPE_lng: DICTselect(lng); break;
-		case TYPE_oid: DICTselect(oid); break;
-		case TYPE_flt: DICTselect(flt); break;
-		case TYPE_dbl: DICTselect(dbl); break;
-#ifdef HAVE_HGE
-		case TYPE_hge: DICTselect(hge); break;
-#endif
-	}
-	MOSskip_var(task);
-	return MAL_SUCCEED;
-}
+#define scan_loop_var(TPE, CANDITER_NEXT, TEST) \
+    scan_loop_dictionary(TPE, CANDITER_NEXT, TEST,\
+    GET_FINAL_DICT, GET_FINAL_BITS)
 
-str
-MOSthetaselect_var( MOStask task, void *val, str oper)
-{
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: DICTthetaselect(bte); break;
-	case TYPE_sht: DICTthetaselect(sht); break;
-	case TYPE_int: DICTthetaselect(int); break;
-	case TYPE_lng: DICTthetaselect(lng); break;
-	case TYPE_oid: DICTthetaselect(oid); break;
-	case TYPE_flt: DICTthetaselect(flt); break;
-	case TYPE_dbl: DICTthetaselect(dbl); break;
+MOSselect_DEF(var, bte)
+MOSselect_DEF(var, sht)
+MOSselect_DEF(var, int)
+MOSselect_DEF(var, lng)
+MOSselect_DEF(var, flt)
+MOSselect_DEF(var, dbl)
 #ifdef HAVE_HGE
-	case TYPE_hge: DICTthetaselect(hge); break;
+MOSselect_DEF(var, hge)
 #endif
-	}
-	MOSskip_var(task);
-	return MAL_SUCCEED;
-}
 
 str
 MOSprojection_var( MOStask task)

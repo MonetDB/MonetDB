@@ -155,6 +155,7 @@ typedef struct MOSTASK{
 
 	oid *lb, *rb;	// Collected oids from operations
 	oid *cl;		// candidate admin
+	struct canditer* ci; // candidate list iterator.
 	lng	n;			// element count in candidate list
 	BUN cnt;		// elements in result set
 

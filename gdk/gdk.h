@@ -1870,6 +1870,7 @@ gdk_export int BATcheckmosaic(BAT *b);
 gdk_export void MOSdestroy(BAT *b);
 gdk_export void MOSsetLock(BAT* b);
 gdk_export void MOSunsetLock(BAT* b);
+gdk_export void MOSvirtualize(BAT *bn);
 
 /*
  * @- Column Imprints Functions

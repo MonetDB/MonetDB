@@ -16,6 +16,7 @@
 #include <mal.h>
 #include "mal_interpreter.h"
 #include "mal_client.h"
+#include "mosaic_select.h"
 
 #define DICTTHRESHOLD 4192
 #define DICTSIZE 256
@@ -32,8 +33,19 @@ mal_export void MOSpostEstimate_capped(MOStask task);
 mal_export str finalizeDictionary_capped(MOStask task);
 mal_export void MOScompress_capped(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_capped(MOStask task);
-mal_export str MOSselect_capped( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mal_export str MOSthetaselect_capped( MOStask task, void *val, str oper);
 mal_export str MOSprojection_capped( MOStask task);
 mal_export str MOSjoin_capped( MOStask task, bit nil_matches);
+
+MOSselect_SIGNATURE(capped, bte);
+MOSselect_SIGNATURE(capped, sht);
+MOSselect_SIGNATURE(capped, int);
+MOSselect_SIGNATURE(capped, lng);
+MOSselect_SIGNATURE(capped, flt);
+MOSselect_SIGNATURE(capped, dbl);
+#ifdef HAVE_HGE
+MOSselect_SIGNATURE(capped, hge);
+#endif
+
+#define SELECT_CAPPED(TPE) do_select(capped, TPE)
+
 #endif /* _MOSAIC_CAPPED_ */

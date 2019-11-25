@@ -54,6 +54,7 @@ typedef struct _DeltaParameters_t {
 	} init;
 } MosaicBlkHeader_delta_t;
 
+#define MOScodevectorDelta(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_delta_t), BitVectorChunk))
 #define toEndOfBitVector(CNT, BITS) wordaligned(((CNT) * (BITS) / CHAR_BIT) + ( ((CNT) * (BITS)) % CHAR_BIT != 0 ), BitVectorChunk)
 
 void
@@ -266,292 +267,34 @@ MOSdecompress_delta(MOStask task)
 	}
 }
 
-// perform relational algebra operators over non-compressed chunks
-// They are bound by an oid range and possibly a candidate list
-
-/* generic range select
- *
- * This macro is based on the combined behavior of ALGselect2 and BATselect.
- * It should return the same output on the same input.
- *
- * A complete breakdown of the various arguments follows.  Here, v, v1
- * and v2 are values from the appropriate domain, and
- * v != nil, v1 != nil, v2 != nil, v1 < v2.
- *	tl	th	li	hi	anti	result list of OIDs for values
- *	-----------------------------------------------------------------
- *	nil	nil	true	true	false	x == nil (only way to get nil)
- *	nil	nil	true	true	true	x != nil
- *	nil	nil	A*		B*		false	x != nil *it must hold that A && B == false.
- *	nil	nil	A*		B*		true	NOTHING *it must hold that A && B == false.
- *	v	v	A*		B*		true	x != nil *it must hold that A && B == false.
- *	v	v	A*		B*		false	NOTHING *it must hold that A && B == false.
- *	v2	v1	ignored	ignored	false	NOTHING
- *	v2	v1	ignored	ignored	true	x != nil
- *	nil	v	ignored	false	false	x < v
- *	nil	v	ignored	true	false	x <= v
- *	nil	v	ignored	false	true	x >= v
- *	nil	v	ignored	true	true	x > v
- *	v	nil	false	ignored	false	x > v
- *	v	nil	true	ignored	false	x >= v
- *	v	nil	false	ignored	true	x <= v
- *	v	nil	true	ignored	true	x < v
- *	v	v	true	true	false	x == v
- *	v	v	true	true	true	x != v
- *	v1	v2	false	false	false	v1 < x < v2
- *	v1	v2	true	false	false	v1 <= x < v2
- *	v1	v2	false	true	false	v1 < x <= v2
- *	v1	v2	true	true	false	v1 <= x <= v2
- *	v1	v2	false	false	true	x <= v1 or x >= v2
- *	v1	v2	true	false	true	x < v1 or x >= v2
- *	v1	v2	false	true	true	x <= v1 or x > v2
- */
-#define  select_delta_general(LOW, HIGH, LI, HI, HAS_NIL, ANTI, TPE) \
+#define scan_loop_delta(TPE, CANDITER_NEXT, TEST) \
 {\
 	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorDelta(task);\
 	DeltaTpe(TPE) acc = parameters->init.val##TPE; /*previous value*/\
 	int bits = parameters->bits;\
 	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
-	if		( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && (LI) && (HI) && !(ANTI)) {\
-		if(HAS_NIL) {\
-			for( ; first < last; first++){\
-				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-				MOSskipit();\
-				if (IS_NIL(TPE, value))\
-					*o++ = (oid) first;\
-			}\
-		}\
-	}\
-	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && (LI) && (HI) && (ANTI)) {\
-		if(HAS_NIL) {\
-			for( ; first < last; first++){\
-				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-				MOSskipit();\
-				if (!IS_NIL(TPE, value))\
-					*o++ = (oid) first;\
-			}\
-		}\
-		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
-	}\
-	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && !((LI) && (HI)) && !(ANTI)) {\
-		if(HAS_NIL) {\
-			for( ; first < last; first++){\
-				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-				MOSskipit();\
-				if (!IS_NIL(TPE, value))\
-					*o++ = (oid) first;\
-			}\
-		}\
-		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
-	}\
-	else if	( IS_NIL(TPE, (LOW)) &&  IS_NIL(TPE, (HIGH)) && !((LI) && (HI)) && (ANTI)) {\
-			/*Empty result set.*/\
-	}\
-	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && (ANTI)) {\
-		if(HAS_NIL) {\
-			for( ; first < last; first++) {\
-				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-				MOSskipit();\
-				if (!IS_NIL(TPE, value))\
-					*o++ = (oid) first;\
-			}\
-		}\
-		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
-	}\
-	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) == (HIGH) && !((LI) && (HI)) && !(ANTI)) {\
-		/*Empty result set.*/\
-	}\
-	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) > (HIGH) && !(ANTI)) {\
-		/*Empty result set.*/\
-	}\
-	else if	( !IS_NIL(TPE, (LOW)) &&  !IS_NIL(TPE, (HIGH)) && (LOW) > (HIGH) && (ANTI)) {\
-		if(HAS_NIL) {\
-			for( ; first < last; first++){\
-				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-				MOSskipit();\
-				if (!IS_NIL(TPE, value))\
-					*o++ = (oid) first;\
-			}\
-		}\
-		else for( ; first < last; first++){ MOSskipit(); *o++ = (oid) first; }\
-	}\
-	else {\
-		/*normal cases.*/\
-		if( IS_NIL(TPE, (LOW)) ){\
-			for( ; first < last; first++,i++){\
-				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-				MOSskipit();\
-				if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
-				bool cmp  =  (((HI) && value <= (HIGH) ) || (!(HI) && value < (HIGH) ));\
-				if (cmp == !(ANTI))\
-					*o++ = (oid) first;\
-			}\
-		} else\
-		if( IS_NIL(TPE, (HIGH)) ){\
-			for( ; first < last; first++,i++){\
-				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-				MOSskipit();\
-				if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
-				bool cmp  =  (((LI) && value >= (LOW) ) || (!(LI) && value > (LOW) ));\
-				if (cmp == !(ANTI))\
-					*o++ = (oid) first;\
-			}\
-		} else{\
-			for( ; first < last; first++,i++){\
-				DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-				TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-				MOSskipit();\
-				if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
-				bool cmp  =  (((HI) && value <= (HIGH) ) || (!(HI) && value < (HIGH) )) &&\
-						(((LI) && value >= (LOW) ) || (!(LI) && value > (LOW) ));\
-				if (cmp == !(ANTI))\
-					*o++ = (oid) first;\
-			}\
-		}\
-	}\
+    v = (TPE) acc;\
+    BUN j = 0;\
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CANDITER_NEXT(task->ci)) {\
+        BUN i = (BUN) (c - first);\
+        for (;j <= i; j++) {\
+            TPE delta = getBitVector(base, j, bits);\
+			v = ACCUMULATE(acc, delta, sign_mask, TPE);\
+        }\
+        /*TODO: change from control to data dependency.*/\
+        if (TEST)\
+            *o++ = c;\
+    }\
 }
 
-#define select_delta(TPE) {\
-	if( nil && *anti) {\
-		select_delta_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, true, true, TPE);\
-	}\
-	if( !nil && *anti) {\
-		select_delta_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, false, true, TPE);\
-	}\
-	if( nil && !*anti) {\
-		select_delta_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, true, false, TPE);\
-	}\
-	if( !nil && !*anti) {\
-		select_delta_general(*(TPE*) low, *(TPE*) hgh, *li, *hi, false, false, TPE);\
-	}\
-}
-
-str
-MOSselect_delta( MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti) {
-	oid *o;
-	BUN i = 0,first,last;
-	// set the oid range covered
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
-	bool nil = !task->bsrc->tnonil;
-
-		if (task->cl && *task->cl > last){
-		MOSadvance_delta(task);
-		return MAL_SUCCEED;
-	}
-	o = task->lb;
-
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: select_delta(bte); break;
-	case TYPE_sht: select_delta(sht); break;
-	case TYPE_int: select_delta(int); break;
-	case TYPE_lng: select_delta(lng); break;
-	case TYPE_oid: select_delta(oid); break;
+MOSselect_DEF(delta, bte)
+MOSselect_DEF(delta, sht)
+MOSselect_DEF(delta, int)
+MOSselect_DEF(delta, lng)
 #ifdef HAVE_HGE
-	case TYPE_hge: select_delta(hge); break;
+MOSselect_DEF(delta, hge)
 #endif
-	}
-	MOSadvance_delta(task);
-	task->lb = o;
-	return MAL_SUCCEED;
-}
-
-#define thetaselect_delta_normalized(HAS_NIL, ANTI, TPE) \
-for( ; first < last; first++,i++){\
-	DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-	TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-	MOSskipit();\
-	if (HAS_NIL && IS_NIL(TPE, value)) { continue;}\
-	bool cmp =  (IS_NIL(TPE, low) || value >= low) && (value <= hgh || IS_NIL(TPE, hgh)) ;\
-	if (cmp == !(ANTI))\
-		*o++ = (oid) first;\
-}\
-
-#define thetaselect_delta_general(HAS_NIL, TPE)\
-{ 	TPE low,hgh;\
-    MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
-	BitVector base = (BitVector) MOScodevectorDelta(task);\
-	DeltaTpe(TPE) acc = parameters->init.val##TPE; /*previous value*/\
-	int bits = parameters->bits;\
-	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
-	low= hgh = TPE##_nil;\
-	if ( strcmp(oper,"<") == 0){\
-		hgh= *(TPE*) val;\
-		hgh = PREVVALUE##TPE(hgh);\
-	} else\
-	if ( strcmp(oper,"<=") == 0){\
-		hgh= *(TPE*) val;\
-	} else\
-	if ( strcmp(oper,">") == 0){\
-		low = *(TPE*) val;\
-		low = NEXTVALUE##TPE(low);\
-	} else\
-	if ( strcmp(oper,">=") == 0){\
-		low = *(TPE*) val;\
-	} else\
-	if ( strcmp(oper,"!=") == 0){\
-		low = hgh = *(TPE*) val;\
-		anti++;\
-	} else\
-	if ( strcmp(oper,"==") == 0){\
-		hgh= low= *(TPE*) val;\
-	} \
-	if (!anti) {\
-		thetaselect_delta_normalized(HAS_NIL, false, TPE);\
-	}\
-	else {\
-		thetaselect_delta_normalized(HAS_NIL, true, TPE);\
-	}\
-}
-
-#define thetaselect_delta(TPE) {\
-	if( nil ){\
-		thetaselect_delta_general(true, TPE);\
-	}\
-	else /*!nil*/{\
-		thetaselect_delta_general(false, TPE);\
-	}\
-}
-
-str
-MOSthetaselect_delta( MOStask task, void *val, str oper)
-{
-	oid *o;
-	int anti=0;
-	BUN i=0,first,last;
-
-	// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
-	bool nil = !task->bsrc->tnonil;
-
-	if (task->cl && *task->cl > last){
-		MOSskip_delta(task);
-		return MAL_SUCCEED;
-	}
-	o = task->lb;
-
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: thetaselect_delta(bte); break;
-	case TYPE_sht: thetaselect_delta(sht); break;
-	case TYPE_int: thetaselect_delta(int); break;
-	case TYPE_lng: thetaselect_delta(lng); break;
-	case TYPE_oid: thetaselect_delta(oid); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: thetaselect_delta(hge); break;
-#endif
-	}
-	MOSskip_delta(task);
-	task->lb =o;
-	return MAL_SUCCEED;
-}
 
 #define projection_delta(TPE)\
 {	TPE *v;\

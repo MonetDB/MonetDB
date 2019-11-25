@@ -149,185 +149,6 @@ typedef struct {
 	 * It should always be after the global Mosaic header.*/
 } MOSBlkHdr_dictionary_t;
 
-
-#define select_dictionary_general(HAS_NIL, ANTI, TPE) {\
-	if		( IS_NIL(TPE, low) &&  IS_NIL(TPE, hgh) && li && hi && !(ANTI)) {\
-		if(HAS_NIL) {\
-			for(unsigned int i = 0; i < cnt; i++){\
-				BitVectorChunk j = getBitVector(base,i,bits);\
-				if (IS_NIL(TPE, dict[j]))\
-					*(*result)++ = (oid) (i + hseqbase);\
-			}\
-		}\
-	}\
-	else if	( IS_NIL(TPE, low) &&  IS_NIL(TPE, hgh) && li && hi && (ANTI)) {\
-		if(HAS_NIL) {\
-			for(unsigned int i = 0; i < cnt; i++){\
-				BitVectorChunk j = getBitVector(base,i,bits);\
-				if (!IS_NIL(TPE, dict[j]))\
-					*(*result)++ = (oid) (i + hseqbase);\
-			}\
-		}\
-		else for(unsigned int i = 0; i < cnt; i++){ *(*result)++ = (oid) (i + hseqbase); }\
-	}\
-	else if	( IS_NIL(TPE, low) &&  IS_NIL(TPE, hgh) && !(li && hi) && !(ANTI)) {\
-		if(HAS_NIL) {\
-			for(unsigned int i = 0; i < cnt; i++){\
-				BitVectorChunk j = getBitVector(base,i,bits);\
-				if (!IS_NIL(TPE, dict[j]))\
-					*(*result)++ = (oid) (i + hseqbase);\
-			}\
-		}\
-		else for(unsigned int i = 0; i < cnt; i++){ *(*result)++ = (oid) (i + hseqbase); }\
-	}\
-	else if	( IS_NIL(TPE, low) &&  IS_NIL(TPE, hgh) && !(li && hi) && (ANTI)) {\
-			/*Empty (*result) set.*/\
-	}\
-	else if	( !IS_NIL(TPE, low) &&  !IS_NIL(TPE, hgh) && low == hgh && !(li && hi) && (ANTI)) {\
-		if(HAS_NIL) {\
-			for(unsigned int i = 0; i < cnt; i++){\
-				BitVectorChunk j = getBitVector(base,i,bits);\
-				if (!IS_NIL(TPE, dict[j]))\
-					*(*result)++ = (oid) (i + hseqbase);\
-			}\
-		}\
-		else for(unsigned int i = 0; i < cnt; i++){ *(*result)++ = (oid) (i + hseqbase); }\
-	}\
-	else if	( !IS_NIL(TPE, low) &&  !IS_NIL(TPE, hgh) && low == hgh && !(li && hi) && !(ANTI)) {\
-		/*Empty (*result) set.*/\
-	}\
-	else if	( !IS_NIL(TPE, low) &&  !IS_NIL(TPE, hgh) && low > hgh && !(ANTI)) {\
-		/*Empty (*result) set.*/\
-	}\
-	else if	( !IS_NIL(TPE, low) &&  !IS_NIL(TPE, hgh) && low > hgh && (ANTI)) {\
-		if(HAS_NIL) {\
-			for(unsigned int i = 0; i < cnt; i++){\
-				BitVectorChunk j = getBitVector(base,i,bits);\
-				if (!IS_NIL(TPE, dict[j]))\
-					*(*result)++ = (oid) (i + hseqbase);\
-			}\
-		}\
-		else for(unsigned int i = 0; i < cnt; i++){ *(*result)++ = (oid) (i + hseqbase); }\
-	}\
-	else {\
-		/*normal cases.*/\
-		if( IS_NIL(TPE, low) ){\
-			for(unsigned int i = 0; i < cnt; i++){\
-				BitVectorChunk j = getBitVector(base,i,bits); \
-				if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
-				bool cmp  =  ((hi && dict[j] <= hgh ) || (!hi && dict[j] < hgh ));\
-				if (cmp == !(ANTI))\
-					*(*result)++ = (oid) (i + hseqbase);\
-			}\
-		} else\
-		if( IS_NIL(TPE, hgh) ){\
-			for(unsigned int i = 0; i < cnt; i++){\
-				BitVectorChunk j = getBitVector(base,i,bits); \
-				if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
-				bool cmp  =  ((li && dict[j] >= low ) || (!li && dict[j] > low ));\
-				if (cmp == !(ANTI))\
-					*(*result)++ = (oid) (i + hseqbase);\
-			}\
-		} else{\
-			for(unsigned int i = 0; i < cnt; i++){\
-				BitVectorChunk j = getBitVector(base,i,bits); \
-				if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
-				bool cmp  =  ((hi && dict[j] <= hgh ) || (!hi && dict[j] < hgh )) &&\
-						((li && dict[j] >= low ) || (!li && dict[j] > low ));\
-				if (cmp == !(ANTI))\
-					*(*result)++ = (oid) (i + hseqbase);\
-			}\
-		}\
-	}\
-}
-
-// perform relational algebra operators over non-compressed chunks
-// They are bound by an oid range and possibly a candidate list
-
-/* TODO: the select_operator for dictionaries doesn't use
- * the ordered property of the actual global dictionary.
- * Which is a shame because it could in this select operator
- * safe on the dictionary look ups by using the dictionary itself
- * as a reverse index for the ranges of your select predicate.
- * Or if we want to stick to this set up, then we should use a
- * hash based dictionary.
-*/
-#define select_dictionary_DEF(TPE)\
-static \
-void select_dictionary_##TPE(\
-	oid **result, BUN hseqbase, BUN cnt, TPE* dict, BitVector base, bte bits,\
-	TPE low, TPE hgh, bool li, bool hi, bool nil, bool anti) {\
-	if(	nil && anti){\
-		select_dictionary_general(true, true, TPE);\
-	}\
-	if( !nil && anti){\
-		select_dictionary_general(false, true, TPE);\
-	}\
-	if( nil && !anti){\
-		select_dictionary_general(true, false, TPE);\
-	}\
-	if( !nil && !anti){\
-		select_dictionary_general(false, false, TPE);\
-	}\
-}
-
-#define thetaselect_dictionary_normalized(HAS_NIL, ANTI, TPE) \
-for(unsigned int i = 0; i < cnt; i++){\
-	BitVectorChunk j = getBitVector(base, i, bits); \
-	if (HAS_NIL && IS_NIL(TPE, dict[j])) { continue;}\
-	bool cmp = (IS_NIL(TPE, low) || dict[j] >= low) && (dict[j] <= hgh || IS_NIL(TPE, hgh));\
-	if (cmp == !(ANTI)) {\
-		*(*result)++ = (oid) (i + hseqbase);\
-	}\
-}\
-
-#define thetaselect_dictionary_general(HAS_NIL, TPE)\
-{\
-	TPE low,hgh;\
-	low= hgh = TPE##_nil;\
-	bool anti = false;\
-	if ( strcmp(oper,"<") == 0){\
-		hgh= val;\
-		hgh = PREVVALUE##TPE(hgh);\
-	} else\
-	if ( strcmp(oper,"<=") == 0){\
-		hgh= val;\
-	} else\
-	if ( strcmp(oper,">") == 0){\
-		low = val;\
-		low = NEXTVALUE##TPE(low);\
-	} else\
-	if ( strcmp(oper,">=") == 0){\
-		low = val;\
-	} else\
-	if ( strcmp(oper,"!=") == 0){\
-		hgh= low= val;\
-		anti = true;\
-	} else\
-	if ( strcmp(oper,"==") == 0){\
-		hgh= low= val;\
-	} \
-	if (!anti) {\
-		thetaselect_dictionary_normalized(HAS_NIL, false, TPE);\
-	}\
-	else {\
-		thetaselect_dictionary_normalized(HAS_NIL, true, TPE);\
-	}\
-}
-
-#define thetaselect_dictionary_DEF(TPE)\
-static \
-void thetaselect_dictionary_##TPE(\
-	oid **result, BUN hseqbase, BUN cnt, TPE* dict, BitVector base, bte bits,\
-	TPE val, str oper, bool nil) {\
-	if( nil ){\
-		thetaselect_dictionary_general(true, TPE);\
-	}\
-	else /*!nil*/{\
-		thetaselect_dictionary_general(false, TPE);\
-	}\
-}
-
 #define join_dictionary_general(HAS_NIL, NIL_MATCHES, TPE) {\
 	BUN i, n;\
 	oid hr, hl; /*The right and left head values respectively.*/\
@@ -396,32 +217,18 @@ return MAL_SUCCEED;\
 	decompress_dictionary_##TPE(dict, bits, base, cnt, &dest);\
 }
 
-#define DICTselect(TPE) {\
-	oid* result = task->lb;\
-	BUN hseqbase = task->start;\
-	BUN cnt = MOSgetCnt(task->blk);\
-	bool nil = !task->bsrc->tnonil;\
-	TPE* dict = GET_FINAL_DICT(task, TPE);\
+#define scan_loop_dictionary(TPE, CANDITER_NEXT, TEST, GET_FINAL_DICT, GET_FINAL_BITS) {\
+    TPE* dict = GET_FINAL_DICT(task, TPE);\
 	BitVector base = (BitVector) MOScodevectorDict(task);\
-	bte bits = GET_FINAL_BITS(task);\
-	select_dictionary_##TPE(\
-		&result, hseqbase, cnt, dict, base, bits,\
-		*(TPE*) low, *(TPE*) hgh, *li, *hi, nil, *anti);\
-	task->lb = result;\
-}
-
-#define DICTthetaselect(TPE) {\
-	oid* result = task->lb;\
-	BUN hseqbase = task->start;\
-	BUN cnt = MOSgetCnt(task->blk);\
-	bool nil = !task->bsrc->tnonil;\
-	TPE* dict = GET_FINAL_DICT(task, TPE);\
-	BitVector base = (BitVector) MOScodevectorDict(task);\
-	bte bits = GET_FINAL_BITS(task);\
-	thetaselect_dictionary_##TPE(\
-		&result, hseqbase, cnt, dict, base, bits,\
-		*(TPE*) val, oper, nil);\
-	task->lb = result;\
+    bte bits = GET_FINAL_BITS(task);\
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CANDITER_NEXT(task->ci)) {\
+        BUN i = (BUN) (c - first);\
+        BitVectorChunk j = getBitVector(base,i,bits); \
+        v = dict[j];\
+        /*TODO: change from control to data dependency.*/\
+        if (TEST)\
+            *o++ = c;\
+    }\
 }
 
 #define DICTprojection(TPE) {	\

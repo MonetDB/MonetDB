@@ -110,8 +110,6 @@ extend_delta_DEF(TPE, GlobalCappedInfo)\
 merge_delta_Into_dictionary_DEF(TPE, GlobalCappedInfo)\
 compress_dictionary_DEF(TPE)\
 decompress_dictionary_DEF(TPE)\
-select_dictionary_DEF(TPE)\
-thetaselect_dictionary_DEF(TPE)\
 join_dictionary_DEF(TPE)
 
 DictionaryClass(bte)
@@ -414,43 +412,19 @@ MOSdecompress_capped(MOStask task)
 	}
 }
 
-str
-MOSselect_capped(MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti)
-{
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: DICTselect(bte); break;
-	case TYPE_sht: DICTselect(sht); break;
-	case TYPE_int: DICTselect(int); break;
-	case TYPE_lng: DICTselect(lng); break;
-	case TYPE_oid: DICTselect(oid); break;
-	case TYPE_flt: DICTselect(flt); break;
-	case TYPE_dbl: DICTselect(dbl); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: DICTselect(hge); break;
-#endif
-	}
-	MOSskip_capped(task);
-	return MAL_SUCCEED;
-}
+#define scan_loop_capped(TPE, CANDITER_NEXT, TEST) \
+    scan_loop_dictionary(TPE, CANDITER_NEXT, TEST,\
+    GET_FINAL_DICT, GET_FINAL_BITS)
 
-str
-MOSthetaselect_capped( MOStask task, void *val, str oper)
-{
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: DICTthetaselect(bte); break;
-	case TYPE_sht: DICTthetaselect(sht); break;
-	case TYPE_int: DICTthetaselect(int); break;
-	case TYPE_lng: DICTthetaselect(lng); break;
-	case TYPE_oid: DICTthetaselect(oid); break;
-	case TYPE_flt: DICTthetaselect(flt); break;
-	case TYPE_dbl: DICTthetaselect(dbl); break;
+MOSselect_DEF(capped, bte)
+MOSselect_DEF(capped, sht)
+MOSselect_DEF(capped, int)
+MOSselect_DEF(capped, lng)
+MOSselect_DEF(capped, flt)
+MOSselect_DEF(capped, dbl)
 #ifdef HAVE_HGE
-	case TYPE_hge: DICTthetaselect(hge); break;
+MOSselect_DEF(capped, hge)
 #endif
-	}
-	MOSskip_capped(task);
-	return MAL_SUCCEED;
-}
 
 str
 MOSprojection_capped( MOStask task)

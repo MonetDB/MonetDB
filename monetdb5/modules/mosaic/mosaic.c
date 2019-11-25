@@ -745,6 +745,16 @@ isCompressed(bat bid)
 	return r;
 }
 
+MOSselect_generic_DEF(bte)
+MOSselect_generic_DEF(sht)
+MOSselect_generic_DEF(int)
+MOSselect_generic_DEF(lng)
+MOSselect_generic_DEF(flt)
+MOSselect_generic_DEF(dbl)
+#ifdef HAVE_HGE
+MOSselect_generic_DEF(hge)
+#endif
+
 /* The algebra operators should fall back to their default
  * when we know that the heap is not compressed
  * The actual decompression should wait until we know that
@@ -752,32 +762,13 @@ isCompressed(bat bid)
  *
  * The oid-range can be reduced due to partitioning.
  */
-str
-MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bit *li, *hi, *anti;
-	void *low, *hgh;
-	bat *ret, *bid, *cid= 0;
-	int i;
-	BUN cnt = 0;
+
+static str
+MOSselect2(bat *ret, const bat *bid, const bat *cid, void *low, void *hgh, bit *li, bit *hi, bit *anti) {
 	BAT *b, *bn, *cand = NULL;
 	str msg = MAL_SUCCEED;
+	BUN cnt = 0;
 	MOStask task;
-	(void) cntxt;
-	(void) mb;
-	ret = getArgReference_bat(stk, pci, 0);
-	bid = getArgReference_bat(stk, pci, 1);
-
-	if (pci->argc == 8) {	/* candidate list included */
-		cid = getArgReference_bat(stk, pci, 2);
-		i = 3;
-	} else
-		i = 2;
-	low = (void *) getArgReference(stk, pci, i);
-	hgh = (void *) getArgReference(stk, pci, i + 1);
-	li = getArgReference_bit(stk, pci, i + 2);
-	hi = getArgReference_bit(stk, pci, i + 3);
-	anti = getArgReference_bit(stk, pci, i + 4);
 	//
 	// use default implementation if possible
 	if( !isCompressed(*bid)){
@@ -822,46 +813,26 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		task->n = BATcount(cand);
 	}
 
+	struct canditer ci;
+	task->ci = &ci;
+	canditer_init(task->ci, b, cand);
+
 	// determine block range to scan for partitioned columns
 	/*
 	** TODO: Figure out how do partitions relate to mosaic chunks.
 	** Is it a good idea to set the capacity to the total size of the select operand b?
 	*/
 
-	while(task->start < task->stop ){
-		switch(MOSgetTag(task->blk)){
-		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_runlength\n");
-			MOSselect_runlength(task,low,hgh,li,hi,anti);
-			break;
-		case MOSAIC_CAPPED:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_capped\n");
-			MOSselect_capped(task,low,hgh,li,hi,anti);
-			break;
-		case MOSAIC_VAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_var\n");
-			MOSselect_var(task,low,hgh,li,hi,anti);
-			break;
-		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_frame\n");
-			MOSselect_frame(task,low,hgh,li,hi,anti);
-			break;
-		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_delta\n");
-			MOSselect_delta(task,low,hgh,li,hi,anti);
-			break;
-		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_prefix\n");
-			MOSselect_prefix(task,low,hgh,li,hi,anti);
-			break;
-		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_linear\n");
-			MOSselect_linear(task,low,hgh,li,hi,anti);
-			break;
-		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_raw\n");
-			MOSselect_raw(task,low,hgh,li,hi,anti);
-		}
+	switch(ATOMbasetype(task->type)){
+	case TYPE_bte: MOSselect_bte(task, low, hgh, li, hi, anti); break;
+	case TYPE_sht: MOSselect_sht(task, low, hgh, li, hi, anti); break;
+	case TYPE_int: MOSselect_int(task, low, hgh, li, hi, anti); break;
+	case TYPE_lng: MOSselect_lng(task, low, hgh, li, hi, anti); break;
+	case TYPE_flt: MOSselect_flt(task, low, hgh, li, hi, anti); break;
+	case TYPE_dbl: MOSselect_dbl(task, low, hgh, li, hi, anti); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: MOSselect_hge(task, low, hgh, li, hi, anti); break;
+#endif
 	}
 	// derive the filling
 	cnt = (BUN) (task->lb - (oid*) Tloc(bn,0));
@@ -872,128 +843,132 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn->tsorted = true;
 	bn->trevsorted = cnt <=1;
 	bn->tkey = true;
+	MOSvirtualize(bn);
 
-	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
+	*ret = bn->batCacheid;
 	GDKfree(task);
 	BBPkeepref(bn->batCacheid);
 	return msg;
+}
+
+str
+MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bit *li, *hi, *anti;
+	void *low, *hgh;
+	bat *ret, *bid, *cid = NULL;
+	int i;
+	(void) cntxt;
+	(void) mb;
+	ret = getArgReference_bat(stk, pci, 0);
+	bid = getArgReference_bat(stk, pci, 1);
+
+	if (pci->argc == 8) {	/* candidate list included */
+		cid = getArgReference_bat(stk, pci, 2);
+		i = 3;
+	} else
+		i = 2;
+	low = (void *) getArgReference(stk, pci, i);
+	hgh = (void *) getArgReference(stk, pci, i + 1);
+	li = getArgReference_bit(stk, pci, i + 2);
+	hi = getArgReference_bit(stk, pci, i + 3);
+	anti = getArgReference_bit(stk, pci, i + 4);
+
+	return MOSselect2(ret, bid, cid, low, hgh, li, hi, anti);
 }
 
 str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx;
 	bat *cid =0,  *ret, *bid;
-	BAT *b = 0, *cand = 0, *bn = NULL;
-	BUN cnt=0;
-	str msg= MAL_SUCCEED;
 	char **oper;
-	void *low;
-	MOStask task;
+	void *val;
 
 	(void) cntxt;
 	(void) mb;
-		ret= getArgReference_bat(stk,pci,0);
+	ret= getArgReference_bat(stk,pci,0);
 	bid= getArgReference_bat(stk,pci,1);
 	if( pci->argc == 5){ // candidate list included
 		cid = getArgReference_bat(stk,pci, 2);
 		idx = 3;
 	} else idx = 2;
-	low= (void*) getArgReference(stk,pci,idx);
+	val= (void*) getArgReference(stk,pci,idx);
 	oper= getArgReference_str(stk,pci,idx+1);
 
 	if( !isCompressed(*bid)){
 		if( cid)
-			return ALGthetaselect2(ret,bid,cid,low, (const char **)oper);
+			return ALGthetaselect2(ret,bid,cid,val, (const char **)oper);
 		else
-			return ALGthetaselect1(ret,bid,low, (const char **)oper);
-	}
-	
-	b = BATdescriptor(*bid);
-	if( b == NULL)
-		throw(MAL, "mosaic.thetaselect", RUNTIME_OBJECT_MISSING);
-	// determine the elements in the compressed structure
-
-	task= (MOStask) GDKzalloc(sizeof(*task));
-	if( task == NULL){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "mosaic.thetaselect", RUNTIME_OBJECT_MISSING);
+			return ALGthetaselect1(ret,bid,val, (const char **)oper);
 	}
 
-	// accumulator for the oids
-	bn = COLnew((oid)0, TYPE_oid, BATcount(b), TRANSIENT);
-	if( bn == NULL){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "mosaic.thetaselect", RUNTIME_OBJECT_MISSING);
+	BAT* b;
+	if ((b = BBPquickdesc(*bid, false)) == NULL) {
+		throw(MAL, "mosaic.MOSthetaselect", RUNTIME_OBJECT_MISSING);
 	}
-	task->lb = (oid*) Tloc(bn,0);
 
-	MOSinit(task,b);
-	MOSinitializeScan(task, b);
-	// drag along the candidate list into the task descriptor
-	if (cid) {
-		cand = BATdescriptor(*cid);
-		if (cand == NULL){
-			BBPunfix(b->batCacheid);
-			BBPunfix(bn->batCacheid);
-			GDKfree(task);
-			throw(MAL, "mosaic.thetaselect", RUNTIME_OBJECT_MISSING);
+	const char* op = *oper;
+	const void *nil = ATOMnilptr(b->ttype);
+	if (ATOMcmp(b->ttype, val, (void *) nil) == 0) {
+		BAT* bn =  BATdense(0, 0, 0);
+		BBPkeepref(*ret = bn->batCacheid);
+		return MAL_SUCCEED;
+	}
+	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0)) {
+		/* "=" or "==" */
+		bit li = true;
+		bit hi = true;
+		bit anti = false;
+		return MOSselect2(ret, bid, cid, val, val, &li, &hi, &anti);
+	}
+	if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
+		/* "!=" (equivalent to "<>") */
+		bit li = true;
+		bit hi = true;
+		bit anti = true;
+		return MOSselect2(ret, bid, cid, val, val, &li, &hi, &anti);
+	}
+	if (op[0] == '<') {
+		if (op[1] == 0) {
+			/* "<" */
+		bit li = false;
+		bit hi = false;
+		bit anti = false;
+		return MOSselect2(ret, bid, cid, (void *) nil, val, &li, &hi, &anti);
 		}
-		task->cl = (oid*) Tloc(cand, 0);
-		task->n = BATcount(cand);
-	}
-
-	while(task->start < task->stop ){
-		switch(MOSgetTag(task->blk)){
-		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_runlength\n");
-			MOSthetaselect_runlength(task,low,*oper);
-			break;
-		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_delta\n");
-			MOSthetaselect_delta(task,low,*oper);
-			break;
-		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_prefix\n");
-			MOSthetaselect_prefix(task,low,*oper);
-			break;
-		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_linear\n");
-			MOSthetaselect_linear(task,low,*oper);
-			break;
-		case MOSAIC_CAPPED:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_capped\n");
-			MOSthetaselect_capped(task,low,*oper);
-			break;
-		case MOSAIC_VAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_var\n");
-			MOSthetaselect_var(task,low,*oper);
-			break;
-		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_frame\n");
-			MOSthetaselect_frame(task,low,*oper);
-			break;
-		case MOSAIC_RAW:
-		default:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSthetaselect_raw\n");
-			MOSthetaselect_raw(task,low,*oper);
+		if (op[1] == '=' && op[2] == 0) {
+			/* "<=" */
+			bit li = false;
+			bit hi = true;
+			bit anti = false;
+			return MOSselect2(ret, bid, cid, (void *) nil, val, &li, &hi, &anti);
+		}
+		if (op[1] == '>' && op[2] == 0) {
+			/* "<>" (equivalent to "!=") */
+			bit li = true;
+			bit hi = true;
+			bit anti = true;
+			return MOSselect2(ret, bid, cid, val, (void *) nil, &li, &hi, &anti);
 		}
 	}
-	// derive the filling
-	cnt = (BUN)( task->lb - (oid*) Tloc(bn,0));
-	
-	if( cid)
-		BBPunfix(*cid);
-	if( bn){
-		BATsetcount(bn,cnt);
-		bn->tnil = false;
-		bn->tnonil = true;
-		bn->tsorted = true;
-		bn->trevsorted = cnt <=1;
-		bn->tkey = true;
-		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
+	if (op[0] == '>') {
+		if (op[1] == 0) {
+			/* ">" */
+			bit li = false;
+			bit hi = false;
+			bit anti = false;
+			return MOSselect2(ret, bid, cid, val, (void *) nil, &li, &hi, &anti);
+		}
+		if (op[1] == '=' && op[2] == 0) {
+			/* ">=" */
+			bit li = true;
+			bit hi = false;
+			bit anti = false;
+			return MOSselect2(ret, bid, cid, val, (void *) nil, &li, &hi, &anti);
+		}
 	}
-	GDKfree(task);
-	return msg;
+
+	throw(MAL, "mosaic.MOSthetaselect", "unknown operator.");
 }
 
 str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1026,7 +1001,7 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"mosaic.projection",RUNTIME_OBJECT_MISSING);
 	}
 
-	if (BATtdense(bl) || /*not a candidate list*/ !(bl->tkey && bl->tsorted && bl->tnonil)) {
+	if (/*not a candidate list*/ !(bl->tkey && bl->tsorted && bl->tnonil)) {
 
 		msg = ALGprojection(ret, lid, rid);
 		BBPunfix(*lid);
@@ -1064,8 +1039,13 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	task->cl = ol;
 	task->n = cnt;
 
+	struct canditer ci;
+	task->ci = &ci;
+	canditer_init(task->ci, NULL, bl);
+	canditer_next(task->ci); // Increase the state by one.
+
 	// loop thru all the chunks and fetch all results
-	while(task->start<task->stop )
+	while(task->start < task->stop )
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_runlength\n");
