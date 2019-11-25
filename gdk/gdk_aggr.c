@@ -896,7 +896,9 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	const char *algo = NULL;
 	lng t0 = 0;
 
-	ALGODEBUG t0 = GDKusec();
+	/* CHECK */
+	// This is in ALGODEBUG
+	t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATgroupsum: %s\n", err);
@@ -947,9 +949,9 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 		bn = NULL;
 	}
 
-	DEBUG(ALGO, "(b="ALGOBATFMT",g="ALGOOPTBATFMT",e="ALGOOPTBATFMT",s="ALGOOPTBATFMT")="ALGOOPTBATFMT": %s; "
-			  	"start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)"
-			  	"\n",
+	DEBUG(ALGO, "%s(b="ALGOBATFMT",g="ALGOOPTBATFMT",e="ALGOOPTBATFMT",s="ALGOOPTBATFMT")="ALGOOPTBATFMT": %s; "
+			  	"start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
+				__func__,
 				ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
 				ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
 				algo ? algo : "",
@@ -969,7 +971,9 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	const char *algo = NULL;
 	lng t0 = 0;
 
-	ALGODEBUG t0 = GDKusec();
+	/* CHECK */
+	// This is in ALGODEBUG
+	t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATsum: %s\n", err);
@@ -1071,9 +1075,9 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	nils = dosum(Tloc(b, 0), b->tnonil, b->hseqbase, &ci, ncand,
 		     res, true, b->ttype, tp, &min, min, max,
 		     skip_nils, abort_on_error, nil_if_empty, "BATsum", &algo);
-	DEBUG(ALGO, "(b="ALGOBATFMT",s="ALGOOPTBATFMT"): %s; "
-				"start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)"
-				"\n",
+	DEBUG(ALGO, "%s(b="ALGOBATFMT",s="ALGOOPTBATFMT"): %s; "
+				"start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
+				__func__,
 				ALGOBATPAR(b), ALGOOPTBATPAR(s),
 				algo ? algo : "",
 				ci.seq, ncand, GDKusec() - t0);
