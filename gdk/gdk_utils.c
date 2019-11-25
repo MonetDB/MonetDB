@@ -2049,6 +2049,7 @@ GDKmmap(const char *path, int mode, size_t len)
 	void *ret;
 
 	if (GDKvm_cursize() + len >= GDK_vm_maxsize) {
+		GDKmemfail("GDKmmap", len);
 		GDKerror("allocating too much virtual address space\n");
 		return NULL;
 	}
@@ -2082,6 +2083,7 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 
 	if (*new_size > old_size &&
 	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize) {
+		GDKmemfail("GDKmmap", *new_size);
 		GDKerror("allocating too much virtual address space\n");
 		return NULL;
 	}
