@@ -89,6 +89,7 @@ static const char *LAYER_STR[] = {
         COMP( DELTA )                 \
         COMP( IO_ )                   \
         COMP( TEM )                   \
+        COMP( HEAP )                  \
                                       \
         COMP( GEOM )                  \
         COMP( LIDAR )                 \

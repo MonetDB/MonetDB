@@ -10,6 +10,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_cand.h"
+#include "gdk_tracer.h"
 
 /* String Atom Implementation
  *
@@ -328,7 +329,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 			GDKerror("strPut: string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
 			return 0;
 		}
-		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
+		DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
 		if (HEAPextend(h, newsize, true) != GDK_SUCCEED) {
 			return 0;
 		}
