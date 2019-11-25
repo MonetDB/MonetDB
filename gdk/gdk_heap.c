@@ -61,7 +61,7 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 		fn = path;
 	}
 	/* round up to mulitple of GDK_mmap_pagesize */
-	fd = GDKfdlocate(NOFARM, fn, "wxb", NULL);
+	fd = GDKfdlocate(NOFARM, fn, "wb", NULL);
 	if (fd >= 0) {
 		close(fd);
 		base = GDKload(NOFARM, fn, NULL, *maxsz, maxsz, STORE_MMAP);
@@ -421,7 +421,7 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 		const char *base = b->theap.base;
 
 		/* first save heap in file with extra .tmp extension */
-		if ((fd = GDKfdlocate(b->theap.farmid, b->theap.filename, "wxb", "tmp")) < 0)
+		if ((fd = GDKfdlocate(b->theap.farmid, b->theap.filename, "wb", "tmp")) < 0)
 			return GDK_FAIL;
 		while (size > 0) {
 			ret = write(fd, base, (unsigned) MIN(1 << 30, size));
