@@ -10,6 +10,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
+#include "gdk_tracer.h"
 #include <math.h>
 
 /* grouped aggregates
@@ -946,15 +947,13 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 		bn = NULL;
 	}
 
-	ALGODEBUG fprintf(stderr,
-			  "#%s: %s(b="ALGOBATFMT",g="ALGOOPTBATFMT",e="ALGOOPTBATFMT",s="ALGOOPTBATFMT")="ALGOOPTBATFMT": %s; "
-			  "start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)"
-			  "\n",
-			  MT_thread_getname(), __func__,
-			  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
-			  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
-			  algo ? algo : "",
-			  ci.seq, ncand, GDKusec() - t0);
+	DEBUG(ALGO, "(b="ALGOBATFMT",g="ALGOOPTBATFMT",e="ALGOOPTBATFMT",s="ALGOOPTBATFMT")="ALGOOPTBATFMT": %s; "
+			  	"start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)"
+			  	"\n",
+				ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+				ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
+				algo ? algo : "",
+				ci.seq, ncand, GDKusec() - t0);
 	return bn;
 }
 
@@ -1072,14 +1071,12 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	nils = dosum(Tloc(b, 0), b->tnonil, b->hseqbase, &ci, ncand,
 		     res, true, b->ttype, tp, &min, min, max,
 		     skip_nils, abort_on_error, nil_if_empty, "BATsum", &algo);
-	ALGODEBUG fprintf(stderr,
-			  "#%s: %s(b="ALGOBATFMT",s="ALGOOPTBATFMT"): %s; "
-			  "start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)"
-			  "\n",
-			  MT_thread_getname(), __func__,
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-			  algo ? algo : "",
-			  ci.seq, ncand, GDKusec() - t0);
+	DEBUG(ALGO, "(b="ALGOBATFMT",s="ALGOOPTBATFMT"): %s; "
+				"start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)"
+				"\n",
+				ALGOBATPAR(b), ALGOOPTBATPAR(s),
+				algo ? algo : "",
+				ci.seq, ncand, GDKusec() - t0);
 	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
 }
 

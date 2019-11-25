@@ -20,6 +20,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_tm.h"
+#include "gdk_tracer.h"
 
 /*
  * The physical (disk) commit protocol is handled mostly by
@@ -102,7 +103,7 @@ epilogue(int cnt, bat *subcommit)
 			if (b) {
 				/* check mmap modes */
 				if (BATcheckmodes(b, true) != GDK_SUCCEED)
-					fprintf(stderr, "#epilogue: BATcheckmodes failed\n");
+					ERROR(GDK_TM, "BATcheckmodes failed\n");
 			}
 		}
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {

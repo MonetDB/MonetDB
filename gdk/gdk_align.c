@@ -48,6 +48,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
+#include "gdk_tracer.h"
 
 /* Return TRUE if the two BATs are aligned (same size, same
  * hseqbase). */
@@ -137,7 +138,7 @@ VIEWcreate(oid seq, BAT *b)
 		GDKfree(bn);
 		return NULL;
 	}
-	ALGODEBUG fprintf(stderr, "#VIEWcreate(" ALGOBATFMT ")=" ALGOBATFMT "\n", ALGOBATPAR(b), ALGOBATPAR(bn));
+	DEBUG(ALGO, "VIEWcreate(" ALGOBATFMT ")=" ALGOBATFMT "\n", ALGOBATPAR(b), ALGOBATPAR(bn));
 	return bn;
 }
 
@@ -164,8 +165,8 @@ BATmaterialize(BAT *b)
 	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
-	ALGODEBUG fprintf(stderr, "#BATmaterialize(" ALGOBATFMT ")\n",
-			  ALGOBATPAR(b));
+	DEBUG(ALGO, "BATmaterialize(" ALGOBATFMT ")\n",
+			  	ALGOBATPAR(b)); 
 
 	if (tt != TYPE_void) {
 		/* no voids */

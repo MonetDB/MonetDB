@@ -10,6 +10,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_cand.h"
+#include "gdk_tracer.h"
 
 /* create a new, dense candidate list with values from `first' up to,
  * but not including, `last' */
@@ -917,9 +918,9 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 	dense_cands->batDirtydesc = true;
 	dense_cands->tvheap = dels;
 	BATsetcount(dense_cands, dense_cands->batCount - (hi - lo));
-	ALGODEBUG fprintf(stderr, "#BATnegcands(cands=" ALGOBATFMT ","
-			  "dels=" ALGOBATFMT ")\n",
-			  ALGOBATPAR(dense_cands),
-			  ALGOBATPAR(odels));
+	DEBUG(ALGO, "BATnegcands(cands=" ALGOBATFMT ","
+			  	"dels=" ALGOBATFMT ")\n",
+			  	ALGOBATPAR(dense_cands),
+			  	ALGOBATPAR(odels));
     	return GDK_SUCCEED;
 }

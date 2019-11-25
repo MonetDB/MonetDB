@@ -86,6 +86,8 @@ static const char *LAYER_STR[] = {
         COMP( ALLOC )                 \
         COMP( PAR )                   \
         COMP( ALGO )                  \
+        COMP( DELTA )                 \
+                                      \
         COMP( GEOM )                  \
         COMP( LIDAR )                 \
         COMP( BAM )                   \
@@ -170,6 +172,8 @@ static const char *LAYER_STR[] = {
         COMP( MAL_OPT_VOLCANO )       \
         COMP( MAL_OPT_MACRO )         \
         COMP( MAL_OPT_POSTFIX )       \
+                                      \
+        COMP( GDK_TM )                \
                                       \
         COMP( COMPONENTS_COUNT )      \
 
