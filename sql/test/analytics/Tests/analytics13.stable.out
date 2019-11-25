@@ -382,6 +382,86 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 [ 255,	308.5,	7404,	NULL,	33330,	NULL,	NULL,	NULL	]
 #SELECT
 #    DISTINCT
+#    NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2)
+#FROM another_T
+#GROUP BY ROLLUP(col1);
+% .%14 # table_name
+% %14 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ NULL	]
+#SELECT
+#    LAST_VALUE(col5) OVER (PARTITION BY AVG(col8) ORDER BY SUM(col7) NULLS FIRST)
+#FROM another_T
+#GROUP BY CUBE(col1, col2, col5, col8);
+% .%5 # table_name
+% %5 # name
+% int # type
+% 4 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ 5555	]
+[ 5555	]
+[ 5555	]
+[ 5555	]
+[ 5555	]
+[ 5555	]
+[ 5555	]
+[ 5555	]
+[ 5555	]
+[ 5555	]
+[ 5555	]
+[ 5555	]
+[ 5555	]
+[ 5555	]
+[ 5555	]
+#SELECT
+#    DISTINCT
 #    NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2),
 #    NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL),
 #    NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col1) IS NOT NULL OR MIN(col1) < MIN(col2)),
@@ -418,6 +498,79 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 [ false,	true,	false,	1,	0	]
 [ true,	true,	false,	NULL,	0	]
 [ true,	true,	false,	1,	0	]
+#SELECT
+#    GROUPING(col1, col2, col5, col8) a1,
+#    col1 IN (SELECT ColID + col2 FROM tbl_ProductSales) a2,
+#    col1 < ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales) a3,
+#    LAST_VALUE(col5) OVER (PARTITION BY AVG(CASE WHEN col8 IS NULL THEN 0 ELSE col8 END) ORDER BY SUM(col7) NULLS FIRST) a4,
+#    col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col8) IS NULL) a5,
+#    EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1) a6,
+#    col1 + col5 = (SELECT MIN(ColID) FROM tbl_ProductSales) a7,
+% .%1,	.%60,	.,	.,	.,	.,	.,	.%13,	.,	.,	.,	.,	.,	. # table_name
+% a1,	a2,	a3,	a4,	a5,	a6,	a7,	a8,	a9,	a10,	a11,	a12,	a13,	a14 # name
+% tinyint,	boolean,	boolean,	int,	boolean,	boolean,	boolean,	bigint,	hugeint,	bigint,	bigint,	varchar,	int,	hugeint # type
+% 2,	5,	5,	4,	5,	5,	5,	4,	4,	5,	3,	32,	3,	1 # length
+[ 0,	false,	true,	5555,	true,	false,	false,	1111,	2226,	0,	333,	"4444 plus 0",	111,	NULL	]
+[ 0,	false,	true,	NULL,	true,	true,	false,	1,	6,	0,	0,	"4 plus 0",	111,	NULL	]
+[ 0,	false,	true,	NULL,	true,	false,	false,	11,	26,	0,	3,	"44 plus 0",	111,	NULL	]
+[ 0,	false,	true,	NULL,	true,	false,	false,	111,	226,	0,	33,	"444 plus 0",	111,	NULL	]
+[ 1,	false,	true,	5555,	true,	false,	false,	1111,	2226,	8888,	333,	"4444 plus 0",	111,	NULL	]
+[ 1,	false,	true,	NULL,	true,	true,	false,	1,	6,	8,	0,	"4 plus 0",	111,	NULL	]
+[ 1,	false,	true,	NULL,	true,	false,	false,	11,	26,	88,	3,	"44 plus 0",	111,	NULL	]
+[ 1,	false,	true,	NULL,	true,	false,	false,	111,	226,	888,	33,	"444 plus 0",	111,	NULL	]
+[ 2,	false,	true,	5555,	true,	false,	NULL,	1111,	2226,	16,	353,	"4444 plus 0",	111,	NULL	]
+[ 2,	false,	true,	NULL,	true,	true,	NULL,	1,	6,	16,	20,	"4 plus 0",	111,	NULL	]
+[ 2,	false,	true,	NULL,	true,	false,	NULL,	11,	26,	16,	23,	"44 plus 0",	111,	NULL	]
+[ 2,	false,	true,	NULL,	true,	false,	NULL,	111,	226,	16,	53,	"444 plus 0",	111,	NULL	]
+[ 3,	false,	true,	5555,	true,	false,	NULL,	1111,	2226,	24,	353,	"4444 plus 0",	111,	NULL	]
+[ 3,	false,	true,	NULL,	true,	true,	NULL,	1,	6,	24,	20,	"4 plus 0",	111,	NULL	]
+[ 3,	false,	true,	NULL,	true,	false,	NULL,	11,	26,	24,	23,	"44 plus 0",	111,	NULL	]
+[ 3,	false,	true,	NULL,	true,	false,	NULL,	111,	226,	24,	53,	"444 plus 0",	111,	NULL	]
+[ 4,	NULL,	NULL,	5555,	true,	false,	false,	1111,	NULL,	0,	343,	"4444 plus 0",	111,	NULL	]
+[ 4,	NULL,	NULL,	NULL,	true,	true,	false,	1,	NULL,	0,	10,	"4 plus 0",	111,	NULL	]
+[ 4,	NULL,	NULL,	NULL,	true,	false,	false,	11,	NULL,	0,	13,	"44 plus 0",	111,	NULL	]
+[ 4,	NULL,	NULL,	NULL,	true,	false,	false,	111,	NULL,	0,	43,	"444 plus 0",	111,	NULL	]
+[ 5,	NULL,	NULL,	5555,	true,	false,	false,	1111,	NULL,	8888,	343,	"4444 plus 0",	111,	NULL	]
+[ 5,	NULL,	NULL,	NULL,	true,	true,	false,	1,	NULL,	8,	10,	"4 plus 0",	111,	NULL	]
+[ 5,	NULL,	NULL,	NULL,	true,	false,	false,	11,	NULL,	88,	13,	"44 plus 0",	111,	NULL	]
+[ 5,	NULL,	NULL,	NULL,	true,	false,	false,	111,	NULL,	888,	43,	"444 plus 0",	111,	NULL	]
+[ 6,	NULL,	NULL,	5555,	true,	false,	NULL,	1111,	NULL,	16,	363,	"4444 plus 0",	111,	NULL	]
+[ 6,	NULL,	NULL,	NULL,	true,	true,	NULL,	1,	NULL,	16,	30,	"4 plus 0",	111,	NULL	]
+[ 6,	NULL,	NULL,	NULL,	true,	false,	NULL,	11,	NULL,	16,	33,	"44 plus 0",	111,	NULL	]
+[ 6,	NULL,	NULL,	NULL,	true,	false,	NULL,	111,	NULL,	16,	63,	"444 plus 0",	111,	NULL	]
+[ 7,	NULL,	NULL,	5555,	true,	false,	NULL,	1111,	NULL,	24,	363,	"4444 plus 0",	111,	NULL	]
+[ 7,	NULL,	NULL,	NULL,	true,	true,	NULL,	1,	NULL,	24,	30,	"4 plus 0",	111,	NULL	]
+[ 7,	NULL,	NULL,	NULL,	true,	false,	NULL,	11,	NULL,	24,	33,	"44 plus 0",	111,	NULL	]
+[ 7,	NULL,	NULL,	NULL,	true,	false,	NULL,	111,	NULL,	24,	63,	"444 plus 0",	111,	NULL	]
+[ 8,	NULL,	NULL,	5555,	true,	false,	NULL,	1111,	2226,	35552,	373,	"4444 plus 1",	111,	NULL	]
+[ 8,	NULL,	NULL,	NULL,	true,	false,	NULL,	1,	6,	32,	40,	"4 plus 1",	111,	NULL	]
+[ 8,	NULL,	NULL,	NULL,	true,	false,	NULL,	11,	26,	352,	43,	"44 plus 1",	111,	NULL	]
+[ 8,	NULL,	NULL,	NULL,	true,	false,	NULL,	111,	226,	3552,	73,	"444 plus 1",	111,	NULL	]
+[ 9,	NULL,	NULL,	5555,	true,	false,	NULL,	1111,	2226,	44440,	373,	"4444 plus 1",	111,	NULL	]
+[ 9,	NULL,	NULL,	NULL,	true,	false,	NULL,	1,	6,	40,	40,	"4 plus 1",	111,	NULL	]
+[ 9,	NULL,	NULL,	NULL,	true,	false,	NULL,	11,	26,	440,	43,	"44 plus 1",	111,	NULL	]
+[ 9,	NULL,	NULL,	NULL,	true,	false,	NULL,	111,	226,	4440,	73,	"444 plus 1",	111,	NULL	]
+[ 10,	NULL,	NULL,	5555,	true,	false,	NULL,	1111,	2226,	48,	393,	"4444 plus 1",	111,	NULL	]
+[ 10,	NULL,	NULL,	NULL,	true,	false,	NULL,	1,	6,	48,	60,	"4 plus 1",	111,	NULL	]
+[ 10,	NULL,	NULL,	NULL,	true,	false,	NULL,	11,	26,	48,	63,	"44 plus 1",	111,	NULL	]
+[ 10,	NULL,	NULL,	NULL,	true,	false,	NULL,	111,	226,	48,	93,	"444 plus 1",	111,	NULL	]
+[ 11,	NULL,	NULL,	5555,	true,	false,	NULL,	1111,	2226,	56,	393,	"4444 plus 1",	111,	NULL	]
+[ 11,	NULL,	NULL,	NULL,	true,	false,	NULL,	1,	6,	56,	60,	"4 plus 1",	111,	NULL	]
+[ 11,	NULL,	NULL,	NULL,	true,	false,	NULL,	11,	26,	56,	63,	"44 plus 1",	111,	NULL	]
+[ 11,	NULL,	NULL,	NULL,	true,	false,	NULL,	111,	226,	56,	93,	"444 plus 1",	111,	NULL	]
+[ 12,	NULL,	NULL,	5555,	true,	false,	NULL,	1111,	NULL,	35552,	383,	"4444 plus 1",	111,	NULL	]
+[ 12,	NULL,	NULL,	NULL,	true,	false,	NULL,	1,	NULL,	32,	50,	"4 plus 1",	111,	NULL	]
+[ 12,	NULL,	NULL,	NULL,	true,	false,	NULL,	11,	NULL,	352,	53,	"44 plus 1",	111,	NULL	]
+[ 12,	NULL,	NULL,	NULL,	true,	false,	NULL,	111,	NULL,	3552,	83,	"444 plus 1",	111,	NULL	]
+[ 13,	NULL,	NULL,	5555,	true,	false,	NULL,	1111,	NULL,	44440,	383,	"4444 plus 1",	111,	NULL	]
+[ 13,	NULL,	NULL,	NULL,	true,	false,	NULL,	1,	NULL,	40,	50,	"4 plus 1",	111,	NULL	]
+[ 13,	NULL,	NULL,	NULL,	true,	false,	NULL,	11,	NULL,	440,	53,	"44 plus 1",	111,	NULL	]
+[ 13,	NULL,	NULL,	NULL,	true,	false,	NULL,	111,	NULL,	4440,	83,	"444 plus 1",	111,	NULL	]
+[ 14,	NULL,	NULL,	5555,	true,	false,	NULL,	1111,	NULL,	48,	403,	"4444 plus 1",	111,	NULL	]
+[ 14,	NULL,	NULL,	NULL,	true,	false,	NULL,	1,	NULL,	48,	70,	"4 plus 1",	111,	NULL	]
+[ 14,	NULL,	NULL,	NULL,	true,	false,	NULL,	11,	NULL,	48,	73,	"44 plus 1",	111,	NULL	]
+[ 14,	NULL,	NULL,	NULL,	true,	false,	NULL,	111,	NULL,	48,	103,	"444 plus 1",	111,	NULL	]
+[ 15,	NULL,	NULL,	NULL,	true,	false,	NULL,	1234,	NULL,	56,	403,	"4-sep-44-sep-444-sep-4444 plus 1",	111,	NULL	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 

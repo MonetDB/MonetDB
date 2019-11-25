@@ -102,6 +102,17 @@ ORDER BY GROUPING(col1, col2, col3, col4, col5, col6, col7, col8);
 
 SELECT
     DISTINCT
+    NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2)
+FROM another_T
+GROUP BY ROLLUP(col1);
+
+SELECT
+    LAST_VALUE(col5) OVER (PARTITION BY AVG(col8) ORDER BY SUM(col7) NULLS FIRST)
+FROM another_T
+GROUP BY CUBE(col1, col2, col5, col8);
+
+SELECT
+    DISTINCT
     NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2),
     NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL),
     NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col1) IS NOT NULL OR MIN(col1) < MIN(col2)),
@@ -121,6 +132,28 @@ FROM another_T
 GROUP BY CUBE(col1, col2, col5)
 ORDER BY a1 NULLS FIRST, a2 NULLS FIRST, a3 NULLS FIRST, a4 NULLS FIRST, a5 NULLS FIRST;
 
+SELECT
+    GROUPING(col1, col2, col5, col8) a1,
+    col1 IN (SELECT ColID + col2 FROM tbl_ProductSales) a2,
+    col1 < ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales) a3,
+    LAST_VALUE(col5) OVER (PARTITION BY AVG(CASE WHEN col8 IS NULL THEN 0 ELSE col8 END) ORDER BY SUM(col7) NULLS FIRST) a4,
+    col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col8) IS NULL) a5,
+    EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1) a6,
+    col1 + col5 = (SELECT MIN(ColID) FROM tbl_ProductSales) a7,
+    CAST(SUM(DISTINCT CASE WHEN col5 - col8 = (SELECT MIN(ColID / col2) FROM tbl_ProductSales) THEN col2 - 5 ELSE ABS(col1) END) AS BIGINT) a8,
+    (SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5)) a9,
+    GROUPING(col1, col5, col8) * MIN(col8) OVER (PARTITION BY col5 ORDER BY col1 NULLS LAST ROWS UNBOUNDED PRECEDING) a10,
+    MAX(col3) / 10 + GROUPING(col1, col5, col2) * 10 a11,
+    GROUP_CONCAT(CAST(col4 AS VARCHAR(32)), '-sep-') || ' plus ' || GROUPING(col1) a12,
+    FIRST_VALUE(col1) OVER (ORDER BY col8 DESC NULLS FIRST) a13,
+    col2 * NULL a14
+FROM another_T
+GROUP BY CUBE(col1, col2, col5, col8), GROUPING SETS (())
+ORDER BY 
+    a1 ASC NULLS FIRST, a2 ASC NULLS LAST, a3 DESC NULLS FIRST, a4 DESC NULLS LAST, a5 ASC NULLS FIRST, 
+    a6 DESC NULLS LAST, a7 ASC NULLS FIRST, a8 ASC NULLS LAST, a9 ASC NULLS FIRST, a10 DESC NULLS LAST, 
+    a11 ASC NULLS FIRST, a12 DESC NULLS LAST, a13 ASC NULLS FIRST, a14 DESC NULLS LAST;
+
 ---Queries bellow give wrong results and errors
 
 SELECT
@@ -139,23 +172,6 @@ SELECT
     GROUPING(t1.col7) = ALL (SELECT GROUPING(t1.col6) UNION ALL SELECT 10 * MIN(t1.col8))
 FROM another_T t1
 GROUP BY CUBE(t1.col7, t1.col6);
-
-SELECT
-    GROUPING(col1, col2, col5, col8),
-    col1 IN (SELECT ColID + col2 FROM tbl_ProductSales),
-    col1 < ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales),
-    col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col8) IS NULL),
-    EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1),
-    col1 + col5 = (SELECT MIN(ColID) FROM tbl_ProductSales),
-    CAST(SUM(DISTINCT CASE WHEN col5 - col8 = (SELECT MIN(ColID / col2) FROM tbl_ProductSales) THEN col2 - 5 ELSE ABS(col1) END) AS BIGINT),
-    (SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5)),
-    GROUPING(col1, col5, col8) * MIN(col8) OVER (PARTITION BY col5 ORDER BY col1 ROWS UNBOUNDED PRECEDING) evil,
-    MAX(col3) / 10 + GROUPING(col1, col5, col2) * 10,
-    GROUP_CONCAT(CAST(col4 AS VARCHAR(32)), '-sep-') || ' plus ' || GROUPING(col1),
-    NTILE(col1) OVER (ORDER BY col8 DESC),
-    col2 * NULL
-FROM another_T
-GROUP BY CUBE(col1, col2, col5, col8), GROUPING SETS (());
 
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
