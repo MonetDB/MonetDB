@@ -2259,7 +2259,7 @@ store_manager(void)
 
 		if (res != LOG_OK) {
 			MT_lock_unset(&bs_lock);
-			GDKfatal("Write-ahead logging failure, disk full?");
+			GDKfatal("write-ahead logging failure, disk full?");
 		}
 
 		flusher_new_cycle();

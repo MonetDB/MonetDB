@@ -1398,7 +1398,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 	if (!t && c)
 		t = c->t;
 
-       	dels = stmt_tid(be, t, rel->flag == REL_PARTITION);
+    dels = stmt_tid(be, t, rel->flag == REL_PARTITION);
 
 	/* add aliases */
 	assert(rel->exps);
@@ -1414,7 +1414,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			const char *cname = cexp->r;
 			list *l = sa_list(sql->sa);
 
-		       	c = find_sql_column(t, cname);
+			c = find_sql_column(t, cname);
 			s = stmt_col(be, c, dels);
 			append(l, s);
 			if (exps->h->next) {

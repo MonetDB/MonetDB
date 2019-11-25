@@ -678,7 +678,7 @@ mvc_release(mvc *m, const char *name)
 	while (ok == SQL_OK && (!tr->name || strcmp(tr->name, name) != 0)) {
 		/* commit all intermediate savepoints */
 		if (sql_trans_commit(tr) != SQL_OK)
-			GDKfatal("Release savepoints should not fail");
+			GDKfatal("release savepoints should not fail");
 		tr = sql_trans_destroy(tr, true);
 	}
 	tr->name = NULL;

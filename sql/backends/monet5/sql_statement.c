@@ -577,7 +577,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		s->nr = l[c->colnr+1];
 		return s;
 	}
-       	q = newStmt(mb, sqlRef, bindRef);
+	q = newStmt(mb, sqlRef, bindRef);
 	if (q == NULL)
 		return NULL;
 	if (access == RD_UPD_ID) {

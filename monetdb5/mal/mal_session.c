@@ -453,7 +453,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 
 	DEBUG(MAL_SESSION, "Reset variable: %s %d\n", getFunctionId(mb->stmt[0]), mb->var[mb->stmt[0]->argv[0]].used);
 	if (mb->errors == MAL_SUCCEED)
-		trimMalVariables_(mb, glb);\
+		trimMalVariables_(mb, glb);
 	DEBUG(MAL_SESSION, "After trim: %s %d\n", getFunctionId(mb->stmt[0]), mb->vtop);
 }
 
