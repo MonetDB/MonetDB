@@ -3070,7 +3070,7 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (!l || !r)
 		return NULL;
 
-	if (rel_check_card(*rel, l, r)) 
+	if (0 && rel_check_card(*rel, l, r)) 
 		return NULL;
 	return rel_binop_(sql, rel ? *rel : NULL, l, r, s, fname, ek.card);
 }
