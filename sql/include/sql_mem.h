@@ -130,7 +130,7 @@ extern size_t sa_size( sql_allocator *sa );
 		size_t _l = (l);				\
 		char *_res = sa_strndup(_sa, _s, _l);		\
 		DEBUG(ALLOC,				\
-				"sa_strndup(%p,len=%zu) -> %p\n" 	\
+				"sa_strndup(%p,len=%zu) -> %p\n", 	\
 				_sa, _l, _res);		\
 		_res;						\
 	})

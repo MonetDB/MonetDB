@@ -1474,7 +1474,7 @@ THRnew(const char *name, MT_Id pid)
 	char *nme = GDKstrdup(name);
 
 	if (nme == NULL) {
-		DEBUG(IO, "Malloc failure\n");
+		DEBUG(IO_, "Malloc failure\n");
 		GDKerror("THRnew: malloc failure\n");
 		return NULL;
 	}
@@ -1496,7 +1496,7 @@ THRnew(const char *name, MT_Id pid)
 		}
 	}
 	GDKfree(nme);
-	DEBUG(IO, "Too many threads\n");
+	DEBUG(IO_, "Too many threads\n");
 	GDKerror("THRnew: too many threads\n");
 	return NULL;
 }
@@ -1547,7 +1547,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	};
 	len = snprintf(semname, sizeof(semname), "THRcreate%" PRIu64, (uint64_t) ATOMIC_INC(&ctr));
 	if (len == -1 || len > (int) sizeof(semname)) {
-		DEBUG(IO, "Semaphore name is too large\n");
+		DEBUG(IO_, "Semaphore name is too large\n");
 		GDKerror("THRcreate: semaphore name is too large\n");
 		GDKfree(t);
 		GDKfree(s->name);
