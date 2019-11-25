@@ -25,7 +25,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_tracer.h"
 
 /*
  * batcommit really forgets the atoms guarded for an undo; we just
