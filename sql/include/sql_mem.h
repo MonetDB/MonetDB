@@ -87,10 +87,8 @@ extern size_t sa_size( sql_allocator *sa );
 		size_t _sz = (sz);				\
 		void *_res = sa_alloc(_sa, _sz);		\
 		DEBUG(ALLOC,				\
-				"#sa_alloc(%p,%zu) -> %p"	\
-				" %s[%s:%d]\n",			\
-				_sa, _sz, _res,			\
-				__func__, __FILE__, __LINE__);	\
+				"sa_alloc(%p,%zu) -> %p\n",	\
+				_sa, _sz, _res);	\
 		_res;						\
 	})
 #define sa_zalloc(sa, sz)					\
@@ -99,10 +97,8 @@ extern size_t sa_size( sql_allocator *sa );
 		size_t _sz = (sz);				\
 		void *_res = sa_zalloc(_sa, _sz);		\
 		DEBUG(ALLOC,				\
-				"#sa_zalloc(%p,%zu) -> %p"	\
-				" %s[%s:%d]\n",			\
-				_sa, _sz, _res,			\
-				__func__, __FILE__, __LINE__);	\
+				"sa_zalloc(%p,%zu) -> %p\n",	\
+				_sa, _sz, _res);	\
 		_res;						\
 	})
 #define sa_realloc(sa, ptr, sz, osz)					\
@@ -113,11 +109,8 @@ extern size_t sa_size( sql_allocator *sa );
 		size_t _osz = (osz);					\
 		void *_res = sa_realloc(_sa, _ptr, _sz, _osz);		\
 		DEBUG(ALLOC,				\
-				"#sa_realloc(%p,%p,%zu,%zu) -> %p"	\
-				" %s[%s:%d]\n",				\
-				_sa, _ptr, _sz, _osz,			\
-				_res,					\
-				__func__, __FILE__, __LINE__);		\
+				"sa_realloc(%p,%p,%zu,%zu) -> %p\n",	\
+				_sa, _ptr, _sz, _osz, _res);		\
 		_res;							\
 	})
 #define sa_strdup(sa, s)					\
@@ -126,10 +119,8 @@ extern size_t sa_size( sql_allocator *sa );
 		const char *_s = (s);				\
 		char *_res = sa_strdup(_sa, _s);		\
 		DEBUG(ALLOC,				\
-				"#sa_strdup(%p,len=%zu) -> %p"	\
-				" %s[%s:%d]\n",			\
-				_sa, strlen(_s), _res,		\
-				__func__, __FILE__, __LINE__);	\
+				"sa_strdup(%p,len=%zu) -> %p\n",	\
+				_sa, strlen(_s), _res);	\
 		_res;						\
 	})
 #define sa_strndup(sa, s, l)					\
@@ -139,10 +130,8 @@ extern size_t sa_size( sql_allocator *sa );
 		size_t _l = (l);				\
 		char *_res = sa_strndup(_sa, _s, _l);		\
 		DEBUG(ALLOC,				\
-				"#sa_strndup(%p,len=%zu) -> %p"	\
-				" %s[%s:%d]\n",			\
-				_sa, _l, _res,			\
-				__func__, __FILE__, __LINE__);	\
+				"sa_strndup(%p,len=%zu) -> %p\n" 	\
+				_sa, _l, _res);		\
 		_res;						\
 	})
 #endif
