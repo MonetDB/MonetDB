@@ -39,7 +39,7 @@ typedef enum {
     FOREACH_ADPTR(GENERATE_ENUM)
 } ADAPTER;
 
-static const char *ADAPTER_STR[] = {
+gdk_export const char *ADAPTER_STR[] = {
     FOREACH_ADPTR(GENERATE_STRING)
 };
 
@@ -58,7 +58,7 @@ typedef enum {
     FOREACH_LEVEL(GENERATE_ENUM)
 } LOG_LEVEL;
 
-static const char *LEVEL_STR[] = {
+gdk_export const char *LEVEL_STR[] = {
     FOREACH_LEVEL(GENERATE_STRING)
 };
 
@@ -76,7 +76,7 @@ typedef enum {
     FOREACH_LAYER(GENERATE_ENUM)
 } LAYER;
 
-static const char *LAYER_STR[] = {
+gdk_export const char *LAYER_STR[] = {
     FOREACH_LAYER(GENERATE_STRING)
 };
 
@@ -184,7 +184,7 @@ typedef enum {
     FOREACH_COMP(GENERATE_ENUM)
 } COMPONENT;
 
-static const char *COMPONENT_STR[] = {
+gdk_export const char *COMPONENT_STR[] = {
     FOREACH_COMP(GENERATE_STRING)
 };
 
