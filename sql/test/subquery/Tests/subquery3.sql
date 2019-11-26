@@ -186,6 +186,15 @@ GROUP BY t1.col7, t1.col6;
 	-- False
 	-- False
 
+SELECT
+    CASE WHEN t1.col1 IN (SELECT 1 FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END
+FROM another_T t1
+GROUP BY t1.col1;
+	-- 1
+	-- 2
+	-- 2
+	-- 2
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
