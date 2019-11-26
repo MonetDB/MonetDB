@@ -441,7 +441,11 @@ rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop)
 	rel->r = r;
 	rel->op = setop;
 	rel->exps = NULL;
-	rel->card = CARD_MULTI;
+	if (setop == op_union) {
+		rel->card = CARD_MULTI;
+	} else {
+		rel->card = l->card;
+	}
 	if (l && r)
 		rel->nrcols = l->nrcols + r->nrcols;
 	return rel;
