@@ -86,7 +86,9 @@ typedef enum {
         COMP( TEM )                   \
         COMP( HEAP )                  \
         COMP( BAT_ )                  \
+        COMP( ACCEL )                 \
         COMP( TRACE )                 \
+        COMP( CHECK_ )                \
                                       \
         COMP( GEOM )                  \
         COMP( LIDAR )                 \

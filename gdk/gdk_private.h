@@ -409,9 +409,9 @@ GDKmunmap_debug(void *ptr, size_t len, const char *filename, int lineno)
 			   	  ptr, len, (int) res);
 	return res;
 }
-#define GDKmunmap(p, l)		GDKmunmap_debug((p), (l), __FILE__, __LINE__)
+#define GDKmunmap(p, l)		GDKmunmap_debug((p), (l))
 static inline void *
-GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size, const char *filename, int lineno)
+GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
 {
 	size_t orig_new_size = *new_size;
 	void *res = GDKmremap(path, mode, old_address, old_size, new_size);
@@ -420,7 +420,7 @@ GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, 
 					  old_address, old_size, orig_new_size, *new_size, res);
 	return res;
 }
-#define GDKmremap(p, m, oa, os, ns)	GDKmremap_debug(p, m, oa, os, ns, __FILE__, __LINE__)
+#define GDKmremap(p, m, oa, os, ns)	GDKmremap_debug(p, m, oa, os, ns)
 
 #endif
 #endif
