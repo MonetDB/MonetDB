@@ -217,7 +217,7 @@ return MAL_SUCCEED;\
 	decompress_dictionary_##TPE(dict, bits, base, cnt, &dest);\
 }
 
-#define scan_loop_dictionary(TPE, CANDITER_NEXT, TEST, GET_FINAL_DICT, GET_FINAL_BITS) {\
+#define scan_loop_dictionary(TPE, CANDITER_NEXT, TEST) {\
     TPE* dict = GET_FINAL_DICT(task, TPE);\
 	BitVector base = (BitVector) MOScodevectorDict(task);\
     bte bits = GET_FINAL_BITS(task);\

@@ -326,8 +326,7 @@ MOSdecompress_var(MOStask task)
 }
 
 #define scan_loop_var(TPE, CANDITER_NEXT, TEST) \
-    scan_loop_dictionary(TPE, CANDITER_NEXT, TEST,\
-    GET_FINAL_DICT, GET_FINAL_BITS)
+    scan_loop_dictionary(TPE, CANDITER_NEXT, TEST)
 
 MOSselect_DEF(var, bte)
 MOSselect_DEF(var, sht)

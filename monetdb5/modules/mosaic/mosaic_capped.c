@@ -413,8 +413,7 @@ MOSdecompress_capped(MOStask task)
 }
 
 #define scan_loop_capped(TPE, CANDITER_NEXT, TEST) \
-    scan_loop_dictionary(TPE, CANDITER_NEXT, TEST,\
-    GET_FINAL_DICT, GET_FINAL_BITS)
+    scan_loop_dictionary(TPE, CANDITER_NEXT, TEST)
 
 MOSselect_DEF(capped, bte)
 MOSselect_DEF(capped, sht)
