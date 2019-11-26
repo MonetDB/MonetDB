@@ -237,6 +237,14 @@ GROUP BY t1.col1, t1.col2;
 	-- 2
 	-- 2
 
+SELECT
+    CASE WHEN NULL NOT IN (SELECT 1 FROM tbl_ProductSales tp FULL OUTER JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END
+FROM another_T t1;
+	-- 2
+	-- 2
+	-- 2
+	-- 2
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
