@@ -29,6 +29,7 @@
 #include "gdk.h"
 #include "gdk_tracer.h"
 
+#define _DEBUG_TRACER_
 
 static gdk_tracer tracer = { .allocated_size = 0, .id = 0, .lock = MT_LOCK_INITIALIZER("GDKtracerL") };
 static gdk_tracer secondary_tracer = { .allocated_size = 0, .id = 1, .lock = MT_LOCK_INITIALIZER("GDKtracerL2") };
@@ -229,6 +230,10 @@ _GDKtracer_layer_level_helper(int *layer, int *level)
             }
         }
     }
+
+#ifdef _DEBUG_TRACER_
+    GDKtracer_show_info();
+#endif
 
     return GDK_SUCCEED;
 }
