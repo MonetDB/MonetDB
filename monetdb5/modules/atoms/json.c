@@ -400,14 +400,17 @@ JSONappend(JSON *jt, int idx, int nxt)
  * ..author
  */
 #define MAXTERMS 256
-#define ROOT_STEP 0
-#define CHILD_STEP 1
-#define INDEX_STEP 2
-#define ANY_STEP 3
-#define END_STEP 4
+
+typedef enum path_token {
+	ROOT_STEP,
+	CHILD_STEP,
+	INDEX_STEP,
+	ANY_STEP,
+	END_STEP
+} path_token;
 
 typedef struct {
-	int token;
+	path_token token;
 	char *name;
 	size_t namelen;
 	int index;
