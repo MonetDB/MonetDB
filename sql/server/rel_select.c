@@ -865,6 +865,27 @@ check_is_lateral(symbol *tableref)
 	}
 }
 
+static sql_rel *
+rel_reduce_on_column_privileges(mvc *sql, sql_rel *rel, sql_table *t)
+{
+	list *exps = sa_list(sql->sa);
+
+	for (node *n = rel->exps->h, *m = t->columns.set->h; n && m; n = n->next, m = m->next) {
+		sql_exp *e = n->data;
+		sql_column *c = m->data;
+
+		if (column_privs(sql, c, PRIV_SELECT)) {
+			append(exps, e);
+		}
+	}
+	if (!list_empty(exps)) {
+		rel->exps = exps;
+		return rel;
+	}
+	return NULL;
+}
+
+
 sql_rel *
 table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 {
@@ -878,6 +899,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 		sql_rel *temp_table = NULL;
 		char *sname = qname_schema(name);
 		sql_schema *s = NULL;
+		int allowed = 1;
 
 		tname = qname_table(name);
 
@@ -903,7 +925,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 		if (!t && !temp_table) {
 			return sql_error(sql, 02, SQLSTATE(42S02) "SELECT: no such table '%s'", tname);
 		} else if (!temp_table && !table_privs(sql, t, PRIV_SELECT)) {
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
+			allowed = 0;
 		}
 		if (tableref->data.lval->h->next->data.sym) {	/* AS */
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
@@ -919,7 +941,9 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 				noninternexp_setname(sql->sa, e, tname, NULL);
 				set_basecol(e);
 			}
-			return temp_table;
+			if (allowed)
+				return temp_table;
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
 		} else if (isView(t)) {
 			/* instantiate base view */
 			node *n,*m;
@@ -932,7 +956,6 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 
 			if (!rel)
 				return NULL;
-
 			/* Rename columns of the rel_parse relation */
 			if (sql->emode != m_deps) {
 				rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
@@ -947,12 +970,20 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 					set_basecol(e);
 				}
 			}
-			return rel;
+			if (!allowed) 
+				rel = rel_reduce_on_column_privileges(sql, rel, t);
+			if (allowed && rel)
+				return rel;
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
 		}
 		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members.set))
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
-
 		res = rel_basetable(sql, t, tname);
+		if (!allowed) {
+			res = rel_reduce_on_column_privileges(sql, res, t);
+			if (!res)
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
+		}
 		if (tableref->data.lval->h->next->data.sym && tableref->data.lval->h->next->data.sym->data.lval->h->next->data.lval) /* AS with column aliases */
 			res = rel_table_optname(sql, res, tableref->data.lval->h->next->data.sym);
 		return res;
