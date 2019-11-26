@@ -1,8 +1,11 @@
 ####technical depth####
+Adapt project and join to use candidate lists properly.
 Factor out boilerplate code mosaic code: resulting mosaic boilerplate is for testing purposes.
-make sure that dense candidate lists are not transparently skipped and pushed to algebra module operators.
-Introduce mosaic into gdk: create hooks in pointselect and scanselect functions/macro's.
-make sure candidate lists are working properly (2)
+Add lots of tests with candidate lists for all 
+Introduce mosaic into gdk: create hooks in scanselect functions/macro's, joins and projections.
+Apply compressed operations more directly: on keys in dictionary compression (1)
+Apply compressed operations more directly: on prefix|suffix in prefix compression (1)
+Apply compressed operations more directly: on linear in prefix compression (1)
 Be sure alignment is correct. Use asserts for this.
 Add test for float/double
 Add test for huge
@@ -10,9 +13,6 @@ Check MOSanalysis and its test.
 Fix/check/test MOSlayout.
 make mitosis work with mosaic and see how this relates to the previous landmark stuff.
 Remove floating point support in prefix compression and use prefix-like-frame semantics
-Apply compressed operations more directly: on keys in dictionary compression (1)
-Apply compressed operations more directly: on prefix|suffix in prefix compression (1)
-Apply compressed operations more directly: on linear in prefix compression (1)
 consider packing mosaic_block_header's more efficiently.
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
 benchmark
