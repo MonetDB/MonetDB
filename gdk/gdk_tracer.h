@@ -264,20 +264,20 @@ gdk_return GDKtracer_init(void);
 gdk_return GDKtracer_stop(void);
 
 
-gdk_return GDKtracer_set_component_level(int *comp, int *level);
+gdk_return GDKtracer_set_component_level(int *comp, int *lvl);
 
 
 gdk_return GDKtracer_reset_component_level(int *comp);
 
 
-gdk_return GDKtracer_set_layer_level(int *layer, int *level);
+gdk_return GDKtracer_set_layer_level(int *layer, int *lvl);
 
 
 gdk_return GDKtracer_reset_layer_level(int *layer);
 
 
 // Sets the minimum flush level that an event will trigger the logger to flush the buffer
-gdk_return GDKtracer_set_flush_level(int *level);
+gdk_return GDKtracer_set_flush_level(int *lvl);
 
 
 // Resets the flush level to the default (ERROR)

@@ -106,12 +106,12 @@ _GDKtracer_adapter_exists(int *adapter)
 
 
 static bool
-_GDKtracer_level_exists(int *level)
+_GDKtracer_level_exists(int *lvl)
 {
-    if(*level == LOG_LEVELS_COUNT)
+    if(*lvl == LOG_LEVELS_COUNT)
         return false;
 
-    if(*level >= 0 && *level < LOG_LEVELS_COUNT)
+    if(*lvl >= 0 && *lvl < LOG_LEVELS_COUNT)
         return true;
 
     return false;
@@ -187,11 +187,11 @@ _GDKtracer_fill_tracer(gdk_tracer *sel_tracer, char *fmt, va_list va)
 
 
 static gdk_return
-_GDKtracer_layer_level_helper(int *layer, int *Level)
+_GDKtracer_layer_level_helper(int *layer, int *lvl)
 {
     char *tmp = NULL;
     char *tok = NULL;
-    LOG_LEVEL level = (LOG_LEVEL)*Level;
+    LOG_LEVEL level = (LOG_LEVEL)*lvl;
 
     for(int i = 0; i < COMPONENTS_COUNT; i++)
     {
@@ -276,9 +276,9 @@ GDKtracer_stop(void)
 
 
 gdk_return
-GDKtracer_set_component_level(int *comp, int *Level)
+GDKtracer_set_component_level(int *comp, int *lvl)
 {
-    LOG_LEVEL level = (LOG_LEVEL)*Level;
+    LOG_LEVEL level = (LOG_LEVEL)*lvl;
 
     if(LVL_PER_COMPONENT[*comp] == level)
         return GDK_SUCCEED;
@@ -286,7 +286,7 @@ GDKtracer_set_component_level(int *comp, int *Level)
     if(!_GDKtracer_component_exists(comp))
         return GDK_FAIL;
 
-    if(!_GDKtracer_level_exists(Level))
+    if(!_GDKtracer_level_exists(lvl))
         return GDK_FAIL;
         
     LVL_PER_COMPONENT[*comp] = level;
@@ -309,15 +309,15 @@ GDKtracer_reset_component_level(int *comp)
 
 
 gdk_return
-GDKtracer_set_layer_level(int *layer, int *level)
+GDKtracer_set_layer_level(int *layer, int *lvl)
 {
     if(!_GDKtracer_layer_exists(layer))
         return GDK_FAIL;
 
-    if(!_GDKtracer_level_exists(level))
+    if(!_GDKtracer_level_exists(lvl))
         return GDK_FAIL;
     
-    return _GDKtracer_layer_level_helper(layer, level);
+    return _GDKtracer_layer_level_helper(layer, lvl);
 }
 
 
@@ -328,20 +328,20 @@ GDKtracer_reset_layer_level(int *layer)
         return GDK_FAIL;
 
     int tmp = DEFAULT_LOG_LEVEL;
-    int *level = &tmp;
-    return _GDKtracer_layer_level_helper(layer, level);
+    int *lvl = &tmp;
+    return _GDKtracer_layer_level_helper(layer, lvl);
 }
 
 
 gdk_return
-GDKtracer_set_flush_level(int *Level)
+GDKtracer_set_flush_level(int *lvl)
 {
-    LOG_LEVEL level = (LOG_LEVEL)*Level;
+    LOG_LEVEL level = (LOG_LEVEL)*lvl;
 
     if(CUR_FLUSH_LEVEL == level)
         return GDK_SUCCEED;
 
-    if(!_GDKtracer_level_exists(Level))
+    if(!_GDKtracer_level_exists(lvl))
         return GDK_FAIL;
         
     CUR_FLUSH_LEVEL = level;
