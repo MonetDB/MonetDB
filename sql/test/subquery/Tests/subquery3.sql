@@ -195,6 +195,17 @@ GROUP BY t1.col1;
 	-- 2
 	-- 2
 
+SELECT
+    1
+FROM another_T t1
+GROUP BY t1.col1, t1.col2, t1.col4
+HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) NOT IN 
+    ((SELECT NOT EXISTS (SELECT t1.col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = t1.col1)) UNION ALL
+     (SELECT NOT t1.col1 BETWEEN (SELECT MAX(t1.col7) EXCEPT SELECT tp.ColID FROM tbl_ProductSales tp) AND (SELECT MIN(t1.col5) EXCEPT SELECT t1.col2)));
+	-- 1
+	-- 1
+	-- 1
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
