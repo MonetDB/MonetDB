@@ -206,6 +206,28 @@ HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) NOT IN
 	-- 1
 	-- 1
 
+SELECT
+    col6,
+    col7,
+    NOT SUM(t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 < MAX(t1.col6))
+FROM another_T t1
+GROUP BY t1.col7, t1.col6;
+	-- 6    7    False
+	-- 666  777  False
+	-- 6666 7777 False
+	-- 66   77   False
+
+SELECT
+    col6,
+    col7,
+    NOT SUM(t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 < MAX(t2.col7 - t1.col6))
+FROM another_T t1
+GROUP BY t1.col7, t1.col6;
+	-- 6    7    False
+	-- 666  777  False
+	-- 6666 7777 False
+	-- 66   77   False
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
