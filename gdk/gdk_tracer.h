@@ -89,7 +89,7 @@ typedef enum {
         COMP( ACCEL )                 \
         COMP( TRACE )                 \
         COMP( CHECK_ )                \
-        COMP( THRD )                  \
+        COMP( THRD )               \
                                       \
         COMP( GEOM )                  \
         COMP( LIDAR )                 \

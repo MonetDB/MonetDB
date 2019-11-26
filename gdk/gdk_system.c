@@ -30,6 +30,7 @@
  */
 #include "monetdb_config.h"
 #include "mstring.h"
+#include "gdk.h"
 #include "gdk_system.h"
 #include "gdk_system_private.h"
 #include "gdk_tracer.h"
@@ -129,7 +130,7 @@ GDKlockstatistics(int what)
 	int n = 0;
 
 	if (ATOMIC_TAS(&GDKlocklistlock) != 0) {
-		WARNING(GDK_SYSTEM, "GDKlocklistlock is set, so cannot access lock list\n");
+		DEBUG(TEM, "GDKlocklistlock is set, so cannot access lock list\n");
 		return;
 	}
 	if (what == -1) {
@@ -142,14 +143,14 @@ GDKlockstatistics(int what)
 		return;
 	}
 	GDKlocklist = sortlocklist(GDKlocklist);
-	DEBUG(GDK_SYSTEM, "lock name\tcount\tcontention\tsleep\tlocked\t(un)locker\tthread\n");
+	DEBUG(TEM, "lock name\tcount\tcontention\tsleep\tlocked\t(un)locker\tthread\n");
 	for (l = GDKlocklist; l; l = l->next) {
 		n++;
 		if (what == 0 ||
 		    (what == 1 && l->count) ||
 		    (what == 2 && ATOMIC_GET(&l->contention)) ||
 		    (what == 3 && lock_isset(l)))
-			DEBUG(GDK_SYSTEM, "%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
+			DEBUG(TEM, "%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
 							l->name, l->count,
 							(size_t) ATOMIC_GET(&l->contention),
 							(size_t) ATOMIC_GET(&l->sleep),
@@ -157,10 +158,10 @@ GDKlockstatistics(int what)
 							l->locker ? l->locker : "",
 							l->thread ? l->thread : "");
 	}
-	DEBUG(GDK_SYSTEM, "Number of locks: %d\n", n);
-	DEBUG(GDK_SYSTEM, "Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
-	DEBUG(GDK_SYSTEM, "Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
-	DEBUG(GDK_SYSTEM, "Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
+	DEBUG(TEM, "Number of locks: %d\n", n);
+	DEBUG(TEM, "Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
+	DEBUG(TEM, "Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
+	DEBUG(TEM, "Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
 	ATOMIC_CLEAR(&GDKlocklistlock);
 }
 
@@ -503,13 +504,13 @@ dump_threads(void)
 	pthread_mutex_lock(&posthread_lock);
 	for (struct posthread *p = posthreads; p; p = p->next) {
 		DEBUG(THRD, "%s, waiting for %s, working on %.200s\n",
-			p->threadname,
-			p->lockwait ? p->lockwait->name :
-			p->semawait ? p->semawait->name :
-			p->joinwait ? p->joinwait->threadname :
-			"nothing",
-			ATOMIC_GET(&p->exited) ? "exiting" :
-			p->working ? p->working : "nothing");
+						p->threadname,
+						p->lockwait ? p->lockwait->name :
+						p->semawait ? p->semawait->name :
+						p->joinwait ? p->joinwait->threadname :
+						"nothing",
+						ATOMIC_GET(&p->exited) ? "exiting" :
+						p->working ? p->working : "nothing");
 	}
 	pthread_mutex_unlock(&posthread_lock);
 }
@@ -801,8 +802,7 @@ MT_join_thread(MT_Id t)
 	ret = pthread_join(p->tid, NULL);
 	self->joinwait = NULL;
 	if (ret != 0) {
-		DEBUG(THRD, "Joining thread failed: %s\n",
-			strerror(ret));
+		DEBUG(THRD, "Joining thread failed: %s\n", strerror(ret));
 		return -1;
 	}
 	rm_posthread(p);

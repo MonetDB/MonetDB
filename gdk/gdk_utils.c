@@ -857,7 +857,8 @@ GDKprepareExit(void)
 		return;
 
 	/* CHECK */
-	// Inside dump_threads() there is the DEBUG(THRD, ...)
+	// THRDDEBUG was outside dump_threads - not it is transferred
+	// inside as DEBUG(THRD, ...)
 	dump_threads();
 	join_detached_threads();
 }
@@ -924,7 +925,7 @@ GDKreset(int status)
 		}
 
 #ifdef LOCK_STATS
-		TEMDEBUG GDKlockstatistics(1);
+		GDKlockstatistics(1);
 #endif
 		GDKdebug = 0;
 		GDK_mmap_minsize_persistent = MMAP_MINSIZE_PERSISTENT;

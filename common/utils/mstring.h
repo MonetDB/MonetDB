@@ -6,6 +6,9 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
+#ifndef _MSTRING_H_
+#define _MSTRING_H_
+
 #include <stdarg.h>		/* va_list etc. */
 #include <string.h>		/* strlen */
 
@@ -46,3 +49,5 @@ strconcat_len(char *restrict dst, size_t n, const char *restrict src, ...)
 	va_end(ap);
 	return i;
 }
+
+#endif
