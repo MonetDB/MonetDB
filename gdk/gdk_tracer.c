@@ -286,7 +286,7 @@ GDKtracer_set_component_level(int *comp, int *Level)
     if(!_GDKtracer_component_exists(comp))
         return GDK_FAIL;
 
-    if(!_GDKtracer_level_exists(*Level))
+    if(!_GDKtracer_level_exists(Level))
         return GDK_FAIL;
         
     LVL_PER_COMPONENT[*comp] = level;
@@ -341,7 +341,7 @@ GDKtracer_set_flush_level(int *Level)
     if(CUR_FLUSH_LEVEL == level)
         return GDK_SUCCEED;
 
-    if(!_GDKtracer_level_exists(*Level))
+    if(!_GDKtracer_level_exists(Level))
         return GDK_FAIL;
         
     CUR_FLUSH_LEVEL = level;
