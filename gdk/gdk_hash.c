@@ -117,6 +117,31 @@ HASHmasklevel(BUN mask)
 #endif
 }
 
+static void
+doHASHdestroy(BAT *b, Hash *hs)
+{
+	if (hs == (Hash *) 1) {
+		GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
+			  BATDIR,
+			  BBP_physical(b->batCacheid),
+			  "thash");
+	} else if (hs) {
+		bat p = VIEWtparent(b);
+		BAT *hp = NULL;
+
+		if (p)
+			hp = BBP_cache(p);
+
+		if (!hp || hs != hp->thash) {
+			ACCELDEBUG if (*(size_t *) hs->heapbckt.base & (1 << 24))
+				fprintf(stderr, "#HASHdestroy: removing persisted hash %d\n", b->batCacheid);
+			HEAPfree(&hs->heapbckt, true);
+			HEAPfree(&hs->heaplink, true);
+			GDKfree(hs);
+		}
+	}
+}
+
 gdk_return
 HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 {
@@ -190,6 +215,87 @@ HASHcollisions(BAT *b, Hash *h)
 		BUNFMT ", nbuckets " BUNFMT ", max " LLFMT ", avg %2.6f);\n",
 		BATcount(b), entries, h->nunique, NHASHBUCKETS(h), max,
 		entries == 0 ? 0 : total / entries);
+}
+
+gdk_return
+HASHupgradehashheap(BAT *b, BUN cap)
+{
+	Hash *h = b->thash;
+	int nwidth;
+	BUN i;
+
+	if (h == NULL)
+		return GDK_SUCCEED;
+	if ((nwidth = HASHwidth(cap)) <= h->width)
+		return GDK_SUCCEED;
+	if (HEAPextend(&h->heaplink, h->heaplink.size * nwidth / h->width, true) != GDK_SUCCEED ||
+	    HEAPextend(&h->heapbckt, (h->heapbckt.size - HASH_HEADER_SIZE * SIZEOF_SIZE_T) * nwidth / h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T, true) != GDK_SUCCEED) {
+		b->thash = NULL;
+		doHASHdestroy(b, h);
+		return GDK_FAIL;
+	}
+	h->Link = h->heaplink.base;
+	h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
+	switch (nwidth) {
+	case BUN4:
+		switch (h->width) {
+		case BUN2:
+			i = h->heaplink.free / h->width;
+			h->heaplink.free = i * nwidth;
+			while (i > 0) {
+				i--;
+				BUN2type v = ((BUN2type *) h->Link)[i];
+				((BUN4type *) h->Link)[i] = v == BUN2_NONE ? BUN4_NONE : v;
+			}
+			i = (h->heapbckt.free - HASH_HEADER_SIZE * SIZEOF_SIZE_T) / h->width;
+			h->heapbckt.free = HASH_HEADER_SIZE * SIZEOF_SIZE_T + i * nwidth;
+			while (i > 0) {
+				i--;
+				BUN2type v = ((BUN2type *) h->Bckt)[i];
+				((BUN4type *) h->Bckt)[i] = v == BUN2_NONE ? BUN4_NONE : v;
+			}
+			break;
+		}
+		break;
+	case BUN8:
+		switch (h->width) {
+		case BUN2:
+			i = h->heaplink.free / h->width;
+			h->heaplink.free = i * nwidth;
+			while (i > 0) {
+				i--;
+				BUN2type v = ((BUN2type *) h->Link)[i];
+				((BUN8type *) h->Link)[i] = v == BUN2_NONE ? BUN8_NONE : v;
+			}
+			i = (h->heapbckt.free - HASH_HEADER_SIZE * SIZEOF_SIZE_T) / h->width;
+			h->heapbckt.free = HASH_HEADER_SIZE * SIZEOF_SIZE_T + i * nwidth;
+			while (i > 0) {
+				i--;
+				BUN2type v = ((BUN2type *) h->Bckt)[i];
+				((BUN8type *) h->Bckt)[i] = v == BUN2_NONE ? BUN8_NONE : v;
+			}
+			break;
+		case BUN4:
+			i = h->heaplink.free / h->width;
+			h->heaplink.free = i * nwidth;
+			while (i > 0) {
+				i--;
+				BUN4type v = ((BUN4type *) h->Link)[i];
+				((BUN8type *) h->Link)[i] = v == BUN4_NONE ? BUN8_NONE : v;
+			}
+			i = (h->heapbckt.free - HASH_HEADER_SIZE * SIZEOF_SIZE_T) / h->width;
+			h->heapbckt.free = HASH_HEADER_SIZE * SIZEOF_SIZE_T + i * nwidth;
+			while (i > 0) {
+				i--;
+				BUN4type v = ((BUN4type *) h->Bckt)[i];
+				((BUN8type *) h->Bckt)[i] = v == BUN4_NONE ? BUN8_NONE : v;
+			}
+			break;
+		}
+		break;
+	}
+	h->width = nwidth;
+	return GDK_SUCCEED;
 }
 
 gdk_return
@@ -863,26 +969,7 @@ HASHdestroy(BAT *b)
 		hs = b->thash;
 		b->thash = NULL;
 		MT_lock_unset(&b->batIdxLock);
-		if (hs == (Hash *) 1) {
-			GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
-				  BATDIR,
-				  BBP_physical(b->batCacheid),
-				  "thash");
-		} else if (hs) {
-			bat p = VIEWtparent(b);
-			BAT *hp = NULL;
-
-			if (p)
-				hp = BBP_cache(p);
-
-			if (!hp || hs != hp->thash) {
-				ACCELDEBUG if (*(size_t *) hs->heapbckt.base & (1 << 24))
-					fprintf(stderr, "#HASHdestroy: removing persisted hash %d\n", b->batCacheid);
-				HEAPfree(&hs->heapbckt, true);
-				HEAPfree(&hs->heaplink, true);
-				GDKfree(hs);
-			}
-		}
+		doHASHdestroy(b, hs);
 	}
 }
 

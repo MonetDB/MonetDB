@@ -47,6 +47,7 @@ gdk_export void HASHdestroy(BAT *b);
 gdk_export BUN HASHprobe(const Hash *h, const void *v);
 gdk_export BUN HASHlist(Hash *h, BUN i);
 gdk_export gdk_return HASHgrowbucket(BAT *b);
+gdk_export gdk_return HASHupgradehashheap(BAT *b, BUN cap);
 
 #define HASHnil(H)	(H)->nil
 
@@ -291,7 +292,8 @@ gdk_export gdk_return HASHgrowbucket(BAT *b);
 			    (((i) + 1) * _h->width > _h->heaplink.size && \
 			     HEAPextend(&_h->heaplink,			\
 					(i) * _h->width + GDK_mmap_pagesize, \
-					true) != GDK_SUCCEED)) {	\
+					true) != GDK_SUCCEED) || \
+			    HASHupgradehashheap(b, i) != GDK_SUCCEED) {	\
 				MT_lock_unset(&(b)->batIdxLock);	\
 				HASHdestroy(b);				\
 			} else {					\
