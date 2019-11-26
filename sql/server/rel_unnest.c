@@ -1026,14 +1026,14 @@ push_up_select_l(mvc *sql, sql_rel *rel)
 }
 
 static sql_rel *
-push_up_join(mvc *sql, sql_rel *rel) 
+push_up_join(mvc *sql, sql_rel *rel, list *ad) 
 {
 	/* input rel is dependent join with on the right a project */ 
 	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
 		sql_rel *d = rel->l, *j = rel->r;
 
 		/* left of rel should be a set */ 
-		if (d && is_distinct_set(sql, d, NULL) && j && (is_join(j->op) || is_semi(j->op))) {
+		if (d && is_distinct_set(sql, d, ad) && j && (is_join(j->op) || is_semi(j->op))) {
 			int crossproduct = 0;
 			sql_rel *jl = j->l, *jr = j->r;
 			/* op_join if F(jl) intersect A(D) = empty -> jl join (D djoin jr) 
@@ -1131,13 +1131,13 @@ push_up_join(mvc *sql, sql_rel *rel)
 }
 
 static sql_rel *
-push_up_set(mvc *sql, sql_rel *rel) 
+push_up_set(mvc *sql, sql_rel *rel, list *ad) 
 {
 	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
 		sql_rel *d = rel->l, *s = rel->r;
 
 		/* left of rel should be a set */ 
-		if (d && is_distinct_set(sql, d, NULL) && s && is_set(s->op)) {
+		if (d && is_distinct_set(sql, d, ad) && s && is_set(s->op)) {
 			list *sexps;
 			node *m;
 			sql_rel *sl = s->l, *sr = s->r, *n;
@@ -1272,18 +1272,18 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && is_groupby(r->op) && is_distinct_set(sql, l, ad)) { 
+			if (r && is_groupby(r->op) && need_distinct(l) /*&& is_distinct_set(sql, l, ad)*/) { 
 				rel = push_up_groupby(sql, rel, ad);
 				return rel_unnest_dependent(sql, rel);
 			}
 
 			if (r && (is_join(r->op) || is_semi(r->op)) && is_distinct_set(sql, l, ad)) {
-				rel = push_up_join(sql, rel);
+				rel = push_up_join(sql, rel, ad);
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && is_set(r->op) && is_distinct_set(sql, l, ad)) {
-				rel = push_up_set(sql, rel);
+			if (r && is_set(r->op) && (!is_left(rel->op) && is_distinct_set(sql, l, ad))) {
+				rel = push_up_set(sql, rel, ad);
 				return rel_unnest_dependent(sql, rel);
 			}
 

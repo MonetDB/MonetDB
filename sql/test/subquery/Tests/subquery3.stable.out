@@ -211,6 +211,44 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 [ 2,	2	]
 [ 2,	2	]
 [ 2,	2	]
+#SELECT
+#    SUM(t1.col6) <> ANY (SELECT t1.col7 INTERSECT SELECT t1.col6)
+#FROM another_T t1
+#GROUP BY t1.col7, t1.col6;
+% .%37 # table_name
+% %37 # name
+% boolean # type
+% 5 # length
+[ false	]
+[ false	]
+[ false	]
+[ false	]
+#SELECT
+#    CASE WHEN t1.col1 IN (SELECT 1 FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END
+#FROM another_T t1
+#GROUP BY t1.col1;
+% .%25 # table_name
+% %25 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 2	]
+[ 2	]
+#SELECT
+#    1
+#FROM another_T t1
+#GROUP BY t1.col1, t1.col2, t1.col4
+#HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) NOT IN 
+#    ((SELECT NOT EXISTS (SELECT t1.col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = t1.col1)) UNION ALL
+#     (SELECT NOT t1.col1 BETWEEN (SELECT MAX(t1.col7) EXCEPT SELECT tp.ColID FROM tbl_ProductSales tp) AND (SELECT MIN(t1.col5) EXCEPT SELECT t1.col2)));
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 
