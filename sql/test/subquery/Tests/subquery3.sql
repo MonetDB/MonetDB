@@ -177,6 +177,15 @@ GROUP BY t1.col1, t1.col2;
 	-- 2	2
 	-- 2	2
 
+SELECT
+    SUM(t1.col6) <> ANY (SELECT t1.col7 INTERSECT SELECT t1.col6)
+FROM another_T t1
+GROUP BY t1.col7, t1.col6;
+	-- False
+	-- False
+	-- False
+	-- False
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
