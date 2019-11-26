@@ -180,6 +180,7 @@ typedef enum {
         COMP( GDK_UTILS )             \
         COMP( GDK_POSIX )             \
         COMP( GDK_SYSTEM )            \
+        COMP( GDK_IMPRINTS )          \
                                       \
         COMP( COMPONENTS_COUNT )      \
 

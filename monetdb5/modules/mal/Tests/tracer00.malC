@@ -11,14 +11,7 @@ logging.setcomplevel(-10, -1);  # Should raise an error
                                 # Component -10 does not exist
                                 # Log level -1 does not exist
 
-logging.setcomplevel(84, 2);    # Should raise an error
-                                # The last component is used for enum count
-
 logging.setcomplevel(1, 5);     # Should raise an error
-                                # The last level is used for enum count
-
-logging.setcomplevel(84, 5);    # Should raise an error
-                                # The last component is used for enum count
                                 # The last level is used for enum count
 
 logging.setcomplevel(1, 4);     # OK
@@ -28,9 +21,6 @@ logging.setcomplevel(1, 4);     # OK
 # logging.resetcomplevel(...)
 logging.resetcomplevel(-1);     # Should raise an error
                                 # Component -1 does not exist
-
-logging.resetcomplevel(84);     # Should raise an error
-                                # The last component is used for enum count
 
 logging.resetcomplevel(1);      # OK
 
