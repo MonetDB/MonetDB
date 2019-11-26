@@ -603,6 +603,20 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 % bigint # type
 % 1 # length
 [ NULL	]
+#SELECT 
+#    NOT GROUPING(t1.col2, t1.col4) <> ALL (SELECT t1.col2 FROM tbl_ProductSales tp WHERE tp.colID = 1) a1
+#FROM another_T t1
+#GROUP BY ROLLUP(t1.col1, t1.col2), GROUPING SETS ((t1.col4))
+#HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) NOT IN 
+#    ((SELECT NOT EXISTS (SELECT t1.col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = t1.col1)) UNION ALL
+#     (SELECT NOT GROUPING(t1.col1) BETWEEN (SELECT MAX(t1.col7) EXCEPT SELECT tp.ColID FROM tbl_ProductSales tp) AND (SELECT MIN(t1.col5) EXCEPT SELECT t1.col2)))
+% .%42 # table_name
+% a1 # name
+% boolean # type
+% 5 # length
+[ false	]
+[ false	]
+[ false	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 

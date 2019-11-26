@@ -177,8 +177,6 @@ FROM another_T t1
 GROUP BY ROLLUP(t1.col1, t1.col2), GROUPING SETS ((t1.col4))
 ORDER BY a1 ASC NULLS FIRST;
 
----Queries bellow give wrong results and errors
-
 SELECT 
     NOT GROUPING(t1.col2, t1.col4) <> ALL (SELECT t1.col2 FROM tbl_ProductSales tp WHERE tp.colID = 1) a1
 FROM another_T t1
@@ -187,6 +185,8 @@ HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) NOT IN
     ((SELECT NOT EXISTS (SELECT t1.col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = t1.col1)) UNION ALL
      (SELECT NOT GROUPING(t1.col1) BETWEEN (SELECT MAX(t1.col7) EXCEPT SELECT tp.ColID FROM tbl_ProductSales tp) AND (SELECT MIN(t1.col5) EXCEPT SELECT t1.col2)))
 ORDER BY a1 DESC NULLS FIRST;
+
+---Queries bellow give wrong results and errors
 
 SELECT
     GROUPING(t1.col6, t1.col7) IN (SELECT SUM(t2.col2) FROM another_T t2 GROUP BY t2.col5),
