@@ -17,19 +17,19 @@
  * e.g. a BAT[void,bit] is (at least) integer aligned.  This optimizes
  * processing on such BATs (DDBENCH).
  */
-#define DELTAinit(P1)						\
-	do {							\
-		BATsetcount((P1), 0);				\
-		(P1)->theap.free = 0;				\
-		(P1)->batInserted = 0;				\
-		(P1)->tshift = ATOMelmshift(Tsize(P1));		\
-		DEBUG(DELTA,						\
-			"%s free %zu ins " BUNFMT	\
-			" base %p\n",				\
-			BATgetId(P1),				\
-			(P1)->theap.free,			\
-			(P1)->batInserted,			\
-			(P1)->theap.base);			\
+#define DELTAinit(P1)							\
+	do {										\
+		BATsetcount((P1), 0);					\
+		(P1)->theap.free = 0;					\
+		(P1)->batInserted = 0;					\
+		(P1)->tshift = ATOMelmshift(Tsize(P1));	\
+		DEBUG(DELTA,							\
+			"%s free %zu ins " BUNFMT			\
+			" base %p\n",						\
+			BATgetId(P1),						\
+			(P1)->theap.free,					\
+			(P1)->batInserted,					\
+			(P1)->theap.base);					\
 	} while (0)
 /*
  * Upon saving a BAT, we should convert the delta marker BUN pointers
