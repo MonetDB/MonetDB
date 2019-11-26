@@ -856,7 +856,9 @@ GDKprepareExit(void)
 	if (ATOMIC_ADD(&GDKstopped, 1) > 0)
 		return;
 
-	THRDDEBUG dump_threads();
+	/* CHECK */
+	// Inside dump_threads() there is the DEBUG(THRD, ...)
+	dump_threads();
 	join_detached_threads();
 }
 

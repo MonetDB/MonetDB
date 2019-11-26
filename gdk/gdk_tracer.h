@@ -89,6 +89,7 @@ typedef enum {
         COMP( ACCEL )                 \
         COMP( TRACE )                 \
         COMP( CHECK_ )                \
+        COMP( THRD )                  \
                                       \
         COMP( GEOM )                  \
         COMP( LIDAR )                 \
@@ -178,6 +179,7 @@ typedef enum {
         COMP( GDK_TM )                \
         COMP( GDK_UTILS )             \
         COMP( GDK_POSIX )             \
+        COMP( GDK_SYSTEM )            \
                                       \
         COMP( COMPONENTS_COUNT )      \
 
