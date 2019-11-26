@@ -737,7 +737,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (gn == NULL)
 		goto error;
 	ngrps = (oid *) Tloc(gn, 0);
-	maxgrps = cnt / 10;
+	if ((prop = BATgetprop(b, GDK_NUNIQUE)) != NULL)
+		maxgrps = prop->v.val.oval;
+	else
+		maxgrps = cnt / 10;
 	if (!is_oid_nil(maxgrp) && maxgrps < maxgrp)
 		maxgrps += maxgrp;
 	if (e && maxgrps < BATcount(e))
@@ -747,7 +750,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (maxgrps < GROUPBATINCR)
 		maxgrps = GROUPBATINCR;
 	if (b->twidth <= 2)
-		maxgrps = (BUN) 1 << (8 << (b->twidth == 2));
+		maxgrps = (BUN) 1 << (8 * b->twidth);
 	if (extents) {
 		en = COLnew(0, TYPE_oid, maxgrps, TRANSIENT);
 		if (en == NULL)

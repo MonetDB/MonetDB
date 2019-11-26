@@ -39,6 +39,7 @@ BATunique(BAT *b, BAT *s)
 	int (*cmp)(const void *, const void *);
 	bat parent;
 	struct canditer ci;
+	PROPrec *prop;
 
 	BATcheck(b, "BATunique", NULL);
 	cnt = canditer_init(&ci, b, s);
@@ -69,7 +70,10 @@ BATunique(BAT *b, BAT *s)
 
 	assert(b->ttype != TYPE_void);
 
-	bn = COLnew(0, TYPE_oid, 1024, TRANSIENT);
+	if (s == NULL && (prop = BATgetprop(b, GDK_NUNIQUE)) != NULL)
+		bn = COLnew(0, TYPE_oid, prop->v.val.oval, TRANSIENT);
+	else
+		bn = COLnew(0, TYPE_oid, 1024, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	vals = Tloc(b, 0);
