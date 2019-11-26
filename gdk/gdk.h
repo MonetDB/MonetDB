@@ -2626,6 +2626,7 @@ enum prop_t {
 	GDK_MIN_VALUE = 3,	/* smallest non-nil value in BAT */
 	GDK_MAX_VALUE,		/* largest non-nil value in BAT */
 	GDK_HASH_BUCKETS,	/* last used hash bucket size */
+	GDK_NUNIQUE,		/* number of unique values */
 };
 
 /*

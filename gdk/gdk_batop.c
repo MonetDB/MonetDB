@@ -570,6 +570,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 			BATrmprop(b, GDK_MIN_VALUE);
 		}
 	}
+	BATrmprop(b, GDK_NUNIQUE);
 #if 0		/* enable if we have more properties than just min/max */
 	do {
 		for (prop = b->tprops; prop; prop = prop->next)
@@ -716,6 +717,8 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		}
 		b->theap.dirty = true;
 	}
+	if (b->thash)
+		BATsetprop(b, GDK_NUNIQUE, TYPE_oid, &(oid){b->thash->nunique});
 	return GDK_SUCCEED;
 
       bunins_failed:
@@ -869,6 +872,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	HASHdestroy(b);
 	OIDXdestroy(b);
 	IMPSdestroy(b);
+	BATrmprop(b, GDK_NUNIQUE);
 
 	b->tsorted = b->trevsorted = false;
 	b->tnosorted = b->tnorevsorted = 0;

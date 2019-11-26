@@ -377,6 +377,11 @@ BATcheckhash(BAT *b)
 							GDK_HASH_BUCKETS,
 							TYPE_oid,
 							&(oid){NHASHBUCKETS(h)});
+						BATsetprop_nolock(
+							b,
+							GDK_NUNIQUE,
+							TYPE_oid,
+							&(oid){h->nunique});
 						b->thash = h;
 						ACCELDEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
 						MT_lock_unset(&b->batIdxLock);
@@ -601,6 +606,9 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
 		mask = HASHmask(cnt);
+ 	} else if (s == NULL && (prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL) {
+		assert(prop->v.vtype == TYPE_oid);
+		mask = prop->v.val.oval * 4 / 3;
  	} else if (s == NULL && (prop = BATgetprop_nolock(b, GDK_HASH_BUCKETS)) != NULL) {
 		assert(prop->v.vtype == TYPE_oid);
 		mask = prop->v.val.oval;
@@ -750,8 +758,10 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		}
 		break;
 	}
-	if (s == NULL)
+	if (s == NULL) {
 		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid, &(oid){NHASHBUCKETS(h)});
+		BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){h->nunique});
+	}
 	h->heapbckt.parentid = b->batCacheid;
 	h->heaplink.parentid = b->batCacheid;
 	/* if the number of unique values is equal to the bat count,

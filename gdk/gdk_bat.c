@@ -1073,6 +1073,7 @@ BUNappend(BAT *b, const void *t, bool force)
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
+	BATrmprop(b, GDK_NUNIQUE);
 #if 0		/* enable if we have more properties than just min/max */
 	PROPrec *prop;
 	do {
@@ -1087,6 +1088,9 @@ BUNappend(BAT *b, const void *t, bool force)
 #endif
 	if (b->thash) {
 		HASHins(b, p, t);
+		if (b->thash)
+			BATsetprop(b, GDK_NUNIQUE,
+				   TYPE_oid, &(oid){b->thash->nunique});
 		if (tsize && tsize != b->tvheap->size)
 			HEAPwarm(b->tvheap);
 	}
@@ -1156,6 +1160,7 @@ BUNdelete(BAT *b, oid o)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	HASHdestroy(b);
+	BATrmprop(b, GDK_NUNIQUE);
 #if 0		/* enable if we have more properties than just min/max */
 	do {
 		for (prop = b->tprops; prop; prop = prop->next)
@@ -1244,6 +1249,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 				BATrmprop(b, GDK_MIN_VALUE);
 			}
 		}
+		BATrmprop(b, GDK_NUNIQUE);
 #if 0		/* enable if we have more properties than just min/max */
 		do {
 			for (prop = b->tprops; prop; prop = prop->next)
