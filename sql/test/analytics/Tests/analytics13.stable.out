@@ -123,8 +123,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    col3 > ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col4) > 30)
 #FROM another_T
 #GROUP BY ROLLUP(col3, col4);
-% .%27 # table_name
-% %27 # name
+% .%30 # table_name
+% %30 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -140,8 +140,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    col1 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col2) IS NULL)
 #FROM another_T
 #GROUP BY CUBE(col1, col2);
-% .%32 # table_name
-% %32 # name
+% .%27 # table_name
+% %27 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -224,8 +224,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    GROUPING(t1.col6) = ALL (SELECT GROUPING(t1.col7) FROM tbl_ProductSales)
 #FROM another_T t1
 #GROUP BY CUBE(t1.col6, t1.col7);
-% .%315,	.%45,	.%317,	.%320,	.%321,	.%322,	.%323 # table_name
-% %315,	%45,	%317,	%320,	%321,	%322,	%323 # name
+% .%317,	.%45,	.%321,	.%322,	.%323,	.%324,	.%325 # table_name
+% %317,	%45,	%321,	%322,	%323,	%324,	%325 # name
 % boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5,	5 # length
 [ true,	false,	false,	false,	false,	true,	true	]
@@ -251,8 +251,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    GROUPING(t1.col6) = ALL (SELECT GROUPING(t1.col7)),
 #    GROUPING(t1.col6) = ALL (SELECT GROUPING(t1.col7) FROM tbl_ProductSales)
 #FROM another_T t1
-% .%315,	.%45,	.%317,	.%320,	.%321,	.%322,	.%323 # table_name
-% %315,	%45,	%317,	%320,	%321,	%322,	%323 # name
+% .%317,	.%45,	.%321,	.%322,	.%323,	.%324,	.%325 # table_name
+% %317,	%45,	%321,	%322,	%323,	%324,	%325 # name
 % boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5,	5 # length
 [ true,	false,	false,	false,	false,	true,	true	]
@@ -265,8 +265,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col1) IS NOT NULL OR MIN(col1) < MIN(col2)),
 #    CAST (NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) | CAST (col2 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER),
 #    CAST (EXISTS (SELECT MAX(col5) * MAX(col4) FROM another_T GROUP BY col5, col4) AS INTEGER) & CAST (GROUPING(col1, col5) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2) AS INTEGER)
-% .%211,	.%212,	.%213,	.%214,	.%215 # table_name
-% %211,	%212,	%213,	%214,	%215 # name
+% .%210,	.%211,	.%212,	.%213,	.%214 # table_name
+% %210,	%211,	%212,	%213,	%214 # name
 % boolean,	boolean,	boolean,	int,	int # type
 % 5,	5,	5,	1,	1 # length
 [ true,	true,	false,	1,	0	]
@@ -467,8 +467,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col1) IS NOT NULL OR MIN(col1) < MIN(col2)),
 #    CAST (NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) | CAST (col2 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER),
 #    CAST (EXISTS (SELECT MAX(col5) * MAX(col4) FROM another_T GROUP BY col5, col4) AS INTEGER) & CAST (GROUPING(col1, col5) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2) AS INTEGER)
-% .%211,	.%212,	.%213,	.%214,	.%215 # table_name
-% %211,	%212,	%213,	%214,	%215 # name
+% .%210,	.%211,	.%212,	.%213,	.%214 # table_name
+% %210,	%211,	%212,	%213,	%214 # name
 % boolean,	boolean,	boolean,	int,	int # type
 % 5,	5,	5,	1,	1 # length
 [ true,	true,	false,	1,	0	]
@@ -571,6 +571,38 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 [ 14,	NULL,	NULL,	NULL,	true,	false,	NULL,	11,	NULL,	48,	73,	"44 plus 1",	111,	NULL	]
 [ 14,	NULL,	NULL,	NULL,	true,	false,	NULL,	111,	NULL,	48,	103,	"444 plus 1",	111,	NULL	]
 [ 15,	NULL,	NULL,	NULL,	true,	false,	NULL,	1234,	NULL,	56,	403,	"4-sep-44-sep-444-sep-4444 plus 1",	111,	NULL	]
+#SELECT
+#    CAST((SELECT tp2.proj * t1.col1 + MAX(t1.col5) FROM LATERAL (SELECT MAX(tp.ColID) + MIN(t1.col6) - t1.col1 as proj FROM tbl_ProductSales tp HAVING NULL IS NOT NULL) AS tp2) AS BIGINT) AS a1
+#FROM another_T t1
+#GROUP BY ROLLUP(t1.col1, t1.col2), GROUPING SETS ((t1.col4))
+#ORDER BY a1 ASC NULLS FIRST;
+% . # table_name
+% a1 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#SELECT
+#    DISTINCT
+#    CAST((SELECT tp2.proj * t1.col1 + MAX(t1.col5) FROM LATERAL (SELECT MAX(tp.ColID) + MIN(t1.col6) - t1.col1 as proj FROM tbl_ProductSales tp HAVING NULL IS NOT NULL) AS tp2) AS BIGINT) AS a1
+#FROM another_T t1
+#GROUP BY ROLLUP(t1.col1, t1.col2), GROUPING SETS ((t1.col4))
+#ORDER BY a1 ASC NULLS FIRST;
+% . # table_name
+% a1 # name
+% bigint # type
+% 1 # length
+[ NULL	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 

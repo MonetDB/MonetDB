@@ -155,6 +155,40 @@ ORDER BY
     a11 ASC NULLS FIRST, a12 DESC NULLS LAST, a13 ASC NULLS FIRST, a14 DESC NULLS LAST;
 
 SELECT
+    NOT t1.col1 BETWEEN (SELECT MAX(t1.col7) EXCEPT SELECT tp.ColID FROM tbl_ProductSales tp) AND (SELECT MIN(t1.col5) EXCEPT SELECT t1.col2) a1,
+    NOT GROUPING(t1.col1, t1.col2, t1.col4) * RANK() OVER (PARTITION BY AVG(DISTINCT t1.col5)) NOT 
+        BETWEEN (SELECT tp2.proj * t1.col1 + MAX(t1.col5) FROM LATERAL (SELECT tp.ColID + MIN(t1.col6) - t1.col1 as proj FROM tbl_ProductSales tp) AS tp2) 
+        AND 
+        (SELECT SUM(t1.col7) FROM tbl_ProductSales tp HAVING t1.col2 < ALL(SELECT MAX(tp.ColID))) a2
+FROM another_T t1
+GROUP BY CUBE(t1.col1, t1.col2), GROUPING SETS ((t1.col4))
+ORDER BY a1 ASC NULLS FIRST, a2 ASC NULLS LAST; --error, cardinality violation, scalar expression expected
+
+SELECT
+    CAST((SELECT tp2.proj * t1.col1 + MAX(t1.col5) FROM LATERAL (SELECT MAX(tp.ColID) + MIN(t1.col6) - t1.col1 as proj FROM tbl_ProductSales tp HAVING NULL IS NOT NULL) AS tp2) AS BIGINT) AS a1
+FROM another_T t1
+GROUP BY ROLLUP(t1.col1, t1.col2), GROUPING SETS ((t1.col4))
+ORDER BY a1 ASC NULLS FIRST;
+
+SELECT
+    DISTINCT
+    CAST((SELECT tp2.proj * t1.col1 + MAX(t1.col5) FROM LATERAL (SELECT MAX(tp.ColID) + MIN(t1.col6) - t1.col1 as proj FROM tbl_ProductSales tp HAVING NULL IS NOT NULL) AS tp2) AS BIGINT) AS a1
+FROM another_T t1
+GROUP BY ROLLUP(t1.col1, t1.col2), GROUPING SETS ((t1.col4))
+ORDER BY a1 ASC NULLS FIRST;
+
+---Queries bellow give wrong results and errors
+
+SELECT 
+    NOT GROUPING(t1.col2, t1.col4) <> ALL (SELECT t1.col2 FROM tbl_ProductSales tp WHERE tp.colID = 1) a1
+FROM another_T t1
+GROUP BY ROLLUP(t1.col1, t1.col2), GROUPING SETS ((t1.col4))
+HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) NOT IN 
+    ((SELECT NOT EXISTS (SELECT t1.col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = t1.col1)) UNION ALL
+     (SELECT NOT GROUPING(t1.col1) BETWEEN (SELECT MAX(t1.col7) EXCEPT SELECT tp.ColID FROM tbl_ProductSales tp) AND (SELECT MIN(t1.col5) EXCEPT SELECT t1.col2)))
+ORDER BY a1 DESC NULLS FIRST;
+
+SELECT
     GROUPING(t1.col6, t1.col7) IN (SELECT SUM(t2.col2) FROM another_T t2 GROUP BY t2.col5),
     NOT 32 * GROUPING(t1.col7, t1.col6) IN (SELECT MAX(t2.col2) FROM another_T t2),
     GROUPING(t1.col6, t1.col7) NOT IN (SELECT MIN(t2.col2) FROM another_T t2 GROUP BY t1.col6),
@@ -164,7 +198,20 @@ SELECT
 FROM another_T t1
 GROUP BY CUBE(t1.col7, t1.col6);
 
----Queries bellow give wrong results and errors
+SELECT
+    CASE WHEN t1.col1 IN (SELECT 1 FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END,
+    CASE WHEN SUM(t1.col3) IN (SELECT MAX(t1.col3) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END,
+    CASE WHEN t1.col2 IN (SELECT MAX(MAX(t1.col3)) OVER (PARTITION BY t1.col2 ORDER BY tp.ColID) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END
+FROM another_T t1
+GROUP BY ROLLUP(t1.col1, t1.col2);
+
+SELECT
+    CASE WHEN t1.col2 IN (SELECT MIN(ColID) FROM tbl_ProductSales tp INNER JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2) THEN 1 ELSE 2 END,
+    CASE WHEN t1.col2 IN (SELECT MIN(ColID) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2) THEN 1 ELSE 2 END,
+    CASE WHEN t1.col2 IN (SELECT MIN(ColID) FROM tbl_ProductSales tp RIGHT JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2) THEN 1 ELSE 2 END,
+    CASE WHEN t1.col2 IN (SELECT MIN(ColID) FROM tbl_ProductSales tp FULL OUTER JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2) THEN 1 ELSE 2 END
+FROM another_T t1
+GROUP BY ROLLUP(t1.col1, t1.col2);
 
 SELECT
     CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON t2.col5 = t1.col1)) THEN 1 ELSE 2 END,
