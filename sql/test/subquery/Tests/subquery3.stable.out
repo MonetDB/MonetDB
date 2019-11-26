@@ -249,6 +249,71 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 [ 1	]
 [ 1	]
 [ 1	]
+#SELECT
+#    1
+#FROM another_T t1
+#GROUP BY t1.col1, t1.col2, t1.col4
+#HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) <
+#    ((SELECT NOT EXISTS (SELECT t1.col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = t1.col1)) INTERSECT
+#     (SELECT NOT t1.col1 IN (SELECT MAX(t1.col7) EXCEPT SELECT tp.ColID FROM tbl_ProductSales tp)));
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+#SELECT
+#    col6,
+#    col7,
+#    NOT SUM(t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 < MAX(t1.col6))
+#FROM another_T t1
+#GROUP BY t1.col7, t1.col6;
+% .t1,	.t1,	.%15 # table_name
+% col6,	col7,	%15 # name
+% int,	int,	boolean # type
+% 4,	4,	5 # length
+[ 6,	7,	false	]
+[ 66,	77,	false	]
+[ 666,	777,	false	]
+[ 6666,	7777,	false	]
+#SELECT
+#    col6,
+#    col7,
+#    NOT SUM(t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 < MAX(t2.col7 - t1.col6))
+#FROM another_T t1
+#GROUP BY t1.col7, t1.col6;
+% .t1,	.t1,	.%15 # table_name
+% col6,	col7,	%15 # name
+% int,	int,	boolean # type
+% 4,	4,	5 # length
+[ 6,	7,	false	]
+[ 66,	77,	false	]
+[ 666,	777,	false	]
+[ 6666,	7777,	false	]
+#SELECT
+#    CASE WHEN NULL IN (SELECT MIN(ColID) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END
+#FROM another_T t1
+#GROUP BY t1.col1, t1.col2;
+% .%32 # table_name
+% %32 # name
+% tinyint # type
+% 1 # length
+[ 2	]
+[ 2	]
+[ 2	]
+[ 2	]
+#SELECT
+#    CASE WHEN NULL NOT IN (SELECT 1 FROM tbl_ProductSales tp FULL OUTER JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END
+#FROM another_T t1;
+% .%34 # table_name
+% %34 # name
+% tinyint # type
+% 1 # length
+[ 2	]
+[ 2	]
+[ 2	]
+[ 2	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 
