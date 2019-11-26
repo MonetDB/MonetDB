@@ -1956,98 +1956,98 @@ gdk_export str GDKstrndup(const char *s, size_t n)
  * the calling function.
  */
 #ifdef __GNUC__
-#define GDKmalloc(s)								\
-	({												\
-		size_t _size = (s);							\
-		void *_res = GDKmalloc(_size);				\
+#define GDKmalloc(s)			\
+	({						\
+		size_t _size = (s);				\
+		void *_res = GDKmalloc(_size);		\
 		DEBUG(ALLOC, "GDKmalloc(%zu) -> %p\n",		\
-					_size, _res);					\
-		_res;										\
+					_size, _res);	\
+		_res;		\
 	})
-#define GDKzalloc(s)								\
-	({												\
-		size_t _size = (s);							\
-		void *_res = GDKzalloc(_size);				\
+#define GDKzalloc(s)			\
+	({						\
+		size_t _size = (s);				\
+		void *_res = GDKzalloc(_size);		\
 		DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n",		\
-					_size, _res);					\
-		_res;										\
+					_size, _res);	\
+		_res;		\
 	})
-#define GDKrealloc(p, s)							\
-	({												\
-		void *_ptr = (p);							\
-		size_t _size = (s);							\
+#define GDKrealloc(p, s)		\
+	({						\
+		void *_ptr = (p);			\
+		size_t _size = (s);		\
 		void *_res = GDKrealloc(_ptr, _size);		\
 		DEBUG(ALLOC, "GDKrealloc(%p,%zu) -> %p\n",	\
-					_ptr, _size, _res);				\
-		_res;										\
+					_ptr, _size, _res);		\
+		_res;	\
 	 })
-#define GDKfree(p)									\
-	({												\
-		void *_ptr = (p);							\
-		if (_ptr)									\
+#define GDKfree(p)			\
+	({								\
+		void *_ptr = (p);		\
+		if (_ptr)					\
 			DEBUG(ALLOC, "GDKfree(%p)\n", _ptr);	\
-		GDKfree(_ptr);								\
+		GDKfree(_ptr);		\
 	})
-#define GDKstrdup(s)								\
-	({												\
-		const char *_str = (s);						\
-		void *_res = GDKstrdup(_str);				\
+#define GDKstrdup(s)			\
+	({						\
+		const char *_str = (s);		\
+		void *_res = GDKstrdup(_str);		\
 		DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",	\
 					_str ? strlen(_str) : 0, _res);	\
-		_res;										\
+		_res;		\
 	})
-#define GDKstrndup(s, n)							\
-	({												\
-		const char *_str = (s);						\
-		size_t _n = (n);							\
-		void *_res = GDKstrndup(_str, _n);			\
+#define GDKstrndup(s, n)	\
+	({					\
+		const char *_str = (s);		\
+		size_t _n = (n);		\
+		void *_res = GDKstrndup(_str, _n);		\
 		DEBUG(ALLOC, "GDKstrndup(len=%zu) -> %p\n", \
-					_n,	_res);						\
-		_res;										\
+					_n,	_res);			\
+		_res;					\
 	})
-#define GDKmmap(p, m, l)							\
-	({												\
-		const char *_path = (p);					\
-		int _mode = (m);							\
-		size_t _len = (l);							\
+#define GDKmmap(p, m, l)			\
+	({							\
+		const char *_path = (p);		\
+		int _mode = (m);			\
+		size_t _len = (l);					\
 		void *_res = GDKmmap(_path, _mode, _len);	\
 		DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",\
-					_path ? _path : "NULL",			\
-					(unsigned) _mode, _len,			\
-					_res);							\
-		_res;										\
+					_path ? _path : "NULL",		\
+					(unsigned) _mode, _len,		\
+					_res);				\
+		_res;					\
 	 })
-#define malloc(s)									\
-	({												\
-		size_t _size = (s);							\
-		void *_res = malloc(_size);					\
-		DEBUG(ALLOC, "malloc(%zu) -> %p\n",			\
-					_size, _res);					\
-		_res;										\
+#define malloc(s)		\
+	({				\
+		size_t _size = (s);			\
+		void *_res = malloc(_size);		\
+		DEBUG(ALLOC, "malloc(%zu) -> %p\n", \
+					_size, _res); 	\
+		_res;			\
 	})
-#define calloc(n, s)								\
-	({												\
-		size_t _nmemb = (n);						\
-		size_t _size = (s);							\
-		void *_res = calloc(_nmemb,_size);			\
+#define calloc(n, s)	\
+	({						\
+		size_t _nmemb = (n);		\
+		size_t _size = (s);				\
+		void *_res = calloc(_nmemb,_size);		\
 		DEBUG(ALLOC, "calloc(%zu,%zu) -> %p\n",		\
-					_nmemb, _size, _res);			\
-		_res;										\
+					_nmemb, _size, _res);	\
+		_res;			\
 	})
-#define realloc(p, s)								\
-	({												\
-		void *_ptr = (p);							\
-		size_t _size = (s);							\
-		void *_res = realloc(_ptr, _size);			\
+#define realloc(p, s)		\
+	({							\
+		void *_ptr = (p);			\
+		size_t _size = (s);		\
+		void *_res = realloc(_ptr, _size);		\
 		DEBUG(ALLOC, "realloc(%p,%zu) -> %p\n",		\
-					_ptr, _size, _res);				\
-		_res;										\
+					_ptr, _size, _res);		\
+		_res;			\
 	 })
-#define free(p)										\
-	({												\
-		void *_ptr = (p);							\
-		DEBUG(ALLOC, "free(%p)\n", _ptr);			\
-		free(_ptr);									\
+#define free(p)			\
+	({				\
+		void *_ptr = (p);	\
+		DEBUG(ALLOC, "free(%p)\n", _ptr);	\
+		free(_ptr);			\
 	})
 #else
 static inline void *

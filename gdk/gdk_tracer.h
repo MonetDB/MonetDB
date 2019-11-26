@@ -13,8 +13,8 @@
 #define BUFFER_SIZE 64000
 
 #define DEFAULT_ADAPTER BASIC
-#define DEFAULT_LOG_LEVEL M_CRITICAL
-#define DEFAULT_FLUSH_LEVEL M_ERROR
+#define DEFAULT_LOG_LEVEL M_DEBUG
+#define DEFAULT_FLUSH_LEVEL M_DEBUG
 
 #define FILE_NAME "trace"
 #define NAME_SEP '_'
@@ -177,6 +177,7 @@ typedef enum {
                                       \
         COMP( GDK_TM )                \
         COMP( GDK_UTILS )             \
+        COMP( GDK_POSIX )             \
                                       \
         COMP( COMPONENTS_COUNT )      \
 

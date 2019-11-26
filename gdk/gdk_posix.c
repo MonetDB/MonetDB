@@ -19,6 +19,7 @@
 #include "gdk.h"		/* includes gdk_posix.h */
 #include "gdk_private.h"
 #include "mutils.h"
+#include "gdk_tracer.h"
 #include <unistd.h>
 #include <string.h>     /* strncpy */
 
@@ -382,9 +383,7 @@ MT_munmap(void *p, size_t len)
 		GDKsyserror("MT_munmap: munmap(%p,%zu) failed\n",
 			    p, len);
 	VALGRIND_FREELIKE_BLOCK(p, 0);
-#ifdef MMAP_DEBUG
-	fprintf(stderr, "#munmap(%p,%zu) = %d\n", p, len, ret);
-#endif
+	DEBUG(GDK_POSIX, "munmap(%p,%zu) = %d\n", p, len, ret);
 	return ret;
 }
 
@@ -415,7 +414,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			GDKsyserror("MT_mremap: munmap(%p,%zu) failed\n",
 				    ((char *) old_address + *new_size),
 				    old_size - *new_size);
-			fprintf(stderr, "= %s:%d: MT_mremap(%s,%p,%zu,%zu): munmap() failed\n", __FILE__, __LINE__, path?path:"NULL", old_address, old_size, *new_size);
+			ERROR(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu): munmap() failed\n", path?path:"NULL", old_address, old_size, *new_size);
 			/* even though the system call failed, we
 			 * don't need to propagate the error up: the
 			 * address should still work in the same way
@@ -423,18 +422,14 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			return old_address;
 		}
 		if (path && truncate(path, *new_size) < 0)
-			fprintf(stderr, "#MT_mremap(%s): truncate failed\n", path);
-#ifdef MMAP_DEBUG
-		fprintf(stderr, "MT_mremap(%s,%p,%zu,%zu) -> shrinking\n", path?path:"NULL", old_address, old_size, *new_size);
-#endif
+			ERROR(GDK_POSIX, "MT_mremap(%s): truncate failed\n", path);
+		DEBUG(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu) -> shrinking\n", path?path:"NULL", old_address, old_size, *new_size);
 #endif	/* !STATIC_CODE_ANALYSIS */
 		return old_address;
 	}
 	if (*new_size == old_size) {
 		/* do nothing */
-#ifdef MMAP_DEBUG
-		fprintf(stderr, "MT_mremap(%s,%p,%zu,%zu) -> unchanged\n", path?path:"NULL", old_address, old_size, *new_size);
-#endif
+		DEBUG(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu) -> unchanged\n", path?path:"NULL", old_address, old_size, *new_size);
 		return old_address;
 	}
 
@@ -443,12 +438,12 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 
 		if ((fd = open(path, O_RDWR | O_CLOEXEC)) < 0) {
 			GDKsyserror("MT_mremap: open(%s) failed\n", path);
-			fprintf(stderr, "= %s:%d: MT_mremap(%s,%p,%zu,%zu): open() failed\n", __FILE__, __LINE__, path, old_address, old_size, *new_size);
+			ERROR(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu): open() failed\n", path, old_address, old_size, *new_size);
 			return NULL;
 		}
 		if (GDKextendf(fd, *new_size, path) != GDK_SUCCEED) {
 			close(fd);
-			fprintf(stderr, "= %s:%d: MT_mremap(%s,%p,%zu,%zu): GDKextendf() failed\n", __FILE__, __LINE__, path, old_address, old_size, *new_size);
+			ERROR(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu): GDKextendf() failed\n", path, old_address, old_size, *new_size);
 			return NULL;
 		}
 #ifdef HAVE_MREMAP
@@ -507,7 +502,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #else
 		if ((fd = open("/dev/zero", O_RDWR | O_CLOEXEC)) < 0) {
 			GDKsyserror("MT_mremap: open(/dev/zero) failed\n");
-			fprintf(stderr, "= %s:%d: MT_mremap(%s,%p,%zu,%zu): open('/dev/zero') failed\n", __FILE__, __LINE__, path?path:"NULL", old_address, old_size, *new_size);
+			ERROR(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu): open('/dev/zero') failed\n", path?path:"NULL", old_address, old_size, *new_size);
 			return NULL;
 		}
 #endif
@@ -583,7 +578,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					p = malloc(strlen(path) + 5);
 					if (p == NULL){
 						GDKsyserror("MT_mremap: malloc() failed\n");
-						fprintf(stderr, "= %s:%d: MT_mremap(%s,%p,%zu,%zu): fd < 0\n", __FILE__, __LINE__, path, old_address, old_size, *new_size);
+						ERROR(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu): fd < 0\n", path, old_address, old_size, *new_size);
 						return NULL;
 					}
 
@@ -593,7 +588,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					if (fd < 0) {
 						GDKsyserror("MT_mremap: open(%s) failed\n", (char *) p);
 						free(p);
-						fprintf(stderr, "= %s:%d: MT_mremap(%s,%p,%zu,%zu): fd < 0\n", __FILE__, __LINE__, path, old_address, old_size, *new_size);
+						ERROR(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu): fd < 0\n", path, old_address, old_size, *new_size);
 						return NULL;
 					}
 					free(p);
@@ -638,8 +633,8 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 						errno = err; /* restore for error message */
 						GDKsyserror("MT_mremap: growing file failed\n");
 						close(fd);
-						fprintf(stderr,
-							"= %s:%d: MT_mremap(%s,%p,%zu,%zu): write() or "
+						ERROR(GDK_POSIX,
+							"MT_mremap(%s,%p,%zu,%zu): write() or "
 #ifdef HAVE_FALLOCATE
 							"fallocate()"
 #else
@@ -649,7 +644,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 							"ftruncate()"
 #endif
 #endif
-							" failed\n", __FILE__, __LINE__, path, old_address, old_size, *new_size);
+							" failed\n", path, old_address, old_size, *new_size);
 						return NULL;
 					}
 					p = mmap(NULL, *new_size, prot, flags,
@@ -668,11 +663,9 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		if (fd >= 0)
 			close(fd);
 	}
-#ifdef MMAP_DEBUG
-	fprintf(stderr, "MT_mremap(%s,%p,%zu,%zu) -> %p%s\n", path?path:"NULL", old_address, old_size, *new_size, p, path && mode & MMAP_COPY ? " private" : "");
-#endif
+	DEBUG(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu) -> %p%s\n", path?path:"NULL", old_address, old_size, *new_size, p, path && mode & MMAP_COPY ? " private" : "");
 	if (p == MAP_FAILED)
-		fprintf(stderr, "= %s:%d: MT_mremap(%s,%p,%zu,%zu): p == MAP_FAILED\n", __FILE__, __LINE__, path?path:"NULL", old_address, old_size, *new_size);
+		ERROR(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu): p == MAP_FAILED\n", path?path:"NULL", old_address, old_size, *new_size);
 	return p == MAP_FAILED ? NULL : p;
 }
 
@@ -683,11 +676,8 @@ MT_msync(void *p, size_t len)
 
 	if (ret < 0)
 		GDKsyserror("MT_msync: msync failed\n");
-#ifdef MMAP_DEBUG
-	fprintf(stderr,
-		     "#msync(%p,%zu,MS_SYNC) = %d\n",
-		     p, len, ret);
-#endif
+	
+	DEBUG(GDK_POSIX, "msync(%p,%zu,MS_SYNC) = %d\n", p, len, ret);
 	return ret;
 }
 
@@ -852,7 +842,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		return old_address;	/* don't bother shrinking */
 	}
 	if (GDKextend(path, *new_size) != GDK_SUCCEED) {
-		fprintf(stderr, "= %s:%d: MT_mremap(%s,%p,%zu,%zu): GDKextend() failed\n", __FILE__, __LINE__, path?path:"NULL", old_address, old_size, *new_size);
+		ERROR(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu): GDKextend() failed\n", path?path:"NULL", old_address, old_size, *new_size);
 		return NULL;
 	}
 	if (path && !(mode & MMAP_COPY))
@@ -862,11 +852,11 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		memcpy(p, old_address, old_size);
 		MT_munmap(old_address, old_size);
 	}
-#ifdef MMAP_DEBUG
-	fprintf(stderr, "MT_mremap(%s,%p,%zu,%zu) -> %p\n", path?path:"NULL", old_address, old_size, *new_size, p);
-#endif
+
+	DEBUG(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu) -> %p\n", path?path:"NULL", old_address, old_size, *new_size, p);
+
 	if (p == NULL)
-		fprintf(stderr, "= %s:%d: MT_mremap(%s,%p,%zu,%zu): p == NULL\n", __FILE__, __LINE__, path?path:"NULL", old_address, old_size, *new_size);
+		ERROR(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu): p == NULL\n", path?path:"NULL", old_address, old_size, *new_size);
 	return p;
 }
 
@@ -1014,7 +1004,7 @@ win_rmdir(const char *pathname)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG fprintf(stderr, "retry rmdir %s\n", pathname);
+		DEBUG(IO_, "Retry rmdir %s\n", pathname);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = _rmdir(p);
 	}
@@ -1039,7 +1029,7 @@ win_unlink(const char *pathname)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG fprintf(stderr, "retry unlink %s\n", pathname);
+		DEBUG(IO_, "Retry unlink %s\n", pathname);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = _unlink(pathname);
 	}
@@ -1064,7 +1054,7 @@ win_rename(const char *old, const char *dst)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG fprintf(stderr, "#retry rename %s %s\n", old, dst);
+		DEBUG(IO_, "Retry rename %s %s\n", old, dst);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = rename(old, dst);
 	}

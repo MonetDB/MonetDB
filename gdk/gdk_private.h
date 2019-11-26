@@ -402,7 +402,7 @@ extern MT_Lock GDKtmLock;
 	 })
 #else
 static inline gdk_return
-GDKmunmap_debug(void *ptr, size_t len, const char *filename, int lineno)
+GDKmunmap_debug(void *ptr, size_t len)
 {
 	gdk_return res = GDKmunmap(ptr, len);
 	DEBUG(ALLOC, "GDKmunmap(%p,%zu) -> %d\n",
