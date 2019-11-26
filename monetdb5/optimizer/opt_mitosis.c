@@ -124,12 +124,12 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 */
 	activeClients = mb->activeClients = MCactiveClients();
 
-	if( cntxt->memorylimit){
+	if (cntxt->memorylimit){
 		/* the new mitosis scheme uses a maximum chunck size in MB from the client context */
 		m = (size_t) ((cntxt->memorylimit * 1024 *1024) / row_size);
-		pieces = (int) rowcnt / m + (rowcnt - m * pieces > 0);
+		pieces = (int) (rowcnt / m + (rowcnt - m * pieces > 0));
 	}
-	if( cntxt->memorylimit == 0 || pieces <= 1){
+	if (cntxt->memorylimit == 0 || pieces <= 1){
 		/* the old allocation scheme */
 		m = GDK_mem_maxsize / argsize;
 		/* if data exceeds memory size,
