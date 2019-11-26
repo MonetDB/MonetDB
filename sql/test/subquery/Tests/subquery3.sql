@@ -207,6 +207,17 @@ HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) NOT IN
 	-- 1
 
 SELECT
+    1
+FROM another_T t1
+GROUP BY t1.col1, t1.col2, t1.col4
+HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) <
+    ((SELECT NOT EXISTS (SELECT t1.col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = t1.col1)) INTERSECT
+     (SELECT NOT t1.col1 IN (SELECT MAX(t1.col7) EXCEPT SELECT tp.ColID FROM tbl_ProductSales tp)));
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
     col6,
     col7,
     NOT SUM(t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 < MAX(t1.col6))
