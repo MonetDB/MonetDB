@@ -617,6 +617,87 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 [ false	]
 [ false	]
 [ false	]
+#SELECT
+#    GROUPING(t1.col6, t1.col7) IN (SELECT SUM(t2.col2) FROM another_T t2 GROUP BY t2.col5),
+#    NOT 32 * GROUPING(t1.col7, t1.col6) IN (SELECT MAX(t2.col2) FROM another_T t2),
+#    GROUPING(t1.col6, t1.col7) NOT IN (SELECT MIN(t2.col2) FROM another_T t2 GROUP BY t1.col6),
+#    NOT SUM(t1.col2) * GROUPING(t1.col6, t1.col6, t1.col6, t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 + MIN(t2.col8) < MAX(t2.col7 - t1.col6)),
+#    GROUPING(t1.col6) <> ANY (SELECT t1.col7 INTERSECT SELECT t1.col6),
+% .%43,	.%374,	.%65,	.%77,	.%377,	.%400 # table_name
+% %43,	%374,	%65,	%77,	%377,	%400 # name
+% boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 5,	5,	5,	5,	5,	5 # length
+[ false,	true,	true,	false,	NULL,	false	]
+[ false,	true,	true,	false,	false,	false	]
+[ false,	true,	true,	false,	false,	false	]
+[ false,	true,	true,	false,	false,	false	]
+[ false,	true,	true,	false,	false,	false	]
+[ false,	true,	true,	false,	false,	false	]
+[ false,	true,	true,	false,	false,	false	]
+[ false,	true,	true,	false,	false,	false	]
+[ false,	true,	true,	false,	false,	false	]
+[ true,	true,	false,	false,	false,	false	]
+[ true,	true,	false,	false,	false,	false	]
+[ true,	true,	false,	false,	false,	false	]
+[ true,	true,	false,	false,	false,	false	]
+#SELECT
+#    CASE WHEN t1.col1 IN (SELECT 1 FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END,
+#    CASE WHEN SUM(t1.col3) IN (SELECT MAX(t1.col3) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END,
+#    CASE WHEN t1.col2 IN (SELECT MAX(MAX(t1.col3)) OVER (PARTITION BY t1.col2 ORDER BY tp.ColID) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END
+#FROM another_T t1
+#GROUP BY ROLLUP(t1.col1, t1.col2);
+% .%134,	.%135,	.%136 # table_name
+% %134,	%135,	%136 # name
+% tinyint,	tinyint,	tinyint # type
+% 1,	1,	1 # length
+[ 1,	1,	2	]
+[ 1,	1,	2	]
+[ 2,	1,	2	]
+[ 2,	1,	2	]
+[ 2,	1,	2	]
+[ 2,	1,	2	]
+[ 2,	1,	2	]
+[ 2,	1,	2	]
+[ 2,	2,	2	]
+#SELECT
+#    CASE WHEN t1.col2 IN (SELECT MIN(ColID) FROM tbl_ProductSales tp INNER JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2) THEN 1 ELSE 2 END,
+#    CASE WHEN t1.col2 IN (SELECT MIN(ColID) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2) THEN 1 ELSE 2 END,
+#    CASE WHEN t1.col2 IN (SELECT MIN(ColID) FROM tbl_ProductSales tp RIGHT JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2) THEN 1 ELSE 2 END,
+#    CASE WHEN t1.col2 IN (SELECT MIN(ColID) FROM tbl_ProductSales tp FULL OUTER JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2) THEN 1 ELSE 2 END
+% .%202,	.%203,	.%204,	.%205 # table_name
+% %202,	%203,	%204,	%205 # name
+% tinyint,	tinyint,	tinyint,	tinyint # type
+% 1,	1,	1,	1 # length
+[ 2,	2,	2,	2	]
+[ 2,	2,	2,	2	]
+[ 2,	2,	2,	2	]
+[ 2,	2,	2,	2	]
+[ 2,	2,	2,	2	]
+[ 2,	2,	2,	2	]
+[ 2,	2,	2,	2	]
+[ 2,	2,	2,	2	]
+[ 2,	2,	2,	2	]
+#SELECT
+#    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON t2.col5 = t1.col1)) THEN 1 ELSE 2 END,
+#    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON MIN(t1.col5) = t1.col1)) THEN 1 ELSE 2 END,
+#    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2)) THEN 1 ELSE 2 END
+% .%365,	.%366,	.%367 # table_name
+% %365,	%366,	%367 # name
+% tinyint,	tinyint,	tinyint # type
+% 1,	1,	1 # length
+[ 2,	2,	2	]
+[ 2,	2,	2	]
+[ 2,	2,	2	]
+[ 2,	2,	2	]
+[ 2,	2,	2	]
+[ 2,	2,	2	]
+[ 2,	2,	2	]
+[ 2,	2,	2	]
+[ 2,	2,	2	]
+[ 2,	2,	2	]
+[ 2,	2,	2	]
+[ 2,	2,	2	]
+[ 2,	2,	2	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 
