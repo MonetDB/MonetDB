@@ -3007,16 +3007,6 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 	return res;
 }
 
-static int
-rel_check_card(sql_rel *rel, sql_exp *l , sql_exp *r)
-{
-	if (rel && rel->card == CARD_AGGR && l->card != r->card && l->card > CARD_ATOM && r->card > CARD_ATOM) {
-		if(l->card == CARD_AGGR || r->card == CARD_AGGR)
-			return 1;
-	}
-	return 0;
-}
-
 static sql_exp *
 rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 {
@@ -3068,9 +3058,6 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	}
 
 	if (!l || !r)
-		return NULL;
-
-	if (0 && rel_check_card(*rel, l, r)) 
 		return NULL;
 	return rel_binop_(sql, rel ? *rel : NULL, l, r, s, fname, ek.card);
 }

@@ -1936,7 +1936,6 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		char *handled = SA_ZNEW_ARRAY(sql->sa, char, list_length(rel->exps));
 
 		/* get equi-joins/filters first */
-		/* TODO handle select expressions!! */
 		if (list_length(rel->exps) > 1) {
 			for( en = rel->exps->h, i=0; en; en = en->next, i++) {
 				sql_exp *e = en->data;
@@ -1973,17 +1972,25 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 
 			/* only handle simple joins here */
 			if ((exp_has_func(e) && get_cmp(e) != cmp_filter) ||
-			    get_cmp(e) == cmp_or || (e->f && e->anti)) {
+			    get_cmp(e) == cmp_or || (e->f && e->anti) ||
+			      (e->type == e_cmp && e->flag == cmp_equal &&
+			      ((rel_find_exp(rel->l, e->l) && rel_find_exp(rel->l, e->r))  ||
+			       (rel_find_exp(rel->r, e->l) && rel_find_exp(rel->r, e->r)))) ) {
 				if (!join && !list_length(lje)) {
 					stmt *l = bin_first_column(be, left);
 					stmt *r = bin_first_column(be, right);
-					join = stmt_join(be, l, r, 0, cmp_all); 
+					join = stmt_join(be, l, r, 0, cmp_all);
 				}
 				break;
 			}
 			if (list_length(lje) && (idx || e->type != e_cmp || (e->flag != cmp_equal && e->flag != cmp_filter) ||
 			   (join && e->flag == cmp_filter)))
 				break;
+			if (e->type == e_cmp && e->flag == cmp_equal &&
+			      ((rel_find_exp(rel->l, e->l) && rel_find_exp(rel->l, e->r))  ||
+			       (rel_find_exp(rel->r, e->l) && rel_find_exp(rel->r, e->r)))) {
+				break;
+			}
 
 			/* handle possible index lookups */
 			/* expressions are in index order ! */
