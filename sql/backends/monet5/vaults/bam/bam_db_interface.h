@@ -38,7 +38,6 @@
 }
 #endif */
 #define RUN_SQL(cntxt, sql, descr, msg) {                           \
-	DEBUG(BAM, "%s\n", sql);                                    \
 	msg = SQLstatementIntern(cntxt, sql, descr, TRUE, FALSE, NULL); \
 }
 

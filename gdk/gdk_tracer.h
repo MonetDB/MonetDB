@@ -89,11 +89,11 @@ typedef enum {
         COMP( ACCEL )                 \
         COMP( TRACE )                 \
         COMP( CHECK_ )                \
-        COMP( THRD )               \
+        COMP( THRD )                  \
                                       \
         COMP( GEOM )                  \
         COMP( LIDAR )                 \
-        COMP( BAM )                   \
+        COMP( BAM_ )                  \
         COMP( FITS )                  \
         COMP( SHP )                   \
                                       \
@@ -225,7 +225,10 @@ extern LOG_LEVEL LVL_PER_COMPONENT[COMPONENTS_COUNT];
 #define ERROR(COMP, MSG, ...)                                            \
     GDK_TRACER_LOG(M_ERROR, COMP, MSG, ## __VA_ARGS__)                   \
 
-#define WARNING(COMP, MSG, ...)                                          \
+/* CHECK */
+// This was WARNING but this macro is defined in another file
+// also, included by GDK - Temp fix
+#define MDB_WARNING(COMP, MSG, ...)                                      \
     GDK_TRACER_LOG(M_WARNING, COMP, MSG, ## __VA_ARGS__)                 \
 
 #define INFO(COMP, MSG, ...)                                             \

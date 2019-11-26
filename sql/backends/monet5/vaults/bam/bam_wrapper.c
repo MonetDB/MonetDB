@@ -1327,11 +1327,11 @@ check_alignment_buffers(bam_wrapper *bw, alignment * alig, int qname_size,
 	}
 
 	if (resized[0])
-		DEBUG(BAM, "Increased size of qname buffer to: %d characters\n", alig->qname_size);
+		DEBUG(BAM_, "Increased size of qname buffer to: %d characters\n", alig->qname_size);
 	if (resized[1])
-		DEBUG(BAM, "Increased size of cigar buffer to: %d characters\n", alig->cigar_size);
+		DEBUG(BAM_, "Increased size of cigar buffer to: %d characters\n", alig->cigar_size);
 	if (resized[2])
-		DEBUG(BAM, "Increased size of seq and qual buffers to: %d characters\n", alig->seq_size);
+		DEBUG(BAM_, "Increased size of seq and qual buffers to: %d characters\n", alig->seq_size);
 
 	return (alig->cigar != NULL && alig->seq != NULL
 		&& alig->qual != NULL);
@@ -1356,7 +1356,7 @@ check_qname_buffer(alignment * alig, int cur_size) {
 		if (tmp == NULL)
 			return 0;
 		alig->qname = tmp;
-		DEBUG(BAM, "Increased size of qname buffer to: %d characters\n", alig->qname_size);
+		DEBUG(BAM_, "Increased size of qname buffer to: %d characters\n", alig->qname_size);
 	}
 	return alig->qname != NULL;
 }
@@ -1378,7 +1378,7 @@ check_rname_rnext_buffers(alignment * alig, int cur_size) {
 		if (tmp == NULL)
 			return 0;
 		alig->rnext = tmp;
-		DEBUG(BAM, "Increased size of cigar buffer to: %d characters\n", alig->rname_size);
+		DEBUG(BAM_, "Increased size of cigar buffer to: %d characters\n", alig->rname_size);
 	}
 	return alig->rname != NULL && alig->rnext != NULL;
 }
@@ -1396,7 +1396,7 @@ check_cigar_buffer(alignment * alig, int cur_size) {
 		if (tmp == NULL)
 			return 0;
 		alig->cigar = tmp;
-		DEBUG(BAM, "Increased size of cigar buffer to: %d characters\n", alig->cigar_size);
+		DEBUG(BAM_, "Increased size of cigar buffer to: %d characters\n", alig->cigar_size);
 	}
 	return alig->cigar != NULL;
 }
@@ -1417,7 +1417,7 @@ check_seq_qual_buffers(alignment * alig, int cur_size) {
 		if (tmp == NULL)
 			return 0;
 		alig->qual = tmp;
-		DEBUG(BAM, "Increased size of seq and qual buffers to: %d characters\n", alig->seq_size);
+		DEBUG(BAM_, "Increased size of seq and qual buffers to: %d characters\n", alig->seq_size);
 	}
 	return alig->seq != NULL && alig->qual != NULL;
 }
@@ -1434,7 +1434,7 @@ check_aux_buffer(alignment * alig, int cur_size) {
 		if (tmp == NULL)
 			return 0;
 		alig->aux = tmp;
-		DEBUG(BAM, "Increased size of aux buffer to: %d characters\n", alig->aux_size);
+		DEBUG(BAM_, "Increased size of aux buffer to: %d characters\n", alig->aux_size);
 	}
 	return alig->aux != NULL;
 }
@@ -2317,7 +2317,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 						}
 					}
 					nr_aligs = new_nr_aligs;
-					DEBUG(BAM, "<bam_loader> Increased size of alignment buffer to: %d alignments\n", nr_aligs);
+					DEBUG(BAM_, "<bam_loader> Increased size of alignment buffer to: %d alignments\n", nr_aligs);
 				}
 			}
 		}

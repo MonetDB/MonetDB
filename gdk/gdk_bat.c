@@ -2114,7 +2114,7 @@ BATmode(BAT *b, bool transient)
 #ifdef NDEBUG
 /* assertions are disabled, turn failing tests into a message */
 #undef assert
-#define assert(test)	((void) ((test) || WARNING(BAT_, "Assertion `%s' failed\n", #test)))
+#define assert(test)	((void) ((test) || ERROR(BAT_, "Assertion `%s' failed\n", #test)))
 #endif
 
 /* Assert that properties are set correctly.

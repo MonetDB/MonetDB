@@ -175,7 +175,7 @@ void print_lidar_header(LASHeaderH header, const char* file_name, int bSkipVLR, 
             DEBUG(LIDAR, "   User          : '%s'\n", pszVLRUser);
 			DEBUG(LIDAR, "   Description   : '%s'\n", pszVLRDescription);
 			DEBUG(LIDAR, "   ID            : '%hu'\n", nVLRRecordId);
-            DEBUG(LIDAR, "   Length        : %hu\n", , nVLRLength);
+            DEBUG(LIDAR, "   Length        : %hu\n", nVLRLength);
            
             MT_lock_set(&mt_lidar_lock); 
             LASVLR_Destroy(pVLR);
