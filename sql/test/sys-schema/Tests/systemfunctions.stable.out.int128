@@ -548,7 +548,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"debug",	1,	"int",	""	]
 [ "sys",	"debug",	0,	"int",	"create function sys.debug(flag string) returns integer\n external name mdb.\"setDebug\";"	]
 [ "sys",	"debug",	1,	"clob",	""	]
-[ "sys",	"debugflags",	0,	"clob",	"create function sys.debugflags()\n returns table(\"flag\" string, \"val\" bool)\n external name \"mdb\".\"getDebugFlags\";"	]
+[ "sys",	"debugflags",	0,	"clob",	"create function sys.debugflags()\n returns table(flag string, val bool)\n external name mdb.\"getDebugFlags\";"	]
 [ "sys",	"debugflags",	1,	"boolean",	""	]
 [ "sys",	"decade",	0,	"int",	"decade"	]
 [ "sys",	"decade",	1,	"date",	""	]

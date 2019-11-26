@@ -67,8 +67,8 @@ create function sys.debug(flag string) returns integer
 	external name mdb."setDebug";
 
 create function sys.debugflags()
-	returns table("flag" string, "val" bool)
-	external name "mdb"."getDebugFlags";
+	returns table(flag string, val bool)
+	external name mdb."getDebugFlags";
 
 create function sys.deltas ("schema" string)
     returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
