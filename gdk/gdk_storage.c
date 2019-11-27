@@ -102,7 +102,7 @@ GDKcreatedir(const char *dir)
 	char *r;
 	DIR *dirp;
 
-	DEBUG(IO_, "GDKcreatedir(%s)\n", dir);
+	TRC_DEBUG(IO_, "GDKcreatedir(%s)\n", dir);
 	assert(!GDKinmemory());
 	assert(MT_path_absolute(dir));
 	if (strlen(dir) >= FILENAME_MAX) {
@@ -120,12 +120,12 @@ GDKcreatedir(const char *dir)
 			mkdir(path, MONETDB_DIRMODE) < 0) {
 			if (errno != EEXIST) {
 				GDKsyserror("GDKcreatedir: cannot create directory %s\n", path);
-				DEBUG(IO_, "mkdir(%s) failed\n", path);
+				TRC_DEBUG(IO_, "mkdir(%s) failed\n", path);
 				return GDK_FAIL;
 			}
 			if ((dirp = opendir(path)) == NULL) {
 				GDKsyserror("GDKcreatedir: %s not a directory\n", path);
-				DEBUG(IO_, "opendir(%s) failed\n", path);
+				TRC_DEBUG(IO_, "opendir(%s) failed\n", path);
 				return GDK_FAIL;
 			}
 			/* it's a directory, we can continue */
@@ -151,7 +151,7 @@ GDKremovedir(int farmid, const char *dirname)
 	if ((dirnamestr = GDKfilepath(farmid, NULL, dirname, NULL)) == NULL)
 		return GDK_FAIL;
 
-	DEBUG(IO_, "GDKremovedir(%s)\n", dirnamestr);
+	TRC_DEBUG(IO_, "GDKremovedir(%s)\n", dirnamestr);
 
 	if ((dirp = opendir(dirnamestr)) == NULL) {
 		GDKfree(dirnamestr);
@@ -166,14 +166,14 @@ GDKremovedir(int farmid, const char *dirname)
 		}
 		path = GDKfilepath(farmid, dirname, dent->d_name, NULL);
 		ret = remove(path);
-		DEBUG(IO_, "Remove %s = %d\n", path, ret);
+		TRC_DEBUG(IO_, "Remove %s = %d\n", path, ret);
 		GDKfree(path);
 	}
 	closedir(dirp);
 	ret = rmdir(dirnamestr);
 	if (ret != 0)
 		GDKsyserror("GDKremovedir: rmdir(%s) failed.\n", dirnamestr);
-	DEBUG(IO_, "rmdir %s = %d\n", dirnamestr, ret);
+	TRC_DEBUG(IO_, "rmdir %s = %d\n", dirnamestr, ret);
 	GDKfree(dirnamestr);
 	return ret ? GDK_FAIL : GDK_SUCCEED;
 }
@@ -266,7 +266,7 @@ GDKfileopen(int farmid, const char *dir, const char *name, const char *extension
 
 	if (path != NULL) {
 		FILE *f;
-		DEBUG(IO_, "GDKfileopen(%s)\n", path);
+		TRC_DEBUG(IO_, "GDKfileopen(%s)\n", path);
 		f = fopen(path, mode);
 		GDKfree(path);
 		return f;
@@ -287,7 +287,7 @@ GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 		/* if file already doesn't exist, we don't care */
 		if (remove(path) != 0 && errno != ENOENT) {
 			GDKsyserror("GDKunlink(%s)\n", path);
-			DEBUG(IO_, "Remove %s = -1\n", path);
+			TRC_DEBUG(IO_, "Remove %s = -1\n", path);
 			GDKfree(path);
 			return GDK_FAIL;
 		}
@@ -322,7 +322,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 		if (ret < 0)
 			GDKsyserror("GDKmove: cannot rename %s to %s\n", path1, path2);
 
-		DEBUG(IO_, "Move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
+		TRC_DEBUG(IO_, "Move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
 	} else {
 		ret = -1;
 	}
@@ -385,7 +385,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 			GDKsyserror("GDKextendf: could not extend file\n");
 		}
 	}
-	DEBUG(IO_, "GDKextend %s %zu -> %zu %dms%s\n",
+	TRC_DEBUG(IO_, "GDKextend %s %zu -> %zu %dms%s\n",
 			fn, (size_t) stb.st_size, size,
 			GDKms() - t0, rt != 0 ? " (failed)" : "");
 	/* posix_fallocate returns != 0 on failure, fallocate and
@@ -430,7 +430,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 {
 	int err = 0;
 
-	DEBUG(IO_, "GDKsave: name=%s, ext=%s, mode %d, dosync=%d\n", nme, ext ? ext : "", (int) mode, dosync);
+	TRC_DEBUG(IO_, "GDKsave: name=%s, ext=%s, mode %d, dosync=%d\n", nme, ext ? ext : "", (int) mode, dosync);
 
 	assert(!GDKinmemory());
 	if (mode == STORE_MMAP) {
@@ -440,7 +440,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 			GDKsyserror("GDKsave: error on: name=%s, ext=%s, "
 				    "mode=%d\n", nme, ext ? ext : "",
 				    (int) mode);
-		DEBUG(IO_, "MT_msync(buf %p, size %zu"
+		TRC_DEBUG(IO_, "MT_msync(buf %p, size %zu"
 					") = %d\n",
 					buf, size, err);
 	} else {
@@ -468,7 +468,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 				}
 				size -= ret;
 				buf = (void *) ((char *) buf + ret);
-				DEBUG(IO_, "Write(fd %d, buf %p"
+				TRC_DEBUG(IO_, "Write(fd %d, buf %p"
 							", size %u) = %zd\n",
 							fd, buf,
 							(unsigned) MIN(1 << 30, size),
@@ -523,7 +523,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 	assert(!GDKinmemory());
 	assert(size <= *maxsize);
 	assert(farmid != NOFARM || ext == NULL);
-	DEBUG(IO_, "GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
+	TRC_DEBUG(IO_, "GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 	
 	if (mode == STORE_MEM) {
 		int fd = GDKfdlocate(farmid, nme, "rb", ext);
@@ -545,7 +545,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 					 * recognize that we're just
 					 * printing the value of ptr,
 					 * not its contents */
-					DEBUG(IO_, "read(dst %p, n_expected %zd, fd %d) = %zd\n", (void *)dst, n_expected, fd, n);
+					TRC_DEBUG(IO_, "read(dst %p, n_expected %zd, fd %d) = %zd\n", (void *)dst, n_expected, fd, n);
 #endif
 
 					if (n <= 0)
@@ -593,7 +593,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 				/* success: update allocated size */
 				*maxsize = size;
 			}
-			DEBUG(IO_, "mmap(NULL, 0, maxsize %zu, mod %d, path %s, 0) = %p\n", size, mod, nme, (void *)ret);
+			TRC_DEBUG(IO_, "mmap(NULL, 0, maxsize %zu, mod %d, path %s, 0) = %p\n", size, mod, nme, (void *)ret);
 		}
 		GDKfree(path);
 	}
@@ -623,7 +623,7 @@ DESCload(int i)
 	BAT *b = NULL;
 	int tt;
 
-	DEBUG(IO_, "DESCload: %s\n", nme ? nme : "<noname>");
+	TRC_DEBUG(IO_, "DESCload: %s\n", nme ? nme : "<noname>");
 	
 	b = BBP_desc(i);
 
@@ -900,7 +900,7 @@ BATdelete(BAT *b)
 		if (b->ttype != TYPE_void &&
 		    HEAPdelete(&b->theap, o, "tail") != GDK_SUCCEED &&
 		    b->batCopiedtodisk)
-			DEBUG(IO_, "BATdelete(%s): bun heap\n", BATgetId(b));
+			TRC_DEBUG(IO_, "BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->theap.base) {
 		HEAPfree(&b->theap, true);
 	}
@@ -909,7 +909,7 @@ BATdelete(BAT *b)
 		if (b->batCopiedtodisk || (b->tvheap->storage != STORE_MEM)) {
 			if (HEAPdelete(b->tvheap, o, "theap") != GDK_SUCCEED &&
 			    b->batCopiedtodisk)
-				DEBUG(IO_, "BATdelete(%s): tail heap\n", BATgetId(b));
+				TRC_DEBUG(IO_, "BATdelete(%s): tail heap\n", BATgetId(b));
 		} else {
 			HEAPfree(b->tvheap, true);
 		}

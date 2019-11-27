@@ -33,7 +33,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 	if(strncmp(mod,"bat",3)==0)
 		mod+=3;
 		
-	DEBUG(MAL_OPT_REMAP, "Found candidate: %s.%s\n", mod, fcn);
+	TRC_DEBUG(MAL_OPT_REMAP, "Found candidate: %s.%s\n", mod, fcn);
 
 	snprintf(buf,1024,"bat%s",mod);
 	bufName = putName(buf);
@@ -57,13 +57,13 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 	/* now see if we can resolve the instruction */
 	typeChecker(scope,mb,p,TRUE);
 	if( p->typechk== TYPE_UNKNOWN) {
-		DEBUG(MAL_OPT_REMAP, "Type error\n");
+		TRC_DEBUG(MAL_OPT_REMAP, "Type error\n");
 		debugInstruction(MAL_OPT_REMAP, mb, 0, p, LIST_MAL_ALL);
 		freeInstruction(p);
 		return 0;
 	}
 	pushInstruction(mb,p);
-	DEBUG(MAL_OPT_REMAP, "Success\n");
+	TRC_DEBUG(MAL_OPT_REMAP, "Success\n");
 
 	return 1;
 }
@@ -122,9 +122,9 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 		/* CHECK */
 		// From here 
 		if( s== NULL) {
-			DEBUG(MAL_OPT_REMAP, "Not found\n");
+			TRC_DEBUG(MAL_OPT_REMAP, "Not found\n");
 		} else {
-			DEBUG(MAL_OPT_REMAP, "Side effects\n");
+			TRC_DEBUG(MAL_OPT_REMAP, "Side effects\n");
 		}
 		// To here is in DBEUG MAL_OPT_REMAP
 			
@@ -138,7 +138,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	}
 	sig= getInstrPtr(mq,0);
 
-	DEBUG(MAL_OPT_REMAP, "Modify the code\n");
+	TRC_DEBUG(MAL_OPT_REMAP, "Modify the code\n");
 	debugFunction(MAL_OPT_REMAP, mq, 0, LIST_MAL_ALL);
 	debugInstruction(MAL_OPT_REMAP, mb, 0, p, LIST_MAL_ALL);
 
@@ -157,11 +157,11 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 			isaBatType( getArgType(mb,p,i)) ){
 
 			if( getBatType(getArgType(mb,p,i)) != getArgType(mq,sig,i-2)){
-				DEBUG(MAL_OPT_REMAP, "Type mismatch: %d\n", i);
+				TRC_DEBUG(MAL_OPT_REMAP, "Type mismatch: %d\n", i);
 				goto terminateMX;
 			}
 
-			DEBUG(MAL_OPT_REMAP, "Upgrade type: %d %d\n", i, getArg(sig,i-2));
+			TRC_DEBUG(MAL_OPT_REMAP, "Upgrade type: %d %d\n", i, getArg(sig,i-2));
 
 			setVarType(mq, i-2,newBatType(getArgType(mb,p,i)));
 			upgrade[getArg(sig,i-2)]= TRUE;
@@ -271,7 +271,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 terminateMX:
 		/* CHECK */
 		// From here 
-		DEBUG(MAL_OPT_REMAP, "Abort remap\n");
+		TRC_DEBUG(MAL_OPT_REMAP, "Abort remap\n");
 		if (q)
 			debugInstruction(MAL_OPT_REMAP, mb, 0, q, LIST_MAL_ALL);
 		// To here is in DEBUG MAL_OPT_REMAP
@@ -297,9 +297,9 @@ terminateMX:
 	inlineMALblock(mb,pc,mq);
 
 	debugInstruction(MAL_OPT_REMAP, mb, 0, p, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_REMAP, "New block\n");
+	TRC_DEBUG(MAL_OPT_REMAP, "New block\n");
 	debugFunction(MAL_OPT_REMAP, mq, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_REMAP, "Inlined result\n");
+	TRC_DEBUG(MAL_OPT_REMAP, "Inlined result\n");
 	debugFunction(MAL_OPT_REMAP, mb, 0, LIST_MAL_ALL);
 
 	freeMalBlk(mq);
@@ -370,7 +370,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) pci;
 
-	DEBUG(MAL_OPT_REMAP, "REMAP optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_REMAP, "REMAP optimizer enter\n");
 
 	old = mb->stmt;
 	limit = mb->stop;
@@ -392,13 +392,13 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			Symbol s = findSymbol(cntxt->usermodule, mod,fcn);
 
 			if (s && s->def->inlineProp ){
-				DEBUG(MAL_OPT_REMAP, "Multiplex inline\n");
+				TRC_DEBUG(MAL_OPT_REMAP, "Multiplex inline\n");
 				debugInstruction(MAL_OPT_REMAP, mb, 0, p, LIST_MAL_ALL);
 
 				pushInstruction(mb, p);
 				if( OPTmultiplexInline(cntxt,mb,p,mb->stop-1) ){
 					doit++;
-					DEBUG(MAL_OPT_REMAP, "Actions: %d\n",doit);
+					TRC_DEBUG(MAL_OPT_REMAP, "Actions: %d\n",doit);
 				}
 
 			} else if (OPTremapDirect(cntxt, mb, stk, p, scope) ||
@@ -487,7 +487,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		addtoMalBlkHistory(mb);
 
 	debugFunction(MAL_OPT_REMAP, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_REMAP, "REMAP optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_REMAP, "REMAP optimizer exit\n");
 
 	return msg;
 }

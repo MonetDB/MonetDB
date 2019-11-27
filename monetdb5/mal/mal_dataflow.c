@@ -398,7 +398,7 @@ DFLOWworker(void *T)
 			}
 		}
 		error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
-		DEBUG(PAR, "Executed pc=%d wrk=%d claim=" LLFMT "," LLFMT "," LLFMT " %s\n",
+		TRC_DEBUG(PAR, "Executed pc=%d wrk=%d claim=" LLFMT "," LLFMT "," LLFMT " %s\n",
 						 fe->pc, id, claim, fe->hotclaim, fe->maxclaim, error ? error : "");
 		/* release the memory claim */
 		MALadmission_release(flow->cntxt, flow->mb, flow->stk, p,  claim);
@@ -550,7 +550,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with flow == NULL");
 	if (mb == NULL)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with mb == NULL");
-	DEBUG(PAR, "Initialize dflow block\n");
+	TRC_DEBUG(PAR, "Initialize dflow block\n");
 	assign = (int *) GDKzalloc(mb->vtop * sizeof(int));
 	if (assign == NULL)
 		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -618,7 +618,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 				l = getEndScope(mb, getArg(p, j));
 				if (l != pc && l < flow->stop && l > flow->start) {
 					/* add edge to the target instruction for wakeup call */
-					DEBUG(PAR, "Endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p, j)), n + flow->start, l);
+					TRC_DEBUG(PAR, "Endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p, j)), n + flow->start, l);
 					assert(pc < l); /* only dependencies on earlier instructions */
 					l -= flow->start;
 					if (flow->nodes[n]) {
@@ -664,11 +664,11 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 	/* CHECK */
 	// The whole for-loop is in PARDEBUG
 	for (n = 0; n < flow->stop - flow->start; n++) {
-		DEBUG(PAR, "[%d] %d\n", flow->start + n, n);
+		TRC_DEBUG(PAR, "[%d] %d\n", flow->start + n, n);
 		debugInstruction(PAR, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_ALL);
-		DEBUG(PAR, "[%d] dependents block count %d wakeup\n", flow->start + n, flow->status[n].blocks);
+		TRC_DEBUG(PAR, "[%d] dependents block count %d wakeup\n", flow->start + n, flow->status[n].blocks);
 		for (j = n; flow->edges[j]; j = flow->edges[j]) {
-			DEBUG(PAR, "%d\n", flow->start + flow->nodes[j]);
+			TRC_DEBUG(PAR, "%d\n", flow->start + flow->nodes[j]);
 			if (flow->edges[j] == -1)
 				break;
 		}
@@ -731,11 +731,11 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 				fe[i].argclaim = getMemoryClaim(fe[0].flow->mb, fe[0].flow->stk, p, j, FALSE);
 			q_enqueue(todo, flow->status + i);
 			flow->status[i].state = DFLOWrunning;
-			DEBUG(PAR, "Enqueue pc=%d claim=" LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
+			TRC_DEBUG(PAR, "Enqueue pc=%d claim=" LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
 		}
 	MT_lock_unset(&flow->flowlock);
 	MT_sema_up(&w->s);
-	DEBUG(PAR, "Run '%d' instructions in dataflow block\n", actions);
+	TRC_DEBUG(PAR, "Run '%d' instructions in dataflow block\n", actions);
 
 	while (actions != tasks ) {
 		f = q_dequeue(flow->done, NULL);
@@ -759,7 +759,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 					flow->status[i].state = DFLOWrunning;
 					flow->status[i].blocks--;
 					q_enqueue(todo, flow->status + i);
-					DEBUG(PAR, "Enqueue pc=%d claim=" LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
+					TRC_DEBUG(PAR, "Enqueue pc=%d claim=" LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
 				} else {
 					flow->status[i].blocks--;
 				}
@@ -772,7 +772,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	/* wrap up errors */
 	assert(flow->done->last == 0);
 	if ((ret = ATOMIC_PTR_XCG(&flow->error, NULL)) != NULL ) {
-		DEBUG(PAR, "Errors encountered: %s\n", ret);
+		TRC_DEBUG(PAR, "Errors encountered: %s\n", ret);
 	}
 	return ret;
 }
@@ -800,7 +800,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	bit *ret;
 	int i;
 
-	DEBUG(MAL_DATAFLOW, "Running for block: %d - %d\n", startpc, stoppc);
+	TRC_DEBUG(MAL_DATAFLOW, "Running for block: %d - %d\n", startpc, stoppc);
 	debugFunction(MAL_DATAFLOW, mb, 0, LIST_MAL_ALL);
 
 	/* in debugging mode we should not start multiple threads */

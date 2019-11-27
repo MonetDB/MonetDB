@@ -39,7 +39,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	(void) stk;
 	(void) pci;
 
-	DEBUG(MAL_OPT_COMMONTERMS, "COMMONTERMS optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_COMMONTERMS, "COMMONTERMS optimizer enter\n");
 
 	alias = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	list = (int*) GDKzalloc(sizeof(int) * mb->stop);
@@ -88,7 +88,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		 */
 		barrier |= getFunctionId(p) == assertRef;
 		if (barrier || p->token == NOOPsymbol || p->token == ASSIGNsymbol) {
-			DEBUG(MAL_OPT_COMMONTERMS, "Skipped[%d]: %d %d\n", i, barrier, p->retc == p->argc);
+			TRC_DEBUG(MAL_OPT_COMMONTERMS, "Skipped[%d]: %d %d\n", i, barrier, p->retc == p->argc);
 			pushInstruction(mb,p);
 			continue;
 		}
@@ -101,20 +101,20 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		/* side-effect producing operators can never be replaced */
 		/* the same holds for function calls without an argument, it is unclear where the results comes from (e.g. clock()) */
 		if ( mayhaveSideEffects(cntxt, mb, p,TRUE) || p->argc == p->retc){
-			DEBUG(MAL_OPT_COMMONTERMS, "Skipped[%d] side-effect: %d\n", i, p->retc == p->argc);
+			TRC_DEBUG(MAL_OPT_COMMONTERMS, "Skipped[%d] side-effect: %d\n", i, p->retc == p->argc);
 			pushInstruction(mb,p);
 			continue;
 		}
 
 		/* from here we have a candidate to look for a match */
-		DEBUG(MAL_OPT_COMMONTERMS, "Candidate[%d] look at list[%d] => %d\n",
+		TRC_DEBUG(MAL_OPT_COMMONTERMS, "Candidate[%d] look at list[%d] => %d\n",
 									i, HASHinstruction(p), hash[HASHinstruction(p)]);
 		debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, p, LIST_MAL_ALL);
 
 		/* Look into the hash structure for matching instructions */
 		for (j = hash[HASHinstruction(p)];  j > 0  ; j = list[j]) 
 			if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
-				DEBUG(MAL_OPT_COMMONTERMS, "Candidate[%d->%d] %d %d :%d %d %d=%d %d %d %d\n",
+				TRC_DEBUG(MAL_OPT_COMMONTERMS, "Candidate[%d->%d] %d %d :%d %d %d=%d %d %d %d\n",
 					j, list[j], 
 					hasSameSignature(mb, p, q), 
 					hasSameArguments(mb, p, q),
@@ -139,7 +139,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					 isLinearFlow(q) 
 					) {
 					if (safetyBarrier(p, q) ){
-						DEBUG(MAL_OPT_COMMONTERMS, "Safety barrier reached\n");
+						TRC_DEBUG(MAL_OPT_COMMONTERMS, "Safety barrier reached\n");
 						break;
 					}
 					duplicate = 1;
@@ -150,7 +150,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 						p= pushArgument(mb,p, getArg(q,k));
 					}
 
-					DEBUG(MAL_OPT_COMMONTERMS, "Modified expression %d -> %d ", getArg(p,0), getArg(p,1));
+					TRC_DEBUG(MAL_OPT_COMMONTERMS, "Modified expression %d -> %d ", getArg(p,0), getArg(p,1));
 					debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, p, LIST_MAL_ALL);
 
 					actions++;
@@ -159,7 +159,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			}
 
 			else if(isUpdateInstruction(p)){
-				DEBUG(MAL_OPT_COMMONTERMS, "Skipped: %d %d\n", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
+				TRC_DEBUG(MAL_OPT_COMMONTERMS, "Skipped: %d %d\n", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
 				debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, q, LIST_MAL_ALL);
 			}
 
@@ -168,7 +168,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			continue;
 		} 
 		/* update the hash structure with another candidate for re-use */
-		DEBUG(MAL_OPT_COMMONTERMS, "Update hash[%d] - look at arg '%d' hash '%d' list '%d'\n",
+		TRC_DEBUG(MAL_OPT_COMMONTERMS, "Update hash[%d] - look at arg '%d' hash '%d' list '%d'\n",
 									i, getArg(p,p->argc-1), HASHinstruction(p), hash[HASHinstruction(p)]);
 		debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, p, LIST_MAL_ALL);
 
@@ -201,7 +201,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	if(old) GDKfree(old);
 
 	debugFunction(MAL_OPT_COMMONTERMS, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_COMMONTERMS, "COMMONTERMS optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_COMMONTERMS, "COMMONTERMS optimizer exit\n");
     
 	return msg;
 }

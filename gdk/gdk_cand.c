@@ -918,7 +918,7 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 	dense_cands->batDirtydesc = true;
 	dense_cands->tvheap = dels;
 	BATsetcount(dense_cands, dense_cands->batCount - (hi - lo));
-	DEBUG(ALGO, "BATnegcands(cands=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "BATnegcands(cands=" ALGOBATFMT ","
 			  	"dels=" ALGOBATFMT ")\n",
 			  	ALGOBATPAR(dense_cands),
 			  	ALGOBATPAR(odels));

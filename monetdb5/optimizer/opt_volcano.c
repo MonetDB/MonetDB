@@ -38,7 +38,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
     if ( mb->inlineProp )
         return MAL_SUCCEED;
 
-	DEBUG(MAL_OPT_VOLCANO, "VOLCANO optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_VOLCANO, "VOLCANO optimizer enter\n");
 
     limit= mb->stop;
     if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
@@ -107,7 +107,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		addtoMalBlkHistory(mb);
 
 	debugFunction(MAL_OPT_VOLCANO, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_VOLCANO, "VOLCANO optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_VOLCANO, "VOLCANO optimizer exit\n");
 
 	return msg;
 }

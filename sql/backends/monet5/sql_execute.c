@@ -729,7 +729,7 @@ SQLengineIntern(Client c, backend *be)
 		return MAL_SUCCEED;
 	}
 
-	DEBUG(SQL_SCENARIO, "Ready to execute SQL statement\n");
+	TRC_DEBUG(SQL_SCENARIO, "Ready to execute SQL statement\n");
 	
 	if (c->curprg->def->stop == 1) {
 		if (mvc_status(m)) {

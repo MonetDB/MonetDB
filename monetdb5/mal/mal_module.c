@@ -71,7 +71,7 @@ mal_module_reset(void)
 	int i;
 	Module m;
 
-	DEBUG(MAL_MODULE, "Reset the global module structure\n");
+	TRC_DEBUG(MAL_MODULE, "Reset the global module structure\n");
 	for(i = 0; i < MODULE_HASH_SIZE; i++) {
 		m= moduleIndex[i];
 		moduleIndex[i] = 0;
@@ -161,7 +161,7 @@ Module globalModule(str nme)
 
 	// Global modules are not named 'user'
 	assert (strcmp(nme, "user"));
-	DEBUG(MAL_MODULE, "Create new global module: %s\n", nme);
+	TRC_DEBUG(MAL_MODULE, "Create new global module: %s\n", nme);
 
 	nme = putName(nme);
 	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
@@ -220,7 +220,7 @@ static void freeSubScope(Module scope)
 
 	if (scope->space == NULL) 
 		return;
-	DEBUG(MAL_MODULE, "Free sub scope: %s\n", scope->name);
+	TRC_DEBUG(MAL_MODULE, "Free sub scope: %s\n", scope->name);
 
 	for(i = 0; i < MAXSCOPE; i++) {
 		if( scope->space[i]){
@@ -249,7 +249,7 @@ void freeModule(Module m)
 			(void)ret;
 		}
 	}
-	DEBUG(MAL_MODULE, "Free module: %s\n", m->name);
+	TRC_DEBUG(MAL_MODULE, "Free module: %s\n", m->name);
 
 	freeSubScope(m);	
 	if (strcmp(m->name, "user")) {
@@ -273,7 +273,7 @@ void insertSymbol(Module scope, Symbol prg){
 
 	assert(scope);
 	sig = getSignature(prg);
-	DEBUG(MAL_MODULE, "Insert sumbol: %s.%s in %s\n", getModuleId(sig), getFunctionId(sig), scope->name);
+	TRC_DEBUG(MAL_MODULE, "Insert sumbol: %s.%s in %s\n", getModuleId(sig), getFunctionId(sig), scope->name);
 
 	if(getModuleId(sig) && getModuleId(sig)!= scope->name){
 		/* move the definition to the proper place */
@@ -281,7 +281,7 @@ void insertSymbol(Module scope, Symbol prg){
 		c= findModule(scope,getModuleId(sig));
 		if ( c )
 			scope = c;
-		DEBUG(MAL_MODULE, "Found alternative module: %s\n", scope->name);
+		TRC_DEBUG(MAL_MODULE, "Found alternative module: %s\n", scope->name);
 	}
 	t = getSymbolIndex(getFunctionId(sig));
 	if( scope->space == NULL) {
@@ -292,7 +292,7 @@ void insertSymbol(Module scope, Symbol prg){
 	assert(scope->space);
 	if (scope->space[t] == prg){
 		/* already known, last inserted */
-		DEBUG(MAL_MODULE, "Unexpected double insert\n");
+		TRC_DEBUG(MAL_MODULE, "Unexpected double insert\n");
 	} else {
 		prg->peer= scope->space[t];
 		scope->space[t] = prg;
@@ -316,7 +316,7 @@ void deleteSymbol(Module scope, Symbol prg){
 	int t;
 
 	sig = getSignature(prg);
-	DEBUG(MAL_MODULE, "Delete symbol '%s.%s' from '%s'\n", getModuleId(sig), getFunctionId(sig), prg->name);
+	TRC_DEBUG(MAL_MODULE, "Delete symbol '%s.%s' from '%s'\n", getModuleId(sig), getFunctionId(sig), prg->name);
 
 	if (getModuleId(sig) && getModuleId(sig)!= scope->name ){
 		/* move the definition to the proper place */
@@ -355,7 +355,7 @@ Module findModule(Module scope, str name){
 	Module def = scope;
 	Module m;
 	if (name == NULL) return scope;
-	DEBUG(MAL_MODULE, "Locate module '%s' in scope '%s'\n", name, scope->name);
+	TRC_DEBUG(MAL_MODULE, "Locate module '%s' in scope '%s'\n", name, scope->name);
 	m = getModule(name);
 	if (m) return m;
 
@@ -378,7 +378,7 @@ Module findModule(Module scope, str name){
 Symbol findSymbolInModule(Module v, str fcn) {
 	Symbol s;
 	if (v == NULL || fcn == NULL) return NULL;
-	DEBUG(MAL_MODULE, "Find symbol '%s' in '%s'\n", fcn, v->name);
+	TRC_DEBUG(MAL_MODULE, "Find symbol '%s' in '%s'\n", fcn, v->name);
 	s = v->space[(int)(*fcn)];
 	while (s != NULL) {
 		if (idcmp(s->name,fcn)==0) return s;

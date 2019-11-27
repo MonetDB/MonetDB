@@ -28,7 +28,7 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) stk;
 	(void) cntxt;
 
-	DEBUG(MAL_OPT_PROFILER, "PROFILER optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_PROFILER, "PROFILER optimizer enter\n");
 	
 	for( i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
@@ -88,7 +88,7 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	addtoMalBlkHistory(mb);
 
 	debugFunction(MAL_OPT_PROFILER, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_PROFILER, "PROFILER optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_PROFILER, "PROFILER optimizer exit\n");
 
 	return MAL_SUCCEED;
 }

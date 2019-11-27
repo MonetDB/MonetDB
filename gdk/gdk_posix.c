@@ -1004,7 +1004,7 @@ win_rmdir(const char *pathname)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		DEBUG(IO_, "Retry rmdir %s\n", pathname);
+		TRC_DEBUG(IO_, "Retry rmdir %s\n", pathname);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = _rmdir(p);
 	}
@@ -1029,7 +1029,7 @@ win_unlink(const char *pathname)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		DEBUG(IO_, "Retry unlink %s\n", pathname);
+		TRC_DEBUG(IO_, "Retry unlink %s\n", pathname);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = _unlink(pathname);
 	}
@@ -1054,7 +1054,7 @@ win_rename(const char *old, const char *dst)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		DEBUG(IO_, "Retry rename %s %s\n", old, dst);
+		TRC_DEBUG(IO_, "Retry rename %s %s\n", old, dst);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = rename(old, dst);
 	}

@@ -282,7 +282,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( dep == NULL)
 		return MAL_SUCCEED;
 
-	DEBUG(MAL_OPT_REORDER, "REORDER optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_REORDER, "REORDER optimizer enter\n");
 	
 	limit= mb->stop;
 	slimit= mb->ssize;
@@ -320,7 +320,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				/* CHECK */
 				// The whole if-statement is in DEBUG MAL_OPT_REORDER
 				if(old[j]){
-					DEBUG(MAL_OPT_REORDER, "Leftover: %d\n", start+1);
+					TRC_DEBUG(MAL_OPT_REORDER, "Leftover: %d\n", start+1);
 					debugInstruction(MAL_OPT_REORDER, mb, 0, old[j], LIST_MAL_ALL);
 				}
 
@@ -358,7 +358,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	addtoMalBlkHistory(mb);
 
 	debugFunction(MAL_OPT_REORDER, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_REORDER, "REORDER optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_REORDER, "REORDER optimizer exit\n");
 
 	return msg;
 }

@@ -97,7 +97,7 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 
 	if (p->token == ENDsymbol || p->barrier || isUnsafeFunction(p) || 
 		(isMultiplex(p) && MANIFOLDtypecheck(cntxt,mb,p,0) == NULL) ){
-			DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on instruction\n");
+			TRC_DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on instruction\n");
 			return TRUE;
 		}
 
@@ -107,7 +107,7 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 	*/
 	for(j=0; j<p->retc; j++)
 		if ( getState(states,p,j) & (VARWRITE | VARREAD | VARBLOCK)){
-			DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on argument '%s' state '%d'\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
+			TRC_DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on argument '%s' state '%d'\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
 			return 1;
 		}
 
@@ -124,7 +124,7 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 		/* CHECK */
 		// If is in DEBUG MAL_OPT_DATAFLOW
 		if( getState(states,p,1) & (VARREAD | VARBLOCK))
-			DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on update '%s' state '%d'\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
+			TRC_DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on update '%s' state '%d'\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
 		return getState(states,p,p->retc) & (VARREAD | VARBLOCK);
 	}
 
@@ -133,14 +133,14 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 			/* CHECK */
 			// If is in DEBUG MAL_OPT_DATAFLOW
 			if( getState(states,p,j) & VARREAD)
-				DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on blocked var '%s' state '%d'\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
+				TRC_DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on blocked var '%s' state '%d'\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
 			return 1;
 		}
 
 		/* CHECK */
 		// If is in DEBUG MAL_OPT_DATAFLOW
 		if( hasSideEffects(mb,p,FALSE))
-			DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on side-effect var '%s' '%s.%s'\n", getVarName(mb,getArg(p,j)), getModuleId(p), getFunctionId(p));
+			TRC_DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on side-effect var '%s' '%s.%s'\n", getVarName(mb,getArg(p,j)), getModuleId(p), getFunctionId(p));
 	}
 	return hasSideEffects(mb,p,FALSE);
 }
@@ -191,7 +191,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( mb->inlineProp)
 		return MAL_SUCCEED;
 
-	DEBUG(MAL_OPT_DATAFLOW, "DATAFLOW optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_DATAFLOW, "DATAFLOW optimizer enter\n");
 
 	vlimit = mb->vsize;
 	states = (States) GDKzalloc(vlimit * sizeof(char));
@@ -222,7 +222,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* close previous flow block */
 			simple = simpleFlow(old,start,i);
 			
-			DEBUG(MAL_OPT_DATAFLOW, "Breakpoint pc: %d %s\n", i, (simple?"simple":""));
+			TRC_DEBUG(MAL_OPT_DATAFLOW, "Breakpoint pc: %d %s\n", i, (simple?"simple":""));
 			
 			if ( !simple){
 				flowblock = newTmpVariable(mb,TYPE_bit);
@@ -304,10 +304,10 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		/* CHECK */
 		// From here
-		DEBUG(MAL_OPT_DATAFLOW, "Variable states\n");
+		TRC_DEBUG(MAL_OPT_DATAFLOW, "Variable states\n");
 		debugInstruction(MAL_OPT_DATAFLOW, mb, 0, p, LIST_MAL_ALL);
 		for(k = 0; k < p->argc; k++)
-			DEBUG(MAL_OPT_DATAFLOW, "%s %d\n", getVarName(mb,getArg(p,k)), states[getArg(p,k)]);
+			TRC_DEBUG(MAL_OPT_DATAFLOW, "%s %d\n", getVarName(mb,getArg(p,k)), states[getArg(p,k)]);
 		// To here - is in DEBUG MAL_OPT_DATAFLOW
 
 	}
@@ -334,7 +334,7 @@ wrapup:
 	if(old)    GDKfree(old);
 
 	debugFunction(MAL_OPT_DATAFLOW, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_DATAFLOW, "DATAFLOW optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_DATAFLOW, "DATAFLOW optimizer exit\n");
 
 	return msg;
 }

@@ -858,7 +858,7 @@ GDKprepareExit(void)
 
 	/* CHECK */
 	// THRDDEBUG was outside dump_threads - not it is transferred
-	// inside as DEBUG(THRD, ...)
+	// inside as TRC_DEBUG(THRD, ...)
 	dump_threads();
 	join_detached_threads();
 }
@@ -1477,7 +1477,7 @@ THRnew(const char *name, MT_Id pid)
 	char *nme = GDKstrdup(name);
 
 	if (nme == NULL) {
-		DEBUG(IO_, "Malloc failure\n");
+		TRC_DEBUG(IO_, "Malloc failure\n");
 		GDKerror("THRnew: malloc failure\n");
 		return NULL;
 	}
@@ -1489,17 +1489,17 @@ THRnew(const char *name, MT_Id pid)
 			s->data[1] = THRdata[1];
 			s->sp = THRsp();
 			s->name = nme;
-			DEBUG(PAR, "%x %zu sp = %zu\n",
+			TRC_DEBUG(PAR, "%x %zu sp = %zu\n",
 					 	(unsigned) s->tid,
 					 	(size_t) ATOMIC_GET(&s->pid),
 					 	(size_t) s->sp);
-			DEBUG(PAR, "Number of threads: %d\n",
+			TRC_DEBUG(PAR, "Number of threads: %d\n",
 					 	(int) ATOMIC_GET(&GDKnrofthreads) + 1);
 			return s;
 		}
 	}
 	GDKfree(nme);
-	DEBUG(IO_, "Too many threads\n");
+	TRC_DEBUG(IO_, "Too many threads\n");
 	GDKerror("THRnew: too many threads\n");
 	return NULL;
 }
@@ -1550,7 +1550,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	};
 	len = snprintf(semname, sizeof(semname), "THRcreate%" PRIu64, (uint64_t) ATOMIC_INC(&ctr));
 	if (len == -1 || len > (int) sizeof(semname)) {
-		DEBUG(IO_, "Semaphore name is too large\n");
+		TRC_DEBUG(IO_, "Semaphore name is too large\n");
 		GDKerror("THRcreate: semaphore name is too large\n");
 		GDKfree(t);
 		GDKfree(s->name);
@@ -1581,7 +1581,7 @@ THRdel(Thread t)
 {
 	assert(GDKthreads <= t && t < GDKthreads + THREADS);
 	MT_thread_setdata(NULL);
-	DEBUG(PAR, "pid = %zu, disconnected, %d left\n",
+	TRC_DEBUG(PAR, "pid = %zu, disconnected, %d left\n",
 			 	(size_t) ATOMIC_GET(&t->pid),
 			 	(int) ATOMIC_GET(&GDKnrofthreads));
 

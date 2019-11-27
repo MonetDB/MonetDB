@@ -32,7 +32,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) stk;
 	(void) cntxt;
 
-	DEBUG(MAL_OPT_ALIASES, "ALIASES optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_ALIASES, "ALIASES optimizer enter\n");
 	
 	limit = mb->stop;
 	for (i = 1; i < limit; i++){
@@ -88,7 +88,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		addtoMalBlkHistory(mb);
 
 	debugFunction(MAL_OPT_ALIASES, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_ALIASES, "ALIASES optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_ALIASES, "ALIASES optimizer exit\n");
 	
 	return MAL_SUCCEED;
 }

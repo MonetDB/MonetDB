@@ -48,7 +48,7 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	varid = getArg(p,1);
 	if ( a == r && coerce[varid].src && coerce[varid].fromtype < r ) 
 	{
-		DEBUG(MAL_OPT_COERCION, "Remove upcast on first argument %d\n", varid);
+		TRC_DEBUG(MAL_OPT_COERCION, "Remove upcast on first argument %d\n", varid);
 		debugInstruction(MAL_OPT_COERCION, mb, 0, p, LIST_MAL_ALL);
 		getArg(p,1) = coerce[varid].src;
 		if ( chkInstruction(cntxt->usermodule, mb, p) || p->typechk == TYPE_UNKNOWN)
@@ -57,14 +57,14 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	varid = getArg(p,2);
 	if ( b == r && coerce[varid].src &&  coerce[varid].fromtype < r ) 
 	{
-		DEBUG(MAL_OPT_COERCION, "Remove upcast on second argument %d\n", varid);
+		TRC_DEBUG(MAL_OPT_COERCION, "Remove upcast on second argument %d\n", varid);
 		debugInstruction(MAL_OPT_COERCION, mb, 0, p, LIST_MAL_ALL);
 		getArg(p,2) = coerce[varid].src;
 		if ( chkInstruction(cntxt->usermodule, mb, p) || p->typechk == TYPE_UNKNOWN)
 			getArg(p,2) = varid;
 	}
 	
-	DEBUG(MAL_OPT_COERCION, "Final instruction\n");
+	TRC_DEBUG(MAL_OPT_COERCION, "Final instruction\n");
 	debugInstruction(MAL_OPT_COERCION, mb, 0, p, LIST_MAL_ALL);
 
 	return;
@@ -104,7 +104,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
-	DEBUG(MAL_OPT_COERCION, "COERCION optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_COERCION, "COERCION optimizer enter\n");
 	
 	if( coerce == NULL)
 		throw(MAL,"optimizer.coercion", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -185,7 +185,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	/* else we can also remove the request to apply the next alias optimizer */
 	
 	debugFunction(MAL_OPT_COERCION, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_COERCION, "COERCION optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_COERCION, "COERCION optimizer exit\n");
 
 	return msg;
 }

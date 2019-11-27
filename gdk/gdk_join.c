@@ -273,7 +273,7 @@ nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *restrict lci,
 			*r2p = r2;
 		}
 		*r1p = r1;
-		DEBUG(ALGO, "%s(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us -- nomatch\n",
+		TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us -- nomatch\n",
 				  	func, BATgetId(l), BATgetId(r),
 				  	ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 				  	GDKusec() - t0);
@@ -289,7 +289,7 @@ nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *restrict lci,
 		*r2p = r2;
 	}
 	*r1p = r1;
-	DEBUG(ALGO, "%s(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us -- nomatch\n",
+	TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us -- nomatch\n",
 				func, BATgetId(l), BATgetId(r),
 				ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 				GDKusec() - t0);
@@ -401,7 +401,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		*r2p = r2;
 	}
 	BBPunfix(bn->batCacheid);
-	DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
 				"r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
 				"sr=" ALGOOPTBATFMT ",nil_matches=%d)%s %s "
 				"-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
@@ -745,7 +745,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (r2->tkey && r2->tsorted)
 		virtualize(r2);
   doreturn2:
-	DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
 				"r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
 				"sr=" ALGOOPTBATFMT ","
 				"nil_on_miss=%d,only_misses=%d)%s %s "
@@ -1041,7 +1041,7 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			r2->tseqbase = 0;
 		}
 	}
-	DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
 				"r=" ALGOBATFMT ","
 				"nil_matches=%d)%s %s "
 				"-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
@@ -1340,7 +1340,7 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			r2->tseqbase = 0;
 		}
 	}
-	DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
 				"r=" ALGOBATFMT ","
 				"nil_matches=%d)%s %s "
 				"-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
@@ -1618,7 +1618,7 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			r2->tseqbase = 0;
 		}
 	}
-	DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
 				"r=" ALGOBATFMT ","
 				"nil_matches=%d)%s %s "
 				"-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
@@ -2342,7 +2342,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			r2->tseqbase = 0;
 		}
 	}
-	DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
 				"r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
 				"sr=" ALGOOPTBATFMT ",nil_matches=%d,"
 				"nil_on_miss=%d,semi=%d,only_misses=%d,"
@@ -2530,7 +2530,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (phash) {
 		BAT *b = BBPdescriptor(VIEWtparent(r));
 		assert(sr == NULL);
-		DEBUG(ALGO, "%s(%s): using "
+		TRC_DEBUG(ALGO, "%s(%s): using "
 				  	"parent(" ALGOBATFMT ") for hash\n",
 				  	__func__,
 				  	BATgetId(r), ALGOBATPAR(b));
@@ -2543,7 +2543,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (BATtdense(sr) &&
 		    BATcheckhash(r) &&
 		    BATcount(r) / ((size_t *) r->thash->heap.base)[5] * lci->ncand < lci->ncand + rci->ncand) {
-			DEBUG(ALGO, "%s(%s): using "
+			TRC_DEBUG(ALGO, "%s(%s): using "
 					  	"existing hash with candidate list\n",
 					  	__func__, BATgetId(r));
 			hsh = r->thash;
@@ -2552,7 +2552,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			int len;
 			char ext[32];
 			assert(!phash);
-			DEBUG(ALGO, "%s(%s): creating "
+			TRC_DEBUG(ALGO, "%s(%s): creating "
 					  	"hash for candidate list\n",
 					  	__func__, BATgetId(r));
 			len = snprintf(ext, sizeof(ext), "thash%x", sr->batCacheid);
@@ -2728,7 +2728,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			r2->tseqbase = 0;
 		}
 	}
-	DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
 			  	"r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
 			  	"sr=" ALGOOPTBATFMT ",nil_matches=%d,"
 			  	"nil_on_miss=%d,semi=%d,only_misses=%d,"
@@ -2780,7 +2780,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	lng loff = 0, roff = 0;
 	oid lval = oid_nil, rval = oid_nil;
 
-	DEBUG(ALGO, "thetajoin(l=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "thetajoin(l=" ALGOBATFMT ","
 			  	"r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
 			  	"sr=" ALGOOPTBATFMT ",op=%s%s%s)\n",
 			  	ALGOBATPAR(l), ALGOBATPAR(r), ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
@@ -2922,7 +2922,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 			r2->tseqbase = 0;
 		}
 	}
-	DEBUG(ALGO, "thetajoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
+	TRC_DEBUG(ALGO, "thetajoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
 			  	BATgetId(l), BATgetId(r),
 			  	ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 			  	GDKusec() - t0);
@@ -3302,7 +3302,7 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			r2->tseqbase = 0;
 		}
 	}
-	DEBUG(ALGO, "BATbandjoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
+	TRC_DEBUG(ALGO, "BATbandjoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
 			  	BATgetId(l), BATgetId(r),
 			  	ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 			  	GDKusec() - t0);
@@ -3361,7 +3361,7 @@ fetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	r1->tsorted = r->tsorted || e - b <= 1;
 	r1->trevsorted = r->trevsorted || e - b <= 1;
 	r1->tseqbase = e == b ? 0 : e - b == 1 ? *(const oid *)Tloc(r1, 0) : oid_nil;
-	DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
 				"r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
 				"sr=" ALGOOPTBATFMT ") %s "
 				"-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
@@ -3402,7 +3402,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	rcnt = canditer_init(&rci, r, sr);
 
 	if (lcnt == 0 || (!only_misses && !nil_on_miss && rcnt == 0)) {
-		DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+		TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
 					"r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
 					"sr=" ALGOOPTBATFMT ",nil_matches=%d,"
 					"nil_on_miss=%d,semi=%d,only_misses=%d,"
@@ -3610,7 +3610,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		return GDK_FAIL;
 
 	if (lcnt == 0 || rcnt == 0) {
-		DEBUG(ALGO, "BATjoin(l=" ALGOBATFMT ","
+		TRC_DEBUG(ALGO, "BATjoin(l=" ALGOBATFMT ","
 					"r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
 					"sr=" ALGOOPTBATFMT ",nil_matches=%d)\n",
 					ALGOBATPAR(l), ALGOBATPAR(r),
@@ -3768,7 +3768,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	// This is in ALGODEBUG
 	t0 = GDKusec();
 
-	DEBUG(ALGO, "BATbandjoin("
+	TRC_DEBUG(ALGO, "BATbandjoin("
 			  	"l=" ALGOBATFMT ",r=" ALGOBATFMT ","
 			  	"sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ")\n",
 			  	ALGOBATPAR(l), ALGOBATPAR(r),

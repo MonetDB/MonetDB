@@ -506,7 +506,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	str username = NULL;
 	str err = NULL;
 
-	DEBUG(SQL_USER, OIDFMT "\n", user);
+	TRC_DEBUG(SQL_USER, OIDFMT "\n", user);
 
 	if ((err = AUTHresolveUser(&username, user)) !=MAL_SUCCEED) {
 		freeException(err);

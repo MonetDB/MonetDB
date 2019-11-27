@@ -31,7 +31,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) stk;		/* to fool compilers */
 	(void) cntxt;
 
-	DEBUG(MAL_OPT_QUERYLOG, "QUERYLOG optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_QUERYLOG, "QUERYLOG optimizer enter\n");
 
 	/* gather information */
 	for (i = 1; i < mb->stop; i++) {
@@ -205,7 +205,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	addtoMalBlkHistory(mb);
 	
 	debugFunction(MAL_OPT_QUERYLOG, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_QUERYLOG, "QUERYLOG optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_QUERYLOG, "QUERYLOG optimizer exit\n");
 
 	return msg;
 }

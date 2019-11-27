@@ -252,7 +252,7 @@ doChallenge(void *data)
 		}
 	}
 
-	DEBUG(MAL_SERVER, "Client accepted: %s\n", buf);
+	TRC_DEBUG(MAL_SERVER, "Client accepted: %s\n", buf);
 
 	bs = bstream_create(fdin, 128 * BLOCK);
 
@@ -466,7 +466,7 @@ SERVERlistenThread(SOCKET *Sock)
 			continue;
 		}
 
-		DEBUG(MAL_SERVER, "Server accepted\n");
+		TRC_DEBUG(MAL_SERVER, "Server accepted\n");
 
 		data = GDKmalloc(sizeof(*data));
 		if( data == NULL){
@@ -902,7 +902,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	}
 #endif
 
-	DEBUG(MAL_SERVER, "Network started at: %d\n", port);
+	TRC_DEBUG(MAL_SERVER, "Network started at: %d\n", port);
 	psock[0] = sock;
 
 #ifdef HAVE_SYS_UN_H
@@ -925,7 +925,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	/* CHECK */
 	// From here
 	gethostname(host, (int) 512);
-	DEBUG(MAL_SERVER, "Ready to accept connections on: %s:%d\n", host, port);
+	TRC_DEBUG(MAL_SERVER, "Ready to accept connections on: %s:%d\n", host, port);
 	// To here is in DEBUG MAL_SERVER
 	
 	/* seed the randomiser such that our challenges aren't

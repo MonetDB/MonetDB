@@ -212,7 +212,7 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 		GDKfree(bn->tvheap);
 		goto bailout;
 	}
-	DEBUG(ALGO, "COLnew()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
+	TRC_DEBUG(ALGO, "COLnew()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
 	return bn;
   bailout:
 	BBPclear(bn->batCacheid);
@@ -231,7 +231,7 @@ BATdense(oid hseq, oid tseq, BUN cnt)
 	if (bn != NULL) {
 		BATtseqbase(bn, tseq);
 		BATsetcount(bn, cnt);
-		DEBUG(ALGO, "BATdense()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
+		TRC_DEBUG(ALGO, "BATdense()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
 	}
 	return bn;
 }
@@ -848,7 +848,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	}
 	if (!writable)
 		bn->batRestricted = BAT_READ;
-	DEBUG(ALGO, "COLcopy(" ALGOBATFMT ")=" ALGOBATFMT "\n",
+	TRC_DEBUG(ALGO, "COLcopy(" ALGOBATFMT ")=" ALGOBATFMT "\n",
 			  	ALGOBATPAR(b), ALGOBATPAR(bn));
 	return bn;
       bunins_failed:
@@ -1854,12 +1854,12 @@ backup_new(Heap *hp, int lockbat)
 		if ((ret = rename(batpath, bakpath)) < 0)
 			GDKsyserror("backup_new: rename %s to %s failed\n",
 				    batpath, bakpath);
-		DEBUG(IO_, "rename(%s,%s) = %d\n", batpath, bakpath, ret);
+		TRC_DEBUG(IO_, "rename(%s,%s) = %d\n", batpath, bakpath, ret);
 	} else if (batret == 0) {
 		/* there is a backup already; just remove the X.new */
 		if ((ret = remove(batpath)) != 0)
 			GDKsyserror("backup_new: remove %s failed\n", batpath);
-		DEBUG(IO_, "remove(%s) = %d\n", batpath, ret);
+		TRC_DEBUG(IO_, "remove(%s) = %d\n", batpath, ret);
 	}
 	GDKfree(batpath);
 	GDKfree(bakpath);
@@ -1967,7 +1967,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 		storage_t b1, b3 = STORE_MEM;
 
 		if (b->batSharecnt && newmode != BAT_READ) {
-			DEBUG(BAT_, "%s has %d views; try creating a copy\n", BATgetId(b), b->batSharecnt);
+			TRC_DEBUG(BAT_, "%s has %d views; try creating a copy\n", BATgetId(b), b->batSharecnt);
 			GDKerror("BATsetaccess: %s has %d views\n",
 				 BATgetId(b), b->batSharecnt);
 			return GDK_FAIL;

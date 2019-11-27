@@ -380,7 +380,7 @@ extern MT_Lock GDKtmLock;
 	({	void *_ptr = (p);				\
 		size_t _len = (l);				\
 		gdk_return _res = GDKmunmap(_ptr, _len);	\
-		DEBUG(ALLOC,						 \
+		TRC_DEBUG(ALLOC,						 \
 				"GDKmunmap(%p,%zu) -> %u\n", \
 				_ptr, _len, _res);	\
 		_res;						\
@@ -394,7 +394,7 @@ extern MT_Lock GDKtmLock;
 		size_t *_ns = (ns);					\
 		size_t _ons = *_ns;					\
 		void *_res = GDKmremap(_path, _mode, _oa, _os, _ns);	\
-			DEBUG(ALLOC,									\
+			TRC_DEBUG(ALLOC,									\
 				"GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p\n", \
 				_path ? _path : "NULL", (unsigned) _mode, \
 				_oa, _os, _ons, *_ns, _res);		\
@@ -405,7 +405,7 @@ static inline gdk_return
 GDKmunmap_debug(void *ptr, size_t len)
 {
 	gdk_return res = GDKmunmap(ptr, len);
-	DEBUG(ALLOC, "GDKmunmap(%p,%zu) -> %d\n",
+	TRC_DEBUG(ALLOC, "GDKmunmap(%p,%zu) -> %d\n",
 			   	  ptr, len, (int) res);
 	return res;
 }
@@ -415,7 +415,7 @@ GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, 
 {
 	size_t orig_new_size = *new_size;
 	void *res = GDKmremap(path, mode, old_address, old_size, new_size);
-		DEBUG(ALLOC, "GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p\n",
+		TRC_DEBUG(ALLOC, "GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p\n",
 					  path ? path : "NULL", mode,
 					  old_address, old_size, orig_new_size, *new_size, res);
 	return res;

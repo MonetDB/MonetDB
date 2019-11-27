@@ -1960,7 +1960,7 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 	({						\
 		size_t _size = (s);				\
 		void *_res = GDKmalloc(_size);		\
-		DEBUG(ALLOC, "GDKmalloc(%zu) -> %p\n",		\
+		TRC_DEBUG(ALLOC, "GDKmalloc(%zu) -> %p\n",		\
 					_size, _res);	\
 		_res;		\
 	})
@@ -1968,7 +1968,7 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 	({						\
 		size_t _size = (s);				\
 		void *_res = GDKzalloc(_size);		\
-		DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n",		\
+		TRC_DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n",		\
 					_size, _res);	\
 		_res;		\
 	})
@@ -1977,7 +1977,7 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 		void *_ptr = (p);			\
 		size_t _size = (s);		\
 		void *_res = GDKrealloc(_ptr, _size);		\
-		DEBUG(ALLOC, "GDKrealloc(%p,%zu) -> %p\n",	\
+		TRC_DEBUG(ALLOC, "GDKrealloc(%p,%zu) -> %p\n",	\
 					_ptr, _size, _res);		\
 		_res;	\
 	 })
@@ -1985,14 +1985,14 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 	({								\
 		void *_ptr = (p);		\
 		if (_ptr)					\
-			DEBUG(ALLOC, "GDKfree(%p)\n", _ptr);	\
+			TRC_DEBUG(ALLOC, "GDKfree(%p)\n", _ptr);	\
 		GDKfree(_ptr);		\
 	})
 #define GDKstrdup(s)			\
 	({						\
 		const char *_str = (s);		\
 		void *_res = GDKstrdup(_str);		\
-		DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",	\
+		TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",	\
 					_str ? strlen(_str) : 0, _res);	\
 		_res;		\
 	})
@@ -2001,7 +2001,7 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 		const char *_str = (s);		\
 		size_t _n = (n);		\
 		void *_res = GDKstrndup(_str, _n);		\
-		DEBUG(ALLOC, "GDKstrndup(len=%zu) -> %p\n", \
+		TRC_DEBUG(ALLOC, "GDKstrndup(len=%zu) -> %p\n", \
 					_n,	_res);			\
 		_res;					\
 	})
@@ -2011,7 +2011,7 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 		int _mode = (m);			\
 		size_t _len = (l);					\
 		void *_res = GDKmmap(_path, _mode, _len);	\
-		DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",\
+		TRC_DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",\
 					_path ? _path : "NULL",		\
 					(unsigned) _mode, _len,		\
 					_res);				\
@@ -2021,7 +2021,7 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 	({				\
 		size_t _size = (s);			\
 		void *_res = malloc(_size);		\
-		DEBUG(ALLOC, "malloc(%zu) -> %p\n", \
+		TRC_DEBUG(ALLOC, "malloc(%zu) -> %p\n", \
 					_size, _res); 	\
 		_res;			\
 	})
@@ -2030,7 +2030,7 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 		size_t _nmemb = (n);		\
 		size_t _size = (s);				\
 		void *_res = calloc(_nmemb,_size);		\
-		DEBUG(ALLOC, "calloc(%zu,%zu) -> %p\n",		\
+		TRC_DEBUG(ALLOC, "calloc(%zu,%zu) -> %p\n",		\
 					_nmemb, _size, _res);	\
 		_res;			\
 	})
@@ -2039,14 +2039,14 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 		void *_ptr = (p);			\
 		size_t _size = (s);		\
 		void *_res = realloc(_ptr, _size);		\
-		DEBUG(ALLOC, "realloc(%p,%zu) -> %p\n",		\
+		TRC_DEBUG(ALLOC, "realloc(%p,%zu) -> %p\n",		\
 					_ptr, _size, _res);		\
 		_res;			\
 	 })
 #define free(p)			\
 	({				\
 		void *_ptr = (p);	\
-		DEBUG(ALLOC, "free(%p)\n", _ptr);	\
+		TRC_DEBUG(ALLOC, "free(%p)\n", _ptr);	\
 		free(_ptr);			\
 	})
 #else
@@ -2054,7 +2054,7 @@ static inline void *
 GDKmalloc_debug(size_t size)
 {
 	void *res = GDKmalloc(size);
-	DEBUG(ALLOC, "GDKmalloc(%zu) -> %p\n", size, res);
+	TRC_DEBUG(ALLOC, "GDKmalloc(%zu) -> %p\n", size, res);
 	return res;
 }
 #define GDKmalloc(s)	GDKmalloc_debug((s))
@@ -2062,7 +2062,7 @@ static inline void *
 GDKzalloc_debug(size_t size)
 {
 	void *res = GDKzalloc(size);
-	DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n",
+	TRC_DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n",
 			   	  size, res);
 	return res;
 }
@@ -2071,7 +2071,7 @@ static inline void *
 GDKrealloc_debug(void *ptr, size_t size)
 {
 	void *res = GDKrealloc(ptr, size);
-	DEBUG(ALLOC, "GDKrealloc(%p,%zu) -> %p\n",
+	TRC_DEBUG(ALLOC, "GDKrealloc(%p,%zu) -> %p\n",
 			   	ptr, size, res);
 	return res;
 }
@@ -2079,7 +2079,7 @@ GDKrealloc_debug(void *ptr, size_t size)
 static inline void
 GDKfree_debug(void *ptr)
 {
-	DEBUG(ALLOC, "GDKfree(%p)\n", ptr);
+	TRC_DEBUG(ALLOC, "GDKfree(%p)\n", ptr);
 	GDKfree(ptr);
 }
 #define GDKfree(p)	GDKfree_debug((p))
@@ -2087,7 +2087,7 @@ static inline char *
 GDKstrdup_debug(const char *str)
 {
 	void *res = GDKstrdup(str);
-	DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",
+	TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",
 			   	str ? strlen(str) : 0, res);
 	return res;
 }
@@ -2096,7 +2096,7 @@ static inline char *
 GDKstrndup_debug(const char *str, size_t n)
 {
 	void *res = GDKstrndup(str, n);
-	DEBUG(ALLOC, "GDKstrndup(len=%zu) -> %p\n", n, res);
+	TRC_DEBUG(ALLOC, "GDKstrndup(len=%zu) -> %p\n", n, res);
 	return res;
 }
 #define GDKstrndup(s, n)	GDKstrndup_debug((s), (n))
@@ -2104,7 +2104,7 @@ static inline void *
 GDKmmap_debug(const char *path, int mode, size_t len)
 {
 	void *res = GDKmmap(path, mode, len);
-	DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",
+	TRC_DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",
 			   	path ? path : "NULL", mode, len,
 			   	res);
 	return res;
@@ -2114,7 +2114,7 @@ static inline void *
 malloc_debug(size_t size)
 {
 	void *res = malloc(size);
-	DEBUG(ALLOC, "malloc(%zu) -> %p\n", size, res);
+	TRC_DEBUG(ALLOC, "malloc(%zu) -> %p\n", size, res);
 	return res;
 }
 #define malloc(s)	malloc_debug((s))
@@ -2122,7 +2122,7 @@ static inline void *
 calloc_debug(size_t nmemb, size_t size)
 {
 	void *res = calloc(nmemb, size);
-	DEBUG(ALLOC, "calloc(%zu,%zu) -> %p\n", nmemb, size, res);
+	TRC_DEBUG(ALLOC, "calloc(%zu,%zu) -> %p\n", nmemb, size, res);
 	return res;
 }
 #define calloc(n, s)	calloc_debug((n), (s))
@@ -2130,14 +2130,14 @@ static inline void *
 realloc_debug(void *ptr, size_t size)
 {
 	void *res = realloc(ptr, size);
-	DEBUG(ALLOC, "realloc(%p,%zu) -> %p \n", ptr, size, res);
+	TRC_DEBUG(ALLOC, "realloc(%p,%zu) -> %p \n", ptr, size, res);
 	return res;
 }
 #define realloc(p, s)	realloc_debug((p), (s))
 static inline void
 free_debug(void *ptr)
 {
-	DEBUG(ALLOC, "free(%p)\n", ptr);
+	TRC_DEBUG(ALLOC, "free(%p)\n", ptr);
 	free(ptr);
 }
 #define free(p)	free_debug((p))
@@ -2302,7 +2302,7 @@ BBPcheck(bat x, const char *y)
 		assert(x > 0);
 
 		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
-			DEBUG(CHECK_, "%s: range error %d\n", y, (int) x);
+			TRC_DEBUG(CHECK_, "%s: range error %d\n", y, (int) x);
 		} else {
 			return x;
 		}

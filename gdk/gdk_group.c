@@ -604,7 +604,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	if (b->tkey || cnt <= 1 || (g && (g->tkey || BATtdense(g)))) {
 		/* grouping is trivial: 1 element per group */
-		DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
+		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -656,7 +656,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* all values are equal */
 		if (g == NULL || (BATordered(g) && BATordered_rev(g))) {
 			/* there's only a single group: 0 */
-			DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
+			TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -694,7 +694,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			 * e/h available in order to copy them,
 			 * otherwise we will need to calculate them
 			 * which we will do using the "normal" case */
-			DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
+			TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -797,7 +797,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	    ((BATordered(b) || BATordered_rev(b)) &&
 	     (g == NULL || BATordered(g) || BATordered_rev(g)))) {
 		/* we only need to compare each entry with the previous */
-		DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
+		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -855,7 +855,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * last time we saw that group, so if the last time we
 		 * saw the old group of the current value is within
 		 * this range, we can reuse the new group */
-		DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
+		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -992,7 +992,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * since we may have to go through long lists of
 		 * duplicates in the hash table to find an old
 		 * group */
-		DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
+		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -1058,7 +1058,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * build an incomplete hash table on the fly--also see
 		 * BATassertProps for similar code; we also exploit if
 		 * g is clustered */
-		DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
+		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","

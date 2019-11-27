@@ -67,6 +67,6 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 	}
 	*r1p = bn1;
 	*r2p = bn2;
-	DEBUG(ALGO, "BATsubcross()=(" ALGOBATFMT "," ALGOBATFMT ")\n", ALGOBATPAR(bn1), ALGOBATPAR(bn2));
+	TRC_DEBUG(ALGO, "BATsubcross()=(" ALGOBATFMT "," ALGOBATFMT ")\n", ALGOBATPAR(bn1), ALGOBATPAR(bn2));
 	return GDK_SUCCEED;
 }

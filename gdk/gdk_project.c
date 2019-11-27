@@ -243,7 +243,7 @@ BATproject(BAT *l, BAT *r)
 	// This is in ALGODEBUG
 	t0 = GDKusec();
 
-	DEBUG(ALGO, "%s(l=" ALGOBATFMT "," 
+	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT "," 
 				"r=" ALGOBATFMT ")\n",
 			  	__func__,
 			  	ALGOBATPAR(l), ALGOBATPAR(r));
@@ -259,7 +259,7 @@ BATproject(BAT *l, BAT *r)
 		}
 		bn = BATslice(r, lo - r->hseqbase, hi - r->hseqbase);
 		BAThseqbase(bn, l->hseqbase);
-		DEBUG(ALGO, "%s(l=%s,r=%s)=" ALGOOPTBATFMT " (slice)\n",
+		TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=" ALGOOPTBATFMT " (slice)\n",
 				  	__func__,
 				  	BATgetId(l), BATgetId(r),  ALGOOPTBATPAR(bn));
 		return bn;
@@ -282,7 +282,7 @@ BATproject(BAT *l, BAT *r)
 		    BATcount(bn) == 0) {
 			BATtseqbase(bn, 0);
 		}
-		DEBUG(ALGO, "%s(l=%s,r=%s)=" ALGOOPTBATFMT " (constant)\n",
+		TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=" ALGOOPTBATFMT " (constant)\n",
 				  	__func__,
 				  	BATgetId(l), BATgetId(r), ALGOOPTBATPAR(bn));
 		return bn;
@@ -307,7 +307,7 @@ BATproject(BAT *l, BAT *r)
 	}
 	bn = COLnew(l->hseqbase, tpe, lcount, TRANSIENT);
 	if (bn == NULL) {
-		DEBUG(ALGO, "%s(l=%s,r=%s)=0\n",
+		TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=0\n",
 				  	__func__,
 				  	BATgetId(l), BATgetId(r));
 		return NULL;
@@ -431,7 +431,7 @@ BATproject(BAT *l, BAT *r)
 
 	if (!BATtdense(r))
 		BATtseqbase(bn, oid_nil);
-		DEBUG(ALGO, "%s(l=%s,r=%s)=" ALGOBATFMT "%s " LLFMT "us\n",
+		TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=" ALGOBATFMT "%s " LLFMT "us\n",
 			  		__func__,
 					BATgetId(l), BATgetId(r), ALGOBATPAR(bn),
 					bn->ttype == TYPE_str && bn->tvheap == r->tvheap ? " shared string heap" : "",
@@ -483,7 +483,7 @@ BATprojectchain(BAT **bats)
 	 * temporary work space */
 	for (n = 0; bats[n]; n++) {
 		b = bats[n];
-		DEBUG(ALGO, "%s arg %d: " ALGOBATFMT "\n",
+		TRC_DEBUG(ALGO, "%s arg %d: " ALGOBATFMT "\n",
 				  	__func__, n + 1, ALGOBATPAR(b));
 	}
 	if (n == 0) {
@@ -492,7 +492,7 @@ BATprojectchain(BAT **bats)
 	}
 	if (n == 1) {
 		bn = COLcopy(b, b->ttype, true, TRANSIENT);
-		DEBUG(ALGO, "%s with 1 bat: copy: "
+		TRC_DEBUG(ALGO, "%s with 1 bat: copy: "
 					ALGOOPTBATFMT " (" LLFMT " usec)\n",
 					__func__,
 					ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -526,7 +526,7 @@ BATprojectchain(BAT **bats)
 		bn = BATconstant(ba[0].hlo, tpe == TYPE_oid ? TYPE_void : tpe,
 				 nil, ba[0].cnt, TRANSIENT);
 		GDKfree(ba);
-		DEBUG(ALGO, "%s with %d bats: nil/empty: "
+		TRC_DEBUG(ALGO, "%s with %d bats: nil/empty: "
 					ALGOOPTBATFMT " (" LLFMT " usec)\n",
 					__func__, n,
 					ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -659,7 +659,7 @@ BATprojectchain(BAT **bats)
 	bn->tnonil = nonil;
 	bn->tseqbase = oid_nil;
 	GDKfree(ba);
-	DEBUG(ALGO, "%s with %d bats: "
+	TRC_DEBUG(ALGO, "%s with %d bats: "
 			  	ALGOOPTBATFMT " (" LLFMT " usec)\n",
 			  	__func__, n,
 			  	ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -668,6 +668,6 @@ BATprojectchain(BAT **bats)
   bunins_failed:
 	GDKfree(ba);
 	BBPreclaim(bn);
-	DEBUG(ALGO, "%s failed\n", __func__);
+	TRC_DEBUG(ALGO, "%s failed\n", __func__);
 	return NULL;
 }

@@ -128,7 +128,7 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count)
 	((size_t *) h->heap.base)[3] = width;
 	((size_t *) h->heap.base)[4] = count;
 	((size_t *) h->heap.base)[5] = 0; /* # filled slots (chain heads) */
-	DEBUG(ACCEL, "Create hash(size " BUNFMT ", mask " BUNFMT ", width %d, total " BUNFMT " bytes);\n", size, mask, width, (size + mask) * width);
+	TRC_DEBUG(ACCEL, "Create hash(size " BUNFMT ", mask " BUNFMT ", width %d, total " BUNFMT " bytes);\n", size, mask, width, (size + mask) * width);
 	return GDK_SUCCEED;
 }
 
@@ -153,7 +153,7 @@ HASHcollisions(BAT *b, Hash *h)
 				max = cnt;
 			total += cnt;
 		}
-	DEBUG(ACCEL, "Statistics (" BUNFMT ", entries " LLFMT ", mask " BUNFMT ", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->mask, max, entries == 0 ? 0 : total / entries);
+	TRC_DEBUG(ACCEL, "Statistics (" BUNFMT ", entries " LLFMT ", mask " BUNFMT ", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->mask, max, entries == 0 ? 0 : total / entries);
 }
 
 /* Return TRUE if we have a hash on the tail, even if we need to read
@@ -239,7 +239,7 @@ BATcheckhash(BAT *b)
 							TYPE_oid,
 							&(oid){h->mask + 1});
 						b->thash = h;
-						DEBUG(ACCEL, "Reusing persisted hash %s\n", BATgetId(b));
+						TRC_DEBUG(ACCEL, "Reusing persisted hash %s\n", BATgetId(b));
 						MT_lock_unset(&b->batIdxLock);
 						return true;
 					}
@@ -254,7 +254,7 @@ BATcheckhash(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->thash != NULL;
-	DEBUG(ACCEL, "Already has hash %s, waited " LLFMT " usec\n", BATgetId(b), t);
+	TRC_DEBUG(ACCEL, "Already has hash %s, waited " LLFMT " usec\n", BATgetId(b), t);
 	return ret;
 }
 
@@ -312,7 +312,7 @@ BAThashsync(void *arg)
 					failed = ""; /* not failed */
 				}
 			}
-			DEBUG(ACCEL, "Persisting hash %s (" LLFMT " usec)%s\n", hp->filename, GDKusec() - t0, failed);
+			TRC_DEBUG(ACCEL, "Persisting hash %s (" LLFMT " usec)%s\n", hp->filename, GDKusec() - t0, failed);
 		}
 	}
 	MT_lock_unset(&b->batIdxLock);
@@ -375,14 +375,14 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	/* CHECK */
 	// This is in ACCELDEBUG
 	t0 = GDKusec();
-	DEBUG(ACCEL, "Create hash(" ALGOBATFMT ");\n", ALGOBATPAR(b));
+	TRC_DEBUG(ACCEL, "Create hash(" ALGOBATFMT ");\n", ALGOBATPAR(b));
 	if (b->ttype == TYPE_void) {
 		if (is_oid_nil(b->tseqbase)) {
-			DEBUG(ACCEL, "Cannot create hash-table on void-NIL column.\n");
+			TRC_DEBUG(ACCEL, "Cannot create hash-table on void-NIL column.\n");
 			GDKerror("BAThash: no hash on void/nil column\n");
 			return NULL;
 		}
-		DEBUG(ACCEL, "Creating hash-table on void column..\n");
+		TRC_DEBUG(ACCEL, "Creating hash-table on void column..\n");
 
 		tpe = TYPE_void;
 	}
@@ -492,7 +492,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		/* CHECK */
 		// The if statement is in DEBUGACCEL
 		if (p < cnt1)
-			DEBUG(ACCEL, "BAThash(%s): abort starthash with "
+			TRC_DEBUG(ACCEL, "BAThash(%s): abort starthash with "
 						"mask " BUNFMT " at " BUNFMT "\n", BATgetId(b),
 						mask, p);
 		if (p == cnt1 || mask == maxmask)
@@ -560,7 +560,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	
 	/* CHECK */
 	// HASHcollisions is also in DEBUG ACCEL
-	DEBUG(ACCEL, "Hash construction " LLFMT " usec\n", GDKusec() - t0);
+	TRC_DEBUG(ACCEL, "Hash construction " LLFMT " usec\n", GDKusec() - t0);
 	HASHcollisions(b, h);
 	
 	return h;
@@ -594,7 +594,7 @@ BAThash(BAT *b)
 			}
 			return GDK_SUCCEED;
 		} else
-			DEBUG(ACCEL, "NOT persisting hash %d\n", b->batCacheid);
+			TRC_DEBUG(ACCEL, "NOT persisting hash %d\n", b->batCacheid);
 #endif
 	}
 	MT_lock_unset(&b->batIdxLock);
@@ -668,7 +668,7 @@ HASHdestroy(BAT *b)
 				/* CHECK */
 				// If statement is in ACCELDEBUG
 				if (*(size_t *) hs->heap.base & (1 << 24))
-					DEBUG(ACCEL, "Removing persisted hash %d\n", b->batCacheid);
+					TRC_DEBUG(ACCEL, "Removing persisted hash %d\n", b->batCacheid);
 				HEAPfree(&hs->heap, true);
 				GDKfree(hs);
 			}

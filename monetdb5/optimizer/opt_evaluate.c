@@ -133,7 +133,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if ( mb->inlineProp )
 		return MAL_SUCCEED;
 
-	DEBUG(MAL_OPT_EVALUATE, "EVALUATE optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_EVALUATE, "EVALUATE optimizer enter\n");
 	
 	cntxt->itrace = 0;
 
@@ -192,7 +192,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			cntxt->sqlprofiler = sqlprofiler;
 			p->barrier = barrier;
 			
-			DEBUG(MAL_OPT_EVALUATE, "Retc var: %s - Result: %s\n", getVarName(mb, getArg(p, 0)), msg == MAL_SUCCEED ? "ok" : msg);
+			TRC_DEBUG(MAL_OPT_EVALUATE, "Retc var: %s - Result: %s\n", getVarName(mb, getArg(p, 0)), msg == MAL_SUCCEED ? "ok" : msg);
 
 			if (msg == MAL_SUCCEED) {
 				int nvar;
@@ -216,12 +216,12 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				/* freeze the type */
 				setVarFixed(mb,getArg(p,1));
 				setVarUDFtype(mb,getArg(p,1));
-				DEBUG(MAL_OPT_EVALUATE, "Evaluated new constant=%d -> %d:%s\n",
+				TRC_DEBUG(MAL_OPT_EVALUATE, "Evaluated new constant=%d -> %d:%s\n",
 										getArg(p, 0), getArg(p, 1), getTypeName(getArgType(mb, p, 1)));
 			} else {
 				/* if there is an error, we should postpone message handling,
 					as the actual error (eg. division by zero ) may not happen) */
-				DEBUG(MAL_OPT_EVALUATE, "Evaluated: %s\n", msg);
+				TRC_DEBUG(MAL_OPT_EVALUATE, "Evaluated: %s\n", msg);
 				freeException(msg);
 				msg= MAL_SUCCEED;
 				mb->errors = 0;
@@ -253,7 +253,7 @@ wrapup:
 	if(alias)	GDKfree(alias);
 
 	debugFunction(MAL_OPT_EVALUATE, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_EVALUATE, "EVALUATE optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_EVALUATE, "EVALUATE optimizer exit\n");
 
 	return msg;
 }

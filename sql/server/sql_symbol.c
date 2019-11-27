@@ -28,7 +28,7 @@ symbol_create(sql_allocator *sa, tokens token, char *data)
 	if (s) {
 		symbol_init(s, token, type_string);
 		s->data.sval = data;
-		DEBUG(SQL_SYMBOL, "%p = symbol_create_string(%s, %s)\n", s, token2string(s->token), s->data.sval);
+		TRC_DEBUG(SQL_SYMBOL, "%p = symbol_create_string(%s, %s)\n", s, token2string(s->token), s->data.sval);
 	}
 	return s;
 }
@@ -41,7 +41,7 @@ symbol_create_list(sql_allocator *sa, tokens token, dlist *data)
 	if (s) {
 		symbol_init(s, token, type_list);
 		s->data.lval = data;
-		DEBUG(SQL_SYMBOL, "%p = symbol_create_list(%s, %p)\n", s, token2string(s->token), s->data.lval);
+		TRC_DEBUG(SQL_SYMBOL, "%p = symbol_create_list(%s, %p)\n", s, token2string(s->token), s->data.lval);
 	}
 	return s;
 }
@@ -54,7 +54,7 @@ symbol_create_int(sql_allocator *sa, tokens token, int data)
 	if (s) {
 		symbol_init(s, token, type_int);
 		s->data.i_val = data;
-		DEBUG(SQL_SYMBOL, "%p = symbol_create_int(%s, %d)\n", s, token2string(s->token), data);
+		TRC_DEBUG(SQL_SYMBOL, "%p = symbol_create_int(%s, %d)\n", s, token2string(s->token), data);
 	}
 	return s;
 }
@@ -67,7 +67,7 @@ symbol_create_lng(sql_allocator *sa, tokens token, lng data)
 	if (s) {
 		symbol_init(s, token, type_lng);
 		s->data.l_val = data;
-		DEBUG(SQL_SYMBOL, "%p = symbol_create_lng(%s, "LLFMT")\n", s, token2string(s->token), data);
+		TRC_DEBUG(SQL_SYMBOL, "%p = symbol_create_lng(%s, "LLFMT")\n", s, token2string(s->token), data);
 	}
 	return s;
 }
@@ -80,7 +80,7 @@ symbol_create_symbol(sql_allocator *sa, tokens token, symbol *data)
 	if (s) {
 		symbol_init(s, token, type_symbol);
 		s->data.sym = data;
-		DEBUG(SQL_SYMBOL, "%p = symbol_create_symbol(%s, %s)\n", s, token2string(s->token), token2string(data->token));
+		TRC_DEBUG(SQL_SYMBOL, "%p = symbol_create_symbol(%s, %s)\n", s, token2string(s->token), token2string(data->token));
 	}
 	return s;
 }

@@ -36,7 +36,7 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) pci;
 
-	DEBUG(MAL_OPT_JIT, "JIT optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_JIT, "JIT optimizer enter\n");
 
 	setVariableScope(mb);
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
@@ -64,7 +64,7 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				getArg(p,2)=  getArg(q,2);
 				p= pushArgument(mb,p, getArg(q,1));
 
-				DEBUG(MAL_OPT_JIT, "Optimize JIT case 1\n");
+				TRC_DEBUG(MAL_OPT_JIT, "Optimize JIT case 1\n");
 				debugInstruction(MAL_OPT_JIT, mb, 0, p, LIST_MAL_ALL);
 			}
 		}
@@ -84,7 +84,7 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		addtoMalBlkHistory(mb);
 
 	debugFunction(MAL_OPT_JIT, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_JIT, "JIT optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_JIT, "JIT optimizer exit\n");
 
 	return msg;
 }

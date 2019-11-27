@@ -252,7 +252,7 @@ BATcheckimprints(BAT *b)
 						close(fd);
 						imprints->imprints.parentid = b->batCacheid;
 						b->timprints = imprints;
-						DEBUG(ACCEL, "BATcheckimprints(" ALGOBATFMT "): reusing persisted imprints\n", ALGOBATPAR(b));
+						TRC_DEBUG(ACCEL, "BATcheckimprints(" ALGOBATFMT "): reusing persisted imprints\n", ALGOBATPAR(b));
 						MT_lock_unset(&b->batIdxLock);
 
 						return true;
@@ -270,7 +270,7 @@ BATcheckimprints(BAT *b)
 	ret = b->timprints != NULL;
 	/* CHECK */
 	// If is in ACCELDEBUG
-	if (ret) DEBUG(ACCEL, "BATcheckimprints(" ALGOBATFMT "): already has imprints\n", ALGOBATPAR(b));
+	if (ret) TRC_DEBUG(ACCEL, "BATcheckimprints(" ALGOBATFMT "): already has imprints\n", ALGOBATPAR(b));
 	return ret;
 }
 
@@ -329,7 +329,7 @@ BATimpsync(void *arg)
 					failed = ""; /* not failed */
 				}
 			}
-			DEBUG(ACCEL, "BATimpsync(" ALGOBATFMT "): "
+			TRC_DEBUG(ACCEL, "BATimpsync(" ALGOBATFMT "): "
 						"imprints persisted "
 						"(" LLFMT " usec)%s\n", ALGOBATPAR(b),
 						GDKusec() - t0, failed);
@@ -392,12 +392,12 @@ BATimprints(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 
 		if (s2) {
-			DEBUG(ACCEL, "BATimprints(b=" ALGOBATFMT
+			TRC_DEBUG(ACCEL, "BATimprints(b=" ALGOBATFMT
 						"): creating imprints on parent "
 						ALGOBATFMT "\n",
 						ALGOBATPAR(s2), ALGOBATPAR(b));
 		} else {
-			DEBUG(ACCEL, "BATimprints(b=" ALGOBATFMT
+			TRC_DEBUG(ACCEL, "BATimprints(b=" ALGOBATFMT
 						"): creating imprints\n",
 						ALGOBATPAR(b));
 		}
@@ -557,7 +557,7 @@ BATimprints(BAT *b)
 		}
 	}
 
-	DEBUG(ACCEL, "BATimprints(%s): imprints construction " LLFMT " usec\n", BATgetId(b), GDKusec() - t0);
+	TRC_DEBUG(ACCEL, "BATimprints(%s): imprints construction " LLFMT " usec\n", BATgetId(b), GDKusec() - t0);
 	MT_lock_unset(&b->batIdxLock);
 
 	/* BBPUnfix tries to get the imprints lock which might lead to
@@ -662,7 +662,7 @@ IMPSremove(BAT *b)
 			DEBUG(GDK_IMPRINTS, "Removing persisted imprints\n");
 		if (HEAPdelete(&imprints->imprints, BBP_physical(b->batCacheid),
 			       "timprints") != GDK_SUCCEED)
-			DEBUG(IO_, "IMPSremove(%s): imprints heap\n", BATgetId(b));
+			TRC_DEBUG(IO_, "IMPSremove(%s): imprints heap\n", BATgetId(b));
 
 		GDKfree(imprints);
 	}

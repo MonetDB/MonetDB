@@ -63,7 +63,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	char cmd;
 	str msg;
 
-	DEBUG(MAL_FACTORY, "Enter runFactory\n");
+	TRC_DEBUG(MAL_FACTORY, "Enter runFactory\n");
 
 	/* the lookup can be largely avoided by handing out the index
 	   upon factory definition. todo
@@ -275,7 +275,7 @@ yieldResult(MalBlkPtr mb, InstrPtr p, int pc)
 			if( pl->env == NULL)
 				return(int) (pl-plants);
 			for (i = 0; i < p->retc; i++) {
-				DEBUG(MAL_FACTORY, "lhs %d rhs %d\n", getArg(pl->pci, i), getArg(p, i));
+				TRC_DEBUG(MAL_FACTORY, "lhs %d rhs %d\n", getArg(pl->pci, i), getArg(p, i));
 				rhs = &pl->stk->stk[getArg(p, i)];
 				lhs = &pl->env->stk[getArg(pl->pci, i)];
 				if (VALcopy(lhs, rhs) == NULL)

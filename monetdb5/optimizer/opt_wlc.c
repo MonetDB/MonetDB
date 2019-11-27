@@ -25,7 +25,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
-	DEBUG(MAL_OPT_WLC, "WLC optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_WLC, "WLC optimizer enter\n");
 
 	if( ! WLCused() )
 		goto wrapup;
@@ -152,7 +152,7 @@ wrapup:
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","wlc",updates,GDKusec() - usec);
     newComment(mb,buf);
 	debugFunction(MAL_OPT_WLC, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_WLC, "WLC optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_WLC, "WLC optimizer exit\n");
         
 	return MAL_SUCCEED;
 }

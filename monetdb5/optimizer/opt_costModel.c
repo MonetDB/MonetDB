@@ -47,7 +47,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if ( mb->inlineProp )
 		return MAL_SUCCEED;
 
-	DEBUG(MAL_OPT_COSTMODEL, "COSTMODEL optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_COSTMODEL, "COSTMODEL optimizer enter\n");
     
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
@@ -155,7 +155,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	addtoMalBlkHistory(mb);
 
 	debugFunction(MAL_OPT_COSTMODEL, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_COSTMODEL, "COSTMODEL optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_COSTMODEL, "COSTMODEL optimizer exit\n");
         
 	return MAL_SUCCEED;
 }

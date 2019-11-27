@@ -142,7 +142,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if( mb->errors)
 		return MAL_SUCCEED;
 
-	DEBUG(MAL_OPT_PUSHSELECT, "PUSHSELECT optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_PUSHSELECT, "PUSHSELECT optimizer enter\n");
 	
 	(void) stk;
 	(void) pci;
@@ -706,7 +706,7 @@ wrapup:
 		addtoMalBlkHistory(mb);
 
 	debugFunction(MAL_OPT_PUSHSELECT, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_PUSHSELECT, "PUSHSELECT optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_PUSHSELECT, "PUSHSELECT optimizer exit\n");
 
 	return MAL_SUCCEED;
 }

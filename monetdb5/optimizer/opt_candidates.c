@@ -27,7 +27,7 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
-	DEBUG(MAL_OPT_CANDIDATES, "CANDIDATES optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_CANDIDATES, "CANDIDATES optimizer enter\n");
 
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb,i);
@@ -95,7 +95,7 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	addtoMalBlkHistory(mb);
 
 	debugFunction(MAL_OPT_CANDIDATES, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_CANDIDATES, "CANDIDATES optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_CANDIDATES, "CANDIDATES optimizer exit\n");
 
 	return MAL_SUCCEED;
 }

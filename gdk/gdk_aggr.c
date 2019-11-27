@@ -949,7 +949,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 		bn = NULL;
 	}
 
-	DEBUG(ALGO, "%s(b="ALGOBATFMT",g="ALGOOPTBATFMT",e="ALGOOPTBATFMT",s="ALGOOPTBATFMT")="ALGOOPTBATFMT": %s; "
+	TRC_DEBUG(ALGO, "%s(b="ALGOBATFMT",g="ALGOOPTBATFMT",e="ALGOOPTBATFMT",s="ALGOOPTBATFMT")="ALGOOPTBATFMT": %s; "
 			  	"start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
 				__func__,
 				ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
@@ -1075,7 +1075,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	nils = dosum(Tloc(b, 0), b->tnonil, b->hseqbase, &ci, ncand,
 		     res, true, b->ttype, tp, &min, min, max,
 		     skip_nils, abort_on_error, nil_if_empty, "BATsum", &algo);
-	DEBUG(ALGO, "%s(b="ALGOBATFMT",s="ALGOOPTBATFMT"): %s; "
+	TRC_DEBUG(ALGO, "%s(b="ALGOBATFMT",s="ALGOOPTBATFMT"): %s; "
 				"start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
 				__func__,
 				ALGOBATPAR(b), ALGOOPTBATPAR(s),

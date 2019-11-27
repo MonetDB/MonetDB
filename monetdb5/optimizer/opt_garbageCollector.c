@@ -38,7 +38,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	if ( mb->inlineProp)
 		return 0;
 	
-	DEBUG(MAL_OPT_GC, "GARBAGECOLLECTOR optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_GC, "GARBAGECOLLECTOR optimizer enter\n");
 
 	used = (char*) GDKzalloc(sizeof(char) * mb->vtop);
 	if ( used == NULL)
@@ -96,14 +96,14 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	/* CHECK */
 	// From here
 	int k;
-	DEBUG(MAL_OPT_GC, "Garbage collected BAT variables\n");
+	TRC_DEBUG(MAL_OPT_GC, "Garbage collected BAT variables\n");
 	for ( k =0; k < mb->vtop; k++)
-	DEBUG(MAL_OPT_GC, "%10s eolife %3d begin %3d lastupd %3d end %3d\n",
+	TRC_DEBUG(MAL_OPT_GC, "%10s eolife %3d begin %3d lastupd %3d end %3d\n",
 					getVarName(mb,k), getVarEolife(mb,k),
 					getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
 	chkFlow(mb);
 	if ( mb->errors != MAL_SUCCEED ){
-		DEBUG(MAL_OPT_GC, "%s\n", mb->errors);
+		TRC_DEBUG(MAL_OPT_GC, "%s\n", mb->errors);
 		freeException(mb->errors);
 		mb->errors = MAL_SUCCEED;
 	}
@@ -126,7 +126,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		addtoMalBlkHistory(mb);
 
 	debugFunction(MAL_OPT_GC, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_GC, "GARBAGECOLLECTOR optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_GC, "GARBAGECOLLECTOR optimizer exit\n");
 
 	return msg;
 }

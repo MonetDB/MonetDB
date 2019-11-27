@@ -9122,7 +9122,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	int i;
 	for (i = 0; i < ddl_maxops; i++) {
 		if (gp.cnt[i]> 0)
-			DEBUG(SQL_OPTIMIZER, "%s %d\n", op2string((operator_type)i), gp.cnt[i]);
+			TRC_DEBUG(SQL_OPTIMIZER, "%s %d\n", op2string((operator_type)i), gp.cnt[i]);
 	}
 
 	if (level <= 0 && gp.cnt[op_select]) 

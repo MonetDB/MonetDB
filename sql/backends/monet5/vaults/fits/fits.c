@@ -227,7 +227,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "fits.exporttable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	DEBUG(FITS, "Number of columns: %d\n", columns);
+	TRC_DEBUG(FITS, "Number of columns: %d\n", columns);
 
 	tables = mvc_bind_table(m, sch, "_tables");
 	col = mvc_bind_column(m, tables, "name");
@@ -545,14 +545,14 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	 
 	// print all the times that were needed to export each one of the columns
-	if (texportboolean > 0)		DEBUG(FITS, "%d Boolean\tcolumn(s) exported in %d ms\n", boolcols, texportboolean);
-	if (texportchar > 0)		DEBUG(FITS, "%d Char\t\tcolumn(s) exported in %d ms\n", charcols, texportchar);
-	if (texportstring > 0)		DEBUG(FITS, "%d String\tcolumn(s) exported in %d ms\n", strcols, texportstring);
-	if (texportshort > 0)		DEBUG(FITS, "%d Short\t\tcolumn(s) exported in %d ms\n", shortcols, texportshort);
-	if (texportint > 0)			DEBUG(FITS, "%d Integer\tcolumn(s) exported in %d ms\n", intcols, texportint);
-	if (texportlng > 0)			DEBUG(FITS, "%d Long\t\tcolumn(s) exported in %d ms\n", lngcols, texportlng);
-	if (texportfloat > 0)		DEBUG(FITS, "%d Float\t\tcolumn(s) exported in %d ms\n", floatcols, texportfloat);
-	if (texportdouble > 0)		DEBUG(FITS, "%d Double\tcolumn(s) exported in %d ms\n", doublecols, texportdouble);
+	if (texportboolean > 0)		TRC_DEBUG(FITS, "%d Boolean\tcolumn(s) exported in %d ms\n", boolcols, texportboolean);
+	if (texportchar > 0)		TRC_DEBUG(FITS, "%d Char\t\tcolumn(s) exported in %d ms\n", charcols, texportchar);
+	if (texportstring > 0)		TRC_DEBUG(FITS, "%d String\tcolumn(s) exported in %d ms\n", strcols, texportstring);
+	if (texportshort > 0)		TRC_DEBUG(FITS, "%d Short\t\tcolumn(s) exported in %d ms\n", shortcols, texportshort);
+	if (texportint > 0)			TRC_DEBUG(FITS, "%d Integer\tcolumn(s) exported in %d ms\n", intcols, texportint);
+	if (texportlng > 0)			TRC_DEBUG(FITS, "%d Long\t\tcolumn(s) exported in %d ms\n", lngcols, texportlng);
+	if (texportfloat > 0)		TRC_DEBUG(FITS, "%d Float\t\tcolumn(s) exported in %d ms\n", floatcols, texportfloat);
+	if (texportdouble > 0)		TRC_DEBUG(FITS, "%d Double\tcolumn(s) exported in %d ms\n", doublecols, texportdouble);
 
 
 	fits_close_file(fptr, &status);
@@ -590,7 +590,7 @@ str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			fits_open_file(&fptr, fname, READONLY, &status);
 			if (status == 0) {
 				snprintf(stmt, BUFSIZ, ATTACHDIR, fname);
-				DEBUG(FITS, "Executing: %s\n", s);
+				TRC_DEBUG(FITS, "Executing: %s\n", s);
 				msg = SQLstatementIntern(cntxt, &s, "fits.listofdir", TRUE, FALSE, NULL);
 				fits_close_file(fptr, &status);
 			}
@@ -623,7 +623,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	snprintf(fulldirectory, BUFSIZ, "%s%s", dir, pat);
 	glob(fulldirectory, GLOB_DOOFFS, NULL, &globbuf);
 
-	DEBUG(FITS, "Fulldir: %s - Size: %lu\n", fulldirectory, globbuf.gl_pathc);
+	TRC_DEBUG(FITS, "Fulldir: %s - Size: %lu\n", fulldirectory, globbuf.gl_pathc);
 
 	if (globbuf.gl_pathc == 0)
 		throw(MAL, "fits.listdirpat", SQLSTATE(FI000) "Couldn't open the directory or there are no files that match the pattern");
@@ -643,7 +643,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (status == 0) {
 			snprintf(stmt, BUFSIZ, ATTACHDIR, filename);
 			GDKfree(filename);
-			DEBUG(FITS, "Executing: %s\n", s);
+			TRC_DEBUG(FITS, "Executing: %s\n", s);
 			msg = SQLstatementIntern(cntxt, &s, "fits.listofdirpat", TRUE, FALSE, NULL);
 			fits_close_file(fptr, &status);
 
@@ -961,7 +961,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fits_get_coltype(fptr, j, &tpcode[j - 1], &rep[j - 1], &wid[j - 1], &status);
 		fits2subtype(&tpe, tpcode[j - 1], rep[j - 1], wid[j - 1]);
 
-		DEBUG(FITS, "%d %ld %ld - M: %s\n", tpcode[j-1], rep[j-1], wid[j-1], tpe.type->sqlname);
+		TRC_DEBUG(FITS, "%d %ld %ld - M: %s\n", tpcode[j-1], rep[j-1], wid[j-1], tpe.type->sqlname);
 
 		mvc_create_column(m, tbl, cname[j - 1], &tpe);
 	}

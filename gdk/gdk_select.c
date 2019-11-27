@@ -45,7 +45,7 @@ virtualize(BAT *bn)
 	     * (const oid *) Tloc(bn, 0) + BATcount(bn) - 1 ==
 	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
 		/* column is dense, replace by virtual oid */
-		DEBUG(ALGO, "%s(bn=" ALGOBATFMT ",seq="OIDFMT")\n",
+		TRC_DEBUG(ALGO, "%s(bn=" ALGOBATFMT ",seq="OIDFMT")\n",
 					__func__, 
 					ALGOBATPAR(bn),
 				  	BATcount(bn) > 0 ? * (const oid *) Tloc(bn, 0) : 0);
@@ -100,7 +100,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	if (phash) {
 		BAT *b2 = BBPdescriptor(VIEWtparent(b));
 		*algo = "hashselect on parent";
-		DEBUG(ALGO, "%s(" ALGOBATFMT "): "
+		TRC_DEBUG(ALGO, "%s(" ALGOBATFMT "): "
 				  	"using parent(" ALGOBATFMT ") "
 				  	"for hash\n",
 					__func__,
@@ -1025,7 +1025,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (canditer_init(&ci, b, s) == 0) {
 		/* trivially empty result */
 		bn = BATdense(0, 0, 0);
-		DEBUG(ALGO, "%s(b=" ALGOBATFMT
+		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
 				  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 				  	" (" LLFMT " usec): "
 				  	"trivially empty\n",
@@ -1046,7 +1046,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * want an interval that's open on at least one
 		 * side */
 		bn = BATdense(0, 0, 0);
-		DEBUG(ALGO, "%s(b=" ALGOBATFMT
+		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
 				  	",s=" ALGOOPTBATFMT ",li=%d,hi=%d,anti=%d)=" ALGOOPTBATFMT
 				  	" (" LLFMT " usec): "
 				  	"empty interval\n",
@@ -1085,7 +1085,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			hval = ti;
 			lnil = ATOMcmp(t, tl, nil) == 0;
 			anti = false;
-			DEBUG(ALGO, "%s(b=" ALGOBATFMT
+			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
 					  	",s=" ALGOOPTBATFMT ",anti=%d): "
 					  	"anti: switch ranges...\n",
 						__func__,
@@ -1096,7 +1096,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			 * values are in range; we must return all
 			 * other non-nil values, i.e. nothing */
 			bn = BATdense(0, 0, 0);
-			DEBUG(ALGO, "%s(b=" ALGOBATFMT
+			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
 					  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 					  	" (" LLFMT " usec): "
 					  	"anti: nil-nil range, nonil\n",
@@ -1112,7 +1112,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			anti = false;
 			lval = false;
 			hval = false;
-			DEBUG(ALGO, "%s(b=" ALGOBATFMT
+			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
 					  	",s=" ALGOOPTBATFMT ",anti=0): "
 					  	"anti-nil...\n",
 						__func__,
@@ -1126,7 +1126,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				anti = false;
 				lval = false;
 				hval = false;
-				DEBUG(ALGO, "%s(b="
+				TRC_DEBUG(ALGO, "%s(b="
 						  	ALGOBATFMT ",s="
 						  	ALGOOPTBATFMT ",anti=0): "
 						  	"anti-nothing...\n",
@@ -1141,7 +1141,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			anti = false;
 			lval = false;
 			hval = false;
-			DEBUG(ALGO, "%s(b=" ALGOBATFMT
+			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
 					  	",s=" ALGOOPTBATFMT ",anti=0): "
 					  	"anti-nil...\n",
 						__func__,
@@ -1155,7 +1155,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (hval && ((equi && !(li && hi)) || ATOMcmp(t, tl, th) > 0)) {
 		/* empty range */
 		bn = BATdense(0, 0, 0);
-		DEBUG(ALGO, "%s(b=" ALGOBATFMT
+		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
 				  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 				  	" (" LLFMT " usec): "
 				  	"empty range\n",
@@ -1167,7 +1167,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (equi && lnil && b->tnonil) {
 		/* return all nils, but there aren't any */
 		bn = BATdense(0, 0, 0);
-		DEBUG(ALGO, "%s(b=" ALGOBATFMT
+		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
 				  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 				  	" (" LLFMT " usec): "
 				  	"equi-nil, nonil\n",
@@ -1181,7 +1181,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		/* return all non-nils from a BAT that doesn't have
 		 * any: i.e. return everything */
 		bn = canditer_slice(&ci, 0, ci.ncand);
-		DEBUG(ALGO, "%s(b=" ALGOBATFMT
+		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
 				  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 				  	" (" LLFMT " usec): "
 				  	"everything, nonil\n",
@@ -1208,7 +1208,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 						 * left over for
 						 * anti */
 						bn = BATdense(0, 0, 0);
-						DEBUG(ALGO, "%s(b=" ALGOBATFMT
+						TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
 								  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 								  	" (" LLFMT " usec): "
 								  	"nothing, out of range\n",
@@ -1228,7 +1228,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				/* smallest value in BAT larger than
 				 * what we're looking for */
 				bn = BATdense(0, 0, 0);
-				DEBUG(ALGO, "%s(b="
+				TRC_DEBUG(ALGO, "%s(b="
 							ALGOBATFMT ",s="
 							ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 							" (" LLFMT " usec): "
@@ -1246,7 +1246,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				/* largest value in BAT smaller than
 				 * what we're looking for */
 				bn = BATdense(0, 0, 0);
-				DEBUG(ALGO, "%s(b="
+				TRC_DEBUG(ALGO, "%s(b="
 							ALGOBATFMT ",s="
 							ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
 							" (" LLFMT " usec): "
@@ -1330,7 +1330,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 		/* CHECK */
 		// This if is in ALGODEBUG
-		if (view) DEBUG(ALGO, "Switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " hseq " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
+		if (view) TRC_DEBUG(ALGO, "Switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " hseq " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
 	}
 
 	if (b->tsorted || b->trevsorted || use_orderidx) {
@@ -1480,7 +1480,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 
 		bn = virtualize(bn);
-		DEBUG(ALGO, "%s(b=" ALGOBATFMT ",anti=%s)="
+		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT ",anti=%s)="
 					ALGOOPTBATFMT " %s (" LLFMT " usec)\n",
 					__func__,
 					ALGOBATPAR(b), anti ? "true" : "false",
@@ -1624,7 +1624,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 
 	bn = virtualize(bn);
-	DEBUG(ALGO, "%s(b=" ALGOBATFMT ",s=" ALGOOPTBATFMT",anti=%s)=" ALGOOPTBATFMT
+	TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT ",s=" ALGOOPTBATFMT",anti=%s)=" ALGOOPTBATFMT
 				" %s (" LLFMT " usec)\n",
 				__func__,
 				ALGOBATPAR(b), ALGOOPTBATPAR(s),
@@ -1762,7 +1762,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	assert(rl->ttype != TYPE_void || !is_oid_nil(rl->tseqbase));
 	assert(rh->ttype != TYPE_void || !is_oid_nil(rh->tseqbase));
 
-	DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
 				"rl=" ALGOBATFMT ",rh=" ALGOBATFMT ","
 				"sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ","
 				"anti=%s,symmetric=%s)\n",
@@ -2331,7 +2331,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		if (BATtdense(r2))
 			r2->tseqbase = cnt > 0 ? dst2[0] : 0;
 	}
-	DEBUG(ALGO, "%s(l=%s,rl=%s,rh=%s)="
+	TRC_DEBUG(ALGO, "%s(l=%s,rl=%s,rh=%s)="
 				"(" ALGOBATFMT "," ALGOOPTBATFMT ")\n",
 				__func__,
 				BATgetId(l), BATgetId(rl), BATgetId(rh),

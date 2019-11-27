@@ -170,7 +170,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (mito_size > 0) 
 		pieces = (int) ((rowcnt * row_size) / (mito_size * 1024));
 
-		DEBUG(MAL_OPT_MITOSIS, "Target is %s.%s"
+		TRC_DEBUG(MAL_OPT_MITOSIS, "Target is %s.%s"
 							   " with " BUNFMT " rows of size %d into %zu"
 							   " rows/piece %d threads %d pieces"
 							   " fixed parts %d fixed size %d chunk = "BUNFMT"\n",
@@ -292,7 +292,7 @@ bailout:
 	addtoMalBlkHistory(mb);
 
 	debugFunction(MAL_OPT_MITOSIS, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_MITOSIS, "MITOSIS optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_MITOSIS, "MITOSIS optimizer exit\n");
     
 	return msg;
 }

@@ -112,7 +112,7 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	/* CHECK */
 	// The for-loop is in DEBUG MAL_GROUPBY
 	for(i=0; i<a->last; i++)
-		DEBUG(MAL_GROUPBY, "Group '%d' unique "BUNFMT "\n", i, a->unique[i]);
+		TRC_DEBUG(MAL_GROUPBY, "Group '%d' unique "BUNFMT "\n", i, a->unique[i]);
 
 	return a;
 }

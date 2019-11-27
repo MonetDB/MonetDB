@@ -20,7 +20,7 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void)stk;
 	(void) p;
 
-	DEBUG(MAL_OPT_REDUCE, "REDUCE optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_REDUCE, "REDUCE optimizer enter\n");
 
 	actions = mb->vtop;
 	trimMalVariables(mb,0);
@@ -42,7 +42,7 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		addtoMalBlkHistory(mb);
 
     debugFunction(MAL_OPT_REDUCE, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_REDUCE, "REDUCE optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_REDUCE, "REDUCE optimizer exit\n");
         
 	return MAL_SUCCEED;
 }

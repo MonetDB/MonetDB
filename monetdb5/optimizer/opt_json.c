@@ -32,7 +32,7 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
-	DEBUG(MAL_OPT_JSON, "JSON optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_JSON, "JSON optimizer enter\n");
 
 	old= mb->stmt;
 	limit= mb->stop;
@@ -92,7 +92,7 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		addtoMalBlkHistory(mb);
 
 	debugFunction(MAL_OPT_JSON, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_JSON, "JSON optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_JSON, "JSON optimizer exit\n");
 
 	return msg;
 }

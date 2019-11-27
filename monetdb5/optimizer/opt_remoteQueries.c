@@ -160,7 +160,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	(void) stk;
 	(void) pci;
 
-	DEBUG(MAL_OPT_REMOTE, "REMOTEQUERIES optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_REMOTE, "REMOTEQUERIES optimizer enter\n");
 
 	limit = mb->stop;
 	slimit = mb->ssize;
@@ -266,7 +266,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				putRemoteVariables()
 				remoteAction()
 			} else {
-				DEBUG(MAL_OPT_REMOTE, "Found remote variable %s ad %d\n",
+				TRC_DEBUG(MAL_OPT_REMOTE, "Found remote variable %s ad %d\n",
 										getVarName(mb,getArg(p,0)), location[getArg(p,0)]);
 				pushInstruction(mb,p);
 			}
@@ -370,7 +370,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	if( doit >= 0)
 		addtoMalBlkHistory(mb);
 	debugFunction(MAL_OPT_REMOTE, mb, 0, LIST_MAL_ALL);
-    DEBUG(MAL_OPT_REMOTE, "REMOTEQUERIES optimizer exit\n");
+    TRC_DEBUG(MAL_OPT_REMOTE, "REMOTEQUERIES optimizer exit\n");
         
 	return msg;
 }

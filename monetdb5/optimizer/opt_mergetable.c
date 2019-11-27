@@ -1785,7 +1785,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
-	DEBUG(MAL_OPT_MERGETABLE, "MERGETABLE optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_MERGETABLE, "MERGETABLE optimizer enter\n");
 
 	//if( optimizerIsApplied(mb, "mergetable") || !optimizerIsApplied(mb,"mitosis"))
 		//return 0;
@@ -2238,7 +2238,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * All other instructions should be checked for remaining MAT dependencies.
 		 * It requires MAT materialization.
 		 */
-		DEBUG(MAL_OPT_MERGETABLE, "%s.%s %d\n", getModuleId(p), getFunctionId(p), match);
+		TRC_DEBUG(MAL_OPT_MERGETABLE, "%s.%s %d\n", getModuleId(p), getFunctionId(p), match);
 
 		for (k = p->retc; k<p->argc; k++) {
 			if((m=is_a_mat(getArg(p,k), &ml)) >= 0){
@@ -2260,7 +2260,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	/* CHECK */
 	// From here
-	DEBUG(MAL_OPT_MERGETABLE, "Result of multi table optimizer\n");
+	TRC_DEBUG(MAL_OPT_MERGETABLE, "Result of multi table optimizer\n");
 	chkTypes(cntxt->usermodule, mb, FALSE);
 	chkFlow(mb);
 	chkDeclarations(mb);
@@ -2296,7 +2296,7 @@ cleanup:
 		addtoMalBlkHistory(mb);
 
 	debugFunction(MAL_OPT_MERGETABLE, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_MERGETABLE, "MERGETABLE optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_MERGETABLE, "MERGETABLE optimizer exit\n");
     
 	return msg;
 }

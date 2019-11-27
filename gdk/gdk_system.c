@@ -130,7 +130,7 @@ GDKlockstatistics(int what)
 	int n = 0;
 
 	if (ATOMIC_TAS(&GDKlocklistlock) != 0) {
-		DEBUG(TEM, "GDKlocklistlock is set, so cannot access lock list\n");
+		TRC_DEBUG(TEM, "GDKlocklistlock is set, so cannot access lock list\n");
 		return;
 	}
 	if (what == -1) {
@@ -143,14 +143,14 @@ GDKlockstatistics(int what)
 		return;
 	}
 	GDKlocklist = sortlocklist(GDKlocklist);
-	DEBUG(TEM, "lock name\tcount\tcontention\tsleep\tlocked\t(un)locker\tthread\n");
+	TRC_DEBUG(TEM, "lock name\tcount\tcontention\tsleep\tlocked\t(un)locker\tthread\n");
 	for (l = GDKlocklist; l; l = l->next) {
 		n++;
 		if (what == 0 ||
 		    (what == 1 && l->count) ||
 		    (what == 2 && ATOMIC_GET(&l->contention)) ||
 		    (what == 3 && lock_isset(l)))
-			DEBUG(TEM, "%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
+			TRC_DEBUG(TEM, "%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
 							l->name, l->count,
 							(size_t) ATOMIC_GET(&l->contention),
 							(size_t) ATOMIC_GET(&l->sleep),
@@ -158,10 +158,10 @@ GDKlockstatistics(int what)
 							l->locker ? l->locker : "",
 							l->thread ? l->thread : "");
 	}
-	DEBUG(TEM, "Number of locks: %d\n", n);
-	DEBUG(TEM, "Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
-	DEBUG(TEM, "Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
-	DEBUG(TEM, "Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
+	TRC_DEBUG(TEM, "Number of locks: %d\n", n);
+	TRC_DEBUG(TEM, "Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
+	TRC_DEBUG(TEM, "Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
+	TRC_DEBUG(TEM, "Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
 	ATOMIC_CLEAR(&GDKlocklistlock);
 }
 
@@ -195,7 +195,7 @@ dump_threads(void)
 {
 	EnterCriticalSection(&winthread_cs);
 	for (struct winthread *w = winthreads; w; w = w->next) {
-		DEBUG(THRD, "%s, waiting for %s, working on %.200s\n",
+		TRC_DEBUG(THRD, "%s, waiting for %s, working on %.200s\n",
 						w->threadname,
 						w->lockwait ? w->lockwait->name :
 						w->semawait ? w->semawait->name :
@@ -313,7 +313,7 @@ thread_starter(LPVOID arg)
 	TlsSetValue(threadslot, w);
 	(*w->func)(data);
 	ATOMIC_SET(&w->exited, 1);
-	DEBUG(THRD, "Exit: \"%s\"\n", w->threadname);
+	TRC_DEBUG(THRD, "Exit: \"%s\"\n", w->threadname);
 	return 0;
 }
 
@@ -330,7 +330,7 @@ join_threads(void)
 			if (w->detached && !w->waiting && ATOMIC_GET(&w->exited)) {
 				w->waiting = true;
 				LeaveCriticalSection(&winthread_cs);
-				DEBUG(THRD, "Join \"%s\" \"%s\"\n", MT_thread_getname(), w->threadname);
+				TRC_DEBUG(THRD, "Join \"%s\" \"%s\"\n", MT_thread_getname(), w->threadname);
 				self->joinwait = w;
 				WaitForSingleObject(w->hdl, INFINITE);
 				self->joinwait = NULL;
@@ -358,7 +358,7 @@ join_detached_threads(void)
 			if (w->detached && !w->waiting) {
 				w->waiting = true;
 				LeaveCriticalSection(&winthread_cs);
-				DEBUG(THRD, "Join \"%s\" \"%s\"\n", MT_thread_getname(), w->threadname);
+				TRC_DEBUG(THRD, "Join \"%s\" \"%s\"\n", MT_thread_getname(), w->threadname);
 				self->joinwait = w;
 				WaitForSingleObject(w->hdl, INFINITE);
 				self->joinwait = NULL;
@@ -390,7 +390,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	};
 	ATOMIC_INIT(&w->exited, 0);
 	strcpy_len(w->threadname, threadname, sizeof(w->threadname));
-	DEBUG(THRD, "Create \"%s\" \"%s\"\n", MT_thread_getname(), threadname);
+	TRC_DEBUG(THRD, "Create \"%s\" \"%s\"\n", MT_thread_getname(), threadname);
 	EnterCriticalSection(&winthread_cs);
 	w->hdl = CreateThread(NULL, THREAD_STACK_SIZE, thread_starter, w,
 			      0, &w->tid);
@@ -433,7 +433,7 @@ MT_join_thread(MT_Id t)
 	w = find_winthread((DWORD) t);
 	if (w == NULL || w->hdl == NULL)
 		return -1;
-	DEBUG(THRD, "Join \"%s\" \"%s\"\n", MT_thread_getname(), w->threadname);
+	TRC_DEBUG(THRD, "Join \"%s\" \"%s\"\n", MT_thread_getname(), w->threadname);
 	struct winthread *self = TlsGetValue(threadslot);
 	self->joinwait = w;
 	DWORD ret = WaitForSingleObject(w->hdl, INFINITE);
@@ -503,7 +503,7 @@ dump_threads(void)
 {
 	pthread_mutex_lock(&posthread_lock);
 	for (struct posthread *p = posthreads; p; p = p->next) {
-		DEBUG(THRD, "%s, waiting for %s, working on %.200s\n",
+		TRC_DEBUG(THRD, "%s, waiting for %s, working on %.200s\n",
 						p->threadname,
 						p->lockwait ? p->lockwait->name :
 						p->semawait ? p->semawait->name :
@@ -638,7 +638,7 @@ thread_starter(void *arg)
 	pthread_setspecific(threadkey, p);
 	(*p->func)(data);
 	ATOMIC_SET(&p->exited, 1);
-	DEBUG(THRD, "Exit \"%s\"\n", p->threadname);
+	TRC_DEBUG(THRD, "Exit \"%s\"\n", p->threadname);
 	return NULL;
 }
 
@@ -655,7 +655,7 @@ join_threads(void)
 			if (p->detached && !p->waiting && ATOMIC_GET(&p->exited)) {
 				p->waiting = true;
 				pthread_mutex_unlock(&posthread_lock);
-				DEBUG(THRD, "Join \"%s\" \"%s\"\n", MT_thread_getname(), p->threadname);
+				TRC_DEBUG(THRD, "Join \"%s\" \"%s\"\n", MT_thread_getname(), p->threadname);
 				self->joinwait = p;
 				pthread_join(p->tid, NULL);
 				self->joinwait = NULL;
@@ -682,7 +682,7 @@ join_detached_threads(void)
 			if (p->detached && !p->waiting) {
 				p->waiting = true;
 				pthread_mutex_unlock(&posthread_lock);
-				DEBUG(THRD, "Join \"%s\" \"%s\"\n", MT_thread_getname(), p->threadname);
+				TRC_DEBUG(THRD, "Join \"%s\" \"%s\"\n", MT_thread_getname(), p->threadname);
 				self->joinwait = p;
 				pthread_join(p->tid, NULL);
 				self->joinwait = NULL;
@@ -743,7 +743,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	(void) sigfillset(&new_mask);
 	MT_thread_sigmask(&new_mask, &orig_mask);
 #endif
-	DEBUG(THRD, "Create \"%s\" \"%s\"\n", MT_thread_getname(), threadname);
+	TRC_DEBUG(THRD, "Create \"%s\" \"%s\"\n", MT_thread_getname(), threadname);
 	/* protect posthreads during thread creation and only add to
 	 * it after the thread was created successfully */
 	pthread_mutex_lock(&posthread_lock);
@@ -796,13 +796,13 @@ MT_join_thread(MT_Id t)
 	p = find_posthread(t);
 	if (p == NULL)
 		return -1;
-	DEBUG(THRD, "Join \"%s\" \"%s\"\n", MT_thread_getname(), p->threadname);
+	TRC_DEBUG(THRD, "Join \"%s\" \"%s\"\n", MT_thread_getname(), p->threadname);
 	struct posthread *self = pthread_getspecific(threadkey);
 	self->joinwait = p;
 	ret = pthread_join(p->tid, NULL);
 	self->joinwait = NULL;
 	if (ret != 0) {
-		DEBUG(THRD, "Joining thread failed: %s\n", strerror(ret));
+		TRC_DEBUG(THRD, "Joining thread failed: %s\n", strerror(ret));
 		return -1;
 	}
 	rm_posthread(p);

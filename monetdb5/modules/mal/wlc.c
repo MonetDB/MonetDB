@@ -554,7 +554,7 @@ WLCpreparewrite(Client cntxt)
 	/* CHECK */
 	// The whole if is in MAL_WLC DEBUG
 	if( cntxt->wlc){
-		DEBUG(MAL_WLC, "Prepare for writing: %d %d\n", cntxt->wlc->stop , cntxt->wlc_kind);
+		TRC_DEBUG(MAL_WLC, "Prepare for writing: %d %d\n", cntxt->wlc->stop , cntxt->wlc_kind);
 		debugFunction(MAL_WLC, cntxt->wlc, 0, LIST_MAL_DEBUG );
 	}
 
@@ -562,7 +562,7 @@ WLCpreparewrite(Client cntxt)
 		return MAL_SUCCEED;
 
 	if( wlc_state != WLC_RUN){
-		DEBUG(MAL_WLC, "State: %d\n", wlc_state);
+		TRC_DEBUG(MAL_WLC, "State: %d\n", wlc_state);
 		trimMalVariables(cntxt->wlc, NULL);
 		resetMalBlk(cntxt->wlc, 0);
 		cntxt->wlc_kind = WLC_QUERY;
@@ -572,7 +572,7 @@ WLCpreparewrite(Client cntxt)
 		if (wlc_fd == NULL){
 			msg = WLCsetlogger();
 			if( msg) {
-				DEBUG(MAL_WLC, "Set logger: %s\n", msg);
+				TRC_DEBUG(MAL_WLC, "Set logger: %s\n", msg);
 				return msg;
 			}
 		}

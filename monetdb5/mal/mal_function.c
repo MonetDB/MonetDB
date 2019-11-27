@@ -270,7 +270,7 @@ int getBarrierEnvelop(MalBlkPtr mb){
 static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	int j,i,x,y;
 
-	DEBUG(MAL_FCN, "Replace type '_%d' by type '%s'\n", v, getTypeName(t));
+	TRC_DEBUG(MAL_FCN, "Replace type '_%d' by type '%s'\n", v, getTypeName(t));
 	for(j=0; j<mb->stop; j++){
 	    p= getInstrPtr(mb,j);
 		debugInstruction(MAL_FCN, mb, 0, p, LIST_MAL_ALL);
@@ -290,14 +290,14 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 			y= newBatType(tail);
 			setTypeIndex(y,tx);
 			setArgType(mb,p,i,y);
-			DEBUG(MAL_FCN, "%d replaced %s -> %s\n", i, getTypeName(x), getTypeName(y));
+			TRC_DEBUG(MAL_FCN, "%d replaced %s -> %s\n", i, getTypeName(x), getTypeName(y));
 		} else
 		if(getTypeIndex(x) == v){
-			DEBUG(MAL_FCN, "Replace x= %s polymorphic\n", getTypeName(x));
+			TRC_DEBUG(MAL_FCN, "Replace x= %s polymorphic\n", getTypeName(x));
 			setArgType(mb,p,i,t);
 		}
 		else {
-			DEBUG(MAL_FCN, "Non x= %s %d\n", getTypeName(x), getTypeIndex(x));
+			TRC_DEBUG(MAL_FCN, "Non x= %s %d\n", getTypeName(x), getTypeIndex(x));
 		}
 	}
 		debugInstruction(MAL_FCN, mb, 0, p, LIST_MAL_ALL);
@@ -354,7 +354,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	int i,v;
 	InstrPtr pp;
 
-	DEBUG(MAL_FCN, "Clone function '%s' to scope '%s'\n", proc->name,scope->name);
+	TRC_DEBUG(MAL_FCN, "Clone function '%s' to scope '%s'\n", proc->name,scope->name);
 	debugInstruction(MAL_FCN, mb, 0, p, LIST_MAL_ALL);
 
 	new = newFunction(scope->name, proc->name, getSignature(proc)->token);
@@ -369,7 +369,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 		return NULL;
 	}
 	/* now change the definition of the original proc */
-	DEBUG(MAL_FCN, "Cloned version\n");
+	TRC_DEBUG(MAL_FCN, "Cloned version\n");
 	debugFunction(MAL_FCN, new->def, 0, LIST_MAL_ALL);
 
 	/* check for errors after fixation , TODO*/
@@ -386,7 +386,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 			} else
 				replaceTypeVar(new->def, pp, getTypeIndex(v), t);
 		} else {
-			DEBUG(MAL_FCN, "%d remains %s\n", i, getTypeName(v));
+			TRC_DEBUG(MAL_FCN, "%d remains %s\n", i, getTypeName(v));
 		}
 	/* include the function at the proper place in the scope */
 	insertSymbolBefore(scope, new, proc);
@@ -400,7 +400,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	for (i = 0; i < new->def->vtop; i++)
 		clrVarFixed(new->def, i);
 
-	DEBUG(MAL_FCN, "Function to be checked\n");
+	TRC_DEBUG(MAL_FCN, "Function to be checked\n");
 	debugFunction(MAL_FCN, new->def, 0, LIST_MAL_ALL);
 
 	/* check for errors after fixation , TODO*/
@@ -416,7 +416,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 		}
 	}
 
-	DEBUG(MAL_FCN, "Newly cloned function added to: %s %d\n", scope->name, i);
+	TRC_DEBUG(MAL_FCN, "Newly cloned function added to: %s %d\n", scope->name, i);
 	debugFunction(MAL_FCN, new->def, 0, LIST_MAL_ALL);
 	return new;
 }
@@ -771,7 +771,7 @@ void chkDeclarations(MalBlkPtr mb){
 					setVarScope(mb, l, blks[0]);
 				else
 					setVarScope(mb, l, blks[top]);
-				DEBUG(MAL_FCN, "Defined '%s' in block '%d'\n", getVarName(mb,l), getVarScope(mb,l));
+				TRC_DEBUG(MAL_FCN, "Defined '%s' in block '%d'\n", getVarName(mb,l), getVarScope(mb,l));
 			}
 			if( blockCntrl(p) || blockStart(p) )
 				setVarUsed(mb, l);
@@ -790,10 +790,10 @@ void chkDeclarations(MalBlkPtr mb){
 					dflow= blkId;
 				} 
 				blks[++top]= blkId;
-				DEBUG(MAL_FCN, "New block '%d' at top '%d'\n", blks[top], top);
+				TRC_DEBUG(MAL_FCN, "New block '%d' at top '%d'\n", blks[top], top);
 			}
 			if( blockExit(p) && top > 0 ){
-				DEBUG(MAL_FCN, "Leave block '%d' at top '%d'\n", blks[top], top);
+				TRC_DEBUG(MAL_FCN, "Leave block '%d' at top '%d'\n", blks[top], top);
 				if( dflow == blkId){
 					dflow = -1;
 				} else

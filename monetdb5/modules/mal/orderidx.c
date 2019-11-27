@@ -93,8 +93,8 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		pieces = 1;
 	}
 
-	DEBUG(MAL_OIDX, "Pieces: %d\n", pieces);
-	DEBUG(MAL_OIDX, "oidx ttype: %s - bat: %s\n", ATOMname(b->ttype), ATOMname(tpe));
+	TRC_DEBUG(MAL_OIDX, "Pieces: %d\n", pieces);
+	TRC_DEBUG(MAL_OIDX, "oidx ttype: %s - bat: %s\n", ATOMname(b->ttype), ATOMname(tpe));
 
 	/* create a temporary MAL function to sort the BAT in parallel */
 	snprintf(name, IDLENGTH, "sort%d", rand()%1000);

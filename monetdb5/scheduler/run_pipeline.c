@@ -215,7 +215,7 @@ RUNsqlbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 
 	debugFunction(MAL_SCHEDULER, mb, stk, LIST_MAL_ALL);
-	DEBUG(MAL_SCHEDULER, "Results from scheduler.sqlbind");
+	TRC_DEBUG(MAL_SCHEDULER, "Results from scheduler.sqlbind");
 
 	return msg;
 }

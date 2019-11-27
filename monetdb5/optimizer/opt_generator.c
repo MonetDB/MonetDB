@@ -75,7 +75,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) stk;
 	(void) pci;
 
-	DEBUG(MAL_OPT_GENERATOR, "GENERATOR optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_GENERATOR, "GENERATOR optimizer enter\n");
 
 	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
 	if(series == NULL)
@@ -174,7 +174,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		addtoMalBlkHistory(mb);
 
 	debugFunction(MAL_OPT_GENERATOR, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_GENERATOR, "GENERATOR optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_GENERATOR, "GENERATOR optimizer exit\n");
 
 	return MAL_SUCCEED;
 }

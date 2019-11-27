@@ -578,7 +578,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
 		
-		DEBUG(MAL_REMOTE, "Remote get: %s\n", qbuf);
+		TRC_DEBUG(MAL_REMOTE, "Remote get: %s\n", qbuf);
 
 		/* this call should be a single transaction over the channel*/
 		MT_lock_set(&c->lock);
@@ -691,7 +691,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		size_t len = 0;
 
 		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
-		DEBUG(MAL_REMOTE, "Remote get: %s - %s\n", c->name, qbuf);
+		TRC_DEBUG(MAL_REMOTE, "Remote get: %s - %s\n", c->name, qbuf);
 		if ((tmp=RMTquery(&mhdl, "remote.get", c->mconn, qbuf)) != MAL_SUCCEED)
 		{
 			return tmp;
@@ -876,7 +876,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			snprintf(nbuf, l, "%s := \"%s\":%s;\n", ident, val, tpe);
 		GDKfree(tpe);
 		GDKfree(val);
-		DEBUG(MAL_REMOTE, "Remote put: %s - %s\n", c->name, nbuf);
+		TRC_DEBUG(MAL_REMOTE, "Remote put: %s - %s\n", c->name, nbuf);
 		tmp = RMTquery(&mhdl, "remote.put", c->mconn, nbuf);
 		if (nbuf != qbuf)
 			GDKfree(nbuf);
@@ -926,7 +926,7 @@ static str RMTregisterInternal(Client cntxt, const char *conn, const char *mod, 
 
 	/* check remote definition */
 	snprintf(buf, BUFSIZ, "inspect.getSignature(\"%s\",\"%s\");", mod, fcn);
-	DEBUG(MAL_REMOTE, "Remote register: %s - %s\n", c->name, buf);
+	TRC_DEBUG(MAL_REMOTE, "Remote register: %s - %s\n", c->name, buf);
 	msg = RMTquery(&mhdl, "remote.register", c->mconn, buf);
 	if (msg == MAL_SUCCEED) {
 		MT_lock_unset(&c->lock);
@@ -950,7 +950,7 @@ static str RMTregisterInternal(Client cntxt, const char *conn, const char *mod, 
 	}
 
 	qry = mal2str(sym->def, 0, sym->def->stop);
-	DEBUG(MAL_REMOTE, "Remote register: %s - %s\n", c->name, qry);
+	TRC_DEBUG(MAL_REMOTE, "Remote register: %s - %s\n", c->name, qry);
 	msg = RMTquery(&mhdl, "remote.register", c->mconn, qry);
 	GDKfree(qry);
 	if (mhdl)
@@ -1056,7 +1056,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	/* finish end execute the invocation string */
 	len += snprintf(&qbuf[len], buflen - len, ");");
-	DEBUG(MAL_REMOTE, "Remote exec: %s - %s\n", c->name, qbuf);
+	TRC_DEBUG(MAL_REMOTE, "Remote exec: %s - %s\n", c->name, qbuf);
 	tmp = RMTquery(&mhdl, "remote.exec", c->mconn, qbuf);
 	GDKfree(qbuf);
 	if (mhdl)

@@ -104,11 +104,11 @@ MSresetClientPrg(Client cntxt, str mod, str fcn)
 
 	/* CHECK */
 	// nme variable is missing?
-	// DEBUG(MAL_SESSION, "Reset sym '%s %s' to '%s', id %d\n", cntxt->curprg->name, getFunctionId(p), nme, findVariable(mb, nme));
+	// TRC_DEBUG(MAL_SESSION, "Reset sym '%s %s' to '%s', id %d\n", cntxt->curprg->name, getFunctionId(p), nme, findVariable(mb, nme));
 	
-	DEBUG(MAL_SESSION, "vtop: %d\n", mb->vtop);
+	TRC_DEBUG(MAL_SESSION, "vtop: %d\n", mb->vtop);
 	if( mb->vtop)
-		DEBUG(MAL_SESSION, "First variable: %s\n", mb->var[0].id);
+		TRC_DEBUG(MAL_SESSION, "First variable: %s\n", mb->var[0].id);
 
 	setModuleId(p, mod);
 	setFunctionId(p, fcn);
@@ -432,7 +432,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i;
 
-	DEBUG(MAL_SESSION, "Reset variables %d vtop and %d errors %s\n", start, mb->vtop, mb->errors);
+	TRC_DEBUG(MAL_SESSION, "Reset variables %d vtop and %d errors %s\n", start, mb->vtop, mb->errors);
 	for (i = 0; i < start && i < mb->vtop ; i++)
 		setVarUsed(mb,i);
 	if (mb->errors == MAL_SUCCEED)
@@ -451,10 +451,10 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 			}
 		}
 
-	DEBUG(MAL_SESSION, "Reset variable: %s %d\n", getFunctionId(mb->stmt[0]), mb->var[mb->stmt[0]->argv[0]].used);
+	TRC_DEBUG(MAL_SESSION, "Reset variable: %s %d\n", getFunctionId(mb->stmt[0]), mb->var[mb->stmt[0]->argv[0]].used);
 	if (mb->errors == MAL_SUCCEED)
 		trimMalVariables_(mb, glb);
-	DEBUG(MAL_SESSION, "After trim: %s %d\n", getFunctionId(mb->stmt[0]), mb->vtop);
+	TRC_DEBUG(MAL_SESSION, "After trim: %s %d\n", getFunctionId(mb->stmt[0]), mb->vtop);
 }
 
 /*

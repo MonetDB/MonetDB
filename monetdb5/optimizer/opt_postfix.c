@@ -28,7 +28,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	
 	slimit = mb->stop;
 	setVariableScope(mb);
-	DEBUG(MAL_OPT_POSTFIX, "POSTFIX optimizer start\n");
+	TRC_DEBUG(MAL_OPT_POSTFIX, "POSTFIX optimizer start\n");
 	debugFunction(MAL_OPT_POSTFIX, mb, 0,  LIST_MAL_ALL);
 
 	/* Remove the result from any join/group instruction when it is not used later on */
@@ -83,7 +83,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec", "postfix", actions, usec);
     newComment(mb,buf);
 	debugFunction(MAL_OPT_POSTFIX, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_POSTFIX, "POSTFIX optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_POSTFIX, "POSTFIX optimizer exit\n");
 	
 	addtoMalBlkHistory(mb);
 	return MAL_SUCCEED;

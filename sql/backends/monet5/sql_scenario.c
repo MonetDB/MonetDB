@@ -62,7 +62,7 @@ monet5_freestack(int clientid, backend_stack stk)
 	if (p != NULL)
 		freeStack(p);
 	
-	DEBUG(SQL_SCENARIO, "Enter monet5_freestack\n");
+	TRC_DEBUG(SQL_SCENARIO, "Enter monet5_freestack\n");
 }
 
 static void
@@ -78,7 +78,7 @@ monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char
 	if (msg)
 		freeException(msg);	/* do something with error? */
 
-	DEBUG(SQL_SCENARIO, "Enter monet5_free: %d\n", nr);
+	TRC_DEBUG(SQL_SCENARIO, "Enter monet5_free: %d\n", nr);
 }
 
 static str SQLinit(Client c);
@@ -178,7 +178,7 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLexit(Client c)
 {
-	DEBUG(SQL_SCENARIO, "Enter SQLexit\n");
+	TRC_DEBUG(SQL_SCENARIO, "Enter SQLexit\n");
 
 	(void) c;		/* not used */
 	MT_lock_set(&sql_contextLock);
@@ -381,7 +381,7 @@ SQLinit(Client c)
 	backend *be = NULL;
 	mvc *m = NULL;
 
-	DEBUG(SQL_SCENARIO, "Enter SQLinit\n");
+	TRC_DEBUG(SQL_SCENARIO, "Enter SQLinit\n");
 
 	MT_lock_set(&sql_contextLock);
 
@@ -704,7 +704,7 @@ SQLinitClient(Client c)
 {
 	str msg = MAL_SUCCEED;
 
-	DEBUG(SQL_SCENARIO, "Enter SQLinitClient\n");
+	TRC_DEBUG(SQL_SCENARIO, "Enter SQLinitClient\n");
 
 	MT_lock_set(&sql_contextLock);
 	if (SQLinitialized == 0) {// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
@@ -748,7 +748,7 @@ SQLexitClient(Client c)
 {
 	str err;
 
-	DEBUG(SQL_SCENARIO, "Enter SQLexitClient\n");
+	TRC_DEBUG(SQL_SCENARIO, "Enter SQLexitClient\n");
 
 	MT_lock_set(&sql_contextLock);
 	if (SQLinitialized == FALSE) {
@@ -879,12 +879,12 @@ SQLreader(Client c)
 		return MAL_SUCCEED;
 	}
 	if (!be || c->mode <= FINISHCLIENT) {
-		DEBUG(SQL_SCENARIO, "SQL client finished\n");
+		TRC_DEBUG(SQL_SCENARIO, "SQL client finished\n");
 		c->mode = FINISHCLIENT;
 		return MAL_SUCCEED;
 	}
 
-	DEBUG(SQL_SCENARIO, "Start reading SQL %s\n", (blocked ? "Blocked read" : ""));
+	TRC_DEBUG(SQL_SCENARIO, "Start reading SQL %s\n", (blocked ? "Blocked read" : ""));
 
 	language = be->language;	/* 'S' for SQL, 'D' from debugger */
 	m = be->mvc;
@@ -893,7 +893,7 @@ SQLreader(Client c)
 	 * Continue processing any left-over input from the previous round.
 	 */
 
-	DEBUG(SQL_SCENARIO, "Pos %zu len %zu eof %d \n", in->pos, in->len, in->eof);
+	TRC_DEBUG(SQL_SCENARIO, "Pos %zu len %zu eof %d \n", in->pos, in->len, in->eof);
 
 	while (more) {
 		more = false;
@@ -916,7 +916,7 @@ SQLreader(Client c)
 			ssize_t rd;
 
 			if (c->bak) {
-				DEBUG(SQL_SCENARIO, "Switch to backup stream\n");
+				TRC_DEBUG(SQL_SCENARIO, "Switch to backup stream\n");
 				in = c->fdin;
 				blocked = isa_block_stream(in->s);
 				m->scanner.rs = c->fdin;
@@ -945,7 +945,7 @@ SQLreader(Client c)
 				more = false;
 				go = false;
 			} else if (go && (rd = bstream_next(in)) <= 0) {
-				DEBUG(SQL_SCENARIO, "Read %zu language %d eof %d\n", rd, language, in->eof);
+				TRC_DEBUG(SQL_SCENARIO, "Read %zu language %d eof %d\n", rd, language, in->eof);
 				if (be->language == 'D' && !in->eof) {
 					in->pos++;// skip 's' or 'S'
 					return msg;
@@ -975,7 +975,7 @@ SQLreader(Client c)
 				in->pos++;// skip 's' or 'S'
 			}
 
-			DEBUG(SQL_SCENARIO, "SQL blk: %s\n", in->buf + in->pos);
+			TRC_DEBUG(SQL_SCENARIO, "SQL blk: %s\n", in->buf + in->pos);
 		}
 	}
 	if ( (c->sessiontimeout && (GDKusec() - c->session) > c->sessiontimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
@@ -1053,7 +1053,7 @@ SQLparser(Client c)
 	oldstop = c->curprg->def->stop;
 	be->vtop = oldvtop;
 
-	DEBUG(SQL_SCENARIO, "SQL compilation - debugger? %d(%d)\n", (int) be->mvc->emode, (int) be->mvc->emod);
+	TRC_DEBUG(SQL_SCENARIO, "SQL compilation - debugger? %d(%d)\n", (int) be->mvc->emode, (int) be->mvc->emod);
 
 	m = be->mvc;
 	m->type = Q_PARSE;
@@ -1358,7 +1358,7 @@ SQLCacheRemove(Client c, str nme)
 {
 	Symbol s;
 
-	DEBUG(SQL_CACHE_TR, "SQLCache remove %s\n", nme);
+	TRC_DEBUG(SQL_CACHE_TR, "SQLCache remove %s\n", nme);
 
 	s = findSymbolInModule(c->usermodule, nme);
 	if (s == NULL)

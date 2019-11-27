@@ -61,7 +61,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) p;
 	(void)stk;
 	
-	DEBUG(MAL_OPT_INLINE, "INLINE optimizer enter\n");
+	TRC_DEBUG(MAL_OPT_INLINE, "INLINE optimizer enter\n");
 
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
@@ -73,7 +73,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 */
 			if (isMultiplex(q)) {
 				if (OPTinlineMultiplex(cntxt,mb,q)) {
-					DEBUG(MAL_OPT_INLINE, "Multiplex inline function\n")
+					TRC_DEBUG(MAL_OPT_INLINE, "Multiplex inline function\n")
 					debugInstruction(MAL_OPT_INLINE, mb, 0, q, LIST_MAL_ALL);
 				}
 			} else
@@ -86,7 +86,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				i--;
 				actions++;
 
-				DEBUG(MAL_OPT_INLINE, "Inline function at %d\n", i);
+				TRC_DEBUG(MAL_OPT_INLINE, "Inline function at %d\n", i);
 				debugFunction(MAL_OPT_INLINE, mb, 0, LIST_MAL_ALL);
 			}
 		}
@@ -106,7 +106,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		addtoMalBlkHistory(mb);
 
 	debugFunction(MAL_OPT_INLINE, mb, 0, LIST_MAL_ALL);
-	DEBUG(MAL_OPT_INLINE, "INLINE optimizer exit\n");
+	TRC_DEBUG(MAL_OPT_INLINE, "INLINE optimizer exit\n");
 	
 
 	return msg;
