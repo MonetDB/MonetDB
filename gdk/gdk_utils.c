@@ -679,6 +679,11 @@ GDKinit(opt *set, int setlen)
 	}
 
 	/* Mserver by default takes 80% of all memory as a default */
+#if SIZEOF_SIZE_T == 4
+	if ((double) MT_npages() * (double) MT_pagesize() * 0.815 >= (double) GDK_VM_MAXSIZE)
+		GDK_mem_maxsize = GDK_VM_MAXSIZE;
+	else
+#endif
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 	if (BBPinit() != GDK_SUCCEED)
 		return GDK_FAIL;
