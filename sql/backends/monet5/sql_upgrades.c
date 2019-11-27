@@ -1959,9 +1959,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 					r = rel_parse(sql, s, relt, m_deps);
 					if (r)
-						r = rel_unnest(sql, r);
-					if (r)
-						r = rel_optimizer(sql, r, 0);
+						r = sql_processrelation(sql, r, 0);
 					if (r) {
 						list *id_l = rel_dependencies(sql, r);
 
@@ -1974,6 +1972,9 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 								FLUSH_INSERTS_IF_BUFFERFILLED
 							}
 						}
+					} else if (sql->session->status == -1) {
+						sql->session->status = 0;
+						sql->errstr[0] = 0;
 					}
 				}
 			}
@@ -1992,9 +1993,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 					r = rel_parse(sql, s, relt, m_deps);
 					if (r)
-						r = rel_unnest(sql, r);
-					if (r)
-						r = rel_optimizer(sql, r, 0);
+						r = sql_processrelation(sql, r, 0);
 					if (r) {
 						list *id_l = rel_dependencies(sql, r);
 
@@ -2022,9 +2021,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 						r = rel_parse(sql, s, relt, m_deps);
 						if (r)
-							r = rel_unnest(sql, r);
-						if (r)
-							r = rel_optimizer(sql, r, 0);
+							r = sql_processrelation(sql, r, 0);
 						if (r) {
 							list *id_l = rel_dependencies(sql, r);
 
@@ -2407,6 +2404,17 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = %d;\n", (int) F_PROC);
 
+	/* 25_debug */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create function sys.debug(flag string) returns integer\n"
+			" external name mdb.\"setDebug\";\n"
+			"create function sys.debugflags()\n"
+			" returns table(flag string, val bool)\n"
+			" external name mdb.\"getDebugFlags\";\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name in ('debug', 'debugflags');\n");
+
 	/* 26_sysmon */
 	t = mvc_bind_table(sql, sys, "queue");
 	t->system = 0; /* make it non-system else the drop view will fail */
@@ -2416,15 +2424,15 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"drop function sys.queue;\n"
 			"create function sys.queue()\n"
 			"returns table(\n"
-			"	\"tag\" bigint,\n"
-			"	\"sessionid\" int,\n"
-			"	\"user\" string,\n"
-			"	\"started\" timestamp,\n"
-			"	\"status\" string,\n"
-			"	\"query\" string,\n"
-			"	\"progress\" int, -- percentage of MAL instructions handled\n"
-			"	\"workers\" int,\n"
-			"	\"memory\" int\n"
+			" tag bigint,\n"
+			" sessionid int,\n"
+			" \"user\" string,\n"
+			" started timestamp,\n"
+			" status string,\n"
+			" query string,\n"
+			" progress int,\n"
+			" workers int,\n"
+			" memory int\n"
 			")\n"
 			"external name sql.sysmon_queue;\n"
 			"grant execute on function sys.queue to public;\n"
@@ -2454,6 +2462,9 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'queue';\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.keywords values ('CUBE'), ('GROUPING'), ('ROLLUP'), ('SETS');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);

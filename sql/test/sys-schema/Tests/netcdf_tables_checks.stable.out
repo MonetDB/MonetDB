@@ -24,27 +24,27 @@ stdout of test 'netcdf_tables_checks` in directory 'sql/test/sys-schema` itself:
 # 16:07:50 >  
 
 #SELECT COUNT(*) AS duplicates, "file_id" FROM "sys"."netcdf_files" GROUP BY "file_id" HAVING COUNT(*) > 1;
-% sys.L3,	sys.netcdf_files # table_name
+% sys.%1,	sys.netcdf_files # table_name
 % duplicates,	file_id # name
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, "dim_id", "file_id" FROM "sys"."netcdf_dims" GROUP BY "dim_id", "file_id" HAVING COUNT(*) > 1;
-% sys.L3,	sys.netcdf_dims,	sys.netcdf_dims # table_name
+% sys.%1,	sys.netcdf_dims,	sys.netcdf_dims # table_name
 % duplicates,	dim_id,	file_id # name
 % bigint,	int,	int # type
 % 1,	1,	1 # length
 #SELECT COUNT(*) AS duplicates, "var_id", "file_id" FROM "sys"."netcdf_vars" GROUP BY "var_id", "file_id" HAVING COUNT(*) > 1;
-% sys.L3,	sys.netcdf_vars,	sys.netcdf_vars # table_name
+% sys.%1,	sys.netcdf_vars,	sys.netcdf_vars # table_name
 % duplicates,	var_id,	file_id # name
 % bigint,	int,	int # type
 % 1,	1,	1 # length
 #SELECT COUNT(*) AS duplicates, "var_id", "dim_id", "file_id" FROM "sys"."netcdf_vardim" GROUP BY "var_id", "dim_id", "file_id" HAVING COUNT(*) > 1;
-% sys.L3,	sys.netcdf_vardim,	sys.netcdf_vardim,	sys.netcdf_vardim # table_name
+% sys.%1,	sys.netcdf_vardim,	sys.netcdf_vardim,	sys.netcdf_vardim # table_name
 % duplicates,	var_id,	dim_id,	file_id # name
 % bigint,	int,	int,	int # type
 % 1,	1,	1,	1 # length
 #SELECT COUNT(*) AS duplicates, "location" FROM "sys"."netcdf_files" GROUP BY "location" HAVING COUNT(*) > 1;
-% sys.L3,	sys.netcdf_files # table_name
+% sys.%1,	sys.netcdf_files # table_name
 % duplicates,	location # name
 % bigint,	char # type
 % 1,	256 # length
@@ -189,42 +189,42 @@ stdout of test 'netcdf_tables_checks` in directory 'sql/test/sys-schema` itself:
 % varchar,	varchar,	varchar,	varchar,	clob,	int,	varchar # type
 % 0,	0,	0,	0,	0,	1,	0 # length
 #SELECT '"sys"."netcdf_attrs"."att_name"' as full_col_nm, 256 as max_allowed_length, length("att_name") as data_length, t."att_name" as data_value FROM "sys"."netcdf_attrs" t WHERE "att_name" IS NOT NULL AND length("att_name") > (select type_digits from sys._columns where name = 'att_name' and table_id in (select id from tables where name = 'netcdf_attrs' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L111,	.L113,	sys.L115,	sys.L117 # table_name
+% .%22,	.%23,	sys.%24,	sys.%25 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 31,	1,	1,	0 # length
 #SELECT '"sys"."netcdf_attrs"."att_type"' as full_col_nm, 64 as max_allowed_length, length("att_type") as data_length, t."att_type" as data_value FROM "sys"."netcdf_attrs" t WHERE "att_type" IS NOT NULL AND length("att_type") > (select type_digits from sys._columns where name = 'att_type' and table_id in (select id from tables where name = 'netcdf_attrs' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L111,	.L113,	sys.L115,	sys.L117 # table_name
+% .%22,	.%23,	sys.%24,	sys.%25 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	tinyint,	int,	varchar # type
 % 31,	1,	1,	0 # length
 #SELECT '"sys"."netcdf_attrs"."gr_name"' as full_col_nm, 256 as max_allowed_length, length("gr_name") as data_length, t."gr_name" as data_value FROM "sys"."netcdf_attrs" t WHERE "gr_name" IS NOT NULL AND length("gr_name") > (select type_digits from sys._columns where name = 'gr_name' and table_id in (select id from tables where name = 'netcdf_attrs' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L111,	.L113,	sys.L115,	sys.L117 # table_name
+% .%22,	.%23,	sys.%24,	sys.%25 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 30,	1,	1,	0 # length
 #SELECT '"sys"."netcdf_attrs"."obj_name"' as full_col_nm, 256 as max_allowed_length, length("obj_name") as data_length, t."obj_name" as data_value FROM "sys"."netcdf_attrs" t WHERE "obj_name" IS NOT NULL AND length("obj_name") > (select type_digits from sys._columns where name = 'obj_name' and table_id in (select id from tables where name = 'netcdf_attrs' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L111,	.L113,	sys.L115,	sys.L117 # table_name
+% .%22,	.%23,	sys.%24,	sys.%25 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	varchar # type
 % 31,	1,	1,	0 # length
 #SELECT '"sys"."netcdf_dims"."name"' as full_col_nm, 64 as max_allowed_length, length("name") as data_length, t."name" as data_value FROM "sys"."netcdf_dims" t WHERE "name" IS NOT NULL AND length("name") > (select type_digits from sys._columns where name = 'name' and table_id in (select id from tables where name = 'netcdf_dims' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L111,	.L113,	sys.L115,	sys.L117 # table_name
+% .%22,	.%23,	sys.%24,	sys.%25 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	tinyint,	int,	varchar # type
 % 26,	1,	1,	0 # length
 #SELECT '"sys"."netcdf_files"."location"' as full_col_nm, 256 as max_allowed_length, length("location") as data_length, t."location" as data_value FROM "sys"."netcdf_files" t WHERE "location" IS NOT NULL AND length("location") > (select type_digits from sys._columns where name = 'location' and table_id in (select id from tables where name = 'netcdf_files' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L111,	.L113,	sys.L115,	sys.L117 # table_name
+% .%22,	.%23,	sys.%24,	sys.%25 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	smallint,	int,	char # type
 % 31,	1,	1,	256 # length
 #SELECT '"sys"."netcdf_vars"."name"' as full_col_nm, 64 as max_allowed_length, length("name") as data_length, t."name" as data_value FROM "sys"."netcdf_vars" t WHERE "name" IS NOT NULL AND length("name") > (select type_digits from sys._columns where name = 'name' and table_id in (select id from tables where name = 'netcdf_vars' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L111,	.L113,	sys.L115,	sys.L117 # table_name
+% .%22,	.%23,	sys.%24,	sys.%25 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	tinyint,	int,	varchar # type
 % 26,	1,	1,	0 # length
 #SELECT '"sys"."netcdf_vars"."vartype"' as full_col_nm, 64 as max_allowed_length, length("vartype") as data_length, t."vartype" as data_value FROM "sys"."netcdf_vars" t WHERE "vartype" IS NOT NULL AND length("vartype") > (select type_digits from sys._columns where name = 'vartype' and table_id in (select id from tables where name = 'netcdf_vars' and schema_id in (select id from sys.schemas where name = 'sys')));
-% .L111,	.L113,	sys.L115,	sys.L117 # table_name
+% .%22,	.%23,	sys.%24,	sys.%25 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	tinyint,	int,	varchar # type
 % 29,	1,	1,	0 # length

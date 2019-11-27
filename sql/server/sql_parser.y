@@ -373,6 +373,9 @@ int yydebug=1;
 	merge_match_clause
 	merge_update_or_delete
 	merge_insert
+	group_by_element
+	ordinary_grouping_element
+	grouping_set_element
 
 %type <type>
 	data_type
@@ -502,7 +505,6 @@ int yydebug=1;
 	routine_body
 	table_function_column_list
 	select_target_list
-	search_condition_commalist
 	external_function_name
 	with_list
 	window_specification
@@ -519,6 +521,10 @@ int yydebug=1;
 	drop_routine_designator
 	partition_list
 	merge_when_list
+	group_by_list
+	search_condition_commalist
+	ordinary_grouping_set
+	grouping_set_list
 
 %type <i_val>
 	any_all_some
@@ -632,8 +638,8 @@ int yydebug=1;
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
-%token <operation> EXISTS ESCAPE UESCAPE HAVING sqlGROUP sqlNULL
-%token <operation> FROM FOR MATCH
+%token <operation> EXISTS ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
+%token <operation> GROUPING SETS FROM FOR MATCH
 
 %token <operation> EXTRACT
 
@@ -3665,31 +3671,59 @@ table_name:
  ;
 
 opt_table_name:
-	      /* empty */ 	{ $$ = NULL; }
- | table_name			{ $$ = $1; }
+	/* empty */ { $$ = NULL; }
+ |  table_name  { $$ = $1; }
  ;
 
 opt_group_by_clause:
-    /* empty */ 		  { $$ = NULL; }
- |  sqlGROUP BY search_condition_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
+	/* empty */               { $$ = NULL; }
+ |  sqlGROUP BY group_by_list { $$ = _symbol_create_list(SQL_GROUPBY, $3); }
  ;
 
-search_condition_commalist:
-    search_condition                                { $$ = append_symbol(L(), $1); }
- |  search_condition_commalist ',' search_condition { $$ = append_symbol($1, $3); }
+group_by_list:
+	group_by_element                   { $$ = append_symbol(L(), $1); }
+ |  group_by_list ',' group_by_element { $$ = append_symbol($1, $3); }
+ ;
+
+group_by_element:
+    search_condition                        { $$ = _symbol_create_list(SQL_GROUPBY, append_symbol(L(), $1)); }
+ |  ROLLUP '(' ordinary_grouping_set ')'    { $$ = _symbol_create_list(SQL_ROLLUP, $3); }
+ |  CUBE '(' ordinary_grouping_set ')'      { $$ = _symbol_create_list(SQL_CUBE, $3); }
+ |  GROUPING SETS '(' grouping_set_list ')' { $$ = _symbol_create_list(SQL_GROUPING_SETS, $4); }
+ |  '(' ')'                                 { $$ = _symbol_create_list(SQL_GROUPBY, NULL); }
+ ;
+
+ordinary_grouping_set:
+    ordinary_grouping_element                           { $$ = append_symbol(L(), $1); }
+ |  ordinary_grouping_set ',' ordinary_grouping_element { $$ = append_symbol($1, $3); }
+ ;
+
+ordinary_grouping_element:
+    '(' column_ref_commalist ')' { $$ = _symbol_create_list(SQL_COLUMN_GROUP, $2); }
+ |  column_ref                   { $$ = _symbol_create_list(SQL_COLUMN, $1); }
  ;
 
 column_ref_commalist:
-    column_ref		{ $$ = append_symbol(L(),
-			       _symbol_create_list(SQL_COLUMN,$1)); }
- |  column_ref_commalist ',' column_ref
-			{ $$ = append_symbol( $1,
-			       _symbol_create_list(SQL_COLUMN,$3)); }
+    column_ref		                    { $$ = append_symbol(L(), _symbol_create_list(SQL_COLUMN,$1)); }
+ |  column_ref_commalist ',' column_ref { $$ = append_symbol($1, _symbol_create_list(SQL_COLUMN,$3)); }
+ ;
+
+grouping_set_list:
+	grouping_set_element                       { $$ = append_symbol(L(), $1); }
+ |  grouping_set_list ',' grouping_set_element { $$ = append_symbol($1, $3); }
+ ;
+
+grouping_set_element:
+    ordinary_grouping_element               { $$ = _symbol_create_list(SQL_GROUPBY, append_symbol(L(), $1)); }
+ |  ROLLUP '(' ordinary_grouping_set ')'    { $$ = _symbol_create_list(SQL_ROLLUP, $3); }
+ |  CUBE '(' ordinary_grouping_set ')'      { $$ = _symbol_create_list(SQL_CUBE, $3); }
+ |  GROUPING SETS '(' grouping_set_list ')' { $$ = _symbol_create_list(SQL_GROUPING_SETS, $4); }
+ |  '(' ')'                                 { $$ = _symbol_create_list(SQL_GROUPBY, NULL); }
  ;
 
 opt_having_clause:
-    /* empty */ 		 { $$ = NULL; }
- |  HAVING search_condition	 { $$ = $2; }
+    /* empty */             { $$ = NULL; }
+ |  HAVING search_condition { $$ = $2; }
  ;
 
 search_condition:
@@ -4215,27 +4249,33 @@ scalar_exp:
 
 value_exp:
     atom
- |  user		{ $$ = _symbol_create_list( SQL_COLUMN, 
-			  append_string(L(), sa_strdup(SA, "current_user"))); }
- |  CURRENT_ROLE	{ $$ = _symbol_create_list( SQL_COLUMN, 
-			  append_string(L(), sa_strdup(SA, "current_role"))); }
- |  window_function
- |  column_ref 		{ $$ = _symbol_create_list( SQL_COLUMN, $1); }
- |  var_ref		
  |  aggr_ref
- |  func_ref
- |  NEXT VALUE FOR qname	{ $$ = _symbol_create_list( SQL_NEXT, $4); }
- |  datetime_funcs
- |  string_funcs
  |  case_exp
  |  cast_exp
- |  XML_value_function
- |  param
+ |  column_ref                            { $$ = _symbol_create_list(SQL_COLUMN, $1); }
+ |  CURRENT_ROLE   { $$ = _symbol_create_list(SQL_COLUMN, append_string(L(), sa_strdup(SA, "current_role"))); }
+ |  datetime_funcs
+ |  func_ref
+ |  GROUPING '(' column_ref_commalist ')' { dlist *l = L();
+										    append_list(l, append_string(L(), "grouping"));
+										    append_int(l, FALSE);
+											for (dnode *dn = $3->h ; dn ; dn = dn->next) {
+												symbol *sym = dn->data.sym; /* do like a aggrN */
+												append_symbol(l, _symbol_create_list(SQL_COLUMN, sym->data.lval));
+											}
+										    $$ = _symbol_create_list(SQL_AGGR, l); }
+ |  NEXT VALUE FOR qname                  { $$ = _symbol_create_list(SQL_NEXT, $4); }
  |  null
+ |  param
+ |  string_funcs
+ |  user            { $$ = _symbol_create_list(SQL_COLUMN, append_string(L(), sa_strdup(SA, "current_user"))); }
+ |  var_ref
+ |  window_function
+ |  XML_value_function
  ;
 
-param:  
-   '?'			
+param:
+   '?'
 	{ 
 	  int nr = (m->params)?list_length(m->params):0;
 
@@ -4273,6 +4313,11 @@ window_ident_clause:
 	/* empty */ { $$ = NULL; }
   |	ident       { $$ = $1; }
   ;
+
+search_condition_commalist:
+    search_condition                                { $$ = append_symbol(L(), $1); }
+ |  search_condition_commalist ',' search_condition { $$ = append_symbol($1, $3); }
+ ;
 
 window_partition_clause:
 	/* empty */ 	{ $$ = NULL; }
@@ -6560,6 +6605,7 @@ char *token2string(tokens token)
 	SQL(CHECK);
 	SQL(COALESCE);
 	SQL(COLUMN);
+	SQL(COLUMN_GROUP);
 	SQL(COLUMN_OPTIONS);
 	SQL(COMMENT);
 	SQL(COMPARE);
@@ -6579,6 +6625,7 @@ char *token2string(tokens token)
 	SQL(CREATE_USER);
 	SQL(CREATE_VIEW);
 	SQL(CROSS);
+	SQL(CUBE);
 	SQL(CURRENT_ROW);
 	SQL(CYCLE);
 	SQL(DECLARE);
@@ -6612,6 +6659,7 @@ char *token2string(tokens token)
 	SQL(GRANT);
 	SQL(GRANT_ROLES);
 	SQL(GROUPBY);
+	SQL(GROUPING_SETS);
 	SQL(IDENT);
 	SQL(IF);
 	SQL(IN);
@@ -6663,6 +6711,7 @@ char *token2string(tokens token)
 	SQL(RETURN);
 	SQL(REVOKE);
 	SQL(REVOKE_ROLES);
+	SQL(ROLLUP);
 	SQL(ROUTINE);
 	SQL(SAMPLE);
 	SQL(SCHEMA);

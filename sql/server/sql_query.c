@@ -9,6 +9,17 @@
 #include "monetdb_config.h"
 #include "sql_query.h"
 
+static stacked_query *
+sq_create( sql_allocator *sa, sql_rel *rel, int sql_state)
+{
+	stacked_query *q = SA_NEW(sa, stacked_query);
+
+	assert(rel);
+	q->rel = rel;
+	q->sql_state = sql_state;
+	return q;
+}
+
 sql_query *
 query_create( mvc *sql)
 {
@@ -20,27 +31,48 @@ query_create( mvc *sql)
 }
 
 void 
-query_push_outer(sql_query *q, sql_rel *r)
+query_push_outer(sql_query *q, sql_rel *r, int sql_state)
 {
-	assert(r);
-	sql_stack_push(q->outer, r);
+	stacked_query *sq = sq_create(q->sql->sa, r, sql_state);
+	assert(sq);
+	sql_stack_push(q->outer, sq);
 }
 
 sql_rel *
 query_pop_outer(sql_query *q)
 {
-	sql_rel *r = sql_stack_pop(q->outer);
+	stacked_query *sq = sql_stack_pop(q->outer);
+	sql_rel *r = sq->rel;
 	return r;
 }
 
 sql_rel *
 query_fetch_outer(sql_query *q, int i)
 {
-	return sql_stack_peek(q->outer, i);
+	stacked_query *sq = sql_stack_fetch(q->outer, i);
+	if (!sq)
+		return NULL;
+	return sq->rel;
+}
+
+int
+query_fetch_outer_state(sql_query *q, int i)
+{
+	stacked_query *sq = sql_stack_fetch(q->outer, i);
+	if (!sq)
+		return 0;
+	return sq->sql_state;
+}
+
+void 
+query_update_outer(sql_query *q, sql_rel *r, int i)
+{
+	stacked_query *sq = sql_stack_fetch(q->outer, i);
+	sq->rel = r;
 }
 
 int 
 query_has_outer(sql_query *q)
 {
-	return !sql_stack_empty(q->outer);
+	return sql_stack_top(q->outer);
 }

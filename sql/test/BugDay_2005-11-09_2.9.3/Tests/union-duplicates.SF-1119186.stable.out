@@ -31,14 +31,14 @@ stdout of test 'union-duplicates.SF-1119186` in directory 'sql/test/BugDay_2005-
 [ 1	]
 [ 6	]
 #SELECT * FROM aap1119186 UNION SELECT * FROM aap1119186;
-% .L11 # table_name
+% .%7 # table_name
 % id # name
 % int # type
 % 1 # length
 [ 1	]
 [ 6	]
 #SELECT * FROM aap1119186 UNION ALL SELECT * FROM aap1119186;
-% .L11 # table_name
+% .%7 # table_name
 % id # name
 % int # type
 % 1 # length
@@ -47,7 +47,7 @@ stdout of test 'union-duplicates.SF-1119186` in directory 'sql/test/BugDay_2005-
 [ 1	]
 [ 6	]
 #SELECT 'a' AS test FROM aap1119186;
-% .L2 # table_name
+% . # table_name
 % test # name
 % char # type
 % 1 # length
@@ -55,7 +55,7 @@ stdout of test 'union-duplicates.SF-1119186` in directory 'sql/test/BugDay_2005-
 [ "a"	]
 #SELECT 'a' AS test FROM aap1119186 UNION SELECT 'b' AS
 #test FROM aap1119186;
-% .L11 # table_name
+% .%5 # table_name
 % test # name
 % char # type
 % 1 # length
@@ -63,7 +63,7 @@ stdout of test 'union-duplicates.SF-1119186` in directory 'sql/test/BugDay_2005-
 [ "b"	]
 #SELECT 'a' AS test FROM aap1119186 UNION ALL SELECT 'b' AS
 #test FROM aap1119186;
-% .L11 # table_name
+% .%5 # table_name
 % test # name
 % char # type
 % 1 # length

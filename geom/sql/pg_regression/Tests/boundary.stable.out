@@ -24,26 +24,26 @@ stdout of test 'boundary` in directory 'geom/sql/pg_regression` itself:
 # 15:14:23 >  
 
 #SELECT ST_AsText(ST_Boundary(ST_GeomFromText('LINESTRING(1 1,0 0, -1 1)')));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % clob # type
 % 22 # length
 [ "MULTIPOINT (1 1, -1 1)"	]
 #SELECT ST_AsText(ST_Boundary(ST_GeomFromText('POLYGON((1 1,0 0, -1 1, 1 1))')));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % clob # type
 % 32 # length
 [ "LINESTRING (1 1, 0 0, -1 1, 1 1)"	]
 #SELECT ST_AsEWKT(ST_Boundary(ST_GeomFromText('POLYGON((1 1 1,0 0 1, -1 1 1, 1 1 1))')));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % clob # type
 % 49 # length
 [ "SRID:0;LINESTRING Z (1 1 1, 0 0 1, -1 1 1, 1 1 1)"	]
 #SELECT ST_AsEWKT(ST_Boundary(ST_GeomFromText('MULTILINESTRING((1 1 1,0 0 0.5, -1 1 1),(1 1 0.5,0 0 0.5, -1 1 0.5, 1 1 0.5) )')));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % clob # type
 % 38 # length
 [ "SRID:0;MULTIPOINT Z (-1 1 1, 1 1 0.75)"	]

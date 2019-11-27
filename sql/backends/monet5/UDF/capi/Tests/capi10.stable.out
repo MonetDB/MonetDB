@@ -75,8 +75,8 @@ stdout of test 'capi10` in directory 'sql/backends/monet5/UDF/capi` itself:
 #INSERT INTO blobs VALUES (BLOB '00FFFF00'), (NULL), (BLOB '');
 [ 3	]
 #SELECT capi10(i) FROM blobs;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % blob # type
 % 0 # length
 [ 00FFFF00	]

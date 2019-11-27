@@ -3758,7 +3758,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 gdk_return
 BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
-	       const void *c1, const void *c2, bool li, bool hi, BUN estimate)
+	    const void *c1, const void *c2, bool li, bool hi, BUN estimate)
 {
 	lng t0 = 0;
 
@@ -3781,17 +3781,43 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 gdk_return
 BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
-		BAT *sl, BAT *sr, bool li, bool hi, BUN estimate)
+	     BAT *sl, BAT *sr, bool li, bool hi, bool anti, bool symmetric,
+	     BUN estimate)
 {
+	struct canditer lci, rci;
 	BAT *r1, *r2;
 	BUN maxsize;
+	lng t0 = 0;
 
+	ALGODEBUG t0 = GDKusec();
 	*r1p = NULL;
 	if (r2p) {
 		*r2p = NULL;
 	}
 	if (joinparamcheck(l, rl, rh, sl, sr, "BATrangejoin") != GDK_SUCCEED)
 		return GDK_FAIL;
+	if (canditer_init(&lci, l, sl) == 0 ||
+	    canditer_init(&rci, rl, sr) == 0 ||
+	    (l->ttype == TYPE_void && is_oid_nil(l->tseqbase)) ||
+	    ((rl->ttype == TYPE_void && is_oid_nil(rl->tseqbase)) &&
+	     (rh->ttype == TYPE_void && is_oid_nil(rh->tseqbase)))) {
+		/* trivial: empty input */
+		return nomatch(r1p, r2p, l, rl, &lci, false, false,
+			       __func__, t0);
+	}
+	if (rl->ttype == TYPE_void && is_oid_nil(rl->tseqbase)) {
+		if (!anti)
+			return nomatch(r1p, r2p, l, rl, &lci, false, false,
+				       __func__, t0);
+		return thetajoin(r1p, r2p, l, rh, sl, sr, MASK_GT, estimate, t0);
+	}
+	if (rh->ttype == TYPE_void && is_oid_nil(rh->tseqbase)) {
+		if (!anti)
+			return nomatch(r1p, r2p, l, rl, &lci, false, false,
+				       __func__, t0);
+		return thetajoin(r1p, r2p, l, rl, sl, sr, MASK_LT, estimate, t0);
+	}
+
 	if ((maxsize = joininitresults(&r1, r2p ? &r2 : NULL, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(rl), false, false, false, false, false, estimate)) == BUN_NONE)
 		return GDK_FAIL;
 	*r1p = r1;
@@ -3803,5 +3829,5 @@ BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 
 	/* note, the rangejoin implementation is in gdk_select.c since
 	 * it uses the imprints code there */
-	return rangejoin(r1, r2, l, rl, rh, sl, sr, li, hi, maxsize);
+	return rangejoin(r1, r2, l, rl, rh, &lci, &rci, li, hi, anti, symmetric, maxsize);
 }

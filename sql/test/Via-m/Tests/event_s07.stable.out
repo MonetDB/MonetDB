@@ -26,8 +26,8 @@ stdout of test 'event_s07` in directory 'sql/test/Via-m` itself:
 #declare id_event integer;
 #set id_event = -1;
 #select id_event; 
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 2 # length
 [ -1	]

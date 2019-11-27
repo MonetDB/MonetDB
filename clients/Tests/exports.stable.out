@@ -165,7 +165,7 @@ gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
 gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty);
 BAT *BATproject(BAT *l, BAT *r);
 BAT *BATprojectchain(BAT **bats);
-gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, BUN estimate) __attribute__((__warn_unused_result__));
+gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, bool anti, bool symmetric, BUN estimate) __attribute__((__warn_unused_result__));
 gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bool force) __attribute__((__warn_unused_result__));
 gdk_return BATroles(BAT *b, const char *tnme);
 BAT *BATsample(BAT *b, BUN n);
@@ -739,7 +739,7 @@ str ALGouterjoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, co
 str ALGprojection(bat *result, const bat *lid, const bat *rid);
 str ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-str ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid, const bit *li, const bit *hi, const lng *estimate);
+str ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid, const bit *li, const bit *hi, const bit *anti, const bit *symmetric, const lng *estimate);
 str ALGreuse(bat *ret, const bat *bid);
 str ALGselect1(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
 str ALGselect1nil(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown);
@@ -1355,7 +1355,8 @@ str LIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, c
 str LIKEjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
 str MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t);
 int MAL_MAXCLIENTS;
-int MALadmission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim);
+int MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim);
+void MALadmission_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim);
 str MALassertBit(void *ret, bit *val, str *msg);
 str MALassertHge(void *ret, hge *val, str *msg);
 str MALassertInt(void *ret, int *val, str *msg);

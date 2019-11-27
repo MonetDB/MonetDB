@@ -225,7 +225,7 @@ command bandjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],c1:any_1,
 address ALGbandjoin
 comment "Band join: values in l and r match if r - c1 <[=] l <[=] r + c2";
 
-command rangejoin(l:bat[:any_1],r1:bat[:any_1],r2:bat[:any_1],sl:bat[:oid],sr:bat[:oid],li:bit,hi:bit,estimate:lng) (:bat[:oid],:bat[:oid])
+command rangejoin(l:bat[:any_1],r1:bat[:any_1],r2:bat[:any_1],sl:bat[:oid],sr:bat[:oid],li:bit,hi:bit,anti:bit,symmetric:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGrangejoin
 comment "Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2";
 

@@ -56,7 +56,7 @@ stdout of test 'crash-in-topn.Bug-6478` in directory 'sql/test/BugTracker-2017` 
 #		select "t7"."A", "t7"."B", "t7"."C", "t7"."D", "t7"."id" from "unitTestDontDelete" as "t7"
 #	) as "t8" order by "A" desc, "id" asc limit 4 offset 1
 #) as "ta" order by "B" asc, "A" desc, "id" asc limit 1;
-% sys.L15,	sys.L17,	sys.L21,	sys.L23 # table_name
+% sys.ta,	sys.ta,	sys.ta,	sys.ta # table_name
 % cb_a,	cc_b,	cd_c,	ce_d # name
 % varchar,	bigint,	double,	timestamp # type
 % 4,	1,	24,	26 # length

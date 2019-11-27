@@ -78,8 +78,8 @@ stdout of test 'query1.1` in directory 'sql/backends/monet5/vaults/bam` itself:
 #SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
 #FROM bam.unpaired_alignments_3
 #WHERE bam.bam_flag(flag, 'seco_alig') = False
-#ORDER BY qname;
-% .L117,	.L117,	.L117,	.L117,	.L117,	.L117,	.L117,	.L117,	.L117,	.L117,	.L117 # table_name
+#ORDER BY qname, flag;
+% .%12,	.%12,	.%12,	.%12,	.%12,	.%12,	.%12,	.%12,	.%12,	.%12,	.%12 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 11,	3,	5,	8,	3,	26,	1,	8,	1,	100,	100 # length

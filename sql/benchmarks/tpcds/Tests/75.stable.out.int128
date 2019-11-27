@@ -35,7 +35,12 @@ stdout of test '75` in directory 'sql/benchmarks/tpcds` itself:
 #     (SELECT d_year ,
 #             i_brand_id ,
 #             i_class_id ,
-% .L70,	.L72,	.curr_yr,	.curr_yr,	.curr_yr,	.curr_yr,	.L100,	.L102,	.L104,	.L106 # table_name
+#             i_category_id ,
+#             i_manufact_id ,
+#             cs_quantity - COALESCE(cr_return_quantity,0) AS sales_cnt ,
+#             cs_ext_sales_price - COALESCE(cr_return_amount,0.0) AS sales_amt
+#      FROM catalog_sales
+% .prev_yr,	.curr_yr,	.curr_yr,	.curr_yr,	.curr_yr,	.curr_yr,	.prev_yr,	.curr_yr,	.,	. # table_name
 % prev_year,	year_,	i_brand_id,	i_class_id,	i_category_id,	i_manufact_id,	prev_yr_cnt,	curr_yr_cnt,	sales_cnt_diff,	sales_amt_diff # name
 % int,	int,	int,	int,	int,	int,	bigint,	bigint,	hugeint,	decimal # type
 % 4,	4,	8,	2,	1,	4,	4,	4,	5,	40 # length

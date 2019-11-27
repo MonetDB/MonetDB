@@ -38,7 +38,7 @@ stdout of test 'strings_concat` in directory 'sql/test/pg_regress` itself:
 #' - next line'
 #	' - third line'
 #	AS "Three lines to one";
-% .L2 # table_name
+% . # table_name
 % "Three lines to one" # name
 % char # type
 % 35 # length

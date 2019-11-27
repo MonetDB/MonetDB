@@ -28,7 +28,7 @@ stdout of test 'insert-into-select.Bug-6718` in directory 'sql/test/BugTracker-2
 #qnt INTEGER NOT NULL
 #);
 CREATE TABLE "sys"."test2" (
-	"order_number" INTEGER       NOT NULL DEFAULT next value for "sys"."seq_9041",
+	"order_number" INTEGER       NOT NULL DEFAULT next value for "sys"."seq_9246",
 	"order_id"     INTEGER       NOT NULL,
 	"qnt"          INTEGER       NOT NULL,
 	CONSTRAINT "test2_order_number_pkey" PRIMARY KEY ("order_number")

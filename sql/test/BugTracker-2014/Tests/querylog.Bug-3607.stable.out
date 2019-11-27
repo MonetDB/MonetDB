@@ -68,8 +68,8 @@ stdout of test 'querylog.Bug-3607` in directory 'sql/test/BugTracker-2014` itsel
 % oid,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	26,	26,	0,	1,	1,	1,	1,	1 # length
 #select 1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]

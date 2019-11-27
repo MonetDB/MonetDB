@@ -24,22 +24,22 @@ stdout of test 'bam_tables_checks` in directory 'sql/test/sys-schema` itself:
 # 18:51:05 >  
 
 #SELECT COUNT(*) AS duplicates, "file_id" FROM "bam"."files" GROUP BY "file_id" HAVING COUNT(*) > 1;
-% bam.L2,	bam.files # table_name
+% bam.%1,	bam.files # table_name
 % duplicates,	file_id # name
 % bigint,	bigint # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, "id", "file_id" FROM "bam"."pg" GROUP BY "id", "file_id" HAVING COUNT(*) > 1;
-% bam.L2,	bam.pg,	bam.pg # table_name
+% bam.%1,	bam.pg,	bam.pg # table_name
 % duplicates,	id,	file_id # name
 % bigint,	clob,	bigint # type
 % 1,	0,	1 # length
 #SELECT COUNT(*) AS duplicates, "id", "file_id" FROM "bam"."rg" GROUP BY "id", "file_id" HAVING COUNT(*) > 1;
-% bam.L2,	bam.rg,	bam.rg # table_name
+% bam.%1,	bam.rg,	bam.rg # table_name
 % duplicates,	id,	file_id # name
 % bigint,	clob,	bigint # type
 % 1,	0,	1 # length
 #SELECT COUNT(*) AS duplicates, "sn", "file_id" FROM "bam"."sq" GROUP BY "sn", "file_id" HAVING COUNT(*) > 1;
-% bam.L2,	bam.sq,	bam.sq # table_name
+% bam.%1,	bam.sq,	bam.sq # table_name
 % duplicates,	sn,	file_id # name
 % bigint,	clob,	bigint # type
 % 1,	0,	1 # length
@@ -159,12 +159,12 @@ stdout of test 'bam_tables_checks` in directory 'sql/test/sys-schema` itself:
 % bigint,	clob,	bigint,	int,	int,	clob,	clob,	clob # type
 % 1,	0,	1,	1,	1,	0,	0,	0 # length
 #SELECT '"bam"."files"."format_version"' as full_col_nm, 7 as max_allowed_length, length("format_version") as data_length, t."format_version" as data_value FROM "bam"."files" t WHERE "format_version" IS NOT NULL AND length("format_version") > (select type_digits from sys._columns where name = 'format_version' and table_id in (select id from tables where name = 'files' and schema_id in (select id from sys.schemas where name = 'bam')));
-% .L21,	.L22,	bam.L23,	bam.L24 # table_name
+% .%22,	.%23,	bam.%24,	bam.%25 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	tinyint,	int,	varchar # type
 % 30,	1,	1,	0 # length
 #SELECT '"bam"."files"."sorting_order"' as full_col_nm, 10 as max_allowed_length, length("sorting_order") as data_length, t."sorting_order" as data_value FROM "bam"."files" t WHERE "sorting_order" IS NOT NULL AND length("sorting_order") > (select type_digits from sys._columns where name = 'sorting_order' and table_id in (select id from tables where name = 'files' and schema_id in (select id from sys.schemas where name = 'bam')));
-% .L21,	.L22,	bam.L23,	bam.L24 # table_name
+% .%22,	.%23,	bam.%24,	bam.%25 # table_name
 % full_col_nm,	max_allowed_length,	data_length,	data_value # name
 % char,	tinyint,	int,	varchar # type
 % 29,	1,	1,	0 # length

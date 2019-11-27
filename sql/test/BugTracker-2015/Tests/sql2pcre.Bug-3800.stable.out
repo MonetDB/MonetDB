@@ -59,68 +59,64 @@ stdout of test 'sql2pcre.Bug-3800` in directory 'sql/test/BugTracker-2015` itsel
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 16:37:27 >  
-# 16:37:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19633" "--port=30760"
-# 16:37:27 >  
-
-#SELECT '\\a' LIKE '\\\\a';
-% .L2 # table_name
-% L2 # name
+#SELECT E'\\a' LIKE E'\\\\a';
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ false	]
-#SELECT '\\a' LIKE '\\\\\\\\a';
-% .L2 # table_name
-% L2 # name
+#SELECT E'\\a' LIKE E'\\\\\\\\a';
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'xa' LIKE '_a{1}';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'xa$b' LIKE '_a$b';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #CREATE FUNCTION sql2pcre(pat TEXT, esc TEXT) RETURNS TEXT EXTERNAL NAME pcre.sql2pcre;
-#SELECT sql2pcre('a', '\\');
-% .L2 # table_name
-% L2 # name
+#SELECT sql2pcre('a', E'\\');
+% .%1 # table_name
+% %1 # name
 % clob # type
 % 0 # length
 [ NULL	]
-#SELECT sql2pcre('_', '\\');
-% .L2 # table_name
-% L2 # name
+#SELECT sql2pcre('_', E'\\');
+% .%1 # table_name
+% %1 # name
 % clob # type
 % 3 # length
 [ "^.$"	]
-#SELECT sql2pcre('%', '\\');
-% .L2 # table_name
-% L2 # name
+#SELECT sql2pcre('%', E'\\');
+% .%1 # table_name
+% %1 # name
 % clob # type
 % 5 # length
 [ "^.*?$"	]
 #SELECT sql2pcre('_??', '?');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % clob # type
 % 5 # length
 [ "^.\\?$"	]
-#SELECT sql2pcre('_{', '\\');
-% .L2 # table_name
-% L2 # name
+#SELECT sql2pcre('_{', E'\\');
+% .%1 # table_name
+% %1 # name
 % clob # type
 % 5 # length
 [ "^.\\{$"	]
-#SELECT sql2pcre('%^%', '\\');
-% .L2 # table_name
-% L2 # name
+#SELECT sql2pcre('%^%', E'\\');
+% .%1 # table_name
+% %1 # name
 % clob # type
 % 10 # length
 [ "^.*?\\^.*?$"	]

@@ -288,7 +288,6 @@ rel_alter_seq(
 		if (r && r->op == op_project) {
 			exp_label(sql->sa, val, ++sql->label);
 			val = rel_project_add_exp(sql, r, val);
-			val = exp_ref(sql->sa, val);
 		}
 	} else if (start_type == 2) {
 		assert (start_list->h->next->type == type_lng);

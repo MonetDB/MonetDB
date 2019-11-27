@@ -1,8 +1,8 @@
 subquery
 any
 all
-KNOWNFAIL?subquery2
-KNOWNFAIL?subquery3
+subquery2
+subquery3
 scalar
 any_all
 exists

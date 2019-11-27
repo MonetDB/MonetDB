@@ -70,14 +70,14 @@ stdout of test 'ST_MPolygonFromText` in directory 'geom/sql/functions` itself:
 [ "MULTIPOLYGON Z (((20 20 20, 30 30 30, 40 40 40, 20 20 20), (200 200 200, 300 300 300, 400 400 400, 200 200 200)))"	]
 #drop table polygons_tbl;
 #select st_mpolyfromtext(geom) from geometriesTxt WHERE id=6;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % geometry # type
 % 0 # length
 [ "MULTIPOLYGON (((10 10, 10 20, 20 20, 20 10, 10 10), (30 30, 30 40, 40 40, 40 30, 30 30)))"	]
 #select st_mpolyfromtext(geom) from geometriesTxt WHERE id=7;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % geometry # type
 % 0 # length
 [ "MULTIPOLYGON EMPTY"	]

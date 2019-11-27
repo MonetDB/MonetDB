@@ -39,8 +39,8 @@ stdout of test 'load_dbobjects` in directory 'sql/test/Skyserver/bugs` itself:
 [ "DBObjects",	"U",	"U",	" Every SkyServer database object has a one line description in this table ",	"none",	0	]
 [ "DBViewCols",	"U",	"U",	" The columns of each view are stored for the auto-documentation ",	" * means that every column from the  parent is propagated. ",	0	]
 #select count(*) from DBObjects;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 9	]

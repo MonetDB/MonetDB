@@ -114,8 +114,8 @@ stdout of test 'dependency_loop` in directory 'sql/test/Dependencies` itself:
 #UNION
 #( SELECT subject,'dc:creator' AS predicate,object FROM dc_creator )
 #select count(*) from dependencies where depend_type = 5;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 581	]

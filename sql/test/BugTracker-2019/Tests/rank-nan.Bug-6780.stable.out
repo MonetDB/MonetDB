@@ -95,7 +95,7 @@ stdout of test 'rank-nan.Bug-6780` in directory 'sql/test/BugTracker-2019` itsel
 #			"Ticker" is not null
 #		group by "c2_h_field_2", "Ticker"
 #) as "t0" 
-% sys.t0,	sys.t0,	sys.t0,	sys.L10,	sys.L13,	sys.L16 # table_name
+% sys.t0,	sys.t0,	sys.t0,	sys.,	sys.,	sys. # table_name
 % count_1,	c2_h_field_2,	Ticker,	RANK,	DRANK,	RNUMBER # name
 % bigint,	double,	varchar,	int,	int,	int # type
 % 1,	24,	6,	2,	1,	3 # length

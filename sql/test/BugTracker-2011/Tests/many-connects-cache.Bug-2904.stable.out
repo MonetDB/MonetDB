@@ -43,302 +43,302 @@ stdout of test 'many-connects-cache.Bug-2904` in directory 'sql/test/BugTracker-
 # 14:18:16 >  
 
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]
 #SELECT rad(55.81689)
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0.9741885087	]

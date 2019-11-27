@@ -32,8 +32,8 @@ stdout of test 'q2_t` in directory 'sql/test/rdf` itself:
 #--       AND A.prop = '<type>'
 #--       AND A.obj = '<Text>'
 #	GROUP BY B.prop;
-% sys.b,	sys.L4 # table_name
-% prop,	L3 # name
+% sys.b,	sys.%1 # table_name
+% prop,	%1 # name
 % int,	bigint # type
 % 1,	1 # length
 

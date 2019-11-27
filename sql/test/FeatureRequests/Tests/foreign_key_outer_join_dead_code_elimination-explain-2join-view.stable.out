@@ -37,7 +37,7 @@ function user.s4_0():void;
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
     X_18:lng := aggr.count(C_5:bat[:oid]);
-    sql.resultSet(".L11":str, "L11":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet(".%6":str, "%6":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s4_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 

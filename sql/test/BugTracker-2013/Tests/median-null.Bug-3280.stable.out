@@ -75,20 +75,20 @@ stdout of test 'median-null.Bug-3280` in directory 'sql/test/BugTracker-2013` it
 #UPDATE mtcars SET mpg = NULL WHERE cyl = 6;
 [ 7	]
 #select avg(mpg) from mtcars;
-% sys.L4 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 20.188	]
 #select sum(mpg), min(mpg), max(mpg) from mtcars;
-% sys.L4,	sys.L7,	sys.L12 # table_name
-% L3,	L6,	L11 # name
+% sys.%1,	sys.%2,	sys.%3 # table_name
+% %1,	%2,	%3 # name
 % double,	double,	double # type
 % 24,	24,	24 # length
 [ 504.7,	10.4,	33.9	]
 #select median(mpg) from mtcars;
-% sys.L4 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 18.7	]

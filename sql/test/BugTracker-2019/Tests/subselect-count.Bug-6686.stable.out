@@ -94,7 +94,7 @@ stdout of test 'subselect-count.Bug-6686` in directory 'sql/test/BugTracker-2019
 #  as "c2_f1"
 #from
 #  "c3_t";
-% sys.c3_t,	.L16 # table_name
+% .c3_t,	.%3 # table_name
 % C,	c2_f1 # name
 % double,	bigint # type
 % 24,	1 # length

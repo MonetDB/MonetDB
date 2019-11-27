@@ -70,8 +70,8 @@ stdout of test 'capi15` in directory 'sql/backends/monet5/UDF/capi` itself:
 #};
 #CREATE TABLE capi16table(i INTEGER, j STRING, k BLOB, l DATE, m TIMESTAMP, n TIME);
 #SELECT i, capi16(i, j, k, l, m, n) FROM capi16table;
-% sys.capi16table,	sys.L3 # table_name
-% i,	L3 # name
+% sys.capi16table,	sys.%2 # table_name
+% i,	%2 # name
 % int,	int # type
 % 1,	1 # length
 #DROP TABLE capi16table;

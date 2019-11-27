@@ -27,7 +27,7 @@ stdout of test 'group_distinct_quantile.Bug-3927` in directory 'sql/test/BugTrac
 #start transaction;
 #create table my_table (my_id clob, my_double double);
 #SELECT COUNT( DISTINCT my_id ) AS unique_enrollees , QUANTILE( my_double , 0.25 ) AS some_quantile FROM my_table;
-% sys.L4,	sys.L7 # table_name
+% sys.%1,	sys.%2 # table_name
 % unique_enrollees,	some_quantile # name
 % bigint,	double # type
 % 1,	24 # length

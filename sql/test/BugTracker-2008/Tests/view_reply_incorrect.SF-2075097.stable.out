@@ -1,29 +1,38 @@
 stdout of test 'view_reply_incorrect.SF-2075097` in directory 'sql/test/BugTracker-2008` itself:
 
 
-# 12:25:53 >  
-# 12:25:53 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30598 --set xrpc_port=44185 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2008" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 12:25:53 >  
+# 17:15:35 >  
+# 17:15:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33945" "--set" "mapi_usock=/var/tmp/mtest-14741/.s.monetdb.33945" "--forcemito" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2008" "--set" "embedded_c=true"
+# 17:15:35 >  
 
-# MonetDB server v5.6.0, based on kernel v1.24.1
-# Serving database 'mTests_src_test_BugTracker-2008'
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:30598/
-# MonetDB/SQL module v2.24.1 loaded
+# MonetDB 5 server v11.36.0 (hg id: 1d18bd8860b4+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2008', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.384 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:33945/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14741/.s.monetdb.33945
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
 
-#function user.main():void;
-#    clients.quit();
-#end main;
+# 17:15:36 >  
+# 17:15:36 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14741" "--port=33945"
+# 17:15:36 >  
 
-
-# 12:25:53 >  
-# 12:25:53 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30598 
-# 12:25:53 >  
-
+#CREATE TABLE GROUPS1
+#(EMPNUM INT, GRP INT);
+#CREATE TABLE NAMES1
+#(EMPNUM INT, NAME CHAR(5));
+#CREATE VIEW NAMGRP1 AS
+#SELECT * FROM NAMES1 NATURAL JOIN GROUPS1;
+#INSERT INTO GROUPS1 VALUES (0, 10);
 [ 1	]
+#INSERT INTO GROUPS1 VALUES (1, 20);
 [ 1	]
+#INSERT INTO GROUPS1 VALUES (2, 30);
 [ 1	]
 [ 1	]
 [ 1	]

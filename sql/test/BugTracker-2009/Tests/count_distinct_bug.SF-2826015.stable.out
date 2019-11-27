@@ -41,14 +41,14 @@ stdout of test 'count_distinct_bug.SF-2826015` in directory 'sql/test/BugTracker
 [ "test"	]
 [ "other"	]
 #select count(distinct(testcol)) from testdistinct ;
-% sys.L4 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(distinct testcol ) from testdistinct ;
-% sys.L4 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]

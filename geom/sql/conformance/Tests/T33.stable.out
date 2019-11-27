@@ -24,8 +24,8 @@ stdout of test 'T33` in directory 'geom/sql/conformance` itself:
 # 15:05:52 >  
 
 #SELECT ST_Length(centerlines) FROM divided_routes WHERE name = 'Route 75';
-% sys.L1 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 96	]

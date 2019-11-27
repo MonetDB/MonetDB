@@ -35,7 +35,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 #INSERT INTO strings VALUES ('hello'), ('world'), (NULL);
 [ 3	]
 #SELECT i, (SELECT 42+i1.i) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L1 # table_name
+% .i1,	.%1 # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	2 # length
@@ -53,7 +53,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2	]
 [ 1	]
 #SELECT i, (SELECT i FROM integers WHERE 1=0 AND i1.i=i) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L2 # table_name
+% .i1,	.%2 # table_name
 % i,	j # name
 % int,	int # type
 % 1,	1 # length
@@ -62,7 +62,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	NULL	]
 [ 3,	NULL	]
 #SELECT i, EXISTS(SELECT i FROM integers WHERE 1=0 AND i1.i=i) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L2 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	boolean # type
 % 1,	5 # length
@@ -71,7 +71,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	false	]
 [ 3,	false	]
 #SELECT i, i=ANY(SELECT i FROM integers WHERE 1=0 AND i1.i=i) AS j FROM integers i1 ORDER BY i;
-% .i1,	.L7 # table_name
+% .i1,	.%14 # table_name
 % i,	j # name
 % int,	boolean # type
 % 1,	5 # length
@@ -80,7 +80,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	false	]
 [ 3,	false	]
 #SELECT i, (SELECT 42 WHERE i1.i>2) AS j FROM integers i1 ORDER BY i;
-% .i1,	.L3 # table_name
+% .i1,	.%1 # table_name
 % i,	j # name
 % int,	tinyint # type
 % 1,	2 # length
@@ -89,7 +89,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	NULL	]
 [ 3,	42	]
 #SELECT i, (SELECT 42 WHERE i1.i IS NULL) AS j FROM integers i1 ORDER BY i;
-% .i1,	.L3 # table_name
+% .i1,	.%1 # table_name
 % i,	j # name
 % int,	tinyint # type
 % 1,	2 # length
@@ -98,7 +98,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	NULL	]
 [ 3,	NULL	]
 #SELECT i, (SELECT i+i1.i FROM integers WHERE i=1) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L3 # table_name
+% .i1,	.%2 # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -107,7 +107,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	3	]
 [ 3,	4	]
 #SELECT i, (SELECT i FROM integers WHERE i=i1.i) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L2 # table_name
+% .i1,	.%2 # table_name
 % i,	j # name
 % int,	int # type
 % 1,	1 # length
@@ -116,7 +116,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	2	]
 [ 3,	3	]
 #SELECT i, (SELECT i+1 FROM integers WHERE i=i1.i) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L3 # table_name
+% .i1,	.%2 # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -125,7 +125,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	3	]
 [ 3,	4	]
 #SELECT i, (SELECT 42 FROM integers WHERE i=i1.i) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L3 # table_name
+% .i1,	.%2 # table_name
 % i,	j # name
 % int,	tinyint # type
 % 1,	2 # length
@@ -134,8 +134,8 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	42	]
 [ 3,	42	]
 #SELECT i, (SELECT MIN(i)+i1.i FROM integers) FROM integers i1 ORDER BY i;
-% .i1,	.L5 # table_name
-% i,	L5 # name
+% .i1,	.%2 # table_name
+% i,	%2 # name
 % int,	bigint # type
 % 1,	1 # length
 [ NULL,	NULL	]
@@ -143,8 +143,8 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	3	]
 [ 3,	4	]
 #SELECT i, (SELECT MIN(i+2*i1.i) FROM integers) FROM integers i1 ORDER BY i;
-% sys.i1,	.L4 # table_name
-% i,	L4 # name
+% .i1,	.%1 # table_name
+% i,	%1 # name
 % int,	bigint # type
 % 1,	1 # length
 [ NULL,	NULL	]
@@ -152,8 +152,8 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	5	]
 [ 3,	7	]
 #SELECT i, CAST(SUM(i) AS BIGINT), CAST((SELECT SUM(i)+SUM(i1.i) FROM integers) AS BIGINT) FROM integers i1 GROUP BY i ORDER BY i;
-% .i1,	.L2,	.L11 # table_name
-% i,	L2,	L11 # name
+% .i1,	.%2,	.%6 # table_name
+% i,	%2,	%6 # name
 % int,	bigint,	bigint # type
 % 1,	1,	1 # length
 [ NULL,	NULL,	NULL	]
@@ -161,8 +161,8 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	2,	8	]
 [ 3,	3,	9	]
 #SELECT i, CAST(SUM(i) AS BIGINT), CAST((SELECT SUM(i)+COUNT(i1.i) FROM integers) AS BIGINT) FROM integers i1 GROUP BY i ORDER BY i;
-% .i1,	.L2,	.L11 # table_name
-% i,	L2,	L11 # name
+% .i1,	.%2,	.%6 # table_name
+% i,	%2,	%6 # name
 % int,	bigint,	bigint # type
 % 1,	1,	1 # length
 [ NULL,	NULL,	6	]
@@ -170,8 +170,8 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	2,	7	]
 [ 3,	3,	7	]
 #SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i) FROM integers i1 ORDER BY i;
-% sys.i1,	.L2 # table_name
-% i,	L2 # name
+% .i1,	.%1 # table_name
+% i,	%1 # name
 % int,	bigint # type
 % 1,	1 # length
 [ NULL,	0	]
@@ -179,8 +179,8 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	1	]
 [ 3,	0	]
 #SELECT i, (SELECT MIN(i+2*i1.i) FROM integers) FROM integers i1 ORDER BY i;
-% sys.i1,	.L4 # table_name
-% i,	L4 # name
+% .i1,	.%1 # table_name
+% i,	%1 # name
 % int,	bigint # type
 % 1,	1 # length
 [ NULL,	NULL	]
@@ -188,50 +188,50 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	5	]
 [ 3,	7	]
 #SELECT CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1; -- 6
-% sys.L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #SELECT MIN(i), CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1; -- 1, 6
-% sys.L2,	sys.L4 # table_name
-% L2,	L4 # name
+% .%1,	.%3 # table_name
+% %1,	%3 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 1,	6	]
 #SELECT MIN(i), CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1; -- 1, 6
-% sys.L2,	sys.L4 # table_name
-% L2,	L4 # name
+% .%1,	.%3 # table_name
+% %1,	%3 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 1,	6	]
 #SELECT CAST((SELECT SUM(i1.i)) AS BIGINT), CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1; -- 6, 6
-% sys.L3,	sys.L5 # table_name
-% L3,	L5 # name
+% .%2,	.%4 # table_name
+% %2,	%4 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 6,	6	]
 #SELECT CAST(SUM(i) AS BIGINT), CAST(SUM((SELECT i FROM integers WHERE i=i1.i)) AS BIGINT) FROM integers i1; -- 6, 6
-% sys.L3,	.L6 # table_name
-% L3,	L6 # name
+% .%2,	.%6 # table_name
+% %2,	%6 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 6,	6	]
 #SELECT CAST(SUM(i) AS BIGINT), CAST((SELECT SUM(i) FROM integers WHERE i>SUM(i1.i)) AS BIGINT) FROM integers i1; -- 6, NULL
-% .L3,	.L7 # table_name
-% L3,	L7 # name
+% .%2,	.%5 # table_name
+% %2,	%5 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 6,	NULL	]
 #SELECT CAST((SELECT SUM(i) FROM integers WHERE i>SUM(i1.i)) AS BIGINT) FROM integers i1; -- NULL
-% .L6 # table_name
-% L6 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ NULL  ]
 #SELECT i, (SELECT MIN(i) FROM integers WHERE i>i1.i) FROM integers i1 ORDER BY i;
-% sys.i1,	.L2 # table_name
-% i,	L2 # name
+% .i1,	.%1 # table_name
+% i,	%1 # name
 % int,	int # type
 % 1,	1 # length
 [ NULL,	NULL	]
@@ -239,8 +239,8 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	3	]
 [ 3,	NULL	]
 #SELECT i, (SELECT MIN(i)+i1.i FROM integers WHERE i>i1.i) FROM integers i1 ORDER BY i;
-% sys.i1,	.L3 # table_name
-% i,	L3 # name
+% .i1,	.%2 # table_name
+% i,	%2 # name
 % int,	bigint # type
 % 1,	1 # length
 [ NULL,	NULL	]
@@ -248,7 +248,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	5	]
 [ 3,	NULL	]
 #SELECT i, (SELECT MIN(i) FROM integers GROUP BY i1.i) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L4 # table_name
+% .i1,	.%2 # table_name
 % i,	j # name
 % int,	int # type
 % 1,	1 # length
@@ -257,7 +257,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	1	]
 [ 3,	1	]
 #SELECT i, (SELECT i FROM integers GROUP BY i HAVING i=i1.i) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L2 # table_name
+% .i1,	.%2 # table_name
 % i,	j # name
 % int,	int # type
 % 1,	1 # length
@@ -266,26 +266,35 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	2	]
 [ 3,	3	]
 #SELECT i1.i, CAST(SUM(i) AS BIGINT) FROM integers i1 GROUP BY i1.i HAVING SUM(i)=(SELECT MIN(i) FROM integers WHERE i<>i1.i+1) ORDER BY 1;
-% sys.i1,	sys.L2 # table_name
-% i,	L2 # name
+% sys.i1,	sys.%2 # table_name
+% i,	%2 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 1,	1	]
 #SELECT i % 2 AS j, CAST(SUM(i) AS BIGINT) FROM integers i1 GROUP BY j HAVING SUM(i)=(SELECT SUM(i) FROM integers WHERE i<>j+1) ORDER BY 1;
-% sys.L1,	sys.L3 # table_name
-% j,	L3 # name
+% sys.,	sys.%2 # table_name
+% j,	%2 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 1,	4	]
 #SELECT CAST((SELECT SUM(i)+SUM(i1.i) FROM integers) AS BIGINT) FROM integers i1 ORDER BY 1;
-% .L11 # table_name
-% L11 # name
+% .%4 # table_name
+% %4 # name
 % bigint # type
 % 2 # length
 [ 12	]
+#SELECT CAST((SELECT SUM(i)+SUM((CASE WHEN i IS NOT NULL THEN i*0 ELSE 0 END)+i1.i) FROM integers) AS BIGINT) FROM integers i1 ORDER BY 1;
+% .%4 # table_name
+% %4 # name
+% bigint # type
+% 2 # length
+[ NULL	]
+[ 10	]
+[ 14	]
+[ 18	]
 #SELECT i, CAST((SELECT i+SUM(i1.i) FROM integers WHERE i=1) AS BIGINT) FROM integers i1 GROUP BY i ORDER BY i;
-% sys.i1,	.L6 # table_name
-% i,	L6 # name
+% .i1,	.%4 # table_name
+% i,	%4 # name
 % int,	bigint # type
 % 1,	1 # length
 [ NULL,	NULL	]
@@ -293,13 +302,13 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	3	]
 [ 3,	4	]
 #SELECT CAST(SUM((SELECT i+i1.i FROM integers WHERE i=1)) AS BIGINT) FROM integers i1;
-% .L5 # table_name
-% L5 # name
+% .%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 9	]
 #SELECT i1.i AS j, CAST((SELECT SUM(j+i) FROM integers) AS BIGINT) AS k FROM integers i1 GROUP BY j ORDER BY j;
-% sys.L1,	.L7 # table_name
+% .i1,	.%1 # table_name
 % j,	k # name
 % int,	bigint # type
 % 1,	2 # length
@@ -307,8 +316,17 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 1,	9	]
 [ 2,	12	]
 [ 3,	15	]
+#SELECT CAST((SELECT SUM(i1.i*i) FROM integers) AS BIGINT) FROM integers i1 ORDER BY i;
+% .%2 # table_name
+% %2 # name
+% bigint # type
+% 2 # length
+[ NULL	]
+[ 6	]
+[ 12	]
+[ 18	]
 #SELECT i, CAST((SELECT SUM(i1.i)) AS BIGINT) AS k, CAST((SELECT SUM(i1.i)) AS BIGINT) AS l FROM integers i1 GROUP BY i ORDER BY i;
-% sys.i1,	sys.L3,	sys.L6 # table_name
+% .i1,	.,	. # table_name
 % i,	k,	l # name
 % int,	bigint,	bigint # type
 % 1,	1,	1 # length
@@ -317,7 +335,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	2,	2	]
 [ 3,	3,	3	]
 #SELECT i, CAST((SELECT SUM(i1.i)*SUM(i) FROM integers) AS BIGINT) AS k FROM integers i1 GROUP BY i ORDER BY i;
-% .i1,	.L12 # table_name
+% .i1,	. # table_name
 % i,	k # name
 % int,	bigint # type
 % 1,	2 # length
@@ -326,7 +344,16 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	12	]
 [ 3,	18	]
 #SELECT i AS j, CAST((SELECT j*SUM(i) FROM integers) AS BIGINT) AS k FROM integers i1 GROUP BY j ORDER BY j;
-% .L1,	.L10 # table_name
+% .i1,	. # table_name
+% j,	k # name
+% int,	bigint # type
+% 1,	2 # length
+[ NULL,	NULL	]
+[ 1,	6	]
+[ 2,	12	]
+[ 3,	18	]
+#SELECT i AS j, CAST((SELECT i1.i*SUM(i) FROM integers) AS BIGINT) AS k FROM integers i1 GROUP BY j ORDER BY j;
+% .i1,	. # table_name
 % j,	k # name
 % int,	bigint # type
 % 1,	2 # length
@@ -335,7 +362,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	12	]
 [ 3,	18	]
 #SELECT i, CAST(SUM((SELECT SUM(i)*i1.i FROM integers)) AS BIGINT) AS k FROM integers i1 GROUP BY i ORDER BY i;
-% .i1,	.L10 # table_name
+% .i1,	. # table_name
 % i,	k # name
 % int,	bigint # type
 % 1,	2 # length
@@ -344,14 +371,14 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	12	]
 [ 3,	18	]
 #SELECT CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1;
-% sys.L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #SELECT i AS j, (SELECT MIN(i1.i) FROM integers GROUP BY i HAVING i=j) FROM integers i1 GROUP BY j ORDER BY j;
-% sys.L1,	.L3 # table_name
-% j,	L3 # name
+% .i1,	.%2 # table_name
+% j,	%2 # name
 % int,	int # type
 % 1,	1 # length
 [ NULL,	NULL	]
@@ -359,7 +386,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	2	]
 [ 3,	3	]
 #SELECT (SELECT i+i1.i FROM integers WHERE i=1) AS k, CAST(SUM(i) AS BIGINT) AS j FROM integers i1 GROUP BY k ORDER BY 1;
-% .L3,	sys.L6 # table_name
+% .%2,	. # table_name
 % k,	j # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -368,20 +395,20 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 3,	2	]
 [ 4,	3	]
 #SELECT CAST(SUM(i) AS BIGINT) FROM integers i1 WHERE i>(SELECT (i+i1.i)/2 FROM integers WHERE i=1);
-% sys.L5 # table_name
-% L5 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 5	]
 #SELECT CAST(SUM(i) AS BIGINT) FROM integers i1 WHERE i>(SELECT (SUM(i)+i1.i)/2 FROM integers WHERE i=1);
-% sys.L10 # table_name
-% L10 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 5	]
 #SELECT i, (SELECT MIN(i) FROM integers WHERE i=i1.i) >= ALL(SELECT i FROM integers WHERE i IS NOT NULL) FROM integers i1 ORDER BY i;
-% sys.i1,	.L6 # table_name
-% i,	L6 # name
+% .i1,	.%4 # table_name
+% i,	%4 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	NULL	]
@@ -389,8 +416,8 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	false	]
 [ 3,	true	]
 #SELECT i, (SELECT MIN(i) FROM integers WHERE i<>i1.i) > ANY(SELECT i FROM integers WHERE i IS NOT NULL) FROM integers i1 ORDER BY i;
-% sys.i1,	.L6 # table_name
-% i,	L6 # name
+% .i1,	.%4 # table_name
+% i,	%4 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	NULL	]
@@ -398,17 +425,26 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	false	]
 [ 3,	false	]
 #SELECT i, NOT((SELECT MIN(i) FROM integers WHERE i<>i1.i) > ANY(SELECT i FROM integers WHERE i IS NOT NULL)) FROM integers i1 ORDER BY i;
-% sys.i1,	.L6 # table_name
-% i,	L6 # name
+% .i1,	.%4 # table_name
+% i,	%4 # name
 % int,	boolean # type
 % 1,	5 # length
 [ NULL,	NULL	]
 [ 1,	false	]
 [ 2,	true	]
 [ 3,	true	]
+#SELECT i, (SELECT i FROM integers i2 WHERE i=(SELECT SUM(i) FROM integers i2 WHERE i2.i>i1.i)) FROM integers i1 ORDER BY 1;
+% .i1,	.%3 # table_name
+% i,	%3 # name
+% int,	int # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ 1,	NULL	]
+[ 2,	3	]
+[ 3,	NULL	]
 #SELECT i, CAST((SELECT SUM(i) IS NULL FROM integers i2 WHERE i2.i>i1.i) AS BIGINT) FROM integers i1 ORDER BY i;
-% sys.i1,	.L4 # table_name
-% i,	L4 # name
+% .i1,	.%3 # table_name
+% i,	%3 # name
 % int,	bigint # type
 % 1,	1 # length
 [ NULL,	1	]
@@ -416,8 +452,8 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	0	]
 [ 3,	1	]
 #SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i) FROM integers i1 ORDER BY i;
-% sys.i1,	.L2 # table_name
-% i,	L2 # name
+% .i1,	.%1 # table_name
+% i,	%1 # name
 % int,	bigint # type
 % 1,	1 # length
 [ NULL,	0	]
@@ -425,8 +461,8 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	1	]
 [ 3,	0	]
 #SELECT i, (SELECT COUNT(i) FROM integers i2 WHERE i2.i>i1.i OR i2.i IS NULL) FROM integers i1 ORDER BY i;
-% sys.i1,	.L2 # table_name
-% i,	L2 # name
+% .i1,	.%1 # table_name
+% i,	%1 # name
 % int,	bigint # type
 % 1,	1 # length
 [ NULL,	0	]
@@ -434,8 +470,8 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	1	]
 [ 3,	0	]
 #SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i OR i2.i IS NULL) FROM integers i1 ORDER BY i;
-% sys.i1,	.L2 # table_name
-% i,	L2 # name
+% .i1,	.%1 # table_name
+% i,	%1 # name
 % int,	bigint # type
 % 1,	1 # length
 [ NULL,	1	]
@@ -443,17 +479,42 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	2	]
 [ 3,	1	]
 #SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i OR (i1.i IS NULL AND i2.i IS NULL)) FROM integers i1 ORDER BY i;
-% sys.i1,	.L2 # table_name
-% i,	L2 # name
+% .i1,	.%1 # table_name
+% i,	%1 # name
 % int,	bigint # type
 % 1,	1 # length
 [ NULL,	1	]
 [ 1,	2	]
 [ 2,	1	]
 [ 3,	0	]
+#SELECT i FROM integers i1 WHERE (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i)=0 ORDER BY i;
+% .i1 # table_name
+% i # name
+% int # type
+% 1 # length
+[ NULL	]
+[ 3	]
+#SELECT i, (SELECT i FROM integers i2 WHERE i-2=(SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i)) FROM integers i1 ORDER BY 1;
+% .i1,	.%3 # table_name
+% i,	%3 # name
+% int,	int # type
+% 1,	1 # length
+[ NULL,	2	]
+[ 1,	NULL	]
+[ 2,	3	]
+[ 3,	2	]
+#SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i GROUP BY i1.i) FROM integers i1 ORDER BY i;
+% .i1,	.%2 # table_name
+% i,	%2 # name
+% int,	bigint # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ 1,	2	]
+[ 2,	1	]
+[ 3,	NULL	]
 #SELECT i, (SELECT CASE WHEN (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i)=0 THEN 1 ELSE 0 END) FROM integers i1 ORDER BY i;
-% sys.i1,	.L3 # table_name
-% i,	L3 # name
+% .i1,	.%2 # table_name
+% i,	%2 # name
 % int,	tinyint # type
 % 1,	1 # length
 [ NULL,	1	]
@@ -461,8 +522,8 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	0	]
 [ 3,	1	]
 #SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i) FROM integers i1 ORDER BY i;
-% sys.i1,	.L2 # table_name
-% i,	L2 # name
+% .i1,	.%1 # table_name
+% i,	%1 # name
 % int,	bigint # type
 % 1,	1 # length
 [ NULL,	0	]
@@ -470,16 +531,16 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	1	]
 [ 3,	0	]
 #SELECT a, CAST(SUM(a) AS BIGINT), CAST((SELECT SUM(a)+SUM(t1.b) FROM test) AS BIGINT) FROM test t1 GROUP BY a ORDER BY a;
-% .t1,	.L2,	.L11 # table_name
-% a,	L2,	L11 # name
+% .t1,	.%2,	.%6 # table_name
+% a,	%2,	%6 # name
 % int,	bigint,	bigint # type
 % 2,	2,	2 # length
 [ 11,	11,	37	]
 [ 12,	12,	38	]
 [ 13,	13,	39	]
-#SELECT CAST((SELECT test.a+test.b+SUM(test2.a) FROM test2 WHERE str=str2) AS BIGINT) FROM test ORDER BY 1;
-% sys.L4 # table_name
-% L4 # name
+#SELECT CAST((SELECT test.a+test.b+SUM(test2.a) FROM test2 WHERE "str"=str2) AS BIGINT) FROM test ORDER BY 1;
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -492,32 +553,32 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 % 2,	1,	1 # length
 [ 12,	2,	"b"	]
 [ 13,	3,	"c"	]
-#SELECT a, a>=ANY(SELECT test2.a+c-b FROM test2 WHERE c>=b AND str=str2) FROM test ORDER BY 1;
-% sys.test,	sys.L4 # table_name
-% a,	L4 # name
+#SELECT a, a>=ANY(SELECT test2.a+c-b FROM test2 WHERE c>=b AND "str"=str2) FROM test ORDER BY 1;
+% .test,	.%3 # table_name
+% a,	%3 # name
 % int,	boolean # type
 % 2,	5 # length
 [ 11,	true	]
 [ 12,	false	]
 [ 13,	false	]
-#SELECT str, str=ANY(SELECT str2 FROM test2) FROM test;
-% .test,	.L10 # table_name
-% str,	L10 # name
+#SELECT "str", "str"=ANY(SELECT str2 FROM test2) FROM test;
+% .test,	.%11 # table_name
+% str,	%11 # name
 % varchar,	boolean # type
 % 1,	5 # length
 [ "a",	true	]
 [ "b",	true	]
 [ "c",	false	]
-#SELECT str, str=ANY(SELECT str2 FROM test2 WHERE test.a<>test2.a) FROM test;
-% .test,	.L6 # table_name
-% str,	L6 # name
+#SELECT "str", "str"=ANY(SELECT str2 FROM test2 WHERE test.a<>test2.a) FROM test;
+% .test,	.%13 # table_name
+% str,	%13 # name
 % varchar,	boolean # type
 % 1,	5 # length
 [ "a",	false	]
 [ "b",	true	]
 [ "c",	false	]
 #SELECT i, (SELECT s1.i FROM (SELECT * FROM integers WHERE i=i1.i) s1) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L3 # table_name
+% .i1,	.%3 # table_name
 % i,	j # name
 % int,	int # type
 % 1,	1 # length
@@ -525,6 +586,39 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 1,	1	]
 [ 2,	2	]
 [ 3,	3	]
+#SELECT i, (SELECT s1.i FROM (SELECT i FROM integers WHERE i=i1.i) s1 INNER JOIN (SELECT i FROM integers WHERE i=4-i1.i) s2 ON s1.i>s2.i) AS j FROM integers i1 ORDER BY i;
+% .i1,	.%4 # table_name
+% i,	j # name
+% int,	int # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ 1,	NULL	]
+[ 2,	NULL	]
+[ 3,	3	]
+#SELECT i, (SELECT s1.i FROM integers s1, integers s2 WHERE s1.i=s2.i AND s1.i=4-i1.i) AS j FROM integers i1 ORDER BY i;
+% .i1,	.%2 # table_name
+% i,	j # name
+% int,	int # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ 1,	3	]
+[ 2,	2	]
+[ 3,	1	]
+#SELECT i, (SELECT s1.i FROM integers s1 INNER JOIN integers s2 ON s1.i=s2.i AND s1.i=4-i1.i) AS j FROM integers i1 ORDER BY i;
+% .i1,	.%4 # table_name
+% i,	j # name
+% int,	int # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ 1,	3	]
+[ 2,	2	]
+[ 3,	1	]
+#SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT 2*SUM(i)*s1.i FROM integers)=(SELECT SUM(i)*s2.i FROM integers) ORDER BY s1.i;
+% sys.s1,	sys.s2 # table_name
+% i,	i # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	2	]
 #SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT s1.i=s2.i) ORDER BY s1.i;
 % sys.s1,	sys.s2 # table_name
 % i,	i # name
@@ -533,8 +627,25 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 1,	1	]
 [ 2,	2	]
 [ 3,	3	]
+#SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT s1.i=i FROM integers WHERE s2.i=i) ORDER BY s1.i;
+% sys.s1,	sys.s2 # table_name
+% i,	i # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+[ 2,	2	]
+[ 3,	3	]
+#SELECT * FROM integers s1 LEFT OUTER JOIN integers s2 ON (SELECT 2*SUM(i)*s1.i FROM integers)=(SELECT SUM(i)*s2.i FROM integers) ORDER BY s1.i;
+% .s1,	.s2 # table_name
+% i,	i # name
+% int,	int # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ 1,	2	]
+[ 2,	NULL	]
+[ 3,	NULL	]
 #SELECT i, CAST((SELECT SUM(s1.i) FROM integers s1 LEFT OUTER JOIN integers s2 ON s1.i=s2.i OR s1.i=i1.i-1) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L6 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	2 # length
@@ -543,7 +654,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	9	]
 [ 3,	12	]
 #SELECT i, CAST((SELECT SUM(s1.i) FROM integers s1 FULL OUTER JOIN integers s2 ON s1.i=s2.i OR s1.i=i1.i-1) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L6 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	2 # length
@@ -551,8 +662,52 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 1,	6	]
 [ 2,	9	]
 [ 3,	12	]
+#SELECT i, (SELECT row_number() OVER (ORDER BY i)) FROM integers i1 ORDER BY i; --Should we support correlated expressions inside PARTITION BY and ORDER BY on Window functions?
+% .i1,	.%1 # table_name
+% i,	%1 # name
+% int,	int # type
+% 1,	1 # length
+[ NULL,	1	]
+[ 1,	1	]
+[ 2,	1	]
+[ 3,	1	]
+#SELECT i, (SELECT i FROM integers WHERE i=i1.i UNION SELECT i FROM integers WHERE i=i1.i) AS j FROM integers i1 ORDER BY i;
+% .i1,	.%5 # table_name
+% i,	j # name
+% int,	int # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ 1,	1	]
+[ 2,	2	]
+[ 3,	3	]
+#SELECT i, (SELECT i FROM integers WHERE i IS NOT NULL EXCEPT SELECT i FROM integers WHERE i<>i1.i) AS j FROM integers i1 WHERE i IS NOT NULL ORDER BY i;
+% .i1,	.%5 # table_name
+% i,	j # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+[ 2,	2	]
+[ 3,	3	]
+#SELECT i, (SELECT i FROM integers WHERE i=i1.i INTERSECT SELECT i FROM integers WHERE i=i1.i) AS j FROM integers i1 ORDER BY i;
+% .i1,	.%5 # table_name
+% i,	j # name
+% int,	int # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ 1,	1	]
+[ 2,	2	]
+[ 3,	3	]
+#SELECT i, (SELECT i FROM integers WHERE i=i1.i UNION SELECT i FROM integers WHERE i<>i1.i EXCEPT SELECT i FROM integers WHERE i<>i1.i) AS j FROM integers i1 ORDER BY i;
+% .i1,	.%13 # table_name
+% i,	j # name
+% int,	int # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ 1,	1	]
+[ 2,	2	]
+[ 3,	3	]
 #SELECT i, CAST((SELECT (SELECT SUM(i) FROM integers)+42+i1.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L4 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	2 # length
@@ -561,16 +716,67 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	50	]
 [ 3,	51	]
 #SELECT i, (SELECT row_number() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1 ORDER BY i;
-% sys.i1,	.L4 # table_name
-% i,	L4 # name
+% .i1,	.%3 # table_name
+% i,	%3 # name
 % int,	int # type
 % 1,	1 # length
-[ NULL,	1	]
+[ NULL,	NULL	]
 [ 1,	1	]
 [ 2,	1	]
 [ 3,	1	]
+#SELECT i1.i, (SELECT rank() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1, integers i2 ORDER BY i1.i;
+% .i1,	.%3 # table_name
+% i,	%3 # name
+% int,	int # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ NULL,	NULL	]
+[ NULL,	NULL	]
+[ NULL,	NULL	]
+[ 1,	1	]
+[ 1,	1	]
+[ 1,	1	]
+[ 1,	1	]
+[ 2,	1	]
+[ 2,	1	]
+[ 2,	1	]
+[ 2,	1	]
+[ 3,	1	]
+[ 3,	1	]
+[ 3,	1	]
+[ 3,	1	]
+#SELECT i1.i, (SELECT row_number() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1, integers i2 ORDER BY i1.i;
+% .i1,	.%3 # table_name
+% i,	%3 # name
+% int,	int # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ NULL,	NULL	]
+[ NULL,	NULL	]
+[ NULL,	NULL	]
+[ 1,	1	]
+[ 1,	1	]
+[ 1,	1	]
+[ 1,	1	]
+[ 2,	1	]
+[ 2,	1	]
+[ 2,	1	]
+[ 2,	1	]
+[ 3,	1	]
+[ 3,	1	]
+[ 3,	1	]
+[ 3,	1	]
+#SELECT i, CAST((SELECT SUM(i) OVER (ORDER BY i) FROM integers WHERE i1.i=i) AS BIGINT) FROM integers i1 ORDER BY i;
+% .i1,	.%3 # table_name
+% i,	%3 # name
+% int,	bigint # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ 1,	1	]
+[ 2,	2	]
+[ 3,	3	]
 #SELECT i, CAST((SELECT (SELECT 42+i1.i)+42+i1.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L2 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	2 # length
@@ -579,7 +785,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	88	]
 [ 3,	90	]
 #SELECT i, CAST((SELECT (SELECT (SELECT (SELECT 42+i1.i)++i1.i)+42+i1.i)+42+i1.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L2 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	3 # length
@@ -588,7 +794,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	134	]
 [ 3,	138	]
 #SELECT i, CAST((SELECT (SELECT i1.i+SUM(i2.i)) FROM integers i2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% .i1,	.L7 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -597,7 +803,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	8	]
 [ 3,	9	]
 #SELECT i, CAST((SELECT (SELECT (SELECT (SELECT i1.i+i1.i+i1.i+i1.i+i1.i)))) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	sys.L2 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	2 # length
@@ -606,7 +812,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	10	]
 [ 3,	15	]
 #SELECT i, CAST((SELECT SUM(i)+(SELECT 42+i1.i) FROM integers) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% .i1,	.L7 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	2 # length
@@ -614,8 +820,17 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 1,	49	]
 [ 2,	50	]
 [ 3,	51	]
+#SELECT i, CAST((SELECT ((SELECT ((SELECT ((SELECT SUM(i)+SUM(i4.i)+SUM(i3.i)+SUM(i2.i)+SUM(i1.i) FROM integers i5)) FROM integers i4)) FROM integers i3)) FROM integers i2) AS BIGINT) AS j FROM integers i1 GROUP BY i ORDER BY i;
+% .i1,	. # table_name
+% i,	j # name
+% int,	bigint # type
+% 1,	2 # length
+[ NULL,	NULL	]
+[ 1,	25	]
+[ 2,	26	]
+[ 3,	27	]
 #SELECT i, CAST((SELECT (SELECT (SELECT (SELECT i1.i+i1.i+i1.i+i1.i+i1.i+i2.i) FROM integers i2 WHERE i2.i=i1.i))) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L4 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	2 # length
@@ -623,8 +838,26 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 1,	6	]
 [ 2,	12	]
 [ 3,	18	]
+#SELECT i, CAST((SELECT SUM(s1.i) FROM integers s1 INNER JOIN integers s2 ON (SELECT i1.i+s1.i)=(SELECT i1.i+s2.i)) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+% .i1,	. # table_name
+% i,	j # name
+% int,	bigint # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ 1,	6	]
+[ 2,	6	]
+[ 3,	6	]
+#SELECT i, CAST(SUM(i) AS BIGINT), CAST((SELECT (SELECT SUM(i)+SUM(i1.i)+SUM(i2.i) FROM integers) FROM integers i2) AS BIGINT) FROM integers i1 GROUP BY i ORDER BY i;
+% .i1,	.%2,	.%10 # table_name
+% i,	%2,	%10 # name
+% int,	bigint,	bigint # type
+% 1,	1,	2 # length
+[ NULL,	NULL,	NULL	]
+[ 1,	1,	13	]
+[ 2,	2,	14	]
+[ 3,	3,	15	]
 #SELECT i, CAST((SELECT SUM(ss1.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L7 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -633,7 +866,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	5	]
 [ 3,	5	]
 #SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L4 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -641,9 +874,17 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 1,	1	]
 [ 2,	2	]
 [ 3,	3	]
-#SELECT i, CAST((SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN (SELECT i FROM integers s1 WHERE i=ANY(SELECT i FROM
-#integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L13 # table_name
+#SELECT i, CAST((SELECT SUM(s1.i) FROM integers s1 LEFT OUTER JOIN integers s2 ON (SELECT i1.i+s1.i)=(SELECT i1.i+s2.i)) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+% .i1,	. # table_name
+% i,	j # name
+% int,	bigint # type
+% 1,	1 # length
+[ NULL,	6	]
+[ 1,	6	]
+[ 2,	6	]
+[ 3,	6	]
+#SELECT i, CAST((SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN (SELECT i FROM integers s1 WHERE i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	2 # length
@@ -652,7 +893,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	10	]
 [ 3,	10	]
 #SELECT i, CAST((SELECT SUM(s1.i) FROM (SELECT i FROM integers WHERE i=i1.i) s1 LEFT OUTER JOIN integers s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L6 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -661,7 +902,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	2	]
 [ 3,	3	]
 #SELECT i, CAST((SELECT SUM(s1.i) FROM (SELECT i FROM integers WHERE i<>i1.i) s1 LEFT OUTER JOIN integers s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L6 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -670,7 +911,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	4	]
 [ 3,	3	]
 #SELECT i, CAST((SELECT SUM(s2.i) FROM integers s1 LEFT OUTER JOIN (SELECT i FROM integers WHERE i=i1.i) s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L6 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -679,7 +920,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	2	]
 [ 3,	3	]
 #SELECT i, CAST((SELECT SUM(s2.i) FROM integers s1 LEFT OUTER JOIN (SELECT i FROM integers WHERE i<>i1.i) s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L6 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -688,7 +929,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	4	]
 [ 3,	3	]
 #SELECT i, CAST((SELECT SUM(s2.i) FROM integers s1 LEFT OUTER JOIN (SELECT i FROM integers WHERE i=i1.i) s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L6 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -697,16 +938,25 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	2	]
 [ 3,	3	]
 #SELECT i, CAST((SELECT SUM(s2.i) FROM integers s1 LEFT OUTER JOIN (SELECT i FROM integers WHERE i<>i1.i) s2 ON s1.i=s2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L6 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
 [ NULL,	NULL	]
 [ 1,	5	]
 [ 2,	4	]
+[ 3,	3	]
+#SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE CASE WHEN (i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) THEN true ELSE false END) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+% .i1,	. # table_name
+% i,	j # name
+% int,	bigint # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ 1,	1	]
+[ 2,	2	]
 [ 3,	3	]
 #SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L4 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -715,7 +965,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	2	]
 [ 3,	3	]
 #SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L4 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -724,7 +974,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	2	]
 [ 3,	3	]
 #SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L4 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -732,8 +982,17 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 1,	6	]
 [ 2,	6	]
 [ 3,	6	]
+#SELECT i, (SELECT i=ANY(SELECT i FROM integers WHERE i=s1.i) FROM integers s1 WHERE i=i1.i) AS j FROM integers i1 ORDER BY i;
+% .i1,	.%3 # table_name
+% i,	j # name
+% int,	boolean # type
+% 1,	5 # length
+[ NULL,	NULL	]
+[ 1,	true	]
+[ 2,	true	]
+[ 3,	true	]
 #SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i OR i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L11 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -741,8 +1000,17 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 1,	6	]
 [ 2,	6	]
 [ 3,	6	]
+#SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE CASE WHEN (i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) THEN true ELSE false END) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+% .i1,	. # table_name
+% i,	j # name
+% int,	bigint # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ 1,	1	]
+[ 2,	2	]
+[ 3,	3	]
 #SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND EXISTS(SELECT i FROM integers WHERE i=s1.i)) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L4 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -751,7 +1019,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	2	]
 [ 3,	3	]
 #SELECT i, CAST((SELECT SUM(ss1.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L7 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -761,7 +1029,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 3,	5	]
 #SELECT i, CAST((SELECT SUM(ss1.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN (SELECT i FROM integers s1 
 #	WHERE i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L14 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -771,7 +1039,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 3,	5	]
 #SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN 
 #	(SELECT i FROM integers s1 WHERE i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L14 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -781,7 +1049,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 3,	3	]
 #SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN
 #	(SELECT i FROM integers s1 WHERE i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L14 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -791,7 +1059,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 3,	3	]
 #SELECT i, CAST((SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN
 #	(SELECT i FROM integers s1 WHERE i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
-% sys.i1,	.L16 # table_name
+% .i1,	. # table_name
 % i,	j # name
 % int,	bigint # type
 % 1,	1 # length
@@ -799,38 +1067,66 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 1,	NULL	]
 [ 2,	7	]
 [ 3,	8	]
+#SELECT i, CAST((SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN
+#	(SELECT i FROM integers s1 WHERE i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+% .i1,	. # table_name
+% i,	j # name
+% int,	bigint # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ 1,	NULL	]
+[ 2,	4	]
+[ 3,	6	]
+#SELECT i, CAST((SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN
+#	(SELECT i FROM integers s1 WHERE i<>i1.i OR i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+% .i1,	. # table_name
+% i,	j # name
+% int,	bigint # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ 1,	NULL	]
+[ 2,	4	]
+[ 3,	6	]
 #SELECT NULL IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v;
-% .L7 # table_name
-% L7 # name
+% .%4 # table_name
+% %4 # name
 % boolean # type
 % 5 # length
 [ false	]
 [ NULL	]
 [ NULL	]
 #SELECT 'hello' IN (SELECT * FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v;
-% .L7 # table_name
-% L7 # name
+% .%4 # table_name
+% %4 # name
 % boolean # type
 % 5 # length
 [ false	]
 [ true	]
 [ false	]
 #SELECT 'hello' IN (SELECT * FROM strings WHERE v=s1.v or v IS NULL) FROM strings s1 ORDER BY v;
-% .L7 # table_name
-% L7 # name
+% .%4 # table_name
+% %4 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 [ true	]
 [ NULL	]
 #SELECT 'bla' IN (SELECT * FROM strings WHERE v=s1.v or v IS NULL) FROM strings s1 ORDER BY v;
-% .L7 # table_name
-% L7 # name
+% .%4 # table_name
+% %4 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
+#SELECT * FROM strings WHERE EXISTS(SELECT NULL, v) ORDER BY v;
+% sys.strings # table_name
+% v # name
+% varchar # type
+% 5 # length
+[ NULL	]
+[ "hello"	]
+[ "world"	]
 #SELECT * FROM strings s1 WHERE EXISTS(SELECT v FROM strings WHERE v=s1.v OR v IS NULL) ORDER BY v;
 % sys.s1 # table_name
 % v # name
@@ -847,16 +1143,16 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ "hello"	]
 [ "world"	]
 #SELECT (SELECT v FROM strings WHERE v=s1.v) FROM strings s1 ORDER BY v;
-% .L1 # table_name
-% L1 # name
+% .%2 # table_name
+% %2 # name
 % varchar # type
 % 5 # length
 [ NULL	]
 [ "hello"	]
 [ "world"	]
 #SELECT (SELECT v FROM strings WHERE v=s1.v OR (v='hello' AND s1.v IS NULL)) FROM strings s1 ORDER BY v;
-% .L1 # table_name
-% L1 # name
+% .%2 # table_name
+% %2 # name
 % varchar # type
 % 5 # length
 [ "hello"	]
@@ -865,6 +1161,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 #DROP TABLE integers;
 #DROP TABLE test;
 #DROP TABLE test2;
+#DROP TABLE strings;
 
 # 20:30:33 >  
 # 20:30:33 >  "Done."

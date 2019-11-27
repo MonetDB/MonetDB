@@ -46,8 +46,8 @@ stdout of test 'proc_insert_into.SF-1958572` in directory 'sql/test/BugTracker` 
 [ 5,	1,	1,	1,	1,	1,	"first row",	"first row",	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 6,	1,	1,	1,	1,	1,	"first row",	"first row",	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select count(*) from proc_insert_into_t1;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 6	]

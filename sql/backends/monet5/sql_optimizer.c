@@ -258,7 +258,7 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 			if (msg != MAL_SUCCEED)
 				freeException(msg); /* ignore error */
 		}
-		return NULL;
+		return createException(MAL, "optimizer.optimizeQuery", "%s", mb->errors);
 	}
 
 	pipe = getSQLoptimizer(be->mvc);
@@ -284,4 +284,3 @@ SQLaddQueryToCache(Client c)
 {
 	insertSymbol(c->usermodule, c->curprg);
 }
-

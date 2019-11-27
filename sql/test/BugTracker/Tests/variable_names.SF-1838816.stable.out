@@ -29,8 +29,8 @@ stdout of test 'variable_names.SF-1838816` in directory 'sql/test/BugTracker` it
 
 #create function foo(_2foo int) returns int begin return _2foo; end;
 #select foo(2);
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 2	]

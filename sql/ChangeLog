@@ -1,6 +1,14 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Nov 27 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Implemented ROLLUP, CUBE and GROUPING SETS from SQL:1999. They define
+  grouping subsets used at GROUP BY clause in order to compute partial
+  groupings. At the same time, the GROUPING aggregate was added. This
+  aggregate is a bitmask identifying the grouping columns not present
+  in the generated grouping row when used with the operators described
+  above.
+
 * Tue Nov 19 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Updated user session procedures by adding te possibility to set properties
   based on a session identifier. The optimizer pipeline, number of worker

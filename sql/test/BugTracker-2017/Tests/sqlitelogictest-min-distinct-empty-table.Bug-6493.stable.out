@@ -25,8 +25,8 @@ stdout of test 'sqlitelogictest-min-distinct-empty-table.Bug-6493` in directory 
 
 #CREATE TABLE tab0(pk INTEGER PRIMARY KEY, col0 INTEGER, col1 FLOAT, col2 TEXT, col3 INTEGER, col4 FLOAT, col5 TEXT);
 #SELECT - MIN ( DISTINCT + 79 ) FROM tab0 AS cor0 WHERE NOT + col4 IS NOT NULL;
-% .L4 # table_name
-% L4 # name
+% .%3 # table_name
+% %3 # name
 % tinyint # type
 % 1 # length
 [ NULL	]

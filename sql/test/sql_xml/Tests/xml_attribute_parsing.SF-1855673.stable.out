@@ -23,8 +23,8 @@ stdout of test 'xml_attribute_parsing.SF-1855673` in directory 'sql/test/sql_xml
 # 17:54:53 >  
 
 #SELECT xmlelement(name element,xmlattributes ('unnamed and wrong'));
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % xml # type
 % 44 # length
 [ <element single_value="unnamed and wrong"/>	]

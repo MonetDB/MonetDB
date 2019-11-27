@@ -79,8 +79,8 @@ stdout of test 'in-subquery-having-Bug-6651` in directory 'sql/test/BugTracker-2
 #  FROM T1
 # GROUP BY C1, C2
 #HAVING COUNT(*) > 1;
-% sys.t1,	sys.t1,	sys.L4 # table_name
-% c1,	c2,	L4 # name
+% sys.t1,	sys.t1,	sys.%1 # table_name
+% c1,	c2,	%1 # name
 % int,	int,	bigint # type
 % 1,	1,	1 # length
 [ 1,	2,	2	]
@@ -118,7 +118,7 @@ stdout of test 'in-subquery-having-Bug-6651` in directory 'sql/test/BugTracker-2
 #  FROM T1
 # WHERE (C2, C1) IN
 #       (
-#	 SELECT C2, C2
+#	 SELECT C2, C1
 #	   FROM T1
 #	  GROUP BY C1, C2
 #	 HAVING COUNT(*) > 1

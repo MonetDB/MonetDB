@@ -37,19 +37,15 @@ stdout of test 'crash_in_reduce_groupby.Bug-3818` in directory 'sql/test/BugTrac
 #  SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, cast( SUM(tib0) as bigint)
 #  FROM t2a
 #  GROUP BY cods, elrik, ether, jaelen, sora;
-% .,    .,      .,      .,      .,      . # table_name
-# .L32, .L32,   .L32,   .L32,   .L32,   .L32 # table_name
-% cods, elrik,  ether,  jaelen, sora,   L # name
-# cods, elrik,  ether,  jaelen, sora,   L10 # name
+% .%11,	.%11,	.%11,	.%11,	.%11,	.%11 # table_name
+% cods,	elrik,	ether,	jaelen,	sora,	%2 # name
 % int,  int,    int,    int,    int,    bigint # type
 % 1,    1,      1,      1,      1,      1 # length
 #SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, cast( SUM(tib0) as bigint)
 # FROM t2a
 #GROUP BY cods, elrik, ether, jaelen, sora;
-% .,    .,      .,      .,      .,      sys. # table_name
-# .L2,  .L4,    .L6,    .L10,   .L12,   sys.L15 # table_name
-% cods, elrik,  ether,  jaelen, sora,   L # name
-# cods, elrik,  ether,  jaelen, sora,   L15 # name
+% .%3,	.%4,	.%5,	.%6,	.%7,	sys.%2 # table_name
+% cods,	elrik,	ether,	jaelen,	sora,	%2 # name
 % tinyint,      tinyint,        tinyint,        tinyint,        tinyint,        bigint # type
 % 1,    1,      1,      1,      1,      1 # length
 #drop table t2a;
