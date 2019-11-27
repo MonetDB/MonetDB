@@ -1959,9 +1959,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 					r = rel_parse(sql, s, relt, m_deps);
 					if (r)
-						r = rel_unnest(sql, r);
-					if (r)
-						r = rel_optimizer(sql, r, 0);
+						r = sql_processrelation(sql, r, 0);
 					if (r) {
 						list *id_l = rel_dependencies(sql, r);
 
@@ -1995,9 +1993,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 					r = rel_parse(sql, s, relt, m_deps);
 					if (r)
-						r = rel_unnest(sql, r);
-					if (r)
-						r = rel_optimizer(sql, r, 0);
+						r = sql_processrelation(sql, r, 0);
 					if (r) {
 						list *id_l = rel_dependencies(sql, r);
 
@@ -2025,9 +2021,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 						r = rel_parse(sql, s, relt, m_deps);
 						if (r)
-							r = rel_unnest(sql, r);
-						if (r)
-							r = rel_optimizer(sql, r, 0);
+							r = sql_processrelation(sql, r, 0);
 						if (r) {
 							list *id_l = rel_dependencies(sql, r);
 
@@ -2468,6 +2462,9 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'queue';\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.keywords values ('CUBE'), ('GROUPING'), ('ROLLUP'), ('SETS');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);

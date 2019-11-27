@@ -3186,11 +3186,12 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	sql_rel *groupby = *rel, *sel = NULL, *gr, *og = NULL, *res = groupby;
 	sql_rel *subquery = NULL;
 	list *exps = NULL;
+	bool is_grouping = !strcmp(aname, "grouping");
 
 	if (!groupby && !query_has_outer(query)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
 		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by",
-				       uaname ? toUpperCopy(uaname, aname) : aname);
+						 uaname ? toUpperCopy(uaname, aname) : aname);
 		if (uaname)
 			GDKfree(uaname);
 		return e;
@@ -3368,7 +3369,35 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	if (gr && gr->op == op_project && gr->l)
 		gr = gr->l;
 
-	a = sql_bind_aggr_(sql->sa, s, aname, exp_types(sql->sa, exps));
+	if (is_grouping) {
+		sql_subtype *tpe;
+		list *l = (list*) groupby->r;
+
+		if (list_length(l) <= 7)
+			tpe = sql_bind_localtype("bte");
+		else if (list_length(l) <= 15)
+			tpe = sql_bind_localtype("sht");
+		else if (list_length(l) <= 31)
+			tpe = sql_bind_localtype("int");
+		else if (list_length(l) <= 63)
+			tpe = sql_bind_localtype("lng");
+#ifdef HAVE_HGE
+		else if (list_length(l) <= 127)
+			tpe = sql_bind_localtype("hge");
+#endif
+		else
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: GROUPING the number of grouping columns is larger"
+								" than the maximum number of representable bits from this server (%d > %d)", list_length(l),
+#ifdef HAVE_HGE
+							 127
+#else
+							 63
+#endif
+							);
+		a = sql_bind_aggr_(sql->sa, s, aname, list_append(sa_list(sql->sa), tpe), false);
+	} else
+		a = sql_bind_aggr_(sql->sa, s, aname, exp_types(sql->sa, exps), true);
+
 	if (!a && list_length(exps) > 1) { 
 		sql_subtype *t1 = exp_subtype(exps->h->data);
 		a = sql_bind_member_aggr(sql->sa, s, aname, exp_subtype(exps->h->data), list_length(exps));
@@ -3384,7 +3413,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					append(sargs, tstr);
 				if (list_length(exps) == 2)
 					append(sargs, tstr);
-				a = sql_bind_aggr_(sql->sa, s, aname, sargs);
+				a = sql_bind_aggr_(sql->sa, s, aname, sargs, true);
 			}
 			if (a) {
 				node *n, *op = a->aggr->ops->h;
@@ -3414,7 +3443,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				list_append(tps, t1);
 				t2 = exp_subtype(r);
 				list_append(tps, t2);
-				a = sql_bind_aggr_(sql->sa, s, aname, tps);
+				a = sql_bind_aggr_(sql->sa, s, aname, tps, true);
 			}
 			if (!a) {
 				sql->session->status = 0;
@@ -3445,7 +3474,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				break;
 			list_append(nexps, e);
 		}
-		a = sql_bind_aggr_(sql->sa, s, aname, exp_types(sql->sa, nexps));
+		a = sql_bind_aggr_(sql->sa, s, aname, exp_types(sql->sa, nexps), true);
 		if (a && list_length(nexps))  /* count(col) has |exps| != |nexps| */
 			exps = nexps;
 		if (!a) {
@@ -3815,11 +3844,184 @@ rel_selection_ref(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection
 	return NULL;
 }
 
-static list *
-rel_group_by(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection, int f )
+static sql_exp*
+rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection, int f)
 {
 	mvc *sql = query->sql;
-	dnode *o = groupby->data.lval->h;
+	int is_last = 1;
+	exp_kind ek = {type_value, card_value, TRUE};
+	sql_exp *e = rel_value_exp2(query, rel, grp, f, ek, &is_last);
+
+	if (!e) {
+		char buf[ERRSIZE];
+		/* reset error */
+		sql->session->status = 0;
+		strcpy(buf, sql->errstr);
+		sql->errstr[0] = '\0';
+
+		e = rel_selection_ref(query, rel, grp, selection);
+		if (!e) {
+			if (sql->errstr[0] == 0)
+				strcpy(sql->errstr, buf);
+			return NULL;
+		}
+	}
+	return e;
+}
+
+static list*
+list_power_set(sql_allocator *sa, list* input) /* cube */
+{
+	list *res = sa_list(sa);
+	/* N stores total number of subsets */
+	int N = (int) pow(2, input->cnt);
+
+	/* generate each subset one by one */
+	for (int i = 0; i < N; i++) {
+		list *ll = sa_list(sa);
+		int j = 0; /* check every bit of i */
+		for (node *n = input->h ; n ; n = n->next) {
+			/* if j'th bit of i is set, then append */
+			if (i & (1 << j))
+				list_prepend(ll, n->data);
+			j++;
+		}
+		list_prepend(res, ll);
+	}
+	return res;
+}
+
+static list*
+list_rollup(sql_allocator *sa, list* input)
+{
+	list *res = sa_list(sa);
+
+	for (int counter = input->cnt; counter > 0; counter--) {
+		list *ll = sa_list(sa);
+		int j = 0;
+		for (node *n = input->h; n && j < counter; j++, n = n->next)
+			list_append(ll, n->data);
+		list_append(res, ll);
+	}
+	list_append(res, sa_list(sa)); /* global aggregate case */
+	return res;
+}
+
+static int
+list_equal(list* list1, list* list2)
+{
+	for (node *n = list1->h; n ; n = n->next) {
+		sql_exp *e = (sql_exp*) n->data;
+		if (!exps_find_exp(list2, e))
+			return 1;
+	}
+	for (node *n = list2->h; n ; n = n->next) {
+		sql_exp *e = (sql_exp*) n->data;
+		if (!exps_find_exp(list1, e))
+			return 1;
+	}
+	return 0;
+}
+
+static list*
+lists_cartesian_product_and_distinct(sql_allocator *sa, list *l1, list *l2)
+{
+	list *res = sa_list(sa);
+
+	/* for each list of l2, merge into each list of l1 while removing duplicates */
+	for (node *n = l1->h ; n ; n = n->next) {
+		list *sub_list = (list*) n->data;
+
+		for (node *m = l2->h ; m ; m = m->next) {
+			list *other = (list*) m->data;
+			list_append(res, list_distinct(list_merge(list_dup(sub_list, (fdup) NULL), other, (fdup) NULL), (fcmp) list_equal, (fdup) NULL));
+		}
+	}
+	return res;
+}
+
+static list*
+rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection, int f, bool grouping_sets, list **sets)
+{
+	mvc *sql = query->sql;
+	list *exps = new_exp_list(sql->sa);
+
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "SELECT: too many nested grouping clauses");
+
+	for (dnode *o = groupby->data.lval->h; o; o = o->next) {
+		symbol *grouping = o->data.sym;
+		list *next_set = NULL;
+
+		if (grouping->token == SQL_GROUPING_SETS) { /* call recursively, and merge the genererated sets */
+			list *other = rel_groupings(query, rel, grouping, selection, f, true, &next_set);
+			if (!other)
+				return NULL;
+			exps = list_distinct(list_merge(exps, other, (fdup) NULL), (fcmp) exp_equal, (fdup) NULL);
+		} else {
+			dlist *dl = grouping->data.lval;
+			if (dl) {
+				list *set_cols = new_exp_list(sql->sa); /* columns and combination of columns to be used for the next set */
+
+				for (dnode *oo = dl->h; oo; oo = oo->next) {
+					symbol *grp = oo->data.sym;
+					list *next_tuple = new_exp_list(sql->sa); /* next tuple of columns */
+
+					if (grp->token == SQL_COLUMN_GROUP) { /* set of columns */
+						assert(is_sql_group_totals(f));
+						for (dnode *ooo = grp->data.lval->h; ooo; ooo = ooo->next) {
+							symbol *elm = ooo->data.sym;
+							sql_exp *e = rel_group_column(query, rel, elm, selection, f);
+							if (!e)
+								return NULL;
+							assert(e->type == e_column);
+							list_append(next_tuple, e);
+							list_append(exps, e);
+						}
+					} else { /* single column or expression */
+						sql_exp *e = rel_group_column(query, rel, grp, selection, f);
+						if (!e)
+							return NULL;
+						if (e->type != e_column) { /* store group by expressions in the stack */
+							if (is_sql_group_totals(f)) {
+								(void) sql_error(sql, 02, SQLSTATE(42000) "GROUP BY: grouping expressions not possible with ROLLUP, CUBE and GROUPING SETS");
+								return NULL;
+							}
+							if (!stack_push_groupby_expression(sql, grp, e))
+								return NULL;
+						}
+						list_append(next_tuple, e);
+						list_append(exps, e);
+					}
+					list_append(set_cols, next_tuple);
+				}
+				if (is_sql_group_totals(f)) {
+					if (grouping->token == SQL_ROLLUP)
+						next_set = list_rollup(sql->sa, set_cols);
+					else if (grouping->token == SQL_CUBE)
+						next_set = list_power_set(sql->sa, set_cols);
+					else /* the list of sets is not used in the "GROUP BY a, b, ..." case */
+						next_set = list_append(new_exp_list(sql->sa), set_cols);
+				}
+			} else if (is_sql_group_totals(f) && grouping_sets) /* The GROUP BY () case is the global aggregate which is always added by ROLLUP and CUBE */
+				next_set = list_append(new_exp_list(sql->sa), new_exp_list(sql->sa));
+		}
+		if (is_sql_group_totals(f)) { /* if there are no sets, set the found one, otherwise calculate cartesian product and merge the distinct ones */
+			assert(next_set);
+			if (!*sets)
+				*sets = next_set;
+			else
+				*sets = grouping_sets ? list_merge(*sets, next_set, (fdup) NULL) : lists_cartesian_product_and_distinct(sql->sa, *sets, next_set);
+		}
+	}
+	return exps;
+}
+
+static list*
+rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dlist *selection, int f)
+{
+	mvc *sql = query->sql;
+	dnode *o = partitionby->data.lval->h;
 	list *exps = new_exp_list(sql->sa);
 
 	for (; o; o = o->next) {
@@ -3861,7 +4063,7 @@ rel_group_by(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection,
 
 /* first limit to simple columns only */
 static sql_exp *
-rel_order_by_simple_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
+rel_order_by_simple_column_exp(mvc *sql, sql_rel *r, symbol *column_r, int f)
 {
 	sql_exp *e = NULL;
 	dlist *l = column_r->data.lval;
@@ -3875,13 +4077,13 @@ rel_order_by_simple_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 		return e;
 	if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
-		e = rel_bind_column(sql, r, name, sql_sel | sql_orderby);
+		e = rel_bind_column(sql, r, name, f);
 	}
 	if (dlist_length(l) == 2) {
 		char *tname = l->h->data.sval;
 		char *name = l->h->next->data.sval;
 
-		e = rel_bind_column2(sql, r, tname, name, sql_sel | sql_orderby);
+		e = rel_bind_column2(sql, r, tname, name, f);
 	}
 	if (e) 
 		return e;
@@ -3890,7 +4092,7 @@ rel_order_by_simple_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 
 /* second complex columns only */
 static sql_exp *
-rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r)
+rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 {
 	mvc *sql = query->sql;
 	sql_rel *r = *R, *p = NULL;
@@ -3905,7 +4107,7 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r)
 		r = r->l;
 	}
 
-	e = rel_value_exp(query, &r, column_r, sql_sel | sql_orderby, ek);
+	e = rel_value_exp(query, &r, column_r, f, ek);
 
 	if (r && !p)
 		*R = r;
@@ -3945,11 +4147,10 @@ simple_selection(symbol *sq)
 }
 
 static list *
-rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
+rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 {
 	mvc *sql = query->sql;
-	sql_rel *rel = *R;
-	sql_rel *or = rel; // the order by relation 
+	sql_rel *rel = *R, *or = rel; // the order by relation 
 	list *exps = new_exp_list(sql->sa);
 	dnode *o = orderby->data.lval->h;
 	dlist *selection = NULL;
@@ -4023,7 +4224,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
 
-				e = rel_order_by_simple_column_exp(sql, rel, col);
+				e = rel_order_by_simple_column_exp(sql, rel, col, sql_sel | sql_orderby | (f & sql_group_totals));
 				if (e && e->card > rel->card) 
 					e = NULL;
 				if (e)
@@ -4035,7 +4236,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 				sql->errstr[0] = '\0';
 
 				if (!e)
-					e = rel_order_by_column_exp(query, &rel, col);
+					e = rel_order_by_column_exp(query, &rel, col, sql_sel | sql_orderby | (f & sql_group_totals));
 				if (e && e->card > rel->card && e->card != CARD_ATOM)
 					e = NULL;
 			}
@@ -4332,7 +4533,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	p = *rel;
 	/* Partition By */
 	if (partition_by_clause) {
-		gbe = rel_group_by(query, &p, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, nf | sql_window);
+		gbe = rel_partition_groupings(query, &p, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, nf | sql_window);
 		if (!gbe)
 			return NULL;
 		for (n = gbe->h ; n ; n = n->next) {
@@ -4824,7 +5025,7 @@ rel_column_exp(sql_query *query, sql_rel **rel, symbol *column_e, int f)
 }
 
 static sql_rel*
-rel_where_groupby_nodes(sql_query *query, sql_rel *rel, SelectNode *sn)
+rel_where_groupby_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, int *group_totals)
 {
 	mvc *sql = query->sql;
 
@@ -4838,10 +5039,23 @@ rel_where_groupby_nodes(sql_query *query, sql_rel *rel, SelectNode *sn)
 	}
 
 	if (rel && sn->groupby) {
-		list *gbe = rel_group_by(query, &rel, sn->groupby, sn->selection, sql_sel | sql_groupby);
+		list *gbe, *sets = NULL;
+		for (dnode *o = sn->groupby->data.lval->h; o ; o = o->next) {
+			symbol *grouping = o->data.sym;
+			if (grouping->token == SQL_ROLLUP || grouping->token == SQL_CUBE || grouping->token == SQL_GROUPING_SETS) {
+				*group_totals |= sql_group_totals;
+				break;
+			}
+		}
+		gbe = rel_groupings(query, &rel, sn->groupby, sn->selection, sql_sel | sql_groupby | *group_totals, false, &sets);
 		if (!gbe)
 			return NULL;
 		rel = rel_groupby(sql, rel, gbe);
+		if (sets && list_length(sets) > 1) { /* if there is only one combination, there is no reason to generate unions */
+			prop *p = prop_create(sql->sa, PROP_GROUPINGS, rel->p);
+			p->value = sets;
+			rel->p = p;
+		}
 	}
 
 	if (rel && sn->having) {
@@ -4854,7 +5068,7 @@ rel_where_groupby_nodes(sql_query *query, sql_rel *rel, SelectNode *sn)
 }
 
 static sql_rel*
-rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
+rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek, int group_totals)
 {
 	mvc *sql = query->sql;
 
@@ -4869,7 +5083,7 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 	
 		if (inner && inner->op == op_groupby)
 			set_processed(inner);
-		inner = rel_logical_exp(query, inner, sn->having, sql_having);
+		inner = rel_logical_exp(query, inner, sn->having, sql_having | group_totals);
 
 		if (!inner)
 			return NULL;
@@ -4893,7 +5107,7 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 		}
 		rel = rel_orderby(sql, rel);
 		set_processed(rel);
-		obe = rel_order_by(query, &rel, sn->orderby, sql_orderby);
+		obe = rel_order_by(query, &rel, sn->orderby, sql_orderby | group_totals);
 		if (!obe)
 			return NULL;
 		rel->r = obe;
@@ -5026,6 +5240,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 {
 	mvc *sql = query->sql;
 	sql_rel *inner = NULL;
+	int group_totals = 0;
 	list *pexps = NULL;
 
 	assert(sn->s.token == SQL_SELECT);
@@ -5034,7 +5249,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 
 	if (!rel)
 		rel = rel_project(sql->sa, NULL, append(new_exp_list(sql->sa), exp_atom_bool(sql->sa, 1)));
-	rel = rel_where_groupby_nodes(query, rel, sn);
+	rel = rel_where_groupby_nodes(query, rel, sn, &group_totals);
 	if (sql->session->status) /* rel might be NULL as input, so we have to check for the session status for errors */
 		return NULL;
 
@@ -5047,7 +5262,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		 * and rel_table_exp.
 		 */
 		list *te = NULL;
-		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel);
+		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | group_totals);
 
 		if (ce && exp_subtype(ce)) {
 			pexps = append(pexps, ce);
@@ -5082,7 +5297,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 	}
 	rel = rel_project(sql->sa, rel, pexps);
 
-	rel = rel_having_limits_nodes(query, rel, sn, ek);
+	rel = rel_having_limits_nodes(query, rel, sn, ek, group_totals);
 	return rel;
 }
 

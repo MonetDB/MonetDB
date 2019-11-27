@@ -2430,6 +2430,133 @@ rewrite_fix_count(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel *
+rewrite_groupings(mvc *sql, sql_rel *rel)
+{
+	prop *found;
+
+	if (rel->op == op_groupby) {
+		/* ROLLUP, CUBE, GROUPING SETS cases */
+		if ((found = find_prop(rel->p, PROP_GROUPINGS))) {
+			list *sets = (list*) found->value;
+			sql_rel *unions = NULL;
+
+			for (node *n = sets->h ; n ; n = n->next) {
+				sql_rel *nrel;
+				list *l = (list*) n->data, *exps = sa_list(sql->sa), *pexps = sa_list(sql->sa);
+
+				l = list_flaten(l);
+				nrel = rel_groupby(sql, unions ? rel_dup(rel->l) : rel->l, l);
+
+				for (node *m = rel->exps->h ; m ; m = m->next) {
+					sql_exp *e = (sql_exp*) m->data, *ne = NULL;
+					sql_subaggr *agr = (sql_subaggr*) e->f;
+
+					if (e->type == e_aggr && !agr->aggr->s && !strcmp(agr->aggr->base.name, "grouping")) {
+						/* replace grouping aggregate calls with constants */
+						sql_subtype tpe = ((sql_arg*) agr->aggr->res->h->data)->type;
+						list *groups = (list*) e->l;
+						atom *a = atom_int(sql->sa, &tpe, 0);
+#ifdef HAVE_HGE
+						hge counter = (hge) list_length(groups) - 1;
+#else
+						lng counter = (lng) list_length(groups) - 1;
+#endif
+						assert(groups && list_length(groups) > 0);
+
+						for (node *nn = groups->h ; nn ; nn = nn->next) {
+							sql_exp *exp = (sql_exp*) nn->data;
+							if (!exps_find_exp(l, exp)) {
+								switch (ATOMstorage(a->data.vtype)) {
+									case TYPE_bte:
+										a->data.val.btval += (bte) (1 << counter);
+										break;
+									case TYPE_sht:
+										a->data.val.shval += (sht) (1 << counter);
+										break;
+									case TYPE_int:
+										a->data.val.ival += (int) (1 << counter);
+										break;
+									case TYPE_lng:
+										a->data.val.lval += (lng) (1 << counter);
+										break;
+#ifdef HAVE_HGE
+									case TYPE_hge:
+										a->data.val.hval += (hge) (1 << counter);
+										break;
+#endif
+									default:
+										assert(0);
+								}
+							}
+							counter--;
+						}
+
+						ne = exp_atom(sql->sa, a);
+						exp_setname(sql->sa, ne, e->alias.rname, e->alias.name);
+					} else if (e->type == e_column && !exps_find_exp(l, e) && !has_label(e)) { 
+						/* do not include in the output of the group by, but add to the project as null */
+						ne = exp_atom(sql->sa, atom_null_value(sql->sa, &(e->tpe)));
+						exp_setname(sql->sa, ne, e->alias.rname, e->alias.name);
+					} else {
+						ne = exp_ref(sql->sa, e);
+						append(exps, e);
+					}
+					append(pexps, ne);
+				}
+				nrel->exps = exps;
+				nrel = rel_project(sql->sa, nrel, pexps);
+				set_grouping_totals(nrel);
+
+				if (!unions)
+					unions = nrel;
+				else {
+					unions = rel_setop(sql->sa, unions, nrel, op_union);
+					unions->exps = rel_projections(sql, rel, NULL, 1, 1);
+					set_processed(unions);
+				}
+				if (!unions)
+					return unions;
+			}
+			return unions;
+		} else {
+			bool found_grouping = false;
+			for (node *n = rel->exps->h ; n ; n = n->next) {
+				sql_exp *e = (sql_exp*) n->data;
+				sql_subaggr *agr = (sql_subaggr*) e->f;
+
+				if (e->type == e_aggr && !agr->aggr->s && !strcmp(agr->aggr->base.name, "grouping")) {
+					found_grouping = true;
+					break;
+				}
+			}
+			if (found_grouping) {
+				/* replace grouping calls with constants of value 0 */
+				sql_rel *nrel = rel_groupby(sql, rel->l, rel->r);
+				list *exps = sa_list(sql->sa), *pexps = sa_list(sql->sa);
+				sql_subtype *bt = sql_bind_localtype("bte");
+
+				for (node *n = rel->exps->h ; n ; n = n->next) {
+					sql_exp *e = (sql_exp*) n->data, *ne;
+					sql_subaggr *agr = (sql_subaggr*) e->f;
+
+					if (e->type == e_aggr && !agr->aggr->s && !strcmp(agr->aggr->base.name, "grouping")) {
+						ne = exp_atom(sql->sa, atom_int(sql->sa, bt, 0));
+						exp_setname(sql->sa, ne, e->alias.rname, e->alias.name);
+					} else {
+						ne = exp_ref(sql->sa, e);
+						append(exps, e);
+					}
+					append(pexps, ne);
+				}
+				nrel->exps = exps;
+				return rel_project(sql->sa, nrel, pexps);
+			}
+		}
+	}
+	return rel;
+}
+
 sql_rel *
 rel_unnest(mvc *sql, sql_rel *rel)
 {
@@ -2449,5 +2576,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = _rel_unnest(sql, rel);
 	rel = rel_visitor(sql, rel, &rewrite_fix_count);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
 	rel = rel_visitor(sql, rel, &rewrite_remove_xp);	/* remove crossproducts with project [ atom ] */
+	rel = rel_visitor(sql, rel, &rewrite_groupings);
 	return rel;
 }
