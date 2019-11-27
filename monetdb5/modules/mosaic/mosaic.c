@@ -847,6 +847,9 @@ MOSselect2(bat *ret, const bat *bid, const bat *cid, void *low, void *hgh, bit *
 
 	*ret = bn->batCacheid;
 	GDKfree(task);
+
+	BBPunfix(b->batCacheid);
+	if (cand != NULL) BBPunfix(cand->batCacheid);
 	BBPkeepref(bn->batCacheid);
 	return msg;
 }
