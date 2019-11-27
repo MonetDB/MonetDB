@@ -440,7 +440,7 @@ SQLinit(Client c)
 
 		bstream_next(fdin);
 		if( MCpushClientInput(c, fdin, 0, "") < 0)
-			ERROR(SQL_SCENARIO, "Could not switch client input stream\n");
+			TRC_ERROR(SQL_SCENARIO, "Could not switch client input stream\n");
 	}
 	if ((msg = SQLprepareClient(c, 0)) != NULL) {
 		MT_lock_unset(&sql_contextLock);
@@ -1043,7 +1043,7 @@ SQLparser(Client c)
 	be = (backend *) c->sqlcontext;
 	if (be == 0) {
 		/* leave a message in the log */
-		ERROR(SQL_SCENARIO, "SQL state description is missing, cannot handle client!\n");
+		TRC_ERROR(SQL_SCENARIO, "SQL state description is missing, cannot handle client!\n");
 		/* stop here, instead of printing the exception below to the
 		 * client in an endless loop */
 		c->mode = FINISHCLIENT;

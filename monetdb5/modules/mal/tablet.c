@@ -255,7 +255,7 @@ static int
 TABLET_error(stream *s)
 {
 	char *err = mnstr_error(s);
-	ERROR(MAL_TABLET, "Stream error: %s\n", err);
+	TRC_ERROR(MAL_TABLET, "Stream error: %s\n", err);
 	/* use free as stream allocates out side GDK */
 	if (err)
 		free(err);
@@ -682,7 +682,7 @@ tablet_error(READERtask *task, lng row, int col, const char *msg, const char *fc
 		} else
 			task->as->error = createException(MAL, "sql.copy_from", "%s", msg);
 	}
-	ERROR(MAL_TABLET, "Error: " LLFMT ", %d:%s:%s\n", row, col, msg, fcn);
+	TRC_ERROR(MAL_TABLET, "Error: " LLFMT ", %d:%s:%s\n", row, col, msg, fcn);
 	task->errorcnt++;
 	MT_lock_unset(&errorlock);
 }
@@ -1080,7 +1080,7 @@ SQLload_parse_line(READERtask *task, int idx)
 		error = true;
 	}
 	if (error)
-		ERROR(MAL_TABLET, "Line break failed: %d:%s\n", idx, line ? line : "EOF");
+		TRC_ERROR(MAL_TABLET, "Line break failed: %d:%s\n", idx, line ? line : "EOF");
 	return error ? -1 : 0;
 }
 
@@ -1757,7 +1757,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 				MT_sema_down(&ptask[j].reply);
 				if (ptask[j].error) {
 					res = -1;
-					ERROR(MAL_TABLET, "Error in task: %d %d\n", j, ptask[j].error);
+					TRC_ERROR(MAL_TABLET, "Error in task: %d %d\n", j, ptask[j].error);
 				}
 			}
 		}

@@ -534,7 +534,7 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	if (!sql_find_subtype(&c->type, tpe, sz, d)) {
 		sql_type *lt = sql_trans_bind_type(tr, t->s, tpe);
 		if (lt == NULL) {
-			ERROR(SQL_STORE, "SQL type '%s' is missing\n", tpe);
+			TRC_ERROR(SQL_STORE, "SQL type '%s' is missing\n", tpe);
 			_DELETE(tpe);
 			return NULL;
 		}
@@ -903,7 +903,7 @@ load_arg(sql_trans *tr, sql_func * f, oid rid)
 	if (!sql_find_subtype(&a->type, tpe, digits, scale)) {
 		sql_type *lt = sql_trans_bind_type(tr, f->s, tpe);
 		if (lt == NULL) {
-			ERROR(SQL_STORE, "SQL type '%s' is missing\n", tpe);
+			TRC_ERROR(SQL_STORE, "SQL type '%s' is missing\n", tpe);
 			_DELETE(tpe);
 			return NULL;
 		}

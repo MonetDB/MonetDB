@@ -745,7 +745,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			print_stmtlist(sql->sa, left);
 			print_stmtlist(sql->sa, right);
 			if (!s) {
-				ERROR(SQL_RELATION, "Query: '%s'\n", sql->query);
+				TRC_ERROR(SQL_RELATION, "Query: '%s'\n", sql->query);
 			}
 			assert(s);
 			return NULL;
@@ -918,7 +918,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 		if (!l || !r || (re2 && !r2)) {
 			//assert(0);
-			ERROR(SQL_RELATION, "Query: '%s'\n", sql->query);
+			TRC_ERROR(SQL_RELATION, "Query: '%s'\n", sql->query);
 			return NULL;
 		}
 

@@ -76,7 +76,7 @@ int mal_init(void){
 #ifndef NDEBUG
 		mdbExit();
 #endif
-		ERROR(MAL_MAL, "%s\n", err);
+		TRC_ERROR(MAL_MAL, "%s\n", err);
 		freeException(err);
 		return -1;
 	}
@@ -106,11 +106,11 @@ void mserver_reset(void)
 	AUTHreset();
 	if (!GDKinmemory()) {
 		if ((err = msab_wildRetreat()) != NULL) {
-			ERROR(MAL_MAL, "%s\n", err);
+			TRC_ERROR(MAL_MAL, "%s\n", err);
 			free(err);
 		}
 		if ((err = msab_registerStop()) != NULL) {
-			ERROR(MAL_MAL, "%s\n", err);
+			TRC_ERROR(MAL_MAL, "%s\n", err);
 			free(err);
 		}
 	}

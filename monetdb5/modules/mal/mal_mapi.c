@@ -444,7 +444,7 @@ SERVERlistenThread(SOCKET *Sock)
 					(void) shutdown(msgsock, SHUT_WR);
 					closesocket(msgsock);
 					if (!cmsg || cmsg->cmsg_type != SCM_RIGHTS) {
-						ERROR(MAL_SERVER, "Expected file descriptor, but received something else\n");
+						TRC_ERROR(MAL_SERVER, "Expected file descriptor, but received something else\n");
 						continue;
 					}
 					/* HACK to avoid
@@ -458,7 +458,7 @@ SERVERlistenThread(SOCKET *Sock)
 				default:
 					/* some unknown state */
 					closesocket(msgsock);
-					ERROR(MAL_SERVER, "Unknown command type in first byte\n");
+					TRC_ERROR(MAL_SERVER, "Unknown command type in first byte\n");
 					continue;
 			}
 #endif
@@ -518,7 +518,7 @@ SERVERlistenThread(SOCKET *Sock)
 		closesocket(usock);
 	return;
 error:
-	ERROR(MAL_SERVER, "Terminating listener: %s\n", msg);
+	TRC_ERROR(MAL_SERVER, "Terminating listener: %s\n", msg);
 	if (sock != INVALID_SOCKET)
 		closesocket(sock);
 	if (usock != INVALID_SOCKET)

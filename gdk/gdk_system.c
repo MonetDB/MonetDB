@@ -521,12 +521,12 @@ MT_thread_init(void)
 	int ret;
 
 	if ((ret = pthread_key_create(&threadkey, NULL)) != 0) {
-		ERROR(GDK_SYSTEM, "Creating specific key for thread failed: %s\n", strerror(ret));
+		TRC_ERROR(GDK_SYSTEM, "Creating specific key for thread failed: %s\n", strerror(ret));
 		return false;
 	}
 	mainthread.tid = pthread_self();
 	if ((ret = pthread_setspecific(threadkey, &mainthread)) != 0) {
-		ERROR(GDK_SYSTEM, "Σetting specific value failed: %s\n", strerror(ret));
+		TRC_ERROR(GDK_SYSTEM, "Σetting specific value failed: %s\n", strerror(ret));
 	}
 	return true;
 }
@@ -706,26 +706,26 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 
 	join_threads();
 	if (threadname == NULL) {
-		ERROR(GDK_SYSTEM, "Thread must have a name\n");
+		TRC_ERROR(GDK_SYSTEM, "Thread must have a name\n");
 		return -1;
 	}
 	tlen = strlen(threadname);
 	if (tlen >= sizeof(p->threadname)) {
-		ERROR(GDK_SYSTEM, "Thread's name is too large\n");
+		TRC_ERROR(GDK_SYSTEM, "Thread's name is too large\n");
 		return -1;
 	}
 	if ((ret = pthread_attr_init(&attr)) != 0) {
-		ERROR(GDK_SYSTEM, "Cannot init pthread attr: %s\n", strerror(ret));
+		TRC_ERROR(GDK_SYSTEM, "Cannot init pthread attr: %s\n", strerror(ret));
 		return -1;
 	}
 	if ((ret = pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE)) != 0) {
-		ERROR(GDK_SYSTEM, "Cannot set stack size: %s\n", strerror(ret));
+		TRC_ERROR(GDK_SYSTEM, "Cannot set stack size: %s\n", strerror(ret));
 		pthread_attr_destroy(&attr);
 		return -1;
 	}
 	p = malloc(sizeof(struct posthread));
 	if (p == NULL) {
-		ERROR(GDK_SYSTEM, "Cannot allocate memory: %s\n", strerror(errno));
+		TRC_ERROR(GDK_SYSTEM, "Cannot allocate memory: %s\n", strerror(errno));
 		pthread_attr_destroy(&attr);
 		return -1;
 	}
@@ -750,7 +750,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	*t = p->mtid = ++MT_thread_id;
 	ret = pthread_create(&p->tid, &attr, thread_starter, p);
 	if (ret != 0) {
-		ERROR(GDK_SYSTEM, "Cannot start thread: %s\n", strerror(ret));
+		TRC_ERROR(GDK_SYSTEM, "Cannot start thread: %s\n", strerror(ret));
 		ret = -1;
 	} else {
 		/* must not fail after this: the thread has been started */

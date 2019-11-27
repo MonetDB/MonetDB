@@ -57,7 +57,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		if (getVarName(mb,i)[0] == 'C' && getVarName(mb,i)[1] == '_')
 			snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
 		//if(strcmp(buf, getVarName(mb,i)) )
-			//ERROR(MAL_OPT_GC, "Non-matching name/entry: %s %s\n", buf, getVarName(mb,i));
+			//TRC_ERROR(MAL_OPT_GC, "Non-matching name/entry: %s %s\n", buf, getVarName(mb,i));
 	}
 
 	// move SQL query definition to the front for event profiling tools

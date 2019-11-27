@@ -259,7 +259,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	va_end(va);
 	if (n) {
 		// This part of the code should never get reached  
-		ERROR(SQL_BAT, "Called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
+		TRC_ERROR(SQL_BAT, "Called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
 		assert(0);
 		return LOG_ERR;
 	}

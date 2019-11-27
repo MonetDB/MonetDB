@@ -73,7 +73,7 @@ WLRgetConfig(void){
 	int len;
 
 	if((path = GDKfilepath(0, 0, "wlr.config", 0)) == NULL){
-		ERROR(SQL_WLR, "Could not create wlr.config file path\n");
+		TRC_ERROR(SQL_WLR, "Could not create wlr.config file path\n");
 		return -1;
 	}
 	fd = fopen(path,"r");
@@ -88,11 +88,11 @@ WLRgetConfig(void){
 		if( strncmp("master=", line,7) == 0) {
 			len = snprintf(wlr_master, IDLENGTH, "%s", line + 7);
 			if (len == -1 || len >= IDLENGTH) {
-				ERROR(SQL_WLR, "Master config value is too large\n");
+				TRC_ERROR(SQL_WLR, "Master config value is too large\n");
 				goto bailout;
 			} else
 			if (len  == 0) {
-				ERROR(SQL_WLR, "Master config path is missing\n");
+				TRC_ERROR(SQL_WLR, "Master config path is missing\n");
 				goto bailout;
 			}
 		} else
@@ -112,13 +112,13 @@ WLRgetConfig(void){
 			char *s;
 			len = snprintf(wlr_error, FILENAME_MAX, "%s", line + 6);
 			if (len == -1 || len >= FILENAME_MAX) {
-				ERROR(SQL_WLR, "Config value is too large\n");
+				TRC_ERROR(SQL_WLR, "Config value is too large\n");
 				goto bailout;
 			}
 			s = strchr(wlr_error, (int) '\n');
 			if ( s) *s = 0;
 		} else{
-				ERROR(SQL_WLR, "Unknown configuration item '%s'\n", line);
+				TRC_ERROR(SQL_WLR, "Unknown configuration item '%s'\n", line);
 				goto bailout;
 		}
 	}
@@ -135,13 +135,13 @@ WLRputConfig(void){
 	stream *fd;
 
 	if((path = GDKfilepath(0,0,"wlr.config",0)) == NULL){
-		ERROR(SQL_WLR, "Could not access wlr.config file\n");
+		TRC_ERROR(SQL_WLR, "Could not access wlr.config file\n");
 		return ;
 	}
 	fd = open_wastream(path);
 	GDKfree(path);
 	if( fd == NULL){
-		ERROR(SQL_WLR, "Could not create wlr.config file\n");
+		TRC_ERROR(SQL_WLR, "Could not create wlr.config file\n");
 		return;
 	}
 
@@ -231,7 +231,7 @@ WLRprocessBatch(void *arg)
 
 	c =MCforkClient(cntxt);
 	if( c == 0){
-		ERROR(SQL_WLR, "Could not create user for WLR process\n"); 
+		TRC_ERROR(SQL_WLR, "Could not create user for WLR process\n"); 
 		return;
 	}
 	c->promptlength = 0;
@@ -239,7 +239,7 @@ WLRprocessBatch(void *arg)
 	c->fdout = open_wastream(".wlr");
 	if(c->fdout == NULL) {
 		MCcloseClient(c);
-		ERROR(SQL_WLR, "Could not create user for WLR process\n");
+		TRC_ERROR(SQL_WLR, "Could not create user for WLR process\n");
 		return;
 	}
 
@@ -247,7 +247,7 @@ WLRprocessBatch(void *arg)
 	prev = newFunction(putName("user"), putName("wlr"), FUNCTIONsymbol);
 	if(prev == NULL) {
 		MCcloseClient(c);
-		ERROR(SQL_WLR, "Could not create user for WLR process\n");
+		TRC_ERROR(SQL_WLR, "Could not create user for WLR process\n");
 		return;
 	}
 	c->curprg = prev;
@@ -256,12 +256,12 @@ WLRprocessBatch(void *arg)
 
 	msg = SQLinitClient(c);
 	if( msg != MAL_SUCCEED)
-		ERROR(SQL_WLR, "Failed to initialize the client\n");
+		TRC_ERROR(SQL_WLR, "Failed to initialize the client\n");
 	msg = getSQLContext(c, mb, &sql, NULL);
 	if( msg)
-		ERROR(SQL_WLR, "Failed to access the transaction context: %s\n", msg);
+		TRC_ERROR(SQL_WLR, "Failed to access the transaction context: %s\n", msg);
 	if ((msg = checkSQLContext(c)) != NULL)
-		ERROR(SQL_WLR, "Inconsistent SQL context: %s\n", msg);
+		TRC_ERROR(SQL_WLR, "Inconsistent SQL context: %s\n", msg);
 
 	TRC_DEBUG(SQL_WLR, "#Ready to start the replay against batches state %d wlr "LLFMT"  wlr_limit "LLFMT" wlr %d  wlc %d  taglimit "LLFMT" exit %d\n",
 					wlr_state, wlr_tag, wlr_limit, wlr_batches, wlc_batches, wlr_limit, GDKexiting());
@@ -270,28 +270,28 @@ WLRprocessBatch(void *arg)
 	for( i= wlr_batches; i < wlc_batches && !GDKexiting() && wlr_state != WLR_STOP && wlr_tag < wlr_limit; i++){
 		len = snprintf(path,FILENAME_MAX,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlr_master, i);
 		if (len == -1 || len >= FILENAME_MAX) {
-			ERROR(SQL_WLR, "Filename path is too large\n");
+			TRC_ERROR(SQL_WLR, "Filename path is too large\n");
 			continue;
 		}
 		fd= open_rastream(path);
 		if( fd == NULL){
-			ERROR(SQL_WLR, "Cannot access path '%s'\n", path);
+			TRC_ERROR(SQL_WLR, "Cannot access path '%s'\n", path);
 			// Be careful not to miss log files.
 			continue;
 		}
 		sz = getFileSize(fd);
 		if (sz > (size_t) 1 << 29) {
 			close_stream(fd);
-			ERROR(SQL_WLR, "File %s is too large to process\n", path);
+			TRC_ERROR(SQL_WLR, "File %s is too large to process\n", path);
 			continue;
 		}
 		if((c->fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz)) == NULL) {
 			close_stream(fd);
-			ERROR(SQL_WLR, "Failed to open stream for file %s\n", path);
+			TRC_ERROR(SQL_WLR, "Failed to open stream for file %s\n", path);
 			continue;
 		}
 		if (bstream_next(c->fdin) < 0){
-			ERROR(SQL_WLR, "Could not read %s\n", path);
+			TRC_ERROR(SQL_WLR, "Could not read %s\n", path);
 			continue;
 		}
 
@@ -973,7 +973,7 @@ cleanup:
 #define WLRvalue(TPE)                                                   \
 	{	TPE val = *getArgReference_##TPE(stk,pci,5);                    \
 			if (BUNappend(upd, (void*) &val, false) != GDK_SUCCEED) {   \
-				ERROR(SQL_WLR, "BUNappend failed\n");                     \
+				TRC_ERROR(SQL_WLR, "BUNappend failed\n");                     \
 				goto cleanup;                                           \
 		}                                                               \
 	}
@@ -1047,7 +1047,7 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		break;
 	default:
-		ERROR(SQL_WLR, "Missing type in WLRupdate\n");
+		TRC_ERROR(SQL_WLR, "Missing type in WLRupdate\n");
 	}
 
 	BATmsync(tids);

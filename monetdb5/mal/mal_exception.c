@@ -87,9 +87,9 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 	}
 	char *q = message;
 	for (char *p = strchr(q, '\n'); p; q = p + 1, p = strchr(q, '\n'))
-		ERROR(MAL_EXCEPTION, "%.*s\n", (int) (p - q), q);
+		TRC_ERROR(MAL_EXCEPTION, "%.*s\n", (int) (p - q), q);
 	if (*q)
-		ERROR(MAL_EXCEPTION, "%s\n", q);
+		TRC_ERROR(MAL_EXCEPTION, "%s\n", q);
 	return message;
 }
 

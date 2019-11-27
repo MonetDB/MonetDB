@@ -81,15 +81,15 @@ static bool
 GDKenvironment(const char *dbpath)
 {
 	if (dbpath == NULL) {
-		ERROR(GDK_UTILS, "Database name missing.\n");
+		TRC_ERROR(GDK_UTILS, "Database name missing.\n");
 		return false;
 	}
 	if (strlen(dbpath) >= FILENAME_MAX) {
-		ERROR(GDK_UTILS, "Database name too long.\n")
+		TRC_ERROR(GDK_UTILS, "Database name too long.\n")
 		return false;
 	}
 	if (!MT_path_absolute(dbpath)) {
-		ERROR(GDK_UTILS, "Directory not an absolute path: %s.\n", dbpath);
+		TRC_ERROR(GDK_UTILS, "Directory not an absolute path: %s.\n", dbpath);
 		return false;
 	}
 	return true;
@@ -1224,7 +1224,7 @@ GDKerror(const char *format, ...)
 	}
 	va_start(ap, format);
 	if (vsnprintf(message + len, sizeof(message) - (len + 2), format, ap) < 0){
-		ERROR(GDK_UTILS, GDKERROR "an error occurred within GDKerror.\n");
+		TRC_ERROR(GDK_UTILS, GDKERROR "an error occurred within GDKerror.\n");
 		strcpy(message, GDKERROR "an error occurred within GDKerror.\n");
 	}
 	va_end(ap);
@@ -1747,7 +1747,7 @@ GDKmemfail(const char *s, size_t len)
 	   }
 	 */
 
-	ERROR(GDK_UTILS, "%s(%zu) fails, try to free up space [memory in use=%zu,virtual memory in use=%zu]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
+	TRC_ERROR(GDK_UTILS, "%s(%zu) fails, try to free up space [memory in use=%zu,virtual memory in use=%zu]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
 }
 
 /* Memory allocation

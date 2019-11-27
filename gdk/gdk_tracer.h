@@ -222,7 +222,7 @@ extern LOG_LEVEL LVL_PER_COMPONENT[COMPONENTS_COUNT];
 #define CRITICAL(COMP, MSG, ...)                                         \
     GDK_TRACER_LOG(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)                \
 
-#define ERROR(COMP, MSG, ...)                                            \
+#define TRC_ERROR(COMP, MSG, ...)                                        \
     GDK_TRACER_LOG(M_ERROR, COMP, MSG, ## __VA_ARGS__)                   \
 
 #define TRC_WARNING(COMP, MSG, ...)                                      \

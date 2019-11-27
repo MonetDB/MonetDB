@@ -586,7 +586,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		if ((tmp = RMTquery(&mhdl, "remote.get", c->mconn, qbuf))
 				!= MAL_SUCCEED)
 		{
-			ERROR(MAL_REMOTE, "Remote get: %s\n%s\n", qbuf, tmp);
+			TRC_ERROR(MAL_REMOTE, "Remote get: %s\n%s\n", qbuf, tmp);
 			MT_lock_unset(&c->lock);
 			var = createException(MAL, "remote.get", "%s", tmp);
 			freeException(tmp);
@@ -1363,7 +1363,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 
 	/* read blockmode flush */
 	while (mnstr_read(in, &tmp, 1, 1) > 0) {
-		ERROR(MAL_REMOTE, "Expected flush, got: %c\n", tmp);
+		TRC_ERROR(MAL_REMOTE, "Expected flush, got: %c\n", tmp);
 	}
 
 	BATsettrivprop(b);

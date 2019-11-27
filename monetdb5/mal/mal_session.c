@@ -288,7 +288,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			if (err != NULL) {
 				/* this is kind of awful, but we need to get rid of this
 				 * message */
-				ERROR(MAL_SESSION, "msab_getMyStatus: %s\n", err);
+				TRC_ERROR(MAL_SESSION, "msab_getMyStatus: %s\n", err);
 				free(err);
 				mnstr_printf(fout, "!internal server error, "
 							 "please try again later\n");

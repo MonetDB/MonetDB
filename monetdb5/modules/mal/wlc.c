@@ -294,7 +294,7 @@ WLCsetlogger(void)
 	wlc_fd = open_wastream(path);
 	if( wlc_fd == 0){
 		MT_lock_unset(&wlc_lock);
-		ERROR(MAL_WLC, "Cloud not create: %s\n", path);
+		TRC_ERROR(MAL_WLC, "Cloud not create: %s\n", path);
 		throw(MAL,"wlc.logger","Could not create %s\n",path);
 	}
 
@@ -365,7 +365,7 @@ WLClogger(void *arg)
 		if( wlc_dir[0] && wlc_fd ){
 			MT_lock_set(&wlc_lock);
 			if((msg = WLCcloselogger()) != MAL_SUCCEED) {
-				ERROR(MAL_WLC, "%s\n", msg);
+				TRC_ERROR(MAL_WLC, "%s\n", msg);
 				freeException(msg);
 			}
 			MT_lock_unset(&wlc_lock);
@@ -404,7 +404,7 @@ WLCinit(void)
 			TRC_INFO(MAL_WLC, "%s\n", msg);
 		if (MT_create_thread(&wlc_logger, WLClogger , (void*) 0,
 							 MT_THR_DETACHED, "WLClogger") < 0) {
-			ERROR(MAL_WLC, "Thread could not be spawned\n");
+			TRC_ERROR(MAL_WLC, "Thread could not be spawned\n");
 		}
 	}
 	return MAL_SUCCEED;
@@ -809,7 +809,7 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 		} }
 		break;
 	default:
-		ERROR(MAL_WLC, "Non-supported type: %d\n", ATOMstorage(b->ttype));
+		TRC_ERROR(MAL_WLC, "Non-supported type: %d\n", ATOMstorage(b->ttype));
 		cntxt->wlc_kind = WLC_CATALOG;
 	}
 finish:

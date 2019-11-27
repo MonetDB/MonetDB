@@ -2114,7 +2114,7 @@ BATmode(BAT *b, bool transient)
 #ifdef NDEBUG
 /* assertions are disabled, turn failing tests into a message */
 #undef assert
-#define assert(test)	((void) ((test) || ERROR(BAT_, "Assertion `%s' failed\n", #test)))
+#define assert(test)	((void) ((test) || TRC_ERROR(BAT_, "Assertion `%s' failed\n", #test)))
 #endif
 
 /* Assert that properties are set correctly.
@@ -2387,13 +2387,13 @@ BATassertProps(BAT *b)
 			int len;
 
 			if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
-				ERROR(BAT_, "Cannot allocate hash table\n");
+				TRC_ERROR(BAT_, "Cannot allocate hash table\n");
 				goto abort_check;
 			}
 			len = snprintf(hs->heap.filename, sizeof(hs->heap.filename), "%s.hash%d", nme, THRgettid());
 			if (len == -1 || len > (int) sizeof(hs->heap.filename)) {
 				GDKfree(hs);
-				ERROR(BAT_, "Heap filename is too large\n");
+				TRC_ERROR(BAT_, "Heap filename is too large\n");
 				goto abort_check;
 			}
 			if (ATOMsize(b->ttype) == 1)
@@ -2407,7 +2407,7 @@ BATassertProps(BAT *b)
 			    HASHnew(hs, b->ttype, BUNlast(b),
 				    mask, BUN_NONE) != GDK_SUCCEED) {
 				GDKfree(hs);
-				ERROR(BAT_, "Cannot allocate hash table\n");
+				TRC_ERROR(BAT_, "Cannot allocate hash table\n");
 				goto abort_check;
 			}
 			BATloop(b, p, q) {

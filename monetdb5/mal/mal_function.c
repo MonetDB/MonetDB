@@ -359,13 +359,13 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 
 	new = newFunction(scope->name, proc->name, getSignature(proc)->token);
 	if( new == NULL){
-		ERROR(MAL_FCN, "Failed to clone function\n");
+		TRC_ERROR(MAL_FCN, "Failed to clone function\n");
 		return NULL;
 	}
 	freeMalBlk(new->def);
 	if((new->def = copyMalBlk(proc->def)) == NULL) {
 		freeSymbol(new);
-		ERROR(MAL_FCN, "Failed to clone function\n");
+		TRC_ERROR(MAL_FCN, "Failed to clone function\n");
 		return NULL;
 	}
 	/* now change the definition of the original proc */
