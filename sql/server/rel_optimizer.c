@@ -7454,7 +7454,7 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps) {
 		node *n;
 		list *exps = sa_list(sql->sa);
-			
+
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
@@ -7482,9 +7482,9 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 
 				if (l->type == e_func) {
 					sql_subfunc *f = l->f;
-					
+
 					/* rewrite isnull(x) = TRUE/FALSE => x =/<> NULL */
-					if (!f->func->s && !strcmp(f->func->base.name, "isnull") && 
+					if (is_select(rel->op) && !f->func->s && !strcmp(f->func->base.name, "isnull") && 
 					     is_atom(r->type) && r->l) { /* direct literal */
 						atom *a = r->l;
 						int flag = a->data.val.bval;
