@@ -241,7 +241,6 @@ typedef struct GDKtracer
     int id;
     char buffer[BUFFER_SIZE];
     int allocated_size;
-    MT_Lock lock;
 }
 gdk_tracer;
 
