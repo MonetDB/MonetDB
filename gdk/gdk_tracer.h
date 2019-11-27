@@ -234,7 +234,7 @@ extern LOG_LEVEL LVL_PER_COMPONENT[COMPONENTS_COUNT];
 #define INFO(COMP, MSG, ...)                                             \
     GDK_TRACER_LOG(M_INFO, COMP, MSG, ## __VA_ARGS__)                    \
 
-#define DEBUG(COMP, MSG, ...)                                            \
+#define TRC_DEBUG(COMP, MSG, ...)                                        \
     GDK_TRACER_LOG(M_DEBUG, COMP, MSG, ## __VA_ARGS__)                   \
 
 
