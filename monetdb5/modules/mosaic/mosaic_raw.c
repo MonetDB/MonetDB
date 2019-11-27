@@ -212,7 +212,1056 @@ MOSdecompress_raw(MOStask task)
     }\
 }
 
-MOSselect_DEF(raw, bte)
+MOSselect_SIGNATURE(raw, bte) { oid *o; BUN first,last; bte v; (void) v; first = task->start; last = first + MOSgetCnt(task->blk); bool nil = !task->bsrc->tnonil; o = task->lb; oid c = canditer_next(task->ci); while (!is_oid_nil(c) && c < first ) { c = canditer_next(task->ci); } if (is_oid_nil(c)) { return MAL_SUCCEED; } else if ( nil && anti){ if (task->ci->tpe == cand_dense) do { if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && !1) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (is_bte_nil(v))
+            *o++ = c;
+    }
+} } } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && 1) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && !1) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && 1) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && 1) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && !1) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && !1) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && 1) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else { if( IS_NIL(bte, tl) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && (((hi && v <= th ) || (!hi && v < th )) == !1))
+            *o++ = c;
+    }
+} } else if( IS_NIL(bte, th) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && (((li && v >= tl ) || (!li && v > tl )) == !1))
+            *o++ = c;
+    }
+} } else if (tl == th){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && ((hi && v == th) == !1))
+            *o++ = c;
+    }
+} } else{ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && ((((hi && v <= th ) || (!hi && v < th )) && ((li && v >= tl ) || (!li && v > tl ))) == !1))
+            *o++ = c;
+    }
+} } }} while (0)
+; else do { if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && !1) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (is_bte_nil(v))
+            *o++ = c;
+    }
+} } } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && 1) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && !1) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && 1) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && 1) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && !1) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && !1) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && 1) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else { if( IS_NIL(bte, tl) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && (((hi && v <= th ) || (!hi && v < th )) == !1))
+            *o++ = c;
+    }
+} } else if( IS_NIL(bte, th) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && (((li && v >= tl ) || (!li && v > tl )) == !1))
+            *o++ = c;
+    }
+} } else if (tl == th){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && ((hi && v == th) == !1))
+            *o++ = c;
+    }
+} } else{ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && ((((hi && v <= th ) || (!hi && v < th )) && ((li && v >= tl ) || (!li && v > tl ))) == !1))
+            *o++ = c;
+    }
+} } }} while (0)
+; } else if ( !nil && anti){ if (task->ci->tpe == cand_dense) do { if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && !1) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (is_bte_nil(v))
+            *o++ = c;
+    }
+} } } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && 1) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && !1) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && 1) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && 1) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && !1) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && !1) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && 1) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else { if( IS_NIL(bte, tl) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && (((hi && v <= th ) || (!hi && v < th )) == !1))
+            *o++ = c;
+    }
+} } else if( IS_NIL(bte, th) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && (((li && v >= tl ) || (!li && v > tl )) == !1))
+            *o++ = c;
+    }
+} } else if (tl == th){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && ((hi && v == th) == !1))
+            *o++ = c;
+    }
+} } else{ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && ((((hi && v <= th ) || (!hi && v < th )) && ((li && v >= tl ) || (!li && v > tl ))) == !1))
+            *o++ = c;
+    }
+} } }} while (0)
+; else do { if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && !1) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (is_bte_nil(v))
+            *o++ = c;
+    }
+} } } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && 1) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && !1) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && 1) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && 1) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && !1) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && !1) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && 1) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else { if( IS_NIL(bte, tl) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && (((hi && v <= th ) || (!hi && v < th )) == !1))
+            *o++ = c;
+    }
+} } else if( IS_NIL(bte, th) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && (((li && v >= tl ) || (!li && v > tl )) == !1))
+            *o++ = c;
+    }
+} } else if (tl == th){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && ((hi && v == th) == !1))
+            *o++ = c;
+    }
+} } else{ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && ((((hi && v <= th ) || (!hi && v < th )) && ((li && v >= tl ) || (!li && v > tl ))) == !1))
+            *o++ = c;
+    }
+} } }} while (0)
+; } else if ( nil && !anti){ if (task->ci->tpe == cand_dense) do { if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && !0) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (is_bte_nil(v))
+            *o++ = c;
+    }
+} } } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && 0) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && !0) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && 0) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && 0) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && !0) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && !0) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && 0) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else { if( IS_NIL(bte, tl) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && (((hi && v <= th ) || (!hi && v < th )) == !0))
+            *o++ = c;
+    }
+} } else if( IS_NIL(bte, th) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && (((li && v >= tl ) || (!li && v > tl )) == !0))
+            *o++ = c;
+    }
+} } else if (tl == th){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && ((hi && v == th) == !0))
+            *o++ = c;
+    }
+} } else{ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && ((((hi && v <= th ) || (!hi && v < th )) && ((li && v >= tl ) || (!li && v > tl ))) == !0))
+            *o++ = c;
+    }
+} } }} while (0)
+; else do { if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && !0) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (is_bte_nil(v))
+            *o++ = c;
+    }
+} } } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && 0) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && !0) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && 0) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && 0) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && !0) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && !0) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && 0) { if(1) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else { if( IS_NIL(bte, tl) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && (((hi && v <= th ) || (!hi && v < th )) == !0))
+            *o++ = c;
+    }
+} } else if( IS_NIL(bte, th) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && (((li && v >= tl ) || (!li && v > tl )) == !0))
+            *o++ = c;
+    }
+} } else if (tl == th){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && ((hi && v == th) == !0))
+            *o++ = c;
+    }
+} } else{ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(1 && IS_NIL(bte, v)) && ((((hi && v <= th ) || (!hi && v < th )) && ((li && v >= tl ) || (!li && v > tl ))) == !0))
+            *o++ = c;
+    }
+} } }} while (0)
+; } else if ( !nil && !anti){ if (task->ci->tpe == cand_dense) do { if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && !0) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (is_bte_nil(v))
+            *o++ = c;
+    }
+} } } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && 0) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && !0) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && 0) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && 0) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && !0) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && !0) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && 0) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else { if( IS_NIL(bte, tl) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && (((hi && v <= th ) || (!hi && v < th )) == !0))
+            *o++ = c;
+    }
+} } else if( IS_NIL(bte, th) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && (((li && v >= tl ) || (!li && v > tl )) == !0))
+            *o++ = c;
+    }
+} } else if (tl == th){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && ((hi && v == th) == !0))
+            *o++ = c;
+    }
+} } else{ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next_dense(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && ((((hi && v <= th ) || (!hi && v < th )) && ((li && v >= tl ) || (!li && v > tl ))) == !0))
+            *o++ = c;
+    }
+} } }} while (0)
+; else do { if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && !0) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (is_bte_nil(v))
+            *o++ = c;
+    }
+} } } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && li && hi && 0) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && !0) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( IS_NIL(bte, tl) && IS_NIL(bte, th) && !(li && hi) && 0) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && 0) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl == th && !(li && hi) && !0) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && !0) { } else if ( !IS_NIL(bte, tl) && !IS_NIL(bte, th) && tl > th && 0) { if(0) { 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!is_bte_nil(v))
+            *o++ = c;
+    }
+} } else 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (true)
+            *o++ = c;
+    }
+} } else { if( IS_NIL(bte, tl) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && (((hi && v <= th ) || (!hi && v < th )) == !0))
+            *o++ = c;
+    }
+} } else if( IS_NIL(bte, th) ){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && (((li && v >= tl ) || (!li && v > tl )) == !0))
+            *o++ = c;
+    }
+} } else if (tl == th){ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && ((hi && v == th) == !0))
+            *o++ = c;
+    }
+} } else{ 
+{
+    bte *val= (bte*) (((char*) task->blk) + MosaicBlkSize);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {
+        BUN i = (BUN) (c - first);
+        v = val[i];
+        /*TODO: change from control to data dependency.*/
+        if (!(0 && IS_NIL(bte, v)) && ((((hi && v <= th ) || (!hi && v < th )) && ((li && v >= tl ) || (!li && v > tl ))) == !0))
+            *o++ = c;
+    }
+} } }} while (0)
+; } if ((c = canditer_peekprev(task->ci)) >= last) { (void) canditer_prev(task->ci); } MOSskip_raw(task); task->lb = o; return MAL_SUCCEED;}
+
 MOSselect_DEF(raw, sht)
 MOSselect_DEF(raw, int)
 MOSselect_DEF(raw, lng)
