@@ -231,6 +231,19 @@ return MAL_SUCCEED;\
     }\
 }
 
+#define projection_loop_dictionary(TPE, CANDITER_NEXT)\
+{\
+	TPE* dict = GET_FINAL_DICT(task, TPE);\
+	BitVector base = (BitVector) MOScodevectorDict(task);\
+    bte bits = GET_FINAL_BITS(task);\
+	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CANDITER_NEXT(task->ci)) {\
+        BUN i = (BUN) (o - first);\
+        BitVectorChunk j = getBitVector(base,i,bits); \
+		*bt++ = dict[j];\
+		task->cnt++;\
+	}\
+}
+
 #define DICTprojection(TPE) {	\
 	BUN i,first,last;\
 	unsigned short j;\

@@ -215,42 +215,24 @@ MOSselect_DEF(runlength, dbl)
 MOSselect_DEF(runlength, hge)
 #endif
 
-#define projection_runlength(TPE)\
-{	TPE val, *v;\
-	v= (TPE*) task->src;\
-	val = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
-	for(; first < last; first++){\
-		MOSskipit();\
-		*v++ = val;\
+#define projection_loop_runlength(TPE, CANDITER_NEXT)\
+{\
+	TPE rt = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
+	for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CANDITER_NEXT(task->ci)) {\
+		*bt++ = rt;\
 		task->cnt++;\
 	}\
-	task->src = (char*) v;\
 }
 
-str
-MOSprojection_runlength( MOStask task)
-{
-	BUN first,last;
-
-	// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
-
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: projection_runlength(bte); break;
-		case TYPE_sht: projection_runlength(sht); break;
-		case TYPE_int: projection_runlength(int); break;
-		case TYPE_lng: projection_runlength(lng); break;
-		case TYPE_oid: projection_runlength(oid); break;
-		case TYPE_flt: projection_runlength(flt); break;
-		case TYPE_dbl: projection_runlength(dbl); break;
+MOSprojection_DEF(runlength, bte)
+MOSprojection_DEF(runlength, sht)
+MOSprojection_DEF(runlength, int)
+MOSprojection_DEF(runlength, lng)
+MOSprojection_DEF(runlength, flt)
+MOSprojection_DEF(runlength, dbl)
 #ifdef HAVE_HGE
-		case TYPE_hge: projection_runlength(hge); break;
+MOSprojection_DEF(runlength, hge)
 #endif
-	}
-	MOSskip_runlength(task);
-	return MAL_SUCCEED;
-}
 
 #define join_runlength_general(HAS_NIL, NIL_MATCHES, TPE)\
 do {	TPE v, *w;\

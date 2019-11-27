@@ -348,47 +348,27 @@ MOSselect_DEF(prefix, lng)
 MOSselect_DEF(prefix, hge)
 #endif
 
-#define projection_prefix(TPE)\
-{	TPE *v;\
+#define projection_loop_prefix(TPE, CANDITER_NEXT)\
+{\
     MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorPrefix(task);\
 	PrefixTpe(TPE) prefix = parameters->prefix.prefix##TPE;\
 	int suffix_bits = parameters->suffix_bits;\
-	v= (TPE*) task->src;\
-	for(; first < last; first++,i++){\
-		MOSskipit();\
-		PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
-		TPE* value =  (TPE*) &pvalue;\
-		*v++ = *value;\
+	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CANDITER_NEXT(task->ci)) {\
+		BUN i = (BUN) (o - first);\
+		TPE value =  (TPE) (prefix | getBitVector(base,i,suffix_bits));\
+		*bt++ = value;\
 		task->cnt++;\
 	}\
-	task->src = (char*) v;\
 }
 
-str
-MOSprojection_prefix( MOStask task)
-{ 
-	BUN i=0, first,last;
-
-	// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
-
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: projection_prefix(bte); break;
-		case TYPE_sht: projection_prefix(sht); break;
-		case TYPE_int: projection_prefix(int); break;
-		case TYPE_lng: projection_prefix(lng); break;
-		case TYPE_oid: projection_prefix(oid); break;
-		case TYPE_flt: projection_prefix(flt); break;
-		case TYPE_dbl: projection_prefix(dbl); break;
+MOSprojection_DEF(prefix, bte)
+MOSprojection_DEF(prefix, sht)
+MOSprojection_DEF(prefix, int)
+MOSprojection_DEF(prefix, lng)
 #ifdef HAVE_HGE
-		case TYPE_hge: projection_prefix(hge); break;
+MOSprojection_DEF(prefix, hge)
 #endif
-	}
-	MOSskip_prefix(task);
-	return MAL_SUCCEED;
-}
 
 #define join_prefix_general(HAS_NIL, NIL_MATCHES, TPE)\
 {   TPE *w;\

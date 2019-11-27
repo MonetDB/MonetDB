@@ -283,43 +283,26 @@ MOSselect_DEF(frame, lng)
 MOSselect_DEF(frame, hge)
 #endif
 
-#define projection_frame(TPE)\
-{	TPE *v;\
+#define projection_loop_frame(TPE, CANDITER_NEXT)\
+{\
     MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
 	TPE frame =  parameters->min.min##TPE;\
 	BitVector base = (BitVector) MOScodevectorFrame(task);\
-	v= (TPE*) task->src;\
-	for(i=0; first < last; first++,i++) {\
-		MOSskipit();\
+	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CANDITER_NEXT(task->ci)) {\
+		BUN i = (BUN) (o - first);\
 		TPE w = ADD_DELTA(TPE, frame, getBitVector(base, i, parameters->bits));\
-		*v++ = w;\
+		*bt++ = w;\
 		task->cnt++;\
 	}\
-\
-	task->src = (char*) v;\
 }
 
-str
-MOSprojection_frame( MOStask task)
-{
-	BUN i,first,last;
-	// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
-
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: projection_frame(bte); break;
-		case TYPE_sht: projection_frame(sht); break;
-		case TYPE_int: projection_frame(int); break;
-		case TYPE_lng: projection_frame(lng); break;
-		case TYPE_oid: projection_frame(oid); break;
+MOSprojection_DEF(frame, bte)
+MOSprojection_DEF(frame, sht)
+MOSprojection_DEF(frame, int)
+MOSprojection_DEF(frame, lng)
 #ifdef HAVE_HGE
-		case TYPE_hge: projection_frame(hge); break;
+MOSprojection_DEF(frame, hge)
 #endif
-	}
-	MOSskip_frame(task);
-	return MAL_SUCCEED;
-}
 
 
 #define join_frame_general(HAS_NIL, NIL_MATCHES, TPE)\

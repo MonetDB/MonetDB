@@ -222,41 +222,25 @@ MOSselect_DEF(raw, dbl)
 MOSselect_DEF(raw, hge)
 #endif
 
-#define projection_raw(TPE)\
-{	TPE *val, *v;\
-	v= (TPE*) task->src;\
-	val = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
-	for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = canditer_next(task->ci)) {\
-		BUN i = (BUN) (c - first);\
-		*v++ = val[i];\
+#define projection_loop_raw(TPE, CANDITER_NEXT)\
+{	TPE *rt;\
+	rt = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
+	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CANDITER_NEXT(task->ci)) {\
+		BUN i = (BUN) (o - first);\
+		*bt++ = rt[i];\
 		task->cnt++;\
 	}\
-	task->src = (char*) v;\
 }
 
-str
-MOSprojection_raw(MOStask task)
-{
-	BUN first,last;
-		// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
-
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: projection_raw(bte); break;
-		case TYPE_sht: projection_raw(sht); break;
-		case TYPE_int: projection_raw(int); break;
-		case TYPE_lng: projection_raw(lng); break;
-		case TYPE_oid: projection_raw(oid); break;
-		case TYPE_flt: projection_raw(flt); break;
-		case TYPE_dbl: projection_raw(dbl); break;
+MOSprojection_DEF(raw, bte)
+MOSprojection_DEF(raw, sht)
+MOSprojection_DEF(raw, int)
+MOSprojection_DEF(raw, lng)
+MOSprojection_DEF(raw, flt)
+MOSprojection_DEF(raw, dbl)
 #ifdef HAVE_HGE
-		case TYPE_hge: projection_raw(hge); break;
+MOSprojection_DEF(raw, hge)
 #endif
-	}
-	MOSskip_raw(task);
-	return MAL_SUCCEED;
-}
 
 #define join_raw_general(HAS_NIL, NIL_MATCHES, TPE)\
 {	TPE *v, *w;\

@@ -974,6 +974,16 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(MAL, "mosaic.MOSthetaselect", "unknown operator.");
 }
 
+MOSprojection_generic_DEF(bte)
+MOSprojection_generic_DEF(sht)
+MOSprojection_generic_DEF(int)
+MOSprojection_generic_DEF(lng)
+MOSprojection_generic_DEF(flt)
+MOSprojection_generic_DEF(dbl)
+#ifdef HAVE_HGE
+MOSprojection_generic_DEF(hge)
+#endif
+
 str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret, *lid =0, *rid=0;
@@ -1045,46 +1055,18 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci;
 	task->ci = &ci;
 	canditer_init(task->ci, NULL, bl);
-	canditer_next(task->ci); // Increase the state by one.
 
-	// loop thru all the chunks and fetch all results
-	while(task->start < task->stop )
-		switch(MOSgetTag(task->blk)){
-		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_runlength\n");
-			MOSprojection_runlength( task);
-			break;
-		case MOSAIC_CAPPED:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_capped\n");
-			MOSprojection_capped( task);
-			break;
-		case MOSAIC_VAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_var\n");
-			MOSprojection_var( task);
-			break;
-		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_frame\n");
-			MOSprojection_frame( task);
-			break;
-		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_delta\n");
-			MOSprojection_delta( task);
-			break;
-		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_prefix\n");
-			MOSprojection_prefix( task);
-			break;
-		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_linear\n");
-			MOSprojection_linear( task);
-			break;
-		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_raw\n");
-			MOSprojection_raw( task);
-			break;
-		default:
-			assert(0);
-		}
+	switch(ATOMbasetype(task->type)){
+	case TYPE_bte: MOSprojection_bte(task); break;
+	case TYPE_sht: MOSprojection_sht(task); break;
+	case TYPE_int: MOSprojection_int(task); break;
+	case TYPE_lng: MOSprojection_lng(task); break;
+	case TYPE_flt: MOSprojection_flt(task); break;
+	case TYPE_dbl: MOSprojection_dbl(task); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: MOSprojection_hge(task); break;
+#endif
+	}
 
 	/* adminstrative wrapup of the projection */
 	BBPunfix(*lid);

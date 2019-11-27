@@ -338,24 +338,18 @@ MOSselect_DEF(var, dbl)
 MOSselect_DEF(var, hge)
 #endif
 
-str
-MOSprojection_var( MOStask task)
-{
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: DICTprojection(bte); break;
-		case TYPE_sht: DICTprojection(sht); break;
-		case TYPE_int: DICTprojection(int); break;
-		case TYPE_lng: DICTprojection(lng); break;
-		case TYPE_oid: DICTprojection(oid); break;
-		case TYPE_flt: DICTprojection(flt); break;
-		case TYPE_dbl: DICTprojection(dbl); break;
+#define projection_loop_var(TPE, CANDITER_NEXT) \
+    projection_loop_dictionary(TPE, CANDITER_NEXT)
+
+MOSprojection_DEF(var, bte)
+MOSprojection_DEF(var, sht)
+MOSprojection_DEF(var, int)
+MOSprojection_DEF(var, lng)
+MOSprojection_DEF(var, flt)
+MOSprojection_DEF(var, dbl)
 #ifdef HAVE_HGE
-		case TYPE_hge: DICTprojection(hge); break;
+MOSprojection_DEF(var, hge)
 #endif
-	}
-	MOSskip_var(task);
-	return MAL_SUCCEED;
-}
 
 str
 MOSjoin_var( MOStask task, bit nil_matches)

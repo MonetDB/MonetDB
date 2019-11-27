@@ -194,11 +194,11 @@ MOSdecompress_linear(MOStask task)
 }
 
 #define scan_loop_linear(TPE, CANDITER_NEXT, TEST) {\
-	DeltaTpe(TPE) val   = linear_base(TPE, task);\
-	DeltaTpe(TPE) step  = linear_step(TPE, task);\
+	DeltaTpe(TPE) offset	= linear_base(TPE, task);\
+	DeltaTpe(TPE) step		= linear_step(TPE, task);\
     for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CANDITER_NEXT(task->ci)) {\
         BUN i = (BUN) (c - first);\
-        v = (TPE) (val + (i * step));\
+        v = (TPE) (offset + (i * step));\
         /*TODO: change from control to data dependency.*/\
         if (TEST)\
             *o++ = c;\
@@ -213,41 +213,25 @@ MOSselect_DEF(linear, lng)
 MOSselect_DEF(linear, hge)
 #endif
 
-#define projection_linear(TPE)\
-{TPE *v;\
-	DeltaTpe(TPE) value	= linear_base(TPE, task) ;\
-	DeltaTpe(TPE) step	= linear_step(TPE, task);\
-	v= (TPE*) task->src;\
-	for(; first < last; first++, value+=step){\
-		MOSskipit();\
-		*v++ = (TPE) value;\
+#define projection_loop_linear(TPE, CANDITER_NEXT)\
+{\
+	DeltaTpe(TPE) offset	= linear_base(TPE, task) ;\
+	DeltaTpe(TPE) step		= linear_step(TPE, task);\
+	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CANDITER_NEXT(task->ci)) {\
+        BUN i = (BUN) (o - first);\
+		TPE value =  (TPE) (offset + (i * step));\
+		*bt++ = value;\
 		task->cnt++;\
 	}\
-	task->src = (char*) v;\
 }
 
-str
-MOSprojection_linear( MOStask task)
-{
-	BUN first,last;
-
-	// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
-
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: projection_linear(bte); break;
-		case TYPE_sht: projection_linear(sht); break;
-		case TYPE_int: projection_linear(int); break;
-		case TYPE_oid: projection_linear(oid); break;
-		case TYPE_lng: projection_linear(lng); break;
+MOSprojection_DEF(linear, bte)
+MOSprojection_DEF(linear, sht)
+MOSprojection_DEF(linear, int)
+MOSprojection_DEF(linear, lng)
 #ifdef HAVE_HGE
-		case TYPE_hge: projection_linear(hge); break;
+MOSprojection_DEF(linear, hge)
 #endif
-	}
-	MOSskip_linear(task);
-	return MAL_SUCCEED;
-}
 
 #define join_linear_general(HAS_NIL, NIL_MATCHES, TPE)\
 {	TPE *w = (TPE*) task->src;\
@@ -265,7 +249,7 @@ MOSprojection_linear( MOStask task)
 			}\
 		}\
 	}\
-}	
+}
 
 #define join_linear(TPE) {\
 	if( nil && nil_matches){\

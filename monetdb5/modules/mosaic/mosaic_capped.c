@@ -425,24 +425,18 @@ MOSselect_DEF(capped, dbl)
 MOSselect_DEF(capped, hge)
 #endif
 
-str
-MOSprojection_capped( MOStask task)
-{
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: DICTprojection(bte); break;
-		case TYPE_sht: DICTprojection(sht); break;
-		case TYPE_int: DICTprojection(int); break;
-		case TYPE_lng: DICTprojection(lng); break;
-		case TYPE_oid: DICTprojection(oid); break;
-		case TYPE_flt: DICTprojection(flt); break;
-		case TYPE_dbl: DICTprojection(dbl); break;
+#define projection_loop_capped(TPE, CANDITER_NEXT) \
+    projection_loop_dictionary(TPE, CANDITER_NEXT)
+
+MOSprojection_DEF(capped, bte)
+MOSprojection_DEF(capped, sht)
+MOSprojection_DEF(capped, int)
+MOSprojection_DEF(capped, lng)
+MOSprojection_DEF(capped, flt)
+MOSprojection_DEF(capped, dbl)
 #ifdef HAVE_HGE
-		case TYPE_hge: DICTprojection(hge); break;
+MOSprojection_DEF(capped, hge)
 #endif
-	}
-	MOSskip_capped(task);
-	return MAL_SUCCEED;
-}
 
 str
 MOSjoin_capped( MOStask task, bit nil_matches)

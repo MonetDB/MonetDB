@@ -193,35 +193,35 @@ MOStask task, void* low, void* hgh, bit* li, bit* hi, bit* anti)\
 		switch(MOSgetTag(task->blk)){\
 		case MOSAIC_RLE:\
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_runlength\n");\
-			SELECT_RUNLENGTH(TPE);\
+			DO_OPERATION_IF_ALLOWED(select, runlength, TPE);\
 			break;\
 		case MOSAIC_CAPPED:\
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_capped\n");\
-			SELECT_CAPPED(TPE);\
+			DO_OPERATION_IF_ALLOWED(select, capped, TPE);\
 			break;\
 		case MOSAIC_VAR:\
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_var\n");\
-			SELECT_VAR(TPE);\
+			DO_OPERATION_IF_ALLOWED(select, var, TPE);\
 			break;\
 		case MOSAIC_FRAME:\
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_frame\n");\
-			SELECT_FRAME(TPE);\
+			DO_OPERATION_IF_ALLOWED(select, frame, TPE);\
 			break;\
 		case MOSAIC_DELTA:\
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_delta\n");\
-			SELECT_DELTA(TPE);\
+			DO_OPERATION_IF_ALLOWED(select, delta, TPE);\
 			break;\
 		case MOSAIC_PREFIX:\
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_prefix\n");\
-			SELECT_PREFIX(TPE);\
+			DO_OPERATION_IF_ALLOWED(select, prefix, TPE);\
 			break;\
 		case MOSAIC_LINEAR:\
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_linear\n");\
-			SELECT_LINEAR(TPE);\
+			DO_OPERATION_IF_ALLOWED(select, linear, TPE);\
 			break;\
 		case MOSAIC_RAW:\
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSselect_raw\n");\
-			SELECT_RAW(TPE);\
+			DO_OPERATION_IF_ALLOWED(select, raw, TPE);\
 			break;\
 		}\
 \

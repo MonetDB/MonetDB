@@ -16,7 +16,7 @@
 #include <mal.h>
 #include "mal_interpreter.h"
 #include "mal_client.h"
-#include "mosaic_select.h"
+#include "mosaic_utility.h"
 
 bool MOStypes_raw(BAT* b);
 mal_export void MOSlayout_raw(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
@@ -25,19 +25,10 @@ mal_export void MOSskip_raw(MOStask task);
 mal_export str MOSestimate_raw(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOScompress_raw(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_raw(MOStask task);
-mal_export str MOSprojection_raw( MOStask task);
 mal_export str MOSjoin_raw( MOStask task, bit nil_matches);
 
-MOSselect_SIGNATURE(raw, bte);
-MOSselect_SIGNATURE(raw, sht);
-MOSselect_SIGNATURE(raw, int);
-MOSselect_SIGNATURE(raw, lng);
-MOSselect_SIGNATURE(raw, flt);
-MOSselect_SIGNATURE(raw, dbl);
-#ifdef HAVE_HGE
-MOSselect_SIGNATURE(raw, hge);
-#endif
+ALGEBRA_INTERFACES_ALL_TYPES(raw);
 
-#define SELECT_RAW(TPE) do_select(raw, TPE)
+#define DO_OPERATION_ON_raw(OPERATION, TPE) DO_OPERATION_ON_ALL_TYPES(OPERATION, raw, TPE)
 
 #endif /* _MOSAIC_RAW_ */

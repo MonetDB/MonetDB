@@ -296,46 +296,33 @@ MOSselect_DEF(delta, lng)
 MOSselect_DEF(delta, hge)
 #endif
 
-#define projection_delta(TPE)\
-{	TPE *v;\
-	v= (TPE*) task->src;\
-    MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
+#define projection_loop_delta(TPE, CANDITER_NEXT)\
+{\
+	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
+	BitVector base = (BitVector) MOScodevectorDelta(task);\
 	DeltaTpe(TPE) acc = parameters->init.val##TPE; /*previous value*/\
 	int bits = parameters->bits;\
-	BitVector base = (BitVector) MOScodevectorDelta(task);\
 	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
-	for(; first < last; first++,i++){\
-		DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-		TPE value = ACCUMULATE(acc, delta, sign_mask, TPE);\
-		MOSskipit();\
-		*v++ = value;\
+    TPE v = (TPE) acc;\
+    BUN j = 0;\
+	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CANDITER_NEXT(task->ci)) {\
+        BUN i = (BUN) (o - first);\
+        for (;j <= i; j++) {\
+            TPE delta = getBitVector(base, j, bits);\
+			v = ACCUMULATE(acc, delta, sign_mask, TPE);\
+        }\
+		*bt++ = v;\
 		task->cnt++;\
 	}\
-	task->src = (char*) v;\
 }
 
-str
-MOSprojection_delta( MOStask task)
-{
-	BUN i=0, first, last;
-
-	// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
-
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: projection_delta(bte); break;
-		case TYPE_sht: projection_delta(sht); break;
-		case TYPE_int: projection_delta(int); break;
-		case TYPE_lng: projection_delta(lng); break;
-		case TYPE_oid: projection_delta(oid); break;
+MOSprojection_DEF(delta, bte)
+MOSprojection_DEF(delta, sht)
+MOSprojection_DEF(delta, int)
+MOSprojection_DEF(delta, lng)
 #ifdef HAVE_HGE
-		case TYPE_hge: projection_delta(hge); break;
+MOSprojection_DEF(delta, hge)
 #endif
-	}
-	MOSskip_delta(task);
-	return MAL_SUCCEED;
-}
 
 #define join_delta_general(HAS_NIL, NIL_MATCHES, TPE)\
 {   TPE *w;\

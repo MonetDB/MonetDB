@@ -16,7 +16,7 @@
 #include <mal.h>
 #include "mal_interpreter.h"
 #include "mal_client.h"
-#include "mosaic_select.h"
+#include "mosaic_utility.h"
 
 #define DICTTHRESHOLD 4192
 #define DICTSIZE 256
@@ -33,19 +33,10 @@ mal_export void MOSpostEstimate_var(MOStask task);
 mal_export str finalizeDictionary_var(MOStask task);
 mal_export void MOScompress_var(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_var(MOStask task);
-mal_export str MOSprojection_var( MOStask task);
 mal_export str MOSjoin_var( MOStask task, bit nil_matches);
 
-MOSselect_SIGNATURE(var, bte);
-MOSselect_SIGNATURE(var, sht);
-MOSselect_SIGNATURE(var, int);
-MOSselect_SIGNATURE(var, lng);
-MOSselect_SIGNATURE(var, flt);
-MOSselect_SIGNATURE(var, dbl);
-#ifdef HAVE_HGE
-MOSselect_SIGNATURE(var, hge);
-#endif
+ALGEBRA_INTERFACES_ALL_TYPES(var);
 
-#define SELECT_VAR(TPE) do_select(var, TPE)
+#define DO_OPERATION_ON_var(OPERATION, TPE) DO_OPERATION_ON_ALL_TYPES(OPERATION, var, TPE)
 
 #endif /* _MOSAIC_VAR_ */
