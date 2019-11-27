@@ -2916,7 +2916,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 			}
 			if (l && r) 
 				return exp_binop(sql->sa, l, r, f);
-			
+
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
@@ -2955,7 +2955,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 
 				l = ol;
 				r = or;
-		    }
+			}
 		}
 		/* try finding function based on both arguments */
 		if (rel_convert_types(sql, rel, rel, &l, &r, 1/*fix scale*/, type_equal) >= 0){
@@ -3406,7 +3406,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		if (list_length(exps) != 2 || (!EC_NUMBER(t1->type->eclass) || !a || is_group_concat || subtype_cmp(
 						&((sql_arg*)a->aggr->ops->h->data)->type,
 						&((sql_arg*)a->aggr->ops->h->next->data)->type) != 0) )  {
-			if(!a && is_group_concat) {
+			if (!a && is_group_concat) {
 				sql_subtype *tstr = sql_bind_localtype("str");
 				list *sargs = sa_list(sql->sa);
 				if (list_length(exps) >= 1)
@@ -3947,7 +3947,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 	list *exps = new_exp_list(sql->sa);
 
 	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "SELECT: too many nested grouping clauses");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	for (dnode *o = groupby->data.lval->h; o; o = o->next) {
 		symbol *grouping = o->data.sym;
@@ -4258,7 +4258,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 static int
 generate_window_bound(tokens sql_token, bool first_half)
 {
-	switch(sql_token) {
+	switch (sql_token) {
 		case SQL_PRECEDING:
 			return first_half ? BOUND_FIRST_HALF_PRECEDING : BOUND_SECOND_HALF_PRECEDING;
 		case SQL_FOLLOWING:
@@ -4280,7 +4280,7 @@ generate_window_bound_call(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schem
 	sql_subfunc *dc1, *dc2;
 	sql_subtype *it = sql_bind_localtype("int");
 
-	if(pe) {
+	if (pe) {
 		append(targs1, exp_subtype(pe));
 		append(targs2, exp_subtype(pe));
 		append(rargs1, exp_copy(sql, pe));
@@ -4325,18 +4325,18 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 	sql_class bclass = EC_ANY;
 	sql_exp *res = NULL;
 
-	if((bound->token == SQL_PRECEDING || bound->token == SQL_FOLLOWING || bound->token == SQL_CURRENT_ROW) && bound->type == type_int) {
+	if ((bound->token == SQL_PRECEDING || bound->token == SQL_FOLLOWING || bound->token == SQL_CURRENT_ROW) && bound->type == type_int) {
 		atom *a = NULL;
 		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
 		bclass = bt->type->eclass;
 
-		if((bound->data.i_val == UNBOUNDED_PRECEDING_BOUND || bound->data.i_val == UNBOUNDED_FOLLOWING_BOUND)) {
-			if(EC_NUMBER(bclass))
+		if ((bound->data.i_val == UNBOUNDED_PRECEDING_BOUND || bound->data.i_val == UNBOUNDED_FOLLOWING_BOUND)) {
+			if (EC_NUMBER(bclass))
 				a = atom_general(sql->sa, bt, NULL);
 			else
 				a = atom_general(sql->sa, it, NULL);
-		} else if(bound->data.i_val == CURRENT_ROW_BOUND) {
-			if(EC_NUMBER(bclass))
+		} else if (bound->data.i_val == CURRENT_ROW_BOUND) {
+			if (EC_NUMBER(bclass))
 				a = atom_zero_value(sql->sa, bt);
 			else
 				a = atom_zero_value(sql->sa, it);
@@ -4358,32 +4358,32 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must not be NULL", bound_desc);
 		}
 		res = rel_value_exp2(query, &p, bound, f, ek, &is_last);
-		if(!res)
+		if (!res)
 			return NULL;
 		bt = exp_subtype(res);
-		if(bt)
+		if (bt)
 			bclass = bt->type->eclass;
-		if(!bt || !(bclass == EC_NUM || EC_INTERVAL(bclass) || bclass == EC_DEC || bclass == EC_FLT))
+		if (!bt || !(bclass == EC_NUM || EC_INTERVAL(bclass) || bclass == EC_DEC || bclass == EC_FLT))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must be of a countable SQL type", bound_desc);
-		if((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bclass != EC_NUM) {
+		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bclass != EC_NUM) {
 			char *err = subtype2string(bt);
-			if(!err)
+			if (!err)
 				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			(void) sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary on %s frame can't be %s type", bound_desc,
 							 (frame_type == FRAME_ROWS) ? "rows":"groups", err);
 			_DELETE(err);
 			return NULL;
 		}
-		if(frame_type == FRAME_RANGE) {
-			if(bclass == EC_FLT && iet->type->eclass != EC_FLT)
+		if (frame_type == FRAME_RANGE) {
+			if (bclass == EC_FLT && iet->type->eclass != EC_FLT)
 				return sql_error(sql, 02, SQLSTATE(42000) "Values in input aren't floating-point while on %s boundary are", bound_desc);
-			if(bclass != EC_FLT && iet->type->eclass == EC_FLT)
+			if (bclass != EC_FLT && iet->type->eclass == EC_FLT)
 				return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary aren't floating-point while on input are", bound_desc);
-			if(bclass == EC_DEC && iet->type->eclass != EC_DEC)
+			if (bclass == EC_DEC && iet->type->eclass != EC_DEC)
 				return sql_error(sql, 02, SQLSTATE(42000) "Values in input aren't decimals while on %s boundary are", bound_desc);
-			if(bclass != EC_DEC && iet->type->eclass == EC_DEC)
+			if (bclass != EC_DEC && iet->type->eclass == EC_DEC)
 				return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary aren't decimals while on input are", bound_desc);
-			if(bclass != EC_SEC && iet->type->eclass == EC_TIME) {
+			if (bclass != EC_SEC && iet->type->eclass == EC_TIME) {
 				char *err = subtype2string(iet);
 				if(!err)
 					return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -4391,9 +4391,9 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 				_DELETE(err);
 				return NULL;
 			}
-			if(EC_INTERVAL(bclass) && !EC_TEMP(iet->type->eclass)) {
+			if (EC_INTERVAL(bclass) && !EC_TEMP(iet->type->eclass)) {
 				char *err = subtype2string(iet);
-				if(!err)
+				if (!err)
 					return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", err, bound_desc);
 				_DELETE(err);
@@ -4414,32 +4414,32 @@ get_window_clauses(mvc *sql, char* ident, symbol **partition_by_clause, symbol *
 	if (THRhighwater())
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	if((window_specification = stack_get_window_def(sql, ident, &pos)) == NULL)
+	if ((window_specification = stack_get_window_def(sql, ident, &pos)) == NULL)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window '%s' not found", ident);
 
 	//avoid infinite lookups
-	if(stack_check_var_visited(sql, pos))
+	if (stack_check_var_visited(sql, pos))
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cyclic references to window '%s' found", ident);
 	stack_set_var_visited(sql, pos);
 
-	if(window_specification->h->next->data.sym) {
-		if(*partition_by_clause)
+	if (window_specification->h->next->data.sym) {
+		if (*partition_by_clause)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: redefinition of PARTITION BY clause from window '%s'", ident);
 		*partition_by_clause = window_specification->h->next->data.sym;
 	}
-	if(window_specification->h->next->next->data.sym) {
-		if(*order_by_clause)
+	if (window_specification->h->next->next->data.sym) {
+		if (*order_by_clause)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: redefinition of ORDER BY clause from window '%s'", ident);
 		*order_by_clause = window_specification->h->next->next->data.sym;
 	}
-	if(window_specification->h->next->next->next->data.sym) {
-		if(*frame_clause)
+	if (window_specification->h->next->next->next->data.sym) {
+		if (*frame_clause)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: redefinition of frame clause from window '%s'", ident);
 		*frame_clause = window_specification->h->next->next->next->data.sym;
 	}
 
 	window_ident = window_specification->h->data.sval;
-	if(window_ident && !get_window_clauses(sql, window_ident, partition_by_clause, order_by_clause, frame_clause))
+	if (window_ident && !get_window_clauses(sql, window_ident, partition_by_clause, order_by_clause, frame_clause))
 		return NULL; //the error was already set
 
 	return window_specification; //return something to say there were no errors
@@ -4833,7 +4833,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 			return NULL;
 		if (exp) {
 			sql_exp *res;
-		       
+
 			if (!exp_name(exp))
 				exp_label(sql->sa, exp, ++sql->label);
 			res  = exp_ref(sql->sa, exp);
@@ -4976,7 +4976,7 @@ column_exp(sql_query *query, sql_rel **rel, symbol *column_e, int f)
 
 	if (f == sql_sel && rel && *rel && (*rel)->card < CARD_AGGR)
 		ek.card = card_value;
-       	ve = rel_value_exp(query, rel, l->h->data.sym, f, ek);
+	ve = rel_value_exp(query, rel, l->h->data.sym, f, ek);
 	if (!ve)
 		return NULL;
 	/* AS name */
@@ -5309,7 +5309,7 @@ rel_unique_names(mvc *sql, sql_rel *rel)
 
 	if (!is_project(rel->op))
 		return rel;
-       	l = sa_list(sql->sa);
+	l = sa_list(sql->sa);
 	for (n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
@@ -5653,7 +5653,7 @@ rel_crossquery(sql_query *query, sql_rel *rel, symbol *q)
 	symbol *tab2 = n->next->data.sym;
 	sql_rel *t1 = table_ref(query, rel, tab1, 0);
 	sql_rel *t2 = NULL;
-       
+
 	if (t1)
 		t2 = table_ref(query, rel, tab2, 0);
 	if (!t1 || !t2)
@@ -5676,7 +5676,7 @@ rel_unionjoinquery(sql_query *query, sql_rel *rel, symbol *q)
 	int found = 0;
 
 	if (lv)
-       		rv = table_ref(query, rel, n->next->next->data.sym, 0);
+		rv = table_ref(query, rel, n->next->next->data.sym, 0);
 	assert(n->next->type == type_int);
 	if (!lv || !rv)
 		return NULL;

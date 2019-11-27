@@ -2566,16 +2566,16 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor(sql, rel, &rewrite_or_exp);
 	rel = rel_exp_visitor(sql, rel, &rewrite_rank);
 	rel = rel_exp_visitor(sql, rel, &rewrite_anyequal);
-	rel = rel_visitor(sql, rel, &rewrite_join2semi);      	/* where possible convert anyequal functions into marks */
+	rel = rel_visitor(sql, rel, &rewrite_join2semi);	/* where possible convert anyequal functions into marks */
 	rel = rel_exp_visitor(sql, rel, &rewrite_compare);
 	rel = rel_exp_visitor(sql, rel, &rewrite_exists);
-	rel = rel_exp_visitor(sql, rel, &rewrite_ifthenelse); 	/* add isnull handling */
+	rel = rel_exp_visitor(sql, rel, &rewrite_ifthenelse);	/* add isnull handling */
 	rel = rel_exp_visitor(sql, rel, &rewrite_exp_rel);
-	rel = rel_visitor(sql, rel, &rewrite_compare_exp); 	/* only allow for e_cmp in selects and  handling */
+	rel = rel_visitor(sql, rel, &rewrite_compare_exp);	/* only allow for e_cmp in selects and  handling */
 	rel = rel_visitor(sql, rel, &rewrite_empty_project);
 	rel = _rel_unnest(sql, rel);
 	rel = rel_visitor(sql, rel, &rewrite_fix_count);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
 	rel = rel_visitor(sql, rel, &rewrite_remove_xp);	/* remove crossproducts with project [ atom ] */
-	rel = rel_visitor(sql, rel, &rewrite_groupings);
+	rel = rel_visitor(sql, rel, &rewrite_groupings);	/* transform group combinations into union of group relations */
 	return rel;
 }
