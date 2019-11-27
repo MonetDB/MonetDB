@@ -2492,9 +2492,7 @@ rel_distinct_aggregate_on_unique_values(int *changes, mvc *sql, sql_rel *rel)
 				for (node *m = ((list*)exp->l)->h; m && all_unique; m = m->next) {
 					sql_exp *arg = (sql_exp*) m->data;
 
-					if (arg->card == CARD_ATOM) /* constants are always unique */
-						continue;
-					else if (arg->type == e_column) {
+					if (arg->type == e_column) {
 						fcmp cmp = (fcmp)&kc_column_cmp;
 						sql_column *c = exp_find_column(rel, arg, -2);
 
