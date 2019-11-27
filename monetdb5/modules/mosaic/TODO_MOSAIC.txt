@@ -11,15 +11,16 @@ Add test for float/double
 Add test for huge
 Check MOSanalysis and its test.
 Fix/check/test MOSlayout.
+benchmark using TPC-H
 make mitosis work with mosaic and see how this relates to the previous landmark stuff.
 Remove floating point support in prefix compression and use prefix-like-frame semantics
 consider packing mosaic_block_header's more efficiently.
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
-benchmark
 DO nil checking more efficient similar to gdk_select
 
 ####code issues####
 Replace the MOSskip functions by MOSadvance functions
+Use GDK naming conventions, e.g. o for stuff coming out if canditer_next.
 Make block headers specific by having type parametrized blockheader struct's.
 atomic base type of an oid bat is lng. So we can remove that one.
 It is a bit cleaner if MOSadvance call's are done outside of select functions.
