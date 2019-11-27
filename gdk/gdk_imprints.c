@@ -659,7 +659,7 @@ IMPSremove(BAT *b)
 
 		if ((GDKdebug & ALGOMASK) &&
 		    * (size_t *) imprints->imprints.base & (1 << 16))
-			DEBUG(GDK_IMPRINTS, "Removing persisted imprints\n");
+			TRC_DEBUG(GDK_IMPRINTS, "Removing persisted imprints\n");
 		if (HEAPdelete(&imprints->imprints, BBP_physical(b->batCacheid),
 			       "timprints") != GDK_SUCCEED)
 			TRC_DEBUG(IO_, "IMPSremove(%s): imprints heap\n", BATgetId(b));
@@ -740,7 +740,7 @@ IMPSprint(BAT *b)
 	int i;
 
 	if (!BATcheckimprints(b)) {
-		DEBUG(GDK_IMPRINTS, "No imprint\n");
+		TRC_DEBUG(GDK_IMPRINTS, "No imprint\n");
 		return;
 	}
 	imprints = b->timprints;
@@ -749,33 +749,33 @@ IMPSprint(BAT *b)
 	max_bins = min_bins + 64;
 	cnt_bins = max_bins + 64;
 
-	DEBUG(GDK_IMPRINTS,
+	TRC_DEBUG(GDK_IMPRINTS,
 		"bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
 		imprints->bits, imprints->impcnt, imprints->dictcnt);
-	DEBUG(GDK_IMPRINTS, "MIN\n");
+	TRC_DEBUG(GDK_IMPRINTS, "MIN\n");
 	for (i = 0; i < imprints->bits; i++) {
-		DEBUG(GDK_IMPRINTS, "[ " BUNFMT " ]\n", min_bins[i]);
+		TRC_DEBUG(GDK_IMPRINTS, "[ " BUNFMT " ]\n", min_bins[i]);
 	}
 	
-	DEBUG(GDK_IMPRINTS, "MAX\n");
+	TRC_DEBUG(GDK_IMPRINTS, "MAX\n");
 	for (i = 0; i < imprints->bits; i++) {
-		DEBUG(GDK_IMPRINTS, "[ " BUNFMT " ]\n", max_bins[i]);
+		TRC_DEBUG(GDK_IMPRINTS, "[ " BUNFMT " ]\n", max_bins[i]);
 	}
-	DEBUG(GDK_IMPRINTS, "COUNT\n");
+	TRC_DEBUG(GDK_IMPRINTS, "COUNT\n");
 	for (i = 0; i < imprints->bits; i++) {
-		DEBUG(GDK_IMPRINTS, "[ " BUNFMT " ]\n", cnt_bins[i]);
+		TRC_DEBUG(GDK_IMPRINTS, "[ " BUNFMT " ]\n", cnt_bins[i]);
 	}
 	for (dcnt = 0, icnt = 0, pages = 1; dcnt < imprints->dictcnt; dcnt++) {
 		if (d[dcnt].repeat) {
 			BINSIZE(imprints->bits, IMPSPRNTMASK, " ");
 			pages += d[dcnt].cnt;
-			DEBUG(GDK_IMPRINTS, "[ " BUNFMT " ]r %s\n", pages, s);
+			TRC_DEBUG(GDK_IMPRINTS, "[ " BUNFMT " ]r %s\n", pages, s);
 			icnt++;
 		} else {
 			l = icnt + d[dcnt].cnt;
 			for (; icnt < l; icnt++) {
 				BINSIZE(imprints->bits, IMPSPRNTMASK, " ");
-				DEBUG(GDK_IMPRINTS, "[ " BUNFMT " ]  %s\n", pages++, s);
+				TRC_DEBUG(GDK_IMPRINTS, "[ " BUNFMT " ]  %s\n", pages++, s);
 			}
 		}
 	}

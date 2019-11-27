@@ -99,7 +99,7 @@ print_stmtlist(sql_allocator *sa, stmt *l)
 			const char *rnme = table_name(sa, n->data);
 			const char *nme = column_name(sa, n->data);
 
-			INFO(SQL_RELATION, "%s.%s\n", rnme ? rnme : "(null!)", nme ? nme : "(null!)");
+			TRC_INFO(SQL_RELATION, "%s.%s\n", rnme ? rnme : "(null!)", nme ? nme : "(null!)");
 		}
 	}
 }

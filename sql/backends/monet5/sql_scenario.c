@@ -446,7 +446,7 @@ SQLinit(Client c)
 		MT_lock_unset(&sql_contextLock);
 		/* CHECK */
 		// Not sure if this is an info msg
-		INFO(SQL_SCENARIO, "%s\n", msg);
+		TRC_INFO(SQL_SCENARIO, "%s\n", msg);
 		return msg;
 	}
 	be = c->sqlcontext;
@@ -562,7 +562,7 @@ SQLinit(Client c)
 			freeException(other);
 
 		if (msg)
-			INFO(SQL_SCENARIO, "%s\n", msg);
+			TRC_INFO(SQL_SCENARIO, "%s\n", msg);
 #endif
 	} else {		/* handle upgrades */
 		if (!m->sa)

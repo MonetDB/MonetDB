@@ -91,7 +91,7 @@ bailout:
 	SQLID = t->base.id;                                         \
 	if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) {  \
 		mvc_destroy(m);                                         \
-		INFO(SQL_MVC, "Initialization: %s\n", output);          \
+		TRC_INFO(SQL_MVC, "Initialization: %s\n", output);          \
 		freeException(output);                                  \
 		return -1;                                              \
 	}
@@ -343,7 +343,7 @@ mvc_trans(mvc *m)
 	int schema_changed = 0, err = m->session->status;
 	assert(!m->session->tr->active);	/* can only start a new transaction */
 	store_lock();
-	INFO(SQL_MVC, "Starting transaction\n");
+	TRC_INFO(SQL_MVC, "Starting transaction\n");
 	schema_changed = sql_trans_begin(m->session);
 	if (m->qc && (schema_changed || m->qc->nr > m->cache || err)){
 		if (schema_changed || err) {
@@ -481,7 +481,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 build up the hash (not copied in the trans dup)) */
 			qc_clean(m->qc);
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
-		INFO(SQL_MVC, "Savepoint commit '%s' done\n", name);
+		TRC_INFO(SQL_MVC, "Savepoint commit '%s' done\n", name);
 		return msg;
 	}
 
@@ -516,7 +516,7 @@ build up the hash (not copied in the trans dup)) */
 				freeException(other);
 			return msg;
 		}
-		INFO(SQL_MVC, 
+		TRC_INFO(SQL_MVC, 
 			"Commit done (no changes)%s%.200s\n", 
 			m->query ? ", query: " : "",
 			m->query ? m->query : "");
@@ -575,7 +575,7 @@ build up the hash (not copied in the trans dup)) */
 		sql_trans_begin(m->session);
 	store_unlock();
 	m->type = Q_TRANS;
-	INFO(SQL_MVC, 
+	TRC_INFO(SQL_MVC, 
 		"Commit done%s%.200s\n",
 		m->query ? ", query: " : "",
 		m->query ? m->query : "");
@@ -637,7 +637,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		return msg;
 	}
 	m->type = Q_TRANS;
-	INFO(SQL_MVC, 
+	TRC_INFO(SQL_MVC, 
 		"Commit%s%s rolled back%s%s%.200s\n",
 		name ? " " : "", name ? name : "",
 		tr->wtime == 0 ? " (no changes)" : "",

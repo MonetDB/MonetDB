@@ -307,7 +307,7 @@ WLRprocessBatch(void *arg)
 				char line[FILENAME_MAX];
 				snprintf(line, FILENAME_MAX,"#wlr.process:failed further parsing '%s':",path);
 				snprintf(wlr_error, FILENAME_MAX, "%.*s", FILENAME_MAX, line);
-				INFO(SQL_WLR, "%s\n", line);
+				TRC_INFO(SQL_WLR, "%s\n", line);
 				debugFunction(SQL_WLR, mb, 0, LIST_MAL_DEBUG );
 				cleanup();
 				TRC_DEBUG(SQL_WLR, "Redo transaction error\n");
@@ -389,7 +389,7 @@ WLRprocessBatch(void *arg)
 					char line[FILENAME_MAX];
 					snprintf(line, FILENAME_MAX,"#wlr.process:typechecking failed '%s':\n",path);
 					snprintf(wlr_error, FILENAME_MAX, "%s", line);
-					INFO(SQL_WLR, "%s\n", line);
+					TRC_INFO(SQL_WLR, "%s\n", line);
 					debugFunction(SQL_WLR, mb, 0, LIST_MAL_DEBUG );
 				}
 				cleanup();
@@ -540,7 +540,7 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( getArgType(mb, pci, 1) == TYPE_timestamp){
 		if (timestamp_precision_tostr(&timelimit, &size, *getArgReference_TYPE(stk, pci, 1, timestamp), 3, true) < 0)
 			throw(SQL, "wlr.replicate", GDK_EXCEPTION);
-		INFO(SQL_WLR, "Time limit %s\n", timelimit);
+		TRC_INFO(SQL_WLR, "Time limit %s\n", timelimit);
 	} else
 	if( getArgType(mb, pci, 1) == TYPE_bte)
 		limit = getVarConstant(mb,getArg(pci,1)).val.btval;

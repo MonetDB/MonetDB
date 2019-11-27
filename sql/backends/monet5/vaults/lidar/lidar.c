@@ -541,7 +541,7 @@ return MAL_SUCCEED;
 	snprintf(fulldirectory, BUFSIZ, "%s%s", dir, pat);
 	glob(fulldirectory, GLOB_DOOFFS, NULL, &globbuf);
 
-	INFO(LIDAR, "Fulldir: %s - Size: %lu\n", fulldirectory, globbuf.gl_pathc);
+	TRC_INFO(LIDAR, "Fulldir: %s - Size: %lu\n", fulldirectory, globbuf.gl_pathc);
 
 	if (globbuf.gl_pathc == 0)
 		throw(MAL, "listdir", SQLSTATE(LI000) "Couldn't open the directory or there are no files that match the pattern");

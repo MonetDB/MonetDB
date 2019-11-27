@@ -383,7 +383,7 @@ MT_munmap(void *p, size_t len)
 		GDKsyserror("MT_munmap: munmap(%p,%zu) failed\n",
 			    p, len);
 	VALGRIND_FREELIKE_BLOCK(p, 0);
-	DEBUG(GDK_POSIX, "munmap(%p,%zu) = %d\n", p, len, ret);
+	TRC_DEBUG(GDK_POSIX, "munmap(%p,%zu) = %d\n", p, len, ret);
 	return ret;
 }
 
@@ -423,13 +423,13 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		}
 		if (path && truncate(path, *new_size) < 0)
 			ERROR(GDK_POSIX, "MT_mremap(%s): truncate failed\n", path);
-		DEBUG(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu) -> shrinking\n", path?path:"NULL", old_address, old_size, *new_size);
+		TRC_DEBUG(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu) -> shrinking\n", path?path:"NULL", old_address, old_size, *new_size);
 #endif	/* !STATIC_CODE_ANALYSIS */
 		return old_address;
 	}
 	if (*new_size == old_size) {
 		/* do nothing */
-		DEBUG(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu) -> unchanged\n", path?path:"NULL", old_address, old_size, *new_size);
+		TRC_DEBUG(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu) -> unchanged\n", path?path:"NULL", old_address, old_size, *new_size);
 		return old_address;
 	}
 
@@ -663,7 +663,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		if (fd >= 0)
 			close(fd);
 	}
-	DEBUG(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu) -> %p%s\n", path?path:"NULL", old_address, old_size, *new_size, p, path && mode & MMAP_COPY ? " private" : "");
+	TRC_DEBUG(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu) -> %p%s\n", path?path:"NULL", old_address, old_size, *new_size, p, path && mode & MMAP_COPY ? " private" : "");
 	if (p == MAP_FAILED)
 		ERROR(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu): p == MAP_FAILED\n", path?path:"NULL", old_address, old_size, *new_size);
 	return p == MAP_FAILED ? NULL : p;
@@ -677,7 +677,7 @@ MT_msync(void *p, size_t len)
 	if (ret < 0)
 		GDKsyserror("MT_msync: msync failed\n");
 	
-	DEBUG(GDK_POSIX, "msync(%p,%zu,MS_SYNC) = %d\n", p, len, ret);
+	TRC_DEBUG(GDK_POSIX, "msync(%p,%zu,MS_SYNC) = %d\n", p, len, ret);
 	return ret;
 }
 
@@ -853,7 +853,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		MT_munmap(old_address, old_size);
 	}
 
-	DEBUG(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu) -> %p\n", path?path:"NULL", old_address, old_size, *new_size, p);
+	TRC_DEBUG(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu) -> %p\n", path?path:"NULL", old_address, old_size, *new_size, p);
 
 	if (p == NULL)
 		ERROR(GDK_POSIX, "MT_mremap(%s,%p,%zu,%zu): p == NULL\n", path?path:"NULL", old_address, old_size, *new_size);

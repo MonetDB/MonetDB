@@ -691,10 +691,10 @@ static void showFlowEvent(DataFlow flow, int pc)
 	int i;
 	FlowEvent fe = flow->status;
 
-	INFO(MAL_DATAFLOW, "End of data flow '%d' done '%d'\n", pc, flow->stop - flow->start);
+	TRC_INFO(MAL_DATAFLOW, "End of data flow '%d' done '%d'\n", pc, flow->stop - flow->start);
 	for (i = 0; i < flow->stop - flow->start; i++)
 		if (fe[i].state != DFLOWwrapup && fe[i].pc >= 0) {
-			INFO(MAL_DATAFLOW, "Missed pc %d status %d %d blocks %d\n", fe[i].state, i, fe[i].pc, fe[i].blocks);
+			TRC_INFO(MAL_DATAFLOW, "Missed pc %d status %d %d blocks %d\n", fe[i].state, i, fe[i].pc, fe[i].blocks);
 			debugInstruction(MAL_DATAFLOW, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), LIST_MAL_MAPI);
 		}
 }

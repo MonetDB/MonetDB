@@ -401,7 +401,7 @@ WLCinit(void)
 
 		msg =  WLCgetConfig();
 		if( msg)
-			INFO(MAL_WLC, "%s\n", msg);
+			TRC_INFO(MAL_WLC, "%s\n", msg);
 		if (MT_create_thread(&wlc_logger, WLClogger , (void*) 0,
 							 MT_THR_DETACHED, "WLClogger") < 0) {
 			ERROR(MAL_WLC, "Thread could not be spawned\n");

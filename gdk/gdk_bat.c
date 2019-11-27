@@ -449,7 +449,7 @@ BATextend(BAT *b, BUN newcap)
 
 	theap_size *= Tsize(b);
 	if (b->theap.base && GDKdebug & HEAPMASK)
-		INFO(BAT_, "HEAPextend in BATextend %s %zu %zu\n", b->theap.filename, b->theap.size, theap_size);
+		TRC_INFO(BAT_, "HEAPextend in BATextend %s %zu %zu\n", b->theap.filename, b->theap.size, theap_size);
 	if (b->theap.base &&
 	    HEAPextend(&b->theap, theap_size, b->batRestricted == BAT_READ) != GDK_SUCCEED)
 		return GDK_FAIL;

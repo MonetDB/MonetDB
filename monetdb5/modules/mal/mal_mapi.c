@@ -1032,7 +1032,7 @@ SERVERlisten_port(int *ret, int *pid)
 str
 SERVERstop(void *ret)
 {
-	INFO(MAL_SERVER, "Server stop\n");
+	TRC_INFO(MAL_SERVER, "Server stop\n");
 	ATOMIC_SET(&serverexiting, 1);
 	/* wait until they all exited, but skip the wait if the whole
 	 * system is going down */

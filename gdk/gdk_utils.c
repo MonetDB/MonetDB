@@ -893,7 +893,7 @@ GDKreset(int status)
 
 					killed = true;
 					e = MT_kill_thread(victim);
-					INFO(GDK_UTILS, "Killing thread: %d\n", e);
+					TRC_INFO(GDK_UTILS, "Killing thread: %d\n", e);
 					(void) ATOMIC_DEC(&GDKnrofthreads);
 				}
 				GDKfree(t->name);
@@ -1132,9 +1132,9 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 		}
 		*dst = '\0';
 	} else {
-		INFO(GDK_UTILS, "%s%.*s%s", prefix, (int) messagelen, message, suffix);
+		TRC_INFO(GDK_UTILS, "%s%.*s%s", prefix, (int) messagelen, message, suffix);
 	}
-	INFO(GDK_UTILS, "%s%.*s%s\n",
+	TRC_INFO(GDK_UTILS, "%s%.*s%s\n",
 					prefix[0] == '#' ? prefix + 1 : prefix,
 					(int) messagelen, message, suffix);
 }

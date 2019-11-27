@@ -124,7 +124,7 @@ atom_int( sql_allocator *sa, sql_subtype *tpe,
 			break;
 #endif
 		default:
-			INFO(SQL_ATOM_TR, "%d\n", a->data.vtype);
+			TRC_INFO(SQL_ATOM_TR, "%d\n", a->data.vtype);
 			assert(0);
 		}
 		a->d = (dbl) val;

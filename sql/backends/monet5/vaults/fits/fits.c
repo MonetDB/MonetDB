@@ -278,7 +278,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(nrows <= (size_t) GDK_oid_max);
 
 	snprintf(filename,BUFSIZ,"\n%s.fit",tname);
-	INFO(FITS, "Filename: %s\n", filename);
+	TRC_INFO(FITS, "Filename: %s\n", filename);
 
 	remove(filename);
 
@@ -973,7 +973,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 
-	INFO(FITS, "Loading %ld rows in table %s\n", rows, tname);
+	TRC_INFO(FITS, "Loading %ld rows in table %s\n", rows, tname);
 
 	for (j = 1; j <= cnum; j++) {
 		BAT *tmp = NULL;
@@ -1068,7 +1068,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for(i = 0; i < bsize ; i++)
 				GDKfree(v[i]);
 			GDKfree(v);
-			INFO(FITS, "String column load %d ms, BUNappend %d ms\n", tloadtm, tattachtm);
+			TRC_INFO(FITS, "String column load %d ms, BUNappend %d ms\n", tloadtm, tattachtm);
 		}
 		else {
 			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, (void *) nilptr, (void *)BUNtloc(bat_iterator(tmp), 0), &anynull, &status);
@@ -1084,14 +1084,14 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		}
 
-		INFO(FITS, "#Column %s loaded for %d ms\t", cname[j-1], GDKms() - time0);
+		TRC_INFO(FITS, "#Column %s loaded for %d ms\t", cname[j-1], GDKms() - time0);
 		if (store_funcs.append_col(m->session->tr, col, tmp, TYPE_bat) != LOG_OK) {
 			BBPunfix(tmp->batCacheid);
 			msg = createException(MAL, "fits.loadtable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			break;
 		}
 
-		INFO(FITS, "Total %d ms\n", GDKms() - time0);
+		TRC_INFO(FITS, "Total %d ms\n", GDKms() - time0);
 		BBPunfix(tmp->batCacheid);
 	}
 
