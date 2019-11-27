@@ -141,12 +141,12 @@ SELECT
     EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1) a6,
     col1 + col5 = (SELECT MIN(ColID) FROM tbl_ProductSales) a7,
     CAST(SUM(DISTINCT CASE WHEN col5 - col8 = (SELECT MIN(ColID / col2) FROM tbl_ProductSales) THEN col2 - 5 ELSE ABS(col1) END) AS BIGINT) a8,
-    (SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5)) a9,
+    CAST((SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5)) AS BIGINT) a9,
     GROUPING(col1, col5, col8) * MIN(col8) OVER (PARTITION BY col5 ORDER BY col1 NULLS LAST ROWS UNBOUNDED PRECEDING) a10,
     MAX(col3) / 10 + GROUPING(col1, col5, col2) * 10 a11,
     GROUP_CONCAT(CAST(col4 AS VARCHAR(32)), '-sep-') || ' plus ' || GROUPING(col1) a12,
     FIRST_VALUE(col1) OVER (ORDER BY col8 DESC NULLS FIRST) a13,
-    col2 * NULL a14
+    CAST(col2 * NULL AS BIGINT) a14
 FROM another_T
 GROUP BY CUBE(col1, col2, col5, col8), GROUPING SETS (())
 ORDER BY 
