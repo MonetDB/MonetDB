@@ -121,7 +121,7 @@ static str findName(const char *nme, size_t len, int allocate)
 		struct namespace *ns = GDKmalloc(sizeof(struct namespace));
 		if (ns == NULL) {
 			/* error we cannot recover from */
-			CRITICAL(MAL_NAMESPACE, SQLSTATE(HY001) MAL_MALLOC_FAIL "\n");
+			TRC_CRITICAL(MAL_NAMESPACE, SQLSTATE(HY001) MAL_MALLOC_FAIL "\n");
 			mal_exit(1);
 		}
 		ns->next = namespace;

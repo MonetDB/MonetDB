@@ -70,7 +70,7 @@ MCinit(void)
 	if (maxclients <= 0) {
 		maxclients = 64;
 		if (GDKsetenv("max_clients", "64") != GDK_SUCCEED) {
-			CRITICAL(MAL_CLIENT, "GDKsetenv failed\n");
+			TRC_CRITICAL(MAL_CLIENT, "GDKsetenv failed\n");
 			return false;
 		}
 	}
@@ -78,7 +78,7 @@ MCinit(void)
 	MAL_MAXCLIENTS = /* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 	if( mal_clients == NULL){
-		CRITICAL(MAL_CLIENT, "Initialization failed: " MAL_MALLOC_FAIL "\n");
+		TRC_CRITICAL(MAL_CLIENT, "Initialization failed: " MAL_MALLOC_FAIL "\n");
 		return false;
 	}
 	for (int i = 0; i < MAL_MAXCLIENTS; i++)
@@ -222,7 +222,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 		MT_lock_set(&mal_contextLock);
 		c->mode = FREECLIENT;
 		MT_lock_unset(&mal_contextLock);
-		CRITICAL(MAL_CLIENT, "Initialization failed: " MAL_MALLOC_FAIL "\n");
+		TRC_CRITICAL(MAL_CLIENT, "Initialization failed: " MAL_MALLOC_FAIL "\n");
 		return NULL;
 	}
 	c->yycur = 0;
@@ -259,7 +259,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 			c->mode = FREECLIENT;
 			MT_lock_unset(&mal_contextLock);
 		}
-		CRITICAL(MAL_CLIENT, "Initialization failed: " MAL_MALLOC_FAIL "\n");
+		TRC_CRITICAL(MAL_CLIENT, "Initialization failed: " MAL_MALLOC_FAIL "\n");
 		return NULL;
 	}
 	c->promptlength = strlen(prompt);

@@ -109,25 +109,25 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	TRC_DEBUG(SQL_MVC, "Initialization\n");
 	keyword_init();
 	if(scanner_init_keywords() != 0) {
-		CRITICAL(SQL_MVC, "Malloc failure\n");
+		TRC_CRITICAL(SQL_MVC, "Malloc failure\n");
 		return -1;
 	}
 
 	if ((first = store_init(debug, store, ro, su, stk)) < 0) {
-		CRITICAL(SQL_MVC, "Unable to create system tables\n");
+		TRC_CRITICAL(SQL_MVC, "Unable to create system tables\n");
 		return -1;
 	}
 
 	m = mvc_create(0, stk, 0, NULL, NULL);
 	if (!m) {
-		CRITICAL(SQL_MVC, "Malloc failure\n");
+		TRC_CRITICAL(SQL_MVC, "Malloc failure\n");
 		return -1;
 	}
 
 	m->sa = sa_create();
 	if (!m->sa) {
 		mvc_destroy(m);
-		CRITICAL(SQL_MVC, "Malloc failure\n");
+		TRC_CRITICAL(SQL_MVC, "Malloc failure\n");
 		return -1;
 	}
 
@@ -139,7 +139,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	if (first || catalog_version) {
 		if (mvc_trans(m) < 0) {
 			mvc_destroy(m);
-			CRITICAL(SQL_MVC, "Failed to start transaction\n");
+			TRC_CRITICAL(SQL_MVC, "Failed to start transaction\n");
 			return -1;
 		}
 
@@ -155,7 +155,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		t = mvc_init_create_view(m, s, "tables", "SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(CASE WHEN \"system\" THEN \"type\" + 10 /* system table/view */ ELSE (CASE WHEN \"commit_action\" = 0 THEN \"type\" /* table/view */ ELSE \"type\" + 20 /* global temp table */ END) END AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", CASE WHEN (NOT \"system\" AND \"commit_action\" > 0) THEN 1 ELSE 0 END AS \"temporary\" FROM \"sys\".\"_tables\" WHERE \"type\" <> 2 UNION ALL SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(\"type\" + 30 /* local temp table */ AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", 1 AS \"temporary\" FROM \"tmp\".\"_tables\";");
 		if (!t) {
 			mvc_destroy(m);
-			CRITICAL(SQL_MVC, "Failed to create 'tables' view\n");
+			TRC_CRITICAL(SQL_MVC, "Failed to create 'tables' view\n");
 			return -1;
 		}
 
@@ -191,7 +191,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		t = mvc_init_create_view(m, s, "columns", "SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;");
 		if (!t) {
 			mvc_destroy(m);
-			CRITICAL(SQL_MVC, "Failed to create 'columns' view\n");
+			TRC_CRITICAL(SQL_MVC, "Failed to create 'columns' view\n");
 			return -1;
 		}
 		ncid = t->base.id;
@@ -232,7 +232,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		assert(m->session->schema != NULL);
 
 		if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {
-			CRITICAL(SQL_MVC, "Unable to commit system tables: %s\n", (msg + 6));
+			TRC_CRITICAL(SQL_MVC, "Unable to commit system tables: %s\n", (msg + 6));
 			freeException(msg);
 			return -1;
 		}
@@ -240,7 +240,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 
 	if(mvc_trans(m) < 0) {
 		mvc_destroy(m);
-		CRITICAL(SQL_MVC, "Failed to start transaction\n");
+		TRC_CRITICAL(SQL_MVC, "Failed to start transaction\n");
 		return -1;
 	}
 
@@ -253,7 +253,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 				if(isPartitionedByColumnTable(tt) || isPartitionedByExpressionTable(tt)) {
 					char *err;
 					if((err = initialize_sql_parts(m, tt)) != NULL) {
-						CRITICAL(SQL_MVC, "Unable to start partitioned table: %s.%s: %s\n", ss->base.name, tt->base.name, err);
+						TRC_CRITICAL(SQL_MVC, "Unable to start partitioned table: %s.%s: %s\n", ss->base.name, tt->base.name, err);
 						freeException(err);
 						return -1;
 					}
@@ -263,7 +263,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	}
 
 	if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {
-		CRITICAL(SQL_MVC, "Unable to commit system tables: %s\n", (msg + 6));
+		TRC_CRITICAL(SQL_MVC, "Unable to commit system tables: %s\n", (msg + 6));
 		freeException(msg);
 		return -1;
 	}

@@ -151,7 +151,7 @@ doChallenge(void *data)
 	memcpy(challenge, ((struct challengedata *) data)->challenge, sizeof(challenge));
 	GDKfree(data);
 	if (buf == NULL) {
-		CRITICAL(MAL_SERVER, MAL_MALLOC_FAIL "\n");
+		TRC_CRITICAL(MAL_SERVER, MAL_MALLOC_FAIL "\n");
 		close_stream(fdin);
 		close_stream(fdout);
 		return;
@@ -471,7 +471,7 @@ SERVERlistenThread(SOCKET *Sock)
 		data = GDKmalloc(sizeof(*data));
 		if( data == NULL){
 			closesocket(msgsock);
-			CRITICAL(MAL_SERVER, SQLSTATE(HY001) MAL_MALLOC_FAIL "\n");
+			TRC_CRITICAL(MAL_SERVER, SQLSTATE(HY001) MAL_MALLOC_FAIL "\n");
 			continue;
 		}
 		data->in = socket_rstream(msgsock, "Server read");
@@ -482,7 +482,7 @@ SERVERlistenThread(SOCKET *Sock)
 			mnstr_destroy(data->out);
 			GDKfree(data);
 			closesocket(msgsock);
-			CRITICAL(MAL_SERVER, "Cannot allocate stream\n");
+			TRC_CRITICAL(MAL_SERVER, "Cannot allocate stream\n");
 			continue;
 		}
 		s = block_stream(data->in);
@@ -507,7 +507,7 @@ SERVERlistenThread(SOCKET *Sock)
 			mnstr_destroy(data->out);
 			GDKfree(data);
 			closesocket(msgsock);
-			CRITICAL(MAL_SERVER, "Cannot fork new client thread\n");
+			TRC_CRITICAL(MAL_SERVER, "Cannot fork new client thread\n");
 			continue;
 		}
 	} while (!ATOMIC_GET(&serverexiting) && !GDKexiting());

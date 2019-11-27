@@ -355,7 +355,7 @@ WLRprocessBatch(void *arg)
 					sql->session->ac_on_commit = 1;
 					sql->session->level = 0;
 					if(mvc_trans(sql) < 0) {
-						CRITICAL(SQL_WLR, "Allocation failure while starting the transaction\n");
+						TRC_CRITICAL(SQL_WLR, "Allocation failure while starting the transaction\n");
 					} else {
 						TRC_DEBUG(SQL_WLR, "Process a transaction\n");
 						debugFunction(SQL_WLR, mb, 0, LIST_MAL_DEBUG | LIST_MAL_MAPI );

@@ -337,7 +337,7 @@ DFLOWworker(void *T)
 #endif
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN)); /* where to leave errors */
 	if( GDKerrbuf == 0) {
-		CRITICAL(MAL_DATAFLOW, "Could not allocate GDKerrbuf\n");
+		TRC_CRITICAL(MAL_DATAFLOW, "Could not allocate GDKerrbuf\n");
 	} else {
 		GDKclrerr();
 	}

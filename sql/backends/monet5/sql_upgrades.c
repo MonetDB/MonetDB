@@ -2481,7 +2481,7 @@ SQLupgrades(Client c, mvc *m)
 	int res = 0;
 
 	if (!prev_schema) {
-		CRITICAL(SQL_UPGRADES, "Allocation failure while running SQL upgrades\n");
+		TRC_CRITICAL(SQL_UPGRADES, "Allocation failure while running SQL upgrades\n");
 		res = -1;
 	}
 

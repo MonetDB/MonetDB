@@ -141,10 +141,10 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	tmp = SQLinit(cntxt);
 	if (tmp != MAL_SUCCEED) {
-		CRITICAL(SQL_SCENARIO, "Fatal error during initialization: %s\n", tmp);
+		TRC_CRITICAL(SQL_SCENARIO, "Fatal error during initialization: %s\n", tmp);
 		freeException(tmp);
 		if ((tmp = GDKerrbuf) && *tmp)
-			CRITICAL(SQL_SCENARIO, SQLSTATE(42000) "GDK reported: %s\n", tmp);
+			TRC_CRITICAL(SQL_SCENARIO, SQLSTATE(42000) "GDK reported: %s\n", tmp);
 		fflush(stderr);
 		exit(1);
 	}
