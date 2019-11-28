@@ -216,25 +216,31 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	/* 39_analytics_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create aggregate stddev_samp(val HUGEINT) returns DOUBLE\n"
-			"\texternal name \"aggr\".\"stdev\";\n"
+			" external name \"aggr\".\"stdev\";\n"
 			"GRANT EXECUTE ON AGGREGATE stddev_samp(HUGEINT) TO PUBLIC;\n"
 			"create aggregate stddev_pop(val HUGEINT) returns DOUBLE\n"
-			"\texternal name \"aggr\".\"stdevp\";\n"
+			" external name \"aggr\".\"stdevp\";\n"
 			"GRANT EXECUTE ON AGGREGATE stddev_pop(HUGEINT) TO PUBLIC;\n"
 			"create aggregate var_samp(val HUGEINT) returns DOUBLE\n"
-			"\texternal name \"aggr\".\"variance\";\n"
+			" external name \"aggr\".\"variance\";\n"
 			"GRANT EXECUTE ON AGGREGATE var_samp(HUGEINT) TO PUBLIC;\n"
 			"create aggregate var_pop(val HUGEINT) returns DOUBLE\n"
-			"\texternal name \"aggr\".\"variancep\";\n"
+			" external name \"aggr\".\"variancep\";\n"
 			"GRANT EXECUTE ON AGGREGATE var_pop(HUGEINT) TO PUBLIC;\n"
 			"create aggregate median(val HUGEINT) returns HUGEINT\n"
-			"\texternal name \"aggr\".\"median\";\n"
+			" external name \"aggr\".\"median\";\n"
 			"GRANT EXECUTE ON AGGREGATE median(HUGEINT) TO PUBLIC;\n"
 			"create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT\n"
-			"\texternal name \"aggr\".\"quantile\";\n"
+			" external name \"aggr\".\"quantile\";\n"
 			"GRANT EXECUTE ON AGGREGATE quantile(HUGEINT, DOUBLE) TO PUBLIC;\n"
+			"create aggregate median_avg(val HUGEINT) returns DOUBLE\n"
+			" external name \"aggr\".\"median_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE median_avg(HUGEINT) TO PUBLIC;\n"
+			"create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE\n"
+			" external name \"aggr\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n"
 			"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
-			"\texternal name \"aggr\".\"corr\";\n"
+			" external name \"aggr\".\"corr\";\n"
 			"GRANT EXECUTE ON AGGREGATE corr(HUGEINT, HUGEINT) TO PUBLIC;\n");
 
 	/* 40_json_hge.sql */
@@ -244,7 +250,7 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr') and schema_id = (select id from sys.schemas where name = 'sys');\n"
+			"update sys.functions set system = true where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys');\n"
 			"update sys.functions set system = true where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
@@ -2309,6 +2315,45 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	return err;		/* usually MAL_SUCCEED */
 }
 
+#ifdef HAVE_HGE
+static str
+sql_update_nov2019_sp1_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+{
+	size_t bufsize = 1024, pos = 0;
+	char *buf, *err;
+
+	if (!*systabfixed &&
+	    (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+		return err;
+	*systabfixed = true;
+
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, "sql_update_hugeint", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	/* 39_analytics_hge.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create aggregate median_avg(val HUGEINT) returns DOUBLE\n"
+			" external name \"aggr\".\"median_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE median_avg(HUGEINT) TO PUBLIC;\n"
+			"create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE\n"
+			" external name \"aggr\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where name in ('median_avg', 'quantile_avg') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+#endif
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -2580,6 +2625,19 @@ SQLupgrades(Client c, mvc *m)
 			res = -1;
 		}
 	}
+
+#ifdef HAVE_HGE
+	if (!res && have_hge) {
+		sql_find_subtype(&tp, "hugeint", 0, 0);
+		if (!sql_bind_aggr(m->sa, s, "median_avg", &tp)) {
+			if ((err = sql_update_nov2019_sp1_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
+				fprintf(stderr, "!%s\n", err);
+				freeException(err);
+				res = -1;
+			}
+		}
+	}
+#endif
 
 	GDKfree(prev_schema);
 	return res;
