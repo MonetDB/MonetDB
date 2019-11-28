@@ -244,26 +244,6 @@ return MAL_SUCCEED;\
 	}\
 }
 
-#define DICTprojection(TPE) {	\
-	BUN i,first,last;\
-	unsigned short j;\
-	/* set the oid range covered and advance scan range*/\
-	first = task->start;\
-	last = first + MOSgetCnt(task->blk);\
-	TPE *v;\
-	bte bits	= GET_FINAL_BITS(task);\
-	TPE* dict	= GET_FINAL_DICT(task, TPE);\
-	BitVector base		= (BitVector) MOScodevectorDict(task);\
-	v= (TPE*) task->src;\
-	for(i=0; first < last; first++,i++){\
-		MOSskipit();\
-		j= getBitVector(base,i,bits); \
-		*v++ = dict[j];\
-		task->cnt++;\
-	}\
-	task->src = (char*) v;\
-}
-
 #define DICTjoin(TPE) {\
 	bte bits		= GET_FINAL_BITS(task);\
 	TPE* dict		= GET_FINAL_DICT(task, TPE);\
