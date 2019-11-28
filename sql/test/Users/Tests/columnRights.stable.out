@@ -29,6 +29,11 @@ stdout of test 'columnRights` in directory 'sql/test/Users` itself:
 
 #GRANT SELECT (price) ON library.orders TO alice;
 #GRANT UPDATE (name)  ON library.orders TO alice;
+#SELECT price FROM orders;
+% library.orders # table_name
+% price # name
+% int # type
+% 1 # length
 #UPDATE orders SET name = 'book title goes here';
 [ 0	]
 
