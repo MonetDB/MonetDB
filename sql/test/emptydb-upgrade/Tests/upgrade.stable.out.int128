@@ -5926,13 +5926,19 @@ GRANT EXECUTE ON AGGREGATE median(HUGEINT) TO PUBLIC;
 create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT
     external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(HUGEINT, DOUBLE) TO PUBLIC;
+create aggregate median_avg(val HUGEINT) returns DOUBLE
+ external name "aggr"."median_avg";
+GRANT EXECUTE ON AGGREGATE median_avg(HUGEINT) TO PUBLIC;
+create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE
+ external name "aggr"."quantile_avg";
+GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;
 create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
     external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(HUGEINT, HUGEINT) TO PUBLIC;
 create function json.filter(js json, name hugeint)
 returns json external name json.filter;
 GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;
-update sys.functions set system = true where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr') and schema_id = (select id from sys.schemas where name = 'sys');
+update sys.functions set system = true where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys');
 update sys.functions set system = true where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json');
 set schema "sys";
 

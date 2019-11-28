@@ -464,6 +464,7 @@ JSONcompile(char *expr, pattern terms[])
 		}
 		if (*s == '[') {
 			// array step
+			bool closed = false;
 			s++;
 			skipblancs(s);
 			if (*s != '*') {
@@ -474,9 +475,14 @@ JSONcompile(char *expr, pattern terms[])
 					throw(MAL, "json.path", "'*' or digit expected");
 			}
 			for (; *s; s++)
-				if (*s == ']')
+				if (*s == ']') {
+					closed = true;
 					break;
+				}
 			if (*s == 0) {
+				if (!closed) {
+					throw(MAL, "json.path", "] expected");
+				}
 				t++;
 				break;
 			}
