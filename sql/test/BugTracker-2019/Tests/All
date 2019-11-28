@@ -49,3 +49,4 @@ index-insert-crash.Bug-6781
 avg-changes-value-scale.Bug-6783
 isaUUID.Bug-6784
 count-distinct.Bug-6790
+jsonpath-validity.Bug-6792
