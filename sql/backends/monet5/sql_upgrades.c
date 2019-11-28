@@ -2464,13 +2464,23 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			" and name = 'queue';\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
+			"ALTER TABLE sys.keywords SET READ WRITE;\n"
 			"insert into sys.keywords values ('CUBE'), ('GROUPING'), ('ROLLUP'), ('SETS');\n");
 
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	if (err == MAL_SUCCEED) {
+		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
+			       "ALTER TABLE sys.keywords SET READ ONLY;\n");
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	}
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }

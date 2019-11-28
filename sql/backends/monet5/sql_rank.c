@@ -619,28 +619,41 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define NTILE_IMP(TPE)                                                                      \
-	do {                                                                                    \
-		TPE *ntile = getArgReference_##TPE(stk, pci, 2);                                    \
-		if(!is_##TPE##_nil(*ntile) && *ntile < 1) {                                         \
-			BBPunfix(b->batCacheid);                                                        \
-			throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile must be greater than zero");     \
-		}                                                                                   \
-		voidresultBAT(r, TYPE_##TPE, cnt, b, "sql.ntile");                                  \
-		if (isaBatType(getArgType(mb, pci, 3))) {                                           \
-			p = BATdescriptor(*getArgReference_bat(stk, pci, 3));                           \
-			if (!p) {                                                                       \
-				BBPunfix(b->batCacheid);                                                    \
+#define NTILE_IMP(TPE) \
+	do { \
+		TPE *ntile = NULL; \
+		if (is_a_bat) { \
+			bool is_non_positive = false; \
+			for (TPE *np = (TPE*)Tloc(n, 0), *nend = np + BATcount(n); np < nend && !is_non_positive; np++) \
+				is_non_positive |= (!is_##TPE##_nil(*np) && *np < 1); \
+			if (is_non_positive) { \
+				BBPunfix(b->batCacheid); \
+				BBPunfix(n->batCacheid); \
+				throw(SQL, "sql.ntile", SQLSTATE(42000) "All ntile values must be greater than zero"); \
+			} \
+		} else { \
+			ntile = getArgReference_##TPE(stk, pci, 2); \
+			if (!is_##TPE##_nil(*ntile) && *ntile < 1) { \
+				BBPunfix(b->batCacheid); \
+				throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile must be greater than zero"); \
+			} \
+		} \
+		voidresultBAT(r, TYPE_##TPE, cnt, b, "sql.ntile"); \
+		if (isaBatType(getArgType(mb, pci, 3))) { \
+			p = BATdescriptor(*getArgReference_bat(stk, pci, 3)); \
+			if (!p) { \
+				BBPunfix(b->batCacheid); \
+				if (n) BBPunfix(n->batCacheid); \
 				throw(SQL, "sql.ntile", SQLSTATE(HY005) "Cannot access column descriptor"); \
-			}                                                                               \
-		}                                                                                   \
-		gdk_code = GDKanalyticalntile(r, b, p, TYPE_##TPE, ntile);                          \
+			} \
+		} \
+		gdk_code = GDKanalyticalntile(r, b, p, n, TYPE_##TPE, ntile); \
 	} while(0);
 
 #define NTILE_VALUE_SINGLE_IMP(TPE)                                                     \
 	do {                                                                                \
 		TPE val = *(TPE*) ntile, *rres = (TPE*) res;                                    \
-		if(!is_##TPE##_nil(val) && val < 1)                                             \
+		if (!is_##TPE##_nil(val) && val < 1)                                            \
 			throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile must be greater than zero"); \
 		*rres = (is_##TPE##_nil(val) || val > 1) ? TPE##_nil : *(TPE*) in;              \
 	} while(0);
@@ -649,6 +662,7 @@ str
 SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tp1, tp2;
+	bool is_a_bat;
 
 	(void)cntxt;
 	if (pci->argc != 5 || (getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit) ||
@@ -656,17 +670,24 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile(:any_1,:number,:bit,:bit)");
 	}
 	tp1 = getArgType(mb, pci, 1), tp2 = getArgType(mb, pci, 2);
-	if (isaBatType(tp2))
-		throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile first argument must be a single atom");
+	is_a_bat = isaBatType(tp2);
+	if (is_a_bat)
+		tp2 = getBatType(tp2);
 
 	if (isaBatType(tp1)) {
 		BUN cnt;
 		bat *res = getArgReference_bat(stk, pci, 0);
-		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *r;
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *r, *n = NULL;
 		if (!b)
 			throw(SQL, "sql.ntile", SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = BATcount(b);
 		gdk_return gdk_code;
+		if (isaBatType(getArgType(mb, pci, 2))) {
+			if (!(n = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
+				BBPunfix(b->batCacheid);
+				throw(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
+			}
+		}
 
 		switch (tp2) {
 			case TYPE_bte:
@@ -688,14 +709,16 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 			default: {
 				BBPunfix(b->batCacheid);
+				if (n) BBPunfix(n->batCacheid);
 				throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile not available for %s", ATOMname(tp2));
 			}
 		}
 
 		BATsetcount(r, cnt);
 		BBPunfix(b->batCacheid);
-		if(p) BBPunfix(p->batCacheid);
-		if(gdk_code == GDK_SUCCEED)
+		if (p) BBPunfix(p->batCacheid);
+		if (n) BBPunfix(n->batCacheid);
+		if (gdk_code == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
 			throw(SQL, "sql.ntile", GDK_EXCEPTION);
