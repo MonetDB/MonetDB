@@ -133,102 +133,133 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 	return GDK_SUCCEED;
 }
 
-#define NTILE_CALC					\
-	do {						\
-		if (bval >= ncnt) {			\
-			j = 1;				\
-			for (; rb < rp; j++, rb++)	\
-				*rb = j;		\
-		} else if (ncnt % bval == 0) {		\
-			buckets = ncnt / bval;		\
-			for (; rb < rp; i++, rb++) {	\
-				if (i == buckets) {	\
-					j++;		\
-					i = 0;		\
-				}			\
-				*rb = j;		\
-			}				\
-		} else {				\
-			buckets = ncnt / bval;		\
-			for (; rb < rp; i++, rb++) {	\
-				*rb = j;		\
-				if (i == buckets) {	\
-					j++;		\
-					i = 0;		\
-				}			\
-			}				\
-		}					\
+#define NTILE_CALC(TPE, NEXT_VALUE, NEXT_CAST)	\
+	do {					\
+		TPE buckets, i, j; \
+		for (; rb < rp; rb++) { \
+			TPE val = NEXT_VALUE; \
+			if (is_##TPE##_nil(val)) {	\
+				has_nils = true;	\
+				*rb = TPE##_nil;	\
+			} else { \
+				BUN bval = (BUN) val; \
+				if (bval >= ncnt) {	\
+					*rb = (TPE) ((rb - prb1) + 1);	\
+				} else { \
+					buckets = (TPE) (ncnt / bval);	\
+					i = (ncnt % bval == 0) ? 1 : 0; \
+					j = 1; \
+					for (prb2 = prb1; prb2 < rb; i++, prb2++) {	\
+						if (i == buckets) {	\
+							j++;	\
+							i = 0;	\
+						}	\
+					} \
+					*rb = j;	\
+				} \
+			} \
+		} \
 	} while (0)
 
-#define ANALYTICAL_NTILE_IMP(TPE)				\
+#define ANALYTICAL_NTILE_IMP(TPE, NEXT_VALUE, NEXT_CAST)	\
 	do {							\
-		TPE j = 1, *rp, *rb, val = *(TPE*) ntile;	\
-		BUN bval = (BUN) val;				\
-		rb = rp = (TPE*)Tloc(r, 0);			\
-		if (is_##TPE##_nil(val)) {			\
-			TPE *end = rp + cnt;			\
-			has_nils = true;			\
-			for (; rp < end; rp++)			\
-				*rp = TPE##_nil;		\
-		} else if (p) {					\
-			pnp = np = (bit*)Tloc(p, 0);		\
+		TPE *rp, *rb, *prb1, *prb2;	\
+		prb1 = rb = rp = (TPE*)Tloc(r, 0);		\
+		if (p) {					\
+			pnp = np = (bit*)Tloc(p, 0);	\
 			end = np + cnt;				\
-			for (; np < end; np++) {		\
+			for (; np < end; np++) {	\
 				if (*np) {			\
-					i = 0;			\
-					j = 1;			\
 					ncnt = np - pnp;	\
 					rp += ncnt;		\
-					NTILE_CALC;		\
-					pnp = np;		\
+					NTILE_CALC(TPE, NEXT_VALUE, NEXT_CAST);\
+					pnp = np;	\
+					prb1 = rp;	\
 				}				\
 			}					\
-			i = 0;					\
-			j = 1;					\
 			ncnt = np - pnp;			\
 			rp += ncnt;				\
-			NTILE_CALC;				\
+			NTILE_CALC(TPE, NEXT_VALUE, NEXT_CAST);	\
 		} else {					\
 			rp += cnt;				\
-			NTILE_CALC;				\
+			NTILE_CALC(TPE, NEXT_VALUE, NEXT_CAST);\
 		}						\
 	} while (0)
 
+#define ANALYTICAL_NTILE_SINGLE_IMP(TPE, NEXT_CAST) \
+	do {	\
+		TPE ntl = *(TPE*) ntile; \
+		ANALYTICAL_NTILE_IMP(TPE, ntl, NEXT_CAST); \
+	} while (0)
+
+#define ANALYTICAL_NTILE_MULTI_IMP(TPE, NEXT_CAST) \
+	do {	\
+		BUN k = 0; \
+		TPE *restrict nn = (TPE*)Tloc(n, 0);	\
+		ANALYTICAL_NTILE_IMP(TPE, nn[k++], NEXT_CAST); \
+	} while (0)
+
 gdk_return
-GDKanalyticalntile(BAT *r, BAT *b, BAT *p, int tpe, const void *restrict ntile)
+GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict ntile)
 {
-	BUN cnt = BATcount(b), ncnt = cnt, buckets, i = 0;
+	BUN cnt = BATcount(b), ncnt = cnt;
 	bit *np, *pnp, *end;
 	bool has_nils = false;
 
-	assert(ntile);
+	assert((n && !ntile) || (!n && ntile));
 
-	switch (tpe) {
-	case TYPE_bte:
-		ANALYTICAL_NTILE_IMP(bte);
-		break;
-	case TYPE_sht:
-		ANALYTICAL_NTILE_IMP(sht);
-		break;
-	case TYPE_int:
-		ANALYTICAL_NTILE_IMP(int);
-		break;
-	case TYPE_lng:
-		ANALYTICAL_NTILE_IMP(lng);
-		break;
+	if (ntile) {
+		switch (tpe) {
+		case TYPE_bte:
+			ANALYTICAL_NTILE_SINGLE_IMP(bte, val);
+			break;
+		case TYPE_sht:
+			ANALYTICAL_NTILE_SINGLE_IMP(sht, val);
+			break;
+		case TYPE_int:
+			ANALYTICAL_NTILE_SINGLE_IMP(int, val);
+			break;
+		case TYPE_lng:
+			ANALYTICAL_NTILE_SINGLE_IMP(lng, val);
+			break;
 #ifdef HAVE_HGE
-	case TYPE_hge:
-		ANALYTICAL_NTILE_IMP(hge);
+		case TYPE_hge:
+			ANALYTICAL_NTILE_SINGLE_IMP(hge, ((val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val));
 		break;
 #endif
-	default:
-		GDKerror("GDKanalyticalntile: type %s not supported.\n", ATOMname(tpe));
-		return GDK_FAIL;
+		default:
+			goto nosupport;
+		}
+	} else {
+		switch (tpe) {
+		case TYPE_bte:
+			ANALYTICAL_NTILE_MULTI_IMP(bte, val);
+			break;
+		case TYPE_sht:
+			ANALYTICAL_NTILE_MULTI_IMP(sht, val);
+			break;
+		case TYPE_int:
+			ANALYTICAL_NTILE_MULTI_IMP(int, val);
+			break;
+		case TYPE_lng:
+			ANALYTICAL_NTILE_MULTI_IMP(lng, val);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			ANALYTICAL_NTILE_MULTI_IMP(hge, ((val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val));
+		break;
+#endif
+		default:
+			goto nosupport;
+		}
 	}
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
+nosupport:
+	GDKerror("GDKanalyticalntile: type %s not supported for the ntile type.\n", ATOMname(tpe));
+	return GDK_FAIL;
 }
 
 #define ANALYTICAL_FIRST_IMP(TPE)				\

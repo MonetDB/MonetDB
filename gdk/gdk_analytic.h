@@ -18,7 +18,7 @@
 
 gdk_export gdk_return GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe);
 
-gdk_export gdk_return GDKanalyticalntile(BAT *r, BAT *b, BAT *p, int tpe, const void *restrict ntile);
+gdk_export gdk_return GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict ntile);
 gdk_export gdk_return GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_value, int tpe);
 gdk_export gdk_return GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default_value, int tpe);
 
