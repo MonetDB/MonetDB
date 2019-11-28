@@ -1,5 +1,6 @@
 ####technical depth####
 Adapt project and join to use candidate lists properly.
+Create test for swapped join.
 Factor out boilerplate code mosaic code: resulting mosaic boilerplate is for testing purposes.
 Add lots of tests with candidate lists for all 
 Introduce mosaic into gdk: create hooks in scanselect functions/macro's, joins and projections.
@@ -20,6 +21,8 @@ DO nil checking more efficient similar to gdk_select
 
 ####code issues####
 Replace the MOSskip functions by MOSadvance functions
+Get rid of (most of) MOStask.
+Make sure the parameters.bits fields are always char.
 Use GDK naming conventions, e.g. o for stuff coming out if canditer_next.
 Make block headers specific by having type parametrized blockheader struct's.
 atomic base type of an oid bat is lng. So we can remove that one.
