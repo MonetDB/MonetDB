@@ -119,7 +119,6 @@ MOSselect_SIGNATURE(NAME, TPE) {\
 	oid *o;\
 	BUN first,last;\
 	TPE v;\
-	(void) v;\
 \
 	/* set the oid range covered and advance scan range*/\
 	first = task->start;\
