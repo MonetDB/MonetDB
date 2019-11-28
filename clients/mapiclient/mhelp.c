@@ -295,7 +295,7 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"EXTRACT",
 	 "Built-in function",
-	 "EXTRACT '(' { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND } FROM scalar_expression ')'",
+	 "EXTRACT '(' { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | CENTUTY | DECADE | QUARTER | WEEK | DOW | DOY } FROM scalar_expression ')'",
 	 NULL,
 	 NULL},
 	{"DECLARE",
