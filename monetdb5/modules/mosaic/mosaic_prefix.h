@@ -27,7 +27,6 @@ mal_export void MOSskip_prefix(MOStask task);
 mal_export str  MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOScompress_prefix(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_prefix(MOStask task);
-mal_export str MOSjoin_prefix( MOStask task, bit nil_matches);
 
 ALGEBRA_INTERFACES_INTEGERS_ONLY(prefix);
 #define DO_OPERATION_ON_prefix(OPERATION, TPE) DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, prefix, TPE)

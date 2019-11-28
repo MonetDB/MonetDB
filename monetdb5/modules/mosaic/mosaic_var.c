@@ -94,8 +94,7 @@ insert_into_dict_DEF(TPE)\
 extend_delta_DEF(TPE, GlobalVarInfo)\
 merge_delta_Into_dictionary_DEF(TPE, GlobalVarInfo)\
 compress_dictionary_DEF(TPE)\
-decompress_dictionary_DEF(TPE)\
-join_dictionary_DEF(TPE)
+decompress_dictionary_DEF(TPE)
 
 DictionaryClass(bte)
 DictionaryClass(sht)
@@ -325,8 +324,8 @@ MOSdecompress_var(MOStask task)
 	}
 }
 
-#define scan_loop_var(TPE, CANDITER_NEXT, TEST) \
-    scan_loop_dictionary(TPE, CANDITER_NEXT, TEST)
+#define scan_loop_var(TPE, CI_NEXT, TEST) \
+    scan_loop_dictionary(TPE, CI_NEXT, TEST)
 
 MOSselect_DEF(var, bte)
 MOSselect_DEF(var, sht)
@@ -338,8 +337,8 @@ MOSselect_DEF(var, dbl)
 MOSselect_DEF(var, hge)
 #endif
 
-#define projection_loop_var(TPE, CANDITER_NEXT) \
-    projection_loop_dictionary(TPE, CANDITER_NEXT)
+#define projection_loop_var(TPE, CI_NEXT) \
+    projection_loop_dictionary(TPE, CI_NEXT)
 
 MOSprojection_DEF(var, bte)
 MOSprojection_DEF(var, sht)
@@ -351,22 +350,15 @@ MOSprojection_DEF(var, dbl)
 MOSprojection_DEF(var, hge)
 #endif
 
-str
-MOSjoin_var( MOStask task, bit nil_matches)
-{
-	// set the oid range covered and advance scan range
-	switch(ATOMbasetype(task->type)) {
-		case TYPE_bte: DICTjoin(bte); break;
-		case TYPE_sht: DICTjoin(sht); break;
-		case TYPE_int: DICTjoin(int); break;
-		case TYPE_lng: DICTjoin(lng); break;
-		case TYPE_oid: DICTjoin(oid); break;
-		case TYPE_flt: DICTjoin(flt); break;
-		case TYPE_dbl: DICTjoin(dbl); break;
+#define outer_loop_var(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
+    outer_loop_dictionary(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT)
+
+MOSjoin_COUI_DEF(var, bte)
+MOSjoin_COUI_DEF(var, sht)
+MOSjoin_COUI_DEF(var, int)
+MOSjoin_COUI_DEF(var, lng)
+MOSjoin_COUI_DEF(var, flt)
+MOSjoin_COUI_DEF(var, dbl)
 #ifdef HAVE_HGE
-		case TYPE_hge: DICTjoin(hge); break;
+MOSjoin_COUI_DEF(var, hge)
 #endif
-	}
-	MOSskip_var(task);
-	return MAL_SUCCEED;
-}

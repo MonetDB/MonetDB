@@ -25,7 +25,6 @@ mal_export void MOSskip_delta(MOStask task);
 mal_export str  MOSestimate_delta(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOScompress_delta(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_delta(MOStask task);
-mal_export str MOSjoin_delta( MOStask task, bit nil_matches);
 
 ALGEBRA_INTERFACES_INTEGERS_ONLY(delta);
 #define DO_OPERATION_ON_delta(OPERATION, TPE) DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, delta, TPE)

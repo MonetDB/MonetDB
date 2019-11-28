@@ -304,63 +304,26 @@ MOSprojection_DEF(frame, lng)
 MOSprojection_DEF(frame, hge)
 #endif
 
-
-#define join_frame_general(HAS_NIL, NIL_MATCHES, TPE)\
-{	TPE *w;\
-	BitVector base = (BitVector) MOScodevectorFrame(task);\
-	w = (TPE*) task->src;\
-	limit= MOSgetCnt(task->blk);\
-	for( o=0, n= task->stop; n-- > 0; o++,w++ ){\
-		for(oo = task->start,i=0; i < limit; i++,oo++){\
-			TPE v = ADD_DELTA(TPE, min, getBitVector(base, i, parameters->bits));\
-			if (HAS_NIL && !NIL_MATCHES) {\
-				if ((IS_NIL(TPE, v))) {continue;};\
-			}\
-			if (ARE_EQUAL(*w, v, HAS_NIL, TPE)){\
-				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
-				BUNappend(task->rbat, &o, false)!= GDK_SUCCEED)\
-				throw(MAL,"mosaic.frame",MAL_MALLOC_FAIL);\
-			}\
-		}\
-	}\
-}
-
-#define join_frame(TPE)\
+#define outer_loop_frame(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\
     MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
-	TPE min =  parameters->min.min##TPE;\
-	if( nil && nil_matches){\
-		join_frame_general(true, true, TPE);\
-	}\
-	if( !nil && nil_matches){\
-		join_frame_general(false, true, TPE);\
-	}\
-	if( nil && !nil_matches){\
-		join_frame_general(true, false, TPE);\
-	}\
-	if( !nil && !nil_matches){\
-		join_frame_general(false, false, TPE);\
+	const TPE min =  parameters->min.min##TPE;\
+	const BitVector base = (BitVector) MOScodevectorFrame(task);\
+	const bte bits = parameters->bits;\
+    for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = LEFT_CI_NEXT(task->ci)) {\
+        BUN i = (BUN) (lo - first);\
+		TPE lval = ADD_DELTA(TPE, min, getBitVector(base, i, bits));\
+		if (HAS_NIL && !NIL_MATCHES) {\
+			if ((IS_NIL(TPE, lval))) {continue;};\
+		}\
+		INNER_LOOP_UNCOMPRESSED(HAS_NIL, TPE, RIGHT_CI_NEXT);\
 	}\
 }
 
-str
-MOSjoin_frame( MOStask task, bit nil_matches)
-{
-	BUN i,n,limit;
-	oid o, oo;
-	bool nil = !task->bsrc->tnonil;
-
-	// set the oid range covered and advance scan range
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: join_frame(bte); break;
-		case TYPE_sht: join_frame(sht); break;
-		case TYPE_int: join_frame(int); break;
-		case TYPE_lng: join_frame(lng); break;
-		case TYPE_oid: join_frame(oid); break;
+MOSjoin_COUI_DEF(frame, bte)
+MOSjoin_COUI_DEF(frame, sht)
+MOSjoin_COUI_DEF(frame, int)
+MOSjoin_COUI_DEF(frame, lng)
 #ifdef HAVE_HGE
-		case TYPE_hge: join_frame(hge); break;
+MOSjoin_COUI_DEF(frame, hge)
 #endif
-		}
-	MOSskip_frame(task);
-	return MAL_SUCCEED;
-}

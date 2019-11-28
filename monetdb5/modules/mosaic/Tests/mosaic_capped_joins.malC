@@ -35,10 +35,6 @@ io.print(jl,jr);
 io.print(ml,mr);
 
 (jl,jr):= algebra.join(d,base, nil:bat, nil:bat, false, 0:lng);
-io.print(jl);
-io.print(jr);
 io.print(jl,jr);
 (ml,mr):= mosaic.join(d,b, nil:bat, nil:bat, false, 0:lng);
-io.print(ml);
-io.print(mr);
 io.print(ml,mr);

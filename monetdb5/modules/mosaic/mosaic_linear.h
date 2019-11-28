@@ -25,7 +25,6 @@ mal_export void MOSskip_linear(MOStask task);
 mal_export str  MOSestimate_linear(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOScompress_linear(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_linear(MOStask task);
-mal_export str MOSjoin_linear( MOStask task, bit nil_matches);
 
 ALGEBRA_INTERFACES_INTEGERS_ONLY(linear);
 #define DO_OPERATION_ON_linear(OPERATION, TPE) DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, linear, TPE)

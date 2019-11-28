@@ -1,13 +1,14 @@
 #ifndef _MOSAIC_UTILITY_
 #define _MOSAIC_UTILITY_
-#include "mosaic.h"
 
 #include "mosaic_select.h"
 #include "mosaic_projection.h"
+#include "mosaic_join.h"
 
 #define ALGEBRA_INTERFACE(NAME, TPE) \
 MOSselect_SIGNATURE(NAME, TPE);\
 MOSprojection_SIGNATURE(NAME, TPE);\
+MOSjoin_COUI_SIGNATURE(NAME, TPE);\
 
 #ifdef HAVE_HGE
 #define ALGEBRA_INTERFACES_INTEGERS_ONLY(NAME) \

@@ -33,7 +33,6 @@ mal_export void MOSpostEstimate_capped(MOStask task);
 mal_export str finalizeDictionary_capped(MOStask task);
 mal_export void MOScompress_capped(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_capped(MOStask task);
-mal_export str MOSjoin_capped( MOStask task, bit nil_matches);
 
 ALGEBRA_INTERFACES_ALL_TYPES(capped);
 

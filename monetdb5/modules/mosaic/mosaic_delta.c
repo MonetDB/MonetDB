@@ -324,66 +324,32 @@ MOSprojection_DEF(delta, lng)
 MOSprojection_DEF(delta, hge)
 #endif
 
-#define join_delta_general(HAS_NIL, NIL_MATCHES, TPE)\
-{   TPE *w;\
-    MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
+#define outer_loop_delta(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
+{\
+	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorDelta(task);\
-	DeltaTpe(TPE) acc;\
+	DeltaTpe(TPE) acc = parameters->init.val##TPE; /*previous value*/\
 	int bits = parameters->bits;\
 	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
-	w = (TPE*) task->src;\
-	for(n = task->stop, o = 0; n -- > 0; w++,o++){\
-		for(acc = parameters->init.val##TPE, i=0, oo= (oid) first; oo < (oid) last; oo++,i++){\
-			DeltaTpe(TPE) delta = (DeltaTpe(TPE)) getBitVector(base,i,bits);\
-			TPE value 			= ACCUMULATE(acc, delta, sign_mask, TPE);\
-			if (HAS_NIL && !NIL_MATCHES) {\
-				if (IS_NIL(TPE, value)) { continue;}\
-			}\
-			if (ARE_EQUAL(*w, value, HAS_NIL, TPE)){\
-				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
-				BUNappend(task->rbat, &o, false) != GDK_SUCCEED )\
-				throw(MAL,"mosaic.delta",MAL_MALLOC_FAIL);\
-			}\
+    TPE lval = (TPE) acc;\
+    BUN j = 0;\
+    for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = LEFT_CI_NEXT(task->ci)) {\
+        BUN i = (BUN) (lo - first);\
+        for (;j <= i; j++) {\
+            TPE delta = getBitVector(base, j, bits);\
+			lval = ACCUMULATE(acc, delta, sign_mask, TPE);\
+        }\
+		if (HAS_NIL && !NIL_MATCHES) {\
+			if ((IS_NIL(TPE, lval))) {continue;};\
 		}\
+		INNER_LOOP_UNCOMPRESSED(HAS_NIL, TPE, RIGHT_CI_NEXT);\
 	}\
 }
 
-#define join_delta(TPE) {\
-	if( nil && nil_matches){\
-		join_delta_general(true, true, TPE);\
-	}\
-	if( !nil && nil_matches){\
-		join_delta_general(false, true, TPE);\
-	}\
-	if( nil && !nil_matches){\
-		join_delta_general(true, false, TPE);\
-	}\
-	if( !nil && !nil_matches){\
-		join_delta_general(false, false, TPE);\
-	}\
-}
-
-str
-MOSjoin_delta( MOStask task, bit nil_matches)
-{
-	BUN i= 0,n,first,last;
-	oid o, oo;
-
-	// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
-	bool nil = !task->bsrc->tnonil;
-
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: join_delta(bte); break;
-		case TYPE_sht: join_delta(sht); break;
-		case TYPE_int: join_delta(int); break;
-		case TYPE_lng: join_delta(lng); break;
-		case TYPE_oid: join_delta(oid); break;
+MOSjoin_COUI_DEF(delta, bte)
+MOSjoin_COUI_DEF(delta, sht)
+MOSjoin_COUI_DEF(delta, int)
+MOSjoin_COUI_DEF(delta, lng)
 #ifdef HAVE_HGE
-		case TYPE_hge: join_delta(hge); break;
+MOSjoin_COUI_DEF(delta, hge)
 #endif
-	}
-	MOSskip_delta(task);
-	return MAL_SUCCEED;
-}

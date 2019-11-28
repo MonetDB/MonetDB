@@ -1081,11 +1081,36 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+MOSjoin_generic_COUI_DEF(bte)
+MOSjoin_generic_COUI_DEF(sht)
+MOSjoin_generic_COUI_DEF(int)
+MOSjoin_generic_COUI_DEF(lng)
+MOSjoin_generic_COUI_DEF(flt)
+MOSjoin_generic_COUI_DEF(dbl)
+#ifdef HAVE_HGE
+MOSjoin_generic_COUI_DEF(hge)
+#endif
+
 /* A mosaic join operator that works when either the left or the right side is compressed
  * and there are no additional candidate lists.
  * Furthermore if both sides are in possesion of a mosaic index,
  * the operator implementation currently only uses the mosaic index of the left side.
  */
+
+#define PREPARE_JOIN_CONTEXT(COMPRESSED_BAT, COMPRESSED_BAT_CL, UNCOMPRESSED_BAT, UNCOMPRESSED_BAT_CL) \
+{\
+	MOSinit(task,COMPRESSED_BAT);\
+	MOSinitializeScan(task, COMPRESSED_BAT);\
+	task->stop = BATcount(COMPRESSED_BAT);\
+	task->src= Tloc(UNCOMPRESSED_BAT,0);\
+	if (*COMPRESSED_BAT_CL != bat_nil && ((cand_l = BATdescriptor(*COMPRESSED_BAT_CL)) == NULL))\
+		throw(MAL,"mosaic.join",RUNTIME_OBJECT_MISSING);\
+	if (*UNCOMPRESSED_BAT_CL != bat_nil && ((cand_r = BATdescriptor(*UNCOMPRESSED_BAT_CL)) == NULL))\
+		throw(MAL,"mosaic.join",RUNTIME_OBJECT_MISSING);\
+	canditer_init(&cil, COMPRESSED_BAT, cand_l);\
+	canditer_init(&cir, UNCOMPRESSED_BAT, cand_r);\
+	r = UNCOMPRESSED_BAT;\
+}
 str
 MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1109,7 +1134,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	sl = (bat*) getArgReference(stk,pci,4) ;
 	sr = (bat*) getArgReference(stk,pci,5);
-	if( (!isCompressed(*lid) && !isCompressed(*rid)) || (*sl != bat_nil || *sr != bat_nil)) 
+	if( !isCompressed(*lid) && !isCompressed(*rid) )
 		return ALGjoin(ret,ret2,lid,rid,sl,sr,nil_matches,estimate);
 
 	bl = BATdescriptor(*lid);
@@ -1134,62 +1159,48 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	// if the left side is not compressed, then assume the right side is compressed.
+
+	BAT* cand_l = NULL;
+	BAT* cand_r = NULL;
+	BAT* r;
+
+	struct canditer cil;
+	struct canditer cir;
+
+	task->ci = &cil;
+
 	if ( bl->tmosaic){
-		MOSinit(task,bl);
-		MOSinitializeScan(task, bl);
+		PREPARE_JOIN_CONTEXT(bl, sl, br, sr);
 	} else {
-		MOSinit(task,br);
-		MOSinitializeScan(task, br);
+		PREPARE_JOIN_CONTEXT(br, sr, bl, sl);
 		swapped=1;
 	}
 	task->lbat = bln;
 	task->rbat = brn;
 
-	if ( bl->tmosaic){
-		task->stop = BATcount(br);
-		task->src= Tloc(br,0);
-	} else {
-		task->stop = BATcount(bl);
-		task->src= Tloc(bl,0);
+	switch(ATOMbasetype(task->type)){
+	case TYPE_bte: msg = MOSjoin_COUI_bte(task, r, &cir, *nil_matches); break;
+	case TYPE_sht: msg = MOSjoin_COUI_sht(task, r, &cir, *nil_matches); break;
+	case TYPE_int: msg = MOSjoin_COUI_int(task, r, &cir, *nil_matches); break;
+	case TYPE_lng: msg = MOSjoin_COUI_lng(task, r, &cir, *nil_matches); break;
+	case TYPE_flt: msg = MOSjoin_COUI_flt(task, r, &cir, *nil_matches); break;
+	case TYPE_dbl: msg = MOSjoin_COUI_dbl(task, r, &cir, *nil_matches); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: msg = MOSjoin_COUI_hge(task, r, &cir, *nil_matches); break;
+#endif
 	}
-	// loop thru all the chunks and collect the results
-	while(task->blk )
-		switch(MOSgetTag(task->blk)){
-		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_runlength\n");
-			MOSjoin_runlength( task, *nil_matches);
-			break;
-		case MOSAIC_CAPPED:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_capped\n");
-			MOSjoin_capped( task, *nil_matches);
-			break;
-		case MOSAIC_VAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_var\n");
-			MOSjoin_var( task, *nil_matches);
-			break;
-		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_frame\n");
-			MOSjoin_frame( task, *nil_matches);
-			break;
-		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_delta\n");
-			MOSjoin_delta( task, *nil_matches);
-			break;
-		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_prefix\n");
-			MOSjoin_prefix( task, *nil_matches);
-			break;
-		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_linear\n");
-			MOSjoin_linear( task, *nil_matches);
-			break;
-		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_raw\n");
-			MOSjoin_raw( task, *nil_matches);
-			break;
-		default:
-			assert(0);
-		}
+
+	(void) BBPreclaim(bl);
+	(void) BBPreclaim(br);
+
+	(void) BBPreclaim(cand_l);
+	(void) BBPreclaim(cand_r);
+
+	if (msg) {
+		(void) BBPreclaim(bln);
+		(void) BBPreclaim(brn);
+		return msg;
+	}
 
 	BATsettrivprop(bln);
 	BATsettrivprop(brn);
@@ -1200,6 +1211,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         BBPkeepref(*ret= bln->batCacheid);
         BBPkeepref(*ret2= brn->batCacheid);
     }
+
 	GDKfree(task);
     return msg;
 }

@@ -33,7 +33,6 @@ mal_export void MOSpostEstimate_var(MOStask task);
 mal_export str finalizeDictionary_var(MOStask task);
 mal_export void MOScompress_var(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_var(MOStask task);
-mal_export str MOSjoin_var( MOStask task, bit nil_matches);
 
 ALGEBRA_INTERFACES_ALL_TYPES(var);
 

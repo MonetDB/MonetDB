@@ -193,10 +193,10 @@ MOSdecompress_linear(MOStask task)
 	}
 }
 
-#define scan_loop_linear(TPE, CANDITER_NEXT, TEST) {\
+#define scan_loop_linear(TPE, CI_NEXT, TEST) {\
 	DeltaTpe(TPE) offset	= linear_base(TPE, task);\
 	DeltaTpe(TPE) step		= linear_step(TPE, task);\
-    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CANDITER_NEXT(task->ci)) {\
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CI_NEXT(task->ci)) {\
         BUN i = (BUN) (c - first);\
         v = (TPE) (offset + (i * step));\
         /*TODO: change from control to data dependency.*/\
@@ -213,11 +213,11 @@ MOSselect_DEF(linear, lng)
 MOSselect_DEF(linear, hge)
 #endif
 
-#define projection_loop_linear(TPE, CANDITER_NEXT)\
+#define projection_loop_linear(TPE, CI_NEXT)\
 {\
 	DeltaTpe(TPE) offset	= linear_base(TPE, task) ;\
 	DeltaTpe(TPE) step		= linear_step(TPE, task);\
-	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CANDITER_NEXT(task->ci)) {\
+	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CI_NEXT(task->ci)) {\
         BUN i = (BUN) (o - first);\
 		TPE value =  (TPE) (offset + (i * step));\
 		*bt++ = value;\
@@ -233,60 +233,24 @@ MOSprojection_DEF(linear, lng)
 MOSprojection_DEF(linear, hge)
 #endif
 
-#define join_linear_general(HAS_NIL, NIL_MATCHES, TPE)\
-{	TPE *w = (TPE*) task->src;\
-	for(n = task->stop, o = 0; n -- > 0; w++,o++) {\
-		DeltaTpe(TPE) value	= linear_base(TPE, task) ;\
-		DeltaTpe(TPE) step	= linear_step(TPE, task);\
-		for(oo= (oid) first; oo < (oid) last; value+=step, oo++) {\
-			if (HAS_NIL && !NIL_MATCHES) {\
-				if (IS_NIL(TPE, (TPE) value)) { continue;}\
-			}\
-			if (ARE_EQUAL(*w, (TPE) value, HAS_NIL, TPE)){\
-				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
-				BUNappend(task->rbat, &o, false) != GDK_SUCCEED )\
-				throw(MAL,"mosaic.delta",MAL_MALLOC_FAIL);\
-			}\
+#define outer_loop_linear(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
+{\
+	DeltaTpe(TPE) offset	= linear_base(TPE, task) ;\
+	DeltaTpe(TPE) step		= linear_step(TPE, task);\
+    for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = LEFT_CI_NEXT(task->ci)) {\
+        BUN i = (BUN) (lo - first);\
+		TPE lval =  (TPE) (offset + (i * step));\
+		if (HAS_NIL && !NIL_MATCHES) {\
+			if ((IS_NIL(TPE, lval))) {continue;};\
 		}\
+		INNER_LOOP_UNCOMPRESSED(HAS_NIL, TPE, RIGHT_CI_NEXT);\
 	}\
 }
 
-#define join_linear(TPE) {\
-	if( nil && nil_matches){\
-		join_linear_general(true, true, TPE);\
-	}\
-	if( !nil && nil_matches){\
-		join_linear_general(false, true, TPE);\
-	}\
-	if( nil && !nil_matches){\
-		join_linear_general(true, false, TPE);\
-	}\
-	if( !nil && !nil_matches){\
-		join_linear_general(false, false, TPE);\
-	}\
-}
-
-str
-MOSjoin_linear( MOStask task, bit nil_matches)
-{
-	BUN n,first,last;
-	oid o, oo;
-
-	// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
-	bool nil = !task->bsrc->tnonil;
-
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: join_linear(bte); break;
-		case TYPE_sht: join_linear(sht); break;
-		case TYPE_int: join_linear(int); break;
-		case TYPE_lng: join_linear(lng); break;
-		case TYPE_oid: join_linear(oid); break;
+MOSjoin_COUI_DEF(linear, bte)
+MOSjoin_COUI_DEF(linear, sht)
+MOSjoin_COUI_DEF(linear, int)
+MOSjoin_COUI_DEF(linear, lng)
 #ifdef HAVE_HGE
-		case TYPE_hge: join_linear(hge); break;
+MOSjoin_COUI_DEF(linear, hge)
 #endif
-	}
-	MOSskip_linear(task);
-	return MAL_SUCCEED;
-}

@@ -27,7 +27,6 @@ mal_export void MOSskip_frame(MOStask task);
 mal_export str  MOSestimate_frame(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOScompress_frame(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_frame(MOStask task);
-mal_export str MOSjoin_frame( MOStask task, bit nil_matches);
 
 ALGEBRA_INTERFACES_INTEGERS_ONLY(frame);
 #define DO_OPERATION_ON_frame(OPERATION, TPE) DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, frame, TPE)

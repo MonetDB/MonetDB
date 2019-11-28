@@ -200,10 +200,10 @@ MOSdecompress_raw(MOStask task)
 	}
 }
 
-#define scan_loop_raw(TPE, CANDITER_NEXT, TEST) \
+#define scan_loop_raw(TPE, CI_NEXT, TEST) \
 {\
     TPE *val= (TPE*) (((char*) task->blk) + MosaicBlkSize);\
-    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CANDITER_NEXT(task->ci)) {\
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CI_NEXT(task->ci)) {\
         BUN i = (BUN) (c - first);\
         v = val[i];\
         /*TODO: change from control to data dependency.*/\
@@ -222,10 +222,10 @@ MOSselect_DEF(raw, dbl)
 MOSselect_DEF(raw, hge)
 #endif
 
-#define projection_loop_raw(TPE, CANDITER_NEXT)\
+#define projection_loop_raw(TPE, CI_NEXT)\
 {	TPE *rt;\
 	rt = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
-	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CANDITER_NEXT(task->ci)) {\
+	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CI_NEXT(task->ci)) {\
 		BUN i = (BUN) (o - first);\
 		*bt++ = rt[i];\
 		task->cnt++;\
@@ -242,63 +242,25 @@ MOSprojection_DEF(raw, dbl)
 MOSprojection_DEF(raw, hge)
 #endif
 
-#define join_raw_general(HAS_NIL, NIL_MATCHES, TPE)\
-{	TPE *v, *w;\
-	v = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
-	for(oo= (oid) first; first < last; first++, v++, oo++){\
+#define outer_loop_raw(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
+{\
+    TPE *vl;\
+	vl = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
+    for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = LEFT_CI_NEXT(task->ci)) {\
+        TPE lval = vl[lo-first];\
 		if (HAS_NIL && !NIL_MATCHES) {\
-			if ((IS_NIL(TPE, *v))) {continue;};\
+			if ((IS_NIL(TPE, lval))) {continue;};\
 		}\
-		w = (TPE*) task->src;\
-		for(n = task->stop, o = 0; n -- > 0; w++,o++) {\
-			if (ARE_EQUAL(*w, *v, HAS_NIL, TPE)){\
-				if( BUNappend(task->lbat, &oo, false)!= GDK_SUCCEED ||\
-				BUNappend(task->rbat, &o, false) != GDK_SUCCEED)\
-				throw(MAL,"mosaic.raw",MAL_MALLOC_FAIL);\
-			}\
-		}\
+		INNER_LOOP_UNCOMPRESSED(HAS_NIL, TPE, RIGHT_CI_NEXT);\
 	}\
 }
 
-#define join_raw(TPE) {\
-	if( nil && nil_matches){\
-		join_raw_general(true, true, TPE);\
-	}\
-	if( !nil && nil_matches){\
-		join_raw_general(false, true, TPE);\
-	}\
-	if( nil && !nil_matches){\
-		join_raw_general(true, false, TPE);\
-	}\
-	if( !nil && !nil_matches){\
-		join_raw_general(false, false, TPE);\
-	}\
-}
-
-
-
-str
-MOSjoin_raw( MOStask task, bit nil_matches)
-{
-	BUN n,first,last;
-	oid o, oo;
-		// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
-	bool nil = !task->bsrc->tnonil;
-
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: join_raw(bte); break;
-		case TYPE_sht: join_raw(sht); break;
-		case TYPE_int: join_raw(int); break;
-		case TYPE_lng: join_raw(lng); break;
-		case TYPE_oid: join_raw(oid); break;
-		case TYPE_flt: join_raw(flt); break;
-		case TYPE_dbl: join_raw(dbl); break;
+MOSjoin_COUI_DEF(raw, bte)
+MOSjoin_COUI_DEF(raw, sht)
+MOSjoin_COUI_DEF(raw, int)
+MOSjoin_COUI_DEF(raw, lng)
+MOSjoin_COUI_DEF(raw, flt)
+MOSjoin_COUI_DEF(raw, dbl)
 #ifdef HAVE_HGE
-		case TYPE_hge: join_raw(hge); break;
+MOSjoin_COUI_DEF(raw, hge)
 #endif
-	}
-	MOSskip_raw(task);
-	return MAL_SUCCEED;
-}

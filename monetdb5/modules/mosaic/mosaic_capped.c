@@ -109,8 +109,7 @@ insert_into_dict_DEF(TPE)\
 extend_delta_DEF(TPE, GlobalCappedInfo)\
 merge_delta_Into_dictionary_DEF(TPE, GlobalCappedInfo)\
 compress_dictionary_DEF(TPE)\
-decompress_dictionary_DEF(TPE)\
-join_dictionary_DEF(TPE)
+decompress_dictionary_DEF(TPE)
 
 DictionaryClass(bte)
 DictionaryClass(sht)
@@ -412,8 +411,8 @@ MOSdecompress_capped(MOStask task)
 	}
 }
 
-#define scan_loop_capped(TPE, CANDITER_NEXT, TEST) \
-    scan_loop_dictionary(TPE, CANDITER_NEXT, TEST)
+#define scan_loop_capped(TPE, CI_NEXT, TEST) \
+    scan_loop_dictionary(TPE, CI_NEXT, TEST)
 
 MOSselect_DEF(capped, bte)
 MOSselect_DEF(capped, sht)
@@ -425,8 +424,8 @@ MOSselect_DEF(capped, dbl)
 MOSselect_DEF(capped, hge)
 #endif
 
-#define projection_loop_capped(TPE, CANDITER_NEXT) \
-    projection_loop_dictionary(TPE, CANDITER_NEXT)
+#define projection_loop_capped(TPE, CI_NEXT) \
+    projection_loop_dictionary(TPE, CI_NEXT)
 
 MOSprojection_DEF(capped, bte)
 MOSprojection_DEF(capped, sht)
@@ -438,22 +437,15 @@ MOSprojection_DEF(capped, dbl)
 MOSprojection_DEF(capped, hge)
 #endif
 
-str
-MOSjoin_capped( MOStask task, bit nil_matches)
-{
-	// set the oid range covered and advance scan range
-	switch(ATOMbasetype(task->type)) {
-		case TYPE_bte: DICTjoin(bte); break;
-		case TYPE_sht: DICTjoin(sht); break;
-		case TYPE_int: DICTjoin(int); break;
-		case TYPE_lng: DICTjoin(lng); break;
-		case TYPE_oid: DICTjoin(oid); break;
-		case TYPE_flt: DICTjoin(flt); break;
-		case TYPE_dbl: DICTjoin(dbl); break;
+#define outer_loop_capped(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
+    outer_loop_dictionary(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT)
+
+MOSjoin_COUI_DEF(capped, bte)
+MOSjoin_COUI_DEF(capped, sht)
+MOSjoin_COUI_DEF(capped, int)
+MOSjoin_COUI_DEF(capped, lng)
+MOSjoin_COUI_DEF(capped, flt)
+MOSjoin_COUI_DEF(capped, dbl)
 #ifdef HAVE_HGE
-		case TYPE_hge: DICTjoin(hge); break;
+MOSjoin_COUI_DEF(capped, hge)
 #endif
-	}
-	MOSskip_capped(task);
-	return MAL_SUCCEED;
-}

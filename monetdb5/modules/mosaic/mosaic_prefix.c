@@ -326,12 +326,12 @@ MOSdecompress_prefix(MOStask task)
 	}
 }
 
-#define scan_loop_prefix(TPE, CANDITER_NEXT, TEST) {\
+#define scan_loop_prefix(TPE, CI_NEXT, TEST) {\
 	MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorPrefix(task);\
 	PrefixTpe(TPE) prefix = parameters->prefix.prefix##TPE;\
 	int suffix_bits = parameters->suffix_bits;\
-    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CANDITER_NEXT(task->ci)) {\
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CI_NEXT(task->ci)) {\
         BUN i = (BUN) (c - first);\
         v = (TPE) (prefix | getBitVector(base,i,suffix_bits));\
         /*TODO: change from control to data dependency.*/\
@@ -348,13 +348,13 @@ MOSselect_DEF(prefix, lng)
 MOSselect_DEF(prefix, hge)
 #endif
 
-#define projection_loop_prefix(TPE, CANDITER_NEXT)\
+#define projection_loop_prefix(TPE, CI_NEXT)\
 {\
     MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorPrefix(task);\
 	PrefixTpe(TPE) prefix = parameters->prefix.prefix##TPE;\
 	int suffix_bits = parameters->suffix_bits;\
-	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CANDITER_NEXT(task->ci)) {\
+	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CI_NEXT(task->ci)) {\
 		BUN i = (BUN) (o - first);\
 		TPE value =  (TPE) (prefix | getBitVector(base,i,suffix_bits));\
 		*bt++ = value;\
@@ -370,67 +370,26 @@ MOSprojection_DEF(prefix, lng)
 MOSprojection_DEF(prefix, hge)
 #endif
 
-#define join_prefix_general(HAS_NIL, NIL_MATCHES, TPE)\
-{   TPE *w;\
+#define outer_loop_prefix(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
+{\
     MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorPrefix(task);\
 	PrefixTpe(TPE) prefix = parameters->prefix.prefix##TPE;\
 	int suffix_bits = parameters->suffix_bits;\
-	w = (TPE*) task->src;\
-	for(n = task->stop, o = 0; n -- > 0; w++,o++){\
-		for(i=0, oo= (oid) first; oo < (oid) last; oo++,i++){\
-			PrefixTpe(TPE) pvalue = prefix | getBitVector(base,i,suffix_bits);\
-			TPE* value =  (TPE*) &pvalue;\
-			if (HAS_NIL && !NIL_MATCHES) {\
-				if (IS_NIL(TPE, *value)) { continue;}\
-			}\
-			if (ARE_EQUAL(*w, *value, HAS_NIL, TPE)){\
-				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
-				BUNappend(task->rbat, &o, false) != GDK_SUCCEED )\
-				throw(MAL,"mosaic.prefix",MAL_MALLOC_FAIL);\
-			}\
+	for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = LEFT_CI_NEXT(task->ci)) {\
+		BUN i = (BUN) (lo - first);\
+		TPE lval =  (TPE) (prefix | getBitVector(base,i,suffix_bits));\
+		if (HAS_NIL && !NIL_MATCHES) {\
+			if ((IS_NIL(TPE, lval))) {continue;};\
 		}\
+		INNER_LOOP_UNCOMPRESSED(HAS_NIL, TPE, RIGHT_CI_NEXT);\
 	}\
 }
 
-#define join_prefix(TPE) {\
-	if( nil && nil_matches){\
-		join_prefix_general(true, true, TPE);\
-	}\
-	if( !nil && nil_matches){\
-		join_prefix_general(false, true, TPE);\
-	}\
-	if( nil && !nil_matches){\
-		join_prefix_general(true, false, TPE);\
-	}\
-	if( !nil && !nil_matches){\
-		join_prefix_general(false, false, TPE);\
-	}\
-}
-
-str
-MOSjoin_prefix( MOStask task, bit nil_matches)
-{
-	BUN i= 0,n,first,last;
-	oid o, oo;
-
-	// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
-	bool nil = !task->bsrc->tnonil;
-
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: join_prefix(bte); break;
-		case TYPE_sht: join_prefix(sht); break;
-		case TYPE_int: join_prefix(int); break;
-		case TYPE_lng: join_prefix(lng); break;
-		case TYPE_oid: join_prefix(oid); break;
-		case TYPE_flt: join_prefix(flt); break;
-		case TYPE_dbl: join_prefix(dbl); break;
+MOSjoin_COUI_DEF(prefix, bte)
+MOSjoin_COUI_DEF(prefix, sht)
+MOSjoin_COUI_DEF(prefix, int)
+MOSjoin_COUI_DEF(prefix, lng)
 #ifdef HAVE_HGE
-		case TYPE_hge: join_prefix(hge); break;
+MOSjoin_COUI_DEF(prefix, hge)
 #endif
-	}
-	MOSskip_prefix(task);
-	return MAL_SUCCEED;
-}

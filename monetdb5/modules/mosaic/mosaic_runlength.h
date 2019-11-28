@@ -25,7 +25,6 @@ mal_export void MOSskip_runlength(MOStask task);
 mal_export str  MOSestimate_runlength(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOScompress_runlength(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_runlength(MOStask task);
-mal_export str MOSjoin_runlength( MOStask task, bit nil_matches);
 
 ALGEBRA_INTERFACES_ALL_TYPES(runlength);
 

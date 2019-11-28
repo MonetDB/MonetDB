@@ -149,46 +149,6 @@ typedef struct {
 	 * It should always be after the global Mosaic header.*/
 } MOSBlkHdr_dictionary_t;
 
-#define join_dictionary_general(HAS_NIL, NIL_MATCHES, TPE) {\
-	BUN i, n;\
-	oid hr, hl; /*The right and left head values respectively.*/\
-	for(hr=0, n= rcnt; n-- > 0; hr++,tr++ ){\
-		for(hl = (oid) hseqbase, i = 0; i < lcnt; i++,hl++){\
-			BitVectorChunk j= getBitVector(base,i,bits);\
-			if (HAS_NIL && !NIL_MATCHES) {\
-				if (IS_NIL(TPE, dict[j])) { continue;}\
-			}\
-			if (ARE_EQUAL(*tr, dict[j], HAS_NIL, TPE)){\
-				if(BUNappend(lres, &hl, false) != GDK_SUCCEED ||\
-				BUNappend(rres, &hr, false) != GDK_SUCCEED)\
-				throw(MAL,"mosaic.dictionary",MAL_MALLOC_FAIL);\
-			}\
-		}\
-	}\
-}
-
-#define join_dictionary_DEF(TPE)\
-static \
-str join_dictionary_##TPE(\
-BAT* lres, BAT* rres,\
-BUN hseqbase, BUN lcnt, TPE* dict, BitVector base, bte bits, TPE* tr, BUN rcnt,\
-bool nil, bool nil_matches)\
-{\
-if( nil && nil_matches){\
-	join_dictionary_general(true, true, TPE);\
-}\
-if( !nil && nil_matches){\
-	join_dictionary_general(false, true, TPE);\
-}\
-if( nil && !nil_matches){\
-	join_dictionary_general(true, false, TPE);\
-}\
-if( !nil && !nil_matches){\
-	join_dictionary_general(false, false, TPE);\
-}\
-return MAL_SUCCEED;\
-}
-
 // MOStask object dependent macro's
 
 #define MOScodevectorDict(Task) (((char*) (Task)->blk) + wordaligned(sizeof(MOSBlkHdr_dictionary_t), BitVectorChunk))
@@ -244,23 +204,20 @@ return MAL_SUCCEED;\
 	}\
 }
 
-#define DICTjoin(TPE) {\
+#define outer_loop_dictionary(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
+{\
 	bte bits		= GET_FINAL_BITS(task);\
 	TPE* dict		= GET_FINAL_DICT(task, TPE);\
 	BitVector base	= (BitVector) MOScodevectorDict(task);\
-	BUN lcnt = MOSgetCnt(task->blk);\
-	BUN hseqbase = task->start;\
-	BAT* lres = task->lbat;\
-	BAT* rres = task->rbat;\
-	TPE* tr = (TPE*) task->src;/*right tail value, i.e. the non-mosaic side. */\
-	bool nil = !task->bsrc->tnonil;\
-	BUN rcnt = task->stop;\
-	str result = join_dictionary_##TPE(\
-		lres, rres,\
-	 	hseqbase, lcnt, dict, base, bits, /*left mosaic side*/\
-		tr, rcnt, /*right (treated as) non-mosaic side*/\
-		nil, nil_matches);\
-	if (result != MAL_SUCCEED) return result;\
+    for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = LEFT_CI_NEXT(task->ci)) {\
+        BUN i = (BUN) (lo - first);\
+		BitVectorChunk j= getBitVector(base,i,bits);\
+        TPE lval = dict[j];\
+		if (HAS_NIL && !NIL_MATCHES) {\
+			if ((IS_NIL(TPE, lval))) {continue;};\
+		}\
+		INNER_LOOP_UNCOMPRESSED(HAS_NIL, TPE, RIGHT_CI_NEXT);\
+	}\
 }
 
 #endif /* _MOSAIC_DICTIONARY_  */

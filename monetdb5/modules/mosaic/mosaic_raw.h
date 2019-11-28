@@ -25,7 +25,6 @@ mal_export void MOSskip_raw(MOStask task);
 mal_export str MOSestimate_raw(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOScompress_raw(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_raw(MOStask task);
-mal_export str MOSjoin_raw( MOStask task, bit nil_matches);
 
 ALGEBRA_INTERFACES_ALL_TYPES(raw);
 

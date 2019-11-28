@@ -195,11 +195,11 @@ MOSdecompress_runlength(MOStask task)
 	}
 }
 
-#define scan_loop_runlength(TPE, CANDITER_NEXT, TEST) \
+#define scan_loop_runlength(TPE, CI_NEXT, TEST) \
 {\
     v = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
     if (TEST) {\
-        for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CANDITER_NEXT(task->ci)) {\
+        for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CI_NEXT(task->ci)) {\
 		    *o++ = c;\
         }\
     }\
@@ -215,10 +215,10 @@ MOSselect_DEF(runlength, dbl)
 MOSselect_DEF(runlength, hge)
 #endif
 
-#define projection_loop_runlength(TPE, CANDITER_NEXT)\
+#define projection_loop_runlength(TPE, CI_NEXT)\
 {\
 	TPE rt = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
-	for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CANDITER_NEXT(task->ci)) {\
+	for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CI_NEXT(task->ci)) {\
 		*bt++ = rt;\
 		task->cnt++;\
 	}\
@@ -234,61 +234,63 @@ MOSprojection_DEF(runlength, dbl)
 MOSprojection_DEF(runlength, hge)
 #endif
 
-#define join_runlength_general(HAS_NIL, NIL_MATCHES, TPE)\
-do {	TPE v, *w;\
-	v = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
-	w = (TPE*) task->src;\
+#define outer_loop_runlength(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
+do {\
+	const TPE lval = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
 	if (HAS_NIL && !NIL_MATCHES) {\
-		if (IS_NIL(TPE, v)) { continue;}\
+		if (IS_NIL(TPE, lval)) { break;}\
 	}\
-	for(n = task->stop, o = 0; n -- > 0; w++,o++) {\
-		if (ARE_EQUAL(*w, v, HAS_NIL, TPE))\
-			for(oo= (oid) first; oo < (oid) last; oo++){\
-				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
-				BUNappend(task->rbat, &o, false) != GDK_SUCCEED )\
-				throw(MAL,"mosaic.runlength",MAL_MALLOC_FAIL);\
-			}\
+    for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = LEFT_CI_NEXT(task->ci)) {\
+		INNER_LOOP_UNCOMPRESSED(HAS_NIL, TPE, RIGHT_CI_NEXT);\
 	}\
-} while (0);
+} while (0)
 
-#define join_runlength(TPE) {\
-	if( nil && nil_matches){\
-		join_runlength_general(true, true, TPE);\
-	}\
-	if( !nil && nil_matches){\
-		join_runlength_general(false, true, TPE);\
-	}\
-	if( nil && !nil_matches){\
-		join_runlength_general(true, false, TPE);\
-	}\
-	if( !nil && !nil_matches){\
-		join_runlength_general(false, false, TPE);\
-	}\
-}
-
-str
-MOSjoin_runlength( MOStask task, bit nil_matches)
+MOSjoin_COUI_DEF(runlength, bte)
+MOSjoin_COUI_DEF(runlength, sht)
+MOSjoin_COUI_DEF(runlength, int)
+MOSjoin_COUI_SIGNATURE(runlength, lng)
 {
-	BUN n,first,last;
-	oid o, oo;
-
-	// set the oid range covered and advance scan range
-	first = task->start;
-	last = first + MOSgetCnt(task->blk);
+	BUN first = task->start;
+	BUN last = first + MOSgetCnt(task->blk);
+	lng* bt= (lng*) task->src;
 	bool nil = !task->bsrc->tnonil;
 
-	switch(ATOMbasetype(task->type)){
-		case TYPE_bte: join_runlength(bte); break;
-		case TYPE_sht: join_runlength(sht); break;
-		case TYPE_int: join_runlength(int); break;
-		case TYPE_lng: join_runlength(lng); break;
-		case TYPE_oid: join_runlength(oid); break;
-		case TYPE_flt: join_runlength(flt); break;
-		case TYPE_dbl: join_runlength(dbl); break;
-#ifdef HAVE_HGE
-		case TYPE_hge: join_runlength(hge); break;
-#endif
+	/* Advance the candidate iterator to the first element within
+	 * the oid range of the current block.
+	 */
+	oid c = canditer_next(task->ci);
+	while (!is_oid_nil(c) && c < first ) {
+		c = canditer_next(task->ci);
 	}
+
+	if 		(is_oid_nil(c)) {
+		/* Nothing left to scan.
+		 * So we can signal the generic select function to stop now.
+		 */
+		return MAL_SUCCEED;
+	}
+
+	do {
+		const lng lval = *(lng*) (((char*) task->blk) + MosaicBlkSize);
+		if (nil && !nil_matches) {
+			if (IS_NIL(lng, lval)) { break;}
+		}
+		for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = canditer_next(task->ci)) {
+			INNER_LOOP_UNCOMPRESSED(nil, lng, canditer_next);
+		}
+	} while (0);
+	task->src = (char*) bt;
+
+	if ((c = canditer_peekprev(task->ci)) >= last) {
+		/*Restore iterator if it went pass the end*/
+		(void) canditer_prev(task->ci);
+	}
+
 	MOSskip_runlength(task);
 	return MAL_SUCCEED;
 }
+MOSjoin_COUI_DEF(runlength, flt)
+MOSjoin_COUI_DEF(runlength, dbl)
+#ifdef HAVE_HGE
+MOSjoin_COUI_DEF(runlength, hge)
+#endif
