@@ -1,6 +1,12 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Fri Nov 29 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Added support for raw strings using the syntax r'' or R''. This means
+  that C-like escapes will remain uninterpreted within those strings. For
+  instance SELECT r'\"' returns a string of length two. The user needs
+  to escape single quotes by doubling them: SELECT r''''.
+
 * Fri Oct 25 2019 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
 - Added SQL function sys.hot_snapshot() which can be used to write
   a snapshot of the database to a tar file. For example,
