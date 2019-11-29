@@ -248,47 +248,7 @@ do {\
 MOSjoin_COUI_DEF(runlength, bte)
 MOSjoin_COUI_DEF(runlength, sht)
 MOSjoin_COUI_DEF(runlength, int)
-MOSjoin_COUI_SIGNATURE(runlength, lng)
-{
-	BUN first = task->start;
-	BUN last = first + MOSgetCnt(task->blk);
-	lng* bt= (lng*) task->src;
-	bool nil = !task->bsrc->tnonil;
-
-	/* Advance the candidate iterator to the first element within
-	 * the oid range of the current block.
-	 */
-	oid c = canditer_next(task->ci);
-	while (!is_oid_nil(c) && c < first ) {
-		c = canditer_next(task->ci);
-	}
-
-	if 		(is_oid_nil(c)) {
-		/* Nothing left to scan.
-		 * So we can signal the generic select function to stop now.
-		 */
-		return MAL_SUCCEED;
-	}
-
-	do {
-		const lng lval = *(lng*) (((char*) task->blk) + MosaicBlkSize);
-		if (nil && !nil_matches) {
-			if (IS_NIL(lng, lval)) { break;}
-		}
-		for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = canditer_next(task->ci)) {
-			INNER_LOOP_UNCOMPRESSED(nil, lng, canditer_next);
-		}
-	} while (0);
-	task->src = (char*) bt;
-
-	if ((c = canditer_peekprev(task->ci)) >= last) {
-		/*Restore iterator if it went pass the end*/
-		(void) canditer_prev(task->ci);
-	}
-
-	MOSskip_runlength(task);
-	return MAL_SUCCEED;
-}
+MOSjoin_COUI_DEF(runlength, lng)
 MOSjoin_COUI_DEF(runlength, flt)
 MOSjoin_COUI_DEF(runlength, dbl)
 #ifdef HAVE_HGE
