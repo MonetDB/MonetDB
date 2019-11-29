@@ -285,6 +285,7 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 {
 	BAT *b, *s = NULL, *bn;
 	const void *nilptr;
+	bit nanti = *anti;
 
 	if (!*unknown)
 		return ALGselect2(result, bid, sid, low, high, li, hi, anti);
@@ -309,7 +310,9 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 		low = high; 
 	else if (*hi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0)
 		high = low;
-	bn = BATselect(b, s, low, high, *li, *hi, *anti);
+	if (low == high && ATOMcmp(b->ttype, high, nilptr) == 0) /* ugh sql nil != nil */
+		nanti = !nanti;
+	bn = BATselect(b, s, low, high, *li, *hi, nanti);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
