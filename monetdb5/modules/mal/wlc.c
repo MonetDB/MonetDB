@@ -524,7 +524,7 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str fcn)
 {
 	struct timeval clock;
 	time_t clk ;
-	struct tm ctm;
+	struct tm ctm = (struct tm) {0};
 	char wlc_time[26];
 
 	(void) pci;
