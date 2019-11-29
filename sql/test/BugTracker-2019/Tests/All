@@ -49,4 +49,5 @@ index-insert-crash.Bug-6781
 avg-changes-value-scale.Bug-6783
 isaUUID.Bug-6784
 count-distinct.Bug-6790
+str_to_time.Bug-6791
 jsonpath-validity.Bug-6792
