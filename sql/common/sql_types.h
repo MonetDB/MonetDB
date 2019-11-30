@@ -29,6 +29,8 @@ extern bool is_commutative(const char *fnm); 	/* return true if commutative */
 
 extern char *sql_bind_alias(const char *alias);
 
+extern sql_subtype *arg_type( sql_arg *a);
+
 extern int sql_find_subtype(sql_subtype *res, const char *name, unsigned int digits, unsigned int scale);
 extern sql_subtype *sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits);
 
@@ -65,6 +67,8 @@ extern sql_subfunc *sql_bind_func_result(sql_allocator *sa, sql_schema *s, const
 extern sql_subfunc *sql_bind_func_result3(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_subtype *res);
 
 extern sql_subfunc *sql_bind_func_(sql_allocator *sa, sql_schema *s, const char *name, list *ops, sql_ftype type);
+
+extern sql_subfunc *resolve_function2(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type);
 
 extern sql_subfunc* sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member);
 
