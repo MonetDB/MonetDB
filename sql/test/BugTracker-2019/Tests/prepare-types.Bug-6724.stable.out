@@ -85,11 +85,11 @@ stdout of test 'prepare-types.Bug-6724` in directory 'sql/test/BugTracker-2019` 
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 4,	2,	1,	0,	2,	2 # length
-[ "int",	32,	0,	"",	"L3",	"L3"	]
+[ "int",	32,	0,	"",	"L2",	"L2"	]
 [ "clob",	0,	0,	NULL,	NULL,	NULL	]
 #exec  9('abc');
-% .L3 # table_name
-% L3 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 5	]

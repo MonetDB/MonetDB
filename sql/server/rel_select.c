@@ -3656,10 +3656,19 @@ rel_binop_(sql_query *query, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s
 
 	/* handle param's early */
 	if (!t1 || !t2) {
-		if (t2 && !t1 && rel_set_type_param(sql, t2, rel, l, 1) < 0)
-			return NULL;
-		if (t1 && !t2 && rel_set_type_param(sql, t1, rel, r, 1) < 0)
-			return NULL;
+		f = resolve_function2(sql->sa, s, fname, t1, t2, type);
+		if (f) { /* add types using f */
+			if (!t1) 
+				rel_set_type_param(sql, arg_type(f->func->ops->h->data), rel, l, 1);
+			if (!t2)
+				rel_set_type_param(sql, arg_type(f->func->ops->h->next->data), rel, r, 1);
+			f = NULL;
+		} else {
+			if (t2 && !t1 && rel_set_type_param(sql, t2, rel, l, 1) < 0)
+				return NULL;
+			if (t1 && !t2 && rel_set_type_param(sql, t1, rel, r, 1) < 0)
+				return NULL;
+		}
 		t1 = exp_subtype(l);
 		t2 = exp_subtype(r);
 	}
@@ -3667,7 +3676,7 @@ rel_binop_(sql_query *query, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s
 	if (!t1 || !t2)
 		return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
 
-	if ((is_addition(fname) || is_subtraction(fname)) && 
+	if (!f && (is_addition(fname) || is_subtraction(fname)) && 
 		((t1->type->eclass == EC_NUM && t2->type->eclass == EC_NUM) ||
 		 (t1->type->eclass == EC_BIT && t2->type->eclass == EC_BIT))) {
 		sql_subtype ntp;
@@ -3680,7 +3689,8 @@ rel_binop_(sql_query *query, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s
 		t2 = exp_subtype(r);
 	}
 
-	f = bind_func(sql, s, fname, t1, t2, type);
+	if (!f)
+		f = bind_func(sql, s, fname, t1, t2, type);
 	if (!f && is_commutative(fname)) {
 		f = bind_func(sql, s, fname, t2, t1, type);
 		if (f) {
