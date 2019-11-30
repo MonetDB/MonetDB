@@ -9324,6 +9324,42 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	return rel;
 }
 
+/* make sure the outer project (without order by or distinct) has all the aliases */
+static sql_rel *
+rel_keep_renames(mvc *sql, sql_rel *rel)
+{
+	if (!is_simple_project(rel->op) || (!rel->r && !need_distinct(rel)) || list_length(rel->exps) <= 1)
+		return rel;
+
+	int needed = 0;
+	for(node *n = rel->exps->h; n && !needed; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (exp_name(e) && (e->type != e_column || strcmp(exp_name(e), e->r) != 0)) 
+			needed = 1;
+	}
+	if (!needed)
+		return rel;
+
+	list *new_outer_exps = sa_list(sql->sa);
+	list *new_inner_exps = sa_list(sql->sa);
+	for(node *n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data, *ie, *oe;
+		const char *rname = exp_relname(e);
+		const char *name = exp_name(e);
+
+		exp_label(sql->sa, e, ++sql->label);
+		ie = e;
+		oe = exp_ref(sql->sa, ie);
+		exp_setname(sql->sa, oe, rname, name);
+		append(new_inner_exps, ie);
+		append(new_outer_exps, oe);
+	}
+	rel->exps = new_inner_exps;
+	rel = rel_project(sql->sa, rel, new_outer_exps);
+	return rel;
+}
+
 static sql_rel *
 optimize(mvc *sql, sql_rel *rel, int value_based_opt) 
 {
@@ -9331,6 +9367,7 @@ optimize(mvc *sql, sql_rel *rel, int value_based_opt)
 	node *n;
 	int level = 0, changes = 1;
 
+	rel = rel_keep_renames(sql, rel);
 
 	for( ;rel && level < 20 && changes; level++)
 		rel = optimize_rel(sql, rel, &changes, level, value_based_opt);
