@@ -120,4 +120,83 @@ where true
 limit 67
 ;
 
+SELECT subq_1.c0 AS c0, 
+       subq_1.c0 AS c1, 
+       subq_0.c0 AS c2, 
+       subq_1.c0 AS c3, 
+       subq_1.c0 AS c4, 
+       subq_0.c0 AS c5 
+FROM   (SELECT ref_0.function_type_name AS c0 
+        FROM   sys.function_types AS ref_0 
+        WHERE  false 
+        LIMIT  143) AS subq_0 
+       LEFT JOIN (SELECT ref_1.table_id AS c0 
+                  FROM   sys.table_partitions AS ref_1 
+                  WHERE  ( false ) 
+                         AND ( EXISTS 
+                         (SELECT ref_2.fk_name   AS c0, 
+                                 ref_1.column_id AS c1, 
+                                 ref_1.type      AS c2 
+                          FROM   sys.dependency_tables_on_foreignkeys AS 
+                                 ref_2 
+                               INNER JOIN sys.dependency_keys_on_foreignkeys AS 
+                                          ref_3 
+                                       ON ( ( false ) 
+                                            AND ( ( ref_3.fk_name IS NULL ) 
+                                                   OR ( ( true ) 
+                                                        AND ( ( ( ( true ) 
+                                                                   OR ( false ) 
+                                                                ) 
+                                                                 OR 
+                                                        ( ( ref_1.column_id IS 
+                                                            NULL 
+                                                          ) 
+                                                          AND ( ( true ) 
+                                                                 OR ( true ) ) 
+                                                        ) ) 
+                                                              AND ( ( 
+                                                            ( false ) 
+                                                             OR ( ref_1.type IS 
+                                                                  NULL 
+                                                                ) 
+                                                                    ) 
+                                                                    AND ( false 
+                                                                    ) 
+                                                                  ) ) ) ) 
+                                          ) 
+                                       WHERE  ( ref_3.depend_type IS NOT NULL ) 
+                                               OR ( ( ( ( ref_3.depend_type IS 
+                                                          NOT NULL 
+                                                        ) 
+                                                        AND ( 55 IS NOT NULL ) ) 
+                                                      AND ( ( ( ref_1.type IS 
+                                                                NOT NULL 
+                                                              ) 
+                                                              AND ( false ) ) 
+                                                            AND ( 79 IS NOT NULL 
+                                                                ) ) ) 
+                                                    AND ( EXISTS 
+                                                    (SELECT ref_3.key_name 
+                                                            AS 
+                                                            c0, 
+       ref_4.table_type_id AS 
+       c1, 
+       ref_2.table_name    AS 
+       c2, 
+       ref_3.fk_name       AS 
+       c3, 
+       ref_2.key_type      AS 
+       c4, 
+       ref_1.table_id      AS 
+       c5 
+       FROM   sys.table_types AS ref_4 
+       WHERE  ( true ) 
+       AND ( ref_2.table_name 
+             IS NULL ) 
+       ) ) 
+       )) ) 
+       LIMIT  30) AS subq_1 
+              ON ( subq_1.c0 IS NULL ) 
+WHERE  subq_0.c0 IS NOT NULL;
+
 ROLLBACK;
