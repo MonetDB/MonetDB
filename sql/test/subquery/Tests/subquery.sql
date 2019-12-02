@@ -81,6 +81,14 @@ SELECT SUM(SUM(i)) FROM integers; -- aggregates cannot be nested
 
 SELECT i1.i FROM integers i1 WHERE i1.i >= (SELECT i1.i, i2.i FROM integers i2 WHERE i2.i > 1); --error, subquery must return a single column
 
+SELECT i1.i FROM integers i1 GROUP BY (SELECT SUM(i1.i) + i2.i FROM integers i2); --error, aggregate functions are not allowed in GROUP BY
+
+SELECT i1.i FROM integers i1 GROUP BY (SELECT i2.i FROM integers i2); --error, column "i1.i" must appear in the GROUP BY clause or be used in an aggregate function
+
+SELECT 1 FROM integers i1 GROUP BY (VALUES(1), (2)); --error, more than one row returned by a subquery used as an expression
+
+SELECT 1 FROM integers i1 GROUP BY (VALUES(1,2,3)); --error, subquery must return only one column
+
 drop TABLE integers;
 
 -- varchar tests
