@@ -17,6 +17,7 @@
 #include "mal_interpreter.h"
 #include "mal_client.h"
 #include "mosaic_utility.h"
+#include "mosaic_dictionary.h"
 
 #define DICTTHRESHOLD 4192
 #define DICTSIZE 256

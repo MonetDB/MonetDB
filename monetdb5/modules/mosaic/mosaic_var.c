@@ -23,7 +23,6 @@
 #include "mosaic.h"
 #include "mosaic_var.h"
 #include "mosaic_private.h"
-#include "mosaic_dictionary.h"
 
 bool MOStypes_var(BAT* b) {
 	switch (b->ttype){
@@ -74,24 +73,12 @@ typedef struct _GlobalVarInfo {
 	EstimationParameters parameters;
 } GlobalVarInfo;
 
-#define GET_BASE(INFO, TPE)				((TPE*) Tloc((INFO)->dict, 0))
-#define GET_COUNT(INFO)					(BATcount((INFO)->dict))
-#define GET_CAP(INFO)					(BATcapacity((INFO)->dict))
-#define GET_DELTA_COUNT(INFO)				((INFO)->parameters.delta_count)
-#define GET_BITS(INFO)					((INFO)->parameters.bits)
-#define GET_BITS_EXTENDED(INFO)			((INFO)->parameters.bits_extended)
-#define EXTEND(INFO, new_capacity)		(BATextend((INFO)->dict, new_capacity) == GDK_SUCCEED)
-#define CONDITIONAL_INSERT(INFO, VAL, TPE)	(true)
-
-// task dependent macro's
-#define GET_FINAL_DICT(TASK, TPE) (((TPE*) (TASK)->bsrc->tvmosaic->base) + (TASK)->hdr->pos_var)
-#define GET_FINAL_BITS(TASK) ((TASK)->hdr->bits_var)
-#define GET_FINAL_DICT_COUNT(TASK) ((TASK)->hdr->length_var);\
+#define CONDITIONAL_INSERT_var(INFO, VAL, TPE)	(true)
 
 #define DictionaryClass(TPE) \
 find_value_DEF(TPE)\
 insert_into_dict_DEF(TPE)\
-extend_delta_DEF(TPE, GlobalVarInfo)\
+extend_delta_DEF(var, TPE, GlobalVarInfo)\
 merge_delta_Into_dictionary_DEF(TPE, GlobalVarInfo)\
 compress_dictionary_DEF(TPE)\
 decompress_dictionary_DEF(TPE)
@@ -267,7 +254,7 @@ _finalizeDictionary(BAT* b, GlobalVarInfo* info, BUN* pos_dict, BUN* length_dict
 
 	*pos_dict = 0;
 	*length_dict = GET_COUNT(info);
-	*bits_dict = calculateBits(*length_dict);
+	calculateBits(*bits_dict, *length_dict);
 
 	BBPreclaim(info->dict);
 
@@ -294,15 +281,15 @@ MOScompress_var(MOStask task, MosaicBlkRec* estimate)
 	MOSsetTag(blk,MOSAIC_VAR);\
 
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: DICTcompress(task, bte); break;
-	case TYPE_sht: DICTcompress(task, sht); break;
-	case TYPE_int: DICTcompress(task, int); break;
-	case TYPE_lng: DICTcompress(task, lng); break;
-	case TYPE_oid: DICTcompress(task, oid); break;
-	case TYPE_flt: DICTcompress(task, flt); break;
-	case TYPE_dbl: DICTcompress(task, dbl); break;
+	case TYPE_bte: DICTcompress(var, bte); break;
+	case TYPE_sht: DICTcompress(var, sht); break;
+	case TYPE_int: DICTcompress(var, int); break;
+	case TYPE_lng: DICTcompress(var, lng); break;
+	case TYPE_oid: DICTcompress(var, oid); break;
+	case TYPE_flt: DICTcompress(var, flt); break;
+	case TYPE_dbl: DICTcompress(var, dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: DICTcompress(task, hge); break;
+	case TYPE_hge: DICTcompress(var, hge); break;
 #endif
 	}
 }
@@ -311,21 +298,21 @@ void
 MOSdecompress_var(MOStask task)
 {
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: DICTdecompress(task, bte); break;
-	case TYPE_sht: DICTdecompress(task, sht); break;
-	case TYPE_int: DICTdecompress(task, int); break;
-	case TYPE_lng: DICTdecompress(task, lng); break;
-	case TYPE_oid: DICTdecompress(task, oid); break;
-	case TYPE_flt: DICTdecompress(task, flt); break;
-	case TYPE_dbl: DICTdecompress(task, dbl); break;
+	case TYPE_bte: DICTdecompress(var, bte); break;
+	case TYPE_sht: DICTdecompress(var, sht); break;
+	case TYPE_int: DICTdecompress(var, int); break;
+	case TYPE_lng: DICTdecompress(var, lng); break;
+	case TYPE_oid: DICTdecompress(var, oid); break;
+	case TYPE_flt: DICTdecompress(var, flt); break;
+	case TYPE_dbl: DICTdecompress(var, dbl); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: DICTdecompress(task, hge); break;
+	case TYPE_hge: DICTdecompress(var, hge); break;
 #endif
 	}
 }
 
 #define scan_loop_var(TPE, CI_NEXT, TEST) \
-    scan_loop_dictionary(TPE, CI_NEXT, TEST)
+    scan_loop_dictionary(var, TPE, CI_NEXT, TEST)
 
 MOSselect_DEF(var, bte)
 MOSselect_DEF(var, sht)
@@ -338,7 +325,7 @@ MOSselect_DEF(var, hge)
 #endif
 
 #define projection_loop_var(TPE, CI_NEXT) \
-    projection_loop_dictionary(TPE, CI_NEXT)
+    projection_loop_dictionary(var, TPE, CI_NEXT)
 
 MOSprojection_DEF(var, bte)
 MOSprojection_DEF(var, sht)
@@ -351,7 +338,7 @@ MOSprojection_DEF(var, hge)
 #endif
 
 #define outer_loop_var(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
-    outer_loop_dictionary(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT)
+    outer_loop_dictionary(HAS_NIL, NIL_MATCHES, var, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT)
 
 MOSjoin_COUI_DEF(var, bte)
 MOSjoin_COUI_DEF(var, sht)

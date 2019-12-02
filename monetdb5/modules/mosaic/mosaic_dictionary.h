@@ -8,13 +8,13 @@
  /*TODO: assuming (for now) that bats have nils during compression*/
 static const bool nil = true;
 
-static unsigned char
-calculateBits(BUN count) {
-	unsigned char bits = 0;
-	while (count >> bits) {
-		bits++;
-	}
-	return bits;
+#define calculateBits(RES, COUNT)\
+{\
+	unsigned char bits = 0;\
+	while ((COUNT) >> bits) {\
+		bits++;\
+	}\
+	(RES) = bits;\
 }
 
 typedef struct _EstimationParameters {
@@ -23,6 +23,19 @@ typedef struct _EstimationParameters {
 	BUN delta_count;
 	unsigned char bits_extended; // number of bits required to index the info after the delta would have been merged.
 } EstimationParameters;
+
+#define GET_BASE(INFO, TPE)			((TPE*) Tloc((INFO)->dict, 0))
+#define GET_COUNT(INFO)				(BATcount((INFO)->dict))
+#define GET_CAP(INFO)				(BATcapacity((INFO)->dict))
+#define GET_DELTA_COUNT(INFO)		((INFO)->parameters.delta_count)
+#define GET_BITS(INFO)				((INFO)->parameters.bits)
+#define GET_BITS_EXTENDED(INFO)		((INFO)->parameters.bits_extended)
+#define EXTEND(INFO, new_capacity)	(BATextend((INFO)->dict, new_capacity) == GDK_SUCCEED)
+
+// task dependent macro's
+#define GET_FINAL_DICT(task, NAME, TPE) (((TPE*) (task)->bsrc->tvmosaic->base) + (task)->hdr->pos_##NAME)
+#define GET_FINAL_BITS(task, NAME) ((task)->hdr->bits_##NAME)
+#define GET_FINAL_DICT_COUNT(task, NAME) ((task)->hdr->length_##NAME);\
 
 #define find_value_DEF(TPE) \
 static inline \
@@ -65,7 +78,7 @@ void insert_into_dict_##TPE(TPE* dict, BUN* dict_count, BUN key, TPE val)\
 	(*dict_count)++;\
 	dict[key] = w;\
 }
-#define extend_delta_DEF(TPE, DICTIONARY_TYPE) \
+#define extend_delta_DEF(NAME, TPE, DICTIONARY_TYPE) \
 static str \
 extend_delta_##TPE(BUN* nr_compressed, BUN* delta_count, BUN limit, DICTIONARY_TYPE* info, TPE* val) {\
 	BUN buffer_size = 256;\
@@ -77,7 +90,7 @@ extend_delta_##TPE(BUN* nr_compressed, BUN* delta_count, BUN limit, DICTIONARY_T
 		BUN pos = find_value_##TPE(dict, dict_count, *val);\
 		if (pos == dict_count || !ARE_EQUAL(delta[pos], *val, nil, TPE)) {\
 			/*This value is not in the base dictionary. See if we can add it to the delta dictionary.*/;\
-			if (CONDITIONAL_INSERT(info, *val, TPE)) {\
+			if (CONDITIONAL_INSERT_##NAME(info, *val, TPE)) {\
 				BUN key = find_value_##TPE(delta, (*delta_count), *val);\
 				if (key < *delta_count && ARE_EQUAL(delta[key], *val, nil, TPE)) {\
 					/*This delta value is already in the dictionary hence we can skip it.*/\
@@ -95,7 +108,7 @@ extend_delta_##TPE(BUN* nr_compressed, BUN* delta_count, BUN limit, DICTIONARY_T
 	}\
 	GET_DELTA_COUNT(info) = (*delta_count);\
 	BUN new_count = dict_count + GET_DELTA_COUNT(info);\
-	GET_BITS_EXTENDED(info) = calculateBits(new_count);\
+	calculateBits(GET_BITS_EXTENDED(info), new_count);\
 	return MAL_SUCCEED;\
 }
 #define merge_delta_Into_dictionary_DEF(TPE, DICTIONARY_TYPE) \
@@ -154,33 +167,33 @@ typedef struct {
 #define MOScodevectorDict(Task) (((char*) (Task)->blk) + wordaligned(sizeof(MOSBlkHdr_dictionary_t), BitVectorChunk))
 
 // insert a series of values into the compressor block using dictionary
-#define DICTcompress(TASK, TPE) {\
-	TPE *val = getSrc(TPE, (TASK));\
+#define DICTcompress(NAME, TPE) {\
+	TPE *val = getSrc(TPE, (task));\
 	BUN cnt = estimate->cnt;\
-	(TASK)->dst = MOScodevectorDict(TASK);\
-	BitVector base = (BitVector) ((TASK)->dst);\
+	(task)->dst = MOScodevectorDict(task);\
+	BitVector base = (BitVector) ((task)->dst);\
 	BUN i;\
-	TPE* dict = GET_FINAL_DICT(TASK, TPE);\
-	BUN dict_size = GET_FINAL_DICT_COUNT(TASK);\
-	bte bits = GET_FINAL_BITS(task);\
+	TPE* dict = GET_FINAL_DICT(task, NAME, TPE);\
+	BUN dict_size = GET_FINAL_DICT_COUNT(task, NAME);\
+	bte bits = GET_FINAL_BITS(task, NAME);\
 	compress_dictionary_##TPE(dict, dict_size, &i, val, cnt, base, bits);\
-	MOSsetCnt((TASK)->blk, i);\
+	MOSsetCnt((task)->blk, i);\
 }
 
 // the inverse operator, extend the src
-#define DICTdecompress(TASK, TPE)\
-{	BUN cnt = MOSgetCnt((TASK)->blk);\
-	BitVector base = (BitVector) MOScodevectorDict(TASK);\
-	bte bits = GET_FINAL_BITS(task);\
-	TPE* dict = GET_FINAL_DICT(TASK, TPE);\
-	TPE* dest = (TPE*) (TASK)->src;\
+#define DICTdecompress(NAME, TPE)\
+{	BUN cnt = MOSgetCnt((task)->blk);\
+	BitVector base = (BitVector) MOScodevectorDict(task);\
+	bte bits = GET_FINAL_BITS(task, NAME);\
+	TPE* dict = GET_FINAL_DICT(task, NAME, TPE);\
+	TPE* dest = (TPE*) (task)->src;\
 	decompress_dictionary_##TPE(dict, bits, base, cnt, &dest);\
 }
 
-#define scan_loop_dictionary(TPE, CANDITER_NEXT, TEST) {\
-    TPE* dict = GET_FINAL_DICT(task, TPE);\
+#define scan_loop_dictionary(NAME, TPE, CANDITER_NEXT, TEST) {\
+    TPE* dict = GET_FINAL_DICT(task, NAME, TPE);\
 	BitVector base = (BitVector) MOScodevectorDict(task);\
-    bte bits = GET_FINAL_BITS(task);\
+    bte bits = GET_FINAL_BITS(task, NAME);\
     for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CANDITER_NEXT(task->ci)) {\
         BUN i = (BUN) (c - first);\
         BitVectorChunk j = getBitVector(base,i,bits); \
@@ -191,11 +204,11 @@ typedef struct {
     }\
 }
 
-#define projection_loop_dictionary(TPE, CANDITER_NEXT)\
+#define projection_loop_dictionary(NAME, TPE, CANDITER_NEXT)\
 {\
-	TPE* dict = GET_FINAL_DICT(task, TPE);\
+	TPE* dict = GET_FINAL_DICT(task, NAME, TPE);\
 	BitVector base = (BitVector) MOScodevectorDict(task);\
-    bte bits = GET_FINAL_BITS(task);\
+    bte bits = GET_FINAL_BITS(task, NAME);\
 	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CANDITER_NEXT(task->ci)) {\
         BUN i = (BUN) (o - first);\
         BitVectorChunk j = getBitVector(base,i,bits); \
@@ -204,10 +217,10 @@ typedef struct {
 	}\
 }
 
-#define outer_loop_dictionary(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
+#define outer_loop_dictionary(HAS_NIL, NIL_MATCHES, NAME, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\
-	bte bits		= GET_FINAL_BITS(task);\
-	TPE* dict		= GET_FINAL_DICT(task, TPE);\
+	bte bits		= GET_FINAL_BITS(task, NAME);\
+	TPE* dict		= GET_FINAL_DICT(task, NAME, TPE);\
 	BitVector base	= (BitVector) MOScodevectorDict(task);\
     for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = LEFT_CI_NEXT(task->ci)) {\
         BUN i = (BUN) (lo - first);\
