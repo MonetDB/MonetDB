@@ -5731,13 +5731,16 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 		return rel_column_ref(query, rel, se, f );
 	case SQL_NAME:
 		return rel_var_ref(sql, se->data.sval, 1);
+	case SQL_VALUES:
 	case SQL_WITH: 
 	case SQL_SELECT: {
 		sql_rel *r;
 
-		if (se->token == SQL_WITH)
+		if (se->token == SQL_WITH) {
 			r = rel_with_query(query, se);
-		else {
+		} else if (se->token == SQL_VALUES) {
+			r = rel_values(query, se);
+		} else {
 			dlist *selection = NULL;
 
 			if ((selection = simple_selection(se)) != NULL) {

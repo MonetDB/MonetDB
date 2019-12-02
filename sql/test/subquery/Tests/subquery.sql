@@ -89,6 +89,12 @@ SELECT 1 FROM integers i1 GROUP BY (VALUES(1), (2)); --error, more than one row 
 
 SELECT 1 FROM integers i1 GROUP BY (VALUES(1,2,3)); --error, subquery must return only one column
 
+SELECT (VALUES(1));
+
+SELECT (VALUES(1),(2)); --error, cardinality violation, scalar value expected
+
+SELECT (VALUES(1,2,3)); --error, subquery must return only one column
+
 drop TABLE integers;
 
 -- varchar tests
