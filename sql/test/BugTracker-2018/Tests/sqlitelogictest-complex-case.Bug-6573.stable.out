@@ -27,7 +27,7 @@ stdout of test 'sqlitelogictest-complex-case.Bug-6573` in directory 'sql/test/Bu
 #( 73 * CASE + + 33 WHEN - 25 THEN - CAST ( NULL AS INTEGER ) ELSE NULL END ) THEN 64 WHEN NOT
 #( + CAST ( + CASE + 52 WHEN COUNT ( * ) THEN NULL WHEN 51 THEN - 68 ELSE NULL END AS INTEGER ) ) = 50
 #THEN NULL END * 11 + NULLIF ( ( - 3 ) + 51, 32 ) AS col1;
-% .L2,	.L17 # table_name
+% .%4,	.%5 # table_name
 % col1,	col1 # name
 % tinyint,	smallint # type
 % 2,	1 # length

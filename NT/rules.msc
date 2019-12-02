@@ -186,8 +186,7 @@ libpy3_CFLAGS = -DHAVE_LIBPY3 "-I$(PYTHON3DIR)\include" "-I$(PYTHON3DIR)\Lib\sit
 # PYTHON may be either a version 2 or a version 3
 # here we let %Path% determine which version we get
 PYTHON = python
-YACC = bison
-LEX = flex
+BISON = bison
 
 ARCHIVER = lib /nologo
 GENDLL =

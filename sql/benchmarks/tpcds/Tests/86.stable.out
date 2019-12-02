@@ -35,7 +35,12 @@ stdout of test '86` in directory 'sql/benchmarks/tpcds` itself:
 # and i_item_sk  = ws_item_sk
 # group by i_category,i_class
 # ) ,
-% .results_rollup,	.results_rollup,	.results_rollup,	.results_rollup,	.L102 # table_name
+#
+# results_rollup as
+#( select total_sum ,i_category ,i_class, g_category, g_class, 0 as lochierarchy from results
+#  union
+#  select sum(total_sum) as total_sum, i_category, NULL as i_class, 0 as g_category, 1 as g_class, 1 as lochierarchy from results group by i_category
+% .results_rollup,	.results_rollup,	.results_rollup,	.results_rollup,	. # table_name
 % total_sum,	i_category,	i_class,	lochierarchy,	rank_within_parent # name
 % decimal,	char,	char,	tinyint,	int # type
 % 20,	50,	50,	1,	2 # length

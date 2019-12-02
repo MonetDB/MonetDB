@@ -27,14 +27,14 @@ stdout of test 'select-in-returns-null.Bug-6491` in directory 'sql/test/BugTrack
 #INSERT INTO t VALUES (1), (2), (3);
 [ 3	]
 #SELECT 1 IN (SELECT i FROM t);
-% .L5 # table_name
-% L5 # name
+% .%12 # table_name
+% %12 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 4 IN (SELECT i FROM t);
-% .L5 # table_name
-% L5 # name
+% .%12 # table_name
+% %12 # name
 % boolean # type
 % 5 # length
 [ false	]

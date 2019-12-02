@@ -61,7 +61,7 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 		fn = path;
 	}
 	/* round up to mulitple of GDK_mmap_pagesize */
-	fd = GDKfdlocate(NOFARM, fn, "wxb", NULL);
+	fd = GDKfdlocate(NOFARM, fn, "wb", NULL);
 	if (fd >= 0) {
 		close(fd);
 		base = GDKload(NOFARM, fn, NULL, *maxsz, maxsz, STORE_MMAP);
@@ -110,7 +110,6 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		return GDK_FAIL;
 	}
 	if (GDKinmemory() ||
-	    h->size < 4 * GDK_mmap_pagesize ||
 	    (GDKmem_cursize() + h->size < GDK_mem_maxsize &&
 	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
 		h->storage = STORE_MEM;
@@ -160,14 +159,10 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 	const char *failure = "None";
 
 	if (GDKinmemory()) {
-		strncpy(nme, ":inmemory", sizeof(nme));
+		strcpy_len(nme, ":inmemory", sizeof(nme));
 		ext = "ext";
 	} else {
-		strncpy(nme, h->filename, sizeof(nme));
-#ifdef STATIC_CODE_ANALYSIS
-		/* help coverity */
-		nme[sizeof(nme) - 1] = 0;
-#endif
+		strcpy_len(nme, h->filename, sizeof(nme));
 		ext = decompose_filename(nme);
 	}
 	if (size <= h->size)
@@ -204,7 +199,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		/* extend a malloced heap, possibly switching over to
 		 * file-mapped storage */
 		Heap bak = *h;
-		bool exceeds_swap = size >= 4 * GDK_mmap_pagesize && size + GDKmem_cursize() >= GDK_mem_maxsize;
+		bool exceeds_swap = size + GDKmem_cursize() >= GDK_mem_maxsize;
 		bool must_mmap = !GDKinmemory() && (exceeds_swap || h->newstorage != STORE_MEM || size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient));
 
 		h->size = size;
@@ -422,7 +417,7 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 		const char *base = b->theap.base;
 
 		/* first save heap in file with extra .tmp extension */
-		if ((fd = GDKfdlocate(b->theap.farmid, b->theap.filename, "wxb", "tmp")) < 0)
+		if ((fd = GDKfdlocate(b->theap.farmid, b->theap.filename, "wb", "tmp")) < 0)
 			return GDK_FAIL;
 		while (size > 0) {
 			ret = write(fd, base, (unsigned) MIN(1 << 30, size));
@@ -601,9 +596,6 @@ HEAPfree(Heap *h, bool rmheap)
  * @- HEAPload
  *
  * If we find file X.new, we move it over X (if present) and open it.
- *
- * This routine initializes the h->filename without deallocating its
- * previous contents.
  */
 static gdk_return
 HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool trunc)
@@ -613,7 +605,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	char *srcpath, *dstpath, *tmp;
 	int t0;
 
-	h->storage = h->newstorage = h->size < 4 * GDK_mmap_pagesize ? STORE_MEM : STORE_MMAP;
+	h->storage = h->newstorage = h->size < GDK_mmap_minsize_persistent ? STORE_MEM : STORE_MMAP;
 
 	minsize = (h->size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 	if (h->storage != STORE_MEM && minsize != h->size)
@@ -712,7 +704,7 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM;
 		assert(strlen(ext) + strlen(suffix) < sizeof(extension));
-		stpconcat(extension, ext, suffix, NULL);
+		strconcat_len(extension, sizeof(extension), ext, suffix, NULL);
 		ext = extension;
 	} else if (store != STORE_MEM) {
 		store = h->storage;
@@ -749,7 +741,7 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 		return GDK_SUCCEED;
 	}
 	assert(strlen(ext) + strlen(".new") < sizeof(ext2));
-	stpconcat(ext2, ext, ".new", NULL);
+	strconcat_len(ext2, sizeof(ext2), ext, ".new", NULL);
 	return (GDKunlink(h->farmid, BATDIR, o, ext) == GDK_SUCCEED) | (GDKunlink(h->farmid, BATDIR, o, ext2) == GDK_SUCCEED) ? GDK_SUCCEED : GDK_FAIL;
 }
 

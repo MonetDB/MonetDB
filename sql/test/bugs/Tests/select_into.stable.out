@@ -30,8 +30,8 @@ stdout of test 'select_into` in directory 'sql/test/bugs` itself:
 #    return i;
 #end;
 #select test5();
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 5	]

@@ -180,7 +180,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
     }
 	logadd("\"state\":\"%s\",", start?"start":"done");
 	logadd("\"usec\":"LLFMT",", pci->ticks);
-	
+
 	/* generate actual call statement */
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
 	if (stmt) {
@@ -296,6 +296,10 @@ This information can be used to determine memory footprint and variable life tim
 					GDKfree(cv);
 					GDKfree(stmtq);
 				}
+				logadd("\"eol\":%d", getVarEolife(mb,getArg(pci,j)));
+				logadd("\"used\":%d", isVarUsed(mb,getArg(pci,j)));
+				logadd("\"fixed\":%d", isVarFixed(mb,getArg(pci,j)));
+				logadd("\"udf\":%d", isVarUDFtype(mb,getArg(pci,j)));
 				GDKfree(tname);
 				logadd("}%s", (j< pci->argc-1?",":""));
 			}
@@ -350,9 +354,9 @@ getCPULoad(char cpuload[BUFSIZ]){
 			if (s == NULL)		/* unexpected format of file */
 				break;
 
-			while(*s && isspace((unsigned char)*s)) s++;
-			i= sscanf(s,LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT,  &user, &nice, &system, &idle, &iowait);
-			if (i != 5)
+			while( *s && isspace((unsigned char)*s)) s++;
+			i= sscanf(s,LLSCN" "LLSCN" "LLSCN" "LLSCN" "LLSCN,  &user, &nice, &system, &idle, &iowait);
+			if ( i != 5 )
 				goto skip;
 			newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
 			if ( newload)

@@ -28,8 +28,8 @@ stdout of test 'q1_t` in directory 'sql/test/rdf` itself:
 #	WHERE A.prop = 17582582
 #--	WHERE A.prop = '<type>'
 #	GROUP BY A.obj;
-% sys.a,	sys.L4 # table_name
-% obj,	L3 # name
+% sys.a,	sys.%1 # table_name
+% obj,	%1 # name
 % int,	bigint # type
 % 1,	1 # length
 

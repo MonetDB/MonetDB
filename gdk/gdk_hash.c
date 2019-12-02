@@ -185,7 +185,9 @@ BATcheckhash(BAT *b)
 			if ((h = GDKzalloc(sizeof(*h))) != NULL &&
 			    (h->heap.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0) {
 				const char *nme = BBP_physical(b->batCacheid);
-				stpconcat(h->heap.filename, nme, ".thash", NULL);
+				strconcat_len(h->heap.filename,
+					      sizeof(h->heap.filename),
+					      nme, ".thash", NULL);
 
 				/* check whether a persisted hash can be found */
 				if ((fd = GDKfdlocate(h->heap.farmid, nme, "rb+", "thash")) >= 0) {
@@ -226,9 +228,11 @@ BATcheckhash(BAT *b)
 						close(fd);
 						h->heap.parentid = b->batCacheid;
 						h->heap.dirty = false;
-						BATsetprop(b, GDK_HASH_MASK,
-							   TYPE_oid,
-							   &(oid){h->mask + 1});
+						BATsetprop_nolock(
+							b,
+							GDK_HASH_MASK,
+							TYPE_oid,
+							&(oid){h->mask + 1});
 						b->thash = h;
 						ACCELDEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
 						MT_lock_unset(&b->batIdxLock);
@@ -383,7 +387,8 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		return NULL;
 	}
 	h->heap.dirty = true;
-	stpconcat(h->heap.filename, nme, ".", ext, NULL);
+	strconcat_len(h->heap.filename, sizeof(h->heap.filename),
+		      nme, ".", ext, NULL);
 
 	/* determine hash mask size */
 	cnt1 = 0;
@@ -397,7 +402,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
 		mask = HASHmask(cnt);
- 	} else if (s == NULL && (prop = BATgetprop(b, GDK_HASH_MASK)) != NULL) {
+ 	} else if (s == NULL && (prop = BATgetprop_nolock(b, GDK_HASH_MASK)) != NULL) {
 		assert(prop->v.vtype == TYPE_oid);
 		mask = prop->v.val.oval;
 		assert((mask & (mask - 1)) == 0); /* power of two */
@@ -529,7 +534,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		break;
 	}
 	if (s == NULL)
-		BATsetprop(b, GDK_HASH_MASK, TYPE_oid, &(oid){h->mask + 1});
+		BATsetprop_nolock(b, GDK_HASH_MASK, TYPE_oid, &(oid){h->mask + 1});
 	((size_t *) h->heap.base)[5] = (size_t) nslots;
 #ifndef NDEBUG
 	/* clear unused part of Link array */

@@ -1457,7 +1457,7 @@ COPY 56 RECORDS INTO segment4 FROM STDIN DELIMITERS '|' , E'\n', '"';
 "74406"|"74406"
 "74404"|"74404"
 
-COPY INTO all_dates FROM E'$QTSTSRCDIR/all_dates.csv.gz' DELIMITERS '|' , E'\n', '"';
+COPY 49998 RECORDS INTO all_dates FROM E'$QTSTSRCDIR/all_dates.csv.gz' DELIMITERS '|' , E'\n', '"';
 
 -- this works
 SELECT loc.code
@@ -1490,9 +1490,9 @@ SELECT loc.code
     AND f.book_code = 'G2FIN'
     AND ( cat.subcategory_code = 200 OR cat.subcategory_code = 301 OR cat.subcategory_code >= 221 )
     AND ( cat.subcategory_code = 200 OR cat.subcategory_code = 301 OR cat.subcategory_code <= 290 )
-    AND d.month_code BETWEEN '2016.01' AND '2016.10';
+    AND d.month_code BETWEEN '2016.01' AND '2016.10'
+ ORDER BY d.d_date;
 
-    
 SELECT loc.code
       ,cat.subcategory_code
       ,cat.category_code
@@ -1524,7 +1524,11 @@ SELECT loc.code
     AND ( cat.subcategory_code = 200 OR cat.subcategory_code = 301 OR cat.subcategory_code >= 221 )
     AND ( cat.subcategory_code = 200 OR cat.subcategory_code = 301 OR cat.subcategory_code <= 290 )
     AND ( s1.code = '03' OR cat.subcategory_code = 25 )
-    AND d.month_code BETWEEN '2016.01' AND '2016.10';
+    AND d.month_code BETWEEN '2016.01' AND '2016.10'
+ ORDER BY d.d_date;
 
+SELECT 1 FROM location loc,segment1 s1,fact f WHERE s1.id = f.s1_id AND loc.id = f.location_id;
+
+SELECT 1 FROM location loc,segment1 s1,fact f WHERE s1.id = f.s1_id AND loc.id = f.location_id AND ( s1.code = '03' OR loc.code = '0010094' );
 
 ROLLBACK;

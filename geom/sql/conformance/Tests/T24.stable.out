@@ -25,8 +25,8 @@ stdout of test 'T24` in directory 'geom/sql/conformance` itself:
 # 14:52:43 >  
 
 #SELECT ST_AsText(ST_Centroid(boundary)) FROM named_places WHERE name = 'Goose Island';
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % clob # type
 % 15 # length
 [ "POINT (63 15.5)"	]

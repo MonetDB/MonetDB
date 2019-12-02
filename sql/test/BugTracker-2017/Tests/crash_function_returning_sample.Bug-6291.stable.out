@@ -75,8 +75,8 @@ stdout of test 'crash_function_returning_sample.Bug-6291` in directory 'sql/test
 #   RETURN SELECT value FROM payments WHERE payment_date = pdate AND state = st SAMPLE 400;
 #END;
 #SELECT avg(v) FROM amostra('2011-01-01', 'DF');
-% .L7 # table_name
-% L6 # name
+% .%4 # table_name
+% %4 # name
 % double # type
 % 24 # length
 [ 123.45	]

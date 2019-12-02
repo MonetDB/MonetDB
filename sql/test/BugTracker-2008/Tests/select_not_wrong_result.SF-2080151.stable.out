@@ -39,8 +39,8 @@ stdout of test 'select_not_wrong_result.SF-2080151` in directory 'sql/test/BugTr
 #(SELECT B.a
 #FROM B
 #WHERE a > 'a4' ));
-% sys.L6 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]

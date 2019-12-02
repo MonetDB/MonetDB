@@ -24,25 +24,25 @@ stdout of test 'ST_IsRing` in directory 'geom/sql/functions` itself:
 # 14:55:48 >  
 
 #SELECT ST_IsRing(st_linefromtext('LINESTRING(0 0, 0 1, 1 1, 1 0, 0 0)'));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT ST_IsRing(st_linefromtext('LINESTRING(0 0, 0 1, 1 0, 1 1, 0 0)'));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #select ST_IsRing(ST_GeomFromText('POLYGON((0 0, 1 1, 1 2, 1 1, 0 0))'));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT geom AS "GEOMETRY" FROM geometries WHERE id<14 AND ST_IsRing(geom);
-% sys.L2 # table_name
+% sys.geometries # table_name
 % GEOMETRY # name
 % geometry # type
 % 0 # length

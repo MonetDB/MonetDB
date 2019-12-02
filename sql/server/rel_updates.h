@@ -15,7 +15,6 @@
 #include "sql_relation.h"
 #include "sql_query.h"
 
-extern sql_exp **table_update_array(mvc *sql, sql_table *t);
 extern sql_rel *rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps);
 
 extern sql_rel *rel_insert(mvc *sql, sql_rel *t, sql_rel *inserts);

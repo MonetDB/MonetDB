@@ -35,8 +35,15 @@ stdout of test '23a` in directory 'sql/benchmarks/tpcds` itself:
 #     AND ss_item_sk = i_item_sk
 #     AND d_year IN (2000,
 #                    2000+1,
-% .L60 # table_name
-% L60 # name
+#                    2000+2,
+#                    2000+3)
+#   GROUP BY itemdesc,
+#            i_item_sk,
+#            d_date
+#   HAVING count(*) >4),
+#      max_store_sales AS
+% .%24 # table_name
+% %24 # name
 % decimal # type
 % 40 # length
 [ 17030.9100	]

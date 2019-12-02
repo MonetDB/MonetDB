@@ -35,7 +35,15 @@ stdout of test '07` in directory 'sql/benchmarks/tpcds` itself:
 #     promotion
 #WHERE ss_sold_date_sk = d_date_sk
 #  AND ss_item_sk = i_item_sk
-% sys.item,	sys.L4,	sys.L7,	sys.L12,	sys.L15 # table_name
+#  AND ss_cdemo_sk = cd_demo_sk
+#  AND ss_promo_sk = p_promo_sk
+#  AND cd_gender = 'M'
+#  AND cd_marital_status = 'S'
+#  AND cd_education_status = 'College'
+#  AND (p_channel_email = 'N'
+#       OR p_channel_event = 'N')
+#  AND d_year = 2000
+% sys.item,	sys.%1,	sys.%2,	sys.%3,	sys.%4 # table_name
 % i_item_id,	agg1,	agg2,	agg3,	agg4 # name
 % char,	double,	double,	double,	double # type
 % 16,	24,	24,	24,	24 # length

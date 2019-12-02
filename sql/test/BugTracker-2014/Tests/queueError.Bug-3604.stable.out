@@ -53,20 +53,20 @@ stdout of test 'queueError.Bug-3604` in directory 'sql/test/BugTracker-2014` its
 # 11:43:52 >  
 
 #select user,status,query from sys.queue();
-% .L3,	.L1,	.L1 # table_name
-% L3,	status,	query # name
+% .,	.%1,	.%1 # table_name
+% single_value,	status,	query # name
 % varchar,	clob,	clob # type
 % 7,	7,	42 # length
 [ "monetdb",	"running",	"select user,status,query from sys.queue();"	]
 #select user,status,query from sys.queue();
-% .L3,	.L1,	.L1 # table_name
-% L3,	status,	query # name
+% .,	.%1,	.%1 # table_name
+% single_value,	status,	query # name
 % varchar,	clob,	clob # type
 % 7,	7,	42 # length
 [ "monetdb",	"running",	"select user,status,query from sys.queue();"	]
 #select user,status,query from sys.queue();
-% .L3,	.L1,	.L1 # table_name
-% L3,	status,	query # name
+% .,	.%1,	.%1 # table_name
+% single_value,	status,	query # name
 % varchar,	clob,	clob # type
 % 7,	7,	42 # length
 [ "monetdb",	"running",	"select user,status,query from sys.queue();"	]

@@ -671,11 +671,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		}
 	}
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, MAINTENANCEFILE);
-	if (stat(buf, &statbuf) == -1) {
-		sdb->locked = 0;
-	} else {
-		sdb->locked = 1;
-	}
+	sdb->locked = stat(buf, &statbuf) != -1;
 
 	/* add scenarios that are supported */
 	sdb->scens = NULL;

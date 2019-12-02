@@ -370,7 +370,7 @@ MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
     (void) mb;
     (void) cntxt;
-    throw(MAL, "opt.remap", "Function '%s.%s' not defined",
+    throw(MAL, "mal.multiplex", "Function '%s.%s' not defined",
 		  *getArgReference_str(stk, p, p->retc),
 		  *getArgReference_str(stk, p, p->retc + 1));
 }

@@ -14,20 +14,20 @@ stdout of test 'cast_bigint_to_int.SF-1211903` in directory 'sql/test/BugDay_200
 
 
 #select cast(1117422000 as integer);
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 10 # length
 [ 1117422000	]
 #select cast('1117422000' as integer);
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 10 # length
 [ 1117422000	]
 #select cast(cast(1117422000 as bigint) as integer);
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 10 # length
 [ 1117422000	]

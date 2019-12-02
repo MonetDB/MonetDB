@@ -29,19 +29,24 @@ stdout of test 'crash_on_alias.Bug-2798` in directory 'sql/test/BugTracker-2011`
 % .plan # table_name
 % rel # name
 % clob # type
-% 109 # length
+% 124 # length
 project (
 | project (
-| | group by (
-| | | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
-| | ) [ "dbg"."a" as "d" ] [ "d", sys.sum no nil ("dbg"."b") as "L2"."L2", "L2"."L2" as "L3"."L3" ]
-| ) [ "d" as "L1"."d", "L2"."L2", sys.sql_mul(sys.sql_div("L3"."L3", tinyint "2"), tinyint "2") as "L4"."f" ]
-) [ "L1"."d", "L2"."L2", "L4"."f" ]
+| | left outer join (
+| | | group by (
+| | | | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
+| | | ) [ "dbg"."a" as "d" ] [ "d", sys.sum no nil ("dbg"."b") as "%1"."%1", "%1"."%1" as "%2"."%2" ],
+| | | project (
+| | | |  [ boolean "true" ]
+| | | ) [ tinyint "2" as "%3"."%3" ]
+| | ) [  ]
+| ) [ "d" as "%6"."%6", "%1"."%1" as "%7"."%7", sys.sql_mul(sys.sql_div("%2"."%2", "%3"."%3"), tinyint "2") as "%10"."%10" ]
+) [ "%6"."%6" as "d", "%7"."%7" as "%1"."%1", "%10"."%10" as "f" ]
 #set optimizer = 'sequential_pipe';
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
-% sys.L1,	sys.L2,	sys.L4 # table_name
-% d,	L2,	f # name
+% .%6,	.%1,	.%10 # table_name
+% d,	%1,	f # name
 % int,  bigint, bigint # type
 % 2,    2,      2 # length
 [ 10,   10,     10      ]
@@ -55,18 +60,23 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 121 # length
+% 124 # length
 project (
 | project (
-| | group by (
-| | | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
-| | ) [ "dbg"."a" as "d" ] [ "d", sys.sum no nil ("dbg"."b") as "L2"."L2", "L2"."L2" as "L4"."L4" ]
-| ) [ "d" as "L1"."d", "L2"."L2" as "L3"."e", sys.sql_mul(sys.sql_div("L4"."L4", tinyint "2"), tinyint "2") as "L5"."f" ]
-) [ "L1"."d", "L3"."e", "L5"."f" ]
+| | left outer join (
+| | | group by (
+| | | | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
+| | | ) [ "dbg"."a" as "d" ] [ "d", sys.sum no nil ("dbg"."b") as "%1"."%1", "%1"."%1" as "%2"."%2" ],
+| | | project (
+| | | |  [ boolean "true" ]
+| | | ) [ tinyint "2" as "%3"."%3" ]
+| | ) [  ]
+| ) [ "d" as "%6"."%6", "%1"."%1" as "%7"."%7", sys.sql_mul(sys.sql_div("%2"."%2", "%3"."%3"), tinyint "2") as "%10"."%10" ]
+) [ "%6"."%6" as "d", "%7"."%7" as "e", "%10"."%10" as "f" ]
 #set optimizer = 'sequential_pipe';
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
-% sys.L1,	sys.L3,	sys.L5 # table_name
+% .%6,	.%7,	.%10 # table_name
 % d,    e,      f # name
 % int,  bigint, bigint # type
 % 2,    2,      2 # length

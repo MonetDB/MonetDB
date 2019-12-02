@@ -34,8 +34,13 @@ stdout of test '13` in directory 'sql/benchmarks/tpcds` itself:
 #     customer_address ,
 #     date_dim
 #WHERE s_store_sk = ss_store_sk
-% sys.L41,	sys.L43,	sys.L45,	sys.L47 # table_name
-% L41,	L43,	L45,	L47 # name
+#  AND ss_sold_date_sk = d_date_sk
+#  AND d_year = 2001 and((ss_hdemo_sk=hd_demo_sk
+#                         AND cd_demo_sk = ss_cdemo_sk
+#                         AND cd_marital_status = 'M'
+#                         AND cd_education_status = 'Advanced Degree'
+% sys.%1,	sys.%2,	sys.%3,	sys.%4 # table_name
+% %1,	%2,	%3,	%4 # name
 % double,	double,	double,	decimal # type
 % 24,	24,	24,	20 # length
 [ 31,	2551.863333,	2365.943333,	14195.66	]

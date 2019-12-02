@@ -48,7 +48,7 @@ stdout of test 'orderby_count.Bug-3526` in directory 'sql/test/BugTracker-2014` 
 [ "two"	]
 [ "two"	]
 #select k, v from a union all select k,NULL from b;
-% .L12,	.L12 # table_name
+% .%6,	.%6 # table_name
 % k,	v # name
 % varchar,	boolean # type
 % 3,	5 # length
@@ -59,8 +59,8 @@ stdout of test 'orderby_count.Bug-3526` in directory 'sql/test/BugTracker-2014` 
 [ "two",	NULL	]
 [ "two",	NULL	]
 #select k,count(*),count(v) from (select k,v from a union all select k,null from b) as t(k,v) group by k order by count(*) desc;
-% .t,	.L16,	.L20 # table_name
-% k,	L16,	L20 # name
+% .t,	.%10,	.%11 # table_name
+% k,	%10,	%11 # name
 % varchar,	bigint,	bigint # type
 % 3,	1,	1 # length
 [ "two",	4,	1	]

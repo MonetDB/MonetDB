@@ -3695,6 +3695,7 @@ buffer_get_buf(buffer *b)
 	b->buf = malloc(b->len);
 	if (b->buf == NULL) {
 		free(b);
+		free(r);
 		return NULL;
 	}
 	b->len = b->buf ? b->len : 0;

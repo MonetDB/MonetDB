@@ -35,7 +35,9 @@ stdout of test '64` in directory 'sql/benchmarks/tpcds` itself:
 #   HAVING sum(cs_ext_list_price)>2*sum(cr_refunded_cash+cr_reversed_charge+cr_store_credit)),
 #     cross_sales AS
 #  (SELECT i_product_name product_name,
-% sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.L107,	sys.L111,	sys.L113,	sys.L115,	sys.L117,	sys.L121,	sys.cs2,	sys.cs2 # table_name
+#          i_item_sk item_sk,
+#          s_store_name store_name,
+% sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs2,	sys.cs2,	sys.cs2,	sys.cs2,	sys.cs2 # table_name
 % product_name,	store_name,	store_zip,	b_street_number,	b_street_name,	b_city,	b_zip,	c_street_number,	c_street_name,	c_city,	c_zip,	syear,	cnt,	s11,	s21,	s31,	s12,	s22,	s32,	syear,	cnt # name
 % char,	varchar,	char,	char,	varchar,	varchar,	char,	char,	varchar,	varchar,	char,	int,	bigint,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	int,	bigint # type
 % 50,	5,	10,	10,	12,	15,	10,	10,	17,	9,	10,	4,	1,	40,	40,	40,	40,	40,	40,	4,	1 # length

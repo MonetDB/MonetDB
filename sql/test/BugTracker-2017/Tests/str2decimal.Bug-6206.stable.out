@@ -66,86 +66,86 @@ stdout of test 'str2decimal.Bug-6206` in directory 'sql/test/BugTracker-2017` it
 # 13:58:25 >  
 
 #select cast(1 as decimal(7,3));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % decimal # type
 % 9 # length
 [ 1.000	]
 #select cast('1' as decimal(7,3));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % decimal # type
 % 9 # length
 [ 1.000	]
 #select cast(10 as decimal(7,3));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % decimal # type
 % 9 # length
 [ 10.000	]
 #select cast('10' as decimal(7,3));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % decimal # type
 % 9 # length
 [ 10.000	]
 #select cast(100 as decimal(7,3));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % decimal # type
 % 9 # length
 [ 100.000	]
 #select cast('100' as decimal(7,3));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % decimal # type
 % 9 # length
 [ 100.000	]
 #select cast(110 as decimal(7,3));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % decimal # type
 % 9 # length
 [ 110.000	]
 #select cast('110' as decimal(7,3));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % decimal # type
 % 9 # length
 [ 110.000	]
 #select cast(1000 as decimal(7,3));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % decimal # type
 % 9 # length
 [ 1000.000	]
 #select cast('1000' as decimal(7,3));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % decimal # type
 % 9 # length
 [ 1000.000	]
 #select cast(1100 as decimal(7,3));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % decimal # type
 % 9 # length
 [ 1100.000	]
 #select cast('1100' as decimal(7,3));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % decimal # type
 % 9 # length
 [ 1100.000	]
 #select cast(1110 as decimal(7,3));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % decimal # type
 % 9 # length
 [ 1110.000	]
 #select cast('1110' as decimal(7,3));
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % decimal # type
 % 9 # length
 [ 1110.000	]

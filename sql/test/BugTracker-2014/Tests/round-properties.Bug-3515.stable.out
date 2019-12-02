@@ -59,8 +59,8 @@ stdout of test 'round-properties.Bug-3515` in directory 'sql/test/BugTracker-201
 #INSERT INTO ceil_floor_round VALUES ('0.0');
 [ 1	]
 #SELECT a, round(a, 0) FROM ceil_floor_round;
-% sys.ceil_floor_round,	sys.L3 # table_name
-% a,	L3 # name
+% sys.ceil_floor_round,	sys.%2 # table_name
+% a,	%2 # name
 % decimal,	decimal # type
 % 20,	20 # length
 [ -5.500,	-6.000	]

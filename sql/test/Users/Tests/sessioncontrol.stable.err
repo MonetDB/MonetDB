@@ -1,0 +1,42 @@
+stderr of test 'sessioncontrol` in directory 'sql/test/Users` itself:
+
+
+# 18:15:20 >  
+# 18:15:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30383" "--set" "mapi_usock=/var/tmp/mtest-5773/.s.monetdb.30383" "--forcemito" "--dbpath=/export/scratch1/mk/branches/default//Linux/var/MonetDB/mTests_sql_test_Users" "--set" "embedded_c=true"
+# 18:15:20 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/branches/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30383
+# cmdline opt 	mapi_usock = /var/tmp/mtest-5773/.s.monetdb.30383
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/branches/default//Linux/var/MonetDB/mTests_sql_test_Users
+# cmdline opt 	embedded_c = true
+#client2:!ERROR:MALException:sessiontimeout:Session time-out should be >= 0
+#client2:!ERROR:MALException:querytimeout:Query time-out should be >= 0
+#client2:!ERROR:MALException:setworkerlimit:At least one worker needed
+
+# 18:15:20 >  
+# 18:15:20 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5773" "--port=30383"
+# 18:15:20 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-5773/.s.monetdb.30383
+QUERY = call setsessiontimeout(-1);
+ERROR = !Session time-out should be >= 0
+MAPI  = (monetdb) /var/tmp/mtest-5773/.s.monetdb.30383
+QUERY = call setquerytimeout(-1);
+ERROR = !Query time-out should be >= 0
+MAPI  = (monetdb) /var/tmp/mtest-5773/.s.monetdb.30383
+QUERY = call setworkerlimit( -1);
+ERROR = !At least one worker needed
+
+# 18:15:20 >  
+# 18:15:20 >  "Done."
+# 18:15:20 >  
+

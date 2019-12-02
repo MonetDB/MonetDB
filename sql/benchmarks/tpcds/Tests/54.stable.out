@@ -35,7 +35,11 @@ stdout of test '54` in directory 'sql/benchmarks/tpcds` itself:
 #                       ws_bill_customer_sk customer_sk,
 #                       ws_item_sk item_sk
 #      FROM web_sales) cs_or_ws_sales,
-% sys.segments,	sys.L52,	sys.L54 # table_name
+#        item,
+#        date_dim,
+#        customer
+#   WHERE sold_date_sk = d_date_sk
+% sys.segments,	sys.%20,	sys. # table_name
 % segment,	num_customers,	segment_base # name
 % int,	bigint,	bigint # type
 % 5,	1,	6 # length

@@ -24,8 +24,8 @@ stdout of test 'sqlitelogictest-complex-case-extra-columns.Bug-6555` in director
 # 16:08:28 >  
 
 #SELECT DISTINCT CASE WHEN + CASE + - COUNT ( * ) WHEN - 10 THEN NULL WHEN + - 23 - 53 THEN ( COUNT ( DISTINCT + ( + 21 ) ) ) * 72 + COALESCE ( + + 45, 9 ) WHEN - 40 + - 7 + - 1 THEN NULL END NOT IN ( + 14 + + 18 ) THEN NULL ELSE ( - - 46 ) END;
-% .L10 # table_name
-% L10 # name
+% .%5 # table_name
+% %5 # name
 % tinyint # type
 % 2 # length
 [ 46	]

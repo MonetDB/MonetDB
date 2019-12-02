@@ -107,21 +107,16 @@ static sql_rel *
 view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 {
 	dnode *n = column_spec->h;
-	node *m = sq->exps->h;
-	list *l = new_exp_list(sql->sa);
+	node *m = sq->exps->h, *p = m;
 
-	for (; n && m; n = n->next, m = m->next) {
+	assert(is_project(sq->op));
+	for (; n && m; n = n->next, p = m, m = m->next) {
 		char *cname = n->data.sval;
 		sql_exp *e = m->data;
-		sql_exp *n;
-	       
-		if (!exp_is_atom(e) && !exp_name(e))
-			exp_setname(sql->sa, e, NULL, cname);
-		n = exp_is_atom(e)?e:exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), sq->card, has_nil(e), is_intern(e));
+		sql_exp *n = e;
 
-		exp_setname(sql->sa, n, NULL, cname);
+		exp_setname(sql->sa, n, name, cname);
 		set_basecol(n);
-		list_append(l, n);
 	}
 	/* skip any intern columns */
 	for (; m; m = m->next) {
@@ -129,10 +124,10 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 		if (!is_intern(e))
 			break;
 	}
+	if (p)
+		p->next = 0;
 	if (n || m) 
 		return sql_error(sql, 02, SQLSTATE(M0M03) "Column lists do not match");
-	(void)name;
-	sq = rel_project(sql->sa, sq, l);
 	set_processed(sq);
 	return sq;
 }
@@ -1139,25 +1134,6 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 	/*return NULL;*/ /* never reached as all branches of the above if() end with return ... */
 }
 
-static void
-rel_add_intern(mvc *sql, sql_rel *rel)
-{
-	if (rel->op == op_project && rel->l && rel->exps && !need_distinct(rel)) {
-		list *prjs = rel_projections(sql, rel->l, NULL, 1, 1);
-		node *n;
-	
-		for(n=prjs->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			if (is_intern(e)) {
-				append(rel->exps, e);
-				n->data = NULL;
-			}
-		}
-	}
-}
-
-
 static sql_rel *
 rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *ast, int check, int persistent, int replace)
 {
@@ -1230,7 +1206,7 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 					return NULL;
 				}
 			}
-			rel_add_intern(sql, sq);
+			//rel_add_intern(sql, sq);
 		}
 
 		if (create) {
@@ -1484,10 +1460,9 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", tname, s->base.name);
 	} else {
-		node *n;
 		sql_rel *res = NULL, *r;
 		sql_table *nt = NULL;
-		sql_exp ** updates, *e;
+		sql_exp **updates, *e;
 
 		assert(te);
 		if (t->persistence != SQL_DECLARED_TABLE)
@@ -1603,17 +1578,17 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		if (!isTable(nt))
 			return res;
 
-		/* new columns need update with default values */
-		updates = table_update_array(sql, nt);
-		e = exp_column(sql->sa, nt->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		/* New columns need update with default values. Add one more element for new column */
+		updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, (list_length(nt->columns.set) + 1));
+		e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 		r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 		if (nt->columns.nelm) {
 			list *cols = new_exp_list(sql->sa);
-			for (n = nt->columns.nelm; n; n = n->next) {
+			for (node *n = nt->columns.nelm; n; n = n->next) {
 				sql_column *c = n->data;
 				if (c->def) {
 					char *d, *typestr = subtype2string2(&c->type);
-					if(!typestr)
+					if (!typestr)
 						return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					d = sql_message("select cast(%s as %s);", c->def, typestr);
 					_DELETE(typestr);
@@ -2137,12 +2112,12 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 	sql_schema *s = NULL;
 	sql_table *t, *nt;
 	sql_rel *r, *res;
-	sql_exp ** updates, *e;
+	sql_exp **updates, *e;
 	sql_idx *i;
 	dnode *n;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	       
+
 	if (sname && !(s = mvc_bind_schema(sql, sname))) 
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE INDEX: no such schema '%s'", sname);
 	if (!s) 
@@ -2176,8 +2151,8 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 	}
 
 	/* new columns need update with default values */
-	updates = table_update_array(sql, nt); 
-	e = exp_column(sql->sa, nt->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, list_length(nt->columns.set));
+	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 	res = rel_update(sql, res, r, updates, NULL); 

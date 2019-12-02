@@ -242,10 +242,13 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->usermodule = c->curmodule = 0;
 
 	c->father = NULL;
-	c->login = c->lastcmd = time(0);
+	c->idle  = c->login = c->lastcmd = time(0);
 	c->session = GDKusec();
-	c->qtimeout = 0;
-	c->stimeout = 0;
+	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
+	c->workerlimit = 0;
+	c->memorylimit = 0;
+	c->querytimeout = 0;
+	c->sessiontimeout = 0;
 	c->itrace = 0;
 	c->errbuf = 0;
 
@@ -268,7 +271,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->profticks = c->profstmt = NULL;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	c->sqlprofiler = 0;
-	c->malprofiler = 0;
 	c->wlc_kind = 0;
 	c->wlc = NULL;
 #ifndef HAVE_EMBEDDED /* no authentication in embedded mode */
@@ -362,7 +364,15 @@ MCforkClient(Client father)
 		son->bak = NULL;
 		son->yycur = 0;
 		son->father = father;
+		son->login = father->login;
+		son->idle = father->idle;
 		son->scenario = father->scenario;
+		strcpy_len(father->optimizer, son->optimizer, sizeof(father->optimizer));
+		son->workerlimit = father->workerlimit;
+		son->memorylimit = father->memorylimit;
+		son->querytimeout = father->querytimeout;
+		son->sessiontimeout = father->sessiontimeout;
+
 		if (son->prompt)
 			GDKfree(son->prompt);
 		son->prompt = prompt;
@@ -425,9 +435,12 @@ MCfreeClient(Client c)
 		freeModule(c->usermodule);
 	c->usermodule = c->curmodule = 0;
 	c->father = 0;
-	c->login = c->lastcmd = 0;
-	c->qtimeout = 0;
-	c->stimeout = 0;
+	c->idle = c->login = c->lastcmd = 0;
+	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
+	c->workerlimit = 0;
+	c->memorylimit = 0;
+	c->querytimeout = 0;
+	c->sessiontimeout = 0;
 	c->user = oid_nil;
 	if( c->username){
 		GDKfree(c->username);
@@ -453,7 +466,6 @@ MCfreeClient(Client c)
 	if( c->wlc)
 		freeMalBlk(c->wlc);
 	c->sqlprofiler = 0;
-	c->malprofiler = 0;
 	c->wlc_kind = 0;
 	c->wlc = NULL;
 	MT_sema_destroy(&c->s);
@@ -502,14 +514,13 @@ MCstopClients(Client cntxt)
 int
 MCactiveClients(void)
 {
-	int finishing=0, running = 0;
+	int idles = 0;
 	Client cntxt = mal_clients;
 
 	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
-		finishing += (cntxt->mode == FINISHCLIENT);
-		running += (cntxt->mode == RUNCLIENT);
+		idles += (cntxt->idle != 0 && cntxt->mode == RUNCLIENT);
 	}
-	return finishing + running;
+	return idles;
 }
 
 void

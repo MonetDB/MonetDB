@@ -35,8 +35,13 @@ stdout of test '48` in directory 'sql/benchmarks/tpcds` itself:
 #  AND ((cd_demo_sk = ss_cdemo_sk
 #        AND cd_marital_status = 'M'
 #        AND cd_education_status = '4 yr Degree'
-% sys.L35 # table_name
-% L35 # name
+#        AND ss_sales_price BETWEEN 100.00 AND 150.00)
+#       OR (cd_demo_sk = ss_cdemo_sk
+#           AND cd_marital_status = 'D'
+#           AND cd_education_status = '2 yr Degree'
+#           AND ss_sales_price BETWEEN 50.00 AND 100.00)
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 5 # length
 [ 26257	]

@@ -46,7 +46,7 @@ stdout of test 'pyapi3_16` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 #	return True
 #};
 #SELECT * FROM pyapi16( (SELECT * FROM vals) );
-% .L3 # table_name
+% .%2 # table_name
 % d # name
 % boolean # type
 % 5 # length

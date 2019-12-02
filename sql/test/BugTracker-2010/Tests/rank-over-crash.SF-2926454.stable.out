@@ -40,8 +40,8 @@ stdout of test 'rank-over-crash.SF-2926454` in directory 'sql/test/BugTracker-20
 #rank() over (order by sum(score) desc) -- cannot use alias 'totalscore' here
 #from score_table
 #group by s_name;
-% sys.score_table,	sys.L5,	sys.L11 # table_name
-% s_name,	totalscore,	L11 # name
+% sys.score_table,	sys.%11,	sys.%7 # table_name
+% s_name,	totalscore,	%7 # name
 % varchar,      bigint, int # type
 % 3,    3,      1 # length
 [ "foo",        180,    1       ]

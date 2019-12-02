@@ -47,8 +47,8 @@ stdout of test 'null_except_null.Bug-3040` in directory 'sql/test/BugTracker-201
 # 14:34:20 >  
 
 #SELECT null EXCEPT SELECT null;
-% .L11 # table_name
-% L2 # name
+% .%7 # table_name
+% %2 # name
 % char # type
 % 0 # length
 

@@ -87,8 +87,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
@@ -123,8 +123,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.oltp();"
 	 "optimizer.wlc();"
@@ -160,8 +160,8 @@ static struct PIPELINES {
 	 "optimizer.volcano();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
@@ -201,8 +201,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
@@ -241,8 +241,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
@@ -512,6 +512,10 @@ compileAllOptimizers(Client cntxt)
     }
 	return msg;
 }
+
+/* 
+ * Add a new components of the optimizer pipe to the plan
+ */
 str
 addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 {
@@ -535,7 +539,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 			if( getModuleId(q) != optimizerRef)
 				continue;
 			p = copyInstruction(q);
-			if (!p) { // oh malloc you cruel mistress
+			if (!p) { 
 				throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			for (k = 0; k < p->argc; k++)

@@ -103,13 +103,13 @@ INSERT INTO tutorial.dc_bikeshare_q1_2012 VALUES (65, '2012-01-07 10:30:10', '20
 SELECT * FROM tutorial.dc_bikeshare_q1_2012;
 
 SELECT duration_seconds,
-       cast(SUM(duration_seconds) OVER (ORDER BY start_time) as bigint) AS running_total
+       cast(SUM(duration_seconds) OVER (ORDER BY start_time) as int) AS running_total
   FROM tutorial.dc_bikeshare_q1_2012;
 
 SELECT start_terminal,
        duration_seconds,
        cast(SUM(duration_seconds) OVER
-         (PARTITION BY start_terminal ORDER BY start_time) as bigint)
+         (PARTITION BY start_terminal ORDER BY start_time) as int)
          AS running_total
   FROM tutorial.dc_bikeshare_q1_2012
  WHERE start_time < '2012-01-08';
@@ -117,14 +117,14 @@ SELECT start_terminal,
 SELECT start_terminal,
        duration_seconds,
        cast(SUM(duration_seconds) OVER
-         (PARTITION BY start_terminal) as bigint) AS start_terminal_total
+         (PARTITION BY start_terminal) as int) AS start_terminal_total
   FROM tutorial.dc_bikeshare_q1_2012
  WHERE start_time < '2012-01-08';
 
 SELECT start_terminal,
        duration_seconds,
        cast(SUM(duration_seconds) OVER
-         (PARTITION BY start_terminal) as bigint) AS running_total,
+         (PARTITION BY start_terminal) as int) AS running_total,
        COUNT(duration_seconds) OVER
          (PARTITION BY start_terminal) AS running_count,
        AVG(duration_seconds) OVER
@@ -135,7 +135,7 @@ SELECT start_terminal,
 SELECT start_terminal,
        duration_seconds,
        cast(SUM(duration_seconds) OVER
-         (PARTITION BY start_terminal ORDER BY start_time) as bigint)
+         (PARTITION BY start_terminal ORDER BY start_time) as int)
          AS running_total,
        COUNT(duration_seconds) OVER
          (PARTITION BY start_terminal ORDER BY start_time)

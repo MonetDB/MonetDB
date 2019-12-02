@@ -11,7 +11,7 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-#define MAXSLICES 256		/* to be refined */
+#define MAXSLICES 1024		/* to be refined */
 #define MINPARTCNT 100000	/* minimal record count per partition */
 
 mal_export str OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

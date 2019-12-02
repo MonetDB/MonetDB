@@ -35,8 +35,16 @@ stdout of test '35` in directory 'sql/benchmarks/tpcds` itself:
 #       count(*) cnt2,
 #       min(cd_dep_employed_count),
 #       max(cd_dep_employed_count),
-% .ca,	.customer_demographics,	.customer_demographics,	.customer_demographics,	.L43,	.L45,	.L47,	.L51,	.customer_demographics,	.L55,	.L57,	.L61,	.L63,	.customer_demographics,	.L67,	.L71,	.L73,	.L75 # table_name
-% ca_state,	cd_gender,	cd_marital_status,	cd_dep_count,	cnt1,	L45,	L47,	L51,	cd_dep_employed_count,	cnt2,	L57,	L61,	L63,	cd_dep_college_count,	cnt3,	L71,	L73,	L75 # name
+#       avg(cd_dep_employed_count),
+#       cd_dep_college_count,
+#       count(*) cnt3,
+#       min(cd_dep_college_count),
+#       max(cd_dep_college_count),
+#       avg(cd_dep_college_count)
+#FROM customer c,
+#     customer_address ca,
+% .ca,	.customer_demographics,	.customer_demographics,	.customer_demographics,	.%20,	.%21,	.%22,	.%23,	.customer_demographics,	.%24,	.%25,	.%26,	.%27,	.customer_demographics,	.%30,	.%31,	.%32,	.%33 # table_name
+% ca_state,	cd_gender,	cd_marital_status,	cd_dep_count,	cnt1,	%21,	%22,	%23,	cd_dep_employed_count,	cnt2,	%25,	%26,	%27,	cd_dep_college_count,	cnt3,	%31,	%32,	%33 # name
 % char,	char,	char,	int,	bigint,	int,	int,	double,	int,	bigint,	int,	int,	double,	int,	bigint,	int,	int,	double # type
 % 2,	1,	1,	1,	1,	1,	1,	24,	1,	1,	1,	1,	24,	1,	1,	1,	1,	24 # length
 [ NULL,	"F",	"D",	0,	1,	0,	0,	0,	1,	1,	1,	1,	1,	2,	1,	2,	2,	2	]

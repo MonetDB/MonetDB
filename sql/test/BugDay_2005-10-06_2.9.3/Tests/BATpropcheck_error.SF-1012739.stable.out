@@ -44,7 +44,7 @@ stdout of test 'BATpropcheck_error.SF-1012739` in directory 'sql/test/BugDay_200
 #AND 
 #    "tables"."name" LIKE 'voyages'
 #ORDER BY "COLUMN_NAME";
-% .L40,	.L42,	.L44,	.L46,	.L50,	.L52 # table_name
+% .,	.schemas,	.tables,	.objects,	.keys,	.keys # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	COLUMN_NAME,	KEY_SEQ,	PK_NAME # name
 % char,	varchar,	varchar,	varchar,	int,	varchar # type
 % 0,	0,	0,	0,	1,	0 # length

@@ -13,9 +13,9 @@ GROUP BY t1.col6, t1.col7;
 	-- False
 
 SELECT
-    (SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5)),
+    CAST((SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5)) AS BIGINT),
     AVG(col1) * MIN(col8) OVER (PARTITION BY col5 ORDER BY col1 ROWS UNBOUNDED PRECEDING) evil,
-    MAX(col3) / 10 + SUM(col1) * 10
+    CAST(MAX(col3) / 10 + SUM(col1) * 10 AS BIGINT)
 FROM another_T
 GROUP BY col1, col2, col5, col8;
 	-- 6    8       10
@@ -140,13 +140,121 @@ FROM another_T t1; --MonetDB outputs this one right, but we should leave it here
 	-- 10
 
 SELECT
-    (SELECT SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1) ROWS UNBOUNDED PRECEDING) FROM another_T)
+    CAST((SELECT SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1) ROWS UNBOUNDED PRECEDING) FROM another_T) AS BIGINT)
 FROM another_T t1
 GROUP BY col1; --MonetDB outputs this one right, but we should leave it here, as it doesn't trigger an error
 	-- 2468
 	-- 2468
 	-- 2468
 	-- 2468
+
+SELECT
+    NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL) AS a1
+FROM another_T
+GROUP BY col1, col2, col5
+ORDER BY a1 NULLS FIRST;
+	-- True
+	-- True
+	-- True
+	-- True
+
+SELECT
+    NOT SUM(t1.col2) * MIN(t1.col6 + t1.col6 - t1.col6 * t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 + MIN(t2.col8) < MAX(t2.col7 - t1.col6))
+FROM another_T t1
+GROUP BY t1.col7, t1.col6;
+	-- False
+	-- False
+	-- False
+	-- False
+
+SELECT
+    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON MIN(t1.col5) = t1.col1)) THEN 1 ELSE 2 END,
+    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2)) THEN 1 ELSE 2 END
+FROM another_T t1
+GROUP BY t1.col1, t1.col2;
+	-- 2	2
+	-- 2	2
+	-- 2	2
+	-- 2	2
+
+SELECT
+    SUM(t1.col6) <> ANY (SELECT t1.col7 INTERSECT SELECT t1.col6)
+FROM another_T t1
+GROUP BY t1.col7, t1.col6;
+	-- False
+	-- False
+	-- False
+	-- False
+
+SELECT
+    CASE WHEN t1.col1 IN (SELECT 1 FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END
+FROM another_T t1
+GROUP BY t1.col1;
+	-- 1
+	-- 2
+	-- 2
+	-- 2
+
+SELECT
+    1
+FROM another_T t1
+GROUP BY t1.col1, t1.col2, t1.col4
+HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) NOT IN 
+    ((SELECT NOT EXISTS (SELECT t1.col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = t1.col1)) UNION ALL
+     (SELECT NOT t1.col1 BETWEEN (SELECT MAX(t1.col7) EXCEPT SELECT tp.ColID FROM tbl_ProductSales tp) AND (SELECT MIN(t1.col5) EXCEPT SELECT t1.col2)));
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
+    1
+FROM another_T t1
+GROUP BY t1.col1, t1.col2, t1.col4
+HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) <
+    ((SELECT NOT EXISTS (SELECT t1.col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = t1.col1)) INTERSECT
+     (SELECT NOT t1.col1 IN (SELECT MAX(t1.col7) EXCEPT SELECT tp.ColID FROM tbl_ProductSales tp)));
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
+    col6,
+    col7,
+    NOT SUM(t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 < MAX(t1.col6))
+FROM another_T t1
+GROUP BY t1.col7, t1.col6;
+	-- 6    7    False
+	-- 666  777  False
+	-- 6666 7777 False
+	-- 66   77   False
+
+SELECT
+    col6,
+    col7,
+    NOT SUM(t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 < MAX(t2.col7 - t1.col6))
+FROM another_T t1
+GROUP BY t1.col7, t1.col6;
+	-- 6    7    False
+	-- 666  777  False
+	-- 6666 7777 False
+	-- 66   77   False
+
+SELECT
+    CASE WHEN NULL IN (SELECT MIN(ColID) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END
+FROM another_T t1
+GROUP BY t1.col1, t1.col2;
+	-- 2
+	-- 2
+	-- 2
+	-- 2
+
+SELECT
+    CASE WHEN NULL NOT IN (SELECT 1 FROM tbl_ProductSales tp FULL OUTER JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END
+FROM another_T t1;
+	-- 2
+	-- 2
+	-- 2
+	-- 2
 
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;

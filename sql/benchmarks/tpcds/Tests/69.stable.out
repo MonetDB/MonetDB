@@ -35,7 +35,16 @@ stdout of test '69` in directory 'sql/benchmarks/tpcds` itself:
 #     customer_address ca,
 #     customer_demographics
 #WHERE c.c_current_addr_sk = ca.ca_address_sk
-% sys.customer_demographics,	sys.customer_demographics,	sys.customer_demographics,	sys.L35,	sys.customer_demographics,	sys.L41,	sys.customer_demographics,	sys.L45 # table_name
+#  AND ca_state IN ('KY',
+#                   'GA',
+#                   'NM')
+#  AND cd_demo_sk = c.c_current_cdemo_sk
+#  AND EXISTS
+#    (SELECT *
+#     FROM store_sales,
+#          date_dim
+#     WHERE c.c_customer_sk = ss_customer_sk
+% sys.customer_demographics,	sys.customer_demographics,	sys.customer_demographics,	sys.%7,	sys.customer_demographics,	sys.%10,	sys.customer_demographics,	sys.%11 # table_name
 % cd_gender,	cd_marital_status,	cd_education_status,	cnt1,	cd_purchase_estimate,	cnt2,	cd_credit_rating,	cnt3 # name
 % char,	char,	char,	bigint,	int,	bigint,	char,	bigint # type
 % 1,	1,	20,	1,	5,	1,	10,	1 # length

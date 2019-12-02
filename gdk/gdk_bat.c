@@ -110,12 +110,15 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	assert(bn->batCacheid > 0);
 
 	const char *nme = BBP_physical(bn->batCacheid);
-	stpconcat(bn->theap.filename, nme, ".tail", NULL);
+	strconcat_len(bn->theap.filename, sizeof(bn->theap.filename),
+		      nme, ".tail", NULL);
 	bn->theap.farmid = BBPselectfarm(role, bn->ttype, offheap);
 	if (heapnames && ATOMneedheap(tt)) {
 		if ((bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL)
 			goto bailout;
-		stpconcat(bn->tvheap->filename, nme, ".theap", NULL);
+		strconcat_len(bn->tvheap->filename,
+			      sizeof(bn->tvheap->filename),
+			      nme, ".theap", NULL);
 		bn->tvheap->parentid = bn->batCacheid;
 		bn->tvheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
 	}
@@ -500,7 +503,7 @@ BATclear(BAT *b, bool force)
 			th = (Heap) {
 				.farmid = b->tvheap->farmid,
 			};
-			strncpy(th.filename, b->tvheap->filename, sizeof(th.filename));
+			strcpy_len(th.filename, b->tvheap->filename, sizeof(th.filename));
 			if (ATOMheap(b->ttype, &th, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
 			th.parentid = b->tvheap->parentid;
@@ -679,7 +682,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		if (tt != bn->ttype) {
 			bn->ttype = tt;
 			bn->tvarsized = ATOMvarsized(tt);
-			bn->tseqbase = b->tseqbase;
+			bn->tseqbase = ATOMtype(tt) == TYPE_oid ? b->tseqbase : oid_nil;
 		}
 	} else {
 		/* check whether we need case (4); BUN-by-BUN copy (by
@@ -726,10 +729,12 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			thp = (Heap) {
 				.farmid = BBPselectfarm(role, b->ttype, varheap),
 			};
-			stpconcat(bthp.filename, BBP_physical(bn->batCacheid),
-				  ".tail", NULL);
-			stpconcat(thp.filename, BBP_physical(bn->batCacheid),
-				  ".theap", NULL);
+			strconcat_len(bthp.filename, sizeof(bthp.filename),
+				      BBP_physical(bn->batCacheid),
+				      ".tail", NULL);
+			strconcat_len(thp.filename, sizeof(thp.filename),
+				      BBP_physical(bn->batCacheid),
+				      ".theap", NULL);
 			if ((b->ttype && HEAPcopy(&bthp, &b->theap) != GDK_SUCCEED) ||
 			    (bn->tvheap && HEAPcopy(&thp, b->tvheap) != GDK_SUCCEED)) {
 				HEAPfree(&thp, true);

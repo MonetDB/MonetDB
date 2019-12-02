@@ -376,18 +376,26 @@ SQLrun(Client c, backend *be, mvc *m)
 		if (c->curprg->def)
 			printFunction(c->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE  | LIST_MAL_TYPE |  LIST_MAL_MAPI);
 	} else if( m->emod & mod_debug) {
+		c->idle = 0;
+		c->lastcmd = time(0);
 		msg = runMALDebugger(c, mb);
 	} else {
 		if( m->emod & mod_trace){
 			if((msg = SQLsetTrace(c,mb)) == MAL_SUCCEED) {
+				c->idle = 0;
+				c->lastcmd = time(0);
 				msg = runMAL(c, mb, 0, 0);
 				stopTrace(c);
 			}
 		} else {
+				c->idle = 0;
+				c->lastcmd = time(0);
 			msg = runMAL(c, mb, 0, 0);
 		}
 	}
-
+	/* after the query has been finished we enter the idle state */
+	c->idle = time(0);
+	c->lastcmd = 0;
 	// release the resources
 	freeMalBlk(mb);
 	MT_thread_setworking(NULL);
@@ -821,10 +829,8 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int oldvtop = c->curprg->def->vtop;
 		int oldstop = c->curprg->def->stop;
 
-		if (*opt) {
-			rel = rel_unnest(m, rel);
-			rel = rel_optimizer(m, rel, 0);
-		}
+		if (*opt && rel)
+			rel = sql_processrelation(m, rel, 0);
 
 		if ((msg = MSinitClientPrg(c, "user", "test")) != MAL_SUCCEED) {
 			rel_destroy(rel);
@@ -947,9 +953,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rel = rel_read(m, *expr, &pos, refs);
 	stack_pop_frame(m);
 	if (rel)
-		rel = rel_unnest(m, rel);
-	if (rel)
-		rel = rel_optimizer(m, rel, 0);
+		rel = sql_processrelation(m, rel, 0);
 	if (!rel || monet5_create_relational_function(m, *mod, *nme, rel, NULL, ops, 0) < 0)
 		throw(SQL, "sql.register", SQLSTATE(42000) "Cannot register %s", buf);
 	rel_destroy(rel);

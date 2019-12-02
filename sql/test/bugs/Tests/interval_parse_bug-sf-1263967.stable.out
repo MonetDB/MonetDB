@@ -14,8 +14,8 @@ stdout of test 'interval_parse_bug-sf-1263967` in directory 'sql/test/bugs` itse
 
 
 #select interval '-1-2' year to month;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % month_interval # type
 % 3 # length
 [ -14	]

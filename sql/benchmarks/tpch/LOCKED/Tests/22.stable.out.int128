@@ -54,7 +54,7 @@ stdout of test '22` in directory 'sql/benchmarks/tpch/LOCKED` itself:
 #				select
 #					*
 #				from
-% sys.custsale,	sys.L21,	sys.L24 # table_name
+% sys.custsale,	sys.%3,	sys.%4 # table_name
 % cntrycode,	numcust,	totacctbal # name
 % clob,	bigint,	decimal # type
 % 2,	2,	40 # length

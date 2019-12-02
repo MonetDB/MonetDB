@@ -25,31 +25,31 @@ stdout of test 'identifiers` in directory 'sql/test` itself:
 # 11:50:07 >  
 
 #SELECT 1 AS bla; -- gives bla
-% .L2 # table_name
+% . # table_name
 % bla # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT 1 AS BLA; -- gives bla
-% .L2 # table_name
+% . # table_name
 % bla # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT 1 AS "bla"; -- gives bla
-% .L2 # table_name
+% . # table_name
 % bla # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT 1 AS "Bla"; -- gives Bla
-% .L2 # table_name
+% . # table_name
 % Bla # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT 1 AS "BLA"; -- gives BLA
-% .L2 # table_name
+% . # table_name
 % BLA # name
 % tinyint # type
 % 1 # length

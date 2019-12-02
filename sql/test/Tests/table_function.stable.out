@@ -29,27 +29,27 @@ stdout of test 'table_function` in directory 'sql/test` itself:
 #CREATE FUNCTION f3(i bigint) RETURNS TABLE (j int) BEGIN RETURN TABLE(SELECT i UNION SELECT 2 * i); END;
 #CREATE FUNCTION f4(i int) RETURNS TABLE (j int) BEGIN RETURN TABLE(SELECT i UNION SELECT i); END;
 #SELECT * FROM f1(1);
-% .L2 # table_name
+% .%2 # table_name
 % j # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT * FROM f2(3);
-% .L2 # table_name
+% .%2 # table_name
 % j # name
 % int # type
 % 1 # length
 [ 3	]
 [ 6	]
 #SELECT * FROM f3(5);
-% .L2 # table_name
+% .%2 # table_name
 % j # name
 % int # type
 % 2 # length
 [ 5	]
 [ 10	]
 #SELECT * FROM f4(7);
-% .L2 # table_name
+% .%2 # table_name
 % j # name
 % int # type
 % 1 # length

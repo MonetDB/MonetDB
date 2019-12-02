@@ -55,7 +55,7 @@ rel_xmlelement(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd
 				
 				/* lets glue the xml content together */
 				if (res) {
-					res = rel_binop_(query, rel ? *rel : NULL, res, c_st, NULL, "concat", card_value);
+					res = rel_binop_(sql, rel ? *rel : NULL, res, c_st, NULL, "concat", card_value);
 				} else {
 					res = c_st;
 				}
@@ -82,7 +82,7 @@ rel_xmlelement(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd
 
 	if (!ns_st || !attr_st || !res) 
 		return NULL;
-	return rel_nop_(query, rel ? *rel : NULL, exp_atom_clob(sql->sa, tag), ns_st, attr_st, res, NULL, "element",
+	return rel_nop_(query->sql, rel ? *rel : NULL, exp_atom_clob(sql->sa, tag), ns_st, attr_st, res, NULL, "element",
 					card_value);
 }
 
@@ -131,11 +131,11 @@ rel_xmlforest(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 				if (!tag)
 					tag = "single_value";
 			}
-			c_st = rel_nop_(query, rel ? *rel : NULL, exp_atom_clob(sql->sa, tag), ns_st, attr_st, c_st, NULL,
+			c_st = rel_nop_(sql, rel ? *rel : NULL, exp_atom_clob(sql->sa, tag), ns_st, attr_st, c_st, NULL,
 							"element", card_value);
 			/* lets glue the xml content together */
 			if (res) {
-				res = rel_binop_(query, rel ? *rel : NULL, res, c_st, NULL, "concat", card_value);
+				res = rel_binop_(sql, rel ? *rel : NULL, res, c_st, NULL, "concat", card_value);
 			} else {
 				res = c_st;
 			}
@@ -154,7 +154,7 @@ rel_xmlcomment(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd
 	comment_st = rel_value_exp(query, rel, comment, f, knd); 
 	if (!comment_st)
 		return NULL;
-	return rel_unop_(query, rel ? *rel : NULL, comment_st, NULL, "comment", card_value);
+	return rel_unop_(query->sql, rel ? *rel : NULL, comment_st, NULL, "comment", card_value);
 }
 
 static sql_exp *
@@ -175,7 +175,7 @@ rel_xmlattribute(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind k
 			attr_name = "single_value";
 	}
 	attr_name_st = exp_atom_str(query->sql->sa, attr_name, &str_type);
-	return rel_binop_(query, rel ? *rel : NULL, attr_name_st, attr_st, NULL, "attribute", card_value);
+	return rel_binop_(query->sql, rel ? *rel : NULL, attr_name_st, attr_st, NULL, "attribute", card_value);
 }
 
 static sql_exp *
@@ -191,7 +191,7 @@ rel_xmlconcat(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 		if (!concat_st) 
 			return NULL;
 		if (res)
-			res = rel_binop_(query, rel ? *rel : NULL, res, concat_st, NULL, "concat", card_value);
+			res = rel_binop_(query->sql, rel ? *rel : NULL, res, concat_st, NULL, "concat", card_value);
 		else
 			res = concat_st;
 	}	
@@ -208,7 +208,7 @@ rel_xmldocument(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind kn
 	val_st = rel_value_exp(query, rel, val, f, knd); 
 	if (!val_st)
 		return NULL;
-	return rel_unop_(query, rel ? *rel : NULL, val_st, NULL, "document", card_value);
+	return rel_unop_(query->sql, rel ? *rel : NULL, val_st, NULL, "document", card_value);
 }
 
 static sql_exp *
@@ -226,7 +226,7 @@ rel_xmlpi(sql_query *query, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 		val_st = exp_atom(query->sql->sa, atom_general(query->sql->sa, &str_type, NULL));
 	if (!val_st) 
 		return NULL;
-	return rel_binop_(query, rel ? *rel : NULL, target_st, val_st, NULL, "pi", card_value);
+	return rel_binop_(query->sql, rel ? *rel : NULL, target_st, val_st, NULL, "pi", card_value);
 }
 
 /* cast string too xml */

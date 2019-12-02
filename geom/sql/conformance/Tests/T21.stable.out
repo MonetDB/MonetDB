@@ -24,8 +24,8 @@ stdout of test 'T21` in directory 'geom/sql/conformance` itself:
 # 14:52:43 >  
 
 #SELECT ST_Length(centerline) FROM road_segments WHERE fid = 106;
-% sys.L1 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 26	]

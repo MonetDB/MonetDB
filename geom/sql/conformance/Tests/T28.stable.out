@@ -25,8 +25,8 @@ stdout of test 'T28` in directory 'geom/sql/conformance` itself:
 # 14:52:44 >  
 
 #SELECT ST_NumInteriorRing(shore) FROM lakes WHERE name = 'Blue Lake';
-% sys.L1 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]

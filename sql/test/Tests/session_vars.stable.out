@@ -33,26 +33,26 @@ stdout of test 'session_vars` in directory 'sql/test` itself:
 # 11:50:12 >  
 
 #select debug;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 1 # length
 [ 0	]
 #select current_schema;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 3 # length
 [ "sys"	]
 #select current_user;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
 #select current_role;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
@@ -63,63 +63,63 @@ stdout of test 'session_vars` in directory 'sql/test` itself:
 #set test_str = 'help';
 #set test_boolean = true;
 #select test_nr;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 1 # length
 [ 1	]
 #select test_str;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 4 # length
 [ "help"	]
 #select test_boolean;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % boolean # type
 % 5 # length
 [ true	]
 #select @debug;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 1 # length
 [ 0	]
 #select @current_schema;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 3 # length
 [ "sys"	]
 #select @"current_user";
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
 #select @"current_role";
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
 #set test_str = 1;
 #select @test_nr;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 1 # length
 [ 1	]
 #select @test_str;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 1 # length
 [ "1"	]
 #select @test_boolean;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % boolean # type
 % 5 # length
 [ true	]

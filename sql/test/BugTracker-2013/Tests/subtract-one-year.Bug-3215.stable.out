@@ -47,8 +47,8 @@ stdout of test 'subtract-one-year.Bug-3215` in directory 'sql/test/BugTracker-20
 # 10:20:45 >  
 
 #select cast ('2013-01-01' as date) + interval '-1' year;
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % date # type
 % 10 # length
 [ 2012-01-01	]

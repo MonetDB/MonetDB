@@ -19,8 +19,8 @@ stdout of test 'crash_on_delete.SF-1651567` in directory 'sql/test/BugTracker` i
 
 [ 1	]
 #select 'the next query causes a "sql_mem.mx:50: sql_ref_dec: Assertion `r->refcnt > 0'' failed."';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 87 # length
 [ "the next query causes a \"sql_mem.mx:50: sql_ref_dec: Assertion `r->refcnt > 0' failed.\""	]

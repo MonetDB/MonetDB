@@ -61,7 +61,7 @@ stdout of test 'Test_PSmetadata` in directory 'sql/jdbc/tests` itself:
 	precision     8
 	scale         0
 	schemaname    
-	tablename     L1
+	tablename     %2
 	autoincrement false
 	casesensitive false
 	currency      false

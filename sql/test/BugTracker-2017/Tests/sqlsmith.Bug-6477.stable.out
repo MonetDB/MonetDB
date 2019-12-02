@@ -44,7 +44,7 @@ stdout of test 'sqlsmith.Bug-6477` in directory 'sql/test/BugTracker-2017` itsel
 #          from
 #            sys.args as ref_1
 #              left join tmp.objects as ref_2
-% .L14,	.L16,	.L21,	.L23,	.L25,	.L27,	.L32 # table_name
+% .%31,	.%32,	.%33,	.%34,	.%35,	.%36,	.%37 # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6 # name
 % timestamp,	oid,	int,	bigint,	timestamp,	int,	int # type
 % 26,	3,	1,	1,	26,	1,	1 # length

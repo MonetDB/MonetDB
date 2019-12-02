@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "mutils.h"
+#include "mstring.h"
 
 #if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
 #include <execinfo.h>
@@ -214,8 +215,7 @@ readdir(DIR *dir)
 	else if (!FindNextFile(dir->find_file_handle,
 			       (LPWIN32_FIND_DATA) dir->find_file_data))
 		return NULL;
-	strncpy(result.d_name, basename(((LPWIN32_FIND_DATA) dir->find_file_data)->cFileName), sizeof(result.d_name));
-	result.d_name[sizeof(result.d_name) - 1] = '\0';
+	strcpy_len(result.d_name, basename(((LPWIN32_FIND_DATA) dir->find_file_data)->cFileName), sizeof(result.d_name));
 	result.d_namelen = (int) strlen(result.d_name);
 
 	return &result;

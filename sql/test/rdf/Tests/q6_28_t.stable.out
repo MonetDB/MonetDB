@@ -45,8 +45,8 @@ stdout of test 'q6_28_t` in directory 'sql/test/rdf` itself:
 #--         AND D.obj = '<Text>')
 #	) AS uniontable
 #	WHERE A.subj = uniontable.subj
-% sys.a,	sys.L13 # table_name
-% prop,	L12 # name
+% sys.a,	sys.%7 # table_name
+% prop,	%7 # name
 % int,	bigint # type
 % 1,	1 # length
 

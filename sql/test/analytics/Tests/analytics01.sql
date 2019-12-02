@@ -45,6 +45,30 @@ select ntile(10) over (partition by aa order by aa desc) from analytics;
 select ntile(10) over (order by aa) from analytics;
 select ntile(10) over (order by aa desc) from analytics;
 
+select ntile(aa) over (partition by aa) from analytics;
+select ntile(aa) over (partition by aa order by aa asc) from analytics;
+select ntile(aa) over (partition by aa order by aa desc) from analytics;
+select ntile(aa) over (order by aa) from analytics;
+select ntile(aa) over (order by aa desc) from analytics;
+
+select ntile(aa) over (partition by bb) from analytics;
+select ntile(aa) over (partition by bb order by bb asc) from analytics;
+select ntile(aa) over (partition by bb order by bb desc) from analytics;
+select ntile(aa) over (order by bb) from analytics;
+select ntile(aa) over (order by bb desc) from analytics;
+
+select ntile(bb) over (partition by aa) from analytics;
+select ntile(bb) over (partition by aa order by aa asc) from analytics;
+select ntile(bb) over (partition by aa order by aa desc) from analytics;
+select ntile(bb) over (order by aa) from analytics;
+select ntile(bb) over (order by aa desc) from analytics;
+
+select ntile(bb) over (partition by bb) from analytics;
+select ntile(bb) over (partition by bb order by bb asc) from analytics;
+select ntile(bb) over (partition by bb order by bb desc) from analytics;
+select ntile(bb) over (order by bb) from analytics;
+select ntile(bb) over (order by bb desc) from analytics;
+
 select first_value(aa) over (partition by aa) from analytics;
 select first_value(aa) over (partition by aa order by aa asc) from analytics;
 select first_value(aa) over (partition by aa order by aa desc) from analytics;
@@ -216,7 +240,6 @@ select lead(col2, -1) over (partition by col1 ORDER BY col2), lead(col2, 1) over
 
 rollback;
 
-select ntile(aa) over () from analytics; --error
 select lag(null, aa) over () from analytics; --error
 select lag(null, null, aa) over () from analytics; --error
 select lead(null, aa) over () from analytics; --error

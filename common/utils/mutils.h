@@ -21,6 +21,8 @@
 
 #ifdef NATIVE_WIN32
 
+#include <stdio.h>
+
 struct DIR {
 	char *dir_name;
 	int just_opened;
@@ -30,7 +32,7 @@ struct DIR {
 
 typedef struct DIR DIR;
 struct dirent {
-	char d_name[256];
+	char d_name[FILENAME_MAX];
 	int d_namelen;
 };
 

@@ -123,7 +123,7 @@ stdout of test 'merge-table-limit.Bug-6756` in directory 'sql/test/BugTracker-20
 #WHERE processed_timestamp >= '2019-09-09 01:23:58.949' AND processed_timestamp <= '2019-09-09 17:38:58.949'
 #ORDER BY timestamp
 #LIMIT 2000;
-% .L1,	.L2,	.L3,	.L4 # table_name
+% .test_message,	.test_message,	.test_message,	.test_message # table_name
 % timestamp,	logentry_no,	logsource,	program # name
 % timestamp,	bigint,	clob,	clob # type
 % 26,	1,	0,	0 # length
@@ -132,7 +132,7 @@ stdout of test 'merge-table-limit.Bug-6756` in directory 'sql/test/BugTracker-20
 #WHERE processed_timestamp >= '2019-09-09 01:23:58.949' AND processed_timestamp <= '2019-09-09 17:38:58.949'
 #ORDER BY timestamp 
 #LIMIT 2000;
-% .L1,	.L2,	.L3 # table_name
+% .test_message,	.test_message,	.test_message # table_name
 % timestamp,	logentry_no,	logsource # name
 % timestamp,	bigint,	clob # type
 % 26,	1,	0 # length

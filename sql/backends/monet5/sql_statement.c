@@ -468,6 +468,8 @@ stmt_table(backend *be, stmt *cols, int temp)
 
 		s->op1 = cols;
 		s->flag = temp;
+		s->nr = cols->nr;
+		s->nrcols = cols->nrcols;
 		return s;
 	}
 	return NULL;
@@ -573,7 +575,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		s->nr = l[c->colnr+1];
 		return s;
 	}
-       	q = newStmt(mb, sqlRef, bindRef);
+	q = newStmt(mb, sqlRef, bindRef);
 	if (q == NULL)
 		return NULL;
 	if (access == RD_UPD_ID) {
@@ -1589,7 +1591,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 	if (op1->nr < 0 && (sub && sub->nr < 0))
 		return NULL;
 	l = op1->nr;
-	if (((cmp & CMP_BETWEEN) || op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
+	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || (cmp & CMP_BETWEEN && anti) || op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
 		int k;
 
 		if (op2->nr < 0 || op3->nr < 0)
@@ -1687,13 +1689,14 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 			q = pushBit(mb, q, TRUE);
 			break;
 		}
+		q = pushBit(mb, q, anti);
+		if (type == st_uselect2) {
+			if (cmp & CMP_BETWEEN)
+				q = pushBit(mb, q, TRUE); /* all nil's are != */
+		} else
+			q = pushBit(mb, q, FALSE);
 		if (type == st_join2)
 			q = pushNil(mb, q, TYPE_lng); /* estimate */
-		if (type == st_uselect2) {
-			q = pushBit(mb, q, anti);
-			if (q == NULL)
-				return NULL;
-		}
 		if (q == NULL)
 			return NULL;
 		if (swapped) {
@@ -2460,6 +2463,7 @@ stmt_set_nrcols(stmt *s)
 		if (f->nrcols > nrcols)
 			nrcols = f->nrcols;
 		key &= f->key;
+		s->nr = f->nr;
 	}
 	s->nrcols = nrcols;
 	s->key = key;
@@ -2795,9 +2799,13 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *sel)
 		q = pushInt(mb, q, f->digits);
 		q = pushInt(mb, q, f->scale);
 		q = pushInt(mb, q, type_has_tz(f));
-	} else if (f->type->eclass == EC_DEC)
+	} else if (f->type->eclass == EC_DEC) {
 		/* scale of the current decimal */
 		q = pushInt(mb, q, f->scale);
+	} else if (f->type->eclass == EC_SEC && t->type->eclass == EC_FLT) {
+		/* scale of the current decimal */
+		q = pushInt(mb, q, 3);
+	}
 	q = pushArgument(mb, q, v->nr);
 	if (sel && v->nrcols && f->type->eclass != EC_DEC && !EC_TEMP_FRAC(t->type->eclass) && !EC_INTERVAL(t->type->eclass))
 		q = pushArgument(mb, q, sel->nr);
@@ -3002,8 +3010,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	p = find_prop(rel->p, PROP_REMOTE);
 	if (p) 
 		rel->p = prop_remove(rel->p, p);
-	rel = rel_unnest(be->mvc, rel);
-	rel = rel_optimizer(be->mvc, rel, 0);
+	rel = sql_processrelation(be->mvc, rel, 0);
 	if (p) {
 		p->p = rel->p;
 		rel->p = p;
@@ -3399,7 +3406,9 @@ _column_name(sql_allocator *sa, stmt *st)
 		return func_name(sa, st->op4.aggrval->aggr->base.name, cn);
 	}
 	case st_alias:
-		return column_name(sa, st->op3);
+		if (st->op3)
+			return column_name(sa, st->op3);
+		break;
 	case st_bat:
 		return st->op4.cval->base.name;
 	case st_atom:
@@ -3422,6 +3431,7 @@ _column_name(sql_allocator *sa, stmt *st)
 	default:
 		return NULL;
 	}
+	return NULL;
 }
 
 const char *_table_name(sql_allocator *sa, stmt *st);
@@ -3460,10 +3470,10 @@ _table_name(sql_allocator *sa, stmt *st)
 		return table_name(sa, st->op1);
 
 	case st_table_clear:
+	case st_tid:
 		return st->op4.tval->base.name;
 	case st_idxbat:
 	case st_bat:
-	case st_tid:
 		return st->op4.cval->t->base.name;
 	case st_alias:
 		if (st->tname)

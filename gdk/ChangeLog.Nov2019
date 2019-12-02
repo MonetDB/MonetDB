@@ -1,12 +1,3 @@
-# ChangeLog file for MonetDB
+# ChangeLog file for gdk
 # This file is updated with Maddlog
-
-* Sun Sep  8 2019 Sjoerd Mullender <sjoerd@acm.org>
-- BATcalcbetween and all its variants now have an extra bool parameter
-  "anti" to invert the test.
-
-* Thu Apr 18 2019 Sjoerd Mullender <sjoerd@acm.org>
-- All forms of BATcalcbetween and VARcalcbetween have extra bool arguments
-  for low inclusive, high inclusive and nils false.  The latter causes
-  the result to be false instead of nil if the value being checked is nil.
 

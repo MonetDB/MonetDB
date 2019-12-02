@@ -63,7 +63,7 @@ stdout of test 'constant-not-in` in directory 'sql/test` itself:
 #INSERT INTO mytable VALUES (1);
 [ 1	]
 #SELECT 'b' AS c FROM mytable;
-% .L2 # table_name
+% . # table_name
 % c # name
 % char # type
 % 1 # length

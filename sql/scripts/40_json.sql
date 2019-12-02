@@ -81,12 +81,6 @@ GRANT EXECUTE ON FUNCTION json.valuearray(json) TO PUBLIC;
 create function json.text(js json)
 returns string external name json.text;
 GRANT EXECUTE ON FUNCTION json.text(json) TO PUBLIC;
-create function json.text(js string)
-returns string external name json.text;
-GRANT EXECUTE ON FUNCTION json.text(string) TO PUBLIC;
-create function json.text(js int)
-returns string external name json.text;
-GRANT EXECUTE ON FUNCTION json.text(int) TO PUBLIC;
 
 -- The remainder awaits the implementation
 

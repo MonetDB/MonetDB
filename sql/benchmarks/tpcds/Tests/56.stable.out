@@ -35,7 +35,15 @@ stdout of test '56` in directory 'sql/benchmarks/tpcds` itself:
 #        FROM item
 #        WHERE i_color IN ('slate',
 #                          'blanched',
-% .tmp1,	.L60 # table_name
+#                          'burnished'))
+#     AND ss_item_sk = i_item_sk
+#     AND ss_sold_date_sk = d_date_sk
+#     AND d_year = 2001
+#     AND d_moy = 2
+#     AND ss_addr_sk = ca_address_sk
+#     AND ca_gmt_offset = -5
+#   GROUP BY i_item_id),
+% .tmp1,	.%31 # table_name
 % i_item_id,	total_sales # name
 % char,	decimal # type
 % 16,	20 # length

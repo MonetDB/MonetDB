@@ -72,9 +72,9 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Alter"},
 	{"ALTER SEQUENCE",
 	 "",
-	 "ALTER SEQUENCE ident [ AS data_type] [ RESTART [WITH start]] [INCREMENT BY increment]\n"
-	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE]",
-	 "ident,data_type",
+	 "ALTER SEQUENCE qname [ AS int_datatype] [ RESTART [WITH intval]] [INCREMENT BY intval]\n"
+	 "[MINVALUE intval | NO MINVALUE] [MAXVALUE intval | NO MAXVALUE] [CACHE intval] [[NO] CYCLE]",
+	 "int_datatype,intval",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"ALTER USER",
 	 "Change a user's login name or password or default schema",
@@ -209,9 +209,9 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Schema"},
 	{"CREATE SEQUENCE",
 	 "Define a new integer number sequence generator",
-	 "CREATE SEQUENCE ident [ AS data_type] [ START [WITH start]] [INCREMENT BY increment]\n"
-	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE]",
-	 "ident,data_type",
+	 "CREATE SEQUENCE qname [ AS int_datatype] [ START [WITH intval]] [INCREMENT BY intval]\n"
+	 "[MINVALUE intval | NO MINVALUE] [MAXVALUE intval | NO MAXVALUE] [CACHE intval] [[NO] CYCLE]",
+	 "int_datatype,intval",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"CREATE STREAM TABLE",
 	 "Temporary table, locked during updates/ continues query processing",
@@ -295,7 +295,7 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"EXTRACT",
 	 "Built-in function",
-	 "EXTRACT '(' { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND } FROM scalar_expression ')'",
+	 "EXTRACT '(' { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | CENTURY | DECADE | QUARTER | WEEK | DOW | DOY } FROM scalar_expression ')'",
 	 NULL,
 	 NULL},
 	{"DECLARE",
@@ -434,14 +434,14 @@ SQLhelp sqlhelp1[] = {
 	 "[ FROM from_item [',' ...] ]\n"
 	 "[ WINDOW window_definition [',' ...] ]\n"
 	 "[ WHERE condition ]\n"
-	 "[ GROUP BY expression [',' ...] ]\n"
+	 "[ GROUP BY group_by_element [',' ...] ]\n"
 	 "[ HAVING condition [',' ...] ]\n"
 	 "[ { UNION | INTERSECT | EXCEPT } [ ALL | DISTINCT ] [ CORRESPONDING ] select ]\n"
 	 "[ ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...] ]\n"
 	 "[ LIMIT { count | param } ]\n"
 	 "[ OFFSET { count | param } ]\n"
 	 "[ SAMPLE size [ SEED size ] ]",
-	 "cte_list,expression,window_definition",
+	 "cte_list,expression,group_by_element,window_definition",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/TableExpressions"},
 	{"SET",
 	 "Assign a value to a variable or column",
@@ -548,8 +548,8 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"column_def",
 	 NULL,
-	 "COLUMN { data_type [ column_option ... ] | SERIAL | BIGSERIAL }",
-	 "data_type,column_option",
+	 "ident { data_type [ column_option ... ] | SERIAL | BIGSERIAL }",
+	 "ident,data_type,column_option",
 	 NULL},
 	{"column_list",
 	 NULL,
@@ -630,6 +630,12 @@ SQLhelp sqlhelp2[] = {
 	 "{ PUBLIC | authid } ",
 	 "authid",
 	 NULL},
+	{"group_by_element",
+	 NULL,
+	 "{ expression | '(' ')' | ROLLUP '(' ident [',' ... ] ')' | CUBE '(' ident [',' ... ] ')'\n"
+	 "| GROUPING SETS '(' group_by_element [',' ... ] ')' }",
+	 "expression",
+	 NULL},
 	{"headerlist",
 	 NULL,
 	 "'(' { ident [string] } [',' ...] ')'",
@@ -645,6 +651,11 @@ SQLhelp sqlhelp2[] = {
 	 NULL,
 	 "ident [',' ...]",
 	 "ident",
+	 NULL},
+	{"int_datatype",
+	 NULL,
+	 "BIGINT | INTEGER | INT | SMALLINT | TINYINT",
+	 NULL,
 	 NULL},
 	{"interval",
 	 NULL,

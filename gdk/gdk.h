@@ -334,6 +334,7 @@
 #include "gdk_system.h"
 #include "gdk_posix.h"
 #include "stream.h"
+#include "mstring.h"
 
 #undef MIN
 #undef MAX
@@ -508,6 +509,8 @@ typedef char *str;
 #define LL_CONSTANT(val)	INT64_C(val)
 #define LLFMT			"%" PRId64
 #define ULLFMT			"%" PRIu64
+#define LLSCN			"%" SCNd64
+#define ULLSCN			"%" SCNu64
 
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define SIZEOF_VAR_T	SIZEOF_OID
@@ -1256,25 +1259,18 @@ BUNtoid(BAT *b, BUN p)
 		return o;
 	}
 	const oid *exc = (oid *) b->tvheap->base;
-	BUN hi = 0;
-	if (nexc > 1024) {
-		BUN lo = 0;
-		hi = nexc - 1;
-		while (hi > lo + 1) {
-			BUN mid = (lo + hi) / 2;
-			if (exc[mid] == o) {
-				hi = mid;
-				break;
-			}
-			if (exc[mid] < o)
-				lo = mid;
-			else
-				hi = mid;
-		}
+	if (o < exc[0])
+		return o;
+	if (o + nexc > exc[nexc - 1])
+		return o + nexc;
+	BUN lo = 0, hi = nexc - 1;
+	while (hi - lo > 1) {
+		BUN mid = (hi + lo) / 2;
+		if (exc[mid] - mid > o)
+			hi = mid;
+		else
+			lo = mid;
 	}
-	for (; hi < nexc; hi++)
-		if (o + hi < exc[hi])
-			break;
 	return o + hi;
 }
 
@@ -2714,11 +2710,6 @@ enum prop_t {
 	GDK_HASH_MASK,		/* last used hash mask */
 };
 
-gdk_export void PROPdestroy(BAT *b);
-gdk_export PROPrec *BATgetprop(BAT *b, enum prop_t idx);
-gdk_export void BATsetprop(BAT *b, enum prop_t idx, int type, const void *v);
-gdk_export void BATrmprop(BAT *b, enum prop_t idx);
-
 /*
  * @- BAT relational operators
  *
@@ -2762,7 +2753,7 @@ gdk_export gdk_return BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, bool li, bool hi, BUN estimate)
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, BUN estimate)
+gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, bool anti, bool symmetric, BUN estimate)
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATproject(BAT *l, BAT *r);
 gdk_export BAT *BATprojectchain(BAT **bats);

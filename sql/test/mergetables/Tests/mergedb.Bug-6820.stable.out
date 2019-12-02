@@ -40,7 +40,7 @@ stdout of test 'mergedb.Bug-6820` in directory 'sql/test/mergetables` itself:
 #        on (sample_8.dimpos = ref_4.x )
 #      on ((sample_7.id is NULL) 
 #          or (sample_8.var_id is not NULL))
-% .L14,	.L16,	.L20 # table_name
+% .sample_8,	.ref_4,	.ref_2 # table_name
 % c0,	c1,	c2 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
@@ -64,7 +64,7 @@ stdout of test 'mergedb.Bug-6820` in directory 'sql/test/mergetables` itself:
 #              on (sample_9.y is not NULL)
 #            on (sample_7.table_type_name = sample_8.function_type_name )
 #          left join sys.r as sample_10
-% .L15,	.L17,	.L21,	.L23 # table_name
+% .ref_7,	.p,	.ref_7,	.sample_8 # table_name
 % c0,	c1,	c2,	c3 # name
 % int,	varchar,	int,	smallint # type
 % 1,	0,	1,	1 # length

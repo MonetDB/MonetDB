@@ -24,8 +24,8 @@ stdout of test 'CrashMe_SQL_server_crash-1.SF-921673` in directory 'sql/test/Bug
 # 11:50:20 >  
 
 #select 2 in (3,2,5,9,5,1) ;
-% .L30 # table_name
-% L30 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

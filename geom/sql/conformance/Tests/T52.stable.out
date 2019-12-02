@@ -25,8 +25,8 @@ stdout of test 'T52` in directory 'geom/sql/conformance` itself:
 # 15:20:22 >  
 
 #SELECT ST_AsText(ST_ConvexHull(shore)) FROM lakes WHERE lakes.name = 'Blue Lake';
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % clob # type
 % 42 # length
 [ "POLYGON ((48 6, 52 18, 66 23, 73 9, 48 6))"	]

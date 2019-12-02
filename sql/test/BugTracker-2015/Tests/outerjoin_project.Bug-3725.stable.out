@@ -30,8 +30,8 @@ stdout of test 'outerjoin_project.Bug-3725` in directory 'sql/test/BugTracker-20
 #insert into a values (1);
 [ 1	]
 #select * from a left join (select a, 20 from b) as x using (a);
-% .L4,	.x # table_name
-% a,	L3 # name
+% .%1,	.%4 # table_name
+% a,	%4 # name
 % int,	tinyint # type
 % 1,	1 # length
 [ 1,	NULL	]

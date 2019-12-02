@@ -41,8 +41,8 @@ stdout of test 'capi02` in directory 'sql/backends/monet5/UDF/capi` itself:
 #INSERT INTO dates VALUES ('1992-09-20'), ('2000-03-10'), ('1000-05-03'), (NULL);
 [ 4	]
 #SELECT capi02_increment_year(i) FROM dates;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % date # type
 % 10 # length
 [ 1993-09-20	]
@@ -71,8 +71,8 @@ stdout of test 'capi02` in directory 'sql/backends/monet5/UDF/capi` itself:
 #INSERT INTO times VALUES ('03:03:02.0101'), (NULL), ('03:03:02.0101');
 [ 3	]
 #SELECT capi02_randomize_time(i) FROM times;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % time # type
 % 8 # length
 [ 10:34:34	]
@@ -99,8 +99,8 @@ stdout of test 'capi02` in directory 'sql/backends/monet5/UDF/capi` itself:
 #INSERT INTO times VALUES ('1992-09-20 03:03:02.0101'), (NULL), ('2000-03-10 03:03:02.0101');
 [ 3	]
 #SELECT capi02_increment_timestamp(i) FROM times;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % timestamp # type
 % 26 # length
 [ 1993-09-20 10:34:34.234000	]

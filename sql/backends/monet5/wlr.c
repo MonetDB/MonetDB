@@ -475,6 +475,7 @@ WLRprocessScheduler(void *arg)
 		if( wlr_timelimit[0]){
 			gettimeofday(&clock, NULL);
 			clk = clock.tv_sec;
+			ctm = (struct tm) {0};
 #ifdef HAVE_LOCALTIME_R
 				(void) localtime_r(&clk, &ctm);
 #else
@@ -589,6 +590,7 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// the client thread should wait for the replicator to its job
 	gettimeofday(&clock, NULL);
 	clk = clock.tv_sec;
+	ctm = (struct tm) {0};
 #ifdef HAVE_LOCALTIME_R
 	(void) localtime_r(&clk, &ctm);
 #else

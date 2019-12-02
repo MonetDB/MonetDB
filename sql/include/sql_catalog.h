@@ -464,6 +464,7 @@ typedef enum idx_type {
 #define hash_index(t) 		(t == hash_idx || t == oph_idx )
 #define idx_has_column(t) 	(hash_index(t) || t == join_idx)
 #define oid_index(t)		(t == join_idx)
+#define non_updatable_index(t) (t == ordered_idx || t == no_idx)
 
 typedef struct sql_idx {
 	sql_base base;

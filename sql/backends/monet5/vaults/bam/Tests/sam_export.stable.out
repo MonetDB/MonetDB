@@ -34,7 +34,7 @@ stdout of test 'sam_export` in directory 'sql/backends/monet5/vaults/bam` itself
 #EXCEPT
 #SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
 #FROM bam.alignments_73;
-% bam.L5,	bam.L5,	bam.L5,	bam.L5,	bam.L5,	bam.L5,	bam.L5,	bam.L5,	bam.L5,	bam.L5,	bam.L5 # table_name
+% bam.%5,	bam.%5,	bam.%5,	bam.%5,	bam.%5,	bam.%5,	bam.%5,	bam.%5,	bam.%5,	bam.%5,	bam.%5 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
@@ -53,7 +53,7 @@ stdout of test 'sam_export` in directory 'sql/backends/monet5/vaults/bam` itself
 #EXCEPT
 #SELECT qname, flag, rname, pos, mapq, cigar, rnext, pnext, tlen, seq, qual
 #FROM bam.alignments_74;
-% .L113,	.L113,	.L113,	.L113,	.L113,	.L113,	.L113,	.L113,	.L113,	.L113,	.L113 # table_name
+% .%35,	.%35,	.%35,	.%35,	.%35,	.%35,	.%35,	.%35,	.%35,	.%35,	.%35 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length

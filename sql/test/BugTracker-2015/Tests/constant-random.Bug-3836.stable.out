@@ -32,8 +32,8 @@ stdout of test 'constant-random.Bug-3836` in directory 'sql/test/BugTracker-2015
 #insert into tr values (1), (1);
 [ 2	]
 #select count(*) from (select a + rand() as arand from tr) as ntr group by arand;
-% sys.L5 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -48,16 +48,16 @@ stdout of test 'constant-random.Bug-3836` in directory 'sql/test/BugTracker-2015
 #alter table trand add column c int default rand();
 #alter table trand add column d int default null;
 #select count(*) from trand group by b;
-% sys.L3 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
 #select count(*) from trand group by c;
-% sys.L3 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -66,8 +66,8 @@ stdout of test 'constant-random.Bug-3836` in directory 'sql/test/BugTracker-2015
 #update trand set d = rand(); -- works as expected
 [ 3	]
 #select count(*) from trand group by d;
-% sys.L3 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -76,8 +76,8 @@ stdout of test 'constant-random.Bug-3836` in directory 'sql/test/BugTracker-2015
 #update trand set a = a + rand(); -- does not work as expected/supposed to
 [ 3	]
 #select count(*) from trand group by a;
-% sys.L3 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
