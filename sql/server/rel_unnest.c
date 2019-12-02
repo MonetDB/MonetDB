@@ -1531,6 +1531,22 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				exp_prop_alias(sql->sa, ie, e);
 			return ie;
 		}
+		/* TRUE or X -> TRUE
+		 * FALSE or X -> X */
+		if (is_compare(e->type) && e->flag == cmp_or) {
+			list *l = e->l, *r = e->r;
+
+			if (list_length(l) == 1) {
+				sql_exp *ie = l->h->data; 
+
+				if (exp_is_true(sql, ie))
+					return ie;
+				else if (exp_is_false(sql, ie) && list_length(r) == 1)
+					return r->h->data;
+			}
+		}
+		/* TRUE and X -> X
+		 * FALSE and X -> FALSE */
 	}
 	return e;
 }
@@ -1677,8 +1693,10 @@ rewrite_or_exp(mvc *sql, sql_rel *rel)
 
 					l = rel_select(sql->sa, l, NULL);
 					l->exps = e->l;
+					l = rewrite_or_exp(sql, l);
 					r = rel_select(sql->sa, r, NULL);
 					r->exps = e->r;
+					r = rewrite_or_exp(sql, r);
 
 					list_remove_node(rel->exps, n); /* remove or expression */
 					list *ls = rel_projections(sql, rel, NULL, 1, 1);
@@ -1686,7 +1704,7 @@ rewrite_or_exp(mvc *sql, sql_rel *rel)
 					rel = rel_setop_check_types(sql, l, r, ls, rs, op_union);
 					rel = rel_distinct(rel);
 					rel->exps = exps;
-					return rewrite_or_exp(sql, rel);
+					return rel;
 				}
 			}	
 		}
@@ -2285,24 +2303,29 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				le = rel_nop_(sql, NULL, jc, null, le, NULL, NULL, "ifthenelse", card_value);
 			}
 
-			sql_subaggr *ea = NULL;
-			sq = rel_groupby(sql, sq, NULL);
+			if (is_project(rel->op) || depth > 0) {
+				sql_subaggr *ea = NULL;
+				sq = rel_groupby(sql, sq, NULL);
 
-			if (exp_is_rel(ie)) /* TODO add set rel function */
-				ie->l = sq;
-			ea = sql_bind_aggr(sql->sa, sql->session->schema, is_exists(sf)?"exist":"not_exist", exp_subtype(le));
-			le = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_AGGR, has_nil(le));
-			le = rel_groupby_add_aggr(sql, sq, le);
-			if (rel_has_freevar(sql, sq))
-				ne = le;
+				if (exp_is_rel(ie))
+					ie->l = sq;
+				ea = sql_bind_aggr(sql->sa, sql->session->schema, is_exists(sf)?"exist":"not_exist", exp_subtype(le));
+				le = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_AGGR, has_nil(le));
+				le = rel_groupby_add_aggr(sql, sq, le);
+				if (rel_has_freevar(sql, sq))
+					ne = le;
 
-			if (exp_has_rel(ie)) 
-				(void)rewrite_exp_rel(sql, rel, ie, depth);
+				if (exp_has_rel(ie)) 
+					(void)rewrite_exp_rel(sql, rel, ie, depth);
 
-			if (is_project(rel->op) && rel_has_freevar(sql, sq))
-				le = exp_exist(sql, le, ne, is_exists(sf));
-			if (exp_name(e))
-				exp_prop_alias(sql->sa, le, e);
+				if (is_project(rel->op) && rel_has_freevar(sql, sq))
+					le = exp_exist(sql, le, ne, is_exists(sf));
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, le, e);
+			} else { /* rewrite into semi/anti join */
+				(void)rewrite_inner(sql, rel, sq, is_exists(sf)?op_semi:op_anti);
+				return exp_atom_bool(sql->sa, 1);
+			}
 			return le;
 		}
 	}

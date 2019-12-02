@@ -1371,6 +1371,36 @@ atom_is_true( atom *a )
 	return 0;
 }
 
+int
+atom_is_false( atom *a )
+{
+	if (a->isnull)
+		return 0;
+	switch(a->tpe.type->localtype) {
+	case TYPE_bit:
+		return a->data.val.btval == 0;
+	case TYPE_bte:
+		return a->data.val.btval == 0;
+	case TYPE_sht:
+		return a->data.val.shval == 0;
+	case TYPE_int:
+		return a->data.val.ival == 0;
+	case TYPE_lng:
+		return a->data.val.lval == 0;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		return a->data.val.hval == 0;
+#endif
+	case TYPE_flt:
+		return a->data.val.fval == 0;
+	case TYPE_dbl:
+		return a->data.val.dval == 0;
+	default:
+		break;
+	}
+	return 0;
+}
+
 atom*
 atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
 {

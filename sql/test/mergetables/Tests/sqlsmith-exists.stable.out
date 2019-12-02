@@ -47,10 +47,42 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 #    ref_2.query as c9,
 #    ref_1.function_name as c10,
 #    ref_1.function_id as c11,
-% .%41,	.%42,	.%43,	.%44 # table_name
+% .%37,	.%40,	.%41,	.%42 # table_name
 % c0,	c1,	c2,	c3 # name
 % int,	boolean,	tinyint,	varchar # type
 % 1,	5,	1,	0 # length
+#CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
+[ 3	]
+#select 
+# subq_0.c0 as c0, 
+# subq_0.c2 as c1, 
+# subq_0.c1 as c2, 
+# subq_0.c1 as c3, 
+# cast(nullif(73,
+# 73) as int) as c4, 
+# subq_0.c2 as c5, 
+# subq_0.c1 as c6, 
+# subq_0.c1 as c7, 
+# subq_0.c1 as c8, 
+# subq_0.c0 as c9
+#from 
+# (select 
+# ref_1.schema_name as c0, 
+# cast(coalesce(ref_1.depend_type,
+# case when true then ref_1.depend_type else ref_1.depend_type end
+# ) as smallint) as c1, 
+# ref_0.action as c2
+# from 
+# tmp.keys as ref_0
+# right join sys.dependency_schemas_on_users as ref_1
+# on (exists (
+# select 
+# ref_0.table_id as c0, 
+% .%45,	.%46,	.%47,	.%50,	.%51,	.%52,	.%53,	.%54,	.%55,	.%56 # table_name
+% c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8,	c9 # name
+% varchar,	int,	smallint,	smallint,	int,	int,	smallint,	smallint,	smallint,	varchar # type
+% 0,	1,	1,	1,	1,	1,	1,	1,	1,	0 # length
 #ROLLBACK;
 
 # 19:56:32 >  

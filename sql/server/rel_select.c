@@ -1938,17 +1938,16 @@ rel_exists_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		rel = query_pop_outer(query);
 	assert(!is_sql_sel(f));
 	if (sq) {
-		rel = rel_crossproduct(sql->sa, rel, sq, op_join);
-		if (sc->token == SQL_EXISTS) {
-			rel->op = op_semi;
-		} else {	
-			rel->op = op_anti;
+		sql_exp *e = exp_rel(sql, sq);
+		e = exp_exist(query, e, sc->token == SQL_EXISTS);
+		if (e) {
+			/* only freevar should have CARD_AGGR */
+			e->card = CARD_ATOM;
 		}
-		if (rel_has_freevar(sql, sq))
-			set_dependent(rel);
+		rel = rel_select_add_exp(sql->sa, rel, e);
 		return rel;
 	}
-	return sq;
+	return NULL;
 }
 
 static sql_exp *
