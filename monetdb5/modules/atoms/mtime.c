@@ -342,7 +342,7 @@ static MT_Lock timelock = MT_LOCK_INITIALIZER("timelock");
 timestamp
 timestamp_fromtime(time_t timeval)
 {
-	struct tm tm, *tmp;
+	struct tm tm = (struct tm) {0}, *tmp;
 	date d;
 	daytime t;
 
@@ -1705,7 +1705,7 @@ MTIMElocal_timezone_msec(lng *ret)
 #else
 	time_t t;
 	timestamp lt, gt;
-	struct tm tm, *tmp;
+	struct tm tm = (struct tm) {0}, *tmp;
 
 	t = time(NULL);
 #ifdef HAVE_GMTIME_R
@@ -1755,6 +1755,7 @@ MTIMEstr_to_date(date *ret, const char *const *s, const char *const *format)
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
+	tm = (struct tm) {0};
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_date", "format '%s', doesn't match date '%s'",
 			  *format, *s);
@@ -1801,6 +1802,7 @@ MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format)
 		*ret = daytime_nil;
 		return MAL_SUCCEED;
 	}
+	tm = (struct tm) {0};
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_time", "format '%s', doesn't match time '%s'",
 			  *format, *s);
@@ -1824,6 +1826,7 @@ MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format)
 		return MAL_SUCCEED;
 	}
 	time_t now = time(NULL);
+	tm = (struct tm) {0};
 	/* fill in current date in struct tm */
 #ifdef HAVE_LOCALTIME_R
 	localtime_r(&now, &tm);
@@ -1852,12 +1855,13 @@ MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format)
 str
 MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *format)
 {
-	struct tm tm = (struct tm) {0};
+	struct tm tm;
 
 	if (GDK_STRNIL(*s) || GDK_STRNIL(*format)) {
 		*ret = timestamp_nil;
 		return MAL_SUCCEED;
 	}
+	tm = (struct tm) {0};
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_timestamp",
 			  "format '%s', doesn't match timestamp '%s'", *format, *s);

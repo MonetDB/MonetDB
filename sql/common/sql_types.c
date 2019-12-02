@@ -230,6 +230,12 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 	return NULL;
 }
 
+sql_subtype *
+arg_type( sql_arg *a)
+{
+	return &a->type;
+}
+
 int 
 sql_find_subtype(sql_subtype *res, const char *name, unsigned int digits, unsigned int scale)
 {
@@ -458,6 +464,16 @@ arg_subtype_cmp(sql_arg *a, sql_subtype *t)
 	if (a->type.type->eclass == EC_ANY)
 		return 0;
 	return (is_subtype(t, &a->type )?0:-1);
+}
+
+static int
+arg_subtype_cmp_null(sql_arg *a, sql_subtype *t)
+{
+	if (a->type.type->eclass == EC_ANY)
+		return 0;
+	if (!t)
+		return 0;
+	return (is_subtypeof(t, &a->type )?0:-1);
 }
 
 static sql_subaggr *
@@ -1087,6 +1103,48 @@ sql_bind_func_result3(sql_allocator *sa, sql_schema *s, const char *sqlfname, sq
 
 	fres = sql_bind_func_result_(sa, s, sqlfname, l, res);
 	return fres;
+}
+
+static sql_subfunc *
+resolve_function(sql_allocator *sa, sql_schema *s, const char *name, list *ops, sql_ftype type)
+{
+	node *n = funcs->h;
+	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
+
+	for (; n; n = n->next) {
+		sql_func *f = n->data;
+
+		if (f->type != type && f->type != filt) 
+			continue;
+		if (strcmp(f->base.name, name) == 0) {
+			if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp_null) == 0) 
+				return sql_dup_subfunc(sa, f, ops, NULL);
+		}
+	}
+	if (s) {
+		node *n;
+
+		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
+			sql_func *f = n->data;
+
+			if (f->type != type && f->type != filt) 
+				continue;
+			if (strcmp(f->base.name, name) == 0) {
+				if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp_null) == 0) 
+					return sql_dup_subfunc(sa, f, ops, NULL);
+			}
+		}
+	}
+	return NULL;
+}
+
+sql_subfunc *
+resolve_function2(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type)
+{
+	list *l = sa_list(sa);
+	list_append(l, tp1);
+	list_append(l, tp2);
+	return resolve_function(sa, s, name, l, type);
 }
 
 static void

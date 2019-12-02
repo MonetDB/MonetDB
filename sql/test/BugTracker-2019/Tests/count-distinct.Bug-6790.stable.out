@@ -102,29 +102,29 @@ stdout of test 'count-distinct.Bug-6790` in directory 'sql/test/BugTracker-2019`
 % 3,	2 # length
 [ -37,	-1	]
 #SELECT DISTINCT + ( CAST ( NULL AS INTEGER ) ) AS col0, col0 FROM tab0;
-% sys.tab0,	sys.tab0 # table_name
+% .%2,	sys.tab0 # table_name
 % col0,	col0 # name
 % int,	int # type
-% 2,	2 # length
+% 1,	2 # length
 [ NULL,	97	]
 [ NULL,	15	]
 [ NULL,	87	]
 #SELECT DISTINCT CAST ( NULL AS INTEGER ) - - 95 AS col1, CAST(col2 * + + col1 AS BIGINT) AS col1 FROM tab2 AS cor0;
-% sys.%4,	sys.%4 # table_name
+% .%3,	sys.%4 # table_name
 % col1,	col1 # name
 % bigint,	bigint # type
-% 4,	4 # length
+% 1,	4 # length
 [ NULL,	3080	]
 [ NULL,	3886	]
 [ NULL,	1173	]
 #SELECT DISTINCT + 14 AS col2, + col0 - - CAST ( NULL AS INTEGER ) AS col2 FROM tab2 AS cor0;
-% sys.%3,	sys.%3 # table_name
+% .%2,	sys.%3 # table_name
 % col2,	col2 # name
-% bigint,	bigint # type
-% 1,	1 # length
+% tinyint,	bigint # type
+% 2,	1 # length
 [ 14,	NULL	]
 #SELECT DISTINCT col1, + col0 col1 FROM tab1;
-% sys.tab1,	sys.tab1 # table_name
+% sys.tab1,	sys.%2 # table_name
 % col1,	col1 # name
 % int,	int # type
 % 2,	2 # length

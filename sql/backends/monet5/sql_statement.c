@@ -3470,10 +3470,10 @@ _table_name(sql_allocator *sa, stmt *st)
 		return table_name(sa, st->op1);
 
 	case st_table_clear:
+	case st_tid:
 		return st->op4.tval->base.name;
 	case st_idxbat:
 	case st_bat:
-	case st_tid:
 		return st->op4.cval->t->base.name;
 	case st_alias:
 		if (st->tname)
