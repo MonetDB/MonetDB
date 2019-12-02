@@ -776,6 +776,7 @@ rel_values(sql_query *query, symbol *tableref)
 	}
 	r = rel_project(sql->sa, NULL, exps);
 	r->nrcols = list_length(exps);
+	r->card = dlist_length(rowlist) == 1 ? CARD_ATOM : CARD_MULTI;
 	return rel_table_optname(sql, r, optname);
 }
 
@@ -3809,18 +3810,20 @@ static sql_exp *
 rel_selection_ref(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection )
 {
 	sql_allocator *sa = query->sql->sa;
-	dnode *n;
-	dlist *gl = grp->data.lval;
+	dlist *gl;
 	char *name = NULL;
 	exp_kind ek = {type_value, card_column, FALSE};
 
+	if (grp->token != SQL_COLUMN && grp->token != SQL_IDENT)
+		return NULL;
+	gl = grp->data.lval;
 	if (dlist_length(gl) > 1)
 		return NULL;
 	if (!selection)
 		return NULL;
 
 	name = gl->h->data.sval;
-	for (n = selection->h; n; n = n->next) {
+	for (dnode *n = selection->h; n; n = n->next) {
 		/* we only look for columns */
 		tokens to = n->data.sym->token;
 		if (to == SQL_COLUMN || to == SQL_IDENT) {
@@ -4058,8 +4061,8 @@ rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dl
 				return NULL;
 			}
 		}
-		if(e->type != e_column) { //store group by expressions in the stack
-			if(!stack_push_groupby_expression(sql, grp, e))
+		if (e->type != e_column) { //store group by expressions in the stack
+			if (!stack_push_groupby_expression(sql, grp, e))
 				return NULL;
 		}
 		if (e->card > CARD_AGGR)
@@ -4878,21 +4881,25 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 		return rel_column_ref(query, rel, se, f );
 	case SQL_NAME:
 		return rel_var_ref(sql, se->data.sval, 1);
+	case SQL_VALUES:
 	case SQL_WITH: 
 	case SQL_SELECT: {
 		sql_rel *r;
 
 		if (se->token == SQL_WITH) {
 			r = rel_with_query(query, se);
+		} else if (se->token == SQL_VALUES) {
+			r = rel_values(query, se);
 		} else {
+			assert(se->token == SQL_SELECT);
 			if (rel && *rel)
 				query_push_outer(query, *rel, f);
 			r = rel_subquery(query, NULL, se, ek);
 			if (rel && *rel)
 				*rel = query_pop_outer(query);
-			if (!r)
-				return NULL;
 		}
+		if (!r)
+			return NULL;
 		if (ek.card <= card_set && is_project(r->op) && list_length(r->exps) > 1) 
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
 		if (list_length(r->exps) == 1) { /* for now don't rename multi attribute results */

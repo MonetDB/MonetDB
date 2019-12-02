@@ -335,6 +335,15 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 % %4 # name
 % int # type
 % 1 # length
+#SELECT
+#	1
+#FROM integers i1
+#GROUP BY (VALUES(1));
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 
