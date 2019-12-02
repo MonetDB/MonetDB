@@ -4206,7 +4206,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 
 						e = exps_get_exp(rel->exps, nr);
 						if (!e)
-							return NULL;
+							return sql_error(sql, 02, SQLSTATE(42000) "SELECT: the order by column number (%d) is not in the number of projections range (%d)", nr, list_length(rel->exps));
 						e = exp_ref(sql->sa, e);
 						/* do not cache this query */
 						if (e)
