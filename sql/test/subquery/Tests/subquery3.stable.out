@@ -344,6 +344,18 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 % tinyint # type
 % 1 # length
 [ 1	]
+#SELECT
+#	MIN(i1.i)
+#FROM integers i1
+#GROUP BY (SELECT SUM(i1.i + i2.i) FROM integers i2);
+% .%2 # table_name
+% %2 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ NULL	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 

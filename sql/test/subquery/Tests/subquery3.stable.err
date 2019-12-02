@@ -85,6 +85,13 @@ QUERY = SELECT
         GROUP BY col1; --error, column "t2.col1" must appear in the GROUP BY clause or be used in an aggregate function
 ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-379847/.s.monetdb.32523
+QUERY = SELECT
+        	MIN(i1.i)
+        FROM integers i1
+        GROUP BY (SELECT i2.i FROM integers i2); --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
 
 # 17:40:41 >  
 # 17:40:41 >  "Done."

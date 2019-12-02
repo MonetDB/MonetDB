@@ -277,6 +277,16 @@ FROM integers i1
 GROUP BY (VALUES(1));
 	-- 1
 
+SELECT
+	MIN(i1.i)
+FROM integers i1
+GROUP BY (SELECT SUM(i1.i + i2.i) FROM integers i2);
+
+SELECT
+	MIN(i1.i)
+FROM integers i1
+GROUP BY (SELECT i2.i FROM integers i2); --error, more than one row returned by a subquery used as an expression
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;

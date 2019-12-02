@@ -320,7 +320,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 				}
 			}
 		}
-		if (!e && (is_sql_sel(f) | is_sql_having(f) | !f) && is_groupby(rel->op) && rel->r) {
+		if (!e && (is_sql_sel(f) || is_sql_having(f) || !f) && is_groupby(rel->op) && rel->r) {
 			e = exps_bind_column2(rel->r, tname, cname);
 			if (e) {
 				e = exp_ref(sql->sa, e);
@@ -331,7 +331,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		if (e)
 			return exp_alias_or_copy(sql, tname, cname, rel, e);
 	}
-	if ((is_simple_project(rel->op) || (is_groupby(rel->op) && is_sql_aggr(f)) ) && rel->l) {
+	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
 		if (!is_processed(rel))
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
 	} else if (is_join(rel->op)) {

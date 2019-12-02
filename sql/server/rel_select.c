@@ -4884,7 +4884,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 	case SQL_VALUES:
 	case SQL_WITH: 
 	case SQL_SELECT: {
-		sql_rel *r;
+		sql_rel *r = NULL;
 
 		if (se->token == SQL_WITH) {
 			r = rel_with_query(query, se);
