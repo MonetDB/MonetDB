@@ -91,7 +91,7 @@ MOSjoin_COUI_SIGNATURE(NAME, TPE)\
 	return MAL_SUCCEED;\
 }
 
-#define do_join_COUI(NAME, TPE) msg = MOSjoin_COUI_##NAME##_##TPE(r1p, r2p, task, r, rci, nil_matches)
+#define do_join_COUI(NAME, TPE, WORK_AROUND_DUMMY) msg = MOSjoin_COUI_##NAME##_##TPE(r1p, r2p, task, r, rci, nil_matches)
 
 /* Nested loop join with the left (C)ompressed side in the (O)uter loop 
  * and the right (U)ncompressed side in the (I)nner loop.
@@ -107,6 +107,7 @@ static str MOSjoin_COUI_##TPE(MOStask task, BAT* r, struct canditer* rci, bool n
 	struct canditer* lci = task->ci;\
 \
 	while(task->start < task->stop ){\
+\
 		switch(MOSgetTag(task->blk)){\
 		case MOSAIC_RLE:\
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_runlength\n");\
@@ -153,6 +154,109 @@ static str MOSjoin_COUI_##TPE(MOStask task, BAT* r, struct canditer* rci, bool n
 	}\
 \
 	assert(task->blk == NULL);\
+\
+	return MAL_SUCCEED;\
+}
+
+/* Nested loop join with the left uncompressed side in the outer loop
+ * and the right compressed side in the inner loop.
+ */
+
+#define do_join_inner_loop(NAME, TPE, HAS_NIL, RIGHT_CI_NEXT)\
+join_inner_loop_##NAME(TPE, HAS_NIL, RIGHT_CI_NEXT)
+
+#define IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE)\
+{\
+	if (ARE_EQUAL(lval, rval, HAS_NIL, TPE)){\
+		if( BUNappend(r1p, &ro, false)!= GDK_SUCCEED || BUNappend(r2p, &lo, false) != GDK_SUCCEED)\
+		throw(MAL,"mosaic.raw",MAL_MALLOC_FAIL);\
+	}\
+}
+
+#define OUTER_LOOP_UNCOMPRESSED(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
+{\
+	str msg = MAL_SUCCEED;\
+\
+	TPE* vl = (TPE*) Tloc(l, 0);\
+	for (BUN li = 0; li < lci->ncand; li++, MOSinitializeScan(task, task->bsrc), canditer_reset(rci)) {\
+		oid lo = LEFT_CI_NEXT(lci);\
+		TPE lval = vl[lo-l->hseqbase];\
+		if (HAS_NIL && !NIL_MATCHES) {\
+			if ((IS_NIL(TPE, lval))) {continue;};\
+		}\
+\
+		while(task->start < task->stop ){\
+			BUN first = task->start;\
+			BUN last = first + MOSgetCnt(task->blk);\
+\
+			oid c = canditer_next(rci);\
+			while (!is_oid_nil(c) && c < first ) {\
+				c = canditer_next(rci);\
+			}\
+			switch(MOSgetTag(task->blk)){\
+			case MOSAIC_RLE:\
+				ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_runlength\n");\
+				DO_OPERATION_IF_ALLOWED(join_inner_loop, runlength, TPE, HAS_NIL, RIGHT_CI_NEXT);\
+				break;\
+			case MOSAIC_CAPPED:\
+				ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_capped\n");\
+				DO_OPERATION_IF_ALLOWED(join_inner_loop, capped, TPE, HAS_NIL, RIGHT_CI_NEXT);\
+				break;\
+			case MOSAIC_VAR:\
+				ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_var\n");\
+				DO_OPERATION_IF_ALLOWED(join_inner_loop, var, TPE, HAS_NIL, RIGHT_CI_NEXT);\
+				break;\
+			case MOSAIC_FRAME:\
+				ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_frame\n");\
+				DO_OPERATION_IF_ALLOWED(join_inner_loop, frame, TPE, HAS_NIL, RIGHT_CI_NEXT);\
+				break;\
+			case MOSAIC_DELTA:\
+				ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_delta\n");\
+				DO_OPERATION_IF_ALLOWED(join_inner_loop, delta, TPE, HAS_NIL, RIGHT_CI_NEXT);\
+				break;\
+			case MOSAIC_PREFIX:\
+				ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_prefix\n");\
+				DO_OPERATION_IF_ALLOWED(join_inner_loop, prefix, TPE, HAS_NIL, RIGHT_CI_NEXT);\
+				break;\
+			case MOSAIC_LINEAR:\
+				ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_linear\n");\
+				DO_OPERATION_IF_ALLOWED(join_inner_loop, linear, TPE, HAS_NIL, RIGHT_CI_NEXT);\
+				break;\
+			case MOSAIC_RAW:\
+				ALGODEBUG mnstr_printf(GDKstdout, "MOSjoin_raw\n");\
+				DO_OPERATION_IF_ALLOWED(join_inner_loop, raw, TPE, HAS_NIL, RIGHT_CI_NEXT);\
+				break;\
+			}\
+	\
+			if (msg != MAL_SUCCEED) return msg;\
+\
+		if (canditer_peekprev(task->ci) >= last) {\
+			/*Restore iterator if it went pass the end*/\
+			(void) canditer_prev(task->ci);\
+		}\
+\
+			if (rci->next == rci->ncand) {\
+				/* We are at the end of the candidate list.
+				* So we can stop now.
+				*/\
+				break;\
+			}\
+		}\
+	\
+		assert(task->blk == NULL);\
+	}\
+}
+
+#define MOSjoin_generic_DEF(TPE) \
+static str MOSjoin_##TPE(MOStask task, BAT* l, struct canditer* lci, bool nil_matches)\
+{\
+    BAT* r1p = task->lbat;\
+    BAT* r2p = task->rbat;\
+\
+	struct canditer* rci = task->ci;\
+	bool nil = !l->tnonil;\
+\
+	NESTED_LOOP_JOIN(TPE, OUTER_LOOP_UNCOMPRESSED);\
 \
 	return MAL_SUCCEED;\
 }

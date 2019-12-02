@@ -29,6 +29,48 @@ mal_export void MOScompress_frame(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_frame(MOStask task);
 
 ALGEBRA_INTERFACES_INTEGERS_ONLY(frame);
-#define DO_OPERATION_ON_frame(OPERATION, TPE) DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, frame, TPE)
+#define DO_OPERATION_ON_frame(OPERATION, TPE, ...) DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, frame, TPE, __VA_ARGS__)
+
+typedef struct _FrameParameters_t {
+	MosaicBlkRec base;
+	int bits;
+	union {
+		bte minbte;
+		sht minsht;
+		int minint;
+		lng minlng;
+		oid minoid;
+#ifdef HAVE_HGE
+		hge minhge;
+#endif
+	} min;
+	union {
+		bte maxbte;
+		sht maxsht;
+		int maxint;
+		lng maxlng;
+		oid maxoid;
+#ifdef HAVE_HGE
+		hge maxhge;
+#endif
+	} max;
+
+} MosaicBlkHeader_frame_t;
+
+#define MOScodevectorFrame(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_frame_t), BitVectorChunk))
+
+#define join_inner_loop_frame(TPE, HAS_NIL, RIGHT_CI_NEXT)\
+{\
+    MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
+	const TPE min =  parameters->min.min##TPE;\
+	const BitVector base = (BitVector) MOScodevectorFrame(task);\
+	const bte bits = parameters->bits;\
+    for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {\
+        BUN i = (BUN) (ro - first);\
+		TPE rval = ADD_DELTA(TPE, min, getBitVector(base, i, bits));\
+        IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
+	}\
+	MOSskip_frame(task);\
+}
 
 #endif /* _MOSAIC_FRAME_ */

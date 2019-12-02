@@ -37,6 +37,8 @@ mal_export void MOSdecompress_capped(MOStask task);
 
 ALGEBRA_INTERFACES_ALL_TYPES(capped);
 
-#define DO_OPERATION_ON_capped(OPERATION, TPE) DO_OPERATION_ON_ALL_TYPES(OPERATION, capped, TPE)
+#define DO_OPERATION_ON_capped(OPERATION, TPE, ...) DO_OPERATION_ON_ALL_TYPES(OPERATION, capped, TPE, __VA_ARGS__)
+
+#define join_inner_loop_capped(TPE, HAS_NIL, RIGHT_CI_NEXT) join_inner_loop_dictionary(capped, TPE, HAS_NIL, RIGHT_CI_NEXT)
 
 #endif /* _MOSAIC_CAPPED_ */

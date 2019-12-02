@@ -78,9 +78,6 @@ MOSadvance_linear(MOStask task)
 	}
 }
 
-#define linear_base(TPE, TASK)       (*(DeltaTpe(TPE)*) (((char*) (TASK)->blk)+ MosaicBlkSize))
-#define linear_step(TPE, TASK)  (*(DeltaTpe(TPE)*) (((char*) (TASK)->blk)+ MosaicBlkSize+ sizeof(TPE)))
-
 void
 MOSskip_linear(MOStask task)
 {

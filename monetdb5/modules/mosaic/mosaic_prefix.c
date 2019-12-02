@@ -43,39 +43,6 @@ bool MOStypes_prefix(BAT* b) {
 
 	return false;
 }
-
-#define Prefixbte uint8_t
-#define Prefixsht uint16_t
-#define Prefixint uint32_t
-#define Prefixlng uint64_t
-#define Prefixoid uint64_t
-#define Prefixflt uint32_t
-#define Prefixdbl uint64_t
-#ifdef HAVE_HGE
-#define Prefixhge uhge
-#endif
-
-#define PrefixTpe(TPE) Prefix##TPE
-
-typedef struct MosaicBlkHeader_prefix_t_ {
-	MosaicBlkRec base;
-	int suffix_bits;
-	union {
-		PrefixTpe(bte) prefixbte;
-		PrefixTpe(sht) prefixsht;
-		PrefixTpe(int) prefixint;
-		PrefixTpe(lng) prefixlng;
-		PrefixTpe(oid) prefixoid;
-		PrefixTpe(flt) prefixflt;
-		PrefixTpe(dbl) prefixdbl;
-#ifdef HAVE_HGE
-		PrefixTpe(hge) prefixhge;
-#endif
-	} prefix;
-
-} MosaicBlkHeader_prefix_t;
-
-#define MOScodevectorPrefix(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_prefix_t), BitVectorChunk))
 #define toEndOfBitVector(CNT, BITS) wordaligned(((CNT) * (BITS) / CHAR_BIT) + ( ((CNT) * (BITS)) % CHAR_BIT != 0 ), lng)
 
 void

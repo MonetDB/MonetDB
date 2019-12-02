@@ -47,34 +47,6 @@ bool MOStypes_frame(BAT* b) {
 	return false;
 }
 
-typedef struct _FrameParameters_t {
-	MosaicBlkRec base;
-	int bits;
-	union {
-		bte minbte;
-		sht minsht;
-		int minint;
-		lng minlng;
-		oid minoid;
-#ifdef HAVE_HGE
-		hge minhge;
-#endif
-	} min;
-	union {
-		bte maxbte;
-		sht maxsht;
-		int maxint;
-		lng maxlng;
-		oid maxoid;
-#ifdef HAVE_HGE
-		hge maxhge;
-#endif
-	} max;
-
-} MosaicBlkHeader_frame_t;
-
-#define MOScodevectorFrame(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_frame_t), BitVectorChunk))
-
 #define toEndOfBitVector(CNT, BITS) wordaligned(((CNT) * (BITS) / CHAR_BIT) + ( ((CNT) * (BITS)) % CHAR_BIT != 0 ), lng)
 
 void

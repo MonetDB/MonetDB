@@ -38,23 +38,6 @@ bool MOStypes_delta(BAT* b) {
 
 	return false;
 }
-
-typedef struct _DeltaParameters_t {
-	MosaicBlkRec base;
-	int bits;
-	union {
-		bte valbte;
-		sht valsht;
-		int valint;
-		lng vallng;
-		oid valoid;
-#ifdef HAVE_HGE
-		hge valhge;
-#endif
-	} init;
-} MosaicBlkHeader_delta_t;
-
-#define MOScodevectorDelta(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_delta_t), BitVectorChunk))
 #define toEndOfBitVector(CNT, BITS) wordaligned(((CNT) * (BITS) / CHAR_BIT) + ( ((CNT) * (BITS)) % CHAR_BIT != 0 ), BitVectorChunk)
 
 void
@@ -226,15 +209,6 @@ MOScompress_delta(MOStask task, MosaicBlkRec* estimate)
 #endif
 	}
 }
-
-#define ACCUMULATE(acc, delta, sign_mask, TPE) \
-( /*code assumes that acc is of type DeltaTpe(TPE)*/\
-	(TPE) (\
-		( (sign_mask) & (delta) )?\
-			((acc) -= (DeltaTpe(TPE)) (~(IPTpe(TPE)) (sign_mask) & (IPTpe(TPE)) (delta))) :\
-			((acc) += (DeltaTpe(TPE)) (~(IPTpe(TPE)) (sign_mask) & (IPTpe(TPE)) (delta)))  \
-	)\
-)
 
 #define DELTAdecompress(TASK, TPE)\
 do {\

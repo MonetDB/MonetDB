@@ -37,6 +37,8 @@ mal_export void MOSdecompress_var(MOStask task);
 
 ALGEBRA_INTERFACES_ALL_TYPES(var);
 
-#define DO_OPERATION_ON_var(OPERATION, TPE) DO_OPERATION_ON_ALL_TYPES(OPERATION, var, TPE)
+#define DO_OPERATION_ON_var(OPERATION, TPE, ...) DO_OPERATION_ON_ALL_TYPES(OPERATION, var, TPE, __VA_ARGS__)
+
+#define join_inner_loop_var(TPE, HAS_NIL, RIGHT_CI_NEXT) join_inner_loop_dictionary(var, TPE, HAS_NIL, RIGHT_CI_NEXT)
 
 #endif /* _MOSAIC_VAR_ */

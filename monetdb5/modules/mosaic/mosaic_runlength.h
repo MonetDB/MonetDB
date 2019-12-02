@@ -28,6 +28,17 @@ mal_export void MOSdecompress_runlength(MOStask task);
 
 ALGEBRA_INTERFACES_ALL_TYPES(runlength);
 
-#define DO_OPERATION_ON_runlength(OPERATION, TPE) DO_OPERATION_ON_ALL_TYPES(OPERATION, runlength, TPE)
+#define DO_OPERATION_ON_runlength(OPERATION, TPE, ...) DO_OPERATION_ON_ALL_TYPES(OPERATION, runlength, TPE, __VA_ARGS__)
+
+#define join_inner_loop_runlength(TPE, HAS_NIL, RIGHT_CI_NEXT)\
+{\
+    BUN first = task->start;\
+    BUN last = first + MOSgetCnt(task->blk);\
+    const TPE rval = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
+    for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {\
+        IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
+	}\
+	MOSskip_runlength(task);\
+}
 
 #endif /* _MOSAIC_RLE_ */

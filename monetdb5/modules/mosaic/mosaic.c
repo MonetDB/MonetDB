@@ -1091,6 +1091,16 @@ MOSjoin_generic_COUI_DEF(dbl)
 MOSjoin_generic_COUI_DEF(hge)
 #endif
 
+MOSjoin_generic_DEF(bte)
+MOSjoin_generic_DEF(sht)
+MOSjoin_generic_DEF(int)
+MOSjoin_generic_DEF(lng)
+MOSjoin_generic_DEF(flt)
+MOSjoin_generic_DEF(dbl)
+#ifdef HAVE_HGE
+MOSjoin_generic_DEF(hge)
+#endif
+
 /* A mosaic join operator that works when either the left or the right side is compressed
  * and there are no additional candidate lists.
  * Furthermore if both sides are in possesion of a mosaic index,
@@ -1103,14 +1113,15 @@ MOSjoin_generic_COUI_DEF(hge)
 	MOSinitializeScan(task, COMPRESSED_BAT);\
 	task->stop = BATcount(COMPRESSED_BAT);\
 	task->src= Tloc(UNCOMPRESSED_BAT,0);\
-	if (*COMPRESSED_BAT_CL != bat_nil && ((cand_l = BATdescriptor(*COMPRESSED_BAT_CL)) == NULL))\
+	if (*COMPRESSED_BAT_CL != bat_nil && ((cand_c = BATdescriptor(*COMPRESSED_BAT_CL)) == NULL))\
 		throw(MAL,"mosaic.join",RUNTIME_OBJECT_MISSING);\
-	if (*UNCOMPRESSED_BAT_CL != bat_nil && ((cand_r = BATdescriptor(*UNCOMPRESSED_BAT_CL)) == NULL))\
+	if (*UNCOMPRESSED_BAT_CL != bat_nil && ((cand_u = BATdescriptor(*UNCOMPRESSED_BAT_CL)) == NULL))\
 		throw(MAL,"mosaic.join",RUNTIME_OBJECT_MISSING);\
-	canditer_init(&cil, COMPRESSED_BAT, cand_l);\
-	canditer_init(&cir, UNCOMPRESSED_BAT, cand_r);\
-	r = UNCOMPRESSED_BAT;\
+	canditer_init(&ci_c, COMPRESSED_BAT, cand_c);\
+	canditer_init(&ci_u, UNCOMPRESSED_BAT, cand_u);\
+	u = UNCOMPRESSED_BAT;\
 }
+
 str
 MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1160,14 +1171,14 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// if the left side is not compressed, then assume the right side is compressed.
 
-	BAT* cand_l = NULL;
-	BAT* cand_r = NULL;
-	BAT* r;
+	BAT* cand_c = NULL;
+	BAT* cand_u = NULL;
+	BAT* u;
 
-	struct canditer cil;
-	struct canditer cir;
+	struct canditer ci_c;
+	struct canditer ci_u;
 
-	task->ci = &cil;
+	task->ci = &ci_c;
 
 	if ( bl->tmosaic){
 		PREPARE_JOIN_CONTEXT(bl, sl, br, sr);
@@ -1178,23 +1189,40 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	task->lbat = bln;
 	task->rbat = brn;
 
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: msg = MOSjoin_COUI_bte(task, r, &cir, *nil_matches); break;
-	case TYPE_sht: msg = MOSjoin_COUI_sht(task, r, &cir, *nil_matches); break;
-	case TYPE_int: msg = MOSjoin_COUI_int(task, r, &cir, *nil_matches); break;
-	case TYPE_lng: msg = MOSjoin_COUI_lng(task, r, &cir, *nil_matches); break;
-	case TYPE_flt: msg = MOSjoin_COUI_flt(task, r, &cir, *nil_matches); break;
-	case TYPE_dbl: msg = MOSjoin_COUI_dbl(task, r, &cir, *nil_matches); break;
+	bit* COUI = NULL;
+
+	if ((pci->argc != 9) || ((*(COUI = getArgReference_bit(stk,pci,8))) == bit_nil) || (*COUI == false)) {
+		switch(ATOMbasetype(task->type)){
+		case TYPE_bte: msg = MOSjoin_bte(task, u, &ci_u, *nil_matches); break;
+		case TYPE_sht: msg = MOSjoin_sht(task, u, &ci_u, *nil_matches); break;
+		case TYPE_int: msg = MOSjoin_int(task, u, &ci_u, *nil_matches); break;
+		case TYPE_lng: msg = MOSjoin_lng(task, u, &ci_u, *nil_matches); break;
+		case TYPE_flt: msg = MOSjoin_flt(task, u, &ci_u, *nil_matches); break;
+		case TYPE_dbl: msg = MOSjoin_dbl(task, u, &ci_u, *nil_matches); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: msg = MOSjoin_COUI_hge(task, r, &cir, *nil_matches); break;
+		case TYPE_hge: msg = MOSjoin_hge(task, u, &ci_u, *nil_matches); break;
 #endif
+		}
+	}
+	else {
+		switch(ATOMbasetype(task->type)){
+		case TYPE_bte: msg = MOSjoin_COUI_bte(task, u, &ci_u, *nil_matches); break;
+		case TYPE_sht: msg = MOSjoin_COUI_sht(task, u, &ci_u, *nil_matches); break;
+		case TYPE_int: msg = MOSjoin_COUI_int(task, u, &ci_u, *nil_matches); break;
+		case TYPE_lng: msg = MOSjoin_COUI_lng(task, u, &ci_u, *nil_matches); break;
+		case TYPE_flt: msg = MOSjoin_COUI_flt(task, u, &ci_u, *nil_matches); break;
+		case TYPE_dbl: msg = MOSjoin_COUI_dbl(task, u, &ci_u, *nil_matches); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: msg = MOSjoin_COUI_hge(task, u, &ci_u, *nil_matches); break;
+#endif
+		}
 	}
 
 	(void) BBPreclaim(bl);
 	(void) BBPreclaim(br);
 
-	(void) BBPreclaim(cand_l);
-	(void) BBPreclaim(cand_r);
+	(void) BBPreclaim(cand_c);
+	(void) BBPreclaim(cand_u);
 
 	if (msg) {
 		(void) BBPreclaim(bln);

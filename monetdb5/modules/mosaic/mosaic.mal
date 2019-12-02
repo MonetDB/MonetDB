@@ -213,4 +213,8 @@ comment "Overloaded projection operation";
 
 pattern join(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address MOSjoin
-comment "Overloaded join operation";
+comment "join operation mimicking algebra.join based on nested loop join with compressed side in the inner loop.";
+
+pattern join(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng, COUI:bit) (:bat[:oid],:bat[:oid])
+address MOSjoin
+comment "Same as above but when the COUI flag is set to true, it puts the compressed side in the outer loop.";
