@@ -74,6 +74,7 @@ extern lng scales[19];
 #endif
 
 extern atom* atom_zero_value(sql_allocator *sa, sql_subtype* tpe);
+extern atom* atom_null_value(sql_allocator *sa, sql_subtype* tpe);
 
 #endif /* _SQL_ATOM_H_ */
 

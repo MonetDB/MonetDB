@@ -1141,7 +1141,6 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			for (node *nn = res->exps->h ; nn ; nn = nn->next)
 				exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
 		}
-
 		if (opt_from) {
 			dlist *fl = opt_from->data.lval;
 			dnode *n = NULL;
@@ -2184,14 +2183,14 @@ rel_updates(sql_query *query, symbol *s)
 		break;
 	case SQL_COPYLOADER:
 	{
-	    dlist *l = s->data.lval;
-	    dlist *qname = l->h->data.lval;
-	    symbol *sym = l->h->next->data.sym;
-	    sql_rel *rel = copyfromloader(query, qname, sym);
+		dlist *l = s->data.lval;
+		dlist *qname = l->h->data.lval;
+		symbol *sym = l->h->next->data.sym;
+		sql_rel *rel = copyfromloader(query, qname, sym);
 
-	    if (rel)
-	    	ret = rel_psm_stmt(sql->sa, exp_rel(sql, rel));
-	    sql->type = Q_SCHEMA;
+		if (rel)
+			ret = rel_psm_stmt(sql->sa, exp_rel(sql, rel));
+		sql->type = Q_SCHEMA;
 	}
 		break;
 	case SQL_COPYTO:

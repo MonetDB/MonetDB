@@ -675,6 +675,11 @@ GDKinit(opt *set, int setlen)
 	}
 
 	/* Mserver by default takes 80% of all memory as a default */
+#if SIZEOF_SIZE_T == 4
+	if ((double) MT_npages() * (double) MT_pagesize() * 0.815 >= (double) GDK_VM_MAXSIZE)
+		GDK_mem_maxsize = GDK_VM_MAXSIZE;
+	else
+#endif
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 	if (BBPinit() != GDK_SUCCEED)
 		return GDK_FAIL;
@@ -2070,6 +2075,7 @@ GDKmmap(const char *path, int mode, size_t len)
 	void *ret;
 
 	if (GDKvm_cursize() + len >= GDK_vm_maxsize) {
+		GDKmemfail("GDKmmap", len);
 		GDKerror("allocating too much virtual address space\n");
 		return NULL;
 	}
@@ -2103,6 +2109,7 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 
 	if (*new_size > old_size &&
 	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize) {
+		GDKmemfail("GDKmmap", *new_size);
 		GDKerror("allocating too much virtual address space\n");
 		return NULL;
 	}

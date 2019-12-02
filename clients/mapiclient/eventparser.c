@@ -212,7 +212,7 @@ keyvalueparser(char *txt, EventRecord *ev)
 	if( strstr(key,"clk")){
 		time_t sec;
 		uint64_t microsec;
-		struct tm curr_time;
+		struct tm curr_time = (struct tm) {0};
 
 		c = strchr(val,'.');
 		if (c != NULL) {

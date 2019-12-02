@@ -30,13 +30,9 @@ stderr of test 'columnRights` in directory 'sql/test/Users` itself:
 # 11:31:52 >  "/usr/bin/python2" "columnRights.SQL.py" "columnRights"
 # 11:31:52 >  
 
-MAPI  = (alice) /var/tmp/mtest-9087/.s.monetdb.35899
-QUERY = SELECT price FROM orders;
-ERROR = !SELECT: access denied for alice to table 'library.orders'
-CODE  = 42000
-MAPI  = (alice) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (alice) /var/tmp/mtest-190499/.s.monetdb.35303
 QUERY = SELECT name FROM orders; --insufficient rights
-ERROR = !SELECT: access denied for alice to table 'library.orders'
+ERROR = !SELECT: identifier 'name' unknown
 CODE  = 42000
 MAPI  = (alice) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = UPDATE orders SET price = 0; --insufficient rights

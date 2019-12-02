@@ -4136,7 +4136,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 
 			if (ok == LOG_OK && isRenamed(ft)) { /* apply possible renaming */
 				list_hash_delete(tt->s->tables.set, tt, NULL);
-				tt->base.name = sa_strdup(tr->sa, ft->base.name);
+				tt->base.name = sa_strdup(tr->parent->sa, ft->base.name);
 				if (!list_hash_add(tt->s->tables.set, tt, NULL))
 					ok = LOG_ERR;
 				setRenamedFlag(tt); /* propagate the change to the upper transaction */
@@ -4226,7 +4226,7 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 
 	if (apply && ok == LOG_OK && isRenamed(fs)) { /* apply possible renaming */
 		list_hash_delete(tr->schemas.set, ts, NULL);
-		ts->base.name = sa_strdup(tr->sa, fs->base.name);
+		ts->base.name = sa_strdup(tr->parent->sa, fs->base.name);
 		if (!list_hash_add(tr->schemas.set, ts, NULL))
 			ok = LOG_ERR;
 		setRenamedFlag(ts); /* propagate the change to the upper transaction */
@@ -4414,7 +4414,7 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 		/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
 		if ((tr->status == 1 && isRenamed(fc)) || isRenamed(pfc)) {
 			list_hash_delete(fc->t->columns.set, fc, NULL);
-			fc->base.name = sa_strdup(tr->sa, pfc->base.name);
+			fc->base.name = sa_strdup(tr->parent->sa, pfc->base.name);
 			if (!list_hash_add(fc->t->columns.set, fc, NULL))
 				return LOG_ERR;
 		}
@@ -4481,7 +4481,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
 		if ((tr->status == 1 && isRenamed(ft)) || isRenamed(pft)) {
 			list_hash_delete(ft->s->tables.set, ft, NULL);
-			ft->base.name = sa_strdup(tr->sa, pft->base.name);
+			ft->base.name = sa_strdup(tr->parent->sa, pft->base.name);
 			if (!list_hash_add(ft->s->tables.set, ft, NULL))
 				ok = LOG_ERR;
 		}
@@ -4540,7 +4540,7 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 		/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
 		if ((tr->status == 1 && isRenamed(fs)) || isRenamed(pfs)) {
 			list_hash_delete(tr->schemas.set, fs, NULL);
-			fs->base.name = sa_strdup(tr->sa, pfs->base.name);
+			fs->base.name = sa_strdup(tr->parent->sa, pfs->base.name);
 			if (!list_hash_add(tr->schemas.set, fs, NULL))
 				ok = LOG_ERR;
 		}

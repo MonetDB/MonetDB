@@ -28,11 +28,7 @@ stderr of test 'analytics01` in directory 'sql/test/analytics` itself:
 # 16:22:53 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23680" "--port=30581"
 # 16:22:53 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-24628/.s.monetdb.33732
-QUERY = select ntile(aa) over () from analytics; --error
-ERROR = !ntile first argument must be a single atom
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-1980/.s.monetdb.31134
+MAPI  = (monetdb) /var/tmp/mtest-84677/.s.monetdb.37473
 QUERY = select lag(null, aa) over () from analytics; --error
 ERROR = !lag second argument must be a single atom
 CODE  = 42000

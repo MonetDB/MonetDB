@@ -304,15 +304,13 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		}
 	}
 
-	if(instantiate) {
+	if (instantiate) {
 		r = rel_project(sql->sa, r, NULL);
 		r->exps = sa_list(sql->sa);
 		list_append(r->exps, exp);
 
 		if (r)
-			r = rel_unnest(sql, r);
-		if (r)
-			r = rel_optimizer(sql, r, 0);
+			r = sql_processrelation(sql, r, 0);
 		if (r) {
 			node *n, *found = NULL;
 			list *id_l = rel_dependencies(sql, r);

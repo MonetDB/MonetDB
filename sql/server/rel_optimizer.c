@@ -1454,7 +1454,7 @@ project_unsafe(sql_rel *rel, int allow_identity)
 	sql_rel *sub = rel->l;
 	node *n;
 
-	if (need_distinct(rel) || rel->r /* order by */)
+	if (need_distinct(rel) || rel->r /* order by */ || is_grouping_totals(rel))
 		return 1;
 	if (!rel->exps)
 		return 0;
@@ -2491,9 +2491,7 @@ rel_distinct_aggregate_on_unique_values(int *changes, mvc *sql, sql_rel *rel)
 				for (node *m = ((list*)exp->l)->h; m && all_unique; m = m->next) {
 					sql_exp *arg = (sql_exp*) m->data;
 
-					if (arg->card == CARD_ATOM) /* constants are always unique */
-						continue;
-					else if (arg->type == e_column) {
+					if (arg->type == e_column) {
 						fcmp cmp = (fcmp)&kc_column_cmp;
 						sql_column *c = exp_find_column(rel, arg, -2);
 
@@ -4778,12 +4776,39 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
  *
  * also push simple expressions of a semijoin down if they only
  * involve the left sided of the semijoin.
+ *
+ * in some cases the other way is usefull, ie push join down
+ * semijoin. When the join reduces (ie when there are selects on it).
  */
 static sql_rel *
-rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel) 
+rel_push_semijoin_down_or_up(int *changes, mvc *sql, sql_rel *rel) 
 {
 	(void)*changes;
 
+	if (rel->op == op_join && rel->exps && rel->l) {
+		sql_rel *l = rel->l, *r = rel->r;
+
+		if (is_semi(l->op) && !rel_is_ref(l) && is_select(r->op) && !rel_is_ref(r)) {
+			rel->l = l->l;
+			l->l = rel;
+			return l;
+		}
+	}
+	/* also case with 2 joins */
+	/* join ( join ( semijoin(), table), select (table)); */
+	if (rel->op == op_join && rel->exps && rel->l) {
+		sql_rel *l = rel->l, *r = rel->r;
+		sql_rel *ll;
+
+		if (is_join(l->op) && !rel_is_ref(l) && is_select(r->op) && !rel_is_ref(r)) {
+			ll = l->l;
+			if (is_semi(ll->op) && !rel_is_ref(ll)) {
+				l->l = ll->l;
+				ll->l = rel;
+				return ll;
+			}
+		}
+	}
 	/* first push down the expressions involving only A */
 	if (rel->op == op_semi && rel->exps && rel->l) {
 		list *exps = rel->exps, *nexps = sa_list(sql->sa);
@@ -6482,7 +6507,7 @@ rel_exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 			nr += e->used;
 		}
 
-		if (!nr && is_project(rel->op)) /* project atleast one column */
+		if (!nr && is_project(rel->op) && len > 0) /* project at least one column if exists */
 			exps[0]->used = 1; 
 
 		for (i = len-1; i >= 0; i--) {
@@ -7434,7 +7459,7 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps && rel->card > CARD_ATOM) {
 		node *n;
 		list *exps = sa_list(sql->sa);
-			
+
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
@@ -7462,9 +7487,9 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 
 				if (l->type == e_func) {
 					sql_subfunc *f = l->f;
-					
+
 					/* rewrite isnull(x) = TRUE/FALSE => x =/<> NULL */
-					if (!f->func->s && !strcmp(f->func->base.name, "isnull") && 
+					if (is_select(rel->op) && !f->func->s && !strcmp(f->func->base.name, "isnull") && 
 					     is_atom(r->type) && r->l) { /* direct literal */
 						atom *a = r->l;
 						int flag = a->data.val.bval;
@@ -9240,7 +9265,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
 		rel = rewrite(sql, rel, &rel_rewrite_semijoin, &changes);
 		/* push semijoin through join */
-		rel = rewrite(sql, rel, &rel_push_semijoin_down, &changes);
+		rel = rewrite(sql, rel, &rel_push_semijoin_down_or_up, &changes);
 		/* antijoin(a, union(b,c)) -> antijoin(antijoin(a,b), c) */
 		rel = rewrite(sql, rel, &rel_rewrite_antijoin, &changes);
 		if (level <= 0)
@@ -9294,6 +9319,42 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	return rel;
 }
 
+/* make sure the outer project (without order by or distinct) has all the aliases */
+static sql_rel *
+rel_keep_renames(mvc *sql, sql_rel *rel)
+{
+	if (!is_simple_project(rel->op) || (!rel->r && !need_distinct(rel)) || list_length(rel->exps) <= 1)
+		return rel;
+
+	int needed = 0;
+	for(node *n = rel->exps->h; n && !needed; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (exp_name(e) && (e->type != e_column || strcmp(exp_name(e), e->r) != 0)) 
+			needed = 1;
+	}
+	if (!needed)
+		return rel;
+
+	list *new_outer_exps = sa_list(sql->sa);
+	list *new_inner_exps = sa_list(sql->sa);
+	for(node *n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data, *ie, *oe;
+		const char *rname = exp_relname(e);
+		const char *name = exp_name(e);
+
+		exp_label(sql->sa, e, ++sql->label);
+		ie = e;
+		oe = exp_ref(sql->sa, ie);
+		exp_setname(sql->sa, oe, rname, name);
+		append(new_inner_exps, ie);
+		append(new_outer_exps, oe);
+	}
+	rel->exps = new_inner_exps;
+	rel = rel_project(sql->sa, rel, new_outer_exps);
+	return rel;
+}
+
 static sql_rel *
 optimize(mvc *sql, sql_rel *rel, int value_based_opt) 
 {
@@ -9301,6 +9362,7 @@ optimize(mvc *sql, sql_rel *rel, int value_based_opt)
 	node *n;
 	int level = 0, changes = 1;
 
+	rel = rel_keep_renames(sql, rel);
 
 	for( ;rel && level < 20 && changes; level++)
 		rel = optimize_rel(sql, rel, &changes, level, value_based_opt);

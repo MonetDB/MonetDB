@@ -1,3 +1,11 @@
+monetdb (11.35.3) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3533: SQL aggregate functions avg(), sum() and median() return an
+    error when used on a column with datatype interval second
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 25 Nov 2019 12:34:22 +0100
+
 monetdb (11.35.1) unstable; urgency=low
 
   * Rebuilt.

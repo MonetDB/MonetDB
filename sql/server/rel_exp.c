@@ -229,7 +229,10 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 
 	if (!a_func) 
 		return sql_error(sql, 02, SQLSTATE(42000) "(NOT) IN operator on type %s missing", exp_subtype(le)->type->sqlname);
-	return exp_binop(sql->sa, le, vals, a_func);
+	e = exp_binop(sql->sa, le, vals, a_func);
+	if (e)
+		e->card = le->card;
+	return e;
 }
 
 sql_exp *
@@ -736,7 +739,7 @@ exp_rel(mvc *sql, sql_rel *rel)
 	if (e == NULL)
 		return NULL;
 	/*
-	rel = rel_optimizer(sql, rel, 0);
+	rel = sql_processrelation(sql, rel, 0);
 	rel = rel_distribute(sql, rel);
 	*/
 	e->l = rel;

@@ -13,7 +13,6 @@
 #include "monetdb_config.h"
 #include "mal_instruction.h"
 #include "opt_postfix.h"
-#include "algebra.h"
 
 #define isCandidateList(M,P,I) ((M)->var[getArg(P,I)].id[0]== 'C')
 str

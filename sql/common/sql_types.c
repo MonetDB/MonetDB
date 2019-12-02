@@ -230,6 +230,12 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 	return NULL;
 }
 
+sql_subtype *
+arg_type( sql_arg *a)
+{
+	return &a->type;
+}
+
 int 
 sql_find_subtype(sql_subtype *res, const char *name, unsigned int digits, unsigned int scale)
 {
@@ -460,6 +466,16 @@ arg_subtype_cmp(sql_arg *a, sql_subtype *t)
 	return (is_subtype(t, &a->type )?0:-1);
 }
 
+static int
+arg_subtype_cmp_null(sql_arg *a, sql_subtype *t)
+{
+	if (a->type.type->eclass == EC_ANY)
+		return 0;
+	if (!t)
+		return 0;
+	return (is_subtypeof(t, &a->type )?0:-1);
+}
+
 static sql_subaggr *
 _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 {
@@ -485,7 +501,7 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 			scale = member->scale;
 		}
 		/* same type as the input */
-		if (r->type->eclass == EC_ANY) 
+		if (r->type->eclass == EC_ANY && member) 
 			r = member;
 		res = sql_create_subtype(sa, r->type, digits, scale);
 		list_append(ares->res, res);
@@ -534,19 +550,19 @@ sql_bind_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql_subtyp
 }
 
 sql_subaggr *
-sql_bind_aggr_(sql_allocator *sa, sql_schema *s, const char *sqlaname, list *ops)
+sql_bind_aggr_(sql_allocator *sa, sql_schema *s, const char *sqlaname, list *inputs, bool args)
 {
 	node *n = aggrs->h;
 	sql_subtype *type = NULL;
 
-	if (ops->h)
-		type = ops->h->data;
+	if (inputs->h)
+		type = inputs->h->data;
 
 	while (n) {
 		sql_func *a = n->data;
 
 		if (strcmp(a->base.name, sqlaname) == 0 &&  
-			list_cmp(a->ops, ops, (fcmp) &arg_subtype_cmp) == 0)
+			list_cmp(args ? a->ops : a->res, inputs, (fcmp) &arg_subtype_cmp) == 0)
 			return _dup_subaggr(sa, a, type);
 		n = n->next;
 	}
@@ -560,7 +576,7 @@ sql_bind_aggr_(sql_allocator *sa, sql_schema *s, const char *sqlaname, list *ops
 				continue;
 
 			if (strcmp(a->base.name, sqlaname) == 0 &&  
-				list_cmp(a->ops, ops, (fcmp) &arg_subtype_cmp) == 0)
+				list_cmp(args ? a->ops : a->res, inputs, (fcmp) &arg_subtype_cmp) == 0)
 				return _dup_subaggr(sa, a, type);
 		}
 	}
@@ -1089,6 +1105,48 @@ sql_bind_func_result3(sql_allocator *sa, sql_schema *s, const char *sqlfname, sq
 	return fres;
 }
 
+static sql_subfunc *
+resolve_function(sql_allocator *sa, sql_schema *s, const char *name, list *ops, sql_ftype type)
+{
+	node *n = funcs->h;
+	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
+
+	for (; n; n = n->next) {
+		sql_func *f = n->data;
+
+		if (f->type != type && f->type != filt) 
+			continue;
+		if (strcmp(f->base.name, name) == 0) {
+			if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp_null) == 0) 
+				return sql_dup_subfunc(sa, f, ops, NULL);
+		}
+	}
+	if (s) {
+		node *n;
+
+		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
+			sql_func *f = n->data;
+
+			if (f->type != type && f->type != filt) 
+				continue;
+			if (strcmp(f->base.name, name) == 0) {
+				if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp_null) == 0) 
+					return sql_dup_subfunc(sa, f, ops, NULL);
+			}
+		}
+	}
+	return NULL;
+}
+
+sql_subfunc *
+resolve_function2(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type)
+{
+	list *l = sa_list(sa);
+	list_append(l, tp1);
+	list_append(l, tp2);
+	return resolve_function(sa, s, name, l, type);
+}
+
 static void
 sql_create_alias(sql_allocator *sa, const char *name, const char *alias)
 {
@@ -1529,6 +1587,13 @@ sqltypeinit( sql_allocator *sa)
 	*t = NULL;
 
 //	sql_create_func(sa, "st_pointfromtext", "geom", "st_pointformtext", OID, NULL, OID, SCALE_FIX);
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, BTE);
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, SHT);
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, INT);
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, LNG);
+#ifdef HAVE_HGE
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, HGE);
+#endif
 
 	sql_create_aggr(sa, "not_unique", "sql", "not_unique", OID, BIT);
 	/* well to be precise it does reduce and map */

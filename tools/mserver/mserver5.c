@@ -119,7 +119,7 @@ usage(char *prog, int xit)
 static void
 monet_hello(void)
 {
-	dbl sz_mem_h;
+	double sz_mem_h;
 	char  *qc = " kMGTPE";
 	int qi = 0;
 
@@ -147,14 +147,14 @@ monet_hello(void)
 			""
 #endif
 			);
-	sz_mem_h = (dbl) (MT_npages() * MT_pagesize());
+	sz_mem_h = (double) MT_npages() * MT_pagesize();
 	while (sz_mem_h >= 1000.0 && qi < 6) {
 		sz_mem_h /= 1024.0;
 		qi++;
 	}
 	printf("# Found %.3f %ciB available main-memory",
 			sz_mem_h, qc[qi]);
-	sz_mem_h = (dbl) GDK_mem_maxsize;
+	sz_mem_h = (double) GDK_mem_maxsize;
 	qi = 0;
 	while (sz_mem_h >= 1000.0 && qi < 6) {
 		sz_mem_h /= 1024.0;

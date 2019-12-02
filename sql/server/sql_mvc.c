@@ -71,9 +71,7 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 
 		r = rel_parse(m, s, buf, m_deps);
 		if (r)
-			r = rel_unnest(m, r);
-		if (r)
-			r = rel_optimizer(m, r, 0);
+			r = sql_processrelation(m, r, 0);
 		if (r) {
 			list *id_l = rel_dependencies(m, r);
 			mvc_create_dependencies(m, id_l, t->base.id, VIEW_DEPENDENCY);
@@ -2007,6 +2005,16 @@ sql_part *
 mvc_copy_part(mvc *m, sql_table *t, sql_part *pt)
 {
 	return sql_trans_copy_part(m->session->tr, t, pt);
+}
+
+sql_rel *
+sql_processrelation(mvc *sql, sql_rel* rel, int value_based_opt)
+{
+	if (rel)
+		rel = rel_unnest(sql, rel);
+	if (rel)
+		rel = rel_optimizer(sql, rel, value_based_opt);
+	return rel;
 }
 
 static inline int dlist_cmp(mvc *sql, dlist *l1, dlist *l2);

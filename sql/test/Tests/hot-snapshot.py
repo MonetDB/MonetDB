@@ -4,7 +4,7 @@
 # We insert some data and commit it.
 # We insert some more data and do not commit it.
 # On another connection, we insert even more uncommitted data.
-# Then  call hot_snapshot.
+# Then we call hot_snapshot.
 # We kill the server, delete the db directory and untar the file.
 # We start a server on the untarred db dir and check the data.
 # The committed data should exist in the snapshot.
@@ -38,6 +38,7 @@ tarname = os.path.join(dbfarm, mydb + '.tar')
 
 def main():
     server = None
+    cleanup_afterward = False;  # we'll set it to true once the tests have succeeded
     try:
         # clean up remainder of earlier run
         if os.path.exists(mydbdir):
@@ -112,12 +113,14 @@ def main():
         # uncommitted1 and uncommitted2 should not be present
         assert foo == [('committed1',)]
 
-        server.terminate()
-        shutil.rmtree(mydbdir)
+        cleanup_afterward = True
+
     finally:
         if server:
-            server.kill()
-        time.sleep(1)
+            server.terminate()
+            server.wait()
+            if cleanup_afterward:
+                shutil.rmtree(mydbdir)
 
 main()
 

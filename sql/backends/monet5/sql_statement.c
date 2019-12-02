@@ -1593,7 +1593,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 	if (op1->nr < 0 && (sub && sub->nr < 0))
 		return NULL;
 	l = op1->nr;
-	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
+	if (((cmp & CMP_BETWEEN && cmp & CMP_SYMMETRIC) || (cmp & CMP_BETWEEN && anti) || op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
 		int k;
 
 		if (op2->nr < 0 || op3->nr < 0)
@@ -3012,8 +3012,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	p = find_prop(rel->p, PROP_REMOTE);
 	if (p) 
 		rel->p = prop_remove(rel->p, p);
-	rel = rel_unnest(be->mvc, rel);
-	rel = rel_optimizer(be->mvc, rel, 0);
+	rel = sql_processrelation(be->mvc, rel, 0);
 	if (p) {
 		p->p = rel->p;
 		rel->p = p;
@@ -3473,10 +3472,10 @@ _table_name(sql_allocator *sa, stmt *st)
 		return table_name(sa, st->op1);
 
 	case st_table_clear:
+	case st_tid:
 		return st->op4.tval->base.name;
 	case st_idxbat:
 	case st_bat:
-	case st_tid:
 		return st->op4.cval->t->base.name;
 	case st_alias:
 		if (st->tname)
