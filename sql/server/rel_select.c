@@ -4679,18 +4679,20 @@ static sql_exp *
 rel_selection_ref(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection )
 {
 	sql_allocator *sa = query->sql->sa;
-	dnode *n;
-	dlist *gl = grp->data.lval;
+	dlist *gl;
 	char *name = NULL;
 	exp_kind ek = {type_value, card_column, FALSE};
 
+	if (grp->token != SQL_COLUMN && grp->token != SQL_IDENT)
+		return NULL;
+	gl = grp->data.lval;
 	if (dlist_length(gl) > 1)
 		return NULL;
 	if (!selection)
 		return NULL;
 
 	name = gl->h->data.sval;
-	for (n = selection->h; n; n = n->next) {
+	for (dnode *n = selection->h; n; n = n->next) {
 		/* we only look for columns */
 		tokens to = n->data.sym->token;
 		if (to == SQL_COLUMN || to == SQL_IDENT) {
@@ -4751,8 +4753,8 @@ rel_group_by(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection,
 				return NULL;
 			}
 		}
-		if(e->type != e_column) { //store group by expressions in the stack
-			if(!stack_push_groupby_expression(sql, grp, e))
+		if (e->type != e_column) { //store group by expressions in the stack
+			if (!stack_push_groupby_expression(sql, grp, e))
 				return NULL;
 		}
 		append(exps, e);
@@ -5743,6 +5745,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 		} else {
 			dlist *selection = NULL;
 
+			assert(se->token == SQL_SELECT);
 			if ((selection = simple_selection(se)) != NULL) {
 				dnode *o = selection->h;
 				symbol *sym = o->data.sym;
