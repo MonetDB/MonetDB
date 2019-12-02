@@ -1536,6 +1536,7 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		if (is_compare(e->type) && e->flag == cmp_or) {
 			list *l = e->l, *r = e->r;
 
+			sql->caching = 0;
 			if (list_length(l) == 1) {
 				sql_exp *ie = l->h->data; 
 
@@ -1545,10 +1546,44 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					return r->h->data;
 			}
 		}
-		/* TRUE and X -> X
-		 * FALSE and X -> FALSE */
 	}
 	return e;
+}
+
+static sql_rel *
+rewrite_simplify(mvc *sql, sql_rel *rel)
+{
+	if (!rel)
+		return rel;
+
+	if (is_select(rel->op) && !list_empty(rel->exps)) {
+		int needed = 0;
+		for (node *n=rel->exps->h; n && !needed; n = n->next) {
+			sql_exp *e = n->data;
+
+			needed = (exp_is_true(sql, e) || exp_is_false(sql, e)); 
+		}
+		if (needed) {
+			list *nexps = sa_list(sql->sa);
+			sql->caching = 0;
+			for (node *n=rel->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+	
+				/* TRUE and X -> X */
+				if (exp_is_true(sql, e)) {
+					continue;
+				/* FALSE and X -> FALSE */
+				} else if (exp_is_false(sql, e)) {
+					rel->exps = append(sa_list(sql->sa), e);
+					return rel;
+				} else {
+					append(nexps, e);
+				}
+			}
+			rel->exps = nexps;
+		}
+	}
+	return rel;
 }
 
 /* add an dummy true projection column */
@@ -1691,6 +1726,8 @@ rewrite_or_exp(mvc *sql, sql_rel *rel)
 					sql_rel *r = rel_dup(rel);
 					list *exps = rel_projections(sql, rel, NULL, 1, 1);
 
+					list_remove_node(rel->exps, n); /* remove or expression */
+
 					l = rel_select(sql->sa, l, NULL);
 					l->exps = e->l;
 					l = rewrite_or_exp(sql, l);
@@ -1698,7 +1735,6 @@ rewrite_or_exp(mvc *sql, sql_rel *rel)
 					r->exps = e->r;
 					r = rewrite_or_exp(sql, r);
 
-					list_remove_node(rel->exps, n); /* remove or expression */
 					list *ls = rel_projections(sql, rel, NULL, 1, 1);
 					list *rs = rel_projections(sql, rel, NULL, 1, 1);
 					rel = rel_setop_check_types(sql, l, r, ls, rs, op_union);
@@ -2585,6 +2621,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 {
 	rel_reset_subquery(rel);
 	rel = rel_exp_visitor(sql, rel, &rewrite_simplify_exp);
+	rel = rel_visitor(sql, rel, &rewrite_simplify);
 	rel = rel_visitor(sql, rel, &rewrite_aggregates);
 	rel = rel_visitor(sql, rel, &rewrite_or_exp);
 	rel = rel_exp_visitor(sql, rel, &rewrite_rank);
