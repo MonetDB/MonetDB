@@ -58,8 +58,8 @@ MAPI  = (monetdb) /var/tmp/mtest-8966/.s.monetdb.37628
 QUERY = SELECT i1.i FROM integers i1 WHERE i1.i >= (SELECT i1.i, i2.i FROM integers i2 WHERE i2.i > 1); --error, subquery must return a single column
 ERROR = !SELECT: subquery must return only one column
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-337643/.s.monetdb.35517
-QUERY = SELECT i1.i FROM integers i1 GROUP BY (SELECT SUM(i1.i) + i2.i FROM integers i2); --error, aggregate functions are not allowed in GROUP BY
+MAPI  = (monetdb) /var/tmp/mtest-338558/.s.monetdb.33733
+QUERY = SELECT i1.i FROM integers i1 GROUP BY (SELECT SUM(i1.i) + i2.i FROM integers i2); --error, cannot use non GROUP BY column 'i2.i' in query results without an aggregate function
 ERROR = !SELECT: cannot use non GROUP BY column 'i2.i' in query results without an aggregate function
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-337643/.s.monetdb.35517
