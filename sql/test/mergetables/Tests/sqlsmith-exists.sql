@@ -55,4 +55,69 @@ or (exists (
     )
     limit 97;
 
+CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
+
+select 
+ subq_0.c0 as c0, 
+ subq_0.c2 as c1, 
+ subq_0.c1 as c2, 
+ subq_0.c1 as c3, 
+ cast(nullif(73,
+ 73) as int) as c4, 
+ subq_0.c2 as c5, 
+ subq_0.c1 as c6, 
+ subq_0.c1 as c7, 
+ subq_0.c1 as c8, 
+ subq_0.c0 as c9
+from 
+ (select 
+ ref_1.schema_name as c0, 
+ cast(coalesce(ref_1.depend_type,
+ case when true then ref_1.depend_type else ref_1.depend_type end
+ ) as smallint) as c1, 
+ ref_0.action as c2
+ from 
+ tmp.keys as ref_0
+ right join sys.dependency_schemas_on_users as ref_1
+ on (exists (
+ select 
+ ref_0.table_id as c0, 
+ ref_1.depend_type as c1
+ from 
+ sys.tab1 as ref_2
+ where (exists (
+ select 
+ ref_3.owner_name as c0, 
+ ref_2.col2 as c1, 
+ ref_3.depend_type as c2, 
+ ref_3.depend_type as c3, 
+ ref_3.owner_name as c4, 
+ ref_2.col0 as c5, 
+ ref_0.action as c6, 
+ ref_1.schema_id as c7, 
+ ref_2.col0 as c8, 
+ 88 as c9
+ from 
+ sys.dependency_owners_on_schemas as ref_3
+ where 69 is null)) 
+ and ((false) 
+ or ((true) 
+ or (exists (
+ select 
+ ref_0.action as c0, 
+ ref_0.action as c1, 
+ ref_1.schema_id as c2, 
+ ref_0.rkey as c3, 
+ ref_4.system as c4
+ from 
+ sys._tables as ref_4
+ where ref_2.col2 is not null))))))
+ where (ref_0.name is null) 
+ and (76 is null)
+ limit 101) as subq_0
+where true
+limit 67
+;
+
 ROLLBACK;
