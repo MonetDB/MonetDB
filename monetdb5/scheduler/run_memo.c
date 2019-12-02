@@ -177,7 +177,7 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 
-	TRC_DEBUG(MAL_MEMO, "Function target '%s' cost: %ld\n", getVarName(mb, target), mincost);
+	TRC_DEBUG(MAL_MEMO, "Function target '%s' cost: %lld\n", getVarName(mb, target), mincost);
 	(void) cntxt;
 
 	/* remove non-qualifying variables */
@@ -189,7 +189,7 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	propagateNonTarget(mb, pc + 1);
 
-	TRC_DEBUG(MAL_MEMO, "Cost choice selected: %s %ld\n", getVarName(mb, target), mincost);
+	TRC_DEBUG(MAL_MEMO, "Cost choice selected: %s %lld\n", getVarName(mb, target), mincost);
 	debugFunction(MAL_MEMO, mb, stk, 1);
 
 

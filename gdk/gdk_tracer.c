@@ -473,7 +473,13 @@ GDKtracer_log(LOG_LEVEL level, char *fmt, ...)
 
     // Flush the current buffer in case the event is 
     // important depending on the flush-level
-    if(level == CUR_FLUSH_LEVEL)
+    // Always flush CRITICAL and ERROR messages - prevent cases 
+    // like mserver5 refusing to start due to allocated port 
+    // and the error is never reported to the user because it 
+    // is still in the buffer which it never gets flushed.
+    if(level == CUR_FLUSH_LEVEL || 
+       level == M_CRITICAL      || 
+       level == M_ERROR)
     {
         GDK_result = GDKtracer_flush_buffer();
         if(GDK_result == GDK_FAIL)
@@ -503,11 +509,17 @@ GDKtracer_flush_buffer(void)
 
     if(ATOMIC_GET(&CUR_ADAPTER) == BASIC)
     {
-        // Check if file is open
-        _GDKtracer_file_is_open(output_file);
-        
+        // Check if file is open - if not send the output to stderr. There are cases that 
+        // this is needed - e.g: on startup of mserver5 GDKmalloc is called before GDKinit. 
+        // In GDKinit GDKtracer is getting initialized (open_file and initialize log level 
+        // per component). Since the file is not open yet and there is an assert, we need 
+        // to do something - and as a backup plan we send the logs to stderr.
+        // _GDKtracer_file_is_open(output_file);
+        if(!output_file)
+            output_file = stderr;
+
         fwrite(&fl_tracer->buffer, fl_tracer->allocated_size, 1, output_file);
-        fflush(output_file);
+        fflush(stderr);
             
         // Reset buffer
         memset(fl_tracer->buffer, 0, BUFFER_SIZE);
@@ -521,7 +533,8 @@ GDKtracer_flush_buffer(void)
     // The file is kept open no matter the adapter
     // When GDKtracer stops we need also to close the file
     if(GDK_TRACER_STOP)
-        fclose(output_file);
+        if(output_file)
+            fclose(output_file);
 
     return GDK_SUCCEED;
 }
