@@ -287,6 +287,10 @@ SELECT
 FROM integers i1
 GROUP BY (SELECT i2.i FROM integers i2); --error, more than one row returned by a subquery used as an expression
 
+SELECT
+    (SELECT SUM(t1.col1) OVER (PARTITION BY (VALUES(1)) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+FROM another_T t1; --error, subqueries not allowed inside PARTITION BY
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;

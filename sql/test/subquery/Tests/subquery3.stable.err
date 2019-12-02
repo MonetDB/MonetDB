@@ -92,6 +92,12 @@ QUERY = SELECT
         GROUP BY (SELECT i2.i FROM integers i2); --error, more than one row returned by a subquery used as an expression
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-538831/.s.monetdb.31459
+QUERY = SELECT
+            (SELECT SUM(t1.col1) OVER (PARTITION BY (VALUES(1)) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+        FROM another_T t1; --error, subqueries not allowed inside PARTITION BY
+ERROR = !PARTITION BY: subqueries not allowed in PARTITION BY clause
+CODE  = 42000
 
 # 17:40:41 >  
 # 17:40:41 >  "Done."
