@@ -2336,9 +2336,9 @@ exp_copy( mvc *sql, sql_exp * e)
 			ne = exp_param(sql->sa, e->r, &e->tpe, e->flag);
 		break;
 	case e_psm:
-		if (e->flag == PSM_SET) 
+		if (e->flag & PSM_SET) 
 			ne = exp_set(sql->sa, e->alias.name, exp_copy(sql, e->l), GET_PSM_LEVEL(e->flag));
-		if (e->flag == PSM_REL) {
+		if (e->flag & PSM_REL) {
 			if (!exp_name(e))
 				exp_label(sql->sa, e, ++sql->label);
 			return exp_ref(sql->sa, e);
