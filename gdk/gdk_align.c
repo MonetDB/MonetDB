@@ -48,7 +48,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_tracer.h"
 
 /* Return TRUE if the two BATs are aligned (same size, same
  * hseqbase). */

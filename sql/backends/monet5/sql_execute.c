@@ -38,7 +38,6 @@
 #include "mtime.h"
 #include "optimizer.h"
 #include "opt_inline.h"
-#include "gdk_tracer.h"
 #include <unistd.h>
 
 /*

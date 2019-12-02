@@ -33,7 +33,6 @@
 #include "gdk.h"
 #include "gdk_system.h"
 #include "gdk_system_private.h"
-#include "gdk_tracer.h"
 
 #include <time.h>
 

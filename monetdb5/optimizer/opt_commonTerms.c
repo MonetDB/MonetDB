@@ -9,7 +9,6 @@
 #include "monetdb_config.h"
 #include "opt_commonTerms.h"
 #include "mal_exception.h"
-#include "gdk_tracer.h"
 
  /*
  * Caveat. A lot of time was lost due to constants that are indistinguisable

@@ -16,7 +16,6 @@
 #include "mal_utils.h"
 #include "mal_exception.h"
 #include "mal_listing.h"
-#include "gdk_tracer.h"
 
 /* 
  * Since MAL programs can be created on the fly by linked-in query

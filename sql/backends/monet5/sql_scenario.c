@@ -45,7 +45,6 @@
 #include "opt_mitosis.h"
 #include <unistd.h>
 #include "sql_upgrades.h"
-#include "gdk_tracer.h"
 
 static int SQLinitialized = 0;
 static int SQLnewcatalog = 0;

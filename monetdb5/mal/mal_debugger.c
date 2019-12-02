@@ -20,7 +20,6 @@
 #include "mal_parser.h"
 #include "mal_namespace.h"
 #include "mal_private.h"
-#include "gdk_tracer.h"
 
 typedef struct {
 	MalBlkPtr brkBlock[MAXBREAKS];

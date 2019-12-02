@@ -23,7 +23,6 @@
 #include "mal_interpreter.h"
 #include "mal_authorize.h"
 #include "mcrypt.h"
-#include "gdk_tracer.h"
 
 #if 0
 int

@@ -28,7 +28,6 @@
 #include "wlc.h"
 
 #include "mal_authorize.h"
-#include "gdk_tracer.h"
 
 static void
 sql_create_comments(mvc *m, sql_schema *s)

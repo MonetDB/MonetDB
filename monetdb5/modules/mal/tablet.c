@@ -39,7 +39,6 @@
 #include "streams.h"
 #include "tablet.h"
 #include "algebra.h"
-#include "gdk_tracer.h"
 
 #include <string.h>
 #include <ctype.h>

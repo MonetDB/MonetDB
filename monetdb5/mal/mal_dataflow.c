@@ -30,7 +30,6 @@
 #include "mal_private.h"
 #include "mal_runtime.h"
 #include "mal_resource.h"
-#include "gdk_tracer.h"
 
 #define DFLOWpending 0		/* runnable */
 #define DFLOWrunning 1		/* currently in progress */

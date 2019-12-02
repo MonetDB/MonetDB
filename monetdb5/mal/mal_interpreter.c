@@ -18,7 +18,6 @@
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_type.h"
 #include "mal_private.h"
-#include "gdk_tracer.h"
 
 static lng qptimeout = 0; /* how often we print still running queries (usec) */
 

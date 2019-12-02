@@ -13,7 +13,6 @@
 #include "monetdb_config.h"
 #include "orderidx.h"
 #include "gdk.h"
-#include "gdk_tracer.h"
 
 #define MIN_PIECE	((BUN) 1000)	/* TODO use realistic size in production */
 

@@ -34,7 +34,6 @@
 #include "mal_client.h"
 #include "mal_authorize.h"
 #include "querylog.h"
-#include "gdk_tracer.h"
 
 #define WLR_WAIT 0
 #define WLR_RUN   101

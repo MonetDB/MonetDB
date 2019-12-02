@@ -10,7 +10,6 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_cand.h"
-#include "gdk_tracer.h"
 
 /* create a new, dense candidate list with values from `first' up to,
  * but not including, `last' */

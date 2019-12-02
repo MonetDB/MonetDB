@@ -57,7 +57,6 @@
 #include "remote.h"
 
 #include "mal_authorize.h"
-#include "gdk_tracer.h"
 
 /*
  * Technically, these methods need to be serialised per connection,

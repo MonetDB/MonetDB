@@ -9,7 +9,6 @@
 /* (author) M. Kersten */
 #include "monetdb_config.h"
 #include "mal.h"
-#include "gdk_tracer.h"
 
 char 	monet_cwd[FILENAME_MAX] = { 0 };
 char 	monet_characteristics[4096];

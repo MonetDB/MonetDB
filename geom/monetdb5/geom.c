@@ -13,7 +13,6 @@
 
 #include "geom.h"
 #include "mal_exception.h"
-#include "gdk_tracer.h"
 
 int TYPE_mbr;
 

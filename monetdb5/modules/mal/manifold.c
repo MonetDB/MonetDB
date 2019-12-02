@@ -13,7 +13,6 @@
 #include "manifold.h"
 #include "mal_resolve.h"
 #include "mal_builder.h"
-#include "gdk_tracer.h"
 
 /* The default iterator over known scalar commands.
  * It can be less efficient then the vector based implementations,

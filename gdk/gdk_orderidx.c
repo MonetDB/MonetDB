@@ -9,7 +9,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_tracer.h"
 
 #define ORDERIDX_VERSION	((oid) 3)
 

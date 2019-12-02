@@ -20,7 +20,6 @@
 #include "sql_orderidx.h"
 #include "orderidx.h"
 #include "sql_scenario.h"
-#include "gdk_tracer.h"
 
 str
 sql_createorderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

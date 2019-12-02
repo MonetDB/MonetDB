@@ -19,7 +19,6 @@
 #include "rel_optimizer.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
-#include "gdk_tracer.h"
 
 #define OUTER_ZERO 64
 

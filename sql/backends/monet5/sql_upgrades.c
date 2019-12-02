@@ -24,7 +24,6 @@
 
 #include "rel_remote.h"
 #include "mal_authorize.h"
-#include "gdk_tracer.h"
 
 /* this function can be used to recreate the system tables (types,
  * functions, args) when internal types and/or functions have changed

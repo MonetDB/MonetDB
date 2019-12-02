@@ -10,7 +10,6 @@
 #include "sql_mem.h"
 #include "sql_symbol.h"
 #include "sql_parser.h"
-#include "gdk_tracer.h"
 
 static symbol *
 symbol_init(symbol *s, tokens token, symtype type )

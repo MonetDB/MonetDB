@@ -23,7 +23,6 @@
 #include "sql_semantic.h"
 #include "sql_parser.h"
 #include "mal_exception.h"
-#include "gdk_tracer.h"
 
 #define PRIV_ROLE_ADMIN 0
 

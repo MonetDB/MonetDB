@@ -20,7 +20,6 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_tm.h"
-#include "gdk_tracer.h"
 
 /*
  * The physical (disk) commit protocol is handled mostly by

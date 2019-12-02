@@ -27,7 +27,6 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_storage.h"
-#include "gdk_tracer.h"
 #include "mutils.h"
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>

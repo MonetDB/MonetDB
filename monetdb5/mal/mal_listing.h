@@ -12,7 +12,6 @@
 #include "mal_type.h"
 #include "mal_stack.h"
 #include "mal_instruction.h"
-#include "gdk_tracer.h"
 
 mal_export str fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len);
 mal_export void printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg);

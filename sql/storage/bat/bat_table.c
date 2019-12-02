@@ -10,7 +10,6 @@
 #include "bat_table.h"
 #include "bat_utils.h"
 #include "bat_storage.h"
-#include "gdk_tracer.h"
 
 static BAT *
 _delta_cands(sql_trans *tr, sql_table *t)

@@ -19,7 +19,6 @@
 
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_tracer.h"
 #include "mutils.h"
 
 static BAT *GDKkey = NULL;

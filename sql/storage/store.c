@@ -16,7 +16,6 @@
 #include "bat/bat_storage.h"
 #include "bat/bat_table.h"
 #include "bat/bat_logger.h"
-#include "gdk_tracer.h"
 
 /* version 05.22.03 of catalog */
 #define CATALOG_VERSION 52203

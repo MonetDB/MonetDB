@@ -23,7 +23,6 @@
 
 #include "mal.h"
 #include "mal_exception.h"
-#include "gdk_tracer.h"
 
 #include <wchar.h>
 #include <wctype.h>

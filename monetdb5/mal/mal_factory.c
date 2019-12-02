@@ -19,7 +19,6 @@
 #include "mal_session.h"
 #include "mal_namespace.h"
 #include "mal_private.h"
-#include "gdk_tracer.h"
 
 typedef struct {
 	int id;			/* unique plant number */

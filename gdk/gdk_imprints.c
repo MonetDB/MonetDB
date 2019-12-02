@@ -17,7 +17,6 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_imprints.h"
-#include "gdk_tracer.h"
 
 #define IMPRINTS_VERSION	2
 #define IMPRINTS_HEADER_SIZE	4 /* nr of size_t fields in header */

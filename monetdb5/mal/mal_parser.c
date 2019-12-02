@@ -21,7 +21,6 @@
 #include "mal_builder.h"
 #include "mal_type.h"
 #include "mal_private.h"
-#include "gdk_tracer.h"
 
 #define FATALINPUT MAXERRORS+1
 #define NL(X) ((X)=='\n' || (X)=='\r')

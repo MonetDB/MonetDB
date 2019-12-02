@@ -46,7 +46,6 @@
 #include "mal_private.h"
 #include "mal_runtime.h"
 #include "mal_authorize.h"
-#include "gdk_tracer.h"
 
 int MAL_MAXCLIENTS = 0;
 ClientRec *mal_clients;

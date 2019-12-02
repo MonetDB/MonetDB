@@ -43,7 +43,6 @@
 #include "monetdb_config.h"
 #include "groupby.h"
 #include "group.h"
-#include "gdk_tracer.h"
 
 /*
  * The implementation is based on a two-phase process. In phase 1, we estimate

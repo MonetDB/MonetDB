@@ -128,7 +128,6 @@
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "opt_prelude.h"
 #include "opt_macro.h"
-#include "gdk_tracer.h"
 
 /*
  * The implementation approach of the scheduler aligns with that of the

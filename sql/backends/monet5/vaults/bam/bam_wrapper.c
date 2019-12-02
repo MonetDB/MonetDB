@@ -32,7 +32,6 @@
 #endif
 
 #include "bam_wrapper.h"
-#include "gdk_tracer.h"
 
 str
 ordering_str(ordering ord)

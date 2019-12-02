@@ -9,7 +9,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_tracer.h"
 #include <math.h>
 
 /* auxiliary functions and structs for imprints */

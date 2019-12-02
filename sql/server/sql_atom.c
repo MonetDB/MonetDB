@@ -11,7 +11,6 @@
 #include "sql_string.h"
 #include "sql_decimal.h"
 #include "mtime.h"
-#include "gdk_tracer.h"
 
 void
 atom_init( atom *a )

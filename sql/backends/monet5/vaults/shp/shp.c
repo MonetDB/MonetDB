@@ -24,7 +24,6 @@
 #include <cpl_conv.h>		/* for CPLFree */
 #include "sql_execute.h"
 #include "mal_exception.h"
-#include "gdk_tracer.h"
 
 #include "geom.h"
 

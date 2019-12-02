@@ -12,7 +12,6 @@
 #include "mal_instruction.h"
 #include "mal_module.h"
 #include "mal_resolve.h"
-#include "gdk_tracer.h"
 
 #define getLastUpdate(L,I)	((L)->var[I].updated)
 #define getEndScope(L,I)	((L)->var[I].eolife)

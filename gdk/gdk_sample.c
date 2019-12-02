@@ -27,7 +27,6 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "xoshiro256starstar.h"
-#include "gdk_tracer.h"
 
 /* this is a straightforward implementation of a binary tree */
 struct oidtreenode {

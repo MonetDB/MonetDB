@@ -27,7 +27,6 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
-#include "gdk_tracer.h"
 
 // We need to get rid of macros defined in gdk.h. Those are using GDKtracer in order to produce 
 // messages. At the point malloc is called in gdk_tracer.c (in function _GDKtracer_fill_tracer)

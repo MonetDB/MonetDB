@@ -16,7 +16,6 @@
 #include "monetdb_config.h"
 #include "oltp.h"
 #include "mtime.h"
-#include "gdk_tracer.h"
 
 #define LOCKTIMEOUT (20 * 1000)
 #define LOCKDELAY 20

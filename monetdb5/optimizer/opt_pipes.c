@@ -25,7 +25,6 @@
 #include "mal_function.h"
 #include "mal_listing.h"
 #include "mal_linker.h"
-#include "gdk_tracer.h"
 
 #define MAXOPTPIPES 64
 

@@ -8,7 +8,6 @@
 
 #include "monetdb_config.h"
 #include "tracer.h"
-#include "gdk_tracer.h"
 
 
 int GDK_result = 0;

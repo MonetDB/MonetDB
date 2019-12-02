@@ -21,7 +21,6 @@
 #include "sql_scenario.h"
 #include "sql_gencode.h"
 #include "opt_pipes.h"
-#include "gdk_tracer.h"
 
 /* calculate the footprint for optimizer pipe line choices
  * and identify empty columns upfront for just in time optimizers.

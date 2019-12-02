@@ -18,7 +18,6 @@
 #include "bat/res_table.h"
 #include "bat/bat_storage.h"
 #include "rel_exp.h"
-#include "gdk_tracer.h"
 
 #ifndef HAVE_LLABS
 #define llabs(x)	((x) < 0 ? -(x) : (x))

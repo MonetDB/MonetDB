@@ -10,7 +10,6 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_cand.h"
-#include "gdk_tracer.h"
 
 /* String Atom Implementation
  *

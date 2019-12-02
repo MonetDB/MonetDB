@@ -34,7 +34,6 @@
 #include <sys/types.h>
 #include "stream_socket.h"
 #include "mapi.h"
-#include "gdk_tracer.h"
 
 #ifdef HAVE_OPENSSL
 # include <openssl/rand.h>		/* RAND_bytes() */

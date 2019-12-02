@@ -13,7 +13,6 @@
 #include "monetdb_config.h"
 #include "mal_instruction.h"
 #include "opt_candidates.h"
-#include "gdk_tracer.h"
 
 str
 OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

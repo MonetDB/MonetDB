@@ -10,7 +10,6 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
-#include "gdk_tracer.h"
 
 /*
  * All join variants produce some sort of join on two input BATs,

@@ -41,7 +41,6 @@
 #include "mal_resource.h"
 #include "mal_authorize.h"
 #include "gdk_cand.h"
-#include "gdk_tracer.h"
 
 static int
 rel_is_table(sql_rel *rel)

@@ -13,7 +13,6 @@
 #include "monetdb_config.h"
 #include "opt_coercion.h"
 #include "opt_aliases.h"
-#include "gdk_tracer.h"
 
 typedef struct{
 	int pc;

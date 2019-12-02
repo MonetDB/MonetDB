@@ -14,7 +14,6 @@
 #include "mal_namespace.h"
 #include "mal_exception.h"
 #include "mal_private.h"
-#include "gdk_tracer.h"
 
 #define MAXIDENTIFIERS 4096
 #define HASHMASK  4095

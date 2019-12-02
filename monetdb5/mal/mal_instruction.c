@@ -15,7 +15,6 @@
 #include "mal_function.h"		/* for getPC() */
 #include "mal_utils.h"
 #include "mal_exception.h"
-#include "gdk_tracer.h"
 
 void
 addMalException(MalBlkPtr mb, str msg)

@@ -20,7 +20,6 @@
 #include "mal_namespace.h"
 #include "mal_private.h"
 #include "mal_linker.h"
-#include "gdk_tracer.h"
 
 static malType getPolyType(malType t, int *polytype);
 static int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);

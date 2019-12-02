@@ -21,7 +21,6 @@
 #include "mal_interpreter.h"
 #include "mal_listing.h"
 #include "mal_private.h"
-#include "gdk_tracer.h"
 
 /*
  * Definition of a new module may interfere with concurrent actions.

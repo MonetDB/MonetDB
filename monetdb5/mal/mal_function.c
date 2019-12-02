@@ -17,7 +17,6 @@
 #include "mal_listing.h"
 #include "mal_namespace.h"
 #include "mal_private.h"
-#include "gdk_tracer.h"
 
 Symbol newFunction(str mod, str nme,int kind){
 	Symbol s;

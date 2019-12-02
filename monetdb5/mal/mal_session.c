@@ -19,7 +19,6 @@
 #include "msabaoth.h"
 #include "mal_private.h"
 #include "gdk.h"	/* for opendir and friends */
-#include "gdk_tracer.h"
 
 /*
  * The MonetDB server uses a startup script to boot the system.

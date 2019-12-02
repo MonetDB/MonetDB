@@ -22,7 +22,6 @@
 #include "mal_debugger.h"
 #include "opt_prelude.h"
 
-#include "gdk_tracer.h"
 
 #include <string.h>
 

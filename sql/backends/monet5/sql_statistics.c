@@ -20,7 +20,6 @@ analysis by optimizers.
 #include "monetdb_config.h"
 #include "sql_statistics.h"
 #include "sql_execute.h"
-#include "gdk_tracer.h"
 
 str
 sql_drop_statistics(mvc *m, sql_table *t)

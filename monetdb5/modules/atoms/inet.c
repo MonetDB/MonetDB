@@ -21,7 +21,6 @@
 #include "gdk.h"
 #include "mal.h"
 #include "mal_exception.h"
-#include "gdk_tracer.h"
 
 /*
  * @* Implementation Code
