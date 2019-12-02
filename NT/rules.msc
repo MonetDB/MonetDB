@@ -139,14 +139,19 @@ bzip2_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
 !IFNDEF LIBXML2
 LIBXML2 = C:\libxml2-2.6.30.win$(bits)
 !ENDIF
-libxml2_CFLAGS = -DHAVE_LIBXML "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
+# by default libxml2 include files get installed in ...\include\libxml2\libxml
+# but this has sometimes been moved to ...\include\libxml
+libxml2_CFLAGS = -DHAVE_LIBXML "-I$(LIBXML2)\include\libxml2" "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
 libxml2_LIBS = "$(LIBXML2)\lib\libxml2.lib" $(zlib_LIBS) $(ICONV_LIBS)
 !ENDIF
 
 !IFNDEF LIBGEOS
 LIBGEOS = C:\geos-3.0.win$(bits)
 !ENDIF
-GEOS_LIBS = $(LIBGEOS)\lib\geos_c_i.lib
+!IFNDEF GEOSFILE
+GEOSFILE = geos_c
+!ENDIF
+GEOS_LIBS = $(LIBGEOS)\lib\$(GEOSFILE).lib
 GEOS_INCS = -I$(LIBGEOS)\include
 
 !IFDEF HAVE_LIBR
