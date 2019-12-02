@@ -2008,7 +2008,7 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 			ne = exp_param(sa, e->r, &e->tpe, e->flag);
 		break;
 	case e_psm:
-		if (e->flag == PSM_SET) 
+		if (e->flag & PSM_SET) 
 			ne = exp_set(sa, e->alias.name, exp_copy(sa, e->l), GET_PSM_LEVEL(e->flag));
 		break;
 	}

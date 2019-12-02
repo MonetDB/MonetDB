@@ -1518,7 +1518,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 			if (exp_deps(sql, e->l, refs, l) != 0 ||
 		            exps_deps(sql, e->r, refs, l) != 0)
 				return -1;
-			if (e->flag == PSM_IF && e->f)
+			if (e->flag & PSM_IF && e->f)
 		            return exps_deps(sql, e->r, refs, l);
 		} else if (e->flag & PSM_REL) {
 			sql_rel *rel = e->l;
