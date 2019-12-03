@@ -856,7 +856,6 @@ str BKCsetImprints(bit *ret, const bat *bid);
 str BKCsetName(void *r, const bat *bid, const char *const *s);
 str BKCsetPersistent(void *r, const bat *bid);
 str BKCsetTransient(void *r, const bat *bid);
-str BKCsetkey(bat *res, const bat *bid, const bit *param);
 str BKCshrinkBAT(bat *ret, const bat *bid, const bat *did);
 str BLOBblob_blob(blob **d, blob **s);
 str BLOBblob_fromstr(blob **b, const char **d);

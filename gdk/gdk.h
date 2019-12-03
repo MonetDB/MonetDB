@@ -716,7 +716,6 @@ gdk_export int VALisnil(const ValRecord *v);
  *           int    ttype;            // Tail type number
  *           str    tident;           // name for tail column
  *           bool   tkey;             // tail values are unique
- *           bool   tunique;          // tail values must be kept unique
  *           bool   tnonil;           // tail has no nils
  *           bool   tsorted;          // are tail values currently ordered?
  *           bool   tvarsized;        // for speed: tail type is varsized?
@@ -755,7 +754,6 @@ typedef struct {
 	uint8_t shift;		/* log2 of bun width */
 	bool varsized:1,	/* varsized/void (true) or fixedsized (false) */
 		key:1,		/* no duplicate values present */
-		unique:1,	/* no duplicate values allowed */
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
 		sorted:1,	/* column is sorted in ascending order */
@@ -822,7 +820,6 @@ typedef struct BATiter {
 /* macros to hide complexity of the BAT structure */
 #define ttype		T.type
 #define tkey		T.key
-#define tunique		T.unique
 #define tvarsized	T.varsized
 #define tseqbase	T.seq
 #define tsorted		T.sorted

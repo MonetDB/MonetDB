@@ -482,33 +482,6 @@ BKCgetRole(str *res, const bat *bid)
 }
 
 str
-BKCsetkey(bat *res, const bat *bid, const bit *param)
-{
-	BAT *b;
-	int unique;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setKey", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	unique = b->tunique;
-	if (*param) {
-		if (!BATkeyed(b)) {
-			BBPunfix(b->batCacheid);
-			throw(MAL, "bat.setKey", "values of bat not unique, cannot set key property");
-		}
-		BATkey(b, true);
-		b->tunique = true;
-	} else {
-		b->tunique = false;
-	}
-	if (b->tunique != unique)
-		b->batDirtydesc = true;
-	*res = b->batCacheid;
-	BBPkeepref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
 BKCisSorted(bit *res, const bat *bid)
 {
 	BAT *b;

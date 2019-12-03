@@ -96,11 +96,10 @@ stdout of test 'inspect05` in directory 'monetdb5/modules/mal` itself:
 [ 65@0,	"setColumn",	"command",	"bat",	"(nme:str):bit ",	"BKCsave;"	]
 [ 66@0,	"setHash",	"command",	"bat",	"(nme:bat[:any_1]):void ",	"BKCsave2;"	]
 [ 67@0,	"setImprints",	"command",	"bat",	"(b:bat[:any_1]):void ",	"BKCsetPersistent;"	]
-[ 68@0,	"setKey",	"command",	"bat",	"(b:bat[:any_1]):void ",	"BKCsetTransient;"	]
-[ 69@0,	"setName",	"command",	"bat",	"(b:bat[:any_1], t:str):void ",	"BKCsetColumn;"	]
-[ 70@0,	"setPersistent",	"command",	"bat",	"(b:bat[:any_1], s:str):void ",	"BKCsetName;"	]
-[ 71@0,	"setTransient",	"command",	"bat",	"(b:bat[:any_1], mode:str):bat[:any_1] ",	"BKCsetAccess;"	]
-[ 72@0,	"single",	"command",	"bat",	"(b:bat[:any_1], mode:bit):bat[:any_1] ",	"BKCsetkey;"	]
+[ 68@0,	"setName",	"command",	"bat",	"(b:bat[:any_1]):void ",	"BKCsetTransient;"	]
+[ 69@0,	"setPersistent",	"command",	"bat",	"(b:bat[:any_1], t:str):void ",	"BKCsetColumn;"	]
+[ 70@0,	"setTransient",	"command",	"bat",	"(b:bat[:any_1], s:str):void ",	"BKCsetName;"	]
+[ 71@0,	"single",	"command",	"bat",	"(b:bat[:any_1], mode:str):bat[:any_1] ",	"BKCsetAccess;"	]
 
 # 08:55:30 >  
 # 08:55:30 >  Done.
