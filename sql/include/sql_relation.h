@@ -50,7 +50,7 @@ typedef struct expression {
 } sql_exp;
 
 #define EXP_DISTINCT	1
-#define NO_NIL		2
+#define NO_NIL			2
 #define TOPN_INCLUDING	4
 #define ZERO_IF_EMPTY	8
 
@@ -62,13 +62,11 @@ typedef struct expression {
 #define get_cmp(e)	(e->flag&CMPMASK)
 #define HAS_NO_NIL	32
 #define NULLS_LAST	64
-#define GROUPING_TOTALS	128
 
-#define UPD_COMP		1
-#define UPD_LOCKED		2
+#define UPD_COMP			1
+#define UPD_LOCKED			2
 #define UPD_NO_CONSTRAINT	4
-
-#define REL_PARTITION	8
+#define REL_PARTITION		8
 
 /* We need bit wise exclusive numbers as we merge the level also in the flag */
 #define PSM_SET 1
@@ -283,11 +281,6 @@ typedef enum operator_type {
 	e->flag |= EXP_DISTINCT
 #define set_nodistinct(e) \
 	e->flag &= (~EXP_DISTINCT)
-
-#define set_grouping_totals(e) \
-	e->flag |= GROUPING_TOTALS
-#define is_grouping_totals(e) \
-	((e->flag&GROUPING_TOTALS)==GROUPING_TOTALS)
 
 #define is_processed(rel) \
 	((rel)->processed)
