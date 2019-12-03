@@ -1440,22 +1440,6 @@ void_inplace(BAT *b, oid id, const void *val, bool force)
 	return BUNinplace(b, id - b->hseqbase, val, force);
 }
 
-gdk_return
-void_replace_bat(BAT *b, BAT *p, BAT *u, bool force)
-{
-	BUN r, s;
-	BATiter uvi = bat_iterator(u);
-
-	BATloop(u, r, s) {
-		oid updid = BUNtoid(p, r);
-		const void *val = BUNtail(uvi, r);
-
-		if (void_inplace(b, updid, val, force) != GDK_SUCCEED)
-			return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
-}
-
 /*
  * @- BUN Lookup
  * Location of a BUN using a value should use the available indexes to

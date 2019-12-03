@@ -2284,8 +2284,6 @@ gdk_export void GDKclrerr(void);
 #include "gdk_utils.h"
 
 /* functions defined in gdk_bat.c */
-gdk_export gdk_return void_replace_bat(BAT *b, BAT *p, BAT *u, bool force)
-	__attribute__((__warn_unused_result__));
 gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bool force)
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATattach(int tt, const char *heapfile, role_t role);

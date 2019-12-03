@@ -881,11 +881,28 @@ BATdel(BAT *b, BAT *d)
 gdk_return
 BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 {
-	if (b == NULL || p == NULL || n == NULL || BATcount(n) == 0) {
+	BUN r, s;
+	BATiter nvi = bat_iterator(n);
+	oid hseqend;
+
+	if (b == NULL || b->ttype == TYPE_void ||
+	    p == NULL || n == NULL || BATcount(n) == 0) {
 		return GDK_SUCCEED;
 	}
-	if (void_replace_bat(b, p, n, force) != GDK_SUCCEED)
-		return GDK_FAIL;
+	hseqend = b->hseqbase + BATcount(b);
+	BATloop(n, r, s) {
+		oid updid = BUNtoid(p, r);
+		const void *val = BUNtail(nvi, r);
+
+		if (b->tunique && BUNfnd(b, val) != BUN_NONE)
+			continue;
+		if (updid < b->hseqbase || updid >= hseqend) {
+			GDKerror("BATreplace: id out of range\n");
+			return GDK_FAIL;
+		}
+		if (BUNinplace(b, updid - b->hseqbase, val, force) != GDK_SUCCEED)
+			return GDK_FAIL;
+	}
 	return GDK_SUCCEED;
 }
 
