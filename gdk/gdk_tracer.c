@@ -27,6 +27,7 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_tracer.h"
 
 // We need to get rid of macros defined in gdk.h. Those are using GDKtracer in order to produce 
 // messages. At the point malloc is called in gdk_tracer.c (in function _GDKtracer_fill_tracer)
@@ -48,7 +49,8 @@ static FILE *output_file;
 static ATOMIC_TYPE CUR_ADAPTER = DEFAULT_ADAPTER;
 
 static LOG_LEVEL CUR_FLUSH_LEVEL = DEFAULT_FLUSH_LEVEL;
-LOG_LEVEL LVL_PER_COMPONENT[COMPONENTS_COUNT];
+// LOG_LEVEL LVL_PER_COMPONENT[COMPONENTS_COUNT] = {[0 ... COMPONENTS_COUNT-1] = DEFAULT_LOG_LEVEL};
+
 static bool GDK_TRACER_STOP = false;
 
 static const char *LAYER_STR[] = {
@@ -57,6 +59,10 @@ static const char *LAYER_STR[] = {
 
 static const char *ADAPTER_STR[] = {
     FOREACH_ADPTR(GENERATE_STRING)
+};
+
+LOG_LEVEL LVL_PER_COMPONENT[] = {
+    FOREACH_COMP(GENERATE_LOG_LEVEL)
 };
 
 
@@ -88,16 +94,6 @@ _GDKtracer_create_file(void)
     output_file = fopen(file_name, "w");
 
     _GDKtracer_file_is_open(output_file);
-}
-
-
-static void
-_GDKtracer_init_components(void)
-{
-    for(int i = 0; i < COMPONENTS_COUNT; i++)
-    {
-        LVL_PER_COMPONENT[i] = DEFAULT_LOG_LEVEL;
-    }
 }
 
 
@@ -273,7 +269,6 @@ GDKtracer_get_timestamp(char* fmt)
 gdk_return
 GDKtracer_init(void)
 {
-    _GDKtracer_init_components();
     _GDKtracer_create_file();
     return GDK_SUCCEED;
 }

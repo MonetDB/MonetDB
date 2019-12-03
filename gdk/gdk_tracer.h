@@ -13,7 +13,7 @@
 #define BUFFER_SIZE 64000
 
 #define DEFAULT_ADAPTER BASIC
-#define DEFAULT_LOG_LEVEL M_CRITICAL
+#define DEFAULT_LOG_LEVEL M_DEBUG
 #define DEFAULT_FLUSH_LEVEL M_INFO
 
 #define FILE_NAME "trace"
@@ -25,7 +25,7 @@
 
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
-
+#define GENERATE_LOG_LEVEL(COMP) DEFAULT_LOG_LEVEL,
 
 
 // ADAPTERS
@@ -197,7 +197,7 @@ static const char *COMPONENT_STR[] = {
 /*
  * Logging macros 
  */
-extern LOG_LEVEL LVL_PER_COMPONENT[COMPONENTS_COUNT];
+extern LOG_LEVEL LVL_PER_COMPONENT[];
 
 // If the LOG_LEVEL of the message is one of the following: CRITICAL, ERROR or WARNING 
 // it is logged no matter the component. In any other case the component is taken into account (needs fix)
