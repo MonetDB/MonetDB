@@ -642,47 +642,47 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 
 	task->timer = GDKusec();
 
-	while(task->blk){
+	while(MOSgetTag(task->blk) != MOSAIC_EOL){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RAW:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_raw\n");
 			MOSdecompress_raw(task);
-			MOSskip_raw(task);
+			MOSadvance_raw(task);
 			break;
 		case MOSAIC_RLE:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_runlength\n");
 			MOSdecompress_runlength(task);
-			MOSskip_runlength(task);
+			MOSadvance_runlength(task);
 			break;
 		case MOSAIC_CAPPED:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_capped\n");
 			MOSdecompress_capped(task);
-			MOSskip_capped(task);
+			MOSadvance_capped(task);
 			break;
 		case MOSAIC_VAR:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_var\n");
 			MOSdecompress_var(task);
-			MOSskip_var(task);
+			MOSadvance_var(task);
 			break;
 		case MOSAIC_DELTA:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_delta\n");
 			MOSdecompress_delta(task);
-			MOSskip_delta(task);
+			MOSadvance_delta(task);
 			break;
 		case MOSAIC_LINEAR:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_linear\n");
 			MOSdecompress_linear(task);
-			MOSskip_linear(task);
+			MOSadvance_linear(task);
 			break;
 		case MOSAIC_FRAME:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_frame\n");
 			MOSdecompress_frame(task);
-			MOSskip_frame(task);
+			MOSadvance_frame(task);
 			break;
 		case MOSAIC_PREFIX:
 			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_prefix\n");
 			MOSdecompress_prefix(task);
-			MOSskip_prefix(task);
+			MOSadvance_prefix(task);
 			break;
 		default: assert(0);
 		}

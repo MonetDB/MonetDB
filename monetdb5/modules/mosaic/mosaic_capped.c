@@ -162,14 +162,6 @@ MOSlayout_capped(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 		return;
 }
 
-void
-MOSskip_capped(MOStask task)
-{
-	MOSadvance_capped(task);
-	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
-		task->blk = 0; // ENDOFLIST
-}
-
 str
 MOSprepareEstimate_capped(MOStask task)
 {

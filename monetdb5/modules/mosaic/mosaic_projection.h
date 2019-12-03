@@ -42,7 +42,7 @@ MOSprojection_SIGNATURE(NAME, TPE)\
 		(void) canditer_prev(task->ci);\
 	}\
 \
-	MOSskip_##NAME(task);\
+	MOSadvance_##NAME(task);\
 	return MAL_SUCCEED;\
 }
 
@@ -95,7 +95,7 @@ static str MOSprojection_##TPE(MOStask task)\
 		}\
 	}\
 \
-	assert(task->blk == NULL);\
+	assert(MOSgetTag(task->blk) == MOSAIC_EOL);\
 \
 	return MAL_SUCCEED;\
 }

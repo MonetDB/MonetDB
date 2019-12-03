@@ -78,14 +78,6 @@ MOSadvance_linear(MOStask task)
 	}
 }
 
-void
-MOSskip_linear(MOStask task)
-{
-	MOSadvance_linear( task);
-	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
-		task->blk = 0; // ENDOFLIST
-}
-
 #define Estimate(TPE)\
 {\
 	current->compression_strategy.tag = MOSAIC_LINEAR;\

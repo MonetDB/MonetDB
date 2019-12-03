@@ -23,7 +23,6 @@ mal_export void MOScreateframeDictionary(MOStask task);
 mal_export void MOSlayout_frame_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSlayout_frame(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSadvance_frame(MOStask task);
-mal_export void MOSskip_frame(MOStask task);
 mal_export str  MOSestimate_frame(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOScompress_frame(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_frame(MOStask task);
@@ -70,7 +69,7 @@ typedef struct _FrameParameters_t {
 		TPE rval = ADD_DELTA(TPE, min, getBitVector(base, i, bits));\
         IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
 	}\
-	MOSskip_frame(task);\
+	MOSadvance_frame(task);\
 }
 
 #endif /* _MOSAIC_FRAME_ */

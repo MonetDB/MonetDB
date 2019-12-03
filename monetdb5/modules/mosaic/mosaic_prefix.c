@@ -115,13 +115,6 @@ MOSadvance_prefix(MOStask task)
 	task->blk = (MosaicBlk) (((char*) dst)  + bytes);
 }
 
-void
-MOSskip_prefix(MOStask task)
-{
-	MOSadvance_prefix(task);
-	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
-		task->blk = 0; // ENDOFLIST
-}
 #define OverShift(TPE) ((sizeof(IPTpe(TPE)) - sizeof(PrefixTpe(TPE))) * CHAR_BIT)
 #define getSuffixMask(SUFFIX_BITS, TPE) ((PrefixTpe(TPE)) (~(~((IPTpe(TPE)) (0)) << (SUFFIX_BITS))))
 #define getPrefixMask(PREFIX_BITS, TPE) ((PrefixTpe(TPE)) ( (~(~((IPTpe(TPE)) (0)) >> (PREFIX_BITS))) >> OverShift(TPE)))

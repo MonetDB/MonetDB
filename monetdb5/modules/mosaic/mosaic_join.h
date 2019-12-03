@@ -87,7 +87,7 @@ MOSjoin_COUI_SIGNATURE(NAME, TPE)\
 		(void) canditer_prev(lci);\
 	}\
 \
-	MOSskip_##NAME(task);\
+	MOSadvance_##NAME(task);\
 	return MAL_SUCCEED;\
 }
 
@@ -153,7 +153,7 @@ static str MOSjoin_COUI_##TPE(MOStask task, BAT* r, struct canditer* rci, bool n
 		}\
 	}\
 \
-	assert(task->blk == NULL);\
+	assert(MOSgetTag(task->blk) == MOSAIC_EOL);\
 \
 	return MAL_SUCCEED;\
 }
@@ -243,7 +243,7 @@ join_inner_loop_##NAME(TPE, HAS_NIL, RIGHT_CI_NEXT)
 			}\
 		}\
 	\
-		assert(task->blk == NULL);\
+		assert(MOSgetTag(task->blk) == MOSAIC_EOL);\
 	}\
 }
 

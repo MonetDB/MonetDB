@@ -85,14 +85,6 @@ MOSadvance_runlength(MOStask task)
 	}
 }
 
-void
-MOSskip_runlength(MOStask task)
-{
-	MOSadvance_runlength(task);
-	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
-		task->blk = 0; // ENDOFLIST
-}
-
 #define Estimate(TPE)\
 {	TPE *v = ((TPE*) task->src) + task->start, val = *v;\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\

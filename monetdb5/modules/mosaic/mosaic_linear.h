@@ -21,7 +21,6 @@
 bool MOStypes_linear(BAT* b);
 mal_export void MOSlayout_linear(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSadvance_linear(MOStask task);
-mal_export void MOSskip_linear(MOStask task);
 mal_export str  MOSestimate_linear(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOScompress_linear(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_linear(MOStask task);
@@ -41,7 +40,7 @@ ALGEBRA_INTERFACES_INTEGERS_ONLY(linear);
 		TPE rval =  (TPE) (offset + (i * step));\
         IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
 	}\
-	MOSskip_linear(task);\
+	MOSadvance_linear(task);\
 }
 
 #endif /* _MOSAIC_LINEAR_ */

@@ -77,14 +77,6 @@ MOSlayout_frame(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 		return;
 }
 
-void
-MOSskip_frame(MOStask task)
-{
-	MOSadvance_frame( task);
-	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
-		task->blk = 0; // ENDOFLIST
-}
-
 #define determineFrameParameters(PARAMETERS, SRC, LIMIT, TPE) \
 do {\
 	TPE *val = SRC, max, min;\

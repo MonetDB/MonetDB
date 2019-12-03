@@ -170,7 +170,7 @@ MOSselect_SIGNATURE(NAME, TPE) {\
 		(void) canditer_prev(task->ci);\
 	}\
 \
-	MOSskip_##NAME(task);\
+	MOSadvance_##NAME(task);\
 	task->lb = o;\
 	return MAL_SUCCEED;\
 }
@@ -232,7 +232,7 @@ MOStask task, void* low, void* hgh, bit* li, bit* hi, bit* anti)\
 		}\
 	}\
 \
-	assert(task->blk == NULL);\
+	assert(MOSgetTag(task->blk) == MOSAIC_EOL);\
 \
 	return MAL_SUCCEED;\
 }

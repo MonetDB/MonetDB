@@ -23,7 +23,6 @@
 bool MOStypes_prefix(BAT* b);
 mal_export void MOSlayout_prefix(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSadvance_prefix(MOStask task);
-mal_export void MOSskip_prefix(MOStask task);
 mal_export str  MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOScompress_prefix(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_prefix(MOStask task);
@@ -75,7 +74,7 @@ typedef struct MosaicBlkHeader_prefix_t_ {
 		TPE rval =  (TPE) (prefix | getBitVector(base,i,suffix_bits));\
         IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
 	}\
-	MOSskip_prefix(task);\
+	MOSadvance_prefix(task);\
 }
 
 #endif /* _MOSAIC_PREFIX_ */

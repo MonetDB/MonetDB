@@ -134,14 +134,6 @@ MOSlayout_var(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, 
 		return;
 }
 
-void
-MOSskip_var(MOStask task)
-{
-	MOSadvance_var(task);
-	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
-		task->blk = 0; // ENDOFLIST
-}
-
 str
 MOSprepareEstimate_var(MOStask task)
 {

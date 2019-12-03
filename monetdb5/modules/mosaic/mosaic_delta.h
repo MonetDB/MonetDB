@@ -21,7 +21,6 @@
 bool MOStypes_delta(BAT* b);
 mal_export void MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSadvance_delta(MOStask task);
-mal_export void MOSskip_delta(MOStask task);
 mal_export str  MOSestimate_delta(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOScompress_delta(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_delta(MOStask task);
@@ -72,7 +71,7 @@ typedef struct _DeltaParameters_t {
         }\
         IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
 	}\
-	MOSskip_delta(task);\
+	MOSadvance_delta(task);\
 }
 
 #endif /* _MOSAIC_DELTA_ */

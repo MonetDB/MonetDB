@@ -175,22 +175,6 @@ typedef struct _MosaicEstimation {
 	size_t nr_capped_encoded_blocks;
 } MosaicEstimation;
 
-/* Run through a column to produce a compressed version */
-
-// skip until you hit a candidate
-#define MOSskipit()\
-if ( task->n && task->cl ){\
-	while(task->n > 0 && *task->cl < (oid) first)\
-		{task->cl++; task->n--;}\
-	if (task->n <= 0 || *task->cl > (oid) first )\
-		continue;\
-	if ( *task->cl == (oid) first ){\
-		task->cl++; task->n--; \
-	}\
-} else if (task->cl) continue;
-
-
-
 mal_export char *MOSfiltername[];
 mal_export bool MOSisTypeAllowed(int compression, BAT* b);
 mal_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -244,7 +244,7 @@ typedef struct {
         TPE rval = dict[j];\
         IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
 	}\
-	MOSskip_##NAME(task);\
+	MOSadvance_##NAME(task);\
 }
 
 #endif /* _MOSAIC_DICTIONARY_  */

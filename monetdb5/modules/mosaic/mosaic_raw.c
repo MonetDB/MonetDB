@@ -85,14 +85,6 @@ MOSadvance_raw(MOStask task)
 	}
 }
 
-void
-MOSskip_raw( MOStask task)
-{
-	MOSadvance_raw(task);
-	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
-		task->blk = 0; // ENDOFLIST
-}
-
 #define Estimate(TPE)\
 {\
 	/*The raw compression technique is always applicable and only adds one item at a time.*/\

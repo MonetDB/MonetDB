@@ -79,14 +79,6 @@ MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 		return;
 }
 
-void
-MOSskip_delta(MOStask task)
-{
-	MOSadvance_delta(task);
-	if ( MOSgetTag(task->blk) == MOSAIC_EOL)
-		task->blk = 0; // ENDOFLIST
-}
-
 #define MOScodevectorDelta(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_delta_t), BitVectorChunk))
 
 #define determineDeltaParameters(PARAMETERS, SRC, LIMIT, TPE) \

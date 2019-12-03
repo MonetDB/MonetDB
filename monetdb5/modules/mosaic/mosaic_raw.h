@@ -21,7 +21,6 @@
 bool MOStypes_raw(BAT* b);
 mal_export void MOSlayout_raw(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSadvance_raw(MOStask task);
-mal_export void MOSskip_raw(MOStask task);
 mal_export str MOSestimate_raw(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
 mal_export void MOScompress_raw(MOStask task, MosaicBlkRec* estimate);
 mal_export void MOSdecompress_raw(MOStask task);
@@ -37,7 +36,7 @@ ALGEBRA_INTERFACES_ALL_TYPES(raw);
         TPE rval = vr[ro-first];\
         IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
 	}\
-	MOSskip_raw(task);\
+	MOSadvance_raw(task);\
 }
 
 #endif /* _MOSAIC_RAW_ */
