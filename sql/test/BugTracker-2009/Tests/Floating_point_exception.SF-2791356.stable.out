@@ -25,8 +25,8 @@ stdout of test 'Floating_point_exception.SF-2791356` in directory 'sql/test/BugT
 
 [ 1	]
 #select case when (bla1 - bla2) > 0 then 1/(bla1 - bla2) else 0 end from test2791356;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]

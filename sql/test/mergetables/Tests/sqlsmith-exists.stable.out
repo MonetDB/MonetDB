@@ -1,0 +1,139 @@
+stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
+
+
+# 19:56:21 >  
+# 19:56:21 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33829" "--set" "mapi_usock=/var/tmp/mtest-3703/.s.monetdb.33829" "--forcemito" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables" "--set" "embedded_c=true"
+# 19:56:21 >  
+
+# MonetDB 5 server v11.36.0 (hg id: 1d18bd8860b4+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.384 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:33829/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3703/.s.monetdb.33829
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 19:56:21 >  
+# 19:56:21 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3703" "--port=33829"
+# 19:56:21 >  
+
+#START TRANSACTION;
+#CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
+#INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
+[ 4	]
+#select
+#cast(coalesce(ref_0.id, ref_0.owner) as int) as c0, ref_0.system as c1,
+#50 as c2,
+#ref_0.name as c3
+#from
+#sys.schemas as ref_0
+#where (false)
+#or (exists (
+#    select
+#    ref_0.system as c0,
+#    ref_0.id as c1,
+#    ref_1.type_name as c2,
+#    ref_2.owner as c3,
+#    ref_2.optimize as c4,
+#    ref_1.function_type as c5,
+#    cast(nullif(ref_1.function_type, ref_1.function_id) as int) as c6,
+#    ref_1.type_name as c7,
+#    73 as c8,
+#    ref_2.query as c9,
+#    ref_1.function_name as c10,
+#    ref_1.function_id as c11,
+% .%37,	.%40,	.%41,	.%42 # table_name
+% c0,	c1,	c2,	c3 # name
+% int,	boolean,	tinyint,	varchar # type
+% 1,	5,	1,	0 # length
+#CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
+[ 3	]
+#select 
+# subq_0.c0 as c0, 
+# subq_0.c2 as c1, 
+# subq_0.c1 as c2, 
+# subq_0.c1 as c3, 
+# cast(nullif(73,
+# 73) as int) as c4, 
+# subq_0.c2 as c5, 
+# subq_0.c1 as c6, 
+# subq_0.c1 as c7, 
+# subq_0.c1 as c8, 
+# subq_0.c0 as c9
+#from 
+# (select 
+# ref_1.schema_name as c0, 
+# cast(coalesce(ref_1.depend_type,
+# case when true then ref_1.depend_type else ref_1.depend_type end
+# ) as smallint) as c1, 
+# ref_0.action as c2
+# from 
+# tmp.keys as ref_0
+# right join sys.dependency_schemas_on_users as ref_1
+# on (exists (
+# select 
+# ref_0.table_id as c0, 
+% .%45,	.%46,	.%47,	.%50,	.%51,	.%52,	.%53,	.%54,	.%55,	.%56 # table_name
+% c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8,	c9 # name
+% varchar,	int,	smallint,	smallint,	int,	int,	smallint,	smallint,	smallint,	varchar # type
+% 0,	1,	1,	1,	1,	1,	1,	1,	1,	0 # length
+#SELECT subq_1.c0 AS c0, 
+#       subq_1.c0 AS c1, 
+#       subq_0.c0 AS c2, 
+#       subq_1.c0 AS c3, 
+#       subq_1.c0 AS c4, 
+#       subq_0.c0 AS c5 
+#FROM   (SELECT ref_0.function_type_name AS c0 
+#        FROM   sys.function_types AS ref_0 
+#        WHERE  false 
+#        LIMIT  143) AS subq_0 
+#       LEFT JOIN (SELECT ref_1.table_id AS c0 
+#                  FROM   sys.table_partitions AS ref_1 
+#                  WHERE  ( false ) 
+#                         AND ( EXISTS 
+#                         (SELECT ref_2.fk_name   AS c0, 
+% .subq_1,	.subq_1,	.subq_0,	.subq_1,	.subq_1,	.subq_0 # table_name
+% c0,	c1,	c2,	c3,	c4,	c5 # name
+% int,	int,	varchar,	int,	int,	varchar # type
+% 1,	1,	0,	1,	1,	0 # length
+#select 
+# subq_0.c0 as c0, 
+# subq_0.c0 as c1, 
+# cast(coalesce(4,
+# subq_0.c0) as int) as c2, 
+# case when subq_0.c0 is null then subq_0.c0 else subq_0.c0 end
+# as c3, 
+# subq_0.c0 as c4, 
+# subq_0.c0 as c5, 
+# subq_0.c0 as c6, 
+# subq_0.c0 as c7
+#from 
+# (select 
+# ref_4.type as c0
+# from 
+# sys.storagemodel as ref_0
+# right join sys.triggers as ref_1
+# right join sys.environment as ref_2
+# on (exists (
+# select 
+# ref_2.name as c0, 
+# ref_2.value as c1
+# from 
+# sys.dependency_owners_on_schemas as ref_3
+# where ref_1.table_id is null))
+% sys.%62,	sys.%63,	.%64,	sys.%65,	sys.%66,	sys.%67,	sys.%70,	sys.%71 # table_name
+% c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7 # name
+% int,	int,	int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1,	1,	1 # length
+#ROLLBACK;
+
+# 19:56:32 >  
+# 19:56:32 >  "Done."
+# 19:56:32 >  
+

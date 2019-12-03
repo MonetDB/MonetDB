@@ -25,8 +25,8 @@ stdout of test 'sqlitelogictest-aggregation-not-in.Bug-6416` in directory 'sql/t
 
 #CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 #SELECT ALL - 89 FROM tab2 GROUP BY col1, col1 HAVING - CAST ( NULL AS INTEGER ) * + - 17 + + - COUNT ( * ) NOT IN ( + MAX ( 44 ) );
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 #DROP TABLE tab2;

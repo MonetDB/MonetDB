@@ -27,9772 +27,9828 @@ create table state (state_code char(2) NOT NULL,state_name char(25) NOT NULL,cou
 create table stop1 (flight_code integer NOT NULL,stop_number decimal(1) NOT NULL,stop_flight integer NOT NULL,PRIMARY KEY (flight_code, stop_number));
 create table time_zone (time_zone_code char(3) NOT NULL,time_zone_name char(32) NOT NULL,PRIMARY KEY (time_zone_code, time_zone_name));
 create table transport (transport_code char(1) NOT NULL,transport_desc char(32) NOT NULL,PRIMARY KEY (transport_code));
-insert into aircraft values ('ATR','AEROSPATIALE/AERITALIA (ALL SERIES)',2,'TURBOPROP','NO',80.58,73.83,32446,49,10603,277,0,'YES');
-insert into aircraft values ('SSC','AEROSPATIALE-BRITISH AEROSPACE (BAC) CONCORDE',4,'JET','NO',83.83,203.75,400000,128,25000,1400,3800,'YES');
-insert into aircraft values ('CRV','AEROSPATIALE CARAVELLE (ALL SERIES)',2,'JET','NO',112.50,118.83,127870,140,29100,512,2150,'YES');
-insert into aircraft values ('ND2','AEROSPATIALE N 262/FRAKES MOHAWK 298',2,'TURBOPROP','NO',71.83,63.25,23370,27,5810,240,500,'YES');
-insert into aircraft values ('NDH','AEROSPATIALE SA 365 DAUPHIN 2',1,'HELICOPTER','NO',0.00,43.50,6615,14,0,196,423,'NO');
-insert into aircraft values ('AGH','AGUSTA A 109 A',2,'HELICOPTER','NO',36.08,35.14,5402,6,0,165,351,'NO');
-insert into aircraft values ('AB3','AIRBUS INDUSTRIE (ALL SERIES)',2,'JET','YES',147.08,175.91,313060,345,68000,576,2100,'YES');
-insert into aircraft values ('AN2','ANTONOV AN22 FREIGHTER',4,'TURBOPROP','YES',211.29,189.62,551156,28,99280,375,3107,'');
-insert into aircraft values ('AN4','ANTONOV AN24',2,'TURBOPROP','NO',95.83,77.25,42997,50,8150,295,807,'NO');
-insert into aircraft values ('AN6','ANTONOV AN26 FREIGHTER',2,'TURBOPROP','NO',95.79,77.20,49297,50,0,280,342,'');
-insert into aircraft values ('BEC','BEECHCRAFT (ALL SERIES)',2,'TURBOPROP','NO',0.00,0.00,0,0,0,0,0,'NO');
-insert into aircraft values ('BEB','BEECHCRAFT BARON',2,'PROPELLER','NO',37.83,28.00,5120,6,1965,225,1085,'NO');
-insert into aircraft values ('BEQ','BEECHCRAFT QUEEN AIR',2,'PROPELLER','NO',50.25,35.50,8800,11,3578,214,1185,'NO');
-insert into aircraft values ('BEO','BEECHCRAFT TWIN BONANZA',2,'PROPELLER','NO',45.95,31.50,6300,5,2230,201,1110,'NO');
-insert into aircraft values ('BE8','BEECHCRAFT 18/VOLPAR TURBO 18',2,'PROPELLER','NO',49.66,35.25,9900,15,4055,256,1515,'NO');
-insert into aircraft values ('BE9','BEECHCRAFT C99 AIRLINER',2,'TURBOPROP','NO',45.66,44.50,10900,15,5123,280,1150,'NO');
-insert into aircraft values ('BH2','BELL (ALL SERIES)',1,'HELICOPTER','NO',33.25,39.08,3200,4,860,140,341,'NO');
-insert into aircraft values ('DHP','BOEING CANADA DHC-2 BEAVER',1,'PROPELLER','NO',48.00,30.25,5100,10,1800,143,733,'');
-insert into aircraft values ('DHB','BOEING CANADA DHC-2 TURBO BEAVER',1,'TURBOPROP','NO',48.00,35.25,5370,10,1800,157,750,'NO');
-insert into aircraft values ('DHO','BOEING CANADA DHC-3 OTTER',1,'PROPELLER','NO',58.00,41.83,8000,10,2100,132,960,'NO');
-insert into aircraft values ('DHT','BOEING CANADA DHC-6 TWIN OTTER',2,'TURBOPROP','NO',65.00,51.75,12500,20,4420,209,745,'NO');
-insert into aircraft values ('DH7','BOEING CANADA DHC-7 DASH-7 PASSENGER',4,'TURBOPROP','NO',93.00,80.58,43000,50,15000,275,850,'YES');
-insert into aircraft values ('DH8','BOEING CANADA DHC-8 DASH-8 (ALL SERIES)',2,'TURBOPROP','NO',84.00,75.00,0,32,0,300,691,'');
-insert into aircraft values ('707','BOEING 707 PASSENGER (ALL SERIES)',4,'JET','NO',130.83,145.08,258000,181,52000,615,6325,'YES');
-insert into aircraft values ('70M','BOEING 707-320C MIXED CONFIGURATION',4,'JET','NO',145.75,152.91,336000,145,83447,615,5750,'YES');
-insert into aircraft values ('727','BOEING 727 PASSENGER (ALL SERIES)',3,'JET','NO',108.00,133.16,170000,131,35900,622,3000,'YES');
-insert into aircraft values ('72M','BOEING 727-100C/100QC MIXED CONFIGURATION',3,'JET','NO',108.00,133.16,160000,96,30500,600,0,'YES');
-insert into aircraft values ('72S','BOEING 727-200 (ALL SERIES)',3,'JET','NO',108.00,153.16,191000,145,40670,622,2400,'YES');
-insert into aircraft values ('737','BOEING 737 PASSENGER (ALL SERIES)',2,'JET','NO',93.00,94.00,111000,138,29093,577,1300,'YES');
-insert into aircraft values ('73M','BOEING 737-200C/200QC MIXED CONFIGURATION',2,'JET','NO',93.00,100.16,125000,130,33561,573,1800,'YES');
-insert into aircraft values ('73S','BOEING 737 PASSENGER (ALL 200/200C SERIES)',2,'JET','NO',93.00,100.16,120000,130,34050,577,2300,'YES');
-insert into aircraft values ('733','BOEING 737-300',2,'JET','NO',94.75,105.58,135000,138,35500,550,2500,'YES');
-insert into aircraft values ('74M','BOEING 747 MIXED CONFIGURATION (ALL SERIES)',4,'JET','YES',195.66,231.83,78500,238,165710,600,5500,'YES');
-insert into aircraft values ('747','BOEING 747 PASSENGER (ALL SERIES)',4,'JET','YES',195.66,321.83,833000,452,134000,557,7500,'YES');
-insert into aircraft values ('74L','BOEING 747SP',4,'JET','YES',195.66,184.75,700000,430,98000,564,6730,'YES');
-insert into aircraft values ('757','BOEING 757-200 PASSENGER',2,'JET','NO',124.50,155.25,220000,224,38940,560,2440,'YES');
-insert into aircraft values ('767','BOEING 767 (ALL SERIES)',2,'JET','YES',156.08,159.16,312000,290,69000,550,4500,'YES');
-insert into aircraft values ('B11','BRITISH AEROSPACE (BAC) ONE-ELEVEN (ALL SERIES)',2,'JET','NO',88.50,93.50,78500,79,17600,550,1430,'YES');
-insert into aircraft values ('VGP','BRITISH AEROSPACE (BAC-VICKERS) VANGUARD PASSENGER',4,'TURBOPROP','NO',118.00,122.87,146500,139,21500,405,2910,'YES');
-insert into aircraft values ('VCV','BRITISH AEROSPACE (BAC-VICKERS) VISCOUNT (ALL SERIES)',4,'TURBOPROP','NO',93.70,85.66,72500,75,14500,352,1725,'YES');
-insert into aircraft values ('HPH','BRITISH AEROSPACE (HANDLEY PAGE) HERALD',2,'TURBOPROP','NO',113.00,96.83,82000,74,12000,266,3150,'YES');
-insert into aircraft values ('HPJ','BRITISH AEROSPACE (HANDLEY PAGE) JETSTREAM 1/200',2,'TURBOPROP','NO',52.00,47.08,12550,18,4100,250,1440,'YES');
-insert into aircraft values ('DHH','BRITISH AEROSPACE (HAWKER SIDDELEY) HERON',4,'PROPELLER','NO',71.50,48.50,13500,17,2100,195,0,'NO');
-insert into aircraft values ('TRD','BRITISH AEROSPACE (HAWKER SIDDELEY) TRIDENT (ALL SERIES)',3,'JET','NO',95.00,114.75,135500,103,24500,606,2700,'YES');
-insert into aircraft values ('HS7','BRITISH AEROSPACE (HAWKER SIDDELEY) 748 PASSENGER',2,'TURBOPROP','NO',98.50,67.00,46500,56,11363,275,850,'YES');
-insert into aircraft values ('J31','BRITISH AEROSPACE JETSTREAM 31',2,'TURBOPROP','NO',52.00,47.12,12566,18,0,282,1380,'YES');
-insert into aircraft values ('141','BRITISH AEROSPACE 146-100',4,'JET','NO',86.41,85.83,74600,88,17277,460,1450,'YES');
-insert into aircraft values ('142','BRITISH AEROSPACE 146-200 PASSENGER',4,'JET','NO',86.41,93.66,89500,100,21000,460,1450,'YES');
-insert into aircraft values ('BNI','BRITTEN-NORMAN BN-2A/B ISLANDER/BN-2T TURBINE ISLANDER',2,'PROPELLER','NO',49.00,35.66,6300,10,2000,260,425,'NO');
-insert into aircraft values ('BNT','BRITTEN-NORMAN BN-2A MK III TRISLANDER',3,'PROPELLER','NO',53.00,43.75,9350,18,4000,180,0,'NO');
-insert into aircraft values ('CS2','CASA C-212/NUSANTARA NC-212 AVIOCAR',2,'TURBOPROP','NO',62.50,45.83,16427,28,6077,230,1400,'NO');
-insert into aircraft values ('CNA','CESSNA (ALL SERIES)',1,'TURBOPROP','NO',0.00,0.00,0,0,0,0,0,'NO');
-insert into aircraft values ('CN2','CESSNA STATIONAIR/TURBO STATIONAIR 6',1,'PROPELLER','NO',35.83,28.00,3600,7,1792,169,702,'NO');
-insert into aircraft values ('CNT','CESSNA STATIONAIR 207/TURBO STATIONAIR 7/8',1,'PROPELLER','NO',35.83,31.75,3800,7,1729,185,581,'NO');
-insert into aircraft values ('CN4','CESSNA 402/402 UTILILINER',2,'PROPELLER','NO',39.91,36.08,6300,8,2436,239,562,'NO');
-insert into aircraft values ('CVR','CONVAIR (ALL SERIES)',2,'TURBOPROP','NO',105.33,79.16,54600,56,11200,350,1100,'YES');
-insert into aircraft values ('CWC','CURTISS C-46 COMMANDO',2,'PROPELLER','NO',108.08,76.33,40000,60,12000,220,1600,'NO');
-insert into aircraft values ('DAM','DASSAULT-BREGUET MERCURE',2,'JET','NO',100.25,114.25,120150,0,32850,574,1094,'YES');
-insert into aircraft values ('DOS','DORNIER DO 28',2,'PROPELLER','NO',51.02,37.02,8852,15,3000,160,708,'');
-insert into aircraft values ('DO8','DORNIER 228 (ALL SERIES)',2,'TURBOPROP','NO',55.58,49.25,12570,19,6000,231,1065,'NO');
-insert into aircraft values ('EMB','EMBRAER EMP-110 BANDEIRANTE',2,'TURBOPROP','NO',50.16,49.41,12500,19,5000,262,900,'NO');
-insert into aircraft values ('EM2','EMBRAER EMP-120 BRASILIA',2,'TURBOPROP','NO',64.89,64.70,12295,30,0,288,628,'YES');
-insert into aircraft values ('FK7','FAIRCHILD INDUSTRIES FH-227',2,'TURBOPROP','NO',95.16,83.08,43500,52,11500,294,1520,'YES');
-insert into aircraft values ('SWM','FAIRCHILD (SWEARINGEN) METRO/MERLIN',2,'TURBOPROP','NO',46.25,59.33,12500,19,3950,294,2139,'YES');
-insert into aircraft values ('F27','FOKKER F27 FRIENDSHIP/FAIRCHILD (ALL SERIES)',2,'TURBOPROP','NO',95.16,82.16,45000,56,13500,265,1450,'YES');
-insert into aircraft values ('F28','FOKKER F28 FELLOWSHIP (ALL SERIES)',2,'JET','NO',82.25,96.16,73000,85,19623,523,1055,'YES');
-insert into aircraft values ('CD2','GOVERNMENT AIRCRAFT FACTORIES N22B/N24A NOMAD',2,'TURBOPROP','NO',54.00,43.00,8500,16,3000,165,850,'NO');
-insert into aircraft values ('GRA','GRUMMAN G-111 ALBATROSS G-111',2,'AMPHIBIAN','NO',96.66,61.25,31000,28,7965,160,1500,'NO');
-insert into aircraft values ('GRG','GRUMMAN G-21 GOOSE',2,'AMPHIBIAN','NO',49.00,38.33,8000,10,2000,160,825,'NO');
-insert into aircraft values ('GRM','GRUMMAN G-73 MALLARD',2,'AMPHIBIAN','NO',66.66,48.33,12750,10,1950,180,1245,'NO');
-insert into aircraft values ('GRS','GULFSTREAM AEROSPACE (GRUMMAN) GULFSTREAM 1/1-C',2,'TURBOPROP','NO',78.33,63.75,36000,37,4300,345,2300,'YES');
-insert into aircraft values ('IL4','ILYUSHIN IL14',2,'PROPELLER','NO',104.00,69.91,36380,24,4800,224,1250,'NO');
-insert into aircraft values ('IL8','ILYUSHIN IL18',4,'TURBOPROP','NO',122.70,117.79,119000,125,30860,403,1860,'YES');
-insert into aircraft values ('IL6','ILYUSHIN IL62/62M',4,'JET','NO',141.29,174.16,347224,186,50706,528,5716,'YES');
-insert into aircraft values ('ILW','ILYUSHIN IL86',4,'JET','YES',157.68,197.54,454152,350,0,575,0,'YES');
-insert into aircraft values ('LOM','LOCKHEED L188 ELECTRA MIXED CONFIGURATION',4,'TURBOPROP','NO',99.00,104.50,116000,0,0,390,2200,'');
-insert into aircraft values ('LOE','LOCKHEED L188 ELECTRA PASSENGER',4,'TURBOPROP','NO',99.00,104.54,116000,104,22000,405,2750,'YES');
-insert into aircraft values ('L10','LOCKHEED L1011 (ALL SERIES)',3,'JET','YES',155.25,177.58,430000,400,95500,615,3450,'YES');
-insert into aircraft values ('L15','LOCKHEED L1011-500 TRISTAR',3,'JET','YES',155.33,164.20,496000,330,115000,580,5998,'YES');
-insert into aircraft values ('MR4','MARTIN 404',2,'PROPELLER','NO',93.25,74.58,44900,44,9500,255,900,'YES');
-insert into aircraft values ('DC3','MCDONNELL DOUGLAS DC3/C47 DAKOTA PASSENGER',2,'PROPELLER','NO',95.00,64.50,25200,30,7380,207,1330,'NO');
-insert into aircraft values ('DC4','MCDONNELL DOUGLAS DOUGLAS DC4/C-54 SKYMASTER PASSENGER',4,'PROPELLER','NO',117.50,93.91,73800,80,11440,230,2750,'NO');
-insert into aircraft values ('DC6','MCDONNELL DOUGLAS DC6 (ALL SERIES)',4,'PROPELLER','NO',117.50,101.50,93200,80,12310,309,3070,'YES');
-insert into aircraft values ('D8M','MCDONNELL DOUGLAS DC8 MIXED CONFIGURATION (ALL SEIRES)',4,'JET','NO',142.33,187.41,325000,259,66665,600,3700,'YES');
-insert into aircraft values ('DC8','MCDONNELL DOUGLAS DC8 PASSENGER (ALL 20-50 SERIES)',4,'JET','NO',142.25,150.41,315000,176,34000,544,7010,'YES');
-insert into aircraft values ('D8S','MCDONNELL DOUGLAS DC8 (ALL 60/70 SERIES)',4,'JET','NO',142.25,187.33,325000,259,66665,580,7150,'YES');
-insert into aircraft values ('DC9','MCDONNELL DOUGLAS DC9 (ALL 10 & 20 SERIES)',2,'JET','NO',93.25,104.33,98000,90,20850,593,2200,'YES');
-insert into aircraft values ('D95','MCDONNELL DOUGLAS DC9-50',2,'JET','NO',93.25,133.41,12200,139,32615,593,2550,'YES');
-insert into aircraft values ('D10','MCDONNELL DOUGLAS DC10 (ALL SERIES)',3,'JET','YES',155.25,182.25,455000,380,98490,608,6350,'YES');
-insert into aircraft values ('M80','MCDONNELL DOUGLAS (MD-80 SERIES)',2,'JET','NO',107.83,147.83,140000,172,0,579,3060,'YES');
-insert into aircraft values ('MIH','MIL MI-8',2,'HELICOPTER','NO',50.20,108.85,26455,28,0,140,311,'');
-insert into aircraft values ('MU2','MITSUBISHI MU2/MARQUISE/SOLITARE',2,'TURBOPROP','NO',39.16,39.41,11575,8,0,347,1606,'');
-insert into aircraft values ('YS1','NAMC YS-11',2,'TURBOPROP','NO',105.00,86.25,51800,60,12550,292,1980,'YES');
-insert into aircraft values ('PN6','PARTENAVIA P.68 VICTOR',2,'PROPELLER','NO',39.37,31.33,4387,7,0,185,1312,'');
-insert into aircraft values ('PL6','PILATUS PC-6 TURBO-PORTER',1,'TURBOPROP','NO',49.66,35.75,4850,0,0,151,644,'');
-insert into aircraft values ('PA6','PIPER AEROSTAR',2,'TURBOPROP','NO',34.16,54.75,5500,6,240,250,1400,'YES');
-insert into aircraft values ('PAZ','PIPER APACHE/AZTEC',2,'PROPELLER','NO',37.33,31.16,5200,6,2151,206,1519,'NO');
-insert into aircraft values ('PAC','PIPER CHEROKEE',1,'PROPELLER','NO',32.83,27.66,3400,7,1544,167,856,'NO');
-insert into aircraft values ('PAH','PIPER NAVAJO/MOHAVE/CHIEFTAIN',2,'PROPELLER','NO',40.50,34.50,7000,8,0,254,1019,'NO');
-insert into aircraft values ('PAS','PIPER SENECA',2,'PROPELLER','NO',38.91,28.50,4570,7,1747,219,1036,'NO');
-insert into aircraft values ('PA1','PIPER T-1020/1040',2,'TURBOPROP','NO',41.08,36.66,9000,9,3800,250,900,'NO');
-insert into aircraft values ('ACD','ROCKWELL COMMANDER (ALL SERIES)',2,'PROPELLER','NO',49.50,35.08,6750,7,2750,205,1220,'YES');
-insert into aircraft values ('SF3','SAAB-FAIRCHILD 340',2,'TURBOPROP','NO',70.33,63.75,25020,34,0,300,920,'YES');
-insert into aircraft values ('SA2','SAUNDERS ST-27',2,'TURBOPROP','NO',71.50,59.00,13500,23,0,230,0,'NO');
-insert into aircraft values ('SHP','SHORTS SKYLINER',2,'TURBOPROP','NO',64.91,40.00,12500,19,4600,188,694,'YES');
-insert into aircraft values ('SHS','SHORTS SKYVAN',2,'TURBOPROP','NO',64.91,40.08,12500,19,0,188,694,'');
-insert into aircraft values ('SH3','SHORTS 330 PASSENGER',2,'TURBOPROP','NO',74.66,58.00,22000,30,7500,218,1137,'NO');
-insert into aircraft values ('SH6','SHORTS 360',2,'TURBOPROP','NO',74.83,70.83,26000,36,7500,244,1151,'NO');
-insert into aircraft values ('S58','SIKORSKY S58T',1,'HELICOPTER','NO',56.00,47.25,13000,16,0,127,278,'NO');
-insert into aircraft values ('S61','SIKORSKY S61',2,'HELICOPTER','NO',62.00,72.00,20500,30,5500,139,282,'NO');
-insert into aircraft values ('TU3','TUPOLEV TU134',2,'JET','NO',95.16,112.71,98100,72,14300,546,1490,'YES');
-insert into aircraft values ('TU5','TUPOLEV TU154',3,'JET','NO',123.20,157.14,198410,164,44090,605,3280,'YES');
-insert into aircraft values ('WLH','WESTLAND 30',2,'HELICOPTER','NO',43.66,52.16,12350,21,0,0,100,'');
-insert into aircraft values ('YK4','YAKOVLEV YAK-40',3,'JET','NO',82.08,66.75,35270,40,5070,342,1240,'YES');
-insert into aircraft values ('YK2','YAKOVLEV YAK-42',3,'JET','NO',112.20,119.35,114640,120,2000,510,621,'YES');
-insert into aircraft values ('100','FOKKER 100',0,'JET','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('146','BRITISH AEROSPACE 146 (ALL SERIES)',0,'JET','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('310','AIRBUS INDUSTRIE A310 (ALL SERIES)',0,'JET','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('320','AIRBUS INDUSTRIE A320 (ALL SERIES)',0,'JET','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('734','BOEING 737-400',0,'JET','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('743','BOEING 737-300 PASSENGER',0,'JET','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('744','BOEING 747-400 PASSENGER',0,'JET','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('74E','BOEING 747-400 MIXED CONFIGURATION',0,'JET','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('763','BOEING 767-300/300ER',0,'JET','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('BE1','BEECHCRAFT 1900',0,'TURBOPROP','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('BUS','BUS',0,'','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('CNJ','CESSNA CITATION',0,'JET','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('D3M','DOUGLAS DC3/C-47 DAKOTA MIXED CONFIGURATION',0,'PROPELLER','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('D9S','MCDONNELL DOUGLAS DC9 (ALL 30/40/50 & 80 SERIES)',0,'JET','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('DHM','BOEING CANADA DHC-7 DASH 7 MIXED CONFIGURATION',0,'TURBOPROP','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('LMO','LIMOSINE',0,'','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('M87','MCDONNELL DOUGLAS MD-87',0,'JET','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('NDE','AEROSPATIALE AS 350 ECUREUIL/AS 355 ECUREUIL 2',1,'TURBOPROP','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('PAG','PIPER (ALL SERIES)',0,'PROPELLER','',0.00,0.00,0,0,0,0,0,'');
-insert into aircraft values ('S76','SIKORSKY S76',1,'TURBOPROP','',0.00,0.00,0,0,0,0,0,'');
-insert into airline values ('AA','AMERICAN AIRLINES','');
-insert into airline values ('AC','AIR CANADA','');
-insert into airline values ('AD','EXEC EXPRESS II,INC.','');
-insert into airline values ('AF','AIR FRANCE','');
-insert into airline values ('AG','ATLANTIC AIRWAYS LIMITED','');
-insert into airline values ('AM','AEROMEXICO - AEROVIAS DE MEXICO S.A. DE C.V.','');
-insert into airline values ('AP','ASPEN AIRWAYS,INC.','');
-insert into airline values ('AQ','ALOHA AIRLINES INC.','');
-insert into airline values ('AR','AEROLINEAS ARGENTINAS','');
-insert into airline values ('AS','ALASKA AIRLINES','');
-insert into airline values ('AT','ROYAL AIR MAROC','');
-insert into airline values ('AV','AVIANCA','');
-insert into airline values ('AY','FINNAIR','');
-insert into airline values ('AZ','ALITALIA','');
-insert into airline values ('BA','BRITISH AIRWAYS','');
-insert into airline values ('BE','ENTERPRISE AIRLINES,INC.','');
-insert into airline values ('BF','MARKAIR,INC.','');
-insert into airline values ('BK','CHALKS/PARADISE ISLAND AIRLINES','');
-insert into airline values ('BL','AIR BVI,LTD.','');
-insert into airline values ('BW','BWIA INTERNATIONAL','');
-insert into airline values ('CA','CAAC','');
-insert into airline values ('CD','TRANS-PROVINCIAL AIRLINES LTD.','');
-insert into airline values ('CH','BEMIDJI AIRLINES','');
-insert into airline values ('CI','CHINA AIRLINES LTD.','');
-insert into airline values ('CO','CONTINENTAL AIRLINES','');
-insert into airline values ('CP','CANADIAN AIRLINES INTERNATIONAL LTD.','');
-insert into airline values ('CS','AIR TORONTO','');
-insert into airline values ('CT','MIDCONTINENT AIRLINES INC.','');
-insert into airline values ('CU','CUBANA AIRLINES','');
-insert into airline values ('CX','CATHAY PACIFIC AIRWAYS LTD.','');
-insert into airline values ('DD','COMMAND AIRWAYS,INC.','');
-insert into airline values ('DE','PRIME AIR,INC.','');
-insert into airline values ('DF','AERO COACH AVIATION INTERNATIONAL,INC.','');
-insert into airline values ('DL','DELTA AIR LINES,INC.','');
-insert into airline values ('DO','DOMINICANA DE AVIACION','');
-insert into airline values ('DQ','COASTAL AIR TRANSPORT','');
-insert into airline values ('DV','NANTUCKET AIRLINES','');
-insert into airline values ('EA','EASTERN AIR LINES,INC.','');
-insert into airline values ('ED','CCAIR INC.','');
-insert into airline values ('EI','AER LINGUS P.L.C.','');
-insert into airline values ('EJ','NEW ENGLAND AIRLINES,INC.','');
-insert into airline values ('EM','EMPIRE AIRWAYS','');
-insert into airline values ('EU','EMPRESA ECUATORIANA DE AVIACION','');
-insert into airline values ('EV','ATLANTIC SOUTHEAST AIRLINES,INC.','');
-insert into airline values ('FC','CHAPARRAL AIRLINES,INC.','');
-insert into airline values ('FH','MALL AIRWAYS INC.','');
-insert into airline values ('FI','ICELANDAIR','');
-insert into airline values ('FK','FLAMENCO AIRWAYS,INC.','');
-insert into airline values ('FN','SFO HEICOPTER AIRLINES,INC.','');
-insert into airline values ('FQ','AIR ARUBA','');
-insert into airline values ('FX','EXPRESS AIR,INC.','');
-insert into airline values ('FY','METROFLIGHT AIRLINES','');
-insert into airline values ('GA','GARUDA INDONESIAN AIRWAYS','');
-insert into airline values ('GM','AIR AMERICA','');
-insert into airline values ('GQ','BIG SKY AIRLINES','');
-insert into airline values ('GS','BAS AIRLINES','');
-insert into airline values ('GU','AVIATECA S.A.','');
-insert into airline values ('HA','HAWAIIAN AIR LINES','');
-insert into airline values ('HD','NEW YORK HELICOPTER CORPORATION','');
-insert into airline values ('HE','KEYSTONE AIR SERVICE LTD.','');
-insert into airline values ('HG','HARBOR AIRLINES,INC','');
-insert into airline values ('HI','GRAND CANYON HELICOPTERS','');
-insert into airline values ('HP','AMERICA WEST AIRLINES,INC.','');
-insert into airline values ('HQ','BUSINESS EXPRESS','');
-insert into airline values ('HY','METRO AIRLINES','');
-insert into airline values ('IB','IBERIA','');
-insert into airline values ('IF','INTERFUG','');
-insert into airline values ('IH','CHANNEL FLYING,INC.','SERVICE TEMPORARILY SUSPENDED');
-insert into airline values ('IN','EAST HAMPTON AIRE','');
-insert into airline values ('IU','HELITRANS AIR SERVICE,INC.','');
-insert into airline values ('JB','HELIJET AIRWAYS','');
-insert into airline values ('JC','ROCKY MOUNTAIN AIRWAYS','');
-insert into airline values ('JF','L.A.B. FYING SERVICE,INC.','CARRIER PERFORMS SEASONAL SERVICE ONLY');
-insert into airline values ('JI','JET EXPRESS','');
-insert into airline values ('JL','JAPAN AIRLINES','');
-insert into airline values ('JM','AIR JAMAICA LIMITED','');
-insert into airline values ('JO','HOLIDAY AIRLINES,INC.','');
-insert into airline values ('JQ','TRANS-JAMAICAN AIRLINES LTD.','');
-insert into airline values ('JR','AERO CALIFORNIA','');
-insert into airline values ('JT','IOWA AIRWAYS,INC.','');
-insert into airline values ('JU','YUGOSLAV AIRLINES (JAT)','');
-insert into airline values ('JV','BEARSKIN LAKE AIR SERVICE LIMITED','');
-insert into airline values ('KE','KOREAN AIR','');
-insert into airline values ('KI','TIME AIR LTD.','');
-insert into airline values ('KL','KLM-ROYAL DUTCH AIRLINES','');
-insert into airline values ('KS','PENINSULA AIRWAYS,INC.','');
-insert into airline values ('KW','CARNIVAL AIR LINES','');
-insert into airline values ('KX','CAYMAN AIRWAYS,LTD.','');
-insert into airline values ('LA','LAN CHILE S.A.','');
-insert into airline values ('LH','LUFTHANSA GERMAN AIRLINES','');
-insert into airline values ('LI','LIAT (1974) LTD.','');
-insert into airline values ('LM','ALM-ANTILLEAN AIRLINES','');
-insert into airline values ('LR','LACSA','');
-insert into airline values ('LS','ILIAMNA AIR TAXI,INC.','');
-insert into airline values ('LV','LAV-LINEA AEROPOSTAL VENEZOLANA','');
-insert into airline values ('LW','AIR NEVADA','');
-insert into airline values ('LY','EL AL ISRAEL AIRLINES','');
-insert into airline values ('MG','MGM GRAND AIR,INC.','');
-insert into airline values ('MH','MALAYSIAN AIRLINE SYSTEM','');
-insert into airline values ('ML','MIDWAY AIRLINES,INC.','');
-insert into airline values ('MO','CALM AIR INTERNATIONAL LTD.','');
-insert into airline values ('MQ','SIMMONS AIRLINES','');
-insert into airline values ('MX','MEXICANA DE AVIACION','');
-insert into airline values ('NA','EXECUTIVE AIR CHARTER','');
-insert into airline values ('ND','INTAIR','');
-insert into airline values ('NN','C.A.A.A.-AIR MARTINIQUE','');
-insert into airline values ('NQ','CUMBERLAND AIRLINES','');
-insert into airline values ('NR','NORONTAIR','');
-insert into airline values ('NV','NORTHWEST TERRITORIAL AIRWAYS,LTD.','');
-insert into airline values ('NW','NORTHWEST AIRLINES,INC.','');
-insert into airline values ('OA','OLYMPIC AIRWAYS','');
-insert into airline values ('OB','TEMPUS AIR LTD.','CARRIER PERFORMS SEASONAL SERVICE ONLY');
-insert into airline values ('OE','WESTAIR AIRLINES','');
-insert into airline values ('OG','AIR GUADELOUPE','');
-insert into airline values ('OH','COMAIR,INC.','NATL AIR TRANSPORTATION ASSOC,INC.');
-insert into airline values ('OJ','AIR ST.-BARTHELEMY','');
-insert into airline values ('OK','CZECHOSLOVAK AIRLINES','');
-insert into airline values ('OO','SKY WEST AIRLINES','');
-insert into airline values ('OQ','AEROLIBERTAD S.A. DE C.V.','');
-insert into airline values ('OT','EVERGREEN ALASKA','');
-insert into airline values ('OU','CITY EXPRESS','');
-insert into airline values ('OY','SUNAIRE','');
-insert into airline values ('PA','PAN AMERICAN WORLD AIRWAYS,INC.','');
-insert into airline values ('PD','PEM AIR LIMITED','');
-insert into airline values ('PK','PAKISTAN INTERNATIONAL AIRLINES','');
-insert into airline values ('PN','COASTAL AIRWAYS','');
-insert into airline values ('PQ','HOLIDAY AIRWAYS','SERVICE TEMPORARILY SUSPENDED');
-insert into airline values ('PR','PHILIPPINE AIRLINES,INC.','');
-insert into airline values ('PS','CENTRAL STATES AIRLINES,INC.','');
-insert into airline values ('PT','PBA-PROVINCETOWN-BOSTON AIRLINE,INC.','');
-insert into airline values ('PV','PANORAMA AIR','');
-insert into airline values ('PY','SURINAM AIRWAYS LTD.','');
-insert into airline values ('QA','AERO CARIBE','');
-insert into airline values ('QB','INTER-QUEBEC','');
-insert into airline values ('QD','GRAND AIRWAYS,INC.','');
-insert into airline values ('QF','QANTAS AIRWAYS LTD.','');
-insert into airline values ('QO','BAR HARBOR AIRLINES','');
-insert into airline values ('QQ','DRUMMOND ISLAND AIR','CARRIER PERFORMS SEASONAL SERVICE ONLY');
-insert into airline values ('QR','AIR SATELLITE,INC.','');
-insert into airline values ('QS','PROPHETER AVIATION','');
-insert into airline values ('QW','TURKS AND CAICOS NATIONAL AIRLINE','');
-insert into airline values ('QX','HORIZON AIR','');
-insert into airline values ('QY','AERO VIRGIN ISLANDS CORP','');
-insert into airline values ('RG','VARIG,S.A.','');
-insert into airline values ('RH','REGAL BAHAMAS INTERNATIONAL AIRLINES','');
-insert into airline values ('RJ','ROYAL JORDANIAN','');
-insert into airline values ('RM','WINGS WEST AIRLINE,INC.','');
-insert into airline values ('RP','PRECISION AIRLINES','');
-insert into airline values ('RV','REEVE ALEUTIAN AIRWAYS,INC.','');
-insert into airline values ('SE','WINGS OF ALASKA','');
-insert into airline values ('SK','SCANDINAVIAN AIRLINES SYSTEM','');
-insert into airline values ('SN','SABENA BELGIAN WORLD AIRLINES','');
-insert into airline values ('SQ','SINGAPORE AIRLINES','');
-insert into airline values ('SR','SWISSAIR','');
-insert into airline values ('SS','METRO AIRLINES NORTHEAST INC.','');
-insert into airline values ('SU','AEROFLOT-SOVIET AIRLINES','');
-insert into airline values ('SV','SAUDI ARABIAN AIRLINES','');
-insert into airline values ('SX','CHRISTMAN AIR SYSTEM','');
-insert into airline values ('TB','TRUMP SHUTTLE,INC.','');
-insert into airline values ('TE','AIR NEW ZEALAND-INTERNATIONAL','');
-insert into airline values ('TG','THAI AIRWAYS INTERNATIONAL,LTD.','');
-insert into airline values ('TO','ALKAN AIR LTD.','');
-insert into airline values ('TP','TAP AIR PORTUGAL','');
-insert into airline values ('TV','HAITI TRANS AIR S.A.','');
-insert into airline values ('TW','TRANS WORLD AIRLINES,INC.','');
-insert into airline values ('TZ','AMERICAN TRANS AIR','');
-insert into airline values ('UA','UNITED AIRLINES','');
-insert into airline values ('UC','LADECO-LINEA AEREA DEL COBRE','');
-insert into airline values ('UE','AIR LA','');
-insert into airline values ('UJ','AIR SEDONA','');
-insert into airline values ('UO','DIRECT AIR,INC.','NATL AIR TRANSPORTATION ASSOC,INC.');
-insert into airline values ('UP','BAHAMASAIR','');
-insert into airline values ('US','USAIR','');
-insert into airline values ('UT','U.T.A. - UNION DE TRANSPORTS AERIENS','');
-insert into airline values ('UW','PERIMETER AIRLINES (INLAND) LTD.','');
-insert into airline values ('VA','VIASA','');
-insert into airline values ('VI','VIEQUES AIR LINK,INC.','');
-insert into airline values ('VW','TRANSPORTES AEROMAR,S.A. DE C.V.','');
-insert into airline values ('WD','WARDAIR','');
-insert into airline values ('WJ','LABRADOR AIRWAYS,LTD.','');
-insert into airline values ('WM','WINDWARD ISLAND AIRWAYS INTERNATIONAL N.V.','');
-insert into airline values ('WN','SOUTHWEST AIRLINES','');
-insert into airline values ('WP','ALOHA ISLANDAIR,INC.','');
-insert into airline values ('WQ','WINGS AIRWAYS','NATL AIR TRANSPORTATION ASSOC,INC.');
-insert into airline values ('WS','WESTATES AIRLINES','SERVICE TEMPORARILY SUSPENDED');
-insert into airline values ('WV','MIDWEST AVIATION','');
-insert into airline values ('XE','SOUTHCENTRAL AIR,INC.','');
-insert into airline values ('XJ','MESABA AVIATION','');
-insert into airline values ('XK','RESORT COMMUTER,INC.','');
-insert into airline values ('XQ','ACTION AIRLINES','');
-insert into airline values ('XV','PRESIDENTIAL AIRWAYS,INC.','');
-insert into airline values ('XW','WALKER''S INTERNATIONAL','');
-insert into airline values ('XY','RYAN AIR,INC.','');
-insert into airline values ('YE','GRAND CANYON AIRLINES,INC.','CARRIER PERFORMS SEASONAL SERVICE ONLY');
-insert into airline values ('YI','AIR SUNSHINE INC.','NATL AIR TRANSPORTATION ASSOC,INC.');
-insert into airline values ('YL','LONG ISLAND AIRLINES','');
-insert into airline values ('YN','AIR CREEBEC INC.','');
-insert into airline values ('YR','SCENIC AIRLINES INC.','NATL AIR TRANSPORTATION ASSOC,INC.');
-insert into airline values ('YS','SAN JUAN AIRLINES','');
-insert into airline values ('YU','AEROLINEAS DOMINICANAS,S.A. - DOMINAIR','');
-insert into airline values ('YV','MESA AIRLINES','');
-insert into airline values ('YW','STATESWEST AIRLINES,INC.','');
-insert into airline values ('YX','MIDWEST EXPRESS AIRLINES,INC.','');
-insert into airline values ('ZD','ROSS AVIATION,INC.','NATL AIR TRANSPORTATION ASSOC,INC');
-insert into airline values ('ZE','AIR CARIBE INTERNATIONAL,INC.','');
-insert into airline values ('ZK','GREAT LAKES AVIATION,LTD.','');
-insert into airline values ('ZO','MOHAWK AIRLINES','');
-insert into airline values ('ZP','VIRGIN AIR,INC.','');
-insert into airline values ('ZS','HISPANIOLA AIRWAYS C. POR A.','');
-insert into airline values ('ZV','AIR MIDWEST','');
-insert into airline values ('ZW','AIR WISCONSIN','');
-insert into airline values ('ZX','AIR BC,LTD.','');
-insert into airline values ('2E','HERMENS/MARKAIR EXPRESS','');
-insert into airline values ('2F','FRONTIER FLYING SERVICE','');
-insert into airline values ('2P','PRAIRIE FLYING SERVICE (1976) LTD.','');
-insert into airline values ('2Q','AQUILA AIR LTD','');
-insert into airline values ('2V','NORTHEAST EXPRESS REGIONAL AIRLINES','NATL AIR TRANSPORTATION ASSOC,INC.');
-insert into airline values ('2Z','SERVICIOS AEROS LITORAL S.A. DE C.V.','');
-insert into airline values ('3A','ALLIANCE AIRLINES','');
-insert into airline values ('3C','CAMAI AIR','');
-insert into airline values ('3G','VIRGIN ISLANDS SEAPLANE SHUTTLE','SERVICE TEMPORARILY SUSPENDED');
-insert into airline values ('3H','AIR INUIT (1985) LTD.','');
-insert into airline values ('3L','AIR-LIFT ASSOCIATES,INC','');
-insert into airline values ('3N','PAC AIR','');
-insert into airline values ('3R','AIR MOLOKAI - TROPIC AIRLINES','SERVICE TEMPORARILY SUSPENDED');
-insert into airline values ('3S','SHUSWAP AIR','');
-insert into airline values ('3V','WAGLISLA AIR INC.','');
-insert into airline values ('4A','AIRWAYS INTERNATIONAL,INC.','');
-insert into airline values ('4B','OLSON AIR SERVICE,INC.','');
-insert into airline values ('4E','TANANA AIR SERVICE','');
-insert into airline values ('4F','FRONTIER AIR','');
-insert into airline values ('4G','INLET AIRLINES,INC.','');
-insert into airline values ('4K','KENN BOREK AIR LTD.','');
-insert into airline values ('4L','AIR ALMA INC.','');
-insert into airline values ('4N','AIR NORTH','');
-insert into airline values ('4T','PACIFIC RIM AIRLINES LTD.','');
-insert into airline values ('4V','VOYAGEUR AIRWAYS LTD.','');
-insert into airline values ('4W','WRANGELL AIR SERVICE','');
-insert into airline values ('4Y','YUTE AIR ALASKA,INC.','SERVICE TEMPORARILY SUSPENDED');
-insert into airline values ('5A','ALPINE AVIATION,INC.','');
-insert into airline values ('5B','BELLAIR INC.','');
-insert into airline values ('5E','HUB EXPRESS,INC.','');
-insert into airline values ('5K','KENMORE AIR HARBOR,INC.','');
-insert into airline values ('5L','LAREDO AIR,INC.','');
-insert into airline values ('5N','SEAGULL AIR SERVICE,INC.','SERVICE TEMPORARILY SUSPENDED');
-insert into airline values ('5P','PTARMIGAN AIRWAYS LTD','');
-insert into airline values ('5S','AIRSPEED AVIATION INC.','');
-insert into airline values ('5T','AVIACION DEL NOROESTE','');
-insert into airline values ('5U','SKAGWAY AIR SERVICE,INC.','');
-insert into airline values ('5V','AVIAIR AVIATION (1984) LTD.','');
-insert into airline values ('5W','CHARTAIR,INC.','');
-insert into airline values ('6A','PANAMA AIRWAYS','');
-insert into airline values ('6B','BAXTER AVIATION','');
-insert into airline values ('6C','CAPE SMYTHE AIR SERVICE,INC.','');
-insert into airline values ('6D','ALASKA ISLAND AIR,INC.','');
-insert into airline values ('6E','BURRARD AIR LTD.','');
-insert into airline values ('6G','LAS VEGAS AIRLINES','');
-insert into airline values ('6J','SOUTHERN JERSEY AIRWAYS,INC.','');
-insert into airline values ('6K','KEEWATIN AIR LIMITED','');
-insert into airline values ('6L','AKLAK AIR LTD.','');
-insert into airline values ('6M','40-MILE AIR,LTD.','');
-insert into airline values ('6P','PROPAIR INC.','');
-insert into airline values ('6Q','BARROW AIR,INC.','');
-insert into airline values ('6S','KETCHIKAN AIR SERVICE,INC.','');
-insert into airline values ('6T','TYEE AIRWAYS LIMITED','');
-insert into airline values ('6V','AIR VEGAS,INC.','');
-insert into airline values ('6W','WILDERNESS AIRLINE (1975) LTD.','');
-insert into airline values ('7A','HAINES AIRWAYS,INC.','');
-insert into airline values ('7D','TRUMP AIR','');
-insert into airline values ('7F','FIRST AIR','');
-insert into airline values ('7G','GULFSTREAM AIRLINES,INC.','NATL AIR TRANSPORTATION ASSOC,INC.');
-insert into airline values ('7H','ERA AVIATION','');
-insert into airline values ('7K','LARRY''S FLYING SERVICE,INC','');
-insert into airline values ('7L','LAKE UNION AIR SERVICE','');
-insert into airline values ('7N','NORTHLAND AIR MANITOBA LIMITED','');
-insert into airline values ('7Q','CALIFORNIA AIR SHUTTLE','');
-insert into airline values ('7R','GCS AIR SERVICE,INC.','');
-insert into airline values ('7T','TRANS COTE INC.','');
-insert into airline values ('7V','ALPHA AIR','');
-insert into airline values ('7W','AIR SASK AVIATION','');
-insert into airline values ('8B','BAKER AVIATION,INC.','');
-insert into airline values ('8D','SKYLINK AIRLINES','SERVICE TEMPORARILY SUSPENDED');
-insert into airline values ('8E','BERING AIR,INC.','');
-insert into airline values ('8F','WILBUR''S INC.','');
-insert into airline values ('8G','GP EXPRESS AIRLINES,INC.','');
-insert into airline values ('8H','HARBOR AIR SERVICE','');
-insert into airline values ('8K','AIR MUSKOKA','');
-insert into airline values ('8L','SERVICIO AEREO LEO LOPEZ','');
-insert into airline values ('8M','APEX AIRLINES','');
-insert into airline values ('8N','NASHVILLE EAGLE,INC.','');
-insert into airline values ('8P','POCONO AIRLINES','');
-insert into airline values ('8R','WRA,INC.','');
-insert into airline values ('8T','TRI AIR,INC.','SERVICE TEMPORARILY SUSPENDED');
-insert into airline values ('8V','WRIGHT AIR SERVICE,INC.','');
-insert into airline values ('9A','AIR ATLANTIC LTD.','');
-insert into airline values ('9C','ICARUS FLYING SERVICE,LTD.','');
-insert into airline values ('9D','DELTA AIR CHARTER LTD.','');
-insert into airline values ('9E','EXPRESS AIRLINES I,INC.','');
-insert into airline values ('9F','SKYCRAFT AIR TRANSPORT INC.','');
-insert into airline values ('9K','CAPE AIR','');
-insert into airline values ('9M','CENTRAL MOUNTAIN AIR LTD.','');
-insert into airline values ('9N','TRANS STATES AIRLINES,INC.','');
-insert into airline values ('9Q','TAQUAN AIR SERVICE,INC.','');
-insert into airline values ('9S','SABOURIN LAKE AIRWAYS LTD.','');
-insert into airline values ('9V','AIR SCHEFFERVILLE','CARRIER PERFORMS SEASONAL SERVICE ONLY');
-insert into airline values ('GD','AIR SOUTH,INC.','NATL AIR TRANSPORTATION ASSOC,INC.');
-insert into airline values ('VL','SUN PACIFIC AIRLINES,INC.','');
-insert into airline values ('3D','EDGARTOWN AIR,INC.','');
-insert into airline values ('4Q','TRANS NORTH AVIATION,LTD.','CARRIER PERFORMS SEASONAL SERVICE ONLY');
-insert into airline values ('4R','RAVEN AIR,INC.','');
-insert into airline values ('4X','L''EXPRESS AIRLINES','');
-insert into airline values ('5C','CONQUEST AIRLINES CORP.','');
-insert into airline values ('7C','SIERRA VISTA AVIATION','SERVICE TEMPORARILY SUSPENDED');
-insert into airline values ('MC','MILITARY AIRLIFT COMMAND (MAC)-U.S. DEPARTMENT OF THE AIR FORCE','');
-insert into airport values ('ATL','WILLIAM B. HARTSFIELD','ATLANTA,GEORGIA','GA','USA','EST');
-insert into airport values ('BOS','LOGAN INTERNATIONAL','BOSTON,MASSACHUSETTS','MA','USA','EST');
-insert into airport values ('BWI','BALTIMORE/WASHINGTON INTERNATIONAL','BALTIMORE,MARYLAND','MD','USA','EST');
-insert into airport values ('DEN','STAPLETON INTERNATIONAL','DENVER,COLORADO','CO','USA','MST');
-insert into airport values ('DFW','DALLAS/FORT WORTH INTERNATIONAL','DALLAS/FT. WORTH,TEXAS','TX','USA','CST');
-insert into airport values ('OAK','METROPOLITAN OAKLAND INTERNATIONAL','OAKLAND,CALIFORNIA','CA','USA','PST');
-insert into airport values ('PHL','PHILADELPHIA INTERNATIONAL','PHILADELPHIA PA/WILM''TON,DE','PA','USA','EST');
-insert into airport values ('PIT','GREATER PITTSBURGH','PITTSBURGH,PENNSYLVANIA','PA','USA','EST');
-insert into airport values ('SFO','SAN FRANCISCO INTERNATIONAL','SAN FRANCISCO,CALIFORNIA','CA','USA','PST');
-insert into airport_service values ('MATL','ATL',9.0,'S',45);
-insert into airport_service values ('BBOS','BOS',3.0,'NE',30);
-insert into airport_service values ('DDFW','DFW',13.0,'NW',70);
-insert into airport_service values ('FDFW','DFW',17.0,'E',55);
-insert into airport_service values ('DDEN','DEN',6.5,'NE',30);
-insert into airport_service values ('PPHL','PHL',7.0,'SW',35);
-insert into airport_service values ('PPIT','PIT',17.0,'W',55);
-insert into airport_service values ('OOAK','OAK',10.0,'SE',15);
-insert into airport_service values ('OOAK','SFO',24.0,'SW',60);
-insert into airport_service values ('SSFO','SFO',8.0,'SE',30);
-insert into airport_service values ('SSFO','OAK',18.0,'SE',60);
-insert into airport_service values ('WWAS','BWI',32.0,'NE',50);
-insert into airport_service values ('BBWI','BWI',10.0,'S',25);
-insert into airport_service values ('','',0.0,'',0);
-insert into city values ('MATL','ATLANTA','GA','USA','EST');
-insert into city values ('BBOS','BOSTON','MA','USA','EST');
-insert into city values ('DDFW','DALLAS','TX','USA','CST');
-insert into city values ('FDFW','FORT WORTH','TX','USA','CST');
-insert into city values ('DDEN','DENVER','CO','USA','MST');
-insert into city values ('PPHL','PHILADELPHIA','PA','USA','EST');
-insert into city values ('PPIT','PITTSBURGH','PA','USA','EST');
-insert into city values ('SSFO','SAN FRANCISCO','CA','USA','PST');
-insert into city values ('OOAK','OAKLAND','CA','USA','PST');
-insert into city values ('WWAS','WASHINGTON','DC','USA','EST');
-insert into city values ('BBWI','BALTIMORE','MD','USA','EST');
-insert into class_of_service values ('R',1,'SUPERSONIC AIRCRAFT');
-insert into class_of_service values ('P',2,'FIRST CLASS PREMIUM');
-insert into class_of_service values ('F',3,'FIRST CLASS');
-insert into class_of_service values ('A',4,'FIRST CLASS DISCOUNTED');
-insert into class_of_service values ('J',5,'BUSINESS CLASS PREMIUM');
-insert into class_of_service values ('C',6,'BUSINESS CLASS');
-insert into class_of_service values ('D',7,'BUSINESS CLASS DISCOUNTED');
-insert into class_of_service values ('S',8,'STANDARD CLASS');
-insert into class_of_service values ('W',9,'COACH ECONOMY CLASS PREMIUM');
-insert into class_of_service values ('FN',10,'FIRST CLASS NIGHT SERVICE');
-insert into class_of_service values ('Y',11,'COACH ECONOMY CLASS');
-insert into class_of_service values ('CN',12,'BUSINESS CLASS NIGHT SERVICE');
-insert into class_of_service values ('YN',13,'COACH ECONOMY CLASS NIGHT SERVICE');
-insert into class_of_service values ('B',14,'COACH ECONOMY CLASS DISCOUNTED');
-insert into class_of_service values ('H',15,'COACH ECONOMY CLASS DISCOUNTED');
-insert into class_of_service values ('Q',16,'COACH ECONOMY CLASS DISCOUNTED');
-insert into class_of_service values ('M',17,'COACH ECONOMY CLASS DISCOUNTED');
-insert into class_of_service values ('T',18,'COACH ECONOMY CLASS DISCOUNTED');
-insert into class_of_service values ('K',19,'THRIFT ECONOMY CLASS');
-insert into class_of_service values ('L',20,'THRIFT ECONOMY CLASS DISCOUNTED');
-insert into class_of_service values ('V',21,'THRIFT ECONOMY CLASS DISCOUNTED');
-insert into class_of_service values ('BN',22,'COACH ECONOMY CLASS DISCOUNTED NIGHT SERVICE');
-insert into class_of_service values ('QN',23,'COACH ECONOMY CLASS DISCOUNTED NIGHT SERVICE');
-insert into class_of_service values ('KN',24,'THRIFT ECONOMY CLASS DISCOUNTED NIGHT SERVICE');
-insert into class_of_service values ('VN',25,'THRIFT ECONOMY CLASS DISCOUNTED NIGHT SERVICE');
-insert into class_of_service values ('U',26,'SHUTTLE SERVICE (NO RESERVATION NEEDED - SEAT GUARANTEED)');
-insert into class_of_service values ('E',27,'SHUTTLE SERVICE (NO RESERVATION ALLOWED - SEAT TO BE CONFIRMED AT CHECK-IN)');
-insert into code_description values ('-','A DASH IN A DAY CODE POSITION INDICATES NON-OPERATION ON THAT DAY');
-insert into code_description values ('AP','ADVANCE PURCHASE EXCURSION FARE');
-insert into code_description values ('CAD','CANADIAN DOLLARS');
-insert into code_description values ('EX','EXCURSION FARE');
-insert into code_description values ('H','HIGHEST LEVEL OF FARE HAVING MORE THAN ONE SEASONAL LEVEL');
-insert into code_description values ('J','THIRD LEVEL OF FARE HAVING MORE THAN THREE SEASONAL LEVELS');
-insert into code_description values ('K','SECOND LEVEL OF A FARE HAVING MORE THAN TWO SEASONAL LEVELS');
-insert into code_description values ('L','LOWEST LEVEL OF FARE HAVING MORE THAN ONE SEASONAL LEVEL');
-insert into code_description values ('MEP','MEXICAN PESOS');
-insert into code_description values ('O','SECOND LEVEL OF A FARE HAVING MORE THAN TWO SEASONAL LEVELS');
-insert into code_description values ('N','NIGHT SERVICE');
-insert into code_description values ('VU','VISIT USA FARE');
-insert into code_description values ('W','WHEN USED AS PART OF A FARE CLASS SUCH AS YW,INDICATES WEEKEND APPLICATION.');
-insert into code_description values ('X','WHEN USED AS PART OF A FARE CLASS SUCH AS YX,INDICATES WEEKDAY APPLICATION.');
-insert into code_description values ('U.S.','48 CONTIGUOUS STATES (NOT INCLUDING ALASKA AND HAWAII) UNLESS OTHERWISE NOTED.');
-insert into compound_class values ('A','A','FIRST','NO','NO','YES','NO','NONE','1234567');
-insert into compound_class values ('AH','A','FIRST','NO','NO','YES','NO','HIGH','1234567');
-insert into compound_class values ('AJ','A','FIRST','NO','NO','YES','NO','MID','1234567');
-insert into compound_class values ('AL','A','FIRST','NO','NO','YES','NO','LOW','1234567');
-insert into compound_class values ('B','B','COACH','NO','YES','YES','NO','NONE','1234567');
-insert into compound_class values ('BH','B','COACH','NO','YES','YES','NO','HIGH','1234567');
-insert into compound_class values ('BHW','B','COACH','NO','YES','YES','NO','HIGH','-----67');
-insert into compound_class values ('BHX','B','COACH','NO','YES','YES','NO','HIGH','12345--');
-insert into compound_class values ('BL','B','COACH','NO','YES','YES','NO','LOW','1234567');
-insert into compound_class values ('BLW','B','COACH','NO','YES','YES','NO','LOW','-----67');
-insert into compound_class values ('BLX','B','COACH','NO','YES','YES','NO','LOW','12345--');
-insert into compound_class values ('BN','BN','COACH','NO','YES','YES','YES','NONE','1234567');
-insert into compound_class values ('BO','B','COACH','NO','YES','YES','NO','MID','1234567');
-insert into compound_class values ('BOW','B','COACH','NO','YES','YES','NO','MID','-----67');
-insert into compound_class values ('BOX','B','COACH','NO','YES','YES','NO','MID','12345--');
-insert into compound_class values ('BW','B','COACH','NO','YES','YES','NO','NONE','-----67');
-insert into compound_class values ('BX','B','COACH','NO','YES','YES','NO','NONE','12345--');
-insert into compound_class values ('C','C','BUSINESS','NO','NO','NO','NO','NONE','1234567');
-insert into compound_class values ('CH','C','BUSINESS','NO','NO','NO','NO','HIGH','1234567');
-insert into compound_class values ('CHW','C','BUSINESS','NO','NO','NO','NO','HIGH','-----67');
-insert into compound_class values ('CHX','C','BUSINESS','NO','NO','NO','NO','HIGH','12345--');
-insert into compound_class values ('CL','C','BUSINESS','NO','NO','NO','NO','LOW','1234567');
-insert into compound_class values ('CLW','C','BUSINESS','NO','NO','NO','NO','LOW','-----67');
-insert into compound_class values ('CLX','C','BUSINESS','NO','NO','NO','NO','LOW','12345--');
-insert into compound_class values ('CN','CN','BUSINESS','NO','NO','NO','YES','NONE','1234567');
-insert into compound_class values ('CO','C','BUSINESS','NO','NO','NO','NO','MID','1234567');
-insert into compound_class values ('CW','C','BUSINESS','NO','NO','NO','NO','NONE','-----67');
-insert into compound_class values ('CX','C','BUSINESS','NO','NO','NO','NO','NONE','12345--');
-insert into compound_class values ('D','D','BUSINESS','NO','NO','YES','NO','NONE','1234567');
-insert into compound_class values ('F','F','FIRST','NO','NO','NO','NO','NONE','1234567');
-insert into compound_class values ('FH','F','FIRST','NO','NO','NO','NO','HIGH','1234567');
-insert into compound_class values ('FHW','F','FIRST','NO','NO','NO','NO','HIGH','-----67');
-insert into compound_class values ('FHX','F','FIRST','NO','NO','NO','NO','HIGH','12345--');
-insert into compound_class values ('FL','F','FIRST','NO','NO','NO','NO','LOW','1234567');
-insert into compound_class values ('FLW','F','FIRST','NO','NO','NO','NO','LOW','-----67');
-insert into compound_class values ('FLX','F','FIRST','NO','NO','NO','NO','LOW','12345--');
-insert into compound_class values ('FN','FN','FIRST','NO','NO','NO','YES','NONE','1234567');
-insert into compound_class values ('FO','F','FIRST','NO','NO','NO','NO','MID','1234567');
-insert into compound_class values ('FW','F','FIRST','NO','NO','NO','NO','NONE','-----67');
-insert into compound_class values ('FX','F','FIRST','NO','NO','NO','NO','NONE','12345--');
-insert into compound_class values ('H','H','COACH','NO','YES','YES','NO','NONE','1234567');
-insert into compound_class values ('HH','H','COACH','NO','YES','YES','NO','HIGH','1234567');
-insert into compound_class values ('HHW','H','COACH','NO','YES','YES','NO','HIGH','-----67');
-insert into compound_class values ('HHX','H','COACH','NO','YES','YES','NO','HIGH','12345--');
-insert into compound_class values ('HK','H','COACH','NO','YES','YES','NO','MID','1234567');
-insert into compound_class values ('HKW','H','COACH','NO','YES','YES','NO','MID','-----67');
-insert into compound_class values ('HKX','H','COACH','NO','YES','YES','NO','MID','12345--');
-insert into compound_class values ('HL','H','COACH','NO','YES','YES','NO','LOW','1234567');
-insert into compound_class values ('HLW','H','COACH','NO','YES','YES','NO','LOW','-----67');
-insert into compound_class values ('HLX','H','COACH','NO','YES','YES','NO','LOW','12345--');
-insert into compound_class values ('HO','H','COACH','NO','YES','YES','NO','MID','1234567');
-insert into compound_class values ('HOW','H','COACH','NO','YES','YES','NO','MID','-----67');
-insert into compound_class values ('HOX','H','COACH','NO','YES','YES','NO','MID','12345--');
-insert into compound_class values ('HW','H','COACH','NO','YES','YES','NO','NONE','-----67');
-insert into compound_class values ('HX','H','COACH','NO','YES','YES','NO','NONE','12345--');
-insert into compound_class values ('J','J','BUSINESS','YES','NO','NO','NO','NONE','1234567');
-insert into compound_class values ('JH','J','BUSINESS','YES','NO','NO','NO','HIGH','1234567');
-insert into compound_class values ('JK','J','BUSINESS','YES','NO','NO','NO','MID','1234567');
-insert into compound_class values ('JL','J','BUSINESS','YES','NO','NO','NO','LOW','1234567');
-insert into compound_class values ('JO','J','BUSINESS','YES','NO','NO','NO','MID','1234567');
-insert into compound_class values ('K','K','THRIFT','NO','YES','NO','NO','NONE','1234567');
-insert into compound_class values ('KH','K','THRIFT','NO','YES','NO','NO','HIGH','1234567');
-insert into compound_class values ('KHW','K','THRIFT','NO','YES','NO','NO','HIGH','-----67');
-insert into compound_class values ('KHX','K','THRIFT','NO','YES','NO','NO','HIGH','12345--');
-insert into compound_class values ('KL','K','THRIFT','NO','YES','NO','NO','LOW','1234567');
-insert into compound_class values ('KLW','K','THRIFT','NO','YES','NO','NO','LOW','-----67');
-insert into compound_class values ('KLX','K','THRIFT','NO','YES','NO','NO','LOW','12345--');
-insert into compound_class values ('KN','KN','THRIFT','NO','YES','YES','YES','NONE','1234567');
-insert into compound_class values ('KO','K','THRIFT','NO','YES','NO','NO','MID','1234567');
-insert into compound_class values ('KW','K','THRIFT','NO','YES','NO','NO','NONE','-----67');
-insert into compound_class values ('KX','K','THRIFT','NO','YES','NO','NO','NONE','12345--');
-insert into compound_class values ('L','L','THRIFT','NO','YES','YES','NO','NONE','1234567');
-insert into compound_class values ('LH','L','THRIFT','NO','YES','YES','NO','HIGH','1234567');
-insert into compound_class values ('LHW','L','THRIFT','NO','YES','YES','NO','HIGH','-----67');
-insert into compound_class values ('LHX','L','THRIFT','NO','YES','YES','NO','HIGH','12345--');
-insert into compound_class values ('LL','L','THRIFT','NO','YES','YES','NO','LOW','1234567');
-insert into compound_class values ('LLW','L','THRIFT','NO','YES','YES','NO','LOW','-----67');
-insert into compound_class values ('LLX','L','THRIFT','NO','YES','YES','NO','LOW','12345--');
-insert into compound_class values ('LO','L','THRIFT','NO','YES','YES','NO','MID','1234567');
-insert into compound_class values ('LOW','L','THRIFT','NO','YES','YES','NO','MID','-----67');
-insert into compound_class values ('LOX','L','THRIFT','NO','YES','YES','NO','MID','12345--');
-insert into compound_class values ('LW','L','THRIFT','NO','YES','YES','NO','NONE','-----67');
-insert into compound_class values ('LX','L','THRIFT','NO','YES','YES','NO','NONE','12345--');
-insert into compound_class values ('M','M','COACH','NO','YES','YES','NO','NONE','1234567');
-insert into compound_class values ('MH','M','COACH','NO','YES','YES','NO','HIGH','1234567');
-insert into compound_class values ('MHW','M','COACH','NO','YES','YES','NO','HIGH','-----67');
-insert into compound_class values ('MHX','M','COACH','NO','YES','YES','NO','HIGH','12345--');
-insert into compound_class values ('MKW','M','COACH','NO','YES','YES','NO','MID','-----67');
-insert into compound_class values ('MKX','M','COACH','NO','YES','YES','NO','MID','12345--');
-insert into compound_class values ('ML','M','COACH','NO','YES','YES','NO','LOW','1234567');
-insert into compound_class values ('MLW','M','COACH','NO','YES','YES','NO','LOW','-----67');
-insert into compound_class values ('MLX','M','COACH','NO','YES','YES','NO','LOW','12345--');
-insert into compound_class values ('MO','M','COACH','NO','YES','YES','NO','MID','1234567');
-insert into compound_class values ('MOW','M','COACH','NO','YES','YES','NO','MID','-----67');
-insert into compound_class values ('MOX','M','COACH','NO','YES','YES','NO','MID','12345--');
-insert into compound_class values ('MW','M','COACH','NO','YES','YES','NO','NONE','-----67');
-insert into compound_class values ('MX','M','COACH','NO','YES','YES','NO','NONE','12345--');
-insert into compound_class values ('P','P','FIRST','YES','NO','NO','NO','NONE','1234567');
-insert into compound_class values ('Q','Q','COACH','NO','YES','YES','NO','NONE','1234567');
-insert into compound_class values ('QH','Q','COACH','NO','YES','YES','NO','HIGH','1234567');
-insert into compound_class values ('QHW','Q','COACH','NO','YES','YES','NO','HIGH','-----67');
-insert into compound_class values ('QHX','Q','COACH','NO','YES','YES','NO','HIGH','12345--');
-insert into compound_class values ('QL','Q','COACH','NO','YES','YES','NO','LOW','1234567');
-insert into compound_class values ('QLW','Q','COACH','NO','YES','YES','NO','LOW','-----67');
-insert into compound_class values ('QLX','Q','COACH','NO','YES','YES','NO','LOW','12345--');
-insert into compound_class values ('QN','QN','COACH','NO','YES','YES','YES','NONE','1234567');
-insert into compound_class values ('QO','Q','COACH','NO','YES','YES','NO','MID','1234567');
-insert into compound_class values ('QOW','Q','COACH','NO','YES','YES','NO','MID','-----67');
-insert into compound_class values ('QOX','Q','COACH','NO','YES','YES','NO','MID','12345--');
-insert into compound_class values ('QW','Q','COACH','NO','YES','YES','NO','NONE','-----67');
-insert into compound_class values ('QX','Q','COACH','NO','YES','YES','NO','NONE','12345--');
-insert into compound_class values ('R','R','SUPERSONIC','NO','NO','NO','NO','NONE','1234567');
-insert into compound_class values ('S','S','STANDARD','NO','NO','NO','NO','NONE','1234567');
-insert into compound_class values ('SH','S','STANDARD','NO','NO','NO','NO','HIGH','1234567');
-insert into compound_class values ('SL','S','STANDARD','NO','NO','NO','NO','LOW','1234567');
-insert into compound_class values ('T','T','COACH','NO','YES','YES','NO','NONE','1234567');
-insert into compound_class values ('TH','T','COACH','NO','YES','YES','NO','HIGH','1234567');
-insert into compound_class values ('TL','T','COACH','NO','YES','YES','NO','LOW','1234567');
-insert into compound_class values ('TO','T','COACH','NO','YES','YES','NO','MID','1234567');
-insert into compound_class values ('V','V','THRIFT','NO','YES','YES','NO','NONE','1234567');
-insert into compound_class values ('VH','V','THRIFT','NO','YES','YES','NO','HIGH','1234567');
-insert into compound_class values ('VHW','V','THRIFT','NO','YES','YES','NO','HIGH','-----67');
-insert into compound_class values ('VHX','V','THRIFT','NO','YES','YES','NO','HIGH','12345--');
-insert into compound_class values ('VK','V','THRIFT','NO','YES','YES','NO','MID','1234567');
-insert into compound_class values ('VL','V','THRIFT','NO','YES','YES','NO','LOW','1234567');
-insert into compound_class values ('VLW','V','THRIFT','NO','YES','YES','NO','LOW','-----67');
-insert into compound_class values ('VLX','V','THRIFT','NO','YES','YES','NO','LOW','12345--');
-insert into compound_class values ('VO','V','THRIFT','NO','YES','YES','NO','MID','1234567');
-insert into compound_class values ('VOW','V','THRIFT','NO','YES','YES','NO','MID','-----67');
-insert into compound_class values ('VOX','V','THRIFT','NO','YES','YES','NO','MID','12345--');
-insert into compound_class values ('VW','V','THRIFT','NO','YES','YES','NO','NONE','-----67');
-insert into compound_class values ('VX','V','THRIFT','NO','YES','YES','NO','NONE','12345--');
-insert into compound_class values ('Y','Y','COACH','NO','YES','NO','NO','NONE','1234567');
-insert into compound_class values ('YH','Y','COACH','NO','YES','NO','NO','HIGH','1234567');
-insert into compound_class values ('YHW','Y','COACH','NO','YES','NO','NO','HIGH','-----67');
-insert into compound_class values ('YHX','Y','COACH','NO','YES','NO','NO','HIGH','12345--');
-insert into compound_class values ('YJ','Y','COACH','NO','YES','NO','NO','MID','1234567');
-insert into compound_class values ('YJW','Y','COACH','NO','YES','NO','NO','MID','-----67');
-insert into compound_class values ('YJX','Y','COACH','NO','YES','NO','NO','MID','12345--');
-insert into compound_class values ('YK','Y','COACH','NO','YES','NO','NO','MID','1234567');
-insert into compound_class values ('YL','Y','COACH','NO','YES','NO','NO','LOW','1234567');
-insert into compound_class values ('YLW','Y','COACH','NO','YES','NO','NO','LOW','-----67');
-insert into compound_class values ('YLX','Y','COACH','NO','YES','NO','NO','LOW','12345--');
-insert into compound_class values ('YN','YN','COACH','NO','YES','NO','YES','NONE','1234567');
-insert into compound_class values ('YO','Y','COACH','NO','YES','NO','NO','MID','1234567');
-insert into compound_class values ('YOW','Y','COACH','NO','YES','NO','NO','MID','-----67');
-insert into compound_class values ('YOX','Y','COACH','NO','YES','NO','NO','MID','12345--');
-insert into compound_class values ('YW','Y','COACH','NO','YES','NO','NO','NONE','-----67');
-insert into compound_class values ('YX','Y','COACH','NO','YES','NO','NO','NONE','12345--');
-insert into connect_leg values (305276,1,106231);
-insert into connect_leg values (305276,2,137225);
-insert into connect_leg values (305277,1,106237);
-insert into connect_leg values (305277,2,137231);
-insert into connect_leg values (305280,1,106247);
-insert into connect_leg values (305280,2,137237);
-insert into connect_leg values (305416,1,112030);
-insert into connect_leg values (305416,1,112031);
-insert into connect_leg values (305416,2,112773);
-insert into connect_leg values (305424,1,112033);
-insert into connect_leg values (305424,2,112784);
-insert into connect_leg values (305429,1,112040);
-insert into connect_leg values (305429,2,112793);
-insert into connect_leg values (305429,2,112794);
-insert into connect_leg values (305435,1,112046);
-insert into connect_leg values (305435,2,112806);
-insert into connect_leg values (305436,1,112051);
-insert into connect_leg values (305436,2,112808);
-insert into connect_leg values (306026,1,133430);
-insert into connect_leg values (306026,2,111891);
-insert into connect_leg values (306031,1,133432);
-insert into connect_leg values (306031,2,111896);
-insert into connect_leg values (306304,1,144155);
-insert into connect_leg values (306304,2,112766);
-insert into connect_leg values (306307,1,144143);
-insert into connect_leg values (306307,2,111891);
-insert into connect_leg values (306309,1,144158);
-insert into connect_leg values (306309,2,112784);
-insert into connect_leg values (306314,1,144163);
-insert into connect_leg values (306314,2,112793);
-insert into connect_leg values (306314,2,112794);
-insert into connect_leg values (306317,1,144167);
-insert into connect_leg values (306317,2,112805);
-insert into connect_leg values (306318,1,144150);
-insert into connect_leg values (306318,2,111896);
-insert into connect_leg values (306319,1,144169);
-insert into connect_leg values (306319,2,112808);
-insert into connect_leg values (308292,1,112766);
-insert into connect_leg values (308292,2,101952);
-insert into connect_leg values (308296,1,112773);
-insert into connect_leg values (308296,2,101953);
-insert into connect_leg values (308301,1,112784);
-insert into connect_leg values (308301,2,101955);
-insert into connect_leg values (308304,1,112793);
-insert into connect_leg values (308304,1,112794);
-insert into connect_leg values (308304,2,101958);
-insert into connect_leg values (308320,1,112030);
-insert into connect_leg values (308320,1,112031);
-insert into connect_leg values (308320,2,112904);
-insert into connect_leg values (308330,1,111892);
-insert into connect_leg values (308330,2,101955);
-insert into connect_leg values (308334,1,112040);
-insert into connect_leg values (308334,2,112907);
-insert into connect_leg values (308924,1,133432);
-insert into connect_leg values (308924,2,111941);
-insert into connect_leg values (309189,1,144060);
-insert into connect_leg values (309189,2,101955);
-insert into connect_leg values (309198,1,144163);
-insert into connect_leg values (309198,2,112907);
-insert into connect_leg values (309204,1,144150);
-insert into connect_leg values (309204,2,111941);
-insert into connect_leg values (312733,1,102767);
-insert into connect_leg values (312733,2,137320);
-insert into connect_leg values (312734,1,102771);
-insert into connect_leg values (312734,2,137326);
-insert into connect_leg values (312737,1,102777);
-insert into connect_leg values (312737,2,137335);
-insert into connect_leg values (313006,1,112805);
-insert into connect_leg values (313006,2,101929);
-insert into connect_leg values (313024,1,111886);
-insert into connect_leg values (313024,2,101909);
-insert into connect_leg values (313025,1,112030);
-insert into connect_leg values (313025,1,112031);
-insert into connect_leg values (313025,2,112866);
-insert into connect_leg values (313025,2,112867);
-insert into connect_leg values (313030,1,111888);
-insert into connect_leg values (313030,2,101916);
-insert into connect_leg values (313030,2,101917);
-insert into connect_leg values (313034,1,112033);
-insert into connect_leg values (313034,2,112870);
-insert into connect_leg values (313037,1,111892);
-insert into connect_leg values (313037,2,101922);
-insert into connect_leg values (313041,1,112040);
-insert into connect_leg values (313041,2,112873);
-insert into connect_leg values (313048,1,111895);
-insert into connect_leg values (313048,2,101929);
-insert into connect_leg values (313867,1,133430);
-insert into connect_leg values (313867,2,111928);
-insert into connect_leg values (314256,1,144143);
-insert into connect_leg values (314256,2,111928);
-insert into connect_leg values (314259,1,144158);
-insert into connect_leg values (314259,2,112870);
-insert into connect_leg values (314263,1,144060);
-insert into connect_leg values (314263,2,101922);
-insert into connect_leg values (314268,1,144163);
-insert into connect_leg values (314268,2,112873);
-insert into connect_leg values (314269,1,144148);
-insert into connect_leg values (314269,2,111931);
-insert into connect_leg values (329933,1,107159);
-insert into connect_leg values (329933,2,102144);
-insert into connect_leg values (329937,1,107162);
-insert into connect_leg values (329937,2,102150);
-insert into connect_leg values (329941,1,107165);
-insert into connect_leg values (329941,2,102166);
-insert into connect_leg values (329944,1,107166);
-insert into connect_leg values (329944,2,102177);
-insert into connect_leg values (329947,1,107168);
-insert into connect_leg values (329947,2,102191);
-insert into connect_leg values (330865,1,133430);
-insert into connect_leg values (330865,2,112034);
-insert into connect_leg values (330867,1,133431);
-insert into connect_leg values (330867,2,112043);
-insert into connect_leg values (330870,1,133432);
-insert into connect_leg values (330870,2,112049);
-insert into connect_leg values (330947,1,137221);
-insert into connect_leg values (330947,2,102144);
-insert into connect_leg values (330956,1,137224);
-insert into connect_leg values (330956,2,102150);
-insert into connect_leg values (330962,1,137228);
-insert into connect_leg values (330962,2,102166);
-insert into connect_leg values (330964,1,137230);
-insert into connect_leg values (330964,2,102173);
-insert into connect_leg values (330967,1,137233);
-insert into connect_leg values (330967,2,102177);
-insert into connect_leg values (330971,1,137235);
-insert into connect_leg values (330971,2,102190);
-insert into connect_leg values (330974,1,137238);
-insert into connect_leg values (330974,2,102191);
-insert into connect_leg values (330977,1,138817);
-insert into connect_leg values (330977,2,102144);
-insert into connect_leg values (330981,1,138821);
-insert into connect_leg values (330981,2,102150);
-insert into connect_leg values (330984,1,138823);
-insert into connect_leg values (330984,2,102166);
-insert into connect_leg values (330989,1,138830);
-insert into connect_leg values (330989,1,138831);
-insert into connect_leg values (330989,2,102191);
-insert into connect_leg values (331132,1,144143);
-insert into connect_leg values (331132,2,112034);
-insert into connect_leg values (331133,1,144148);
-insert into connect_leg values (331133,2,112043);
-insert into connect_leg values (331134,1,144150);
-insert into connect_leg values (331134,2,112049);
-insert into connect_leg values (333051,1,102136);
-insert into connect_leg values (333051,1,102137);
-insert into connect_leg values (333051,2,112992);
-insert into connect_leg values (333054,1,102148);
-insert into connect_leg values (333054,2,113000);
-insert into connect_leg values (333059,1,102162);
-insert into connect_leg values (333059,1,102163);
-insert into connect_leg values (333059,2,113003);
-insert into connect_leg values (333067,1,102190);
-insert into connect_leg values (333067,2,113012);
-insert into connect_leg values (333067,2,113013);
-insert into connect_leg values (333086,1,107159);
-insert into connect_leg values (333086,2,102122);
-insert into connect_leg values (333091,1,107258);
-insert into connect_leg values (333091,2,113000);
-insert into connect_leg values (333099,1,107165);
-insert into connect_leg values (333099,2,102127);
-insert into connect_leg values (333110,1,107168);
-insert into connect_leg values (333110,2,102135);
-insert into connect_leg values (333153,1,105700);
-insert into connect_leg values (333153,2,107255);
-insert into connect_leg values (333158,1,105592);
-insert into connect_leg values (333158,2,102127);
-insert into connect_leg values (333168,1,105599);
-insert into connect_leg values (333168,2,102135);
-insert into connect_leg values (334183,1,137221);
-insert into connect_leg values (334183,2,102122);
-insert into connect_leg values (334190,1,137354);
-insert into connect_leg values (334190,2,107255);
-insert into connect_leg values (334198,1,137233);
-insert into connect_leg values (334198,2,102133);
-insert into connect_leg values (334202,1,137238);
-insert into connect_leg values (334202,2,102135);
-insert into connect_leg values (334210,1,138817);
-insert into connect_leg values (334210,2,102122);
-insert into connect_leg values (334218,1,138879);
-insert into connect_leg values (334218,2,107255);
-insert into connect_leg values (334222,1,138823);
-insert into connect_leg values (334222,2,102127);
-insert into connect_leg values (334230,1,138830);
-insert into connect_leg values (334230,1,138831);
-insert into connect_leg values (334230,2,102135);
-insert into connect_leg values (393490,1,102125);
-insert into connect_leg values (393490,2,112352);
-insert into connect_leg values (393507,1,107254);
-insert into connect_leg values (393507,2,112352);
-insert into connect_leg values (393546,1,105794);
-insert into connect_leg values (393546,2,112352);
-insert into connect_leg values (393547,1,105795);
-insert into connect_leg values (393547,2,112352);
-insert into connect_leg values (393553,1,105799);
-insert into connect_leg values (393553,2,112354);
-insert into connect_leg values (393637,1,112991);
-insert into connect_leg values (393637,2,112351);
-insert into connect_leg values (393641,1,113004);
-insert into connect_leg values (393641,2,112353);
-insert into connect_leg values (393643,1,113008);
-insert into connect_leg values (393643,2,112354);
-insert into connect_leg values (393950,1,137407);
-insert into connect_leg values (393950,2,112352);
-insert into connect_leg values (393953,1,137412);
-insert into connect_leg values (393953,2,112354);
-insert into connect_leg values (402327,1,112766);
-insert into connect_leg values (402327,2,102770);
-insert into connect_leg values (402332,1,112773);
-insert into connect_leg values (402332,2,102773);
-insert into connect_leg values (402339,1,112784);
-insert into connect_leg values (402339,2,102776);
-insert into connect_leg values (402343,1,112790);
-insert into connect_leg values (402343,2,102779);
-insert into connect_leg values (402346,1,112793);
-insert into connect_leg values (402346,1,112794);
-insert into connect_leg values (402346,2,102782);
-insert into connect_leg values (402350,1,112805);
-insert into connect_leg values (402350,2,102784);
-insert into connect_leg values (402376,1,112030);
-insert into connect_leg values (402376,1,112031);
-insert into connect_leg values (402376,2,113577);
-insert into connect_leg values (402382,1,111888);
-insert into connect_leg values (402382,2,102773);
-insert into connect_leg values (402388,1,111892);
-insert into connect_leg values (402388,2,102776);
-insert into connect_leg values (402391,1,111939);
-insert into connect_leg values (402391,2,107478);
-insert into connect_leg values (402397,1,112046);
-insert into connect_leg values (402397,2,113583);
-insert into connect_leg values (402398,1,111895);
-insert into connect_leg values (402398,2,102784);
-insert into connect_leg values (403125,1,133430);
-insert into connect_leg values (403125,2,112415);
-insert into connect_leg values (403128,1,133431);
-insert into connect_leg values (403128,2,112417);
-insert into connect_leg values (403468,1,144143);
-insert into connect_leg values (403468,2,112415);
-insert into connect_leg values (403472,1,144158);
-insert into connect_leg values (403472,2,113579);
-insert into connect_leg values (403474,1,144060);
-insert into connect_leg values (403474,2,102776);
-insert into connect_leg values (403479,1,144148);
-insert into connect_leg values (403479,2,112417);
-insert into connect_leg values (403481,1,144062);
-insert into connect_leg values (403481,1,144063);
-insert into connect_leg values (403481,2,102782);
-insert into connect_leg values (403485,1,144167);
-insert into connect_leg values (403485,2,113583);
-insert into connect_leg values (403486,1,144066);
-insert into connect_leg values (403486,2,102784);
-insert into connect_leg values (403488,1,144067);
-insert into connect_leg values (403488,2,102766);
-insert into connect_leg values (405211,1,112773);
-insert into connect_leg values (405211,2,102800);
-insert into connect_leg values (405214,1,112784);
-insert into connect_leg values (405214,2,102802);
-insert into connect_leg values (405214,2,102803);
-insert into connect_leg values (405217,1,112793);
-insert into connect_leg values (405217,1,112794);
-insert into connect_leg values (405217,2,102807);
-insert into connect_leg values (405219,1,112805);
-insert into connect_leg values (405219,2,102809);
-insert into connect_leg values (405235,1,111886);
-insert into connect_leg values (405235,2,102795);
-insert into connect_leg values (405236,1,111886);
-insert into connect_leg values (405236,2,102796);
-insert into connect_leg values (405241,1,111888);
-insert into connect_leg values (405241,2,102800);
-insert into connect_leg values (405250,1,111892);
-insert into connect_leg values (405250,2,102802);
-insert into connect_leg values (405250,2,102803);
-insert into connect_leg values (405253,1,111939);
-insert into connect_leg values (405253,2,107492);
-insert into connect_leg values (405258,1,111895);
-insert into connect_leg values (405258,2,102809);
-insert into connect_leg values (405963,1,144060);
-insert into connect_leg values (405963,2,102802);
-insert into connect_leg values (405963,2,102803);
-insert into connect_leg values (405970,1,144066);
-insert into connect_leg values (405970,2,102809);
-insert into connect_leg values (405971,1,144067);
-insert into connect_leg values (405971,2,102796);
-insert into connect_leg values (420730,1,102136);
-insert into connect_leg values (420730,1,102137);
-insert into connect_leg values (420730,2,113705);
-insert into connect_leg values (420735,1,102148);
-insert into connect_leg values (420735,2,113712);
-insert into connect_leg values (420736,1,102125);
-insert into connect_leg values (420736,2,112516);
-insert into connect_leg values (420739,1,102162);
-insert into connect_leg values (420739,1,102163);
-insert into connect_leg values (420739,2,113715);
-insert into connect_leg values (420745,1,102173);
-insert into connect_leg values (420745,2,113719);
-insert into connect_leg values (420747,1,102129);
-insert into connect_leg values (420747,2,112526);
-insert into connect_leg values (420751,1,102190);
-insert into connect_leg values (420751,2,113721);
-insert into connect_leg values (420782,1,107486);
-insert into connect_leg values (420782,2,139353);
-insert into connect_leg values (420783,1,107258);
-insert into connect_leg values (420783,2,113712);
-insert into connect_leg values (420785,1,107254);
-insert into connect_leg values (420785,2,112516);
-insert into connect_leg values (420791,1,107165);
-insert into connect_leg values (420791,2,102929);
-insert into connect_leg values (420792,1,107487);
-insert into connect_leg values (420792,2,139355);
-insert into connect_leg values (420798,1,107489);
-insert into connect_leg values (420798,2,139356);
-insert into connect_leg values (420887,1,105802);
-insert into connect_leg values (420887,2,113712);
-insert into connect_leg values (420888,1,105794);
-insert into connect_leg values (420888,2,112516);
-insert into connect_leg values (420893,1,105805);
-insert into connect_leg values (420893,2,113715);
-insert into connect_leg values (420894,1,106266);
-insert into connect_leg values (420894,2,139355);
-insert into connect_leg values (420903,1,105595);
-insert into connect_leg values (420903,2,102932);
-insert into connect_leg values (420911,1,105799);
-insert into connect_leg values (420911,2,112526);
-insert into connect_leg values (420912,1,105812);
-insert into connect_leg values (420912,2,113721);
-insert into connect_leg values (421176,1,112991);
-insert into connect_leg values (421176,2,112513);
-insert into connect_leg values (421177,1,112998);
-insert into connect_leg values (421177,2,112516);
-insert into connect_leg values (421179,1,113004);
-insert into connect_leg values (421179,2,112524);
-insert into connect_leg values (421180,1,113008);
-insert into connect_leg values (421180,2,112526);
-insert into connect_leg values (421181,1,113010);
-insert into connect_leg values (421181,2,112527);
-insert into connect_leg values (422233,1,137221);
-insert into connect_leg values (422233,2,102923);
-insert into connect_leg values (422233,2,102924);
-insert into connect_leg values (422240,1,137415);
-insert into connect_leg values (422240,2,113712);
-insert into connect_leg values (422241,1,137407);
-insert into connect_leg values (422241,2,112516);
-insert into connect_leg values (422249,1,137228);
-insert into connect_leg values (422249,2,102929);
-insert into connect_leg values (422262,1,137412);
-insert into connect_leg values (422262,2,112526);
-insert into connect_leg values (422263,1,137423);
-insert into connect_leg values (422263,2,113721);
-insert into connect_leg values (422277,1,138821);
-insert into connect_leg values (422277,2,102927);
-insert into connect_leg values (422281,1,138823);
-insert into connect_leg values (422281,2,102929);
-insert into fconnection values (312733,'ATL','BOS',740,1127,'1234567',0,1,227);
-insert into fconnection values (312734,'ATL','BOS',1200,1548,'1234567',0,1,228);
-insert into fconnection values (312737,'ATL','BOS',1650,2053,'1234567',0,1,243);
-insert into fconnection values (333051,'ATL','DEN',630,910,'1234567',0,1,280);
-insert into fconnection values (333054,'ATL','DEN',1000,1245,'1234567',0,1,285);
-insert into fconnection values (333059,'ATL','DEN',1319,1554,'1234567',0,1,275);
-insert into fconnection values (333067,'ATL','DEN',2029,2320,'1234567',0,1,291);
-insert into fconnection values (393490,'ATL','OAK',1000,1339,'1234567',0,1,399);
-insert into fconnection values (420730,'ATL','SFO',630,955,'1234567',0,1,385);
-insert into fconnection values (420735,'ATL','SFO',1000,1325,'1234567',0,1,385);
-insert into fconnection values (420736,'ATL','SFO',1000,1336,'1234567',0,1,396);
-insert into fconnection values (420739,'ATL','SFO',1319,1650,'1234567',0,1,391);
-insert into fconnection values (420745,'ATL','SFO',1650,2050,'1234567',0,1,420);
-insert into fconnection values (420747,'ATL','SFO',1825,2214,'1234567',0,1,409);
-insert into fconnection values (420751,'ATL','SFO',2029,2350,'1234567',0,1,381);
-insert into fconnection values (305276,'BOS','ATL',705,1110,'1234567',0,1,245);
-insert into fconnection values (305277,'BOS','ATL',1125,1615,'1234567',0,1,290);
-insert into fconnection values (305280,'BOS','ATL',1645,2101,'1234567',0,1,256);
-insert into fconnection values (333153,'BOS','DEN',1000,1410,'1234567',0,1,370);
-insert into fconnection values (333158,'BOS','DEN',1156,1615,'1234567',0,1,379);
-insert into fconnection values (333168,'BOS','DEN',1850,2320,'1234567',0,1,390);
-insert into fconnection values (393546,'BOS','OAK',838,1339,'123456-',0,1,481);
-insert into fconnection values (393547,'BOS','OAK',840,1339,'------7',0,1,479);
-insert into fconnection values (393553,'BOS','OAK',1720,2205,'1234567',0,1,465);
-insert into fconnection values (420887,'BOS','SFO',805,1325,'1234567',0,1,500);
-insert into fconnection values (420888,'BOS','SFO',838,1336,'123456-',0,1,478);
-insert into fconnection values (420893,'BOS','SFO',1132,1650,'1234567',0,1,498);
-insert into fconnection values (420894,'BOS','SFO',1210,1652,'1234567',0,1,462);
-insert into fconnection values (420903,'BOS','SFO',1520,2115,'1234567',0,1,535);
-insert into fconnection values (420911,'BOS','SFO',1720,2214,'1234567',0,1,474);
-insert into fconnection values (420912,'BOS','SFO',1845,2350,'1234567',0,1,485);
-insert into fconnection values (333086,'BWI','DEN',550,955,'1234567',0,1,365);
-insert into fconnection values (333091,'BWI','DEN',845,1245,'1234567',0,1,360);
-insert into fconnection values (333099,'BWI','DEN',1230,1615,'1234567',0,1,345);
-insert into fconnection values (333110,'BWI','DEN',1945,2320,'1234567',0,1,335);
-insert into fconnection values (329933,'BWI','DFW',550,930,'1234567',0,1,280);
-insert into fconnection values (329937,'BWI','DFW',900,1250,'1234567',0,1,290);
-insert into fconnection values (329941,'BWI','DFW',1230,1620,'1234567',0,1,290);
-insert into fconnection values (329944,'BWI','DFW',1600,1955,'1234567',0,1,295);
-insert into fconnection values (329947,'BWI','DFW',1945,2321,'1234567',0,1,276);
-insert into fconnection values (393507,'BWI','OAK',915,1339,'1234567',0,1,444);
-insert into fconnection values (420782,'BWI','SFO',800,1217,'123456-',0,1,437);
-insert into fconnection values (420783,'BWI','SFO',845,1325,'1234567',0,1,460);
-insert into fconnection values (420785,'BWI','SFO',915,1336,'1234567',0,1,441);
-insert into fconnection values (420791,'BWI','SFO',1230,1730,'1234567',0,1,480);
-insert into fconnection values (420792,'BWI','SFO',1240,1652,'1234567',0,1,432);
-insert into fconnection values (420798,'BWI','SFO',1620,2022,'1234567',0,1,422);
-insert into fconnection values (305416,'DEN','ATL',620,1244,'1234567',0,1,264);
-insert into fconnection values (305424,'DEN','ATL',950,1606,'1234567',0,1,256);
-insert into fconnection values (305429,'DEN','ATL',1325,1943,'1234567',0,1,258);
-insert into fconnection values (305435,'DEN','ATL',1700,100,'1234567',0,1,360);
-insert into fconnection values (305436,'DEN','ATL',1955,230,'1234567',0,1,275);
-insert into fconnection values (313024,'DEN','BOS',55,855,'1234567',0,1,360);
-insert into fconnection values (313025,'DEN','BOS',620,1435,'1234567',0,1,375);
-insert into fconnection values (313030,'DEN','BOS',800,1550,'1234567',0,1,350);
-insert into fconnection values (313034,'DEN','BOS',950,1755,'1234567',0,1,365);
-insert into fconnection values (313037,'DEN','BOS',1055,1920,'1234567',0,1,385);
-insert into fconnection values (313041,'DEN','BOS',1325,2125,'1234567',0,1,360);
-insert into fconnection values (313048,'DEN','BOS',1815,153,'1234567',0,1,338);
-insert into fconnection values (308320,'DEN','BWI',620,1400,'1234567',0,1,340);
-insert into fconnection values (308330,'DEN','BWI',1055,1850,'1234567',0,1,355);
-insert into fconnection values (308334,'DEN','BWI',1325,2045,'1234567',0,1,320);
-insert into fconnection values (402376,'DEN','PHL',620,1350,'1234567',0,1,330);
-insert into fconnection values (402382,'DEN','PHL',800,1515,'1234567',0,1,315);
-insert into fconnection values (402388,'DEN','PHL',1055,1840,'1234567',0,1,345);
-insert into fconnection values (402391,'DEN','PHL',1455,2146,'12345-7',0,1,291);
-insert into fconnection values (402397,'DEN','PHL',1700,15,'1234567',0,1,315);
-insert into fconnection values (402398,'DEN','PHL',1815,130,'1234567',0,1,315);
-insert into fconnection values (405235,'DEN','PIT',55,803,'1234567',0,1,308);
-insert into fconnection values (405236,'DEN','PIT',55,1000,'1234567',0,1,425);
-insert into fconnection values (405241,'DEN','PIT',800,1510,'1234567',0,1,310);
-insert into fconnection values (405250,'DEN','PIT',1055,1845,'1234567',0,1,350);
-insert into fconnection values (405253,'DEN','PIT',1455,2202,'1234567',0,1,307);
-insert into fconnection values (405258,'DEN','PIT',1815,59,'1234567',0,1,284);
-insert into fconnection values (313006,'DFW','BOS',2010,153,'1234567',0,1,283);
-insert into fconnection values (308292,'DFW','BWI',625,1145,'1234567',0,1,260);
-insert into fconnection values (308296,'DFW','BWI',945,1510,'1234567',0,1,265);
-insert into fconnection values (308301,'DFW','BWI',1305,1850,'1234567',0,1,285);
-insert into fconnection values (308304,'DFW','BWI',1650,2230,'1234567',0,1,280);
-insert into fconnection values (393637,'DFW','OAK',700,1014,'123456-',0,1,314);
-insert into fconnection values (393641,'DFW','OAK',1547,1852,'1234567',0,1,305);
-insert into fconnection values (393643,'DFW','OAK',1850,2205,'12345-7',0,1,315);
-insert into fconnection values (402327,'DFW','PHL',625,1200,'1234567',0,1,275);
-insert into fconnection values (402332,'DFW','PHL',945,1515,'1234567',0,1,270);
-insert into fconnection values (402339,'DFW','PHL',1305,1840,'1234567',0,1,275);
-insert into fconnection values (402343,'DFW','PHL',1501,2045,'1234567',0,1,284);
-insert into fconnection values (402346,'DFW','PHL',1650,2220,'1234567',0,1,270);
-insert into fconnection values (402350,'DFW','PHL',2010,130,'1234567',0,1,260);
-insert into fconnection values (405211,'DFW','PIT',945,1510,'1234567',0,1,265);
-insert into fconnection values (405214,'DFW','PIT',1305,1845,'1234567',0,1,280);
-insert into fconnection values (405217,'DFW','PIT',1650,2205,'1234567',0,1,255);
-insert into fconnection values (405219,'DFW','PIT',2010,59,'1234567',0,1,229);
-insert into fconnection values (421176,'DFW','SFO',700,1006,'123456-',0,1,306);
-insert into fconnection values (421177,'DFW','SFO',1032,1336,'1234567',0,1,304);
-insert into fconnection values (421179,'DFW','SFO',1547,1912,'1234567',0,1,325);
-insert into fconnection values (421180,'DFW','SFO',1850,2214,'12345-7',0,1,324);
-insert into fconnection values (421181,'DFW','SFO',1940,2310,'1234567',0,1,330);
-insert into fconnection values (306026,'OAK','ATL',625,1537,'1234567',0,1,372);
-insert into fconnection values (306031,'OAK','ATL',1425,2330,'1234567',0,1,365);
-insert into fconnection values (313867,'OAK','BOS',625,1619,'1234567',0,1,414);
-insert into fconnection values (308924,'OAK','BWI',1425,2332,'1234567',0,1,367);
-insert into fconnection values (330865,'OAK','DFW',625,1312,'1234567',0,1,287);
-insert into fconnection values (330867,'OAK','DFW',1105,1753,'1234567',0,1,288);
-insert into fconnection values (330870,'OAK','DFW',1425,2122,'12345-7',0,1,297);
-insert into fconnection values (403125,'OAK','PHL',625,1553,'1234567',0,1,388);
-insert into fconnection values (403128,'OAK','PHL',1105,2041,'1234567',0,1,396);
-insert into fconnection values (334183,'PHL','DEN',540,955,'1234567',0,1,375);
-insert into fconnection values (334190,'PHL','DEN',840,1410,'123456-',0,1,450);
-insert into fconnection values (334198,'PHL','DEN',1600,2015,'1234567',0,1,375);
-insert into fconnection values (334202,'PHL','DEN',1935,2320,'1234567',0,1,345);
-insert into fconnection values (330947,'PHL','DFW',540,930,'1234567',0,1,290);
-insert into fconnection values (330956,'PHL','DFW',900,1250,'1234567',0,1,290);
-insert into fconnection values (330962,'PHL','DFW',1230,1620,'1234567',0,1,290);
-insert into fconnection values (330964,'PHL','DFW',1405,1805,'1234567',0,1,300);
-insert into fconnection values (330967,'PHL','DFW',1600,1955,'1234567',0,1,295);
-insert into fconnection values (330971,'PHL','DFW',1750,2140,'1234567',0,1,290);
-insert into fconnection values (330974,'PHL','DFW',1935,2321,'1234567',0,1,286);
-insert into fconnection values (393950,'PHL','OAK',905,1339,'1234567',0,1,454);
-insert into fconnection values (393953,'PHL','OAK',1753,2205,'1234567',0,1,432);
-insert into fconnection values (422233,'PHL','SFO',540,1110,'1234567',0,1,510);
-insert into fconnection values (422240,'PHL','SFO',830,1325,'1234567',0,1,475);
-insert into fconnection values (422241,'PHL','SFO',905,1336,'1234567',0,1,451);
-insert into fconnection values (422249,'PHL','SFO',1230,1730,'1234567',0,1,480);
-insert into fconnection values (422262,'PHL','SFO',1753,2214,'1234567',0,1,441);
-insert into fconnection values (422263,'PHL','SFO',1915,2350,'1234567',0,1,455);
-insert into fconnection values (334210,'PIT','DEN',600,955,'1234567',0,1,355);
-insert into fconnection values (334218,'PIT','DEN',1030,1410,'1234567',0,1,340);
-insert into fconnection values (334222,'PIT','DEN',1245,1615,'1234567',0,1,330);
-insert into fconnection values (334230,'PIT','DEN',1945,2320,'1234567',0,1,335);
-insert into fconnection values (330977,'PIT','DFW',600,930,'1234567',0,1,270);
-insert into fconnection values (330981,'PIT','DFW',910,1250,'1234567',0,1,280);
-insert into fconnection values (330984,'PIT','DFW',1245,1620,'1234567',0,1,275);
-insert into fconnection values (330989,'PIT','DFW',1945,2321,'1234567',0,1,276);
-insert into fconnection values (422277,'PIT','SFO',910,1410,'1234567',0,1,480);
-insert into fconnection values (422281,'PIT','SFO',1245,1730,'1234567',0,1,465);
-insert into fconnection values (306304,'SFO','ATL',20,917,'1234567',0,1,357);
-insert into fconnection values (306307,'SFO','ATL',620,1537,'1234567',0,1,377);
-insert into fconnection values (306309,'SFO','ATL',700,1606,'1234567',0,1,366);
-insert into fconnection values (306314,'SFO','ATL',1059,1943,'1234567',0,1,344);
-insert into fconnection values (306317,'SFO','ATL',1425,2258,'1234567',0,1,333);
-insert into fconnection values (306318,'SFO','ATL',1431,2330,'1234567',0,1,359);
-insert into fconnection values (306319,'SFO','ATL',1750,230,'1234567',0,1,340);
-insert into fconnection values (314256,'SFO','BOS',620,1619,'1234567',0,1,419);
-insert into fconnection values (314259,'SFO','BOS',700,1755,'1234567',0,1,475);
-insert into fconnection values (314263,'SFO','BOS',815,1920,'1234567',0,1,485);
-insert into fconnection values (314268,'SFO','BOS',1059,2125,'1234567',0,1,446);
-insert into fconnection values (314269,'SFO','BOS',1108,2056,'1234567',0,1,408);
-insert into fconnection values (309189,'SFO','BWI',815,1850,'1234567',0,1,455);
-insert into fconnection values (309198,'SFO','BWI',1059,2045,'1234567',0,1,406);
-insert into fconnection values (309204,'SFO','BWI',1431,2332,'1234567',0,1,361);
-insert into fconnection values (331132,'SFO','DFW',620,1312,'1234567',0,1,292);
-insert into fconnection values (331133,'SFO','DFW',1108,1753,'1234567',0,1,285);
-insert into fconnection values (331134,'SFO','DFW',1431,2122,'12345-7',0,1,291);
-insert into fconnection values (403468,'SFO','PHL',620,1553,'1234567',0,1,393);
-insert into fconnection values (403472,'SFO','PHL',700,1705,'1234567',0,1,425);
-insert into fconnection values (403474,'SFO','PHL',815,1840,'1234567',0,1,445);
-insert into fconnection values (403479,'SFO','PHL',1108,2041,'1234567',0,1,393);
-insert into fconnection values (403481,'SFO','PHL',1215,2220,'1234567',0,1,425);
-insert into fconnection values (403485,'SFO','PHL',1425,15,'1234567',0,1,410);
-insert into fconnection values (403486,'SFO','PHL',1530,130,'1234567',0,1,420);
-insert into fconnection values (403488,'SFO','PHL',2220,825,'1234567',0,1,425);
-insert into fconnection values (405963,'SFO','PIT',815,1845,'1234567',0,1,450);
-insert into fconnection values (405970,'SFO','PIT',1530,59,'1234567',0,1,389);
-insert into fconnection values (405971,'SFO','PIT',2220,1000,'1234567',0,1,520);
-insert into day_name values (1,'MONDAY');
-insert into day_name values (2,'TUESDAY');
-insert into day_name values (3,'WEDNESDAY');
-insert into day_name values (4,'THURSDAY');
-insert into day_name values (5,'FRIDAY');
-insert into day_name values (6,'SATURDAY');
-insert into day_name values (7,'SUNDAY');
-insert into dual_carrier values ('AA','AA',3000,5799,'AMERICAN EAGLE');
-insert into dual_carrier values ('AC','RJ',1001,1010,'AIR CANADA');
-insert into dual_carrier values ('AC','CS',1100,1199,'AIR CANADA');
-insert into dual_carrier values ('AC','GX',1200,1499,'AIR CANADA');
-insert into dual_carrier values ('AC','ZX',1500,1799,'AIR CANADA');
-insert into dual_carrier values ('AC','QK',1800,1899,'AIR CANADA');
-insert into dual_carrier values ('AC','3J',1900,1949,'AIR CANADA');
-insert into dual_carrier values ('AC','3J',1977,1981,'AIR CANADA');
-insert into dual_carrier values ('AC','3J',1990,1999,'AIR CANADA');
-insert into dual_carrier values ('AC','NV',1950,1976,'AIR CANADA');
-insert into dual_carrier values ('AC','NV',1982,1989,'AIR CANADA');
-insert into dual_carrier values ('AQ','WP',1000,1999,'ALOHA AIRLINES,INC');
-insert into dual_carrier values ('AS','QX',2000,2199,'ALASKA AIRLINES COMMUTER SERVICE');
-insert into dual_carrier values ('AS','QX',2260,2999,'ALASKA AIRLINES COMMUTER SERVICE');
-insert into dual_carrier values ('AS','BF',2200,2259,'ALASKA AIRLINES COMMUTER SERVICE');
-insert into dual_carrier values ('AS','BF',4000,4199,'ALASKA AIRLINES COMMUTER SERVICE');
-insert into dual_carrier values ('AS','JF',4400,4499,'ALASKA AIRLINES COMMUTER SERVICE');
-insert into dual_carrier values ('AS','KN',4500,4599,'ALASKA AIRLINES COMMUTER SERVICE');
-insert into dual_carrier values ('AS','8E',4600,4699,'ALASKA AIRLINES COMMUTER SERVICE');
-insert into dual_carrier values ('AS','7H',4800,4899,'ALASKA AIRLINES COMMUTER SERVICE');
-insert into dual_carrier values ('BA','BE',8001,8002,'BRITISH AIRWAYS');
-insert into dual_carrier values ('BA','BE',8004,8004,'BRITISH AIRWAYS');
-insert into dual_carrier values ('BA','UA',8022,8022,'BRITISH AIRWAYS');
-insert into dual_carrier values ('BA','UA',8154,8155,'BRITISH AIRWAYS');
-insert into dual_carrier values ('BA','UA',8159,8159,'BRITISH AIRWAYS');
-insert into dual_carrier values ('BA','UA',8235,8235,'BRITISH AIRWAYS');
-insert into dual_carrier values ('BA','UA',8243,8243,'BRITISH AIRWAYS');
-insert into dual_carrier values ('BA','UA',8246,8246,'BRITISH AIRWAYS');
-insert into dual_carrier values ('BA','UA',8064,8064,'BRITISH AIRWAYS');
-insert into dual_carrier values ('BA','UA',8269,8269,'BRITISH AIRWAYS');
-insert into dual_carrier values ('BA','UA',8300,8300,'BRITISH AIRWAYS');
-insert into dual_carrier values ('BF','2E',1100,1399,'MARKAIR,INC.');
-insert into dual_carrier values ('BF','2E',1800,1899,'MARKAIR,INC.');
-insert into dual_carrier values ('CO','CO',950,967,'CONTINENTAL AIRLINES/AIR MICRONESIA');
-insert into dual_carrier values ('CO','CO',970,997,'CONTINENTAL AIRLINES/AIR MICRONESIA');
-insert into dual_carrier values ('CO','CO',1880,1899,'CONTINENTAL AIRLINES/AIR MICRONESIA');
-insert into dual_carrier values ('CO','CO',3300,3399,'CONTINENTAL AIRLINES/AIR MICRONESIA');
-insert into dual_carrier values ('CO','SK',8900,8949,'CONTINENTAL AIRLINES/SAS SCANDINAVIAN AIRLINES SYSTEM');
-insert into dual_carrier values ('CO','SK',9000,9125,'CONTINENTAL AIRLINES/SAS SCANDINAVIAN AIRLINES SYSTEM');
-insert into dual_carrier values ('CO','SK',9370,9435,'CONTINENTAL AIRLINES/SAS SCANDINAVIAN AIRLINES SYSTEM');
-insert into dual_carrier values ('CO','JC',2000,2499,'CONTINENTAL EXPRESS');
-insert into dual_carrier values ('CO','RU',2500,2799,'CONTINENTAL EXPRESS');
-insert into dual_carrier values ('CO','RU',3000,3025,'CONTINENTAL EXPRESS');
-insert into dual_carrier values ('CO','RU',4400,4999,'CONTINENTAL EXPRESS');
-insert into dual_carrier values ('CO','CO',2800,2999,'CONTINENTAL EXPRESS/RESORT EXPRESS');
-insert into dual_carrier values ('CO','CO',3026,3099,'CONTINENTAL EXPRESS/HOME JAMES');
-insert into dual_carrier values ('CO','CO',3100,3199,'CONTINENTAL EXPRESS/COLORADO MOUNTAIN EXPRESS');
-insert into dual_carrier values ('CO','6J',3200,3299,'CONTINENTAL EXPRESS/SOUTHERN JERSEY AIRWAYS,INC.');
-insert into dual_carrier values ('CO','QO',3400,3999,'CONTINENTAL EXPRESS/BAR HARBOR AIRLINES');
-insert into dual_carrier values ('CP','SK',68,69,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','LH',144,145,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','WD',950,951,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','WD',954,955,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','WD',957,958,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','WD',960,961,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','WD',963,964,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','WD',967,968,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','WD',983,983,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','WD',986,986,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','WD',988,988,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','WD',991,992,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','WD',994,995,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','PJ',1001,1010,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','KI',1100,1272,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','KI',1274,1274,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','KI',1276,1276,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','KI',1278,1283,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','KI',1285,1288,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','MO',1300,1359,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','9A',1400,1499,'CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS');
-insert into dual_carrier values ('CP','CP',1800,1999,'CANADIAN AIRLINES INTERNATIONAL LTD./ONTARIO EXPRESS LTD.');
-insert into dual_carrier values ('DL','EV',2000,2999,'DELTA CONNECTION');
-insert into dual_carrier values ('DL','OH',3000,3699,'DELTA CONNECTION');
-insert into dual_carrier values ('DL','HQ',4300,4999,'DELTA CONNECTION');
-insert into dual_carrier values ('DL','OO',5200,5999,'DELTA CONNECTION');
-insert into dual_carrier values ('EA','LI',2300,2399,'EASTERN EXPRESS');
-insert into dual_carrier values ('EA','HY',2900,3299,'EASTERN EXPRESS');
-insert into dual_carrier values ('EA','QO',3700,3999,'EASTERN EXPRESS');
-insert into dual_carrier values ('KL','UK',2843,2843,'KLM-ROYAL DUTCH AIRLINES');
-insert into dual_carrier values ('KL','UK',2845,2845,'KLM-ROYAL DUTCH AIRLINES');
-insert into dual_carrier values ('KL','UK',2847,2847,'KLM-ROYAL DUTCH AIRLINES');
-insert into dual_carrier values ('ML','JT',1500,1550,'THE MIDWAY CONNECTION/IOWA AIRWAYS');
-insert into dual_carrier values ('ML','ML',1600,1999,'THE MIDWAY CONNECTION/MIDWAY COMMUTER/FISCHER BROS. AVIATION');
-insert into dual_carrier values ('ND','QR',240,259,'INTAIR');
-insert into dual_carrier values ('ND','ND',940,959,'INTAIR/ALEXANDAIR,INC.');
-insert into dual_carrier values ('NW','QX',2000,2399,'NORTHWEST AIRLINES');
-insert into dual_carrier values ('NW','US',4000,4999,'NORTHWEST AIRLINES');
-insert into dual_carrier values ('NW','9E',2500,2999,'NORTHWEST AIRLINK');
-insert into dual_carrier values ('NW','XJ',3000,3399,'NORTHWEST AIRLINK');
-insert into dual_carrier values ('NW','RP',3500,3799,'NORTHWEST AIRLINK');
-insert into dual_carrier values ('NW','GQ',3800,3999,'NORTHWEST AIRLINK');
-insert into dual_carrier values ('PA','RZ',270,271,'PAN AM EXPRESS,INC.');
-insert into dual_carrier values ('PA','RZ',4500,4999,'PAN AM EXPRESS,INC.');
-insert into dual_carrier values ('PA','MA',4072,4073,'PAN AMERICAN WORLD AIRWAYS,INC./MALEV-HUNGARIAN AIRLINES');
-insert into dual_carrier values ('PA','JP',4076,4077,'PAN AMERICAN WORLD AIRWAYS,INC./ADRIA AIRWAYS');
-insert into dual_carrier values ('QF','AA',301,302,'QANTAS AIRWAYS LTD.');
-insert into dual_carrier values ('QK','QK',803,804,'AIR NOVA INC./NEWFOUNDLAND LABRADOR AIR TRANSPORT,LTD.');
-insert into dual_carrier values ('QY','QY',600,615,'AERO VIRGIN ISLANDS CORP./TAINO AIRWAYS');
-insert into dual_carrier values ('TW','US',8150,8155,'TRANS WORLD AIRLINES,INC.');
-insert into dual_carrier values ('TW','US',8156,8199,'TRANS WORLD AIRLINES,INC.');
-insert into dual_carrier values ('TW','9N',7000,7199,'TRANS WORLD EXPRESS,');
-insert into dual_carrier values ('TW','ZV',7300,7499,'TRANS WORLD EXPRESS,');
-insert into dual_carrier values ('TW','JI',7550,7569,'TRANS WORLD EXPRESS,');
-insert into dual_carrier values ('TW','8P',7570,7699,'TRANS WORLD EXPRESS,');
-insert into dual_carrier values ('TW','SS',7750,7949,'TRANS WORLD EXPRESS,');
-insert into dual_carrier values ('UA','XV',2100,2349,'UNITED EXPRESS');
-insert into dual_carrier values ('UA','NO',2375,2624,'UNITED EXPRESS');
-insert into dual_carrier values ('UA','ZW',2640,3099,'UNITED EXPRESS');
-insert into dual_carrier values ('UA','OE',3100,3569,'UNITED EXPRESS');
-insert into dual_carrier values ('UA','AP',3640,3999,'UNITED EXPRESS');
-insert into dual_carrier values ('US','US',3000,4999,'USAIR EXPRESS');
-insert into dual_carrier values ('YX','YX',1000,1999,'MIDWEST EXPRESS CONNECTION/SKYWAY AIRLINES INC.');
-insert into dual_carrier values ('2F','2F',526,529,'FRONTIER FLYING SERVICE/TATONDUK AIR SERVICE');
-insert into dual_carrier values ('','',0,0,'');
-insert into fare values ('7100001','ATL','BOS','F','','',497.00,994.00);
-insert into fare values ('7100002','ATL','BOS','FN','','',348.00,696.00);
-insert into fare values ('7100003','ATL','BOS','Y','','',331.00,662.00);
-insert into fare values ('7100004','ATL','BOS','YN','','',266.00,532.00);
-insert into fare values ('7100005','ATL','BOS','K','','AP/57',0.00,388.00);
-insert into fare values ('7100006','ATL','BOS','KO','','AP/57',0.00,368.00);
-insert into fare values ('7100007','ATL','BOS','QW','','AP/57',0.00,268.00);
-insert into fare values ('7100008','ATL','BOS','QX','','AP/57',0.00,248.00);
-insert into fare values ('7100009','ATL','BOS','B','','VU/1',230.00,0.00);
-insert into fare values ('7100010','ATL','BOS','Y','','VU/1',226.00,0.00);
-insert into fare values ('7100011','ATL','BWI','F','','',428.00,856.00);
-insert into fare values ('7100012','ATL','BWI','FN','','',299.00,598.00);
-insert into fare values ('7100013','ATL','BWI','Y','','',286.00,572.00);
-insert into fare values ('7100014','ATL','BWI','YN','','',230.00,460.00);
-insert into fare values ('7100015','ATL','BWI','QW','','AP/57',0.00,248.00);
-insert into fare values ('7100016','ATL','BWI','QX','','AP/57',0.00,208.00);
-insert into fare values ('7100017','ATL','BWI','B','','VU/1',199.00,0.00);
-insert into fare values ('7100018','ATL','BWI','Y','','VU/1',196.00,0.00);
-insert into fare values ('7100019','ATL','DEN','F','UA','',685.00,1370.00);
-insert into fare values ('7100020','ATL','DEN','F','','',677.00,1354.00);
-insert into fare values ('7100021','ATL','DEN','FN','','',475.00,950.00);
-insert into fare values ('7100022','ATL','DEN','Y','UA','',457.00,914.00);
-insert into fare values ('7100023','ATL','DEN','Y','','',452.00,904.00);
-insert into fare values ('7100024','ATL','DEN','B','DL','',435.00,870.00);
-insert into fare values ('7100025','ATL','DEN','H','EA','',410.00,820.00);
-insert into fare values ('7100026','ATL','DEN','M','DL','',410.00,820.00);
-insert into fare values ('7100027','ATL','DEN','YN','','',361.00,722.00);
-insert into fare values ('7100028','ATL','DEN','MW','','AP/57',0.00,438.00);
-insert into fare values ('7100029','ATL','DEN','MX','','AP/57',0.00,378.00);
-insert into fare values ('7100030','ATL','DEN','QW','','AP/57',0.00,298.00);
-insert into fare values ('7100031','ATL','DEN','QX','','AP/57',0.00,238.00);
-insert into fare values ('7100032','ATL','DEN','B','','VU/1',314.00,0.00);
-insert into fare values ('7100033','ATL','DEN','Y','','VU/1',314.00,0.00);
-insert into fare values ('7100034','ATL','DEN','B','','AP/55',304.00,0.00);
-insert into fare values ('7100035','ATL','DEN','H','','AP/55',228.00,0.00);
-insert into fare values ('7100036','ATL','DFW','F','AA','',512.00,1024.00);
-insert into fare values ('7100037','ATL','DFW','F','DL','',504.00,1008.00);
-insert into fare values ('7100038','ATL','DFW','F','','',503.00,1006.00);
-insert into fare values ('7100039','ATL','DFW','FN','AA','',360.00,720.00);
-insert into fare values ('7100040','ATL','DFW','FN','','',352.00,704.00);
-insert into fare values ('7100041','ATL','DFW','Y','','',341.00,682.00);
-insert into fare values ('7100042','ATL','DFW','Y','DL','',336.00,672.00);
-insert into fare values ('7100043','ATL','DFW','YN','AA','',277.00,554.00);
-insert into fare values ('7100044','ATL','DFW','YN','','',272.00,544.00);
-insert into fare values ('7100045','ATL','DFW','QW','','AP/80',0.00,268.00);
-insert into fare values ('7100046','ATL','DFW','QX','','AP/80',0.00,228.00);
-insert into fare values ('7100047','ATL','DFW','B','','VU/1',233.00,0.00);
-insert into fare values ('7100048','ATL','DFW','Y','AA','VU/1',233.00,0.00);
-insert into fare values ('7100049','ATL','DFW','M','','VU/1',233.00,0.00);
-insert into fare values ('7100050','ATL','DFW','Y','','VU/1',222.00,0.00);
-insert into fare values ('7100051','ATL','OAK','F','UA','',843.00,1686.00);
-insert into fare values ('7100052','ATL','OAK','Y','UA','',557.00,1114.00);
-insert into fare values ('7100053','ATL','OAK','QW','','AP/80',0.00,398.00);
-insert into fare values ('7100054','ATL','OAK','QX','','AP/80',0.00,348.00);
-insert into fare values ('7100055','ATL','OAK','B','','AP/68',503.00,0.00);
-insert into fare values ('7100056','ATL','OAK','B','','VU/1',387.00,0.00);
-insert into fare values ('7100057','ATL','OAK','Y','','VU/1',376.00,0.00);
-insert into fare values ('7100058','ATL','PHL','F','US','',465.00,930.00);
-insert into fare values ('7100059','ATL','PHL','F','','',449.00,898.00);
-insert into fare values ('7100060','ATL','PHL','FN','','',314.00,628.00);
-insert into fare values ('7100061','ATL','PHL','Y','','',295.00,590.00);
-insert into fare values ('7100062','ATL','PHL','Y','US','',290.00,580.00);
-insert into fare values ('7100063','ATL','PHL','YN','','',243.00,486.00);
-insert into fare values ('7100064','ATL','PHL','KW','','AP/57',0.00,268.00);
-insert into fare values ('7100065','ATL','PHL','QW','','AP/80',0.00,268.00);
-insert into fare values ('7100066','ATL','PHL','QW','','AP/57',0.00,268.00);
-insert into fare values ('7100067','ATL','PHL','KX','','AP/57',0.00,228.00);
-insert into fare values ('7100068','ATL','PHL','QX','','AP/57',0.00,228.00);
-insert into fare values ('7100069','ATL','PHL','QX','','AP/80',0.00,228.00);
-insert into fare values ('7100070','ATL','PHL','B','','VU/1',205.00,0.00);
-insert into fare values ('7100071','ATL','PHL','Y','','VU/1',205.00,0.00);
-insert into fare values ('7100072','ATL','PIT','F','','',416.00,832.00);
-insert into fare values ('7100073','ATL','PIT','FN','','',291.00,582.00);
-insert into fare values ('7100074','ATL','PIT','Y','','',274.00,548.00);
-insert into fare values ('7100075','ATL','PIT','YN','','',217.00,434.00);
-insert into fare values ('7100076','ATL','PIT','KW','','AP/57',0.00,268.00);
-insert into fare values ('7100077','ATL','PIT','QW','','AP/57',0.00,248.00);
-insert into fare values ('7100078','ATL','PIT','KX','','AP/57',0.00,228.00);
-insert into fare values ('7100079','ATL','PIT','QX','','AP/57',0.00,208.00);
-insert into fare values ('7100080','ATL','PIT','B','','VU/1',190.00,0.00);
-insert into fare values ('7100081','ATL','PIT','Y','','VU/1',190.00,0.00);
-insert into fare values ('7100082','ATL','SFO','F','','',828.00,1656.00);
-insert into fare values ('7100083','ATL','SFO','Y','','',552.00,1104.00);
-insert into fare values ('7100084','ATL','SFO','QW','','AP/57',0.00,398.00);
-insert into fare values ('7100085','ATL','SFO','QX','','AP/57',0.00,358.00);
-insert into fare values ('7100086','ATL','SFO','K','','AP/68',435.00,0.00);
-insert into fare values ('7100087','ATL','SFO','Q','','AP/68',435.00,0.00);
-insert into fare values ('7100088','ATL','SFO','B','','VU/1',383.00,0.00);
-insert into fare values ('7100089','ATL','SFO','Y','','VU/1',376.00,0.00);
-insert into fare values ('7100090','BOS','ATL','F','','',497.00,994.00);
-insert into fare values ('7100091','BOS','ATL','FN','','',348.00,696.00);
-insert into fare values ('7100092','BOS','ATL','Y','','',331.00,662.00);
-insert into fare values ('7100093','BOS','ATL','YN','','',266.00,532.00);
-insert into fare values ('7100094','BOS','ATL','K','','AP/57',0.00,388.00);
-insert into fare values ('7100095','BOS','ATL','KO','','AP/57',0.00,368.00);
-insert into fare values ('7100096','BOS','ATL','QW','','AP/57',0.00,268.00);
-insert into fare values ('7100097','BOS','ATL','QX','','AP/57',0.00,248.00);
-insert into fare values ('7100098','BOS','ATL','B','','VU/1',230.00,0.00);
-insert into fare values ('7100099','BOS','ATL','Y','','VU/1',226.00,0.00);
-insert into fare values ('7100100','BOS','BWI','F','','',368.00,736.00);
-insert into fare values ('7100101','BOS','BWI','Y','','',161.00,322.00);
-insert into fare values ('7100102','BOS','BWI','Y','','VU/1',109.00,0.00);
-insert into fare values ('7100103','BOS','DEN','F','','',713.00,1426.00);
-insert into fare values ('7100104','BOS','DEN','Y','','',475.00,950.00);
-insert into fare values ('7100105','BOS','DEN','QW','','AP/80',0.00,378.00);
-insert into fare values ('7100106','BOS','DEN','QX','','AP/80',0.00,338.00);
-insert into fare values ('7100107','BOS','DEN','B','','VU/1',379.00,0.00);
-insert into fare values ('7100108','BOS','DEN','Y','','VU/1',326.00,0.00);
-insert into fare values ('7100109','BOS','DFW','F','AA','',773.00,1546.00);
-insert into fare values ('7100110','BOS','DFW','F','DL','',765.00,1530.00);
-insert into fare values ('7100111','BOS','DFW','Y','AA','',515.00,1030.00);
-insert into fare values ('7100112','BOS','DFW','Y','DL','',510.00,1020.00);
-insert into fare values ('7100113','BOS','DFW','B','','VU/1',354.00,0.00);
-insert into fare values ('7100114','BOS','DFW','Y','','VU/1',354.00,0.00);
-insert into fare values ('7100115','BOS','PHL','F','','',210.00,420.00);
-insert into fare values ('7100116','BOS','PHL','Y','DL','',147.00,294.00);
-insert into fare values ('7100117','BOS','PHL','B','DL','',140.00,280.00);
-insert into fare values ('7100118','BOS','PHL','K','','',140.00,280.00);
-insert into fare values ('7100119','BOS','PHL','Y','DL','',140.00,280.00);
-insert into fare values ('7100120','BOS','PHL','Y','','',140.00,280.00);
-insert into fare values ('7100121','BOS','PHL','B','','AP/75',0.00,270.00);
-insert into fare values ('7100122','BOS','PHL','B','DL','',129.00,258.00);
-insert into fare values ('7100123','BOS','PHL','B','US','',109.00,218.00);
-insert into fare values ('7100124','BOS','PHL','M','ML','',109.00,218.00);
-insert into fare values ('7100125','BOS','PHL','Q','','AP/27',0.00,188.00);
-insert into fare values ('7100126','BOS','PHL','B','','AP/44',129.00,0.00);
-insert into fare values ('7100127','BOS','PHL','B','','VU/1',102.00,0.00);
-insert into fare values ('7100128','BOS','PHL','Y','','VU/1',97.00,0.00);
-insert into fare values ('7100129','BOS','PIT','F','','',330.00,660.00);
-insert into fare values ('7100130','BOS','PIT','Y','','',240.00,480.00);
-insert into fare values ('7100131','BOS','PIT','Y','','VU/1',153.00,0.00);
-insert into fare values ('7100132','BOS','SFO','F','','',860.00,1720.00);
-insert into fare values ('7100133','BOS','SFO','F','AA','',852.00,1704.00);
-insert into fare values ('7100134','BOS','SFO','C','','',635.00,1270.00);
-insert into fare values ('7100135','BOS','SFO','Y','TW','',605.00,1210.00);
-insert into fare values ('7100136','BOS','SFO','Y','UA','',605.00,1210.00);
-insert into fare values ('7100137','BOS','SFO','Y','','',573.00,1146.00);
-insert into fare values ('7100138','BOS','SFO','B','AA','',508.00,1016.00);
-insert into fare values ('7100139','BOS','SFO','KW','','AP/57',0.00,418.00);
-insert into fare values ('7100140','BOS','SFO','QW','','AP/80',0.00,418.00);
-insert into fare values ('7100141','BOS','SFO','KX','','AP/57',0.00,378.00);
-insert into fare values ('7100142','BOS','SFO','QX','','AP/80',0.00,378.00);
-insert into fare values ('7100143','BOS','SFO','B','','VU/1',412.00,0.00);
-insert into fare values ('7100144','BOS','SFO','M','','VU/1',394.00,0.00);
-insert into fare values ('7100145','BOS','SFO','Y','','VU/1',394.00,0.00);
-insert into fare values ('7100146','BWI','ATL','F','','',428.00,856.00);
-insert into fare values ('7100147','BWI','ATL','FN','','',299.00,598.00);
-insert into fare values ('7100148','BWI','ATL','Y','','',286.00,572.00);
-insert into fare values ('7100149','BWI','ATL','YN','','',230.00,460.00);
-insert into fare values ('7100150','BWI','ATL','QW','','AP/57',0.00,248.00);
-insert into fare values ('7100151','BWI','ATL','QX','','AP/57',0.00,208.00);
-insert into fare values ('7100152','BWI','ATL','B','','VU/1',199.00,0.00);
-insert into fare values ('7100153','BWI','ATL','Y','','VU/1',196.00,0.00);
-insert into fare values ('7100154','BWI','BOS','F','','',368.00,736.00);
-insert into fare values ('7100155','BWI','BOS','Y','','',161.00,322.00);
-insert into fare values ('7100156','BWI','BOS','Y','','VU/1',109.00,0.00);
-insert into fare values ('7100157','BWI','DEN','F','US','',653.00,1306.00);
-insert into fare values ('7100158','BWI','DEN','F','','',645.00,1290.00);
-insert into fare values ('7100159','BWI','DEN','Y','UA','',424.00,848.00);
-insert into fare values ('7100160','BWI','DEN','Y','','',420.00,840.00);
-insert into fare values ('7100161','BWI','DEN','Q','US','',238.00,476.00);
-insert into fare values ('7100162','BWI','DEN','QW','','AP/80',0.00,306.00);
-insert into fare values ('7100163','BWI','DEN','QX','','AP/80',0.00,256.00);
-insert into fare values ('7100164','BWI','DEN','Y','','VU/1',280.00,0.00);
-insert into fare values ('7100165','BWI','DFW','F','AA','',630.00,1260.00);
-insert into fare values ('7100166','BWI','DFW','F','','',622.00,1244.00);
-insert into fare values ('7100167','BWI','DFW','Y','AA','',420.00,840.00);
-insert into fare values ('7100168','BWI','DFW','Y','','',415.00,830.00);
-insert into fare values ('7100169','BWI','DFW','B','','VU/1',288.00,0.00);
-insert into fare values ('7100170','BWI','DFW','Y','','VU/1',288.00,0.00);
-insert into fare values ('7100171','BWI','PHL','Y','','',165.00,330.00);
-insert into fare values ('7100172','BWI','PHL','M','','',106.00,212.00);
-insert into fare values ('7100173','BWI','PHL','Y','','VU/1',115.00,0.00);
-insert into fare values ('7100174','BWI','PIT','F','','',172.00,344.00);
-insert into fare values ('7100175','BWI','PIT','Y','','',119.00,238.00);
-insert into fare values ('7100176','BWI','PIT','Y','','VU/1',80.00,0.00);
-insert into fare values ('7100177','DEN','ATL','F','UA','',685.00,1370.00);
-insert into fare values ('7100178','DEN','ATL','F','','',677.00,1354.00);
-insert into fare values ('7100179','DEN','ATL','FN','','',475.00,950.00);
-insert into fare values ('7100180','DEN','ATL','Y','UA','',457.00,914.00);
-insert into fare values ('7100181','DEN','ATL','Y','','',452.00,904.00);
-insert into fare values ('7100182','DEN','ATL','B','DL','',435.00,870.00);
-insert into fare values ('7100183','DEN','ATL','H','','',410.00,820.00);
-insert into fare values ('7100184','DEN','ATL','M','DL','',410.00,820.00);
-insert into fare values ('7100185','DEN','ATL','YN','','',361.00,722.00);
-insert into fare values ('7100186','DEN','ATL','MW','','AP/57',0.00,438.00);
-insert into fare values ('7100187','DEN','ATL','MX','','AP/57',0.00,378.00);
-insert into fare values ('7100188','DEN','ATL','QW','','AP/57',0.00,298.00);
-insert into fare values ('7100189','DEN','ATL','QX','','AP/57',0.00,238.00);
-insert into fare values ('7100190','DEN','ATL','B','','VU/1',314.00,0.00);
-insert into fare values ('7100191','DEN','ATL','Y','','VU/1',314.00,0.00);
-insert into fare values ('7100192','DEN','ATL','B','','AP/55',304.00,0.00);
-insert into fare values ('7100193','DEN','BOS','F','','',713.00,1426.00);
-insert into fare values ('7100194','DEN','BOS','F','US','',705.00,1410.00);
-insert into fare values ('7100195','DEN','BOS','Y','','',475.00,950.00);
-insert into fare values ('7100196','DEN','BOS','Y','US','',470.00,940.00);
-insert into fare values ('7100197','DEN','BOS','B','US','',382.00,764.00);
-insert into fare values ('7100198','DEN','BOS','M','DL','',295.00,590.00);
-insert into fare values ('7100199','DEN','BOS','Q','US','',295.00,590.00);
-insert into fare values ('7100200','DEN','BOS','Q','DL','',238.00,476.00);
-insert into fare values ('7100201','DEN','BOS','KW','','AP/57',0.00,378.00);
-insert into fare values ('7100202','DEN','BOS','QW','','AP/80',0.00,378.00);
-insert into fare values ('7100203','DEN','BOS','KX','','AP/57',0.00,338.00);
-insert into fare values ('7100204','DEN','BOS','QX','','AP/80',0.00,338.00);
-insert into fare values ('7100205','DEN','BOS','B','','VU/1',379.00,0.00);
-insert into fare values ('7100206','DEN','BOS','Y','','VU/1',326.00,0.00);
-insert into fare values ('7100207','DEN','BWI','F','US','',653.00,1306.00);
-insert into fare values ('7100208','DEN','BWI','F','UA','',645.00,1290.00);
-insert into fare values ('7100209','DEN','BWI','Y','','',424.00,848.00);
-insert into fare values ('7100210','DEN','BWI','Y','US','',420.00,840.00);
-insert into fare values ('7100211','DEN','BWI','Q','US','',238.00,476.00);
-insert into fare values ('7100212','DEN','BWI','QW','','AP/80',0.00,306.00);
-insert into fare values ('7100213','DEN','BWI','QX','','AP/80',0.00,256.00);
-insert into fare values ('7100214','DEN','BWI','M','','VU/1',296.00,0.00);
-insert into fare values ('7100215','DEN','BWI','Y','','VU/1',280.00,0.00);
-insert into fare values ('7100216','DEN','DFW','F','','',489.00,978.00);
-insert into fare values ('7100217','DEN','DFW','F','DL','',481.00,962.00);
-insert into fare values ('7100218','DEN','DFW','FN','AA','',344.00,688.00);
-insert into fare values ('7100219','DEN','DFW','FN','','',336.00,672.00);
-insert into fare values ('7100220','DEN','DFW','Y','','',305.00,610.00);
-insert into fare values ('7100221','DEN','DFW','Y','DL','',300.00,600.00);
-insert into fare values ('7100222','DEN','DFW','YN','AA','',261.00,522.00);
-insert into fare values ('7100223','DEN','DFW','YN','','',256.00,512.00);
-insert into fare values ('7100224','DEN','DFW','QW','','AP/80',0.00,268.00);
-insert into fare values ('7100225','DEN','DFW','QX','','AP/80',0.00,228.00);
-insert into fare values ('7100226','DEN','DFW','B','','VU/1',208.00,0.00);
-insert into fare values ('7100227','DEN','DFW','Y','','VU/1',208.00,0.00);
-insert into fare values ('7100228','DEN','OAK','F','','',488.00,976.00);
-insert into fare values ('7100229','DEN','OAK','Y','','',325.00,650.00);
-insert into fare values ('7100230','DEN','OAK','QW','','AP/80',0.00,288.00);
-insert into fare values ('7100231','DEN','OAK','QX','','AP/80',0.00,248.00);
-insert into fare values ('7100232','DEN','OAK','Y','','VU/1',222.00,0.00);
-insert into fare values ('7100233','DEN','PHL','F','','',706.00,1412.00);
-insert into fare values ('7100234','DEN','PHL','Y','','',470.00,940.00);
-insert into fare values ('7100235','DEN','PHL','FN','','',441.00,882.00);
-insert into fare values ('7100236','DEN','PHL','YN','','',336.00,672.00);
-insert into fare values ('7100237','DEN','PHL','KW','','AP/57',0.00,488.00);
-insert into fare values ('7100238','DEN','PHL','KX','','AP/57',0.00,418.00);
-insert into fare values ('7100239','DEN','PHL','QW','','AP/80',0.00,348.00);
-insert into fare values ('7100240','DEN','PHL','QX','','AP/80',0.00,278.00);
-insert into fare values ('7100241','DEN','PHL','Y','','VU/1',323.00,0.00);
-insert into fare values ('7100242','DEN','PHL','B','','VU/1',297.00,0.00);
-insert into fare values ('7100243','DEN','PIT','F','','',647.00,1294.00);
-insert into fare values ('7100244','DEN','PIT','Y','','',412.00,824.00);
-insert into fare values ('7100245','DEN','PIT','Q','','',287.00,574.00);
-insert into fare values ('7100246','DEN','PIT','Y','','VU/1',285.00,0.00);
-insert into fare values ('7100247','DEN','SFO','F','','',488.00,976.00);
-insert into fare values ('7100248','DEN','SFO','Y','','',325.00,650.00);
-insert into fare values ('7100249','DEN','SFO','YN','','',325.00,650.00);
-insert into fare values ('7100250','DEN','SFO','QW','','AP/80',0.00,288.00);
-insert into fare values ('7100251','DEN','SFO','QX','','AP/80',0.00,248.00);
-insert into fare values ('7100252','DEN','SFO','B','','VU/1',222.00,0.00);
-insert into fare values ('7100253','DEN','SFO','Y','','VU/1',222.00,0.00);
-insert into fare values ('7100254','DFW','ATL','F','AA','',512.00,1024.00);
-insert into fare values ('7100255','DFW','ATL','F','DL','',504.00,1008.00);
-insert into fare values ('7100256','DFW','ATL','F','','',488.00,976.00);
-insert into fare values ('7100257','DFW','ATL','FN','AA','',360.00,720.00);
-insert into fare values ('7100258','DFW','ATL','FN','','',352.00,704.00);
-insert into fare values ('7100259','DFW','ATL','Y','AA','',341.00,682.00);
-insert into fare values ('7100260','DFW','ATL','Y','DL','',336.00,672.00);
-insert into fare values ('7100261','DFW','ATL','YN','AA','',277.00,554.00);
-insert into fare values ('7100262','DFW','ATL','YN','','',272.00,544.00);
-insert into fare values ('7100263','DFW','ATL','QW','','AP/80',0.00,268.00);
-insert into fare values ('7100264','DFW','ATL','QX','','AP/80',0.00,228.00);
-insert into fare values ('7100265','DFW','ATL','B','','VU/1',233.00,0.00);
-insert into fare values ('7100266','DFW','ATL','Y','AA','VU/1',233.00,0.00);
-insert into fare values ('7100267','DFW','ATL','Y','','VU/1',222.00,0.00);
-insert into fare values ('7100268','DFW','BOS','F','AA','',773.00,1546.00);
-insert into fare values ('7100269','DFW','BOS','F','','',765.00,1530.00);
-insert into fare values ('7100270','DFW','BOS','Y','AA','',515.00,1030.00);
-insert into fare values ('7100271','DFW','BOS','Y','DL','',510.00,1020.00);
-insert into fare values ('7100272','DFW','BOS','B','','VU/1',354.00,0.00);
-insert into fare values ('7100273','DFW','BOS','Y','AA','VU/1',354.00,0.00);
-insert into fare values ('7100274','DFW','BOS','Y','','VU/1',341.00,0.00);
-insert into fare values ('7100275','DFW','BWI','F','AA','',630.00,1260.00);
-insert into fare values ('7100276','DFW','BWI','F','','',622.00,1244.00);
-insert into fare values ('7100277','DFW','BWI','Y','AA','',420.00,840.00);
-insert into fare values ('7100278','DFW','BWI','Y','','',415.00,830.00);
-insert into fare values ('7100279','DFW','BWI','B','','VU/1',288.00,0.00);
-insert into fare values ('7100280','DFW','BWI','Y','','VU/1',288.00,0.00);
-insert into fare values ('7100281','DFW','DEN','F','','',489.00,978.00);
-insert into fare values ('7100282','DFW','DEN','F','DL','',481.00,962.00);
-insert into fare values ('7100283','DFW','DEN','FN','AA','',344.00,688.00);
-insert into fare values ('7100284','DFW','DEN','FN','','',336.00,672.00);
-insert into fare values ('7100285','DFW','DEN','Y','','',305.00,610.00);
-insert into fare values ('7100286','DFW','DEN','Y','DL','',300.00,600.00);
-insert into fare values ('7100287','DFW','DEN','YN','AA','',261.00,522.00);
-insert into fare values ('7100288','DFW','DEN','YN','','',256.00,512.00);
-insert into fare values ('7100289','DFW','DEN','QW','','AP/80',0.00,268.00);
-insert into fare values ('7100290','DFW','DEN','QX','','AP/80',0.00,228.00);
-insert into fare values ('7100291','DFW','DEN','B','','VU/1',208.00,0.00);
-insert into fare values ('7100292','DFW','DEN','Y','','VU/1',208.00,0.00);
-insert into fare values ('7100293','DFW','OAK','F','AA','',717.00,1434.00);
-insert into fare values ('7100294','DFW','OAK','F','','',646.00,1292.00);
-insert into fare values ('7100295','DFW','OAK','FN','','',504.00,1008.00);
-insert into fare values ('7100296','DFW','OAK','Y','AA','',478.00,956.00);
-insert into fare values ('7100297','DFW','OAK','Y','','',467.00,934.00);
-insert into fare values ('7100298','DFW','OAK','YN','','',386.00,772.00);
-insert into fare values ('7100299','DFW','OAK','QW','','AP/80',0.00,378.00);
-insert into fare values ('7100300','DFW','OAK','QX','','AP/80',0.00,338.00);
-insert into fare values ('7100301','DFW','OAK','Y','','VU/1',328.00,0.00);
-insert into fare values ('7100302','DFW','PHL','F','AA','',745.00,1490.00);
-insert into fare values ('7100303','DFW','PHL','F','','',737.00,1474.00);
-insert into fare values ('7100304','DFW','PHL','FN','','',516.00,1032.00);
-insert into fare values ('7100305','DFW','PHL','Y','AA','',496.00,992.00);
-insert into fare values ('7100306','DFW','PHL','Y','DL','',491.00,982.00);
-insert into fare values ('7100307','DFW','PHL','YN','','',396.00,792.00);
-insert into fare values ('7100308','DFW','PHL','B','','VU/1',341.00,0.00);
-insert into fare values ('7100309','DFW','PHL','Y','','VU/1',341.00,0.00);
-insert into fare values ('7100310','DFW','PIT','F','','',611.00,1222.00);
-insert into fare values ('7100311','DFW','PIT','Y','AA','',420.00,840.00);
-insert into fare values ('7100312','DFW','PIT','Y','AA','',380.00,760.00);
-insert into fare values ('7100313','DFW','PIT','Y','','',375.00,750.00);
-insert into fare values ('7100314','DFW','PIT','B','','VU/1',279.00,0.00);
-insert into fare values ('7100315','DFW','PIT','Y','','VU/1',260.00,0.00);
-insert into fare values ('7100316','DFW','SFO','F','','',717.00,1434.00);
-insert into fare values ('7100317','DFW','SFO','F','DL','',709.00,1418.00);
-insert into fare values ('7100318','DFW','SFO','FN','AA','',504.00,1008.00);
-insert into fare values ('7100319','DFW','SFO','FN','','',496.00,992.00);
-insert into fare values ('7100320','DFW','SFO','Y','','',478.00,956.00);
-insert into fare values ('7100321','DFW','SFO','Y','DL','',473.00,946.00);
-insert into fare values ('7100322','DFW','SFO','YN','AA','',386.00,772.00);
-insert into fare values ('7100323','DFW','SFO','YN','','',381.00,762.00);
-insert into fare values ('7100324','DFW','SFO','QW','','AP/80',0.00,378.00);
-insert into fare values ('7100325','DFW','SFO','QX','','AP/80',0.00,338.00);
-insert into fare values ('7100326','DFW','SFO','B','','VU/1',328.00,0.00);
-insert into fare values ('7100327','DFW','SFO','Y','','VU/1',328.00,0.00);
-insert into fare values ('7100328','OAK','BOS','F','','',836.00,1672.00);
-insert into fare values ('7100329','OAK','BOS','Y','','',557.00,1114.00);
-insert into fare values ('7100330','OAK','BOS','QW','','AP/80',0.00,418.00);
-insert into fare values ('7100331','OAK','BOS','QX','','AP/80',0.00,378.00);
-insert into fare values ('7100332','OAK','BOS','Y','','VU/1',394.00,0.00);
-insert into fare values ('7100333','OAK','DEN','F','','',488.00,976.00);
-insert into fare values ('7100334','OAK','DEN','Y','','',325.00,650.00);
-insert into fare values ('7100335','OAK','DEN','QW','','AP/80',0.00,288.00);
-insert into fare values ('7100336','OAK','DEN','QX','','AP/80',0.00,248.00);
-insert into fare values ('7100337','OAK','DEN','Y','','VU/1',222.00,0.00);
-insert into fare values ('7100338','OAK','DFW','F','','',717.00,1434.00);
-insert into fare values ('7100339','OAK','DFW','FN','','',504.00,1008.00);
-insert into fare values ('7100340','OAK','DFW','Y','','',478.00,956.00);
-insert into fare values ('7100341','OAK','DFW','YN','','',386.00,772.00);
-insert into fare values ('7100342','OAK','DFW','Y','','VU/1',328.00,0.00);
-insert into fare values ('7100343','OAK','PHL','F','AA','',877.00,1754.00);
-insert into fare values ('7100344','OAK','PHL','Y','AA','',584.00,1168.00);
-insert into fare values ('7100345','OAK','PHL','B','AA','',488.00,976.00);
-insert into fare values ('7100346','OAK','PHL','Y','','VU/1',402.00,0.00);
-insert into fare values ('7100347','OAK','SFO','Y','','',110.00,220.00);
-insert into fare values ('7100348','OAK','SFO','YN','','',54.00,108.00);
-insert into fare values ('7100349','OAK','SFO','Y','AA','VU/1',61.00,0.00);
-insert into fare values ('7100350','PHL','ATL','F','US','',465.00,930.00);
-insert into fare values ('7100351','PHL','ATL','F','','',449.00,898.00);
-insert into fare values ('7100352','PHL','ATL','FN','','',314.00,628.00);
-insert into fare values ('7100353','PHL','ATL','Y','DL','',295.00,590.00);
-insert into fare values ('7100354','PHL','ATL','Y','EA','',295.00,590.00);
-insert into fare values ('7100355','PHL','ATL','Y','','',290.00,580.00);
-insert into fare values ('7100356','PHL','ATL','YN','','',243.00,486.00);
-insert into fare values ('7100357','PHL','ATL','KW','','AP/57',0.00,268.00);
-insert into fare values ('7100358','PHL','ATL','QW','','AP/57',0.00,268.00);
-insert into fare values ('7100359','PHL','ATL','KX','','AP/57',0.00,228.00);
-insert into fare values ('7100360','PHL','ATL','QX','','AP/57',0.00,228.00);
-insert into fare values ('7100361','PHL','ATL','B','','VU/1',205.00,0.00);
-insert into fare values ('7100362','PHL','ATL','Y','','VU/1',205.00,0.00);
-insert into fare values ('7100363','PHL','BOS','F','','',210.00,420.00);
-insert into fare values ('7100364','PHL','BOS','FN','','',147.00,294.00);
-insert into fare values ('7100365','PHL','BOS','Y','DL','',147.00,294.00);
-insert into fare values ('7100366','PHL','BOS','B','DL','',140.00,280.00);
-insert into fare values ('7100367','PHL','BOS','K','','',140.00,280.00);
-insert into fare values ('7100368','PHL','BOS','Y','DL','',140.00,280.00);
-insert into fare values ('7100369','PHL','BOS','Y','','',140.00,280.00);
-insert into fare values ('7100370','PHL','BOS','B','','AP/75',0.00,270.00);
-insert into fare values ('7100371','PHL','BOS','B','DL','',129.00,258.00);
-insert into fare values ('7100372','PHL','BOS','YN','','',119.00,238.00);
-insert into fare values ('7100373','PHL','BOS','B','US','',109.00,218.00);
-insert into fare values ('7100374','PHL','BOS','M','ML','',109.00,218.00);
-insert into fare values ('7100375','PHL','BOS','Q','','AP/27',0.00,188.00);
-insert into fare values ('7100376','PHL','BOS','B','','AP/44',129.00,0.00);
-insert into fare values ('7100377','PHL','BOS','B','','VU/1',102.00,0.00);
-insert into fare values ('7100378','PHL','BOS','Y','','VU/1',97.00,0.00);
-insert into fare values ('7100379','PHL','BWI','Y','','',165.00,330.00);
-insert into fare values ('7100380','PHL','BWI','M','','',106.00,212.00);
-insert into fare values ('7100381','PHL','BWI','Y','','VU/1',115.00,0.00);
-insert into fare values ('7100382','PHL','DEN','F','','',706.00,1412.00);
-insert into fare values ('7100383','PHL','DEN','F','DL','',630.00,1260.00);
-insert into fare values ('7100384','PHL','DEN','Y','','',470.00,940.00);
-insert into fare values ('7100385','PHL','DEN','Y','DL','',420.00,840.00);
-insert into fare values ('7100386','PHL','DEN','KW','','AP/57',0.00,488.00);
-insert into fare values ('7100387','PHL','DEN','KX','','AP/57',0.00,418.00);
-insert into fare values ('7100388','PHL','DEN','QW','','AP/80',0.00,348.00);
-insert into fare values ('7100389','PHL','DEN','QX','','AP/80',0.00,278.00);
-insert into fare values ('7100390','PHL','DEN','Y','','VU/1',323.00,0.00);
-insert into fare values ('7100391','PHL','DEN','B','','VU/1',297.00,0.00);
-insert into fare values ('7100392','PHL','DFW','F','AA','',745.00,1490.00);
-insert into fare values ('7100393','PHL','DFW','F','','',737.00,1474.00);
-insert into fare values ('7100394','PHL','DFW','Y','AA','',496.00,992.00);
-insert into fare values ('7100395','PHL','DFW','Y','DL','',491.00,982.00);
-insert into fare values ('7100396','PHL','DFW','B','','VU/1',341.00,0.00);
-insert into fare values ('7100397','PHL','DFW','Y','AA','VU/1',341.00,0.00);
-insert into fare values ('7100398','PHL','DFW','M','','AP/68',284.00,0.00);
-insert into fare values ('7100399','PHL','DFW','Y','','VU/1',283.00,0.00);
-insert into fare values ('7100400','PHL','OAK','F','AA','',877.00,1754.00);
-insert into fare values ('7100401','PHL','OAK','Y','AA','',584.00,1168.00);
-insert into fare values ('7100402','PHL','OAK','B','AA','',488.00,976.00);
-insert into fare values ('7100403','PHL','OAK','Y','','VU/1',402.00,0.00);
-insert into fare values ('7100404','PHL','PIT','F','','',189.00,378.00);
-insert into fare values ('7100405','PHL','PIT','Y','','',131.00,262.00);
-insert into fare values ('7100406','PHL','PIT','Y','','VU/1',88.00,0.00);
-insert into fare values ('7100407','PHL','SFO','F','US','',995.00,1990.00);
-insert into fare values ('7100408','PHL','SFO','F','','',887.00,1774.00);
-insert into fare values ('7100409','PHL','SFO','Y','','',591.00,1182.00);
-insert into fare values ('7100410','PHL','SFO','Y','US','',586.00,1172.00);
-insert into fare values ('7100411','PHL','SFO','B','US','',483.00,966.00);
-insert into fare values ('7100412','PHL','SFO','QW','','AP/80',0.00,418.00);
-insert into fare values ('7100413','PHL','SFO','QX','','AP/80',0.00,378.00);
-insert into fare values ('7100414','PHL','SFO','B','','AP/55',488.00,0.00);
-insert into fare values ('7100415','PHL','SFO','B','','VU/1',407.00,0.00);
-insert into fare values ('7100416','PHL','SFO','M','','VU/1',407.00,0.00);
-insert into fare values ('7100417','PHL','SFO','Y','','VU/1',407.00,0.00);
-insert into fare values ('7100418','PHL','SFO','Y','US','VU/1',388.00,0.00);
-insert into fare values ('7100419','PIT','ATL','F','','',416.00,832.00);
-insert into fare values ('7100420','PIT','ATL','FN','','',291.00,582.00);
-insert into fare values ('7100421','PIT','ATL','Y','','',274.00,548.00);
-insert into fare values ('7100422','PIT','ATL','YN','','',217.00,434.00);
-insert into fare values ('7100423','PIT','ATL','KW','','AP/57',0.00,268.00);
-insert into fare values ('7100424','PIT','ATL','QW','','AP/57',0.00,248.00);
-insert into fare values ('7100425','PIT','ATL','KX','','AP/57',0.00,228.00);
-insert into fare values ('7100426','PIT','ATL','QX','','AP/57',0.00,208.00);
-insert into fare values ('7100427','PIT','ATL','B','','VU/1',190.00,0.00);
-insert into fare values ('7100428','PIT','ATL','Y','','VU/1',190.00,0.00);
-insert into fare values ('7100429','PIT','BOS','F','','',330.00,660.00);
-insert into fare values ('7100430','PIT','BOS','Y','','',240.00,480.00);
-insert into fare values ('7100431','PIT','BOS','Y','','VU/1',153.00,0.00);
-insert into fare values ('7100432','PIT','BWI','F','','',172.00,344.00);
-insert into fare values ('7100433','PIT','BWI','Y','','',119.00,238.00);
-insert into fare values ('7100434','PIT','BWI','Y','','VU/1',80.00,0.00);
-insert into fare values ('7100435','PIT','DEN','F','US','',647.00,1294.00);
-insert into fare values ('7100436','PIT','DEN','F','','',607.00,1214.00);
-insert into fare values ('7100437','PIT','DEN','Y','AA','',422.00,844.00);
-insert into fare values ('7100438','PIT','DEN','Y','','',412.00,824.00);
-insert into fare values ('7100439','PIT','DEN','Q','','',287.00,574.00);
-insert into fare values ('7100440','PIT','DEN','M','','',282.00,564.00);
-insert into fare values ('7100441','PIT','DEN','Y','AA','VU/1',299.00,0.00);
-insert into fare values ('7100442','PIT','DEN','Y','','VU/1',285.00,0.00);
-insert into fare values ('7100443','PIT','DFW','F','','',611.00,1222.00);
-insert into fare values ('7100444','PIT','DFW','Y','AA','',420.00,840.00);
-insert into fare values ('7100445','PIT','DFW','Y','AA','',380.00,760.00);
-insert into fare values ('7100446','PIT','DFW','Y','','',375.00,750.00);
-insert into fare values ('7100447','PIT','DFW','BW','','AP/57',0.00,428.00);
-insert into fare values ('7100448','PIT','DFW','BX','','AP/57',0.00,378.00);
-insert into fare values ('7100449','PIT','DFW','B','','VU/1',279.00,0.00);
-insert into fare values ('7100450','PIT','DFW','M','','VU/1',260.00,0.00);
-insert into fare values ('7100451','PIT','DFW','Y','','VU/1',260.00,0.00);
-insert into fare values ('7100452','PIT','PHL','F','','',189.00,378.00);
-insert into fare values ('7100453','PIT','PHL','Y','','',131.00,262.00);
-insert into fare values ('7100454','PIT','PHL','Y','','VU/1',88.00,0.00);
-insert into fare values ('7100455','PIT','SFO','F','US','',819.00,1638.00);
-insert into fare values ('7100456','PIT','SFO','Y','','',546.00,1092.00);
-insert into fare values ('7100457','PIT','SFO','QW','','AP/80',0.00,398.00);
-insert into fare values ('7100458','PIT','SFO','QX','','AP/80',0.00,358.00);
-insert into fare values ('7100459','PIT','SFO','Y','','VU/1',379.00,0.00);
-insert into fare values ('7100460','SFO','ATL','F','','',828.00,1656.00);
-insert into fare values ('7100461','SFO','ATL','F','AA','',821.00,1642.00);
-insert into fare values ('7100462','SFO','ATL','FN','','',580.00,1160.00);
-insert into fare values ('7100463','SFO','ATL','Y','','',552.00,1104.00);
-insert into fare values ('7100464','SFO','ATL','Y','AA','',547.00,1094.00);
-insert into fare values ('7100465','SFO','ATL','B','AA','',475.00,950.00);
-insert into fare values ('7100466','SFO','ATL','YN','EA','',445.00,890.00);
-insert into fare values ('7100467','SFO','ATL','YN','DL','',442.00,884.00);
-insert into fare values ('7100468','SFO','ATL','M','AA','',430.00,860.00);
-insert into fare values ('7100469','SFO','ATL','QW','','AP/57',0.00,398.00);
-insert into fare values ('7100470','SFO','ATL','QX','','AP/57',0.00,358.00);
-insert into fare values ('7100471','SFO','ATL','K','','AP/68',435.00,0.00);
-insert into fare values ('7100472','SFO','ATL','Q','','AP/68',435.00,0.00);
-insert into fare values ('7100473','SFO','ATL','B','','VU/1',383.00,0.00);
-insert into fare values ('7100474','SFO','ATL','Y','AA','VU/1',383.00,0.00);
-insert into fare values ('7100475','SFO','ATL','Y','','VU/1',376.00,0.00);
-insert into fare values ('7100476','SFO','BOS','F','US','',995.00,1990.00);
-insert into fare values ('7100477','SFO','BOS','F','DL','',890.00,1780.00);
-insert into fare values ('7100478','SFO','BOS','F','','',860.00,1720.00);
-insert into fare values ('7100479','SFO','BOS','C','','',635.00,1270.00);
-insert into fare values ('7100480','SFO','BOS','Y','TW','',605.00,1210.00);
-insert into fare values ('7100481','SFO','BOS','Y','UA','',605.00,1210.00);
-insert into fare values ('7100482','SFO','BOS','Y','DL','',593.00,1186.00);
-insert into fare values ('7100483','SFO','BOS','Y','','',573.00,1146.00);
-insert into fare values ('7100484','SFO','BOS','Y','US','',568.00,1136.00);
-insert into fare values ('7100485','SFO','BOS','B','AA','',508.00,1016.00);
-insert into fare values ('7100486','SFO','BOS','B','DL','',503.00,1006.00);
-insert into fare values ('7100487','SFO','BOS','B','US','',503.00,1006.00);
-insert into fare values ('7100488','SFO','BOS','KW','','AP/57',0.00,418.00);
-insert into fare values ('7100489','SFO','BOS','QW','','AP/80',0.00,418.00);
-insert into fare values ('7100490','SFO','BOS','KX','','AP/57',0.00,378.00);
-insert into fare values ('7100491','SFO','BOS','QX','','AP/80',0.00,378.00);
-insert into fare values ('7100492','SFO','BOS','B','','VU/1',412.00,0.00);
-insert into fare values ('7100493','SFO','BOS','M','','VU/1',394.00,0.00);
-insert into fare values ('7100494','SFO','BOS','Y','','VU/1',394.00,0.00);
-insert into fare values ('7100495','SFO','BWI','F','','',781.00,1562.00);
-insert into fare values ('7100496','SFO','BWI','Y','','',516.00,1032.00);
-insert into fare values ('7100497','SFO','BWI','B','','',449.00,898.00);
-insert into fare values ('7100498','SFO','BWI','Q','','',405.00,810.00);
-insert into fare values ('7100499','SFO','BWI','Y','','VU/1',358.00,0.00);
-insert into fare values ('7100500','SFO','DEN','F','','',488.00,976.00);
-insert into fare values ('7100501','SFO','DEN','Y','','',325.00,650.00);
-insert into fare values ('7100502','SFO','DEN','QW','','AP/80',0.00,288.00);
-insert into fare values ('7100503','SFO','DEN','QX','','AP/80',0.00,248.00);
-insert into fare values ('7100504','SFO','DEN','Y','','VU/1',222.00,0.00);
-insert into fare values ('7100505','SFO','DFW','F','','',717.00,1434.00);
-insert into fare values ('7100506','SFO','DFW','F','DL','',709.00,1418.00);
-insert into fare values ('7100507','SFO','DFW','FN','AA','',504.00,1008.00);
-insert into fare values ('7100508','SFO','DFW','FN','','',496.00,992.00);
-insert into fare values ('7100509','SFO','DFW','Y','','',478.00,956.00);
-insert into fare values ('7100510','SFO','DFW','Y','DL','',473.00,946.00);
-insert into fare values ('7100511','SFO','DFW','YN','AA','',386.00,772.00);
-insert into fare values ('7100512','SFO','DFW','YN','','',381.00,762.00);
-insert into fare values ('7100513','SFO','DFW','QW','','AP/80',0.00,378.00);
-insert into fare values ('7100514','SFO','DFW','QX','','AP/80',0.00,338.00);
-insert into fare values ('7100515','SFO','DFW','B','','VU/1',328.00,0.00);
-insert into fare values ('7100516','SFO','DFW','Y','','VU/1',328.00,0.00);
-insert into fare values ('7100517','SFO','OAK','Y','','',110.00,220.00);
-insert into fare values ('7100518','SFO','OAK','YN','','',54.00,108.00);
-insert into fare values ('7100519','SFO','OAK','Y','AA','VU/1',61.00,0.00);
-insert into fare values ('7100520','SFO','PHL','F','US','',995.00,1990.00);
-insert into fare values ('7100521','SFO','PHL','F','','',887.00,1774.00);
-insert into fare values ('7100522','SFO','PHL','Y','','',591.00,1182.00);
-insert into fare values ('7100523','SFO','PHL','Y','US','',586.00,1172.00);
-insert into fare values ('7100524','SFO','PHL','B','US','',483.00,966.00);
-insert into fare values ('7100525','SFO','PHL','QW','','AP/80',0.00,418.00);
-insert into fare values ('7100526','SFO','PHL','QX','','AP/80',0.00,378.00);
-insert into fare values ('7100527','SFO','PHL','B','','AP/55',488.00,0.00);
-insert into fare values ('7100528','SFO','PHL','B','','VU/1',407.00,0.00);
-insert into fare values ('7100529','SFO','PHL','M','','VU/1',407.00,0.00);
-insert into fare values ('7100530','SFO','PHL','Y','','VU/1',407.00,0.00);
-insert into fare values ('7100531','SFO','PHL','Y','US','VU/1',388.00,0.00);
-insert into fare values ('7100532','SFO','PIT','F','US','',819.00,1638.00);
-insert into fare values ('7100533','SFO','PIT','Y','','',546.00,1092.00);
-insert into fare values ('7100534','SFO','PIT','Y','','VU/1',379.00,0.00);
-insert into flight values (101908,'1234567','ATL','BOS',636,1000,'DL',296,'FNYNBNMQ','72S','B',1,'N',204);
-insert into flight values (101909,'1234567','ATL','BOS',641,855,'DL',314,'FNYNBNMQ','72S','B',0,'N',134);
-insert into flight values (101910,'1234567','ATL','BOS',755,1019,'EA',140,'FYHQK','D9S','B',0,'N',144);
-insert into flight values (101911,'1234567','ATL','BOS',920,1150,'EA',534,'FYHQK','D9S','B',0,'N',150);
-insert into flight values (101912,'1234567','ATL','BOS',959,1215,'DL',410,'FYBMQ','757','B',0,'N',136);
-insert into flight values (101913,'1234567','ATL','BOS',1010,1355,'DL',726,'FYBMQ','72S','S',1,'N',225);
-insert into flight values (101914,'1234567','ATL','BOS',1057,1320,'EA',640,'YHQKL','72S','L',0,'N',143);
-insert into flight values (101915,'1234567','ATL','BOS',1229,1456,'EA',142,'FYHQK','D9S','L',0,'N',147);
-insert into flight values (101916,'-----6-','ATL','BOS',1325,1550,'DL',110,'FYBMQ','767','L',0,'N',145);
-insert into flight values (101917,'12345-7','ATL','BOS',1325,1550,'DL',110,'FYBMQ','763','L',0,'N',145);
-insert into flight values (101918,'1234567','ATL','BOS',1426,1656,'EA',644,'FYHQK','D9S','S',0,'N',150);
-insert into flight values (101922,'1234567','ATL','BOS',1655,1920,'DL',134,'FYBMQ','L10','D',0,'N',145);
-insert into flight values (101923,'1234567','ATL','BOS',1800,2032,'EA',144,'FYHQK','757','D',0,'N',152);
-insert into flight values (101924,'1234567','ATL','BOS',1851,2219,'DL',106,'FYBMQ','M80','D',1,'N',208);
-insert into flight values (101925,'1234567','ATL','BOS',1855,2122,'DL',326,'FYBMQ','72S','D',0,'N',147);
-insert into flight values (101926,'1234567','ATL','BOS',1950,2220,'EA',148,'FYHQK','D9S','S',0,'N',150);
-insert into flight values (101927,'------7','ATL','BOS',2035,2255,'DL',166,'FYBMQ','L10','S/',0,'N',140);
-insert into flight values (101928,'123456-','ATL','BOS',2035,2255,'DL',116,'FYBMQ','L10','S/',0,'N',140);
-insert into flight values (101929,'1234567','ATL','BOS',2345,153,'DL',162,'FNYNBNMQ','757','',0,'N',128);
-insert into flight values (101951,'1234567','ATL','BWI',915,1055,'EA',202,'FYHQK','D9S','S',0,'N',100);
-insert into flight values (101952,'1234567','ATL','BWI',1002,1145,'DL',1204,'FYBMQ','M80','',0,'N',103);
-insert into flight values (101953,'1234567','ATL','BWI',1330,1510,'DL',662,'FYBMQ','M80','L',0,'N',100);
-insert into flight values (101954,'1234567','ATL','BWI',1423,1610,'EA',206,'FYHQK','D9S','',0,'N',107);
-insert into flight values (101955,'1234567','ATL','BWI',1704,1850,'DL',294,'FYBMQ','757','D',0,'N',106);
-insert into flight values (101956,'1234567','ATL','BWI',1800,1937,'EA',210,'FYHQK','D9S','D',0,'N',97);
-insert into flight values (101957,'1234567','ATL','BWI',1955,2140,'EA',212,'FYHQK','D9S','S',0,'N',105);
-insert into flight values (101958,'1234567','ATL','BWI',2048,2230,'DL',256,'FYBMQ','757','',0,'N',102);
-insert into flight values (101959,'1234567','ATL','BWI',2140,2318,'EA',208,'FNYNHQNK','72S','',0,'N',98);
-insert into flight values (102122,'1234567','ATL','DEN',840,955,'DL',445,'FYBMQ','757','B',0,'N',195);
-insert into flight values (102123,'1234567','ATL','DEN',934,1054,'EA',821,'FYHQK','72S','B',0,'N',200);
-insert into flight values (102125,'1234567','ATL','DEN',1000,1124,'UA',915,'FYBMQ','73S','S',0,'N',204);
-insert into flight values (102126,'1234567','ATL','DEN',1200,1305,'DL',257,'FYBMQ','72S','L',0,'N',185);
-insert into flight values (102127,'1234567','ATL','DEN',1510,1615,'DL',1083,'FYBMQ','72S','S',0,'N',185);
-insert into flight values (102128,'1234567','ATL','DEN',1755,1910,'EA',825,'FYHQK','72S','D',0,'N',195);
-insert into flight values (102129,'1234567','ATL','DEN',1825,1946,'UA',673,'FYBMQ','733','D',0,'N',201);
-insert into flight values (102133,'1234567','ATL','DEN',1900,2015,'DL',675,'FYBMQ','72S','D',0,'N',195);
-insert into flight values (102134,'1234567','ATL','DEN',2145,2308,'EA',823,'FNYNHQNK','757','S',0,'N',203);
-insert into flight values (102135,'1234567','ATL','DEN',2219,2320,'DL',229,'FNYNBNMQ','72S','',0,'N',181);
-insert into flight values (102136,'--34567','ATL','DFW',630,740,'DL',131,'FNYNBNMQ','L10','B',0,'N',130);
-insert into flight values (102137,'12-----','ATL','DFW',630,740,'DL',131,'FNYNBNMQ','763','B',0,'N',130);
-insert into flight values (102139,'1234567','ATL','DFW',730,849,'AA',1339,'FYBMV','M80','B',0,'N',139);
-insert into flight values (102144,'1234567','ATL','DFW',823,930,'DL',671,'FYBMQ','72S','B',0,'N',127);
-insert into flight values (102147,'1234567','ATL','DFW',901,1027,'AA',447,'FYBMV','M80','S',0,'N',146);
-insert into flight values (102148,'1234567','ATL','DFW',1000,1110,'DL',17,'FYBMQ','L15','S',0,'N',130);
-insert into flight values (102150,'1234567','ATL','DFW',1145,1250,'DL',545,'FYBMQ','72S','L',0,'N',125);
-insert into flight values (102162,'--34567','ATL','DFW',1319,1430,'DL',179,'FYBMQ','763','L',0,'N',131);
-insert into flight values (102163,'12-----','ATL','DFW',1319,1430,'DL',179,'FYBMQ','L10','L',0,'N',131);
-insert into flight values (102164,'1234567','ATL','DFW',1347,1505,'AA',237,'FYBMV','M80','S',0,'N',138);
-insert into flight values (102165,'-2-----','ATL','DFW',1415,1525,'LH',442,'FCBMK','74M','D',0,'N',130);
-insert into flight values (102166,'1234567','ATL','DFW',1510,1620,'DL',1145,'FYBMQ','757','S',0,'N',130);
-insert into flight values (102172,'1234567','ATL','DFW',1634,1759,'AA',351,'FYBMV','M80','S',0,'N',145);
-insert into flight values (102173,'1234567','ATL','DFW',1650,1805,'DL',82,'FYBMQ','L10','D',0,'N',135);
-insert into flight values (102177,'1234567','ATL','DFW',1840,1955,'DL',405,'FYBMQ','M80','D',0,'N',135);
-insert into flight values (102188,'1234567','ATL','DFW',1925,2050,'AA',1419,'FNYNBMV','M80','D',0,'N',145);
-insert into flight values (102190,'1234567','ATL','DFW',2029,2140,'DL',275,'FNYNBNMQ','763','',0,'N',131);
-insert into flight values (102191,'1234567','ATL','DFW',2213,2321,'DL',574,'FNYNBNMQ','M80','',0,'N',128);
-insert into flight values (102192,'12345-7','ATL','DFW',2335,40,'DL',1107,'FNYNBNMQ','D9S','',0,'N',125);
-insert into flight values (102674,'1234567','ATL','OAK',1825,2205,'UA',673,'FYBMQ','733','D',1,'N',400);
-insert into flight values (102766,'1234567','ATL','PHL',636,825,'DL',296,'FNYNBNMQ','72S','B',0,'N',109);
-insert into flight values (102767,'1234567','ATL','PHL',740,929,'US',258,'FYBHQ','D9S','B',0,'N',109);
-insert into flight values (102768,'1234567','ATL','PHL',805,956,'EA',124,'FYHQK','D9S','B',0,'N',111);
-insert into flight values (102769,'1234567','ATL','PHL',935,1125,'EA',126,'FYHQK','D9S','S',0,'N',110);
-insert into flight values (102770,'1234567','ATL','PHL',1010,1200,'DL',726,'FYBMQ','72S','',0,'N',110);
-insert into flight values (102771,'1234567','ATL','PHL',1200,1345,'US',29,'FYBHQ','733','L',0,'N',105);
-insert into flight values (102772,'1234567','ATL','PHL',1215,1415,'EA',610,'FYHQK','D9S','L',0,'N',120);
-insert into flight values (102773,'1234567','ATL','PHL',1322,1515,'DL',424,'FYBMQ','72S','L',0,'N',113);
-insert into flight values (102774,'1234567','ATL','PHL',1417,1607,'EA',324,'FYHQK','D9S','',0,'N',110);
-insert into flight values (102775,'1234567','ATL','PHL',1605,1800,'EA',602,'FYHQK','D9S','S',0,'N',115);
-insert into flight values (102776,'1234567','ATL','PHL',1649,1840,'DL',1206,'FYBMQ','767','D',0,'N',111);
-insert into flight values (102777,'1234567','ATL','PHL',1650,1835,'US',1786,'FYBHQ','73S','D',0,'N',105);
-insert into flight values (102778,'1234567','ATL','PHL',1802,1959,'EA',120,'FYHQK','D9S','D',0,'N',117);
-insert into flight values (102779,'1234567','ATL','PHL',1851,2045,'DL',106,'FYBMQ','M80','D',0,'N',114);
-insert into flight values (102781,'1234567','ATL','PHL',1957,2151,'EA',604,'FYHQK','D9S','S',0,'N',114);
-insert into flight values (102782,'1234567','ATL','PHL',2035,2220,'DL',250,'FYBMQ','72S','',0,'N',105);
-insert into flight values (102783,'1234567','ATL','PHL',2140,2335,'EA',128,'FNYNHQNK','D9S','',0,'N',115);
-insert into flight values (102784,'1234567','ATL','PHL',2350,130,'DL',1210,'FNYNBNMQ','757','',0,'N',100);
-insert into flight values (102795,'1234567','ATL','PIT',630,803,'US',339,'FYBHQ','D9S','B',0,'N',93);
-insert into flight values (102796,'1234567','ATL','PIT',831,1000,'DL',842,'FYBMQ','D9S','B',0,'N',89);
-insert into flight values (102797,'1234567','ATL','PIT',925,1100,'EA',302,'FYHQK','D9S','S',0,'N',95);
-insert into flight values (102798,'1234567','ATL','PIT',1105,1238,'US',248,'FYBHQ','D9S','L',0,'N',93);
-insert into flight values (102799,'1234567','ATL','PIT',1225,1405,'EA',308,'FYHQK','757','L',0,'N',100);
-insert into flight values (102800,'1234567','ATL','PIT',1340,1510,'DL',628,'FYBMQ','73S','',0,'N',90);
-insert into flight values (102801,'1234567','ATL','PIT',1540,1713,'US',508,'FYBHQ','D9S','L/S',0,'N',93);
-insert into flight values (102802,'-----67','ATL','PIT',1711,1845,'DL',1132,'FYBMQ','73S','D',0,'N',94);
-insert into flight values (102803,'12345--','ATL','PIT',1711,1845,'DL',1132,'FYBMQ','72S','D',0,'N',94);
-insert into flight values (102804,'1234567','ATL','PIT',1759,1933,'EA',310,'YHQKL','72S','D',0,'N',94);
-insert into flight values (102805,'1234567','ATL','PIT',1920,2056,'US',480,'FYBHQ','D9S','D',0,'N',96);
-insert into flight values (102806,'1234567','ATL','PIT',1959,2139,'EA',312,'FYHQK','757','S/',0,'N',100);
-insert into flight values (102807,'1234567','ATL','PIT',2030,2205,'DL',1076,'FYBMQ','73S','',0,'N',95);
-insert into flight values (102808,'1234567','ATL','PIT',2145,2313,'EA',314,'FNYNHQNK','D9S','',0,'N',88);
-insert into flight values (102809,'1234567','ATL','PIT',2334,59,'DL',311,'FNYNBNMQ','D9S','',0,'N',85);
-insert into flight values (102923,'------7','ATL','SFO',912,1110,'DL',137,'FYBMQ','767','B',0,'N',298);
-insert into flight values (102924,'123456-','ATL','SFO',912,1110,'DL',137,'FYBMQ','L10','B',0,'N',298);
-insert into flight values (102925,'1234567','ATL','SFO',930,1157,'EA',71,'FYHQK','757','B',0,'N',327);
-insert into flight values (102927,'1234567','ATL','SFO',1200,1410,'DL',977,'FYBMQ','757','L',0,'N',310);
-insert into flight values (102929,'1234567','ATL','SFO',1525,1730,'DL',97,'FYBMQ','763','D',0,'N',305);
-insert into flight values (102930,'1234567','ATL','SFO',1625,1844,'EA',73,'FYHQK','757','D',0,'N',319);
-insert into flight values (102932,'1234567','ATL','SFO',1855,2115,'DL',99,'FYBMQ','767','D',0,'N',320);
-insert into flight values (102933,'1234567','ATL','SFO',2010,2229,'EA',77,'FYHQK','757','D',0,'N',319);
-insert into flight values (105584,'1234567','BOS','ATL',630,913,'DL',225,'FYBMQ','M80','B',0,'N',163);
-insert into flight values (105586,'1234567','BOS','ATL',700,946,'EA',147,'FNYNHQNK','72S','B',0,'N',166);
-insert into flight values (105588,'1234567','BOS','ATL',815,1100,'DL',219,'FYBMQ','L10','B',0,'N',165);
-insert into flight values (105589,'1234567','BOS','ATL',832,1126,'EA',643,'FYHQK','D9S','B',0,'N',174);
-insert into flight values (105590,'1234567','BOS','ATL',955,1235,'DL',547,'FYBMQ','72S','B',0,'N',160);
-insert into flight values (105591,'1234567','BOS','ATL',1035,1327,'EA',145,'FYHQK','D9S','L',0,'N',172);
-insert into flight values (105592,'1234567','BOS','ATL',1156,1435,'DL',708,'FYBMQ','767','L',0,'N',159);
-insert into flight values (105593,'1234567','BOS','ATL',1240,1525,'EA',143,'FYHQK','D9S','L',0,'N',165);
-insert into flight values (105594,'1234567','BOS','ATL',1421,1709,'EA',645,'YHQKL','72S','S',0,'N',168);
-insert into flight values (105595,'1234567','BOS','ATL',1520,1804,'DL',975,'FYBMQ','757','S',0,'N',164);
-insert into flight values (105597,'1234567','BOS','ATL',1605,1900,'EA',141,'FYHQK','72S','D',0,'N',175);
-insert into flight values (105598,'1234567','BOS','ATL',1758,2049,'EA',149,'FYHQK','D9S','D',0,'N',171);
-insert into flight values (105599,'1234567','BOS','ATL',1850,2128,'DL',323,'FYBMQ','757','D',0,'N',158);
-insert into flight values (105601,'1234567','BOS','ATL',2024,2258,'DL',541,'FNYNBNMQ','L10','S',0,'N',154);
-insert into flight values (105698,'1234567','BOS','BWI',645,811,'US',369,'FYBHQ','733','B/S',0,'N',86);
-insert into flight values (105699,'1234567','BOS','BWI',930,1056,'US',511,'FYBHQ','733','S/',0,'N',86);
-insert into flight values (105700,'1234567','BOS','BWI',1000,1127,'US',437,'FYBHQ','M80','S/',0,'N',87);
-insert into flight values (105701,'1234567','BOS','BWI',1330,1451,'US',269,'FYBHQ','D9S','S',0,'N',81);
-insert into flight values (105702,'1234567','BOS','BWI',1505,1626,'US',428,'FYBHQ','D9S','',0,'N',81);
-insert into flight values (105703,'1234567','BOS','BWI',1745,1912,'US',1581,'FYBHQ','72S','S',0,'N',87);
-insert into flight values (105704,'1234567','BOS','BWI',1955,2122,'US',1609,'FYBHQ','73S','',0,'N',87);
-insert into flight values (105705,'12345-7','BOS','BWI',2140,2306,'US',76,'FYBHQ','733','',0,'N',86);
-insert into flight values (105794,'123456-','BOS','DEN',838,1110,'UA',201,'FYBMQ','D8S','B',0,'N',272);
-insert into flight values (105795,'------7','BOS','DEN',840,1112,'UA',343,'FYBMQ','D8S','B',0,'N',272);
-insert into flight values (105796,'1234567','BOS','DEN',855,1140,'CO',1209,'FYQHK','M80','B',0,'N',285);
-insert into flight values (105798,'1234567','BOS','DEN',1425,1732,'CO',1215,'FYQHK','733','S',0,'N',307);
-insert into flight values (105799,'1234567','BOS','DEN',1720,1949,'UA',281,'FYBMQ','D8S','D',0,'N',269);
-insert into flight values (105800,'12345-7','BOS','DEN',1740,2033,'CO',1765,'FYQHK','M80','D',0,'N',293);
-insert into flight values (105801,'1234567','BOS','DFW',653,1017,'AA',315,'FYBMV','D10','B',0,'N',264);
-insert into flight values (105802,'1234567','BOS','DFW',805,1110,'DL',831,'FYBMQ','757','B',0,'N',245);
-insert into flight values (105803,'1234567','BOS','DFW',830,1209,'AA',1099,'FYBMV','M80','B',0,'N',279);
-insert into flight values (105805,'1234567','BOS','DFW',1132,1430,'DL',169,'FYBMQ','757','L',0,'N',238);
-insert into flight values (105806,'1234567','BOS','DFW',1149,1520,'AA',813,'FYBMV','767','L',0,'N',271);
-insert into flight values (105807,'1234567','BOS','DFW',1428,1750,'AA',215,'FYBMV','D10','S',0,'N',262);
-insert into flight values (105808,'1234567','BOS','DFW',1445,1755,'DL',697,'FYBMQ','72S','S',0,'N',250);
-insert into flight values (105810,'1234567','BOS','DFW',1721,2144,'DL',589,'FYBMQ','72S','SD',1,'N',323);
-insert into flight values (105811,'1234567','BOS','DFW',1740,2100,'AA',155,'FYBMV','767','D',0,'N',260);
-insert into flight values (105812,'1234567','BOS','DFW',1845,2144,'DL',487,'FYBMQ','72S','D',0,'N',239);
-insert into flight values (106229,'123456-','BOS','PHL',630,750,'US',1800,'FYBHQ','734','S',0,'N',80);
-insert into flight values (106230,'1234567','BOS','PHL',700,820,'ML',455,'FYMHQ','D9S','B/S',0,'N',80);
-insert into flight values (106231,'1234567','BOS','PHL',705,817,'US',567,'FYBHQ','72S','S',0,'N',72);
-insert into flight values (106232,'1234567','BOS','PHL',817,940,'DL',891,'FYBMQ','72S','B/S',0,'N',83);
-insert into flight values (106234,'1234567','BOS','PHL',850,1010,'US',577,'FYBHQ','100','',0,'N',80);
-insert into flight values (106235,'123456-','BOS','PHL',910,1030,'ML',437,'FYMHQ','D9S','B/S',0,'N',80);
-insert into flight values (106236,'1234567','BOS','PHL',1030,1150,'US',569,'FYBHQ','733','',0,'N',80);
-insert into flight values (106237,'1234567','BOS','PHL',1125,1245,'US',359,'FYBHQ','733','',0,'N',80);
-insert into flight values (106238,'1234567','BOS','PHL',1142,1300,'DL',949,'FYBMQ','72S','S',0,'N',78);
-insert into flight values (106239,'1234567','BOS','PHL',1215,1335,'ML',425,'FYMHQ','D9S','L/S',0,'N',80);
-insert into flight values (106240,'-2-4--7','BOS','PHL',1325,1445,'LH',420,'FCBMK','D10','',0,'N',80);
-insert into flight values (106241,'1234567','BOS','PHL',1400,1520,'ML',439,'FYMHQ','D9S','',0,'N',80);
-insert into flight values (106242,'1234567','BOS','PHL',1414,1535,'DL',639,'FYBMQ','72S','',0,'N',81);
-insert into flight values (106245,'12345-7','BOS','PHL',1510,1629,'US',731,'FYBHQ','D9S','',0,'N',79);
-insert into flight values (106246,'1234567','BOS','PHL',1545,1704,'US',297,'FYBHQ','D9S','',0,'N',79);
-insert into flight values (106247,'1234567','BOS','PHL',1645,1808,'US',1664,'FYBHQ','733','',0,'N',83);
-insert into flight values (106248,'1234567','BOS','PHL',1721,1840,'DL',589,'FYBMQ','72S','S',0,'N',79);
-insert into flight values (106249,'1234567','BOS','PHL',1745,1905,'ML',413,'FYMHQ','D9S','D/S',0,'N',80);
-insert into flight values (106250,'12345-7','BOS','PHL',1805,1924,'US',101,'FYBHQ','D9S','',0,'N',79);
-insert into flight values (106251,'12345-7','BOS','PHL',1855,2015,'US',293,'FYBHQ','733','',0,'N',80);
-insert into flight values (106252,'12345-7','BOS','PHL',1900,2019,'ML',431,'FYMHQ','D9S','D/S',0,'N',79);
-insert into flight values (106253,'1234567','BOS','PHL',1950,2111,'US',411,'FYBHQ','M80','',0,'N',81);
-insert into flight values (106254,'1234567','BOS','PHL',2033,2150,'DL',339,'FYBMQ','72S','',0,'N',77);
-insert into flight values (106255,'12345-7','BOS','PHL',2145,2304,'US',307,'FYBHQ','D9S','',0,'N',79);
-insert into flight values (106262,'123456-','BOS','PIT',630,950,'US',1800,'FYBHQ','734','S',1,'N',200);
-insert into flight values (106263,'1234567','BOS','PIT',715,857,'US',476,'FYBHQ','72S','B',0,'N',102);
-insert into flight values (106264,'1234567','BOS','PIT',810,953,'US',65,'FYBHQ','D9S','B',0,'N',103);
-insert into flight values (106265,'1234567','BOS','PIT',1145,1333,'US',167,'FYBHQ','733','S',0,'N',108);
-insert into flight values (106266,'1234567','BOS','PIT',1210,1353,'US',81,'FYBHQ','M80','S',0,'N',103);
-insert into flight values (106267,'1234567','BOS','PIT',1520,1706,'US',148,'FYBHQ','73S','S/',0,'N',106);
-insert into flight values (106268,'1234567','BOS','PIT',1640,1823,'US',303,'FYBHQ','D9S','S/',0,'N',103);
-insert into flight values (106269,'1234567','BOS','PIT',1755,1941,'US',1652,'FYBHQ','73S','S',0,'N',106);
-insert into flight values (106270,'12345-7','BOS','PIT',1855,2207,'US',293,'FYBHQ','733','',1,'N',192);
-insert into flight values (106271,'12345-7','BOS','PIT',2105,2248,'US',345,'FYBHQ','M80','',0,'N',103);
-insert into flight values (106365,'1234567','BOS','SFO',800,1131,'UA',21,'FYBMQ','D10','B',0,'N',391);
-insert into flight values (106366,'------7','BOS','SFO',840,1336,'UA',343,'FYBMQ','D8S','BL',1,'N',476);
-insert into flight values (106373,'1234567','BOS','SFO',1149,1758,'AA',813,'FYBMV','767','LD',1,'N',549);
-insert into flight values (106375,'12345-7','BOS','SFO',1740,2310,'CO',1765,'FYQHK','M80','D',1,'N',510);
-insert into flight values (106376,'1234567','BOS','SFO',1745,2127,'UA',93,'FYBMQ','D8S','D',0,'N',402);
-insert into flight values (106377,'1234567','BOS','SFO',1810,2137,'TW',61,'FCYBQ','L10','D',0,'N',387);
-insert into flight values (107159,'1234567','BWI','ATL',550,739,'DL',995,'FNYNBNMQ','M80','B',0,'N',109);
-insert into flight values (107160,'1234567','BWI','ATL',640,835,'EA',207,'FNYNHQNK','72S','B',0,'N',115);
-insert into flight values (107161,'1234567','BWI','ATL',800,1001,'EA',203,'FYHQK','D9S','B',0,'N',121);
-insert into flight values (107162,'1234567','BWI','ATL',900,1050,'DL',125,'FYBMQ','757','S',0,'N',110);
-insert into flight values (107163,'1234567','BWI','ATL',940,1137,'EA',201,'FYHQK','D9S','S',0,'N',117);
-insert into flight values (107164,'1234567','BWI','ATL',1144,1335,'EA',205,'FYHQK','D9S','L',0,'N',111);
-insert into flight values (107165,'1234567','BWI','ATL',1230,1423,'DL',539,'FYBMQ','M80','L',0,'N',113);
-insert into flight values (107166,'1234567','BWI','ATL',1600,1750,'DL',1055,'FYBMQ','M80','S/',0,'N',110);
-insert into flight values (107167,'1234567','BWI','ATL',1659,1854,'EA',131,'FYHQK','D9S','D',0,'N',115);
-insert into flight values (107168,'1234567','BWI','ATL',1945,2128,'DL',469,'FYBMQ','757','',0,'N',103);
-insert into flight values (107193,'123456-','BWI','BOS',720,839,'US',1049,'FYBHQ','72S','B/S',0,'N',79);
-insert into flight values (107194,'1234567','BWI','BOS',905,1025,'US',600,'FYBHQ','733','S/',0,'N',80);
-insert into flight values (107195,'1234567','BWI','BOS',1010,1130,'US',1508,'FYBHQ','72S','S/',0,'N',80);
-insert into flight values (107196,'1234567','BWI','BOS',1310,1430,'US',324,'FYBHQ','73S','S',0,'N',80);
-insert into flight values (107197,'1234567','BWI','BOS',1630,1749,'US',1016,'FYBHQ','72S','',0,'N',79);
-insert into flight values (107198,'1234567','BWI','BOS',1745,1905,'US',1586,'FYBHQ','73S','S',0,'N',80);
-insert into flight values (107199,'1234567','BWI','BOS',2045,2205,'US',1750,'FYBHQ','734','',0,'N',80);
-insert into flight values (107200,'1234567','BWI','BOS',2110,2231,'US',368,'FYBHQ','733','',0,'N',81);
-insert into flight values (107253,'123456-','BWI','DEN',800,1135,'US',1402,'FYBHQ','733','SB',1,'N',335);
-insert into flight values (107254,'1234567','BWI','DEN',915,1110,'UA',277,'FYBMQ','72S','B',0,'N',235);
-insert into flight values (107255,'1234567','BWI','DEN',1205,1410,'US',2123,'FYBHQ','734','L',0,'N',245);
-insert into flight values (107256,'1234567','BWI','DEN',1745,1933,'UA',707,'FYBMQ','72S','D',0,'N',228);
-insert into flight values (107257,'1234567','BWI','DFW',745,1015,'AA',195,'FYBMV','M80','B',0,'N',210);
-insert into flight values (107258,'1234567','BWI','DFW',845,1100,'DL',1028,'FYBMQ','D9S','B',0,'N',195);
-insert into flight values (107259,'1234567','BWI','DFW',1245,1518,'AA',273,'FYBMV','72S','L',0,'N',213);
-insert into flight values (107260,'1234567','BWI','DFW',1505,1745,'AA',1179,'FYBMV','M80','S',0,'N',220);
-insert into flight values (107261,'1234567','BWI','DFW',1530,1800,'DL',743,'FYBMQ','73S','S',0,'N',210);
-insert into flight values (107264,'1234567','BWI','DFW',1852,2120,'AA',599,'FYBMV','72S','D',0,'N',208);
-insert into flight values (107470,'123456-','BWI','PHL',715,808,'US',3724,'YBHQM','SH3','',0,'Y',53);
-insert into flight values (107471,'1234567','BWI','PHL',1000,1053,'US',4518,'YBHQM','DH8','',0,'Y',53);
-insert into flight values (107472,'1234567','BWI','PHL',1205,1258,'US',3533,'YBHQM','SH6','',0,'Y',53);
-insert into flight values (107473,'1234567','BWI','PHL',1325,1415,'US',4393,'YBHQM','DH8','',0,'Y',50);
-insert into flight values (107474,'12345-7','BWI','PHL',1500,1543,'US',4386,'YBHQM','DH8','',0,'Y',43);
-insert into flight values (107475,'1234567','BWI','PHL',1640,1733,'US',3738,'YBHQM','SH3','',0,'Y',53);
-insert into flight values (107476,'12345-7','BWI','PHL',1930,2020,'US',3753,'YBHQM','SH3','',0,'Y',50);
-insert into flight values (107477,'12345-7','BWI','PHL',2010,2103,'US',3721,'YBHQM','SH6','',0,'Y',53);
-insert into flight values (107478,'12345-7','BWI','PHL',2053,2146,'US',3671,'YBHQM','SH6','',0,'Y',53);
-insert into flight values (107484,'123456-','BWI','PIT',700,758,'US',351,'FYBHQ','734','S',0,'N',58);
-insert into flight values (107485,'------7','BWI','PIT',715,815,'US',931,'FYBHQ','100','S',0,'N',60);
-insert into flight values (107486,'123456-','BWI','PIT',800,901,'US',1402,'FYBHQ','733','S',0,'N',61);
-insert into flight values (107487,'1234567','BWI','PIT',1240,1343,'US',1276,'FYBHQ','733','',0,'N',63);
-insert into flight values (107488,'------7','BWI','PIT',1300,1406,'US',977,'FYBHQ','F28','',0,'N',66);
-insert into flight values (107489,'1234567','BWI','PIT',1620,1720,'US',451,'FYBHQ','72S','',0,'N',60);
-insert into flight values (107490,'1234567','BWI','PIT',1710,1812,'US',189,'FYBHQ','D9S','',0,'N',62);
-insert into flight values (107491,'1234567','BWI','PIT',1825,1928,'US',1605,'FYBHQ','733','',0,'N',63);
-insert into flight values (107492,'1234567','BWI','PIT',2100,2202,'US',1216,'FYBHQ','73S','',0,'N',62);
-insert into flight values (111886,'1234567','DEN','ATL',55,527,'DL',296,'FNYNBNMQ','72S','',0,'N',152);
-insert into flight values (111887,'1234567','DEN','ATL',215,654,'EA',820,'FNYNHQNK','757','S',0,'N',159);
-insert into flight values (111888,'1234567','DEN','ATL',800,1235,'DL',402,'FYBMQ','72S','B',0,'N',155);
-insert into flight values (111889,'1234567','DEN','ATL',825,1315,'EA',822,'FYHQK','72S','B',0,'N',170);
-insert into flight values (111891,'1234567','DEN','ATL',1039,1537,'UA',408,'FYBMQ','733','L',0,'N',178);
-insert into flight values (111892,'1234567','DEN','ATL',1055,1541,'DL',317,'FYBMQ','757','L',0,'N',166);
-insert into flight values (111893,'1234567','DEN','ATL',1155,1645,'EA',824,'FYHQK','72S','L',0,'N',170);
-insert into flight values (111894,'1234567','DEN','ATL',1450,1925,'DL',704,'FYBMQ','757','D',0,'N',155);
-insert into flight values (111895,'1234567','DEN','ATL',1815,2250,'DL',1644,'FYBMQ','72S','D',0,'N',155);
-insert into flight values (111896,'1234567','DEN','ATL',1837,2330,'UA',886,'FYBMQ','73S','D',0,'N',173);
-insert into flight values (111924,'1234567','DEN','BOS',55,1000,'DL',296,'FNYNBNMQ','72S','B',2,'N',425);
-insert into flight values (111928,'1234567','DEN','BOS',1039,1619,'UA',352,'FYBMQ','D8S','L',0,'N',220);
-insert into flight values (111929,'1234567','DEN','BOS',1105,1700,'CO',1234,'FYQHK','M80','L',0,'N',235);
-insert into flight values (111930,'1234567','DEN','BOS',1455,2205,'US',1750,'FYBHQ','734','L',1,'N',310);
-insert into flight values (111931,'1234567','DEN','BOS',1520,2056,'UA',354,'FYBMQ','72S','D',0,'N',216);
-insert into flight values (111932,'1234567','DEN','BOS',1605,2145,'CO',1220,'FYQHK','M80','D',0,'N',220);
-insert into flight values (111933,'12345-7','DEN','BOS',1935,132,'CO',1270,'FYQHK','733','D',0,'N',237);
-insert into flight values (111937,'1234567','DEN','BWI',1045,1553,'UA',658,'FYBMQ','72S','L',0,'N',188);
-insert into flight values (111939,'1234567','DEN','BWI',1455,2010,'US',1750,'FYBHQ','734','L',0,'N',195);
-insert into flight values (111941,'1234567','DEN','BWI',1828,2332,'UA',302,'FYBMQ','72S','D',0,'N',184);
-insert into flight values (112028,'1234567','DEN','DFW',450,742,'AA',1412,'FNYNBMV','M80','',0,'N',112);
-insert into flight values (112029,'123456-','DEN','DFW',605,851,'UA',216,'FYBMQ','733','B',0,'N',106);
-insert into flight values (112030,'--34567','DEN','DFW',620,906,'DL',465,'FNYNBNMQ','M80','B',0,'N',106);
-insert into flight values (112031,'12-----','DEN','DFW',620,906,'DL',465,'FNYNBNMQ','72S','B',0,'N',106);
-insert into flight values (112032,'1234567','DEN','DFW',901,1210,'AA',912,'FYBMV','M80','S',0,'N',129);
-insert into flight values (112033,'1234567','DEN','DFW',950,1235,'DL',335,'FYBMQ','M80','S',0,'N',105);
-insert into flight values (112034,'1234567','DEN','DFW',1029,1312,'UA',438,'FYBMQ','727','L',0,'N',103);
-insert into flight values (112035,'1234567','DEN','DFW',1040,1343,'AA',464,'FYBMV','M80','S',0,'N',123);
-insert into flight values (112036,'1234567','DEN','DFW',1105,1353,'CO',1226,'FYQHK','72S','L',0,'N',108);
-insert into flight values (112037,'1234567','DEN','DFW',1210,1504,'AA',242,'FYBMV','M80','L',0,'N',114);
-insert into flight values (112038,'-----6-','DEN','DFW',1310,1555,'UA',888,'FYBMQ','727','S',0,'N',105);
-insert into flight values (112039,'12345-7','DEN','DFW',1310,1555,'UA',880,'FYBMQ','727','S',0,'N',105);
-insert into flight values (112041,'1234567','DEN','DFW',1325,1615,'CO',90,'FYQHK','72S','S',0,'N',110);
-insert into flight values (112040,'1234567','DEN','DFW',1325,1615,'DL',870,'FYBMQ','M80','L',0,'N',110);
-insert into flight values (112042,'1234567','DEN','DFW',1340,1628,'AA',50,'FYBMV','M80','',0,'N',108);
-insert into flight values (112043,'1234567','DEN','DFW',1507,1753,'UA',450,'FYBMQ','727','',0,'N',106);
-insert into flight values (112044,'1234567','DEN','DFW',1605,1905,'CO',1652,'FYQHK','M80','D',0,'N',120);
-insert into flight values (112045,'1234567','DEN','DFW',1613,1923,'AA',618,'FYBMV','72S','D',0,'N',130);
-insert into flight values (112046,'1234567','DEN','DFW',1700,1943,'DL',742,'FYBMQ','72S','D',0,'N',103);
-insert into flight values (112047,'1234567','DEN','DFW',1723,2006,'UA',714,'FYBMQ','72S','D',0,'N',103);
-insert into flight values (112048,'1234567','DEN','DFW',1808,2103,'AA',1486,'FYBMV','M80','D',0,'N',115);
-insert into flight values (112049,'12345-7','DEN','DFW',1835,2122,'UA',664,'FYBMQ','727','D',0,'N',107);
-insert into flight values (112050,'1234567','DEN','DFW',1925,2220,'CO',935,'FYQHK','733','S',0,'N',115);
-insert into flight values (112051,'1234567','DEN','DFW',1955,2240,'DL',661,'FNYNBNMQ','72S','S',0,'N',105);
-insert into flight values (112052,'1234567','DEN','DFW',2036,2327,'AA',1432,'FNYNBMV','M80','',0,'N',111);
-insert into flight values (112351,'1234567','DEN','OAK',840,1014,'UA',389,'FYBMQ','727','B',0,'N',154);
-insert into flight values (112352,'1234567','DEN','OAK',1208,1339,'UA',551,'FYBMQ','727','L',0,'N',151);
-insert into flight values (112353,'1234567','DEN','OAK',1715,1852,'UA',645,'FYBMQ','73S','D',0,'N',157);
-insert into flight values (112354,'1234567','DEN','OAK',2030,2205,'UA',673,'FYBMQ','733','',0,'N',155);
-insert into flight values (112413,'1234567','DEN','PHL',55,825,'DL',296,'FNYNBNMQ','72S','B',1,'N',330);
-insert into flight values (112415,'1234567','DEN','PHL',1033,1553,'UA',270,'FYBMQ','D8S','L',0,'N',200);
-insert into flight values (112416,'1234567','DEN','PHL',1120,1705,'CO',1602,'FYQHK','733','L',0,'N',225);
-insert into flight values (112417,'1234567','DEN','PHL',1524,2041,'UA',494,'FYBMQ','D10','D',0,'N',197);
-insert into flight values (112418,'1234567','DEN','PHL',1615,2146,'CO',784,'FYQHK','72S','D/S',0,'N',211);
-insert into flight values (112440,'1234567','DEN','PIT',730,1225,'US',1039,'FYBHQ','734','B',0,'N',175);
-insert into flight values (112441,'1234567','DEN','PIT',1035,1527,'US',1520,'FYBHQ','733','B',0,'N',172);
-insert into flight values (112442,'1234567','DEN','PIT',1605,2057,'US',1421,'FYBHQ','733','D',0,'N',172);
-insert into flight values (112513,'1234567','DEN','SFO',830,1006,'UA',819,'FCYBM','D10','B',0,'N',156);
-insert into flight values (112514,'1234567','DEN','SFO',840,1041,'CO',1679,'FYQHK','733','B',0,'N',181);
-insert into flight values (112515,'1234567','DEN','SFO',935,1110,'UA',315,'FYBMQ','72S','S',0,'N',155);
-insert into flight values (112516,'1234567','DEN','SFO',1200,1336,'UA',343,'FYBMQ','D8S','L',0,'N',156);
-insert into flight values (112519,'12345-7','DEN','SFO',1220,1416,'CO',1295,'FYQHK','733','L',0,'N',176);
-insert into flight values (112518,'-----6-','DEN','SFO',1220,1416,'CO',1291,'FYQHK','72S','L',0,'N',176);
-insert into flight values (112520,'1234567','DEN','SFO',1408,1535,'UA',773,'FYBMQ','727','S',0,'N',147);
-insert into flight values (112524,'1234567','DEN','SFO',1735,1912,'UA',207,'FYBMQ','757','D',0,'N',157);
-insert into flight values (112525,'1234567','DEN','SFO',1810,1947,'CO',511,'FYQHK','72S','D/S',0,'N',157);
-insert into flight values (112526,'1234567','DEN','SFO',2045,2214,'UA',297,'FYBMQ','72S','',0,'N',149);
-insert into flight values (112527,'1234567','DEN','SFO',2130,2310,'CO',1765,'FQYNHK','M80','',0,'N',160);
-insert into flight values (112766,'1234567','DFW','ATL',625,917,'DL',16,'FYBMQ','L15','B',0,'N',112);
-insert into flight values (112771,'1234567','DFW','ATL',658,950,'AA',864,'FNYNBMV','M80','B',0,'N',112);
-insert into flight values (112772,'1234567','DFW','ATL',800,1050,'DL',83,'FYBMQ','L10','B',0,'N',110);
-insert into flight values (112773,'1234567','DFW','ATL',945,1244,'DL',790,'FYBMQ','767','S',0,'N',119);
-insert into flight values (112777,'1234567','DFW','ATL',1140,1434,'DL',446,'FYBMQ','M80','L',0,'N',114);
-insert into flight values (112783,'1234567','DFW','ATL',1251,1549,'AA',504,'FYBMV','M80','L',0,'N',118);
-insert into flight values (112784,'1234567','DFW','ATL',1305,1606,'DL',796,'FYBMQ','763','L',0,'N',121);
-insert into flight values (112789,'1234567','DFW','ATL',1442,1746,'AA',482,'FYBMV','M80','S',0,'N',124);
-insert into flight values (112790,'1234567','DFW','ATL',1501,1753,'DL',688,'FYBMQ','763','S',0,'N',112);
-insert into flight values (112793,'--34567','DFW','ATL',1650,1943,'DL',748,'FYBMQ','L10','D',0,'N',113);
-insert into flight values (112794,'12-----','DFW','ATL',1650,1943,'DL',748,'FYBMQ','763','D',0,'N',113);
-insert into flight values (112797,'-2-----','DFW','ATL',1705,2005,'LH',443,'FCBMK','74M','D',0,'N',120);
-insert into flight values (112798,'1234567','DFW','ATL',1716,2016,'AA',222,'FYBMV','M80','D',0,'N',120);
-insert into flight values (112802,'1234567','DFW','ATL',1840,2133,'DL',832,'FYBMQ','M80','D',0,'N',113);
-insert into flight values (112804,'1234567','DFW','ATL',1958,2255,'AA',496,'FNYNBMV','M80','S/',0,'N',117);
-insert into flight values (112805,'1234567','DFW','ATL',2010,2258,'DL',1720,'FYBMQ','72S','S/',0,'N',108);
-insert into flight values (112806,'1234567','DFW','ATL',2215,100,'DL',1008,'FNYNBNMQ','D9S','',0,'N',105);
-insert into flight values (112807,'1234567','DFW','ATL',2257,151,'AA',628,'FNYNBMV','M80','',0,'N',114);
-insert into flight values (112808,'1234567','DFW','ATL',2345,230,'DL',1030,'FNYNBNMQ','M80','',0,'N',105);
-insert into flight values (112864,'1234567','DFW','BOS',641,1104,'AA',928,'FYBMV','767','B',0,'N',203);
-insert into flight values (112867,'12-----','DFW','BOS',1005,1435,'DL',694,'FYBMQ','72S','B',0,'N',210);
-insert into flight values (112866,'--34567','DFW','BOS',1005,1435,'DL',694,'FYBMQ','M80','B',0,'N',210);
-insert into flight values (112869,'1234567','DFW','BOS',1304,1730,'AA',28,'FYBMV','D10','L/S',0,'N',206);
-insert into flight values (112870,'1234567','DFW','BOS',1315,1755,'DL',128,'FYBMQ','757','L',0,'N',220);
-insert into flight values (112872,'1234567','DFW','BOS',1448,1925,'AA',634,'FYBMV','767','S',0,'N',217);
-insert into flight values (112873,'1234567','DFW','BOS',1705,2125,'DL',670,'FYBMQ','72S','D',0,'N',200);
-insert into flight values (112874,'1234567','DFW','BOS',1719,2152,'AA',154,'FYBMV','D10','D',0,'N',213);
-insert into flight values (112903,'1234567','DFW','BWI',822,1200,'AA',314,'FYBMV','72S','B',0,'N',158);
-insert into flight values (112904,'1234567','DFW','BWI',1020,1400,'DL',430,'FYBMQ','73S','L',0,'N',160);
-insert into flight values (112905,'1234567','DFW','BWI',1426,1807,'AA',600,'FYBMV','72S','S',0,'N',161);
-insert into flight values (112907,'1234567','DFW','BWI',1708,2045,'DL',605,'FYBMQ','M80','D',0,'N',157);
-insert into flight values (112908,'1234567','DFW','BWI',1717,2110,'AA',268,'FYBMV','M80','D',0,'N',173);
-insert into flight values (112909,'1234567','DFW','BWI',1957,2334,'AA',376,'FYBMV','72S','S',0,'N',157);
-insert into flight values (112989,'1234567','DFW','DEN',650,800,'CO',1149,'FYQHK','733','B',0,'N',130);
-insert into flight values (112990,'1234567','DFW','DEN',658,753,'AA',1443,'FYBMV','M80','B',0,'N',115);
-insert into flight values (112991,'123456-','DFW','DEN',700,753,'UA',953,'FYBMQ','72S','B',0,'N',113);
-insert into flight values (112992,'1234567','DFW','DEN',816,910,'DL',416,'FYBMQ','M80','B',0,'N',114);
-insert into flight values (112993,'1234567','DFW','DEN',822,932,'AA',445,'FYBMV','M80','B',0,'N',130);
-insert into flight values (112994,'1234567','DFW','DEN',830,921,'UA',985,'FYBMQ','727','B',0,'N',111);
-insert into flight values (112995,'1234567','DFW','DEN',941,1047,'AA',521,'FYBMV','M80','S',0,'N',126);
-insert into flight values (112996,'-----6-','DFW','DEN',1030,1130,'CO',1291,'FYQHK','72S','S',0,'N',120);
-insert into flight values (112997,'12345-7','DFW','DEN',1030,1130,'CO',215,'FYQHK','72S','S',0,'N',120);
-insert into flight values (112998,'1234567','DFW','DEN',1032,1125,'UA',551,'FYBMQ','727','S',0,'N',113);
-insert into flight values (112999,'1234567','DFW','DEN',1108,11,'AA',419,'FYBMV','M80','S',0,'N',123);
-insert into flight values (113000,'1234567','DFW','DEN',1151,1245,'DL',551,'FYBMQ','M80','L',0,'N',114);
-insert into flight values (113001,'1234567','DFW','DEN',1240,1333,'UA',773,'FYBMQ','727','L',0,'N',113);
-insert into flight values (113002,'1234567','DFW','DEN',1428,1528,'AA',1249,'FYBMV','72S','',0,'N',120);
-insert into flight values (113003,'1234567','DFW','DEN',1500,1554,'DL',309,'FYBMQ','72S','',0,'N',114);
-insert into flight values (113004,'1234567','DFW','DEN',1547,1646,'UA',725,'FYBMQ','733','',0,'N',119);
-insert into flight values (113005,'1234567','DFW','DEN',1607,1714,'AA',51,'FYBMV','M80','',0,'N',127);
-insert into flight values (113006,'1234567','DFW','DEN',1630,1729,'CO',469,'FYQHK','72S','',0,'N',119);
-insert into flight values (113007,'1234567','DFW','DEN',1835,1936,'AA',193,'FNYNBMV','M80','D',0,'N',121);
-insert into flight values (113008,'12345-7','DFW','DEN',1850,1951,'UA',475,'FYBMQ','733','D',0,'N',121);
-insert into flight values (113009,'1234567','DFW','DEN',1855,1950,'DL',807,'FYBMQ','72S','D',0,'N',115);
-insert into flight values (113010,'1234567','DFW','DEN',1940,2040,'CO',271,'FYQHK','M80','D/S',0,'N',120);
-insert into flight values (113011,'1234567','DFW','DEN',2153,2253,'AA',313,'FNYNBMV','M80','',0,'N',120);
-insert into flight values (113013,'1-----7','DFW','DEN',2225,2320,'DL',621,'FNYNBNMQ','72S','',0,'N',115);
-insert into flight values (113012,'-23456-','DFW','DEN',2225,2320,'DL',621,'FNYNBNMQ','M80','',0,'N',115);
-insert into flight values (113498,'1234567','DFW','OAK',943,1133,'AA',877,'FYBMV','M80','B',0,'N',230);
-insert into flight values (113499,'1234567','DFW','OAK',1032,1339,'UA',551,'FYBMQ','727','SL',1,'N',307);
-insert into flight values (113500,'1234567','DFW','OAK',1835,2023,'AA',459,'FYBMV','M80','D',0,'N',228);
-insert into flight values (113501,'1234567','DFW','OAK',2153,2343,'AA',367,'FNYNBMV','M80','',0,'N',230);
-insert into flight values (113576,'1234567','DFW','PHL',703,1106,'AA',124,'FYBMV','M80','B',0,'N',183);
-insert into flight values (113577,'1234567','DFW','PHL',950,1350,'DL',1006,'FYBMQ','73S','B',0,'N',180);
-insert into flight values (113578,'1234567','DFW','PHL',1303,1706,'AA',1010,'FYBMV','767','L/S',0,'N',183);
-insert into flight values (113579,'1234567','DFW','PHL',1310,1705,'DL',234,'FYBMQ','72S','L',0,'N',175);
-insert into flight values (113581,'1234567','DFW','PHL',1718,2130,'AA',586,'FYBMV','M80','D',0,'N',192);
-insert into flight values (113582,'1234567','DFW','PHL',1959,2358,'AA',1074,'FYBMV','M80','S/',0,'N',179);
-insert into flight values (113583,'1234567','DFW','PHL',2025,15,'DL',1546,'FNYNBNMQ','72S','S',0,'N',170);
-insert into flight values (113595,'1234567','DFW','PIT',825,1200,'AA',478,'FYBMV','M80','B',0,'N',155);
-insert into flight values (113596,'1234567','DFW','PIT',845,1214,'US',326,'FYBHQ','M80','B',0,'N',149);
-insert into flight values (113597,'1234567','DFW','PIT',1230,1559,'US',96,'FYBHQ','M80','L',0,'N',149);
-insert into flight values (113599,'1234567','DFW','PIT',1434,1804,'AA',296,'FYBMV','M80','S',0,'N',150);
-insert into flight values (113600,'1234567','DFW','PIT',1720,2059,'US',504,'FYBHQ','M80','D',0,'N',159);
-insert into flight values (113602,'1234567','DFW','PIT',1958,2328,'AA',144,'FYBMV','M80','S/',0,'N',150);
-insert into flight values (113705,'1234567','DFW','SFO',815,955,'DL',825,'FYBMQ','757','B',0,'N',220);
-insert into flight values (113706,'1234567','DFW','SFO',826,1013,'AA',203,'FYBMV','D10','B',0,'N',227);
-insert into flight values (113707,'1234567','DFW','SFO',935,1127,'UA',459,'FYBMQ','733','L',0,'N',232);
-insert into flight values (113709,'1234567','DFW','SFO',944,1147,'AA',125,'FYBMV','M80','B',0,'N',243);
-insert into flight values (113710,'-----6-','DFW','SFO',1030,1416,'CO',1291,'FYQHK','72S','SL',1,'N',346);
-insert into flight values (113711,'1234567','DFW','SFO',1107,59,'AA',295,'FYBMV','D10','L',0,'N',232);
-insert into flight values (113712,'1234567','DFW','SFO',1143,1325,'DL',149,'FYBMQ','767','L',0,'N',222);
-insert into flight values (113713,'1234567','DFW','SFO',1240,1535,'UA',773,'FYBMQ','727','LS',1,'N',295);
-insert into flight values (113715,'1234567','DFW','SFO',1510,1650,'DL',887,'FYBMQ','757','S',0,'N',220);
-insert into flight values (113716,'1234567','DFW','SFO',1604,1758,'AA',813,'FYBMV','767','D',0,'N',234);
-insert into flight values (113717,'1234567','DFW','SFO',1705,1858,'AA',1119,'FYBMV','767','D',0,'N',233);
-insert into flight values (113718,'1234567','DFW','SFO',1840,2029,'AA',71,'FYBMV','D10','D',0,'N',229);
-insert into flight values (113719,'1234567','DFW','SFO',1900,2050,'DL',139,'FYBMQ','757','D',0,'N',230);
-insert into flight values (113720,'1234567','DFW','SFO',2155,2341,'AA',37,'FNYNBMV','767','S',0,'N',226);
-insert into flight values (113721,'1234567','DFW','SFO',2214,2350,'DL',395,'FNYNBNMQ','757','S',0,'N',216);
-insert into flight values (133423,'1234567','OAK','BOS',1105,2056,'UA',354,'FYBMQ','72S','LD',1,'N',411);
-insert into flight values (133430,'1234567','OAK','DEN',625,949,'UA',982,'FYBMQ','733','B',0,'N',144);
-insert into flight values (133431,'1234567','OAK','DEN',1105,1417,'UA',354,'FYBMQ','72S','L',0,'N',132);
-insert into flight values (133432,'1234567','OAK','DEN',1425,1740,'UA',436,'FYBMQ','727','S',0,'N',135);
-insert into flight values (133433,'1234567','OAK','DEN',1930,2251,'UA',384,'FYBMQ','73S','S/',0,'N',141);
-insert into flight values (133434,'1234567','OAK','DFW',35,552,'AA',534,'FNYNBMV','M80','',0,'N',197);
-insert into flight values (133435,'1234567','OAK','DFW',640,1214,'AA',1086,'FYBMV','M80','B',0,'N',214);
-insert into flight values (133436,'1234567','OAK','DFW',1345,1912,'AA',1074,'FYBMV','M80','L',0,'N',207);
-insert into flight values (133516,'1234567','OAK','PHL',1345,2358,'AA',1074,'FYBMV','M80','LS/L',1,'N',433);
-insert into flight values (133567,'123456-','OAK','SFO',530,554,'AA',5112,'YNBMVQ','SWM','',0,'Y',24);
-insert into flight values (133568,'------7','OAK','SFO',735,759,'AA',5235,'YBMVQ','SWM','',0,'Y',24);
-insert into flight values (133569,'------7','OAK','SFO',1020,1055,'AA',5140,'YBMVQ','SWM','',0,'Y',35);
-insert into flight values (137221,'1234567','PHL','ATL',540,740,'DL',201,'FNYNBNMQ','72S','B',0,'N',120);
-insert into flight values (137222,'1234567','PHL','ATL',635,844,'EA',121,'FNYNHQNK','D9S','B',0,'N',129);
-insert into flight values (137223,'1234567','PHL','ATL',800,1004,'EA',601,'FYHQK','D9S','B',0,'N',124);
-insert into flight values (137224,'1234567','PHL','ATL',900,1104,'DL',803,'FYBMQ','757','S',0,'N',124);
-insert into flight values (137225,'1234567','PHL','ATL',900,1110,'US',667,'FYBHQ','733','B',0,'N',130);
-insert into flight values (137226,'1234567','PHL','ATL',930,1142,'EA',125,'FYHQK','D9S','S',0,'N',132);
-insert into flight values (137227,'1234567','PHL','ATL',1115,1320,'EA',123,'FYHQK','D9S','L',0,'N',125);
-insert into flight values (137228,'1234567','PHL','ATL',1230,1430,'DL',1083,'FYBMQ','72S','L',0,'N',120);
-insert into flight values (137229,'1234567','PHL','ATL',1304,1512,'EA',127,'FYHQK','D9S','L',0,'N',128);
-insert into flight values (137230,'1234567','PHL','ATL',1405,1605,'DL',429,'FYBMQ','72S','',0,'N',120);
-insert into flight values (137231,'1234567','PHL','ATL',1405,1615,'US',1623,'FYBHQ','73S','L/S',0,'N',130);
-insert into flight values (137232,'1234567','PHL','ATL',1500,1710,'EA',603,'FYHQK','D9S','S/',0,'N',130);
-insert into flight values (137233,'1234567','PHL','ATL',1600,1805,'DL',1507,'FYBMQ','72S','S',0,'N',125);
-insert into flight values (137234,'1234567','PHL','ATL',1700,1909,'EA',329,'FYHQK','D9S','D',0,'N',129);
-insert into flight values (137235,'1234567','PHL','ATL',1750,1950,'DL',101,'FYBMQ','72S','D',0,'N',120);
-insert into flight values (137236,'1234567','PHL','ATL',1850,2055,'EA',129,'FYHQK','D9S','D',0,'N',125);
-insert into flight values (137237,'1234567','PHL','ATL',1855,2101,'US',289,'FYBHQ','D9S','D',0,'N',126);
-insert into flight values (137238,'1234567','PHL','ATL',1935,2137,'DL',389,'FYBMQ','767','D',0,'N',122);
-insert into flight values (137315,'1234567','PHL','BOS',615,719,'DL',562,'FYBMQ','757','B/S',0,'N',64);
-insert into flight values (137316,'1234567','PHL','BOS',700,805,'US',292,'FYBHQ','733','S',0,'N',65);
-insert into flight values (137317,'123456-','PHL','BOS',700,820,'ML',436,'FYMHQ','D9S','B/S',0,'N',80);
-insert into flight values (137318,'1234567','PHL','BOS',800,907,'US',1557,'FYBHQ','73S','S',0,'N',67);
-insert into flight values (137319,'1234567','PHL','BOS',855,1000,'DL',296,'FYBMQ','72S','',0,'N',65);
-insert into flight values (137320,'1234567','PHL','BOS',1020,1127,'US',424,'FYBHQ','M80','',0,'N',67);
-insert into flight values (137321,'1234567','PHL','BOS',1020,1140,'ML',400,'FYMHQ','D9S','',0,'N',80);
-insert into flight values (137322,'1234567','PHL','BOS',1200,1315,'ML',438,'FYMHQ','D9S','L/S',0,'N',75);
-insert into flight values (137323,'1234567','PHL','BOS',1250,1355,'DL',726,'FYBMQ','72S','S',0,'N',65);
-insert into flight values (137324,'1234567','PHL','BOS',1325,1432,'US',122,'FYBHQ','D9S','',0,'N',67);
-insert into flight values (137326,'1234567','PHL','BOS',1440,1548,'US',404,'FYBHQ','72S','',0,'N',68);
-insert into flight values (137327,'1234567','PHL','BOS',1520,1627,'US',282,'FYBHQ','73S','',0,'N',67);
-insert into flight values (137328,'1234567','PHL','BOS',1540,1700,'ML',420,'FYMHQ','D9S','',0,'N',80);
-insert into flight values (137329,'1234567','PHL','BOS',1600,1707,'US',2,'FYBHQ','73S','',0,'N',67);
-insert into flight values (137330,'-2-4--7','PHL','BOS',1615,1730,'LH',421,'FCBMK','D10','',0,'N',75);
-insert into flight values (137331,'1234567','PHL','BOS',1650,1755,'DL',648,'FYBMQ','72S','S',0,'N',65);
-insert into flight values (137332,'12345-7','PHL','BOS',1700,1820,'ML',430,'FYMHQ','D9S','',0,'N',80);
-insert into flight values (137333,'1234567','PHL','BOS',1755,1902,'US',196,'FYBHQ','M80','',0,'N',67);
-insert into flight values (137334,'12345-7','PHL','BOS',1855,2002,'US',460,'FYBHQ','D9S','',0,'N',67);
-insert into flight values (137335,'1234567','PHL','BOS',1945,2053,'US',162,'FYBHQ','72S','',0,'N',68);
-insert into flight values (137336,'12345-7','PHL','BOS',2030,2137,'US',539,'FYBHQ','D9S','',0,'N',67);
-insert into flight values (137337,'1234567','PHL','BOS',2055,2215,'ML',432,'FYMHQ','D9S','',0,'N',80);
-insert into flight values (137338,'12345-7','PHL','BOS',2100,2207,'US',279,'FYBHQ','734','',0,'N',67);
-insert into flight values (137339,'1234567','PHL','BOS',2115,2219,'DL',106,'FNYNBNMQ','M80','',0,'N',64);
-insert into flight values (137353,'12345--','PHL','BWI',715,804,'US',3745,'YBHQM','SH3','',0,'Y',49);
-insert into flight values (137354,'123456-','PHL','BWI',840,929,'US',3725,'YBHQM','SH3','',0,'Y',49);
-insert into flight values (137355,'1234567','PHL','BWI',1100,1150,'US',3609,'YBHQM','SH6','',0,'Y',50);
-insert into flight values (137356,'1234567','PHL','BWI',1200,1250,'US',3765,'YBHQM','SH3','',0,'Y',50);
-insert into flight values (137357,'1234567','PHL','BWI',1335,1425,'US',4517,'YBHQM','DH8','',0,'Y',50);
-insert into flight values (137358,'1234567','PHL','BWI',1520,1620,'US',3749,'YBHQM','SH3','',0,'Y',60);
-insert into flight values (137359,'1234567','PHL','BWI',1854,1944,'US',3357,'YBHQM','J31','',0,'Y',50);
-insert into flight values (137360,'12345-7','PHL','BWI',2045,2135,'US',3753,'YBHQM','SH3','',0,'Y',50);
-insert into flight values (137361,'12345-7','PHL','BWI',2150,2240,'US',4400,'YBHQM','DH8','',0,'Y',50);
-insert into flight values (137407,'1234567','PHL','DEN',905,1107,'UA',131,'FYBMQ','D10','B',0,'N',242);
-insert into flight values (137408,'1234567','PHL','DEN',915,1138,'CO',781,'FYQHK','72S','B',0,'N',263);
-insert into flight values (137410,'1234567','PHL','DEN',1230,1615,'DL',1083,'FYBMQ','72S','LS',1,'N',345);
-insert into flight values (137412,'1234567','PHL','DEN',1753,1955,'UA',355,'FYBMQ','D8S','D',0,'N',242);
-insert into flight values (137413,'1234567','PHL','DEN',1800,2037,'CO',1631,'FYQHK','733','D',0,'N',277);
-insert into flight values (137414,'1234567','PHL','DFW',720,1014,'AA',487,'FYBMV','M80','B',0,'N',234);
-insert into flight values (137415,'1234567','PHL','DFW',830,1050,'DL',217,'FYBMQ','72S','B',0,'N',200);
-insert into flight values (137417,'1234567','PHL','DFW',1212,1502,'AA',883,'FYBMV','M80','L',0,'N',230);
-insert into flight values (137419,'1234567','PHL','DFW',1440,1710,'DL',1061,'FYBMQ','73S','S',0,'N',210);
-insert into flight values (137420,'1234567','PHL','DFW',1500,1747,'AA',459,'FYBMV','M80','S',0,'N',227);
-insert into flight values (137422,'1234567','PHL','DFW',1805,2047,'AA',573,'FYBMV','767','D',0,'N',222);
-insert into flight values (137423,'1234567','PHL','DFW',1915,2144,'DL',589,'FYBMQ','72S','D',0,'N',209);
-insert into flight values (137685,'1234567','PHL','OAK',1500,2023,'AA',459,'FYBMV','M80','SD',1,'N',503);
-insert into flight values (137732,'1234567','PHL','PIT',700,806,'US',71,'FYBHQ','733','B',0,'N',66);
-insert into flight values (137733,'1234567','PHL','PIT',740,847,'US',39,'FYBHQ','733','B',0,'N',67);
-insert into flight values (137734,'123456-','PHL','PIT',840,950,'US',1800,'FYBHQ','734','S/',0,'N',70);
-insert into flight values (137735,'1234567','PHL','PIT',1010,1115,'US',358,'FYBHQ','M80','S/',0,'N',65);
-insert into flight values (137736,'1234567','PHL','PIT',1235,1341,'US',37,'FYBHQ','733','S',0,'N',66);
-insert into flight values (137737,'1234567','PHL','PIT',1600,1706,'US',778,'FYBHQ','733','S/',0,'N',66);
-insert into flight values (137738,'1234567','PHL','PIT',1715,1822,'US',1580,'FYBHQ','734','S/',0,'N',67);
-insert into flight values (137739,'1234567','PHL','PIT',1810,1916,'US',772,'FYBHQ','72S','S',0,'N',66);
-insert into flight values (137740,'1234567','PHL','PIT',2100,2207,'US',293,'FYBHQ','733','',0,'N',67);
-insert into flight values (137811,'1234567','PHL','SFO',800,1121,'UA',143,'FYBMQ','767','B',0,'N',381);
-insert into flight values (137814,'1234567','PHL','SFO',1235,1652,'US',37,'FYBHQ','733','SL',1,'N',437);
-insert into flight values (137817,'1234567','PHL','SFO',1655,2005,'UA',101,'FYBMQ','D8S','D',0,'N',370);
-insert into flight values (138817,'1234567','PIT','ATL',600,739,'DL',357,'FNYNBNMQ','73S','B',0,'N',99);
-insert into flight values (138818,'1234567','PIT','ATL',645,825,'EA',303,'FYHQK','D9S','B',0,'N',100);
-insert into flight values (138819,'1234567','PIT','ATL',827,1004,'EA',301,'YHQKL','72S','B',0,'N',97);
-insert into flight values (138820,'1234567','PIT','ATL',845,1025,'US',573,'FYBHQ','D9S','B',0,'N',100);
-insert into flight values (138821,'1234567','PIT','ATL',910,1048,'DL',1059,'FYBMQ','D9S','S',0,'N',98);
-insert into flight values (138822,'1234567','PIT','ATL',1150,1329,'EA',307,'FYHQK','D9S','L',0,'N',99);
-insert into flight values (138823,'1234567','PIT','ATL',1245,1420,'DL',631,'FYBMQ','D9S','L',0,'N',95);
-insert into flight values (138824,'1234567','PIT','ATL',1320,1500,'US',18,'FYBHQ','D9S','L',0,'N',100);
-insert into flight values (138825,'1234567','PIT','ATL',1520,1701,'EA',311,'YHQKL','72S','S',0,'N',101);
-insert into flight values (138827,'1234567','PIT','ATL',1600,1735,'DL',709,'FYBMQ','73S','',0,'N',95);
-insert into flight values (138828,'1234567','PIT','ATL',1750,1930,'US',1103,'FYBHQ','733','D',0,'N',100);
-insert into flight values (138829,'1234567','PIT','ATL',1855,2035,'EA',327,'FYHQK','757','D',0,'N',100);
-insert into flight values (138830,'-----67','PIT','ATL',1945,2118,'DL',381,'FNYNBNMQ','73S','D',0,'N',93);
-insert into flight values (138831,'12345--','PIT','ATL',1945,2118,'DL',381,'FNYNBNMQ','72S','D',0,'N',93);
-insert into flight values (138832,'1234567','PIT','ATL',2025,2205,'US',412,'FYBHQ','D9S','D/S',0,'N',100);
-insert into flight values (138860,'1234567','PIT','BOS',710,839,'US',732,'FYBHQ','733','B',0,'N',89);
-insert into flight values (138861,'1234567','PIT','BOS',840,1006,'US',736,'FYBHQ','733','S/',0,'N',86);
-insert into flight values (138862,'1234567','PIT','BOS',1200,1328,'US',674,'FYBHQ','M80','S',0,'N',88);
-insert into flight values (138863,'1234567','PIT','BOS',1310,1440,'US',418,'FYBHQ','D9S','S',0,'N',90);
-insert into flight values (138864,'1234567','PIT','BOS',1355,1524,'US',794,'FYBHQ','D9S','S/',0,'N',89);
-insert into flight values (138865,'1234567','PIT','BOS',1640,1809,'US',14,'FYBHQ','733','S/',0,'N',89);
-insert into flight values (138866,'1234567','PIT','BOS',1800,2053,'US',162,'FYBHQ','72S','S',1,'N',173);
-insert into flight values (138867,'12345-7','PIT','BOS',1930,2058,'US',400,'FYBHQ','73S','S',0,'N',88);
-insert into flight values (138868,'1234567','PIT','BOS',2155,2322,'US',30,'FYBHQ','72S','',0,'N',87);
-insert into flight values (138878,'1234567','PIT','BWI',845,938,'US',446,'FYBHQ','72S','',0,'N',53);
-insert into flight values (138879,'1234567','PIT','BWI',1030,1129,'US',1801,'FYBHQ','734','',0,'N',59);
-insert into flight values (138880,'1234567','PIT','BWI',1400,1458,'US',538,'FYBHQ','D9S','',0,'N',58);
-insert into flight values (138881,'1234567','PIT','BWI',1525,1621,'US',1982,'FYBHQ','F28','',0,'N',56);
-insert into flight values (138882,'1234567','PIT','BWI',1640,1737,'US',2153,'FYBHQ','733','',0,'N',57);
-insert into flight values (138883,'-----6-','PIT','BWI',1810,1910,'US',975,'FYBHQ','F28','',0,'N',60);
-insert into flight values (138884,'1234567','PIT','BWI',2155,2252,'US',1793,'FYBHQ','733','',0,'N',57);
-insert into flight values (138963,'1234567','PIT','DEN',950,1135,'US',1402,'FYBHQ','733','B',0,'N',225);
-insert into flight values (138964,'1234567','PIT','DEN',1330,1510,'US',1417,'FYBHQ','733','L',0,'N',220);
-insert into flight values (138965,'1234567','PIT','DEN',1854,2253,'AA',313,'FYBMV','M80','D',1,'N',359);
-insert into flight values (138966,'1234567','PIT','DEN',2035,2226,'US',1742,'FYBHQ','734','D',0,'N',231);
-insert into flight values (138970,'1234567','PIT','DFW',640,852,'AA',493,'FYBMV','M80','B',0,'N',192);
-insert into flight values (138971,'1234567','PIT','DFW',940,1149,'US',7,'FYBHQ','M80','B',0,'N',189);
-insert into flight values (138973,'1234567','PIT','DFW',1301,1514,'AA',425,'FYBMV','M80','L/S',0,'N',193);
-insert into flight values (138974,'1234567','PIT','DFW',1430,1639,'US',503,'FYBHQ','M80','L',0,'N',189);
-insert into flight values (138976,'1234567','PIT','DFW',1854,2107,'AA',313,'FYBMV','M80','D',0,'N',193);
-insert into flight values (138977,'1234567','PIT','DFW',2020,2229,'US',19,'FYBHQ','M80','D',0,'N',189);
-insert into flight values (139264,'1234567','PIT','PHL',700,755,'US',771,'FYBHQ','72S','B',0,'N',55);
-insert into flight values (139265,'1234567','PIT','PHL',740,850,'US',620,'FYBHQ','733','B',0,'N',70);
-insert into flight values (139266,'1234567','PIT','PHL',850,958,'US',606,'FYBHQ','733','S/',0,'N',68);
-insert into flight values (139267,'1234567','PIT','PHL',1150,1251,'US',122,'FYBHQ','D9S','S',0,'N',61);
-insert into flight values (139268,'1234567','PIT','PHL',1325,1430,'US',198,'FYBHQ','733','S',0,'N',65);
-insert into flight values (139269,'1234567','PIT','PHL',1640,1745,'US',1438,'FYBHQ','733','S/',0,'N',65);
-insert into flight values (139270,'1234567','PIT','PHL',1800,1900,'US',162,'FYBHQ','72S','S',0,'N',60);
-insert into flight values (139271,'1234567','PIT','PHL',1955,2100,'US',166,'FYBHQ','733','',0,'N',65);
-insert into flight values (139272,'12345-7','PIT','PHL',2045,2145,'US',1984,'FYBHQ','73S','',0,'N',60);
-insert into flight values (139273,'1234567','PIT','PHL',2145,2250,'US',1678,'FYBHQ','734','',0,'N',65);
-insert into flight values (139353,'1234567','PIT','SFO',945,1217,'US',31,'FYBHQ','72S','B',0,'N',332);
-insert into flight values (139355,'1234567','PIT','SFO',1430,1652,'US',37,'FYBHQ','733','L',0,'N',322);
-insert into flight values (139356,'1234567','PIT','SFO',1750,2022,'US',33,'FYBHQ','733','D',0,'N',332);
-insert into flight values (139357,'1234567','PIT','SFO',2020,2250,'US',35,'FYBHQ','733','D',0,'N',330);
-insert into flight values (144059,'1234567','SFO','ATL',645,1549,'AA',504,'FYBMV','M80','BL',1,'N',364);
-insert into flight values (144060,'1234567','SFO','ATL',815,1540,'DL',98,'FYBMQ','763','B',0,'N',265);
-insert into flight values (144061,'1234567','SFO','ATL',900,1644,'EA',70,'FYHQK','757','B',0,'N',284);
-insert into flight values (144062,'------7','SFO','ATL',1215,1933,'DL',116,'FYBMQ','767','L',0,'N',258);
-insert into flight values (144063,'123456-','SFO','ATL',1215,1933,'DL',116,'FYBMQ','L10','L',0,'N',258);
-insert into flight values (144065,'1234567','SFO','ATL',1310,2041,'EA',72,'FYHQK','757','L',0,'N',271);
-insert into flight values (144066,'1234567','SFO','ATL',1530,2248,'DL',162,'FYBMQ','757','D',0,'N',258);
-insert into flight values (144067,'1234567','SFO','ATL',2220,540,'DL',156,'FNYNBNMQ','767','S',0,'N',260);
-insert into flight values (144069,'1234567','SFO','ATL',2340,657,'EA',74,'FNYNHQNK','757','S',0,'N',257);
-insert into flight values (144087,'1234567','SFO','BOS',30,1104,'AA',928,'FNYNBMV','767','B',1,'N',454);
-insert into flight values (144088,'1234567','SFO','BOS',650,1700,'CO',1234,'FYQHK','M80','BL',1,'N',430);
-insert into flight values (144089,'1234567','SFO','BOS',800,1627,'UA',92,'FYBMQ','D8S','B',0,'N',327);
-insert into flight values (144090,'1234567','SFO','BOS',825,1639,'TW',754,'FCYBQ','L10','B',0,'N',314);
-insert into flight values (144092,'123456-','SFO','BOS',1215,2255,'DL',116,'FYBMQ','L10','LS/L',1,'N',460);
-insert into flight values (144093,'1234567','SFO','BOS',1320,2322,'US',30,'FYBHQ','72S','L',1,'N',422);
-insert into flight values (144094,'1234567','SFO','BOS',1340,2202,'UA',20,'FYBMQ','D10','L',0,'N',322);
-insert into flight values (144095,'1234567','SFO','BOS',1530,153,'DL',162,'FYBMQ','757','D',1,'N',443);
-insert into flight values (144110,'1234567','SFO','BWI',755,1737,'US',2153,'FYBHQ','733','B',1,'N',402);
-insert into flight values (144143,'1234567','SFO','DEN',620,946,'UA',194,'FYBMQ','D10','B',0,'N',146);
-insert into flight values (144144,'1234567','SFO','DEN',650,1017,'CO',1234,'FYQHK','M80','B',0,'N',147);
-insert into flight values (144145,'-----6-','SFO','DEN',900,1223,'UA',888,'FYBMQ','727','B',0,'N',143);
-insert into flight values (144146,'12345--','SFO','DEN',900,1223,'UA',880,'FYBMQ','727','B',0,'N',143);
-insert into flight values (144147,'1234567','SFO','DEN',915,1244,'CO',64,'FYQHK','72S','B',0,'N',149);
-insert into flight values (144148,'1234567','SFO','DEN',1108,1428,'UA',820,'FCYBM','D10','L',0,'N',140);
-insert into flight values (144149,'1234567','SFO','DEN',1155,1523,'CO',1212,'FYQHK','733','L',0,'N',148);
-insert into flight values (144150,'1234567','SFO','DEN',1431,1753,'UA',178,'FYBMQ','D8S','S',0,'N',142);
-insert into flight values (144152,'12345-7','SFO','DEN',1520,1850,'CO',886,'FYQHK','733','S',0,'N',150);
-insert into flight values (144151,'-----6-','SFO','DEN',1520,1850,'CO',886,'FYQHK','72S','S',0,'N',150);
-insert into flight values (144153,'1234567','SFO','DEN',1825,2143,'UA',346,'FYBMQ','73S','D',0,'N',138);
-insert into flight values (144155,'1234567','SFO','DFW',20,522,'DL',374,'FNYNBNMQ','757','S',0,'N',182);
-insert into flight values (144156,'1234567','SFO','DFW',30,548,'AA',928,'FNYNBMV','767','',0,'N',198);
-insert into flight values (144157,'1234567','SFO','DFW',645,1204,'AA',504,'FYBMV','M80','B',0,'N',199);
-insert into flight values (144158,'1234567','SFO','DFW',700,1221,'DL',838,'FYBMQ','767','B',0,'N',201);
-insert into flight values (144159,'1234567','SFO','DFW',800,1315,'AA',70,'FYBMV','D10','B',0,'N',195);
-insert into flight values (144160,'-----6-','SFO','DFW',900,1555,'UA',888,'FYBMQ','727','BS',1,'N',295);
-insert into flight values (144161,'12345--','SFO','DFW',900,1555,'UA',880,'FYBMQ','727','BS',1,'N',295);
-insert into flight values (144162,'1234567','SFO','DFW',945,1503,'AA',986,'FYBMV','767','B',0,'N',198);
-insert into flight values (144163,'1234567','SFO','DFW',1059,1612,'DL',1014,'FYBMQ','757','L',0,'N',193);
-insert into flight values (144164,'1234567','SFO','DFW',1105,1622,'AA',288,'FYBMV','D10','L',0,'N',197);
-insert into flight values (144165,'1234567','SFO','DFW',1240,1808,'UA',478,'FYBMQ','733','L',0,'N',208);
-insert into flight values (144166,'1234567','SFO','DFW',1349,1910,'AA',404,'FYBMV','D10','L',0,'N',201);
-insert into flight values (144167,'1234567','SFO','DFW',1425,1937,'DL',180,'FYBMQ','767','L',0,'N',192);
-insert into flight values (144168,'1234567','SFO','DFW',1655,2215,'AA',264,'FYBMV','767','D',0,'N',200);
-insert into flight values (144169,'1234567','SFO','DFW',1750,2258,'DL',852,'FYBMQ','757','D',0,'N',188);
-insert into flight values (144477,'1234567','SFO','OAK',1250,1319,'AA',5302,'YBMVQ','SWM','',0,'Y',29);
-insert into flight values (144478,'-----6-','SFO','OAK',1749,1809,'AA',5130,'YBMVQ','SWM','',0,'Y',20);
-insert into flight values (144479,'-----6-','SFO','OAK',1831,1853,'AA',5111,'YBMVQ','SWM','',0,'Y',22);
-insert into flight values (144480,'12345-7','SFO','OAK',2221,2247,'AA',5104,'YNBMVQ','SWM','',0,'Y',26);
-insert into flight values (144541,'1234567','SFO','PHL',810,1608,'UA',130,'FYBMQ','D8S','B',0,'N',298);
-insert into flight values (144543,'1234567','SFO','PHL',1125,2100,'US',166,'FYBHQ','733','L',1,'N',395);
-insert into flight values (144547,'1234567','SFO','PHL',1330,2141,'UA',94,'FYBMQ','767','L',0,'N',311);
-insert into flight values (144572,'1234567','SFO','PIT',755,1534,'US',2153,'FYBHQ','733','B',0,'N',279);
-insert into flight values (144574,'1234567','SFO','PIT',1125,1856,'US',166,'FYBHQ','733','L',0,'N',271);
-insert into flight values (144575,'1234567','SFO','PIT',1320,2046,'US',30,'FYBHQ','72S','L',0,'N',266);
-insert into flight values (144576,'1234567','SFO','PIT',2355,726,'US',604,'FYBHQ','733','D',0,'N',271);
-insert into flight_class values (101909,'FN');
-insert into flight_class values (101909,'YN');
-insert into flight_class values (101909,'BN');
-insert into flight_class values (101909,'M');
-insert into flight_class values (101909,'Q');
-insert into flight_class values (101910,'F');
-insert into flight_class values (101910,'Y');
-insert into flight_class values (101910,'H');
-insert into flight_class values (101910,'Q');
-insert into flight_class values (101910,'K');
-insert into flight_class values (101911,'F');
-insert into flight_class values (101911,'Y');
-insert into flight_class values (101911,'H');
-insert into flight_class values (101911,'Q');
-insert into flight_class values (101911,'K');
-insert into flight_class values (101912,'F');
-insert into flight_class values (101912,'Y');
-insert into flight_class values (101912,'B');
-insert into flight_class values (101912,'M');
-insert into flight_class values (101912,'Q');
-insert into flight_class values (101914,'Y');
-insert into flight_class values (101914,'H');
-insert into flight_class values (101914,'Q');
-insert into flight_class values (101914,'K');
-insert into flight_class values (101914,'L');
-insert into flight_class values (101915,'F');
-insert into flight_class values (101915,'Y');
-insert into flight_class values (101915,'H');
-insert into flight_class values (101915,'Q');
-insert into flight_class values (101915,'K');
-insert into flight_class values (101916,'F');
-insert into flight_class values (101916,'Y');
-insert into flight_class values (101916,'B');
-insert into flight_class values (101916,'M');
-insert into flight_class values (101916,'Q');
-insert into flight_class values (101917,'F');
-insert into flight_class values (101917,'Y');
-insert into flight_class values (101917,'B');
-insert into flight_class values (101917,'M');
-insert into flight_class values (101917,'Q');
-insert into flight_class values (101918,'F');
-insert into flight_class values (101918,'Y');
-insert into flight_class values (101918,'H');
-insert into flight_class values (101918,'Q');
-insert into flight_class values (101918,'K');
-insert into flight_class values (101922,'F');
-insert into flight_class values (101922,'Y');
-insert into flight_class values (101922,'B');
-insert into flight_class values (101922,'M');
-insert into flight_class values (101922,'Q');
-insert into flight_class values (101923,'F');
-insert into flight_class values (101923,'Y');
-insert into flight_class values (101923,'H');
-insert into flight_class values (101923,'Q');
-insert into flight_class values (101923,'K');
-insert into flight_class values (101925,'F');
-insert into flight_class values (101925,'Y');
-insert into flight_class values (101925,'B');
-insert into flight_class values (101925,'M');
-insert into flight_class values (101925,'Q');
-insert into flight_class values (101926,'F');
-insert into flight_class values (101926,'Y');
-insert into flight_class values (101926,'H');
-insert into flight_class values (101926,'Q');
-insert into flight_class values (101926,'K');
-insert into flight_class values (101927,'F');
-insert into flight_class values (101927,'Y');
-insert into flight_class values (101927,'B');
-insert into flight_class values (101927,'M');
-insert into flight_class values (101927,'Q');
-insert into flight_class values (101928,'F');
-insert into flight_class values (101928,'Y');
-insert into flight_class values (101928,'B');
-insert into flight_class values (101928,'M');
-insert into flight_class values (101928,'Q');
-insert into flight_class values (101929,'FN');
-insert into flight_class values (101929,'YN');
-insert into flight_class values (101929,'BN');
-insert into flight_class values (101929,'M');
-insert into flight_class values (101929,'Q');
-insert into flight_class values (101951,'F');
-insert into flight_class values (101951,'Y');
-insert into flight_class values (101951,'H');
-insert into flight_class values (101951,'Q');
-insert into flight_class values (101951,'K');
-insert into flight_class values (101952,'F');
-insert into flight_class values (101952,'Y');
-insert into flight_class values (101952,'B');
-insert into flight_class values (101952,'M');
-insert into flight_class values (101952,'Q');
-insert into flight_class values (101953,'F');
-insert into flight_class values (101953,'Y');
-insert into flight_class values (101953,'B');
-insert into flight_class values (101953,'M');
-insert into flight_class values (101953,'Q');
-insert into flight_class values (101954,'F');
-insert into flight_class values (101954,'Y');
-insert into flight_class values (101954,'H');
-insert into flight_class values (101954,'Q');
-insert into flight_class values (101954,'K');
-insert into flight_class values (101955,'F');
-insert into flight_class values (101955,'Y');
-insert into flight_class values (101955,'B');
-insert into flight_class values (101955,'M');
-insert into flight_class values (101955,'Q');
-insert into flight_class values (101956,'F');
-insert into flight_class values (101956,'Y');
-insert into flight_class values (101956,'H');
-insert into flight_class values (101956,'Q');
-insert into flight_class values (101956,'K');
-insert into flight_class values (101957,'F');
-insert into flight_class values (101957,'Y');
-insert into flight_class values (101957,'H');
-insert into flight_class values (101957,'Q');
-insert into flight_class values (101957,'K');
-insert into flight_class values (101958,'F');
-insert into flight_class values (101958,'Y');
-insert into flight_class values (101958,'B');
-insert into flight_class values (101958,'M');
-insert into flight_class values (101958,'Q');
-insert into flight_class values (101959,'FN');
-insert into flight_class values (101959,'YN');
-insert into flight_class values (101959,'H');
-insert into flight_class values (101959,'QN');
-insert into flight_class values (101959,'K');
-insert into flight_class values (102122,'F');
-insert into flight_class values (102122,'Y');
-insert into flight_class values (102122,'B');
-insert into flight_class values (102122,'M');
-insert into flight_class values (102122,'Q');
-insert into flight_class values (102123,'F');
-insert into flight_class values (102123,'Y');
-insert into flight_class values (102123,'H');
-insert into flight_class values (102123,'Q');
-insert into flight_class values (102123,'K');
-insert into flight_class values (102125,'F');
-insert into flight_class values (102125,'Y');
-insert into flight_class values (102125,'B');
-insert into flight_class values (102125,'M');
-insert into flight_class values (102125,'Q');
-insert into flight_class values (102126,'F');
-insert into flight_class values (102126,'Y');
-insert into flight_class values (102126,'B');
-insert into flight_class values (102126,'M');
-insert into flight_class values (102126,'Q');
-insert into flight_class values (102127,'F');
-insert into flight_class values (102127,'Y');
-insert into flight_class values (102127,'B');
-insert into flight_class values (102127,'M');
-insert into flight_class values (102127,'Q');
-insert into flight_class values (102128,'F');
-insert into flight_class values (102128,'Y');
-insert into flight_class values (102128,'H');
-insert into flight_class values (102128,'Q');
-insert into flight_class values (102128,'K');
-insert into flight_class values (102129,'F');
-insert into flight_class values (102129,'Y');
-insert into flight_class values (102129,'B');
-insert into flight_class values (102129,'M');
-insert into flight_class values (102129,'Q');
-insert into flight_class values (102133,'F');
-insert into flight_class values (102133,'Y');
-insert into flight_class values (102133,'B');
-insert into flight_class values (102133,'M');
-insert into flight_class values (102133,'Q');
-insert into flight_class values (102134,'FN');
-insert into flight_class values (102134,'YN');
-insert into flight_class values (102134,'H');
-insert into flight_class values (102134,'QN');
-insert into flight_class values (102134,'K');
-insert into flight_class values (102135,'FN');
-insert into flight_class values (102135,'YN');
-insert into flight_class values (102135,'BN');
-insert into flight_class values (102135,'M');
-insert into flight_class values (102135,'Q');
-insert into flight_class values (102136,'FN');
-insert into flight_class values (102136,'YN');
-insert into flight_class values (102136,'BN');
-insert into flight_class values (102136,'M');
-insert into flight_class values (102136,'Q');
-insert into flight_class values (102137,'FN');
-insert into flight_class values (102137,'YN');
-insert into flight_class values (102137,'BN');
-insert into flight_class values (102137,'M');
-insert into flight_class values (102137,'Q');
-insert into flight_class values (102139,'F');
-insert into flight_class values (102139,'Y');
-insert into flight_class values (102139,'B');
-insert into flight_class values (102139,'M');
-insert into flight_class values (102139,'V');
-insert into flight_class values (102144,'F');
-insert into flight_class values (102144,'Y');
-insert into flight_class values (102144,'B');
-insert into flight_class values (102144,'M');
-insert into flight_class values (102144,'Q');
-insert into flight_class values (102147,'F');
-insert into flight_class values (102147,'Y');
-insert into flight_class values (102147,'B');
-insert into flight_class values (102147,'M');
-insert into flight_class values (102147,'V');
-insert into flight_class values (102148,'F');
-insert into flight_class values (102148,'Y');
-insert into flight_class values (102148,'B');
-insert into flight_class values (102148,'M');
-insert into flight_class values (102148,'Q');
-insert into flight_class values (102150,'F');
-insert into flight_class values (102150,'Y');
-insert into flight_class values (102150,'B');
-insert into flight_class values (102150,'M');
-insert into flight_class values (102150,'Q');
-insert into flight_class values (102162,'F');
-insert into flight_class values (102162,'Y');
-insert into flight_class values (102162,'B');
-insert into flight_class values (102162,'M');
-insert into flight_class values (102162,'Q');
-insert into flight_class values (102163,'F');
-insert into flight_class values (102163,'Y');
-insert into flight_class values (102163,'B');
-insert into flight_class values (102163,'M');
-insert into flight_class values (102163,'Q');
-insert into flight_class values (102164,'F');
-insert into flight_class values (102164,'Y');
-insert into flight_class values (102164,'B');
-insert into flight_class values (102164,'M');
-insert into flight_class values (102164,'V');
-insert into flight_class values (102165,'F');
-insert into flight_class values (102165,'C');
-insert into flight_class values (102165,'B');
-insert into flight_class values (102165,'M');
-insert into flight_class values (102165,'K');
-insert into flight_class values (102166,'F');
-insert into flight_class values (102166,'Y');
-insert into flight_class values (102166,'B');
-insert into flight_class values (102166,'M');
-insert into flight_class values (102166,'Q');
-insert into flight_class values (102172,'F');
-insert into flight_class values (102172,'Y');
-insert into flight_class values (102172,'B');
-insert into flight_class values (102172,'M');
-insert into flight_class values (102172,'V');
-insert into flight_class values (102173,'F');
-insert into flight_class values (102173,'Y');
-insert into flight_class values (102173,'B');
-insert into flight_class values (102173,'M');
-insert into flight_class values (102173,'Q');
-insert into flight_class values (102177,'F');
-insert into flight_class values (102177,'Y');
-insert into flight_class values (102177,'B');
-insert into flight_class values (102177,'M');
-insert into flight_class values (102177,'Q');
-insert into flight_class values (102188,'FN');
-insert into flight_class values (102188,'YN');
-insert into flight_class values (102188,'B');
-insert into flight_class values (102188,'M');
-insert into flight_class values (102188,'V');
-insert into flight_class values (102190,'FN');
-insert into flight_class values (102190,'YN');
-insert into flight_class values (102190,'BN');
-insert into flight_class values (102190,'M');
-insert into flight_class values (102190,'Q');
-insert into flight_class values (102191,'FN');
-insert into flight_class values (102191,'YN');
-insert into flight_class values (102191,'BN');
-insert into flight_class values (102191,'M');
-insert into flight_class values (102191,'Q');
-insert into flight_class values (102192,'FN');
-insert into flight_class values (102192,'YN');
-insert into flight_class values (102192,'BN');
-insert into flight_class values (102192,'M');
-insert into flight_class values (102192,'Q');
-insert into flight_class values (102766,'FN');
-insert into flight_class values (102766,'YN');
-insert into flight_class values (102766,'BN');
-insert into flight_class values (102766,'M');
-insert into flight_class values (102766,'Q');
-insert into flight_class values (102767,'F');
-insert into flight_class values (102767,'Y');
-insert into flight_class values (102767,'B');
-insert into flight_class values (102767,'H');
-insert into flight_class values (102767,'Q');
-insert into flight_class values (102768,'F');
-insert into flight_class values (102768,'Y');
-insert into flight_class values (102768,'H');
-insert into flight_class values (102768,'Q');
-insert into flight_class values (102768,'K');
-insert into flight_class values (102769,'F');
-insert into flight_class values (102769,'Y');
-insert into flight_class values (102769,'H');
-insert into flight_class values (102769,'Q');
-insert into flight_class values (102769,'K');
-insert into flight_class values (102770,'F');
-insert into flight_class values (102770,'Y');
-insert into flight_class values (102770,'B');
-insert into flight_class values (102770,'M');
-insert into flight_class values (102770,'Q');
-insert into flight_class values (102771,'F');
-insert into flight_class values (102771,'Y');
-insert into flight_class values (102771,'B');
-insert into flight_class values (102771,'H');
-insert into flight_class values (102771,'Q');
-insert into flight_class values (102772,'F');
-insert into flight_class values (102772,'Y');
-insert into flight_class values (102772,'H');
-insert into flight_class values (102772,'Q');
-insert into flight_class values (102772,'K');
-insert into flight_class values (102773,'F');
-insert into flight_class values (102773,'Y');
-insert into flight_class values (102773,'B');
-insert into flight_class values (102773,'M');
-insert into flight_class values (102773,'Q');
-insert into flight_class values (102774,'F');
-insert into flight_class values (102774,'Y');
-insert into flight_class values (102774,'H');
-insert into flight_class values (102774,'Q');
-insert into flight_class values (102774,'K');
-insert into flight_class values (102775,'F');
-insert into flight_class values (102775,'Y');
-insert into flight_class values (102775,'H');
-insert into flight_class values (102775,'Q');
-insert into flight_class values (102775,'K');
-insert into flight_class values (102776,'F');
-insert into flight_class values (102776,'Y');
-insert into flight_class values (102776,'B');
-insert into flight_class values (102776,'M');
-insert into flight_class values (102776,'Q');
-insert into flight_class values (102777,'F');
-insert into flight_class values (102777,'Y');
-insert into flight_class values (102777,'B');
-insert into flight_class values (102777,'H');
-insert into flight_class values (102777,'Q');
-insert into flight_class values (102778,'F');
-insert into flight_class values (102778,'Y');
-insert into flight_class values (102778,'H');
-insert into flight_class values (102778,'Q');
-insert into flight_class values (102778,'K');
-insert into flight_class values (102779,'F');
-insert into flight_class values (102779,'Y');
-insert into flight_class values (102779,'B');
-insert into flight_class values (102779,'M');
-insert into flight_class values (102779,'Q');
-insert into flight_class values (102781,'F');
-insert into flight_class values (102781,'Y');
-insert into flight_class values (102781,'H');
-insert into flight_class values (102781,'Q');
-insert into flight_class values (102781,'K');
-insert into flight_class values (102782,'F');
-insert into flight_class values (102782,'Y');
-insert into flight_class values (102782,'B');
-insert into flight_class values (102782,'M');
-insert into flight_class values (102782,'Q');
-insert into flight_class values (102783,'FN');
-insert into flight_class values (102783,'YN');
-insert into flight_class values (102783,'H');
-insert into flight_class values (102783,'QN');
-insert into flight_class values (102783,'K');
-insert into flight_class values (102784,'FN');
-insert into flight_class values (102784,'YN');
-insert into flight_class values (102784,'BN');
-insert into flight_class values (102784,'M');
-insert into flight_class values (102784,'Q');
-insert into flight_class values (102795,'F');
-insert into flight_class values (102795,'Y');
-insert into flight_class values (102795,'B');
-insert into flight_class values (102795,'H');
-insert into flight_class values (102795,'Q');
-insert into flight_class values (102796,'F');
-insert into flight_class values (102796,'Y');
-insert into flight_class values (102796,'B');
-insert into flight_class values (102796,'M');
-insert into flight_class values (102796,'Q');
-insert into flight_class values (102797,'F');
-insert into flight_class values (102797,'Y');
-insert into flight_class values (102797,'H');
-insert into flight_class values (102797,'Q');
-insert into flight_class values (102797,'K');
-insert into flight_class values (102798,'F');
-insert into flight_class values (102798,'Y');
-insert into flight_class values (102798,'B');
-insert into flight_class values (102798,'H');
-insert into flight_class values (102798,'Q');
-insert into flight_class values (102799,'F');
-insert into flight_class values (102799,'Y');
-insert into flight_class values (102799,'H');
-insert into flight_class values (102799,'Q');
-insert into flight_class values (102799,'K');
-insert into flight_class values (102800,'F');
-insert into flight_class values (102800,'Y');
-insert into flight_class values (102800,'B');
-insert into flight_class values (102800,'M');
-insert into flight_class values (102800,'Q');
-insert into flight_class values (102801,'F');
-insert into flight_class values (102801,'Y');
-insert into flight_class values (102801,'B');
-insert into flight_class values (102801,'H');
-insert into flight_class values (102801,'Q');
-insert into flight_class values (102802,'F');
-insert into flight_class values (102802,'Y');
-insert into flight_class values (102802,'B');
-insert into flight_class values (102802,'M');
-insert into flight_class values (102802,'Q');
-insert into flight_class values (102803,'F');
-insert into flight_class values (102803,'Y');
-insert into flight_class values (102803,'B');
-insert into flight_class values (102803,'M');
-insert into flight_class values (102803,'Q');
-insert into flight_class values (102804,'Y');
-insert into flight_class values (102804,'H');
-insert into flight_class values (102804,'Q');
-insert into flight_class values (102804,'K');
-insert into flight_class values (102804,'L');
-insert into flight_class values (102805,'F');
-insert into flight_class values (102805,'Y');
-insert into flight_class values (102805,'B');
-insert into flight_class values (102805,'H');
-insert into flight_class values (102805,'Q');
-insert into flight_class values (102806,'F');
-insert into flight_class values (102806,'Y');
-insert into flight_class values (102806,'H');
-insert into flight_class values (102806,'Q');
-insert into flight_class values (102806,'K');
-insert into flight_class values (102807,'F');
-insert into flight_class values (102807,'Y');
-insert into flight_class values (102807,'B');
-insert into flight_class values (102807,'M');
-insert into flight_class values (102807,'Q');
-insert into flight_class values (102808,'FN');
-insert into flight_class values (102808,'YN');
-insert into flight_class values (102808,'H');
-insert into flight_class values (102808,'QN');
-insert into flight_class values (102808,'K');
-insert into flight_class values (102809,'FN');
-insert into flight_class values (102809,'YN');
-insert into flight_class values (102809,'BN');
-insert into flight_class values (102809,'M');
-insert into flight_class values (102809,'Q');
-insert into flight_class values (102923,'F');
-insert into flight_class values (102923,'Y');
-insert into flight_class values (102923,'B');
-insert into flight_class values (102923,'M');
-insert into flight_class values (102923,'Q');
-insert into flight_class values (102924,'F');
-insert into flight_class values (102924,'Y');
-insert into flight_class values (102924,'B');
-insert into flight_class values (102924,'M');
-insert into flight_class values (102924,'Q');
-insert into flight_class values (102925,'F');
-insert into flight_class values (102925,'Y');
-insert into flight_class values (102925,'H');
-insert into flight_class values (102925,'Q');
-insert into flight_class values (102925,'K');
-insert into flight_class values (102927,'F');
-insert into flight_class values (102927,'Y');
-insert into flight_class values (102927,'B');
-insert into flight_class values (102927,'M');
-insert into flight_class values (102927,'Q');
-insert into flight_class values (102929,'F');
-insert into flight_class values (102929,'Y');
-insert into flight_class values (102929,'B');
-insert into flight_class values (102929,'M');
-insert into flight_class values (102929,'Q');
-insert into flight_class values (102930,'F');
-insert into flight_class values (102930,'Y');
-insert into flight_class values (102930,'H');
-insert into flight_class values (102930,'Q');
-insert into flight_class values (102930,'K');
-insert into flight_class values (102932,'F');
-insert into flight_class values (102932,'Y');
-insert into flight_class values (102932,'B');
-insert into flight_class values (102932,'M');
-insert into flight_class values (102932,'Q');
-insert into flight_class values (102933,'F');
-insert into flight_class values (102933,'Y');
-insert into flight_class values (102933,'H');
-insert into flight_class values (102933,'Q');
-insert into flight_class values (102933,'K');
-insert into flight_class values (105584,'F');
-insert into flight_class values (105584,'Y');
-insert into flight_class values (105584,'B');
-insert into flight_class values (105584,'M');
-insert into flight_class values (105584,'Q');
-insert into flight_class values (105586,'FN');
-insert into flight_class values (105586,'YN');
-insert into flight_class values (105586,'H');
-insert into flight_class values (105586,'QN');
-insert into flight_class values (105586,'K');
-insert into flight_class values (105588,'F');
-insert into flight_class values (105588,'Y');
-insert into flight_class values (105588,'B');
-insert into flight_class values (105588,'M');
-insert into flight_class values (105588,'Q');
-insert into flight_class values (105589,'F');
-insert into flight_class values (105589,'Y');
-insert into flight_class values (105589,'H');
-insert into flight_class values (105589,'Q');
-insert into flight_class values (105589,'K');
-insert into flight_class values (105590,'F');
-insert into flight_class values (105590,'Y');
-insert into flight_class values (105590,'B');
-insert into flight_class values (105590,'M');
-insert into flight_class values (105590,'Q');
-insert into flight_class values (105591,'F');
-insert into flight_class values (105591,'Y');
-insert into flight_class values (105591,'H');
-insert into flight_class values (105591,'Q');
-insert into flight_class values (105591,'K');
-insert into flight_class values (105592,'F');
-insert into flight_class values (105592,'Y');
-insert into flight_class values (105592,'B');
-insert into flight_class values (105592,'M');
-insert into flight_class values (105592,'Q');
-insert into flight_class values (105593,'F');
-insert into flight_class values (105593,'Y');
-insert into flight_class values (105593,'H');
-insert into flight_class values (105593,'Q');
-insert into flight_class values (105593,'K');
-insert into flight_class values (105594,'Y');
-insert into flight_class values (105594,'H');
-insert into flight_class values (105594,'Q');
-insert into flight_class values (105594,'K');
-insert into flight_class values (105594,'L');
-insert into flight_class values (105595,'F');
-insert into flight_class values (105595,'Y');
-insert into flight_class values (105595,'B');
-insert into flight_class values (105595,'M');
-insert into flight_class values (105595,'Q');
-insert into flight_class values (105597,'F');
-insert into flight_class values (105597,'Y');
-insert into flight_class values (105597,'H');
-insert into flight_class values (105597,'Q');
-insert into flight_class values (105597,'K');
-insert into flight_class values (105598,'F');
-insert into flight_class values (105598,'Y');
-insert into flight_class values (105598,'H');
-insert into flight_class values (105598,'Q');
-insert into flight_class values (105598,'K');
-insert into flight_class values (105599,'F');
-insert into flight_class values (105599,'Y');
-insert into flight_class values (105599,'B');
-insert into flight_class values (105599,'M');
-insert into flight_class values (105599,'Q');
-insert into flight_class values (105601,'FN');
-insert into flight_class values (105601,'YN');
-insert into flight_class values (105601,'BN');
-insert into flight_class values (105601,'M');
-insert into flight_class values (105601,'Q');
-insert into flight_class values (105698,'F');
-insert into flight_class values (105698,'Y');
-insert into flight_class values (105698,'B');
-insert into flight_class values (105698,'H');
-insert into flight_class values (105698,'Q');
-insert into flight_class values (105699,'F');
-insert into flight_class values (105699,'Y');
-insert into flight_class values (105699,'B');
-insert into flight_class values (105699,'H');
-insert into flight_class values (105699,'Q');
-insert into flight_class values (105700,'F');
-insert into flight_class values (105700,'Y');
-insert into flight_class values (105700,'B');
-insert into flight_class values (105700,'H');
-insert into flight_class values (105700,'Q');
-insert into flight_class values (105701,'F');
-insert into flight_class values (105701,'Y');
-insert into flight_class values (105701,'B');
-insert into flight_class values (105701,'H');
-insert into flight_class values (105701,'Q');
-insert into flight_class values (105702,'F');
-insert into flight_class values (105702,'Y');
-insert into flight_class values (105702,'B');
-insert into flight_class values (105702,'H');
-insert into flight_class values (105702,'Q');
-insert into flight_class values (105703,'F');
-insert into flight_class values (105703,'Y');
-insert into flight_class values (105703,'B');
-insert into flight_class values (105703,'H');
-insert into flight_class values (105703,'Q');
-insert into flight_class values (105704,'F');
-insert into flight_class values (105704,'Y');
-insert into flight_class values (105704,'B');
-insert into flight_class values (105704,'H');
-insert into flight_class values (105704,'Q');
-insert into flight_class values (105705,'F');
-insert into flight_class values (105705,'Y');
-insert into flight_class values (105705,'B');
-insert into flight_class values (105705,'H');
-insert into flight_class values (105705,'Q');
-insert into flight_class values (105794,'F');
-insert into flight_class values (105794,'Y');
-insert into flight_class values (105794,'B');
-insert into flight_class values (105794,'M');
-insert into flight_class values (105794,'Q');
-insert into flight_class values (105795,'F');
-insert into flight_class values (105795,'Y');
-insert into flight_class values (105795,'B');
-insert into flight_class values (105795,'M');
-insert into flight_class values (105795,'Q');
-insert into flight_class values (105796,'F');
-insert into flight_class values (105796,'Y');
-insert into flight_class values (105796,'Q');
-insert into flight_class values (105796,'H');
-insert into flight_class values (105796,'K');
-insert into flight_class values (105798,'F');
-insert into flight_class values (105798,'Y');
-insert into flight_class values (105798,'Q');
-insert into flight_class values (105798,'H');
-insert into flight_class values (105798,'K');
-insert into flight_class values (105799,'F');
-insert into flight_class values (105799,'Y');
-insert into flight_class values (105799,'B');
-insert into flight_class values (105799,'M');
-insert into flight_class values (105799,'Q');
-insert into flight_class values (105800,'F');
-insert into flight_class values (105800,'Y');
-insert into flight_class values (105800,'Q');
-insert into flight_class values (105800,'H');
-insert into flight_class values (105800,'K');
-insert into flight_class values (105801,'F');
-insert into flight_class values (105801,'Y');
-insert into flight_class values (105801,'B');
-insert into flight_class values (105801,'M');
-insert into flight_class values (105801,'V');
-insert into flight_class values (105802,'F');
-insert into flight_class values (105802,'Y');
-insert into flight_class values (105802,'B');
-insert into flight_class values (105802,'M');
-insert into flight_class values (105802,'Q');
-insert into flight_class values (105803,'F');
-insert into flight_class values (105803,'Y');
-insert into flight_class values (105803,'B');
-insert into flight_class values (105803,'M');
-insert into flight_class values (105803,'V');
-insert into flight_class values (105805,'F');
-insert into flight_class values (105805,'Y');
-insert into flight_class values (105805,'B');
-insert into flight_class values (105805,'M');
-insert into flight_class values (105805,'Q');
-insert into flight_class values (105806,'F');
-insert into flight_class values (105806,'Y');
-insert into flight_class values (105806,'B');
-insert into flight_class values (105806,'M');
-insert into flight_class values (105806,'V');
-insert into flight_class values (105807,'F');
-insert into flight_class values (105807,'Y');
-insert into flight_class values (105807,'B');
-insert into flight_class values (105807,'M');
-insert into flight_class values (105807,'V');
-insert into flight_class values (105808,'F');
-insert into flight_class values (105808,'Y');
-insert into flight_class values (105808,'B');
-insert into flight_class values (105808,'M');
-insert into flight_class values (105808,'Q');
-insert into flight_class values (105811,'F');
-insert into flight_class values (105811,'Y');
-insert into flight_class values (105811,'B');
-insert into flight_class values (105811,'M');
-insert into flight_class values (105811,'V');
-insert into flight_class values (105812,'F');
-insert into flight_class values (105812,'Y');
-insert into flight_class values (105812,'B');
-insert into flight_class values (105812,'M');
-insert into flight_class values (105812,'Q');
-insert into flight_class values (106229,'F');
-insert into flight_class values (106229,'Y');
-insert into flight_class values (106229,'B');
-insert into flight_class values (106229,'H');
-insert into flight_class values (106229,'Q');
-insert into flight_class values (106230,'F');
-insert into flight_class values (106230,'Y');
-insert into flight_class values (106230,'M');
-insert into flight_class values (106230,'H');
-insert into flight_class values (106230,'Q');
-insert into flight_class values (106231,'F');
-insert into flight_class values (106231,'Y');
-insert into flight_class values (106231,'B');
-insert into flight_class values (106231,'H');
-insert into flight_class values (106231,'Q');
-insert into flight_class values (106232,'F');
-insert into flight_class values (106232,'Y');
-insert into flight_class values (106232,'B');
-insert into flight_class values (106232,'M');
-insert into flight_class values (106232,'Q');
-insert into flight_class values (106234,'F');
-insert into flight_class values (106234,'Y');
-insert into flight_class values (106234,'B');
-insert into flight_class values (106234,'H');
-insert into flight_class values (106234,'Q');
-insert into flight_class values (106235,'F');
-insert into flight_class values (106235,'Y');
-insert into flight_class values (106235,'M');
-insert into flight_class values (106235,'H');
-insert into flight_class values (106235,'Q');
-insert into flight_class values (106236,'F');
-insert into flight_class values (106236,'Y');
-insert into flight_class values (106236,'B');
-insert into flight_class values (106236,'H');
-insert into flight_class values (106236,'Q');
-insert into flight_class values (106237,'F');
-insert into flight_class values (106237,'Y');
-insert into flight_class values (106237,'B');
-insert into flight_class values (106237,'H');
-insert into flight_class values (106237,'Q');
-insert into flight_class values (106238,'F');
-insert into flight_class values (106238,'Y');
-insert into flight_class values (106238,'B');
-insert into flight_class values (106238,'M');
-insert into flight_class values (106238,'Q');
-insert into flight_class values (106239,'F');
-insert into flight_class values (106239,'Y');
-insert into flight_class values (106239,'M');
-insert into flight_class values (106239,'H');
-insert into flight_class values (106239,'Q');
-insert into flight_class values (106240,'F');
-insert into flight_class values (106240,'C');
-insert into flight_class values (106240,'B');
-insert into flight_class values (106240,'M');
-insert into flight_class values (106240,'K');
-insert into flight_class values (106241,'F');
-insert into flight_class values (106241,'Y');
-insert into flight_class values (106241,'M');
-insert into flight_class values (106241,'H');
-insert into flight_class values (106241,'Q');
-insert into flight_class values (106242,'F');
-insert into flight_class values (106242,'Y');
-insert into flight_class values (106242,'B');
-insert into flight_class values (106242,'M');
-insert into flight_class values (106242,'Q');
-insert into flight_class values (106245,'F');
-insert into flight_class values (106245,'Y');
-insert into flight_class values (106245,'B');
-insert into flight_class values (106245,'H');
-insert into flight_class values (106245,'Q');
-insert into flight_class values (106246,'F');
-insert into flight_class values (106246,'Y');
-insert into flight_class values (106246,'B');
-insert into flight_class values (106246,'H');
-insert into flight_class values (106246,'Q');
-insert into flight_class values (106247,'F');
-insert into flight_class values (106247,'Y');
-insert into flight_class values (106247,'B');
-insert into flight_class values (106247,'H');
-insert into flight_class values (106247,'Q');
-insert into flight_class values (106248,'F');
-insert into flight_class values (106248,'Y');
-insert into flight_class values (106248,'B');
-insert into flight_class values (106248,'M');
-insert into flight_class values (106248,'Q');
-insert into flight_class values (106249,'F');
-insert into flight_class values (106249,'Y');
-insert into flight_class values (106249,'M');
-insert into flight_class values (106249,'H');
-insert into flight_class values (106249,'Q');
-insert into flight_class values (106250,'F');
-insert into flight_class values (106250,'Y');
-insert into flight_class values (106250,'B');
-insert into flight_class values (106250,'H');
-insert into flight_class values (106250,'Q');
-insert into flight_class values (106251,'F');
-insert into flight_class values (106251,'Y');
-insert into flight_class values (106251,'B');
-insert into flight_class values (106251,'H');
-insert into flight_class values (106251,'Q');
-insert into flight_class values (106252,'F');
-insert into flight_class values (106252,'Y');
-insert into flight_class values (106252,'M');
-insert into flight_class values (106252,'H');
-insert into flight_class values (106252,'Q');
-insert into flight_class values (106253,'F');
-insert into flight_class values (106253,'Y');
-insert into flight_class values (106253,'B');
-insert into flight_class values (106253,'H');
-insert into flight_class values (106253,'Q');
-insert into flight_class values (106254,'F');
-insert into flight_class values (106254,'Y');
-insert into flight_class values (106254,'B');
-insert into flight_class values (106254,'M');
-insert into flight_class values (106254,'Q');
-insert into flight_class values (106255,'F');
-insert into flight_class values (106255,'Y');
-insert into flight_class values (106255,'B');
-insert into flight_class values (106255,'H');
-insert into flight_class values (106255,'Q');
-insert into flight_class values (106263,'F');
-insert into flight_class values (106263,'Y');
-insert into flight_class values (106263,'B');
-insert into flight_class values (106263,'H');
-insert into flight_class values (106263,'Q');
-insert into flight_class values (106264,'F');
-insert into flight_class values (106264,'Y');
-insert into flight_class values (106264,'B');
-insert into flight_class values (106264,'H');
-insert into flight_class values (106264,'Q');
-insert into flight_class values (106265,'F');
-insert into flight_class values (106265,'Y');
-insert into flight_class values (106265,'B');
-insert into flight_class values (106265,'H');
-insert into flight_class values (106265,'Q');
-insert into flight_class values (106266,'F');
-insert into flight_class values (106266,'Y');
-insert into flight_class values (106266,'B');
-insert into flight_class values (106266,'H');
-insert into flight_class values (106266,'Q');
-insert into flight_class values (106267,'F');
-insert into flight_class values (106267,'Y');
-insert into flight_class values (106267,'B');
-insert into flight_class values (106267,'H');
-insert into flight_class values (106267,'Q');
-insert into flight_class values (106268,'F');
-insert into flight_class values (106268,'Y');
-insert into flight_class values (106268,'B');
-insert into flight_class values (106268,'H');
-insert into flight_class values (106268,'Q');
-insert into flight_class values (106269,'F');
-insert into flight_class values (106269,'Y');
-insert into flight_class values (106269,'B');
-insert into flight_class values (106269,'H');
-insert into flight_class values (106269,'Q');
-insert into flight_class values (106271,'F');
-insert into flight_class values (106271,'Y');
-insert into flight_class values (106271,'B');
-insert into flight_class values (106271,'H');
-insert into flight_class values (106271,'Q');
-insert into flight_class values (106365,'F');
-insert into flight_class values (106365,'Y');
-insert into flight_class values (106365,'B');
-insert into flight_class values (106365,'M');
-insert into flight_class values (106365,'Q');
-insert into flight_class values (106376,'F');
-insert into flight_class values (106376,'Y');
-insert into flight_class values (106376,'B');
-insert into flight_class values (106376,'M');
-insert into flight_class values (106376,'Q');
-insert into flight_class values (106377,'F');
-insert into flight_class values (106377,'C');
-insert into flight_class values (106377,'Y');
-insert into flight_class values (106377,'B');
-insert into flight_class values (106377,'Q');
-insert into flight_class values (107159,'FN');
-insert into flight_class values (107159,'YN');
-insert into flight_class values (107159,'BN');
-insert into flight_class values (107159,'M');
-insert into flight_class values (107159,'Q');
-insert into flight_class values (107160,'FN');
-insert into flight_class values (107160,'YN');
-insert into flight_class values (107160,'H');
-insert into flight_class values (107160,'QN');
-insert into flight_class values (107160,'K');
-insert into flight_class values (107161,'F');
-insert into flight_class values (107161,'Y');
-insert into flight_class values (107161,'H');
-insert into flight_class values (107161,'Q');
-insert into flight_class values (107161,'K');
-insert into flight_class values (107162,'F');
-insert into flight_class values (107162,'Y');
-insert into flight_class values (107162,'B');
-insert into flight_class values (107162,'M');
-insert into flight_class values (107162,'Q');
-insert into flight_class values (107163,'F');
-insert into flight_class values (107163,'Y');
-insert into flight_class values (107163,'H');
-insert into flight_class values (107163,'Q');
-insert into flight_class values (107163,'K');
-insert into flight_class values (107164,'F');
-insert into flight_class values (107164,'Y');
-insert into flight_class values (107164,'H');
-insert into flight_class values (107164,'Q');
-insert into flight_class values (107164,'K');
-insert into flight_class values (107165,'F');
-insert into flight_class values (107165,'Y');
-insert into flight_class values (107165,'B');
-insert into flight_class values (107165,'M');
-insert into flight_class values (107165,'Q');
-insert into flight_class values (107166,'F');
-insert into flight_class values (107166,'Y');
-insert into flight_class values (107166,'B');
-insert into flight_class values (107166,'M');
-insert into flight_class values (107166,'Q');
-insert into flight_class values (107167,'F');
-insert into flight_class values (107167,'Y');
-insert into flight_class values (107167,'H');
-insert into flight_class values (107167,'Q');
-insert into flight_class values (107167,'K');
-insert into flight_class values (107168,'F');
-insert into flight_class values (107168,'Y');
-insert into flight_class values (107168,'B');
-insert into flight_class values (107168,'M');
-insert into flight_class values (107168,'Q');
-insert into flight_class values (107193,'F');
-insert into flight_class values (107193,'Y');
-insert into flight_class values (107193,'B');
-insert into flight_class values (107193,'H');
-insert into flight_class values (107193,'Q');
-insert into flight_class values (107194,'F');
-insert into flight_class values (107194,'Y');
-insert into flight_class values (107194,'B');
-insert into flight_class values (107194,'H');
-insert into flight_class values (107194,'Q');
-insert into flight_class values (107195,'F');
-insert into flight_class values (107195,'Y');
-insert into flight_class values (107195,'B');
-insert into flight_class values (107195,'H');
-insert into flight_class values (107195,'Q');
-insert into flight_class values (107196,'F');
-insert into flight_class values (107196,'Y');
-insert into flight_class values (107196,'B');
-insert into flight_class values (107196,'H');
-insert into flight_class values (107196,'Q');
-insert into flight_class values (107197,'F');
-insert into flight_class values (107197,'Y');
-insert into flight_class values (107197,'B');
-insert into flight_class values (107197,'H');
-insert into flight_class values (107197,'Q');
-insert into flight_class values (107198,'F');
-insert into flight_class values (107198,'Y');
-insert into flight_class values (107198,'B');
-insert into flight_class values (107198,'H');
-insert into flight_class values (107198,'Q');
-insert into flight_class values (107199,'F');
-insert into flight_class values (107199,'Y');
-insert into flight_class values (107199,'B');
-insert into flight_class values (107199,'H');
-insert into flight_class values (107199,'Q');
-insert into flight_class values (107200,'F');
-insert into flight_class values (107200,'Y');
-insert into flight_class values (107200,'B');
-insert into flight_class values (107200,'H');
-insert into flight_class values (107200,'Q');
-insert into flight_class values (107254,'F');
-insert into flight_class values (107254,'Y');
-insert into flight_class values (107254,'B');
-insert into flight_class values (107254,'M');
-insert into flight_class values (107254,'Q');
-insert into flight_class values (107255,'F');
-insert into flight_class values (107255,'Y');
-insert into flight_class values (107255,'B');
-insert into flight_class values (107255,'H');
-insert into flight_class values (107255,'Q');
-insert into flight_class values (107256,'F');
-insert into flight_class values (107256,'Y');
-insert into flight_class values (107256,'B');
-insert into flight_class values (107256,'M');
-insert into flight_class values (107256,'Q');
-insert into flight_class values (107257,'F');
-insert into flight_class values (107257,'Y');
-insert into flight_class values (107257,'B');
-insert into flight_class values (107257,'M');
-insert into flight_class values (107257,'V');
-insert into flight_class values (107258,'F');
-insert into flight_class values (107258,'Y');
-insert into flight_class values (107258,'B');
-insert into flight_class values (107258,'M');
-insert into flight_class values (107258,'Q');
-insert into flight_class values (107259,'F');
-insert into flight_class values (107259,'Y');
-insert into flight_class values (107259,'B');
-insert into flight_class values (107259,'M');
-insert into flight_class values (107259,'V');
-insert into flight_class values (107260,'F');
-insert into flight_class values (107260,'Y');
-insert into flight_class values (107260,'B');
-insert into flight_class values (107260,'M');
-insert into flight_class values (107260,'V');
-insert into flight_class values (107261,'F');
-insert into flight_class values (107261,'Y');
-insert into flight_class values (107261,'B');
-insert into flight_class values (107261,'M');
-insert into flight_class values (107261,'Q');
-insert into flight_class values (107264,'F');
-insert into flight_class values (107264,'Y');
-insert into flight_class values (107264,'B');
-insert into flight_class values (107264,'M');
-insert into flight_class values (107264,'V');
-insert into flight_class values (107470,'Y');
-insert into flight_class values (107470,'B');
-insert into flight_class values (107470,'H');
-insert into flight_class values (107470,'Q');
-insert into flight_class values (107470,'M');
-insert into flight_class values (107471,'Y');
-insert into flight_class values (107471,'B');
-insert into flight_class values (107471,'H');
-insert into flight_class values (107471,'Q');
-insert into flight_class values (107471,'M');
-insert into flight_class values (107472,'Y');
-insert into flight_class values (107472,'B');
-insert into flight_class values (107472,'H');
-insert into flight_class values (107472,'Q');
-insert into flight_class values (107472,'M');
-insert into flight_class values (107473,'Y');
-insert into flight_class values (107473,'B');
-insert into flight_class values (107473,'H');
-insert into flight_class values (107473,'Q');
-insert into flight_class values (107473,'M');
-insert into flight_class values (107474,'Y');
-insert into flight_class values (107474,'B');
-insert into flight_class values (107474,'H');
-insert into flight_class values (107474,'Q');
-insert into flight_class values (107474,'M');
-insert into flight_class values (107475,'Y');
-insert into flight_class values (107475,'B');
-insert into flight_class values (107475,'H');
-insert into flight_class values (107475,'Q');
-insert into flight_class values (107475,'M');
-insert into flight_class values (107476,'Y');
-insert into flight_class values (107476,'B');
-insert into flight_class values (107476,'H');
-insert into flight_class values (107476,'Q');
-insert into flight_class values (107476,'M');
-insert into flight_class values (107477,'Y');
-insert into flight_class values (107477,'B');
-insert into flight_class values (107477,'H');
-insert into flight_class values (107477,'Q');
-insert into flight_class values (107477,'M');
-insert into flight_class values (107478,'Y');
-insert into flight_class values (107478,'B');
-insert into flight_class values (107478,'H');
-insert into flight_class values (107478,'Q');
-insert into flight_class values (107478,'M');
-insert into flight_class values (107484,'F');
-insert into flight_class values (107484,'Y');
-insert into flight_class values (107484,'B');
-insert into flight_class values (107484,'H');
-insert into flight_class values (107484,'Q');
-insert into flight_class values (107485,'F');
-insert into flight_class values (107485,'Y');
-insert into flight_class values (107485,'B');
-insert into flight_class values (107485,'H');
-insert into flight_class values (107485,'Q');
-insert into flight_class values (107486,'F');
-insert into flight_class values (107486,'Y');
-insert into flight_class values (107486,'B');
-insert into flight_class values (107486,'H');
-insert into flight_class values (107486,'Q');
-insert into flight_class values (107487,'F');
-insert into flight_class values (107487,'Y');
-insert into flight_class values (107487,'B');
-insert into flight_class values (107487,'H');
-insert into flight_class values (107487,'Q');
-insert into flight_class values (107488,'F');
-insert into flight_class values (107488,'Y');
-insert into flight_class values (107488,'B');
-insert into flight_class values (107488,'H');
-insert into flight_class values (107488,'Q');
-insert into flight_class values (107489,'F');
-insert into flight_class values (107489,'Y');
-insert into flight_class values (107489,'B');
-insert into flight_class values (107489,'H');
-insert into flight_class values (107489,'Q');
-insert into flight_class values (107490,'F');
-insert into flight_class values (107490,'Y');
-insert into flight_class values (107490,'B');
-insert into flight_class values (107490,'H');
-insert into flight_class values (107490,'Q');
-insert into flight_class values (107491,'F');
-insert into flight_class values (107491,'Y');
-insert into flight_class values (107491,'B');
-insert into flight_class values (107491,'H');
-insert into flight_class values (107491,'Q');
-insert into flight_class values (107492,'F');
-insert into flight_class values (107492,'Y');
-insert into flight_class values (107492,'B');
-insert into flight_class values (107492,'H');
-insert into flight_class values (107492,'Q');
-insert into flight_class values (111886,'FN');
-insert into flight_class values (111886,'YN');
-insert into flight_class values (111886,'BN');
-insert into flight_class values (111886,'M');
-insert into flight_class values (111886,'Q');
-insert into flight_class values (111887,'FN');
-insert into flight_class values (111887,'YN');
-insert into flight_class values (111887,'H');
-insert into flight_class values (111887,'QN');
-insert into flight_class values (111887,'K');
-insert into flight_class values (111888,'F');
-insert into flight_class values (111888,'Y');
-insert into flight_class values (111888,'B');
-insert into flight_class values (111888,'M');
-insert into flight_class values (111888,'Q');
-insert into flight_class values (111889,'F');
-insert into flight_class values (111889,'Y');
-insert into flight_class values (111889,'H');
-insert into flight_class values (111889,'Q');
-insert into flight_class values (111889,'K');
-insert into flight_class values (111891,'F');
-insert into flight_class values (111891,'Y');
-insert into flight_class values (111891,'B');
-insert into flight_class values (111891,'M');
-insert into flight_class values (111891,'Q');
-insert into flight_class values (111892,'F');
-insert into flight_class values (111892,'Y');
-insert into flight_class values (111892,'B');
-insert into flight_class values (111892,'M');
-insert into flight_class values (111892,'Q');
-insert into flight_class values (111893,'F');
-insert into flight_class values (111893,'Y');
-insert into flight_class values (111893,'H');
-insert into flight_class values (111893,'Q');
-insert into flight_class values (111893,'K');
-insert into flight_class values (111894,'F');
-insert into flight_class values (111894,'Y');
-insert into flight_class values (111894,'B');
-insert into flight_class values (111894,'M');
-insert into flight_class values (111894,'Q');
-insert into flight_class values (111895,'F');
-insert into flight_class values (111895,'Y');
-insert into flight_class values (111895,'B');
-insert into flight_class values (111895,'M');
-insert into flight_class values (111895,'Q');
-insert into flight_class values (111896,'F');
-insert into flight_class values (111896,'Y');
-insert into flight_class values (111896,'B');
-insert into flight_class values (111896,'M');
-insert into flight_class values (111896,'Q');
-insert into flight_class values (111928,'F');
-insert into flight_class values (111928,'Y');
-insert into flight_class values (111928,'B');
-insert into flight_class values (111928,'M');
-insert into flight_class values (111928,'Q');
-insert into flight_class values (111929,'F');
-insert into flight_class values (111929,'Y');
-insert into flight_class values (111929,'Q');
-insert into flight_class values (111929,'H');
-insert into flight_class values (111929,'K');
-insert into flight_class values (111931,'F');
-insert into flight_class values (111931,'Y');
-insert into flight_class values (111931,'B');
-insert into flight_class values (111931,'M');
-insert into flight_class values (111931,'Q');
-insert into flight_class values (111932,'F');
-insert into flight_class values (111932,'Y');
-insert into flight_class values (111932,'Q');
-insert into flight_class values (111932,'H');
-insert into flight_class values (111932,'K');
-insert into flight_class values (111933,'F');
-insert into flight_class values (111933,'Y');
-insert into flight_class values (111933,'Q');
-insert into flight_class values (111933,'H');
-insert into flight_class values (111933,'K');
-insert into flight_class values (111937,'F');
-insert into flight_class values (111937,'Y');
-insert into flight_class values (111937,'B');
-insert into flight_class values (111937,'M');
-insert into flight_class values (111937,'Q');
-insert into flight_class values (111939,'F');
-insert into flight_class values (111939,'Y');
-insert into flight_class values (111939,'B');
-insert into flight_class values (111939,'H');
-insert into flight_class values (111939,'Q');
-insert into flight_class values (111941,'F');
-insert into flight_class values (111941,'Y');
-insert into flight_class values (111941,'B');
-insert into flight_class values (111941,'M');
-insert into flight_class values (111941,'Q');
-insert into flight_class values (112028,'FN');
-insert into flight_class values (112028,'YN');
-insert into flight_class values (112028,'B');
-insert into flight_class values (112028,'M');
-insert into flight_class values (112028,'V');
-insert into flight_class values (112029,'F');
-insert into flight_class values (112029,'Y');
-insert into flight_class values (112029,'B');
-insert into flight_class values (112029,'M');
-insert into flight_class values (112029,'Q');
-insert into flight_class values (112030,'FN');
-insert into flight_class values (112030,'YN');
-insert into flight_class values (112030,'BN');
-insert into flight_class values (112030,'M');
-insert into flight_class values (112030,'Q');
-insert into flight_class values (112031,'FN');
-insert into flight_class values (112031,'YN');
-insert into flight_class values (112031,'BN');
-insert into flight_class values (112031,'M');
-insert into flight_class values (112031,'Q');
-insert into flight_class values (112032,'F');
-insert into flight_class values (112032,'Y');
-insert into flight_class values (112032,'B');
-insert into flight_class values (112032,'M');
-insert into flight_class values (112032,'V');
-insert into flight_class values (112033,'F');
-insert into flight_class values (112033,'Y');
-insert into flight_class values (112033,'B');
-insert into flight_class values (112033,'M');
-insert into flight_class values (112033,'Q');
-insert into flight_class values (112034,'F');
-insert into flight_class values (112034,'Y');
-insert into flight_class values (112034,'B');
-insert into flight_class values (112034,'M');
-insert into flight_class values (112034,'Q');
-insert into flight_class values (112035,'F');
-insert into flight_class values (112035,'Y');
-insert into flight_class values (112035,'B');
-insert into flight_class values (112035,'M');
-insert into flight_class values (112035,'V');
-insert into flight_class values (112036,'F');
-insert into flight_class values (112036,'Y');
-insert into flight_class values (112036,'Q');
-insert into flight_class values (112036,'H');
-insert into flight_class values (112036,'K');
-insert into flight_class values (112037,'F');
-insert into flight_class values (112037,'Y');
-insert into flight_class values (112037,'B');
-insert into flight_class values (112037,'M');
-insert into flight_class values (112037,'V');
-insert into flight_class values (112038,'F');
-insert into flight_class values (112038,'Y');
-insert into flight_class values (112038,'B');
-insert into flight_class values (112038,'M');
-insert into flight_class values (112038,'Q');
-insert into flight_class values (112039,'F');
-insert into flight_class values (112039,'Y');
-insert into flight_class values (112039,'B');
-insert into flight_class values (112039,'M');
-insert into flight_class values (112039,'Q');
-insert into flight_class values (112040,'F');
-insert into flight_class values (112040,'Y');
-insert into flight_class values (112040,'B');
-insert into flight_class values (112040,'M');
-insert into flight_class values (112040,'Q');
-insert into flight_class values (112041,'F');
-insert into flight_class values (112041,'Y');
-insert into flight_class values (112041,'Q');
-insert into flight_class values (112041,'H');
-insert into flight_class values (112041,'K');
-insert into flight_class values (112042,'F');
-insert into flight_class values (112042,'Y');
-insert into flight_class values (112042,'B');
-insert into flight_class values (112042,'M');
-insert into flight_class values (112042,'V');
-insert into flight_class values (112043,'F');
-insert into flight_class values (112043,'Y');
-insert into flight_class values (112043,'B');
-insert into flight_class values (112043,'M');
-insert into flight_class values (112043,'Q');
-insert into flight_class values (112044,'F');
-insert into flight_class values (112044,'Y');
-insert into flight_class values (112044,'Q');
-insert into flight_class values (112044,'H');
-insert into flight_class values (112044,'K');
-insert into flight_class values (112045,'F');
-insert into flight_class values (112045,'Y');
-insert into flight_class values (112045,'B');
-insert into flight_class values (112045,'M');
-insert into flight_class values (112045,'V');
-insert into flight_class values (112046,'F');
-insert into flight_class values (112046,'Y');
-insert into flight_class values (112046,'B');
-insert into flight_class values (112046,'M');
-insert into flight_class values (112046,'Q');
-insert into flight_class values (112047,'F');
-insert into flight_class values (112047,'Y');
-insert into flight_class values (112047,'B');
-insert into flight_class values (112047,'M');
-insert into flight_class values (112047,'Q');
-insert into flight_class values (112048,'F');
-insert into flight_class values (112048,'Y');
-insert into flight_class values (112048,'B');
-insert into flight_class values (112048,'M');
-insert into flight_class values (112048,'V');
-insert into flight_class values (112049,'F');
-insert into flight_class values (112049,'Y');
-insert into flight_class values (112049,'B');
-insert into flight_class values (112049,'M');
-insert into flight_class values (112049,'Q');
-insert into flight_class values (112050,'F');
-insert into flight_class values (112050,'Y');
-insert into flight_class values (112050,'Q');
-insert into flight_class values (112050,'H');
-insert into flight_class values (112050,'K');
-insert into flight_class values (112051,'FN');
-insert into flight_class values (112051,'YN');
-insert into flight_class values (112051,'BN');
-insert into flight_class values (112051,'M');
-insert into flight_class values (112051,'Q');
-insert into flight_class values (112052,'FN');
-insert into flight_class values (112052,'YN');
-insert into flight_class values (112052,'B');
-insert into flight_class values (112052,'M');
-insert into flight_class values (112052,'V');
-insert into flight_class values (112351,'F');
-insert into flight_class values (112351,'Y');
-insert into flight_class values (112351,'B');
-insert into flight_class values (112351,'M');
-insert into flight_class values (112351,'Q');
-insert into flight_class values (112352,'F');
-insert into flight_class values (112352,'Y');
-insert into flight_class values (112352,'B');
-insert into flight_class values (112352,'M');
-insert into flight_class values (112352,'Q');
-insert into flight_class values (112353,'F');
-insert into flight_class values (112353,'Y');
-insert into flight_class values (112353,'B');
-insert into flight_class values (112353,'M');
-insert into flight_class values (112353,'Q');
-insert into flight_class values (112354,'F');
-insert into flight_class values (112354,'Y');
-insert into flight_class values (112354,'B');
-insert into flight_class values (112354,'M');
-insert into flight_class values (112354,'Q');
-insert into flight_class values (112415,'F');
-insert into flight_class values (112415,'Y');
-insert into flight_class values (112415,'B');
-insert into flight_class values (112415,'M');
-insert into flight_class values (112415,'Q');
-insert into flight_class values (112416,'F');
-insert into flight_class values (112416,'Y');
-insert into flight_class values (112416,'Q');
-insert into flight_class values (112416,'H');
-insert into flight_class values (112416,'K');
-insert into flight_class values (112417,'F');
-insert into flight_class values (112417,'Y');
-insert into flight_class values (112417,'B');
-insert into flight_class values (112417,'M');
-insert into flight_class values (112417,'Q');
-insert into flight_class values (112418,'F');
-insert into flight_class values (112418,'Y');
-insert into flight_class values (112418,'Q');
-insert into flight_class values (112418,'H');
-insert into flight_class values (112418,'K');
-insert into flight_class values (112440,'F');
-insert into flight_class values (112440,'Y');
-insert into flight_class values (112440,'B');
-insert into flight_class values (112440,'H');
-insert into flight_class values (112440,'Q');
-insert into flight_class values (112441,'F');
-insert into flight_class values (112441,'Y');
-insert into flight_class values (112441,'B');
-insert into flight_class values (112441,'H');
-insert into flight_class values (112441,'Q');
-insert into flight_class values (112442,'F');
-insert into flight_class values (112442,'Y');
-insert into flight_class values (112442,'B');
-insert into flight_class values (112442,'H');
-insert into flight_class values (112442,'Q');
-insert into flight_class values (112513,'F');
-insert into flight_class values (112513,'C');
-insert into flight_class values (112513,'Y');
-insert into flight_class values (112513,'B');
-insert into flight_class values (112513,'M');
-insert into flight_class values (112514,'F');
-insert into flight_class values (112514,'Y');
-insert into flight_class values (112514,'Q');
-insert into flight_class values (112514,'H');
-insert into flight_class values (112514,'K');
-insert into flight_class values (112515,'F');
-insert into flight_class values (112515,'Y');
-insert into flight_class values (112515,'B');
-insert into flight_class values (112515,'M');
-insert into flight_class values (112515,'Q');
-insert into flight_class values (112516,'F');
-insert into flight_class values (112516,'Y');
-insert into flight_class values (112516,'B');
-insert into flight_class values (112516,'M');
-insert into flight_class values (112516,'Q');
-insert into flight_class values (112518,'F');
-insert into flight_class values (112518,'Y');
-insert into flight_class values (112518,'Q');
-insert into flight_class values (112518,'H');
-insert into flight_class values (112518,'K');
-insert into flight_class values (112519,'F');
-insert into flight_class values (112519,'Y');
-insert into flight_class values (112519,'Q');
-insert into flight_class values (112519,'H');
-insert into flight_class values (112519,'K');
-insert into flight_class values (112520,'F');
-insert into flight_class values (112520,'Y');
-insert into flight_class values (112520,'B');
-insert into flight_class values (112520,'M');
-insert into flight_class values (112520,'Q');
-insert into flight_class values (112524,'F');
-insert into flight_class values (112524,'Y');
-insert into flight_class values (112524,'B');
-insert into flight_class values (112524,'M');
-insert into flight_class values (112524,'Q');
-insert into flight_class values (112525,'F');
-insert into flight_class values (112525,'Y');
-insert into flight_class values (112525,'Q');
-insert into flight_class values (112525,'H');
-insert into flight_class values (112525,'K');
-insert into flight_class values (112526,'F');
-insert into flight_class values (112526,'Y');
-insert into flight_class values (112526,'B');
-insert into flight_class values (112526,'M');
-insert into flight_class values (112526,'Q');
-insert into flight_class values (112527,'F');
-insert into flight_class values (112527,'Q');
-insert into flight_class values (112527,'YN');
-insert into flight_class values (112527,'H');
-insert into flight_class values (112527,'K');
-insert into flight_class values (112766,'F');
-insert into flight_class values (112766,'Y');
-insert into flight_class values (112766,'B');
-insert into flight_class values (112766,'M');
-insert into flight_class values (112766,'Q');
-insert into flight_class values (112771,'FN');
-insert into flight_class values (112771,'YN');
-insert into flight_class values (112771,'B');
-insert into flight_class values (112771,'M');
-insert into flight_class values (112771,'V');
-insert into flight_class values (112772,'F');
-insert into flight_class values (112772,'Y');
-insert into flight_class values (112772,'B');
-insert into flight_class values (112772,'M');
-insert into flight_class values (112772,'Q');
-insert into flight_class values (112773,'F');
-insert into flight_class values (112773,'Y');
-insert into flight_class values (112773,'B');
-insert into flight_class values (112773,'M');
-insert into flight_class values (112773,'Q');
-insert into flight_class values (112777,'F');
-insert into flight_class values (112777,'Y');
-insert into flight_class values (112777,'B');
-insert into flight_class values (112777,'M');
-insert into flight_class values (112777,'Q');
-insert into flight_class values (112783,'F');
-insert into flight_class values (112783,'Y');
-insert into flight_class values (112783,'B');
-insert into flight_class values (112783,'M');
-insert into flight_class values (112783,'V');
-insert into flight_class values (112784,'F');
-insert into flight_class values (112784,'Y');
-insert into flight_class values (112784,'B');
-insert into flight_class values (112784,'M');
-insert into flight_class values (112784,'Q');
-insert into flight_class values (112789,'F');
-insert into flight_class values (112789,'Y');
-insert into flight_class values (112789,'B');
-insert into flight_class values (112789,'M');
-insert into flight_class values (112789,'V');
-insert into flight_class values (112790,'F');
-insert into flight_class values (112790,'Y');
-insert into flight_class values (112790,'B');
-insert into flight_class values (112790,'M');
-insert into flight_class values (112790,'Q');
-insert into flight_class values (112793,'F');
-insert into flight_class values (112793,'Y');
-insert into flight_class values (112793,'B');
-insert into flight_class values (112793,'M');
-insert into flight_class values (112793,'Q');
-insert into flight_class values (112794,'F');
-insert into flight_class values (112794,'Y');
-insert into flight_class values (112794,'B');
-insert into flight_class values (112794,'M');
-insert into flight_class values (112794,'Q');
-insert into flight_class values (112797,'F');
-insert into flight_class values (112797,'C');
-insert into flight_class values (112797,'B');
-insert into flight_class values (112797,'M');
-insert into flight_class values (112797,'K');
-insert into flight_class values (112798,'F');
-insert into flight_class values (112798,'Y');
-insert into flight_class values (112798,'B');
-insert into flight_class values (112798,'M');
-insert into flight_class values (112798,'V');
-insert into flight_class values (112802,'F');
-insert into flight_class values (112802,'Y');
-insert into flight_class values (112802,'B');
-insert into flight_class values (112802,'M');
-insert into flight_class values (112802,'Q');
-insert into flight_class values (112804,'FN');
-insert into flight_class values (112804,'YN');
-insert into flight_class values (112804,'B');
-insert into flight_class values (112804,'M');
-insert into flight_class values (112804,'V');
-insert into flight_class values (112805,'F');
-insert into flight_class values (112805,'Y');
-insert into flight_class values (112805,'B');
-insert into flight_class values (112805,'M');
-insert into flight_class values (112805,'Q');
-insert into flight_class values (112806,'FN');
-insert into flight_class values (112806,'YN');
-insert into flight_class values (112806,'BN');
-insert into flight_class values (112806,'M');
-insert into flight_class values (112806,'Q');
-insert into flight_class values (112807,'FN');
-insert into flight_class values (112807,'YN');
-insert into flight_class values (112807,'B');
-insert into flight_class values (112807,'M');
-insert into flight_class values (112807,'V');
-insert into flight_class values (112808,'FN');
-insert into flight_class values (112808,'YN');
-insert into flight_class values (112808,'BN');
-insert into flight_class values (112808,'M');
-insert into flight_class values (112808,'Q');
-insert into flight_class values (112864,'F');
-insert into flight_class values (112864,'Y');
-insert into flight_class values (112864,'B');
-insert into flight_class values (112864,'M');
-insert into flight_class values (112864,'V');
-insert into flight_class values (112866,'F');
-insert into flight_class values (112866,'Y');
-insert into flight_class values (112866,'B');
-insert into flight_class values (112866,'M');
-insert into flight_class values (112866,'Q');
-insert into flight_class values (112867,'F');
-insert into flight_class values (112867,'Y');
-insert into flight_class values (112867,'B');
-insert into flight_class values (112867,'M');
-insert into flight_class values (112867,'Q');
-insert into flight_class values (112869,'F');
-insert into flight_class values (112869,'Y');
-insert into flight_class values (112869,'B');
-insert into flight_class values (112869,'M');
-insert into flight_class values (112869,'V');
-insert into flight_class values (112870,'F');
-insert into flight_class values (112870,'Y');
-insert into flight_class values (112870,'B');
-insert into flight_class values (112870,'M');
-insert into flight_class values (112870,'Q');
-insert into flight_class values (112872,'F');
-insert into flight_class values (112872,'Y');
-insert into flight_class values (112872,'B');
-insert into flight_class values (112872,'M');
-insert into flight_class values (112872,'V');
-insert into flight_class values (112873,'F');
-insert into flight_class values (112873,'Y');
-insert into flight_class values (112873,'B');
-insert into flight_class values (112873,'M');
-insert into flight_class values (112873,'Q');
-insert into flight_class values (112874,'F');
-insert into flight_class values (112874,'Y');
-insert into flight_class values (112874,'B');
-insert into flight_class values (112874,'M');
-insert into flight_class values (112874,'V');
-insert into flight_class values (112903,'F');
-insert into flight_class values (112903,'Y');
-insert into flight_class values (112903,'B');
-insert into flight_class values (112903,'M');
-insert into flight_class values (112903,'V');
-insert into flight_class values (112904,'F');
-insert into flight_class values (112904,'Y');
-insert into flight_class values (112904,'B');
-insert into flight_class values (112904,'M');
-insert into flight_class values (112904,'Q');
-insert into flight_class values (112905,'F');
-insert into flight_class values (112905,'Y');
-insert into flight_class values (112905,'B');
-insert into flight_class values (112905,'M');
-insert into flight_class values (112905,'V');
-insert into flight_class values (112907,'F');
-insert into flight_class values (112907,'Y');
-insert into flight_class values (112907,'B');
-insert into flight_class values (112907,'M');
-insert into flight_class values (112907,'Q');
-insert into flight_class values (112908,'F');
-insert into flight_class values (112908,'Y');
-insert into flight_class values (112908,'B');
-insert into flight_class values (112908,'M');
-insert into flight_class values (112908,'V');
-insert into flight_class values (112909,'F');
-insert into flight_class values (112909,'Y');
-insert into flight_class values (112909,'B');
-insert into flight_class values (112909,'M');
-insert into flight_class values (112909,'V');
-insert into flight_class values (112989,'F');
-insert into flight_class values (112989,'Y');
-insert into flight_class values (112989,'Q');
-insert into flight_class values (112989,'H');
-insert into flight_class values (112989,'K');
-insert into flight_class values (112990,'F');
-insert into flight_class values (112990,'Y');
-insert into flight_class values (112990,'B');
-insert into flight_class values (112990,'M');
-insert into flight_class values (112990,'V');
-insert into flight_class values (112991,'F');
-insert into flight_class values (112991,'Y');
-insert into flight_class values (112991,'B');
-insert into flight_class values (112991,'M');
-insert into flight_class values (112991,'Q');
-insert into flight_class values (112992,'F');
-insert into flight_class values (112992,'Y');
-insert into flight_class values (112992,'B');
-insert into flight_class values (112992,'M');
-insert into flight_class values (112992,'Q');
-insert into flight_class values (112993,'F');
-insert into flight_class values (112993,'Y');
-insert into flight_class values (112993,'B');
-insert into flight_class values (112993,'M');
-insert into flight_class values (112993,'V');
-insert into flight_class values (112994,'F');
-insert into flight_class values (112994,'Y');
-insert into flight_class values (112994,'B');
-insert into flight_class values (112994,'M');
-insert into flight_class values (112994,'Q');
-insert into flight_class values (112995,'F');
-insert into flight_class values (112995,'Y');
-insert into flight_class values (112995,'B');
-insert into flight_class values (112995,'M');
-insert into flight_class values (112995,'V');
-insert into flight_class values (112996,'F');
-insert into flight_class values (112996,'Y');
-insert into flight_class values (112996,'Q');
-insert into flight_class values (112996,'H');
-insert into flight_class values (112996,'K');
-insert into flight_class values (112997,'F');
-insert into flight_class values (112997,'Y');
-insert into flight_class values (112997,'Q');
-insert into flight_class values (112997,'H');
-insert into flight_class values (112997,'K');
-insert into flight_class values (112998,'F');
-insert into flight_class values (112998,'Y');
-insert into flight_class values (112998,'B');
-insert into flight_class values (112998,'M');
-insert into flight_class values (112998,'Q');
-insert into flight_class values (112999,'F');
-insert into flight_class values (112999,'Y');
-insert into flight_class values (112999,'B');
-insert into flight_class values (112999,'M');
-insert into flight_class values (112999,'V');
-insert into flight_class values (113000,'F');
-insert into flight_class values (113000,'Y');
-insert into flight_class values (113000,'B');
-insert into flight_class values (113000,'M');
-insert into flight_class values (113000,'Q');
-insert into flight_class values (113001,'F');
-insert into flight_class values (113001,'Y');
-insert into flight_class values (113001,'B');
-insert into flight_class values (113001,'M');
-insert into flight_class values (113001,'Q');
-insert into flight_class values (113002,'F');
-insert into flight_class values (113002,'Y');
-insert into flight_class values (113002,'B');
-insert into flight_class values (113002,'M');
-insert into flight_class values (113002,'V');
-insert into flight_class values (113003,'F');
-insert into flight_class values (113003,'Y');
-insert into flight_class values (113003,'B');
-insert into flight_class values (113003,'M');
-insert into flight_class values (113003,'Q');
-insert into flight_class values (113004,'F');
-insert into flight_class values (113004,'Y');
-insert into flight_class values (113004,'B');
-insert into flight_class values (113004,'M');
-insert into flight_class values (113004,'Q');
-insert into flight_class values (113005,'F');
-insert into flight_class values (113005,'Y');
-insert into flight_class values (113005,'B');
-insert into flight_class values (113005,'M');
-insert into flight_class values (113005,'V');
-insert into flight_class values (113006,'F');
-insert into flight_class values (113006,'Y');
-insert into flight_class values (113006,'Q');
-insert into flight_class values (113006,'H');
-insert into flight_class values (113006,'K');
-insert into flight_class values (113007,'FN');
-insert into flight_class values (113007,'YN');
-insert into flight_class values (113007,'B');
-insert into flight_class values (113007,'M');
-insert into flight_class values (113007,'V');
-insert into flight_class values (113008,'F');
-insert into flight_class values (113008,'Y');
-insert into flight_class values (113008,'B');
-insert into flight_class values (113008,'M');
-insert into flight_class values (113008,'Q');
-insert into flight_class values (113009,'F');
-insert into flight_class values (113009,'Y');
-insert into flight_class values (113009,'B');
-insert into flight_class values (113009,'M');
-insert into flight_class values (113009,'Q');
-insert into flight_class values (113010,'F');
-insert into flight_class values (113010,'Y');
-insert into flight_class values (113010,'Q');
-insert into flight_class values (113010,'H');
-insert into flight_class values (113010,'K');
-insert into flight_class values (113011,'FN');
-insert into flight_class values (113011,'YN');
-insert into flight_class values (113011,'B');
-insert into flight_class values (113011,'M');
-insert into flight_class values (113011,'V');
-insert into flight_class values (113012,'FN');
-insert into flight_class values (113012,'YN');
-insert into flight_class values (113012,'BN');
-insert into flight_class values (113012,'M');
-insert into flight_class values (113012,'Q');
-insert into flight_class values (113013,'FN');
-insert into flight_class values (113013,'YN');
-insert into flight_class values (113013,'BN');
-insert into flight_class values (113013,'M');
-insert into flight_class values (113013,'Q');
-insert into flight_class values (113498,'F');
-insert into flight_class values (113498,'Y');
-insert into flight_class values (113498,'B');
-insert into flight_class values (113498,'M');
-insert into flight_class values (113498,'V');
-insert into flight_class values (113500,'F');
-insert into flight_class values (113500,'Y');
-insert into flight_class values (113500,'B');
-insert into flight_class values (113500,'M');
-insert into flight_class values (113500,'V');
-insert into flight_class values (113501,'FN');
-insert into flight_class values (113501,'YN');
-insert into flight_class values (113501,'B');
-insert into flight_class values (113501,'M');
-insert into flight_class values (113501,'V');
-insert into flight_class values (113576,'F');
-insert into flight_class values (113576,'Y');
-insert into flight_class values (113576,'B');
-insert into flight_class values (113576,'M');
-insert into flight_class values (113576,'V');
-insert into flight_class values (113577,'F');
-insert into flight_class values (113577,'Y');
-insert into flight_class values (113577,'B');
-insert into flight_class values (113577,'M');
-insert into flight_class values (113577,'Q');
-insert into flight_class values (113578,'F');
-insert into flight_class values (113578,'Y');
-insert into flight_class values (113578,'B');
-insert into flight_class values (113578,'M');
-insert into flight_class values (113578,'V');
-insert into flight_class values (113579,'F');
-insert into flight_class values (113579,'Y');
-insert into flight_class values (113579,'B');
-insert into flight_class values (113579,'M');
-insert into flight_class values (113579,'Q');
-insert into flight_class values (113581,'F');
-insert into flight_class values (113581,'Y');
-insert into flight_class values (113581,'B');
-insert into flight_class values (113581,'M');
-insert into flight_class values (113581,'V');
-insert into flight_class values (113582,'F');
-insert into flight_class values (113582,'Y');
-insert into flight_class values (113582,'B');
-insert into flight_class values (113582,'M');
-insert into flight_class values (113582,'V');
-insert into flight_class values (113583,'FN');
-insert into flight_class values (113583,'YN');
-insert into flight_class values (113583,'BN');
-insert into flight_class values (113583,'M');
-insert into flight_class values (113583,'Q');
-insert into flight_class values (113595,'F');
-insert into flight_class values (113595,'Y');
-insert into flight_class values (113595,'B');
-insert into flight_class values (113595,'M');
-insert into flight_class values (113595,'V');
-insert into flight_class values (113596,'F');
-insert into flight_class values (113596,'Y');
-insert into flight_class values (113596,'B');
-insert into flight_class values (113596,'H');
-insert into flight_class values (113596,'Q');
-insert into flight_class values (113597,'F');
-insert into flight_class values (113597,'Y');
-insert into flight_class values (113597,'B');
-insert into flight_class values (113597,'H');
-insert into flight_class values (113597,'Q');
-insert into flight_class values (113599,'F');
-insert into flight_class values (113599,'Y');
-insert into flight_class values (113599,'B');
-insert into flight_class values (113599,'M');
-insert into flight_class values (113599,'V');
-insert into flight_class values (113600,'F');
-insert into flight_class values (113600,'Y');
-insert into flight_class values (113600,'B');
-insert into flight_class values (113600,'H');
-insert into flight_class values (113600,'Q');
-insert into flight_class values (113602,'F');
-insert into flight_class values (113602,'Y');
-insert into flight_class values (113602,'B');
-insert into flight_class values (113602,'M');
-insert into flight_class values (113602,'V');
-insert into flight_class values (113705,'F');
-insert into flight_class values (113705,'Y');
-insert into flight_class values (113705,'B');
-insert into flight_class values (113705,'M');
-insert into flight_class values (113705,'Q');
-insert into flight_class values (113706,'F');
-insert into flight_class values (113706,'Y');
-insert into flight_class values (113706,'B');
-insert into flight_class values (113706,'M');
-insert into flight_class values (113706,'V');
-insert into flight_class values (113707,'F');
-insert into flight_class values (113707,'Y');
-insert into flight_class values (113707,'B');
-insert into flight_class values (113707,'M');
-insert into flight_class values (113707,'Q');
-insert into flight_class values (113709,'F');
-insert into flight_class values (113709,'Y');
-insert into flight_class values (113709,'B');
-insert into flight_class values (113709,'M');
-insert into flight_class values (113709,'V');
-insert into flight_class values (113711,'F');
-insert into flight_class values (113711,'Y');
-insert into flight_class values (113711,'B');
-insert into flight_class values (113711,'M');
-insert into flight_class values (113711,'V');
-insert into flight_class values (113712,'F');
-insert into flight_class values (113712,'Y');
-insert into flight_class values (113712,'B');
-insert into flight_class values (113712,'M');
-insert into flight_class values (113712,'Q');
-insert into flight_class values (113715,'F');
-insert into flight_class values (113715,'Y');
-insert into flight_class values (113715,'B');
-insert into flight_class values (113715,'M');
-insert into flight_class values (113715,'Q');
-insert into flight_class values (113716,'F');
-insert into flight_class values (113716,'Y');
-insert into flight_class values (113716,'B');
-insert into flight_class values (113716,'M');
-insert into flight_class values (113716,'V');
-insert into flight_class values (113717,'F');
-insert into flight_class values (113717,'Y');
-insert into flight_class values (113717,'B');
-insert into flight_class values (113717,'M');
-insert into flight_class values (113717,'V');
-insert into flight_class values (113718,'F');
-insert into flight_class values (113718,'Y');
-insert into flight_class values (113718,'B');
-insert into flight_class values (113718,'M');
-insert into flight_class values (113718,'V');
-insert into flight_class values (113719,'F');
-insert into flight_class values (113719,'Y');
-insert into flight_class values (113719,'B');
-insert into flight_class values (113719,'M');
-insert into flight_class values (113719,'Q');
-insert into flight_class values (113720,'FN');
-insert into flight_class values (113720,'YN');
-insert into flight_class values (113720,'B');
-insert into flight_class values (113720,'M');
-insert into flight_class values (113720,'V');
-insert into flight_class values (113721,'FN');
-insert into flight_class values (113721,'YN');
-insert into flight_class values (113721,'BN');
-insert into flight_class values (113721,'M');
-insert into flight_class values (113721,'Q');
-insert into flight_class values (133430,'F');
-insert into flight_class values (133430,'Y');
-insert into flight_class values (133430,'B');
-insert into flight_class values (133430,'M');
-insert into flight_class values (133430,'Q');
-insert into flight_class values (133431,'F');
-insert into flight_class values (133431,'Y');
-insert into flight_class values (133431,'B');
-insert into flight_class values (133431,'M');
-insert into flight_class values (133431,'Q');
-insert into flight_class values (133432,'F');
-insert into flight_class values (133432,'Y');
-insert into flight_class values (133432,'B');
-insert into flight_class values (133432,'M');
-insert into flight_class values (133432,'Q');
-insert into flight_class values (133433,'F');
-insert into flight_class values (133433,'Y');
-insert into flight_class values (133433,'B');
-insert into flight_class values (133433,'M');
-insert into flight_class values (133433,'Q');
-insert into flight_class values (133434,'FN');
-insert into flight_class values (133434,'YN');
-insert into flight_class values (133434,'B');
-insert into flight_class values (133434,'M');
-insert into flight_class values (133434,'V');
-insert into flight_class values (133435,'F');
-insert into flight_class values (133435,'Y');
-insert into flight_class values (133435,'B');
-insert into flight_class values (133435,'M');
-insert into flight_class values (133435,'V');
-insert into flight_class values (133436,'F');
-insert into flight_class values (133436,'Y');
-insert into flight_class values (133436,'B');
-insert into flight_class values (133436,'M');
-insert into flight_class values (133436,'V');
-insert into flight_class values (133567,'YN');
-insert into flight_class values (133567,'B');
-insert into flight_class values (133567,'M');
-insert into flight_class values (133567,'V');
-insert into flight_class values (133567,'Q');
-insert into flight_class values (133568,'Y');
-insert into flight_class values (133568,'B');
-insert into flight_class values (133568,'M');
-insert into flight_class values (133568,'V');
-insert into flight_class values (133568,'Q');
-insert into flight_class values (133569,'Y');
-insert into flight_class values (133569,'B');
-insert into flight_class values (133569,'M');
-insert into flight_class values (133569,'V');
-insert into flight_class values (133569,'Q');
-insert into flight_class values (137221,'FN');
-insert into flight_class values (137221,'YN');
-insert into flight_class values (137221,'BN');
-insert into flight_class values (137221,'M');
-insert into flight_class values (137221,'Q');
-insert into flight_class values (137222,'FN');
-insert into flight_class values (137222,'YN');
-insert into flight_class values (137222,'H');
-insert into flight_class values (137222,'QN');
-insert into flight_class values (137222,'K');
-insert into flight_class values (137223,'F');
-insert into flight_class values (137223,'Y');
-insert into flight_class values (137223,'H');
-insert into flight_class values (137223,'Q');
-insert into flight_class values (137223,'K');
-insert into flight_class values (137224,'F');
-insert into flight_class values (137224,'Y');
-insert into flight_class values (137224,'B');
-insert into flight_class values (137224,'M');
-insert into flight_class values (137224,'Q');
-insert into flight_class values (137225,'F');
-insert into flight_class values (137225,'Y');
-insert into flight_class values (137225,'B');
-insert into flight_class values (137225,'H');
-insert into flight_class values (137225,'Q');
-insert into flight_class values (137226,'F');
-insert into flight_class values (137226,'Y');
-insert into flight_class values (137226,'H');
-insert into flight_class values (137226,'Q');
-insert into flight_class values (137226,'K');
-insert into flight_class values (137227,'F');
-insert into flight_class values (137227,'Y');
-insert into flight_class values (137227,'H');
-insert into flight_class values (137227,'Q');
-insert into flight_class values (137227,'K');
-insert into flight_class values (137228,'F');
-insert into flight_class values (137228,'Y');
-insert into flight_class values (137228,'B');
-insert into flight_class values (137228,'M');
-insert into flight_class values (137228,'Q');
-insert into flight_class values (137229,'F');
-insert into flight_class values (137229,'Y');
-insert into flight_class values (137229,'H');
-insert into flight_class values (137229,'Q');
-insert into flight_class values (137229,'K');
-insert into flight_class values (137230,'F');
-insert into flight_class values (137230,'Y');
-insert into flight_class values (137230,'B');
-insert into flight_class values (137230,'M');
-insert into flight_class values (137230,'Q');
-insert into flight_class values (137231,'F');
-insert into flight_class values (137231,'Y');
-insert into flight_class values (137231,'B');
-insert into flight_class values (137231,'H');
-insert into flight_class values (137231,'Q');
-insert into flight_class values (137232,'F');
-insert into flight_class values (137232,'Y');
-insert into flight_class values (137232,'H');
-insert into flight_class values (137232,'Q');
-insert into flight_class values (137232,'K');
-insert into flight_class values (137233,'F');
-insert into flight_class values (137233,'Y');
-insert into flight_class values (137233,'B');
-insert into flight_class values (137233,'M');
-insert into flight_class values (137233,'Q');
-insert into flight_class values (137234,'F');
-insert into flight_class values (137234,'Y');
-insert into flight_class values (137234,'H');
-insert into flight_class values (137234,'Q');
-insert into flight_class values (137234,'K');
-insert into flight_class values (137235,'F');
-insert into flight_class values (137235,'Y');
-insert into flight_class values (137235,'B');
-insert into flight_class values (137235,'M');
-insert into flight_class values (137235,'Q');
-insert into flight_class values (137236,'F');
-insert into flight_class values (137236,'Y');
-insert into flight_class values (137236,'H');
-insert into flight_class values (137236,'Q');
-insert into flight_class values (137236,'K');
-insert into flight_class values (137237,'F');
-insert into flight_class values (137237,'Y');
-insert into flight_class values (137237,'B');
-insert into flight_class values (137237,'H');
-insert into flight_class values (137237,'Q');
-insert into flight_class values (137238,'F');
-insert into flight_class values (137238,'Y');
-insert into flight_class values (137238,'B');
-insert into flight_class values (137238,'M');
-insert into flight_class values (137238,'Q');
-insert into flight_class values (137315,'F');
-insert into flight_class values (137315,'Y');
-insert into flight_class values (137315,'B');
-insert into flight_class values (137315,'M');
-insert into flight_class values (137315,'Q');
-insert into flight_class values (137316,'F');
-insert into flight_class values (137316,'Y');
-insert into flight_class values (137316,'B');
-insert into flight_class values (137316,'H');
-insert into flight_class values (137316,'Q');
-insert into flight_class values (137317,'F');
-insert into flight_class values (137317,'Y');
-insert into flight_class values (137317,'M');
-insert into flight_class values (137317,'H');
-insert into flight_class values (137317,'Q');
-insert into flight_class values (137318,'F');
-insert into flight_class values (137318,'Y');
-insert into flight_class values (137318,'B');
-insert into flight_class values (137318,'H');
-insert into flight_class values (137318,'Q');
-insert into flight_class values (137319,'F');
-insert into flight_class values (137319,'Y');
-insert into flight_class values (137319,'B');
-insert into flight_class values (137319,'M');
-insert into flight_class values (137319,'Q');
-insert into flight_class values (137320,'F');
-insert into flight_class values (137320,'Y');
-insert into flight_class values (137320,'B');
-insert into flight_class values (137320,'H');
-insert into flight_class values (137320,'Q');
-insert into flight_class values (137321,'F');
-insert into flight_class values (137321,'Y');
-insert into flight_class values (137321,'M');
-insert into flight_class values (137321,'H');
-insert into flight_class values (137321,'Q');
-insert into flight_class values (137322,'F');
-insert into flight_class values (137322,'Y');
-insert into flight_class values (137322,'M');
-insert into flight_class values (137322,'H');
-insert into flight_class values (137322,'Q');
-insert into flight_class values (137323,'F');
-insert into flight_class values (137323,'Y');
-insert into flight_class values (137323,'B');
-insert into flight_class values (137323,'M');
-insert into flight_class values (137323,'Q');
-insert into flight_class values (137324,'F');
-insert into flight_class values (137324,'Y');
-insert into flight_class values (137324,'B');
-insert into flight_class values (137324,'H');
-insert into flight_class values (137324,'Q');
-insert into flight_class values (137326,'F');
-insert into flight_class values (137326,'Y');
-insert into flight_class values (137326,'B');
-insert into flight_class values (137326,'H');
-insert into flight_class values (137326,'Q');
-insert into flight_class values (137327,'F');
-insert into flight_class values (137327,'Y');
-insert into flight_class values (137327,'B');
-insert into flight_class values (137327,'H');
-insert into flight_class values (137327,'Q');
-insert into flight_class values (137328,'F');
-insert into flight_class values (137328,'Y');
-insert into flight_class values (137328,'M');
-insert into flight_class values (137328,'H');
-insert into flight_class values (137328,'Q');
-insert into flight_class values (137329,'F');
-insert into flight_class values (137329,'Y');
-insert into flight_class values (137329,'B');
-insert into flight_class values (137329,'H');
-insert into flight_class values (137329,'Q');
-insert into flight_class values (137330,'F');
-insert into flight_class values (137330,'C');
-insert into flight_class values (137330,'B');
-insert into flight_class values (137330,'M');
-insert into flight_class values (137330,'K');
-insert into flight_class values (137331,'F');
-insert into flight_class values (137331,'Y');
-insert into flight_class values (137331,'B');
-insert into flight_class values (137331,'M');
-insert into flight_class values (137331,'Q');
-insert into flight_class values (137332,'F');
-insert into flight_class values (137332,'Y');
-insert into flight_class values (137332,'M');
-insert into flight_class values (137332,'H');
-insert into flight_class values (137332,'Q');
-insert into flight_class values (137333,'F');
-insert into flight_class values (137333,'Y');
-insert into flight_class values (137333,'B');
-insert into flight_class values (137333,'H');
-insert into flight_class values (137333,'Q');
-insert into flight_class values (137334,'F');
-insert into flight_class values (137334,'Y');
-insert into flight_class values (137334,'B');
-insert into flight_class values (137334,'H');
-insert into flight_class values (137334,'Q');
-insert into flight_class values (137335,'F');
-insert into flight_class values (137335,'Y');
-insert into flight_class values (137335,'B');
-insert into flight_class values (137335,'H');
-insert into flight_class values (137335,'Q');
-insert into flight_class values (137336,'F');
-insert into flight_class values (137336,'Y');
-insert into flight_class values (137336,'B');
-insert into flight_class values (137336,'H');
-insert into flight_class values (137336,'Q');
-insert into flight_class values (137337,'F');
-insert into flight_class values (137337,'Y');
-insert into flight_class values (137337,'M');
-insert into flight_class values (137337,'H');
-insert into flight_class values (137337,'Q');
-insert into flight_class values (137338,'F');
-insert into flight_class values (137338,'Y');
-insert into flight_class values (137338,'B');
-insert into flight_class values (137338,'H');
-insert into flight_class values (137338,'Q');
-insert into flight_class values (137339,'FN');
-insert into flight_class values (137339,'YN');
-insert into flight_class values (137339,'BN');
-insert into flight_class values (137339,'M');
-insert into flight_class values (137339,'Q');
-insert into flight_class values (137353,'Y');
-insert into flight_class values (137353,'B');
-insert into flight_class values (137353,'H');
-insert into flight_class values (137353,'Q');
-insert into flight_class values (137353,'M');
-insert into flight_class values (137354,'Y');
-insert into flight_class values (137354,'B');
-insert into flight_class values (137354,'H');
-insert into flight_class values (137354,'Q');
-insert into flight_class values (137354,'M');
-insert into flight_class values (137355,'Y');
-insert into flight_class values (137355,'B');
-insert into flight_class values (137355,'H');
-insert into flight_class values (137355,'Q');
-insert into flight_class values (137355,'M');
-insert into flight_class values (137356,'Y');
-insert into flight_class values (137356,'B');
-insert into flight_class values (137356,'H');
-insert into flight_class values (137356,'Q');
-insert into flight_class values (137356,'M');
-insert into flight_class values (137357,'Y');
-insert into flight_class values (137357,'B');
-insert into flight_class values (137357,'H');
-insert into flight_class values (137357,'Q');
-insert into flight_class values (137357,'M');
-insert into flight_class values (137358,'Y');
-insert into flight_class values (137358,'B');
-insert into flight_class values (137358,'H');
-insert into flight_class values (137358,'Q');
-insert into flight_class values (137358,'M');
-insert into flight_class values (137359,'Y');
-insert into flight_class values (137359,'B');
-insert into flight_class values (137359,'H');
-insert into flight_class values (137359,'Q');
-insert into flight_class values (137359,'M');
-insert into flight_class values (137360,'Y');
-insert into flight_class values (137360,'B');
-insert into flight_class values (137360,'H');
-insert into flight_class values (137360,'Q');
-insert into flight_class values (137360,'M');
-insert into flight_class values (137361,'Y');
-insert into flight_class values (137361,'B');
-insert into flight_class values (137361,'H');
-insert into flight_class values (137361,'Q');
-insert into flight_class values (137361,'M');
-insert into flight_class values (137407,'F');
-insert into flight_class values (137407,'Y');
-insert into flight_class values (137407,'B');
-insert into flight_class values (137407,'M');
-insert into flight_class values (137407,'Q');
-insert into flight_class values (137408,'F');
-insert into flight_class values (137408,'Y');
-insert into flight_class values (137408,'Q');
-insert into flight_class values (137408,'H');
-insert into flight_class values (137408,'K');
-insert into flight_class values (137412,'F');
-insert into flight_class values (137412,'Y');
-insert into flight_class values (137412,'B');
-insert into flight_class values (137412,'M');
-insert into flight_class values (137412,'Q');
-insert into flight_class values (137413,'F');
-insert into flight_class values (137413,'Y');
-insert into flight_class values (137413,'Q');
-insert into flight_class values (137413,'H');
-insert into flight_class values (137413,'K');
-insert into flight_class values (137414,'F');
-insert into flight_class values (137414,'Y');
-insert into flight_class values (137414,'B');
-insert into flight_class values (137414,'M');
-insert into flight_class values (137414,'V');
-insert into flight_class values (137415,'F');
-insert into flight_class values (137415,'Y');
-insert into flight_class values (137415,'B');
-insert into flight_class values (137415,'M');
-insert into flight_class values (137415,'Q');
-insert into flight_class values (137417,'F');
-insert into flight_class values (137417,'Y');
-insert into flight_class values (137417,'B');
-insert into flight_class values (137417,'M');
-insert into flight_class values (137417,'V');
-insert into flight_class values (137419,'F');
-insert into flight_class values (137419,'Y');
-insert into flight_class values (137419,'B');
-insert into flight_class values (137419,'M');
-insert into flight_class values (137419,'Q');
-insert into flight_class values (137420,'F');
-insert into flight_class values (137420,'Y');
-insert into flight_class values (137420,'B');
-insert into flight_class values (137420,'M');
-insert into flight_class values (137420,'V');
-insert into flight_class values (137422,'F');
-insert into flight_class values (137422,'Y');
-insert into flight_class values (137422,'B');
-insert into flight_class values (137422,'M');
-insert into flight_class values (137422,'V');
-insert into flight_class values (137423,'F');
-insert into flight_class values (137423,'Y');
-insert into flight_class values (137423,'B');
-insert into flight_class values (137423,'M');
-insert into flight_class values (137423,'Q');
-insert into flight_class values (137732,'F');
-insert into flight_class values (137732,'Y');
-insert into flight_class values (137732,'B');
-insert into flight_class values (137732,'H');
-insert into flight_class values (137732,'Q');
-insert into flight_class values (137733,'F');
-insert into flight_class values (137733,'Y');
-insert into flight_class values (137733,'B');
-insert into flight_class values (137733,'H');
-insert into flight_class values (137733,'Q');
-insert into flight_class values (137734,'F');
-insert into flight_class values (137734,'Y');
-insert into flight_class values (137734,'B');
-insert into flight_class values (137734,'H');
-insert into flight_class values (137734,'Q');
-insert into flight_class values (137735,'F');
-insert into flight_class values (137735,'Y');
-insert into flight_class values (137735,'B');
-insert into flight_class values (137735,'H');
-insert into flight_class values (137735,'Q');
-insert into flight_class values (137736,'F');
-insert into flight_class values (137736,'Y');
-insert into flight_class values (137736,'B');
-insert into flight_class values (137736,'H');
-insert into flight_class values (137736,'Q');
-insert into flight_class values (137737,'F');
-insert into flight_class values (137737,'Y');
-insert into flight_class values (137737,'B');
-insert into flight_class values (137737,'H');
-insert into flight_class values (137737,'Q');
-insert into flight_class values (137738,'F');
-insert into flight_class values (137738,'Y');
-insert into flight_class values (137738,'B');
-insert into flight_class values (137738,'H');
-insert into flight_class values (137738,'Q');
-insert into flight_class values (137739,'F');
-insert into flight_class values (137739,'Y');
-insert into flight_class values (137739,'B');
-insert into flight_class values (137739,'H');
-insert into flight_class values (137739,'Q');
-insert into flight_class values (137740,'F');
-insert into flight_class values (137740,'Y');
-insert into flight_class values (137740,'B');
-insert into flight_class values (137740,'H');
-insert into flight_class values (137740,'Q');
-insert into flight_class values (137811,'F');
-insert into flight_class values (137811,'Y');
-insert into flight_class values (137811,'B');
-insert into flight_class values (137811,'M');
-insert into flight_class values (137811,'Q');
-insert into flight_class values (137817,'F');
-insert into flight_class values (137817,'Y');
-insert into flight_class values (137817,'B');
-insert into flight_class values (137817,'M');
-insert into flight_class values (137817,'Q');
-insert into flight_class values (138817,'FN');
-insert into flight_class values (138817,'YN');
-insert into flight_class values (138817,'BN');
-insert into flight_class values (138817,'M');
-insert into flight_class values (138817,'Q');
-insert into flight_class values (138818,'F');
-insert into flight_class values (138818,'Y');
-insert into flight_class values (138818,'H');
-insert into flight_class values (138818,'Q');
-insert into flight_class values (138818,'K');
-insert into flight_class values (138819,'Y');
-insert into flight_class values (138819,'H');
-insert into flight_class values (138819,'Q');
-insert into flight_class values (138819,'K');
-insert into flight_class values (138819,'L');
-insert into flight_class values (138820,'F');
-insert into flight_class values (138820,'Y');
-insert into flight_class values (138820,'B');
-insert into flight_class values (138820,'H');
-insert into flight_class values (138820,'Q');
-insert into flight_class values (138821,'F');
-insert into flight_class values (138821,'Y');
-insert into flight_class values (138821,'B');
-insert into flight_class values (138821,'M');
-insert into flight_class values (138821,'Q');
-insert into flight_class values (138822,'F');
-insert into flight_class values (138822,'Y');
-insert into flight_class values (138822,'H');
-insert into flight_class values (138822,'Q');
-insert into flight_class values (138822,'K');
-insert into flight_class values (138823,'F');
-insert into flight_class values (138823,'Y');
-insert into flight_class values (138823,'B');
-insert into flight_class values (138823,'M');
-insert into flight_class values (138823,'Q');
-insert into flight_class values (138824,'F');
-insert into flight_class values (138824,'Y');
-insert into flight_class values (138824,'B');
-insert into flight_class values (138824,'H');
-insert into flight_class values (138824,'Q');
-insert into flight_class values (138825,'Y');
-insert into flight_class values (138825,'H');
-insert into flight_class values (138825,'Q');
-insert into flight_class values (138825,'K');
-insert into flight_class values (138825,'L');
-insert into flight_class values (138827,'F');
-insert into flight_class values (138827,'Y');
-insert into flight_class values (138827,'B');
-insert into flight_class values (138827,'M');
-insert into flight_class values (138827,'Q');
-insert into flight_class values (138828,'F');
-insert into flight_class values (138828,'Y');
-insert into flight_class values (138828,'B');
-insert into flight_class values (138828,'H');
-insert into flight_class values (138828,'Q');
-insert into flight_class values (138829,'F');
-insert into flight_class values (138829,'Y');
-insert into flight_class values (138829,'H');
-insert into flight_class values (138829,'Q');
-insert into flight_class values (138829,'K');
-insert into flight_class values (138830,'FN');
-insert into flight_class values (138830,'YN');
-insert into flight_class values (138830,'BN');
-insert into flight_class values (138830,'M');
-insert into flight_class values (138830,'Q');
-insert into flight_class values (138831,'FN');
-insert into flight_class values (138831,'YN');
-insert into flight_class values (138831,'BN');
-insert into flight_class values (138831,'M');
-insert into flight_class values (138831,'Q');
-insert into flight_class values (138832,'F');
-insert into flight_class values (138832,'Y');
-insert into flight_class values (138832,'B');
-insert into flight_class values (138832,'H');
-insert into flight_class values (138832,'Q');
-insert into flight_class values (138860,'F');
-insert into flight_class values (138860,'Y');
-insert into flight_class values (138860,'B');
-insert into flight_class values (138860,'H');
-insert into flight_class values (138860,'Q');
-insert into flight_class values (138861,'F');
-insert into flight_class values (138861,'Y');
-insert into flight_class values (138861,'B');
-insert into flight_class values (138861,'H');
-insert into flight_class values (138861,'Q');
-insert into flight_class values (138862,'F');
-insert into flight_class values (138862,'Y');
-insert into flight_class values (138862,'B');
-insert into flight_class values (138862,'H');
-insert into flight_class values (138862,'Q');
-insert into flight_class values (138863,'F');
-insert into flight_class values (138863,'Y');
-insert into flight_class values (138863,'B');
-insert into flight_class values (138863,'H');
-insert into flight_class values (138863,'Q');
-insert into flight_class values (138864,'F');
-insert into flight_class values (138864,'Y');
-insert into flight_class values (138864,'B');
-insert into flight_class values (138864,'H');
-insert into flight_class values (138864,'Q');
-insert into flight_class values (138865,'F');
-insert into flight_class values (138865,'Y');
-insert into flight_class values (138865,'B');
-insert into flight_class values (138865,'H');
-insert into flight_class values (138865,'Q');
-insert into flight_class values (138867,'F');
-insert into flight_class values (138867,'Y');
-insert into flight_class values (138867,'B');
-insert into flight_class values (138867,'H');
-insert into flight_class values (138867,'Q');
-insert into flight_class values (138868,'F');
-insert into flight_class values (138868,'Y');
-insert into flight_class values (138868,'B');
-insert into flight_class values (138868,'H');
-insert into flight_class values (138868,'Q');
-insert into flight_class values (138878,'F');
-insert into flight_class values (138878,'Y');
-insert into flight_class values (138878,'B');
-insert into flight_class values (138878,'H');
-insert into flight_class values (138878,'Q');
-insert into flight_class values (138879,'F');
-insert into flight_class values (138879,'Y');
-insert into flight_class values (138879,'B');
-insert into flight_class values (138879,'H');
-insert into flight_class values (138879,'Q');
-insert into flight_class values (138880,'F');
-insert into flight_class values (138880,'Y');
-insert into flight_class values (138880,'B');
-insert into flight_class values (138880,'H');
-insert into flight_class values (138880,'Q');
-insert into flight_class values (138881,'F');
-insert into flight_class values (138881,'Y');
-insert into flight_class values (138881,'B');
-insert into flight_class values (138881,'H');
-insert into flight_class values (138881,'Q');
-insert into flight_class values (138882,'F');
-insert into flight_class values (138882,'Y');
-insert into flight_class values (138882,'B');
-insert into flight_class values (138882,'H');
-insert into flight_class values (138882,'Q');
-insert into flight_class values (138883,'F');
-insert into flight_class values (138883,'Y');
-insert into flight_class values (138883,'B');
-insert into flight_class values (138883,'H');
-insert into flight_class values (138883,'Q');
-insert into flight_class values (138884,'F');
-insert into flight_class values (138884,'Y');
-insert into flight_class values (138884,'B');
-insert into flight_class values (138884,'H');
-insert into flight_class values (138884,'Q');
-insert into flight_class values (138963,'F');
-insert into flight_class values (138963,'Y');
-insert into flight_class values (138963,'B');
-insert into flight_class values (138963,'H');
-insert into flight_class values (138963,'Q');
-insert into flight_class values (138964,'F');
-insert into flight_class values (138964,'Y');
-insert into flight_class values (138964,'B');
-insert into flight_class values (138964,'H');
-insert into flight_class values (138964,'Q');
-insert into flight_class values (138966,'F');
-insert into flight_class values (138966,'Y');
-insert into flight_class values (138966,'B');
-insert into flight_class values (138966,'H');
-insert into flight_class values (138966,'Q');
-insert into flight_class values (138970,'F');
-insert into flight_class values (138970,'Y');
-insert into flight_class values (138970,'B');
-insert into flight_class values (138970,'M');
-insert into flight_class values (138970,'V');
-insert into flight_class values (138971,'F');
-insert into flight_class values (138971,'Y');
-insert into flight_class values (138971,'B');
-insert into flight_class values (138971,'H');
-insert into flight_class values (138971,'Q');
-insert into flight_class values (138973,'F');
-insert into flight_class values (138973,'Y');
-insert into flight_class values (138973,'B');
-insert into flight_class values (138973,'M');
-insert into flight_class values (138973,'V');
-insert into flight_class values (138974,'F');
-insert into flight_class values (138974,'Y');
-insert into flight_class values (138974,'B');
-insert into flight_class values (138974,'H');
-insert into flight_class values (138974,'Q');
-insert into flight_class values (138976,'F');
-insert into flight_class values (138976,'Y');
-insert into flight_class values (138976,'B');
-insert into flight_class values (138976,'M');
-insert into flight_class values (138976,'V');
-insert into flight_class values (138977,'F');
-insert into flight_class values (138977,'Y');
-insert into flight_class values (138977,'B');
-insert into flight_class values (138977,'H');
-insert into flight_class values (138977,'Q');
-insert into flight_class values (139264,'F');
-insert into flight_class values (139264,'Y');
-insert into flight_class values (139264,'B');
-insert into flight_class values (139264,'H');
-insert into flight_class values (139264,'Q');
-insert into flight_class values (139265,'F');
-insert into flight_class values (139265,'Y');
-insert into flight_class values (139265,'B');
-insert into flight_class values (139265,'H');
-insert into flight_class values (139265,'Q');
-insert into flight_class values (139266,'F');
-insert into flight_class values (139266,'Y');
-insert into flight_class values (139266,'B');
-insert into flight_class values (139266,'H');
-insert into flight_class values (139266,'Q');
-insert into flight_class values (139267,'F');
-insert into flight_class values (139267,'Y');
-insert into flight_class values (139267,'B');
-insert into flight_class values (139267,'H');
-insert into flight_class values (139267,'Q');
-insert into flight_class values (139268,'F');
-insert into flight_class values (139268,'Y');
-insert into flight_class values (139268,'B');
-insert into flight_class values (139268,'H');
-insert into flight_class values (139268,'Q');
-insert into flight_class values (139269,'F');
-insert into flight_class values (139269,'Y');
-insert into flight_class values (139269,'B');
-insert into flight_class values (139269,'H');
-insert into flight_class values (139269,'Q');
-insert into flight_class values (139270,'F');
-insert into flight_class values (139270,'Y');
-insert into flight_class values (139270,'B');
-insert into flight_class values (139270,'H');
-insert into flight_class values (139270,'Q');
-insert into flight_class values (139271,'F');
-insert into flight_class values (139271,'Y');
-insert into flight_class values (139271,'B');
-insert into flight_class values (139271,'H');
-insert into flight_class values (139271,'Q');
-insert into flight_class values (139272,'F');
-insert into flight_class values (139272,'Y');
-insert into flight_class values (139272,'B');
-insert into flight_class values (139272,'H');
-insert into flight_class values (139272,'Q');
-insert into flight_class values (139273,'F');
-insert into flight_class values (139273,'Y');
-insert into flight_class values (139273,'B');
-insert into flight_class values (139273,'H');
-insert into flight_class values (139273,'Q');
-insert into flight_class values (139353,'F');
-insert into flight_class values (139353,'Y');
-insert into flight_class values (139353,'B');
-insert into flight_class values (139353,'H');
-insert into flight_class values (139353,'Q');
-insert into flight_class values (139355,'F');
-insert into flight_class values (139355,'Y');
-insert into flight_class values (139355,'B');
-insert into flight_class values (139355,'H');
-insert into flight_class values (139355,'Q');
-insert into flight_class values (139356,'F');
-insert into flight_class values (139356,'Y');
-insert into flight_class values (139356,'B');
-insert into flight_class values (139356,'H');
-insert into flight_class values (139356,'Q');
-insert into flight_class values (139357,'F');
-insert into flight_class values (139357,'Y');
-insert into flight_class values (139357,'B');
-insert into flight_class values (139357,'H');
-insert into flight_class values (139357,'Q');
-insert into flight_class values (144060,'F');
-insert into flight_class values (144060,'Y');
-insert into flight_class values (144060,'B');
-insert into flight_class values (144060,'M');
-insert into flight_class values (144060,'Q');
-insert into flight_class values (144061,'F');
-insert into flight_class values (144061,'Y');
-insert into flight_class values (144061,'H');
-insert into flight_class values (144061,'Q');
-insert into flight_class values (144061,'K');
-insert into flight_class values (144062,'F');
-insert into flight_class values (144062,'Y');
-insert into flight_class values (144062,'B');
-insert into flight_class values (144062,'M');
-insert into flight_class values (144062,'Q');
-insert into flight_class values (144063,'F');
-insert into flight_class values (144063,'Y');
-insert into flight_class values (144063,'B');
-insert into flight_class values (144063,'M');
-insert into flight_class values (144063,'Q');
-insert into flight_class values (144065,'F');
-insert into flight_class values (144065,'Y');
-insert into flight_class values (144065,'H');
-insert into flight_class values (144065,'Q');
-insert into flight_class values (144065,'K');
-insert into flight_class values (144066,'F');
-insert into flight_class values (144066,'Y');
-insert into flight_class values (144066,'B');
-insert into flight_class values (144066,'M');
-insert into flight_class values (144066,'Q');
-insert into flight_class values (144067,'FN');
-insert into flight_class values (144067,'YN');
-insert into flight_class values (144067,'BN');
-insert into flight_class values (144067,'M');
-insert into flight_class values (144067,'Q');
-insert into flight_class values (144069,'FN');
-insert into flight_class values (144069,'YN');
-insert into flight_class values (144069,'H');
-insert into flight_class values (144069,'QN');
-insert into flight_class values (144069,'K');
-insert into flight_class values (144089,'F');
-insert into flight_class values (144089,'Y');
-insert into flight_class values (144089,'B');
-insert into flight_class values (144089,'M');
-insert into flight_class values (144089,'Q');
-insert into flight_class values (144090,'F');
-insert into flight_class values (144090,'C');
-insert into flight_class values (144090,'Y');
-insert into flight_class values (144090,'B');
-insert into flight_class values (144090,'Q');
-insert into flight_class values (144094,'F');
-insert into flight_class values (144094,'Y');
-insert into flight_class values (144094,'B');
-insert into flight_class values (144094,'M');
-insert into flight_class values (144094,'Q');
-insert into flight_class values (144143,'F');
-insert into flight_class values (144143,'Y');
-insert into flight_class values (144143,'B');
-insert into flight_class values (144143,'M');
-insert into flight_class values (144143,'Q');
-insert into flight_class values (144144,'F');
-insert into flight_class values (144144,'Y');
-insert into flight_class values (144144,'Q');
-insert into flight_class values (144144,'H');
-insert into flight_class values (144144,'K');
-insert into flight_class values (144145,'F');
-insert into flight_class values (144145,'Y');
-insert into flight_class values (144145,'B');
-insert into flight_class values (144145,'M');
-insert into flight_class values (144145,'Q');
-insert into flight_class values (144146,'F');
-insert into flight_class values (144146,'Y');
-insert into flight_class values (144146,'B');
-insert into flight_class values (144146,'M');
-insert into flight_class values (144146,'Q');
-insert into flight_class values (144147,'F');
-insert into flight_class values (144147,'Y');
-insert into flight_class values (144147,'Q');
-insert into flight_class values (144147,'H');
-insert into flight_class values (144147,'K');
-insert into flight_class values (144148,'F');
-insert into flight_class values (144148,'C');
-insert into flight_class values (144148,'Y');
-insert into flight_class values (144148,'B');
-insert into flight_class values (144148,'M');
-insert into flight_class values (144149,'F');
-insert into flight_class values (144149,'Y');
-insert into flight_class values (144149,'Q');
-insert into flight_class values (144149,'H');
-insert into flight_class values (144149,'K');
-insert into flight_class values (144150,'F');
-insert into flight_class values (144150,'Y');
-insert into flight_class values (144150,'B');
-insert into flight_class values (144150,'M');
-insert into flight_class values (144150,'Q');
-insert into flight_class values (144151,'F');
-insert into flight_class values (144151,'Y');
-insert into flight_class values (144151,'Q');
-insert into flight_class values (144151,'H');
-insert into flight_class values (144151,'K');
-insert into flight_class values (144152,'F');
-insert into flight_class values (144152,'Y');
-insert into flight_class values (144152,'Q');
-insert into flight_class values (144152,'H');
-insert into flight_class values (144152,'K');
-insert into flight_class values (144153,'F');
-insert into flight_class values (144153,'Y');
-insert into flight_class values (144153,'B');
-insert into flight_class values (144153,'M');
-insert into flight_class values (144153,'Q');
-insert into flight_class values (144155,'FN');
-insert into flight_class values (144155,'YN');
-insert into flight_class values (144155,'BN');
-insert into flight_class values (144155,'M');
-insert into flight_class values (144155,'Q');
-insert into flight_class values (144156,'FN');
-insert into flight_class values (144156,'YN');
-insert into flight_class values (144156,'B');
-insert into flight_class values (144156,'M');
-insert into flight_class values (144156,'V');
-insert into flight_class values (144157,'F');
-insert into flight_class values (144157,'Y');
-insert into flight_class values (144157,'B');
-insert into flight_class values (144157,'M');
-insert into flight_class values (144157,'V');
-insert into flight_class values (144158,'F');
-insert into flight_class values (144158,'Y');
-insert into flight_class values (144158,'B');
-insert into flight_class values (144158,'M');
-insert into flight_class values (144158,'Q');
-insert into flight_class values (144159,'F');
-insert into flight_class values (144159,'Y');
-insert into flight_class values (144159,'B');
-insert into flight_class values (144159,'M');
-insert into flight_class values (144159,'V');
-insert into flight_class values (144162,'F');
-insert into flight_class values (144162,'Y');
-insert into flight_class values (144162,'B');
-insert into flight_class values (144162,'M');
-insert into flight_class values (144162,'V');
-insert into flight_class values (144163,'F');
-insert into flight_class values (144163,'Y');
-insert into flight_class values (144163,'B');
-insert into flight_class values (144163,'M');
-insert into flight_class values (144163,'Q');
-insert into flight_class values (144164,'F');
-insert into flight_class values (144164,'Y');
-insert into flight_class values (144164,'B');
-insert into flight_class values (144164,'M');
-insert into flight_class values (144164,'V');
-insert into flight_class values (144165,'F');
-insert into flight_class values (144165,'Y');
-insert into flight_class values (144165,'B');
-insert into flight_class values (144165,'M');
-insert into flight_class values (144165,'Q');
-insert into flight_class values (144166,'F');
-insert into flight_class values (144166,'Y');
-insert into flight_class values (144166,'B');
-insert into flight_class values (144166,'M');
-insert into flight_class values (144166,'V');
-insert into flight_class values (144167,'F');
-insert into flight_class values (144167,'Y');
-insert into flight_class values (144167,'B');
-insert into flight_class values (144167,'M');
-insert into flight_class values (144167,'Q');
-insert into flight_class values (144168,'F');
-insert into flight_class values (144168,'Y');
-insert into flight_class values (144168,'B');
-insert into flight_class values (144168,'M');
-insert into flight_class values (144168,'V');
-insert into flight_class values (144169,'F');
-insert into flight_class values (144169,'Y');
-insert into flight_class values (144169,'B');
-insert into flight_class values (144169,'M');
-insert into flight_class values (144169,'Q');
-insert into flight_class values (144477,'Y');
-insert into flight_class values (144477,'B');
-insert into flight_class values (144477,'M');
-insert into flight_class values (144477,'V');
-insert into flight_class values (144477,'Q');
-insert into flight_class values (144478,'Y');
-insert into flight_class values (144478,'B');
-insert into flight_class values (144478,'M');
-insert into flight_class values (144478,'V');
-insert into flight_class values (144478,'Q');
-insert into flight_class values (144479,'Y');
-insert into flight_class values (144479,'B');
-insert into flight_class values (144479,'M');
-insert into flight_class values (144479,'V');
-insert into flight_class values (144479,'Q');
-insert into flight_class values (144480,'YN');
-insert into flight_class values (144480,'B');
-insert into flight_class values (144480,'M');
-insert into flight_class values (144480,'V');
-insert into flight_class values (144480,'Q');
-insert into flight_class values (144541,'F');
-insert into flight_class values (144541,'Y');
-insert into flight_class values (144541,'B');
-insert into flight_class values (144541,'M');
-insert into flight_class values (144541,'Q');
-insert into flight_class values (144547,'F');
-insert into flight_class values (144547,'Y');
-insert into flight_class values (144547,'B');
-insert into flight_class values (144547,'M');
-insert into flight_class values (144547,'Q');
-insert into flight_class values (144572,'F');
-insert into flight_class values (144572,'Y');
-insert into flight_class values (144572,'B');
-insert into flight_class values (144572,'H');
-insert into flight_class values (144572,'Q');
-insert into flight_class values (144574,'F');
-insert into flight_class values (144574,'Y');
-insert into flight_class values (144574,'B');
-insert into flight_class values (144574,'H');
-insert into flight_class values (144574,'Q');
-insert into flight_class values (144575,'F');
-insert into flight_class values (144575,'Y');
-insert into flight_class values (144575,'B');
-insert into flight_class values (144575,'H');
-insert into flight_class values (144575,'Q');
-insert into flight_class values (144576,'F');
-insert into flight_class values (144576,'Y');
-insert into flight_class values (144576,'B');
-insert into flight_class values (144576,'H');
-insert into flight_class values (144576,'Q');
-insert into flight_class values (101908,'FN');
-insert into flight_class values (101908,'YN');
-insert into flight_class values (101908,'BN');
-insert into flight_class values (101908,'M');
-insert into flight_class values (101908,'Q');
-insert into flight_class values (101913,'F');
-insert into flight_class values (101913,'Y');
-insert into flight_class values (101913,'B');
-insert into flight_class values (101913,'M');
-insert into flight_class values (101913,'Q');
-insert into flight_class values (101924,'F');
-insert into flight_class values (101924,'Y');
-insert into flight_class values (101924,'B');
-insert into flight_class values (101924,'M');
-insert into flight_class values (101924,'Q');
-insert into flight_class values (102674,'F');
-insert into flight_class values (102674,'Y');
-insert into flight_class values (102674,'B');
-insert into flight_class values (102674,'M');
-insert into flight_class values (102674,'Q');
-insert into flight_class values (105810,'F');
-insert into flight_class values (105810,'Y');
-insert into flight_class values (105810,'B');
-insert into flight_class values (105810,'M');
-insert into flight_class values (105810,'Q');
-insert into flight_class values (106262,'F');
-insert into flight_class values (106262,'Y');
-insert into flight_class values (106262,'B');
-insert into flight_class values (106262,'H');
-insert into flight_class values (106262,'Q');
-insert into flight_class values (106270,'F');
-insert into flight_class values (106270,'Y');
-insert into flight_class values (106270,'B');
-insert into flight_class values (106270,'H');
-insert into flight_class values (106270,'Q');
-insert into flight_class values (106366,'F');
-insert into flight_class values (106366,'Y');
-insert into flight_class values (106366,'B');
-insert into flight_class values (106366,'M');
-insert into flight_class values (106366,'Q');
-insert into flight_class values (106373,'F');
-insert into flight_class values (106373,'Y');
-insert into flight_class values (106373,'B');
-insert into flight_class values (106373,'M');
-insert into flight_class values (106373,'V');
-insert into flight_class values (106375,'F');
-insert into flight_class values (106375,'Y');
-insert into flight_class values (106375,'Q');
-insert into flight_class values (106375,'H');
-insert into flight_class values (106375,'K');
-insert into flight_class values (107253,'F');
-insert into flight_class values (107253,'Y');
-insert into flight_class values (107253,'B');
-insert into flight_class values (107253,'H');
-insert into flight_class values (107253,'Q');
-insert into flight_class values (111924,'FN');
-insert into flight_class values (111924,'YN');
-insert into flight_class values (111924,'BN');
-insert into flight_class values (111924,'M');
-insert into flight_class values (111924,'Q');
-insert into flight_class values (111930,'F');
-insert into flight_class values (111930,'Y');
-insert into flight_class values (111930,'B');
-insert into flight_class values (111930,'H');
-insert into flight_class values (111930,'Q');
-insert into flight_class values (112413,'FN');
-insert into flight_class values (112413,'YN');
-insert into flight_class values (112413,'BN');
-insert into flight_class values (112413,'M');
-insert into flight_class values (112413,'Q');
-insert into flight_class values (113499,'F');
-insert into flight_class values (113499,'Y');
-insert into flight_class values (113499,'B');
-insert into flight_class values (113499,'M');
-insert into flight_class values (113499,'Q');
-insert into flight_class values (113710,'F');
-insert into flight_class values (113710,'Y');
-insert into flight_class values (113710,'Q');
-insert into flight_class values (113710,'H');
-insert into flight_class values (113710,'K');
-insert into flight_class values (113713,'F');
-insert into flight_class values (113713,'Y');
-insert into flight_class values (113713,'B');
-insert into flight_class values (113713,'M');
-insert into flight_class values (113713,'Q');
-insert into flight_class values (133423,'F');
-insert into flight_class values (133423,'Y');
-insert into flight_class values (133423,'B');
-insert into flight_class values (133423,'M');
-insert into flight_class values (133423,'Q');
-insert into flight_class values (133516,'F');
-insert into flight_class values (133516,'Y');
-insert into flight_class values (133516,'B');
-insert into flight_class values (133516,'M');
-insert into flight_class values (133516,'V');
-insert into flight_class values (137410,'F');
-insert into flight_class values (137410,'Y');
-insert into flight_class values (137410,'B');
-insert into flight_class values (137410,'M');
-insert into flight_class values (137410,'Q');
-insert into flight_class values (137685,'F');
-insert into flight_class values (137685,'Y');
-insert into flight_class values (137685,'B');
-insert into flight_class values (137685,'M');
-insert into flight_class values (137685,'V');
-insert into flight_class values (137814,'F');
-insert into flight_class values (137814,'Y');
-insert into flight_class values (137814,'B');
-insert into flight_class values (137814,'H');
-insert into flight_class values (137814,'Q');
-insert into flight_class values (138866,'F');
-insert into flight_class values (138866,'Y');
-insert into flight_class values (138866,'B');
-insert into flight_class values (138866,'H');
-insert into flight_class values (138866,'Q');
-insert into flight_class values (138965,'F');
-insert into flight_class values (138965,'Y');
-insert into flight_class values (138965,'B');
-insert into flight_class values (138965,'M');
-insert into flight_class values (138965,'V');
-insert into flight_class values (144059,'F');
-insert into flight_class values (144059,'Y');
-insert into flight_class values (144059,'B');
-insert into flight_class values (144059,'M');
-insert into flight_class values (144059,'V');
-insert into flight_class values (144087,'FN');
-insert into flight_class values (144087,'YN');
-insert into flight_class values (144087,'B');
-insert into flight_class values (144087,'M');
-insert into flight_class values (144087,'V');
-insert into flight_class values (144088,'F');
-insert into flight_class values (144088,'Y');
-insert into flight_class values (144088,'Q');
-insert into flight_class values (144088,'H');
-insert into flight_class values (144088,'K');
-insert into flight_class values (144092,'F');
-insert into flight_class values (144092,'Y');
-insert into flight_class values (144092,'B');
-insert into flight_class values (144092,'M');
-insert into flight_class values (144092,'Q');
-insert into flight_class values (144093,'F');
-insert into flight_class values (144093,'Y');
-insert into flight_class values (144093,'B');
-insert into flight_class values (144093,'H');
-insert into flight_class values (144093,'Q');
-insert into flight_class values (144095,'F');
-insert into flight_class values (144095,'Y');
-insert into flight_class values (144095,'B');
-insert into flight_class values (144095,'M');
-insert into flight_class values (144095,'Q');
-insert into flight_class values (144110,'F');
-insert into flight_class values (144110,'Y');
-insert into flight_class values (144110,'B');
-insert into flight_class values (144110,'H');
-insert into flight_class values (144110,'Q');
-insert into flight_class values (144160,'F');
-insert into flight_class values (144160,'Y');
-insert into flight_class values (144160,'B');
-insert into flight_class values (144160,'M');
-insert into flight_class values (144160,'Q');
-insert into flight_class values (144161,'F');
-insert into flight_class values (144161,'Y');
-insert into flight_class values (144161,'B');
-insert into flight_class values (144161,'M');
-insert into flight_class values (144161,'Q');
-insert into flight_class values (144543,'F');
-insert into flight_class values (144543,'Y');
-insert into flight_class values (144543,'B');
-insert into flight_class values (144543,'H');
-insert into flight_class values (144543,'Q');
-insert into flight_day values ('1234567',1,'MONDAY');
-insert into flight_day values ('1234567',2,'TUESDAY');
-insert into flight_day values ('1234567',3,'WEDNESDAY');
-insert into flight_day values ('1234567',4,'THURSDAY');
-insert into flight_day values ('1234567',5,'FRIDAY');
-insert into flight_day values ('1234567',6,'SATURDAY');
-insert into flight_day values ('1234567',7,'SUNDAY');
-insert into flight_day values ('-234567',2,'TUESDAY');
-insert into flight_day values ('-234567',3,'WEDNESDAY');
-insert into flight_day values ('-234567',4,'THURSDAY');
-insert into flight_day values ('-234567',5,'FRIDAY');
-insert into flight_day values ('-234567',6,'SATURDAY');
-insert into flight_day values ('-234567',7,'SUNDAY');
-insert into flight_day values ('1-34567',1,'MONDAY');
-insert into flight_day values ('1-34567',3,'WEDNESDAY');
-insert into flight_day values ('1-34567',4,'THURSDAY');
-insert into flight_day values ('1-34567',5,'FRIDAY');
-insert into flight_day values ('1-34567',6,'SATURDAY');
-insert into flight_day values ('1-34567',7,'SUNDAY');
-insert into flight_day values ('--34567',3,'WEDNESDAY');
-insert into flight_day values ('--34567',4,'THURSDAY');
-insert into flight_day values ('--34567',5,'FRIDAY');
-insert into flight_day values ('--34567',6,'SATURDAY');
-insert into flight_day values ('--34567',7,'SUNDAY');
-insert into flight_day values ('12-4567',1,'MONDAY');
-insert into flight_day values ('12-4567',2,'TUESDAY');
-insert into flight_day values ('12-4567',4,'THURSDAY');
-insert into flight_day values ('12-4567',5,'FRIDAY');
-insert into flight_day values ('12-4567',6,'SATURDAY');
-insert into flight_day values ('12-4567',7,'SUNDAY');
-insert into flight_day values ('-2-4567',2,'TUESDAY');
-insert into flight_day values ('-2-4567',4,'THURSDAY');
-insert into flight_day values ('-2-4567',5,'FRIDAY');
-insert into flight_day values ('-2-4567',6,'SATURDAY');
-insert into flight_day values ('-2-4567',7,'SUNDAY');
-insert into flight_day values ('1--4567',1,'MONDAY');
-insert into flight_day values ('1--4567',4,'THURSDAY');
-insert into flight_day values ('1--4567',5,'FRIDAY');
-insert into flight_day values ('1--4567',6,'SATURDAY');
-insert into flight_day values ('1--4567',7,'SUNDAY');
-insert into flight_day values ('---4567',4,'THURSDAY');
-insert into flight_day values ('---4567',5,'FRIDAY');
-insert into flight_day values ('---4567',6,'SATURDAY');
-insert into flight_day values ('---4567',7,'SUNDAY');
-insert into flight_day values ('123-567',1,'MONDAY');
-insert into flight_day values ('123-567',2,'TUESDAY');
-insert into flight_day values ('123-567',3,'WEDNESDAY');
-insert into flight_day values ('123-567',5,'FRIDAY');
-insert into flight_day values ('123-567',6,'SATURDAY');
-insert into flight_day values ('123-567',7,'SUNDAY');
-insert into flight_day values ('-23-567',2,'TUESDAY');
-insert into flight_day values ('-23-567',3,'WEDNESDAY');
-insert into flight_day values ('-23-567',5,'FRIDAY');
-insert into flight_day values ('-23-567',6,'SATURDAY');
-insert into flight_day values ('-23-567',7,'SUNDAY');
-insert into flight_day values ('1-3-567',1,'MONDAY');
-insert into flight_day values ('1-3-567',3,'WEDNESDAY');
-insert into flight_day values ('1-3-567',5,'FRIDAY');
-insert into flight_day values ('1-3-567',6,'SATURDAY');
-insert into flight_day values ('1-3-567',7,'SUNDAY');
-insert into flight_day values ('--3-567',3,'WEDNESDAY');
-insert into flight_day values ('--3-567',5,'FRIDAY');
-insert into flight_day values ('--3-567',6,'SATURDAY');
-insert into flight_day values ('--3-567',7,'SUNDAY');
-insert into flight_day values ('12--567',1,'MONDAY');
-insert into flight_day values ('12--567',2,'TUESDAY');
-insert into flight_day values ('12--567',5,'FRIDAY');
-insert into flight_day values ('12--567',6,'SATURDAY');
-insert into flight_day values ('12--567',7,'SUNDAY');
-insert into flight_day values ('-2--567',2,'TUESDAY');
-insert into flight_day values ('-2--567',5,'FRIDAY');
-insert into flight_day values ('-2--567',6,'SATURDAY');
-insert into flight_day values ('-2--567',7,'SUNDAY');
-insert into flight_day values ('1---567',1,'MONDAY');
-insert into flight_day values ('1---567',5,'FRIDAY');
-insert into flight_day values ('1---567',6,'SATURDAY');
-insert into flight_day values ('1---567',7,'SUNDAY');
-insert into flight_day values ('----567',5,'FRIDAY');
-insert into flight_day values ('----567',6,'SATURDAY');
-insert into flight_day values ('----567',7,'SUNDAY');
-insert into flight_day values ('1234-67',1,'MONDAY');
-insert into flight_day values ('1234-67',2,'TUESDAY');
-insert into flight_day values ('1234-67',3,'WEDNESDAY');
-insert into flight_day values ('1234-67',4,'THURSDAY');
-insert into flight_day values ('1234-67',6,'SATURDAY');
-insert into flight_day values ('1234-67',7,'SUNDAY');
-insert into flight_day values ('-234-67',2,'TUESDAY');
-insert into flight_day values ('-234-67',3,'WEDNESDAY');
-insert into flight_day values ('-234-67',4,'THURSDAY');
-insert into flight_day values ('-234-67',6,'SATURDAY');
-insert into flight_day values ('-234-67',7,'SUNDAY');
-insert into flight_day values ('1-34-67',1,'MONDAY');
-insert into flight_day values ('1-34-67',3,'WEDNESDAY');
-insert into flight_day values ('1-34-67',4,'THURSDAY');
-insert into flight_day values ('1-34-67',6,'SATURDAY');
-insert into flight_day values ('1-34-67',7,'SUNDAY');
-insert into flight_day values ('--34-67',3,'WEDNESDAY');
-insert into flight_day values ('--34-67',4,'THURSDAY');
-insert into flight_day values ('--34-67',6,'SATURDAY');
-insert into flight_day values ('--34-67',7,'SUNDAY');
-insert into flight_day values ('12-4-67',1,'MONDAY');
-insert into flight_day values ('12-4-67',2,'TUESDAY');
-insert into flight_day values ('12-4-67',4,'THURSDAY');
-insert into flight_day values ('12-4-67',6,'SATURDAY');
-insert into flight_day values ('12-4-67',7,'SUNDAY');
-insert into flight_day values ('-2-4-67',2,'TUESDAY');
-insert into flight_day values ('-2-4-67',4,'THURSDAY');
-insert into flight_day values ('-2-4-67',6,'SATURDAY');
-insert into flight_day values ('-2-4-67',7,'SUNDAY');
-insert into flight_day values ('1--4-67',1,'MONDAY');
-insert into flight_day values ('1--4-67',4,'THURSDAY');
-insert into flight_day values ('1--4-67',6,'SATURDAY');
-insert into flight_day values ('1--4-67',7,'SUNDAY');
-insert into flight_day values ('---4-67',4,'THURSDAY');
-insert into flight_day values ('---4-67',6,'SATURDAY');
-insert into flight_day values ('---4-67',7,'SUNDAY');
-insert into flight_day values ('123--67',1,'MONDAY');
-insert into flight_day values ('123--67',2,'TUESDAY');
-insert into flight_day values ('123--67',3,'WEDNESDAY');
-insert into flight_day values ('123--67',6,'SATURDAY');
-insert into flight_day values ('123--67',7,'SUNDAY');
-insert into flight_day values ('-23--67',2,'TUESDAY');
-insert into flight_day values ('-23--67',3,'WEDNESDAY');
-insert into flight_day values ('-23--67',6,'SATURDAY');
-insert into flight_day values ('-23--67',7,'SUNDAY');
-insert into flight_day values ('1-3--67',1,'MONDAY');
-insert into flight_day values ('1-3--67',3,'WEDNESDAY');
-insert into flight_day values ('1-3--67',6,'SATURDAY');
-insert into flight_day values ('1-3--67',7,'SUNDAY');
-insert into flight_day values ('--3--67',3,'WEDNESDAY');
-insert into flight_day values ('--3--67',6,'SATURDAY');
-insert into flight_day values ('--3--67',7,'SUNDAY');
-insert into flight_day values ('12---67',1,'MONDAY');
-insert into flight_day values ('12---67',2,'TUESDAY');
-insert into flight_day values ('12---67',6,'SATURDAY');
-insert into flight_day values ('12---67',7,'SUNDAY');
-insert into flight_day values ('-2---67',2,'TUESDAY');
-insert into flight_day values ('-2---67',6,'SATURDAY');
-insert into flight_day values ('-2---67',7,'SUNDAY');
-insert into flight_day values ('1----67',1,'MONDAY');
-insert into flight_day values ('1----67',6,'SATURDAY');
-insert into flight_day values ('1----67',7,'SUNDAY');
-insert into flight_day values ('-----67',6,'SATURDAY');
-insert into flight_day values ('-----67',7,'SUNDAY');
-insert into flight_day values ('12345-7',1,'MONDAY');
-insert into flight_day values ('12345-7',2,'TUESDAY');
-insert into flight_day values ('12345-7',3,'WEDNESDAY');
-insert into flight_day values ('12345-7',4,'THURSDAY');
-insert into flight_day values ('12345-7',5,'FRIDAY');
-insert into flight_day values ('12345-7',7,'SUNDAY');
-insert into flight_day values ('-2345-7',2,'TUESDAY');
-insert into flight_day values ('-2345-7',3,'WEDNESDAY');
-insert into flight_day values ('-2345-7',4,'THURSDAY');
-insert into flight_day values ('-2345-7',5,'FRIDAY');
-insert into flight_day values ('-2345-7',7,'SUNDAY');
-insert into flight_day values ('1-345-7',1,'MONDAY');
-insert into flight_day values ('1-345-7',3,'WEDNESDAY');
-insert into flight_day values ('1-345-7',4,'THURSDAY');
-insert into flight_day values ('1-345-7',5,'FRIDAY');
-insert into flight_day values ('1-345-7',7,'SUNDAY');
-insert into flight_day values ('--345-7',3,'WEDNESDAY');
-insert into flight_day values ('--345-7',4,'THURSDAY');
-insert into flight_day values ('--345-7',5,'FRIDAY');
-insert into flight_day values ('--345-7',7,'SUNDAY');
-insert into flight_day values ('12-45-7',1,'MONDAY');
-insert into flight_day values ('12-45-7',2,'TUESDAY');
-insert into flight_day values ('12-45-7',4,'THURSDAY');
-insert into flight_day values ('12-45-7',5,'FRIDAY');
-insert into flight_day values ('12-45-7',7,'SUNDAY');
-insert into flight_day values ('-2-45-7',2,'TUESDAY');
-insert into flight_day values ('-2-45-7',4,'THURSDAY');
-insert into flight_day values ('-2-45-7',5,'FRIDAY');
-insert into flight_day values ('-2-45-7',7,'SUNDAY');
-insert into flight_day values ('1--45-7',1,'MONDAY');
-insert into flight_day values ('1--45-7',4,'THURSDAY');
-insert into flight_day values ('1--45-7',5,'FRIDAY');
-insert into flight_day values ('1--45-7',7,'SUNDAY');
-insert into flight_day values ('---45-7',4,'THURSDAY');
-insert into flight_day values ('---45-7',5,'FRIDAY');
-insert into flight_day values ('---45-7',7,'SUNDAY');
-insert into flight_day values ('123-5-7',1,'MONDAY');
-insert into flight_day values ('123-5-7',2,'TUESDAY');
-insert into flight_day values ('123-5-7',3,'WEDNESDAY');
-insert into flight_day values ('123-5-7',5,'FRIDAY');
-insert into flight_day values ('123-5-7',7,'SUNDAY');
-insert into flight_day values ('-23-5-7',2,'TUESDAY');
-insert into flight_day values ('-23-5-7',3,'WEDNESDAY');
-insert into flight_day values ('-23-5-7',5,'FRIDAY');
-insert into flight_day values ('-23-5-7',7,'SUNDAY');
-insert into flight_day values ('1-3-5-7',1,'MONDAY');
-insert into flight_day values ('1-3-5-7',3,'WEDNESDAY');
-insert into flight_day values ('1-3-5-7',5,'FRIDAY');
-insert into flight_day values ('1-3-5-7',7,'SUNDAY');
-insert into flight_day values ('--3-5-7',3,'WEDNESDAY');
-insert into flight_day values ('--3-5-7',5,'FRIDAY');
-insert into flight_day values ('--3-5-7',7,'SUNDAY');
-insert into flight_day values ('12--5-7',1,'MONDAY');
-insert into flight_day values ('12--5-7',2,'TUESDAY');
-insert into flight_day values ('12--5-7',5,'FRIDAY');
-insert into flight_day values ('12--5-7',7,'SUNDAY');
-insert into flight_day values ('-2--5-7',2,'TUESDAY');
-insert into flight_day values ('-2--5-7',5,'FRIDAY');
-insert into flight_day values ('-2--5-7',7,'SUNDAY');
-insert into flight_day values ('1---5-7',1,'MONDAY');
-insert into flight_day values ('1---5-7',5,'FRIDAY');
-insert into flight_day values ('1---5-7',7,'SUNDAY');
-insert into flight_day values ('----5-7',5,'FRIDAY');
-insert into flight_day values ('----5-7',7,'SUNDAY');
-insert into flight_day values ('1234--7',1,'MONDAY');
-insert into flight_day values ('1234--7',2,'TUESDAY');
-insert into flight_day values ('1234--7',3,'WEDNESDAY');
-insert into flight_day values ('1234--7',4,'THURSDAY');
-insert into flight_day values ('1234--7',7,'SUNDAY');
-insert into flight_day values ('-234--7',2,'TUESDAY');
-insert into flight_day values ('-234--7',3,'WEDNESDAY');
-insert into flight_day values ('-234--7',4,'THURSDAY');
-insert into flight_day values ('-234--7',7,'SUNDAY');
-insert into flight_day values ('1-34--7',1,'MONDAY');
-insert into flight_day values ('1-34--7',3,'WEDNESDAY');
-insert into flight_day values ('1-34--7',4,'THURSDAY');
-insert into flight_day values ('1-34--7',7,'SUNDAY');
-insert into flight_day values ('--34--7',3,'WEDNESDAY');
-insert into flight_day values ('--34--7',4,'THURSDAY');
-insert into flight_day values ('--34--7',7,'SUNDAY');
-insert into flight_day values ('12-4--7',1,'MONDAY');
-insert into flight_day values ('12-4--7',2,'TUESDAY');
-insert into flight_day values ('12-4--7',4,'THURSDAY');
-insert into flight_day values ('12-4--7',7,'SUNDAY');
-insert into flight_day values ('-2-4--7',2,'TUESDAY');
-insert into flight_day values ('-2-4--7',4,'THURSDAY');
-insert into flight_day values ('-2-4--7',7,'SUNDAY');
-insert into flight_day values ('1--4--7',1,'MONDAY');
-insert into flight_day values ('1--4--7',4,'THURSDAY');
-insert into flight_day values ('1--4--7',7,'SUNDAY');
-insert into flight_day values ('---4--7',4,'THURSDAY');
-insert into flight_day values ('---4--7',7,'SUNDAY');
-insert into flight_day values ('123---7',1,'MONDAY');
-insert into flight_day values ('123---7',2,'TUESDAY');
-insert into flight_day values ('123---7',3,'WEDNESDAY');
-insert into flight_day values ('123---7',7,'SUNDAY');
-insert into flight_day values ('-23---7',2,'TUESDAY');
-insert into flight_day values ('-23---7',3,'WEDNESDAY');
-insert into flight_day values ('-23---7',7,'SUNDAY');
-insert into flight_day values ('1-3---7',1,'MONDAY');
-insert into flight_day values ('1-3---7',3,'WEDNESDAY');
-insert into flight_day values ('1-3---7',7,'SUNDAY');
-insert into flight_day values ('--3---7',3,'WEDNESDAY');
-insert into flight_day values ('--3---7',7,'SUNDAY');
-insert into flight_day values ('12----7',1,'MONDAY');
-insert into flight_day values ('12----7',2,'TUESDAY');
-insert into flight_day values ('12----7',7,'SUNDAY');
-insert into flight_day values ('-2----7',2,'TUESDAY');
-insert into flight_day values ('-2----7',7,'SUNDAY');
-insert into flight_day values ('1-----7',1,'MONDAY');
-insert into flight_day values ('1-----7',7,'SUNDAY');
-insert into flight_day values ('------7',7,'SUNDAY');
-insert into flight_day values ('123456-',1,'MONDAY');
-insert into flight_day values ('123456-',2,'TUESDAY');
-insert into flight_day values ('123456-',3,'WEDNESDAY');
-insert into flight_day values ('123456-',4,'THURSDAY');
-insert into flight_day values ('123456-',5,'FRIDAY');
-insert into flight_day values ('123456-',6,'SATURDAY');
-insert into flight_day values ('-23456-',2,'TUESDAY');
-insert into flight_day values ('-23456-',3,'WEDNESDAY');
-insert into flight_day values ('-23456-',4,'THURSDAY');
-insert into flight_day values ('-23456-',5,'FRIDAY');
-insert into flight_day values ('-23456-',6,'SATURDAY');
-insert into flight_day values ('1-3456-',1,'MONDAY');
-insert into flight_day values ('1-3456-',3,'WEDNESDAY');
-insert into flight_day values ('1-3456-',4,'THURSDAY');
-insert into flight_day values ('1-3456-',5,'FRIDAY');
-insert into flight_day values ('1-3456-',6,'SATURDAY');
-insert into flight_day values ('--3456-',3,'WEDNESDAY');
-insert into flight_day values ('--3456-',4,'THURSDAY');
-insert into flight_day values ('--3456-',5,'FRIDAY');
-insert into flight_day values ('--3456-',6,'SATURDAY');
-insert into flight_day values ('12-456-',1,'MONDAY');
-insert into flight_day values ('12-456-',2,'TUESDAY');
-insert into flight_day values ('12-456-',4,'THURSDAY');
-insert into flight_day values ('12-456-',5,'FRIDAY');
-insert into flight_day values ('12-456-',6,'SATURDAY');
-insert into flight_day values ('-2-456-',2,'TUESDAY');
-insert into flight_day values ('-2-456-',4,'THURSDAY');
-insert into flight_day values ('-2-456-',5,'FRIDAY');
-insert into flight_day values ('-2-456-',6,'SATURDAY');
-insert into flight_day values ('1--456-',1,'MONDAY');
-insert into flight_day values ('1--456-',4,'THURSDAY');
-insert into flight_day values ('1--456-',5,'FRIDAY');
-insert into flight_day values ('1--456-',6,'SATURDAY');
-insert into flight_day values ('---456-',4,'THURSDAY');
-insert into flight_day values ('---456-',5,'FRIDAY');
-insert into flight_day values ('---456-',6,'SATURDAY');
-insert into flight_day values ('123-56-',1,'MONDAY');
-insert into flight_day values ('123-56-',2,'TUESDAY');
-insert into flight_day values ('123-56-',3,'WEDNESDAY');
-insert into flight_day values ('123-56-',5,'FRIDAY');
-insert into flight_day values ('123-56-',6,'SATURDAY');
-insert into flight_day values ('-23-56-',2,'TUESDAY');
-insert into flight_day values ('-23-56-',3,'WEDNESDAY');
-insert into flight_day values ('-23-56-',5,'FRIDAY');
-insert into flight_day values ('-23-56-',6,'SATURDAY');
-insert into flight_day values ('1-3-56-',1,'MONDAY');
-insert into flight_day values ('1-3-56-',3,'WEDNESDAY');
-insert into flight_day values ('1-3-56-',5,'FRIDAY');
-insert into flight_day values ('1-3-56-',6,'SATURDAY');
-insert into flight_day values ('--3-56-',3,'WEDNESDAY');
-insert into flight_day values ('--3-56-',5,'FRIDAY');
-insert into flight_day values ('--3-56-',6,'SATURDAY');
-insert into flight_day values ('12--56-',1,'MONDAY');
-insert into flight_day values ('12--56-',2,'TUESDAY');
-insert into flight_day values ('12--56-',5,'FRIDAY');
-insert into flight_day values ('12--56-',6,'SATURDAY');
-insert into flight_day values ('-2--56-',2,'TUESDAY');
-insert into flight_day values ('-2--56-',5,'FRIDAY');
-insert into flight_day values ('-2--56-',6,'SATURDAY');
-insert into flight_day values ('1---56-',1,'MONDAY');
-insert into flight_day values ('1---56-',5,'FRIDAY');
-insert into flight_day values ('1---56-',6,'SATURDAY');
-insert into flight_day values ('----56-',5,'FRIDAY');
-insert into flight_day values ('----56-',6,'SATURDAY');
-insert into flight_day values ('1234-6-',1,'MONDAY');
-insert into flight_day values ('1234-6-',2,'TUESDAY');
-insert into flight_day values ('1234-6-',3,'WEDNESDAY');
-insert into flight_day values ('1234-6-',4,'THURSDAY');
-insert into flight_day values ('1234-6-',6,'SATURDAY');
-insert into flight_day values ('-234-6-',2,'TUESDAY');
-insert into flight_day values ('-234-6-',3,'WEDNESDAY');
-insert into flight_day values ('-234-6-',4,'THURSDAY');
-insert into flight_day values ('-234-6-',6,'SATURDAY');
-insert into flight_day values ('1-34-6-',1,'MONDAY');
-insert into flight_day values ('1-34-6-',3,'WEDNESDAY');
-insert into flight_day values ('1-34-6-',4,'THURSDAY');
-insert into flight_day values ('1-34-6-',6,'SATURDAY');
-insert into flight_day values ('--34-6-',3,'WEDNESDAY');
-insert into flight_day values ('--34-6-',4,'THURSDAY');
-insert into flight_day values ('--34-6-',6,'SATURDAY');
-insert into flight_day values ('12-4-6-',1,'MONDAY');
-insert into flight_day values ('12-4-6-',2,'TUESDAY');
-insert into flight_day values ('12-4-6-',4,'THURSDAY');
-insert into flight_day values ('12-4-6-',6,'SATURDAY');
-insert into flight_day values ('-2-4-6-',2,'TUESDAY');
-insert into flight_day values ('-2-4-6-',4,'THURSDAY');
-insert into flight_day values ('-2-4-6-',6,'SATURDAY');
-insert into flight_day values ('1--4-6-',1,'MONDAY');
-insert into flight_day values ('1--4-6-',4,'THURSDAY');
-insert into flight_day values ('1--4-6-',6,'SATURDAY');
-insert into flight_day values ('---4-6-',4,'THURSDAY');
-insert into flight_day values ('---4-6-',6,'SATURDAY');
-insert into flight_day values ('123--6-',1,'MONDAY');
-insert into flight_day values ('123--6-',2,'TUESDAY');
-insert into flight_day values ('123--6-',3,'WEDNESDAY');
-insert into flight_day values ('123--6-',6,'SATURDAY');
-insert into flight_day values ('-23--6-',2,'TUESDAY');
-insert into flight_day values ('-23--6-',3,'WEDNESDAY');
-insert into flight_day values ('-23--6-',6,'SATURDAY');
-insert into flight_day values ('1-3--6-',1,'MONDAY');
-insert into flight_day values ('1-3--6-',3,'WEDNESDAY');
-insert into flight_day values ('1-3--6-',6,'SATURDAY');
-insert into flight_day values ('--3--6-',3,'WEDNESDAY');
-insert into flight_day values ('--3--6-',6,'SATURDAY');
-insert into flight_day values ('12---6-',1,'MONDAY');
-insert into flight_day values ('12---6-',2,'TUESDAY');
-insert into flight_day values ('12---6-',6,'SATURDAY');
-insert into flight_day values ('-2---6-',2,'TUESDAY');
-insert into flight_day values ('-2---6-',6,'SATURDAY');
-insert into flight_day values ('1----6-',1,'MONDAY');
-insert into flight_day values ('1----6-',6,'SATURDAY');
-insert into flight_day values ('-----6-',6,'SATURDAY');
-insert into flight_day values ('12345--',1,'MONDAY');
-insert into flight_day values ('12345--',2,'TUESDAY');
-insert into flight_day values ('12345--',3,'WEDNESDAY');
-insert into flight_day values ('12345--',4,'THURSDAY');
-insert into flight_day values ('12345--',5,'FRIDAY');
-insert into flight_day values ('-2345--',2,'TUESDAY');
-insert into flight_day values ('-2345--',3,'WEDNESDAY');
-insert into flight_day values ('-2345--',4,'THURSDAY');
-insert into flight_day values ('-2345--',5,'FRIDAY');
-insert into flight_day values ('1-345--',1,'MONDAY');
-insert into flight_day values ('1-345--',3,'WEDNESDAY');
-insert into flight_day values ('1-345--',4,'THURSDAY');
-insert into flight_day values ('1-345--',5,'FRIDAY');
-insert into flight_day values ('--345--',3,'WEDNESDAY');
-insert into flight_day values ('--345--',4,'THURSDAY');
-insert into flight_day values ('--345--',5,'FRIDAY');
-insert into flight_day values ('12-45--',1,'MONDAY');
-insert into flight_day values ('12-45--',2,'TUESDAY');
-insert into flight_day values ('12-45--',4,'THURSDAY');
-insert into flight_day values ('12-45--',5,'FRIDAY');
-insert into flight_day values ('-2-45--',2,'TUESDAY');
-insert into flight_day values ('-2-45--',4,'THURSDAY');
-insert into flight_day values ('-2-45--',5,'FRIDAY');
-insert into flight_day values ('1--45--',1,'MONDAY');
-insert into flight_day values ('1--45--',4,'THURSDAY');
-insert into flight_day values ('1--45--',5,'FRIDAY');
-insert into flight_day values ('---45--',4,'THURSDAY');
-insert into flight_day values ('---45--',5,'FRIDAY');
-insert into flight_day values ('123-5--',1,'MONDAY');
-insert into flight_day values ('123-5--',2,'TUESDAY');
-insert into flight_day values ('123-5--',3,'WEDNESDAY');
-insert into flight_day values ('123-5--',5,'FRIDAY');
-insert into flight_day values ('-23-5--',2,'TUESDAY');
-insert into flight_day values ('-23-5--',3,'WEDNESDAY');
-insert into flight_day values ('-23-5--',5,'FRIDAY');
-insert into flight_day values ('1-3-5--',1,'MONDAY');
-insert into flight_day values ('1-3-5--',3,'WEDNESDAY');
-insert into flight_day values ('1-3-5--',5,'FRIDAY');
-insert into flight_day values ('--3-5--',3,'WEDNESDAY');
-insert into flight_day values ('--3-5--',5,'FRIDAY');
-insert into flight_day values ('12--5--',1,'MONDAY');
-insert into flight_day values ('12--5--',2,'TUESDAY');
-insert into flight_day values ('12--5--',5,'FRIDAY');
-insert into flight_day values ('-2--5--',2,'TUESDAY');
-insert into flight_day values ('-2--5--',5,'FRIDAY');
-insert into flight_day values ('1---5--',1,'MONDAY');
-insert into flight_day values ('1---5--',5,'FRIDAY');
-insert into flight_day values ('----5--',5,'FRIDAY');
-insert into flight_day values ('1234---',1,'MONDAY');
-insert into flight_day values ('1234---',2,'TUESDAY');
-insert into flight_day values ('1234---',3,'WEDNESDAY');
-insert into flight_day values ('1234---',4,'THURSDAY');
-insert into flight_day values ('-234---',2,'TUESDAY');
-insert into flight_day values ('-234---',3,'WEDNESDAY');
-insert into flight_day values ('-234---',4,'THURSDAY');
-insert into flight_day values ('1-34---',1,'MONDAY');
-insert into flight_day values ('1-34---',3,'WEDNESDAY');
-insert into flight_day values ('1-34---',4,'THURSDAY');
-insert into flight_day values ('--34---',3,'WEDNESDAY');
-insert into flight_day values ('--34---',4,'THURSDAY');
-insert into flight_day values ('12-4---',1,'MONDAY');
-insert into flight_day values ('12-4---',2,'TUESDAY');
-insert into flight_day values ('12-4---',4,'THURSDAY');
-insert into flight_day values ('-2-4---',2,'TUESDAY');
-insert into flight_day values ('-2-4---',4,'THURSDAY');
-insert into flight_day values ('1--4---',1,'MONDAY');
-insert into flight_day values ('1--4---',4,'THURSDAY');
-insert into flight_day values ('---4---',4,'THURSDAY');
-insert into flight_day values ('123----',1,'MONDAY');
-insert into flight_day values ('123----',2,'TUESDAY');
-insert into flight_day values ('123----',3,'WEDNESDAY');
-insert into flight_day values ('-23----',2,'TUESDAY');
-insert into flight_day values ('-23----',3,'WEDNESDAY');
-insert into flight_day values ('1-3----',1,'MONDAY');
-insert into flight_day values ('1-3----',3,'WEDNESDAY');
-insert into flight_day values ('--3----',3,'WEDNESDAY');
-insert into flight_day values ('12-----',1,'MONDAY');
-insert into flight_day values ('12-----',2,'TUESDAY');
-insert into flight_day values ('-2-----',2,'TUESDAY');
-insert into flight_day values ('1------',1,'MONDAY');
-insert into flight_fare values (101910,'7100001');
-insert into flight_fare values (101911,'7100001');
-insert into flight_fare values (101912,'7100001');
-insert into flight_fare values (101915,'7100001');
-insert into flight_fare values (101916,'7100001');
-insert into flight_fare values (101917,'7100001');
-insert into flight_fare values (101918,'7100001');
-insert into flight_fare values (101922,'7100001');
-insert into flight_fare values (101923,'7100001');
-insert into flight_fare values (101925,'7100001');
-insert into flight_fare values (101926,'7100001');
-insert into flight_fare values (101927,'7100001');
-insert into flight_fare values (101928,'7100001');
-insert into flight_fare values (101913,'7100001');
-insert into flight_fare values (101924,'7100001');
-insert into flight_fare values (101909,'7100002');
-insert into flight_fare values (101929,'7100002');
-insert into flight_fare values (101908,'7100002');
-insert into flight_fare values (101910,'7100003');
-insert into flight_fare values (101911,'7100003');
-insert into flight_fare values (101912,'7100003');
-insert into flight_fare values (101914,'7100003');
-insert into flight_fare values (101915,'7100003');
-insert into flight_fare values (101916,'7100003');
-insert into flight_fare values (101917,'7100003');
-insert into flight_fare values (101918,'7100003');
-insert into flight_fare values (101922,'7100003');
-insert into flight_fare values (101923,'7100003');
-insert into flight_fare values (101925,'7100003');
-insert into flight_fare values (101926,'7100003');
-insert into flight_fare values (101927,'7100003');
-insert into flight_fare values (101928,'7100003');
-insert into flight_fare values (101913,'7100003');
-insert into flight_fare values (101924,'7100003');
-insert into flight_fare values (101909,'7100004');
-insert into flight_fare values (101929,'7100004');
-insert into flight_fare values (101908,'7100004');
-insert into flight_fare values (101910,'7100005');
-insert into flight_fare values (101911,'7100005');
-insert into flight_fare values (101914,'7100005');
-insert into flight_fare values (101915,'7100005');
-insert into flight_fare values (101918,'7100005');
-insert into flight_fare values (101923,'7100005');
-insert into flight_fare values (101926,'7100005');
-insert into flight_fare values (101910,'7100006');
-insert into flight_fare values (101911,'7100006');
-insert into flight_fare values (101914,'7100006');
-insert into flight_fare values (101915,'7100006');
-insert into flight_fare values (101918,'7100006');
-insert into flight_fare values (101923,'7100006');
-insert into flight_fare values (101926,'7100006');
-insert into flight_fare values (101908,'7100007');
-insert into flight_fare values (101913,'7100007');
-insert into flight_fare values (101924,'7100007');
-insert into flight_fare values (101909,'7100007');
-insert into flight_fare values (101910,'7100007');
-insert into flight_fare values (101911,'7100007');
-insert into flight_fare values (101912,'7100007');
-insert into flight_fare values (101914,'7100007');
-insert into flight_fare values (101915,'7100007');
-insert into flight_fare values (101916,'7100007');
-insert into flight_fare values (101917,'7100007');
-insert into flight_fare values (101918,'7100007');
-insert into flight_fare values (101922,'7100007');
-insert into flight_fare values (101923,'7100007');
-insert into flight_fare values (101925,'7100007');
-insert into flight_fare values (101926,'7100007');
-insert into flight_fare values (101927,'7100007');
-insert into flight_fare values (101928,'7100007');
-insert into flight_fare values (101929,'7100007');
-insert into flight_fare values (101908,'7100008');
-insert into flight_fare values (101913,'7100008');
-insert into flight_fare values (101924,'7100008');
-insert into flight_fare values (101909,'7100008');
-insert into flight_fare values (101910,'7100008');
-insert into flight_fare values (101911,'7100008');
-insert into flight_fare values (101912,'7100008');
-insert into flight_fare values (101914,'7100008');
-insert into flight_fare values (101915,'7100008');
-insert into flight_fare values (101917,'7100008');
-insert into flight_fare values (101918,'7100008');
-insert into flight_fare values (101922,'7100008');
-insert into flight_fare values (101923,'7100008');
-insert into flight_fare values (101925,'7100008');
-insert into flight_fare values (101926,'7100008');
-insert into flight_fare values (101928,'7100008');
-insert into flight_fare values (101929,'7100008');
-insert into flight_fare values (101913,'7100009');
-insert into flight_fare values (101924,'7100009');
-insert into flight_fare values (101912,'7100009');
-insert into flight_fare values (101916,'7100009');
-insert into flight_fare values (101917,'7100009');
-insert into flight_fare values (101922,'7100009');
-insert into flight_fare values (101925,'7100009');
-insert into flight_fare values (101927,'7100009');
-insert into flight_fare values (101928,'7100009');
-insert into flight_fare values (101913,'7100010');
-insert into flight_fare values (101924,'7100010');
-insert into flight_fare values (101910,'7100010');
-insert into flight_fare values (101911,'7100010');
-insert into flight_fare values (101912,'7100010');
-insert into flight_fare values (101914,'7100010');
-insert into flight_fare values (101915,'7100010');
-insert into flight_fare values (101916,'7100010');
-insert into flight_fare values (101917,'7100010');
-insert into flight_fare values (101918,'7100010');
-insert into flight_fare values (101922,'7100010');
-insert into flight_fare values (101923,'7100010');
-insert into flight_fare values (101925,'7100010');
-insert into flight_fare values (101926,'7100010');
-insert into flight_fare values (101927,'7100010');
-insert into flight_fare values (101928,'7100010');
-insert into flight_fare values (101951,'7100011');
-insert into flight_fare values (101952,'7100011');
-insert into flight_fare values (101953,'7100011');
-insert into flight_fare values (101954,'7100011');
-insert into flight_fare values (101955,'7100011');
-insert into flight_fare values (101956,'7100011');
-insert into flight_fare values (101957,'7100011');
-insert into flight_fare values (101958,'7100011');
-insert into flight_fare values (101959,'7100012');
-insert into flight_fare values (101951,'7100013');
-insert into flight_fare values (101952,'7100013');
-insert into flight_fare values (101953,'7100013');
-insert into flight_fare values (101954,'7100013');
-insert into flight_fare values (101955,'7100013');
-insert into flight_fare values (101956,'7100013');
-insert into flight_fare values (101957,'7100013');
-insert into flight_fare values (101958,'7100013');
-insert into flight_fare values (101959,'7100014');
-insert into flight_fare values (101951,'7100015');
-insert into flight_fare values (101952,'7100015');
-insert into flight_fare values (101953,'7100015');
-insert into flight_fare values (101954,'7100015');
-insert into flight_fare values (101955,'7100015');
-insert into flight_fare values (101956,'7100015');
-insert into flight_fare values (101957,'7100015');
-insert into flight_fare values (101958,'7100015');
-insert into flight_fare values (101951,'7100016');
-insert into flight_fare values (101952,'7100016');
-insert into flight_fare values (101953,'7100016');
-insert into flight_fare values (101954,'7100016');
-insert into flight_fare values (101955,'7100016');
-insert into flight_fare values (101956,'7100016');
-insert into flight_fare values (101957,'7100016');
-insert into flight_fare values (101958,'7100016');
-insert into flight_fare values (101952,'7100017');
-insert into flight_fare values (101953,'7100017');
-insert into flight_fare values (101955,'7100017');
-insert into flight_fare values (101958,'7100017');
-insert into flight_fare values (101951,'7100018');
-insert into flight_fare values (101952,'7100018');
-insert into flight_fare values (101953,'7100018');
-insert into flight_fare values (101954,'7100018');
-insert into flight_fare values (101955,'7100018');
-insert into flight_fare values (101956,'7100018');
-insert into flight_fare values (101957,'7100018');
-insert into flight_fare values (101958,'7100018');
-insert into flight_fare values (102125,'7100019');
-insert into flight_fare values (102129,'7100019');
-insert into flight_fare values (102122,'7100020');
-insert into flight_fare values (102123,'7100020');
-insert into flight_fare values (102126,'7100020');
-insert into flight_fare values (102127,'7100020');
-insert into flight_fare values (102128,'7100020');
-insert into flight_fare values (102133,'7100020');
-insert into flight_fare values (102134,'7100021');
-insert into flight_fare values (102135,'7100021');
-insert into flight_fare values (102125,'7100022');
-insert into flight_fare values (102129,'7100022');
-insert into flight_fare values (102122,'7100023');
-insert into flight_fare values (102123,'7100023');
-insert into flight_fare values (102126,'7100023');
-insert into flight_fare values (102127,'7100023');
-insert into flight_fare values (102128,'7100023');
-insert into flight_fare values (102133,'7100023');
-insert into flight_fare values (102122,'7100024');
-insert into flight_fare values (102126,'7100024');
-insert into flight_fare values (102127,'7100024');
-insert into flight_fare values (102133,'7100024');
-insert into flight_fare values (102123,'7100025');
-insert into flight_fare values (102128,'7100025');
-insert into flight_fare values (102134,'7100025');
-insert into flight_fare values (102122,'7100026');
-insert into flight_fare values (102126,'7100026');
-insert into flight_fare values (102127,'7100026');
-insert into flight_fare values (102133,'7100026');
-insert into flight_fare values (102135,'7100026');
-insert into flight_fare values (102134,'7100027');
-insert into flight_fare values (102135,'7100027');
-insert into flight_fare values (102122,'7100028');
-insert into flight_fare values (102125,'7100028');
-insert into flight_fare values (102126,'7100028');
-insert into flight_fare values (102127,'7100028');
-insert into flight_fare values (102129,'7100028');
-insert into flight_fare values (102133,'7100028');
-insert into flight_fare values (102135,'7100028');
-insert into flight_fare values (102122,'7100029');
-insert into flight_fare values (102125,'7100029');
-insert into flight_fare values (102126,'7100029');
-insert into flight_fare values (102127,'7100029');
-insert into flight_fare values (102129,'7100029');
-insert into flight_fare values (102133,'7100029');
-insert into flight_fare values (102135,'7100029');
-insert into flight_fare values (102122,'7100030');
-insert into flight_fare values (102123,'7100030');
-insert into flight_fare values (102125,'7100030');
-insert into flight_fare values (102126,'7100030');
-insert into flight_fare values (102127,'7100030');
-insert into flight_fare values (102128,'7100030');
-insert into flight_fare values (102129,'7100030');
-insert into flight_fare values (102133,'7100030');
-insert into flight_fare values (102135,'7100030');
-insert into flight_fare values (102122,'7100031');
-insert into flight_fare values (102123,'7100031');
-insert into flight_fare values (102125,'7100031');
-insert into flight_fare values (102126,'7100031');
-insert into flight_fare values (102127,'7100031');
-insert into flight_fare values (102128,'7100031');
-insert into flight_fare values (102129,'7100031');
-insert into flight_fare values (102133,'7100031');
-insert into flight_fare values (102135,'7100031');
-insert into flight_fare values (102122,'7100032');
-insert into flight_fare values (102125,'7100032');
-insert into flight_fare values (102126,'7100032');
-insert into flight_fare values (102127,'7100032');
-insert into flight_fare values (102129,'7100032');
-insert into flight_fare values (102133,'7100032');
-insert into flight_fare values (102122,'7100033');
-insert into flight_fare values (102123,'7100033');
-insert into flight_fare values (102125,'7100033');
-insert into flight_fare values (102126,'7100033');
-insert into flight_fare values (102127,'7100033');
-insert into flight_fare values (102128,'7100033');
-insert into flight_fare values (102129,'7100033');
-insert into flight_fare values (102133,'7100033');
-insert into flight_fare values (102122,'7100034');
-insert into flight_fare values (102125,'7100034');
-insert into flight_fare values (102126,'7100034');
-insert into flight_fare values (102127,'7100034');
-insert into flight_fare values (102129,'7100034');
-insert into flight_fare values (102133,'7100034');
-insert into flight_fare values (102123,'7100035');
-insert into flight_fare values (102128,'7100035');
-insert into flight_fare values (102134,'7100035');
-insert into flight_fare values (102139,'7100036');
-insert into flight_fare values (102147,'7100036');
-insert into flight_fare values (102164,'7100036');
-insert into flight_fare values (102172,'7100036');
-insert into flight_fare values (102144,'7100037');
-insert into flight_fare values (102148,'7100037');
-insert into flight_fare values (102150,'7100037');
-insert into flight_fare values (102162,'7100037');
-insert into flight_fare values (102163,'7100037');
-insert into flight_fare values (102166,'7100037');
-insert into flight_fare values (102173,'7100037');
-insert into flight_fare values (102177,'7100037');
-insert into flight_fare values (102165,'7100038');
-insert into flight_fare values (102188,'7100039');
-insert into flight_fare values (102136,'7100040');
-insert into flight_fare values (102137,'7100040');
-insert into flight_fare values (102190,'7100040');
-insert into flight_fare values (102191,'7100040');
-insert into flight_fare values (102192,'7100040');
-insert into flight_fare values (102139,'7100041');
-insert into flight_fare values (102147,'7100041');
-insert into flight_fare values (102164,'7100041');
-insert into flight_fare values (102172,'7100041');
-insert into flight_fare values (102144,'7100042');
-insert into flight_fare values (102148,'7100042');
-insert into flight_fare values (102150,'7100042');
-insert into flight_fare values (102162,'7100042');
-insert into flight_fare values (102163,'7100042');
-insert into flight_fare values (102166,'7100042');
-insert into flight_fare values (102173,'7100042');
-insert into flight_fare values (102177,'7100042');
-insert into flight_fare values (102188,'7100043');
-insert into flight_fare values (102136,'7100044');
-insert into flight_fare values (102137,'7100044');
-insert into flight_fare values (102190,'7100044');
-insert into flight_fare values (102191,'7100044');
-insert into flight_fare values (102192,'7100044');
-insert into flight_fare values (102136,'7100045');
-insert into flight_fare values (102144,'7100045');
-insert into flight_fare values (102148,'7100045');
-insert into flight_fare values (102150,'7100045');
-insert into flight_fare values (102162,'7100045');
-insert into flight_fare values (102166,'7100045');
-insert into flight_fare values (102173,'7100045');
-insert into flight_fare values (102177,'7100045');
-insert into flight_fare values (102190,'7100045');
-insert into flight_fare values (102191,'7100045');
-insert into flight_fare values (102192,'7100045');
-insert into flight_fare values (102136,'7100046');
-insert into flight_fare values (102137,'7100046');
-insert into flight_fare values (102144,'7100046');
-insert into flight_fare values (102148,'7100046');
-insert into flight_fare values (102150,'7100046');
-insert into flight_fare values (102162,'7100046');
-insert into flight_fare values (102163,'7100046');
-insert into flight_fare values (102166,'7100046');
-insert into flight_fare values (102173,'7100046');
-insert into flight_fare values (102177,'7100046');
-insert into flight_fare values (102190,'7100046');
-insert into flight_fare values (102191,'7100046');
-insert into flight_fare values (102192,'7100046');
-insert into flight_fare values (102144,'7100047');
-insert into flight_fare values (102148,'7100047');
-insert into flight_fare values (102150,'7100047');
-insert into flight_fare values (102162,'7100047');
-insert into flight_fare values (102163,'7100047');
-insert into flight_fare values (102165,'7100047');
-insert into flight_fare values (102166,'7100047');
-insert into flight_fare values (102173,'7100047');
-insert into flight_fare values (102177,'7100047');
-insert into flight_fare values (102139,'7100048');
-insert into flight_fare values (102147,'7100048');
-insert into flight_fare values (102164,'7100048');
-insert into flight_fare values (102172,'7100048');
-insert into flight_fare values (102136,'7100049');
-insert into flight_fare values (102137,'7100049');
-insert into flight_fare values (102144,'7100049');
-insert into flight_fare values (102148,'7100049');
-insert into flight_fare values (102150,'7100049');
-insert into flight_fare values (102162,'7100049');
-insert into flight_fare values (102163,'7100049');
-insert into flight_fare values (102165,'7100049');
-insert into flight_fare values (102166,'7100049');
-insert into flight_fare values (102173,'7100049');
-insert into flight_fare values (102177,'7100049');
-insert into flight_fare values (102190,'7100049');
-insert into flight_fare values (102191,'7100049');
-insert into flight_fare values (102192,'7100049');
-insert into flight_fare values (102144,'7100050');
-insert into flight_fare values (102148,'7100050');
-insert into flight_fare values (102150,'7100050');
-insert into flight_fare values (102162,'7100050');
-insert into flight_fare values (102163,'7100050');
-insert into flight_fare values (102166,'7100050');
-insert into flight_fare values (102173,'7100050');
-insert into flight_fare values (102177,'7100050');
-insert into flight_fare values (102674,'7100051');
-insert into flight_fare values (102674,'7100052');
-insert into flight_fare values (102674,'7100053');
-insert into flight_fare values (102674,'7100054');
-insert into flight_fare values (102674,'7100055');
-insert into flight_fare values (102674,'7100056');
-insert into flight_fare values (102674,'7100057');
-insert into flight_fare values (102767,'7100058');
-insert into flight_fare values (102771,'7100058');
-insert into flight_fare values (102777,'7100058');
-insert into flight_fare values (102768,'7100059');
-insert into flight_fare values (102769,'7100059');
-insert into flight_fare values (102770,'7100059');
-insert into flight_fare values (102772,'7100059');
-insert into flight_fare values (102773,'7100059');
-insert into flight_fare values (102774,'7100059');
-insert into flight_fare values (102775,'7100059');
-insert into flight_fare values (102776,'7100059');
-insert into flight_fare values (102778,'7100059');
-insert into flight_fare values (102779,'7100059');
-insert into flight_fare values (102781,'7100059');
-insert into flight_fare values (102782,'7100059');
-insert into flight_fare values (102766,'7100060');
-insert into flight_fare values (102783,'7100060');
-insert into flight_fare values (102784,'7100060');
-insert into flight_fare values (102768,'7100061');
-insert into flight_fare values (102769,'7100061');
-insert into flight_fare values (102770,'7100061');
-insert into flight_fare values (102772,'7100061');
-insert into flight_fare values (102773,'7100061');
-insert into flight_fare values (102774,'7100061');
-insert into flight_fare values (102775,'7100061');
-insert into flight_fare values (102776,'7100061');
-insert into flight_fare values (102778,'7100061');
-insert into flight_fare values (102779,'7100061');
-insert into flight_fare values (102781,'7100061');
-insert into flight_fare values (102782,'7100061');
-insert into flight_fare values (102767,'7100062');
-insert into flight_fare values (102771,'7100062');
-insert into flight_fare values (102777,'7100062');
-insert into flight_fare values (102766,'7100063');
-insert into flight_fare values (102783,'7100063');
-insert into flight_fare values (102784,'7100063');
-insert into flight_fare values (102768,'7100064');
-insert into flight_fare values (102769,'7100064');
-insert into flight_fare values (102772,'7100064');
-insert into flight_fare values (102774,'7100064');
-insert into flight_fare values (102775,'7100064');
-insert into flight_fare values (102778,'7100064');
-insert into flight_fare values (102781,'7100064');
-insert into flight_fare values (102783,'7100064');
-insert into flight_fare values (102766,'7100065');
-insert into flight_fare values (102767,'7100065');
-insert into flight_fare values (102768,'7100065');
-insert into flight_fare values (102769,'7100065');
-insert into flight_fare values (102770,'7100065');
-insert into flight_fare values (102771,'7100065');
-insert into flight_fare values (102772,'7100065');
-insert into flight_fare values (102773,'7100065');
-insert into flight_fare values (102774,'7100065');
-insert into flight_fare values (102775,'7100065');
-insert into flight_fare values (102776,'7100065');
-insert into flight_fare values (102777,'7100065');
-insert into flight_fare values (102778,'7100065');
-insert into flight_fare values (102779,'7100065');
-insert into flight_fare values (102781,'7100065');
-insert into flight_fare values (102782,'7100065');
-insert into flight_fare values (102784,'7100065');
-insert into flight_fare values (102766,'7100066');
-insert into flight_fare values (102767,'7100066');
-insert into flight_fare values (102768,'7100066');
-insert into flight_fare values (102769,'7100066');
-insert into flight_fare values (102770,'7100066');
-insert into flight_fare values (102771,'7100066');
-insert into flight_fare values (102772,'7100066');
-insert into flight_fare values (102773,'7100066');
-insert into flight_fare values (102774,'7100066');
-insert into flight_fare values (102775,'7100066');
-insert into flight_fare values (102776,'7100066');
-insert into flight_fare values (102777,'7100066');
-insert into flight_fare values (102778,'7100066');
-insert into flight_fare values (102779,'7100066');
-insert into flight_fare values (102781,'7100066');
-insert into flight_fare values (102782,'7100066');
-insert into flight_fare values (102784,'7100066');
-insert into flight_fare values (102768,'7100067');
-insert into flight_fare values (102769,'7100067');
-insert into flight_fare values (102772,'7100067');
-insert into flight_fare values (102774,'7100067');
-insert into flight_fare values (102775,'7100067');
-insert into flight_fare values (102778,'7100067');
-insert into flight_fare values (102781,'7100067');
-insert into flight_fare values (102783,'7100067');
-insert into flight_fare values (102766,'7100068');
-insert into flight_fare values (102767,'7100068');
-insert into flight_fare values (102768,'7100068');
-insert into flight_fare values (102769,'7100068');
-insert into flight_fare values (102770,'7100068');
-insert into flight_fare values (102771,'7100068');
-insert into flight_fare values (102772,'7100068');
-insert into flight_fare values (102773,'7100068');
-insert into flight_fare values (102774,'7100068');
-insert into flight_fare values (102775,'7100068');
-insert into flight_fare values (102776,'7100068');
-insert into flight_fare values (102777,'7100068');
-insert into flight_fare values (102778,'7100068');
-insert into flight_fare values (102779,'7100068');
-insert into flight_fare values (102781,'7100068');
-insert into flight_fare values (102782,'7100068');
-insert into flight_fare values (102784,'7100068');
-insert into flight_fare values (102766,'7100069');
-insert into flight_fare values (102767,'7100069');
-insert into flight_fare values (102768,'7100069');
-insert into flight_fare values (102769,'7100069');
-insert into flight_fare values (102770,'7100069');
-insert into flight_fare values (102771,'7100069');
-insert into flight_fare values (102772,'7100069');
-insert into flight_fare values (102773,'7100069');
-insert into flight_fare values (102774,'7100069');
-insert into flight_fare values (102775,'7100069');
-insert into flight_fare values (102776,'7100069');
-insert into flight_fare values (102777,'7100069');
-insert into flight_fare values (102778,'7100069');
-insert into flight_fare values (102779,'7100069');
-insert into flight_fare values (102781,'7100069');
-insert into flight_fare values (102782,'7100069');
-insert into flight_fare values (102784,'7100069');
-insert into flight_fare values (102767,'7100070');
-insert into flight_fare values (102770,'7100070');
-insert into flight_fare values (102771,'7100070');
-insert into flight_fare values (102773,'7100070');
-insert into flight_fare values (102776,'7100070');
-insert into flight_fare values (102777,'7100070');
-insert into flight_fare values (102779,'7100070');
-insert into flight_fare values (102782,'7100070');
-insert into flight_fare values (102767,'7100071');
-insert into flight_fare values (102768,'7100071');
-insert into flight_fare values (102769,'7100071');
-insert into flight_fare values (102770,'7100071');
-insert into flight_fare values (102771,'7100071');
-insert into flight_fare values (102772,'7100071');
-insert into flight_fare values (102773,'7100071');
-insert into flight_fare values (102774,'7100071');
-insert into flight_fare values (102775,'7100071');
-insert into flight_fare values (102776,'7100071');
-insert into flight_fare values (102777,'7100071');
-insert into flight_fare values (102778,'7100071');
-insert into flight_fare values (102779,'7100071');
-insert into flight_fare values (102781,'7100071');
-insert into flight_fare values (102782,'7100071');
-insert into flight_fare values (102795,'7100072');
-insert into flight_fare values (102796,'7100072');
-insert into flight_fare values (102797,'7100072');
-insert into flight_fare values (102798,'7100072');
-insert into flight_fare values (102799,'7100072');
-insert into flight_fare values (102800,'7100072');
-insert into flight_fare values (102801,'7100072');
-insert into flight_fare values (102802,'7100072');
-insert into flight_fare values (102803,'7100072');
-insert into flight_fare values (102805,'7100072');
-insert into flight_fare values (102806,'7100072');
-insert into flight_fare values (102807,'7100072');
-insert into flight_fare values (102808,'7100073');
-insert into flight_fare values (102809,'7100073');
-insert into flight_fare values (102795,'7100074');
-insert into flight_fare values (102796,'7100074');
-insert into flight_fare values (102797,'7100074');
-insert into flight_fare values (102798,'7100074');
-insert into flight_fare values (102799,'7100074');
-insert into flight_fare values (102800,'7100074');
-insert into flight_fare values (102801,'7100074');
-insert into flight_fare values (102802,'7100074');
-insert into flight_fare values (102803,'7100074');
-insert into flight_fare values (102804,'7100074');
-insert into flight_fare values (102805,'7100074');
-insert into flight_fare values (102806,'7100074');
-insert into flight_fare values (102807,'7100074');
-insert into flight_fare values (102808,'7100075');
-insert into flight_fare values (102809,'7100075');
-insert into flight_fare values (102797,'7100076');
-insert into flight_fare values (102799,'7100076');
-insert into flight_fare values (102804,'7100076');
-insert into flight_fare values (102806,'7100076');
-insert into flight_fare values (102808,'7100076');
-insert into flight_fare values (102795,'7100077');
-insert into flight_fare values (102796,'7100077');
-insert into flight_fare values (102797,'7100077');
-insert into flight_fare values (102798,'7100077');
-insert into flight_fare values (102799,'7100077');
-insert into flight_fare values (102800,'7100077');
-insert into flight_fare values (102801,'7100077');
-insert into flight_fare values (102802,'7100077');
-insert into flight_fare values (102804,'7100077');
-insert into flight_fare values (102805,'7100077');
-insert into flight_fare values (102806,'7100077');
-insert into flight_fare values (102807,'7100077');
-insert into flight_fare values (102809,'7100077');
-insert into flight_fare values (102797,'7100078');
-insert into flight_fare values (102799,'7100078');
-insert into flight_fare values (102804,'7100078');
-insert into flight_fare values (102806,'7100078');
-insert into flight_fare values (102808,'7100078');
-insert into flight_fare values (102795,'7100079');
-insert into flight_fare values (102796,'7100079');
-insert into flight_fare values (102797,'7100079');
-insert into flight_fare values (102798,'7100079');
-insert into flight_fare values (102799,'7100079');
-insert into flight_fare values (102800,'7100079');
-insert into flight_fare values (102801,'7100079');
-insert into flight_fare values (102803,'7100079');
-insert into flight_fare values (102804,'7100079');
-insert into flight_fare values (102805,'7100079');
-insert into flight_fare values (102806,'7100079');
-insert into flight_fare values (102807,'7100079');
-insert into flight_fare values (102809,'7100079');
-insert into flight_fare values (102795,'7100080');
-insert into flight_fare values (102796,'7100080');
-insert into flight_fare values (102798,'7100080');
-insert into flight_fare values (102800,'7100080');
-insert into flight_fare values (102801,'7100080');
-insert into flight_fare values (102802,'7100080');
-insert into flight_fare values (102803,'7100080');
-insert into flight_fare values (102805,'7100080');
-insert into flight_fare values (102807,'7100080');
-insert into flight_fare values (102795,'7100081');
-insert into flight_fare values (102796,'7100081');
-insert into flight_fare values (102797,'7100081');
-insert into flight_fare values (102798,'7100081');
-insert into flight_fare values (102799,'7100081');
-insert into flight_fare values (102800,'7100081');
-insert into flight_fare values (102801,'7100081');
-insert into flight_fare values (102802,'7100081');
-insert into flight_fare values (102803,'7100081');
-insert into flight_fare values (102804,'7100081');
-insert into flight_fare values (102805,'7100081');
-insert into flight_fare values (102806,'7100081');
-insert into flight_fare values (102807,'7100081');
-insert into flight_fare values (102923,'7100082');
-insert into flight_fare values (102924,'7100082');
-insert into flight_fare values (102925,'7100082');
-insert into flight_fare values (102927,'7100082');
-insert into flight_fare values (102929,'7100082');
-insert into flight_fare values (102930,'7100082');
-insert into flight_fare values (102932,'7100082');
-insert into flight_fare values (102933,'7100082');
-insert into flight_fare values (102923,'7100083');
-insert into flight_fare values (102924,'7100083');
-insert into flight_fare values (102925,'7100083');
-insert into flight_fare values (102927,'7100083');
-insert into flight_fare values (102929,'7100083');
-insert into flight_fare values (102930,'7100083');
-insert into flight_fare values (102932,'7100083');
-insert into flight_fare values (102933,'7100083');
-insert into flight_fare values (102923,'7100084');
-insert into flight_fare values (102924,'7100084');
-insert into flight_fare values (102925,'7100084');
-insert into flight_fare values (102927,'7100084');
-insert into flight_fare values (102929,'7100084');
-insert into flight_fare values (102930,'7100084');
-insert into flight_fare values (102932,'7100084');
-insert into flight_fare values (102933,'7100084');
-insert into flight_fare values (102924,'7100085');
-insert into flight_fare values (102925,'7100085');
-insert into flight_fare values (102927,'7100085');
-insert into flight_fare values (102929,'7100085');
-insert into flight_fare values (102930,'7100085');
-insert into flight_fare values (102932,'7100085');
-insert into flight_fare values (102933,'7100085');
-insert into flight_fare values (102925,'7100086');
-insert into flight_fare values (102930,'7100086');
-insert into flight_fare values (102933,'7100086');
-insert into flight_fare values (102923,'7100087');
-insert into flight_fare values (102924,'7100087');
-insert into flight_fare values (102925,'7100087');
-insert into flight_fare values (102927,'7100087');
-insert into flight_fare values (102929,'7100087');
-insert into flight_fare values (102930,'7100087');
-insert into flight_fare values (102932,'7100087');
-insert into flight_fare values (102933,'7100087');
-insert into flight_fare values (102923,'7100088');
-insert into flight_fare values (102924,'7100088');
-insert into flight_fare values (102927,'7100088');
-insert into flight_fare values (102929,'7100088');
-insert into flight_fare values (102932,'7100088');
-insert into flight_fare values (102923,'7100089');
-insert into flight_fare values (102924,'7100089');
-insert into flight_fare values (102925,'7100089');
-insert into flight_fare values (102927,'7100089');
-insert into flight_fare values (102929,'7100089');
-insert into flight_fare values (102930,'7100089');
-insert into flight_fare values (102932,'7100089');
-insert into flight_fare values (102933,'7100089');
-insert into flight_fare values (105584,'7100090');
-insert into flight_fare values (105588,'7100090');
-insert into flight_fare values (105589,'7100090');
-insert into flight_fare values (105590,'7100090');
-insert into flight_fare values (105591,'7100090');
-insert into flight_fare values (105592,'7100090');
-insert into flight_fare values (105593,'7100090');
-insert into flight_fare values (105595,'7100090');
-insert into flight_fare values (105597,'7100090');
-insert into flight_fare values (105598,'7100090');
-insert into flight_fare values (105599,'7100090');
-insert into flight_fare values (105586,'7100091');
-insert into flight_fare values (105601,'7100091');
-insert into flight_fare values (105584,'7100092');
-insert into flight_fare values (105588,'7100092');
-insert into flight_fare values (105589,'7100092');
-insert into flight_fare values (105590,'7100092');
-insert into flight_fare values (105591,'7100092');
-insert into flight_fare values (105592,'7100092');
-insert into flight_fare values (105593,'7100092');
-insert into flight_fare values (105594,'7100092');
-insert into flight_fare values (105595,'7100092');
-insert into flight_fare values (105597,'7100092');
-insert into flight_fare values (105598,'7100092');
-insert into flight_fare values (105599,'7100092');
-insert into flight_fare values (105586,'7100093');
-insert into flight_fare values (105601,'7100093');
-insert into flight_fare values (105586,'7100094');
-insert into flight_fare values (105589,'7100094');
-insert into flight_fare values (105591,'7100094');
-insert into flight_fare values (105593,'7100094');
-insert into flight_fare values (105594,'7100094');
-insert into flight_fare values (105597,'7100094');
-insert into flight_fare values (105598,'7100094');
-insert into flight_fare values (105586,'7100095');
-insert into flight_fare values (105589,'7100095');
-insert into flight_fare values (105591,'7100095');
-insert into flight_fare values (105593,'7100095');
-insert into flight_fare values (105594,'7100095');
-insert into flight_fare values (105597,'7100095');
-insert into flight_fare values (105598,'7100095');
-insert into flight_fare values (105584,'7100096');
-insert into flight_fare values (105588,'7100096');
-insert into flight_fare values (105589,'7100096');
-insert into flight_fare values (105590,'7100096');
-insert into flight_fare values (105591,'7100096');
-insert into flight_fare values (105592,'7100096');
-insert into flight_fare values (105593,'7100096');
-insert into flight_fare values (105594,'7100096');
-insert into flight_fare values (105595,'7100096');
-insert into flight_fare values (105597,'7100096');
-insert into flight_fare values (105598,'7100096');
-insert into flight_fare values (105599,'7100096');
-insert into flight_fare values (105601,'7100096');
-insert into flight_fare values (105584,'7100097');
-insert into flight_fare values (105588,'7100097');
-insert into flight_fare values (105589,'7100097');
-insert into flight_fare values (105590,'7100097');
-insert into flight_fare values (105591,'7100097');
-insert into flight_fare values (105592,'7100097');
-insert into flight_fare values (105593,'7100097');
-insert into flight_fare values (105594,'7100097');
-insert into flight_fare values (105595,'7100097');
-insert into flight_fare values (105597,'7100097');
-insert into flight_fare values (105598,'7100097');
-insert into flight_fare values (105599,'7100097');
-insert into flight_fare values (105601,'7100097');
-insert into flight_fare values (105584,'7100098');
-insert into flight_fare values (105588,'7100098');
-insert into flight_fare values (105590,'7100098');
-insert into flight_fare values (105592,'7100098');
-insert into flight_fare values (105595,'7100098');
-insert into flight_fare values (105599,'7100098');
-insert into flight_fare values (105584,'7100099');
-insert into flight_fare values (105588,'7100099');
-insert into flight_fare values (105589,'7100099');
-insert into flight_fare values (105590,'7100099');
-insert into flight_fare values (105591,'7100099');
-insert into flight_fare values (105592,'7100099');
-insert into flight_fare values (105593,'7100099');
-insert into flight_fare values (105594,'7100099');
-insert into flight_fare values (105595,'7100099');
-insert into flight_fare values (105597,'7100099');
-insert into flight_fare values (105598,'7100099');
-insert into flight_fare values (105599,'7100099');
-insert into flight_fare values (105698,'7100100');
-insert into flight_fare values (105699,'7100100');
-insert into flight_fare values (105700,'7100100');
-insert into flight_fare values (105701,'7100100');
-insert into flight_fare values (105702,'7100100');
-insert into flight_fare values (105703,'7100100');
-insert into flight_fare values (105704,'7100100');
-insert into flight_fare values (105705,'7100100');
-insert into flight_fare values (105698,'7100101');
-insert into flight_fare values (105699,'7100101');
-insert into flight_fare values (105700,'7100101');
-insert into flight_fare values (105701,'7100101');
-insert into flight_fare values (105702,'7100101');
-insert into flight_fare values (105703,'7100101');
-insert into flight_fare values (105704,'7100101');
-insert into flight_fare values (105705,'7100101');
-insert into flight_fare values (105698,'7100102');
-insert into flight_fare values (105699,'7100102');
-insert into flight_fare values (105700,'7100102');
-insert into flight_fare values (105701,'7100102');
-insert into flight_fare values (105702,'7100102');
-insert into flight_fare values (105703,'7100102');
-insert into flight_fare values (105704,'7100102');
-insert into flight_fare values (105705,'7100102');
-insert into flight_fare values (105794,'7100103');
-insert into flight_fare values (105795,'7100103');
-insert into flight_fare values (105796,'7100103');
-insert into flight_fare values (105798,'7100103');
-insert into flight_fare values (105799,'7100103');
-insert into flight_fare values (105800,'7100103');
-insert into flight_fare values (105794,'7100104');
-insert into flight_fare values (105795,'7100104');
-insert into flight_fare values (105796,'7100104');
-insert into flight_fare values (105798,'7100104');
-insert into flight_fare values (105799,'7100104');
-insert into flight_fare values (105800,'7100104');
-insert into flight_fare values (105794,'7100105');
-insert into flight_fare values (105795,'7100105');
-insert into flight_fare values (105796,'7100105');
-insert into flight_fare values (105798,'7100105');
-insert into flight_fare values (105799,'7100105');
-insert into flight_fare values (105800,'7100105');
-insert into flight_fare values (105794,'7100106');
-insert into flight_fare values (105796,'7100106');
-insert into flight_fare values (105798,'7100106');
-insert into flight_fare values (105799,'7100106');
-insert into flight_fare values (105800,'7100106');
-insert into flight_fare values (105794,'7100107');
-insert into flight_fare values (105795,'7100107');
-insert into flight_fare values (105799,'7100107');
-insert into flight_fare values (105794,'7100108');
-insert into flight_fare values (105795,'7100108');
-insert into flight_fare values (105796,'7100108');
-insert into flight_fare values (105798,'7100108');
-insert into flight_fare values (105799,'7100108');
-insert into flight_fare values (105800,'7100108');
-insert into flight_fare values (105801,'7100109');
-insert into flight_fare values (105803,'7100109');
-insert into flight_fare values (105806,'7100109');
-insert into flight_fare values (105807,'7100109');
-insert into flight_fare values (105811,'7100109');
-insert into flight_fare values (105802,'7100110');
-insert into flight_fare values (105805,'7100110');
-insert into flight_fare values (105808,'7100110');
-insert into flight_fare values (105812,'7100110');
-insert into flight_fare values (105810,'7100110');
-insert into flight_fare values (105801,'7100111');
-insert into flight_fare values (105803,'7100111');
-insert into flight_fare values (105806,'7100111');
-insert into flight_fare values (105807,'7100111');
-insert into flight_fare values (105811,'7100111');
-insert into flight_fare values (105802,'7100112');
-insert into flight_fare values (105805,'7100112');
-insert into flight_fare values (105808,'7100112');
-insert into flight_fare values (105812,'7100112');
-insert into flight_fare values (105810,'7100112');
-insert into flight_fare values (105810,'7100113');
-insert into flight_fare values (105801,'7100113');
-insert into flight_fare values (105802,'7100113');
-insert into flight_fare values (105803,'7100113');
-insert into flight_fare values (105805,'7100113');
-insert into flight_fare values (105806,'7100113');
-insert into flight_fare values (105807,'7100113');
-insert into flight_fare values (105808,'7100113');
-insert into flight_fare values (105811,'7100113');
-insert into flight_fare values (105812,'7100113');
-insert into flight_fare values (105810,'7100114');
-insert into flight_fare values (105801,'7100114');
-insert into flight_fare values (105802,'7100114');
-insert into flight_fare values (105803,'7100114');
-insert into flight_fare values (105805,'7100114');
-insert into flight_fare values (105806,'7100114');
-insert into flight_fare values (105807,'7100114');
-insert into flight_fare values (105808,'7100114');
-insert into flight_fare values (105811,'7100114');
-insert into flight_fare values (105812,'7100114');
-insert into flight_fare values (106229,'7100115');
-insert into flight_fare values (106230,'7100115');
-insert into flight_fare values (106231,'7100115');
-insert into flight_fare values (106232,'7100115');
-insert into flight_fare values (106234,'7100115');
-insert into flight_fare values (106235,'7100115');
-insert into flight_fare values (106236,'7100115');
-insert into flight_fare values (106237,'7100115');
-insert into flight_fare values (106238,'7100115');
-insert into flight_fare values (106239,'7100115');
-insert into flight_fare values (106240,'7100115');
-insert into flight_fare values (106241,'7100115');
-insert into flight_fare values (106242,'7100115');
-insert into flight_fare values (106245,'7100115');
-insert into flight_fare values (106246,'7100115');
-insert into flight_fare values (106247,'7100115');
-insert into flight_fare values (106248,'7100115');
-insert into flight_fare values (106249,'7100115');
-insert into flight_fare values (106250,'7100115');
-insert into flight_fare values (106251,'7100115');
-insert into flight_fare values (106252,'7100115');
-insert into flight_fare values (106253,'7100115');
-insert into flight_fare values (106254,'7100115');
-insert into flight_fare values (106255,'7100115');
-insert into flight_fare values (106232,'7100116');
-insert into flight_fare values (106238,'7100116');
-insert into flight_fare values (106242,'7100116');
-insert into flight_fare values (106248,'7100116');
-insert into flight_fare values (106254,'7100116');
-insert into flight_fare values (106232,'7100117');
-insert into flight_fare values (106238,'7100117');
-insert into flight_fare values (106242,'7100117');
-insert into flight_fare values (106248,'7100117');
-insert into flight_fare values (106254,'7100117');
-insert into flight_fare values (106240,'7100118');
-insert into flight_fare values (106232,'7100119');
-insert into flight_fare values (106238,'7100119');
-insert into flight_fare values (106242,'7100119');
-insert into flight_fare values (106248,'7100119');
-insert into flight_fare values (106254,'7100119');
-insert into flight_fare values (106229,'7100120');
-insert into flight_fare values (106230,'7100120');
-insert into flight_fare values (106231,'7100120');
-insert into flight_fare values (106234,'7100120');
-insert into flight_fare values (106235,'7100120');
-insert into flight_fare values (106236,'7100120');
-insert into flight_fare values (106237,'7100120');
-insert into flight_fare values (106239,'7100120');
-insert into flight_fare values (106241,'7100120');
-insert into flight_fare values (106245,'7100120');
-insert into flight_fare values (106246,'7100120');
-insert into flight_fare values (106247,'7100120');
-insert into flight_fare values (106249,'7100120');
-insert into flight_fare values (106250,'7100120');
-insert into flight_fare values (106251,'7100120');
-insert into flight_fare values (106252,'7100120');
-insert into flight_fare values (106253,'7100120');
-insert into flight_fare values (106255,'7100120');
-insert into flight_fare values (106229,'7100121');
-insert into flight_fare values (106231,'7100121');
-insert into flight_fare values (106232,'7100121');
-insert into flight_fare values (106234,'7100121');
-insert into flight_fare values (106236,'7100121');
-insert into flight_fare values (106237,'7100121');
-insert into flight_fare values (106238,'7100121');
-insert into flight_fare values (106240,'7100121');
-insert into flight_fare values (106242,'7100121');
-insert into flight_fare values (106245,'7100121');
-insert into flight_fare values (106246,'7100121');
-insert into flight_fare values (106247,'7100121');
-insert into flight_fare values (106248,'7100121');
-insert into flight_fare values (106250,'7100121');
-insert into flight_fare values (106251,'7100121');
-insert into flight_fare values (106253,'7100121');
-insert into flight_fare values (106254,'7100121');
-insert into flight_fare values (106255,'7100121');
-insert into flight_fare values (106232,'7100122');
-insert into flight_fare values (106238,'7100122');
-insert into flight_fare values (106242,'7100122');
-insert into flight_fare values (106248,'7100122');
-insert into flight_fare values (106254,'7100122');
-insert into flight_fare values (106229,'7100123');
-insert into flight_fare values (106231,'7100123');
-insert into flight_fare values (106234,'7100123');
-insert into flight_fare values (106236,'7100123');
-insert into flight_fare values (106237,'7100123');
-insert into flight_fare values (106245,'7100123');
-insert into flight_fare values (106246,'7100123');
-insert into flight_fare values (106247,'7100123');
-insert into flight_fare values (106250,'7100123');
-insert into flight_fare values (106251,'7100123');
-insert into flight_fare values (106253,'7100123');
-insert into flight_fare values (106255,'7100123');
-insert into flight_fare values (106230,'7100124');
-insert into flight_fare values (106235,'7100124');
-insert into flight_fare values (106239,'7100124');
-insert into flight_fare values (106241,'7100124');
-insert into flight_fare values (106249,'7100124');
-insert into flight_fare values (106252,'7100124');
-insert into flight_fare values (106229,'7100125');
-insert into flight_fare values (106230,'7100125');
-insert into flight_fare values (106231,'7100125');
-insert into flight_fare values (106232,'7100125');
-insert into flight_fare values (106234,'7100125');
-insert into flight_fare values (106235,'7100125');
-insert into flight_fare values (106236,'7100125');
-insert into flight_fare values (106237,'7100125');
-insert into flight_fare values (106238,'7100125');
-insert into flight_fare values (106239,'7100125');
-insert into flight_fare values (106241,'7100125');
-insert into flight_fare values (106242,'7100125');
-insert into flight_fare values (106245,'7100125');
-insert into flight_fare values (106246,'7100125');
-insert into flight_fare values (106247,'7100125');
-insert into flight_fare values (106248,'7100125');
-insert into flight_fare values (106249,'7100125');
-insert into flight_fare values (106250,'7100125');
-insert into flight_fare values (106251,'7100125');
-insert into flight_fare values (106252,'7100125');
-insert into flight_fare values (106253,'7100125');
-insert into flight_fare values (106254,'7100125');
-insert into flight_fare values (106255,'7100125');
-insert into flight_fare values (106229,'7100126');
-insert into flight_fare values (106231,'7100126');
-insert into flight_fare values (106232,'7100126');
-insert into flight_fare values (106234,'7100126');
-insert into flight_fare values (106236,'7100126');
-insert into flight_fare values (106237,'7100126');
-insert into flight_fare values (106238,'7100126');
-insert into flight_fare values (106240,'7100126');
-insert into flight_fare values (106242,'7100126');
-insert into flight_fare values (106245,'7100126');
-insert into flight_fare values (106246,'7100126');
-insert into flight_fare values (106247,'7100126');
-insert into flight_fare values (106248,'7100126');
-insert into flight_fare values (106250,'7100126');
-insert into flight_fare values (106251,'7100126');
-insert into flight_fare values (106253,'7100126');
-insert into flight_fare values (106254,'7100126');
-insert into flight_fare values (106255,'7100126');
-insert into flight_fare values (106229,'7100127');
-insert into flight_fare values (106231,'7100127');
-insert into flight_fare values (106232,'7100127');
-insert into flight_fare values (106234,'7100127');
-insert into flight_fare values (106236,'7100127');
-insert into flight_fare values (106237,'7100127');
-insert into flight_fare values (106238,'7100127');
-insert into flight_fare values (106240,'7100127');
-insert into flight_fare values (106242,'7100127');
-insert into flight_fare values (106245,'7100127');
-insert into flight_fare values (106246,'7100127');
-insert into flight_fare values (106247,'7100127');
-insert into flight_fare values (106248,'7100127');
-insert into flight_fare values (106250,'7100127');
-insert into flight_fare values (106251,'7100127');
-insert into flight_fare values (106253,'7100127');
-insert into flight_fare values (106254,'7100127');
-insert into flight_fare values (106255,'7100127');
-insert into flight_fare values (106229,'7100128');
-insert into flight_fare values (106230,'7100128');
-insert into flight_fare values (106231,'7100128');
-insert into flight_fare values (106232,'7100128');
-insert into flight_fare values (106234,'7100128');
-insert into flight_fare values (106235,'7100128');
-insert into flight_fare values (106236,'7100128');
-insert into flight_fare values (106237,'7100128');
-insert into flight_fare values (106238,'7100128');
-insert into flight_fare values (106239,'7100128');
-insert into flight_fare values (106241,'7100128');
-insert into flight_fare values (106242,'7100128');
-insert into flight_fare values (106245,'7100128');
-insert into flight_fare values (106246,'7100128');
-insert into flight_fare values (106247,'7100128');
-insert into flight_fare values (106248,'7100128');
-insert into flight_fare values (106249,'7100128');
-insert into flight_fare values (106250,'7100128');
-insert into flight_fare values (106251,'7100128');
-insert into flight_fare values (106252,'7100128');
-insert into flight_fare values (106253,'7100128');
-insert into flight_fare values (106254,'7100128');
-insert into flight_fare values (106255,'7100128');
-insert into flight_fare values (106263,'7100129');
-insert into flight_fare values (106264,'7100129');
-insert into flight_fare values (106265,'7100129');
-insert into flight_fare values (106266,'7100129');
-insert into flight_fare values (106267,'7100129');
-insert into flight_fare values (106268,'7100129');
-insert into flight_fare values (106269,'7100129');
-insert into flight_fare values (106271,'7100129');
-insert into flight_fare values (106262,'7100129');
-insert into flight_fare values (106270,'7100129');
-insert into flight_fare values (106263,'7100130');
-insert into flight_fare values (106264,'7100130');
-insert into flight_fare values (106265,'7100130');
-insert into flight_fare values (106266,'7100130');
-insert into flight_fare values (106267,'7100130');
-insert into flight_fare values (106268,'7100130');
-insert into flight_fare values (106269,'7100130');
-insert into flight_fare values (106271,'7100130');
-insert into flight_fare values (106262,'7100130');
-insert into flight_fare values (106270,'7100130');
-insert into flight_fare values (106262,'7100131');
-insert into flight_fare values (106270,'7100131');
-insert into flight_fare values (106263,'7100131');
-insert into flight_fare values (106264,'7100131');
-insert into flight_fare values (106265,'7100131');
-insert into flight_fare values (106266,'7100131');
-insert into flight_fare values (106267,'7100131');
-insert into flight_fare values (106268,'7100131');
-insert into flight_fare values (106269,'7100131');
-insert into flight_fare values (106271,'7100131');
-insert into flight_fare values (106365,'7100132');
-insert into flight_fare values (106376,'7100132');
-insert into flight_fare values (106377,'7100132');
-insert into flight_fare values (106366,'7100132');
-insert into flight_fare values (106375,'7100132');
-insert into flight_fare values (106373,'7100133');
-insert into flight_fare values (106377,'7100134');
-insert into flight_fare values (106377,'7100135');
-insert into flight_fare values (106365,'7100136');
-insert into flight_fare values (106376,'7100136');
-insert into flight_fare values (106366,'7100136');
-insert into flight_fare values (106373,'7100137');
-insert into flight_fare values (106375,'7100137');
-insert into flight_fare values (106373,'7100138');
-insert into flight_fare values (106375,'7100139');
-insert into flight_fare values (106366,'7100140');
-insert into flight_fare values (106375,'7100140');
-insert into flight_fare values (106365,'7100140');
-insert into flight_fare values (106376,'7100140');
-insert into flight_fare values (106377,'7100140');
-insert into flight_fare values (106375,'7100141');
-insert into flight_fare values (106375,'7100142');
-insert into flight_fare values (106365,'7100142');
-insert into flight_fare values (106376,'7100142');
-insert into flight_fare values (106377,'7100142');
-insert into flight_fare values (106366,'7100143');
-insert into flight_fare values (106373,'7100143');
-insert into flight_fare values (106365,'7100143');
-insert into flight_fare values (106376,'7100143');
-insert into flight_fare values (106377,'7100143');
-insert into flight_fare values (106366,'7100144');
-insert into flight_fare values (106373,'7100144');
-insert into flight_fare values (106365,'7100144');
-insert into flight_fare values (106376,'7100144');
-insert into flight_fare values (106366,'7100145');
-insert into flight_fare values (106373,'7100145');
-insert into flight_fare values (106375,'7100145');
-insert into flight_fare values (106365,'7100145');
-insert into flight_fare values (106376,'7100145');
-insert into flight_fare values (106377,'7100145');
-insert into flight_fare values (107161,'7100146');
-insert into flight_fare values (107162,'7100146');
-insert into flight_fare values (107163,'7100146');
-insert into flight_fare values (107164,'7100146');
-insert into flight_fare values (107165,'7100146');
-insert into flight_fare values (107166,'7100146');
-insert into flight_fare values (107167,'7100146');
-insert into flight_fare values (107168,'7100146');
-insert into flight_fare values (107159,'7100147');
-insert into flight_fare values (107160,'7100147');
-insert into flight_fare values (107161,'7100148');
-insert into flight_fare values (107162,'7100148');
-insert into flight_fare values (107163,'7100148');
-insert into flight_fare values (107164,'7100148');
-insert into flight_fare values (107165,'7100148');
-insert into flight_fare values (107166,'7100148');
-insert into flight_fare values (107167,'7100148');
-insert into flight_fare values (107168,'7100148');
-insert into flight_fare values (107159,'7100149');
-insert into flight_fare values (107160,'7100149');
-insert into flight_fare values (107159,'7100150');
-insert into flight_fare values (107161,'7100150');
-insert into flight_fare values (107162,'7100150');
-insert into flight_fare values (107163,'7100150');
-insert into flight_fare values (107164,'7100150');
-insert into flight_fare values (107165,'7100150');
-insert into flight_fare values (107166,'7100150');
-insert into flight_fare values (107167,'7100150');
-insert into flight_fare values (107168,'7100150');
-insert into flight_fare values (107159,'7100151');
-insert into flight_fare values (107161,'7100151');
-insert into flight_fare values (107162,'7100151');
-insert into flight_fare values (107163,'7100151');
-insert into flight_fare values (107164,'7100151');
-insert into flight_fare values (107165,'7100151');
-insert into flight_fare values (107166,'7100151');
-insert into flight_fare values (107167,'7100151');
-insert into flight_fare values (107168,'7100151');
-insert into flight_fare values (107162,'7100152');
-insert into flight_fare values (107165,'7100152');
-insert into flight_fare values (107166,'7100152');
-insert into flight_fare values (107168,'7100152');
-insert into flight_fare values (107161,'7100153');
-insert into flight_fare values (107162,'7100153');
-insert into flight_fare values (107163,'7100153');
-insert into flight_fare values (107164,'7100153');
-insert into flight_fare values (107165,'7100153');
-insert into flight_fare values (107166,'7100153');
-insert into flight_fare values (107167,'7100153');
-insert into flight_fare values (107168,'7100153');
-insert into flight_fare values (107193,'7100154');
-insert into flight_fare values (107194,'7100154');
-insert into flight_fare values (107195,'7100154');
-insert into flight_fare values (107196,'7100154');
-insert into flight_fare values (107197,'7100154');
-insert into flight_fare values (107198,'7100154');
-insert into flight_fare values (107199,'7100154');
-insert into flight_fare values (107200,'7100154');
-insert into flight_fare values (107193,'7100155');
-insert into flight_fare values (107194,'7100155');
-insert into flight_fare values (107195,'7100155');
-insert into flight_fare values (107196,'7100155');
-insert into flight_fare values (107197,'7100155');
-insert into flight_fare values (107198,'7100155');
-insert into flight_fare values (107199,'7100155');
-insert into flight_fare values (107200,'7100155');
-insert into flight_fare values (107193,'7100156');
-insert into flight_fare values (107194,'7100156');
-insert into flight_fare values (107195,'7100156');
-insert into flight_fare values (107196,'7100156');
-insert into flight_fare values (107197,'7100156');
-insert into flight_fare values (107198,'7100156');
-insert into flight_fare values (107199,'7100156');
-insert into flight_fare values (107200,'7100156');
-insert into flight_fare values (107255,'7100157');
-insert into flight_fare values (107253,'7100157');
-insert into flight_fare values (107254,'7100158');
-insert into flight_fare values (107256,'7100158');
-insert into flight_fare values (107254,'7100159');
-insert into flight_fare values (107256,'7100159');
-insert into flight_fare values (107255,'7100160');
-insert into flight_fare values (107253,'7100160');
-insert into flight_fare values (107255,'7100161');
-insert into flight_fare values (107253,'7100161');
-insert into flight_fare values (107253,'7100162');
-insert into flight_fare values (107254,'7100162');
-insert into flight_fare values (107255,'7100162');
-insert into flight_fare values (107256,'7100162');
-insert into flight_fare values (107253,'7100163');
-insert into flight_fare values (107254,'7100163');
-insert into flight_fare values (107255,'7100163');
-insert into flight_fare values (107256,'7100163');
-insert into flight_fare values (107253,'7100164');
-insert into flight_fare values (107254,'7100164');
-insert into flight_fare values (107255,'7100164');
-insert into flight_fare values (107256,'7100164');
-insert into flight_fare values (107257,'7100165');
-insert into flight_fare values (107259,'7100165');
-insert into flight_fare values (107260,'7100165');
-insert into flight_fare values (107264,'7100165');
-insert into flight_fare values (107258,'7100166');
-insert into flight_fare values (107261,'7100166');
-insert into flight_fare values (107257,'7100167');
-insert into flight_fare values (107259,'7100167');
-insert into flight_fare values (107260,'7100167');
-insert into flight_fare values (107264,'7100167');
-insert into flight_fare values (107258,'7100168');
-insert into flight_fare values (107261,'7100168');
-insert into flight_fare values (107257,'7100169');
-insert into flight_fare values (107258,'7100169');
-insert into flight_fare values (107259,'7100169');
-insert into flight_fare values (107260,'7100169');
-insert into flight_fare values (107261,'7100169');
-insert into flight_fare values (107264,'7100169');
-insert into flight_fare values (107257,'7100170');
-insert into flight_fare values (107258,'7100170');
-insert into flight_fare values (107259,'7100170');
-insert into flight_fare values (107260,'7100170');
-insert into flight_fare values (107261,'7100170');
-insert into flight_fare values (107264,'7100170');
-insert into flight_fare values (107470,'7100171');
-insert into flight_fare values (107471,'7100171');
-insert into flight_fare values (107472,'7100171');
-insert into flight_fare values (107473,'7100171');
-insert into flight_fare values (107474,'7100171');
-insert into flight_fare values (107475,'7100171');
-insert into flight_fare values (107476,'7100171');
-insert into flight_fare values (107477,'7100171');
-insert into flight_fare values (107478,'7100171');
-insert into flight_fare values (107470,'7100172');
-insert into flight_fare values (107471,'7100172');
-insert into flight_fare values (107472,'7100172');
-insert into flight_fare values (107473,'7100172');
-insert into flight_fare values (107474,'7100172');
-insert into flight_fare values (107475,'7100172');
-insert into flight_fare values (107476,'7100172');
-insert into flight_fare values (107477,'7100172');
-insert into flight_fare values (107478,'7100172');
-insert into flight_fare values (107470,'7100173');
-insert into flight_fare values (107471,'7100173');
-insert into flight_fare values (107472,'7100173');
-insert into flight_fare values (107473,'7100173');
-insert into flight_fare values (107474,'7100173');
-insert into flight_fare values (107475,'7100173');
-insert into flight_fare values (107476,'7100173');
-insert into flight_fare values (107477,'7100173');
-insert into flight_fare values (107478,'7100173');
-insert into flight_fare values (107484,'7100174');
-insert into flight_fare values (107485,'7100174');
-insert into flight_fare values (107486,'7100174');
-insert into flight_fare values (107487,'7100174');
-insert into flight_fare values (107488,'7100174');
-insert into flight_fare values (107489,'7100174');
-insert into flight_fare values (107490,'7100174');
-insert into flight_fare values (107491,'7100174');
-insert into flight_fare values (107492,'7100174');
-insert into flight_fare values (107484,'7100175');
-insert into flight_fare values (107485,'7100175');
-insert into flight_fare values (107486,'7100175');
-insert into flight_fare values (107487,'7100175');
-insert into flight_fare values (107488,'7100175');
-insert into flight_fare values (107489,'7100175');
-insert into flight_fare values (107490,'7100175');
-insert into flight_fare values (107491,'7100175');
-insert into flight_fare values (107492,'7100175');
-insert into flight_fare values (107484,'7100176');
-insert into flight_fare values (107485,'7100176');
-insert into flight_fare values (107486,'7100176');
-insert into flight_fare values (107487,'7100176');
-insert into flight_fare values (107488,'7100176');
-insert into flight_fare values (107489,'7100176');
-insert into flight_fare values (107490,'7100176');
-insert into flight_fare values (107491,'7100176');
-insert into flight_fare values (107492,'7100176');
-insert into flight_fare values (111891,'7100177');
-insert into flight_fare values (111896,'7100177');
-insert into flight_fare values (111888,'7100178');
-insert into flight_fare values (111889,'7100178');
-insert into flight_fare values (111892,'7100178');
-insert into flight_fare values (111893,'7100178');
-insert into flight_fare values (111894,'7100178');
-insert into flight_fare values (111895,'7100178');
-insert into flight_fare values (111886,'7100179');
-insert into flight_fare values (111887,'7100179');
-insert into flight_fare values (111891,'7100180');
-insert into flight_fare values (111896,'7100180');
-insert into flight_fare values (111888,'7100181');
-insert into flight_fare values (111889,'7100181');
-insert into flight_fare values (111892,'7100181');
-insert into flight_fare values (111893,'7100181');
-insert into flight_fare values (111894,'7100181');
-insert into flight_fare values (111895,'7100181');
-insert into flight_fare values (111888,'7100182');
-insert into flight_fare values (111892,'7100182');
-insert into flight_fare values (111894,'7100182');
-insert into flight_fare values (111895,'7100182');
-insert into flight_fare values (111887,'7100183');
-insert into flight_fare values (111889,'7100183');
-insert into flight_fare values (111893,'7100183');
-insert into flight_fare values (111886,'7100184');
-insert into flight_fare values (111888,'7100184');
-insert into flight_fare values (111892,'7100184');
-insert into flight_fare values (111894,'7100184');
-insert into flight_fare values (111895,'7100184');
-insert into flight_fare values (111886,'7100185');
-insert into flight_fare values (111887,'7100185');
-insert into flight_fare values (111886,'7100186');
-insert into flight_fare values (111888,'7100186');
-insert into flight_fare values (111891,'7100186');
-insert into flight_fare values (111892,'7100186');
-insert into flight_fare values (111894,'7100186');
-insert into flight_fare values (111895,'7100186');
-insert into flight_fare values (111896,'7100186');
-insert into flight_fare values (111886,'7100187');
-insert into flight_fare values (111888,'7100187');
-insert into flight_fare values (111891,'7100187');
-insert into flight_fare values (111892,'7100187');
-insert into flight_fare values (111894,'7100187');
-insert into flight_fare values (111895,'7100187');
-insert into flight_fare values (111896,'7100187');
-insert into flight_fare values (111886,'7100188');
-insert into flight_fare values (111888,'7100188');
-insert into flight_fare values (111889,'7100188');
-insert into flight_fare values (111891,'7100188');
-insert into flight_fare values (111892,'7100188');
-insert into flight_fare values (111893,'7100188');
-insert into flight_fare values (111894,'7100188');
-insert into flight_fare values (111895,'7100188');
-insert into flight_fare values (111896,'7100188');
-insert into flight_fare values (111886,'7100189');
-insert into flight_fare values (111888,'7100189');
-insert into flight_fare values (111889,'7100189');
-insert into flight_fare values (111891,'7100189');
-insert into flight_fare values (111892,'7100189');
-insert into flight_fare values (111893,'7100189');
-insert into flight_fare values (111894,'7100189');
-insert into flight_fare values (111895,'7100189');
-insert into flight_fare values (111896,'7100189');
-insert into flight_fare values (111888,'7100190');
-insert into flight_fare values (111891,'7100190');
-insert into flight_fare values (111892,'7100190');
-insert into flight_fare values (111894,'7100190');
-insert into flight_fare values (111895,'7100190');
-insert into flight_fare values (111896,'7100190');
-insert into flight_fare values (111888,'7100191');
-insert into flight_fare values (111889,'7100191');
-insert into flight_fare values (111891,'7100191');
-insert into flight_fare values (111892,'7100191');
-insert into flight_fare values (111893,'7100191');
-insert into flight_fare values (111894,'7100191');
-insert into flight_fare values (111895,'7100191');
-insert into flight_fare values (111896,'7100191');
-insert into flight_fare values (111888,'7100192');
-insert into flight_fare values (111891,'7100192');
-insert into flight_fare values (111892,'7100192');
-insert into flight_fare values (111894,'7100192');
-insert into flight_fare values (111895,'7100192');
-insert into flight_fare values (111896,'7100192');
-insert into flight_fare values (111928,'7100193');
-insert into flight_fare values (111929,'7100193');
-insert into flight_fare values (111931,'7100193');
-insert into flight_fare values (111932,'7100193');
-insert into flight_fare values (111933,'7100193');
-insert into flight_fare values (111930,'7100194');
-insert into flight_fare values (111928,'7100195');
-insert into flight_fare values (111929,'7100195');
-insert into flight_fare values (111931,'7100195');
-insert into flight_fare values (111932,'7100195');
-insert into flight_fare values (111933,'7100195');
-insert into flight_fare values (111930,'7100196');
-insert into flight_fare values (111930,'7100197');
-insert into flight_fare values (111924,'7100198');
-insert into flight_fare values (111930,'7100199');
-insert into flight_fare values (111924,'7100200');
-insert into flight_fare values (111929,'7100201');
-insert into flight_fare values (111932,'7100201');
-insert into flight_fare values (111933,'7100201');
-insert into flight_fare values (111924,'7100202');
-insert into flight_fare values (111930,'7100202');
-insert into flight_fare values (111928,'7100202');
-insert into flight_fare values (111929,'7100202');
-insert into flight_fare values (111931,'7100202');
-insert into flight_fare values (111932,'7100202');
-insert into flight_fare values (111933,'7100202');
-insert into flight_fare values (111929,'7100203');
-insert into flight_fare values (111932,'7100203');
-insert into flight_fare values (111933,'7100203');
-insert into flight_fare values (111924,'7100204');
-insert into flight_fare values (111930,'7100204');
-insert into flight_fare values (111928,'7100204');
-insert into flight_fare values (111929,'7100204');
-insert into flight_fare values (111931,'7100204');
-insert into flight_fare values (111932,'7100204');
-insert into flight_fare values (111933,'7100204');
-insert into flight_fare values (111930,'7100205');
-insert into flight_fare values (111928,'7100205');
-insert into flight_fare values (111931,'7100205');
-insert into flight_fare values (111930,'7100206');
-insert into flight_fare values (111928,'7100206');
-insert into flight_fare values (111929,'7100206');
-insert into flight_fare values (111931,'7100206');
-insert into flight_fare values (111932,'7100206');
-insert into flight_fare values (111933,'7100206');
-insert into flight_fare values (111939,'7100207');
-insert into flight_fare values (111937,'7100208');
-insert into flight_fare values (111941,'7100208');
-insert into flight_fare values (111937,'7100209');
-insert into flight_fare values (111941,'7100209');
-insert into flight_fare values (111939,'7100210');
-insert into flight_fare values (111939,'7100211');
-insert into flight_fare values (111937,'7100212');
-insert into flight_fare values (111939,'7100212');
-insert into flight_fare values (111941,'7100212');
-insert into flight_fare values (111937,'7100213');
-insert into flight_fare values (111939,'7100213');
-insert into flight_fare values (111941,'7100213');
-insert into flight_fare values (111937,'7100214');
-insert into flight_fare values (111941,'7100214');
-insert into flight_fare values (111937,'7100215');
-insert into flight_fare values (111939,'7100215');
-insert into flight_fare values (111941,'7100215');
-insert into flight_fare values (112029,'7100216');
-insert into flight_fare values (112032,'7100216');
-insert into flight_fare values (112034,'7100216');
-insert into flight_fare values (112035,'7100216');
-insert into flight_fare values (112036,'7100216');
-insert into flight_fare values (112037,'7100216');
-insert into flight_fare values (112038,'7100216');
-insert into flight_fare values (112039,'7100216');
-insert into flight_fare values (112041,'7100216');
-insert into flight_fare values (112042,'7100216');
-insert into flight_fare values (112043,'7100216');
-insert into flight_fare values (112044,'7100216');
-insert into flight_fare values (112045,'7100216');
-insert into flight_fare values (112047,'7100216');
-insert into flight_fare values (112048,'7100216');
-insert into flight_fare values (112049,'7100216');
-insert into flight_fare values (112050,'7100216');
-insert into flight_fare values (112033,'7100217');
-insert into flight_fare values (112040,'7100217');
-insert into flight_fare values (112046,'7100217');
-insert into flight_fare values (112028,'7100218');
-insert into flight_fare values (112052,'7100218');
-insert into flight_fare values (112030,'7100219');
-insert into flight_fare values (112031,'7100219');
-insert into flight_fare values (112051,'7100219');
-insert into flight_fare values (112029,'7100220');
-insert into flight_fare values (112032,'7100220');
-insert into flight_fare values (112034,'7100220');
-insert into flight_fare values (112035,'7100220');
-insert into flight_fare values (112036,'7100220');
-insert into flight_fare values (112037,'7100220');
-insert into flight_fare values (112038,'7100220');
-insert into flight_fare values (112039,'7100220');
-insert into flight_fare values (112041,'7100220');
-insert into flight_fare values (112042,'7100220');
-insert into flight_fare values (112043,'7100220');
-insert into flight_fare values (112044,'7100220');
-insert into flight_fare values (112045,'7100220');
-insert into flight_fare values (112047,'7100220');
-insert into flight_fare values (112048,'7100220');
-insert into flight_fare values (112049,'7100220');
-insert into flight_fare values (112050,'7100220');
-insert into flight_fare values (112033,'7100221');
-insert into flight_fare values (112040,'7100221');
-insert into flight_fare values (112046,'7100221');
-insert into flight_fare values (112028,'7100222');
-insert into flight_fare values (112052,'7100222');
-insert into flight_fare values (112030,'7100223');
-insert into flight_fare values (112031,'7100223');
-insert into flight_fare values (112051,'7100223');
-insert into flight_fare values (112029,'7100224');
-insert into flight_fare values (112030,'7100224');
-insert into flight_fare values (112033,'7100224');
-insert into flight_fare values (112034,'7100224');
-insert into flight_fare values (112036,'7100224');
-insert into flight_fare values (112038,'7100224');
-insert into flight_fare values (112039,'7100224');
-insert into flight_fare values (112040,'7100224');
-insert into flight_fare values (112041,'7100224');
-insert into flight_fare values (112043,'7100224');
-insert into flight_fare values (112044,'7100224');
-insert into flight_fare values (112046,'7100224');
-insert into flight_fare values (112047,'7100224');
-insert into flight_fare values (112049,'7100224');
-insert into flight_fare values (112050,'7100224');
-insert into flight_fare values (112051,'7100224');
-insert into flight_fare values (112029,'7100225');
-insert into flight_fare values (112030,'7100225');
-insert into flight_fare values (112031,'7100225');
-insert into flight_fare values (112033,'7100225');
-insert into flight_fare values (112034,'7100225');
-insert into flight_fare values (112036,'7100225');
-insert into flight_fare values (112039,'7100225');
-insert into flight_fare values (112040,'7100225');
-insert into flight_fare values (112041,'7100225');
-insert into flight_fare values (112043,'7100225');
-insert into flight_fare values (112044,'7100225');
-insert into flight_fare values (112046,'7100225');
-insert into flight_fare values (112047,'7100225');
-insert into flight_fare values (112049,'7100225');
-insert into flight_fare values (112050,'7100225');
-insert into flight_fare values (112051,'7100225');
-insert into flight_fare values (112028,'7100226');
-insert into flight_fare values (112029,'7100226');
-insert into flight_fare values (112032,'7100226');
-insert into flight_fare values (112033,'7100226');
-insert into flight_fare values (112034,'7100226');
-insert into flight_fare values (112035,'7100226');
-insert into flight_fare values (112037,'7100226');
-insert into flight_fare values (112038,'7100226');
-insert into flight_fare values (112039,'7100226');
-insert into flight_fare values (112040,'7100226');
-insert into flight_fare values (112042,'7100226');
-insert into flight_fare values (112043,'7100226');
-insert into flight_fare values (112045,'7100226');
-insert into flight_fare values (112046,'7100226');
-insert into flight_fare values (112047,'7100226');
-insert into flight_fare values (112048,'7100226');
-insert into flight_fare values (112049,'7100226');
-insert into flight_fare values (112052,'7100226');
-insert into flight_fare values (112029,'7100227');
-insert into flight_fare values (112032,'7100227');
-insert into flight_fare values (112033,'7100227');
-insert into flight_fare values (112034,'7100227');
-insert into flight_fare values (112035,'7100227');
-insert into flight_fare values (112036,'7100227');
-insert into flight_fare values (112037,'7100227');
-insert into flight_fare values (112038,'7100227');
-insert into flight_fare values (112039,'7100227');
-insert into flight_fare values (112040,'7100227');
-insert into flight_fare values (112041,'7100227');
-insert into flight_fare values (112042,'7100227');
-insert into flight_fare values (112043,'7100227');
-insert into flight_fare values (112044,'7100227');
-insert into flight_fare values (112045,'7100227');
-insert into flight_fare values (112046,'7100227');
-insert into flight_fare values (112047,'7100227');
-insert into flight_fare values (112048,'7100227');
-insert into flight_fare values (112049,'7100227');
-insert into flight_fare values (112050,'7100227');
-insert into flight_fare values (112351,'7100228');
-insert into flight_fare values (112352,'7100228');
-insert into flight_fare values (112353,'7100228');
-insert into flight_fare values (112354,'7100228');
-insert into flight_fare values (112351,'7100229');
-insert into flight_fare values (112352,'7100229');
-insert into flight_fare values (112353,'7100229');
-insert into flight_fare values (112354,'7100229');
-insert into flight_fare values (112351,'7100230');
-insert into flight_fare values (112352,'7100230');
-insert into flight_fare values (112353,'7100230');
-insert into flight_fare values (112354,'7100230');
-insert into flight_fare values (112351,'7100231');
-insert into flight_fare values (112352,'7100231');
-insert into flight_fare values (112353,'7100231');
-insert into flight_fare values (112354,'7100231');
-insert into flight_fare values (112351,'7100232');
-insert into flight_fare values (112352,'7100232');
-insert into flight_fare values (112353,'7100232');
-insert into flight_fare values (112354,'7100232');
-insert into flight_fare values (112415,'7100233');
-insert into flight_fare values (112416,'7100233');
-insert into flight_fare values (112417,'7100233');
-insert into flight_fare values (112418,'7100233');
-insert into flight_fare values (112415,'7100234');
-insert into flight_fare values (112416,'7100234');
-insert into flight_fare values (112417,'7100234');
-insert into flight_fare values (112418,'7100234');
-insert into flight_fare values (112413,'7100235');
-insert into flight_fare values (112413,'7100236');
-insert into flight_fare values (112416,'7100237');
-insert into flight_fare values (112418,'7100237');
-insert into flight_fare values (112416,'7100238');
-insert into flight_fare values (112418,'7100238');
-insert into flight_fare values (112413,'7100239');
-insert into flight_fare values (112415,'7100239');
-insert into flight_fare values (112416,'7100239');
-insert into flight_fare values (112417,'7100239');
-insert into flight_fare values (112418,'7100239');
-insert into flight_fare values (112413,'7100240');
-insert into flight_fare values (112415,'7100240');
-insert into flight_fare values (112416,'7100240');
-insert into flight_fare values (112417,'7100240');
-insert into flight_fare values (112418,'7100240');
-insert into flight_fare values (112415,'7100241');
-insert into flight_fare values (112416,'7100241');
-insert into flight_fare values (112417,'7100241');
-insert into flight_fare values (112418,'7100241');
-insert into flight_fare values (112415,'7100242');
-insert into flight_fare values (112417,'7100242');
-insert into flight_fare values (112440,'7100243');
-insert into flight_fare values (112441,'7100243');
-insert into flight_fare values (112442,'7100243');
-insert into flight_fare values (112440,'7100244');
-insert into flight_fare values (112441,'7100244');
-insert into flight_fare values (112442,'7100244');
-insert into flight_fare values (112440,'7100245');
-insert into flight_fare values (112441,'7100245');
-insert into flight_fare values (112442,'7100245');
-insert into flight_fare values (112440,'7100246');
-insert into flight_fare values (112441,'7100246');
-insert into flight_fare values (112442,'7100246');
-insert into flight_fare values (112513,'7100247');
-insert into flight_fare values (112514,'7100247');
-insert into flight_fare values (112515,'7100247');
-insert into flight_fare values (112516,'7100247');
-insert into flight_fare values (112518,'7100247');
-insert into flight_fare values (112519,'7100247');
-insert into flight_fare values (112520,'7100247');
-insert into flight_fare values (112524,'7100247');
-insert into flight_fare values (112525,'7100247');
-insert into flight_fare values (112526,'7100247');
-insert into flight_fare values (112527,'7100247');
-insert into flight_fare values (112513,'7100248');
-insert into flight_fare values (112514,'7100248');
-insert into flight_fare values (112515,'7100248');
-insert into flight_fare values (112516,'7100248');
-insert into flight_fare values (112518,'7100248');
-insert into flight_fare values (112519,'7100248');
-insert into flight_fare values (112520,'7100248');
-insert into flight_fare values (112524,'7100248');
-insert into flight_fare values (112525,'7100248');
-insert into flight_fare values (112526,'7100248');
-insert into flight_fare values (112527,'7100249');
-insert into flight_fare values (112514,'7100250');
-insert into flight_fare values (112515,'7100250');
-insert into flight_fare values (112516,'7100250');
-insert into flight_fare values (112518,'7100250');
-insert into flight_fare values (112519,'7100250');
-insert into flight_fare values (112520,'7100250');
-insert into flight_fare values (112524,'7100250');
-insert into flight_fare values (112525,'7100250');
-insert into flight_fare values (112526,'7100250');
-insert into flight_fare values (112527,'7100250');
-insert into flight_fare values (112514,'7100251');
-insert into flight_fare values (112515,'7100251');
-insert into flight_fare values (112516,'7100251');
-insert into flight_fare values (112519,'7100251');
-insert into flight_fare values (112520,'7100251');
-insert into flight_fare values (112524,'7100251');
-insert into flight_fare values (112525,'7100251');
-insert into flight_fare values (112526,'7100251');
-insert into flight_fare values (112527,'7100251');
-insert into flight_fare values (112513,'7100252');
-insert into flight_fare values (112515,'7100252');
-insert into flight_fare values (112516,'7100252');
-insert into flight_fare values (112520,'7100252');
-insert into flight_fare values (112524,'7100252');
-insert into flight_fare values (112526,'7100252');
-insert into flight_fare values (112513,'7100253');
-insert into flight_fare values (112514,'7100253');
-insert into flight_fare values (112515,'7100253');
-insert into flight_fare values (112516,'7100253');
-insert into flight_fare values (112518,'7100253');
-insert into flight_fare values (112519,'7100253');
-insert into flight_fare values (112520,'7100253');
-insert into flight_fare values (112524,'7100253');
-insert into flight_fare values (112525,'7100253');
-insert into flight_fare values (112526,'7100253');
-insert into flight_fare values (112783,'7100254');
-insert into flight_fare values (112789,'7100254');
-insert into flight_fare values (112798,'7100254');
-insert into flight_fare values (112766,'7100255');
-insert into flight_fare values (112772,'7100255');
-insert into flight_fare values (112773,'7100255');
-insert into flight_fare values (112777,'7100255');
-insert into flight_fare values (112784,'7100255');
-insert into flight_fare values (112790,'7100255');
-insert into flight_fare values (112793,'7100255');
-insert into flight_fare values (112794,'7100255');
-insert into flight_fare values (112802,'7100255');
-insert into flight_fare values (112805,'7100255');
-insert into flight_fare values (112797,'7100256');
-insert into flight_fare values (112771,'7100257');
-insert into flight_fare values (112804,'7100257');
-insert into flight_fare values (112807,'7100257');
-insert into flight_fare values (112806,'7100258');
-insert into flight_fare values (112808,'7100258');
-insert into flight_fare values (112783,'7100259');
-insert into flight_fare values (112789,'7100259');
-insert into flight_fare values (112798,'7100259');
-insert into flight_fare values (112766,'7100260');
-insert into flight_fare values (112772,'7100260');
-insert into flight_fare values (112773,'7100260');
-insert into flight_fare values (112777,'7100260');
-insert into flight_fare values (112784,'7100260');
-insert into flight_fare values (112790,'7100260');
-insert into flight_fare values (112793,'7100260');
-insert into flight_fare values (112794,'7100260');
-insert into flight_fare values (112802,'7100260');
-insert into flight_fare values (112805,'7100260');
-insert into flight_fare values (112771,'7100261');
-insert into flight_fare values (112804,'7100261');
-insert into flight_fare values (112807,'7100261');
-insert into flight_fare values (112806,'7100262');
-insert into flight_fare values (112808,'7100262');
-insert into flight_fare values (112766,'7100263');
-insert into flight_fare values (112772,'7100263');
-insert into flight_fare values (112773,'7100263');
-insert into flight_fare values (112777,'7100263');
-insert into flight_fare values (112784,'7100263');
-insert into flight_fare values (112790,'7100263');
-insert into flight_fare values (112793,'7100263');
-insert into flight_fare values (112802,'7100263');
-insert into flight_fare values (112805,'7100263');
-insert into flight_fare values (112806,'7100263');
-insert into flight_fare values (112808,'7100263');
-insert into flight_fare values (112766,'7100264');
-insert into flight_fare values (112772,'7100264');
-insert into flight_fare values (112773,'7100264');
-insert into flight_fare values (112777,'7100264');
-insert into flight_fare values (112784,'7100264');
-insert into flight_fare values (112790,'7100264');
-insert into flight_fare values (112793,'7100264');
-insert into flight_fare values (112794,'7100264');
-insert into flight_fare values (112802,'7100264');
-insert into flight_fare values (112805,'7100264');
-insert into flight_fare values (112806,'7100264');
-insert into flight_fare values (112808,'7100264');
-insert into flight_fare values (112766,'7100265');
-insert into flight_fare values (112772,'7100265');
-insert into flight_fare values (112773,'7100265');
-insert into flight_fare values (112777,'7100265');
-insert into flight_fare values (112784,'7100265');
-insert into flight_fare values (112790,'7100265');
-insert into flight_fare values (112793,'7100265');
-insert into flight_fare values (112794,'7100265');
-insert into flight_fare values (112797,'7100265');
-insert into flight_fare values (112802,'7100265');
-insert into flight_fare values (112805,'7100265');
-insert into flight_fare values (112783,'7100266');
-insert into flight_fare values (112789,'7100266');
-insert into flight_fare values (112798,'7100266');
-insert into flight_fare values (112766,'7100267');
-insert into flight_fare values (112772,'7100267');
-insert into flight_fare values (112773,'7100267');
-insert into flight_fare values (112777,'7100267');
-insert into flight_fare values (112784,'7100267');
-insert into flight_fare values (112790,'7100267');
-insert into flight_fare values (112793,'7100267');
-insert into flight_fare values (112794,'7100267');
-insert into flight_fare values (112802,'7100267');
-insert into flight_fare values (112805,'7100267');
-insert into flight_fare values (112864,'7100268');
-insert into flight_fare values (112869,'7100268');
-insert into flight_fare values (112872,'7100268');
-insert into flight_fare values (112874,'7100268');
-insert into flight_fare values (112866,'7100269');
-insert into flight_fare values (112867,'7100269');
-insert into flight_fare values (112870,'7100269');
-insert into flight_fare values (112873,'7100269');
-insert into flight_fare values (112864,'7100270');
-insert into flight_fare values (112869,'7100270');
-insert into flight_fare values (112872,'7100270');
-insert into flight_fare values (112874,'7100270');
-insert into flight_fare values (112866,'7100271');
-insert into flight_fare values (112867,'7100271');
-insert into flight_fare values (112870,'7100271');
-insert into flight_fare values (112873,'7100271');
-insert into flight_fare values (112866,'7100272');
-insert into flight_fare values (112867,'7100272');
-insert into flight_fare values (112870,'7100272');
-insert into flight_fare values (112873,'7100272');
-insert into flight_fare values (112864,'7100273');
-insert into flight_fare values (112869,'7100273');
-insert into flight_fare values (112872,'7100273');
-insert into flight_fare values (112874,'7100273');
-insert into flight_fare values (112866,'7100274');
-insert into flight_fare values (112867,'7100274');
-insert into flight_fare values (112870,'7100274');
-insert into flight_fare values (112873,'7100274');
-insert into flight_fare values (112903,'7100275');
-insert into flight_fare values (112905,'7100275');
-insert into flight_fare values (112908,'7100275');
-insert into flight_fare values (112909,'7100275');
-insert into flight_fare values (112904,'7100276');
-insert into flight_fare values (112907,'7100276');
-insert into flight_fare values (112903,'7100277');
-insert into flight_fare values (112905,'7100277');
-insert into flight_fare values (112908,'7100277');
-insert into flight_fare values (112909,'7100277');
-insert into flight_fare values (112904,'7100278');
-insert into flight_fare values (112907,'7100278');
-insert into flight_fare values (112903,'7100279');
-insert into flight_fare values (112904,'7100279');
-insert into flight_fare values (112905,'7100279');
-insert into flight_fare values (112907,'7100279');
-insert into flight_fare values (112908,'7100279');
-insert into flight_fare values (112909,'7100279');
-insert into flight_fare values (112903,'7100280');
-insert into flight_fare values (112904,'7100280');
-insert into flight_fare values (112905,'7100280');
-insert into flight_fare values (112907,'7100280');
-insert into flight_fare values (112908,'7100280');
-insert into flight_fare values (112909,'7100280');
-insert into flight_fare values (112989,'7100281');
-insert into flight_fare values (112990,'7100281');
-insert into flight_fare values (112991,'7100281');
-insert into flight_fare values (112993,'7100281');
-insert into flight_fare values (112994,'7100281');
-insert into flight_fare values (112995,'7100281');
-insert into flight_fare values (112996,'7100281');
-insert into flight_fare values (112997,'7100281');
-insert into flight_fare values (112998,'7100281');
-insert into flight_fare values (112999,'7100281');
-insert into flight_fare values (113001,'7100281');
-insert into flight_fare values (113002,'7100281');
-insert into flight_fare values (113004,'7100281');
-insert into flight_fare values (113005,'7100281');
-insert into flight_fare values (113006,'7100281');
-insert into flight_fare values (113008,'7100281');
-insert into flight_fare values (113010,'7100281');
-insert into flight_fare values (112992,'7100282');
-insert into flight_fare values (113000,'7100282');
-insert into flight_fare values (113003,'7100282');
-insert into flight_fare values (113009,'7100282');
-insert into flight_fare values (113007,'7100283');
-insert into flight_fare values (113011,'7100283');
-insert into flight_fare values (113012,'7100284');
-insert into flight_fare values (113013,'7100284');
-insert into flight_fare values (112989,'7100285');
-insert into flight_fare values (112990,'7100285');
-insert into flight_fare values (112991,'7100285');
-insert into flight_fare values (112993,'7100285');
-insert into flight_fare values (112994,'7100285');
-insert into flight_fare values (112995,'7100285');
-insert into flight_fare values (112996,'7100285');
-insert into flight_fare values (112997,'7100285');
-insert into flight_fare values (112998,'7100285');
-insert into flight_fare values (112999,'7100285');
-insert into flight_fare values (113001,'7100285');
-insert into flight_fare values (113002,'7100285');
-insert into flight_fare values (113004,'7100285');
-insert into flight_fare values (113005,'7100285');
-insert into flight_fare values (113006,'7100285');
-insert into flight_fare values (113008,'7100285');
-insert into flight_fare values (113010,'7100285');
-insert into flight_fare values (112992,'7100286');
-insert into flight_fare values (113000,'7100286');
-insert into flight_fare values (113003,'7100286');
-insert into flight_fare values (113009,'7100286');
-insert into flight_fare values (113007,'7100287');
-insert into flight_fare values (113011,'7100287');
-insert into flight_fare values (113012,'7100288');
-insert into flight_fare values (113013,'7100288');
-insert into flight_fare values (112989,'7100289');
-insert into flight_fare values (112991,'7100289');
-insert into flight_fare values (112992,'7100289');
-insert into flight_fare values (112994,'7100289');
-insert into flight_fare values (112996,'7100289');
-insert into flight_fare values (112997,'7100289');
-insert into flight_fare values (112998,'7100289');
-insert into flight_fare values (113000,'7100289');
-insert into flight_fare values (113001,'7100289');
-insert into flight_fare values (113003,'7100289');
-insert into flight_fare values (113004,'7100289');
-insert into flight_fare values (113006,'7100289');
-insert into flight_fare values (113008,'7100289');
-insert into flight_fare values (113009,'7100289');
-insert into flight_fare values (113010,'7100289');
-insert into flight_fare values (113012,'7100289');
-insert into flight_fare values (113013,'7100289');
-insert into flight_fare values (112989,'7100290');
-insert into flight_fare values (112991,'7100290');
-insert into flight_fare values (112992,'7100290');
-insert into flight_fare values (112994,'7100290');
-insert into flight_fare values (112997,'7100290');
-insert into flight_fare values (112998,'7100290');
-insert into flight_fare values (113000,'7100290');
-insert into flight_fare values (113001,'7100290');
-insert into flight_fare values (113003,'7100290');
-insert into flight_fare values (113004,'7100290');
-insert into flight_fare values (113006,'7100290');
-insert into flight_fare values (113008,'7100290');
-insert into flight_fare values (113009,'7100290');
-insert into flight_fare values (113010,'7100290');
-insert into flight_fare values (113012,'7100290');
-insert into flight_fare values (113013,'7100290');
-insert into flight_fare values (112990,'7100291');
-insert into flight_fare values (112991,'7100291');
-insert into flight_fare values (112992,'7100291');
-insert into flight_fare values (112993,'7100291');
-insert into flight_fare values (112994,'7100291');
-insert into flight_fare values (112995,'7100291');
-insert into flight_fare values (112998,'7100291');
-insert into flight_fare values (112999,'7100291');
-insert into flight_fare values (113000,'7100291');
-insert into flight_fare values (113001,'7100291');
-insert into flight_fare values (113002,'7100291');
-insert into flight_fare values (113003,'7100291');
-insert into flight_fare values (113004,'7100291');
-insert into flight_fare values (113005,'7100291');
-insert into flight_fare values (113007,'7100291');
-insert into flight_fare values (113008,'7100291');
-insert into flight_fare values (113009,'7100291');
-insert into flight_fare values (113011,'7100291');
-insert into flight_fare values (112989,'7100292');
-insert into flight_fare values (112990,'7100292');
-insert into flight_fare values (112991,'7100292');
-insert into flight_fare values (112992,'7100292');
-insert into flight_fare values (112993,'7100292');
-insert into flight_fare values (112994,'7100292');
-insert into flight_fare values (112995,'7100292');
-insert into flight_fare values (112996,'7100292');
-insert into flight_fare values (112997,'7100292');
-insert into flight_fare values (112998,'7100292');
-insert into flight_fare values (112999,'7100292');
-insert into flight_fare values (113000,'7100292');
-insert into flight_fare values (113001,'7100292');
-insert into flight_fare values (113002,'7100292');
-insert into flight_fare values (113003,'7100292');
-insert into flight_fare values (113004,'7100292');
-insert into flight_fare values (113005,'7100292');
-insert into flight_fare values (113006,'7100292');
-insert into flight_fare values (113008,'7100292');
-insert into flight_fare values (113009,'7100292');
-insert into flight_fare values (113010,'7100292');
-insert into flight_fare values (113498,'7100293');
-insert into flight_fare values (113500,'7100293');
-insert into flight_fare values (113499,'7100294');
-insert into flight_fare values (113501,'7100295');
-insert into flight_fare values (113498,'7100296');
-insert into flight_fare values (113500,'7100296');
-insert into flight_fare values (113499,'7100297');
-insert into flight_fare values (113501,'7100298');
-insert into flight_fare values (113499,'7100299');
-insert into flight_fare values (113499,'7100300');
-insert into flight_fare values (113499,'7100301');
-insert into flight_fare values (113498,'7100301');
-insert into flight_fare values (113500,'7100301');
-insert into flight_fare values (113576,'7100302');
-insert into flight_fare values (113578,'7100302');
-insert into flight_fare values (113581,'7100302');
-insert into flight_fare values (113582,'7100302');
-insert into flight_fare values (113577,'7100303');
-insert into flight_fare values (113579,'7100303');
-insert into flight_fare values (113583,'7100304');
-insert into flight_fare values (113576,'7100305');
-insert into flight_fare values (113578,'7100305');
-insert into flight_fare values (113581,'7100305');
-insert into flight_fare values (113582,'7100305');
-insert into flight_fare values (113577,'7100306');
-insert into flight_fare values (113579,'7100306');
-insert into flight_fare values (113583,'7100307');
-insert into flight_fare values (113576,'7100308');
-insert into flight_fare values (113577,'7100308');
-insert into flight_fare values (113578,'7100308');
-insert into flight_fare values (113579,'7100308');
-insert into flight_fare values (113581,'7100308');
-insert into flight_fare values (113582,'7100308');
-insert into flight_fare values (113577,'7100309');
-insert into flight_fare values (113578,'7100309');
-insert into flight_fare values (113579,'7100309');
-insert into flight_fare values (113581,'7100309');
-insert into flight_fare values (113582,'7100309');
-insert into flight_fare values (113576,'7100309');
-insert into flight_fare values (113595,'7100310');
-insert into flight_fare values (113596,'7100310');
-insert into flight_fare values (113597,'7100310');
-insert into flight_fare values (113599,'7100310');
-insert into flight_fare values (113600,'7100310');
-insert into flight_fare values (113602,'7100310');
-insert into flight_fare values (113595,'7100311');
-insert into flight_fare values (113599,'7100311');
-insert into flight_fare values (113602,'7100311');
-insert into flight_fare values (113595,'7100312');
-insert into flight_fare values (113599,'7100312');
-insert into flight_fare values (113602,'7100312');
-insert into flight_fare values (113596,'7100313');
-insert into flight_fare values (113597,'7100313');
-insert into flight_fare values (113600,'7100313');
-insert into flight_fare values (113595,'7100314');
-insert into flight_fare values (113596,'7100314');
-insert into flight_fare values (113597,'7100314');
-insert into flight_fare values (113599,'7100314');
-insert into flight_fare values (113600,'7100314');
-insert into flight_fare values (113602,'7100314');
-insert into flight_fare values (113595,'7100315');
-insert into flight_fare values (113596,'7100315');
-insert into flight_fare values (113597,'7100315');
-insert into flight_fare values (113599,'7100315');
-insert into flight_fare values (113600,'7100315');
-insert into flight_fare values (113602,'7100315');
-insert into flight_fare values (113706,'7100316');
-insert into flight_fare values (113707,'7100316');
-insert into flight_fare values (113709,'7100316');
-insert into flight_fare values (113711,'7100316');
-insert into flight_fare values (113716,'7100316');
-insert into flight_fare values (113717,'7100316');
-insert into flight_fare values (113718,'7100316');
-insert into flight_fare values (113710,'7100316');
-insert into flight_fare values (113713,'7100316');
-insert into flight_fare values (113705,'7100317');
-insert into flight_fare values (113712,'7100317');
-insert into flight_fare values (113715,'7100317');
-insert into flight_fare values (113719,'7100317');
-insert into flight_fare values (113720,'7100318');
-insert into flight_fare values (113721,'7100319');
-insert into flight_fare values (113706,'7100320');
-insert into flight_fare values (113707,'7100320');
-insert into flight_fare values (113709,'7100320');
-insert into flight_fare values (113711,'7100320');
-insert into flight_fare values (113716,'7100320');
-insert into flight_fare values (113717,'7100320');
-insert into flight_fare values (113718,'7100320');
-insert into flight_fare values (113710,'7100320');
-insert into flight_fare values (113713,'7100320');
-insert into flight_fare values (113705,'7100321');
-insert into flight_fare values (113712,'7100321');
-insert into flight_fare values (113715,'7100321');
-insert into flight_fare values (113719,'7100321');
-insert into flight_fare values (113720,'7100322');
-insert into flight_fare values (113721,'7100323');
-insert into flight_fare values (113705,'7100324');
-insert into flight_fare values (113707,'7100324');
-insert into flight_fare values (113712,'7100324');
-insert into flight_fare values (113715,'7100324');
-insert into flight_fare values (113719,'7100324');
-insert into flight_fare values (113721,'7100324');
-insert into flight_fare values (113710,'7100324');
-insert into flight_fare values (113713,'7100324');
-insert into flight_fare values (113705,'7100325');
-insert into flight_fare values (113707,'7100325');
-insert into flight_fare values (113712,'7100325');
-insert into flight_fare values (113715,'7100325');
-insert into flight_fare values (113719,'7100325');
-insert into flight_fare values (113721,'7100325');
-insert into flight_fare values (113713,'7100325');
-insert into flight_fare values (113705,'7100326');
-insert into flight_fare values (113706,'7100326');
-insert into flight_fare values (113707,'7100326');
-insert into flight_fare values (113709,'7100326');
-insert into flight_fare values (113711,'7100326');
-insert into flight_fare values (113712,'7100326');
-insert into flight_fare values (113715,'7100326');
-insert into flight_fare values (113716,'7100326');
-insert into flight_fare values (113717,'7100326');
-insert into flight_fare values (113718,'7100326');
-insert into flight_fare values (113719,'7100326');
-insert into flight_fare values (113720,'7100326');
-insert into flight_fare values (113713,'7100326');
-insert into flight_fare values (113705,'7100327');
-insert into flight_fare values (113706,'7100327');
-insert into flight_fare values (113707,'7100327');
-insert into flight_fare values (113709,'7100327');
-insert into flight_fare values (113711,'7100327');
-insert into flight_fare values (113712,'7100327');
-insert into flight_fare values (113715,'7100327');
-insert into flight_fare values (113716,'7100327');
-insert into flight_fare values (113717,'7100327');
-insert into flight_fare values (113718,'7100327');
-insert into flight_fare values (113719,'7100327');
-insert into flight_fare values (113710,'7100327');
-insert into flight_fare values (113713,'7100327');
-insert into flight_fare values (133423,'7100328');
-insert into flight_fare values (133423,'7100329');
-insert into flight_fare values (133423,'7100330');
-insert into flight_fare values (133423,'7100331');
-insert into flight_fare values (133423,'7100332');
-insert into flight_fare values (133430,'7100333');
-insert into flight_fare values (133431,'7100333');
-insert into flight_fare values (133432,'7100333');
-insert into flight_fare values (133433,'7100333');
-insert into flight_fare values (133430,'7100334');
-insert into flight_fare values (133431,'7100334');
-insert into flight_fare values (133432,'7100334');
-insert into flight_fare values (133433,'7100334');
-insert into flight_fare values (133430,'7100335');
-insert into flight_fare values (133431,'7100335');
-insert into flight_fare values (133432,'7100335');
-insert into flight_fare values (133433,'7100335');
-insert into flight_fare values (133430,'7100336');
-insert into flight_fare values (133431,'7100336');
-insert into flight_fare values (133432,'7100336');
-insert into flight_fare values (133433,'7100336');
-insert into flight_fare values (133430,'7100337');
-insert into flight_fare values (133431,'7100337');
-insert into flight_fare values (133432,'7100337');
-insert into flight_fare values (133433,'7100337');
-insert into flight_fare values (133435,'7100338');
-insert into flight_fare values (133436,'7100338');
-insert into flight_fare values (133434,'7100339');
-insert into flight_fare values (133435,'7100340');
-insert into flight_fare values (133436,'7100340');
-insert into flight_fare values (133434,'7100341');
-insert into flight_fare values (133435,'7100342');
-insert into flight_fare values (133436,'7100342');
-insert into flight_fare values (133516,'7100343');
-insert into flight_fare values (133516,'7100344');
-insert into flight_fare values (133516,'7100345');
-insert into flight_fare values (133516,'7100346');
-insert into flight_fare values (133568,'7100347');
-insert into flight_fare values (133569,'7100347');
-insert into flight_fare values (133567,'7100348');
-insert into flight_fare values (133568,'7100349');
-insert into flight_fare values (133569,'7100349');
-insert into flight_fare values (137225,'7100350');
-insert into flight_fare values (137231,'7100350');
-insert into flight_fare values (137237,'7100350');
-insert into flight_fare values (137223,'7100351');
-insert into flight_fare values (137224,'7100351');
-insert into flight_fare values (137226,'7100351');
-insert into flight_fare values (137227,'7100351');
-insert into flight_fare values (137228,'7100351');
-insert into flight_fare values (137229,'7100351');
-insert into flight_fare values (137230,'7100351');
-insert into flight_fare values (137232,'7100351');
-insert into flight_fare values (137233,'7100351');
-insert into flight_fare values (137234,'7100351');
-insert into flight_fare values (137235,'7100351');
-insert into flight_fare values (137236,'7100351');
-insert into flight_fare values (137238,'7100351');
-insert into flight_fare values (137221,'7100352');
-insert into flight_fare values (137222,'7100352');
-insert into flight_fare values (137224,'7100353');
-insert into flight_fare values (137228,'7100353');
-insert into flight_fare values (137230,'7100353');
-insert into flight_fare values (137233,'7100353');
-insert into flight_fare values (137235,'7100353');
-insert into flight_fare values (137238,'7100353');
-insert into flight_fare values (137223,'7100354');
-insert into flight_fare values (137226,'7100354');
-insert into flight_fare values (137227,'7100354');
-insert into flight_fare values (137229,'7100354');
-insert into flight_fare values (137232,'7100354');
-insert into flight_fare values (137234,'7100354');
-insert into flight_fare values (137236,'7100354');
-insert into flight_fare values (137225,'7100355');
-insert into flight_fare values (137231,'7100355');
-insert into flight_fare values (137237,'7100355');
-insert into flight_fare values (137221,'7100356');
-insert into flight_fare values (137222,'7100356');
-insert into flight_fare values (137222,'7100357');
-insert into flight_fare values (137223,'7100357');
-insert into flight_fare values (137226,'7100357');
-insert into flight_fare values (137227,'7100357');
-insert into flight_fare values (137229,'7100357');
-insert into flight_fare values (137232,'7100357');
-insert into flight_fare values (137234,'7100357');
-insert into flight_fare values (137236,'7100357');
-insert into flight_fare values (137221,'7100358');
-insert into flight_fare values (137223,'7100358');
-insert into flight_fare values (137224,'7100358');
-insert into flight_fare values (137225,'7100358');
-insert into flight_fare values (137226,'7100358');
-insert into flight_fare values (137227,'7100358');
-insert into flight_fare values (137228,'7100358');
-insert into flight_fare values (137229,'7100358');
-insert into flight_fare values (137230,'7100358');
-insert into flight_fare values (137231,'7100358');
-insert into flight_fare values (137232,'7100358');
-insert into flight_fare values (137233,'7100358');
-insert into flight_fare values (137234,'7100358');
-insert into flight_fare values (137235,'7100358');
-insert into flight_fare values (137236,'7100358');
-insert into flight_fare values (137237,'7100358');
-insert into flight_fare values (137238,'7100358');
-insert into flight_fare values (137222,'7100359');
-insert into flight_fare values (137223,'7100359');
-insert into flight_fare values (137226,'7100359');
-insert into flight_fare values (137227,'7100359');
-insert into flight_fare values (137229,'7100359');
-insert into flight_fare values (137232,'7100359');
-insert into flight_fare values (137234,'7100359');
-insert into flight_fare values (137236,'7100359');
-insert into flight_fare values (137221,'7100360');
-insert into flight_fare values (137223,'7100360');
-insert into flight_fare values (137224,'7100360');
-insert into flight_fare values (137225,'7100360');
-insert into flight_fare values (137226,'7100360');
-insert into flight_fare values (137227,'7100360');
-insert into flight_fare values (137228,'7100360');
-insert into flight_fare values (137229,'7100360');
-insert into flight_fare values (137230,'7100360');
-insert into flight_fare values (137231,'7100360');
-insert into flight_fare values (137232,'7100360');
-insert into flight_fare values (137233,'7100360');
-insert into flight_fare values (137234,'7100360');
-insert into flight_fare values (137235,'7100360');
-insert into flight_fare values (137236,'7100360');
-insert into flight_fare values (137237,'7100360');
-insert into flight_fare values (137238,'7100360');
-insert into flight_fare values (137224,'7100361');
-insert into flight_fare values (137225,'7100361');
-insert into flight_fare values (137228,'7100361');
-insert into flight_fare values (137230,'7100361');
-insert into flight_fare values (137231,'7100361');
-insert into flight_fare values (137233,'7100361');
-insert into flight_fare values (137235,'7100361');
-insert into flight_fare values (137237,'7100361');
-insert into flight_fare values (137238,'7100361');
-insert into flight_fare values (137223,'7100362');
-insert into flight_fare values (137224,'7100362');
-insert into flight_fare values (137225,'7100362');
-insert into flight_fare values (137226,'7100362');
-insert into flight_fare values (137227,'7100362');
-insert into flight_fare values (137228,'7100362');
-insert into flight_fare values (137229,'7100362');
-insert into flight_fare values (137230,'7100362');
-insert into flight_fare values (137231,'7100362');
-insert into flight_fare values (137232,'7100362');
-insert into flight_fare values (137233,'7100362');
-insert into flight_fare values (137234,'7100362');
-insert into flight_fare values (137235,'7100362');
-insert into flight_fare values (137236,'7100362');
-insert into flight_fare values (137237,'7100362');
-insert into flight_fare values (137238,'7100362');
-insert into flight_fare values (137315,'7100363');
-insert into flight_fare values (137316,'7100363');
-insert into flight_fare values (137317,'7100363');
-insert into flight_fare values (137318,'7100363');
-insert into flight_fare values (137319,'7100363');
-insert into flight_fare values (137320,'7100363');
-insert into flight_fare values (137321,'7100363');
-insert into flight_fare values (137322,'7100363');
-insert into flight_fare values (137323,'7100363');
-insert into flight_fare values (137324,'7100363');
-insert into flight_fare values (137326,'7100363');
-insert into flight_fare values (137327,'7100363');
-insert into flight_fare values (137328,'7100363');
-insert into flight_fare values (137329,'7100363');
-insert into flight_fare values (137330,'7100363');
-insert into flight_fare values (137331,'7100363');
-insert into flight_fare values (137332,'7100363');
-insert into flight_fare values (137333,'7100363');
-insert into flight_fare values (137334,'7100363');
-insert into flight_fare values (137335,'7100363');
-insert into flight_fare values (137336,'7100363');
-insert into flight_fare values (137337,'7100363');
-insert into flight_fare values (137338,'7100363');
-insert into flight_fare values (137339,'7100364');
-insert into flight_fare values (137315,'7100365');
-insert into flight_fare values (137319,'7100365');
-insert into flight_fare values (137323,'7100365');
-insert into flight_fare values (137331,'7100365');
-insert into flight_fare values (137315,'7100366');
-insert into flight_fare values (137319,'7100366');
-insert into flight_fare values (137323,'7100366');
-insert into flight_fare values (137331,'7100366');
-insert into flight_fare values (137330,'7100367');
-insert into flight_fare values (137315,'7100368');
-insert into flight_fare values (137319,'7100368');
-insert into flight_fare values (137323,'7100368');
-insert into flight_fare values (137331,'7100368');
-insert into flight_fare values (137316,'7100369');
-insert into flight_fare values (137317,'7100369');
-insert into flight_fare values (137318,'7100369');
-insert into flight_fare values (137320,'7100369');
-insert into flight_fare values (137321,'7100369');
-insert into flight_fare values (137322,'7100369');
-insert into flight_fare values (137324,'7100369');
-insert into flight_fare values (137326,'7100369');
-insert into flight_fare values (137327,'7100369');
-insert into flight_fare values (137328,'7100369');
-insert into flight_fare values (137329,'7100369');
-insert into flight_fare values (137332,'7100369');
-insert into flight_fare values (137333,'7100369');
-insert into flight_fare values (137334,'7100369');
-insert into flight_fare values (137335,'7100369');
-insert into flight_fare values (137336,'7100369');
-insert into flight_fare values (137337,'7100369');
-insert into flight_fare values (137338,'7100369');
-insert into flight_fare values (137315,'7100370');
-insert into flight_fare values (137316,'7100370');
-insert into flight_fare values (137318,'7100370');
-insert into flight_fare values (137319,'7100370');
-insert into flight_fare values (137320,'7100370');
-insert into flight_fare values (137323,'7100370');
-insert into flight_fare values (137324,'7100370');
-insert into flight_fare values (137326,'7100370');
-insert into flight_fare values (137327,'7100370');
-insert into flight_fare values (137329,'7100370');
-insert into flight_fare values (137330,'7100370');
-insert into flight_fare values (137331,'7100370');
-insert into flight_fare values (137333,'7100370');
-insert into flight_fare values (137334,'7100370');
-insert into flight_fare values (137335,'7100370');
-insert into flight_fare values (137336,'7100370');
-insert into flight_fare values (137338,'7100370');
-insert into flight_fare values (137315,'7100371');
-insert into flight_fare values (137319,'7100371');
-insert into flight_fare values (137323,'7100371');
-insert into flight_fare values (137331,'7100371');
-insert into flight_fare values (137339,'7100372');
-insert into flight_fare values (137316,'7100373');
-insert into flight_fare values (137318,'7100373');
-insert into flight_fare values (137320,'7100373');
-insert into flight_fare values (137324,'7100373');
-insert into flight_fare values (137326,'7100373');
-insert into flight_fare values (137327,'7100373');
-insert into flight_fare values (137329,'7100373');
-insert into flight_fare values (137333,'7100373');
-insert into flight_fare values (137334,'7100373');
-insert into flight_fare values (137335,'7100373');
-insert into flight_fare values (137336,'7100373');
-insert into flight_fare values (137338,'7100373');
-insert into flight_fare values (137317,'7100374');
-insert into flight_fare values (137321,'7100374');
-insert into flight_fare values (137322,'7100374');
-insert into flight_fare values (137328,'7100374');
-insert into flight_fare values (137332,'7100374');
-insert into flight_fare values (137337,'7100374');
-insert into flight_fare values (137315,'7100375');
-insert into flight_fare values (137316,'7100375');
-insert into flight_fare values (137317,'7100375');
-insert into flight_fare values (137318,'7100375');
-insert into flight_fare values (137319,'7100375');
-insert into flight_fare values (137320,'7100375');
-insert into flight_fare values (137321,'7100375');
-insert into flight_fare values (137322,'7100375');
-insert into flight_fare values (137323,'7100375');
-insert into flight_fare values (137324,'7100375');
-insert into flight_fare values (137326,'7100375');
-insert into flight_fare values (137327,'7100375');
-insert into flight_fare values (137328,'7100375');
-insert into flight_fare values (137329,'7100375');
-insert into flight_fare values (137331,'7100375');
-insert into flight_fare values (137332,'7100375');
-insert into flight_fare values (137333,'7100375');
-insert into flight_fare values (137334,'7100375');
-insert into flight_fare values (137335,'7100375');
-insert into flight_fare values (137336,'7100375');
-insert into flight_fare values (137337,'7100375');
-insert into flight_fare values (137338,'7100375');
-insert into flight_fare values (137339,'7100375');
-insert into flight_fare values (137315,'7100376');
-insert into flight_fare values (137316,'7100376');
-insert into flight_fare values (137318,'7100376');
-insert into flight_fare values (137319,'7100376');
-insert into flight_fare values (137320,'7100376');
-insert into flight_fare values (137323,'7100376');
-insert into flight_fare values (137324,'7100376');
-insert into flight_fare values (137326,'7100376');
-insert into flight_fare values (137327,'7100376');
-insert into flight_fare values (137329,'7100376');
-insert into flight_fare values (137330,'7100376');
-insert into flight_fare values (137331,'7100376');
-insert into flight_fare values (137333,'7100376');
-insert into flight_fare values (137334,'7100376');
-insert into flight_fare values (137335,'7100376');
-insert into flight_fare values (137336,'7100376');
-insert into flight_fare values (137338,'7100376');
-insert into flight_fare values (137315,'7100377');
-insert into flight_fare values (137316,'7100377');
-insert into flight_fare values (137318,'7100377');
-insert into flight_fare values (137319,'7100377');
-insert into flight_fare values (137320,'7100377');
-insert into flight_fare values (137323,'7100377');
-insert into flight_fare values (137324,'7100377');
-insert into flight_fare values (137326,'7100377');
-insert into flight_fare values (137327,'7100377');
-insert into flight_fare values (137329,'7100377');
-insert into flight_fare values (137330,'7100377');
-insert into flight_fare values (137331,'7100377');
-insert into flight_fare values (137333,'7100377');
-insert into flight_fare values (137334,'7100377');
-insert into flight_fare values (137335,'7100377');
-insert into flight_fare values (137336,'7100377');
-insert into flight_fare values (137338,'7100377');
-insert into flight_fare values (137315,'7100378');
-insert into flight_fare values (137316,'7100378');
-insert into flight_fare values (137317,'7100378');
-insert into flight_fare values (137318,'7100378');
-insert into flight_fare values (137319,'7100378');
-insert into flight_fare values (137320,'7100378');
-insert into flight_fare values (137321,'7100378');
-insert into flight_fare values (137322,'7100378');
-insert into flight_fare values (137323,'7100378');
-insert into flight_fare values (137324,'7100378');
-insert into flight_fare values (137326,'7100378');
-insert into flight_fare values (137327,'7100378');
-insert into flight_fare values (137328,'7100378');
-insert into flight_fare values (137329,'7100378');
-insert into flight_fare values (137331,'7100378');
-insert into flight_fare values (137332,'7100378');
-insert into flight_fare values (137333,'7100378');
-insert into flight_fare values (137334,'7100378');
-insert into flight_fare values (137335,'7100378');
-insert into flight_fare values (137336,'7100378');
-insert into flight_fare values (137337,'7100378');
-insert into flight_fare values (137338,'7100378');
-insert into flight_fare values (137353,'7100379');
-insert into flight_fare values (137354,'7100379');
-insert into flight_fare values (137355,'7100379');
-insert into flight_fare values (137356,'7100379');
-insert into flight_fare values (137357,'7100379');
-insert into flight_fare values (137358,'7100379');
-insert into flight_fare values (137359,'7100379');
-insert into flight_fare values (137360,'7100379');
-insert into flight_fare values (137361,'7100379');
-insert into flight_fare values (137353,'7100380');
-insert into flight_fare values (137354,'7100380');
-insert into flight_fare values (137355,'7100380');
-insert into flight_fare values (137356,'7100380');
-insert into flight_fare values (137357,'7100380');
-insert into flight_fare values (137358,'7100380');
-insert into flight_fare values (137359,'7100380');
-insert into flight_fare values (137360,'7100380');
-insert into flight_fare values (137361,'7100380');
-insert into flight_fare values (137353,'7100381');
-insert into flight_fare values (137354,'7100381');
-insert into flight_fare values (137355,'7100381');
-insert into flight_fare values (137356,'7100381');
-insert into flight_fare values (137357,'7100381');
-insert into flight_fare values (137358,'7100381');
-insert into flight_fare values (137359,'7100381');
-insert into flight_fare values (137360,'7100381');
-insert into flight_fare values (137361,'7100381');
-insert into flight_fare values (137407,'7100382');
-insert into flight_fare values (137408,'7100382');
-insert into flight_fare values (137412,'7100382');
-insert into flight_fare values (137413,'7100382');
-insert into flight_fare values (137410,'7100383');
-insert into flight_fare values (137407,'7100384');
-insert into flight_fare values (137408,'7100384');
-insert into flight_fare values (137412,'7100384');
-insert into flight_fare values (137413,'7100384');
-insert into flight_fare values (137410,'7100385');
-insert into flight_fare values (137408,'7100386');
-insert into flight_fare values (137413,'7100386');
-insert into flight_fare values (137408,'7100387');
-insert into flight_fare values (137413,'7100387');
-insert into flight_fare values (137407,'7100388');
-insert into flight_fare values (137408,'7100388');
-insert into flight_fare values (137412,'7100388');
-insert into flight_fare values (137413,'7100388');
-insert into flight_fare values (137410,'7100388');
-insert into flight_fare values (137407,'7100389');
-insert into flight_fare values (137408,'7100389');
-insert into flight_fare values (137412,'7100389');
-insert into flight_fare values (137413,'7100389');
-insert into flight_fare values (137410,'7100389');
-insert into flight_fare values (137407,'7100390');
-insert into flight_fare values (137408,'7100390');
-insert into flight_fare values (137412,'7100390');
-insert into flight_fare values (137413,'7100390');
-insert into flight_fare values (137410,'7100390');
-insert into flight_fare values (137407,'7100391');
-insert into flight_fare values (137412,'7100391');
-insert into flight_fare values (137410,'7100391');
-insert into flight_fare values (137414,'7100392');
-insert into flight_fare values (137417,'7100392');
-insert into flight_fare values (137420,'7100392');
-insert into flight_fare values (137422,'7100392');
-insert into flight_fare values (137415,'7100393');
-insert into flight_fare values (137419,'7100393');
-insert into flight_fare values (137423,'7100393');
-insert into flight_fare values (137414,'7100394');
-insert into flight_fare values (137417,'7100394');
-insert into flight_fare values (137420,'7100394');
-insert into flight_fare values (137422,'7100394');
-insert into flight_fare values (137415,'7100395');
-insert into flight_fare values (137419,'7100395');
-insert into flight_fare values (137423,'7100395');
-insert into flight_fare values (137415,'7100396');
-insert into flight_fare values (137419,'7100396');
-insert into flight_fare values (137423,'7100396');
-insert into flight_fare values (137414,'7100397');
-insert into flight_fare values (137417,'7100397');
-insert into flight_fare values (137420,'7100397');
-insert into flight_fare values (137422,'7100397');
-insert into flight_fare values (137415,'7100398');
-insert into flight_fare values (137419,'7100398');
-insert into flight_fare values (137423,'7100398');
-insert into flight_fare values (137415,'7100399');
-insert into flight_fare values (137419,'7100399');
-insert into flight_fare values (137423,'7100399');
-insert into flight_fare values (137685,'7100400');
-insert into flight_fare values (137685,'7100401');
-insert into flight_fare values (137685,'7100402');
-insert into flight_fare values (137685,'7100403');
-insert into flight_fare values (137732,'7100404');
-insert into flight_fare values (137733,'7100404');
-insert into flight_fare values (137734,'7100404');
-insert into flight_fare values (137735,'7100404');
-insert into flight_fare values (137736,'7100404');
-insert into flight_fare values (137737,'7100404');
-insert into flight_fare values (137738,'7100404');
-insert into flight_fare values (137739,'7100404');
-insert into flight_fare values (137740,'7100404');
-insert into flight_fare values (137732,'7100405');
-insert into flight_fare values (137733,'7100405');
-insert into flight_fare values (137734,'7100405');
-insert into flight_fare values (137735,'7100405');
-insert into flight_fare values (137736,'7100405');
-insert into flight_fare values (137737,'7100405');
-insert into flight_fare values (137738,'7100405');
-insert into flight_fare values (137739,'7100405');
-insert into flight_fare values (137740,'7100405');
-insert into flight_fare values (137732,'7100406');
-insert into flight_fare values (137733,'7100406');
-insert into flight_fare values (137734,'7100406');
-insert into flight_fare values (137735,'7100406');
-insert into flight_fare values (137736,'7100406');
-insert into flight_fare values (137737,'7100406');
-insert into flight_fare values (137738,'7100406');
-insert into flight_fare values (137739,'7100406');
-insert into flight_fare values (137740,'7100406');
-insert into flight_fare values (137814,'7100407');
-insert into flight_fare values (137811,'7100408');
-insert into flight_fare values (137817,'7100408');
-insert into flight_fare values (137811,'7100409');
-insert into flight_fare values (137817,'7100409');
-insert into flight_fare values (137814,'7100410');
-insert into flight_fare values (137814,'7100411');
-insert into flight_fare values (137811,'7100412');
-insert into flight_fare values (137817,'7100412');
-insert into flight_fare values (137811,'7100413');
-insert into flight_fare values (137817,'7100413');
-insert into flight_fare values (137811,'7100414');
-insert into flight_fare values (137817,'7100414');
-insert into flight_fare values (137811,'7100415');
-insert into flight_fare values (137817,'7100415');
-insert into flight_fare values (137811,'7100416');
-insert into flight_fare values (137817,'7100416');
-insert into flight_fare values (137811,'7100417');
-insert into flight_fare values (137817,'7100417');
-insert into flight_fare values (137814,'7100418');
-insert into flight_fare values (138818,'7100419');
-insert into flight_fare values (138820,'7100419');
-insert into flight_fare values (138821,'7100419');
-insert into flight_fare values (138822,'7100419');
-insert into flight_fare values (138823,'7100419');
-insert into flight_fare values (138824,'7100419');
-insert into flight_fare values (138827,'7100419');
-insert into flight_fare values (138828,'7100419');
-insert into flight_fare values (138829,'7100419');
-insert into flight_fare values (138832,'7100419');
-insert into flight_fare values (138817,'7100420');
-insert into flight_fare values (138830,'7100420');
-insert into flight_fare values (138831,'7100420');
-insert into flight_fare values (138818,'7100421');
-insert into flight_fare values (138819,'7100421');
-insert into flight_fare values (138820,'7100421');
-insert into flight_fare values (138821,'7100421');
-insert into flight_fare values (138822,'7100421');
-insert into flight_fare values (138823,'7100421');
-insert into flight_fare values (138824,'7100421');
-insert into flight_fare values (138825,'7100421');
-insert into flight_fare values (138827,'7100421');
-insert into flight_fare values (138828,'7100421');
-insert into flight_fare values (138829,'7100421');
-insert into flight_fare values (138832,'7100421');
-insert into flight_fare values (138817,'7100422');
-insert into flight_fare values (138830,'7100422');
-insert into flight_fare values (138831,'7100422');
-insert into flight_fare values (138818,'7100423');
-insert into flight_fare values (138819,'7100423');
-insert into flight_fare values (138822,'7100423');
-insert into flight_fare values (138825,'7100423');
-insert into flight_fare values (138829,'7100423');
-insert into flight_fare values (138817,'7100424');
-insert into flight_fare values (138818,'7100424');
-insert into flight_fare values (138819,'7100424');
-insert into flight_fare values (138820,'7100424');
-insert into flight_fare values (138821,'7100424');
-insert into flight_fare values (138822,'7100424');
-insert into flight_fare values (138823,'7100424');
-insert into flight_fare values (138824,'7100424');
-insert into flight_fare values (138825,'7100424');
-insert into flight_fare values (138827,'7100424');
-insert into flight_fare values (138828,'7100424');
-insert into flight_fare values (138829,'7100424');
-insert into flight_fare values (138830,'7100424');
-insert into flight_fare values (138832,'7100424');
-insert into flight_fare values (138818,'7100425');
-insert into flight_fare values (138819,'7100425');
-insert into flight_fare values (138822,'7100425');
-insert into flight_fare values (138825,'7100425');
-insert into flight_fare values (138829,'7100425');
-insert into flight_fare values (138817,'7100426');
-insert into flight_fare values (138818,'7100426');
-insert into flight_fare values (138819,'7100426');
-insert into flight_fare values (138820,'7100426');
-insert into flight_fare values (138821,'7100426');
-insert into flight_fare values (138822,'7100426');
-insert into flight_fare values (138823,'7100426');
-insert into flight_fare values (138824,'7100426');
-insert into flight_fare values (138825,'7100426');
-insert into flight_fare values (138827,'7100426');
-insert into flight_fare values (138828,'7100426');
-insert into flight_fare values (138829,'7100426');
-insert into flight_fare values (138831,'7100426');
-insert into flight_fare values (138832,'7100426');
-insert into flight_fare values (138820,'7100427');
-insert into flight_fare values (138821,'7100427');
-insert into flight_fare values (138823,'7100427');
-insert into flight_fare values (138824,'7100427');
-insert into flight_fare values (138827,'7100427');
-insert into flight_fare values (138828,'7100427');
-insert into flight_fare values (138832,'7100427');
-insert into flight_fare values (138818,'7100428');
-insert into flight_fare values (138819,'7100428');
-insert into flight_fare values (138820,'7100428');
-insert into flight_fare values (138821,'7100428');
-insert into flight_fare values (138822,'7100428');
-insert into flight_fare values (138823,'7100428');
-insert into flight_fare values (138824,'7100428');
-insert into flight_fare values (138825,'7100428');
-insert into flight_fare values (138827,'7100428');
-insert into flight_fare values (138828,'7100428');
-insert into flight_fare values (138829,'7100428');
-insert into flight_fare values (138832,'7100428');
-insert into flight_fare values (138860,'7100429');
-insert into flight_fare values (138861,'7100429');
-insert into flight_fare values (138862,'7100429');
-insert into flight_fare values (138863,'7100429');
-insert into flight_fare values (138864,'7100429');
-insert into flight_fare values (138865,'7100429');
-insert into flight_fare values (138867,'7100429');
-insert into flight_fare values (138868,'7100429');
-insert into flight_fare values (138866,'7100429');
-insert into flight_fare values (138860,'7100430');
-insert into flight_fare values (138861,'7100430');
-insert into flight_fare values (138862,'7100430');
-insert into flight_fare values (138863,'7100430');
-insert into flight_fare values (138864,'7100430');
-insert into flight_fare values (138865,'7100430');
-insert into flight_fare values (138867,'7100430');
-insert into flight_fare values (138868,'7100430');
-insert into flight_fare values (138866,'7100430');
-insert into flight_fare values (138860,'7100431');
-insert into flight_fare values (138861,'7100431');
-insert into flight_fare values (138862,'7100431');
-insert into flight_fare values (138863,'7100431');
-insert into flight_fare values (138864,'7100431');
-insert into flight_fare values (138865,'7100431');
-insert into flight_fare values (138867,'7100431');
-insert into flight_fare values (138868,'7100431');
-insert into flight_fare values (138866,'7100431');
-insert into flight_fare values (138878,'7100432');
-insert into flight_fare values (138879,'7100432');
-insert into flight_fare values (138880,'7100432');
-insert into flight_fare values (138881,'7100432');
-insert into flight_fare values (138882,'7100432');
-insert into flight_fare values (138883,'7100432');
-insert into flight_fare values (138884,'7100432');
-insert into flight_fare values (138878,'7100433');
-insert into flight_fare values (138879,'7100433');
-insert into flight_fare values (138880,'7100433');
-insert into flight_fare values (138881,'7100433');
-insert into flight_fare values (138882,'7100433');
-insert into flight_fare values (138883,'7100433');
-insert into flight_fare values (138884,'7100433');
-insert into flight_fare values (138878,'7100434');
-insert into flight_fare values (138879,'7100434');
-insert into flight_fare values (138880,'7100434');
-insert into flight_fare values (138881,'7100434');
-insert into flight_fare values (138882,'7100434');
-insert into flight_fare values (138883,'7100434');
-insert into flight_fare values (138884,'7100434');
-insert into flight_fare values (138963,'7100435');
-insert into flight_fare values (138964,'7100435');
-insert into flight_fare values (138966,'7100435');
-insert into flight_fare values (138965,'7100436');
-insert into flight_fare values (138965,'7100437');
-insert into flight_fare values (138963,'7100438');
-insert into flight_fare values (138964,'7100438');
-insert into flight_fare values (138966,'7100438');
-insert into flight_fare values (138963,'7100439');
-insert into flight_fare values (138964,'7100439');
-insert into flight_fare values (138966,'7100439');
-insert into flight_fare values (138965,'7100440');
-insert into flight_fare values (138965,'7100441');
-insert into flight_fare values (138963,'7100442');
-insert into flight_fare values (138964,'7100442');
-insert into flight_fare values (138966,'7100442');
-insert into flight_fare values (138970,'7100443');
-insert into flight_fare values (138971,'7100443');
-insert into flight_fare values (138973,'7100443');
-insert into flight_fare values (138974,'7100443');
-insert into flight_fare values (138976,'7100443');
-insert into flight_fare values (138977,'7100443');
-insert into flight_fare values (138970,'7100444');
-insert into flight_fare values (138973,'7100444');
-insert into flight_fare values (138976,'7100444');
-insert into flight_fare values (138970,'7100445');
-insert into flight_fare values (138973,'7100445');
-insert into flight_fare values (138976,'7100445');
-insert into flight_fare values (138971,'7100446');
-insert into flight_fare values (138974,'7100446');
-insert into flight_fare values (138977,'7100446');
-insert into flight_fare values (138970,'7100447');
-insert into flight_fare values (138971,'7100447');
-insert into flight_fare values (138973,'7100447');
-insert into flight_fare values (138974,'7100447');
-insert into flight_fare values (138976,'7100447');
-insert into flight_fare values (138977,'7100447');
-insert into flight_fare values (138970,'7100448');
-insert into flight_fare values (138971,'7100448');
-insert into flight_fare values (138973,'7100448');
-insert into flight_fare values (138974,'7100448');
-insert into flight_fare values (138976,'7100448');
-insert into flight_fare values (138977,'7100448');
-insert into flight_fare values (138970,'7100449');
-insert into flight_fare values (138971,'7100449');
-insert into flight_fare values (138973,'7100449');
-insert into flight_fare values (138974,'7100449');
-insert into flight_fare values (138976,'7100449');
-insert into flight_fare values (138977,'7100449');
-insert into flight_fare values (138970,'7100450');
-insert into flight_fare values (138973,'7100450');
-insert into flight_fare values (138976,'7100450');
-insert into flight_fare values (138970,'7100451');
-insert into flight_fare values (138971,'7100451');
-insert into flight_fare values (138973,'7100451');
-insert into flight_fare values (138974,'7100451');
-insert into flight_fare values (138976,'7100451');
-insert into flight_fare values (138977,'7100451');
-insert into flight_fare values (139264,'7100452');
-insert into flight_fare values (139265,'7100452');
-insert into flight_fare values (139266,'7100452');
-insert into flight_fare values (139267,'7100452');
-insert into flight_fare values (139268,'7100452');
-insert into flight_fare values (139269,'7100452');
-insert into flight_fare values (139270,'7100452');
-insert into flight_fare values (139271,'7100452');
-insert into flight_fare values (139272,'7100452');
-insert into flight_fare values (139273,'7100452');
-insert into flight_fare values (139264,'7100453');
-insert into flight_fare values (139265,'7100453');
-insert into flight_fare values (139266,'7100453');
-insert into flight_fare values (139267,'7100453');
-insert into flight_fare values (139268,'7100453');
-insert into flight_fare values (139269,'7100453');
-insert into flight_fare values (139270,'7100453');
-insert into flight_fare values (139271,'7100453');
-insert into flight_fare values (139272,'7100453');
-insert into flight_fare values (139273,'7100453');
-insert into flight_fare values (139264,'7100454');
-insert into flight_fare values (139265,'7100454');
-insert into flight_fare values (139266,'7100454');
-insert into flight_fare values (139267,'7100454');
-insert into flight_fare values (139268,'7100454');
-insert into flight_fare values (139269,'7100454');
-insert into flight_fare values (139270,'7100454');
-insert into flight_fare values (139271,'7100454');
-insert into flight_fare values (139272,'7100454');
-insert into flight_fare values (139273,'7100454');
-insert into flight_fare values (139353,'7100455');
-insert into flight_fare values (139355,'7100455');
-insert into flight_fare values (139356,'7100455');
-insert into flight_fare values (139357,'7100455');
-insert into flight_fare values (139353,'7100456');
-insert into flight_fare values (139355,'7100456');
-insert into flight_fare values (139356,'7100456');
-insert into flight_fare values (139357,'7100456');
-insert into flight_fare values (139353,'7100457');
-insert into flight_fare values (139355,'7100457');
-insert into flight_fare values (139356,'7100457');
-insert into flight_fare values (139357,'7100457');
-insert into flight_fare values (139353,'7100458');
-insert into flight_fare values (139355,'7100458');
-insert into flight_fare values (139356,'7100458');
-insert into flight_fare values (139357,'7100458');
-insert into flight_fare values (139353,'7100459');
-insert into flight_fare values (139355,'7100459');
-insert into flight_fare values (139356,'7100459');
-insert into flight_fare values (139357,'7100459');
-insert into flight_fare values (144060,'7100460');
-insert into flight_fare values (144061,'7100460');
-insert into flight_fare values (144062,'7100460');
-insert into flight_fare values (144063,'7100460');
-insert into flight_fare values (144065,'7100460');
-insert into flight_fare values (144066,'7100460');
-insert into flight_fare values (144059,'7100461');
-insert into flight_fare values (144067,'7100462');
-insert into flight_fare values (144069,'7100462');
-insert into flight_fare values (144060,'7100463');
-insert into flight_fare values (144061,'7100463');
-insert into flight_fare values (144062,'7100463');
-insert into flight_fare values (144063,'7100463');
-insert into flight_fare values (144065,'7100463');
-insert into flight_fare values (144066,'7100463');
-insert into flight_fare values (144059,'7100464');
-insert into flight_fare values (144059,'7100465');
-insert into flight_fare values (144069,'7100466');
-insert into flight_fare values (144067,'7100467');
-insert into flight_fare values (144059,'7100468');
-insert into flight_fare values (144060,'7100469');
-insert into flight_fare values (144061,'7100469');
-insert into flight_fare values (144062,'7100469');
-insert into flight_fare values (144063,'7100469');
-insert into flight_fare values (144065,'7100469');
-insert into flight_fare values (144066,'7100469');
-insert into flight_fare values (144067,'7100469');
-insert into flight_fare values (144060,'7100470');
-insert into flight_fare values (144061,'7100470');
-insert into flight_fare values (144063,'7100470');
-insert into flight_fare values (144065,'7100470');
-insert into flight_fare values (144066,'7100470');
-insert into flight_fare values (144067,'7100470');
-insert into flight_fare values (144061,'7100471');
-insert into flight_fare values (144065,'7100471');
-insert into flight_fare values (144069,'7100471');
-insert into flight_fare values (144060,'7100472');
-insert into flight_fare values (144061,'7100472');
-insert into flight_fare values (144062,'7100472');
-insert into flight_fare values (144063,'7100472');
-insert into flight_fare values (144065,'7100472');
-insert into flight_fare values (144066,'7100472');
-insert into flight_fare values (144067,'7100472');
-insert into flight_fare values (144060,'7100473');
-insert into flight_fare values (144062,'7100473');
-insert into flight_fare values (144063,'7100473');
-insert into flight_fare values (144066,'7100473');
-insert into flight_fare values (144059,'7100474');
-insert into flight_fare values (144060,'7100475');
-insert into flight_fare values (144061,'7100475');
-insert into flight_fare values (144062,'7100475');
-insert into flight_fare values (144063,'7100475');
-insert into flight_fare values (144065,'7100475');
-insert into flight_fare values (144066,'7100475');
-insert into flight_fare values (144093,'7100476');
-insert into flight_fare values (144092,'7100477');
-insert into flight_fare values (144095,'7100477');
-insert into flight_fare values (144089,'7100478');
-insert into flight_fare values (144090,'7100478');
-insert into flight_fare values (144094,'7100478');
-insert into flight_fare values (144088,'7100478');
-insert into flight_fare values (144090,'7100479');
-insert into flight_fare values (144090,'7100480');
-insert into flight_fare values (144089,'7100481');
-insert into flight_fare values (144094,'7100481');
-insert into flight_fare values (144092,'7100482');
-insert into flight_fare values (144095,'7100482');
-insert into flight_fare values (144088,'7100483');
-insert into flight_fare values (144093,'7100484');
-insert into flight_fare values (144087,'7100485');
-insert into flight_fare values (144092,'7100486');
-insert into flight_fare values (144095,'7100486');
-insert into flight_fare values (144093,'7100487');
-insert into flight_fare values (144088,'7100488');
-insert into flight_fare values (144089,'7100489');
-insert into flight_fare values (144090,'7100489');
-insert into flight_fare values (144094,'7100489');
-insert into flight_fare values (144088,'7100489');
-insert into flight_fare values (144092,'7100489');
-insert into flight_fare values (144093,'7100489');
-insert into flight_fare values (144095,'7100489');
-insert into flight_fare values (144088,'7100490');
-insert into flight_fare values (144089,'7100491');
-insert into flight_fare values (144090,'7100491');
-insert into flight_fare values (144094,'7100491');
-insert into flight_fare values (144088,'7100491');
-insert into flight_fare values (144092,'7100491');
-insert into flight_fare values (144093,'7100491');
-insert into flight_fare values (144095,'7100491');
-insert into flight_fare values (144089,'7100492');
-insert into flight_fare values (144090,'7100492');
-insert into flight_fare values (144094,'7100492');
-insert into flight_fare values (144087,'7100492');
-insert into flight_fare values (144092,'7100492');
-insert into flight_fare values (144093,'7100492');
-insert into flight_fare values (144095,'7100492');
-insert into flight_fare values (144089,'7100493');
-insert into flight_fare values (144094,'7100493');
-insert into flight_fare values (144087,'7100493');
-insert into flight_fare values (144092,'7100493');
-insert into flight_fare values (144095,'7100493');
-insert into flight_fare values (144089,'7100494');
-insert into flight_fare values (144090,'7100494');
-insert into flight_fare values (144094,'7100494');
-insert into flight_fare values (144088,'7100494');
-insert into flight_fare values (144092,'7100494');
-insert into flight_fare values (144093,'7100494');
-insert into flight_fare values (144095,'7100494');
-insert into flight_fare values (144110,'7100495');
-insert into flight_fare values (144110,'7100496');
-insert into flight_fare values (144110,'7100497');
-insert into flight_fare values (144110,'7100498');
-insert into flight_fare values (144110,'7100499');
-insert into flight_fare values (144143,'7100500');
-insert into flight_fare values (144144,'7100500');
-insert into flight_fare values (144145,'7100500');
-insert into flight_fare values (144146,'7100500');
-insert into flight_fare values (144147,'7100500');
-insert into flight_fare values (144148,'7100500');
-insert into flight_fare values (144149,'7100500');
-insert into flight_fare values (144150,'7100500');
-insert into flight_fare values (144151,'7100500');
-insert into flight_fare values (144152,'7100500');
-insert into flight_fare values (144153,'7100500');
-insert into flight_fare values (144143,'7100501');
-insert into flight_fare values (144144,'7100501');
-insert into flight_fare values (144145,'7100501');
-insert into flight_fare values (144146,'7100501');
-insert into flight_fare values (144147,'7100501');
-insert into flight_fare values (144148,'7100501');
-insert into flight_fare values (144149,'7100501');
-insert into flight_fare values (144150,'7100501');
-insert into flight_fare values (144151,'7100501');
-insert into flight_fare values (144152,'7100501');
-insert into flight_fare values (144153,'7100501');
-insert into flight_fare values (144143,'7100502');
-insert into flight_fare values (144144,'7100502');
-insert into flight_fare values (144145,'7100502');
-insert into flight_fare values (144147,'7100502');
-insert into flight_fare values (144149,'7100502');
-insert into flight_fare values (144150,'7100502');
-insert into flight_fare values (144151,'7100502');
-insert into flight_fare values (144152,'7100502');
-insert into flight_fare values (144153,'7100502');
-insert into flight_fare values (144143,'7100503');
-insert into flight_fare values (144144,'7100503');
-insert into flight_fare values (144146,'7100503');
-insert into flight_fare values (144147,'7100503');
-insert into flight_fare values (144149,'7100503');
-insert into flight_fare values (144150,'7100503');
-insert into flight_fare values (144152,'7100503');
-insert into flight_fare values (144153,'7100503');
-insert into flight_fare values (144143,'7100504');
-insert into flight_fare values (144144,'7100504');
-insert into flight_fare values (144145,'7100504');
-insert into flight_fare values (144146,'7100504');
-insert into flight_fare values (144147,'7100504');
-insert into flight_fare values (144148,'7100504');
-insert into flight_fare values (144149,'7100504');
-insert into flight_fare values (144150,'7100504');
-insert into flight_fare values (144151,'7100504');
-insert into flight_fare values (144152,'7100504');
-insert into flight_fare values (144153,'7100504');
-insert into flight_fare values (144157,'7100505');
-insert into flight_fare values (144159,'7100505');
-insert into flight_fare values (144162,'7100505');
-insert into flight_fare values (144164,'7100505');
-insert into flight_fare values (144165,'7100505');
-insert into flight_fare values (144166,'7100505');
-insert into flight_fare values (144168,'7100505');
-insert into flight_fare values (144160,'7100505');
-insert into flight_fare values (144161,'7100505');
-insert into flight_fare values (144158,'7100506');
-insert into flight_fare values (144163,'7100506');
-insert into flight_fare values (144167,'7100506');
-insert into flight_fare values (144169,'7100506');
-insert into flight_fare values (144156,'7100507');
-insert into flight_fare values (144155,'7100508');
-insert into flight_fare values (144157,'7100509');
-insert into flight_fare values (144159,'7100509');
-insert into flight_fare values (144162,'7100509');
-insert into flight_fare values (144164,'7100509');
-insert into flight_fare values (144165,'7100509');
-insert into flight_fare values (144166,'7100509');
-insert into flight_fare values (144168,'7100509');
-insert into flight_fare values (144160,'7100509');
-insert into flight_fare values (144161,'7100509');
-insert into flight_fare values (144158,'7100510');
-insert into flight_fare values (144163,'7100510');
-insert into flight_fare values (144167,'7100510');
-insert into flight_fare values (144169,'7100510');
-insert into flight_fare values (144156,'7100511');
-insert into flight_fare values (144155,'7100512');
-insert into flight_fare values (144155,'7100513');
-insert into flight_fare values (144158,'7100513');
-insert into flight_fare values (144163,'7100513');
-insert into flight_fare values (144165,'7100513');
-insert into flight_fare values (144167,'7100513');
-insert into flight_fare values (144169,'7100513');
-insert into flight_fare values (144160,'7100513');
-insert into flight_fare values (144155,'7100514');
-insert into flight_fare values (144158,'7100514');
-insert into flight_fare values (144163,'7100514');
-insert into flight_fare values (144165,'7100514');
-insert into flight_fare values (144167,'7100514');
-insert into flight_fare values (144169,'7100514');
-insert into flight_fare values (144161,'7100514');
-insert into flight_fare values (144156,'7100515');
-insert into flight_fare values (144157,'7100515');
-insert into flight_fare values (144158,'7100515');
-insert into flight_fare values (144159,'7100515');
-insert into flight_fare values (144162,'7100515');
-insert into flight_fare values (144163,'7100515');
-insert into flight_fare values (144164,'7100515');
-insert into flight_fare values (144165,'7100515');
-insert into flight_fare values (144166,'7100515');
-insert into flight_fare values (144167,'7100515');
-insert into flight_fare values (144168,'7100515');
-insert into flight_fare values (144169,'7100515');
-insert into flight_fare values (144160,'7100515');
-insert into flight_fare values (144161,'7100515');
-insert into flight_fare values (144157,'7100516');
-insert into flight_fare values (144158,'7100516');
-insert into flight_fare values (144159,'7100516');
-insert into flight_fare values (144162,'7100516');
-insert into flight_fare values (144163,'7100516');
-insert into flight_fare values (144164,'7100516');
-insert into flight_fare values (144165,'7100516');
-insert into flight_fare values (144166,'7100516');
-insert into flight_fare values (144167,'7100516');
-insert into flight_fare values (144168,'7100516');
-insert into flight_fare values (144169,'7100516');
-insert into flight_fare values (144160,'7100516');
-insert into flight_fare values (144161,'7100516');
-insert into flight_fare values (144477,'7100517');
-insert into flight_fare values (144478,'7100517');
-insert into flight_fare values (144479,'7100517');
-insert into flight_fare values (144480,'7100518');
-insert into flight_fare values (144477,'7100519');
-insert into flight_fare values (144478,'7100519');
-insert into flight_fare values (144479,'7100519');
-insert into flight_fare values (144543,'7100520');
-insert into flight_fare values (144541,'7100521');
-insert into flight_fare values (144547,'7100521');
-insert into flight_fare values (144541,'7100522');
-insert into flight_fare values (144547,'7100522');
-insert into flight_fare values (144543,'7100523');
-insert into flight_fare values (144543,'7100524');
-insert into flight_fare values (144541,'7100525');
-insert into flight_fare values (144547,'7100525');
-insert into flight_fare values (144541,'7100526');
-insert into flight_fare values (144547,'7100526');
-insert into flight_fare values (144541,'7100527');
-insert into flight_fare values (144547,'7100527');
-insert into flight_fare values (144541,'7100528');
-insert into flight_fare values (144547,'7100528');
-insert into flight_fare values (144541,'7100529');
-insert into flight_fare values (144547,'7100529');
-insert into flight_fare values (144541,'7100530');
-insert into flight_fare values (144547,'7100530');
-insert into flight_fare values (144543,'7100531');
-insert into flight_fare values (144572,'7100532');
-insert into flight_fare values (144574,'7100532');
-insert into flight_fare values (144575,'7100532');
-insert into flight_fare values (144576,'7100532');
-insert into flight_fare values (144572,'7100533');
-insert into flight_fare values (144574,'7100533');
-insert into flight_fare values (144575,'7100533');
-insert into flight_fare values (144576,'7100533');
-insert into flight_fare values (144572,'7100534');
-insert into flight_fare values (144574,'7100534');
-insert into flight_fare values (144575,'7100534');
-insert into flight_fare values (144576,'7100534');
-insert into food_service values ('B',1,'FIRST','BREAKFAST');
-insert into food_service values ('B',1,'COACH','BREAKFAST');
-insert into food_service values ('B/',1,'FIRST','BREAKFAST');
-insert into food_service values ('B/S',1,'FIRST','BREAKFAST');
-insert into food_service values ('B/S',1,'COACH','SNACK');
-insert into food_service values ('BD',1,'FIRST','BREAKFAST');
-insert into food_service values ('BD',2,'FIRST','DINNER');
-insert into food_service values ('BD',1,'COACH','BREAKFAST');
-insert into food_service values ('BD',2,'COACH','DINNER');
-insert into food_service values ('BDS',1,'FIRST','BREAKFAST');
-insert into food_service values ('BDS',2,'FIRST','DINNER');
-insert into food_service values ('BDS',3,'FIRST','SNACK');
-insert into food_service values ('BDS',1,'COACH','BREAKFAST');
-insert into food_service values ('BDS',2,'COACH','DINNER');
-insert into food_service values ('BDS',3,'COACH','SNACK');
-insert into food_service values ('BL',1,'FIRST','BREAKFAST');
-insert into food_service values ('BL',2,'FIRST','LUNCH');
-insert into food_service values ('BL',1,'COACH','BREAKFAST');
-insert into food_service values ('BL',2,'COACH','LUNCH');
-insert into food_service values ('BLD',1,'FIRST','BREAKFAST');
-insert into food_service values ('BLD',2,'FIRST','LUNCH');
-insert into food_service values ('BLD',3,'FIRST','DINNER');
-insert into food_service values ('BLD',1,'COACH','BREAKFAST');
-insert into food_service values ('BLD',2,'COACH','LUNCH');
-insert into food_service values ('BLD',3,'COACH','DINNER');
-insert into food_service values ('BLS',1,'FIRST','BREAKFAST');
-insert into food_service values ('BLS',2,'FIRST','LUNCH');
-insert into food_service values ('BLS',3,'FIRST','SNACK');
-insert into food_service values ('BLS',1,'COACH','BREAKFAST');
-insert into food_service values ('BLS',2,'COACH','LUNCH');
-insert into food_service values ('BLS',3,'COACH','SNACK');
-insert into food_service values ('BS',1,'FIRST','BREAKFAST');
-insert into food_service values ('BS',2,'FIRST','SNACK');
-insert into food_service values ('BS',1,'COACH','BREAKFAST');
-insert into food_service values ('BS',2,'COACH','SNACK');
-insert into food_service values ('BSD',1,'FIRST','BREAKFAST');
-insert into food_service values ('BSD',2,'FIRST','SNACK');
-insert into food_service values ('BSD',3,'FIRST','DINNER');
-insert into food_service values ('BSD',1,'COACH','BREAKFAST');
-insert into food_service values ('BSD',2,'COACH','SNACK');
-insert into food_service values ('BSD',3,'COACH','DINNER');
-insert into food_service values ('BSL',1,'FIRST','BREAKFAST');
-insert into food_service values ('BSL',2,'FIRST','SNACK');
-insert into food_service values ('BSL',3,'FIRST','LUNCH');
-insert into food_service values ('BSL',1,'COACH','BREAKFAST');
-insert into food_service values ('BSL',2,'COACH','SNACK');
-insert into food_service values ('BSL',3,'COACH','LUNCH');
-insert into food_service values ('D',1,'FIRST','DINNER');
-insert into food_service values ('D',2,'COACH','DINNER');
-insert into food_service values ('D/',1,'FIRST','DINNER');
-insert into food_service values ('D/S',1,'FIRST','DINNER');
-insert into food_service values ('D/S',1,'COACH','SNACK');
-insert into food_service values ('DB',1,'FIRST','DINNER');
-insert into food_service values ('DB',2,'FIRST','BREAKFAST');
-insert into food_service values ('DB',1,'COACH','DINNER');
-insert into food_service values ('DB',2,'COACH','BREAKFAST');
-insert into food_service values ('DS',1,'FIRST','DINNER');
-insert into food_service values ('DS',2,'FIRST','SNACK');
-insert into food_service values ('DS',1,'COACH','DINNER');
-insert into food_service values ('DS',2,'COACH','SNACK');
-insert into food_service values ('L',1,'FIRST','LUNCH');
-insert into food_service values ('L',1,'COACH','LUNCH');
-insert into food_service values ('L/',1,'FIRST','LUNCH');
-insert into food_service values ('L/S',1,'FIRST','LUNCH');
-insert into food_service values ('L/S',1,'COACH','SNACK');
-insert into food_service values ('LD',1,'FIRST','LUNCH');
-insert into food_service values ('LD',2,'FIRST','DINNER');
-insert into food_service values ('LD',1,'COACH','LUNCH');
-insert into food_service values ('LD',2,'COACH','DINNER');
-insert into food_service values ('LDS',1,'FIRST','LUNCH');
-insert into food_service values ('LDS',2,'FIRST','DINNER');
-insert into food_service values ('LDS',3,'FIRST','SNACK');
-insert into food_service values ('LDS',1,'COACH','LUNCH');
-insert into food_service values ('LDS',2,'COACH','DINNER');
-insert into food_service values ('LDS',3,'COACH','SNACK');
-insert into food_service values ('LS',1,'FIRST','LUNCH');
-insert into food_service values ('LS',2,'FIRST','SNACK');
-insert into food_service values ('LS',1,'COACH','LUNCH');
-insert into food_service values ('LS',2,'COACH','SNACK');
-insert into food_service values ('LS/L',1,'FIRST','LUNCH');
-insert into food_service values ('LS/L',2,'FIRST','SNACK');
-insert into food_service values ('LS/L',1,'COACH','LUNCH');
-insert into food_service values ('LSD',1,'FIRST','LUNCH');
-insert into food_service values ('LSD',2,'FIRST','SNACK');
-insert into food_service values ('LSD',3,'FIRST','DINNER');
-insert into food_service values ('LSD',1,'COACH','LUNCH');
-insert into food_service values ('LSD',2,'COACH','SNACK');
-insert into food_service values ('LSD',3,'COACH','DINNER');
-insert into food_service values ('S',1,'FIRST','SNACK');
-insert into food_service values ('S',1,'COACH','SNACK');
-insert into food_service values ('S/',1,'FIRST','SNACK');
-insert into food_service values ('SB',1,'FIRST','SNACK');
-insert into food_service values ('SB',2,'FIRST','BREAKFAST');
-insert into food_service values ('SB',1,'COACH','SNACK');
-insert into food_service values ('SB',2,'COACH','BREAKFAST');
-insert into food_service values ('SBD',1,'FIRST','SNACK');
-insert into food_service values ('SBD',2,'FIRST','BREAKFAST');
-insert into food_service values ('SBD',3,'FIRST','DINNER');
-insert into food_service values ('SBD',1,'COACH','SNACK');
-insert into food_service values ('SBD',2,'COACH','BREAKFAST');
-insert into food_service values ('SBD',3,'COACH','DINNER');
-insert into food_service values ('SBL',1,'FIRST','SNACK');
-insert into food_service values ('SBL',2,'FIRST','BREAKFAST');
-insert into food_service values ('SBL',3,'FIRST','LUNCH');
-insert into food_service values ('SBL',1,'COACH','SNACK');
-insert into food_service values ('SBL',2,'COACH','BREAKFAST');
-insert into food_service values ('SBL',3,'COACH','LUNCH');
-insert into food_service values ('SD',1,'FIRST','SNACK');
-insert into food_service values ('SD',2,'FIRST','DINNER');
-insert into food_service values ('SD',1,'COACH','SNACK');
-insert into food_service values ('SD',2,'COACH','DINNER');
-insert into food_service values ('SL',1,'FIRST','SNACK');
-insert into food_service values ('SL',2,'FIRST','LUNCH');
-insert into food_service values ('SL',1,'COACH','SNACK');
-insert into food_service values ('SL',2,'COACH','LUNCH');
-insert into food_service values ('SLD',1,'FIRST','SNACK');
-insert into food_service values ('SLD',2,'FIRST','LUNCH');
-insert into food_service values ('SLD',3,'FIRST','DINNER');
-insert into food_service values ('SLD',1,'COACH','SNACK');
-insert into food_service values ('SLD',2,'COACH','LUNCH');
-insert into food_service values ('SLD',3,'COACH','DINNER');
-insert into ground_service values ('MATL','ATL','L',9.00);
-insert into ground_service values ('MATL','ATL','R',0.00);
-insert into ground_service values ('MATL','ATL','A',0.00);
-insert into ground_service values ('BBOS','BOS','L',5.00);
-insert into ground_service values ('BBOS','BOS','R',0.00);
-insert into ground_service values ('BBOS','BOS','A',0.00);
-insert into ground_service values ('DDFW','DFW','R',0.00);
-insert into ground_service values ('DDFW','DFW','L',6.00);
-insert into ground_service values ('FDFW','DFW','L',6.00);
-insert into ground_service values ('FDFW','DFW','R',0.00);
-insert into ground_service values ('DDEN','DEN','L',5.00);
-insert into ground_service values ('DDEN','DEN','R',0.00);
-insert into ground_service values ('DDEN','DEN','A',0.00);
-insert into ground_service values ('PPHL','PHL','L',4.75);
-insert into ground_service values ('PPHL','PHL','R',0.00);
-insert into ground_service values ('PPHL','PHL','A',0.00);
-insert into ground_service values ('PPIT','PIT','L',7.50);
-insert into ground_service values ('PPIT','PIT','R',0.00);
-insert into ground_service values ('PPIT','PIT','A',0.00);
-insert into ground_service values ('OOAK','OAK','L',3.50);
-insert into ground_service values ('OOAK','OAK','R',0.00);
-insert into ground_service values ('OOAK','SFO','L',6.00);
-insert into ground_service values ('OOAK','SFO','R',0.00);
-insert into ground_service values ('OOAK','SFO','A',0.00);
-insert into ground_service values ('SSFO','SFO','L',4.00);
-insert into ground_service values ('SSFO','SFO','R',0.00);
-insert into ground_service values ('SSFO','SFO','A',0.00);
-insert into ground_service values ('SSFO','OAK','L',5.00);
-insert into ground_service values ('WWAS','BWI','L',12.00);
-insert into ground_service values ('BBWI','BWI','L',5.00);
-insert into ground_service values ('BBWI','BWI','R',0.00);
-insert into ground_service values ('BBWI','BWI','A',0.00);
-insert into ground_service values ('','','',0.00);
-insert into time_interval values ('morning',0000,1200);
-insert into time_interval values ('afternoon',1200,1800);
-insert into time_interval values ('evening',1800,2000);
-insert into time_interval values ('day',600,1800);
-insert into time_interval values ('night',1800,2400);
-insert into time_interval values ('night',000,600);
-insert into time_interval values ('early morning',0000,800);
-insert into time_interval values ('mid-morning',800,1000);
-insert into time_interval values ('late morning',1000,1200);
-insert into time_interval values ('early afternoon',1200,1400);
-insert into time_interval values ('mid-afternoon',1400,1600);
-insert into time_interval values ('late afternoon',1600,1800);
-insert into month_name values (1,'JANUARY');
-insert into month_name values (2,'FEBRUARY');
-insert into month_name values (3,'MARCH');
-insert into month_name values (4,'APRIL');
-insert into month_name values (5,'MAY');
-insert into month_name values (6,'JUNE');
-insert into month_name values (7,'JULY');
-insert into month_name values (8,'AUGUST');
-insert into month_name values (9,'SEPTEMBER');
-insert into month_name values (10,'OCTOBER');
-insert into month_name values (11,'NOVEMBER');
-insert into month_name values (12,'DECEMBER');
-insert into restrict_carrier values ('AP/1','AA');
-insert into restrict_carrier values ('AP/2','AA');
-insert into restrict_carrier values ('AP/2','AF');
-insert into restrict_carrier values ('AP/2','AM');
-insert into restrict_carrier values ('AP/2','EA');
-insert into restrict_carrier values ('AP/2','KX');
-insert into restrict_carrier values ('AP/2','MX');
-insert into restrict_carrier values ('AP/2','NW');
-insert into restrict_carrier values ('AP/4','AA');
-insert into restrict_carrier values ('AP/4','AC');
-insert into restrict_carrier values ('AP/4','AS');
-insert into restrict_carrier values ('AP/4','BW');
-insert into restrict_carrier values ('AP/4','CO');
-insert into restrict_carrier values ('AP/4','DL');
-insert into restrict_carrier values ('AP/4','EA');
-insert into restrict_carrier values ('AP/4','KW');
-insert into restrict_carrier values ('AP/4','LI');
-insert into restrict_carrier values ('AP/4','MX');
-insert into restrict_carrier values ('AP/4','PA');
-insert into restrict_carrier values ('AP/4','TW');
-insert into restrict_carrier values ('AP/6','AC');
-insert into restrict_carrier values ('AP/6','BA');
-insert into restrict_carrier values ('AP/6','CB');
-insert into restrict_carrier values ('AP/6','EA');
-insert into restrict_carrier values ('AP/6','ND');
-insert into restrict_carrier values ('AP/6','NW');
-insert into restrict_carrier values ('AP/6','OU');
-insert into restrict_carrier values ('AP/6','PA');
-insert into restrict_carrier values ('AP/6','US');
-insert into restrict_carrier values ('AP/6','WD');
-insert into restrict_carrier values ('AP/10','AA');
-insert into restrict_carrier values ('AP/10','AC');
-insert into restrict_carrier values ('AP/10','AM');
-insert into restrict_carrier values ('AP/10','CO');
-insert into restrict_carrier values ('AP/10','DL');
-insert into restrict_carrier values ('AP/10','EA');
-insert into restrict_carrier values ('AP/10','FH');
-insert into restrict_carrier values ('AP/10','NW');
-insert into restrict_carrier values ('AP/10','RP');
-insert into restrict_carrier values ('AP/10','TW');
-insert into restrict_carrier values ('AP/10','UA');
-insert into restrict_carrier values ('AP/10','US');
-insert into restrict_carrier values ('AP/12','AA');
-insert into restrict_carrier values ('AP/12','CO');
-insert into restrict_carrier values ('AP/12','DL');
-insert into restrict_carrier values ('AP/12','EA');
-insert into restrict_carrier values ('AP/12','JM');
-insert into restrict_carrier values ('AP/12','ML');
-insert into restrict_carrier values ('AP/12','MX');
-insert into restrict_carrier values ('AP/12','PA');
-insert into restrict_carrier values ('AP/12','TW');
-insert into restrict_carrier values ('AP/12','US');
-insert into restrict_carrier values ('AP/13','AA');
-insert into restrict_carrier values ('AP/13','JM');
-insert into restrict_carrier values ('AP/14','AA');
-insert into restrict_carrier values ('AP/14','EA');
-insert into restrict_carrier values ('AP/14','KX');
-insert into restrict_carrier values ('AP/14','NW');
-insert into restrict_carrier values ('AP/14','PA');
-insert into restrict_carrier values ('AP/16','AC');
-insert into restrict_carrier values ('AP/16','CX');
-insert into restrict_carrier values ('AP/16','DL');
-insert into restrict_carrier values ('AP/16','EA');
-insert into restrict_carrier values ('AP/16','SN');
-insert into restrict_carrier values ('AP/16','TW');
-insert into restrict_carrier values ('AP/16','UA');
-insert into restrict_carrier values ('AP/17','AA');
-insert into restrict_carrier values ('AP/18','CP');
-insert into restrict_carrier values ('AP/18','MX');
-insert into restrict_carrier values ('AP/19','AC');
-insert into restrict_carrier values ('AP/19','BW');
-insert into restrict_carrier values ('AP/19','CU');
-insert into restrict_carrier values ('AP/19','EA');
-insert into restrict_carrier values ('AP/19','JM');
-insert into restrict_carrier values ('AP/20','AA');
-insert into restrict_carrier values ('AP/20','AC');
-insert into restrict_carrier values ('AP/20','AS');
-insert into restrict_carrier values ('AP/20','CO');
-insert into restrict_carrier values ('AP/20','CP');
-insert into restrict_carrier values ('AP/20','DL');
-insert into restrict_carrier values ('AP/20','EA');
-insert into restrict_carrier values ('AP/20','FH');
-insert into restrict_carrier values ('AP/20','HP');
-insert into restrict_carrier values ('AP/20','LH');
-insert into restrict_carrier values ('AP/20','ND');
-insert into restrict_carrier values ('AP/20','NR');
-insert into restrict_carrier values ('AP/20','NW');
-insert into restrict_carrier values ('AP/20','NX');
-insert into restrict_carrier values ('AP/20','OU');
-insert into restrict_carrier values ('AP/20','QB');
-insert into restrict_carrier values ('AP/20','TG');
-insert into restrict_carrier values ('AP/20','UA');
-insert into restrict_carrier values ('AP/20','US');
-insert into restrict_carrier values ('AP/20','WD');
-insert into restrict_carrier values ('AP/20','YN');
-insert into restrict_carrier values ('AP/20','4F');
-insert into restrict_carrier values ('AP/20','4V');
-insert into restrict_carrier values ('AP/20','7F');
-insert into restrict_carrier values ('AP/20','8D');
-insert into restrict_carrier values ('AP/21','AA');
-insert into restrict_carrier values ('AP/21','AC');
-insert into restrict_carrier values ('AP/21','EA');
-insert into restrict_carrier values ('AP/21','KX');
-insert into restrict_carrier values ('AP/21','NW');
-insert into restrict_carrier values ('AP/25','AA');
-insert into restrict_carrier values ('AP/25','AS');
-insert into restrict_carrier values ('AP/25','EA');
-insert into restrict_carrier values ('AP/25','LR');
-insert into restrict_carrier values ('AP/25','MX');
-insert into restrict_carrier values ('AP/25','PA');
-insert into restrict_carrier values ('AP/27','AA');
-insert into restrict_carrier values ('AP/27','CO');
-insert into restrict_carrier values ('AP/27','DL');
-insert into restrict_carrier values ('AP/27','EA');
-insert into restrict_carrier values ('AP/27','HP');
-insert into restrict_carrier values ('AP/27','ML');
-insert into restrict_carrier values ('AP/27','NW');
-insert into restrict_carrier values ('AP/27','PA');
-insert into restrict_carrier values ('AP/27','TW');
-insert into restrict_carrier values ('AP/27','UA');
-insert into restrict_carrier values ('AP/27','US');
-insert into restrict_carrier values ('AP/27','WN');
-insert into restrict_carrier values ('AP/32','AA');
-insert into restrict_carrier values ('AP/32','AC');
-insert into restrict_carrier values ('AP/32','BA');
-insert into restrict_carrier values ('AP/32','CP');
-insert into restrict_carrier values ('AP/32','NW');
-insert into restrict_carrier values ('AP/33','LM');
-insert into restrict_carrier values ('AP/35','AA');
-insert into restrict_carrier values ('AP/35','AC');
-insert into restrict_carrier values ('AP/35','AS');
-insert into restrict_carrier values ('AP/35','CO');
-insert into restrict_carrier values ('AP/35','DF');
-insert into restrict_carrier values ('AP/35','EA');
-insert into restrict_carrier values ('AP/35','HA');
-insert into restrict_carrier values ('AP/35','HP');
-insert into restrict_carrier values ('AP/35','LM');
-insert into restrict_carrier values ('AP/35','ND');
-insert into restrict_carrier values ('AP/35','NW');
-insert into restrict_carrier values ('AP/35','PA');
-insert into restrict_carrier values ('AP/35','TW');
-insert into restrict_carrier values ('AP/35','UA');
-insert into restrict_carrier values ('AP/35','WD');
-insert into restrict_carrier values ('AP/43','AA');
-insert into restrict_carrier values ('AP/43','DF');
-insert into restrict_carrier values ('AP/43','UA');
-insert into restrict_carrier values ('AP/43','US');
-insert into restrict_carrier values ('AP/44','AA');
-insert into restrict_carrier values ('AP/44','AC');
-insert into restrict_carrier values ('AP/44','AD');
-insert into restrict_carrier values ('AP/44','AS');
-insert into restrict_carrier values ('AP/44','BE');
-insert into restrict_carrier values ('AP/44','CO');
-insert into restrict_carrier values ('AP/44','DF');
-insert into restrict_carrier values ('AP/44','DL');
-insert into restrict_carrier values ('AP/44','EA');
-insert into restrict_carrier values ('AP/44','FH');
-insert into restrict_carrier values ('AP/44','HP');
-insert into restrict_carrier values ('AP/44','IN');
-insert into restrict_carrier values ('AP/44','IT');
-insert into restrict_carrier values ('AP/44','KS');
-insert into restrict_carrier values ('AP/44','ML');
-insert into restrict_carrier values ('AP/44','NW');
-insert into restrict_carrier values ('AP/44','PA');
-insert into restrict_carrier values ('AP/44','TW');
-insert into restrict_carrier values ('AP/44','UA');
-insert into restrict_carrier values ('AP/44','UO');
-insert into restrict_carrier values ('AP/44','US');
-insert into restrict_carrier values ('AP/44','WN');
-insert into restrict_carrier values ('AP/44','YN');
-insert into restrict_carrier values ('AP/44','YV');
-insert into restrict_carrier values ('AP/44','YW');
-insert into restrict_carrier values ('AP/44','YX');
-insert into restrict_carrier values ('AP/44','ZO');
-insert into restrict_carrier values ('AP/44','ZK');
-insert into restrict_carrier values ('AP/44','3S');
-insert into restrict_carrier values ('AP/44','5A');
-insert into restrict_carrier values ('AP/44','5C');
-insert into restrict_carrier values ('AP/44','7F');
-insert into restrict_carrier values ('AP/44','7V');
-insert into restrict_carrier values ('AP/44','8G');
-insert into restrict_carrier values ('AP/47','AA');
-insert into restrict_carrier values ('AP/47','DO');
-insert into restrict_carrier values ('AP/48','AA');
-insert into restrict_carrier values ('AP/48','AC');
-insert into restrict_carrier values ('AP/48','BL');
-insert into restrict_carrier values ('AP/48','BW');
-insert into restrict_carrier values ('AP/48','CO');
-insert into restrict_carrier values ('AP/48','CP');
-insert into restrict_carrier values ('AP/48','DL');
-insert into restrict_carrier values ('AP/48','EA');
-insert into restrict_carrier values ('AP/48','IV');
-insert into restrict_carrier values ('AP/48','KW');
-insert into restrict_carrier values ('AP/48','KX');
-insert into restrict_carrier values ('AP/48','ML');
-insert into restrict_carrier values ('AP/48','MX');
-insert into restrict_carrier values ('AP/48','NR');
-insert into restrict_carrier values ('AP/48','NW');
-insert into restrict_carrier values ('AP/48','PA');
-insert into restrict_carrier values ('AP/48','PD');
-insert into restrict_carrier values ('AP/48','TW');
-insert into restrict_carrier values ('AP/48','UA');
-insert into restrict_carrier values ('AP/48','YV');
-insert into restrict_carrier values ('AP/48','8D');
-insert into restrict_carrier values ('AP/55','AA');
-insert into restrict_carrier values ('AP/55','AC');
-insert into restrict_carrier values ('AP/55','AS');
-insert into restrict_carrier values ('AP/55','CH');
-insert into restrict_carrier values ('AP/55','CO');
-insert into restrict_carrier values ('AP/55','CP');
-insert into restrict_carrier values ('AP/55','CT');
-insert into restrict_carrier values ('AP/55','DL');
-insert into restrict_carrier values ('AP/55','EA');
-insert into restrict_carrier values ('AP/55','GM');
-insert into restrict_carrier values ('AP/55','HA');
-insert into restrict_carrier values ('AP/55','HP');
-insert into restrict_carrier values ('AP/55','ML');
-insert into restrict_carrier values ('AP/55','ND');
-insert into restrict_carrier values ('AP/55','NR');
-insert into restrict_carrier values ('AP/55','NW');
-insert into restrict_carrier values ('AP/55','OD');
-insert into restrict_carrier values ('AP/55','PA');
-insert into restrict_carrier values ('AP/55','RP');
-insert into restrict_carrier values ('AP/55','TW');
-insert into restrict_carrier values ('AP/55','UA');
-insert into restrict_carrier values ('AP/55','UE');
-insert into restrict_carrier values ('AP/55','US');
-insert into restrict_carrier values ('AP/55','WD');
-insert into restrict_carrier values ('AP/55','YW');
-insert into restrict_carrier values ('AP/55','YX');
-insert into restrict_carrier values ('AP/55','YK');
-insert into restrict_carrier values ('AP/55','ZV');
-insert into restrict_carrier values ('AP/55','2V');
-insert into restrict_carrier values ('AP/55','3N');
-insert into restrict_carrier values ('AP/55','4N');
-insert into restrict_carrier values ('AP/55','4W');
-insert into restrict_carrier values ('AP/55','5A');
-insert into restrict_carrier values ('AP/55','5C');
-insert into restrict_carrier values ('AP/55','5L');
-insert into restrict_carrier values ('AP/55','8D');
-insert into restrict_carrier values ('AP/56','AA');
-insert into restrict_carrier values ('AP/56','DL');
-insert into restrict_carrier values ('AP/56','GM');
-insert into restrict_carrier values ('AP/56','HA');
-insert into restrict_carrier values ('AP/56','HP');
-insert into restrict_carrier values ('AP/56','PA');
-insert into restrict_carrier values ('AP/56','TW');
-insert into restrict_carrier values ('AP/56','UA');
-insert into restrict_carrier values ('AP/56','WD');
-insert into restrict_carrier values ('AP/57','AA');
-insert into restrict_carrier values ('AP/57','AC');
-insert into restrict_carrier values ('AP/57','AS');
-insert into restrict_carrier values ('AP/57','BE');
-insert into restrict_carrier values ('AP/57','CO');
-insert into restrict_carrier values ('AP/57','CP');
-insert into restrict_carrier values ('AP/57','CT');
-insert into restrict_carrier values ('AP/57','DL');
-insert into restrict_carrier values ('AP/57','EA');
-insert into restrict_carrier values ('AP/57','HP');
-insert into restrict_carrier values ('AP/57','ML');
-insert into restrict_carrier values ('AP/57','ND');
-insert into restrict_carrier values ('AP/57','NW');
-insert into restrict_carrier values ('AP/57','PA');
-insert into restrict_carrier values ('AP/57','PD');
-insert into restrict_carrier values ('AP/57','PS');
-insert into restrict_carrier values ('AP/57','TW');
-insert into restrict_carrier values ('AP/57','UA');
-insert into restrict_carrier values ('AP/57','US');
-insert into restrict_carrier values ('AP/57','YV');
-insert into restrict_carrier values ('AP/57','YW');
-insert into restrict_carrier values ('AP/57','YX');
-insert into restrict_carrier values ('AP/57','ZV');
-insert into restrict_carrier values ('AP/57','2P');
-insert into restrict_carrier values ('AP/57','2V');
-insert into restrict_carrier values ('AP/57','3N');
-insert into restrict_carrier values ('AP/57','4N');
-insert into restrict_carrier values ('AP/57','4X');
-insert into restrict_carrier values ('AP/57','8G');
-insert into restrict_carrier values ('AP/58','AS');
-insert into restrict_carrier values ('AP/58','EA');
-insert into restrict_carrier values ('AP/58','7H');
-insert into restrict_carrier values ('AP/59','DL');
-insert into restrict_carrier values ('AP/59','JN');
-insert into restrict_carrier values ('AP/60','AC');
-insert into restrict_carrier values ('AP/60','EA');
-insert into restrict_carrier values ('AP/60','NW');
-insert into restrict_carrier values ('AP/60','UA');
-insert into restrict_carrier values ('AP/60','US');
-insert into restrict_carrier values ('AP/61','CO');
-insert into restrict_carrier values ('AP/61','FY');
-insert into restrict_carrier values ('AP/61','JR');
-insert into restrict_carrier values ('AP/61','2V');
-insert into restrict_carrier values ('AP/68','AA');
-insert into restrict_carrier values ('AP/68','AD');
-insert into restrict_carrier values ('AP/68','AM');
-insert into restrict_carrier values ('AP/68','AS');
-insert into restrict_carrier values ('AP/68','BE');
-insert into restrict_carrier values ('AP/68','CO');
-insert into restrict_carrier values ('AP/68','CP');
-insert into restrict_carrier values ('AP/68','CT');
-insert into restrict_carrier values ('AP/68','DF');
-insert into restrict_carrier values ('AP/68','DL');
-insert into restrict_carrier values ('AP/68','EA');
-insert into restrict_carrier values ('AP/68','EM');
-insert into restrict_carrier values ('AP/68','HP');
-insert into restrict_carrier values ('AP/68','IN');
-insert into restrict_carrier values ('AP/68','ML');
-insert into restrict_carrier values ('AP/68','MX');
-insert into restrict_carrier values ('AP/68','NW');
-insert into restrict_carrier values ('AP/68','OU');
-insert into restrict_carrier values ('AP/68','PA');
-insert into restrict_carrier values ('AP/68','QQ');
-insert into restrict_carrier values ('AP/68','QS');
-insert into restrict_carrier values ('AP/68','RP');
-insert into restrict_carrier values ('AP/68','TW');
-insert into restrict_carrier values ('AP/68','UA');
-insert into restrict_carrier values ('AP/68','US');
-insert into restrict_carrier values ('AP/68','YN');
-insert into restrict_carrier values ('AP/68','YV');
-insert into restrict_carrier values ('AP/68','YW');
-insert into restrict_carrier values ('AP/68','YX');
-insert into restrict_carrier values ('AP/68','ZE');
-insert into restrict_carrier values ('AP/68','ZK');
-insert into restrict_carrier values ('AP/68','3N');
-insert into restrict_carrier values ('AP/68','5C');
-insert into restrict_carrier values ('AP/68','7L');
-insert into restrict_carrier values ('AP/70','AC');
-insert into restrict_carrier values ('AP/70','BW');
-insert into restrict_carrier values ('AP/70','EA');
-insert into restrict_carrier values ('AP/70','PA');
-insert into restrict_carrier values ('AP/73','AA');
-insert into restrict_carrier values ('AP/73','DL');
-insert into restrict_carrier values ('AP/73','EA');
-insert into restrict_carrier values ('AP/73','ML');
-insert into restrict_carrier values ('AP/73','PA');
-insert into restrict_carrier values ('AP/73','TW');
-insert into restrict_carrier values ('AP/75','AA');
-insert into restrict_carrier values ('AP/75','AC');
-insert into restrict_carrier values ('AP/75','AS');
-insert into restrict_carrier values ('AP/75','CH');
-insert into restrict_carrier values ('AP/75','CO');
-insert into restrict_carrier values ('AP/75','CP');
-insert into restrict_carrier values ('AP/75','DL');
-insert into restrict_carrier values ('AP/75','EA');
-insert into restrict_carrier values ('AP/75','HP');
-insert into restrict_carrier values ('AP/75','JV');
-insert into restrict_carrier values ('AP/75','KS');
-insert into restrict_carrier values ('AP/75','LH');
-insert into restrict_carrier values ('AP/75','ML');
-insert into restrict_carrier values ('AP/75','MX');
-insert into restrict_carrier values ('AP/75','ND');
-insert into restrict_carrier values ('AP/75','NW');
-insert into restrict_carrier values ('AP/75','OU');
-insert into restrict_carrier values ('AP/75','PA');
-insert into restrict_carrier values ('AP/75','RP');
-insert into restrict_carrier values ('AP/75','RV');
-insert into restrict_carrier values ('AP/75','TW');
-insert into restrict_carrier values ('AP/75','UA');
-insert into restrict_carrier values ('AP/75','US');
-insert into restrict_carrier values ('AP/75','WD');
-insert into restrict_carrier values ('AP/75','XE');
-insert into restrict_carrier values ('AP/75','YN');
-insert into restrict_carrier values ('AP/75','YV');
-insert into restrict_carrier values ('AP/75','ZO');
-insert into restrict_carrier values ('AP/75','7F');
-insert into restrict_carrier values ('AP/75','8D');
-insert into restrict_carrier values ('AP/76','MX');
-insert into restrict_carrier values ('AP/76','NW');
-insert into restrict_carrier values ('AP/80','AA');
-insert into restrict_carrier values ('AP/80','AC');
-insert into restrict_carrier values ('AP/80','AR');
-insert into restrict_carrier values ('AP/80','AS');
-insert into restrict_carrier values ('AP/80','BA');
-insert into restrict_carrier values ('AP/80','CO');
-insert into restrict_carrier values ('AP/80','CP');
-insert into restrict_carrier values ('AP/80','DL');
-insert into restrict_carrier values ('AP/80','EA');
-insert into restrict_carrier values ('AP/80','HP');
-insert into restrict_carrier values ('AP/80','JB');
-insert into restrict_carrier values ('AP/80','JL');
-insert into restrict_carrier values ('AP/80','JV');
-insert into restrict_carrier values ('AP/80','LA');
-insert into restrict_carrier values ('AP/80','LH');
-insert into restrict_carrier values ('AP/80','ND');
-insert into restrict_carrier values ('AP/80','NW');
-insert into restrict_carrier values ('AP/80','PA');
-insert into restrict_carrier values ('AP/80','TG');
-insert into restrict_carrier values ('AP/80','UA');
-insert into restrict_carrier values ('AP/80','US');
-insert into restrict_carrier values ('AP/80','UW');
-insert into restrict_carrier values ('AP/80','WD');
-insert into restrict_carrier values ('AP/80','YN');
-insert into restrict_carrier values ('AP/80','4V');
-insert into restrict_carrier values ('AP/80','7E');
-insert into restrict_carrier values ('AP/80','8D');
-insert into restrict_carrier values ('AP/87','AC');
-insert into restrict_carrier values ('AP/94','AA');
-insert into restrict_carrier values ('AP/94','AC');
-insert into restrict_carrier values ('AP/94','EA');
-insert into restrict_carrier values ('AP/94','LM');
-insert into restrict_carrier values ('AP/94','NW');
-insert into restrict_carrier values ('EX/1','AR');
-insert into restrict_carrier values ('EX/1','IB');
-insert into restrict_carrier values ('EX/2','AB');
-insert into restrict_carrier values ('EX/2','BW');
-insert into restrict_carrier values ('EX/2','FQ');
-insert into restrict_carrier values ('EX/2','MX');
-insert into restrict_carrier values ('EX/2','UA');
-insert into restrict_carrier values ('EX/2','UP');
-insert into restrict_carrier values ('EX/3','AA');
-insert into restrict_carrier values ('EX/3','CO');
-insert into restrict_carrier values ('EX/3','DL');
-insert into restrict_carrier values ('EX/3','EA');
-insert into restrict_carrier values ('EX/3','HP');
-insert into restrict_carrier values ('EX/3','PA');
-insert into restrict_carrier values ('EX/3','US');
-insert into restrict_carrier values ('EX/5','LR');
-insert into restrict_carrier values ('EX/9','AA');
-insert into restrict_carrier values ('EX/9','AC');
-insert into restrict_carrier values ('EX/9','AM');
-insert into restrict_carrier values ('EX/9','BA');
-insert into restrict_carrier values ('EX/9','CO');
-insert into restrict_carrier values ('EX/9','EA');
-insert into restrict_carrier values ('EX/9','FQ');
-insert into restrict_carrier values ('EX/9','HP');
-insert into restrict_carrier values ('EX/9','PA');
-insert into restrict_carrier values ('EX/9','TV');
-insert into restrict_carrier values ('EX/11','AA');
-insert into restrict_carrier values ('EX/11','AM');
-insert into restrict_carrier values ('EX/11','CO');
-insert into restrict_carrier values ('EX/11','CP');
-insert into restrict_carrier values ('EX/11','CX');
-insert into restrict_carrier values ('EX/11','DL');
-insert into restrict_carrier values ('EX/11','JT');
-insert into restrict_carrier values ('EX/11','LA');
-insert into restrict_carrier values ('EX/11','MX');
-insert into restrict_carrier values ('EX/11','NW');
-insert into restrict_carrier values ('EX/11','PA');
-insert into restrict_carrier values ('EX/11','UA');
-insert into restrict_carrier values ('EX/12','AS');
-insert into restrict_carrier values ('EX/12','CP');
-insert into restrict_carrier values ('EX/12','CX');
-insert into restrict_carrier values ('EX/13','AC');
-insert into restrict_carrier values ('EX/13','AS');
-insert into restrict_carrier values ('EX/13','BF');
-insert into restrict_carrier values ('EX/13','BW');
-insert into restrict_carrier values ('EX/13','DL');
-insert into restrict_carrier values ('EX/13','KS');
-insert into restrict_carrier values ('EX/13','LM');
-insert into restrict_carrier values ('EX/13','ML');
-insert into restrict_carrier values ('EX/13','YV');
-insert into restrict_carrier values ('EX/13','ZV');
-insert into restrict_carrier values ('EX/13','7H');
-insert into restrict_carrier values ('EX/14','AA');
-insert into restrict_carrier values ('EX/14','AS');
-insert into restrict_carrier values ('EX/14','BE');
-insert into restrict_carrier values ('EX/14','CO');
-insert into restrict_carrier values ('EX/14','CP');
-insert into restrict_carrier values ('EX/14','DL');
-insert into restrict_carrier values ('EX/14','EA');
-insert into restrict_carrier values ('EX/14','IN');
-insert into restrict_carrier values ('EX/14','ML');
-insert into restrict_carrier values ('EX/14','NW');
-insert into restrict_carrier values ('EX/14','PA');
-insert into restrict_carrier values ('EX/14','PD');
-insert into restrict_carrier values ('EX/14','TW');
-insert into restrict_carrier values ('EX/14','UA');
-insert into restrict_carrier values ('EX/14','US');
-insert into restrict_carrier values ('EX/14','WN');
-insert into restrict_carrier values ('EX/14','YW');
-insert into restrict_carrier values ('EX/14','ZV');
-insert into restrict_carrier values ('EX/14','2V');
-insert into restrict_carrier values ('EX/14','4N');
-insert into restrict_carrier values ('EX/14','4X');
-insert into restrict_carrier values ('EX/14','7F');
-insert into restrict_carrier values ('EX/14','8D');
-insert into restrict_carrier values ('EX/15','AC');
-insert into restrict_carrier values ('EX/15','BW');
-insert into restrict_carrier values ('EX/15','CU');
-insert into restrict_carrier values ('EX/15','HP');
-insert into restrict_carrier values ('EX/15','JM');
-insert into restrict_carrier values ('EX/17','AA');
-insert into restrict_carrier values ('EX/17','AM');
-insert into restrict_carrier values ('EX/17','AS');
-insert into restrict_carrier values ('EX/17','DL');
-insert into restrict_carrier values ('EX/17','EA');
-insert into restrict_carrier values ('EX/17','JL');
-insert into restrict_carrier values ('EX/17','LH');
-insert into restrict_carrier values ('EX/17','PA');
-insert into restrict_carrier values ('EX/17','UA');
-insert into restrict_carrier values ('EX/19','BW');
-insert into restrict_carrier values ('EX/19','KX');
-insert into restrict_carrier values ('EX/20','AA');
-insert into restrict_carrier values ('EX/20','CO');
-insert into restrict_carrier values ('EX/20','DL');
-insert into restrict_carrier values ('EX/20','HE');
-insert into restrict_carrier values ('EX/20','JM');
-insert into restrict_carrier values ('EX/20','ML');
-insert into restrict_carrier values ('EX/20','MX');
-insert into restrict_carrier values ('EX/20','NW');
-insert into restrict_carrier values ('EX/20','PA');
-insert into restrict_carrier values ('EX/20','UA');
-insert into restrict_carrier values ('EX/20','8R');
-insert into restrict_carrier values ('EX/21','AA');
-insert into restrict_carrier values ('EX/21','JM');
-insert into restrict_carrier values ('EX/25','AA');
-insert into restrict_carrier values ('EX/25','MX');
-insert into restrict_carrier values ('EX/29','AA');
-insert into restrict_carrier values ('EX/29','AM');
-insert into restrict_carrier values ('EX/29','CO');
-insert into restrict_carrier values ('EX/29','EA');
-insert into restrict_carrier values ('EX/29','LH');
-insert into restrict_carrier values ('EX/32','AA');
-insert into restrict_carrier values ('EX/32','EA');
-insert into restrict_carrier values ('EX/32','JM');
-insert into restrict_carrier values ('EX/33','AA');
-insert into restrict_carrier values ('EX/33','JM');
-insert into restrict_carrier values ('EX/33','LI');
-insert into restrict_carrier values ('EX/33','UA');
-insert into restrict_carrier values ('EX/33','5T');
-insert into restrict_carrier values ('EX/34','EA');
-insert into restrict_carrier values ('EX/34','IN');
-insert into restrict_carrier values ('EX/34','JM');
-insert into restrict_carrier values ('EX/34','KW');
-insert into restrict_carrier values ('EX/34','UE');
-insert into restrict_carrier values ('EX/34','UP');
-insert into restrict_carrier values ('EX/34','YV');
-insert into restrict_carrier values ('EX/34','YL');
-insert into restrict_carrier values ('EX/36','AA');
-insert into restrict_carrier values ('EX/36','AC');
-insert into restrict_carrier values ('EX/36','CO');
-insert into restrict_carrier values ('EX/36','CP');
-insert into restrict_carrier values ('EX/36','LI');
-insert into restrict_carrier values ('EX/36','OU');
-insert into restrict_carrier values ('EX/36','US');
-insert into restrict_carrier values ('EX/38','AA');
-insert into restrict_carrier values ('EX/38','EA');
-insert into restrict_carrier values ('EX/38','JM');
-insert into restrict_carrier values ('EX/38','KX');
-insert into restrict_carrier values ('EX/43','AA');
-insert into restrict_carrier values ('EX/43','AS');
-insert into restrict_carrier values ('EX/43','CO');
-insert into restrict_carrier values ('EX/43','CT');
-insert into restrict_carrier values ('EX/43','DL');
-insert into restrict_carrier values ('EX/43','EA');
-insert into restrict_carrier values ('EX/43','HP');
-insert into restrict_carrier values ('EX/43','MX');
-insert into restrict_carrier values ('EX/43','NW');
-insert into restrict_carrier values ('EX/43','OG');
-insert into restrict_carrier values ('EX/43','PA');
-insert into restrict_carrier values ('EX/43','TW');
-insert into restrict_carrier values ('EX/43','UA');
-insert into restrict_carrier values ('EX/43','US');
-insert into restrict_carrier values ('EX/45','NW');
-insert into restrict_carrier values ('EX/47','AA');
-insert into restrict_carrier values ('EX/47','CO');
-insert into restrict_carrier values ('EX/47','DL');
-insert into restrict_carrier values ('EX/47','EA');
-insert into restrict_carrier values ('EX/47','JM');
-insert into restrict_carrier values ('EX/47','JR');
-insert into restrict_carrier values ('EX/47','ML');
-insert into restrict_carrier values ('EX/47','NW');
-insert into restrict_carrier values ('EX/47','OG');
-insert into restrict_carrier values ('EX/47','PA');
-insert into restrict_carrier values ('EX/47','TW');
-insert into restrict_carrier values ('EX/47','US');
-insert into restrict_carrier values ('EX/48','AC');
-insert into restrict_carrier values ('EX/48','AF');
-insert into restrict_carrier values ('EX/48','CO');
-insert into restrict_carrier values ('EX/48','CP');
-insert into restrict_carrier values ('EX/48','DL');
-insert into restrict_carrier values ('EX/48','JM');
-insert into restrict_carrier values ('EX/48','KW');
-insert into restrict_carrier values ('EX/48','MX');
-insert into restrict_carrier values ('EX/48','PA');
-insert into restrict_carrier values ('EX/48','SN');
-insert into restrict_carrier values ('EX/55','AA');
-insert into restrict_carrier values ('EX/55','AF');
-insert into restrict_carrier values ('EX/55','BW');
-insert into restrict_carrier values ('EX/55','CO');
-insert into restrict_carrier values ('EX/55','DO');
-insert into restrict_carrier values ('EX/55','EA');
-insert into restrict_carrier values ('EX/55','JM');
-insert into restrict_carrier values ('EX/55','KX');
-insert into restrict_carrier values ('EX/55','LI');
-insert into restrict_carrier values ('EX/55','LM');
-insert into restrict_carrier values ('EX/55','NW');
-insert into restrict_carrier values ('EX/55','PA');
-insert into restrict_carrier values ('EX/55','PY');
-insert into restrict_carrier values ('EX/55','TW');
-insert into restrict_carrier values ('EX/55','UP');
-insert into restrict_carrier values ('EX/55','2V');
-insert into restrict_carrier values ('VU/1','AA');
-insert into restrict_carrier values ('VU/1','AC');
-insert into restrict_carrier values ('VU/1','AQ');
-insert into restrict_carrier values ('VU/1','AS');
-insert into restrict_carrier values ('VU/1','CP');
-insert into restrict_carrier values ('VU/1','CT');
-insert into restrict_carrier values ('VU/1','CX');
-insert into restrict_carrier values ('VU/1','DL');
-insert into restrict_carrier values ('VU/1','EA');
-insert into restrict_carrier values ('VU/1','HP');
-insert into restrict_carrier values ('VU/1','LW');
-insert into restrict_carrier values ('VU/1','ND');
-insert into restrict_carrier values ('VU/1','NW');
-insert into restrict_carrier values ('VU/1','PA');
-insert into restrict_carrier values ('VU/1','TB');
-insert into restrict_carrier values ('VU/1','TW');
-insert into restrict_carrier values ('VU/1','UA');
-insert into restrict_carrier values ('VU/1','US');
-insert into restrict_carrier values ('VU/1','YR');
-insert into restrict_carrier values ('VU/1','6G');
-insert into restrict_class values ('AP/2','B7NR');
-insert into restrict_class values ('AP/2','BW7NR');
-insert into restrict_class values ('AP/2','BWE14');
-insert into restrict_class values ('AP/2','YAP14');
-insert into restriction values ('AP/1','FOR TRAVEL ORIGINATING AND TERMINATING IN HAWAII','CHILDREN''S FARES,SALES AGENTS,TOUR CONDUCTORS',7,'Y',3,150);
-insert into restriction values ('AP/2','FOR TRAVEL BETWEEN UNITED STATES AND CARIBBEAN','TOUR CONDUCTORS',7,'N',3,14);
-insert into restriction values ('AP/4','FOR TRAVEL BETWEEN UNITED STATES AND MEXICO','CHILDREN''S FARES,SALES AGENTS',7,'Y',3,21);
-insert into restriction values ('AP/6','FOR TRAVEL TO/FROM CANADA','CHILDREN''S FARES,FAMILY FARES,TOUR CONDUCTORS,VISIT USA FARES',7,'Y',3,30);
-insert into restriction values ('AP/10','FOR TRAVEL TO/FROM INTERMEDIATE POINTS','CONTACT CARRIER',30,'Y',3,21);
-insert into restriction values ('AP/12','FOR TRAVEL BETWEEN UNITED STATES AND CARIBBEAN','CONTACT CARRIER',14,'N',3,21);
-insert into restriction values ('AP/13','TRAVEL BETWEEN U.S. AND CANADA,AND POINTS IN CARIBBEAN','CONTACT CARRIER',3,'Y',0,180);
-insert into restriction values ('AP/14','TRAVEL BETWEEN POINTS NAMED AND ARE NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CONTACT CARRIER',3,'Y',1,3);
-insert into restriction values ('AP/16','FARES ARE NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CONTACT CARRIER',14,'Y',3,21);
-insert into restriction values ('AP/17','ROUND TRIP TRAVEL BETWEEN U.S. AND MEXICO','SALES AGENTS (VIA AA TOUR CONDUCTORS)',7,'N',3,30);
-insert into restriction values ('AP/18','ROUND TRIP TRAVEL BETWEEN CANADA AND MEXICO','FAMILY FARES,SALES AGENTS,TOUR CONDUCTORS',7,'N',7,180);
-insert into restriction values ('AP/19','RND TRIP BETWEEN CANADA AND CARIBBEAN. NOT APPLICABLE TO/FROM INTERMEDIATE PNTS','CHILDREN''S FARES,SALES AGENT,TOUR CONDUCTORS',7,'N',7,30);
-insert into restriction values ('AP/20','ROUND TRIP EXCURSION FARES,NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CHILDREN''S FARES,FAMILY FARES,TOUR CONDUCTORS',14,'Y',3,180);
-insert into restriction values ('AP/21','TRAVEL TO/FROM U.S.A. AND CANADA,NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','SALES AGENTS,TOUR CONDUCTORS',14,'N',7,7);
-insert into restriction values ('AP/25','FARES DO NOT APPLY TO/FROM INTERMEDIATE POINTS ON THE ROUTING','SALES AGENTS,TOUR CONDUCTORS',7,'Y',3,60);
-insert into restriction values ('AP/27','FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CONTACT CARRIER',7,'Y',0,180);
-insert into restriction values ('AP/32','ROUND TRIP CHARTER TO HAWAII.  FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CHILDREN''S AND FAMILY FARES,HAWAII COMMON FARE,SALES AGENTS,TOUR CONDUCTORS',7,'Y',3,30);
-insert into restriction values ('AP/33','ROUND TRIP BETWEEN U.S. AND CARIBBEAN','CHILDREN''S FARE,SALES AGENTS,TOUR CONDUCTORS',14,'Y',6,21);
-insert into restriction values ('AP/35','FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','SALES AGENTS,TOUR CONDUCTORS',7,'Y',0,30);
-insert into restriction values ('AP/43','FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CHILDREN''S FARE,SALES AGENTS,TOUR CONDUCTORS',14,'N',3,3);
-insert into restriction values ('AP/44','ONE_WAY TRAVEL,DURING PEAK/NON-PEAK HOURS','CONTACT CARRIER',4,'Y',0,0);
-insert into restriction values ('AP/47','ROUND TRIP TRAVEL','CONTACT CARRIER',14,'Y',7,30);
-insert into restriction values ('AP/48','FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','SALES AGENTS,TOUR CONDUCTORS,VISIT USA FARES,CHILDREN''S FARES',7,'Y',0,0);
-insert into restriction values ('AP/55','MAY COMBINE FARES (EXCEPT VIA DELTA AIRLINES) SEATS LIMITED VIA UNITED AIRLINES','CONTACT CARRIER',3,'N',0,0);
-insert into restriction values ('AP/56','SEATS ARE LIMITED','CONTACT CARRIERS',7,'Y',3,45);
-insert into restriction values ('AP/57','FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CHILDREN''S FARES,SALES AGENTS,TOUR CONDUCTORS',7,'Y',3,180);
-insert into restriction values ('AP/58','FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CHILDREN''S FARES,SALES AGENTS,TOUR CONDUCTORS',7,'Y',3,330);
-insert into restriction values ('AP/59','FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CHILDREN''S FARES,SALES AGENTS,TOUR CONDUCTORS',14,'N',7,30);
-insert into restriction values ('AP/60','ROUND TRIP TRAVEL BETWEEN U.S. AND CANADA','CHILDREN''S FARES,SALES AGENTS,TOUR CONDUCTORS',7,'N',3,365);
-insert into restriction values ('AP/61','FARES MAYBE COMBINED','CHILDREN''S FARES,SALES AGENTS,TOUR CONDUCTORS',7,'Y',0,60);
-insert into restriction values ('AP/68','FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CONTACT CARRIER',7,'Y',0,0);
-insert into restriction values ('AP/70','ROUND TRIP TRAVEL. FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','SALES AGENTS,TOUR CONDUCTORS,VISIT U.S.A. FARES,CHILDREN''S FARES',14,'Y',7,14);
-insert into restriction values ('AP/73','FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CONTACT CARRIER',7,'N',0,30);
-insert into restriction values ('AP/75','FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','SALES AGENTS,TOUR CONDUCTORS,VISIT U.S.A. FARES,CHILDREN''S FARES',7,'Y',3,60);
-insert into restriction values ('AP/76','ROUND TRIP TRAVEL BETWEEN U.S. AND JAMAICA','SALES AGENTS,TOUR CONDUCTORS',7,'N',0,14);
-insert into restriction values ('AP/80','FARES APPLY TO/FROM INTERMEDIATE POINTS','CHILDREN''S FARES,FAMILY FARES,SALES AGENTS,TOUR CONDUCTORS',14,'N',3,30);
-insert into restriction values ('AP/87','FARES APPLY TO ROUND TRIP TRAVEL','CONTACT CARRIER',14,'Y',7,21);
-insert into restriction values ('AP/94','FOR ROUND TRIP TRAVEL. FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CHILDREN''S FARES,SALES AGENTS,TOUR CONDUCTORS',7,'Y',7,21);
-insert into restriction values ('EX/1','FOR CIRCLE TRIP TRAVEL','CHILDREN''S FARES,SALES AGENTS',0,'Y',5,60);
-insert into restriction values ('EX/2','ECONOMY CLASS EXCURSION FARES','SALES AGENTS,TOUR CONDUCTORS',0,'Y',0,21);
-insert into restriction values ('EX/3','FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CONTACT CARRIER',0,'Y',2,45);
-insert into restriction values ('EX/5','FOR ROUND TRIP TRAVEL','CONTACT CARRIER',0,'N',5,30);
-insert into restriction values ('EX/9','FARES DO NOT APPLY TO/FROM INTERMEDIATE POINTS','CHILDREN''S FARES,SALES AGENTS,TOUR CONDUCTORS',0,'N',0,30);
-insert into restriction values ('EX/11','FARES MAY BE COMBINED','CONTACT CARRIER',0,'Y',0,60);
-insert into restriction values ('EX/12','FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CHILDREN''S FARES',0,'Y',3,180);
-insert into restriction values ('EX/13','FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CHILDREN''S FARES,FAMILY FARES,SALES AGENTS,TOUR CONDUCTORS',0,'Y',0,3);
-insert into restriction values ('EX/14','FARES MAY BE COMBINED','CONTACT CARRIER',0,'N',3,330);
-insert into restriction values ('EX/15','ROUND TRIP TRAVEL BETWEEN CANADA AND CARIBBEAN','CONTACT CARRIER',0,'Y',7,45);
-insert into restriction values ('EX/17','ROUND TRIP EXCURSION FARES','SALES AGENTS,TOUR CONDUCTORS',0,'N',0,180);
-insert into restriction values ('EX/19','ROUND TRIP EXCURSION FARES BETWEEN CANADA AND CARIBBEAN','CONTACT CARRIER',0,'Y',7,7);
-insert into restriction values ('EX/20','ROUND TRIP EXCURSION FARES','CONTACT CARRIER',0,'Y',0,14);
-insert into restriction values ('EX/21','TRAVEL BETWEEN THE U.S.A. AND CARIBBEAN','SALES AGENTS,TOUR CONDUCTORS',0,'N',0,7);
-insert into restriction values ('EX/25','VIA AA,ROUND TRIP TRAVEL BETWEEN SAN JUAN AND ACAPULCO/MEXICO CITY','SALES AGENTS,TOUR CONDUCTORS',0,'Y',3,14);
-insert into restriction values ('EX/29','ROUND TRIP TRAVEL BETWEEN U.S.,CARIBBEAN,AND MEXICO','CHILDREN''S FARES',0,'Y',0,21);
-insert into restriction values ('EX/32','TRAVEL ORIGINATING IN JAMAICA','SALES AGENTS,TOUR CONDUCTORS',0,'N',0,365);
-insert into restriction values ('EX/33','ROUND TRIP TRAVEL TO JAMAICA/CARIBBEAN','CHILDREN''S FARES,TOUR CONDUCTORS',0,'N',0,21);
-insert into restriction values ('EX/34','ONE DAY AWAY ROUND TRIP FARES','SALES AGENTS,TOUR CONDUCTORS',0,'N',1,1);
-insert into restriction values ('EX/36','ROUND TRIP TRAVEL. NOT APPLICABLE TO/FROM INTERMEDIATE POINTS','CHILDREN''S FARES,FAMILY FARES,TOUR CONDUCTORS',0,'Y',1,2);
-insert into restriction values ('EX/38','SAME DAY FARES (VIA EASTERN AIRLINES)','SALES AGENTS,TOUR CONDUCTORS',0,'N',1,1);
-insert into restriction values ('EX/43','ROUND TRIP EXCURSION FARES','CONTACT CARRIER',0,'Y',0,365);
-insert into restriction values ('EX/45','VIA AMERICAN AIRLINES ROUND TRIP TRAVEL BETWEEN KINGSTON/MONTEGO BAY','CHILDREN''S FARES,SALES AGENTS,TOUR CONDUCTORS',0,'N',3,21);
-insert into restriction values ('EX/47','ROUND TRIP TRAVEL BETWEEN U.S.,CANADA,AND CARIBBEAN','CONTACT CARRIER',0,'Y',3,21);
-insert into restriction values ('EX/48','WEEKEND EXCURSION FARE','CHILDREN''S FARE,FAMILY FARES,SALES AGENTS,TOUR CONDUCTORS',0,'N',7,365);
-insert into restriction values ('EX/55','FARES MAY BE COMBINED','SALES AGENTS',0,'Y',3,21);
-insert into restriction values ('VU/1','VISIT USA: INTERNATIONAL TRAVEL BEGINNING AND ENDING OUTSIDE U.S.','SALES AGENTS',0,'Y',3,21);
-insert into state values ('AB','ALBERTA','CANADA');
-insert into state values ('AK','ALASKA','USA');
-insert into state values ('AL','ALABAMA','USA');
-insert into state values ('AR','ARKANSAS','USA');
-insert into state values ('AZ','ARIZONA','USA');
-insert into state values ('BC','BRITISH COLUMBIA','CANADA');
-insert into state values ('CA','CALIFORNIA','USA');
-insert into state values ('CO','COLORADO','USA');
-insert into state values ('CT','CONNECTICUT','USA');
-insert into state values ('DC','DISTRICT OF COLUMBIA','USA');
-insert into state values ('DE','DELAWARE','USA');
-insert into state values ('FL','FLORIDA','USA');
-insert into state values ('GA','GEORGIA','USA');
-insert into state values ('HI','HAWAII','USA');
-insert into state values ('IA','IOWA','USA');
-insert into state values ('ID','IDAHO','USA');
-insert into state values ('IL','ILLINOIS','USA');
-insert into state values ('IN','INDIANA','USA');
-insert into state values ('KS','KANSAS','USA');
-insert into state values ('KY','KENTUCKY','USA');
-insert into state values ('LA','LOUISIANA','USA');
-insert into state values ('MA','MASSACHUSETTS','USA');
-insert into state values ('MB','MANITOBA','CANADA');
-insert into state values ('MD','MARYLAND','USA');
-insert into state values ('ME','MAINE','USA');
-insert into state values ('MI','MICHIGAN','USA');
-insert into state values ('MN','MINNESOTA','USA');
-insert into state values ('MO','MISSOURI','USA');
-insert into state values ('MS','MISSISSIPPI','USA');
-insert into state values ('MT','MONTANA','USA');
-insert into state values ('NB','NEW BRUNSWICK','CANADA');
-insert into state values ('NC','NORTH CAROLINA','USA');
-insert into state values ('ND','NORTH DAKOTA','USA');
-insert into state values ('NE','NEBRASKA','USA');
-insert into state values ('NF','NEWFOUNDLAND','CANADA');
-insert into state values ('NH','NEW HAMPSHIRE','USA');
-insert into state values ('NJ','NEW JERSEY','USA');
-insert into state values ('NM','NEW MEXICO','USA');
-insert into state values ('NS','NOVA SCOTIA','CANADA');
-insert into state values ('NT','NORTHWEST TERRITORIES','CANADA');
-insert into state values ('NV','NEVADA','USA');
-insert into state values ('NY','NEW YORK','USA');
-insert into state values ('OH','OHIO','USA');
-insert into state values ('OK','OKLAHOMA','USA');
-insert into state values ('ON','ONTARIO','CANADA');
-insert into state values ('OR','OREGON','USA');
-insert into state values ('PA','PENNSYLVANIA','USA');
-insert into state values ('PE','PRINCE EDWARD ISLAND','CANADA');
-insert into state values ('PQ','QUEBEC','CANADA');
-insert into state values ('RI','RHODE ISLAND','USA');
-insert into state values ('SC','SOUTH CAROLINA','USA');
-insert into state values ('SD','SOUTH DAKOTA','USA');
-insert into state values ('SK','SASKATCHEWAN','CANADA');
-insert into state values ('TN','TENNESSEE','USA');
-insert into state values ('TX','TEXAS','USA');
-insert into state values ('UT','UTAH','USA');
-insert into state values ('VA','VIRGINIA','USA');
-insert into state values ('VT','VERMONT','USA');
-insert into state values ('WA','WASHINGTON','USA');
-insert into state values ('WI','WISCONSIN','USA');
-insert into state values ('WV','WEST VIRGINIA','USA');
-insert into state values ('WY','WYOMING','USA');
-insert into state values ('YT','YUKON TERRITORY','CANADA');
-insert into stop1 values (101908,1,102766);
-insert into stop1 values (101908,2,137319);
-insert into stop1 values (101913,1,102770);
-insert into stop1 values (101913,2,137323);
-insert into stop1 values (101924,1,102779);
-insert into stop1 values (101924,2,137339);
-insert into stop1 values (102674,1,102129);
-insert into stop1 values (102674,2,112354);
-insert into stop1 values (105810,1,106248);
-insert into stop1 values (105810,2,137423);
-insert into stop1 values (106262,1,106229);
-insert into stop1 values (106262,2,137734);
-insert into stop1 values (106270,1,106251);
-insert into stop1 values (106270,2,137740);
-insert into stop1 values (106366,1,105795);
-insert into stop1 values (106366,2,112516);
-insert into stop1 values (106373,1,105806);
-insert into stop1 values (106373,2,113716);
-insert into stop1 values (106375,1,105800);
-insert into stop1 values (106375,2,112527);
-insert into stop1 values (107253,1,107486);
-insert into stop1 values (107253,2,138963);
-insert into stop1 values (111924,1,111886);
-insert into stop1 values (111924,2,102766);
-insert into stop1 values (111924,3,137319);
-insert into stop1 values (111930,1,111939);
-insert into stop1 values (111930,2,107199);
-insert into stop1 values (112413,1,111886);
-insert into stop1 values (112413,2,102766);
-insert into stop1 values (113499,1,112998);
-insert into stop1 values (113499,2,112352);
-insert into stop1 values (113710,1,112996);
-insert into stop1 values (113710,2,112518);
-insert into stop1 values (113713,1,113001);
-insert into stop1 values (113713,2,112520);
-insert into stop1 values (133423,1,133431);
-insert into stop1 values (133423,2,111931);
-insert into stop1 values (133516,1,133436);
-insert into stop1 values (133516,2,113582);
-insert into stop1 values (137410,1,137228);
-insert into stop1 values (137410,2,102127);
-insert into stop1 values (137685,1,137420);
-insert into stop1 values (137685,2,113500);
-insert into stop1 values (137814,1,137736);
-insert into stop1 values (137814,2,139355);
-insert into stop1 values (138866,1,139270);
-insert into stop1 values (138866,2,137335);
-insert into stop1 values (138965,1,138976);
-insert into stop1 values (138965,2,113011);
-insert into stop1 values (144059,1,144157);
-insert into stop1 values (144059,2,112783);
-insert into stop1 values (144087,1,144156);
-insert into stop1 values (144087,2,112864);
-insert into stop1 values (144088,1,144144);
-insert into stop1 values (144088,2,111929);
-insert into stop1 values (144092,1,144063);
-insert into stop1 values (144092,2,101928);
-insert into stop1 values (144093,1,144575);
-insert into stop1 values (144093,2,138868);
-insert into stop1 values (144095,1,144066);
-insert into stop1 values (144095,2,101929);
-insert into stop1 values (144110,1,144572);
-insert into stop1 values (144110,2,138882);
-insert into stop1 values (144160,1,144145);
-insert into stop1 values (144160,2,112038);
-insert into stop1 values (144161,1,144146);
-insert into stop1 values (144161,2,112039);
-insert into stop1 values (144543,1,144574);
-insert into stop1 values (144543,2,139271);
-insert into time_zone values ('HST','HAWAII/ALEUTIAN STANDARD TIME');
-insert into time_zone values ('AST','ALASKA STANDARD TIME');
-insert into time_zone values ('YST','YUKON STANDARD TIME');
-insert into time_zone values ('PST','PACIFIC STANDARD TIME');
-insert into time_zone values ('MST','MOUNTAIN STANDARD TIME');
-insert into time_zone values ('CST','CENTRAL STANDARD TIME');
-insert into time_zone values ('EST','EASTERN STANDARD TIME');
-insert into time_zone values ('AST','ATLANTIC STANDARD TIME');
-insert into time_zone values ('NST','NEWFOUNDLAND STANDARD TIME');
-insert into transport values ('L','LIMOUSINE');
-insert into transport values ('T','TAXI');
-insert into transport values ('R','RENTAL CAR');
-insert into transport values ('A','AIR TAXI OPERATION');
+COPY 135 RECORDS INTO "sys"."aircraft" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"ATR"	"AEROSPATIALE/AERITALIA (ALL SERIES)"	2	"TURBOPROP"	"NO"	80.58	73.83	32446	49	10603	277	0	"YES"
+"SSC"	"AEROSPATIALE-BRITISH AEROSPACE (BAC) CONCORDE"	4	"JET"	"NO"	83.83	203.75	400000	128	25000	1400	3800	"YES"
+"CRV"	"AEROSPATIALE CARAVELLE (ALL SERIES)"	2	"JET"	"NO"	112.5	118.83	127870	140	29100	512	2150	"YES"
+"ND2"	"AEROSPATIALE N 262/FRAKES MOHAWK 298"	2	"TURBOPROP"	"NO"	71.83	63.25	23370	27	5810	240	500	"YES"
+"NDH"	"AEROSPATIALE SA 365 DAUPHIN 2"	1	"HELICOPTER"	"NO"	0	43.5	6615	14	0	196	423	"NO"
+"AGH"	"AGUSTA A 109 A"	2	"HELICOPTER"	"NO"	36.08	35.14	5402	6	0	165	351	"NO"
+"AB3"	"AIRBUS INDUSTRIE (ALL SERIES)"	2	"JET"	"YES"	147.08	175.91	313060	345	68000	576	2100	"YES"
+"AN2"	"ANTONOV AN22 FREIGHTER"	4	"TURBOPROP"	"YES"	211.29	189.62	551156	28	99280	375	3107	""
+"AN4"	"ANTONOV AN24"	2	"TURBOPROP"	"NO"	95.83	77.25	42997	50	8150	295	807	"NO"
+"AN6"	"ANTONOV AN26 FREIGHTER"	2	"TURBOPROP"	"NO"	95.79	77.2	49297	50	0	280	342	""
+"BEC"	"BEECHCRAFT (ALL SERIES)"	2	"TURBOPROP"	"NO"	0	0	0	0	0	0	0	"NO"
+"BEB"	"BEECHCRAFT BARON"	2	"PROPELLER"	"NO"	37.83	28	5120	6	1965	225	1085	"NO"
+"BEQ"	"BEECHCRAFT QUEEN AIR"	2	"PROPELLER"	"NO"	50.25	35.5	8800	11	3578	214	1185	"NO"
+"BEO"	"BEECHCRAFT TWIN BONANZA"	2	"PROPELLER"	"NO"	45.95	31.5	6300	5	2230	201	1110	"NO"
+"BE8"	"BEECHCRAFT 18/VOLPAR TURBO 18"	2	"PROPELLER"	"NO"	49.66	35.25	9900	15	4055	256	1515	"NO"
+"BE9"	"BEECHCRAFT C99 AIRLINER"	2	"TURBOPROP"	"NO"	45.66	44.5	10900	15	5123	280	1150	"NO"
+"BH2"	"BELL (ALL SERIES)"	1	"HELICOPTER"	"NO"	33.25	39.08	3200	4	860	140	341	"NO"
+"DHP"	"BOEING CANADA DHC-2 BEAVER"	1	"PROPELLER"	"NO"	48	30.25	5100	10	1800	143	733	""
+"DHB"	"BOEING CANADA DHC-2 TURBO BEAVER"	1	"TURBOPROP"	"NO"	48	35.25	5370	10	1800	157	750	"NO"
+"DHO"	"BOEING CANADA DHC-3 OTTER"	1	"PROPELLER"	"NO"	58	41.83	8000	10	2100	132	960	"NO"
+"DHT"	"BOEING CANADA DHC-6 TWIN OTTER"	2	"TURBOPROP"	"NO"	65	51.75	12500	20	4420	209	745	"NO"
+"DH7"	"BOEING CANADA DHC-7 DASH-7 PASSENGER"	4	"TURBOPROP"	"NO"	93	80.58	43000	50	15000	275	850	"YES"
+"DH8"	"BOEING CANADA DHC-8 DASH-8 (ALL SERIES)"	2	"TURBOPROP"	"NO"	84	75	0	32	0	300	691	""
+"707"	"BOEING 707 PASSENGER (ALL SERIES)"	4	"JET"	"NO"	130.83	145.08	258000	181	52000	615	6325	"YES"
+"70M"	"BOEING 707-320C MIXED CONFIGURATION"	4	"JET"	"NO"	145.75	152.91	336000	145	83447	615	5750	"YES"
+"727"	"BOEING 727 PASSENGER (ALL SERIES)"	3	"JET"	"NO"	108	133.16	170000	131	35900	622	3000	"YES"
+"72M"	"BOEING 727-100C/100QC MIXED CONFIGURATION"	3	"JET"	"NO"	108	133.16	160000	96	30500	600	0	"YES"
+"72S"	"BOEING 727-200 (ALL SERIES)"	3	"JET"	"NO"	108	153.16	191000	145	40670	622	2400	"YES"
+"737"	"BOEING 737 PASSENGER (ALL SERIES)"	2	"JET"	"NO"	93	94	111000	138	29093	577	1300	"YES"
+"73M"	"BOEING 737-200C/200QC MIXED CONFIGURATION"	2	"JET"	"NO"	93	100.16	125000	130	33561	573	1800	"YES"
+"73S"	"BOEING 737 PASSENGER (ALL 200/200C SERIES)"	2	"JET"	"NO"	93	100.16	120000	130	34050	577	2300	"YES"
+"733"	"BOEING 737-300"	2	"JET"	"NO"	94.75	105.58	135000	138	35500	550	2500	"YES"
+"74M"	"BOEING 747 MIXED CONFIGURATION (ALL SERIES)"	4	"JET"	"YES"	195.66	231.83	78500	238	165710	600	5500	"YES"
+"747"	"BOEING 747 PASSENGER (ALL SERIES)"	4	"JET"	"YES"	195.66	321.83	833000	452	134000	557	7500	"YES"
+"74L"	"BOEING 747SP"	4	"JET"	"YES"	195.66	184.75	700000	430	98000	564	6730	"YES"
+"757"	"BOEING 757-200 PASSENGER"	2	"JET"	"NO"	124.5	155.25	220000	224	38940	560	2440	"YES"
+"767"	"BOEING 767 (ALL SERIES)"	2	"JET"	"YES"	156.08	159.16	312000	290	69000	550	4500	"YES"
+"B11"	"BRITISH AEROSPACE (BAC) ONE-ELEVEN (ALL SERIES)"	2	"JET"	"NO"	88.5	93.5	78500	79	17600	550	1430	"YES"
+"VGP"	"BRITISH AEROSPACE (BAC-VICKERS) VANGUARD PASSENGER"	4	"TURBOPROP"	"NO"	118	122.87	146500	139	21500	405	2910	"YES"
+"VCV"	"BRITISH AEROSPACE (BAC-VICKERS) VISCOUNT (ALL SERIES)"	4	"TURBOPROP"	"NO"	93.7	85.66	72500	75	14500	352	1725	"YES"
+"HPH"	"BRITISH AEROSPACE (HANDLEY PAGE) HERALD"	2	"TURBOPROP"	"NO"	113	96.83	82000	74	12000	266	3150	"YES"
+"HPJ"	"BRITISH AEROSPACE (HANDLEY PAGE) JETSTREAM 1/200"	2	"TURBOPROP"	"NO"	52	47.08	12550	18	4100	250	1440	"YES"
+"DHH"	"BRITISH AEROSPACE (HAWKER SIDDELEY) HERON"	4	"PROPELLER"	"NO"	71.5	48.5	13500	17	2100	195	0	"NO"
+"TRD"	"BRITISH AEROSPACE (HAWKER SIDDELEY) TRIDENT (ALL SERIES)"	3	"JET"	"NO"	95	114.75	135500	103	24500	606	2700	"YES"
+"HS7"	"BRITISH AEROSPACE (HAWKER SIDDELEY) 748 PASSENGER"	2	"TURBOPROP"	"NO"	98.5	67	46500	56	11363	275	850	"YES"
+"J31"	"BRITISH AEROSPACE JETSTREAM 31"	2	"TURBOPROP"	"NO"	52	47.12	12566	18	0	282	1380	"YES"
+"141"	"BRITISH AEROSPACE 146-100"	4	"JET"	"NO"	86.41	85.83	74600	88	17277	460	1450	"YES"
+"142"	"BRITISH AEROSPACE 146-200 PASSENGER"	4	"JET"	"NO"	86.41	93.66	89500	100	21000	460	1450	"YES"
+"BNI"	"BRITTEN-NORMAN BN-2A/B ISLANDER/BN-2T TURBINE ISLANDER"	2	"PROPELLER"	"NO"	49	35.66	6300	10	2000	260	425	"NO"
+"BNT"	"BRITTEN-NORMAN BN-2A MK III TRISLANDER"	3	"PROPELLER"	"NO"	53	43.75	9350	18	4000	180	0	"NO"
+"CS2"	"CASA C-212/NUSANTARA NC-212 AVIOCAR"	2	"TURBOPROP"	"NO"	62.5	45.83	16427	28	6077	230	1400	"NO"
+"CNA"	"CESSNA (ALL SERIES)"	1	"TURBOPROP"	"NO"	0	0	0	0	0	0	0	"NO"
+"CN2"	"CESSNA STATIONAIR/TURBO STATIONAIR 6"	1	"PROPELLER"	"NO"	35.83	28	3600	7	1792	169	702	"NO"
+"CNT"	"CESSNA STATIONAIR 207/TURBO STATIONAIR 7/8"	1	"PROPELLER"	"NO"	35.83	31.75	3800	7	1729	185	581	"NO"
+"CN4"	"CESSNA 402/402 UTILILINER"	2	"PROPELLER"	"NO"	39.91	36.08	6300	8	2436	239	562	"NO"
+"CVR"	"CONVAIR (ALL SERIES)"	2	"TURBOPROP"	"NO"	105.33	79.16	54600	56	11200	350	1100	"YES"
+"CWC"	"CURTISS C-46 COMMANDO"	2	"PROPELLER"	"NO"	108.08	76.33	40000	60	12000	220	1600	"NO"
+"DAM"	"DASSAULT-BREGUET MERCURE"	2	"JET"	"NO"	100.25	114.25	120150	0	32850	574	1094	"YES"
+"DOS"	"DORNIER DO 28"	2	"PROPELLER"	"NO"	51.02	37.02	8852	15	3000	160	708	""
+"DO8"	"DORNIER 228 (ALL SERIES)"	2	"TURBOPROP"	"NO"	55.58	49.25	12570	19	6000	231	1065	"NO"
+"EMB"	"EMBRAER EMP-110 BANDEIRANTE"	2	"TURBOPROP"	"NO"	50.16	49.41	12500	19	5000	262	900	"NO"
+"EM2"	"EMBRAER EMP-120 BRASILIA"	2	"TURBOPROP"	"NO"	64.89	64.7	12295	30	0	288	628	"YES"
+"FK7"	"FAIRCHILD INDUSTRIES FH-227"	2	"TURBOPROP"	"NO"	95.16	83.08	43500	52	11500	294	1520	"YES"
+"SWM"	"FAIRCHILD (SWEARINGEN) METRO/MERLIN"	2	"TURBOPROP"	"NO"	46.25	59.33	12500	19	3950	294	2139	"YES"
+"F27"	"FOKKER F27 FRIENDSHIP/FAIRCHILD (ALL SERIES)"	2	"TURBOPROP"	"NO"	95.16	82.16	45000	56	13500	265	1450	"YES"
+"F28"	"FOKKER F28 FELLOWSHIP (ALL SERIES)"	2	"JET"	"NO"	82.25	96.16	73000	85	19623	523	1055	"YES"
+"CD2"	"GOVERNMENT AIRCRAFT FACTORIES N22B/N24A NOMAD"	2	"TURBOPROP"	"NO"	54	43	8500	16	3000	165	850	"NO"
+"GRA"	"GRUMMAN G-111 ALBATROSS G-111"	2	"AMPHIBIAN"	"NO"	96.66	61.25	31000	28	7965	160	1500	"NO"
+"GRG"	"GRUMMAN G-21 GOOSE"	2	"AMPHIBIAN"	"NO"	49	38.33	8000	10	2000	160	825	"NO"
+"GRM"	"GRUMMAN G-73 MALLARD"	2	"AMPHIBIAN"	"NO"	66.66	48.33	12750	10	1950	180	1245	"NO"
+"GRS"	"GULFSTREAM AEROSPACE (GRUMMAN) GULFSTREAM 1/1-C"	2	"TURBOPROP"	"NO"	78.33	63.75	36000	37	4300	345	2300	"YES"
+"IL4"	"ILYUSHIN IL14"	2	"PROPELLER"	"NO"	104	69.91	36380	24	4800	224	1250	"NO"
+"IL8"	"ILYUSHIN IL18"	4	"TURBOPROP"	"NO"	122.7	117.79	119000	125	30860	403	1860	"YES"
+"IL6"	"ILYUSHIN IL62/62M"	4	"JET"	"NO"	141.29	174.16	347224	186	50706	528	5716	"YES"
+"ILW"	"ILYUSHIN IL86"	4	"JET"	"YES"	157.68	197.54	454152	350	0	575	0	"YES"
+"LOM"	"LOCKHEED L188 ELECTRA MIXED CONFIGURATION"	4	"TURBOPROP"	"NO"	99	104.5	116000	0	0	390	2200	""
+"LOE"	"LOCKHEED L188 ELECTRA PASSENGER"	4	"TURBOPROP"	"NO"	99	104.54	116000	104	22000	405	2750	"YES"
+"L10"	"LOCKHEED L1011 (ALL SERIES)"	3	"JET"	"YES"	155.25	177.58	430000	400	95500	615	3450	"YES"
+"L15"	"LOCKHEED L1011-500 TRISTAR"	3	"JET"	"YES"	155.33	164.2	496000	330	115000	580	5998	"YES"
+"MR4"	"MARTIN 404"	2	"PROPELLER"	"NO"	93.25	74.58	44900	44	9500	255	900	"YES"
+"DC3"	"MCDONNELL DOUGLAS DC3/C47 DAKOTA PASSENGER"	2	"PROPELLER"	"NO"	95	64.5	25200	30	7380	207	1330	"NO"
+"DC4"	"MCDONNELL DOUGLAS DOUGLAS DC4/C-54 SKYMASTER PASSENGER"	4	"PROPELLER"	"NO"	117.5	93.91	73800	80	11440	230	2750	"NO"
+"DC6"	"MCDONNELL DOUGLAS DC6 (ALL SERIES)"	4	"PROPELLER"	"NO"	117.5	101.5	93200	80	12310	309	3070	"YES"
+"D8M"	"MCDONNELL DOUGLAS DC8 MIXED CONFIGURATION (ALL SEIRES)"	4	"JET"	"NO"	142.33	187.41	325000	259	66665	600	3700	"YES"
+"DC8"	"MCDONNELL DOUGLAS DC8 PASSENGER (ALL 20-50 SERIES)"	4	"JET"	"NO"	142.25	150.41	315000	176	34000	544	7010	"YES"
+"D8S"	"MCDONNELL DOUGLAS DC8 (ALL 60/70 SERIES)"	4	"JET"	"NO"	142.25	187.33	325000	259	66665	580	7150	"YES"
+"DC9"	"MCDONNELL DOUGLAS DC9 (ALL 10 & 20 SERIES)"	2	"JET"	"NO"	93.25	104.33	98000	90	20850	593	2200	"YES"
+"D95"	"MCDONNELL DOUGLAS DC9-50"	2	"JET"	"NO"	93.25	133.41	12200	139	32615	593	2550	"YES"
+"D10"	"MCDONNELL DOUGLAS DC10 (ALL SERIES)"	3	"JET"	"YES"	155.25	182.25	455000	380	98490	608	6350	"YES"
+"M80"	"MCDONNELL DOUGLAS (MD-80 SERIES)"	2	"JET"	"NO"	107.83	147.83	140000	172	0	579	3060	"YES"
+"MIH"	"MIL MI-8"	2	"HELICOPTER"	"NO"	50.2	108.85	26455	28	0	140	311	""
+"MU2"	"MITSUBISHI MU2/MARQUISE/SOLITARE"	2	"TURBOPROP"	"NO"	39.16	39.41	11575	8	0	347	1606	""
+"YS1"	"NAMC YS-11"	2	"TURBOPROP"	"NO"	105	86.25	51800	60	12550	292	1980	"YES"
+"PN6"	"PARTENAVIA P.68 VICTOR"	2	"PROPELLER"	"NO"	39.37	31.33	4387	7	0	185	1312	""
+"PL6"	"PILATUS PC-6 TURBO-PORTER"	1	"TURBOPROP"	"NO"	49.66	35.75	4850	0	0	151	644	""
+"PA6"	"PIPER AEROSTAR"	2	"TURBOPROP"	"NO"	34.16	54.75	5500	6	240	250	1400	"YES"
+"PAZ"	"PIPER APACHE/AZTEC"	2	"PROPELLER"	"NO"	37.33	31.16	5200	6	2151	206	1519	"NO"
+"PAC"	"PIPER CHEROKEE"	1	"PROPELLER"	"NO"	32.83	27.66	3400	7	1544	167	856	"NO"
+"PAH"	"PIPER NAVAJO/MOHAVE/CHIEFTAIN"	2	"PROPELLER"	"NO"	40.5	34.5	7000	8	0	254	1019	"NO"
+"PAS"	"PIPER SENECA"	2	"PROPELLER"	"NO"	38.91	28.5	4570	7	1747	219	1036	"NO"
+"PA1"	"PIPER T-1020/1040"	2	"TURBOPROP"	"NO"	41.08	36.66	9000	9	3800	250	900	"NO"
+"ACD"	"ROCKWELL COMMANDER (ALL SERIES)"	2	"PROPELLER"	"NO"	49.5	35.08	6750	7	2750	205	1220	"YES"
+"SF3"	"SAAB-FAIRCHILD 340"	2	"TURBOPROP"	"NO"	70.33	63.75	25020	34	0	300	920	"YES"
+"SA2"	"SAUNDERS ST-27"	2	"TURBOPROP"	"NO"	71.5	59	13500	23	0	230	0	"NO"
+"SHP"	"SHORTS SKYLINER"	2	"TURBOPROP"	"NO"	64.91	40	12500	19	4600	188	694	"YES"
+"SHS"	"SHORTS SKYVAN"	2	"TURBOPROP"	"NO"	64.91	40.08	12500	19	0	188	694	""
+"SH3"	"SHORTS 330 PASSENGER"	2	"TURBOPROP"	"NO"	74.66	58	22000	30	7500	218	1137	"NO"
+"SH6"	"SHORTS 360"	2	"TURBOPROP"	"NO"	74.83	70.83	26000	36	7500	244	1151	"NO"
+"S58"	"SIKORSKY S58T"	1	"HELICOPTER"	"NO"	56	47.25	13000	16	0	127	278	"NO"
+"S61"	"SIKORSKY S61"	2	"HELICOPTER"	"NO"	62	72	20500	30	5500	139	282	"NO"
+"TU3"	"TUPOLEV TU134"	2	"JET"	"NO"	95.16	112.71	98100	72	14300	546	1490	"YES"
+"TU5"	"TUPOLEV TU154"	3	"JET"	"NO"	123.2	157.14	198410	164	44090	605	3280	"YES"
+"WLH"	"WESTLAND 30"	2	"HELICOPTER"	"NO"	43.66	52.16	12350	21	0	0	100	""
+"YK4"	"YAKOVLEV YAK-40"	3	"JET"	"NO"	82.08	66.75	35270	40	5070	342	1240	"YES"
+"YK2"	"YAKOVLEV YAK-42"	3	"JET"	"NO"	112.2	119.35	114640	120	2000	510	621	"YES"
+"100"	"FOKKER 100"	0	"JET"	""	0	0	0	0	0	0	0	""
+"146"	"BRITISH AEROSPACE 146 (ALL SERIES)"	0	"JET"	""	0	0	0	0	0	0	0	""
+"310"	"AIRBUS INDUSTRIE A310 (ALL SERIES)"	0	"JET"	""	0	0	0	0	0	0	0	""
+"320"	"AIRBUS INDUSTRIE A320 (ALL SERIES)"	0	"JET"	""	0	0	0	0	0	0	0	""
+"734"	"BOEING 737-400"	0	"JET"	""	0	0	0	0	0	0	0	""
+"743"	"BOEING 737-300 PASSENGER"	0	"JET"	""	0	0	0	0	0	0	0	""
+"744"	"BOEING 747-400 PASSENGER"	0	"JET"	""	0	0	0	0	0	0	0	""
+"74E"	"BOEING 747-400 MIXED CONFIGURATION"	0	"JET"	""	0	0	0	0	0	0	0	""
+"763"	"BOEING 767-300/300ER"	0	"JET"	""	0	0	0	0	0	0	0	""
+"BE1"	"BEECHCRAFT 1900"	0	"TURBOPROP"	""	0	0	0	0	0	0	0	""
+"BUS"	"BUS"	0	""	""	0	0	0	0	0	0	0	""
+"CNJ"	"CESSNA CITATION"	0	"JET"	""	0	0	0	0	0	0	0	""
+"D3M"	"DOUGLAS DC3/C-47 DAKOTA MIXED CONFIGURATION"	0	"PROPELLER"	""	0	0	0	0	0	0	0	""
+"D9S"	"MCDONNELL DOUGLAS DC9 (ALL 30/40/50 & 80 SERIES)"	0	"JET"	""	0	0	0	0	0	0	0	""
+"DHM"	"BOEING CANADA DHC-7 DASH 7 MIXED CONFIGURATION"	0	"TURBOPROP"	""	0	0	0	0	0	0	0	""
+"LMO"	"LIMOSINE"	0	""	""	0	0	0	0	0	0	0	""
+"M87"	"MCDONNELL DOUGLAS MD-87"	0	"JET"	""	0	0	0	0	0	0	0	""
+"NDE"	"AEROSPATIALE AS 350 ECUREUIL/AS 355 ECUREUIL 2"	1	"TURBOPROP"	""	0	0	0	0	0	0	0	""
+"PAG"	"PIPER (ALL SERIES)"	0	"PROPELLER"	""	0	0	0	0	0	0	0	""
+"S76"	"SIKORSKY S76"	1	"TURBOPROP"	""	0	0	0	0	0	0	0	""
+
+COPY 314 RECORDS INTO "sys"."airline" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"AA"	"AMERICAN AIRLINES"	""
+"AC"	"AIR CANADA"	""
+"AD"	"EXEC EXPRESS II,INC."	""
+"AF"	"AIR FRANCE"	""
+"AG"	"ATLANTIC AIRWAYS LIMITED"	""
+"AM"	"AEROMEXICO - AEROVIAS DE MEXICO S.A. DE C.V."	""
+"AP"	"ASPEN AIRWAYS,INC."	""
+"AQ"	"ALOHA AIRLINES INC."	""
+"AR"	"AEROLINEAS ARGENTINAS"	""
+"AS"	"ALASKA AIRLINES"	""
+"AT"	"ROYAL AIR MAROC"	""
+"AV"	"AVIANCA"	""
+"AY"	"FINNAIR"	""
+"AZ"	"ALITALIA"	""
+"BA"	"BRITISH AIRWAYS"	""
+"BE"	"ENTERPRISE AIRLINES,INC."	""
+"BF"	"MARKAIR,INC."	""
+"BK"	"CHALKS/PARADISE ISLAND AIRLINES"	""
+"BL"	"AIR BVI,LTD."	""
+"BW"	"BWIA INTERNATIONAL"	""
+"CA"	"CAAC"	""
+"CD"	"TRANS-PROVINCIAL AIRLINES LTD."	""
+"CH"	"BEMIDJI AIRLINES"	""
+"CI"	"CHINA AIRLINES LTD."	""
+"CO"	"CONTINENTAL AIRLINES"	""
+"CP"	"CANADIAN AIRLINES INTERNATIONAL LTD."	""
+"CS"	"AIR TORONTO"	""
+"CT"	"MIDCONTINENT AIRLINES INC."	""
+"CU"	"CUBANA AIRLINES"	""
+"CX"	"CATHAY PACIFIC AIRWAYS LTD."	""
+"DD"	"COMMAND AIRWAYS,INC."	""
+"DE"	"PRIME AIR,INC."	""
+"DF"	"AERO COACH AVIATION INTERNATIONAL,INC."	""
+"DL"	"DELTA AIR LINES,INC."	""
+"DO"	"DOMINICANA DE AVIACION"	""
+"DQ"	"COASTAL AIR TRANSPORT"	""
+"DV"	"NANTUCKET AIRLINES"	""
+"EA"	"EASTERN AIR LINES,INC."	""
+"ED"	"CCAIR INC."	""
+"EI"	"AER LINGUS P.L.C."	""
+"EJ"	"NEW ENGLAND AIRLINES,INC."	""
+"EM"	"EMPIRE AIRWAYS"	""
+"EU"	"EMPRESA ECUATORIANA DE AVIACION"	""
+"EV"	"ATLANTIC SOUTHEAST AIRLINES,INC."	""
+"FC"	"CHAPARRAL AIRLINES,INC."	""
+"FH"	"MALL AIRWAYS INC."	""
+"FI"	"ICELANDAIR"	""
+"FK"	"FLAMENCO AIRWAYS,INC."	""
+"FN"	"SFO HEICOPTER AIRLINES,INC."	""
+"FQ"	"AIR ARUBA"	""
+"FX"	"EXPRESS AIR,INC."	""
+"FY"	"METROFLIGHT AIRLINES"	""
+"GA"	"GARUDA INDONESIAN AIRWAYS"	""
+"GM"	"AIR AMERICA"	""
+"GQ"	"BIG SKY AIRLINES"	""
+"GS"	"BAS AIRLINES"	""
+"GU"	"AVIATECA S.A."	""
+"HA"	"HAWAIIAN AIR LINES"	""
+"HD"	"NEW YORK HELICOPTER CORPORATION"	""
+"HE"	"KEYSTONE AIR SERVICE LTD."	""
+"HG"	"HARBOR AIRLINES,INC"	""
+"HI"	"GRAND CANYON HELICOPTERS"	""
+"HP"	"AMERICA WEST AIRLINES,INC."	""
+"HQ"	"BUSINESS EXPRESS"	""
+"HY"	"METRO AIRLINES"	""
+"IB"	"IBERIA"	""
+"IF"	"INTERFUG"	""
+"IH"	"CHANNEL FLYING,INC."	"SERVICE TEMPORARILY SUSPENDED"
+"IN"	"EAST HAMPTON AIRE"	""
+"IU"	"HELITRANS AIR SERVICE,INC."	""
+"JB"	"HELIJET AIRWAYS"	""
+"JC"	"ROCKY MOUNTAIN AIRWAYS"	""
+"JF"	"L.A.B. FYING SERVICE,INC."	"CARRIER PERFORMS SEASONAL SERVICE ONLY"
+"JI"	"JET EXPRESS"	""
+"JL"	"JAPAN AIRLINES"	""
+"JM"	"AIR JAMAICA LIMITED"	""
+"JO"	"HOLIDAY AIRLINES,INC."	""
+"JQ"	"TRANS-JAMAICAN AIRLINES LTD."	""
+"JR"	"AERO CALIFORNIA"	""
+"JT"	"IOWA AIRWAYS,INC."	""
+"JU"	"YUGOSLAV AIRLINES (JAT)"	""
+"JV"	"BEARSKIN LAKE AIR SERVICE LIMITED"	""
+"KE"	"KOREAN AIR"	""
+"KI"	"TIME AIR LTD."	""
+"KL"	"KLM-ROYAL DUTCH AIRLINES"	""
+"KS"	"PENINSULA AIRWAYS,INC."	""
+"KW"	"CARNIVAL AIR LINES"	""
+"KX"	"CAYMAN AIRWAYS,LTD."	""
+"LA"	"LAN CHILE S.A."	""
+"LH"	"LUFTHANSA GERMAN AIRLINES"	""
+"LI"	"LIAT (1974) LTD."	""
+"LM"	"ALM-ANTILLEAN AIRLINES"	""
+"LR"	"LACSA"	""
+"LS"	"ILIAMNA AIR TAXI,INC."	""
+"LV"	"LAV-LINEA AEROPOSTAL VENEZOLANA"	""
+"LW"	"AIR NEVADA"	""
+"LY"	"EL AL ISRAEL AIRLINES"	""
+"MG"	"MGM GRAND AIR,INC."	""
+"MH"	"MALAYSIAN AIRLINE SYSTEM"	""
+"ML"	"MIDWAY AIRLINES,INC."	""
+"MO"	"CALM AIR INTERNATIONAL LTD."	""
+"MQ"	"SIMMONS AIRLINES"	""
+"MX"	"MEXICANA DE AVIACION"	""
+"NA"	"EXECUTIVE AIR CHARTER"	""
+"ND"	"INTAIR"	""
+"NN"	"C.A.A.A.-AIR MARTINIQUE"	""
+"NQ"	"CUMBERLAND AIRLINES"	""
+"NR"	"NORONTAIR"	""
+"NV"	"NORTHWEST TERRITORIAL AIRWAYS,LTD."	""
+"NW"	"NORTHWEST AIRLINES,INC."	""
+"OA"	"OLYMPIC AIRWAYS"	""
+"OB"	"TEMPUS AIR LTD."	"CARRIER PERFORMS SEASONAL SERVICE ONLY"
+"OE"	"WESTAIR AIRLINES"	""
+"OG"	"AIR GUADELOUPE"	""
+"OH"	"COMAIR,INC."	"NATL AIR TRANSPORTATION ASSOC,INC."
+"OJ"	"AIR ST.-BARTHELEMY"	""
+"OK"	"CZECHOSLOVAK AIRLINES"	""
+"OO"	"SKY WEST AIRLINES"	""
+"OQ"	"AEROLIBERTAD S.A. DE C.V."	""
+"OT"	"EVERGREEN ALASKA"	""
+"OU"	"CITY EXPRESS"	""
+"OY"	"SUNAIRE"	""
+"PA"	"PAN AMERICAN WORLD AIRWAYS,INC."	""
+"PD"	"PEM AIR LIMITED"	""
+"PK"	"PAKISTAN INTERNATIONAL AIRLINES"	""
+"PN"	"COASTAL AIRWAYS"	""
+"PQ"	"HOLIDAY AIRWAYS"	"SERVICE TEMPORARILY SUSPENDED"
+"PR"	"PHILIPPINE AIRLINES,INC."	""
+"PS"	"CENTRAL STATES AIRLINES,INC."	""
+"PT"	"PBA-PROVINCETOWN-BOSTON AIRLINE,INC."	""
+"PV"	"PANORAMA AIR"	""
+"PY"	"SURINAM AIRWAYS LTD."	""
+"QA"	"AERO CARIBE"	""
+"QB"	"INTER-QUEBEC"	""
+"QD"	"GRAND AIRWAYS,INC."	""
+"QF"	"QANTAS AIRWAYS LTD."	""
+"QO"	"BAR HARBOR AIRLINES"	""
+"QQ"	"DRUMMOND ISLAND AIR"	"CARRIER PERFORMS SEASONAL SERVICE ONLY"
+"QR"	"AIR SATELLITE,INC."	""
+"QS"	"PROPHETER AVIATION"	""
+"QW"	"TURKS AND CAICOS NATIONAL AIRLINE"	""
+"QX"	"HORIZON AIR"	""
+"QY"	"AERO VIRGIN ISLANDS CORP"	""
+"RG"	"VARIG,S.A."	""
+"RH"	"REGAL BAHAMAS INTERNATIONAL AIRLINES"	""
+"RJ"	"ROYAL JORDANIAN"	""
+"RM"	"WINGS WEST AIRLINE,INC."	""
+"RP"	"PRECISION AIRLINES"	""
+"RV"	"REEVE ALEUTIAN AIRWAYS,INC."	""
+"SE"	"WINGS OF ALASKA"	""
+"SK"	"SCANDINAVIAN AIRLINES SYSTEM"	""
+"SN"	"SABENA BELGIAN WORLD AIRLINES"	""
+"SQ"	"SINGAPORE AIRLINES"	""
+"SR"	"SWISSAIR"	""
+"SS"	"METRO AIRLINES NORTHEAST INC."	""
+"SU"	"AEROFLOT-SOVIET AIRLINES"	""
+"SV"	"SAUDI ARABIAN AIRLINES"	""
+"SX"	"CHRISTMAN AIR SYSTEM"	""
+"TB"	"TRUMP SHUTTLE,INC."	""
+"TE"	"AIR NEW ZEALAND-INTERNATIONAL"	""
+"TG"	"THAI AIRWAYS INTERNATIONAL,LTD."	""
+"TO"	"ALKAN AIR LTD."	""
+"TP"	"TAP AIR PORTUGAL"	""
+"TV"	"HAITI TRANS AIR S.A."	""
+"TW"	"TRANS WORLD AIRLINES,INC."	""
+"TZ"	"AMERICAN TRANS AIR"	""
+"UA"	"UNITED AIRLINES"	""
+"UC"	"LADECO-LINEA AEREA DEL COBRE"	""
+"UE"	"AIR LA"	""
+"UJ"	"AIR SEDONA"	""
+"UO"	"DIRECT AIR,INC."	"NATL AIR TRANSPORTATION ASSOC,INC."
+"UP"	"BAHAMASAIR"	""
+"US"	"USAIR"	""
+"UT"	"U.T.A. - UNION DE TRANSPORTS AERIENS"	""
+"UW"	"PERIMETER AIRLINES (INLAND) LTD."	""
+"VA"	"VIASA"	""
+"VI"	"VIEQUES AIR LINK,INC."	""
+"VW"	"TRANSPORTES AEROMAR,S.A. DE C.V."	""
+"WD"	"WARDAIR"	""
+"WJ"	"LABRADOR AIRWAYS,LTD."	""
+"WM"	"WINDWARD ISLAND AIRWAYS INTERNATIONAL N.V."	""
+"WN"	"SOUTHWEST AIRLINES"	""
+"WP"	"ALOHA ISLANDAIR,INC."	""
+"WQ"	"WINGS AIRWAYS"	"NATL AIR TRANSPORTATION ASSOC,INC."
+"WS"	"WESTATES AIRLINES"	"SERVICE TEMPORARILY SUSPENDED"
+"WV"	"MIDWEST AVIATION"	""
+"XE"	"SOUTHCENTRAL AIR,INC."	""
+"XJ"	"MESABA AVIATION"	""
+"XK"	"RESORT COMMUTER,INC."	""
+"XQ"	"ACTION AIRLINES"	""
+"XV"	"PRESIDENTIAL AIRWAYS,INC."	""
+"XW"	"WALKER'S INTERNATIONAL"	""
+"XY"	"RYAN AIR,INC."	""
+"YE"	"GRAND CANYON AIRLINES,INC."	"CARRIER PERFORMS SEASONAL SERVICE ONLY"
+"YI"	"AIR SUNSHINE INC."	"NATL AIR TRANSPORTATION ASSOC,INC."
+"YL"	"LONG ISLAND AIRLINES"	""
+"YN"	"AIR CREEBEC INC."	""
+"YR"	"SCENIC AIRLINES INC."	"NATL AIR TRANSPORTATION ASSOC,INC."
+"YS"	"SAN JUAN AIRLINES"	""
+"YU"	"AEROLINEAS DOMINICANAS,S.A. - DOMINAIR"	""
+"YV"	"MESA AIRLINES"	""
+"YW"	"STATESWEST AIRLINES,INC."	""
+"YX"	"MIDWEST EXPRESS AIRLINES,INC."	""
+"ZD"	"ROSS AVIATION,INC."	"NATL AIR TRANSPORTATION ASSOC,INC"
+"ZE"	"AIR CARIBE INTERNATIONAL,INC."	""
+"ZK"	"GREAT LAKES AVIATION,LTD."	""
+"ZO"	"MOHAWK AIRLINES"	""
+"ZP"	"VIRGIN AIR,INC."	""
+"ZS"	"HISPANIOLA AIRWAYS C. POR A."	""
+"ZV"	"AIR MIDWEST"	""
+"ZW"	"AIR WISCONSIN"	""
+"ZX"	"AIR BC,LTD."	""
+"2E"	"HERMENS/MARKAIR EXPRESS"	""
+"2F"	"FRONTIER FLYING SERVICE"	""
+"2P"	"PRAIRIE FLYING SERVICE (1976) LTD."	""
+"2Q"	"AQUILA AIR LTD"	""
+"2V"	"NORTHEAST EXPRESS REGIONAL AIRLINES"	"NATL AIR TRANSPORTATION ASSOC,INC."
+"2Z"	"SERVICIOS AEROS LITORAL S.A. DE C.V."	""
+"3A"	"ALLIANCE AIRLINES"	""
+"3C"	"CAMAI AIR"	""
+"3G"	"VIRGIN ISLANDS SEAPLANE SHUTTLE"	"SERVICE TEMPORARILY SUSPENDED"
+"3H"	"AIR INUIT (1985) LTD."	""
+"3L"	"AIR-LIFT ASSOCIATES,INC"	""
+"3N"	"PAC AIR"	""
+"3R"	"AIR MOLOKAI - TROPIC AIRLINES"	"SERVICE TEMPORARILY SUSPENDED"
+"3S"	"SHUSWAP AIR"	""
+"3V"	"WAGLISLA AIR INC."	""
+"4A"	"AIRWAYS INTERNATIONAL,INC."	""
+"4B"	"OLSON AIR SERVICE,INC."	""
+"4E"	"TANANA AIR SERVICE"	""
+"4F"	"FRONTIER AIR"	""
+"4G"	"INLET AIRLINES,INC."	""
+"4K"	"KENN BOREK AIR LTD."	""
+"4L"	"AIR ALMA INC."	""
+"4N"	"AIR NORTH"	""
+"4T"	"PACIFIC RIM AIRLINES LTD."	""
+"4V"	"VOYAGEUR AIRWAYS LTD."	""
+"4W"	"WRANGELL AIR SERVICE"	""
+"4Y"	"YUTE AIR ALASKA,INC."	"SERVICE TEMPORARILY SUSPENDED"
+"5A"	"ALPINE AVIATION,INC."	""
+"5B"	"BELLAIR INC."	""
+"5E"	"HUB EXPRESS,INC."	""
+"5K"	"KENMORE AIR HARBOR,INC."	""
+"5L"	"LAREDO AIR,INC."	""
+"5N"	"SEAGULL AIR SERVICE,INC."	"SERVICE TEMPORARILY SUSPENDED"
+"5P"	"PTARMIGAN AIRWAYS LTD"	""
+"5S"	"AIRSPEED AVIATION INC."	""
+"5T"	"AVIACION DEL NOROESTE"	""
+"5U"	"SKAGWAY AIR SERVICE,INC."	""
+"5V"	"AVIAIR AVIATION (1984) LTD."	""
+"5W"	"CHARTAIR,INC."	""
+"6A"	"PANAMA AIRWAYS"	""
+"6B"	"BAXTER AVIATION"	""
+"6C"	"CAPE SMYTHE AIR SERVICE,INC."	""
+"6D"	"ALASKA ISLAND AIR,INC."	""
+"6E"	"BURRARD AIR LTD."	""
+"6G"	"LAS VEGAS AIRLINES"	""
+"6J"	"SOUTHERN JERSEY AIRWAYS,INC."	""
+"6K"	"KEEWATIN AIR LIMITED"	""
+"6L"	"AKLAK AIR LTD."	""
+"6M"	"40-MILE AIR,LTD."	""
+"6P"	"PROPAIR INC."	""
+"6Q"	"BARROW AIR,INC."	""
+"6S"	"KETCHIKAN AIR SERVICE,INC."	""
+"6T"	"TYEE AIRWAYS LIMITED"	""
+"6V"	"AIR VEGAS,INC."	""
+"6W"	"WILDERNESS AIRLINE (1975) LTD."	""
+"7A"	"HAINES AIRWAYS,INC."	""
+"7D"	"TRUMP AIR"	""
+"7F"	"FIRST AIR"	""
+"7G"	"GULFSTREAM AIRLINES,INC."	"NATL AIR TRANSPORTATION ASSOC,INC."
+"7H"	"ERA AVIATION"	""
+"7K"	"LARRY'S FLYING SERVICE,INC"	""
+"7L"	"LAKE UNION AIR SERVICE"	""
+"7N"	"NORTHLAND AIR MANITOBA LIMITED"	""
+"7Q"	"CALIFORNIA AIR SHUTTLE"	""
+"7R"	"GCS AIR SERVICE,INC."	""
+"7T"	"TRANS COTE INC."	""
+"7V"	"ALPHA AIR"	""
+"7W"	"AIR SASK AVIATION"	""
+"8B"	"BAKER AVIATION,INC."	""
+"8D"	"SKYLINK AIRLINES"	"SERVICE TEMPORARILY SUSPENDED"
+"8E"	"BERING AIR,INC."	""
+"8F"	"WILBUR'S INC."	""
+"8G"	"GP EXPRESS AIRLINES,INC."	""
+"8H"	"HARBOR AIR SERVICE"	""
+"8K"	"AIR MUSKOKA"	""
+"8L"	"SERVICIO AEREO LEO LOPEZ"	""
+"8M"	"APEX AIRLINES"	""
+"8N"	"NASHVILLE EAGLE,INC."	""
+"8P"	"POCONO AIRLINES"	""
+"8R"	"WRA,INC."	""
+"8T"	"TRI AIR,INC."	"SERVICE TEMPORARILY SUSPENDED"
+"8V"	"WRIGHT AIR SERVICE,INC."	""
+"9A"	"AIR ATLANTIC LTD."	""
+"9C"	"ICARUS FLYING SERVICE,LTD."	""
+"9D"	"DELTA AIR CHARTER LTD."	""
+"9E"	"EXPRESS AIRLINES I,INC."	""
+"9F"	"SKYCRAFT AIR TRANSPORT INC."	""
+"9K"	"CAPE AIR"	""
+"9M"	"CENTRAL MOUNTAIN AIR LTD."	""
+"9N"	"TRANS STATES AIRLINES,INC."	""
+"9Q"	"TAQUAN AIR SERVICE,INC."	""
+"9S"	"SABOURIN LAKE AIRWAYS LTD."	""
+"9V"	"AIR SCHEFFERVILLE"	"CARRIER PERFORMS SEASONAL SERVICE ONLY"
+"GD"	"AIR SOUTH,INC."	"NATL AIR TRANSPORTATION ASSOC,INC."
+"VL"	"SUN PACIFIC AIRLINES,INC."	""
+"3D"	"EDGARTOWN AIR,INC."	""
+"4Q"	"TRANS NORTH AVIATION,LTD."	"CARRIER PERFORMS SEASONAL SERVICE ONLY"
+"4R"	"RAVEN AIR,INC."	""
+"4X"	"L'EXPRESS AIRLINES"	""
+"5C"	"CONQUEST AIRLINES CORP."	""
+"7C"	"SIERRA VISTA AVIATION"	"SERVICE TEMPORARILY SUSPENDED"
+"MC"	"MILITARY AIRLIFT COMMAND (MAC)-U.S. DEPARTMENT OF THE AIR FORCE"	""
+
+COPY 9 RECORDS INTO "sys"."airport" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"ATL"	"WILLIAM B. HARTSFIELD"	"ATLANTA,GEORGIA"	"GA"	"USA"	"EST"
+"BOS"	"LOGAN INTERNATIONAL"	"BOSTON,MASSACHUSETTS"	"MA"	"USA"	"EST"
+"BWI"	"BALTIMORE/WASHINGTON INTERNATIONAL"	"BALTIMORE,MARYLAND"	"MD"	"USA"	"EST"
+"DEN"	"STAPLETON INTERNATIONAL"	"DENVER,COLORADO"	"CO"	"USA"	"MST"
+"DFW"	"DALLAS/FORT WORTH INTERNATIONAL"	"DALLAS/FT. WORTH,TEXAS"	"TX"	"USA"	"CST"
+"OAK"	"METROPOLITAN OAKLAND INTERNATIONAL"	"OAKLAND,CALIFORNIA"	"CA"	"USA"	"PST"
+"PHL"	"PHILADELPHIA INTERNATIONAL"	"PHILADELPHIA PA/WILM'TON,DE"	"PA"	"USA"	"EST"
+"PIT"	"GREATER PITTSBURGH"	"PITTSBURGH,PENNSYLVANIA"	"PA"	"USA"	"EST"
+"SFO"	"SAN FRANCISCO INTERNATIONAL"	"SAN FRANCISCO,CALIFORNIA"	"CA"	"USA"	"PST"
+
+COPY 14 RECORDS INTO "sys"."airport_service" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"MATL"	"ATL"	9	"S"	45
+"BBOS"	"BOS"	3	"NE"	30
+"DDFW"	"DFW"	13	"NW"	70
+"FDFW"	"DFW"	17	"E"	55
+"DDEN"	"DEN"	6.5	"NE"	30
+"PPHL"	"PHL"	7	"SW"	35
+"PPIT"	"PIT"	17	"W"	55
+"OOAK"	"OAK"	10	"SE"	15
+"OOAK"	"SFO"	24	"SW"	60
+"SSFO"	"SFO"	8	"SE"	30
+"SSFO"	"OAK"	18	"SE"	60
+"WWAS"	"BWI"	32	"NE"	50
+"BBWI"	"BWI"	10	"S"	25
+""	""	0	""	0
+
+COPY 11 RECORDS INTO "sys"."city" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"MATL"	"ATLANTA"	"GA"	"USA"	"EST"
+"BBOS"	"BOSTON"	"MA"	"USA"	"EST"
+"DDFW"	"DALLAS"	"TX"	"USA"	"CST"
+"FDFW"	"FORT WORTH"	"TX"	"USA"	"CST"
+"DDEN"	"DENVER"	"CO"	"USA"	"MST"
+"PPHL"	"PHILADELPHIA"	"PA"	"USA"	"EST"
+"PPIT"	"PITTSBURGH"	"PA"	"USA"	"EST"
+"SSFO"	"SAN FRANCISCO"	"CA"	"USA"	"PST"
+"OOAK"	"OAKLAND"	"CA"	"USA"	"PST"
+"WWAS"	"WASHINGTON"	"DC"	"USA"	"EST"
+"BBWI"	"BALTIMORE"	"MD"	"USA"	"EST"
+
+COPY 27 RECORDS INTO "sys"."class_of_service" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"R"	1	"SUPERSONIC AIRCRAFT"
+"P"	2	"FIRST CLASS PREMIUM"
+"F"	3	"FIRST CLASS"
+"A"	4	"FIRST CLASS DISCOUNTED"
+"J"	5	"BUSINESS CLASS PREMIUM"
+"C"	6	"BUSINESS CLASS"
+"D"	7	"BUSINESS CLASS DISCOUNTED"
+"S"	8	"STANDARD CLASS"
+"W"	9	"COACH ECONOMY CLASS PREMIUM"
+"FN"	10	"FIRST CLASS NIGHT SERVICE"
+"Y"	11	"COACH ECONOMY CLASS"
+"CN"	12	"BUSINESS CLASS NIGHT SERVICE"
+"YN"	13	"COACH ECONOMY CLASS NIGHT SERVICE"
+"B"	14	"COACH ECONOMY CLASS DISCOUNTED"
+"H"	15	"COACH ECONOMY CLASS DISCOUNTED"
+"Q"	16	"COACH ECONOMY CLASS DISCOUNTED"
+"M"	17	"COACH ECONOMY CLASS DISCOUNTED"
+"T"	18	"COACH ECONOMY CLASS DISCOUNTED"
+"K"	19	"THRIFT ECONOMY CLASS"
+"L"	20	"THRIFT ECONOMY CLASS DISCOUNTED"
+"V"	21	"THRIFT ECONOMY CLASS DISCOUNTED"
+"BN"	22	"COACH ECONOMY CLASS DISCOUNTED NIGHT SERVICE"
+"QN"	23	"COACH ECONOMY CLASS DISCOUNTED NIGHT SERVICE"
+"KN"	24	"THRIFT ECONOMY CLASS DISCOUNTED NIGHT SERVICE"
+"VN"	25	"THRIFT ECONOMY CLASS DISCOUNTED NIGHT SERVICE"
+"U"	26	"SHUTTLE SERVICE (NO RESERVATION NEEDED - SEAT GUARANTEED)"
+"E"	27	"SHUTTLE SERVICE (NO RESERVATION ALLOWED - SEAT TO BE CONFIRMED AT CHECK-IN)"
+
+COPY 15 RECORDS INTO "sys"."code_description" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"-"	"A DASH IN A DAY CODE POSITION INDICATES NON-OPERATION ON THAT DAY"
+"AP"	"ADVANCE PURCHASE EXCURSION FARE"
+"CAD"	"CANADIAN DOLLARS"
+"EX"	"EXCURSION FARE"
+"H"	"HIGHEST LEVEL OF FARE HAVING MORE THAN ONE SEASONAL LEVEL"
+"J"	"THIRD LEVEL OF FARE HAVING MORE THAN THREE SEASONAL LEVELS"
+"K"	"SECOND LEVEL OF A FARE HAVING MORE THAN TWO SEASONAL LEVELS"
+"L"	"LOWEST LEVEL OF FARE HAVING MORE THAN ONE SEASONAL LEVEL"
+"MEP"	"MEXICAN PESOS"
+"O"	"SECOND LEVEL OF A FARE HAVING MORE THAN TWO SEASONAL LEVELS"
+"N"	"NIGHT SERVICE"
+"VU"	"VISIT USA FARE"
+"W"	"WHEN USED AS PART OF A FARE CLASS SUCH AS YW,INDICATES WEEKEND APPLICATION."
+"X"	"WHEN USED AS PART OF A FARE CLASS SUCH AS YX,INDICATES WEEKDAY APPLICATION."
+"U.S."	"48 CONTIGUOUS STATES (NOT INCLUDING ALASKA AND HAWAII) UNLESS OTHERWISE NOTED."
+
+COPY 149 RECORDS INTO "sys"."compound_class" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"A"	"A"	"FIRST"	"NO"	"NO"	"YES"	"NO"	"NONE"	"1234567"
+"AH"	"A"	"FIRST"	"NO"	"NO"	"YES"	"NO"	"HIGH"	"1234567"
+"AJ"	"A"	"FIRST"	"NO"	"NO"	"YES"	"NO"	"MID"	"1234567"
+"AL"	"A"	"FIRST"	"NO"	"NO"	"YES"	"NO"	"LOW"	"1234567"
+"B"	"B"	"COACH"	"NO"	"YES"	"YES"	"NO"	"NONE"	"1234567"
+"BH"	"B"	"COACH"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"1234567"
+"BHW"	"B"	"COACH"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"-----67"
+"BHX"	"B"	"COACH"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"12345--"
+"BL"	"B"	"COACH"	"NO"	"YES"	"YES"	"NO"	"LOW"	"1234567"
+"BLW"	"B"	"COACH"	"NO"	"YES"	"YES"	"NO"	"LOW"	"-----67"
+"BLX"	"B"	"COACH"	"NO"	"YES"	"YES"	"NO"	"LOW"	"12345--"
+"BN"	"BN"	"COACH"	"NO"	"YES"	"YES"	"YES"	"NONE"	"1234567"
+"BO"	"B"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"1234567"
+"BOW"	"B"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"-----67"
+"BOX"	"B"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"12345--"
+"BW"	"B"	"COACH"	"NO"	"YES"	"YES"	"NO"	"NONE"	"-----67"
+"BX"	"B"	"COACH"	"NO"	"YES"	"YES"	"NO"	"NONE"	"12345--"
+"C"	"C"	"BUSINESS"	"NO"	"NO"	"NO"	"NO"	"NONE"	"1234567"
+"CH"	"C"	"BUSINESS"	"NO"	"NO"	"NO"	"NO"	"HIGH"	"1234567"
+"CHW"	"C"	"BUSINESS"	"NO"	"NO"	"NO"	"NO"	"HIGH"	"-----67"
+"CHX"	"C"	"BUSINESS"	"NO"	"NO"	"NO"	"NO"	"HIGH"	"12345--"
+"CL"	"C"	"BUSINESS"	"NO"	"NO"	"NO"	"NO"	"LOW"	"1234567"
+"CLW"	"C"	"BUSINESS"	"NO"	"NO"	"NO"	"NO"	"LOW"	"-----67"
+"CLX"	"C"	"BUSINESS"	"NO"	"NO"	"NO"	"NO"	"LOW"	"12345--"
+"CN"	"CN"	"BUSINESS"	"NO"	"NO"	"NO"	"YES"	"NONE"	"1234567"
+"CO"	"C"	"BUSINESS"	"NO"	"NO"	"NO"	"NO"	"MID"	"1234567"
+"CW"	"C"	"BUSINESS"	"NO"	"NO"	"NO"	"NO"	"NONE"	"-----67"
+"CX"	"C"	"BUSINESS"	"NO"	"NO"	"NO"	"NO"	"NONE"	"12345--"
+"D"	"D"	"BUSINESS"	"NO"	"NO"	"YES"	"NO"	"NONE"	"1234567"
+"F"	"F"	"FIRST"	"NO"	"NO"	"NO"	"NO"	"NONE"	"1234567"
+"FH"	"F"	"FIRST"	"NO"	"NO"	"NO"	"NO"	"HIGH"	"1234567"
+"FHW"	"F"	"FIRST"	"NO"	"NO"	"NO"	"NO"	"HIGH"	"-----67"
+"FHX"	"F"	"FIRST"	"NO"	"NO"	"NO"	"NO"	"HIGH"	"12345--"
+"FL"	"F"	"FIRST"	"NO"	"NO"	"NO"	"NO"	"LOW"	"1234567"
+"FLW"	"F"	"FIRST"	"NO"	"NO"	"NO"	"NO"	"LOW"	"-----67"
+"FLX"	"F"	"FIRST"	"NO"	"NO"	"NO"	"NO"	"LOW"	"12345--"
+"FN"	"FN"	"FIRST"	"NO"	"NO"	"NO"	"YES"	"NONE"	"1234567"
+"FO"	"F"	"FIRST"	"NO"	"NO"	"NO"	"NO"	"MID"	"1234567"
+"FW"	"F"	"FIRST"	"NO"	"NO"	"NO"	"NO"	"NONE"	"-----67"
+"FX"	"F"	"FIRST"	"NO"	"NO"	"NO"	"NO"	"NONE"	"12345--"
+"H"	"H"	"COACH"	"NO"	"YES"	"YES"	"NO"	"NONE"	"1234567"
+"HH"	"H"	"COACH"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"1234567"
+"HHW"	"H"	"COACH"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"-----67"
+"HHX"	"H"	"COACH"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"12345--"
+"HK"	"H"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"1234567"
+"HKW"	"H"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"-----67"
+"HKX"	"H"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"12345--"
+"HL"	"H"	"COACH"	"NO"	"YES"	"YES"	"NO"	"LOW"	"1234567"
+"HLW"	"H"	"COACH"	"NO"	"YES"	"YES"	"NO"	"LOW"	"-----67"
+"HLX"	"H"	"COACH"	"NO"	"YES"	"YES"	"NO"	"LOW"	"12345--"
+"HO"	"H"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"1234567"
+"HOW"	"H"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"-----67"
+"HOX"	"H"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"12345--"
+"HW"	"H"	"COACH"	"NO"	"YES"	"YES"	"NO"	"NONE"	"-----67"
+"HX"	"H"	"COACH"	"NO"	"YES"	"YES"	"NO"	"NONE"	"12345--"
+"J"	"J"	"BUSINESS"	"YES"	"NO"	"NO"	"NO"	"NONE"	"1234567"
+"JH"	"J"	"BUSINESS"	"YES"	"NO"	"NO"	"NO"	"HIGH"	"1234567"
+"JK"	"J"	"BUSINESS"	"YES"	"NO"	"NO"	"NO"	"MID"	"1234567"
+"JL"	"J"	"BUSINESS"	"YES"	"NO"	"NO"	"NO"	"LOW"	"1234567"
+"JO"	"J"	"BUSINESS"	"YES"	"NO"	"NO"	"NO"	"MID"	"1234567"
+"K"	"K"	"THRIFT"	"NO"	"YES"	"NO"	"NO"	"NONE"	"1234567"
+"KH"	"K"	"THRIFT"	"NO"	"YES"	"NO"	"NO"	"HIGH"	"1234567"
+"KHW"	"K"	"THRIFT"	"NO"	"YES"	"NO"	"NO"	"HIGH"	"-----67"
+"KHX"	"K"	"THRIFT"	"NO"	"YES"	"NO"	"NO"	"HIGH"	"12345--"
+"KL"	"K"	"THRIFT"	"NO"	"YES"	"NO"	"NO"	"LOW"	"1234567"
+"KLW"	"K"	"THRIFT"	"NO"	"YES"	"NO"	"NO"	"LOW"	"-----67"
+"KLX"	"K"	"THRIFT"	"NO"	"YES"	"NO"	"NO"	"LOW"	"12345--"
+"KN"	"KN"	"THRIFT"	"NO"	"YES"	"YES"	"YES"	"NONE"	"1234567"
+"KO"	"K"	"THRIFT"	"NO"	"YES"	"NO"	"NO"	"MID"	"1234567"
+"KW"	"K"	"THRIFT"	"NO"	"YES"	"NO"	"NO"	"NONE"	"-----67"
+"KX"	"K"	"THRIFT"	"NO"	"YES"	"NO"	"NO"	"NONE"	"12345--"
+"L"	"L"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"NONE"	"1234567"
+"LH"	"L"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"1234567"
+"LHW"	"L"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"-----67"
+"LHX"	"L"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"12345--"
+"LL"	"L"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"LOW"	"1234567"
+"LLW"	"L"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"LOW"	"-----67"
+"LLX"	"L"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"LOW"	"12345--"
+"LO"	"L"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"MID"	"1234567"
+"LOW"	"L"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"MID"	"-----67"
+"LOX"	"L"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"MID"	"12345--"
+"LW"	"L"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"NONE"	"-----67"
+"LX"	"L"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"NONE"	"12345--"
+"M"	"M"	"COACH"	"NO"	"YES"	"YES"	"NO"	"NONE"	"1234567"
+"MH"	"M"	"COACH"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"1234567"
+"MHW"	"M"	"COACH"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"-----67"
+"MHX"	"M"	"COACH"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"12345--"
+"MKW"	"M"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"-----67"
+"MKX"	"M"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"12345--"
+"ML"	"M"	"COACH"	"NO"	"YES"	"YES"	"NO"	"LOW"	"1234567"
+"MLW"	"M"	"COACH"	"NO"	"YES"	"YES"	"NO"	"LOW"	"-----67"
+"MLX"	"M"	"COACH"	"NO"	"YES"	"YES"	"NO"	"LOW"	"12345--"
+"MO"	"M"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"1234567"
+"MOW"	"M"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"-----67"
+"MOX"	"M"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"12345--"
+"MW"	"M"	"COACH"	"NO"	"YES"	"YES"	"NO"	"NONE"	"-----67"
+"MX"	"M"	"COACH"	"NO"	"YES"	"YES"	"NO"	"NONE"	"12345--"
+"P"	"P"	"FIRST"	"YES"	"NO"	"NO"	"NO"	"NONE"	"1234567"
+"Q"	"Q"	"COACH"	"NO"	"YES"	"YES"	"NO"	"NONE"	"1234567"
+"QH"	"Q"	"COACH"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"1234567"
+"QHW"	"Q"	"COACH"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"-----67"
+"QHX"	"Q"	"COACH"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"12345--"
+"QL"	"Q"	"COACH"	"NO"	"YES"	"YES"	"NO"	"LOW"	"1234567"
+"QLW"	"Q"	"COACH"	"NO"	"YES"	"YES"	"NO"	"LOW"	"-----67"
+"QLX"	"Q"	"COACH"	"NO"	"YES"	"YES"	"NO"	"LOW"	"12345--"
+"QN"	"QN"	"COACH"	"NO"	"YES"	"YES"	"YES"	"NONE"	"1234567"
+"QO"	"Q"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"1234567"
+"QOW"	"Q"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"-----67"
+"QOX"	"Q"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"12345--"
+"QW"	"Q"	"COACH"	"NO"	"YES"	"YES"	"NO"	"NONE"	"-----67"
+"QX"	"Q"	"COACH"	"NO"	"YES"	"YES"	"NO"	"NONE"	"12345--"
+"R"	"R"	"SUPERSONIC"	"NO"	"NO"	"NO"	"NO"	"NONE"	"1234567"
+"S"	"S"	"STANDARD"	"NO"	"NO"	"NO"	"NO"	"NONE"	"1234567"
+"SH"	"S"	"STANDARD"	"NO"	"NO"	"NO"	"NO"	"HIGH"	"1234567"
+"SL"	"S"	"STANDARD"	"NO"	"NO"	"NO"	"NO"	"LOW"	"1234567"
+"T"	"T"	"COACH"	"NO"	"YES"	"YES"	"NO"	"NONE"	"1234567"
+"TH"	"T"	"COACH"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"1234567"
+"TL"	"T"	"COACH"	"NO"	"YES"	"YES"	"NO"	"LOW"	"1234567"
+"TO"	"T"	"COACH"	"NO"	"YES"	"YES"	"NO"	"MID"	"1234567"
+"V"	"V"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"NONE"	"1234567"
+"VH"	"V"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"1234567"
+"VHW"	"V"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"-----67"
+"VHX"	"V"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"HIGH"	"12345--"
+"VK"	"V"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"MID"	"1234567"
+"VL"	"V"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"LOW"	"1234567"
+"VLW"	"V"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"LOW"	"-----67"
+"VLX"	"V"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"LOW"	"12345--"
+"VO"	"V"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"MID"	"1234567"
+"VOW"	"V"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"MID"	"-----67"
+"VOX"	"V"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"MID"	"12345--"
+"VW"	"V"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"NONE"	"-----67"
+"VX"	"V"	"THRIFT"	"NO"	"YES"	"YES"	"NO"	"NONE"	"12345--"
+"Y"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"NONE"	"1234567"
+"YH"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"HIGH"	"1234567"
+"YHW"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"HIGH"	"-----67"
+"YHX"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"HIGH"	"12345--"
+"YJ"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"MID"	"1234567"
+"YJW"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"MID"	"-----67"
+"YJX"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"MID"	"12345--"
+"YK"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"MID"	"1234567"
+"YL"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"LOW"	"1234567"
+"YLW"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"LOW"	"-----67"
+"YLX"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"LOW"	"12345--"
+"YN"	"YN"	"COACH"	"NO"	"YES"	"NO"	"YES"	"NONE"	"1234567"
+"YO"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"MID"	"1234567"
+"YOW"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"MID"	"-----67"
+"YOX"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"MID"	"12345--"
+"YW"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"NONE"	"-----67"
+"YX"	"Y"	"COACH"	"NO"	"YES"	"NO"	"NO"	"NONE"	"12345--"
+
+COPY 351 RECORDS INTO "sys"."connect_leg" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+305276	1	106231
+305276	2	137225
+305277	1	106237
+305277	2	137231
+305280	1	106247
+305280	2	137237
+305416	1	112030
+305416	1	112031
+305416	2	112773
+305424	1	112033
+305424	2	112784
+305429	1	112040
+305429	2	112793
+305429	2	112794
+305435	1	112046
+305435	2	112806
+305436	1	112051
+305436	2	112808
+306026	1	133430
+306026	2	111891
+306031	1	133432
+306031	2	111896
+306304	1	144155
+306304	2	112766
+306307	1	144143
+306307	2	111891
+306309	1	144158
+306309	2	112784
+306314	1	144163
+306314	2	112793
+306314	2	112794
+306317	1	144167
+306317	2	112805
+306318	1	144150
+306318	2	111896
+306319	1	144169
+306319	2	112808
+308292	1	112766
+308292	2	101952
+308296	1	112773
+308296	2	101953
+308301	1	112784
+308301	2	101955
+308304	1	112793
+308304	1	112794
+308304	2	101958
+308320	1	112030
+308320	1	112031
+308320	2	112904
+308330	1	111892
+308330	2	101955
+308334	1	112040
+308334	2	112907
+308924	1	133432
+308924	2	111941
+309189	1	144060
+309189	2	101955
+309198	1	144163
+309198	2	112907
+309204	1	144150
+309204	2	111941
+312733	1	102767
+312733	2	137320
+312734	1	102771
+312734	2	137326
+312737	1	102777
+312737	2	137335
+313006	1	112805
+313006	2	101929
+313024	1	111886
+313024	2	101909
+313025	1	112030
+313025	1	112031
+313025	2	112866
+313025	2	112867
+313030	1	111888
+313030	2	101916
+313030	2	101917
+313034	1	112033
+313034	2	112870
+313037	1	111892
+313037	2	101922
+313041	1	112040
+313041	2	112873
+313048	1	111895
+313048	2	101929
+313867	1	133430
+313867	2	111928
+314256	1	144143
+314256	2	111928
+314259	1	144158
+314259	2	112870
+314263	1	144060
+314263	2	101922
+314268	1	144163
+314268	2	112873
+314269	1	144148
+314269	2	111931
+329933	1	107159
+329933	2	102144
+329937	1	107162
+329937	2	102150
+329941	1	107165
+329941	2	102166
+329944	1	107166
+329944	2	102177
+329947	1	107168
+329947	2	102191
+330865	1	133430
+330865	2	112034
+330867	1	133431
+330867	2	112043
+330870	1	133432
+330870	2	112049
+330947	1	137221
+330947	2	102144
+330956	1	137224
+330956	2	102150
+330962	1	137228
+330962	2	102166
+330964	1	137230
+330964	2	102173
+330967	1	137233
+330967	2	102177
+330971	1	137235
+330971	2	102190
+330974	1	137238
+330974	2	102191
+330977	1	138817
+330977	2	102144
+330981	1	138821
+330981	2	102150
+330984	1	138823
+330984	2	102166
+330989	1	138830
+330989	1	138831
+330989	2	102191
+331132	1	144143
+331132	2	112034
+331133	1	144148
+331133	2	112043
+331134	1	144150
+331134	2	112049
+333051	1	102136
+333051	1	102137
+333051	2	112992
+333054	1	102148
+333054	2	113000
+333059	1	102162
+333059	1	102163
+333059	2	113003
+333067	1	102190
+333067	2	113012
+333067	2	113013
+333086	1	107159
+333086	2	102122
+333091	1	107258
+333091	2	113000
+333099	1	107165
+333099	2	102127
+333110	1	107168
+333110	2	102135
+333153	1	105700
+333153	2	107255
+333158	1	105592
+333158	2	102127
+333168	1	105599
+333168	2	102135
+334183	1	137221
+334183	2	102122
+334190	1	137354
+334190	2	107255
+334198	1	137233
+334198	2	102133
+334202	1	137238
+334202	2	102135
+334210	1	138817
+334210	2	102122
+334218	1	138879
+334218	2	107255
+334222	1	138823
+334222	2	102127
+334230	1	138830
+334230	1	138831
+334230	2	102135
+393490	1	102125
+393490	2	112352
+393507	1	107254
+393507	2	112352
+393546	1	105794
+393546	2	112352
+393547	1	105795
+393547	2	112352
+393553	1	105799
+393553	2	112354
+393637	1	112991
+393637	2	112351
+393641	1	113004
+393641	2	112353
+393643	1	113008
+393643	2	112354
+393950	1	137407
+393950	2	112352
+393953	1	137412
+393953	2	112354
+402327	1	112766
+402327	2	102770
+402332	1	112773
+402332	2	102773
+402339	1	112784
+402339	2	102776
+402343	1	112790
+402343	2	102779
+402346	1	112793
+402346	1	112794
+402346	2	102782
+402350	1	112805
+402350	2	102784
+402376	1	112030
+402376	1	112031
+402376	2	113577
+402382	1	111888
+402382	2	102773
+402388	1	111892
+402388	2	102776
+402391	1	111939
+402391	2	107478
+402397	1	112046
+402397	2	113583
+402398	1	111895
+402398	2	102784
+403125	1	133430
+403125	2	112415
+403128	1	133431
+403128	2	112417
+403468	1	144143
+403468	2	112415
+403472	1	144158
+403472	2	113579
+403474	1	144060
+403474	2	102776
+403479	1	144148
+403479	2	112417
+403481	1	144062
+403481	1	144063
+403481	2	102782
+403485	1	144167
+403485	2	113583
+403486	1	144066
+403486	2	102784
+403488	1	144067
+403488	2	102766
+405211	1	112773
+405211	2	102800
+405214	1	112784
+405214	2	102802
+405214	2	102803
+405217	1	112793
+405217	1	112794
+405217	2	102807
+405219	1	112805
+405219	2	102809
+405235	1	111886
+405235	2	102795
+405236	1	111886
+405236	2	102796
+405241	1	111888
+405241	2	102800
+405250	1	111892
+405250	2	102802
+405250	2	102803
+405253	1	111939
+405253	2	107492
+405258	1	111895
+405258	2	102809
+405963	1	144060
+405963	2	102802
+405963	2	102803
+405970	1	144066
+405970	2	102809
+405971	1	144067
+405971	2	102796
+420730	1	102136
+420730	1	102137
+420730	2	113705
+420735	1	102148
+420735	2	113712
+420736	1	102125
+420736	2	112516
+420739	1	102162
+420739	1	102163
+420739	2	113715
+420745	1	102173
+420745	2	113719
+420747	1	102129
+420747	2	112526
+420751	1	102190
+420751	2	113721
+420782	1	107486
+420782	2	139353
+420783	1	107258
+420783	2	113712
+420785	1	107254
+420785	2	112516
+420791	1	107165
+420791	2	102929
+420792	1	107487
+420792	2	139355
+420798	1	107489
+420798	2	139356
+420887	1	105802
+420887	2	113712
+420888	1	105794
+420888	2	112516
+420893	1	105805
+420893	2	113715
+420894	1	106266
+420894	2	139355
+420903	1	105595
+420903	2	102932
+420911	1	105799
+420911	2	112526
+420912	1	105812
+420912	2	113721
+421176	1	112991
+421176	2	112513
+421177	1	112998
+421177	2	112516
+421179	1	113004
+421179	2	112524
+421180	1	113008
+421180	2	112526
+421181	1	113010
+421181	2	112527
+422233	1	137221
+422233	2	102923
+422233	2	102924
+422240	1	137415
+422240	2	113712
+422241	1	137407
+422241	2	112516
+422249	1	137228
+422249	2	102929
+422262	1	137412
+422262	2	112526
+422263	1	137423
+422263	2	113721
+422277	1	138821
+422277	2	102927
+422281	1	138823
+422281	2	102929
+
+COPY 164 RECORDS INTO "sys"."fconnection" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+312733	"ATL"	"BOS"	740	1127	"1234567"	0	1	227
+312734	"ATL"	"BOS"	1200	1548	"1234567"	0	1	228
+312737	"ATL"	"BOS"	1650	2053	"1234567"	0	1	243
+333051	"ATL"	"DEN"	630	910	"1234567"	0	1	280
+333054	"ATL"	"DEN"	1000	1245	"1234567"	0	1	285
+333059	"ATL"	"DEN"	1319	1554	"1234567"	0	1	275
+333067	"ATL"	"DEN"	2029	2320	"1234567"	0	1	291
+393490	"ATL"	"OAK"	1000	1339	"1234567"	0	1	399
+420730	"ATL"	"SFO"	630	955	"1234567"	0	1	385
+420735	"ATL"	"SFO"	1000	1325	"1234567"	0	1	385
+420736	"ATL"	"SFO"	1000	1336	"1234567"	0	1	396
+420739	"ATL"	"SFO"	1319	1650	"1234567"	0	1	391
+420745	"ATL"	"SFO"	1650	2050	"1234567"	0	1	420
+420747	"ATL"	"SFO"	1825	2214	"1234567"	0	1	409
+420751	"ATL"	"SFO"	2029	2350	"1234567"	0	1	381
+305276	"BOS"	"ATL"	705	1110	"1234567"	0	1	245
+305277	"BOS"	"ATL"	1125	1615	"1234567"	0	1	290
+305280	"BOS"	"ATL"	1645	2101	"1234567"	0	1	256
+333153	"BOS"	"DEN"	1000	1410	"1234567"	0	1	370
+333158	"BOS"	"DEN"	1156	1615	"1234567"	0	1	379
+333168	"BOS"	"DEN"	1850	2320	"1234567"	0	1	390
+393546	"BOS"	"OAK"	838	1339	"123456-"	0	1	481
+393547	"BOS"	"OAK"	840	1339	"------7"	0	1	479
+393553	"BOS"	"OAK"	1720	2205	"1234567"	0	1	465
+420887	"BOS"	"SFO"	805	1325	"1234567"	0	1	500
+420888	"BOS"	"SFO"	838	1336	"123456-"	0	1	478
+420893	"BOS"	"SFO"	1132	1650	"1234567"	0	1	498
+420894	"BOS"	"SFO"	1210	1652	"1234567"	0	1	462
+420903	"BOS"	"SFO"	1520	2115	"1234567"	0	1	535
+420911	"BOS"	"SFO"	1720	2214	"1234567"	0	1	474
+420912	"BOS"	"SFO"	1845	2350	"1234567"	0	1	485
+333086	"BWI"	"DEN"	550	955	"1234567"	0	1	365
+333091	"BWI"	"DEN"	845	1245	"1234567"	0	1	360
+333099	"BWI"	"DEN"	1230	1615	"1234567"	0	1	345
+333110	"BWI"	"DEN"	1945	2320	"1234567"	0	1	335
+329933	"BWI"	"DFW"	550	930	"1234567"	0	1	280
+329937	"BWI"	"DFW"	900	1250	"1234567"	0	1	290
+329941	"BWI"	"DFW"	1230	1620	"1234567"	0	1	290
+329944	"BWI"	"DFW"	1600	1955	"1234567"	0	1	295
+329947	"BWI"	"DFW"	1945	2321	"1234567"	0	1	276
+393507	"BWI"	"OAK"	915	1339	"1234567"	0	1	444
+420782	"BWI"	"SFO"	800	1217	"123456-"	0	1	437
+420783	"BWI"	"SFO"	845	1325	"1234567"	0	1	460
+420785	"BWI"	"SFO"	915	1336	"1234567"	0	1	441
+420791	"BWI"	"SFO"	1230	1730	"1234567"	0	1	480
+420792	"BWI"	"SFO"	1240	1652	"1234567"	0	1	432
+420798	"BWI"	"SFO"	1620	2022	"1234567"	0	1	422
+305416	"DEN"	"ATL"	620	1244	"1234567"	0	1	264
+305424	"DEN"	"ATL"	950	1606	"1234567"	0	1	256
+305429	"DEN"	"ATL"	1325	1943	"1234567"	0	1	258
+305435	"DEN"	"ATL"	1700	100	"1234567"	0	1	360
+305436	"DEN"	"ATL"	1955	230	"1234567"	0	1	275
+313024	"DEN"	"BOS"	55	855	"1234567"	0	1	360
+313025	"DEN"	"BOS"	620	1435	"1234567"	0	1	375
+313030	"DEN"	"BOS"	800	1550	"1234567"	0	1	350
+313034	"DEN"	"BOS"	950	1755	"1234567"	0	1	365
+313037	"DEN"	"BOS"	1055	1920	"1234567"	0	1	385
+313041	"DEN"	"BOS"	1325	2125	"1234567"	0	1	360
+313048	"DEN"	"BOS"	1815	153	"1234567"	0	1	338
+308320	"DEN"	"BWI"	620	1400	"1234567"	0	1	340
+308330	"DEN"	"BWI"	1055	1850	"1234567"	0	1	355
+308334	"DEN"	"BWI"	1325	2045	"1234567"	0	1	320
+402376	"DEN"	"PHL"	620	1350	"1234567"	0	1	330
+402382	"DEN"	"PHL"	800	1515	"1234567"	0	1	315
+402388	"DEN"	"PHL"	1055	1840	"1234567"	0	1	345
+402391	"DEN"	"PHL"	1455	2146	"12345-7"	0	1	291
+402397	"DEN"	"PHL"	1700	15	"1234567"	0	1	315
+402398	"DEN"	"PHL"	1815	130	"1234567"	0	1	315
+405235	"DEN"	"PIT"	55	803	"1234567"	0	1	308
+405236	"DEN"	"PIT"	55	1000	"1234567"	0	1	425
+405241	"DEN"	"PIT"	800	1510	"1234567"	0	1	310
+405250	"DEN"	"PIT"	1055	1845	"1234567"	0	1	350
+405253	"DEN"	"PIT"	1455	2202	"1234567"	0	1	307
+405258	"DEN"	"PIT"	1815	59	"1234567"	0	1	284
+313006	"DFW"	"BOS"	2010	153	"1234567"	0	1	283
+308292	"DFW"	"BWI"	625	1145	"1234567"	0	1	260
+308296	"DFW"	"BWI"	945	1510	"1234567"	0	1	265
+308301	"DFW"	"BWI"	1305	1850	"1234567"	0	1	285
+308304	"DFW"	"BWI"	1650	2230	"1234567"	0	1	280
+393637	"DFW"	"OAK"	700	1014	"123456-"	0	1	314
+393641	"DFW"	"OAK"	1547	1852	"1234567"	0	1	305
+393643	"DFW"	"OAK"	1850	2205	"12345-7"	0	1	315
+402327	"DFW"	"PHL"	625	1200	"1234567"	0	1	275
+402332	"DFW"	"PHL"	945	1515	"1234567"	0	1	270
+402339	"DFW"	"PHL"	1305	1840	"1234567"	0	1	275
+402343	"DFW"	"PHL"	1501	2045	"1234567"	0	1	284
+402346	"DFW"	"PHL"	1650	2220	"1234567"	0	1	270
+402350	"DFW"	"PHL"	2010	130	"1234567"	0	1	260
+405211	"DFW"	"PIT"	945	1510	"1234567"	0	1	265
+405214	"DFW"	"PIT"	1305	1845	"1234567"	0	1	280
+405217	"DFW"	"PIT"	1650	2205	"1234567"	0	1	255
+405219	"DFW"	"PIT"	2010	59	"1234567"	0	1	229
+421176	"DFW"	"SFO"	700	1006	"123456-"	0	1	306
+421177	"DFW"	"SFO"	1032	1336	"1234567"	0	1	304
+421179	"DFW"	"SFO"	1547	1912	"1234567"	0	1	325
+421180	"DFW"	"SFO"	1850	2214	"12345-7"	0	1	324
+421181	"DFW"	"SFO"	1940	2310	"1234567"	0	1	330
+306026	"OAK"	"ATL"	625	1537	"1234567"	0	1	372
+306031	"OAK"	"ATL"	1425	2330	"1234567"	0	1	365
+313867	"OAK"	"BOS"	625	1619	"1234567"	0	1	414
+308924	"OAK"	"BWI"	1425	2332	"1234567"	0	1	367
+330865	"OAK"	"DFW"	625	1312	"1234567"	0	1	287
+330867	"OAK"	"DFW"	1105	1753	"1234567"	0	1	288
+330870	"OAK"	"DFW"	1425	2122	"12345-7"	0	1	297
+403125	"OAK"	"PHL"	625	1553	"1234567"	0	1	388
+403128	"OAK"	"PHL"	1105	2041	"1234567"	0	1	396
+334183	"PHL"	"DEN"	540	955	"1234567"	0	1	375
+334190	"PHL"	"DEN"	840	1410	"123456-"	0	1	450
+334198	"PHL"	"DEN"	1600	2015	"1234567"	0	1	375
+334202	"PHL"	"DEN"	1935	2320	"1234567"	0	1	345
+330947	"PHL"	"DFW"	540	930	"1234567"	0	1	290
+330956	"PHL"	"DFW"	900	1250	"1234567"	0	1	290
+330962	"PHL"	"DFW"	1230	1620	"1234567"	0	1	290
+330964	"PHL"	"DFW"	1405	1805	"1234567"	0	1	300
+330967	"PHL"	"DFW"	1600	1955	"1234567"	0	1	295
+330971	"PHL"	"DFW"	1750	2140	"1234567"	0	1	290
+330974	"PHL"	"DFW"	1935	2321	"1234567"	0	1	286
+393950	"PHL"	"OAK"	905	1339	"1234567"	0	1	454
+393953	"PHL"	"OAK"	1753	2205	"1234567"	0	1	432
+422233	"PHL"	"SFO"	540	1110	"1234567"	0	1	510
+422240	"PHL"	"SFO"	830	1325	"1234567"	0	1	475
+422241	"PHL"	"SFO"	905	1336	"1234567"	0	1	451
+422249	"PHL"	"SFO"	1230	1730	"1234567"	0	1	480
+422262	"PHL"	"SFO"	1753	2214	"1234567"	0	1	441
+422263	"PHL"	"SFO"	1915	2350	"1234567"	0	1	455
+334210	"PIT"	"DEN"	600	955	"1234567"	0	1	355
+334218	"PIT"	"DEN"	1030	1410	"1234567"	0	1	340
+334222	"PIT"	"DEN"	1245	1615	"1234567"	0	1	330
+334230	"PIT"	"DEN"	1945	2320	"1234567"	0	1	335
+330977	"PIT"	"DFW"	600	930	"1234567"	0	1	270
+330981	"PIT"	"DFW"	910	1250	"1234567"	0	1	280
+330984	"PIT"	"DFW"	1245	1620	"1234567"	0	1	275
+330989	"PIT"	"DFW"	1945	2321	"1234567"	0	1	276
+422277	"PIT"	"SFO"	910	1410	"1234567"	0	1	480
+422281	"PIT"	"SFO"	1245	1730	"1234567"	0	1	465
+306304	"SFO"	"ATL"	20	917	"1234567"	0	1	357
+306307	"SFO"	"ATL"	620	1537	"1234567"	0	1	377
+306309	"SFO"	"ATL"	700	1606	"1234567"	0	1	366
+306314	"SFO"	"ATL"	1059	1943	"1234567"	0	1	344
+306317	"SFO"	"ATL"	1425	2258	"1234567"	0	1	333
+306318	"SFO"	"ATL"	1431	2330	"1234567"	0	1	359
+306319	"SFO"	"ATL"	1750	230	"1234567"	0	1	340
+314256	"SFO"	"BOS"	620	1619	"1234567"	0	1	419
+314259	"SFO"	"BOS"	700	1755	"1234567"	0	1	475
+314263	"SFO"	"BOS"	815	1920	"1234567"	0	1	485
+314268	"SFO"	"BOS"	1059	2125	"1234567"	0	1	446
+314269	"SFO"	"BOS"	1108	2056	"1234567"	0	1	408
+309189	"SFO"	"BWI"	815	1850	"1234567"	0	1	455
+309198	"SFO"	"BWI"	1059	2045	"1234567"	0	1	406
+309204	"SFO"	"BWI"	1431	2332	"1234567"	0	1	361
+331132	"SFO"	"DFW"	620	1312	"1234567"	0	1	292
+331133	"SFO"	"DFW"	1108	1753	"1234567"	0	1	285
+331134	"SFO"	"DFW"	1431	2122	"12345-7"	0	1	291
+403468	"SFO"	"PHL"	620	1553	"1234567"	0	1	393
+403472	"SFO"	"PHL"	700	1705	"1234567"	0	1	425
+403474	"SFO"	"PHL"	815	1840	"1234567"	0	1	445
+403479	"SFO"	"PHL"	1108	2041	"1234567"	0	1	393
+403481	"SFO"	"PHL"	1215	2220	"1234567"	0	1	425
+403485	"SFO"	"PHL"	1425	15	"1234567"	0	1	410
+403486	"SFO"	"PHL"	1530	130	"1234567"	0	1	420
+403488	"SFO"	"PHL"	2220	825	"1234567"	0	1	425
+405963	"SFO"	"PIT"	815	1845	"1234567"	0	1	450
+405970	"SFO"	"PIT"	1530	59	"1234567"	0	1	389
+405971	"SFO"	"PIT"	2220	1000	"1234567"	0	1	520
+
+COPY 7 RECORDS INTO "sys"."day_name" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+1	"MONDAY"
+2	"TUESDAY"
+3	"WEDNESDAY"
+4	"THURSDAY"
+5	"FRIDAY"
+6	"SATURDAY"
+7	"SUNDAY"
+
+COPY 114 RECORDS INTO "sys"."dual_carrier" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"AA"	"AA"	3000	5799	"AMERICAN EAGLE"
+"AC"	"RJ"	1001	1010	"AIR CANADA"
+"AC"	"CS"	1100	1199	"AIR CANADA"
+"AC"	"GX"	1200	1499	"AIR CANADA"
+"AC"	"ZX"	1500	1799	"AIR CANADA"
+"AC"	"QK"	1800	1899	"AIR CANADA"
+"AC"	"3J"	1900	1949	"AIR CANADA"
+"AC"	"3J"	1977	1981	"AIR CANADA"
+"AC"	"3J"	1990	1999	"AIR CANADA"
+"AC"	"NV"	1950	1976	"AIR CANADA"
+"AC"	"NV"	1982	1989	"AIR CANADA"
+"AQ"	"WP"	1000	1999	"ALOHA AIRLINES,INC"
+"AS"	"QX"	2000	2199	"ALASKA AIRLINES COMMUTER SERVICE"
+"AS"	"QX"	2260	2999	"ALASKA AIRLINES COMMUTER SERVICE"
+"AS"	"BF"	2200	2259	"ALASKA AIRLINES COMMUTER SERVICE"
+"AS"	"BF"	4000	4199	"ALASKA AIRLINES COMMUTER SERVICE"
+"AS"	"JF"	4400	4499	"ALASKA AIRLINES COMMUTER SERVICE"
+"AS"	"KN"	4500	4599	"ALASKA AIRLINES COMMUTER SERVICE"
+"AS"	"8E"	4600	4699	"ALASKA AIRLINES COMMUTER SERVICE"
+"AS"	"7H"	4800	4899	"ALASKA AIRLINES COMMUTER SERVICE"
+"BA"	"BE"	8001	8002	"BRITISH AIRWAYS"
+"BA"	"BE"	8004	8004	"BRITISH AIRWAYS"
+"BA"	"UA"	8022	8022	"BRITISH AIRWAYS"
+"BA"	"UA"	8154	8155	"BRITISH AIRWAYS"
+"BA"	"UA"	8159	8159	"BRITISH AIRWAYS"
+"BA"	"UA"	8235	8235	"BRITISH AIRWAYS"
+"BA"	"UA"	8243	8243	"BRITISH AIRWAYS"
+"BA"	"UA"	8246	8246	"BRITISH AIRWAYS"
+"BA"	"UA"	8064	8064	"BRITISH AIRWAYS"
+"BA"	"UA"	8269	8269	"BRITISH AIRWAYS"
+"BA"	"UA"	8300	8300	"BRITISH AIRWAYS"
+"BF"	"2E"	1100	1399	"MARKAIR,INC."
+"BF"	"2E"	1800	1899	"MARKAIR,INC."
+"CO"	"CO"	950	967	"CONTINENTAL AIRLINES/AIR MICRONESIA"
+"CO"	"CO"	970	997	"CONTINENTAL AIRLINES/AIR MICRONESIA"
+"CO"	"CO"	1880	1899	"CONTINENTAL AIRLINES/AIR MICRONESIA"
+"CO"	"CO"	3300	3399	"CONTINENTAL AIRLINES/AIR MICRONESIA"
+"CO"	"SK"	8900	8949	"CONTINENTAL AIRLINES/SAS SCANDINAVIAN AIRLINES SYSTEM"
+"CO"	"SK"	9000	9125	"CONTINENTAL AIRLINES/SAS SCANDINAVIAN AIRLINES SYSTEM"
+"CO"	"SK"	9370	9435	"CONTINENTAL AIRLINES/SAS SCANDINAVIAN AIRLINES SYSTEM"
+"CO"	"JC"	2000	2499	"CONTINENTAL EXPRESS"
+"CO"	"RU"	2500	2799	"CONTINENTAL EXPRESS"
+"CO"	"RU"	3000	3025	"CONTINENTAL EXPRESS"
+"CO"	"RU"	4400	4999	"CONTINENTAL EXPRESS"
+"CO"	"CO"	2800	2999	"CONTINENTAL EXPRESS/RESORT EXPRESS"
+"CO"	"CO"	3026	3099	"CONTINENTAL EXPRESS/HOME JAMES"
+"CO"	"CO"	3100	3199	"CONTINENTAL EXPRESS/COLORADO MOUNTAIN EXPRESS"
+"CO"	"6J"	3200	3299	"CONTINENTAL EXPRESS/SOUTHERN JERSEY AIRWAYS,INC."
+"CO"	"QO"	3400	3999	"CONTINENTAL EXPRESS/BAR HARBOR AIRLINES"
+"CP"	"SK"	68	69	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"LH"	144	145	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"WD"	950	951	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"WD"	954	955	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"WD"	957	958	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"WD"	960	961	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"WD"	963	964	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"WD"	967	968	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"WD"	983	983	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"WD"	986	986	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"WD"	988	988	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"WD"	991	992	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"WD"	994	995	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"PJ"	1001	1010	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"KI"	1100	1272	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"KI"	1274	1274	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"KI"	1276	1276	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"KI"	1278	1283	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"KI"	1285	1288	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"MO"	1300	1359	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"9A"	1400	1499	"CANADIAN AIRLINES INTERNATIONAL LTD. CANADIAN PARTNERS"
+"CP"	"CP"	1800	1999	"CANADIAN AIRLINES INTERNATIONAL LTD./ONTARIO EXPRESS LTD."
+"DL"	"EV"	2000	2999	"DELTA CONNECTION"
+"DL"	"OH"	3000	3699	"DELTA CONNECTION"
+"DL"	"HQ"	4300	4999	"DELTA CONNECTION"
+"DL"	"OO"	5200	5999	"DELTA CONNECTION"
+"EA"	"LI"	2300	2399	"EASTERN EXPRESS"
+"EA"	"HY"	2900	3299	"EASTERN EXPRESS"
+"EA"	"QO"	3700	3999	"EASTERN EXPRESS"
+"KL"	"UK"	2843	2843	"KLM-ROYAL DUTCH AIRLINES"
+"KL"	"UK"	2845	2845	"KLM-ROYAL DUTCH AIRLINES"
+"KL"	"UK"	2847	2847	"KLM-ROYAL DUTCH AIRLINES"
+"ML"	"JT"	1500	1550	"THE MIDWAY CONNECTION/IOWA AIRWAYS"
+"ML"	"ML"	1600	1999	"THE MIDWAY CONNECTION/MIDWAY COMMUTER/FISCHER BROS. AVIATION"
+"ND"	"QR"	240	259	"INTAIR"
+"ND"	"ND"	940	959	"INTAIR/ALEXANDAIR,INC."
+"NW"	"QX"	2000	2399	"NORTHWEST AIRLINES"
+"NW"	"US"	4000	4999	"NORTHWEST AIRLINES"
+"NW"	"9E"	2500	2999	"NORTHWEST AIRLINK"
+"NW"	"XJ"	3000	3399	"NORTHWEST AIRLINK"
+"NW"	"RP"	3500	3799	"NORTHWEST AIRLINK"
+"NW"	"GQ"	3800	3999	"NORTHWEST AIRLINK"
+"PA"	"RZ"	270	271	"PAN AM EXPRESS,INC."
+"PA"	"RZ"	4500	4999	"PAN AM EXPRESS,INC."
+"PA"	"MA"	4072	4073	"PAN AMERICAN WORLD AIRWAYS,INC./MALEV-HUNGARIAN AIRLINES"
+"PA"	"JP"	4076	4077	"PAN AMERICAN WORLD AIRWAYS,INC./ADRIA AIRWAYS"
+"QF"	"AA"	301	302	"QANTAS AIRWAYS LTD."
+"QK"	"QK"	803	804	"AIR NOVA INC./NEWFOUNDLAND LABRADOR AIR TRANSPORT,LTD."
+"QY"	"QY"	600	615	"AERO VIRGIN ISLANDS CORP./TAINO AIRWAYS"
+"TW"	"US"	8150	8155	"TRANS WORLD AIRLINES,INC."
+"TW"	"US"	8156	8199	"TRANS WORLD AIRLINES,INC."
+"TW"	"9N"	7000	7199	"TRANS WORLD EXPRESS,"
+"TW"	"ZV"	7300	7499	"TRANS WORLD EXPRESS,"
+"TW"	"JI"	7550	7569	"TRANS WORLD EXPRESS,"
+"TW"	"8P"	7570	7699	"TRANS WORLD EXPRESS,"
+"TW"	"SS"	7750	7949	"TRANS WORLD EXPRESS,"
+"UA"	"XV"	2100	2349	"UNITED EXPRESS"
+"UA"	"NO"	2375	2624	"UNITED EXPRESS"
+"UA"	"ZW"	2640	3099	"UNITED EXPRESS"
+"UA"	"OE"	3100	3569	"UNITED EXPRESS"
+"UA"	"AP"	3640	3999	"UNITED EXPRESS"
+"US"	"US"	3000	4999	"USAIR EXPRESS"
+"YX"	"YX"	1000	1999	"MIDWEST EXPRESS CONNECTION/SKYWAY AIRLINES INC."
+"2F"	"2F"	526	529	"FRONTIER FLYING SERVICE/TATONDUK AIR SERVICE"
+""	""	0	0	""
+
+COPY 534 RECORDS INTO "sys"."fare" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"7100001"	"ATL"	"BOS"	"F"	""	""	497	994
+"7100002"	"ATL"	"BOS"	"FN"	""	""	348	696
+"7100003"	"ATL"	"BOS"	"Y"	""	""	331	662
+"7100004"	"ATL"	"BOS"	"YN"	""	""	266	532
+"7100005"	"ATL"	"BOS"	"K"	""	"AP/57"	0	388
+"7100006"	"ATL"	"BOS"	"KO"	""	"AP/57"	0	368
+"7100007"	"ATL"	"BOS"	"QW"	""	"AP/57"	0	268
+"7100008"	"ATL"	"BOS"	"QX"	""	"AP/57"	0	248
+"7100009"	"ATL"	"BOS"	"B"	""	"VU/1"	230	0
+"7100010"	"ATL"	"BOS"	"Y"	""	"VU/1"	226	0
+"7100011"	"ATL"	"BWI"	"F"	""	""	428	856
+"7100012"	"ATL"	"BWI"	"FN"	""	""	299	598
+"7100013"	"ATL"	"BWI"	"Y"	""	""	286	572
+"7100014"	"ATL"	"BWI"	"YN"	""	""	230	460
+"7100015"	"ATL"	"BWI"	"QW"	""	"AP/57"	0	248
+"7100016"	"ATL"	"BWI"	"QX"	""	"AP/57"	0	208
+"7100017"	"ATL"	"BWI"	"B"	""	"VU/1"	199	0
+"7100018"	"ATL"	"BWI"	"Y"	""	"VU/1"	196	0
+"7100019"	"ATL"	"DEN"	"F"	"UA"	""	685	1370
+"7100020"	"ATL"	"DEN"	"F"	""	""	677	1354
+"7100021"	"ATL"	"DEN"	"FN"	""	""	475	950
+"7100022"	"ATL"	"DEN"	"Y"	"UA"	""	457	914
+"7100023"	"ATL"	"DEN"	"Y"	""	""	452	904
+"7100024"	"ATL"	"DEN"	"B"	"DL"	""	435	870
+"7100025"	"ATL"	"DEN"	"H"	"EA"	""	410	820
+"7100026"	"ATL"	"DEN"	"M"	"DL"	""	410	820
+"7100027"	"ATL"	"DEN"	"YN"	""	""	361	722
+"7100028"	"ATL"	"DEN"	"MW"	""	"AP/57"	0	438
+"7100029"	"ATL"	"DEN"	"MX"	""	"AP/57"	0	378
+"7100030"	"ATL"	"DEN"	"QW"	""	"AP/57"	0	298
+"7100031"	"ATL"	"DEN"	"QX"	""	"AP/57"	0	238
+"7100032"	"ATL"	"DEN"	"B"	""	"VU/1"	314	0
+"7100033"	"ATL"	"DEN"	"Y"	""	"VU/1"	314	0
+"7100034"	"ATL"	"DEN"	"B"	""	"AP/55"	304	0
+"7100035"	"ATL"	"DEN"	"H"	""	"AP/55"	228	0
+"7100036"	"ATL"	"DFW"	"F"	"AA"	""	512	1024
+"7100037"	"ATL"	"DFW"	"F"	"DL"	""	504	1008
+"7100038"	"ATL"	"DFW"	"F"	""	""	503	1006
+"7100039"	"ATL"	"DFW"	"FN"	"AA"	""	360	720
+"7100040"	"ATL"	"DFW"	"FN"	""	""	352	704
+"7100041"	"ATL"	"DFW"	"Y"	""	""	341	682
+"7100042"	"ATL"	"DFW"	"Y"	"DL"	""	336	672
+"7100043"	"ATL"	"DFW"	"YN"	"AA"	""	277	554
+"7100044"	"ATL"	"DFW"	"YN"	""	""	272	544
+"7100045"	"ATL"	"DFW"	"QW"	""	"AP/80"	0	268
+"7100046"	"ATL"	"DFW"	"QX"	""	"AP/80"	0	228
+"7100047"	"ATL"	"DFW"	"B"	""	"VU/1"	233	0
+"7100048"	"ATL"	"DFW"	"Y"	"AA"	"VU/1"	233	0
+"7100049"	"ATL"	"DFW"	"M"	""	"VU/1"	233	0
+"7100050"	"ATL"	"DFW"	"Y"	""	"VU/1"	222	0
+"7100051"	"ATL"	"OAK"	"F"	"UA"	""	843	1686
+"7100052"	"ATL"	"OAK"	"Y"	"UA"	""	557	1114
+"7100053"	"ATL"	"OAK"	"QW"	""	"AP/80"	0	398
+"7100054"	"ATL"	"OAK"	"QX"	""	"AP/80"	0	348
+"7100055"	"ATL"	"OAK"	"B"	""	"AP/68"	503	0
+"7100056"	"ATL"	"OAK"	"B"	""	"VU/1"	387	0
+"7100057"	"ATL"	"OAK"	"Y"	""	"VU/1"	376	0
+"7100058"	"ATL"	"PHL"	"F"	"US"	""	465	930
+"7100059"	"ATL"	"PHL"	"F"	""	""	449	898
+"7100060"	"ATL"	"PHL"	"FN"	""	""	314	628
+"7100061"	"ATL"	"PHL"	"Y"	""	""	295	590
+"7100062"	"ATL"	"PHL"	"Y"	"US"	""	290	580
+"7100063"	"ATL"	"PHL"	"YN"	""	""	243	486
+"7100064"	"ATL"	"PHL"	"KW"	""	"AP/57"	0	268
+"7100065"	"ATL"	"PHL"	"QW"	""	"AP/80"	0	268
+"7100066"	"ATL"	"PHL"	"QW"	""	"AP/57"	0	268
+"7100067"	"ATL"	"PHL"	"KX"	""	"AP/57"	0	228
+"7100068"	"ATL"	"PHL"	"QX"	""	"AP/57"	0	228
+"7100069"	"ATL"	"PHL"	"QX"	""	"AP/80"	0	228
+"7100070"	"ATL"	"PHL"	"B"	""	"VU/1"	205	0
+"7100071"	"ATL"	"PHL"	"Y"	""	"VU/1"	205	0
+"7100072"	"ATL"	"PIT"	"F"	""	""	416	832
+"7100073"	"ATL"	"PIT"	"FN"	""	""	291	582
+"7100074"	"ATL"	"PIT"	"Y"	""	""	274	548
+"7100075"	"ATL"	"PIT"	"YN"	""	""	217	434
+"7100076"	"ATL"	"PIT"	"KW"	""	"AP/57"	0	268
+"7100077"	"ATL"	"PIT"	"QW"	""	"AP/57"	0	248
+"7100078"	"ATL"	"PIT"	"KX"	""	"AP/57"	0	228
+"7100079"	"ATL"	"PIT"	"QX"	""	"AP/57"	0	208
+"7100080"	"ATL"	"PIT"	"B"	""	"VU/1"	190	0
+"7100081"	"ATL"	"PIT"	"Y"	""	"VU/1"	190	0
+"7100082"	"ATL"	"SFO"	"F"	""	""	828	1656
+"7100083"	"ATL"	"SFO"	"Y"	""	""	552	1104
+"7100084"	"ATL"	"SFO"	"QW"	""	"AP/57"	0	398
+"7100085"	"ATL"	"SFO"	"QX"	""	"AP/57"	0	358
+"7100086"	"ATL"	"SFO"	"K"	""	"AP/68"	435	0
+"7100087"	"ATL"	"SFO"	"Q"	""	"AP/68"	435	0
+"7100088"	"ATL"	"SFO"	"B"	""	"VU/1"	383	0
+"7100089"	"ATL"	"SFO"	"Y"	""	"VU/1"	376	0
+"7100090"	"BOS"	"ATL"	"F"	""	""	497	994
+"7100091"	"BOS"	"ATL"	"FN"	""	""	348	696
+"7100092"	"BOS"	"ATL"	"Y"	""	""	331	662
+"7100093"	"BOS"	"ATL"	"YN"	""	""	266	532
+"7100094"	"BOS"	"ATL"	"K"	""	"AP/57"	0	388
+"7100095"	"BOS"	"ATL"	"KO"	""	"AP/57"	0	368
+"7100096"	"BOS"	"ATL"	"QW"	""	"AP/57"	0	268
+"7100097"	"BOS"	"ATL"	"QX"	""	"AP/57"	0	248
+"7100098"	"BOS"	"ATL"	"B"	""	"VU/1"	230	0
+"7100099"	"BOS"	"ATL"	"Y"	""	"VU/1"	226	0
+"7100100"	"BOS"	"BWI"	"F"	""	""	368	736
+"7100101"	"BOS"	"BWI"	"Y"	""	""	161	322
+"7100102"	"BOS"	"BWI"	"Y"	""	"VU/1"	109	0
+"7100103"	"BOS"	"DEN"	"F"	""	""	713	1426
+"7100104"	"BOS"	"DEN"	"Y"	""	""	475	950
+"7100105"	"BOS"	"DEN"	"QW"	""	"AP/80"	0	378
+"7100106"	"BOS"	"DEN"	"QX"	""	"AP/80"	0	338
+"7100107"	"BOS"	"DEN"	"B"	""	"VU/1"	379	0
+"7100108"	"BOS"	"DEN"	"Y"	""	"VU/1"	326	0
+"7100109"	"BOS"	"DFW"	"F"	"AA"	""	773	1546
+"7100110"	"BOS"	"DFW"	"F"	"DL"	""	765	1530
+"7100111"	"BOS"	"DFW"	"Y"	"AA"	""	515	1030
+"7100112"	"BOS"	"DFW"	"Y"	"DL"	""	510	1020
+"7100113"	"BOS"	"DFW"	"B"	""	"VU/1"	354	0
+"7100114"	"BOS"	"DFW"	"Y"	""	"VU/1"	354	0
+"7100115"	"BOS"	"PHL"	"F"	""	""	210	420
+"7100116"	"BOS"	"PHL"	"Y"	"DL"	""	147	294
+"7100117"	"BOS"	"PHL"	"B"	"DL"	""	140	280
+"7100118"	"BOS"	"PHL"	"K"	""	""	140	280
+"7100119"	"BOS"	"PHL"	"Y"	"DL"	""	140	280
+"7100120"	"BOS"	"PHL"	"Y"	""	""	140	280
+"7100121"	"BOS"	"PHL"	"B"	""	"AP/75"	0	270
+"7100122"	"BOS"	"PHL"	"B"	"DL"	""	129	258
+"7100123"	"BOS"	"PHL"	"B"	"US"	""	109	218
+"7100124"	"BOS"	"PHL"	"M"	"ML"	""	109	218
+"7100125"	"BOS"	"PHL"	"Q"	""	"AP/27"	0	188
+"7100126"	"BOS"	"PHL"	"B"	""	"AP/44"	129	0
+"7100127"	"BOS"	"PHL"	"B"	""	"VU/1"	102	0
+"7100128"	"BOS"	"PHL"	"Y"	""	"VU/1"	97	0
+"7100129"	"BOS"	"PIT"	"F"	""	""	330	660
+"7100130"	"BOS"	"PIT"	"Y"	""	""	240	480
+"7100131"	"BOS"	"PIT"	"Y"	""	"VU/1"	153	0
+"7100132"	"BOS"	"SFO"	"F"	""	""	860	1720
+"7100133"	"BOS"	"SFO"	"F"	"AA"	""	852	1704
+"7100134"	"BOS"	"SFO"	"C"	""	""	635	1270
+"7100135"	"BOS"	"SFO"	"Y"	"TW"	""	605	1210
+"7100136"	"BOS"	"SFO"	"Y"	"UA"	""	605	1210
+"7100137"	"BOS"	"SFO"	"Y"	""	""	573	1146
+"7100138"	"BOS"	"SFO"	"B"	"AA"	""	508	1016
+"7100139"	"BOS"	"SFO"	"KW"	""	"AP/57"	0	418
+"7100140"	"BOS"	"SFO"	"QW"	""	"AP/80"	0	418
+"7100141"	"BOS"	"SFO"	"KX"	""	"AP/57"	0	378
+"7100142"	"BOS"	"SFO"	"QX"	""	"AP/80"	0	378
+"7100143"	"BOS"	"SFO"	"B"	""	"VU/1"	412	0
+"7100144"	"BOS"	"SFO"	"M"	""	"VU/1"	394	0
+"7100145"	"BOS"	"SFO"	"Y"	""	"VU/1"	394	0
+"7100146"	"BWI"	"ATL"	"F"	""	""	428	856
+"7100147"	"BWI"	"ATL"	"FN"	""	""	299	598
+"7100148"	"BWI"	"ATL"	"Y"	""	""	286	572
+"7100149"	"BWI"	"ATL"	"YN"	""	""	230	460
+"7100150"	"BWI"	"ATL"	"QW"	""	"AP/57"	0	248
+"7100151"	"BWI"	"ATL"	"QX"	""	"AP/57"	0	208
+"7100152"	"BWI"	"ATL"	"B"	""	"VU/1"	199	0
+"7100153"	"BWI"	"ATL"	"Y"	""	"VU/1"	196	0
+"7100154"	"BWI"	"BOS"	"F"	""	""	368	736
+"7100155"	"BWI"	"BOS"	"Y"	""	""	161	322
+"7100156"	"BWI"	"BOS"	"Y"	""	"VU/1"	109	0
+"7100157"	"BWI"	"DEN"	"F"	"US"	""	653	1306
+"7100158"	"BWI"	"DEN"	"F"	""	""	645	1290
+"7100159"	"BWI"	"DEN"	"Y"	"UA"	""	424	848
+"7100160"	"BWI"	"DEN"	"Y"	""	""	420	840
+"7100161"	"BWI"	"DEN"	"Q"	"US"	""	238	476
+"7100162"	"BWI"	"DEN"	"QW"	""	"AP/80"	0	306
+"7100163"	"BWI"	"DEN"	"QX"	""	"AP/80"	0	256
+"7100164"	"BWI"	"DEN"	"Y"	""	"VU/1"	280	0
+"7100165"	"BWI"	"DFW"	"F"	"AA"	""	630	1260
+"7100166"	"BWI"	"DFW"	"F"	""	""	622	1244
+"7100167"	"BWI"	"DFW"	"Y"	"AA"	""	420	840
+"7100168"	"BWI"	"DFW"	"Y"	""	""	415	830
+"7100169"	"BWI"	"DFW"	"B"	""	"VU/1"	288	0
+"7100170"	"BWI"	"DFW"	"Y"	""	"VU/1"	288	0
+"7100171"	"BWI"	"PHL"	"Y"	""	""	165	330
+"7100172"	"BWI"	"PHL"	"M"	""	""	106	212
+"7100173"	"BWI"	"PHL"	"Y"	""	"VU/1"	115	0
+"7100174"	"BWI"	"PIT"	"F"	""	""	172	344
+"7100175"	"BWI"	"PIT"	"Y"	""	""	119	238
+"7100176"	"BWI"	"PIT"	"Y"	""	"VU/1"	80	0
+"7100177"	"DEN"	"ATL"	"F"	"UA"	""	685	1370
+"7100178"	"DEN"	"ATL"	"F"	""	""	677	1354
+"7100179"	"DEN"	"ATL"	"FN"	""	""	475	950
+"7100180"	"DEN"	"ATL"	"Y"	"UA"	""	457	914
+"7100181"	"DEN"	"ATL"	"Y"	""	""	452	904
+"7100182"	"DEN"	"ATL"	"B"	"DL"	""	435	870
+"7100183"	"DEN"	"ATL"	"H"	""	""	410	820
+"7100184"	"DEN"	"ATL"	"M"	"DL"	""	410	820
+"7100185"	"DEN"	"ATL"	"YN"	""	""	361	722
+"7100186"	"DEN"	"ATL"	"MW"	""	"AP/57"	0	438
+"7100187"	"DEN"	"ATL"	"MX"	""	"AP/57"	0	378
+"7100188"	"DEN"	"ATL"	"QW"	""	"AP/57"	0	298
+"7100189"	"DEN"	"ATL"	"QX"	""	"AP/57"	0	238
+"7100190"	"DEN"	"ATL"	"B"	""	"VU/1"	314	0
+"7100191"	"DEN"	"ATL"	"Y"	""	"VU/1"	314	0
+"7100192"	"DEN"	"ATL"	"B"	""	"AP/55"	304	0
+"7100193"	"DEN"	"BOS"	"F"	""	""	713	1426
+"7100194"	"DEN"	"BOS"	"F"	"US"	""	705	1410
+"7100195"	"DEN"	"BOS"	"Y"	""	""	475	950
+"7100196"	"DEN"	"BOS"	"Y"	"US"	""	470	940
+"7100197"	"DEN"	"BOS"	"B"	"US"	""	382	764
+"7100198"	"DEN"	"BOS"	"M"	"DL"	""	295	590
+"7100199"	"DEN"	"BOS"	"Q"	"US"	""	295	590
+"7100200"	"DEN"	"BOS"	"Q"	"DL"	""	238	476
+"7100201"	"DEN"	"BOS"	"KW"	""	"AP/57"	0	378
+"7100202"	"DEN"	"BOS"	"QW"	""	"AP/80"	0	378
+"7100203"	"DEN"	"BOS"	"KX"	""	"AP/57"	0	338
+"7100204"	"DEN"	"BOS"	"QX"	""	"AP/80"	0	338
+"7100205"	"DEN"	"BOS"	"B"	""	"VU/1"	379	0
+"7100206"	"DEN"	"BOS"	"Y"	""	"VU/1"	326	0
+"7100207"	"DEN"	"BWI"	"F"	"US"	""	653	1306
+"7100208"	"DEN"	"BWI"	"F"	"UA"	""	645	1290
+"7100209"	"DEN"	"BWI"	"Y"	""	""	424	848
+"7100210"	"DEN"	"BWI"	"Y"	"US"	""	420	840
+"7100211"	"DEN"	"BWI"	"Q"	"US"	""	238	476
+"7100212"	"DEN"	"BWI"	"QW"	""	"AP/80"	0	306
+"7100213"	"DEN"	"BWI"	"QX"	""	"AP/80"	0	256
+"7100214"	"DEN"	"BWI"	"M"	""	"VU/1"	296	0
+"7100215"	"DEN"	"BWI"	"Y"	""	"VU/1"	280	0
+"7100216"	"DEN"	"DFW"	"F"	""	""	489	978
+"7100217"	"DEN"	"DFW"	"F"	"DL"	""	481	962
+"7100218"	"DEN"	"DFW"	"FN"	"AA"	""	344	688
+"7100219"	"DEN"	"DFW"	"FN"	""	""	336	672
+"7100220"	"DEN"	"DFW"	"Y"	""	""	305	610
+"7100221"	"DEN"	"DFW"	"Y"	"DL"	""	300	600
+"7100222"	"DEN"	"DFW"	"YN"	"AA"	""	261	522
+"7100223"	"DEN"	"DFW"	"YN"	""	""	256	512
+"7100224"	"DEN"	"DFW"	"QW"	""	"AP/80"	0	268
+"7100225"	"DEN"	"DFW"	"QX"	""	"AP/80"	0	228
+"7100226"	"DEN"	"DFW"	"B"	""	"VU/1"	208	0
+"7100227"	"DEN"	"DFW"	"Y"	""	"VU/1"	208	0
+"7100228"	"DEN"	"OAK"	"F"	""	""	488	976
+"7100229"	"DEN"	"OAK"	"Y"	""	""	325	650
+"7100230"	"DEN"	"OAK"	"QW"	""	"AP/80"	0	288
+"7100231"	"DEN"	"OAK"	"QX"	""	"AP/80"	0	248
+"7100232"	"DEN"	"OAK"	"Y"	""	"VU/1"	222	0
+"7100233"	"DEN"	"PHL"	"F"	""	""	706	1412
+"7100234"	"DEN"	"PHL"	"Y"	""	""	470	940
+"7100235"	"DEN"	"PHL"	"FN"	""	""	441	882
+"7100236"	"DEN"	"PHL"	"YN"	""	""	336	672
+"7100237"	"DEN"	"PHL"	"KW"	""	"AP/57"	0	488
+"7100238"	"DEN"	"PHL"	"KX"	""	"AP/57"	0	418
+"7100239"	"DEN"	"PHL"	"QW"	""	"AP/80"	0	348
+"7100240"	"DEN"	"PHL"	"QX"	""	"AP/80"	0	278
+"7100241"	"DEN"	"PHL"	"Y"	""	"VU/1"	323	0
+"7100242"	"DEN"	"PHL"	"B"	""	"VU/1"	297	0
+"7100243"	"DEN"	"PIT"	"F"	""	""	647	1294
+"7100244"	"DEN"	"PIT"	"Y"	""	""	412	824
+"7100245"	"DEN"	"PIT"	"Q"	""	""	287	574
+"7100246"	"DEN"	"PIT"	"Y"	""	"VU/1"	285	0
+"7100247"	"DEN"	"SFO"	"F"	""	""	488	976
+"7100248"	"DEN"	"SFO"	"Y"	""	""	325	650
+"7100249"	"DEN"	"SFO"	"YN"	""	""	325	650
+"7100250"	"DEN"	"SFO"	"QW"	""	"AP/80"	0	288
+"7100251"	"DEN"	"SFO"	"QX"	""	"AP/80"	0	248
+"7100252"	"DEN"	"SFO"	"B"	""	"VU/1"	222	0
+"7100253"	"DEN"	"SFO"	"Y"	""	"VU/1"	222	0
+"7100254"	"DFW"	"ATL"	"F"	"AA"	""	512	1024
+"7100255"	"DFW"	"ATL"	"F"	"DL"	""	504	1008
+"7100256"	"DFW"	"ATL"	"F"	""	""	488	976
+"7100257"	"DFW"	"ATL"	"FN"	"AA"	""	360	720
+"7100258"	"DFW"	"ATL"	"FN"	""	""	352	704
+"7100259"	"DFW"	"ATL"	"Y"	"AA"	""	341	682
+"7100260"	"DFW"	"ATL"	"Y"	"DL"	""	336	672
+"7100261"	"DFW"	"ATL"	"YN"	"AA"	""	277	554
+"7100262"	"DFW"	"ATL"	"YN"	""	""	272	544
+"7100263"	"DFW"	"ATL"	"QW"	""	"AP/80"	0	268
+"7100264"	"DFW"	"ATL"	"QX"	""	"AP/80"	0	228
+"7100265"	"DFW"	"ATL"	"B"	""	"VU/1"	233	0
+"7100266"	"DFW"	"ATL"	"Y"	"AA"	"VU/1"	233	0
+"7100267"	"DFW"	"ATL"	"Y"	""	"VU/1"	222	0
+"7100268"	"DFW"	"BOS"	"F"	"AA"	""	773	1546
+"7100269"	"DFW"	"BOS"	"F"	""	""	765	1530
+"7100270"	"DFW"	"BOS"	"Y"	"AA"	""	515	1030
+"7100271"	"DFW"	"BOS"	"Y"	"DL"	""	510	1020
+"7100272"	"DFW"	"BOS"	"B"	""	"VU/1"	354	0
+"7100273"	"DFW"	"BOS"	"Y"	"AA"	"VU/1"	354	0
+"7100274"	"DFW"	"BOS"	"Y"	""	"VU/1"	341	0
+"7100275"	"DFW"	"BWI"	"F"	"AA"	""	630	1260
+"7100276"	"DFW"	"BWI"	"F"	""	""	622	1244
+"7100277"	"DFW"	"BWI"	"Y"	"AA"	""	420	840
+"7100278"	"DFW"	"BWI"	"Y"	""	""	415	830
+"7100279"	"DFW"	"BWI"	"B"	""	"VU/1"	288	0
+"7100280"	"DFW"	"BWI"	"Y"	""	"VU/1"	288	0
+"7100281"	"DFW"	"DEN"	"F"	""	""	489	978
+"7100282"	"DFW"	"DEN"	"F"	"DL"	""	481	962
+"7100283"	"DFW"	"DEN"	"FN"	"AA"	""	344	688
+"7100284"	"DFW"	"DEN"	"FN"	""	""	336	672
+"7100285"	"DFW"	"DEN"	"Y"	""	""	305	610
+"7100286"	"DFW"	"DEN"	"Y"	"DL"	""	300	600
+"7100287"	"DFW"	"DEN"	"YN"	"AA"	""	261	522
+"7100288"	"DFW"	"DEN"	"YN"	""	""	256	512
+"7100289"	"DFW"	"DEN"	"QW"	""	"AP/80"	0	268
+"7100290"	"DFW"	"DEN"	"QX"	""	"AP/80"	0	228
+"7100291"	"DFW"	"DEN"	"B"	""	"VU/1"	208	0
+"7100292"	"DFW"	"DEN"	"Y"	""	"VU/1"	208	0
+"7100293"	"DFW"	"OAK"	"F"	"AA"	""	717	1434
+"7100294"	"DFW"	"OAK"	"F"	""	""	646	1292
+"7100295"	"DFW"	"OAK"	"FN"	""	""	504	1008
+"7100296"	"DFW"	"OAK"	"Y"	"AA"	""	478	956
+"7100297"	"DFW"	"OAK"	"Y"	""	""	467	934
+"7100298"	"DFW"	"OAK"	"YN"	""	""	386	772
+"7100299"	"DFW"	"OAK"	"QW"	""	"AP/80"	0	378
+"7100300"	"DFW"	"OAK"	"QX"	""	"AP/80"	0	338
+"7100301"	"DFW"	"OAK"	"Y"	""	"VU/1"	328	0
+"7100302"	"DFW"	"PHL"	"F"	"AA"	""	745	1490
+"7100303"	"DFW"	"PHL"	"F"	""	""	737	1474
+"7100304"	"DFW"	"PHL"	"FN"	""	""	516	1032
+"7100305"	"DFW"	"PHL"	"Y"	"AA"	""	496	992
+"7100306"	"DFW"	"PHL"	"Y"	"DL"	""	491	982
+"7100307"	"DFW"	"PHL"	"YN"	""	""	396	792
+"7100308"	"DFW"	"PHL"	"B"	""	"VU/1"	341	0
+"7100309"	"DFW"	"PHL"	"Y"	""	"VU/1"	341	0
+"7100310"	"DFW"	"PIT"	"F"	""	""	611	1222
+"7100311"	"DFW"	"PIT"	"Y"	"AA"	""	420	840
+"7100312"	"DFW"	"PIT"	"Y"	"AA"	""	380	760
+"7100313"	"DFW"	"PIT"	"Y"	""	""	375	750
+"7100314"	"DFW"	"PIT"	"B"	""	"VU/1"	279	0
+"7100315"	"DFW"	"PIT"	"Y"	""	"VU/1"	260	0
+"7100316"	"DFW"	"SFO"	"F"	""	""	717	1434
+"7100317"	"DFW"	"SFO"	"F"	"DL"	""	709	1418
+"7100318"	"DFW"	"SFO"	"FN"	"AA"	""	504	1008
+"7100319"	"DFW"	"SFO"	"FN"	""	""	496	992
+"7100320"	"DFW"	"SFO"	"Y"	""	""	478	956
+"7100321"	"DFW"	"SFO"	"Y"	"DL"	""	473	946
+"7100322"	"DFW"	"SFO"	"YN"	"AA"	""	386	772
+"7100323"	"DFW"	"SFO"	"YN"	""	""	381	762
+"7100324"	"DFW"	"SFO"	"QW"	""	"AP/80"	0	378
+"7100325"	"DFW"	"SFO"	"QX"	""	"AP/80"	0	338
+"7100326"	"DFW"	"SFO"	"B"	""	"VU/1"	328	0
+"7100327"	"DFW"	"SFO"	"Y"	""	"VU/1"	328	0
+"7100328"	"OAK"	"BOS"	"F"	""	""	836	1672
+"7100329"	"OAK"	"BOS"	"Y"	""	""	557	1114
+"7100330"	"OAK"	"BOS"	"QW"	""	"AP/80"	0	418
+"7100331"	"OAK"	"BOS"	"QX"	""	"AP/80"	0	378
+"7100332"	"OAK"	"BOS"	"Y"	""	"VU/1"	394	0
+"7100333"	"OAK"	"DEN"	"F"	""	""	488	976
+"7100334"	"OAK"	"DEN"	"Y"	""	""	325	650
+"7100335"	"OAK"	"DEN"	"QW"	""	"AP/80"	0	288
+"7100336"	"OAK"	"DEN"	"QX"	""	"AP/80"	0	248
+"7100337"	"OAK"	"DEN"	"Y"	""	"VU/1"	222	0
+"7100338"	"OAK"	"DFW"	"F"	""	""	717	1434
+"7100339"	"OAK"	"DFW"	"FN"	""	""	504	1008
+"7100340"	"OAK"	"DFW"	"Y"	""	""	478	956
+"7100341"	"OAK"	"DFW"	"YN"	""	""	386	772
+"7100342"	"OAK"	"DFW"	"Y"	""	"VU/1"	328	0
+"7100343"	"OAK"	"PHL"	"F"	"AA"	""	877	1754
+"7100344"	"OAK"	"PHL"	"Y"	"AA"	""	584	1168
+"7100345"	"OAK"	"PHL"	"B"	"AA"	""	488	976
+"7100346"	"OAK"	"PHL"	"Y"	""	"VU/1"	402	0
+"7100347"	"OAK"	"SFO"	"Y"	""	""	110	220
+"7100348"	"OAK"	"SFO"	"YN"	""	""	54	108
+"7100349"	"OAK"	"SFO"	"Y"	"AA"	"VU/1"	61	0
+"7100350"	"PHL"	"ATL"	"F"	"US"	""	465	930
+"7100351"	"PHL"	"ATL"	"F"	""	""	449	898
+"7100352"	"PHL"	"ATL"	"FN"	""	""	314	628
+"7100353"	"PHL"	"ATL"	"Y"	"DL"	""	295	590
+"7100354"	"PHL"	"ATL"	"Y"	"EA"	""	295	590
+"7100355"	"PHL"	"ATL"	"Y"	""	""	290	580
+"7100356"	"PHL"	"ATL"	"YN"	""	""	243	486
+"7100357"	"PHL"	"ATL"	"KW"	""	"AP/57"	0	268
+"7100358"	"PHL"	"ATL"	"QW"	""	"AP/57"	0	268
+"7100359"	"PHL"	"ATL"	"KX"	""	"AP/57"	0	228
+"7100360"	"PHL"	"ATL"	"QX"	""	"AP/57"	0	228
+"7100361"	"PHL"	"ATL"	"B"	""	"VU/1"	205	0
+"7100362"	"PHL"	"ATL"	"Y"	""	"VU/1"	205	0
+"7100363"	"PHL"	"BOS"	"F"	""	""	210	420
+"7100364"	"PHL"	"BOS"	"FN"	""	""	147	294
+"7100365"	"PHL"	"BOS"	"Y"	"DL"	""	147	294
+"7100366"	"PHL"	"BOS"	"B"	"DL"	""	140	280
+"7100367"	"PHL"	"BOS"	"K"	""	""	140	280
+"7100368"	"PHL"	"BOS"	"Y"	"DL"	""	140	280
+"7100369"	"PHL"	"BOS"	"Y"	""	""	140	280
+"7100370"	"PHL"	"BOS"	"B"	""	"AP/75"	0	270
+"7100371"	"PHL"	"BOS"	"B"	"DL"	""	129	258
+"7100372"	"PHL"	"BOS"	"YN"	""	""	119	238
+"7100373"	"PHL"	"BOS"	"B"	"US"	""	109	218
+"7100374"	"PHL"	"BOS"	"M"	"ML"	""	109	218
+"7100375"	"PHL"	"BOS"	"Q"	""	"AP/27"	0	188
+"7100376"	"PHL"	"BOS"	"B"	""	"AP/44"	129	0
+"7100377"	"PHL"	"BOS"	"B"	""	"VU/1"	102	0
+"7100378"	"PHL"	"BOS"	"Y"	""	"VU/1"	97	0
+"7100379"	"PHL"	"BWI"	"Y"	""	""	165	330
+"7100380"	"PHL"	"BWI"	"M"	""	""	106	212
+"7100381"	"PHL"	"BWI"	"Y"	""	"VU/1"	115	0
+"7100382"	"PHL"	"DEN"	"F"	""	""	706	1412
+"7100383"	"PHL"	"DEN"	"F"	"DL"	""	630	1260
+"7100384"	"PHL"	"DEN"	"Y"	""	""	470	940
+"7100385"	"PHL"	"DEN"	"Y"	"DL"	""	420	840
+"7100386"	"PHL"	"DEN"	"KW"	""	"AP/57"	0	488
+"7100387"	"PHL"	"DEN"	"KX"	""	"AP/57"	0	418
+"7100388"	"PHL"	"DEN"	"QW"	""	"AP/80"	0	348
+"7100389"	"PHL"	"DEN"	"QX"	""	"AP/80"	0	278
+"7100390"	"PHL"	"DEN"	"Y"	""	"VU/1"	323	0
+"7100391"	"PHL"	"DEN"	"B"	""	"VU/1"	297	0
+"7100392"	"PHL"	"DFW"	"F"	"AA"	""	745	1490
+"7100393"	"PHL"	"DFW"	"F"	""	""	737	1474
+"7100394"	"PHL"	"DFW"	"Y"	"AA"	""	496	992
+"7100395"	"PHL"	"DFW"	"Y"	"DL"	""	491	982
+"7100396"	"PHL"	"DFW"	"B"	""	"VU/1"	341	0
+"7100397"	"PHL"	"DFW"	"Y"	"AA"	"VU/1"	341	0
+"7100398"	"PHL"	"DFW"	"M"	""	"AP/68"	284	0
+"7100399"	"PHL"	"DFW"	"Y"	""	"VU/1"	283	0
+"7100400"	"PHL"	"OAK"	"F"	"AA"	""	877	1754
+"7100401"	"PHL"	"OAK"	"Y"	"AA"	""	584	1168
+"7100402"	"PHL"	"OAK"	"B"	"AA"	""	488	976
+"7100403"	"PHL"	"OAK"	"Y"	""	"VU/1"	402	0
+"7100404"	"PHL"	"PIT"	"F"	""	""	189	378
+"7100405"	"PHL"	"PIT"	"Y"	""	""	131	262
+"7100406"	"PHL"	"PIT"	"Y"	""	"VU/1"	88	0
+"7100407"	"PHL"	"SFO"	"F"	"US"	""	995	1990
+"7100408"	"PHL"	"SFO"	"F"	""	""	887	1774
+"7100409"	"PHL"	"SFO"	"Y"	""	""	591	1182
+"7100410"	"PHL"	"SFO"	"Y"	"US"	""	586	1172
+"7100411"	"PHL"	"SFO"	"B"	"US"	""	483	966
+"7100412"	"PHL"	"SFO"	"QW"	""	"AP/80"	0	418
+"7100413"	"PHL"	"SFO"	"QX"	""	"AP/80"	0	378
+"7100414"	"PHL"	"SFO"	"B"	""	"AP/55"	488	0
+"7100415"	"PHL"	"SFO"	"B"	""	"VU/1"	407	0
+"7100416"	"PHL"	"SFO"	"M"	""	"VU/1"	407	0
+"7100417"	"PHL"	"SFO"	"Y"	""	"VU/1"	407	0
+"7100418"	"PHL"	"SFO"	"Y"	"US"	"VU/1"	388	0
+"7100419"	"PIT"	"ATL"	"F"	""	""	416	832
+"7100420"	"PIT"	"ATL"	"FN"	""	""	291	582
+"7100421"	"PIT"	"ATL"	"Y"	""	""	274	548
+"7100422"	"PIT"	"ATL"	"YN"	""	""	217	434
+"7100423"	"PIT"	"ATL"	"KW"	""	"AP/57"	0	268
+"7100424"	"PIT"	"ATL"	"QW"	""	"AP/57"	0	248
+"7100425"	"PIT"	"ATL"	"KX"	""	"AP/57"	0	228
+"7100426"	"PIT"	"ATL"	"QX"	""	"AP/57"	0	208
+"7100427"	"PIT"	"ATL"	"B"	""	"VU/1"	190	0
+"7100428"	"PIT"	"ATL"	"Y"	""	"VU/1"	190	0
+"7100429"	"PIT"	"BOS"	"F"	""	""	330	660
+"7100430"	"PIT"	"BOS"	"Y"	""	""	240	480
+"7100431"	"PIT"	"BOS"	"Y"	""	"VU/1"	153	0
+"7100432"	"PIT"	"BWI"	"F"	""	""	172	344
+"7100433"	"PIT"	"BWI"	"Y"	""	""	119	238
+"7100434"	"PIT"	"BWI"	"Y"	""	"VU/1"	80	0
+"7100435"	"PIT"	"DEN"	"F"	"US"	""	647	1294
+"7100436"	"PIT"	"DEN"	"F"	""	""	607	1214
+"7100437"	"PIT"	"DEN"	"Y"	"AA"	""	422	844
+"7100438"	"PIT"	"DEN"	"Y"	""	""	412	824
+"7100439"	"PIT"	"DEN"	"Q"	""	""	287	574
+"7100440"	"PIT"	"DEN"	"M"	""	""	282	564
+"7100441"	"PIT"	"DEN"	"Y"	"AA"	"VU/1"	299	0
+"7100442"	"PIT"	"DEN"	"Y"	""	"VU/1"	285	0
+"7100443"	"PIT"	"DFW"	"F"	""	""	611	1222
+"7100444"	"PIT"	"DFW"	"Y"	"AA"	""	420	840
+"7100445"	"PIT"	"DFW"	"Y"	"AA"	""	380	760
+"7100446"	"PIT"	"DFW"	"Y"	""	""	375	750
+"7100447"	"PIT"	"DFW"	"BW"	""	"AP/57"	0	428
+"7100448"	"PIT"	"DFW"	"BX"	""	"AP/57"	0	378
+"7100449"	"PIT"	"DFW"	"B"	""	"VU/1"	279	0
+"7100450"	"PIT"	"DFW"	"M"	""	"VU/1"	260	0
+"7100451"	"PIT"	"DFW"	"Y"	""	"VU/1"	260	0
+"7100452"	"PIT"	"PHL"	"F"	""	""	189	378
+"7100453"	"PIT"	"PHL"	"Y"	""	""	131	262
+"7100454"	"PIT"	"PHL"	"Y"	""	"VU/1"	88	0
+"7100455"	"PIT"	"SFO"	"F"	"US"	""	819	1638
+"7100456"	"PIT"	"SFO"	"Y"	""	""	546	1092
+"7100457"	"PIT"	"SFO"	"QW"	""	"AP/80"	0	398
+"7100458"	"PIT"	"SFO"	"QX"	""	"AP/80"	0	358
+"7100459"	"PIT"	"SFO"	"Y"	""	"VU/1"	379	0
+"7100460"	"SFO"	"ATL"	"F"	""	""	828	1656
+"7100461"	"SFO"	"ATL"	"F"	"AA"	""	821	1642
+"7100462"	"SFO"	"ATL"	"FN"	""	""	580	1160
+"7100463"	"SFO"	"ATL"	"Y"	""	""	552	1104
+"7100464"	"SFO"	"ATL"	"Y"	"AA"	""	547	1094
+"7100465"	"SFO"	"ATL"	"B"	"AA"	""	475	950
+"7100466"	"SFO"	"ATL"	"YN"	"EA"	""	445	890
+"7100467"	"SFO"	"ATL"	"YN"	"DL"	""	442	884
+"7100468"	"SFO"	"ATL"	"M"	"AA"	""	430	860
+"7100469"	"SFO"	"ATL"	"QW"	""	"AP/57"	0	398
+"7100470"	"SFO"	"ATL"	"QX"	""	"AP/57"	0	358
+"7100471"	"SFO"	"ATL"	"K"	""	"AP/68"	435	0
+"7100472"	"SFO"	"ATL"	"Q"	""	"AP/68"	435	0
+"7100473"	"SFO"	"ATL"	"B"	""	"VU/1"	383	0
+"7100474"	"SFO"	"ATL"	"Y"	"AA"	"VU/1"	383	0
+"7100475"	"SFO"	"ATL"	"Y"	""	"VU/1"	376	0
+"7100476"	"SFO"	"BOS"	"F"	"US"	""	995	1990
+"7100477"	"SFO"	"BOS"	"F"	"DL"	""	890	1780
+"7100478"	"SFO"	"BOS"	"F"	""	""	860	1720
+"7100479"	"SFO"	"BOS"	"C"	""	""	635	1270
+"7100480"	"SFO"	"BOS"	"Y"	"TW"	""	605	1210
+"7100481"	"SFO"	"BOS"	"Y"	"UA"	""	605	1210
+"7100482"	"SFO"	"BOS"	"Y"	"DL"	""	593	1186
+"7100483"	"SFO"	"BOS"	"Y"	""	""	573	1146
+"7100484"	"SFO"	"BOS"	"Y"	"US"	""	568	1136
+"7100485"	"SFO"	"BOS"	"B"	"AA"	""	508	1016
+"7100486"	"SFO"	"BOS"	"B"	"DL"	""	503	1006
+"7100487"	"SFO"	"BOS"	"B"	"US"	""	503	1006
+"7100488"	"SFO"	"BOS"	"KW"	""	"AP/57"	0	418
+"7100489"	"SFO"	"BOS"	"QW"	""	"AP/80"	0	418
+"7100490"	"SFO"	"BOS"	"KX"	""	"AP/57"	0	378
+"7100491"	"SFO"	"BOS"	"QX"	""	"AP/80"	0	378
+"7100492"	"SFO"	"BOS"	"B"	""	"VU/1"	412	0
+"7100493"	"SFO"	"BOS"	"M"	""	"VU/1"	394	0
+"7100494"	"SFO"	"BOS"	"Y"	""	"VU/1"	394	0
+"7100495"	"SFO"	"BWI"	"F"	""	""	781	1562
+"7100496"	"SFO"	"BWI"	"Y"	""	""	516	1032
+"7100497"	"SFO"	"BWI"	"B"	""	""	449	898
+"7100498"	"SFO"	"BWI"	"Q"	""	""	405	810
+"7100499"	"SFO"	"BWI"	"Y"	""	"VU/1"	358	0
+"7100500"	"SFO"	"DEN"	"F"	""	""	488	976
+"7100501"	"SFO"	"DEN"	"Y"	""	""	325	650
+"7100502"	"SFO"	"DEN"	"QW"	""	"AP/80"	0	288
+"7100503"	"SFO"	"DEN"	"QX"	""	"AP/80"	0	248
+"7100504"	"SFO"	"DEN"	"Y"	""	"VU/1"	222	0
+"7100505"	"SFO"	"DFW"	"F"	""	""	717	1434
+"7100506"	"SFO"	"DFW"	"F"	"DL"	""	709	1418
+"7100507"	"SFO"	"DFW"	"FN"	"AA"	""	504	1008
+"7100508"	"SFO"	"DFW"	"FN"	""	""	496	992
+"7100509"	"SFO"	"DFW"	"Y"	""	""	478	956
+"7100510"	"SFO"	"DFW"	"Y"	"DL"	""	473	946
+"7100511"	"SFO"	"DFW"	"YN"	"AA"	""	386	772
+"7100512"	"SFO"	"DFW"	"YN"	""	""	381	762
+"7100513"	"SFO"	"DFW"	"QW"	""	"AP/80"	0	378
+"7100514"	"SFO"	"DFW"	"QX"	""	"AP/80"	0	338
+"7100515"	"SFO"	"DFW"	"B"	""	"VU/1"	328	0
+"7100516"	"SFO"	"DFW"	"Y"	""	"VU/1"	328	0
+"7100517"	"SFO"	"OAK"	"Y"	""	""	110	220
+"7100518"	"SFO"	"OAK"	"YN"	""	""	54	108
+"7100519"	"SFO"	"OAK"	"Y"	"AA"	"VU/1"	61	0
+"7100520"	"SFO"	"PHL"	"F"	"US"	""	995	1990
+"7100521"	"SFO"	"PHL"	"F"	""	""	887	1774
+"7100522"	"SFO"	"PHL"	"Y"	""	""	591	1182
+"7100523"	"SFO"	"PHL"	"Y"	"US"	""	586	1172
+"7100524"	"SFO"	"PHL"	"B"	"US"	""	483	966
+"7100525"	"SFO"	"PHL"	"QW"	""	"AP/80"	0	418
+"7100526"	"SFO"	"PHL"	"QX"	""	"AP/80"	0	378
+"7100527"	"SFO"	"PHL"	"B"	""	"AP/55"	488	0
+"7100528"	"SFO"	"PHL"	"B"	""	"VU/1"	407	0
+"7100529"	"SFO"	"PHL"	"M"	""	"VU/1"	407	0
+"7100530"	"SFO"	"PHL"	"Y"	""	"VU/1"	407	0
+"7100531"	"SFO"	"PHL"	"Y"	"US"	"VU/1"	388	0
+"7100532"	"SFO"	"PIT"	"F"	"US"	""	819	1638
+"7100533"	"SFO"	"PIT"	"Y"	""	""	546	1092
+"7100534"	"SFO"	"PIT"	"Y"	""	"VU/1"	379	0
+
+COPY 579 RECORDS INTO "sys"."flight" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+101908	"1234567"	"ATL"	"BOS"	636	1000	"DL"	296	"FNYNBNMQ"	"72S"	"B"	1	"N"	204
+101909	"1234567"	"ATL"	"BOS"	641	855	"DL"	314	"FNYNBNMQ"	"72S"	"B"	0	"N"	134
+101910	"1234567"	"ATL"	"BOS"	755	1019	"EA"	140	"FYHQK"	"D9S"	"B"	0	"N"	144
+101911	"1234567"	"ATL"	"BOS"	920	1150	"EA"	534	"FYHQK"	"D9S"	"B"	0	"N"	150
+101912	"1234567"	"ATL"	"BOS"	959	1215	"DL"	410	"FYBMQ"	"757"	"B"	0	"N"	136
+101913	"1234567"	"ATL"	"BOS"	1010	1355	"DL"	726	"FYBMQ"	"72S"	"S"	1	"N"	225
+101914	"1234567"	"ATL"	"BOS"	1057	1320	"EA"	640	"YHQKL"	"72S"	"L"	0	"N"	143
+101915	"1234567"	"ATL"	"BOS"	1229	1456	"EA"	142	"FYHQK"	"D9S"	"L"	0	"N"	147
+101916	"-----6-"	"ATL"	"BOS"	1325	1550	"DL"	110	"FYBMQ"	"767"	"L"	0	"N"	145
+101917	"12345-7"	"ATL"	"BOS"	1325	1550	"DL"	110	"FYBMQ"	"763"	"L"	0	"N"	145
+101918	"1234567"	"ATL"	"BOS"	1426	1656	"EA"	644	"FYHQK"	"D9S"	"S"	0	"N"	150
+101922	"1234567"	"ATL"	"BOS"	1655	1920	"DL"	134	"FYBMQ"	"L10"	"D"	0	"N"	145
+101923	"1234567"	"ATL"	"BOS"	1800	2032	"EA"	144	"FYHQK"	"757"	"D"	0	"N"	152
+101924	"1234567"	"ATL"	"BOS"	1851	2219	"DL"	106	"FYBMQ"	"M80"	"D"	1	"N"	208
+101925	"1234567"	"ATL"	"BOS"	1855	2122	"DL"	326	"FYBMQ"	"72S"	"D"	0	"N"	147
+101926	"1234567"	"ATL"	"BOS"	1950	2220	"EA"	148	"FYHQK"	"D9S"	"S"	0	"N"	150
+101927	"------7"	"ATL"	"BOS"	2035	2255	"DL"	166	"FYBMQ"	"L10"	"S/"	0	"N"	140
+101928	"123456-"	"ATL"	"BOS"	2035	2255	"DL"	116	"FYBMQ"	"L10"	"S/"	0	"N"	140
+101929	"1234567"	"ATL"	"BOS"	2345	153	"DL"	162	"FNYNBNMQ"	"757"	""	0	"N"	128
+101951	"1234567"	"ATL"	"BWI"	915	1055	"EA"	202	"FYHQK"	"D9S"	"S"	0	"N"	100
+101952	"1234567"	"ATL"	"BWI"	1002	1145	"DL"	1204	"FYBMQ"	"M80"	""	0	"N"	103
+101953	"1234567"	"ATL"	"BWI"	1330	1510	"DL"	662	"FYBMQ"	"M80"	"L"	0	"N"	100
+101954	"1234567"	"ATL"	"BWI"	1423	1610	"EA"	206	"FYHQK"	"D9S"	""	0	"N"	107
+101955	"1234567"	"ATL"	"BWI"	1704	1850	"DL"	294	"FYBMQ"	"757"	"D"	0	"N"	106
+101956	"1234567"	"ATL"	"BWI"	1800	1937	"EA"	210	"FYHQK"	"D9S"	"D"	0	"N"	97
+101957	"1234567"	"ATL"	"BWI"	1955	2140	"EA"	212	"FYHQK"	"D9S"	"S"	0	"N"	105
+101958	"1234567"	"ATL"	"BWI"	2048	2230	"DL"	256	"FYBMQ"	"757"	""	0	"N"	102
+101959	"1234567"	"ATL"	"BWI"	2140	2318	"EA"	208	"FNYNHQNK"	"72S"	""	0	"N"	98
+102122	"1234567"	"ATL"	"DEN"	840	955	"DL"	445	"FYBMQ"	"757"	"B"	0	"N"	195
+102123	"1234567"	"ATL"	"DEN"	934	1054	"EA"	821	"FYHQK"	"72S"	"B"	0	"N"	200
+102125	"1234567"	"ATL"	"DEN"	1000	1124	"UA"	915	"FYBMQ"	"73S"	"S"	0	"N"	204
+102126	"1234567"	"ATL"	"DEN"	1200	1305	"DL"	257	"FYBMQ"	"72S"	"L"	0	"N"	185
+102127	"1234567"	"ATL"	"DEN"	1510	1615	"DL"	1083	"FYBMQ"	"72S"	"S"	0	"N"	185
+102128	"1234567"	"ATL"	"DEN"	1755	1910	"EA"	825	"FYHQK"	"72S"	"D"	0	"N"	195
+102129	"1234567"	"ATL"	"DEN"	1825	1946	"UA"	673	"FYBMQ"	"733"	"D"	0	"N"	201
+102133	"1234567"	"ATL"	"DEN"	1900	2015	"DL"	675	"FYBMQ"	"72S"	"D"	0	"N"	195
+102134	"1234567"	"ATL"	"DEN"	2145	2308	"EA"	823	"FNYNHQNK"	"757"	"S"	0	"N"	203
+102135	"1234567"	"ATL"	"DEN"	2219	2320	"DL"	229	"FNYNBNMQ"	"72S"	""	0	"N"	181
+102136	"--34567"	"ATL"	"DFW"	630	740	"DL"	131	"FNYNBNMQ"	"L10"	"B"	0	"N"	130
+102137	"12-----"	"ATL"	"DFW"	630	740	"DL"	131	"FNYNBNMQ"	"763"	"B"	0	"N"	130
+102139	"1234567"	"ATL"	"DFW"	730	849	"AA"	1339	"FYBMV"	"M80"	"B"	0	"N"	139
+102144	"1234567"	"ATL"	"DFW"	823	930	"DL"	671	"FYBMQ"	"72S"	"B"	0	"N"	127
+102147	"1234567"	"ATL"	"DFW"	901	1027	"AA"	447	"FYBMV"	"M80"	"S"	0	"N"	146
+102148	"1234567"	"ATL"	"DFW"	1000	1110	"DL"	17	"FYBMQ"	"L15"	"S"	0	"N"	130
+102150	"1234567"	"ATL"	"DFW"	1145	1250	"DL"	545	"FYBMQ"	"72S"	"L"	0	"N"	125
+102162	"--34567"	"ATL"	"DFW"	1319	1430	"DL"	179	"FYBMQ"	"763"	"L"	0	"N"	131
+102163	"12-----"	"ATL"	"DFW"	1319	1430	"DL"	179	"FYBMQ"	"L10"	"L"	0	"N"	131
+102164	"1234567"	"ATL"	"DFW"	1347	1505	"AA"	237	"FYBMV"	"M80"	"S"	0	"N"	138
+102165	"-2-----"	"ATL"	"DFW"	1415	1525	"LH"	442	"FCBMK"	"74M"	"D"	0	"N"	130
+102166	"1234567"	"ATL"	"DFW"	1510	1620	"DL"	1145	"FYBMQ"	"757"	"S"	0	"N"	130
+102172	"1234567"	"ATL"	"DFW"	1634	1759	"AA"	351	"FYBMV"	"M80"	"S"	0	"N"	145
+102173	"1234567"	"ATL"	"DFW"	1650	1805	"DL"	82	"FYBMQ"	"L10"	"D"	0	"N"	135
+102177	"1234567"	"ATL"	"DFW"	1840	1955	"DL"	405	"FYBMQ"	"M80"	"D"	0	"N"	135
+102188	"1234567"	"ATL"	"DFW"	1925	2050	"AA"	1419	"FNYNBMV"	"M80"	"D"	0	"N"	145
+102190	"1234567"	"ATL"	"DFW"	2029	2140	"DL"	275	"FNYNBNMQ"	"763"	""	0	"N"	131
+102191	"1234567"	"ATL"	"DFW"	2213	2321	"DL"	574	"FNYNBNMQ"	"M80"	""	0	"N"	128
+102192	"12345-7"	"ATL"	"DFW"	2335	40	"DL"	1107	"FNYNBNMQ"	"D9S"	""	0	"N"	125
+102674	"1234567"	"ATL"	"OAK"	1825	2205	"UA"	673	"FYBMQ"	"733"	"D"	1	"N"	400
+102766	"1234567"	"ATL"	"PHL"	636	825	"DL"	296	"FNYNBNMQ"	"72S"	"B"	0	"N"	109
+102767	"1234567"	"ATL"	"PHL"	740	929	"US"	258	"FYBHQ"	"D9S"	"B"	0	"N"	109
+102768	"1234567"	"ATL"	"PHL"	805	956	"EA"	124	"FYHQK"	"D9S"	"B"	0	"N"	111
+102769	"1234567"	"ATL"	"PHL"	935	1125	"EA"	126	"FYHQK"	"D9S"	"S"	0	"N"	110
+102770	"1234567"	"ATL"	"PHL"	1010	1200	"DL"	726	"FYBMQ"	"72S"	""	0	"N"	110
+102771	"1234567"	"ATL"	"PHL"	1200	1345	"US"	29	"FYBHQ"	"733"	"L"	0	"N"	105
+102772	"1234567"	"ATL"	"PHL"	1215	1415	"EA"	610	"FYHQK"	"D9S"	"L"	0	"N"	120
+102773	"1234567"	"ATL"	"PHL"	1322	1515	"DL"	424	"FYBMQ"	"72S"	"L"	0	"N"	113
+102774	"1234567"	"ATL"	"PHL"	1417	1607	"EA"	324	"FYHQK"	"D9S"	""	0	"N"	110
+102775	"1234567"	"ATL"	"PHL"	1605	1800	"EA"	602	"FYHQK"	"D9S"	"S"	0	"N"	115
+102776	"1234567"	"ATL"	"PHL"	1649	1840	"DL"	1206	"FYBMQ"	"767"	"D"	0	"N"	111
+102777	"1234567"	"ATL"	"PHL"	1650	1835	"US"	1786	"FYBHQ"	"73S"	"D"	0	"N"	105
+102778	"1234567"	"ATL"	"PHL"	1802	1959	"EA"	120	"FYHQK"	"D9S"	"D"	0	"N"	117
+102779	"1234567"	"ATL"	"PHL"	1851	2045	"DL"	106	"FYBMQ"	"M80"	"D"	0	"N"	114
+102781	"1234567"	"ATL"	"PHL"	1957	2151	"EA"	604	"FYHQK"	"D9S"	"S"	0	"N"	114
+102782	"1234567"	"ATL"	"PHL"	2035	2220	"DL"	250	"FYBMQ"	"72S"	""	0	"N"	105
+102783	"1234567"	"ATL"	"PHL"	2140	2335	"EA"	128	"FNYNHQNK"	"D9S"	""	0	"N"	115
+102784	"1234567"	"ATL"	"PHL"	2350	130	"DL"	1210	"FNYNBNMQ"	"757"	""	0	"N"	100
+102795	"1234567"	"ATL"	"PIT"	630	803	"US"	339	"FYBHQ"	"D9S"	"B"	0	"N"	93
+102796	"1234567"	"ATL"	"PIT"	831	1000	"DL"	842	"FYBMQ"	"D9S"	"B"	0	"N"	89
+102797	"1234567"	"ATL"	"PIT"	925	1100	"EA"	302	"FYHQK"	"D9S"	"S"	0	"N"	95
+102798	"1234567"	"ATL"	"PIT"	1105	1238	"US"	248	"FYBHQ"	"D9S"	"L"	0	"N"	93
+102799	"1234567"	"ATL"	"PIT"	1225	1405	"EA"	308	"FYHQK"	"757"	"L"	0	"N"	100
+102800	"1234567"	"ATL"	"PIT"	1340	1510	"DL"	628	"FYBMQ"	"73S"	""	0	"N"	90
+102801	"1234567"	"ATL"	"PIT"	1540	1713	"US"	508	"FYBHQ"	"D9S"	"L/S"	0	"N"	93
+102802	"-----67"	"ATL"	"PIT"	1711	1845	"DL"	1132	"FYBMQ"	"73S"	"D"	0	"N"	94
+102803	"12345--"	"ATL"	"PIT"	1711	1845	"DL"	1132	"FYBMQ"	"72S"	"D"	0	"N"	94
+102804	"1234567"	"ATL"	"PIT"	1759	1933	"EA"	310	"YHQKL"	"72S"	"D"	0	"N"	94
+102805	"1234567"	"ATL"	"PIT"	1920	2056	"US"	480	"FYBHQ"	"D9S"	"D"	0	"N"	96
+102806	"1234567"	"ATL"	"PIT"	1959	2139	"EA"	312	"FYHQK"	"757"	"S/"	0	"N"	100
+102807	"1234567"	"ATL"	"PIT"	2030	2205	"DL"	1076	"FYBMQ"	"73S"	""	0	"N"	95
+102808	"1234567"	"ATL"	"PIT"	2145	2313	"EA"	314	"FNYNHQNK"	"D9S"	""	0	"N"	88
+102809	"1234567"	"ATL"	"PIT"	2334	59	"DL"	311	"FNYNBNMQ"	"D9S"	""	0	"N"	85
+102923	"------7"	"ATL"	"SFO"	912	1110	"DL"	137	"FYBMQ"	"767"	"B"	0	"N"	298
+102924	"123456-"	"ATL"	"SFO"	912	1110	"DL"	137	"FYBMQ"	"L10"	"B"	0	"N"	298
+102925	"1234567"	"ATL"	"SFO"	930	1157	"EA"	71	"FYHQK"	"757"	"B"	0	"N"	327
+102927	"1234567"	"ATL"	"SFO"	1200	1410	"DL"	977	"FYBMQ"	"757"	"L"	0	"N"	310
+102929	"1234567"	"ATL"	"SFO"	1525	1730	"DL"	97	"FYBMQ"	"763"	"D"	0	"N"	305
+102930	"1234567"	"ATL"	"SFO"	1625	1844	"EA"	73	"FYHQK"	"757"	"D"	0	"N"	319
+102932	"1234567"	"ATL"	"SFO"	1855	2115	"DL"	99	"FYBMQ"	"767"	"D"	0	"N"	320
+102933	"1234567"	"ATL"	"SFO"	2010	2229	"EA"	77	"FYHQK"	"757"	"D"	0	"N"	319
+105584	"1234567"	"BOS"	"ATL"	630	913	"DL"	225	"FYBMQ"	"M80"	"B"	0	"N"	163
+105586	"1234567"	"BOS"	"ATL"	700	946	"EA"	147	"FNYNHQNK"	"72S"	"B"	0	"N"	166
+105588	"1234567"	"BOS"	"ATL"	815	1100	"DL"	219	"FYBMQ"	"L10"	"B"	0	"N"	165
+105589	"1234567"	"BOS"	"ATL"	832	1126	"EA"	643	"FYHQK"	"D9S"	"B"	0	"N"	174
+105590	"1234567"	"BOS"	"ATL"	955	1235	"DL"	547	"FYBMQ"	"72S"	"B"	0	"N"	160
+105591	"1234567"	"BOS"	"ATL"	1035	1327	"EA"	145	"FYHQK"	"D9S"	"L"	0	"N"	172
+105592	"1234567"	"BOS"	"ATL"	1156	1435	"DL"	708	"FYBMQ"	"767"	"L"	0	"N"	159
+105593	"1234567"	"BOS"	"ATL"	1240	1525	"EA"	143	"FYHQK"	"D9S"	"L"	0	"N"	165
+105594	"1234567"	"BOS"	"ATL"	1421	1709	"EA"	645	"YHQKL"	"72S"	"S"	0	"N"	168
+105595	"1234567"	"BOS"	"ATL"	1520	1804	"DL"	975	"FYBMQ"	"757"	"S"	0	"N"	164
+105597	"1234567"	"BOS"	"ATL"	1605	1900	"EA"	141	"FYHQK"	"72S"	"D"	0	"N"	175
+105598	"1234567"	"BOS"	"ATL"	1758	2049	"EA"	149	"FYHQK"	"D9S"	"D"	0	"N"	171
+105599	"1234567"	"BOS"	"ATL"	1850	2128	"DL"	323	"FYBMQ"	"757"	"D"	0	"N"	158
+105601	"1234567"	"BOS"	"ATL"	2024	2258	"DL"	541	"FNYNBNMQ"	"L10"	"S"	0	"N"	154
+105698	"1234567"	"BOS"	"BWI"	645	811	"US"	369	"FYBHQ"	"733"	"B/S"	0	"N"	86
+105699	"1234567"	"BOS"	"BWI"	930	1056	"US"	511	"FYBHQ"	"733"	"S/"	0	"N"	86
+105700	"1234567"	"BOS"	"BWI"	1000	1127	"US"	437	"FYBHQ"	"M80"	"S/"	0	"N"	87
+105701	"1234567"	"BOS"	"BWI"	1330	1451	"US"	269	"FYBHQ"	"D9S"	"S"	0	"N"	81
+105702	"1234567"	"BOS"	"BWI"	1505	1626	"US"	428	"FYBHQ"	"D9S"	""	0	"N"	81
+105703	"1234567"	"BOS"	"BWI"	1745	1912	"US"	1581	"FYBHQ"	"72S"	"S"	0	"N"	87
+105704	"1234567"	"BOS"	"BWI"	1955	2122	"US"	1609	"FYBHQ"	"73S"	""	0	"N"	87
+105705	"12345-7"	"BOS"	"BWI"	2140	2306	"US"	76	"FYBHQ"	"733"	""	0	"N"	86
+105794	"123456-"	"BOS"	"DEN"	838	1110	"UA"	201	"FYBMQ"	"D8S"	"B"	0	"N"	272
+105795	"------7"	"BOS"	"DEN"	840	1112	"UA"	343	"FYBMQ"	"D8S"	"B"	0	"N"	272
+105796	"1234567"	"BOS"	"DEN"	855	1140	"CO"	1209	"FYQHK"	"M80"	"B"	0	"N"	285
+105798	"1234567"	"BOS"	"DEN"	1425	1732	"CO"	1215	"FYQHK"	"733"	"S"	0	"N"	307
+105799	"1234567"	"BOS"	"DEN"	1720	1949	"UA"	281	"FYBMQ"	"D8S"	"D"	0	"N"	269
+105800	"12345-7"	"BOS"	"DEN"	1740	2033	"CO"	1765	"FYQHK"	"M80"	"D"	0	"N"	293
+105801	"1234567"	"BOS"	"DFW"	653	1017	"AA"	315	"FYBMV"	"D10"	"B"	0	"N"	264
+105802	"1234567"	"BOS"	"DFW"	805	1110	"DL"	831	"FYBMQ"	"757"	"B"	0	"N"	245
+105803	"1234567"	"BOS"	"DFW"	830	1209	"AA"	1099	"FYBMV"	"M80"	"B"	0	"N"	279
+105805	"1234567"	"BOS"	"DFW"	1132	1430	"DL"	169	"FYBMQ"	"757"	"L"	0	"N"	238
+105806	"1234567"	"BOS"	"DFW"	1149	1520	"AA"	813	"FYBMV"	"767"	"L"	0	"N"	271
+105807	"1234567"	"BOS"	"DFW"	1428	1750	"AA"	215	"FYBMV"	"D10"	"S"	0	"N"	262
+105808	"1234567"	"BOS"	"DFW"	1445	1755	"DL"	697	"FYBMQ"	"72S"	"S"	0	"N"	250
+105810	"1234567"	"BOS"	"DFW"	1721	2144	"DL"	589	"FYBMQ"	"72S"	"SD"	1	"N"	323
+105811	"1234567"	"BOS"	"DFW"	1740	2100	"AA"	155	"FYBMV"	"767"	"D"	0	"N"	260
+105812	"1234567"	"BOS"	"DFW"	1845	2144	"DL"	487	"FYBMQ"	"72S"	"D"	0	"N"	239
+106229	"123456-"	"BOS"	"PHL"	630	750	"US"	1800	"FYBHQ"	"734"	"S"	0	"N"	80
+106230	"1234567"	"BOS"	"PHL"	700	820	"ML"	455	"FYMHQ"	"D9S"	"B/S"	0	"N"	80
+106231	"1234567"	"BOS"	"PHL"	705	817	"US"	567	"FYBHQ"	"72S"	"S"	0	"N"	72
+106232	"1234567"	"BOS"	"PHL"	817	940	"DL"	891	"FYBMQ"	"72S"	"B/S"	0	"N"	83
+106234	"1234567"	"BOS"	"PHL"	850	1010	"US"	577	"FYBHQ"	"100"	""	0	"N"	80
+106235	"123456-"	"BOS"	"PHL"	910	1030	"ML"	437	"FYMHQ"	"D9S"	"B/S"	0	"N"	80
+106236	"1234567"	"BOS"	"PHL"	1030	1150	"US"	569	"FYBHQ"	"733"	""	0	"N"	80
+106237	"1234567"	"BOS"	"PHL"	1125	1245	"US"	359	"FYBHQ"	"733"	""	0	"N"	80
+106238	"1234567"	"BOS"	"PHL"	1142	1300	"DL"	949	"FYBMQ"	"72S"	"S"	0	"N"	78
+106239	"1234567"	"BOS"	"PHL"	1215	1335	"ML"	425	"FYMHQ"	"D9S"	"L/S"	0	"N"	80
+106240	"-2-4--7"	"BOS"	"PHL"	1325	1445	"LH"	420	"FCBMK"	"D10"	""	0	"N"	80
+106241	"1234567"	"BOS"	"PHL"	1400	1520	"ML"	439	"FYMHQ"	"D9S"	""	0	"N"	80
+106242	"1234567"	"BOS"	"PHL"	1414	1535	"DL"	639	"FYBMQ"	"72S"	""	0	"N"	81
+106245	"12345-7"	"BOS"	"PHL"	1510	1629	"US"	731	"FYBHQ"	"D9S"	""	0	"N"	79
+106246	"1234567"	"BOS"	"PHL"	1545	1704	"US"	297	"FYBHQ"	"D9S"	""	0	"N"	79
+106247	"1234567"	"BOS"	"PHL"	1645	1808	"US"	1664	"FYBHQ"	"733"	""	0	"N"	83
+106248	"1234567"	"BOS"	"PHL"	1721	1840	"DL"	589	"FYBMQ"	"72S"	"S"	0	"N"	79
+106249	"1234567"	"BOS"	"PHL"	1745	1905	"ML"	413	"FYMHQ"	"D9S"	"D/S"	0	"N"	80
+106250	"12345-7"	"BOS"	"PHL"	1805	1924	"US"	101	"FYBHQ"	"D9S"	""	0	"N"	79
+106251	"12345-7"	"BOS"	"PHL"	1855	2015	"US"	293	"FYBHQ"	"733"	""	0	"N"	80
+106252	"12345-7"	"BOS"	"PHL"	1900	2019	"ML"	431	"FYMHQ"	"D9S"	"D/S"	0	"N"	79
+106253	"1234567"	"BOS"	"PHL"	1950	2111	"US"	411	"FYBHQ"	"M80"	""	0	"N"	81
+106254	"1234567"	"BOS"	"PHL"	2033	2150	"DL"	339	"FYBMQ"	"72S"	""	0	"N"	77
+106255	"12345-7"	"BOS"	"PHL"	2145	2304	"US"	307	"FYBHQ"	"D9S"	""	0	"N"	79
+106262	"123456-"	"BOS"	"PIT"	630	950	"US"	1800	"FYBHQ"	"734"	"S"	1	"N"	200
+106263	"1234567"	"BOS"	"PIT"	715	857	"US"	476	"FYBHQ"	"72S"	"B"	0	"N"	102
+106264	"1234567"	"BOS"	"PIT"	810	953	"US"	65	"FYBHQ"	"D9S"	"B"	0	"N"	103
+106265	"1234567"	"BOS"	"PIT"	1145	1333	"US"	167	"FYBHQ"	"733"	"S"	0	"N"	108
+106266	"1234567"	"BOS"	"PIT"	1210	1353	"US"	81	"FYBHQ"	"M80"	"S"	0	"N"	103
+106267	"1234567"	"BOS"	"PIT"	1520	1706	"US"	148	"FYBHQ"	"73S"	"S/"	0	"N"	106
+106268	"1234567"	"BOS"	"PIT"	1640	1823	"US"	303	"FYBHQ"	"D9S"	"S/"	0	"N"	103
+106269	"1234567"	"BOS"	"PIT"	1755	1941	"US"	1652	"FYBHQ"	"73S"	"S"	0	"N"	106
+106270	"12345-7"	"BOS"	"PIT"	1855	2207	"US"	293	"FYBHQ"	"733"	""	1	"N"	192
+106271	"12345-7"	"BOS"	"PIT"	2105	2248	"US"	345	"FYBHQ"	"M80"	""	0	"N"	103
+106365	"1234567"	"BOS"	"SFO"	800	1131	"UA"	21	"FYBMQ"	"D10"	"B"	0	"N"	391
+106366	"------7"	"BOS"	"SFO"	840	1336	"UA"	343	"FYBMQ"	"D8S"	"BL"	1	"N"	476
+106373	"1234567"	"BOS"	"SFO"	1149	1758	"AA"	813	"FYBMV"	"767"	"LD"	1	"N"	549
+106375	"12345-7"	"BOS"	"SFO"	1740	2310	"CO"	1765	"FYQHK"	"M80"	"D"	1	"N"	510
+106376	"1234567"	"BOS"	"SFO"	1745	2127	"UA"	93	"FYBMQ"	"D8S"	"D"	0	"N"	402
+106377	"1234567"	"BOS"	"SFO"	1810	2137	"TW"	61	"FCYBQ"	"L10"	"D"	0	"N"	387
+107159	"1234567"	"BWI"	"ATL"	550	739	"DL"	995	"FNYNBNMQ"	"M80"	"B"	0	"N"	109
+107160	"1234567"	"BWI"	"ATL"	640	835	"EA"	207	"FNYNHQNK"	"72S"	"B"	0	"N"	115
+107161	"1234567"	"BWI"	"ATL"	800	1001	"EA"	203	"FYHQK"	"D9S"	"B"	0	"N"	121
+107162	"1234567"	"BWI"	"ATL"	900	1050	"DL"	125	"FYBMQ"	"757"	"S"	0	"N"	110
+107163	"1234567"	"BWI"	"ATL"	940	1137	"EA"	201	"FYHQK"	"D9S"	"S"	0	"N"	117
+107164	"1234567"	"BWI"	"ATL"	1144	1335	"EA"	205	"FYHQK"	"D9S"	"L"	0	"N"	111
+107165	"1234567"	"BWI"	"ATL"	1230	1423	"DL"	539	"FYBMQ"	"M80"	"L"	0	"N"	113
+107166	"1234567"	"BWI"	"ATL"	1600	1750	"DL"	1055	"FYBMQ"	"M80"	"S/"	0	"N"	110
+107167	"1234567"	"BWI"	"ATL"	1659	1854	"EA"	131	"FYHQK"	"D9S"	"D"	0	"N"	115
+107168	"1234567"	"BWI"	"ATL"	1945	2128	"DL"	469	"FYBMQ"	"757"	""	0	"N"	103
+107193	"123456-"	"BWI"	"BOS"	720	839	"US"	1049	"FYBHQ"	"72S"	"B/S"	0	"N"	79
+107194	"1234567"	"BWI"	"BOS"	905	1025	"US"	600	"FYBHQ"	"733"	"S/"	0	"N"	80
+107195	"1234567"	"BWI"	"BOS"	1010	1130	"US"	1508	"FYBHQ"	"72S"	"S/"	0	"N"	80
+107196	"1234567"	"BWI"	"BOS"	1310	1430	"US"	324	"FYBHQ"	"73S"	"S"	0	"N"	80
+107197	"1234567"	"BWI"	"BOS"	1630	1749	"US"	1016	"FYBHQ"	"72S"	""	0	"N"	79
+107198	"1234567"	"BWI"	"BOS"	1745	1905	"US"	1586	"FYBHQ"	"73S"	"S"	0	"N"	80
+107199	"1234567"	"BWI"	"BOS"	2045	2205	"US"	1750	"FYBHQ"	"734"	""	0	"N"	80
+107200	"1234567"	"BWI"	"BOS"	2110	2231	"US"	368	"FYBHQ"	"733"	""	0	"N"	81
+107253	"123456-"	"BWI"	"DEN"	800	1135	"US"	1402	"FYBHQ"	"733"	"SB"	1	"N"	335
+107254	"1234567"	"BWI"	"DEN"	915	1110	"UA"	277	"FYBMQ"	"72S"	"B"	0	"N"	235
+107255	"1234567"	"BWI"	"DEN"	1205	1410	"US"	2123	"FYBHQ"	"734"	"L"	0	"N"	245
+107256	"1234567"	"BWI"	"DEN"	1745	1933	"UA"	707	"FYBMQ"	"72S"	"D"	0	"N"	228
+107257	"1234567"	"BWI"	"DFW"	745	1015	"AA"	195	"FYBMV"	"M80"	"B"	0	"N"	210
+107258	"1234567"	"BWI"	"DFW"	845	1100	"DL"	1028	"FYBMQ"	"D9S"	"B"	0	"N"	195
+107259	"1234567"	"BWI"	"DFW"	1245	1518	"AA"	273	"FYBMV"	"72S"	"L"	0	"N"	213
+107260	"1234567"	"BWI"	"DFW"	1505	1745	"AA"	1179	"FYBMV"	"M80"	"S"	0	"N"	220
+107261	"1234567"	"BWI"	"DFW"	1530	1800	"DL"	743	"FYBMQ"	"73S"	"S"	0	"N"	210
+107264	"1234567"	"BWI"	"DFW"	1852	2120	"AA"	599	"FYBMV"	"72S"	"D"	0	"N"	208
+107470	"123456-"	"BWI"	"PHL"	715	808	"US"	3724	"YBHQM"	"SH3"	""	0	"Y"	53
+107471	"1234567"	"BWI"	"PHL"	1000	1053	"US"	4518	"YBHQM"	"DH8"	""	0	"Y"	53
+107472	"1234567"	"BWI"	"PHL"	1205	1258	"US"	3533	"YBHQM"	"SH6"	""	0	"Y"	53
+107473	"1234567"	"BWI"	"PHL"	1325	1415	"US"	4393	"YBHQM"	"DH8"	""	0	"Y"	50
+107474	"12345-7"	"BWI"	"PHL"	1500	1543	"US"	4386	"YBHQM"	"DH8"	""	0	"Y"	43
+107475	"1234567"	"BWI"	"PHL"	1640	1733	"US"	3738	"YBHQM"	"SH3"	""	0	"Y"	53
+107476	"12345-7"	"BWI"	"PHL"	1930	2020	"US"	3753	"YBHQM"	"SH3"	""	0	"Y"	50
+107477	"12345-7"	"BWI"	"PHL"	2010	2103	"US"	3721	"YBHQM"	"SH6"	""	0	"Y"	53
+107478	"12345-7"	"BWI"	"PHL"	2053	2146	"US"	3671	"YBHQM"	"SH6"	""	0	"Y"	53
+107484	"123456-"	"BWI"	"PIT"	700	758	"US"	351	"FYBHQ"	"734"	"S"	0	"N"	58
+107485	"------7"	"BWI"	"PIT"	715	815	"US"	931	"FYBHQ"	"100"	"S"	0	"N"	60
+107486	"123456-"	"BWI"	"PIT"	800	901	"US"	1402	"FYBHQ"	"733"	"S"	0	"N"	61
+107487	"1234567"	"BWI"	"PIT"	1240	1343	"US"	1276	"FYBHQ"	"733"	""	0	"N"	63
+107488	"------7"	"BWI"	"PIT"	1300	1406	"US"	977	"FYBHQ"	"F28"	""	0	"N"	66
+107489	"1234567"	"BWI"	"PIT"	1620	1720	"US"	451	"FYBHQ"	"72S"	""	0	"N"	60
+107490	"1234567"	"BWI"	"PIT"	1710	1812	"US"	189	"FYBHQ"	"D9S"	""	0	"N"	62
+107491	"1234567"	"BWI"	"PIT"	1825	1928	"US"	1605	"FYBHQ"	"733"	""	0	"N"	63
+107492	"1234567"	"BWI"	"PIT"	2100	2202	"US"	1216	"FYBHQ"	"73S"	""	0	"N"	62
+111886	"1234567"	"DEN"	"ATL"	55	527	"DL"	296	"FNYNBNMQ"	"72S"	""	0	"N"	152
+111887	"1234567"	"DEN"	"ATL"	215	654	"EA"	820	"FNYNHQNK"	"757"	"S"	0	"N"	159
+111888	"1234567"	"DEN"	"ATL"	800	1235	"DL"	402	"FYBMQ"	"72S"	"B"	0	"N"	155
+111889	"1234567"	"DEN"	"ATL"	825	1315	"EA"	822	"FYHQK"	"72S"	"B"	0	"N"	170
+111891	"1234567"	"DEN"	"ATL"	1039	1537	"UA"	408	"FYBMQ"	"733"	"L"	0	"N"	178
+111892	"1234567"	"DEN"	"ATL"	1055	1541	"DL"	317	"FYBMQ"	"757"	"L"	0	"N"	166
+111893	"1234567"	"DEN"	"ATL"	1155	1645	"EA"	824	"FYHQK"	"72S"	"L"	0	"N"	170
+111894	"1234567"	"DEN"	"ATL"	1450	1925	"DL"	704	"FYBMQ"	"757"	"D"	0	"N"	155
+111895	"1234567"	"DEN"	"ATL"	1815	2250	"DL"	1644	"FYBMQ"	"72S"	"D"	0	"N"	155
+111896	"1234567"	"DEN"	"ATL"	1837	2330	"UA"	886	"FYBMQ"	"73S"	"D"	0	"N"	173
+111924	"1234567"	"DEN"	"BOS"	55	1000	"DL"	296	"FNYNBNMQ"	"72S"	"B"	2	"N"	425
+111928	"1234567"	"DEN"	"BOS"	1039	1619	"UA"	352	"FYBMQ"	"D8S"	"L"	0	"N"	220
+111929	"1234567"	"DEN"	"BOS"	1105	1700	"CO"	1234	"FYQHK"	"M80"	"L"	0	"N"	235
+111930	"1234567"	"DEN"	"BOS"	1455	2205	"US"	1750	"FYBHQ"	"734"	"L"	1	"N"	310
+111931	"1234567"	"DEN"	"BOS"	1520	2056	"UA"	354	"FYBMQ"	"72S"	"D"	0	"N"	216
+111932	"1234567"	"DEN"	"BOS"	1605	2145	"CO"	1220	"FYQHK"	"M80"	"D"	0	"N"	220
+111933	"12345-7"	"DEN"	"BOS"	1935	132	"CO"	1270	"FYQHK"	"733"	"D"	0	"N"	237
+111937	"1234567"	"DEN"	"BWI"	1045	1553	"UA"	658	"FYBMQ"	"72S"	"L"	0	"N"	188
+111939	"1234567"	"DEN"	"BWI"	1455	2010	"US"	1750	"FYBHQ"	"734"	"L"	0	"N"	195
+111941	"1234567"	"DEN"	"BWI"	1828	2332	"UA"	302	"FYBMQ"	"72S"	"D"	0	"N"	184
+112028	"1234567"	"DEN"	"DFW"	450	742	"AA"	1412	"FNYNBMV"	"M80"	""	0	"N"	112
+112029	"123456-"	"DEN"	"DFW"	605	851	"UA"	216	"FYBMQ"	"733"	"B"	0	"N"	106
+112030	"--34567"	"DEN"	"DFW"	620	906	"DL"	465	"FNYNBNMQ"	"M80"	"B"	0	"N"	106
+112031	"12-----"	"DEN"	"DFW"	620	906	"DL"	465	"FNYNBNMQ"	"72S"	"B"	0	"N"	106
+112032	"1234567"	"DEN"	"DFW"	901	1210	"AA"	912	"FYBMV"	"M80"	"S"	0	"N"	129
+112033	"1234567"	"DEN"	"DFW"	950	1235	"DL"	335	"FYBMQ"	"M80"	"S"	0	"N"	105
+112034	"1234567"	"DEN"	"DFW"	1029	1312	"UA"	438	"FYBMQ"	"727"	"L"	0	"N"	103
+112035	"1234567"	"DEN"	"DFW"	1040	1343	"AA"	464	"FYBMV"	"M80"	"S"	0	"N"	123
+112036	"1234567"	"DEN"	"DFW"	1105	1353	"CO"	1226	"FYQHK"	"72S"	"L"	0	"N"	108
+112037	"1234567"	"DEN"	"DFW"	1210	1504	"AA"	242	"FYBMV"	"M80"	"L"	0	"N"	114
+112038	"-----6-"	"DEN"	"DFW"	1310	1555	"UA"	888	"FYBMQ"	"727"	"S"	0	"N"	105
+112039	"12345-7"	"DEN"	"DFW"	1310	1555	"UA"	880	"FYBMQ"	"727"	"S"	0	"N"	105
+112041	"1234567"	"DEN"	"DFW"	1325	1615	"CO"	90	"FYQHK"	"72S"	"S"	0	"N"	110
+112040	"1234567"	"DEN"	"DFW"	1325	1615	"DL"	870	"FYBMQ"	"M80"	"L"	0	"N"	110
+112042	"1234567"	"DEN"	"DFW"	1340	1628	"AA"	50	"FYBMV"	"M80"	""	0	"N"	108
+112043	"1234567"	"DEN"	"DFW"	1507	1753	"UA"	450	"FYBMQ"	"727"	""	0	"N"	106
+112044	"1234567"	"DEN"	"DFW"	1605	1905	"CO"	1652	"FYQHK"	"M80"	"D"	0	"N"	120
+112045	"1234567"	"DEN"	"DFW"	1613	1923	"AA"	618	"FYBMV"	"72S"	"D"	0	"N"	130
+112046	"1234567"	"DEN"	"DFW"	1700	1943	"DL"	742	"FYBMQ"	"72S"	"D"	0	"N"	103
+112047	"1234567"	"DEN"	"DFW"	1723	2006	"UA"	714	"FYBMQ"	"72S"	"D"	0	"N"	103
+112048	"1234567"	"DEN"	"DFW"	1808	2103	"AA"	1486	"FYBMV"	"M80"	"D"	0	"N"	115
+112049	"12345-7"	"DEN"	"DFW"	1835	2122	"UA"	664	"FYBMQ"	"727"	"D"	0	"N"	107
+112050	"1234567"	"DEN"	"DFW"	1925	2220	"CO"	935	"FYQHK"	"733"	"S"	0	"N"	115
+112051	"1234567"	"DEN"	"DFW"	1955	2240	"DL"	661	"FNYNBNMQ"	"72S"	"S"	0	"N"	105
+112052	"1234567"	"DEN"	"DFW"	2036	2327	"AA"	1432	"FNYNBMV"	"M80"	""	0	"N"	111
+112351	"1234567"	"DEN"	"OAK"	840	1014	"UA"	389	"FYBMQ"	"727"	"B"	0	"N"	154
+112352	"1234567"	"DEN"	"OAK"	1208	1339	"UA"	551	"FYBMQ"	"727"	"L"	0	"N"	151
+112353	"1234567"	"DEN"	"OAK"	1715	1852	"UA"	645	"FYBMQ"	"73S"	"D"	0	"N"	157
+112354	"1234567"	"DEN"	"OAK"	2030	2205	"UA"	673	"FYBMQ"	"733"	""	0	"N"	155
+112413	"1234567"	"DEN"	"PHL"	55	825	"DL"	296	"FNYNBNMQ"	"72S"	"B"	1	"N"	330
+112415	"1234567"	"DEN"	"PHL"	1033	1553	"UA"	270	"FYBMQ"	"D8S"	"L"	0	"N"	200
+112416	"1234567"	"DEN"	"PHL"	1120	1705	"CO"	1602	"FYQHK"	"733"	"L"	0	"N"	225
+112417	"1234567"	"DEN"	"PHL"	1524	2041	"UA"	494	"FYBMQ"	"D10"	"D"	0	"N"	197
+112418	"1234567"	"DEN"	"PHL"	1615	2146	"CO"	784	"FYQHK"	"72S"	"D/S"	0	"N"	211
+112440	"1234567"	"DEN"	"PIT"	730	1225	"US"	1039	"FYBHQ"	"734"	"B"	0	"N"	175
+112441	"1234567"	"DEN"	"PIT"	1035	1527	"US"	1520	"FYBHQ"	"733"	"B"	0	"N"	172
+112442	"1234567"	"DEN"	"PIT"	1605	2057	"US"	1421	"FYBHQ"	"733"	"D"	0	"N"	172
+112513	"1234567"	"DEN"	"SFO"	830	1006	"UA"	819	"FCYBM"	"D10"	"B"	0	"N"	156
+112514	"1234567"	"DEN"	"SFO"	840	1041	"CO"	1679	"FYQHK"	"733"	"B"	0	"N"	181
+112515	"1234567"	"DEN"	"SFO"	935	1110	"UA"	315	"FYBMQ"	"72S"	"S"	0	"N"	155
+112516	"1234567"	"DEN"	"SFO"	1200	1336	"UA"	343	"FYBMQ"	"D8S"	"L"	0	"N"	156
+112519	"12345-7"	"DEN"	"SFO"	1220	1416	"CO"	1295	"FYQHK"	"733"	"L"	0	"N"	176
+112518	"-----6-"	"DEN"	"SFO"	1220	1416	"CO"	1291	"FYQHK"	"72S"	"L"	0	"N"	176
+112520	"1234567"	"DEN"	"SFO"	1408	1535	"UA"	773	"FYBMQ"	"727"	"S"	0	"N"	147
+112524	"1234567"	"DEN"	"SFO"	1735	1912	"UA"	207	"FYBMQ"	"757"	"D"	0	"N"	157
+112525	"1234567"	"DEN"	"SFO"	1810	1947	"CO"	511	"FYQHK"	"72S"	"D/S"	0	"N"	157
+112526	"1234567"	"DEN"	"SFO"	2045	2214	"UA"	297	"FYBMQ"	"72S"	""	0	"N"	149
+112527	"1234567"	"DEN"	"SFO"	2130	2310	"CO"	1765	"FQYNHK"	"M80"	""	0	"N"	160
+112766	"1234567"	"DFW"	"ATL"	625	917	"DL"	16	"FYBMQ"	"L15"	"B"	0	"N"	112
+112771	"1234567"	"DFW"	"ATL"	658	950	"AA"	864	"FNYNBMV"	"M80"	"B"	0	"N"	112
+112772	"1234567"	"DFW"	"ATL"	800	1050	"DL"	83	"FYBMQ"	"L10"	"B"	0	"N"	110
+112773	"1234567"	"DFW"	"ATL"	945	1244	"DL"	790	"FYBMQ"	"767"	"S"	0	"N"	119
+112777	"1234567"	"DFW"	"ATL"	1140	1434	"DL"	446	"FYBMQ"	"M80"	"L"	0	"N"	114
+112783	"1234567"	"DFW"	"ATL"	1251	1549	"AA"	504	"FYBMV"	"M80"	"L"	0	"N"	118
+112784	"1234567"	"DFW"	"ATL"	1305	1606	"DL"	796	"FYBMQ"	"763"	"L"	0	"N"	121
+112789	"1234567"	"DFW"	"ATL"	1442	1746	"AA"	482	"FYBMV"	"M80"	"S"	0	"N"	124
+112790	"1234567"	"DFW"	"ATL"	1501	1753	"DL"	688	"FYBMQ"	"763"	"S"	0	"N"	112
+112793	"--34567"	"DFW"	"ATL"	1650	1943	"DL"	748	"FYBMQ"	"L10"	"D"	0	"N"	113
+112794	"12-----"	"DFW"	"ATL"	1650	1943	"DL"	748	"FYBMQ"	"763"	"D"	0	"N"	113
+112797	"-2-----"	"DFW"	"ATL"	1705	2005	"LH"	443	"FCBMK"	"74M"	"D"	0	"N"	120
+112798	"1234567"	"DFW"	"ATL"	1716	2016	"AA"	222	"FYBMV"	"M80"	"D"	0	"N"	120
+112802	"1234567"	"DFW"	"ATL"	1840	2133	"DL"	832	"FYBMQ"	"M80"	"D"	0	"N"	113
+112804	"1234567"	"DFW"	"ATL"	1958	2255	"AA"	496	"FNYNBMV"	"M80"	"S/"	0	"N"	117
+112805	"1234567"	"DFW"	"ATL"	2010	2258	"DL"	1720	"FYBMQ"	"72S"	"S/"	0	"N"	108
+112806	"1234567"	"DFW"	"ATL"	2215	100	"DL"	1008	"FNYNBNMQ"	"D9S"	""	0	"N"	105
+112807	"1234567"	"DFW"	"ATL"	2257	151	"AA"	628	"FNYNBMV"	"M80"	""	0	"N"	114
+112808	"1234567"	"DFW"	"ATL"	2345	230	"DL"	1030	"FNYNBNMQ"	"M80"	""	0	"N"	105
+112864	"1234567"	"DFW"	"BOS"	641	1104	"AA"	928	"FYBMV"	"767"	"B"	0	"N"	203
+112867	"12-----"	"DFW"	"BOS"	1005	1435	"DL"	694	"FYBMQ"	"72S"	"B"	0	"N"	210
+112866	"--34567"	"DFW"	"BOS"	1005	1435	"DL"	694	"FYBMQ"	"M80"	"B"	0	"N"	210
+112869	"1234567"	"DFW"	"BOS"	1304	1730	"AA"	28	"FYBMV"	"D10"	"L/S"	0	"N"	206
+112870	"1234567"	"DFW"	"BOS"	1315	1755	"DL"	128	"FYBMQ"	"757"	"L"	0	"N"	220
+112872	"1234567"	"DFW"	"BOS"	1448	1925	"AA"	634	"FYBMV"	"767"	"S"	0	"N"	217
+112873	"1234567"	"DFW"	"BOS"	1705	2125	"DL"	670	"FYBMQ"	"72S"	"D"	0	"N"	200
+112874	"1234567"	"DFW"	"BOS"	1719	2152	"AA"	154	"FYBMV"	"D10"	"D"	0	"N"	213
+112903	"1234567"	"DFW"	"BWI"	822	1200	"AA"	314	"FYBMV"	"72S"	"B"	0	"N"	158
+112904	"1234567"	"DFW"	"BWI"	1020	1400	"DL"	430	"FYBMQ"	"73S"	"L"	0	"N"	160
+112905	"1234567"	"DFW"	"BWI"	1426	1807	"AA"	600	"FYBMV"	"72S"	"S"	0	"N"	161
+112907	"1234567"	"DFW"	"BWI"	1708	2045	"DL"	605	"FYBMQ"	"M80"	"D"	0	"N"	157
+112908	"1234567"	"DFW"	"BWI"	1717	2110	"AA"	268	"FYBMV"	"M80"	"D"	0	"N"	173
+112909	"1234567"	"DFW"	"BWI"	1957	2334	"AA"	376	"FYBMV"	"72S"	"S"	0	"N"	157
+112989	"1234567"	"DFW"	"DEN"	650	800	"CO"	1149	"FYQHK"	"733"	"B"	0	"N"	130
+112990	"1234567"	"DFW"	"DEN"	658	753	"AA"	1443	"FYBMV"	"M80"	"B"	0	"N"	115
+112991	"123456-"	"DFW"	"DEN"	700	753	"UA"	953	"FYBMQ"	"72S"	"B"	0	"N"	113
+112992	"1234567"	"DFW"	"DEN"	816	910	"DL"	416	"FYBMQ"	"M80"	"B"	0	"N"	114
+112993	"1234567"	"DFW"	"DEN"	822	932	"AA"	445	"FYBMV"	"M80"	"B"	0	"N"	130
+112994	"1234567"	"DFW"	"DEN"	830	921	"UA"	985	"FYBMQ"	"727"	"B"	0	"N"	111
+112995	"1234567"	"DFW"	"DEN"	941	1047	"AA"	521	"FYBMV"	"M80"	"S"	0	"N"	126
+112996	"-----6-"	"DFW"	"DEN"	1030	1130	"CO"	1291	"FYQHK"	"72S"	"S"	0	"N"	120
+112997	"12345-7"	"DFW"	"DEN"	1030	1130	"CO"	215	"FYQHK"	"72S"	"S"	0	"N"	120
+112998	"1234567"	"DFW"	"DEN"	1032	1125	"UA"	551	"FYBMQ"	"727"	"S"	0	"N"	113
+112999	"1234567"	"DFW"	"DEN"	1108	11	"AA"	419	"FYBMV"	"M80"	"S"	0	"N"	123
+113000	"1234567"	"DFW"	"DEN"	1151	1245	"DL"	551	"FYBMQ"	"M80"	"L"	0	"N"	114
+113001	"1234567"	"DFW"	"DEN"	1240	1333	"UA"	773	"FYBMQ"	"727"	"L"	0	"N"	113
+113002	"1234567"	"DFW"	"DEN"	1428	1528	"AA"	1249	"FYBMV"	"72S"	""	0	"N"	120
+113003	"1234567"	"DFW"	"DEN"	1500	1554	"DL"	309	"FYBMQ"	"72S"	""	0	"N"	114
+113004	"1234567"	"DFW"	"DEN"	1547	1646	"UA"	725	"FYBMQ"	"733"	""	0	"N"	119
+113005	"1234567"	"DFW"	"DEN"	1607	1714	"AA"	51	"FYBMV"	"M80"	""	0	"N"	127
+113006	"1234567"	"DFW"	"DEN"	1630	1729	"CO"	469	"FYQHK"	"72S"	""	0	"N"	119
+113007	"1234567"	"DFW"	"DEN"	1835	1936	"AA"	193	"FNYNBMV"	"M80"	"D"	0	"N"	121
+113008	"12345-7"	"DFW"	"DEN"	1850	1951	"UA"	475	"FYBMQ"	"733"	"D"	0	"N"	121
+113009	"1234567"	"DFW"	"DEN"	1855	1950	"DL"	807	"FYBMQ"	"72S"	"D"	0	"N"	115
+113010	"1234567"	"DFW"	"DEN"	1940	2040	"CO"	271	"FYQHK"	"M80"	"D/S"	0	"N"	120
+113011	"1234567"	"DFW"	"DEN"	2153	2253	"AA"	313	"FNYNBMV"	"M80"	""	0	"N"	120
+113013	"1-----7"	"DFW"	"DEN"	2225	2320	"DL"	621	"FNYNBNMQ"	"72S"	""	0	"N"	115
+113012	"-23456-"	"DFW"	"DEN"	2225	2320	"DL"	621	"FNYNBNMQ"	"M80"	""	0	"N"	115
+113498	"1234567"	"DFW"	"OAK"	943	1133	"AA"	877	"FYBMV"	"M80"	"B"	0	"N"	230
+113499	"1234567"	"DFW"	"OAK"	1032	1339	"UA"	551	"FYBMQ"	"727"	"SL"	1	"N"	307
+113500	"1234567"	"DFW"	"OAK"	1835	2023	"AA"	459	"FYBMV"	"M80"	"D"	0	"N"	228
+113501	"1234567"	"DFW"	"OAK"	2153	2343	"AA"	367	"FNYNBMV"	"M80"	""	0	"N"	230
+113576	"1234567"	"DFW"	"PHL"	703	1106	"AA"	124	"FYBMV"	"M80"	"B"	0	"N"	183
+113577	"1234567"	"DFW"	"PHL"	950	1350	"DL"	1006	"FYBMQ"	"73S"	"B"	0	"N"	180
+113578	"1234567"	"DFW"	"PHL"	1303	1706	"AA"	1010	"FYBMV"	"767"	"L/S"	0	"N"	183
+113579	"1234567"	"DFW"	"PHL"	1310	1705	"DL"	234	"FYBMQ"	"72S"	"L"	0	"N"	175
+113581	"1234567"	"DFW"	"PHL"	1718	2130	"AA"	586	"FYBMV"	"M80"	"D"	0	"N"	192
+113582	"1234567"	"DFW"	"PHL"	1959	2358	"AA"	1074	"FYBMV"	"M80"	"S/"	0	"N"	179
+113583	"1234567"	"DFW"	"PHL"	2025	15	"DL"	1546	"FNYNBNMQ"	"72S"	"S"	0	"N"	170
+113595	"1234567"	"DFW"	"PIT"	825	1200	"AA"	478	"FYBMV"	"M80"	"B"	0	"N"	155
+113596	"1234567"	"DFW"	"PIT"	845	1214	"US"	326	"FYBHQ"	"M80"	"B"	0	"N"	149
+113597	"1234567"	"DFW"	"PIT"	1230	1559	"US"	96	"FYBHQ"	"M80"	"L"	0	"N"	149
+113599	"1234567"	"DFW"	"PIT"	1434	1804	"AA"	296	"FYBMV"	"M80"	"S"	0	"N"	150
+113600	"1234567"	"DFW"	"PIT"	1720	2059	"US"	504	"FYBHQ"	"M80"	"D"	0	"N"	159
+113602	"1234567"	"DFW"	"PIT"	1958	2328	"AA"	144	"FYBMV"	"M80"	"S/"	0	"N"	150
+113705	"1234567"	"DFW"	"SFO"	815	955	"DL"	825	"FYBMQ"	"757"	"B"	0	"N"	220
+113706	"1234567"	"DFW"	"SFO"	826	1013	"AA"	203	"FYBMV"	"D10"	"B"	0	"N"	227
+113707	"1234567"	"DFW"	"SFO"	935	1127	"UA"	459	"FYBMQ"	"733"	"L"	0	"N"	232
+113709	"1234567"	"DFW"	"SFO"	944	1147	"AA"	125	"FYBMV"	"M80"	"B"	0	"N"	243
+113710	"-----6-"	"DFW"	"SFO"	1030	1416	"CO"	1291	"FYQHK"	"72S"	"SL"	1	"N"	346
+113711	"1234567"	"DFW"	"SFO"	1107	59	"AA"	295	"FYBMV"	"D10"	"L"	0	"N"	232
+113712	"1234567"	"DFW"	"SFO"	1143	1325	"DL"	149	"FYBMQ"	"767"	"L"	0	"N"	222
+113713	"1234567"	"DFW"	"SFO"	1240	1535	"UA"	773	"FYBMQ"	"727"	"LS"	1	"N"	295
+113715	"1234567"	"DFW"	"SFO"	1510	1650	"DL"	887	"FYBMQ"	"757"	"S"	0	"N"	220
+113716	"1234567"	"DFW"	"SFO"	1604	1758	"AA"	813	"FYBMV"	"767"	"D"	0	"N"	234
+113717	"1234567"	"DFW"	"SFO"	1705	1858	"AA"	1119	"FYBMV"	"767"	"D"	0	"N"	233
+113718	"1234567"	"DFW"	"SFO"	1840	2029	"AA"	71	"FYBMV"	"D10"	"D"	0	"N"	229
+113719	"1234567"	"DFW"	"SFO"	1900	2050	"DL"	139	"FYBMQ"	"757"	"D"	0	"N"	230
+113720	"1234567"	"DFW"	"SFO"	2155	2341	"AA"	37	"FNYNBMV"	"767"	"S"	0	"N"	226
+113721	"1234567"	"DFW"	"SFO"	2214	2350	"DL"	395	"FNYNBNMQ"	"757"	"S"	0	"N"	216
+133423	"1234567"	"OAK"	"BOS"	1105	2056	"UA"	354	"FYBMQ"	"72S"	"LD"	1	"N"	411
+133430	"1234567"	"OAK"	"DEN"	625	949	"UA"	982	"FYBMQ"	"733"	"B"	0	"N"	144
+133431	"1234567"	"OAK"	"DEN"	1105	1417	"UA"	354	"FYBMQ"	"72S"	"L"	0	"N"	132
+133432	"1234567"	"OAK"	"DEN"	1425	1740	"UA"	436	"FYBMQ"	"727"	"S"	0	"N"	135
+133433	"1234567"	"OAK"	"DEN"	1930	2251	"UA"	384	"FYBMQ"	"73S"	"S/"	0	"N"	141
+133434	"1234567"	"OAK"	"DFW"	35	552	"AA"	534	"FNYNBMV"	"M80"	""	0	"N"	197
+133435	"1234567"	"OAK"	"DFW"	640	1214	"AA"	1086	"FYBMV"	"M80"	"B"	0	"N"	214
+133436	"1234567"	"OAK"	"DFW"	1345	1912	"AA"	1074	"FYBMV"	"M80"	"L"	0	"N"	207
+133516	"1234567"	"OAK"	"PHL"	1345	2358	"AA"	1074	"FYBMV"	"M80"	"LS/L"	1	"N"	433
+133567	"123456-"	"OAK"	"SFO"	530	554	"AA"	5112	"YNBMVQ"	"SWM"	""	0	"Y"	24
+133568	"------7"	"OAK"	"SFO"	735	759	"AA"	5235	"YBMVQ"	"SWM"	""	0	"Y"	24
+133569	"------7"	"OAK"	"SFO"	1020	1055	"AA"	5140	"YBMVQ"	"SWM"	""	0	"Y"	35
+137221	"1234567"	"PHL"	"ATL"	540	740	"DL"	201	"FNYNBNMQ"	"72S"	"B"	0	"N"	120
+137222	"1234567"	"PHL"	"ATL"	635	844	"EA"	121	"FNYNHQNK"	"D9S"	"B"	0	"N"	129
+137223	"1234567"	"PHL"	"ATL"	800	1004	"EA"	601	"FYHQK"	"D9S"	"B"	0	"N"	124
+137224	"1234567"	"PHL"	"ATL"	900	1104	"DL"	803	"FYBMQ"	"757"	"S"	0	"N"	124
+137225	"1234567"	"PHL"	"ATL"	900	1110	"US"	667	"FYBHQ"	"733"	"B"	0	"N"	130
+137226	"1234567"	"PHL"	"ATL"	930	1142	"EA"	125	"FYHQK"	"D9S"	"S"	0	"N"	132
+137227	"1234567"	"PHL"	"ATL"	1115	1320	"EA"	123	"FYHQK"	"D9S"	"L"	0	"N"	125
+137228	"1234567"	"PHL"	"ATL"	1230	1430	"DL"	1083	"FYBMQ"	"72S"	"L"	0	"N"	120
+137229	"1234567"	"PHL"	"ATL"	1304	1512	"EA"	127	"FYHQK"	"D9S"	"L"	0	"N"	128
+137230	"1234567"	"PHL"	"ATL"	1405	1605	"DL"	429	"FYBMQ"	"72S"	""	0	"N"	120
+137231	"1234567"	"PHL"	"ATL"	1405	1615	"US"	1623	"FYBHQ"	"73S"	"L/S"	0	"N"	130
+137232	"1234567"	"PHL"	"ATL"	1500	1710	"EA"	603	"FYHQK"	"D9S"	"S/"	0	"N"	130
+137233	"1234567"	"PHL"	"ATL"	1600	1805	"DL"	1507	"FYBMQ"	"72S"	"S"	0	"N"	125
+137234	"1234567"	"PHL"	"ATL"	1700	1909	"EA"	329	"FYHQK"	"D9S"	"D"	0	"N"	129
+137235	"1234567"	"PHL"	"ATL"	1750	1950	"DL"	101	"FYBMQ"	"72S"	"D"	0	"N"	120
+137236	"1234567"	"PHL"	"ATL"	1850	2055	"EA"	129	"FYHQK"	"D9S"	"D"	0	"N"	125
+137237	"1234567"	"PHL"	"ATL"	1855	2101	"US"	289	"FYBHQ"	"D9S"	"D"	0	"N"	126
+137238	"1234567"	"PHL"	"ATL"	1935	2137	"DL"	389	"FYBMQ"	"767"	"D"	0	"N"	122
+137315	"1234567"	"PHL"	"BOS"	615	719	"DL"	562	"FYBMQ"	"757"	"B/S"	0	"N"	64
+137316	"1234567"	"PHL"	"BOS"	700	805	"US"	292	"FYBHQ"	"733"	"S"	0	"N"	65
+137317	"123456-"	"PHL"	"BOS"	700	820	"ML"	436	"FYMHQ"	"D9S"	"B/S"	0	"N"	80
+137318	"1234567"	"PHL"	"BOS"	800	907	"US"	1557	"FYBHQ"	"73S"	"S"	0	"N"	67
+137319	"1234567"	"PHL"	"BOS"	855	1000	"DL"	296	"FYBMQ"	"72S"	""	0	"N"	65
+137320	"1234567"	"PHL"	"BOS"	1020	1127	"US"	424	"FYBHQ"	"M80"	""	0	"N"	67
+137321	"1234567"	"PHL"	"BOS"	1020	1140	"ML"	400	"FYMHQ"	"D9S"	""	0	"N"	80
+137322	"1234567"	"PHL"	"BOS"	1200	1315	"ML"	438	"FYMHQ"	"D9S"	"L/S"	0	"N"	75
+137323	"1234567"	"PHL"	"BOS"	1250	1355	"DL"	726	"FYBMQ"	"72S"	"S"	0	"N"	65
+137324	"1234567"	"PHL"	"BOS"	1325	1432	"US"	122	"FYBHQ"	"D9S"	""	0	"N"	67
+137326	"1234567"	"PHL"	"BOS"	1440	1548	"US"	404	"FYBHQ"	"72S"	""	0	"N"	68
+137327	"1234567"	"PHL"	"BOS"	1520	1627	"US"	282	"FYBHQ"	"73S"	""	0	"N"	67
+137328	"1234567"	"PHL"	"BOS"	1540	1700	"ML"	420	"FYMHQ"	"D9S"	""	0	"N"	80
+137329	"1234567"	"PHL"	"BOS"	1600	1707	"US"	2	"FYBHQ"	"73S"	""	0	"N"	67
+137330	"-2-4--7"	"PHL"	"BOS"	1615	1730	"LH"	421	"FCBMK"	"D10"	""	0	"N"	75
+137331	"1234567"	"PHL"	"BOS"	1650	1755	"DL"	648	"FYBMQ"	"72S"	"S"	0	"N"	65
+137332	"12345-7"	"PHL"	"BOS"	1700	1820	"ML"	430	"FYMHQ"	"D9S"	""	0	"N"	80
+137333	"1234567"	"PHL"	"BOS"	1755	1902	"US"	196	"FYBHQ"	"M80"	""	0	"N"	67
+137334	"12345-7"	"PHL"	"BOS"	1855	2002	"US"	460	"FYBHQ"	"D9S"	""	0	"N"	67
+137335	"1234567"	"PHL"	"BOS"	1945	2053	"US"	162	"FYBHQ"	"72S"	""	0	"N"	68
+137336	"12345-7"	"PHL"	"BOS"	2030	2137	"US"	539	"FYBHQ"	"D9S"	""	0	"N"	67
+137337	"1234567"	"PHL"	"BOS"	2055	2215	"ML"	432	"FYMHQ"	"D9S"	""	0	"N"	80
+137338	"12345-7"	"PHL"	"BOS"	2100	2207	"US"	279	"FYBHQ"	"734"	""	0	"N"	67
+137339	"1234567"	"PHL"	"BOS"	2115	2219	"DL"	106	"FNYNBNMQ"	"M80"	""	0	"N"	64
+137353	"12345--"	"PHL"	"BWI"	715	804	"US"	3745	"YBHQM"	"SH3"	""	0	"Y"	49
+137354	"123456-"	"PHL"	"BWI"	840	929	"US"	3725	"YBHQM"	"SH3"	""	0	"Y"	49
+137355	"1234567"	"PHL"	"BWI"	1100	1150	"US"	3609	"YBHQM"	"SH6"	""	0	"Y"	50
+137356	"1234567"	"PHL"	"BWI"	1200	1250	"US"	3765	"YBHQM"	"SH3"	""	0	"Y"	50
+137357	"1234567"	"PHL"	"BWI"	1335	1425	"US"	4517	"YBHQM"	"DH8"	""	0	"Y"	50
+137358	"1234567"	"PHL"	"BWI"	1520	1620	"US"	3749	"YBHQM"	"SH3"	""	0	"Y"	60
+137359	"1234567"	"PHL"	"BWI"	1854	1944	"US"	3357	"YBHQM"	"J31"	""	0	"Y"	50
+137360	"12345-7"	"PHL"	"BWI"	2045	2135	"US"	3753	"YBHQM"	"SH3"	""	0	"Y"	50
+137361	"12345-7"	"PHL"	"BWI"	2150	2240	"US"	4400	"YBHQM"	"DH8"	""	0	"Y"	50
+137407	"1234567"	"PHL"	"DEN"	905	1107	"UA"	131	"FYBMQ"	"D10"	"B"	0	"N"	242
+137408	"1234567"	"PHL"	"DEN"	915	1138	"CO"	781	"FYQHK"	"72S"	"B"	0	"N"	263
+137410	"1234567"	"PHL"	"DEN"	1230	1615	"DL"	1083	"FYBMQ"	"72S"	"LS"	1	"N"	345
+137412	"1234567"	"PHL"	"DEN"	1753	1955	"UA"	355	"FYBMQ"	"D8S"	"D"	0	"N"	242
+137413	"1234567"	"PHL"	"DEN"	1800	2037	"CO"	1631	"FYQHK"	"733"	"D"	0	"N"	277
+137414	"1234567"	"PHL"	"DFW"	720	1014	"AA"	487	"FYBMV"	"M80"	"B"	0	"N"	234
+137415	"1234567"	"PHL"	"DFW"	830	1050	"DL"	217	"FYBMQ"	"72S"	"B"	0	"N"	200
+137417	"1234567"	"PHL"	"DFW"	1212	1502	"AA"	883	"FYBMV"	"M80"	"L"	0	"N"	230
+137419	"1234567"	"PHL"	"DFW"	1440	1710	"DL"	1061	"FYBMQ"	"73S"	"S"	0	"N"	210
+137420	"1234567"	"PHL"	"DFW"	1500	1747	"AA"	459	"FYBMV"	"M80"	"S"	0	"N"	227
+137422	"1234567"	"PHL"	"DFW"	1805	2047	"AA"	573	"FYBMV"	"767"	"D"	0	"N"	222
+137423	"1234567"	"PHL"	"DFW"	1915	2144	"DL"	589	"FYBMQ"	"72S"	"D"	0	"N"	209
+137685	"1234567"	"PHL"	"OAK"	1500	2023	"AA"	459	"FYBMV"	"M80"	"SD"	1	"N"	503
+137732	"1234567"	"PHL"	"PIT"	700	806	"US"	71	"FYBHQ"	"733"	"B"	0	"N"	66
+137733	"1234567"	"PHL"	"PIT"	740	847	"US"	39	"FYBHQ"	"733"	"B"	0	"N"	67
+137734	"123456-"	"PHL"	"PIT"	840	950	"US"	1800	"FYBHQ"	"734"	"S/"	0	"N"	70
+137735	"1234567"	"PHL"	"PIT"	1010	1115	"US"	358	"FYBHQ"	"M80"	"S/"	0	"N"	65
+137736	"1234567"	"PHL"	"PIT"	1235	1341	"US"	37	"FYBHQ"	"733"	"S"	0	"N"	66
+137737	"1234567"	"PHL"	"PIT"	1600	1706	"US"	778	"FYBHQ"	"733"	"S/"	0	"N"	66
+137738	"1234567"	"PHL"	"PIT"	1715	1822	"US"	1580	"FYBHQ"	"734"	"S/"	0	"N"	67
+137739	"1234567"	"PHL"	"PIT"	1810	1916	"US"	772	"FYBHQ"	"72S"	"S"	0	"N"	66
+137740	"1234567"	"PHL"	"PIT"	2100	2207	"US"	293	"FYBHQ"	"733"	""	0	"N"	67
+137811	"1234567"	"PHL"	"SFO"	800	1121	"UA"	143	"FYBMQ"	"767"	"B"	0	"N"	381
+137814	"1234567"	"PHL"	"SFO"	1235	1652	"US"	37	"FYBHQ"	"733"	"SL"	1	"N"	437
+137817	"1234567"	"PHL"	"SFO"	1655	2005	"UA"	101	"FYBMQ"	"D8S"	"D"	0	"N"	370
+138817	"1234567"	"PIT"	"ATL"	600	739	"DL"	357	"FNYNBNMQ"	"73S"	"B"	0	"N"	99
+138818	"1234567"	"PIT"	"ATL"	645	825	"EA"	303	"FYHQK"	"D9S"	"B"	0	"N"	100
+138819	"1234567"	"PIT"	"ATL"	827	1004	"EA"	301	"YHQKL"	"72S"	"B"	0	"N"	97
+138820	"1234567"	"PIT"	"ATL"	845	1025	"US"	573	"FYBHQ"	"D9S"	"B"	0	"N"	100
+138821	"1234567"	"PIT"	"ATL"	910	1048	"DL"	1059	"FYBMQ"	"D9S"	"S"	0	"N"	98
+138822	"1234567"	"PIT"	"ATL"	1150	1329	"EA"	307	"FYHQK"	"D9S"	"L"	0	"N"	99
+138823	"1234567"	"PIT"	"ATL"	1245	1420	"DL"	631	"FYBMQ"	"D9S"	"L"	0	"N"	95
+138824	"1234567"	"PIT"	"ATL"	1320	1500	"US"	18	"FYBHQ"	"D9S"	"L"	0	"N"	100
+138825	"1234567"	"PIT"	"ATL"	1520	1701	"EA"	311	"YHQKL"	"72S"	"S"	0	"N"	101
+138827	"1234567"	"PIT"	"ATL"	1600	1735	"DL"	709	"FYBMQ"	"73S"	""	0	"N"	95
+138828	"1234567"	"PIT"	"ATL"	1750	1930	"US"	1103	"FYBHQ"	"733"	"D"	0	"N"	100
+138829	"1234567"	"PIT"	"ATL"	1855	2035	"EA"	327	"FYHQK"	"757"	"D"	0	"N"	100
+138830	"-----67"	"PIT"	"ATL"	1945	2118	"DL"	381	"FNYNBNMQ"	"73S"	"D"	0	"N"	93
+138831	"12345--"	"PIT"	"ATL"	1945	2118	"DL"	381	"FNYNBNMQ"	"72S"	"D"	0	"N"	93
+138832	"1234567"	"PIT"	"ATL"	2025	2205	"US"	412	"FYBHQ"	"D9S"	"D/S"	0	"N"	100
+138860	"1234567"	"PIT"	"BOS"	710	839	"US"	732	"FYBHQ"	"733"	"B"	0	"N"	89
+138861	"1234567"	"PIT"	"BOS"	840	1006	"US"	736	"FYBHQ"	"733"	"S/"	0	"N"	86
+138862	"1234567"	"PIT"	"BOS"	1200	1328	"US"	674	"FYBHQ"	"M80"	"S"	0	"N"	88
+138863	"1234567"	"PIT"	"BOS"	1310	1440	"US"	418	"FYBHQ"	"D9S"	"S"	0	"N"	90
+138864	"1234567"	"PIT"	"BOS"	1355	1524	"US"	794	"FYBHQ"	"D9S"	"S/"	0	"N"	89
+138865	"1234567"	"PIT"	"BOS"	1640	1809	"US"	14	"FYBHQ"	"733"	"S/"	0	"N"	89
+138866	"1234567"	"PIT"	"BOS"	1800	2053	"US"	162	"FYBHQ"	"72S"	"S"	1	"N"	173
+138867	"12345-7"	"PIT"	"BOS"	1930	2058	"US"	400	"FYBHQ"	"73S"	"S"	0	"N"	88
+138868	"1234567"	"PIT"	"BOS"	2155	2322	"US"	30	"FYBHQ"	"72S"	""	0	"N"	87
+138878	"1234567"	"PIT"	"BWI"	845	938	"US"	446	"FYBHQ"	"72S"	""	0	"N"	53
+138879	"1234567"	"PIT"	"BWI"	1030	1129	"US"	1801	"FYBHQ"	"734"	""	0	"N"	59
+138880	"1234567"	"PIT"	"BWI"	1400	1458	"US"	538	"FYBHQ"	"D9S"	""	0	"N"	58
+138881	"1234567"	"PIT"	"BWI"	1525	1621	"US"	1982	"FYBHQ"	"F28"	""	0	"N"	56
+138882	"1234567"	"PIT"	"BWI"	1640	1737	"US"	2153	"FYBHQ"	"733"	""	0	"N"	57
+138883	"-----6-"	"PIT"	"BWI"	1810	1910	"US"	975	"FYBHQ"	"F28"	""	0	"N"	60
+138884	"1234567"	"PIT"	"BWI"	2155	2252	"US"	1793	"FYBHQ"	"733"	""	0	"N"	57
+138963	"1234567"	"PIT"	"DEN"	950	1135	"US"	1402	"FYBHQ"	"733"	"B"	0	"N"	225
+138964	"1234567"	"PIT"	"DEN"	1330	1510	"US"	1417	"FYBHQ"	"733"	"L"	0	"N"	220
+138965	"1234567"	"PIT"	"DEN"	1854	2253	"AA"	313	"FYBMV"	"M80"	"D"	1	"N"	359
+138966	"1234567"	"PIT"	"DEN"	2035	2226	"US"	1742	"FYBHQ"	"734"	"D"	0	"N"	231
+138970	"1234567"	"PIT"	"DFW"	640	852	"AA"	493	"FYBMV"	"M80"	"B"	0	"N"	192
+138971	"1234567"	"PIT"	"DFW"	940	1149	"US"	7	"FYBHQ"	"M80"	"B"	0	"N"	189
+138973	"1234567"	"PIT"	"DFW"	1301	1514	"AA"	425	"FYBMV"	"M80"	"L/S"	0	"N"	193
+138974	"1234567"	"PIT"	"DFW"	1430	1639	"US"	503	"FYBHQ"	"M80"	"L"	0	"N"	189
+138976	"1234567"	"PIT"	"DFW"	1854	2107	"AA"	313	"FYBMV"	"M80"	"D"	0	"N"	193
+138977	"1234567"	"PIT"	"DFW"	2020	2229	"US"	19	"FYBHQ"	"M80"	"D"	0	"N"	189
+139264	"1234567"	"PIT"	"PHL"	700	755	"US"	771	"FYBHQ"	"72S"	"B"	0	"N"	55
+139265	"1234567"	"PIT"	"PHL"	740	850	"US"	620	"FYBHQ"	"733"	"B"	0	"N"	70
+139266	"1234567"	"PIT"	"PHL"	850	958	"US"	606	"FYBHQ"	"733"	"S/"	0	"N"	68
+139267	"1234567"	"PIT"	"PHL"	1150	1251	"US"	122	"FYBHQ"	"D9S"	"S"	0	"N"	61
+139268	"1234567"	"PIT"	"PHL"	1325	1430	"US"	198	"FYBHQ"	"733"	"S"	0	"N"	65
+139269	"1234567"	"PIT"	"PHL"	1640	1745	"US"	1438	"FYBHQ"	"733"	"S/"	0	"N"	65
+139270	"1234567"	"PIT"	"PHL"	1800	1900	"US"	162	"FYBHQ"	"72S"	"S"	0	"N"	60
+139271	"1234567"	"PIT"	"PHL"	1955	2100	"US"	166	"FYBHQ"	"733"	""	0	"N"	65
+139272	"12345-7"	"PIT"	"PHL"	2045	2145	"US"	1984	"FYBHQ"	"73S"	""	0	"N"	60
+139273	"1234567"	"PIT"	"PHL"	2145	2250	"US"	1678	"FYBHQ"	"734"	""	0	"N"	65
+139353	"1234567"	"PIT"	"SFO"	945	1217	"US"	31	"FYBHQ"	"72S"	"B"	0	"N"	332
+139355	"1234567"	"PIT"	"SFO"	1430	1652	"US"	37	"FYBHQ"	"733"	"L"	0	"N"	322
+139356	"1234567"	"PIT"	"SFO"	1750	2022	"US"	33	"FYBHQ"	"733"	"D"	0	"N"	332
+139357	"1234567"	"PIT"	"SFO"	2020	2250	"US"	35	"FYBHQ"	"733"	"D"	0	"N"	330
+144059	"1234567"	"SFO"	"ATL"	645	1549	"AA"	504	"FYBMV"	"M80"	"BL"	1	"N"	364
+144060	"1234567"	"SFO"	"ATL"	815	1540	"DL"	98	"FYBMQ"	"763"	"B"	0	"N"	265
+144061	"1234567"	"SFO"	"ATL"	900	1644	"EA"	70	"FYHQK"	"757"	"B"	0	"N"	284
+144062	"------7"	"SFO"	"ATL"	1215	1933	"DL"	116	"FYBMQ"	"767"	"L"	0	"N"	258
+144063	"123456-"	"SFO"	"ATL"	1215	1933	"DL"	116	"FYBMQ"	"L10"	"L"	0	"N"	258
+144065	"1234567"	"SFO"	"ATL"	1310	2041	"EA"	72	"FYHQK"	"757"	"L"	0	"N"	271
+144066	"1234567"	"SFO"	"ATL"	1530	2248	"DL"	162	"FYBMQ"	"757"	"D"	0	"N"	258
+144067	"1234567"	"SFO"	"ATL"	2220	540	"DL"	156	"FNYNBNMQ"	"767"	"S"	0	"N"	260
+144069	"1234567"	"SFO"	"ATL"	2340	657	"EA"	74	"FNYNHQNK"	"757"	"S"	0	"N"	257
+144087	"1234567"	"SFO"	"BOS"	30	1104	"AA"	928	"FNYNBMV"	"767"	"B"	1	"N"	454
+144088	"1234567"	"SFO"	"BOS"	650	1700	"CO"	1234	"FYQHK"	"M80"	"BL"	1	"N"	430
+144089	"1234567"	"SFO"	"BOS"	800	1627	"UA"	92	"FYBMQ"	"D8S"	"B"	0	"N"	327
+144090	"1234567"	"SFO"	"BOS"	825	1639	"TW"	754	"FCYBQ"	"L10"	"B"	0	"N"	314
+144092	"123456-"	"SFO"	"BOS"	1215	2255	"DL"	116	"FYBMQ"	"L10"	"LS/L"	1	"N"	460
+144093	"1234567"	"SFO"	"BOS"	1320	2322	"US"	30	"FYBHQ"	"72S"	"L"	1	"N"	422
+144094	"1234567"	"SFO"	"BOS"	1340	2202	"UA"	20	"FYBMQ"	"D10"	"L"	0	"N"	322
+144095	"1234567"	"SFO"	"BOS"	1530	153	"DL"	162	"FYBMQ"	"757"	"D"	1	"N"	443
+144110	"1234567"	"SFO"	"BWI"	755	1737	"US"	2153	"FYBHQ"	"733"	"B"	1	"N"	402
+144143	"1234567"	"SFO"	"DEN"	620	946	"UA"	194	"FYBMQ"	"D10"	"B"	0	"N"	146
+144144	"1234567"	"SFO"	"DEN"	650	1017	"CO"	1234	"FYQHK"	"M80"	"B"	0	"N"	147
+144145	"-----6-"	"SFO"	"DEN"	900	1223	"UA"	888	"FYBMQ"	"727"	"B"	0	"N"	143
+144146	"12345--"	"SFO"	"DEN"	900	1223	"UA"	880	"FYBMQ"	"727"	"B"	0	"N"	143
+144147	"1234567"	"SFO"	"DEN"	915	1244	"CO"	64	"FYQHK"	"72S"	"B"	0	"N"	149
+144148	"1234567"	"SFO"	"DEN"	1108	1428	"UA"	820	"FCYBM"	"D10"	"L"	0	"N"	140
+144149	"1234567"	"SFO"	"DEN"	1155	1523	"CO"	1212	"FYQHK"	"733"	"L"	0	"N"	148
+144150	"1234567"	"SFO"	"DEN"	1431	1753	"UA"	178	"FYBMQ"	"D8S"	"S"	0	"N"	142
+144152	"12345-7"	"SFO"	"DEN"	1520	1850	"CO"	886	"FYQHK"	"733"	"S"	0	"N"	150
+144151	"-----6-"	"SFO"	"DEN"	1520	1850	"CO"	886	"FYQHK"	"72S"	"S"	0	"N"	150
+144153	"1234567"	"SFO"	"DEN"	1825	2143	"UA"	346	"FYBMQ"	"73S"	"D"	0	"N"	138
+144155	"1234567"	"SFO"	"DFW"	20	522	"DL"	374	"FNYNBNMQ"	"757"	"S"	0	"N"	182
+144156	"1234567"	"SFO"	"DFW"	30	548	"AA"	928	"FNYNBMV"	"767"	""	0	"N"	198
+144157	"1234567"	"SFO"	"DFW"	645	1204	"AA"	504	"FYBMV"	"M80"	"B"	0	"N"	199
+144158	"1234567"	"SFO"	"DFW"	700	1221	"DL"	838	"FYBMQ"	"767"	"B"	0	"N"	201
+144159	"1234567"	"SFO"	"DFW"	800	1315	"AA"	70	"FYBMV"	"D10"	"B"	0	"N"	195
+144160	"-----6-"	"SFO"	"DFW"	900	1555	"UA"	888	"FYBMQ"	"727"	"BS"	1	"N"	295
+144161	"12345--"	"SFO"	"DFW"	900	1555	"UA"	880	"FYBMQ"	"727"	"BS"	1	"N"	295
+144162	"1234567"	"SFO"	"DFW"	945	1503	"AA"	986	"FYBMV"	"767"	"B"	0	"N"	198
+144163	"1234567"	"SFO"	"DFW"	1059	1612	"DL"	1014	"FYBMQ"	"757"	"L"	0	"N"	193
+144164	"1234567"	"SFO"	"DFW"	1105	1622	"AA"	288	"FYBMV"	"D10"	"L"	0	"N"	197
+144165	"1234567"	"SFO"	"DFW"	1240	1808	"UA"	478	"FYBMQ"	"733"	"L"	0	"N"	208
+144166	"1234567"	"SFO"	"DFW"	1349	1910	"AA"	404	"FYBMV"	"D10"	"L"	0	"N"	201
+144167	"1234567"	"SFO"	"DFW"	1425	1937	"DL"	180	"FYBMQ"	"767"	"L"	0	"N"	192
+144168	"1234567"	"SFO"	"DFW"	1655	2215	"AA"	264	"FYBMV"	"767"	"D"	0	"N"	200
+144169	"1234567"	"SFO"	"DFW"	1750	2258	"DL"	852	"FYBMQ"	"757"	"D"	0	"N"	188
+144477	"1234567"	"SFO"	"OAK"	1250	1319	"AA"	5302	"YBMVQ"	"SWM"	""	0	"Y"	29
+144478	"-----6-"	"SFO"	"OAK"	1749	1809	"AA"	5130	"YBMVQ"	"SWM"	""	0	"Y"	20
+144479	"-----6-"	"SFO"	"OAK"	1831	1853	"AA"	5111	"YBMVQ"	"SWM"	""	0	"Y"	22
+144480	"12345-7"	"SFO"	"OAK"	2221	2247	"AA"	5104	"YNBMVQ"	"SWM"	""	0	"Y"	26
+144541	"1234567"	"SFO"	"PHL"	810	1608	"UA"	130	"FYBMQ"	"D8S"	"B"	0	"N"	298
+144543	"1234567"	"SFO"	"PHL"	1125	2100	"US"	166	"FYBHQ"	"733"	"L"	1	"N"	395
+144547	"1234567"	"SFO"	"PHL"	1330	2141	"UA"	94	"FYBMQ"	"767"	"L"	0	"N"	311
+144572	"1234567"	"SFO"	"PIT"	755	1534	"US"	2153	"FYBHQ"	"733"	"B"	0	"N"	279
+144574	"1234567"	"SFO"	"PIT"	1125	1856	"US"	166	"FYBHQ"	"733"	"L"	0	"N"	271
+144575	"1234567"	"SFO"	"PIT"	1320	2046	"US"	30	"FYBHQ"	"72S"	"L"	0	"N"	266
+144576	"1234567"	"SFO"	"PIT"	2355	726	"US"	604	"FYBHQ"	"733"	"D"	0	"N"	271
+
+COPY 2895 RECORDS INTO "sys"."flight_class" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+101909	"FN"
+101909	"YN"
+101909	"BN"
+101909	"M"
+101909	"Q"
+101910	"F"
+101910	"Y"
+101910	"H"
+101910	"Q"
+101910	"K"
+101911	"F"
+101911	"Y"
+101911	"H"
+101911	"Q"
+101911	"K"
+101912	"F"
+101912	"Y"
+101912	"B"
+101912	"M"
+101912	"Q"
+101914	"Y"
+101914	"H"
+101914	"Q"
+101914	"K"
+101914	"L"
+101915	"F"
+101915	"Y"
+101915	"H"
+101915	"Q"
+101915	"K"
+101916	"F"
+101916	"Y"
+101916	"B"
+101916	"M"
+101916	"Q"
+101917	"F"
+101917	"Y"
+101917	"B"
+101917	"M"
+101917	"Q"
+101918	"F"
+101918	"Y"
+101918	"H"
+101918	"Q"
+101918	"K"
+101922	"F"
+101922	"Y"
+101922	"B"
+101922	"M"
+101922	"Q"
+101923	"F"
+101923	"Y"
+101923	"H"
+101923	"Q"
+101923	"K"
+101925	"F"
+101925	"Y"
+101925	"B"
+101925	"M"
+101925	"Q"
+101926	"F"
+101926	"Y"
+101926	"H"
+101926	"Q"
+101926	"K"
+101927	"F"
+101927	"Y"
+101927	"B"
+101927	"M"
+101927	"Q"
+101928	"F"
+101928	"Y"
+101928	"B"
+101928	"M"
+101928	"Q"
+101929	"FN"
+101929	"YN"
+101929	"BN"
+101929	"M"
+101929	"Q"
+101951	"F"
+101951	"Y"
+101951	"H"
+101951	"Q"
+101951	"K"
+101952	"F"
+101952	"Y"
+101952	"B"
+101952	"M"
+101952	"Q"
+101953	"F"
+101953	"Y"
+101953	"B"
+101953	"M"
+101953	"Q"
+101954	"F"
+101954	"Y"
+101954	"H"
+101954	"Q"
+101954	"K"
+101955	"F"
+101955	"Y"
+101955	"B"
+101955	"M"
+101955	"Q"
+101956	"F"
+101956	"Y"
+101956	"H"
+101956	"Q"
+101956	"K"
+101957	"F"
+101957	"Y"
+101957	"H"
+101957	"Q"
+101957	"K"
+101958	"F"
+101958	"Y"
+101958	"B"
+101958	"M"
+101958	"Q"
+101959	"FN"
+101959	"YN"
+101959	"H"
+101959	"QN"
+101959	"K"
+102122	"F"
+102122	"Y"
+102122	"B"
+102122	"M"
+102122	"Q"
+102123	"F"
+102123	"Y"
+102123	"H"
+102123	"Q"
+102123	"K"
+102125	"F"
+102125	"Y"
+102125	"B"
+102125	"M"
+102125	"Q"
+102126	"F"
+102126	"Y"
+102126	"B"
+102126	"M"
+102126	"Q"
+102127	"F"
+102127	"Y"
+102127	"B"
+102127	"M"
+102127	"Q"
+102128	"F"
+102128	"Y"
+102128	"H"
+102128	"Q"
+102128	"K"
+102129	"F"
+102129	"Y"
+102129	"B"
+102129	"M"
+102129	"Q"
+102133	"F"
+102133	"Y"
+102133	"B"
+102133	"M"
+102133	"Q"
+102134	"FN"
+102134	"YN"
+102134	"H"
+102134	"QN"
+102134	"K"
+102135	"FN"
+102135	"YN"
+102135	"BN"
+102135	"M"
+102135	"Q"
+102136	"FN"
+102136	"YN"
+102136	"BN"
+102136	"M"
+102136	"Q"
+102137	"FN"
+102137	"YN"
+102137	"BN"
+102137	"M"
+102137	"Q"
+102139	"F"
+102139	"Y"
+102139	"B"
+102139	"M"
+102139	"V"
+102144	"F"
+102144	"Y"
+102144	"B"
+102144	"M"
+102144	"Q"
+102147	"F"
+102147	"Y"
+102147	"B"
+102147	"M"
+102147	"V"
+102148	"F"
+102148	"Y"
+102148	"B"
+102148	"M"
+102148	"Q"
+102150	"F"
+102150	"Y"
+102150	"B"
+102150	"M"
+102150	"Q"
+102162	"F"
+102162	"Y"
+102162	"B"
+102162	"M"
+102162	"Q"
+102163	"F"
+102163	"Y"
+102163	"B"
+102163	"M"
+102163	"Q"
+102164	"F"
+102164	"Y"
+102164	"B"
+102164	"M"
+102164	"V"
+102165	"F"
+102165	"C"
+102165	"B"
+102165	"M"
+102165	"K"
+102166	"F"
+102166	"Y"
+102166	"B"
+102166	"M"
+102166	"Q"
+102172	"F"
+102172	"Y"
+102172	"B"
+102172	"M"
+102172	"V"
+102173	"F"
+102173	"Y"
+102173	"B"
+102173	"M"
+102173	"Q"
+102177	"F"
+102177	"Y"
+102177	"B"
+102177	"M"
+102177	"Q"
+102188	"FN"
+102188	"YN"
+102188	"B"
+102188	"M"
+102188	"V"
+102190	"FN"
+102190	"YN"
+102190	"BN"
+102190	"M"
+102190	"Q"
+102191	"FN"
+102191	"YN"
+102191	"BN"
+102191	"M"
+102191	"Q"
+102192	"FN"
+102192	"YN"
+102192	"BN"
+102192	"M"
+102192	"Q"
+102766	"FN"
+102766	"YN"
+102766	"BN"
+102766	"M"
+102766	"Q"
+102767	"F"
+102767	"Y"
+102767	"B"
+102767	"H"
+102767	"Q"
+102768	"F"
+102768	"Y"
+102768	"H"
+102768	"Q"
+102768	"K"
+102769	"F"
+102769	"Y"
+102769	"H"
+102769	"Q"
+102769	"K"
+102770	"F"
+102770	"Y"
+102770	"B"
+102770	"M"
+102770	"Q"
+102771	"F"
+102771	"Y"
+102771	"B"
+102771	"H"
+102771	"Q"
+102772	"F"
+102772	"Y"
+102772	"H"
+102772	"Q"
+102772	"K"
+102773	"F"
+102773	"Y"
+102773	"B"
+102773	"M"
+102773	"Q"
+102774	"F"
+102774	"Y"
+102774	"H"
+102774	"Q"
+102774	"K"
+102775	"F"
+102775	"Y"
+102775	"H"
+102775	"Q"
+102775	"K"
+102776	"F"
+102776	"Y"
+102776	"B"
+102776	"M"
+102776	"Q"
+102777	"F"
+102777	"Y"
+102777	"B"
+102777	"H"
+102777	"Q"
+102778	"F"
+102778	"Y"
+102778	"H"
+102778	"Q"
+102778	"K"
+102779	"F"
+102779	"Y"
+102779	"B"
+102779	"M"
+102779	"Q"
+102781	"F"
+102781	"Y"
+102781	"H"
+102781	"Q"
+102781	"K"
+102782	"F"
+102782	"Y"
+102782	"B"
+102782	"M"
+102782	"Q"
+102783	"FN"
+102783	"YN"
+102783	"H"
+102783	"QN"
+102783	"K"
+102784	"FN"
+102784	"YN"
+102784	"BN"
+102784	"M"
+102784	"Q"
+102795	"F"
+102795	"Y"
+102795	"B"
+102795	"H"
+102795	"Q"
+102796	"F"
+102796	"Y"
+102796	"B"
+102796	"M"
+102796	"Q"
+102797	"F"
+102797	"Y"
+102797	"H"
+102797	"Q"
+102797	"K"
+102798	"F"
+102798	"Y"
+102798	"B"
+102798	"H"
+102798	"Q"
+102799	"F"
+102799	"Y"
+102799	"H"
+102799	"Q"
+102799	"K"
+102800	"F"
+102800	"Y"
+102800	"B"
+102800	"M"
+102800	"Q"
+102801	"F"
+102801	"Y"
+102801	"B"
+102801	"H"
+102801	"Q"
+102802	"F"
+102802	"Y"
+102802	"B"
+102802	"M"
+102802	"Q"
+102803	"F"
+102803	"Y"
+102803	"B"
+102803	"M"
+102803	"Q"
+102804	"Y"
+102804	"H"
+102804	"Q"
+102804	"K"
+102804	"L"
+102805	"F"
+102805	"Y"
+102805	"B"
+102805	"H"
+102805	"Q"
+102806	"F"
+102806	"Y"
+102806	"H"
+102806	"Q"
+102806	"K"
+102807	"F"
+102807	"Y"
+102807	"B"
+102807	"M"
+102807	"Q"
+102808	"FN"
+102808	"YN"
+102808	"H"
+102808	"QN"
+102808	"K"
+102809	"FN"
+102809	"YN"
+102809	"BN"
+102809	"M"
+102809	"Q"
+102923	"F"
+102923	"Y"
+102923	"B"
+102923	"M"
+102923	"Q"
+102924	"F"
+102924	"Y"
+102924	"B"
+102924	"M"
+102924	"Q"
+102925	"F"
+102925	"Y"
+102925	"H"
+102925	"Q"
+102925	"K"
+102927	"F"
+102927	"Y"
+102927	"B"
+102927	"M"
+102927	"Q"
+102929	"F"
+102929	"Y"
+102929	"B"
+102929	"M"
+102929	"Q"
+102930	"F"
+102930	"Y"
+102930	"H"
+102930	"Q"
+102930	"K"
+102932	"F"
+102932	"Y"
+102932	"B"
+102932	"M"
+102932	"Q"
+102933	"F"
+102933	"Y"
+102933	"H"
+102933	"Q"
+102933	"K"
+105584	"F"
+105584	"Y"
+105584	"B"
+105584	"M"
+105584	"Q"
+105586	"FN"
+105586	"YN"
+105586	"H"
+105586	"QN"
+105586	"K"
+105588	"F"
+105588	"Y"
+105588	"B"
+105588	"M"
+105588	"Q"
+105589	"F"
+105589	"Y"
+105589	"H"
+105589	"Q"
+105589	"K"
+105590	"F"
+105590	"Y"
+105590	"B"
+105590	"M"
+105590	"Q"
+105591	"F"
+105591	"Y"
+105591	"H"
+105591	"Q"
+105591	"K"
+105592	"F"
+105592	"Y"
+105592	"B"
+105592	"M"
+105592	"Q"
+105593	"F"
+105593	"Y"
+105593	"H"
+105593	"Q"
+105593	"K"
+105594	"Y"
+105594	"H"
+105594	"Q"
+105594	"K"
+105594	"L"
+105595	"F"
+105595	"Y"
+105595	"B"
+105595	"M"
+105595	"Q"
+105597	"F"
+105597	"Y"
+105597	"H"
+105597	"Q"
+105597	"K"
+105598	"F"
+105598	"Y"
+105598	"H"
+105598	"Q"
+105598	"K"
+105599	"F"
+105599	"Y"
+105599	"B"
+105599	"M"
+105599	"Q"
+105601	"FN"
+105601	"YN"
+105601	"BN"
+105601	"M"
+105601	"Q"
+105698	"F"
+105698	"Y"
+105698	"B"
+105698	"H"
+105698	"Q"
+105699	"F"
+105699	"Y"
+105699	"B"
+105699	"H"
+105699	"Q"
+105700	"F"
+105700	"Y"
+105700	"B"
+105700	"H"
+105700	"Q"
+105701	"F"
+105701	"Y"
+105701	"B"
+105701	"H"
+105701	"Q"
+105702	"F"
+105702	"Y"
+105702	"B"
+105702	"H"
+105702	"Q"
+105703	"F"
+105703	"Y"
+105703	"B"
+105703	"H"
+105703	"Q"
+105704	"F"
+105704	"Y"
+105704	"B"
+105704	"H"
+105704	"Q"
+105705	"F"
+105705	"Y"
+105705	"B"
+105705	"H"
+105705	"Q"
+105794	"F"
+105794	"Y"
+105794	"B"
+105794	"M"
+105794	"Q"
+105795	"F"
+105795	"Y"
+105795	"B"
+105795	"M"
+105795	"Q"
+105796	"F"
+105796	"Y"
+105796	"Q"
+105796	"H"
+105796	"K"
+105798	"F"
+105798	"Y"
+105798	"Q"
+105798	"H"
+105798	"K"
+105799	"F"
+105799	"Y"
+105799	"B"
+105799	"M"
+105799	"Q"
+105800	"F"
+105800	"Y"
+105800	"Q"
+105800	"H"
+105800	"K"
+105801	"F"
+105801	"Y"
+105801	"B"
+105801	"M"
+105801	"V"
+105802	"F"
+105802	"Y"
+105802	"B"
+105802	"M"
+105802	"Q"
+105803	"F"
+105803	"Y"
+105803	"B"
+105803	"M"
+105803	"V"
+105805	"F"
+105805	"Y"
+105805	"B"
+105805	"M"
+105805	"Q"
+105806	"F"
+105806	"Y"
+105806	"B"
+105806	"M"
+105806	"V"
+105807	"F"
+105807	"Y"
+105807	"B"
+105807	"M"
+105807	"V"
+105808	"F"
+105808	"Y"
+105808	"B"
+105808	"M"
+105808	"Q"
+105811	"F"
+105811	"Y"
+105811	"B"
+105811	"M"
+105811	"V"
+105812	"F"
+105812	"Y"
+105812	"B"
+105812	"M"
+105812	"Q"
+106229	"F"
+106229	"Y"
+106229	"B"
+106229	"H"
+106229	"Q"
+106230	"F"
+106230	"Y"
+106230	"M"
+106230	"H"
+106230	"Q"
+106231	"F"
+106231	"Y"
+106231	"B"
+106231	"H"
+106231	"Q"
+106232	"F"
+106232	"Y"
+106232	"B"
+106232	"M"
+106232	"Q"
+106234	"F"
+106234	"Y"
+106234	"B"
+106234	"H"
+106234	"Q"
+106235	"F"
+106235	"Y"
+106235	"M"
+106235	"H"
+106235	"Q"
+106236	"F"
+106236	"Y"
+106236	"B"
+106236	"H"
+106236	"Q"
+106237	"F"
+106237	"Y"
+106237	"B"
+106237	"H"
+106237	"Q"
+106238	"F"
+106238	"Y"
+106238	"B"
+106238	"M"
+106238	"Q"
+106239	"F"
+106239	"Y"
+106239	"M"
+106239	"H"
+106239	"Q"
+106240	"F"
+106240	"C"
+106240	"B"
+106240	"M"
+106240	"K"
+106241	"F"
+106241	"Y"
+106241	"M"
+106241	"H"
+106241	"Q"
+106242	"F"
+106242	"Y"
+106242	"B"
+106242	"M"
+106242	"Q"
+106245	"F"
+106245	"Y"
+106245	"B"
+106245	"H"
+106245	"Q"
+106246	"F"
+106246	"Y"
+106246	"B"
+106246	"H"
+106246	"Q"
+106247	"F"
+106247	"Y"
+106247	"B"
+106247	"H"
+106247	"Q"
+106248	"F"
+106248	"Y"
+106248	"B"
+106248	"M"
+106248	"Q"
+106249	"F"
+106249	"Y"
+106249	"M"
+106249	"H"
+106249	"Q"
+106250	"F"
+106250	"Y"
+106250	"B"
+106250	"H"
+106250	"Q"
+106251	"F"
+106251	"Y"
+106251	"B"
+106251	"H"
+106251	"Q"
+106252	"F"
+106252	"Y"
+106252	"M"
+106252	"H"
+106252	"Q"
+106253	"F"
+106253	"Y"
+106253	"B"
+106253	"H"
+106253	"Q"
+106254	"F"
+106254	"Y"
+106254	"B"
+106254	"M"
+106254	"Q"
+106255	"F"
+106255	"Y"
+106255	"B"
+106255	"H"
+106255	"Q"
+106263	"F"
+106263	"Y"
+106263	"B"
+106263	"H"
+106263	"Q"
+106264	"F"
+106264	"Y"
+106264	"B"
+106264	"H"
+106264	"Q"
+106265	"F"
+106265	"Y"
+106265	"B"
+106265	"H"
+106265	"Q"
+106266	"F"
+106266	"Y"
+106266	"B"
+106266	"H"
+106266	"Q"
+106267	"F"
+106267	"Y"
+106267	"B"
+106267	"H"
+106267	"Q"
+106268	"F"
+106268	"Y"
+106268	"B"
+106268	"H"
+106268	"Q"
+106269	"F"
+106269	"Y"
+106269	"B"
+106269	"H"
+106269	"Q"
+106271	"F"
+106271	"Y"
+106271	"B"
+106271	"H"
+106271	"Q"
+106365	"F"
+106365	"Y"
+106365	"B"
+106365	"M"
+106365	"Q"
+106376	"F"
+106376	"Y"
+106376	"B"
+106376	"M"
+106376	"Q"
+106377	"F"
+106377	"C"
+106377	"Y"
+106377	"B"
+106377	"Q"
+107159	"FN"
+107159	"YN"
+107159	"BN"
+107159	"M"
+107159	"Q"
+107160	"FN"
+107160	"YN"
+107160	"H"
+107160	"QN"
+107160	"K"
+107161	"F"
+107161	"Y"
+107161	"H"
+107161	"Q"
+107161	"K"
+107162	"F"
+107162	"Y"
+107162	"B"
+107162	"M"
+107162	"Q"
+107163	"F"
+107163	"Y"
+107163	"H"
+107163	"Q"
+107163	"K"
+107164	"F"
+107164	"Y"
+107164	"H"
+107164	"Q"
+107164	"K"
+107165	"F"
+107165	"Y"
+107165	"B"
+107165	"M"
+107165	"Q"
+107166	"F"
+107166	"Y"
+107166	"B"
+107166	"M"
+107166	"Q"
+107167	"F"
+107167	"Y"
+107167	"H"
+107167	"Q"
+107167	"K"
+107168	"F"
+107168	"Y"
+107168	"B"
+107168	"M"
+107168	"Q"
+107193	"F"
+107193	"Y"
+107193	"B"
+107193	"H"
+107193	"Q"
+107194	"F"
+107194	"Y"
+107194	"B"
+107194	"H"
+107194	"Q"
+107195	"F"
+107195	"Y"
+107195	"B"
+107195	"H"
+107195	"Q"
+107196	"F"
+107196	"Y"
+107196	"B"
+107196	"H"
+107196	"Q"
+107197	"F"
+107197	"Y"
+107197	"B"
+107197	"H"
+107197	"Q"
+107198	"F"
+107198	"Y"
+107198	"B"
+107198	"H"
+107198	"Q"
+107199	"F"
+107199	"Y"
+107199	"B"
+107199	"H"
+107199	"Q"
+107200	"F"
+107200	"Y"
+107200	"B"
+107200	"H"
+107200	"Q"
+107254	"F"
+107254	"Y"
+107254	"B"
+107254	"M"
+107254	"Q"
+107255	"F"
+107255	"Y"
+107255	"B"
+107255	"H"
+107255	"Q"
+107256	"F"
+107256	"Y"
+107256	"B"
+107256	"M"
+107256	"Q"
+107257	"F"
+107257	"Y"
+107257	"B"
+107257	"M"
+107257	"V"
+107258	"F"
+107258	"Y"
+107258	"B"
+107258	"M"
+107258	"Q"
+107259	"F"
+107259	"Y"
+107259	"B"
+107259	"M"
+107259	"V"
+107260	"F"
+107260	"Y"
+107260	"B"
+107260	"M"
+107260	"V"
+107261	"F"
+107261	"Y"
+107261	"B"
+107261	"M"
+107261	"Q"
+107264	"F"
+107264	"Y"
+107264	"B"
+107264	"M"
+107264	"V"
+107470	"Y"
+107470	"B"
+107470	"H"
+107470	"Q"
+107470	"M"
+107471	"Y"
+107471	"B"
+107471	"H"
+107471	"Q"
+107471	"M"
+107472	"Y"
+107472	"B"
+107472	"H"
+107472	"Q"
+107472	"M"
+107473	"Y"
+107473	"B"
+107473	"H"
+107473	"Q"
+107473	"M"
+107474	"Y"
+107474	"B"
+107474	"H"
+107474	"Q"
+107474	"M"
+107475	"Y"
+107475	"B"
+107475	"H"
+107475	"Q"
+107475	"M"
+107476	"Y"
+107476	"B"
+107476	"H"
+107476	"Q"
+107476	"M"
+107477	"Y"
+107477	"B"
+107477	"H"
+107477	"Q"
+107477	"M"
+107478	"Y"
+107478	"B"
+107478	"H"
+107478	"Q"
+107478	"M"
+107484	"F"
+107484	"Y"
+107484	"B"
+107484	"H"
+107484	"Q"
+107485	"F"
+107485	"Y"
+107485	"B"
+107485	"H"
+107485	"Q"
+107486	"F"
+107486	"Y"
+107486	"B"
+107486	"H"
+107486	"Q"
+107487	"F"
+107487	"Y"
+107487	"B"
+107487	"H"
+107487	"Q"
+107488	"F"
+107488	"Y"
+107488	"B"
+107488	"H"
+107488	"Q"
+107489	"F"
+107489	"Y"
+107489	"B"
+107489	"H"
+107489	"Q"
+107490	"F"
+107490	"Y"
+107490	"B"
+107490	"H"
+107490	"Q"
+107491	"F"
+107491	"Y"
+107491	"B"
+107491	"H"
+107491	"Q"
+107492	"F"
+107492	"Y"
+107492	"B"
+107492	"H"
+107492	"Q"
+111886	"FN"
+111886	"YN"
+111886	"BN"
+111886	"M"
+111886	"Q"
+111887	"FN"
+111887	"YN"
+111887	"H"
+111887	"QN"
+111887	"K"
+111888	"F"
+111888	"Y"
+111888	"B"
+111888	"M"
+111888	"Q"
+111889	"F"
+111889	"Y"
+111889	"H"
+111889	"Q"
+111889	"K"
+111891	"F"
+111891	"Y"
+111891	"B"
+111891	"M"
+111891	"Q"
+111892	"F"
+111892	"Y"
+111892	"B"
+111892	"M"
+111892	"Q"
+111893	"F"
+111893	"Y"
+111893	"H"
+111893	"Q"
+111893	"K"
+111894	"F"
+111894	"Y"
+111894	"B"
+111894	"M"
+111894	"Q"
+111895	"F"
+111895	"Y"
+111895	"B"
+111895	"M"
+111895	"Q"
+111896	"F"
+111896	"Y"
+111896	"B"
+111896	"M"
+111896	"Q"
+111928	"F"
+111928	"Y"
+111928	"B"
+111928	"M"
+111928	"Q"
+111929	"F"
+111929	"Y"
+111929	"Q"
+111929	"H"
+111929	"K"
+111931	"F"
+111931	"Y"
+111931	"B"
+111931	"M"
+111931	"Q"
+111932	"F"
+111932	"Y"
+111932	"Q"
+111932	"H"
+111932	"K"
+111933	"F"
+111933	"Y"
+111933	"Q"
+111933	"H"
+111933	"K"
+111937	"F"
+111937	"Y"
+111937	"B"
+111937	"M"
+111937	"Q"
+111939	"F"
+111939	"Y"
+111939	"B"
+111939	"H"
+111939	"Q"
+111941	"F"
+111941	"Y"
+111941	"B"
+111941	"M"
+111941	"Q"
+112028	"FN"
+112028	"YN"
+112028	"B"
+112028	"M"
+112028	"V"
+112029	"F"
+112029	"Y"
+112029	"B"
+112029	"M"
+112029	"Q"
+112030	"FN"
+112030	"YN"
+112030	"BN"
+112030	"M"
+112030	"Q"
+112031	"FN"
+112031	"YN"
+112031	"BN"
+112031	"M"
+112031	"Q"
+112032	"F"
+112032	"Y"
+112032	"B"
+112032	"M"
+112032	"V"
+112033	"F"
+112033	"Y"
+112033	"B"
+112033	"M"
+112033	"Q"
+112034	"F"
+112034	"Y"
+112034	"B"
+112034	"M"
+112034	"Q"
+112035	"F"
+112035	"Y"
+112035	"B"
+112035	"M"
+112035	"V"
+112036	"F"
+112036	"Y"
+112036	"Q"
+112036	"H"
+112036	"K"
+112037	"F"
+112037	"Y"
+112037	"B"
+112037	"M"
+112037	"V"
+112038	"F"
+112038	"Y"
+112038	"B"
+112038	"M"
+112038	"Q"
+112039	"F"
+112039	"Y"
+112039	"B"
+112039	"M"
+112039	"Q"
+112040	"F"
+112040	"Y"
+112040	"B"
+112040	"M"
+112040	"Q"
+112041	"F"
+112041	"Y"
+112041	"Q"
+112041	"H"
+112041	"K"
+112042	"F"
+112042	"Y"
+112042	"B"
+112042	"M"
+112042	"V"
+112043	"F"
+112043	"Y"
+112043	"B"
+112043	"M"
+112043	"Q"
+112044	"F"
+112044	"Y"
+112044	"Q"
+112044	"H"
+112044	"K"
+112045	"F"
+112045	"Y"
+112045	"B"
+112045	"M"
+112045	"V"
+112046	"F"
+112046	"Y"
+112046	"B"
+112046	"M"
+112046	"Q"
+112047	"F"
+112047	"Y"
+112047	"B"
+112047	"M"
+112047	"Q"
+112048	"F"
+112048	"Y"
+112048	"B"
+112048	"M"
+112048	"V"
+112049	"F"
+112049	"Y"
+112049	"B"
+112049	"M"
+112049	"Q"
+112050	"F"
+112050	"Y"
+112050	"Q"
+112050	"H"
+112050	"K"
+112051	"FN"
+112051	"YN"
+112051	"BN"
+112051	"M"
+112051	"Q"
+112052	"FN"
+112052	"YN"
+112052	"B"
+112052	"M"
+112052	"V"
+112351	"F"
+112351	"Y"
+112351	"B"
+112351	"M"
+112351	"Q"
+112352	"F"
+112352	"Y"
+112352	"B"
+112352	"M"
+112352	"Q"
+112353	"F"
+112353	"Y"
+112353	"B"
+112353	"M"
+112353	"Q"
+112354	"F"
+112354	"Y"
+112354	"B"
+112354	"M"
+112354	"Q"
+112415	"F"
+112415	"Y"
+112415	"B"
+112415	"M"
+112415	"Q"
+112416	"F"
+112416	"Y"
+112416	"Q"
+112416	"H"
+112416	"K"
+112417	"F"
+112417	"Y"
+112417	"B"
+112417	"M"
+112417	"Q"
+112418	"F"
+112418	"Y"
+112418	"Q"
+112418	"H"
+112418	"K"
+112440	"F"
+112440	"Y"
+112440	"B"
+112440	"H"
+112440	"Q"
+112441	"F"
+112441	"Y"
+112441	"B"
+112441	"H"
+112441	"Q"
+112442	"F"
+112442	"Y"
+112442	"B"
+112442	"H"
+112442	"Q"
+112513	"F"
+112513	"C"
+112513	"Y"
+112513	"B"
+112513	"M"
+112514	"F"
+112514	"Y"
+112514	"Q"
+112514	"H"
+112514	"K"
+112515	"F"
+112515	"Y"
+112515	"B"
+112515	"M"
+112515	"Q"
+112516	"F"
+112516	"Y"
+112516	"B"
+112516	"M"
+112516	"Q"
+112518	"F"
+112518	"Y"
+112518	"Q"
+112518	"H"
+112518	"K"
+112519	"F"
+112519	"Y"
+112519	"Q"
+112519	"H"
+112519	"K"
+112520	"F"
+112520	"Y"
+112520	"B"
+112520	"M"
+112520	"Q"
+112524	"F"
+112524	"Y"
+112524	"B"
+112524	"M"
+112524	"Q"
+112525	"F"
+112525	"Y"
+112525	"Q"
+112525	"H"
+112525	"K"
+112526	"F"
+112526	"Y"
+112526	"B"
+112526	"M"
+112526	"Q"
+112527	"F"
+112527	"Q"
+112527	"YN"
+112527	"H"
+112527	"K"
+112766	"F"
+112766	"Y"
+112766	"B"
+112766	"M"
+112766	"Q"
+112771	"FN"
+112771	"YN"
+112771	"B"
+112771	"M"
+112771	"V"
+112772	"F"
+112772	"Y"
+112772	"B"
+112772	"M"
+112772	"Q"
+112773	"F"
+112773	"Y"
+112773	"B"
+112773	"M"
+112773	"Q"
+112777	"F"
+112777	"Y"
+112777	"B"
+112777	"M"
+112777	"Q"
+112783	"F"
+112783	"Y"
+112783	"B"
+112783	"M"
+112783	"V"
+112784	"F"
+112784	"Y"
+112784	"B"
+112784	"M"
+112784	"Q"
+112789	"F"
+112789	"Y"
+112789	"B"
+112789	"M"
+112789	"V"
+112790	"F"
+112790	"Y"
+112790	"B"
+112790	"M"
+112790	"Q"
+112793	"F"
+112793	"Y"
+112793	"B"
+112793	"M"
+112793	"Q"
+112794	"F"
+112794	"Y"
+112794	"B"
+112794	"M"
+112794	"Q"
+112797	"F"
+112797	"C"
+112797	"B"
+112797	"M"
+112797	"K"
+112798	"F"
+112798	"Y"
+112798	"B"
+112798	"M"
+112798	"V"
+112802	"F"
+112802	"Y"
+112802	"B"
+112802	"M"
+112802	"Q"
+112804	"FN"
+112804	"YN"
+112804	"B"
+112804	"M"
+112804	"V"
+112805	"F"
+112805	"Y"
+112805	"B"
+112805	"M"
+112805	"Q"
+112806	"FN"
+112806	"YN"
+112806	"BN"
+112806	"M"
+112806	"Q"
+112807	"FN"
+112807	"YN"
+112807	"B"
+112807	"M"
+112807	"V"
+112808	"FN"
+112808	"YN"
+112808	"BN"
+112808	"M"
+112808	"Q"
+112864	"F"
+112864	"Y"
+112864	"B"
+112864	"M"
+112864	"V"
+112866	"F"
+112866	"Y"
+112866	"B"
+112866	"M"
+112866	"Q"
+112867	"F"
+112867	"Y"
+112867	"B"
+112867	"M"
+112867	"Q"
+112869	"F"
+112869	"Y"
+112869	"B"
+112869	"M"
+112869	"V"
+112870	"F"
+112870	"Y"
+112870	"B"
+112870	"M"
+112870	"Q"
+112872	"F"
+112872	"Y"
+112872	"B"
+112872	"M"
+112872	"V"
+112873	"F"
+112873	"Y"
+112873	"B"
+112873	"M"
+112873	"Q"
+112874	"F"
+112874	"Y"
+112874	"B"
+112874	"M"
+112874	"V"
+112903	"F"
+112903	"Y"
+112903	"B"
+112903	"M"
+112903	"V"
+112904	"F"
+112904	"Y"
+112904	"B"
+112904	"M"
+112904	"Q"
+112905	"F"
+112905	"Y"
+112905	"B"
+112905	"M"
+112905	"V"
+112907	"F"
+112907	"Y"
+112907	"B"
+112907	"M"
+112907	"Q"
+112908	"F"
+112908	"Y"
+112908	"B"
+112908	"M"
+112908	"V"
+112909	"F"
+112909	"Y"
+112909	"B"
+112909	"M"
+112909	"V"
+112989	"F"
+112989	"Y"
+112989	"Q"
+112989	"H"
+112989	"K"
+112990	"F"
+112990	"Y"
+112990	"B"
+112990	"M"
+112990	"V"
+112991	"F"
+112991	"Y"
+112991	"B"
+112991	"M"
+112991	"Q"
+112992	"F"
+112992	"Y"
+112992	"B"
+112992	"M"
+112992	"Q"
+112993	"F"
+112993	"Y"
+112993	"B"
+112993	"M"
+112993	"V"
+112994	"F"
+112994	"Y"
+112994	"B"
+112994	"M"
+112994	"Q"
+112995	"F"
+112995	"Y"
+112995	"B"
+112995	"M"
+112995	"V"
+112996	"F"
+112996	"Y"
+112996	"Q"
+112996	"H"
+112996	"K"
+112997	"F"
+112997	"Y"
+112997	"Q"
+112997	"H"
+112997	"K"
+112998	"F"
+112998	"Y"
+112998	"B"
+112998	"M"
+112998	"Q"
+112999	"F"
+112999	"Y"
+112999	"B"
+112999	"M"
+112999	"V"
+113000	"F"
+113000	"Y"
+113000	"B"
+113000	"M"
+113000	"Q"
+113001	"F"
+113001	"Y"
+113001	"B"
+113001	"M"
+113001	"Q"
+113002	"F"
+113002	"Y"
+113002	"B"
+113002	"M"
+113002	"V"
+113003	"F"
+113003	"Y"
+113003	"B"
+113003	"M"
+113003	"Q"
+113004	"F"
+113004	"Y"
+113004	"B"
+113004	"M"
+113004	"Q"
+113005	"F"
+113005	"Y"
+113005	"B"
+113005	"M"
+113005	"V"
+113006	"F"
+113006	"Y"
+113006	"Q"
+113006	"H"
+113006	"K"
+113007	"FN"
+113007	"YN"
+113007	"B"
+113007	"M"
+113007	"V"
+113008	"F"
+113008	"Y"
+113008	"B"
+113008	"M"
+113008	"Q"
+113009	"F"
+113009	"Y"
+113009	"B"
+113009	"M"
+113009	"Q"
+113010	"F"
+113010	"Y"
+113010	"Q"
+113010	"H"
+113010	"K"
+113011	"FN"
+113011	"YN"
+113011	"B"
+113011	"M"
+113011	"V"
+113012	"FN"
+113012	"YN"
+113012	"BN"
+113012	"M"
+113012	"Q"
+113013	"FN"
+113013	"YN"
+113013	"BN"
+113013	"M"
+113013	"Q"
+113498	"F"
+113498	"Y"
+113498	"B"
+113498	"M"
+113498	"V"
+113500	"F"
+113500	"Y"
+113500	"B"
+113500	"M"
+113500	"V"
+113501	"FN"
+113501	"YN"
+113501	"B"
+113501	"M"
+113501	"V"
+113576	"F"
+113576	"Y"
+113576	"B"
+113576	"M"
+113576	"V"
+113577	"F"
+113577	"Y"
+113577	"B"
+113577	"M"
+113577	"Q"
+113578	"F"
+113578	"Y"
+113578	"B"
+113578	"M"
+113578	"V"
+113579	"F"
+113579	"Y"
+113579	"B"
+113579	"M"
+113579	"Q"
+113581	"F"
+113581	"Y"
+113581	"B"
+113581	"M"
+113581	"V"
+113582	"F"
+113582	"Y"
+113582	"B"
+113582	"M"
+113582	"V"
+113583	"FN"
+113583	"YN"
+113583	"BN"
+113583	"M"
+113583	"Q"
+113595	"F"
+113595	"Y"
+113595	"B"
+113595	"M"
+113595	"V"
+113596	"F"
+113596	"Y"
+113596	"B"
+113596	"H"
+113596	"Q"
+113597	"F"
+113597	"Y"
+113597	"B"
+113597	"H"
+113597	"Q"
+113599	"F"
+113599	"Y"
+113599	"B"
+113599	"M"
+113599	"V"
+113600	"F"
+113600	"Y"
+113600	"B"
+113600	"H"
+113600	"Q"
+113602	"F"
+113602	"Y"
+113602	"B"
+113602	"M"
+113602	"V"
+113705	"F"
+113705	"Y"
+113705	"B"
+113705	"M"
+113705	"Q"
+113706	"F"
+113706	"Y"
+113706	"B"
+113706	"M"
+113706	"V"
+113707	"F"
+113707	"Y"
+113707	"B"
+113707	"M"
+113707	"Q"
+113709	"F"
+113709	"Y"
+113709	"B"
+113709	"M"
+113709	"V"
+113711	"F"
+113711	"Y"
+113711	"B"
+113711	"M"
+113711	"V"
+113712	"F"
+113712	"Y"
+113712	"B"
+113712	"M"
+113712	"Q"
+113715	"F"
+113715	"Y"
+113715	"B"
+113715	"M"
+113715	"Q"
+113716	"F"
+113716	"Y"
+113716	"B"
+113716	"M"
+113716	"V"
+113717	"F"
+113717	"Y"
+113717	"B"
+113717	"M"
+113717	"V"
+113718	"F"
+113718	"Y"
+113718	"B"
+113718	"M"
+113718	"V"
+113719	"F"
+113719	"Y"
+113719	"B"
+113719	"M"
+113719	"Q"
+113720	"FN"
+113720	"YN"
+113720	"B"
+113720	"M"
+113720	"V"
+113721	"FN"
+113721	"YN"
+113721	"BN"
+113721	"M"
+113721	"Q"
+133430	"F"
+133430	"Y"
+133430	"B"
+133430	"M"
+133430	"Q"
+133431	"F"
+133431	"Y"
+133431	"B"
+133431	"M"
+133431	"Q"
+133432	"F"
+133432	"Y"
+133432	"B"
+133432	"M"
+133432	"Q"
+133433	"F"
+133433	"Y"
+133433	"B"
+133433	"M"
+133433	"Q"
+133434	"FN"
+133434	"YN"
+133434	"B"
+133434	"M"
+133434	"V"
+133435	"F"
+133435	"Y"
+133435	"B"
+133435	"M"
+133435	"V"
+133436	"F"
+133436	"Y"
+133436	"B"
+133436	"M"
+133436	"V"
+133567	"YN"
+133567	"B"
+133567	"M"
+133567	"V"
+133567	"Q"
+133568	"Y"
+133568	"B"
+133568	"M"
+133568	"V"
+133568	"Q"
+133569	"Y"
+133569	"B"
+133569	"M"
+133569	"V"
+133569	"Q"
+137221	"FN"
+137221	"YN"
+137221	"BN"
+137221	"M"
+137221	"Q"
+137222	"FN"
+137222	"YN"
+137222	"H"
+137222	"QN"
+137222	"K"
+137223	"F"
+137223	"Y"
+137223	"H"
+137223	"Q"
+137223	"K"
+137224	"F"
+137224	"Y"
+137224	"B"
+137224	"M"
+137224	"Q"
+137225	"F"
+137225	"Y"
+137225	"B"
+137225	"H"
+137225	"Q"
+137226	"F"
+137226	"Y"
+137226	"H"
+137226	"Q"
+137226	"K"
+137227	"F"
+137227	"Y"
+137227	"H"
+137227	"Q"
+137227	"K"
+137228	"F"
+137228	"Y"
+137228	"B"
+137228	"M"
+137228	"Q"
+137229	"F"
+137229	"Y"
+137229	"H"
+137229	"Q"
+137229	"K"
+137230	"F"
+137230	"Y"
+137230	"B"
+137230	"M"
+137230	"Q"
+137231	"F"
+137231	"Y"
+137231	"B"
+137231	"H"
+137231	"Q"
+137232	"F"
+137232	"Y"
+137232	"H"
+137232	"Q"
+137232	"K"
+137233	"F"
+137233	"Y"
+137233	"B"
+137233	"M"
+137233	"Q"
+137234	"F"
+137234	"Y"
+137234	"H"
+137234	"Q"
+137234	"K"
+137235	"F"
+137235	"Y"
+137235	"B"
+137235	"M"
+137235	"Q"
+137236	"F"
+137236	"Y"
+137236	"H"
+137236	"Q"
+137236	"K"
+137237	"F"
+137237	"Y"
+137237	"B"
+137237	"H"
+137237	"Q"
+137238	"F"
+137238	"Y"
+137238	"B"
+137238	"M"
+137238	"Q"
+137315	"F"
+137315	"Y"
+137315	"B"
+137315	"M"
+137315	"Q"
+137316	"F"
+137316	"Y"
+137316	"B"
+137316	"H"
+137316	"Q"
+137317	"F"
+137317	"Y"
+137317	"M"
+137317	"H"
+137317	"Q"
+137318	"F"
+137318	"Y"
+137318	"B"
+137318	"H"
+137318	"Q"
+137319	"F"
+137319	"Y"
+137319	"B"
+137319	"M"
+137319	"Q"
+137320	"F"
+137320	"Y"
+137320	"B"
+137320	"H"
+137320	"Q"
+137321	"F"
+137321	"Y"
+137321	"M"
+137321	"H"
+137321	"Q"
+137322	"F"
+137322	"Y"
+137322	"M"
+137322	"H"
+137322	"Q"
+137323	"F"
+137323	"Y"
+137323	"B"
+137323	"M"
+137323	"Q"
+137324	"F"
+137324	"Y"
+137324	"B"
+137324	"H"
+137324	"Q"
+137326	"F"
+137326	"Y"
+137326	"B"
+137326	"H"
+137326	"Q"
+137327	"F"
+137327	"Y"
+137327	"B"
+137327	"H"
+137327	"Q"
+137328	"F"
+137328	"Y"
+137328	"M"
+137328	"H"
+137328	"Q"
+137329	"F"
+137329	"Y"
+137329	"B"
+137329	"H"
+137329	"Q"
+137330	"F"
+137330	"C"
+137330	"B"
+137330	"M"
+137330	"K"
+137331	"F"
+137331	"Y"
+137331	"B"
+137331	"M"
+137331	"Q"
+137332	"F"
+137332	"Y"
+137332	"M"
+137332	"H"
+137332	"Q"
+137333	"F"
+137333	"Y"
+137333	"B"
+137333	"H"
+137333	"Q"
+137334	"F"
+137334	"Y"
+137334	"B"
+137334	"H"
+137334	"Q"
+137335	"F"
+137335	"Y"
+137335	"B"
+137335	"H"
+137335	"Q"
+137336	"F"
+137336	"Y"
+137336	"B"
+137336	"H"
+137336	"Q"
+137337	"F"
+137337	"Y"
+137337	"M"
+137337	"H"
+137337	"Q"
+137338	"F"
+137338	"Y"
+137338	"B"
+137338	"H"
+137338	"Q"
+137339	"FN"
+137339	"YN"
+137339	"BN"
+137339	"M"
+137339	"Q"
+137353	"Y"
+137353	"B"
+137353	"H"
+137353	"Q"
+137353	"M"
+137354	"Y"
+137354	"B"
+137354	"H"
+137354	"Q"
+137354	"M"
+137355	"Y"
+137355	"B"
+137355	"H"
+137355	"Q"
+137355	"M"
+137356	"Y"
+137356	"B"
+137356	"H"
+137356	"Q"
+137356	"M"
+137357	"Y"
+137357	"B"
+137357	"H"
+137357	"Q"
+137357	"M"
+137358	"Y"
+137358	"B"
+137358	"H"
+137358	"Q"
+137358	"M"
+137359	"Y"
+137359	"B"
+137359	"H"
+137359	"Q"
+137359	"M"
+137360	"Y"
+137360	"B"
+137360	"H"
+137360	"Q"
+137360	"M"
+137361	"Y"
+137361	"B"
+137361	"H"
+137361	"Q"
+137361	"M"
+137407	"F"
+137407	"Y"
+137407	"B"
+137407	"M"
+137407	"Q"
+137408	"F"
+137408	"Y"
+137408	"Q"
+137408	"H"
+137408	"K"
+137412	"F"
+137412	"Y"
+137412	"B"
+137412	"M"
+137412	"Q"
+137413	"F"
+137413	"Y"
+137413	"Q"
+137413	"H"
+137413	"K"
+137414	"F"
+137414	"Y"
+137414	"B"
+137414	"M"
+137414	"V"
+137415	"F"
+137415	"Y"
+137415	"B"
+137415	"M"
+137415	"Q"
+137417	"F"
+137417	"Y"
+137417	"B"
+137417	"M"
+137417	"V"
+137419	"F"
+137419	"Y"
+137419	"B"
+137419	"M"
+137419	"Q"
+137420	"F"
+137420	"Y"
+137420	"B"
+137420	"M"
+137420	"V"
+137422	"F"
+137422	"Y"
+137422	"B"
+137422	"M"
+137422	"V"
+137423	"F"
+137423	"Y"
+137423	"B"
+137423	"M"
+137423	"Q"
+137732	"F"
+137732	"Y"
+137732	"B"
+137732	"H"
+137732	"Q"
+137733	"F"
+137733	"Y"
+137733	"B"
+137733	"H"
+137733	"Q"
+137734	"F"
+137734	"Y"
+137734	"B"
+137734	"H"
+137734	"Q"
+137735	"F"
+137735	"Y"
+137735	"B"
+137735	"H"
+137735	"Q"
+137736	"F"
+137736	"Y"
+137736	"B"
+137736	"H"
+137736	"Q"
+137737	"F"
+137737	"Y"
+137737	"B"
+137737	"H"
+137737	"Q"
+137738	"F"
+137738	"Y"
+137738	"B"
+137738	"H"
+137738	"Q"
+137739	"F"
+137739	"Y"
+137739	"B"
+137739	"H"
+137739	"Q"
+137740	"F"
+137740	"Y"
+137740	"B"
+137740	"H"
+137740	"Q"
+137811	"F"
+137811	"Y"
+137811	"B"
+137811	"M"
+137811	"Q"
+137817	"F"
+137817	"Y"
+137817	"B"
+137817	"M"
+137817	"Q"
+138817	"FN"
+138817	"YN"
+138817	"BN"
+138817	"M"
+138817	"Q"
+138818	"F"
+138818	"Y"
+138818	"H"
+138818	"Q"
+138818	"K"
+138819	"Y"
+138819	"H"
+138819	"Q"
+138819	"K"
+138819	"L"
+138820	"F"
+138820	"Y"
+138820	"B"
+138820	"H"
+138820	"Q"
+138821	"F"
+138821	"Y"
+138821	"B"
+138821	"M"
+138821	"Q"
+138822	"F"
+138822	"Y"
+138822	"H"
+138822	"Q"
+138822	"K"
+138823	"F"
+138823	"Y"
+138823	"B"
+138823	"M"
+138823	"Q"
+138824	"F"
+138824	"Y"
+138824	"B"
+138824	"H"
+138824	"Q"
+138825	"Y"
+138825	"H"
+138825	"Q"
+138825	"K"
+138825	"L"
+138827	"F"
+138827	"Y"
+138827	"B"
+138827	"M"
+138827	"Q"
+138828	"F"
+138828	"Y"
+138828	"B"
+138828	"H"
+138828	"Q"
+138829	"F"
+138829	"Y"
+138829	"H"
+138829	"Q"
+138829	"K"
+138830	"FN"
+138830	"YN"
+138830	"BN"
+138830	"M"
+138830	"Q"
+138831	"FN"
+138831	"YN"
+138831	"BN"
+138831	"M"
+138831	"Q"
+138832	"F"
+138832	"Y"
+138832	"B"
+138832	"H"
+138832	"Q"
+138860	"F"
+138860	"Y"
+138860	"B"
+138860	"H"
+138860	"Q"
+138861	"F"
+138861	"Y"
+138861	"B"
+138861	"H"
+138861	"Q"
+138862	"F"
+138862	"Y"
+138862	"B"
+138862	"H"
+138862	"Q"
+138863	"F"
+138863	"Y"
+138863	"B"
+138863	"H"
+138863	"Q"
+138864	"F"
+138864	"Y"
+138864	"B"
+138864	"H"
+138864	"Q"
+138865	"F"
+138865	"Y"
+138865	"B"
+138865	"H"
+138865	"Q"
+138867	"F"
+138867	"Y"
+138867	"B"
+138867	"H"
+138867	"Q"
+138868	"F"
+138868	"Y"
+138868	"B"
+138868	"H"
+138868	"Q"
+138878	"F"
+138878	"Y"
+138878	"B"
+138878	"H"
+138878	"Q"
+138879	"F"
+138879	"Y"
+138879	"B"
+138879	"H"
+138879	"Q"
+138880	"F"
+138880	"Y"
+138880	"B"
+138880	"H"
+138880	"Q"
+138881	"F"
+138881	"Y"
+138881	"B"
+138881	"H"
+138881	"Q"
+138882	"F"
+138882	"Y"
+138882	"B"
+138882	"H"
+138882	"Q"
+138883	"F"
+138883	"Y"
+138883	"B"
+138883	"H"
+138883	"Q"
+138884	"F"
+138884	"Y"
+138884	"B"
+138884	"H"
+138884	"Q"
+138963	"F"
+138963	"Y"
+138963	"B"
+138963	"H"
+138963	"Q"
+138964	"F"
+138964	"Y"
+138964	"B"
+138964	"H"
+138964	"Q"
+138966	"F"
+138966	"Y"
+138966	"B"
+138966	"H"
+138966	"Q"
+138970	"F"
+138970	"Y"
+138970	"B"
+138970	"M"
+138970	"V"
+138971	"F"
+138971	"Y"
+138971	"B"
+138971	"H"
+138971	"Q"
+138973	"F"
+138973	"Y"
+138973	"B"
+138973	"M"
+138973	"V"
+138974	"F"
+138974	"Y"
+138974	"B"
+138974	"H"
+138974	"Q"
+138976	"F"
+138976	"Y"
+138976	"B"
+138976	"M"
+138976	"V"
+138977	"F"
+138977	"Y"
+138977	"B"
+138977	"H"
+138977	"Q"
+139264	"F"
+139264	"Y"
+139264	"B"
+139264	"H"
+139264	"Q"
+139265	"F"
+139265	"Y"
+139265	"B"
+139265	"H"
+139265	"Q"
+139266	"F"
+139266	"Y"
+139266	"B"
+139266	"H"
+139266	"Q"
+139267	"F"
+139267	"Y"
+139267	"B"
+139267	"H"
+139267	"Q"
+139268	"F"
+139268	"Y"
+139268	"B"
+139268	"H"
+139268	"Q"
+139269	"F"
+139269	"Y"
+139269	"B"
+139269	"H"
+139269	"Q"
+139270	"F"
+139270	"Y"
+139270	"B"
+139270	"H"
+139270	"Q"
+139271	"F"
+139271	"Y"
+139271	"B"
+139271	"H"
+139271	"Q"
+139272	"F"
+139272	"Y"
+139272	"B"
+139272	"H"
+139272	"Q"
+139273	"F"
+139273	"Y"
+139273	"B"
+139273	"H"
+139273	"Q"
+139353	"F"
+139353	"Y"
+139353	"B"
+139353	"H"
+139353	"Q"
+139355	"F"
+139355	"Y"
+139355	"B"
+139355	"H"
+139355	"Q"
+139356	"F"
+139356	"Y"
+139356	"B"
+139356	"H"
+139356	"Q"
+139357	"F"
+139357	"Y"
+139357	"B"
+139357	"H"
+139357	"Q"
+144060	"F"
+144060	"Y"
+144060	"B"
+144060	"M"
+144060	"Q"
+144061	"F"
+144061	"Y"
+144061	"H"
+144061	"Q"
+144061	"K"
+144062	"F"
+144062	"Y"
+144062	"B"
+144062	"M"
+144062	"Q"
+144063	"F"
+144063	"Y"
+144063	"B"
+144063	"M"
+144063	"Q"
+144065	"F"
+144065	"Y"
+144065	"H"
+144065	"Q"
+144065	"K"
+144066	"F"
+144066	"Y"
+144066	"B"
+144066	"M"
+144066	"Q"
+144067	"FN"
+144067	"YN"
+144067	"BN"
+144067	"M"
+144067	"Q"
+144069	"FN"
+144069	"YN"
+144069	"H"
+144069	"QN"
+144069	"K"
+144089	"F"
+144089	"Y"
+144089	"B"
+144089	"M"
+144089	"Q"
+144090	"F"
+144090	"C"
+144090	"Y"
+144090	"B"
+144090	"Q"
+144094	"F"
+144094	"Y"
+144094	"B"
+144094	"M"
+144094	"Q"
+144143	"F"
+144143	"Y"
+144143	"B"
+144143	"M"
+144143	"Q"
+144144	"F"
+144144	"Y"
+144144	"Q"
+144144	"H"
+144144	"K"
+144145	"F"
+144145	"Y"
+144145	"B"
+144145	"M"
+144145	"Q"
+144146	"F"
+144146	"Y"
+144146	"B"
+144146	"M"
+144146	"Q"
+144147	"F"
+144147	"Y"
+144147	"Q"
+144147	"H"
+144147	"K"
+144148	"F"
+144148	"C"
+144148	"Y"
+144148	"B"
+144148	"M"
+144149	"F"
+144149	"Y"
+144149	"Q"
+144149	"H"
+144149	"K"
+144150	"F"
+144150	"Y"
+144150	"B"
+144150	"M"
+144150	"Q"
+144151	"F"
+144151	"Y"
+144151	"Q"
+144151	"H"
+144151	"K"
+144152	"F"
+144152	"Y"
+144152	"Q"
+144152	"H"
+144152	"K"
+144153	"F"
+144153	"Y"
+144153	"B"
+144153	"M"
+144153	"Q"
+144155	"FN"
+144155	"YN"
+144155	"BN"
+144155	"M"
+144155	"Q"
+144156	"FN"
+144156	"YN"
+144156	"B"
+144156	"M"
+144156	"V"
+144157	"F"
+144157	"Y"
+144157	"B"
+144157	"M"
+144157	"V"
+144158	"F"
+144158	"Y"
+144158	"B"
+144158	"M"
+144158	"Q"
+144159	"F"
+144159	"Y"
+144159	"B"
+144159	"M"
+144159	"V"
+144162	"F"
+144162	"Y"
+144162	"B"
+144162	"M"
+144162	"V"
+144163	"F"
+144163	"Y"
+144163	"B"
+144163	"M"
+144163	"Q"
+144164	"F"
+144164	"Y"
+144164	"B"
+144164	"M"
+144164	"V"
+144165	"F"
+144165	"Y"
+144165	"B"
+144165	"M"
+144165	"Q"
+144166	"F"
+144166	"Y"
+144166	"B"
+144166	"M"
+144166	"V"
+144167	"F"
+144167	"Y"
+144167	"B"
+144167	"M"
+144167	"Q"
+144168	"F"
+144168	"Y"
+144168	"B"
+144168	"M"
+144168	"V"
+144169	"F"
+144169	"Y"
+144169	"B"
+144169	"M"
+144169	"Q"
+144477	"Y"
+144477	"B"
+144477	"M"
+144477	"V"
+144477	"Q"
+144478	"Y"
+144478	"B"
+144478	"M"
+144478	"V"
+144478	"Q"
+144479	"Y"
+144479	"B"
+144479	"M"
+144479	"V"
+144479	"Q"
+144480	"YN"
+144480	"B"
+144480	"M"
+144480	"V"
+144480	"Q"
+144541	"F"
+144541	"Y"
+144541	"B"
+144541	"M"
+144541	"Q"
+144547	"F"
+144547	"Y"
+144547	"B"
+144547	"M"
+144547	"Q"
+144572	"F"
+144572	"Y"
+144572	"B"
+144572	"H"
+144572	"Q"
+144574	"F"
+144574	"Y"
+144574	"B"
+144574	"H"
+144574	"Q"
+144575	"F"
+144575	"Y"
+144575	"B"
+144575	"H"
+144575	"Q"
+144576	"F"
+144576	"Y"
+144576	"B"
+144576	"H"
+144576	"Q"
+101908	"FN"
+101908	"YN"
+101908	"BN"
+101908	"M"
+101908	"Q"
+101913	"F"
+101913	"Y"
+101913	"B"
+101913	"M"
+101913	"Q"
+101924	"F"
+101924	"Y"
+101924	"B"
+101924	"M"
+101924	"Q"
+102674	"F"
+102674	"Y"
+102674	"B"
+102674	"M"
+102674	"Q"
+105810	"F"
+105810	"Y"
+105810	"B"
+105810	"M"
+105810	"Q"
+106262	"F"
+106262	"Y"
+106262	"B"
+106262	"H"
+106262	"Q"
+106270	"F"
+106270	"Y"
+106270	"B"
+106270	"H"
+106270	"Q"
+106366	"F"
+106366	"Y"
+106366	"B"
+106366	"M"
+106366	"Q"
+106373	"F"
+106373	"Y"
+106373	"B"
+106373	"M"
+106373	"V"
+106375	"F"
+106375	"Y"
+106375	"Q"
+106375	"H"
+106375	"K"
+107253	"F"
+107253	"Y"
+107253	"B"
+107253	"H"
+107253	"Q"
+111924	"FN"
+111924	"YN"
+111924	"BN"
+111924	"M"
+111924	"Q"
+111930	"F"
+111930	"Y"
+111930	"B"
+111930	"H"
+111930	"Q"
+112413	"FN"
+112413	"YN"
+112413	"BN"
+112413	"M"
+112413	"Q"
+113499	"F"
+113499	"Y"
+113499	"B"
+113499	"M"
+113499	"Q"
+113710	"F"
+113710	"Y"
+113710	"Q"
+113710	"H"
+113710	"K"
+113713	"F"
+113713	"Y"
+113713	"B"
+113713	"M"
+113713	"Q"
+133423	"F"
+133423	"Y"
+133423	"B"
+133423	"M"
+133423	"Q"
+133516	"F"
+133516	"Y"
+133516	"B"
+133516	"M"
+133516	"V"
+137410	"F"
+137410	"Y"
+137410	"B"
+137410	"M"
+137410	"Q"
+137685	"F"
+137685	"Y"
+137685	"B"
+137685	"M"
+137685	"V"
+137814	"F"
+137814	"Y"
+137814	"B"
+137814	"H"
+137814	"Q"
+138866	"F"
+138866	"Y"
+138866	"B"
+138866	"H"
+138866	"Q"
+138965	"F"
+138965	"Y"
+138965	"B"
+138965	"M"
+138965	"V"
+144059	"F"
+144059	"Y"
+144059	"B"
+144059	"M"
+144059	"V"
+144087	"FN"
+144087	"YN"
+144087	"B"
+144087	"M"
+144087	"V"
+144088	"F"
+144088	"Y"
+144088	"Q"
+144088	"H"
+144088	"K"
+144092	"F"
+144092	"Y"
+144092	"B"
+144092	"M"
+144092	"Q"
+144093	"F"
+144093	"Y"
+144093	"B"
+144093	"H"
+144093	"Q"
+144095	"F"
+144095	"Y"
+144095	"B"
+144095	"M"
+144095	"Q"
+144110	"F"
+144110	"Y"
+144110	"B"
+144110	"H"
+144110	"Q"
+144160	"F"
+144160	"Y"
+144160	"B"
+144160	"M"
+144160	"Q"
+144161	"F"
+144161	"Y"
+144161	"B"
+144161	"M"
+144161	"Q"
+144543	"F"
+144543	"Y"
+144543	"B"
+144543	"H"
+144543	"Q"
+
+COPY 448 RECORDS INTO "sys"."flight_day" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"1234567"	1	"MONDAY"
+"1234567"	2	"TUESDAY"
+"1234567"	3	"WEDNESDAY"
+"1234567"	4	"THURSDAY"
+"1234567"	5	"FRIDAY"
+"1234567"	6	"SATURDAY"
+"1234567"	7	"SUNDAY"
+"-234567"	2	"TUESDAY"
+"-234567"	3	"WEDNESDAY"
+"-234567"	4	"THURSDAY"
+"-234567"	5	"FRIDAY"
+"-234567"	6	"SATURDAY"
+"-234567"	7	"SUNDAY"
+"1-34567"	1	"MONDAY"
+"1-34567"	3	"WEDNESDAY"
+"1-34567"	4	"THURSDAY"
+"1-34567"	5	"FRIDAY"
+"1-34567"	6	"SATURDAY"
+"1-34567"	7	"SUNDAY"
+"--34567"	3	"WEDNESDAY"
+"--34567"	4	"THURSDAY"
+"--34567"	5	"FRIDAY"
+"--34567"	6	"SATURDAY"
+"--34567"	7	"SUNDAY"
+"12-4567"	1	"MONDAY"
+"12-4567"	2	"TUESDAY"
+"12-4567"	4	"THURSDAY"
+"12-4567"	5	"FRIDAY"
+"12-4567"	6	"SATURDAY"
+"12-4567"	7	"SUNDAY"
+"-2-4567"	2	"TUESDAY"
+"-2-4567"	4	"THURSDAY"
+"-2-4567"	5	"FRIDAY"
+"-2-4567"	6	"SATURDAY"
+"-2-4567"	7	"SUNDAY"
+"1--4567"	1	"MONDAY"
+"1--4567"	4	"THURSDAY"
+"1--4567"	5	"FRIDAY"
+"1--4567"	6	"SATURDAY"
+"1--4567"	7	"SUNDAY"
+"---4567"	4	"THURSDAY"
+"---4567"	5	"FRIDAY"
+"---4567"	6	"SATURDAY"
+"---4567"	7	"SUNDAY"
+"123-567"	1	"MONDAY"
+"123-567"	2	"TUESDAY"
+"123-567"	3	"WEDNESDAY"
+"123-567"	5	"FRIDAY"
+"123-567"	6	"SATURDAY"
+"123-567"	7	"SUNDAY"
+"-23-567"	2	"TUESDAY"
+"-23-567"	3	"WEDNESDAY"
+"-23-567"	5	"FRIDAY"
+"-23-567"	6	"SATURDAY"
+"-23-567"	7	"SUNDAY"
+"1-3-567"	1	"MONDAY"
+"1-3-567"	3	"WEDNESDAY"
+"1-3-567"	5	"FRIDAY"
+"1-3-567"	6	"SATURDAY"
+"1-3-567"	7	"SUNDAY"
+"--3-567"	3	"WEDNESDAY"
+"--3-567"	5	"FRIDAY"
+"--3-567"	6	"SATURDAY"
+"--3-567"	7	"SUNDAY"
+"12--567"	1	"MONDAY"
+"12--567"	2	"TUESDAY"
+"12--567"	5	"FRIDAY"
+"12--567"	6	"SATURDAY"
+"12--567"	7	"SUNDAY"
+"-2--567"	2	"TUESDAY"
+"-2--567"	5	"FRIDAY"
+"-2--567"	6	"SATURDAY"
+"-2--567"	7	"SUNDAY"
+"1---567"	1	"MONDAY"
+"1---567"	5	"FRIDAY"
+"1---567"	6	"SATURDAY"
+"1---567"	7	"SUNDAY"
+"----567"	5	"FRIDAY"
+"----567"	6	"SATURDAY"
+"----567"	7	"SUNDAY"
+"1234-67"	1	"MONDAY"
+"1234-67"	2	"TUESDAY"
+"1234-67"	3	"WEDNESDAY"
+"1234-67"	4	"THURSDAY"
+"1234-67"	6	"SATURDAY"
+"1234-67"	7	"SUNDAY"
+"-234-67"	2	"TUESDAY"
+"-234-67"	3	"WEDNESDAY"
+"-234-67"	4	"THURSDAY"
+"-234-67"	6	"SATURDAY"
+"-234-67"	7	"SUNDAY"
+"1-34-67"	1	"MONDAY"
+"1-34-67"	3	"WEDNESDAY"
+"1-34-67"	4	"THURSDAY"
+"1-34-67"	6	"SATURDAY"
+"1-34-67"	7	"SUNDAY"
+"--34-67"	3	"WEDNESDAY"
+"--34-67"	4	"THURSDAY"
+"--34-67"	6	"SATURDAY"
+"--34-67"	7	"SUNDAY"
+"12-4-67"	1	"MONDAY"
+"12-4-67"	2	"TUESDAY"
+"12-4-67"	4	"THURSDAY"
+"12-4-67"	6	"SATURDAY"
+"12-4-67"	7	"SUNDAY"
+"-2-4-67"	2	"TUESDAY"
+"-2-4-67"	4	"THURSDAY"
+"-2-4-67"	6	"SATURDAY"
+"-2-4-67"	7	"SUNDAY"
+"1--4-67"	1	"MONDAY"
+"1--4-67"	4	"THURSDAY"
+"1--4-67"	6	"SATURDAY"
+"1--4-67"	7	"SUNDAY"
+"---4-67"	4	"THURSDAY"
+"---4-67"	6	"SATURDAY"
+"---4-67"	7	"SUNDAY"
+"123--67"	1	"MONDAY"
+"123--67"	2	"TUESDAY"
+"123--67"	3	"WEDNESDAY"
+"123--67"	6	"SATURDAY"
+"123--67"	7	"SUNDAY"
+"-23--67"	2	"TUESDAY"
+"-23--67"	3	"WEDNESDAY"
+"-23--67"	6	"SATURDAY"
+"-23--67"	7	"SUNDAY"
+"1-3--67"	1	"MONDAY"
+"1-3--67"	3	"WEDNESDAY"
+"1-3--67"	6	"SATURDAY"
+"1-3--67"	7	"SUNDAY"
+"--3--67"	3	"WEDNESDAY"
+"--3--67"	6	"SATURDAY"
+"--3--67"	7	"SUNDAY"
+"12---67"	1	"MONDAY"
+"12---67"	2	"TUESDAY"
+"12---67"	6	"SATURDAY"
+"12---67"	7	"SUNDAY"
+"-2---67"	2	"TUESDAY"
+"-2---67"	6	"SATURDAY"
+"-2---67"	7	"SUNDAY"
+"1----67"	1	"MONDAY"
+"1----67"	6	"SATURDAY"
+"1----67"	7	"SUNDAY"
+"-----67"	6	"SATURDAY"
+"-----67"	7	"SUNDAY"
+"12345-7"	1	"MONDAY"
+"12345-7"	2	"TUESDAY"
+"12345-7"	3	"WEDNESDAY"
+"12345-7"	4	"THURSDAY"
+"12345-7"	5	"FRIDAY"
+"12345-7"	7	"SUNDAY"
+"-2345-7"	2	"TUESDAY"
+"-2345-7"	3	"WEDNESDAY"
+"-2345-7"	4	"THURSDAY"
+"-2345-7"	5	"FRIDAY"
+"-2345-7"	7	"SUNDAY"
+"1-345-7"	1	"MONDAY"
+"1-345-7"	3	"WEDNESDAY"
+"1-345-7"	4	"THURSDAY"
+"1-345-7"	5	"FRIDAY"
+"1-345-7"	7	"SUNDAY"
+"--345-7"	3	"WEDNESDAY"
+"--345-7"	4	"THURSDAY"
+"--345-7"	5	"FRIDAY"
+"--345-7"	7	"SUNDAY"
+"12-45-7"	1	"MONDAY"
+"12-45-7"	2	"TUESDAY"
+"12-45-7"	4	"THURSDAY"
+"12-45-7"	5	"FRIDAY"
+"12-45-7"	7	"SUNDAY"
+"-2-45-7"	2	"TUESDAY"
+"-2-45-7"	4	"THURSDAY"
+"-2-45-7"	5	"FRIDAY"
+"-2-45-7"	7	"SUNDAY"
+"1--45-7"	1	"MONDAY"
+"1--45-7"	4	"THURSDAY"
+"1--45-7"	5	"FRIDAY"
+"1--45-7"	7	"SUNDAY"
+"---45-7"	4	"THURSDAY"
+"---45-7"	5	"FRIDAY"
+"---45-7"	7	"SUNDAY"
+"123-5-7"	1	"MONDAY"
+"123-5-7"	2	"TUESDAY"
+"123-5-7"	3	"WEDNESDAY"
+"123-5-7"	5	"FRIDAY"
+"123-5-7"	7	"SUNDAY"
+"-23-5-7"	2	"TUESDAY"
+"-23-5-7"	3	"WEDNESDAY"
+"-23-5-7"	5	"FRIDAY"
+"-23-5-7"	7	"SUNDAY"
+"1-3-5-7"	1	"MONDAY"
+"1-3-5-7"	3	"WEDNESDAY"
+"1-3-5-7"	5	"FRIDAY"
+"1-3-5-7"	7	"SUNDAY"
+"--3-5-7"	3	"WEDNESDAY"
+"--3-5-7"	5	"FRIDAY"
+"--3-5-7"	7	"SUNDAY"
+"12--5-7"	1	"MONDAY"
+"12--5-7"	2	"TUESDAY"
+"12--5-7"	5	"FRIDAY"
+"12--5-7"	7	"SUNDAY"
+"-2--5-7"	2	"TUESDAY"
+"-2--5-7"	5	"FRIDAY"
+"-2--5-7"	7	"SUNDAY"
+"1---5-7"	1	"MONDAY"
+"1---5-7"	5	"FRIDAY"
+"1---5-7"	7	"SUNDAY"
+"----5-7"	5	"FRIDAY"
+"----5-7"	7	"SUNDAY"
+"1234--7"	1	"MONDAY"
+"1234--7"	2	"TUESDAY"
+"1234--7"	3	"WEDNESDAY"
+"1234--7"	4	"THURSDAY"
+"1234--7"	7	"SUNDAY"
+"-234--7"	2	"TUESDAY"
+"-234--7"	3	"WEDNESDAY"
+"-234--7"	4	"THURSDAY"
+"-234--7"	7	"SUNDAY"
+"1-34--7"	1	"MONDAY"
+"1-34--7"	3	"WEDNESDAY"
+"1-34--7"	4	"THURSDAY"
+"1-34--7"	7	"SUNDAY"
+"--34--7"	3	"WEDNESDAY"
+"--34--7"	4	"THURSDAY"
+"--34--7"	7	"SUNDAY"
+"12-4--7"	1	"MONDAY"
+"12-4--7"	2	"TUESDAY"
+"12-4--7"	4	"THURSDAY"
+"12-4--7"	7	"SUNDAY"
+"-2-4--7"	2	"TUESDAY"
+"-2-4--7"	4	"THURSDAY"
+"-2-4--7"	7	"SUNDAY"
+"1--4--7"	1	"MONDAY"
+"1--4--7"	4	"THURSDAY"
+"1--4--7"	7	"SUNDAY"
+"---4--7"	4	"THURSDAY"
+"---4--7"	7	"SUNDAY"
+"123---7"	1	"MONDAY"
+"123---7"	2	"TUESDAY"
+"123---7"	3	"WEDNESDAY"
+"123---7"	7	"SUNDAY"
+"-23---7"	2	"TUESDAY"
+"-23---7"	3	"WEDNESDAY"
+"-23---7"	7	"SUNDAY"
+"1-3---7"	1	"MONDAY"
+"1-3---7"	3	"WEDNESDAY"
+"1-3---7"	7	"SUNDAY"
+"--3---7"	3	"WEDNESDAY"
+"--3---7"	7	"SUNDAY"
+"12----7"	1	"MONDAY"
+"12----7"	2	"TUESDAY"
+"12----7"	7	"SUNDAY"
+"-2----7"	2	"TUESDAY"
+"-2----7"	7	"SUNDAY"
+"1-----7"	1	"MONDAY"
+"1-----7"	7	"SUNDAY"
+"------7"	7	"SUNDAY"
+"123456-"	1	"MONDAY"
+"123456-"	2	"TUESDAY"
+"123456-"	3	"WEDNESDAY"
+"123456-"	4	"THURSDAY"
+"123456-"	5	"FRIDAY"
+"123456-"	6	"SATURDAY"
+"-23456-"	2	"TUESDAY"
+"-23456-"	3	"WEDNESDAY"
+"-23456-"	4	"THURSDAY"
+"-23456-"	5	"FRIDAY"
+"-23456-"	6	"SATURDAY"
+"1-3456-"	1	"MONDAY"
+"1-3456-"	3	"WEDNESDAY"
+"1-3456-"	4	"THURSDAY"
+"1-3456-"	5	"FRIDAY"
+"1-3456-"	6	"SATURDAY"
+"--3456-"	3	"WEDNESDAY"
+"--3456-"	4	"THURSDAY"
+"--3456-"	5	"FRIDAY"
+"--3456-"	6	"SATURDAY"
+"12-456-"	1	"MONDAY"
+"12-456-"	2	"TUESDAY"
+"12-456-"	4	"THURSDAY"
+"12-456-"	5	"FRIDAY"
+"12-456-"	6	"SATURDAY"
+"-2-456-"	2	"TUESDAY"
+"-2-456-"	4	"THURSDAY"
+"-2-456-"	5	"FRIDAY"
+"-2-456-"	6	"SATURDAY"
+"1--456-"	1	"MONDAY"
+"1--456-"	4	"THURSDAY"
+"1--456-"	5	"FRIDAY"
+"1--456-"	6	"SATURDAY"
+"---456-"	4	"THURSDAY"
+"---456-"	5	"FRIDAY"
+"---456-"	6	"SATURDAY"
+"123-56-"	1	"MONDAY"
+"123-56-"	2	"TUESDAY"
+"123-56-"	3	"WEDNESDAY"
+"123-56-"	5	"FRIDAY"
+"123-56-"	6	"SATURDAY"
+"-23-56-"	2	"TUESDAY"
+"-23-56-"	3	"WEDNESDAY"
+"-23-56-"	5	"FRIDAY"
+"-23-56-"	6	"SATURDAY"
+"1-3-56-"	1	"MONDAY"
+"1-3-56-"	3	"WEDNESDAY"
+"1-3-56-"	5	"FRIDAY"
+"1-3-56-"	6	"SATURDAY"
+"--3-56-"	3	"WEDNESDAY"
+"--3-56-"	5	"FRIDAY"
+"--3-56-"	6	"SATURDAY"
+"12--56-"	1	"MONDAY"
+"12--56-"	2	"TUESDAY"
+"12--56-"	5	"FRIDAY"
+"12--56-"	6	"SATURDAY"
+"-2--56-"	2	"TUESDAY"
+"-2--56-"	5	"FRIDAY"
+"-2--56-"	6	"SATURDAY"
+"1---56-"	1	"MONDAY"
+"1---56-"	5	"FRIDAY"
+"1---56-"	6	"SATURDAY"
+"----56-"	5	"FRIDAY"
+"----56-"	6	"SATURDAY"
+"1234-6-"	1	"MONDAY"
+"1234-6-"	2	"TUESDAY"
+"1234-6-"	3	"WEDNESDAY"
+"1234-6-"	4	"THURSDAY"
+"1234-6-"	6	"SATURDAY"
+"-234-6-"	2	"TUESDAY"
+"-234-6-"	3	"WEDNESDAY"
+"-234-6-"	4	"THURSDAY"
+"-234-6-"	6	"SATURDAY"
+"1-34-6-"	1	"MONDAY"
+"1-34-6-"	3	"WEDNESDAY"
+"1-34-6-"	4	"THURSDAY"
+"1-34-6-"	6	"SATURDAY"
+"--34-6-"	3	"WEDNESDAY"
+"--34-6-"	4	"THURSDAY"
+"--34-6-"	6	"SATURDAY"
+"12-4-6-"	1	"MONDAY"
+"12-4-6-"	2	"TUESDAY"
+"12-4-6-"	4	"THURSDAY"
+"12-4-6-"	6	"SATURDAY"
+"-2-4-6-"	2	"TUESDAY"
+"-2-4-6-"	4	"THURSDAY"
+"-2-4-6-"	6	"SATURDAY"
+"1--4-6-"	1	"MONDAY"
+"1--4-6-"	4	"THURSDAY"
+"1--4-6-"	6	"SATURDAY"
+"---4-6-"	4	"THURSDAY"
+"---4-6-"	6	"SATURDAY"
+"123--6-"	1	"MONDAY"
+"123--6-"	2	"TUESDAY"
+"123--6-"	3	"WEDNESDAY"
+"123--6-"	6	"SATURDAY"
+"-23--6-"	2	"TUESDAY"
+"-23--6-"	3	"WEDNESDAY"
+"-23--6-"	6	"SATURDAY"
+"1-3--6-"	1	"MONDAY"
+"1-3--6-"	3	"WEDNESDAY"
+"1-3--6-"	6	"SATURDAY"
+"--3--6-"	3	"WEDNESDAY"
+"--3--6-"	6	"SATURDAY"
+"12---6-"	1	"MONDAY"
+"12---6-"	2	"TUESDAY"
+"12---6-"	6	"SATURDAY"
+"-2---6-"	2	"TUESDAY"
+"-2---6-"	6	"SATURDAY"
+"1----6-"	1	"MONDAY"
+"1----6-"	6	"SATURDAY"
+"-----6-"	6	"SATURDAY"
+"12345--"	1	"MONDAY"
+"12345--"	2	"TUESDAY"
+"12345--"	3	"WEDNESDAY"
+"12345--"	4	"THURSDAY"
+"12345--"	5	"FRIDAY"
+"-2345--"	2	"TUESDAY"
+"-2345--"	3	"WEDNESDAY"
+"-2345--"	4	"THURSDAY"
+"-2345--"	5	"FRIDAY"
+"1-345--"	1	"MONDAY"
+"1-345--"	3	"WEDNESDAY"
+"1-345--"	4	"THURSDAY"
+"1-345--"	5	"FRIDAY"
+"--345--"	3	"WEDNESDAY"
+"--345--"	4	"THURSDAY"
+"--345--"	5	"FRIDAY"
+"12-45--"	1	"MONDAY"
+"12-45--"	2	"TUESDAY"
+"12-45--"	4	"THURSDAY"
+"12-45--"	5	"FRIDAY"
+"-2-45--"	2	"TUESDAY"
+"-2-45--"	4	"THURSDAY"
+"-2-45--"	5	"FRIDAY"
+"1--45--"	1	"MONDAY"
+"1--45--"	4	"THURSDAY"
+"1--45--"	5	"FRIDAY"
+"---45--"	4	"THURSDAY"
+"---45--"	5	"FRIDAY"
+"123-5--"	1	"MONDAY"
+"123-5--"	2	"TUESDAY"
+"123-5--"	3	"WEDNESDAY"
+"123-5--"	5	"FRIDAY"
+"-23-5--"	2	"TUESDAY"
+"-23-5--"	3	"WEDNESDAY"
+"-23-5--"	5	"FRIDAY"
+"1-3-5--"	1	"MONDAY"
+"1-3-5--"	3	"WEDNESDAY"
+"1-3-5--"	5	"FRIDAY"
+"--3-5--"	3	"WEDNESDAY"
+"--3-5--"	5	"FRIDAY"
+"12--5--"	1	"MONDAY"
+"12--5--"	2	"TUESDAY"
+"12--5--"	5	"FRIDAY"
+"-2--5--"	2	"TUESDAY"
+"-2--5--"	5	"FRIDAY"
+"1---5--"	1	"MONDAY"
+"1---5--"	5	"FRIDAY"
+"----5--"	5	"FRIDAY"
+"1234---"	1	"MONDAY"
+"1234---"	2	"TUESDAY"
+"1234---"	3	"WEDNESDAY"
+"1234---"	4	"THURSDAY"
+"-234---"	2	"TUESDAY"
+"-234---"	3	"WEDNESDAY"
+"-234---"	4	"THURSDAY"
+"1-34---"	1	"MONDAY"
+"1-34---"	3	"WEDNESDAY"
+"1-34---"	4	"THURSDAY"
+"--34---"	3	"WEDNESDAY"
+"--34---"	4	"THURSDAY"
+"12-4---"	1	"MONDAY"
+"12-4---"	2	"TUESDAY"
+"12-4---"	4	"THURSDAY"
+"-2-4---"	2	"TUESDAY"
+"-2-4---"	4	"THURSDAY"
+"1--4---"	1	"MONDAY"
+"1--4---"	4	"THURSDAY"
+"---4---"	4	"THURSDAY"
+"123----"	1	"MONDAY"
+"123----"	2	"TUESDAY"
+"123----"	3	"WEDNESDAY"
+"-23----"	2	"TUESDAY"
+"-23----"	3	"WEDNESDAY"
+"1-3----"	1	"MONDAY"
+"1-3----"	3	"WEDNESDAY"
+"--3----"	3	"WEDNESDAY"
+"12-----"	1	"MONDAY"
+"12-----"	2	"TUESDAY"
+"-2-----"	2	"TUESDAY"
+"1------"	1	"MONDAY"
+
+COPY 2998 RECORDS INTO "sys"."flight_fare" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+101910	"7100001"
+101911	"7100001"
+101912	"7100001"
+101915	"7100001"
+101916	"7100001"
+101917	"7100001"
+101918	"7100001"
+101922	"7100001"
+101923	"7100001"
+101925	"7100001"
+101926	"7100001"
+101927	"7100001"
+101928	"7100001"
+101913	"7100001"
+101924	"7100001"
+101909	"7100002"
+101929	"7100002"
+101908	"7100002"
+101910	"7100003"
+101911	"7100003"
+101912	"7100003"
+101914	"7100003"
+101915	"7100003"
+101916	"7100003"
+101917	"7100003"
+101918	"7100003"
+101922	"7100003"
+101923	"7100003"
+101925	"7100003"
+101926	"7100003"
+101927	"7100003"
+101928	"7100003"
+101913	"7100003"
+101924	"7100003"
+101909	"7100004"
+101929	"7100004"
+101908	"7100004"
+101910	"7100005"
+101911	"7100005"
+101914	"7100005"
+101915	"7100005"
+101918	"7100005"
+101923	"7100005"
+101926	"7100005"
+101910	"7100006"
+101911	"7100006"
+101914	"7100006"
+101915	"7100006"
+101918	"7100006"
+101923	"7100006"
+101926	"7100006"
+101908	"7100007"
+101913	"7100007"
+101924	"7100007"
+101909	"7100007"
+101910	"7100007"
+101911	"7100007"
+101912	"7100007"
+101914	"7100007"
+101915	"7100007"
+101916	"7100007"
+101917	"7100007"
+101918	"7100007"
+101922	"7100007"
+101923	"7100007"
+101925	"7100007"
+101926	"7100007"
+101927	"7100007"
+101928	"7100007"
+101929	"7100007"
+101908	"7100008"
+101913	"7100008"
+101924	"7100008"
+101909	"7100008"
+101910	"7100008"
+101911	"7100008"
+101912	"7100008"
+101914	"7100008"
+101915	"7100008"
+101917	"7100008"
+101918	"7100008"
+101922	"7100008"
+101923	"7100008"
+101925	"7100008"
+101926	"7100008"
+101928	"7100008"
+101929	"7100008"
+101913	"7100009"
+101924	"7100009"
+101912	"7100009"
+101916	"7100009"
+101917	"7100009"
+101922	"7100009"
+101925	"7100009"
+101927	"7100009"
+101928	"7100009"
+101913	"7100010"
+101924	"7100010"
+101910	"7100010"
+101911	"7100010"
+101912	"7100010"
+101914	"7100010"
+101915	"7100010"
+101916	"7100010"
+101917	"7100010"
+101918	"7100010"
+101922	"7100010"
+101923	"7100010"
+101925	"7100010"
+101926	"7100010"
+101927	"7100010"
+101928	"7100010"
+101951	"7100011"
+101952	"7100011"
+101953	"7100011"
+101954	"7100011"
+101955	"7100011"
+101956	"7100011"
+101957	"7100011"
+101958	"7100011"
+101959	"7100012"
+101951	"7100013"
+101952	"7100013"
+101953	"7100013"
+101954	"7100013"
+101955	"7100013"
+101956	"7100013"
+101957	"7100013"
+101958	"7100013"
+101959	"7100014"
+101951	"7100015"
+101952	"7100015"
+101953	"7100015"
+101954	"7100015"
+101955	"7100015"
+101956	"7100015"
+101957	"7100015"
+101958	"7100015"
+101951	"7100016"
+101952	"7100016"
+101953	"7100016"
+101954	"7100016"
+101955	"7100016"
+101956	"7100016"
+101957	"7100016"
+101958	"7100016"
+101952	"7100017"
+101953	"7100017"
+101955	"7100017"
+101958	"7100017"
+101951	"7100018"
+101952	"7100018"
+101953	"7100018"
+101954	"7100018"
+101955	"7100018"
+101956	"7100018"
+101957	"7100018"
+101958	"7100018"
+102125	"7100019"
+102129	"7100019"
+102122	"7100020"
+102123	"7100020"
+102126	"7100020"
+102127	"7100020"
+102128	"7100020"
+102133	"7100020"
+102134	"7100021"
+102135	"7100021"
+102125	"7100022"
+102129	"7100022"
+102122	"7100023"
+102123	"7100023"
+102126	"7100023"
+102127	"7100023"
+102128	"7100023"
+102133	"7100023"
+102122	"7100024"
+102126	"7100024"
+102127	"7100024"
+102133	"7100024"
+102123	"7100025"
+102128	"7100025"
+102134	"7100025"
+102122	"7100026"
+102126	"7100026"
+102127	"7100026"
+102133	"7100026"
+102135	"7100026"
+102134	"7100027"
+102135	"7100027"
+102122	"7100028"
+102125	"7100028"
+102126	"7100028"
+102127	"7100028"
+102129	"7100028"
+102133	"7100028"
+102135	"7100028"
+102122	"7100029"
+102125	"7100029"
+102126	"7100029"
+102127	"7100029"
+102129	"7100029"
+102133	"7100029"
+102135	"7100029"
+102122	"7100030"
+102123	"7100030"
+102125	"7100030"
+102126	"7100030"
+102127	"7100030"
+102128	"7100030"
+102129	"7100030"
+102133	"7100030"
+102135	"7100030"
+102122	"7100031"
+102123	"7100031"
+102125	"7100031"
+102126	"7100031"
+102127	"7100031"
+102128	"7100031"
+102129	"7100031"
+102133	"7100031"
+102135	"7100031"
+102122	"7100032"
+102125	"7100032"
+102126	"7100032"
+102127	"7100032"
+102129	"7100032"
+102133	"7100032"
+102122	"7100033"
+102123	"7100033"
+102125	"7100033"
+102126	"7100033"
+102127	"7100033"
+102128	"7100033"
+102129	"7100033"
+102133	"7100033"
+102122	"7100034"
+102125	"7100034"
+102126	"7100034"
+102127	"7100034"
+102129	"7100034"
+102133	"7100034"
+102123	"7100035"
+102128	"7100035"
+102134	"7100035"
+102139	"7100036"
+102147	"7100036"
+102164	"7100036"
+102172	"7100036"
+102144	"7100037"
+102148	"7100037"
+102150	"7100037"
+102162	"7100037"
+102163	"7100037"
+102166	"7100037"
+102173	"7100037"
+102177	"7100037"
+102165	"7100038"
+102188	"7100039"
+102136	"7100040"
+102137	"7100040"
+102190	"7100040"
+102191	"7100040"
+102192	"7100040"
+102139	"7100041"
+102147	"7100041"
+102164	"7100041"
+102172	"7100041"
+102144	"7100042"
+102148	"7100042"
+102150	"7100042"
+102162	"7100042"
+102163	"7100042"
+102166	"7100042"
+102173	"7100042"
+102177	"7100042"
+102188	"7100043"
+102136	"7100044"
+102137	"7100044"
+102190	"7100044"
+102191	"7100044"
+102192	"7100044"
+102136	"7100045"
+102144	"7100045"
+102148	"7100045"
+102150	"7100045"
+102162	"7100045"
+102166	"7100045"
+102173	"7100045"
+102177	"7100045"
+102190	"7100045"
+102191	"7100045"
+102192	"7100045"
+102136	"7100046"
+102137	"7100046"
+102144	"7100046"
+102148	"7100046"
+102150	"7100046"
+102162	"7100046"
+102163	"7100046"
+102166	"7100046"
+102173	"7100046"
+102177	"7100046"
+102190	"7100046"
+102191	"7100046"
+102192	"7100046"
+102144	"7100047"
+102148	"7100047"
+102150	"7100047"
+102162	"7100047"
+102163	"7100047"
+102165	"7100047"
+102166	"7100047"
+102173	"7100047"
+102177	"7100047"
+102139	"7100048"
+102147	"7100048"
+102164	"7100048"
+102172	"7100048"
+102136	"7100049"
+102137	"7100049"
+102144	"7100049"
+102148	"7100049"
+102150	"7100049"
+102162	"7100049"
+102163	"7100049"
+102165	"7100049"
+102166	"7100049"
+102173	"7100049"
+102177	"7100049"
+102190	"7100049"
+102191	"7100049"
+102192	"7100049"
+102144	"7100050"
+102148	"7100050"
+102150	"7100050"
+102162	"7100050"
+102163	"7100050"
+102166	"7100050"
+102173	"7100050"
+102177	"7100050"
+102674	"7100051"
+102674	"7100052"
+102674	"7100053"
+102674	"7100054"
+102674	"7100055"
+102674	"7100056"
+102674	"7100057"
+102767	"7100058"
+102771	"7100058"
+102777	"7100058"
+102768	"7100059"
+102769	"7100059"
+102770	"7100059"
+102772	"7100059"
+102773	"7100059"
+102774	"7100059"
+102775	"7100059"
+102776	"7100059"
+102778	"7100059"
+102779	"7100059"
+102781	"7100059"
+102782	"7100059"
+102766	"7100060"
+102783	"7100060"
+102784	"7100060"
+102768	"7100061"
+102769	"7100061"
+102770	"7100061"
+102772	"7100061"
+102773	"7100061"
+102774	"7100061"
+102775	"7100061"
+102776	"7100061"
+102778	"7100061"
+102779	"7100061"
+102781	"7100061"
+102782	"7100061"
+102767	"7100062"
+102771	"7100062"
+102777	"7100062"
+102766	"7100063"
+102783	"7100063"
+102784	"7100063"
+102768	"7100064"
+102769	"7100064"
+102772	"7100064"
+102774	"7100064"
+102775	"7100064"
+102778	"7100064"
+102781	"7100064"
+102783	"7100064"
+102766	"7100065"
+102767	"7100065"
+102768	"7100065"
+102769	"7100065"
+102770	"7100065"
+102771	"7100065"
+102772	"7100065"
+102773	"7100065"
+102774	"7100065"
+102775	"7100065"
+102776	"7100065"
+102777	"7100065"
+102778	"7100065"
+102779	"7100065"
+102781	"7100065"
+102782	"7100065"
+102784	"7100065"
+102766	"7100066"
+102767	"7100066"
+102768	"7100066"
+102769	"7100066"
+102770	"7100066"
+102771	"7100066"
+102772	"7100066"
+102773	"7100066"
+102774	"7100066"
+102775	"7100066"
+102776	"7100066"
+102777	"7100066"
+102778	"7100066"
+102779	"7100066"
+102781	"7100066"
+102782	"7100066"
+102784	"7100066"
+102768	"7100067"
+102769	"7100067"
+102772	"7100067"
+102774	"7100067"
+102775	"7100067"
+102778	"7100067"
+102781	"7100067"
+102783	"7100067"
+102766	"7100068"
+102767	"7100068"
+102768	"7100068"
+102769	"7100068"
+102770	"7100068"
+102771	"7100068"
+102772	"7100068"
+102773	"7100068"
+102774	"7100068"
+102775	"7100068"
+102776	"7100068"
+102777	"7100068"
+102778	"7100068"
+102779	"7100068"
+102781	"7100068"
+102782	"7100068"
+102784	"7100068"
+102766	"7100069"
+102767	"7100069"
+102768	"7100069"
+102769	"7100069"
+102770	"7100069"
+102771	"7100069"
+102772	"7100069"
+102773	"7100069"
+102774	"7100069"
+102775	"7100069"
+102776	"7100069"
+102777	"7100069"
+102778	"7100069"
+102779	"7100069"
+102781	"7100069"
+102782	"7100069"
+102784	"7100069"
+102767	"7100070"
+102770	"7100070"
+102771	"7100070"
+102773	"7100070"
+102776	"7100070"
+102777	"7100070"
+102779	"7100070"
+102782	"7100070"
+102767	"7100071"
+102768	"7100071"
+102769	"7100071"
+102770	"7100071"
+102771	"7100071"
+102772	"7100071"
+102773	"7100071"
+102774	"7100071"
+102775	"7100071"
+102776	"7100071"
+102777	"7100071"
+102778	"7100071"
+102779	"7100071"
+102781	"7100071"
+102782	"7100071"
+102795	"7100072"
+102796	"7100072"
+102797	"7100072"
+102798	"7100072"
+102799	"7100072"
+102800	"7100072"
+102801	"7100072"
+102802	"7100072"
+102803	"7100072"
+102805	"7100072"
+102806	"7100072"
+102807	"7100072"
+102808	"7100073"
+102809	"7100073"
+102795	"7100074"
+102796	"7100074"
+102797	"7100074"
+102798	"7100074"
+102799	"7100074"
+102800	"7100074"
+102801	"7100074"
+102802	"7100074"
+102803	"7100074"
+102804	"7100074"
+102805	"7100074"
+102806	"7100074"
+102807	"7100074"
+102808	"7100075"
+102809	"7100075"
+102797	"7100076"
+102799	"7100076"
+102804	"7100076"
+102806	"7100076"
+102808	"7100076"
+102795	"7100077"
+102796	"7100077"
+102797	"7100077"
+102798	"7100077"
+102799	"7100077"
+102800	"7100077"
+102801	"7100077"
+102802	"7100077"
+102804	"7100077"
+102805	"7100077"
+102806	"7100077"
+102807	"7100077"
+102809	"7100077"
+102797	"7100078"
+102799	"7100078"
+102804	"7100078"
+102806	"7100078"
+102808	"7100078"
+102795	"7100079"
+102796	"7100079"
+102797	"7100079"
+102798	"7100079"
+102799	"7100079"
+102800	"7100079"
+102801	"7100079"
+102803	"7100079"
+102804	"7100079"
+102805	"7100079"
+102806	"7100079"
+102807	"7100079"
+102809	"7100079"
+102795	"7100080"
+102796	"7100080"
+102798	"7100080"
+102800	"7100080"
+102801	"7100080"
+102802	"7100080"
+102803	"7100080"
+102805	"7100080"
+102807	"7100080"
+102795	"7100081"
+102796	"7100081"
+102797	"7100081"
+102798	"7100081"
+102799	"7100081"
+102800	"7100081"
+102801	"7100081"
+102802	"7100081"
+102803	"7100081"
+102804	"7100081"
+102805	"7100081"
+102806	"7100081"
+102807	"7100081"
+102923	"7100082"
+102924	"7100082"
+102925	"7100082"
+102927	"7100082"
+102929	"7100082"
+102930	"7100082"
+102932	"7100082"
+102933	"7100082"
+102923	"7100083"
+102924	"7100083"
+102925	"7100083"
+102927	"7100083"
+102929	"7100083"
+102930	"7100083"
+102932	"7100083"
+102933	"7100083"
+102923	"7100084"
+102924	"7100084"
+102925	"7100084"
+102927	"7100084"
+102929	"7100084"
+102930	"7100084"
+102932	"7100084"
+102933	"7100084"
+102924	"7100085"
+102925	"7100085"
+102927	"7100085"
+102929	"7100085"
+102930	"7100085"
+102932	"7100085"
+102933	"7100085"
+102925	"7100086"
+102930	"7100086"
+102933	"7100086"
+102923	"7100087"
+102924	"7100087"
+102925	"7100087"
+102927	"7100087"
+102929	"7100087"
+102930	"7100087"
+102932	"7100087"
+102933	"7100087"
+102923	"7100088"
+102924	"7100088"
+102927	"7100088"
+102929	"7100088"
+102932	"7100088"
+102923	"7100089"
+102924	"7100089"
+102925	"7100089"
+102927	"7100089"
+102929	"7100089"
+102930	"7100089"
+102932	"7100089"
+102933	"7100089"
+105584	"7100090"
+105588	"7100090"
+105589	"7100090"
+105590	"7100090"
+105591	"7100090"
+105592	"7100090"
+105593	"7100090"
+105595	"7100090"
+105597	"7100090"
+105598	"7100090"
+105599	"7100090"
+105586	"7100091"
+105601	"7100091"
+105584	"7100092"
+105588	"7100092"
+105589	"7100092"
+105590	"7100092"
+105591	"7100092"
+105592	"7100092"
+105593	"7100092"
+105594	"7100092"
+105595	"7100092"
+105597	"7100092"
+105598	"7100092"
+105599	"7100092"
+105586	"7100093"
+105601	"7100093"
+105586	"7100094"
+105589	"7100094"
+105591	"7100094"
+105593	"7100094"
+105594	"7100094"
+105597	"7100094"
+105598	"7100094"
+105586	"7100095"
+105589	"7100095"
+105591	"7100095"
+105593	"7100095"
+105594	"7100095"
+105597	"7100095"
+105598	"7100095"
+105584	"7100096"
+105588	"7100096"
+105589	"7100096"
+105590	"7100096"
+105591	"7100096"
+105592	"7100096"
+105593	"7100096"
+105594	"7100096"
+105595	"7100096"
+105597	"7100096"
+105598	"7100096"
+105599	"7100096"
+105601	"7100096"
+105584	"7100097"
+105588	"7100097"
+105589	"7100097"
+105590	"7100097"
+105591	"7100097"
+105592	"7100097"
+105593	"7100097"
+105594	"7100097"
+105595	"7100097"
+105597	"7100097"
+105598	"7100097"
+105599	"7100097"
+105601	"7100097"
+105584	"7100098"
+105588	"7100098"
+105590	"7100098"
+105592	"7100098"
+105595	"7100098"
+105599	"7100098"
+105584	"7100099"
+105588	"7100099"
+105589	"7100099"
+105590	"7100099"
+105591	"7100099"
+105592	"7100099"
+105593	"7100099"
+105594	"7100099"
+105595	"7100099"
+105597	"7100099"
+105598	"7100099"
+105599	"7100099"
+105698	"7100100"
+105699	"7100100"
+105700	"7100100"
+105701	"7100100"
+105702	"7100100"
+105703	"7100100"
+105704	"7100100"
+105705	"7100100"
+105698	"7100101"
+105699	"7100101"
+105700	"7100101"
+105701	"7100101"
+105702	"7100101"
+105703	"7100101"
+105704	"7100101"
+105705	"7100101"
+105698	"7100102"
+105699	"7100102"
+105700	"7100102"
+105701	"7100102"
+105702	"7100102"
+105703	"7100102"
+105704	"7100102"
+105705	"7100102"
+105794	"7100103"
+105795	"7100103"
+105796	"7100103"
+105798	"7100103"
+105799	"7100103"
+105800	"7100103"
+105794	"7100104"
+105795	"7100104"
+105796	"7100104"
+105798	"7100104"
+105799	"7100104"
+105800	"7100104"
+105794	"7100105"
+105795	"7100105"
+105796	"7100105"
+105798	"7100105"
+105799	"7100105"
+105800	"7100105"
+105794	"7100106"
+105796	"7100106"
+105798	"7100106"
+105799	"7100106"
+105800	"7100106"
+105794	"7100107"
+105795	"7100107"
+105799	"7100107"
+105794	"7100108"
+105795	"7100108"
+105796	"7100108"
+105798	"7100108"
+105799	"7100108"
+105800	"7100108"
+105801	"7100109"
+105803	"7100109"
+105806	"7100109"
+105807	"7100109"
+105811	"7100109"
+105802	"7100110"
+105805	"7100110"
+105808	"7100110"
+105812	"7100110"
+105810	"7100110"
+105801	"7100111"
+105803	"7100111"
+105806	"7100111"
+105807	"7100111"
+105811	"7100111"
+105802	"7100112"
+105805	"7100112"
+105808	"7100112"
+105812	"7100112"
+105810	"7100112"
+105810	"7100113"
+105801	"7100113"
+105802	"7100113"
+105803	"7100113"
+105805	"7100113"
+105806	"7100113"
+105807	"7100113"
+105808	"7100113"
+105811	"7100113"
+105812	"7100113"
+105810	"7100114"
+105801	"7100114"
+105802	"7100114"
+105803	"7100114"
+105805	"7100114"
+105806	"7100114"
+105807	"7100114"
+105808	"7100114"
+105811	"7100114"
+105812	"7100114"
+106229	"7100115"
+106230	"7100115"
+106231	"7100115"
+106232	"7100115"
+106234	"7100115"
+106235	"7100115"
+106236	"7100115"
+106237	"7100115"
+106238	"7100115"
+106239	"7100115"
+106240	"7100115"
+106241	"7100115"
+106242	"7100115"
+106245	"7100115"
+106246	"7100115"
+106247	"7100115"
+106248	"7100115"
+106249	"7100115"
+106250	"7100115"
+106251	"7100115"
+106252	"7100115"
+106253	"7100115"
+106254	"7100115"
+106255	"7100115"
+106232	"7100116"
+106238	"7100116"
+106242	"7100116"
+106248	"7100116"
+106254	"7100116"
+106232	"7100117"
+106238	"7100117"
+106242	"7100117"
+106248	"7100117"
+106254	"7100117"
+106240	"7100118"
+106232	"7100119"
+106238	"7100119"
+106242	"7100119"
+106248	"7100119"
+106254	"7100119"
+106229	"7100120"
+106230	"7100120"
+106231	"7100120"
+106234	"7100120"
+106235	"7100120"
+106236	"7100120"
+106237	"7100120"
+106239	"7100120"
+106241	"7100120"
+106245	"7100120"
+106246	"7100120"
+106247	"7100120"
+106249	"7100120"
+106250	"7100120"
+106251	"7100120"
+106252	"7100120"
+106253	"7100120"
+106255	"7100120"
+106229	"7100121"
+106231	"7100121"
+106232	"7100121"
+106234	"7100121"
+106236	"7100121"
+106237	"7100121"
+106238	"7100121"
+106240	"7100121"
+106242	"7100121"
+106245	"7100121"
+106246	"7100121"
+106247	"7100121"
+106248	"7100121"
+106250	"7100121"
+106251	"7100121"
+106253	"7100121"
+106254	"7100121"
+106255	"7100121"
+106232	"7100122"
+106238	"7100122"
+106242	"7100122"
+106248	"7100122"
+106254	"7100122"
+106229	"7100123"
+106231	"7100123"
+106234	"7100123"
+106236	"7100123"
+106237	"7100123"
+106245	"7100123"
+106246	"7100123"
+106247	"7100123"
+106250	"7100123"
+106251	"7100123"
+106253	"7100123"
+106255	"7100123"
+106230	"7100124"
+106235	"7100124"
+106239	"7100124"
+106241	"7100124"
+106249	"7100124"
+106252	"7100124"
+106229	"7100125"
+106230	"7100125"
+106231	"7100125"
+106232	"7100125"
+106234	"7100125"
+106235	"7100125"
+106236	"7100125"
+106237	"7100125"
+106238	"7100125"
+106239	"7100125"
+106241	"7100125"
+106242	"7100125"
+106245	"7100125"
+106246	"7100125"
+106247	"7100125"
+106248	"7100125"
+106249	"7100125"
+106250	"7100125"
+106251	"7100125"
+106252	"7100125"
+106253	"7100125"
+106254	"7100125"
+106255	"7100125"
+106229	"7100126"
+106231	"7100126"
+106232	"7100126"
+106234	"7100126"
+106236	"7100126"
+106237	"7100126"
+106238	"7100126"
+106240	"7100126"
+106242	"7100126"
+106245	"7100126"
+106246	"7100126"
+106247	"7100126"
+106248	"7100126"
+106250	"7100126"
+106251	"7100126"
+106253	"7100126"
+106254	"7100126"
+106255	"7100126"
+106229	"7100127"
+106231	"7100127"
+106232	"7100127"
+106234	"7100127"
+106236	"7100127"
+106237	"7100127"
+106238	"7100127"
+106240	"7100127"
+106242	"7100127"
+106245	"7100127"
+106246	"7100127"
+106247	"7100127"
+106248	"7100127"
+106250	"7100127"
+106251	"7100127"
+106253	"7100127"
+106254	"7100127"
+106255	"7100127"
+106229	"7100128"
+106230	"7100128"
+106231	"7100128"
+106232	"7100128"
+106234	"7100128"
+106235	"7100128"
+106236	"7100128"
+106237	"7100128"
+106238	"7100128"
+106239	"7100128"
+106241	"7100128"
+106242	"7100128"
+106245	"7100128"
+106246	"7100128"
+106247	"7100128"
+106248	"7100128"
+106249	"7100128"
+106250	"7100128"
+106251	"7100128"
+106252	"7100128"
+106253	"7100128"
+106254	"7100128"
+106255	"7100128"
+106263	"7100129"
+106264	"7100129"
+106265	"7100129"
+106266	"7100129"
+106267	"7100129"
+106268	"7100129"
+106269	"7100129"
+106271	"7100129"
+106262	"7100129"
+106270	"7100129"
+106263	"7100130"
+106264	"7100130"
+106265	"7100130"
+106266	"7100130"
+106267	"7100130"
+106268	"7100130"
+106269	"7100130"
+106271	"7100130"
+106262	"7100130"
+106270	"7100130"
+106262	"7100131"
+106270	"7100131"
+106263	"7100131"
+106264	"7100131"
+106265	"7100131"
+106266	"7100131"
+106267	"7100131"
+106268	"7100131"
+106269	"7100131"
+106271	"7100131"
+106365	"7100132"
+106376	"7100132"
+106377	"7100132"
+106366	"7100132"
+106375	"7100132"
+106373	"7100133"
+106377	"7100134"
+106377	"7100135"
+106365	"7100136"
+106376	"7100136"
+106366	"7100136"
+106373	"7100137"
+106375	"7100137"
+106373	"7100138"
+106375	"7100139"
+106366	"7100140"
+106375	"7100140"
+106365	"7100140"
+106376	"7100140"
+106377	"7100140"
+106375	"7100141"
+106375	"7100142"
+106365	"7100142"
+106376	"7100142"
+106377	"7100142"
+106366	"7100143"
+106373	"7100143"
+106365	"7100143"
+106376	"7100143"
+106377	"7100143"
+106366	"7100144"
+106373	"7100144"
+106365	"7100144"
+106376	"7100144"
+106366	"7100145"
+106373	"7100145"
+106375	"7100145"
+106365	"7100145"
+106376	"7100145"
+106377	"7100145"
+107161	"7100146"
+107162	"7100146"
+107163	"7100146"
+107164	"7100146"
+107165	"7100146"
+107166	"7100146"
+107167	"7100146"
+107168	"7100146"
+107159	"7100147"
+107160	"7100147"
+107161	"7100148"
+107162	"7100148"
+107163	"7100148"
+107164	"7100148"
+107165	"7100148"
+107166	"7100148"
+107167	"7100148"
+107168	"7100148"
+107159	"7100149"
+107160	"7100149"
+107159	"7100150"
+107161	"7100150"
+107162	"7100150"
+107163	"7100150"
+107164	"7100150"
+107165	"7100150"
+107166	"7100150"
+107167	"7100150"
+107168	"7100150"
+107159	"7100151"
+107161	"7100151"
+107162	"7100151"
+107163	"7100151"
+107164	"7100151"
+107165	"7100151"
+107166	"7100151"
+107167	"7100151"
+107168	"7100151"
+107162	"7100152"
+107165	"7100152"
+107166	"7100152"
+107168	"7100152"
+107161	"7100153"
+107162	"7100153"
+107163	"7100153"
+107164	"7100153"
+107165	"7100153"
+107166	"7100153"
+107167	"7100153"
+107168	"7100153"
+107193	"7100154"
+107194	"7100154"
+107195	"7100154"
+107196	"7100154"
+107197	"7100154"
+107198	"7100154"
+107199	"7100154"
+107200	"7100154"
+107193	"7100155"
+107194	"7100155"
+107195	"7100155"
+107196	"7100155"
+107197	"7100155"
+107198	"7100155"
+107199	"7100155"
+107200	"7100155"
+107193	"7100156"
+107194	"7100156"
+107195	"7100156"
+107196	"7100156"
+107197	"7100156"
+107198	"7100156"
+107199	"7100156"
+107200	"7100156"
+107255	"7100157"
+107253	"7100157"
+107254	"7100158"
+107256	"7100158"
+107254	"7100159"
+107256	"7100159"
+107255	"7100160"
+107253	"7100160"
+107255	"7100161"
+107253	"7100161"
+107253	"7100162"
+107254	"7100162"
+107255	"7100162"
+107256	"7100162"
+107253	"7100163"
+107254	"7100163"
+107255	"7100163"
+107256	"7100163"
+107253	"7100164"
+107254	"7100164"
+107255	"7100164"
+107256	"7100164"
+107257	"7100165"
+107259	"7100165"
+107260	"7100165"
+107264	"7100165"
+107258	"7100166"
+107261	"7100166"
+107257	"7100167"
+107259	"7100167"
+107260	"7100167"
+107264	"7100167"
+107258	"7100168"
+107261	"7100168"
+107257	"7100169"
+107258	"7100169"
+107259	"7100169"
+107260	"7100169"
+107261	"7100169"
+107264	"7100169"
+107257	"7100170"
+107258	"7100170"
+107259	"7100170"
+107260	"7100170"
+107261	"7100170"
+107264	"7100170"
+107470	"7100171"
+107471	"7100171"
+107472	"7100171"
+107473	"7100171"
+107474	"7100171"
+107475	"7100171"
+107476	"7100171"
+107477	"7100171"
+107478	"7100171"
+107470	"7100172"
+107471	"7100172"
+107472	"7100172"
+107473	"7100172"
+107474	"7100172"
+107475	"7100172"
+107476	"7100172"
+107477	"7100172"
+107478	"7100172"
+107470	"7100173"
+107471	"7100173"
+107472	"7100173"
+107473	"7100173"
+107474	"7100173"
+107475	"7100173"
+107476	"7100173"
+107477	"7100173"
+107478	"7100173"
+107484	"7100174"
+107485	"7100174"
+107486	"7100174"
+107487	"7100174"
+107488	"7100174"
+107489	"7100174"
+107490	"7100174"
+107491	"7100174"
+107492	"7100174"
+107484	"7100175"
+107485	"7100175"
+107486	"7100175"
+107487	"7100175"
+107488	"7100175"
+107489	"7100175"
+107490	"7100175"
+107491	"7100175"
+107492	"7100175"
+107484	"7100176"
+107485	"7100176"
+107486	"7100176"
+107487	"7100176"
+107488	"7100176"
+107489	"7100176"
+107490	"7100176"
+107491	"7100176"
+107492	"7100176"
+111891	"7100177"
+111896	"7100177"
+111888	"7100178"
+111889	"7100178"
+111892	"7100178"
+111893	"7100178"
+111894	"7100178"
+111895	"7100178"
+111886	"7100179"
+111887	"7100179"
+111891	"7100180"
+111896	"7100180"
+111888	"7100181"
+111889	"7100181"
+111892	"7100181"
+111893	"7100181"
+111894	"7100181"
+111895	"7100181"
+111888	"7100182"
+111892	"7100182"
+111894	"7100182"
+111895	"7100182"
+111887	"7100183"
+111889	"7100183"
+111893	"7100183"
+111886	"7100184"
+111888	"7100184"
+111892	"7100184"
+111894	"7100184"
+111895	"7100184"
+111886	"7100185"
+111887	"7100185"
+111886	"7100186"
+111888	"7100186"
+111891	"7100186"
+111892	"7100186"
+111894	"7100186"
+111895	"7100186"
+111896	"7100186"
+111886	"7100187"
+111888	"7100187"
+111891	"7100187"
+111892	"7100187"
+111894	"7100187"
+111895	"7100187"
+111896	"7100187"
+111886	"7100188"
+111888	"7100188"
+111889	"7100188"
+111891	"7100188"
+111892	"7100188"
+111893	"7100188"
+111894	"7100188"
+111895	"7100188"
+111896	"7100188"
+111886	"7100189"
+111888	"7100189"
+111889	"7100189"
+111891	"7100189"
+111892	"7100189"
+111893	"7100189"
+111894	"7100189"
+111895	"7100189"
+111896	"7100189"
+111888	"7100190"
+111891	"7100190"
+111892	"7100190"
+111894	"7100190"
+111895	"7100190"
+111896	"7100190"
+111888	"7100191"
+111889	"7100191"
+111891	"7100191"
+111892	"7100191"
+111893	"7100191"
+111894	"7100191"
+111895	"7100191"
+111896	"7100191"
+111888	"7100192"
+111891	"7100192"
+111892	"7100192"
+111894	"7100192"
+111895	"7100192"
+111896	"7100192"
+111928	"7100193"
+111929	"7100193"
+111931	"7100193"
+111932	"7100193"
+111933	"7100193"
+111930	"7100194"
+111928	"7100195"
+111929	"7100195"
+111931	"7100195"
+111932	"7100195"
+111933	"7100195"
+111930	"7100196"
+111930	"7100197"
+111924	"7100198"
+111930	"7100199"
+111924	"7100200"
+111929	"7100201"
+111932	"7100201"
+111933	"7100201"
+111924	"7100202"
+111930	"7100202"
+111928	"7100202"
+111929	"7100202"
+111931	"7100202"
+111932	"7100202"
+111933	"7100202"
+111929	"7100203"
+111932	"7100203"
+111933	"7100203"
+111924	"7100204"
+111930	"7100204"
+111928	"7100204"
+111929	"7100204"
+111931	"7100204"
+111932	"7100204"
+111933	"7100204"
+111930	"7100205"
+111928	"7100205"
+111931	"7100205"
+111930	"7100206"
+111928	"7100206"
+111929	"7100206"
+111931	"7100206"
+111932	"7100206"
+111933	"7100206"
+111939	"7100207"
+111937	"7100208"
+111941	"7100208"
+111937	"7100209"
+111941	"7100209"
+111939	"7100210"
+111939	"7100211"
+111937	"7100212"
+111939	"7100212"
+111941	"7100212"
+111937	"7100213"
+111939	"7100213"
+111941	"7100213"
+111937	"7100214"
+111941	"7100214"
+111937	"7100215"
+111939	"7100215"
+111941	"7100215"
+112029	"7100216"
+112032	"7100216"
+112034	"7100216"
+112035	"7100216"
+112036	"7100216"
+112037	"7100216"
+112038	"7100216"
+112039	"7100216"
+112041	"7100216"
+112042	"7100216"
+112043	"7100216"
+112044	"7100216"
+112045	"7100216"
+112047	"7100216"
+112048	"7100216"
+112049	"7100216"
+112050	"7100216"
+112033	"7100217"
+112040	"7100217"
+112046	"7100217"
+112028	"7100218"
+112052	"7100218"
+112030	"7100219"
+112031	"7100219"
+112051	"7100219"
+112029	"7100220"
+112032	"7100220"
+112034	"7100220"
+112035	"7100220"
+112036	"7100220"
+112037	"7100220"
+112038	"7100220"
+112039	"7100220"
+112041	"7100220"
+112042	"7100220"
+112043	"7100220"
+112044	"7100220"
+112045	"7100220"
+112047	"7100220"
+112048	"7100220"
+112049	"7100220"
+112050	"7100220"
+112033	"7100221"
+112040	"7100221"
+112046	"7100221"
+112028	"7100222"
+112052	"7100222"
+112030	"7100223"
+112031	"7100223"
+112051	"7100223"
+112029	"7100224"
+112030	"7100224"
+112033	"7100224"
+112034	"7100224"
+112036	"7100224"
+112038	"7100224"
+112039	"7100224"
+112040	"7100224"
+112041	"7100224"
+112043	"7100224"
+112044	"7100224"
+112046	"7100224"
+112047	"7100224"
+112049	"7100224"
+112050	"7100224"
+112051	"7100224"
+112029	"7100225"
+112030	"7100225"
+112031	"7100225"
+112033	"7100225"
+112034	"7100225"
+112036	"7100225"
+112039	"7100225"
+112040	"7100225"
+112041	"7100225"
+112043	"7100225"
+112044	"7100225"
+112046	"7100225"
+112047	"7100225"
+112049	"7100225"
+112050	"7100225"
+112051	"7100225"
+112028	"7100226"
+112029	"7100226"
+112032	"7100226"
+112033	"7100226"
+112034	"7100226"
+112035	"7100226"
+112037	"7100226"
+112038	"7100226"
+112039	"7100226"
+112040	"7100226"
+112042	"7100226"
+112043	"7100226"
+112045	"7100226"
+112046	"7100226"
+112047	"7100226"
+112048	"7100226"
+112049	"7100226"
+112052	"7100226"
+112029	"7100227"
+112032	"7100227"
+112033	"7100227"
+112034	"7100227"
+112035	"7100227"
+112036	"7100227"
+112037	"7100227"
+112038	"7100227"
+112039	"7100227"
+112040	"7100227"
+112041	"7100227"
+112042	"7100227"
+112043	"7100227"
+112044	"7100227"
+112045	"7100227"
+112046	"7100227"
+112047	"7100227"
+112048	"7100227"
+112049	"7100227"
+112050	"7100227"
+112351	"7100228"
+112352	"7100228"
+112353	"7100228"
+112354	"7100228"
+112351	"7100229"
+112352	"7100229"
+112353	"7100229"
+112354	"7100229"
+112351	"7100230"
+112352	"7100230"
+112353	"7100230"
+112354	"7100230"
+112351	"7100231"
+112352	"7100231"
+112353	"7100231"
+112354	"7100231"
+112351	"7100232"
+112352	"7100232"
+112353	"7100232"
+112354	"7100232"
+112415	"7100233"
+112416	"7100233"
+112417	"7100233"
+112418	"7100233"
+112415	"7100234"
+112416	"7100234"
+112417	"7100234"
+112418	"7100234"
+112413	"7100235"
+112413	"7100236"
+112416	"7100237"
+112418	"7100237"
+112416	"7100238"
+112418	"7100238"
+112413	"7100239"
+112415	"7100239"
+112416	"7100239"
+112417	"7100239"
+112418	"7100239"
+112413	"7100240"
+112415	"7100240"
+112416	"7100240"
+112417	"7100240"
+112418	"7100240"
+112415	"7100241"
+112416	"7100241"
+112417	"7100241"
+112418	"7100241"
+112415	"7100242"
+112417	"7100242"
+112440	"7100243"
+112441	"7100243"
+112442	"7100243"
+112440	"7100244"
+112441	"7100244"
+112442	"7100244"
+112440	"7100245"
+112441	"7100245"
+112442	"7100245"
+112440	"7100246"
+112441	"7100246"
+112442	"7100246"
+112513	"7100247"
+112514	"7100247"
+112515	"7100247"
+112516	"7100247"
+112518	"7100247"
+112519	"7100247"
+112520	"7100247"
+112524	"7100247"
+112525	"7100247"
+112526	"7100247"
+112527	"7100247"
+112513	"7100248"
+112514	"7100248"
+112515	"7100248"
+112516	"7100248"
+112518	"7100248"
+112519	"7100248"
+112520	"7100248"
+112524	"7100248"
+112525	"7100248"
+112526	"7100248"
+112527	"7100249"
+112514	"7100250"
+112515	"7100250"
+112516	"7100250"
+112518	"7100250"
+112519	"7100250"
+112520	"7100250"
+112524	"7100250"
+112525	"7100250"
+112526	"7100250"
+112527	"7100250"
+112514	"7100251"
+112515	"7100251"
+112516	"7100251"
+112519	"7100251"
+112520	"7100251"
+112524	"7100251"
+112525	"7100251"
+112526	"7100251"
+112527	"7100251"
+112513	"7100252"
+112515	"7100252"
+112516	"7100252"
+112520	"7100252"
+112524	"7100252"
+112526	"7100252"
+112513	"7100253"
+112514	"7100253"
+112515	"7100253"
+112516	"7100253"
+112518	"7100253"
+112519	"7100253"
+112520	"7100253"
+112524	"7100253"
+112525	"7100253"
+112526	"7100253"
+112783	"7100254"
+112789	"7100254"
+112798	"7100254"
+112766	"7100255"
+112772	"7100255"
+112773	"7100255"
+112777	"7100255"
+112784	"7100255"
+112790	"7100255"
+112793	"7100255"
+112794	"7100255"
+112802	"7100255"
+112805	"7100255"
+112797	"7100256"
+112771	"7100257"
+112804	"7100257"
+112807	"7100257"
+112806	"7100258"
+112808	"7100258"
+112783	"7100259"
+112789	"7100259"
+112798	"7100259"
+112766	"7100260"
+112772	"7100260"
+112773	"7100260"
+112777	"7100260"
+112784	"7100260"
+112790	"7100260"
+112793	"7100260"
+112794	"7100260"
+112802	"7100260"
+112805	"7100260"
+112771	"7100261"
+112804	"7100261"
+112807	"7100261"
+112806	"7100262"
+112808	"7100262"
+112766	"7100263"
+112772	"7100263"
+112773	"7100263"
+112777	"7100263"
+112784	"7100263"
+112790	"7100263"
+112793	"7100263"
+112802	"7100263"
+112805	"7100263"
+112806	"7100263"
+112808	"7100263"
+112766	"7100264"
+112772	"7100264"
+112773	"7100264"
+112777	"7100264"
+112784	"7100264"
+112790	"7100264"
+112793	"7100264"
+112794	"7100264"
+112802	"7100264"
+112805	"7100264"
+112806	"7100264"
+112808	"7100264"
+112766	"7100265"
+112772	"7100265"
+112773	"7100265"
+112777	"7100265"
+112784	"7100265"
+112790	"7100265"
+112793	"7100265"
+112794	"7100265"
+112797	"7100265"
+112802	"7100265"
+112805	"7100265"
+112783	"7100266"
+112789	"7100266"
+112798	"7100266"
+112766	"7100267"
+112772	"7100267"
+112773	"7100267"
+112777	"7100267"
+112784	"7100267"
+112790	"7100267"
+112793	"7100267"
+112794	"7100267"
+112802	"7100267"
+112805	"7100267"
+112864	"7100268"
+112869	"7100268"
+112872	"7100268"
+112874	"7100268"
+112866	"7100269"
+112867	"7100269"
+112870	"7100269"
+112873	"7100269"
+112864	"7100270"
+112869	"7100270"
+112872	"7100270"
+112874	"7100270"
+112866	"7100271"
+112867	"7100271"
+112870	"7100271"
+112873	"7100271"
+112866	"7100272"
+112867	"7100272"
+112870	"7100272"
+112873	"7100272"
+112864	"7100273"
+112869	"7100273"
+112872	"7100273"
+112874	"7100273"
+112866	"7100274"
+112867	"7100274"
+112870	"7100274"
+112873	"7100274"
+112903	"7100275"
+112905	"7100275"
+112908	"7100275"
+112909	"7100275"
+112904	"7100276"
+112907	"7100276"
+112903	"7100277"
+112905	"7100277"
+112908	"7100277"
+112909	"7100277"
+112904	"7100278"
+112907	"7100278"
+112903	"7100279"
+112904	"7100279"
+112905	"7100279"
+112907	"7100279"
+112908	"7100279"
+112909	"7100279"
+112903	"7100280"
+112904	"7100280"
+112905	"7100280"
+112907	"7100280"
+112908	"7100280"
+112909	"7100280"
+112989	"7100281"
+112990	"7100281"
+112991	"7100281"
+112993	"7100281"
+112994	"7100281"
+112995	"7100281"
+112996	"7100281"
+112997	"7100281"
+112998	"7100281"
+112999	"7100281"
+113001	"7100281"
+113002	"7100281"
+113004	"7100281"
+113005	"7100281"
+113006	"7100281"
+113008	"7100281"
+113010	"7100281"
+112992	"7100282"
+113000	"7100282"
+113003	"7100282"
+113009	"7100282"
+113007	"7100283"
+113011	"7100283"
+113012	"7100284"
+113013	"7100284"
+112989	"7100285"
+112990	"7100285"
+112991	"7100285"
+112993	"7100285"
+112994	"7100285"
+112995	"7100285"
+112996	"7100285"
+112997	"7100285"
+112998	"7100285"
+112999	"7100285"
+113001	"7100285"
+113002	"7100285"
+113004	"7100285"
+113005	"7100285"
+113006	"7100285"
+113008	"7100285"
+113010	"7100285"
+112992	"7100286"
+113000	"7100286"
+113003	"7100286"
+113009	"7100286"
+113007	"7100287"
+113011	"7100287"
+113012	"7100288"
+113013	"7100288"
+112989	"7100289"
+112991	"7100289"
+112992	"7100289"
+112994	"7100289"
+112996	"7100289"
+112997	"7100289"
+112998	"7100289"
+113000	"7100289"
+113001	"7100289"
+113003	"7100289"
+113004	"7100289"
+113006	"7100289"
+113008	"7100289"
+113009	"7100289"
+113010	"7100289"
+113012	"7100289"
+113013	"7100289"
+112989	"7100290"
+112991	"7100290"
+112992	"7100290"
+112994	"7100290"
+112997	"7100290"
+112998	"7100290"
+113000	"7100290"
+113001	"7100290"
+113003	"7100290"
+113004	"7100290"
+113006	"7100290"
+113008	"7100290"
+113009	"7100290"
+113010	"7100290"
+113012	"7100290"
+113013	"7100290"
+112990	"7100291"
+112991	"7100291"
+112992	"7100291"
+112993	"7100291"
+112994	"7100291"
+112995	"7100291"
+112998	"7100291"
+112999	"7100291"
+113000	"7100291"
+113001	"7100291"
+113002	"7100291"
+113003	"7100291"
+113004	"7100291"
+113005	"7100291"
+113007	"7100291"
+113008	"7100291"
+113009	"7100291"
+113011	"7100291"
+112989	"7100292"
+112990	"7100292"
+112991	"7100292"
+112992	"7100292"
+112993	"7100292"
+112994	"7100292"
+112995	"7100292"
+112996	"7100292"
+112997	"7100292"
+112998	"7100292"
+112999	"7100292"
+113000	"7100292"
+113001	"7100292"
+113002	"7100292"
+113003	"7100292"
+113004	"7100292"
+113005	"7100292"
+113006	"7100292"
+113008	"7100292"
+113009	"7100292"
+113010	"7100292"
+113498	"7100293"
+113500	"7100293"
+113499	"7100294"
+113501	"7100295"
+113498	"7100296"
+113500	"7100296"
+113499	"7100297"
+113501	"7100298"
+113499	"7100299"
+113499	"7100300"
+113499	"7100301"
+113498	"7100301"
+113500	"7100301"
+113576	"7100302"
+113578	"7100302"
+113581	"7100302"
+113582	"7100302"
+113577	"7100303"
+113579	"7100303"
+113583	"7100304"
+113576	"7100305"
+113578	"7100305"
+113581	"7100305"
+113582	"7100305"
+113577	"7100306"
+113579	"7100306"
+113583	"7100307"
+113576	"7100308"
+113577	"7100308"
+113578	"7100308"
+113579	"7100308"
+113581	"7100308"
+113582	"7100308"
+113577	"7100309"
+113578	"7100309"
+113579	"7100309"
+113581	"7100309"
+113582	"7100309"
+113576	"7100309"
+113595	"7100310"
+113596	"7100310"
+113597	"7100310"
+113599	"7100310"
+113600	"7100310"
+113602	"7100310"
+113595	"7100311"
+113599	"7100311"
+113602	"7100311"
+113595	"7100312"
+113599	"7100312"
+113602	"7100312"
+113596	"7100313"
+113597	"7100313"
+113600	"7100313"
+113595	"7100314"
+113596	"7100314"
+113597	"7100314"
+113599	"7100314"
+113600	"7100314"
+113602	"7100314"
+113595	"7100315"
+113596	"7100315"
+113597	"7100315"
+113599	"7100315"
+113600	"7100315"
+113602	"7100315"
+113706	"7100316"
+113707	"7100316"
+113709	"7100316"
+113711	"7100316"
+113716	"7100316"
+113717	"7100316"
+113718	"7100316"
+113710	"7100316"
+113713	"7100316"
+113705	"7100317"
+113712	"7100317"
+113715	"7100317"
+113719	"7100317"
+113720	"7100318"
+113721	"7100319"
+113706	"7100320"
+113707	"7100320"
+113709	"7100320"
+113711	"7100320"
+113716	"7100320"
+113717	"7100320"
+113718	"7100320"
+113710	"7100320"
+113713	"7100320"
+113705	"7100321"
+113712	"7100321"
+113715	"7100321"
+113719	"7100321"
+113720	"7100322"
+113721	"7100323"
+113705	"7100324"
+113707	"7100324"
+113712	"7100324"
+113715	"7100324"
+113719	"7100324"
+113721	"7100324"
+113710	"7100324"
+113713	"7100324"
+113705	"7100325"
+113707	"7100325"
+113712	"7100325"
+113715	"7100325"
+113719	"7100325"
+113721	"7100325"
+113713	"7100325"
+113705	"7100326"
+113706	"7100326"
+113707	"7100326"
+113709	"7100326"
+113711	"7100326"
+113712	"7100326"
+113715	"7100326"
+113716	"7100326"
+113717	"7100326"
+113718	"7100326"
+113719	"7100326"
+113720	"7100326"
+113713	"7100326"
+113705	"7100327"
+113706	"7100327"
+113707	"7100327"
+113709	"7100327"
+113711	"7100327"
+113712	"7100327"
+113715	"7100327"
+113716	"7100327"
+113717	"7100327"
+113718	"7100327"
+113719	"7100327"
+113710	"7100327"
+113713	"7100327"
+133423	"7100328"
+133423	"7100329"
+133423	"7100330"
+133423	"7100331"
+133423	"7100332"
+133430	"7100333"
+133431	"7100333"
+133432	"7100333"
+133433	"7100333"
+133430	"7100334"
+133431	"7100334"
+133432	"7100334"
+133433	"7100334"
+133430	"7100335"
+133431	"7100335"
+133432	"7100335"
+133433	"7100335"
+133430	"7100336"
+133431	"7100336"
+133432	"7100336"
+133433	"7100336"
+133430	"7100337"
+133431	"7100337"
+133432	"7100337"
+133433	"7100337"
+133435	"7100338"
+133436	"7100338"
+133434	"7100339"
+133435	"7100340"
+133436	"7100340"
+133434	"7100341"
+133435	"7100342"
+133436	"7100342"
+133516	"7100343"
+133516	"7100344"
+133516	"7100345"
+133516	"7100346"
+133568	"7100347"
+133569	"7100347"
+133567	"7100348"
+133568	"7100349"
+133569	"7100349"
+137225	"7100350"
+137231	"7100350"
+137237	"7100350"
+137223	"7100351"
+137224	"7100351"
+137226	"7100351"
+137227	"7100351"
+137228	"7100351"
+137229	"7100351"
+137230	"7100351"
+137232	"7100351"
+137233	"7100351"
+137234	"7100351"
+137235	"7100351"
+137236	"7100351"
+137238	"7100351"
+137221	"7100352"
+137222	"7100352"
+137224	"7100353"
+137228	"7100353"
+137230	"7100353"
+137233	"7100353"
+137235	"7100353"
+137238	"7100353"
+137223	"7100354"
+137226	"7100354"
+137227	"7100354"
+137229	"7100354"
+137232	"7100354"
+137234	"7100354"
+137236	"7100354"
+137225	"7100355"
+137231	"7100355"
+137237	"7100355"
+137221	"7100356"
+137222	"7100356"
+137222	"7100357"
+137223	"7100357"
+137226	"7100357"
+137227	"7100357"
+137229	"7100357"
+137232	"7100357"
+137234	"7100357"
+137236	"7100357"
+137221	"7100358"
+137223	"7100358"
+137224	"7100358"
+137225	"7100358"
+137226	"7100358"
+137227	"7100358"
+137228	"7100358"
+137229	"7100358"
+137230	"7100358"
+137231	"7100358"
+137232	"7100358"
+137233	"7100358"
+137234	"7100358"
+137235	"7100358"
+137236	"7100358"
+137237	"7100358"
+137238	"7100358"
+137222	"7100359"
+137223	"7100359"
+137226	"7100359"
+137227	"7100359"
+137229	"7100359"
+137232	"7100359"
+137234	"7100359"
+137236	"7100359"
+137221	"7100360"
+137223	"7100360"
+137224	"7100360"
+137225	"7100360"
+137226	"7100360"
+137227	"7100360"
+137228	"7100360"
+137229	"7100360"
+137230	"7100360"
+137231	"7100360"
+137232	"7100360"
+137233	"7100360"
+137234	"7100360"
+137235	"7100360"
+137236	"7100360"
+137237	"7100360"
+137238	"7100360"
+137224	"7100361"
+137225	"7100361"
+137228	"7100361"
+137230	"7100361"
+137231	"7100361"
+137233	"7100361"
+137235	"7100361"
+137237	"7100361"
+137238	"7100361"
+137223	"7100362"
+137224	"7100362"
+137225	"7100362"
+137226	"7100362"
+137227	"7100362"
+137228	"7100362"
+137229	"7100362"
+137230	"7100362"
+137231	"7100362"
+137232	"7100362"
+137233	"7100362"
+137234	"7100362"
+137235	"7100362"
+137236	"7100362"
+137237	"7100362"
+137238	"7100362"
+137315	"7100363"
+137316	"7100363"
+137317	"7100363"
+137318	"7100363"
+137319	"7100363"
+137320	"7100363"
+137321	"7100363"
+137322	"7100363"
+137323	"7100363"
+137324	"7100363"
+137326	"7100363"
+137327	"7100363"
+137328	"7100363"
+137329	"7100363"
+137330	"7100363"
+137331	"7100363"
+137332	"7100363"
+137333	"7100363"
+137334	"7100363"
+137335	"7100363"
+137336	"7100363"
+137337	"7100363"
+137338	"7100363"
+137339	"7100364"
+137315	"7100365"
+137319	"7100365"
+137323	"7100365"
+137331	"7100365"
+137315	"7100366"
+137319	"7100366"
+137323	"7100366"
+137331	"7100366"
+137330	"7100367"
+137315	"7100368"
+137319	"7100368"
+137323	"7100368"
+137331	"7100368"
+137316	"7100369"
+137317	"7100369"
+137318	"7100369"
+137320	"7100369"
+137321	"7100369"
+137322	"7100369"
+137324	"7100369"
+137326	"7100369"
+137327	"7100369"
+137328	"7100369"
+137329	"7100369"
+137332	"7100369"
+137333	"7100369"
+137334	"7100369"
+137335	"7100369"
+137336	"7100369"
+137337	"7100369"
+137338	"7100369"
+137315	"7100370"
+137316	"7100370"
+137318	"7100370"
+137319	"7100370"
+137320	"7100370"
+137323	"7100370"
+137324	"7100370"
+137326	"7100370"
+137327	"7100370"
+137329	"7100370"
+137330	"7100370"
+137331	"7100370"
+137333	"7100370"
+137334	"7100370"
+137335	"7100370"
+137336	"7100370"
+137338	"7100370"
+137315	"7100371"
+137319	"7100371"
+137323	"7100371"
+137331	"7100371"
+137339	"7100372"
+137316	"7100373"
+137318	"7100373"
+137320	"7100373"
+137324	"7100373"
+137326	"7100373"
+137327	"7100373"
+137329	"7100373"
+137333	"7100373"
+137334	"7100373"
+137335	"7100373"
+137336	"7100373"
+137338	"7100373"
+137317	"7100374"
+137321	"7100374"
+137322	"7100374"
+137328	"7100374"
+137332	"7100374"
+137337	"7100374"
+137315	"7100375"
+137316	"7100375"
+137317	"7100375"
+137318	"7100375"
+137319	"7100375"
+137320	"7100375"
+137321	"7100375"
+137322	"7100375"
+137323	"7100375"
+137324	"7100375"
+137326	"7100375"
+137327	"7100375"
+137328	"7100375"
+137329	"7100375"
+137331	"7100375"
+137332	"7100375"
+137333	"7100375"
+137334	"7100375"
+137335	"7100375"
+137336	"7100375"
+137337	"7100375"
+137338	"7100375"
+137339	"7100375"
+137315	"7100376"
+137316	"7100376"
+137318	"7100376"
+137319	"7100376"
+137320	"7100376"
+137323	"7100376"
+137324	"7100376"
+137326	"7100376"
+137327	"7100376"
+137329	"7100376"
+137330	"7100376"
+137331	"7100376"
+137333	"7100376"
+137334	"7100376"
+137335	"7100376"
+137336	"7100376"
+137338	"7100376"
+137315	"7100377"
+137316	"7100377"
+137318	"7100377"
+137319	"7100377"
+137320	"7100377"
+137323	"7100377"
+137324	"7100377"
+137326	"7100377"
+137327	"7100377"
+137329	"7100377"
+137330	"7100377"
+137331	"7100377"
+137333	"7100377"
+137334	"7100377"
+137335	"7100377"
+137336	"7100377"
+137338	"7100377"
+137315	"7100378"
+137316	"7100378"
+137317	"7100378"
+137318	"7100378"
+137319	"7100378"
+137320	"7100378"
+137321	"7100378"
+137322	"7100378"
+137323	"7100378"
+137324	"7100378"
+137326	"7100378"
+137327	"7100378"
+137328	"7100378"
+137329	"7100378"
+137331	"7100378"
+137332	"7100378"
+137333	"7100378"
+137334	"7100378"
+137335	"7100378"
+137336	"7100378"
+137337	"7100378"
+137338	"7100378"
+137353	"7100379"
+137354	"7100379"
+137355	"7100379"
+137356	"7100379"
+137357	"7100379"
+137358	"7100379"
+137359	"7100379"
+137360	"7100379"
+137361	"7100379"
+137353	"7100380"
+137354	"7100380"
+137355	"7100380"
+137356	"7100380"
+137357	"7100380"
+137358	"7100380"
+137359	"7100380"
+137360	"7100380"
+137361	"7100380"
+137353	"7100381"
+137354	"7100381"
+137355	"7100381"
+137356	"7100381"
+137357	"7100381"
+137358	"7100381"
+137359	"7100381"
+137360	"7100381"
+137361	"7100381"
+137407	"7100382"
+137408	"7100382"
+137412	"7100382"
+137413	"7100382"
+137410	"7100383"
+137407	"7100384"
+137408	"7100384"
+137412	"7100384"
+137413	"7100384"
+137410	"7100385"
+137408	"7100386"
+137413	"7100386"
+137408	"7100387"
+137413	"7100387"
+137407	"7100388"
+137408	"7100388"
+137412	"7100388"
+137413	"7100388"
+137410	"7100388"
+137407	"7100389"
+137408	"7100389"
+137412	"7100389"
+137413	"7100389"
+137410	"7100389"
+137407	"7100390"
+137408	"7100390"
+137412	"7100390"
+137413	"7100390"
+137410	"7100390"
+137407	"7100391"
+137412	"7100391"
+137410	"7100391"
+137414	"7100392"
+137417	"7100392"
+137420	"7100392"
+137422	"7100392"
+137415	"7100393"
+137419	"7100393"
+137423	"7100393"
+137414	"7100394"
+137417	"7100394"
+137420	"7100394"
+137422	"7100394"
+137415	"7100395"
+137419	"7100395"
+137423	"7100395"
+137415	"7100396"
+137419	"7100396"
+137423	"7100396"
+137414	"7100397"
+137417	"7100397"
+137420	"7100397"
+137422	"7100397"
+137415	"7100398"
+137419	"7100398"
+137423	"7100398"
+137415	"7100399"
+137419	"7100399"
+137423	"7100399"
+137685	"7100400"
+137685	"7100401"
+137685	"7100402"
+137685	"7100403"
+137732	"7100404"
+137733	"7100404"
+137734	"7100404"
+137735	"7100404"
+137736	"7100404"
+137737	"7100404"
+137738	"7100404"
+137739	"7100404"
+137740	"7100404"
+137732	"7100405"
+137733	"7100405"
+137734	"7100405"
+137735	"7100405"
+137736	"7100405"
+137737	"7100405"
+137738	"7100405"
+137739	"7100405"
+137740	"7100405"
+137732	"7100406"
+137733	"7100406"
+137734	"7100406"
+137735	"7100406"
+137736	"7100406"
+137737	"7100406"
+137738	"7100406"
+137739	"7100406"
+137740	"7100406"
+137814	"7100407"
+137811	"7100408"
+137817	"7100408"
+137811	"7100409"
+137817	"7100409"
+137814	"7100410"
+137814	"7100411"
+137811	"7100412"
+137817	"7100412"
+137811	"7100413"
+137817	"7100413"
+137811	"7100414"
+137817	"7100414"
+137811	"7100415"
+137817	"7100415"
+137811	"7100416"
+137817	"7100416"
+137811	"7100417"
+137817	"7100417"
+137814	"7100418"
+138818	"7100419"
+138820	"7100419"
+138821	"7100419"
+138822	"7100419"
+138823	"7100419"
+138824	"7100419"
+138827	"7100419"
+138828	"7100419"
+138829	"7100419"
+138832	"7100419"
+138817	"7100420"
+138830	"7100420"
+138831	"7100420"
+138818	"7100421"
+138819	"7100421"
+138820	"7100421"
+138821	"7100421"
+138822	"7100421"
+138823	"7100421"
+138824	"7100421"
+138825	"7100421"
+138827	"7100421"
+138828	"7100421"
+138829	"7100421"
+138832	"7100421"
+138817	"7100422"
+138830	"7100422"
+138831	"7100422"
+138818	"7100423"
+138819	"7100423"
+138822	"7100423"
+138825	"7100423"
+138829	"7100423"
+138817	"7100424"
+138818	"7100424"
+138819	"7100424"
+138820	"7100424"
+138821	"7100424"
+138822	"7100424"
+138823	"7100424"
+138824	"7100424"
+138825	"7100424"
+138827	"7100424"
+138828	"7100424"
+138829	"7100424"
+138830	"7100424"
+138832	"7100424"
+138818	"7100425"
+138819	"7100425"
+138822	"7100425"
+138825	"7100425"
+138829	"7100425"
+138817	"7100426"
+138818	"7100426"
+138819	"7100426"
+138820	"7100426"
+138821	"7100426"
+138822	"7100426"
+138823	"7100426"
+138824	"7100426"
+138825	"7100426"
+138827	"7100426"
+138828	"7100426"
+138829	"7100426"
+138831	"7100426"
+138832	"7100426"
+138820	"7100427"
+138821	"7100427"
+138823	"7100427"
+138824	"7100427"
+138827	"7100427"
+138828	"7100427"
+138832	"7100427"
+138818	"7100428"
+138819	"7100428"
+138820	"7100428"
+138821	"7100428"
+138822	"7100428"
+138823	"7100428"
+138824	"7100428"
+138825	"7100428"
+138827	"7100428"
+138828	"7100428"
+138829	"7100428"
+138832	"7100428"
+138860	"7100429"
+138861	"7100429"
+138862	"7100429"
+138863	"7100429"
+138864	"7100429"
+138865	"7100429"
+138867	"7100429"
+138868	"7100429"
+138866	"7100429"
+138860	"7100430"
+138861	"7100430"
+138862	"7100430"
+138863	"7100430"
+138864	"7100430"
+138865	"7100430"
+138867	"7100430"
+138868	"7100430"
+138866	"7100430"
+138860	"7100431"
+138861	"7100431"
+138862	"7100431"
+138863	"7100431"
+138864	"7100431"
+138865	"7100431"
+138867	"7100431"
+138868	"7100431"
+138866	"7100431"
+138878	"7100432"
+138879	"7100432"
+138880	"7100432"
+138881	"7100432"
+138882	"7100432"
+138883	"7100432"
+138884	"7100432"
+138878	"7100433"
+138879	"7100433"
+138880	"7100433"
+138881	"7100433"
+138882	"7100433"
+138883	"7100433"
+138884	"7100433"
+138878	"7100434"
+138879	"7100434"
+138880	"7100434"
+138881	"7100434"
+138882	"7100434"
+138883	"7100434"
+138884	"7100434"
+138963	"7100435"
+138964	"7100435"
+138966	"7100435"
+138965	"7100436"
+138965	"7100437"
+138963	"7100438"
+138964	"7100438"
+138966	"7100438"
+138963	"7100439"
+138964	"7100439"
+138966	"7100439"
+138965	"7100440"
+138965	"7100441"
+138963	"7100442"
+138964	"7100442"
+138966	"7100442"
+138970	"7100443"
+138971	"7100443"
+138973	"7100443"
+138974	"7100443"
+138976	"7100443"
+138977	"7100443"
+138970	"7100444"
+138973	"7100444"
+138976	"7100444"
+138970	"7100445"
+138973	"7100445"
+138976	"7100445"
+138971	"7100446"
+138974	"7100446"
+138977	"7100446"
+138970	"7100447"
+138971	"7100447"
+138973	"7100447"
+138974	"7100447"
+138976	"7100447"
+138977	"7100447"
+138970	"7100448"
+138971	"7100448"
+138973	"7100448"
+138974	"7100448"
+138976	"7100448"
+138977	"7100448"
+138970	"7100449"
+138971	"7100449"
+138973	"7100449"
+138974	"7100449"
+138976	"7100449"
+138977	"7100449"
+138970	"7100450"
+138973	"7100450"
+138976	"7100450"
+138970	"7100451"
+138971	"7100451"
+138973	"7100451"
+138974	"7100451"
+138976	"7100451"
+138977	"7100451"
+139264	"7100452"
+139265	"7100452"
+139266	"7100452"
+139267	"7100452"
+139268	"7100452"
+139269	"7100452"
+139270	"7100452"
+139271	"7100452"
+139272	"7100452"
+139273	"7100452"
+139264	"7100453"
+139265	"7100453"
+139266	"7100453"
+139267	"7100453"
+139268	"7100453"
+139269	"7100453"
+139270	"7100453"
+139271	"7100453"
+139272	"7100453"
+139273	"7100453"
+139264	"7100454"
+139265	"7100454"
+139266	"7100454"
+139267	"7100454"
+139268	"7100454"
+139269	"7100454"
+139270	"7100454"
+139271	"7100454"
+139272	"7100454"
+139273	"7100454"
+139353	"7100455"
+139355	"7100455"
+139356	"7100455"
+139357	"7100455"
+139353	"7100456"
+139355	"7100456"
+139356	"7100456"
+139357	"7100456"
+139353	"7100457"
+139355	"7100457"
+139356	"7100457"
+139357	"7100457"
+139353	"7100458"
+139355	"7100458"
+139356	"7100458"
+139357	"7100458"
+139353	"7100459"
+139355	"7100459"
+139356	"7100459"
+139357	"7100459"
+144060	"7100460"
+144061	"7100460"
+144062	"7100460"
+144063	"7100460"
+144065	"7100460"
+144066	"7100460"
+144059	"7100461"
+144067	"7100462"
+144069	"7100462"
+144060	"7100463"
+144061	"7100463"
+144062	"7100463"
+144063	"7100463"
+144065	"7100463"
+144066	"7100463"
+144059	"7100464"
+144059	"7100465"
+144069	"7100466"
+144067	"7100467"
+144059	"7100468"
+144060	"7100469"
+144061	"7100469"
+144062	"7100469"
+144063	"7100469"
+144065	"7100469"
+144066	"7100469"
+144067	"7100469"
+144060	"7100470"
+144061	"7100470"
+144063	"7100470"
+144065	"7100470"
+144066	"7100470"
+144067	"7100470"
+144061	"7100471"
+144065	"7100471"
+144069	"7100471"
+144060	"7100472"
+144061	"7100472"
+144062	"7100472"
+144063	"7100472"
+144065	"7100472"
+144066	"7100472"
+144067	"7100472"
+144060	"7100473"
+144062	"7100473"
+144063	"7100473"
+144066	"7100473"
+144059	"7100474"
+144060	"7100475"
+144061	"7100475"
+144062	"7100475"
+144063	"7100475"
+144065	"7100475"
+144066	"7100475"
+144093	"7100476"
+144092	"7100477"
+144095	"7100477"
+144089	"7100478"
+144090	"7100478"
+144094	"7100478"
+144088	"7100478"
+144090	"7100479"
+144090	"7100480"
+144089	"7100481"
+144094	"7100481"
+144092	"7100482"
+144095	"7100482"
+144088	"7100483"
+144093	"7100484"
+144087	"7100485"
+144092	"7100486"
+144095	"7100486"
+144093	"7100487"
+144088	"7100488"
+144089	"7100489"
+144090	"7100489"
+144094	"7100489"
+144088	"7100489"
+144092	"7100489"
+144093	"7100489"
+144095	"7100489"
+144088	"7100490"
+144089	"7100491"
+144090	"7100491"
+144094	"7100491"
+144088	"7100491"
+144092	"7100491"
+144093	"7100491"
+144095	"7100491"
+144089	"7100492"
+144090	"7100492"
+144094	"7100492"
+144087	"7100492"
+144092	"7100492"
+144093	"7100492"
+144095	"7100492"
+144089	"7100493"
+144094	"7100493"
+144087	"7100493"
+144092	"7100493"
+144095	"7100493"
+144089	"7100494"
+144090	"7100494"
+144094	"7100494"
+144088	"7100494"
+144092	"7100494"
+144093	"7100494"
+144095	"7100494"
+144110	"7100495"
+144110	"7100496"
+144110	"7100497"
+144110	"7100498"
+144110	"7100499"
+144143	"7100500"
+144144	"7100500"
+144145	"7100500"
+144146	"7100500"
+144147	"7100500"
+144148	"7100500"
+144149	"7100500"
+144150	"7100500"
+144151	"7100500"
+144152	"7100500"
+144153	"7100500"
+144143	"7100501"
+144144	"7100501"
+144145	"7100501"
+144146	"7100501"
+144147	"7100501"
+144148	"7100501"
+144149	"7100501"
+144150	"7100501"
+144151	"7100501"
+144152	"7100501"
+144153	"7100501"
+144143	"7100502"
+144144	"7100502"
+144145	"7100502"
+144147	"7100502"
+144149	"7100502"
+144150	"7100502"
+144151	"7100502"
+144152	"7100502"
+144153	"7100502"
+144143	"7100503"
+144144	"7100503"
+144146	"7100503"
+144147	"7100503"
+144149	"7100503"
+144150	"7100503"
+144152	"7100503"
+144153	"7100503"
+144143	"7100504"
+144144	"7100504"
+144145	"7100504"
+144146	"7100504"
+144147	"7100504"
+144148	"7100504"
+144149	"7100504"
+144150	"7100504"
+144151	"7100504"
+144152	"7100504"
+144153	"7100504"
+144157	"7100505"
+144159	"7100505"
+144162	"7100505"
+144164	"7100505"
+144165	"7100505"
+144166	"7100505"
+144168	"7100505"
+144160	"7100505"
+144161	"7100505"
+144158	"7100506"
+144163	"7100506"
+144167	"7100506"
+144169	"7100506"
+144156	"7100507"
+144155	"7100508"
+144157	"7100509"
+144159	"7100509"
+144162	"7100509"
+144164	"7100509"
+144165	"7100509"
+144166	"7100509"
+144168	"7100509"
+144160	"7100509"
+144161	"7100509"
+144158	"7100510"
+144163	"7100510"
+144167	"7100510"
+144169	"7100510"
+144156	"7100511"
+144155	"7100512"
+144155	"7100513"
+144158	"7100513"
+144163	"7100513"
+144165	"7100513"
+144167	"7100513"
+144169	"7100513"
+144160	"7100513"
+144155	"7100514"
+144158	"7100514"
+144163	"7100514"
+144165	"7100514"
+144167	"7100514"
+144169	"7100514"
+144161	"7100514"
+144156	"7100515"
+144157	"7100515"
+144158	"7100515"
+144159	"7100515"
+144162	"7100515"
+144163	"7100515"
+144164	"7100515"
+144165	"7100515"
+144166	"7100515"
+144167	"7100515"
+144168	"7100515"
+144169	"7100515"
+144160	"7100515"
+144161	"7100515"
+144157	"7100516"
+144158	"7100516"
+144159	"7100516"
+144162	"7100516"
+144163	"7100516"
+144164	"7100516"
+144165	"7100516"
+144166	"7100516"
+144167	"7100516"
+144168	"7100516"
+144169	"7100516"
+144160	"7100516"
+144161	"7100516"
+144477	"7100517"
+144478	"7100517"
+144479	"7100517"
+144480	"7100518"
+144477	"7100519"
+144478	"7100519"
+144479	"7100519"
+144543	"7100520"
+144541	"7100521"
+144547	"7100521"
+144541	"7100522"
+144547	"7100522"
+144543	"7100523"
+144543	"7100524"
+144541	"7100525"
+144547	"7100525"
+144541	"7100526"
+144547	"7100526"
+144541	"7100527"
+144547	"7100527"
+144541	"7100528"
+144547	"7100528"
+144541	"7100529"
+144547	"7100529"
+144541	"7100530"
+144547	"7100530"
+144543	"7100531"
+144572	"7100532"
+144574	"7100532"
+144575	"7100532"
+144576	"7100532"
+144572	"7100533"
+144574	"7100533"
+144575	"7100533"
+144576	"7100533"
+144572	"7100534"
+144574	"7100534"
+144575	"7100534"
+144576	"7100534"
+
+COPY 121 RECORDS INTO "sys"."food_service" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"B"	1	"FIRST"	"BREAKFAST"
+"B"	1	"COACH"	"BREAKFAST"
+"B/"	1	"FIRST"	"BREAKFAST"
+"B/S"	1	"FIRST"	"BREAKFAST"
+"B/S"	1	"COACH"	"SNACK"
+"BD"	1	"FIRST"	"BREAKFAST"
+"BD"	2	"FIRST"	"DINNER"
+"BD"	1	"COACH"	"BREAKFAST"
+"BD"	2	"COACH"	"DINNER"
+"BDS"	1	"FIRST"	"BREAKFAST"
+"BDS"	2	"FIRST"	"DINNER"
+"BDS"	3	"FIRST"	"SNACK"
+"BDS"	1	"COACH"	"BREAKFAST"
+"BDS"	2	"COACH"	"DINNER"
+"BDS"	3	"COACH"	"SNACK"
+"BL"	1	"FIRST"	"BREAKFAST"
+"BL"	2	"FIRST"	"LUNCH"
+"BL"	1	"COACH"	"BREAKFAST"
+"BL"	2	"COACH"	"LUNCH"
+"BLD"	1	"FIRST"	"BREAKFAST"
+"BLD"	2	"FIRST"	"LUNCH"
+"BLD"	3	"FIRST"	"DINNER"
+"BLD"	1	"COACH"	"BREAKFAST"
+"BLD"	2	"COACH"	"LUNCH"
+"BLD"	3	"COACH"	"DINNER"
+"BLS"	1	"FIRST"	"BREAKFAST"
+"BLS"	2	"FIRST"	"LUNCH"
+"BLS"	3	"FIRST"	"SNACK"
+"BLS"	1	"COACH"	"BREAKFAST"
+"BLS"	2	"COACH"	"LUNCH"
+"BLS"	3	"COACH"	"SNACK"
+"BS"	1	"FIRST"	"BREAKFAST"
+"BS"	2	"FIRST"	"SNACK"
+"BS"	1	"COACH"	"BREAKFAST"
+"BS"	2	"COACH"	"SNACK"
+"BSD"	1	"FIRST"	"BREAKFAST"
+"BSD"	2	"FIRST"	"SNACK"
+"BSD"	3	"FIRST"	"DINNER"
+"BSD"	1	"COACH"	"BREAKFAST"
+"BSD"	2	"COACH"	"SNACK"
+"BSD"	3	"COACH"	"DINNER"
+"BSL"	1	"FIRST"	"BREAKFAST"
+"BSL"	2	"FIRST"	"SNACK"
+"BSL"	3	"FIRST"	"LUNCH"
+"BSL"	1	"COACH"	"BREAKFAST"
+"BSL"	2	"COACH"	"SNACK"
+"BSL"	3	"COACH"	"LUNCH"
+"D"	1	"FIRST"	"DINNER"
+"D"	2	"COACH"	"DINNER"
+"D/"	1	"FIRST"	"DINNER"
+"D/S"	1	"FIRST"	"DINNER"
+"D/S"	1	"COACH"	"SNACK"
+"DB"	1	"FIRST"	"DINNER"
+"DB"	2	"FIRST"	"BREAKFAST"
+"DB"	1	"COACH"	"DINNER"
+"DB"	2	"COACH"	"BREAKFAST"
+"DS"	1	"FIRST"	"DINNER"
+"DS"	2	"FIRST"	"SNACK"
+"DS"	1	"COACH"	"DINNER"
+"DS"	2	"COACH"	"SNACK"
+"L"	1	"FIRST"	"LUNCH"
+"L"	1	"COACH"	"LUNCH"
+"L/"	1	"FIRST"	"LUNCH"
+"L/S"	1	"FIRST"	"LUNCH"
+"L/S"	1	"COACH"	"SNACK"
+"LD"	1	"FIRST"	"LUNCH"
+"LD"	2	"FIRST"	"DINNER"
+"LD"	1	"COACH"	"LUNCH"
+"LD"	2	"COACH"	"DINNER"
+"LDS"	1	"FIRST"	"LUNCH"
+"LDS"	2	"FIRST"	"DINNER"
+"LDS"	3	"FIRST"	"SNACK"
+"LDS"	1	"COACH"	"LUNCH"
+"LDS"	2	"COACH"	"DINNER"
+"LDS"	3	"COACH"	"SNACK"
+"LS"	1	"FIRST"	"LUNCH"
+"LS"	2	"FIRST"	"SNACK"
+"LS"	1	"COACH"	"LUNCH"
+"LS"	2	"COACH"	"SNACK"
+"LS/L"	1	"FIRST"	"LUNCH"
+"LS/L"	2	"FIRST"	"SNACK"
+"LS/L"	1	"COACH"	"LUNCH"
+"LSD"	1	"FIRST"	"LUNCH"
+"LSD"	2	"FIRST"	"SNACK"
+"LSD"	3	"FIRST"	"DINNER"
+"LSD"	1	"COACH"	"LUNCH"
+"LSD"	2	"COACH"	"SNACK"
+"LSD"	3	"COACH"	"DINNER"
+"S"	1	"FIRST"	"SNACK"
+"S"	1	"COACH"	"SNACK"
+"S/"	1	"FIRST"	"SNACK"
+"SB"	1	"FIRST"	"SNACK"
+"SB"	2	"FIRST"	"BREAKFAST"
+"SB"	1	"COACH"	"SNACK"
+"SB"	2	"COACH"	"BREAKFAST"
+"SBD"	1	"FIRST"	"SNACK"
+"SBD"	2	"FIRST"	"BREAKFAST"
+"SBD"	3	"FIRST"	"DINNER"
+"SBD"	1	"COACH"	"SNACK"
+"SBD"	2	"COACH"	"BREAKFAST"
+"SBD"	3	"COACH"	"DINNER"
+"SBL"	1	"FIRST"	"SNACK"
+"SBL"	2	"FIRST"	"BREAKFAST"
+"SBL"	3	"FIRST"	"LUNCH"
+"SBL"	1	"COACH"	"SNACK"
+"SBL"	2	"COACH"	"BREAKFAST"
+"SBL"	3	"COACH"	"LUNCH"
+"SD"	1	"FIRST"	"SNACK"
+"SD"	2	"FIRST"	"DINNER"
+"SD"	1	"COACH"	"SNACK"
+"SD"	2	"COACH"	"DINNER"
+"SL"	1	"FIRST"	"SNACK"
+"SL"	2	"FIRST"	"LUNCH"
+"SL"	1	"COACH"	"SNACK"
+"SL"	2	"COACH"	"LUNCH"
+"SLD"	1	"FIRST"	"SNACK"
+"SLD"	2	"FIRST"	"LUNCH"
+"SLD"	3	"FIRST"	"DINNER"
+"SLD"	1	"COACH"	"SNACK"
+"SLD"	2	"COACH"	"LUNCH"
+"SLD"	3	"COACH"	"DINNER"
+
+COPY 33 RECORDS INTO "sys"."ground_service" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"MATL"	"ATL"	"L"	9
+"MATL"	"ATL"	"R"	0
+"MATL"	"ATL"	"A"	0
+"BBOS"	"BOS"	"L"	5
+"BBOS"	"BOS"	"R"	0
+"BBOS"	"BOS"	"A"	0
+"DDFW"	"DFW"	"R"	0
+"DDFW"	"DFW"	"L"	6
+"FDFW"	"DFW"	"L"	6
+"FDFW"	"DFW"	"R"	0
+"DDEN"	"DEN"	"L"	5
+"DDEN"	"DEN"	"R"	0
+"DDEN"	"DEN"	"A"	0
+"PPHL"	"PHL"	"L"	4.75
+"PPHL"	"PHL"	"R"	0
+"PPHL"	"PHL"	"A"	0
+"PPIT"	"PIT"	"L"	7.5
+"PPIT"	"PIT"	"R"	0
+"PPIT"	"PIT"	"A"	0
+"OOAK"	"OAK"	"L"	3.5
+"OOAK"	"OAK"	"R"	0
+"OOAK"	"SFO"	"L"	6
+"OOAK"	"SFO"	"R"	0
+"OOAK"	"SFO"	"A"	0
+"SSFO"	"SFO"	"L"	4
+"SSFO"	"SFO"	"R"	0
+"SSFO"	"SFO"	"A"	0
+"SSFO"	"OAK"	"L"	5
+"WWAS"	"BWI"	"L"	12
+"BBWI"	"BWI"	"L"	5
+"BBWI"	"BWI"	"R"	0
+"BBWI"	"BWI"	"A"	0
+""	""	""	0
+
+COPY 12 RECORDS INTO "sys"."time_interval" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"morning"	0	1200
+"afternoon"	1200	1800
+"evening"	1800	2000
+"day"	600	1800
+"night"	1800	2400
+"night"	0	600
+"early morning"	0	800
+"mid-morning"	800	1000
+"late morning"	1000	1200
+"early afternoon"	1200	1400
+"mid-afternoon"	1400	1600
+"late afternoon"	1600	1800
+
+COPY 12 RECORDS INTO "sys"."month_name" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+1	"JANUARY"
+2	"FEBRUARY"
+3	"MARCH"
+4	"APRIL"
+5	"MAY"
+6	"JUNE"
+7	"JULY"
+8	"AUGUST"
+9	"SEPTEMBER"
+10	"OCTOBER"
+11	"NOVEMBER"
+12	"DECEMBER"
+
+COPY 612 RECORDS INTO "sys"."restrict_carrier" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"AP/1"	"AA"
+"AP/2"	"AA"
+"AP/2"	"AF"
+"AP/2"	"AM"
+"AP/2"	"EA"
+"AP/2"	"KX"
+"AP/2"	"MX"
+"AP/2"	"NW"
+"AP/4"	"AA"
+"AP/4"	"AC"
+"AP/4"	"AS"
+"AP/4"	"BW"
+"AP/4"	"CO"
+"AP/4"	"DL"
+"AP/4"	"EA"
+"AP/4"	"KW"
+"AP/4"	"LI"
+"AP/4"	"MX"
+"AP/4"	"PA"
+"AP/4"	"TW"
+"AP/6"	"AC"
+"AP/6"	"BA"
+"AP/6"	"CB"
+"AP/6"	"EA"
+"AP/6"	"ND"
+"AP/6"	"NW"
+"AP/6"	"OU"
+"AP/6"	"PA"
+"AP/6"	"US"
+"AP/6"	"WD"
+"AP/10"	"AA"
+"AP/10"	"AC"
+"AP/10"	"AM"
+"AP/10"	"CO"
+"AP/10"	"DL"
+"AP/10"	"EA"
+"AP/10"	"FH"
+"AP/10"	"NW"
+"AP/10"	"RP"
+"AP/10"	"TW"
+"AP/10"	"UA"
+"AP/10"	"US"
+"AP/12"	"AA"
+"AP/12"	"CO"
+"AP/12"	"DL"
+"AP/12"	"EA"
+"AP/12"	"JM"
+"AP/12"	"ML"
+"AP/12"	"MX"
+"AP/12"	"PA"
+"AP/12"	"TW"
+"AP/12"	"US"
+"AP/13"	"AA"
+"AP/13"	"JM"
+"AP/14"	"AA"
+"AP/14"	"EA"
+"AP/14"	"KX"
+"AP/14"	"NW"
+"AP/14"	"PA"
+"AP/16"	"AC"
+"AP/16"	"CX"
+"AP/16"	"DL"
+"AP/16"	"EA"
+"AP/16"	"SN"
+"AP/16"	"TW"
+"AP/16"	"UA"
+"AP/17"	"AA"
+"AP/18"	"CP"
+"AP/18"	"MX"
+"AP/19"	"AC"
+"AP/19"	"BW"
+"AP/19"	"CU"
+"AP/19"	"EA"
+"AP/19"	"JM"
+"AP/20"	"AA"
+"AP/20"	"AC"
+"AP/20"	"AS"
+"AP/20"	"CO"
+"AP/20"	"CP"
+"AP/20"	"DL"
+"AP/20"	"EA"
+"AP/20"	"FH"
+"AP/20"	"HP"
+"AP/20"	"LH"
+"AP/20"	"ND"
+"AP/20"	"NR"
+"AP/20"	"NW"
+"AP/20"	"NX"
+"AP/20"	"OU"
+"AP/20"	"QB"
+"AP/20"	"TG"
+"AP/20"	"UA"
+"AP/20"	"US"
+"AP/20"	"WD"
+"AP/20"	"YN"
+"AP/20"	"4F"
+"AP/20"	"4V"
+"AP/20"	"7F"
+"AP/20"	"8D"
+"AP/21"	"AA"
+"AP/21"	"AC"
+"AP/21"	"EA"
+"AP/21"	"KX"
+"AP/21"	"NW"
+"AP/25"	"AA"
+"AP/25"	"AS"
+"AP/25"	"EA"
+"AP/25"	"LR"
+"AP/25"	"MX"
+"AP/25"	"PA"
+"AP/27"	"AA"
+"AP/27"	"CO"
+"AP/27"	"DL"
+"AP/27"	"EA"
+"AP/27"	"HP"
+"AP/27"	"ML"
+"AP/27"	"NW"
+"AP/27"	"PA"
+"AP/27"	"TW"
+"AP/27"	"UA"
+"AP/27"	"US"
+"AP/27"	"WN"
+"AP/32"	"AA"
+"AP/32"	"AC"
+"AP/32"	"BA"
+"AP/32"	"CP"
+"AP/32"	"NW"
+"AP/33"	"LM"
+"AP/35"	"AA"
+"AP/35"	"AC"
+"AP/35"	"AS"
+"AP/35"	"CO"
+"AP/35"	"DF"
+"AP/35"	"EA"
+"AP/35"	"HA"
+"AP/35"	"HP"
+"AP/35"	"LM"
+"AP/35"	"ND"
+"AP/35"	"NW"
+"AP/35"	"PA"
+"AP/35"	"TW"
+"AP/35"	"UA"
+"AP/35"	"WD"
+"AP/43"	"AA"
+"AP/43"	"DF"
+"AP/43"	"UA"
+"AP/43"	"US"
+"AP/44"	"AA"
+"AP/44"	"AC"
+"AP/44"	"AD"
+"AP/44"	"AS"
+"AP/44"	"BE"
+"AP/44"	"CO"
+"AP/44"	"DF"
+"AP/44"	"DL"
+"AP/44"	"EA"
+"AP/44"	"FH"
+"AP/44"	"HP"
+"AP/44"	"IN"
+"AP/44"	"IT"
+"AP/44"	"KS"
+"AP/44"	"ML"
+"AP/44"	"NW"
+"AP/44"	"PA"
+"AP/44"	"TW"
+"AP/44"	"UA"
+"AP/44"	"UO"
+"AP/44"	"US"
+"AP/44"	"WN"
+"AP/44"	"YN"
+"AP/44"	"YV"
+"AP/44"	"YW"
+"AP/44"	"YX"
+"AP/44"	"ZO"
+"AP/44"	"ZK"
+"AP/44"	"3S"
+"AP/44"	"5A"
+"AP/44"	"5C"
+"AP/44"	"7F"
+"AP/44"	"7V"
+"AP/44"	"8G"
+"AP/47"	"AA"
+"AP/47"	"DO"
+"AP/48"	"AA"
+"AP/48"	"AC"
+"AP/48"	"BL"
+"AP/48"	"BW"
+"AP/48"	"CO"
+"AP/48"	"CP"
+"AP/48"	"DL"
+"AP/48"	"EA"
+"AP/48"	"IV"
+"AP/48"	"KW"
+"AP/48"	"KX"
+"AP/48"	"ML"
+"AP/48"	"MX"
+"AP/48"	"NR"
+"AP/48"	"NW"
+"AP/48"	"PA"
+"AP/48"	"PD"
+"AP/48"	"TW"
+"AP/48"	"UA"
+"AP/48"	"YV"
+"AP/48"	"8D"
+"AP/55"	"AA"
+"AP/55"	"AC"
+"AP/55"	"AS"
+"AP/55"	"CH"
+"AP/55"	"CO"
+"AP/55"	"CP"
+"AP/55"	"CT"
+"AP/55"	"DL"
+"AP/55"	"EA"
+"AP/55"	"GM"
+"AP/55"	"HA"
+"AP/55"	"HP"
+"AP/55"	"ML"
+"AP/55"	"ND"
+"AP/55"	"NR"
+"AP/55"	"NW"
+"AP/55"	"OD"
+"AP/55"	"PA"
+"AP/55"	"RP"
+"AP/55"	"TW"
+"AP/55"	"UA"
+"AP/55"	"UE"
+"AP/55"	"US"
+"AP/55"	"WD"
+"AP/55"	"YW"
+"AP/55"	"YX"
+"AP/55"	"YK"
+"AP/55"	"ZV"
+"AP/55"	"2V"
+"AP/55"	"3N"
+"AP/55"	"4N"
+"AP/55"	"4W"
+"AP/55"	"5A"
+"AP/55"	"5C"
+"AP/55"	"5L"
+"AP/55"	"8D"
+"AP/56"	"AA"
+"AP/56"	"DL"
+"AP/56"	"GM"
+"AP/56"	"HA"
+"AP/56"	"HP"
+"AP/56"	"PA"
+"AP/56"	"TW"
+"AP/56"	"UA"
+"AP/56"	"WD"
+"AP/57"	"AA"
+"AP/57"	"AC"
+"AP/57"	"AS"
+"AP/57"	"BE"
+"AP/57"	"CO"
+"AP/57"	"CP"
+"AP/57"	"CT"
+"AP/57"	"DL"
+"AP/57"	"EA"
+"AP/57"	"HP"
+"AP/57"	"ML"
+"AP/57"	"ND"
+"AP/57"	"NW"
+"AP/57"	"PA"
+"AP/57"	"PD"
+"AP/57"	"PS"
+"AP/57"	"TW"
+"AP/57"	"UA"
+"AP/57"	"US"
+"AP/57"	"YV"
+"AP/57"	"YW"
+"AP/57"	"YX"
+"AP/57"	"ZV"
+"AP/57"	"2P"
+"AP/57"	"2V"
+"AP/57"	"3N"
+"AP/57"	"4N"
+"AP/57"	"4X"
+"AP/57"	"8G"
+"AP/58"	"AS"
+"AP/58"	"EA"
+"AP/58"	"7H"
+"AP/59"	"DL"
+"AP/59"	"JN"
+"AP/60"	"AC"
+"AP/60"	"EA"
+"AP/60"	"NW"
+"AP/60"	"UA"
+"AP/60"	"US"
+"AP/61"	"CO"
+"AP/61"	"FY"
+"AP/61"	"JR"
+"AP/61"	"2V"
+"AP/68"	"AA"
+"AP/68"	"AD"
+"AP/68"	"AM"
+"AP/68"	"AS"
+"AP/68"	"BE"
+"AP/68"	"CO"
+"AP/68"	"CP"
+"AP/68"	"CT"
+"AP/68"	"DF"
+"AP/68"	"DL"
+"AP/68"	"EA"
+"AP/68"	"EM"
+"AP/68"	"HP"
+"AP/68"	"IN"
+"AP/68"	"ML"
+"AP/68"	"MX"
+"AP/68"	"NW"
+"AP/68"	"OU"
+"AP/68"	"PA"
+"AP/68"	"QQ"
+"AP/68"	"QS"
+"AP/68"	"RP"
+"AP/68"	"TW"
+"AP/68"	"UA"
+"AP/68"	"US"
+"AP/68"	"YN"
+"AP/68"	"YV"
+"AP/68"	"YW"
+"AP/68"	"YX"
+"AP/68"	"ZE"
+"AP/68"	"ZK"
+"AP/68"	"3N"
+"AP/68"	"5C"
+"AP/68"	"7L"
+"AP/70"	"AC"
+"AP/70"	"BW"
+"AP/70"	"EA"
+"AP/70"	"PA"
+"AP/73"	"AA"
+"AP/73"	"DL"
+"AP/73"	"EA"
+"AP/73"	"ML"
+"AP/73"	"PA"
+"AP/73"	"TW"
+"AP/75"	"AA"
+"AP/75"	"AC"
+"AP/75"	"AS"
+"AP/75"	"CH"
+"AP/75"	"CO"
+"AP/75"	"CP"
+"AP/75"	"DL"
+"AP/75"	"EA"
+"AP/75"	"HP"
+"AP/75"	"JV"
+"AP/75"	"KS"
+"AP/75"	"LH"
+"AP/75"	"ML"
+"AP/75"	"MX"
+"AP/75"	"ND"
+"AP/75"	"NW"
+"AP/75"	"OU"
+"AP/75"	"PA"
+"AP/75"	"RP"
+"AP/75"	"RV"
+"AP/75"	"TW"
+"AP/75"	"UA"
+"AP/75"	"US"
+"AP/75"	"WD"
+"AP/75"	"XE"
+"AP/75"	"YN"
+"AP/75"	"YV"
+"AP/75"	"ZO"
+"AP/75"	"7F"
+"AP/75"	"8D"
+"AP/76"	"MX"
+"AP/76"	"NW"
+"AP/80"	"AA"
+"AP/80"	"AC"
+"AP/80"	"AR"
+"AP/80"	"AS"
+"AP/80"	"BA"
+"AP/80"	"CO"
+"AP/80"	"CP"
+"AP/80"	"DL"
+"AP/80"	"EA"
+"AP/80"	"HP"
+"AP/80"	"JB"
+"AP/80"	"JL"
+"AP/80"	"JV"
+"AP/80"	"LA"
+"AP/80"	"LH"
+"AP/80"	"ND"
+"AP/80"	"NW"
+"AP/80"	"PA"
+"AP/80"	"TG"
+"AP/80"	"UA"
+"AP/80"	"US"
+"AP/80"	"UW"
+"AP/80"	"WD"
+"AP/80"	"YN"
+"AP/80"	"4V"
+"AP/80"	"7E"
+"AP/80"	"8D"
+"AP/87"	"AC"
+"AP/94"	"AA"
+"AP/94"	"AC"
+"AP/94"	"EA"
+"AP/94"	"LM"
+"AP/94"	"NW"
+"EX/1"	"AR"
+"EX/1"	"IB"
+"EX/2"	"AB"
+"EX/2"	"BW"
+"EX/2"	"FQ"
+"EX/2"	"MX"
+"EX/2"	"UA"
+"EX/2"	"UP"
+"EX/3"	"AA"
+"EX/3"	"CO"
+"EX/3"	"DL"
+"EX/3"	"EA"
+"EX/3"	"HP"
+"EX/3"	"PA"
+"EX/3"	"US"
+"EX/5"	"LR"
+"EX/9"	"AA"
+"EX/9"	"AC"
+"EX/9"	"AM"
+"EX/9"	"BA"
+"EX/9"	"CO"
+"EX/9"	"EA"
+"EX/9"	"FQ"
+"EX/9"	"HP"
+"EX/9"	"PA"
+"EX/9"	"TV"
+"EX/11"	"AA"
+"EX/11"	"AM"
+"EX/11"	"CO"
+"EX/11"	"CP"
+"EX/11"	"CX"
+"EX/11"	"DL"
+"EX/11"	"JT"
+"EX/11"	"LA"
+"EX/11"	"MX"
+"EX/11"	"NW"
+"EX/11"	"PA"
+"EX/11"	"UA"
+"EX/12"	"AS"
+"EX/12"	"CP"
+"EX/12"	"CX"
+"EX/13"	"AC"
+"EX/13"	"AS"
+"EX/13"	"BF"
+"EX/13"	"BW"
+"EX/13"	"DL"
+"EX/13"	"KS"
+"EX/13"	"LM"
+"EX/13"	"ML"
+"EX/13"	"YV"
+"EX/13"	"ZV"
+"EX/13"	"7H"
+"EX/14"	"AA"
+"EX/14"	"AS"
+"EX/14"	"BE"
+"EX/14"	"CO"
+"EX/14"	"CP"
+"EX/14"	"DL"
+"EX/14"	"EA"
+"EX/14"	"IN"
+"EX/14"	"ML"
+"EX/14"	"NW"
+"EX/14"	"PA"
+"EX/14"	"PD"
+"EX/14"	"TW"
+"EX/14"	"UA"
+"EX/14"	"US"
+"EX/14"	"WN"
+"EX/14"	"YW"
+"EX/14"	"ZV"
+"EX/14"	"2V"
+"EX/14"	"4N"
+"EX/14"	"4X"
+"EX/14"	"7F"
+"EX/14"	"8D"
+"EX/15"	"AC"
+"EX/15"	"BW"
+"EX/15"	"CU"
+"EX/15"	"HP"
+"EX/15"	"JM"
+"EX/17"	"AA"
+"EX/17"	"AM"
+"EX/17"	"AS"
+"EX/17"	"DL"
+"EX/17"	"EA"
+"EX/17"	"JL"
+"EX/17"	"LH"
+"EX/17"	"PA"
+"EX/17"	"UA"
+"EX/19"	"BW"
+"EX/19"	"KX"
+"EX/20"	"AA"
+"EX/20"	"CO"
+"EX/20"	"DL"
+"EX/20"	"HE"
+"EX/20"	"JM"
+"EX/20"	"ML"
+"EX/20"	"MX"
+"EX/20"	"NW"
+"EX/20"	"PA"
+"EX/20"	"UA"
+"EX/20"	"8R"
+"EX/21"	"AA"
+"EX/21"	"JM"
+"EX/25"	"AA"
+"EX/25"	"MX"
+"EX/29"	"AA"
+"EX/29"	"AM"
+"EX/29"	"CO"
+"EX/29"	"EA"
+"EX/29"	"LH"
+"EX/32"	"AA"
+"EX/32"	"EA"
+"EX/32"	"JM"
+"EX/33"	"AA"
+"EX/33"	"JM"
+"EX/33"	"LI"
+"EX/33"	"UA"
+"EX/33"	"5T"
+"EX/34"	"EA"
+"EX/34"	"IN"
+"EX/34"	"JM"
+"EX/34"	"KW"
+"EX/34"	"UE"
+"EX/34"	"UP"
+"EX/34"	"YV"
+"EX/34"	"YL"
+"EX/36"	"AA"
+"EX/36"	"AC"
+"EX/36"	"CO"
+"EX/36"	"CP"
+"EX/36"	"LI"
+"EX/36"	"OU"
+"EX/36"	"US"
+"EX/38"	"AA"
+"EX/38"	"EA"
+"EX/38"	"JM"
+"EX/38"	"KX"
+"EX/43"	"AA"
+"EX/43"	"AS"
+"EX/43"	"CO"
+"EX/43"	"CT"
+"EX/43"	"DL"
+"EX/43"	"EA"
+"EX/43"	"HP"
+"EX/43"	"MX"
+"EX/43"	"NW"
+"EX/43"	"OG"
+"EX/43"	"PA"
+"EX/43"	"TW"
+"EX/43"	"UA"
+"EX/43"	"US"
+"EX/45"	"NW"
+"EX/47"	"AA"
+"EX/47"	"CO"
+"EX/47"	"DL"
+"EX/47"	"EA"
+"EX/47"	"JM"
+"EX/47"	"JR"
+"EX/47"	"ML"
+"EX/47"	"NW"
+"EX/47"	"OG"
+"EX/47"	"PA"
+"EX/47"	"TW"
+"EX/47"	"US"
+"EX/48"	"AC"
+"EX/48"	"AF"
+"EX/48"	"CO"
+"EX/48"	"CP"
+"EX/48"	"DL"
+"EX/48"	"JM"
+"EX/48"	"KW"
+"EX/48"	"MX"
+"EX/48"	"PA"
+"EX/48"	"SN"
+"EX/55"	"AA"
+"EX/55"	"AF"
+"EX/55"	"BW"
+"EX/55"	"CO"
+"EX/55"	"DO"
+"EX/55"	"EA"
+"EX/55"	"JM"
+"EX/55"	"KX"
+"EX/55"	"LI"
+"EX/55"	"LM"
+"EX/55"	"NW"
+"EX/55"	"PA"
+"EX/55"	"PY"
+"EX/55"	"TW"
+"EX/55"	"UP"
+"EX/55"	"2V"
+"VU/1"	"AA"
+"VU/1"	"AC"
+"VU/1"	"AQ"
+"VU/1"	"AS"
+"VU/1"	"CP"
+"VU/1"	"CT"
+"VU/1"	"CX"
+"VU/1"	"DL"
+"VU/1"	"EA"
+"VU/1"	"HP"
+"VU/1"	"LW"
+"VU/1"	"ND"
+"VU/1"	"NW"
+"VU/1"	"PA"
+"VU/1"	"TB"
+"VU/1"	"TW"
+"VU/1"	"UA"
+"VU/1"	"US"
+"VU/1"	"YR"
+"VU/1"	"6G"
+
+COPY 4 RECORDS INTO "sys"."restrict_class" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"AP/2"	"B7NR"
+"AP/2"	"BW7NR"
+"AP/2"	"BWE14"
+"AP/2"	"YAP14"
+
+COPY 65 RECORDS INTO "sys"."restriction" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"AP/1"	"FOR TRAVEL ORIGINATING AND TERMINATING IN HAWAII"	"CHILDREN'S FARES,SALES AGENTS,TOUR CONDUCTORS"	7	"Y"	3	150
+"AP/2"	"FOR TRAVEL BETWEEN UNITED STATES AND CARIBBEAN"	"TOUR CONDUCTORS"	7	"N"	3	14
+"AP/4"	"FOR TRAVEL BETWEEN UNITED STATES AND MEXICO"	"CHILDREN'S FARES,SALES AGENTS"	7	"Y"	3	21
+"AP/6"	"FOR TRAVEL TO/FROM CANADA"	"CHILDREN'S FARES,FAMILY FARES,TOUR CONDUCTORS,VISIT USA FARES"	7	"Y"	3	30
+"AP/10"	"FOR TRAVEL TO/FROM INTERMEDIATE POINTS"	"CONTACT CARRIER"	30	"Y"	3	21
+"AP/12"	"FOR TRAVEL BETWEEN UNITED STATES AND CARIBBEAN"	"CONTACT CARRIER"	14	"N"	3	21
+"AP/13"	"TRAVEL BETWEEN U.S. AND CANADA,AND POINTS IN CARIBBEAN"	"CONTACT CARRIER"	3	"Y"	0	180
+"AP/14"	"TRAVEL BETWEEN POINTS NAMED AND ARE NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CONTACT CARRIER"	3	"Y"	1	3
+"AP/16"	"FARES ARE NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CONTACT CARRIER"	14	"Y"	3	21
+"AP/17"	"ROUND TRIP TRAVEL BETWEEN U.S. AND MEXICO"	"SALES AGENTS (VIA AA TOUR CONDUCTORS)"	7	"N"	3	30
+"AP/18"	"ROUND TRIP TRAVEL BETWEEN CANADA AND MEXICO"	"FAMILY FARES,SALES AGENTS,TOUR CONDUCTORS"	7	"N"	7	180
+"AP/19"	"RND TRIP BETWEEN CANADA AND CARIBBEAN. NOT APPLICABLE TO/FROM INTERMEDIATE PNTS"	"CHILDREN'S FARES,SALES AGENT,TOUR CONDUCTORS"	7	"N"	7	30
+"AP/20"	"ROUND TRIP EXCURSION FARES,NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CHILDREN'S FARES,FAMILY FARES,TOUR CONDUCTORS"	14	"Y"	3	180
+"AP/21"	"TRAVEL TO/FROM U.S.A. AND CANADA,NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"SALES AGENTS,TOUR CONDUCTORS"	14	"N"	7	7
+"AP/25"	"FARES DO NOT APPLY TO/FROM INTERMEDIATE POINTS ON THE ROUTING"	"SALES AGENTS,TOUR CONDUCTORS"	7	"Y"	3	60
+"AP/27"	"FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CONTACT CARRIER"	7	"Y"	0	180
+"AP/32"	"ROUND TRIP CHARTER TO HAWAII.  FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CHILDREN'S AND FAMILY FARES,HAWAII COMMON FARE,SALES AGENTS,TOUR CONDUCTORS"	7	"Y"	3	30
+"AP/33"	"ROUND TRIP BETWEEN U.S. AND CARIBBEAN"	"CHILDREN'S FARE,SALES AGENTS,TOUR CONDUCTORS"	14	"Y"	6	21
+"AP/35"	"FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"SALES AGENTS,TOUR CONDUCTORS"	7	"Y"	0	30
+"AP/43"	"FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CHILDREN'S FARE,SALES AGENTS,TOUR CONDUCTORS"	14	"N"	3	3
+"AP/44"	"ONE_WAY TRAVEL,DURING PEAK/NON-PEAK HOURS"	"CONTACT CARRIER"	4	"Y"	0	0
+"AP/47"	"ROUND TRIP TRAVEL"	"CONTACT CARRIER"	14	"Y"	7	30
+"AP/48"	"FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"SALES AGENTS,TOUR CONDUCTORS,VISIT USA FARES,CHILDREN'S FARES"	7	"Y"	0	0
+"AP/55"	"MAY COMBINE FARES (EXCEPT VIA DELTA AIRLINES) SEATS LIMITED VIA UNITED AIRLINES"	"CONTACT CARRIER"	3	"N"	0	0
+"AP/56"	"SEATS ARE LIMITED"	"CONTACT CARRIERS"	7	"Y"	3	45
+"AP/57"	"FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CHILDREN'S FARES,SALES AGENTS,TOUR CONDUCTORS"	7	"Y"	3	180
+"AP/58"	"FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CHILDREN'S FARES,SALES AGENTS,TOUR CONDUCTORS"	7	"Y"	3	330
+"AP/59"	"FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CHILDREN'S FARES,SALES AGENTS,TOUR CONDUCTORS"	14	"N"	7	30
+"AP/60"	"ROUND TRIP TRAVEL BETWEEN U.S. AND CANADA"	"CHILDREN'S FARES,SALES AGENTS,TOUR CONDUCTORS"	7	"N"	3	365
+"AP/61"	"FARES MAYBE COMBINED"	"CHILDREN'S FARES,SALES AGENTS,TOUR CONDUCTORS"	7	"Y"	0	60
+"AP/68"	"FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CONTACT CARRIER"	7	"Y"	0	0
+"AP/70"	"ROUND TRIP TRAVEL. FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"SALES AGENTS,TOUR CONDUCTORS,VISIT U.S.A. FARES,CHILDREN'S FARES"	14	"Y"	7	14
+"AP/73"	"FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CONTACT CARRIER"	7	"N"	0	30
+"AP/75"	"FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"SALES AGENTS,TOUR CONDUCTORS,VISIT U.S.A. FARES,CHILDREN'S FARES"	7	"Y"	3	60
+"AP/76"	"ROUND TRIP TRAVEL BETWEEN U.S. AND JAMAICA"	"SALES AGENTS,TOUR CONDUCTORS"	7	"N"	0	14
+"AP/80"	"FARES APPLY TO/FROM INTERMEDIATE POINTS"	"CHILDREN'S FARES,FAMILY FARES,SALES AGENTS,TOUR CONDUCTORS"	14	"N"	3	30
+"AP/87"	"FARES APPLY TO ROUND TRIP TRAVEL"	"CONTACT CARRIER"	14	"Y"	7	21
+"AP/94"	"FOR ROUND TRIP TRAVEL. FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CHILDREN'S FARES,SALES AGENTS,TOUR CONDUCTORS"	7	"Y"	7	21
+"EX/1"	"FOR CIRCLE TRIP TRAVEL"	"CHILDREN'S FARES,SALES AGENTS"	0	"Y"	5	60
+"EX/2"	"ECONOMY CLASS EXCURSION FARES"	"SALES AGENTS,TOUR CONDUCTORS"	0	"Y"	0	21
+"EX/3"	"FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CONTACT CARRIER"	0	"Y"	2	45
+"EX/5"	"FOR ROUND TRIP TRAVEL"	"CONTACT CARRIER"	0	"N"	5	30
+"EX/9"	"FARES DO NOT APPLY TO/FROM INTERMEDIATE POINTS"	"CHILDREN'S FARES,SALES AGENTS,TOUR CONDUCTORS"	0	"N"	0	30
+"EX/11"	"FARES MAY BE COMBINED"	"CONTACT CARRIER"	0	"Y"	0	60
+"EX/12"	"FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CHILDREN'S FARES"	0	"Y"	3	180
+"EX/13"	"FARES NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CHILDREN'S FARES,FAMILY FARES,SALES AGENTS,TOUR CONDUCTORS"	0	"Y"	0	3
+"EX/14"	"FARES MAY BE COMBINED"	"CONTACT CARRIER"	0	"N"	3	330
+"EX/15"	"ROUND TRIP TRAVEL BETWEEN CANADA AND CARIBBEAN"	"CONTACT CARRIER"	0	"Y"	7	45
+"EX/17"	"ROUND TRIP EXCURSION FARES"	"SALES AGENTS,TOUR CONDUCTORS"	0	"N"	0	180
+"EX/19"	"ROUND TRIP EXCURSION FARES BETWEEN CANADA AND CARIBBEAN"	"CONTACT CARRIER"	0	"Y"	7	7
+"EX/20"	"ROUND TRIP EXCURSION FARES"	"CONTACT CARRIER"	0	"Y"	0	14
+"EX/21"	"TRAVEL BETWEEN THE U.S.A. AND CARIBBEAN"	"SALES AGENTS,TOUR CONDUCTORS"	0	"N"	0	7
+"EX/25"	"VIA AA,ROUND TRIP TRAVEL BETWEEN SAN JUAN AND ACAPULCO/MEXICO CITY"	"SALES AGENTS,TOUR CONDUCTORS"	0	"Y"	3	14
+"EX/29"	"ROUND TRIP TRAVEL BETWEEN U.S.,CARIBBEAN,AND MEXICO"	"CHILDREN'S FARES"	0	"Y"	0	21
+"EX/32"	"TRAVEL ORIGINATING IN JAMAICA"	"SALES AGENTS,TOUR CONDUCTORS"	0	"N"	0	365
+"EX/33"	"ROUND TRIP TRAVEL TO JAMAICA/CARIBBEAN"	"CHILDREN'S FARES,TOUR CONDUCTORS"	0	"N"	0	21
+"EX/34"	"ONE DAY AWAY ROUND TRIP FARES"	"SALES AGENTS,TOUR CONDUCTORS"	0	"N"	1	1
+"EX/36"	"ROUND TRIP TRAVEL. NOT APPLICABLE TO/FROM INTERMEDIATE POINTS"	"CHILDREN'S FARES,FAMILY FARES,TOUR CONDUCTORS"	0	"Y"	1	2
+"EX/38"	"SAME DAY FARES (VIA EASTERN AIRLINES)"	"SALES AGENTS,TOUR CONDUCTORS"	0	"N"	1	1
+"EX/43"	"ROUND TRIP EXCURSION FARES"	"CONTACT CARRIER"	0	"Y"	0	365
+"EX/45"	"VIA AMERICAN AIRLINES ROUND TRIP TRAVEL BETWEEN KINGSTON/MONTEGO BAY"	"CHILDREN'S FARES,SALES AGENTS,TOUR CONDUCTORS"	0	"N"	3	21
+"EX/47"	"ROUND TRIP TRAVEL BETWEEN U.S.,CANADA,AND CARIBBEAN"	"CONTACT CARRIER"	0	"Y"	3	21
+"EX/48"	"WEEKEND EXCURSION FARE"	"CHILDREN'S FARE,FAMILY FARES,SALES AGENTS,TOUR CONDUCTORS"	0	"N"	7	365
+"EX/55"	"FARES MAY BE COMBINED"	"SALES AGENTS"	0	"Y"	3	21
+"VU/1"	"VISIT USA: INTERNATIONAL TRAVEL BEGINNING AND ENDING OUTSIDE U.S."	"SALES AGENTS"	0	"Y"	3	21
+
+COPY 63 RECORDS INTO "sys"."state" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"AB"	"ALBERTA"	"CANADA"
+"AK"	"ALASKA"	"USA"
+"AL"	"ALABAMA"	"USA"
+"AR"	"ARKANSAS"	"USA"
+"AZ"	"ARIZONA"	"USA"
+"BC"	"BRITISH COLUMBIA"	"CANADA"
+"CA"	"CALIFORNIA"	"USA"
+"CO"	"COLORADO"	"USA"
+"CT"	"CONNECTICUT"	"USA"
+"DC"	"DISTRICT OF COLUMBIA"	"USA"
+"DE"	"DELAWARE"	"USA"
+"FL"	"FLORIDA"	"USA"
+"GA"	"GEORGIA"	"USA"
+"HI"	"HAWAII"	"USA"
+"IA"	"IOWA"	"USA"
+"ID"	"IDAHO"	"USA"
+"IL"	"ILLINOIS"	"USA"
+"IN"	"INDIANA"	"USA"
+"KS"	"KANSAS"	"USA"
+"KY"	"KENTUCKY"	"USA"
+"LA"	"LOUISIANA"	"USA"
+"MA"	"MASSACHUSETTS"	"USA"
+"MB"	"MANITOBA"	"CANADA"
+"MD"	"MARYLAND"	"USA"
+"ME"	"MAINE"	"USA"
+"MI"	"MICHIGAN"	"USA"
+"MN"	"MINNESOTA"	"USA"
+"MO"	"MISSOURI"	"USA"
+"MS"	"MISSISSIPPI"	"USA"
+"MT"	"MONTANA"	"USA"
+"NB"	"NEW BRUNSWICK"	"CANADA"
+"NC"	"NORTH CAROLINA"	"USA"
+"ND"	"NORTH DAKOTA"	"USA"
+"NE"	"NEBRASKA"	"USA"
+"NF"	"NEWFOUNDLAND"	"CANADA"
+"NH"	"NEW HAMPSHIRE"	"USA"
+"NJ"	"NEW JERSEY"	"USA"
+"NM"	"NEW MEXICO"	"USA"
+"NS"	"NOVA SCOTIA"	"CANADA"
+"NT"	"NORTHWEST TERRITORIES"	"CANADA"
+"NV"	"NEVADA"	"USA"
+"NY"	"NEW YORK"	"USA"
+"OH"	"OHIO"	"USA"
+"OK"	"OKLAHOMA"	"USA"
+"ON"	"ONTARIO"	"CANADA"
+"OR"	"OREGON"	"USA"
+"PA"	"PENNSYLVANIA"	"USA"
+"PE"	"PRINCE EDWARD ISLAND"	"CANADA"
+"PQ"	"QUEBEC"	"CANADA"
+"RI"	"RHODE ISLAND"	"USA"
+"SC"	"SOUTH CAROLINA"	"USA"
+"SD"	"SOUTH DAKOTA"	"USA"
+"SK"	"SASKATCHEWAN"	"CANADA"
+"TN"	"TENNESSEE"	"USA"
+"TX"	"TEXAS"	"USA"
+"UT"	"UTAH"	"USA"
+"VA"	"VIRGINIA"	"USA"
+"VT"	"VERMONT"	"USA"
+"WA"	"WASHINGTON"	"USA"
+"WI"	"WISCONSIN"	"USA"
+"WV"	"WEST VIRGINIA"	"USA"
+"WY"	"WYOMING"	"USA"
+"YT"	"YUKON TERRITORY"	"CANADA"
+
+COPY 69 RECORDS INTO "sys"."stop1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+101908	1	102766
+101908	2	137319
+101913	1	102770
+101913	2	137323
+101924	1	102779
+101924	2	137339
+102674	1	102129
+102674	2	112354
+105810	1	106248
+105810	2	137423
+106262	1	106229
+106262	2	137734
+106270	1	106251
+106270	2	137740
+106366	1	105795
+106366	2	112516
+106373	1	105806
+106373	2	113716
+106375	1	105800
+106375	2	112527
+107253	1	107486
+107253	2	138963
+111924	1	111886
+111924	2	102766
+111924	3	137319
+111930	1	111939
+111930	2	107199
+112413	1	111886
+112413	2	102766
+113499	1	112998
+113499	2	112352
+113710	1	112996
+113710	2	112518
+113713	1	113001
+113713	2	112520
+133423	1	133431
+133423	2	111931
+133516	1	133436
+133516	2	113582
+137410	1	137228
+137410	2	102127
+137685	1	137420
+137685	2	113500
+137814	1	137736
+137814	2	139355
+138866	1	139270
+138866	2	137335
+138965	1	138976
+138965	2	113011
+144059	1	144157
+144059	2	112783
+144087	1	144156
+144087	2	112864
+144088	1	144144
+144088	2	111929
+144092	1	144063
+144092	2	101928
+144093	1	144575
+144093	2	138868
+144095	1	144066
+144095	2	101929
+144110	1	144572
+144110	2	138882
+144160	1	144145
+144160	2	112038
+144161	1	144146
+144161	2	112039
+144543	1	144574
+144543	2	139271
+
+COPY 9 RECORDS INTO "sys"."time_zone" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"HST"	"HAWAII/ALEUTIAN STANDARD TIME"
+"AST"	"ALASKA STANDARD TIME"
+"YST"	"YUKON STANDARD TIME"
+"PST"	"PACIFIC STANDARD TIME"
+"MST"	"MOUNTAIN STANDARD TIME"
+"CST"	"CENTRAL STANDARD TIME"
+"EST"	"EASTERN STANDARD TIME"
+"AST"	"ATLANTIC STANDARD TIME"
+"NST"	"NEWFOUNDLAND STANDARD TIME"
+
+COPY 4 RECORDS INTO "sys"."transport" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"L"	"LIMOUSINE"
+"T"	"TAXI"
+"R"	"RENTAL CAR"
+"A"	"AIR TAXI OPERATION"
+
 commit;

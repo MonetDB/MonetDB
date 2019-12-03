@@ -42,7 +42,6 @@ timestamp_dbat( sql_dbat *d, int ts)
 	return d;
 }
 
-
 static BAT *
 delta_bind_del(sql_dbat *bat, int access) 
 {
@@ -178,7 +177,7 @@ delta_bind_bat( sql_delta *bat, int access, int temp)
 				bat_destroy(o);
 				if (nui == NULL ||
 				    nuv == NULL ||
-				    void_replace_bat(b, nui, nuv, true) != GDK_SUCCEED) {
+				    BATreplace(b, nui, nuv, true) != GDK_SUCCEED) {
 					bat_destroy(nui);
 					bat_destroy(nuv);
 					bat_destroy(b);
@@ -282,7 +281,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 				return LOG_ERR;
 			}
 			assert(BATcount(nui) == BATcount(nuv));
-			ret = void_replace_bat(ib, nui, nuv, true);
+			ret = BATreplace(ib, nui, nuv, true);
 			bat_destroy(nui);
 			bat_destroy(nuv);
 			if (ret != GDK_SUCCEED) {
@@ -365,7 +364,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 				return LOG_ERR;
 			}
 			assert(BATcount(nui) == BATcount(nuv));
-			ret = void_replace_bat(ib, nui, nuv, true);
+			ret = BATreplace(ib, nui, nuv, true);
 			bat_destroy(nui);
 			bat_destroy(nuv);
 			if (ret != GDK_SUCCEED) {
@@ -391,7 +390,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 				return LOG_ERR;
 			}
 			assert(BATcount(nui) == BATcount(nuv));
-			ret = void_replace_bat(b, nui, nuv, true);
+			ret = BATreplace(b, nui, nuv, true);
 			bat_destroy(nui);
 			bat_destroy(nuv);
 			if (ret != GDK_SUCCEED) {
@@ -400,7 +399,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 				return LOG_ERR;
 			}
 		} else {
-			if (void_replace_bat(b, tids, updates, true) != GDK_SUCCEED) {
+			if (BATreplace(b, tids, updates, true) != GDK_SUCCEED) {
 				bat_destroy(b);
 				bat_destroy(ib);
 				return LOG_ERR;
@@ -412,7 +411,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 		b = temp_descriptor(bat->ibid);
 		if (b == NULL)
 			return LOG_ERR;
-		ret = void_replace_bat(b, tids, updates, true);
+		ret = BATreplace(b, tids, updates, true);
 		bat_destroy(b);
 		if (ret != GDK_SUCCEED) {
 			return LOG_ERR;
@@ -1539,7 +1538,6 @@ log_create_col(sql_trans *tr, sql_column *c)
 	return log_create_delta( c->data, c->t->bootstrap?0:LOG_COL, c->base.id);
 }
 
-
 static int
 snapshot_create_col(sql_trans *tr, sql_column *c)
 {
@@ -1655,7 +1653,6 @@ load_dbat(sql_dbat *bat, int bid)
 		return LOG_ERR;
 	}
 }
-
 
 static int
 create_del(sql_trans *tr, sql_table *t)
@@ -2171,7 +2168,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes, int id, int tpe)
 		/* any updates */
 		if (BUNlast(ui) > 0) {
 			(*changes)++;
-			if (void_replace_bat(cur, ui, uv, true) != GDK_SUCCEED) {
+			if (BATreplace(cur, ui, uv, true) != GDK_SUCCEED) {
 				bat_destroy(ui);
 				bat_destroy(uv);
 				bat_destroy(cur);
@@ -2245,7 +2242,6 @@ gtr_update_dbat(sql_trans *tr, sql_dbat *d, int *changes, char tpe, oid id)
 	assert(BATcount(quick_descriptor(d->dbid)) == d->cnt);
 	return ok;
 }
-
 
 static int
 gtr_update_table(sql_trans *tr, sql_table *t, int *tchanges)
@@ -2486,7 +2482,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		/* any updates */
 		assert(!isEbat(cur));
 		if (BUNlast(ui) > 0) {
-			if (void_replace_bat(cur, ui, uv, true) != GDK_SUCCEED) {
+			if (BATreplace(cur, ui, uv, true) != GDK_SUCCEED) {
 				bat_destroy(ui);
 				bat_destroy(uv);
 				bat_destroy(cur);
@@ -2585,7 +2581,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 		/* any updates */
 		assert(!isEbat(cur));
 		if (BUNlast(ui) > 0) {
-			if (void_replace_bat(cur, ui, uv, true) != GDK_SUCCEED) {
+			if (BATreplace(cur, ui, uv, true) != GDK_SUCCEED) {
 				bat_destroy(ui);
 				bat_destroy(uv);
 				bat_destroy(cur);
@@ -2791,20 +2787,21 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 		}
 
+		oc->colnr = cc->colnr;
 		oc->null = cc->null;
 		oc->unique = cc->unique;
 		if (cc->storage_type && (!oc->storage_type || strcmp(cc->storage_type, oc->storage_type) != 0))
-			oc->storage_type = sa_strdup(tr->sa, cc->storage_type);
+			oc->storage_type = sa_strdup(tr->parent->sa, cc->storage_type);
 		if (!cc->storage_type)
 			oc->storage_type = NULL;
 		if (cc->def && (!oc->def || strcmp(cc->def, oc->def) != 0))
-			oc->def = sa_strdup(tr->sa, cc->def);
+			oc->def = sa_strdup(tr->parent->sa, cc->def);
 		if (!cc->def)
 			oc->def = NULL;
 
 		if (isRenamed(cc)) { /* apply possible renaming */
 			list_hash_delete(oc->t->columns.set, oc, NULL);
-			oc->base.name = sa_strdup(tr->sa, cc->base.name);
+			oc->base.name = sa_strdup(tr->parent->sa, cc->base.name);
 			if (!list_hash_add(oc->t->columns.set, oc, NULL))
 				ok = LOG_ERR;
 			setRenamedFlag(oc); /* propagate the change to the upper transaction */

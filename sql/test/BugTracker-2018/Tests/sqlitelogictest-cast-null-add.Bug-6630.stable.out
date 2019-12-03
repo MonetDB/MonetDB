@@ -30,41 +30,41 @@ stdout of test 'sqlitelogictest-cast-null-add.Bug-6630` in directory 'sql/test/B
 #INSERT INTO tab2 VALUES(64,77,40), (75,67,58), (46,51,23);
 [ 3	]
 #SELECT CAST ( 0 + CAST ( NULL AS INTEGER ) + 0 AS BIGINT ); -- NULL
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ NULL	]
 #SELECT CAST ( 90 + CAST ( NULL AS INTEGER ) + + - 90 AS BIGINT ) FROM tab1 AS cor0 WHERE NULL IS NULL;
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
 #SELECT CAST ( 24 - CAST ( NULL AS INTEGER ) + - 29 + COUNT ( * ) + - 46 AS BIGINT ) AS col2 FROM tab2; -- NULL
-% .L6 # table_name
+% .%4 # table_name
 % col2 # name
 % bigint # type
 % 1 # length
 [ NULL	]
 #SELECT DISTINCT CAST ( + 2 + + CAST ( NULL AS INTEGER ) - - ( + 69 ) AS BIGINT ) FROM tab2 AS cor0; -- NULL
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ NULL	]
 #SELECT ALL CAST ( - 8 + CAST ( NULL AS INTEGER ) + 43 AS BIGINT ) FROM tab2 cor0; -- A single column with 3 NULL values
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
 #SELECT ALL CAST ( 51 + + CAST ( NULL AS INTEGER ) - - - 17 AS BIGINT ) AS col0 FROM tab2;
-% .L4 # table_name
+% .%3 # table_name
 % col0 # name
 % bigint # type
 % 1 # length
@@ -73,7 +73,7 @@ stdout of test 'sqlitelogictest-cast-null-add.Bug-6630` in directory 'sql/test/B
 [ NULL	]
 #SELECT ALL CAST ( col1 / - - ( + CAST ( NULL AS INTEGER ) ) AS BIGINT ) col0,
 #           CAST ( 39 + + + CAST ( NULL AS INTEGER ) + + - 10 + col1 / - col0 AS BIGINT ) AS col1 FROM tab2;
-% sys.L4,	.L10 # table_name
+% sys.%5,	.%6 # table_name
 % col0,	col1 # name
 % bigint,	bigint # type
 % 1,	1 # length

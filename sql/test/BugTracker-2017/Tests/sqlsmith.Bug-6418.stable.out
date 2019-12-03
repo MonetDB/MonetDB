@@ -44,7 +44,7 @@ stdout of test 'sqlsmith.Bug-6418` in directory 'sql/test/BugTracker-2017` itsel
 #    on (sample_1.schema_id is NULL)
 #where true
 #limit 116;
-% .L2,	.L4,	.L6 # table_name
+% .ref_2,	.ref_3,	.sample_0 # table_name
 % c0,	c1,	c2 # name
 % smallint,	int,	varchar # type
 % 1,	1,	0 # length

@@ -24,8 +24,8 @@ stdout of test 'addmonths_missing.SF-2854949` in directory 'sql/test/BugTracker-
 # 08:44:54 >  
 
 #select timestamp '2000-01-01' + interval '1' year;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % timestamp # type
 % 26 # length
 [ 2001-01-01 00:00:00.000000	]

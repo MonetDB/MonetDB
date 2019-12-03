@@ -76,8 +76,8 @@ stdout of test 'server-crash.Bug-3046` in directory 'sql/test/BugTracker-2012` i
 #      rank1.component_ref = component1.id AND
 #      rank1.node_ref = node1.id AND
 #      rank1.pre = rank2.parent AND
-% sys.L10 # table_name
-% L10 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]

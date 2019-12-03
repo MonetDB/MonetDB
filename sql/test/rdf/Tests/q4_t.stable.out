@@ -39,8 +39,8 @@ stdout of test 'q4_t` in directory 'sql/test/rdf` itself:
 #--       AND C.obj =  '<language/iso639-2b/fre>'
 #	GROUP BY B.prop, B.obj
 #	HAVING count(*) > 1;
-% sys.b,	sys.b,	sys.L5 # table_name
-% prop,	obj,	L4 # name
+% sys.b,	sys.b,	sys.%1 # table_name
+% prop,	obj,	%1 # name
 % int,	int,	bigint # type
 % 1,	1,	1 # length
 

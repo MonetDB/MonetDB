@@ -46,8 +46,8 @@ stdout of test 'create_insert_select_aggr-bug-00001` in directory 'sql/test/bugs
 # 12:47:55 >  
 
 #select 1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -55,8 +55,8 @@ stdout of test 'create_insert_select_aggr-bug-00001` in directory 'sql/test/bugs
 [ 1	]
 #drop table foo;
 #select 1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -70,8 +70,8 @@ stdout of test 'create_insert_select_aggr-bug-00001` in directory 'sql/test/bugs
 [ 2,	"Jochem"	]
 #drop table ff;
 #select (4-1)*5;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % smallint # type
 % 2 # length
 [ 15	]
@@ -128,8 +128,8 @@ stdout of test 'create_insert_select_aggr-bug-00001` in directory 'sql/test/bugs
 #drop table r;
 #select name, 1, 2, 3  from _tables
 #	where name in ('s4', 'r', 'foo', 'ff');
-% sys._tables,	.L3,	.L5,	.L7 # table_name
-% name,	L3,	L5,	L7 # name
+% sys._tables,	.,	.,	. # table_name
+% name,	single_value,	single_value,	single_value # name
 % varchar,	tinyint,	tinyint,	tinyint # type
 % 0,	1,	1,	1 # length
 

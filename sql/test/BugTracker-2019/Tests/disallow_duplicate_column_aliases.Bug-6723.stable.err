@@ -25,30 +25,6 @@ stderr of test 'disallow_duplicate_column_aliases.Bug-6723` in directory 'sql/te
 # 13:22:43 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15745" "--port=33477"
 # 13:22:43 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-15745/.s.monetdb.33477
-QUERY = select 1 as T, 2 as T;
-ERROR = !SELECT: Duplicate column name or alias 'T' not allowed
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-15745/.s.monetdb.33477
-QUERY = select a.* from (select 1 as T, 2 as T) a;
-ERROR = !SELECT: Duplicate column name or alias 'T' not allowed
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-15745/.s.monetdb.33477
-QUERY = with wa as (select 1 as T, 2 as T) select wa.* from wa;
-ERROR = !SELECT: Duplicate column name or alias 'T' not allowed
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-15745/.s.monetdb.33477
-QUERY = select 1,2,3 as "L2";
-ERROR = !SELECT: Duplicate column name or alias 'L2' not allowed
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-15745/.s.monetdb.33477
-QUERY = select a.* from (select 1,2,3 as "L2") a;
-ERROR = !SELECT: Duplicate column name or alias 'L2' not allowed
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-15745/.s.monetdb.33477
-QUERY = with wa as (select 1,2,3 as "L2") select wa.* from wa;
-ERROR = !SELECT: Duplicate column name or alias 'L2' not allowed
-CODE  = 42000
 
 # 13:22:43 >  
 # 13:22:43 >  "Done."

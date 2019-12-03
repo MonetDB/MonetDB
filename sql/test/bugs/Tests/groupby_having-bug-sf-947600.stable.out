@@ -30,8 +30,8 @@ stdout of test 'groupby_having-bug-sf-947600` in directory 'sql/test/bugs` itsel
 #             'objects', 'keys', 'modules', 'sequences') AND
 #         b.name IN ('args', 'columns', 'functions', 'idxs',
 #             'objects', 'keys', 'modules', 'sequences')
-% .a,	.b,	.L125 # table_name
-% name,	name,	L124 # name
+% .a,	.b,	.%35 # table_name
+% name,	name,	%35 # name
 % varchar,	varchar,	bigint # type
 % 9,	9,	2 # length
 [ "args",	"columns",	6	]

@@ -39,10 +39,11 @@
 #define card_row 	1 /* needed for subqueries on single value tables (select (select 1))*/
 #define card_column 	2
 #define card_set	3 /* some operators require only a set (IN/EXISTS) */
-#define card_relation 	4
-#define card_loader 	5
+#define card_exists	4
+#define card_relation 	5
+#define card_loader 	6
 
-#define CARD_VALUE(card) (card == card_value || card == card_row || card == card_column || card == card_set)
+#define CARD_VALUE(card) (card == card_value || card == card_row || card == card_column || card == card_set || card == card_exists)
 
 /* allowed to reduce (in the where and having parts we can reduce) */
 
@@ -279,6 +280,8 @@ extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k);
 extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i);
 extern sql_trigger *mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr);
 extern sql_part *mvc_copy_part(mvc *m, sql_table *t, sql_part *pt);
+
+extern sql_rel *sql_processrelation(mvc *m, sql_rel* rel, int value_based_opt);
 
 extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));

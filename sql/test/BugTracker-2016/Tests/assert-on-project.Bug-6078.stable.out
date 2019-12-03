@@ -41,7 +41,7 @@ stdout of test 'assert-on-project.Bug-6078` in directory 'sql/test/BugTracker-20
 #			              inner join bam.files as ref_164
 #				                  right join sys.keys as ref_165
 #						              on (ref_164.sorting_order = ref_165.name )
-% .L22,	.L24,	.L26,	.L30,	.L32,	.L34,	.L36,	.L40,	.L42 # table_name
+% .%7,	.,	.ref_164,	.%1,	.ref_165,	.functions,	.,	.%1,	.ref_165 # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8 # name
 % int,	tinyint,	varchar,	varchar,	int,	int,	tinyint,	varchar,	int # type
 % 1,	1,	0,	0,	1,	1,	1,	0,	1 # length

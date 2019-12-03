@@ -54,7 +54,7 @@ stdout of test '07` in directory 'sql/benchmarks/tpch` itself:
 #			and c_nationkey = n2.n_nationkey
 #			and (
 #				(n1.n_name = 'FRANCE' and n2.n_name = 'GERMANY')
-% sys.shipping,	sys.shipping,	sys.shipping,	sys.L16 # table_name
+% sys.shipping,	sys.shipping,	sys.shipping,	sys.%1 # table_name
 % supp_nation,	cust_nation,	l_year,	revenue # name
 % char,	char,	int,	decimal # type
 % 25,	25,	4,	40 # length

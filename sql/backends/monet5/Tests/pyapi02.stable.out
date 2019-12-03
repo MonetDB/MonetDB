@@ -39,8 +39,8 @@ stdout of test 'pyapi02` in directory 'sql/backends/monet5` itself:
 #	return(x);
 #};
 #SELECT pyapi02(i,j,2) FROM rval;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 20	]
@@ -54,8 +54,8 @@ stdout of test 'pyapi02` in directory 'sql/backends/monet5` itself:
 #	return numpy.min(i)
 #};
 #SELECT pyapi02(i) FROM rval;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]

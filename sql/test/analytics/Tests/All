@@ -1,3 +1,4 @@
+# Windowing functions tests
 analytics00
 analytics01
 analytics02
@@ -8,3 +9,9 @@ analytics06
 analytics07
 analytics08
 analytics09
+
+# Rollup, Cube tests
+analytics10
+analytics11
+analytics12
+analytics13

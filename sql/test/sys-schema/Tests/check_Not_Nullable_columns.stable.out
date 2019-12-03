@@ -634,12 +634,12 @@ stdout of test 'check_Not_Nullable_columns` in directory 'sql/test/sys-schema` i
 % tinyint,	int,	int,	int,	varchar,	tinyint # type
 % 1,	1,	1,	1,	0,	1 # length
 #SELECT "column_id", "expression", 'Missing either column_id or expression' AS violation, * FROM "sys"."table_partitions" WHERE "column_id" IS NULL AND "expression" IS NULL;
-% sys.table_partitions, sys.table_partitions,   .,      sys.table_partitions,   sys.table_partitions,   sys.table_partitions,   sys.table_partitions,   sys.table_partitions # table_name
+% sys.table_partitions,	sys.table_partitions,	.,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions # table_name
 % column_id,    expression,     violation,      id,     table_id,       column_id,      expression,     type # name
 % int,  varchar,        char,   int,    int,    int,    varchar,        tinyint # type
 % 1,    0,      38,     1,      1,      1,      0,      1 # length
 #SELECT "column_id", "expression", 'column_id and expression may not both be populated. One of them must be NULL' AS violation, * FROM "sys"."table_partitions" WHERE "column_id" IS NOT NULL AND "expression" IS NOT NULL;
-% sys.table_partitions, sys.table_partitions,   .,      sys.table_partitions,   sys.table_partitions,   sys.table_partitions,   sys.table_partitions,   sys.table_partitions # table_name
+% sys.table_partitions,	sys.table_partitions,	.,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions # table_name
 % column_id,    expression,     violation,      id,     table_id,       column_id,      expression,     type # name
 % int,  varchar,        char,   int,    int,    int,    varchar,        tinyint # type
 % 1,    0,      76,     1,      1,      1,      0,      1 # length

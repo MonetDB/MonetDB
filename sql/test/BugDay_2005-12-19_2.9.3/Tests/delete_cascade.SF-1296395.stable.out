@@ -23,8 +23,8 @@ stdout of test 'delete_cascade.SF-1296395` in directory 'sql/test/BugDay_2005-12
 [ 1	]
 [ 1	]
 #select count(*) from b1296395;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]

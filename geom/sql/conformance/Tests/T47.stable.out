@@ -25,8 +25,8 @@ stdout of test 'T47` in directory 'geom/sql/conformance` itself:
 # 15:15:54 >  
 
 #SELECT ST_AsText(ST_Intersection(centerline, shore)) FROM streams, lakes WHERE streams.name = 'Cam Stream' AND lakes.name = 'Blue Lake';
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % clob # type
 % 13 # length
 [ "POINT (52 18)"	]

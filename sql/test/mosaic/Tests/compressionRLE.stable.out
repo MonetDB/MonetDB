@@ -41,14 +41,14 @@ stdout of test 'compressionRLE` in directory 'sql/test/mosaic` itself:
 [ 86	]
 #alter table tmp3RLE set read only;
 #select cast(sum(i) as bigint) from tmp3RLE;
-% sys.L3 # table_name
-% L3 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3RLE;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % real # type
 % 15 # length
 [ 27.104	]
@@ -100,25 +100,25 @@ end user.s14_0;
 #total                actions= 1 time=274 usec 
 #alter table tmp3RLE alter column i set storage 'runlength';
 #select * from mosaic.layout('sys','tmp3RLE','i') limit 25;
-% .L4,	.L4,	.L4,	.L4,	.L4 # table_name
+% .%4,	.%4,	.%4,	.%4,	.%4 # table_name
 % technique,	count,	inputsize,	outputsize,	properties # name
 % clob,	bigint,	bigint,	bigint,	clob # type
 % 0,	1,	1,	1,	0 # length
 #alter table tmp3RLE alter column b set storage 'runlength';
 #select * from mosaic.layout('sys','tmp3RLE','b') limit 25;
-% .L4,	.L4,	.L4,	.L4,	.L4 # table_name
+% .%4,	.%4,	.%4,	.%4,	.%4 # table_name
 % technique,	count,	inputsize,	outputsize,	properties # name
 % clob,	bigint,	bigint,	bigint,	clob # type
 % 0,	1,	1,	1,	0 # length
 #alter table tmp3RLE alter column f set storage 'runlength';
 #select * from mosaic.layout('sys','tmp3RLE','f') limit 25;
-% .L4,	.L4,	.L4,	.L4,	.L4 # table_name
+% .%4,	.%4,	.%4,	.%4,	.%4 # table_name
 % technique,	count,	inputsize,	outputsize,	properties # name
 % clob,	bigint,	bigint,	bigint,	clob # type
 % 0,	1,	1,	1,	0 # length
 #alter table tmp3RLE alter column t set storage 'runlength';
 #select * from mosaic.layout('sys','tmp3RLE','t') limit 25;
-% .L4,	.L4,	.L4,	.L4,	.L4 # table_name
+% .%4,	.%4,	.%4,	.%4,	.%4 # table_name
 % technique,	count,	inputsize,	outputsize,	properties # name
 % clob,	bigint,	bigint,	bigint,	clob # type
 % 0,	1,	1,	1,	0 # length
@@ -374,14 +374,14 @@ end user.s38_0;
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
 #select cast(sum(i) as bigint) from tmp3RLE;
-% sys.L3 # table_name
-% L3 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3RLE;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % real # type
 % 15 # length
 [ 27.104	]

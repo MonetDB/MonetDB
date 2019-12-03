@@ -28,8 +28,8 @@ stdout of test 'group_by_in_subquery_fails.SF-2219131` in directory 'sql/test/Bu
 # 17:32:51 >  
 
 #select (select 1);
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 1	]

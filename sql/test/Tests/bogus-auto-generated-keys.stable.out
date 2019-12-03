@@ -28,6 +28,8 @@ stdout of test 'bogus-auto-generated-keys` in directory 'sql/test` itself:
 # 15:49:00 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h pegasus -p 37335 -d mTests_src_test -e -f "../../../../../../../../../../../net/volund.ins.cwi.nl/export/scratch1/fabian/monetdb/stable/sql/src/test/Tests/../bogus-auto-generated-keys.sql"
 # 15:49:00 >  
 
+START TRANSACTION;
+Operation successful
 -- generate a simple table with an auto-generated key (id)
 CREATE TABLE gen_keys (
 	"id" serial,
@@ -54,9 +56,10 @@ UPDATE gen_keys SET "x" = 'bla' WHERE "id" = 1;
 UPDATE gen_keys SET "x" = 'bla' WHERE "id" = 12;
 0 affected rows, last generated key: 1
 
-
 -- ok, cleanup a bit
 DROP TABLE gen_keys;
+Operation successful
+ROLLBACK;
 Operation successful
 
 

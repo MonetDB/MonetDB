@@ -285,6 +285,7 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 {
 	BAT *b, *s = NULL, *bn;
 	const void *nilptr;
+	bit nanti = *anti;
 
 	if (!*unknown)
 		return ALGselect2(result, bid, sid, low, high, li, hi, anti);
@@ -309,7 +310,9 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 		low = high; 
 	else if (*hi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0)
 		high = low;
-	bn = BATselect(b, s, low, high, *li, *hi, *anti);
+	if (low == high && ATOMcmp(b->ttype, high, nilptr) == 0) /* ugh sql nil != nil */
+		nanti = !nanti;
+	bn = BATselect(b, s, low, high, *li, *hi, nanti);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -396,6 +399,7 @@ static str
 do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 		const bat *slid, const bat *srid,
 		int op, const void *c1, const void *c2, bool li, bool hi,
+		bool anti, bool symmetric, /* these two only for rangejoin */
 		const bit *nil_matches, const bit *not_in, const lng *estimate,
 		gdk_return (*joinfunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
 							   bool, BUN),
@@ -404,7 +408,7 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 		gdk_return (*bandfunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
 							   const void *, const void *, bool, bool, BUN),
 		gdk_return (*rangefunc)(BAT **, BAT **, BAT *, BAT *, BAT *,
-								BAT *, BAT *, bool, bool, BUN),
+								BAT *, BAT *, bool, bool, bool, bool, BUN),
 		BAT *(*difffunc)(BAT *, BAT *, BAT *, BAT *, bool, bool, BUN),
 		BAT *(*interfunc)(BAT *, BAT *, BAT *, BAT *, bool, BUN),
 		const char *funcname)
@@ -461,7 +465,7 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id,
 			err = SQLSTATE(HY002) RUNTIME_OBJECT_MISSING;
 			goto fail;
 		}
-		if ((*rangefunc)(&result1, r2 ? &result2 : NULL, left, right, right2, candleft, candright, li, hi, est) != GDK_SUCCEED)
+		if ((*rangefunc)(&result1, r2 ? &result2 : NULL, left, right, right2, candleft, candright, li, hi, anti, symmetric, est) != GDK_SUCCEED)
 			goto fail;
 		BBPunfix(right2->batCacheid);
 	} else if (difffunc) {
@@ -511,7 +515,7 @@ ALGjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const
 		   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, nil_matches, NULL, estimate,
+				   false, false, false, false, nil_matches, NULL, estimate,
 				   BATjoin, NULL, NULL, NULL, NULL, NULL, "algebra.join");
 }
 
@@ -520,7 +524,7 @@ ALGjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *sr
 		   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, nil_matches, NULL, estimate,
+				   false, false, false, false, nil_matches, NULL, estimate,
 				   BATjoin, NULL, NULL, NULL, NULL, NULL, "algebra.join");
 }
 
@@ -529,7 +533,7 @@ ALGleftjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 			   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, nil_matches, NULL, estimate,
+				   false, false, false, false, nil_matches, NULL, estimate,
 				   BATleftjoin, NULL, NULL, NULL, NULL, NULL, "algebra.leftjoin");
 }
 
@@ -538,7 +542,7 @@ ALGleftjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat
 			   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, nil_matches, NULL, estimate,
+				   false, false, false, false, nil_matches, NULL, estimate,
 				   BATleftjoin, NULL, NULL, NULL, NULL, NULL, "algebra.leftjoin");
 }
 
@@ -547,7 +551,7 @@ ALGouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, 
 				const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, nil_matches, NULL, estimate,
+				   false, false, false, false, nil_matches, NULL, estimate,
 				   BATouterjoin, NULL, NULL, NULL, NULL, NULL, "algebra.outerjoin");
 }
 
@@ -556,7 +560,7 @@ ALGsemijoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 			   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, nil_matches, NULL, estimate,
+				   false, false, false, false, nil_matches, NULL, estimate,
 				   BATsemijoin, NULL, NULL, NULL, NULL, NULL, "algebra.semijoin");
 }
 
@@ -565,7 +569,7 @@ ALGthetajoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, 
 				const int *op, const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, *op, NULL, NULL,
-				   false, false, nil_matches, NULL, estimate,
+				   false, false, false, false, nil_matches, NULL, estimate,
 				   NULL, BATthetajoin, NULL, NULL, NULL, NULL, "algebra.thetajoin");
 }
 
@@ -575,15 +579,15 @@ ALGbandjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, c
 			   const lng *estimate)
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, c1, c2,
-				   *li, *hi, NULL, NULL, estimate,
+				   *li, *hi, false, false, NULL, NULL, estimate,
 				   NULL, NULL, BATbandjoin, NULL, NULL, NULL, "algebra.bandjoin");
 }
 
 str
-ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid, const bit *li, const bit *hi, const lng *estimate)
+ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid, const bit *li, const bit *hi, const bit *anti, const bit *symmetric, const lng *estimate)
 {
 	return do_join(r1, r2, lid, rlid, rhid, slid, srid, 0, NULL, NULL,
-				   *li, *hi, NULL, NULL, estimate,
+				   *li, *hi, *anti, *symmetric, NULL, NULL, estimate,
 				   NULL, NULL, NULL, BATrangejoin, NULL, NULL, "algebra.rangejoin");
 }
 
@@ -592,7 +596,7 @@ ALGdifference(bat *r1, const bat *lid, const bat *rid, const bat *slid, const ba
 			  const bit *nil_matches, const bit *not_in, const lng *estimate)
 {
 	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, nil_matches, not_in, estimate,
+				   false, false, false, false, nil_matches, not_in, estimate,
 				   NULL, NULL, NULL, NULL, BATdiff, NULL, "algebra.difference");
 }
 
@@ -601,7 +605,7 @@ ALGintersect(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat
 			   const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, nil_matches, NULL, estimate,
+				   false, false, false, false, nil_matches, NULL, estimate,
 				   NULL, NULL, NULL, NULL, NULL, BATintersect, "algebra.intersect");
 }
 

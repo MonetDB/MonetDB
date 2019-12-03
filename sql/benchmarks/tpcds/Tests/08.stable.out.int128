@@ -35,8 +35,12 @@ stdout of test '08` in directory 'sql/benchmarks/tpcds` itself:
 #      WHERE SUBSTRING(ca_zip, 1, 5) IN ('24128',
 #                                     '76232',
 #                                     '65084',
-% sys.store,	sys.L23 # table_name
-% s_store_name,	L23 # name
+#                                     '87816',
+#                                     '83926',
+#                                     '77556',
+#                                     '20548',
+% sys.store,	sys.%11 # table_name
+% s_store_name,	%11 # name
 % varchar,	decimal # type
 % 5,	40 # length
 [ "able",	-9767751.88	]

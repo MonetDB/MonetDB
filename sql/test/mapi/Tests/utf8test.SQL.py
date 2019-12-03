@@ -1,4 +1,5 @@
 import sys
+import locale
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -11,6 +12,7 @@ def client(args, universal_newlines = True):
     return clt.communicate()
 
 def printit(file, string):
+    string = string.replace('\r', '')
     file.write(string)
     if not string.endswith('\n'):
         file.write('\n')
@@ -25,13 +27,13 @@ printit(sys.stderr, err)
 out, err = client(['-s', "insert into utf8test values ('value without special characters')"])
 printit(sys.stdout, out)
 printit(sys.stderr, err)
-out, err = client(['-s', "insert into utf8test values ('funny characters: %s')" % funny])
+out, err = client(['-E%s' % locale.getpreferredencoding(), '-s', "insert into utf8test values ('funny characters: %s')" % funny])
 printit(sys.stdout, out)
 printit(sys.stderr, err)
-out, err = client(['-fraw', '-s', 'select * from utf8test'])
+out, err = client(['-Eutf-8', '-fraw', '-s', 'select * from utf8test'])
 printit(sys.stdout, out)
 printit(sys.stderr, err)
-out, err = client(['-fsql', '-s', 'select * from utf8test'])
+out, err = client(['-Eutf-8', '-fsql', '-s', 'select * from utf8test'])
 printit(sys.stdout, out)
 printit(sys.stderr, err)
 out, err = client(['-fraw', '-Eiso-8859-1', '-s', 'select * from utf8test'],

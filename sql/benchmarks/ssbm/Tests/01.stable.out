@@ -28,7 +28,7 @@ stdout of test '01` in directory 'sql/benchmarks/ssbm` itself:
 #		and d_year = 1993
 #		and lo_discount between 1 and 3
 #		and lo_quantity < 25;
-% sys.L4 # table_name
+% sys.%1 # table_name
 % revenue # name
 % bigint # type
 % 10 # length

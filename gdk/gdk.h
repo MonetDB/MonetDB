@@ -716,7 +716,6 @@ gdk_export int VALisnil(const ValRecord *v);
  *           int    ttype;            // Tail type number
  *           str    tident;           // name for tail column
  *           bool   tkey;             // tail values are unique
- *           bool   tunique;          // tail values must be kept unique
  *           bool   tnonil;           // tail has no nils
  *           bool   tsorted;          // are tail values currently ordered?
  *           bool   tvarsized;        // for speed: tail type is varsized?
@@ -756,7 +755,6 @@ typedef struct {
 	uint8_t shift;		/* log2 of bun width */
 	bool varsized:1,	/* varsized/void (true) or fixedsized (false) */
 		key:1,		/* no duplicate values present */
-		unique:1,	/* no duplicate values allowed */
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
 		sorted:1,	/* column is sorted in ascending order */
@@ -825,7 +823,6 @@ typedef struct BATiter {
 /* macros to hide complexity of the BAT structure */
 #define ttype		T.type
 #define tkey		T.key
-#define tunique		T.unique
 #define tvarsized	T.varsized
 #define tseqbase	T.seq
 #define tsorted		T.sorted
@@ -2298,8 +2295,6 @@ gdk_export void GDKclrerr(void);
 #include "gdk_utils.h"
 
 /* functions defined in gdk_bat.c */
-gdk_export gdk_return void_replace_bat(BAT *b, BAT *p, BAT *u, bool force)
-	__attribute__((__warn_unused_result__));
 gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bool force)
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATattach(int tt, const char *heapfile, role_t role);
@@ -2771,7 +2766,7 @@ gdk_export gdk_return BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, bool li, bool hi, BUN estimate)
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, BUN estimate)
+gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, bool anti, bool symmetric, BUN estimate)
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATproject(BAT *l, BAT *r);
 gdk_export BAT *BATprojectchain(BAT **bats);

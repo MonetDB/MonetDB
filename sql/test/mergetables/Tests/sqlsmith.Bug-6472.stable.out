@@ -46,7 +46,7 @@ stdout of test 'sqlsmith.Bug-6472` in directory 'sql/test/mergetables` itself:
 #      from 
 #        sys.tracelog as ref_0
 #      where ref_0.stmt is NULL
-% .L44,	.L45,	.L46 # table_name
+% .subq_0,	.subq_0,	.subq_0 # table_name
 % c0,	c1,	c2 # name
 % clob,	tinyint,	clob # type
 % 0,	1,	0 # length

@@ -25,8 +25,8 @@ stdout of test 'T7` in directory 'geom/sql/conformance` itself:
 # 14:02:52 >  
 
 #SELECT GeometryType(centerlines) FROM divided_routes WHERE name = 'Route 75';
-% sys.L1 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % clob # type
 % 15 # length
 [ "MULTILINESTRING"	]

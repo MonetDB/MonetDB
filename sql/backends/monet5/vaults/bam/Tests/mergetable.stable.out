@@ -70,15 +70,15 @@ stdout of test 'mergetable` in directory 'sql/backends/monet5/vaults/bam` itself
 #	"qual"           STRING		   NOT NULL,
 #ALTER TABLE alignments ADD TABLE alignments_1;
 #SELECT COUNT(*) FROM alignments;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 71	]
 #ALTER TABLE alignments ADD TABLE alignments_2;
 #SELECT COUNT(*) FROM alignments;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 142	]

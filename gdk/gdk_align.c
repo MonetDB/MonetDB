@@ -345,7 +345,6 @@ VIEWreset(BAT *b)
 		b->batRestricted = BAT_WRITE;
 
 		b->tkey = BATtkey(v);
-		b->tunique = false;
 
 		/* copy the heaps */
 		b->theap = tail;
@@ -370,7 +369,6 @@ VIEWreset(BAT *b)
 		b->batDirtydesc = true;
 
 		b->tkey = BATtkey(v);
-		b->tunique = false;
 
 		/* make the BAT empty and insert all again */
 		DELTAinit(b);

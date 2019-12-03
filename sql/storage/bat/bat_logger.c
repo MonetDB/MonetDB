@@ -127,11 +127,14 @@ tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const
 	const void *cval;
 	gdk_return rc;
 	BAT *b;
+	int len;
 
 	va_start(va, tname);
 	while ((cname = va_arg(va, char *)) != NULL) {
 		cval = va_arg(va, void *);
-		snprintf(lname, sizeof(lname), "%s_%s_%s", sname, tname, cname);
+		len = snprintf(lname, sizeof(lname), "%s_%s_%s", sname, tname, cname);
+		if (len == -1 || (size_t)len >= sizeof(lname))
+			return GDK_FAIL;
 		if ((b = temp_descriptor(logger_find_bat(lg, lname, 0, 0))) == NULL)
 			return GDK_FAIL;
 		if (first) {
@@ -960,11 +963,20 @@ snapshot_wal(stream *plan, const char *db_dir)
 {
 	stream *log = bat_logger->log;
 	char log_file[FILENAME_MAX];
+	int len;
 
-	snprintf(log_file, sizeof(log_file), "%s/%s%s", db_dir, bat_logger->dir, LOGFILE);
+	len = snprintf(log_file, sizeof(log_file), "%s/%s%s", db_dir, bat_logger->dir, LOGFILE);
+	if (len == -1 || (size_t)len >= sizeof(log_file)) {
+		GDKerror("Could not open %s, filename is too large", log_file);
+		return GDK_FAIL;
+	}
 	snapshot_immediate_copy_file(plan, log_file, log_file + strlen(db_dir) + 1);
 
-	snprintf(log_file, sizeof(log_file), "%s%s." LLFMT, bat_logger->dir, LOGFILE, bat_logger->id);
+	len = snprintf(log_file, sizeof(log_file), "%s%s." LLFMT, bat_logger->dir, LOGFILE, bat_logger->id);
+	if (len == -1 || (size_t)len >= sizeof(log_file)) {
+		GDKerror("Could not open %s, filename is too large", log_file);
+		return GDK_FAIL;
+	}
 	uint64_t extent = getFileSize(log);
 
 	snapshot_lazy_copy_file(plan, log_file, extent);
@@ -979,9 +991,14 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 	char path2[FILENAME_MAX];
 	const size_t offset = strlen(db_dir) + 1;
 	struct stat statbuf;
+	int len;
 
 	// first check the backup dir
-	snprintf(path1, FILENAME_MAX, "%s/%s/%" PRIo64 "%s", db_dir, BAKDIR, batid, suffix);
+	len = snprintf(path1, FILENAME_MAX, "%s/%s/%" PRIo64 "%s", db_dir, BAKDIR, batid, suffix);
+	if (len == -1 || len >= FILENAME_MAX) {
+		GDKerror("Could not open %s, filename is too large", path1);
+		return GDK_FAIL;
+	}
 	if (stat(path1, &statbuf) == 0) {
 		snapshot_lazy_copy_file(plan, path1 + offset, extent);
 		return GDK_SUCCEED;
@@ -992,7 +1009,11 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 	}
 
 	// then check the regular location
-	snprintf(path2, FILENAME_MAX, "%s/%s/%s%s", db_dir, BATDIR, filename, suffix);
+	len = snprintf(path2, FILENAME_MAX, "%s/%s/%s%s", db_dir, BATDIR, filename, suffix);
+	if (len == -1 || len >= FILENAME_MAX) {
+		GDKerror("Could not open %s, filename is too large", path2);
+		return GDK_FAIL;
+	}
 	if (stat(path2, &statbuf) == 0) {
 		snapshot_lazy_copy_file(plan, path2 + offset, extent);
 		return GDK_SUCCEED;
@@ -1015,10 +1036,14 @@ snapshot_bats(stream *plan, const char *db_dir)
 	char bbpdir[FILENAME_MAX];
 	stream *cat = NULL;
 	char line[1024];
-	int gdk_version;
+	int gdk_version, len;
 	gdk_return ret = GDK_FAIL;
 
-	snprintf(bbpdir, FILENAME_MAX, "%s/%s/%s", db_dir, BAKDIR, "BBP.dir");
+	len = snprintf(bbpdir, FILENAME_MAX, "%s/%s/%s", db_dir, BAKDIR, "BBP.dir");
+	if (len == -1 || len >= FILENAME_MAX) {
+		GDKerror("Could not open %s, filename is too large", bbpdir);
+		goto end;
+	}
 	ret = snapshot_immediate_copy_file(plan, bbpdir, bbpdir + strlen(db_dir) + 1);
 	if (ret == GDK_FAIL)
 		goto end;

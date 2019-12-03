@@ -16,38 +16,6 @@
 #include "opt_prelude.h"
 #include "opt_profiler.h"
 
-/*
-static struct{
-    char *mod, *fcn;
-    char *alias;
-}mapping[]={
-    {"algebra", "projectionpath", "projection"},
-    {"algebra", "thetaselect", "select"},
-    {"algebra", "projection", "projection"},
-    {"dataflow", "language", "parallel"},
-    {"algebra", "select", "select"},
-    {"sql", "projectdelta", "project"},
-    {"algebra", "join", "join"},
-    {"language", "pass(nil)", "release"},
-    {"mat", "packIncrement", "pack"},
-    {"language", "pass", "release"},
-    {"aggr", "subcount", "count"},
-    {"sql", "subdelta", "project"},
-    {"bat", "append", "append"},
-    {"aggr", "subavg", "average"},
-    {"aggr", "subsum", "sum"},
-    {"aggr", "submin", "minimum"},
-    {"aggr", "submax", "maximum"},
-    {"aggr", "count", "count"},
-    {"calc", "lng", "long"},
-    {"sql", "bind", "bind"},
-    {"batcalc", "hge", "hugeint"},
-    {"batcalc", "dbl", "real"},
-    {"batcalc", "flt", "real"},
-    {"batcalc", "lng", "bigint"},
-    {0,0,0}};
-*/
-
 str
 OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {

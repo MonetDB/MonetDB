@@ -27,7 +27,7 @@ stdout of test 'with_in_derived_table.Bug-3043` in directory 'sql/test/BugTracke
 #        SELECT * FROM x
 #) y;
 % .y # table_name
-% L2 # name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]

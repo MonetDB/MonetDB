@@ -15,14 +15,8 @@ fi
 echo "creating"
 $SQL < create_tables.flt.sql
 
-echo "insert BONDs"
-$SQL < insert_BOND.flt.sql   
-
-echo "insert ATOMs"
-$SQL < insert_ATOM.flt.sql    
-
-echo "insert MODELs"
-$SQL < insert_MODEL.flt.sql
+echo "inserts"
+$SQL < inserts.flt.sql
 
 echo "check0"
 $SQL < Tests/check0.sql

@@ -52,7 +52,7 @@ function user.s10_0():void;
     C_6:bat[:oid] := sql.tid(X_5:int, "sys":str, "dtmp3":str);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 4:int, "<":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
-    sql.resultSet("sys.L2":str, "L2":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s10_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=0 usec 
@@ -77,8 +77,8 @@ end user.s10_0;
 #garbagecollector     actions= 1 time=9 usec 
 #total                actions= 1 time=185 usec 
 #select count(*) from dtmp3 where i <4;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 44	]
@@ -94,7 +94,7 @@ function user.s12_0():void;
     C_6:bat[:oid] := sql.tid(X_5:int, "sys":str, "dtmp3":str);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 7:int, "==":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
-    sql.resultSet("sys.L2":str, "L2":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s12_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
@@ -118,32 +118,32 @@ end user.s12_0;
 #garbagecollector     actions= 1 time=10 usec 
 #total                actions= 1 time=207 usec 
 #select count(*) from dtmp3 where i = 7;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from dtmp3 where f <0.316;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 42	]
 #select count(*) from dtmp3 where b = true;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 66	]
 #select cast(sum(i) as bigint) from dtmp3;
-% sys.L3 # table_name
-% L3 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from dtmp3;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % real # type
 % 15 # length
 [ 27.104	]
@@ -151,20 +151,20 @@ end user.s12_0;
 #alter table dtmp3 alter column b set storage 'delta';
 #alter table dtmp3 alter column f set storage 'delta';
 #select count(*) from dtmp3;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 86	]
 #select cast(sum(i) as bigint) from dtmp3;
-% sys.L3 # table_name
-% L3 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from dtmp3;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % real # type
 % 15 # length
 [ 27.104	]
@@ -180,7 +180,7 @@ function user.s34_0():void;
     C_6:bat[:oid] := sql.tid(X_5:int, "sys":str, "dtmp3":str);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 4:int, "<":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
-    sql.resultSet("sys.L2":str, "L2":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s34_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
@@ -204,8 +204,8 @@ end user.s34_0;
 #garbagecollector     actions= 1 time=9 usec 
 #total                actions= 1 time=165 usec 
 #select count(*) from dtmp3 where i <4;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 44	]
@@ -221,7 +221,7 @@ function user.s36_0():void;
     C_6:bat[:oid] := sql.tid(X_5:int, "sys":str, "dtmp3":str);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 7:int, "==":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
-    sql.resultSet("sys.L2":str, "L2":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s36_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
@@ -245,20 +245,20 @@ end user.s36_0;
 #garbagecollector     actions= 1 time=10 usec 
 #total                actions= 1 time=167 usec 
 #select count(*) from dtmp3 where i = 7;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from dtmp3 where f <0.316;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 42	]
 #select count(*) from dtmp3 where b = true;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 66	]
@@ -266,14 +266,14 @@ end user.s36_0;
 #alter table dtmp3 alter column b set storage NULL;
 #alter table dtmp3 alter column f set storage NULL;
 #select cast(sum(i) as bigint) from dtmp3;
-% sys.L3 # table_name
-% L3 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 3 # length
 [ 270	]
 #select sum(f) from dtmp3;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % real # type
 % 15 # length
 [ 27.104	]
@@ -289,7 +289,7 @@ function user.s52_0():void;
     C_6:bat[:oid] := sql.tid(X_5:int, "sys":str, "dtmp3":str);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 4:int, "<":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
-    sql.resultSet("sys.L2":str, "L2":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s52_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
@@ -313,8 +313,8 @@ end user.s52_0;
 #garbagecollector     actions= 1 time=10 usec 
 #total                actions= 1 time=167 usec 
 #select count(*) from dtmp3 where i <4;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 44	]
@@ -330,7 +330,7 @@ function user.s54_0():void;
     C_6:bat[:oid] := sql.tid(X_5:int, "sys":str, "dtmp3":str);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 7:int, "==":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
-    sql.resultSet("sys.L2":str, "L2":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s54_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
@@ -354,20 +354,20 @@ end user.s54_0;
 #garbagecollector     actions= 1 time=10 usec 
 #total                actions= 1 time=165 usec 
 #select count(*) from dtmp3 where i = 7;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from dtmp3 where f <0.316;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 42	]
 #select count(*) from dtmp3 where b = true;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 66	]

@@ -38,8 +38,8 @@ stdout of test 'orderby_in_function.SF-1892708` in directory 'sql/test/BugTracke
 #  LIMIT 1;
 #END;
 #select CHECK_VIDEO();
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % varchar # type
 % 7 # length
 [ "schemas"	]

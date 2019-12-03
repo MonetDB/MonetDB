@@ -627,7 +627,6 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 		(*res)->tvheap = bsrc->tvheap;
 	}
 
-	(*res)->tunique = bsrc->tunique;
 	(*res)->tkey = bsrc->tkey;
 	(*res)->tsorted = bsrc->tsorted;
 	(*res)->trevsorted = bsrc->trevsorted;

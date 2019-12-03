@@ -413,7 +413,7 @@ BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bat *uid, con
 		BBPunfix(p->batCacheid);
 		throw(MAL, "bat.inplace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (void_replace_bat(b, p, u, *force) != GDK_SUCCEED) {
+	if (BATreplace(b, p, u, *force) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(p->batCacheid);
 		BBPunfix(u->batCacheid);
@@ -478,33 +478,6 @@ BKCgetRole(str *res, const bat *bid)
 	BBPunfix(b->batCacheid);
 	if(*res == NULL)
 		throw(MAL,"bat.getRole", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
-}
-
-str
-BKCsetkey(bat *res, const bat *bid, const bit *param)
-{
-	BAT *b;
-	int unique;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setKey", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	unique = b->tunique;
-	if (*param) {
-		if (!BATkeyed(b)) {
-			BBPunfix(b->batCacheid);
-			throw(MAL, "bat.setKey", "values of bat not unique, cannot set key property");
-		}
-		BATkey(b, true);
-		b->tunique = true;
-	} else {
-		b->tunique = false;
-	}
-	if (b->tunique != unique)
-		b->batDirtydesc = true;
-	*res = b->batCacheid;
-	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 

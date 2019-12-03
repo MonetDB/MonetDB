@@ -24,13 +24,13 @@ stdout of test 'truncate_geom_tables.Bug-6543` in directory 'sql/test/BugTracker
 # 15:22:47 >  
 
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.spatial_ref_sys;
-% .L4 # table_name
+% .%2 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.spatial_ref_sys;
-% .L4 # table_name
+% .%2 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length

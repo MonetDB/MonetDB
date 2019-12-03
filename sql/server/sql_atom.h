@@ -65,6 +65,7 @@ extern atom *atom_sub(atom *a1, atom *a2);
 extern atom *atom_mul(atom *a1, atom *a2);
 extern int atom_inc(atom *a);
 extern int atom_is_true(atom *a);
+extern int atom_is_false(atom *a);
 extern int atom_is_zero(atom *a);
 
 #ifdef HAVE_HGE
@@ -74,6 +75,7 @@ extern lng scales[19];
 #endif
 
 extern atom* atom_zero_value(sql_allocator *sa, sql_subtype* tpe);
+extern atom* atom_null_value(sql_allocator *sa, sql_subtype* tpe);
 
 #endif /* _SQL_ATOM_H_ */
 

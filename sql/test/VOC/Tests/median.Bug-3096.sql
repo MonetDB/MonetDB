@@ -1,3 +1,4 @@
+START TRANSACTION;
 
 CREATE TABLE "voyages" (
 	"number"            integer	NOT NULL,
@@ -27,4 +28,4 @@ CREATE TABLE "voyages" (
 select median(departure_date) - min(departure_date) from voyages;
 select max(departure_date) - min(departure_date) from voyages;
 
-drop table voyages;
+ROLLBACK;

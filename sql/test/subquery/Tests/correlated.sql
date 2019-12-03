@@ -71,7 +71,7 @@ SELECT i, (SELECT 42 WHERE i1.i>2) AS j FROM integers i1 ORDER BY i;
 	-- 3, 42
 -- correlated filter with matching entry on NULL
 SELECT i, (SELECT 42 WHERE i1.i IS NULL) AS j FROM integers i1 ORDER BY i;
-	-- NULL, 42		-- current bug in left outerjoin with only a select!
+	-- NULL, 42
 	-- 1, NULL
 	-- 2, NULL
 	-- 3, NULL
@@ -196,8 +196,7 @@ SELECT CAST((SELECT i+SUM(i1.i) FROM integers WHERE i=1 LIMIT 1) AS BIGINT) FROM
 SELECT CAST((SELECT SUM(i)+SUM(i1.i) FROM integers) AS BIGINT) FROM integers i1 ORDER BY 1;
 --12
 
-/*Wrong results
-SELECT CAST((SELECT SUM(i)+SUM((CASE WHEN i IS NOT NULL THEN i*0 ELSE 0 END)+i1.i) FROM integers) AS BIGINT) FROM integers i1 ORDER BY 1;*/
+SELECT CAST((SELECT SUM(i)+SUM((CASE WHEN i IS NOT NULL THEN i*0 ELSE 0 END)+i1.i) FROM integers) AS BIGINT) FROM integers i1 ORDER BY 1;
 --10
 --14
 --18
@@ -220,8 +219,7 @@ SELECT i1.i AS j, CAST((SELECT SUM(j+i) FROM integers) AS BIGINT) AS k FROM inte
 --3	15
 --NULL	NULL
 
-/*BROKEN
-SELECT CAST((SELECT SUM(i1.i*i) FROM integers) AS BIGINT) FROM integers i1 ORDER BY i;*/
+SELECT CAST((SELECT SUM(i1.i*i) FROM integers) AS BIGINT) FROM integers i1 ORDER BY i;
 --6
 --12
 --18
@@ -245,8 +243,7 @@ SELECT i AS j, CAST((SELECT j*SUM(i) FROM integers) AS BIGINT) AS k FROM integer
 --3	18
 --NULL	NULL
 
-/*Wrong result, cannot find column
-SELECT i AS j, CAST((SELECT i1.i*SUM(i) FROM integers) AS BIGINT) AS k FROM integers i1 GROUP BY j ORDER BY j;*/
+SELECT i AS j, CAST((SELECT i1.i*SUM(i) FROM integers) AS BIGINT) AS k FROM integers i1 GROUP BY j ORDER BY j;
 --1	6
 --2	12
 --3	18
@@ -258,8 +255,7 @@ SELECT i, CAST(SUM((SELECT SUM(i)*i1.i FROM integers)) AS BIGINT) AS k FROM inte
 --3	18
 --NULL	NULL
 
-/*Wrong results, aggregation functions cannot be nested
-SELECT i, SUM((SELECT SUM(i)*SUM(i1.i) FROM integers)) AS k FROM integers i1 GROUP BY i ORDER BY i; --error*/
+SELECT i, SUM((SELECT SUM(i)*SUM(i1.i) FROM integers)) AS k FROM integers i1 GROUP BY i ORDER BY i; --error
 
 SELECT CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1;
 --6
@@ -306,18 +302,17 @@ SELECT i, NOT((SELECT MIN(i) FROM integers WHERE i<>i1.i) > ANY(SELECT i FROM in
 --3	True
 --NULL	NULL
 
-/* Wrong results
-SELECT i, (SELECT i FROM integers i2 WHERE i=(SELECT SUM(i) FROM integers i2 WHERE i2.i>i1.i)) FROM integers i1 ORDER BY 1;*/
+SELECT i, (SELECT i FROM integers i2 WHERE i=(SELECT SUM(i) FROM integers i2 WHERE i2.i>i1.i)) FROM integers i1 ORDER BY 1;
 --1	NULL
 --2	3
 --3	NULL
 --NULL	NULL
 
 SELECT i, CAST((SELECT SUM(i) IS NULL FROM integers i2 WHERE i2.i>i1.i) AS BIGINT) FROM integers i1 ORDER BY i;
---1	False
---2	False
---3	True
---NULL	True
+--1	0
+--2	0
+--3	1
+--NULL	1
 
 SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i) FROM integers i1 ORDER BY i;
 --1	2
@@ -343,20 +338,17 @@ SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i OR (i1.i IS NULL AND
 --3	0
 --NULL	1
 
-/*Wrong results
-SELECT i FROM integers i1 WHERE (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i)=0 ORDER BY i;*/
+SELECT i FROM integers i1 WHERE (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i)=0 ORDER BY i;
 --3
 --NULL
 
-/*Wrong results
-SELECT i, (SELECT i FROM integers i2 WHERE i-2=(SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i)) FROM integers i1 ORDER BY 1;*/
+SELECT i, (SELECT i FROM integers i2 WHERE i-2=(SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i)) FROM integers i1 ORDER BY 1;
 --1	NULL
 --2	3
 --3	2
 --NULL	2
 
-/*Wrong results
-SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i GROUP BY i1.i) FROM integers i1 ORDER BY i;*/
+SELECT i, (SELECT COUNT(*) FROM integers i2 WHERE i2.i>i1.i GROUP BY i1.i) FROM integers i1 ORDER BY i;
 --1	2
 --2	1
 --3	NULL
@@ -409,27 +401,25 @@ SELECT i, (SELECT s1.i FROM (SELECT * FROM integers WHERE i=i1.i) s1) AS j FROM 
 --3	3
 --NULL	NULL
 
-/*Wrong results
-SELECT i, (SELECT s1.i FROM (SELECT i FROM integers WHERE i=i1.i) s1 INNER JOIN (SELECT i FROM integers WHERE i=4-i1.i) s2 ON s1.i>s2.i) AS j FROM integers i1 ORDER BY i;*/
+SELECT i, (SELECT s1.i FROM (SELECT i FROM integers WHERE i=i1.i) s1 INNER JOIN (SELECT i FROM integers WHERE i=4-i1.i) s2 ON s1.i>s2.i) AS j FROM integers i1 ORDER BY i;
 --1	NULL
 --2	NULL
 --3	3
 --NULL	NULL
 
-/*Mitosis error I think (it runs fine without it)
-SELECT i, (SELECT s1.i FROM integers s1, integers s2 WHERE s1.i=s2.i AND s1.i=4-i1.i) AS j FROM integers i1 ORDER BY i;*/
+SELECT i, (SELECT s1.i FROM integers s1, integers s2 WHERE s1.i=s2.i AND s1.i=4-i1.i) AS j FROM integers i1 ORDER BY i;
+--NULL, NULL
 --1	3
 --2	2
 --3	1
 
-/*Mitosis error I think (it runs fine without it)
-SELECT i, (SELECT s1.i FROM integers s1 INNER JOIN integers s2 ON s1.i=s2.i AND s1.i=4-i1.i) AS j FROM integers i1 ORDER BY i;*/
+SELECT i, (SELECT s1.i FROM integers s1 INNER JOIN integers s2 ON s1.i=s2.i AND s1.i=4-i1.i) AS j FROM integers i1 ORDER BY i;
+--NULL, NULL
 --1	3
 --2	2
 --3	1
 
-/*Extra projection
-SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT 2*SUM(i)*s1.i FROM integers)=(SELECT SUM(i)*s2.i FROM integers) ORDER BY s1.i;*/
+SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT 2*SUM(i)*s1.i FROM integers)=(SELECT SUM(i)*s2.i FROM integers) ORDER BY s1.i;
 --1 2
 
 SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT s1.i=s2.i) ORDER BY s1.i;
@@ -437,14 +427,12 @@ SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT s1.i=s2.i) ORDER BY 
 --2	2
 --3	3
 
-/*Extra projection
-SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT s1.i=i FROM integers WHERE s2.i=i) ORDER BY s1.i;*/
+SELECT * FROM integers s1 INNER JOIN integers s2 ON (SELECT s1.i=i FROM integers WHERE s2.i=i) ORDER BY s1.i;
 --1	1
 --2	2
 --3	3
 
-/*Wrong results
-SELECT * FROM integers s1 LEFT OUTER JOIN integers s2 ON (SELECT 2*SUM(i)*s1.i FROM integers)=(SELECT SUM(i)*s2.i FROM integers) ORDER BY s1.i;*/
+SELECT * FROM integers s1 LEFT OUTER JOIN integers s2 ON (SELECT 2*SUM(i)*s1.i FROM integers)=(SELECT SUM(i)*s2.i FROM integers) ORDER BY s1.i;
 --1	2
 --2	NULL
 --3	NULL
@@ -462,30 +450,31 @@ SELECT i, CAST((SELECT SUM(s1.i) FROM integers s1 FULL OUTER JOIN integers s2 ON
 --3	12
 --NULL	6
 
---SELECT i, (SELECT row_number() OVER (ORDER BY i)) FROM integers i1 ORDER BY i; --Should we support correlated expressions inside PARTITION BY and ORDER BY on Window functions?
+-- 
+SELECT i, (SELECT row_number() OVER (ORDER BY i)) FROM integers i1 ORDER BY i; --Should we support correlated expressions inside PARTITION BY and ORDER BY on Window functions?
+--1	1
+--2	1
+--3	1
+--NULL	1
 
-/* Extra projection
-SELECT i, (SELECT i FROM integers WHERE i=i1.i UNION SELECT i FROM integers WHERE i=i1.i) AS j FROM integers i1 ORDER BY i;*/
+SELECT i, (SELECT i FROM integers WHERE i=i1.i UNION SELECT i FROM integers WHERE i=i1.i) AS j FROM integers i1 ORDER BY i;
 --1	1
 --2	2
 --3	3
 --NULL	NULL
 
-/* Extra projection
-SELECT i, (SELECT i FROM integers WHERE i IS NOT NULL EXCEPT SELECT i FROM integers WHERE i<>i1.i) AS j FROM integers i1 WHERE i IS NOT NULL ORDER BY i;*/
+SELECT i, (SELECT i FROM integers WHERE i IS NOT NULL EXCEPT SELECT i FROM integers WHERE i<>i1.i) AS j FROM integers i1 WHERE i IS NOT NULL ORDER BY i;
 --1	1
 --2	2
 --3	3
 
-/* Extra projection
-SELECT i, (SELECT i FROM integers WHERE i=i1.i INTERSECT SELECT i FROM integers WHERE i=i1.i) AS j FROM integers i1 ORDER BY i;*/
+SELECT i, (SELECT i FROM integers WHERE i=i1.i INTERSECT SELECT i FROM integers WHERE i=i1.i) AS j FROM integers i1 ORDER BY i;
 --1	1
 --2	2
 --3	3
 --NULL	NULL
 
-/* Extra projection
-SELECT i, (SELECT i FROM integers WHERE i=i1.i UNION SELECT i FROM integers WHERE i<>i1.i EXCEPT SELECT i FROM integers WHERE i<>i1.i) AS j FROM integers i1 ORDER BY i;*/
+SELECT i, (SELECT i FROM integers WHERE i=i1.i UNION SELECT i FROM integers WHERE i<>i1.i EXCEPT SELECT i FROM integers WHERE i<>i1.i) AS j FROM integers i1 ORDER BY i;
 --1	1
 --2	2
 --3	3
@@ -498,13 +487,12 @@ SELECT i, CAST((SELECT (SELECT SUM(i) FROM integers)+42+i1.i) AS BIGINT) AS j FR
 --NULL	NULL
 
 SELECT i, (SELECT row_number() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1 ORDER BY i;
+--NULL	NULL
 --1	1
 --2	1
 --3	1
---NULL	NULL
 
-/*Wrong results
-SELECT i1.i, (SELECT rank() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1, integers i2 ORDER BY i1.i;*/
+SELECT i1.i, (SELECT rank() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1, integers i2 ORDER BY i1.i;
 --NULL,	NULL
 --NULL,	NULL
 --NULL,	NULL
@@ -522,8 +510,7 @@ SELECT i1.i, (SELECT rank() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM i
 --3,	1
 --3,	1
 
-/*Wrong results
-SELECT i1.i, (SELECT row_number() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1, integers i2 ORDER BY i1.i;*/
+SELECT i1.i, (SELECT row_number() OVER (ORDER BY i) FROM integers WHERE i1.i=i) FROM integers i1, integers i2 ORDER BY i1.i;
 --1	1
 --1	1
 --1	1
@@ -541,8 +528,7 @@ SELECT i1.i, (SELECT row_number() OVER (ORDER BY i) FROM integers WHERE i1.i=i) 
 --NULL	NULL
 --NULL	NULL
 
-/*MAL error
-SELECT i, CAST((SELECT SUM(i) OVER (ORDER BY i) FROM integers WHERE i1.i=i) AS BIGINT) FROM integers i1 ORDER BY i;*/
+SELECT i, CAST((SELECT SUM(i) OVER (ORDER BY i) FROM integers WHERE i1.i=i) AS BIGINT) FROM integers i1 ORDER BY i;
 --1	1
 --2	2
 --3	3
@@ -580,8 +566,7 @@ SELECT i, CAST((SELECT SUM(i)+(SELECT 42+i1.i) FROM integers) AS BIGINT) AS j FR
 --3	51
 --NULL	NULL
 
-/* BROKEN, cannot find column
-SELECT i, (SELECT ((SELECT ((SELECT ((SELECT SUM(i)+SUM(i4.i)+SUM(i3.i)+SUM(i2.i)+SUM(i1.i) FROM integers i5)) FROM integers i4)) FROM integers i3)) FROM integers i2) AS j FROM integers i1 GROUP BY i ORDER BY i;*/
+SELECT i, CAST((SELECT ((SELECT ((SELECT ((SELECT SUM(i)+SUM(i4.i)+SUM(i3.i)+SUM(i2.i)+SUM(i1.i) FROM integers i5)) FROM integers i4)) FROM integers i3)) FROM integers i2) AS BIGINT) AS j FROM integers i1 GROUP BY i ORDER BY i;
 --1	25
 --2	26
 --3	27
@@ -593,15 +578,13 @@ SELECT i, CAST((SELECT (SELECT (SELECT (SELECT i1.i+i1.i+i1.i+i1.i+i1.i+i2.i) FR
 --3	18
 --NULL	NULL
 
---BROKEN
---SELECT i, (SELECT SUM(s1.i) FROM integers s1 INNER JOIN integers s2 ON (SELECT i1.i+s1.i)=(SELECT i1.i+s2.i)) AS j FROM integers i1 ORDER BY i;
+SELECT i, CAST((SELECT SUM(s1.i) FROM integers s1 INNER JOIN integers s2 ON (SELECT i1.i+s1.i)=(SELECT i1.i+s2.i)) AS BIGINT) AS j FROM integers i1 ORDER BY i;
 --1	6
 --2	6
 --3	6
 --NULL	NULL
 
---BROKEN
---SELECT i, SUM(i), (SELECT (SELECT SUM(i)+SUM(i1.i)+SUM(i2.i) FROM integers) FROM integers i2) FROM integers i1 GROUP BY i ORDER BY i;
+SELECT i, CAST(SUM(i) AS BIGINT), CAST((SELECT (SELECT SUM(i)+SUM(i1.i)+SUM(i2.i) FROM integers) FROM integers i2) AS BIGINT) FROM integers i1 GROUP BY i ORDER BY i;
 --1	1 13
 --2	2 14
 --3	3 15
@@ -619,15 +602,13 @@ SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i A
 --3	3
 --NULL	NULL
 
---BROKEN
---SELECT i, (SELECT SUM(s1.i) FROM integers s1 LEFT OUTER JOIN integers s2 ON (SELECT i1.i+s1.i)=(SELECT i1.i+s2.i)) AS j FROM integers i1 ORDER BY i;
+SELECT i, CAST((SELECT SUM(s1.i) FROM integers s1 LEFT OUTER JOIN integers s2 ON (SELECT i1.i+s1.i)=(SELECT i1.i+s2.i)) AS BIGINT) AS j FROM integers i1 ORDER BY i;
 --1	6
 --2	6
 --3	6
 --NULL	6
 
-SELECT i, CAST((SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN (SELECT i FROM integers s1 WHERE i=ANY(SELECT i FROM
-integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
+SELECT i, CAST((SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN (SELECT i FROM integers s1 WHERE i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
 --1	10
 --2	10
 --3	10
@@ -669,8 +650,7 @@ SELECT i, CAST((SELECT SUM(s2.i) FROM integers s1 LEFT OUTER JOIN (SELECT i FROM
 --3	3
 --NULL	NULL
 
---BROKEN
---SELECT i, (SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE CASE WHEN (i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) THEN true ELSE false END) ss2) AS j FROM integers i1 ORDER BY i;
+SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE CASE WHEN (i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) THEN true ELSE false END) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
 --1	1
 --2	2
 --3	3
@@ -694,8 +674,7 @@ SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=ANY(SE
 --3	6
 --NULL	6
 
-/*Wrong result
-SELECT i, (SELECT i=ANY(SELECT i FROM integers WHERE i=s1.i) FROM integers s1 WHERE i=i1.i) AS j FROM integers i1 ORDER BY i;*/
+SELECT i, (SELECT i=ANY(SELECT i FROM integers WHERE i=s1.i) FROM integers s1 WHERE i=i1.i) AS j FROM integers i1 ORDER BY i;
 --1	True
 --2	True
 --3	True
@@ -707,8 +686,7 @@ SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i O
 --3	6
 --NULL	6
 
---BROKEN
---SELECT i, (SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE CASE WHEN (i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) THEN true ELSE false END) ss2) AS j FROM integers i1 ORDER BY i;
+SELECT i, CAST((SELECT SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE CASE WHEN (i=i1.i AND i=ANY(SELECT i FROM integers WHERE i=s1.i)) THEN true ELSE false END) ss2) AS BIGINT) AS j FROM integers i1 ORDER BY i;
 --1	1
 --2	2
 --3	3
@@ -754,17 +732,15 @@ SELECT i, CAST((SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHE
 --3	8
 --NULL	NULL
 
-/*Wrong result
 SELECT i, CAST((SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN
-	(SELECT i FROM integers s1 WHERE i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;*/
+	(SELECT i FROM integers s1 WHERE i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
 --1	NULL
 --2	4
 --3	6
 --NULL	NULL
 
-/*Wrong result
-SELECT i, (SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN
-	(SELECT i FROM integers s1 WHERE i<>i1.i OR i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS j FROM integers i1 ORDER BY i;*/
+SELECT i, CAST((SELECT SUM(ss1.i)+SUM(ss2.i) FROM (SELECT i FROM integers s1 WHERE i=i1.i AND i>ANY(SELECT i FROM integers WHERE i<>s1.i)) ss1 LEFT OUTER JOIN
+	(SELECT i FROM integers s1 WHERE i<>i1.i OR i=ANY(SELECT i FROM integers WHERE i=s1.i)) ss2 ON ss1.i=ss2.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;
 --1	NULL
 --2	4
 --3	6
@@ -792,8 +768,7 @@ SELECT 'bla' IN (SELECT * FROM strings WHERE v=s1.v or v IS NULL) FROM strings s
 --NULL
 --NULL
 
-/*BROKEN
-SELECT * FROM strings WHERE EXISTS(SELECT NULL, v) ORDER BY v;*/
+SELECT * FROM strings WHERE EXISTS(SELECT NULL, v) ORDER BY v;
 --'hello'
 --'world'
 --NULL

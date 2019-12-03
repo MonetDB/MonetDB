@@ -27,19 +27,19 @@ stderr of test 'sqlitelogictest-having-not-null-not-in.Bug-6557` in directory 's
 # 12:32:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25333" "--port=30615"
 # 12:32:58 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-3426/.s.monetdb.34192
+MAPI  = (monetdb) /var/tmp/mtest-10256/.s.monetdb.36560
 QUERY = SELECT 1 FROM tab0 HAVING tab0.col1 IN ( 1 ); --error
 ERROR = !SELECT: cannot use non GROUP BY column 'tab0.col1' in query results without an aggregate function
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-3426/.s.monetdb.34192
+MAPI  = (monetdb) /var/tmp/mtest-10256/.s.monetdb.36560
 QUERY = SELECT 1 FROM tab0 HAVING col1 IN ( 1 ); --error
 ERROR = !SELECT: cannot use non GROUP BY column 'col1' in query results without an aggregate function
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-3426/.s.monetdb.34192
+MAPI  = (monetdb) /var/tmp/mtest-10256/.s.monetdb.36560
 QUERY = SELECT 1 FROM tab0 HAVING NULL IN ( tab0.col2 ); --error
 ERROR = !SELECT: cannot use non GROUP BY column 'tab0.col2' in query results without an aggregate function
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30783/.s.monetdb.35089
+MAPI  = (monetdb) /var/tmp/mtest-10256/.s.monetdb.36560
 QUERY = SELECT DISTINCT tab0.col1 AS col2 FROM tab0 GROUP BY tab0.col1 HAVING NULL NOT IN ( col2 ); --error
 ERROR = !SELECT: cannot use non GROUP BY column 'col2' in query results without an aggregate function
 CODE  = 42000

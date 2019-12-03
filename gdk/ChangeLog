@@ -1,3 +1,12 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Dec  3 2019 Sjoerd Mullender <sjoerd@acm.org>
+- Removed the tunique property.  The tunique property indicated that
+  all values in the column had to be distinct.  It was removed because
+  it wasn't used.
+
+* Fri Nov 22 2019 Sjoerd Mullender <sjoerd@acm.org>
+- BATrangeselect now has two extra arguments: anti and symmetric
+  (both bool).
+

@@ -130,13 +130,13 @@ stdout of test 'catalog_name_qualifier.Bug-3948` in directory 'sql/test/BugTrack
 [ 21	]
 #drop table sys.t3948;
 #select * from generate_series(1,2);
-% .L3 # table_name
+% .%3 # table_name
 % value # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #select * from sys.generate_series(1,2);
-% .L3 # table_name
+% .%3 # table_name
 % value # name
 % tinyint # type
 % 1 # length

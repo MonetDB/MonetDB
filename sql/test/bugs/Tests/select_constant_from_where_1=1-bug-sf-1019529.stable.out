@@ -28,57 +28,57 @@ stdout of test 'select_constant_from_where_1=1-bug-sf-1019529` in directory 'sql
 % varchar # type
 % 0 # length
 #select 1 from t1019529 where name='doesnotexist';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 #select 1 from t1019529;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
 #select 1 from t1019529 where 0=1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 #select 1 from t1019529 where 1=1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
 [ 1	]
 [ 1	]
 #select 1 where 0=1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 #select 1 where 1=1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #select 1, count(*) from t1019529;
-% .L2,	.L5 # table_name
-% L2,	L5 # name
+% .,	.%1 # table_name
+% single_value,	%1 # name
 % tinyint,	bigint # type
 % 1,	1 # length
 [ 1,	3	]
 #select 1, count(*) from t1019529 where 0=1;
-% .L2,	.L5 # table_name
-% L2,	L5 # name
+% .,	.%1 # table_name
+% single_value,	%1 # name
 % tinyint,	bigint # type
 % 1,	1 # length
 [ 1,	0	]
 #select 1, count(*) where 0=1;
-% .L2,	.L5 # table_name
-% L2,	L5 # name
+% .,	.%1 # table_name
+% single_value,	%1 # name
 % tinyint,	bigint # type
 % 1,	1 # length
 [ 1,	0	]

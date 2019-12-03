@@ -94,7 +94,7 @@ stdout of test 'assert-on-push-project-up.Bug-6077` in directory 'sql/test/BugTr
 #  	right join tmp.objects as ref_186
 #		on (ref_182.ln = ref_186.id )
 #		on (ref_140.var_id = ref_185.default_schema )
-% .L47,	.L51,	.L53 # table_name
+% .ref_188,	.ref_222,	.ref_188 # table_name
 % c0,	c1,	c2 # name
 % varchar,	char,	varchar # type
 % 0,	10,	0 # length

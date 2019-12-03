@@ -33,7 +33,7 @@ stdout of test 'bug_in_selection.SF-1892413` in directory 'sql/test/BugTracker` 
 [ 19260102	]
 [ 19260104	]
 #SELECT date, (SELECT max(date) from test_subquery where date > t1892413a.date) as dtNext from test_subquery t1892413a;
-% .t1892413a,	.L3 # table_name
+% .t1892413a,	.%1 # table_name
 % date,	dtnext # name
 % int,	int # type
 % 8,	8 # length

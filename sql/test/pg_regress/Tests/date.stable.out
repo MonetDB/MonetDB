@@ -59,7 +59,7 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 #INSERT INTO DATE_TBL VALUES ('2040-04-10');
 [ 1 ]
 #SELECT f1 AS "Fifteen" FROM DATE_TBL;
-% sys.L2 # table_name
+% sys.date_tbl # table_name
 % Fifteen # name
 % date # type
 % 10 # length
@@ -79,7 +79,7 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2039-04-09	]
 [ 2040-04-10	]
 #SELECT f1 AS "Nine" FROM DATE_TBL WHERE f1 < '2000-01-01';
-% sys.L2 # table_name
+% sys.date_tbl # table_name
 % Nine # name
 % date # type
 % 10 # length
@@ -94,7 +94,7 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 1997-03-02	]
 #SELECT f1 AS "Three" FROM DATE_TBL
 #  WHERE f1 BETWEEN '2000-01-01' AND '2001-01-01';
-% sys.L2 # table_name
+% sys.date_tbl # table_name
 % Three # name
 % date # type
 % 10 # length
@@ -104,8 +104,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 #INSERT INTO DATE_TBL VALUES (null);
 [ 1	]
 #SELECT f1, "day"(f1) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	2 # length
 [ 1957-04-09,	9	]
@@ -125,8 +125,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	10	]
 [ NULL,	NULL	]
 #SELECT f1, "month"(f1) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	1 # length
 [ 1957-04-09,	4	]
@@ -146,8 +146,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	4	]
 [ NULL,	NULL	]
 #SELECT f1, "year"(f1) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	4 # length
 [ 1957-04-09,	1957	]
@@ -167,8 +167,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	2040	]
 [ NULL,	NULL	]
 #SELECT f1, extract(day from f1) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	2 # length
 [ 1957-04-09,	9	]
@@ -188,8 +188,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	10	]
 [ NULL,	NULL	]
 #SELECT f1, extract(week from f1) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	2 # length
 [ 1957-04-09,	15	]
@@ -209,8 +209,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	15	]
 [ NULL,	NULL	]
 #SELECT f1, extract(month from f1) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	1 # length
 [ 1957-04-09,	4	]
@@ -230,8 +230,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	4	]
 [ NULL,	NULL	]
 #SELECT f1, extract(quarter from f1) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	1 # length
 [ 1957-04-09,	2	]
@@ -251,8 +251,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	2	]
 [ NULL,	NULL	]
 #SELECT f1, extract(year from f1) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	4 # length
 [ 1957-04-09,	1957	]
@@ -272,8 +272,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	2040	]
 [ NULL,	NULL	]
 #SELECT f1, extract(century from f1) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	2 # length
 [ 1957-04-09,	20	]
@@ -293,8 +293,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	21	]
 [ NULL,	NULL	]
 #SELECT f1, week(f1) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	2 # length
 [ 1957-04-09,	15	]
@@ -314,8 +314,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	15	]
 [ NULL,	NULL	]
 #SELECT f1, weekofyear(f1) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	2 # length
 [ 1957-04-09,	15	]
@@ -335,8 +335,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	15	]
 [ NULL,	NULL	]
 #SELECT f1, dayofmonth(f1) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	2 # length
 [ 1957-04-09,	9	]
@@ -356,8 +356,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	10	]
 [ NULL,	NULL	]
 #SELECT f1, dayofweek(f1) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	1 # length
 [ 1957-04-09,	2	]
@@ -377,8 +377,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	2	]
 [ NULL,	NULL	]
 #SELECT f1, dayofyear(f1) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	int # type
 % 10,	3 # length
 [ 1957-04-09,	99	]
@@ -398,8 +398,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	101	]
 [ NULL,	NULL	]
 #SELECT f1, cast(f1 as timestamp) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%1 # table_name
+% f1,	%1 # name
 % date,	timestamp # type
 % 10,	26 # length
 [ 1957-04-09,	1957-04-09 00:00:00.000000	]
@@ -419,8 +419,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	2040-04-10 00:00:00.000000	]
 [ NULL,	NULL	]
 #SELECT f1, "hour"(cast(f1 as timestamp)) FROM DATE_TBL;
-% sys.date_tbl,	sys.L4 # table_name
-% f1,	L4 # name
+% sys.date_tbl,	sys.%3 # table_name
+% f1,	%3 # name
 % date,	int # type
 % 10,	1 # length
 [ 1957-04-09,	0	]
@@ -440,8 +440,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	0	]
 [ NULL,	NULL	]
 #SELECT f1, "minute"(cast(f1 as timestamp)) FROM DATE_TBL;
-% sys.date_tbl,	sys.L4 # table_name
-% f1,	L4 # name
+% sys.date_tbl,	sys.%3 # table_name
+% f1,	%3 # name
 % date,	int # type
 % 10,	1 # length
 [ 1957-04-09,	0	]
@@ -461,8 +461,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	0	]
 [ NULL,	NULL	]
 #SELECT f1, "second"(cast(f1 as timestamp)) FROM DATE_TBL;
-% sys.date_tbl,	sys.L4 # table_name
-% f1,	L4 # name
+% sys.date_tbl,	sys.%3 # table_name
+% f1,	%3 # name
 % date,	decimal # type
 % 10,	11 # length
 [ 1957-04-09,	0.000000	]
@@ -482,8 +482,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	0.000000	]
 [ NULL,	NULL	]
 #SELECT f1, extract(hour from cast(f1 as timestamp)) FROM DATE_TBL;
-% sys.date_tbl,	sys.L4 # table_name
-% f1,	L4 # name
+% sys.date_tbl,	sys.%3 # table_name
+% f1,	%3 # name
 % date,	int # type
 % 10,	1 # length
 [ 1957-04-09,	0	]
@@ -503,8 +503,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	0	]
 [ NULL,	NULL	]
 #SELECT f1, extract(minute from cast(f1 as timestamp)) FROM DATE_TBL;
-% sys.date_tbl,	sys.L4 # table_name
-% f1,	L4 # name
+% sys.date_tbl,	sys.%3 # table_name
+% f1,	%3 # name
 % date,	int # type
 % 10,	1 # length
 [ 1957-04-09,	0	]
@@ -524,8 +524,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	0	]
 [ NULL,	NULL	]
 #SELECT f1, extract(second from cast(f1 as timestamp)) FROM DATE_TBL;
-% sys.date_tbl,	sys.L4 # table_name
-% f1,	L4 # name
+% sys.date_tbl,	sys.%3 # table_name
+% f1,	%3 # name
 % date,	decimal # type
 % 10,	11 # length
 [ 1957-04-09,	0.000000	]
@@ -545,8 +545,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	0.000000	]
 [ NULL,	NULL	]
 #SELECT f1, sql_add(f1, 365*24*60*60.0) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	date # type
 % 10,	10 # length
 [ 1957-04-09,	1958-04-09	]
@@ -566,8 +566,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	2041-04-10	]
 [ NULL,	NULL	]
 #SELECT f1, sql_add(f1, cast(365*24*60*60 as interval second)) FROM DATE_TBL;
-% sys.date_tbl,	sys.L4 # table_name
-% f1,	L4 # name
+% sys.date_tbl,	sys.%3 # table_name
+% f1,	%3 # name
 % date,	date # type
 % 10,	10 # length
 [ 1957-04-09,	1958-04-09	]
@@ -587,8 +587,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	2041-04-10	]
 [ NULL,	NULL	]
 #SELECT f1, sql_add(f1, cast(12 as interval month)) FROM DATE_TBL;
-% sys.date_tbl,	sys.L4 # table_name
-% f1,	L4 # name
+% sys.date_tbl,	sys.%3 # table_name
+% f1,	%3 # name
 % date,	date # type
 % 10,	10 # length
 [ 1957-04-09,	1958-04-09	]
@@ -608,8 +608,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	2041-04-10	]
 [ NULL,	NULL	]
 #SELECT f1, sql_add(f1, cast(-18 as interval month)) FROM DATE_TBL;
-% sys.date_tbl,	sys.L4 # table_name
-% f1,	L4 # name
+% sys.date_tbl,	sys.%3 # table_name
+% f1,	%3 # name
 % date,	date # type
 % 10,	10 # length
 [ 1957-04-09,	1955-10-09	]
@@ -629,8 +629,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	2038-10-10	]
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, 365*24*60*60.0) FROM DATE_TBL;
-% sys.date_tbl,	sys.L3 # table_name
-% f1,	L3 # name
+% sys.date_tbl,	sys.%2 # table_name
+% f1,	%2 # name
 % date,	date # type
 % 10,	10 # length
 [ 1957-04-09,	1956-04-09	]
@@ -650,8 +650,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	2039-04-11	]
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, cast(365*24*60*60 as interval second)) FROM DATE_TBL;
-% sys.date_tbl,	sys.L4 # table_name
-% f1,	L4 # name
+% sys.date_tbl,	sys.%3 # table_name
+% f1,	%3 # name
 % date,	date # type
 % 10,	10 # length
 [ 1957-04-09,	1956-04-09	]
@@ -671,8 +671,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	2039-04-11	]
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, cast(12 as interval month)) FROM DATE_TBL;
-% sys.date_tbl,	sys.L4 # table_name
-% f1,	L4 # name
+% sys.date_tbl,	sys.%3 # table_name
+% f1,	%3 # name
 % date,	date # type
 % 10,	10 # length
 [ 1957-04-09,	1956-04-09	]
@@ -692,8 +692,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	2039-04-10	]
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, cast(-18 as interval month)) FROM DATE_TBL;
-% sys.date_tbl,	sys.L4 # table_name
-% f1,	L4 # name
+% sys.date_tbl,	sys.%3 # table_name
+% f1,	%3 # name
 % date,	date # type
 % 10,	10 # length
 [ 1957-04-09,	1958-10-09	]
@@ -713,8 +713,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	2041-10-10	]
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, cast('2001-12-12' as date)) FROM DATE_TBL;
-% sys.date_tbl,	sys.L4 # table_name
-% f1,	L4 # name
+% sys.date_tbl,	sys.%3 # table_name
+% f1,	%3 # name
 % date,	int # type
 % 10,	6 # length
 [ 1957-04-09,	-16318	]
@@ -734,8 +734,8 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	13999	]
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(cast('2001-12-12' as date), f1) FROM DATE_TBL;
-% sys.date_tbl,	.L4 # table_name
-% f1,	L4 # name
+% sys.date_tbl,	.%3 # table_name
+% f1,	%3 # name
 % date,	int # type
 % 10,	6 # length
 [ 1957-04-09,	16318	]
@@ -755,349 +755,349 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 2040-04-10,	-13999	]
 [ NULL,	NULL	]
 #SELECT date 'January 8, 1999';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '1999-01-08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '1999-01-18';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-18	]
 #SELECT date '01/02/03';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1-02-03	]
 #SELECT date 'January 8, 99 BC';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date '99-Jan-08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date '1999-Jan-08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '99 Jan 08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date '1999 Jan 08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date 'Jan 08 99';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date 'Jan 08 1999';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '99-01-08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date '1999-01-08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '99-08-01';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-08-01	]
 #SELECT date '1999-08-01';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-08-01	]
 #SELECT date '99 01 08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date '1999 01 08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '99 08 01';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-08-01	]
 #SELECT date '1999 08 01';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-08-01	]
 #SELECT date 'January 8, 1999';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '1999-01-08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '1999-01-18';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-18	]
 #SELECT date '01/02/03';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1-02-03	]
 #SELECT date 'January 8, 99 BC';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date '99-Jan-08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date '1999-Jan-08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '99 Jan 08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date '1999 Jan 08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date 'Jan 08 99';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date 'Jan 08 1999';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '99-01-08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date '1999-01-08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '99-08-01';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-08-01	]
 #SELECT date '1999-08-01';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-08-01	]
 #SELECT date '99 01 08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date '1999 01 08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '99 08 01';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-08-01	]
 #SELECT date '1999 08 01';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-08-01	]
 #SELECT date 'January 8, 1999';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '1999-01-08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '1999-01-18';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-18	]
 #SELECT date '01/02/03';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1-02-03	]
 #SELECT date 'January 8, 99 BC';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date '99-Jan-08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date '1999-Jan-08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '99 Jan 08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date '1999 Jan 08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date 'Jan 08 99';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date 'Jan 08 1999';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '99-01-08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date '1999-01-08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '99-08-01';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-08-01	]
 #SELECT date '1999-08-01';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-08-01	]
 #SELECT date '99 01 08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-01-08	]
 #SELECT date '1999 01 08';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-01-08	]
 #SELECT date '99 08 01';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 99-08-01	]
 #SELECT date '1999 08 01';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1999-08-01	]
 #SELECT f1 - date '2000-01-01' AS "Days From 2K" FROM DATE_TBL;
-% sys.L2 # table_name
+% sys.%1 # table_name
 % "Days From 2K" # name
 % int # type
 % 6 # length
@@ -1118,152 +1118,152 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 [ 14710 ]
 [ NULL	]
 #SELECT sql_sub(current_date, 24*60*60.0) - current_date AS "One day";
-% .L2 # table_name
+% .%1 # table_name
 % "One day" # name
 % int # type
 % 2 # length
 [ -1 ]
 #SELECT current_date - sql_add(current_date, 24*60*60.0) AS "One day";
-% .L2 # table_name
+% .%1 # table_name
 % "One day" # name
 % int # type
 % 2 # length
 [ -1 ]
 #SELECT sql_sub(current_date, 24*60*60.0) - sql_add(current_date, 24*60*60.0) AS "Two days";
-% .L2 # table_name
+% .%1 # table_name
 % "Two days" # name
 % int # type
 % 2 # length
 [ -2 ]
 #SELECT sql_add(current_date, 24*60*60.0) - current_date AS "One day";
-% .L2 # table_name
+% .%1 # table_name
 % "One day" # name
 % int # type
 % 1 # length
 [ 1 ]
 #SELECT current_date - sql_sub(current_date, 24*60*60.0) AS "One day";
-% .L2 # table_name
+% .%1 # table_name
 % "One day" # name
 % int # type
 % 1 # length
 [ 1 ]
 #SELECT sql_add(current_date, 24*60*60.0) - sql_sub(current_date, 24*60*60.0) AS "Two days";
-% .L2 # table_name
+% .%1 # table_name
 % "Two days" # name
 % int # type
 % 1 # length
 [ 2 ]
 #SELECT EXTRACT(CENTURY FROM DATE '0101-12-31 BC'); -- -2
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 2	]
 #SELECT EXTRACT(CENTURY FROM DATE '0100-12-31 BC'); -- -1
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT EXTRACT(CENTURY FROM DATE '0001-12-31 BC'); -- -1
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT EXTRACT(CENTURY FROM DATE '0001-01-01');    --  1
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT EXTRACT(CENTURY FROM DATE '0001-01-01 AD'); --  1
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT EXTRACT(CENTURY FROM DATE '1900-12-31');    -- 19
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 19	]
 #SELECT EXTRACT(CENTURY FROM DATE '1901-01-01');    -- 20
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 20	]
 #SELECT EXTRACT(CENTURY FROM DATE '2000-12-31');    -- 20
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 20	]
 #SELECT EXTRACT(CENTURY FROM DATE '2001-01-01');    -- 21
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 21	]
 #SELECT EXTRACT(DECADE FROM DATE '1994-12-25');    -- 199
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 3 # length
 [ 199	]
 #SELECT EXTRACT(DECADE FROM DATE '0010-01-01');    --   1
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT EXTRACT(DECADE FROM DATE '0009-12-31');    --   0
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 0	]
 #SELECT EXTRACT(DECADE FROM DATE '0001-01-01 BC'); --   0
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 0	]
 #SELECT EXTRACT(DECADE FROM DATE '0002-12-31 BC'); --  -1
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 0	]
 #SELECT EXTRACT(DECADE FROM DATE '0011-01-01 BC'); --  -1
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT EXTRACT(DECADE FROM DATE '0012-12-31 BC'); --  -2
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT EXTRACT(CENTURY FROM TIMESTAMP '1970-03-20 04:30:00.00000'); -- 20
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 20	]
 #SELECT DATE_TRUNC('MILLENNIUM', TIMESTAMP '1970-03-20 04:30:00.00000'); -- 1001
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % timestamp # type
 % 26 # length
 [ 1000-01-01 00:00:00.000000	]
 #SELECT DATE_TRUNC('CENTURY', TIMESTAMP '1970-03-20 04:30:00.00000'); -- 1901
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % timestamp # type
 % 26 # length
 [ 1900-01-01 00:00:00.000000	]

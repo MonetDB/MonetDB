@@ -216,25 +216,31 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	/* 39_analytics_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create aggregate stddev_samp(val HUGEINT) returns DOUBLE\n"
-			"\texternal name \"aggr\".\"stdev\";\n"
+			" external name \"aggr\".\"stdev\";\n"
 			"GRANT EXECUTE ON AGGREGATE stddev_samp(HUGEINT) TO PUBLIC;\n"
 			"create aggregate stddev_pop(val HUGEINT) returns DOUBLE\n"
-			"\texternal name \"aggr\".\"stdevp\";\n"
+			" external name \"aggr\".\"stdevp\";\n"
 			"GRANT EXECUTE ON AGGREGATE stddev_pop(HUGEINT) TO PUBLIC;\n"
 			"create aggregate var_samp(val HUGEINT) returns DOUBLE\n"
-			"\texternal name \"aggr\".\"variance\";\n"
+			" external name \"aggr\".\"variance\";\n"
 			"GRANT EXECUTE ON AGGREGATE var_samp(HUGEINT) TO PUBLIC;\n"
 			"create aggregate var_pop(val HUGEINT) returns DOUBLE\n"
-			"\texternal name \"aggr\".\"variancep\";\n"
+			" external name \"aggr\".\"variancep\";\n"
 			"GRANT EXECUTE ON AGGREGATE var_pop(HUGEINT) TO PUBLIC;\n"
 			"create aggregate median(val HUGEINT) returns HUGEINT\n"
-			"\texternal name \"aggr\".\"median\";\n"
+			" external name \"aggr\".\"median\";\n"
 			"GRANT EXECUTE ON AGGREGATE median(HUGEINT) TO PUBLIC;\n"
 			"create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT\n"
-			"\texternal name \"aggr\".\"quantile\";\n"
+			" external name \"aggr\".\"quantile\";\n"
 			"GRANT EXECUTE ON AGGREGATE quantile(HUGEINT, DOUBLE) TO PUBLIC;\n"
+			"create aggregate median_avg(val HUGEINT) returns DOUBLE\n"
+			" external name \"aggr\".\"median_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE median_avg(HUGEINT) TO PUBLIC;\n"
+			"create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE\n"
+			" external name \"aggr\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n"
 			"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
-			"\texternal name \"aggr\".\"corr\";\n"
+			" external name \"aggr\".\"corr\";\n"
 			"GRANT EXECUTE ON AGGREGATE corr(HUGEINT, HUGEINT) TO PUBLIC;\n");
 
 	/* 40_json_hge.sql */
@@ -244,7 +250,7 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr') and schema_id = (select id from sys.schemas where name = 'sys');\n"
+			"update sys.functions set system = true where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys');\n"
 			"update sys.functions set system = true where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
@@ -1959,9 +1965,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 					r = rel_parse(sql, s, relt, m_deps);
 					if (r)
-						r = rel_unnest(sql, r);
-					if (r)
-						r = rel_optimizer(sql, r, 0);
+						r = sql_processrelation(sql, r, 0);
 					if (r) {
 						list *id_l = rel_dependencies(sql, r);
 
@@ -1974,6 +1978,9 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 								FLUSH_INSERTS_IF_BUFFERFILLED
 							}
 						}
+					} else if (sql->session->status == -1) {
+						sql->session->status = 0;
+						sql->errstr[0] = 0;
 					}
 				}
 			}
@@ -1992,9 +1999,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 					r = rel_parse(sql, s, relt, m_deps);
 					if (r)
-						r = rel_unnest(sql, r);
-					if (r)
-						r = rel_optimizer(sql, r, 0);
+						r = sql_processrelation(sql, r, 0);
 					if (r) {
 						list *id_l = rel_dependencies(sql, r);
 
@@ -2022,9 +2027,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 						r = rel_parse(sql, s, relt, m_deps);
 						if (r)
-							r = rel_unnest(sql, r);
-						if (r)
-							r = rel_optimizer(sql, r, 0);
+							r = sql_processrelation(sql, r, 0);
 						if (r) {
 							list *id_l = rel_dependencies(sql, r);
 
@@ -2062,7 +2065,7 @@ bailout:
 static str
 sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
-	size_t bufsize = 8192, pos = 0;
+	size_t bufsize = 16384, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	res_table *output;
 	BAT *b;
@@ -2241,6 +2244,55 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'wlr')"
 			" and name in ('master', 'stop', 'accept', 'replicate', 'beat') and type = %d;\n", (int) F_PROC);
 
+	/* 39_analytics.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create aggregate stddev_samp(val INTERVAL SECOND) returns DOUBLE\n"
+			"external name \"aggr\".\"stdev\";\n"
+			"GRANT EXECUTE ON AGGREGATE stddev_samp(INTERVAL SECOND) TO PUBLIC;\n"
+			"create aggregate stddev_samp(val INTERVAL MONTH) returns DOUBLE\n"
+			"external name \"aggr\".\"stdev\";\n"
+			"GRANT EXECUTE ON AGGREGATE stddev_samp(INTERVAL MONTH) TO PUBLIC;\n"
+
+			"create aggregate stddev_pop(val INTERVAL SECOND) returns DOUBLE\n"
+			"external name \"aggr\".\"stdevp\";\n"
+			"GRANT EXECUTE ON AGGREGATE stddev_pop(INTERVAL SECOND) TO PUBLIC;\n"
+			"create aggregate stddev_pop(val INTERVAL MONTH) returns DOUBLE\n"
+			"external name \"aggr\".\"stdevp\";\n"
+			"GRANT EXECUTE ON AGGREGATE stddev_pop(INTERVAL MONTH) TO PUBLIC;\n"
+
+			"create aggregate var_samp(val INTERVAL SECOND) returns DOUBLE\n"
+			"external name \"aggr\".\"variance\";\n"
+			"GRANT EXECUTE ON AGGREGATE var_samp(INTERVAL SECOND) TO PUBLIC;\n"
+			"create aggregate var_samp(val INTERVAL MONTH) returns DOUBLE\n"
+			"external name \"aggr\".\"variance\";\n"
+			"GRANT EXECUTE ON AGGREGATE var_samp(INTERVAL MONTH) TO PUBLIC;\n"
+
+			"create aggregate var_pop(val INTERVAL SECOND) returns DOUBLE\n"
+			"external name \"aggr\".\"variancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE var_pop(INTERVAL SECOND) TO PUBLIC;\n"
+			"create aggregate var_pop(val INTERVAL MONTH) returns DOUBLE\n"
+			"external name \"aggr\".\"variancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE var_pop(INTERVAL MONTH) TO PUBLIC;\n"
+
+			"create aggregate median(val INTERVAL SECOND) returns INTERVAL SECOND\n"
+			"external name \"aggr\".\"median\";\n"
+			"GRANT EXECUTE ON AGGREGATE median(INTERVAL SECOND) TO PUBLIC;\n"
+			"create aggregate median(val INTERVAL MONTH) returns INTERVAL MONTH\n"
+			"external name \"aggr\".\"median\";\n"
+			"GRANT EXECUTE ON AGGREGATE median(INTERVAL MONTH) TO PUBLIC;\n"
+
+			"create aggregate quantile(val INTERVAL SECOND, q DOUBLE) returns INTERVAL SECOND\n"
+			"external name \"aggr\".\"quantile\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile(INTERVAL SECOND, DOUBLE) TO PUBLIC;\n"
+			"create aggregate quantile(val INTERVAL MONTH, q DOUBLE) returns INTERVAL MONTH\n"
+			"external name \"aggr\".\"quantile\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile(INTERVAL MONTH, DOUBLE) TO PUBLIC;\n"
+		);
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile') and type = %d;\n", (int) F_AGGR);
+
 	/* The MAL implementation of functions json.text(string) and json.text(int) do not exist */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"drop function json.text(string);\n"
@@ -2259,6 +2311,45 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
+
+#ifdef HAVE_HGE
+static str
+sql_update_nov2019_sp1_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+{
+	size_t bufsize = 1024, pos = 0;
+	char *buf, *err;
+
+	if (!*systabfixed &&
+	    (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+		return err;
+	*systabfixed = true;
+
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, "sql_update_hugeint", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	/* 39_analytics_hge.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create aggregate median_avg(val HUGEINT) returns DOUBLE\n"
+			" external name \"aggr\".\"median_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE median_avg(HUGEINT) TO PUBLIC;\n"
+			"create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE\n"
+			" external name \"aggr\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where name in ('median_avg', 'quantile_avg') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+#endif
 
 static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema)
@@ -2325,10 +2416,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"create view sys.sessions as select * from sys.sessions();\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop procedure sys.settimeout(bigint);\n"
-			"drop procedure sys.settimeout(bigint,bigint);\n"
-			"drop procedure sys.setsession(bigint);\n"
-
 			"create procedure sys.setoptimizer(\"optimizer\" string)\n"
 			" external name clients.setoptimizer;\n"
 			"create procedure sys.setquerytimeout(\"query\" int)\n"
@@ -2362,6 +2449,17 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = %d;\n", (int) F_PROC);
 
+	/* 25_debug */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create function sys.debug(flag string) returns integer\n"
+			" external name mdb.\"setDebug\";\n"
+			"create function sys.debugflags()\n"
+			" returns table(flag string, val bool)\n"
+			" external name mdb.\"getDebugFlags\";\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name in ('debug', 'debugflags');\n");
+
 	/* 26_sysmon */
 	t = mvc_bind_table(sql, sys, "queue");
 	t->system = 0; /* make it non-system else the drop view will fail */
@@ -2371,15 +2469,15 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"drop function sys.queue;\n"
 			"create function sys.queue()\n"
 			"returns table(\n"
-			"	\"tag\" bigint,\n"
-			"	\"sessionid\" int,\n"
-			"	\"user\" string,\n"
-			"	\"started\" timestamp,\n"
-			"	\"status\" string,\n"
-			"	\"query\" string,\n"
-			"	\"progress\" int, -- percentage of MAL instructions handled\n"
-			"	\"workers\" int,\n"
-			"	\"memory\" int\n"
+			" tag bigint,\n"
+			" sessionid int,\n"
+			" \"user\" string,\n"
+			" started timestamp,\n"
+			" status string,\n"
+			" query string,\n"
+			" progress int,\n"
+			" workers int,\n"
+			" memory int\n"
 			")\n"
 			"external name sql.sysmon_queue;\n"
 			"grant execute on function sys.queue to public;\n"
@@ -2410,11 +2508,24 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'queue';\n");
 
+	pos += snprintf(buf + pos, bufsize - pos,
+			"ALTER TABLE sys.keywords SET READ WRITE;\n"
+			"insert into sys.keywords values ('CUBE'), ('GROUPING'), ('ROLLUP'), ('SETS');\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	if (err == MAL_SUCCEED) {
+		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
+			       "ALTER TABLE sys.keywords SET READ ONLY;\n");
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	}
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -2690,6 +2801,19 @@ SQLupgrades(Client c, mvc *m)
 			res = -1;
 		}
 	}
+
+#ifdef HAVE_HGE
+	if (!res && have_hge) {
+		sql_find_subtype(&tp, "hugeint", 0, 0);
+		if (!sql_bind_aggr(m->sa, s, "median_avg", &tp)) {
+			if ((err = sql_update_nov2019_sp1_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
+				fprintf(stderr, "!%s\n", err);
+				freeException(err);
+				res = -1;
+			}
+		}
+	}
+#endif
 
 	if (!res && !sql_bind_func(m->sa, s, "suspend_log_flushing", NULL, NULL, F_PROC)) {
 		if ((err = sql_update_default(c, m, prev_schema)) != NULL) {

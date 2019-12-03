@@ -36,7 +36,7 @@ stdout of test 'error_while_drop_func_returns_table_type.SF-2604573` in director
 #return tbl;
 #end;
 #select * from test_002();
-% .L1 # table_name
+% .%1 # table_name
 % i # name
 % int # type
 % 3 # length
@@ -51,7 +51,7 @@ stdout of test 'error_while_drop_func_returns_table_type.SF-2604573` in director
 #return tbl;
 #end;
 #select * from test_002();
-% .L1 # table_name
+% .%1 # table_name
 % j # name
 % char # type
 % 20 # length

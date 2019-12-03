@@ -70,8 +70,8 @@ stdout of test 'ST_PolygonFromText` in directory 'geom/sql/functions` itself:
 [ "POLYGON Z ((20 20 20, 30 30 30, 40 40 40, 20 20 20))"	]
 #drop table polygons_tbl;
 #select st_polygonfromtext(geom) from geometriesTxt WHERE id=3;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % geometry # type
 % 0 # length
 [ "POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10))"	]

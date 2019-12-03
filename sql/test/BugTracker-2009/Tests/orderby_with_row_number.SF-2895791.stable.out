@@ -30,7 +30,7 @@ stdout of test 'orderby_with_row_number.SF-2895791` in directory 'sql/test/BugTr
 [ 1	]
 [ 1	]
 #SELECT "customer", "product", "sumprice", (Row_number() OVER(PARTITION BY "customer" ORDER BY "sumprice")) as "rank" FROM ( SELECT "customer", "product", (Sum("price")) AS "sumprice" FROM "table1" GROUP BY "customer", "product") AS "temp";
-% sys.temp,	sys.temp,	sys.temp,	sys.L15 # table_name
+% sys.temp,	sys.temp,	sys.temp,	sys. # table_name
 % customer,	product,	sumprice,	rank # name
 % varchar,	varchar,	double,	int # type
 % 5,	2,	24,	1 # length

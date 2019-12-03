@@ -38,8 +38,8 @@ stdout of test 'subcorr-missing.Bug-3978` in directory 'sql/test/BugTracker-2016
 #insert into x values (2,2,2);
 [ 1	]
 #select id,corr(i,j) from x group by id order by id;
-% sys.x,	sys.L4 # table_name
-% id,	L3 # name
+% sys.x,	sys.%1 # table_name
+% id,	%1 # name
 % int,	double # type
 % 1,	24 # length
 [ 1,	1	]

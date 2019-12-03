@@ -57,8 +57,8 @@ stdout of test 'q2_28_t` in directory 'sql/test/rdf` itself:
 #		14659939,
 #		14660087,
 #		14660290,
-% sys.b,	sys.L4 # table_name
-% prop,	L3 # name
+% sys.b,	sys.%1 # table_name
+% prop,	%1 # name
 % int,	bigint # type
 % 1,	1 # length
 

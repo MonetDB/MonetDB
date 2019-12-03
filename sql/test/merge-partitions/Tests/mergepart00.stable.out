@@ -66,28 +66,28 @@ stdout of test 'mergepart00` in directory 'sql/test/merge-partitions` itself:
 # 14:00:22 >  
 
 #SELECT COUNT(*) from table_partitions;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) from table_partitions;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #CREATE MERGE TABLE mysecondattempt (a int, b varchar(32)) PARTITION BY RANGE (a);
 #SELECT COUNT(*) from table_partitions;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #DROP TABLE mysecondattempt;
 #SELECT COUNT(*) from table_partitions;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]

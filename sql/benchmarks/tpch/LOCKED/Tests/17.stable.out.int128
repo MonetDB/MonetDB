@@ -43,7 +43,7 @@ stdout of test '17` in directory 'sql/benchmarks/tpch/LOCKED` itself:
 #		where
 #			l_partkey = p_partkey
 #	);
-% sys.L12 # table_name
+% sys.%24 # table_name
 % avg_yearly # name
 % decimal # type
 % 40 # length

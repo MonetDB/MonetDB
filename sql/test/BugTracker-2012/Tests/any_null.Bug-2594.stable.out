@@ -26,7 +26,7 @@ stdout of test 'any_null.Bug-2594` in directory 'sql/test/BugTracker-2012` itsel
 #select i as boom1, ts as boom2 from skyboom
 #union
 #select NULL as boom1, NULL as boom2;
-% .L15,	.L15 # table_name
+% .%5,	.%5 # table_name
 % boom1,	boom2 # name
 % int,	timestamp # type
 % 1,	26 # length

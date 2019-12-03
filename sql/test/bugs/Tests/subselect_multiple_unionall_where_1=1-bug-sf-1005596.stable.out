@@ -24,7 +24,7 @@ stdout of test 'subselect_multiple_unionall_where_1=1-bug-sf-1005596` in directo
 # 11:55:40 >  
 
 #SELECT 1 AS number;
-% .L2 # table_name
+% . # table_name
 % number # name
 % tinyint # type
 % 1 # length
@@ -52,7 +52,7 @@ stdout of test 'subselect_multiple_unionall_where_1=1-bug-sf-1005596` in directo
 % char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
 % 4,	0,	0,	12,	0,	0,	0,	0,	5,	6 # length
 #SELECT 2 AS number;
-% .L2 # table_name
+% . # table_name
 % number # name
 % tinyint # type
 % 1 # length
@@ -62,7 +62,7 @@ stdout of test 'subselect_multiple_unionall_where_1=1-bug-sf-1005596` in directo
 % char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
 % 4,	0,	0,	20,	0,	0,	0,	0,	5,	6 # length
 #SELECT 3 AS number;
-% .L2 # table_name
+% . # table_name
 % number # name
 % tinyint # type
 % 1 # length

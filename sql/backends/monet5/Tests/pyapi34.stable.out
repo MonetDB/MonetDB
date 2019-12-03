@@ -70,8 +70,8 @@ stdout of test 'pyapi34` in directory 'sql/backends/monet5` itself:
 #	return {'result': inp};
 #};
 #SELECT a, pyapi34a(a), pyapi34b(a) FROM booleans;
-% sys.booleans,	sys.L3,	sys.L5 # table_name
-% a,	L3,	L5 # name
+% sys.booleans,	sys.%2,	sys.%3 # table_name
+% a,	%2,	%3 # name
 % boolean,	boolean,	boolean # type
 % 5,	5,	5 # length
 [ true,	false,	true	]

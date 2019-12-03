@@ -205,6 +205,9 @@ scanner_init_keywords(void)
 	failed += keywords_insert("FIRST", FIRST);
 	failed += keywords_insert("GLOBAL", GLOBAL);
 	failed += keywords_insert("GROUP", sqlGROUP);
+	failed += keywords_insert("GROUPING", GROUPING);
+	failed += keywords_insert("ROLLUP", ROLLUP);
+	failed += keywords_insert("CUBE", CUBE);
 	failed += keywords_insert("HAVING", HAVING);
 	failed += keywords_insert("ILIKE", ILIKE);
 	failed += keywords_insert("IMPRINTS", IMPRINTS);
@@ -261,6 +264,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("SCHEMA", SCHEMA);
 	failed += keywords_insert("SELECT", SELECT);
 	failed += keywords_insert("SET", SET);
+	failed += keywords_insert("SETS", SETS);
 	failed += keywords_insert("AUTO_COMMIT", AUTO_COMMIT);
 
 	failed += keywords_insert("ALL", ALL);
@@ -1168,6 +1172,11 @@ tokenize(mvc * c, int cur)
 			    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
 				return scanner_string(c, scanner_getc(lc), true);
 			}
+			if ((cur == 'R' || cur == 'r') &&
+			    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
+				return scanner_string(c, scanner_getc(lc), false);
+			}
+
 			if ((cur == 'U' || cur == 'u') &&
 			    lc->rs->buf[lc->rs->pos + lc->yycur] == '&' &&
 			    (lc->rs->buf[lc->rs->pos + lc->yycur + 1] == '\'' ||
@@ -1260,7 +1269,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 	else if (token == STRING) {
 		char quote = *yylval->sval;
 		char *str = sa_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 + 1 );
-		assert(quote == '"' || quote == '\'' || quote == 'E' || quote == 'e' || quote == 'U' || quote == 'u' || quote == 'X' || quote == 'x');
+		assert(quote == '"' || quote == '\'' || quote == 'E' || quote == 'e' || quote == 'U' || quote == 'u' || quote == 'X' || quote == 'x' || quote == 'R' || quote == 'r');
 
 		lc->rs->buf[lc->rs->pos + lc->yycur - 1] = 0;
 		if (quote == '"') {
@@ -1291,6 +1300,14 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 			*dst = 0;
 			quote = '\'';
 			token = XSTRING;
+		} else if (quote == 'R' || quote == 'r') {
+			assert(yylval->sval[1] == '\'');
+			char *dst = str;
+			for (char *src = yylval->sval + 2; *src; dst++)
+				if ((*dst = *src++) == '\'' && *src == '\'')
+					src++;
+			quote = '\'';
+			*dst = 0;
 		} else {
 #if 0
 			char *dst = str;
