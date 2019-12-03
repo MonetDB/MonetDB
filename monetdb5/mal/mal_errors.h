@@ -88,6 +88,7 @@
 #define RUNTIME_QRY_TIMEOUT "Query aborted due to timeout"
 #define RUNTIME_SESSION_TIMEOUT "Query aborted due to session timeout"
 #define OPERATION_FAILED "operation failed"
+#define _OPERATION_FAILED "Operation failed"
 
 #define BOX_CLOSED "Box is not open"
 

@@ -26,7 +26,8 @@ enum malexception {
 	PARSE,
 	ARITH,
 	PERMD,
-	SQL
+	SQL,
+	TRACER
 };
 
 #define MAL_SUCCEED ((str) 0) /* no error */

@@ -29,6 +29,7 @@ static char *exceptionNames[] = {
 /*11 */	"ArithmeticException",
 /*12 */	"PermissionDeniedException",
 /*13 */	"SQLException",
+/*14 */ "TracerException",
 /*15 */	"Deprecated operation",
 /*EOE*/	NULL
 };
