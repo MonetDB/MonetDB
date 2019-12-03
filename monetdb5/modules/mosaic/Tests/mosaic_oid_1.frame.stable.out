@@ -219,8 +219,6 @@ MOSjoin_frame
 MOSjoin_frame
 MOSjoin_frame
 MOSselect_frame
-MOSprojection_frame
-MOSprojection_frame
 
 # 16:33:27 >  
 # 16:33:27 >  "/usr/bin/python3" "mosaic_oid_1.frame.MAL.py" "mosaic_oid_1.frame"

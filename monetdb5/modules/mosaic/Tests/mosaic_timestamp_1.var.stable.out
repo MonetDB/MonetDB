@@ -219,8 +219,6 @@ MOSjoin_var
 MOSjoin_var
 MOSjoin_var
 MOSselect_var
-MOSprojection_var
-MOSprojection_var
 
 # 16:33:14 >  
 # 16:33:14 >  "/usr/bin/python3" "mosaic_timestamp_1.var.MAL.py" "mosaic_timestamp_1.var"

@@ -1992,26 +1992,6 @@ MOSselect_linear
 MOSselect_linear
 MOSselect_linear
 MOSselect_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
-MOSprojection_linear
 
 # 16:33:22 >  
 # 16:33:22 >  "/usr/bin/python3" "mosaic_lng_2.linear.MAL.py" "mosaic_lng_2.linear"

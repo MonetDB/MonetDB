@@ -219,8 +219,6 @@ MOSjoin_prefix
 MOSjoin_prefix
 MOSjoin_prefix
 MOSselect_prefix
-MOSprojection_prefix
-MOSprojection_prefix
 
 # 16:33:32 >  
 # 16:33:32 >  "/usr/bin/python3" "mosaic_timestamp_1.prefix.MAL.py" "mosaic_timestamp_1.prefix"

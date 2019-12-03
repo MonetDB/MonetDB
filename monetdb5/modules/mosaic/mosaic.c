@@ -1023,6 +1023,25 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	}
 
+	if (bl->ttype == TYPE_void && BATcount(bl) == BATcount(br)) {
+
+		if (bl->tseqbase == br->hseqbase) {
+			/* The left side is a dense candidate list covering the entire right side.
+			* So we can just return the right side as is.
+			*/
+			BBPkeepref(*ret = br->batCacheid);
+			BBPunfix(*lid);
+		}
+		else {
+			/* Something is probably wrong if the left tseqbase and right hseqbase aren't equal.*/
+			msg = ALGprojection(ret, lid, rid);
+			BBPunfix(*lid);
+			BBPunfix(*rid);
+		}
+
+		return msg;
+	}
+
 	cnt = BATcount(bl);
 	bn = COLnew((oid)0,br->ttype, cnt, TRANSIENT);
 	if ( bn == NULL){

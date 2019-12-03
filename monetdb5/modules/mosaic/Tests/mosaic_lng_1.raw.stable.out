@@ -219,8 +219,6 @@ MOSjoin_raw
 MOSjoin_raw
 MOSjoin_raw
 MOSselect_raw
-MOSprojection_raw
-MOSprojection_raw
 
 # 16:33:02 >  
 # 16:33:02 >  "/usr/bin/python3" "mosaic_lng_1.raw.MAL.py" "mosaic_lng_1.raw"

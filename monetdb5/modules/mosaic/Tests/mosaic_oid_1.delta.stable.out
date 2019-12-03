@@ -219,8 +219,6 @@ MOSjoin_delta
 MOSjoin_delta
 MOSjoin_delta
 MOSselect_delta
-MOSprojection_delta
-MOSprojection_delta
 
 # 16:33:19 >  
 # 16:33:19 >  "/usr/bin/python3" "mosaic_oid_1.delta.MAL.py" "mosaic_oid_1.delta"

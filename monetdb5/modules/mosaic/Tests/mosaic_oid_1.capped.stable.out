@@ -219,8 +219,6 @@ MOSjoin_capped
 MOSjoin_capped
 MOSjoin_capped
 MOSselect_capped
-MOSprojection_capped
-MOSprojection_capped
 
 # 16:33:16 >  
 # 16:33:16 >  "/usr/bin/python3" "mosaic_oid_1.capped.MAL.py" "mosaic_oid_1.capped"

@@ -33,6 +33,7 @@ static int OPTmosaicType(MalBlkPtr mb, InstrPtr pci, int idx)
 	case TYPE_oid:
 	case TYPE_flt:
 	case TYPE_dbl:
+	case TYPE_str:
 		return 1;
 	default:
 		if( type == TYPE_date)
@@ -92,15 +93,7 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else
 		if ( getModuleId(p) == sqlRef &&  getFunctionId(p) == tidRef){
 				check[getArg(p,0)] = 1;
-		} else
-        if ( getModuleId(p) == algebraRef && (getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef) && check[getArg(p,1)] ) 
-                /* ok */;
-		else
-        if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && check[getArg(p,2)])
-                /* ok */;
-		else
-        if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && (check[getArg(p,2)] || check[getArg(p,1)]) && p->argc ==8)
-                /* ok */;
+		}
 		else
 		if ( p->token == ASSIGNsymbol)
 			for( j=0; j < p->retc; j++)
@@ -114,31 +107,15 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// actual conversion
     for( i=0; i < limit; i++){
         p = old[i];
-        if ( getModuleId(p) == sqlRef && getFunctionId(p) == bindRef && getVarConstant(mb,getArg(p,5)).val.ival == 0 && check[getArg(p,0)]< 0){
-			//decompress before use such that it can be used properly
-			pushInstruction(mb,p);
-			j=  getArg(p,0);
-			check[getArg(p,0)] = 0;
-
-			q = newStmt(mb,mosaicRef,decompressRef);
-			setVarType(mb,getArg(q,0), getVarType(mb,getArg(p,0)));
-			setVarUDFtype(mb,getArg(q,0));
-
-			getArg(p,0) = getArg(q,0);
-			q = pushArgument(mb,q,getArg(q,0));
-			getArg(q,0) = j;
-			p= 0;
-			actions++;
-		}else
-        if ( getModuleId(p) == algebraRef && (getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef) && check[getArg(p,1)] != 0){
+        if ( getModuleId(p) == algebraRef && (getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)){
 			setModuleId(p, mosaicRef);
 			actions++;
 		} else
-        if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && check[getArg(p,2)] != 0){
+        if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef){
 			setModuleId(p, mosaicRef);
 			actions++;
 		} else
-        if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && (check[getArg(p,2)] || check[getArg(p,1)] != 0) && p->argc ==8){
+        if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && p->argc ==8){
 			setModuleId(p, mosaicRef);
 			actions++;
 		}
