@@ -177,7 +177,7 @@ delta_bind_bat( sql_delta *bat, int access, int temp)
 				bat_destroy(o);
 				if (nui == NULL ||
 				    nuv == NULL ||
-				    void_replace_bat(b, nui, nuv, true) != GDK_SUCCEED) {
+				    BATreplace(b, nui, nuv, true) != GDK_SUCCEED) {
 					bat_destroy(nui);
 					bat_destroy(nuv);
 					bat_destroy(b);
@@ -281,7 +281,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 				return LOG_ERR;
 			}
 			assert(BATcount(nui) == BATcount(nuv));
-			ret = void_replace_bat(ib, nui, nuv, true);
+			ret = BATreplace(ib, nui, nuv, true);
 			bat_destroy(nui);
 			bat_destroy(nuv);
 			if (ret != GDK_SUCCEED) {
@@ -364,7 +364,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 				return LOG_ERR;
 			}
 			assert(BATcount(nui) == BATcount(nuv));
-			ret = void_replace_bat(ib, nui, nuv, true);
+			ret = BATreplace(ib, nui, nuv, true);
 			bat_destroy(nui);
 			bat_destroy(nuv);
 			if (ret != GDK_SUCCEED) {
@@ -390,7 +390,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 				return LOG_ERR;
 			}
 			assert(BATcount(nui) == BATcount(nuv));
-			ret = void_replace_bat(b, nui, nuv, true);
+			ret = BATreplace(b, nui, nuv, true);
 			bat_destroy(nui);
 			bat_destroy(nuv);
 			if (ret != GDK_SUCCEED) {
@@ -399,7 +399,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 				return LOG_ERR;
 			}
 		} else {
-			if (void_replace_bat(b, tids, updates, true) != GDK_SUCCEED) {
+			if (BATreplace(b, tids, updates, true) != GDK_SUCCEED) {
 				bat_destroy(b);
 				bat_destroy(ib);
 				return LOG_ERR;
@@ -411,7 +411,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 		b = temp_descriptor(bat->ibid);
 		if (b == NULL)
 			return LOG_ERR;
-		ret = void_replace_bat(b, tids, updates, true);
+		ret = BATreplace(b, tids, updates, true);
 		bat_destroy(b);
 		if (ret != GDK_SUCCEED) {
 			return LOG_ERR;
@@ -2168,7 +2168,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes, int id, int tpe)
 		/* any updates */
 		if (BUNlast(ui) > 0) {
 			(*changes)++;
-			if (void_replace_bat(cur, ui, uv, true) != GDK_SUCCEED) {
+			if (BATreplace(cur, ui, uv, true) != GDK_SUCCEED) {
 				bat_destroy(ui);
 				bat_destroy(uv);
 				bat_destroy(cur);
@@ -2482,7 +2482,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		/* any updates */
 		assert(!isEbat(cur));
 		if (BUNlast(ui) > 0) {
-			if (void_replace_bat(cur, ui, uv, true) != GDK_SUCCEED) {
+			if (BATreplace(cur, ui, uv, true) != GDK_SUCCEED) {
 				bat_destroy(ui);
 				bat_destroy(uv);
 				bat_destroy(cur);
@@ -2581,7 +2581,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 		/* any updates */
 		assert(!isEbat(cur));
 		if (BUNlast(ui) > 0) {
-			if (void_replace_bat(cur, ui, uv, true) != GDK_SUCCEED) {
+			if (BATreplace(cur, ui, uv, true) != GDK_SUCCEED) {
 				bat_destroy(ui);
 				bat_destroy(uv);
 				bat_destroy(cur);

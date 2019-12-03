@@ -929,12 +929,252 @@ BATdel(BAT *b, BAT *d)
 gdk_return
 BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 {
-	if (b == NULL || p == NULL || n == NULL || BATcount(n) == 0) {
+	if (b == NULL || b->ttype == TYPE_void || p == NULL || n == NULL) {
 		return GDK_SUCCEED;
 	}
-	if (void_replace_bat(b, p, n, force) != GDK_SUCCEED)
+	if (BATcount(p) != BATcount(n)) {
+		GDKerror("BATreplace: update BATs not the same size\n");
 		return GDK_FAIL;
+	}
+	if (ATOMtype(p->ttype) != TYPE_oid) {
+		GDKerror("BATreplace: positions BAT not type OID\n");
+		return GDK_FAIL;
+	}
+	if (BATcount(n) == 0) {
+		return GDK_SUCCEED;
+	}
+	if (!force && (b->batRestricted != BAT_WRITE || b->batSharecnt > 0)) {
+		GDKerror("BATreplace: access denied to %s, aborting.\n",
+			 BATgetId(b));
+		return GDK_FAIL;
+	}
+	if (b->tunique) {
+		/* do it the old-fashioned way so that tunique
+		 * property is obeyed */
+		return void_replace_bat(b, p, n, force);
+	}
+
+	HASHdestroy(b);
+	OIDXdestroy(b);
+	IMPSdestroy(b);
+
+	b->tsorted = b->trevsorted = false;
+	b->tnosorted = b->tnorevsorted = 0;
+	b->tkey = false;
+	b->tnokey[0] = b->tnokey[1] = 0;
+
+	const PROPrec *maxprop = BATgetprop(b, GDK_MAX_VALUE);
+	const PROPrec *minprop = BATgetprop(b, GDK_MIN_VALUE);
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
+	const void *nil = ATOMnilptr(b->ttype);
+	oid hseqend = b->hseqbase + BATcount(b);
+	BATiter bi = bat_iterator(b);
+	BATiter ni = bat_iterator(n);
+	bool anynil = false;
+
+	b->theap.dirty = true;
+	if (b->tvarsized) {
+		b->tvheap->dirty = true;
+		for (BUN i = 0, j = BATcount(p); i < j; i++) {
+			oid updid = BUNtoid(p, i);
+
+			if (updid < b->hseqbase || updid >= hseqend) {
+				GDKerror("BATreplace: id out of range\n");
+				return GDK_FAIL;
+			}
+			updid -= b->hseqbase;
+			if (!force && updid < b->batInserted) {
+				GDKerror("BATreplace: updating committed value\n");
+				return GDK_FAIL;
+			}
+
+			const void *old = BUNtvar(bi, updid);
+			const void *new = BUNtvar(ni, i);
+			bool isnil = atomcmp(new, nil) == 0;
+			anynil |= isnil;
+			if (b->tnil &&
+			    !anynil &&
+			    atomcmp(old, nil) == 0) {
+				/* if old value is nil and no new
+				 * value is, we're not sure anymore
+				 * about the nil property, so we must
+				 * clear it */
+				b->tnil = false;
+			}
+			b->tnonil &= !isnil;
+			b->tnil |= isnil;
+			if (maxprop) {
+				if (!isnil &&
+				    atomcmp(VALptr(&maxprop->v), new) < 0) {
+					/* new value is larger than
+					 * previous largest */
+					BATsetprop(b, GDK_MAX_VALUE, b->ttype, new);
+					maxprop = BATgetprop(b, GDK_MAX_VALUE);
+				} else if (atomcmp(VALptr(&maxprop->v), old) == 0 &&
+					   atomcmp(new, old) != 0) {
+					/* old value is equal to
+					 * largest and new value is
+					 * smaller, so we don't know
+					 * anymore which is the
+					 * largest */
+					BATrmprop(b, GDK_MAX_VALUE);
+					maxprop = NULL;
+				}
+			}
+			if (minprop) {
+				if (!isnil &&
+				    atomcmp(VALptr(&minprop->v), new) > 0) {
+					/* new value is smaller than
+					 * previous smallest */
+					BATsetprop(b, GDK_MIN_VALUE, b->ttype, new);
+					minprop = BATgetprop(b, GDK_MIN_VALUE);
+				} else if (atomcmp(VALptr(&minprop->v), old) == 0 &&
+					   atomcmp(new, old) != 0) {
+					/* old value is equal to
+					 * smallest and new value is
+					 * larger, so we don't know
+					 * anymore which is the
+					 * smallest */
+					BATrmprop(b, GDK_MIN_VALUE);
+					minprop = NULL;
+				}
+			}
+
+			var_t d;
+			switch (b->twidth) {
+			case 1:
+				d = (var_t) ((uint8_t *) b->theap.base)[updid] + GDK_VAROFFSET;
+				break;
+			case 2:
+				d = (var_t) ((uint16_t *) b->theap.base)[updid] + GDK_VAROFFSET;
+				break;
+			case 4:
+				d = (var_t) ((uint32_t *) b->theap.base)[updid];
+				break;
+#if SIZEOF_VAR_T == 8
+			case 8:
+				d = (var_t) ((uint64_t *) b->theap.base)[updid];
+				break;
+#endif
+			}
+			ATOMreplaceVAR(b->ttype, b->tvheap, &d, new);
+			if (b->twidth < SIZEOF_VAR_T &&
+			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
+				/* doesn't fit in current heap, upgrade it */
+				if (GDKupgradevarheap(b, d, false, b->batRestricted == BAT_READ) != GDK_SUCCEED)
+					goto bunins_failed;
+			}
+			switch (b->twidth) {
+			case 1:
+				((uint8_t *) b->theap.base)[updid] = (uint8_t) (d - GDK_VAROFFSET);
+				break;
+			case 2:
+				((uint16_t *) b->theap.base)[updid] = (uint16_t) (d - GDK_VAROFFSET);
+				break;
+			case 4:
+				((uint32_t *) b->theap.base)[updid] = (uint32_t) d;
+				break;
+#if SIZEOF_VAR_T == 8
+			case 8:
+				((uint64_t *) b->theap.base)[updid] = (uint64_t) d;
+				break;
+#endif
+			}
+		}
+	} else {
+		for (BUN i = 0, j = BATcount(p); i < j; i++) {
+			oid updid = BUNtoid(p, i);
+
+			if (updid < b->hseqbase || updid >= hseqend) {
+				GDKerror("BATreplace: id out of range\n");
+				return GDK_FAIL;
+			}
+			updid -= b->hseqbase;
+			if (!force && updid < b->batInserted) {
+				GDKerror("BATreplace: updating committed value\n");
+				return GDK_FAIL;
+			}
+
+			const void *old = BUNtloc(bi, updid);
+			const void *new = BUNtail(ni, i);
+			bool isnil = atomcmp(new, nil) == 0;
+			anynil |= isnil;
+			if (b->tnil &&
+			    !anynil &&
+			    atomcmp(old, nil) == 0) {
+				/* if old value is nil and no new
+				 * value is, we're not sure anymore
+				 * about the nil property, so we must
+				 * clear it */
+				b->tnil = false;
+			}
+			b->tnonil &= !isnil;
+			b->tnil |= isnil;
+			if (maxprop) {
+				if (!isnil &&
+				    atomcmp(VALptr(&maxprop->v), new) < 0) {
+					/* new value is larger than
+					 * previous largest */
+					BATsetprop(b, GDK_MAX_VALUE, b->ttype, new);
+					maxprop = BATgetprop(b, GDK_MAX_VALUE);
+				} else if (atomcmp(VALptr(&maxprop->v), old) == 0 &&
+					   atomcmp(new, old) != 0) {
+					/* old value is equal to
+					 * largest and new value is
+					 * smaller, so we don't know
+					 * anymore which is the
+					 * largest */
+					BATrmprop(b, GDK_MAX_VALUE);
+					maxprop = NULL;
+				}
+			}
+			if (minprop) {
+				if (!isnil &&
+				    atomcmp(VALptr(&minprop->v), new) > 0) {
+					/* new value is smaller than
+					 * previous smallest */
+					BATsetprop(b, GDK_MIN_VALUE, b->ttype, new);
+					minprop = BATgetprop(b, GDK_MIN_VALUE);
+				} else if (atomcmp(VALptr(&minprop->v), old) == 0 &&
+					   atomcmp(new, old) != 0) {
+					/* old value is equal to
+					 * smallest and new value is
+					 * larger, so we don't know
+					 * anymore which is the
+					 * smallest */
+					BATrmprop(b, GDK_MIN_VALUE);
+					minprop = NULL;
+				}
+			}
+
+			switch (b->twidth) {
+			case 1:
+				((bte *) b->theap.base)[updid] = * (bte *) new;
+				break;
+			case 2:
+				((sht *) b->theap.base)[updid] = * (sht *) new;
+				break;
+			case 4:
+				((int *) b->theap.base)[updid] = * (int *) new;
+				break;
+			case 8:
+				((lng *) b->theap.base)[updid] = * (lng *) new;
+				break;
+#ifdef HAVE_HGE
+			case 16:
+				((hge *) b->theap.base)[updid] = * (hge *) new;
+				break;
+#endif
+			default:
+				memcpy(BUNtloc(bi, updid), new, ATOMsize(b->ttype));
+				break;
+			}
+		}
+	}
 	return GDK_SUCCEED;
+
+  bunins_failed:
+	return GDK_FAIL;
 }
 
 
