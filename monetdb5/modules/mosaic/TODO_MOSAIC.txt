@@ -6,29 +6,29 @@ Create test for swapped join.
 Add lots of tests with candidate lists for all
 Add test for float/double
 Add test for huge
-Introduce mosaic into gdk: create hooks in scanselect functions/macro's, joins and projections.
-Apply compressed operations more directly: on keys in dictionary compression (1)
-Apply compressed operations more directly: on prefix|suffix in prefix compression (1)
-Apply compressed operations more directly: on delta's and frame in frame compression (1)
+Add test for default join and COUI case both in MAL and in SQL.
 Be sure alignment is correct. Use asserts for this.
 Check MOSanalysis and its test.
 Fix/check/test MOSlayout.
+Introduce mosaic into gdk: create hooks in scanselect functions/macro's, joins and projections.
 benchmark using TPC-H
 make mitosis work with mosaic and see how this relates to the previous landmark stuff.
+Apply compressed operations more directly: on keys in dictionary compression (1)
+Apply compressed operations more directly: on prefix|suffix in prefix compression (1)
+Apply compressed operations more directly: on delta's and frame in frame compression (1)
 consider packing mosaic_block_header's more efficiently.
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
 DO nil checking more efficient similar to gdk_select
+Timing in the context of MOSanalysis
 
 ####code issues####
+See if the iteration algorithms can be improved.
 Get rid of (most of) MOStask and/or don't allocate it on the heap.
 Make sure the parameters.bits fields are always char.
 Use GDK naming conventions, e.g. o for stuff coming out if canditer_next.
 Make block headers specific by having type parametrized blockheader struct's.
 atomic base type of an oid bat is lng. So we can remove that one.
 It is a bit cleaner if MOSadvance call's are done outside of select functions.
-Refactor frame compressions code to be more inline with the other compression algortihm code.(1)
 create a common header/source file for mosaic for common tasks e.g. to house a generic IS_NIL macro, IPtpe, etc.
-mosaic_<compression>.c: for type macro's use macro-wised inline functions. (1)
-Factor out more boilerplate code in various compression techniques. All compression follow similar patterns. (1*)
 Improve the administration of the various hard coded compression techniques, e.g. MOSskipit skip (2*)
 Update copyright in 2020.
