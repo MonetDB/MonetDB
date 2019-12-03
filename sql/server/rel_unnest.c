@@ -66,8 +66,6 @@ exps_set_freevar(mvc *sql, list *exps, sql_rel *r)
 		exp_set_freevar(sql, n->data, r);
 }
 
-static int exps_have_freevar(mvc *sql, list *exps);
-
 /* check if the set is distinct for the set of free variables */
 static int
 is_distinct_set(mvc *sql, sql_rel *rel, list *ad)
@@ -123,7 +121,7 @@ exp_has_freevar(mvc *sql, sql_exp *e)
 	return 0;
 }
 
-static int
+int
 exps_have_freevar(mvc *sql, list *exps)
 {
 	node *n;

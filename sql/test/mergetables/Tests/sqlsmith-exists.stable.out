@@ -102,6 +102,35 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 % c0,	c1,	c2,	c3,	c4,	c5 # name
 % int,	int,	varchar,	int,	int,	varchar # type
 % 1,	1,	0,	1,	1,	0 # length
+#select 
+# subq_0.c0 as c0, 
+# subq_0.c0 as c1, 
+# cast(coalesce(4,
+# subq_0.c0) as int) as c2, 
+# case when subq_0.c0 is null then subq_0.c0 else subq_0.c0 end
+# as c3, 
+# subq_0.c0 as c4, 
+# subq_0.c0 as c5, 
+# subq_0.c0 as c6, 
+# subq_0.c0 as c7
+#from 
+# (select 
+# ref_4.type as c0
+# from 
+# sys.storagemodel as ref_0
+# right join sys.triggers as ref_1
+# right join sys.environment as ref_2
+# on (exists (
+# select 
+# ref_2.name as c0, 
+# ref_2.value as c1
+# from 
+# sys.dependency_owners_on_schemas as ref_3
+# where ref_1.table_id is null))
+% sys.%62,	sys.%63,	.%64,	sys.%65,	sys.%66,	sys.%67,	sys.%70,	sys.%71 # table_name
+% c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7 # name
+% int,	int,	int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1,	1,	1 # length
 #ROLLBACK;
 
 # 19:56:32 >  

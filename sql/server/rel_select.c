@@ -1074,6 +1074,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
 			}
+			if (exp && outer && is_join(outer->op))
+				set_dependent(outer);
 		}
 		if (exp) {
 			if (var || a)
@@ -1135,6 +1137,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
 			}
+			if (exp && outer && is_join(outer->op))
+				set_dependent(outer);
 		}
 
 		/* some views are just in the stack,
