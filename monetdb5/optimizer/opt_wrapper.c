@@ -78,6 +78,7 @@ struct{
 	{"mergetable", &OPTmergetableImplementation,0,0},
 	{"mitosis", &OPTmitosisImplementation,0,0},
 	{"mosaic", &OPTmosaicImplementation,0,0},
+	{"mosaiccoui", &OPTmosaicImplementation,0,0},
 	{"multiplex", &OPTmultiplexImplementation,0,0},
 	{"oltp", &OPToltpImplementation,0,0},
 	{"postfix", &OPTpostfixImplementation,0,0},
@@ -142,7 +143,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	for (i=0; codes[i].nme; i++)
 		if (strcmp(codes[i].nme, optimizer) == 0){
 			clk = GDKusec();
-			msg = (str)(*(codes[i].fcn))(cntxt, mb, stk, 0);
+			msg = (str)(*(codes[i].fcn))(cntxt, mb, stk, p);
 			codes[i].timing += GDKusec() - clk;
 			codes[i].calls++;
 			if (msg) 

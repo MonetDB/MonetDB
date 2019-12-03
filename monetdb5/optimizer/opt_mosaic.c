@@ -46,8 +46,8 @@ static int OPTmosaicType(MalBlkPtr mb, InstrPtr pci, int idx)
 	return 0;
 }
 
-str 
-OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+OPTmosaicImplementationInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool coui)
 {
 	InstrPtr p,q, *old;
     int limit, slimit,i,j, k, actions =0;
@@ -55,7 +55,7 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char buf[256];
     lng usec = GDKusec();
 
-	if( optimizerIsApplied(mb,"mosaic"))
+	if( optimizerIsApplied(mb,"mosaic") || optimizerIsApplied(mb,"mosaiccoui"))
 		return MAL_SUCCEED;
 	check = GDKzalloc(mb->vsize);
 	if ( check == NULL)
@@ -74,8 +74,8 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	(void) cntxt;
-	(void) pci;
 	(void) stk;
+	(void) pci;
 
 	// pre-scan to identify all potentially compressed columns
     for( i=1; i < limit; i++){
@@ -117,6 +117,10 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else
         if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && p->argc ==8){
 			setModuleId(p, mosaicRef);
+			if (coui) {
+				/*This will push and set the COUI flag true.*/
+				pushBit(mb, p, 1);
+			}
 			actions++;
 		}
 		if( p )
@@ -137,4 +141,10 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #endif
 	return MAL_SUCCEED;
+}
+
+str
+OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	bool coui = strcmp("mosaiccoui", getFunctionId(pci)) == 0;
+	return OPTmosaicImplementationInternal(cntxt, mb, stk, pci, coui);
 }

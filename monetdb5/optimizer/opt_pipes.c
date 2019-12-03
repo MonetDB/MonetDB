@@ -96,8 +96,7 @@ static struct PIPELINES {
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 /*
- *	The mosaic pipeline is the only pipeline that uses the mosaic optimizer.
- *	It is based on the sequential pipeline.
+ *	The mosaic pipeline is based on the sequential pipeline.
 */
 	 {"mosaic_pipe",
 	 "optimizer.inline();"
@@ -123,6 +122,46 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.mosaic();"
+	 "optimizer.profiler();"
+	 "optimizer.candidates();"
+	 "optimizer.postfix();"
+	 "optimizer.deadcode();"
+//	 "optimizer.jit();" awaiting the new batcalc api
+//	 "optimizer.oltp();"awaiting the autocommit front-end changes
+	 "optimizer.wlc();"
+	 "optimizer.garbageCollector();",
+	 "stable", NULL, NULL, 1},
+/*
+ * The mosaic pipeline with COUI is based on the normal mosaic pipeline.
+ * The main difference is that for nested loop joins, mosaic with COUI
+ * will iterate respectively
+ * over the (C)ompressed side in the (O)uter loop and
+ * over the (U)ncompressed side in the (I)nner loop.
+*/
+	 {"mosaiccoui_pipe",
+	 "optimizer.inline();"
+	 "optimizer.remap();"
+	 "optimizer.costModel();"
+	 "optimizer.coercions();"
+	 "optimizer.evaluate();"
+	 "optimizer.emptybind();"
+	 "optimizer.pushselect();"
+	 "optimizer.aliases();"
+//	 "optimizer.mitosis();" turned off for now
+	 "optimizer.mergetable();"
+	 "optimizer.deadcode();"
+	 "optimizer.aliases();"
+	 "optimizer.constants();"
+	 "optimizer.commonTerms();"
+	 "optimizer.projectionpath();"
+	 "optimizer.deadcode();"
+	 "optimizer.reorder();"
+//	 "optimizer.reduce();" deprecated
+	 "optimizer.matpack();"
+	 "optimizer.querylog();"
+	 "optimizer.multiplex();"
+	 "optimizer.generator();"
+	 "optimizer.mosaiccoui();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 "optimizer.postfix();"

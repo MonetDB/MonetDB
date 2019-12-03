@@ -188,6 +188,7 @@ str minusRef;
 str mirrorRef;
 str mitosisRef;
 str mosaicRef;
+str mosaiccouiRef;
 str mkeyRef;
 str mmathRef;
 str mtimeRef;
@@ -490,6 +491,7 @@ void optimizerInit(void)
 	mergepackRef= putName("mergepack");
 	min_no_nilRef = putName("min_no_nil");
 	mosaicRef = putName("mosaic");
+	mosaiccouiRef = putName("mosaiccoui");
 	minRef = putName("min");
 	minusRef = putName("-");
 	mirrorRef = putName("mirror");

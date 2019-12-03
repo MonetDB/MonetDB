@@ -1,6 +1,4 @@
 ####technical depth####
-Create an uncompressed-bat-on-the-outer-side-and-compressed-bat-on-the-inner-side-nested-loop-join and mark it as default mosaic.join.
-Make the COUI-nested-loop-join available for comparison. i.e. separate optimizer.
 Split the MOSadvance-like functions to type specific variant and remove the MOSskip functions.
 See if decompress can be refactored similar to the algebraic operators.
 Factor out boilerplate code mosaic code: resulting mosaic boilerplate is for testing purposes.
