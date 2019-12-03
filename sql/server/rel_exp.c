@@ -1558,6 +1558,19 @@ exp_is_true(mvc *sql, sql_exp *e)
 }
 
 int
+exp_is_false(mvc *sql, sql_exp *e) 
+{
+	if (e->type == e_atom) {
+		if (e->l) {
+			return atom_is_false(e->l);
+		} else if(sql->emode == m_normal && (unsigned) sql->argc > e->flag && EC_BOOLEAN(exp_subtype(e)->type->eclass)) {
+			return atom_is_false(sql->args[e->flag]);
+		}
+	}
+	return 0;
+}
+
+int
 exp_is_zero(mvc *sql, sql_exp *e) 
 {
 	if (e->type == e_atom) {
@@ -2323,9 +2336,9 @@ exp_copy( mvc *sql, sql_exp * e)
 			ne = exp_param(sql->sa, e->r, &e->tpe, e->flag);
 		break;
 	case e_psm:
-		if (e->flag == PSM_SET) 
+		if (e->flag & PSM_SET) 
 			ne = exp_set(sql->sa, e->alias.name, exp_copy(sql, e->l), GET_PSM_LEVEL(e->flag));
-		if (e->flag == PSM_REL) {
+		if (e->flag & PSM_REL) {
 			if (!exp_name(e))
 				exp_label(sql->sa, e, ++sql->label);
 			return exp_ref(sql->sa, e);

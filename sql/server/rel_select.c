@@ -776,6 +776,7 @@ rel_values(sql_query *query, symbol *tableref)
 	}
 	r = rel_project(sql->sa, NULL, exps);
 	r->nrcols = list_length(exps);
+	r->card = dlist_length(rowlist) == 1 ? CARD_ATOM : CARD_MULTI;
 	return rel_table_optname(sql, r, optname);
 }
 
@@ -1073,6 +1074,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
 			}
+			if (exp && outer && is_join(outer->op))
+				set_dependent(outer);
 		}
 		if (exp) {
 			if (var || a)
@@ -1134,6 +1137,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
 			}
+			if (exp && outer && is_join(outer->op))
+				set_dependent(outer);
 		}
 
 		/* some views are just in the stack,
@@ -1937,17 +1942,16 @@ rel_exists_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		rel = query_pop_outer(query);
 	assert(!is_sql_sel(f));
 	if (sq) {
-		rel = rel_crossproduct(sql->sa, rel, sq, op_join);
-		if (sc->token == SQL_EXISTS) {
-			rel->op = op_semi;
-		} else {	
-			rel->op = op_anti;
+		sql_exp *e = exp_rel(sql, sq);
+		e = exp_exist(query, e, sc->token == SQL_EXISTS);
+		if (e) {
+			/* only freevar should have CARD_AGGR */
+			e->card = CARD_ATOM;
 		}
-		if (rel_has_freevar(sql, sq))
-			set_dependent(rel);
+		rel = rel_select_add_exp(sql->sa, rel, e);
 		return rel;
 	}
-	return sq;
+	return NULL;
 }
 
 static sql_exp *
@@ -3809,18 +3813,20 @@ static sql_exp *
 rel_selection_ref(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection )
 {
 	sql_allocator *sa = query->sql->sa;
-	dnode *n;
-	dlist *gl = grp->data.lval;
+	dlist *gl;
 	char *name = NULL;
 	exp_kind ek = {type_value, card_column, FALSE};
 
+	if (grp->token != SQL_COLUMN && grp->token != SQL_IDENT)
+		return NULL;
+	gl = grp->data.lval;
 	if (dlist_length(gl) > 1)
 		return NULL;
 	if (!selection)
 		return NULL;
 
 	name = gl->h->data.sval;
-	for (n = selection->h; n; n = n->next) {
+	for (dnode *n = selection->h; n; n = n->next) {
 		/* we only look for columns */
 		tokens to = n->data.sym->token;
 		if (to == SQL_COLUMN || to == SQL_IDENT) {
@@ -4058,8 +4064,10 @@ rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dl
 				return NULL;
 			}
 		}
-		if(e->type != e_column) { //store group by expressions in the stack
-			if(!stack_push_groupby_expression(sql, grp, e))
+		if (exp_is_rel(e))
+			return sql_error(sql, 02, SQLSTATE(42000) "PARTITION BY: subqueries not allowed in PARTITION BY clause");
+		if (e->type != e_column) { //store group by expressions in the stack
+			if (!stack_push_groupby_expression(sql, grp, e))
 				return NULL;
 		}
 		if (e->card > CARD_AGGR)
@@ -4202,7 +4210,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 
 						e = exps_get_exp(rel->exps, nr);
 						if (!e)
-							return NULL;
+							return sql_error(sql, 02, SQLSTATE(42000) "SELECT: the order by column number (%d) is not in the number of projections range (%d)", nr, list_length(rel->exps));
 						e = exp_ref(sql->sa, e);
 						/* do not cache this query */
 						if (e)
@@ -4878,21 +4886,25 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 		return rel_column_ref(query, rel, se, f );
 	case SQL_NAME:
 		return rel_var_ref(sql, se->data.sval, 1);
+	case SQL_VALUES:
 	case SQL_WITH: 
 	case SQL_SELECT: {
-		sql_rel *r;
+		sql_rel *r = NULL;
 
 		if (se->token == SQL_WITH) {
 			r = rel_with_query(query, se);
+		} else if (se->token == SQL_VALUES) {
+			r = rel_values(query, se);
 		} else {
+			assert(se->token == SQL_SELECT);
 			if (rel && *rel)
 				query_push_outer(query, *rel, f);
 			r = rel_subquery(query, NULL, se, ek);
 			if (rel && *rel)
 				*rel = query_pop_outer(query);
-			if (!r)
-				return NULL;
 		}
+		if (!r)
+			return NULL;
 		if (ek.card <= card_set && is_project(r->op) && list_length(r->exps) > 1) 
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
 		if (list_length(r->exps) == 1) { /* for now don't rename multi attribute results */
