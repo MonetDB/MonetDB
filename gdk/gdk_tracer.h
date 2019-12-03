@@ -13,7 +13,7 @@
 #define BUFFER_SIZE 64000
 
 #define DEFAULT_ADAPTER BASIC
-#define DEFAULT_LOG_LEVEL M_DEBUG
+#define DEFAULT_LOG_LEVEL M_ERROR
 #define DEFAULT_FLUSH_LEVEL M_INFO
 
 #define FILE_NAME "trace"
@@ -200,7 +200,7 @@ static const char *COMPONENT_STR[] = {
 extern LOG_LEVEL LVL_PER_COMPONENT[];
 
 // If the LOG_LEVEL of the message is one of the following: CRITICAL, ERROR or WARNING 
-// it is logged no matter the component. In any other case the component is taken into account (needs fix)
+// it is logged no matter the component. In any other case the component is taken into account
 #define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)                        \
     if(LOG_LEVEL == M_CRITICAL ||                                        \
        LOG_LEVEL == M_ERROR    ||                                        \
@@ -245,6 +245,18 @@ typedef struct GDKtracer
 gdk_tracer;
 
 
+
+/*
+ * GDKtracer Stream Usage
+ */
+// Exception
+#define GDK_TRACER_REPORT_EXCEPTION(MSG)                                     \
+    mnstr_printf(GDKstdout, "[%s] %s %s:%d M_CRITICAL GDK_TRACER %s # "MSG,  \
+                            GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S"),    \
+                            __FILENAME__,                                    \
+                            __FUNCTION__,                                    \
+                            __LINE__,                                        \
+                            MT_thread_getname());                            \
 
 /*
  *  GDKtracer API
