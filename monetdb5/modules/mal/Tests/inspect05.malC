@@ -1,17 +1,17 @@
 #Illustrate the modules loaded after start
 m:= inspect.getModule();
 m0:= algebra.select(m,nil:bat[:oid],"bat", "bat", true,true,false);	# limit the list
-m1:= algebra.projection(m0,m);
 k:= inspect.getKind();
-k0:= algebra.projection(m0,k);
 f:= inspect.getFunction();
-f0:= algebra.projection(m0,f);
 s:= inspect.getSignatures();
-s0:= algebra.projection(m0,s);
 a:= inspect.getAddresses();
-a0:= algebra.projection(m0,a);
 
+f0:= algebra.projection(m0,f);
 (fv,forder):= algebra.sort(f0,false,false,true);
 
-io.print(fv,k0,m1,s0,a0);
+m1:= algebra.projectionpath(forder,m0,m);
+k0:= algebra.projectionpath(forder,m0,k);
+s0:= algebra.projectionpath(forder,m0,s);
+a0:= algebra.projectionpath(forder,m0,a);
 
+io.print(fv,k0,m1,s0,a0);
