@@ -65,22 +65,35 @@ MOSlayout_runlength(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *bou
 		return;
 }
 
+#define MOSadvance_DEF(TPE)\
+MOSadvance_SIGNATURE(runlength, TPE)\
+{\
+	task->start += MOSgetCnt(task->blk);\
+	task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(TPE),TPE));\
+}
+
+MOSadvance_DEF(bte)
+MOSadvance_DEF(sht)
+MOSadvance_DEF(int)
+MOSadvance_DEF(lng)
+MOSadvance_DEF(flt)
+MOSadvance_DEF(dbl)
+#ifdef HAVE_HGE
+MOSadvance_DEF(hge)
+#endif
+
 void
 MOSadvance_runlength(MOStask task)
 {
-
-	task->start += MOSgetCnt(task->blk);
-
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(bte),bte)); break;
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(sht),sht)); break;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(int),int)); break;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(lng),lng)); break;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(oid),oid)); break;
-	case TYPE_flt: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(flt),flt)); break;
-	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(dbl),dbl)); break;
+	case TYPE_bte: MOSadvance_runlength_bte(task); break;
+	case TYPE_sht: MOSadvance_runlength_sht(task); break;
+	case TYPE_int: MOSadvance_runlength_int(task); break;
+	case TYPE_lng: MOSadvance_runlength_lng(task); break;
+	case TYPE_flt: MOSadvance_runlength_flt(task); break;
+	case TYPE_dbl: MOSadvance_runlength_dbl(task); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(hge),hge)); break;
+	case TYPE_hge: MOSadvance_runlength_hge(task); break;
 #endif
 	}
 }

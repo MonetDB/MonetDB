@@ -40,7 +40,6 @@ ALGEBRA_INTERFACES_INTEGERS_ONLY(linear);
 		TPE rval =  (TPE) (offset + (i * step));\
         IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
 	}\
-	MOSadvance_linear(task);\
 }
 
 #endif /* _MOSAIC_LINEAR_ */

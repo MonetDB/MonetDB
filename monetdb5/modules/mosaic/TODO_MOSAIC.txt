@@ -1,6 +1,6 @@
 ####technical depth####
-Split the MOSadvance-like functions to type specific variant and remove the MOSskip functions.
-See if decompress can be refactored similar to the algebraic operators.
+Split the MOSadvance-like functions to type specific variant.
+See if compress, decompress and layout can be refactored similar to the algebraic operators.
 Factor out boilerplate code mosaic code: resulting mosaic boilerplate is for testing purposes.
 Create test for swapped join.
 Add lots of tests with candidate lists for all

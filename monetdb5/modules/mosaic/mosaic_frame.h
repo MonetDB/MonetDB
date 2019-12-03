@@ -69,7 +69,6 @@ typedef struct _FrameParameters_t {
 		TPE rval = ADD_DELTA(TPE, min, getBitVector(base, i, bits));\
         IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
 	}\
-	MOSadvance_frame(task);\
 }
 
 #endif /* _MOSAIC_FRAME_ */

@@ -87,7 +87,7 @@ MOSjoin_COUI_SIGNATURE(NAME, TPE)\
 		(void) canditer_prev(lci);\
 	}\
 \
-	MOSadvance_##NAME(task);\
+	MOSadvance_##NAME##_##TPE(task);\
 	return MAL_SUCCEED;\
 }
 
@@ -163,7 +163,10 @@ static str MOSjoin_COUI_##TPE(MOStask task, BAT* r, struct canditer* rci, bool n
  */
 
 #define do_join_inner_loop(NAME, TPE, HAS_NIL, RIGHT_CI_NEXT)\
-join_inner_loop_##NAME(TPE, HAS_NIL, RIGHT_CI_NEXT)
+{\
+	join_inner_loop_##NAME(TPE, HAS_NIL, RIGHT_CI_NEXT);\
+	MOSadvance_##NAME##_##TPE(task);\
+}
 
 #define IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE)\
 {\

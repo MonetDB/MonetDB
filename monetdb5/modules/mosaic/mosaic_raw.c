@@ -65,22 +65,36 @@ MOSlayout_raw(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, 
 		return;
 }
 
+#define MOSadvance_DEF(TPE)\
+MOSadvance_SIGNATURE(raw, TPE)\
+{\
+	MosaicBlk blk = task->blk;\
+	task->start += MOSgetCnt(blk);\
+	task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(TPE)* MOSgetCnt(blk),TPE));\
+}
+
+MOSadvance_DEF(bte)
+MOSadvance_DEF(sht)
+MOSadvance_DEF(int)
+MOSadvance_DEF(lng)
+MOSadvance_DEF(flt)
+MOSadvance_DEF(dbl)
+#ifdef HAVE_HGE
+MOSadvance_DEF(hge)
+#endif
+
 void
 MOSadvance_raw(MOStask task)
 {
-	MosaicBlk blk = task->blk;
-
-	task->start += MOSgetCnt(blk);
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(bte)* MOSgetCnt(blk),bte)); break;
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(sht)* MOSgetCnt(blk),sht)); break;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(int)* MOSgetCnt(blk),int)); break;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(lng)* MOSgetCnt(blk),lng)); break;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(oid)* MOSgetCnt(blk),oid)); break;
-	case TYPE_flt: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(flt)* MOSgetCnt(blk),flt)); break;
-	case TYPE_dbl: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(dbl)* MOSgetCnt(blk),dbl)); break;
+	case TYPE_bte: MOSadvance_raw_bte(task); break;
+	case TYPE_sht: MOSadvance_raw_sht(task); break;
+	case TYPE_int: MOSadvance_raw_int(task); break;
+	case TYPE_lng: MOSadvance_raw_lng(task); break;
+	case TYPE_flt: MOSadvance_raw_flt(task); break;
+	case TYPE_dbl: MOSadvance_raw_dbl(task); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(hge)* MOSgetCnt(blk),hge)); break;
+	case TYPE_hge: MOSadvance_raw_hge(task); break;
 #endif
 	}
 }

@@ -37,7 +37,6 @@ ALGEBRA_INTERFACES_ALL_TYPES(runlength);
     for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {\
         IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
 	}\
-	MOSadvance_runlength(task);\
 }
 
 #endif /* _MOSAIC_RLE_ */

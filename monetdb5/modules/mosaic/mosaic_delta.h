@@ -71,7 +71,6 @@ typedef struct _DeltaParameters_t {
         }\
         IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
 	}\
-	MOSadvance_delta(task);\
 }
 
 #endif /* _MOSAIC_DELTA_ */

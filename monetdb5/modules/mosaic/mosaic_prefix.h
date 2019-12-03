@@ -74,7 +74,6 @@ typedef struct MosaicBlkHeader_prefix_t_ {
 		TPE rval =  (TPE) (prefix | getBitVector(base,i,suffix_bits));\
         IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
 	}\
-	MOSadvance_prefix(task);\
 }
 
 #endif /* _MOSAIC_PREFIX_ */

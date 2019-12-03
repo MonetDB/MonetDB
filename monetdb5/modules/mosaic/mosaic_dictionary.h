@@ -164,6 +164,19 @@ typedef struct {
 
 // MOStask object dependent macro's
 
+
+#define advance_dictionary(NAME)\
+{\
+	int *dst = (int*)  MOScodevectorDict(task);\
+	BUN cnt = MOSgetCnt(task->blk);\
+	BUN bytes;\
+\
+	assert(cnt > 0);\
+	task->start += (oid) cnt;\
+	bytes =  (cnt * GET_FINAL_BITS(task, NAME))/8 + (((cnt * GET_FINAL_BITS(task, NAME)) %8) != 0);\
+	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, BitVectorChunk));\
+}
+
 #define MOScodevectorDict(Task) (((char*) (Task)->blk) + wordaligned(sizeof(MOSBlkHdr_dictionary_t), BitVectorChunk))
 
 // insert a series of values into the compressor block using dictionary
@@ -244,7 +257,6 @@ typedef struct {
         TPE rval = dict[j];\
         IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
 	}\
-	MOSadvance_##NAME(task);\
 }
 
 #endif /* _MOSAIC_DICTIONARY_  */

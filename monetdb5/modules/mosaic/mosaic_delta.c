@@ -40,19 +40,41 @@ bool MOStypes_delta(BAT* b) {
 }
 #define toEndOfBitVector(CNT, BITS) wordaligned(((CNT) * (BITS) / CHAR_BIT) + ( ((CNT) * (BITS)) % CHAR_BIT != 0 ), BitVectorChunk)
 
+#define MOSadvance_DEF(TPE)\
+MOSadvance_SIGNATURE(delta, TPE)\
+{\
+	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) (task)->blk;\
+	int *dst = (int*)  (((char*) task->blk) + wordaligned(sizeof(MosaicBlkHeader_delta_t), BitVectorChunk));\
+	long cnt = parameters->base.cnt;\
+	long bytes = toEndOfBitVector(cnt, parameters->bits);\
+\
+	assert(cnt > 0);\
+	task->start += (oid) cnt;\
+	task->blk = (MosaicBlk) (((char*) dst)  + bytes);\
+}
+
+MOSadvance_DEF(bte)
+MOSadvance_DEF(sht)
+MOSadvance_DEF(int)
+MOSadvance_DEF(lng)
+#ifdef HAVE_HGE
+MOSadvance_DEF(hge)
+#endif
+
 void
 MOSadvance_delta(MOStask task)
 {
-	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) (task)->blk;
-	int *dst = (int*)  (((char*) task->blk) + wordaligned(sizeof(MosaicBlkHeader_delta_t), BitVectorChunk));
-	long cnt = parameters->base.cnt;
-	long bytes = toEndOfBitVector(cnt, parameters->bits);
-
-	assert(cnt > 0);
-	task->start += (oid) cnt;
-	task->blk = (MosaicBlk) (((char*) dst)  + bytes);
+	// TODO: Not strictly necessary to split on type here since the logic remains the same.
+	switch(ATOMbasetype(task->type)){
+	case TYPE_bte: MOSadvance_delta_bte(task); break;
+	case TYPE_sht: MOSadvance_delta_sht(task); break;
+	case TYPE_int: MOSadvance_delta_int(task); break;
+	case TYPE_lng: MOSadvance_delta_lng(task); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: MOSadvance_delta_hge(task); break;
+#endif
+	}
 }
-
 
 void
 MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)

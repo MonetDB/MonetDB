@@ -42,7 +42,7 @@ MOSprojection_SIGNATURE(NAME, TPE)\
 		(void) canditer_prev(task->ci);\
 	}\
 \
-	MOSadvance_##NAME(task);\
+	MOSadvance_##NAME##_##TPE(task);\
 	return MAL_SUCCEED;\
 }
 

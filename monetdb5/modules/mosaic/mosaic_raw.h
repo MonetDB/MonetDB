@@ -36,7 +36,6 @@ ALGEBRA_INTERFACES_ALL_TYPES(raw);
         TPE rval = vr[ro-first];\
         IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
 	}\
-	MOSadvance_raw(task);\
 }
 
 #endif /* _MOSAIC_RAW_ */

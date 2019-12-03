@@ -170,7 +170,7 @@ MOSselect_SIGNATURE(NAME, TPE) {\
 		(void) canditer_prev(task->ci);\
 	}\
 \
-	MOSadvance_##NAME(task);\
+	MOSadvance_##NAME##_##TPE(task);\
 	task->lb = o;\
 	return MAL_SUCCEED;\
 }

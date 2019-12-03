@@ -111,17 +111,34 @@ DictionaryClass(hge)
 #define GetTypeWidth(INFO)			((INFO)->dict->twidth)
 #define GetSizeInBytes(INFO)		(BATcount((INFO)->dict) * GetTypeWidth(INFO))
 
+#define MOSadvance_DEF(TPE)\
+MOSadvance_SIGNATURE(capped, TPE) advance_dictionary(capped)
+
+MOSadvance_DEF(bte)
+MOSadvance_DEF(sht)
+MOSadvance_DEF(int)
+MOSadvance_DEF(lng)
+MOSadvance_DEF(flt)
+MOSadvance_DEF(dbl)
+#ifdef HAVE_HGE
+MOSadvance_DEF(hge)
+#endif
+
 void
 MOSadvance_capped(MOStask task)
 {
-	int *dst = (int*)  MOScodevectorDict(task);
-	BUN cnt = MOSgetCnt(task->blk);
-	BUN bytes;
-
-	assert(cnt > 0);
-	task->start += (oid) cnt;
-	bytes =  (cnt * GET_FINAL_BITS(task, capped))/8 + (((cnt * GET_FINAL_BITS(task, capped)) %8) != 0);
-	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, BitVectorChunk));
+	// TODO: Not strictly necessary to split on type here since the logic remains the same.
+	switch(ATOMbasetype(task->type)){
+	case TYPE_bte: MOSadvance_capped_bte(task); break;
+	case TYPE_sht: MOSadvance_capped_sht(task); break;
+	case TYPE_int: MOSadvance_capped_int(task); break;
+	case TYPE_lng: MOSadvance_capped_lng(task); break;
+	case TYPE_flt: MOSadvance_capped_flt(task); break;
+	case TYPE_dbl: MOSadvance_capped_dbl(task); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: MOSadvance_capped_hge(task); break;
+#endif
+	}
 }
 
 void

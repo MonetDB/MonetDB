@@ -5,10 +5,13 @@
 #include "mosaic_projection.h"
 #include "mosaic_join.h"
 
+#define MOSadvance_SIGNATURE(NAME, TPE) void MOSadvance_##NAME##_##TPE(MOStask task)
+
 #define ALGEBRA_INTERFACE(NAME, TPE) \
 MOSselect_SIGNATURE(NAME, TPE);\
 MOSprojection_SIGNATURE(NAME, TPE);\
 MOSjoin_COUI_SIGNATURE(NAME, TPE);\
+MOSadvance_SIGNATURE(NAME, TPE);
 
 #ifdef HAVE_HGE
 #define ALGEBRA_INTERFACES_INTEGERS_ONLY(NAME) \

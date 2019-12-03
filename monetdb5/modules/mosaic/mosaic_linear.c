@@ -62,18 +62,32 @@ MOSlayout_linear(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 		return;
 }
 
+#define MOSadvance_DEF(TPE)\
+MOSadvance_SIGNATURE(linear, TPE)\
+{\
+	task->start += MOSgetCnt(task->blk);\
+	task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(TPE),TPE));\
+}
+
+MOSadvance_DEF(bte)
+MOSadvance_DEF(sht)
+MOSadvance_DEF(int)
+MOSadvance_DEF(lng)
+#ifdef HAVE_HGE
+MOSadvance_DEF(hge)
+#endif
+
 void
 MOSadvance_linear(MOStask task)
 {
-	task->start += MOSgetCnt(task->blk);
+	// TODO: Not strictly necessary to split on type here since the logic remains the same.
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(bte),bte)); break;
-	case TYPE_sht: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(sht),sht)); break;
-	case TYPE_int: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(int),int)); break;
-	case TYPE_oid: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(oid),oid)); break;
-	case TYPE_lng: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(lng),lng)); break;
+	case TYPE_bte: MOSadvance_linear_bte(task); break;
+	case TYPE_sht: MOSadvance_linear_sht(task); break;
+	case TYPE_int: MOSadvance_linear_int(task); break;
+	case TYPE_lng: MOSadvance_linear_lng(task); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(hge),hge)); break;
+	case TYPE_hge: MOSadvance_linear_hge(task); break;
 #endif
 	}
 }
