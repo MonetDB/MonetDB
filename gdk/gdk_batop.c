@@ -960,6 +960,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 
 	b->tsorted = b->trevsorted = false;
 	b->tnosorted = b->tnorevsorted = 0;
+	b->tseqbase = oid_nil;
 	b->tkey = false;
 	b->tnokey[0] = b->tnokey[1] = 0;
 
