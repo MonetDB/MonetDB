@@ -219,7 +219,7 @@ extern LOG_LEVEL LVL_PER_COMPONENT[];
                         ## __VA_ARGS__);                                 \
     }                                                                    \
 
-#define TRC_CRITICAL(COMP, MSG, ...)                                         \
+#define TRC_CRITICAL(COMP, MSG, ...)                                     \
     GDK_TRACER_LOG(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)                \
 
 #define TRC_ERROR(COMP, MSG, ...)                                        \
@@ -250,13 +250,14 @@ gdk_tracer;
  * GDKtracer Stream Usage
  */
 // Exception
-#define GDK_TRACER_REPORT_EXCEPTION(MSG)                                     \
+#define GDK_TRACER_REPORT_EXCEPTION(MSG, ...)                                \
     mnstr_printf(GDKstdout, "[%s] %s %s:%d M_CRITICAL GDK_TRACER %s # "MSG,  \
                             GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S"),    \
                             __FILENAME__,                                    \
                             __FUNCTION__,                                    \
                             __LINE__,                                        \
-                            MT_thread_getname());                            \
+                            MT_thread_getname(),                             \
+                            ## __VA_ARGS__);                                 \
 
 /*
  *  GDKtracer API
