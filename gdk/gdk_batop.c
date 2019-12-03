@@ -478,8 +478,6 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 	return GDK_SUCCEED;
 
       bunins_failed:
-	if (b->tunique)
-		BBPunfix(s->batCacheid);
 	return GDK_FAIL;
 }
 
@@ -515,44 +513,17 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		}
 	}
 
-	if (b->tunique) {
-		/* if b has the unique bit set, only insert values
-		 * from n that don't already occur in b, and make sure
-		 * we don't insert any duplicates either; we do this
-		 * by calculating a subset of n that complies with
-		 * this */
-		BAT *d;
-
-		d = BATdiff(n, b, s, NULL, true, false, BUN_NONE);
-		if (d == NULL)
-			return GDK_FAIL;
-		s = BATunique(n, d);
-		BBPunfix(d->batCacheid);
-		if (s == NULL)
-			return GDK_FAIL;
-		if (BATcount(s) == 0) {
-			/* no new values in subset of n */
-			BBPunfix(s->batCacheid);
-			return GDK_SUCCEED;
-		}
-	}
-
 	cnt = canditer_init(&ci, n, s);
 	if (cnt == 0) {
-		assert(!b->tunique);
 		return GDK_SUCCEED;
 	}
 
 	if (BUNlast(b) + cnt > BUN_MAX) {
-		if (b->tunique)
-			BBPunfix(s->batCacheid);
 		GDKerror("BATappend: combined BATs too large\n");
 		return GDK_FAIL;
 	}
 
 	if (b->hseqbase + BATcount(b) + cnt >= GDK_oid_max) {
-		if (b->tunique)
-			BBPunfix(s->batCacheid);
 		GDKerror("BATappend: overflow of head value\n");
 		return GDK_FAIL;
 	}
@@ -615,8 +586,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 			if (BATcount(b) == 0)
 				BATtseqbase(b, n->tseqbase + ci.seq - hseq);
 			BATsetcount(b, BATcount(b) + cnt);
-			if (b->tunique)
-				BBPunfix(s->batCacheid);
 			return GDK_SUCCEED;
 		}
 		if ((BATcount(b) == 0 || is_oid_nil(b->tseqbase)) &&
@@ -624,8 +593,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 			/* both b and n are void/nil */
 			BATtseqbase(b, oid_nil);
 			BATsetcount(b, BATcount(b) + cnt);
-			if (b->tunique)
-				BBPunfix(s->batCacheid);
 			return GDK_SUCCEED;
 		}
 		/* we need to materialize b; allocate enough capacity */
@@ -674,9 +641,8 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 			b->tnosorted = 0;
 			b->tnorevsorted = 0;
 		}
-		/* if tunique, uniqueness is guaranteed above */
-		b->tkey = n->tkey | b->tunique;
-		if (!b->tunique && cnt == BATcount(n)) {
+		b->tkey = n->tkey;
+		if (cnt == BATcount(n)) {
 			b->tnokey[0] = n->tnokey[0];
 			b->tnokey[1] = n->tnokey[1];
 		} else {
@@ -699,8 +665,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 			b->trevsorted = false;
 			b->tnorevsorted = 0;
 		}
-		if (!b->tunique && /* uniqueness is guaranteed above */
-		    b->tkey &&
+		if (b->tkey &&
 		    (!(BATtordered(b) || BATtrevordered(b)) ||
 		     !n->tkey || xx == 0)) {
 			BATkey(b, false);
@@ -716,14 +681,10 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	}
 	if (b->ttype == TYPE_str) {
 		if (insert_string_bat(b, n, s, force) != GDK_SUCCEED) {
-			if (b->tunique)
-				BBPunfix(s->batCacheid);
 			return GDK_FAIL;
 		}
 	} else if (ATOMvarsized(b->ttype)) {
 		if (append_varsized_bat(b, n, s) != GDK_SUCCEED) {
-			if (b->tunique)
-				BBPunfix(s->batCacheid);
 			return GDK_FAIL;
 		}
 	} else {
@@ -752,12 +713,9 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		}
 		b->theap.dirty = true;
 	}
-	if (b->tunique)
-		BBPunfix(s->batCacheid);
 	return GDK_SUCCEED;
+
       bunins_failed:
-	if (b->tunique)
-		BBPunfix(s->batCacheid);
 	return GDK_FAIL;
 }
 
@@ -881,11 +839,26 @@ BATdel(BAT *b, BAT *d)
 gdk_return
 BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 {
-	if (b == NULL || p == NULL || n == NULL || BATcount(n) == 0) {
+	BUN r, s;
+	BATiter nvi = bat_iterator(n);
+	oid hseqend;
+
+	if (b == NULL || b->ttype == TYPE_void ||
+	    p == NULL || n == NULL || BATcount(n) == 0) {
 		return GDK_SUCCEED;
 	}
-	if (void_replace_bat(b, p, n, force) != GDK_SUCCEED)
-		return GDK_FAIL;
+	hseqend = b->hseqbase + BATcount(b);
+	BATloop(n, r, s) {
+		oid updid = BUNtoid(p, r);
+		const void *val = BUNtail(nvi, r);
+
+		if (updid < b->hseqbase || updid >= hseqend) {
+			GDKerror("BATreplace: id out of range\n");
+			return GDK_FAIL;
+		}
+		if (BUNinplace(b, updid - b->hseqbase, val, force) != GDK_SUCCEED)
+			return GDK_FAIL;
+	}
 	return GDK_SUCCEED;
 }
 

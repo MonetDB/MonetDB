@@ -82,7 +82,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 
 	bn->ttype = tt;
 	bn->tkey = false;
-	bn->tunique = false;
 	bn->tnonil = true;
 	bn->tnil = false;
 	bn->tsorted = bn->trevsorted = ATOMlinear(tt);
@@ -963,8 +962,7 @@ setcolprops(BAT *b, const void *x)
 		prv = BUNtail(bi, pos - 1);
 		cmp = ATOMcmp(b->ttype, prv, x);
 
-		if (!b->tunique && /* assume outside check if tunique */
-		    b->tkey &&
+		if (b->tkey &&
 		    (cmp == 0 || /* definitely not KEY */
 		     (b->batCount > 1 && /* can't guarantee KEY if unordered */
 		      ((b->tsorted && cmp > 0) ||
@@ -1040,9 +1038,6 @@ BUNappend(BAT *b, const void *t, bool force)
 	BATcheck(b, "BUNappend", GDK_FAIL);
 
 	assert(!VIEWtparent(b));
-	if (b->tunique && BUNfnd(b, t) != BUN_NONE) {
-		return GDK_SUCCEED;
-	}
 
 	p = BUNlast(b);		/* insert at end */
 	if (p == BUN_MAX || b->batCount == BUN_MAX) {
@@ -1381,7 +1376,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		}
 	} else if (b->tnorevsorted >= p)
 		b->tnorevsorted = 0;
-	if (((b->ttype != TYPE_void) & b->tkey & !b->tunique) && b->batCount > 1) {
+	if (((b->ttype != TYPE_void) & b->tkey) && b->batCount > 1) {
 		BATkey(b, false);
 	} else if (!b->tkey && (b->tnokey[0] == p || b->tnokey[1] == p))
 		b->tnokey[0] = b->tnokey[1] = 0;
@@ -1408,9 +1403,6 @@ BUNreplace(BAT *b, oid id, const void *t, bool force)
 	if (id < b->hseqbase || id >= b->hseqbase + BATcount(b))
 		return GDK_SUCCEED;
 
-	if (b->tunique && BUNfnd(b, t) != BUN_NONE) {
-		return GDK_SUCCEED;
-	}
 	if (b->ttype == TYPE_void) {
 		/* no need to materialize if value doesn't change */
 		if (is_oid_nil(b->tseqbase) ||
@@ -1433,27 +1425,9 @@ void_inplace(BAT *b, oid id, const void *val, bool force)
 		GDKerror("void_inplace: id out of range\n");
 		return GDK_FAIL;
 	}
-	if (b->tunique && BUNfnd(b, val) != BUN_NONE)
-		return GDK_SUCCEED;
 	if (b->ttype == TYPE_void)
 		return GDK_SUCCEED;
 	return BUNinplace(b, id - b->hseqbase, val, force);
-}
-
-gdk_return
-void_replace_bat(BAT *b, BAT *p, BAT *u, bool force)
-{
-	BUN r, s;
-	BATiter uvi = bat_iterator(u);
-
-	BATloop(u, r, s) {
-		oid updid = BUNtoid(p, r);
-		const void *val = BUNtail(uvi, r);
-
-		if (void_inplace(b, updid, val, force) != GDK_SUCCEED)
-			return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
 }
 
 /*
@@ -1607,7 +1581,6 @@ BATkey(BAT *b, bool flag)
 {
 	BATcheck(b, "BATkey", GDK_FAIL);
 	assert(b->batCacheid > 0);
-	assert(!b->tunique || flag);
 	if (b->ttype == TYPE_void) {
 		if (BATtdense(b) && !flag) {
 			GDKerror("BATkey: dense column must be unique.\n");
@@ -2146,11 +2119,6 @@ BATmode(BAT *b, bool transient)
  * nokey	Pair of BUN positions that proof not all values are
  *		distinct (i.e. values at given locations are equal).
  *
- * In addition there is a property "unique" that, when set, indicates
- * that values must be kept unique (and hence that the "key" property
- * must be set).  This property is only used when changing (adding,
- * replacing) values.
- *
  * Note that the functions BATtseqbase and BATkey also set more
  * properties than you might suspect.  When setting properties on a
  * newly created and filled BAT, you may want to first make sure the
@@ -2187,7 +2155,6 @@ BATassertProps(BAT *b)
 	assert(b->ttype >= TYPE_void);
 	assert(b->ttype < GDKatomcnt);
 	assert(b->ttype != TYPE_bat);
-	assert(!b->tunique || b->tkey); /* if unique, then key */
 	assert(isVIEW(b) ||
 	       b->ttype == TYPE_void ||
 	       BBPfarms[b->theap.farmid].roles & (1 << b->batRole));
