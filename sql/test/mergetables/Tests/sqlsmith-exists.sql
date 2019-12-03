@@ -199,4 +199,37 @@ FROM   (SELECT ref_0.function_type_name AS c0
               ON ( subq_1.c0 IS NULL ) 
 WHERE  subq_0.c0 IS NOT NULL;
 
+select 
+ subq_0.c0 as c0, 
+ subq_0.c0 as c1, 
+ cast(coalesce(4,
+ subq_0.c0) as int) as c2, 
+ case when subq_0.c0 is null then subq_0.c0 else subq_0.c0 end
+ as c3, 
+ subq_0.c0 as c4, 
+ subq_0.c0 as c5, 
+ subq_0.c0 as c6, 
+ subq_0.c0 as c7
+from 
+ (select 
+ ref_4.type as c0
+ from 
+ sys.storagemodel as ref_0
+ right join sys.triggers as ref_1
+ right join sys.environment as ref_2
+ on (exists (
+ select 
+ ref_2.name as c0, 
+ ref_2.value as c1
+ from 
+ sys.dependency_owners_on_schemas as ref_3
+ where ref_1.table_id is null))
+ on (ref_0.type = ref_2.name )
+ inner join sys.idxs as ref_4
+ on (ref_1.time is not null)
+ where true) as subq_0
+where subq_0.c0 is not null
+limit 107
+;
+
 ROLLBACK;
