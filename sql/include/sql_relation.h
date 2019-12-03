@@ -51,10 +51,8 @@ typedef struct expression {
 
 #define EXP_DISTINCT	1
 #define NO_NIL			2
-#define TOPN_INCLUDING	4
+#define LEFT_JOIN		4
 #define ZERO_IF_EMPTY	8
-
-#define LEFT_JOIN	4
 
 /* ASCENDING > 15 else we have problems with cmp types */
 #define ASCENDING	16
