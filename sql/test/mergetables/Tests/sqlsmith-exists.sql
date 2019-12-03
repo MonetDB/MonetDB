@@ -232,4 +232,118 @@ where subq_0.c0 is not null
 limit 107
 ;
 
+CREATE TABLE integers(i INTEGER);
+INSERT INTO integers VALUES (1), (2), (3), (NULL);
+CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product_Name  varchar(64), TotalSales int); 
+INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Game',400),(3,'Fashion','Shirt',500),(4,'Fashion','Shorts',100);
+create table analytics (aa int, bb int, cc bigint);
+insert into analytics values (15, 3, 15), (3, 1, 3), (2, 1, 2), (5, 3, 5), (NULL, 2, NULL), (3, 2, 3), (4, 1, 4), (6, 3, 6), (8, 2, 8), (NULL, 4, NULL);
+
+SELECT subq_1.c3 AS c0
+FROM
+  (SELECT 1 AS c0,
+          subq_0.c8 AS c1,
+          subq_0.c6 AS c2,
+          subq_0.c0 AS c3,
+          subq_0.c4 AS c4,
+          subq_0.c9 AS c5,
+          subq_0.c6 AS c6,
+          subq_0.c0 AS c7,
+          subq_0.c3 AS c8,
+          subq_0.c4 AS c9,
+          CASE
+              WHEN (94 IS NOT NULL)
+                   OR (subq_0.c0 IS NULL) THEN subq_0.c4
+              ELSE subq_0.c4
+          END AS c10,
+          subq_0.c5 AS c11,
+          subq_0.c4 AS c12
+   FROM
+     (SELECT ref_0.i AS c0,
+             ref_0.i AS c1,
+             ref_0.i AS c2,
+             ref_0.i AS c3,
+             ref_0.i AS c4,
+             ref_0.i AS c5,
+             ref_0.i AS c6,
+             ref_0.i AS c7,
+             ref_0.i AS c8,
+             ref_0.i AS c9,
+             ref_0.i AS c10
+      FROM sys.integers AS ref_0
+      WHERE (ref_0.i IS NOT NULL)
+        OR (TRUE)) AS subq_0
+   WHERE CASE
+             WHEN (((((TRUE)
+                      AND (TRUE))
+                     AND (EXISTS
+                            (SELECT subq_0.c3 AS c0,
+                                    ref_1.value AS c1,
+                                    subq_0.c1 AS c2,
+                                    subq_0.c3 AS c3,
+                                    subq_0.c10 AS c4
+                             FROM sys.value_partitions AS ref_1
+                             WHERE (ref_1.value IS NULL)
+                               OR ((subq_0.c2 IS NULL)
+                                   OR ((FALSE)
+                                       AND ((ref_1.value IS NULL)
+                                            OR ((TRUE)
+                                                OR (ref_1.table_id IS NULL))))))))
+                    OR (FALSE))
+                   AND (((((TRUE)
+                           AND (((EXISTS
+                                    (SELECT 69 AS c0,
+                                            ref_2.product_category AS c1,
+                                            ref_2.product_name AS c2,
+                                            ref_2.totalsales AS c3,
+                                            subq_0.c0 AS c4,
+                                            ref_2.colid AS c5,
+                                            subq_0.c5 AS c6,
+                                            subq_0.c8 AS c7,
+                                            subq_0.c10 AS c8
+                                     FROM sys.tbl_productsales AS ref_2
+                                     WHERE (FALSE)
+                                       OR ((FALSE)
+                                           AND ((TRUE)
+                                                OR ((TRUE)
+                                                    OR (TRUE))))))
+                                 AND (TRUE))
+                                OR ((FALSE)
+                                    OR ((subq_0.c0 IS NOT NULL)
+                                        OR (subq_0.c8 IS NULL)))))
+                          AND (subq_0.c5 IS NOT NULL))
+                         AND ((EXISTS
+                                 (SELECT subq_0.c9 AS c0,
+                                         subq_0.c6 AS c1,
+                                         subq_0.c7 AS c2,
+                                         subq_0.c7 AS c3,
+                                         ref_3.name AS c4,
+                                         ref_3.cycle AS c5,
+                                         ref_3.cacheinc AS c6,
+                                         subq_0.c8 AS c7,
+                                         ref_3.minvalue AS c8,
+                                         ref_3.start AS c9,
+                                         subq_0.c4 AS c10,
+                                         ref_3.id AS c11,
+                                         subq_0.c5 AS c12
+                                  FROM sys.sequences AS ref_3
+                                  WHERE (ref_3.start IS NULL)
+                                    OR (EXISTS
+                                          (SELECT subq_0.c1 AS c0,
+                                                  ref_3.name AS c1
+                                           FROM sys.analytics AS ref_4
+                                           WHERE (TRUE)
+                                             AND (FALSE)))))
+                              OR ((TRUE)
+                                  AND (subq_0.c9 IS NOT NULL))))
+                        AND ((TRUE)
+                             AND ((FALSE)
+                                  AND (FALSE)))))
+                  OR ((subq_0.c5 IS NOT NULL)
+                      OR (FALSE)) THEN subq_0.c8
+             ELSE subq_0.c8
+         END IS NOT NULL) AS subq_1
+WHERE TRUE
+LIMIT 73;
+
 ROLLBACK;
