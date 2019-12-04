@@ -756,7 +756,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		sql_exp *re = e->r, *re2 = e->f;
 
 		/* general predicate, select and join */
-		if (get_cmp(e) == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			list *args;
 			list *ops;
 			node *n;
@@ -801,7 +801,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return handle_in_exps(be, e->l, e->r, left, right, grp, ext, cnt, sel, (e->flag == cmp_in), 0);
 		}
-		if (get_cmp(e) == cmp_or && (!right || right->nrcols == 1)) {
+		if (e->flag == cmp_or && (!right || right->nrcols == 1)) {
 			sql_subtype *bt = sql_bind_localtype("bit");
 			list *l = e->l;
 			node *n;
@@ -884,7 +884,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return stmt_project(be, stmt_tinter(be, sel1, sel2), sel1);
 			return stmt_tunion(be, sel1, sel2);
 		}
-		if (get_cmp(e) == cmp_or && right) {  /* join */
+		if (e->flag == cmp_or && right) {  /* join */
 			assert(0);
 		}
 
@@ -982,13 +982,13 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					s = stmt_binop(be, l, r, f);
 				} else if (l->nrcols == 0 && r->nrcols == 0) {
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema,
-							compare_func((comp_type)get_cmp(e), is_anti(e)),
+							compare_func((comp_type)e->flag, is_anti(e)),
 							tail_type(l), tail_type(l), F_FUNC);
 					assert(f);
 					s = stmt_binop(be, l, r, f);
 				} else {
 					/* this can still be a join (as relational algebra and single value subquery results still means joins */
-					s = stmt_uselect(be, l, r, (comp_type)get_cmp(e), sel, is_anti(e));
+					s = stmt_uselect(be, l, r, (comp_type)e->flag, sel, is_anti(e));
 				}
 			}
 		}
@@ -1473,7 +1473,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 	case e_psm:
 		return args;
 	case e_cmp:
-		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			args = exps2bin_args(be, e->l, args);
 			args = exps2bin_args(be, e->r, args);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
@@ -1686,7 +1686,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					}
 				}
 		}
-		if (!rel->flag && sub && sub->nrcols) { 
+		if (rel->flag == TABLE_PROD_FUNC && sub && sub->nrcols) { 
 			assert(0);
 			list_merge(l, sub->op4.lval, NULL);
 			osub = sub;
@@ -1971,8 +1971,8 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			prop *p;
 
 			/* only handle simple joins here */
-			if ((exp_has_func(e) && get_cmp(e) != cmp_filter) ||
-			    get_cmp(e) == cmp_or || (e->f && e->anti) ||
+			if ((exp_has_func(e) && e->flag != cmp_filter) ||
+			    e->flag == cmp_or || (e->f && e->anti) ||
 			      (e->type == e_cmp && e->flag == cmp_equal &&
 			      ((rel_find_exp(rel->l, e->l) && rel_find_exp(rel->l, e->r))  ||
 			       (rel_find_exp(rel->r, e->l) && rel_find_exp(rel->r, e->r)))) ) {
@@ -2282,8 +2282,8 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			stmt *s = NULL;
 
 			/* only handle simple joins here */
-			if ((exp_has_func(e) && get_cmp(e) != cmp_filter) ||
-			    get_cmp(e) == cmp_or || (e->f && e->anti)) {
+			if ((exp_has_func(e) && e->flag != cmp_filter) ||
+			    e->flag == cmp_or || (e->f && e->anti)) {
 				if (!join && !list_length(lje)) {
 					stmt *l = bin_first_column(be, left);
 					stmt *r = bin_first_column(be, right);

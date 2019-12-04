@@ -22,7 +22,7 @@ exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
 {
 	switch(e->type) {
 	case e_cmp:
-		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			exps_set_freevar(sql, e->l, r);
 			exps_set_freevar(sql, e->r, r);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
@@ -93,7 +93,7 @@ exp_has_freevar(mvc *sql, sql_exp *e)
 		return 1;
 	switch(e->type) {
 	case e_cmp:
-		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			return (exps_have_freevar(sql, e->l) || exps_have_freevar(sql, e->r));
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return (exp_has_freevar(sql, e->l) || exps_have_freevar(sql, e->r));
@@ -197,7 +197,7 @@ exp_freevar(mvc *sql, sql_exp *e)
 			return exps_freevar(sql, e->l);
 		break;
 	case e_cmp:
-		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			list *l = exps_freevar(sql, e->l);
 			list *r = exps_freevar(sql, e->r);
 			return merge_freevar(l, r);
@@ -390,7 +390,7 @@ push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 
 	switch(e->type) {
 	case e_cmp:
-		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			e->l = push_up_project_exps(sql, rel, e->l);
 			e->r = push_up_project_exps(sql, rel, e->r);
 			return e;

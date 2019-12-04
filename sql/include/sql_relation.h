@@ -38,31 +38,32 @@ typedef struct expression {
 	void *r;
 	void *f;	/* func's and aggr's, also e_cmp may have have 2 arguments */
 	unsigned int
-	 flag:20,	/* EXP_DISTINCT, NO_NIL, cmp types */
+	 flag:16,	/* cmp types, PSM types/level */
 	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
 	 freevar:4,	/* free variable, ie binds to the upper dependent join */
 	 intern:1,
 	 anti:1,
 	 ascending:1,	/* order direction */
 	 nulls_last:1,	/* return null after all other rows */
+	 zero_if_empty:1, 	/* in case of partial aggregator computation, some aggregators need to return 0 instead of NULL */
+	 distinct:1,	
+	 need_no_nil:1,	
+	 has_no_nil:1,	
 	 base:1,
 	 used:1;	/* used for quick dead code removal */
 	sql_subtype	tpe;
 	void *p;	/* properties for the optimizer */
 } sql_exp;
 
-/* cannot be combined with cmp_* or PSM flags */
-#define EXP_DISTINCT	1		/* used for both expressions and relations */
-#define NO_NIL		2
-#define LEFT_JOIN	4		/* relational flag */
-#define ZERO_IF_EMPTY	8		/* in case of partial aggregator computation, some aggregators need to return 0 instead of NULL */
-#define HAS_NO_NIL	16
+#define TABLE_PROD_FUNC		0
+#define TABLE_FROM_RELATION	1
 
-#define get_cmp(e)	(e->flag)
+/* or-ed with the above TABLE_PROD_FUNC */
+#define UPD_COMP		2
+#define UPD_LOCKED		4
+#define UPD_NO_CONSTRAINT	8
 
-#define UPD_COMP		1
-#define UPD_LOCKED		2
-#define UPD_NO_CONSTRAINT	4
+#define LEFT_JOIN		4
 #define REL_PARTITION		8
 
 /* We need bit wise exclusive numbers as we merge the level also in the flag */
@@ -192,25 +193,18 @@ typedef enum operator_type {
 #define is_delete(op) 		(op == op_delete)
 #define is_truncate(op) 	(op == op_truncate)
 
-/* NO NIL semantics of aggr operations */
-#define need_no_nil(e) \
-	((e->flag&NO_NIL)==NO_NIL)
-#define set_no_nil(e) \
-	e->flag |= NO_NIL
-
 /* ZERO on empty sets, needed for sum (of counts)). */
-#define zero_if_empty(e) \
-	((e->flag&ZERO_IF_EMPTY)==ZERO_IF_EMPTY)
-#define set_zero_if_empty(e) \
-	e->flag |= ZERO_IF_EMPTY
+#define zero_if_empty(e) 	((e)->zero_if_empty)
+#define set_zero_if_empty(e) 	(e)->zero_if_empty = 1
+
+/* NO NIL semantics of aggr operations */
+#define need_no_nil(e) 		((e)->need_no_nil)
+#define set_no_nil(e) 		(e)->need_no_nil = 1
 
 /* does the expression (possibly) have nils */
-#define has_nil(e) \
-	(((e)->flag&HAS_NO_NIL) == 0)
-#define set_has_no_nil(e) \
-	(e)->flag |= HAS_NO_NIL
-#define set_has_nil(e) \
-	(e)->flag &= (~HAS_NO_NIL)
+#define has_nil(e) 		((e)->has_no_nil==0)
+#define set_has_no_nil(e) 	(e)->has_no_nil = 1
+#define set_has_nil(e) 		(e)->has_no_nil = 0
 
 #define is_ascending(e) 	((e)->ascending)
 #define set_ascending(e) 	((e)->ascending = 1)
@@ -220,22 +214,19 @@ typedef enum operator_type {
 #define set_nulls_first(e) 	((e)->nulls_last=0)
 #define set_direction(e, dir) 	((e)->ascending = (dir&1), (e)->nulls_last = (dir&2)?1:0)
 
-#define is_anti(e) 	((e)->anti)
-#define set_anti(e)  	(e)->anti = 1
-#define is_intern(e) 	((e)->intern)
-#define set_intern(e) 	(e)->intern = 1
-#define is_basecol(e) 	((e)->base)
-#define set_basecol(e) 	(e)->base = 1
+#define is_anti(e) 		((e)->anti)
+#define set_anti(e)  		(e)->anti = 1
+#define is_intern(e) 		((e)->intern)
+#define set_intern(e) 		(e)->intern = 1
+#define is_basecol(e) 		((e)->base)
+#define set_basecol(e) 		(e)->base = 1
 
-#define has_label(e)  	((e)->alias.label > 0)
+#define has_label(e)  		((e)->alias.label > 0)
 
 /* used for expressions and relations */
-#define need_distinct(e) \
-	((e->flag&EXP_DISTINCT)==EXP_DISTINCT)
-#define set_distinct(e) \
-	e->flag |= EXP_DISTINCT
-#define set_nodistinct(e) \
-	e->flag &= (~EXP_DISTINCT)
+#define need_distinct(er) 	((er)->distinct)
+#define set_distinct(er) 	(er)->distinct = 1;
+#define set_nodistinct(er)	(er)->distinct = 0;
 
 #define is_processed(rel) 	((rel)->processed)
 #define set_processed(rel) 	(rel)->processed = 1
@@ -262,10 +253,10 @@ typedef struct relation {
 	list *exps;
 	int nrcols;	/* nr of cols */
 	unsigned int
-	 flag:8,	/* EXP_DISTINCT */
+	 flag:16,
 	 card:4,	/* 0, 1 (row), 2 aggr, 3 */
 	 dependent:1, 	/* dependent join */
-	 single:1,	/* single join operator */
+	 distinct:1,	
 	 processed:1,   /* fully processed or still in the process of building */
 	 subquery:1;	/* is this part a subquery, this is needed for proper name binding */
 	void *p;	/* properties for the optimizer, distribution */

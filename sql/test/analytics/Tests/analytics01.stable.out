@@ -513,15 +513,15 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 % tinyint # type
 % 1 # length
 [ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 [ 2	]
 [ 1	]
 [ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
 [ 2	]
-[ 1	]
 #select ntile(10) over (order by aa) from analytics;
 % sys.%4 # table_name
 % %4 # name
@@ -587,8 +587,6 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 % %4 # name
 % int # type
 % 1 # length
-[ NULL	]
-[ NULL	]
 [ 1	]
 [ 1	]
 [ 1	]
@@ -597,6 +595,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 2	]
 [ 1	]
+[ NULL	]
+[ NULL	]
 #select ntile(aa) over (order by aa) from analytics;
 % sys.%4 # table_name
 % %4 # name
@@ -738,15 +738,15 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 % int # type
 % 1 # length
 [ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 [ 2	]
 [ 1	]
 [ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
 [ 2	]
-[ 1	]
 #select ntile(bb) over (order by aa) from analytics;
 % sys.%4 # table_name
 % %4 # name
@@ -887,8 +887,6 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 % %3 # name
 % int # type
 % 2 # length
-[ NULL	]
-[ NULL	]
 [ 15	]
 [ 8	]
 [ 6	]
@@ -897,6 +895,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 3	]
 [ 2	]
+[ NULL	]
+[ NULL	]
 #select first_value(aa) over (order by aa) from analytics;
 % sys.%3 # table_name
 % %3 # name
@@ -1112,8 +1112,6 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 % %3 # name
 % int # type
 % 1 # length
-[ 4	]
-[ 4	]
 [ 3	]
 [ 2	]
 [ 3	]
@@ -1122,6 +1120,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 2	]
 [ 2	]
 [ 1	]
+[ 4	]
+[ 4	]
 #select last_value(bb) over (order by aa) from analytics;
 % sys.%3 # table_name
 % %3 # name
@@ -1338,8 +1338,6 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 % int # type
 % 1 # length
 [ NULL	]
-[ 2	]
-[ NULL	]
 [ NULL	]
 [ NULL	]
 [ NULL	]
@@ -1347,6 +1345,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ 1	]
 [ NULL	]
+[ NULL	]
+[ 2	]
 #select lag(bb) over (order by aa) from analytics;
 % sys.%3 # table_name
 % %3 # name
@@ -2023,8 +2023,6 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 % %3 # name
 % int # type
 % 1 # length
-[ 2	]
-[ 2	]
 [ 1	]
 [ 3	]
 [ 1	]
@@ -2032,6 +2030,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 3	]
 [ 1	]
+[ 2	]
+[ 2	]
 #select first_value(bb) over (order by aa) from stressme;
 % sys.%3 # table_name
 % %3 # name
@@ -2163,8 +2163,6 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 % %3 # name
 % int # type
 % 1 # length
-[ 4	]
-[ 4	]
 [ 1	]
 [ 3	]
 [ 1	]
@@ -2172,6 +2170,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 3	]
 [ 1	]
+[ 4	]
+[ 4	]
 #select last_value(bb) over (order by aa) from stressme;
 % sys.%3 # table_name
 % %3 # name
@@ -2373,8 +2373,6 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 % %3 # name
 % int # type
 % 1 # length
-[ 2	]
-[ 2	]
 [ 1	]
 [ 3	]
 [ 1	]
@@ -2382,6 +2380,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 3	]
 [ 1	]
+[ 2	]
+[ 2	]
 #select nth_value(bb, 1) over (order by aa) from stressme;
 % sys.%3 # table_name
 % %3 # name
@@ -2654,14 +2654,14 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 % int # type
 % 1 # length
 [ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 [ 2	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
 #select lag(bb) over (order by aa) from stressme;
 % sys.%3 # table_name
 % %3 # name
@@ -2723,14 +2723,14 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 % %3 # name
 % int # type
 % 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 [ 4	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
 [ NULL	]
 #select lead(bb) over (order by aa) from stressme;
 % sys.%3 # table_name

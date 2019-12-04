@@ -657,7 +657,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		set_basecol(e);
 		append(exps, e);
 	}
-	rel = rel_table_func(sql->sa, rel, e, exps, (sq != NULL));
+	rel = rel_table_func(sql->sa, rel, e, exps, (sq)?TABLE_FROM_RELATION:TABLE_PROD_FUNC);
 	if (ast->data.lval->h->next->data.sym && ast->data.lval->h->next->data.sym->data.lval->h->next->data.lval)
 		rel = rel_table_optname(sql, rel, ast->data.lval->h->next->data.sym);
 	return rel;
@@ -1062,7 +1062,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (exp)
 					break;
 			}
-			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && !is_sql_aggr(f))
+			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && (!is_sql_aggr(f) || is_sql_farg(f)))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
 			if (exp) { 
 				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
@@ -1125,7 +1125,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (exp)
 					break;
 			}
-			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && !is_sql_aggr(f))
+			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && (!is_sql_aggr(f) || is_sql_farg(f)))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
 			if (exp) {
 				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
@@ -3071,14 +3071,14 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (!s)
 		return NULL;
 
-	l = rel_value_exp(query, rel, dl->next->data.sym, f, iek);
-	r = rel_value_exp(query, rel, dl->next->next->data.sym, f, iek);
+	l = rel_value_exp(query, rel, dl->next->data.sym, f|sql_farg, iek);
+	r = rel_value_exp(query, rel, dl->next->next->data.sym, f|sql_farg, iek);
 
 	if (!l || !r) {
 		sf = find_func(sql, s, fname, 2, F_AGGR, NULL);
 	}
 	if (!sf && (!l || !r) && *rel && (*rel)->card == CARD_AGGR) {
-		if (is_sql_having(f) || is_sql_orderby(f))
+		if (mvc_status(sql) || is_sql_having(f) || is_sql_orderby(f))
 			return NULL;
 		/* reset error */
 		sql->session->status = 0;
@@ -3247,7 +3247,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		for (	; args; args = args->next ) {
 			int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
 			sql_rel *gl = base?groupby:groupby->l, *ogl = gl; /* handle case of subqueries without correlation */
-			sql_exp *e = rel_value_exp(query, &gl, args->data.sym, f | sql_aggr, ek);
+			sql_exp *e = rel_value_exp(query, &gl, args->data.sym, (f | sql_aggr)& ~sql_farg, ek);
 
 			if (gl && gl != ogl) {
 				if (!base)
@@ -5882,5 +5882,5 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 	if (loader_function)
 		*loader_function = sf;
 
-	return rel_table_func(sql->sa, sq, e, fexps, (sq != NULL));
+	return rel_table_func(sql->sa, sq, e, fexps, (sq)?TABLE_FROM_RELATION:TABLE_PROD_FUNC);
 }

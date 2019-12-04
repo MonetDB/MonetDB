@@ -209,15 +209,15 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			exp_print(sql, fout, e->l, depth, refs, 0, alias);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, get_cmp(e));
+			cmp_print(sql, fout, e->flag);
 			exps_print(sql, fout, e->r, depth, refs, alias, 1);
-		} else if (get_cmp(e) == cmp_or) {
+		} else if (e->flag == cmp_or) {
 			exps_print(sql, fout, e->l, depth, refs, alias, 1);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, get_cmp(e));
+			cmp_print(sql, fout, e->flag);
 			exps_print(sql, fout, e->r, depth, refs, alias, 1);
-		} else if (get_cmp(e) == cmp_filter) {
+		} else if (e->flag == cmp_filter) {
 			sql_subfunc *f = e->f;
 
 			exps_print(sql, fout, e->l, depth, refs, alias, 1);
@@ -243,7 +243,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			exp_print(sql, fout, e->l, depth+1, refs, 0, 0);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, get_cmp(e));
+			cmp_print(sql, fout, e->flag);
 
 			exp_print(sql, fout, e->r, depth+1, refs, 0, 0);
 		}
@@ -558,8 +558,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	default:
 		assert(0);
 	}
-	if (rel->single)
-		mnstr_printf(fout, " single ");
 	if (rel->p) {
 		prop *p = rel->p;
 		char *pv;
