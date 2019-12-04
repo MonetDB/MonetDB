@@ -1769,11 +1769,15 @@ rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				for(node *nn = gbe->h ; nn && !found ; nn = nn->next) {
 					sql_exp *e2 = nn->data;
 					//the partition expression order should be the same as the one in the order by clause (if it's in there as well)
-					if(!exp_equal(e1, e2)) {
-						if(is_ascending(e1))
-							e2->flag |= ASCENDING;
+					if (!exp_equal(e1, e2)) {
+						if (is_ascending(e1))
+							set_ascending(e2);
 						else
-							e2->flag &= ~ASCENDING;
+							set_descending(e2);
+						if (nulls_last(e1))
+							set_nulls_last(e2);
+						else
+							set_nulls_first(e2);
 						found = true;
 					}
 				}
@@ -1781,6 +1785,22 @@ rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					append(gbe, e1);
 			}
 		} else if (obe) {
+			for(node *n = obe->h ; n ; n = n->next) {
+				sql_exp *oe = n->data;
+				if (!exps_find_exp(r->exps, oe)) {
+					sql_exp *ne = exp_ref(sql->sa, oe);
+
+					if (is_ascending(oe))
+						set_ascending(ne);
+					if (nulls_last(oe))
+						set_nulls_last(ne);
+					/* disable sorting info (ie back too defaults) */
+					set_descending(oe);
+					set_nulls_first(oe);
+					n->data = ne;
+					append(r->exps, oe);
+				}
+			}
 			gbe = obe;
 		}
 		r->r = gbe;

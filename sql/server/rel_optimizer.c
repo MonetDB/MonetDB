@@ -1334,7 +1334,7 @@ exps_push_down(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
 static sql_exp *
 _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) 
 {
-	int flag = e->flag;
+	sql_exp *oe = e;
 	sql_exp *ne = NULL, *l, *r, *r2;
 
 	switch(e->type) {
@@ -1353,24 +1353,14 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (!ne || ne->type != e_column)
 			return NULL;
 		e = NULL;
-		/*
-		if (exp_name(ne) && exp_relname(ne))
-			e = rel_bind_column2(sql, t, exp_relname(ne), exp_name(ne), 0);
-		if (!e && exp_name(ne) && !exp_relname(ne))
-			e = rel_bind_column(sql, t, exp_name(ne), 0);
-		if (!e && exp_name(ne) && ne->r && ne->l) 
-			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
-		if (!e && ne->r && !ne->l)
-			e = rel_bind_column(sql, t, ne->r, 0);
-			*/
 		if (ne->l && ne->r)
 			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
 		if (!e && ne->r && !ne->l)
 			e = rel_bind_column(sql, t, ne->r, 0);
 		sql->session->status = 0;
 		sql->errstr[0] = 0;
-		if (e && flag)
-			e->flag = flag;
+		if (e && oe)
+			e = exp_propagate(sql->sa, e, oe);
 		/* if the upper exp was an alias, keep this */ 
 		if (e && exp_relname(ne)) 
 			exp_setname(sql->sa, e, exp_relname(ne), exp_name(ne));
@@ -6613,12 +6603,9 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 
 	case op_topn:
 	case op_sample:
-		if (proj) {
-			rel = rel ->l;
-			rel_mark_used(sql, rel, proj);
-			break;
-		}
-		/* fall through */
+		rel = rel ->l;
+		rel_mark_used(sql, rel, 1);
+		break;
 	case op_project:
 	case op_groupby: 
 		if (proj && rel->l) {
@@ -9364,9 +9351,10 @@ rel_keep_renames(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
-optimize(mvc *sql, sql_rel *rel, int value_based_opt) 
+sql_rel *
+rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt)
 {
+	lng Tbegin = GDKusec();
 	list *refs = sa_list(sql->sa);
 	node *n;
 	int level = 0, changes = 1;
@@ -9383,14 +9371,6 @@ optimize(mvc *sql, sql_rel *rel, int value_based_opt)
 			n->data = optimize_rel(sql, n->data, &changes, 0, value_based_opt);
 	}
 	rel = rel_dce(sql, rel);
-	return rel;
-}
-
-sql_rel *
-rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt)
-{
-	lng Tbegin = GDKusec();
-	rel = optimize(sql, rel, value_based_opt);
 	sql->Topt += GDKusec() - Tbegin;
 	return rel;
 }

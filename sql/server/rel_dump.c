@@ -253,6 +253,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	}
 	if (e->type != e_atom && e->type != e_cmp && is_ascending(e))
 		mnstr_printf(fout, " ASC");
+	if (e->type != e_atom && e->type != e_cmp && nulls_last(e))
+		mnstr_printf(fout, " NULLS LAST");
 	if (e->type != e_atom && e->type != e_cmp && !has_nil(e))
 		mnstr_printf(fout, " NOT NULL");
 	/*
@@ -1084,7 +1086,13 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
 		(*pos)+= (int) strlen("ASC");
 		skipWS(r, pos);
-		set_direction(exp, 1);
+		set_ascending(exp);
+	}
+	/* [ NULLS LAST ] */
+	if (strncmp(r+*pos, "NULLS LAST",  strlen("NULLS LAST")) == 0) {
+		(*pos)+= (int) strlen("NULLS LAST");
+		skipWS(r, pos);
+		set_nulls_last(exp);
 	}
 	/* [ ANY|ALL ] */
 	if (strncmp(r+*pos, "ANY",  strlen("ANY")) == 0) {
