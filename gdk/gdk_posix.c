@@ -63,30 +63,6 @@
 #define O_CLOEXEC 0
 #endif
 
-/* DDALERT: AIX4.X 64bits needs HAVE_SETENV==0 due to a AIX bug, but
- * it probably isn't detected so by configure */
-
-#ifndef HAVE_SETENV
-int
-setenv(const char *name, const char *value, int overwrite)
-{
-	int ret = 0;
-
-	if (overwrite || getenv(name) == NULL) {
-		char *p = GDKmalloc(2 + strlen(name) + strlen(value));
-
-		if (p == NULL)
-			return -1;
-		strcpy(p, name);
-		strcat(p, "=");
-		strcat(p, value);
-		ret = putenv(p);
-		/* GDKfree(p); LEAK INSERTED DUE TO SOME WEIRD CRASHES */
-	}
-	return ret;
-}
-#endif
-
 /* Crude VM buffer management that keep a list of all memory mapped
  * regions.
  *
