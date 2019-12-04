@@ -936,6 +936,10 @@ order_joins(mvc *sql, list *rels, list *exps)
 					l = rn->data;
 					r = find_rel(rels, cje->l);
 				}
+				if (!r) {
+					fnd = 1; // not really, but this bails out
+					continue;
+				}
 				list_remove_data(rels, r);
 				append(n_rels, r);
 
