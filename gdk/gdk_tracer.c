@@ -4,18 +4,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
- *
- * The tracer is the general logging system for the MonetDB stack.
- * It is modelled after well-known logging schems, eg. Python
- *
- * Internally, the logger uses a dual buffer to capture log messages
- * before they are written to a file. This way we avoid serial execution.
- *
- * The logger files come in two as well, where we switch them 
- * once the logger is full.
- * The logger file format is "tracer_YY-MM-DDTHH:MM:SS_number.log"
- * An option to consider is we need a rotating scheme over 2 files only,
- * Moreover, old log files might be sent in the background to long term storage as well.
  */
 
 #include <assert.h>

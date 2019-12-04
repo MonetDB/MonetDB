@@ -4,6 +4,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * 
+ * REWRITE ----->
+ * The tracer is the general logging system for the MonetDB stack.
+ * It is modelled after well-known logging schems, eg. Python
+ *
+ * Internally, the logger uses a dual buffer to capture log messages
+ * before they are written to a file. This way we avoid serial execution.
+ *
+ * The logger files come in two as well, where we switch them 
+ * once the logger is full.
+ * The logger file format is "tracer_YY-MM-DDTHH:MM:SS_number.log"
+ * An option to consider is we need a rotating scheme over 2 files only,
+ * Moreover, old log files might be sent in the background to long term storage as well.
+ * 
  */
 
 #ifndef _GDK_TRACER_H_
@@ -20,6 +34,10 @@
 #define NAME_SEP '_'
 #define NULL_CHAR '\0'
 #define NEW_LINE '\n'
+#define MXW "20"
+
+#define AS_STR(x) #x
+#define STR(x) AS_STR(x)
 
 #define __FILENAME__ (__builtin_strrchr(__FILE__, DIR_SEP) ? __builtin_strrchr(__FILE__, DIR_SEP) + 1 : __FILE__)
 
@@ -208,7 +226,12 @@ extern LOG_LEVEL LVL_PER_COMPONENT[];
        (LVL_PER_COMPONENT[COMP] >= LOG_LEVEL))                           \
     {                                                                    \
             GDKtracer_log(LOG_LEVEL,                                     \
-                        "[%s] %s %s:%d %s %s %s # "MSG,                  \
+                        "[%s] "                                          \
+                        "%-"MXW"s "                                      \
+                        "%"MXW"s:%d "                                    \
+                        "%"MXW"s "                                       \
+                        "%-"MXW"s "                                      \
+                        "%-"MXW"s # "MSG,                                \
                         GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S"),    \
                         __FILENAME__,                                    \
                         __FUNCTION__,                                    \
@@ -247,17 +270,25 @@ gdk_tracer;
 
 
 /*
- * GDKtracer Stream Usage
+ * GDKtracer Stream Macros
  */
 // Exception
-#define GDK_TRACER_REPORT_EXCEPTION(MSG, ...)                                \
-    mnstr_printf(GDKstdout, "[%s] %s %s:%d M_CRITICAL GDK_TRACER %s # "MSG,  \
-                            GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S"),    \
-                            __FILENAME__,                                    \
-                            __FUNCTION__,                                    \
-                            __LINE__,                                        \
-                            MT_thread_getname(),                             \
-                            ## __VA_ARGS__);                                 \
+#define GDK_TRACER_REPORT_EXCEPTION(MSG, ...)                               \
+    mnstr_printf(GDKstdout,                                                 \
+                           "[%s] "                                          \
+                           "%-"MXW"s "                                      \
+                           "%"MXW"s:%d "                                    \
+                           "%"MXW"s "                                       \
+                           "%-"MXW"s "                                      \
+                           "%-"MXW"s # "MSG,                                \
+                            GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S"),   \
+                            __FILENAME__,                                   \
+                            __FUNCTION__,                                   \
+                            __LINE__,                                       \
+                            STR(M_CRITICAL),                                \
+                            STR(GDK_TRACER),                                \
+                            MT_thread_getname(),                            \
+                            ## __VA_ARGS__);                                \
 
 
 // Produces messages to the output stream. It is also used as a fallback mechanism 
@@ -268,13 +299,14 @@ gdk_tracer;
 
 
 /*
- *  GDKtracer API
+ * GDKtracer API
+ * For the allowed log_levels, components and layers see the 
+ * LOG_LEVEL, COMPONENT and LAYER enum respectively.
  */
 // Returns the timestamp in the form of datetime
 char* GDKtracer_get_timestamp(char* fmt);
 
 
-// Initialize tracer
 gdk_return GDKtracer_init(void);
 
 
@@ -297,7 +329,6 @@ gdk_return GDKtracer_reset_layer_level(int *layer);
 gdk_return GDKtracer_set_flush_level(int *lvl);
 
 
-// Resets the flush level to the default (ERROR)
 gdk_return GDKtracer_reset_flush_level(void);
 
 
@@ -305,7 +336,7 @@ gdk_return GDKtracer_reset_flush_level(void);
 gdk_return GDKtracer_set_adapter(int *adapter);
 
 
-// Resets the adapter to the default (BASIC) when flush buffer takes place 
+// Resets the adapter to the default
 gdk_return GDKtracer_reset_adapter(void);
 
 
