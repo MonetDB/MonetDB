@@ -28,11 +28,7 @@ mal_export void MOSlayout_var(MOStask task, BAT *btech, BAT *bcount, BAT *binput
 mal_export void MOSlayout_var_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSadvance_var(MOStask task);
 mal_export str MOSprepareEstimate_var(MOStask task);
-mal_export str  MOSestimate_var(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
-mal_export void MOSpostEstimate_var(MOStask task);
 mal_export str finalizeDictionary_var(MOStask task);
-mal_export void MOScompress_var(MOStask task, MosaicBlkRec* estimate);
-mal_export void MOSdecompress_var(MOStask task);
 
 ALGEBRA_INTERFACES_ALL_TYPES(var);
 

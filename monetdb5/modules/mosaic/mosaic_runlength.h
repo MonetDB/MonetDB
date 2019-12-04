@@ -21,9 +21,6 @@
 bool MOStypes_runlength(BAT* b);
 mal_export void MOSlayout_runlength(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSadvance_runlength(MOStask task);
-mal_export str  MOSestimate_runlength(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
-mal_export void MOScompress_runlength(MOStask task, MosaicBlkRec* estimate);
-mal_export void MOSdecompress_runlength(MOStask task);
 
 ALGEBRA_INTERFACES_ALL_TYPES(runlength);
 

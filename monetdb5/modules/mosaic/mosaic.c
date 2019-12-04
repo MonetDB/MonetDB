@@ -141,6 +141,7 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 		BUNappend(bproperties, "", false) != GDK_SUCCEED)
 			throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
 
+/*
 	while(task->start< task->stop){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RAW:
@@ -187,6 +188,7 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 			assert(0);
 		}
 	}
+*/
 	return MAL_SUCCEED;
 }
 
@@ -222,138 +224,156 @@ MOSprepareEstimate(MOStask task) {
 	return MAL_SUCCEED;
 }
 
-/* The compression orchestration is dealt with here.
- * We assume that the estimates for each scheme returns
- * the number of elements it applies to. Moreover, we
- * assume that the compression factor holds for any subsequence.
- * This allows us to avoid expensive estimate calls when a small
- * sequence is found with high compression factor.
- */
-static str
-MOSoptimizerCost(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous) {
-	str result = MAL_SUCCEED;
 
-	MosaicEstimation estimations[MOSAICINDEX];
-	const int size = sizeof(estimations) / sizeof(MosaicEstimation);
-	for (int i = 0; i < size; i++) {
-		estimations[i].uncompressed_size = previous->uncompressed_size;
-		estimations[i].compressed_size = previous->compressed_size;
-		estimations[i].compression_strategy = previous->compression_strategy;
-		estimations[i].nr_var_encoded_blocks = previous->nr_var_encoded_blocks;
-		estimations[i].nr_var_encoded_elements = previous->nr_var_encoded_elements;
-		estimations[i].nr_capped_encoded_elements = previous->nr_capped_encoded_elements;
-		estimations[i].nr_capped_encoded_blocks = previous->nr_capped_encoded_blocks;
-		estimations[i].must_be_merged_with_previous = false;
-		estimations[i].is_applicable = false;
-	}
-
-	// select candidate amongst those
-	if (task->filter[MOSAIC_RAW]){
-		if( (result = MOSestimate_raw(task, &estimations[MOSAIC_RAW], previous))) {
-			return result;
-		}
-	}
-	if (task->filter[MOSAIC_RLE]){
-		if( (result = MOSestimate_runlength(task, &estimations[MOSAIC_RLE], previous))) {
-			return result;
-		}
-	}
-	if (task->filter[MOSAIC_CAPPED]){
-		if( (result = MOSestimate_capped(task, &estimations[MOSAIC_CAPPED], previous))) {
-			return result;
-		}
-	}
-	if (task->filter[MOSAIC_VAR]){
-		if( (result = MOSestimate_var(task, &estimations[MOSAIC_VAR], previous))) {
-			return result;
-		}
-	}
-	if (task->filter[MOSAIC_DELTA]){
-		if( (result = MOSestimate_delta(task, &estimations[MOSAIC_DELTA], previous))) {
-			return result;
-		}
-	}
-	if (task->filter[MOSAIC_LINEAR]){
-		if( (result = MOSestimate_linear(task, &estimations[MOSAIC_LINEAR], previous))) {
-			return result;
-		}
-	}
-	if (task->filter[MOSAIC_FRAME]){
-		if( (result = MOSestimate_frame(task, &estimations[MOSAIC_FRAME], previous))) {
-			return result;
-		}
-	}
-	if (task->filter[MOSAIC_PREFIX]){
-		if( (result = MOSestimate_prefix(task, &estimations[MOSAIC_PREFIX], previous))) {
-			return result;
-		}
-	}
-
-	flt best_factor = 0.0;
-	current->is_applicable = false;
-
-	for (int i = 0; i < size; i++) {
-		flt factor = getFactor(estimations[i]);
-
-		if (estimations[i].is_applicable && best_factor < factor) {
-			*current = estimations[i];
-			best_factor = factor;
-		}
-	}
-
-	if (current->compression_strategy.tag == MOSAIC_CAPPED)	MOSpostEstimate_capped(task);
-	if (current->compression_strategy.tag == MOSAIC_VAR)	MOSpostEstimate_var(task);
-
-	return result;
+#define do_estimate(NAME, TPE, DUMMY_ARGUMENT)\
+{\
+	str msg = MOSestimate_##NAME##_##TPE(task, &estimations[MOSAIC_LINEAR], previous);\
+	if (msg != MAL_SUCCEED) return msg;\
 }
+
+
+#define do_postEstimate(NAME, TPE, DUMMY_ARGUMENT) MOSpostEstimate_##NAME##_##TPE(task);
+
+#define MOSestimate_AND_MOSoptimizerCost_DEF(TPE) \
+static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous) {\
+\
+	MosaicEstimation estimations[MOSAICINDEX];\
+	const int size = sizeof(estimations) / sizeof(MosaicEstimation);\
+	for (int i = 0; i < size; i++) {\
+		estimations[i].uncompressed_size = previous->uncompressed_size;\
+		estimations[i].compressed_size = previous->compressed_size;\
+		estimations[i].compression_strategy = previous->compression_strategy;\
+		estimations[i].nr_var_encoded_blocks = previous->nr_var_encoded_blocks;\
+		estimations[i].nr_var_encoded_elements = previous->nr_var_encoded_elements;\
+		estimations[i].nr_capped_encoded_elements = previous->nr_capped_encoded_elements;\
+		estimations[i].nr_capped_encoded_blocks = previous->nr_capped_encoded_blocks;\
+		estimations[i].must_be_merged_with_previous = false;\
+		estimations[i].is_applicable = false;\
+	}\
+\
+	/* select candidate amongst those*/\
+	if (task->filter[MOSAIC_RAW]){\
+		DO_OPERATION_IF_ALLOWED(estimate, raw, TPE);\
+	}\
+	if (task->filter[MOSAIC_RLE]){\
+		DO_OPERATION_IF_ALLOWED(estimate, runlength, TPE);\
+	}\
+	if (task->filter[MOSAIC_CAPPED]){\
+		DO_OPERATION_IF_ALLOWED(estimate, capped, TPE);\
+	}\
+	if (task->filter[MOSAIC_VAR]){\
+		DO_OPERATION_IF_ALLOWED(estimate, var, TPE);\
+	}\
+	if (task->filter[MOSAIC_DELTA]){\
+		DO_OPERATION_IF_ALLOWED(estimate, delta, TPE);\
+	}\
+	if (task->filter[MOSAIC_LINEAR]){\
+		DO_OPERATION_IF_ALLOWED(estimate, linear, TPE);\
+	}\
+	if (task->filter[MOSAIC_FRAME]){\
+		DO_OPERATION_IF_ALLOWED(estimate, frame, TPE);\
+	}\
+	if (task->filter[MOSAIC_PREFIX]){\
+		DO_OPERATION_IF_ALLOWED(estimate, prefix, TPE);\
+	}\
+\
+	flt best_factor = 0.0;\
+	current->is_applicable = false;\
+\
+	for (int i = 0; i < size; i++) {\
+		flt factor = getFactor(estimations[i]);\
+\
+		if (estimations[i].is_applicable && best_factor < factor) {\
+			*current = estimations[i];\
+			best_factor = factor;\
+		}\
+	}\
+\
+	if (current->compression_strategy.tag == MOSAIC_RAW)	DO_OPERATION_IF_ALLOWED(postEstimate, raw, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_RLE)	DO_OPERATION_IF_ALLOWED(postEstimate, runlength, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_CAPPED)	DO_OPERATION_IF_ALLOWED(postEstimate, capped, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_VAR)	DO_OPERATION_IF_ALLOWED(postEstimate, var, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_DELTA)	DO_OPERATION_IF_ALLOWED(postEstimate, delta, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_LINEAR)	DO_OPERATION_IF_ALLOWED(postEstimate, linear, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_FRAME)	DO_OPERATION_IF_ALLOWED(postEstimate, frame, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_PREFIX)	DO_OPERATION_IF_ALLOWED(postEstimate, prefix, TPE);\
+\
+	return MAL_SUCCEED;\
+}\
+static str MOSestimate_##TPE(MOStask task, BAT* estimates, size_t* compressed_size) {\
+	str result = MAL_SUCCEED;\
+\
+	*compressed_size = 0;\
+\
+	MosaicEstimation previous = {\
+		.is_applicable = false,\
+		.uncompressed_size = 0,\
+		.compressed_size = 0,\
+		.nr_var_encoded_elements = 0,\
+		.nr_var_encoded_blocks = 0,\
+		.nr_capped_encoded_elements = 0,\
+		.nr_capped_encoded_blocks = 0,\
+		.compression_strategy = {.tag = MOSAIC_EOL, .cnt = 0},\
+		.must_be_merged_with_previous = false\
+	};\
+\
+	MosaicEstimation current;\
+	MosaicBlkRec* cursor = Tloc(estimates,0);\
+\
+	while(task->start < task->stop ){\
+		/* default is to extend the non-compressed block with a single element*/\
+		if ( (result = MOSestimate_inner_##TPE(task, &current, &previous)) ) {\
+			return result;\
+		}\
+\
+		if (!current.is_applicable) {\
+			throw(MAL,"mosaic.compress", "Cannot compress BAT with given compression techniques.");\
+		}\
+\
+		if (current.must_be_merged_with_previous) {\
+			--cursor;\
+			assert(cursor->tag == previous.compression_strategy.tag && cursor->cnt == previous.compression_strategy.cnt);\
+			task->start -= previous.compression_strategy.cnt;\
+		}\
+		else BATcount(estimates)++;\
+\
+		*cursor = current.compression_strategy;\
+		++cursor;\
+		previous = current;\
+		task->start += current.compression_strategy.cnt;\
+	}\
+\
+	(*compressed_size) = current.compressed_size;\
+\
+	return MAL_SUCCEED;\
+}
+
+MOSestimate_AND_MOSoptimizerCost_DEF(bte)
+MOSestimate_AND_MOSoptimizerCost_DEF(sht)
+MOSestimate_AND_MOSoptimizerCost_DEF(int)
+MOSestimate_AND_MOSoptimizerCost_DEF(lng)
+MOSestimate_AND_MOSoptimizerCost_DEF(flt)
+MOSestimate_AND_MOSoptimizerCost_DEF(dbl)
+#ifdef HAVE_HGE
+MOSestimate_AND_MOSoptimizerCost_DEF(hge)
+#endif
+
 
 static
 str MOSestimate(MOStask task, BAT* estimates, size_t* compressed_size) {
-	str result = MAL_SUCCEED;
-
-	*compressed_size = 0;
-
-	MosaicEstimation previous = {
-		.is_applicable = false,
-		.uncompressed_size = 0,
-		.compressed_size = 0,
-		.nr_var_encoded_elements = 0,
-		.nr_var_encoded_blocks = 0,
-		.nr_capped_encoded_elements = 0,
-		.nr_capped_encoded_blocks = 0,
-		.compression_strategy = {.tag = MOSAIC_EOL, .cnt = 0},
-		.must_be_merged_with_previous = false
-	};
-
-	MosaicEstimation current;
-	MosaicBlkRec* cursor = Tloc(estimates,0);
-
-	while(task->start < task->stop ){
-		// default is to extend the non-compressed block with a single element
-		if ( (result = MOSoptimizerCost(task, &current, &previous)) ) {
-			return result;
-		}
-
-		if (!current.is_applicable) {
-			throw(MAL,"mosaic.compress", "Cannot compress BAT with given compression techniques.");
-		}
-
-		if (current.must_be_merged_with_previous) {
-			--cursor;
-			assert(cursor->tag == previous.compression_strategy.tag && cursor->cnt == previous.compression_strategy.cnt);
-			task->start -= previous.compression_strategy.cnt;
-		}
-		else BATcount(estimates)++;
-
-		*cursor = current.compression_strategy;
-		++cursor;
-		previous = current;
-		task->start += current.compression_strategy.cnt;
+	switch(ATOMbasetype(task->type)){
+	case TYPE_bte: return MOSestimate_bte(task, estimates, compressed_size);
+	case TYPE_sht: return MOSestimate_sht(task, estimates, compressed_size);
+	case TYPE_int: return MOSestimate_int(task, estimates, compressed_size);
+	case TYPE_lng: return MOSestimate_lng(task, estimates, compressed_size);
+	case TYPE_flt: return MOSestimate_flt(task, estimates, compressed_size);
+	case TYPE_dbl: return MOSestimate_dbl(task, estimates, compressed_size);
+#ifdef HAVE_HGE
+	case TYPE_hge: return MOSestimate_hge(task, estimates, compressed_size);
+#endif
+	default: // Unknown block type. Should not happen.
+		assert(0);
 	}
-
-	(*compressed_size) = current.compressed_size;
-
-	return MAL_SUCCEED;
 }
 
 static str
@@ -374,6 +394,67 @@ MOSfinalizeDictionary(MOStask task) {
 
 	return MAL_SUCCEED;
 }
+
+
+#define do_compress(NAME, TPE, DUMMY_ARGUMENT)\
+{\
+	ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_" #NAME "\n");\
+	MOScompress_##NAME##_##TPE(task, estimate);\
+	MOSupdateHeader(task);\
+	MOSadvance_##NAME##_##TPE(task);\
+	MOSnewBlk(task);\
+}
+
+#define MOScompressInternal_DEF(TPE)\
+static void \
+MOScompressInternal_##TPE(MOStask task, BAT* estimates)\
+{\
+	/* second pass: compression phase*/\
+	for(BUN i = 0; i < BATcount(estimates); i++) {\
+		assert (task->dst < task->bsrc->tmosaic->base + task->bsrc->tmosaic->size );\
+\
+		MosaicBlkRec* estimate = Tloc(estimates, i);\
+\
+		switch(estimate->tag) {\
+		case MOSAIC_RLE:\
+			DO_OPERATION_IF_ALLOWED(compress, runlength, TPE);\
+			break;\
+		case MOSAIC_CAPPED:\
+			DO_OPERATION_IF_ALLOWED(compress, capped, TPE);\
+			break;\
+		case MOSAIC_VAR:\
+			DO_OPERATION_IF_ALLOWED(compress, var, TPE);\
+			break;\
+		case MOSAIC_DELTA:\
+			DO_OPERATION_IF_ALLOWED(compress, delta, TPE);\
+			break;\
+		case MOSAIC_LINEAR:\
+			DO_OPERATION_IF_ALLOWED(compress, linear, TPE);\
+			break;\
+		case MOSAIC_FRAME:\
+			DO_OPERATION_IF_ALLOWED(compress, frame, TPE);\
+			break;\
+		case MOSAIC_PREFIX:\
+			DO_OPERATION_IF_ALLOWED(compress, prefix, TPE);\
+			break;\
+		case MOSAIC_RAW:\
+			DO_OPERATION_IF_ALLOWED(compress, raw, TPE);\
+			break;\
+		default : /* Unknown block type. Should not happen.*/\
+			assert(0);\
+		}\
+	}\
+}
+
+MOScompressInternal_DEF(bte)
+MOScompressInternal_DEF(sht)
+MOScompressInternal_DEF(int)
+MOScompressInternal_DEF(lng)
+MOScompressInternal_DEF(flt)
+MOScompressInternal_DEF(dbl)
+#ifdef HAVE_HGE
+MOScompressInternal_DEF(hge)
+#endif
 
 /* the source is extended with a BAT mosaic heap */
 str
@@ -470,72 +551,18 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 
 	task->start = 0;
 
-	// second pass: compression phase
-	for(BUN i = 0; i < BATcount(estimates); i++) {
-		assert (task->dst < bsrc->tmosaic->base + bsrc->tmosaic->size );
-
-		MosaicBlkRec* estimate = Tloc(estimates, i);
-
-		switch(estimate->tag) {
-		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_runlength\n");
-			MOScompress_runlength(task, estimate);
-			MOSupdateHeader(task);
-			MOSadvance_runlength(task);
-			MOSnewBlk(task);
-			break;
-		case MOSAIC_CAPPED:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_capped\n");
-			MOScompress_capped(task, estimate);
-			MOSupdateHeader(task);
-			MOSadvance_capped(task);
-			MOSnewBlk(task);
-			break;
-		case MOSAIC_VAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_var\n");
-			MOScompress_var(task, estimate);
-			MOSupdateHeader(task);
-			MOSadvance_var(task);
-			MOSnewBlk(task);
-			break;
-		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_delta\n");
-			MOScompress_delta(task, estimate);
-			MOSupdateHeader(task);
-			MOSadvance_delta(task);
-			MOSnewBlk(task);
-			break;
-		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_linear\n");
-			MOScompress_linear(task, estimate);
-			MOSupdateHeader(task);
-			MOSadvance_linear(task);
-			MOSnewBlk(task);
-			break;
-		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_frame\n");
-			MOScompress_frame(task, estimate);
-			MOSupdateHeader(task);
-			MOSadvance_frame(task);
-			MOSnewBlk(task);
-			break;
-		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_prefix\n");
-			MOScompress_prefix(task, estimate);
-			MOSupdateHeader(task);
-			MOSadvance_prefix(task);
-			MOSnewBlk(task);
-			break;
-		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_raw\n");
-			MOScompress_raw( task, estimate);
-			MOSupdateHeader(task);
-			MOSadvance_raw(task);
-			MOSnewBlk(task);
-			break;
-		default : // Unknown block type. Should not happen.
-			assert(0);
-		}
+	switch(ATOMbasetype(task->type)){
+	case TYPE_bte: MOScompressInternal_bte(task, estimates); break;
+	case TYPE_sht: MOScompressInternal_sht(task, estimates); break;
+	case TYPE_int: MOScompressInternal_int(task, estimates); break;
+	case TYPE_lng: MOScompressInternal_lng(task, estimates); break;
+	case TYPE_flt: MOScompressInternal_flt(task, estimates); break;
+	case TYPE_dbl: MOScompressInternal_dbl(task, estimates); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: MOScompressInternal_hge(task, estimates); break;
+#endif
+	default: // Unknown block type. Should not happen.
+		assert(0);
 	}
 
 	task->bsrc->tmosaic->free = (task->dst - (char*)task->hdr);
@@ -591,6 +618,58 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+
+#define do_decompress(NAME, TPE, DUMMY_ARGUMENT)\
+{\
+	ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_" #NAME "\n");\
+	MOSdecompress_##NAME##_##TPE(task);\
+	MOSadvance_##NAME##_##TPE(task);\
+}
+
+#define MOSdecompressInternal_DEF(TPE) \
+static void MOSdecompressInternal_##TPE(MOStask task)\
+{\
+	while(MOSgetTag(task->blk) != MOSAIC_EOL){\
+		switch(MOSgetTag(task->blk)){\
+		case MOSAIC_RAW:\
+			DO_OPERATION_IF_ALLOWED(decompress, raw, TPE);\
+			break;\
+		case MOSAIC_RLE:\
+			DO_OPERATION_IF_ALLOWED(decompress, runlength, TPE);\
+			break;\
+		case MOSAIC_CAPPED:\
+			DO_OPERATION_IF_ALLOWED(decompress, capped, TPE);\
+			break;\
+		case MOSAIC_VAR:\
+			DO_OPERATION_IF_ALLOWED(decompress, var, TPE);\
+			break;\
+		case MOSAIC_DELTA:\
+			DO_OPERATION_IF_ALLOWED(decompress, delta, TPE);\
+			break;\
+		case MOSAIC_LINEAR:\
+			DO_OPERATION_IF_ALLOWED(decompress, linear, TPE);\
+			break;\
+		case MOSAIC_FRAME:\
+			DO_OPERATION_IF_ALLOWED(decompress, frame, TPE);\
+			break;\
+		case MOSAIC_PREFIX:\
+			DO_OPERATION_IF_ALLOWED(decompress, prefix, TPE);\
+			break;\
+		default: assert(0);\
+		}\
+	}\
+}
+
+MOSdecompressInternal_DEF(bte)
+MOSdecompressInternal_DEF(sht)
+MOSdecompressInternal_DEF(int)
+MOSdecompressInternal_DEF(lng)
+MOSdecompressInternal_DEF(flt)
+MOSdecompressInternal_DEF(dbl)
+#ifdef HAVE_HGE
+MOSdecompressInternal_DEF(hge)
+#endif
+
 // recreate the uncompressed heap from its mosaic version
 static str
 MOSdecompressInternal(BAT** res, BAT* bsrc)
@@ -641,50 +720,18 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 
 	task->timer = GDKusec();
 
-	while(MOSgetTag(task->blk) != MOSAIC_EOL){
-		switch(MOSgetTag(task->blk)){
-		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_raw\n");
-			MOSdecompress_raw(task);
-			MOSadvance_raw(task);
-			break;
-		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_runlength\n");
-			MOSdecompress_runlength(task);
-			MOSadvance_runlength(task);
-			break;
-		case MOSAIC_CAPPED:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_capped\n");
-			MOSdecompress_capped(task);
-			MOSadvance_capped(task);
-			break;
-		case MOSAIC_VAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_var\n");
-			MOSdecompress_var(task);
-			MOSadvance_var(task);
-			break;
-		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_delta\n");
-			MOSdecompress_delta(task);
-			MOSadvance_delta(task);
-			break;
-		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_linear\n");
-			MOSdecompress_linear(task);
-			MOSadvance_linear(task);
-			break;
-		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_frame\n");
-			MOSdecompress_frame(task);
-			MOSadvance_frame(task);
-			break;
-		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_prefix\n");
-			MOSdecompress_prefix(task);
-			MOSadvance_prefix(task);
-			break;
-		default: assert(0);
-		}
+	switch(ATOMbasetype(task->type)){
+	case TYPE_bte: MOSdecompressInternal_bte(task); break;
+	case TYPE_sht: MOSdecompressInternal_sht(task); break;
+	case TYPE_int: MOSdecompressInternal_int(task); break;
+	case TYPE_lng: MOSdecompressInternal_lng(task); break;
+	case TYPE_flt: MOSdecompressInternal_flt(task); break;
+	case TYPE_dbl: MOSdecompressInternal_dbl(task); break;
+#ifdef HAVE_HGE
+	case TYPE_hge: MOSdecompressInternal_hge(task); break;
+#endif
+	default: // Unknown block type. Should not happen.
+		assert(0);
 	}
 
 	task->timer = GDKusec() - task->timer;

@@ -1,7 +1,5 @@
 ####technical depth####
 Split the MOSadvance-like functions to type specific variant.
-See if compress, decompress and layout can be refactored similar to the algebraic operators.
-Factor out boilerplate code mosaic code: resulting mosaic boilerplate is for testing purposes.
 Create test for swapped join.
 Add lots of tests with candidate lists for all
 Add test for float/double
@@ -27,7 +25,6 @@ Get rid of (most of) MOStask and/or don't allocate it on the heap.
 Make sure the parameters.bits fields are always char.
 Use GDK naming conventions, e.g. o for stuff coming out if canditer_next.
 Make block headers specific by having type parametrized blockheader struct's.
-atomic base type of an oid bat is lng. So we can remove that one.
 It is a bit cleaner if MOSadvance call's are done outside of select functions.
 create a common header/source file for mosaic for common tasks e.g. to house a generic IS_NIL macro, IPtpe, etc.
 Improve the administration of the various hard coded compression techniques, e.g. MOSskipit skip (2*)

@@ -95,7 +95,6 @@ decompress_dictionary_DEF(TPE)
 DictionaryClass(bte)
 DictionaryClass(sht)
 DictionaryClass(int)
-DictionaryClass(oid)
 DictionaryClass(lng)
 DictionaryClass(flt)
 DictionaryClass(dbl)
@@ -166,77 +165,68 @@ MOSprepareEstimate_var(MOStask task)
 	return MAL_SUCCEED;
 }
 
-#define estimateDict(TASK, CURRENT, TPE)\
-do {\
-	/*TODO*/\
-	GlobalVarInfo* info = TASK->var_info;\
-	BUN limit = (BUN) ((TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start);\
-	TPE* val = getSrc(TPE, (TASK));\
+#define MOSestimate_DEF(TPE) \
+MOSestimate_SIGNATURE(var, TPE)\
+{\
+	(void) previous;\
+	GlobalVarInfo* info = task->var_info;\
+	BUN limit = (BUN) (task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start);\
+	TPE* val = getSrc(TPE, task);\
 	BUN delta_count;\
 	BUN nr_compressed;\
 \
-	BUN old_keys_size	= ((CURRENT)->nr_var_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
+	BUN old_keys_size	= (current->nr_var_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
 	BUN old_dict_size	= GET_COUNT(info) * sizeof(TPE);\
-	BUN old_headers_size	= (CURRENT)->nr_var_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
+	BUN old_headers_size	= current->nr_var_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
 	BUN old_bytes		= old_keys_size + old_dict_size + old_headers_size;\
 \
 	if (extend_delta_##TPE(&nr_compressed, &delta_count, limit, info, val)) {\
 		throw(MAL, "mosaic.var", MAL_MALLOC_FAIL);\
 	}\
 \
-	(CURRENT)->is_applicable = true;\
-	(CURRENT)->nr_var_encoded_elements += nr_compressed;\
-	(CURRENT)->nr_var_encoded_blocks++;\
+	current->is_applicable = true;\
+	current->nr_var_encoded_elements += nr_compressed;\
+	current->nr_var_encoded_blocks++;\
 \
-	BUN new_keys_size	= ((CURRENT) -> nr_var_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
+	BUN new_keys_size	= (current -> nr_var_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
 	BUN new_dict_size	= (delta_count + GET_COUNT(info)) * sizeof(TPE);\
-	BUN new_headers_size	= (CURRENT)->nr_var_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
+	BUN new_headers_size	= current->nr_var_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
 	BUN new_bytes		= new_keys_size + new_dict_size + new_headers_size;\
 \
-	(CURRENT)->compression_strategy.tag = MOSAIC_VAR;\
-	(CURRENT)->compression_strategy.cnt = (unsigned int) nr_compressed;\
+	current->compression_strategy.tag = MOSAIC_VAR;\
+	current->compression_strategy.cnt = (unsigned int) nr_compressed;\
 \
-	(CURRENT)->uncompressed_size	+= (BUN) ( nr_compressed * sizeof(TPE));\
-	(CURRENT)->compressed_size		+= (BUN) (wordaligned( MosaicBlkSize, BitVector) + new_bytes - old_bytes);\
-} while (0)
-
-// calculate the expected reduction using INFO in terms of elements compressed
-str
-MOSestimate_var(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
-{	
-	(void) previous;
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: estimateDict(task, current, bte); break; 
-	case TYPE_sht: estimateDict(task, current, sht); break;
-	case TYPE_int: estimateDict(task, current, int); break;
-	case TYPE_oid: estimateDict(task, current, oid); break;
-	case TYPE_lng: estimateDict(task, current, lng); break;
-	case TYPE_flt: estimateDict(task, current, flt); break;
-	case TYPE_dbl: estimateDict(task, current, dbl); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: estimateDict(task, current, hge); break;
-#endif
-	}
-	return MAL_SUCCEED;
+	current->uncompressed_size	+= (BUN) ( nr_compressed * sizeof(TPE));\
+	current->compressed_size		+= (BUN) (wordaligned( MosaicBlkSize, BitVector) + new_bytes - old_bytes);\
+\
+	return MAL_SUCCEED;\
 }
 
-#define postEstimate(TASK, TPE) merge_delta_Into_dictionary_##TPE( (TASK)->var_info)
-
-void
-MOSpostEstimate_var(MOStask task) {
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: postEstimate(task, bte); break; 
-	case TYPE_sht: postEstimate(task, sht); break;
-	case TYPE_int: postEstimate(task, int); break;
-	case TYPE_oid: postEstimate(task, oid); break;
-	case TYPE_lng: postEstimate(task, lng); break;
-	case TYPE_flt: postEstimate(task, flt); break;
-	case TYPE_dbl: postEstimate(task, dbl); break;
+MOSestimate_DEF(bte)
+MOSestimate_DEF(sht)
+MOSestimate_DEF(int)
+MOSestimate_DEF(lng)
+MOSestimate_DEF(flt)
+MOSestimate_DEF(dbl)
 #ifdef HAVE_HGE
-	case TYPE_hge: postEstimate(task, hge); break;
+MOSestimate_DEF(hge)
 #endif
-	}
+
+#define MOSpostEstimate_DEF(TPE)\
+MOSpostEstimate_SIGNATURE(var, TPE)\
+{\
+	merge_delta_Into_dictionary_##TPE( task->var_info);\
 }
+
+MOSpostEstimate_DEF(bte)
+MOSpostEstimate_DEF(sht)
+MOSpostEstimate_DEF(int)
+MOSpostEstimate_DEF(lng)
+MOSpostEstimate_DEF(flt)
+MOSpostEstimate_DEF(dbl)
+#ifdef HAVE_HGE
+MOSpostEstimate_DEF(hge)
+#endif
 
 static str
 _finalizeDictionary(BAT* b, GlobalVarInfo* info, BUN* pos_dict, BUN* length_dict, bte* bits_dict) {
@@ -274,43 +264,42 @@ finalizeDictionary_var(MOStask task) {
 		&task->hdr->bits_var);
 }
 
-void
-MOScompress_var(MOStask task, MosaicBlkRec* estimate)
-{
-	MosaicBlk blk = task->blk;
-	task->dst = MOScodevectorDict(task);
+// rather expensive simple value non-compressed store
+#define MOScompress_DEF(TPE)\
+MOScompress_SIGNATURE(var, TPE)\
+{\
+	MosaicBlk blk = task->blk;\
+	task->dst = MOScodevectorDict(task);\
 	MOSsetTag(blk,MOSAIC_VAR);\
-
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: DICTcompress(var, bte); break;
-	case TYPE_sht: DICTcompress(var, sht); break;
-	case TYPE_int: DICTcompress(var, int); break;
-	case TYPE_lng: DICTcompress(var, lng); break;
-	case TYPE_oid: DICTcompress(var, oid); break;
-	case TYPE_flt: DICTcompress(var, flt); break;
-	case TYPE_dbl: DICTcompress(var, dbl); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: DICTcompress(var, hge); break;
-#endif
-	}
+	MOSsetCnt(blk,0);\
+	DICTcompress(var, TPE);\
 }
 
-void
-MOSdecompress_var(MOStask task)
-{
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: DICTdecompress(var, bte); break;
-	case TYPE_sht: DICTdecompress(var, sht); break;
-	case TYPE_int: DICTdecompress(var, int); break;
-	case TYPE_lng: DICTdecompress(var, lng); break;
-	case TYPE_oid: DICTdecompress(var, oid); break;
-	case TYPE_flt: DICTdecompress(var, flt); break;
-	case TYPE_dbl: DICTdecompress(var, dbl); break;
+MOScompress_DEF(bte)
+MOScompress_DEF(sht)
+MOScompress_DEF(int)
+MOScompress_DEF(lng)
+MOScompress_DEF(flt)
+MOScompress_DEF(dbl)
 #ifdef HAVE_HGE
-	case TYPE_hge: DICTdecompress(var, hge); break;
+MOScompress_DEF(hge)
 #endif
-	}
+
+#define MOSdecompress_DEF(TPE) \
+MOSdecompress_SIGNATURE(var, TPE)\
+{\
+	DICTdecompress(var, TPE);\
 }
+
+MOSdecompress_DEF(bte)
+MOSdecompress_DEF(sht)
+MOSdecompress_DEF(int)
+MOSdecompress_DEF(lng)
+MOSdecompress_DEF(flt)
+MOSdecompress_DEF(dbl)
+#ifdef HAVE_HGE
+MOSdecompress_DEF(hge)
+#endif
 
 #define scan_loop_var(TPE, CI_NEXT, TEST) \
     scan_loop_dictionary(var, TPE, CI_NEXT, TEST)

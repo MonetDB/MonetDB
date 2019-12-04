@@ -21,9 +21,6 @@
 bool MOStypes_linear(BAT* b);
 mal_export void MOSlayout_linear(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSadvance_linear(MOStask task);
-mal_export str  MOSestimate_linear(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous);
-mal_export void MOScompress_linear(MOStask task, MosaicBlkRec* estimate);
-mal_export void MOSdecompress_linear(MOStask task);
 
 ALGEBRA_INTERFACES_INTEGERS_ONLY(linear);
 #define DO_OPERATION_ON_linear(OPERATION, TPE, ...) DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, linear, TPE, __VA_ARGS__)

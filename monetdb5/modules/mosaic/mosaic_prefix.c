@@ -188,10 +188,14 @@ do {\
 	(PARAMETERS).prefix.prefix##TPE = prefix;\
 } while(0)
 
-#define estimate_prefix(TASK, TPE)\
-do {\
-	PrefixTpe(TPE) *src = ((PrefixTpe(TPE)*) (TASK)->src) + (TASK)->start;\
-	BUN limit = (TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start;\
+#define MOSestimate_DEF(TPE) \
+MOSestimate_SIGNATURE(prefix, TPE)\
+{\
+	(void) previous;\
+	current->is_applicable = true;\
+	current->compression_strategy.tag = MOSAIC_PREFIX;\
+	PrefixTpe(TPE) *src = ((PrefixTpe(TPE)*) task->src) + task->start;\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	MosaicBlkHeader_prefix_t parameters;\
 	determinePrefixParameters(parameters, src, limit, TPE);\
 	assert(parameters.base.cnt > 0);/*Should always compress.*/\
@@ -208,106 +212,89 @@ do {\
 	current->uncompressed_size += (BUN) (i * sizeof(TPE));\
 	current->compressed_size += store;\
 	current->compression_strategy.cnt = (unsigned int) parameters.base.cnt;\
-} while (0)
-
-// calculate the expected reduction 
-str
-MOSestimate_prefix(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
-{
-	(void) previous;
-	current->is_applicable = true;
-	current->compression_strategy.tag = MOSAIC_PREFIX;
-
-	switch(ATOMbasetype(task->type)) {
-		case TYPE_bte: estimate_prefix(task, bte); break;
-		case TYPE_sht: estimate_prefix(task, sht); break;
-		case TYPE_int: estimate_prefix(task, int); break;
-		case TYPE_lng: estimate_prefix(task, lng); break;
-		case TYPE_oid: estimate_prefix(task, oid); break;
-		case TYPE_flt: estimate_prefix(task, flt);	break;
-		case TYPE_dbl: estimate_prefix(task, dbl); break;
-	#ifdef HAVE_HGE
-		case TYPE_hge: estimate_prefix(task, hge); break;
-	#endif
-	}
-	return MAL_SUCCEED;
+\
+	return MAL_SUCCEED;\
 }
 
-#define compress_prefix(TASK, TPE)\
-do {\
-	PrefixTpe(TPE)* src = (PrefixTpe(TPE)*) getSrc(TPE, TASK);\
+MOSestimate_DEF(bte)
+MOSestimate_DEF(sht)
+MOSestimate_DEF(int)
+MOSestimate_DEF(lng)
+#ifdef HAVE_HGE
+MOSestimate_DEF(hge)
+#endif
+
+#define MOSpostEstimate_DEF(TPE)\
+MOSpostEstimate_SIGNATURE(prefix, TPE)\
+{\
+	(void) task;\
+}
+
+MOSpostEstimate_DEF(bte)
+MOSpostEstimate_DEF(sht)
+MOSpostEstimate_DEF(int)
+MOSpostEstimate_DEF(lng)
+#ifdef HAVE_HGE
+MOSpostEstimate_DEF(hge)
+#endif
+
+// rather expensive simple value non-compressed store
+#define MOScompress_DEF(TPE)\
+MOScompress_SIGNATURE(prefix, TPE)\
+{\
+	MosaicBlk blk = task->blk;\
+\
+	MOSsetTag(blk,MOSAIC_PREFIX);\
+	MOSsetCnt(blk, 0);\
+	PrefixTpe(TPE)* src = (PrefixTpe(TPE)*) getSrc(TPE, task);\
 	BUN i = 0;\
 	BUN limit = estimate->cnt;\
 	BitVector base;\
-	MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) ((TASK))->blk;\
+	MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) (task)->blk;\
 	determinePrefixParameters(*parameters, src, limit, TPE);\
-	(TASK)->dst = MOScodevectorPrefix(TASK);\
-	base = (BitVector) ((TASK)->dst);\
+	task->dst = MOScodevectorPrefix(task);\
+	base = (BitVector) (task->dst);\
 	PrefixTpe(TPE) suffix_mask = getSuffixMask(parameters->suffix_bits, TPE);\
 	for(i = 0; i < parameters->base.cnt; i++, src++) {\
-		/*TODO: assert that delta's actually does not cause an overflow. */\
+		/*TODO: assert that prefix's actually does not cause an overflow. */\
 		PrefixTpe(TPE) suffix = *src & suffix_mask;\
 		setBitVector(base, i, parameters->suffix_bits, (BitVectorChunk) /*TODO: fix this once we have increased capacity of bitvector*/ suffix);\
 	}\
-	(TASK)->dst += toEndOfBitVector(i, parameters->suffix_bits);\
-} while(0)
-
-void
-MOScompress_prefix(MOStask task, MosaicBlkRec* estimate)
-{
-	MosaicBlk blk = task->blk;
-
-	MOSsetTag(blk,MOSAIC_PREFIX);
-	MOSsetCnt(blk, 0);
-
-	switch(ATOMbasetype(task->type)) {
-		case TYPE_bte: compress_prefix(task, bte); break;
-		case TYPE_sht: compress_prefix(task, sht); break;
-		case TYPE_int: compress_prefix(task, int); break;
-		case TYPE_lng: compress_prefix(task, lng); break;
-		case TYPE_oid: compress_prefix(task, oid); break;
-		case TYPE_flt: compress_prefix(task, flt); break;
-		case TYPE_dbl: compress_prefix(task, dbl); break;
-	#ifdef HAVE_HGE
-		case TYPE_hge: compress_prefix(task, hge); break;
-	#endif
-	}
+	task->dst += toEndOfBitVector(i, parameters->suffix_bits);\
 }
 
-// the inverse operator, extend the src
+MOScompress_DEF(bte)
+MOScompress_DEF(sht)
+MOScompress_DEF(int)
+MOScompress_DEF(lng)
+#ifdef HAVE_HGE
+MOScompress_DEF(hge)
+#endif
 
-#define decompress_prefix(TASK, TPE)\
-do {\
-	MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) ((TASK))->blk;\
+#define MOSdecompress_DEF(TPE) \
+MOSdecompress_SIGNATURE(prefix, TPE)\
+{\
+	MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) (task)->blk;\
 	BUN lim = parameters->base.cnt;\
     PrefixTpe(TPE) prefix = parameters->prefix.prefix##TPE;\
-	BitVector base = (BitVector) MOScodevectorPrefix(TASK);\
+	BitVector base = (BitVector) MOScodevectorPrefix(task);\
 	BUN i;\
 	for(i = 0; i < lim; i++){\
 		PrefixTpe(TPE) suffix = getBitVector(base, i, parameters->suffix_bits);\
 		/*TODO: assert that suffix's actually does not cause an overflow. */\
 		PrefixTpe(TPE) val = prefix | suffix;\
-		((PrefixTpe(TPE)*)(TASK)->src)[i] = val;\
+		((PrefixTpe(TPE)*)task->src)[i] = val;\
 	}\
-	(TASK)->src += i * sizeof(TPE);\
-} while(0)
-
-void
-MOSdecompress_prefix(MOStask task)
-{
-	switch(ATOMbasetype(task->type)) {
-		case TYPE_bte: decompress_prefix(task, bte); break;
-		case TYPE_sht: decompress_prefix(task, sht); break;
-		case TYPE_int: decompress_prefix(task, int); break;
-		case TYPE_lng: decompress_prefix(task, lng); break;
-		case TYPE_oid: decompress_prefix(task, oid); break;
-		case TYPE_flt: decompress_prefix(task, flt); break;
-		case TYPE_dbl: decompress_prefix(task, dbl); break;
-	#ifdef HAVE_HGE
-		case TYPE_hge: decompress_prefix(task, hge); break;
-	#endif
-	}
+	task->src += i * sizeof(TPE);\
 }
+
+MOSdecompress_DEF(bte)
+MOSdecompress_DEF(sht)
+MOSdecompress_DEF(int)
+MOSdecompress_DEF(lng)
+#ifdef HAVE_HGE
+MOSdecompress_DEF(hge)
+#endif
 
 #define scan_loop_prefix(TPE, CI_NEXT, TEST) {\
 	MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) task->blk;\

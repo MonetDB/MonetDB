@@ -143,110 +143,103 @@ do {\
 	(PARAMETERS).base.cnt = i;\
 } while(0)
 
-#define estimateFrame(TASK, TPE)\
-do {\
-	TPE *src = getSrc(TPE, (TASK));\
-	BUN limit = (TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start;\
+#define MOSestimate_frame_DEF(TPE) \
+MOSestimate_SIGNATURE(frame, TPE)\
+{\
+	(void) previous;\
+	current->is_applicable = true;\
+	current->compression_strategy.tag = MOSAIC_FRAME;\
+	TPE *src = getSrc(TPE, task);\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	MosaicBlkHeader_frame_t parameters;\
 	determineFrameParameters(parameters, src, limit, TPE);\
 	assert(parameters.base.cnt > 0);/*Should always compress.*/\
 	current->uncompressed_size += (BUN) (parameters.base.cnt * sizeof(TPE));\
 	current->compressed_size += wordaligned(sizeof(MosaicBlkHeader_frame_t), lng) + wordaligned((parameters.base.cnt * parameters.bits) / CHAR_BIT, lng);\
 	current->compression_strategy.cnt = (unsigned int) parameters.base.cnt;\
-} while (0)
-
-// calculate the expected reduction using dictionary in terms of elements compressed
-str
-MOSestimate_frame(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous) {
-	(void) previous;
-	current->is_applicable = true;
-	current->compression_strategy.tag = MOSAIC_FRAME;
-
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: estimateFrame(task, bte); break;
-	case TYPE_sht: estimateFrame(task, sht); break;
-	case TYPE_int: estimateFrame(task, int); break;
-	case TYPE_lng: estimateFrame(task, lng); break;
-	case TYPE_oid: estimateFrame(task, oid); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: estimateFrame(task, hge); break;
-#endif
-	}
-
-	return MAL_SUCCEED;
+\
+	return MAL_SUCCEED;\
 }
 
-#define FRAMEcompress(TASK, TPE)\
-do {\
-	TPE *src = getSrc(TPE, (TASK));\
+MOSestimate_frame_DEF(bte)
+MOSestimate_frame_DEF(sht)
+MOSestimate_frame_DEF(int)
+MOSestimate_frame_DEF(lng)
+#ifdef HAVE_HGE
+MOSestimate_frame_DEF(hge)
+#endif
+
+#define MOSpostEstimate_DEF(TPE)\
+MOSpostEstimate_SIGNATURE(frame, TPE)\
+{\
+	(void) task;\
+}
+
+MOSpostEstimate_DEF(bte)
+MOSpostEstimate_DEF(sht)
+MOSpostEstimate_DEF(int)
+MOSpostEstimate_DEF(lng)
+#ifdef HAVE_HGE
+MOSpostEstimate_DEF(hge)
+#endif
+
+// rather expensive simple value non-compressed store
+#define MOScompress_DEF(TPE)\
+MOScompress_SIGNATURE(frame, TPE)\
+{\
+	MosaicBlk blk = task->blk;\
+\
+	MOSsetTag(blk,MOSAIC_FRAME);\
+	MOSsetCnt(blk, 0);\
+	TPE *src = getSrc(TPE, task);\
 	TPE delta;\
 	BUN i = 0;\
 	BUN limit = estimate->cnt;\
 	BitVector base;\
-	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((TASK))->blk;\
+	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) (task)->blk;\
 	determineFrameParameters(*parameters, src, limit, TPE);\
-	(TASK)->dst = MOScodevectorFrame(TASK);\
-	base = (BitVector) ((TASK)->dst);\
+	task->dst = MOScodevectorFrame(task);\
+	base = (BitVector) (task->dst);\
 	for(i = 0; i < parameters->base.cnt; i++, src++) {\
 		/*TODO: assert that delta's actually does not cause an overflow. */\
 		delta = *src - parameters->min.min##TPE;\
 		setBitVector(base, i, parameters->bits, (BitVectorChunk) /*TODO: fix this once we have increased capacity of bitvector*/ delta);\
 	}\
-	(TASK)->dst += toEndOfBitVector(i, parameters->bits);\
-} while(0)
-
-void
-MOScompress_frame(MOStask task, MosaicBlkRec* estimate)
-{
-	MosaicBlk blk = task->blk;
-
-	MOSsetTag(blk,MOSAIC_FRAME);
-	MOSsetCnt(blk, 0);
-
-	switch(ATOMbasetype(task->type)) {
-	case TYPE_bte: FRAMEcompress(task, bte); break;
-	case TYPE_sht: FRAMEcompress(task, sht); break;
-	case TYPE_int: FRAMEcompress(task, int); break;
-	case TYPE_lng: FRAMEcompress(task, lng); break;
-	case TYPE_oid: FRAMEcompress(task, oid); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: FRAMEcompress(task, hge); break;
-#endif
-	}
+	task->dst += toEndOfBitVector(i, parameters->bits);\
 }
 
-// the inverse operator, extend the src
+MOScompress_DEF(bte)
+MOScompress_DEF(sht)
+MOScompress_DEF(int)
+MOScompress_DEF(lng)
+#ifdef HAVE_HGE
+MOScompress_DEF(hge)
+#endif
 
-#define FRAMEdecompress(TASK, TPE)\
-do {\
-	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((TASK))->blk;\
+#define MOSdecompress_DEF(TPE) \
+MOSdecompress_SIGNATURE(frame, TPE)\
+{\
+	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) (task)->blk;\
 	BUN lim = parameters->base.cnt;\
     TPE min = parameters->min.min##TPE;\
-	BitVector base = (BitVector) MOScodevectorFrame(TASK);\
+	BitVector base = (BitVector) MOScodevectorFrame(task);\
 	BUN i;\
 	for(i = 0; i < lim; i++){\
 		TPE delta = getBitVector(base, i, parameters->bits);\
 		/*TODO: assert that delta's actually does not cause an overflow. */\
 		TPE val = min + delta;\
-		((TPE*)(TASK)->src)[i] = val;\
+		((TPE*)task->src)[i] = val;\
 	}\
-	(TASK)->src += i * sizeof(TPE);\
-} while(0)
-
-void
-MOSdecompress_frame(MOStask task)
-{
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: FRAMEdecompress(task, bte); break;
-	case TYPE_sht: FRAMEdecompress(task, sht); break;
-	case TYPE_int: FRAMEdecompress(task, int); break;
-	case TYPE_lng: FRAMEdecompress(task, lng); break;
-	case TYPE_oid: FRAMEdecompress(task, oid); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: FRAMEdecompress(task, hge); break;
-#endif
-	}
+	task->src += i * sizeof(TPE);\
 }
+
+MOSdecompress_DEF(bte)
+MOSdecompress_DEF(sht)
+MOSdecompress_DEF(int)
+MOSdecompress_DEF(lng)
+#ifdef HAVE_HGE
+MOSdecompress_DEF(hge)
+#endif
 
 #define scan_loop_frame(TPE, CANDITER_NEXT, TEST) {\
 	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) task->blk;\

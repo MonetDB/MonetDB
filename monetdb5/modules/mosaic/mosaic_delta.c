@@ -88,7 +88,6 @@ MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 	case TYPE_sht: output = wordaligned(MosaicBlkSize + sizeof(sht) + MOSgetCnt(blk)-1,sht); break ;
 	case TYPE_int: output = wordaligned(MosaicBlkSize + sizeof(int) + MOSgetCnt(blk)-1,int); break ;
 	case TYPE_lng: output = wordaligned(MosaicBlkSize + sizeof(lng) + MOSgetCnt(blk)-1,lng); break ;
-	case TYPE_oid: output = wordaligned(MosaicBlkSize + sizeof(oid) + MOSgetCnt(blk)-1,oid); break ;
 #ifdef HAVE_HGE
 	case TYPE_hge: output = wordaligned(MosaicBlkSize + sizeof(hge) + MOSgetCnt(blk)-1,hge); break ;
 #endif
@@ -146,49 +145,62 @@ do {\
 	(PARAMETERS).bits = bits;\
 } while(0)
 
-#define estimateDelta(TASK, TPE)\
-do {\
-	TPE *src = getSrc(TPE, (TASK));\
-	BUN limit = (TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start;\
+#define MOSestimate_DEF(TPE) \
+MOSestimate_SIGNATURE(delta, TPE)\
+{\
+	(void) previous;\
+	current->is_applicable = true;\
+	current->compression_strategy.tag = MOSAIC_DELTA;\
+	TPE *src = getSrc(TPE, task);\
+	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	MosaicBlkHeader_delta_t parameters;\
 	determineDeltaParameters(parameters, src, limit, TPE);\
 	assert(parameters.base.cnt > 0);/*Should always compress.*/\
 	current->uncompressed_size += (BUN) (parameters.base.cnt * sizeof(TPE));\
 	current->compressed_size += wordaligned(sizeof(MosaicBlkHeader_delta_t), lng) + wordaligned((parameters.base.cnt * parameters.bits) / CHAR_BIT, lng);\
 	current->compression_strategy.cnt = (unsigned int) parameters.base.cnt;\
-} while (0)
-
-// calculate the expected reduction using dictionary in terms of elements compressed
-str
-MOSestimate_delta(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous) {
-	(void) previous;
-	current->is_applicable = true;
-	current->compression_strategy.tag = MOSAIC_DELTA;
-
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: estimateDelta(task, bte); break;
-	case TYPE_sht: estimateDelta(task, sht); break;
-	case TYPE_int: estimateDelta(task, int); break;
-	case TYPE_lng: estimateDelta(task, lng); break;
-	case TYPE_oid: estimateDelta(task, oid); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: estimateDelta(task, hge); break;
-#endif
-	}
-
-	return MAL_SUCCEED;
+\
+	return MAL_SUCCEED;\
 }
 
-#define DELTAcompress(TASK, TPE)\
-do {\
-	TPE *src = getSrc(TPE, (TASK));\
+MOSestimate_DEF(bte)
+MOSestimate_DEF(sht)
+MOSestimate_DEF(int)
+MOSestimate_DEF(lng)
+#ifdef HAVE_HGE
+MOSestimate_DEF(hge)
+#endif
+
+#define MOSpostEstimate_DEF(TPE)\
+MOSpostEstimate_SIGNATURE(delta, TPE)\
+{\
+	(void) task;\
+}
+
+MOSpostEstimate_DEF(bte)
+MOSpostEstimate_DEF(sht)
+MOSpostEstimate_DEF(int)
+MOSpostEstimate_DEF(lng)
+#ifdef HAVE_HGE
+MOSpostEstimate_DEF(hge)
+#endif
+
+// rather expensive simple value non-compressed store
+#define MOScompress_DEF(TPE)\
+MOScompress_SIGNATURE(delta, TPE)\
+{\
+	MosaicBlk blk = task->blk;\
+\
+	MOSsetTag(blk,MOSAIC_DELTA);\
+	MOSsetCnt(blk, 0);\
+	TPE *src = getSrc(TPE, task);\
 	BUN i = 0;\
 	BUN limit = estimate->cnt;\
 	BitVector base;\
-	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) ((TASK))->blk;\
+	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) (task)->blk;\
 	determineDeltaParameters(*parameters, src, limit, TPE);\
-	(TASK)->dst = MOScodevectorDelta(TASK);\
-	base = (BitVector) ((TASK)->dst);\
+	task->dst = MOScodevectorDelta(task);\
+	base = (BitVector) (task->dst);\
 	TPE pv = parameters->init.val##TPE; /*previous value*/\
 	/*Initial delta is zero.*/\
 	setBitVector(base, 0, parameters->bits, (BitVectorChunk) 0);\
@@ -201,59 +213,41 @@ do {\
 		setBitVector(base, i, parameters->bits, (BitVectorChunk) /*TODO: fix this once we have increased capacity of bitvector*/ delta);\
 		pv = cv;\
 	}\
-	(TASK)->dst += toEndOfBitVector(i, parameters->bits);\
-} while(0)
-
-void
-MOScompress_delta(MOStask task, MosaicBlkRec* estimate)
-{
-	MosaicBlk blk = task->blk;
-
-	MOSsetTag(blk,MOSAIC_DELTA);
-	MOSsetCnt(blk, 0);
-
-	switch(ATOMbasetype(task->type)) {
-	case TYPE_bte: DELTAcompress(task, bte); break;
-	case TYPE_sht: DELTAcompress(task, sht); break;
-	case TYPE_int: DELTAcompress(task, int); break;
-	case TYPE_lng: DELTAcompress(task, lng); break;
-	case TYPE_oid: DELTAcompress(task, oid); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: DELTAcompress(task, hge); break;
-#endif
-	}
+	task->dst += toEndOfBitVector(i, parameters->bits);\
 }
 
-#define DELTAdecompress(TASK, TPE)\
-do {\
-	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) ((TASK))->blk;\
+MOScompress_DEF(bte)
+MOScompress_DEF(sht)
+MOScompress_DEF(int)
+MOScompress_DEF(lng)
+#ifdef HAVE_HGE
+MOScompress_DEF(hge)
+#endif
+
+#define MOSdecompress_DEF(TPE) \
+MOSdecompress_SIGNATURE(delta, TPE)\
+{\
+	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) (task)->blk;\
 	BUN lim = parameters->base.cnt;\
-	((TPE*)(TASK)->src)[0] = parameters->init.val##TPE; /*previous value*/\
-	BitVector base = (BitVector) MOScodevectorDelta(TASK);\
+	((TPE*)task->src)[0] = parameters->init.val##TPE; /*previous value*/\
+	BitVector base = (BitVector) MOScodevectorDelta(task);\
 	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (parameters->bits - 1);\
 	DeltaTpe(TPE) acc = (DeltaTpe(TPE)) parameters->init.val##TPE /*unsigned accumulating value*/;\
 	BUN i;\
 	for(i = 0; i < lim; i++) {\
 		DeltaTpe(TPE) delta = getBitVector(base, i, parameters->bits);\
-		((TPE*)(TASK)->src)[i] = ACCUMULATE(acc, delta, sign_mask, TPE);\
+		((TPE*)task->src)[i] = ACCUMULATE(acc, delta, sign_mask, TPE);\
 	}\
-	(TASK)->src += i * sizeof(TPE);\
-} while(0)
-
-void
-MOSdecompress_delta(MOStask task)
-{
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: DELTAdecompress(task, bte); break;
-	case TYPE_sht: DELTAdecompress(task, sht); break;
-	case TYPE_int: DELTAdecompress(task, int); break;
-	case TYPE_lng: DELTAdecompress(task, lng); break;
-	case TYPE_oid: DELTAdecompress(task, oid); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: DELTAdecompress(task, hge); break;
-#endif
-	}
+	task->src += i * sizeof(TPE);\
 }
+
+MOSdecompress_DEF(bte)
+MOSdecompress_DEF(sht)
+MOSdecompress_DEF(int)
+MOSdecompress_DEF(lng)
+#ifdef HAVE_HGE
+MOSdecompress_DEF(hge)
+#endif
 
 #define scan_loop_delta(TPE, CANDITER_NEXT, TEST) \
 {\

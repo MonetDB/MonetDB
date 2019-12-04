@@ -59,7 +59,6 @@ typedef union{
 	sht valsht[TMPDICT];
 	int valint[TMPDICT];
 	lng vallng[TMPDICT];
-	oid valoid[TMPDICT];
 	flt valflt[TMPDICT];
 	dbl valdbl[TMPDICT];
 #ifdef HAVE_HGE
@@ -101,7 +100,6 @@ DictionaryClass(bte)
 DictionaryClass(sht)
 DictionaryClass(int)
 DictionaryClass(lng)
-DictionaryClass(oid)
 DictionaryClass(flt)
 DictionaryClass(dbl)
 #ifdef HAVE_HGE
@@ -253,78 +251,68 @@ MOSprepareEstimate_capped(MOStask task)
 	return MAL_SUCCEED;
 }
 
-#define estimate_dict(TASK, CURRENT, TPE)\
-do {\
-	/*TODO*/\
-	GlobalCappedInfo* info = TASK->capped_info;\
-	BUN limit = (BUN) ((TASK)->stop - (TASK)->start > MOSAICMAXCNT? MOSAICMAXCNT: (TASK)->stop - (TASK)->start);\
-	TPE* val = getSrc(TPE, (TASK));\
+#define MOSestimate_DEF(TPE) \
+MOSestimate_SIGNATURE(capped, TPE)\
+{\
+	(void) previous;\
+	GlobalCappedInfo* info = task->capped_info;\
+	BUN limit = (BUN) (task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start);\
+	TPE* val = getSrc(TPE, task);\
 	BUN delta_count;\
 	BUN nr_compressed;\
 \
-	BUN old_keys_size	= ((CURRENT)->nr_capped_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
+	BUN old_keys_size	= (current->nr_capped_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
 	BUN old_dict_size	= GET_COUNT(info) * sizeof(TPE);\
-	BUN old_headers_size	= (CURRENT)->nr_capped_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
+	BUN old_headers_size	= current->nr_capped_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
 	BUN old_bytes		= old_keys_size + old_dict_size + old_headers_size;\
 \
 	if (extend_delta_##TPE(&nr_compressed, &delta_count, limit, info, val)) {\
 		throw(MAL, "mosaic.capped", MAL_MALLOC_FAIL);\
 	}\
 \
-	(CURRENT)->is_applicable = nr_compressed > 0;\
-	(CURRENT)->nr_capped_encoded_elements += nr_compressed;\
-	(CURRENT)->nr_capped_encoded_blocks++;\
+	current->is_applicable = nr_compressed > 0;\
+	current->nr_capped_encoded_elements += nr_compressed;\
+	current->nr_capped_encoded_blocks++;\
 \
-	BUN new_keys_size	= ((CURRENT)->nr_capped_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
+	BUN new_keys_size	= (current->nr_capped_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
 	BUN new_dict_size	= (delta_count + GET_COUNT(info)) * sizeof(TPE);\
-	BUN new_headers_size	= (CURRENT)->nr_capped_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
+	BUN new_headers_size	= current->nr_capped_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
 	BUN new_bytes		= new_keys_size + new_dict_size + new_headers_size;\
 \
-	(CURRENT)->compression_strategy.tag = MOSAIC_CAPPED;\
-	(CURRENT)->compression_strategy.cnt = (unsigned int) nr_compressed;\
+	current->compression_strategy.tag = MOSAIC_CAPPED;\
+	current->compression_strategy.cnt = (unsigned int) nr_compressed;\
 \
-	(CURRENT)->uncompressed_size	+= (BUN) ( nr_compressed * sizeof(TPE));\
-	(CURRENT)->compressed_size		+= (BUN) (wordaligned( MosaicBlkSize, BitVectorChunk) + new_bytes - old_bytes);\
-} while (0)
-
-// calculate the expected reduction using DICT in terms of elements compressed
-str
-MOSestimate_capped(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
-{
-	(void) previous;
-
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: estimate_dict(task, current, bte); break;
-	case TYPE_sht: estimate_dict(task, current, sht); break;
-	case TYPE_int: estimate_dict(task, current, int); break;
-	case TYPE_oid: estimate_dict(task, current, oid); break;
-	case TYPE_lng: estimate_dict(task, current, lng); break;
-	case TYPE_flt: estimate_dict(task, current, flt); break;
-	case TYPE_dbl: estimate_dict(task, current, dbl); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: estimate_dict(task, current, hge); break;
-#endif
-	}
-	return MAL_SUCCEED;
+	current->uncompressed_size	+= (BUN) ( nr_compressed * sizeof(TPE));\
+	current->compressed_size		+= (BUN) (wordaligned( MosaicBlkSize, BitVectorChunk) + new_bytes - old_bytes);\
+\
+	return MAL_SUCCEED;\
 }
 
-#define postEstimate(TASK, TPE) merge_delta_Into_dictionary_##TPE( (TASK)->capped_info)
-
-void
-MOSpostEstimate_capped(MOStask task) {
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: postEstimate(task, bte); break; 
-	case TYPE_sht: postEstimate(task, sht); break;
-	case TYPE_int: postEstimate(task, int); break;
-	case TYPE_lng: postEstimate(task, lng); break;
-	case TYPE_oid: postEstimate(task, oid); break;
-	case TYPE_flt: postEstimate(task, flt); break;
-	case TYPE_dbl: postEstimate(task, dbl); break;
+MOSestimate_DEF(bte)
+MOSestimate_DEF(sht)
+MOSestimate_DEF(int)
+MOSestimate_DEF(lng)
+MOSestimate_DEF(flt)
+MOSestimate_DEF(dbl)
 #ifdef HAVE_HGE
-	case TYPE_hge: postEstimate(task, hge); break;
+MOSestimate_DEF(hge)
 #endif
-	}
+
+#define MOSpostEstimate_DEF(TPE)\
+MOSpostEstimate_SIGNATURE(capped, TPE)\
+{\
+	merge_delta_Into_dictionary_##TPE( task->capped_info);\
 }
+
+MOSpostEstimate_DEF(bte)
+MOSpostEstimate_DEF(sht)
+MOSpostEstimate_DEF(int)
+MOSpostEstimate_DEF(lng)
+MOSpostEstimate_DEF(flt)
+MOSpostEstimate_DEF(dbl)
+#ifdef HAVE_HGE
+MOSpostEstimate_DEF(hge)
+#endif
 
 static str
 _finalizeDictionary(BAT* b, GlobalCappedInfo* info, BUN* pos_dict, BUN* length_dict, bte* bits_dict) {
@@ -365,46 +353,44 @@ finalizeDictionary_capped(MOStask task) {
 		&GET_FINAL_BITS(task, capped));
 }
 
-void
-MOScompress_capped(MOStask task, MosaicBlkRec* estimate)
-{
-	MosaicBlk blk = task->blk;
-
-	task->dst = MOScodevectorDict(task);
-
-	MOSsetTag(blk,MOSAIC_CAPPED);
-	MOSsetCnt(blk,0);
-
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: DICTcompress(capped, bte); break;
-	case TYPE_sht: DICTcompress(capped, sht); break;
-	case TYPE_int: DICTcompress(capped, int); break;
-	case TYPE_lng: DICTcompress(capped, lng); break;
-	case TYPE_oid: DICTcompress(capped, oid); break;
-	case TYPE_flt: DICTcompress(capped, flt); break;
-	case TYPE_dbl: DICTcompress(capped, dbl); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: DICTcompress(capped, hge); break;
-#endif
-	}
+// rather expensive simple value non-compressed store
+#define MOScompress_DEF(TPE)\
+MOScompress_SIGNATURE(capped, TPE)\
+{\
+	MosaicBlk blk = task->blk;\
+\
+	task->dst = MOScodevectorDict(task);\
+\
+	MOSsetTag(blk,MOSAIC_CAPPED);\
+	MOSsetCnt(blk,0);\
+	DICTcompress(capped, TPE);\
 }
 
-void
-MOSdecompress_capped(MOStask task)
-{
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: DICTdecompress(capped, bte); break;
-	case TYPE_sht: DICTdecompress(capped, sht); break;
-	case TYPE_int: DICTdecompress(capped, int); break;
-	case TYPE_lng: DICTdecompress(capped, lng); break;
-	case TYPE_oid: DICTdecompress(capped, oid); break;
-	case TYPE_flt: DICTdecompress(capped, flt); break;
-	case TYPE_dbl: DICTdecompress(capped, dbl); break;
+MOScompress_DEF(bte)
+MOScompress_DEF(sht)
+MOScompress_DEF(int)
+MOScompress_DEF(lng)
+MOScompress_DEF(flt)
+MOScompress_DEF(dbl)
 #ifdef HAVE_HGE
-	case TYPE_hge: DICTdecompress(capped, hge); break;
+MOScompress_DEF(hge)
 #endif
-	}
+
+#define MOSdecompress_DEF(TPE) \
+MOSdecompress_SIGNATURE(capped, TPE)\
+{\
+	DICTdecompress(capped, TPE);\
 }
+
+MOSdecompress_DEF(bte)
+MOSdecompress_DEF(sht)
+MOSdecompress_DEF(int)
+MOSdecompress_DEF(lng)
+MOSdecompress_DEF(flt)
+MOSdecompress_DEF(dbl)
+#ifdef HAVE_HGE
+MOSdecompress_DEF(hge)
+#endif
 
 #define scan_loop_capped(TPE, CI_NEXT, TEST) \
     scan_loop_dictionary(capped, TPE, CI_NEXT, TEST)

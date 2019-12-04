@@ -48,7 +48,6 @@ MOSlayout_linear(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 	case TYPE_bte: output = wordaligned( MosaicBlkSize + 2 * sizeof(bte),bte); break;
 	case TYPE_sht: output = wordaligned( MosaicBlkSize + 2 * sizeof(sht),sht); break;
 	case TYPE_int: output = wordaligned( MosaicBlkSize + 2 * sizeof(int),int); break;
-	case TYPE_oid: output = wordaligned( MosaicBlkSize + 2 * sizeof(oid),oid); break;
 	case TYPE_lng: output = wordaligned( MosaicBlkSize + 2 * sizeof(lng),lng); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: output = wordaligned( MosaicBlkSize + 2 * sizeof(hge),hge); break;
@@ -92,8 +91,10 @@ MOSadvance_linear(MOStask task)
 	}
 }
 
-#define Estimate(TPE)\
+#define MOSestimate_DEF(TPE) \
+MOSestimate_SIGNATURE(linear, TPE)\
 {\
+	(void) previous;\
 	current->compression_strategy.tag = MOSAIC_LINEAR;\
 	TPE *c = ((TPE*) task->src)+task->start; /*(c)urrent value*/\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
@@ -112,30 +113,37 @@ MOSadvance_linear(MOStask task)
 	current->uncompressed_size += (BUN) (i * sizeof(TPE));\
 	current->compressed_size += wordaligned( MosaicBlkSize + 2 * sizeof(TPE),TPE);\
 	current->compression_strategy.cnt = (unsigned int) i;\
+\
+	return MAL_SUCCEED;\
 }
 
-// calculate the expected reduction using LINEAR in terms of elements compressed
-str
-MOSestimate_linear(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
-{
-	(void) previous;
-
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: Estimate(bte); break;
-	case TYPE_sht: Estimate(sht); break;
-	case TYPE_int: Estimate(int); break;
-	case TYPE_oid: Estimate(oid); break;
-	case TYPE_lng: Estimate(lng); break;
+MOSestimate_DEF(bte)
+MOSestimate_DEF(sht)
+MOSestimate_DEF(int)
+MOSestimate_DEF(lng)
 #ifdef HAVE_HGE
-	case TYPE_hge: Estimate(hge); break;
+MOSestimate_DEF(hge)
 #endif
-	}
-	return MAL_SUCCEED;
+
+#define MOSpostEstimate_DEF(TPE)\
+MOSpostEstimate_SIGNATURE(linear, TPE)\
+{\
+	(void) task;\
 }
 
-// insert a series of values into the compressor block using linear.
-#define LINEARcompress(TPE)\
+MOSpostEstimate_DEF(bte)
+MOSpostEstimate_DEF(sht)
+MOSpostEstimate_DEF(int)
+MOSpostEstimate_DEF(lng)
+#ifdef HAVE_HGE
+MOSpostEstimate_DEF(hge)
+#endif
+
+// rather expensive simple value non-compressed store
+#define MOScompress_DEF(TPE)\
+MOScompress_SIGNATURE(linear, TPE)\
 {\
+	MOSsetTag(task->blk,MOSAIC_LINEAR);\
 	TPE *c = ((TPE*) task->src)+task->start; /*(c)urrent value*/\
 	TPE step = 0;\
 	BUN limit = estimate->cnt;\
@@ -149,27 +157,20 @@ MOSestimate_linear(MOStask task, MosaicEstimation* current, const MosaicEstimati
 	task->dst = ((char*) task->blk)+ wordaligned(MosaicBlkSize +  2 * sizeof(TPE),MosaicBlkRec);\
 }
 
-	//task->dst = ((char*) blk)+ MosaicBlkSize +  2 * sizeof(TPE);
-void
-MOScompress_linear(MOStask task, MosaicBlkRec* estimate)
-{
-	MOSsetTag(task->blk,MOSAIC_LINEAR);
-
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: LINEARcompress(bte); break;
-	case TYPE_sht: LINEARcompress(sht); break;
-	case TYPE_int: LINEARcompress(int); break;
-	case TYPE_oid: LINEARcompress(oid); break;
-	case TYPE_lng: LINEARcompress(lng); break;
+MOScompress_DEF(bte)
+MOScompress_DEF(sht)
+MOScompress_DEF(int)
+MOScompress_DEF(lng)
 #ifdef HAVE_HGE
-	case TYPE_hge: LINEARcompress(hge); break;
+MOScompress_DEF(hge)
 #endif
-	}
-}
 
-// the inverse operator, extend the src
-#define LINEARdecompress(TPE)\
-{	DeltaTpe(TPE) val	= linear_base(TPE, task);\
+#define MOSdecompress_DEF(TPE) \
+MOSdecompress_SIGNATURE(linear, TPE)\
+{\
+	MosaicBlk blk =  task->blk;\
+	BUN i;\
+	DeltaTpe(TPE) val	= linear_base(TPE, task);\
 	DeltaTpe(TPE) step	= linear_step(TPE, task);\
 	BUN lim = MOSgetCnt(blk);\
 	for(i = 0; i < lim; i++, val += step) {\
@@ -178,23 +179,13 @@ MOScompress_linear(MOStask task, MosaicBlkRec* estimate)
 	task->src += i * sizeof(TPE);\
 }
 
-void
-MOSdecompress_linear(MOStask task)
-{
-	MosaicBlk blk =  task->blk;
-	BUN i;
-
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: LINEARdecompress(bte); break;
-	case TYPE_sht: LINEARdecompress(sht); break;
-	case TYPE_int: LINEARdecompress(int); break;
-	case TYPE_oid: LINEARdecompress(oid); break;
-	case TYPE_lng: LINEARdecompress(lng); break;
+MOSdecompress_DEF(bte)
+MOSdecompress_DEF(sht)
+MOSdecompress_DEF(int)
+MOSdecompress_DEF(lng)
 #ifdef HAVE_HGE
-	case TYPE_hge: LINEARdecompress(hge); break;
+MOSdecompress_DEF(hge)
 #endif
-	}
-}
 
 #define scan_loop_linear(TPE, CI_NEXT, TEST) {\
 	DeltaTpe(TPE) offset	= linear_base(TPE, task);\

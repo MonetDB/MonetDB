@@ -50,7 +50,6 @@ MOSlayout_runlength(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *bou
 	case TYPE_sht: output = wordaligned( MosaicBlkSize + sizeof(sht),sht); break;
 	case TYPE_int: output = wordaligned( MosaicBlkSize + sizeof(int),int); break;
 	case TYPE_lng: output = wordaligned( MosaicBlkSize + sizeof(lng),lng); break;
-	case TYPE_oid: output = wordaligned( MosaicBlkSize + sizeof(oid),oid); break;
 	case TYPE_flt: output = wordaligned( MosaicBlkSize + sizeof(flt),flt); break;
 	case TYPE_dbl: output = wordaligned( MosaicBlkSize + sizeof(dbl),dbl); break;
 #ifdef HAVE_HGE
@@ -98,8 +97,13 @@ MOSadvance_runlength(MOStask task)
 	}
 }
 
-#define Estimate(TPE)\
-{	TPE *v = ((TPE*) task->src) + task->start, val = *v;\
+#define MOSestimate_DEF(TPE) \
+MOSestimate_SIGNATURE(runlength, TPE)\
+{	unsigned int i = 0;\
+	(void) previous;\
+	current->compression_strategy.tag = MOSAIC_RLE;\
+	bool nil = !task->bsrc->tnonil;\
+	TPE *v = ((TPE*) task->src) + task->start, val = *v;\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	for(v++,i = 1; i < limit; i++,v++) if ( !ARE_EQUAL(*v, val, nil, TPE) ) break;\
 	assert(i > 0);/*Should always compress.*/\
@@ -107,34 +111,47 @@ MOSadvance_runlength(MOStask task)
 	current->uncompressed_size += (BUN) (i * sizeof(TPE));\
 	current->compressed_size += wordaligned( MosaicBlkSize, TPE) + sizeof(TPE);\
 	current->compression_strategy.cnt = i;\
+\
+	return MAL_SUCCEED;\
 }
 
-// calculate the expected reduction using RLE in terms of elements compressed
-str
-MOSestimate_runlength(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
-{	unsigned int i = 0;
-	(void) previous;
-	current->compression_strategy.tag = MOSAIC_RLE;
-	bool nil = !task->bsrc->tnonil;
-
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: Estimate(bte); break;
-	case TYPE_sht: Estimate(sht); break;
-	case TYPE_int: Estimate(int); break;
-	case TYPE_lng: Estimate(lng); break;
-	case TYPE_oid: Estimate(oid); break;
-	case TYPE_flt: Estimate(flt); break;
-	case TYPE_dbl: Estimate(dbl); break;
+MOSestimate_DEF(bte)
+MOSestimate_DEF(sht)
+MOSestimate_DEF(int)
+MOSestimate_DEF(lng)
+MOSestimate_DEF(flt)
+MOSestimate_DEF(dbl)
 #ifdef HAVE_HGE
-	case TYPE_hge: Estimate(hge); break;
+MOSestimate_DEF(hge)
 #endif
-	}
-	return MAL_SUCCEED;
+
+#define MOSpostEstimate_DEF(TPE)\
+MOSpostEstimate_SIGNATURE(runlength, TPE)\
+{\
+	(void) task;\
 }
 
-// insert a series of values into the compressor block using rle.
-#define RLEcompress(TPE)\
-{	TPE *v = ((TPE*) task->src)+task->start, val = *v;\
+MOSpostEstimate_DEF(bte)
+MOSpostEstimate_DEF(sht)
+MOSpostEstimate_DEF(int)
+MOSpostEstimate_DEF(lng)
+MOSpostEstimate_DEF(flt)
+MOSpostEstimate_DEF(dbl)
+#ifdef HAVE_HGE
+MOSpostEstimate_DEF(hge)
+#endif
+
+// rather expensive simple value non-compressed store
+#define MOScompress_DEF(TPE)\
+MOScompress_SIGNATURE(runlength, TPE)\
+{\
+	(void) estimate;\
+	BUN i ;\
+	MosaicBlk blk = task->blk;\
+	bool nil = !task->bsrc->tnonil;\
+\
+	MOSsetTag(blk, MOSAIC_RLE);\
+	TPE *v = ((TPE*) task->src)+task->start, val = *v;\
 	TPE *dst = (TPE*) task->dst;\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT ? MOSAICMAXCNT: task->stop - task->start;\
 	*dst = val;\
@@ -145,60 +162,40 @@ MOSestimate_runlength(MOStask task, MosaicEstimation* current, const MosaicEstim
 	task->dst +=  sizeof(TPE);\
 }
 
-void
-MOScompress_runlength(MOStask task, MosaicBlkRec* estimate)
-{
-	(void) estimate;
-	BUN i ;
-	MosaicBlk blk = task->blk;
-	bool nil = !task->bsrc->tnonil;
-
-		MOSsetTag(blk, MOSAIC_RLE);
-
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: RLEcompress(bte); break;
-	case TYPE_sht: RLEcompress(sht); break;
-	case TYPE_int: RLEcompress(int); break;
-	case TYPE_lng: RLEcompress(lng); break;
-	case TYPE_oid: RLEcompress(oid); break;
-	case TYPE_flt: RLEcompress(flt); break;
-	case TYPE_dbl: RLEcompress(dbl); break;
+MOScompress_DEF(bte)
+MOScompress_DEF(sht)
+MOScompress_DEF(int)
+MOScompress_DEF(lng)
+MOScompress_DEF(flt)
+MOScompress_DEF(dbl)
 #ifdef HAVE_HGE
-	case TYPE_hge: RLEcompress(hge); break;
+MOScompress_DEF(hge)
 #endif
-	}
-}
 
-// the inverse operator, extend the src
-#define RLEdecompress(TPE)\
-{	TPE val = *(TPE*) compressed;\
+#define MOSdecompress_DEF(TPE) \
+MOSdecompress_SIGNATURE(runlength, TPE)\
+{\
+	MosaicBlk blk =  ((MosaicBlk) task->blk);\
+	BUN i;\
+	char *compressed;\
+\
+	compressed = (char*) blk + MosaicBlkSize;\
+	TPE val = *(TPE*) compressed;\
 	BUN lim = MOSgetCnt(blk);\
 	for(i = 0; i < lim; i++)\
 		((TPE*)task->src)[i] = val;\
 	task->src += i * sizeof(TPE);\
 }
 
-void
-MOSdecompress_runlength(MOStask task)
-{
-	MosaicBlk blk =  ((MosaicBlk) task->blk);
-	BUN i;
-	char *compressed;
-
-	compressed = (char*) blk + MosaicBlkSize;
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: RLEdecompress(bte); break;
-	case TYPE_sht: RLEdecompress(sht); break;
-	case TYPE_int: RLEdecompress(int); break;
-	case TYPE_lng: RLEdecompress(lng); break;
-	case TYPE_oid: RLEdecompress(oid); break;
-	case TYPE_flt: RLEdecompress(flt); break;
-	case TYPE_dbl: RLEdecompress(dbl); break;
+MOSdecompress_DEF(bte)
+MOSdecompress_DEF(sht)
+MOSdecompress_DEF(int)
+MOSdecompress_DEF(lng)
+MOSdecompress_DEF(flt)
+MOSdecompress_DEF(dbl)
 #ifdef HAVE_HGE
-	case TYPE_hge: RLEdecompress(hge); break;
+MOSdecompress_DEF(hge)
 #endif
-	}
-}
 
 #define scan_loop_runlength(TPE, CI_NEXT, TEST) \
 {\

@@ -50,7 +50,6 @@ MOSlayout_raw(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, 
 	case TYPE_sht: output = wordaligned( MosaicBlkSize + sizeof(sht)* MOSgetCnt(blk),sht); break;
 	case TYPE_int: output = wordaligned( MosaicBlkSize + sizeof(int)* MOSgetCnt(blk),int); break;
 	case TYPE_lng: output = wordaligned( MosaicBlkSize + sizeof(lng)* MOSgetCnt(blk),lng); break;
-	case TYPE_oid: output = wordaligned( MosaicBlkSize + sizeof(oid)* MOSgetCnt(blk),oid); break;
 	case TYPE_flt: output = wordaligned( MosaicBlkSize + sizeof(flt)* MOSgetCnt(blk),flt); break;
 	case TYPE_dbl: output = wordaligned( MosaicBlkSize + sizeof(dbl)* MOSgetCnt(blk),dbl); break;
 #ifdef HAVE_HGE
@@ -99,9 +98,11 @@ MOSadvance_raw(MOStask task)
 	}
 }
 
-#define Estimate(TPE)\
+#define MOSestimate_DEF(TPE) \
+MOSestimate_SIGNATURE(raw, TPE)\
 {\
 	/*The raw compression technique is always applicable and only adds one item at a time.*/\
+	(void) task;\
 	current->compression_strategy.tag = MOSAIC_RAW;\
 	current->is_applicable = true;\
 	current->uncompressed_size += (BUN) sizeof(TPE);\
@@ -117,94 +118,86 @@ MOSadvance_raw(MOStask task)
 		current->compressed_size += wordaligned(MosaicBlkSize, TPE) + sizeof(TPE);\
 	}\
 	current->compression_strategy.cnt = cnt;\
+\
+	return MAL_SUCCEED;\
 }
 
-str
-MOSestimate_raw(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous) {
-
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: Estimate(bte); break;
-	case TYPE_sht: Estimate(sht); break;
-	case TYPE_int: Estimate(int); break;
-	case TYPE_lng: Estimate(lng); break;
-	case TYPE_oid: Estimate(oid); break;
-	case TYPE_flt: Estimate(flt); break;
-	case TYPE_dbl: Estimate(dbl); break;
+MOSestimate_DEF(bte)
+MOSestimate_DEF(sht)
+MOSestimate_DEF(int)
+MOSestimate_DEF(lng)
+MOSestimate_DEF(flt)
+MOSestimate_DEF(dbl)
 #ifdef HAVE_HGE
-	case TYPE_hge: Estimate(hge); break;
+MOSestimate_DEF(hge)
 #endif
-	}
 
-	return MAL_SUCCEED;
+#define MOSpostEstimate_DEF(TPE)\
+MOSpostEstimate_SIGNATURE(raw, TPE)\
+{\
+	(void) task;\
 }
 
+MOSpostEstimate_DEF(bte)
+MOSpostEstimate_DEF(sht)
+MOSpostEstimate_DEF(int)
+MOSpostEstimate_DEF(lng)
+MOSpostEstimate_DEF(flt)
+MOSpostEstimate_DEF(dbl)
+#ifdef HAVE_HGE
+MOSpostEstimate_DEF(hge)
+#endif
 
-// append a series of values into the non-compressed block
-
-#define RAWcompress(TYPE)\
+// rather expensive simple value non-compressed store
+#define MOScompress_DEF(TPE)\
+MOScompress_SIGNATURE(raw, TPE)\
 {\
-	TYPE *v = ((TYPE*)task->src) + task->start;\
+	MosaicBlk blk = (MosaicBlk) task->blk;\
+\
+	MOSsetTag(blk,MOSAIC_RAW);\
+	TPE *v = ((TPE*)task->src) + task->start;\
 	unsigned int cnt = estimate->cnt;\
-	TYPE *d = (TYPE*)task->dst;\
+	TPE *d = (TPE*)task->dst;\
 	for(unsigned int i = 0; i<cnt; i++,v++){\
-		*d++ = (TYPE) *v;\
+		*d++ = (TPE) *v;\
 	}\
-	task->dst += sizeof(TYPE);\
+	task->dst += sizeof(TPE);\
 	MOSsetCnt(blk,cnt);\
 }
 
-// rather expensive simple value non-compressed store
-void
-MOScompress_raw(MOStask task, MosaicBlkRec* estimate)
-{
-	MosaicBlk blk = (MosaicBlk) task->blk;
-
-	MOSsetTag(blk,MOSAIC_RAW);
-
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: RAWcompress(bte); break;
-	case TYPE_sht: RAWcompress(sht); break;
-	case TYPE_int: RAWcompress(int); break;
-	case TYPE_lng: RAWcompress(lng); break;
-	case TYPE_oid: RAWcompress(oid); break;
-	case TYPE_flt: RAWcompress(flt); break;
-	case TYPE_dbl: RAWcompress(dbl); break;
+MOScompress_DEF(bte)
+MOScompress_DEF(sht)
+MOScompress_DEF(int)
+MOScompress_DEF(lng)
+MOScompress_DEF(flt)
+MOScompress_DEF(dbl)
 #ifdef HAVE_HGE
-	case TYPE_hge: RAWcompress(hge); break;
+MOScompress_DEF(hge)
 #endif
-	}
-}
 
-// the inverse operator, extend the src
-#define RAWdecompress(TYPE)\
-{ BUN lim = MOSgetCnt(blk); \
+#define MOSdecompress_DEF(TPE) \
+MOSdecompress_SIGNATURE(raw, TPE)\
+{\
+	MosaicBlk blk = (MosaicBlk) task->blk;\
+	BUN i;\
+	char *compressed;\
+	compressed = ((char*)blk) + MosaicBlkSize;\
+	BUN lim = MOSgetCnt(blk);\
 	for(i = 0; i < lim; i++) {\
-	((TYPE*)task->src)[i] = ((TYPE*)compressed)[i]; \
+	((TPE*)task->src)[i] = ((TPE*)compressed)[i]; \
 	}\
-	task->src += i * sizeof(TYPE);\
+	task->src += i * sizeof(TPE);\
 }
 
-void
-MOSdecompress_raw(MOStask task)
-{
-	MosaicBlk blk = (MosaicBlk) task->blk;
-	BUN i;
-	char *compressed;
-
-	compressed = ((char*)blk) + MosaicBlkSize;
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: RAWdecompress(bte); break;
-	case TYPE_sht: RAWdecompress(sht); break;
-	case TYPE_int: RAWdecompress(int); break;
-	case TYPE_lng: RAWdecompress(lng); break;
-	case TYPE_oid: RAWdecompress(oid); break;
-	case TYPE_flt: RAWdecompress(flt); break;
-	case TYPE_dbl: RAWdecompress(dbl); break;
+MOSdecompress_DEF(bte)
+MOSdecompress_DEF(sht)
+MOSdecompress_DEF(int)
+MOSdecompress_DEF(lng)
+MOSdecompress_DEF(flt)
+MOSdecompress_DEF(dbl)
 #ifdef HAVE_HGE
-	case TYPE_hge: RAWdecompress(hge); break;
+MOSdecompress_DEF(hge)
 #endif
-	}
-}
 
 #define scan_loop_raw(TPE, CI_NEXT, TEST) \
 {\
