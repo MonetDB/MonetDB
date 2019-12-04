@@ -98,6 +98,18 @@ QUERY = SELECT
         FROM another_T t1; --error, subqueries not allowed inside PARTITION BY
 ERROR = !PARTITION BY: subqueries not allowed in PARTITION BY clause
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-6419/.s.monetdb.37915
+QUERY = SELECT
+            (SELECT SUM(t1.col1) OVER (ORDER BY (VALUES(1)) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+        FROM another_T t1;
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-6419/.s.monetdb.37915
+QUERY = SELECT
+            (SELECT SUM(t1.col1) OVER (ORDER BY (SELECT SUM(t1.col1 + t2.col1) FROM another_T t2) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+        FROM another_T t1;
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
 
 # 17:40:41 >  
 # 17:40:41 >  "Done."
