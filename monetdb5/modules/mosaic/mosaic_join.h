@@ -91,7 +91,11 @@ MOSjoin_COUI_SIGNATURE(NAME, TPE)\
 	return MAL_SUCCEED;\
 }
 
-#define do_join_COUI(NAME, TPE, DUMMY_ARGUMENT) msg = MOSjoin_COUI_##NAME##_##TPE(r1p, r2p, task, r, rci, nil_matches)
+#define do_join_COUI(NAME, TPE, DUMMY_ARGUMENT)\
+{\
+str msg = MOSjoin_COUI_##NAME##_##TPE(r1p, r2p, task, r, rci, nil_matches);\
+	if (msg != MAL_SUCCEED) return msg;\
+}
 
 /* Nested loop join with the left (C)ompressed side in the (O)uter loop 
  * and the right (U)ncompressed side in the (I)nner loop.
@@ -101,8 +105,6 @@ static str MOSjoin_COUI_##TPE(MOStask task, BAT* r, struct canditer* rci, bool n
 {\
     BAT* r1p = task->lbat;\
     BAT* r2p = task->rbat;\
-\
-	str msg = MAL_SUCCEED;\
 \
 	struct canditer* lci = task->ci;\
 \
@@ -142,8 +144,6 @@ static str MOSjoin_COUI_##TPE(MOStask task, BAT* r, struct canditer* rci, bool n
 			DO_OPERATION_IF_ALLOWED(join_COUI, raw, TPE);\
 			break;\
 		}\
-\
-		if (msg != MAL_SUCCEED) return msg;\
 \
 		if (lci->next == lci->ncand) {\
 			/* We are at the end of the candidate list.
