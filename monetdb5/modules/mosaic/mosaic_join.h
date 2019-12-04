@@ -87,14 +87,14 @@ MOSjoin_COUI_SIGNATURE(NAME, TPE)\
 		(void) canditer_prev(lci);\
 	}\
 \
-	MOSadvance_##NAME##_##TPE(task);\
 	return MAL_SUCCEED;\
 }
 
 #define do_join_COUI(NAME, TPE, DUMMY_ARGUMENT)\
 {\
-str msg = MOSjoin_COUI_##NAME##_##TPE(r1p, r2p, task, r, rci, nil_matches);\
+	str msg = MOSjoin_COUI_##NAME##_##TPE(r1p, r2p, task, r, rci, nil_matches);\
 	if (msg != MAL_SUCCEED) return msg;\
+	MOSadvance_##NAME##_##TPE(task);\
 }
 
 /* Nested loop join with the left (C)ompressed side in the (O)uter loop 

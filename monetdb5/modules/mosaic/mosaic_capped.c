@@ -123,23 +123,6 @@ MOSadvance_DEF(hge)
 #endif
 
 void
-MOSadvance_capped(MOStask task)
-{
-	// TODO: Not strictly necessary to split on type here since the logic remains the same.
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: MOSadvance_capped_bte(task); break;
-	case TYPE_sht: MOSadvance_capped_sht(task); break;
-	case TYPE_int: MOSadvance_capped_int(task); break;
-	case TYPE_lng: MOSadvance_capped_lng(task); break;
-	case TYPE_flt: MOSadvance_capped_flt(task); break;
-	case TYPE_dbl: MOSadvance_capped_dbl(task); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: MOSadvance_capped_hge(task); break;
-#endif
-	}
-}
-
-void
 MOSlayout_capped_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	lng zero=0;

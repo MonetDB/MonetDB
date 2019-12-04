@@ -26,7 +26,6 @@ bool MOStypes_var(BAT* b);
 mal_export void MOScreatevar(MOStask task);
 mal_export void MOSlayout_var(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSlayout_var_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export void MOSadvance_var(MOStask task);
 mal_export str MOSprepareEstimate_var(MOStask task);
 mal_export str finalizeDictionary_var(MOStask task);
 

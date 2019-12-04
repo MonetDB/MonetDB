@@ -170,19 +170,21 @@ MOSselect_SIGNATURE(NAME, TPE) {\
 		(void) canditer_prev(task->ci);\
 	}\
 \
-	MOSadvance_##NAME##_##TPE(task);\
 	task->lb = o;\
 	return MAL_SUCCEED;\
 }
 
-#define do_select(NAME, TPE, DUMMY_ARGUMENT) \
+#define do_select(NAME, TPE, DUMMY_ARGUMENT)\
+{\
     MOSselect_##NAME##_##TPE(\
         task,\
         *(TPE*) low,\
         *(TPE*) hgh,\
         *li,\
         *hi,\
-        *anti)
+        *anti);\
+	MOSadvance_##NAME##_##TPE(task);\
+}
 
 #define MOSselect_generic_DEF(TPE) \
 static str MOSselect_##TPE(\

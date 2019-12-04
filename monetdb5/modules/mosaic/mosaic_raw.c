@@ -82,22 +82,6 @@ MOSadvance_DEF(dbl)
 MOSadvance_DEF(hge)
 #endif
 
-void
-MOSadvance_raw(MOStask task)
-{
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: MOSadvance_raw_bte(task); break;
-	case TYPE_sht: MOSadvance_raw_sht(task); break;
-	case TYPE_int: MOSadvance_raw_int(task); break;
-	case TYPE_lng: MOSadvance_raw_lng(task); break;
-	case TYPE_flt: MOSadvance_raw_flt(task); break;
-	case TYPE_dbl: MOSadvance_raw_dbl(task); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: MOSadvance_raw_hge(task); break;
-#endif
-	}
-}
-
 #define MOSestimate_DEF(TPE) \
 MOSestimate_SIGNATURE(raw, TPE)\
 {\

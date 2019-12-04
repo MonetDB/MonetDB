@@ -76,21 +76,6 @@ MOSadvance_DEF(lng)
 MOSadvance_DEF(hge)
 #endif
 
-void
-MOSadvance_linear(MOStask task)
-{
-	// TODO: Not strictly necessary to split on type here since the logic remains the same.
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: MOSadvance_linear_bte(task); break;
-	case TYPE_sht: MOSadvance_linear_sht(task); break;
-	case TYPE_int: MOSadvance_linear_int(task); break;
-	case TYPE_lng: MOSadvance_linear_lng(task); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: MOSadvance_linear_hge(task); break;
-#endif
-	}
-}
-
 #define MOSestimate_DEF(TPE) \
 MOSestimate_SIGNATURE(linear, TPE)\
 {\

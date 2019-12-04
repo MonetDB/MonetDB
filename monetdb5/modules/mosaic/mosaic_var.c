@@ -58,23 +58,6 @@ MOSadvance_DEF(dbl)
 MOSadvance_DEF(hge)
 #endif
 
-void
-MOSadvance_var(MOStask task)
-{
-	// TODO: Not strictly necessary to split on type here since the logic remains the same.
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: MOSadvance_var_bte(task); break;
-	case TYPE_sht: MOSadvance_var_sht(task); break;
-	case TYPE_int: MOSadvance_var_int(task); break;
-	case TYPE_lng: MOSadvance_var_lng(task); break;
-	case TYPE_flt: MOSadvance_var_flt(task); break;
-	case TYPE_dbl: MOSadvance_var_dbl(task); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: MOSadvance_var_hge(task); break;
-#endif
-	}
-}
-
 #define MOSgetDictFreq(DICTIONARY, KEY) ((BUN*)(((char*) DICTIONARY) + wordaligned(sizeof(DICTIONARY), BUN))[KEY])
 
 typedef struct _GlobalVarInfo {

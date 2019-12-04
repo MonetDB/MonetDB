@@ -20,7 +20,6 @@
 
 bool MOStypes_raw(BAT* b);
 mal_export void MOSlayout_raw(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export void MOSadvance_raw(MOStask task);
 
 ALGEBRA_INTERFACES_ALL_TYPES(raw);
 

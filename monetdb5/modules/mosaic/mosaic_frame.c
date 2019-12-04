@@ -71,21 +71,6 @@ MOSadvance_DEF(hge)
 #endif
 
 void
-MOSadvance_frame(MOStask task)
-{
-	// TODO: Not strictly necessary to split on type here since the logic remains the same.
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: MOSadvance_frame_bte(task); break;
-	case TYPE_sht: MOSadvance_frame_sht(task); break;
-	case TYPE_int: MOSadvance_frame_int(task); break;
-	case TYPE_lng: MOSadvance_frame_lng(task); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: MOSadvance_frame_hge(task); break;
-#endif
-	}
-}
-
-void
 MOSlayout_frame(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	(void) boutput;

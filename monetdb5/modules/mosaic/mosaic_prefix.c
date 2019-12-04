@@ -123,21 +123,6 @@ MOSadvance_DEF(lng)
 MOSadvance_DEF(hge)
 #endif
 
-void
-MOSadvance_prefix(MOStask task)
-{
-	// TODO: Not strictly necessary to split on type here since the logic remains the same.
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: MOSadvance_prefix_bte(task); break;
-	case TYPE_sht: MOSadvance_prefix_sht(task); break;
-	case TYPE_int: MOSadvance_prefix_int(task); break;
-	case TYPE_lng: MOSadvance_prefix_lng(task); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: MOSadvance_prefix_hge(task); break;
-#endif
-	}
-}
-
 #define OverShift(TPE) ((sizeof(IPTpe(TPE)) - sizeof(PrefixTpe(TPE))) * CHAR_BIT)
 #define getSuffixMask(SUFFIX_BITS, TPE) ((PrefixTpe(TPE)) (~(~((IPTpe(TPE)) (0)) << (SUFFIX_BITS))))
 #define getPrefixMask(PREFIX_BITS, TPE) ((PrefixTpe(TPE)) ( (~(~((IPTpe(TPE)) (0)) >> (PREFIX_BITS))) >> OverShift(TPE)))

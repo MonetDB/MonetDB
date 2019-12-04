@@ -81,22 +81,6 @@ MOSadvance_DEF(dbl)
 MOSadvance_DEF(hge)
 #endif
 
-void
-MOSadvance_runlength(MOStask task)
-{
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: MOSadvance_runlength_bte(task); break;
-	case TYPE_sht: MOSadvance_runlength_sht(task); break;
-	case TYPE_int: MOSadvance_runlength_int(task); break;
-	case TYPE_lng: MOSadvance_runlength_lng(task); break;
-	case TYPE_flt: MOSadvance_runlength_flt(task); break;
-	case TYPE_dbl: MOSadvance_runlength_dbl(task); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: MOSadvance_runlength_hge(task); break;
-#endif
-	}
-}
-
 #define MOSestimate_DEF(TPE) \
 MOSestimate_SIGNATURE(runlength, TPE)\
 {	unsigned int i = 0;\

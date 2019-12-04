@@ -26,7 +26,6 @@ bool MOStypes_capped(BAT* b);
 mal_export str MOScreateCappedInfo(MOStask task);
 mal_export void MOSlayout_capped(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSlayout_capped_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export void MOSadvance_capped(MOStask task);
 mal_export str MOSprepareEstimate_capped(MOStask task);
 mal_export str finalizeDictionary_capped(MOStask task);
 

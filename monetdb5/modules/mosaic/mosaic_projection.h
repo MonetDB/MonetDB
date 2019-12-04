@@ -42,11 +42,14 @@ MOSprojection_SIGNATURE(NAME, TPE)\
 		(void) canditer_prev(task->ci);\
 	}\
 \
-	MOSadvance_##NAME##_##TPE(task);\
 	return MAL_SUCCEED;\
 }
 
-#define do_projection(NAME, TPE, DUMMY_ARGUMENT) MOSprojection_##NAME##_##TPE(task)
+#define do_projection(NAME, TPE, DUMMY_ARGUMENT)\
+{\
+	MOSprojection_##NAME##_##TPE(task);\
+	MOSadvance_##NAME##_##TPE(task);\
+}
 
 #define MOSprojection_generic_DEF(TPE) \
 static str MOSprojection_##TPE(MOStask task)\

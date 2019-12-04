@@ -22,7 +22,6 @@ bool MOStypes_frame(BAT* b);
 mal_export void MOScreateframeDictionary(MOStask task);
 mal_export void MOSlayout_frame_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSlayout_frame(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export void MOSadvance_frame(MOStask task);
 
 ALGEBRA_INTERFACES_INTEGERS_ONLY(frame);
 #define DO_OPERATION_ON_frame(OPERATION, TPE, ...) DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, frame, TPE, __VA_ARGS__)
