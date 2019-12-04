@@ -409,9 +409,11 @@ GDKtracer_log(LOG_LEVEL level, char *fmt, ...)
 
         if(bytes_written < 0)
         {
-            GDK_TRACER_REPORT_EXCEPTION("Cannot write data to the buffer, discarding this entry\n");
-            /* CHECK */
-            // Maybe here add return GDK_FAIL?
+            // Catch the exception and use the fallback mechanism for logging
+            va_list va;
+            va_start(va, fmt);
+            GDK_TRACER_OSTREAM(fmt, va);
+            va_end(va);
         }
         else
         {
@@ -476,27 +478,20 @@ GDKtracer_flush_buffer(void)
         // to do something - and as a backup plan we send the logs to GDKstdout.
         if(output_file)
         {
-            /* CHECK */
-            // This should be working!
-            // size_t w = fwrite(&fl_tracer->buffer, fl_tracer->allocated_size, 1, output_file);
+            size_t nitems = 1;
+            size_t w = fwrite(&fl_tracer->buffer, fl_tracer->allocated_size, nitems, output_file);
 
-            // fwrite failed for whatever reason 
-            // (e.g: disk is full) fallback to stream
-            // if(w == (size_t) fl_tracer->allocated_size)
-            // {   
-            //     USE_STREAM = false;
-            //     fflush(output_file);
-            // }
-
-            fwrite(&fl_tracer->buffer, fl_tracer->allocated_size, 1, output_file);
-            fflush(output_file);
-            USE_STREAM = false;
+            if(w == nitems)
+            {   
+                USE_STREAM = false;
+                fflush(output_file);
+            }
         }
 
-        // Write buffer to a stream
+        // fwrite failed for whatever reason 
+        // (e.g: disk is full) fallback to stream
         if(USE_STREAM)
-            mnstr_printf(GDKstdout, "%s", fl_tracer->buffer);
-            
+            GDK_TRACER_OSTREAM("%s", fl_tracer->buffer);
 
         // Reset buffer
         memset(fl_tracer->buffer, 0, BUFFER_SIZE);
@@ -504,7 +499,7 @@ GDKtracer_flush_buffer(void)
     }
     else
     {
-        mnstr_printf(GDKstdout, "Using adapter: %s", ADAPTER_STR[(int) ATOMIC_GET(&CUR_ADAPTER)]);
+        GDK_TRACER_OSTREAM("Using adapter: %s\n", ADAPTER_STR[(int) ATOMIC_GET(&CUR_ADAPTER)]);
     }
 
     // The file is kept open no matter the adapter
@@ -533,17 +528,17 @@ GDKtracer_show_info(void)
             max_width = comp_width;
     }
 
-    mnstr_printf(GDKstdout, "# LOG level per component\n");
+    GDK_TRACER_OSTREAM("# LOG level per component\n");
     for(i = 0; i < COMPONENTS_COUNT; i++)
     {
         space = (int) (max_width - strlen(COMPONENT_STR[i]) + 30);
-        mnstr_printf(GDKstdout, "# %s %*s\n", COMPONENT_STR[i], space, LEVEL_STR[LVL_PER_COMPONENT[i]]);
+        GDK_TRACER_OSTREAM("# %s %*s\n", COMPONENT_STR[i], space, LEVEL_STR[LVL_PER_COMPONENT[i]]);
     }
 
-    mnstr_printf(GDKstdout, "# You can use one of the following layers to massively set the LOG level\n");
+    GDK_TRACER_OSTREAM("# You can use one of the following layers to massively set the LOG level\n");
     for(i = 0; i < LAYERS_COUNT; i++)
     {
-        mnstr_printf(GDKstdout, "# %s\n", LAYER_STR[i]);
+        GDK_TRACER_OSTREAM("# %s\n", LAYER_STR[i]);
     }
 
     return GDK_SUCCEED;

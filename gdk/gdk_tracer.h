@@ -259,6 +259,14 @@ gdk_tracer;
                             MT_thread_getname(),                             \
                             ## __VA_ARGS__);                                 \
 
+
+// Produces messages to the output stream. It is also used as a fallback mechanism 
+// in case GDKtracer fails to log for whatever reason.
+#define GDK_TRACER_OSTREAM(MSG, ...)                \
+    mnstr_printf(GDKstdout, MSG, ## __VA_ARGS__);   \
+
+
+
 /*
  *  GDKtracer API
  */
