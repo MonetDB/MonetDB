@@ -373,7 +373,39 @@ from
  where true) as subq_0
  where subq_0.c8 is not null
  limit 46) as subq_1
-where false
-;
+where false;
+
+select 
+ subq_0.c4 as c0, 
+ subq_0.c6 as c1, 
+ subq_0.c2 as c2, 
+ subq_0.c3 as c3, 
+ subq_0.c5 as c4, 
+ subq_0.c2 as c5, 
+ subq_0.c3 as c6, 
+ subq_0.c0 as c7
+from 
+ (select 
+ ref_0.type as c0, 
+ ref_1.function_name as c1, 
+ ref_2.function_type as c2, 
+ ref_1.trigger_table_id as c3, 
+ ref_0.storage as c4, 
+ ref_0.type as c5, 
+ ref_2.trigger_table_id as c6, 
+ ref_1.function_schema_id as c7
+ from 
+ sys._columns as ref_0
+ inner join sys.dependency_functions_on_triggers as ref_1
+ on (true)
+ right join sys.dependency_functions_on_triggers as ref_2
+ on (ref_0.type = ref_2.function_name )
+ where (((ref_2.function_schema_id is null) 
+ and (true)) 
+ and (true)) 
+ and (true)
+ limit 104) as subq_0
+where (subq_0.c3 is not null) 
+ or (subq_0.c0 is not null);
 
 ROLLBACK;
