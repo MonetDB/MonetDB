@@ -4,6 +4,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * 
+ * 
+ * GDKtracer exposes routines where an occuring failure should not reach the client but 
+ * should be made known only to the DBA. On the other hand, there are exposed routines
+ * where the failure must also reach the client. 
+ * 
+ * For both cases the failures are being logged to the active adapter, or to the fallback
+ * mechanism (mserver5). To cover the needs of the second category, an exception is thrown. 
+ * Exceptions apart from being logged by GDKtracer are also percolating up to the client. 
+ * 
  */
 
 #include "monetdb_config.h"
@@ -15,10 +25,7 @@ int GDK_result = 0;
 str 
 TRACERflush_buffer(void)
 {
-    GDK_result = GDKtracer_flush_buffer();
-    if(GDK_result == GDK_FAIL)
-        throw(TRACER, __FUNCTION__, _OPERATION_FAILED); 
-
+    GDKtracer_flush_buffer();
     return MAL_SUCCEED;
 }
 
@@ -111,5 +118,16 @@ TRACERreset_adapter(void)
     if(GDK_result == GDK_FAIL)
         throw(TRACER, __FUNCTION__, _OPERATION_FAILED); 
 
+    return MAL_SUCCEED;
+}
+
+
+// Exposed only in MAL layer - for testing
+str
+TRACERlog(void)
+{
+    TRC_CRITICAL(SQL_BAT, "A CRITICAL message\n");
+    TRC_INFO(MAL_DATAFLOW, "An INFO message\n");
+    
     return MAL_SUCCEED;
 }

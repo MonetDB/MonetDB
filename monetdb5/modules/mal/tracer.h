@@ -4,6 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * 
+ * All the functions correspond one by one to the API calls in gdk_tracer.h
+ * Except TRACERlog which is exposed only in the MAL layer for testing.
+ * 
  */
 
 #ifndef _TRACER_H
@@ -12,9 +16,7 @@
 #include "mal.h"
 #include "mal_interpreter.h"
 
-/*
- * All the functions correspond one by one to the API calls in gdk_tracer.h
- */
+
 mal_export str TRACERflush_buffer(void);
 mal_export str TRACERset_component_level(void *ret, int *comp, int *lvl);
 mal_export str TRACERreset_component_level(int *comp);
@@ -24,5 +26,8 @@ mal_export str TRACERset_flush_level(void *ret, int *lvl);
 mal_export str TRACERreset_flush_level(void);
 mal_export str TRACERset_adapter(void *ret, int *adapter);
 mal_export str TRACERreset_adapter(void);
+
+// Exposed only in MAL layer - for testing
+mal_export str TRACERlog(void);
 
 #endif /* _TRACER_H */

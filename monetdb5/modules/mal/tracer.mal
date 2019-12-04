@@ -41,3 +41,8 @@ comment "Set the adapter";
 command resetadapter()
 address TRACERreset_adapter
 comment "Reset the adapter";
+
+# Exposed only in MAL layer - for testing
+command log()
+address TRACERlog
+comment "Create a log message";

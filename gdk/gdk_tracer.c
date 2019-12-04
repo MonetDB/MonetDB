@@ -545,4 +545,6 @@ GDKtracer_show_info(void)
     {
         mnstr_printf(GDKstdout, "# %s\n", LAYER_STR[i]);
     }
+
+    return GDK_SUCCEED;
 }
