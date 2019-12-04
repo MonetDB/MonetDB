@@ -394,9 +394,6 @@
 /* Define if semtimedop exists */
 /* #undef HAVE_SEMTIMEDOP */
 
-/* Define to 1 if you have the `setenv' function. */
-/* #undef HAVE_SETENV */
-
 /* Define to 1 if you have the `setsid' function. */
 /* #undef HAVE_SETSID */
 

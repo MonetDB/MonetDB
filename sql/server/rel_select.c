@@ -4557,7 +4557,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		for (n = gbe->h ; n ; n = n->next) {
 			sql_exp *en = n->data;
 
-			set_direction(en, 1);
+			set_ascending(en);
+			set_nulls_first(en);
 		}
 	}
 
@@ -4570,9 +4571,13 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			sql_exp *oexp = n->data, *nexp = oexp;
 
 			if (is_ascending(oexp))
-				set_direction(nexp, 1);
+				set_ascending(nexp);
+			else
+				set_descending(nexp);
 			if (nulls_last(oexp))
-				set_direction(nexp, 2);
+				set_nulls_last(nexp);
+			else
+				set_nulls_first(nexp);
 		}
 	}
 

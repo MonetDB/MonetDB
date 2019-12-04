@@ -115,7 +115,7 @@ project (
 | | | | | | | | | | ) [ "f"."id", "p"."number" ]
 | | | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
 | | | | | | | | ) [ "f"."id", "p"."number" ]
-| | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ]
+| | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" NULLS LAST ]
 | | | | | | ) [ "f"."id", "p"."number" ]
 | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
 | | | | ) [ "f"."id", "p"."number", sys.row_number("f"."id", boolean "false", sys.diff(sys.diff("f"."id" ASC), "p"."number" ASC)) as "line" ]

@@ -840,6 +840,10 @@ BATdel(BAT *b, BAT *d)
 gdk_return
 BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 {
+	lng t0 = 0;
+
+	ALGODEBUG t0 = GDKusec();
+
 	if (b == NULL || b->ttype == TYPE_void || p == NULL || n == NULL) {
 		return GDK_SUCCEED;
 	}
@@ -988,6 +992,87 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 #endif
 			}
 		}
+	} else if (BATtdense(p)) {
+		oid updid = BUNtoid(p, 0);
+
+		if (updid < b->hseqbase || updid + BATcount(p) > hseqend) {
+			GDKerror("BATreplace: id out of range\n");
+			return GDK_FAIL;
+		}
+		updid -= b->hseqbase;
+		if (!force && updid < b->batInserted) {
+			GDKerror("BATreplace: updating committed value\n");
+			return GDK_FAIL;
+		}
+
+		/* we copy all of n, so if there are nils in n we get
+		 * nils in b (and else we don't know) */
+		b->tnil = n->tnil;
+		/* we may not copy over all of b, so we only know that
+		 * there are no nils in b afterward if there weren't
+		 * any in either b or n to begin with */
+		b->tnonil &= n->tnonil;
+		if (n->ttype == TYPE_void) {
+			assert(b->ttype == TYPE_oid);
+			oid *o = Tloc(b, updid);
+			if (is_oid_nil(n->tseqbase)) {
+				/* we may or may not overwrite the old
+				 * min/max values */
+				BATrmprop(b, GDK_MAX_VALUE);
+				BATrmprop(b, GDK_MIN_VALUE);
+				for (BUN i = 0, j = BATcount(p); i < j; i++)
+					o[i] = oid_nil;
+				b->tnil = true;
+			} else {
+				oid v = n->tseqbase;
+				/* we know min/max of n, so we know
+				 * the new min/max of b if those of n
+				 * are smaller/larger than the old */
+				if (minprop && v <= minprop->v.val.oval)
+					BATsetprop(b, GDK_MIN_VALUE, TYPE_oid, &v);
+				else
+					BATrmprop(b, GDK_MIN_VALUE);
+				for (BUN i = 0, j = BATcount(p); i < j; i++)
+					o[i] = v++;
+				if (maxprop && --v >= maxprop->v.val.oval)
+					BATsetprop(b, GDK_MAX_VALUE, TYPE_oid, &v);
+				else
+					BATrmprop(b, GDK_MAX_VALUE);
+			}
+		} else {
+			/* if the extremes of n are at least as
+			 * extreme as those of b, we can replace b's
+			 * min/max, else we don't know what b's new
+			 * min/max are*/
+			PROPrec *prop;
+			if (maxprop != NULL &&
+			    (prop = BATgetprop(n, GDK_MAX_VALUE)) != NULL &&
+			    atomcmp(VALptr(&maxprop->v), VALptr(&prop->v)) <= 0)
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, VALptr(&prop->v));
+			else
+				BATrmprop(b, GDK_MAX_VALUE);
+			if (minprop != NULL &&
+			    (prop = BATgetprop(n, GDK_MIN_VALUE)) != NULL &&
+			    atomcmp(VALptr(&minprop->v), VALptr(&prop->v)) >= 0)
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, VALptr(&prop->v));
+			else
+				BATrmprop(b, GDK_MIN_VALUE);
+			memcpy(Tloc(b, updid), Tloc(n, 0),
+			       BATcount(p) * b->twidth);
+		}
+		if (BATcount(p) == BATcount(b)) {
+			/* if we replaced all values of b by values
+			 * from n, we can also copy the min/max
+			 * properties */
+			if ((minprop = BATgetprop(n, GDK_MIN_VALUE)) != NULL)
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, VALptr(&minprop->v));
+			if ((maxprop = BATgetprop(n, GDK_MAX_VALUE)) != NULL)
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, VALptr(&maxprop->v));
+			if (BATtdense(n)) {
+				/* replaced all of b with a dense sequence */
+				BATtseqbase(b, n->tseqbase);
+			}
+		}
 	} else {
 		for (BUN i = 0, j = BATcount(p); i < j; i++) {
 			oid updid = BUNtoid(p, i);
@@ -1078,6 +1163,11 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			}
 		}
 	}
+	ALGODEBUG fprintf(stderr,
+			  "#%s: BATreplace(" ALGOBATFMT "," ALGOBATFMT "," ALGOBATFMT ") " LLFMT " usec\n",
+			  MT_thread_getname(),
+			  ALGOBATPAR(b), ALGOBATPAR(p), ALGOBATPAR(n),
+			  GDKusec() - t0);
 	return GDK_SUCCEED;
 
   bunins_failed:

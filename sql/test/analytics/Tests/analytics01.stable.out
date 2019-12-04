@@ -182,21 +182,51 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 % %4 # name
 % double # type
 % 24 # length
-[ 0.2	]
-[ 0.2	]
-[ 0.3	]
-[ 0.5	]
-[ 0.5	]
-[ 0.6	]
-[ 0.7	]
-[ 0.8	]
-[ 0.9	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 [ 1	]
 #select cume_dist() over (partition by aa order by aa asc) from analytics;
 % sys.%4 # table_name
 % %4 # name
 % double # type
 % 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select cume_dist() over (partition by aa order by aa desc) from analytics;
+% sys.%4 # table_name
+% %4 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select cume_dist() over (order by aa) from analytics;
+% sys.%4 # table_name
+% %4 # name
+% double # type
+% 24 # length
 [ 0.2	]
 [ 0.2	]
 [ 0.3	]
@@ -207,49 +237,19 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0.8	]
 [ 0.9	]
 [ 1	]
-#select cume_dist() over (partition by aa order by aa desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
-% double # type
-% 24 # length
-[ 0.2	]
-[ 0.2	]
-[ 0.3	]
-[ 0.4	]
-[ 0.5	]
-[ 0.6	]
-[ 0.7	]
-[ 0.9	]
-[ 0.9	]
-[ 1	]
-#select cume_dist() over (order by aa) from analytics;
-% sys.%4 # table_name
-% %4 # name
-% double # type
-% 24 # length
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
 #select cume_dist() over (order by aa desc) from analytics;
 % sys.%4 # table_name
 % %4 # name
 % double # type
 % 24 # length
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
+[ 0.1	]
+[ 0.2	]
+[ 0.3	]
+[ 0.4	]
+[ 0.5	]
+[ 0.7	]
+[ 0.7	]
+[ 0.8	]
 [ 1	]
 [ 1	]
 #select cume_dist() over (partition by bb) from analytics;
@@ -257,17 +257,47 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 % %4 # name
 % double # type
 % 24 # length
-[ 0.3	]
-[ 0.3	]
-[ 0.3	]
-[ 0.6	]
-[ 0.6	]
-[ 0.6	]
-[ 0.9	]
-[ 0.9	]
-[ 0.9	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 [ 1	]
 #select cume_dist() over (partition by bb order by bb asc) from analytics;
+% sys.%4 # table_name
+% %4 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select cume_dist() over (partition by bb order by bb desc) from analytics;
+% sys.%4 # table_name
+% %4 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select cume_dist() over (order by bb) from analytics;
 % sys.%4 # table_name
 % %4 # name
 % double # type
@@ -282,7 +312,7 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0.9	]
 [ 0.9	]
 [ 1	]
-#select cume_dist() over (partition by bb order by bb desc) from analytics;
+#select cume_dist() over (order by bb desc) from analytics;
 % sys.%4 # table_name
 % %4 # name
 % double # type
@@ -294,36 +324,6 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 0.7	]
 [ 0.7	]
 [ 0.7	]
-[ 1	]
-[ 1	]
-[ 1	]
-#select cume_dist() over (order by bb) from analytics;
-% sys.%4 # table_name
-% %4 # name
-% double # type
-% 24 # length
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-#select cume_dist() over (order by bb desc) from analytics;
-% sys.%4 # table_name
-% %4 # name
-% double # type
-% 24 # length
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
 [ 1	]
 [ 1	]
 [ 1	]

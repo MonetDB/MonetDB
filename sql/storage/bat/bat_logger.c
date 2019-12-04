@@ -996,6 +996,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 	// first check the backup dir
 	len = snprintf(path1, FILENAME_MAX, "%s/%s/%" PRIo64 "%s", db_dir, BAKDIR, batid, suffix);
 	if (len == -1 || len >= FILENAME_MAX) {
+		path1[FILENAME_MAX - 1] = '\0';
 		GDKerror("Could not open %s, filename is too large", path1);
 		return GDK_FAIL;
 	}
@@ -1011,6 +1012,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 	// then check the regular location
 	len = snprintf(path2, FILENAME_MAX, "%s/%s/%s%s", db_dir, BATDIR, filename, suffix);
 	if (len == -1 || len >= FILENAME_MAX) {
+		path2[FILENAME_MAX - 1] = '\0';
 		GDKerror("Could not open %s, filename is too large", path2);
 		return GDK_FAIL;
 	}
@@ -1169,6 +1171,30 @@ snapshot_wlc(stream *plan, const char *db_dir)
 }
 
 static gdk_return
+snapshot_vaultkey(stream *plan, const char *db_dir)
+{
+	char path[FILENAME_MAX];
+	struct stat statbuf;
+
+	int len = snprintf(path, FILENAME_MAX, "%s/.vaultkey", db_dir);
+	if (len == -1 || len >= FILENAME_MAX) {
+		path[FILENAME_MAX - 1] = '\0';
+		GDKerror("Could not open %s, filename is too large", path);
+		return GDK_FAIL;
+	}
+	if (stat(path, &statbuf) == 0) {
+		snapshot_lazy_copy_file(plan, ".vaultkey", statbuf.st_size);
+		return GDK_SUCCEED;
+	}
+	if (errno == ENOENT) {
+		// No .vaultkey? Fine.
+		return GDK_SUCCEED;
+	}
+
+	GDKerror("Error stat'ing %s: %s", path, strerror(errno));
+	return GDK_FAIL;
+}
+static gdk_return
 bl_snapshot(stream *plan)
 {
 	gdk_return ret;
@@ -1182,6 +1208,13 @@ bl_snapshot(stream *plan)
 		db_dir[db_dir_len - 1] = '\0';
 
 	mnstr_printf(plan, "%s\n", db_dir);
+
+	// Please monetdbd
+	mnstr_printf(plan, "w 0 .uplog\n");
+
+	ret = snapshot_vaultkey(plan, db_dir);
+	if (ret != GDK_SUCCEED)
+		goto end;
 
 	ret = snapshot_bats(plan, db_dir);
 	if (ret != GDK_SUCCEED)

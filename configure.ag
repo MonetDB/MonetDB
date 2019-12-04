@@ -2427,7 +2427,6 @@ AC_CHECK_FUNCS([\
 	posix_fallocate \
 	posix_madvise \
 	putenv \
-	setenv \
 	setsid \
 	shutdown \
 	sigaction \

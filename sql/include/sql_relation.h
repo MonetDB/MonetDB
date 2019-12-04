@@ -38,31 +38,30 @@ typedef struct expression {
 	void *r;
 	void *f;	/* func's and aggr's, also e_cmp may have have 2 arguments */
 	unsigned int
-	 flag:18,	/* EXP_DISTINCT, NO_NIL, ASCENDING, NULLS_LAST, cmp types */
+	 flag:20,	/* EXP_DISTINCT, NO_NIL, cmp types */
 	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
 	 freevar:4,	/* free variable, ie binds to the upper dependent join */
 	 intern:1,
 	 anti:1,
+	 ascending:1,	/* order direction */
+	 nulls_last:1,	/* return null after all other rows */
 	 base:1,
 	 used:1;	/* used for quick dead code removal */
 	sql_subtype	tpe;
 	void *p;	/* properties for the optimizer */
 } sql_exp;
 
-#define EXP_DISTINCT	1
-#define NO_NIL			2
-#define LEFT_JOIN		4
-#define ZERO_IF_EMPTY	8
+/* cannot be combined with cmp_* or PSM flags */
+#define EXP_DISTINCT	1		/* used for both expressions and relations */
+#define NO_NIL		2
+#define LEFT_JOIN	4		/* relational flag */
+#define ZERO_IF_EMPTY	8		/* in case of partial aggregator computation, some aggregators need to return 0 instead of NULL */
+#define HAS_NO_NIL	16
 
-/* ASCENDING > 15 else we have problems with cmp types */
-#define ASCENDING	16
-#define CMPMASK		(ASCENDING-1)
-#define get_cmp(e)	(e->flag&CMPMASK)
-#define HAS_NO_NIL	32
-#define NULLS_LAST	64
+#define get_cmp(e)	(e->flag)
 
-#define UPD_COMP			1
-#define UPD_LOCKED			2
+#define UPD_COMP		1
+#define UPD_LOCKED		2
 #define UPD_NO_CONSTRAINT	4
 #define REL_PARTITION		8
 
@@ -153,81 +152,45 @@ typedef enum operator_type {
 	op_truncate /* truncate(l=table) */
 } operator_type;
 
-#define is_atom(et) \
-	(et == e_atom)
+#define is_atom(et) 		(et == e_atom)
 /* a simple atom is a literal or on the query stack */
-#define is_simple_atom(e) \
-	(is_atom(e->type) && !e->r && !e->f)
-#define is_values(e) \
-	((e)->type == e_atom && (e)->f)
-#define is_func(et) \
-	(et == e_func)
-#define is_aggr(et) \
-	(et == e_aggr)
-#define is_convert(et) \
-	(et == e_convert)
-#define is_map_op(et) \
-	(et == e_func || et == e_convert)
-#define is_compare(et) \
-	(et == e_cmp)
-#define is_column(et) \
-	(et != e_cmp)
-#define is_alias(et) \
-	(et == e_column)
-#define is_analytic(e) \
-	(e->type == e_func && ((sql_subfunc*)e->f)->func->type == F_ANALYTIC)
-#define is_base(op) \
-	(op == op_basetable || op == op_table)
-#define is_basetable(op) \
-	(op == op_basetable)
-#define is_ddl(op) \
-	(op == op_ddl)
-#define is_outerjoin(op) \
-	(op == op_left || op == op_right || op == op_full)
-#define is_left(op) \
-	(op == op_left)
-#define is_right(op) \
-	(op == op_right)
-#define is_full(op) \
-	(op == op_full)
-#define is_join(op) \
-	(op == op_join || is_outerjoin(op))
-#define is_semi(op) \
-	(op == op_semi || op == op_anti)
-#define is_joinop(op) \
-	(is_join(op) || is_semi(op))
-#define is_select(op) \
-	(op == op_select)
-#define is_set(op) \
-	(op == op_union || op == op_inter || op == op_except)
-#define is_union(op) \
-	(op == op_union)
-#define is_inter(rel) \
-	(op == op_inter)
-#define is_except(rel) \
-	(op == op_except)
-#define is_simple_project(op) \
-	(op == op_project)
-#define is_project(op) \
-	(op == op_project || op == op_groupby || is_set(op))
-#define is_groupby(op) \
-	(op == op_groupby)
-#define is_sort(rel) \
-	((rel->op == op_project && rel->r) || rel->op == op_topn)
-#define is_topn(op) \
-	(op == op_topn)
-#define is_modify(op) \
-	(op == op_insert || op == op_update || op == op_delete || op == op_truncate)
-#define is_sample(op) \
-	(op == op_sample)
-#define is_insert(op) \
-	(op == op_insert)
-#define is_update(op) \
-	(op == op_update)
-#define is_delete(op) \
-	(op == op_delete)
-#define is_truncate(op) \
-	(op == op_truncate)
+#define is_simple_atom(e) 	(is_atom(e->type) && !e->r && !e->f)
+#define is_values(e) 		((e)->type == e_atom && (e)->f)
+#define is_func(et) 		(et == e_func)
+#define is_aggr(et) 		(et == e_aggr)
+#define is_convert(et) 		(et == e_convert)
+#define is_map_op(et) 		(et == e_func || et == e_convert)
+#define is_compare(et) 		(et == e_cmp)
+#define is_column(et)		(et != e_cmp)
+#define is_alias(et) 		(et == e_column)
+#define is_analytic(e) 		(e->type == e_func && ((sql_subfunc*)e->f)->func->type == F_ANALYTIC)
+
+#define is_base(op)  		(op == op_basetable || op == op_table)
+#define is_basetable(op) 	(op == op_basetable)
+#define is_ddl(op)	 	(op == op_ddl)
+#define is_outerjoin(op) 	(op == op_left || op == op_right || op == op_full)
+#define is_left(op) 		(op == op_left)
+#define is_right(op) 		(op == op_right)
+#define is_full(op) 		(op == op_full)
+#define is_join(op) 		(op == op_join || is_outerjoin(op))
+#define is_semi(op) 		(op == op_semi || op == op_anti)
+#define is_joinop(op) 		(is_join(op) || is_semi(op))
+#define is_select(op) 		(op == op_select)
+#define is_set(op) 		(op == op_union || op == op_inter || op == op_except)
+#define is_union(op) 		(op == op_union)
+#define is_inter(rel) 		(op == op_inter)
+#define is_except(rel) 		(op == op_except)
+#define is_simple_project(op) 	(op == op_project)
+#define is_project(op) 		(op == op_project || op == op_groupby || is_set(op))
+#define is_groupby(op) 		(op == op_groupby)
+#define is_sort(rel) 		((rel->op == op_project && rel->r) || rel->op == op_topn)
+#define is_topn(op) 		(op == op_topn)
+#define is_modify(op) 	 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate)
+#define is_sample(op) 		(op == op_sample)
+#define is_insert(op) 		(op == op_insert)
+#define is_update(op) 		(op == op_update)
+#define is_delete(op) 		(op == op_delete)
+#define is_truncate(op) 	(op == op_truncate)
 
 /* NO NIL semantics of aggr operations */
 #define need_no_nil(e) \
@@ -249,28 +212,22 @@ typedef enum operator_type {
 #define set_has_nil(e) \
 	(e)->flag &= (~HAS_NO_NIL)
 
-#define is_ascending(e) \
-	(((e)->flag&ASCENDING)==ASCENDING)
-#define nulls_last(e) \
-	(((e)->flag&NULLS_LAST)==NULLS_LAST)
-#define set_direction(e, dir) \
-	(e)->flag |= ((dir&1)?ASCENDING:0) | ((dir&2)?NULLS_LAST:0)
+#define is_ascending(e) 	((e)->ascending)
+#define set_ascending(e) 	((e)->ascending = 1)
+#define set_descending(e) 	((e)->ascending = 0)
+#define nulls_last(e) 		((e)->nulls_last)
+#define set_nulls_last(e) 	((e)->nulls_last=1)
+#define set_nulls_first(e) 	((e)->nulls_last=0)
+#define set_direction(e, dir) 	((e)->ascending = (dir&1), (e)->nulls_last = (dir&2)?1:0)
 
-#define is_anti(e) \
-	((e)->anti)
-#define set_anti(e) \
-	(e)->anti = 1
-#define is_intern(e) \
-	((e)->intern)
-#define set_intern(e) \
-	(e)->intern = 1
-#define is_basecol(e) \
-	((e)->base)
-#define set_basecol(e) \
-	(e)->base = 1
+#define is_anti(e) 	((e)->anti)
+#define set_anti(e)  	(e)->anti = 1
+#define is_intern(e) 	((e)->intern)
+#define set_intern(e) 	(e)->intern = 1
+#define is_basecol(e) 	((e)->base)
+#define set_basecol(e) 	(e)->base = 1
 
-#define has_label(e) \
-	((e)->alias.label > 0)
+#define has_label(e)  	((e)->alias.label > 0)
 
 /* used for expressions and relations */
 #define need_distinct(e) \
@@ -280,31 +237,19 @@ typedef enum operator_type {
 #define set_nodistinct(e) \
 	e->flag &= (~EXP_DISTINCT)
 
-#define is_processed(rel) \
-	((rel)->processed)
-#define set_processed(rel) \
-	(rel)->processed = 1
-#define reset_processed(rel) \
-	(rel)->processed = 0
-#define is_subquery(rel) \
-	((rel)->subquery)
-#define set_subquery(rel) \
-	(rel)->subquery = 1
-#define reset_subquery(rel) \
-	(rel)->subquery = 0
-#define is_dependent(rel) \
-	((rel)->dependent)
-#define set_dependent(rel) \
-	(rel)->dependent = 1
-#define reset_dependent(rel) \
-	(rel)->dependent = 0
+#define is_processed(rel) 	((rel)->processed)
+#define set_processed(rel) 	(rel)->processed = 1
+#define reset_processed(rel) 	(rel)->processed = 0
+#define is_subquery(rel) 	((rel)->subquery)
+#define set_subquery(rel) 	(rel)->subquery = 1
+#define reset_subquery(rel) 	(rel)->subquery = 0
+#define is_dependent(rel) 	((rel)->dependent)
+#define set_dependent(rel) 	(rel)->dependent = 1
+#define reset_dependent(rel) 	(rel)->dependent = 0
 
-#define is_freevar(e) \
-	((e)->freevar)
-#define set_freevar(e,level) \
-	(e)->freevar = level+1
-#define reset_freevar(e) \
-	(e)->freevar = 0
+#define is_freevar(e) 		((e)->freevar)
+#define set_freevar(e,level) 	(e)->freevar = level+1
+#define reset_freevar(e) 	(e)->freevar = 0
 
 #define rel_is_ref(rel)		(((sql_rel*)rel)->ref.refcnt > 1)
 
