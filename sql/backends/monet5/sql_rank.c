@@ -558,57 +558,90 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
-		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p, *r;
-		BUN cnt;
-		int j;
-		dbl *rb, *rp, *end, cnt_cast;
-		bit *np;
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p, *o, *r;
+		BUN ncnt, j = 0;
+		bit *np, *no, *bo1, *bo2, *end;
+		dbl *rb, *rp, cnt_cast, nres;
 
 		if (!b)
 			throw(SQL, "sql.cume_dist", SQLSTATE(HY005) "Cannot access column descriptor");
-		cnt = BATcount(b);
-		cnt_cast = (dbl) cnt;
-		voidresultBAT(r, TYPE_dbl, cnt, b, "sql.cume_dist");
+		voidresultBAT(r, TYPE_dbl, BATcount(b), b, "sql.cume_dist");
 		rb = rp = (dbl*)Tloc(r, 0);
-		end = rp + cnt;
 		if (isaBatType(getArgType(mb, pci, 2))) {
 			if (isaBatType(getArgType(mb, pci, 3))) {
 				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
-				if (!p) {
+				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+				if (!p || !o) {
 					BBPunfix(b->batCacheid);
+					if (p) BBPunfix(p->batCacheid);
+					if (o) BBPunfix(o->batCacheid);
 					throw(SQL, "sql.cume_dist", SQLSTATE(HY005) "Cannot access column descriptor");
 				}
 				np = (bit*)Tloc(p, 0);
-				for(j=0; rp<end; j++, np++, rp++) {
+				end = np + BATcount(p);
+				bo1 = bo2 = no = (bit*)Tloc(o, 0);
+
+				for (; np<end; np++, no++) {
 					if (*np) {
-						for(; rb<rp; rb++)
-							*rb = j / cnt_cast;
+						ncnt = no - bo2;
+						cnt_cast = (dbl) ncnt;
+						for (; bo2<no; bo2++) {
+							if (*bo2) {
+								j += (bo2 - bo1);
+								nres = j / cnt_cast;
+								for (; bo1 < bo2; bo1++, rb++)
+									*rb = nres;
+							}
+						}
+						for (; bo1 < bo2; bo1++, rb++)
+							*rb = 1;
 					}
 				}
-				for(; rb<rp; rb++)
+				ncnt = no - bo2;
+				cnt_cast = (dbl) ncnt;
+				for (; bo2<no; bo2++) {
+					if (*bo2) {
+						j += (bo2 - bo1);
+						nres = j / cnt_cast;
+						for (; bo1 < bo2; bo1++, rb++)
+							*rb = nres;
+					}
+				}
+				for (; bo1 < bo2; bo1++, rb++)
 					*rb = 1;
 			} else { /* single value, ie no ordering */
-				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
-				if (!p) {
+				rp = rb + BATcount(b);
+				for (; rb<rp; rb++)
+					*rb = 1;
+			}
+		} else { /* single value, ie no partitions */
+			if (isaBatType(getArgType(mb, pci, 3))) {
+				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+				if (!o) {
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.cume_dist", SQLSTATE(HY005) "Cannot access column descriptor");
 				}
-				np = (bit*)Tloc(p, 0);
-				for(j=0; rp<end; j++, np++, rp++) {
-					if (*np) {
-						for(; rb<rp; rb++)
-							*rb = j / cnt_cast;
+				bo1 = bo2 = (bit*)Tloc(o, 0);
+				no = bo1 + BATcount(b);
+				cnt_cast = (dbl) BATcount(b);
+				for (; bo2<no; bo2++) {
+					if (*bo2) {
+						j += (bo2 - bo1);
+						nres = j / cnt_cast;
+						for (; bo1 < bo2; bo1++, rb++)
+							*rb = nres;
 					}
 				}
-				for(; rb<rp; rb++)
+				for (; bo1 < bo2; bo1++, rb++)
 					*rb = 1;
-				BBPunfix(p->batCacheid);
+				BBPunfix(o->batCacheid);
+			} else { /* single value, ie no ordering */
+				rp = rb + BATcount(b);
+				for (; rb<rp; rb++)
+					*rb = 1;
 			}
-		} else {
-			for(; rp<end; rp++)
-				*rp = 1;
 		}
-		BATsetcount(r, cnt);
+		BATsetcount(r, BATcount(b));
 		BBPunfix(b->batCacheid);
 		BBPkeepref(*res = r->batCacheid);
 	} else {
