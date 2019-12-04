@@ -41,12 +41,6 @@
 # include <sys/user.h>
 #endif
 
-#ifdef NDEBUG
-#ifndef NVALGRIND
-#define NVALGRIND NDEBUG
-#endif
-#endif
-
 #if defined(__GNUC__) && defined(HAVE_VALGRIND)
 #include <valgrind.h>
 #else
