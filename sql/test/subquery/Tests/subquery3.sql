@@ -299,6 +299,20 @@ SELECT
     (SELECT SUM(t1.col1) OVER (ORDER BY (SELECT SUM(t1.col1 + t2.col1) FROM another_T t2) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
 FROM another_T t1;
 
+SELECT
+    SUM(CAST(SUM(CAST (NOT t1.col1 IN (SELECT 1) AS INTEGER)) < ANY (SELECT 1) AS INT)) OVER ()
+FROM another_T t1
+GROUP BY t1.col6;
+	-- 1
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
+    SUM(CAST(SUM(t1.col6 * CAST (NOT t1.col1 IN (SELECT t2.col2 FROM another_T t2 GROUP BY t2.col2) AS INTEGER)) < ANY (SELECT MAX(ColID + t1.col7 - t1.col2) FROM tbl_ProductSales) AS INT)) OVER (PARTITION BY SUM(t1.col5) ORDER BY (SELECT MIN(t1.col6 + t1.col5 - t2.col2) FROM another_T t2))
+FROM another_T t1
+GROUP BY t1.col7, t1.col6; --error, subquery uses ungrouped column "t1.col2" from outer query
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
