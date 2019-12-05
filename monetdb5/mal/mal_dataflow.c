@@ -335,9 +335,7 @@ DFLOWworker(void *T)
 	srand((unsigned int) GDKusec());
 #endif
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN)); /* where to leave errors */
-	if( GDKerrbuf == 0) {
-		TRC_CRITICAL(MAL_DATAFLOW, "Could not allocate GDKerrbuf\n");
-	} else {
+	if( GDKerrbuf ) {
 		GDKclrerr();
 	}
 		
@@ -397,7 +395,7 @@ DFLOWworker(void *T)
 			}
 		}
 		error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
-		TRC_DEBUG(PAR, "Executed pc=%d wrk=%d claim=" LLFMT "," LLFMT "," LLFMT " %s\n",
+		TRC_DEBUG(MAL_DATAFLOW, "Executed pc=%d wrk=%d claim=" LLFMT "," LLFMT "," LLFMT " %s\n",
 						 fe->pc, id, claim, fe->hotclaim, fe->maxclaim, error ? error : "");
 		/* release the memory claim */
 		MALadmission_release(flow->cntxt, flow->mb, flow->stk, p,  claim);
@@ -549,7 +547,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with flow == NULL");
 	if (mb == NULL)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with mb == NULL");
-	TRC_DEBUG(PAR, "Initialize dflow block\n");
+	TRC_DEBUG(MAL_DATAFLOW, "Initialize dflow block\n");
 	assign = (int *) GDKzalloc(mb->vtop * sizeof(int));
 	if (assign == NULL)
 		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -617,7 +615,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 				l = getEndScope(mb, getArg(p, j));
 				if (l != pc && l < flow->stop && l > flow->start) {
 					/* add edge to the target instruction for wakeup call */
-					TRC_DEBUG(PAR, "Endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p, j)), n + flow->start, l);
+					TRC_DEBUG(MAL_DATAFLOW, "Endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p, j)), n + flow->start, l);
 					assert(pc < l); /* only dependencies on earlier instructions */
 					l -= flow->start;
 					if (flow->nodes[n]) {
@@ -661,17 +659,20 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 	GDKfree(assign);
 
 	/* CHECK */
-	// The whole for-loop is in PARDEBUG
-	for (n = 0; n < flow->stop - flow->start; n++) {
-		TRC_DEBUG(PAR, "[%d] %d\n", flow->start + n, n);
-		debugInstruction(PAR, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_ALL);
-		TRC_DEBUG(PAR, "[%d] dependents block count %d wakeup\n", flow->start + n, flow->status[n].blocks);
-		for (j = n; flow->edges[j]; j = flow->edges[j]) {
-			TRC_DEBUG(PAR, "%d\n", flow->start + flow->nodes[j]);
-			if (flow->edges[j] == -1)
-				break;
+	{ char buf[8192];
+	  int len = 8192;
+
+		/* only use in debugging mode compilations */
+		for (n = 0; n < flow->stop - flow->start; n++) {
+			for (j = n; flow->edges[j]; j = flow->edges[j]) {
+				len -= snprintf(buf + strlen(buf), len, "%d\n", flow->start + flow->nodes[j]);
+				if (flow->edges[j] == -1)
+					break;
+			}
+			TRC_INFO(MAL_DATAFLOW, "[%d] %d dependents block count %d wakeup, %s\n", flow->start + n, n, flow->status[n].blocks, buf);
 		}
 	}
+
 	return MAL_SUCCEED;
 }
 
@@ -730,11 +731,10 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 				fe[i].argclaim = getMemoryClaim(fe[0].flow->mb, fe[0].flow->stk, p, j, FALSE);
 			q_enqueue(todo, flow->status + i);
 			flow->status[i].state = DFLOWrunning;
-			TRC_DEBUG(PAR, "Enqueue pc=%d claim=" LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
+			TRC_DEBUG(MAL_DATAFLOW, "Enqueue pc=%d\n", flow->status[i].pc);
 		}
 	MT_lock_unset(&flow->flowlock);
 	MT_sema_up(&w->s);
-	TRC_DEBUG(PAR, "Run '%d' instructions in dataflow block\n", actions);
 
 	while (actions != tasks ) {
 		f = q_dequeue(flow->done, NULL);
@@ -758,7 +758,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 					flow->status[i].state = DFLOWrunning;
 					flow->status[i].blocks--;
 					q_enqueue(todo, flow->status + i);
-					TRC_DEBUG(PAR, "Enqueue pc=%d claim=" LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
+					TRC_DEBUG(MAL_DATAFLOW, "Enqueue pc=%d\n", flow->status[i].pc);
 				} else {
 					flow->status[i].blocks--;
 				}
@@ -771,7 +771,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	/* wrap up errors */
 	assert(flow->done->last == 0);
 	if ((ret = ATOMIC_PTR_XCG(&flow->error, NULL)) != NULL ) {
-		TRC_DEBUG(PAR, "Errors encountered: %s\n", ret);
+		TRC_DEBUG(MAL_DATAFLOW, "Errors encountered: %s\n", ret);
 	}
 	return ret;
 }

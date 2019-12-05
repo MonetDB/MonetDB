@@ -66,9 +66,7 @@ int mal_init(void){
 #endif
 	initNamespace();
 	initParser();
-#ifndef HAVE_EMBEDDED
 	initHeartbeat();
-#endif
 	str err = malBootstrap();
 	if (err != MAL_SUCCEED) {
 		mal_client_reset();

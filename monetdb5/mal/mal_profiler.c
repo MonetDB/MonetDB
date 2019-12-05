@@ -940,6 +940,9 @@ void initProfiler(void)
 
 void initHeartbeat(void)
 {
+#ifdef HAVE_EMBEDDED
+	return;
+#endif
 	ATOMIC_SET(&hbrunning, 1);
 	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE,
 						 "heartbeat") < 0) {
@@ -948,3 +951,5 @@ void initHeartbeat(void)
 		ATOMIC_SET(&hbrunning, 0);
 	}
 }
+
+

@@ -69,8 +69,7 @@ MCinit(void)
 	if (maxclients <= 0) {
 		maxclients = 64;
 		if (GDKsetenv("max_clients", "64") != GDK_SUCCEED) {
-			TRC_CRITICAL(MAL_CLIENT, "GDKsetenv failed\n");
-			return false;
+			TRC_ERROR(MAL_CLIENT, "GDKsetenv failed\n");
 		}
 	}
 
@@ -221,7 +220,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 		MT_lock_set(&mal_contextLock);
 		c->mode = FREECLIENT;
 		MT_lock_unset(&mal_contextLock);
-		TRC_CRITICAL(MAL_CLIENT, "Initialization failed: " MAL_MALLOC_FAIL "\n");
+		TRC_ERROR(MAL_CLIENT, "No stdin channel available\n");
 		return NULL;
 	}
 	c->yycur = 0;
@@ -258,7 +257,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 			c->mode = FREECLIENT;
 			MT_lock_unset(&mal_contextLock);
 		}
-		TRC_CRITICAL(MAL_CLIENT, "Initialization failed: " MAL_MALLOC_FAIL "\n");
+		TRC_ERROR(MAL_CLIENT, "Client prompt undefined\n");
 		return NULL;
 	}
 	c->promptlength = strlen(prompt);
@@ -405,7 +404,6 @@ MCfreeClient(Client c)
 		return;
 	c->mode = FINISHCLIENT;
 
-	TRC_DEBUG(MAL_CLIENT, "Free client: %d\n", c->idx);
 	MCexitClient(c);
 
 	/* scope list and curprg can not be removed, because the client may
