@@ -120,7 +120,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	InstrPtr p;
 	int i, k, limit, *alias = 0, barrier;
 	MalStkPtr env = NULL;
-	int profiler, sqlprofiler;
 	int debugstate = cntxt->itrace, actions = 0, constantblock = 0;
 	int *assigned = 0, use; 
 	char buf[256];
@@ -178,9 +177,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if (use && p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
 			barrier = p->barrier;
 			p->barrier = 0;
-			profiler = malProfileMode;	/* we don't trace it */
-			sqlprofiler = cntxt->sqlprofiler;
-			malProfileMode = 0;
 			if ( env == NULL) {
 				env = prepareMALstack(mb,  2 * mb->vsize);
 				if (!env) {
@@ -190,8 +186,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				env->keepAlive = TRUE;
 			}
 			msg = reenterMAL(cntxt, mb, i, i + 1, env);
-			malProfileMode= profiler;
-			cntxt->sqlprofiler = sqlprofiler;
 			p->barrier = barrier;
 			if( OPTdebug &  OPTevaluate){
 				fprintf(stderr, "#retc var %s\n", getVarName(mb, getArg(p, 0)));

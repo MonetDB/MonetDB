@@ -604,6 +604,7 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 		sql_rel *D = rel_project(sql->sa, rel_dup(l), exps_copy(sql, ad));
 		set_distinct(D);
 
+		assert(!rel_is_ref(r));
 		r = rel_crossproduct(sql->sa, D, r, rel->op);
 		r->op = /*is_semi(rel->op)?op_left:*/op_join;
 		move_join_exps(sql, rel, r);
@@ -653,11 +654,18 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 static sql_rel *
 push_up_project(mvc *sql, sql_rel *rel, list *ad) 
 {
+	sql_rel *r = rel->r;
+
+	if (rel_is_ref(r)) {
+		sql_rel *nr = rel_project(sql->sa, rel_dup(r->l), exps_copy(sql, r->exps));
+		rel_destroy(r);
+		rel->r = r = nr;
+	}
+
 	/* input rel is dependent outerjoin with on the right a project, we first try to push inner side expressions down (because these cannot be pushed up) */ 
 	if (rel && is_outerjoin(rel->op) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
-		assert(!rel_is_ref(r));
 		/* find constant expressions and move these down */
 		if (r && r->op == op_project) {
 			node *n;
@@ -665,7 +673,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 			list *cexps = NULL;
 			sql_rel *l = r->l;
 
-			if (l && is_select(l->op)) {
+			if (l && is_select(l->op) && !rel_is_ref(l)) {
 				for(n=r->exps->h; n; n=n->next) {
 					sql_exp *e = n->data;
 
@@ -700,8 +708,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 	if (rel && is_join(rel->op) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
-		assert(!rel_is_ref(r));
-		if (r && r->op == op_project /*&& r->l*/) {
+		if (r && r->op == op_project) {
 			sql_exp *id = NULL;
 			node *m;
 			/* move project up, ie all attributes of left + the old expression list */
@@ -750,31 +757,20 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 			/* remove old project */
 			rel->r = r->l;
 			r->l = NULL;
-			rel_destroy(r);
-			r = rel->r;
+                        rel_destroy(r);
 			return n;
-			/*
-		} else if (r && r->op == op_project && !r->l) {
-			sql_rel *l = rel->l;
-
-			rel->l = NULL;
-			rel_destroy(rel);
-			return l;
-			*/
 		}
 	}
 	/* a dependent semi/anti join with a project on the right side, could be removed */
 	if (rel && is_semi(rel->op) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
-		assert(!rel_is_ref(r));
 		/* merge project expressions into the join expressions  */
 		rel->exps = push_up_project_exps(sql, r, rel->exps);
 
 		if (r && r->op == op_project && r->l) {
 			/* remove old project */
-			rel->r = r->l;
-			r->l = NULL;
+			rel->r = rel_dup(r->l);
 			rel_destroy(r);
 			return rel;
 		} else if (r && r->op == op_project) {
@@ -789,9 +785,9 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 					append(nexps, e);
 			}
 			if (list_empty(nexps)) {
+				assert(!r->l);
 				/* remove old project and change outer into select */
-				rel->r = r->l;
-				r->l = NULL;
+				rel->r = NULL;
 				rel_destroy(r);
 				rel->op = op_select;
 				return rel;
@@ -811,9 +807,8 @@ push_up_topn(mvc *sql, sql_rel *rel)
 
 		if (r && r->op == op_topn) {
 			/* remove old topn */
-			rel->r = r->l;
+			rel->r = rel_dup(r->l);
 			rel = rel_topn(sql->sa, rel, r->exps);
-			r->l = NULL;
 			rel_destroy(r);
 			return rel;
 		}
@@ -861,14 +856,15 @@ push_up_select(mvc *sql, sql_rel *rel, list *ad)
 				reset_dependent(rel);
 		}
 	} else if (rel && is_join(rel->op) && is_dependent(rel)) {
+		int cp = rel_is_ref(r);
 		sql_rel *r = rel->r;
 		list *exps = r->exps;
 
 		/* remove select */
 		rel->r = rel_dup(r->l);
-		rel_destroy(r);
 		rel = rel_select(sql->sa, rel, NULL);
-		rel->exps = exps;
+		rel->exps = !cp?exps:exps_copy(sql, exps);
+		rel_destroy(r);
 	}
 	return rel;
 }
@@ -1070,11 +1066,13 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 
 			if (ld && rd) {
 				node *m;
-				sql_rel *n, *nr;
+				sql_rel *n, *nr, *nj;
 
-				rel->r = jl;
-				j->l = rel_dup(d);
-				j->r = jr;
+				rel->r = rel_dup(jl);
+				nj = rel_crossproduct(sql->sa, rel_dup(d), rel_dup(jr), j->op);
+				nj->exps = exps_copy(sql, j->exps);
+				rel_destroy(j);
+				j = nj;
 				set_dependent(j);
 				n = rel_crossproduct(sql->sa, rel, j, j->op);
 				j->op = rel->op;
@@ -1102,10 +1100,12 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				return n;
 			}
 
-			if (!rd) { 
-				rel->r = jl;
-				j->l = rel;
-				j->r = jr;
+			if (!rd) {
+				rel->r = rel_dup(jl);
+				sql_rel *nj = rel_crossproduct(sql->sa, rel, rel_dup(jr), j->op);
+				nj->exps = exps_copy(sql, j->exps);
+				rel_destroy(j);
+				j = nj; 
 				move_join_exps(sql, j, rel);
 				return j;
 			}
@@ -1116,6 +1116,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				j->l = rel;
 				j->r = jl;
 
+				assert(!rel_is_ref(j));
 				if (!is_simple_project(jr->op))
 					rel->r = jr = rel_project(sql->sa, jr, rel_projections(sql, jr, NULL, 1, 1));
 				if (!is_simple_project(jl->op))
@@ -1134,9 +1135,11 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				append(j->exps, l);
 				return j;
 			} else if (!ld) {
-				rel->r = jr;
-				j->l = jl;
-				j->r = rel;
+				rel->r = rel_dup(jr);
+				sql_rel *nj = rel_crossproduct(sql->sa, rel_dup(jl), rel, j->op);
+				nj->exps = exps_copy(sql, j->exps);
+				rel_destroy(j);
+				j = nj; 
 				move_join_exps(sql, j, rel);
 				return j;
 			}
@@ -1261,6 +1264,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 		l = rel->l;
 		r = rel->r;
 
+		assert(!rel_is_ref(rel));
 		if (rel_has_freevar(sql, l))
 			rel->l = rel_unnest_dependent(sql, rel->l);
 
@@ -2447,6 +2451,29 @@ rewrite_compare_exp(mvc *sql, sql_rel *rel)
 }
 
 static sql_rel *
+rewrite_remove_xp_project(mvc *sql, sql_rel *rel)
+{
+	(void)sql;
+	if (rel->op == op_join && list_empty(rel->exps)) {
+		sql_rel *r = rel->r;
+
+		if (is_simple_project(r->op) && r->l) {
+			sql_rel *rl = r->l;
+
+			if (is_simple_project(rl->op) && !rl->l && list_length(rl->exps) == 1) {
+				sql_exp *t = rl->exps->h->data;
+
+				if (is_atom(t->type) && !exp_name(t)) { /* atom with out alias cannot be used later */
+					rel = rel_project(sql->sa, rel->l, rel_projections(sql, rel->l, NULL, 1, 1));
+					list_merge(rel->exps, r->exps, (fdup)NULL);
+				}
+			}
+		}
+	}
+	return rel;
+}
+
+static sql_rel *
 rewrite_remove_xp(mvc *sql, sql_rel *rel)
 {
 	(void)sql;
@@ -2649,6 +2676,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_exp_visitor(sql, rel, &rewrite_ifthenelse);	/* add isnull handling */
 	rel = rel_exp_visitor(sql, rel, &rewrite_exp_rel);
 	rel = rel_visitor(sql, rel, &rewrite_compare_exp);	/* only allow for e_cmp in selects and  handling */
+	rel = rel_visitor(sql, rel, &rewrite_remove_xp_project);	/* remove crossproducts with project ( project [ atom ] ) [ etc ] */
 	rel = _rel_unnest(sql, rel);
 	rel = rel_visitor(sql, rel, &rewrite_fix_count);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
 	rel = rel_visitor(sql, rel, &rewrite_remove_xp);	/* remove crossproducts with project [ atom ] */
