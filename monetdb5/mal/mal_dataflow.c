@@ -658,11 +658,11 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 	}
 	GDKfree(assign);
 
-	/* CHECK */
+	/* CHECK 
 	{ char buf[8192];
 	  int len = 8192;
 
-		/* only use in debugging mode compilations */
+		// only use in debugging mode compilations 
 		for (n = 0; n < flow->stop - flow->start; n++) {
 			for (j = n; flow->edges[j]; j = flow->edges[j]) {
 				len -= snprintf(buf + strlen(buf), len, "%d\n", flow->start + flow->nodes[j]);
@@ -672,6 +672,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 			TRC_INFO(MAL_DATAFLOW, "[%d] %d dependents block count %d wakeup, %s\n", flow->start + n, n, flow->status[n].blocks, buf);
 		}
 	}
+*/
 
 	return MAL_SUCCEED;
 }
