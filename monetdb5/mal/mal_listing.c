@@ -167,7 +167,7 @@ beginning of each line.
 str
 fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 {
-	int i;
+	int i, j;
 	str arg, tpe;
 
 	len -= t - base;
@@ -238,6 +238,34 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 			return base;
 	}
 	(void) copystring(&t, ";", &len);
+	/* add the extra properties for debugging */
+	if( flg & LIST_MAL_PROPS){
+		char extra[256];
+		if (p->token == REMsymbol){
+		} else{
+			snprintf(extra, 256, "\t#[%d] ("BUNFMT") %s ", getPC(mb,p), getRowCnt(mb,getArg(p,0)), (p->blk? p->blk->binding:""));
+			if (!copystring(&t, extra, &len))
+				return base;
+			for(j =0; j < p->retc; j++){
+				snprintf(extra, 256, "%d ", getArg(p,j));
+				if (!copystring(&t, extra, &len))
+					return base;
+			}
+			if( p->argc - p->retc > 0){
+				if (!copystring(&t, "<- ", &len))
+					return base;
+			}
+			for(; j < p->argc; j++){
+				snprintf(extra, 256, "%d ", getArg(p,j));
+				if (!copystring(&t, extra, &len))
+					return base;
+			}
+			if( p->typechk == TYPE_UNKNOWN){
+				if (!copystring(&t, " type check needed" , &len))
+					return base;
+			}
+		}
+	}
 	return base;
 }
 
@@ -266,7 +294,7 @@ operatorName(int i)
 str
 instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 {
-	int i;
+	int i,j;
 	str base, t;
 	size_t len = 512 + (p->argc * 128);		 /* max realistic line length estimate */
 	str arg;
@@ -412,6 +440,34 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	if (p->token != REMsymbol){
 		if (!copystring(&t, ";", &len))
 			return base;
+	}
+	/* add the extra properties for debugging */
+	if( flg & LIST_MAL_PROPS){
+		char extra[256];
+		if (p->token == REMsymbol){
+		} else{
+			snprintf(extra, 256, "\t#[%d] ("BUNFMT") %s ", getPC(mb,p), getRowCnt(mb,getArg(p,0)), (p->blk? p->blk->binding:""));
+			if (!copystring(&t, extra, &len))
+				return base;
+			for(j =0; j < p->retc; j++){
+				snprintf(extra, 256, "%d ", getArg(p,j));
+				if (!copystring(&t, extra, &len))
+					return base;
+			}
+			if( p->argc - p->retc > 0){
+				if (!copystring(&t, "<- ", &len))
+					return base;
+			}
+			for(; j < p->argc; j++){
+				snprintf(extra, 256, "%d ", getArg(p,j));
+				if (!copystring(&t, extra, &len))
+					return base;
+			}
+			if( p->typechk == TYPE_UNKNOWN){
+				if (!copystring(&t, " type check needed" , &len))
+					return base;
+			}
+		}
 	}
 	return base;
 }
@@ -582,7 +638,6 @@ mal2str(MalBlkPtr mb, int first, int last)
 			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_NAME | LIST_MAL_TYPE  | LIST_MAL_PROPS);
 		else
 			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_CALL | LIST_MAL_PROPS | LIST_MAL_REMOTE);
-		TRC_DEBUG(MAL_LISTING, "%s\n", txt[i]);
 
 		if ( txt[i])
 			totlen += len[i] = strlen(txt[i]);
