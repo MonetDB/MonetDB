@@ -223,7 +223,10 @@ _GDKtracer_layer_level_helper(int *layer, int *lvl)
         }
     }
     
+/* CHECK 
+ * this should only be called if you wish to trace the GDKtracer
     GDKtracer_show_info();
+*/
 
     return GDK_SUCCEED;
 }
@@ -276,7 +279,10 @@ GDKtracer_set_component_level(int *comp, int *lvl)
         return GDK_FAIL;
         
     LVL_PER_COMPONENT[*comp] = level;
+/* CHECK 
+ * this should only be called if you wish to trace the GDKtracer
     GDKtracer_show_info();
+*/
     return GDK_SUCCEED;
 }
 
