@@ -629,7 +629,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 				lng nr = l->nr;
 
 				if (mnstr_read(lg->log, &compressed, 1, 1) != 1)
-					return GDK_FAIL;
+					return LOG_ERR;
 
 				if (compressed) {
 					void *h = rh(hv, lg->log, 1);
@@ -639,7 +639,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 						res = LOG_EOF;
 					else {
 						BATtseqbase(uid, *(oid*)h);
-						BATsetcount(uid, l->nr);
+						BATsetcount(uid, (BUN) l->nr);
 					}
 				} else {
 					for (; res == LOG_OK && nr > 0; nr--) {
