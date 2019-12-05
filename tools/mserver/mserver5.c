@@ -676,7 +676,7 @@ main(int argc, char **av)
 	}
 
 	/* show log level per component and available layers */
-	GDKtracerinfo();
+	/* This should only be generated upon explicit request GDKtracerinfo(); */
 
 	emergencyBreakpoint();
 
