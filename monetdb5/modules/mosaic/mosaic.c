@@ -361,19 +361,22 @@ MOSestimate_AND_MOSoptimizerCost_DEF(hge)
 
 static
 str MOSestimate(MOStask task, BAT* estimates, size_t* compressed_size) {
+	str msg;
 	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: return MOSestimate_bte(task, estimates, compressed_size);
-	case TYPE_sht: return MOSestimate_sht(task, estimates, compressed_size);
-	case TYPE_int: return MOSestimate_int(task, estimates, compressed_size);
-	case TYPE_lng: return MOSestimate_lng(task, estimates, compressed_size);
-	case TYPE_flt: return MOSestimate_flt(task, estimates, compressed_size);
-	case TYPE_dbl: return MOSestimate_dbl(task, estimates, compressed_size);
+	case TYPE_bte: msg = MOSestimate_bte(task, estimates, compressed_size); break;
+	case TYPE_sht: msg = MOSestimate_sht(task, estimates, compressed_size); break;
+	case TYPE_int: msg = MOSestimate_int(task, estimates, compressed_size); break;
+	case TYPE_lng: msg = MOSestimate_lng(task, estimates, compressed_size); break;
+	case TYPE_flt: msg = MOSestimate_flt(task, estimates, compressed_size); break;
+	case TYPE_dbl: msg = MOSestimate_dbl(task, estimates, compressed_size); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: return MOSestimate_hge(task, estimates, compressed_size);
+	case TYPE_hge: msg = MOSestimate_hge(task, estimates, compressed_size); break;
 #endif
 	default: // Unknown block type. Should not happen.
 		assert(0);
 	}
+
+	return msg;
 }
 
 static str
