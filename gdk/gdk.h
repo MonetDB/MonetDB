@@ -537,22 +537,6 @@ typedef size_t BUN;
 #endif
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
 
-#define BUN2 2
-#define BUN4 4
-#if SIZEOF_BUN > 4
-#define BUN8 8
-#endif
-typedef uint16_t BUN2type;
-typedef uint32_t BUN4type;
-#if SIZEOF_BUN > 4
-typedef uint64_t BUN8type;
-#endif
-#define BUN2_NONE ((BUN2type) UINT16_C(0xFFFF))
-#define BUN4_NONE ((BUN4type) UINT32_C(0xFFFFFFFF))
-#if SIZEOF_BUN > 4
-#define BUN8_NONE ((BUN8type) UINT64_C(0xFFFFFFFFFFFFFFFF))
-#endif
-
 #include "gdk_atoms.h"
 
 /*
