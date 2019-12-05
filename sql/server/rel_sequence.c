@@ -295,7 +295,7 @@ rel_alter_seq(
 	}
 	if (val && val->card > CARD_ATOM) {
 		sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(val));
-		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, 0);
+		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, has_nil(val));
 	}
 	return rel_seq(sql->sa, ddl_alter_seq, s->base.name, seq, r, val);
 }

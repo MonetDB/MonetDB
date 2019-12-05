@@ -2137,7 +2137,7 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 
 					rsq = rel_groupby(sql, rsq, NULL); 
 					a = sql_bind_aggr(sql->sa, NULL, "null", exp_subtype(re));
-					rnull = exp_aggr1(sql->sa, re, a, 0, 1, CARD_AGGR, 0);
+					rnull = exp_aggr1(sql->sa, re, a, 0, 1, CARD_AGGR, has_nil(re));
 					rnull = rel_groupby_add_aggr(sql, rsq, rnull);
 
 					if (is_notequal_func(sf))

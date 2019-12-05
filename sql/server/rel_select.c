@@ -2771,7 +2771,7 @@ rel_unop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 	}
-	e = rel_value_exp(query, rel, l->next->data.sym, fs, iek);
+	e = rel_value_exp(query, rel, l->next->data.sym, fs|sql_farg, iek);
 	if (!e) {
 		if (!f && *rel && (*rel)->card == CARD_AGGR) {
 			if (is_sql_having(fs) || is_sql_orderby(fs))
@@ -3150,7 +3150,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	int err = 0;
 
 	for (; ops; ops = ops->next, nr_args++) {
-		sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs, iek);
+		sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs|sql_farg, iek);
 		sql_subtype *tpe;
 
 		if (!e) 
@@ -3374,7 +3374,6 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		}
 		return e;
 	} 
-
 
 	/* use cnt as nils shouldn't be counted */
 	no_nil = 1;
