@@ -426,21 +426,25 @@ GDKtracer_log(LOG_LEVEL level, char *fmt, ...)
             {
                 MT_lock_unset(&lock);
 
+                GDK_TRACER_OSTREAM("Failed to write to the buffer (bytes_written = %d)\n", bytes_written);
                 // Fallback logging mechanism 
-                va_list va;
-                va_start(va, fmt);
-                GDK_TRACER_OSTREAM(fmt, va);
-                va_end(va);
+                // va_list va;
+                // va_start(va, fmt);
+                // GDK_TRACER_OSTREAM(fmt, va);
+                // va_end(va);
             }
         }
     }
     else
     {
+        MT_lock_unset(&lock);
+
+        GDK_TRACER_OSTREAM("Failed to write to the buffer (bytes_written = %d)\n", bytes_written);
         // Fallback logging mechanism 
-        va_list va;
-        va_start(va, fmt);
-        GDK_TRACER_OSTREAM("%s", fmt);
-        va_end(va);
+        // va_list va;
+        // va_start(va, fmt);
+        // GDK_TRACER_OSTREAM("%s", fmt);
+        // va_end(va);
     }
 
     // Flush the current buffer in case the event is 
@@ -513,7 +517,6 @@ GDKtracer_flush_buffer(void)
         active_tracer->allocated_size = 0;
         MT_lock_unset(&lock);
 
-        /* WHY THE FCK YOU GET PRINTED 7 TIMES? */
         GDK_TRACER_OSTREAM("Using adapter: %s\n", ADAPTER_STR[(int) ATOMIC_GET(&CUR_ADAPTER)]);
     }
 
