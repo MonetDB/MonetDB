@@ -292,11 +292,7 @@ mdbInit(void)
 	 * space in each instruction.
 	 */
 	mdbTable = GDKzalloc(sizeof(mdbStateRecord) * MAL_MAXCLIENTS);
-	if (mdbTable == NULL) {
-		TRC_CRITICAL(MAL_DEBUGGER, "Initialization failed: " MAL_MALLOC_FAIL "\n");
-		return false;
-	}
-	return true;
+	return mdbTable != NULL;
 }
 
 void

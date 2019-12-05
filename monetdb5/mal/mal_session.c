@@ -103,11 +103,7 @@ MSresetClientPrg(Client cntxt, str mod, str fcn)
 
 	/* CHECK */
 	// nme variable is missing?
-	// TRC_DEBUG(MAL_SESSION, "Reset sym '%s %s' to '%s', id %d\n", cntxt->curprg->name, getFunctionId(p), nme, findVariable(mb, nme));
 	
-	TRC_DEBUG(MAL_SESSION, "vtop: %d\n", mb->vtop);
-	if( mb->vtop)
-		TRC_DEBUG(MAL_SESSION, "First variable: %s\n", mb->var[0].id);
 
 	setModuleId(p, mod);
 	setFunctionId(p, fcn);
@@ -287,7 +283,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			if (err != NULL) {
 				/* this is kind of awful, but we need to get rid of this
 				 * message */
-				TRC_ERROR(MAL_SESSION, "msab_getMyStatus: %s\n", err);
 				free(err);
 				mnstr_printf(fout, "!internal server error, "
 							 "please try again later\n");
@@ -431,7 +426,6 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i;
 
-	TRC_DEBUG(MAL_SESSION, "Reset variables %d vtop and %d errors %s\n", start, mb->vtop, mb->errors);
 	for (i = 0; i < start && i < mb->vtop ; i++)
 		setVarUsed(mb,i);
 	if (mb->errors == MAL_SUCCEED)
@@ -450,10 +444,8 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 			}
 		}
 
-	TRC_DEBUG(MAL_SESSION, "Reset variable: %s %d\n", getFunctionId(mb->stmt[0]), mb->var[mb->stmt[0]->argv[0]].used);
 	if (mb->errors == MAL_SUCCEED)
 		trimMalVariables_(mb, glb);
-	TRC_DEBUG(MAL_SESSION, "After trim: %s %d\n", getFunctionId(mb->stmt[0]), mb->vtop);
 }
 
 /*

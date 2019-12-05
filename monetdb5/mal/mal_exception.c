@@ -68,7 +68,7 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 		/* Leave a message behind in the logging system */
 		len = snprintf(local, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
 		len = vsnprintf(local + len, GDKMAXERRLEN, format, ap);
-		TRC_CRITICAL(MAL_EXCEPTION, "%s\n", local);
+		TRC_ERROR(MAL_EXCEPTION, "%s\n", local);
 		return M5OutOfMemory;	/* last resort */
 	}
 	len = snprintf(message, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);

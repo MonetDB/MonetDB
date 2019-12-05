@@ -112,7 +112,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	 * Simplify polytype using a map into the concrete argument table.
 	 */
 
-	TRC_DEBUG(MAL_RESOLVE, "Find function type: %s.%s\n", getModuleId(p), getFunctionId(p));
 	m = scope;
 	s = m->space[(int) (getSymbolIndex(getFunctionId(p)))];
 	if (s == 0)
@@ -177,15 +176,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 			if (sig->retc != p->retc && !(sig->varargs & VARRETS)) {
 				s = s->peer;
 				continue;
-			}
-
-			/* CHECK */
-			// If is in DEBUG MAL_RESOLVE
-			if (sig->polymorphic || sig->retc == p->retc) {
-				TRC_DEBUG(MAL_RESOLVE, "Resolving\n");
-				debugInstruction(MAL_RESOLVE, mb, 0, p, LIST_MAL_ALL);
-				TRC_DEBUG(MAL_RESOLVE, "Against\n");
-				debugInstruction(MAL_RESOLVE, s->def, 0, getSignature(s), LIST_MAL_ALL);
 			}
 
 			for (k = 0; k < limit; k++)
@@ -271,14 +261,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 				continue;
 			}
 
-			/* CHECK */
-			// If is in DEBUG MAL_RESOLVE
-			if (sig->polymorphic || sig->retc == p->retc) {
-				TRC_DEBUG(MAL_RESOLVE, "Resolving\n");
-				debugInstruction(MAL_RESOLVE, mb, 0, p, LIST_MAL_ALL);
-				TRC_DEBUG(MAL_RESOLVE, "Against\n");
-				debugInstruction(MAL_RESOLVE, s->def, 0, getSignature(s), LIST_MAL_ALL);
-			}
 
 			for (i = p->retc; i < p->argc; i++) {
 				int actual = getArgType(mb, p, i);
@@ -298,7 +280,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 					//	GDKfree(ftpe);
 					//	GDKfree(atpe);
 					// #endif
-					TRC_DEBUG(MAL_RESOLVE, "Unmatched '%d' (formal: %s - actual: %s)\n", i, getTypeName(formal), getTypeName(actual));	
 					unmatched = i;
 					break;
 				}
@@ -312,33 +293,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		 * An optimizer may at a later stage automatically insert such
 		 * coercion requests.
 		 */
-		/* CHECK */
-		// From here
-		TRC_DEBUG(MAL_RESOLVE, 
-			"Finished %s.%s unmatched=%d polymorphic=%d %d\n",
-			getModuleId(sig), getFunctionId(sig), unmatched,
-			sig->polymorphic, p == sig);
-
-		if (sig->polymorphic) {
-			int l;
-			for (l = 0; l < 2 * p->argc; l++)
-				if (polytype[l] != TYPE_any) {
-					TRC_DEBUG(MAL_RESOLVE, "Polymorphic: %d %s\n", l, getTypeName(polytype[l]));
-				}
-		}
-
-		TRC_DEBUG(MAL_RESOLVE, "Resolving\n");
-		debugInstruction(MAL_RESOLVE, mb, 0, p, LIST_MAL_ALL);
-		TRC_DEBUG(MAL_RESOLVE, "Against\n");
-		debugInstruction(MAL_RESOLVE, s->def, 0, getSignature(s), LIST_MAL_ALL);
-
-		if(unmatched)
-			TRC_DEBUG(MAL_RESOLVE,
-				"Unmatched '%d' (test: %s - polymorphic: %s)\n",
-				unmatched, 
-				getTypeName(getArgType(mb, p, unmatched)), 
-				getTypeName(getArgType(s->def, sig, unmatched)));
-		// Till here - in in DEBUG MAL_RESOLVE
 
 		if (unmatched) {
 			s = s->peer;
@@ -404,7 +358,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		 * Also mark all variables that are subject to garbage control.
 		 * Beware, this is not yet effectuated in the interpreter.
 		 */
-		TRC_DEBUG(MAL_RESOLVE, "Type resolved\n");
 		debugInstruction(MAL_RESOLVE, mb, 0, p, LIST_MAL_DEBUG);
 
 		p->typechk = TYPE_RESOLVED;
@@ -482,9 +435,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	 * arguments, but that clashes with one of the target variables.
 	 */
   wrapup:
-	TRC_DEBUG(MAL_RESOLVE, "Wrapup matching returntype '%d' returns '%d'\n", *returntype, *returns);
-	debugInstruction(MAL_RESOLVE, mb, 0, p, LIST_MAL_ALL);
-
 	if (returntype != returns)
 		GDKfree(returntype);
 	return -3;
@@ -493,8 +443,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 int
 resolveType(int dsttype, int srctype)
 {
-	TRC_DEBUG(MAL_RESOLVE, "Resolve type dst %s(%d) %s(%d)\n", getTypeName(dsttype), dsttype, getTypeName(srctype), srctype);
-
 	if (dsttype == srctype)
 		return dsttype;
 	if (dsttype == TYPE_any)
@@ -519,16 +467,10 @@ resolveType(int dsttype, int srctype)
 		else if (t2 == TYPE_any)
 			t3 = t1;
 		else {
-			TRC_DEBUG(MAL_RESOLVE, "Tail cannot be resolved\n");
 			return -1;
 		}
-		TRC_DEBUG(MAL_RESOLVE, 
-			"Resolved to bat[:oid,:%s] bat[:oid,:%s] -> bat[:oid,%s:%d]\n", 
-			getTypeName(t1), getTypeName(t2), getTypeName(t3), getTypeIndex(dsttype));
 		return newBatType(t3);
 	}
-
-	TRC_DEBUG(MAL_RESOLVE, "Cannot be resolved\n");
 	return -1;
 }
 
@@ -592,7 +534,6 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	if (getFunctionId(p) && getModuleId(p)) {
 		m = findModule(scope, getModuleId(p));
 		s1 = findFunctionType(m, mb, p, silent);
-		TRC_DEBUG(MAL_RESOLVE, "Matched: %d\n", s1);
 
 		if (s1 >= 0)
 			return;
@@ -630,8 +571,6 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 			p->typechk = TYPE_UNKNOWN;
 		} else
 			p->typechk = TYPE_RESOLVED;
-
-		TRC_DEBUG(MAL_RESOLVE, "No-sig and no-oly could not find it: %d\n", p->typechk);
 		return;
 	}
 	/*
@@ -641,7 +580,6 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	 * variables.
 	 */
 	if (getFunctionId(p)){
-		TRC_DEBUG(MAL_RESOLVE, "Function call break: %s\n", getFunctionId(p));
 		return;
 	}
 	if (p->retc >= 1 && p->argc > p->retc && p->argc != 2 * p->retc) {
@@ -659,7 +597,6 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 			s1 = resolveType(lhs, rhs);
 			if (s1 == -1) {
 				typeMismatch(mb, p, lhs, rhs, silent);
-				TRC_DEBUG(MAL_RESOLVE, "Function mismatch: %s\n", getFunctionId(p));
 				return;
 			}
 		} else {
@@ -818,7 +755,6 @@ updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 	if (formal == TYPE_bat && isaBatType(actual))
 		return 0;
 
-	TRC_DEBUG(MAL_RESOLVE, "Formal: %s - Actual: %s\n", getTypeName(formal), getTypeName(actual));
 	if ((h = getTypeIndex(formal))) {
 		if (isaBatType(actual) && !isaBatType(formal) &&
 			(polytype[h] == TYPE_any || polytype[h] == actual)) {
@@ -843,6 +779,5 @@ updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 			return -1;
 	}
   updLabel:
-	TRC_DEBUG(MAL_RESOLVE, "Returns: %d\n", ret);
 	return ret;
 }

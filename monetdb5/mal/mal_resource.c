@@ -113,14 +113,12 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 	 * of parallism for a single dataflow graph.
 	 */
 	if(cntxt->workerlimit && cntxt->workerlimit < stk->workers){
-		TRC_DEBUG(PAR, "Worker limit reached, %d <= %d\n", cntxt->workerlimit, stk->workers);
 		MT_lock_unset(&admissionLock);
 		return -1;
 	}
 	/* Determine if the total memory resource is exhausted, because it is overall limitation.  */
 	if ( memorypool <= 0){
 		// we accidently released too much memory or need to initialize
-		TRC_DEBUG(PAR, "Memorypool reset\n");
 		memorypool = (lng) MEMORY_THRESHOLD;
 	}
 
@@ -132,22 +130,16 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 		if ( 0 &&  cntxt->memorylimit) {
 			if (argclaim + stk->memory > (lng) cntxt->memorylimit * LL_CONSTANT(1048576)){
 				MT_lock_unset(&admissionLock);
-				TRC_DEBUG(PAR, "Delayed due to lack of session memory " LLFMT " requested "LLFMT"\n", 
-							stk->memory, argclaim);
 				return -1;
 			}
 			stk->memory += argclaim;
 		}
 		*/
 		memorypool -= argclaim;
-		TRC_DEBUG(PAR, "Thread %d pool " LLFMT "claims " LLFMT "\n",
-					THRgettid(), memorypool, argclaim);
 		stk->workers++;
 		MT_lock_unset(&admissionLock);
 		return 0;
 	}
-	TRC_DEBUG(PAR, "Delayed due to lack of memory " LLFMT " requested " LLFMT "\n", 
-			memorypool, argclaim);
 	MT_lock_unset(&admissionLock);
 	return -1;
 }
@@ -165,18 +157,14 @@ MALadmission_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, ln
 	MT_lock_set(&admissionLock);
 	/* on hold until after experiments
 	if ( 0 && cntxt->memorylimit) {
-		TRC_DEBUG(PAR, "Return memory to session budget " LLFMT "\n", stk->memory);
 		stk->memory -= argclaim;
 	}
 	*/
 	memorypool += argclaim;
 	if ( memorypool > (lng) MEMORY_THRESHOLD ){
-		TRC_DEBUG(PAR, "Memorypool reset\n");
 		memorypool = (lng) MEMORY_THRESHOLD;
 	}
 	stk->workers--;
-	TRC_DEBUG(PAR, "Thread %d pool " LLFMT " claims " LLFMT "\n",
-				THRgettid(), memorypool, argclaim);
 	MT_lock_unset(&admissionLock);
 	return;
 }

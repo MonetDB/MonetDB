@@ -903,8 +903,6 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 
 	/* build the alias table */
 	for (i = 0; i < mb->vtop; i++) {
-		TRC_DEBUG(MAL_REDUCE, "Used: %s %d\n", getVarName(mb,i), isVarUsed(mb,i));
-
 		if ( isVarUsed(mb,i) == 0) {
 			if (glb && isVarConstant(mb, i))
 				VALclear(&glb->stk[i]);
@@ -928,18 +926,11 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 		cnt++;
 	}
 
-	/* CHECK */
-	// The 1st DEBUG message and the for loop are both in DEBUG MAL_REDUCE
-	TRC_DEBUG(MAL_REDUCE, "Variable reduction %d -> %d\n", mb->vtop, cnt);
-	for (i = 0; i < mb->vtop; i++)
-		TRC_DEBUG(MAL_REDUCE, "map %d -> %d\n", i, alias[i]);
-
 	/* remap all variable references to their new position. */
 	if (cnt < mb->vtop) {
 		for (i = 0; i < mb->stop; i++) {
 			q = getInstrPtr(mb, i);
 			for (j = 0; j < q->argc; j++){
-				TRC_DEBUG(MAL_REDUCE, "map %d -> %d\n", getArg(q,j), alias[getArg(q,j)]);
 				getArg(q, j) = alias[getArg(q, j)];
 			}
 		}
@@ -950,9 +941,6 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 	if( isTmpVar(mb,i))
         (void) snprintf(mb->var[i].id, IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
 	
-	TRC_DEBUG(MAL_REDUCE, "After reduction\n");
-	debugFunction(MAL_REDUCE, mb, 0, 0);
-
 	GDKfree(alias);
 	mb->vtop = cnt;
 }

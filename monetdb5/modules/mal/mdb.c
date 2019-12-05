@@ -567,7 +567,7 @@ MDBlistDetail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
 	(void) stk;
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS);
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_DEBUG);
 	return MAL_SUCCEED;
 }
 
@@ -581,7 +581,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	s = findSymbol(cntxt->usermodule, putName(modnme), putName(fcnnme));
 	if (s == NULL)
 		throw(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
-	printFunction(cntxt->fdout, s->def, 0,  LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS);
+	printFunction(cntxt->fdout, s->def, 0,  LIST_MAL_DEBUG);
 	(void) mb;		/* fool compiler */
 	return NULL;
 }

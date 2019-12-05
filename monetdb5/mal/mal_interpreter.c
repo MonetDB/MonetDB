@@ -390,8 +390,6 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	InstrPtr pci = getInstrPtr(mb, 0);
 
 	cntxt->lastcmd= time(0);
-	TRC_DEBUG(MAL_INTERPRETER, "Enter callMAL\n");
-	debugInstruction(MAL_INTERPRETER, mb, 0, pci, LIST_MAL_ALL);
 
 	switch (pci->token) {
 	case FUNCTIONsymbol:
@@ -867,7 +865,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						bat bid = stk->stk[a].val.bval;
 
 						if (garbage[i] >= 0) {
-							TRC_DEBUG(PAR, "GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
 							bid = stk->stk[garbage[i]].val.bval;
 							stk->stk[garbage[i]].val.bval = bat_nil;
 							BBPrelease(bid);
