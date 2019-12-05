@@ -1,6 +1,4 @@
 ####technical depth####
-Create test for swapped join.
-Add test for default join and COUI case both in MAL and in SQL.
 Add lots of tests with candidate lists for all
 Add test for float/double
 Add test for huge
