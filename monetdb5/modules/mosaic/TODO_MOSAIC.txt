@@ -2,15 +2,15 @@
 Add lots of tests with candidate lists for all
 Add test for float/double
 Add test for huge
-Be sure alignment is correct. Use asserts for this.
+Be sure alignment is correct. Use asserts and type specialized block headers for this.(1*)
 Check MOSanalysis and its test.
 Fix/check/test MOSlayout.
 Introduce mosaic into gdk: create hooks in scanselect functions/macro's, joins and projections.
 benchmark using TPC-H
 make mitosis work with mosaic and see how this relates to the previous landmark stuff.
-Apply compressed operations more directly: on keys in dictionary compression (1)
-Apply compressed operations more directly: on prefix|suffix in prefix compression (1)
-Apply compressed operations more directly: on delta's and frame in frame compression (1)
+Apply compressed operations more directly: on keys in dictionary compression
+Apply compressed operations more directly: on prefix|suffix in prefix compression
+Apply compressed operations more directly: on delta's and frame in frame compression
 consider packing mosaic_block_header's more efficiently.
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
 DO nil checking more efficient similar to gdk_select
@@ -21,5 +21,5 @@ See if the iteration algorithms can be improved.
 Get rid of (most of) MOStask and/or don't allocate it on the heap.
 Make sure the parameters.bits fields are always char.
 Use GDK naming conventions, e.g. o for stuff coming out if canditer_next.
-Make block headers specific by having type parametrized blockheader struct's.
+Make block headers specific by having type parametrized blockheader struct's.(1)
 Update copyright in 2020.
