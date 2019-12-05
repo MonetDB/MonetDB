@@ -408,4 +408,69 @@ from
 where (subq_0.c3 is not null) 
  or (subq_0.c0 is not null);
 
+select 
+ cast(coalesce(subq_1.c0,
+ subq_1.c1) as int) as c0
+from 
+ (select 
+ subq_0.c6 as c0, 
+ subq_0.c0 as c1
+ from 
+ (select 
+ ref_1.ln as c0, 
+ ref_1.ln as c1, 
+ ref_0.name as c2, 
+ ref_1.ln as c3, 
+ ref_0.fullname as c4, 
+ ref_1.sn as c5, 
+ ref_0.default_schema as c6, 
+ ref_1.sp as c7, 
+ 5 as c8, 
+ ref_1.ln as c9, 
+ ref_1.ur as c10, 
+ ref_0.name as c11, 
+ ref_0.default_schema as c12
+ from 
+ sys.users as ref_0
+ inner join bam.sq as ref_1
+ on (ref_0.default_schema = ref_1.ln )
+ where exists (
+ select 
+ ref_1.ur as c0
+ from 
+ sys.privilege_codes as ref_2
+ where (((exists (
+ select 
+ ref_3.table_type_name as c0
+ from 
+ sys.table_types as ref_3
+ where true)) 
+ or (((true) 
+ or (ref_1.m5 is not null)) 
+ and (false))) 
+ and ((exists (
+ select 
+ 87 as c0, 
+ ref_1.sp as c1, 
+ ref_1.m5 as c2, 
+ ref_0.name as c3, 
+ ref_4.type as c4, 
+ ref_4.rkey as c5, 
+ ref_1.ln as c6, 
+ ref_1.ln as c7, 
+ ref_2.privilege_code_name as c8, 
+ ref_4.type as c9
+ from 
+ tmp.keys as ref_4
+ where ref_1.file_id is not null)) 
+ and (ref_2.privilege_code_id is null))) 
+ and (ref_1.m5 is null))
+ limit 26) as subq_0
+ where (subq_0.c3 is null) 
+ and ((false) 
+ or (true))) as subq_1
+where (subq_1.c1 is not null) 
+ and (subq_1.c0 is not null)
+limit 79;
+
 ROLLBACK;

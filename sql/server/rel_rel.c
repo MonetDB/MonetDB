@@ -102,8 +102,8 @@ rel_create( sql_allocator *sa )
 	r->nrcols = 0;
 	r->flag = 0;
 	r->card = CARD_ATOM;
+	r->distinct = 0;
 	r->processed = 0;
-	r->single = 0;
 	r->dependent = 0;
 	r->subquery = 0;
 	r->p = NULL;
@@ -1650,8 +1650,8 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 			cond_append(l, &a->aggr->base.id);
 		} break;
 	case e_cmp: {
-			if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
-				if (get_cmp(e) == cmp_filter) {
+			if (e->flag == cmp_or || e->flag == cmp_filter) {
+				if (e->flag == cmp_filter) {
 					sql_subfunc *f = e->f;
 					cond_append(l, &f->func->base.id);
 				}
@@ -1816,7 +1816,7 @@ exp_visitor(mvc *sql, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr exp_
 				return NULL;
 		break;
 	case e_cmp:	
-		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			if ((e->l = exps_exp_visitor(sql, rel, e->l, depth+1, exp_rewriter)) == NULL)
 				return NULL;
 			if ((e->r = exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter)) == NULL)
@@ -1974,7 +1974,7 @@ exp_rel_visitor(mvc *sql, sql_exp *e, rel_rewrite_fptr rel_rewriter)
 				return NULL;
 		break;
 	case e_cmp:	
-		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			if ((e->l = exps_rel_visitor(sql, e->l, rel_rewriter)) == NULL)
 				return NULL;
 			if ((e->r = exps_rel_visitor(sql, e->r, rel_rewriter)) == NULL)

@@ -110,6 +110,20 @@ QUERY = SELECT
         FROM another_T t1;
 ERROR = !zero_or_one: cardinality violation, scalar expression expected
 CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-18306/.s.monetdb.35753
+QUERY = SELECT
+            SUM(SUM(t1.col7) * CAST (NOT t1.col1 IN (SELECT 1) AS INTEGER)) OVER ()
+        FROM another_T t1
+        GROUP BY t1.col7; --error, column "t1.col1" must appear in the GROUP BY clause or be used in an aggregate function
+ERROR = !SELECT: cannot use non GROUP BY column 't1.col1' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-18306/.s.monetdb.35753
+QUERY = SELECT
+            SUM(CAST(SUM(t1.col6 * CAST (NOT t1.col1 IN (SELECT t2.col2 FROM another_T t2 GROUP BY t2.col2) AS INTEGER)) < ANY (SELECT MAX(ColID + t1.col7 - t1.col2) FROM tbl_ProductSales) AS INT)) OVER (PARTITION BY SUM(t1.col5) ORDER BY (SELECT MIN(t1.col6 + t1.col5 - t2.col2) FROM another_T t2))
+        FROM another_T t1
+        GROUP BY t1.col7, t1.col6; --error, subquery uses ungrouped column "t1.col2" from outer query
+ERROR = !SELECT: cannot use non GROUP BY column 't1.col5' in query results without an aggregate function
+CODE  = 42000
 
 # 17:40:41 >  
 # 17:40:41 >  "Done."

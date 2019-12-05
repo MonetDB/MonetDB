@@ -1631,7 +1631,7 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 		if (c->base.name[0] != '%')
 			append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
-	res = rel_table_func(sql->sa, NULL, import, exps, 1);
+	res = rel_table_func(sql->sa, NULL, import, exps, TABLE_PROD_FUNC);
 	return res;
 }
 
@@ -1930,7 +1930,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 		sql_column *c = n->data;
 		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
-	res = rel_table_func(sql->sa, NULL, import, exps, 1);
+	res = rel_table_func(sql->sa, NULL, import, exps, TABLE_PROD_FUNC);
 	res = rel_insert_table(query, t, t->base.name, res);
 	if (res && !constraint)
 		res->flag |= UPD_NO_CONSTRAINT;
