@@ -28,8 +28,9 @@
     #undef free
 #endif
 
-static gdk_tracer tracer = { .allocated_size = 0, .id = 0 };
-static MT_Lock lock = MT_LOCK_INITIALIZER("GDKtracer");
+static gdk_tracer tracer = { .id = 0, .allocated_size = 0 };
+static gdk_tracer *active_tracer = &tracer;
+MT_Lock lock = MT_LOCK_INITIALIZER("GDKtracer_1");
 
 static FILE *output_file;
 static bool USE_STREAM = true;
@@ -383,52 +384,64 @@ GDKtracer_reset_adapter(void)
 gdk_return
 GDKtracer_log(LOG_LEVEL level, char *fmt, ...)
 {      
-    gdk_tracer *fill_tracer;
     int bytes_written = 0;
 
     MT_lock_set(&lock);
+    
+    va_list va;
+    va_start(va, fmt);
+    bytes_written = _GDKtracer_fill_tracer(active_tracer, fmt, va);
+    va_end(va);
+    
+    if(bytes_written >= 0)
     {
-        fill_tracer = &tracer;
-
-        va_list va;
-        va_start(va, fmt);
-        bytes_written = _GDKtracer_fill_tracer(fill_tracer, fmt, va);
-        va_end(va);
-
-        if(bytes_written < 0)
+        // The message fits the buffer OR the buffer is empty but the message does not fit (we cut it off)
+        if(bytes_written < (BUFFER_SIZE - active_tracer->allocated_size) || 
+            active_tracer->allocated_size == 0)
         {
-            // Catch the exception and use the fallback mechanism for logging
-            va_list va;
-            va_start(va, fmt);
-            GDK_TRACER_OSTREAM(fmt, va);
-            va_end(va);
+            active_tracer->allocated_size += bytes_written;
+            MT_lock_unset(&lock);
         }
         else
         {
-            // The message fits the buffer OR the buffer is empty but the message does not fit (we cut it off)
-            if(bytes_written < (BUFFER_SIZE - fill_tracer->allocated_size) || 
-                fill_tracer->allocated_size == 0)
-            {
-                fill_tracer->allocated_size += bytes_written;
-            }
-            else
-            {
-                GDKtracer_flush_buffer();
+            MT_lock_unset(&lock);
 
-                // Write to the new tracer
-                va_list va;
-                va_start(va, fmt);
-                bytes_written = _GDKtracer_fill_tracer(fill_tracer, fmt, va);
-                va_end(va);
+            GDKtracer_flush_buffer();
+            
+            MT_lock_set(&lock);
+            va_list va;
+            va_start(va, fmt);
+            bytes_written = _GDKtracer_fill_tracer(active_tracer, fmt, va);
+            va_end(va);
 
+            if(bytes_written >= 0)
+            {
                 // The second buffer will always be empty at start
                 // So if the message does not fit we cut it off
                 // message might be > BUFFER_SIZE
-                fill_tracer->allocated_size += bytes_written;      
+                active_tracer->allocated_size += bytes_written;  
+                MT_lock_unset(&lock);
+            }
+            else
+            {
+                MT_lock_unset(&lock);
+
+                // Fallback logging mechanism 
+                va_list va;
+                va_start(va, fmt);
+                GDK_TRACER_OSTREAM(fmt, va);
+                va_end(va);
             }
         }
     }
-    MT_lock_unset(&lock);
+    else
+    {
+        // Fallback logging mechanism 
+        va_list va;
+        va_start(va, fmt);
+        GDK_TRACER_OSTREAM("%s", fmt);
+        va_end(va);
+    }
 
     // Flush the current buffer in case the event is 
     // important depending on the flush-level
@@ -450,43 +463,57 @@ GDKtracer_log(LOG_LEVEL level, char *fmt, ...)
 gdk_return
 GDKtracer_flush_buffer(void)
 {
-    // Select a tracer
-    gdk_tracer *fl_tracer = &tracer;
-
     // No reason to flush a buffer with no content 
-    if(fl_tracer->allocated_size == 0)
+    MT_lock_set(&lock);
+    if(active_tracer->allocated_size == 0)
+    {
+        MT_lock_unset(&lock);
         return GDK_SUCCEED;
+    }
+    MT_lock_unset(&lock);
 
     if(ATOMIC_GET(&CUR_ADAPTER) == BASIC)
     {
-        // Check if file is open - if not send the output to GDKstdout. There are cases that 
-        // this is needed - e.g: on startup of mserver5 GDKmalloc is called before GDKinit. 
-        // In GDKinit GDKtracer is getting initialized (open_file and initialize log level 
-        // per component). Since the file is not open yet and there is an assert, we need 
-        // to do something - and as a backup plan we send the logs to GDKstdout.
-        if(output_file)
+        MT_lock_set(&lock);
         {
-            size_t nitems = 1;
-            size_t w = fwrite(&fl_tracer->buffer, fl_tracer->allocated_size, nitems, output_file);
+            // Check if file is open - if not send the output to GDKstdout. There are cases that 
+            // this is needed - e.g: on startup of mserver5 GDKmalloc is called before GDKinit. 
+            // In GDKinit GDKtracer is getting initialized (open_file and initialize log level 
+            // per component). Since the file is not open yet and there is an assert, we need 
+            // to do something - and as a backup plan we send the logs to GDKstdout.
+            if(output_file)
+            {
+                size_t nitems = 1;
+                size_t w = fwrite(&active_tracer->buffer, active_tracer->allocated_size, nitems, output_file);
 
-            if(w == nitems)
-            {   
-                USE_STREAM = false;
-                fflush(output_file);
+                if(w == nitems)
+                {   
+                    USE_STREAM = false;
+                    fflush(output_file);
+                }
             }
+
+            // fwrite failed for whatever reason 
+            // (e.g: disk is full) fallback to stream
+            if(USE_STREAM)
+            {
+                GDK_TRACER_OSTREAM("%s", active_tracer->buffer);
+            }
+                
+            // Reset buffer
+            memset(active_tracer->buffer, 0, BUFFER_SIZE);
+            active_tracer->allocated_size = 0;
         }
-
-        // fwrite failed for whatever reason 
-        // (e.g: disk is full) fallback to stream
-        if(USE_STREAM)
-            GDK_TRACER_OSTREAM("%s", fl_tracer->buffer);
-
-        // Reset buffer
-        memset(fl_tracer->buffer, 0, BUFFER_SIZE);
-        fl_tracer->allocated_size = 0;
+        MT_lock_unset(&lock);
     }
     else
     {
+        MT_lock_set(&lock);
+        memset(active_tracer->buffer, 0, BUFFER_SIZE);
+        active_tracer->allocated_size = 0;
+        MT_lock_unset(&lock);
+
+        /* WHY THE FCK YOU GET PRINTED 7 TIMES? */
         GDK_TRACER_OSTREAM("Using adapter: %s\n", ADAPTER_STR[(int) ATOMIC_GET(&CUR_ADAPTER)]);
     }
 
