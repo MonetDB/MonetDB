@@ -53,3 +53,4 @@ count-distinct.Bug-6790
 str_to_time.Bug-6791
 jsonpath-validity.Bug-6792
 cast-interval.Bug-6793
+could-not-allocate-space.Bug-6795
