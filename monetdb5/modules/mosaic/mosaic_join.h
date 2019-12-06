@@ -153,8 +153,6 @@ static str MOSjoin_COUI_##TPE(MOStask task, BAT* r, struct canditer* rci, bool n
 		}\
 	}\
 \
-	assert(MOSgetTag(task->blk) == MOSAIC_EOL);\
-\
 	return MAL_SUCCEED;\
 }
 
@@ -245,8 +243,6 @@ static str MOSjoin_COUI_##TPE(MOStask task, BAT* r, struct canditer* rci, bool n
 				break;\
 			}\
 		}\
-	\
-		assert(MOSgetTag(task->blk) == MOSAIC_EOL);\
 	}\
 }
 
