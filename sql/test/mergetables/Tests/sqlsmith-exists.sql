@@ -417,26 +417,26 @@ from
  subq_0.c0 as c1
  from 
  (select 
- ref_1.ln as c0, 
- ref_1.ln as c1, 
+ ref_1.col1 as c0, 
+ ref_1.col1 as c1, 
  ref_0.name as c2, 
- ref_1.ln as c3, 
+ ref_1.col1 as c3, 
  ref_0.fullname as c4, 
- ref_1.sn as c5, 
+ ref_1.col1 as c5, 
  ref_0.default_schema as c6, 
- ref_1.sp as c7, 
+ ref_1.col6 as c7, 
  5 as c8, 
- ref_1.ln as c9, 
- ref_1.ur as c10, 
+ ref_1.col1 as c9, 
+ ref_1.col4 as c10, 
  ref_0.name as c11, 
  ref_0.default_schema as c12
  from 
  sys.users as ref_0
- inner join bam.sq as ref_1
- on (ref_0.default_schema = ref_1.ln )
+ inner join another_T as ref_1
+ on (ref_0.default_schema = ref_1.col1 )
  where exists (
  select 
- ref_1.ur as c0
+ ref_1.col4 as c0
  from 
  sys.privilege_codes as ref_2
  where (((exists (
@@ -446,25 +446,25 @@ from
  sys.table_types as ref_3
  where true)) 
  or (((true) 
- or (ref_1.m5 is not null)) 
+ or (ref_1.col3 is not null)) 
  and (false))) 
  and ((exists (
  select 
  87 as c0, 
- ref_1.sp as c1, 
- ref_1.m5 as c2, 
+ ref_1.col2 as c1, 
+ ref_1.col3 as c2, 
  ref_0.name as c3, 
  ref_4.type as c4, 
  ref_4.rkey as c5, 
- ref_1.ln as c6, 
- ref_1.ln as c7, 
+ ref_1.col1 as c6, 
+ ref_1.col1 as c7, 
  ref_2.privilege_code_name as c8, 
  ref_4.type as c9
  from 
  tmp.keys as ref_4
- where ref_1.file_id is not null)) 
+ where ref_1.col5 is not null)) 
  and (ref_2.privilege_code_id is null))) 
- and (ref_1.m5 is null))
+ and (ref_1.col3 is null))
  limit 26) as subq_0
  where (subq_0.c3 is null) 
  and ((false) 
@@ -472,5 +472,105 @@ from
 where (subq_1.c1 is not null) 
  and (subq_1.c0 is not null)
 limit 79;
+
+select 
+ subq_2.c18 as c0, 
+ subq_0.c0 as c1, 
+ cast(coalesce(subq_0.c1,
+ subq_2.c5) as int) as c2, 
+ 92 as c3, 
+ subq_0.c1 as c4, 
+ subq_2.c21 as c5, 
+ subq_2.c24 as c6, 
+ subq_2.c11 as c7, 
+ subq_2.c13 as c8, 
+ subq_2.c16 as c9, 
+ case when subq_2.c26 is null then subq_2.c20 else subq_2.c20 end
+ as c10, 
+ subq_0.c0 as c11, 
+ subq_0.c0 as c12, 
+ subq_0.c1 as c13, 
+ subq_0.c1 as c14
+from 
+ (select 
+ ref_0.col7 as c0, 
+ ref_0.col2 as c1
+ from 
+ sys.another_t as ref_0
+ where (true) 
+ and ((ref_0.col4 is not null) 
+ and (ref_0.col5 is not null))
+ limit 58) as subq_0
+ inner join (select 
+ subq_1.c15 as c0, 
+ subq_1.c1 as c1, 
+ subq_1.c7 as c2, 
+ subq_1.c13 as c3, 
+ subq_1.c17 as c4, 
+ subq_1.c21 as c5, 
+ subq_1.c12 as c6, 
+ subq_1.c0 as c7, 
+ subq_1.c22 as c8, 
+ subq_1.c20 as c9, 
+ subq_1.c17 as c10, 
+ subq_1.c12 as c11, 
+ subq_1.c10 as c12, 
+ subq_1.c5 as c13, 
+ subq_1.c3 as c14, 
+ subq_1.c14 as c15, 
+ subq_1.c2 as c16, 
+ subq_1.c20 as c17, 
+ subq_1.c4 as c18, 
+ subq_1.c20 as c19, 
+ subq_1.c12 as c20, 
+ subq_1.c11 as c21, 
+ subq_1.c3 as c22, 
+ subq_1.c3 as c23, 
+ subq_1.c6 as c24, 
+ subq_1.c4 as c25, 
+ 85 as c26, 
+ subq_1.c0 as c27, 
+ subq_1.c12 as c28, 
+ subq_1.c16 as c29, 
+ subq_1.c19 as c30
+ from 
+ (select 
+ ref_1.col6 as c0, 
+ ref_1.col1 as c1, 
+ 18 as c2, 
+ ref_1.col8 as c3, 
+ ref_1.col4 as c4, 
+ ref_1.col1 as c5, 
+ ref_1.col2 as c6, 
+ ref_1.col5 as c7, 
+ ref_1.col7 as c8, 
+ ref_1.col3 as c9, 
+ ref_1.col4 as c10, 
+ ref_1.col2 as c11, 
+ ref_1.col3 as c12, 
+ ref_1.col4 as c13, 
+ ref_1.col6 as c14, 
+ ref_1.col3 as c15, 
+ ref_1.col4 as c16, 
+ ref_1.col5 as c17, 
+ ref_1.col2 as c18, 
+ ref_1.col2 as c19, 
+ ref_1.col2 as c20, 
+ ref_1.col8 as c21, 
+ ref_1.col6 as c22
+ from 
+ sys.another_t as ref_1
+ where true
+ limit 133) as subq_1
+ where (false) 
+ and ((subq_1.c2 is not null) 
+ or (false))
+ limit 115) as subq_2
+ on (((true) 
+ and (subq_2.c3 is null)) 
+ or (true))
+where case when subq_0.c1 is null then subq_2.c25 else subq_2.c25 end
+ is null
+limit 81;
 
 ROLLBACK;
