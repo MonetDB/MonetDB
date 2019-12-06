@@ -2904,7 +2904,8 @@ mvc_export_chunk_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* NOT USED */
 	if (pci->argc == 5) {
 		offset = (BUN) *getArgReference_int(stk, pci, 3);
-		nr = (BUN) *getArgReference_int(stk, pci, 4);
+		int cnt = *getArgReference_int(stk, pci, 4);
+		nr = cnt < 0 ? BUN_NONE : (BUN) cnt;
 	}
 
 	if ((msg = checkSQLContext(cntxt)) != NULL)

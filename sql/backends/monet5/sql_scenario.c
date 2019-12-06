@@ -1104,7 +1104,9 @@ SQLparser(Client c)
 			n = sscanf(in->buf + in->pos + 7, "%d %d %d", &v, &off, &len);
 
 		if (n == 2 || n == 3) {
-			if (mvc_export_chunk(be, out, v, off, n == 3 ? len : m->reply_size)) {
+			if (n == 2)
+				len = m->reply_size;
+			if (mvc_export_chunk(be, out, v, off, len < 0 ? BUN_NONE : (BUN) len)) {
 				msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed");
 				goto finalize;
 			}
