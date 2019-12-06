@@ -9225,7 +9225,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		if (level <= 0)
 			rel = rewrite(sql, rel, &rel_join_push_exps_down, &changes);
 
-		if (0) rel = rewrite(sql, rel, &rel_merge_identical_joins, &e_changes);
+		if (/* DISABLES CODE */ (0)) rel = rewrite(sql, rel, &rel_merge_identical_joins, &e_changes);
 	}
 
 	/* Important -> Re-write semijoins after rel_join_order */
