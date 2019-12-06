@@ -58,8 +58,8 @@ stdout of test 'nested_concat_query.Bug-3408` in directory 'sql/test/BugTracker-
 #declare dated integer;
 #declare stamp varchar(32);
 #select stamp;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 0 # length
 [ NULL	]
@@ -68,8 +68,8 @@ stdout of test 'nested_concat_query.Bug-3408` in directory 'sql/test/BugTracker-
 #set dated = '10';
 #set stamp = concat(concat(concat(concat(concat(concat('2013-11-', dated), ' '), dateh), ':'), datem), ':30.000000');
 #select stamp;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 26 # length
 [ "2013-11-10 11:12:30.000000"	]
@@ -80,8 +80,8 @@ stdout of test 'nested_concat_query.Bug-3408` in directory 'sql/test/BugTracker-
 #set stamp = concat(stamp, datem);
 #set stamp = concat(stamp, ':01.000000');
 #select stamp;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 26 # length
 [ "2013-11-10 11:12:01.000000"	]

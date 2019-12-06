@@ -33,7 +33,7 @@ stdout of test 'pyapi07` in directory 'sql/backends/monet5` itself:
 #	return numpy.percentile(v,q[0] * 100) 
 #};
 #SELECT rquantile(val,0.05) AS q5, rquantile(val,0.95) AS q95 FROM rval;
-% sys.L4,	sys.L7 # table_name
+% sys.%1,	sys.%2 # table_name
 % q5,	q95 # name
 % int,	int # type
 % 4,	5 # length

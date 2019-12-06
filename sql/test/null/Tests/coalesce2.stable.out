@@ -40,7 +40,7 @@ stdout of test 'coalesce2` in directory 'sql/test/null` itself:
 #      SELECT * FROM my_table1
 #     ) x
 #;
-% .L3 # table_name
+% .%3 # table_name
 % col1 # name
 % int # type
 % 1 # length
@@ -59,7 +59,7 @@ stdout of test 'coalesce2` in directory 'sql/test/null` itself:
 #      SELECT * FROM my_table1
 #     ) x
 #;
-% .L3 # table_name
+% .%17 # table_name
 % col1 # name
 % int # type
 % 1 # length

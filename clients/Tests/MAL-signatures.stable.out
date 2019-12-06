@@ -61,11 +61,12 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 # 16:19:19 >  
 
 #select * from sys.malfunctions() order by module, "function", address, signature, comment;
-% .L1,	.L1,	.L1,	.L1,	.L1 # table_name
+% .%1,	.%1,	.%1,	.%1,	.%1 # table_name
 % module,	function,	signature,	address,	comment # name
 % clob,	clob,	clob,	clob,	clob # type
 % 11,	28,	364,	38,	874 # length
 [ "aggr",	"allnotequal",	"command aggr.allnotequal(l:bat[:any_1], r:bat[:any_1]):bit ",	"SQLallnotequal;",	"if all values in r are not equal to l return true, else if r has nil nil else false"	]
+[ "aggr",	"anyequal",	"pattern aggr.anyequal(l:any_1, r:any_1):bit ",	"CMDvarEQ;",	""	]
 [ "aggr",	"anyequal",	"command aggr.anyequal(l:bat[:any_1], r:bat[:any_1]):bit ",	"SQLanyequal;",	"if any value in r is equal to l return true, else if r has nil nil else false"	]
 [ "aggr",	"avg",	"command aggr.avg(b:bat[:bte], g:bat[:oid], e:bat[:any_1]):bat[:dbl] ",	"AGGRavg13_dbl;",	"Grouped tail average on bte"	]
 [ "aggr",	"avg",	"command aggr.avg(b:bat[:dbl], g:bat[:oid], e:bat[:any_1]):bat[:dbl] ",	"AGGRavg13_dbl;",	"Grouped tail average on dbl"	]
@@ -128,6 +129,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "aggr",	"min",	"command aggr.min(b:bat[:any_1], g:bat[:oid], e:bat[:any_2]):bat[:any_1] ",	"AGGRmin3;",	""	]
 [ "aggr",	"min",	"command aggr.min(b:bat[:any_2]):any_2 ",	"ALGminany;",	"Return the lowest tail value or nil."	]
 [ "aggr",	"min",	"command aggr.min(b:bat[:any_2], skipnil:bit):any_2 ",	"ALGminany_skipnil;",	"Return the lowest tail value or nil."	]
+[ "aggr",	"not_anyequal",	"pattern aggr.not_anyequal(l:any_1, r:any_1):bit ",	"CMDvarNE;",	""	]
 [ "aggr",	"not_exist",	"command aggr.not_exist(b:bat[:any_2]):bit ",	"SQLnot_exist;",	""	]
 [ "aggr",	"not_exist",	"pattern aggr.not_exist(v:any_2):bit ",	"SQLnot_exist_val;",	""	]
 [ "aggr",	"prod",	"command aggr.prod(b:bat[:bte], g:bat[:oid], e:bat[:any_1]):bat[:bte] ",	"AGGRprod3_bte;",	"Grouped tail product on bte"	]
@@ -575,7 +577,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "algebra",	"project",	"pattern algebra.project(b:bat[:any_1], v:any_3):bat[:any_3] ",	"ALGprojecttail;",	"Fill the tail with a constant"	]
 [ "algebra",	"projection",	"command algebra.projection(left:bat[:oid], right:bat[:any_3]):bat[:any_3] ",	"ALGprojection;",	"Project left input onto right input."	]
 [ "algebra",	"projectionpath",	"pattern algebra.projectionpath(l:bat[:any]...):bat[:any] ",	"ALGprojectionpath;",	"Routine to handle join paths.  The type analysis is rather tricky."	]
-[ "algebra",	"rangejoin",	"command algebra.rangejoin(l:bat[:any_1], r1:bat[:any_1], r2:bat[:any_1], sl:bat[:oid], sr:bat[:oid], li:bit, hi:bit, estimate:lng) (X_0:bat[:oid], X_1:bat[:oid]) ",	"ALGrangejoin;",	"Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2"	]
+[ "algebra",	"rangejoin",	"command algebra.rangejoin(l:bat[:any_1], r1:bat[:any_1], r2:bat[:any_1], sl:bat[:oid], sr:bat[:oid], li:bit, hi:bit, anti:bit, symmetric:bit, estimate:lng) (X_0:bat[:oid], X_1:bat[:oid]) ",	"ALGrangejoin;",	"Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2"	]
 [ "algebra",	"reuse",	"command algebra.reuse(b:bat[:any_1]):bat[:any_1] ",	"ALGreuse;",	"Reuse a temporary BAT if you can. Otherwise,\n\tallocate enough storage to accept result of an\n \toperation (not involving the heap)"	]
 [ "algebra",	"select",	"command algebra.select(b:bat[:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit):bat[:oid] ",	"ALGselect1;",	"Select all head values for which the tail value is in range.\n\tInput is a dense-headed BAT, output is a dense-headed BAT with in\n\tthe tail the head value of the input BAT for which the tail value\n\tis between the values low and high (inclusive if li respectively\n\thi is set).  The output BAT is sorted on the tail value.  If low\n\tor high is nil, the boundary is not considered (effectively - and\n\t+ infinity).  If anti is set, the result is the complement.  Nil\n\tvalues in the tail are never matched, unless low=nil, high=nil,\n\tli=1, hi=1, anti=0.  All non-nil values are returned if low=nil,\n\thigh=nil, and li, hi are not both 1, or anti=1.\n\tNote that the output is suitable as second input for the other\n\tversion of this function."	]
 [ "algebra",	"select",	"command algebra.select(b:bat[:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit, unknown:bit):bat[:oid] ",	"ALGselect1nil;",	"With unknow set, each nil != nil"	]
@@ -679,7 +681,6 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "bat",	"setColumn",	"command bat.setColumn(b:bat[:any_1], t:str):void ",	"BKCsetColumn;",	"Give a logical name to the tail column of a BAT."	]
 [ "bat",	"setHash",	"command bat.setHash(b:bat[:any_1]):bit ",	"BKCsetHash;",	"Create a hash structure on the column"	]
 [ "bat",	"setImprints",	"command bat.setImprints(b:bat[:any_1]):bit ",	"BKCsetImprints;",	"Create an imprints structure on the column"	]
-[ "bat",	"setKey",	"command bat.setKey(b:bat[:any_1], mode:bit):bat[:any_1] ",	"BKCsetkey;",	"Sets the 'key' property of the tail column to 'mode'. In 'key' mode,\n        the kernel will silently block insertions that cause a duplicate\n        entry in the head column."	]
 [ "bat",	"setName",	"command bat.setName(b:bat[:any_1], s:str):void ",	"BKCsetName;",	"Give a logical name to a BAT. "	]
 [ "bat",	"setPersistent",	"command bat.setPersistent(b:bat[:any_1]):void ",	"BKCsetPersistent;",	"Make the BAT persistent."	]
 [ "bat",	"setTransient",	"command bat.setTransient(b:bat[:any_1]):void ",	"BKCsetTransient;",	"Make the BAT transient.  Returns \n\tboolean which indicates if the\nBAT administration has indeed changed."	]
@@ -10774,10 +10775,13 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "clients",	"setquerytimeout",	"pattern clients.setquerytimeout(sid:bte, n:int):void ",	"CLTqueryTimeout;",	""	]
 [ "clients",	"setquerytimeout",	"pattern clients.setquerytimeout(sid:int, n:int):void ",	"CLTqueryTimeout;",	"A query is aborted after q seconds (q=0 means run undisturbed)."	]
 [ "clients",	"setquerytimeout",	"pattern clients.setquerytimeout(sid:sht, n:int):void ",	"CLTqueryTimeout;",	""	]
+[ "clients",	"setsession",	"pattern clients.setsession(n:lng):void ",	"CLTsetSessionTimeout;",	"Abort a session after  n seconds."	]
 [ "clients",	"setsessiontimeout",	"pattern clients.setsessiontimeout(n:int):void ",	"CLTsessionTimeout;",	""	]
 [ "clients",	"setsessiontimeout",	"pattern clients.setsessiontimeout(sid:bte, n:int):void ",	"CLTsessionTimeout;",	""	]
 [ "clients",	"setsessiontimeout",	"pattern clients.setsessiontimeout(sid:int, n:int):void ",	"CLTsessionTimeout;",	"Set the session timeout for a particulat session id"	]
 [ "clients",	"setsessiontimeout",	"pattern clients.setsessiontimeout(sid:sht, n:int):void ",	"CLTsessionTimeout;",	""	]
+[ "clients",	"settimeout",	"pattern clients.settimeout(n:lng):void ",	"CLTsetTimeout;",	"Abort a query after  n seconds."	]
+[ "clients",	"settimeout",	"pattern clients.settimeout(q:lng, s:lng):void ",	"CLTsetTimeout;",	"Abort a query after q seconds (q=0 means run undisturbed).\nThe session timeout aborts the connection after spending too\nmany seconds on query processing."	]
 [ "clients",	"setworkerlimit",	"pattern clients.setworkerlimit(n:int):void ",	"CLTsetworkerlimit;",	""	]
 [ "clients",	"setworkerlimit",	"pattern clients.setworkerlimit(sid:int, n:int):void ",	"CLTsetworkerlimit;",	"Limit the number of worker threads per query"	]
 [ "clients",	"sha1sum",	"command clients.sha1sum(pw:str):str ",	"CLTsha1sum;",	"Return hex string representation of the SHA-1 hash of the given string"	]

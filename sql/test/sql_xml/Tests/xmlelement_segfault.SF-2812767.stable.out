@@ -32,8 +32,8 @@ stdout of test 'xmlelement_segfault.SF-2812767` in directory 'sql/test/sql_xml` 
 #x varchar(64)
 #);
 #select xmlelement(name a, xmlagg(xmlelement(name b, x))) from test;
-% .L2 # table_name
-% L2 # name
+% .%4 # table_name
+% %4 # name
 % xml # type
 % 0 # length
 [ NULL	]

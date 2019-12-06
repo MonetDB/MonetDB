@@ -35,7 +35,14 @@ stdout of test '58` in directory 'sql/benchmarks/tpcds` itself:
 #        FROM date_dim
 #        WHERE d_week_seq =
 #            (SELECT d_week_seq
-% sys.ss_items,	sys.ss_items,	sys.L56,	sys.cs_items,	sys.L61,	sys.ws_items,	sys.L64,	sys.L66 # table_name
+#             FROM date_dim
+#             WHERE d_date = '2000-01-03'))
+#     AND ss_sold_date_sk = d_date_sk
+#   GROUP BY i_item_id),
+#     cs_items AS
+#  (SELECT i_item_id item_id,
+#          sum(cs_ext_sales_price) cs_item_rev
+% sys.ss_items,	sys.ss_items,	sys.,	sys.cs_items,	sys.,	sys.ws_items,	sys.,	sys. # table_name
 % item_id,	ss_item_rev,	ss_dev,	cs_item_rev,	cs_dev,	ws_item_rev,	ws_dev,	average # name
 % char,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal # type
 % 16,	40,	40,	40,	40,	40,	40,	40 # length

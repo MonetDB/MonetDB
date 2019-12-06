@@ -31,8 +31,8 @@ stdout of test 'sqlitelogictest-wrong-select-not-between.Bug-6511` in directory 
 #INSERT INTO tab2 VALUES(46,51,23);
 [ 1	]
 #SELECT ALL - col0 / col0 FROM tab2 cor0 WHERE - col0 NOT BETWEEN ( + col1 + - 0 ) AND ( NULL );
-% sys.L1 # table_name
-% L1 # name
+% sys.%2 # table_name
+% %2 # name
 % int # type
 % 2 # length
 [ -1	]

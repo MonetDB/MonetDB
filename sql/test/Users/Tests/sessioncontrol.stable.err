@@ -21,7 +21,6 @@ stderr of test 'sessioncontrol` in directory 'sql/test/Users` itself:
 #client2:!ERROR:MALException:sessiontimeout:Session time-out should be >= 0
 #client2:!ERROR:MALException:querytimeout:Query time-out should be >= 0
 #client2:!ERROR:MALException:setworkerlimit:At least one worker needed
-#client2:!ERROR:MALException:setmemorylimit:At least 100 MB needed
 
 # 18:15:20 >  
 # 18:15:20 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5773" "--port=30383"
@@ -36,9 +35,6 @@ ERROR = !Query time-out should be >= 0
 MAPI  = (monetdb) /var/tmp/mtest-5773/.s.monetdb.30383
 QUERY = call setworkerlimit( -1);
 ERROR = !At least one worker needed
-MAPI  = (monetdb) /var/tmp/mtest-5773/.s.monetdb.30383
-QUERY = call setmemorylimit(10);
-ERROR = !At least 100 MB needed
 
 # 18:15:20 >  
 # 18:15:20 >  "Done."

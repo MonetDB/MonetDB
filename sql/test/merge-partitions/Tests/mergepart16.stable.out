@@ -106,32 +106,32 @@ stdout of test 'mergepart16` in directory 'sql/test/merge-partitions` itself:
 #TRUNCATE testnestedpartitions;
 [ 5	]
 #SELECT count(*) FROM testnestedpartitions;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM subnested1;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM subnested2;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM subt1;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM subt2;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -140,44 +140,44 @@ stdout of test 'mergepart16` in directory 'sql/test/merge-partitions` itself:
 #TRUNCATE subnested1;
 [ 2	]
 #SELECT count(*) FROM testnestedpartitions;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #SELECT count(*) FROM subnested1;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM subnested2;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #SELECT count(*) FROM subt1;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM subt2;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #SELECT count(*) FROM subt3;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM subt4;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]

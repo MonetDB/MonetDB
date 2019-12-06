@@ -30,8 +30,8 @@ tables
 [ 0	]
 [ 12	]
 #select 'Region';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 6 # length
 [ "Region"	]
@@ -68,8 +68,8 @@ tables
 [ 37	]
 [ 923	]
 #select 'TiledTargetAll';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 14 # length
 [ "TiledTargetAll"	]
@@ -94,8 +94,8 @@ tables
 [ 1	]
 [ 187	]
 #select count(*) from PhotoObjAll;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 187	]
@@ -117,8 +117,8 @@ tables
 [ 0	]
 [ 84	]
 #select 'ALL DONE';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 8 # length
 [ "ALL DONE"	]

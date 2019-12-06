@@ -25,8 +25,8 @@ stdout of test 'T50` in directory 'geom/sql/conformance` itself:
 # 15:20:22 >  
 
 #SELECT ST_AsText(ST_SymDifference(shore, boundary)) FROM lakes, named_places WHERE lakes.name = 'Blue Lake' AND named_places.name = 'Ashton';
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % clob # type
 % 133 # length
 [ "MULTIPOLYGON (((52 18, 66 23, 73 9, 48 6, 52 18), (59 18, 67 18, 67 13, 59 13, 59 18)), ((62 48, 84 48, 84 30, 56 30, 56 34, 62 48)))"	]

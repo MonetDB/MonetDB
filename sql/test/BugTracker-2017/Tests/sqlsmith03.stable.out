@@ -38,7 +38,7 @@ stdout of test 'sqlsmith03` in directory 'sql/test/BugTracker-2017` itself:
 #          right join sys.privileges as ref_111
 #              left join sys.systemfunctions as ref_112
 #                left join sys.querylog_calls as ref_113
-% .L155 # table_name
+% . # table_name
 % c0 # name
 % tinyint # type
 % 1 # length

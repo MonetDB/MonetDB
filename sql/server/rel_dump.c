@@ -85,13 +85,16 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	(void)sql;
 	if (!e)
 		return;
-	//mnstr_printf(fout, "%p ", e);
+	/*mnstr_printf(fout, "%p ", e);*/
 	switch(e->type) {
 	case e_psm: {
 		if (e->flag & PSM_SET) {
-			/* todo */
+			mnstr_printf(fout, "%s = ", exp_name(e));
+			exp_print(sql, fout, e->l, depth, refs, 0, 0);
 		} else if (e->flag & PSM_VAR) {
-			/* todo */
+			// todo output table def (from e->f)
+			// or type if e-f == NULL
+			mnstr_printf(fout, "declare %s ", exp_name(e));
 		} else if (e->flag & PSM_RETURN) {
 			mnstr_printf(fout, "return ");
 			exp_print(sql, fout, e->l, depth, refs, 0, 0);
@@ -106,7 +109,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			if (e->f)
 				exps_print(sql, fout, e->f, depth, refs, alias, 0);
 		} else if (e->flag & PSM_REL) {
-			rel_print_(sql, fout, e->l, depth+1, refs, 1);
+			rel_print_(sql, fout, e->l, depth+10, refs, 1);
 		} else if (e->flag & PSM_EXCEPTION) {
 			mnstr_printf(fout, "except ");
 			exp_print(sql, fout, e->l, depth, refs, 0, 0);
@@ -164,8 +167,13 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				f->func->s?f->func->s->base.name:"sys",
 				f->func->base.name);
 		exps_print(sql, fout, e->l, depth, refs, alias, 1);
-		if (e->r)
-			exps_print(sql, fout, e->r, depth, refs, alias, 1);
+		if (e->r) { /* list of optional lists */
+			list *l = e->r;
+			for(node *n = l->h; n; n = n->next) 
+				exps_print(sql, fout, n->data, depth, refs, alias, 1);
+		}
+		if (e->flag && is_compare_func(f)) 
+			mnstr_printf(fout, " %s", e->flag==1?"ANY":"ALL");
 	} 	break;
 	case e_aggr: {
 		sql_subaggr *a = e->f;
@@ -201,15 +209,15 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			exp_print(sql, fout, e->l, depth, refs, 0, alias);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, get_cmp(e));
+			cmp_print(sql, fout, e->flag);
 			exps_print(sql, fout, e->r, depth, refs, alias, 1);
-		} else if (get_cmp(e) == cmp_or) {
+		} else if (e->flag == cmp_or) {
 			exps_print(sql, fout, e->l, depth, refs, alias, 1);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, get_cmp(e));
+			cmp_print(sql, fout, e->flag);
 			exps_print(sql, fout, e->r, depth, refs, alias, 1);
-		} else if (get_cmp(e) == cmp_filter) {
+		} else if (e->flag == cmp_filter) {
 			sql_subfunc *f = e->f;
 
 			exps_print(sql, fout, e->l, depth, refs, alias, 1);
@@ -227,13 +235,15 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				mnstr_printf(fout, " !");
 			cmp_print(sql, fout, range2rcompare(e->flag) );
 			exp_print(sql, fout, e->f, depth+1, refs, 0, 0);
+			if (e->flag & CMP_BETWEEN)
+				mnstr_printf(fout, " BETWEEN ");
 			if (e->flag & CMP_SYMMETRIC)
 				mnstr_printf(fout, " SYM ");
 		} else {
 			exp_print(sql, fout, e->l, depth+1, refs, 0, 0);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, get_cmp(e));
+			cmp_print(sql, fout, e->flag);
 
 			exp_print(sql, fout, e->r, depth+1, refs, 0, 0);
 		}
@@ -241,8 +251,10 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	default:
 		;
 	}
-	if (e->type != e_atom && is_ascending(e))
+	if (e->type != e_atom && e->type != e_cmp && is_ascending(e))
 		mnstr_printf(fout, " ASC");
+	if (e->type != e_atom && e->type != e_cmp && nulls_last(e))
+		mnstr_printf(fout, " NULLS LAST");
 	if (e->type != e_atom && e->type != e_cmp && !has_nil(e))
 		mnstr_printf(fout, " NOT NULL");
 	/*
@@ -356,7 +368,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		int cnt = rel->ref.refcnt;
 		mnstr_printf(fout, "\n%cREF %d (%d)", decorate?'=':' ', nr, cnt);
 	}
-
 
 	switch (rel->op) {
 	case op_basetable: {
@@ -547,8 +558,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	default:
 		assert(0);
 	}
-	if (rel->single)
-		mnstr_printf(fout, " single ");
 	if (rel->p) {
 		prop *p = rel->p;
 		char *pv;
@@ -559,6 +568,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			GDKfree(pv);
 		}
 	}
+	//mnstr_printf(fout, " %p ", rel);
 }
 
 void
@@ -1074,7 +1084,24 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
 		(*pos)+= (int) strlen("ASC");
 		skipWS(r, pos);
-		set_direction(exp, 1);
+		set_ascending(exp);
+	}
+	/* [ NULLS LAST ] */
+	if (strncmp(r+*pos, "NULLS LAST",  strlen("NULLS LAST")) == 0) {
+		(*pos)+= (int) strlen("NULLS LAST");
+		skipWS(r, pos);
+		set_nulls_last(exp);
+	}
+	/* [ ANY|ALL ] */
+	if (strncmp(r+*pos, "ANY",  strlen("ANY")) == 0) {
+		(*pos)+= (int) strlen("ANY");
+		skipWS(r, pos);
+		exp->flag = 1;
+	}
+	if (strncmp(r+*pos, "ALL",  strlen("ALL")) == 0) {
+		(*pos)+= (int) strlen("ALL");
+		skipWS(r, pos);
+		exp->flag = 2;
 	}
 	/* [ NOT ] NULL */
 	if (strncmp(r+*pos, "NOT",  strlen("NOT")) == 0) {
@@ -1134,6 +1161,15 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	}
 	skipWS(r, pos);
 	switch(r[*pos]) {
+	case 'a':
+		if (strncmp(r+*pos, "any =",  strlen("any =")) == 0) {
+			(*pos)+= (int) strlen("any =");
+			f = mark_in;
+		} else if (strncmp(r+*pos, "all <>",  strlen("all <>")) == 0) {
+			(*pos)+= (int) strlen("all <>");
+			f = mark_notin;
+		}
+		break;
 	case 'n':
 		if (strncmp(r+*pos, "notin",  strlen("notin")) == 0) {
 			(*pos)+= (int) strlen("notin");
@@ -1203,14 +1239,34 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			if (f == cmp_in || f == cmp_notin)
 				return exp_in(sql->sa, exp, exps, f);
 		} else {
+			int sym = 0, between = 0;
 			sql_exp *e = exp_read(sql, lrel, rrel, pexps, r, pos, 0);
+
+			if (strncmp(r+*pos, "BETWEEN",  strlen("BETWEEN")) == 0) {
+				(*pos)+= (int) strlen("BETWEEN");
+				skipWS(r,pos);
+				between = 1;
+			}
+			if (strncmp(r+*pos, "SYM",  strlen("SYM")) == 0) {
+				(*pos)+= (int) strlen("SYM");
+				skipWS(r,pos);
+				sym = 1;
+			}
 			if (e && e->type == e_cmp) {
 				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag));
+				if (sym)
+					ne->flag |= CMP_SYMMETRIC;
+				if (between)
+					ne->flag |= CMP_BETWEEN;
 				if (is_anti(exp))
 					set_anti(ne);
 				return ne;
 			} else if (e) {
 				sql_exp *ne = exp_compare(sql->sa, exp, e, f);
+				if (sym)
+					ne->flag |= CMP_SYMMETRIC;
+				if (between)
+					ne->flag |= CMP_BETWEEN;
 				if (is_anti(exp))
 					set_anti(ne);
 				return ne;

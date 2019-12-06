@@ -63,7 +63,7 @@ stdout of test 'storagemodel` in directory 'sql/test/BugTracker-2016` itself:
 
 #create table bug3923(i integer);
 #select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from storage('sys','_tables');
-% .L3,	.L3,	.L3,	.L3,	.L3,	.L12,	.L3,	.L3,	.L3 # table_name
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%11,	.%3,	.%3,	.%3 # table_name
 % schema,	table,	column,	type,	mode,	typewidth,	hashes,	phash,	imprints # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	boolean,	bigint # type
 % 3,	7,	13,	8,	8,	2,	1,	5,	1 # length
@@ -88,7 +88,7 @@ stdout of test 'storagemodel` in directory 'sql/test/BugTracker-2016` itself:
 #drop table bug3923;
 #create table bug3923(i integer);
 #select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from sys.storage('sys','_tables');
-% .L3,	.L3,	.L3,	.L3,	.L3,	.L12,	.L3,	.L3,	.L3 # table_name
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%11,	.%3,	.%3,	.%3 # table_name
 % schema,	table,	column,	type,	mode,	typewidth,	hashes,	phash,	imprints # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	boolean,	bigint # type
 % 3,	7,	13,	8,	8,	2,	1,	5,	1 # length

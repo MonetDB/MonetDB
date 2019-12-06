@@ -288,7 +288,6 @@ rel_alter_seq(
 		if (r && r->op == op_project) {
 			exp_label(sql->sa, val, ++sql->label);
 			val = rel_project_add_exp(sql, r, val);
-			val = exp_ref(sql->sa, val);
 		}
 	} else if (start_type == 2) {
 		assert (start_list->h->next->type == type_lng);
@@ -296,7 +295,7 @@ rel_alter_seq(
 	}
 	if (val && val->card > CARD_ATOM) {
 		sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(val));
-		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, 0);
+		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, has_nil(val));
 	}
 	return rel_seq(sql->sa, ddl_alter_seq, s->base.name, seq, r, val);
 }

@@ -22,8 +22,8 @@ stdout of test 'custom_function_in_where.SF-937859` in directory 'sql/test/BugDa
 #from   t937859 a, t937859 b 
 #where  a.id < b.id 
 #and    char_length(a.s)-char_length(b.s)=0;
-% sys.L2 # table_name
-% L2 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]

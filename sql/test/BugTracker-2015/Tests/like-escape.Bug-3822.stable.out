@@ -59,19 +59,15 @@ stdout of test 'like-escape.Bug-3822` in directory 'sql/test/BugTracker-2015` it
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 16:42:22 >  
-# 16:42:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11859" "--port=34019"
-# 16:42:22 >  
-
-#select '_' like '\\_';
-% .L2 # table_name
-% L2 # name
+#select '_' like E'\\_';
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ false	]
-#select '_' like '\\_' escape '\\';
-% .L2 # table_name
-% L2 # name
+#select '_' like E'\\_' escape E'\\';
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

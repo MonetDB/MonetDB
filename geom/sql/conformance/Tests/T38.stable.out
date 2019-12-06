@@ -24,8 +24,8 @@ stdout of test 'T38` in directory 'geom/sql/conformance` itself:
 # 15:05:53 >  
 
 #SELECT ST_Disjoint(centerlines, boundary) FROM divided_routes, named_places WHERE divided_routes.name = 'Route 75' AND named_places.name = 'Ashton';
-% sys.L1 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

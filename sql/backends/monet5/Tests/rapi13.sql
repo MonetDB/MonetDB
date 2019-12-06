@@ -26,7 +26,7 @@ CREATE FUNCTION broken_test(stt string, tss bigint, lat double, lon double, alt 
 	return(data.frame(1:10, 1:10, 1:10, 1:10))
 };
 
-create temporary table planes as SELECT station, (ts-CAST('1970-01-01' AS timestamp)), lat, lon, alt*0.3048 FROM streams WHERE type = 2 and alt > 0 with data;
+create temporary table planes as SELECT station, (ts-CAST('1970-01-01' AS timestamp)) tsdiff, lat, lon, alt*0.3048 altitude FROM streams WHERE type = 2 and alt > 0 with data;
 #this is the input
 select * from planes;
 select * from working_test( (SELECT * FROM planes AS p) );

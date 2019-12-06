@@ -25,10 +25,8 @@ stdout of test 'union_with_subqueries.Bug-3518` in directory 'sql/test/BugTracke
 # 18:48:46 >  
 
 #SELECT cast(sum(a) as bigint), cast(sum(a) as bigint) FROM (( SELECT 1 AS A ) UNION ALL (SELECT 3 AS A)) AS query;
-% .,    . # table_name
-# .L16, .L21 # table_name
-% L,    L # name
-# L16,  L21 # name
+% .%10,	.%12 # table_name
+% %10,	%12 # name
 % bigint,       bigint # type
 % 1,    1 # length
 [ 4,    4       ]

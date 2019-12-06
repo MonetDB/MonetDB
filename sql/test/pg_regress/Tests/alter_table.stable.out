@@ -578,13 +578,13 @@ stdout of test 'alter_table` in directory 'sql/test/pg_regress` itself:
 #insert into altinhoid values (1);
 [ 1	]
 #select oid > 0, * from altwithoid;
-% sys.L1,	sys.altwithoid,	sys.altwithoid # table_name
-% L1,	oid,	col # name
+% sys.%2,	sys.altwithoid,	sys.altwithoid # table_name
+% %2,	oid,	col # name
 % boolean,	oid,	int # type
 % 5,	3,	1 # length
 #select oid > 0, * from altwithoid; -- fails
-% sys.L1,	sys.altwithoid,	sys.altwithoid # table_name
-% L1,	oid,	col # name
+% sys.%2,	sys.altwithoid,	sys.altwithoid # table_name
+% %2,	oid,	col # name
 % boolean,	oid,	int # type
 % 5,	3,	1 # length
 #select * from altwithoid;
@@ -650,8 +650,8 @@ stdout of test 'alter_table` in directory 'sql/test/pg_regress` itself:
 [ "aa",	"bb",	"zz"	]
 [ "qq",	NULL,	"zz"	]
 #select f3,max(f1) from foo group by f3;
-% tmp.foo,	tmp.L1 # table_name
-% f3,	L1 # name
+% tmp.foo,	tmp.%1 # table_name
+% f3,	%1 # name
 % clob,	clob # type
 % 2,	2 # length
 [ "zz",	"qq"	]

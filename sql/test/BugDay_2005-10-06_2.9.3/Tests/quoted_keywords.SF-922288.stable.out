@@ -26,7 +26,7 @@ stdout of test 'quoted_keywords.SF-922288` in directory 'sql/test/BugDay_2005-10
 [ 1,	2	]
 [ 3,	4	]
 #SELECT null AS test, "null" AS nullable FROM tab;
-% .L2,	sys.L4 # table_name
+% .,	sys.tab # table_name
 % test,	nullable # name
 % char,	int # type
 % 0,	1 # length

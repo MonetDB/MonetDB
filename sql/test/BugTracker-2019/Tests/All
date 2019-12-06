@@ -21,6 +21,7 @@ select_window_function_and_asterisk.Bug-6722
 disallow_duplicate_column_aliases.Bug-6723
 prepare-types.Bug-6724
 prepare-non-existing-function.Bug-6725
+HAVE_LIBPY3?python-aggregate-no-groups.Bug-6726
 select-distinct.Bug-6728
 table-duplicate-column.Bug-6729
 view-too-few-rows.Bug-6736
@@ -30,7 +31,7 @@ sequence-first-next-value.Bug-6743
 sequences-defaults.Bug-6744
 sequences-types.Bug-6745
 alter_table_drop_column.Bug-6749
-HAVE_PYMONETDB?remote-table-non-existent-column.Bug-6750
+KNOWNFAIL&HAVE_PYMONETDB?remote-table-non-existent-column.Bug-6750
 cte-union.Bug-6755
 merge-table-limit.Bug-6756
 double-free.Bug-6757
@@ -40,6 +41,7 @@ grant-select-column.Bug-6765
 next-get-value-bulk.Bug-6766
 filter_json_null.Bug-6773
 prod-decimals.Bug-6774
+prepared-select-with-error-causes-hang.Jira-292
 NOT_IN-AND-OR-wrong-results.Bug-6775
 outer-join-varchar.Bug-6776
 msqldump-mapi-cache.Bug-6777
@@ -47,3 +49,8 @@ rank-nan.Bug-6780
 index-insert-crash.Bug-6781
 avg-changes-value-scale.Bug-6783
 isaUUID.Bug-6784
+count-distinct.Bug-6790
+str_to_time.Bug-6791
+jsonpath-validity.Bug-6792
+cast-interval.Bug-6793
+could-not-allocate-space.Bug-6795

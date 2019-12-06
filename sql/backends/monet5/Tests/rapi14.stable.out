@@ -70,8 +70,8 @@ stdout of test 'rapi14` in directory 'sql/backends/monet5` itself:
 #    rep(T,4)
 #};
 #SELECT rapi14() FROM dval;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

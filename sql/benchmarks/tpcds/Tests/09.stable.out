@@ -39,7 +39,7 @@ stdout of test '09` in directory 'sql/benchmarks/tpcds` itself:
 #       CASE
 #           WHEN
 #                  (SELECT count(*)
-% .L13,	.L26,	.L41,	.L54,	.L67 # table_name
+% .%133,	.%134,	.%135,	.%136,	.%137 # table_name
 % bucket1,	bucket2,	bucket3,	bucket4,	bucket5 # name
 % double,	double,	double,	double,	double # type
 % 24,	24,	24,	24,	24 # length

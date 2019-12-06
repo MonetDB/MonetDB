@@ -39,7 +39,7 @@ stdout of test 'pyapi09` in directory 'sql/backends/monet5` itself:
 #    return res
 #};
 #SELECT * FROM pyapi09();
-% .L1 # table_name
+% .%1 # table_name
 % i # name
 % int # type
 % 1 # length
@@ -62,8 +62,8 @@ stdout of test 'pyapi09` in directory 'sql/backends/monet5` itself:
 #    return res['i'] * i
 #};
 #SELECT pyapi09(i) FROM pyapi09table; #multiply by 3
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 3	]
@@ -73,8 +73,8 @@ stdout of test 'pyapi09` in directory 'sql/backends/monet5` itself:
 #UPDATE pyapi09multiplication SET i=10;
 [ 1	]
 #SELECT pyapi09(i) FROM pyapi09table; #multiply by 10
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 10	]
@@ -102,7 +102,7 @@ stdout of test 'pyapi09` in directory 'sql/backends/monet5` itself:
 #    return array[:10]
 #};
 #SELECT * FROM pyapi09load();
-% .L1 # table_name
+% .%1 # table_name
 % i # name
 % int # type
 % 1 # length
@@ -135,7 +135,7 @@ stdout of test 'pyapi09` in directory 'sql/backends/monet5` itself:
 #    return numpy.arange(10)
 #};
 #SELECT * FROM pyapi09();
-% .L1 # table_name
+% .%1 # table_name
 % i # name
 % int # type
 % 1 # length

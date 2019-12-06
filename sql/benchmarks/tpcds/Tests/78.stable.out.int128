@@ -35,7 +35,12 @@ stdout of test '78` in directory 'sql/benchmarks/tpcds` itself:
 #   AND ws_item_sk=wr_item_sk
 #   JOIN date_dim ON ws_sold_date_sk = d_date_sk
 #   WHERE wr_order_number IS NULL
-% .ss,	.ss,	.ss,	.L64,	.L66,	.L70,	.L72,	.L74,	.L76,	.L100 # table_name
+#   GROUP BY d_year,
+#            ws_item_sk,
+#            ws_bill_customer_sk ),
+#     cs AS
+#  (SELECT d_year AS cs_sold_year,
+% .ss,	.ss,	.ss,	.,	.ss,	.ss,	.ss,	.,	.,	. # table_name
 % ss_sold_year,	ss_item_sk,	ss_customer_sk,	ratio,	store_qty,	store_wholesale_cost,	store_sales_price,	other_chan_qty,	other_chan_wholesale_cost,	other_chan_sales_price # name
 % int,	int,	int,	decimal,	hugeint,	decimal,	decimal,	hugeint,	decimal,	decimal # type
 % 4,	4,	5,	40,	2,	40,	40,	2,	40,	40 # length

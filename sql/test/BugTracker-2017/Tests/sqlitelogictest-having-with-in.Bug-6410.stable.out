@@ -25,8 +25,8 @@ stdout of test 'sqlitelogictest-having-with-in.Bug-6410` in directory 'sql/test/
 
 #CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 #SELECT 9 - - col1 FROM tab2 GROUP BY col1 HAVING - CAST ( NULL AS INTEGER ) IN ( + - SUM ( - + 47 ), + MIN ( col2 ) );
-% .L2 # table_name
-% L2 # name
+% .%5 # table_name
+% %5 # name
 % bigint # type
 % 1 # length
 #DROP TABLE tab2;

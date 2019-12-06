@@ -19,8 +19,8 @@ stdout of test 'default_with_cast.SF-1334486` in directory 'sql/test/bugs` itsel
 
 [ 1	]
 #select cast(now() as date) - d from t;
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ 0	]

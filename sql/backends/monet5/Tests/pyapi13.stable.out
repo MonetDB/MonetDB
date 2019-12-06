@@ -89,8 +89,8 @@ Addition in python is not inconsistent!
 #    return(i*j)
 #};
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
-% .L6 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 4 # length
 [ 1257	]
@@ -99,16 +99,16 @@ Addition in python is not inconsistent!
 #language PYTHON_MAP { return(i*j)
 #};
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
-% .L6 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 4 # length
 [ 1257	]
 #DROP FUNCTION pyapi13_mult;
 #CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer language PYTHON_MAP { return(i*j) };
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
-% .L6 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 4 # length
 [ 1257	]
@@ -121,8 +121,8 @@ Addition in python is not inconsistent!
 #return(i*j) 
 #};
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
-% .L6 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 4 # length
 [ 1257	]
@@ -142,8 +142,8 @@ Addition in python is not inconsistent!
 #	return(i+j)
 #};
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
-% .L6 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 4 # length
 [ 1257	]
@@ -165,8 +165,8 @@ Addition in python is not inconsistent!
 #    								return(i*j)
 #};
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
-% .L6 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 4 # length
 [ 1257	]

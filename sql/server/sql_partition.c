@@ -200,7 +200,7 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 				exp_find_table_columns(sql, e->l, t, cols);
 				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
-			} else if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
+			} else if (e->flag == cmp_or || e->flag == cmp_filter) {
 				for(node *n = ((list*)e->l)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
 				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
@@ -304,15 +304,13 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		}
 	}
 
-	if(instantiate) {
+	if (instantiate) {
 		r = rel_project(sql->sa, r, NULL);
 		r->exps = sa_list(sql->sa);
 		list_append(r->exps, exp);
 
 		if (r)
-			r = rel_unnest(sql, r);
-		if (r)
-			r = rel_optimizer(sql, r, 0);
+			r = sql_processrelation(sql, r, 0);
 		if (r) {
 			node *n, *found = NULL;
 			list *id_l = rel_dependencies(sql, r);

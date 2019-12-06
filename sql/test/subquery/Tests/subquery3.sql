@@ -2,6 +2,8 @@ CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product
 INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Game',400),(3,'Fashion','Shirt',500),(4,'Fashion','Shorts',100);
 CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
 INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
+CREATE TABLE integers(i INTEGER);
+INSERT INTO integers VALUES (1), (2), (3), (NULL);
 
 SELECT
     NOT MAX(t1.col6) IN (SELECT SUM(t1.col6) FROM tbl_ProductSales tp HAVING MAX(t1.col1) > MIN(tp.colID))
@@ -13,9 +15,9 @@ GROUP BY t1.col6, t1.col7;
 	-- False
 
 SELECT
-    (SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5)),
+    CAST((SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5)) AS BIGINT),
     AVG(col1) * MIN(col8) OVER (PARTITION BY col5 ORDER BY col1 ROWS UNBOUNDED PRECEDING) evil,
-    MAX(col3) / 10 + SUM(col1) * 10
+    CAST(MAX(col3) / 10 + SUM(col1) * 10 AS BIGINT)
 FROM another_T
 GROUP BY col1, col2, col5, col8;
 	-- 6    8       10
@@ -140,13 +142,183 @@ FROM another_T t1; --MonetDB outputs this one right, but we should leave it here
 	-- 10
 
 SELECT
-    (SELECT SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1) ROWS UNBOUNDED PRECEDING) FROM another_T)
+    CAST((SELECT SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1) ROWS UNBOUNDED PRECEDING) FROM another_T) AS BIGINT)
 FROM another_T t1
 GROUP BY col1; --MonetDB outputs this one right, but we should leave it here, as it doesn't trigger an error
 	-- 2468
 	-- 2468
 	-- 2468
 	-- 2468
+
+SELECT
+    NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL) AS a1
+FROM another_T
+GROUP BY col1, col2, col5
+ORDER BY a1 NULLS FIRST;
+	-- True
+	-- True
+	-- True
+	-- True
+
+SELECT
+    NOT SUM(t1.col2) * MIN(t1.col6 + t1.col6 - t1.col6 * t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 + MIN(t2.col8) < MAX(t2.col7 - t1.col6))
+FROM another_T t1
+GROUP BY t1.col7, t1.col6;
+	-- False
+	-- False
+	-- False
+	-- False
+
+SELECT
+    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON MIN(t1.col5) = t1.col1)) THEN 1 ELSE 2 END,
+    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2)) THEN 1 ELSE 2 END
+FROM another_T t1
+GROUP BY t1.col1, t1.col2;
+	-- 2	2
+	-- 2	2
+	-- 2	2
+	-- 2	2
+
+SELECT
+    SUM(t1.col6) <> ANY (SELECT t1.col7 INTERSECT SELECT t1.col6)
+FROM another_T t1
+GROUP BY t1.col7, t1.col6;
+	-- False
+	-- False
+	-- False
+	-- False
+
+SELECT
+    CASE WHEN t1.col1 IN (SELECT 1 FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END
+FROM another_T t1
+GROUP BY t1.col1;
+	-- 1
+	-- 2
+	-- 2
+	-- 2
+
+SELECT
+    1
+FROM another_T t1
+GROUP BY t1.col1, t1.col2, t1.col4
+HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) NOT IN 
+    ((SELECT NOT EXISTS (SELECT t1.col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = t1.col1)) UNION ALL
+     (SELECT NOT t1.col1 BETWEEN (SELECT MAX(t1.col7) EXCEPT SELECT tp.ColID FROM tbl_ProductSales tp) AND (SELECT MIN(t1.col5) EXCEPT SELECT t1.col2)));
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
+    1
+FROM another_T t1
+GROUP BY t1.col1, t1.col2, t1.col4
+HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) <
+    ((SELECT NOT EXISTS (SELECT t1.col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = t1.col1)) INTERSECT
+     (SELECT NOT t1.col1 IN (SELECT MAX(t1.col7) EXCEPT SELECT tp.ColID FROM tbl_ProductSales tp)));
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
+    col6,
+    col7,
+    NOT SUM(t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 < MAX(t1.col6))
+FROM another_T t1
+GROUP BY t1.col7, t1.col6;
+	-- 6    7    False
+	-- 666  777  False
+	-- 6666 7777 False
+	-- 66   77   False
+
+SELECT
+    col6,
+    col7,
+    NOT SUM(t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 < MAX(t2.col7 - t1.col6))
+FROM another_T t1
+GROUP BY t1.col7, t1.col6;
+	-- 6    7    False
+	-- 666  777  False
+	-- 6666 7777 False
+	-- 66   77   False
+
+SELECT
+    CASE WHEN NULL IN (SELECT MIN(ColID) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END
+FROM another_T t1
+GROUP BY t1.col1, t1.col2;
+	-- 2
+	-- 2
+	-- 2
+	-- 2
+
+SELECT
+    CASE WHEN NULL NOT IN (SELECT 1 FROM tbl_ProductSales tp FULL OUTER JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END
+FROM another_T t1;
+	-- 2
+	-- 2
+	-- 2
+	-- 2
+
+SELECT 
+	MIN(i1.i)
+FROM integers i1
+GROUP BY (SELECT MAX(i2.i) FROM integers i2 LEFT JOIN integers i3 on i1.i = i2.i);
+	-- 1
+
+SELECT
+	MAX(t1.col1)
+FROM another_T t1
+GROUP BY (NOT t1.col6 NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 < MAX(t2.col7 - t1.col6)))
+HAVING (MIN(t1.col7) <> ANY(SELECT MAX(t2.col5) FROM another_T t2 GROUP BY t2.col6 HAVING t2.col6 + MIN(t2.col2) = MAX(t1.col7)));
+	-- empty
+
+SELECT
+	1
+FROM integers i1
+GROUP BY (VALUES(1));
+	-- 1
+
+SELECT
+	MIN(i1.i)
+FROM integers i1
+GROUP BY (SELECT SUM(i1.i + i2.i) FROM integers i2);
+
+SELECT
+	MIN(i1.i)
+FROM integers i1
+GROUP BY (SELECT i2.i FROM integers i2); --error, more than one row returned by a subquery used as an expression
+
+SELECT
+    (SELECT SUM(t1.col1) OVER (PARTITION BY (VALUES(1)) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+FROM another_T t1; --error, subqueries not allowed inside PARTITION BY
+
+SELECT
+    (SELECT SUM(t1.col1) OVER (ORDER BY (VALUES(1)) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+FROM another_T t1;
+
+SELECT
+    (SELECT SUM(t1.col1) OVER (ORDER BY (SELECT SUM(t1.col1 + t2.col1) FROM another_T t2) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+FROM another_T t1;
+
+/*
+SELECT
+    SUM(CAST(SUM(CAST (NOT t1.col1 IN (SELECT 1) AS INTEGER)) < ANY (SELECT 1) AS INT)) OVER ()
+FROM another_T t1
+GROUP BY t1.col6;
+*/
+	-- 1
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
+    SUM(SUM(t1.col7) * CAST (NOT t1.col1 IN (SELECT 1) AS INTEGER)) OVER ()
+FROM another_T t1
+GROUP BY t1.col7; --error, column "t1.col1" must appear in the GROUP BY clause or be used in an aggregate function
+
+SELECT
+    SUM(CAST(SUM(t1.col6 * CAST (NOT t1.col1 IN (SELECT t2.col2 FROM another_T t2 GROUP BY t2.col2) AS INTEGER)) < ANY (SELECT MAX(ColID + t1.col7 - t1.col2) FROM tbl_ProductSales) AS INT)) OVER (PARTITION BY SUM(t1.col5) ORDER BY (SELECT MIN(t1.col6 + t1.col5 - t2.col2) FROM another_T t2))
+FROM another_T t1
+GROUP BY t1.col7, t1.col6; --error, subquery uses ungrouped column "t1.col2" from outer query
 
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
@@ -158,3 +330,4 @@ GROUP BY col1; --MonetDB outputs this one right, but we should leave it here, as
 
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
+DROP TABLE integers;

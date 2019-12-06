@@ -33,7 +33,7 @@ stdout of test 'sqlsmith.Bug-6217` in directory 'sql/test/BugTracker-2017` itsel
 #from
 #  sys.triggers as ref_2
 #where 24 is NULL;
-% sys.L2,	sys.L4,	sys.L6,	.L10,	sys.L12,	sys.L14 # table_name
+% sys.ref_2,	sys.ref_2,	sys.ref_2,	.,	sys.ref_2,	sys.ref_2 # table_name
 % c0,	c1,	c2,	c3,	c4,	c5 # name
 % varchar,	varchar,	varchar,	tinyint,	varchar,	int # type
 % 0,	0,	0,	1,	0,	1 # length

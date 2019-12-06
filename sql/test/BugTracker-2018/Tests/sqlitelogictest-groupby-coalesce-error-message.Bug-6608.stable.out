@@ -71,38 +71,38 @@ stdout of test 'sqlitelogictest-groupby-coalesce-error-message.Bug-6608` in dire
 #INSERT INTO tab1 VALUES (22,6,8), (28,57,45), (82,44,71);
 [ 3	]
 #SELECT DISTINCT - COALESCE ( - 86, + cor0.col1, cor0.col1, - cor0.col0 ) AS col2 FROM tab0 AS cor0;
-% .L1 # table_name
+% .%1 # table_name
 % col2 # name
 % int # type
 % 2 # length
 [ 86	]
 #SELECT ALL + 33 * - COALESCE ( - 86, tab1.col2 ) + + col1 FROM tab1;
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ 2844	]
 [ 2895	]
 [ 2882	]
-#SELECT ALL + COALESCE ( - cor0.col1, cor0.col1, 63, - cor0.col2 ) * - cor0.col1 AS col1 FROM tab0 cor0;
-% sys.L2 # table_name
+#SELECT ALL CAST( + COALESCE ( - cor0.col1, cor0.col1, 63, - cor0.col2 ) * - cor0.col1 AS BIGINT) AS col1 FROM tab0 cor0;
+% sys.%2 # table_name
 % col1 # name
 % bigint # type
 % 4 # length
 [ 0	]
 [ 0	]
 [ 6561	]
-#SELECT - 38 + - tab1.col1 - tab1.col1 / COALESCE ( + 20, - tab1.col0 ) FROM tab1;
-% sys.L2 # table_name
-% L2 # name
+#SELECT CAST(- 38 + - tab1.col1 - tab1.col1 / COALESCE ( + 20, - tab1.col0 ) AS BIGINT) FROM tab1;
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ -44	]
 [ -97	]
 [ -84	]
 #SELECT DISTINCT COALESCE ( - 82, - cor0.col0, - CAST ( NULL AS INTEGER ) ) / - 70 FROM tab0 AS cor0;
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ 1	]

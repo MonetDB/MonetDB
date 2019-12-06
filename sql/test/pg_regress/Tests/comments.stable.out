@@ -27,32 +27,32 @@ stdout of test 'comments` in directory 'sql/test/pg_regress` itself:
 #-- COMMENTS
 #--
 #SELECT 'trailing' AS first; -- trailing single line
-% .L2 # table_name
+% . # table_name
 % first # name
 % char # type
 % 8 # length
 [ "trailing" ]
 #SELECT /* embedded single line */ 'embedded' AS "second";
-% .L2 # table_name
+% . # table_name
 % second # name
 % char # type
 % 8 # length
 [ "embedded"	]
 #SELECT /* both embedded and trailing single line */ 'both' AS third; -- trailing single line
-% .L2 # table_name
+% . # table_name
 % third # name
 % char # type
 % 4 # length
 [ "both" ]
 
 #SELECT 'before multi-line' AS fourth;
-% .L2 # table_name
+% . # table_name
 % fourth # name
 % char # type
 % 17 # length
 [ "before multi-line" ]
 #SELECT 'after multi-line' AS fifth;
-% .L2 # table_name
+% . # table_name
 % fifth # name
 % char # type
 % 16 # length
@@ -71,7 +71,7 @@ stdout of test 'comments` in directory 'sql/test/pg_regress` itself:
 #Now just one deep...
 #*/
 #'deeply nested example' AS sixth;
-% .L2 # table_name
+% . # table_name
 % sixth # name
 % char # type
 % 21 # length

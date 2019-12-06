@@ -34,8 +34,7 @@ stdout of test '17` in directory 'sql/benchmarks/tpcds` itself:
 #       avg(sr_return_quantity) AS store_returns_quantityave,
 #       stddev_samp(sr_return_quantity) AS store_returns_quantitystdev,
 #       stddev_samp(sr_return_quantity)/avg(sr_return_quantity) AS store_returns_quantitycov,
-#       count(cs_quantity) AS catalog_sales_quantitycount,
-% sys.item,	sys.item,	sys.store,	sys.L6,	sys.L11,	sys.L14,	sys.L20,	sys.L23,	sys.L26,	sys.L31,	sys.L35,	sys.L40,	sys.L43,	sys.L46,	sys.L52 # table_name
+% sys.item,	sys.item,	sys.store,	sys.%1,	sys.%2,	sys.%3,	sys.,	sys.%6,	sys.%7,	sys.%10,	sys.,	sys.%13,	sys.%14,	sys.%15,	sys. # table_name
 % i_item_id,	i_item_desc,	s_state,	store_sales_quantitycount,	store_sales_quantityave,	store_sales_quantitystdev,	store_sales_quantitycov,	store_returns_quantitycount,	store_returns_quantityave,	store_returns_quantitystdev,	store_returns_quantitycov,	catalog_sales_quantitycount,	catalog_sales_quantityave,	catalog_sales_quantitystdev,	catalog_sales_quantitycov # name
 % char,	varchar,	char,	bigint,	double,	double,	double,	bigint,	double,	double,	double,	bigint,	double,	double,	double # type
 % 16,	14,	2,	1,	24,	24,	24,	1,	24,	24,	24,	1,	24,	24,	24 # length

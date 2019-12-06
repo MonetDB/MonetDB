@@ -29,20 +29,20 @@ stdout of test 'epoch.Bug-3979` in directory 'sql/test/BugTracker-2016` itself:
 # 13:17:29 >  
 
 #SELECT epoch((1460453860-300) * 1000);
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % timestamp # type
 % 26 # length
 [ 2016-04-12 09:32:40.000000	]
 #SELECT epoch(CAST(1460453860-300 AS INTEGER));
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % timestamp # type
 % 26 # length
 [ 2016-04-12 09:32:40.000000	]
 #SELECT epoch(CAST(1460453860-300 AS INTERVAL SECOND));
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % timestamp # type
 % 26 # length
 [ 2016-04-12 09:32:40.000000	]

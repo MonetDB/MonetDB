@@ -23,50 +23,50 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 # 19:15:04 >  
 
 #SELECT 1 = ANY(SELECT 1); -- true
-% .L11 # table_name
-% L11 # name
+% .%12 # table_name
+% %12 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 1 = ANY(SELECT NULL); -- NULL
-% .L11 # table_name
-% L11 # name
+% .%12 # table_name
+% %12 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 1 = ANY(SELECT 2); -- false
-% .L11 # table_name
-% L11 # name
+% .%12 # table_name
+% %12 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT NULL = ANY(SELECT 2); -- NULL
-% .L11 # table_name
-% L11 # name
+% .%12 # table_name
+% %12 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 1 = ALL(SELECT 1); -- true
-% .L5 # table_name
-% L5 # name
+% .%5 # table_name
+% %5 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 1 = ALL(SELECT NULL); -- NULL
-% .L5 # table_name
-% L5 # name
+% .%5 # table_name
+% %5 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 1 = ALL(SELECT 2); -- false
-% .L5 # table_name
-% L5 # name
+% .%5 # table_name
+% %5 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT NULL = ALL(SELECT 2); -- NULL
-% .L5 # table_name
-% L5 # name
+% .%5 # table_name
+% %5 # name
 % boolean # type
 % 5 # length
 [ NULL	]
@@ -74,88 +74,106 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 #INSERT INTO integers VALUES (1), (2), (3);
 [ 3	]
 #SELECT 2 > ANY(SELECT * FROM integers); -- true
-% .L7 # table_name
-% L7 # name
+% .%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 1 > ANY(SELECT * FROM integers); -- false
-% .L7 # table_name
-% L7 # name
+% .%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 4 > ALL(SELECT * FROM integers); -- true
-% .L7 # table_name
-% L7 # name
+% .%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 1 > ALL(SELECT * FROM integers); -- false
-% .L7 # table_name
-% L7 # name
+% .%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT NULL > ANY(SELECT * FROM integers); -- NULL
-% .L7 # table_name
-% L7 # name
+% .%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT NULL > ALL(SELECT * FROM integers); -- NULL
-% .L7 # table_name
-% L7 # name
+% .%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #INSERT INTO integers VALUES (NULL);
 [ 1	]
 #SELECT 2 > ANY(SELECT * FROM integers); -- true
-% .L7 # table_name
-% L7 # name
+% .%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 1 > ANY(SELECT * FROM integers); -- NULL
-% .L7 # table_name
-% L7 # name
+% .%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 4 > ALL(SELECT * FROM integers); -- NULL
-% .L7 # table_name
-% L7 # name
+% .%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 1 > ALL(SELECT * FROM integers); -- false
-% .L7 # table_name
-% L7 # name
+% .%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT NULL > ANY(SELECT * FROM integers); -- NULL
-% .L7 # table_name
-% L7 # name
+% .%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT NULL > ALL(SELECT * FROM integers); -- NULL
-% .L7 # table_name
-% L7 # name
+% .%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT i=ANY(SELECT i FROM integers WHERE i=i1.i) FROM integers i1 ORDER BY i;
-% .L6 # table_name
-% L6 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ false	]
 [ true	]
 [ true	]
 [ true	]
+#SELECT i>ALL(SELECT (i+i1.i-1)/2 FROM integers WHERE i IS NOT NULL) FROM integers i1 ORDER BY i;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+[ false	]
+[ false	]
+[ true	]
+#SELECT i=ALL(SELECT i FROM integers WHERE i<>i1.i) FROM integers i1 ORDER BY i;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ false	]
+[ false	]
+[ false	]
 #SELECT i FROM integers i1 WHERE i=ANY(SELECT i FROM integers WHERE i=i1.i) ORDER BY i;
 % sys.i1 # table_name
 % i # name
@@ -164,6 +182,11 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 [ 1	]
 [ 2	]
 [ 3	]
+#SELECT i FROM integers i1 WHERE i<>ANY(SELECT i FROM integers WHERE i=i1.i) ORDER BY i;
+% .i1 # table_name
+% i # name
+% int # type
+% 1 # length
 #SELECT i FROM integers i1 WHERE i=ANY(SELECT i FROM integers WHERE i<>i1.i) ORDER BY i;
 % sys.i1 # table_name
 % i # name
@@ -183,8 +206,8 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ 3	]
 #SELECT i=ALL(SELECT i FROM integers WHERE i=i1.i) FROM integers i1 ORDER BY i;
-% sys.L4 # table_name
-% L4 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -192,8 +215,8 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 [ true	]
 [ true	]
 #SELECT i=ANY(SELECT i FROM integers WHERE i=i1.i) FROM integers i1 ORDER BY i;
-% .L6 # table_name
-% L6 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -201,8 +224,8 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 [ true	]
 [ true	]
 #SELECT i<>ALL(SELECT i FROM integers WHERE i=i1.i) FROM integers i1 ORDER BY i;
-% .L6 # table_name
-% L6 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -210,8 +233,8 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 [ false	]
 [ false	]
 #SELECT i<>ANY(SELECT i FROM integers WHERE i=i1.i) FROM integers i1 ORDER BY i;
-% sys.L4 # table_name
-% L4 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -219,8 +242,8 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 [ false	]
 [ false	]
 #SELECT i=ANY(SELECT i FROM integers WHERE i<>i1.i) FROM integers i1 ORDER BY i;
-% .L6 # table_name
-% L6 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -228,38 +251,71 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 [ false	]
 [ false	]
 #SELECT i>ANY(SELECT i FROM integers WHERE i<>i1.i) FROM integers i1 ORDER BY i;
-% sys.L4 # table_name
-% L4 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ false	]
 [ false	]
 [ true	]
 [ true	]
+#SELECT i>ALL(SELECT (i+i1.i-1)/2 FROM integers) FROM integers i1 ORDER BY i;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+[ false	]
+[ false	]
+[ NULL	]
+#SELECT i>ALL(SELECT (i+i1.i-1)/2 FROM integers WHERE i IS NOT NULL) FROM integers i1 ORDER BY i;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+[ false	]
+[ false	]
+[ true	]
 #SELECT i=ANY(SELECT i FROM integers WHERE i=i1.i OR i IS NULL) FROM integers i1 ORDER BY i;
-% .L6 # table_name
-% L6 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 [ true	]
 [ true	]
 [ true	]
+#SELECT i=ALL(SELECT i FROM integers WHERE i=i1.i OR i IS NULL) FROM integers i1 ORDER BY i;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #SELECT MIN(i)>ANY(SELECT i FROM integers WHERE i>MIN(i1.i)) FROM integers i1;
-% .L7 # table_name
-% L7 # name
+% .%21 # table_name
+% %21 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT SUM(i)>ANY(SELECT i FROM integers WHERE i>MIN(i1.i)) FROM integers i1;
-% .L7 # table_name
-% L7 # name
+% .%21 # table_name
+% %21 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT (SELECT SUM(i)+SUM(i1.i) FROM integers)>ANY(SELECT i FROM integers WHERE i>MIN(i1.i)) FROM integers i1;
+% .%36 # table_name
+% %36 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT i=ANY(SELECT i FROM integers WHERE i=i1.i AND i>10) FROM integers i1 ORDER BY i;
-% .L6 # table_name
-% L6 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ false	]

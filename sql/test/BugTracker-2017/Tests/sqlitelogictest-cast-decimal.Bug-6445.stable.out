@@ -25,13 +25,13 @@ stdout of test 'sqlitelogictest-cast-decimal.Bug-6445` in directory 'sql/test/Bu
 
 #CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 #SELECT col0 + - - CAST ( NULL AS REAL ) - + col0 + + col1 FROM tab1 cor0 WHERE ( NULL ) IS NOT NULL;
-% .L3 # table_name
-% L3 # name
+% .%3 # table_name
+% %3 # name
 % real # type
 % 15 # length
 #SELECT col0 + - - CAST( NULL AS DECIMAL ) - + col0 + + col1 FROM tab1 cor0 WHERE ( NULL ) IS NOT NULL;
-% sys.L3 # table_name
-% L3 # name
+% sys.%3 # table_name
+% %3 # name
 % decimal # type
 % 20 # length
 #DROP TABLE tab1;

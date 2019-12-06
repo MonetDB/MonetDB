@@ -35,7 +35,10 @@ stdout of test '84` in directory 'sql/benchmarks/tpcds` itself:
 #  AND c_current_addr_sk = ca_address_sk
 #  AND ib_lower_bound >= 38128
 #  AND ib_upper_bound <= 38128 + 50000
-% sys.L2,	sys.L4 # table_name
+#  AND ib_income_band_sk = hd_income_band_sk
+#  AND cd_demo_sk = c_current_cdemo_sk
+#  AND hd_demo_sk = c_current_hdemo_sk
+% sys.customer,	sys. # table_name
 % customer_id,	customername # name
 % char,	varchar # type
 % 16,	19 # length

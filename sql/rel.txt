@@ -5,12 +5,12 @@ BASETABLE
 	-> l		(sql_table)
 
 TABLE 	(card MULTI)
-	-> flags	0, 1, 2 
+	-> flags	TABLE_PROD_FUNC, TABLE_FROM_RELATION
 			cases 
-			0) TABLE producing function 
-			1) RELATIONAL subquery which is dynamically wrapped
+			TABLE_PROD_FUNC) TABLE producing function 
+			TABLE_FROM_RELATION) RELATIONAL subquery which is dynamically wrapped
 			    into function call (needed of remote calls)
-			2) WRAPPER for inserts, deletes and updates (new/old values)
+			2) WRAPPER for triggers inserts, deletes and updates (new/old values)
 				flags 
 				r is list of stmts
 	-> exps		is list of column expressions (also used for aliases)

@@ -33,14 +33,14 @@ stdout of test 'TypeException_with_missing_function.Bug-2674` in directory 'sql/
 #	RETURN (left_shift(nx1 - 1.0,2));
 #END;
 #select f2674();
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0	]
 #select f2674();
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0	]

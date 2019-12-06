@@ -38,7 +38,10 @@ sql_add_arg(mvc *sql, atom *v)
 {
 	atom** new_args;
 	int next_size = sql->argmax;
-	if (sql->argc == next_size) {
+
+	if (sql->argc == (1<<16)-1)
+		sql->caching = 0;
+	if (sql->caching && sql->argc == next_size) {
 		next_size *= 2;
 		new_args = RENEW_ARRAY(atom*,sql->args,next_size);
 		if(new_args) {
@@ -245,6 +248,9 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 				rdigits = digits2bits(rdigits);
 		}
 	}
+	/* handle OID horror */
+	if (i->type->radix == r->type->radix && i->type->base.id < r->type->base.id && strcmp(i->type->sqlname, "oid") == 0)
+		tpe = i->type->sqlname;
 	if (scale == 0 && (idigits == 0 || rdigits == 0)) {
 		sql_find_subtype(&lsuper, tpe, 0, 0);
 	} else {

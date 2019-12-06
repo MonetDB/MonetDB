@@ -40,7 +40,7 @@ stdout of test 'q6_v` in directory 'sql/test/rdf` itself:
 #	 UNION ALL
 #		(SELECT 'prop17582582_pso', count(*)
 % .trip,	.trip # table_name
-% L12,	L15 # name
+% %13,	%7 # name
 % char,	bigint # type
 % 16,	1 # length
 [ "prop14657240_pso",	0	]

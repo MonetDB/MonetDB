@@ -61,8 +61,8 @@ stdout of test 'case-overflow.Bug-2239` in directory 'sql/test/BugTracker-2011` 
 #        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
 #        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
 #        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
-% sys.t2239,	sys.L3 # table_name
-% station136,	L3 # name
+% sys.t2239,	sys.%2 # table_name
+% station136,	%2 # name
 % smallint,	hugeint # type
 % 4,	5 # length
 [ 1214,	38848	]

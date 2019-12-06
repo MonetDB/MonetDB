@@ -66,8 +66,8 @@ stdout of test 'analytics05` in directory 'sql/test/analytics` itself:
 [ 10	]
 #select count(*) over w, cast(sum(aa) over w as bigint)
 #    from analytics window w as (rows between 5 preceding and 0 following);
-% sys.L4,	sys.L12 # table_name
-% L4,	L12 # name
+% sys.%3,	sys.%2 # table_name
+% %3,	%2 # name
 % bigint,	bigint # type
 % 1,	2 # length
 [ 1,	15	]
@@ -82,24 +82,24 @@ stdout of test 'analytics05` in directory 'sql/test/analytics` itself:
 [ 6,	21	]
 #select count(*) over w, cast(sum(aa) over z as bigint), avg(aa) over z
 #    from analytics window w as (rows between 5 preceding and 0 following), z as (order by bb range unbounded preceding);
-% sys.L4,	sys.L12,	sys.L15 # table_name
-% L4,	L12,	L15 # name
+% sys.%11,	sys.%2,	sys.%10 # table_name
+% %11,	%2,	%10 # name
 % bigint,	bigint,	double # type
 % 1,	2,	24 # length
+[ 1,	9,	3	]
 [ 2,	9,	3	]
 [ 3,	9,	3	]
-[ 6,	9,	3	]
+[ 4,	20,	4	]
 [ 5,	20,	4	]
 [ 6,	20,	4	]
-[ 6,	20,	4	]
-[ 1,	46,	5.75	]
-[ 4,	46,	5.75	]
+[ 6,	46,	5.75	]
+[ 6,	46,	5.75	]
 [ 6,	46,	5.75	]
 [ 6,	46,	5.75	]
 #with helper as (select count(*) over w as counted from analytics window w as (order by bb))
 #    select count(*) over w from helper window w as (rows unbounded preceding);
-% sys.L13 # table_name
-% L13 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 2 # length
 [ 1	]
@@ -113,14 +113,14 @@ stdout of test 'analytics05` in directory 'sql/test/analytics` itself:
 [ 9	]
 [ 10	]
 #select count(*) over w window w as ();
-% .L4 # table_name
-% L4 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select (select count(*) over w window w as ());
-% .L5 # table_name
-% L5 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]

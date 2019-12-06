@@ -19,13 +19,9 @@ stdout of test 'sqlitelogictest-select-nullif-case.Bug-6579` in directory 'sql/t
 # MonetDB/SQL module loaded
 
 
-# 09:56:14 >  
-# 09:56:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15495" "--port=31815"
-# 09:56:14 >  
-
-#SELECT ALL - 70 + + - 89 - + ( SUM ( + CASE - NULLIF ( + 87, CASE CAST ( NULL AS INTEGER ) WHEN 13 / + ( 68 * - ( 64 ) )
-#THEN + 39 WHEN 70 * - 95 THEN 60 ELSE 15 + + 25 END * 5 ) WHEN + 36 THEN NULL WHEN 24 THEN NULL ELSE 66 END ) ) AS col2;
-% .L10 # table_name
+#SELECT ALL CAST(- 70 + + - 89 - + ( SUM ( + CASE - NULLIF ( + 87, CASE CAST ( NULL AS INTEGER ) WHEN 13 / + ( 68 * - ( 64 ) )
+#THEN + 39 WHEN 70 * - 95 THEN 60 ELSE 15 + + 25 END * 5 ) WHEN + 36 THEN NULL WHEN 24 THEN NULL ELSE 66 END ) ) AS BIGINT) AS col2;
+% .%10 # table_name
 % col2 # name
 % bigint # type
 % 4 # length
@@ -34,9 +30,9 @@ stdout of test 'sqlitelogictest-select-nullif-case.Bug-6579` in directory 'sql/t
 #- CAST ( + 90 AS INTEGER ) THEN NULL ELSE + - 80 END AS col1, ( + - 13 ) + + CAST ( NULL AS INTEGER ) + - 76 + - +
 #CASE + + NULLIF ( - MAX ( + NULLIF ( + 43, + 25 + + - CAST ( NULL AS INTEGER ) ) ), - - COUNT ( * ) ) WHEN 12 + + 36 *
 #- + CAST ( NULL AS INTEGER ) THEN NULL WHEN + 34 * + 10 THEN MIN ( DISTINCT + 68 ) / 10 WHEN 31 - COUNT ( * ) / + 16
-#THEN + 12 ELSE NULL END;
-% .L6,	.L25 # table_name
-% col1,	L25 # name
+#THEN + 12 ELSE NULL END AS BIGINT); -- 110, NULL
+% .%27,	.%21 # table_name
+% col1,	%21 # name
 % bigint,	bigint # type
 % 4,	1 # length
 [ -110,	NULL	]

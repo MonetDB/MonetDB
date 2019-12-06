@@ -64,44 +64,44 @@ stdout of test 'avggroupbysq.Bug-6178` in directory 'sql/test/BugTracker-2017` i
 #"N907MQ",191
 [ 2	]
 #SELECT AVG( arr_delay ) FROM x;
-% sys.L4 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 191	]
 #SELECT tailnum , AVG( arr_delay ) FROM x GROUP BY tailnum;
-% sys.x,	sys.L4 # table_name
-% tailnum,	L3 # name
+% sys.x,	sys.%1 # table_name
+% tailnum,	%1 # name
 % clob,	double # type
 % 6,	24 # length
 [ "N907MQ",	191	]
 #SELECT tailnum , MIN( arr_delay ) FROM x GROUP BY tailnum;
-% sys.x,	sys.L4 # table_name
-% tailnum,	L3 # name
+% sys.x,	sys.%1 # table_name
+% tailnum,	%1 # name
 % clob,	int # type
 % 6,	3 # length
 [ "N907MQ",	191	]
 #SELECT tailnum , AVG( arr_delay ) FROM x WHERE tailnum = 'N907MQ' GROUP BY tailnum;
-% sys.x,	sys.L4 # table_name
-% tailnum,	L3 # name
+% sys.x,	sys.%1 # table_name
+% tailnum,	%1 # name
 % clob,	double # type
 % 6,	24 # length
 [ "N907MQ",	191	]
 #SELECT * FROM ( SELECT tailnum , AVG( arr_delay ) FROM x GROUP BY tailnum ) AS xxx WHERE tailnum = 'N907MQ';
 % sys.xxx,	sys.xxx # table_name
-% tailnum,	L3 # name
+% tailnum,	%1 # name
 % clob,	double # type
 % 6,	24 # length
 [ "N907MQ",	191	]
 #SELECT tailnum , MIN( arr_delay ) FROM x WHERE tailnum = 'N907MQ' GROUP BY tailnum;
-% sys.x,	sys.L4 # table_name
-% tailnum,	L3 # name
+% sys.x,	sys.%1 # table_name
+% tailnum,	%1 # name
 % clob,	int # type
 % 6,	3 # length
 [ "N907MQ",	191	]
 #SELECT * FROM ( SELECT tailnum , MIN( arr_delay ) FROM x GROUP BY tailnum ) AS xxx WHERE tailnum = 'N907MQ';
 % sys.xxx,	sys.xxx # table_name
-% tailnum,	L3 # name
+% tailnum,	%1 # name
 % clob,	int # type
 % 6,	3 # length
 [ "N907MQ",	191	]

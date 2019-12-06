@@ -94,13 +94,13 @@ stdout of test 'multiple-count.Bug-6599` in directory 'sql/test/BugTracker-2018`
 #INSERT INTO "sys"."unitTestDontDelete" VALUES ('Cat1', 8, 8.5, '2013-06-18 19:18:18.000000');
 [ 1	]
 #select count(*) as "c3_recordcount" from "unitTestDontDelete" as "t2" where "t2"."A" = 'Nope';
-% sys.L4 # table_name
+% sys.%1 # table_name
 % c3_recordcount # name
 % bigint # type
 % 1 # length
 [ 0	]
 #select count(*) as "c3_recordcount", count(distinct "t2"."B") as "c7_b__unique_count_"  from "unitTestDontDelete" as "t2" where "t2"."A" = 'Nope';
-% sys.L4,	sys.L7 # table_name
+% sys.%1,	sys.%2 # table_name
 % c3_recordcount,	c7_b__unique_count_ # name
 % bigint,	bigint # type
 % 1,	1 # length

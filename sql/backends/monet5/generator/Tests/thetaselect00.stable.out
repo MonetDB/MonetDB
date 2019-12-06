@@ -36,7 +36,7 @@ stdout of test 'thetaselect00` in directory 'sql/backends/monet5/generator` itse
 [ 2,	4	]
 [ 3,	9	]
 #select * from generate_series(0,5,1);
-% .L4 # table_name
+% .%4 # table_name
 % value # name
 % tinyint # type
 % 1 # length

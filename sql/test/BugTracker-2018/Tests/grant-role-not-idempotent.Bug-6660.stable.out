@@ -7,35 +7,35 @@ stdout of test 'grant-role-not-idempotent.Bug-6660` in directory 'sql/test/BugTr
 
 #create user "mydummyuser" with password 'mydummyuser' name 'mydummyuser' schema "sys";
 #select count(*) from "user_role" where "login_id" in (select "id" from "sys"."auths" where "name" = 'mydummyuser');
-% sys.L5 # table_name
-% L5 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #grant sysadmin to mydummyuser;
 #set role sysadmin;
 #select count(*) from "user_role" where "login_id" in (select "id" from "sys"."auths" where "name" = 'mydummyuser');
-% sys.L5 # table_name
-% L5 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) from "user_role" where "login_id" in (select "id" from "sys"."auths" where "name" = 'mydummyuser');
-% sys.L5 # table_name
-% L5 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #revoke "sysadmin" from "mydummyuser";
 #select count(*) from "user_role" where "login_id" in (select "id" from "sys"."auths" where "name" = 'mydummyuser');
-% sys.L5 # table_name
-% L5 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #select count(*) from "user_role" where "login_id" in (select "id" from "sys"."auths" where "name" = 'mydummyuser');
-% sys.L5 # table_name
-% L5 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 0	]

@@ -46,8 +46,8 @@ stdout of test 'large-number-operation-strange-results.Bug-2929` in directory 's
 # 14:36:23 >  
 
 #select convert (                   10000000                *          100000 * 11.51 , decimal(15)) + convert (51.097 *          100000 , decimal(15));
-% .L4 # table_name
-% L4 # name
+% .%3 # table_name
+% %3 # name
 % decimal # type
 % 19 # length
 [ 11510005109700	]

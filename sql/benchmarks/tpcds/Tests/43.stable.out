@@ -34,7 +34,12 @@ stdout of test '43` in directory 'sql/benchmarks/tpcds` itself:
 #               ELSE NULL
 #           END) mon_sales,
 #       sum(CASE
-% sys.store,	sys.store,	sys.L5,	sys.L10,	sys.L13,	sys.L16,	sys.L21,	sys.L24,	sys.L27 # table_name
+#               WHEN (d_day_name='Tuesday') THEN ss_sales_price
+#               ELSE NULL
+#           END) tue_sales,
+#       sum(CASE
+#               WHEN (d_day_name='Wednesday') THEN ss_sales_price
+% sys.store,	sys.store,	sys.%1,	sys.%2,	sys.%3,	sys.%4,	sys.%5,	sys.%6,	sys.%7 # table_name
 % s_store_name,	s_store_id,	sun_sales,	mon_sales,	tue_sales,	wed_sales,	thu_sales,	fri_sales,	sat_sales # name
 % varchar,	char,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal # type
 % 5,	16,	20,	20,	20,	20,	20,	20,	20 # length

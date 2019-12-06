@@ -25,7 +25,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 #   and f.id = a.func_id
 #   and f.system
 # order by s.name, f.name, f.id, a.number;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
+% sys.s,	sys.f,	sys.a,	sys.a,	sys. # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
 % 8,	24,	2,	14,	705 # length
@@ -548,7 +548,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"debug",	1,	"int",	""	]
 [ "sys",	"debug",	0,	"int",	"create function sys.debug(flag string) returns integer\n external name mdb.\"setDebug\";"	]
 [ "sys",	"debug",	1,	"clob",	""	]
-[ "sys",	"debugflags",	0,	"clob",	"create function sys.debugflags()\n returns table(\"flag\" string, \"val\" bool)\n external name \"mdb\".\"getDebugFlags\";"	]
+[ "sys",	"debugflags",	0,	"clob",	"create function sys.debugflags()\n returns table(flag string, val bool)\n external name mdb.\"getDebugFlags\";"	]
 [ "sys",	"debugflags",	1,	"boolean",	""	]
 [ "sys",	"decade",	0,	"int",	"decade"	]
 [ "sys",	"decade",	1,	"date",	""	]
@@ -757,6 +757,16 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"group_concat",	0,	"clob",	"create aggregate sys.group_concat(str string, sep string) returns string external name \"aggr\".\"str_group_concat\";"	]
 [ "sys",	"group_concat",	1,	"clob",	""	]
 [ "sys",	"group_concat",	2,	"clob",	""	]
+[ "sys",	"grouping",	0,	"tinyint",	"grouping"	]
+[ "sys",	"grouping",	1,	"any",	""	]
+[ "sys",	"grouping",	0,	"smallint",	"grouping"	]
+[ "sys",	"grouping",	1,	"any",	""	]
+[ "sys",	"grouping",	0,	"int",	"grouping"	]
+[ "sys",	"grouping",	1,	"any",	""	]
+[ "sys",	"grouping",	0,	"bigint",	"grouping"	]
+[ "sys",	"grouping",	1,	"any",	""	]
+[ "sys",	"grouping",	0,	"hugeint",	"grouping"	]
+[ "sys",	"grouping",	1,	"any",	""	]
 [ "sys",	"has_m",	0,	"int",	"create function has_m(info integer) returns integer external name geom.\"hasM\";"	]
 [ "sys",	"has_m",	1,	"int",	""	]
 [ "sys",	"has_z",	0,	"int",	"create function has_z(info integer) returns integer external name geom.\"hasZ\";"	]
@@ -3702,9 +3712,13 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"setquerytimeout",	0,	"int",	"create procedure sys.setquerytimeout(\"query\" int)\n external name clients.setquerytimeout;"	]
 [ "sys",	"setquerytimeout",	0,	"int",	"create procedure sys.setquerytimeout(\"sessionid\" int, \"query\" int)\n external name clients.setquerytimeout;"	]
 [ "sys",	"setquerytimeout",	1,	"int",	""	]
+[ "sys",	"setsession",	0,	"bigint",	"create procedure sys.setsession(\"timeout\" bigint)\n external name clients.setsession;"	]
 [ "sys",	"setsessiontimeout",	0,	"int",	"create procedure sys.setsessiontimeout(\"timeout\" int)\n external name clients.setsessiontimeout;"	]
 [ "sys",	"setsessiontimeout",	0,	"int",	"create procedure sys.setsessiontimeout(\"sessionid\" int, \"query\" int)\n external name clients.setsessiontimeout;"	]
 [ "sys",	"setsessiontimeout",	1,	"int",	""	]
+[ "sys",	"settimeout",	0,	"bigint",	"create procedure sys.settimeout(\"query\" bigint)\n external name clients.settimeout;"	]
+[ "sys",	"settimeout",	0,	"bigint",	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint)\n external name clients.settimeout;"	]
+[ "sys",	"settimeout",	1,	"bigint",	""	]
 [ "sys",	"setworkerlimit",	0,	"int",	"create procedure sys.setworkerlimit(\"limit\" int)\n external name clients.setworkerlimit;"	]
 [ "sys",	"setworkerlimit",	0,	"int",	"create procedure sys.setworkerlimit(\"sessionid\" int, \"limit\" int)\n external name clients.setworkerlimit;"	]
 [ "sys",	"setworkerlimit",	1,	"int",	""	]
@@ -3935,6 +3949,9 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"sql_add",	0,	"timetz",	"time_add_msec_interval"	]
 [ "sys",	"sql_add",	1,	"timetz",	""	]
 [ "sys",	"sql_add",	2,	"sec_interval",	""	]
+[ "sys",	"sql_anyequal",	0,	"boolean",	"anyequal"	]
+[ "sys",	"sql_anyequal",	1,	"any",	""	]
+[ "sys",	"sql_anyequal",	2,	"any",	""	]
 [ "sys",	"sql_div",	0,	"smallint",	"/"	]
 [ "sys",	"sql_div",	1,	"smallint",	""	]
 [ "sys",	"sql_div",	2,	"tinyint",	""	]
@@ -4465,6 +4482,9 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"sql_neg",	1,	"month_interval",	""	]
 [ "sys",	"sql_neg",	0,	"sec_interval",	"-"	]
 [ "sys",	"sql_neg",	1,	"sec_interval",	""	]
+[ "sys",	"sql_not_anyequal",	0,	"boolean",	"not_anyequal"	]
+[ "sys",	"sql_not_anyequal",	1,	"any",	""	]
+[ "sys",	"sql_not_anyequal",	2,	"any",	""	]
 [ "sys",	"sql_not_exists",	0,	"boolean",	"not_exist"	]
 [ "sys",	"sql_not_exists",	1,	"any",	""	]
 [ "sys",	"sql_sub",	0,	"oid",	"-"	]

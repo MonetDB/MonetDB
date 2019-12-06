@@ -24,8 +24,8 @@ stdout of test 'T44` in directory 'geom/sql/conformance` itself:
 # 15:15:53 >  
 
 #SELECT ST_Contains(forests.boundary, named_places.boundary) FROM forests, named_places WHERE forests.name = 'Green Forest' AND named_places.name = 'Ashton';
-% sys.L1 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ false	]

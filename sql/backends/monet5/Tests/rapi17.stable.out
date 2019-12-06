@@ -31,8 +31,8 @@ stdout of test 'rapi17` in directory 'sql/backends/monet5` itself:
 #START TRANSACTION;
 #create function dt(d date) returns string language R { class(d) };
 #select dt( cast('2015-09-21' as date) );
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % clob # type
 % 4 # length
 [ "Date"	]

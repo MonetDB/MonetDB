@@ -30,8 +30,8 @@ stdout of test 'update_statement_in_function_ignored.Bug-2614` in directory 'sql
 % 1,	1 # length
 [ 1,	NULL	]
 #select next_b();
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]

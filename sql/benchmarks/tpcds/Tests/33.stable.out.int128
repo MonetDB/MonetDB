@@ -35,7 +35,15 @@ stdout of test '33` in directory 'sql/benchmarks/tpcds` itself:
 #        FROM item
 #        WHERE i_category IN ('Electronics'))
 #     AND ss_item_sk = i_item_sk
-% .tmp1,	.L60 # table_name
+#     AND ss_sold_date_sk = d_date_sk
+#     AND d_year = 1998
+#     AND d_moy = 5
+#     AND ss_addr_sk = ca_address_sk
+#     AND ca_gmt_offset = -5
+#   GROUP BY i_manufact_id),
+#     cs AS
+#  ( SELECT i_manufact_id,
+% .tmp1,	.%31 # table_name
 % i_manufact_id,	total_sales # name
 % int,	decimal # type
 % 4,	40 # length

@@ -558,57 +558,90 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
-		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p, *r;
-		BUN cnt;
-		int j;
-		dbl *rb, *rp, *end, cnt_cast;
-		bit *np;
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p, *o, *r;
+		BUN ncnt, j = 0;
+		bit *np, *no, *bo1, *bo2, *end;
+		dbl *rb, *rp, cnt_cast, nres;
 
 		if (!b)
 			throw(SQL, "sql.cume_dist", SQLSTATE(HY005) "Cannot access column descriptor");
-		cnt = BATcount(b);
-		cnt_cast = (dbl) cnt;
-		voidresultBAT(r, TYPE_dbl, cnt, b, "sql.cume_dist");
+		voidresultBAT(r, TYPE_dbl, BATcount(b), b, "sql.cume_dist");
 		rb = rp = (dbl*)Tloc(r, 0);
-		end = rp + cnt;
 		if (isaBatType(getArgType(mb, pci, 2))) {
 			if (isaBatType(getArgType(mb, pci, 3))) {
 				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
-				if (!p) {
+				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+				if (!p || !o) {
 					BBPunfix(b->batCacheid);
+					if (p) BBPunfix(p->batCacheid);
+					if (o) BBPunfix(o->batCacheid);
 					throw(SQL, "sql.cume_dist", SQLSTATE(HY005) "Cannot access column descriptor");
 				}
 				np = (bit*)Tloc(p, 0);
-				for(j=0; rp<end; j++, np++, rp++) {
+				end = np + BATcount(p);
+				bo1 = bo2 = no = (bit*)Tloc(o, 0);
+
+				for (; np<end; np++, no++) {
 					if (*np) {
-						for(; rb<rp; rb++)
-							*rb = j / cnt_cast;
+						ncnt = no - bo2;
+						cnt_cast = (dbl) ncnt;
+						for (; bo2<no; bo2++) {
+							if (*bo2) {
+								j += (bo2 - bo1);
+								nres = j / cnt_cast;
+								for (; bo1 < bo2; bo1++, rb++)
+									*rb = nres;
+							}
+						}
+						for (; bo1 < bo2; bo1++, rb++)
+							*rb = 1;
 					}
 				}
-				for(; rb<rp; rb++)
+				ncnt = no - bo2;
+				cnt_cast = (dbl) ncnt;
+				for (; bo2<no; bo2++) {
+					if (*bo2) {
+						j += (bo2 - bo1);
+						nres = j / cnt_cast;
+						for (; bo1 < bo2; bo1++, rb++)
+							*rb = nres;
+					}
+				}
+				for (; bo1 < bo2; bo1++, rb++)
 					*rb = 1;
 			} else { /* single value, ie no ordering */
-				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
-				if (!p) {
+				rp = rb + BATcount(b);
+				for (; rb<rp; rb++)
+					*rb = 1;
+			}
+		} else { /* single value, ie no partitions */
+			if (isaBatType(getArgType(mb, pci, 3))) {
+				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+				if (!o) {
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.cume_dist", SQLSTATE(HY005) "Cannot access column descriptor");
 				}
-				np = (bit*)Tloc(p, 0);
-				for(j=0; rp<end; j++, np++, rp++) {
-					if (*np) {
-						for(; rb<rp; rb++)
-							*rb = j / cnt_cast;
+				bo1 = bo2 = (bit*)Tloc(o, 0);
+				no = bo1 + BATcount(b);
+				cnt_cast = (dbl) BATcount(b);
+				for (; bo2<no; bo2++) {
+					if (*bo2) {
+						j += (bo2 - bo1);
+						nres = j / cnt_cast;
+						for (; bo1 < bo2; bo1++, rb++)
+							*rb = nres;
 					}
 				}
-				for(; rb<rp; rb++)
+				for (; bo1 < bo2; bo1++, rb++)
 					*rb = 1;
-				BBPunfix(p->batCacheid);
+				BBPunfix(o->batCacheid);
+			} else { /* single value, ie no ordering */
+				rp = rb + BATcount(b);
+				for (; rb<rp; rb++)
+					*rb = 1;
 			}
-		} else {
-			for(; rp<end; rp++)
-				*rp = 1;
 		}
-		BATsetcount(r, cnt);
+		BATsetcount(r, BATcount(b));
 		BBPunfix(b->batCacheid);
 		BBPkeepref(*res = r->batCacheid);
 	} else {
@@ -619,28 +652,41 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define NTILE_IMP(TPE)                                                                      \
-	do {                                                                                    \
-		TPE *ntile = getArgReference_##TPE(stk, pci, 2);                                    \
-		if(!is_##TPE##_nil(*ntile) && *ntile < 1) {                                         \
-			BBPunfix(b->batCacheid);                                                        \
-			throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile must be greater than zero");     \
-		}                                                                                   \
-		voidresultBAT(r, TYPE_##TPE, cnt, b, "sql.ntile");                                  \
-		if (isaBatType(getArgType(mb, pci, 3))) {                                           \
-			p = BATdescriptor(*getArgReference_bat(stk, pci, 3));                           \
-			if (!p) {                                                                       \
-				BBPunfix(b->batCacheid);                                                    \
+#define NTILE_IMP(TPE) \
+	do { \
+		TPE *ntile = NULL; \
+		if (is_a_bat) { \
+			bool is_non_positive = false; \
+			for (TPE *np = (TPE*)Tloc(n, 0), *nend = np + BATcount(n); np < nend && !is_non_positive; np++) \
+				is_non_positive |= (!is_##TPE##_nil(*np) && *np < 1); \
+			if (is_non_positive) { \
+				BBPunfix(b->batCacheid); \
+				BBPunfix(n->batCacheid); \
+				throw(SQL, "sql.ntile", SQLSTATE(42000) "All ntile values must be greater than zero"); \
+			} \
+		} else { \
+			ntile = getArgReference_##TPE(stk, pci, 2); \
+			if (!is_##TPE##_nil(*ntile) && *ntile < 1) { \
+				BBPunfix(b->batCacheid); \
+				throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile must be greater than zero"); \
+			} \
+		} \
+		voidresultBAT(r, TYPE_##TPE, cnt, b, "sql.ntile"); \
+		if (isaBatType(getArgType(mb, pci, 3))) { \
+			p = BATdescriptor(*getArgReference_bat(stk, pci, 3)); \
+			if (!p) { \
+				BBPunfix(b->batCacheid); \
+				if (n) BBPunfix(n->batCacheid); \
 				throw(SQL, "sql.ntile", SQLSTATE(HY005) "Cannot access column descriptor"); \
-			}                                                                               \
-		}                                                                                   \
-		gdk_code = GDKanalyticalntile(r, b, p, TYPE_##TPE, ntile);                          \
+			} \
+		} \
+		gdk_code = GDKanalyticalntile(r, b, p, n, TYPE_##TPE, ntile); \
 	} while(0);
 
 #define NTILE_VALUE_SINGLE_IMP(TPE)                                                     \
 	do {                                                                                \
 		TPE val = *(TPE*) ntile, *rres = (TPE*) res;                                    \
-		if(!is_##TPE##_nil(val) && val < 1)                                             \
+		if (!is_##TPE##_nil(val) && val < 1)                                            \
 			throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile must be greater than zero"); \
 		*rres = (is_##TPE##_nil(val) || val > 1) ? TPE##_nil : *(TPE*) in;              \
 	} while(0);
@@ -649,6 +695,7 @@ str
 SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tp1, tp2;
+	bool is_a_bat;
 
 	(void)cntxt;
 	if (pci->argc != 5 || (getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit) ||
@@ -656,17 +703,24 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile(:any_1,:number,:bit,:bit)");
 	}
 	tp1 = getArgType(mb, pci, 1), tp2 = getArgType(mb, pci, 2);
-	if (isaBatType(tp2))
-		throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile first argument must be a single atom");
+	is_a_bat = isaBatType(tp2);
+	if (is_a_bat)
+		tp2 = getBatType(tp2);
 
 	if (isaBatType(tp1)) {
 		BUN cnt;
 		bat *res = getArgReference_bat(stk, pci, 0);
-		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *r;
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *r, *n = NULL;
 		if (!b)
 			throw(SQL, "sql.ntile", SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = BATcount(b);
 		gdk_return gdk_code;
+		if (isaBatType(getArgType(mb, pci, 2))) {
+			if (!(n = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
+				BBPunfix(b->batCacheid);
+				throw(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
+			}
+		}
 
 		switch (tp2) {
 			case TYPE_bte:
@@ -688,14 +742,16 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 			default: {
 				BBPunfix(b->batCacheid);
+				if (n) BBPunfix(n->batCacheid);
 				throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile not available for %s", ATOMname(tp2));
 			}
 		}
 
 		BATsetcount(r, cnt);
 		BBPunfix(b->batCacheid);
-		if(p) BBPunfix(p->batCacheid);
-		if(gdk_code == GDK_SUCCEED)
+		if (p) BBPunfix(p->batCacheid);
+		if (n) BBPunfix(n->batCacheid);
+		if (gdk_code == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
 			throw(SQL, "sql.ntile", GDK_EXCEPTION);

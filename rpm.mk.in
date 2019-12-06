@@ -41,7 +41,7 @@ monetdb_hgversion.h: always
 		else \
 			mv -f monetdb_hgversion.h.new monetdb_hgversion.h; \
 		fi; \
-	elif [ -d "$(srcdir)"/.git ]; then \
+	elif [ -e "$(srcdir)"/.git ]; then \
 		hgid=`(cd "$(srcdir)"; git log -1 | sed -n '/Notes (hg):/,$$p' | grep -v Notes | sed 's/^ \+\(............\).*/\1/') 2>/dev/null`; \
 		dirty=`(cd "$(srcdir)"; [[ -z $$(git status -s) ]] || echo "+")`; \
 		if [ -z "$${hgid}" ]; then \

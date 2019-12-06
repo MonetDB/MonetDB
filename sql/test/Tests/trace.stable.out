@@ -31,14 +31,14 @@ stdout of test 'trace` in directory 'sql/test` itself:
 #(20,'int'),(21,'lng'),(22,'daytime'),(23,'daytime'),(24,'date'),(25,'timestamp'),(26,'timestamp'),(27,'blob');
 [ 26	]
 #select '~BeginVariableOutput~';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 21 # length
 [ "~BeginVariableOutput~"	]
 #TRACE SELECT count(*) FROM mytypes;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 26	]
@@ -47,20 +47,20 @@ stdout of test 'trace` in directory 'sql/test` itself:
 % usec,	statement # name
 % bigint,	clob # type
 % 2,	106 # length
-[ 77,	"X_1=0@0:void := querylog.define(\"trace select count(*) from mytypes;\":str, \"sequential_pipe\":str, 12:int);"	]
-[ 38,	"X_4=0:int := sql.mvc();"	]
-[ 64,	"C_5=<tmp_1173>[26]:bat[:oid] := sql.tid(X_4=0:int, \"sys\":str, \"mytypes\":str);"	]
-[ 59,	"X_18=26:lng := aggr.count(C_5=<tmp_1173>[26]:bat[:oid]);"	]
-[ 93,	"sql.resultSet(\".L3\":str, \"L3\":str, \"bigint\":str, 64:int, 0:int, 7:int, X_18=26:lng);"	]
+[ 2,	"X_1=0@0:void := querylog.define(\"trace select count(*) from mytypes;\":str, \"sequential_pipe\":str, 12:int);"	]
+[ 0,	"X_4=0:int := sql.mvc();"	]
+[ 4,	"C_5=<tmp_2405>[26]:bat[:oid] := sql.tid(X_4=0:int, \"sys\":str, \"mytypes\":str);"	]
+[ 1,	"X_18=26:lng := aggr.count(C_5=<tmp_2405>[26]:bat[:oid]);"	]
+[ 19,	"sql.resultSet(\".%1\":str, \"%1\":str, \"bigint\":str, 64:int, 0:int, 7:int, X_18=26:lng);"	]
 #select '~EndVariableOutput~';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 19 # length
 [ "~EndVariableOutput~"	]
 #SELECT COUNT(*) FROM tracelog();
-% .L4 # table_name
-% L4 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 5	]

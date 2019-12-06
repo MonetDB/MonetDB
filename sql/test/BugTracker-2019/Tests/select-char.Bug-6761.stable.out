@@ -127,7 +127,7 @@ stdout of test 'select-char.Bug-6761` in directory 'sql/test/BugTracker-2019` it
 % int # type
 % 1 # length
 #select fundid, CAST(sum(fxcurdlttot) AS BIGINT) as fxcurdlttotfx from actual_positionmart_pfx_intraday_test where asofdate='2019-09-11' and fundid = 10 and currencyexposed <> 'TOTAL' group by fundid;
-% sys.actual_positionmart_pfx_intraday_test,	sys.L3 # table_name
+% sys.actual_positionmart_pfx_intraday_test,	sys.%4 # table_name
 % fundid,	fxcurdlttotfx # name
 % int,	bigint # type
 % 1,	1 # length

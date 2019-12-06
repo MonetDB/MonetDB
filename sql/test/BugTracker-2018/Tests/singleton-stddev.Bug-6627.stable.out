@@ -94,16 +94,16 @@ stdout of test 'singleton-stddev.Bug-6627` in directory 'sql/test/BugTracker-201
 #INSERT INTO "sys"."unitTestDontDelete" VALUES ('Cat1', 8, 8.5, '2013-06-18 19:18:18.000000');
 [ 1	]
 #select stddev_pop("C"), "A" from "unitTestDontDelete" group by "A";
-% sys.L2,	sys.unitTestDontDelete # table_name
-% L2,	A # name
+% sys.%1,	sys.unitTestDontDelete # table_name
+% %1,	A # name
 % double,	varchar # type
 % 24,	4 # length
 [ NULL,	NULL	]
 [ 2.828427125,	"Cat1"	]
 [ 2.236067977,	"Cat2"	]
 #select stddev_pop("C"), "A", "B" from "unitTestDontDelete" group by "A", "B";
-% sys.L2,	sys.unitTestDontDelete,	sys.unitTestDontDelete # table_name
-% L2,	A,	B # name
+% sys.%1,	sys.unitTestDontDelete,	sys.unitTestDontDelete # table_name
+% %1,	A,	B # name
 % double,	varchar,	bigint # type
 % 24,	4,	1 # length
 [ NULL,	NULL,	NULL	]

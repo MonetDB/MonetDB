@@ -1699,10 +1699,37 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 			 s##vals + ((x) * s##width))
 #define FVALUE(s, x)	(s##vals + ((x) * s##width))
 
+#define LTany(a,b)	((*cmp)(a, b) < 0)
+#define EQany(a,b)	((*cmp)(a, b) == 0)
+#define is_any_nil(v)	((v) == NULL || (*cmp)((v), nil) == 0)
+
+#define less3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(a, b) || (i && EQ##t(a, b)))
+#define grtr3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(b, a) || (i && EQ##t(a, b)))
+#define or3(a,b)	((a) == 1 || (b) == 1 ? 1 : is_bit_nil(a) || is_bit_nil(b) ? bit_nil : 0)
+#define and3(a,b)	((a) == 0 || (b) == 0 ? 0 : is_bit_nil(a) || is_bit_nil(b) ? bit_nil : 1)
+#define not3(a)		(is_bit_nil(a) ? bit_nil : !(a))
+
+#define between3(v, lo, linc, hi, hinc, TYPE)	\
+	and3(grtr3(v, lo, linc, TYPE), less3(v, hi, hinc, TYPE))
+
+#define BETWEEN(v, lo, linc, hi, hinc, TYPE)				\
+	(is_##TYPE##_nil(v)						\
+	 ? bit_nil							\
+	 : (bit) (anti							\
+		  ? (symmetric						\
+		     ? not3(or3(between3(v, lo, linc, hi, hinc, TYPE),	\
+				between3(v, hi, hinc, lo, linc, TYPE)))	\
+		     : not3(between3(v, lo, linc, hi, hinc, TYPE)))	\
+		  : (symmetric						\
+		     ? or3(between3(v, lo, linc, hi, hinc, TYPE),	\
+			   between3(v, hi, hinc, lo, linc, TYPE))	\
+		     : between3(v, lo, linc, hi, hinc, TYPE))))
+
 gdk_return
-rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, BUN maxsize)
+rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
+	  struct canditer *lci, struct canditer *rci,
+	  bool li, bool hi, bool anti, bool symmetric, BUN maxsize)
 {
-	struct canditer lci, rci;
 	const char *rlvals, *rhvals;
 	const char *lvars, *rlvars, *rhvars;
 	int rlwidth, rhwidth;
@@ -1715,7 +1742,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 	const void *vrl, *vrh;
 	oid ro;
 	oid rlval = oid_nil, rhval = oid_nil;
-	int sorted = 0;		/* which column is sorted */
+	int sorted = 0;		/* which output column is sorted */
 	BAT *tmp;
 	bool use_orderidx = false;
 	const char *algo = NULL;
@@ -1727,29 +1754,22 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 	assert(r1->ttype == TYPE_oid);
 	assert(r2 == NULL || r2->ttype == TYPE_oid);
 	assert(r2 == NULL || BATcount(r1) == BATcount(r2));
+	assert(l->ttype != TYPE_void || !is_oid_nil(l->tseqbase));
+	assert(rl->ttype != TYPE_void || !is_oid_nil(rl->tseqbase));
+	assert(rh->ttype != TYPE_void || !is_oid_nil(rh->tseqbase));
 
 	ALGODEBUG fprintf(stderr, "#%s: %s(l=" ALGOBATFMT ","
 			  "rl=" ALGOBATFMT ",rh=" ALGOBATFMT ","
-			  "sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ")\n",
+			  "sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ","
+			  "anti=%s,symmetric=%s)\n",
 			  MT_thread_getname(), __func__,
 			  ALGOBATPAR(l),
 			  ALGOBATPAR(rl),
 			  ALGOBATPAR(rh),
-			  ALGOOPTBATPAR(sl),
-			  ALGOOPTBATPAR(sr));
-
-	if ((l->ttype == TYPE_void && is_oid_nil(l->tseqbase)) ||
-	    (rl->ttype == TYPE_void && is_oid_nil(rl->tseqbase)) ||
-	    (rh->ttype == TYPE_void && is_oid_nil(rh->tseqbase))) {
-		/* trivial: nils don't match anything */
-		return GDK_SUCCEED;
-	}
-
-	if (canditer_init(&lci, l, sl) == 0 ||
-	    canditer_init(&rci, rl, sr) == 0) {
-		/* trivial: empty input */
-		return GDK_SUCCEED;
-	}
+			  ALGOOPTBATPAR(lci->s),
+			  ALGOOPTBATPAR(rci->s),
+			  anti ? "true" : "false",
+			  symmetric ? "true" : "false");
 
 	rlvals = rl->ttype == TYPE_void ? NULL : (const char *) Tloc(rl, 0);
 	rhvals = rh->ttype == TYPE_void ? NULL : (const char *) Tloc(rh, 0);
@@ -1784,13 +1804,13 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 
 	vrl = &rlval;
 	vrh = &rhval;
-	if (BATordered(l) || BATordered_rev(l) || use_orderidx) {
+	if (!anti && !symmetric && (BATordered(l) || BATordered_rev(l) || use_orderidx)) {
 		/* left column is sorted, use binary search */
 		sorted = 2;
-		for (BUN i = 0; i < rci.ncand; i++) {
+		for (BUN i = 0; i < rci->ncand; i++) {
 			BUN low, high;
 
-			ro = canditer_next(&rci);
+			ro = canditer_next(rci);
 			if (rlvals) {
 				vrl = VALUE(rl, ro - rl->hseqbase);
 			} else {
@@ -1837,8 +1857,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 			if (high <= low)
 				continue;
 			if (l->tsorted || l->trevsorted) {
-				low = canditer_search(&lci, low + l->hseqbase, true);
-				high = canditer_search(&lci, high + l->hseqbase, true);
+				low = canditer_search(lci, low + l->hseqbase, true);
+				high = canditer_search(lci, high + l->hseqbase, true);
 				assert(high >= low);
 
 				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
@@ -1857,9 +1877,9 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 						dst2 = (oid *) Tloc(r2, 0);
 					}
 				}
-				canditer_setidx(&lci, low);
+				canditer_setidx(lci, low);
 				while (low < high) {
-					dst1[r1->batCount++] = canditer_next(&lci);
+					dst1[r1->batCount++] = canditer_next(lci);
 					if (r2) {
 						dst2[r2->batCount++] = ro;
 					}
@@ -1889,7 +1909,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 
 				while (low < high) {
-					if (canditer_search(&lci, ord[low], false) != BUN_NONE) {
+					if (canditer_search(lci, ord[low], false) != BUN_NONE) {
 						dst1[r1->batCount++] = ord[low];
 						if (r2) {
 							dst2[r2->batCount++] = ro;
@@ -1901,7 +1921,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 		}
 		cnt = BATcount(r1);
 		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
-	} else if ((BATcount(rl) > 2 ||
+	} else if (!anti && !symmetric &&
+		   (BATcount(rl) > 2 ||
 		    !l->batTransient ||
 		    (VIEWtparent(l) != 0 &&
 		     (tmp = BBPquickdesc(VIEWtparent(l), false)) != NULL &&
@@ -1918,9 +1939,9 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 
 		sorted = 2;
 		cnt = 0;
-		maximum = lci.ncand;
-		for (BUN i = 0; i < rci.ncand; i++) {
-			ro = canditer_next(&rci);
+		maximum = lci->ncand;
+		for (BUN i = 0; i < rci->ncand; i++) {
+			ro = canditer_next(rci);
 			if (rlvals) {
 				vrl = FVALUE(rl, ro - rl->hseqbase);
 			} else {
@@ -1953,7 +1974,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 				if (vl > vh)
 					continue;
-				ncnt = fullscan_bte(l, &lci, r1, &vl, &vh,
+				ncnt = fullscan_bte(l, lci, r1, &vl, &vh,
 						    true, true, false,
 						    false, true, true,
 						    false, cnt,
@@ -1980,7 +2001,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 				if (vl > vh)
 					continue;
-				ncnt = fullscan_sht(l, &lci, r1, &vl, &vh,
+				ncnt = fullscan_sht(l, lci, r1, &vl, &vh,
 						    true, true, false,
 						    false, true, true,
 						    false, cnt,
@@ -2020,7 +2041,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 				if (vl > vh)
 					continue;
-				ncnt = fullscan_int(l, &lci, r1, &vl, &vh,
+				ncnt = fullscan_int(l, lci, r1, &vl, &vh,
 						    true, true, false,
 						    false, true, true,
 						    false, cnt,
@@ -2060,7 +2081,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 				if (vl > vh)
 					continue;
-				ncnt = fullscan_lng(l, &lci, r1, &vl, &vh,
+				ncnt = fullscan_lng(l, lci, r1, &vl, &vh,
 						    true, true, false,
 						    false, true, true,
 						    false, cnt,
@@ -2088,7 +2109,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 				if (vl > vh)
 					continue;
-				ncnt = fullscan_hge(l, &lci, r1, &vl, &vh,
+				ncnt = fullscan_hge(l, lci, r1, &vl, &vh,
 						    true, true, false,
 						    false, true, true,
 						    false, cnt,
@@ -2118,7 +2139,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 				if (vl > vh)
 					continue;
-				ncnt = fullscan_flt(l, &lci, r1, &vl, &vh,
+				ncnt = fullscan_flt(l, lci, r1, &vl, &vh,
 						    true, true, false,
 						    false, true, true,
 						    false, cnt,
@@ -2147,7 +2168,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 				}
 				if (vl > vh)
 					continue;
-				ncnt = fullscan_dbl(l, &lci, r1, &vl, &vh,
+				ncnt = fullscan_dbl(l, lci, r1, &vl, &vh,
 						    true, true, false,
 						    false, true, true,
 						    false, cnt,
@@ -2189,10 +2210,10 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 		sorted = 1;
 		lvals = l->ttype == TYPE_void ? NULL : (const char *) Tloc(l, 0);
 		vl = &lval;
-		for (BUN i = 0; i < lci.ncand; i++) {
+		for (BUN i = 0; i < lci->ncand; i++) {
 			oid lo;
 
-			lo = canditer_next(&lci);
+			lo = canditer_next(lci);
 			if (lvals) {
 				vl = VALUE(l, lo - l->hseqbase);
 				if (cmp(vl, nil) == 0)
@@ -2200,11 +2221,9 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 			} else {
 				lval = lo - l->hseqbase + l->tseqbase;
 			}
-			canditer_reset(&rci);
-			for (BUN j = 0; j < rci.ncand; j++) {
-				int c;
-
-				ro = canditer_next(&rci);
+			canditer_reset(rci);
+			for (BUN j = 0; j < rci->ncand; j++) {
+				ro = canditer_next(rci);
 				if (rlvals) {
 					vrl = VALUE(rl, ro - rl->hseqbase);
 					if (cmp(vrl, nil) == 0)
@@ -2221,11 +2240,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 					/* TYPE_void */
 					rhval = ro - rh->hseqbase + rh->tseqbase;
 				}
-				c = cmp(vl, vrl);
-				if (c < 0 || (c == 0 && !li))
-					continue;
-				c = cmp(vl, vrh);
-				if (c > 0 || (c == 0 && !hi))
+				if (BETWEEN(vl, vrl, li, vrh, hi, any) != 1)
 					continue;
 				if (BUNlast(r1) == BATcapacity(r1)) {
 					BUN newcap = BATgrows(r1);

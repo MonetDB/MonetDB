@@ -44,44 +44,44 @@ stdout of test 'date_parsing` in directory 'sql/test/snodgrass` itself:
 # 21:11:50 >  
 
 #SELECT DATE '1997-01-12';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % date # type
 % 10 # length
 [ 1997-01-12	]
 #SELECT TIME '11:35:29';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % time # type
 % 8 # length
 [ 11:35:29	]
 #SELECT TIME '00:00:00';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % time # type
 % 8 # length
 [ 00:00:00	]
 #SELECT TIME '11:08:27-07:00';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % time # type
 % 8 # length
 [ 18:08:27	]
 #SELECT TIME '11:08:27.123456-07:00';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % time # type
 % 8 # length
 [ 18:08:27	]
 #SELECT TIMESTAMP '1997-01-15 11:35:29.123456';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % timestamp # type
 % 26 # length
 [ 1997-01-15 11:35:29.123456	]
 #SELECT TIMESTAMP '1997-01-15 11:35:29.123456-07:00';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % timestamp # type
 % 26 # length
 [ 1997-01-15 18:35:29.123456	]
