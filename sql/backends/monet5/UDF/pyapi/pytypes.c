@@ -113,6 +113,8 @@ char *BatType_Format(int type)
 		return "BLOB";
 	}
 	switch (type) {
+		case TYPE_void:
+			return "VOID";
 		case TYPE_bit:
 			return "BOOL";
 		case TYPE_bte:
@@ -157,12 +159,8 @@ int PyType_ToBat(int type)
 #endif
 		case NPY_LONGLONG:
 			return TYPE_lng;
-		case NPY_UBYTE:
-		case NPY_USHORT:
-		case NPY_UINT:
 		case NPY_ULONG:
-		case NPY_ULONGLONG:
-			return TYPE_void;
+			return TYPE_oid;
 		case NPY_FLOAT16:
 		case NPY_FLOAT:
 			return TYPE_flt;
@@ -184,6 +182,8 @@ int BatType_ToPyType(int type)
 		return NPY_OBJECT;
 	}
 	switch (type) {
+		case TYPE_void:
+			return NPY_ULONGLONG;
 		case TYPE_bit:
 			return NPY_BOOL;
 		case TYPE_bte:
@@ -201,7 +201,7 @@ int BatType_ToPyType(int type)
 		case TYPE_str:
 			return NPY_UNICODE;
 		case TYPE_oid:
-			return NPY_INT32;
+			return NPY_ULONG;
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return NPY_FLOAT64;
