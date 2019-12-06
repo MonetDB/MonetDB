@@ -1,5 +1,4 @@
 ####technical depth####
-Add lots of tests with candidate lists for all
 Add test for float/double
 Add test for huge
 Be sure alignment is correct. Use asserts and type specialized block headers for this.(1*)
