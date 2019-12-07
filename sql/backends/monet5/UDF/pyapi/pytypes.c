@@ -159,7 +159,8 @@ int PyType_ToBat(int type)
 #endif
 		case NPY_LONGLONG:
 			return TYPE_lng;
-		case NPY_ULONG:
+		case NPY_UINT32:
+		case NPY_UINT64:
 			return TYPE_oid;
 		case NPY_FLOAT16:
 		case NPY_FLOAT:
@@ -183,7 +184,11 @@ int BatType_ToPyType(int type)
 	}
 	switch (type) {
 		case TYPE_void:
+#if SIZEOF_OID == SIZEOF_INT
+			return NPY_UINT;
+#else
 			return NPY_ULONGLONG;
+#endif
 		case TYPE_bit:
 			return NPY_BOOL;
 		case TYPE_bte:
@@ -201,7 +206,11 @@ int BatType_ToPyType(int type)
 		case TYPE_str:
 			return NPY_UNICODE;
 		case TYPE_oid:
-			return NPY_ULONG;
+#if SIZEOF_OID == SIZEOF_INT
+			return NPY_UINT32;
+#else
+			return NPY_UINT64;
+#endif
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			return NPY_FLOAT64;

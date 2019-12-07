@@ -50,7 +50,13 @@ PyObject *PyArrayObject_FromScalar(PyInput *inp, char **return_message)
 
 	switch (inp->bat_type) {
 		case TYPE_void:
-			vararray = PyArray_Arange(0, 1, 1, NPY_ULONGLONG);
+			vararray = PyArray_Arange(0, 1, 1, 
+#if SIZEOF_OID == SIZEOF_INT
+									  NPY_UINT
+#else
+									  NPY_ULONGLONG
+#endif
+			);
 			break;
 		case TYPE_oid:
 			vararray = PyInt_FromLong((long)(*(oid *)inp->dataptr));
@@ -217,10 +223,22 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 	} else {
 		switch (inp->bat_type) {
 			case TYPE_void:
-				BAT_TO_NP_CREATE_ALWAYS(b, NPY_ULONGLONG);
+				BAT_TO_NP_CREATE_ALWAYS(b, 
+#if SIZEOF_OID == SIZEOF_INT
+					NPY_UINT
+#else
+					NPY_ULONGLONG
+#endif
+				);
 				break;
 			case TYPE_oid:
-				BAT_TO_NP(b, oid, NPY_ULONG);
+				BAT_TO_NP(b, oid, 
+#if SIZEOF_OID == SIZEOF_INT
+					NPY_UINT32
+#else
+					NPY_UINT64
+#endif
+				);
 				break;
 			case TYPE_bit:
 				BAT_TO_NP(b, bit, NPY_INT8);

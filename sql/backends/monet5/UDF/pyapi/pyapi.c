@@ -1508,9 +1508,28 @@ static void ComputeParallelAggregation(AggrParams *p)
 				npy_intp elements[1] = {group_elements};
 				switch (input.bat_type) {
 					case TYPE_void:
+						vararray = PyArray_New(
+							&PyArray_Type, 1, elements, 
+#if SIZEOF_OID == SIZEOF_INT
+							NPY_UINT
+#else
+							NPY_ULONGLONG
+#endif
+							,
+							NULL,
+							((oid ***)(*p->split_bats))[group_it][i], 0,
+							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
+						break;
 					case TYPE_oid:
 						vararray = PyArray_New(
-							&PyArray_Type, 1, elements, NPY_INT64, NULL,
+							&PyArray_Type, 1, elements, 
+#if SIZEOF_OID == SIZEOF_INT
+							NPY_UINT32
+#else
+							NPY_UINT64
+#endif
+							,
+							NULL,
 							((oid ***)(*p->split_bats))[group_it][i], 0,
 							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
 						break;
