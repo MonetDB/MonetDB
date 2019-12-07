@@ -12,6 +12,9 @@
  * these are in a separate header because they are used in multiple places
  */
 
+#define BAT_TO_NP_CREATE_ALWAYS(bat, nptpe)                                    \
+		vararray = PyArray_Arange(0, (double)bat->batCount, 1, nptpe);
+
 #define BAT_TO_NP(bat, mtpe, nptpe)                                            \
 	if (copy) {                                                                \
 		vararray = PyArray_EMPTY(1, elements, nptpe, 0);                       \
@@ -560,6 +563,22 @@ convert_and_append(BAT* b, const char* text, bool force) {
 #else
 #define NOT_HGE(mtpe) true
 #endif
+
+#define NP_CREATE_EMPTY_BAT(bat, mtpe)                                     \
+	{                                                                      \
+		bat = COLnew(seqbase, TYPE_##mtpe, (BUN)ret->count, TRANSIENT);    \
+		if (bat == NULL) {                                                 \
+			msg = createException(MAL, "pyapi.eval", SQLSTATE(PY000) "Cannot create column"); \
+			goto wrapup;                                                   \
+		}                                                                  \
+		bat->tkey = false;                                                 \
+		bat->tsorted = false;                                              \
+		bat->trevsorted = false;                                           \
+		bat->tnil = false;                                                 \
+		bat->tnonil = true;                                                \
+		BATsetcount(bat, (BUN)ret->count);                                 \
+		BATsettrivprop(bat);                                               \
+	}
 
 // This very big #define combines all the previous #defines for one big #define
 // that is responsible for converting a Numpy array (described in the PyReturn

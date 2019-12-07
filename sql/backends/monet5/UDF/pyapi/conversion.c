@@ -37,6 +37,11 @@ static bool IsBlobType(int type)
 	return type == TYPE_blob;
 }
 
+static bool IsVoidType(int type)
+{
+	return type == TYPE_void;
+}
+
 PyObject *PyArrayObject_FromScalar(PyInput *inp, char **return_message)
 {
 	PyObject *vararray = NULL;
@@ -44,6 +49,18 @@ PyObject *PyArrayObject_FromScalar(PyInput *inp, char **return_message)
 	assert(inp->scalar); // input has to be a scalar
 
 	switch (inp->bat_type) {
+		case TYPE_void:
+			vararray = PyArray_Arange(0, 1, 1, 
+#if SIZEOF_OID == SIZEOF_INT
+									  NPY_UINT
+#else
+									  NPY_ULONGLONG
+#endif
+			);
+			break;
+		case TYPE_oid:
+			vararray = PyInt_FromLong((long)(*(oid *)inp->dataptr));
+			break;
 		case TYPE_bit:
 			vararray = PyInt_FromLong((long)(*(bit *)inp->dataptr));
 			break;
@@ -165,7 +182,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 		goto wrapup;
 	}
 
-	if (!IsBlobType(inp->bat_type) &&
+	if (!IsVoidType(inp->bat_type) && !IsBlobType(inp->bat_type) &&
 		(!IsStandardBATType(inp->bat_type) ||
 		 ConvertableSQLType(inp->sql_subtype))) { // if the sql type is set, we
 												  // have to do some conversion
@@ -205,6 +222,24 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 		}
 	} else {
 		switch (inp->bat_type) {
+			case TYPE_void:
+				BAT_TO_NP_CREATE_ALWAYS(b, 
+#if SIZEOF_OID == SIZEOF_INT
+					NPY_UINT
+#else
+					NPY_ULONGLONG
+#endif
+				);
+				break;
+			case TYPE_oid:
+				BAT_TO_NP(b, oid, 
+#if SIZEOF_OID == SIZEOF_INT
+					NPY_UINT32
+#else
+					NPY_UINT64
+#endif
+				);
+				break;
 			case TYPE_bit:
 				BAT_TO_NP(b, bit, NPY_INT8);
 				break;
@@ -927,6 +962,9 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 		BATsettrivprop(b);
 	} else {
 		switch (bat_type) {
+			case TYPE_void:
+				NP_CREATE_EMPTY_BAT(b, oid);
+				break;
 			case TYPE_bit:
 				NP_CREATE_BAT(b, bit);
 				break;

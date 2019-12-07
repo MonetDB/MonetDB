@@ -138,7 +138,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 			inp.scalar = false;
 			inp.count = BATcount(b);
-			inp.bat_type = ATOMstorage(getBatType(getArgType(mb, pci, i)));
+			inp.bat_type = getBatType(getArgType(mb, pci, i));
 			inp.bat = b;
 
 			val = PyMaskedArray_FromBAT(
