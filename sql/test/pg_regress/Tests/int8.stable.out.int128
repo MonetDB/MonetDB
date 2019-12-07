@@ -118,8 +118,8 @@ stdout of test 'int8` in directory 'sql/test/pg_regress` itself:
 [ "",	4567890123456789,	4567890123456789,	1 ]
 [ "",	4567890123456789,	-4567890123456789,	-1 ]
 #SELECT '' AS five, q1, cast(q1 as double) FROM INT8_TBL;
-% .%2,	sys.int8_tbl,	sys.%1 # table_name
-% five,	q1,	%1 # name
+% .%1,	sys.int8_tbl,	sys.int8_tbl # table_name
+% five,	q1,	q1 # name
 % char,	bigint,	double # type
 % 0,	16,	24 # length
 [ "",	123,	123	]
@@ -128,8 +128,8 @@ stdout of test 'int8` in directory 'sql/test/pg_regress` itself:
 [ "",	4567890123456789,	4.567890123e+15	]
 [ "",	4567890123456789,	4.567890123e+15	]
 #SELECT '' AS five, q2, cast(q2 as double) FROM INT8_TBL;
-% .%2,	sys.int8_tbl,	sys.%1 # table_name
-% five,	q2,	%1 # name
+% .%1,	sys.int8_tbl,	sys.int8_tbl # table_name
+% five,	q2,	q2 # name
 % char,	bigint,	double # type
 % 0,	17,	24 # length
 [ "",	456,	456	]

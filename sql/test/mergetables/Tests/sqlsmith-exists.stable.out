@@ -47,7 +47,7 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 #    ref_2.query as c9,
 #    ref_1.function_name as c10,
 #    ref_1.function_id as c11,
-% .%37,	.%40,	.%41,	.%42 # table_name
+% .%35,	.%36,	.%37,	.%40 # table_name
 % c0,	c1,	c2,	c3 # name
 % int,	boolean,	tinyint,	varchar # type
 % 1,	5,	1,	0 # length
@@ -79,7 +79,7 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # on (exists (
 # select 
 # ref_0.table_id as c0, 
-% .%45,	.%46,	.%47,	.%50,	.%51,	.%52,	.%53,	.%54,	.%55,	.%56 # table_name
+% .%41,	.%42,	.%43,	.%44,	.%45,	.%46,	.%47,	.%50,	.%51,	.%52 # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8,	c9 # name
 % varchar,	int,	smallint,	smallint,	int,	int,	smallint,	smallint,	smallint,	varchar # type
 % 0,	1,	1,	1,	1,	1,	1,	1,	1,	0 # length
@@ -127,10 +127,117 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # from 
 # sys.dependency_owners_on_schemas as ref_3
 # where ref_1.table_id is null))
-% sys.%62,	sys.%63,	.%64,	sys.%65,	sys.%66,	sys.%67,	sys.%70,	sys.%71 # table_name
+% sys.%51,	sys.%52,	.%53,	sys.%54,	sys.%55,	sys.%56,	sys.%57,	sys.%60 # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7 # name
 % int,	int,	int,	int,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1,	1,	1,	1 # length
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
+[ 0,	0,	4,	0,	0,	0,	0,	0	]
 #CREATE TABLE integers(i INTEGER);
 #INSERT INTO integers VALUES (1), (2), (3), (NULL);
 [ 4	]
@@ -190,7 +297,7 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # sys.dependency_tables_on_indexes as ref_0
 # where true) as subq_0
 # where subq_0.c8 is not null
-% .subq_1,	.subq_1,	.subq_1 # table_name
+% .ref_0,	.ref_0,	.ref_0 # table_name
 % c0,	c1,	c2 # name
 % varchar,	int,	int # type
 % 0,	1,	1 # length
@@ -249,12 +356,40 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # inner join bam.sq as ref_1
 # on (ref_0.default_schema = ref_1.ln )
 # where exists (
-# select 
-# ref_1.ur as c0
-% .%110 # table_name
+% .%107 # table_name
 % c0 # name
 % int # type
 % 1 # length
+#select 
+# subq_2.c18 as c0, 
+# subq_0.c0 as c1, 
+# cast(coalesce(subq_0.c1,
+# subq_2.c5) as int) as c2, 
+# 92 as c3, 
+# subq_0.c1 as c4, 
+# subq_2.c21 as c5, 
+# subq_2.c24 as c6, 
+# subq_2.c11 as c7, 
+# subq_2.c13 as c8, 
+# subq_2.c16 as c9, 
+# case when subq_2.c26 is null then subq_2.c20 else subq_2.c20 end
+# as c10, 
+# subq_0.c0 as c11, 
+# subq_0.c0 as c12, 
+# subq_0.c1 as c13, 
+# subq_0.c1 as c14
+#from 
+# (select 
+# ref_0.col7 as c0, 
+# ref_0.col2 as c1
+# from 
+# sys.another_t as ref_0
+# where (true) 
+# and ((ref_0.col4 is not null) 
+% sys.%15,	sys.%16,	sys.%17,	.%20,	sys.%21,	sys.%22,	sys.%23,	sys.%24,	sys.%25,	.%26,	.%27,	sys.%30,	sys.%31,	sys.%32,	sys.%33 # table_name
+% c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8,	c9,	c10,	c11,	c12,	c13,	c14 # name
+% int,	int,	int,	tinyint,	int,	int,	int,	int,	int,	tinyint,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1 # length
 #ROLLBACK;
 
 # 19:56:32 >  

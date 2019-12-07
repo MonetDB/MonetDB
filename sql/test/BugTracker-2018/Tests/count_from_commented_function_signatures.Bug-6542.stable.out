@@ -119,8 +119,8 @@ project (
 | | | | | | ) [ "f"."id", "p"."number" ]
 | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
 | | | | ) [ "f"."id", "p"."number", sys.row_number("f"."id", boolean "false", sys.diff(sys.diff("f"."id" ASC), "p"."number" ASC)) as "line" ]
-| | | ) [ "line" ]
-| | ) [ "line" as "commented_function_signatures_6542"."line" ] [ "line" ASC ]
+| | | ) [ "f"."id" as "fid", "line" ]
+| | ) [ "fid" as "commented_function_signatures_6542"."fid" ] [ "line" ASC ]
 | ) [  ] [ sys.count() NOT NULL as "%12"."%12" ]
 ) [ "%12"."%12" NOT NULL ]
 #select count (*) from sys.commented_function_signatures_6542;

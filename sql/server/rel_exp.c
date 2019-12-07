@@ -127,6 +127,7 @@ exp_create(sql_allocator *sa, int type )
 	e->need_no_nil = 0;
 	e->has_no_nil = 0;
 	e->base = 0;
+	e->ref = 0;
 	e->used = 0;
 	e->tpe.type = NULL;
 	e->tpe.digits = e->tpe.scale = 0;
@@ -623,6 +624,21 @@ exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
 	return ne;
 }
 
+sql_exp *
+exp_ref_save(mvc *sql, sql_exp *e)
+{
+	if (is_atom(e->type))
+		return exp_copy(sql, e);
+	if (!exp_name(e) || is_convert(e->type))
+		exp_label(sql->sa, e, ++sql->label);
+	if (e->type != e_column)
+		e->ref = 1;
+	sql_exp *ne = exp_ref(sql->sa, e);
+	if (ne && is_freevar(e))
+		set_freevar(ne, is_freevar(e)-1);
+	return ne;
+}
+
 sql_exp * 
 exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, unsigned int card, int has_nils, int intern) 
 {
@@ -1093,7 +1109,7 @@ exp_match_col_exps( sql_exp *e, list *l)
 			return exp_match_col_exps(e, re->l) &&
 			       exp_match_col_exps(e, re->r); 
 
-		if (re->type != e_cmp || /*re->flag != cmp_equal ||*/ !re_r || re_r->card != 1 || !exp_match_exp(e, re->l)) 
+		if (re->type != e_cmp || !re_r || re_r->card != 1 || !exp_match_exp(e, re->l)) 
 			return 0;
 	} 
 	return 1;
@@ -1486,7 +1502,7 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 			if (e->l) {
 				ne = exps_bind_column2(rel->exps, e->l, e->r);
 			} else {
-				ne = exps_bind_column(rel->exps, e->r, NULL);
+				ne = exps_bind_column(rel->exps, e->r, NULL, 1);
 			}
 		}
 		return ne;
@@ -1555,7 +1571,7 @@ rel_find_exp( sql_rel *rel, sql_exp *e)
 			else if (rel->exps && e->l)
 				ne = exps_bind_column2(rel->exps, e->l, e->r);
 			else if (rel->exps)
-				ne = exps_bind_column(rel->exps, e->r, NULL);
+				ne = exps_bind_column(rel->exps, e->r, NULL, 1);
 		}
 		break;
 		case op_basetable: 
@@ -2012,7 +2028,7 @@ exp_key( sql_exp *e )
 }
 
 sql_exp *
-exps_bind_column( list *exps, const char *cname, int *ambiguous ) 
+exps_bind_column( list *exps, const char *cname, int *ambiguous, int no_tname) 
 {
 	sql_exp *e = NULL;
 
@@ -2046,7 +2062,7 @@ exps_bind_column( list *exps, const char *cname, int *ambiguous )
 				for (; he; he = he->chain) {
 					sql_exp *ce = he->value;
 
-					if (ce->alias.name && strcmp(ce->alias.name, cname) == 0) {
+					if (ce->alias.name && strcmp(ce->alias.name, cname) == 0 && (!no_tname || !ce->alias.rname)) {
 						if (e && e != ce && ce->alias.rname && e->alias.rname && strcmp(ce->alias.rname, e->alias.rname) != 0 ) {
 							if (ambiguous)
 								*ambiguous = 1;
@@ -2063,7 +2079,7 @@ exps_bind_column( list *exps, const char *cname, int *ambiguous )
 		}
 		for (en = exps->h; en; en = en->next ) {
 			sql_exp *ce = en->data;
-			if (ce->alias.name && strcmp(ce->alias.name, cname) == 0) {
+			if (ce->alias.name && strcmp(ce->alias.name, cname) == 0 && (!no_tname || !ce->alias.rname)) {
 				if (e && e != ce && ce->alias.rname && e->alias.rname && strcmp(ce->alias.rname, e->alias.rname) != 0 ) {
 					if (ambiguous)
 						*ambiguous = 1;
@@ -2110,8 +2126,7 @@ exps_bind_column2( list *exps, const char *rname, const char *cname )
 				for (; he; he = he->chain) {
 					sql_exp *e = he->value;
 
-					if ((e && is_column(e->type) && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0) ||
-					    (e && e->type == e_column && e->alias.name && !e->alias.rname && e->l && strcmp(e->alias.name, cname) == 0 && strcmp(e->l, rname) == 0)) {
+					if (e && is_column(e->type) && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0) {
 						MT_lock_unset(&exps->ht_lock);
 						return e;
 					}
@@ -2125,8 +2140,6 @@ exps_bind_column2( list *exps, const char *rname, const char *cname )
 			sql_exp *e = en->data;
 		
 			if (e && is_column(e->type) && e->alias.name && e->alias.rname && strcmp(e->alias.name, cname) == 0 && strcmp(e->alias.rname, rname) == 0)
-				return e;
-			if (e && e->type == e_column && e->alias.name && !e->alias.rname && e->l && strcmp(e->alias.name, cname) == 0 && strcmp(e->l, rname) == 0)
 				return e;
 		}
 	}
@@ -2241,7 +2254,7 @@ is_identity( sql_exp *e, sql_rel *r)
 			if (e->l)
 				re = exps_bind_column2(r->exps, e->l, e->r);
 			if (!re && has_label(e))
-				re = exps_bind_column(r->exps, e->r, NULL);
+				re = exps_bind_column(r->exps, e->r, NULL, 1);
 			if (re)
 				return is_identity(re, r->l);
 		}

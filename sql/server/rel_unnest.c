@@ -45,7 +45,7 @@ exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
 		break;
 	case e_column: 
 		if ((e->l && rel_bind_column2(sql, r, e->l, e->r, 0)) ||
-		    (!e->l && rel_bind_column(sql, r, e->r, 0)))
+		    (!e->l && rel_bind_column(sql, r, e->r, 0, 1)))
 			return;
 		set_freevar(e, 0);
 		break;
@@ -165,6 +165,21 @@ rel_has_freevar(mvc *sql, sql_rel *rel)
 	return 0;
 }
 
+static int 
+freevar_equal( sql_exp *e1, sql_exp *e2)
+{
+	assert(e1 && e2 && e1->freevar && e2->freevar);
+	if (e1 == e2)
+		return 0;
+	if (e1->type != e_column || e2->type != e_column)
+		return -1;
+	if (e1->l && e2->l && strcmp(e1->l, e2->l) == 0)
+		return strcmp(e1->r, e2->r);
+	if (!e1->l && !e2->l)
+		return strcmp(e1->r, e2->r);
+	return -1;
+}
+
 static list *
 merge_freevar(list *l, list *r)
 {
@@ -172,7 +187,7 @@ merge_freevar(list *l, list *r)
 		return r;
 	if (!r)
 		return l;
-	return list_distinct(list_merge(l, r, (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
+	return list_distinct(list_merge(l, r, (fdup)NULL), (fcmp)freevar_equal, (fdup)NULL);
 }
 
 static list * exps_freevar(mvc *sql, list *exps);
@@ -330,7 +345,7 @@ rel_dependent_var(mvc *sql, sql_rel *l, sql_rel *r)
 				if (e->l) {
 					ne = exps_bind_column2(boundvar, e->l, e->r );
 				} else {
-					ne = exps_bind_column(boundvar, e->r, NULL);
+					ne = exps_bind_column(boundvar, e->r, NULL, 1);
 				}
 				if (ne) {
 					if (!res)
@@ -421,7 +436,7 @@ push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 			if (e->l) {
 				ne = exps_bind_column2(rel->exps, e->l, e->r );
 			} else {
-				ne = exps_bind_column(rel->exps, e->r, NULL);
+				ne = exps_bind_column(rel->exps, e->r, NULL, 1);
 			}
 			if (ne) {
 				if (ne->type == e_column) {
@@ -621,7 +636,7 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 				if (e->l) {
 					ne = exps_bind_column2(ad, e->l, e->r );
 				} else {
-					ne = exps_bind_column(ad, e->r, NULL);
+					ne = exps_bind_column(ad, e->r, NULL, 1);
 				}
 				if (!ne)
 					append(exps,e);
@@ -1109,7 +1124,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				move_join_exps(sql, j, rel);
 				return j;
 			}
-			if (!ld && is_left(rel->op) && crossproduct) {
+			if (0 && !ld && is_left(rel->op) && crossproduct) {
 				sql_exp *l = exp_atom_int(sql->sa, 1);
 				sql_exp *r = exp_atom_int(sql->sa, 1);
 				rel->r = jr;
@@ -1754,16 +1769,36 @@ rewrite_or_exp(mvc *sql, sql_rel *rel)
 static sql_exp *
 rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
+	sql_rel *rell = NULL;
+	int needed = 0;
+
 	if (e->type != e_func || !e->r /* e->r means window function */)
 		return e;
 
 	(void)depth;
 	/* ranks/window functions only exist in the projection */
 	assert(is_simple_project(rel->op));
-	list *r = e->r, *gbe = r->h->data, *obe = r->h->next->data; 
+	list *l = e->l, *r = e->r, *gbe = r->h->data, *obe = r->h->next->data; 
 
+	needed = (gbe || obe);
+	for (node *n = l->h; n && !needed; n = n->next) {
+		sql_exp *e = n->data;
+		needed = e->ref;
+	}
+
+	if (needed) {
+		rell = rel->l = rel_project(sql->sa, rel->l, rel_projections(sql, rel->l, NULL, 1, 1));
+		for (node *n = l->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (e->ref) {
+				e->ref = 0;
+				append(rell->exps, e); 
+				n->data = exp_ref(sql->sa, e);
+			}
+		}
+	}
 	if (gbe || obe) {
-		sql_rel *r = rel_project(sql->sa, rel->l, rel_projections(sql, rel->l, NULL, 1, 1));
 		if (gbe && obe) {
 			gbe = list_merge(sa_list(sql->sa), gbe, (fdup)NULL); /* make sure the p->r is a different list than the gbe list */
 			for(node *n = obe->h ; n ; n = n->next) {
@@ -1791,7 +1826,7 @@ rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		} else if (obe) {
 			for(node *n = obe->h ; n ; n = n->next) {
 				sql_exp *oe = n->data;
-				if (!exps_find_exp(r->exps, oe)) {
+				if (!exps_find_exp(rell->exps, oe)) {
 					sql_exp *ne = exp_ref(sql->sa, oe);
 
 					if (is_ascending(oe))
@@ -1802,23 +1837,23 @@ rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					set_descending(oe);
 					set_nulls_first(oe);
 					n->data = ne;
-					append(r->exps, oe);
+					append(rell->exps, oe);
 				}
 			}
 			gbe = obe;
 		}
-		r->r = gbe;
-		rel->l = r;
+		rell->r = gbe;
+		rel->l = rell;
 
 		/* mark as normal (analytic) function now */
 		e->r = NULL;
 
 		/* add project with rank */
-		r = rel->l = rel_project(sql->sa, rel->l, rel_projections(sql, rel->l, NULL, 1, 1));
+		rell = rel->l = rel_project(sql->sa, rel->l, rel_projections(sql, rell->l, NULL, 1, 1));
 		/* move rank down add ref */
 		if (!exp_name(e))
 			e = exp_label(sql->sa, e, ++sql->label);
-		append(r->exps, e); 
+		append(rell->exps, e); 
 		e = exp_ref(sql->sa, e);
 	} else {
 		/* mark as normal (analytic) function now */
@@ -2397,11 +2432,20 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 static sql_exp *
 rewrite_ifthenelse(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
+	(void)depth;
+	/* for ifthenelse and rank flatten referenced inner expressions */
+	if (e->ref) {
+		sql_rel *r = rel->l = rel_project(sql->sa, rel->l, rel_projections(sql, rel->l, NULL, 1, 1));
+
+		e->ref = 0;
+		append(r->exps, e);
+		return exp_ref(sql->sa, e);
+	}
+
 	sql_subfunc *sf;
 	if (e->type != e_func)
 		return e;
 
-	(void)depth;
 	sf = e->f;
 	if (is_ifthenelse_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
@@ -2670,11 +2714,11 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor(sql, rel, &rewrite_or_exp);
 	rel = rel_exp_visitor(sql, rel, &rewrite_rank);
 	rel = rel_exp_visitor(sql, rel, &rewrite_anyequal);
-	rel = rel_visitor(sql, rel, &rewrite_join2semi);	/* where possible convert anyequal functions into marks */
 	rel = rel_exp_visitor(sql, rel, &rewrite_compare);
 	rel = rel_exp_visitor(sql, rel, &rewrite_exists);
 	rel = rel_exp_visitor(sql, rel, &rewrite_ifthenelse);	/* add isnull handling */
 	rel = rel_exp_visitor(sql, rel, &rewrite_exp_rel);
+	rel = rel_visitor(sql, rel, &rewrite_join2semi);	/* where possible convert anyequal functions into marks */
 	rel = rel_visitor(sql, rel, &rewrite_compare_exp);	/* only allow for e_cmp in selects and  handling */
 	rel = rel_visitor(sql, rel, &rewrite_remove_xp_project);	/* remove crossproducts with project ( project [ atom ] ) [ etc ] */
 	rel = _rel_unnest(sql, rel);
