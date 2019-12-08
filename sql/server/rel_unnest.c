@@ -1124,7 +1124,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				move_join_exps(sql, j, rel);
 				return j;
 			}
-			if (0 && !ld && is_left(rel->op) && crossproduct) {
+			if (/* DISABLES CODE */ (0) && !ld && is_left(rel->op) && crossproduct) {
 				sql_exp *l = exp_atom_int(sql->sa, 1);
 				sql_exp *r = exp_atom_int(sql->sa, 1);
 				rel->r = jr;
