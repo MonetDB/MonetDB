@@ -360,9 +360,9 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #    SUM(CAST(SUM(CAST (NOT t1.col1 IN (SELECT 1) AS INTEGER)) < ANY (SELECT 1) AS INT)) OVER ()
 #FROM another_T t1
 #GROUP BY t1.col6;
-% .%30 # table_name
-% %30 # name
-% hugeint # type
+% .%26 # table_name
+% %26 # name
+% bigint # type
 % 1 # length
 [ 1	]
 [ 1	]
