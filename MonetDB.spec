@@ -635,7 +635,6 @@ exit 0
 %if %{with fits}
 %exclude %{_libdir}/monetdb5/fits.mal
 %exclude %{_libdir}/monetdb5/autoload/*_fits.mal
-%exclude %{_libdir}/monetdb5/createdb/*_fits.sql
 %endif
 %if %{with geos}
 %exclude %{_libdir}/monetdb5/geom.mal
@@ -774,6 +773,9 @@ use SQL with MonetDB, you will need to install this package.
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %dir %{_libdir}/monetdb5/createdb
+%if %{with fits}
+%exclude %{_libdir}/monetdb5/createdb/*_fits.sql
+%endif
 %if %{with geos}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
