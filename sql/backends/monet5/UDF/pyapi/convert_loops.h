@@ -13,19 +13,23 @@
  */
 
 #define BAT_TO_NP_CREATE_ALWAYS(bat, nptpe)                                    \
-		vararray = PyArray_Arange(0, (double)bat->batCount, 1, nptpe);
+	do {                                                                       \
+		vararray = PyArray_Arange(0, (double)bat->batCount, 1, nptpe);         \
+	} while(0)                                                                 \
 
 #define BAT_TO_NP(bat, mtpe, nptpe)                                            \
-	if (copy) {                                                                \
-		vararray = PyArray_EMPTY(1, elements, nptpe, 0);                       \
-		memcpy(PyArray_DATA((PyArrayObject *)vararray), Tloc(bat, 0),          \
-			   sizeof(mtpe) * (t_end - t_start));                              \
-	} else {                                                                   \
-		vararray =                                                             \
-			PyArray_New(&PyArray_Type, 1, elements, nptpe, NULL,               \
-						&((mtpe *)Tloc(bat, 0))[t_start], 0,                   \
-						NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);       \
-	}
+	do {                                                                       \
+		if (copy) {                                                            \
+			vararray = PyArray_EMPTY(1, elements, nptpe, 0);                   \
+			memcpy(PyArray_DATA((PyArrayObject *)vararray), Tloc(bat, 0),      \
+				sizeof(mtpe) * (t_end - t_start));                             \
+		} else {                                                               \
+			vararray =                                                         \
+				PyArray_New(&PyArray_Type, 1, elements, nptpe, NULL,           \
+							&((mtpe *)Tloc(bat, 0))[t_start], 0,               \
+							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);   \
+		}                                                                      \
+	} while(0)                                                                 \
 
 // This #define creates a new BAT with the internal data and mask from a Numpy
 // array, without copying the data
