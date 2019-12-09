@@ -211,6 +211,36 @@ FROM   (SELECT ref_0.col0 AS c0
 WHERE  subq_0.c0 IS NOT NULL; --empty on PostgreSQL
 
 select 
+ 1
+ from 
+ tab1 as ref_0
+ right join analytics as ref_1
+ on (exists (
+ select 
+ 1
+ from 
+ tbl_ProductSales as ref_3
+ where ref_1.aa is null))
+ right join tab2 as ref_2
+ on (ref_0.col1 = ref_2.col0 );
+-- 3 rows with 1
+
+select 
+ 1
+ from 
+ tab1 as ref_0
+ right join analytics as ref_1
+ right join tab2 as ref_2
+ on (exists (
+ select 
+ 1
+ from 
+ tbl_ProductSales as ref_3
+ where ref_1.aa is null))
+ on (ref_0.col1 = ref_2.col0 );
+-- 6 rows with 1
+
+select 
  subq_0.c0 as c0, 
  subq_0.c0 as c1, 
  cast(coalesce(4,

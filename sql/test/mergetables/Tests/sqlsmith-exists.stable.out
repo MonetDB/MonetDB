@@ -128,6 +128,26 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 % int,	int,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1,	1 # length
 #select 
+# 1
+# from 
+# tab1 as ref_0
+# right join analytics as ref_1
+# on (exists (
+# select 
+# 1
+# from 
+# tbl_ProductSales as ref_3
+# where ref_1.aa is null))
+# right join tab2 as ref_2
+# on (ref_0.col1 = ref_2.col0 );
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+#select 
 # subq_0.c0 as c0, 
 # subq_0.c0 as c1, 
 # cast(coalesce(4,
