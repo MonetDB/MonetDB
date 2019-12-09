@@ -20,7 +20,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BUN r = 0, rowcnt = 0;    /* table should be sizeable to consider parallel execution*/
 	InstrPtr q, *old, target = 0;
 	size_t argsize = 6 * sizeof(lng), m = 0;
-	/*     per op:   6 = (2+1)*2   <=  2 args + 1 res, each with head & tail */
+	/*     per op estimate:   4 args + 2 res*/
 	int threads = GDKnr_threads ? GDKnr_threads : 1;
 	int activeClients;
 	char buf[256];
@@ -97,7 +97,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		 * single subplan should ideally fit together.
 		 */
 		r = getRowCnt(mb, getArg(p, 0));
-		if (r >= rowcnt) {
+		if (r > rowcnt) {
 			/* the rowsize depends on the column types, assume void-headed */
 			row_size = ATOMsize(getBatType(getArgType(mb,p,0)));
 			rowcnt = r;
