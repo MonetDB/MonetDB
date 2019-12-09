@@ -130,6 +130,7 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	char *nme;
 	InstrPtr q;
 
+	mincost = 0;
 	pc = getPC(mb, p);
 	for (i = pc + 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);

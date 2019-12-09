@@ -4356,7 +4356,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 				node *t = n->next;
 
 				sql_base *b = n->data;
-				TRC_DEBUG(SQL_STORE, "Free: %s\n", (b->name) ? b->name : "help")
+				TRC_DEBUG(SQL_STORE, "Free: %s\n", (b->name) ? b->name : "help");
 				cs_remove_node(fs, n);
 				n = t;
 			} else { /* a new id */
@@ -4377,7 +4377,7 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 		while ( ok == LOG_OK && n) { /* remove remaining old stuff */
 			node *t = n->next;
 			sql_base *b = n->data;
-			TRC_DEBUG(SQL_STORE, "Free: %s\n", (b->name) ? b->name : "help")
+			TRC_DEBUG(SQL_STORE, "Free: %s\n", (b->name) ? b->name : "help");
 
 			cs_remove_node(fs, n);
 			n = t;

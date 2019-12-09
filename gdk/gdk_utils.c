@@ -84,7 +84,7 @@ GDKenvironment(const char *dbpath)
 		return false;
 	}
 	if (strlen(dbpath) >= FILENAME_MAX) {
-		TRC_ERROR(GDK_UTILS, "Database name too long.\n")
+		TRC_ERROR(GDK_UTILS, "Database name too long.\n");
 		return false;
 	}
 	if (!MT_path_absolute(dbpath)) {

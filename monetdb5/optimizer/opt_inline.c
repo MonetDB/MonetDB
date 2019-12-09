@@ -73,7 +73,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 */
 			if (isMultiplex(q)) {
 				if (OPTinlineMultiplex(cntxt,mb,q)) {
-					TRC_DEBUG(MAL_OPT_INLINE, "Multiplex inline function\n")
+					TRC_DEBUG(MAL_OPT_INLINE, "Multiplex inline function\n");
 					debugInstruction(MAL_OPT_INLINE, mb, 0, q, LIST_MAL_ALL);
 				}
 			} else

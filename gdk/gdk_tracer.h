@@ -219,43 +219,100 @@ extern LOG_LEVEL LVL_PER_COMPONENT[];
 
 // If the LOG_LEVEL of the message is one of the following: CRITICAL, ERROR or WARNING 
 // it is logged no matter the component. In any other case the component is taken into account
-#define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)                        \
-    if(LOG_LEVEL == M_CRITICAL ||                                        \
-       LOG_LEVEL == M_ERROR    ||                                        \
-       LOG_LEVEL == M_WARNING  ||                                        \
-       (LVL_PER_COMPONENT[COMP] >= LOG_LEVEL))                           \
-    {                                                                    \
-            GDKtracer_log(LOG_LEVEL,                                     \
-                        "[%s] "                                          \
-                        "%-"MXW"s "                                      \
-                        "%"MXW"s:%d "                                    \
-                        "%"MXW"s "                                       \
-                        "%-"MXW"s "                                      \
-                        "%-"MXW"s # "MSG,                                \
-                        GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S"),    \
-                        __FILENAME__,                                    \
-                        __FUNCTION__,                                    \
-                        __LINE__,                                        \
-                        LEVEL_STR[LOG_LEVEL],                            \
-                        COMPONENT_STR[COMP],                             \
-                        MT_thread_getname(),                             \
-                        ## __VA_ARGS__);                                 \
-    }                                                                    \
+#define IF_GDK_TRACER_LOG(LOG_LEVEL, COMP)                                \
+    if(LOG_LEVEL == M_CRITICAL ||                                         \
+       LOG_LEVEL == M_ERROR    ||                                         \
+       LOG_LEVEL == M_WARNING  ||                                         \
+       (LVL_PER_COMPONENT[COMP] >= LOG_LEVEL))                            \
 
-#define TRC_CRITICAL(COMP, MSG, ...)                                     \
-    GDK_TRACER_LOG(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)                \
+#define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG, ...)                    \
+          GDKtracer_log(LOG_LEVEL,                                        \
+                        "[%s] "                                           \
+                        "%-"MXW"s "                                       \
+                        "%"MXW"s:%d "                                     \
+                        "%"MXW"s "                                        \
+                        "%-"MXW"s "                                       \
+                        "%-"MXW"s # "MSG,                                 \
+                        GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S"),     \
+                        __FILENAME__,                                     \
+                        __FUNCTION__,                                     \
+                        __LINE__,                                         \
+                        LEVEL_STR[LOG_LEVEL],                             \
+                        COMPONENT_STR[COMP],                              \
+                        MT_thread_getname(),                              \
+                        ## __VA_ARGS__);                                  \
 
-#define TRC_ERROR(COMP, MSG, ...)                                        \
-    GDK_TRACER_LOG(M_ERROR, COMP, MSG, ## __VA_ARGS__)                   \
+#define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)                         \
+    do {                                                                  \
+            IF_GDK_TRACER_LOG(LOG_LEVEL, COMP)                            \
+            {                                                             \
+                GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG, ## __VA_ARGS__) \
+            }                                                             \
+    } while (0)                                                           \
 
-#define TRC_WARNING(COMP, MSG, ...)                                      \
-    GDK_TRACER_LOG(M_WARNING, COMP, MSG, ## __VA_ARGS__)                 \
 
-#define TRC_INFO(COMP, MSG, ...)                                         \
-    GDK_TRACER_LOG(M_INFO, COMP, MSG, ## __VA_ARGS__)                    \
+#define TRC_CRITICAL(COMP, MSG, ...)                                      \
+    GDK_TRACER_LOG(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)                 \
 
-#define TRC_DEBUG(COMP, MSG, ...)                                        \
-    GDK_TRACER_LOG(M_DEBUG, COMP, MSG, ## __VA_ARGS__)                   \
+#define TRC_ERROR(COMP, MSG, ...)                                         \
+    GDK_TRACER_LOG(M_ERROR, COMP, MSG, ## __VA_ARGS__)                    \
+
+#define TRC_WARNING(COMP, MSG, ...)                                       \
+    GDK_TRACER_LOG(M_WARNING, COMP, MSG, ## __VA_ARGS__)                  \
+
+#define TRC_INFO(COMP, MSG, ...)                                          \
+    GDK_TRACER_LOG(M_INFO, COMP, MSG, ## __VA_ARGS__)                     \
+
+#define TRC_DEBUG(COMP, MSG, ...)                                         \
+    GDK_TRACER_LOG(M_DEBUG, COMP, MSG, ## __VA_ARGS__)                    \
+
+
+
+
+// Conditional logging - Example usage
+// NOTE: When using the macro with *_IF always use the macro with *_ENDIF for 
+// logging. Avoiding to do that will result into checking the LOG_LEVEL of the 
+// the COMPONENT 2 times. Also NEVER use the *_ENDIF macro without before 
+// performing a check with *_IF macro. Such an action will have as a consequence
+// logging everything without taking into account the LOG_LEVEL of the COMPONENT.
+/*  
+    TRC_CRITICAL_IF(SQL_STORE)
+    {
+        TRC_CRITICAL_ENDIF(SQL_STORE, "Test\n")
+    }
+*/
+
+#define TRC_CRITICAL_IF(COMP)                                             \
+    IF_GDK_TRACER_LOG(M_CRITICAL, COMP)                                   \
+
+#define TRC_ERROR_IF(COMP)                                                \
+    IF_GDK_TRACER_LOG(M_ERROR, COMP)                                      \
+
+#define TRC_WARNING_IF(COMP)                                              \
+    IF_GDK_TRACER_LOG(M_WARNING, COMP)                                    \
+
+#define TRC_INFO_IF(COMP)                                                 \
+    IF_GDK_TRACER_LOG(M_INFO, COMP)                                       \
+
+#define TRC_DEBUG_IF(COMP)                                                \
+    IF_GDK_TRACER_LOG(M_DEBUG, COMP)                                      \
+
+
+#define TRC_CRITICAL_ENDIF(COMP, MSG, ...)                                \
+    GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)            \
+
+#define TRC_ERROR_ENDIF(COMP, MSG, ...)                                   \
+    GDK_TRACER_LOG_BODY(M_ERROR, COMP, MSG, ## __VA_ARGS__)               \
+
+#define TRC_WARNING_ENDIF(COMP, MSG, ...)                                 \
+    GDK_TRACER_LOG_BODY(M_WARNING, COMP, MSG, ## __VA_ARGS__)             \
+
+#define TRC_INFO_ENDIF(COMP, MSG, ...)                                    \
+    GDK_TRACER_LOG_BODY(M_INFO, COMP, MSG, ## __VA_ARGS__)                \
+
+#define TRC_DEBUG_ENDIF(COMP, MSG, ...)                                   \
+    GDK_TRACER_LOG_BODY(M_DEBUG, COMP, MSG, ## __VA_ARGS__)               \
+
 
 
 // GDKtracer Buffer
@@ -291,10 +348,11 @@ gdk_tracer;
                             ## __VA_ARGS__);                                \
 
 
+// mnstr_printf(GDKstdout, MSG, ## __VA_ARGS__);   \
 // Produces messages to the output stream. It is also used as a fallback mechanism 
 // in case GDKtracer fails to log for whatever reason.
 #define GDK_TRACER_OSTREAM(MSG, ...)                \
-    mnstr_printf(GDKstdout, MSG, ## __VA_ARGS__);   \
+    fprintf(stderr, MSG, ## __VA_ARGS__);           \
 
 
 

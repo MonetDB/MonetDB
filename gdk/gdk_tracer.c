@@ -424,9 +424,8 @@ GDKtracer_log(LOG_LEVEL level, char *fmt, ...)
             {
                 MT_lock_unset(&lock);
 
-                // GDK_TRACER_OSTREAM("Failed to write to the buffer (bytes_written = %d)\n", bytes_written);
-                // Fallback logging mechanism 
-                GDK_TRACER_OSTREAM("FALLBACK MECHANISM\n");
+                // Failed to write to the buffer - bytes_written < 0
+                // Fallback logging mechanism
                 va_list va;
                 va_start(va, fmt);
                 GDK_TRACER_OSTREAM(fmt, va);
@@ -438,12 +437,12 @@ GDKtracer_log(LOG_LEVEL level, char *fmt, ...)
     {
         MT_lock_unset(&lock);
 
-        GDK_TRACER_OSTREAM("Failed to write to the buffer (bytes_written = %d)\n", bytes_written);
-        // Fallback logging mechanism 
-        // va_list va;
-        // va_start(va, fmt);
-        // GDK_TRACER_OSTREAM("%s", fmt);
-        // va_end(va);
+        // Failed to write to the buffer - bytes_written < 0
+        // Fallback logging mechanism
+        va_list va;
+        va_start(va, fmt);
+        GDK_TRACER_OSTREAM(fmt, va);
+        va_end(va);
     }
 
     // Flush the current buffer in case the event is 
