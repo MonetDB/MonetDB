@@ -17,6 +17,8 @@
 #include "gdk.h"
 #include "gdk_tracer.h"
 
+#define _GDKTRACER_DEBUG_
+
 // We need to get rid of macros defined in gdk.h. Those are using GDKtracer in order to produce 
 // messages. At the point malloc is called in gdk_tracer.c (in function _GDKtracer_fill_tracer)
 // a lock has already being acquired. Using the macro malloc in gdk.h a call to GDKtracer 
@@ -222,11 +224,10 @@ _GDKtracer_layer_level_helper(int *layer, int *lvl)
             }
         }
     }
-    
-/* CHECK 
- * this should only be called if you wish to trace the GDKtracer
+
+#ifdef _GDKTRACER_DEBUG_
     GDKtracer_show_info();
-*/
+#endif
 
     return GDK_SUCCEED;
 }
@@ -279,10 +280,11 @@ GDKtracer_set_component_level(int *comp, int *lvl)
         return GDK_FAIL;
         
     LVL_PER_COMPONENT[*comp] = level;
-/* CHECK 
- * this should only be called if you wish to trace the GDKtracer
+
+#ifdef _GDKTRACER_DEBUG_
     GDKtracer_show_info();
-*/
+#endif
+
     return GDK_SUCCEED;
 }
 
