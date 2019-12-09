@@ -67,7 +67,7 @@ stdout of test 'sqlsmith.Bug-6219` in directory 'sql/test/BugTracker-2017` itsel
 #              left join tab2 as ref_25
 #              on (ref_24.col0 = ref_25.col0 )
 #            on (ref_23.col0 = ref_24.col1 )
-% .%12,	. # table_name
+% .,	. # table_name
 % c0,	c1 # name
 % int,	tinyint # type
 % 1,	1 # length

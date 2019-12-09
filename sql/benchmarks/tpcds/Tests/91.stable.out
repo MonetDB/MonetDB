@@ -40,7 +40,7 @@ stdout of test '91` in directory 'sql/benchmarks/tpcds` itself:
 #  AND cd_demo_sk = c_current_cdemo_sk
 #  AND hd_demo_sk = c_current_hdemo_sk
 #  AND ca_address_sk = c_current_addr_sk
-% sys.call_center,	sys.call_center,	sys.call_center,	sys.%1 # table_name
+% sys.,	sys.,	sys.,	sys. # table_name
 % call_center,	call_center_name,	manager,	returns_loss # name
 % char,	varchar,	varchar,	decimal # type
 % 16,	12,	14,	20 # length

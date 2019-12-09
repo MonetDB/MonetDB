@@ -25,7 +25,7 @@ stdout of test 'sqlitelogictest-case-not-in-count.Bug-6587` in directory 'sql/te
 
 #SELECT ALL + CASE WHEN NOT + - 10 IS NULL AND NULL IS NULL THEN NULL WHEN - - 39 * - 89
 #NOT IN ( - + 51 * - - 45, COUNT ( * ) / + 67 ) THEN + COUNT ( ALL 54 ) END;
-% .%3 # table_name
+% . # table_name
 % %3 # name
 % bigint # type
 % 1 # length

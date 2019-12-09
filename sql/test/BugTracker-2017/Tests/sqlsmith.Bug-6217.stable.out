@@ -31,9 +31,9 @@ stdout of test 'sqlsmith.Bug-6217` in directory 'sql/test/BugTracker-2017` itsel
 #  ref_2.condition as c4,
 #  ref_2.id as c5
 #from
-#  sys.triggers as ref_2
-#where 24 is NULL;
-% sys.ref_2,	sys.ref_2,	sys.ref_2,	.,	sys.ref_2,	sys.ref_2 # table_name
+#  another_T as ref_2
+#where 24 is NULL; --empty
+% sys.,	sys.,	sys.,	.,	sys.,	sys. # table_name
 % c0,	c1,	c2,	c3,	c4,	c5 # name
 % int,	int,	int,	tinyint,	int,	int # type
 % 1,	1,	1,	1,	1,	1 # length

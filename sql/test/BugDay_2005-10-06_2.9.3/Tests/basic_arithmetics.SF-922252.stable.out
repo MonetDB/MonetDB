@@ -37,13 +37,13 @@ stdout of test 'basic_arithmetics.SF-922252` in directory 'sql/test/BugDay_2005-
 [ 2	]
 [ 3	]
 #select 1<2;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select 'A'='a';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length

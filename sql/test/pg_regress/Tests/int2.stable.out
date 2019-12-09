@@ -156,7 +156,7 @@ stdout of test 'int2` in directory 'sql/test/pg_regress` itself:
 [ "",	1234	]
 [ "",	-1234 ]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT2_TBL i;
-% .%2,	sys.i,	sys.%4 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	bigint # type
 % 0,	6,	6 # length
@@ -167,7 +167,7 @@ stdout of test 'int2` in directory 'sql/test/pg_regress` itself:
 [ "",	-32767,	-65534	]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT2_TBL i
 #WHERE abs(f1) < 16384;
-% .%3,	sys.i,	sys.%5 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	bigint # type
 % 0,	5,	5 # length
@@ -175,7 +175,7 @@ stdout of test 'int2` in directory 'sql/test/pg_regress` itself:
 [ "",	1234,	2468	]
 [ "",	-1234,	-2468 ]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT2_TBL i;
-% .%2,	sys.i,	sys.%4 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	bigint # type
 % 0,	6,	6 # length
@@ -185,7 +185,7 @@ stdout of test 'int2` in directory 'sql/test/pg_regress` itself:
 [ "",	32767,	65534 ]
 [ "",	-32767,	-65534 ]
 #SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT2_TBL i;
-% .%2,	sys.i,	sys.%4 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	6,	6 # length
@@ -196,7 +196,7 @@ stdout of test 'int2` in directory 'sql/test/pg_regress` itself:
 [ "",	-32767,	-32765	]
 #SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT2_TBL i
 #WHERE f1 < 32766;
-% .%2,	sys.i,	sys.%4 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	6,	6 # length
@@ -205,7 +205,7 @@ stdout of test 'int2` in directory 'sql/test/pg_regress` itself:
 [ "",	-1234,	-1232 ]
 [ "",	-32767,	-32765 ]
 #SELECT '' AS five, i.f1, i.f1 + cast('2' as integer) AS x FROM INT2_TBL i;
-% .%2,	sys.i,	sys.%4 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	bigint # type
 % 0,	6,	6 # length
@@ -215,7 +215,7 @@ stdout of test 'int2` in directory 'sql/test/pg_regress` itself:
 [ "",	32767,	32769 ]
 [ "",	-32767,	-32765 ]
 #SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT2_TBL i;
-% .%2,	sys.i,	sys.%4 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	6,	6 # length
@@ -226,7 +226,7 @@ stdout of test 'int2` in directory 'sql/test/pg_regress` itself:
 [ "",	-32767,	-32769	]
 #SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT2_TBL i
 #WHERE f1 > -32767;
-% .%2,	sys.i,	sys.%4 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	5,	5 # length
@@ -235,7 +235,7 @@ stdout of test 'int2` in directory 'sql/test/pg_regress` itself:
 [ "",	-1234,	-1236 ]
 [ "",	32767,	32765 ]
 #SELECT '' AS five, i.f1, i.f1 - cast('2' as integer) AS x FROM INT2_TBL i;
-% .%2,	sys.i,	sys.%4 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	bigint # type
 % 0,	6,	6 # length
@@ -245,7 +245,7 @@ stdout of test 'int2` in directory 'sql/test/pg_regress` itself:
 [ "",	32767,	32765 ]
 [ "",	-32767,	-32769 ]
 #SELECT '' AS five, i.f1, i.f1 / cast('2' as smallint) AS x FROM INT2_TBL i;
-% .%2,	sys.i,	sys.%4 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	smallint # type
 % 0,	6,	6 # length
@@ -255,7 +255,7 @@ stdout of test 'int2` in directory 'sql/test/pg_regress` itself:
 [ "",	32767,	16383 ]
 [ "",	-32767,	-16383 ]
 #SELECT '' AS five, i.f1, i.f1 / cast('2' as integer) AS x FROM INT2_TBL i;
-% .%2,	sys.i,	sys.%4 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	6,	6 # length

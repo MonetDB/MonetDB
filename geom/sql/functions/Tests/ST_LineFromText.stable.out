@@ -70,7 +70,7 @@ stdout of test 'ST_LineFromText` in directory 'geom/sql/functions` itself:
 [ "LINESTRING Z (20 20 20, 30 30 30, 40 40 40)"	]
 #drop table lines_tbl;
 #select st_linefromtext(geom) from geometriesTxt WHERE id=2;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % geometry # type
 % 0 # length

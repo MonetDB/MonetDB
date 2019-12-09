@@ -58,7 +58,7 @@ stdout of test 'zero_or_one_bug` in directory 'sql/test/bugs` itself:
 #      (SELECT col2 FROM my_table2 WHERE col2 = col1a)
 #FROM  my_table1 x
 #;
-% .%16,	.%2 # table_name
+% .,	.%2 # table_name
 % %16,	%2 # name
 % int,	varchar # type
 % 1,	0 # length
@@ -76,7 +76,7 @@ stdout of test 'zero_or_one_bug` in directory 'sql/test/bugs` itself:
 #      (SELECT col2 FROM my_table2 WHERE col2 = col1a) AS my_col1
 #FROM  my_table1 x
 #;
-% .%16,	.%17 # table_name
+% .,	. # table_name
 % %16,	my_col1 # name
 % int,	varchar # type
 % 1,	0 # length

@@ -28,7 +28,7 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 
 #select c.CustId, c.Name as CustName 
 #from customers c;
-% sys.c,	sys.c # table_name
+% sys.c,	sys. # table_name
 % custid,	custname # name
 % int,	varchar # type
 % 1,	18 # length
@@ -42,7 +42,7 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 #       	xmlelement(name "CustName", c.Name),
 #        xmlelement(name "City", c.City))
 #from customers c;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % xml # type
 % 98 # length
@@ -54,7 +54,7 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 #select xmlelement(name "Customer",
 #	xmlforest(c.CustId, c.Name AS CustName, c.City))
 #from customers c;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % xml # type
 % 98 # length
@@ -124,7 +124,7 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 #  xmlattributes(c.CustId as "id"), 
 #  xmlcomment('simple comment test'))
 #from Customers c;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % xml # type
 % 57 # length

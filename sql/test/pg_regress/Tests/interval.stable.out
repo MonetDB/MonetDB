@@ -25,7 +25,7 @@ stdout of test 'interval` in directory 'sql/test/pg_regress` itself:
 # 12:56:39 >  
 
 #SELECT cast('-05' as interval second) AS "Five hours";
-% .%2 # table_name
+% . # table_name
 % "Five hours" # name
 % sec_interval # type
 % 6 # length

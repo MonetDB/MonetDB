@@ -58,7 +58,7 @@ stdout of test 'sqlsmith04` in directory 'sql/test/BugTracker-2017` itself:
 #      left join tbl_ProductSales as ref_699
 #      on (ref_678.col0 = ref_699.col1 )
 #    left join LongTable as ref_700
-% .ref_696,	.ref_699 # table_name
+% .,	. # table_name
 % c0,	c1 # name
 % int,	varchar # type
 % 1,	0 # length

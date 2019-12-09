@@ -5655,14 +5655,14 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, convert(v, char) from T_char where v in ('0', '1');
-% sys.t_char,	sys.%2 # table_name
+% sys.t_char,	sys. # table_name
 % v,	%2 # name
 % char,	char # type
 % 33,	1 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 #SELECT v, convert(v, varchar(36)) from T_char;
-% sys.t_char,	sys.%2 # table_name
+% sys.t_char,	sys. # table_name
 % v,	%2 # name
 % char,	varchar # type
 % 33,	26 # length
@@ -5816,14 +5816,14 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, cast(v as char) from T_char where v in ('0', '1');
-% sys.t_char,	sys.%2 # table_name
+% sys.t_char,	sys. # table_name
 % v,	%2 # name
 % char,	char # type
 % 33,	1 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 #SELECT v, cast(v as varchar(36)) from T_char;
-% sys.t_char,	sys.%2 # table_name
+% sys.t_char,	sys. # table_name
 % v,	%2 # name
 % char,	varchar # type
 % 33,	26 # length
@@ -5995,14 +5995,14 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, convert(v, char) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.%2 # table_name
+% sys.t_varchar,	sys. # table_name
 % v,	%2 # name
 % varchar,	char # type
 % 1,	1 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 #SELECT v, convert(v, varchar(36)) from T_varchar;
-% sys.t_varchar,	sys.%2 # table_name
+% sys.t_varchar,	sys. # table_name
 % v,	%2 # name
 % varchar,	varchar # type
 % 26,	26 # length
@@ -6156,14 +6156,14 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, cast(v as char) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.%2 # table_name
+% sys.t_varchar,	sys. # table_name
 % v,	%2 # name
 % varchar,	char # type
 % 1,	1 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 #SELECT v, cast(v as varchar(36)) from T_varchar;
-% sys.t_varchar,	sys.%2 # table_name
+% sys.t_varchar,	sys. # table_name
 % v,	%2 # name
 % varchar,	varchar # type
 % 26,	26 # length
@@ -6335,14 +6335,14 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, convert(v, char) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.%2 # table_name
+% sys.t_clob,	sys. # table_name
 % v,	%2 # name
 % clob,	char # type
 % 1,	1 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 #SELECT v, convert(v, varchar(36)) from T_clob;
-% sys.t_clob,	sys.%2 # table_name
+% sys.t_clob,	sys. # table_name
 % v,	%2 # name
 % clob,	varchar # type
 % 26,	26 # length
@@ -6496,14 +6496,14 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, cast(v as char) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.%2 # table_name
+% sys.t_clob,	sys. # table_name
 % v,	%2 # name
 % clob,	char # type
 % 1,	1 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 #SELECT v, cast(v as varchar(36)) from T_clob;
-% sys.t_clob,	sys.%2 # table_name
+% sys.t_clob,	sys. # table_name
 % v,	%2 # name
 % clob,	varchar # type
 % 26,	26 # length

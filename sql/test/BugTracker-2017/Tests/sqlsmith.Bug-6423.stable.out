@@ -64,7 +64,7 @@ stdout of test 'sqlsmith.Bug-6423` in directory 'sql/test/BugTracker-2017` itsel
 #          right join sys.key_types as ref_8
 #          on (true)
 #      on (ref_6.col2 = ref_8.col1 )
-% .%57,	.%60,	.%61,	.%62 # table_name
+% .,	.,	.,	. # table_name
 % c0,	c1,	c2,	c3 # name
 % varchar,	int,	int,	tinyint # type
 % 0,	1,	1,	1 # length

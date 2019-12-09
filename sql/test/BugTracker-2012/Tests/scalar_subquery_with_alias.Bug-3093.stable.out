@@ -56,7 +56,7 @@ stdout of test 'scalar_subquery_with_alias.Bug-3093` in directory 'sql/test/BugT
 #       ) AS c2
 #  FROM test1 a
 #;
-% .%2,	.%3 # table_name
+% .,	. # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -69,7 +69,7 @@ stdout of test 'scalar_subquery_with_alias.Bug-3093` in directory 'sql/test/BugT
 #       )
 #  FROM test1 a
 #;
-% .%2,	.%3 # table_name
+% .,	. # table_name
 % %2,	%4 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -82,7 +82,7 @@ stdout of test 'scalar_subquery_with_alias.Bug-3093` in directory 'sql/test/BugT
 #       ) AS c2
 #  FROM test1 a
 #;
-% .%2,	.%3 # table_name
+% .,	. # table_name
 % %2,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -95,7 +95,7 @@ stdout of test 'scalar_subquery_with_alias.Bug-3093` in directory 'sql/test/BugT
 #       ) AS c1
 #  FROM test1 a
 #;
-% .%2,	.%4 # table_name
+% .,	. # table_name
 % c2,	c1 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -108,7 +108,7 @@ stdout of test 'scalar_subquery_with_alias.Bug-3093` in directory 'sql/test/BugT
 #       ) AS c2
 #  FROM test1 a
 #;
-% .%2,	.%3 # table_name
+% .,	. # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -129,7 +129,7 @@ stdout of test 'scalar_subquery_with_alias.Bug-3093` in directory 'sql/test/BugT
 #       ) AS c2
 #  FROM test1 a
 #;
-% .%2,	.%3 # table_name
+% .,	. # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -145,7 +145,7 @@ stdout of test 'scalar_subquery_with_alias.Bug-3093` in directory 'sql/test/BugT
 #       )
 #  FROM test1 a
 #;
-% .%2,	.%3 # table_name
+% .,	. # table_name
 % %2,	%4 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -161,7 +161,7 @@ stdout of test 'scalar_subquery_with_alias.Bug-3093` in directory 'sql/test/BugT
 #       ) AS c2
 #  FROM test1 a
 #;
-% .%2,	.%3 # table_name
+% .,	. # table_name
 % %2,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -177,7 +177,7 @@ stdout of test 'scalar_subquery_with_alias.Bug-3093` in directory 'sql/test/BugT
 #       ) AS c1
 #  FROM test1 a
 #;
-% .%2,	.%4 # table_name
+% .,	. # table_name
 % c2,	c1 # name
 % bigint,	bigint # type
 % 1,	1 # length
@@ -193,7 +193,7 @@ stdout of test 'scalar_subquery_with_alias.Bug-3093` in directory 'sql/test/BugT
 #       ) AS c2
 #  FROM test1 a
 #;
-% .%2,	.%3 # table_name
+% .,	. # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length

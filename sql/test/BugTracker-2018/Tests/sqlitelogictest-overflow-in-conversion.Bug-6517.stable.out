@@ -31,7 +31,7 @@ stdout of test 'sqlitelogictest-overflow-in-conversion.Bug-6517` in directory 's
 #INSERT INTO tab1 VALUES(91,47,68);
 [ 1	]
 #SELECT - col1 FROM tab1 WHERE NOT - 86 IN ( 47 * - 49 + 22 );
-% sys.%2 # table_name
+% sys. # table_name
 % %2 # name
 % int # type
 % 3 # length

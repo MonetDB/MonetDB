@@ -72,7 +72,7 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 #    ref_1.col5 as c12,
 #    ref_2.col3 as c13,
 #    case when exists (
-% .%32,	.%33,	.%34,	.%35 # table_name
+% .,	.,	.,	. # table_name
 % c0,	c1,	c2,	c3 # name
 % int,	int,	tinyint,	int # type
 % 1,	1,	1,	1 # length
@@ -104,7 +104,7 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # ref_1.col2 as c1
 # from 
 # tab1 as ref_2
-% .%26,	.%27,	.%30,	.%31,	.%32,	.%33,	.%34,	.%35,	.%36,	.%37 # table_name
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8,	c9 # name
 % int,	int,	smallint,	smallint,	int,	int,	smallint,	smallint,	smallint,	int # type
 % 1,	1,	1,	1,	1,	1,	1,	1,	1,	1 # length
@@ -122,8 +122,9 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 #                  FROM   sys.table_partitions AS ref_1 
 #                  WHERE  ( false ) 
 #                         AND ( EXISTS 
-#                         (SELECT ref_2.fk_name   AS c0, 
-% .subq_1,	.subq_1,	.subq_0,	.subq_1,	.subq_1,	.subq_0 # table_name
+#                         (SELECT ref_2.col0   AS c0, 
+#                                 ref_1.col2 AS c1, 
+% .,	.,	.,	.,	.,	. # table_name
 % c0,	c1,	c2,	c3,	c4,	c5 # name
 % int,	int,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1,	1 # length
@@ -144,6 +145,29 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 % single_value # name
 % tinyint # type
 % 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+#select 
+# 1
+# from 
+# tab1 as ref_0
+# right join analytics as ref_1
+# right join tab2 as ref_2
+# on (exists (
+# select 
+# 1
+# from 
+# tbl_ProductSales as ref_3
+# where ref_1.aa is null))
+# on (ref_0.col1 = ref_2.col0 );
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
 [ 1	]
 [ 1	]
 [ 1	]
@@ -173,82 +197,11 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # sys.tbl_ProductSales as ref_3
 # where ref_1.aa is null))
 # on (ref_0.col1 = ref_2.col0 )
-% sys.%57,	sys.%60,	.%61,	sys.%62,	sys.%63,	sys.%64,	sys.%65,	sys.%66 # table_name
+# inner join tab0 as ref_4
+% sys.,	sys.,	.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7 # name
 % int,	int,	int,	int,	int,	int,	int,	int # type
-% 2,	2,	1,	2,	2,	2,	2,	2 # length
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
-[ 1,	1,	4,	1,	1,	1,	1,	1	]
-[ 81,	81,	4,	81,	81,	81,	81,	81	]
-[ 21,	21,	4,	21,	21,	21,	21,	21	]
+% 1,	1,	1,	1,	1,	1,	1,	1 # length
 #SELECT subq_1.c3 AS c0
 #FROM
 #  (SELECT 1 AS c0,
@@ -269,7 +222,7 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 #          subq_0.c5 AS c11,
 #          subq_0.c4 AS c12
 #   FROM
-% sys.subq_0 # table_name
+% sys. # table_name
 % c0 # name
 % int # type
 % 1 # length
@@ -301,7 +254,7 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # where subq_0.c8 is not null
 # limit 46) as subq_1
 #where false; --empty on PostgreSQL
-% sys.ref_0,	sys.ref_0,	sys.ref_0 # table_name
+% sys.,	sys.,	sys. # table_name
 % c0,	c1,	c2 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
@@ -328,8 +281,12 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # sys._columns as ref_0
 # inner join sys.dependency_functions_on_triggers as ref_1
 # on (true)
-# right join sys.dependency_functions_on_triggers as ref_2
-% .subq_0,	.subq_0,	.subq_0,	.subq_0,	.subq_0,	.subq_0,	.subq_0,	.subq_0 # table_name
+# right join LongTable as ref_2
+# on (ref_0.col1 = ref_2.col6 )
+# where (((ref_2.col5 is null) 
+# and (true)) 
+# and (true)) 
+% .,	.,	.,	.,	.,	.,	.,	. # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7 # name
 % int,	int,	int,	int,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1,	1,	1,	1 # length
@@ -362,7 +319,7 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # where exists (
 # select 
 # ref_1.col4 as c0
-% sys.%73 # table_name
+% sys. # table_name
 % c0 # name
 % int # type
 % 1 # length
@@ -392,7 +349,7 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # sys.another_t as ref_0
 # where (true) 
 # and ((ref_0.col4 is not null) 
-% sys.%15,	sys.%16,	sys.%17,	.%20,	sys.%21,	sys.%22,	sys.%23,	sys.%24,	sys.%25,	.%26,	.%27,	sys.%30,	sys.%31,	sys.%32,	sys.%33 # table_name
+% sys.,	sys.,	sys.,	.,	sys.,	sys.,	sys.,	sys.,	sys.,	.,	.,	sys.,	sys.,	sys.,	sys. # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8,	c9,	c10,	c11,	c12,	c13,	c14 # name
 % int,	int,	int,	tinyint,	int,	int,	int,	int,	int,	tinyint,	int,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1 # length

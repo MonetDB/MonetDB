@@ -55,7 +55,7 @@ stdout of test 'sqlsmith.Bug-6449` in directory 'sql/test/BugTracker-2017` itsel
 #            tab1 as ref_5
 #              left join tab2 as ref_6
 #              on (ref_5.col1 is not NULL)
-% sys.ref_3,	sys.ref_4,	sys.ref_3,	sys.ref_3 # table_name
+% sys.,	sys.,	sys.,	sys. # table_name
 % c0,	c1,	c2,	c3 # name
 % int,	int,	int,	int # type
 % 1,	1,	1,	1 # length

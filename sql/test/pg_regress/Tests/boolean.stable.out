@@ -36,49 +36,49 @@ stdout of test 'boolean` in directory 'sql/test/pg_regress` itself:
 % 1 # length
 [ 1 ]
 #SELECT cast('true' AS boolean) AS "true";
-% .%2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT cast('false' AS boolean) AS "false";
-% .%2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT cast('true' AS boolean) or cast('false' AS boolean) AS "true";
-% .%3 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT cast('true' AS boolean) and cast('false' AS boolean) AS "false";
-% .%3 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT not cast('false' AS boolean) AS "true";
-% .%2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT not cast('true' AS boolean) AS "false";
-% .%2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT cast('true' AS boolean) = cast('false' AS boolean) AS "false";
-% .%3 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT cast('true' AS boolean) <> cast('false' AS boolean) AS "true";
-% .%3 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length

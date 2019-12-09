@@ -44,7 +44,7 @@ stdout of test '19` in directory 'sql/benchmarks/tpcds` itself:
 #  AND SUBSTRING(ca_zip, 1, 5) <> SUBSTRING(s_zip, 1, 5)
 #  AND ss_store_sk = s_store_sk
 #GROUP BY i_brand,
-% sys.item,	sys.item,	sys.item,	sys.item,	sys.%1 # table_name
+% sys.,	sys.,	sys.item,	sys.item,	sys. # table_name
 % brand_id,	brand,	i_manufact_id,	i_manufact,	ext_price # name
 % int,	char,	int,	char,	decimal # type
 % 8,	50,	3,	50,	20 # length

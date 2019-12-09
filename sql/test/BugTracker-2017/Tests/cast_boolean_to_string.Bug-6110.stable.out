@@ -72,7 +72,7 @@ stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 #INSERT INTO t_boolean VALUES (Null, 'Null');
 [ 1	]
 #SELECT val, valstr, cast(val as bool) as cast2bool FROM t_boolean order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.t_boolean # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	cast2bool # name
 % boolean,	varchar,	boolean # type
 % 5,	5,	5 # length

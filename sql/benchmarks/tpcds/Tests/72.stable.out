@@ -40,7 +40,7 @@ stdout of test '72` in directory 'sql/benchmarks/tpcds` itself:
 #JOIN warehouse ON (w_warehouse_sk=inv_warehouse_sk)
 #JOIN item ON (i_item_sk = cs_item_sk)
 #JOIN customer_demographics ON (cs_bill_cdemo_sk = cd_demo_sk)
-% .item,	.warehouse,	.d1,	.%25,	.%26,	.%27 # table_name
+% .item,	.warehouse,	.d1,	.,	.,	. # table_name
 % i_item_desc,	w_warehouse_name,	d_week_seq,	no_promo,	promo,	total_cnt # name
 % varchar,	varchar,	int,	bigint,	bigint,	bigint # type
 % 197,	20,	4,	1,	1,	1 # length

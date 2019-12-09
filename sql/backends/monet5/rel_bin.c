@@ -1324,23 +1324,16 @@ rel_parse_value(backend *be, char *query, char emode)
 	return s;
 }
 
-
 static stmt *
-stmt_rename(backend *be, sql_rel *rel, sql_exp *exp, stmt *s )
+stmt_rename(backend *be, sql_exp *exp, stmt *s )
 {
 	const char *name = exp_name(exp);
 	const char *rname = exp_relname(exp);
 	stmt *o = s;
 
-	(void)rel;
-	if (!name && exp->type == e_column && exp->r)
-		name = exp->r;
-	if (!name)
-		name = column_name(be->mvc->sa, s);
-	if (!rname && exp->type == e_column && exp->l)
-		rname = exp->l;
-	if (!rname)
-		rname = table_name(be->mvc->sa, s);
+	if (!name && exp_is_atom(exp))
+		name = sa_strdup(be->mvc->sa, "single_value");
+	assert(name);
 	s = stmt_alias(be, s, rname, name);
 	if (o->flag & OUTER_ZERO)
 		s->flag |= OUTER_ZERO;
@@ -2469,7 +2462,7 @@ rel_rename(backend *be, sql_rel *rel, stmt *sub)
 				assert(0);
 				return NULL;
 			}
-			s = stmt_rename(be, rel, exp, s);
+			s = stmt_rename(be, exp, s);
 			list_append(l, s);
 		}
 		sub = stmt_list(be, l);
@@ -2825,7 +2818,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		else if (sub && sub->nrcols >= 1 && s->nrcols == 0)
 			s = stmt_const(be, bin_first_column(be, sub), s);
 
-		s = stmt_rename(be, rel, exp, s);
+		s = stmt_rename(be, exp, s);
 		column_name(sql->sa, s); /* save column name */
 		list_append(pl, s);
 	}
@@ -3102,7 +3095,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		}
 
-		aggrstmt = stmt_rename(be, rel, aggrexp, aggrstmt);
+		aggrstmt = stmt_rename(be, aggrexp, aggrstmt);
 		list_append(l, aggrstmt);
 	}
 	stmt_set_nrcols(cursub);

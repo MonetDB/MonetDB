@@ -76,7 +76,7 @@ stdout of test 'box` in directory 'sql/test/pg_regress` itself:
 [ "",	"BOX (2.5 2.5, 2.5 3.5)"	]
 [ "",	"BOX (3 3, 3 3)"	]
 #SELECT '' AS four, b.f1, cast(f1 as varchar(44)) as txt FROM BOX_TBL b;
-% .%2,	sys.b,	sys.%4 # table_name
+% .,	sys.b,	sys. # table_name
 % four,	f1,	txt # name
 % char,	mbr,	varchar # type
 % 0,	0,	42 # length

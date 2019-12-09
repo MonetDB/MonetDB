@@ -47,7 +47,7 @@ stdout of test 'push_subslice.Bug-6322` in directory 'sql/test/BugTracker-2017` 
 #where (true)
 #  or ((select pc from sys.tracelog)
 #       is not NULL);
-% .subq_0 # table_name
+% . # table_name
 % c2 # name
 % int # type
 % 4 # length
@@ -63,7 +63,7 @@ stdout of test 'push_subslice.Bug-6322` in directory 'sql/test/BugTracker-2017` 
 #      from sys.spatial_ref_sys as sample_0
 #              where sample_0.srtext is not NULL limit 95) as subq_0
 #where cast(coalesce(17, subq_0.c1) as int) is not NULL;
-% .%3,	.sample_0 # table_name
+% .,	. # table_name
 % c3,	c9 # name
 % boolean,	int # type
 % 5,	4 # length

@@ -46,7 +46,7 @@ stdout of test 'sqlsmith.Bug-6425` in directory 'sql/test/BugTracker-2017` itsel
 #    on (sample_1.var_id = sample_3.privilege_code_id )
 #where false
 #limit 106;
-% .sample_2 # table_name
+% . # table_name
 % c0 # name
 % int # type
 % 1 # length

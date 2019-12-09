@@ -51,8 +51,8 @@ stdout of test 'sqlsmith01` in directory 'sql/test/BugTracker-2017` itself:
 #    ref_20.file_id) as bigint) as c1
 #from
 #  another_T as ref_20
-#where ref_20.col1 is not NULL;
-% sys.%2,	sys.%3 # table_name
+#where ref_20.col1 is not NULL; --empty
+% sys.,	sys. # table_name
 % c0,	c1 # name
 % int,	bigint # type
 % 4,	4 # length
@@ -79,7 +79,7 @@ stdout of test 'sqlsmith01` in directory 'sql/test/BugTracker-2017` itself:
 #            left join analytics as ref_21
 #              inner join tbl_ProductSales as ref_22
 #              on (ref_21.aa = ref_22.col1 )
-% .%57,	.%60,	.%61,	.%62 # table_name
+% .,	.,	.,	. # table_name
 % c0,	c1,	c2,	c3 # name
 % int,	int,	int,	int # type
 % 1,	1,	1,	1 # length
