@@ -43,7 +43,7 @@
 #define getpid _getpid
 #endif
 
-/* these two are used of the set parameter passed into functions is NULL */
+/* these two are used if the set parameter passed into functions is NULL */
 static int default_setlen = 0;
 static opt *default_set = NULL;
 
@@ -218,7 +218,7 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	7	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	8	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
@@ -251,6 +251,10 @@ mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("sql_debug");
 	set[i].value = strdup("0");
+	i++;
+	set[i].kind = opt_builtin;
+	set[i].name = strdup("raw_strings");
+	set[i].value = strdup("false");
 	i++;
 
 	assert(i == N_OPTIONS);

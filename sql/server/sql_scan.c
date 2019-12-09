@@ -1309,17 +1309,18 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 			quote = '\'';
 			*dst = 0;
 		} else {
-#if 0
-			char *dst = str;
-			for (char *src = yylval->sval + 1; *src; dst++)
-				if ((*dst = *src++) == '\'' && *src == '\'')
-					src++;
-			*dst = 0;
-#else
-			GDKstrFromStr((unsigned char *) str,
-				      (unsigned char *) yylval->sval + 1,
-				      lc->yycur-lc->yysval - 1);
-#endif
+			bool raw_strings = GDKgetenv_istrue("raw_strings");
+			if (raw_strings) {
+				char *dst = str;
+				for (char *src = yylval->sval + 1; *src; dst++)
+					if ((*dst = *src++) == '\'' && *src == '\'')
+						src++;
+				*dst = 0;
+			} else {
+				GDKstrFromStr((unsigned char *)str,
+					      (unsigned char *)yylval->sval + 1,
+					      lc->yycur - lc->yysval - 1);
+			}
 		}
 		yylval->sval = str;
 

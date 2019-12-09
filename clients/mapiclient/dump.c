@@ -128,7 +128,17 @@ squoted_print(stream *f, const char *s, char quote)
 	if (mnstr_printf(f, "%c", quote) < 0)
 		return -1;
 	while (*s) {
+		size_t n = strcspn(s, "\\'\"\177"
+				   "\001\002\003\004\005\006\007"
+				   "\010\011\012\013\014\015\016\017"
+				   "\020\021\022\023\024\025\026\027"
+				   "\030\031\032\033\034\035\036\037");
+		if (n > 0 && mnstr_write(f, s, 1, n) < 0)
+			return -1;
+		s += n;
 		switch (*s) {
+		case '\0':
+			continue;
 		case '\\':
 			if (mnstr_write(f, "\\\\", 1, 2) < 0)
 				return -1;
@@ -148,13 +158,8 @@ squoted_print(stream *f, const char *s, char quote)
 				return -1;
 			break;
 		default:
-			if ((0 < *s && *s < 32) || *s == '\177') {
-				if (mnstr_printf(f, "\\%03o", (uint8_t) *s) < 0)
-					return -1;
-			} else {
-				if (mnstr_write(f, s, 1, 1) < 0)
-					return -1;
-			}
+			if (mnstr_printf(f, "\\%03o", (uint8_t) *s) < 0)
+				return -1;
 			break;
 		}
 		s++;
@@ -1783,14 +1788,13 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 					 strcmp(tp, "url") == 0 ||
 					 strcmp(tp, "uuid") == 0 ||
 					 string[i])
-					squoted_print(toConsole, s, useInserts ? '\'' : '"');
+					squoted_print(toConsole, s, '\'');
 				else
 					mnstr_printf(toConsole, "%s", s);
 			} else if (string[i]) {
-				/* write double or single-quoted
-				   string with certain characters
-				   escaped */
-				squoted_print(toConsole, s, useInserts ? '\'' : '"');
+				/* write double-quoted string with
+				   certain characters escaped */
+				squoted_print(toConsole, s, '"');
 			} else
 				mnstr_printf(toConsole, "%s", s);
 

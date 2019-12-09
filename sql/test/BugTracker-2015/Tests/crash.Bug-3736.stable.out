@@ -80,11 +80,11 @@ join (
 | | group by (
 | | | project (
 | | | | join (
-| | | | | table(sys.bidder) [ "bidder"."id" NOT NULL HASHCOL  as "b3"."id", "bidder"."increase" NOT NULL as "b3"."increase" ] COUNT ,
+| | | | | table(sys.bidder) [ "bidder"."id" NOT NULL HASHCOL  as "b3"."id", "bidder"."open_auction_id" NOT NULL as "b3"."open_auction_id", "bidder"."date" NOT NULL as "b3"."date", "bidder"."time" NOT NULL as "b3"."time", "bidder"."personref" NOT NULL as "b3"."personref", "bidder"."increase" NOT NULL as "b3"."increase", "bidder"."%TID%" NOT NULL as "b3"."%TID%" ] COUNT ,
 | | | | | project (
 | | | | | | group by (
 | | | | | | | join (
-| | | | | | | | table(sys.bidder) [ "bidder"."id" NOT NULL HASHCOL  as "b3a"."id", "bidder"."open_auction_id" NOT NULL as "b3a"."open_auction_id" ] COUNT ,
+| | | | | | | | table(sys.bidder) [ "bidder"."id" NOT NULL HASHCOL  as "b3a"."id", "bidder"."open_auction_id" NOT NULL as "b3a"."open_auction_id", "bidder"."date" NOT NULL as "b3a"."date", "bidder"."time" NOT NULL as "b3a"."time", "bidder"."personref" NOT NULL as "b3a"."personref", "bidder"."increase" NOT NULL as "b3a"."increase", "bidder"."%TID%" NOT NULL as "b3a"."%TID%" ] COUNT ,
 | | | | | | | | group by (
 | | | | | | | | | project (
 | | | | | | | | | | & REF 1 

@@ -105,7 +105,7 @@ static char *RAPIinitialize(void) {
 	char *e;
 
 	// set R_HOME for packages etc. We know this from our configure script
-	setenv("R_HOME", RHOME, TRUE);
+	putenv("R_HOME=" RHOME);
 
 	// set some command line arguments
 	{

@@ -95,6 +95,12 @@ SELECT (VALUES(1),(2)); --error, cardinality violation, scalar value expected
 
 SELECT (VALUES(1,2,3)); --error, subquery must return only one column
 
+SELECT i FROM integers ORDER BY (SELECT 1);
+
+SELECT i FROM integers ORDER BY (SELECT 2); --error, the query outputs 1 column, so not possible to order by the second projection
+
+SELECT i FROM integers ORDER BY (SELECT -1); --error, no in the order by range
+
 drop TABLE integers;
 
 -- varchar tests

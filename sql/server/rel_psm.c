@@ -129,7 +129,7 @@ psm_set_exp(sql_query *query, dnode *n)
 			if (v->card > CARD_AGGR) {
 				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(v));
 				assert(zero_or_one);
-				v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, 0);
+				v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, has_nil(v));
 			}
 			append(b, exp_set(sql->sa, vname, v, level));
 		}
@@ -552,7 +552,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		if (v->card > CARD_AGGR) {
 			sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(v));
 			assert(zero_or_one);
-			v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, 0);
+			v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, has_nil(v));
 		}
 		tpe = stack_find_type(sql, nme);
 		level = stack_find_frame(sql, nme);

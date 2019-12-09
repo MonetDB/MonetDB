@@ -296,7 +296,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 	case e_cmp: {
 		lng dcount = exp_getdcount( sql, r, e->l, count);
 
-		switch (get_cmp(e)) {
+		switch (e->flag) {
 		case cmp_equal: {
 			sel = 1.0/dcount;
 			break;
@@ -354,7 +354,7 @@ rel_join_exp_selectivity(mvc *sql, sql_rel *l, sql_rel *r, sql_exp *e, lng lcoun
 	rdcount = exp_getdcount(sql, r, e->r, rcount);
 	switch(e->type) {
 	case e_cmp:
-		switch (get_cmp(e)) {
+		switch (e->flag) {
 		case cmp_equal: 
 			sel = (lcount/(dbl)ldcount)*(rcount/(dbl)rdcount);
 			break;

@@ -2002,14 +2002,6 @@ stmt_project_join(backend *be, stmt *op1, stmt *op2, stmt *ins)
 		q = pushArgument(mb, q, op2->nr);
 		if (q == NULL)
 			return NULL;
-		/*
-		if (s->key) {
-			q = newStmt(mb, batRef, putName("setKey"));
-			q = pushArgument(mb, q, s->nr);
-			q = pushBit(mb, q, TRUE);
-		}
-		*/
-		
 	}
 	return q;
 }

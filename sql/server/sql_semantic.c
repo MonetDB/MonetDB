@@ -38,7 +38,10 @@ sql_add_arg(mvc *sql, atom *v)
 {
 	atom** new_args;
 	int next_size = sql->argmax;
-	if (sql->argc == next_size) {
+
+	if (sql->argc == (1<<16)-1)
+		sql->caching = 0;
+	if (sql->caching && sql->argc == next_size) {
 		next_size *= 2;
 		new_args = RENEW_ARRAY(atom*,sql->args,next_size);
 		if(new_args) {

@@ -38,7 +38,7 @@ stdout of test 'sqlsmith.Bug-6219` in directory 'sql/test/BugTracker-2017` itsel
 #              left join sys.db_user_info as ref_25
 #              on (ref_24.dimpos = ref_25.default_schema )
 #            on (ref_23.id = ref_24.var_id )
-% .subq_0,	.subq_0 # table_name
+% .%14,	. # table_name
 % c0,	c1 # name
 % int,	tinyint # type
 % 1,	1 # length
