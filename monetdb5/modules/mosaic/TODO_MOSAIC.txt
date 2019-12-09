@@ -1,4 +1,5 @@
 ####technical depth####
+Remove debug flags from test runs and restore pound sign in debug messages
 Add test for float/double
 Add test for huge
 Be sure alignment is correct. Use asserts and type specialized block headers for this.(1*)
@@ -7,6 +8,7 @@ Fix/check/test MOSlayout.
 Introduce mosaic into gdk: create hooks in scanselect functions/macro's, joins and projections.
 benchmark using TPC-H
 make mitosis work with mosaic and see how this relates to the previous landmark stuff.
+Transform control dependency into data dependency select loops.
 Apply compressed operations more directly: on keys in dictionary compression
 Apply compressed operations more directly: on prefix|suffix in prefix compression
 Apply compressed operations more directly: on delta's and frame in frame compression
@@ -14,6 +16,7 @@ consider packing mosaic_block_header's more efficiently.
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
 DO nil checking more efficient similar to gdk_select
 Timing in the context of MOSanalysis
+create mix compression test cases.
 
 ####code issues####
 See if the iteration algorithms can be improved.
