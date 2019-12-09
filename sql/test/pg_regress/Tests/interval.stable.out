@@ -75,7 +75,7 @@ stdout of test 'interval` in directory 'sql/test/pg_regress` itself:
 % L3 # name
 % double # type
 % 24 # length
-[ 3.1756752e+13	]
+[ 3.1756752e+10	]
 #select min(f1) from interval_tbl;
 % sys.L2 # table_name
 % L2 # name
