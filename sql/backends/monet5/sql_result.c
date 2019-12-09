@@ -2563,7 +2563,7 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 		cnt = BATcount(order);
 	if (offset >= BATcount(order))
 		cnt = 0;
-	if (offset + cnt > BATcount(order))
+	if (cnt == BUN_NONE || offset + cnt > BATcount(order))
 		cnt = BATcount(order) - offset;
 
 	if (b->client->protocol != PROTOCOL_10) {

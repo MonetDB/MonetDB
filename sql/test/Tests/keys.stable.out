@@ -136,11 +136,11 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 113 # length
+% 98 # length
 project (
 | group by (
 | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL , "dummyme"."b" ] COUNT 
-| ) [ "dummyme"."b" ] [ "dummyme"."b", sys.count no nil ("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "%1"."%1" ]
+| ) [ "dummyme"."b" ] [ sys.count no nil ("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 #plan select count(distinct b) from dummyme;
 % .plan # table_name

@@ -45,7 +45,7 @@ exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
 		break;
 	case e_column: 
 		if ((e->l && rel_bind_column2(sql, r, e->l, e->r, 0)) ||
-		    (!e->l && rel_bind_column(sql, r, e->r, 0)))
+		    (!e->l && rel_bind_column(sql, r, e->r, 0, 1)))
 			return;
 		set_freevar(e, 0);
 		break;
@@ -165,6 +165,21 @@ rel_has_freevar(mvc *sql, sql_rel *rel)
 	return 0;
 }
 
+static int 
+freevar_equal( sql_exp *e1, sql_exp *e2)
+{
+	assert(e1 && e2 && e1->freevar && e2->freevar);
+	if (e1 == e2)
+		return 0;
+	if (e1->type != e_column || e2->type != e_column)
+		return -1;
+	if (e1->l && e2->l && strcmp(e1->l, e2->l) == 0)
+		return strcmp(e1->r, e2->r);
+	if (!e1->l && !e2->l)
+		return strcmp(e1->r, e2->r);
+	return -1;
+}
+
 static list *
 merge_freevar(list *l, list *r)
 {
@@ -172,7 +187,7 @@ merge_freevar(list *l, list *r)
 		return r;
 	if (!r)
 		return l;
-	return list_distinct(list_merge(l, r, (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
+	return list_distinct(list_merge(l, r, (fdup)NULL), (fcmp)freevar_equal, (fdup)NULL);
 }
 
 static list * exps_freevar(mvc *sql, list *exps);
@@ -330,7 +345,7 @@ rel_dependent_var(mvc *sql, sql_rel *l, sql_rel *r)
 				if (e->l) {
 					ne = exps_bind_column2(boundvar, e->l, e->r );
 				} else {
-					ne = exps_bind_column(boundvar, e->r, NULL);
+					ne = exps_bind_column(boundvar, e->r, NULL, 1);
 				}
 				if (ne) {
 					if (!res)
@@ -421,7 +436,7 @@ push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 			if (e->l) {
 				ne = exps_bind_column2(rel->exps, e->l, e->r );
 			} else {
-				ne = exps_bind_column(rel->exps, e->r, NULL);
+				ne = exps_bind_column(rel->exps, e->r, NULL, 1);
 			}
 			if (ne) {
 				if (ne->type == e_column) {
@@ -604,6 +619,7 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 		sql_rel *D = rel_project(sql->sa, rel_dup(l), exps_copy(sql, ad));
 		set_distinct(D);
 
+		assert(!rel_is_ref(r));
 		r = rel_crossproduct(sql->sa, D, r, rel->op);
 		r->op = /*is_semi(rel->op)?op_left:*/op_join;
 		move_join_exps(sql, rel, r);
@@ -620,7 +636,7 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 				if (e->l) {
 					ne = exps_bind_column2(ad, e->l, e->r );
 				} else {
-					ne = exps_bind_column(ad, e->r, NULL);
+					ne = exps_bind_column(ad, e->r, NULL, 1);
 				}
 				if (!ne)
 					append(exps,e);
@@ -653,11 +669,18 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 static sql_rel *
 push_up_project(mvc *sql, sql_rel *rel, list *ad) 
 {
+	sql_rel *r = rel->r;
+
+	if (rel_is_ref(r)) {
+		sql_rel *nr = rel_project(sql->sa, rel_dup(r->l), exps_copy(sql, r->exps));
+		rel_destroy(r);
+		rel->r = r = nr;
+	}
+
 	/* input rel is dependent outerjoin with on the right a project, we first try to push inner side expressions down (because these cannot be pushed up) */ 
 	if (rel && is_outerjoin(rel->op) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
-		assert(!rel_is_ref(r));
 		/* find constant expressions and move these down */
 		if (r && r->op == op_project) {
 			node *n;
@@ -665,7 +688,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 			list *cexps = NULL;
 			sql_rel *l = r->l;
 
-			if (l && is_select(l->op)) {
+			if (l && is_select(l->op) && !rel_is_ref(l)) {
 				for(n=r->exps->h; n; n=n->next) {
 					sql_exp *e = n->data;
 
@@ -700,8 +723,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 	if (rel && is_join(rel->op) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
-		assert(!rel_is_ref(r));
-		if (r && r->op == op_project /*&& r->l*/) {
+		if (r && r->op == op_project) {
 			sql_exp *id = NULL;
 			node *m;
 			/* move project up, ie all attributes of left + the old expression list */
@@ -750,31 +772,20 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 			/* remove old project */
 			rel->r = r->l;
 			r->l = NULL;
-			rel_destroy(r);
-			r = rel->r;
+                        rel_destroy(r);
 			return n;
-			/*
-		} else if (r && r->op == op_project && !r->l) {
-			sql_rel *l = rel->l;
-
-			rel->l = NULL;
-			rel_destroy(rel);
-			return l;
-			*/
 		}
 	}
 	/* a dependent semi/anti join with a project on the right side, could be removed */
 	if (rel && is_semi(rel->op) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
-		assert(!rel_is_ref(r));
 		/* merge project expressions into the join expressions  */
 		rel->exps = push_up_project_exps(sql, r, rel->exps);
 
 		if (r && r->op == op_project && r->l) {
 			/* remove old project */
-			rel->r = r->l;
-			r->l = NULL;
+			rel->r = rel_dup(r->l);
 			rel_destroy(r);
 			return rel;
 		} else if (r && r->op == op_project) {
@@ -789,9 +800,9 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 					append(nexps, e);
 			}
 			if (list_empty(nexps)) {
+				assert(!r->l);
 				/* remove old project and change outer into select */
-				rel->r = r->l;
-				r->l = NULL;
+				rel->r = NULL;
 				rel_destroy(r);
 				rel->op = op_select;
 				return rel;
@@ -811,9 +822,8 @@ push_up_topn(mvc *sql, sql_rel *rel)
 
 		if (r && r->op == op_topn) {
 			/* remove old topn */
-			rel->r = r->l;
+			rel->r = rel_dup(r->l);
 			rel = rel_topn(sql->sa, rel, r->exps);
-			r->l = NULL;
 			rel_destroy(r);
 			return rel;
 		}
@@ -861,14 +871,15 @@ push_up_select(mvc *sql, sql_rel *rel, list *ad)
 				reset_dependent(rel);
 		}
 	} else if (rel && is_join(rel->op) && is_dependent(rel)) {
+		int cp = rel_is_ref(r);
 		sql_rel *r = rel->r;
 		list *exps = r->exps;
 
 		/* remove select */
 		rel->r = rel_dup(r->l);
-		rel_destroy(r);
 		rel = rel_select(sql->sa, rel, NULL);
-		rel->exps = exps;
+		rel->exps = !cp?exps:exps_copy(sql, exps);
+		rel_destroy(r);
 	}
 	return rel;
 }
@@ -1070,11 +1081,13 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 
 			if (ld && rd) {
 				node *m;
-				sql_rel *n, *nr;
+				sql_rel *n, *nr, *nj;
 
-				rel->r = jl;
-				j->l = rel_dup(d);
-				j->r = jr;
+				rel->r = rel_dup(jl);
+				nj = rel_crossproduct(sql->sa, rel_dup(d), rel_dup(jr), j->op);
+				nj->exps = exps_copy(sql, j->exps);
+				rel_destroy(j);
+				j = nj;
 				set_dependent(j);
 				n = rel_crossproduct(sql->sa, rel, j, j->op);
 				j->op = rel->op;
@@ -1102,20 +1115,23 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				return n;
 			}
 
-			if (!rd) { 
-				rel->r = jl;
-				j->l = rel;
-				j->r = jr;
+			if (!rd) {
+				rel->r = rel_dup(jl);
+				sql_rel *nj = rel_crossproduct(sql->sa, rel, rel_dup(jr), j->op);
+				nj->exps = exps_copy(sql, j->exps);
+				rel_destroy(j);
+				j = nj; 
 				move_join_exps(sql, j, rel);
 				return j;
 			}
-			if (!ld && is_left(rel->op) && crossproduct) {
+			if (/* DISABLES CODE */ (0) && !ld && is_left(rel->op) && crossproduct) {
 				sql_exp *l = exp_atom_int(sql->sa, 1);
 				sql_exp *r = exp_atom_int(sql->sa, 1);
 				rel->r = jr;
 				j->l = rel;
 				j->r = jl;
 
+				assert(!rel_is_ref(j));
 				if (!is_simple_project(jr->op))
 					rel->r = jr = rel_project(sql->sa, jr, rel_projections(sql, jr, NULL, 1, 1));
 				if (!is_simple_project(jl->op))
@@ -1134,9 +1150,11 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				append(j->exps, l);
 				return j;
 			} else if (!ld) {
-				rel->r = jr;
-				j->l = jl;
-				j->r = rel;
+				rel->r = rel_dup(jr);
+				sql_rel *nj = rel_crossproduct(sql->sa, rel_dup(jl), rel, j->op);
+				nj->exps = exps_copy(sql, j->exps);
+				rel_destroy(j);
+				j = nj; 
 				move_join_exps(sql, j, rel);
 				return j;
 			}
@@ -1261,6 +1279,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 		l = rel->l;
 		r = rel->r;
 
+		assert(!rel_is_ref(rel));
 		if (rel_has_freevar(sql, l))
 			rel->l = rel_unnest_dependent(sql, rel->l);
 
@@ -1750,16 +1769,36 @@ rewrite_or_exp(mvc *sql, sql_rel *rel)
 static sql_exp *
 rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
+	sql_rel *rell = NULL;
+	int needed = 0;
+
 	if (e->type != e_func || !e->r /* e->r means window function */)
 		return e;
 
 	(void)depth;
 	/* ranks/window functions only exist in the projection */
 	assert(is_simple_project(rel->op));
-	list *r = e->r, *gbe = r->h->data, *obe = r->h->next->data; 
+	list *l = e->l, *r = e->r, *gbe = r->h->data, *obe = r->h->next->data; 
 
+	needed = (gbe || obe);
+	for (node *n = l->h; n && !needed; n = n->next) {
+		sql_exp *e = n->data;
+		needed = e->ref;
+	}
+
+	if (needed) {
+		rell = rel->l = rel_project(sql->sa, rel->l, rel_projections(sql, rel->l, NULL, 1, 1));
+		for (node *n = l->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (e->ref) {
+				e->ref = 0;
+				append(rell->exps, e); 
+				n->data = exp_ref(sql->sa, e);
+			}
+		}
+	}
 	if (gbe || obe) {
-		sql_rel *r = rel_project(sql->sa, rel->l, rel_projections(sql, rel->l, NULL, 1, 1));
 		if (gbe && obe) {
 			gbe = list_merge(sa_list(sql->sa), gbe, (fdup)NULL); /* make sure the p->r is a different list than the gbe list */
 			for(node *n = obe->h ; n ; n = n->next) {
@@ -1787,7 +1826,7 @@ rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		} else if (obe) {
 			for(node *n = obe->h ; n ; n = n->next) {
 				sql_exp *oe = n->data;
-				if (!exps_find_exp(r->exps, oe)) {
+				if (!exps_find_exp(rell->exps, oe)) {
 					sql_exp *ne = exp_ref(sql->sa, oe);
 
 					if (is_ascending(oe))
@@ -1798,23 +1837,23 @@ rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					set_descending(oe);
 					set_nulls_first(oe);
 					n->data = ne;
-					append(r->exps, oe);
+					append(rell->exps, oe);
 				}
 			}
 			gbe = obe;
 		}
-		r->r = gbe;
-		rel->l = r;
+		rell->r = gbe;
+		rel->l = rell;
 
 		/* mark as normal (analytic) function now */
 		e->r = NULL;
 
 		/* add project with rank */
-		r = rel->l = rel_project(sql->sa, rel->l, rel_projections(sql, rel->l, NULL, 1, 1));
+		rell = rel->l = rel_project(sql->sa, rel->l, rel_projections(sql, rell->l, NULL, 1, 1));
 		/* move rank down add ref */
 		if (!exp_name(e))
 			e = exp_label(sql->sa, e, ++sql->label);
-		append(r->exps, e); 
+		append(rell->exps, e); 
 		e = exp_ref(sql->sa, e);
 	} else {
 		/* mark as normal (analytic) function now */
@@ -2393,11 +2432,20 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 static sql_exp *
 rewrite_ifthenelse(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
+	(void)depth;
+	/* for ifthenelse and rank flatten referenced inner expressions */
+	if (e->ref) {
+		sql_rel *r = rel->l = rel_project(sql->sa, rel->l, rel_projections(sql, rel->l, NULL, 1, 1));
+
+		e->ref = 0;
+		append(r->exps, e);
+		return exp_ref(sql->sa, e);
+	}
+
 	sql_subfunc *sf;
 	if (e->type != e_func)
 		return e;
 
-	(void)depth;
 	sf = e->f;
 	if (is_ifthenelse_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
@@ -2443,6 +2491,29 @@ rewrite_compare_exp(mvc *sql, sql_rel *rel)
 {
 	if ((is_select(rel->op) || is_join(rel->op)) && !list_empty(rel->exps))
 		rel->exps = rewrite_compare_exps(sql, rel->exps);
+	return rel;
+}
+
+static sql_rel *
+rewrite_remove_xp_project(mvc *sql, sql_rel *rel)
+{
+	(void)sql;
+	if (rel->op == op_join && list_empty(rel->exps)) {
+		sql_rel *r = rel->r;
+
+		if (is_simple_project(r->op) && r->l) {
+			sql_rel *rl = r->l;
+
+			if (is_simple_project(rl->op) && !rl->l && list_length(rl->exps) == 1) {
+				sql_exp *t = rl->exps->h->data;
+
+				if (is_atom(t->type) && !exp_name(t)) { /* atom with out alias cannot be used later */
+					rel = rel_project(sql->sa, rel->l, rel_projections(sql, rel->l, NULL, 1, 1));
+					list_merge(rel->exps, r->exps, (fdup)NULL);
+				}
+			}
+		}
+	}
 	return rel;
 }
 
@@ -2643,12 +2714,13 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor(sql, rel, &rewrite_or_exp);
 	rel = rel_exp_visitor(sql, rel, &rewrite_rank);
 	rel = rel_exp_visitor(sql, rel, &rewrite_anyequal);
-	rel = rel_visitor(sql, rel, &rewrite_join2semi);	/* where possible convert anyequal functions into marks */
 	rel = rel_exp_visitor(sql, rel, &rewrite_compare);
 	rel = rel_exp_visitor(sql, rel, &rewrite_exists);
 	rel = rel_exp_visitor(sql, rel, &rewrite_ifthenelse);	/* add isnull handling */
 	rel = rel_exp_visitor(sql, rel, &rewrite_exp_rel);
+	rel = rel_visitor(sql, rel, &rewrite_join2semi);	/* where possible convert anyequal functions into marks */
 	rel = rel_visitor(sql, rel, &rewrite_compare_exp);	/* only allow for e_cmp in selects and  handling */
+	rel = rel_visitor(sql, rel, &rewrite_remove_xp_project);	/* remove crossproducts with project ( project [ atom ] ) [ etc ] */
 	rel = _rel_unnest(sql, rel);
 	rel = rel_visitor(sql, rel, &rewrite_fix_count);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
 	rel = rel_visitor(sql, rel, &rewrite_remove_xp);	/* remove crossproducts with project [ atom ] */

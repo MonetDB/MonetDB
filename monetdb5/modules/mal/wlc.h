@@ -11,12 +11,13 @@
 
 #include "gdk.h"
 #include <time.h>
+#include "mal.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
 #define WLC_QUERY		1
 #define WLC_UPDATE 		2
-#define WLC_CATALOG 	3
+#define WLC_CATALOG 		3
 #define WLC_IGNORE		4
 
 /* WLC modes */

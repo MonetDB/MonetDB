@@ -159,6 +159,10 @@ main(int argc, char **argv)
 	if (user_set_as_flag)
 		passwd = NULL;
 
+	if( dbname == NULL){
+		printf("msqldump, please specify a database\n");
+		usage(argv[0], -1);
+	}
 	if (user == NULL)
 		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
 	if (passwd == NULL)
@@ -186,7 +190,7 @@ main(int argc, char **argv)
 			fprintf(stderr, "%s", motd);
 	}
 	mapi_trace(mid, trace);
-	mapi_cache_limit(mid, 10000);
+	mapi_cache_limit(mid, -1);
 
 	out = file_wastream(stdout, "stdout");
 	if (out == NULL) {

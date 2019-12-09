@@ -281,7 +281,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			}
 			seqbase = b->hseqbase;
 			inp->count = BATcount(b);
-			inp->bat_type = ATOMstorage(getBatType(getArgType(mb, pci, i)));
+			inp->bat_type = b->ttype;
 			inp->bat = b;
 			if (inp->count == 0) {
 				// one of the input BATs is empty, don't execute the function at
@@ -635,9 +635,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			result_array = PyArrayObject_FromScalar(
 				&pyinput_values[i - (pci->retc + 2)], &msg);
 		} else {
+			int type = pyinput_values[i - (pci->retc + 2)].bat_type;
 			result_array = PyMaskedArray_FromBAT(
 				&pyinput_values[i - (pci->retc + 2)], t_start, t_end, &msg,
-				!enable_zerocopy_input);
+				!enable_zerocopy_input && type != TYPE_void);
 		}
 		if (result_array == NULL) {
 			if (msg == MAL_SUCCEED) {
@@ -756,6 +757,9 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 
 				if (!input.scalar) {
 					switch (input.bat_type) {
+						case TYPE_void:
+							NP_SPLIT_BAT(oid);
+							break;
 						case TYPE_bit:
 							NP_SPLIT_BAT(bit);
 							break;
@@ -1072,7 +1076,8 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				//   if someone has some problem with memory size exploding when
 				//   using PYTHON_MAP but it being fine in regular PYTHON this
 				//   is probably the issue
-				int bat_type = getBatType(getArgType(mb, pci, i));
+				PyInput *inp = &pyinput_values[i - (pci->retc + 2)];
+				int bat_type = inp->bat_type;
 				PyObject *new_array = PyArray_FromAny(
 					ret->numpy_array,
 					PyArray_DescrFromType(BatType_ToPyType(bat_type)), 1, 1,
@@ -1502,6 +1507,38 @@ static void ComputeParallelAggregation(AggrParams *p)
 			} else {
 				npy_intp elements[1] = {group_elements};
 				switch (input.bat_type) {
+					case TYPE_void:
+						vararray = PyArray_New(
+							&PyArray_Type, 1, elements, 
+#if SIZEOF_OID == SIZEOF_INT
+							NPY_UINT
+#else
+							NPY_ULONGLONG
+#endif
+							,
+							NULL,
+							((oid ***)(*p->split_bats))[group_it][i], 0,
+							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
+						break;
+					case TYPE_oid:
+						vararray = PyArray_New(
+							&PyArray_Type, 1, elements, 
+#if SIZEOF_OID == SIZEOF_INT
+							NPY_UINT32
+#else
+							NPY_UINT64
+#endif
+							,
+							NULL,
+							((oid ***)(*p->split_bats))[group_it][i], 0,
+							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
+						break;
+					case TYPE_bit:
+						vararray = PyArray_New(
+							&PyArray_Type, 1, elements, NPY_BOOL, NULL,
+							((bit ***)(*p->split_bats))[group_it][i], 0,
+							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
+						break;
 					case TYPE_bte:
 						vararray = PyArray_New(
 							&PyArray_Type, 1, elements, NPY_INT8, NULL,

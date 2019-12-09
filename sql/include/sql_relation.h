@@ -37,7 +37,7 @@ typedef struct expression {
 	void *l;
 	void *r;
 	void *f;	/* func's and aggr's, also e_cmp may have have 2 arguments */
-	unsigned int
+	unsigned long
 	 flag:16,	/* cmp types, PSM types/level */
 	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
 	 freevar:4,	/* free variable, ie binds to the upper dependent join */
@@ -50,6 +50,7 @@ typedef struct expression {
 	 need_no_nil:1,	
 	 has_no_nil:1,	
 	 base:1,
+	 ref:1,		/* used to indicate an other expression may reference this one */
 	 used:1;	/* used for quick dead code removal */
 	sql_subtype	tpe;
 	void *p;	/* properties for the optimizer */
