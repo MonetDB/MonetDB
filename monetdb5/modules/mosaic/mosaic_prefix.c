@@ -30,8 +30,6 @@ bool MOStypes_prefix(BAT* b) {
 	case TYPE_int: return true;
 	case TYPE_lng: return true;
 	case TYPE_oid: return true;
-	case TYPE_flt: return true;
-	case TYPE_dbl: return true;
 #ifdef HAVE_HGE
 	case TYPE_hge: return true;
 #endif
