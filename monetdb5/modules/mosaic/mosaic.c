@@ -1142,7 +1142,7 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BATsetcount(bn,task->cnt);
 	bn->tnil = 0;
-	bn->tnonil = 1;
+	bn->tnonil = br->tnonil;
 	bn->tsorted = bn->trevsorted = cnt <= 1;
 	BBPkeepref(*ret = bn->batCacheid);
 	GDKfree(task);
