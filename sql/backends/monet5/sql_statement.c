@@ -535,8 +535,6 @@ stmt_tid(backend *be, sql_table *t, int partition)
 		sql_trans *tr = be->mvc->session->tr;
 		BUN rows = (BUN) store_funcs.count_col(tr, t->columns.set->h->data, 1);
 		setRowCnt(mb,getArg(q,0),rows);
-		if (t->p && 0)
-			setMitosisPartition(q, t->p->base.id);
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_tid);
@@ -606,8 +604,6 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
 			BUN rows = (BUN) store_funcs.count_col(tr, c, 1);
 			setRowCnt(mb,getArg(q,0),rows);
-			if (c->t->p && 0)
-				setMitosisPartition(q, c->t->p->base.id);
 		}
 	}
 	if (q) {
@@ -665,8 +661,6 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 		if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
 			BUN rows = (BUN) store_funcs.count_idx(tr, i, 1);
 			setRowCnt(mb,getArg(q,0),rows);
-			if (i->t->p && 0)
-				setMitosisPartition(q, i->t->p->base.id);
 		}
 	}
 	if (q) {

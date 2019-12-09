@@ -222,14 +222,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		if (p->retc == 2)
 			upd = 1;
-		if( mt == -1)
-			mt = getMitosisPartition(p);
 		if (mt < 0 && (strcmp(schema, getVarConstant(mb, getArg(p, 2 + upd)).val.sval) ||
 			       strcmp(table, getVarConstant(mb, getArg(p, 3 + upd)).val.sval))) {
-			pushInstruction(mb, p);
-			continue;
-		}
-		if (mt >= 0 && getMitosisPartition(p) != mt) {
 			pushInstruction(mb, p);
 			continue;
 		}

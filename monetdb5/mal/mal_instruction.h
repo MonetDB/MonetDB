@@ -110,9 +110,6 @@
 #define setRowCnt(M,I,C)	(M)->var[I].rowcnt = C
 #define getRowCnt(M,I)		((M)->var[I].rowcnt)
 
-#define setMitosisPartition(P,C)	(P)->mitosis = C
-#define getMitosisPartition(P)		((P)->mitosis)
-
 #define getVarSTC(M,I)			((M)->var[I].stc)
 
 #define getDestVar(P)		(P)->argv[0]

@@ -14,12 +14,16 @@
  * at the surface level.  It requires the constant optimizer to be ran first.
  */
 
+/* This hash is simplistic, it links all instructions in which a variable is used.
+ * Merge table could duplicate an instruction many times, which means that the last argument becomes a long list.
+ * Then hashing over the other arguments does not help.
+ */
 #define HASHinstruction(X)   getArg((X), (X)->argc-1)
 
 str
 OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, barrier= 0;
+	int i, j, k, barrier= 0, bailout = 0;
 	InstrPtr p, q;
 	int actions = 0;
 	int limit, slimit;
@@ -117,8 +121,9 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
 		}
 
+		bailout = 1024 ;  // don't run over long collision list
 		/* Look into the hash structure for matching instructions */
-		for (j = hash[HASHinstruction(p)];  j > 0  ; j = list[j]) 
+		for (j = hash[HASHinstruction(p)];  j > 0 && bailout-- > 0  ; j = list[j]) 
 			if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
 
 				if( OPTdebug & OPTcommonterms){
