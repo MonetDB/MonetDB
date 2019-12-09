@@ -43,7 +43,7 @@ BUN find_value_##TPE(TPE* dict, BUN dict_count, TPE val) {\
 	BUN m, f= 0, l = dict_count, offset = 0;\
 	/* This function assumes that the implementation of a dictionary*/\
 	/* is that of a sorted array with nils starting first.*/\
-	if (dict_count > 0 && IS_NIL(TPE, val) && IS_NIL(TPE, dict[0])) return 0;\
+	if (IS_NIL(TPE, val)) return 0;\
 	if (dict_count > 0 && IS_NIL(TPE, dict[0])) {\
 		/*If the dictionary starts with a nil,*/\
 		/*the actual sorted dictionary starts an array entry later.*/\
@@ -63,6 +63,16 @@ static inline \
 void insert_into_dict_##TPE(TPE* dict, BUN* dict_count, BUN key, TPE val)\
 {\
 	TPE w = val;\
+\
+	if (IS_NIL(TPE, w)) {\
+		assert(key == 0);\
+		dbl v = dict[key];\
+		dict[key] = w;\
+\
+		if (*dict_count > 0) {\
+			w = v;\
+		}\
+	}\
 	\
 	if (IS_NIL(TPE, dict[key]) && !IS_NIL(TPE, w)) {\
 		assert(key == 0);\
