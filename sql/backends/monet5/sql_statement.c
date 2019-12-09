@@ -2799,7 +2799,8 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *sel)
 	} else if (f->type->eclass == EC_DEC) {
 		/* scale of the current decimal */
 		q = pushInt(mb, q, f->scale);
-	} else if (f->type->eclass == EC_SEC && t->type->eclass == EC_FLT) {
+	} else if (f->type->eclass == EC_SEC &&
+		   (EC_COMPUTE(t->type->eclass) || t->type->eclass == EC_DEC)) {
 		/* scale of the current decimal */
 		q = pushInt(mb, q, 3);
 	}

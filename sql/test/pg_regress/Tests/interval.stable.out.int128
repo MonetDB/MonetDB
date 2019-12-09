@@ -75,13 +75,13 @@ stdout of test 'interval` in directory 'sql/test/pg_regress` itself:
 % L3 # name
 % double # type
 % 24 # length
-[ 3.1756752e+13	]
+[ 3.1756752e+10	]
 #select avg(cast(f1 as decimal(22,3))) from interval_tbl;
 % sys.L3 # table_name
 % L3 # name
 % double # type
 % 24 # length
-[ 3.1756752e+13	]
+[ 3.1756752e+10	]
 #select min(f1) from interval_tbl;
 % sys.L2 # table_name
 % L2 # name
@@ -99,7 +99,7 @@ stdout of test 'interval` in directory 'sql/test/pg_regress` itself:
 % L3 # name
 % decimal # type
 % 40 # length
-[ 63513504001234.000	]
+[ 63513504001.234	]
 #select count(f1) from interval_tbl;
 % sys.L2 # table_name
 % L2 # name
