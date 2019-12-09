@@ -145,42 +145,42 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 	while(task->start< task->stop){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_raw\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_raw\n");
 			MOSlayout_raw(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_raw(task);
 			break;
 		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_runlength\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_runlength\n");
 			MOSlayout_runlength(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_runlength(task);
 			break;
 		case MOSAIC_CAPPED:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_capped\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_capped\n");
 			MOSlayout_capped(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_capped(task);
 			break;
 		case MOSAIC_VAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_var\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_var\n");
 			MOSlayout_var(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_var(task);
 			break;
 		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_delta\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_delta\n");
 			MOSlayout_delta(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_delta(task);
 			break;
 		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_linear\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_linear\n");
 			MOSlayout_linear(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_linear(task);
 			break;
 		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_frame\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_frame\n");
 			MOSlayout_frame(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_frame(task);
 			break;
 		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSlayout_prefix\n");
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_prefix\n");
 			MOSlayout_prefix(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_prefix(task);
 			break;
@@ -401,7 +401,7 @@ MOSfinalizeDictionary(MOStask task) {
 
 #define do_compress(NAME, TPE, DUMMY_ARGUMENT)\
 {\
-	ALGODEBUG mnstr_printf(GDKstdout, "MOScompress_" #NAME "\n");\
+	ALGODEBUG mnstr_printf(GDKstdout, "#MOScompress_" #NAME "\n");\
 	MOScompress_##NAME##_##TPE(task, estimate);\
 	MOSupdateHeader(task);\
 	MOSadvance_##NAME##_##TPE(task);\
@@ -579,7 +579,7 @@ finalize:
 	GDKfree(task);
 
 	t1 = GDKusec();
-	ALGODEBUG mnstr_printf(GDKstdout, "#BATmosaic: mosaic construction " LLFMT " usec\n", t1 - t0);
+	ALGODEBUG mnstr_printf(GDKstdout, "##BATmosaic: mosaic construction " LLFMT " usec\n", t1 - t0);
 
 	return msg;
 }
@@ -624,7 +624,7 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define do_decompress(NAME, TPE, DUMMY_ARGUMENT)\
 {\
-	ALGODEBUG mnstr_printf(GDKstdout, "MOSdecompress_" #NAME "\n");\
+	ALGODEBUG mnstr_printf(GDKstdout, "#MOSdecompress_" #NAME "\n");\
 	MOSdecompress_##NAME##_##TPE(task);\
 	MOSadvance_##NAME##_##TPE(task);\
 }

@@ -57,35 +57,35 @@ static str MOSprojection_##TPE(MOStask task)\
 	while(task->start < task->stop ){\
 		switch(MOSgetTag(task->blk)){\
 		case MOSAIC_RLE:\
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_runlength\n");\
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_runlength\n");\
 			DO_OPERATION_IF_ALLOWED(projection, runlength, TPE);\
 			break;\
 		case MOSAIC_CAPPED:\
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_capped\n");\
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_capped\n");\
 			DO_OPERATION_IF_ALLOWED(projection, capped, TPE);\
 			break;\
 		case MOSAIC_VAR:\
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_var\n");\
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_var\n");\
 			DO_OPERATION_IF_ALLOWED(projection, var, TPE);\
 			break;\
 		case MOSAIC_FRAME:\
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_frame\n");\
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_frame\n");\
 			DO_OPERATION_IF_ALLOWED(projection, frame, TPE);\
 			break;\
 		case MOSAIC_DELTA:\
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_delta\n");\
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_delta\n");\
 			DO_OPERATION_IF_ALLOWED(projection, delta, TPE);\
 			break;\
 		case MOSAIC_PREFIX:\
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_prefix\n");\
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_prefix\n");\
 			DO_OPERATION_IF_ALLOWED(projection, prefix, TPE);\
 			break;\
 		case MOSAIC_LINEAR:\
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_linear\n");\
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_linear\n");\
 			DO_OPERATION_IF_ALLOWED(projection, linear, TPE);\
 			break;\
 		case MOSAIC_RAW:\
-			ALGODEBUG mnstr_printf(GDKstdout, "MOSprojection_raw\n");\
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_raw\n");\
 			DO_OPERATION_IF_ALLOWED(projection, raw, TPE);\
 			break;\
 		}\
