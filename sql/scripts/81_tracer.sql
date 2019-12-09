@@ -41,3 +41,7 @@ CREATE PROCEDURE logging.setadapter(adapter INT)
 -- Reset the adapter
 CREATE PROCEDURE logging.resetadapter()
        EXTERNAL NAME logging.resetadapter;
+
+-- Show log level per component and available layers
+CREATE PROCEDURE logging.showinfo()
+       EXTERNAL NAME logging.showinfo;

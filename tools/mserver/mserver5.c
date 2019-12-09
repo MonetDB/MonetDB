@@ -675,9 +675,6 @@ main(int argc, char **av)
 		return 0;
 	}
 
-	/* show log level per component and available layers */
-	/* This should only be generated upon explicit request GDKtracerinfo(); */
-
 	emergencyBreakpoint();
 
 	if (!GDKinmemory() && (err = msab_registerStarted()) != NULL) {

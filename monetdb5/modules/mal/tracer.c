@@ -122,6 +122,14 @@ TRACERreset_adapter(void)
 }
 
 
+str
+TRACERshowinfo(void)
+{
+    GDKtracer_show_info();
+    return MAL_SUCCEED;
+}
+
+
 // Exposed only in MAL layer - for testing
 str
 TRACERlog(void)

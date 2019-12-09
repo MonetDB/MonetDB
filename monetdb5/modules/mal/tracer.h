@@ -26,6 +26,7 @@ mal_export str TRACERset_flush_level(void *ret, int *lvl);
 mal_export str TRACERreset_flush_level(void);
 mal_export str TRACERset_adapter(void *ret, int *adapter);
 mal_export str TRACERreset_adapter(void);
+mal_export str TRACERshowinfo(void);
 
 // Exposed only in MAL layer - for testing
 mal_export str TRACERlog(void);

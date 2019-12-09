@@ -17,8 +17,6 @@
 #include "gdk.h"
 #include "gdk_tracer.h"
 
-#define _GDKTRACER_DEBUG_
-
 // We need to get rid of macros defined in gdk.h. Those are using GDKtracer in order to produce 
 // messages. At the point malloc is called in gdk_tracer.c (in function _GDKtracer_fill_tracer)
 // a lock has already being acquired. Using the macro malloc in gdk.h a call to GDKtracer 
@@ -225,10 +223,6 @@ _GDKtracer_layer_level_helper(int *layer, int *lvl)
         }
     }
 
-#ifdef _GDKTRACER_DEBUG_
-    GDKtracer_show_info();
-#endif
-
     return GDK_SUCCEED;
 }
 
@@ -280,10 +274,6 @@ GDKtracer_set_component_level(int *comp, int *lvl)
         return GDK_FAIL;
         
     LVL_PER_COMPONENT[*comp] = level;
-
-#ifdef _GDKTRACER_DEBUG_
-    GDKtracer_show_info();
-#endif
 
     return GDK_SUCCEED;
 }
@@ -434,12 +424,13 @@ GDKtracer_log(LOG_LEVEL level, char *fmt, ...)
             {
                 MT_lock_unset(&lock);
 
-                GDK_TRACER_OSTREAM("Failed to write to the buffer (bytes_written = %d)\n", bytes_written);
+                // GDK_TRACER_OSTREAM("Failed to write to the buffer (bytes_written = %d)\n", bytes_written);
                 // Fallback logging mechanism 
-                // va_list va;
-                // va_start(va, fmt);
-                // GDK_TRACER_OSTREAM(fmt, va);
-                // va_end(va);
+                GDK_TRACER_OSTREAM("FALLBACK MECHANISM\n");
+                va_list va;
+                va_start(va, fmt);
+                GDK_TRACER_OSTREAM(fmt, va);
+                va_end(va);
             }
         }
     }
