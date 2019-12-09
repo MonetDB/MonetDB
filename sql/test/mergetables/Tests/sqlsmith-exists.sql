@@ -84,52 +84,52 @@ select
  subq_0.c0 as c9
 from 
  (select 
- ref_1.schema_name as c0, 
- cast(coalesce(ref_1.depend_type,
- case when true then ref_1.depend_type else ref_1.depend_type end
+ ref_1.col1 as c0, 
+ cast(coalesce(ref_1.col2,
+ case when true then ref_1.col2 else ref_1.col2 end
  ) as smallint) as c1, 
- ref_0.action as c2
+ ref_0.col2 as c2
  from 
- tmp.keys as ref_0
- right join dependency_schemas_on_users as ref_1
+ another_T as ref_0
+ right join LongTable as ref_1
  on (exists (
  select 
- ref_0.table_id as c0, 
- ref_1.depend_type as c1
+ ref_0.col1 as c0, 
+ ref_1.col2 as c1
  from 
  tab1 as ref_2
  where (exists (
  select 
- ref_3.owner_name as c0, 
+ ref_3.col1 as c0, 
  ref_2.col2 as c1, 
- ref_3.depend_type as c2, 
- ref_3.depend_type as c3, 
- ref_3.owner_name as c4, 
+ ref_3.col2 as c2, 
+ ref_3.col2 as c3, 
+ ref_3.col1 as c4, 
  ref_2.col0 as c5, 
- ref_0.action as c6, 
- ref_1.schema_id as c7, 
+ ref_0.col2 as c6, 
+ ref_1.col3 as c7, 
  ref_2.col0 as c8, 
  88 as c9
  from 
- dependency_owners_on_schemas as ref_3
+ tab2 as ref_3
  where 69 is null)) 
  and ((false) 
  or ((true) 
  or (exists (
  select 
- ref_0.action as c0, 
- ref_0.action as c1, 
- ref_1.schema_id as c2, 
- ref_0.rkey as c3, 
- ref_4.system as c4
+ ref_0.col2 as c0, 
+ ref_0.col2 as c1, 
+ ref_1.col3 as c2, 
+ ref_0.col3 as c3, 
+ ref_4.col0 as c4
  from 
- _tables as ref_4
+ tab0 as ref_4
  where ref_2.col2 is not null))))))
- where (ref_0.name is null) 
+ where (ref_0.col4 is null) 
  and (76 is null)
  limit 101) as subq_0
 where true
-limit 67;
+limit 67; --empty on PostgreSQL
 
 SELECT subq_1.c0 AS c0, 
        subq_1.c0 AS c1, 
@@ -137,29 +137,29 @@ SELECT subq_1.c0 AS c0,
        subq_1.c0 AS c3, 
        subq_1.c0 AS c4, 
        subq_0.c0 AS c5 
-FROM   (SELECT ref_0.function_type_name AS c0 
-        FROM   function_types AS ref_0 
+FROM   (SELECT ref_0.col0 AS c0 
+        FROM   tab0 AS ref_0 
         WHERE  false 
         LIMIT  143) AS subq_0 
-       LEFT JOIN (SELECT ref_1.table_id AS c0 
-                  FROM   table_partitions AS ref_1 
+       LEFT JOIN (SELECT ref_1.col1 AS c0 
+                  FROM   another_t AS ref_1 
                   WHERE  ( false ) 
                          AND ( EXISTS 
-                         (SELECT ref_2.fk_name   AS c0, 
-                                 ref_1.column_id AS c1, 
-                                 ref_1.type      AS c2 
-                          FROM   dependency_tables_on_foreignkeys AS 
+                         (SELECT ref_2.col0   AS c0, 
+                                 ref_1.col2 AS c1, 
+                                 ref_1.col3      AS c2 
+                          FROM   tab1 AS 
                                  ref_2 
-                               INNER JOIN dependency_keys_on_foreignkeys AS 
+                               INNER JOIN tbl_ProductSales AS 
                                           ref_3 
                                        ON ( ( false ) 
-                                            AND ( ( ref_3.fk_name IS NULL ) 
+                                            AND ( ( ref_3.col1 IS NULL ) 
                                                    OR ( ( true ) 
                                                         AND ( ( ( ( true ) 
                                                                    OR ( false ) 
                                                                 ) 
                                                                  OR 
-                                                        ( ( ref_1.column_id IS 
+                                                        ( ( ref_1.col2 IS 
                                                             NULL 
                                                           ) 
                                                           AND ( ( true ) 
@@ -167,7 +167,7 @@ FROM   (SELECT ref_0.function_type_name AS c0
                                                         ) ) 
                                                               AND ( ( 
                                                             ( false ) 
-                                                             OR ( ref_1.type IS 
+                                                             OR ( ref_1.col3 IS 
                                                                   NULL 
                                                                 ) 
                                                                     ) 
@@ -175,40 +175,40 @@ FROM   (SELECT ref_0.function_type_name AS c0
                                                                     ) 
                                                                   ) ) ) ) 
                                           ) 
-                                       WHERE  ( ref_3.depend_type IS NOT NULL ) 
-                                               OR ( ( ( ( ref_3.depend_type IS 
+                                       WHERE  ( ref_3.col2 IS NOT NULL ) 
+                                               OR ( ( ( ( ref_3.col2 IS 
                                                           NOT NULL 
                                                         ) 
                                                         AND ( 55 IS NOT NULL ) ) 
-                                                      AND ( ( ( ref_1.type IS 
+                                                      AND ( ( ( ref_1.col3 IS 
                                                                 NOT NULL 
                                                               ) 
                                                               AND ( false ) ) 
                                                             AND ( 79 IS NOT NULL 
                                                                 ) ) ) 
                                                     AND ( EXISTS 
-                                                    (SELECT ref_3.key_name 
+                                                    (SELECT ref_3.col1 
                                                             AS 
                                                             c0, 
-       ref_4.table_type_id AS 
+       ref_4.col0 AS 
        c1, 
-       ref_2.table_name    AS 
+       ref_2.col1    AS 
        c2, 
-       ref_3.fk_name       AS 
+       ref_3.col1       AS 
        c3, 
-       ref_2.key_type      AS 
+       ref_2.col2      AS 
        c4, 
-       ref_1.table_id      AS 
+       ref_1.col1      AS 
        c5 
-       FROM   table_types AS ref_4 
+       FROM   tab2 AS ref_4 
        WHERE  ( true ) 
-       AND ( ref_2.table_name 
+       AND ( ref_2.col1 
              IS NULL ) 
        ) ) 
        )) ) 
        LIMIT  30) AS subq_1 
               ON ( subq_1.c0 IS NULL ) 
-WHERE  subq_0.c0 IS NOT NULL;
+WHERE  subq_0.c0 IS NOT NULL; --empty on PostgreSQL
 
 select 
  subq_0.c0 as c0, 
@@ -281,17 +281,17 @@ FROM
                       AND (TRUE))
                      AND (EXISTS
                             (SELECT subq_0.c3 AS c0,
-                                    ref_1.value AS c1,
+                                    ref_1.col0 AS c1,
                                     subq_0.c1 AS c2,
                                     subq_0.c3 AS c3,
                                     subq_0.c10 AS c4
-                             FROM value_partitions AS ref_1
-                             WHERE (ref_1.value IS NULL)
+                             FROM tab0 AS ref_1
+                             WHERE (ref_1.col0 IS NULL)
                                OR ((subq_0.c2 IS NULL)
                                    OR ((FALSE)
-                                       AND ((ref_1.value IS NULL)
+                                       AND ((ref_1.col0 IS NULL)
                                             OR ((TRUE)
-                                                OR (ref_1.table_id IS NULL))))))))
+                                                OR (ref_1.col1 IS NULL))))))))
                     OR (FALSE))
                    AND (((((TRUE)
                            AND (((EXISTS
@@ -320,20 +320,20 @@ FROM
                                          subq_0.c6 AS c1,
                                          subq_0.c7 AS c2,
                                          subq_0.c7 AS c3,
-                                         ref_3.name AS c4,
-                                         ref_3.cycle AS c5,
-                                         ref_3.cacheinc AS c6,
+                                         ref_3.col1 AS c4,
+                                         ref_3.col2 AS c5,
+                                         ref_3.col3 AS c6,
                                          subq_0.c8 AS c7,
-                                         ref_3.minvalue AS c8,
-                                         ref_3.start AS c9,
+                                         ref_3.col4 AS c8,
+                                         ref_3.col5 AS c9,
                                          subq_0.c4 AS c10,
-                                         ref_3.id AS c11,
+                                         ref_3.col6 AS c11,
                                          subq_0.c5 AS c12
-                                  FROM sequences AS ref_3
-                                  WHERE (ref_3.start IS NULL)
+                                  FROM another_t AS ref_3
+                                  WHERE (ref_3.col5 IS NULL)
                                     OR (EXISTS
                                           (SELECT subq_0.c1 AS c0,
-                                                  ref_3.name AS c1
+                                                  ref_3.col1 AS c1
                                            FROM analytics AS ref_4
                                            WHERE (TRUE)
                                              AND (FALSE)))))
@@ -348,6 +348,10 @@ FROM
          END IS NOT NULL) AS subq_1
 WHERE TRUE
 LIMIT 73;
+-- On PostgreSQL it gives three rows
+-- 1
+-- 2
+-- 3
 
 select 
  subq_1.c1 as c0, 
@@ -361,22 +365,22 @@ from
  subq_0.c6 as c3
  from 
  (select 
- ref_0.depend_type as c0, 
- ref_0.depend_type as c1, 
+ ref_0.col1 as c0, 
+ ref_0.col1 as c1, 
  87 as c2, 
- ref_0.index_type as c3, 
- ref_0.table_id as c4, 
- ref_0.index_id as c5, 
- ref_0.index_id as c6, 
- ref_0.table_name as c7, 
- ref_0.table_schema_id as c8, 
- ref_0.table_schema_id as c9
+ ref_0.col2 as c3, 
+ ref_0.col3 as c4, 
+ ref_0.col4 as c5, 
+ ref_0.col4 as c6, 
+ ref_0.col5 as c7, 
+ ref_0.col6 as c8, 
+ ref_0.col6 as c9
  from 
- dependency_tables_on_indexes as ref_0
+ another_T as ref_0
  where true) as subq_0
  where subq_0.c8 is not null
  limit 46) as subq_1
-where false;
+where false; --empty on PostgreSQL
 
 select 
  subq_0.c4 as c0, 
@@ -389,27 +393,27 @@ select
  subq_0.c0 as c7
 from 
  (select 
- ref_0.type as c0, 
- ref_1.function_name as c1, 
- ref_2.function_type as c2, 
- ref_1.trigger_table_id as c3, 
- ref_0.storage as c4, 
- ref_0.type as c5, 
- ref_2.trigger_table_id as c6, 
- ref_1.function_schema_id as c7
+ ref_0.col1 as c0, 
+ ref_1.col1 as c1, 
+ ref_2.col1 as c2, 
+ ref_1.col2 as c3, 
+ ref_0.col2 as c4, 
+ ref_0.col1 as c5, 
+ ref_2.col7 as c6, 
+ ref_1.col5 as c7
  from 
- _columns as ref_0
- inner join dependency_functions_on_triggers as ref_1
+ another_t as ref_0
+ inner join LongTable as ref_1
  on (true)
- right join dependency_functions_on_triggers as ref_2
- on (ref_0.type = ref_2.function_name )
- where (((ref_2.function_schema_id is null) 
+ right join LongTable as ref_2
+ on (ref_0.col1 = ref_2.col6 )
+ where (((ref_2.col5 is null) 
  and (true)) 
  and (true)) 
  and (true)
  limit 104) as subq_0
 where (subq_0.c3 is not null) 
- or (subq_0.c0 is not null);
+ or (subq_0.c0 is not null); --empty on PostgreSQL
 
 select 
  cast(coalesce(subq_1.c0,
@@ -422,31 +426,31 @@ from
  (select 
  ref_1.col1 as c0, 
  ref_1.col1 as c1, 
- ref_0.name as c2, 
+ ref_0.col1 as c2, 
  ref_1.col1 as c3, 
- ref_0.fullname as c4, 
+ ref_0.col2 as c4, 
  ref_1.col1 as c5, 
- ref_0.default_schema as c6, 
+ ref_0.col3 as c6, 
  ref_1.col6 as c7, 
  5 as c8, 
  ref_1.col1 as c9, 
  ref_1.col4 as c10, 
- ref_0.name as c11, 
- ref_0.default_schema as c12
+ ref_0.col1 as c11, 
+ ref_0.col3 as c12
  from 
- users as ref_0
+ LongTable as ref_0
  inner join another_T as ref_1
- on (ref_0.default_schema = ref_1.col1 )
+ on (ref_0.col3 = ref_1.col1 )
  where exists (
  select 
  ref_1.col4 as c0
  from 
- privilege_codes as ref_2
+ tab0 as ref_2
  where (((exists (
  select 
- ref_3.table_type_name as c0
+ ref_3.col0 as c0
  from 
- table_types as ref_3
+ tab1 as ref_3
  where true)) 
  or (((true) 
  or (ref_1.col3 is not null)) 
@@ -456,17 +460,17 @@ from
  87 as c0, 
  ref_1.col2 as c1, 
  ref_1.col3 as c2, 
- ref_0.name as c3, 
- ref_4.type as c4, 
- ref_4.rkey as c5, 
+ ref_0.col1 as c3, 
+ ref_4.col0 as c4, 
+ ref_4.col1 as c5, 
  ref_1.col1 as c6, 
  ref_1.col1 as c7, 
- ref_2.privilege_code_name as c8, 
- ref_4.type as c9
+ ref_2.col0 as c8, 
+ ref_4.col0 as c9
  from 
- tmp.keys as ref_4
+ tab2 as ref_4
  where ref_1.col5 is not null)) 
- and (ref_2.privilege_code_id is null))) 
+ and (ref_2.col1 is null))) 
  and (ref_1.col3 is null))
  limit 26) as subq_0
  where (subq_0.c3 is null) 
@@ -474,7 +478,7 @@ from
  or (true))) as subq_1
 where (subq_1.c1 is not null) 
  and (subq_1.c0 is not null)
-limit 79;
+limit 79; --empty on PostgreSQL
 
 select 
  subq_2.c18 as c0, 
@@ -574,6 +578,6 @@ from
  or (true))
 where case when subq_0.c1 is null then subq_2.c25 else subq_2.c25 end
  is null
-limit 81;
+limit 81; --empty on PostgreSQL
 
 ROLLBACK;

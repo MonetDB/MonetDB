@@ -100,11 +100,14 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # right join sys.dependency_schemas_on_users as ref_1
 # on (exists (
 # select 
-# ref_0.table_id as c0, 
-% .%41,	.%42,	.%43,	.%44,	.%45,	.%46,	.%47,	.%50,	.%51,	.%52 # table_name
+# ref_0.col1 as c0, 
+# ref_1.col2 as c1
+# from 
+# tab1 as ref_2
+% .%26,	.%27,	.%30,	.%31,	.%32,	.%33,	.%34,	.%35,	.%36,	.%37 # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8,	c9 # name
-% varchar,	int,	smallint,	smallint,	int,	int,	smallint,	smallint,	smallint,	varchar # type
-% 0,	1,	1,	1,	1,	1,	1,	1,	1,	0 # length
+% int,	int,	smallint,	smallint,	int,	int,	smallint,	smallint,	smallint,	int # type
+% 1,	1,	1,	1,	1,	1,	1,	1,	1,	1 # length
 #SELECT subq_1.c0 AS c0, 
 #       subq_1.c0 AS c1, 
 #       subq_0.c0 AS c2, 
@@ -122,8 +125,8 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 #                         (SELECT ref_2.fk_name   AS c0, 
 % .subq_1,	.subq_1,	.subq_0,	.subq_1,	.subq_1,	.subq_0 # table_name
 % c0,	c1,	c2,	c3,	c4,	c5 # name
-% int,	int,	varchar,	int,	int,	varchar # type
-% 1,	1,	0,	1,	1,	0 # length
+% int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1 # length
 #select 
 # subq_0.c0 as c0, 
 # subq_0.c0 as c1, 
@@ -276,10 +279,12 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # sys.dependency_tables_on_indexes as ref_0
 # where true) as subq_0
 # where subq_0.c8 is not null
-% .ref_0,	.ref_0,	.ref_0 # table_name
+# limit 46) as subq_1
+#where false; --empty on PostgreSQL
+% sys.ref_0,	sys.ref_0,	sys.ref_0 # table_name
 % c0,	c1,	c2 # name
-% varchar,	int,	int # type
-% 0,	1,	1 # length
+% int,	int,	int # type
+% 1,	1,	1 # length
 #select 
 # subq_0.c4 as c0, 
 # subq_0.c6 as c1, 
@@ -306,8 +311,8 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # right join sys.dependency_functions_on_triggers as ref_2
 % .subq_0,	.subq_0,	.subq_0,	.subq_0,	.subq_0,	.subq_0,	.subq_0,	.subq_0 # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7 # name
-% varchar,	int,	int,	int,	varchar,	int,	int,	varchar # type
-% 0,	1,	1,	1,	0,	1,	1,	0 # length
+% int,	int,	int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1,	1,	1 # length
 #select 
 # cast(coalesce(subq_1.c0,
 # subq_1.c1) as int) as c0
@@ -335,7 +340,9 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # inner join bam.sq as ref_1
 # on (ref_0.default_schema = ref_1.ln )
 # where exists (
-% .%107 # table_name
+# select 
+# ref_1.col4 as c0
+% sys.%73 # table_name
 % c0 # name
 % int # type
 % 1 # length
