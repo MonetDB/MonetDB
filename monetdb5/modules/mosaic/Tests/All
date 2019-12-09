@@ -35,33 +35,39 @@ mosaic_lng.runlength
 mosaic_oid.runlength
 mosaic_date.runlength
 mosaic_timestamp.runlength
+mosaic_dbl.runlength
 mosaic_bit_with_nils.runlength
 mosaic_lng_with_nils.runlength
 mosaic_oid_with_nils.runlength
 mosaic_date_with_nils.runlength
 mosaic_timestamp_with_nils.runlength
+mosaic_dbl_with_nils.runlength
 
 mosaic_bit.capped
 mosaic_lng.capped
 mosaic_oid.capped
 mosaic_date.capped
 mosaic_timestamp.capped
+mosaic_dbl.capped
 mosaic_bit_with_nils.capped
 mosaic_lng_with_nils.capped
 mosaic_oid_with_nils.capped
 mosaic_date_with_nils.capped
 mosaic_timestamp_with_nils.capped
+mosaic_dbl_with_nils.capped
 
 mosaic_bit.var
 mosaic_lng.var
 mosaic_oid.var
 mosaic_date.var
 mosaic_timestamp.var
+mosaic_dbl.var
 mosaic_bit_with_nils.var
 mosaic_lng_with_nils.var
 mosaic_oid_with_nils.var
 mosaic_date_with_nils.var
 mosaic_timestamp_with_nils.var
+mosaic_dbl_with_nils.var
 
 mosaic_bit.delta
 mosaic_lng.delta
@@ -112,8 +118,10 @@ mosaic_lng.raw
 mosaic_oid.raw
 mosaic_date.raw
 mosaic_timestamp.raw
+mosaic_dbl.raw
 mosaic_bit_with_nils.raw
 mosaic_lng_with_nils.raw
 mosaic_oid_with_nils.raw
 mosaic_date_with_nils.raw
 mosaic_timestamp_with_nils.raw
+mosaic_dbl_with_nils.raw
