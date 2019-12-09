@@ -43,7 +43,7 @@ address TRACERreset_adapter
 comment "Reset the adapter";
 
 command showinfo()
-address TRACERshowinfo
+address TRACERshow_info
 comment "Show logging levels per component and layers";
 
 # Exposed only in MAL layer - for testing

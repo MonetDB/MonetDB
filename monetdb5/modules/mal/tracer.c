@@ -123,7 +123,7 @@ TRACERreset_adapter(void)
 
 
 str
-TRACERshowinfo(void)
+TRACERshow_info(void)
 {
     GDKtracer_show_info();
     return MAL_SUCCEED;
