@@ -11252,6 +11252,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "logging",	"setcomplevel",	"command logging.setcomplevel(comp:int, lvl:int):void ",	"TRACERset_component_level;",	"Set the log level for a specific component"	]
 [ "logging",	"setflushlevel",	"command logging.setflushlevel(lvl:int):void ",	"TRACERset_flush_level;",	"Set the flush level"	]
 [ "logging",	"setlayerlevel",	"command logging.setlayerlevel(layer:int, lvl:int):void ",	"TRACERset_layer_level;",	"Set the log level for a specific layer"	]
+[ "logging",	"showinfo",	"command logging.showinfo():void ",	"TRACERshow_info;",	"Show logging levels per component and available layers"	]
 [ "mal",	"manifold",	"pattern mal.manifold(mod:str, fcn:str, a:any...):bat[:any] ",	"MANIFOLDevaluate;",	""	]
 [ "mal",	"multiplex",	"pattern mal.multiplex(mod:str, fcn:str, a:any...):any... ",	"MANIFOLDremapMultiplex;",	""	]
 [ "manual",	"functions",	"pattern manual.functions() (mod:bat[:str], fcn:bat[:str], sig:bat[:str], adr:bat[:str], com:bat[:str]) ",	"MANUALcreateOverview;",	"Produces a table with all MAL functions known"	]

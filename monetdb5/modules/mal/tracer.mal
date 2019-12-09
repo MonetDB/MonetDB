@@ -44,7 +44,7 @@ comment "Reset the adapter";
 
 command showinfo()
 address TRACERshow_info
-comment "Show logging levels per component and layers";
+comment "Show logging levels per component and available layers";
 
 # Exposed only in MAL layer - for testing
 command log()
