@@ -610,4 +610,109 @@ where case when subq_0.c1 is null then subq_2.c25 else subq_2.c25 end
  is null
 limit 81; --empty on PostgreSQL
 
+SELECT
+        subq_2.c3 AS c0
+        ,subq_2.c6 AS c1
+    FROM
+        (
+            SELECT
+                    36 AS c0
+                    ,ref_0.cc AS c1
+                FROM
+                    analytics AS ref_0
+                WHERE
+                    FALSE LIMIT 32
+        ) AS subq_0 INNER JOIN (
+            SELECT
+                    ref_1.bb AS c0
+                    ,ref_1.cc AS c1
+                    ,ref_1.cc AS c2
+                    ,ref_1.aa AS c3
+                    ,ref_1.bb AS c4
+                    ,ref_1.aa AS c5
+                    ,ref_1.aa AS c6
+                FROM
+                    analytics AS ref_1
+                WHERE
+                    ref_1.bb IS NOT NULL LIMIT 83
+        ) AS subq_1 RIGHT JOIN (
+            SELECT
+                    ref_2.col2 AS c0
+                    ,ref_2.col4 AS c1
+                    ,ref_3.col1 AS c2
+                    ,ref_2.col8 AS c3
+                    ,ref_3.col2 AS c4
+                    ,ref_3.col1 AS c5
+                    ,ref_2.col2 AS c6
+                    ,24 AS c7
+                FROM
+                    longtable AS ref_2 LEFT JOIN tab1 AS ref_3
+                        ON (
+                        (
+                            ref_3.col0 IS NULL
+                        )
+                        OR (TRUE)
+                    )
+                WHERE
+                    TRUE LIMIT 138
+        ) AS subq_2
+            ON (
+            (
+                46 IS NULL
+            )
+            OR (
+                20 IS NOT NULL
+            )
+        )
+            ON (
+            (
+                EXISTS (
+                    SELECT
+                            subq_1.c4 AS c0
+                            ,ref_4.col0 AS c1
+                        FROM
+                            tab1 AS ref_4
+                        WHERE
+                            (
+                                subq_2.c5 IS NULL
+                            )
+                            AND (TRUE)
+                )
+            )
+            OR (
+                subq_0.c0 IS NOT NULL
+            )
+        )
+    WHERE
+        (
+            (FALSE)
+            AND (
+                (
+                    subq_2.c2 IS NULL
+                )
+                OR (
+                    (
+                        subq_2.c7 IS NULL
+                    )
+                    AND (TRUE)
+                )
+            )
+        )
+        OR (
+            (
+                (
+                    subq_2.c2 IS NOT NULL
+                )
+                OR (
+                    (
+                        subq_0.c1 IS NOT NULL
+                    )
+                    OR (TRUE)
+                )
+            )
+            AND (
+                subq_0.c1 IS NULL
+            )
+        ) LIMIT 76; --empty on PostgreSQL
+
 ROLLBACK;
