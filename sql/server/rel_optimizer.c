@@ -6187,10 +6187,10 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 
 		/* Don't rewrite refs, non projections or constant or 
 		   order by projections  */
-		if (!l || rel_is_ref(l) || 
+		if (!l || rel_is_ref(l) || is_topn(l->op) || 
 		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
 		   (is_select(rel->op) && l->op != op_project) ||
-		   (is_join(rel->op) && l->op != op_project && r->op != op_project) ||
+		   (is_join(rel->op) && ((l->op != op_project && r->op != op_project) || is_topn(r->op))) ||
 		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l,is_select(rel->op)))) ||
 		   (is_join(rel->op) && (is_subquery(r) ||
 		    (r->op == op_project && (!r->l || r->r || project_unsafe(r,0))))))) 

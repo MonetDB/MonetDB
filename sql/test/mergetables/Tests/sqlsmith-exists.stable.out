@@ -353,6 +353,30 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8,	c9,	c10,	c11,	c12,	c13,	c14 # name
 % int,	int,	int,	tinyint,	int,	int,	int,	int,	int,	tinyint,	int,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1 # length
+#SELECT
+#        subq_2.c3 AS c0
+#        ,subq_2.c6 AS c1
+#    FROM
+#        (
+#            SELECT
+#                    36 AS c0
+#                    ,ref_0.cc AS c1
+#                FROM
+#                    analytics AS ref_0
+#                WHERE
+#                    FALSE LIMIT 32
+#        ) AS subq_0 INNER JOIN (
+#            SELECT
+#                    ref_1.bb AS c0
+#                    ,ref_1.cc AS c1
+#                    ,ref_1.cc AS c2
+#                    ,ref_1.aa AS c3
+#                    ,ref_1.bb AS c4
+#                    ,ref_1.aa AS c5
+% .,	. # table_name
+% c0,	c1 # name
+% int,	int # type
+% 1,	1 # length
 #ROLLBACK;
 
 # 19:56:32 >  
