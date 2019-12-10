@@ -563,11 +563,6 @@ sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":tim
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,false);
 sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,false);
 eq  := batcalc.==(sa,  sc);
@@ -583,23 +578,8 @@ sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":tim
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
 sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,false);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -613,23 +593,8 @@ sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":tim
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
 sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,false);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -643,23 +608,8 @@ sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":tim
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
 sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,true);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -673,16 +623,6 @@ sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":tim
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
 sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
 eq  := batcalc.==(sa,  sc);
@@ -693,23 +633,8 @@ sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":tim
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
 sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,true);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -883,16 +808,6 @@ sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":tim
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
 sc:= mosaic.select (c,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
 eq  := batcalc.==(sa,  sc);
@@ -903,53 +818,8 @@ sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":tim
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
 sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -963,36 +833,6 @@ sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":tim
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
 sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
 eq  := batcalc.==(sa,  sc);
@@ -1000,36 +840,6 @@ io.print(sa, sc, eq);
 
 sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
 sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
-sc:= mosaic.select (c,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -1696,11 +1506,6 @@ sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,false);
 sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,false);
 eq  := batcalc.==(sa,  sc);
@@ -1716,23 +1521,8 @@ sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
 sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,false);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -1746,23 +1536,8 @@ sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
 sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,false);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -1776,23 +1551,8 @@ sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
 sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,true);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -1806,16 +1566,6 @@ sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
 sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
 eq  := batcalc.==(sa,  sc);
@@ -1826,23 +1576,8 @@ sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
 sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,true);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -2016,16 +1751,6 @@ sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
 sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
 eq  := batcalc.==(sa,  sc);
@@ -2036,53 +1761,8 @@ sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
 sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -2096,36 +1776,6 @@ sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
 sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
 eq  := batcalc.==(sa,  sc);
@@ -2133,36 +1783,6 @@ io.print(sa, sc, eq);
 
 sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
 sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
-sc:= mosaic.select (c, mcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -2829,11 +2449,6 @@ sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,false);
 sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,false);
 eq  := batcalc.==(sa,  sc);
@@ -2849,23 +2464,8 @@ sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
 sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,false);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -2879,23 +2479,8 @@ sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
 sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,false);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -2909,23 +2494,8 @@ sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
 sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,true,true);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -2939,16 +2509,6 @@ sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
 sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,true,false,true);
 eq  := batcalc.==(sa,  sc);
@@ -2959,23 +2519,8 @@ sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
 sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:05":timestamp,false,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:08":timestamp,false,false,true);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -3149,16 +2694,6 @@ sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
 sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:59":timestamp, "2014-08-14 12:10:20":timestamp,true,true,false);
 eq  := batcalc.==(sa,  sc);
@@ -3169,53 +2704,8 @@ sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
 sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,false);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -3229,36 +2719,6 @@ sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
 sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
 sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,true,true);
 eq  := batcalc.==(sa,  sc);
@@ -3266,36 +2726,6 @@ io.print(sa, sc, eq);
 
 sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
 sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,true,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
-eq  := batcalc.==(sa,  sc);
-io.print(sa, sc, eq);
-
-sa:= algebra.select(a, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
-sc:= mosaic.select (c, dcl_a,"2014-08-14 12:09:40":timestamp, "2014-08-14 12:10:20":timestamp,false,false,true);
 eq  := batcalc.==(sa,  sc);
 io.print(sa, sc, eq);
 
@@ -3597,3 +3027,4 @@ eq  := batcalc.==(l, lc, true:bit);
 io.print(l, lc, eq);
 eq  := batcalc.==(r, rc, true:bit);
 io.print(r, rc, eq);
+
