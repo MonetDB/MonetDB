@@ -1,8 +1,9 @@
 ####technical depth####
-Add test for huge
 Be sure alignment is correct. Use asserts and type specialized block headers for this.(1*)
 Check MOSanalysis and its test.
 Fix/check/test MOSlayout.
+create mix compression test cases.
+Add test for huge
 Introduce mosaic into gdk: create hooks in scanselect functions/macro's, joins and projections.
 benchmark using TPC-H
 make mitosis work with mosaic and see how this relates to the previous landmark stuff.
@@ -14,7 +15,6 @@ consider packing mosaic_block_header's more efficiently.
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
 DO nil checking more efficient similar to gdk_select
 Timing in the context of MOSanalysis
-create mix compression test cases.
 
 ####code issues####
 See if the iteration algorithms can be improved.
