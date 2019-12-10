@@ -261,9 +261,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				setVarUDFtype(mb, rv);
 			}
 			pushInstruction(mb, q);
-			matq = pushArgument(mb, matq, qv);
+			matq = addArgument(mb, matq, qv);
 			if (upd)
-				matr = pushArgument(mb, matr, rv);
+				matr = addArgument(mb, matr, rv);
 		}
 		pushInstruction(mb, matq);
 		if (upd)
