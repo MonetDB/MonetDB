@@ -283,7 +283,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
     /* keep all actions taken as a post block comment */
 bailout:
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","mitosis", usec);
+    snprintf(buf,256,"%-20s actions=%d time=" LLFMT " usec","mitosis", pieces, usec);
     newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 
