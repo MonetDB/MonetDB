@@ -1183,7 +1183,7 @@ JSONjson2textSeparator(str *ret, json *js, str *sep)
 	}
 	JSONplaintext(s, &l, jt, 0, **sep);
 	l = strlen(s);
-	if (l)
+	if (l && **sep)
 		s[l - 1] = 0;
 	*ret = s;
 	JSONfree(jt);
