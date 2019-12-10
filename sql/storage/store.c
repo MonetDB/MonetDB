@@ -1044,24 +1044,24 @@ set_members(changeset *ts)
 {
 	node *n, *m;
 
-	if (ts && ts->set)
-	for (n = ts->set->h; n; n = n->next) {
-		sql_table *t = n->data;
-
-		if (isMergeTable(t) || isReplicaTable(t)) {
-			if (t->members.set)
-			for (m = t->members.set->h; m; m = m->next) {
-				sql_part *p = m->data;
-				sql_table *pt = find_sql_table(t->s, p->base.name);
-
-				p->t = pt;
-				pt->p = t;
-			}
+	if (ts && ts->set) {
+		for (n = ts->set->h; n; n = n->next) {
+			sql_table *t = n->data;
+			t->p = NULL;
 		}
-		if(t->p) {
-			sql_part *pt = find_sql_part(t->p, t->base.name);
-			if(!pt)
-				t->p = NULL;
+		for (n = ts->set->h; n; n = n->next) {
+			sql_table *t = n->data;
+
+			if (isMergeTable(t) || isReplicaTable(t)) {
+				if (t->members.set)
+				for (m = t->members.set->h; m; m = m->next) {
+					sql_part *p = m->data;
+					sql_table *pt = find_sql_table(t->s, p->base.name);
+	
+					p->t = pt;
+					pt->p = t;
+				}
+			}
 		}
 	}
 }
