@@ -1138,21 +1138,14 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
  * limited. Furthermore, we should assure that no variable is
  * referenced before being assigned. Failure to obey should mark the
  * instruction as type-error. */
-InstrPtr
-pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
-{
-	if (p == NULL)
-		return NULL;
-	if (varid < 0) {
-		/* leave everything as is in this exceptional programming error */
-		mb->errors = createMalException(mb, 0, TYPE,"improper variable id");
-		return p;
-	}
 
+static InstrPtr 
+extendInstruction(MalBlkPtr mb, InstrPtr p)
+{
+	InstrPtr pn = p;
 	if (p->argc + 1 == p->maxarg) {
-		int i = 0;
 		int space = p->maxarg * sizeof(p->argv[0]) + offsetof(InstrRecord, argv);
-		InstrPtr pn = (InstrPtr) GDKrealloc(p,space + MAXARG * sizeof(p->argv[0]));
+		pn = (InstrPtr) GDKrealloc(p,space + MAXARG * sizeof(p->argv[0]));
 
 		if (pn == NULL) {
 			/* In the exceptional case we can not allocate more space
@@ -1164,6 +1157,27 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 		}
 		memset( ((char*)pn) + space, 0, MAXARG * sizeof(pn->argv[0]));
 		pn->maxarg += MAXARG;
+	}
+	return pn;
+}
+
+InstrPtr
+pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
+{
+	InstrPtr pn;
+	if (p == NULL)
+		return NULL;
+	if (varid < 0) {
+		/* leave everything as is in this exceptional programming error */
+		mb->errors = createMalException(mb, 0, TYPE,"improper variable id");
+		return p;
+	}
+
+	if (p->argc + 1 == p->maxarg) {
+		int i = 0;
+		pn = extendInstruction(mb, p);
+		if ( mb->errors)
+			return p;
 
 		/* if the instruction is already stored in the MAL block
 		 * it should be replaced by an extended version.
@@ -1183,6 +1197,69 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 	}
 	/* protect against the case that the instruction is malloced
 	 * in isolation */
+	if( mb->maxarg < p->maxarg)
+		mb->maxarg= p->maxarg;
+
+	p->argv[p->argc++] = varid;
+	return p;
+}
+
+/* If the instruction is already stored in the MAL block then a
+ * reference to its position avoids an expensive search.
+ */
+InstrPtr
+pushArgumentIdx(MalBlkPtr mb, int idx, int varid)
+{
+	InstrPtr p, pn;
+
+	pn = p = getInstrPtr(mb, idx);
+	if (p == NULL)
+		return NULL;
+	if (varid < 0) {
+		/* leave everything as is in this exceptional programming error */
+		mb->errors = createMalException(mb, 0, TYPE,"improper variable id");
+		return p;
+	}
+
+	if (p->argc + 1 == p->maxarg) {
+		pn = extendInstruction(mb, p);
+		if ( mb->errors)
+			return p;
+		mb->stmt[idx]= pn;
+		p = pn;
+	}
+	/* protect against the case that the instruction is malloced in isolation */
+	if( mb->maxarg < p->maxarg)
+		mb->maxarg= p->maxarg;
+
+	p->argv[p->argc++] = varid;
+	return p;
+}
+
+/* the next version assumes that we have allocated an isolated instruction
+ * using newInstruction. As long as it is not stored in the MAL block
+ * we can simpy extend it with arguments
+ */
+InstrPtr
+addArgument(MalBlkPtr mb, InstrPtr p, int varid)
+{
+	InstrPtr pn = p;
+
+	if (p == NULL)
+		return NULL;
+	if (varid < 0) {
+		/* leave everything as is in this exceptional programming error */
+		mb->errors = createMalException(mb, 0, TYPE,"improper variable id");
+		return p;
+	}
+
+	if (p->argc + 1 == p->maxarg) {
+		pn = extendInstruction(mb, p);
+		if ( mb->errors)
+			return p;
+		p = pn;
+	}
+	/* protect against the case that the instruction is malloced in isolation */
 	if( mb->maxarg < p->maxarg)
 		mb->maxarg= p->maxarg;
 
