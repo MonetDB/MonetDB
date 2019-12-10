@@ -3787,16 +3787,19 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 			if (bs_debug) 
 				fprintf(stderr, "#update table %s\n", tt->base.name);
 			ok = store_funcs.update_table(tr, ft, tt);
-			ft->cleared = 0;
-			tt->access = ft->access;
+		}
+	}
 
-			if (ok == LOG_OK && isRenamed(ft)) { /* apply possible renaming */
-				list_hash_delete(tt->s->tables.set, tt, NULL);
-				tt->base.name = sa_strdup(tr->parent->sa, ft->base.name);
-				if (!list_hash_add(tt->s->tables.set, tt, NULL))
-					ok = LOG_ERR;
-				setRenamedFlag(tt); /* propagate the change to the upper transaction */
-			}
+	if (mode == R_APPLY && ok == LOG_OK) {
+		ft->cleared = 0;
+		tt->access = ft->access;
+
+		if (isRenamed(ft)) { /* apply possible renaming */
+			list_hash_delete(tt->s->tables.set, tt, NULL);
+			tt->base.name = sa_strdup(tr->parent->sa, ft->base.name);
+			if (!list_hash_add(tt->s->tables.set, tt, NULL))
+				ok = LOG_ERR;
+			setRenamedFlag(tt); /* propagate the change to the upper transaction */
 		}
 	}
 	return ok;
