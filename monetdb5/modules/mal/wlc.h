@@ -49,7 +49,7 @@ mal_export char wlc_write[26];
 
 mal_export str WLCinit(void);
 mal_export int WLCused(void);
-mal_export void WLCreset(void);
+mal_export str WLCepilogue(void *ret);
 mal_export str WLCgetConfig(void);
 mal_export str WLCreadConfig(FILE *fd);
 mal_export str WLCflush(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

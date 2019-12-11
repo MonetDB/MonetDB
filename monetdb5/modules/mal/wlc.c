@@ -333,10 +333,13 @@ WLCflush(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCsetConfig();
 }
 
-void
-WLCreset(void)
+str 
+WLCepilogue(void *ret)
 {
 	str msg = MAL_SUCCEED;
+
+	(void)ret;
+
 	MT_lock_set(&wlc_lock);
 	msg = WLCcloselogger();
 	wlc_snapshot[0]=0;
@@ -344,8 +347,8 @@ WLCreset(void)
 	wlc_name[0]= 0;
 	wlc_write[0] =0;
 	MT_lock_unset(&wlc_lock);
-	if(msg) //TODO we have to return a possible error message somehow
-		freeException(msg);
+       	//TODO we have to return a possible error message somehow
+	return(msg);
 }
 
 /*

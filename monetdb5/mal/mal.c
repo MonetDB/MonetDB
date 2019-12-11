@@ -37,10 +37,7 @@ int have_hge;
 #include "mal_private.h"
 #include "mal_runtime.h"
 #include "mal_resource.h"
-#include "wlc.h"
 #include "mal_atom.h"
-#include "opt_pipes.h"
-#include "tablet.h"
 
 MT_Lock     mal_contextLock = MT_LOCK_INITIALIZER("mal_contextLock");
 MT_Lock     mal_remoteLock = MT_LOCK_INITIALIZER("mal_remoteLock");
@@ -99,7 +96,6 @@ void mserver_reset(void)
 	str err = 0;
 
 	GDKprepareExit();
-	WLCreset();
 	MCstopClients(0);
 	setHeartbeat(-1);
 	stopProfiler(0);
@@ -122,7 +118,6 @@ void mserver_reset(void)
 	mal_runtime_reset();
 	mal_module_reset();
 	mal_atom_reset();
-	opt_pipes_reset();
 #ifndef NDEBUG
 	mdbExit();
 #endif

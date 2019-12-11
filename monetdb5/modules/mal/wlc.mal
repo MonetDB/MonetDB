@@ -10,6 +10,10 @@ pattern init()
 address WLCinitCmd
 comment "Test for running as master";
 
+command epilogue():void
+address WLCepilogue
+comment "release the resources held by the wlc module";
+
 pattern master()
 address WLCmaster
 comment "Activate the workload-capture-replay process";
