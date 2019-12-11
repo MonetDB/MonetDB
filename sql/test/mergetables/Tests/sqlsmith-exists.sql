@@ -715,4 +715,71 @@ SELECT
             )
         ) LIMIT 76; --empty on PostgreSQL
 
+select 
+ subq_1.c0 as c0
+from 
+ (select 
+ subq_0.c9 as c0
+ from 
+ (select 
+ ref_3.aa as c0, 
+ ref_3.cc as c1, 
+ ref_2.col2 as c2, 
+ ref_2.col2 as c3, 
+ ref_0.col1 as c4, 
+ ref_1.col3 as c5, 
+ ref_3.aa as c6, 
+ ref_1.col2 as c7, 
+ ref_2.col2 as c8, 
+ ref_1.col8 as c9, 
+ ref_2.col1 as c10, 
+ ref_0.col2 as c11, 
+ ref_2.col0 as c12, 
+ ref_0.col1 as c13, 
+ ref_2.col1 as c14
+ from 
+ tab1 as ref_0
+ left join another_t as ref_1
+ on (ref_0.col2 is null)
+ inner join tab0 as ref_2
+ left join analytics as ref_3
+ on (ref_2.col1 is not null)
+ on ((true) 
+ and (true))
+ where true
+ limit 48) as subq_0
+ where (exists (
+ select 
+ subq_0.c5 as c0, 
+ subq_0.c14 as c1, 
+ ref_4.col1 as c2
+ from 
+ tab1 as ref_4
+ where false)) 
+ or ((subq_0.c14 is null) 
+ and (false))) as subq_1
+where exists (
+ select 
+ ref_5.col6 as c0, 
+ ref_7.col1 as c1, 
+ cast(nullif(ref_6.col0,
+ 6) as int) as c2, 
+ ref_7.col2 as c3, 
+ ref_5.col3 as c4, 
+ subq_1.c0 as c5
+ from 
+ longtable as ref_5
+ inner join tab1 as ref_6
+ on ((subq_1.c0 is null) 
+ and (((false) 
+ and ((ref_5.col7 is null) 
+ or ((ref_5.col3 is not null) 
+ and (ref_6.col2 is not null)))) 
+ or (true)))
+ left join tab0 as ref_7
+ on (ref_6.col0 = ref_7.col0 )
+ where case when ref_5.col1 is null then 44 else 44 end
+ is not null)
+limit 99; --empty on PostgreSQL
+
 ROLLBACK;
