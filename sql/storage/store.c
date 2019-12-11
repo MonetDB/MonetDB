@@ -4163,12 +4163,11 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 		} else
 			tt->p = NULL;
 
-		if (isRenamed(ft)) { /* apply possible renaming */
+		if (strcmp(tt->base.name, ft->base.name) != 0) { /* apply possible renaming */
 			list_hash_delete(tt->s->tables.set, tt, NULL);
 			tt->base.name = sa_strdup(tr->parent->sa, ft->base.name);
 			if (!list_hash_add(tt->s->tables.set, tt, NULL))
 				ok = LOG_ERR;
-			setRenamedFlag(tt); /* propagate the change to the upper transaction */
 		}
 	}
 
@@ -4281,12 +4280,11 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 	if (ok == LOG_OK) /* last as it may require complex (table) types */
 		ok = rollforward_changeset_updates(tr, &fs->seqs, &ts->seqs, &ts->base, (rfufunc) &rollforward_update_seq, (rfcfunc) &rollforward_create_seq, (rfdfunc) &rollforward_drop_seq, (dupfunc) &seq_dup, mode);
 
-	if (apply && ok == LOG_OK && isRenamed(fs)) { /* apply possible renaming */
+	if (apply && ok == LOG_OK && strcmp(ts->base.name, fs->base.name) != 0) { /* apply possible renaming */
 		list_hash_delete(tr->schemas.set, ts, NULL);
 		ts->base.name = sa_strdup(tr->parent->sa, fs->base.name);
 		if (!list_hash_add(tr->schemas.set, ts, NULL))
 			ok = LOG_ERR;
-		setRenamedFlag(ts); /* propagate the change to the upper transaction */
 	}
 
 	return ok;
@@ -4479,7 +4477,7 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 			store_funcs.destroy_col(NULL, fc);
 
 		/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
-		if ((tr->status == 1 && isRenamed(fc)) || isRenamed(pfc)) {
+		if (strcmp(fc->base.name, pfc->base.name) != 0) {
 			list_hash_delete(fc->t->columns.set, fc, NULL);
 			fc->base.name = sa_strdup(tr->parent->sa, pfc->base.name);
 			if (!list_hash_add(fc->t->columns.set, fc, NULL))
@@ -4564,7 +4562,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 			ft->p = NULL;
 
 		/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
-		if ((tr->status == 1 && isRenamed(ft)) || isRenamed(pft)) {
+		if (strcmp(ft->base.name, pft->base.name) != 0) {
 			list_hash_delete(ft->s->tables.set, ft, NULL);
 			ft->base.name = sa_strdup(tr->parent->sa, pft->base.name);
 			if (!list_hash_add(ft->s->tables.set, ft, NULL))
@@ -4628,7 +4626,7 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 	if (fs->base.rtime || fs->base.wtime || tr->stime < pfs->base.wtime) {
 
 		/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
-		if ((tr->status == 1 && isRenamed(fs)) || isRenamed(pfs)) {
+		if (strcmp(fs->base.name, pfs->base.name) != 0) {
 			list_hash_delete(tr->schemas.set, fs, NULL);
 			fs->base.name = sa_strdup(tr->parent->sa, pfs->base.name);
 			if (!list_hash_add(tr->schemas.set, fs, NULL))
@@ -5566,7 +5564,6 @@ sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 	assert(!is_oid_nil(rid));
 	table_funcs.column_update_value(tr, find_sql_column(sysschema, "name"), rid, (void*) new_name);
 
-	setRenamedFlag(s);
 	s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	return s;
@@ -5868,7 +5865,6 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 	assert(!is_oid_nil(rid));
 	table_funcs.column_update_value(tr, find_sql_column(systable, "name"), rid, (void*) new_name);
 
-	setRenamedFlag(t);
 	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	return t;
@@ -6285,7 +6281,6 @@ sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const
 	assert(!is_oid_nil(rid));
 	table_funcs.column_update_value(tr, find_sql_column(syscolumn, "name"), rid, (void*) new_name);
 
-	setRenamedFlag(c);
 	c->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	return c;
