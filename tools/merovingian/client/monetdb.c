@@ -282,7 +282,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		char locked = '\0';
 		char uptime[12];
 		char avg[8];
-		char info[32];
+		char info[64];
 		char *dbname;
 		char *uri;
 
@@ -318,7 +318,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		{
 			struct tm *t;
 			t = localtime(&uplog.lastcrash);
-			strftime(info, sizeof(info), "crashed on %Y-%m-%d %H:%M:%S", t);
+			strftime(info, sizeof(info), "crashed (started on %Y-%m-%d %H:%M:%S)", t);
 		}
 
 		switch (stats->state) {
@@ -461,7 +461,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 			break;
 			case SABdbCrashed:
 				t = localtime(&uplog.lastcrash);
-				strftime(buf, sizeof(buf), "crashed on %Y-%m-%d %H:%M:%S", t);
+				strftime(buf, sizeof(buf), "crashed (started on %Y-%m-%d %H:%M:%S)", t);
 			break;
 			case SABdbInactive:
 				snprintf(buf, sizeof(buf), "not running");
@@ -807,13 +807,12 @@ command_status(int argc, char *argv[])
 		int len = 0;
 
 		/* calculate dbwidth and uriwidth */
+		uriwidth = 32;
 		for (stats = orig; stats != NULL; stats = stats->next) {
 			if ((t = strlen(stats->dbname)) > dbwidth)
 				dbwidth = t;
 			if (stats->uri != NULL && (t = strlen(stats->uri)) > uriwidth)
 				uriwidth = t;
-			if (uriwidth < 32)
-				uriwidth = 32;
 		}
 
 		/* Ultra Condensed State(tm) since Feb2013:
