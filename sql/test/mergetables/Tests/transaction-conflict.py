@@ -66,7 +66,6 @@ cursor.execute("""
 START TRANSACTION;
 DROP TABLE "mt";
 DROP TABLE "part";
-DROP TABLE "dummy";
 COMMIT;
 """)
 

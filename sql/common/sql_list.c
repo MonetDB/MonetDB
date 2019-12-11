@@ -314,6 +314,7 @@ list_remove_node(list *l, node *n)
 		l->t = p;
 	node_destroy(l, n);
 	l->cnt--;
+	assert(l->cnt >= 0);
 	MT_lock_set(&l->ht_lock);
 	if (l->ht && data)
 		hash_delete(l->ht, data);

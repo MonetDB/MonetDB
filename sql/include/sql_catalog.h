@@ -364,13 +364,13 @@ typedef enum sql_ftype {
 	F_LOADER = 7
 } sql_ftype;
 
-#define IS_FUNC(f) (f->type == F_FUNC)
-#define IS_PROC(f) (f->type == F_PROC)
-#define IS_AGGR(f) (f->type == F_AGGR)
-#define IS_FILT(f) (f->type == F_FILT)
-#define IS_UNION(f) (f->type == F_UNION)
-#define IS_ANALYTIC(f) (f->type == F_ANALYTIC)
-#define IS_LOADER(f) (f->type == F_LOADER)
+#define IS_FUNC(f)     ((f)->type == F_FUNC)
+#define IS_PROC(f)     ((f)->type == F_PROC)
+#define IS_AGGR(f)     ((f)->type == F_AGGR)
+#define IS_FILT(f)     ((f)->type == F_FILT)
+#define IS_UNION(f)    ((f)->type == F_UNION)
+#define IS_ANALYTIC(f) ((f)->type == F_ANALYTIC)
+#define IS_LOADER(f)   ((f)->type == F_LOADER)
 
 typedef enum sql_flang {
 	FUNC_LANG_INT = 0, /* internal */
