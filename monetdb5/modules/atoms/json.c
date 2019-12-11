@@ -1185,75 +1185,99 @@ JSONjson2textSeparator(str *ret, json *js, str *sep)
 	return MAL_SUCCEED;
 }
 
-str
-JSONjson2number(dbl *ret, json *js)
-{
+static str
+JSONjson2numberInternal(void **ret, json *js, void (*str2num)(void **ret, const char *nptr, size_t len)) {
 	JSON *jt;
-	char *rest;
 
-	*ret = dbl_nil;
 	jt = JSONparse(*js);
 	CHECK_JSON(jt);
 	switch (jt->elm[0].kind) {
 	case JSON_NUMBER:
-		*ret = strtod(jt->elm[0].value, &rest);
-		if (rest && (size_t) (rest - jt->elm[0].value) !=jt->elm[0].valuelen)
-			*ret = dbl_nil;
+		str2num(ret, jt->elm[0].value, jt->elm[0].valuelen);
 		break;
 	case JSON_ARRAY:
 		if (jt->free == 2) {
-			*ret = strtod(jt->elm[1].value, &rest);
-			if (rest && (size_t) (rest - jt->elm[1].value) !=jt->elm[1].valuelen)
-				*ret = dbl_nil;
+			str2num(ret, jt->elm[1].value, jt->elm[1].valuelen);
+		}
+		else {
+			*ret = NULL;
 		}
 		break;
 	case JSON_OBJECT:
 		if (jt->free == 3) {
-			*ret = strtod(jt->elm[2].value, &rest);
-			if (rest && (size_t) (rest - jt->elm[2].value) !=jt->elm[2].valuelen)
-				*ret = dbl_nil;
+			str2num(ret, jt->elm[2].value, jt->elm[2].valuelen);
+		}
+		else {
+			*ret = NULL;
 		}
 		break;
 	default:
-		*ret = dbl_nil;
+		*ret = NULL;
 	}
 	JSONfree(jt);
+
+	return MAL_SUCCEED;
+}
+
+static void
+strtod_wrapper(void **ret, const char *nptr, size_t len) {
+	char *rest;
+	dbl val;
+
+	val = strtod(nptr, &rest);
+	if(rest && (size_t)(rest - nptr) != len) {
+		*ret = NULL;
+	}
+	else {
+		**(dbl **)ret = val;
+	}
+}
+
+static  void
+strtol_wrapper(void **ret, const char *nptr, size_t len) {
+	char *rest;
+	lng val;
+
+	val = strtol(nptr, &rest, 0);
+	if(rest && (size_t)(rest - nptr) != len) {
+		*ret = NULL;
+	}
+	else {
+		**(lng **)ret = val;
+	}
+}
+
+str
+JSONjson2number(dbl *ret, json *js)
+{
+	dbl val = 0;
+	dbl *val_ptr = &val;
+	JSONjson2numberInternal((void **)&val_ptr, js, strtod_wrapper);
+
+	if (val_ptr == NULL) {
+		*ret = dbl_nil;
+	}
+	else {
+		*ret = val;
+	}
+
 	return MAL_SUCCEED;
 }
 
 str
 JSONjson2integer(lng *ret, json *js)
 {
-	JSON *jt;
-	char *rest;
+	lng val = 0;
+	lng *val_ptr = &val;
 
-	*ret = lng_nil;
-	jt = JSONparse(*js);
-	CHECK_JSON(jt);
-	switch (jt->elm[0].kind) {
-	case JSON_NUMBER:
-		*ret = strtol(jt->elm[0].value, &rest, 0);
-		if (rest && (size_t) (rest - jt->elm[0].value) !=jt->elm[0].valuelen)
-			*ret = lng_nil;
-		break;
-	case JSON_ARRAY:
-		if (jt->free == 2) {
-			*ret = strtol(jt->elm[1].value, &rest, 0);
-			if (rest && (size_t) (rest - jt->elm[1].value) !=jt->elm[1].valuelen)
-				*ret = lng_nil;
-		}
-		break;
-	case JSON_OBJECT:
-		if (jt->free == 3) {
-			*ret = strtol(jt->elm[2].value, &rest, 0);
-			if (rest && (size_t) (rest - jt->elm[2].value) !=jt->elm[2].valuelen)
-				*ret = lng_nil;
-		}
-		break;
-	default:
+	JSONjson2numberInternal((void **)&val_ptr, js, strtol_wrapper);
+	if (val_ptr == NULL) {
 		*ret = lng_nil;
 	}
-	JSONfree(jt);
+	else {
+		*ret = val;
+	}
+
 	return MAL_SUCCEED;
 }
 
