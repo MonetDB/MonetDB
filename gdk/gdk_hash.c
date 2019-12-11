@@ -133,8 +133,7 @@ doHASHdestroy(BAT *b, Hash *hs)
 			hp = BBP_cache(p);
 
 		if (!hp || hs != hp->thash) {
-			ACCELDEBUG if (*(size_t *) hs->heapbckt.base & (1 << 24))
-				fprintf(stderr, "#%s: HASHdestroy(" ALGOBATFMT "): removing persisted hash\n", MT_thread_getname(), ALGOBATPAR(b));
+			ACCELDEBUG fprintf(stderr, "#%s: HASHdestroy(" ALGOBATFMT "): removing%s hash\n", MT_thread_getname(), ALGOBATPAR(b), *(size_t *) hs->heapbckt.base & (1 << 24) ? " persisted" : "");
 			HEAPfree(&hs->heapbckt, true);
 			HEAPfree(&hs->heaplink, true);
 			GDKfree(hs);
@@ -191,7 +190,7 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 
 /* collect HASH statistics for analysis */
 static void
-HASHcollisions(BAT *b, Hash *h)
+HASHcollisions(BAT *b, Hash *h, const char *func)
 {
 	lng cnt, entries = 0, max = 0;
 	double total = 0;
@@ -211,10 +210,10 @@ HASHcollisions(BAT *b, Hash *h)
 			total += cnt;
 		}
 	fprintf(stderr,
-		"#%s: BAThash(" ALGOBATFMT "): statistics " BUNFMT ", "
+		"#%s: %s(" ALGOBATFMT "): statistics " BUNFMT ", "
 		"entries " LLFMT ", nunique " BUNFMT ", nbuckets " BUNFMT ", "
 		"max " LLFMT ", avg %2.6f;\n",
-		MT_thread_getname(), ALGOBATPAR(b), BATcount(b), entries,
+		MT_thread_getname(), func, ALGOBATPAR(b), BATcount(b), entries,
 		h->nunique, NHASHBUCKETS(h), max,
 		entries == 0 ? 0 : total / entries);
 }
@@ -393,7 +392,7 @@ HASHgrowbucket(BAT *b)
 			" -> " BUNFMT " buckets (" LLFMT " usec)\n",
 			MT_thread_getname(), __func__, ALGOBATPAR(b),
 			onbucket, NHASHBUCKETS(h), GDKusec() - t0);
-		HASHcollisions(b, h);
+		HASHcollisions(b, h, __func__);
 	}
 	return GDK_SUCCEED;
 }
@@ -741,6 +740,8 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 
 	o = canditer_next(&ci);	/* always one ahead */
 	for (;;) {
+		lng t1 = 0;
+		ACCELDEBUG t1 = GDKusec();
 		BUN maxslots = (mask >> 3) - 1;	/* 1/8 full is too full */
 
 		h->nheads = 0;
@@ -810,8 +811,8 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		}
 		ACCELDEBUG if (p < cnt1)
 			fprintf(stderr, "#%s: BAThash(%s): abort starthash with "
-				"mask " BUNFMT " at " BUNFMT "\n", MT_thread_getname(), BATgetId(b),
-				mask, p);
+				"mask " BUNFMT " at " BUNFMT " after " LLFMT " usec\n", MT_thread_getname(), BATgetId(b),
+				mask, p, GDKusec() - t1);
 		if (p == cnt1 || mask == maxmask)
 			break;
 		mask <<= 2;
@@ -881,7 +882,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	}
 	ACCELDEBUG {
 		fprintf(stderr, "#%s: BAThash: hash construction " LLFMT " usec\n", MT_thread_getname(), GDKusec() - t0);
-		HASHcollisions(b, h);
+		HASHcollisions(b, h, __func__);
 	}
 	return h;
 }
