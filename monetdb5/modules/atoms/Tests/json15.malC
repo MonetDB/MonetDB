@@ -9,7 +9,7 @@ d:= json.number(j1);
 io.print(d);
 
 j1:= json.new("{\"tag\":3.14}");
-json.dump(j1);
+#json.dump(j1);
 d:= json.number(j1);
 io.print(d);
 
@@ -18,7 +18,7 @@ d:= json.number(j1);
 io.print(d);
 
 j1 := json.new("{\"tag1\":3.14, \"tag2\":2.1}");
-json.dump(j1);
+#json.dump(j1);
 d := json.number(j1);
 io.print(d);
 
@@ -42,6 +42,6 @@ i:= json.integer(j1);
 io.print(i);
 
 j1 := json.new("{\"tag1\":314, \"tag2\":2.1}");
-json.dump(j1);
+#json.dump(j1);
 d := json.number(j1);
 io.print(d);
