@@ -179,7 +179,8 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					p->argc = p->retc;
 					for (k = 0; k < q->retc; k++){
 						alias[getArg(p,k)] = getArg(q,k);
-						p= pushArgument(mb,p, getArg(q,k));
+						/* we know the arguments fit so the instruction can safely be patched */
+						p= addArgument(mb,p, getArg(q,k));
 					}
 
 					if( OPTdebug & OPTcommonterms){
