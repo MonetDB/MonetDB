@@ -214,6 +214,34 @@ select col1, col2, lag(col2) over (partition by col1 ORDER BY col2), lag(col2, 2
 select lag(col2, -1) over (partition by col1 ORDER BY col2), lag(col2, 1) over (partition by col1 ORDER BY col2), lag(col2, 2) over (partition by col1 ORDER BY col2) from t1;
 select lead(col2, -1) over (partition by col1 ORDER BY col2), lead(col2, 1) over (partition by col1 ORDER BY col2), lead(col2, 2) over (partition by col1 ORDER BY col2) from t1;
 
+CREATE TABLE "sys"."test1" (
+	"name"       VARCHAR(100),
+	"points"     DOUBLE,
+	"start_time" TIMESTAMP
+);
+COPY 8 RECORDS INTO "sys"."test1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"Hello"	20	"2017-12-01 00:00:00.000000"
+"Hello"	40	"2017-12-01 01:00:00.000000"
+"Hello"	60	"2017-12-01 00:00:00.000000"
+"World"	10	"2017-12-01 00:00:00.000000"
+"World"	50	"2017-12-01 01:00:00.000000"
+"World"	90	"2017-12-01 00:00:00.000000"
+"World"	11	"2017-12-02 01:02:00.000000"
+"World"	15	"2017-12-02 02:02:00.000000"
+
+SELECT CAST(t0.start_time AS DATE) AS start_time,
+FIRST_VALUE(t0.points) OVER (PARTITION BY CAST(t0.start_time AS DATE) ORDER BY t0.start_time) AS first_point,
+LAST_VALUE(t0.points) OVER (PARTITION BY CAST(t0.start_time AS DATE) ORDER BY t0.start_time) AS last_point
+FROM test1 t0
+WHERE (t0.start_time >= '2017/12/01 00:00:00' AND t0.start_time <= '2017/12/02 00:00:00');
+
+SELECT DISTINCT CAST(t0.start_time AS DATE) AS start_time,
+FIRST_VALUE(t0.points) OVER (PARTITION BY CAST(t0.start_time AS DATE) ORDER BY t0.start_time) AS first_point,
+LAST_VALUE(t0.points) OVER (PARTITION BY CAST(t0.start_time AS DATE) ORDER BY t0.start_time) AS last_point
+FROM test1 t0
+WHERE (t0.start_time >= '2017/12/01 00:00:00' AND t0.start_time <= '2017/12/02 00:00:00');
+
+
 rollback;
 
 select ntile(aa) over () from analytics; --error
