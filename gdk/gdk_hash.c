@@ -524,6 +524,11 @@ BAThashsave(BAT *b, bool dosync)
 	if ((h = b->thash) != NULL) {
 		Heap *hp = &h->heapbckt;
 
+#ifndef PERSISTENTHASH
+		/* no need to sync if not persistent */
+		dosync = false;
+#endif
+
 		rc = GDK_FAIL;
 		/* only persist if parent BAT hasn't changed in the
 		 * mean time */
