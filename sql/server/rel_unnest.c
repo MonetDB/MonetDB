@@ -1076,8 +1076,8 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				return rel; /* ie try again */
 			}
 			crossproduct = list_empty(j->exps);
-			rd = (j->op != op_full)?rel_dependent_var(sql, d, jr):(list*)1;
-			ld = (((j->op == op_join && rd) || j->op == op_right))?rel_dependent_var(sql, d, jl):(list*)1;
+			rd = (j->op != op_full && j->op != op_right)?rel_dependent_var(sql, d, jr):(list*)1;
+			ld = ((j->op == op_join || j->op == op_right))?rel_dependent_var(sql, d, jl):(list*)1;
 
 			if (ld && rd) {
 				node *m;
@@ -1091,6 +1091,11 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				set_dependent(j);
 				n = rel_crossproduct(sql->sa, rel, j, j->op);
 				j->op = rel->op;
+				if (is_semi(rel->op)) {
+				//assert(!is_semi(rel->op));
+					j->op = op_left;
+					rel->op = op_left;
+				}
 				n->l = rel_project(sql->sa, n->l, rel_projections(sql, n->l, NULL, 1, 1));
 				nr = n->r;
 				nr = n->r = rel_project(sql->sa, n->r, is_semi(nr->op)?sa_list(sql->sa):rel_projections(sql, nr->r, NULL, 1, 1));
@@ -1119,6 +1124,10 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
 				j = nj; 
+				if (is_semi(rel->op)) {
+				//assert(!is_semi(rel->op));
+					rel->op = op_left;
+				}
 				move_join_exps(sql, j, rel);
 				return j;
 			}
