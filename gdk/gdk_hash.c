@@ -49,13 +49,9 @@ HASHwidth(BUN hashsize)
 #endif
 }
 
-BUN
-HASHmask(BUN cnt)
+static inline BUN
+hashmask(BUN m)
 {
-	BUN m = cnt;
-
-#if 0
-	/* find largest power of 2 smaller than or equal to cnt */
 	m |= m >> 1;
 	m |= m >> 2;
 	m |= m >> 4;
@@ -64,6 +60,17 @@ HASHmask(BUN cnt)
 #if SIZEOF_BUN == 8
 	m |= m >> 32;
 #endif
+	return m;
+}
+
+BUN
+HASHmask(BUN cnt)
+{
+	BUN m = cnt;
+
+#if 0
+	/* find largest power of 2 smaller than or equal to cnt */
+	m = hashmask(m);
 	m -= m >> 1;
 
 	/* if cnt is more than 1/3 into the gap between m and 2*m,
@@ -91,35 +98,7 @@ HASHclear(Hash *h)
 }
 
 #define HASH_VERSION		3
-#define HASH_HEADER_SIZE	8	/* nr of size_t fields in header */
-
-/* calculate (uint8_t) floor(log2(mask)) */
-static inline uint8_t
-HASHmasklevel(BUN mask)
-{
-	assert(mask != 0);
-
-#if SIZEOF_BUN == SIZEOF_INT && defined(__GNUC__)
-	return (uint8_t) (31 - __builtin_clz((unsigned int) mask));
-#elif SIZEOF_BUN == SIZEOF_INT && defined(_MSC_VER)
-	return (uint8_t) (31 - __lzcnt((unsigned int) mask));
-#elif SIZEOF_BUN == SIZEOF_LONG && defined(__GNUC__)
-	return (uint8_t) (63 - __builtin_clzl((unsigned long) mask));
-#elif SIZEOF_BUN == SIZEOF_LONG && defined(_MSC_VER)
-	return (uint8_t) (63 - __lzcnt64((unsigned __int64) mask));
-#else
-	uint8_t n = 0;
-	uint8_t c = SIZEOF_BUN * 4;
-	do {
-		BUN y = mask >> c;
-		if (y) {
-			n += c;
-			mask = y;
-		}
-	} while ((c >>= 1) != 0);
-	return n;
-#endif
-}
+#define HASH_HEADER_SIZE	7	/* nr of size_t fields in header */
 
 static void
 doHASHdestroy(BAT *b, Hash *hs)
@@ -160,8 +139,15 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width) != GDK_SUCCEED)
 		return GDK_FAIL;
 	h->heapbckt.free = mask * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
-	h->level = HASHmasklevel(mask);
-	h->split = mask - ((BUN) 1 << h->level);
+	h->nbucket = mask;
+	if (mask & (mask - 1)) {
+		h->mask2 = hashmask(mask);
+		h->mask1 = h->mask2 >> 1;
+	} else {
+		/* mask is a power of two */
+		h->mask1 = mask - 1;
+		h->mask2 = h->mask1 << 1 | 1;
+	}
 	switch (h->width) {
 	case BUN2:
 		h->nil = (BUN) BUN2_NONE;
@@ -182,12 +168,11 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	HASHclear(h);		/* zero the mask */
 	((size_t *) h->heapbckt.base)[0] = (size_t) HASH_VERSION;
 	((size_t *) h->heapbckt.base)[1] = (size_t) size;
-	((size_t *) h->heapbckt.base)[2] = (size_t) h->level;
-	((size_t *) h->heapbckt.base)[3] = (size_t) h->split;
-	((size_t *) h->heapbckt.base)[4] = (size_t) h->width;
-	((size_t *) h->heapbckt.base)[5] = (size_t) count;
-	((size_t *) h->heapbckt.base)[6] = (size_t) h->nunique;
-	((size_t *) h->heapbckt.base)[7] = (size_t) h->nheads;
+	((size_t *) h->heapbckt.base)[2] = (size_t) h->nbucket;
+	((size_t *) h->heapbckt.base)[3] = (size_t) h->width;
+	((size_t *) h->heapbckt.base)[4] = (size_t) count;
+	((size_t *) h->heapbckt.base)[5] = (size_t) h->nunique;
+	((size_t *) h->heapbckt.base)[6] = (size_t) h->nheads;
 	ACCELDEBUG fprintf(stderr, "#%s: HASHnew: create hash(size " BUNFMT ", mask " BUNFMT ", width %d, total " BUNFMT " bytes);\n", MT_thread_getname(), size, mask, h->width, (size + mask) * h->width);
 	return GDK_SUCCEED;
 }
@@ -332,10 +317,10 @@ HASHgrowbucket(BAT *b)
 		}
 	}
 	while (h->nunique >= (nbucket = NHASHBUCKETS(h)) * 7 / 8) {
-		BUN old = h->split;
-		BUN new = ((BUN) 1 << h->level) + h->split;
+		BUN new = h->nbucket;
+		BUN old = new & h->mask1;
 		BATiter bi = bat_iterator(b);
-		BUN msk = (BUN) 1 << h->level;
+		BUN msk = h->mask1 + 1; /* == h->mask2 - h->mask1 */
 
 		assert(h->heapbckt.free == nbucket * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T);
 		if (h->heapbckt.free + h->width > h->heapbckt.size) {
@@ -347,10 +332,11 @@ HASHgrowbucket(BAT *b)
 			h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 		}
 		assert(h->heapbckt.free + h->width <= h->heapbckt.size);
-		if (++h->split == ((BUN) 1 << h->level)) {
-			h->level++;
-			h->split = 0;
+		if (h->nbucket == h->mask2) {
+			h->mask1 = h->mask2;
+			h->mask2 = h->mask2 << 1 | 1;
 		}
+		h->nbucket++;
 		h->heapbckt.free += h->width;
 		BUN lold, lnew, hb;
 		lold = lnew = HASHnil(h);
@@ -450,9 +436,9 @@ BATcheckhash(BAT *b)
 						    ((size_t) 1 << 24) |
 #endif
 						    HASH_VERSION) &&
-					    hdata[5] == (size_t) BATcount(b) &&
+					    hdata[4] == (size_t) BATcount(b) &&
 					    fstat(fd, &st) == 0 &&
-					    st.st_size >= (off_t) (h->heapbckt.size = h->heapbckt.free = (((BUN) 1 << (h->level = (uint8_t) hdata[2])) + (h->split = (BUN) hdata[3])) * (BUN) (h->width = (uint8_t) hdata[4]) + HASH_HEADER_SIZE * SIZEOF_SIZE_T) &&
+					    st.st_size >= (off_t) (h->heapbckt.size = h->heapbckt.free = (h->nbucket = (BUN) hdata[2]) * (BUN) (h->width = (uint8_t) hdata[3]) + HASH_HEADER_SIZE * SIZEOF_SIZE_T) &&
 					    close(fd) == 0 &&
 					    (fd = GDKfdlocate(h->heaplink.farmid, nme, "rb+", "thashl")) >= 0 &&
 					    fstat(fd, &st) == 0 &&
@@ -460,8 +446,15 @@ BATcheckhash(BAT *b)
 					    st.st_size >= (off_t) (h->heaplink.size = h->heaplink.free = hdata[1] * h->width) &&
 					    HEAPload(&h->heaplink, nme, "thashl", false) == GDK_SUCCEED &&
 					    HEAPload(&h->heapbckt, nme, "thashb", false) == GDK_SUCCEED) {
-						h->nunique = hdata[6];
-						h->nheads = hdata[7];
+						if (h->nbucket & (h->nbucket - 1)) {
+							h->mask2 = hashmask(h->nbucket);
+							h->mask1 = h->mask2 >> 1;
+						} else {
+							h->mask1 = h->nbucket - 1;
+							h->mask2 = h->mask1 << 1 | 1;
+						}
+						h->nunique = hdata[5];
+						h->nheads = hdata[6];
 						h->type = ATOMtype(b->ttype);
 						switch (h->width) {
 						case BUN2:
@@ -538,12 +531,11 @@ BAThashsave(BAT *b, bool dosync)
 		 * mean time */
 		((size_t *) hp->base)[0] = (size_t) HASH_VERSION;
 		((size_t *) hp->base)[1] = (size_t) (h->heaplink.free / h->width);
-		((size_t *) hp->base)[2] = (size_t) h->level;
-		((size_t *) hp->base)[3] = (size_t) h->split;
-		((size_t *) hp->base)[4] = (size_t) h->width;
-		((size_t *) hp->base)[5] = (size_t) BATcount(b);
-		((size_t *) hp->base)[6] = (size_t) h->nunique;
-		((size_t *) hp->base)[7] = (size_t) h->nheads;
+		((size_t *) hp->base)[2] = (size_t) h->nbucket;
+		((size_t *) hp->base)[3] = (size_t) h->width;
+		((size_t *) hp->base)[4] = (size_t) BATcount(b);
+		((size_t *) hp->base)[5] = (size_t) h->nunique;
+		((size_t *) hp->base)[6] = (size_t) h->nheads;
 		if (!b->theap.dirty &&
 		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync) == GDK_SUCCEED &&
 		    HEAPsave(hp, hp->filename, NULL, dosync) == GDK_SUCCEED) {

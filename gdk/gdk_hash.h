@@ -23,8 +23,9 @@
 typedef struct Hash {
 	int type;		/* type of index entity */
 	uint8_t width;		/* width of hash entries */
-	uint8_t level;		/* mask is (1<<.level)-1 or (2<<.level)-1 */
-	BUN split;		/* ... depending on hash value and .split */
+	BUN mask1;		/* .mask1 < .nbucket <= .mask2 */
+	BUN mask2;
+	BUN nbucket;		/* ... depending on hash value and .nbucket */
 	BUN nil;		/* nil representation */
 	BUN nunique;		/* number of unique values */
 	BUN nheads;		/* number of chain heads */
@@ -33,13 +34,11 @@ typedef struct Hash {
 	Heap heaplink;		/* heap where the hash links are stored */
 	Heap heapbckt;		/* heap where the hash buckets are stored */
 } Hash;
-#define NHASHBUCKETS(h)		(((BUN) 1 << (h)->level) + (h)->split)
+#define NHASHBUCKETS(h)		((h)->nbucket)
 static inline BUN
 HASHbucket(const Hash *h, BUN v)
 {
-	return (v & (((BUN) 1 << h->level) - 1)) < h->split
-		? v & (((BUN) 2 << h->level) - 1)
-		: v & (((BUN) 1 << h->level) - 1);
+	return (v &= h->mask2) < h->nbucket ? v : v & h->mask1;
 }
 
 gdk_export gdk_return BAThash(BAT *b);
@@ -176,8 +175,8 @@ HASHgetlink(Hash *h, BUN i)
 #define hash_loc(H,V)	hash_any(H,V)
 #define hash_var(H,V)	hash_any(H,V)
 #define hash_any(H,V)	HASHbucket(H, ATOMhash((H)->type, (V)))
-#define hash_bte(H,V)	(assert((H)->level >= 8), (BUN) mix_bte(*(const unsigned char*) (V)))
-#define hash_sht(H,V)	(assert((H)->level >= 16), (BUN) mix_sht(*(const unsigned short*) (V)))
+#define hash_bte(H,V)	(assert((H)->nbucket >= 256), (BUN) mix_bte(*(const unsigned char*) (V)))
+#define hash_sht(H,V)	(assert((H)->nbucket >= 65536), (BUN) mix_sht(*(const unsigned short*) (V)))
 #define hash_int(H,V)	HASHbucket(H, (BUN) mix_int(*(const unsigned int *) (V)))
 /* XXX return size_t-sized value for 8-byte oid? */
 #define hash_lng(H,V)	HASHbucket(H, (BUN) mix_lng(*(const ulng *) (V)))
