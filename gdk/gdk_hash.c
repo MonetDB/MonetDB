@@ -818,7 +818,11 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		mask <<= 2;
 		/* if we fill up the slots fast (p <= maxslots * 1.2)
 		 * increase mask size a bit more quickly */
-		if (mask < maxmask && p <= maxslots * 1.2)
+		if (p == h->nunique) {
+			/* only unique values so far: grow really fast */
+			mask = maxmask;
+			cnt1 = 0;
+		} else if (mask < maxmask && p <= maxslots * 1.2)
 			mask <<= 2;
 		canditer_reset(&ci);
 		o = canditer_next(&ci);
