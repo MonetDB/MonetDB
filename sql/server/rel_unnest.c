@@ -1805,7 +1805,7 @@ rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				for(node *nn = gbe->h ; nn && !found ; nn = nn->next) {
 					sql_exp *e2 = nn->data;
 					/* the partition expression order should be the same as the one in the order by clause (if it's in there as well) */
-					if (!exp_equal(e1, e2)) {
+					if (exp_match(e1, e2)) {
 						if (is_ascending(e1))
 							set_ascending(e2);
 						else
