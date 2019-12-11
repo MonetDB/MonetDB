@@ -54,6 +54,7 @@ HASHmask(BUN cnt)
 {
 	BUN m = cnt;
 
+#if 0
 	/* find largest power of 2 smaller than or equal to cnt */
 	m |= m >> 1;
 	m |= m >> 2;
@@ -69,6 +70,9 @@ HASHmask(BUN cnt)
 	   double m */
 	if (m + m - cnt < 2 * (cnt - m))
 		m += m;
+#else
+	m = m * 8 / 7;
+#endif
 	if (m < BATTINY)
 		m = BATTINY;
 	return m;
@@ -327,7 +331,7 @@ HASHgrowbucket(BAT *b)
 				MT_msync(h->heapbckt.base, SIZEOF_SIZE_T);
 		}
 	}
-	while (h->nunique >= (nbucket = NHASHBUCKETS(h)) * 3 / 4) {
+	while (h->nunique >= (nbucket = NHASHBUCKETS(h)) * 7 / 8) {
 		BUN old = h->split;
 		BUN new = ((BUN) 1 << h->level) + h->split;
 		BATiter bi = bat_iterator(b);
@@ -721,7 +725,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		mask = HASHmask(cnt);
  	} else if (s == NULL && (prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL) {
 		assert(prop->v.vtype == TYPE_oid);
-		mask = prop->v.val.oval * 4 / 3;
+		mask = prop->v.val.oval * 8 / 7;
  	} else if (s == NULL && (prop = BATgetprop_nolock(b, GDK_HASH_BUCKETS)) != NULL) {
 		assert(prop->v.vtype == TYPE_oid);
 		mask = prop->v.val.oval;
