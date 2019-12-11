@@ -167,7 +167,7 @@ mat_pack(MalBlkPtr mb, matlist_t *ml, int m)
 		r = newInstruction(mb, matRef, packRef);
 		getArg(r,0) = getArg(ml->v[m].mi, 0);
 		for(l=ml->v[m].mi->retc; l< ml->v[m].mi->argc; l++)
-			r= pushArgument(mb,r, getArg(ml->v[m].mi,l));
+			r= addArgument(mb,r, getArg(ml->v[m].mi,l));
 	}
 	matlist_pack(ml, m);
 	pushInstruction(mb, r);
@@ -369,9 +369,9 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 		if (evar == 1 && e >= 0 && mat[e].type == mat_slc && is_projectdelta) {
 			InstrPtr q = newInstruction(mb, algebraRef, projectionRef);
 			getArg(q, 0) = getArg(r, 0);
-			q = pushArgument(mb, q, getArg(mat[e].mi, 0));
+			q = addArgument(mb, q, getArg(mat[e].mi, 0));
 			getArg(r, 0) = newTmpVariable(mb, tpe);
-			q = pushArgument(mb, q, getArg(r, 0));
+			q = addArgument(mb, q, getArg(r, 0));
 			pushInstruction(mb, r);
 			pushInstruction(mb, q);
 			pushed = 1;
@@ -614,7 +614,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 		       	ttpe = getArgType(mb, mat[n].mi, 0);
 			for (j=1; j<mat[n].mi->argc; j++) {
 				if (getBatType(ttpe) != TYPE_oid || overlap(ml, getArg(mat[m].mi, k), getArg(mat[n].mi, j), k, j, 1)){
-					s = pushArgument(mb,s,getArg(mat[n].mi,j));
+					s = addArgument(mb,s,getArg(mat[n].mi,j));
 				}
 			}
 			if (s->retc == 1 && s->argc == 2){ /* only one input, change into an assignment */
@@ -1013,14 +1013,14 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		getArg(q,0) = newTmpVariable(mb, tp);
 		if (isAvg) 
 			q = pushReturn(mb, q, newTmpVariable(mb, tp2));
-		q = pushArgument(mb,q,getArg(mat[m].mi,k));
+		q = addArgument(mb,q,getArg(mat[m].mi,k));
 		for (i = q->argc; i<p->argc; i++)
-			q = pushArgument(mb,q,getArg(p,i));
+			q = addArgument(mb,q,getArg(p,i));
 		pushInstruction(mb,q);
 		
-		r = pushArgument(mb,r,getArg(q,0));
+		r = addArgument(mb,r,getArg(q,0));
 		if (isAvg) 
-			u = pushArgument(mb,u,getArg(q,1));
+			u = addArgument(mb,u,getArg(q,1));
 	}
 	pushInstruction(mb,r);
 	if (isAvg)
@@ -1030,7 +1030,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	if (getModuleId(p) == aggrRef && !isAvg) {
 		s = newInstruction(mb, algebraRef, selectNotNilRef);
 		getArg(s,0) = newTmpVariable(mb, battp);
-		s = pushArgument(mb, s, getArg(r,0));
+		s = addArgument(mb, s, getArg(r,0));
 		pushInstruction(mb, s);
 		r = s;
 	}
@@ -1042,41 +1042,41 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		/* lng w = sum counts */
  		w = newInstruction(mb, aggrRef, sumRef);
 		getArg(w,0) = newTmpVariable(mb, tp2);
-		w = pushArgument(mb, w, getArg(u, 0));
+		w = addArgument(mb, w, getArg(u, 0));
 		pushInstruction(mb, w);
 
 		/*  y=count = ifthenelse(w=count==0,NULL,w=count)  */
 		cond = newInstruction(mb, calcRef, eqRef);
 		getArg(cond,0) = newTmpVariable(mb, TYPE_bit);
-		cond = pushArgument(mb, cond, getArg(w, 0));
+		cond = addArgument(mb, cond, getArg(w, 0));
 		cond = pushLng(mb, cond, 0);
 		pushInstruction(mb,cond);
 
 		y = newInstruction(mb, calcRef, ifthenelseRef);
 		getArg(y,0) = newTmpVariable(mb, tp2);
-		y = pushArgument(mb, y, getArg(cond, 0));
+		y = addArgument(mb, y, getArg(cond, 0));
 		y = pushNil(mb, y, tp2);
-		y = pushArgument(mb, y, getArg(w, 0));
+		y = addArgument(mb, y, getArg(w, 0));
 		pushInstruction(mb,y);
 
 		/* dbl v = double(count) */
 		v = newInstruction(mb,  batcalcRef, dblRef);
 		getArg(v,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
-		v = pushArgument(mb, v, getArg(u, 0));
+		v = addArgument(mb, v, getArg(u, 0));
 		pushInstruction(mb, v);
 
 		/* dbl x = v / y */
 		x = newInstruction(mb, batcalcRef, divRef);
 		getArg(x,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
-		x = pushArgument(mb, x, getArg(v, 0));
-		x = pushArgument(mb, x, getArg(y, 0));
+		x = addArgument(mb, x, getArg(v, 0));
+		x = addArgument(mb, x, getArg(y, 0));
 		pushInstruction(mb, x);
 
 		/* dbl w = avg * x */
 		w = newInstruction(mb, batcalcRef, mulRef);
 		getArg(w,0) = newTmpVariable(mb, battp);
-		w = pushArgument(mb, w, getArg(r, 0));
-		w = pushArgument(mb, w, getArg(x, 0));
+		w = addArgument(mb, w, getArg(r, 0));
+		w = addArgument(mb, w, getArg(x, 0));
 		pushInstruction(mb, w);
 
 		r = w;
@@ -1084,14 +1084,14 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		/* filter nils */
 		s = newInstruction(mb, algebraRef, selectNotNilRef);
 		getArg(s,0) = newTmpVariable(mb, battp);
-		s = pushArgument(mb, s, getArg(r,0));
+		s = addArgument(mb, s, getArg(r,0));
 		pushInstruction(mb, s);
 		r = s;
 	}
 
 	s = newInstruction(mb, getModuleId(p), aggr_phase2(getFunctionId(p)));
 	getArg(s,0) = getArg(p,0);
-	s = pushArgument(mb, s, getArg(r,0));
+	s = addArgument(mb, s, getArg(r,0));
 	pushInstruction(mb, s);
 }
 
@@ -1160,7 +1160,7 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 			return -1;
 
 		/* pack the result into a mat */
-		ai1 = pushArgument(mb,ai1,getArg(q,0));
+		ai1 = addArgument(mb,ai1,getArg(q,0));
 	}
 	pushInstruction(mb, ai1);
 
@@ -1208,7 +1208,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		getArg(q,0) = newTmpVariable(mb, tp);
 		if (isAvg) {
 			getArg(q,1) = newTmpVariable(mb, tp2);
-			q = pushArgument(mb, q, getArg(q,1)); /* push at end, create space */
+			q = addArgument(mb, q, getArg(q,1)); /* push at end, create space */
 			q->retc = 2;
 			getArg(q,q->argc-1) = getArg(q,q->argc-2);
 			getArg(q,q->argc-2) = getArg(q,q->argc-3);
@@ -1219,9 +1219,9 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		pushInstruction(mb,q);
 
 		/* pack the result into a mat */
-		ai1 = pushArgument(mb,ai1,getArg(q,0));
+		ai1 = addArgument(mb,ai1,getArg(q,0));
 		if (isAvg)
-			ai10 = pushArgument(mb,ai10,getArg(q,1));
+			ai10 = addArgument(mb,ai10,getArg(q,1));
 	}
 	pushInstruction(mb, ai1);
 	if (isAvg)
@@ -1234,9 +1234,9 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		/* lng s = sum counts */
  		s = newInstruction(mb, aggrRef, subsumRef);
 		getArg(s,0) = newTmpVariable(mb, tp2);
-		s = pushArgument(mb, s, getArg(ai10, 0));
-		s = pushArgument(mb, s, mat[g].mv);
-		s = pushArgument(mb, s, mat[e].mv);
+		s = addArgument(mb, s, getArg(ai10, 0));
+		s = addArgument(mb, s, mat[g].mv);
+		s = addArgument(mb, s, mat[e].mv);
 		s = pushBit(mb, s, 1); /* skip nils */
 		s = pushBit(mb, s, 1);
 		pushInstruction(mb,s);
@@ -1244,52 +1244,52 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		/*  w=count = ifthenelse(s=count==0,NULL,s=count)  */
 		cond = newInstruction(mb, batcalcRef, eqRef);
 		getArg(cond,0) = newTmpVariable(mb, newBatType(TYPE_bit));
-		cond = pushArgument(mb, cond, getArg(s, 0));
+		cond = addArgument(mb, cond, getArg(s, 0));
 		cond = pushLng(mb, cond, 0);
 		pushInstruction(mb,cond);
 
 		w = newInstruction(mb, batcalcRef, ifthenelseRef);
 		getArg(w,0) = newTmpVariable(mb, tp2);
-		w = pushArgument(mb, w, getArg(cond, 0));
+		w = addArgument(mb, w, getArg(cond, 0));
 		w = pushNil(mb, w, TYPE_lng);
-		w = pushArgument(mb, w, getArg(s, 0));
+		w = addArgument(mb, w, getArg(s, 0));
 		pushInstruction(mb,w);
 
 		/* fetchjoin with groups */
  		r = newInstruction(mb, algebraRef, projectionRef);
 		getArg(r, 0) = newTmpVariable(mb, tp2);
-		r = pushArgument(mb, r, mat[g].mv);
-		r = pushArgument(mb, r, getArg(w,0));
+		r = addArgument(mb, r, mat[g].mv);
+		r = addArgument(mb, r, getArg(w,0));
 		pushInstruction(mb,r);
 		s = r;
 
 		/* dbl v = double(count) */
 		v = newInstruction(mb, batcalcRef, dblRef);
 		getArg(v,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
-		v = pushArgument(mb, v, getArg(ai10, 0));
+		v = addArgument(mb, v, getArg(ai10, 0));
 		pushInstruction(mb, v);
 
 		/* dbl r = v / s */
 		r = newInstruction(mb, batcalcRef, divRef);
 		getArg(r,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
-		r = pushArgument(mb, r, getArg(v, 0));
-		r = pushArgument(mb, r, getArg(s, 0));
+		r = addArgument(mb, r, getArg(v, 0));
+		r = addArgument(mb, r, getArg(s, 0));
 		pushInstruction(mb,r);
 
 		/* dbl s = avg * r */
 		s = newInstruction(mb, batcalcRef, mulRef);
 		getArg(s,0) = newTmpVariable(mb, tp);
-		s = pushArgument(mb, s, getArg(ai1, 0));
-		s = pushArgument(mb, s, getArg(r, 0));
+		s = addArgument(mb, s, getArg(ai1, 0));
+		s = addArgument(mb, s, getArg(r, 0));
 		pushInstruction(mb,s);
 
 		ai1 = s;
 	}
  	ai2 = newInstruction(mb, aggrRef, aggr2);
 	getArg(ai2,0) = getArg(p,0);
-	ai2 = pushArgument(mb, ai2, getArg(ai1, 0));
-	ai2 = pushArgument(mb, ai2, mat[g].mv);
-	ai2 = pushArgument(mb, ai2, mat[e].mv);
+	ai2 = addArgument(mb, ai2, getArg(ai1, 0));
+	ai2 = addArgument(mb, ai2, mat[g].mv);
+	ai2 = addArgument(mb, ai2, mat[e].mv);
 	ai2 = pushBit(mb, ai2, 1); /* skip nils */
 	if (getFunctionId(p) != subminRef && getFunctionId(p) != submaxRef)
 		ai2 = pushBit(mb, ai2, 1);
@@ -1317,9 +1317,9 @@ mat_pack_group(MalBlkPtr mb, matlist_t *ml, int g)
 		getArg(grp,0) = mat[ogrp].mv;
 		grp = pushReturn(mb, grp, mat[oext].mv);
 		grp = pushReturn(mb, grp, newTmpVariable(mb, newBatType(TYPE_lng)));
-		grp = pushArgument(mb, grp, getArg(mat[attr].mi, 0));
+		grp = addArgument(mb, grp, getArg(mat[attr].mi, 0));
 		if (cur) 
-			grp = pushArgument(mb, grp, getArg(cur, 0));
+			grp = addArgument(mb, grp, getArg(cur, 0));
 		pushInstruction(mb, grp);
 		cur = grp;
 	}
@@ -1353,16 +1353,16 @@ mat_group_attr(MalBlkPtr mb, matlist_t *ml, int g, InstrPtr cext, int push )
 			InstrPtr q = newInstruction(mb, algebraRef, projectionRef);
 
 			getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
-			r = pushArgument(mb, r, getArg(cext,k));
-			r = pushArgument(mb, r, getArg(ml->v[ogrp].mi,k));
+			r = addArgument(mb, r, getArg(cext,k));
+			r = addArgument(mb, r, getArg(ml->v[ogrp].mi,k));
 			pushInstruction(mb,r);
 
 			getArg(q, 0) = newTmpVariable(mb, atp);
-			q = pushArgument(mb, q, getArg(r,0));
-			q = pushArgument(mb, q, getArg(ml->v[a].mi,k));
+			q = addArgument(mb, q, getArg(r,0));
+			q = addArgument(mb, q, getArg(ml->v[a].mi,k));
 			pushInstruction(mb,q);
 	
-			attr = pushArgument(mb, attr, getArg(q, 0)); 
+			attr = addArgument(mb, attr, getArg(q, 0)); 
 		}
 		if (push)
 			pushInstruction(mb,attr);
@@ -1421,19 +1421,19 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 			return -1;
 
 		/* add result to mats */
-		r0 = pushArgument(mb,r0,getArg(q,0));
-		r1 = pushArgument(mb,r1,getArg(q,1));
-		r2 = pushArgument(mb,r2,getArg(q,2));
+		r0 = addArgument(mb,r0,getArg(q,0));
+		r1 = addArgument(mb,r1,getArg(q,1));
+		r2 = addArgument(mb,r2,getArg(q,2));
 
 		r = newInstruction(mb, algebraRef, projectionRef);
 		getArg(r, 0) = newTmpVariable(mb, atp);
-		r = pushArgument(mb, r, getArg(q,1));
-		r = pushArgument(mb, r, getArg(ml->v[b].mi,i));
+		r = addArgument(mb, r, getArg(q,1));
+		r = addArgument(mb, r, getArg(ml->v[b].mi,i));
 		if(setPartnr(ml, getArg(ml->v[b].mi,i), getArg(r,0), i))
 			return -1;
 		pushInstruction(mb,r);
 
-		attr = pushArgument(mb, attr, getArg(r, 0)); 
+		attr = addArgument(mb, attr, getArg(r, 0)); 
 	}
 	pushInstruction(mb,r0);
 	pushInstruction(mb,r1);
@@ -1512,19 +1512,19 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 			return -1;
 
 		/* add result to mats */
-		r0 = pushArgument(mb,r0,getArg(q,0));
-		r1 = pushArgument(mb,r1,getArg(q,1));
-		r2 = pushArgument(mb,r2,getArg(q,2));
+		r0 = addArgument(mb,r0,getArg(q,0));
+		r1 = addArgument(mb,r1,getArg(q,1));
+		r2 = addArgument(mb,r2,getArg(q,2));
 
 		r = newInstruction(mb, algebraRef, projectionRef);
 		getArg(r, 0) = newTmpVariable(mb, atp);
-		r = pushArgument(mb, r, getArg(q,1));
-		r = pushArgument(mb, r, getArg(ml->v[b].mi,i));
+		r = addArgument(mb, r, getArg(q,1));
+		r = addArgument(mb, r, getArg(ml->v[b].mi,i));
 		if(setPartnr(ml, getArg(ml->v[b].mi,i), getArg(r,0), i))
 			return -1;
 		pushInstruction(mb,r);
 
-		attr = pushArgument(mb, attr, getArg(r, 0)); 
+		attr = addArgument(mb, attr, getArg(r, 0)); 
 	}
 	pushInstruction(mb,r0);
 	pushInstruction(mb,r1);
@@ -1570,7 +1570,7 @@ mat_topn_project(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n)
 		getArg(q,2) = getArg(mat[n].mi, k);
 		pushInstruction(mb, q);
 
-		pck = pushArgument(mb, pck, getArg(q, 0));
+		pck = addArgument(mb, pck, getArg(q, 0));
 	}
 	pushInstruction(mb, pck);
 
@@ -1602,11 +1602,11 @@ mat_pack_topn(MalBlkPtr mb, InstrPtr slc, mat_t *mat, int m)
 			InstrPtr q = newInstruction(mb, algebraRef, projectionRef);
 			getArg(q, 0) = newTmpVariable(mb, tpe);
 
-			q = pushArgument(mb, q, getArg(slc, k));
-			q = pushArgument(mb, q, getArg(mat[attr].mi, k));
+			q = addArgument(mb, q, getArg(slc, k));
+			q = addArgument(mb, q, getArg(mat[attr].mi, k));
 			pushInstruction(mb, q);
 
-			pck = pushArgument(mb, pck, getArg(q,0));
+			pck = addArgument(mb, pck, getArg(q,0));
 		}
 		pushInstruction(mb, pck);
 
@@ -1676,9 +1676,9 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 		}
 		pushInstruction(mb,q);
 		
-		pck = pushArgument(mb, pck, getArg(q,0));
+		pck = addArgument(mb, pck, getArg(q,0));
 		if (with_groups)
-			gpck = pushArgument(mb, gpck, getArg(q,1));
+			gpck = addArgument(mb, gpck, getArg(q,1));
 	}
 
 	piv = ml->top;
@@ -1700,7 +1700,7 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 			getArg(r,0) = newTmpVariable(mb, tpe);
 	
 			for(k=1; k< pck->argc; k++) 
-				r = pushArgument(mb, r, getArg(pck,k));
+				r = addArgument(mb, r, getArg(pck,k));
 			pushInstruction(mb,r);
 
 			if((q = copyInstruction(p)) == NULL)
@@ -1747,7 +1747,7 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 		getArg(q,0) = newTmpVariable(mb, tpe);
 		getArg(q,q->retc) = getArg(ml->v[m].mi,k);
 		pushInstruction(mb,q);
-		pck = pushArgument(mb, pck, getArg(q,0));
+		pck = addArgument(mb, pck, getArg(q,0));
 	}
 
 	piv = ml->top;
@@ -1765,8 +1765,8 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 
 	r = newInstruction(mb, algebraRef, projectionRef);
 	getArg(r,0) = getArg(p,0);
-	pushArgument(mb, r, getArg(q, 0));
-	pushArgument(mb, r, getArg(pck, 0));
+	addArgument(mb, r, getArg(q, 0));
+	addArgument(mb, r, getArg(pck, 0));
 	pushInstruction(mb, r);
 
 	matlist_pack(ml, piv);

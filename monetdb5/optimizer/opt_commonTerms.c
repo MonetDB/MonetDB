@@ -14,18 +14,32 @@
  * at the surface level.  It requires the constant optimizer to be ran first.
  */
 
-#define HASHinstruction(X)   getArg((X), (X)->argc-1)
+/* The key for finding common terms is that they share variables.
+ * Therefore we skip all constants, except for a constant only situation.
+ */
+
+static int 
+hashInstruction(MalBlkPtr mb, InstrPtr p)
+{
+	int i;
+	for ( i = p->argc - 1 ; i >= p->retc; i--)
+		if (! isVarConstant(mb,getArg(p,i)) ) 
+			return getArg(p,i);
+	if (isVarConstant(mb,getArg(p, p->retc)) ) 
+		return p->retc;
+	return -1;
+}
 
 str
 OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, barrier= 0;
+	int i, j, k, barrier= 0, bailout = 0;
 	InstrPtr p, q;
 	int actions = 0;
 	int limit, slimit;
 	int duplicate;
 	int *alias;
-	int *hash;
+	int *hash, h;
 	int *list;	
 
 	InstrPtr *old = NULL;
@@ -111,14 +125,19 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 		/* from here we have a candidate to look for a match */
 
+		h = hashInstruction(mb, p);
 		if( OPTdebug & OPTcommonterms){
-			fprintf(stderr,"#CANDIDATE[%d] look at list[%d]=>%d\n",
-				i, HASHinstruction(p), hash[HASHinstruction(p)]);
+			fprintf(stderr,"#CANDIDATE[%d] look at list[%d]=>%d\n", i, h, hash[h]);
 			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
 		}
+		if( h < 0){
+			pushInstruction(mb,p);
+			continue;
+		}
 
+		bailout = 1024 ;  // don't run over long collision list
 		/* Look into the hash structure for matching instructions */
-		for (j = hash[HASHinstruction(p)];  j > 0  ; j = list[j]) 
+		for (j = hash[h];  j > 0 && bailout-- > 0  ; j = list[j]) 
 			if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
 
 				if( OPTdebug & OPTcommonterms){
@@ -160,7 +179,8 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					p->argc = p->retc;
 					for (k = 0; k < q->retc; k++){
 						alias[getArg(p,k)] = getArg(q,k);
-						p= pushArgument(mb,p, getArg(q,k));
+						/* we know the arguments fit so the instruction can safely be patched */
+						p= addArgument(mb,p, getArg(q,k));
 					}
 
 					if( OPTdebug & OPTcommonterms){
@@ -186,13 +206,13 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 		if( OPTdebug & OPTcommonterms){
 			fprintf(stderr,"#UPDATE HASH[%d] look at  arg %d hash %d list %d\n",
-				i, getArg(p,p->argc-1), HASHinstruction(p), hash[HASHinstruction(p)]);
+				i, getArg(p,p->argc-1), h, hash[h]);
 			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
 		}
 
 		if ( !mayhaveSideEffects(cntxt, mb, p, TRUE) && p->argc != p->retc &&  isLinearFlow(p) && !isUnsafeFunction(p) && !isUpdateInstruction(p)){
-			list[i] = hash[HASHinstruction(p)];
-			hash[HASHinstruction(p)] = i;
+			list[i] = hash[h];
+			hash[h] = i;
 			pushInstruction(mb,p);
 		}
 	}

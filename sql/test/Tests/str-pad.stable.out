@@ -52,73 +52,73 @@ stdout of test 'str-pad` in directory 'sql/test` itself:
 # 22:57:30 >  
 
 #SELECT '#' || lpad('hi', 7) || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 9 # length
 [ "#     hi#"	]
 #SELECT '#' || lpad('hixyäbcdef', 7) || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 9 # length
 [ "#hixyäbc#"	]
 #SELECT '#' || lpad('hi', 7, 'xya') || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 9 # length
 [ "#xyaxyhi#"	]
 #SELECT '#' || lpad('hi', 7, 'xyä') || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 9 # length
 [ "#xyäxyhi#"	]
 #SELECT '#' || lpad('hi', 7, 'xy颖äbcdef') || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 10 # length
 [ "#xy颖äbhi#"	]
 #SELECT '#' || lpad('hi颖xyäbcdef', 7, 'lmn') || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 10 # length
 [ "#hi颖xyäb#"	]
 #SELECT '#' || rpad('hi', 7) || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 9 # length
 [ "#hi     #"	]
 #SELECT '#' || rpad('hixyäbcdef', 7) || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 9 # length
 [ "#hixyäbc#"	]
 #SELECT '#' || rpad('hi', 7, 'xya') || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 9 # length
 [ "#hixyaxy#"	]
 #SELECT '#' || rpad('hi', 7, 'xyä') || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 9 # length
 [ "#hixyäxy#"	]
 #SELECT '#' || rpad('hi', 7, 'xy颖äbcdef') || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 10 # length
 [ "#hixy颖äb#"	]
 #SELECT '#' || rpad('hi颖xyäbcdef', 7, 'lmn') || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 10 # length
@@ -127,28 +127,28 @@ stdout of test 'str-pad` in directory 'sql/test` itself:
 #INSERT INTO p VALUES ('hi', 10), ('hixyäbcdef', 7);
 [ 2	]
 #SELECT '#' || lpad(s, 5) || '#' FROM p;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 7 # length
 [ "#   hi#"	]
 [ "#hixyä#"	]
 #SELECT '#' || lpad(s, n) || '#' FROM p;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 12 # length
 [ "#        hi#"	]
 [ "#hixyäbc#"	]
 #SELECT '#' || rpad(s, 5) || '#' FROM p;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 7 # length
 [ "#hi   #"	]
 [ "#hixyä#"	]
 #SELECT '#' || rpad(s, n) || '#' FROM p;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 12 # length
@@ -158,7 +158,7 @@ stdout of test 'str-pad` in directory 'sql/test` itself:
 #INSERT INTO p2 VALUES ('hi', 6, 'xya'), ('hi', 7, 'xyä'), ('hi', 8, 'xy颖äbcdef'), ('hi颖xyäbcdef', 9, 'lmn');
 [ 4	]
 #SELECT '#' || lpad(s, 10, 'x') || '#' FROM p2;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 13 # length
@@ -167,7 +167,7 @@ stdout of test 'str-pad` in directory 'sql/test` itself:
 [ "#xxxxxxxxhi#"	]
 [ "#hi颖xyäbcde#"	]
 #SELECT '#' || lpad(s, n, 'x') || '#' FROM p2;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 12 # length
@@ -176,7 +176,7 @@ stdout of test 'str-pad` in directory 'sql/test` itself:
 [ "#xxxxxxhi#"	]
 [ "#hi颖xyäbcd#"	]
 #SELECT '#' || lpad(s, 10, s2) || '#' FROM p2;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 13 # length
@@ -185,7 +185,7 @@ stdout of test 'str-pad` in directory 'sql/test` itself:
 [ "#xy颖äbcdehi#"	]
 [ "#hi颖xyäbcde#"	]
 #SELECT '#' || lpad(s, n, s2) || '#' FROM p2;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 12 # length
@@ -194,7 +194,7 @@ stdout of test 'str-pad` in directory 'sql/test` itself:
 [ "#xy颖äbchi#"	]
 [ "#hi颖xyäbcd#"	]
 #SELECT '#' || rpad(s, 10, 'x') || '#' FROM p2;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 13 # length
@@ -203,7 +203,7 @@ stdout of test 'str-pad` in directory 'sql/test` itself:
 [ "#hixxxxxxxx#"	]
 [ "#hi颖xyäbcde#"	]
 #SELECT '#' || rpad(s, n, 'x') || '#' FROM p2;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 12 # length
@@ -212,7 +212,7 @@ stdout of test 'str-pad` in directory 'sql/test` itself:
 [ "#hixxxxxx#"	]
 [ "#hi颖xyäbcd#"	]
 #SELECT '#' || rpad(s, 10, s2) || '#' FROM p2;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 13 # length
@@ -221,7 +221,7 @@ stdout of test 'str-pad` in directory 'sql/test` itself:
 [ "#hixy颖äbcde#"	]
 [ "#hi颖xyäbcde#"	]
 #SELECT '#' || rpad(s, n, s2) || '#' FROM p2;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 12 # length
@@ -232,25 +232,25 @@ stdout of test 'str-pad` in directory 'sql/test` itself:
 #DROP TABLE p;
 #DROP TABLE p2;
 #SELECT '#' || rpad('hi颖xyäbcdef', 0) || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 2 # length
 [ "##"	]
 #SELECT '#' || lpad('hi颖xyäbcdef', 0) || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 2 # length
 [ "##"	]
 #SELECT '#' || rpad('hi颖xyäbcdef', 0, 'junk') || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 2 # length
 [ "##"	]
 #SELECT '#' || lpad('hi颖xyäbcdef', 0, 'junk') || '#';
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % varchar # type
 % 2 # length

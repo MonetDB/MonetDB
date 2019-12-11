@@ -37,7 +37,7 @@ stdout of test '64` in directory 'sql/benchmarks/tpcds` itself:
 #  (SELECT i_product_name product_name,
 #          i_item_sk item_sk,
 #          s_store_name store_name,
-% sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs2,	sys.cs2,	sys.cs2,	sys.cs2,	sys.cs2 # table_name
+% sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.cs1,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.cs2,	sys.cs2 # table_name
 % product_name,	store_name,	store_zip,	b_street_number,	b_street_name,	b_city,	b_zip,	c_street_number,	c_street_name,	c_city,	c_zip,	syear,	cnt,	s11,	s21,	s31,	s12,	s22,	s32,	syear,	cnt # name
 % char,	varchar,	char,	char,	varchar,	varchar,	char,	char,	varchar,	varchar,	char,	int,	bigint,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	int,	bigint # type
 % 50,	5,	10,	10,	12,	15,	10,	10,	17,	9,	10,	4,	1,	40,	40,	40,	40,	40,	40,	4,	1 # length

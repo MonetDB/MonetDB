@@ -60,55 +60,55 @@ stdout of test 'recursion` in directory 'sql/test/BugTracker-2013` itself:
 #	RETURN 1;
 #END;
 #SELECT fibonacci(0);
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % int # type
 % 1 # length
 [ 0	]
 #SELECT fibonacci(1);
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT fibonacci(2);
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT fibonacci(3);
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % int # type
 % 1 # length
 [ 2	]
 #SELECT fibonacci(4);
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % int # type
 % 1 # length
 [ 3	]
 #SELECT fibonacci(5);
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % int # type
 % 1 # length
 [ 5	]
 #SELECT fibonacci(6);
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % int # type
 % 1 # length
 [ 8	]
 #SELECT fibonacci(7);
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % int # type
 % 2 # length
 [ 13	]
 #SELECT fibonacci(8);
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % int # type
 % 2 # length

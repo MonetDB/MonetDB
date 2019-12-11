@@ -2850,6 +2850,47 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL,	1,	2	]
 [ 0,	2,	NULL	]
 [ 1,	NULL,	NULL	]
+#CREATE TABLE "sys"."test1" (
+#	"name"       VARCHAR(100),
+#	"points"     DOUBLE,
+#	"start_time" TIMESTAMP
+#);
+#COPY 8 RECORDS INTO "sys"."test1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"Hello"	20	"2017-12-01 00:00:00.000000"
+#"Hello"	40	"2017-12-01 01:00:00.000000"
+#"Hello"	60	"2017-12-01 00:00:00.000000"
+#"World"	10	"2017-12-01 00:00:00.000000"
+#"World"	50	"2017-12-01 01:00:00.000000"
+#"World"	90	"2017-12-01 00:00:00.000000"
+#"World"	11	"2017-12-02 01:02:00.000000"
+#"World"	15	"2017-12-02 02:02:00.000000"
+[ 8	]
+#SELECT CAST(t0.start_time AS DATE) AS start_time,
+#FIRST_VALUE(t0.points) OVER (PARTITION BY CAST(t0.start_time AS DATE) ORDER BY t0.start_time) AS first_point,
+#LAST_VALUE(t0.points) OVER (PARTITION BY CAST(t0.start_time AS DATE) ORDER BY t0.start_time) AS last_point
+#FROM test1 t0
+#WHERE (t0.start_time >= '2017/12/01 00:00:00' AND t0.start_time <= '2017/12/02 00:00:00');
+% sys.L2,	sys.L7,	sys.L13 # table_name
+% start_time,	first_point,	last_point # name
+% date,	double,	double # type
+% 10,	24,	24 # length
+[ 2017-12-01,	20,	90	]
+[ 2017-12-01,	20,	90	]
+[ 2017-12-01,	20,	90	]
+[ 2017-12-01,	20,	90	]
+[ 2017-12-01,	20,	50	]
+[ 2017-12-01,	20,	50	]
+#SELECT DISTINCT CAST(t0.start_time AS DATE) AS start_time,
+#FIRST_VALUE(t0.points) OVER (PARTITION BY CAST(t0.start_time AS DATE) ORDER BY t0.start_time) AS first_point,
+#LAST_VALUE(t0.points) OVER (PARTITION BY CAST(t0.start_time AS DATE) ORDER BY t0.start_time) AS last_point
+#FROM test1 t0
+#WHERE (t0.start_time >= '2017/12/01 00:00:00' AND t0.start_time <= '2017/12/02 00:00:00');
+% sys.L2,	sys.L7,	sys.L13 # table_name
+% start_time,	first_point,	last_point # name
+% date,	double,	double # type
+% 10,	24,	24 # length
+[ 2017-12-01,	20,	90	]
+[ 2017-12-01,	20,	50	]
 #rollback;
 #drop table analytics;
 

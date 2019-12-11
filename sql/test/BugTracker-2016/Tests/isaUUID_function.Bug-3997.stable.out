@@ -88,7 +88,7 @@ stdout of test 'isaUUID_function.Bug-3997` in directory 'sql/test/BugTracker-201
 [ "ad887b3d-08f7-c308-7285-354a1857cbc8",	ad887b3d-08f7-c308-7285-354a1857cbc8	]
 [ "c005d6fd-20c3-4d01-91a5-bbe676593530",	c005d6fd-20c3-4d01-91a5-bbe676593530	]
 #SELECT MIN(u) AS mn, MAX(u) AS mx, COUNT(u) AS cnt, COUNT(DISTINCT u) AS cnt_d FROM testUUID;
-% sys.%1,	sys.%2,	sys.%3,	sys.%4 # table_name
+% sys.,	sys.,	sys.,	sys. # table_name
 % mn,	mx,	cnt,	cnt_d # name
 % uuid,	uuid,	bigint,	bigint # type
 % 36,	36,	1,	1 # length

@@ -43,7 +43,7 @@ stdout of test '33` in directory 'sql/benchmarks/tpcds` itself:
 #   GROUP BY i_manufact_id),
 #     cs AS
 #  ( SELECT i_manufact_id,
-% .tmp1,	.%31 # table_name
+% .tmp1,	. # table_name
 % i_manufact_id,	total_sales # name
 % int,	decimal # type
 % 4,	20 # length

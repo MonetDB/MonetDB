@@ -47,20 +47,20 @@ stdout of test 'aggr_single_value` in directory 'sql/test/bugs` itself:
 % 24 # length
 [ 1	]
 #SELECT avg(cast (NULL as int));
-% .%2 # table_name
-% %2 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ NULL	]
 #SELECT cast( sum(1) as bigint);
-% .%2 # table_name
-% %2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT cast( sum(cast (NULL as int)) as bigint);
-% .%3 # table_name
-% %3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ NULL	]
@@ -71,8 +71,8 @@ stdout of test 'aggr_single_value` in directory 'sql/test/bugs` itself:
 % 1 # length
 [ 1	]
 #SELECT max(cast (NULL as int));
-% .%2 # table_name
-% %2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -83,8 +83,8 @@ stdout of test 'aggr_single_value` in directory 'sql/test/bugs` itself:
 % 1 # length
 [ 1	]
 #SELECT min(cast (NULL as int));
-% .%2 # table_name
-% %2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ NULL	]

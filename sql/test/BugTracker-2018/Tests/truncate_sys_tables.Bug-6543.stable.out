@@ -24,301 +24,301 @@ stdout of test 'truncate_sys_tables.Bug-6543` in directory 'sql/test/BugTracker-
 # 17:47:14 >  
 
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.user_role;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.user_role;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.types;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.types;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.triggers;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.triggers;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.table_types;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.table_types;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.systemfunctions;
-% sys.%2 # table_name
+% sys. # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.systemfunctions;
-% sys.%2 # table_name
+% sys. # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.sequences;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.sequences;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.schemas;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.schemas;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.privileges;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.privileges;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.privilege_codes;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.privilege_codes;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.objects;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.objects;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.keywords;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.keywords;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.keys;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.keys;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.key_types;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.key_types;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.index_types;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.index_types;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.idxs;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.idxs;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.functions;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.functions;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.function_types;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.function_types;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.function_languages;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.function_languages;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.dependency_types;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.dependency_types;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.dependencies;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.dependencies;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.comments;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.comments;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.auths;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.auths;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.args;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.args;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys._tables;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys._tables;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys._columns;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys._columns;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length

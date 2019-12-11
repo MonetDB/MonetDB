@@ -24,31 +24,31 @@ stdout of test 'round` in directory 'sql/test` itself:
 # 15:17:09 >  
 
 #SELECT ROUND(748.58, -1),ROUND(748.58, -2),ROUND(748.58, -3),ROUND(748.58, -4);
-% .%1,	.%2,	.%3,	.%4 # table_name
+% .,	.,	.,	. # table_name
 % %1,	%2,	%3,	%4 # name
 % decimal,	decimal,	decimal,	decimal # type
 % 7,	7,	7,	7 # length
 [ 750.00,	700.00,	1000.00,	0.00	]
 #SELECT ROUND(123.9994, 3),ROUND(123.9995, 3);
-% .%1,	.%2 # table_name
+% .,	. # table_name
 % %1,	%2 # name
 % decimal,	decimal # type
 % 9,	9 # length
 [ 123.9990,	124.0000	]
 #SELECT ROUND(123.4545, 2);
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % decimal # type
 % 9 # length
 [ 123.4500	]
 #SELECT ROUND(123.45, -2);
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % decimal # type
 % 7 # length
 [ 100.00	]
 #SELECT ROUND(150.75, 0);
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % decimal # type
 % 7 # length

@@ -44,7 +44,7 @@ stdout of test '60` in directory 'sql/benchmarks/tpcds` itself:
 #     cs AS
 #  (SELECT i_item_id,
 #          sum(cs_ext_sales_price) total_sales
-% .tmp1,	.%31 # table_name
+% .tmp1,	. # table_name
 % i_item_id,	total_sales # name
 % char,	decimal # type
 % 16,	40 # length

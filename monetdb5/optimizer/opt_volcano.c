@@ -58,8 +58,8 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			){
 				q= newInstruction(0,languageRef,blockRef);
 				setDestVar(q, newTmpVariable(mb,TYPE_any));
-				q =  pushArgument(mb,q,mvcvar);
-				q =  pushArgument(mb,q,getArg(p,0));
+				q =  addArgument(mb,q,mvcvar);
+				q =  addArgument(mb,q,getArg(p,0));
 				mvcvar=  getArg(q,0);
 				pushInstruction(mb,q);
 				count++;
@@ -70,8 +70,8 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			if( getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupdoneRef ){
 				q= newInstruction(0,languageRef,blockRef);
 				setDestVar(q, newTmpVariable(mb,TYPE_any));
-				q =  pushArgument(mb,q,mvcvar);
-				q =  pushArgument(mb,q,getArg(p,0));
+				q =  addArgument(mb,q,mvcvar);
+				q =  addArgument(mb,q,getArg(p,0));
 				mvcvar=  getArg(q,0);
 				pushInstruction(mb,q);
 				count++;

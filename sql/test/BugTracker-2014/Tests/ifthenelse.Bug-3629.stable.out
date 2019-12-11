@@ -34,25 +34,25 @@ stdout of test 'ifthenelse.Bug-3629` in directory 'sql/test/BugTracker-2014` its
 #  END IF;
 #END;
 #SELECT test(true), test(false), test(null);
-% .%1,	.%2,	.%3 # table_name
+% .,	.,	. # table_name
 % %1,	%2,	%3 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
 [ 1,	0,	NULL	]
 #select test(true);
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % int # type
 % 1 # length
 [ 1	]
 #select test(false);
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % int # type
 % 1 # length
 [ 0	]
 #select test(null);
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % int # type
 % 1 # length

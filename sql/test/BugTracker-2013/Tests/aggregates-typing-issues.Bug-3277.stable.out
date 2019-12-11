@@ -83,8 +83,8 @@ stdout of test 'aggregates-typing-issues.Bug-3277` in directory 'sql/test/BugTra
 % 1 # length
 [ 3	]
 #select cast (prod( prob1 ) as bigint) from mtcars2;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -101,7 +101,7 @@ stdout of test 'aggregates-typing-issues.Bug-3277` in directory 'sql/test/BugTra
 % 24 # length
 [ 3.656045222	]
 #select sign( prob1 ) from mtcars2;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % tinyint # type
 % 1 # length
@@ -131,8 +131,8 @@ stdout of test 'aggregates-typing-issues.Bug-3277` in directory 'sql/test/BugTra
 % 1 # length
 [ 3	]
 #select cast (prod( prob1 ) as bigint) from mtcars2;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -149,7 +149,7 @@ stdout of test 'aggregates-typing-issues.Bug-3277` in directory 'sql/test/BugTra
 % 24 # length
 [ 3.656045222	]
 #select sign( prob1 ) from mtcars2;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % tinyint # type
 % 1 # length
@@ -179,8 +179,8 @@ stdout of test 'aggregates-typing-issues.Bug-3277` in directory 'sql/test/BugTra
 % 1 # length
 [ 3	]
 #select cast (prod( prob1 ) as bigint) from mtcars2;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -197,7 +197,7 @@ stdout of test 'aggregates-typing-issues.Bug-3277` in directory 'sql/test/BugTra
 % 24 # length
 [ 3.656045222	]
 #select sign( prob1 ) from mtcars2;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % tinyint # type
 % 1 # length
@@ -227,8 +227,8 @@ stdout of test 'aggregates-typing-issues.Bug-3277` in directory 'sql/test/BugTra
 % 1 # length
 [ 3	]
 #select cast (prod( prob1 ) as bigint) from mtcars2;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -245,7 +245,7 @@ stdout of test 'aggregates-typing-issues.Bug-3277` in directory 'sql/test/BugTra
 % 24 # length
 [ 3.656045222	]
 #select sign( prob1 ) from mtcars2;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % tinyint # type
 % 1 # length
@@ -275,8 +275,8 @@ stdout of test 'aggregates-typing-issues.Bug-3277` in directory 'sql/test/BugTra
 % 1 # length
 [ 3	]
 #select cast (prod( prob1 ) as bigint) from mtcars2;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -293,7 +293,7 @@ stdout of test 'aggregates-typing-issues.Bug-3277` in directory 'sql/test/BugTra
 % 24 # length
 [ 3.656045222	]
 #select sign( prob1 ) from mtcars2;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % tinyint # type
 % 1 # length

@@ -40,7 +40,7 @@ stdout of test '97` in directory 'sql/benchmarks/tpcds` itself:
 #   GROUP BY cs_bill_customer_sk ,cs_item_sk)
 #SELECT sum(CASE
 #               WHEN ssci.customer_sk IS NOT NULL
-% .%5,	.%6,	.%7 # table_name
+% .,	.,	. # table_name
 % store_only,	catalog_only,	store_and_catalog # name
 % hugeint,	hugeint,	hugeint # type
 % 6,	6,	3 # length

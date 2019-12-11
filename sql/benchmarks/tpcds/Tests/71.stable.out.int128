@@ -41,7 +41,7 @@ stdout of test '71` in directory 'sql/benchmarks/tpcds` itself:
 #   UNION ALL SELECT cs_ext_sales_price AS ext_price,
 #                    cs_sold_date_sk AS sold_date_sk,
 #                    cs_item_sk AS sold_item_sk,
-% .item,	.item,	.time_dim,	.time_dim,	.%15 # table_name
+% .,	.,	.time_dim,	.time_dim,	. # table_name
 % brand_id,	brand,	t_hour,	t_minute,	ext_price # name
 % int,	char,	int,	int,	decimal # type
 % 8,	50,	2,	2,	40 # length

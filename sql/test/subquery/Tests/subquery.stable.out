@@ -257,8 +257,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ NULL	]
 [ NULL	]
 #SELECT CAST(SUM(i) AS BIGINT) FROM integers WHERE 1 IN (SELECT * FROM integers); -- 6
-% sys.%4 # table_name
-% %4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 6	]
@@ -278,14 +278,14 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ true	]
 [ true	]
 #SELECT (SELECT MAX(i) FROM integers) AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k; -- 3,6
-% .%6,	.%3 # table_name
-% k,	%3 # name
+% .%5,	.%2 # table_name
+% k,	%2 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 3,	6	]
 #SELECT i % 2 AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k HAVING SUM(i) > (SELECT MAX(i) FROM integers); -- 1,4
-% sys.%6,	sys.%2 # table_name
-% k,	%2 # name
+% sys.%5,	sys.%1 # table_name
+% k,	%1 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 1,	4	]
@@ -296,8 +296,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ 1	]
 #SELECT (SELECT CAST(SUM(i) AS BIGINT) FROM integers), (SELECT 42);
-% .%2,	.%3 # table_name
-% %2,	%3 # name
+% .%1,	.%2 # table_name
+% %1,	%2 # name
 % bigint,	tinyint # type
 % 1,	2 # length
 [ 6,	42	]
@@ -344,6 +344,35 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % boolean # type
 % 5 # length
 [ false	]
+#SELECT * FROM strings WHERE EXISTS(SELECT NULL);
+% sys.strings # table_name
+% v # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+[ "world"	]
+[ NULL	]
+#SELECT * FROM strings WHERE EXISTS(SELECT v FROM strings WHERE v='bla');
+% sys.strings # table_name
+% v # name
+% varchar # type
+% 0 # length
+#SELECT (SELECT v FROM strings WHERE v='hello') FROM strings;
+% .%2 # table_name
+% %2 # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+[ "hello"	]
+[ "hello"	]
+#SELECT (SELECT v FROM strings WHERE v='bla') FROM strings;
+% .%2 # table_name
+% %2 # name
+% varchar # type
+% 0 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #drop table strings;
 
 # 17:27:37 >  

@@ -364,13 +364,13 @@ typedef enum sql_ftype {
 	F_LOADER = 7
 } sql_ftype;
 
-#define IS_FUNC(f) (f->type == F_FUNC)
-#define IS_PROC(f) (f->type == F_PROC)
-#define IS_AGGR(f) (f->type == F_AGGR)
-#define IS_FILT(f) (f->type == F_FILT)
-#define IS_UNION(f) (f->type == F_UNION)
-#define IS_ANALYTIC(f) (f->type == F_ANALYTIC)
-#define IS_LOADER(f) (f->type == F_LOADER)
+#define IS_FUNC(f)     ((f)->type == F_FUNC)
+#define IS_PROC(f)     ((f)->type == F_PROC)
+#define IS_AGGR(f)     ((f)->type == F_AGGR)
+#define IS_FILT(f)     ((f)->type == F_FILT)
+#define IS_UNION(f)    ((f)->type == F_UNION)
+#define IS_ANALYTIC(f) ((f)->type == F_ANALYTIC)
+#define IS_LOADER(f)   ((f)->type == F_LOADER)
 
 typedef enum sql_flang {
 	FUNC_LANG_INT = 0, /* internal */
@@ -562,19 +562,19 @@ typedef enum table_types {
 (tt == tt_merge_table && (properties & PARTITION_LIST) == PARTITION_LIST)?"LIST PARTITION TABLE":                   \
 (tt == tt_merge_table && (properties & PARTITION_RANGE) == PARTITION_RANGE)?"RANGE PARTITION TABLE":"REPLICA TABLE"
 
-#define isTable(x)                        (x->type==tt_table)
-#define isView(x)                         (x->type==tt_view)
-#define isNonPartitionedTable(x)          (x->type==tt_merge_table && !x->properties)
-#define isRangePartitionTable(x)          (x->type==tt_merge_table && (x->properties & PARTITION_RANGE) == PARTITION_RANGE)
-#define isListPartitionTable(x)           (x->type==tt_merge_table && (x->properties & PARTITION_LIST) == PARTITION_LIST)
-#define isPartitionedByColumnTable(x)     (x->type==tt_merge_table && (x->properties & PARTITION_COLUMN) == PARTITION_COLUMN)
-#define isPartitionedByExpressionTable(x) (x->type==tt_merge_table && (x->properties & PARTITION_EXPRESSION) == PARTITION_EXPRESSION)
-#define isMergeTable(x)                   (x->type==tt_merge_table)
-#define isStream(x)                       (x->type==tt_stream)
-#define isRemote(x)                       (x->type==tt_remote)
-#define isReplicaTable(x)                 (x->type==tt_replica_table)
+#define isTable(x)                        ((x)->type==tt_table)
+#define isView(x)                         ((x)->type==tt_view)
+#define isNonPartitionedTable(x)          ((x)->type==tt_merge_table && !(x)->properties)
+#define isRangePartitionTable(x)          ((x)->type==tt_merge_table && ((x)->properties & PARTITION_RANGE) == PARTITION_RANGE)
+#define isListPartitionTable(x)           ((x)->type==tt_merge_table && ((x)->properties & PARTITION_LIST) == PARTITION_LIST)
+#define isPartitionedByColumnTable(x)     ((x)->type==tt_merge_table && ((x)->properties & PARTITION_COLUMN) == PARTITION_COLUMN)
+#define isPartitionedByExpressionTable(x) ((x)->type==tt_merge_table && ((x)->properties & PARTITION_EXPRESSION) == PARTITION_EXPRESSION)
+#define isMergeTable(x)                   ((x)->type==tt_merge_table)
+#define isStream(x)                       ((x)->type==tt_stream)
+#define isRemote(x)                       ((x)->type==tt_remote)
+#define isReplicaTable(x)                 ((x)->type==tt_replica_table)
 #define isKindOfTable(x)                  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
-#define isPartition(x)                    (isTable(x) && x->p)
+#define isPartition(x)                    (isTable(x) && (x)->p)
 
 #define TABLE_WRITABLE	0
 #define TABLE_READONLY	1

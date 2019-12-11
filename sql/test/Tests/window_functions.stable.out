@@ -122,7 +122,7 @@ stdout of test 'window_functions` in directory 'sql/test` itself:
 #       SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
 #                           ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS sum_over_1or2or3_rows
 #FROM   employee;
-% sys.employee,	sys.employee,	sys.employee,	sys.%12,	sys.%13 # table_name
+% sys.employee,	sys.employee,	sys.employee,	sys.,	sys. # table_name
 % id,	dep_name,	salary,	growing_sum,	sum_over_1or2or3_rows # name
 % decimal,	varchar,	decimal,	decimal,	decimal # type
 % 20,	10,	9,	9,	9 # length
@@ -141,7 +141,7 @@ stdout of test 'window_functions` in directory 'sql/test` itself:
 #       SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
 #                           GROUPS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS sum_over_groups
 #FROM   employee;
-% sys.employee,	sys.employee,	sys.employee,	sys.%7 # table_name
+% sys.employee,	sys.employee,	sys.employee,	sys. # table_name
 % id,	dep_name,	salary,	sum_over_groups # name
 % decimal,	varchar,	decimal,	decimal # type
 % 20,	10,	9,	9 # length
@@ -160,7 +160,7 @@ stdout of test 'window_functions` in directory 'sql/test` itself:
 #       SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
 #                           RANGE BETWEEN 100.0 PRECEDING AND 50.0 FOLLOWING) AS sum_over_range
 #FROM   employee;
-% sys.employee,	sys.employee,	sys.employee,	sys.%7 # table_name
+% sys.employee,	sys.employee,	sys.employee,	sys. # table_name
 % id,	dep_name,	salary,	sum_over_range # name
 % decimal,	varchar,	decimal,	decimal # type
 % 20,	10,	9,	9 # length
@@ -204,7 +204,7 @@ stdout of test 'window_functions` in directory 'sql/test` itself:
 #SELECT duration_seconds,
 #       cast(SUM(duration_seconds) OVER (ORDER BY start_time) as bigint) AS running_total
 #  FROM tutorial.dc_bikeshare_q1_2012;
-% tutorial.dc_bikeshare_q1_2012,	tutorial.%5 # table_name
+% tutorial.dc_bikeshare_q1_2012,	tutorial. # table_name
 % duration_seconds,	running_total # name
 % int,	int # type
 % 3,	3 # length
@@ -221,7 +221,7 @@ stdout of test 'window_functions` in directory 'sql/test` itself:
 #         AS running_total
 #  FROM tutorial.dc_bikeshare_q1_2012
 # WHERE start_time < '2012-01-08';
-% tutorial.dc_bikeshare_q1_2012,	tutorial.dc_bikeshare_q1_2012,	tutorial.%6 # table_name
+% tutorial.dc_bikeshare_q1_2012,	tutorial.dc_bikeshare_q1_2012,	tutorial. # table_name
 % start_terminal,	duration_seconds,	running_total # name
 % varchar,	int,	int # type
 % 6,	3,	3 # length
@@ -237,7 +237,7 @@ stdout of test 'window_functions` in directory 'sql/test` itself:
 #         (PARTITION BY start_terminal) as bigint) AS start_terminal_total
 #  FROM tutorial.dc_bikeshare_q1_2012
 # WHERE start_time < '2012-01-08';
-% tutorial.dc_bikeshare_q1_2012,	tutorial.dc_bikeshare_q1_2012,	tutorial.%6 # table_name
+% tutorial.dc_bikeshare_q1_2012,	tutorial.dc_bikeshare_q1_2012,	tutorial. # table_name
 % start_terminal,	duration_seconds,	start_terminal_total # name
 % varchar,	int,	int # type
 % 6,	3,	3 # length
@@ -257,7 +257,7 @@ stdout of test 'window_functions` in directory 'sql/test` itself:
 #         (PARTITION BY start_terminal) AS running_avg
 #  FROM tutorial.dc_bikeshare_q1_2012
 # WHERE start_time < '2012-01-08';
-% tutorial.dc_bikeshare_q1_2012,	tutorial.dc_bikeshare_q1_2012,	tutorial.%12,	tutorial.%13,	tutorial.%14 # table_name
+% tutorial.dc_bikeshare_q1_2012,	tutorial.dc_bikeshare_q1_2012,	tutorial.,	tutorial.,	tutorial. # table_name
 % start_terminal,	duration_seconds,	running_total,	running_count,	running_avg # name
 % varchar,	int,	int,	bigint,	double # type
 % 6,	3,	3,	1,	24 # length
@@ -280,7 +280,7 @@ stdout of test 'window_functions` in directory 'sql/test` itself:
 #         AS running_avg
 #  FROM tutorial.dc_bikeshare_q1_2012
 # WHERE start_time < '2012-01-08';
-% tutorial.dc_bikeshare_q1_2012,	tutorial.dc_bikeshare_q1_2012,	tutorial.%12,	tutorial.%13,	tutorial.%14 # table_name
+% tutorial.dc_bikeshare_q1_2012,	tutorial.dc_bikeshare_q1_2012,	tutorial.,	tutorial.,	tutorial. # table_name
 % start_terminal,	duration_seconds,	running_total,	running_count,	running_avg # name
 % varchar,	int,	int,	bigint,	double # type
 % 6,	3,	3,	1,	24 # length

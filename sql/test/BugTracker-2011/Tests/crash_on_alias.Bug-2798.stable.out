@@ -45,7 +45,7 @@ project (
 #set optimizer = 'sequential_pipe';
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
-% .%6,	.%1,	.%10 # table_name
+% .,	.%1,	. # table_name
 % d,	%1,	f # name
 % int,  bigint, bigint # type
 % 2,    2,      2 # length
@@ -76,7 +76,7 @@ project (
 #set optimizer = 'sequential_pipe';
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
-% .%6,	.%7,	.%10 # table_name
+% .,	.,	. # table_name
 % d,    e,      f # name
 % int,  bigint, bigint # type
 % 2,    2,      2 # length

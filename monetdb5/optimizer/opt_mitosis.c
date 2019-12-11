@@ -20,7 +20,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BUN r = 0, rowcnt = 0;    /* table should be sizeable to consider parallel execution*/
 	InstrPtr q, *old, target = 0;
 	size_t argsize = 6 * sizeof(lng), m = 0;
-	/*     per op:   6 = (2+1)*2   <=  2 args + 1 res, each with head & tail */
+	/*     per op estimate:   4 args + 2 res*/
 	int threads = GDKnr_threads ? GDKnr_threads : 1;
 	int activeClients;
 	char buf[256];
@@ -97,7 +97,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		 * single subplan should ideally fit together.
 		 */
 		r = getRowCnt(mb, getArg(p, 0));
-		if (r >= rowcnt) {
+		if (r > rowcnt) {
 			/* the rowsize depends on the column types, assume void-headed */
 			row_size = ATOMsize(getBatType(getArgType(mb,p,0)));
 			rowcnt = r;
@@ -222,14 +222,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		if (p->retc == 2)
 			upd = 1;
-		if( mt == -1)
-			mt = getMitosisPartition(p);
 		if (mt < 0 && (strcmp(schema, getVarConstant(mb, getArg(p, 2 + upd)).val.sval) ||
 			       strcmp(table, getVarConstant(mb, getArg(p, 3 + upd)).val.sval))) {
-			pushInstruction(mb, p);
-			continue;
-		}
-		if (mt >= 0 && getMitosisPartition(p) != mt) {
 			pushInstruction(mb, p);
 			continue;
 		}
@@ -267,9 +261,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				setVarUDFtype(mb, rv);
 			}
 			pushInstruction(mb, q);
-			matq = pushArgument(mb, matq, qv);
+			matq = addArgument(mb, matq, qv);
 			if (upd)
-				matr = pushArgument(mb, matr, rv);
+				matr = addArgument(mb, matr, rv);
 		}
 		pushInstruction(mb, matq);
 		if (upd)
@@ -289,7 +283,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
     /* keep all actions taken as a post block comment */
 bailout:
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","mitosis", usec);
+    snprintf(buf,256,"%-20s actions=%d time=" LLFMT " usec","mitosis", pieces, usec);
     newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 
