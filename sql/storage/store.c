@@ -1155,7 +1155,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	type_id = find_sql_column(types, "id");
 	rs = table_funcs.rids_select(tr, type_schema, &s->base.id, &s->base.id, type_id, &tmpid, NULL, NULL);
 	for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) 
-	    	cs_add(&s->types, load_type(tr, s, rid), 0);
+		cs_add(&s->types, load_type(tr, s, rid), 0);
 	table_funcs.rids_destroy(rs);
 
 	/* second tables */
@@ -1703,7 +1703,6 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	return t;
 }
 
-
 static sql_schema *
 bootstrap_create_schema(sql_trans *tr, char *name, sqlid auth_id, int owner)
 {
@@ -2201,7 +2200,6 @@ store_exit(void)
 	store_initialized=0;
 }
 
-
 /* call locked! */
 int
 store_apply_deltas(bool not_locked)
@@ -2339,7 +2337,6 @@ idle_manager(void)
 		MT_thread_setworking("sleeping");
 	}
 }
-
 
 void
 store_lock(void)
@@ -3032,7 +3029,6 @@ sql_trans_copy_part( sql_trans *tr, sql_table *t, sql_part *pt)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *sysic = find_sql_table(syss, "objects");
-	node *n;
 	sql_part *npt = SA_ZNEW(tr->sa, sql_part);
 
 	base_init(tr->sa, &npt->base, pt->base.id, TR_NEW, npt->base.name);
@@ -3041,7 +3037,7 @@ sql_trans_copy_part( sql_trans *tr, sql_table *t, sql_part *pt)
 	npt->with_nills = pt->with_nills;
 	npt->t = t;
 
-	assert(!npt->t || isMergeTable(npt->t) || isReplicaTable(npt->t));
+	assert(isMergeTable(npt->t) || isReplicaTable(npt->t));
 	if (isRangePartitionTable(t)) {
 		npt->part.range.minvalue = sa_alloc(tr->sa, pt->part.range.minlength);
 		npt->part.range.maxvalue = sa_alloc(tr->sa, pt->part.range.maxlength);
@@ -3051,7 +3047,7 @@ sql_trans_copy_part( sql_trans *tr, sql_table *t, sql_part *pt)
 		npt->part.range.maxlength = pt->part.range.maxlength;
 	} else if (isListPartitionTable(t)) {
 		npt->part.values = list_new(tr->sa, (fdestroy) NULL);
-		for (n = pt->part.values->h ; n ; n = n->next) {
+		for (node *n = pt->part.values->h ; n ; n = n->next) {
 			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(tr->sa, sql_part_value);
 			nextv->tpe = prev->tpe;
 			nextv->value = sa_alloc(tr->sa, prev->length);
@@ -3077,7 +3073,6 @@ trigger_dup(sql_trans *tr, int flags, sql_trigger * i, sql_table *t)
 {
 	sql_allocator *sa = (newFlagSet(flags))?tr->parent->sa:tr->sa;
 	sql_trigger *nt = SA_ZNEW(sa, sql_trigger);
-	node *n;
 
 	base_init(sa, &nt->base, i->base.id, tr_flag(&i->base, flags), i->base.name);
 
@@ -3095,7 +3090,7 @@ trigger_dup(sql_trans *tr, int flags, sql_trigger * i, sql_table *t)
 		nt->condition = sa_strdup(sa, i->condition);
 	nt->statement = sa_strdup(sa, i->statement);
 
-	for (n = i->columns->h; n; n = n->next) {
+	for (node *n = i->columns->h; n; n = n->next) {
 		sql_kc *okc = n->data;
 
 		list_append(nt->columns, kc_dup(tr, flags, okc, t));
@@ -5915,6 +5910,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	sql_table *sysobj = find_sql_table(syss, "objects");
 	node *n = cs_find_name(&mt->members, pt->base.name);
 	oid obj_oid = table_funcs.column_find_row(tr, find_sql_column(sysobj, "nr"), &pt->base.id, NULL), rid;
+	sql_part *p = (sql_part*) n->data;
 
 	if (is_oid_nil(obj_oid))
 		return NULL;
@@ -5936,7 +5932,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	/* merge table depends on part table */
 	sql_trans_drop_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 
-	cs_del(&mt->members, n, pt->base.flags);
+	cs_del(&mt->members, n, p->base.flags);
 	pt->p = NULL;
 	table_funcs.table_delete(tr, sysobj, obj_oid);
 
