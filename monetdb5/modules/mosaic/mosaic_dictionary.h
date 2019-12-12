@@ -66,7 +66,7 @@ void insert_into_dict_##TPE(TPE* dict, BUN* dict_count, BUN key, TPE val)\
 \
 	if (IS_NIL(TPE, w)) {\
 		assert(key == 0);\
-		dbl v = dict[key];\
+		TPE v = dict[key];\
 		dict[key] = w;\
 \
 		if (*dict_count > 0) {\
