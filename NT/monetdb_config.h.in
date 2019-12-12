@@ -656,7 +656,7 @@
 #define PACKAGE_URL "https://www.monetdb.org/"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "11.35.4"
+#define PACKAGE_VERSION "11.35.6"
 
 /* Path separator */
 #define PATH_SEP ';'
