@@ -544,18 +544,28 @@ GDKtracer_show_info(void)
             max_width = comp_width;
     }
 
-    GDK_TRACER_OSTREAM("# LOG level per component\n");
+    GDK_TRACER_OSTREAM("\n###############################################################\n");
+    GDK_TRACER_OSTREAM("# Available logging levels\n");
+    for(i = 0; i < LOG_LEVELS_COUNT; i++)
+    {
+        GDK_TRACER_OSTREAM("# (%d) %s\n", i, LEVEL_STR[i]);
+    }
+
+    GDK_TRACER_OSTREAM("\n# You can use one of the following layers to massively set the LOG level\n");
+    for(i = 0; i < LAYERS_COUNT; i++)
+    {
+        GDK_TRACER_OSTREAM("# (%d) %s\n", i, LAYER_STR[i]);
+    }
+
+    GDK_TRACER_OSTREAM("\n# LOG level per component\n");
     for(i = 0; i < COMPONENTS_COUNT; i++)
     {
         space = (int) (max_width - strlen(COMPONENT_STR[i]) + 30);
-        GDK_TRACER_OSTREAM("# %s %*s\n", COMPONENT_STR[i], space, LEVEL_STR[LVL_PER_COMPONENT[i]]);
+        if(i < 10)
+            GDK_TRACER_OSTREAM("# (%d)  %s %*s\n", i, COMPONENT_STR[i], space, LEVEL_STR[LVL_PER_COMPONENT[i]]);
+        else
+            GDK_TRACER_OSTREAM("# (%d) %s %*s\n", i, COMPONENT_STR[i], space, LEVEL_STR[LVL_PER_COMPONENT[i]]);
     }
-
-    GDK_TRACER_OSTREAM("# You can use one of the following layers to massively set the LOG level\n");
-    for(i = 0; i < LAYERS_COUNT; i++)
-    {
-        GDK_TRACER_OSTREAM("# %s\n", LAYER_STR[i]);
-    }
-
+    GDK_TRACER_OSTREAM("###############################################################\n");
     return GDK_SUCCEED;
 }
