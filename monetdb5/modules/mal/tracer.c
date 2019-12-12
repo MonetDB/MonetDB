@@ -31,10 +31,10 @@ TRACERflush_buffer(void)
 
 
 str
-TRACERset_component_level(void *ret, int *comp, int *lvl)
+TRACERset_component_level(void *ret, int *comp_id, int *lvl_id)
 {
     (void) ret;
-    GDK_result = GDKtracer_set_component_level(comp, lvl);
+    GDK_result = GDKtracer_set_component_level(comp_id, lvl_id);
     if(GDK_result == GDK_FAIL)
         throw(TRACER, __FUNCTION__, ILLEGAL_ARGUMENT); 
 
@@ -43,9 +43,10 @@ TRACERset_component_level(void *ret, int *comp, int *lvl)
 
 
 str
-TRACERreset_component_level(int *comp)
+TRACERreset_component_level(void *ret, int *comp_id)
 {
-    GDK_result = GDKtracer_reset_component_level(comp);
+    (void) ret;
+    GDK_result = GDKtracer_reset_component_level(comp_id);
     if(GDK_result == GDK_FAIL)
         throw(TRACER, __FUNCTION__, _OPERATION_FAILED); 
 
@@ -54,10 +55,10 @@ TRACERreset_component_level(int *comp)
 
 
 str
-TRACERset_layer_level(void *ret, int *layer, int *lvl)
+TRACERset_layer_level(void *ret, int *layer_id, int *lvl_id)
 {
     (void) ret;
-    GDK_result = GDKtracer_set_layer_level(layer, lvl);
+    GDK_result = GDKtracer_set_layer_level(layer_id, lvl_id);
     if(GDK_result == GDK_FAIL)
         throw(TRACER, __FUNCTION__, ILLEGAL_ARGUMENT); 
 
@@ -66,9 +67,10 @@ TRACERset_layer_level(void *ret, int *layer, int *lvl)
 
 
 str
-TRACERreset_layer_level(int *layer)
+TRACERreset_layer_level(void *ret, int *layer_id)
 {
-    GDK_result = GDKtracer_reset_layer_level(layer);
+    (void) ret;
+    GDK_result = GDKtracer_reset_layer_level(layer_id);
     if(GDK_result == GDK_FAIL)
         throw(TRACER, __FUNCTION__, _OPERATION_FAILED); 
 
@@ -77,10 +79,10 @@ TRACERreset_layer_level(int *layer)
 
 
 str
-TRACERset_flush_level(void *ret, int *lvl)
+TRACERset_flush_level(void *ret, int *lvl_id)
 {
     (void) ret;
-    GDK_result = GDKtracer_set_flush_level(lvl);
+    GDK_result = GDKtracer_set_flush_level(lvl_id);
     if(GDK_result == GDK_FAIL)
         throw(TRACER, __FUNCTION__, ILLEGAL_ARGUMENT); 
 
@@ -100,10 +102,10 @@ TRACERreset_flush_level(void)
 
 
 str
-TRACERset_adapter(void *ret, int *adapter)
+TRACERset_adapter(void *ret, int *adapter_id)
 {
     (void) ret;
-    GDK_result = GDKtracer_set_adapter(adapter);
+    GDK_result = GDKtracer_set_adapter(adapter_id);
     if(GDK_result == GDK_FAIL)
         throw(TRACER, __FUNCTION__, ILLEGAL_ARGUMENT); 
 

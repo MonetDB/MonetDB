@@ -11,23 +11,23 @@ CREATE PROCEDURE logging.flush()
         EXTERNAL NAME logging.flush;
 
 -- Set the log level for a specific component
-CREATE PROCEDURE logging.setcomplevel(comp INT, lvl INT)
+CREATE PROCEDURE logging.setcomplevel(comp_id INT, lvl_id INT)
         EXTERNAL NAME logging.setcomplevel;
 
 -- Reset the log level for a specific component
-CREATE PROCEDURE logging.resetcomplevel(comp INT)
+CREATE PROCEDURE logging.resetcomplevel(comp_id INT)
         EXTERNAL NAME logging.resetcomplevel;
 
 -- Set the log level for a specific layer
-CREATE PROCEDURE logging.setlayerlevel(layer INT, lvl INT)
+CREATE PROCEDURE logging.setlayerlevel(layer_id INT, lvl_id INT)
         EXTERNAL NAME logging.setlayerlevel;
 
 -- Reset the log level for a specific layer
-CREATE PROCEDURE logging.resetlayerlevel(layer INT)
+CREATE PROCEDURE logging.resetlayerlevel(layer_id INT)
         EXTERNAL NAME logging.resetlayerlevel;
 
 -- Set the flush level
-CREATE PROCEDURE logging.setflushlevel(lvl INT)
+CREATE PROCEDURE logging.setflushlevel(lvl_id INT)
        EXTERNAL NAME logging.setflushlevel;
 
 -- Reset the flush level
@@ -35,7 +35,7 @@ CREATE PROCEDURE logging.resetflushlevel()
        EXTERNAL NAME logging.resetflushlevel;
 
 -- Set the adapter
-CREATE PROCEDURE logging.setadapter(adapter INT)
+CREATE PROCEDURE logging.setadapter(adapter_id INT)
        EXTERNAL NAME logging.setadapter;
 
 -- Reset the adapter
