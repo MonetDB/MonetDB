@@ -44,7 +44,6 @@ lib_mal = {
 		mal_stack.c mal_stack.h \
 		mal_type.c mal_type.h \
 		mal_utils.c mal_utils.h \
-		mal_wlc.c mal_wlc.h \
 		mal_private.h
 }
 
