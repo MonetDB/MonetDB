@@ -1390,32 +1390,38 @@ SQLCacheRemove(Client c, str nme)
 str
 SQLcallback(Client c, str msg)
 {
-	char *newerr;
+	char *newerr = NULL;
 
-	if (msg &&
-	    (newerr = GDKmalloc(strlen(msg) + 1)) != NULL) {
-		/* remove exception decoration */
-		char *m, *n, *p, *s;
-		size_t l;
+	if (msg) {
+		if (!(newerr = GDKmalloc(strlen(msg) + 1))) {
+			msg = createException(SQL, "SQLcallback", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		} else {
+			/* remove exception decoration */
+			char *m, *n, *p, *s;
+			size_t l;
 
-		m = msg;
-		p = newerr;
-		while (m && *m) {
-			n = strchr(m, '\n');
-			s = getExceptionMessageAndState(m);
-			if (n) {
-				n++; /* include newline */
-				l = n - s;
-			} else {
-				l = strlen(s);
+			m = msg;
+			p = newerr;
+			while (m && *m) {
+				n = strchr(m, '\n');
+				s = getExceptionMessageAndState(m);
+				if (n) {
+					n++; /* include newline */
+					l = n - s;
+				} else {
+					l = strlen(s);
+				}
+				memcpy(p, s, l);
+				p += l;
+				m = n;
 			}
-			memcpy(p, s, l);
-			p += l;
-			m = n;
+			*p = 0;
+			freeException(msg);
+			if (!(msg = GDKrealloc(newerr, strlen(newerr) + 1))) {
+				GDKfree(newerr);
+				msg = createException(SQL, "SQLcallback", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 		}
-		*p = 0;
-		freeException(msg);
-		msg = GDKrealloc(newerr, strlen(newerr) + 1);
 	}
 	return MALcallback(c, msg);
 }
