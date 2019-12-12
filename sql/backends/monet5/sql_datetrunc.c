@@ -77,7 +77,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 	date_trunc_time_loop("milliseconds", 1000);
 	date_trunc_time_loop("second", 1000000);
 	date_trunc_time_loop("minute", 1000000 * 60);
-	date_trunc_time_loop("hour", 1000000 * 60 * 24);
+	date_trunc_time_loop("hour", LL_CONSTANT(1000000) * 60 * 60);
 
 	if  ( strcasecmp(*scale, "day") == 0){
 		for( ; lo < hi; lo++)
@@ -202,7 +202,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 	date_trunc_single_time("milliseconds", 1000);
 	date_trunc_single_time("second", 1000000);
 	date_trunc_single_time("minute", 1000000 * 60);
-	date_trunc_single_time("hour", 1000000 * 60 * 24);
+	date_trunc_single_time("hour", LL_CONSTANT(1000000) * 60 * 60);
 
 	if  ( strcasecmp(*scale, "day") == 0){
 		days = timestamp_date(*bt);
