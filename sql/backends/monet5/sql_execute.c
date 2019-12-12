@@ -108,7 +108,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= pushArgument(mb,q,k);
 	q= pushStr(mb,q,".trace");
 
-	resultset= pushArgument(mb,resultset, getArg(q,0));
+	resultset= addArgument(mb,resultset, getArg(q,0));
 
 	/* build colum defs */
 	cols = newStmt(mb,batRef, newRef);
@@ -124,7 +124,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= pushArgument(mb,q, k);
 	q= pushStr(mb,q,"statement");
 
-	resultset= pushArgument(mb,resultset, getArg(q,0));
+	resultset= addArgument(mb,resultset, getArg(q,0));
 
 	/* build type defs */
 	types = newStmt(mb,batRef, newRef);
@@ -140,7 +140,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= pushArgument(mb,q, k);
 	q= pushStr(mb,q,"clob");
 
-	resultset= pushArgument(mb,resultset, getArg(q,0));
+	resultset= addArgument(mb,resultset, getArg(q,0));
 
 	/* build scale defs */
 	clen = newStmt(mb,batRef, newRef);
@@ -156,7 +156,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= pushArgument(mb,q, k);
 	q= pushInt(mb,q,0);
 
-	resultset= pushArgument(mb,resultset, getArg(q,0));
+	resultset= addArgument(mb,resultset, getArg(q,0));
 
 	/* build scale defs */
 	scale = newStmt(mb,batRef, newRef);
@@ -172,18 +172,18 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	q= pushArgument(mb, q, k);
 	q= pushInt(mb,q,0);
 
-	resultset= pushArgument(mb,resultset, getArg(q,0));
+	resultset= addArgument(mb,resultset, getArg(q,0));
 
 	/* add the ticks column */
 
 	q = newStmt(mb, profilerRef, "getTrace");
 	q = pushStr(mb, q, putName("usec"));
-	resultset= pushArgument(mb,resultset, getArg(q,0));
+	resultset= addArgument(mb,resultset, getArg(q,0));
 
 	/* add the stmt column */
 	q = newStmt(mb, profilerRef, "getTrace");
 	q = pushStr(mb, q, putName("stmt"));
-	resultset= pushArgument(mb,resultset, getArg(q,0));
+	resultset= addArgument(mb,resultset, getArg(q,0));
 
 	pushInstruction(mb,resultset);
 	pushEndInstruction(mb);

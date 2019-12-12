@@ -318,6 +318,7 @@ list_remove_node(list *l, node *n)
 	MT_lock_unset(&l->ht_lock);
 	node_destroy(l, n);
 	l->cnt--;
+	assert(l->cnt >= 0);
 	return p;
 }
 

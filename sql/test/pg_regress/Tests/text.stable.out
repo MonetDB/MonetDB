@@ -48,13 +48,13 @@ stdout of test 'text` in directory 'sql/test/pg_regress` itself:
 # 17:59:44 >  
 
 #SELECT cast ('this is a text string' AS text) = cast('this is a text string' AS text) AS "true";
-% .%3 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT cast ('this is a text string' AS text) = cast('this is a text strin' AS text) AS "false";
-% .%3 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length

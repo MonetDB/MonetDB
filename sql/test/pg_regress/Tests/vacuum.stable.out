@@ -60,7 +60,7 @@ stdout of test 'vacuum` in directory 'sql/test/pg_regress` itself:
 % 4 # length
 [ 2049 ]
 #SELECT i, count(*) AS count FROM vactst GROUP BY i ORDER BY i;
-% sys.vactst,	sys.%1 # table_name
+% sys.vactst,	sys. # table_name
 % i,	count # name
 % int,	bigint # type
 % 1,	4 # length
@@ -143,7 +143,7 @@ stdout of test 'vacuum` in directory 'sql/test/pg_regress` itself:
 % 7 # length
 [ 1048577	]
 #SELECT i, count(*) AS count FROM vactst GROUP BY i ORDER BY i;
-% sys.vactst,	sys.%1 # table_name
+% sys.vactst,	sys. # table_name
 % i,	count # name
 % int,	bigint # type
 % 1,	7 # length

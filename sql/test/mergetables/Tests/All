@@ -19,6 +19,7 @@ KNOWNFAIL?singlekeyconstraint
 part-elim
 mergedropcascade
 addtable
+HAVE_PYMONETDB?transaction-conflict
 
 mergedb_create
 HAVE_NETCDF&HAVE_SAMTOOLS?mergedb.Bug-6820

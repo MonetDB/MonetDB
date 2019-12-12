@@ -610,4 +610,261 @@ where case when subq_0.c1 is null then subq_2.c25 else subq_2.c25 end
  is null
 limit 81; --empty on PostgreSQL
 
+SELECT
+        subq_2.c3 AS c0
+        ,subq_2.c6 AS c1
+    FROM
+        (
+            SELECT
+                    36 AS c0
+                    ,ref_0.cc AS c1
+                FROM
+                    analytics AS ref_0
+                WHERE
+                    FALSE LIMIT 32
+        ) AS subq_0 INNER JOIN (
+            SELECT
+                    ref_1.bb AS c0
+                    ,ref_1.cc AS c1
+                    ,ref_1.cc AS c2
+                    ,ref_1.aa AS c3
+                    ,ref_1.bb AS c4
+                    ,ref_1.aa AS c5
+                    ,ref_1.aa AS c6
+                FROM
+                    analytics AS ref_1
+                WHERE
+                    ref_1.bb IS NOT NULL LIMIT 83
+        ) AS subq_1 RIGHT JOIN (
+            SELECT
+                    ref_2.col2 AS c0
+                    ,ref_2.col4 AS c1
+                    ,ref_3.col1 AS c2
+                    ,ref_2.col8 AS c3
+                    ,ref_3.col2 AS c4
+                    ,ref_3.col1 AS c5
+                    ,ref_2.col2 AS c6
+                    ,24 AS c7
+                FROM
+                    longtable AS ref_2 LEFT JOIN tab1 AS ref_3
+                        ON (
+                        (
+                            ref_3.col0 IS NULL
+                        )
+                        OR (TRUE)
+                    )
+                WHERE
+                    TRUE LIMIT 138
+        ) AS subq_2
+            ON (
+            (
+                46 IS NULL
+            )
+            OR (
+                20 IS NOT NULL
+            )
+        )
+            ON (
+            (
+                EXISTS (
+                    SELECT
+                            subq_1.c4 AS c0
+                            ,ref_4.col0 AS c1
+                        FROM
+                            tab1 AS ref_4
+                        WHERE
+                            (
+                                subq_2.c5 IS NULL
+                            )
+                            AND (TRUE)
+                )
+            )
+            OR (
+                subq_0.c0 IS NOT NULL
+            )
+        )
+    WHERE
+        (
+            (FALSE)
+            AND (
+                (
+                    subq_2.c2 IS NULL
+                )
+                OR (
+                    (
+                        subq_2.c7 IS NULL
+                    )
+                    AND (TRUE)
+                )
+            )
+        )
+        OR (
+            (
+                (
+                    subq_2.c2 IS NOT NULL
+                )
+                OR (
+                    (
+                        subq_0.c1 IS NOT NULL
+                    )
+                    OR (TRUE)
+                )
+            )
+            AND (
+                subq_0.c1 IS NULL
+            )
+        ) LIMIT 76; --empty on PostgreSQL
+
+select 
+ subq_1.c0 as c0
+from 
+ (select 
+ subq_0.c9 as c0
+ from 
+ (select 
+ ref_3.aa as c0, 
+ ref_3.cc as c1, 
+ ref_2.col2 as c2, 
+ ref_2.col2 as c3, 
+ ref_0.col1 as c4, 
+ ref_1.col3 as c5, 
+ ref_3.aa as c6, 
+ ref_1.col2 as c7, 
+ ref_2.col2 as c8, 
+ ref_1.col8 as c9, 
+ ref_2.col1 as c10, 
+ ref_0.col2 as c11, 
+ ref_2.col0 as c12, 
+ ref_0.col1 as c13, 
+ ref_2.col1 as c14
+ from 
+ tab1 as ref_0
+ left join another_t as ref_1
+ on (ref_0.col2 is null)
+ inner join tab0 as ref_2
+ left join analytics as ref_3
+ on (ref_2.col1 is not null)
+ on ((true) 
+ and (true))
+ where true
+ limit 48) as subq_0
+ where (exists (
+ select 
+ subq_0.c5 as c0, 
+ subq_0.c14 as c1, 
+ ref_4.col1 as c2
+ from 
+ tab1 as ref_4
+ where false)) 
+ or ((subq_0.c14 is null) 
+ and (false))) as subq_1
+where exists (
+ select 
+ ref_5.col6 as c0, 
+ ref_7.col1 as c1, 
+ cast(nullif(ref_6.col0,
+ 6) as int) as c2, 
+ ref_7.col2 as c3, 
+ ref_5.col3 as c4, 
+ subq_1.c0 as c5
+ from 
+ longtable as ref_5
+ inner join tab1 as ref_6
+ on ((subq_1.c0 is null) 
+ and (((false) 
+ and ((ref_5.col7 is null) 
+ or ((ref_5.col3 is not null) 
+ and (ref_6.col2 is not null)))) 
+ or (true)))
+ left join tab0 as ref_7
+ on (ref_6.col0 = ref_7.col0 )
+ where case when ref_5.col1 is null then 44 else 44 end
+ is not null)
+limit 99; --empty on PostgreSQL
+
+select 
+ subq_1.c0 as c0
+from 
+ (select 
+ case when ((false) 
+ or (subq_0.c3 is not null)) 
+ and (true) then subq_0.c11 else subq_0.c11 end
+ as c0, 
+ case when subq_0.c0 is null then subq_0.c5 else subq_0.c5 end
+ as c1, 
+ subq_0.c6 as c2, 
+ case when true then subq_0.c3 else subq_0.c3 end
+ as c3, 
+ subq_0.c3 as c4, 
+ subq_0.c0 as c5, 
+ subq_0.c6 as c6, 
+ subq_0.c3 as c7, 
+ subq_0.c8 as c8, 
+ 42 as c9, 
+ subq_0.c6 as c10
+ from 
+ (select 
+ ref_0.col0 as c0, 
+ 85 as c1, 
+ ref_0.col1 as c2, 
+ ref_0.col2 as c3, 
+ ref_0.col1 as c4, 
+ ref_0.col0 as c5, 
+ ref_0.col2 as c6, 
+ ref_0.col0 as c7, 
+ ref_0.col0 as c8, 
+ ref_0.col2 as c9, 
+ ref_0.col1 as c10, 
+ ref_0.col2 as c11
+ from 
+ tab1 as ref_0
+ where ref_0.col0 is not null
+ limit 153) as subq_0
+ where (exists (
+ select 
+ ref_1.col2 as c0, 
+ subq_0.c3 as c1, 
+ subq_0.c10 as c2, 
+ ref_1.col3 as c3
+ from 
+ longtable as ref_1
+ where false)) 
+ or ((false) 
+ or (subq_0.c10 is null))) as subq_1
+where (subq_1.c9 is not null) 
+ and (exists (
+ select 
+ subq_2.c4 as c0
+ from 
+ (select 
+ subq_1.c3 as c0, 
+ subq_1.c10 as c1, 
+ ref_3.col0 as c2, 
+ subq_1.c9 as c3, 
+ ref_2.col2 as c4
+ from 
+ tab1 as ref_2
+ right join tab1 as ref_3
+ on ((ref_2.col1 is null) 
+ and (true))
+ where ((false) 
+ and (ref_2.col0 is not null)) 
+ or ((ref_3.col1 is not null) 
+ and (false))) as subq_2
+ right join longtable as ref_4
+ inner join tbl_productsales as ref_5
+ right join longtable as ref_6
+ on (ref_5.col4 = ref_6.col1 )
+ left join tab0 as ref_7
+ on (true)
+ on (ref_7.col0 is null)
+ on ((subq_2.c4 is null) 
+ or (ref_4.col2 is null))
+ where ((true) 
+ and (ref_6.col7 is not null)) 
+ or ((false) 
+ or ((ref_4.col5 is null) 
+ or (ref_7.col1 is null)))))
+limit 111; --empty on PostgreSQL
+
 ROLLBACK;

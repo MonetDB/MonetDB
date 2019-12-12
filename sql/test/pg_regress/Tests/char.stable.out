@@ -34,7 +34,7 @@ stdout of test 'char` in directory 'sql/test/pg_regress` itself:
 #-- fixed-length by value
 #-- internally passed by value if <= 4 bytes in storage
 #SELECT cast('c' as char) = cast('c' as char) AS "true";
-% .%3 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length

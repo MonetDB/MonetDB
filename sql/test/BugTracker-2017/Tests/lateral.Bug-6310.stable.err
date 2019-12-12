@@ -29,23 +29,25 @@ stderr of test 'lateral.Bug-6310` in directory 'sql/test/BugTracker-2017` itself
 
 MAPI  = (monetdb) /var/tmp/mtest-4110/.s.monetdb.34271
 QUERY = select
-          ref_0.message as c0
+          ref_0.i as c0
         from
-          sys.rejects as ref_0,
+          integers as ref_0,
           lateral (select
-        		(select name from sys.objects)
+        		(select col1 from tab0)
         		   as c0
         	  from
-        		sys.args as sample_1
-        		  right join tmp._columns as ref_4
-        			  inner join sys.part as ref_6
-        				  inner join sys.types as sample_5
-        				  on (ref_6.p_comment = sample_5.systemname )
-        				right join sys.netcdf_vars as ref_7
-        				on (sample_5.digits = ref_7.var_id )
-        			  on (ref_4.name = sample_5.systemname )
-        			right join sys.user_role as sample_8
-        			  inner join sys.partsupp as ref_10
+        		tab1 as sample_1
+        		  right join tab2 as ref_4
+        			  inner join part as ref_6
+        				  inner join tbl_ProductSales as sample_5
+        				  on (ref_6.p_comment = sample_5.col3 )
+        				right join LongTable as ref_7
+        				on (sample_5.col1 = ref_7.col1 )
+        			  on (ref_4.col0 = sample_5.col4 )
+        			right join another_t as sample_8
+        			  inner join partsupp as ref_10
+        			  on (sample_8.col1 = ref_10.ps_partkey )
+        			on (ref_4.col0 = ref_10.ps_suppkey )
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
 

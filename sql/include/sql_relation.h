@@ -37,7 +37,7 @@ typedef struct expression {
 	void *l;
 	void *r;
 	void *f;	/* func's and aggr's, also e_cmp may have have 2 arguments */
-	unsigned long
+	uint64_t
 	 flag:16,	/* cmp types, PSM types/level */
 	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
 	 freevar:4,	/* free variable, ie binds to the upper dependent join */
@@ -156,7 +156,7 @@ typedef enum operator_type {
 
 #define is_atom(et) 		(et == e_atom)
 /* a simple atom is a literal or on the query stack */
-#define is_simple_atom(e) 	(is_atom(e->type) && !e->r && !e->f)
+#define is_simple_atom(e) 	(is_atom((e)->type) && !(e)->r && !(e)->f)
 #define is_values(e) 		((e)->type == e_atom && (e)->f)
 #define is_func(et) 		(et == e_func)
 #define is_aggr(et) 		(et == e_aggr)
@@ -165,11 +165,11 @@ typedef enum operator_type {
 #define is_compare(et) 		(et == e_cmp)
 #define is_column(et)		(et != e_cmp)
 #define is_alias(et) 		(et == e_column)
-#define is_analytic(e) 		(e->type == e_func && ((sql_subfunc*)e->f)->func->type == F_ANALYTIC)
+#define is_analytic(e) 		((e)->type == e_func && ((sql_subfunc*)(e)->f)->func->type == F_ANALYTIC)
 
 #define is_base(op)  		(op == op_basetable || op == op_table)
 #define is_basetable(op) 	(op == op_basetable)
-#define is_ddl(op)	 	(op == op_ddl)
+#define is_ddl(op)	 		(op == op_ddl)
 #define is_outerjoin(op) 	(op == op_left || op == op_right || op == op_full)
 #define is_left(op) 		(op == op_left)
 #define is_right(op) 		(op == op_right)
@@ -178,14 +178,14 @@ typedef enum operator_type {
 #define is_semi(op) 		(op == op_semi || op == op_anti)
 #define is_joinop(op) 		(is_join(op) || is_semi(op))
 #define is_select(op) 		(op == op_select)
-#define is_set(op) 		(op == op_union || op == op_inter || op == op_except)
+#define is_set(op) 			(op == op_union || op == op_inter || op == op_except)
 #define is_union(op) 		(op == op_union)
-#define is_inter(rel) 		(op == op_inter)
-#define is_except(rel) 		(op == op_except)
+#define is_inter(op) 		(op == op_inter)
+#define is_except(op) 		(op == op_except)
 #define is_simple_project(op) 	(op == op_project)
 #define is_project(op) 		(op == op_project || op == op_groupby || is_set(op))
 #define is_groupby(op) 		(op == op_groupby)
-#define is_sort(rel) 		((rel->op == op_project && rel->r) || rel->op == op_topn)
+#define is_sort(rel) 		(((rel)->op == op_project && (rel)->r) || (rel)->op == op_topn)
 #define is_topn(op) 		(op == op_topn)
 #define is_modify(op) 	 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate)
 #define is_sample(op) 		(op == op_sample)
@@ -203,7 +203,7 @@ typedef enum operator_type {
 #define set_no_nil(e) 		(e)->need_no_nil = 1
 
 /* does the expression (possibly) have nils */
-#define has_nil(e) 		((e)->has_no_nil==0)
+#define has_nil(e)			((e)->has_no_nil==0)
 #define set_has_no_nil(e) 	(e)->has_no_nil = 1
 #define set_has_nil(e) 		(e)->has_no_nil = 0
 
@@ -215,7 +215,7 @@ typedef enum operator_type {
 #define set_nulls_first(e) 	((e)->nulls_last=0)
 #define set_direction(e, dir) 	((e)->ascending = (dir&1), (e)->nulls_last = (dir&2)?1:0)
 
-#define is_anti(e) 		((e)->anti)
+#define is_anti(e) 			((e)->anti)
 #define set_anti(e)  		(e)->anti = 1
 #define is_intern(e) 		((e)->intern)
 #define set_intern(e) 		(e)->intern = 1
@@ -243,7 +243,7 @@ typedef enum operator_type {
 #define set_freevar(e,level) 	(e)->freevar = level+1
 #define reset_freevar(e) 	(e)->freevar = 0
 
-#define rel_is_ref(rel)		(((sql_rel*)rel)->ref.refcnt > 1)
+#define rel_is_ref(rel)		(((sql_rel*)(rel))->ref.refcnt > 1)
 
 typedef struct relation {
 	sql_ref ref;

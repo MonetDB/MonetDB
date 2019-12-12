@@ -39,12 +39,7 @@ rel_name( sql_rel *r )
 sql_rel *
 rel_distinct(sql_rel *l)
 {
-#if 0
-	if (l->card >= CARD_AGGR) /* in case of CARD_AGGR, we could
-	                             do better, ie check the group by
-	                             list etc */
-#endif
-		set_distinct(l);
+	set_distinct(l);
 	return l;
 }
 
@@ -269,7 +264,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname, int no_
 sql_exp *
 rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 {
-	sql_rel *p = NULL;//, *orel = rel;
+	sql_rel *p = NULL;
 
 	if (is_sql_sel(f) && rel && is_simple_project(rel->op) && !is_processed(rel))
 		rel = rel->l;
@@ -976,12 +971,11 @@ list *
 _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern, int basecol /* basecol only */ )
 {
 	list *lexps, *rexps, *exps;
-	int include_subquery = (intern==2)?1:0;
 
 	if (THRhighwater())
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	if (!rel || (!include_subquery && is_subquery(rel) && rel->op == op_project))
+	if (!rel)
 		return new_exp_list(sql->sa);
 
 	switch(rel->op) {
@@ -1441,7 +1435,7 @@ exps_find_identity(list *exps, sql_rel *p)
 static sql_rel *
 _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 {
-	list *exps = rel_projections(sql, rel, NULL, 1, 2);
+	list *exps = rel_projections(sql, rel, NULL, 1, 1);
 	sql_exp *e;
 
 	if (list_length(exps) == 0) {
@@ -1505,10 +1499,8 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 	if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
 		int ambiguous = 0;
 		sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
-		if (!e && cname[0] == '%' && !tname) {
-			//assert(!tname);
+		if (!e && cname[0] == '%' && !tname) 
 			e = exps_bind_column(rel->exps, cname, &ambiguous, 0);
-		}
 		if (e && !ambiguous)
 			return exp_alias(sa, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
 	}

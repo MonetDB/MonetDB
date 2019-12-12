@@ -536,8 +536,6 @@ stmt_tid(backend *be, sql_table *t, int partition)
 		sql_trans *tr = be->mvc->session->tr;
 		BUN rows = (BUN) store_funcs.count_col(tr, t->columns.set->h->data, 1);
 		setRowCnt(mb,getArg(q,0),rows);
-		if (t->p && 0)
-			setMitosisPartition(q, t->p->base.id);
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_tid);
@@ -574,6 +572,8 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		s->nrcols = 1;
 		s->flag = access;
 		s->nr = l[c->colnr+1];
+		s->tname = c->t?c->t->base.name:NULL;
+		s->cname = c->base.name;
 		return s;
 	}
 	q = newStmt(mb, sqlRef, bindRef);
@@ -605,8 +605,6 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
 			BUN rows = (BUN) store_funcs.count_col(tr, c, 1);
 			setRowCnt(mb,getArg(q,0),rows);
-			if (c->t->p && 0)
-				setMitosisPartition(q, c->t->p->base.id);
 		}
 	}
 	if (q) {
@@ -622,6 +620,8 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		s->flag = access;
 		s->nr = getDestVar(q);
 		s->q = q;
+		s->tname = c->t->base.name;
+		s->cname = c->base.name;
 		return s;
 	}
 	return NULL;
@@ -662,8 +662,6 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 		if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
 			BUN rows = (BUN) store_funcs.count_idx(tr, i, 1);
 			setRowCnt(mb,getArg(q,0),rows);
-			if (i->t->p && 0)
-				setMitosisPartition(q, i->t->p->base.id);
 		}
 	}
 	if (q) {
@@ -931,6 +929,8 @@ stmt_const(backend *be, stmt *s, stmt *val)
 		ns->aggr = s->aggr;
 		ns->q = q;
 		ns->nr = getDestVar(q);
+		ns->tname = val->tname;
+		ns->cname = val->cname;
 		return ns;
 	}
 	return NULL;
@@ -2021,6 +2021,8 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 		s->nrcols = MAX(op1->nrcols,op2->nrcols);
 		s->nr = getDestVar(q);
 		s->q = q;
+		s->tname = op2->tname;
+		s->cname = op2->cname;
 		return s;
 	}
 	return NULL;
@@ -2041,6 +2043,8 @@ stmt_project_delta(backend *be, stmt *col, stmt *upd, stmt *ins)
 		s->nrcols = 2;
 		s->nr = getDestVar(q);
 		s->q = q;
+		s->tname = col->tname;
+		s->cname = col->cname;
 		return s;
 	}
 	return NULL;
@@ -2795,7 +2799,8 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *sel)
 	} else if (f->type->eclass == EC_DEC) {
 		/* scale of the current decimal */
 		q = pushInt(mb, q, f->scale);
-	} else if (f->type->eclass == EC_SEC && t->type->eclass == EC_FLT) {
+	} else if (f->type->eclass == EC_SEC &&
+		   (EC_COMPUTE(t->type->eclass) || t->type->eclass == EC_DEC)) {
 		/* scale of the current decimal */
 		q = pushInt(mb, q, 3);
 	}
@@ -3427,69 +3432,11 @@ _column_name(sql_allocator *sa, stmt *st)
 	return NULL;
 }
 
-const char *_table_name(sql_allocator *sa, stmt *st);
-
 const char *
 table_name(sql_allocator *sa, stmt *st)
 {
-	if (!st->tname)
-		st->tname = _table_name(sa, st);
+	(void)sa;
 	return st->tname;
-}
-
-const char *
-_table_name(sql_allocator *sa, stmt *st)
-{
-	switch (st->type) {
-	case st_const:
-	case st_join:
-	case st_join2:
-	case st_joinN:
-	case st_append:
-		return table_name(sa, st->op2);
-	case st_mirror:
-	case st_group:
-	case st_result:
-	case st_gen_group:
-	case st_uselect:
-	case st_uselect2:
-	case st_limit:
-	case st_limit2:
-	case st_sample:
-	case st_tunion:
-	case st_tdiff:
-	case st_tinter:
-	case st_aggr:
-		return table_name(sa, st->op1);
-
-	case st_table_clear:
-	case st_tid:
-		return st->op4.tval->base.name;
-	case st_idxbat:
-	case st_bat:
-		return st->op4.cval->t->base.name;
-	case st_alias:
-		if (st->tname)
-			return st->tname;
-		else
-			/* there are no table aliases, ie look into the base column */
-			return table_name(sa, st->op1);
-	case st_atom:
-		if (st->op4.aval->data.vtype == TYPE_str && st->op4.aval->data.val.sval && _strlen(st->op4.aval->data.val.sval))
-			return st->op4.aval->data.val.sval;
-		return NULL;
-
-	case st_list:
-		if (list_length(st->op4.lval) && st->op4.lval->h)
-			return table_name(sa, st->op4.lval->h->data);
-		return NULL;
-
-	case st_var:
-	case st_temp:
-	case st_single:
-	default:
-		return NULL;
-	}
 }
 
 const char *

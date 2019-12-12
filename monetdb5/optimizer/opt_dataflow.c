@@ -160,7 +160,7 @@ dflowGarbagesink(Client cntxt, MalBlkPtr mb, int var, InstrPtr *sink, int top)
 	
 	r = newInstruction(NULL,languageRef, passRef);
 	getArg(r,0) = newTmpVariable(mb,TYPE_void);
-	r= pushArgument(mb,r, var);
+	r= addArgument(mb,r, var);
 	sink[top++] = r;
 	return top;
 }

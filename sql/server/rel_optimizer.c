@@ -935,7 +935,7 @@ order_joins(mvc *sql, list *rels, list *exps)
 					r = find_rel(rels, cje->l);
 				}
 				if (!r) {
-					fnd = 1; // not really, but this bails out
+					fnd = 1; /* not really, but this bails out */
 					continue;
 				}
 				list_remove_data(rels, r);
@@ -970,7 +970,6 @@ order_joins(mvc *sql, list *rels, list *exps)
 	}
 	if (list_length(exps)) { /* more expressions (add selects) */
 		node *n;
-		//set_processed(top);
 		top = rel_select(sql->sa, top, NULL);
 		for(n=exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
@@ -3046,7 +3045,7 @@ rel_case_fixup(int *changes, mvc *sql, sql_rel *rel, int top)
 			if (top)
 				res = rel_safe_project(sql, rel);
 			else
-				res = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 2));
+				res = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
 			if (need_distinct(rel))
 				set_distinct(res);
 		}
@@ -6186,10 +6185,10 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 
 		/* Don't rewrite refs, non projections or constant or 
 		   order by projections  */
-		if (!l || rel_is_ref(l) || 
+		if (!l || rel_is_ref(l) || is_topn(l->op) || 
 		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
 		   (is_select(rel->op) && l->op != op_project) ||
-		   (is_join(rel->op) && l->op != op_project && r->op != op_project) ||
+		   (is_join(rel->op) && ((l->op != op_project && r->op != op_project) || is_topn(r->op))) ||
 		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l,is_select(rel->op)))) ||
 		   (is_join(rel->op) && (is_subquery(r) ||
 		    (r->op == op_project && (!r->l || r->r || project_unsafe(r,0))))))) 
@@ -6239,7 +6238,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 				}
 			}
 		} else if (is_join(rel->op)) {
-			list *r_exps = rel_projections(sql, r, NULL, 1, 2);
+			list *r_exps = rel_projections(sql, r, NULL, 1, 1);
 
 			list_merge(exps, r_exps, (fdup)NULL);
 		}

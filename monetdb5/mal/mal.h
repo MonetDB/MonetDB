@@ -157,7 +157,6 @@ typedef struct {
 	int pc;						/* location in MAL plan for profiler*/
 	MALfcn fcn;					/* resolved function address */
 	struct MALBLK *blk;			/* resolved MAL function address */
-	int mitosis;				/* old mtProp value */
 	/* inline statistics */
 	lng clock;					/* when the last call was started */
 	lng ticks;					/* total micro seconds spent in last call */

@@ -42,8 +42,8 @@ stdout of test '61` in directory 'sql/benchmarks/tpcds` itself:
 #     AND ca_address_sk = c_current_addr_sk
 #     AND ss_item_sk = i_item_sk
 #     AND ca_gmt_offset = -5
-% .promotional_sales,	.all_sales,	.%6 # table_name
-% promotions,	total,	%6 # name
+% .promotional_sales,	.all_sales,	.%4 # table_name
+% promotions,	total,	%4 # name
 % decimal,	decimal,	decimal # type
 % 40,	40,	28 # length
 [ 2894229.70,	5493575.41,	52.6800	]

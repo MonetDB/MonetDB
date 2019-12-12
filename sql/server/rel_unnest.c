@@ -1076,8 +1076,8 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				return rel; /* ie try again */
 			}
 			crossproduct = list_empty(j->exps);
-			rd = (j->op != op_full)?rel_dependent_var(sql, d, jr):(list*)1;
-			ld = (((j->op == op_join && rd) || j->op == op_right))?rel_dependent_var(sql, d, jl):(list*)1;
+			rd = (j->op != op_full && j->op != op_right)?rel_dependent_var(sql, d, jr):(list*)1;
+			ld = ((j->op == op_join || j->op == op_right))?rel_dependent_var(sql, d, jl):(list*)1;
 
 			if (ld && rd) {
 				node *m;
@@ -1091,11 +1091,14 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				set_dependent(j);
 				n = rel_crossproduct(sql->sa, rel, j, j->op);
 				j->op = rel->op;
-				if (is_semi(n->op)) 
+				if (is_semi(rel->op)) {
+				//assert(!is_semi(rel->op));
 					j->op = op_left;
+					rel->op = op_left;
+				}
 				n->l = rel_project(sql->sa, n->l, rel_projections(sql, n->l, NULL, 1, 1));
 				nr = n->r;
-				nr = n->r = rel_project(sql->sa, n->r, rel_projections(sql, nr->r, NULL, 1, 1));
+				nr = n->r = rel_project(sql->sa, n->r, is_semi(nr->op)?sa_list(sql->sa):rel_projections(sql, nr->r, NULL, 1, 1));
 				move_join_exps(sql, n, j);
 				/* add nr->l exps with labels */ 
 				/* create jexps */
@@ -1121,6 +1124,10 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
 				j = nj; 
+				if (is_semi(rel->op)) {
+				//assert(!is_semi(rel->op));
+					rel->op = op_left;
+				}
 				move_join_exps(sql, j, rel);
 				return j;
 			}
@@ -1279,7 +1286,6 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 		l = rel->l;
 		r = rel->r;
 
-		assert(!rel_is_ref(rel));
 		if (rel_has_freevar(sql, l))
 			rel->l = rel_unnest_dependent(sql, rel->l);
 
@@ -1807,8 +1813,8 @@ rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 
 				for(node *nn = gbe->h ; nn && !found ; nn = nn->next) {
 					sql_exp *e2 = nn->data;
-					//the partition expression order should be the same as the one in the order by clause (if it's in there as well)
-					if (!exp_equal(e1, e2)) {
+					/* the partition expression order should be the same as the one in the order by clause (if it's in there as well) */
+					if (exp_match(e1, e2)) {
 						if (is_ascending(e1))
 							set_ascending(e2);
 						else

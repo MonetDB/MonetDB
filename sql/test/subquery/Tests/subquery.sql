@@ -110,4 +110,9 @@ SELECT NULL IN (SELECT * FROM strings); -- NULL
 SELECT 'hello' IN (SELECT * FROM strings); -- true
 SELECT 'bla' IN (SELECT * FROM strings); -- NULL
 SELECT 'bla' IN (SELECT * FROM strings WHERE v IS NOT NULL); -- false
+SELECT * FROM strings WHERE EXISTS(SELECT NULL);
+SELECT * FROM strings WHERE EXISTS(SELECT v FROM strings WHERE v='bla');
+SELECT (SELECT v FROM strings WHERE v='hello') FROM strings;
+SELECT (SELECT v FROM strings WHERE v='bla') FROM strings;
+
 drop table strings;
