@@ -19,12 +19,10 @@
 #include "mal_interpreter.h"
 #include "mal_client.h"
 #include "mosaic_utility.h"
+#include "gdk_bitvector.h"
 
 bool MOStypes_prefix(BAT* b);
 mal_export void MOSlayout_prefix(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-
-ALGEBRA_INTERFACES_INTEGERS_ONLY(prefix);
-#define DO_OPERATION_ON_prefix(OPERATION, TPE, ...) DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, prefix, TPE, __VA_ARGS__)
 
 #define Prefixbte uint8_t
 #define Prefixsht uint16_t
@@ -39,31 +37,24 @@ ALGEBRA_INTERFACES_INTEGERS_ONLY(prefix);
 
 #define PrefixTpe(TPE) Prefix##TPE
 
-typedef struct MosaicBlkHeader_prefix_t_ {
-	MosaicBlkRec base;
-	int suffix_bits;
-	union {
-		PrefixTpe(bte) prefixbte;
-		PrefixTpe(sht) prefixsht;
-		PrefixTpe(int) prefixint;
-		PrefixTpe(lng) prefixlng;
-		PrefixTpe(oid) prefixoid;
-		PrefixTpe(flt) prefixflt;
-		PrefixTpe(dbl) prefixdbl;
-#ifdef HAVE_HGE
-		PrefixTpe(hge) prefixhge;
-#endif
-	} prefix;
+#define MosaicBlkHeader_DEF_prefix(TPE)\
+typedef struct {\
+	MosaicBlkHdrGeneric base;\
+	int suffix_bits;\
+	PrefixTpe(TPE) prefix;\
+	BitVectorChunk bitvector; /*First chunk of bitvector to force correct alignment.*/\
+} MOSBlockHeader_prefix_##TPE;
 
-} MosaicBlkHeader_prefix_t;
+ALGEBRA_INTERFACES_INTEGERS_ONLY(prefix);
+#define DO_OPERATION_ON_prefix(OPERATION, TPE, ...) DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, prefix, TPE, __VA_ARGS__)
 
-#define MOScodevectorPrefix(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_prefix_t), BitVectorChunk))
+#define MOScodevectorPrefix(task, TPE) ((BitVector) &((MOSBlockHeaderTpe(prefix, TPE)*) (task)->blk)->bitvector)
 
 #define join_inner_loop_prefix(TPE, HAS_NIL, RIGHT_CI_NEXT)\
 {\
-    MosaicBlkHeader_prefix_t* parameters = (MosaicBlkHeader_prefix_t*) task->blk;\
-	BitVector base = (BitVector) MOScodevectorPrefix(task);\
-	PrefixTpe(TPE) prefix = parameters->prefix.prefix##TPE;\
+    MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) task->blk;\
+	BitVector base = (BitVector) MOScodevectorPrefix(task, TPE);\
+	PrefixTpe(TPE) prefix = parameters->prefix;\
 	int suffix_bits = parameters->suffix_bits;\
     for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {\
 		BUN i = (BUN) (ro - first);\

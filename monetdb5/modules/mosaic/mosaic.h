@@ -20,6 +20,8 @@
 #include "opt_prelude.h"
 #include "algebra.h"
 
+#include <limits.h>
+
 //#define _DEBUG_MOSAIC_
 //#define _DEBUG_PREFIX_
 
@@ -107,15 +109,20 @@ typedef struct MOSAICHEADER{
 #define CNT_BITS 24
 #define MOSAICMAXCNT (1 << CNT_BITS)
 
-typedef struct MOSAICBLK{
+typedef struct MOSAICBLK {
 	unsigned int tag:((sizeof(unsigned int) * CHAR_BIT) - CNT_BITS), cnt:CNT_BITS;
 } MosaicBlkRec, *MosaicBlk;
+
+typedef struct {
+	MosaicBlkRec rec;
+	char padding;
+} MosaicBlkHdrGeneric;
 
 #define MOSgetTag(Blk) (Blk->tag)
 #define MOSsetTag(Blk,Tag)  (Blk)->tag = Tag
 #define MOSsetCnt(Blk,I) (assert(I <= MOSAICMAXCNT), (Blk)->cnt = (unsigned int)(I))
 #define MOSgetCnt(Blk) (BUN)((Blk)->cnt)
-#define MOSincCnt(Blk,I) (assert((Blk)->cnt +I <= MOSAICMAXCNT), (Blk)->cnt+= (unsigned int)(I))
+#define MOSincCnt(Blk,I) (assert((Blk)->cnt +I <= MOSAICMAXCNT), (Blk)->cnt += (unsigned int)(I))
 
 /* The start of the encoding withing a Mosaic block */
 #define MOScodevector(Task) (((char*) (Task)->blk)+ MosaicBlkSize)
@@ -150,6 +157,7 @@ typedef struct MOSTASK{
 
 	BAT *bsrc;		// target column to extended with compressed heap
 	char *src;		// read pointer into source
+	char* padding; // padding at the end of a block necessary to correctly align the next block during compression.
 
 	lng timer;		// compression time
 
@@ -174,6 +182,31 @@ typedef struct _MosaicEstimation {
 	size_t nr_capped_encoded_elements;
 	size_t nr_capped_encoded_blocks;
 } MosaicEstimation;
+
+#define GET_PADDING(blk, NAME, TPE) (((MOSBlockHeaderTpe(NAME, TPE)*) (blk))->base.padding)
+
+#define ALIGN_BLOCK_HEADER(task, NAME, TPE)\
+{\
+	if (task->padding) {\
+		ALIGNMENT_HELPER_TPE(NAME, TPE) dummy;\
+		uintptr_t alignment = (BUN) ((uintptr_t) (void*) &dummy.b - (uintptr_t) (void*) &dummy.a);\
+		uintptr_t SZ = (uintptr_t) (char*)((task)->blk);\
+		BUN padding = (BUN) ( ( (SZ) % alignment ) ? ( alignment - ((SZ)%alignment) ) : 0 );\
+		assert (padding < CHAR_MAX);\
+		(task)->blk = (MosaicBlk) ((char*)((task)->blk) + padding);\
+		*task->padding = (char) padding;\
+		/*printf("padding: %ld\n", padding);*/\
+	}\
+	task->padding = &GET_PADDING(task->blk, NAME, TPE);\
+	*task->padding = 0;\
+}
+
+#define ASSERT_ALIGNMENT_BLOCK_HEADER(ptr, NAME, TPE)\
+{\
+	ALIGNMENT_HELPER_TPE(NAME, TPE) dummy;\
+	uintptr_t alignment = ((uintptr_t) (void*) &dummy.b - (uintptr_t) (void*) &dummy.a);\
+	assert((uintptr_t) (void*) (ptr) % alignment == 0);\
+}
 
 mal_export char *MOSfiltername[];
 mal_export bool MOSisTypeAllowed(int compression, BAT* b);

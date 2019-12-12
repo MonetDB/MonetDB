@@ -21,15 +21,23 @@
 bool MOStypes_runlength(BAT* b);
 mal_export void MOSlayout_runlength(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 
+#define MosaicBlkHeader_DEF_runlength(TPE)\
+typedef struct {\
+	MosaicBlkHdrGeneric base;\
+	TPE val;\
+} MOSBlockHeader_runlength_##TPE;
+
 ALGEBRA_INTERFACES_ALL_TYPES(runlength);
 
 #define DO_OPERATION_ON_runlength(OPERATION, TPE, ...) DO_OPERATION_ON_ALL_TYPES(OPERATION, runlength, TPE, __VA_ARGS__)
+
+#define GET_VAL_runlength(task, TPE) (((MOSBlockHeaderTpe(runlength, TPE)*) (task)->blk)->val)
 
 #define join_inner_loop_runlength(TPE, HAS_NIL, RIGHT_CI_NEXT)\
 {\
     BUN first = task->start;\
     BUN last = first + MOSgetCnt(task->blk);\
-    const TPE rval = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
+    const TPE rval = GET_VAL_runlength(task, TPE);\
     for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {\
         IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
 	}\

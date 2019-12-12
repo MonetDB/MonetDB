@@ -120,6 +120,8 @@ MOSselect_SIGNATURE(NAME, TPE) {\
 	BUN first,last;\
 	TPE v;\
 \
+	ASSERT_ALIGNMENT_BLOCK_HEADER(task->blk, NAME, TPE);\
+\
 	/* set the oid range covered and advance scan range*/\
 	first = task->start;\
 	last = first + MOSgetCnt(task->blk);\

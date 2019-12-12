@@ -110,7 +110,7 @@ DictionaryClass(hge)
 #define GetSizeInBytes(INFO)		(BATcount((INFO)->dict) * GetTypeWidth(INFO))
 
 #define MOSadvance_DEF(TPE)\
-MOSadvance_SIGNATURE(capped, TPE) advance_dictionary(capped)
+MOSadvance_SIGNATURE(capped, TPE) advance_dictionary(capped, TPE)
 
 MOSadvance_DEF(bte)
 MOSadvance_DEF(sht)
@@ -244,10 +244,10 @@ MOSestimate_SIGNATURE(capped, TPE)\
 	BUN delta_count;\
 	BUN nr_compressed;\
 \
-	BUN old_keys_size	= (current->nr_capped_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
-	BUN old_dict_size	= GET_COUNT(info) * sizeof(TPE);\
-	BUN old_headers_size	= current->nr_capped_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
-	BUN old_bytes		= old_keys_size + old_dict_size + old_headers_size;\
+	BUN old_keys_size		= (current->nr_capped_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
+	BUN old_dict_size		= GET_COUNT(info) * sizeof(TPE);\
+	BUN old_headers_size	= current->nr_capped_encoded_blocks * 2 * sizeof(MOSBlockHeaderTpe(capped, TPE));\
+	BUN old_bytes			= old_keys_size + old_dict_size + old_headers_size;\
 \
 	if (extend_delta_##TPE(&nr_compressed, &delta_count, limit, info, val)) {\
 		throw(MAL, "mosaic.capped", MAL_MALLOC_FAIL);\
@@ -257,10 +257,10 @@ MOSestimate_SIGNATURE(capped, TPE)\
 	current->nr_capped_encoded_elements += nr_compressed;\
 	current->nr_capped_encoded_blocks++;\
 \
-	BUN new_keys_size	= (current->nr_capped_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
-	BUN new_dict_size	= (delta_count + GET_COUNT(info)) * sizeof(TPE);\
-	BUN new_headers_size	= current->nr_capped_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
-	BUN new_bytes		= new_keys_size + new_dict_size + new_headers_size;\
+	BUN new_keys_size		= (current->nr_capped_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
+	BUN new_dict_size		= (delta_count + GET_COUNT(info)) * sizeof(TPE);\
+	BUN new_headers_size	= current->nr_capped_encoded_blocks * 2 * sizeof(MOSBlockHeaderTpe(capped, TPE));\
+	BUN new_bytes			= new_keys_size + new_dict_size + new_headers_size;\
 \
 	current->compression_strategy.tag = MOSAIC_CAPPED;\
 	current->compression_strategy.cnt = (unsigned int) nr_compressed;\
@@ -340,12 +340,7 @@ finalizeDictionary_capped(MOStask task) {
 #define MOScompress_DEF(TPE)\
 MOScompress_SIGNATURE(capped, TPE)\
 {\
-	MosaicBlk blk = task->blk;\
-\
-	task->dst = MOScodevectorDict(task);\
-\
-	MOSsetTag(blk,MOSAIC_CAPPED);\
-	MOSsetCnt(blk,0);\
+	MOSsetTag(task->blk, MOSAIC_CAPPED);\
 	DICTcompress(capped, TPE);\
 }
 

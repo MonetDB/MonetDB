@@ -29,6 +29,8 @@ mal_export void MOSlayout_var_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *bi
 mal_export str MOSprepareEstimate_var(MOStask task);
 mal_export str finalizeDictionary_var(MOStask task);
 
+#define MosaicBlkHeader_DEF_var(TPE) MosaicBlkHeader_DEF_dictionary(var, TPE)
+
 ALGEBRA_INTERFACES_ALL_TYPES(var);
 
 #define DO_OPERATION_ON_var(OPERATION, TPE, ...) DO_OPERATION_ON_ALL_TYPES(OPERATION, var, TPE, __VA_ARGS__)

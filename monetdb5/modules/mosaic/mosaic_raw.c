@@ -67,9 +67,15 @@ MOSlayout_raw(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, 
 #define MOSadvance_DEF(TPE)\
 MOSadvance_SIGNATURE(raw, TPE)\
 {\
-	MosaicBlk blk = task->blk;\
-	task->start += MOSgetCnt(blk);\
-	task->blk = (MosaicBlk)( ((char*) task->blk) + wordaligned( MosaicBlkSize + sizeof(TPE)* MOSgetCnt(blk),TPE));\
+	BUN cnt = MOSgetCnt(task->blk);\
+	task->start += MOSgetCnt(task->blk);\
+\
+	char* blk = (char*)task->blk;\
+	blk += sizeof(MOSBlockHeaderTpe(raw, TPE));\
+	blk += GET_PADDING(task->blk, raw, TPE);\
+	blk += cnt * sizeof(TPE);\
+\
+	task->blk = (MosaicBlk) blk;\
 }
 
 MOSadvance_DEF(bte)
@@ -99,7 +105,7 @@ MOSestimate_SIGNATURE(raw, TPE)\
 	else {\
 		current->must_be_merged_with_previous = false;\
 		cnt = 1;\
-		current->compressed_size += wordaligned(MosaicBlkSize, TPE) + sizeof(TPE);\
+		current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(raw, TPE));\
 	}\
 	current->compression_strategy.cnt = cnt;\
 \
@@ -136,13 +142,14 @@ MOSpostEstimate_DEF(hge)
 #define MOScompress_DEF(TPE)\
 MOScompress_SIGNATURE(raw, TPE)\
 {\
-	MosaicBlk blk = (MosaicBlk) task->blk;\
+	ALIGN_BLOCK_HEADER(task, raw, TPE);\
 \
-	MOSsetTag(blk,MOSAIC_RAW);\
+	MosaicBlk blk = (MosaicBlk) task->blk;\
+	MOSsetTag(blk, MOSAIC_RAW);\
 	TPE *v = ((TPE*)task->src) + task->start;\
-	unsigned int cnt = estimate->cnt;\
-	TPE *d = (TPE*)task->dst;\
-	for(unsigned int i = 0; i<cnt; i++,v++){\
+	BUN cnt = estimate->cnt;\
+	TPE *d = &GET_INIT_raw(task, TPE);\
+	for(BUN i = 0; i < cnt; i++,v++){\
 		*d++ = (TPE) *v;\
 	}\
 	task->dst += sizeof(TPE);\
@@ -164,13 +171,12 @@ MOSdecompress_SIGNATURE(raw, TPE)\
 {\
 	MosaicBlk blk = (MosaicBlk) task->blk;\
 	BUN i;\
-	char *compressed;\
-	compressed = ((char*)blk) + MosaicBlkSize;\
+	TPE* val = &GET_INIT_raw(task, TPE);\
+	TPE* dst = (TPE*) task->src;\
 	BUN lim = MOSgetCnt(blk);\
 	for(i = 0; i < lim; i++) {\
-	((TPE*)task->src)[i] = ((TPE*)compressed)[i]; \
+	dst[i] = val[i]; \
 	}\
-	task->src += i * sizeof(TPE);\
 }
 
 MOSdecompress_DEF(bte)
@@ -185,7 +191,7 @@ MOSdecompress_DEF(hge)
 
 #define scan_loop_raw(TPE, CI_NEXT, TEST) \
 {\
-    TPE *val= (TPE*) (((char*) task->blk) + MosaicBlkSize);\
+    TPE *val= &GET_INIT_raw(task, TPE);\
     for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CI_NEXT(task->ci)) {\
         BUN i = (BUN) (c - first);\
         v = val[i];\
@@ -207,7 +213,7 @@ MOSselect_DEF(raw, hge)
 
 #define projection_loop_raw(TPE, CI_NEXT)\
 {	TPE *rt;\
-	rt = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
+	rt = &GET_INIT_raw(task, TPE);\
 	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CI_NEXT(task->ci)) {\
 		BUN i = (BUN) (o - first);\
 		*bt++ = rt[i];\
@@ -228,7 +234,7 @@ MOSprojection_DEF(raw, hge)
 #define outer_loop_raw(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\
     TPE *vl;\
-	vl = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
+	vl = &GET_INIT_raw(task, TPE);\
     for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = LEFT_CI_NEXT(task->ci)) {\
         TPE lval = vl[lo-first];\
 		if (HAS_NIL && !NIL_MATCHES) {\

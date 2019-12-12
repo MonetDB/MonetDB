@@ -62,6 +62,8 @@ MOSjoin_COUI_SIGNATURE(NAME, TPE)\
 	TPE* bt= (TPE*) task->src;\
 	bool nil = !task->bsrc->tnonil;\
 \
+	ASSERT_ALIGNMENT_BLOCK_HEADER(task->blk, NAME, TPE);\
+\
 	struct canditer* lci = task->ci;\
 \
 	/* Advance the candidate iterator to the first element within

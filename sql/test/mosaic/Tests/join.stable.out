@@ -16,23 +16,23 @@ stdout of test 'join` in directory 'sql/test/mosaic` itself:
 # Listening for connection requests on mapi:monetdb://aris-XPS-13-9380:32105/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27046/.s.monetdb.32105
 # MonetDB/SQL module loaded
-MOScompress_delta
-#BATmosaic: mosaic construction 19 usec
-MOSjoin_delta
-MOSjoin_delta
-MOSjoin_delta
-MOSjoin_delta
-MOSjoin_delta
-MOSjoin_delta
-MOSjoin_delta
-MOSjoin_delta
-MOSjoin_delta
-MOSjoin_delta
-MOSjoin_delta
-MOSjoin_delta
-MOSjoin_delta
-MOSjoin_delta
-MOSjoin_COUI_delta
+#MOScompress_delta
+##BATmosaic: mosaic construction 23 usec
+#MOSjoin_delta
+#MOSjoin_delta
+#MOSjoin_delta
+#MOSjoin_delta
+#MOSjoin_delta
+#MOSjoin_delta
+#MOSjoin_delta
+#MOSjoin_delta
+#MOSjoin_delta
+#MOSjoin_delta
+#MOSjoin_delta
+#MOSjoin_delta
+#MOSjoin_delta
+#MOSjoin_delta
+#MOSjoin_COUI_delta
 
 # 13:25:02 >  
 # 13:25:02 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27046" "--port=32105"

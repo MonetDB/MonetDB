@@ -29,4 +29,6 @@ gdk_export void clrBitVector(BitVector vector, BUN i, int bits);
 gdk_export int tstBitVector(BitVector vector, BUN i, int bits);
 gdk_export int getBitVector(BitVector vector, BUN i, int bits);
 
+#define BitVectorSize(CNT, BITS) wordaligned(((CNT) * (BITS) / CHAR_BIT) + ( ((CNT) * (BITS)) % CHAR_BIT != 0 ), BitVectorChunk)
+
 #endif /* _GDK_MASK_H_ */

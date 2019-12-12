@@ -5,11 +5,22 @@
 #include "mosaic_projection.h"
 #include "mosaic_join.h"
 
+#define MOSBlockHeaderTpe(NAME, TPE) MOSBlockHeader_##NAME##_##TPE
+#define ALIGNMENT_HELPER_TPE(NAME, TPE) struct ALIGNMENT_HELPER_MOSBlockHeader_##NAME##_##TPE
+
+#define ALIGNMENT_HELPER__DEF(NAME, TPE) \
+ALIGNMENT_HELPER_TPE(NAME, TPE)\
+{\
+	char a;\
+	MOSBlockHeaderTpe(NAME, TPE) b;\
+};
+
 #define MOSadvance_SIGNATURE(NAME, TPE) void MOSadvance_##NAME##_##TPE(MOStask task)
 #define MOSestimate_SIGNATURE(NAME, TPE) str MOSestimate_##NAME##_##TPE(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
 #define MOSpostEstimate_SIGNATURE(NAME, TPE) void MOSpostEstimate_##NAME##_##TPE(MOStask task)
 #define MOScompress_SIGNATURE(NAME, TPE) void MOScompress_##NAME##_##TPE(MOStask task, MosaicBlkRec* estimate)
 #define MOSdecompress_SIGNATURE(NAME, TPE) void MOSdecompress_##NAME##_##TPE(MOStask task)
+#define MOSBlockHeader_DEF(NAME, TPE) MosaicBlkHeader_DEF_##NAME(TPE)
 
 #define ALGEBRA_INTERFACE(NAME, TPE) \
 MOSadvance_SIGNATURE(NAME, TPE);\
@@ -19,7 +30,9 @@ MOScompress_SIGNATURE(NAME, TPE);\
 MOSdecompress_SIGNATURE(NAME, TPE);\
 MOSselect_SIGNATURE(NAME, TPE);\
 MOSprojection_SIGNATURE(NAME, TPE);\
-MOSjoin_COUI_SIGNATURE(NAME, TPE);
+MOSjoin_COUI_SIGNATURE(NAME, TPE);\
+MOSBlockHeader_DEF(NAME, TPE);\
+ALIGNMENT_HELPER__DEF(NAME, TPE);
 
 #ifdef HAVE_HGE
 #define ALGEBRA_INTERFACES_INTEGERS_ONLY(NAME) \

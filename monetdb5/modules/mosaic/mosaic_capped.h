@@ -29,6 +29,8 @@ mal_export void MOSlayout_capped_hdr(MOStask task, BAT *btech, BAT *bcount, BAT 
 mal_export str MOSprepareEstimate_capped(MOStask task);
 mal_export str finalizeDictionary_capped(MOStask task);
 
+#define MosaicBlkHeader_DEF_capped(TPE) MosaicBlkHeader_DEF_dictionary(capped, TPE)
+
 ALGEBRA_INTERFACES_ALL_TYPES(capped);
 
 #define DO_OPERATION_ON_capped(OPERATION, TPE, ...) DO_OPERATION_ON_ALL_TYPES(OPERATION, capped, TPE, __VA_ARGS__)

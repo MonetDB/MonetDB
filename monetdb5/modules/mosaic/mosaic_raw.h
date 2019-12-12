@@ -21,13 +21,21 @@
 bool MOStypes_raw(BAT* b);
 mal_export void MOSlayout_raw(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 
+#define MosaicBlkHeader_DEF_raw(TPE)\
+typedef struct {\
+	MosaicBlkHdrGeneric base;\
+    TPE init;\
+} MOSBlockHeader_raw_##TPE;
+
+#define GET_INIT_raw(task, TPE) (((MOSBlockHeaderTpe(raw, TPE)*) (task)->blk)->init)
+
 ALGEBRA_INTERFACES_ALL_TYPES(raw);
 
 #define DO_OPERATION_ON_raw(OPERATION, TPE, ...) DO_OPERATION_ON_ALL_TYPES(OPERATION, raw, TPE, __VA_ARGS__)
 
 #define join_inner_loop_raw(TPE, HAS_NIL, RIGHT_CI_NEXT)\
 {\
-    TPE* vr = (TPE*) (((char*) task->blk) + MosaicBlkSize);\
+    TPE* vr = &GET_INIT_raw(task, TPE);\
     for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {\
         TPE rval = vr[ro-first];\
         IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\

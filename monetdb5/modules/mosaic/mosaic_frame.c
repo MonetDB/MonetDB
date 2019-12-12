@@ -47,19 +47,23 @@ bool MOStypes_frame(BAT* b) {
 	return false;
 }
 
-#define toEndOfBitVector(CNT, BITS) wordaligned(((CNT) * (BITS) / CHAR_BIT) + ( ((CNT) * (BITS)) % CHAR_BIT != 0 ), lng)
-
 #define MOSadvance_DEF(TPE)\
 MOSadvance_SIGNATURE(frame, TPE)\
 {\
-	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) (task)->blk;\
-	int *dst = (int*)  (((char*) task->blk) + wordaligned(sizeof(MosaicBlkHeader_frame_t), BitVectorChunk));\
-	long cnt = parameters->base.cnt;\
-	long bytes = toEndOfBitVector(cnt, parameters->bits);\
+	MOSBlockHeaderTpe(frame, TPE)* parameters = (MOSBlockHeaderTpe(frame, TPE)*) (task)->blk;\
+	BUN cnt		= MOSgetCnt(task->blk);\
 \
 	assert(cnt > 0);\
+	assert(MOSgetTag(task->blk) == MOSAIC_FRAME);\
+\
 	task->start += (oid) cnt;\
-	task->blk = (MosaicBlk) (((char*) dst)  + bytes);\
+\
+	char* blk = (char*)task->blk;\
+	blk += sizeof(MOSBlockHeaderTpe(frame, TPE));\
+	blk += BitVectorSize(cnt, parameters->bits);\
+	blk += GET_PADDING(task->blk, frame, TPE);\
+\
+	task->blk = (MosaicBlk) blk;\
 }
 
 MOSadvance_DEF(bte)
@@ -122,10 +126,9 @@ do {\
 			bits = current_bits;\
 		}\
 	}\
-	(PARAMETERS).min.min##TPE = min;\
-	(PARAMETERS).max.max##TPE = max;\
+	(PARAMETERS).min = min;\
 	(PARAMETERS).bits = bits;\
-	(PARAMETERS).base.cnt = i;\
+	(PARAMETERS).base.rec.cnt = i;\
 } while(0)
 
 #define MOSestimate_frame_DEF(TPE) \
@@ -136,12 +139,12 @@ MOSestimate_SIGNATURE(frame, TPE)\
 	current->compression_strategy.tag = MOSAIC_FRAME;\
 	TPE *src = getSrc(TPE, task);\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
-	MosaicBlkHeader_frame_t parameters;\
+	MOSBlockHeaderTpe(frame, TPE) parameters;\
 	determineFrameParameters(parameters, src, limit, TPE);\
-	assert(parameters.base.cnt > 0);/*Should always compress.*/\
-	current->uncompressed_size += (BUN) (parameters.base.cnt * sizeof(TPE));\
-	current->compressed_size += wordaligned(sizeof(MosaicBlkHeader_frame_t), lng) + wordaligned((parameters.base.cnt * parameters.bits) / CHAR_BIT, lng);\
-	current->compression_strategy.cnt = (unsigned int) parameters.base.cnt;\
+	assert(parameters.base.rec.cnt > 0);/*Should always compress.*/\
+	current->uncompressed_size += (BUN) (parameters.base.rec.cnt * sizeof(TPE));\
+	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(frame, TPE)) + wordaligned((parameters.base.rec.cnt * parameters.bits) / CHAR_BIT, lng);\
+	current->compression_strategy.cnt = (unsigned int) parameters.base.rec.cnt;\
 \
 	return MAL_SUCCEED;\
 }
@@ -172,25 +175,25 @@ MOSpostEstimate_DEF(hge)
 #define MOScompress_DEF(TPE)\
 MOScompress_SIGNATURE(frame, TPE)\
 {\
-	MosaicBlk blk = task->blk;\
+	ALIGN_BLOCK_HEADER(task,  frame, TPE);\
 \
+	MosaicBlk blk = task->blk;\
 	MOSsetTag(blk,MOSAIC_FRAME);\
 	MOSsetCnt(blk, 0);\
 	TPE *src = getSrc(TPE, task);\
 	TPE delta;\
 	BUN i = 0;\
 	BUN limit = estimate->cnt;\
-	BitVector base;\
-	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) (task)->blk;\
+	MOSBlockHeaderTpe(frame, TPE)* parameters = (MOSBlockHeaderTpe(frame, TPE)*) (task)->blk;\
 	determineFrameParameters(*parameters, src, limit, TPE);\
-	task->dst = MOScodevectorFrame(task);\
-	base = (BitVector) (task->dst);\
-	for(i = 0; i < parameters->base.cnt; i++, src++) {\
+	BitVector base = MOScodevectorFrame(task, TPE);\
+	task->dst = (char*) base;\
+	for(i = 0; i < MOSgetCnt(task->blk); i++, src++) {\
 		/*TODO: assert that delta's actually does not cause an overflow. */\
-		delta = *src - parameters->min.min##TPE;\
+		delta = *src - parameters->min;\
 		setBitVector(base, i, parameters->bits, (BitVectorChunk) /*TODO: fix this once we have increased capacity of bitvector*/ delta);\
 	}\
-	task->dst += toEndOfBitVector(i, parameters->bits);\
+	task->dst += BitVectorSize(i, parameters->bits);\
 }
 
 MOScompress_DEF(bte)
@@ -204,10 +207,10 @@ MOScompress_DEF(hge)
 #define MOSdecompress_DEF(TPE) \
 MOSdecompress_SIGNATURE(frame, TPE)\
 {\
-	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) (task)->blk;\
-	BUN lim = parameters->base.cnt;\
-    TPE min = parameters->min.min##TPE;\
-	BitVector base = (BitVector) MOScodevectorFrame(task);\
+	MOSBlockHeaderTpe(frame, TPE)* parameters = (MOSBlockHeaderTpe(frame, TPE)*) (task)->blk;\
+	BUN lim = MOSgetCnt(task->blk);\
+    TPE min = parameters->min;\
+	BitVector base = (BitVector) MOScodevectorFrame(task, TPE);\
 	BUN i;\
 	for(i = 0; i < lim; i++){\
 		TPE delta = getBitVector(base, i, parameters->bits);\
@@ -227,9 +230,9 @@ MOSdecompress_DEF(hge)
 #endif
 
 #define scan_loop_frame(TPE, CANDITER_NEXT, TEST) {\
-	MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) task->blk;\
-    TPE min = parameters->min.min##TPE;\
-	BitVector base = (BitVector) MOScodevectorFrame(task);\
+	MOSBlockHeaderTpe(frame, TPE)* parameters = (MOSBlockHeaderTpe(frame, TPE)*) task->blk;\
+    TPE min = parameters->min;\
+	BitVector base = (BitVector) MOScodevectorFrame(task, TPE);\
     for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CANDITER_NEXT(task->ci)) {\
         BUN i = (BUN) (c - first);\
         TPE delta = getBitVector(base, i, parameters->bits);\
@@ -250,9 +253,9 @@ MOSselect_DEF(frame, hge)
 
 #define projection_loop_frame(TPE, CANDITER_NEXT)\
 {\
-    MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
-	TPE frame =  parameters->min.min##TPE;\
-	BitVector base = (BitVector) MOScodevectorFrame(task);\
+    MOSBlockHeaderTpe(frame, TPE)* parameters = (MOSBlockHeaderTpe(frame, TPE)*) ((task))->blk;\
+	TPE frame =  parameters->min;\
+	BitVector base = (BitVector) MOScodevectorFrame(task, TPE);\
 	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CANDITER_NEXT(task->ci)) {\
 		BUN i = (BUN) (o - first);\
 		TPE w = ADD_DELTA(TPE, frame, getBitVector(base, i, parameters->bits));\
@@ -271,9 +274,9 @@ MOSprojection_DEF(frame, hge)
 
 #define outer_loop_frame(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\
-    MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
-	const TPE min =  parameters->min.min##TPE;\
-	const BitVector base = (BitVector) MOScodevectorFrame(task);\
+    MOSBlockHeaderTpe(frame, TPE)* parameters = (MOSBlockHeaderTpe(frame, TPE)*) ((task))->blk;\
+	const TPE min =  parameters->min;\
+	const BitVector base = (BitVector) MOScodevectorFrame(task, TPE);\
 	const bte bits = parameters->bits;\
     for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = LEFT_CI_NEXT(task->ci)) {\
         BUN i = (BUN) (lo - first);\

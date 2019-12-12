@@ -84,6 +84,7 @@ MOSinit(MOStask task, BAT *b) {
 	task->dst = MOScodevector(task);
 	task->capped_info = NULL;
 	task->var_info = NULL;
+	task->padding = NULL;
 }
 
 void MOSblk(MosaicBlk blk)
@@ -667,7 +668,38 @@ MOSdecompressInternal_DEF(bte)
 MOSdecompressInternal_DEF(sht)
 MOSdecompressInternal_DEF(int)
 MOSdecompressInternal_DEF(lng)
-MOSdecompressInternal_DEF(flt)
+static void MOSdecompressInternal_flt(MOStask task)
+{
+	while(MOSgetTag(task->blk) != MOSAIC_EOL){
+		switch(MOSgetTag(task->blk)){
+		case MOSAIC_RAW:
+			DO_OPERATION_IF_ALLOWED(decompress, raw, flt);
+			break;
+		case MOSAIC_RLE:
+			DO_OPERATION_IF_ALLOWED(decompress, runlength, flt);
+			break;
+		case MOSAIC_CAPPED:
+			DO_OPERATION_IF_ALLOWED(decompress, capped, flt);
+			break;
+		case MOSAIC_VAR:
+			DO_OPERATION_IF_ALLOWED(decompress, var, flt);
+			break;
+		case MOSAIC_DELTA:
+			DO_OPERATION_IF_ALLOWED(decompress, delta, flt);
+			break;
+		case MOSAIC_LINEAR:
+			DO_OPERATION_IF_ALLOWED(decompress, linear, flt);
+			break;
+		case MOSAIC_FRAME:
+			DO_OPERATION_IF_ALLOWED(decompress, frame, flt);
+			break;
+		case MOSAIC_PREFIX:
+			DO_OPERATION_IF_ALLOWED(decompress, prefix, flt);
+			break;
+		default: assert(0);
+		}
+	}
+}
 MOSdecompressInternal_DEF(dbl)
 #ifdef HAVE_HGE
 MOSdecompressInternal_DEF(hge)

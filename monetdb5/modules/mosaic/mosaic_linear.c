@@ -65,7 +65,11 @@ MOSlayout_linear(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 MOSadvance_SIGNATURE(linear, TPE)\
 {\
 	task->start += MOSgetCnt(task->blk);\
-	task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + 2 * sizeof(TPE),TPE));\
+	char* blk = (char*)task->blk;\
+	blk += sizeof(MOSBlockHeaderTpe(linear, TPE));\
+	blk += GET_PADDING(task->blk, linear, TPE);\
+\
+	task->blk = (MosaicBlk) blk;\
 }
 
 MOSadvance_DEF(bte)
@@ -96,7 +100,7 @@ MOSestimate_SIGNATURE(linear, TPE)\
 	assert(i > 0);/*Should always compress.*/\
 	current->is_applicable = true;\
 	current->uncompressed_size += (BUN) (i * sizeof(TPE));\
-	current->compressed_size += wordaligned( MosaicBlkSize + 2 * sizeof(TPE),TPE);\
+	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(linear, TPE));\
 	current->compression_strategy.cnt = (unsigned int) i;\
 \
 	return MAL_SUCCEED;\
@@ -128,11 +132,13 @@ MOSpostEstimate_DEF(hge)
 #define MOScompress_DEF(TPE)\
 MOScompress_SIGNATURE(linear, TPE)\
 {\
+	ALIGN_BLOCK_HEADER(task,  linear, TPE);\
+\
 	MOSsetTag(task->blk,MOSAIC_LINEAR);\
 	TPE *c = ((TPE*) task->src)+task->start; /*(c)urrent value*/\
 	TPE step = 0;\
 	BUN limit = estimate->cnt;\
-	linear_base(TPE, task) = *(DeltaTpe(TPE)*) c;\
+	linear_offset(TPE, task) = *(DeltaTpe(TPE)*) c;\
 	if (limit > 1 ){\
 		TPE *p = c++; /*(p)revious value*/\
 		step = (TPE) GET_DELTA(TPE, *c, *p);\
@@ -155,7 +161,7 @@ MOSdecompress_SIGNATURE(linear, TPE)\
 {\
 	MosaicBlk blk =  task->blk;\
 	BUN i;\
-	DeltaTpe(TPE) val	= linear_base(TPE, task);\
+	DeltaTpe(TPE) val	= linear_offset(TPE, task);\
 	DeltaTpe(TPE) step	= linear_step(TPE, task);\
 	BUN lim = MOSgetCnt(blk);\
 	for(i = 0; i < lim; i++, val += step) {\
@@ -173,7 +179,7 @@ MOSdecompress_DEF(hge)
 #endif
 
 #define scan_loop_linear(TPE, CI_NEXT, TEST) {\
-	DeltaTpe(TPE) offset	= linear_base(TPE, task);\
+	DeltaTpe(TPE) offset	= linear_offset(TPE, task);\
 	DeltaTpe(TPE) step		= linear_step(TPE, task);\
     for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CI_NEXT(task->ci)) {\
         BUN i = (BUN) (c - first);\
@@ -194,7 +200,7 @@ MOSselect_DEF(linear, hge)
 
 #define projection_loop_linear(TPE, CI_NEXT)\
 {\
-	DeltaTpe(TPE) offset	= linear_base(TPE, task) ;\
+	DeltaTpe(TPE) offset	= linear_offset(TPE, task) ;\
 	DeltaTpe(TPE) step		= linear_step(TPE, task);\
 	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CI_NEXT(task->ci)) {\
         BUN i = (BUN) (o - first);\
@@ -214,7 +220,7 @@ MOSprojection_DEF(linear, hge)
 
 #define outer_loop_linear(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\
-	DeltaTpe(TPE) offset	= linear_base(TPE, task) ;\
+	DeltaTpe(TPE) offset	= linear_offset(TPE, task) ;\
 	DeltaTpe(TPE) step		= linear_step(TPE, task);\
     for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = LEFT_CI_NEXT(task->ci)) {\
         BUN i = (BUN) (lo - first);\

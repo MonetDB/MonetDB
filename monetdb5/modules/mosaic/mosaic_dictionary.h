@@ -166,47 +166,53 @@ decompress_dictionary_##TPE(TPE* dict, bte bits, BitVector base, BUN limit, TPE*
 	*dest += limit;\
 }
 
-typedef struct {
-	MosaicBlkRec base;
-	/* offset to the location of the actual variable sized info.
-	 * It should always be after the global Mosaic header.*/
-} MOSBlkHdr_dictionary_t;
+#define MosaicBlkHeader_DEF_dictionary(NAME, TPE)\
+typedef struct {\
+	MosaicBlkHdrGeneric base;\
+	BitVectorChunk bitvector; /*First chunk of bitvector to force correct alignment.*/\
+} MOSBlockHeader_##NAME##_##TPE;
+
+#define DICTBlockHeaderTpe(NAME, TPE) MOSBlockHeader_##NAME##_##TPE
 
 // MOStask object dependent macro's
 
+#define MOScodevectorDict(task, NAME, TPE) ((BitVector) &((DICTBlockHeaderTpe(NAME, TPE)*) (task)->blk)->bitvector)
 
-#define advance_dictionary(NAME)\
+#define advance_dictionary(NAME, TPE)\
 {\
-	int *dst = (int*)  MOScodevectorDict(task);\
 	BUN cnt = MOSgetCnt(task->blk);\
-	BUN bytes;\
 \
 	assert(cnt > 0);\
 	task->start += (oid) cnt;\
-	bytes =  (cnt * GET_FINAL_BITS(task, NAME))/8 + (((cnt * GET_FINAL_BITS(task, NAME)) %8) != 0);\
-	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, BitVectorChunk));\
+\
+	char* blk = (char*)task->blk;\
+	blk += sizeof(MOSBlockHeaderTpe(NAME, TPE));\
+	blk += BitVectorSize(cnt, GET_FINAL_BITS(task, NAME));\
+	blk += GET_PADDING(task->blk, NAME, TPE);\
+\
+	task->blk = (MosaicBlk) blk;\
 }
 
-#define MOScodevectorDict(Task) (((char*) (Task)->blk) + wordaligned(sizeof(MOSBlkHdr_dictionary_t), BitVectorChunk))
-
 // insert a series of values into the compressor block using dictionary
-#define DICTcompress(NAME, TPE) {\
+#define DICTcompress(NAME, TPE)\
+{\
+	ALIGN_BLOCK_HEADER(task,  NAME, TPE);\
+\
 	TPE *val = getSrc(TPE, (task));\
 	BUN cnt = estimate->cnt;\
-	(task)->dst = MOScodevectorDict(task);\
-	BitVector base = (BitVector) ((task)->dst);\
+	BitVector base = MOScodevectorDict(task, NAME, TPE);\
 	BUN i;\
 	TPE* dict = GET_FINAL_DICT(task, NAME, TPE);\
 	BUN dict_size = GET_FINAL_DICT_COUNT(task, NAME);\
 	bte bits = GET_FINAL_BITS(task, NAME);\
 	compress_dictionary_##TPE(dict, dict_size, &i, val, cnt, base, bits);\
-	MOSsetCnt((task)->blk, i);\
+	MOSsetCnt(task->blk, i);\
 }
 
 // the inverse operator, extend the src
 #define DICTdecompress(NAME, TPE)\
 {	BUN cnt = MOSgetCnt((task)->blk);\
-	BitVector base = (BitVector) MOScodevectorDict(task);\
+	BitVector base = MOScodevectorDict(task, NAME, TPE);\
 	bte bits = GET_FINAL_BITS(task, NAME);\
 	TPE* dict = GET_FINAL_DICT(task, NAME, TPE);\
 	TPE* dest = (TPE*) (task)->src;\
@@ -215,7 +221,7 @@ typedef struct {
 
 #define scan_loop_dictionary(NAME, TPE, CANDITER_NEXT, TEST) {\
     TPE* dict = GET_FINAL_DICT(task, NAME, TPE);\
-	BitVector base = (BitVector) MOScodevectorDict(task);\
+	BitVector base = MOScodevectorDict(task, NAME, TPE);\
     bte bits = GET_FINAL_BITS(task, NAME);\
     for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CANDITER_NEXT(task->ci)) {\
         BUN i = (BUN) (c - first);\
@@ -230,7 +236,7 @@ typedef struct {
 #define projection_loop_dictionary(NAME, TPE, CANDITER_NEXT)\
 {\
 	TPE* dict = GET_FINAL_DICT(task, NAME, TPE);\
-	BitVector base = (BitVector) MOScodevectorDict(task);\
+	BitVector base = MOScodevectorDict(task, NAME, TPE);\
     bte bits = GET_FINAL_BITS(task, NAME);\
 	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CANDITER_NEXT(task->ci)) {\
         BUN i = (BUN) (o - first);\
@@ -244,7 +250,7 @@ typedef struct {
 {\
 	bte bits		= GET_FINAL_BITS(task, NAME);\
 	TPE* dict		= GET_FINAL_DICT(task, NAME, TPE);\
-	BitVector base	= (BitVector) MOScodevectorDict(task);\
+	BitVector base	= MOScodevectorDict(task, NAME, TPE);\
     for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = LEFT_CI_NEXT(task->ci)) {\
         BUN i = (BUN) (lo - first);\
 		BitVectorChunk j= getBitVector(base,i,bits);\
@@ -260,7 +266,7 @@ typedef struct {
 {\
 	bte bits		= GET_FINAL_BITS(task, NAME);\
 	TPE* dict		= GET_FINAL_DICT(task, NAME, TPE);\
-	BitVector base	= (BitVector) MOScodevectorDict(task);\
+	BitVector base	= MOScodevectorDict(task, NAME, TPE);\
     for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {\
         BUN i = (BUN) (ro - first);\
 		BitVectorChunk j= getBitVector(base,i,bits);\

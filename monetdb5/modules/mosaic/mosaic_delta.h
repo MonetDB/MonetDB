@@ -17,29 +17,23 @@
 #include "mal_interpreter.h"
 #include "mal_client.h"
 #include "mosaic_utility.h"
+#include "gdk_bitvector.h"
 
 bool MOStypes_delta(BAT* b);
 mal_export void MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 
+#define MosaicBlkHeader_DEF_delta(TPE)\
+typedef struct {\
+	MosaicBlkHdrGeneric base;\
+	char bits;\
+	TPE init;\
+	BitVectorChunk bitvector; /*First chunk of bitvector to force correct alignment.*/\
+} MOSBlockHeader_delta_##TPE;
+
 ALGEBRA_INTERFACES_INTEGERS_ONLY(delta);
 #define DO_OPERATION_ON_delta(OPERATION, TPE, ...) DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, delta, TPE, __VA_ARGS__)
 
-typedef struct _DeltaParameters_t {
-	MosaicBlkRec base;
-	int bits;
-	union {
-		bte valbte;
-		sht valsht;
-		int valint;
-		lng vallng;
-		oid valoid;
-#ifdef HAVE_HGE
-		hge valhge;
-#endif
-	} init;
-} MosaicBlkHeader_delta_t;
-
-#define MOScodevectorDelta(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_delta_t), BitVectorChunk))
+#define MOScodevectorDelta(task, TPE) ((BitVector) &((MOSBlockHeaderTpe(delta, TPE)*) (task)->blk)->bitvector)
 
 #define ACCUMULATE(acc, delta, sign_mask, TPE) \
 ( /*code assumes that acc is of type DeltaTpe(TPE)*/\
@@ -52,10 +46,10 @@ typedef struct _DeltaParameters_t {
 
 #define join_inner_loop_delta(TPE, HAS_NIL, RIGHT_CI_NEXT)\
 {\
-	MosaicBlkHeader_delta_t* parameters = (MosaicBlkHeader_delta_t*) task->blk;\
-	BitVector base = (BitVector) MOScodevectorDelta(task);\
-	DeltaTpe(TPE) acc = parameters->init.val##TPE; /*previous value*/\
-	int bits = parameters->bits;\
+	MOSBlockHeaderTpe(delta, TPE)* parameters = (MOSBlockHeaderTpe(delta, TPE)*) task->blk;\
+	BitVector base = MOScodevectorDelta(task, TPE);\
+	DeltaTpe(TPE) acc = (DeltaTpe(TPE)) parameters->init; /*previous value*/\
+	char bits = parameters->bits;\
 	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
     TPE rval = (TPE) acc;\
     BUN j = 0;\

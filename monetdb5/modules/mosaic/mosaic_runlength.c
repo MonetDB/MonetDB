@@ -68,7 +68,12 @@ MOSlayout_runlength(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *bou
 MOSadvance_SIGNATURE(runlength, TPE)\
 {\
 	task->start += MOSgetCnt(task->blk);\
-	task->blk = (MosaicBlk)( ((char*)task->blk) + wordaligned( MosaicBlkSize + sizeof(TPE),TPE));\
+\
+	char* blk = (char*)task->blk;\
+	blk += sizeof(MOSBlockHeaderTpe(runlength, TPE));\
+	blk += GET_PADDING(task->blk, runlength, TPE);\
+\
+	task->blk = (MosaicBlk) blk;\
 }
 
 MOSadvance_DEF(bte)
@@ -93,7 +98,7 @@ MOSestimate_SIGNATURE(runlength, TPE)\
 	assert(i > 0);/*Should always compress.*/\
 	current->is_applicable = true;\
 	current->uncompressed_size += (BUN) (i * sizeof(TPE));\
-	current->compressed_size += wordaligned( MosaicBlkSize, TPE) + sizeof(TPE);\
+	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(runlength, TPE));\
 	current->compression_strategy.cnt = i;\
 \
 	return MAL_SUCCEED;\
@@ -129,14 +134,16 @@ MOSpostEstimate_DEF(hge)
 #define MOScompress_DEF(TPE)\
 MOScompress_SIGNATURE(runlength, TPE)\
 {\
+	ALIGN_BLOCK_HEADER(task,  runlength, TPE);\
+\
 	(void) estimate;\
 	BUN i ;\
-	MosaicBlk blk = task->blk;\
 	bool nil = !task->bsrc->tnonil;\
 \
+	MosaicBlk blk = task->blk;\
 	MOSsetTag(blk, MOSAIC_RLE);\
 	TPE *v = ((TPE*) task->src)+task->start, val = *v;\
-	TPE *dst = (TPE*) task->dst;\
+	TPE *dst = &GET_VAL_runlength(task, TPE);\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT ? MOSAICMAXCNT: task->stop - task->start;\
 	*dst = val;\
 	for(v++, i =1; i<limit; i++,v++)\
@@ -159,13 +166,10 @@ MOScompress_DEF(hge)
 #define MOSdecompress_DEF(TPE) \
 MOSdecompress_SIGNATURE(runlength, TPE)\
 {\
-	MosaicBlk blk =  ((MosaicBlk) task->blk);\
-	BUN i;\
-	char *compressed;\
+	TPE val = GET_VAL_runlength(task, TPE);\
+	BUN lim = MOSgetCnt(task->blk);\
 \
-	compressed = (char*) blk + MosaicBlkSize;\
-	TPE val = *(TPE*) compressed;\
-	BUN lim = MOSgetCnt(blk);\
+	BUN i;\
 	for(i = 0; i < lim; i++)\
 		((TPE*)task->src)[i] = val;\
 	task->src += i * sizeof(TPE);\
@@ -183,7 +187,7 @@ MOSdecompress_DEF(hge)
 
 #define scan_loop_runlength(TPE, CI_NEXT, TEST) \
 {\
-    v = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
+    v = GET_VAL_runlength(task, TPE);\
     if (TEST) {\
         for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CI_NEXT(task->ci)) {\
 		    *o++ = c;\
@@ -203,7 +207,7 @@ MOSselect_DEF(runlength, hge)
 
 #define projection_loop_runlength(TPE, CI_NEXT)\
 {\
-	TPE rt = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
+	TPE rt = GET_VAL_runlength(task, TPE);\
 	for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CI_NEXT(task->ci)) {\
 		*bt++ = rt;\
 		task->cnt++;\
@@ -222,7 +226,7 @@ MOSprojection_DEF(runlength, hge)
 
 #define outer_loop_runlength(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 do {\
-	const TPE lval = *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
+	const TPE lval = GET_VAL_runlength(task, TPE);\
 	if (HAS_NIL && !NIL_MATCHES) {\
 		if (IS_NIL(TPE, lval)) { break;}\
 	}\

@@ -46,7 +46,7 @@ bool MOStypes_var(BAT* b) {
 }
 
 #define MOSadvance_DEF(TPE)\
-MOSadvance_SIGNATURE(var, TPE) advance_dictionary(var)
+MOSadvance_SIGNATURE(var, TPE) advance_dictionary(var, TPE)
 
 MOSadvance_DEF(bte)
 MOSadvance_DEF(sht)
@@ -160,7 +160,7 @@ MOSestimate_SIGNATURE(var, TPE)\
 \
 	BUN old_keys_size	= (current->nr_var_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
 	BUN old_dict_size	= GET_COUNT(info) * sizeof(TPE);\
-	BUN old_headers_size	= current->nr_var_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
+	BUN old_headers_size	= current->nr_var_encoded_blocks * 2 * sizeof(MOSBlockHeaderTpe(var, TPE));\
 	BUN old_bytes		= old_keys_size + old_dict_size + old_headers_size;\
 \
 	if (extend_delta_##TPE(&nr_compressed, &delta_count, limit, info, val)) {\
@@ -173,14 +173,14 @@ MOSestimate_SIGNATURE(var, TPE)\
 \
 	BUN new_keys_size	= (current -> nr_var_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
 	BUN new_dict_size	= (delta_count + GET_COUNT(info)) * sizeof(TPE);\
-	BUN new_headers_size	= current->nr_var_encoded_blocks * (MosaicBlkSize + sizeof(TPE));\
+	BUN new_headers_size	= current->nr_var_encoded_blocks * 2 * sizeof(MOSBlockHeaderTpe(var, TPE));\
 	BUN new_bytes		= new_keys_size + new_dict_size + new_headers_size;\
 \
 	current->compression_strategy.tag = MOSAIC_VAR;\
 	current->compression_strategy.cnt = (unsigned int) nr_compressed;\
 \
 	current->uncompressed_size	+= (BUN) ( nr_compressed * sizeof(TPE));\
-	current->compressed_size		+= (BUN) (wordaligned( MosaicBlkSize, BitVector) + new_bytes - old_bytes);\
+	current->compressed_size	+= (BUN) (wordaligned( MosaicBlkSize, BitVector) + new_bytes - old_bytes);\
 \
 	return MAL_SUCCEED;\
 }
@@ -251,10 +251,7 @@ finalizeDictionary_var(MOStask task) {
 #define MOScompress_DEF(TPE)\
 MOScompress_SIGNATURE(var, TPE)\
 {\
-	MosaicBlk blk = task->blk;\
-	task->dst = MOScodevectorDict(task);\
-	MOSsetTag(blk,MOSAIC_VAR);\
-	MOSsetCnt(blk,0);\
+	MOSsetTag(task->blk, MOSAIC_VAR);\
 	DICTcompress(var, TPE);\
 }
 

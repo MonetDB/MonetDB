@@ -12,6 +12,9 @@ MOSprojection_SIGNATURE(NAME, TPE)\
 {\
 	BUN first = task->start;\
 	BUN last = first + MOSgetCnt(task->blk);\
+\
+	ASSERT_ALIGNMENT_BLOCK_HEADER(task->blk, NAME, TPE);\
+\
 	TPE* bt= (TPE*) task->src;\
 \
 	/* Advance the candidate iterator to the first element within

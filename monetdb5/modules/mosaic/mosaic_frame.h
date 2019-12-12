@@ -23,42 +23,24 @@ mal_export void MOScreateframeDictionary(MOStask task);
 mal_export void MOSlayout_frame_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSlayout_frame(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 
+#define MosaicBlkHeader_DEF_frame(TPE)\
+typedef struct {\
+	MosaicBlkHdrGeneric base;\
+	char bits;\
+	TPE min;\
+	BitVectorChunk bitvector; /*First chunk of bitvector to force correct alignment.*/\
+} MOSBlockHeader_frame_##TPE;
+
 ALGEBRA_INTERFACES_INTEGERS_ONLY(frame);
 #define DO_OPERATION_ON_frame(OPERATION, TPE, ...) DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, frame, TPE, __VA_ARGS__)
 
-typedef struct _FrameParameters_t {
-	MosaicBlkRec base;
-	int bits;
-	union {
-		bte minbte;
-		sht minsht;
-		int minint;
-		lng minlng;
-		oid minoid;
-#ifdef HAVE_HGE
-		hge minhge;
-#endif
-	} min;
-	union {
-		bte maxbte;
-		sht maxsht;
-		int maxint;
-		lng maxlng;
-		oid maxoid;
-#ifdef HAVE_HGE
-		hge maxhge;
-#endif
-	} max;
-
-} MosaicBlkHeader_frame_t;
-
-#define MOScodevectorFrame(Task) (((char*) (Task)->blk)+ wordaligned(sizeof(MosaicBlkHeader_frame_t), BitVectorChunk))
+#define MOScodevectorFrame(task, TPE) ((BitVector) &((MOSBlockHeaderTpe(frame, TPE)*) (task)->blk)->bitvector)
 
 #define join_inner_loop_frame(TPE, HAS_NIL, RIGHT_CI_NEXT)\
 {\
-    MosaicBlkHeader_frame_t* parameters = (MosaicBlkHeader_frame_t*) ((task))->blk;\
-	const TPE min =  parameters->min.min##TPE;\
-	const BitVector base = (BitVector) MOScodevectorFrame(task);\
+    MOSBlockHeaderTpe(frame, TPE)* parameters = (MOSBlockHeaderTpe(frame, TPE)*) ((task))->blk;\
+	const TPE min =  parameters->min;\
+	const BitVector base = MOScodevectorFrame(task, TPE);\
 	const bte bits = parameters->bits;\
     for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {\
         BUN i = (BUN) (ro - first);\
