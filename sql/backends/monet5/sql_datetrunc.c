@@ -120,7 +120,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 				days = timestamp_date(bt[lo]);
 				dt[lo] = timestamp_fromdate(
 					date_create(date_year(days),
-						    (date_month(days) - 1) / 3 + 1,
+						    ((date_month(days) - 1) / 3) * 3 + 1,
 						    1));
 			}
 	}
@@ -221,7 +221,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 
 	if  ( strcasecmp(*scale, "quarter") == 0){
 		days = timestamp_date(*bt);
-		*dt = timestamp_fromdate(date_create(date_year(days), (date_month(days) - 1) / 3 + 1, 1));
+		*dt = timestamp_fromdate(date_create(date_year(days), ((date_month(days) - 1) / 3) * 3 + 1, 1));
 	}
 
 	if  ( strcasecmp(*scale, "year") == 0){
