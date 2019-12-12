@@ -10,38 +10,40 @@ CREATE SCHEMA logging;
 CREATE PROCEDURE logging.flush()
         EXTERNAL NAME logging.flush;
 
--- Set the log level for a specific component
+-- Sets the log level for a specific component
 CREATE PROCEDURE logging.setcomplevel(comp_id INT, lvl_id INT)
         EXTERNAL NAME logging.setcomplevel;
 
--- Reset the log level for a specific component
+-- Resets the log level for a specific component back to the default
 CREATE PROCEDURE logging.resetcomplevel(comp_id INT)
         EXTERNAL NAME logging.resetcomplevel;
 
--- Set the log level for a specific layer
+-- Sets the log level for a specific layer
 CREATE PROCEDURE logging.setlayerlevel(layer_id INT, lvl_id INT)
         EXTERNAL NAME logging.setlayerlevel;
 
--- Reset the log level for a specific layer
+-- Resets the log level for a specific layer back to the default
 CREATE PROCEDURE logging.resetlayerlevel(layer_id INT)
         EXTERNAL NAME logging.resetlayerlevel;
 
--- Set the flush level
+-- Sets the flush level
 CREATE PROCEDURE logging.setflushlevel(lvl_id INT)
        EXTERNAL NAME logging.setflushlevel;
 
--- Reset the flush level
+-- Resets the flush level back to the default
 CREATE PROCEDURE logging.resetflushlevel()
        EXTERNAL NAME logging.resetflushlevel;
 
--- Set the adapter
+-- Sets the adapter
 CREATE PROCEDURE logging.setadapter(adapter_id INT)
        EXTERNAL NAME logging.setadapter;
 
--- Reset the adapter
+-- Resets the adapter back to the default
 CREATE PROCEDURE logging.resetadapter()
        EXTERNAL NAME logging.resetadapter;
 
--- Show log level per component and available layers
+-- Dumps to the console all the available logging levels, 
+-- layers and the components along with their current logging 
+-- level being set
 CREATE PROCEDURE logging.showinfo()
        EXTERNAL NAME logging.showinfo;

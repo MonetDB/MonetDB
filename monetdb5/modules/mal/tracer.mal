@@ -12,39 +12,40 @@ comment "Flush the buffer";
 
 command setcomplevel(comp:int, lvl:int)
 address TRACERset_component_level
-comment "Set the log level for a specific component";
+comment "Sets the log level for a specific component";
 
 command resetcomplevel(comp:int)
 address TRACERreset_component_level
-comment "Reset the log level for a specific component";
+comment "Resets the log level for a specific component back to the default";
 
 command setlayerlevel(layer:int, lvl:int)
 address TRACERset_layer_level
-comment "Set the log level for a specific layer";
+comment "Sets the log level for a specific layer";
 
 command resetlayerlevel(layer:int)
 address TRACERreset_layer_level
-comment "Reset the log level for a specific layer";
+comment "Resets the log level for a specific layer back to the default";
 
 command setflushlevel(lvl:int)
 address TRACERset_flush_level
-comment "Set the flush level";
+comment "Sets the flush level";
 
 command resetflushlevel()
 address TRACERreset_flush_level
-comment "Reset the flush level";
+comment "Resets the flush level back to the default";
 
 command setadapter(adapter:int)
 address TRACERset_adapter
-comment "Set the adapter";
+comment "Sets the adapter";
 
 command resetadapter()
 address TRACERreset_adapter
-comment "Reset the adapter";
+comment "Resets the adapter back to the default";
 
 command showinfo()
 address TRACERshow_info
-comment "Show logging levels per component and available layers";
+comment "Dumps to the console all the available logging levels, layers and the components
+along with their current logging level being set";
 
 # Exposed only in MAL layer - for testing
 command log()
