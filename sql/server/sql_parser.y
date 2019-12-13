@@ -5732,7 +5732,6 @@ non_reserved_word:
 | COLUMN	{ $$ = sa_strdup(SA, "column"); }	/* sloppy: officially reserved */
 | CYCLE		{ $$ = sa_strdup(SA, "cycle"); }	/* sloppy: officially reserved */
 | sqlDATE	{ $$ = sa_strdup(SA, "date"); }		/* sloppy: officially reserved */
-| DEALLOC   { $$ = sa_strdup(SA, "dealloc"); }	/* sloppy: officially reserved */
 | DEALLOCATE { $$ = sa_strdup(SA, "deallocate"); }	/* sloppy: officially reserved */
 | DISTINCT	{ $$ = sa_strdup(SA, "distinct"); }	/* sloppy: officially reserved */
 | EXEC		{ $$ = sa_strdup(SA, "exec"); }		/* sloppy: officially reserved */
@@ -5762,6 +5761,7 @@ non_reserved_word:
 | CLIENT	{ $$ = sa_strdup(SA, "client"); }
 | COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 | DATA 		{ $$ = sa_strdup(SA, "data"); }
+| DEALLOC   { $$ = sa_strdup(SA, "dealloc"); }
 | DECADE	{ $$ = sa_strdup(SA, "decade"); }
 | SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 | DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
