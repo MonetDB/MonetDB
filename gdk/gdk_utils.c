@@ -142,8 +142,10 @@ gdk_return
 GDKsetenv(const char *name, const char *value)
 {
 	if (BUNappend(GDKkey, name, false) != GDK_SUCCEED ||
-	    BUNappend(GDKval, value, false) != GDK_SUCCEED)
-		return GDK_FAIL;
+	    BUNappend(GDKval, value, false) != GDK_SUCCEED){
+			GDKerror("GDKsetenv: failed to keep enviroment property.\n");
+			return GDK_FAIL;
+	}
 	return GDK_SUCCEED;
 }
 
