@@ -1261,7 +1261,7 @@ fcnHeader(Client cntxt, int kind)
 	}
 	if (curInstr != getInstrPtr(curBlk, 0)) {
 		freeInstruction(getInstrPtr(curBlk, 0));
-		getInstrPtr(curBlk, 0) = curInstr;
+		putInstrPtr(curBlk, 0, curInstr);
 	}
 	return curBlk;
 }
