@@ -1168,4 +1168,147 @@ SELECT
         )
 ; --empty
 
+select
+  subq_0.c1 as c0,
+  subq_0.c1 as c1,
+  subq_0.c1 as c2,
+  cast(
+    nullif(
+      subq_0.c3,
+      cast(
+        nullif(
+          subq_0.c2,
+          case when (
+            (subq_0.c1 is not null)
+            and (subq_0.c3 is not null)
+          )
+          or (
+            (
+              (subq_0.c4 is not null)
+              or (
+                (
+                  (
+                    (true)
+                    or (
+                      (
+                        exists (
+                          select
+                            ref_5.bb as c0,
+                            ref_5.aa as c1
+                          from
+                            analytics as ref_5
+                          where
+                            true
+                        )
+                      )
+                      and (
+                        (false)
+                        or (
+                          (false)
+                          and (
+                            (75 is null)
+                            and (
+                              (
+                                (true)
+                                and (
+                                  (true)
+                                  and (subq_0.c1 is not null)
+                                )
+                              )
+                              or (subq_0.c3 is null)
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                  or (
+                    (false)
+                    or (
+                      exists (
+                        select
+                          subq_0.c1 as c0,
+                          32 as c1,
+                          subq_0.c2 as c2,
+                          ref_6.col7 as c3,
+                          subq_0.c0 as c4,
+                          ref_6.col7 as c5,
+                          subq_0.c1 as c6
+                        from
+                          longtable as ref_6
+                        where
+                          (
+                            (
+                              (false)
+                              and (ref_6.col8 is not null)
+                            )
+                            or (ref_6.col8 is null)
+                          )
+                          and (subq_0.c3 is null)
+                      )
+                    )
+                  )
+                )
+                and (false)
+              )
+            )
+            or (
+              (subq_0.c3 is null)
+              or (subq_0.c2 is null)
+            )
+          ) then subq_0.c1 else subq_0.c1 end
+        ) as int
+      )
+    ) as int
+  ) as c3,
+  subq_0.c0 as c4
+from
+  (
+    select
+      ref_4.aa as c0,
+      ref_1.col0 as c1,
+      ref_2.col1 as c2,
+      ref_2.col2 as c3,
+      ref_2.col0 as c4
+    from
+      tbl_productsales as ref_0
+      inner join tab2 as ref_1 on (
+        (false)
+        or (false)
+      )
+      right join tab0 as ref_2 on (
+        (
+          exists (
+            select
+              ref_2.col2 as c0,
+              ref_0.col6 as c1,
+              ref_3.i as c2,
+              ref_1.col1 as c3,
+              ref_1.col0 as c4,
+              ref_2.col0 as c5,
+              ref_3.i as c6,
+              ref_0.col3 as c7
+            from
+              integers as ref_3
+            where
+              (true)
+              or (
+                (ref_3.i is not null)
+                or (true)
+              )
+          )
+        )
+        and (false)
+      )
+      inner join analytics as ref_4 on (ref_4.bb is null)
+    where
+      (ref_1.col1 is not null)
+      or (true)
+    limit
+      76
+  ) as subq_0
+where
+  subq_0.c0 is null
+limit 92; --empty
+
 ROLLBACK;
