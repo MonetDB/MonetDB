@@ -37,11 +37,11 @@ merge-table-limit.Bug-6756
 double-free.Bug-6757
 HAVE_LIBPY3?python-loader-string.Bug-6759
 select-char.Bug-6761
+prepared-select-with-error-causes-hang.Bug-6761
 grant-select-column.Bug-6765
 next-get-value-bulk.Bug-6766
 filter_json_null.Bug-6773
 prod-decimals.Bug-6774
-prepared-select-with-error-causes-hang.Jira-292
 NOT_IN-AND-OR-wrong-results.Bug-6775
 outer-join-varchar.Bug-6776
 msqldump-mapi-cache.Bug-6777
@@ -56,3 +56,4 @@ cast-interval.Bug-6793
 could-not-allocate-space.Bug-6795
 HAVE_LIBPY3?python3-udf-modules.Bug-6797
 json-text-empty-separator.Bug-6798
+orderby-alias-expr.Bug-6799

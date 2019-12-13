@@ -63,10 +63,10 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	/* collect the initial statistics */
 	q = newStmt(mb, "clients", "getUsername");
 	name= getArg(q,0)= newVariable(mb,"name",4,TYPE_str);
-	defineQuery = pushArgument(mb,defineQuery,name);
+	defineQuery = addArgument(mb,defineQuery,name);
 	q = newStmt(mb, "mtime", "current_timestamp");
 	start= getArg(q,0)= newVariable(mb,"start",5,TYPE_timestamp);
-	defineQuery = pushArgument(mb,defineQuery,start);
+	defineQuery = addArgument(mb,defineQuery,start);
 	pushInstruction(mb, defineQuery);
 
 	q = newStmt(mb, sqlRef, "argRecord");
