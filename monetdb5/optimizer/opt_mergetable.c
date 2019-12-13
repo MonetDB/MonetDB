@@ -1843,6 +1843,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 			bailout = 1;
 		}
+
 		/*
 		if (isTopn(p))
 			topn_res = getArg(p, 0);

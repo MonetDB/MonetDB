@@ -2724,8 +2724,8 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor(sql, rel, &rewrite_or_exp);
 	rel = rel_exp_visitor(sql, rel, &rewrite_rank);
 	rel = rel_exp_visitor(sql, rel, &rewrite_anyequal);
-	rel = rel_exp_visitor(sql, rel, &rewrite_compare);
 	rel = rel_exp_visitor(sql, rel, &rewrite_exists);
+	rel = rel_exp_visitor(sql, rel, &rewrite_compare);
 	rel = rel_exp_visitor(sql, rel, &rewrite_ifthenelse);	/* add isnull handling */
 	rel = rel_exp_visitor(sql, rel, &rewrite_exp_rel);
 	rel = rel_visitor(sql, rel, &rewrite_join2semi);	/* where possible convert anyequal functions into marks */
