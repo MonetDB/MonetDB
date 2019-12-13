@@ -2455,12 +2455,14 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 				/* a bit of a hack for prepare/exec/dealloc
 				 * tests: replace "exec[ute] **" with the
 				 * ID of the last prepared statement */
-				if (mode == SQL &&
-				    formatter == TESTformatter &&
-				    (strncasecmp(line, "exec **", 7) == 0 || 
-					 strncasecmp(line, "execute **", 10) == 0)) {
-					line[5] = prepno < 10 ? ' ' : prepno / 10 + '0';
-					line[6] = prepno % 10 + '0';
+				if (mode == SQL && formatter == TESTformatter) {
+					if (strncasecmp(line, "exec **", 7) == 0) {
+						line[5] = prepno < 10 ? ' ' : prepno / 10 + '0';
+						line[6] = prepno % 10 + '0';
+					} else if (strncasecmp(line, "execute **", 10) == 0) {
+						line[8] = prepno < 10 ? ' ' : prepno / 10 + '0';
+						line[9] = prepno % 10 + '0';
+					}
 				}
 				if (strncasecmp(line, "exit\n", 5) == 0) {
 					goto bailout;
@@ -2471,12 +2473,14 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 				/* a bit of a hack for prepare/exec/dealloc
 				 * tests: replace "dealloc[ate] **" with the
 				 * ID of the last prepared statement */
-				if (mode == SQL &&
-				    formatter == TESTformatter &&
-				    (strncasecmp(line, "dealloc **", 10) == 0 || 
-					 strncasecmp(line, "deallocate **", 13) == 0)) {
-					line[5] = prepno < 10 ? ' ' : prepno / 10 + '0';
-					line[6] = prepno % 10 + '0';
+				if (mode == SQL && formatter == TESTformatter) {
+					if (strncasecmp(line, "dealloc **", 10) == 0) {
+						line[8] = prepno < 10 ? ' ' : prepno / 10 + '0';
+						line[9] = prepno % 10 + '0';
+					} else if (strncasecmp(line, "deallocate **", 13) == 0) {
+						line[11] = prepno < 10 ? ' ' : prepno / 10 + '0';
+						line[12] = prepno % 10 + '0';
+					}
 				}
 				break;
 			case 'q':
