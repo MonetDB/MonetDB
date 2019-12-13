@@ -36,7 +36,7 @@
 		bn = COLnew(b->hseqbase, X1, BATcount(b), TRANSIENT);	\
 		if (bn == NULL) {										\
 			BBPunfix(b->batCacheid);							\
-			throw(MAL, X2, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+			throw(MAL, X2, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 		}														\
 		bn->tsorted = b->tsorted;								\
 		bn->trevsorted = b->trevsorted;							\
@@ -68,7 +68,7 @@ str CMDscience_bat_##TYPE##_##FUNC##_cand(bat *ret, const bat *bid, const bat *s
 	if (bn == NULL) {													\
 		BBPunfix(b->batCacheid);										\
 		BBPunfix(s->batCacheid);										\
-		throw(MAL, "batcalc." #FUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+		throw(MAL, "batcalc." #FUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 	}																	\
 																		\
 	const TYPE *restrict src = (const TYPE *) Tloc(b, 0);				\
@@ -155,7 +155,7 @@ str CMDscience_bat_cst_##FUNC##_##TYPE##_cand(bat *ret, const bat *bid, \
 	if (bn == NULL) {													\
 		BBPunfix(b->batCacheid);										\
 		BBPunfix(s->batCacheid);										\
-		throw(MAL, "batcalc." #FUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+		throw(MAL, "batcalc." #FUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 	}																	\
 																		\
 	const TYPE *restrict src = (const TYPE *) Tloc(b, 0);				\
@@ -242,7 +242,7 @@ str CMDscience_cst_bat_##FUNC##_##TYPE##_cand(bat *ret, const TYPE *d,	\
 	if (bn == NULL) {													\
 		BBPunfix(b->batCacheid);										\
 		BBPunfix(s->batCacheid);										\
-		throw(MAL, "batcalc." #FUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+		throw(MAL, "batcalc." #FUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 	}																	\
 																		\
 	const TYPE *restrict src = (const TYPE *) Tloc(b, 0);				\

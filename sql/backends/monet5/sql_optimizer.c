@@ -264,7 +264,7 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 	pipe = getSQLoptimizer(be->mvc);
 	if( strcmp(pipe, "default_pipe") == 0 && strcmp(c->optimizer, "default_pipe") != 0) {
 		if (!(pipe = GDKstrdup(c->optimizer)))
-			throw(MAL, "sql.optimizeQuery", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "sql.optimizeQuery", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		free_pipe = true;
 	}
 

@@ -39,7 +39,7 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 		*(ptr *) ret = GDKmalloc(_s);
 		if (*(ptr *) ret == NULL) {
 			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.zero_or_one", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.zero_or_one", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		memcpy(*(ptr *) ret, p, _s);
 	} else if (b->ttype == TYPE_bat) {
@@ -164,7 +164,7 @@ SQLall(ptr ret, const bat *bid)
 		*(ptr *) ret = GDKmalloc(_s);
 		if (*(ptr *) ret == NULL) {
 			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.all", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.all", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		memcpy(*(ptr *) ret, p, _s);
 	} else if (b->ttype == TYPE_bat) {
@@ -226,7 +226,7 @@ SQLall_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
 			BBPunfix(l->batCacheid);
 			BBPunfix(g->batCacheid);
 			BBPunfix(e->batCacheid);
-			throw(SQL, "sql.all =", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.all =", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		for (s = 0; s < BATcount(e); s++) 
 			pos[s] = -1;
@@ -257,7 +257,7 @@ SQLall_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
 		BBPunfix(g->batCacheid);
 		BBPunfix(e->batCacheid);
 		GDKfree(pos);
-		throw(SQL, "sql.all =", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.all =", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	for (p = 0; p < (ssize_t)BATcount(e) && !error; p++) {
@@ -342,7 +342,7 @@ SQLnil_grp(bat *ret, const bat *bid, const bat *gp, const bat *gpe, bit *no_nil)
 		BBPunfix(l->batCacheid);
 		BBPunfix(g->batCacheid);
 		BBPunfix(e->batCacheid);
-		throw(SQL, "sql.any =", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.any =", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BAThseqbase(res, e->hseqbase);
 	offset = g->hseqbase - l->hseqbase;
@@ -479,7 +479,7 @@ SQLanyequal_grp(bat *ret, const bat *bid1, const bat *bid2, const bat *gp, const
 		BBPunfix(r->batCacheid);
 		BBPunfix(g->batCacheid);
 		BBPunfix(e->batCacheid);
-		throw(SQL, "sql.any =", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.any =", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BAThseqbase(res, e->hseqbase);
 	assert(BATcount(l) == BATcount(r));
@@ -563,7 +563,7 @@ SQLanyequal_grp2(bat *ret, const bat *bid1, const bat *bid2, const bat *Rid, con
 		BBPunfix(rid->batCacheid);
 		BBPunfix(g->batCacheid);
 		BBPunfix(e->batCacheid);
-		throw(SQL, "sql.any =", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.any =", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BAThseqbase(res, e->hseqbase);
 	assert(BATcount(l) == BATcount(r));
@@ -682,7 +682,7 @@ SQLallnotequal_grp(bat *ret, const bat *bid1, const bat *bid2, const bat *gp, co
 		BBPunfix(r->batCacheid);
 		BBPunfix(g->batCacheid);
 		BBPunfix(e->batCacheid);
-		throw(SQL, "sql.all <>", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.all <>", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BAThseqbase(res, e->hseqbase);
 	assert(BATcount(l) == BATcount(r));
@@ -766,7 +766,7 @@ SQLallnotequal_grp2(bat *ret, const bat *bid1, const bat *bid2, const bat *Rid, 
 		BBPunfix(rid->batCacheid);
 		BBPunfix(g->batCacheid);
 		BBPunfix(e->batCacheid);
-		throw(SQL, "sql.all <>", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.all <>", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BAThseqbase(res, e->hseqbase);
 	assert(BATcount(l) == BATcount(r));
@@ -873,7 +873,7 @@ SQLsubexist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
 		BBPunfix(e->batCacheid);
-		throw(SQL, "aggr.subexist", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "aggr.subexist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BAThseqbase(res, e->hseqbase);
 	offset = g->hseqbase - b->hseqbase;
@@ -968,7 +968,7 @@ SQLsubnot_exist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
 		BBPunfix(e->batCacheid);
-		throw(SQL, "aggr.subnot_exist", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "aggr.subnot_exist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BAThseqbase(res, e->hseqbase);
 	offset = g->hseqbase - b->hseqbase;

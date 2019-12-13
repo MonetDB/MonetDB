@@ -176,7 +176,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 
 	if (!b) {
 		// No BAT was found, we can't do anything in this case
-		msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL " bat missing");
+		msg = createException(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL " bat missing");
 		goto wrapup;
 	}
 
@@ -287,7 +287,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
 								msg = createException(MAL, "pyapi.eval",
-													  SQLSTATE(HY001) MAL_MALLOC_FAIL
+													  SQLSTATE(HY013) MAL_MALLOC_FAIL
 													  " PyObject strings.");
 								goto wrapup;
 							}
@@ -352,7 +352,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
 								msg = createException(MAL, "pyapi.eval",
-													  SQLSTATE(HY001) MAL_MALLOC_FAIL
+													  SQLSTATE(HY013) MAL_MALLOC_FAIL
 													  " PyObject strings.");
 								goto wrapup;
 							}
@@ -1041,7 +1041,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 	return b;
 bunins_failed:
 	BBPunfix(b->batCacheid);
-	msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	msg = createException(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 wrapup:
 	*return_message = msg;
 	return NULL;
@@ -1101,7 +1101,7 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 		*ret_type = conv_type;
 		if (!(*ret_bat)) {
 			return createException(MAL, "pyapi.eval",
-								   SQLSTATE(HY001) MAL_MALLOC_FAIL " string conversion BAT.");
+								   SQLSTATE(HY013) MAL_MALLOC_FAIL " string conversion BAT.");
 		}
 		BATloop(b, p, q)
 		{
@@ -1113,7 +1113,7 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 			}
 			if (BUNappend(*ret_bat, result, false) != GDK_SUCCEED) {
 				BBPunfix((*ret_bat)->batCacheid);
-				throw(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		if (result) {

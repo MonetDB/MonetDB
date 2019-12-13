@@ -35,7 +35,7 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 	bn= COLnew(b->hseqbase,TPE,BATcount(b), TRANSIENT);					\
 	if( bn == NULL){													\
 		BBPunfix(b->batCacheid);										\
-		throw(MAL, "batcolor." #NAME, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+		throw(MAL, "batcolor." #NAME, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 	}																	\
 	bn->tsorted=false;													\
 	bn->trevsorted=false;												\
@@ -113,7 +113,7 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 		BBPunfix(b->batCacheid);										\
 		BBPunfix(b2->batCacheid);										\
 		BBPunfix(b3->batCacheid);										\
-		throw(MAL, "batcolor." #NAME, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+		throw(MAL, "batcolor." #NAME, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 	}																	\
 	bn->tsorted=false;													\
 	bn->trevsorted=false;												\

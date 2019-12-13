@@ -405,7 +405,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 		if (*env == NULL) {
 			stk = prepareMALstack(mb, mb->vsize);
 			if (stk == NULL)
-				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			stk->up = 0;
 			*env = stk;
 		} else {
@@ -415,13 +415,13 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 			stk = *env;
 			initStack(0, res);
 			if(!res)
-				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		assert(stk);
 		for (i = pci->retc; i < pci->argc; i++) {
 			lhs = &stk->stk[pci->argv[i]];
 			if (VALcopy(lhs, argv[i]) == NULL)
-				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			if (lhs->vtype == TYPE_bat)
 				BBPretain(lhs->val.bval);
 		}
@@ -481,7 +481,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if( backup == NULL || garbage == NULL) {
 				GDKfree(backup);
 				GDKfree(garbage);
-				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		} else {
 			backup = backups;
@@ -494,7 +494,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		if( backup == NULL || garbage == NULL) {
 			GDKfree(backup);
 			GDKfree(garbage);
-			throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	} else {
 		backup = backups;

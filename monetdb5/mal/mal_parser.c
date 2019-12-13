@@ -1127,7 +1127,7 @@ fcnHeader(Client cntxt, int kind)
 	cntxt->curprg = newFunction( modnme, fnme, kind);
 	if(cntxt->curprg == NULL) {
 		cntxt->curprg = cntxt->backup;
-		parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return 0;
 	}
 	cntxt->curprg->def->errors = cntxt->backup->def->errors;
@@ -1224,7 +1224,7 @@ fcnHeader(Client cntxt, int kind)
 		max = curInstr->maxarg;
 		newarg = (short *) GDKmalloc(max * sizeof(curInstr->argv[0]));
 		if (newarg == NULL){
-			parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			if (cntxt->backup) {
 				freeSymbol(cntxt->curprg);
 				cntxt->curprg = cntxt->backup;
@@ -1385,7 +1385,7 @@ parseFunction(Client cntxt, int kind)
 		}
 		nme = idCopy(cntxt, i);
 		if (nme == NULL) {
-			parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return 0;
 		}
 		curInstr->fcn = getAddress(nme);
@@ -1550,7 +1550,7 @@ parseAssign(Client cntxt, int cntrl)
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	if((curInstr = newInstruction(curBlk, NULL, NULL)) == NULL) {
-		parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return;
 	}
 
@@ -1797,7 +1797,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 			if (! skipcomments && e > start && curBlk->stop > 0 ) {
 				ValRecord cst;
 				if((curInstr = newInstruction(curBlk, NULL, NULL)) == NULL) {
-					parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					continue;
 				}
 				curInstr->token= REMsymbol;
@@ -1805,7 +1805,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				cst.vtype = TYPE_str;
 				cst.len = strlen(start);
 				if((cst.val.sval = GDKstrdup(start)) == NULL) {
-					parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					freeInstruction(curInstr);
 					continue;
 				}

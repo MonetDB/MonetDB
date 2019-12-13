@@ -16,7 +16,7 @@
 		r = COLnew(b->hseqbase, tpe, cnt, TRANSIENT);		\
 		if (r == NULL) {					\
 			BBPunfix(b->batCacheid);			\
-			throw(MAL, err, SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+			throw(MAL, err, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 		}							\
 		r->tsorted = false;					\
 		r->trevsorted = false;					\
@@ -1159,7 +1159,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char*
 		ValRecord *vin = &(stk)->stk[(pci)->argv[1]];
 		if(l_value == 0) {
 			if(!VALcopy(res, vin))
-				throw(SQL, op, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
 			VALset(res, tp1, (ptr) default_value);
 		}

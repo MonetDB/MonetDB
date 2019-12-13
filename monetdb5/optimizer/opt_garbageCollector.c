@@ -40,7 +40,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	
 	used = (char*) GDKzalloc(sizeof(char) * mb->vtop);
 	if ( used == NULL)
-		throw(MAL, "optimizer.garbagecollector", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.garbagecollector", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	limit = mb->stop;
 

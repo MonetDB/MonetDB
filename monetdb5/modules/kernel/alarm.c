@@ -79,7 +79,7 @@ ALARMctime(str *res)
 	base[24] = 0;				/* squash final newline */
 	*res = GDKstrdup(base);
 	if (*res == NULL)
-		throw(MAL, "alarm.ctime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "alarm.ctime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

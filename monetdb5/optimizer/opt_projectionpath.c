@@ -154,13 +154,13 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	limit= mb->stop;
 	slimit= mb->ssize;
 	if ( newMalBlkStmt(mb, 2 * mb->stop) < 0)
-		throw(MAL,"optimizer.projectionpath", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* beware, new variables and instructions are introduced */
 	pc= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
 	varcnt= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); 
 	if (pc == NULL || varcnt == NULL ){
-		msg = createException(MAL,"optimizer.projectionpath", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL,"optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapupall;
 	}
 
@@ -186,7 +186,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			 * Try to expand its argument list with what we have found so far.
 			 */
 			if((q = copyInstruction(p)) == NULL) {
-				msg = createException(MAL,"optimizer.projectionpath", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto wrapupall;
 			}
 
