@@ -78,7 +78,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	args = (str *)GDKzalloc(pci->argc * sizeof(str));
 	if (!args) {
-		throw(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL " arguments.");
+		throw(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL " arguments.");
 	}
 
 	// Analyse the SQL_Func structure to get the parameter names
@@ -105,7 +105,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	pArgs = PyTuple_New(argcount - pci->retc - 2 + additional_columns);
 	if (!pArgs) {
 		msg = createException(MAL, "pyapi.eval_loader",
-							  SQLSTATE(HY001) MAL_MALLOC_FAIL "python object");
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL "python object");
 		goto wrapup;
 	}
 
@@ -171,7 +171,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		cols = GDKzalloc(sizeof(sql_emit_col) * ncols);
 		if (!cols) {
 			msg = createException(MAL, "pyapi.eval_loader",
-								  SQLSTATE(HY001) MAL_MALLOC_FAIL "column list");
+								  SQLSTATE(HY013) MAL_MALLOC_FAIL "column list");
 			goto wrapup;
 		}
 		assert(pyapi_list_length(sqlmorefun->colnames) == pyapi_list_length(sqlmorefun->coltypes) * 2);
@@ -202,7 +202,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	pEmit = PyEmit_Create(cols, ncols);
 	if (!pConnection || !pEmit) {
 		msg = createException(MAL, "pyapi.eval_loader",
-							  SQLSTATE(HY001) MAL_MALLOC_FAIL "python object");
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL "python object");
 		goto wrapup;
 	}
 

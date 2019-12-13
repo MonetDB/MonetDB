@@ -201,7 +201,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	states = (States) GDKzalloc(vlimit * sizeof(char));
 	sink = (InstrPtr *) GDKzalloc(mb->stop * sizeof(InstrPtr));
 	if (states == NULL || sink == NULL){
-		msg= createException(MAL,"optimizer.dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg= createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 	
@@ -211,7 +211,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	slimit= mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		msg= createException(MAL,"optimizer.dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg= createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		actions = -1;
 		goto wrapup;
 	}

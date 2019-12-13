@@ -111,7 +111,7 @@ QLOGcatalog(BAT **r)
 	}
 	if( r[0])
 		return MAL_SUCCEED;
-	throw(MAL,"catalog_queries", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL,"catalog_queries", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -147,7 +147,7 @@ QLOGcalls(BAT **r)
 	}
 	if( r[0])
 		return MAL_SUCCEED;
-	throw(MAL,"catalog_calls", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL,"catalog_calls", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 #define MAXCOMMITLIST 32
@@ -233,7 +233,7 @@ _initQlog(void)
 		QLOG_calls_tuples == NULL || QLOG_calls_exec == NULL || QLOG_calls_result == NULL ||
 		QLOG_calls_cpuload == NULL || QLOG_calls_iowait == NULL){
 			_QLOGcleanup();
-			throw(MAL,"querylog.init", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"querylog.init", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	QLOG_init = true;
@@ -358,7 +358,7 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BUNappend(QLOG_cat_user,*usr,false) != GDK_SUCCEED ||
 			BUNappend(QLOG_cat_defined,tick,false) != GDK_SUCCEED) {
 			MT_lock_unset(&mal_profileLock);
-			throw(MAL, "querylog.append", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "querylog.append", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	MT_lock_unset(&mal_profileLock);
@@ -408,7 +408,7 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNappend(QLOG_calls_cpuload,cpu,false) != GDK_SUCCEED ||
 		BUNappend(QLOG_calls_iowait,iowait,false) != GDK_SUCCEED) {
 		MT_lock_unset(&mal_profileLock);
-		throw(MAL, "querylog.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "querylog.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	MT_lock_unset(&mal_profileLock);
 	TMsubcommit_list(commitlist, committop);

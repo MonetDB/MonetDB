@@ -79,7 +79,7 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			n++;						\
 		bn = COLnew(0, TYPE_##TPE, n, TRANSIENT);		\
 		if (bn == NULL)						\
-			throw(MAL, "generator.table", SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+			throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 		v = (TPE*) Tloc(bn, 0);					\
 		for (c = 0; c < n; c++)					\
 			*v++ = (TPE) (f + c * s);			\
@@ -148,7 +148,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			n = (BUN) (timestamp_diff(l, f) / s);
 			bn = COLnew(0, TYPE_timestamp, n + 1, TRANSIENT);
 			if (bn == NULL)
-				throw(MAL, "generator.table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			v = (timestamp *) Tloc(bn, 0);
 			for (c = 0; c < n; c++) {
 				*v++ = f;
@@ -379,7 +379,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			o2 = (BUN) (timestamp_diff(tsl, tsf) / tss);
 			bn = COLnew(0, TYPE_oid, o2 + 1, TRANSIENT);
 			if (bn == NULL)
-				throw(MAL, "generator.select", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "generator.select", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 			// simply enumerate the sequence and filter it by predicate and candidate list
 			ol = (oid *) Tloc(bn, 0);
@@ -462,7 +462,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(cand->batCacheid);
 		if (bn == NULL)
 			throw(MAL, "generator.select",
-			      SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			      SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		if (anti) {
 			oid o;
@@ -471,7 +471,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn = COLnew(0, TYPE_oid, n - (o2 - o1), TRANSIENT);
 			if (bn == NULL)
 				throw(MAL, "generator.select",
-				      SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				      SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			BATsetcount(bn, n - (o2 - o1));
 			op = (oid *) Tloc(bn, 0);
 			for (o = 0; o < o1; o++)
@@ -487,7 +487,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn = BATdense(0, o1, (BUN) (o2 - o1));
 			if (bn == NULL)
 				throw(MAL, "generator.select",
-				      SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				      SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	* getArgReference_bat(stk, pci, 0) = bn->batCacheid;
@@ -532,7 +532,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	cap = (BUN)(ABS(l-f)/ABS(s));\
 	bn = COLnew(0, TYPE_oid, cap, TRANSIENT);\
 	if( bn == NULL)\
-		throw(MAL,"generator.thetaselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);\
+		throw(MAL,"generator.thetaselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);\
 	low= hgh = TPE##_nil;\
 	v = (oid*) Tloc(bn,0);\
 	if ( strcmp(oper,"<") == 0){\
@@ -675,7 +675,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if( bn == NULL) {
 				if (cand)
 					BBPunfix(cand->batCacheid);
-				throw(MAL,"generator.thetaselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL,"generator.thetaselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			v = (oid*) Tloc(bn,0);
 
@@ -730,7 +730,7 @@ wrapup:
 	bn = COLnew(0, TYPE_##TPE, cnt, TRANSIENT);\
 	if( bn == NULL){\
 		BBPunfix(bid);\
-		throw(MAL,"generator.projection", SQLSTATE(HY001) MAL_MALLOC_FAIL);\
+		throw(MAL,"generator.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);\
 	}\
 	v = (TPE*) Tloc(bn,0);\
 	for(; cnt-- > 0; ol ? *ol++ : o++){\
@@ -814,7 +814,7 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			bn = COLnew(0, TYPE_timestamp, cnt, TRANSIENT);
 			if( bn == NULL){
 				BBPunfix(bid);
-				throw(MAL,"generator.projection", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL,"generator.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 
 			v = (timestamp*) Tloc(bn,0);
@@ -935,7 +935,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(brn) BBPunfix(brn->batCacheid);
 		if(bl) BBPunfix(bl->batCacheid);
 		if(br) BBPunfix(br->batCacheid);
-		throw(MAL,"generator.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"generator.join", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	ol = (oid*) Tloc(bln,0);
 	or = (oid*) Tloc(brn,0);
@@ -997,14 +997,14 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(bhgh->batCacheid);\
 		BBPunfix(bln->batCacheid);\
 		BBPunfix(brn->batCacheid);\
-		throw(MAL,"generator.rangejoin", SQLSTATE(HY001) MAL_MALLOC_FAIL);\
+		throw(MAL,"generator.rangejoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);\
 	}\
 	if (BATextend(brn, limit) != GDK_SUCCEED) {	\
 		BBPunfix(blow->batCacheid);\
 		BBPunfix(bhgh->batCacheid);\
 		BBPunfix(bln->batCacheid);\
 		BBPunfix(brn->batCacheid);\
-		throw(MAL,"generator.rangejoin", SQLSTATE(HY001) MAL_MALLOC_FAIL);\
+		throw(MAL,"generator.rangejoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);\
 	}\
 	ol = (oid*) Tloc(bln,0) + c;\
 	or = (oid*) Tloc(brn,0) + c;\
@@ -1076,7 +1076,7 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if(brn) BBPunfix(brn->batCacheid);
 		if(blow) BBPunfix(blow->batCacheid);
 		if(bhgh) BBPunfix(bhgh->batCacheid);
-		throw(MAL,"generator.rangejoin", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"generator.rangejoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	ol = (oid*) Tloc(bln,0);
 	or = (oid*) Tloc(brn,0);

@@ -986,7 +986,7 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 				 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
 				err = sql_subtype_string(&(t->part.pcol->type));
 				if (!err) {
-					sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else {
 					sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: column type %s not yet supported for the partition column", err);
 					GDKfree(err);
@@ -1070,14 +1070,14 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 			char *local_user = stack_get_string(sql, "current_user");
 			char *local_table = sa_strconcat(sql->sa, sa_strconcat(sql->sa, sname, "."), name);
 			if (!local_table) {
-				return sql_error(sql, 02, SQLSTATE(HY001) "CREATE TABLE: " MAL_MALLOC_FAIL);
+				return sql_error(sql, 02, SQLSTATE(HY013) "CREATE TABLE: " MAL_MALLOC_FAIL);
 			}
 			if (!mapiuri_valid(loc))
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: incorrect uri '%s' for remote table '%s'", loc, name);
 
 			const char *remote_uri = mapiuri_uri(loc, sql->sa);
 			if (remote_uri == NULL) {
-				return sql_error(sql, 02, SQLSTATE(HY001) "CREATE TABLE: " MAL_MALLOC_FAIL);
+				return sql_error(sql, 02, SQLSTATE(HY013) "CREATE TABLE: " MAL_MALLOC_FAIL);
 			}
 			char *reg_credentials = AUTHaddRemoteTableCredentials(local_table, local_user, remote_uri, username, password, pw_encrypted);
 			if (reg_credentials != 0) {
@@ -1613,7 +1613,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 				if (c->def) {
 					char *d, *typestr = subtype2string2(&c->type);
 					if (!typestr)
-						return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					d = sql_message("select cast(%s as %s);", c->def, typestr);
 					_DELETE(typestr);
 					e = rel_parse_val(sql, d, sql->emode, NULL);

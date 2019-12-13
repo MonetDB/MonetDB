@@ -37,7 +37,7 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 		*(ptr *) ret = GDKmalloc(_s);
 		if(*(ptr *) ret == NULL){
 			BBPunfix(b->batCacheid);
-			throw(SQL, "zero_or_one", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "zero_or_one", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		memcpy(*(ptr *) ret, p, _s);
 	} else if (b->ttype == TYPE_bat) {
@@ -156,7 +156,7 @@ SQLall(ptr ret, const bat *bid)
 		*(ptr *) ret = GDKmalloc(_s);
 		if(*(ptr *) ret == NULL){
 			BBPunfix(b->batCacheid);
-			throw(SQL, "SQLall", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "SQLall", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		memcpy(*(ptr *) ret, p, _s);
 	} else if (b->ttype == TYPE_bat) {

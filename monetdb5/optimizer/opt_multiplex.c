@@ -58,7 +58,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fcn = VALget(&getVar(mb, getArg(pci, pci->retc+1))->value);
 	fcn = putName(fcn);
 	if(mod == NULL || fcn == NULL)
-		throw(MAL, "optimizer.multiplex", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 #ifndef NDEBUG
 	fprintf(stderr,"#WARNING To speedup %s.%s a bulk operator implementation is needed\n#", mod,fcn);
 	fprintInstruction(stderr, mb, stk, pci, LIST_MAL_DEBUG);
@@ -94,7 +94,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (alias == NULL || resB == NULL)  {
 		GDKfree(alias);
 		GDKfree(resB);
-		throw(MAL, "optimizer.multiplex", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	/* resB := new(refBat) */
@@ -228,7 +228,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0 )
-		throw(MAL,"optimizer.mergetable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.mergetable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];

@@ -455,7 +455,7 @@ newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
 		 * The marking of the block as containing errors should protect further actions.
 		 */
 		if( mb){
-			mb->errors = createMalException(mb,0, TYPE, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			mb->errors = createMalException(mb,0, TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		return NULL;
 	}
@@ -739,7 +739,7 @@ makeVarSpace(MalBlkPtr mb)
 		if (new == NULL) {
 			// the only place to return an error signal at this stage.
 			// The Client context should be passed around more deeply
-			mb->errors = createMalException(mb,0,TYPE, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			mb->errors = createMalException(mb,0,TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 		memset( ((char*) new) + mb->vsize * sizeof(VarRecord), 0, (s- mb->vsize) * sizeof(VarRecord));
@@ -1132,7 +1132,7 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 			 * then we show an exception, mark the block as erroneous
 			 * and leave the instruction as is.
 			*/
-			mb->errors = createMalException(mb,0, TYPE, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			mb->errors = createMalException(mb,0, TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return p;
 		}
 		memset( ((char*)pn) + space, 0, MAXARG * sizeof(pn->argv[0]));

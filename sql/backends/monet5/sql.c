@@ -312,19 +312,19 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 			sql->sa = sa_create();
 			if (!sql->sa) {
 				sql->sa = osa;
-				throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			buf = sa_alloc(sql->sa, strlen(c->def) + 8);
 			if (!buf) {
 				sa_destroy(sql->sa);
 				sql->sa = osa;
-				throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			typestr = subtype2string2(&c->type);
 			if (!typestr) {
 				sa_destroy(sql->sa);
 				sql->sa = osa;
-				throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			snprintf(buf, BUFSIZ, "select cast(%s as %s);", c->def, typestr);
 			_DELETE(typestr);
@@ -366,7 +366,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		sql->sa = sa_create();
 		if (!sql->sa) {
 			sql->sa = osa;
-			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
 		err = bootstrap_partition_expression(sql, sql->session->tr->sa, nt, 1);
@@ -400,7 +400,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 			sql->sa = sa_create();
 			if(!sql->sa) {
 				sql->sa = osa;
-				throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 
 			err = sql_partition_validate_key(sql, nt, k, "CREATE");
@@ -432,7 +432,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		sql->sa = sa_create();
 		if (!sql->sa) {
 			sql->sa = osa;
-			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
@@ -466,7 +466,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 
 	/* for some reason we don't have an allocator here, so make one */
 	if (!(sql->sa = sa_create())) {
-		msg = sql_error(sql, 02, SQLSTATE(HY001) "CREATE TABLE: %s", MAL_MALLOC_FAIL);
+		msg = sql_error(sql, 02, SQLSTATE(HY013) "CREATE TABLE: %s", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -545,7 +545,7 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 
 	/* for some reason we don't have an allocator here, so make one */
 	if (!(sql->sa = sa_create())) {
-		msg = sql_error(sql, 02, SQLSTATE(HY001) "CREATE TABLE: %s", MAL_MALLOC_FAIL);
+		msg = sql_error(sql, 02, SQLSTATE(HY013) "CREATE TABLE: %s", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -645,11 +645,11 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					return msg;
 				if (stack_find_var(m, varname)) {
 					if(!stack_set_string(m, varname, buf))
-						throw(SQL, "sql.setVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			} else if (stack_find_var(m, varname)) {
 				if(!stack_set_string(m, varname, newopt))
-					throw(SQL, "sql.setVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		return MAL_SUCCEED;
@@ -664,7 +664,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ((msg = sql_update_var(m, varname, src->val.sval, sgn)) != NULL)
 			return msg;
 		if(!stack_set_var(m, varname, src))
-			throw(SQL, "sql.setVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		throw(SQL, "sql.setVariable", SQLSTATE(42100) "variable '%s' unknown", varname);
 	}
@@ -693,7 +693,7 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	src = &a->data;
 	dst = &stk->stk[getArg(pci, 0)];
 	if (VALcopy(dst, src) == NULL)
-		throw(MAL, "sql.getVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "sql.getVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -713,11 +713,11 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	vars = COLnew(0, TYPE_str, m->topvars, TRANSIENT);
 	if (vars == NULL)
-		throw(SQL, "sql.variables", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (i = 0; i < m->topvars && !m->vars[i].frame; i++) {
 		if (BUNappend(vars, m->vars[i].name, false) != GDK_SUCCEED) {
 			BBPreclaim(vars);
-			throw(SQL, "sql.variables", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	*res = vars->batCacheid;
@@ -744,7 +744,7 @@ mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (strcmp(filename, str_nil)) {
 		if((m->scanner.log = open_wastream(filename)) == NULL)
-			throw(SQL, "sql.logfile", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.logfile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	return MAL_SUCCEED;
 }
@@ -844,7 +844,7 @@ mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	it = b ? b : c; /* Either b or c must be set */
 
 	if (!(r = COLnew(it->hseqbase, TYPE_lng, BATcount(it), TRANSIENT))) {
-		msg = createException(SQL, call, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(SQL, call, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
@@ -889,7 +889,7 @@ mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 			goto bailout;
 		}
 		if (BUNappend(r, &l, false) != GDK_SUCCEED) {
-			msg = createException(SQL, call, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			msg = createException(SQL, call, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 	}
@@ -1020,7 +1020,7 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	it = b ? b : c ? c : d; /* Either b, c or d must be set */
 
 	if (!(r = COLnew(it->hseqbase, TYPE_lng, BATcount(it), TRANSIENT))) {
-		msg = createException(SQL, "sql.restart", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.restart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
@@ -1083,7 +1083,7 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 		if (BUNappend(r, &nstart, false) != GDK_SUCCEED) {
-			msg = createException(SQL, "sql.restart", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			msg = createException(SQL, "sql.restart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 	}
@@ -1179,7 +1179,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				bn = BATslice(b, part_nr * psz, (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz));
 				if(bn == NULL) {
 					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.bind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(SQL, "sql.bind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				BAThseqbase(bn, part_nr * psz);
 			} else {
@@ -1200,7 +1200,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(c->batCacheid);
 				if(bn == NULL) {
 					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.bind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(SQL, "sql.bind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
 			BBPunfix(b->batCacheid);
@@ -1241,7 +1241,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BBPunfix(b->batCacheid);
 					bat_destroy(id);
 					bat_destroy(vl);
-					throw(SQL, "sql.bind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(SQL, "sql.bind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				if ( BATcount(id) != BATcount(vl)){
 					BBPunfix(b->batCacheid);
@@ -1258,7 +1258,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*uvl = e_bat(c->type.type->localtype);
 				if(*bid == BID_NIL || *uvl == BID_NIL) {
 					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.bind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(SQL, "sql.bind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
 			BBPunfix(b->batCacheid);
@@ -1296,22 +1296,22 @@ mvc_insert_delta_values(mvc *m, BAT *col1, BAT *col2, BAT *col3, BAT *col4, BAT 
 	assert(all >= inserted);
 
 	if (BUNappend(col1, &c->base.id, false) != GDK_SUCCEED) {
-		return createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return createException(SQL,"sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (BUNappend(col2, &cleared, false) != GDK_SUCCEED) {
-		return createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return createException(SQL,"sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (BUNappend(col3, &readonly, false) != GDK_SUCCEED) {
-		return createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return createException(SQL,"sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (BUNappend(col4, &inserted, false) != GDK_SUCCEED) {
-		return createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return createException(SQL,"sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (BUNappend(col5, &updates, false) != GDK_SUCCEED) {
-		return createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return createException(SQL,"sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (BUNappend(col6, &deletes, false) != GDK_SUCCEED) {
-		return createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return createException(SQL,"sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	/* compute level using global transaction */
 	if (gtrans) {
@@ -1323,7 +1323,7 @@ mvc_insert_delta_values(mvc *m, BAT *col1, BAT *col2, BAT *col3, BAT *col4, BAT 
 		}
 	}
 	if (BUNappend(col7, &level, false) != GDK_SUCCEED) {
-		return createException(SQL,"sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return createException(SQL,"sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	return MAL_SUCCEED;
 }
@@ -1389,31 +1389,31 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if ((col1 = COLnew(0, TYPE_int, nrows, TRANSIENT)) == NULL) {
-		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	if ((col2 = COLnew(0, TYPE_bit, nrows, TRANSIENT)) == NULL) {
-		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	if ((col3 = COLnew(0, TYPE_lng, nrows, TRANSIENT)) == NULL) {
-		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	if ((col4 = COLnew(0, TYPE_lng, nrows, TRANSIENT)) == NULL) {
-		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	if ((col5 = COLnew(0, TYPE_lng, nrows, TRANSIENT)) == NULL) {
-		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	if ((col6 = COLnew(0, TYPE_lng, nrows, TRANSIENT)) == NULL) {
-		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	if ((col7 = COLnew(0, TYPE_int, nrows, TRANSIENT)) == NULL) {
-		msg = createException(SQL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -1511,7 +1511,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				psz = cnt ? (cnt / nr_parts) : 0;
 				bn = BATslice(b, part_nr * psz, (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz));
 				if(bn == NULL)
-					throw(SQL, "sql.bindidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(SQL, "sql.bindidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				BAThseqbase(bn, part_nr * psz);
 			} else {
 				/* BAT b holds the UPD_ID bat */
@@ -1530,7 +1530,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(c->batCacheid);
 				if(bn == NULL) {
 					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.bindidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(SQL, "sql.bindidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
 			BBPunfix(b->batCacheid);
@@ -1563,7 +1563,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (id == NULL || vl == NULL) {
 					bat_destroy(id);
 					bat_destroy(vl);
-					throw(SQL, "sql.idxbind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(SQL, "sql.idxbind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				assert(BATcount(id) == BATcount(vl));
 				BBPkeepref(*bid = id->batCacheid);
@@ -1575,7 +1575,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_lng);
 				if(*bid == BID_NIL || *uvl == BID_NIL)
-					throw(SQL, "sql.idxbind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(SQL, "sql.idxbind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			BBPunfix(b->batCacheid);
 		} else {
@@ -1630,7 +1630,7 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for(;cnt>0; cnt--, v++) {
 		if (BUNappend(tid, &v, false) != GDK_SUCCEED) {
 			BBPunfix(Tid);
-			throw(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPunfix(Tid);
@@ -1987,7 +1987,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		if (!cminu) {
 			BBPunfix(c->batCacheid);
 			BBPunfix(u_id->batCacheid);
-			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL " intermediate");
+			throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL " intermediate");
 		}
 		res = BATproject(cminu, c);
 		BBPunfix(c->batCacheid);
@@ -1995,7 +1995,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		cminu = NULL;
 		if (!res) {
 			BBPunfix(u_id->batCacheid);
-			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL " intermediate" );
+			throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL " intermediate" );
 		}
 		c = res;
 
@@ -2010,7 +2010,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			BBPunfix(u_id->batCacheid);
 			if (!u) {
 				BBPunfix(c->batCacheid);
-				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 
 			/* check selected updated values against candidates */
@@ -2026,7 +2026,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			if (cminu == NULL) {
 				BBPunfix(c->batCacheid);
 				BBPunfix(u->batCacheid);
-				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			ret = BATappend(res, u, cminu, true);
 			BBPunfix(u->batCacheid);
@@ -2035,13 +2035,13 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			cminu = NULL;
 			if (ret != GDK_SUCCEED) {
 				BBPunfix(res->batCacheid);
-				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 
 			ret = BATsort(&u, NULL, NULL, res, NULL, NULL, false, false, false);
 			BBPunfix(res->batCacheid);
 			if (ret != GDK_SUCCEED) {
-				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			res = u;
 		} else {
@@ -2068,7 +2068,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			if (!cminu) {
 				BBPunfix(res->batCacheid);
 				BBPunfix(i->batCacheid);
-				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		if (isVIEW(res)) {
@@ -2079,7 +2079,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				BBPunfix(i->batCacheid);
 				if (cminu)
 					BBPunfix(cminu->batCacheid);
-				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		ret = BATappend(res, i, cminu, true);
@@ -2088,13 +2088,13 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			BBPunfix(cminu->batCacheid);
 		if (ret != GDK_SUCCEED) {
 			BBPunfix(res->batCacheid);
-			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
 		ret = BATsort(&u, NULL, NULL, res, NULL, NULL, false, false, false);
 		BBPunfix(res->batCacheid);
 		if (ret != GDK_SUCCEED)
-			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		res = u;
 	}
 	BATkey(res, true);
@@ -2120,7 +2120,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		BBPunfix(s->batCacheid);
 		BBPunfix(i->batCacheid);
 		if (res == NULL)
-			throw(MAL, "sql.projectdelta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "sql.projectdelta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 		BBPkeepref(*result = res->batCacheid);
 		return MAL_SUCCEED;
@@ -2144,13 +2144,13 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 				BBPunfix(s->batCacheid);
 				BBPunfix(i->batCacheid);
 				BBPunfix(c->batCacheid);
-				throw(MAL, "sql.projectdelta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "sql.projectdelta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			BBPunfix(c->batCacheid);
 			if (BATappend(res, i, NULL, false) != GDK_SUCCEED) {
 				BBPunfix(s->batCacheid);
 				BBPunfix(i->batCacheid);
-				throw(MAL, "sql.projectdelta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "sql.projectdelta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 	}
@@ -2161,7 +2161,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 	BBPunfix(res->batCacheid);
 	if (tres == NULL) {
 		BBPunfix(s->batCacheid);
-		throw(MAL, "sql.projectdelta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "sql.projectdelta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	res = tres;
 
@@ -2192,7 +2192,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 			BBPunfix(res->batCacheid);
 			BBPunfix(u_id->batCacheid);
 			BBPunfix(u_val->batCacheid);
-			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		/* BATcount(ou) == BATcount(os) */
 		if (BATcount(ou) != 0) {
@@ -2212,7 +2212,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 				BBPunfix(u_id->batCacheid);
 				BBPunfix(u_val->batCacheid);
 				BBPunfix(nu_val->batCacheid);
-				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			BBPunfix(nu_val->batCacheid);
 		} else {
@@ -2349,7 +2349,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* create void,void bat with length and oid's set */
 	tids = BATdense(sb, sb, (BUN) nr);
 	if (tids == NULL)
-		throw(SQL, "sql.tid", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if ((dcnt = store_funcs.count_del(tr, t)) > 0) {
 		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
@@ -2613,7 +2613,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE, NULL);
 	if (res < 0)
-		throw(SQL, "sql.resultset", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.resultset", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	tbl = BATdescriptor(tblId);
 	atr = BATdescriptor(atrId);
@@ -2958,7 +2958,7 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// scalar values are single-column result sets
 	if ((res_id = mvc_result_table(b->mvc, mb->tag, 1, Q_TABLE, NULL)) < 0)
-		throw(SQL, "sql.exportValue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.exportValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (mvc_result_value(b->mvc, tn, cn, type, digits, scale, p, mtype))
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed");
 	if (b->output_format == OFMT_NONE) {
@@ -3094,7 +3094,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			widths = malloc(sizeof(size_t) * ncol);
 			if (!widths) {
 				close_stream(ss);
-				throw(MAL, "sql.copy_from", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			for (i = 0; i < width_len; i++) {
 				if (fixed_widths[i] == STREAM_FWF_FIELD_SEP) {
@@ -3320,7 +3320,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				/* get the BAT and fill it with the strings */
 				c = COLnew(0, TYPE_str, 0, TRANSIENT);
 				if (c == NULL) {
-					msg = createException(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
 				/* this code should be extended to
@@ -3337,7 +3337,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				if (buf == NULL) {
 					fclose(f);
 					BBPreclaim(c);
-					msg = createException(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
 				while (fgets(buf, bufsiz, f) != NULL) {
@@ -3347,7 +3347,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					if (BUNappend(c, buf, false) != GDK_SUCCEED) {
 						BBPreclaim(c);
 						fclose(f);
-						msg = createException(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						goto bailout;
 					}
 				}
@@ -3392,7 +3392,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				// fill the new BAT with NULL values
 				c = BATconstant(0, tpe, ATOMnilptr(tpe), cnt, TRANSIENT);
 				if (c == NULL) {
-					msg = createException(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
 				*getArgReference_bat(stk, pci, i - (3 + pci->retc)) = c->batCacheid;
@@ -3681,7 +3681,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 	bn = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.alpha", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.alpha", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	s = sin(radians(*theta));
 	const dbl *vals = (const dbl *) Tloc(b, 0);
@@ -3698,7 +3698,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 		}
 		if (BUNappend(bn, &r, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
-			throw(SQL, "sql.alpha", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.alpha", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	*res = bn->batCacheid;
@@ -3723,7 +3723,7 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *thetabid)
 	bn = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.alpha", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.alpha", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		dbl d = *decl;
@@ -3741,7 +3741,7 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *thetabid)
 		}
 		if (BUNappend(bn, &r, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
-			throw(SQL, "sql.alpha", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.alpha", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = bn->batCacheid);
@@ -3957,11 +3957,11 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	cnt = m->qc->id;
 	query = COLnew(0, TYPE_str, cnt, TRANSIENT);
 	if (query == NULL)
-		throw(SQL, "sql.dumpcache", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.dumpcache", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	count = COLnew(0, TYPE_int, cnt, TRANSIENT);
 	if (count == NULL) {
 		BBPunfix(query->batCacheid);
-		throw(SQL, "sql.dumpcache", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.dumpcache", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	for (q = m->qc->q; q; q = q->next) {
@@ -3970,7 +3970,7 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			    BUNappend(count, &q->count, false) != GDK_SUCCEED) {
 				BBPunfix(query->batCacheid);
 				BBPunfix(count->batCacheid);
-				throw(SQL, "sql.dumpcache", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(SQL, "sql.dumpcache", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 	}
@@ -4001,14 +4001,14 @@ dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (rewrite == NULL || count == NULL) {
 		BBPreclaim(rewrite);
 		BBPreclaim(count);
-		throw(SQL, "sql.optstats", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.optstats", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	if (BUNappend(rewrite, "joinidx", false) != GDK_SUCCEED ||
 	    BUNappend(count, &m->opt_stats[0], false) != GDK_SUCCEED) {
 		BBPreclaim(rewrite);
 		BBPreclaim(count);
-		throw(SQL, "sql.optstats", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.optstats", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	/* TODO add other rewrites */
 
@@ -4069,7 +4069,7 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	hashb = COLnew(0, TYPE_str, 0, TRANSIENT);
 
 	if (urib == NULL || unameb == NULL || hashb == NULL) {
-		msg = createException(SQL, "sql.remote_table_credentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(SQL, "sql.remote_table_credentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
@@ -4093,7 +4093,7 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
   lbailout:
 	MT_lock_unset(&mal_contextLock);
-	msg = createException(SQL, "sql.remote_table_credentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	msg = createException(SQL, "sql.remote_table_credentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
   bailout:
 	if (hashs) GDKfree(hashs);
 	if (urib) BBPunfix(urib->batCacheid);
@@ -4238,7 +4238,7 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 	if (r == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
-		throw(SQL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		on = BUNtail(bi, p);
@@ -4254,7 +4254,7 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 			BBPunfix(b->batCacheid);
 			BBPunfix(g->batCacheid);
 			BBPunfix(r->batCacheid);
-			throw(SQL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		nrank += !dense || c;
 	}
@@ -4288,7 +4288,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 	r = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (BATtdense(b)) {
 		BATloop(b, p, q) {
@@ -4313,7 +4313,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
   bailout:
 	BBPunfix(b->batCacheid);
 	BBPunfix(r->batCacheid);
-	throw(SQL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(SQL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -4351,12 +4351,12 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret = getArgReference_str(stk, pci, 0);
 	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_ALL);
 	if(s == NULL)
-		throw(SQL, "sql.argRecord", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.argRecord", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	t = strchr(s, ' ');
 	*ret = GDKstrdup(t ? t + 1 : s);
 	GDKfree(s);
 	if(*ret == NULL)
-		throw(SQL, "sql.argRecord", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.argRecord", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -4974,7 +4974,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(key->batCacheid);
 	if (oidx)
 		BBPunfix(oidx->batCacheid);
-	throw(SQL, "sql.storage", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(SQL, "sql.storage", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 void
@@ -5026,7 +5026,7 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 		r = COLnew(0, TYPE_int, 1024, TRANSIENT);
 		if (r == NULL) {
 			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		pos = GDK_STRHASHSIZE;
 		while (pos < h->free) {
@@ -5041,7 +5041,7 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 			if (BUNappend(r, &v, false) != GDK_SUCCEED) {
 				BBPreclaim(r);
 				BBPunfix(s->batCacheid);
-				throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			pos += GDK_STRLEN(p);
 		}
@@ -5049,7 +5049,7 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 		r = VIEWcreate(s->hseqbase, s);
 		if (r == NULL) {
 			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		r->ttype = TYPE_int;
 		r->tvarsized = false;
@@ -5085,7 +5085,7 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 		r = COLnew(0, TYPE_sht, 1024, TRANSIENT);
 		if (r == NULL) {
 			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		pos = GDK_STRHASHSIZE;
 		while (pos < h->free) {
@@ -5099,7 +5099,7 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 			v = (sht) (pos - GDK_STRHASHSIZE);
 			if (BUNappend(r, &v, false) != GDK_SUCCEED) {
 				BBPreclaim(r);
-				throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			pos += GDK_STRLEN(s);
 		}
@@ -5107,7 +5107,7 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 		r = VIEWcreate(s->hseqbase, s);
 		if (r == NULL) {
 			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		r->ttype = TYPE_sht;
 		r->tvarsized = false;
@@ -5143,7 +5143,7 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 		r = COLnew(0, TYPE_bte, 64, TRANSIENT);
 		if (r == NULL) {
 			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		pos = GDK_STRHASHSIZE;
 		while (pos < h->free) {
@@ -5158,7 +5158,7 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 			if (BUNappend(r, &v, false) != GDK_SUCCEED) {
 				BBPreclaim(r);
 				BBPunfix(s->batCacheid);
-				throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			pos += GDK_STRLEN(p);
 		}
@@ -5166,7 +5166,7 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 		r = VIEWcreate(s->hseqbase, s);
 		if (r == NULL) {
 			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		r->ttype = TYPE_bte;
 		r->tvarsized = false;
@@ -5201,7 +5201,7 @@ BATSTRstrings(bat *res, const bat *src)
 	r = COLnew(0, TYPE_str, 1024, TRANSIENT);
 	if (r == NULL) {
 		BBPunfix(s->batCacheid);
-		throw(SQL, "calc.strings", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "calc.strings", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	pos = GDK_STRHASHSIZE;
 	while (pos < h->free) {
@@ -5215,7 +5215,7 @@ BATSTRstrings(bat *res, const bat *src)
 		if (BUNappend(r, p, false) != GDK_SUCCEED) {
 			BBPreclaim(r);
 			BBPunfix(s->batCacheid);
-			throw(SQL, "calc.strings", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "calc.strings", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		pos += GDK_STRLEN(p);
 	}

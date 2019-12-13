@@ -141,7 +141,7 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 		if(!amin) {
 			char *err = sql_subtype_string(&tpe);
 			if(!err)
-				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute minimum value not available for %s type", err);
 			GDKfree(err);
 			return NULL;
@@ -152,7 +152,7 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 		if(!amax) {
 			char *err = sql_subtype_string(&tpe);
 			if(!err)
-				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute maximum value not available for %s type", err);
 			GDKfree(err);
 			return NULL;

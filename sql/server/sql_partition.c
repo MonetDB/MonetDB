@@ -296,7 +296,7 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
 		char *err = sql_subtype_string(&(mt->part.pexp->type));
 		if (!err) {
-			throw(SQL, "sql.partition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.partition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
 			msg = createException(SQL, "sql.partition",
 								  SQLSTATE(42000) "Column type %s not supported for the expression return value", err);

@@ -66,7 +66,7 @@ CLTgetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		*getArgReference_str(stk,pci,0) = GDKstrdup("nil");
 	if(*getArgReference_str(stk,pci,0) == NULL)
-		throw(MAL, "clients.getScenario", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "clients.getScenario", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -81,7 +81,7 @@ CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg == NULL) {
 		*getArgReference_str(stk,pci,0) = GDKstrdup(cntxt->scenario);
 		if(*getArgReference_str(stk,pci,0) == NULL)
-			throw(MAL, "clients.setScenario", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "clients.setScenario", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	return msg;
 }
@@ -129,7 +129,7 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0 || bn == 0){
 		if ( b != 0) BBPunfix(b->batCacheid);
 		if ( bn != 0) BBPunfix(bn->batCacheid);
-		throw(MAL, "clients.info", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "clients.info", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	(void) sprintf(buf, ""LLFMT"", (lng) cntxt->user);
@@ -163,7 +163,7 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "clients.info", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "clients.info", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -194,7 +194,7 @@ CLTLogin(bat *nme, bat *ret)
 bailout:
 	BBPreclaim(b);
 	BBPreclaim(u);
-	throw(MAL, "clients.getLogins", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "clients.getLogins", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -313,11 +313,11 @@ str CLTmd5sum(str *ret, str *pw) {
 	char *mret = mcrypt_MD5Sum(*pw, strlen(*pw));
 
 	if (!mret)
-		throw(MAL, "clients.md5sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "clients.md5sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = GDKstrdup(mret);
 	free(mret);
 	if(*ret == NULL)
-		throw(MAL, "clients.md5sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "clients.md5sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 #else
 	(void) ret;
@@ -331,11 +331,11 @@ str CLTsha1sum(str *ret, str *pw) {
 	char *mret = mcrypt_SHA1Sum(*pw, strlen(*pw));
 
 	if (!mret)
-		throw(MAL, "clients.sha1sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "clients.sha1sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = GDKstrdup(mret);
 	free(mret);
 	if(*ret == NULL)
-		throw(MAL, "clients.sha1sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "clients.sha1sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 #else
 	(void) ret;
@@ -349,11 +349,11 @@ str CLTripemd160sum(str *ret, str *pw) {
 	char *mret = mcrypt_RIPEMD160Sum(*pw, strlen(*pw));
 
 	if (!mret)
-		throw(MAL, "clients.ripemd160sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "clients.ripemd160sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = GDKstrdup(mret);
 	free(mret);
 	if(*ret == NULL)
-		throw(MAL, "clients.ripemd160sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "clients.ripemd160sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 #else
 	(void) ret;
@@ -391,22 +391,22 @@ str CLTsha2sum(str *ret, str *pw, int *bits) {
 	}
 
 	if (!mret)
-		throw(MAL, "clients.sha2sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "clients.sha2sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = GDKstrdup(mret);
 	free(mret);
 	if(*ret == NULL)
-		throw(MAL, "clients.sha2sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "clients.sha2sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
 str CLTbackendsum(str *ret, str *pw) {
 	char *mret = mcrypt_BackendSum(*pw, strlen(*pw));
 	if (mret == NULL)
-		throw(MAL, "clients.backendsum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "clients.backendsum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = GDKstrdup(mret);
 	free(mret);
 	if(*ret == NULL)
-		throw(MAL, "clients.backendsum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "clients.backendsum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -484,7 +484,7 @@ str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 	(void)mb;
 
 	if (!(pwd = mcrypt_SHA1Sum(*pw, strlen(*pw))))
-		throw(MAL, "clients.checkPermission", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "clients.checkPermission", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = AUTHcheckCredentials(&id, cntxt, *usr, pwd, ch, algo);
 	free(pwd);
 	return msg;
@@ -551,7 +551,7 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	if ( force)
 		mal_exit(0);
 	if(*ret == NULL)
-		throw(MAL, "mal.shutdown", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mal.shutdown", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -586,7 +586,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ( qtimeout) BBPunfix(qtimeout->batCacheid);
 		if ( last) BBPunfix(last->batCacheid);
 		if ( active) BBPunfix(active->batCacheid);
-		throw(SQL,"sql.sessions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL,"sql.sessions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
     MT_lock_set(&mal_contextLock);

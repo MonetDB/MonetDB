@@ -1259,7 +1259,7 @@ rel_parse_value(backend *be, char *query, char emode)
 	if (b == NULL || n == NULL) {
 		GDKfree(b);
 		GDKfree(n);
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(n, len + 2, "%s\n", query);
 	query = n;
@@ -1268,12 +1268,12 @@ rel_parse_value(backend *be, char *query, char emode)
 	sr = buffer_rastream(b, "sqlstatement");
 	if (sr == NULL) {
 		buffer_destroy(b);
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bs = bstream_create(sr, b->len);
 	if(bs == NULL) {
 		buffer_destroy(b);
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	scanner_init(&m->scanner, bs, NULL);
 	m->scanner.mode = LINE_1; 
@@ -3217,14 +3217,14 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 	if (b == 0) {
 		*m = *o;
 		GDKfree(o);
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	nquery = GDKmalloc(len + 1 + 1);
 	if (nquery == 0) {
 		*m = *o;
 		GDKfree(o);
 		GDKfree(b);
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(nquery, len + 2, "%s\n", query);
 	len++;
@@ -3236,7 +3236,7 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 		GDKfree(b);
 		GDKfree(nquery);
 		be->depth--;
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if((bst = bstream_create(buf, b->len)) == NULL) {
 		close_stream(buf);
@@ -3245,7 +3245,7 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 		GDKfree(b);
 		GDKfree(nquery);
 		be->depth--;
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	scanner_init( &m->scanner, bst, NULL);
 	m->scanner.mode = LINE_1; 
@@ -3266,7 +3266,7 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 		GDKfree(b);
 		GDKfree(nquery);
 		be->depth--;
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	if (sqlparse(m) || !m->sym) {
@@ -4137,7 +4137,7 @@ sql_delete_set_Fkeys(backend *be, sql_key *k, stmt *ftids /* to be updated rows 
 				stmt *sq;
 				char *msg, *typestr = subtype2string2(&fc->c->type);
 				if(!typestr)
-					return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				msg = sa_message(sql->sa, "select cast(%s as %s);", fc->c->def, typestr);
 				_DELETE(typestr);
 				sq = rel_parse_value(be, msg, sql->emode);
@@ -4200,7 +4200,7 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 				stmt *sq;
 				char *msg, *typestr = subtype2string2(&fc->c->type);
 				if(!typestr)
-					return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				msg = sa_message(sql->sa, "select cast(%s as %s);", fc->c->def, typestr);
 				_DELETE(typestr);
 				sq = rel_parse_value(be, msg, sql->emode);
@@ -5007,7 +5007,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 							}
 							if (!found) {
 								if ((new_node = MNEW(struct tablelist)) == NULL) {
-									sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+									sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 									*error = 1;
 									return;
 								}
@@ -5043,7 +5043,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	struct tablelist* new_list = MNEW(struct tablelist), *list_node, *aux;
 
 	if (!new_list) {
-		sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		error = 1;
 		goto finalize;
 	}
@@ -5064,7 +5064,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 				if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
 					seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
 					if (!seq_name) {
-						sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						error = 1;
 						goto finalize;
 					}

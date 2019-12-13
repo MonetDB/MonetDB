@@ -43,11 +43,11 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
     vars= (InstrPtr*) GDKzalloc(sizeof(InstrPtr)* mb->vtop);
     if (vars == NULL)
-        throw(MAL,"optimizer.batcalc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+        throw(MAL,"optimizer.batcalc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	old = mb->stmt;
     if (newMalBlkStmt(mb, mb->ssize) < 0) {
-        msg= createException(MAL,"optimizer.postfix", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+        msg= createException(MAL,"optimizer.postfix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
         goto wrapup;
     }
 	/* collect where variables are assigned last */

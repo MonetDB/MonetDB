@@ -619,7 +619,7 @@ startTrace(str path)
 			len = snprintf(buf,FILENAME_MAX,"%s%c%s",GDKgetenv("gdk_dbpath"), DIR_SEP, path);
 			if (len == -1 || len >= FILENAME_MAX) {
 				MT_lock_unset(&mal_profileLock);
-				throw(MAL, "profiler.startTrace", SQLSTATE(HY001) "Profiler filename path is too large");
+				throw(MAL, "profiler.startTrace", SQLSTATE(HY013) "Profiler filename path is too large");
 			}
 			if (mkdir(buf, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
 				MT_lock_unset(&mal_profileLock);
@@ -628,11 +628,11 @@ startTrace(str path)
 			len = snprintf(buf,FILENAME_MAX,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbpath"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
 			if (len == -1 || len >= FILENAME_MAX) {
 				MT_lock_unset(&mal_profileLock);
-				throw(MAL, "profiler.startTrace", SQLSTATE(HY001) "Profiler filename path is too large");
+				throw(MAL, "profiler.startTrace", SQLSTATE(HY013) "Profiler filename path is too large");
 			}
 			if ((eventstream = open_wastream(buf)) == NULL) {
 				MT_lock_unset(&mal_profileLock );
-				throw(MAL,"profiler.startTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL,"profiler.startTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			offlinestore++;
 		}

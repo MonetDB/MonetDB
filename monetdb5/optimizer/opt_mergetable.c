@@ -1799,7 +1799,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if (vars == NULL || group_input == NULL){
 		if (vars)
 			GDKfree(vars);
-		throw(MAL, "optimizer.mergetable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.mergetable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	/* check for bailout conditions */
 	for (i = 1; i < oldtop && !bailout; i++) {
@@ -1885,7 +1885,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
 	if ( mb->stmt == NULL) {
 		mb->stmt = old;
-		msg = createException(MAL,"optimizer.mergetable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL,"optimizer.mergetable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	mb->ssize = size;
@@ -1899,7 +1899,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (getModuleId(p) == matRef && 
 		   (getFunctionId(p) == newRef || getFunctionId(p) == packRef)){
 			if(mat_set_prop(&ml, mb, p) || mat_add_var(&ml, p, NULL, getArg(p,0), mat_none, -1, -1, 1)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			continue;
@@ -1912,7 +1912,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if ((match = nr_of_mats(p, &ml)) == 0) {
 			cp = copyInstruction(p);
 			if(!cp) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			pushInstruction(mb, cp);
@@ -1931,12 +1931,12 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   		m = is_a_mat(getArg(p,p->retc), &ml);
 		   		n = is_a_mat(getArg(p,p->retc+1), &ml);
 				if(mat_join2(mb, p, &ml, m, n)) {
-					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
 			} else {
 				if ( mat_joinNxM(cntxt, mb, p, &ml, bats)) {
-					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
 			}
@@ -1950,7 +1950,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			if (m >= 0) {
 				if(mat_join2(mb, p, &ml, m, n)) {
-					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
 				actions++;
@@ -1980,7 +1980,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		if (match == 1 && bats == 1 && p->argc == 4 && isSlice(p) && ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0)) {
 			if(mat_topn(mb, p, &ml, m, -1, -1)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;
@@ -1989,7 +1989,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		if (match == 1 && bats == 1 && p->argc == 3 && isSample(p) && ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0)) {
 			if(mat_sample(mb, p, &ml, m)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;
@@ -1998,7 +1998,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		if (!distinct_topn && match == 1 && bats == 1 && (p->argc-p->retc) == 4 && isTopn(p) && ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0)) {
 			if(mat_topn(mb, p, &ml, m, -1, -1)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;
@@ -2009,7 +2009,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	 	   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) &&
 	 	   ((o=is_a_mat(getArg(p,p->retc+2), &ml)) >= 0)) {
 			if(mat_topn(mb, p, &ml, m, n, o)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;
@@ -2021,7 +2021,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef) && 
 	 	   ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0)) {
 			if(mat_group_new(mb, p, &ml, m)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;
@@ -2033,7 +2033,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   ((n=is_a_mat(getArg(p,p->retc+1), &ml)) >= 0) && 
 		     ml.v[n].im >= 0 /* not packed */) {
 			if(mat_group_derive(mb, p, &ml, m, n)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;
@@ -2051,7 +2051,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   ((n=is_a_mat(getArg(p,2), &ml)) >= 0) &&
 		   ((o=is_a_mat(getArg(p,3), &ml)) >= 0)) {
 			if(mat_group_aggr(mb, p, ml.v, m, n, o)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;
@@ -2066,13 +2066,13 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			assert(ml.v[m].pushed);
 			if (!ml.v[n].pushed) {
 				if(mat_group_project(mb, p, &ml, m, n)) {
-					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
 			} else {
 				cp = copyInstruction(p);
 				if(!cp) {
-					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
 				pushInstruction(mb, cp);
@@ -2087,7 +2087,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (n=is_a_mat(getArg(p,2), &ml)) >= 0 &&
 		   (ml.v[m].type == mat_slc)) {
 			if(mat_topn_project(mb, p, ml.v, m, n)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;
@@ -2100,7 +2100,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0) { 
 		   	n=is_a_mat(getArg(p,2), &ml);
 			if(mat_projection(mb, p, &ml, m, n)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;
@@ -2113,7 +2113,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0) { 
 		   	n=is_a_mat(getArg(p,2), &ml);
 			if(mat_setop(mb, p, &ml, m, n)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;
@@ -2146,7 +2146,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if ((r = mat_delta(&ml, mb, p, ml.v, m, n, o, -1, fm, fn, fo, 0)) != NULL) {
 				actions++;
 			} else {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 
@@ -2160,7 +2160,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if ((r = mat_delta(&ml, mb, p, ml.v, m, n, o, e, fm, fn, fo, fe)) != NULL) {
 				actions++;
 			} else {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			continue;
@@ -2172,7 +2172,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   !ml.v[m].packed && /* not packed yet */ 
 		   !was_a_mat(getArg(p,fm-1), &ml)){ /* not previously packed */
 			if((r = copyInstruction(p)) == NULL) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			getArg(r, fm) = getArg(ml.v[m].mi, ml.v[m].mi->argc-1);
@@ -2188,11 +2188,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			is_bat_nil(getVarConstant(mb,getArg(p,2)).val.bval)) {
 			if ((r = mat_apply1(mb, p, &ml, m, fm)) != NULL) {
 				if(mat_add(&ml, r, mat_type(ml.v, m), getFunctionId(p))) {
-					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
 			} else {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;
@@ -2206,7 +2206,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0){
 			assert(ml.v[m].mi->argc == ml.v[n].mi->argc); 
 			if(mat_apply3(mb, p, &ml, m, n, o, fm, fn, fo)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;
@@ -2217,7 +2217,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0){
 			assert(ml.v[m].mi->argc == ml.v[n].mi->argc); 
 			if(mat_apply2(&ml, mb, p, ml.v, m, n, fm, fn)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;
@@ -2229,11 +2229,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0){
 			if ((r = mat_apply1(mb, p, &ml, m, fm)) != NULL) {
 				if(mat_add(&ml, r, mat_type(ml.v, m), getFunctionId(p))) {
-					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
 			} else {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;
@@ -2256,7 +2256,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		cp = copyInstruction(p);
 		if(!cp) {
-			msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
 		pushInstruction(mb, cp);

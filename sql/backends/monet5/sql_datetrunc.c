@@ -64,7 +64,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.truncate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.truncate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	bt = (const timestamp *) Tloc(b, 0);
@@ -191,7 +191,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 	date days;
 
 	if (truncate_check(*scale) == 0)
-		throw(SQL, "sql.truncate", SQLSTATE(HY001) "Improper directive ");
+		throw(SQL, "sql.truncate", SQLSTATE(HY013) "Improper directive ");
 
 	if (is_timestamp_nil(*bt)) {
 		*dt = timestamp_nil;

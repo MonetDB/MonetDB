@@ -149,7 +149,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	(void) pci;
 	vars= (int*) GDKzalloc(sizeof(int)* mb->vtop);
 	if( vars == NULL)
-		throw(MAL,"optimizer.pushselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	limit = mb->stop;
 	slimit= mb->ssize;
@@ -435,7 +435,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						GDKfree(slices);
 						GDKfree(rslices);
 						GDKfree(old);
-						throw(MAL,"optimizer.pushselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 
 					setFunctionId(q, projectdeltaRef);
@@ -508,7 +508,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					GDKfree(rslices);
 					GDKfree(oclean);
 					GDKfree(old);
-					throw(MAL,"optimizer.pushselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 
 				/* slice the candidates */
@@ -559,7 +559,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 							GDKfree(rslices);
 							GDKfree(oclean);
 							GDKfree(old);
-							throw(MAL,"optimizer.pushselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						}
 
 						getArg(t, 1) = nvars[getArg(r, 0)]; /* use result of slice */
@@ -575,7 +575,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 								GDKfree(rslices);
 								GDKfree(oclean);
 								GDKfree(old);
-								throw(MAL,"optimizer.pushselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+								throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							}
 							getArg(t, 1) = nvars[getArg(t,1)];
 							pushInstruction(mb, t);
@@ -640,7 +640,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					GDKfree(rslices);
 					GDKfree(oclean);
 					GDKfree(old);
-					throw(MAL,"optimizer.pushselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb,getArg(r,0));

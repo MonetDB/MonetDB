@@ -3253,7 +3253,7 @@ null:
 		atom *a = atom_general(SA, sql_bind_localtype("void"), NULL);
 
 		if(!sql_add_arg( m, a)) {
-			char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
+			char *msg = sql_message(SQLSTATE(HY013) "allocation failure");
 			yyerror(m, msg);
 			_DELETE(msg);
 			YYABORT;
@@ -4537,7 +4537,7 @@ atom:
 		AtomNode *an = (AtomNode*)$1;
 
 		if(!sql_add_arg( m, an->a)) {
-			char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
+			char *msg = sql_message(SQLSTATE(HY013) "allocation failure");
 			yyerror(m, msg);
 			_DELETE(msg);
 			YYABORT;
@@ -5534,7 +5534,7 @@ data_type:
 		_DELETE(msg);
 		YYABORT;
 	} else if (geoSubType == -1) {
-		char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
+		char *msg = sql_message(SQLSTATE(HY013) "allocation failure");
 		$$.type = NULL;
 		yyerror(m, msg);
 		_DELETE(msg);
@@ -5560,7 +5560,7 @@ subgeometry_type:
 		_DELETE(msg);
 		YYABORT;
 	} else if(subtype == -1) {
-		char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
+		char *msg = sql_message(SQLSTATE(HY013) "allocation failure");
 		yyerror(m, msg);
 		_DELETE(msg);
 		YYABORT;
@@ -5577,7 +5577,7 @@ subgeometry_type:
 		_DELETE(msg);
 		YYABORT;
 	} else if (subtype == -1) {
-		char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
+		char *msg = sql_message(SQLSTATE(HY013) "allocation failure");
 		yyerror(m, msg);
 		_DELETE(msg);
 		YYABORT;
