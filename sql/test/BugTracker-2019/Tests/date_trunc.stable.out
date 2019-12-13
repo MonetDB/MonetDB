@@ -138,7 +138,7 @@ stdout of test 'date_trunc` in directory 'sql/test/BugTracker-2019` itself:
 % %1 # name
 % timestamp # type
 % 26 # length
-[ 1999-12-31 23:36:00.000000	]
+[ 1999-12-31 23:00:00.000000	]
 #select date_trunc('day', timestamp '1999-12-31 23:59:59.987654');
 % . # table_name
 % %1 # name
@@ -162,7 +162,7 @@ stdout of test 'date_trunc` in directory 'sql/test/BugTracker-2019` itself:
 % %1 # name
 % timestamp # type
 % 26 # length
-[ 1999-04-01 00:00:00.000000	]
+[ 1999-10-01 00:00:00.000000	]
 #select date_trunc('year', timestamp '1999-12-31 23:59:59.987654');
 % . # table_name
 % %1 # name
