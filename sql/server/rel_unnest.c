@@ -619,9 +619,8 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 		sql_rel *D = rel_project(sql->sa, rel_dup(l), exps_copy(sql, ad));
 		set_distinct(D);
 
-		assert(!rel_is_ref(r));
 		r = rel_crossproduct(sql->sa, D, r, rel->op);
-		r->op = /*is_semi(rel->op)?op_left:*/op_join;
+		r->op = op_join;
 		move_join_exps(sql, rel, r);
 		set_dependent(r);
 		inner_r = r;
