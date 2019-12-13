@@ -14,6 +14,7 @@
 #include "sql_list.h"
 #include "sql_symbol.h"
 #include "sql_backend.h"
+#include "mtime.h"
 
 #define DEFAULT_CACHESIZE 100
 typedef struct cq {
@@ -33,6 +34,7 @@ typedef struct cq {
 	char *name;		/* name of cache query */
 	int no_mitosis;		/* run query without mitosis */
 	int count;		/* number of times the query is matched */
+	timestamp created; /* when the query was created */
 } cq;
 
 typedef struct qc {
@@ -54,4 +56,3 @@ extern int qc_isaquerytemplate(char *nme);
 extern int qc_isapreparedquerytemplate(char *nme);
 
 #endif /*_SQL_QC_H_*/
-

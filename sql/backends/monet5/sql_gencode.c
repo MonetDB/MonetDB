@@ -742,8 +742,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	MalBlkPtr mb = 0;
 	Symbol curPrg = 0, backup = NULL;
 	InstrPtr curInstr = 0;
-	int argc = 0;
-	char arg[IDLENGTH];
+	int argc = 0, res;
+	char arg[IDLENGTH], *escaped_q = NULL;
 	node *n;
 
 	backup = c->curprg;
@@ -806,7 +806,15 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 		}
 	}
 
-	if (backend_dumpstmt(be, mb, r, 1, 1, be->q?be->q->codestring:NULL) < 0) 
+	if (be->q) {
+		if (!(escaped_q = sql_escape_str(be->q->codestring))) {
+			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto cleanup;
+		}
+	}
+	res = backend_dumpstmt(be, mb, r, 1, 1, escaped_q);
+	GDKfree(escaped_q);
+	if (res < 0)
 		goto cleanup;
 
 	if (cq) {

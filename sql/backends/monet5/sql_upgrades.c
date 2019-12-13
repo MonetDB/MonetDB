@@ -2440,11 +2440,22 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			" external name clients.stopsession;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
+			"create function sys.prepared_statements()\n"
+			"returns table(\n"
+			"\"sessionid\" int,\n"
+			"\"user\" string,\n"
+			"\"statementid\" int,\n"
+			"\"statement\" string,\n"
+			"\"created\" timestamp)\n"
+			" external name sql.prepared_statements;\n"
+			"create view sys.prepared_statements as select * from sys.prepared_statements();\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name = 'sessions' and type = %d;\n", (int) F_UNION);
+			" and name in ('sessions', 'prepared_statements') and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name = 'sessions';\n");
+			" and name in ('sessions', 'prepared_statements');\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = %d;\n", (int) F_PROC);

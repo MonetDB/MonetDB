@@ -1276,25 +1276,23 @@ SQLparser(Client c)
 			else opt = 1;
 		} else {
 			/* Add the query tree to the SQL query cache
-			 * and bake a MAL program for it.
-			 */
-			char *escaped_q;
-			char qname[IDLENGTH];
+			 * and bake a MAL program for it. */
+			char *q_copy = GDKstrdup(q), qname[IDLENGTH];
+
 			be->q = NULL;
 			(void) snprintf(qname, IDLENGTH, "%c%d_%d", (m->emode == m_prepare?'p':'s'), m->qc->id++, m->qc->clientid);
-			escaped_q = sql_escape_str(q);
-			if (!escaped_q) {
+			if (!q_copy) {
 				err = 1;
 				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			} else {
 				be->q = qc_insert(m->qc, m->sa,	/* the allocator */
 						  r,	/* keep relational query */
-						  qname, /* its MAL name) */
+						  qname, /* its MAL name */
 						  m->sym,	/* the sql symbol tree */
 						  m->args,	/* the argument list */
 						  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
 						  m->type,	/* the type of the statement */
-						  escaped_q,
+						  q_copy,
 						  m->no_mitosis,
 						  m->emode == m_prepare);
 			}

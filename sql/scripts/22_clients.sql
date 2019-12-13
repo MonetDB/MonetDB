@@ -81,3 +81,18 @@ create procedure sys.stopsession("sessionid" int)
 
 create procedure sys.setprinttimeout("timeout" integer)
 	external name clients.setprinttimeout;
+
+-- session's prepared statements
+create function sys.prepared_statements()
+returns table(
+	"sessionid" int,
+	"user" string,
+	"statementid" int,
+	"statement" string,
+	"created" timestamp
+)
+external name sql.prepared_statements;
+grant execute on function sys.prepared_statements to public;
+
+create view sys.prepared_statements as select * from sys.prepared_statements();
+grant select on sys.prepared_statements to public;

@@ -5277,3 +5277,85 @@ SQLhot_snapshot(void *ret, const str *tarfile_arg)
 	else
 		throw(SQL, "sql.hot_snapshot", GDK_EXCEPTION);
 }
+
+str
+SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *sessionid, *user, *statementid, *statement, *created;
+	bat *sid = getArgReference_bat(stk,pci,0);
+	bat *u = getArgReference_bat(stk,pci,1);
+	bat *i = getArgReference_bat(stk,pci,2);
+	bat *s = getArgReference_bat(stk,pci,3);
+	bat *c = getArgReference_bat(stk,pci,4);
+	str msg = MAL_SUCCEED, usr;
+	mvc *sql = NULL;
+	cq *q = NULL;
+
+	(void) stk;
+	(void) pci;
+	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	assert(sql->qc);
+
+	sessionid = COLnew(0, TYPE_int, 256, TRANSIENT);
+	user = COLnew(0, TYPE_str, 256, TRANSIENT);
+	statementid = COLnew(0, TYPE_int, 256, TRANSIENT);
+	statement = COLnew(0, TYPE_str, 256, TRANSIENT);
+	created = COLnew(0, TYPE_timestamp, 256, TRANSIENT);
+	if (sessionid == NULL || user == NULL || statementid == NULL || statement == NULL || created == NULL) {
+		msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	for (q = sql->qc->q; q; q = q->next) {
+		if (q->prepared) {
+			gdk_return bun_res;
+			if (BUNappend(sessionid, &(cntxt->idx), false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+
+			msg = AUTHgetUsername(&usr, cntxt);
+			if (msg != MAL_SUCCEED)
+				goto bailout;
+			bun_res = BUNappend(user, usr, false);
+			GDKfree(usr);
+			if (bun_res != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+
+			if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			if (BUNappend(statement, q->codestring, false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			if (BUNappend(created, &(q->created), false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.session_prepared_statements", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+		}
+	}
+
+bailout:
+	if (msg) {
+		BBPreclaim(sessionid);
+		BBPreclaim(user);
+		BBPreclaim(statementid);
+		BBPreclaim(statement);
+		BBPreclaim(created);
+	} else {
+		BBPkeepref(*sid = sessionid->batCacheid);
+		BBPkeepref(*u = user->batCacheid);
+		BBPkeepref(*i = statementid->batCacheid);
+		BBPkeepref(*s = statement->batCacheid);
+		BBPkeepref(*c = created->batCacheid);
+	}
+	return msg;
+}
