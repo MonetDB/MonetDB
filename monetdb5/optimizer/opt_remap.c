@@ -53,7 +53,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 			p = pushReturn(mb, p, getArg(pci,i));
 	p->retc= p->argc= pci->retc;
 	for(i= pci->retc+2; i<pci->argc; i++)
-		p= pushArgument(mb,p,getArg(pci,i));
+		p= addArgument(mb,p,getArg(pci,i));
 
     if( OPTdebug &  OPTremap){
 		fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
@@ -235,7 +235,8 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 				setVarType(mq,getArg(q,0),tpe);
 				setModuleId(q,algebraRef);
 				setFunctionId(q,projectRef);
-				q= pushArgument(mb,q, getArg(q,1));
+				q= addArgument(mb,q, getArg(q,1));
+				mq->stmt[i] = q;
 				getArg(q,1)= refbat;
 			}
 		}
@@ -269,7 +270,8 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					!(isaBatType( getArgType(mq,q,1))) ){
 					setModuleId(q,algebraRef);
 					setFunctionId(q,projectRef);
-					q= pushArgument(mq,q, getArg(q,1));
+					q= addArgument(mq,q, getArg(q,1));
+					mq->stmt[i] = q;
 					getArg(q,1)= refbat;
 				
 					q->typechk = TYPE_UNKNOWN;
@@ -452,35 +454,35 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			t = newInstruction(mb, batcalcRef, putName("=="));
 			getArg(t,0) = newTmpVariable(mb, newBatType(TYPE_bit));
-			t = pushArgument(mb, t, getDestVar(cnt));
+			t = addArgument(mb, t, getDestVar(cnt));
 			t = pushLng(mb, t, 0);
 			pushInstruction(mb, t);
 			iszero = t;
 
 			t = newInstruction(mb, batcalcRef, dblRef);
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
-			t = pushArgument(mb, t, getDestVar(sum));
+			t = addArgument(mb, t, getDestVar(sum));
 			pushInstruction(mb, t);
 			sum = t;
 
 			t = newInstruction(mb, batcalcRef, putName("ifthenelse"));
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
-			t = pushArgument(mb, t, getDestVar(iszero));
+			t = addArgument(mb, t, getDestVar(iszero));
 			t = pushNil(mb, t, TYPE_dbl);
-			t = pushArgument(mb, t, getDestVar(sum));
+			t = addArgument(mb, t, getDestVar(sum));
 			pushInstruction(mb, t);
 			sum = t;
 
 			t = newInstruction(mb, batcalcRef, dblRef);
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
-			t = pushArgument(mb, t, getDestVar(cnt));
+			t = addArgument(mb, t, getDestVar(cnt));
 			pushInstruction(mb, t);
 			cnt = t;
 
 			avg = newInstruction(mb, batcalcRef, divRef);
 			getArg(avg, 0) = getArg(p, 0);
-			avg = pushArgument(mb, avg, getDestVar(sum));
-			avg = pushArgument(mb, avg, getDestVar(cnt));
+			avg = addArgument(mb, avg, getDestVar(sum));
+			avg = addArgument(mb, avg, getDestVar(cnt));
 			freeInstruction(p);
 			pushInstruction(mb, avg);
 		} else {
