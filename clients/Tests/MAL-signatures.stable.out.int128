@@ -16163,6 +16163,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "sql",	"password",	"pattern sql.password(user:str):str ",	"db_password_wrap;",	"Return password hash of user"	]
 [ "sql",	"percent_rank",	"pattern sql.percent_rank(b:any_1, p:bit, o:bit):dbl ",	"SQLpercent_rank;",	"return the percentage into the total number of groups for each row"	]
 [ "sql",	"prelude",	"pattern sql.prelude():void ",	"SQLprelude;",	""	]
+[ "sql",	"prepared_statements",	"pattern sql.prepared_statements() (sessionid:bat[:int], user:bat[:str], statementid:bat[:int], statementt:bat[:str], createdd:bat[:timestamp]) ",	"SQLsession_prepared_statements;",	"Available prepared statements in the current session"	]
 [ "sql",	"prod",	"pattern sql.prod(b:bte, s:lng, e:lng):hge ",	"SQLprod;",	"return the product of groups"	]
 [ "sql",	"prod",	"pattern sql.prod(b:bte, s:lng, e:lng):lng ",	"SQLprod;",	"return the product of groups"	]
 [ "sql",	"prod",	"pattern sql.prod(b:dbl, s:lng, e:lng):dbl ",	"SQLprod;",	"return the product of groups"	]
