@@ -935,27 +935,6 @@ SQLhelp sqlhelp2[] = {
 	{NULL, NULL, NULL, NULL, NULL}	/* End of list marker */
 };
 
-#ifndef HAVE_STRNCASECMP
-static int
-strncasecmp(const char *s1, const char *s2, size_t n)
-{
-	int c1, c2;
-
-	while (n > 0) {
-		c1 = (unsigned char) *s1++;
-		c2 = (unsigned char) *s2++;
-		if (c1 == 0)
-			return -c2;
-		if (c2 == 0)
-			return c1;
-		if (c1 != c2 && tolower(c1) != tolower(c2))
-			return tolower(c1) - tolower(c2);
-		n--;
-	}
-	return 0;
-}
-#endif
-
 static const char *
 sql_grammar_rule(const char *word, stream *toConsole)
 {
