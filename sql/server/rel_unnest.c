@@ -1082,24 +1082,29 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 			if (ld && rd) {
 				node *m;
 				sql_rel *n, *nr, *nj;
+				list *inner_exps = exps_copy(sql, j->exps);
+				list *outer_exps = exps_copy(sql, rel->exps);
 
 				rel->r = rel_dup(jl);
+				rel->exps = sa_list(sql->sa);
 				nj = rel_crossproduct(sql->sa, rel_dup(d), rel_dup(jr), j->op);
-				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
 				j = nj;
 				set_dependent(j);
 				n = rel_crossproduct(sql->sa, rel, j, j->op);
+				n->exps = outer_exps;
+				if (!n->exps)
+					n->exps = inner_exps;
+				else
+					n->exps = list_merge(n->exps, inner_exps, (fdup)NULL);
 				j->op = rel->op;
 				if (is_semi(rel->op)) {
-				//assert(!is_semi(rel->op));
 					j->op = op_left;
 					rel->op = op_left;
 				}
 				n->l = rel_project(sql->sa, n->l, rel_projections(sql, n->l, NULL, 1, 1));
 				nr = n->r;
 				nr = n->r = rel_project(sql->sa, n->r, is_semi(nr->op)?sa_list(sql->sa):rel_projections(sql, nr->r, NULL, 1, 1));
-				move_join_exps(sql, n, j);
 				/* add nr->l exps with labels */ 
 				/* create jexps */
 				if (!n->exps)
