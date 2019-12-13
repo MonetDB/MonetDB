@@ -97,7 +97,6 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 
 	if (p->token == ENDsymbol || p->barrier || isUnsafeFunction(p) || 
 		(isMultiplex(p) && MANIFOLDtypecheck(cntxt,mb,p,0) == NULL) ){
-			TRC_DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on instruction\n");
 			return TRUE;
 		}
 
@@ -190,8 +189,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* inlined functions will get their dataflow control later */
 	if ( mb->inlineProp)
 		return MAL_SUCCEED;
-
-	TRC_DEBUG(MAL_OPT_DATAFLOW, "DATAFLOW optimizer enter\n");
 
 	vlimit = mb->vsize;
 	states = (States) GDKzalloc(vlimit * sizeof(char));
@@ -301,15 +298,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if( getState(states, p, k) & VARWRITE)
 				setState(states, p ,k, VARREAD);
 		}
-
-		/* CHECK */
-		// From here
-		TRC_DEBUG(MAL_OPT_DATAFLOW, "Variable states\n");
-		debugInstruction(MAL_OPT_DATAFLOW, mb, 0, p, LIST_MAL_ALL);
-		for(k = 0; k < p->argc; k++)
-			TRC_DEBUG(MAL_OPT_DATAFLOW, "%s %d\n", getVarName(mb,getArg(p,k)), states[getArg(p,k)]);
-		// To here - is in DEBUG MAL_OPT_DATAFLOW
-
 	}
 	/* take the remainder as is */
 	for (; i<slimit; i++) 
@@ -325,16 +313,12 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","dataflow",actions,usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
 
 wrapup:
 	if(states) GDKfree(states);
 	if(sink)   GDKfree(sink);
 	if(old)    GDKfree(old);
-
-	debugFunction(MAL_OPT_DATAFLOW, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_DATAFLOW, "DATAFLOW optimizer exit\n");
-
 	return msg;
 }

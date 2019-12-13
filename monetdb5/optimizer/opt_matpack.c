@@ -87,9 +87,5 @@ wrapup:
     newComment(mb,buf);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
-
-	debugFunction(MAL_OPT_MATPACK, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_MATPACK, "MATPACK optimizer exit\n");
-
 	return MAL_SUCCEED;
 }

@@ -25,7 +25,7 @@
 str
 OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,actions = 0;
+	int i, actions = 0;
 	int limit = mb->stop;
 	InstrPtr p, q, *old = mb->stmt;
 	char buf[256];
@@ -35,8 +35,6 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) cntxt;
 	(void) pci;
-
-	TRC_DEBUG(MAL_OPT_JIT, "JIT optimizer enter\n");
 
 	setVariableScope(mb);
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
@@ -63,8 +61,7 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if( q && getArg(q,0) == getArg(p,2) && getModuleId(q) == algebraRef && getFunctionId(q) == projectionRef ){
 				getArg(p,2)=  getArg(q,2);
 				p= addArgument(mb, p, getArg(q,1));
-				TRC_DEBUG(MAL_OPT_JIT, "Optimize JIT case 1\n");
-				debugInstruction(MAL_OPT_JIT, mb, 0, p, LIST_MAL_ALL);
+				actions++;
 			}
 		}
 		pushInstruction(mb,p);
@@ -79,11 +76,7 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","jit",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
-	debugFunction(MAL_OPT_JIT, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_JIT, "JIT optimizer exit\n");
-
 	return msg;
 }

@@ -49,6 +49,7 @@
 
 /* different query execution modes (emode) */
 #define m_normal 	0
+#define m_deallocate 1
 #define m_execute 	2
 #define m_prepare 	3
 #define m_plan 		4

@@ -35,7 +35,6 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
-	
 	alias= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	cst= (VarPtr*) GDKzalloc(sizeof(VarPtr) * mb->vtop);
 	index= (int*) GDKzalloc(sizeof(int) * mb->vtop);
@@ -98,16 +97,12 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","constants",actions,usec);
 	newComment(mb,buf);
-	if (actions >= 0)
+	if (actions > 0)
 		addtoMalBlkHistory(mb);
 
 wrapup:
 	if( alias) GDKfree(alias);
 	if( cst) GDKfree(cst);
 	if( index) GDKfree(index);
-
-	debugFunction(MAL_OPT_CONSTANTS, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_CONSTANTS, "CONSTANTS optimizer exit\n");
-    
 	return msg;
 }

@@ -71,17 +71,6 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( i == pci->argc)
 		throw(MAL, "optimizer.multiplex", SQLSTATE(HY002) "Iterator BAT type is missing");
 
-	/* CHECK */
-	// From here
-	char *tpenme;
-	TRC_DEBUG(MAL_OPT_MULTIPLEX, "Calling the optimize multiplex script routine\n");
-	debugFunction(MAL_OPT_MULTIPLEX,mb, 0, LIST_MAL_ALL );
-	tpenme = getTypeName(getVarType(mb,iter));
-	TRC_DEBUG(MAL_OPT_MULTIPLEX, "Multiplex against operator: %d %s\n", iter, tpenme);
-	GDKfree(tpenme);
-	debugInstruction(MAL_OPT_MULTIPLEX, mb, 0, pci, LIST_MAL_ALL);
-	// To here is in DEBUG MAL_OPT_MULTIPLEX
-
 	/*
 	 * Beware, the operator constant (arg=1) is passed along as well,
 	 * because in the end we issue a recursive function call that should
@@ -270,11 +259,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","multiplex",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
-	debugFunction(MAL_OPT_MULTIPLEX, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_MULTIPLEX, "MULTIPLEX optimizer exit\n");
-	
 	return msg;
 }

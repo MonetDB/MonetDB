@@ -83,11 +83,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	usec= GDKusec() - usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","aliases",actions,usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
-	debugFunction(MAL_OPT_ALIASES, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_ALIASES, "ALIASES optimizer exit\n");
-	
 	return MAL_SUCCEED;
 }

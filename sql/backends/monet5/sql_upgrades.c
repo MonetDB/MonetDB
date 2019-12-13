@@ -2510,7 +2510,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"ALTER TABLE sys.keywords SET READ WRITE;\n"
-			"insert into sys.keywords values ('CUBE'), ('GROUPING'), ('ROLLUP'), ('SETS');\n");
+			"insert into sys.keywords values ('CUBE'), ('DEALLOC'), ('DEALLOCATE'), ('GROUPING'), ('ROLLUP'), ('SETS');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);

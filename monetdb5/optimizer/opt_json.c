@@ -88,11 +88,7 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","json",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
-	debugFunction(MAL_OPT_JSON, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_JSON, "JSON optimizer exit\n");
-
 	return msg;
 }

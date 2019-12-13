@@ -37,7 +37,7 @@ typedef struct expression {
 	void *l;
 	void *r;
 	void *f;	/* func's and aggr's, also e_cmp may have have 2 arguments */
-	uint64_t
+	unsigned int
 	 flag:16,	/* cmp types, PSM types/level */
 	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
 	 freevar:4,	/* free variable, ie binds to the upper dependent join */

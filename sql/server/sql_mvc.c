@@ -354,7 +354,7 @@ mvc_trans(mvc *m)
 				return -1;
 			}
 		} else { /* clean all but the prepared statements */
-			qc_clean(m->qc);
+			qc_clean(m->qc, false);
 		}
 	}
 	store_unlock();
@@ -476,7 +476,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		m->type = Q_TRANS;
 		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
 build up the hash (not copied in the trans dup)) */
-			qc_clean(m->qc);
+			qc_clean(m->qc, false);
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		TRC_INFO(SQL_MVC, "Savepoint commit '%s' done\n", name);
 		return msg;
@@ -592,7 +592,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 
 	store_lock();
 	if (m->qc) 
-		qc_clean(m->qc);
+		qc_clean(m->qc, false);
 	if (name && name[0] != '\0') {
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;

@@ -72,10 +72,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 * They are produced by SQL compiler.
 			 */
 			if (isMultiplex(q)) {
-				if (OPTinlineMultiplex(cntxt,mb,q)) {
-					TRC_DEBUG(MAL_OPT_INLINE, "Multiplex inline function\n");
-					debugInstruction(MAL_OPT_INLINE, mb, 0, q, LIST_MAL_ALL);
-				}
+				 OPTinlineMultiplex(cntxt,mb,q);
 			} else
 			/*
 			 * Check if the function definition is tagged as being inlined.
@@ -85,9 +82,6 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				(void) inlineMALblock(mb,i,q->blk);
 				i--;
 				actions++;
-
-				TRC_DEBUG(MAL_OPT_INLINE, "Inline function at %d\n", i);
-				debugFunction(MAL_OPT_INLINE, mb, 0, LIST_MAL_ALL);
 			}
 		}
 	}
@@ -102,12 +96,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","inline",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
-	debugFunction(MAL_OPT_INLINE, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_INLINE, "INLINE optimizer exit\n");
-	
-
 	return msg;
 }

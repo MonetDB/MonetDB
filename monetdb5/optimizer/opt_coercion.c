@@ -179,12 +179,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","coercion",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-	/* else we can also remove the request to apply the next alias optimizer */
-	
-	debugFunction(MAL_OPT_COERCION, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_COERCION, "COERCION optimizer exit\n");
-
 	return msg;
 }

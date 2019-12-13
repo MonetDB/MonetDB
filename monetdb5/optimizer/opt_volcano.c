@@ -103,11 +103,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","volcano",count,usec);
     newComment(mb,buf);
-	if( count >= 0)
+	if( count > 0)
 		addtoMalBlkHistory(mb);
-
-	debugFunction(MAL_OPT_VOLCANO, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_VOLCANO, "VOLCANO optimizer exit\n");
-
 	return msg;
 }

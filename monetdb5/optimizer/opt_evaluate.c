@@ -168,9 +168,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		for (k = p->retc; k < p->argc; k++)
 			if (alias[getArg(p, k)])
 				getArg(p, k) = alias[getArg(p, k)];
-				
-		debugInstruction(MAL_OPT_EVALUATE, mb, 0, p, LIST_MAL_ALL);
-	
 		/* be aware that you only assign once to a variable */
 		if (use && p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
 			barrier = p->barrier;
@@ -185,9 +182,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 			msg = reenterMAL(cntxt, mb, i, i + 1, env);
 			p->barrier = barrier;
-			
-			TRC_DEBUG(MAL_OPT_EVALUATE, "Retc var: %s - Result: %s\n", getVarName(mb, getArg(p, 0)), msg == MAL_SUCCEED ? "ok" : msg);
-
 			if (msg == MAL_SUCCEED) {
 				int nvar;
 				ValRecord cst;
@@ -210,12 +204,9 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				/* freeze the type */
 				setVarFixed(mb,getArg(p,1));
 				setVarUDFtype(mb,getArg(p,1));
-				TRC_DEBUG(MAL_OPT_EVALUATE, "Evaluated new constant=%d -> %d:%s\n",
-										getArg(p, 0), getArg(p, 1), getTypeName(getArgType(mb, p, 1)));
 			} else {
 				/* if there is an error, we should postpone message handling,
 					as the actual error (eg. division by zero ) may not happen) */
-				TRC_DEBUG(MAL_OPT_EVALUATE, "Evaluated: %s\n", msg);
 				freeException(msg);
 				msg= MAL_SUCCEED;
 				mb->errors = 0;
@@ -238,16 +229,12 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","evaluate",actions,usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
 
 wrapup:
 	if ( env) freeStack(env);
 	if(assigned) GDKfree(assigned);
 	if(alias)	GDKfree(alias);
-
-	debugFunction(MAL_OPT_EVALUATE, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_EVALUATE, "EVALUATE optimizer exit\n");
-
 	return msg;
 }

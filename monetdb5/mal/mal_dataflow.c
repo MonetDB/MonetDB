@@ -800,8 +800,6 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	bit *ret;
 	int i;
 
-	TRC_DEBUG(MAL_DATAFLOW, "Running for block: %d - %d\n", startpc, stoppc);
-
 	/* in debugging mode we should not start multiple threads */
 	if (stk == NULL)
 		throw(MAL, "dataflow", "runMALdataflow(): Called with stk == NULL");

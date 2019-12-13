@@ -331,7 +331,7 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 						freeInstruction(r);
 						return NULL;
 					}
-					r = pushArgument(mb, r, getArg(q, 0));
+					r = addArgument(mb, r, getArg(q, 0));
 
 					nr++;
 					break;
@@ -364,7 +364,7 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 				freeInstruction(r);
 				return NULL;
 			}
-			r = pushArgument(mb, r, getArg(q, 0));
+			r = addArgument(mb, r, getArg(q, 0));
 		}
 		if (evar == 1 && e >= 0 && mat[e].type == mat_slc && is_projectdelta) {
 			InstrPtr q = newInstruction(mb, algebraRef, projectionRef);
@@ -456,7 +456,7 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 			freeInstruction(r);
 			return NULL;
 		}
-		r = pushArgument(mb, r, getArg(q, 0));
+		r = addArgument(mb, r, getArg(q, 0));
 	}
 	return r;
 }
@@ -506,7 +506,7 @@ mat_apply2(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, in
 				GDKfree(r);
 				return -1;
 			}
-			r[l] = pushArgument(mb, r[l], getArg(q, l));
+			r[l] = addArgument(mb, r[l], getArg(q, l));
 		}
 	}
 
@@ -563,7 +563,7 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mva
 				GDKfree(r);
 				return -1;
 			}
-			r[l] = pushArgument(mb, r[l], getArg(q, l));
+			r[l] = addArgument(mb, r[l], getArg(q, l));
 		}
 	}
 	for(k=0; k < p->retc; k++) {
@@ -637,7 +637,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 			}
 			pushInstruction(mb,q);
 
-			r = pushArgument(mb,r,getArg(q,0));
+			r = addArgument(mb,r,getArg(q,0));
 			nr++;
 		}
 	} else {
@@ -657,7 +657,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 				freeInstruction(r);
 				return -1;
 			}
-			r = pushArgument(mb, r, getArg(q,0));
+			r = addArgument(mb, r, getArg(q,0));
 		}
 	}
 
@@ -701,7 +701,7 @@ mat_projection(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 						freeInstruction(r);
 						return -1;
 					}
-					r = pushArgument(mb,r,getArg(q,0));
+					r = addArgument(mb,r,getArg(q,0));
 
 					nr++;
 					break;
@@ -728,7 +728,7 @@ mat_projection(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 				freeInstruction(r);
 				return -1;
 			}
-			r = pushArgument(mb, r, getArg(q,0));
+			r = addArgument(mb, r, getArg(q,0));
 		}
 	}
 
@@ -781,8 +781,8 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 				}
 
 				/* add result to mat */
-				l = pushArgument(mb,l,getArg(q,0));
-				r = pushArgument(mb,r,getArg(q,1));
+				l = addArgument(mb,l,getArg(q,0));
+				r = addArgument(mb,r,getArg(q,1));
 				nr++;
 			}
 		}
@@ -813,8 +813,8 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 			}
 
 			/* add result to mat */
-			l = pushArgument(mb, l, getArg(q,0));
-			r = pushArgument(mb, r, getArg(q,1));
+			l = addArgument(mb, l, getArg(q,0));
+			r = addArgument(mb, r, getArg(q,1));
 		}
 	}
 	return mat_add(ml, l, mat_none, getFunctionId(p)) || mat_add(ml, r, mat_none, getFunctionId(p));
@@ -929,8 +929,8 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 				}
 
 				/* add result to mat */
-				l = pushArgument(mb,l,getArg(q,0));
-				r = pushArgument(mb,r,getArg(q,1));
+				l = addArgument(mb,l,getArg(q,0));
+				r = addArgument(mb,r,getArg(q,1));
 				nr++;
 			}
 		}
@@ -966,8 +966,8 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 			pushInstruction(mb,q);
 
 			/* add result to mat */
-			l = pushArgument(mb, l, getArg(q,0));
-			r = pushArgument(mb, r, getArg(q,1));
+			l = addArgument(mb, l, getArg(q,0));
+			r = addArgument(mb, r, getArg(q,1));
 		}
 	}
 	res = mat_add(ml, l, mat_none, getFunctionId(p)) || mat_add(ml, r, mat_none, getFunctionId(p));
@@ -2292,11 +2292,7 @@ cleanup:
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mergetable",actions, usec);
    	newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
-	debugFunction(MAL_OPT_MERGETABLE, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_MERGETABLE, "MERGETABLE optimizer exit\n");
-    
 	return msg;
 }

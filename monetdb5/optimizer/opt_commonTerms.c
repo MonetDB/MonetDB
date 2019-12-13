@@ -213,7 +213,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","commonTerms",actions,usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
 
   wrapup:
@@ -221,9 +221,5 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	if(list) GDKfree(list);
 	if(hash) GDKfree(hash);
 	if(old) GDKfree(old);
-
-	debugFunction(MAL_OPT_COMMONTERMS, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_COMMONTERMS, "COMMONTERMS optimizer exit\n");
-    
 	return msg;
 }

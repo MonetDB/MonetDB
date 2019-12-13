@@ -92,9 +92,5 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","candidates",usec);
 	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
-
-	debugFunction(MAL_OPT_CANDIDATES, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_CANDIDATES, "CANDIDATES optimizer exit\n");
-
 	return MAL_SUCCEED;
 }

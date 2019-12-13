@@ -72,7 +72,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		for(  ; i > 1; i--)
 			mb->stmt[i] = mb->stmt[i-1];
 		mb->stmt[1] = p;
-		actions =1;
+		actions = 1;
 	}
 
 	// Actual garbage collection stuff, just mark them for re-assessment
@@ -122,12 +122,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
 	newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
-	debugFunction(MAL_OPT_GC, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_GC, "GARBAGECOLLECTOR optimizer exit\n");
-
 	return msg;
 }
 

@@ -153,9 +153,5 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
     snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","costmodel",usec);
     newComment(mb,buf);
 	addtoMalBlkHistory(mb);
-
-	debugFunction(MAL_OPT_COSTMODEL, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_COSTMODEL, "COSTMODEL optimizer exit\n");
-        
 	return MAL_SUCCEED;
 }

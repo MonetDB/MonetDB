@@ -159,7 +159,6 @@ Module globalModule(str nme)
 
 	// Global modules are not named 'user'
 	assert (strcmp(nme, "user"));
-
 	nme = putName(nme);
 	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
 	if (cur == NULL)
@@ -217,7 +216,6 @@ static void freeSubScope(Module scope)
 
 	if (scope->space == NULL) 
 		return;
-
 	for(i = 0; i < MAXSCOPE; i++) {
 		if( scope->space[i]){
 			s= scope->space[i];
@@ -245,7 +243,6 @@ void freeModule(Module m)
 			(void)ret;
 		}
 	}
-
 	freeSubScope(m);	
 	if (strcmp(m->name, "user")) {
 		clrModuleIndex(m);
@@ -268,7 +265,6 @@ void insertSymbol(Module scope, Symbol prg){
 
 	assert(scope);
 	sig = getSignature(prg);
-
 	if(getModuleId(sig) && getModuleId(sig)!= scope->name){
 		/* move the definition to the proper place */
 		/* default scope is the last resort */
@@ -308,7 +304,6 @@ void deleteSymbol(Module scope, Symbol prg){
 	int t;
 
 	sig = getSignature(prg);
-
 	if (getModuleId(sig) && getModuleId(sig)!= scope->name ){
 		/* move the definition to the proper place */
 		/* default scope is the last resort */

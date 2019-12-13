@@ -37,6 +37,7 @@
 #define garbageControl(P)	((P)->gc & GARBAGECONTROL)
 
 #define getInstrPtr(M,I)	(M)->stmt[I]
+#define putInstrPtr(M,I,P)	(M)->stmt[I] = P
 #define getSignature(S)		getInstrPtr((S)->def,0)
 #define isMain(M)			((getInstrPtr(M,0))->fcnname== putName("main",4))
 #define getFcnName(M)		getFunctionId(getInstrPtr(M,0))

@@ -86,9 +86,5 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","profiler", usec);
 	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
-
-	debugFunction(MAL_OPT_PROFILER, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_PROFILER, "PROFILER optimizer exit\n");
-
 	return MAL_SUCCEED;
 }

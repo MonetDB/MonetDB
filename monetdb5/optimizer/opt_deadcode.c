@@ -139,15 +139,11 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","deadcode",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
 
 wrapup:
 	if(old) GDKfree(old);
 	if(varused) GDKfree(varused);
-
-	debugFunction(MAL_OPT_DEADCODE, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_DEADCODE, "DEADCODE optimizer exit\n");
-
 	return msg;
 }

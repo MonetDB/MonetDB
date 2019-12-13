@@ -424,10 +424,6 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				}
 			}
 	}
-
-	debugFunction(MAL_OPT_MACRO, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_MACRO, "MACRO optimizer exit\n");
-
 	return MAL_SUCCEED;
 }
 /*
@@ -477,10 +473,6 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				}
 			}
 	}
-
-	debugFunction(MAL_OPT_MACRO, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_MACRO, "ORCAM optimizer exit\n");
-
 	return msg;
 }
 
@@ -529,10 +521,6 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.macro", SQLSTATE(42000) PROGRAM_GENERAL);
-
-	debugFunction(MAL_OPT_MACRO, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_MACRO, "MACRO optimizer exit\n");
-	
 	return msg;
 }
 
@@ -578,9 +566,5 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.orcam", SQLSTATE(42000) PROGRAM_GENERAL);
-
-	debugFunction(MAL_OPT_MACRO, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_MACRO, "ORCAM optimizer exit\n");
-
 	return msg;
 }

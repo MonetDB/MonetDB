@@ -92,12 +92,12 @@ qc_delete(qc *cache, cq *q)
 }
 
 void
-qc_clean(qc *cache)
+qc_clean(qc *cache, bool prepared)
 {
 	cq *n, *q, *p = NULL;
 
 	for (q = cache->q; q; ) {
-		if (!q->prepared) {
+		if (q->prepared == prepared) {
 			n = q->next;
 			if (p) 
 				p->next = n;
@@ -238,7 +238,7 @@ qc_match(qc *cache, mvc *sql, symbol *s, atom **params, int plen, int key)
 }
 
 cq *
-qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, sql_query_t type, char *cmd, int no_mitosis, int prepared)
+qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, sql_query_t type, char *cmd, int no_mitosis, bool prepared)
 {
 	int i, namelen;
 	cq *n = MNEW(cq);

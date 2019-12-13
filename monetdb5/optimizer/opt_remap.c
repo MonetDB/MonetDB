@@ -32,8 +32,6 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 
 	if(strncmp(mod,"bat",3)==0)
 		mod+=3;
-		
-	TRC_DEBUG(MAL_OPT_REMAP, "Found candidate: %s.%s\n", mod, fcn);
 
 	snprintf(buf,1024,"bat%s",mod);
 	bufName = putName(buf);
@@ -50,21 +48,15 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 			p = pushReturn(mb, p, getArg(pci,i));
 	p->retc= p->argc= pci->retc;
 	for(i= pci->retc+2; i<pci->argc; i++)
-		p= pushArgument(mb,p,getArg(pci,i));
-
-	debugInstruction(MAL_OPT_REMAP, mb, 0, p, LIST_MAL_ALL);
+		p= addArgument(mb,p,getArg(pci,i));
 
 	/* now see if we can resolve the instruction */
 	typeChecker(scope,mb,p,TRUE);
 	if( p->typechk== TYPE_UNKNOWN) {
-		TRC_DEBUG(MAL_OPT_REMAP, "Type error\n");
-		debugInstruction(MAL_OPT_REMAP, mb, 0, p, LIST_MAL_ALL);
 		freeInstruction(p);
 		return 0;
 	}
 	pushInstruction(mb,p);
-	TRC_DEBUG(MAL_OPT_REMAP, "Success\n");
-
 	return 1;
 }
 
@@ -118,16 +110,6 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 
 	if( s== NULL || !isSideEffectFree(s->def) || 
 		getInstrPtr(s->def,0)->retc != p->retc ) {
-
-		/* CHECK */
-		// From here 
-		if( s== NULL) {
-			TRC_DEBUG(MAL_OPT_REMAP, "Not found\n");
-		} else {
-			TRC_DEBUG(MAL_OPT_REMAP, "Side effects\n");
-		}
-		// To here is in DBEUG MAL_OPT_REMAP
-			
 		return 0;
 	}
 	/*
@@ -137,10 +119,6 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 		return 0;
 	}
 	sig= getInstrPtr(mq,0);
-
-	TRC_DEBUG(MAL_OPT_REMAP, "Modify the code\n");
-	debugFunction(MAL_OPT_REMAP, mq, 0, LIST_MAL_ALL);
-	debugInstruction(MAL_OPT_REMAP, mb, 0, p, LIST_MAL_ALL);
 
 	upgrade = (bit*) GDKzalloc(sizeof(bit)*mq->vtop);
 	if( upgrade == NULL) {
@@ -157,11 +135,8 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 			isaBatType( getArgType(mb,p,i)) ){
 
 			if( getBatType(getArgType(mb,p,i)) != getArgType(mq,sig,i-2)){
-				TRC_DEBUG(MAL_OPT_REMAP, "Type mismatch: %d\n", i);
 				goto terminateMX;
 			}
-
-			TRC_DEBUG(MAL_OPT_REMAP, "Upgrade type: %d %d\n", i, getArg(sig,i-2));
 
 			setVarType(mq, i-2,newBatType(getArgType(mb,p,i)));
 			upgrade[getArg(sig,i-2)]= TRUE;
@@ -219,7 +194,8 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 				setVarType(mq,getArg(q,0),tpe);
 				setModuleId(q,algebraRef);
 				setFunctionId(q,projectRef);
-				q= pushArgument(mb,q, getArg(q,1));
+				q= addArgument(mb,q, getArg(q,1));
+				mq->stmt[i] = q;
 				getArg(q,1)= refbat;
 			}
 		}
@@ -253,7 +229,8 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					!(isaBatType( getArgType(mq,q,1))) ){
 					setModuleId(q,algebraRef);
 					setFunctionId(q,projectRef);
-					q= pushArgument(mq,q, getArg(q,1));
+					q= addArgument(mq,q, getArg(q,1));
+					mq->stmt[i] = q;
 					getArg(q,1)= refbat;
 				
 					q->typechk = TYPE_UNKNOWN;
@@ -269,12 +246,6 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 
 	if(mq->errors){
 terminateMX:
-		/* CHECK */
-		// From here 
-		TRC_DEBUG(MAL_OPT_REMAP, "Abort remap\n");
-		if (q)
-			debugInstruction(MAL_OPT_REMAP, mb, 0, q, LIST_MAL_ALL);
-		// To here is in DEBUG MAL_OPT_REMAP
 
 		freeMalBlk(mq);
 		GDKfree(upgrade);
@@ -295,12 +266,6 @@ terminateMX:
 	delArgument(p,2);
 	delArgument(p,1);
 	inlineMALblock(mb,pc,mq);
-
-	debugInstruction(MAL_OPT_REMAP, mb, 0, p, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_REMAP, "New block\n");
-	debugFunction(MAL_OPT_REMAP, mq, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_REMAP, "Inlined result\n");
-	debugFunction(MAL_OPT_REMAP, mb, 0, LIST_MAL_ALL);
 
 	freeMalBlk(mq);
 	GDKfree(upgrade);
@@ -392,15 +357,10 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			Symbol s = findSymbol(cntxt->usermodule, mod,fcn);
 
 			if (s && s->def->inlineProp ){
-				TRC_DEBUG(MAL_OPT_REMAP, "Multiplex inline\n");
-				debugInstruction(MAL_OPT_REMAP, mb, 0, p, LIST_MAL_ALL);
-
 				pushInstruction(mb, p);
 				if( OPTmultiplexInline(cntxt,mb,p,mb->stop-1) ){
 					doit++;
-					TRC_DEBUG(MAL_OPT_REMAP, "Actions: %d\n",doit);
 				}
-
 			} else if (OPTremapDirect(cntxt, mb, stk, p, scope) ||
 				OPTremapSwitched(cntxt, mb, stk, p, scope)) {
 				freeInstruction(p); 
@@ -431,35 +391,35 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			t = newInstruction(mb, batcalcRef, putName("=="));
 			getArg(t,0) = newTmpVariable(mb, newBatType(TYPE_bit));
-			t = pushArgument(mb, t, getDestVar(cnt));
+			t = addArgument(mb, t, getDestVar(cnt));
 			t = pushLng(mb, t, 0);
 			pushInstruction(mb, t);
 			iszero = t;
 
 			t = newInstruction(mb, batcalcRef, dblRef);
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
-			t = pushArgument(mb, t, getDestVar(sum));
+			t = addArgument(mb, t, getDestVar(sum));
 			pushInstruction(mb, t);
 			sum = t;
 
 			t = newInstruction(mb, batcalcRef, putName("ifthenelse"));
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
-			t = pushArgument(mb, t, getDestVar(iszero));
+			t = addArgument(mb, t, getDestVar(iszero));
 			t = pushNil(mb, t, TYPE_dbl);
-			t = pushArgument(mb, t, getDestVar(sum));
+			t = addArgument(mb, t, getDestVar(sum));
 			pushInstruction(mb, t);
 			sum = t;
 
 			t = newInstruction(mb, batcalcRef, dblRef);
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
-			t = pushArgument(mb, t, getDestVar(cnt));
+			t = addArgument(mb, t, getDestVar(cnt));
 			pushInstruction(mb, t);
 			cnt = t;
 
 			avg = newInstruction(mb, batcalcRef, divRef);
 			getArg(avg, 0) = getArg(p, 0);
-			avg = pushArgument(mb, avg, getDestVar(sum));
-			avg = pushArgument(mb, avg, getDestVar(cnt));
+			avg = addArgument(mb, avg, getDestVar(sum));
+			avg = addArgument(mb, avg, getDestVar(cnt));
 			freeInstruction(p);
 			pushInstruction(mb, avg);
 		} else {
@@ -485,9 +445,5 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     newComment(mb,buf);
 	if( doit >= 0)
 		addtoMalBlkHistory(mb);
-
-	debugFunction(MAL_OPT_REMAP, mb, 0, LIST_MAL_ALL);
-	TRC_DEBUG(MAL_OPT_REMAP, "REMAP optimizer exit\n");
-
 	return msg;
 }
