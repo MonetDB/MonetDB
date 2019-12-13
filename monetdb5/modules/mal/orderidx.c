@@ -107,7 +107,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	smb = snew->def;
 	q = getInstrPtr(smb, 0);
 	arg = newTmpVariable(smb, tpe);
-	q= pushArgument(smb, q, arg);
+	q= addArgument(smb, q, arg);
 	getArg(q,0) = newTmpVariable(smb, TYPE_void);
 
 	resizeMalBlk(smb, 2*pieces+10); // large enough
@@ -119,7 +119,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		goto bailout;
 	}
 	pack->argv[0] = newTmpVariable(smb, TYPE_void);
-	pack = pushArgument(smb, pack, arg);
+	pack = addArgument(smb, pack, arg);
 	setVarFixed(smb, getArg(pack, 0));
 
 	/* the costly part executed as a parallel block */
@@ -133,11 +133,11 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	o = 0;
 	for (i = 0; i < pieces; i++) {
 		/* add slice instruction */
-		q = newStmt(smb, putName("algebra"),putName("slice"));
+		q = newInstruction(smb, putName("algebra"),putName("slice"));
 		setVarType(smb, getArg(q,0), tpe);
 		setVarFixed(smb, getArg(q,0));
-		q = pushArgument(smb, q, arg);
-		pack = pushArgument(smb, pack, getArg(q,0));
+		q = addArgument(smb, q, arg);
+		pack = addArgument(smb, pack, getArg(q,0));
 		q = pushOid(smb, q, o);
 		if (i == pieces-1) {
 			o = cnt;
@@ -145,15 +145,17 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 			o += step;
 		}
 		q = pushOid(smb, q, o - 1);
+		pushInstruction(smb, q);
 	}
 	for (i = 0; i < pieces; i++) {
 		/* add sort instruction */
-		q = newStmt(smb, putName("algebra"), putName("orderidx"));
+		q = newInstruction(smb, putName("algebra"), putName("orderidx"));
 		setVarType(smb, getArg(q, 0), tpe);
 		setVarFixed(smb, getArg(q, 0));
-		q = pushArgument(smb, q, pack->argv[2+i]);
+		q = addArgument(smb, q, pack->argv[2+i]);
 		q = pushBit(smb, q, 1);
 		pack->argv[2+i] = getArg(q, 0);
+		pushInstruction(smb, q);
 	}
 	/* finalize OID packing, check, and evaluate */
 	pushInstruction(smb,pack);
