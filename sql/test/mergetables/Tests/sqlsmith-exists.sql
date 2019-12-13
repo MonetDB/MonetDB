@@ -1311,4 +1311,93 @@ where
   subq_0.c0 is null
 limit 92; --empty
 
+select 
+ 34 as c0, 
+ ref_7.col1 as c1
+from 
+ (select 
+ cast(nullif(ref_1.bb,
+ ref_0.col1) as int) as c0, 
+ ref_1.bb as c1, 
+ ref_0.col2 as c2, 
+ ref_1.bb as c3, 
+ ref_0.col2 as c4, 
+ cast(nullif(ref_0.col0,
+ ref_1.bb) as int) as c5, 
+ ref_0.col1 as c6, 
+ ref_1.bb as c7, 
+ ref_0.col2 as c8, 
+ ref_0.col0 as c9, 
+ ref_1.cc as c10, 
+ ref_0.col0 as c11, 
+ ref_1.aa as c12
+ from 
+ tab0 as ref_0
+ inner join analytics as ref_1
+ on (((ref_1.aa is null) 
+ or ((ref_1.bb is null) 
+ or ((63 is null) 
+ or ((ref_1.bb is not null) 
+ and (false))))) 
+ or ((ref_0.col0 is not null) 
+ or ((ref_1.aa is not null) 
+ or ((((((false) 
+ and (exists (
+ select 
+ ref_2.i as c0, 
+ ref_2.i as c1, 
+ ref_0.col2 as c2, 
+ ref_2.i as c3, 
+ ref_1.aa as c4, 
+ ref_0.col0 as c5, 
+ ref_2.i as c6
+ from 
+ integers as ref_2
+ where ref_0.col1 is null))) 
+ or (true)) 
+ or (true)) 
+ and (ref_1.aa is not null)) 
+ or (ref_1.aa is not null)))))
+ where exists (
+ select 
+ ref_3.col2 as c0, 
+ ref_0.col2 as c1, 
+ ref_0.col1 as c2, 
+ ref_1.aa as c3, 
+ ref_3.col0 as c4, 
+ ref_3.col0 as c5
+ from 
+ tab2 as ref_3
+ right join analytics as ref_4
+ on (((false) 
+ and (ref_1.aa is not null)) 
+ or (ref_4.bb is not null))
+ where ref_0.col2 is not null)
+ limit 183) as subq_0
+ right join another_t as ref_5
+ right join longtable as ref_6
+ inner join longtable as ref_7
+ right join tbl_productsales as ref_8
+ inner join integers as ref_9
+ on (ref_8.col4 = ref_9.i )
+ on (ref_9.i is not null)
+ on ((ref_7.col5 is not null) 
+ and (ref_6.col5 is not null))
+ left join (select 
+ ref_10.i as c0, 
+ ref_10.i as c1, 
+ ref_10.i as c2, 
+ ref_10.i as c3, 
+ ref_10.i as c4, 
+ ref_10.i as c5
+ from 
+ integers as ref_10
+ where 67 is null
+ limit 151) as subq_1
+ on (subq_1.c1 is null)
+ on (ref_5.col5 = ref_6.col1 )
+ on (ref_5.col7 is null)
+where ref_7.col8 is not null
+limit 151; --empty
+
 ROLLBACK;
