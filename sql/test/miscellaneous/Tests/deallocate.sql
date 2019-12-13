@@ -1,6 +1,6 @@
 prepare select "system" or ? from _tables WHERE false;
 EXEC **(false);
-dealloc **;
+deallocate **;
 exec **(false); --error, the last prepared statement, no longer exists;
 DEALLOCATE **; --error, last prepared statement already closed
 

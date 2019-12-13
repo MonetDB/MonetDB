@@ -2,7 +2,7 @@
 # This file is updated with Maddlog
 
 * Fri Dec 13 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Added deallocate statements with the syntax 'DEALLOC[ATE] [PREPARE]
+- Added deallocate statements with the syntax 'DEALLOCATE [PREPARE]
   { number | ALL }', to close an existing prepared statement or all, 
   through the SQL layer. Previously this feature was available via MAPI 
   exclusively with the "release" command.
