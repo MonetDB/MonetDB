@@ -2451,22 +2451,37 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 			case '\0':
 				break;
 			case 'e':
-				/* a bit of a hack for prepare/exec
-				 * tests: replace "exec **" with the
-				 * ID of the last prepared
-				 * statement */
+			case 'E':
+				/* a bit of a hack for prepare/exec/dealloc
+				 * tests: replace "exec[ute] **" with the
+				 * ID of the last prepared statement */
 				if (mode == SQL &&
 				    formatter == TESTformatter &&
-				    strncmp(line, "exec **", 7) == 0) {
+				    (strncasecmp(line, "exec **", 7) == 0 || 
+					 strncasecmp(line, "execute **", 10) == 0)) {
 					line[5] = prepno < 10 ? ' ' : prepno / 10 + '0';
 					line[6] = prepno % 10 + '0';
 				}
-				if (strcmp(line, "exit\n") == 0) {
+				if (strncasecmp(line, "exit\n", 5) == 0) {
 					goto bailout;
 				}
 				break;
+			case 'd':
+			case 'D':
+				/* a bit of a hack for prepare/exec/dealloc
+				 * tests: replace "dealloc[ate] **" with the
+				 * ID of the last prepared statement */
+				if (mode == SQL &&
+				    formatter == TESTformatter &&
+				    (strncasecmp(line, "dealloc **", 10) == 0 || 
+					 strncasecmp(line, "deallocate **", 13) == 0)) {
+					line[5] = prepno < 10 ? ' ' : prepno / 10 + '0';
+					line[6] = prepno % 10 + '0';
+				}
+				break;
 			case 'q':
-				if (strcmp(line, "quit\n") == 0) {
+			case 'Q':
+				if (strncasecmp(line, "quit\n", 5) == 0) {
 					goto bailout;
 				}
 				break;
