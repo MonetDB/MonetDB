@@ -39,27 +39,6 @@ typedef struct {
 #endif
 } bignum_t;
 
-#ifndef HAVE_STRNCASECMP
-static int
-strncasecmp(const char *s1, const char *s2, size_t n)
-{
-	int c1, c2;
-
-	while (n > 0) {
-		c1 = (unsigned char) *s1++;
-		c2 = (unsigned char) *s2++;
-		if (c1 == 0)
-			return -c2;
-		if (c2 == 0)
-			return c1;
-		if (c1 != c2 && tolower(c1) != tolower(c2))
-			return tolower(c1) - tolower(c2);
-		n--;
-	}
-	return 0;
-}
-#endif
-
 /* Parse a number and store in a bignum_t.
  * 1 is returned if all is well;
  * 2 is returned if there is loss of precision (i.e. overflow of the value);
