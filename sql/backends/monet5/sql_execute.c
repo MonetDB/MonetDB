@@ -763,7 +763,7 @@ SQLengineIntern(Client c, backend *be)
 
 cleanup_engine:
 	if (m->type == Q_SCHEMA && m->qc != NULL)
-		qc_clean(m->qc);
+		qc_clean(m->qc, false);
 	if (msg) {
 		/* don't print exception decoration, just the message */
 /*

@@ -317,6 +317,7 @@ int yydebug=1;
 	object_name
 	exec
 	exec_ref
+	dealloc
 	trigger_def
 	trigger_event
 	opt_when
@@ -539,6 +540,7 @@ int yydebug=1;
 	join_type
 	opt_outer
 	non_second_datetime_field
+	dealloc_ref
 	nonzero
 	opt_bounds
 	opt_column
@@ -692,7 +694,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE
-%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE
+%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOC DEALLOCATE
 %token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -790,23 +792,32 @@ sqlstmt:
 			}
    sqlstmt		{ $$ = $3; YYACCEPT; }
  | exec SCOLON		{ m->sym = $$ = $1; YYACCEPT; }
+ | dealloc SCOLON	{ m->sym = $$ = $1; YYACCEPT; }
  | /*empty*/		{ m->sym = $$ = NULL; YYACCEPT; }
  | SCOLON		{ m->sym = $$ = NULL; YYACCEPT; }
  | error SCOLON		{ m->sym = $$ = NULL; YYACCEPT; }
  | LEX_ERROR		{ m->sym = $$ = NULL; YYABORT; }
  ;
 
-
 prepare:
-       PREPARE
- |     PREP
+   PREPARE
+ | PREP
  ; 
 
 execute:
-       EXECUTE
- |     EXEC
+   EXECUTE
+ | EXEC
  ; 
 
+opt_prepare:
+   /* empty */
+ | prepare
+ ;
+
+deallocate:
+   DEALLOCATE
+ | DEALLOC
+ ;
 
 create:
     CREATE  { $$ = FALSE; }
@@ -827,13 +838,13 @@ if_not_exists:
 ;
 
 drop:
-    DROP 		
+    DROP 
 
 set:
-    SET 		
+    SET
 
 declare:
-    DECLARE 		
+    DECLARE 
 
 	/* schema definition language */
 sql:
@@ -5721,6 +5732,8 @@ non_reserved_word:
 | COLUMN	{ $$ = sa_strdup(SA, "column"); }	/* sloppy: officially reserved */
 | CYCLE		{ $$ = sa_strdup(SA, "cycle"); }	/* sloppy: officially reserved */
 | sqlDATE	{ $$ = sa_strdup(SA, "date"); }		/* sloppy: officially reserved */
+| DEALLOC   { $$ = sa_strdup(SA, "dealloc"); }	/* sloppy: officially reserved */
+| DEALLOCATE { $$ = sa_strdup(SA, "deallocate"); }	/* sloppy: officially reserved */
 | DISTINCT	{ $$ = sa_strdup(SA, "distinct"); }	/* sloppy: officially reserved */
 | EXEC		{ $$ = sa_strdup(SA, "exec"); }		/* sloppy: officially reserved */
 | EXECUTE	{ $$ = sa_strdup(SA, "execute"); }	/* sloppy: officially reserved */
@@ -5963,13 +5976,25 @@ exec:
 		  $$ = $2; }
  ;
 
+dealloc_ref:
+   posint { $$ = $1; }
+ | ALL    { $$ = -1; } /* prepared statements numbers cannot be negative, so set -1 to deallocate all */
+ ;
+
+dealloc:
+     deallocate opt_prepare dealloc_ref
+		{
+		  m->emode = m_deallocate;
+		  $$ = _newAtomNode(atom_int(SA, sql_bind_localtype("int"), $3)); }
+ ;
+
 exec_ref:
-    intval '(' ')'
+    posint '(' ')'
 	{ dlist *l = L();
   	  append_int(l, $1);
   	  append_list(l, NULL);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
-|   intval '(' value_commalist ')'
+|   posint '(' value_commalist ')'
 	{ dlist *l = L();
   	  append_int(l, $1);
   	  append_list(l, $3);
