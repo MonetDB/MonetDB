@@ -264,10 +264,6 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				putRemoteVariables()
 				remoteAction()
 			} else {
-				if( OPTdebug &  OPTremotequeries){
-					fprintf(stderr, "found remote variable %s ad %d\n",
-						getVarName(mb,getArg(p,0)), location[getArg(p,0)]);
-				}
 				pushInstruction(mb,p);
 			}
 		} else
@@ -367,12 +363,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remoteQueries",doit,  usec);
     newComment(mb,buf);
-	if( doit >= 0)
+	if( doit > 0)
 		addtoMalBlkHistory(mb);
-
-    if( OPTdebug &  OPTremotequeries){
-        fprintf(stderr, "#remotequeries optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

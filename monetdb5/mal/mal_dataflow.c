@@ -798,11 +798,6 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	bit *ret;
 	int i;
 
-#ifdef DEBUG_FLOW
-	fprintf(stderr, "#runMALdataflow for block %d - %d\n", startpc, stoppc);
-	fprintFunction(stderr, mb, 0, LIST_ALL);
-#endif
-
 	/* in debugging mode we should not start multiple threads */
 	if (stk == NULL)
 		throw(MAL, "dataflow", "runMALdataflow(): Called with stk == NULL");

@@ -82,11 +82,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		return 0;
 	}
 
-    if( OPTdebug &  OPTemptybind){
-		fprintf(stderr, "#Optimize Query Emptybind\n");
-		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
-	}
-
 	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(empty);
 		GDKfree(updated);
@@ -111,9 +106,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
  		 * sequences to filter and replace results 
  		 */
 		if ( getModuleId(p) == batRef && getFunctionId(p) == newRef){
-			if( OPTdebug &  OPTemptybind){
-				fprintf(stderr, "#empty bat  pc %d var %d\n",i , getArg(p,0) );
-			}
 			empty[getArg(p,0)] = i;
 			continue;
 		} 
@@ -137,17 +129,11 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		 */
 
 		if (getFunctionId(p) == emptybindRef) {
-			if( OPTdebug &  OPTemptybind){
-				fprintf(stderr, "#empty bind  pc %d var %d\n",i , getArg(p,0) );
-			}
 			setFunctionId(p,bindRef);
 			p->typechk= TYPE_UNKNOWN;
 			empty[getArg(p,0)] = i;
 			if( p->retc == 2){
 				empty[getArg(p,1)] = i;
-				if( OPTdebug &  OPTemptybind){
-					fprintf(stderr, "#empty update bind  pc %d var %d\n",i , getArg(p,1) );
-				}
 			}
 			// replace the call into a empty bat creation unless the table was updated already in the same query 
 			sch = getVarConstant(mb,getArg(p,2  + (p->retc==2))).val.sval;
@@ -157,14 +143,8 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				if(q && getModuleId(q) == sqlRef && isUpdateInstruction(q)){
 					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 &&
 						 strcmp(getVarConstant(mb,getArg(q,3)).val.sval, tbl) == 0 ){
-						if( OPTdebug &  OPTemptybind){
-							fprintf(stderr, "#reset mark empty variable pc %d var %d\n",i , getArg(p,0) );
-						}
 						empty[getArg(p,0)] = 0;
 						if( p->retc == 2){
-							if( OPTdebug &  OPTemptybind){
-								fprintf(stderr, "#reset mark empty variable pc %d var %d\n",i , getArg(p,1) );
-							}
 							empty[getArg(p,1)] = 0;
 						}
 						break;
@@ -174,9 +154,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 ){
 						empty[getArg(p,0)] = 0;
 						if( p->retc == 2){
-							if( OPTdebug &  OPTemptybind){
-								fprintf(stderr, "#reset mark empty variable pc %d var %d\n",i , getArg(p,1) );
-							}
 							empty[getArg(p,1)] = 0;
 						}
 						break;
@@ -187,9 +164,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		}
 
 		if (getFunctionId(p) == emptybindidxRef) {
-			if( OPTdebug &  OPTemptybind){
-				fprintf(stderr, "#empty bindidx  pc %d var %d\n",i , getArg(p,0) );
-			}
 			setFunctionId(p,bindidxRef);
 			p->typechk= TYPE_UNKNOWN;
 			empty[getArg(p,0)] = i;
@@ -201,14 +175,8 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				if(q && getModuleId(q) == sqlRef && (getFunctionId(q) == appendRef || getFunctionId(q) == updateRef )){
 					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 &&
 						 strcmp(getVarConstant(mb,getArg(q,3)).val.sval, tbl) == 0 ){
-						if( OPTdebug &  OPTemptybind){
-							fprintf(stderr, "#reset mark empty variable pc %d var %d\n",i , getArg(p,0) );
-						}
 						empty[getArg(p,0)] = 0;
 						if( p->retc == 2){
-							if( OPTdebug &  OPTemptybind){
-								fprintf(stderr, "#reset mark empty variable pc %d var %d\n",i , getArg(p,1) );
-							}
 							empty[getArg(p,1)] = 0;
 						}
 						break;
@@ -227,10 +195,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		// delta operations without updates+ insert can be replaced by an assignment
 		if (getModuleId(p)== sqlRef && getFunctionId(p) == deltaRef  && p->argc ==5){
 			if( empty[getArg(p,2)] && empty[getArg(p,3)] && empty[getArg(p,4)] ){
-				if( OPTdebug &  OPTemptybind){
-					fprintf(stderr, "#empty delta  pc %d var %d,%d,%d\n",i ,empty[getArg(p,2)], empty[getArg(p,3)], empty[getArg(p,4)] );
-					fprintf(stderr, "#empty delta  pc %d var %d\n",i , getArg(p,0) );
-				}
 				actions++;
 				clrFunction(p);
 				p->argc = 2;
@@ -243,9 +207,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 		if (getModuleId(p)== sqlRef && getFunctionId(p) == projectdeltaRef) {
 			if( empty[getArg(p,3)] && empty[getArg(p,4)] ){
-				if( OPTdebug &  OPTemptybind){
-					fprintf(stderr, "#empty projectdelta  pc %d var %d\n",i , getArg(p,0) );
-				}
 				actions++;
 				setModuleId(p,algebraRef);
 				setFunctionId(p,projectionRef);
@@ -257,18 +218,12 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if (getModuleId(p)== algebraRef){
 			if( getFunctionId(p) == projectionRef) {
 				if( empty[getArg(p,1)] || empty[getArg(p,2)] ){
-					if( OPTdebug &  OPTemptybind){
-						fprintf(stderr, "#empty projection  pc %d var %d\n",i , getArg(p,0) );
-					}
 					actions++;
 					emptyresult(0);
 				}
 			}
 			if( getFunctionId(p) == thetaselectRef || getFunctionId(p) == selectRef) {
 				if( empty[getArg(p,1)] || empty[getArg(p,2)] ){
-					if( OPTdebug &  OPTemptybind){
-						fprintf(stderr, "#empty selection  pc %d var %d\n",i , getArg(p,0) );
-					}
 					actions++;
 					emptyresult(0);
 				}
@@ -276,10 +231,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		}
 		if( getModuleId(p) == batstrRef){
 			if( empty[getArg(p,1)] || empty[getArg(p,2)] ){
-
-				if( OPTdebug &  OPTemptybind){
-					fprintf(stderr, "#empty string operation  pc %d var %d\n",i , getArg(p,0) );
-				}
 				actions++;
 				emptyresult(0);
 			}
@@ -311,12 +262,7 @@ wrapup:
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","emptybind",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
-    if( OPTdebug &  OPTemptybind){
-        fprintf(stderr, "#EMPTYBIND optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

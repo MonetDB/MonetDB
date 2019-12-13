@@ -84,10 +84,5 @@ wrapup:
     newComment(mb,buf);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
-
-    if( OPTdebug &  OPTmatpack){
-        fprintf(stderr, "#MATPACK optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return MAL_SUCCEED;
 }

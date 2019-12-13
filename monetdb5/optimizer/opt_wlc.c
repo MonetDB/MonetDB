@@ -150,9 +150,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 wrapup:
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","wlc",updates,GDKusec() - usec);
     newComment(mb,buf);
-    if( OPTdebug &  OPTwlc){
-        fprintf(stderr, "#wlc optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+	if( updates > 0)
+		addtoMalBlkHistory(mb);
 	return MAL_SUCCEED;
 }
