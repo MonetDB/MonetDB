@@ -867,4 +867,305 @@ where (subq_1.c9 is not null)
  or (ref_7.col1 is null)))))
 limit 111; --empty on PostgreSQL
 
+SELECT
+        subq_1.c2 AS c0
+        ,subq_1.c0 AS c1
+    FROM
+        (
+            SELECT
+                    subq_0.c7 AS c0
+                    ,subq_0.c7 AS c1
+                    ,CASE
+                        WHEN TRUE
+                        THEN subq_0.c7
+                        ELSE subq_0.c7
+                    END AS c2
+                FROM
+                    (
+                        SELECT
+                                ref_0.col1 AS c0
+                                ,89 AS c1
+                                ,ref_0.col2 AS c2
+                                ,ref_0.col5 AS c3
+                                ,93 AS c4
+                                ,ref_0.col2 AS c5
+                                ,ref_0.col4 AS c6
+                                ,ref_0.col2 AS c7
+                                ,ref_0.col5 AS c8
+                                ,ref_0.col1 AS c9
+                                ,ref_0.col1 AS c10
+                                ,ref_0.col3 AS c11
+                                ,ref_0.col3 AS c12
+                            FROM
+                                tbl_productsales AS ref_0
+                            WHERE
+                                (
+                                    (FALSE)
+                                    OR (
+                                        EXISTS (
+                                            SELECT
+                                                    ref_0.col6 AS c0
+                                                    ,ref_0.col3 AS c1
+                                                    ,ref_1.col0 AS c2
+                                                    ,ref_1.col2 AS c3
+                                                    ,ref_0.col1 AS c4
+                                                    ,ref_1.col0 AS c5
+                                                    ,69 AS c6
+                                                    ,ref_1.col2 AS c7
+                                                    ,ref_0.col6 AS c8
+                                                    ,ref_1.col1 AS c9
+                                                FROM
+                                                    tab1 AS ref_1
+                                                WHERE
+                                                    (FALSE)
+                                                    AND (
+                                                        (
+                                                            (
+                                                                ref_1.col2 IS NOT NULL
+                                                            )
+                                                            OR (
+                                                                ref_0.col2 IS NOT NULL
+                                                            )
+                                                        )
+                                                        AND (TRUE)
+                                                    )
+                                        )
+                                    )
+                                )
+                                AND (
+                                    (
+                                        EXISTS (
+                                            SELECT
+                                                    ref_0.col4 AS c0
+                                                FROM
+                                                    analytics AS ref_2
+                                                WHERE
+                                                    (
+                                                        (
+                                                            ref_0.col4 IS NULL
+                                                        )
+                                                        AND (TRUE)
+                                                    )
+                                                    AND (TRUE)
+                                        )
+                                    )
+                                    AND (FALSE)
+                                ) LIMIT 137
+                    ) AS subq_0
+                WHERE
+                    (
+                        (
+                            subq_0.c12 IS NOT NULL
+                        )
+                        AND (TRUE)
+                    )
+                    AND (
+                        (
+                            subq_0.c3 IS NOT NULL
+                        )
+                        AND (
+                            (TRUE)
+                            OR (
+                                (
+                                    subq_0.c3 IS NOT NULL
+                                )
+                                OR (
+                                    (
+                                        EXISTS (
+                                            SELECT
+                                                    subq_0.c11 AS c0
+                                                    ,subq_0.c9 AS c1
+                                                    ,subq_0.c7 AS c2
+                                                    ,50 AS c3
+                                                    ,ref_3.bb AS c4
+                                                FROM
+                                                    analytics AS ref_3
+                                                WHERE
+                                                    ref_3.bb IS NULL
+                                        )
+                                    )
+                                    OR (FALSE)
+                                )
+                            )
+                        )
+                    )
+        ) AS subq_1
+    WHERE
+        (TRUE)
+        AND (
+            (
+                (
+                    EXISTS (
+                        SELECT
+                                ref_5.col1 AS c0
+                            FROM
+                                tab1 AS ref_4 LEFT JOIN tab2 AS ref_5
+                                    ON (
+                                    (TRUE)
+                                    OR (
+                                        (
+                                            EXISTS (
+                                                SELECT
+                                                        subq_1.c2 AS c0
+                                                        ,subq_1.c2 AS c1
+                                                        ,25 AS c2
+                                                        ,ref_5.col2 AS c3
+                                                        ,ref_6.col4 AS c4
+                                                        ,subq_1.c0 AS c5
+                                                        ,ref_6.col5 AS c6
+                                                        ,ref_4.col0 AS c7
+                                                        ,subq_1.c0 AS c8
+                                                        ,ref_4.col1 AS c9
+                                                        ,ref_5.col2 AS c10
+                                                        ,45 AS c11
+                                                        ,subq_1.c2 AS c12
+                                                        ,ref_4.col1 AS c13
+                                                        ,ref_5.col2 AS c14
+                                                        ,ref_4.col2 AS c15
+                                                        ,ref_6.col7 AS c16
+                                                        ,24 AS c17
+                                                        ,subq_1.c1 AS c18
+                                                        ,subq_1.c0 AS c19
+                                                        ,ref_6.col3 AS c20
+                                                        ,ref_4.col1 AS c21
+                                                        ,ref_6.col2 AS c22
+                                                        ,86 AS c23
+                                                    FROM
+                                                        longtable AS ref_6
+                                                    WHERE
+                                                        TRUE
+                                            )
+                                        )
+                                        AND (
+                                            (FALSE)
+                                            OR (FALSE)
+                                        )
+                                    )
+                                )
+                            WHERE
+                                subq_1.c1 IS NOT NULL
+                    )
+                )
+                OR (TRUE)
+            )
+            AND (
+                (
+                    EXISTS (
+                        SELECT
+                                ref_8.col6 AS c0
+                                ,subq_1.c0 AS c1
+                                ,subq_1.c0 AS c2
+                                ,ref_7.col2 AS c3
+                                ,subq_1.c1 AS c4
+                                ,ref_7.col6 AS c5
+                                ,ref_9.col0 AS c6
+                                ,ref_7.col4 AS c7
+                            FROM
+                                another_t AS ref_7 LEFT JOIN tbl_productsales AS ref_8 INNER JOIN tab2 AS ref_9
+                                    ON (
+                                    ref_8.col1 = ref_9.col0
+                                )
+                                    ON (
+                                    (
+                                        (
+                                            (FALSE)
+                                            OR (FALSE)
+                                        )
+                                        OR (
+                                            (
+                                                (
+                                                    (
+                                                        (
+                                                            subq_1.c1 IS NULL
+                                                        )
+                                                        OR (
+                                                            (
+                                                                (FALSE)
+                                                                OR (
+                                                                    EXISTS (
+                                                                        SELECT
+                                                                                ref_9.col2 AS c0
+                                                                            FROM
+                                                                                longtable AS ref_10
+                                                                            WHERE
+                                                                                TRUE
+                                                                    )
+                                                                )
+                                                            )
+                                                            OR (
+                                                                (
+                                                                    (
+                                                                        ref_9.col2 IS NULL
+                                                                    )
+                                                                    AND (
+                                                                        (
+                                                                            EXISTS (
+                                                                                SELECT
+                                                                                        subq_1.c0 AS c0
+                                                                                        ,ref_11.cc AS c1
+                                                                                        ,ref_8.col4 AS c2
+                                                                                    FROM
+                                                                                        analytics AS ref_11
+                                                                                    WHERE
+                                                                                        subq_1.c0 IS NOT NULL
+                                                                            )
+                                                                        )
+                                                                        AND (TRUE)
+                                                                    )
+                                                                )
+                                                                OR (
+                                                                    (FALSE)
+                                                                    AND (
+                                                                        (FALSE)
+                                                                        AND (FALSE)
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                    AND (
+                                                        subq_1.c2 IS NULL
+                                                    )
+                                                )
+                                                AND (
+                                                    ref_9.col1 IS NULL
+                                                )
+                                            )
+                                            OR (
+                                                (
+                                                    18 IS NOT NULL
+                                                )
+                                                OR (
+                                                    (FALSE)
+                                                    OR (
+                                                        (FALSE)
+                                                        AND (FALSE)
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                    AND (
+                                        ref_9.col1 IS NOT NULL
+                                    )
+                                )
+                            WHERE
+                                (TRUE)
+                                OR (
+                                    (
+                                        ref_9.col1 IS NULL
+                                    )
+                                    AND (
+                                        ref_7.col5 IS NOT NULL
+                                    )
+                                )
+                    )
+                )
+                AND (
+                    subq_1.c1 IS NULL
+                )
+            )
+        )
+; --empty
+
 ROLLBACK;
