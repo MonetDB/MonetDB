@@ -256,9 +256,9 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				if ( getFunctionId(p) == projectionRef){
 					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== projectionRef  || getFunctionId(r)== projectionpathRef) ){
 						for(k= r->retc; k<r->argc; k++) 
-							q = pushArgument(mb,q,getArg(r,k));
+							q = addArgument(mb,q,getArg(r,k));
 					} else 
-						q = pushArgument(mb,q,getArg(p,j));
+						q = addArgument(mb,q,getArg(p,j));
 				}
 			}
 			if(q->argc<= p->argc){
