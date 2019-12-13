@@ -68,9 +68,7 @@ MCinit(void)
 		maxclients = atoi(max_clients);
 	if (maxclients <= 0) {
 		maxclients = 64;
-		if (GDKsetenv("max_clients", "64") != GDK_SUCCEED) {
-			TRC_ERROR(MAL_CLIENT, "GDKsetenv failed\n");
-		}
+		GDKsetenv("max_clients", "64") ;
 	}
 
 	MAL_MAXCLIENTS = /* client connections */ maxclients;
@@ -79,8 +77,9 @@ MCinit(void)
 		TRC_CRITICAL(MAL_CLIENT, "Initialization failed: " MAL_MALLOC_FAIL "\n");
 		return false;
 	}
-	for (int i = 0; i < MAL_MAXCLIENTS; i++)
+	for (int i = 0; i < MAL_MAXCLIENTS; i++){
 		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
+	}
 	return true;
 }
 
@@ -217,9 +216,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->fdin = fin ? fin : bstream_create(GDKstdin, 0);
 	if ( c->fdin == NULL){
-		MT_lock_set(&mal_contextLock);
 		c->mode = FREECLIENT;
-		MT_lock_unset(&mal_contextLock);
 		TRC_ERROR(MAL_CLIENT, "No stdin channel available\n");
 		return NULL;
 	}
@@ -253,9 +250,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 		if (fin == NULL) {
 			c->fdin->s = NULL;
 			bstream_destroy(c->fdin);
-			MT_lock_set(&mal_contextLock);
 			c->mode = FREECLIENT;
-			MT_lock_unset(&mal_contextLock);
 		}
 		TRC_ERROR(MAL_CLIENT, "Client prompt undefined\n");
 		return NULL;
