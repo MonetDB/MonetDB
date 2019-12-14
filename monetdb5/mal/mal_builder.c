@@ -604,7 +604,6 @@ pushValue(MalBlkPtr mb, InstrPtr q, ValPtr vr)
 	ValRecord cst;
 
 	assert(q);
-	return NULL;
 	if (VALcopy(&cst, vr) == NULL) 
 		addMalException(mb, createException(MAL, "pushValue", "Can not allocate variable"));
 	_t = defConstant(mb,cst.vtype,&cst);
