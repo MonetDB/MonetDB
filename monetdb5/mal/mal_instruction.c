@@ -448,16 +448,16 @@ newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args)
 {
 	InstrPtr p = NULL;
 
+	(void) mb;
+
 	p = GDKzalloc(args * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
 	if (p == NULL) {
 		/* We are facing an hard problem.
-		 * The hack is to re-use an already allocated instruction.
-		 * The marking of the block as containing errors should protect further actions.
+		 * The upper layers of the code base assume that this routine will always produce a structure.
+		 * Furthermore, failure to allocate such a small data structure indicates we are in serious trouble.
+		 * The only way out is declare it a fatal error, terminate the system to avoid crashes in all kind of places.
 		 */
-		if( mb){
-			mb->errors = createMalException(mb,0, TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		return NULL;
+		GDKfatal("newInstruction:" SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	p->maxarg = args;
 	p->typechk = TYPE_UNKNOWN;
@@ -470,35 +470,12 @@ newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args)
 	 * with modifier */
 	p->token = ASSIGNsymbol;
 	return p;
-
 }
+
 InstrPtr
 newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
 {
-	InstrPtr p = NULL;
-
-	p = GDKzalloc(MAXARG * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
-	if (p == NULL) {
-		/* We are facing an hard problem.
-		 * The hack is to re-use an already allocated instruction.
-		 * The marking of the block as containing errors should protect further actions.
-		 */
-		if( mb){
-			mb->errors = createMalException(mb,0, TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		return NULL;
-	}
-	p->maxarg = MAXARG;
-	p->typechk = TYPE_UNKNOWN;
-	setModuleId(p, modnme);
-	setFunctionId(p, fcnnme);
-	p->argc = 1;
-	p->retc = 1;
-	p->argv[0] = -1;			/* watch out for direct use in variable table */
-	/* Flow of control instructions are always marked as an assignment
-	 * with modifier */
-	p->token = ASSIGNsymbol;
-	return p;
+	return newInstructionArgs(mb, modnme, fcnnme, MAXARG);
 }
 
 /* Copying an instruction is space conservative. */
