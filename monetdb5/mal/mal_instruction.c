@@ -16,15 +16,21 @@
 #include "mal_utils.h"
 #include "mal_exception.h"
 
+/* If we encounter an error it can be left behind in the MalBlk
+ * for the upper layers to abandon the track
+ */
 void
 addMalException(MalBlkPtr mb, str msg)
 {
 	str new;
 
+	if( msg == NULL)
+		return;
 	if( mb->errors){
 		new = GDKzalloc(strlen(mb->errors) + strlen(msg) + 4);
 		if (new == NULL)
-			return ; // just stick to one error message, ignore rest
+			// just stick to one error message, ignore rest
+			return ; 
 		strcpy(new, mb->errors);
 		strcat(new, msg);
 		freeException(mb->errors);
@@ -1181,37 +1187,6 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 	return p;
 }
 
-/* If the instruction is already stored in the MAL block then a
- * reference to its position avoids an expensive search.
- */
-InstrPtr
-pushArgumentIdx(MalBlkPtr mb, int idx, int varid)
-{
-	InstrPtr p, pn;
-
-	pn = p = getInstrPtr(mb, idx);
-	if (p == NULL)
-		return NULL;
-	if (varid < 0) {
-		/* leave everything as is in this exceptional programming error */
-		mb->errors = createMalException(mb, 0, TYPE,"improper variable id");
-		return p;
-	}
-
-	if (p->argc + 1 == p->maxarg) {
-		pn = extendInstruction(mb, p);
-		if ( mb->errors)
-			return p;
-		mb->stmt[idx]= pn;
-		p = pn;
-	}
-	/* protect against the case that the instruction is malloced in isolation */
-	if( mb->maxarg < p->maxarg)
-		mb->maxarg= p->maxarg;
-
-	p->argv[p->argc++] = varid;
-	return p;
-}
 
 /* the next version assumes that we have allocated an isolated instruction
  * using newInstruction. As long as it is not stored in the MAL block
@@ -1290,7 +1265,8 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name)
 	if (v < 0) {
 		size_t namelen = strlen(name);
 		if ((v = newVariable(mb, name, namelen, getAtomIndex(name, namelen, TYPE_any))) < 0) {
-			freeInstruction(p);
+			/* set the MAL block to erroneous and simply return without doing anything */
+			mb->errors = createMalException(mb,0, TYPE, "out of memory ");
 			return NULL;
 		}
 	}
