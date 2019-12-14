@@ -25,13 +25,12 @@
 str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, limit;
+	int i, limit;
 	InstrPtr p;
 	int actions = 0;
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
-	char *used;
 
 	(void) pci;
 	(void) stk;
@@ -40,34 +39,21 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	limit = mb->stop;
 	
-	used = (char*) GDKzalloc(sizeof(char) * mb->vtop);
-	if ( used == NULL)
-		throw(MAL, "optimizer.garbagecollector", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	limit = mb->stop;
-	if ( mb->keephistory )
-	{
-		/* In debugging or profiling mode we should cleanup namings*/
-		for( i = 0; i< mb->stop; i++){
-			p = getInstrPtr(mb, i);
-			for ( j = p->retc; j < p->argc; j++)
-				used[getArg(p,j)] = 1;
-		}
 
-		/* variables get their name from the position */
-		/* rename all temporaries used for ease of variable table interpretation */
-		/* this code should not be necessary is variables always keep their position */
-		for( i = 0; i < mb->vtop; i++)
-		if( used[i]) {
-			//strcpy(buf, getVarName(mb,i));
-			if (getVarName(mb,i)[0] == 'X' && getVarName(mb,i)[1] == '_')
-				snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
-			else
-			if (getVarName(mb,i)[0] == 'C' && getVarName(mb,i)[1] == '_')
-				snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
-			//if(strcmp(buf, getVarName(mb,i)) )
-				//fprintf(stderr, "non-matching name/entry %s %s\n", buf, getVarName(mb,i));
-		}
+	/* variables get their name from the position */
+	/* rename all temporaries for ease of variable table interpretation */
+	/* this code should not be necessary is variables always keep their position */
+	for( i = 0; i < mb->vtop; i++) {
+		//strcpy(buf, getVarName(mb,i));
+		if (getVarName(mb,i)[0] == 'X' && getVarName(mb,i)[1] == '_')
+			snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
+		else
+		if (getVarName(mb,i)[0] == 'C' && getVarName(mb,i)[1] == '_')
+			snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
+		//if(strcmp(buf, getVarName(mb,i)) )
+			//fprintf(stderr, "non-matching name/entry %s %s\n", buf, getVarName(mb,i));
 	}
 
 	// move SQL query definition to the front for event profiling tools
@@ -101,7 +87,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
-	GDKfree(used);
     if( OPTdebug &  OPTgarbagecollector)
 	{ 	int k;
 		fprintf(stderr, "#Garbage collected BAT variables \n");

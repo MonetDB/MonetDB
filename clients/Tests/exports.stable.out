@@ -2488,7 +2488,6 @@ str projectionRef;
 str projectionpathRef;
 InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
 InstrPtr pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name);
-InstrPtr pushArgumentIdx(MalBlkPtr mb, int idx, int varid);
 InstrPtr pushBit(MalBlkPtr mb, InstrPtr q, bit val);
 InstrPtr pushBte(MalBlkPtr mb, InstrPtr q, bte val);
 InstrPtr pushDbl(MalBlkPtr mb, InstrPtr q, dbl val);
