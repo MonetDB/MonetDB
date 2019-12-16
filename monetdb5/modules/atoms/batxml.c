@@ -62,7 +62,7 @@ mal_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat
 		if ((X) == NULL) {											\
 			BBPunfix((Y)->batCacheid);								\
 			free;													\
-			throw(MAL, "xml." Z, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+			throw(MAL, "xml." Z, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 		}															\
 		(X)->tsorted =  false;										\
 		(X)->trevsorted =  false;									\
@@ -142,7 +142,7 @@ BATXMLxmltext(bat *ret, const bat *bid)
 			content = (str) xmlNodeGetContent(elem);
 			xmlFreeDoc(d);
 			if (content == NULL) {
-				err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 				goto bunins_failed;
 			}
 			break;
@@ -154,7 +154,7 @@ BATXMLxmltext(bat *ret, const bat *bid)
 			content = (str) xmlNodeGetContent(elem);
 			xmlFreeNodeList(elem);
 			if (content == NULL) {
-				err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 				goto bunins_failed;
 			}
 			break;
@@ -167,7 +167,7 @@ BATXMLxmltext(bat *ret, const bat *bid)
 					GDKfree(buf);
 				buf = GDKmalloc(size);
 				if (buf == NULL) {
-					err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+					err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 					goto bunins_failed;
 				}
 			}
@@ -237,7 +237,7 @@ BATXMLstr2xml(bat *ret, const bat *bid)
 
 	buf = GDKmalloc(size);
 	if (buf == NULL)
-		throw(MAL,"xml.str2xml", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"xml.str2xml", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.xml", INTERNAL_BAT_ACCESS);
@@ -260,7 +260,7 @@ BATXMLstr2xml(bat *ret, const bat *bid)
 			GDKfree(buf);
 			buf = GDKmalloc(size);
 			if (buf == NULL) {
-				err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 				goto bunins_failed;
 			}
 		}
@@ -290,7 +290,7 @@ BATXMLdocument(bat *ret, const bat *bid)
 	const char *err = OPERATION_FAILED;
 
 	if (buf == NULL)
-		throw(MAL,"xml.document", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"xml.document", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.document", INTERNAL_BAT_ACCESS);
@@ -353,7 +353,7 @@ BATXMLcontent(bat *ret, const bat *bid)
 	xmlBufferPtr xbuf;
 
 	if (buf == NULL)
-		throw(MAL,"xml.content", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"xml.content", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.content", INTERNAL_BAT_ACCESS);
@@ -389,7 +389,7 @@ BATXMLcontent(bat *ret, const bat *bid)
 			size = len + 128;
 			buf = GDKmalloc(size);
 			if (buf == NULL) {
-				err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 				goto bunins_failed;
 			}
 		}
@@ -480,7 +480,7 @@ BATXMLoptions(bat *ret, const char * const *name, const char * const *options, c
 			GDKfree(val);
 		if (buf != NULL)
 			GDKfree(buf);
-		throw(MAL, "batxml.options", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batxml.options", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(val);
@@ -516,7 +516,7 @@ BATXMLoptions(bat *ret, const char * const *name, const char * const *options, c
 				size += strlen(t);
 				tmp = (char *) GDKrealloc(val, size + strlen(t));
 				if (tmp == NULL) {
-					err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+					err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 					goto bunins_failed;
 				}
 				val = tmp;
@@ -550,7 +550,7 @@ BATXMLcomment(bat *ret, const bat *bid)
 	const char *err= OPERATION_FAILED;
 
 	if (buf == NULL)
-		throw(MAL, "xml.comment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.comment", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.comment", INTERNAL_BAT_ACCESS);
@@ -578,7 +578,7 @@ BATXMLcomment(bat *ret, const bat *bid)
 			GDKfree(buf);
 			buf = GDKmalloc(size);
 			if (buf == NULL) {
-				err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 				goto bunins_failed;
 			}
 		}
@@ -622,7 +622,7 @@ BATXMLpi(bat *ret, const char * const *target, const bat *bid)
 		throw(MAL, "xml.pi", XML_PI_ERROR);
 	buf = GDKmalloc(size);
 	if (buf == NULL)
-		throw(MAL, "xml.pi", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.pi", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	tgtlen = strlen(*target) + 6;
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -645,7 +645,7 @@ BATXMLpi(bat *ret, const char * const *target, const bat *bid)
 			GDKfree(buf);
 			buf = GDKmalloc(size);
 			if (buf == NULL) {
-				err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 				goto bunins_failed;
 			}
 		}
@@ -693,7 +693,7 @@ BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * c
 	}
 	buf = GDKmalloc(size);
 	if (buf == NULL)
-		throw(MAL, "xml.root", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.root", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.pi", INTERNAL_BAT_ACCESS);
@@ -715,7 +715,7 @@ BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * c
 			GDKfree(buf);
 			buf = GDKmalloc(size);
 			if (buf == NULL) {
-				err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 				goto bunins_failed;
 			}
 		}
@@ -769,7 +769,7 @@ BATXMLattribute(bat *ret, const char * const *name, const bat *bid)
 	attrlen = strlen(*name) + 5;
 	buf = GDKmalloc(size);
 	if (buf == NULL)
-		throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.attribute", INTERNAL_BAT_ACCESS);
@@ -790,7 +790,7 @@ BATXMLattribute(bat *ret, const char * const *name, const bat *bid)
 			GDKfree(buf);
 			buf = GDKmalloc(size);
 			if (buf == NULL) {
-				err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 				goto bunins_failed;
 			}
 		}
@@ -846,7 +846,7 @@ BATXMLelement(bat *ret, const char * const *name, xml *nspace, xml *attr, const 
 	}
 	buf = GDKmalloc(size);
 	if (buf == NULL)
-		throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.element", INTERNAL_BAT_ACCESS);
@@ -872,7 +872,7 @@ BATXMLelement(bat *ret, const char * const *name, xml *nspace, xml *attr, const 
 			GDKfree(buf);
 			buf = GDKmalloc(size);
 			if (buf == NULL) {
-				err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 				goto bunins_failed;
 			}
 		}
@@ -936,7 +936,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(p);
 		if (q)
 			GDKfree(q);
-		throw(MAL, "xml.forest", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.forest", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	/* collect the admin for the xml elements */
@@ -980,7 +980,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				size += len + 128;
 				tmp = GDKrealloc(buf, size);
 				if (tmp == NULL) {
-					err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+					err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 					goto bunins_failed;
 				}
 				buf = tmp;
@@ -1038,7 +1038,7 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 	const char *err = OPERATION_FAILED;
 
 	if (buf == NULL)
-		throw(MAL, "xml.concat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	b = BATdescriptor(*bid);
 	r = BATdescriptor(*rid);
 	if (b == NULL || r == NULL) {
@@ -1122,7 +1122,7 @@ BATXMLgroup(xml *ret, const bat *bid)
 	const char *err = NULL;
 
 	if (buf == NULL)
-		throw(MAL, "xml.aggr", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.aggr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.aggr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1232,13 +1232,13 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 
 	maxlen = BUFSIZ;
 	if ((buf = GDKmalloc(maxlen)) == NULL) {
-		err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+		err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 		goto out;
 	}
 	buflen = 0;
 	bn = COLnew(min, TYPE_xml, ngrp, TRANSIENT);
 	if (bn == NULL) {
-		err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+		err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 		goto out;
 	}
 	bi = bat_iterator(b);
@@ -1292,7 +1292,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					maxlen += len + BUFSIZ;
 					tmp = GDKrealloc(buf, maxlen);
 					if (tmp == NULL) {
-						err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+						err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 						goto bunins_failed;
 					}
 					buf = tmp;
@@ -1332,7 +1332,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				maxlen += len + BUFSIZ;
 				tmp = GDKrealloc(buf, maxlen);
 				if (tmp == NULL) {
-					err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+					err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 					goto bunins_failed;
 				}
 				buf = tmp;
@@ -1379,7 +1379,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	BBPreclaim(bn);
 	bn = NULL;
 	if (err == NULL)
-		err = SQLSTATE(HY001) MAL_MALLOC_FAIL;	/* insertion into result BAT failed */
+		err = SQLSTATE(HY013) MAL_MALLOC_FAIL;	/* insertion into result BAT failed */
 	goto out;
 }
 

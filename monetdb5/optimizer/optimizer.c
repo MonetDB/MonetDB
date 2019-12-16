@@ -42,6 +42,13 @@ optimizer_prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
+str
+optimizer_epilogue(void *ret)
+{
+	(void)ret;
+	opt_pipes_reset();
+	return MAL_SUCCEED;
+}
 
 /*
  * MAL functions can be optimized explicitly using the routines below.

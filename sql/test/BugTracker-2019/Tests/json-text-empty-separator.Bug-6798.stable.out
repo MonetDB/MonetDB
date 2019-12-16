@@ -60,14 +60,14 @@ stdout of test 'json-text-empty-separator.Bug-6798` in directory 'sql/test/BugTr
 # 17:34:10 >  
 
 #select json.text('["abc", "def"]', '');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % clob # type
 % 6 # length
 [ "abcdef"	]
 #select json.text('{"a":"abc", "b":"def"}', '');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % clob # type
 % 6 # length
 [ "abcdef"	]

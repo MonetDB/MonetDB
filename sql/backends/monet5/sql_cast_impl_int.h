@@ -124,7 +124,7 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 	bn = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(dec,TP1,_2_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql."STRNG(FUN(dec,TP1,_2_,TP2)), SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	const TP1 *vals = (const TP1 *) Tloc(b, 0);
 	TP2 *o = (TP2 *) Tloc(bn, 0);
@@ -162,7 +162,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *
 	bn = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	const TP1 *vals = (const TP1 *) Tloc(b, 0);
 	TP2 *o = (TP2 *) Tloc(bn, 0);
@@ -200,7 +200,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 	bn = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	const TP1 *vals = (const TP1 *) Tloc(b, 0);
 	TP2 *o = (TP2 *) Tloc(bn, 0);

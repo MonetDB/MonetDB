@@ -35,12 +35,13 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
-    if ( mb->inlineProp )
-        return MAL_SUCCEED;
+	if ( mb->inlineProp )
+		return MAL_SUCCEED;
 
-    limit= mb->stop;
-    if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
-		throw(MAL,"optimizer.volcano", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	limit= mb->stop;
+	if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
+		throw(MAL,"optimizer.volcano", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 
@@ -101,12 +102,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","volcano",count,usec);
     newComment(mb,buf);
-	if( count >= 0)
+	if( count > 0)
 		addtoMalBlkHistory(mb);
-
-    if( OPTdebug &  OPTvolcano){
-        fprintf(stderr, "#volcano optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

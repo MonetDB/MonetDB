@@ -207,7 +207,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 	args = (str *)GDKzalloc(pci->argc * sizeof(str));
 	pyreturn_values = GDKzalloc(pci->retc * sizeof(PyReturn));
 	if (args == NULL || pyreturn_values == NULL) {
-		throw(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL " arguments.");
+		throw(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL " arguments.");
 	}
 
 	if ((pci->argc - (pci->retc + 2)) * sizeof(PyInput) > 0) {
@@ -217,7 +217,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		if (pyinput_values == NULL) {
 			GDKfree(args);
 			GDKfree(pyreturn_values);
-			throw(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL " input values.");
+			throw(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL " input values.");
 		}
 	}
 
@@ -335,7 +335,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		mmap_sizes = GDKzalloc(mmap_count * sizeof(size_t));
 		if (mmap_ptrs == NULL || mmap_sizes == NULL) {
 			msg = createException(MAL, "pyapi.eval",
-								  SQLSTATE(HY001) MAL_MALLOC_FAIL " mmap values.");
+								  SQLSTATE(HY013) MAL_MALLOC_FAIL " mmap values.");
 			goto wrapup;
 		}
 
@@ -581,7 +581,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			exprStr = GDKzalloc(length + 1);
 			if (exprStr == NULL) {
 				msg = createException(MAL, "pyapi.eval",
-									  SQLSTATE(HY001) MAL_MALLOC_FAIL " function body string.");
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL " function body string.");
 				goto wrapup;
 			}
 			if (fread(exprStr, 1, (size_t) length, fp) != (size_t) length) {
@@ -731,7 +731,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			group_counts = GDKzalloc(group_count * sizeof(size_t));
 			if (group_counts == NULL) {
 				msg = createException(MAL, "pyapi.eval",
-									  SQLSTATE(HY001) MAL_MALLOC_FAIL " group count array.");
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL " group count array.");
 				goto aggrwrapup;
 			}
 
@@ -1192,12 +1192,12 @@ returnvalues:
 			if (bat_type != TYPE_str) {
 				if (VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0)) ==
 					NULL)
-					msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else {
 				BATiter li = bat_iterator(b);
 				if (VALinit(&stk->stk[pci->argv[i]], bat_type,
 							BUNtail(li, 0)) == NULL)
-					msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		if (argnode) {
@@ -1587,7 +1587,7 @@ static void ComputeParallelAggregation(AggrParams *p)
 				}
 
 				if (vararray == NULL) {
-					p->msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL
+					p->msg = createException(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL
 											 " to create NumPy array.");
 					goto wrapup;
 				}

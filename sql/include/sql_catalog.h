@@ -85,9 +85,8 @@ typedef enum sql_dependency {
 #define SCALE_EQ	7	/* user defined functions need equal scales */
 #define SCALE_DIGITS_FIX 8	/* the geom module requires the types and functions to have the same scale and digits */
 
-/* Warning TR flags are a bitmask */
+/* Warning TR flags is a bitmask */
 #define TR_NEW 1
-#define TR_RENAMED 2
 
 #define RDONLY 0
 #define RD_INS 1
@@ -209,10 +208,6 @@ typedef struct sql_base {
 #define newFlagSet(x)     ((x & TR_NEW) == TR_NEW)
 #define removeNewFlag(x)  ((x)->base.flags &= ~TR_NEW)
 #define isNew(x)          (newFlagSet((x)->base.flags))
-
-#define setRenamedFlag(x)    ((x)->base.flags |= TR_RENAMED)
-#define removeRenamedFlag(x) ((x)->base.flags &= ~TR_RENAMED)
-#define isRenamed(x)         (((x)->base.flags & TR_RENAMED) == TR_RENAMED)
 
 extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, int flags, const char *name);
 

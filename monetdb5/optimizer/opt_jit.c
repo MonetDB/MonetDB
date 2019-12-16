@@ -25,7 +25,7 @@
 str
 OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,actions = 0;
+	int i, actions = 0;
 	int limit = mb->stop;
 	InstrPtr p, q, *old = mb->stmt;
 	char buf[256];
@@ -36,14 +36,9 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) pci;
 
-    if( OPTdebug &  OPTjit){
-		fprintf(stderr, "#Optimize JIT\n");
-		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
-	}
-
 	setVariableScope(mb);
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
-		throw(MAL,"optimizer.jit", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.jit", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* peephole optimization */
 	for (i = 0; i < limit; i++) {
@@ -66,10 +61,7 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if( q && getArg(q,0) == getArg(p,2) && getModuleId(q) == algebraRef && getFunctionId(q) == projectionRef ){
 				getArg(p,2)=  getArg(q,2);
 				p= addArgument(mb, p, getArg(q,1));
-				if( OPTdebug &  OPTjit){
-					fprintf(stderr, "#Optimize JIT case 1\n");
-					fprintInstruction(stderr, mb,0,p,LIST_MAL_ALL);
-				}
+				actions++;
 			}
 		}
 		pushInstruction(mb,p);
@@ -84,12 +76,7 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","jit",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
-    if( OPTdebug &  OPTjit){
-        fprintf(stderr, "#JIT optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

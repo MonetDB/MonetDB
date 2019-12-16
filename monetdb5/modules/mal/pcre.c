@@ -642,7 +642,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, boo
 #else
 		regfree(&re);
 #endif
-		throw(MAL, "pcre.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	off = b->hseqbase;
 
@@ -717,13 +717,13 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 
 	bn = COLnew(0, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
 	if (bn == NULL)
-		throw(MAL, "pcre.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	off = b->hseqbase;
 
 	if (!use_strcmp) {
 		re = re_create(pat, caseignore, esc);
 		if (!re)
-			throw(MAL, "pcre.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (s && !BATtdense(s)) {
 		struct canditer ci;
@@ -736,7 +736,7 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 				uint32_t *wpat;
 				wpat = utf8stoucs(pat);
 				if (wpat == NULL)
-					throw(MAL, "pcre.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				if (anti)
 					candscanloop(v && *v != '\200' &&
 								 mywstrcasecmp(v, wpat) != 0);
@@ -787,7 +787,7 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 				uint32_t *wpat;
 				wpat = utf8stoucs(pat);
 				if (wpat == NULL)
-					throw(MAL, "pcre.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				if (anti)
 					scanloop(v && *v != '\200' &&
 							 mywstrcasecmp(v, wpat) != 0);
@@ -1053,7 +1053,7 @@ pcre_replace(str *res, const char *origin_str, const char *pattern,
 		pcre_free_study(extra);
 		pcre_free(pcre_code);
 		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
-			  SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	/* identify back references in the replacement string */
@@ -1067,7 +1067,7 @@ pcre_replace(str *res, const char *origin_str, const char *pattern,
 		pcre_free_study(extra);
 		pcre_free(pcre_code);
 		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
-			  SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	tmpres = single_replace(pcre_code, extra, origin_str, len_origin_str,
@@ -1079,7 +1079,7 @@ pcre_replace(str *res, const char *origin_str, const char *pattern,
 	pcre_free(pcre_code);
 	if (tmpres == NULL)
 		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
-			  SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	*res = tmpres;
 	return MAL_SUCCEED;
@@ -1164,7 +1164,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 		pcre_free_study(extra);
 		pcre_free(pcre_code);
 		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
-			  SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	/* identify back references in the replacement string */
@@ -1184,7 +1184,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 		BBPreclaim(tmpbat);
 		GDKfree(tmpres);
 		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
-			  SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATloop(origin_strs, p, q) {
 		origin_str = BUNtvar(origin_strsi, p);
@@ -1200,7 +1200,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 			GDKfree(tmpres);
 			BBPreclaim(tmpbat);
 			throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
-				  SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	pcre_free_study(extra);
@@ -1343,7 +1343,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
 	ppat = GDKmalloc(strlen(pat)*3+3 /* 3 = "^'the translated regexp'$0" */);
 	if (ppat == NULL)
-		throw(MAL, "pcre.sql2pcre", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.sql2pcre", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	*r = ppat;
 	/* The escape character can be a char which is special in a PCRE
@@ -1404,7 +1404,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 			throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
 		*r = GDKstrdup(str_nil);
 		if (*r == NULL)
-			throw(MAL, "pcre.sql2pcre", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "pcre.sql2pcre", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		*ppat++ = '$';
 		*ppat = 0;
@@ -1422,7 +1422,7 @@ pat2pcre(str *r, const char *pat)
 	int start = 0;
 
 	if (ppat == NULL)
-		throw(MAL, "pcre.sql2pcre", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.sql2pcre", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*r = ppat;
 	while (*pat) {
 		int c = *pat++;
@@ -1572,7 +1572,7 @@ PCREquote(str *ret, const str *val)
 
 	*ret = p = GDKmalloc(strlen(s) * 2 + 1); /* certainly long enough */
 	if (p == NULL)
-		throw(MAL, "pcre.quote", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.quote", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	/* quote all non-alphanumeric ASCII characters (i.e. leave
 	   non-ASCII and alphanumeric alone) */
 	while (*s) {
@@ -1722,7 +1722,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		if (r==NULL) {
 			GDKfree(ppat);
 			BBPunfix(strs->batCacheid);
-			throw(MAL, "pcre.like3", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "pcre.like3", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		br = (bit*)Tloc(r, 0);
 		strsi = bat_iterator(strs);
@@ -1933,7 +1933,7 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 					BBPunfix(b->batCacheid);
 					if (s)
 						BBPunfix(s->batCacheid);
-					throw(MAL, "algebra.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(MAL, "algebra.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				ppat[0] = '^';
 				strcpy(ppat + 1, *pat);
@@ -2086,7 +2086,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (re_simple(vr, esc && *esc != '\200' ? (unsigned char) *esc : 0)) {
 			re = re_create(vr, caseignore, esc && *esc != '\200' ? (unsigned char) *esc : 0);
 			if (re == NULL) {
-				msg = createException(MAL, "pcre.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 		} else {
@@ -2099,7 +2099,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (caseignore) {
 					pcrepat = GDKmalloc(strlen(vr) + 3);
 					if (pcrepat == NULL) {
-						msg = createException(MAL, "pcre.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						goto bailout;
 					}
 					sprintf(pcrepat, "^%s$", vr);
@@ -2172,7 +2172,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				BATsetcount(r2, BATcount(r2));
 				if (BATextend(r1, newcap) != GDK_SUCCEED ||
 					BATextend(r2, newcap) != GDK_SUCCEED) {
-					msg = createException(MAL, "pcre.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
 				assert(BATcapacity(r1) == BATcapacity(r2));
@@ -2282,7 +2282,7 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 	result1 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
 	result2 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
 	if (result1 == NULL || result2 == NULL) {
-		msg = createException(MAL, "pcre.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "pcre.join", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto fail;
 	}
 	result1->tnil = false;

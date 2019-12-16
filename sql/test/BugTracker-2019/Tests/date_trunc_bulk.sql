@@ -1,6 +1,7 @@
 start transaction;
 create table dt_tmp( t timestamp);
 insert into dt_tmp values (timestamp '2119-02-17 02:08:12.345678'), (null);
+insert into dt_tmp values (timestamp '1999-12-31 23:59:59.987654');
 
 select * from dt_tmp;
 

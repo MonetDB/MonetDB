@@ -742,8 +742,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	MalBlkPtr mb = 0;
 	Symbol curPrg = 0, backup = NULL;
 	InstrPtr curInstr = 0;
-	int argc = 0;
-	char arg[IDLENGTH];
+	int argc = 0, res;
+	char arg[IDLENGTH], *escaped_q = NULL;
 	node *n;
 
 	backup = c->curprg;
@@ -806,7 +806,15 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 		}
 	}
 
-	if (backend_dumpstmt(be, mb, r, 1, 1, be->q?be->q->codestring:NULL) < 0) 
+	if (be->q) {
+		if (!(escaped_q = sql_escape_str(be->q->codestring))) {
+			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto cleanup;
+		}
+	}
+	res = backend_dumpstmt(be, mb, r, 1, 1, escaped_q);
+	GDKfree(escaped_q);
+	if (res < 0)
 		goto cleanup;
 
 	if (cq) {
@@ -873,7 +881,7 @@ backend_call(backend *be, Client c, cq *cq)
 			} else {
 				int _t;
 				if((_t = constantAtom(be, mb, a)) == -1) {
-					(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure during function call: %s\n", atom_type(a)->type->sqlname);
+					(void) sql_error(m, 02, SQLSTATE(HY013) "Allocation failure during function call: %s\n", atom_type(a)->type->sqlname);
 					break;
 				}
 				q = pushArgument(mb, q, _t);
@@ -1098,40 +1106,40 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	dlist *l, *ext_name;
 
 	if (!(m = ZNEW(mvc))) {
-		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	m->type = Q_PARSE;
 	m->user_id = m->role_id = USER_MONETDB;
 
 	if (!(m->session = sql_session_create(0, 0))) {
-		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	if (s)
 		m->session->schema = s;
 
 	if (!(m->sa = sa_create())) {
-		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	if (!(b = (buffer*)GDKmalloc(sizeof(buffer)))) {
-		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	if (!(n = GDKmalloc(len + 2))) {
-		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	snprintf(n, len + 2, "%s\n", f->query);
 	len++;
 	buffer_init(b, n, len);
 	if (!(buf = buffer_rastream(b, "sqlstatement"))) {
-		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	if (!(bs = bstream_create(buf, b->len))) {
-		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	scanner_init(&m->scanner, bs, NULL);

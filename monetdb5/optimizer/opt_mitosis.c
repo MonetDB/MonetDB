@@ -170,16 +170,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (mito_size > 0) 
 		pieces = (int) ((rowcnt * row_size) / (mito_size * 1024));
 
-    if(OPTdebug &  OPTmitosis){
-		fprintf(stderr, "#opt_mitosis: target is %s.%s "
-							   " with " BUNFMT " rows of size %d into %zu"
-								" rows/piece %d threads %d pieces"
-								" fixed parts %d fixed size %d chunk = "BUNFMT"\n",
-				 getVarConstant(mb, getArg(target, 2)).val.sval,
-				 getVarConstant(mb, getArg(target, 3)).val.sval,
-				 rowcnt, row_size, m, threads, pieces, mito_parts, mito_size, rowcnt / pieces * row_size);
-	}
-
 	if (pieces <= 1)
 		goto bailout;
 
@@ -187,7 +177,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->stop + 2 * estimate) < 0)
-		throw(MAL,"optimizer.mitosis", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.mitosis", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	estimate = 0;
 
 	schema = getVarConstant(mb, getArg(target, 2)).val.sval;
@@ -249,7 +239,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					if (old[i])
 						pushInstruction(mb,old[i]);
 				GDKfree(old);
-				throw(MAL,"optimizer.mitosis", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL,"optimizer.mitosis", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			q = pushInt(mb, q, j);
 			q = pushInt(mb, q, pieces);
@@ -285,11 +275,7 @@ bailout:
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%d time=" LLFMT " usec","mitosis", pieces, usec);
     newComment(mb,buf);
-	addtoMalBlkHistory(mb);
-
-    if( OPTdebug &  OPTmitosis){
-        fprintf(stderr, "#MITOSIS optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+	if( pieces > 0)
+		addtoMalBlkHistory(mb);
 	return msg;
 }

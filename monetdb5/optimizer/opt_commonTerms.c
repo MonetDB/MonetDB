@@ -54,7 +54,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	list = (int*) GDKzalloc(sizeof(int) * mb->stop);
 	hash = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	if ( alias == NULL || list == NULL || hash == NULL){
-		msg = createException(MAL,"optimizer.commonTerms", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL,"optimizer.commonTerms", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 
@@ -62,7 +62,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
-		msg = createException(MAL,"optimizer.commonTerms", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL,"optimizer.commonTerms", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		old = NULL;
 		goto wrapup;
 	}
@@ -229,7 +229,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","commonTerms",actions,usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
 
   wrapup:
@@ -237,9 +237,5 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	if(list) GDKfree(list);
 	if(hash) GDKfree(hash);
 	if(old) GDKfree(old);
-    if( OPTdebug &  OPTcommonterms){
-        fprintf(stderr, "#COMMONTERMS optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

@@ -27,10 +27,6 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	
 	slimit = mb->stop;
 	setVariableScope(mb);
-	if( OPTdebug & OPTpostfix){
-		fprintf(stderr,"POSTFIX start\n");
-		fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-	}
 	/* Remove the result from any join/group instruction when it is not used later on */
 	for( i = 0; i< slimit; i++){
 /* POSTFIX ACTION FOR THE JOIN CASE  */
@@ -73,6 +69,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		}
 	}
+
 	/* Defense line against incorrect plans */
 	if( actions ){
 		//chkTypes(cntxt->usermodule, mb, FALSE);
@@ -82,10 +79,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	usec= GDKusec() - usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec", "postfix", actions, usec);
     newComment(mb,buf);
-	if( OPTdebug & OPTpostfix){
-		fprintf(stderr,"POSTFIX done\n");
-		fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-	}
-	addtoMalBlkHistory(mb);
+	if( actions > 0)
+		addtoMalBlkHistory(mb);
 	return MAL_SUCCEED;
 }

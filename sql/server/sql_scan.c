@@ -385,6 +385,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("PREP", PREP);
 	failed += keywords_insert("EXECUTE", EXECUTE);
 	failed += keywords_insert("EXEC", EXEC);
+	failed += keywords_insert("DEALLOCATE", DEALLOCATE);
 
 	failed += keywords_insert("INDEX", INDEX);
 

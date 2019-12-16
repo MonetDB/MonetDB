@@ -16,15 +16,21 @@
 #include "mal_utils.h"
 #include "mal_exception.h"
 
+/* If we encounter an error it can be left behind in the MalBlk
+ * for the upper layers to abandon the track
+ */
 void
 addMalException(MalBlkPtr mb, str msg)
 {
 	str new;
 
+	if( msg == NULL)
+		return;
 	if( mb->errors){
 		new = GDKzalloc(strlen(mb->errors) + strlen(msg) + 4);
 		if (new == NULL)
-			return ; // just stick to one error message, ignore rest
+			// just stick to one error message, ignore rest
+			return ; 
 		strcpy(new, mb->errors);
 		strcat(new, msg);
 		freeException(mb->errors);
@@ -448,16 +454,17 @@ newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args)
 {
 	InstrPtr p = NULL;
 
+	(void) mb;
+
 	p = GDKzalloc(args * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
 	if (p == NULL) {
 		/* We are facing an hard problem.
-		 * The hack is to re-use an already allocated instruction.
-		 * The marking of the block as containing errors should protect further actions.
+		 * The upper layers of the code base assume that this routine will always produce a structure.
+		 * Furthermore, failure to allocate such a small data structure indicates we are in serious trouble.
+		 * The only way out is declare it a fatal error, terminate the system to avoid crashes in all kind of places.
 		 */
-		if( mb){
-			mb->errors = createMalException(mb,0, TYPE, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-		return NULL;
+		GDKerror("newInstruction:" SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		mal_exit(1);
 	}
 	p->maxarg = args;
 	p->typechk = TYPE_UNKNOWN;
@@ -470,35 +477,12 @@ newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args)
 	 * with modifier */
 	p->token = ASSIGNsymbol;
 	return p;
-
 }
+
 InstrPtr
 newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
 {
-	InstrPtr p = NULL;
-
-	p = GDKzalloc(MAXARG * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
-	if (p == NULL) {
-		/* We are facing an hard problem.
-		 * The hack is to re-use an already allocated instruction.
-		 * The marking of the block as containing errors should protect further actions.
-		 */
-		if( mb){
-			mb->errors = createMalException(mb,0, TYPE, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-		return NULL;
-	}
-	p->maxarg = MAXARG;
-	p->typechk = TYPE_UNKNOWN;
-	setModuleId(p, modnme);
-	setFunctionId(p, fcnnme);
-	p->argc = 1;
-	p->retc = 1;
-	p->argv[0] = -1;			/* watch out for direct use in variable table */
-	/* Flow of control instructions are always marked as an assignment
-	 * with modifier */
-	p->token = ASSIGNsymbol;
-	return p;
+	return newInstructionArgs(mb, modnme, fcnnme, MAXARG);
 }
 
 /* Copying an instruction is space conservative. */
@@ -767,7 +751,7 @@ makeVarSpace(MalBlkPtr mb)
 		if (new == NULL) {
 			// the only place to return an error signal at this stage.
 			// The Client context should be passed around more deeply
-			mb->errors = createMalException(mb,0,TYPE, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			mb->errors = createMalException(mb,0,TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 		memset( ((char*) new) + mb->vsize * sizeof(VarRecord), 0, (s- mb->vsize) * sizeof(VarRecord));
@@ -1152,7 +1136,7 @@ extendInstruction(MalBlkPtr mb, InstrPtr p)
 			 * then we show an exception, mark the block as erroneous
 			 * and leave the instruction as is.
 			*/
-			mb->errors = createMalException(mb,0, TYPE, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			mb->errors = createMalException(mb,0, TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return p;
 		}
 		memset( ((char*)pn) + space, 0, MAXARG * sizeof(pn->argv[0]));
@@ -1204,37 +1188,6 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 	return p;
 }
 
-/* If the instruction is already stored in the MAL block then a
- * reference to its position avoids an expensive search.
- */
-InstrPtr
-pushArgumentIdx(MalBlkPtr mb, int idx, int varid)
-{
-	InstrPtr p, pn;
-
-	pn = p = getInstrPtr(mb, idx);
-	if (p == NULL)
-		return NULL;
-	if (varid < 0) {
-		/* leave everything as is in this exceptional programming error */
-		mb->errors = createMalException(mb, 0, TYPE,"improper variable id");
-		return p;
-	}
-
-	if (p->argc + 1 == p->maxarg) {
-		pn = extendInstruction(mb, p);
-		if ( mb->errors)
-			return p;
-		mb->stmt[idx]= pn;
-		p = pn;
-	}
-	/* protect against the case that the instruction is malloced in isolation */
-	if( mb->maxarg < p->maxarg)
-		mb->maxarg= p->maxarg;
-
-	p->argv[p->argc++] = varid;
-	return p;
-}
 
 /* the next version assumes that we have allocated an isolated instruction
  * using newInstruction. As long as it is not stored in the MAL block
@@ -1313,7 +1266,8 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name)
 	if (v < 0) {
 		size_t namelen = strlen(name);
 		if ((v = newVariable(mb, name, namelen, getAtomIndex(name, namelen, TYPE_any))) < 0) {
-			freeInstruction(p);
+			/* set the MAL block to erroneous and simply return without doing anything */
+			mb->errors = createMalException(mb,0, TYPE, "out of memory ");
 			return NULL;
 		}
 	}

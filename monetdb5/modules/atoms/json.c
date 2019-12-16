@@ -45,7 +45,7 @@
 			JSONfree(jt);												\
 		} else {														\
 			msg = createException(MAL, "json.new",						\
-								  SQLSTATE(HY001) MAL_MALLOC_FAIL);		\
+								  SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
 		}																\
 		return msg;														\
 	}
@@ -81,7 +81,7 @@ JSONnew(JSON *js)
 	if (js->free == js->size) {
 		term = (JSONterm *) GDKrealloc(js->elm, sizeof(JSONterm) * (js->size + 8));
 		if (term == NULL) {
-			js->error = createException(MAL, "json.new", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			js->error = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return js->free - 1;
 		}
 		js->elm = term;
@@ -293,7 +293,7 @@ JSONjson2str(str *ret, json *j)
 	if (*s == '"')
 		s++;
 	if ((s = GDKstrdup(s)) == NULL)
-		throw(MAL, "json.str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "json.str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	c = s + strlen(s) - 1;
 	if (*c == '"')
 		*c = 0;
@@ -309,7 +309,7 @@ JSONstr2json(json *ret, str *j)
 	CHECK_JSON(jt);
 	JSONfree(jt);
 	if ((*ret = GDKstrdup(*j)) == NULL)
-		throw(MAL, "json.new", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -319,7 +319,7 @@ JSONisvalid(bit *ret, json *j)
 	JSON *jt = JSONparse(*j);
 
 	if (jt == NULL)
-		throw(MAL, "json.isvalid", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "json.isvalid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = jt->error == MAL_SUCCEED;
 	JSONfree(jt);
 	return MAL_SUCCEED;
@@ -452,7 +452,7 @@ JSONcompile(char *expr, pattern terms[])
 					break;
 			terms[t].name = GDKzalloc(s - beg + 1);
 			if(terms[t].name == NULL)
-				throw(MAL, "json.compile", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "json.compile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			terms[t].namelen = s - beg;
 			strncpy(terms[t].name, beg, s - beg);
 			if (*s == '.')
@@ -657,7 +657,7 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 	if (strNil(j)) {
 		*ret = GDKstrdup(j);
 		if (*ret == NULL)
-			throw(MAL,"JSONfilterInternal", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	jt = JSONparse(j);
@@ -669,7 +669,7 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 
 	result = s = JSONmatch(jt, 0, terms, tidx);
 	if (s == (char *) -1) {
-		msg = createException(MAL,"JSONfilterInternal", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL,"JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	// process all other PATH expression
@@ -677,7 +677,7 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 		if (terms[tidx].token == END_STEP && tidx + 1 < MAXTERMS && terms[tidx + 1].token) {
 			s = JSONmatch(jt, 0, terms, ++tidx);
 			if (s == (char *) -1) {
-				msg = createException(MAL,"JSONfilterInternal", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 			result = JSONglue(result, s, ',');
@@ -691,7 +691,7 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 	s = GDKzalloc(l + 3);
 	if (s == NULL) {
 		GDKfree(result);
-		throw(MAL,"JSONfilterInternal", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(s, l + 3, "[%s]", (result ? result : ""));
 	GDKfree(result);
@@ -1149,7 +1149,7 @@ JSONjson2text(str *ret, json *js)
 	s = GDKmalloc(l);
 	if(s == NULL) {
 		JSONfree(jt);
-		throw(MAL,"json2txt", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	JSONplaintext(s, &l, jt, 0, ' ');
 	l = strlen(s);
@@ -1174,7 +1174,7 @@ JSONjson2textSeparator(str *ret, json *js, str *sep)
 	s = GDKmalloc(l);
 	if(s == NULL) {
 		JSONfree(jt);
-		throw(MAL,"json2txt", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	JSONplaintext(s, &l, jt, 0, **sep);
 	l = strlen(s);
@@ -1341,7 +1341,7 @@ JSONunfoldContainer(JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
 	return MAL_SUCCEED;
 
   memfail:
-	throw(MAL, "json.unfold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 static str
@@ -1357,7 +1357,7 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 	bk = COLnew(0, TYPE_str, 64, TRANSIENT);
 	if (bk == NULL) {
 		JSONfree(jt);
-		throw(MAL, "json.unfold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bk->tsorted = true;
 	bk->trevsorted = false;
@@ -1368,7 +1368,7 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 		if (bo == NULL) {
 			BBPreclaim(bk);
 			JSONfree(jt);
-			throw(MAL, "json.unfold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		bo->tsorted = true;
 		bo->trevsorted = false;
@@ -1380,7 +1380,7 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 		JSONfree(jt);
 		BBPreclaim(bo);
 		BBPreclaim(bk);
-		throw(MAL, "json.unfold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bv->tsorted = true;
 	bv->trevsorted = false;
@@ -1419,7 +1419,7 @@ JSONkeyTable(bat *ret, json *js)
 	bn = COLnew(0, TYPE_str, 64, TRANSIENT);
 	if (bn == NULL) {
 		JSONfree(jt);
-		throw(MAL, "json.keys", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "json.keys", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bn->tsorted = true;
 	bn->trevsorted = false;
@@ -1432,7 +1432,7 @@ JSONkeyTable(bat *ret, json *js)
 			GDKfree(r);
 			JSONfree(jt);
 			BBPreclaim(bn);
-			throw(MAL, "json.keys", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "json.keys", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(r);
 	}
@@ -1489,7 +1489,7 @@ JSONkeyArray(json *ret, json *js)
 
   memfail:
 	GDKfree(result);
-	throw(MAL, "json.keyarray", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "json.keyarray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 
@@ -1506,7 +1506,7 @@ JSONvalueTable(bat *ret, json *js)
 	bn = COLnew(0, TYPE_json, 64, TRANSIENT);
 	if (bn == NULL) {
 		JSONfree(jt);
-		throw(MAL, "json.values", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "json.values", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bn->tsorted = true;
 	bn->trevsorted = false;
@@ -1522,7 +1522,7 @@ JSONvalueTable(bat *ret, json *js)
 			GDKfree(r);
 			BBPreclaim(bn);
 			JSONfree(jt);
-			throw(MAL, "json.values", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "json.values", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(r);
 	}
@@ -1577,7 +1577,7 @@ JSONvalueArray(json *ret, json *js)
 
   memfail:
 	GDKfree(result);
-	throw(MAL, "json.valuearray", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "json.valuearray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 static BAT **
@@ -1700,7 +1700,7 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	result = (char *) GDKmalloc(lim = BUFSIZ);
 	if (result == NULL) {
 		JSONfreeArgumentlist(bl, pci);
-		throw(MAL,"json.renderobject", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"json.renderobject", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	result[0] = '[';
 	result[1] = 0;
@@ -1734,7 +1734,7 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(result);
 	GDKfree(row);
 	JSONfreeArgumentlist(bl, pci);
-	throw(MAL,"json.renderobject", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL,"json.renderobject", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 static str
@@ -1844,7 +1844,7 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   memfail:
 	GDKfree(result);
 	JSONfreeArgumentlist(bl, pci);
-	throw(MAL,"json.renderArray", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL,"json.renderArray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 static str
@@ -1973,7 +1973,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	if (bk)
 		BBPunfix(bk->batCacheid);
 	BBPunfix(bv->batCacheid);
-	throw(MAL, "json.fold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "json.fold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -2068,7 +2068,7 @@ JSONgroupStr(str *ret, const bat *bid)
 	const double *val = NULL;
 
 	if (buf == NULL)
-		throw(MAL, "json.group", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "json.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "json.agg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -2105,7 +2105,7 @@ JSONgroupStr(str *ret, const bat *bid)
 			size += len + 128;
 			nbuf = GDKrealloc(buf, size);
 			if (nbuf == NULL) {
-				err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 				goto failed;
 			}
 			buf = nbuf;
@@ -2164,7 +2164,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	if (BATcount(b) == 0 || ngrp == 0) {
 		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_str, ATOMnilptr(TYPE_str), ngrp, TRANSIENT);
 		if (bn == NULL)
-			return SQLSTATE(HY001) MAL_MALLOC_FAIL;
+			return SQLSTATE(HY013) MAL_MALLOC_FAIL;
 		*bnp = bn;
 		return NULL;
 	}
@@ -2187,13 +2187,13 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 
 	maxlen = BUFSIZ;
 	if ((buf = GDKmalloc(maxlen)) == NULL) {
-		err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+		err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 		goto out;
 	}
 	buflen = 0;
 	bn = COLnew(min, TYPE_str, ngrp, TRANSIENT);
 	if (bn == NULL) {
-		err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+		err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 		goto out;
 	}
 	bi = bat_iterator(b);
@@ -2253,7 +2253,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 						maxlen += len + BUFSIZ;
 						buf2 = GDKrealloc(buf, maxlen);
 						if (buf2 == NULL) {
-							err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+							err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 							goto bunins_failed;
 						}
 						buf = buf2;
@@ -2329,7 +2329,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					maxlen += len + BUFSIZ;
 					buf2 = GDKrealloc(buf, maxlen);
 					if (buf2 == NULL) {
-						err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+						err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 						goto bunins_failed;
 					}
 					buf = buf2;
@@ -2387,7 +2387,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				maxlen += len + BUFSIZ;
 				buf2 = GDKrealloc(buf, maxlen);
 				if (buf2 == NULL) {
-					err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
+					err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 					goto bunins_failed;
 				}
 				buf = buf2;
@@ -2440,7 +2440,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 
   bunins_failed:
 	if (err == NULL)
-		err = SQLSTATE(HY001) MAL_MALLOC_FAIL;	/* insertion into result BAT failed */
+		err = SQLSTATE(HY013) MAL_MALLOC_FAIL;	/* insertion into result BAT failed */
 	goto out;
 }
 

@@ -273,7 +273,7 @@ rel_with_query(sql_query *query, symbol *q )
 	sql_rel *rel;
 
 	if(!stack_push_frame(sql, "WITH"))
-		return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	/* first handle all with's (ie inlined views) */
 	for (d = d->data.lval->h; d; d = d->next) {
 		symbol *sym = d->data.sym;
@@ -292,7 +292,7 @@ rel_with_query(sql_query *query, symbol *q )
 		}
 		if(!stack_push_rel_view(sql, name, nrel)) {
 			stack_pop_frame(sql);
-			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (!is_project(nrel->op)) {
 			if (is_topn(nrel->op) || is_sample(nrel->op)) {
@@ -480,7 +480,7 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 		int len, match = 0;
 		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), type); 
 		if (!funcs)
-			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len = list_length(funcs);
 		if (len > 1) {
 			int i, score = 0; 
@@ -1825,7 +1825,7 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 		int len, match = 0;
 		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), type); 
 		if (!funcs)
-			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len = list_length(funcs);
 		if (len > 1) {
 			int i, score = 0; 
@@ -4383,7 +4383,7 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bclass != EC_NUM) {
 			char *err = subtype2string(bt);
 			if (!err)
-				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			(void) sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary on %s frame can't be %s type", bound_desc,
 							 (frame_type == FRAME_ROWS) ? "rows":"groups", err);
 			_DELETE(err);
@@ -4401,7 +4401,7 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 			if (bclass != EC_SEC && iet->type->eclass == EC_TIME) {
 				char *err = subtype2string(iet);
 				if(!err)
-					return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type up to the day", err, bound_desc);
 				_DELETE(err);
 				return NULL;
@@ -4409,7 +4409,7 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 			if (EC_INTERVAL(bclass) && !EC_TEMP(iet->type->eclass)) {
 				char *err = subtype2string(iet);
 				if (!err)
-					return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", err, bound_desc);
 				_DELETE(err);
 				return NULL;
@@ -5369,7 +5369,7 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 			if(stack_get_window_def(sql, name, NULL)) {
 				return sql_error(sql, 01, SQLSTATE(42000) "SELECT: Redefinition of window '%s'", name);
 			} else if(!stack_push_window_def(sql, name, wdef)) {
-				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 	}
@@ -5736,7 +5736,7 @@ rel_subquery(sql_query *query, sql_rel *rel, symbol *sq, exp_kind ek)
 	int toplevel = 0;
 
 	if (!stack_push_frame(sql, "SELECT"))
-		return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if (!rel || (rel->op == op_project &&
 		(!rel->exps || list_length(rel->exps) == 0)))

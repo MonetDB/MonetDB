@@ -31,7 +31,7 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 			sql_exp *e;
 			char *typestr = subtype2string2(&c->type);
 			if(!typestr)
-				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			e = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", c->def, typestr), sql->emode, NULL);
 			_DELETE(typestr);
 			if (!e || (e = rel_check_type(sql, &c->type, r ? *r : NULL, e, type_equal)) == NULL)
@@ -347,7 +347,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 						if (c->def) {
 							char *q, *typestr = subtype2string2(&c->type);
 							if(!typestr)
-								return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+								return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							q = sa_message(sql->sa, "select cast(%s as %s);", c->def, typestr);
 							_DELETE(typestr);
 							e = rel_parse_val(sql, q, sql->emode, NULL);
@@ -977,7 +977,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				if (col->def) {
 					char *typestr = subtype2string2(&col->type);
 					if(!typestr)
-						return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					v = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", col->def, typestr), sql->emode, NULL);
 					_DELETE(typestr);
 				} else {

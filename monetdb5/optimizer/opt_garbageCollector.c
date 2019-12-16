@@ -31,23 +31,21 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
-	char *used;
 
 	(void) pci;
 	(void) stk;
 	if ( mb->inlineProp)
 		return 0;
+
+	limit = mb->stop;
 	
-	used = (char*) GDKzalloc(sizeof(char) * mb->vtop);
-	if ( used == NULL)
-		throw(MAL, "optimizer.garbagecollector", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	limit = mb->stop;
 
 	/* variables get their name from the position */
-	/* rename all temporaries used for ease of variable table interpretation */
+	/* rename all temporaries for ease of variable table interpretation */
 	/* this code should not be necessary is variables always keep their position */
- 	for( i = 0; i < mb->vtop; i++){
+	for( i = 0; i < mb->vtop; i++) {
 		//strcpy(buf, getVarName(mb,i));
 		if (getVarName(mb,i)[0] == 'X' && getVarName(mb,i)[1] == '_')
 			snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
@@ -70,7 +68,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		for(  ; i > 1; i--)
 			mb->stmt[i] = mb->stmt[i-1];
 		mb->stmt[1] = p;
-		actions =1;
+		actions = 1;
 	}
 
 	// Actual garbage collection stuff, just mark them for re-assessment
@@ -89,7 +87,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
-	GDKfree(used);
     if( OPTdebug &  OPTgarbagecollector)
 	{ 	int k;
 		fprintf(stderr, "#Garbage collected BAT variables \n");
@@ -120,13 +117,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
 	newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
-    if( OPTdebug &  OPTgarbagecollector){
-        fprintf(stderr, "#GARBAGECOLLECTOR optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }
 

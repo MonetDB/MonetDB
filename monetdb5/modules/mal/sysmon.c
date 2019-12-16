@@ -56,7 +56,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(progress);
 		BBPreclaim(workers);
 		BBPreclaim(memory);
-		throw(MAL, "SYSMONqueue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "SYSMONqueue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	MT_lock_set(&mal_delayLock);
@@ -122,7 +122,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(progress->batCacheid);
 	BBPunfix(workers->batCacheid);
 	BBPunfix(memory->batCacheid);
-	return msg ? msg : createException(MAL, "SYSMONqueue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return msg ? msg : createException(MAL, "SYSMONqueue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str

@@ -60,6 +60,7 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('CURRENT_TIMESTAMP'),
   ('CURRENT_USER'),
   ('DAY'),
+  ('DEALLOCATE'),
   ('DEC'),
   ('DECIMAL'),
   ('DECLARE'),

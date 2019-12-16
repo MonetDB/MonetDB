@@ -312,4 +312,6 @@ sql5_export str SQLsuspend_log_flushing(void *ret);
 sql5_export str SQLresume_log_flushing(void *ret);
 sql5_export str SQLhot_snapshot(void *ret, const str *tarfile);
 
+sql5_export str SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
 #endif /* _SQL_H */

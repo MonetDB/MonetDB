@@ -582,9 +582,6 @@ mal2str(MalBlkPtr mb, int first, int last)
 			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_NAME | LIST_MAL_TYPE  | LIST_MAL_PROPS);
 		else
 			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_CALL | LIST_MAL_PROPS | LIST_MAL_REMOTE);
-#ifdef _DEBUG_LISTING_
-		fprintf(stderr,"%s\n",txt[i]);
-#endif
 
 		if ( txt[i])
 			totlen += len[i] = strlen(txt[i]);

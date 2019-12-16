@@ -619,9 +619,8 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 		sql_rel *D = rel_project(sql->sa, rel_dup(l), exps_copy(sql, ad));
 		set_distinct(D);
 
-		assert(!rel_is_ref(r));
 		r = rel_crossproduct(sql->sa, D, r, rel->op);
-		r->op = /*is_semi(rel->op)?op_left:*/op_join;
+		r->op = op_join;
 		move_join_exps(sql, rel, r);
 		set_dependent(r);
 		inner_r = r;
@@ -1062,7 +1061,6 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 
 		/* left of rel should be a set */ 
 		if (d && is_distinct_set(sql, d, ad) && j && (is_join(j->op) || is_semi(j->op))) {
-			int crossproduct = 0;
 			sql_rel *jl = j->l, *jr = j->r;
 			/* op_join if F(jl) intersect A(D) = empty -> jl join (D djoin jr) 
 			 * 	      F(jr) intersect A(D) = empty -> (D djoin jl) join jr
@@ -1075,26 +1073,35 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				rel->r = j = push_up_select_l(sql, j);
 				return rel; /* ie try again */
 			}
-			crossproduct = list_empty(j->exps);
-			rd = (j->op != op_full)?rel_dependent_var(sql, d, jr):(list*)1;
-			ld = (((j->op == op_join && rd) || j->op == op_right))?rel_dependent_var(sql, d, jl):(list*)1;
+			rd = (j->op != op_full && j->op != op_right)?rel_dependent_var(sql, d, jr):(list*)1;
+			ld = ((j->op == op_join || j->op == op_right))?rel_dependent_var(sql, d, jl):(list*)1;
 
 			if (ld && rd) {
 				node *m;
 				sql_rel *n, *nr, *nj;
+				list *inner_exps = exps_copy(sql, j->exps);
+				list *outer_exps = exps_copy(sql, rel->exps);
 
 				rel->r = rel_dup(jl);
+				rel->exps = sa_list(sql->sa);
 				nj = rel_crossproduct(sql->sa, rel_dup(d), rel_dup(jr), j->op);
-				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
 				j = nj;
 				set_dependent(j);
 				n = rel_crossproduct(sql->sa, rel, j, j->op);
+				n->exps = outer_exps;
+				if (!n->exps)
+					n->exps = inner_exps;
+				else
+					n->exps = list_merge(n->exps, inner_exps, (fdup)NULL);
 				j->op = rel->op;
+				if (is_semi(rel->op)) {
+					j->op = op_left;
+					rel->op = op_left;
+				}
 				n->l = rel_project(sql->sa, n->l, rel_projections(sql, n->l, NULL, 1, 1));
 				nr = n->r;
 				nr = n->r = rel_project(sql->sa, n->r, is_semi(nr->op)?sa_list(sql->sa):rel_projections(sql, nr->r, NULL, 1, 1));
-				move_join_exps(sql, n, j);
 				/* add nr->l exps with labels */ 
 				/* create jexps */
 				if (!n->exps)
@@ -1119,40 +1126,23 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
 				j = nj; 
+				if (is_semi(rel->op)) {
+				//assert(!is_semi(rel->op));
+					rel->op = op_left;
+				}
 				move_join_exps(sql, j, rel);
 				return j;
 			}
-			if (/* DISABLES CODE */ (0) && !ld && is_left(rel->op) && crossproduct) {
-				sql_exp *l = exp_atom_int(sql->sa, 1);
-				sql_exp *r = exp_atom_int(sql->sa, 1);
-				rel->r = jr;
-				j->l = rel;
-				j->r = jl;
-
-				assert(!rel_is_ref(j));
-				if (!is_simple_project(jr->op))
-					rel->r = jr = rel_project(sql->sa, jr, rel_projections(sql, jr, NULL, 1, 1));
-				if (!is_simple_project(jl->op))
-					j->r = jl = rel_project(sql->sa, jl, rel_projections(sql, jl, NULL, 1, 1));
-				l = exp_label(sql->sa, l, ++sql->label);
-				r = exp_label(sql->sa, r, ++sql->label);
-				append(jl->exps, l);
-				append(jr->exps, r);
-				l = exp_ref(sql->sa, l);
-				r = exp_ref(sql->sa, r);
-				l = exp_compare(sql->sa, r, l, cmp_equal_nil);
-				j->op = rel->op;
-				move_join_exps(sql, j, rel);
-				if (!j->exps)
-					j->exps = sa_list(sql->sa);
-				append(j->exps, l);
-				return j;
-			} else if (!ld) {
+			if (!ld) {
 				rel->r = rel_dup(jr);
 				sql_rel *nj = rel_crossproduct(sql->sa, rel_dup(jl), rel, j->op);
 				nj->exps = exps_copy(sql, j->exps);
 				rel_destroy(j);
 				j = nj; 
+				if (is_semi(rel->op)) {
+				//assert(!is_semi(rel->op));
+					rel->op = op_left;
+				}
 				move_join_exps(sql, j, rel);
 				return j;
 			}
@@ -1805,7 +1795,7 @@ rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				for(node *nn = gbe->h ; nn && !found ; nn = nn->next) {
 					sql_exp *e2 = nn->data;
 					/* the partition expression order should be the same as the one in the order by clause (if it's in there as well) */
-					if (!exp_equal(e1, e2)) {
+					if (exp_match(e1, e2)) {
 						if (is_ascending(e1))
 							set_ascending(e2);
 						else
@@ -2711,8 +2701,8 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor(sql, rel, &rewrite_or_exp);
 	rel = rel_exp_visitor(sql, rel, &rewrite_rank);
 	rel = rel_exp_visitor(sql, rel, &rewrite_anyequal);
-	rel = rel_exp_visitor(sql, rel, &rewrite_compare);
 	rel = rel_exp_visitor(sql, rel, &rewrite_exists);
+	rel = rel_exp_visitor(sql, rel, &rewrite_compare);
 	rel = rel_exp_visitor(sql, rel, &rewrite_ifthenelse);	/* add isnull handling */
 	rel = rel_exp_visitor(sql, rel, &rewrite_exp_rel);
 	rel = rel_visitor(sql, rel, &rewrite_join2semi);	/* where possible convert anyequal functions into marks */
