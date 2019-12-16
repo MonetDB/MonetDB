@@ -2175,7 +2175,6 @@ AC_CHECK_HEADERS([ \
 	dirent.h \
 	dispatch/dispatch.h \
 	dlfcn.h \
-	execinfo.h \
 	fcntl.h \
 	getopt.h \
 	iconv.h \
@@ -2396,7 +2395,6 @@ LIBS="$LIBS $MATH_LIBS"
 AC_CHECK_FUNCS([\
 	accept4 \
 	asctime_r \
-	backtrace \
 	cbrt \
 	clock_gettime \
 	ctime_r \
