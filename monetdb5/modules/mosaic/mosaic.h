@@ -107,7 +107,7 @@ typedef struct MOSAICHEADER{
 } * MosaicHdr;
 
 #define CNT_BITS 24
-#define MOSAICMAXCNT (1 << CNT_BITS)
+#define MOSAICMAXCNT ((1 << CNT_BITS) - 1)
 
 typedef struct MOSAICBLK {
 	unsigned int tag:((sizeof(unsigned int) * CHAR_BIT) - CNT_BITS), cnt:CNT_BITS;
