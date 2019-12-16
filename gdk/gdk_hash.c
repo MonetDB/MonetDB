@@ -436,6 +436,7 @@ BATcheckhash(BAT *b)
 						    ((size_t) 1 << 24) |
 #endif
 						    HASH_VERSION) &&
+					    hdata[1] > 0 &&
 					    hdata[4] == (size_t) BATcount(b) &&
 					    fstat(fd, &st) == 0 &&
 					    st.st_size >= (off_t) (h->heapbckt.size = h->heapbckt.free = (h->nbucket = (BUN) hdata[2]) * (BUN) (h->width = (uint8_t) hdata[3]) + HASH_HEADER_SIZE * SIZEOF_SIZE_T) &&

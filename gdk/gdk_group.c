@@ -1050,8 +1050,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		bool gc = g != NULL && (BATordered(g) || BATordered_rev(g));
 		const char *nme;
 		BUN prb;
-		int bits;
-		BUN mask;
+		int bits = 0;
+		BUN nbucket;
 		oid grp;
 
 		GDKclrerr();	/* not interested in BAThash errors */
@@ -1073,10 +1073,27 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted, gc ? " (g clustered)" : "");
 		nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
-		mask = MAX(HASHmask(cnt), 1 << 16);
-		/* mask is a power of two, so pop(mask - 1) tells us
-		 * which power of two */
-		bits = 8 * SIZEOF_OID - pop(mask - 1);
+		if (grps && !gc) {
+			/* we manipulate the hash value after having
+			 * calculated it, and when doing that, we
+			 * assume the mask (i.e. nbucket-1) is a
+			 * power-of-two minus one, so make sure it
+			 * is */
+			nbucket = cnt | cnt >> 1;
+			nbucket |= nbucket >> 2;
+			nbucket |= nbucket >> 4;
+			nbucket |= nbucket >> 8;
+			nbucket |= nbucket >> 16;
+#if SIZEOF_BUN == 8
+			nbucket |= nbucket >> 32;
+#endif
+			nbucket++;
+			/* nbucket is a power of two, so pop(nbucket - 1)
+			 * tells us which power of two */
+			bits = 8 * SIZEOF_OID - pop(nbucket - 1);
+		} else {
+			nbucket = MAX(HASHmask(cnt), 1 << 16);
+		}
 		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
 		    (hs->heaplink.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
 		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0) {
@@ -1087,7 +1104,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshgrpl%x", nme, THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
 		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshgrpb%x", nme, THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
-		    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
+		    HASHnew(hs, b->ttype, BUNlast(b), nbucket, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("BATgroup: cannot allocate hash table\n");
