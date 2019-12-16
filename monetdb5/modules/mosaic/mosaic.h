@@ -206,6 +206,7 @@ typedef struct _MosaicEstimation {
 	ALIGNMENT_HELPER_TPE(NAME, TPE) dummy;\
 	uintptr_t alignment = ((uintptr_t) (void*) &dummy.b - (uintptr_t) (void*) &dummy.a);\
 	assert((uintptr_t) (void*) (ptr) % alignment == 0);\
+	(void) alignment;\
 }
 
 mal_export char *MOSfiltername[];
