@@ -939,7 +939,9 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 					Py_XDECREF(pickle_module);
 					Python_ReleaseGIL(gstate);
 				}
-				goto bunins_failed;
+				BBPunfix(b->batCacheid);
+				msg = createException(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto wrapup;
 			}
 			GDKfree(ele_blob);
 			data += ret->memory_size;
@@ -1039,10 +1041,8 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 	}
 
 	return b;
-bunins_failed:
-	BBPunfix(b->batCacheid);
-	msg = createException(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-wrapup:
+
+  wrapup:
 	*return_message = msg;
 	return NULL;
 }

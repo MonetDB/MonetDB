@@ -273,7 +273,7 @@ nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *restrict lci,
 		}
 		*r1p = r1;
 		ALGODEBUG fprintf(stderr,
-				  "#%s(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us -- nomatch\n",
+				  "#%s: %s(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us -- nomatch\n", MT_thread_getname(),
 				  func, BATgetId(l), BATgetId(r),
 				  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 				  GDKusec() - t0);
@@ -290,7 +290,7 @@ nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *restrict lci,
 	}
 	*r1p = r1;
 	ALGODEBUG fprintf(stderr,
-			  "#%s(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us -- nomatch\n",
+			  "#%s: %s(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us -- nomatch\n", MT_thread_getname(),
 			  func, BATgetId(l), BATgetId(r),
 			  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 			  GDKusec() - t0);
@@ -2784,9 +2784,9 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	lng loff = 0, roff = 0;
 	oid lval = oid_nil, rval = oid_nil;
 
-	ALGODEBUG fprintf(stderr, "#thetajoin(l=" ALGOBATFMT ","
+	ALGODEBUG fprintf(stderr, "#%s: thetajoin(l=" ALGOBATFMT ","
 			  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-			  "sr=" ALGOOPTBATFMT ",op=%s%s%s)\n",
+			  "sr=" ALGOOPTBATFMT ",op=%s%s%s)\n", MT_thread_getname(),
 			  ALGOBATPAR(l), ALGOBATPAR(r), ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
 			  opcode & MASK_LT ? "<" : "",
 			  opcode & MASK_GT ? ">" : "",
@@ -2926,7 +2926,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 			r2->tseqbase = 0;
 		}
 	}
-	ALGODEBUG fprintf(stderr, "#thetajoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
+	ALGODEBUG fprintf(stderr, "#%s: thetajoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n", MT_thread_getname(),
 			  BATgetId(l), BATgetId(r),
 			  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 			  GDKusec() - t0);
@@ -3306,7 +3306,7 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			r2->tseqbase = 0;
 		}
 	}
-	ALGODEBUG fprintf(stderr, "#BATbandjoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
+	ALGODEBUG fprintf(stderr, "#%s: BATbandjoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n", MT_thread_getname(),
 			  BATgetId(l), BATgetId(r),
 			  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 			  GDKusec() - t0);
@@ -3406,11 +3406,11 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	rcnt = canditer_init(&rci, r, sr);
 
 	if (lcnt == 0 || (!only_misses && !nil_on_miss && rcnt == 0)) {
-		ALGODEBUG fprintf(stderr, "#%s(l=" ALGOBATFMT ","
+		ALGODEBUG fprintf(stderr, "#%s: %s(l=" ALGOBATFMT ","
 				  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
 				  "sr=" ALGOOPTBATFMT ",nil_matches=%d,"
 				  "nil_on_miss=%d,semi=%d,only_misses=%d,"
-				  "not_in=%d)\n",
+				  "not_in=%d)\n", MT_thread_getname(),
 				  func,
 				  ALGOBATPAR(l), ALGOBATPAR(r),
 				  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
@@ -3609,9 +3609,9 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		return GDK_FAIL;
 
 	if (lcnt == 0 || rcnt == 0) {
-		ALGODEBUG fprintf(stderr, "#BATjoin(l=" ALGOBATFMT ","
+		ALGODEBUG fprintf(stderr, "#%s: BATjoin(l=" ALGOBATFMT ","
 				  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-				  "sr=" ALGOOPTBATFMT ",nil_matches=%d)\n",
+				  "sr=" ALGOOPTBATFMT ",nil_matches=%d)\n", MT_thread_getname(),
 				  ALGOBATPAR(l), ALGOBATPAR(r),
 				  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
 				  nil_matches);
@@ -3765,9 +3765,9 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	ALGODEBUG t0 = GDKusec();
 
-	ALGODEBUG fprintf(stderr, "#BATbandjoin("
+	ALGODEBUG fprintf(stderr, "#%s: BATbandjoin("
 			  "l=" ALGOBATFMT ",r=" ALGOBATFMT ","
-			  "sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ")\n",
+			  "sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ")\n", MT_thread_getname(),
 			  ALGOBATPAR(l), ALGOBATPAR(r),
 			  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr));
 

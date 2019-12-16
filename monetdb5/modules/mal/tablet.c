@@ -902,9 +902,10 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		adt = fmt->nildata;
 		fmt->c->tnonil = false;
 	}
-	bunfastapp(fmt->c, adt);
-	return ret;
-  bunins_failed:
+	if (bunfastapp(fmt->c, adt) == GDK_SUCCEED)
+		return ret;
+
+	/* failure */
 	if (task->rowerror) {
 		lng row = BATcount(fmt->c);
 		MT_lock_set(&errorlock);

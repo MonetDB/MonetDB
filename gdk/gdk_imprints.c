@@ -251,7 +251,7 @@ BATcheckimprints(BAT *b)
 						close(fd);
 						imprints->imprints.parentid = b->batCacheid;
 						b->timprints = imprints;
-						ACCELDEBUG fprintf(stderr, "#BATcheckimprints(" ALGOBATFMT "): reusing persisted imprints\n", ALGOBATPAR(b));
+						ACCELDEBUG fprintf(stderr, "#%s: BATcheckimprints(" ALGOBATFMT "): reusing persisted imprints\n", MT_thread_getname(), ALGOBATPAR(b));
 						MT_lock_unset(&b->batIdxLock);
 
 						return true;
@@ -267,7 +267,7 @@ BATcheckimprints(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->timprints != NULL;
-	ACCELDEBUG if (ret) fprintf(stderr, "#BATcheckimprints(" ALGOBATFMT "): already has imprints\n", ALGOBATPAR(b));
+	ACCELDEBUG if (ret) fprintf(stderr, "#%s: BATcheckimprints(" ALGOBATFMT "): already has imprints\n", MT_thread_getname(), ALGOBATPAR(b));
 	return ret;
 }
 
@@ -324,9 +324,9 @@ BATimpsync(void *arg)
 					failed = ""; /* not failed */
 				}
 			}
-			ACCELDEBUG fprintf(stderr, "#BATimpsync(" ALGOBATFMT "): "
+			ACCELDEBUG fprintf(stderr, "#%s: BATimpsync(" ALGOBATFMT "): "
 					  "imprints persisted "
-					  "(" LLFMT " usec)%s\n", ALGOBATPAR(b),
+					  "(" LLFMT " usec)%s\n", MT_thread_getname(), ALGOBATPAR(b),
 					  GDKusec() - t0, failed);
 		}
 	}
@@ -384,13 +384,13 @@ BATimprints(BAT *b)
 
 		ACCELDEBUG {
 			if (s2)
-				fprintf(stderr, "#BATimprints(b=" ALGOBATFMT
+				fprintf(stderr, "#%s: BATimprints(b=" ALGOBATFMT
 					"): creating imprints on parent "
-					ALGOBATFMT "\n",
+					ALGOBATFMT "\n", MT_thread_getname(),
 					ALGOBATPAR(s2), ALGOBATPAR(b));
 			else
-				fprintf(stderr, "#BATimprints(b=" ALGOBATFMT
-					"): creating imprints\n",
+				fprintf(stderr, "#%s: BATimprints(b=" ALGOBATFMT
+					"): creating imprints\n", MT_thread_getname(),
 					ALGOBATPAR(b));
 		}
 		s2 = NULL;
@@ -548,7 +548,7 @@ BATimprints(BAT *b)
 		}
 	}
 
-	ACCELDEBUG fprintf(stderr, "#BATimprints(%s): imprints construction " LLFMT " usec\n", BATgetId(b), GDKusec() - t0);
+	ACCELDEBUG fprintf(stderr, "#%s: BATimprints(%s): imprints construction " LLFMT " usec\n", MT_thread_getname(), BATgetId(b), GDKusec() - t0);
 	MT_lock_unset(&b->batIdxLock);
 
 	/* BBPUnfix tries to get the imprints lock which might lead to
@@ -650,10 +650,10 @@ IMPSremove(BAT *b)
 
 		if ((GDKdebug & ALGOMASK) &&
 		    * (size_t *) imprints->imprints.base & (1 << 16))
-			fprintf(stderr, "#IMPSremove: removing persisted imprints\n");
+			fprintf(stderr, "#%s: IMPSremove: removing persisted imprints\n", MT_thread_getname());
 		if (HEAPdelete(&imprints->imprints, BBP_physical(b->batCacheid),
 			       "timprints") != GDK_SUCCEED)
-			IODEBUG fprintf(stderr, "#IMPSremove(%s): imprints heap\n", BATgetId(b));
+			IODEBUG fprintf(stderr, "#%s: IMPSremove(%s): imprints heap\n", MT_thread_getname(), BATgetId(b));
 
 		GDKfree(imprints);
 	}

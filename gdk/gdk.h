@@ -537,8 +537,6 @@ typedef size_t BUN;
 #endif
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
 
-#include "gdk_atoms.h"
-
 /*
  * @- Checking and Error definitions:
  */
@@ -927,206 +925,6 @@ gdk_export gdk_return BATextend(BAT *b, BUN newcap)
 /* internal */
 gdk_export uint8_t ATOMelmshift(int sz);
 
-/*
- * @- BUN manipulation
- * @multitable @columnfractions 0.08 0.7
- * @item BAT*
- * @tab BATappend (BAT *b, BAT *n, BAT *s, bool force)
- * @item BAT*
- * @tab BUNappend (BAT *b, ptr right, bool force)
- * @item BAT*
- * @tab BUNreplace (BAT *b, oid left, ptr right, bool force)
- * @item int
- * @tab BUNfnd (BAT *b, ptr tail)
- * @item BUN
- * @tab BUNlocate (BAT *b, ptr head, ptr tail)
- * @item ptr
- * @tab BUNtail (BAT *b, BUN p)
- * @end multitable
- *
- * The BATs contain a number of fixed-sized slots to store the binary
- * associations.  These slots are called BUNs or BAT units. A BUN
- * variable is a pointer into the storage area of the BAT, but it has
- * limited validity. After a BAT modification, previously obtained
- * BUNs may no longer reside at the same location.
- *
- * The association list does not contain holes.  This density permits
- * users to quickly access successive elements without the need to
- * test the items for validity. Moreover, it simplifies transport to
- * disk and other systems. The negative effect is that the user should
- * be aware of the evolving nature of the sequence, which may require
- * copying the BAT first.
- *
- * The update operations come in two flavors: BUNappend and
- * BUNreplace.  The batch version of BUNappend is BATappend.
- *
- * The routine BUNfnd provides fast access to a single BUN providing a
- * value for the tail of the binary association.
- *
- * The routine BUNtail returns a pointer to the second value in an
- * association.  To guard against side effects on the BAT, one should
- * normally copy this value into a scratch variable for further
- * processing.
- *
- * Behind the interface we use several macros to access the BUN fixed
- * part and the variable part. The BUN operators always require a BAT
- * pointer and BUN identifier.
- * @itemize
- * @item
- * BATttype(b) finds out the type of a BAT.
- * @item
- * BUNlast(b) returns the BUN pointer directly after the last BUN
- * in the BAT.
- * @end itemize
- */
-/* NOTE: `p' is evaluated after a possible upgrade of the heap */
-#if SIZEOF_VAR_T == 8
-#define Tputvalue(b, p, v, copyall)					\
-	do {								\
-		if ((b)->tvarsized && (b)->ttype) {			\
-			var_t _d;					\
-			void *_ptr;					\
-			ATOMputVAR((b)->ttype, (b)->tvheap, &_d, v);	\
-			if ((b)->twidth < SIZEOF_VAR_T &&		\
-			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
-				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b), _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
-					goto bunins_failed;		\
-			}						\
-			_ptr = (p);					\
-			switch ((b)->twidth) {				\
-			case 1:						\
-				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 2:						\
-				* (uint16_t *) _ptr = (uint16_t) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 4:						\
-				* (uint32_t *) _ptr = (uint32_t) _d;	\
-				break;					\
-			case 8:						\
-				* (var_t *) _ptr = _d;			\
-				break;					\
-			}						\
-		} else {						\
-			ATOMputFIX((b)->ttype, (p), v);			\
-		}							\
-	} while (false)
-#else
-#define Tputvalue(b, p, v, copyall)					\
-	do {								\
-		if ((b)->tvarsized && (b)->ttype) {			\
-			var_t _d;					\
-			void *_ptr;					\
-			ATOMputVAR((b)->ttype, (b)->tvheap, &_d, v);	\
-			if ((b)->twidth < SIZEOF_VAR_T &&		\
-			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
-				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b), _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
-					goto bunins_failed;		\
-			}						\
-			_ptr = (p);					\
-			switch ((b)->twidth) {				\
-			case 1:						\
-				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 2:						\
-				* (uint16_t *) _ptr = (uint16_t) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 4:						\
-				* (var_t *) _ptr = _d;			\
-				break;					\
-			}						\
-		} else {						\
-			ATOMputFIX((b)->ttype, (p), v);			\
-		}							\
-	} while (false)
-#endif
-#define tfastins_nocheck(b, p, v, s)				\
-	do {							\
-		(b)->theap.free += (s);				\
-		Tputvalue((b), Tloc((b), (p)), (v), false);	\
-	} while (false)
-
-#define bunfastapp_nocheck(b, p, v, ts)		\
-	do {					\
-		tfastins_nocheck(b, p, v, ts);	\
-		(b)->batCount++;		\
-	} while (false)
-
-#define bunfastapp(b, v)						\
-	do {								\
-		if (BATcount(b) >= BATcapacity(b)) {				\
-			if (BATcount(b) == BUN_MAX) {			\
-				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
-				goto bunins_failed;			\
-			}						\
-			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
-				goto bunins_failed;			\
-		}							\
-		bunfastapp_nocheck(b, (b)->batCount, v, Tsize(b));	\
-	} while (false)
-
-#define bunfastappTYPE(TYPE, b, v)					\
-	do {								\
-		if (BATcount(b) >= BATcapacity(b)) {			\
-			if (BATcount(b) == BUN_MAX) {	\
-				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
-				goto bunins_failed;			\
-			}						\
-			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
-				goto bunins_failed;			\
-		}							\
-		(b)->theap.free += sizeof(TYPE);			\
-		((TYPE *) (b)->theap.base)[(b)->batCount++] = * (const TYPE *) (v); \
-	} while (false)
-
-#define tfastins_nocheckVAR(b, p, v, s)					\
-	do {								\
-		var_t _d;						\
-		(b)->theap.free += (s);					\
-		ATOMputVAR((b)->ttype, (b)->tvheap, &_d, v);		\
-		if ((b)->twidth < SIZEOF_VAR_T &&			\
-		    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
-			/* doesn't fit in current heap, upgrade it */	\
-			if (GDKupgradevarheap((b), _d, false, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
-				goto bunins_failed;			\
-		}							\
-		switch ((b)->twidth) {					\
-		case 1:							\
-			((uint8_t *) (b)->theap.base)[p] = (uint8_t) (_d - GDK_VAROFFSET); \
-			break;						\
-		case 2:							\
-			((uint16_t *) (b)->theap.base)[p] = (uint16_t) (_d - GDK_VAROFFSET); \
-			break;						\
-		case 4:							\
-			((uint32_t *) (b)->theap.base)[p] = (uint32_t) _d; \
-			break;						\
-		case 8:		/* superfluous on 32-bit archs */	\
-			((uint64_t *) (b)->theap.base)[p] = (uint64_t) _d; \
-			break;						\
-		}							\
-	} while (false)
-
-#define bunfastapp_nocheckVAR(b, p, v, ts)		\
-	do {						\
-		tfastins_nocheckVAR(b, p, v, ts);	\
-		(b)->batCount++;			\
-	} while (false)
-
-#define bunfastappVAR(b, v)						\
-	do {								\
-		if ((b)->batCount >= BATcapacity(b)) {			\
-			if ((b)->batCount == BUN_MAX || BATcount(b) == BUN_MAX) { \
-				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
-				goto bunins_failed;			\
-			}						\
-			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
-				goto bunins_failed;			\
-		}							\
-		bunfastapp_nocheckVAR(b, (b)->batCount, v, Tsize(b));	\
-	} while (false)
-
 gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bool force)
@@ -1199,6 +997,205 @@ typedef var_t stridx_t;
 #define BUNlast(b)	(assert((b)->batCount <= BUN_MAX), (b)->batCount)
 
 #define BATcount(b)	((b)->batCount)
+
+/*
+ * @+ GDK Extensibility
+ * GDK can be extended with new atoms, search accelerators and storage
+ * modes.
+ *
+ * @- Atomic Type Descriptors
+ * The atomic types over which the binary associations are maintained
+ * are described by an atom descriptor.
+ *  @multitable @columnfractions 0.08 0.7
+ * @item void
+ * @tab ATOMallocate    (str   nme);
+ * @item int
+ * @tab ATOMindex       (char *nme);
+ * @item int
+ * @tab ATOMdump        ();
+ * @item void
+ * @tab ATOMdelete      (int id);
+ * @item str
+ * @tab ATOMname        (int id);
+ * @item unsigned int
+ * @tab ATOMsize        (int id);
+ * @item int
+ * @tab ATOMvarsized    (int id);
+ * @item ptr
+ * @tab ATOMnilptr      (int id);
+ * @item ssize_t
+ * @tab ATOMfromstr     (int id, str s, size_t* len, ptr* v_dst);
+ * @item ssize_t
+ * @tab ATOMtostr       (int id, str s, size_t* len, ptr* v_dst);
+ * @item hash_t
+ * @tab ATOMhash        (int id, ptr val, in mask);
+ * @item int
+ * @tab ATOMcmp         (int id, ptr val_1, ptr val_2);
+ * @item int
+ * @tab ATOMfix         (int id, ptr v);
+ * @item int
+ * @tab ATOMunfix       (int id, ptr v);
+ * @item int
+ * @tab ATOMheap        (int id, Heap *hp, size_t cap);
+ * @item int
+ * @tab ATOMput         (int id, Heap *hp, BUN pos_dst, ptr val_src);
+ * @item int
+ * @tab ATOMdel         (int id, Heap *hp, BUN v_src);
+ * @item size_t
+ * @tab ATOMlen         (int id, ptr val);
+ * @item ptr
+ * @tab ATOMnil         (int id);
+ * @item ssize_t
+ * @tab ATOMformat      (int id, ptr val, char** buf);
+ * @item int
+ * @tab ATOMprint       (int id, ptr val, stream *fd);
+ * @item ptr
+ * @tab ATOMdup         (int id, ptr val );
+ * @end multitable
+ *
+ * @- Atom Definition
+ * User defined atomic types can be added to a running system with the
+ * following interface:.
+ *
+ * @itemize
+ * @item @emph{ATOMallocate()} registers a new atom definition if
+ * there is no atom registered yet under that name.
+ *
+ * @item @emph{ATOMdelete()} unregisters an atom definition.
+ *
+ * @item @emph{ATOMindex()} looks up the atom descriptor with a certain name.
+ * @end itemize
+ *
+ * @- Atom Manipulation
+ *
+ * @itemize
+ * @item The @emph{ATOMname()} operation retrieves the name of an atom
+ * using its id.
+ *
+ * @item The @emph{ATOMsize()} operation returns the atoms fixed size.
+ *
+ * @item The @emph{ATOMnilptr()} operation returns a pointer to the
+ * nil-value of an atom. We usually take one dedicated value halfway
+ * down the negative extreme of the atom range (if such a concept
+ * fits), as the nil value.
+ *
+ * @item The @emph{ATOMnil()} operation returns a copy of the nil
+ * value, allocated with GDKmalloc().
+ *
+ * @item The @emph{ATOMheap()} operation creates a new var-sized atom
+ * heap in 'hp' with capacity 'cap'.
+ *
+ * @item The @emph{ATOMhash()} computes a hash index for a
+ * value. `val' is a direct pointer to the atom value. Its return
+ * value should be an hash_t between 0 and 'mask'.
+ *
+ * @item The @emph{ATOMcmp()} operation compares two atomic
+ * values. Its parameters are pointers to atomic values.
+ *
+ * @item The @emph{ATOMlen()} operation computes the byte length for a
+ * value.  `val' is a direct pointer to the atom value. Its return
+ * value should be an integer between 0 and 'mask'.
+ *
+ * @item The @emph{ATOMdel()} operation deletes a var-sized atom from
+ * its heap `hp'.  The integer byte-index of this value in the heap is
+ * pointed to by `val_src'.
+ *
+ * @item The @emph{ATOMput()} operation inserts an atom `src_val' in a
+ * BUN at `dst_pos'. This involves copying the fixed sized part in the
+ * BUN. In case of a var-sized atom, this fixed sized part is an
+ * integer byte-index into a heap of var-sized atoms. The atom is then
+ * also copied into that heap `hp'.
+ *
+ * @item The @emph{ATOMfix()} and @emph{ATOMunfix()} operations do
+ * bookkeeping on the number of references that a GDK application
+ * maintains to the atom.  In MonetDB, we use this to count the number
+ * of references directly, or through BATs that have columns of these
+ * atoms. The only operator for which this is currently relevant is
+ * BAT. The operators return the POST reference count to the
+ * atom. BATs with fixable atoms may not be stored persistently.
+ *
+ * @item The @emph{ATOMfromstr()} parses an atom value from string
+ * `s'. The memory allocation policy is the same as in
+ * @emph{ATOMget()}. The return value is the number of parsed
+ * characters or -1 on failure.  Also in case of failure, the output
+ * parameter buf is a valid pointer or NULL.
+ *
+ * @item The @emph{ATOMprint()} prints an ASCII description of the
+ * atom value pointed to by `val' on file descriptor `fd'. The return
+ * value is the number of parsed characters.
+ *
+ * @item The @emph{ATOMformat()} is similar to @emph{ATOMprint()}. It
+ * prints an atom on a newly allocated string. It must later be freed
+ * with @strong{GDKfree}.  The number of characters written is
+ * returned. This is minimally the size of the allocated buffer.
+ *
+ * @item The @emph{ATOMdup()} makes a copy of the given atom. The
+ * storage needed for this is allocated and should be removed by the
+ * user.
+ * @end itemize
+ *
+ * These wrapper functions correspond closely to the interface
+ * functions one has to provide for a user-defined atom. They
+ * basically (with exception of @emph{ATOMput()}, @emph{ATOMprint()}
+ * and @emph{ATOMformat()}) just have the atom id parameter prepended
+ * to them.
+ */
+
+/* atomFromStr returns the number of bytes of the input string that
+ * were processed.  atomToStr returns the length of the string
+ * produced.  Both functions return -1 on (any kind of) failure.  If
+ * *dst is not NULL, *len specifies the available space.  If there is
+ * not enough space, or if *dst is NULL, *dst will be freed (if not
+ * NULL) and a new buffer will be allocated and returned in *dst.
+ * *len will be set to reflect the actual size allocated.  If
+ * allocation fails, *dst will be NULL on return and *len is
+ * undefined.  In any case, if the function returns, *buf is either
+ * NULL or a valid pointer and then *len is the size of the area *buf
+ * points to. */
+
+typedef struct {
+	/* simple attributes */
+	char name[IDLENGTH];
+	uint8_t storage;	/* stored as another type? */
+	bool linear;		/* atom can be ordered linearly */
+	uint16_t size;		/* fixed size of atom */
+
+	/* automatically generated fields */
+	const void *atomNull;	/* global nil value */
+
+	/* generic (fixed + varsized atom) ADT functions */
+	ssize_t (*atomFromStr) (const char *src, size_t *len, void **dst, bool external);
+	ssize_t (*atomToStr) (char **dst, size_t *len, const void *src, bool external);
+	void *(*atomRead) (void *dst, stream *s, size_t cnt);
+	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
+	int (*atomCmp) (const void *v1, const void *v2);
+	BUN (*atomHash) (const void *v);
+	/* optional functions */
+	int (*atomFix) (const void *atom);
+	int (*atomUnfix) (const void *atom);
+
+	/* varsized atom-only ADT functions */
+	var_t (*atomPut) (Heap *, var_t *off, const void *src);
+	void (*atomDel) (Heap *, var_t *atom);
+	size_t (*atomLen) (const void *atom);
+	void (*atomHeap) (Heap *, size_t);
+} atomDesc;
+
+gdk_export atomDesc BATatoms[];
+gdk_export int GDKatomcnt;
+
+gdk_export int ATOMallocate(const char *nme);
+gdk_export int ATOMindex(const char *nme);
+
+gdk_export str ATOMname(int id);
+gdk_export size_t ATOMlen(int id, const void *v);
+gdk_export void *ATOMnil(int id);
+gdk_export int ATOMprint(int id, const void *val, stream *fd);
+gdk_export char *ATOMformat(int id, const void *val);
+
+gdk_export void *ATOMdup(int id, const void *val);
+
+#include "gdk_atoms.h"
 
 /* return the oid value at BUN position p from the (v)oid bat b
  * works with any TYPE_void or TYPE_oid bat */
@@ -1615,201 +1612,279 @@ gdk_export void BBPunlock(void);
 gdk_export BAT *BBPquickdesc(bat b, bool delaccess);
 
 /*
- * @+ GDK Extensibility
- * GDK can be extended with new atoms, search accelerators and storage
- * modes.
- *
- * @- Atomic Type Descriptors
- * The atomic types over which the binary associations are maintained
- * are described by an atom descriptor.
+ * @- GDK error handling
  *  @multitable @columnfractions 0.08 0.7
- * @item void
- * @tab ATOMallocate    (str   nme);
- * @item int
- * @tab ATOMindex       (char *nme);
- * @item int
- * @tab ATOMdump        ();
- * @item void
- * @tab ATOMdelete      (int id);
  * @item str
- * @tab ATOMname        (int id);
- * @item unsigned int
- * @tab ATOMsize        (int id);
+ * @tab
+ *  GDKmessage
+ * @item bit
+ * @tab
+ *  GDKfatal(str msg)
  * @item int
- * @tab ATOMvarsized    (int id);
- * @item ptr
- * @tab ATOMnilptr      (int id);
- * @item ssize_t
- * @tab ATOMfromstr     (int id, str s, size_t* len, ptr* v_dst);
- * @item ssize_t
- * @tab ATOMtostr       (int id, str s, size_t* len, ptr* v_dst);
- * @item hash_t
- * @tab ATOMhash        (int id, ptr val, in mask);
+ * @tab
+ *  GDKwarning(str msg)
  * @item int
- * @tab ATOMcmp         (int id, ptr val_1, ptr val_2);
+ * @tab
+ *  GDKerror (str msg)
  * @item int
- * @tab ATOMfix         (int id, ptr v);
+ * @tab
+ *  GDKgoterrors ()
  * @item int
- * @tab ATOMunfix       (int id, ptr v);
- * @item int
- * @tab ATOMheap        (int id, Heap *hp, size_t cap);
- * @item int
- * @tab ATOMput         (int id, Heap *hp, BUN pos_dst, ptr val_src);
- * @item int
- * @tab ATOMdel         (int id, Heap *hp, BUN v_src);
- * @item size_t
- * @tab ATOMlen         (int id, ptr val);
- * @item ptr
- * @tab ATOMnil         (int id);
- * @item ssize_t
- * @tab ATOMformat      (int id, ptr val, char** buf);
- * @item int
- * @tab ATOMprint       (int id, ptr val, stream *fd);
- * @item ptr
- * @tab ATOMdup         (int id, ptr val );
+ * @tab
+ *  GDKsyserror (str msg)
+ * @item str
+ * @tab
+ *  GDKerrbuf
+ *  @item
+ * @tab GDKsetbuf (str buf)
  * @end multitable
  *
- * @- Atom Definition
- * User defined atomic types can be added to a running system with the
- * following interface:.
+ * The error handling mechanism is not sophisticated yet. Experience
+ * should show if this mechanism is sufficient.  Most routines return
+ * a pointer with zero to indicate an error.
  *
- * @itemize
- * @item @emph{ATOMallocate()} registers a new atom definition if
- * there is no atom registered yet under that name.
+ * The error messages are also copied to standard output.  The last
+ * error message is kept around in a global variable.
  *
- * @item @emph{ATOMdelete()} unregisters an atom definition.
- *
- * @item @emph{ATOMindex()} looks up the atom descriptor with a certain name.
- * @end itemize
- *
- * @- Atom Manipulation
- *
- * @itemize
- * @item The @emph{ATOMname()} operation retrieves the name of an atom
- * using its id.
- *
- * @item The @emph{ATOMsize()} operation returns the atoms fixed size.
- *
- * @item The @emph{ATOMnilptr()} operation returns a pointer to the
- * nil-value of an atom. We usually take one dedicated value halfway
- * down the negative extreme of the atom range (if such a concept
- * fits), as the nil value.
- *
- * @item The @emph{ATOMnil()} operation returns a copy of the nil
- * value, allocated with GDKmalloc().
- *
- * @item The @emph{ATOMheap()} operation creates a new var-sized atom
- * heap in 'hp' with capacity 'cap'.
- *
- * @item The @emph{ATOMhash()} computes a hash index for a
- * value. `val' is a direct pointer to the atom value. Its return
- * value should be an hash_t between 0 and 'mask'.
- *
- * @item The @emph{ATOMcmp()} operation compares two atomic
- * values. Its parameters are pointers to atomic values.
- *
- * @item The @emph{ATOMlen()} operation computes the byte length for a
- * value.  `val' is a direct pointer to the atom value. Its return
- * value should be an integer between 0 and 'mask'.
- *
- * @item The @emph{ATOMdel()} operation deletes a var-sized atom from
- * its heap `hp'.  The integer byte-index of this value in the heap is
- * pointed to by `val_src'.
- *
- * @item The @emph{ATOMput()} operation inserts an atom `src_val' in a
- * BUN at `dst_pos'. This involves copying the fixed sized part in the
- * BUN. In case of a var-sized atom, this fixed sized part is an
- * integer byte-index into a heap of var-sized atoms. The atom is then
- * also copied into that heap `hp'.
- *
- * @item The @emph{ATOMfix()} and @emph{ATOMunfix()} operations do
- * bookkeeping on the number of references that a GDK application
- * maintains to the atom.  In MonetDB, we use this to count the number
- * of references directly, or through BATs that have columns of these
- * atoms. The only operator for which this is currently relevant is
- * BAT. The operators return the POST reference count to the
- * atom. BATs with fixable atoms may not be stored persistently.
- *
- * @item The @emph{ATOMfromstr()} parses an atom value from string
- * `s'. The memory allocation policy is the same as in
- * @emph{ATOMget()}. The return value is the number of parsed
- * characters or -1 on failure.  Also in case of failure, the output
- * parameter buf is a valid pointer or NULL.
- *
- * @item The @emph{ATOMprint()} prints an ASCII description of the
- * atom value pointed to by `val' on file descriptor `fd'. The return
- * value is the number of parsed characters.
- *
- * @item The @emph{ATOMformat()} is similar to @emph{ATOMprint()}. It
- * prints an atom on a newly allocated string. It must later be freed
- * with @strong{GDKfree}.  The number of characters written is
- * returned. This is minimally the size of the allocated buffer.
- *
- * @item The @emph{ATOMdup()} makes a copy of the given atom. The
- * storage needed for this is allocated and should be removed by the
- * user.
- * @end itemize
- *
- * These wrapper functions correspond closely to the interface
- * functions one has to provide for a user-defined atom. They
- * basically (with exception of @emph{ATOMput()}, @emph{ATOMprint()}
- * and @emph{ATOMformat()}) just have the atom id parameter prepended
- * to them.
+ * Error messages can also be collected in a user-provided buffer,
+ * instead of being echoed to a stream. This is a thread-specific
+ * issue; you want to decide on the error mechanism on a
+ * thread-specific basis.  This effect is established with
+ * GDKsetbuf. The memory (de)allocation of this buffer, that must at
+ * least be 1024 chars long, is entirely by the user. A pointer to
+ * this buffer is kept in the pseudo-variable GDKerrbuf. Normally,
+ * this is a NULL pointer.
  */
+#define GDKMAXERRLEN	10240
+#define GDKWARNING	"!WARNING: "
+#define GDKERROR	"!ERROR: "
+#define GDKMESSAGE	"!OS: "
+#define GDKFATAL	"!FATAL: "
 
-/* atomFromStr returns the number of bytes of the input string that
- * were processed.  atomToStr returns the length of the string
- * produced.  Both functions return -1 on (any kind of) failure.  If
- * *dst is not NULL, *len specifies the available space.  If there is
- * not enough space, or if *dst is NULL, *dst will be freed (if not
- * NULL) and a new buffer will be allocated and returned in *dst.
- * *len will be set to reflect the actual size allocated.  If
- * allocation fails, *dst will be NULL on return and *len is
- * undefined.  In any case, if the function returns, *buf is either
- * NULL or a valid pointer and then *len is the size of the area *buf
- * points to. */
+/* Data Distilleries uses ICU for internationalization of some MonetDB error messages */
 
-typedef struct {
-	/* simple attributes */
-	char name[IDLENGTH];
-	uint8_t storage;	/* stored as another type? */
-	bool linear;		/* atom can be ordered linearly */
-	uint16_t size;		/* fixed size of atom */
+gdk_export void GDKerror(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+gdk_export void GDKsyserror(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+#ifndef HAVE_EMBEDDED
+gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+#else
+gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
+#endif
+gdk_export void GDKclrerr(void);
 
-	/* automatically generated fields */
-	const void *atomNull;	/* global nil value */
+/*
+ * @- BUN manipulation
+ * @multitable @columnfractions 0.08 0.7
+ * @item BAT*
+ * @tab BATappend (BAT *b, BAT *n, BAT *s, bool force)
+ * @item BAT*
+ * @tab BUNappend (BAT *b, ptr right, bool force)
+ * @item BAT*
+ * @tab BUNreplace (BAT *b, oid left, ptr right, bool force)
+ * @item int
+ * @tab BUNfnd (BAT *b, ptr tail)
+ * @item BUN
+ * @tab BUNlocate (BAT *b, ptr head, ptr tail)
+ * @item ptr
+ * @tab BUNtail (BAT *b, BUN p)
+ * @end multitable
+ *
+ * The BATs contain a number of fixed-sized slots to store the binary
+ * associations.  These slots are called BUNs or BAT units. A BUN
+ * variable is a pointer into the storage area of the BAT, but it has
+ * limited validity. After a BAT modification, previously obtained
+ * BUNs may no longer reside at the same location.
+ *
+ * The association list does not contain holes.  This density permits
+ * users to quickly access successive elements without the need to
+ * test the items for validity. Moreover, it simplifies transport to
+ * disk and other systems. The negative effect is that the user should
+ * be aware of the evolving nature of the sequence, which may require
+ * copying the BAT first.
+ *
+ * The update operations come in two flavors: BUNappend and
+ * BUNreplace.  The batch version of BUNappend is BATappend.
+ *
+ * The routine BUNfnd provides fast access to a single BUN providing a
+ * value for the tail of the binary association.
+ *
+ * The routine BUNtail returns a pointer to the second value in an
+ * association.  To guard against side effects on the BAT, one should
+ * normally copy this value into a scratch variable for further
+ * processing.
+ *
+ * Behind the interface we use several macros to access the BUN fixed
+ * part and the variable part. The BUN operators always require a BAT
+ * pointer and BUN identifier.
+ * @itemize
+ * @item
+ * BATttype(b) finds out the type of a BAT.
+ * @item
+ * BUNlast(b) returns the BUN pointer directly after the last BUN
+ * in the BAT.
+ * @end itemize
+ */
+/* NOTE: `p' is evaluated after a possible upgrade of the heap */
+static inline gdk_return Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
+	__attribute__((__warn_unused_result__));
+static inline gdk_return
+Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
+{
+	if (b->tvarsized && b->ttype) {
+		var_t d;
+		gdk_return rc;
 
-	/* generic (fixed + varsized atom) ADT functions */
-	ssize_t (*atomFromStr) (const char *src, size_t *len, void **dst, bool external);
-	ssize_t (*atomToStr) (char **dst, size_t *len, const void *src, bool external);
-	void *(*atomRead) (void *dst, stream *s, size_t cnt);
-	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
-	int (*atomCmp) (const void *v1, const void *v2);
-	BUN (*atomHash) (const void *v);
-	/* optional functions */
-	int (*atomFix) (const void *atom);
-	int (*atomUnfix) (const void *atom);
+		rc = ATOMputVAR(b->ttype, b->tvheap, &d, v);
+		if (rc != GDK_SUCCEED)
+			return rc;
+		if (b->twidth < SIZEOF_VAR_T &&
+		    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
+			/* doesn't fit in current heap, upgrade it */
+			rc = GDKupgradevarheap(b, d, copyall,
+					       b->batRestricted == BAT_READ);
+			if (rc != GDK_SUCCEED)
+				return rc;
+		}
+		switch (b->twidth) {
+		case 1:
+			((uint8_t *) b->theap.base)[p] = (uint8_t) (d - GDK_VAROFFSET);
+			break;
+		case 2:
+			((uint16_t *) b->theap.base)[p] = (uint16_t) (d - GDK_VAROFFSET);
+			break;
+		case 4:
+			((uint32_t *) b->theap.base)[p] = (uint32_t) d;
+			break;
+#if SIZEOF_VAR_T == 8
+		case 8:
+			((uint64_t *) b->theap.base)[p] = (uint64_t) d;
+			break;
+#endif
+		}
+	} else {
+		ATOMputFIX(b->ttype, Tloc(b, p), v);
+	}
+	return GDK_SUCCEED;
+}
 
-	/* varsized atom-only ADT functions */
-	var_t (*atomPut) (Heap *, var_t *off, const void *src);
-	void (*atomDel) (Heap *, var_t *atom);
-	size_t (*atomLen) (const void *atom);
-	void (*atomHeap) (Heap *, size_t);
-} atomDesc;
+static inline gdk_return tfastins_nocheck(BAT *b, BUN p, const void *v, int s)
+	__attribute__((__warn_unused_result__));
+static inline gdk_return
+tfastins_nocheck(BAT *b, BUN p, const void *v, int s)
+{
+	b->theap.free += s;
+	return Tputvalue(b, p, v, false);
+}
 
-gdk_export atomDesc BATatoms[];
-gdk_export int GDKatomcnt;
+static inline gdk_return bunfastapp_nocheck(BAT *b, BUN p, const void *v, int ts)
+	__attribute__((__warn_unused_result__));
+static inline gdk_return
+bunfastapp_nocheck(BAT *b, BUN p, const void *v, int ts)
+{
+	gdk_return rc;
+	rc = tfastins_nocheck(b, p, v, ts);
+	if (rc == GDK_SUCCEED)
+		b->batCount++;
+	return rc;
+}
 
-gdk_export int ATOMallocate(const char *nme);
-gdk_export int ATOMindex(const char *nme);
+static inline gdk_return bunfastapp(BAT *b, const void *v)
+	__attribute__((__warn_unused_result__));
+static inline gdk_return
+bunfastapp(BAT *b, const void *v)
+{
+	if (BATcount(b) >= BATcapacity(b)) {
+		if (BATcount(b) == BUN_MAX) {
+			GDKerror("bunfastapp: too many elements to accommodate (" BUNFMT ")\n", BUN_MAX);
+			return GDK_FAIL;
+		}
+		gdk_return rc = BATextend(b, BATgrows(b));
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	return bunfastapp_nocheck(b, b->batCount, v, Tsize(b));
+}
 
-gdk_export str ATOMname(int id);
-gdk_export size_t ATOMlen(int id, const void *v);
-gdk_export void *ATOMnil(int id);
-gdk_export int ATOMprint(int id, const void *val, stream *fd);
-gdk_export char *ATOMformat(int id, const void *val);
+#define bunfastappTYPE(TYPE, b, v)					\
+	(BATcount(b) >= BATcapacity(b) &&				\
+	 ((BATcount(b) == BUN_MAX &&					\
+	   (GDKerror("bunfastapp: too many elements to accommodate (" BUNFMT ")\n", BUN_MAX), \
+	    true)) ||							\
+	  BATextend((b), BATgrows(b)) != GDK_SUCCEED) ?			\
+	 GDK_FAIL :							\
+	 ((b)->theap.free += sizeof(TYPE),				\
+	  ((TYPE *) (b)->theap.base)[(b)->batCount++] = * (const TYPE *) (v), \
+	  GDK_SUCCEED)) 
 
-gdk_export void *ATOMdup(int id, const void *val);
+static inline gdk_return tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
+	__attribute__((__warn_unused_result__));
+static inline gdk_return
+tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
+{
+	var_t d;
+	gdk_return rc;
+	b->theap.free += s;
+	if ((rc = ATOMputVAR(b->ttype, b->tvheap, &d, v)) != GDK_SUCCEED)
+		return rc;
+	if (b->twidth < SIZEOF_VAR_T &&
+	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
+		/* doesn't fit in current heap, upgrade it */
+		rc = GDKupgradevarheap(b, d, false,
+				       b->batRestricted == BAT_READ);
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	switch (b->twidth) {
+	case 1:
+		((uint8_t *) b->theap.base)[p] = (uint8_t) (d - GDK_VAROFFSET);
+		break;
+	case 2:
+		((uint16_t *) b->theap.base)[p] = (uint16_t) (d - GDK_VAROFFSET);
+		break;
+	case 4:
+		((uint32_t *) b->theap.base)[p] = (uint32_t) d;
+		break;
+#if SIZEOF_VAR_T == 8
+	case 8:
+		((uint64_t *) b->theap.base)[p] = (uint64_t) d;
+		break;
+#endif
+	}
+	return GDK_SUCCEED;
+}
+
+static inline gdk_return bunfastapp_nocheckVAR(BAT *b, BUN p, const void *v, int ts)
+	__attribute__((__warn_unused_result__));
+static inline gdk_return
+bunfastapp_nocheckVAR(BAT *b, BUN p, const void *v, int ts)
+{
+	gdk_return rc;
+	rc = tfastins_nocheckVAR(b, p, v, ts);
+	if (rc == GDK_SUCCEED)
+		b->batCount++;
+	return rc;
+}
+
+static inline gdk_return bunfastappVAR(BAT *b, const void *v)
+	__attribute__((__warn_unused_result__));
+static inline gdk_return
+bunfastappVAR(BAT *b, const void *v)
+{
+	if (BATcount(b) >= BATcapacity(b)) {
+		if (BATcount(b) == BUN_MAX) {
+			GDKerror("bunfastapp: too many elements to accommodate (" BUNFMT ")\n", BUN_MAX);
+			return GDK_FAIL;
+		}
+		gdk_return rc = BATextend(b, BATgrows(b));
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	return bunfastapp_nocheckVAR(b, b->batCount, v, Tsize(b));
+}
 
 /*
  * @- Column Imprints Functions
@@ -2165,71 +2240,6 @@ free_debug(void *ptr, const char *filename, int lineno)
 #define free(p)	free_debug((p), __FILE__, __LINE__)
 #endif
 #endif
-
-/*
- * @- GDK error handling
- *  @multitable @columnfractions 0.08 0.7
- * @item str
- * @tab
- *  GDKmessage
- * @item bit
- * @tab
- *  GDKfatal(str msg)
- * @item int
- * @tab
- *  GDKwarning(str msg)
- * @item int
- * @tab
- *  GDKerror (str msg)
- * @item int
- * @tab
- *  GDKgoterrors ()
- * @item int
- * @tab
- *  GDKsyserror (str msg)
- * @item str
- * @tab
- *  GDKerrbuf
- *  @item
- * @tab GDKsetbuf (str buf)
- * @end multitable
- *
- * The error handling mechanism is not sophisticated yet. Experience
- * should show if this mechanism is sufficient.  Most routines return
- * a pointer with zero to indicate an error.
- *
- * The error messages are also copied to standard output.  The last
- * error message is kept around in a global variable.
- *
- * Error messages can also be collected in a user-provided buffer,
- * instead of being echoed to a stream. This is a thread-specific
- * issue; you want to decide on the error mechanism on a
- * thread-specific basis.  This effect is established with
- * GDKsetbuf. The memory (de)allocation of this buffer, that must at
- * least be 1024 chars long, is entirely by the user. A pointer to
- * this buffer is kept in the pseudo-variable GDKerrbuf. Normally,
- * this is a NULL pointer.
- */
-#define GDKMAXERRLEN	10240
-#define GDKWARNING	"!WARNING: "
-#define GDKERROR	"!ERROR: "
-#define GDKMESSAGE	"!OS: "
-#define GDKFATAL	"!FATAL: "
-
-/* Data Distilleries uses ICU for internationalization of some MonetDB error messages */
-
-gdk_export void GDKerror(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-gdk_export void GDKsyserror(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-#ifndef HAVE_EMBEDDED
-gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-#else
-gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-#endif
-gdk_export void GDKclrerr(void);
 
 #include "gdk_delta.h"
 #include "gdk_hash.h"

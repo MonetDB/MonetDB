@@ -564,7 +564,8 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 			r = (BUN) (o - off);										\
 			v = BUNtvar(bi, r);											\
 			if (TEST)													\
-				bunfastappTYPE(oid, bn, &o);							\
+				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)			\
+					goto bunins_failed;									\
 		}																\
 	} while (0)
 
@@ -579,7 +580,8 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 			v = BUNtvar(bi, p-off);										\
 			if (TEST) {													\
 				o = (oid) p;											\
-				bunfastappTYPE(oid, bn, &o);							\
+				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)			\
+					goto bunins_failed;									\
 			}															\
 			p++;														\
 		}																\
