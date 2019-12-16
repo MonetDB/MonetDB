@@ -1460,10 +1460,12 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op)
 		d = rel->l = rel_crossproduct(sql->sa, rel->l, inner, op);
 	}
 	if (d && rel_has_freevar(sql, inner)) {
+		list *dv = rel_dependent_var(sql, d, inner);
+		list *fv = rel_freevar(sql, inner);
 		/* check if the inner depends on the new join (d) or one leve up */
-		if (!list_empty(rel_dependent_var(sql, d, inner)))
+		if (list_length(dv))
 			set_dependent(d);
-		else
+		if (list_length(fv) != list_length(dv))
 			set_dependent(rel);
 	}
 	return inner->exps->t->data;
