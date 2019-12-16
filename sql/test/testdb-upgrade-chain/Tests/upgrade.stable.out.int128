@@ -5998,8 +5998,17 @@ create procedure sys.setmemorylimit("sessionid" int, "limit" int)
  external name clients.setmemorylimit;
 create procedure sys.stopsession("sessionid" int)
  external name clients.stopsession;
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'sessions' and type = 5;
-update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'sessions';
+create function sys.prepared_statements()
+returns table(
+"sessionid" int,
+"user" string,
+"statementid" int,
+"statement" string,
+"created" timestamp)
+ external name sql.prepared_statements;
+create view sys.prepared_statements as select * from sys.prepared_statements();
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('sessions', 'prepared_statements') and type = 5;
+update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('sessions', 'prepared_statements');
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = 2;
 create function sys.debug(flag string) returns integer
  external name mdb."setDebug";
@@ -6041,7 +6050,8 @@ update sys.functions set system = true where schema_id = (select id from sys.sch
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('pause', 'resume', 'stop') and type = 2;
 update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue';
 ALTER TABLE sys.keywords SET READ WRITE;
-insert into sys.keywords values ('CUBE'), ('GROUPING'), ('ROLLUP'), ('SETS');
+DELETE FROM sys.keywords where "keyword" IN ('NOCYCLE','NOMAXVALUE','NOMINVALUE');
+insert into sys.keywords values ('ANALYZE'),('AT'),('AUTHORIZATION'),('CACHE'),('CENTURY'),('COLUMN'),('CLIENT'),('CUBE'),('CYCLE'),('DATA'),('DATE'),('DEBUG'),('DECADE'),('DEALLOCATE'),('DIAGNOSTICS'),('DISTINCT'),('DOW'),('DOY'),('EXEC'),('EXECUTE'),('EXPLAIN'),('FIRST'),('FWF'),('GROUPING'),('GROUPS'),('INCREMENT'),('INTERVAL'),('KEY'),('LANGUAGE'),('LARGE'),('LAST'),('LATERAL'),('LEVEL'),('LOADER'),('MATCH'),('MATCHED'),('MAXVALUE'),('MINVALUE'),('NAME'),('NO'),('NULLS'),('OBJECT'),('OPTIONS'),('PASSWORD'),('PLAN'),('PRECISION'),('PREP'),('PREPARE'),('QUARTER'),('RELEASE'),('REPLACE'),('ROLLUP'),('SCHEMA'),('SEED'),('SERVER'),('SESSION'),('SETS'),('SIZE'),('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('UNIONJOIN'),('WEEK'),('YEAR'),('ZONE');
 commit;
 set schema "sys";
 
