@@ -1493,7 +1493,18 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 
 		// analyse result block distribution to exclude complicated compression combination that (probably) won't improve compression rate.
 		if ( i < MOSAIC_METHODS-1 && pat[i].xf >= 0 && pat[i].xf < 1.0) {
-				antipattern[antipatternSize++] = pattern[i];
+				bool keep = false;
+				for(j=0, bit=1; j < MOSAIC_METHODS-1; j++, bit<<=1){
+					if (pattern[i] == bit ) {
+						/* We'll keep it if is a singleton compression strategy.
+						 * It might still compress well in combination with another compressor.
+						 */
+						keep = true;
+					}
+				}
+				if (!keep) {
+					antipattern[antipatternSize++] = pattern[i];
+				}
 		}
 		else {
 			for(j=1; j < MOSAIC_METHODS-1; j++){
