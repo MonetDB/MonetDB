@@ -52,7 +52,8 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 			bn->tnil = true;											\
 		} else if ((msg = FUNC(&y,x)) != MAL_SUCCEED)					\
 			goto bunins_failed;											\
-		APP;															\
+		if ((APP) != GDK_SUCCEED)										\
+			goto bunins_failed;											\
 	}																	\
 	bn->theap.dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\
@@ -136,7 +137,8 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			bn->tnil = true;											\
 		} else if ((msg = FUNC(&y,x,x2,x3)) != MAL_SUCCEED)				\
 			goto bunins_failed;											\
-		bunfastappTYPE(color, bn, &y);									\
+		if (bunfastappTYPE(color, bn, &y) != GDK_SUCCEED)				\
+			goto bunins_failed;											\
 	}																	\
 	bn->theap.dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\

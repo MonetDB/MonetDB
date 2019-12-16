@@ -137,7 +137,7 @@ VIEWcreate(oid seq, BAT *b)
 		GDKfree(bn);
 		return NULL;
 	}
-	ALGODEBUG fprintf(stderr, "#VIEWcreate(" ALGOBATFMT ")=" ALGOBATFMT "\n", ALGOBATPAR(b), ALGOBATPAR(bn));
+	ALGODEBUG fprintf(stderr, "#%s: VIEWcreate(" ALGOBATFMT ")=" ALGOBATFMT "\n", MT_thread_getname(), ALGOBATPAR(b), ALGOBATPAR(bn));
 	return bn;
 }
 
@@ -164,7 +164,7 @@ BATmaterialize(BAT *b)
 	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
-	ALGODEBUG fprintf(stderr, "#BATmaterialize(" ALGOBATFMT ")\n",
+	ALGODEBUG fprintf(stderr, "#%s: BATmaterialize(" ALGOBATFMT ")\n", MT_thread_getname(),
 			  ALGOBATPAR(b));
 
 	if (tt != TYPE_void) {

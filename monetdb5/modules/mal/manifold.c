@@ -109,7 +109,8 @@ typedef struct{
 				msg = (*mut->pci->fcn)(&y, __VA_ARGS__);				\
 				if (msg)												\
 					break;												\
-				bunfastapp(mut->args[0].b, (void*) y);					\
+				if (bunfastapp(mut->args[0].b, (void*) y) != GDK_SUCCEED) \
+					goto bunins_failed;									\
 				GDKfree(y); y = NULL;									\
 				if (++oo == olimit)										\
 					break;												\
