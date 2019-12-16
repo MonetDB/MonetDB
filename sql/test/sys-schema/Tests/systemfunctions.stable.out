@@ -25,7 +25,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 #   and f.id = a.func_id
 #   and f.system
 # order by s.name, f.name, f.id, a.number;
-% sys.s,	sys.f,	sys.a,	sys.a,	sys. # table_name
+% sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
 % 8,	24,	2,	14,	705 # length
@@ -1460,6 +1460,11 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"power",	0,	"double",	"pow"	]
 [ "sys",	"power",	1,	"double",	""	]
 [ "sys",	"power",	2,	"double",	""	]
+[ "sys",	"prepared_statements",	0,	"int",	"create function sys.prepared_statements()\nreturns table(\n \"sessionid\" int,\n \"user\" string,\n \"statementid\" int,\n \"statement\" string,\n \"created\" timestamp\n)\nexternal name sql.prepared_statements;"	]
+[ "sys",	"prepared_statements",	1,	"clob",	""	]
+[ "sys",	"prepared_statements",	2,	"int",	""	]
+[ "sys",	"prepared_statements",	3,	"clob",	""	]
+[ "sys",	"prepared_statements",	4,	"timestamp",	""	]
 [ "sys",	"prod",	0,	"bigint",	"prod"	]
 [ "sys",	"prod",	1,	"tinyint",	""	]
 [ "sys",	"prod",	0,	"bigint",	"prod"	]

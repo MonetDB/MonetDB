@@ -42,7 +42,7 @@ stdout of test '52` in directory 'sql/benchmarks/tpcds` itself:
 #         ext_price DESC,
 #         brand_id
 #LIMIT 100 ;
-% sys.dt,	sys.item,	sys.item,	sys.%1 # table_name
+% sys.dt,	sys.,	sys.,	sys. # table_name
 % d_year,	brand_id,	brand,	ext_price # name
 % int,	int,	char,	decimal # type
 % 4,	8,	50,	40 # length

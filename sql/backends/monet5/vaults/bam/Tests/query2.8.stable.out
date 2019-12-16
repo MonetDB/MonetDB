@@ -29,7 +29,7 @@ stdout of test 'query2.8` in directory 'sql/backends/monet5/vaults/bam` itself:
 #FROM (
 #    SELECT *
 #    FROM bam.alignments_1
-% bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_1,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2,	bam.alignments_2 # table_name
+% bam.,	bam.,	bam.,	bam.,	bam.,	bam.,	bam.,	bam.,	bam.,	bam.,	bam.,	bam.,	bam.,	bam.,	bam.,	bam.,	bam.,	bam.,	bam.,	bam.,	bam. # table_name
 % qname,	f1_flag,	f1_rname,	f1_pos,	f1_mapq,	f1_cigar,	f1_rnext,	f1_pnext,	f1_tlen,	f1_seq,	f1_qual,	f2_flag,	f2_rname,	f2_pos,	f2_mapq,	f2_cigar,	f2_rnext,	f2_pnext,	f2_tlen,	f2_seq,	f2_qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
@@ -40,7 +40,7 @@ stdout of test 'query2.8` in directory 'sql/backends/monet5/vaults/bam` itself:
 #FROM (
 #   SELECT *
 #   FROM bam.unpaired_primary_alignments_3
-% .unpaired_primary_alignments_3,	.unpaired_primary_alignments_3,	.unpaired_primary_alignments_3,	.unpaired_primary_alignments_3,	.unpaired_primary_alignments_3,	.unpaired_primary_alignments_3,	.unpaired_primary_alignments_3,	.unpaired_primary_alignments_3,	.unpaired_primary_alignments_3,	.unpaired_primary_alignments_3,	.unpaired_primary_alignments_3,	.unpaired_primary_alignments_4,	.unpaired_primary_alignments_4,	.unpaired_primary_alignments_4,	.unpaired_primary_alignments_4,	.unpaired_primary_alignments_4,	.unpaired_primary_alignments_4,	.unpaired_primary_alignments_4,	.unpaired_primary_alignments_4,	.unpaired_primary_alignments_4,	.unpaired_primary_alignments_4 # table_name
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
 % qname,	f1_flag,	f1_rname,	f1_pos,	f1_mapq,	f1_cigar,	f1_rnext,	f1_pnext,	f1_tlen,	f1_seq,	f1_qual,	f2_flag,	f2_rname,	f2_pos,	f2_mapq,	f2_cigar,	f2_rnext,	f2_pnext,	f2_tlen,	f2_seq,	f2_qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length

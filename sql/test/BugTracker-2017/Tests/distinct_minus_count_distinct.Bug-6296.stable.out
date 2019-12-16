@@ -74,7 +74,7 @@ stdout of test 'distinct_minus_count_distinct.Bug-6296` in directory 'sql/test/B
 #CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 #CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 #SELECT DISTINCT - COUNT ( DISTINCT 74 ) AS col1 FROM tab0 AS cor0 CROSS JOIN tab2 AS cor1;
-% .%4 # table_name
+% . # table_name
 % col1 # name
 % bigint # type
 % 1 # length

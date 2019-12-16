@@ -1053,16 +1053,16 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			*e = 0;
 			cname = sa_strdup(sql->sa, b);
 			if (pexps) {
-				exp = exps_bind_column(pexps, cname, &amb);
+				exp = exps_bind_column(pexps, cname, &amb, 1);
 				if (exp)
 					exp = exp_alias_or_copy(sql, exp_relname(exp), cname, lrel, exp);
 			}
 			(void)amb;
 			assert(amb == 0);
 			if (!exp && lrel)
-				exp = rel_bind_column(sql, lrel, cname, 0);
+				exp = rel_bind_column(sql, lrel, cname, 0, 1);
 			if (!exp && rrel)
-				exp = rel_bind_column(sql, rrel, cname, 0);
+				exp = rel_bind_column(sql, rrel, cname, 0, 1);
 			*e = old;
 			skipWS(r,pos);
 		}

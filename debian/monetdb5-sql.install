@@ -14,8 +14,8 @@ debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/sql_[!adhr]*.mal usr/lib/x86_64-lin
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_sql.so usr/lib/x86_64-linux-gnu/monetdb5
 debian/tmp/var/monetdb5/dbfarm/.merovingian_properties var/monetdb5/dbfarm
 
-# usr/lib/x86_64-linux-gnu/monetdb5/createdb/*.sql EXCEPT: *_bam.sql, *_geom.sql, *_gsl.sql, *_hge.sql *_lidar.sql
-debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/createdb/??_[!abgjlu]*.sql usr/lib/x86_64-linux-gnu/monetdb5/createdb
+# usr/lib/x86_64-linux-gnu/monetdb5/createdb/*.sql EXCEPT: *_bam.sql, *_fits.sql, *_geom.sql, *_gsl.sql, *_hge.sql, *_lidar.sql
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/createdb/??_[!abfgjlu]*.sql usr/lib/x86_64-linux-gnu/monetdb5/createdb
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/createdb/??_analytics.sql usr/lib/x86_64-linux-gnu/monetdb5/createdb
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/createdb/??_json.sql usr/lib/x86_64-linux-gnu/monetdb5/createdb
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/createdb/??_generator.sql usr/lib/x86_64-linux-gnu/monetdb5/createdb

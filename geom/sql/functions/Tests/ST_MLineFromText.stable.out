@@ -70,7 +70,7 @@ stdout of test 'ST_MLineFromText` in directory 'geom/sql/functions` itself:
 [ "MULTILINESTRING Z ((20 20 20, 30 30 30, 40 40 40), (50 50 50, 60 60 60, 70 70 70))"	]
 #drop table lines_tbl;
 #select st_mlinefromtext(geom) from geometriesTxt WHERE id=5;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % geometry # type
 % 0 # length

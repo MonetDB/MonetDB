@@ -1,6 +1,11 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Fri Dec  6 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Added mserver5 option (--set raw_strings=true|false) and monetdb
+  database property (raw_strings=yes|no) to control interpretation
+  of strings.
+
 * Fri Nov 29 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
 - Added support for raw strings using the syntax r'' or R''. This means
   that C-like escapes will remain uninterpreted within those strings. For

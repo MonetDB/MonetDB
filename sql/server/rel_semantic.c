@@ -203,7 +203,7 @@ rel_semantic(sql_query *query, symbol *s)
 		sql_rel *r = NULL;
 
 		if(!stack_push_frame(sql, "MUL"))
-			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		for (d = s->data.lval->h; d; d = d->next) {
 			symbol *sym = d->data.sym;
 			sql_rel *nr = rel_semantic(query, sym);

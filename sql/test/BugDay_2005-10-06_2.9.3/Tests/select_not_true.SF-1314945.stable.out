@@ -30,7 +30,7 @@ stdout of test 'select_not_true.SF-1314945` in directory 'sql/test/BugDay_2005-1
 % 5 # length
 [ false	]
 #select not true;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length

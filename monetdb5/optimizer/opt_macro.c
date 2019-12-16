@@ -258,7 +258,7 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 			last = i;
 			i = inlineMALblock(mb, i, t->def);
 			if( i < 0)
-				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				
 			cnt++;
 			if (cnt > MAXEXPANSION)
@@ -370,7 +370,7 @@ ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 			msg = MACROvalidate(mc);
 			if (msg == MAL_SUCCEED){
 				if( replaceMALblock(mb, i, mc) < 0)
-					throw(MAL,"orcam", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(MAL,"orcam", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else
 				break;
 		}
@@ -422,10 +422,6 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				}
 			}
 	}
-    if( OPTdebug &  OPTmacros){
-        fprintf(stderr, "#MACRO optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return MAL_SUCCEED;
 }
 /*
@@ -473,10 +469,6 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				}
 			}
 	}
-    if( OPTdebug &  OPTmacros){
-        fprintf(stderr, "#MACRO optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }
 
@@ -523,10 +515,6 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.macro", SQLSTATE(42000) PROGRAM_GENERAL);
-    if( OPTdebug &  OPTmacros){
-        fprintf(stderr, "#MACRO optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }
 
@@ -570,9 +558,5 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.orcam", SQLSTATE(42000) PROGRAM_GENERAL);
-    if( OPTdebug &  OPTmacros){
-        fprintf(stderr, "#MACRO optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

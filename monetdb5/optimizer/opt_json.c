@@ -35,16 +35,15 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	limit= mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb,mb->stop) < 0)
-		throw(MAL,"optimizer.json", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-
+		throw(MAL,"optimizer.json", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if( getModuleId(p) == sqlRef  && getFunctionId(p) == affectedRowsRef) {
 			q = newInstruction(0, jsonRef, resultSetRef);
-			q = pushArgument(mb, q, bu);
-			q = pushArgument(mb, q, br);
-			q = pushArgument(mb, q, bj);
+			q = addArgument(mb, q, bu);
+			q = addArgument(mb, q, br);
+			q = addArgument(mb, q, bj);
 			j = getArg(q,0);
 			p= getInstrPtr(mb,0);
 			setDestVar(q, newTmpVariable(mb, TYPE_str));
@@ -52,7 +51,7 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q = newInstruction(0, NULL, NULL);
 			q->barrier = RETURNsymbol;
 			getArg(q,0)= getArg(p,0);
-			pushArgument(mb,q,j);
+			addArgument(mb,q,j);
 			pushInstruction(mb,q);
 			actions++;
 			continue;
@@ -85,12 +84,7 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","json",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
-    if( OPTdebug &  OPTjson){
-        fprintf(stderr, "#JIT optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

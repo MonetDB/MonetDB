@@ -95,7 +95,7 @@ mal_export str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *
 	X= COLnew((Y)->hseqbase,T,BATcount(Y), TRANSIENT);	\
 	if( X == NULL){										\
 		BBPunfix(Y->batCacheid);						\
-		throw(MAL, Z, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+		throw(MAL, Z, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 	}													\
 	X->tsorted=false;									\
 	X->trevsorted=false;
@@ -104,7 +104,7 @@ mal_export str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *
 	if( X == NULL){										\
 		BBPunfix(Y->batCacheid);						\
 		BBPunfix(A->batCacheid);						\
-		throw(MAL, Z, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+		throw(MAL, Z, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 	}													\
 	X->tsorted=false;									\
 	X->trevsorted=false;
@@ -581,7 +581,7 @@ do_batstr_batint_batstr_str(bat *ret, const bat *l, const bat *n, const bat *l2,
 		BBPunfix(b->batCacheid);
 		BBPunfix(b2->batCacheid);
 		BBPunfix(b3->batCacheid);
-		throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bn->tsorted=false;
 	bn->trevsorted=false;
@@ -1212,7 +1212,7 @@ STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length
 	bn= COLnew(b->hseqbase, TYPE_str, BATcount(b)/10+5, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batstr.substring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bn->tsorted = b->tsorted;
 	bn->trevsorted = b->trevsorted;
@@ -1228,7 +1228,7 @@ STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length
 			if (msg != MAL_SUCCEED)
 				return msg;
 			GDKfree(res);
-			throw(MAL, "batstr.substring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(res);
 	}
@@ -1271,7 +1271,7 @@ str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 		BBPunfix(left->batCacheid);
 		BBPunfix(start->batCacheid);
 		BBPunfix(length->batCacheid);
-		throw(MAL, "batstr.substring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	bn->tsorted=false;
@@ -1293,7 +1293,7 @@ str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 			if (msg)
 				return msg;
 			GDKfree(v);
-			throw(MAL, "batstr.substring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "batstr.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(v);
 	}

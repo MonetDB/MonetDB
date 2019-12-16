@@ -335,6 +335,19 @@ users of the server are allowed to execute arbitrary C code, and are
 therefore able to read and modify all data that the server process has
 access to.  In addition, if the C code causes a crash, all bets are
 off.
+.TP
+.B raw_strings=true
+The boolean option raw_strings controls how the sql scanner interprets string
+literals. If the value is
+.B false
+then strings are interpreted as if they were delimited with E-quotes, that is
+strings are interpreted as C strings and backslash characters are needed to
+escape special characters. If the value is
+.B true
+then strings are interpreted as if they were delimited with R-quotes, that is
+all characters are interpreted literally. Single quote characters need to be
+doubled inside strings. The default value is
+.BR false .
 .SH CONFIG FILE FORMAT
 The configuration file readable by
 .I mserver5

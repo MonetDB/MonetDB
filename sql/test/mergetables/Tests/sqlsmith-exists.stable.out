@@ -26,6 +26,28 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 #CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
 #INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
 [ 4	]
+#CREATE TABLE LongTable (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
+#INSERT INTO LongTable VALUES (1,7,2,1,1,909,1,1), (2,7,2,2,3,4,4,6), (NULL,5,4,81,NULL,5,-10,1), (-90,NULL,0,NULL,2,0,1,NULL);
+[ 4	]
+#CREATE TABLE integers(i INTEGER);
+#INSERT INTO integers VALUES (1), (2), (3), (NULL);
+[ 4	]
+#CREATE TABLE tbl_ProductSales (col1 INT, col2 varchar(64), col3 varchar(64), col4 INT, col5 REAL, col6 date); 
+#INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200, 1.2, date '2015-07-15'),(2,'Game','PKO Game',400, -1.0, date '2012-02-10'),(3,'Fashion','Shirt',500, NULL, date '1990-01-01'),
+#(4,'Fashion','Shorts',100, 102.45, date '2000-03-08'),(5,'Sport','Ball',0, 224.78, NULL);
+[ 5	]
+#CREATE TABLE analytics (aa INT, bb INT, cc BIGINT);
+#INSERT INTO analytics VALUES (15, 3, 15), (3, 1, 3), (2, 1, 2), (5, 3, 5), (NULL, 2, NULL), (3, 2, 3), (4, 1, 4), (6, 3, 6), (8, 2, 8), (NULL, 4, NULL);
+[ 10	]
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab0 VALUES (97,1,99), (15,81,47),(87,21,10);
+[ 3	]
+#INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
+[ 3	]
+#INSERT INTO tab2 VALUES (64,77,40), (75,67,58),(46,51,23);
+[ 3	]
 #select
 #cast(coalesce(ref_0.id, ref_0.owner) as int) as c0, ref_0.system as c1,
 #50 as c2,
@@ -44,16 +66,16 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 #    cast(nullif(ref_1.function_type, ref_1.function_id) as int) as c6,
 #    ref_1.type_name as c7,
 #    73 as c8,
-#    ref_2.query as c9,
-#    ref_1.function_name as c10,
-#    ref_1.function_id as c11,
-% .%37,	.%40,	.%41,	.%42 # table_name
+#    ref_2.col2 as c9,
+#    ref_1.col2 as c10,
+#    ref_1.col1 as c11,
+#    ref_1.col5 as c12,
+#    ref_2.col3 as c13,
+#    case when exists (
+% .,	.,	.,	. # table_name
 % c0,	c1,	c2,	c3 # name
-% int,	boolean,	tinyint,	varchar # type
-% 1,	5,	1,	0 # length
-#CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
-#INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
-[ 3	]
+% int,	int,	tinyint,	int # type
+% 1,	1,	1,	1 # length
 #select 
 # subq_0.c0 as c0, 
 # subq_0.c2 as c1, 
@@ -78,11 +100,14 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # right join sys.dependency_schemas_on_users as ref_1
 # on (exists (
 # select 
-# ref_0.table_id as c0, 
-% .%45,	.%46,	.%47,	.%50,	.%51,	.%52,	.%53,	.%54,	.%55,	.%56 # table_name
+# ref_0.col1 as c0, 
+# ref_1.col2 as c1
+# from 
+# tab1 as ref_2
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8,	c9 # name
-% varchar,	int,	smallint,	smallint,	int,	int,	smallint,	smallint,	smallint,	varchar # type
-% 0,	1,	1,	1,	1,	1,	1,	1,	1,	0 # length
+% int,	int,	smallint,	smallint,	int,	int,	smallint,	smallint,	smallint,	int # type
+% 1,	1,	1,	1,	1,	1,	1,	1,	1,	1 # length
 #SELECT subq_1.c0 AS c0, 
 #       subq_1.c0 AS c1, 
 #       subq_0.c0 AS c2, 
@@ -97,11 +122,55 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 #                  FROM   sys.table_partitions AS ref_1 
 #                  WHERE  ( false ) 
 #                         AND ( EXISTS 
-#                         (SELECT ref_2.fk_name   AS c0, 
-% .subq_1,	.subq_1,	.subq_0,	.subq_1,	.subq_1,	.subq_0 # table_name
+#                         (SELECT ref_2.col0   AS c0, 
+#                                 ref_1.col2 AS c1, 
+% .,	.,	.,	.,	.,	. # table_name
 % c0,	c1,	c2,	c3,	c4,	c5 # name
-% int,	int,	varchar,	int,	int,	varchar # type
-% 1,	1,	0,	1,	1,	0 # length
+% int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1 # length
+#select 
+# 1
+# from 
+# tab1 as ref_0
+# right join analytics as ref_1
+# on (exists (
+# select 
+# 1
+# from 
+# tbl_ProductSales as ref_3
+# where ref_1.aa is null))
+# right join tab2 as ref_2
+# on (ref_0.col1 = ref_2.col0 );
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+#select 
+# 1
+# from 
+# tab1 as ref_0
+# right join analytics as ref_1
+# right join tab2 as ref_2
+# on (exists (
+# select 
+# 1
+# from 
+# tbl_ProductSales as ref_3
+# where ref_1.aa is null))
+# on (ref_0.col1 = ref_2.col0 );
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 #select 
 # subq_0.c0 as c0, 
 # subq_0.c0 as c1, 
@@ -125,21 +194,14 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # ref_2.name as c0, 
 # ref_2.value as c1
 # from 
-# sys.dependency_owners_on_schemas as ref_3
-# where ref_1.table_id is null))
-% sys.%62,	sys.%63,	.%64,	sys.%65,	sys.%66,	sys.%67,	sys.%70,	sys.%71 # table_name
+# sys.tbl_ProductSales as ref_3
+# where ref_1.aa is null))
+# on (ref_0.col1 = ref_2.col0 )
+# inner join tab0 as ref_4
+% sys.,	sys.,	.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7 # name
 % int,	int,	int,	int,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1,	1,	1,	1 # length
-#CREATE TABLE integers(i INTEGER);
-#INSERT INTO integers VALUES (1), (2), (3), (NULL);
-[ 4	]
-#CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product_Name  varchar(64), TotalSales int); 
-#INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Game',400),(3,'Fashion','Shirt',500),(4,'Fashion','Shorts',100);
-[ 4	]
-#create table analytics (aa int, bb int, cc bigint);
-#insert into analytics values (15, 3, 15), (3, 1, 3), (2, 1, 2), (5, 3, 5), (NULL, 2, NULL), (3, 2, 3), (4, 1, 4), (6, 3, 6), (8, 2, 8), (NULL, 4, NULL);
-[ 10	]
 #SELECT subq_1.c3 AS c0
 #FROM
 #  (SELECT 1 AS c0,
@@ -160,7 +222,7 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 #          subq_0.c5 AS c11,
 #          subq_0.c4 AS c12
 #   FROM
-% sys.subq_0 # table_name
+% sys. # table_name
 % c0 # name
 % int # type
 % 1 # length
@@ -190,10 +252,12 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # sys.dependency_tables_on_indexes as ref_0
 # where true) as subq_0
 # where subq_0.c8 is not null
-% .subq_1,	.subq_1,	.subq_1 # table_name
+# limit 46) as subq_1
+#where false; --empty on PostgreSQL
+% sys.,	sys.,	sys. # table_name
 % c0,	c1,	c2 # name
-% varchar,	int,	int # type
-% 0,	1,	1 # length
+% int,	int,	int # type
+% 1,	1,	1 # length
 #select 
 # subq_0.c4 as c0, 
 # subq_0.c6 as c1, 
@@ -217,11 +281,15 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # sys._columns as ref_0
 # inner join sys.dependency_functions_on_triggers as ref_1
 # on (true)
-# right join sys.dependency_functions_on_triggers as ref_2
-% .subq_0,	.subq_0,	.subq_0,	.subq_0,	.subq_0,	.subq_0,	.subq_0,	.subq_0 # table_name
+# right join LongTable as ref_2
+# on (ref_0.col1 = ref_2.col6 )
+# where (((ref_2.col5 is null) 
+# and (true)) 
+# and (true)) 
+% .,	.,	.,	.,	.,	.,	.,	. # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7 # name
-% varchar,	int,	int,	int,	varchar,	int,	int,	varchar # type
-% 0,	1,	1,	1,	0,	1,	1,	0 # length
+% int,	int,	int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1,	1,	1 # length
 #select 
 # cast(coalesce(subq_1.c0,
 # subq_1.c1) as int) as c0
@@ -250,11 +318,211 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # on (ref_0.default_schema = ref_1.ln )
 # where exists (
 # select 
-# ref_1.ur as c0
-% .%110 # table_name
+# ref_1.col4 as c0
+% sys. # table_name
 % c0 # name
 % int # type
 % 1 # length
+#select 
+# subq_2.c18 as c0, 
+# subq_0.c0 as c1, 
+# cast(coalesce(subq_0.c1,
+# subq_2.c5) as int) as c2, 
+# 92 as c3, 
+# subq_0.c1 as c4, 
+# subq_2.c21 as c5, 
+# subq_2.c24 as c6, 
+# subq_2.c11 as c7, 
+# subq_2.c13 as c8, 
+# subq_2.c16 as c9, 
+# case when subq_2.c26 is null then subq_2.c20 else subq_2.c20 end
+# as c10, 
+# subq_0.c0 as c11, 
+# subq_0.c0 as c12, 
+# subq_0.c1 as c13, 
+# subq_0.c1 as c14
+#from 
+# (select 
+# ref_0.col7 as c0, 
+# ref_0.col2 as c1
+# from 
+# sys.another_t as ref_0
+# where (true) 
+# and ((ref_0.col4 is not null) 
+% sys.,	sys.,	sys.,	.,	sys.,	sys.,	sys.,	sys.,	sys.,	.,	.,	sys.,	sys.,	sys.,	sys. # table_name
+% c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8,	c9,	c10,	c11,	c12,	c13,	c14 # name
+% int,	int,	int,	tinyint,	int,	int,	int,	int,	int,	tinyint,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1 # length
+#SELECT
+#        subq_2.c3 AS c0
+#        ,subq_2.c6 AS c1
+#    FROM
+#        (
+#            SELECT
+#                    36 AS c0
+#                    ,ref_0.cc AS c1
+#                FROM
+#                    analytics AS ref_0
+#                WHERE
+#                    FALSE LIMIT 32
+#        ) AS subq_0 INNER JOIN (
+#            SELECT
+#                    ref_1.bb AS c0
+#                    ,ref_1.cc AS c1
+#                    ,ref_1.cc AS c2
+#                    ,ref_1.aa AS c3
+#                    ,ref_1.bb AS c4
+#                    ,ref_1.aa AS c5
+% .,	. # table_name
+% c0,	c1 # name
+% int,	int # type
+% 1,	1 # length
+#select 
+# subq_1.c0 as c0
+#from 
+# (select 
+# subq_0.c9 as c0
+# from 
+# (select 
+# ref_3.aa as c0, 
+# ref_3.cc as c1, 
+# ref_2.col2 as c2, 
+# ref_2.col2 as c3, 
+# ref_0.col1 as c4, 
+# ref_1.col3 as c5, 
+# ref_3.aa as c6, 
+# ref_1.col2 as c7, 
+# ref_2.col2 as c8, 
+# ref_1.col8 as c9, 
+# ref_2.col1 as c10, 
+# ref_0.col2 as c11, 
+# ref_2.col0 as c12, 
+# ref_0.col1 as c13, 
+# ref_2.col1 as c14
+# from 
+# tab1 as ref_0
+# left join another_t as ref_1
+# on (ref_0.col2 is null)
+# inner join tab0 as ref_2
+# left join analytics as ref_3
+# on (ref_2.col1 is not null)
+% . # table_name
+% c0 # name
+% int # type
+% 1 # length
+#select 
+# subq_1.c0 as c0
+#from 
+# (select 
+# case when ((false) 
+# or (subq_0.c3 is not null)) 
+# and (true) then subq_0.c11 else subq_0.c11 end
+# as c0, 
+# case when subq_0.c0 is null then subq_0.c5 else subq_0.c5 end
+# as c1, 
+# subq_0.c6 as c2, 
+# case when true then subq_0.c3 else subq_0.c3 end
+# as c3, 
+# subq_0.c3 as c4, 
+# subq_0.c0 as c5, 
+# subq_0.c6 as c6, 
+# subq_0.c3 as c7, 
+# subq_0.c8 as c8, 
+# 42 as c9, 
+# subq_0.c6 as c10
+# from 
+# (select 
+# ref_0.col0 as c0, 
+# 85 as c1, 
+# ref_0.col1 as c2, 
+# ref_0.col2 as c3, 
+% . # table_name
+% c0 # name
+% int # type
+% 1 # length
+#SELECT
+#        subq_1.c2 AS c0
+#        ,subq_1.c0 AS c1
+#    FROM
+#        (
+#            SELECT
+#                    subq_0.c7 AS c0
+#                    ,subq_0.c7 AS c1
+#                    ,CASE
+#                        WHEN TRUE
+#                        THEN subq_0.c7
+#                        ELSE subq_0.c7
+#                    END AS c2
+#                FROM
+#                    (
+#                        SELECT
+#                                ref_0.col1 AS c0
+#                                ,89 AS c1
+#                                ,ref_0.col2 AS c2
+% .,	. # table_name
+% c0,	c1 # name
+% varchar,	varchar # type
+% 0,	0 # length
+#select
+#  subq_0.c1 as c0,
+#  subq_0.c1 as c1,
+#  subq_0.c1 as c2,
+#  cast(
+#    nullif(
+#      subq_0.c3,
+#      cast(
+#        nullif(
+#          subq_0.c2,
+#          case when (
+#            (subq_0.c1 is not null)
+#            and (subq_0.c3 is not null)
+#          )
+#          or (
+#            (
+#              (subq_0.c4 is not null)
+#              or (
+#                (
+#                  (
+#                    (true)
+#                    or (
+#                      (
+#                        exists (
+#                          select
+% .,	.,	.,	.,	. # table_name
+% c0,	c1,	c2,	c3,	c4 # name
+% int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1 # length
+#select 
+# 34 as c0, 
+# ref_7.col1 as c1
+#from 
+# (select 
+# cast(nullif(ref_1.bb,
+# ref_0.col1) as int) as c0, 
+# ref_1.bb as c1, 
+# ref_0.col2 as c2, 
+# ref_1.bb as c3, 
+# ref_0.col2 as c4, 
+# cast(nullif(ref_0.col0,
+# ref_1.bb) as int) as c5, 
+# ref_0.col1 as c6, 
+# ref_1.bb as c7, 
+# ref_0.col2 as c8, 
+# ref_0.col0 as c9, 
+# ref_1.cc as c10, 
+# ref_0.col0 as c11, 
+# ref_1.aa as c12
+# from 
+# tab0 as ref_0
+# inner join analytics as ref_1
+# on (((ref_1.aa is null) 
+# or ((ref_1.bb is null) 
+# or ((63 is null) 
+# or ((ref_1.bb is not null) 
+% .,	. # table_name
+% c0,	c1 # name
+% tinyint,	int # type
+% 1,	1 # length
 #ROLLBACK;
 
 # 19:56:32 >  

@@ -39,12 +39,7 @@ rel_name( sql_rel *r )
 sql_rel *
 rel_distinct(sql_rel *l)
 {
-#if 0
-	if (l->card >= CARD_AGGR) /* in case of CARD_AGGR, we could
-	                             do better, ie check the group by
-	                             list etc */
-#endif
-		set_distinct(l);
+	set_distinct(l);
 	return l;
 }
 
@@ -193,7 +188,7 @@ rel_issubquery(sql_rel*r)
 }
 
 static sql_rel *
-rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname)
+rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname, int no_tname)
 {
 	int ambiguous = 0;
 	sql_rel *l = NULL, *r = NULL;
@@ -209,14 +204,14 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname)
 		sql_rel *right = rel->r;
 
 		*p = rel;
-		r = rel_bind_column_(sql, p, rel->r, cname);
+		r = rel_bind_column_(sql, p, rel->r, cname, no_tname);
 
 		if (!r || !rel_issubquery(right)) {
-			sql_exp *e = r?exps_bind_column(r->exps, cname, &ambiguous):NULL;
+			sql_exp *e = r?exps_bind_column(r->exps, cname, &ambiguous, 0):NULL;
 
 			if (!r || !e || !is_freevar(e)) {
 				*p = rel;
-				l = rel_bind_column_(sql, p, rel->l, cname);
+				l = rel_bind_column_(sql, p, rel->l, cname, no_tname);
 				if (l && r && !rel_issubquery(r) && !is_dependent(rel)) {
 					(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 					return NULL;
@@ -236,9 +231,9 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname)
 	case op_project:
 	case op_table:
 	case op_basetable:
-		if (rel->exps && exps_bind_column(rel->exps, cname, &ambiguous))
+		if (rel->exps && exps_bind_column(rel->exps, cname, &ambiguous, no_tname))
 			return rel;
-		if (rel->r && is_groupby(rel->op) && exps_bind_column(rel->r, cname, &ambiguous))
+		if (rel->r && is_groupby(rel->op) && exps_bind_column(rel->r, cname, &ambiguous, no_tname))
 			return rel;
 		if (ambiguous) {
 			(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
@@ -248,7 +243,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname)
 		if (is_processed(rel))
 			return NULL;
 		if (rel->l && !(is_base(rel->op)))
-			return rel_bind_column_(sql, p, rel->l, cname);
+			return rel_bind_column_(sql, p, rel->l, cname, no_tname);
 		break;
 	case op_semi:
 	case op_anti:
@@ -258,7 +253,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname)
 	case op_sample:
 		*p = rel;
 		if (rel->l)
-			return rel_bind_column_(sql, p, rel->l, cname);
+			return rel_bind_column_(sql, p, rel->l, cname, no_tname);
 		/* fall through */
 	default:
 		return NULL;
@@ -267,30 +262,26 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname)
 }
 
 sql_exp *
-rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f)
+rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 {
-	sql_rel *p = NULL;//, *orel = rel;
+	sql_rel *p = NULL;
 
 	if (is_sql_sel(f) && rel && is_simple_project(rel->op) && !is_processed(rel))
 		rel = rel->l;
 
-	if (!rel || (rel = rel_bind_column_(sql, &p, rel, cname)) == NULL)
+	if (!rel || (rel = rel_bind_column_(sql, &p, rel, cname, no_tname)) == NULL)
 		return NULL;
 
 	if ((is_project(rel->op) || is_base(rel->op)) && rel->exps) {
-		sql_exp *e = exps_bind_column(rel->exps, cname, NULL);
+		sql_exp *e = exps_bind_column(rel->exps, cname, NULL, no_tname);
 		if (e)
 			e = exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
 		if (!e && is_groupby(rel->op) && rel->r) {
-			sql_exp *e = exps_bind_column(rel->r, cname, NULL);
+			sql_exp *e = exps_bind_column(rel->r, cname, NULL, no_tname);
 			if (e)
 				e = exp_alias_or_copy(sql, exp_relname(e), cname, rel, e);
 			return e;
 		}
-		/*
-		if (p && e && is_simple_project(p->op) && !is_processed(p) && is_sql_orderby(f) && orel != rel)
-			e = rel_project_add_exp(sql, p, e);
-			*/
 		return e;
 	}
 	return NULL;
@@ -314,7 +305,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 					if (exp_relname(e))
 						e = exps_bind_column2(rel->exps, exp_relname(e), exp_name(e));
 					else
-						e = exps_bind_column(rel->exps, exp_name(e), NULL);
+						e = exps_bind_column(rel->exps, exp_name(e), NULL, 0);
 					if (e)
 						return e;
 				}
@@ -980,12 +971,11 @@ list *
 _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern, int basecol /* basecol only */ )
 {
 	list *lexps, *rexps, *exps;
-	int include_subquery = (intern==2)?1:0;
 
 	if (THRhighwater())
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	if (!rel || (!include_subquery && is_subquery(rel) && rel->op == op_project))
+	if (!rel)
 		return new_exp_list(sql->sa);
 
 	switch(rel->op) {
@@ -1080,6 +1070,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 list *
 rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern)
 {
+	assert(tname == NULL);
 	return _rel_projections(sql, rel, tname, settname, intern, 0);
 }
 
@@ -1154,7 +1145,7 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 			break;
 		if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r))
 			found = 1;
-		if (!found && !e->l && exps_bind_column(rel->exps, e->r, NULL))
+		if (!found && !e->l && exps_bind_column(rel->exps, e->r, NULL, 1))
 			found = 1;
 		break;
 	case op_insert:
@@ -1444,7 +1435,7 @@ exps_find_identity(list *exps, sql_rel *p)
 static sql_rel *
 _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 {
-	list *exps = rel_projections(sql, rel, NULL, 1, 2);
+	list *exps = rel_projections(sql, rel, NULL, 1, 1);
 	sql_exp *e;
 
 	if (list_length(exps) == 0) {
@@ -1508,8 +1499,8 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 	if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
 		int ambiguous = 0;
 		sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
-		if (!e && cname[0] == '%')
-			e = exps_bind_column(rel->exps, cname, &ambiguous);
+		if (!e && cname[0] == '%' && !tname) 
+			e = exps_bind_column(rel->exps, cname, &ambiguous, 0);
 		if (e && !ambiguous)
 			return exp_alias(sa, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
 	}
@@ -1795,6 +1786,20 @@ rel_dependencies(mvc *sql, sql_rel *r)
 
 static list *exps_exp_visitor(mvc *sql, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter);
 
+static list *
+exps_exps_exp_visitor(mvc *sql, sql_rel *rel, list *lists, int depth, exp_rewrite_fptr exp_rewriter) 
+{
+	node *n;
+
+	if (list_empty(lists))
+		return lists;
+	for (n = lists->h; n; n = n->next) {
+		if (n->data && (n->data = exps_exp_visitor(sql, rel, n->data, depth, exp_rewriter)) == NULL)
+			return NULL;
+	}
+	return lists;
+}
+
 static sql_exp *
 exp_visitor(mvc *sql, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr exp_rewriter) 
 {
@@ -1808,8 +1813,8 @@ exp_visitor(mvc *sql, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr exp_
 		break;
 	case e_aggr:
 	case e_func: 
-		if (e->r) /* rewrite rank */
-			if ((e->r = exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter)) == NULL)
+		if (e->r) /* rewrite rank -r is list of lists */
+			if ((e->r = exps_exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter)) == NULL)
 				return NULL;
 		if (e->l)
 			if ((e->l = exps_exp_visitor(sql, rel, e->l, depth+1, exp_rewriter)) == NULL)

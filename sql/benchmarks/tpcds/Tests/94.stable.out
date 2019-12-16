@@ -39,7 +39,7 @@ stdout of test '94` in directory 'sql/benchmarks/tpcds` itself:
 #  AND EXISTS
 #    (SELECT *
 #     FROM web_sales ws2
-% .%4,	.%5,	.%6 # table_name
+% .,	.,	. # table_name
 % "order count",	"total shipping cost",	"total net profit" # name
 % bigint,	decimal,	decimal # type
 % 2,	20,	20 # length

@@ -29,18 +29,18 @@ stderr of test 'sqlsmith.Bug-6432` in directory 'sql/test/BugTracker-2017` itsel
 
 MAPI  = (monetdb) /var/tmp/mtest-32690/.s.monetdb.32660
 QUERY = select  
-          ref_0.name as c0
+          ref_0.i as c0
         from 
-          sys.objects as ref_0
-              inner join sys.columns as ref_1
-                inner join sys.dependencies as ref_2
-                  inner join sys.columns as sample_0
-                  on (sample_0.type_digits is NULL)
-                on ((ref_1.type is NULL) 
-                    or (ref_2.id is not NULL))
+          integers as ref_0
+              inner join tab0 as ref_1
+                inner join tab1 as ref_2
+                  inner join tab2 as sample_0
+                  on (sample_0.col1 is NULL)
+                on ((ref_1.col0 is NULL) 
+                    or (ref_2.col1 is not NULL))
               on (12 is NULL)
-            left join sys.queue as ref_3
-            on (ref_1.number = ref_3.progress )
+            left join another_t as ref_3
+            on (ref_1.col1 = ref_3.col1 )
         where ref_3.estimate is not NULL
         limit 156;
 ERROR = !SELECT: no such column 'ref_3.estimate'

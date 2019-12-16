@@ -462,7 +462,7 @@ BKCgetColumnType(str *res, const bat *bid)
 	}
 	*res = GDKstrdup(ret);
 	if(*res == NULL)
-		throw(MAL,"bat.getColumnType", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"bat.getColumnType", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -477,7 +477,7 @@ BKCgetRole(str *res, const bat *bid)
 	*res = GDKstrdup(b->tident);
 	BBPunfix(b->batCacheid);
 	if(*res == NULL)
-		throw(MAL,"bat.getRole", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"bat.getRole", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -631,7 +631,7 @@ BKCgetAccess(str *res, const bat *bid)
 	}
 	BBPunfix(b->batCacheid);
 	if(*res == NULL)
-		throw(MAL,"bat.getAccess", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"bat.getAccess", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -658,7 +658,7 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 		BBPreclaim(bk);
 		BBPreclaim(bv);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.getInfo", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "bat.getInfo", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	if (b->batTransient) {
@@ -761,7 +761,7 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 		BBPreclaim(bk);
 		BBPreclaim(bv);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.getInfo", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "bat.getInfo", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	assert(BATcount(bk) == BATcount(bv));
@@ -838,7 +838,7 @@ BKCsetColumn(void *r, const bat *bid, const char * const *tname)
 	}
 	if (BATroles(b, *tname) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.setColumn", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "bat.setColumn", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -891,7 +891,7 @@ BKCgetBBPname(str *ret, const bat *bid)
 	}
 	*ret = GDKstrdup(BBPname(b->batCacheid));
 	BBPunfix(b->batCacheid);
-	return *ret ? MAL_SUCCEED : createException(MAL, "bat.getName", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return *ret ? MAL_SUCCEED : createException(MAL, "bat.getName", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -1018,14 +1018,14 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(d->batCacheid);
-		throw(MAL, "bat.shrink", SQLSTATE(HY001) MAL_MALLOC_FAIL );
+		throw(MAL, "bat.shrink", SQLSTATE(HY013) MAL_MALLOC_FAIL );
 	}
 	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
-		throw(MAL, "bat.shrink", SQLSTATE(HY001) MAL_MALLOC_FAIL );
+		throw(MAL, "bat.shrink", SQLSTATE(HY013) MAL_MALLOC_FAIL );
 	}
 
 	o = (oid*)Tloc(bs, 0);
@@ -1056,7 +1056,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 					if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
 						BBPunfix(b->batCacheid);
 						BBPunfix(bn->batCacheid);
-						throw(MAL, "bat.shrink", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						throw(MAL, "bat.shrink", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 					cnt++;
 				}
@@ -1114,14 +1114,14 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(d->batCacheid);
-		throw(MAL, "bat.shrinkMap", SQLSTATE(HY001) MAL_MALLOC_FAIL );
+		throw(MAL, "bat.shrinkMap", SQLSTATE(HY013) MAL_MALLOC_FAIL );
 	}
 	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
-		throw(MAL, "bat.shrinkMap", SQLSTATE(HY001) MAL_MALLOC_FAIL );
+		throw(MAL, "bat.shrinkMap", SQLSTATE(HY013) MAL_MALLOC_FAIL );
 	}
 
 	o = (oid*)Tloc(bs, 0);
@@ -1192,14 +1192,14 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(d->batCacheid);
-		throw(MAL, "bat.reuse", SQLSTATE(HY001) MAL_MALLOC_FAIL );
+		throw(MAL, "bat.reuse", SQLSTATE(HY013) MAL_MALLOC_FAIL );
 	}
 	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
-		throw(MAL, "bat.reuse", SQLSTATE(HY001) MAL_MALLOC_FAIL );
+		throw(MAL, "bat.reuse", SQLSTATE(HY013) MAL_MALLOC_FAIL );
 	}
 
 	oidx = b->hseqbase;
@@ -1235,7 +1235,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 					if (BUNappend(bn, BUNtail(bi, --q), false) != GDK_SUCCEED) {
 						BBPunfix(b->batCacheid);
 						BBPunfix(bn->batCacheid);
-						throw(MAL, "bat.shrink", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						throw(MAL, "bat.shrink", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 					o += (o < ol);
 					bidx--;
@@ -1243,7 +1243,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 					if (BUNappend(bn, BUNtail(bi, p), false) != GDK_SUCCEED) {
 						BBPunfix(b->batCacheid);
 						BBPunfix(bn->batCacheid);
-						throw(MAL,  "bat.shrink", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						throw(MAL,  "bat.shrink", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 				}
 			}
@@ -1296,14 +1296,14 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(d->batCacheid);
-		throw(MAL, "bat.shrinkMap", SQLSTATE(HY001) MAL_MALLOC_FAIL );
+		throw(MAL, "bat.shrinkMap", SQLSTATE(HY013) MAL_MALLOC_FAIL );
 	}
 	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
-		throw(MAL, "bat.shrinkMap", SQLSTATE(HY001) MAL_MALLOC_FAIL );
+		throw(MAL, "bat.shrinkMap", SQLSTATE(HY013) MAL_MALLOC_FAIL );
 	}
 
 	oidx = b->hseqbase;

@@ -2799,12 +2799,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		if (!cc->def)
 			oc->def = NULL;
 
-		if (isRenamed(cc)) { /* apply possible renaming */
+		if (strcmp(cc->base.name, oc->base.name) != 0) { /* apply possible renaming */
 			list_hash_delete(oc->t->columns.set, oc, NULL);
 			oc->base.name = sa_strdup(tr->parent->sa, cc->base.name);
 			if (!list_hash_add(oc->t->columns.set, oc, NULL))
 				ok = LOG_ERR;
-			setRenamedFlag(oc); /* propagate the change to the upper transaction */
 		}
 
 		if (oc->base.rtime < cc->base.rtime)

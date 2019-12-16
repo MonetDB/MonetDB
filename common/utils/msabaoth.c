@@ -848,8 +848,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 		start = stop = up = 0;
 		p = data;
 		while ((c = getc(f)) != EOF) {
-			*p = (char)c;
-			switch (*p) {
+			switch (c) {
 				case '\t':
 					/* start attempt */
 					ret->startcntr++;
@@ -879,7 +878,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 				break;
 				default:
 					/* timestamp */
-					p++;
+					*p++ = c;
 				break;
 			}
 		}

@@ -124,7 +124,7 @@ stdout of test 'subselect.Bug-6688` in directory 'sql/test/BugTracker-2019` itse
 #              "cq_t"."A" = "cp_t"."A"
 #              or
 #              (
-% .%7 # table_name
+% . # table_name
 % co_f1 # name
 % bigint # type
 % 2 # length
@@ -171,7 +171,7 @@ stdout of test 'subselect.Bug-6688` in directory 'sql/test/BugTracker-2019` itse
 #              "cq_t"."A" = "cp_t"."A"
 #              or
 #              (
-% .%12 # table_name
+% . # table_name
 % co_f1 # name
 % bigint # type
 % 2 # length

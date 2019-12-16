@@ -37,7 +37,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 	sql_schema *s;
 
 	if (buf == NULL)
-		throw(SQL, "sql_fix_system_tables", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	s = mvc_bind_schema(sql, "sys");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -195,7 +195,7 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	*systabfixed = true;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_update_hugeint", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -277,12 +277,12 @@ sql_update_geom(Client c, mvc *sql, int olddb, const char *prev_schema)
 
 	geomupgrade = (*fixfunc)(olddb);
 	if (geomupgrade == NULL)
-		throw(SQL, "sql_update_geom", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	bufsize = strlen(geomupgrade) + 512;
 	buf = GDKmalloc(bufsize);
 	if (buf == NULL) {
 		GDKfree(geomupgrade);
-		throw(SQL, "sql_update_geom", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "%s", geomupgrade);
@@ -320,7 +320,7 @@ sql_update_jul2017(Client c, const char *prev_schema)
 	BAT *b;
 
 	if( buf == NULL)
-		throw(SQL, "sql_update_jul2017", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -444,7 +444,7 @@ sql_update_jul2017_sp2(Client c)
 			char *buf = GDKmalloc(bufsize);
 
 			if (buf == NULL)
-				throw(SQL, "sql_update_jul2017_sp2", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 			/* 51_sys_schema_extensions.sql and 25_debug.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -502,7 +502,7 @@ sql_update_jul2017_sp3(Client c, mvc *sql, const char *prev_schema, bool *systab
 		size_t bufsize = 1024, pos = 0;
 		char *buf = GDKmalloc(bufsize);
 		if (buf == NULL)
-			throw(SQL, "sql_update_jul2017_sp3", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		pos += snprintf(
 			buf + pos,
 			bufsize - pos,
@@ -525,7 +525,7 @@ sql_update_mar2018_geom(Client c, sql_table *t, const char *prev_schema)
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_mar2018_geom", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	t->system = 0;
@@ -585,7 +585,7 @@ sql_update_mar2018(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	buf = GDKmalloc(bufsize);
 	if (buf == NULL)
-		throw(SQL, "sql_update_mar2018", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	s = mvc_bind_schema(sql, "sys");
 
 	t = mvc_create_table(sql, s, "comments", tt_table, 1, SQL_PERSIST, 0, -1, 0);
@@ -1040,7 +1040,7 @@ sql_update_mar2018_netcdf(Client c, const char *prev_schema)
 	char *buf = GDKmalloc(bufsize), *err;
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_mar2018_netcdf", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 
@@ -1077,7 +1077,7 @@ sql_update_mar2018_samtools(Client c, mvc *sql, const char *prev_schema)
 
 	buf = GDKmalloc(bufsize);
 	if (buf == NULL)
-		throw(SQL, "sql_update_mar2018_samtools", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 
@@ -1146,7 +1146,7 @@ sql_update_mar2018_sp1(Client c, const char *prev_schema)
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_mar2018_sp1", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
 			"drop function sys.dependencies_functions_os_triggers();\n"
@@ -1173,7 +1173,7 @@ sql_update_remote_tables(Client c, mvc *sql, const char *prev_schema)
 	BAT *tbl = NULL, *uri = NULL;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_update_remote_tables", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* Create the SQL function needed to dump the remote table credentials */
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
@@ -1259,7 +1259,7 @@ sql_replace_Mar2018_ids_view(Client c, mvc *sql, const char *prev_schema)
 	sql_table *t = mvc_bind_table(sql, s, "ids");
 
 	if (buf == NULL)
-		throw(SQL, "sql_replace_Mar2018_ids_view", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	t->system = 0;	/* make it non-system else the drop view will fail */
 	t = mvc_bind_table(sql, s, "dependencies_vw");	/* dependencies_vw uses view sys.ids so must be removed first */
@@ -1321,7 +1321,7 @@ sql_update_gsl(Client c, const char *prev_schema)
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_gsl", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
 			"drop function sys.chi2prob(double, double);\n");
@@ -1342,7 +1342,7 @@ sql_update_aug2018(Client c, mvc *sql, const char *prev_schema)
 	char *buf, *err;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_update_aug2018", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1375,7 +1375,7 @@ sql_update_aug2018_sp2(Client c, const char *prev_schema)
 	BAT *b;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_update_aug2018_sp2", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* required update for changeset 23e1231ada99 */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1413,7 +1413,7 @@ sql_drop_functions_dependencies_Xs_on_Ys(Client c, const char *prev_schema)
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 
 	if (buf == NULL)
-		throw(SQL, "sql_drop_functions_dependencies_Xs_on_Ys", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* remove functions which were created in sql/scripts/21_dependency_functions.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1454,7 +1454,7 @@ sql_update_apr2019(Client c, mvc *sql, const char *prev_schema)
 	sql_table *t;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_update_apr2019", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 
@@ -1549,7 +1549,7 @@ sql_update_storagemodel(Client c, mvc *sql, const char *prev_schema)
 	sql_table *t;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_update_storagemodel", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* set views and tables internally to non-system to allow drop commands to succeed without error */
 	if ((t = mvc_bind_table(sql, s, "storage")) != NULL)
@@ -1891,7 +1891,7 @@ sql_update_apr2019_sp2(Client c, mvc *sql, const char *prev_schema, bool *systab
 	char *buf = GDKmalloc(bufsize), *err;
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_apr2019_sp2", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if (!*systabfixed) {
 		sql_fix_system_tables(c, sql, prev_schema);
@@ -1937,10 +1937,10 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 	bool first = true;
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_nov2019_missing_dependencies", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if (!(sql->sa = sa_create())) {
-		err = createException(SQL, "sql.catalog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		err = createException(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
@@ -1959,7 +1959,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 					sql_rel *r = NULL;
 
 					if (!(relt = sa_strdup(sql->sa, f->query))) {
-						err = createException(SQL, "sql.catalog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						err = createException(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						goto bailout;
 					}
 
@@ -1993,7 +1993,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 					sql_rel *r = NULL;
 
 					if (!(relt = sa_strdup(sql->sa, t->query))) {
-						err = createException(SQL, "sql.catalog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						err = createException(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						goto bailout;
 					}
 
@@ -2021,7 +2021,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 						sql_rel *r = NULL;
 
 						if (!(relt = sa_strdup(sql->sa, tr->statement))) {
-							err = createException(SQL, "sql.catalog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							err = createException(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							goto bailout;
 						}
 
@@ -2071,7 +2071,7 @@ sql_update_nov2019(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	BAT *b;
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_nov2019", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"select id from sys.args where func_id in (select id from sys.functions where schema_id = (select id from sys.schemas where name = 'sys') and name = 'second' and func = 'sql_seconds') and number = 0 and type_scale = 3;\n");
@@ -2325,7 +2325,7 @@ sql_update_nov2019_sp1_hugeint(Client c, mvc *sql, const char *prev_schema, bool
 	*systabfixed = true;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_update_hugeint", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -2360,7 +2360,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_default", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
@@ -2440,11 +2440,22 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			" external name clients.stopsession;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
+			"create function sys.prepared_statements()\n"
+			"returns table(\n"
+			"\"sessionid\" int,\n"
+			"\"user\" string,\n"
+			"\"statementid\" int,\n"
+			"\"statement\" string,\n"
+			"\"created\" timestamp)\n"
+			" external name sql.prepared_statements;\n"
+			"create view sys.prepared_statements as select * from sys.prepared_statements();\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name = 'sessions' and type = %d;\n", (int) F_UNION);
+			" and name in ('sessions', 'prepared_statements') and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name = 'sessions';\n");
+			" and name in ('sessions', 'prepared_statements');\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = %d;\n", (int) F_PROC);
@@ -2510,7 +2521,15 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"ALTER TABLE sys.keywords SET READ WRITE;\n"
-			"insert into sys.keywords values ('CUBE'), ('GROUPING'), ('ROLLUP'), ('SETS');\n");
+			"DELETE FROM sys.keywords where \"keyword\" IN ('NOCYCLE','NOMAXVALUE','NOMINVALUE');\n"
+			"insert into sys.keywords values ('ANALYZE'),('AT'),('AUTHORIZATION'),('CACHE'),('CENTURY'),('COLUMN'),('CLIENT'),"
+			"('CUBE'),('CYCLE'),('DATA'),('DATE'),('DEBUG'),('DECADE'),('DEALLOCATE'),('DIAGNOSTICS'),('DISTINCT'),"
+			"('DOW'),('DOY'),('EXEC'),('EXECUTE'),('EXPLAIN'),('FIRST'),('FWF'),('GROUPING'),('GROUPS'),('INCREMENT'),"
+			"('INTERVAL'),('KEY'),('LANGUAGE'),('LARGE'),('LAST'),('LATERAL'),('LEVEL'),('LOADER'),('MATCH'),('MATCHED'),('MAXVALUE'),"
+			"('MINVALUE'),('NAME'),('NO'),('NULLS'),('OBJECT'),('OPTIONS'),('PASSWORD'),('PLAN'),('PRECISION'),('PREP'),('PREPARE'),"
+			"('QUARTER'),('RELEASE'),('REPLACE'),('ROLLUP'),('SCHEMA'),('SEED'),('SERVER'),('SESSION'),('SETS'),('SIZE'),"
+			"('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('UNIONJOIN'),"
+			"('WEEK'),('YEAR'),('ZONE');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);

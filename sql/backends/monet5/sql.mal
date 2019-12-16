@@ -603,6 +603,10 @@ address SYSMONstop;
 pattern sysmon_stop(tag:lng)
 address SYSMONstop;
 
+pattern prepared_statements()(sessionid:bat[:int], user:bat[:str], statementid:bat[:int], statementt:bat[:str], createdd:bat[:timestamp])
+address SQLsession_prepared_statements
+comment "Available prepared statements in the current session";
+
 pattern copy_rejects() (rowid:bat[:lng], fldid:bat[:int], msg:bat[:str], inp:bat[:str])
 address COPYrejects;
 pattern copy_rejects_clear()

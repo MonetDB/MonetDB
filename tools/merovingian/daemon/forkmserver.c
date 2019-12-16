@@ -215,6 +215,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 	char *embeddedr = NULL;
 	char *embeddedpy = NULL;
 	char *embeddedc = NULL;
+	char *raw_strings = NULL;
 	char *ipv6 = NULL;
 	char *dbextra = NULL;
 	char *mserver5_extra = NULL;
@@ -537,6 +538,11 @@ forkMserver(char *database, sabdb** stats, bool force)
 	} else {
 		listenaddr[0] = '\0';
 	}
+
+	kv = findConfKey(ckv, "raw_strings");
+	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
+		raw_strings="raw_strings=true";
+	}
 	mport = (unsigned int)getConfNum(_mero_props, "port");
 	ipv6 = getConfNum(_mero_props, "ipv6") == 1 ? "mapi_ipv6=true" : "mapi_ipv6=false";
 
@@ -617,6 +623,9 @@ forkMserver(char *database, sabdb** stats, bool force)
 	}
 	if (readonly != NULL) {
 		argv[c++] = readonly;
+	}
+	if (raw_strings != NULL) {
+		argv[c++] = "--set"; argv[c++] = raw_strings;
 	}
 	/* get the rest (non-default) mserver props set in the conf file */
 	list = ckv;
