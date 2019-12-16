@@ -200,6 +200,10 @@ MOSestimate_SIGNATURE(prefix, TPE)\
 	current->compressed_size += store;\
 	current->compression_strategy.cnt = (unsigned int) parameters.base.rec.cnt;\
 \
+	if (parameters.base.rec.cnt > *current->max_compression_length ) {\
+		*current->max_compression_length = parameters.base.rec.cnt;\
+	}\
+\
 	return MAL_SUCCEED;\
 }
 

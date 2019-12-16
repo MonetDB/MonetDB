@@ -149,6 +149,10 @@ MOSestimate_SIGNATURE(delta, TPE)\
 	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(delta, TPE)) + wordaligned((parameters.base.rec.cnt * parameters.bits) / CHAR_BIT, lng);\
 	current->compression_strategy.cnt = (unsigned int) parameters.base.rec.cnt;\
 \
+	if (parameters.base.rec.cnt > *current->max_compression_length ) {\
+		*current->max_compression_length = parameters.base.rec.cnt;\
+	}\
+\
 	return MAL_SUCCEED;\
 }
 

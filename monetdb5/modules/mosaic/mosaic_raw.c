@@ -97,7 +97,7 @@ MOSestimate_SIGNATURE(raw, TPE)\
 	current->is_applicable = true;\
 	current->uncompressed_size += (BUN) sizeof(TPE);\
 	unsigned int cnt = previous->compression_strategy.cnt;\
-	if (previous->compression_strategy.tag == MOSAIC_RAW && cnt + 1 < (1 << CNT_BITS)) {\
+	if (previous->compression_strategy.tag == MOSAIC_RAW && (cnt + 1 < MOSAICMAXCNT)) {\
 		current->must_be_merged_with_previous = true;\
 		cnt++;\
 		current->compressed_size += sizeof(TPE);\

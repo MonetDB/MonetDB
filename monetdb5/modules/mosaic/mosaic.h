@@ -177,10 +177,11 @@ typedef struct _MosaicEstimation {
 	MosaicBlkRec compression_strategy;
 	bool is_applicable;
 	bool must_be_merged_with_previous;
-	size_t nr_var_encoded_elements;
-	size_t nr_var_encoded_blocks;
-	size_t nr_capped_encoded_elements;
-	size_t nr_capped_encoded_blocks;
+	BUN nr_var_encoded_elements;
+	BUN nr_var_encoded_blocks;
+	BUN nr_capped_encoded_elements;
+	BUN nr_capped_encoded_blocks;
+	BUN* max_compression_length;
 } MosaicEstimation;
 
 #define GET_PADDING(blk, NAME, TPE) (((MOSBlockHeaderTpe(NAME, TPE)*) (blk))->base.padding)

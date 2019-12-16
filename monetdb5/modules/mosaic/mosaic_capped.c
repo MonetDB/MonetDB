@@ -240,6 +240,11 @@ MOSestimate_SIGNATURE(capped, TPE)\
 	(void) previous;\
 	GlobalCappedInfo* info = task->capped_info;\
 	BUN limit = (BUN) (task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start);\
+\
+	if (*current->max_compression_length != 0 &&  *current->max_compression_length < limit) {\
+		limit = *current->max_compression_length;\
+	}\
+\
 	TPE* val = getSrc(TPE, task);\
 	BUN delta_count;\
 	BUN nr_compressed;\

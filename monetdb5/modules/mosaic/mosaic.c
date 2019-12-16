@@ -238,6 +238,7 @@ MOSprepareEstimate(MOStask task) {
 #define MOSestimate_AND_MOSoptimizerCost_DEF(TPE) \
 static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous) {\
 \
+	BUN max_compression_length = 0;\
 	MosaicEstimation estimations[MOSAICINDEX];\
 	const int size = sizeof(estimations) / sizeof(MosaicEstimation);\
 	for (int i = 0; i < size; i++) {\
@@ -250,6 +251,7 @@ static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, cons
 		estimations[i].nr_capped_encoded_blocks = previous->nr_capped_encoded_blocks;\
 		estimations[i].must_be_merged_with_previous = false;\
 		estimations[i].is_applicable = false;\
+		estimations[i].max_compression_length = &max_compression_length;\
 	}\
 \
 	/* select candidate amongst those*/\
@@ -258,12 +260,6 @@ static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, cons
 	}\
 	if (task->filter[MOSAIC_RLE]){\
 		DO_OPERATION_IF_ALLOWED(estimate, runlength, TPE);\
-	}\
-	if (task->filter[MOSAIC_CAPPED]){\
-		DO_OPERATION_IF_ALLOWED(estimate, capped, TPE);\
-	}\
-	if (task->filter[MOSAIC_VAR]){\
-		DO_OPERATION_IF_ALLOWED(estimate, var, TPE);\
 	}\
 	if (task->filter[MOSAIC_DELTA]){\
 		DO_OPERATION_IF_ALLOWED(estimate, delta, TPE);\
@@ -276,6 +272,12 @@ static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, cons
 	}\
 	if (task->filter[MOSAIC_PREFIX]){\
 		DO_OPERATION_IF_ALLOWED(estimate, prefix, TPE);\
+	}\
+	if (task->filter[MOSAIC_CAPPED]){\
+		DO_OPERATION_IF_ALLOWED(estimate, capped, TPE);\
+	}\
+	if (task->filter[MOSAIC_VAR]){\
+		DO_OPERATION_IF_ALLOWED(estimate, var, TPE);\
 	}\
 \
 	flt best_factor = 0.0;\
@@ -315,7 +317,7 @@ static str MOSestimate_##TPE(MOStask task, BAT* estimates, size_t* compressed_si
 		.nr_capped_encoded_elements = 0,\
 		.nr_capped_encoded_blocks = 0,\
 		.compression_strategy = {.tag = MOSAIC_EOL, .cnt = 0},\
-		.must_be_merged_with_previous = false\
+		.must_be_merged_with_previous = false,\
 	};\
 \
 	MosaicEstimation current;\
@@ -575,7 +577,9 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	// TODO: if we couldnt compress well enough, ignore the result
 
 	bsrc->batDirtydesc = true;
-	task->hdr->ratio = (flt)task->bsrc->theap.free/ task->bsrc->tmosaic->free;
+	task->hdr->ratio =
+		(flt)task->bsrc->theap.free /
+		(task->bsrc->tmosaic->free + (task->bsrc->tvmosaic? task->bsrc->tvmosaic->free : 0));
 finalize:
 	GDKfree(task);
 

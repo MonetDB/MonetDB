@@ -103,6 +103,10 @@ MOSestimate_SIGNATURE(linear, TPE)\
 	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(linear, TPE));\
 	current->compression_strategy.cnt = (unsigned int) i;\
 \
+	if (i > *current->max_compression_length ) {\
+		*current->max_compression_length = i;\
+	}\
+\
 	return MAL_SUCCEED;\
 }
 
