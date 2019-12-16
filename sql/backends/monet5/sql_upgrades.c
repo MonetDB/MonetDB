@@ -2521,14 +2521,15 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"ALTER TABLE sys.keywords SET READ WRITE;\n"
+			"DELETE FROM sys.keywords where \"keyword\" IN ('NOCYCLE','NOMAXVALUE','NOMINVALUE');\n"
 			"insert into sys.keywords values ('ANALYZE'),('AT'),('AUTHORIZATION'),('CACHE'),('CENTURY'),('COLUMN'),('CLIENT'),"
 			"('CUBE'),('CYCLE'),('DATA'),('DATE'),('DEBUG'),('DECADE'),('DEALLOCATE'),('DIAGNOSTICS'),('DISTINCT'),"
 			"('DOW'),('DOY'),('EXEC'),('EXECUTE'),('EXPLAIN'),('FIRST'),('FWF'),('GROUPING'),('GROUPS'),('INCREMENT'),"
-			"('INTERVAL'),('KEY'),('LANGUAGE'),('LARGE'),('LAST'),('LEVEL'),('LOADER'),('MATCH'),('MATCHED'),('MAXVALUE'),"
-			"('MINVALUE'),('NAME'),('NULLS'),('OBJECT'),('OPTIONS'),('PASSWORD'),('PLAN'),('PRECISION'),('PREP'),('PREPARE'),"
+			"('INTERVAL'),('KEY'),('LANGUAGE'),('LARGE'),('LAST'),('LATERAL'),('LEVEL'),('LOADER'),('MATCH'),('MATCHED'),('MAXVALUE'),"
+			"('MINVALUE'),('NAME'),('NO'),('NULLS'),('OBJECT'),('OPTIONS'),('PASSWORD'),('PLAN'),('PRECISION'),('PREP'),('PREPARE'),"
 			"('QUARTER'),('RELEASE'),('REPLACE'),('ROLLUP'),('SCHEMA'),('SEED'),('SERVER'),('SESSION'),('SETS'),('SIZE'),"
-			"('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('UNIONJOIN'),('WEEK'),"
-			"('YEAR'),('ZONE');\n");
+			"('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('UNIONJOIN'),"
+			"('WEEK'),('YEAR'),('ZONE');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
