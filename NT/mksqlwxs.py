@@ -157,7 +157,8 @@ def main():
                r'lib\libmonetdb5.pdb',
                r'lib\libstream.pdb'])
     id = comp(geom, id, 14,
-              [r'%s\bin\geos_c.dll' % makedefs['LIBGEOS']])
+              [r'%s\bin\geos_c.dll' % makedefs['LIBGEOS'],
+               r'%s\bin\geos.dll' % makedefs['LIBGEOS']])
     print(r'            </Directory>')
     print(r'            <Directory Id="etc" Name="etc">')
     id = comp(features, id, 14, [r'etc\.monetdb'])
