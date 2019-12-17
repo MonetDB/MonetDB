@@ -1464,71 +1464,69 @@ gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restric
 #define BATtkey(b)	((b)->tkey || BATtdense(b))
 
 /* set some properties that are trivial to deduce */
-#define BATsettrivprop(b)						\
-	do {								\
-		assert(!is_oid_nil((b)->hseqbase));			\
-		(b)->batDirtydesc = true; /* likely already set */	\
-		assert(is_oid_nil((b)->tseqbase) ||			\
-		       ATOMtype((b)->ttype) == TYPE_oid);		\
-		if ((b)->ttype == TYPE_void) {				\
-			if (is_oid_nil((b)->tseqbase)) {		\
-				(b)->tnonil = (b)->batCount == 0;	\
-				(b)->tnil = !(b)->tnonil;		\
-				(b)->trevsorted = true;			\
-				(b)->tkey = (b)->batCount <= 1;		\
-			} else {					\
-				(b)->tnonil = true;			\
-				(b)->tnil = false;			\
-				(b)->tkey = true;			\
-				(b)->trevsorted = (b)->batCount <= 1;	\
-			}						\
-			(b)->tsorted = true;				\
-		} else if ((b)->batCount <= 1) {			\
-			if (ATOMlinear((b)->ttype)) {			\
-				(b)->tsorted = true;			\
-				(b)->trevsorted = true;			\
-			}						\
-			(b)->tkey = true;				\
-			if ((b)->batCount == 0) {			\
-				(b)->tnonil = true;			\
-				(b)->tnil = false;			\
-				if ((b)->ttype == TYPE_oid) {		\
-					(b)->tseqbase = 0;		\
-				}					\
-			} else if ((b)->ttype == TYPE_oid) {		\
-				/* b->batCount == 1 */			\
-				oid sqbs = ((const oid *) (b)->theap.base)[0]; \
-				if (is_oid_nil(sqbs)) {			\
-					(b)->tnonil = false;		\
-					(b)->tnil = true;		\
-				} else {				\
-					(b)->tnonil = true;		\
-					(b)->tnil = false;		\
-				}					\
-				(b)->tseqbase = sqbs;			\
-			}						\
-		} else if ((b)->batCount == 2 && ATOMlinear((b)->ttype)) { \
-			int _c_;					\
-			if ((b)->tvarsized)				\
-				_c_ = ATOMcmp((b)->ttype,		\
-					      Tbase(b) + VarHeapVal((b)->theap.base, 0, (b)->twidth), \
-					      Tbase(b) + VarHeapVal((b)->theap.base, 1, (b)->twidth)); \
-			else						\
-				_c_ = ATOMcmp((b)->ttype,		\
-					      Tloc((b), 0),		\
-					      Tloc((b), 1));		\
-			(b)->tsorted = _c_ <= 0;			\
-			(b)->tnosorted = !(b)->tsorted;			\
-			(b)->trevsorted = _c_ >= 0;			\
-			(b)->tnorevsorted = !(b)->trevsorted;		\
-			(b)->tkey = _c_ != 0;				\
-			(b)->tnokey[0] = 0;				\
-			(b)->tnokey[1] = !(b)->tkey;			\
-		} else if (!ATOMlinear((b)->ttype)) {			\
-			(b)->tsorted = false;				\
-			(b)->trevsorted = false;			\
-		}							\
-	} while (false)
+static inline void
+BATsettrivprop(BAT *b)
+{
+	assert(!is_oid_nil(b->hseqbase));
+	b->batDirtydesc = true; /* likely already set */
+	assert(is_oid_nil(b->tseqbase) || ATOMtype(b->ttype) == TYPE_oid);
+	if (b->ttype == TYPE_void) {
+		if (is_oid_nil(b->tseqbase)) {
+			b->tnonil = b->batCount == 0;
+			b->tnil = !b->tnonil;
+			b->trevsorted = true;
+			b->tkey = b->batCount <= 1;
+		} else {
+			b->tnonil = true;
+			b->tnil = false;
+			b->tkey = true;
+			b->trevsorted = b->batCount <= 1;
+		}
+		b->tsorted = true;
+	} else if (b->batCount <= 1) {
+		if (ATOMlinear(b->ttype)) {
+			b->tsorted = true;
+			b->trevsorted = true;
+		}
+		b->tkey = true;
+		if (b->batCount == 0) {
+			b->tnonil = true;
+			b->tnil = false;
+			if (b->ttype == TYPE_oid) {
+				b->tseqbase = 0;
+			}
+		} else if (b->ttype == TYPE_oid) {
+			/* b->batCount == 1 */
+			oid sqbs = ((const oid *) b->theap.base)[0];
+			if (is_oid_nil(sqbs)) {
+				b->tnonil = false;
+				b->tnil = true;
+			} else {
+				b->tnonil = true;
+				b->tnil = false;
+			}
+			b->tseqbase = sqbs;
+		}
+	} else if (b->batCount == 2 && ATOMlinear(b->ttype)) {
+		int c;
+		if (b->tvarsized)
+			c = ATOMcmp(b->ttype,
+				    Tbase(b) + VarHeapVal(b->theap.base, 0, b->twidth),
+				    Tbase(b) + VarHeapVal(b->theap.base, 1, b->twidth));
+		else
+			c = ATOMcmp(b->ttype, Tloc(b, 0), Tloc(b, 1));
+		b->tsorted = c <= 0;
+		b->tnosorted = !b->tsorted;
+		b->trevsorted = c >= 0;
+		b->tnorevsorted = !b->trevsorted;
+		b->tkey = c != 0;
+		b->tnokey[0] = 0;
+		b->tnokey[1] = !b->tkey;
+	} else if (!ATOMlinear(b->ttype)) {
+		b->tsorted = false;
+		b->trevsorted = false;
+	}
+}
 
 /*
  * @+ BAT Buffer Pool
