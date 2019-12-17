@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Dec 17 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Added prepared_statements_args view, which details the arguments for
+  the prepared statements created in the current session.
+
 * Fri Dec 13 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Added sys.prepared_statements view, which depicts the available prepared
   statements in the current session.
