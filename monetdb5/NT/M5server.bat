@@ -23,14 +23,14 @@ if "%APPDATA%" == "" goto usevar
 rem if the APPDATA variable does exist, put the database there
 set MONETDBDIR=%APPDATA%\MonetDB5
 set MONETDBFARM="--dbpath=%MONETDBDIR%\dbfarm\demo"
-mkdir "%MONETDBDIR%\dbfarm\demo"
+if not exist "%MONETDBDIR%\dbfarm\demo" mkdir "%MONETDBDIR%\dbfarm\demo"
 goto skipusevar
 :usevar
 rem if the APPDATA variable does not exist, put the database in the
 rem installation folder (i.e. default location, so no command line argument)
 set MONETDBDIR=%MONETDB%\var\monetdb5
 set MONETDBFARM=
-mkdir "%MONETDB%\var\monetdb5\dbfarm"
+if not exist "%MONETDB%\var\monetdb5\dbfarm" mkdir "%MONETDB%\var\monetdb5\dbfarm"
 :skipusevar
 
 rem the SQL log directory used to be in %MONETDBDIR%, but we now
