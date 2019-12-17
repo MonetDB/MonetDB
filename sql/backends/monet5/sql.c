@@ -5359,3 +5359,164 @@ bailout:
 	}
 	return msg;
 }
+
+str
+SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *statementid, *parameter, *type, *digits, *scale, *schema, *table, *column;
+	bat *sid = getArgReference_bat(stk,pci,0);
+	bat *p = getArgReference_bat(stk,pci,1);
+	bat *t = getArgReference_bat(stk,pci,2);
+	bat *d = getArgReference_bat(stk,pci,3);
+	bat *s = getArgReference_bat(stk,pci,4);
+	bat *sch = getArgReference_bat(stk,pci,5);
+	bat *tbl = getArgReference_bat(stk,pci,6);
+	bat *col = getArgReference_bat(stk,pci,7);
+	str msg = MAL_SUCCEED;
+	mvc *sql = NULL;
+	cq *q = NULL;
+
+	(void) stk;
+	(void) pci;
+	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	assert(sql->qc);
+
+	statementid = COLnew(0, TYPE_int, 256, TRANSIENT);
+	parameter = COLnew(0, TYPE_bit, 256, TRANSIENT);
+	type = COLnew(0, TYPE_str, 256, TRANSIENT);
+	digits = COLnew(0, TYPE_int, 256, TRANSIENT);
+	scale = COLnew(0, TYPE_int, 256, TRANSIENT);
+	schema = COLnew(0, TYPE_str, 256, TRANSIENT);
+	table = COLnew(0, TYPE_str, 256, TRANSIENT);
+	column = COLnew(0, TYPE_str, 256, TRANSIENT);
+	if (!statementid || !parameter || !type || !digits || !scale || !schema || !table || !column) {
+		msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	for (q = sql->qc->q; q; q = q->next) {
+		if (q->prepared) {
+			sql_rel *r = q->rel;
+			bool isparameter = false;
+
+			if (r && is_topn(r->op))
+				r = r->l;
+
+			if (r && is_project(r->op) && r->exps) {
+				for (node *n = r->exps->h; n; n = n->next) {
+					sql_exp *e = n->data;
+					sql_subtype *t = exp_subtype(e);
+					const char *name = exp_name(e), *rname = exp_relname(e), *rschema = ATOMnilptr(TYPE_str);
+
+					if (!name && e->type == e_column && e->r)
+						name = e->r;
+					if (!name)
+						name = ATOMnilptr(TYPE_str);
+					if (!rname && e->type == e_column && e->l)
+						rname = e->l;
+					if (!rname)
+						rname = ATOMnilptr(TYPE_str);
+
+					if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					if (BUNappend(parameter, &isparameter, false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					if (BUNappend(type, t->type->sqlname, false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					if (BUNappend(digits, &t->digits, false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					if (BUNappend(scale, &t->scale, false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					if (BUNappend(schema, rschema, false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					if (BUNappend(table, rname, false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					if (BUNappend(column, name, false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+				}
+			}
+
+			if (q->params) {
+				isparameter = true;
+				for (int i = 0; i < q->paramlen; i++) {
+					sql_subtype t = q->params[i];
+
+					if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					if (BUNappend(parameter, &isparameter, false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					if (BUNappend(type, t.type->sqlname, false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					if (BUNappend(digits, &(t.digits), false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					if (BUNappend(scale, &(t.scale), false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					if (BUNappend(schema, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					if (BUNappend(table, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					if (BUNappend(column, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
+						msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+				}
+			}
+		}
+	}
+
+bailout:
+	if (msg) {
+		BBPreclaim(statementid);
+		BBPreclaim(parameter);
+		BBPreclaim(type);
+		BBPreclaim(digits);
+		BBPreclaim(scale);
+		BBPreclaim(schema);
+		BBPreclaim(table);
+		BBPreclaim(column);
+	} else {
+		BBPkeepref(*sid = statementid->batCacheid);
+		BBPkeepref(*p = parameter->batCacheid);
+		BBPkeepref(*t = type->batCacheid);
+		BBPkeepref(*d = digits->batCacheid);
+		BBPkeepref(*s = scale->batCacheid);
+		BBPkeepref(*sch = schema->batCacheid);
+		BBPkeepref(*tbl = table->batCacheid);
+		BBPkeepref(*col = column->batCacheid);
+	}
+	return msg;
+}

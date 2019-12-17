@@ -1061,6 +1061,9 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue Dec 17 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.7-20191217
+- Rebuilt.
+
 * Thu Dec 12 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.5-20191212
 - Rebuilt.
 - BZ#6723: columns aliases duplicates should not be allowed. automatic

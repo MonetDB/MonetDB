@@ -2448,14 +2448,26 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"\"statement\" string,\n"
 			"\"created\" timestamp)\n"
 			" external name sql.prepared_statements;\n"
-			"create view sys.prepared_statements as select * from sys.prepared_statements();\n");
+			"create view sys.prepared_statements as select * from sys.prepared_statements();\n"
+			"create function sys.prepared_statements_args()\n"
+			"returns table(\n"
+			"\"statementid\" int,\n"
+			"\"parameter\" boolean,\n"
+			"\"type\" string,\n"
+			"\"digits\" int,\n"
+			"\"scale\" int,\n"
+			"\"schema\" string,\n"
+			"\"table\" string,\n"
+			"\"column\" string)\n"
+			" external name sql.prepared_statements_args;\n"
+			"create view sys.prepared_statements_args as select * from sys.prepared_statements_args();\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('sessions', 'prepared_statements') and type = %d;\n", (int) F_UNION);
+			" and name in ('sessions', 'prepared_statements', 'prepared_statements_args') and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('sessions', 'prepared_statements');\n");
+			" and name in ('sessions', 'prepared_statements', 'prepared_statements_args');\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = %d;\n", (int) F_PROC);

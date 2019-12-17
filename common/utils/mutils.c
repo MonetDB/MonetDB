@@ -15,10 +15,6 @@
 #include "mutils.h"
 #include "mstring.h"
 
-#if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
-#include <execinfo.h>
-#endif
-
 #ifdef HAVE_MACH_O_DYLD_H
 # include <mach-o/dyld.h>  /* _NSGetExecutablePath on OSX >=10.5 */
 #endif

@@ -96,3 +96,21 @@ grant execute on function sys.prepared_statements to public;
 
 create view sys.prepared_statements as select * from sys.prepared_statements();
 grant select on sys.prepared_statements to public;
+
+-- session's prepared statements arguments
+create function sys.prepared_statements_args()
+returns table(
+	"statementid" int,
+	"parameter" boolean,
+	"type" string,
+	"digits" int,
+	"scale" int,
+	"schema" string,
+	"table" string,
+	"column" string
+)
+external name sql.prepared_statements_args;
+grant execute on function sys.prepared_statements_args to public;
+
+create view sys.prepared_statements_args as select * from sys.prepared_statements_args();
+grant select on sys.prepared_statements_args to public;
