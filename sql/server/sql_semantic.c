@@ -145,7 +145,6 @@ sql_destroy_args(mvc *sql)
 	sql->argc = 0;
 }
 
-
 sql_schema *
 cur_schema(mvc *sql)
 {

@@ -70,6 +70,22 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 % clob # type
 % 54 # length
 [ "prepare select \"system\" or ? from _tables where false;"	]
+#select "parameter", "type", "digits", "scale", "schema", "table", "column" from prepared_statements_args; --only 1
+% .prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args # table_name
+% parameter,	type,	digits,	scale,	schema,	table,	column # name
+% boolean,	clob,	int,	int,	clob,	clob,	clob # type
+% 5,	7,	1,	1,	0,	2,	2 # length
+[ false,	"boolean",	1,	0,	NULL,	"%1",	"%1"	]
+[ true,	"boolean",	1,	0,	NULL,	NULL,	NULL	]
+#select "prep"."statement" "parameter", "type", "digits", "scale", "schema", "table", "column" 
+#from prepared_statements prep
+#inner join prepared_statements_args psa on prep."statementid" = psa."statementid"; --two rows
+% .prep,	.psa,	.psa,	.psa,	.psa,	.psa,	.psa,	.psa # table_name
+% statement,	parameter,	type,	digits,	scale,	schema,	table,	column # name
+% clob,	boolean,	clob,	int,	int,	clob,	clob,	clob # type
+% 54,	5,	7,	1,	1,	0,	2,	2 # length
+[ "prepare select \"system\" or ? from _tables where false;",	false,	"boolean",	1,	0,	NULL,	"%1",	"%1"	]
+[ "prepare select \"system\" or ? from _tables where false;",	true,	"boolean",	1,	0,	NULL,	NULL,	NULL	]
 #EXEC  3(false);
 % sys. # table_name
 % %1 # name
@@ -81,12 +97,24 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 % clob # type
 % 54 # length
 [ "prepare select \"system\" or ? from _tables where false;"	]
+#select "parameter", "type", "digits", "scale", "schema", "table", "column" from prepared_statements_args; --only 1
+% .prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args # table_name
+% parameter,	type,	digits,	scale,	schema,	table,	column # name
+% boolean,	clob,	int,	int,	clob,	clob,	clob # type
+% 5,	7,	1,	1,	0,	2,	2 # length
+[ false,	"boolean",	1,	0,	NULL,	"%1",	"%1"	]
+[ true,	"boolean",	1,	0,	NULL,	NULL,	NULL	]
 #deallocate  3;
 #select "statement" from prepared_statements; --empty
 % .prepared_statements # table_name
 % statement # name
 % clob # type
 % 0 # length
+#select "parameter", "type", "digits", "scale", "schema", "table", "column" from prepared_statements_args; --empty
+% .prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args # table_name
+% parameter,	type,	digits,	scale,	schema,	table,	column # name
+% boolean,	clob,	int,	int,	clob,	clob,	clob # type
+% 5,	0,	1,	1,	0,	0,	0 # length
 #prepare select "system" or ? from _tables WHERE false;
 #prepare select "system" or ? from _tables WHERE false;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
@@ -106,12 +134,22 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 % statement # name
 % clob # type
 % 0 # length
+#select "parameter", "type", "digits", "scale", "schema", "table", "column" from prepared_statements_args; --empty
+% .prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args # table_name
+% parameter,	type,	digits,	scale,	schema,	table,	column # name
+% boolean,	clob,	int,	int,	clob,	clob,	clob # type
+% 5,	0,	1,	1,	0,	0,	0 # length
 #DEALLOCATE ALL;
 #select "statement" from prepared_statements; --empty
 % .prepared_statements # table_name
 % statement # name
 % clob # type
 % 0 # length
+#select "parameter", "type", "digits", "scale", "schema", "table", "column" from prepared_statements_args; --empty
+% .prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args,	.prepared_statements_args # table_name
+% parameter,	type,	digits,	scale,	schema,	table,	column # name
+% boolean,	clob,	int,	int,	clob,	clob,	clob # type
+% 5,	0,	1,	1,	0,	0,	0 # length
 
 # 13:56:29 >  
 # 13:56:29 >  "Done."
