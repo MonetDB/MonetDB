@@ -133,14 +133,9 @@ typedef enum {
         COMP( SQL_BAT )               \
                                       \
         COMP( MAL_MEMO )              \
-        COMP( MAL_SESSION )           \
         COMP( MAL_INTERPRETER )       \
         COMP( MAL_SCHEDULER )         \
-        COMP( MAL_LISTING )           \
-        COMP( MAL_FACTORY )           \
-        COMP( MAL_PARSER )            \
         COMP( MAL_WLC )               \
-        COMP( MAL_REDUCE )            \
         COMP( MAL_CLIENT )            \
         COMP( MAL_OIDX )              \
         COMP( MAL_REMOTE )            \
@@ -152,13 +147,11 @@ typedef enum {
         COMP( MAL_RESOLVE )           \
         COMP( MAL_FCN )               \
         COMP( MAL_DATAFLOW )          \
-        COMP( MAL_MODULE )            \
         COMP( MAL_SERVER )            \
         COMP( MAL_EXCEPTION )         \
         COMP( MAL_NAMESPACE )         \
         COMP( MAL_PROFILER )          \
         COMP( MAL_MAL )               \
-        COMP( MAL_DEBUGGER )          \
                                       \
         COMP( MAL_OPT_ALIASES )       \
         COMP( MAL_OPT_CANDIDATES )    \
@@ -169,7 +162,6 @@ typedef enum {
         COMP( MAL_OPT_DATAFLOW )      \
         COMP( MAL_OPT_EVALUATE )      \
         COMP( MAL_OPT_INLINE )        \
-        COMP( MAL_OPT_JIT )           \
         COMP( MAL_OPT_MULTIPLEX )     \
         COMP( MAL_OPT_REORDER )       \
         COMP( MAL_OPT_PROJECTIONPATH )\
@@ -183,7 +175,6 @@ typedef enum {
         COMP( MAL_OPT_MATPACK )       \
         COMP( MAL_OPT_GC )            \
         COMP( MAL_OPT_MERGETABLE )    \
-        COMP( MAL_OPT_MITOSIS )       \
         COMP( MAL_OPT_PUSHSELECT )    \
         COMP( MAL_OPT_QUERYLOG )      \
         COMP( MAL_OPT_OLTP )          \
@@ -192,7 +183,6 @@ typedef enum {
         COMP( MAL_OPT_REMOTE )        \
         COMP( MAL_OPT_VOLCANO )       \
         COMP( MAL_OPT_MACRO )         \
-        COMP( MAL_OPT_POSTFIX )       \
                                       \
         COMP( GDK_TM )                \
         COMP( GDK_UTILS )             \
