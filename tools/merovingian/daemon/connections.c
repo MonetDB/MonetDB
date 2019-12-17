@@ -35,7 +35,6 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 	int on = 1;
 	int i = 0;
 	char sport[16];
-	char host[512];
 
 	snprintf(sport, 16, "%hu", port);
 	if (bindaddr) {
@@ -135,14 +134,6 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 		}
 	}
 
-	check = getnameinfo(server, length, host, sizeof(host), sport, sizeof(sport), NI_NUMERICSERV);
-	if (result)
-		freeaddrinfo(result);
-	if (check != 0) {
-		closesocket(sock);
-		return(newErr("failed getting socket name: %s", gai_strerror(check)));
-	}
-
 	/* keep queue of 5 */
 	if (listen(sock, 5) == -1) {
 		int e = errno;
@@ -151,7 +142,7 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 		return(newErr("failed setting socket to listen: %s", strerror(errno)));
 	}
 
-	Mfprintf(log, "accepting connections on TCP socket %s:%s\n", host, sport);
+	Mfprintf(log, "accepting connections on TCP socket %s:%u\n", bindaddr, port);
 
 	*ret = sock;
 	return(NO_ERR);
