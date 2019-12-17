@@ -98,7 +98,7 @@ extend_delta_##TPE(BUN* nr_compressed, BUN* delta_count, BUN limit, DICTIONARY_T
 	*delta_count	= 0;\
 	for((*nr_compressed) = 0; (*nr_compressed)< limit; (*nr_compressed)++, val++) {\
 		BUN pos = find_value_##TPE(dict, dict_count, *val);\
-		if (pos == dict_count || !ARE_EQUAL(delta[pos], *val, nil, TPE)) {\
+		if (pos == dict_count || !ARE_EQUAL(dict[pos], *val, nil, TPE)) {\
 			/*This value is not in the base dictionary. See if we can add it to the delta dictionary.*/;\
 			if (CONDITIONAL_INSERT_##NAME(info, *val, TPE)) {\
 				BUN key = find_value_##TPE(delta, (*delta_count), *val);\
