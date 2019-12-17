@@ -3232,7 +3232,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		if (uaname)
 			GDKfree(uaname);
 		return e;
-	} else if (is_sql_aggr(f)) {
+	} else if (!query_has_outer(query) && is_sql_aggr(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
 		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested",
 				       uaname ? toUpperCopy(uaname, aname) : aname);
