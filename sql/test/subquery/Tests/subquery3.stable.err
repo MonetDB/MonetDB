@@ -130,6 +130,12 @@ QUERY = SELECT
         FROM integers i1; --SUM(i1.i) is a correlation from the outer query, so the sum aggregates can be nested at this case
 ERROR = !zero_or_one: cardinality violation, scalar expression expected
 CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-224250/.s.monetdb.30823
+QUERY = SELECT 
+            (SELECT SUM(SUM(i1.i)) FROM integers i2 GROUP BY i2.i)
+        FROM integers i1; --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
 
 # 17:40:41 >  
 # 17:40:41 >  "Done."

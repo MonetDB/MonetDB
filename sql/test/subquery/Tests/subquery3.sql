@@ -328,6 +328,10 @@ SELECT
 FROM integers i1; --SUM(i1.i) is a correlation from the outer query, so the sum aggregates can be nested at this case
 	--error, more than one row returned by a subquery used as an expression
 
+SELECT 
+    (SELECT SUM(SUM(i1.i)) FROM integers i2 GROUP BY i2.i)
+FROM integers i1; --error, more than one row returned by a subquery used as an expression
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
