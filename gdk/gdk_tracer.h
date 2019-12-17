@@ -5,19 +5,26 @@
  *
  * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  * 
- * REWRITE ----->
- * The tracer is the general logging system for the MonetDB stack.
- * It is modelled after well-known logging schems, eg. Python
- *
- * Internally, the logger uses a dual buffer to capture log messages
- * before they are written to a file. This way we avoid serial execution.
- *
- * The logger files come in two as well, where we switch them 
- * once the logger is full.
- * The logger file format is "tracer_YY-MM-DDTHH:MM:SS_number.log"
- * An option to consider is we need a rotating scheme over 2 files only,
- * Moreover, old log files might be sent in the background to long term storage as well.
  * 
+ * // TODO: Complete it when documentation is accepted
+ * 
+ * Tracer is the general logging system for the MonetDB stack modelled after the 
+ * well-known logging schemes (e.g: Python). It provides a number of logging levels 
+ * and options to increase or reduce the verbosity either of individual code parts 
+ * or of the codebase as a whole. It allows users to focus on logging messages 
+ * related to certain steps of execution, which can be proved handy when it comes 
+ * to debugging. The behavior of Tracer can be controlled at runtime using the 
+ * SQL API described later on. Certain calls require an “id” to operate which can 
+ * be found on the list of each section below.
+ * 
+ * Internally, the logger uses a buffer to capture log messages before they are 
+ * forwarded to the specific adapter.
+ * 
+ * - Sets the minimum flush level that an event will trigger the logger to flush the buffer
+ * - Produces messages to the output stream. It is also used as a fallback mechanism 
+ * in case GDKtracer fails to log for whatever reason.
+ * - Struct buffer with allocated space etc.
+ * - Flush buffer sends the messages to the selected adapter
  */
 
 #ifndef _GDK_TRACER_H_
@@ -271,7 +278,6 @@ extern LOG_LEVEL LVL_PER_COMPONENT[];
         TRC_CRITICAL_ENDIF(SQL_STORE, "Test\n")
     }
 */
-
 #define TRC_CRITICAL_IF(COMP)                                             \
     IF_GDK_TRACER_LOG(M_CRITICAL, COMP)                                   \
 
@@ -305,7 +311,7 @@ extern LOG_LEVEL LVL_PER_COMPONENT[];
 
 
 
-// GDKtracer Buffer
+// GDKtracer struct - Buffer and info
 typedef struct GDKtracer
 {
     int id;
@@ -338,13 +344,10 @@ gdk_tracer;
                             ## __VA_ARGS__);                                \
 
 
-
-// Produces messages to the output stream. It is also used as a fallback mechanism 
-// in case GDKtracer fails to log for whatever reason.
-#define GDK_TRACER_OSTREAM(MSG, ...)                    \
-    do {                                                \
-        mnstr_printf(GDKstdout, MSG, ## __VA_ARGS__);   \
-    } while (0)                                         \
+#define GDK_TRACER_OSTREAM(MSG, ...)                                        \
+    do {                                                                    \
+        mnstr_printf(GDKstdout, MSG, ## __VA_ARGS__);                       \
+    } while (0)                                                             \
     
 
 
@@ -376,26 +379,21 @@ gdk_return GDKtracer_set_layer_level(int *layer, int *lvl);
 gdk_return GDKtracer_reset_layer_level(int *layer);
 
 
-// Sets the minimum flush level that an event will trigger the logger to flush the buffer
 gdk_return GDKtracer_set_flush_level(int *lvl);
 
 
 gdk_return GDKtracer_reset_flush_level(void);
 
 
-// Sets the adapter used when flush buffer takes place
 gdk_return GDKtracer_set_adapter(int *adapter);
 
 
-// Resets the adapter to the default
 gdk_return GDKtracer_reset_adapter(void);
 
 
-// Candidate for 'gnu_printf' format attribute [-Werror=suggest-attribute=format] 
 gdk_return GDKtracer_log(LOG_LEVEL level, char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 
 
-// Flush the buffer to the file
 gdk_return GDKtracer_flush_buffer(void);
 
 

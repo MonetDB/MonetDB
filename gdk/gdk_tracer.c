@@ -54,7 +54,8 @@ LOG_LEVEL LVL_PER_COMPONENT[] = {
 
 
 
-// Prepares a file in order to write the contents of the buffer when necessary
+// When BASIC adapter is active, all the log messages are getting output to a file. 
+// This function prepares a file in order to write the contents of the buffer when necessary.
 static gdk_return
 _GDKtracer_init_basic_adptr(void)
 {
@@ -498,9 +499,7 @@ GDKtracer_flush_buffer(void)
             // fwrite failed for whatever reason 
             // (e.g: disk is full) fallback to stream
             if(USE_STREAM)
-            {
                 GDK_TRACER_OSTREAM("%s", active_tracer->buffer);
-            }
                 
             // Reset buffer
             memset(active_tracer->buffer, 0, BUFFER_SIZE);
