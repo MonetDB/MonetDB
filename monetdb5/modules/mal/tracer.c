@@ -36,7 +36,7 @@ TRACERset_component_level(void *ret, int *comp_id, int *lvl_id)
     (void) ret;
     GDK_result = GDKtracer_set_component_level(comp_id, lvl_id);
     if(GDK_result == GDK_FAIL)
-        throw(TRACER, __FUNCTION__, ILLEGAL_ARGUMENT); 
+        GDK_TRACER_REPORT_EXCEPTION("[%s] " ILLEGAL_ARGUMENT"\n", __FUNCTION__);
 
     return MAL_SUCCEED; 
 }
@@ -48,7 +48,7 @@ TRACERreset_component_level(void *ret, int *comp_id)
     (void) ret;
     GDK_result = GDKtracer_reset_component_level(comp_id);
     if(GDK_result == GDK_FAIL)
-        throw(TRACER, __FUNCTION__, _OPERATION_FAILED); 
+        GDK_TRACER_REPORT_EXCEPTION("[%s] " OPERATION_FAILED"\n", __FUNCTION__);
 
     return MAL_SUCCEED;
 }
@@ -60,7 +60,7 @@ TRACERset_layer_level(void *ret, int *layer_id, int *lvl_id)
     (void) ret;
     GDK_result = GDKtracer_set_layer_level(layer_id, lvl_id);
     if(GDK_result == GDK_FAIL)
-        throw(TRACER, __FUNCTION__, ILLEGAL_ARGUMENT); 
+        GDK_TRACER_REPORT_EXCEPTION("[%s] " ILLEGAL_ARGUMENT"\n", __FUNCTION__);
 
     return MAL_SUCCEED; 
 }
@@ -72,7 +72,7 @@ TRACERreset_layer_level(void *ret, int *layer_id)
     (void) ret;
     GDK_result = GDKtracer_reset_layer_level(layer_id);
     if(GDK_result == GDK_FAIL)
-        throw(TRACER, __FUNCTION__, _OPERATION_FAILED); 
+        GDK_TRACER_REPORT_EXCEPTION("[%s] " OPERATION_FAILED"\n", __FUNCTION__);
 
     return MAL_SUCCEED;
 }
@@ -84,7 +84,7 @@ TRACERset_flush_level(void *ret, int *lvl_id)
     (void) ret;
     GDK_result = GDKtracer_set_flush_level(lvl_id);
     if(GDK_result == GDK_FAIL)
-        throw(TRACER, __FUNCTION__, ILLEGAL_ARGUMENT); 
+        GDK_TRACER_REPORT_EXCEPTION("[%s] " ILLEGAL_ARGUMENT"\n", __FUNCTION__);
 
     return MAL_SUCCEED;
 }
@@ -95,7 +95,7 @@ TRACERreset_flush_level(void)
 {
     GDK_result = GDKtracer_reset_flush_level();
     if(GDK_result == GDK_FAIL)
-        throw(TRACER, __FUNCTION__, _OPERATION_FAILED); 
+        GDK_TRACER_REPORT_EXCEPTION("[%s] " OPERATION_FAILED"\n", __FUNCTION__);
 
     return MAL_SUCCEED;
 }
@@ -107,7 +107,7 @@ TRACERset_adapter(void *ret, int *adapter_id)
     (void) ret;
     GDK_result = GDKtracer_set_adapter(adapter_id);
     if(GDK_result == GDK_FAIL)
-        throw(TRACER, __FUNCTION__, ILLEGAL_ARGUMENT); 
+        GDK_TRACER_REPORT_EXCEPTION("[%s] " ILLEGAL_ARGUMENT"\n", __FUNCTION__);
 
     return MAL_SUCCEED;
 }
@@ -118,7 +118,7 @@ TRACERreset_adapter(void)
 {
     GDK_result = GDKtracer_reset_adapter();
     if(GDK_result == GDK_FAIL)
-        throw(TRACER, __FUNCTION__, _OPERATION_FAILED); 
+        GDK_TRACER_REPORT_EXCEPTION("[%s] " OPERATION_FAILED"\n", __FUNCTION__);
 
     return MAL_SUCCEED;
 }
