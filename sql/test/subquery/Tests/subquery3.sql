@@ -318,6 +318,11 @@ SELECT
 FROM another_T t1
 GROUP BY t1.col7, t1.col6; --error, subquery uses ungrouped column "t1.col2" from outer query
 
+SELECT
+    (SELECT 1 FROM integers i2 GROUP BY SUM(i1.i))
+FROM integers i1; --The sum at group by is a correlation from the outer query, so it's allowed inside the GROUP BY at this case
+	-- 1
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
