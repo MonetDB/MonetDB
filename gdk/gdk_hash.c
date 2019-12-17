@@ -40,12 +40,12 @@ HASHwidth(BUN hashsize)
 {
 	if (hashsize <= (BUN) BUN2_NONE)
 		return BUN2;
-#if SIZEOF_BUN <= 4
-	return BUN4;
-#else
+#ifdef BUN8
 	if (hashsize <= (BUN) BUN4_NONE)
 		return BUN4;
 	return BUN8;
+#else
+	return BUN4;
 #endif
 }
 
@@ -247,6 +247,7 @@ HASHupgradehashheap(BAT *b, BUN cap)
 			break;
 		}
 		break;
+#ifdef BUN8
 	case BUN8:
 		switch (h->width) {
 		case BUN2:
@@ -283,6 +284,7 @@ HASHupgradehashheap(BAT *b, BUN cap)
 			break;
 		}
 		break;
+#endif
 	}
 	h->width = nwidth;
 	return GDK_SUCCEED;
