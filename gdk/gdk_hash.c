@@ -474,6 +474,7 @@ BATcheckhash(BAT *b)
 						default:
 							assert(0);
 						}
+						close(fd);
 						h->Link = h->heaplink.base;
 						h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 						h->heaplink.parentid = b->batCacheid;
