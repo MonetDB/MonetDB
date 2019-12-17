@@ -226,10 +226,12 @@ MOSprepareEstimate(MOStask task) {
 }
 
 
-#define do_estimate(NAME, TPE, DUMMY_ARGUMENT)\
+#define do_estimate(NAME, TPE, NAME_TAG)\
 {\
-	str msg = MOSestimate_##NAME##_##TPE(task, &estimations[MOSAIC_LINEAR], previous);\
-	if (msg != MAL_SUCCEED) return msg;\
+	if (task->filter[NAME_TAG]) {\
+		str msg = MOSestimate_##NAME##_##TPE(task, &estimations[NAME_TAG], previous);\
+		if (msg != MAL_SUCCEED) return msg;\
+	}\
 }
 
 
@@ -255,30 +257,14 @@ static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, cons
 	}\
 \
 	/* select candidate amongst those*/\
-	if (task->filter[MOSAIC_RAW]){\
-		DO_OPERATION_IF_ALLOWED(estimate, raw, TPE);\
-	}\
-	if (task->filter[MOSAIC_RLE]){\
-		DO_OPERATION_IF_ALLOWED(estimate, runlength, TPE);\
-	}\
-	if (task->filter[MOSAIC_DELTA]){\
-		DO_OPERATION_IF_ALLOWED(estimate, delta, TPE);\
-	}\
-	if (task->filter[MOSAIC_LINEAR]){\
-		DO_OPERATION_IF_ALLOWED(estimate, linear, TPE);\
-	}\
-	if (task->filter[MOSAIC_FRAME]){\
-		DO_OPERATION_IF_ALLOWED(estimate, frame, TPE);\
-	}\
-	if (task->filter[MOSAIC_PREFIX]){\
-		DO_OPERATION_IF_ALLOWED(estimate, prefix, TPE);\
-	}\
-	if (task->filter[MOSAIC_CAPPED]){\
-		DO_OPERATION_IF_ALLOWED(estimate, capped, TPE);\
-	}\
-	if (task->filter[MOSAIC_VAR]){\
-		DO_OPERATION_IF_ALLOWED(estimate, var, TPE);\
-	}\
+	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, runlength,	TPE, MOSAIC_RLE);\
+	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, delta,		TPE, MOSAIC_DELTA);\
+	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, linear,		TPE, MOSAIC_LINEAR);\
+	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, frame,		TPE, MOSAIC_FRAME);\
+	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, prefix,		TPE, MOSAIC_PREFIX);\
+	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, capped,		TPE, MOSAIC_CAPPED);\
+	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, var,			TPE, MOSAIC_VAR);\
+	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, raw,			TPE, MOSAIC_RAW);\
 \
 	flt best_factor = 0.0;\
 	current->is_applicable = false;\
@@ -475,7 +461,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 
 		return MAL_SUCCEED;
 	}
-    assert(bsrc->tmosaic == NULL);
+	assert(bsrc->tmosaic == NULL);
 
 	if ( BATcount(bsrc) < MOSAIC_THRESHOLD ){
 		/* no need to compress */
@@ -1466,10 +1452,13 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 		MOSsetLock(b);
 
 		Heap* original = NULL;
+		Heap* voriginal = NULL;
 
 		if (BATcheckmosaic(b)){
 			original = b->tmosaic;
 			b->tmosaic = NULL;
+			voriginal = b->tvmosaic;
+			b->tvmosaic = NULL;
 		}
 
 		const char* compressions = buf;
@@ -1482,6 +1471,9 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 
 			if (original) {
 				b->tmosaic = original;
+			}
+			if (voriginal) {
+				b->tvmosaic = voriginal;
 			}
 			pat[i].include = false;
 			MOSunsetLock(b);
@@ -1527,6 +1519,10 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 
 		if (original) {
 			b->tmosaic = original;
+		}
+
+		if (voriginal) {
+			b->tvmosaic = voriginal;
 		}
 
 		MOSunsetLock(b);
