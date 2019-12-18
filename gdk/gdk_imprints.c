@@ -282,7 +282,7 @@ BATimpsync(void *arg)
 
 	/* CHECK */
 	// This is defined in ACCELDEBUG
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ACCEL) t0 = GDKusec();
 
 	MT_lock_set(&b->batIdxLock);
 	if ((imprints = b->timprints) != NULL) {
@@ -379,7 +379,7 @@ BATimprints(BAT *b)
 
 	/* CHECK */
 	// This is defined in ACCELDEBUG
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ACCEL) t0 = GDKusec();
 
 	if (b->timprints == NULL) {
 		BUN cnt;

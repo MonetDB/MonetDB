@@ -306,7 +306,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 
 	/* CHECK */
 	// This is declared only if IODEBUG
-	t0 = GDKms();
+	TRC_DEBUG_IF(IO_) t0 = GDKms();
 
 	if ((nme1 == NULL) || (*nme1 == 0)) {
 		GDKerror("GDKmove: no file specified\n");
@@ -348,7 +348,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 	/* if necessary, extend the underlying file */
 	/* CHECK */
 	// This is declared only if IODEBUG
-	t0 = GDKms();
+	TRC_DEBUG_IF(IO_) t0 = GDKms();
 	if (stb.st_size < (off_t) size) {
 #ifdef HAVE_FALLOCATE
 		if ((rt = fallocate(fd, 0, stb.st_size, (off_t) size - stb.st_size)) < 0 &&

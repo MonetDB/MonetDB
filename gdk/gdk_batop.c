@@ -508,10 +508,13 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 
 	/* CHECK */
 	// The whole if statement is in DEBUG CHECK_
-	if (BATttype(b) != BATttype(n) &&
+	TRC_DEBUG_IF(CHECK_)
+	{
+		if (BATttype(b) != BATttype(n) &&
 		ATOMtype(b->ttype) != ATOMtype(n->ttype)) {
-		TRC_DEBUG(CHECK_, "Interpreting %s as %s.\n",
-					ATOMname(BATttype(n)), ATOMname(BATttype(b)));
+			TRC_DEBUG_ENDIF(CHECK_, "Interpreting %s as %s.\n",
+									ATOMname(BATttype(n)), ATOMname(BATttype(b)));
+		}
 	}
 
 	cnt = canditer_init(&ci, n, s);
@@ -1448,7 +1451,7 @@ BATordered(BAT *b)
 
 	/* CHECK */
 	// This is in DEBUGALGO
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if (b->ttype == TYPE_void)
 		return true;
@@ -1538,7 +1541,7 @@ BATordered_rev(BAT *b)
 
 	/* CHECK */
 	// This is in DEBUGALGO
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if (b == NULL)
 		return false;
@@ -1637,7 +1640,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 
 	/* CHECK */
 	// This is in DEBUGALGO
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	/* we haven't implemented NILs as largest value for stable
 	 * sort, so NILs come first for ascending and last for
@@ -2097,7 +2100,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 
 	/* CHECK */
 	// This is in DEBUGALGO
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if (v == NULL)
 		return NULL;

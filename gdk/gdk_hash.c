@@ -174,11 +174,11 @@ BATcheckhash(BAT *b)
 		/* but when we want to change it, we need the lock */
 		/* CHECK */
 		// This is in ACCELDEBUG
-		t = GDKusec();
+		TRC_DEBUG_IF(ACCEL) t = GDKusec();
 		MT_lock_set(&b->batIdxLock);
 		/* CHECK */
 		// This is in ACCELDEBUG
-		t = GDKusec() - t;
+		TRC_DEBUG_IF(ACCEL) t = GDKusec() - t;
 		/* if still 1 now that we have the lock, we can update */
 		if (b->thash == (Hash *) 1) {
 			Hash *h;
@@ -268,7 +268,7 @@ BAThashsync(void *arg)
 
 	/* CHECK */
 	// This is in ACCELDEBUG
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ACCEL) t0 = GDKusec();
 
 	/* we could check whether b->thash == NULL before getting the
 	 * lock, and only lock if it isn't; however, it's very

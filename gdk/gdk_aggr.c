@@ -897,7 +897,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 
 	/* CHECK */
 	// This is in ALGODEBUG
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATgroupsum: %s\n", err);
@@ -972,7 +972,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 
 	/* CHECK */
 	// This is in ALGODEBUG
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATsum: %s\n", err);

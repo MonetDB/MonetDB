@@ -923,8 +923,11 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 
 	/* CHECK */
 	// From here
-	gethostname(host, (int) 512);
-	TRC_DEBUG(MAL_SERVER, "Ready to accept connections on: %s:%d\n", host, port);
+	TRC_DEBUG_IF(MAL_SERVER)
+	{
+		gethostname(host, (int) 512);
+		TRC_DEBUG_ENDIF(MAL_SERVER, "Ready to accept connections on: %s:%d\n", host, port);
+	}
 	// To here is in DEBUG MAL_SERVER
 	
 	/* seed the randomiser such that our challenges aren't

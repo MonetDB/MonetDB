@@ -24,7 +24,7 @@ BATidxsync(void *arg)
 
 	/* CHECK */
 	// This is in ACCEL DEBUG
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ACCEL) t0 = GDKusec();
 
 	MT_lock_set(&b->batIdxLock);
 	if ((hp = b->torderidx) != NULL) {
@@ -81,7 +81,7 @@ BATcheckorderidx(BAT *b)
 		return false;
 	/* CHECK */
 	// This is in DEBUG ACCEL
-	t = GDKusec();
+	TRC_DEBUG_IF(ACCEL) t = GDKusec();
 	assert(b->batCacheid > 0);
 	/* we don't need the lock just to read the value b->torderidx */
 	if (b->torderidx == (Heap *) 1) {
@@ -135,7 +135,7 @@ BATcheckorderidx(BAT *b)
 	ret = b->torderidx != NULL;
 	/* CHECK */
 	// The if statement in in ACCEL DEBUG
-	if (ret) TRC_DEBUG(ACCEL, "BATcheckorderidx(" ALGOBATFMT "): already has orderidx, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
+	TRC_DEBUG_IF(ACCEL) if (ret) TRC_DEBUG_ENDIF(ACCEL, "BATcheckorderidx(" ALGOBATFMT "): already has orderidx, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
 	return ret;
 }
 

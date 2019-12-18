@@ -242,7 +242,7 @@ BATproject(BAT *l, BAT *r)
 
 	/* CHECK */
 	// This is in ALGODEBUG
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT "," 
 				"r=" ALGOBATFMT ")\n",
@@ -478,7 +478,7 @@ BATprojectchain(BAT **bats)
 
 	/* CHECK */
 	// This is in ALGODEBUG
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	/* count number of participating BATs and allocate some
 	 * temporary work space */

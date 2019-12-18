@@ -908,8 +908,11 @@ HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 	headp->next = 0;
 	/* CHECK */
 	// HEAP_printstatus is also in if DEBUG-TRACE
-	TRC_DEBUG(TRACE, "We created the following heap\n");
-	HEAP_printstatus(heap);
+	TRC_DEBUG_IF(TRACE)
+	{
+		TRC_DEBUG_ENDIF(TRACE, "We created the following heap\n");
+		HEAP_printstatus(heap);
+	}
 }
 
 void

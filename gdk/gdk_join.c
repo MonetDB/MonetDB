@@ -3554,7 +3554,7 @@ BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, boo
 
 	/* CHECK */
 	// This is in ALGODEBUG
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	*r1p = NULL;
 	if (r2p) {
@@ -3583,7 +3583,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 	/* CHECK */
 	// This is in ALGODEBUG
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((parent = VIEWtparent(l)) != 0) {
 		BAT *b = BBPdescriptor(parent);
@@ -3765,7 +3765,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	/* CHECK */
 	// This is in ALGODEBUG
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	TRC_DEBUG(ALGO, "BATbandjoin("
 			  	"l=" ALGOBATFMT ",r=" ALGOBATFMT ","
@@ -3794,7 +3794,7 @@ BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 
 	/* CHECK */
 	// This is in ALGODEBUG
-	t0 = GDKusec();
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	*r1p = NULL;
 	if (r2p) {

@@ -555,9 +555,12 @@ WLCpreparewrite(Client cntxt)
 	// save the wlc record on a file 
 	/* CHECK */
 	// The whole if is in MAL_WLC DEBUG
-	if( cntxt->wlc){
-		TRC_DEBUG(MAL_WLC, "Prepare for writing: %d %d\n", cntxt->wlc->stop , cntxt->wlc_kind);
-		debugFunction(MAL_WLC, cntxt->wlc, 0, LIST_MAL_DEBUG );
+	TRC_DEBUG_IF(MAL_WLC)
+	{
+		if( cntxt->wlc){
+			TRC_DEBUG_ENDIF(MAL_WLC, "Prepare for writing: %d %d\n", cntxt->wlc->stop , cntxt->wlc_kind);
+			debugFunction(MAL_WLC, cntxt->wlc, 0, LIST_MAL_DEBUG );
+		}
 	}
 
 	if( cntxt->wlc == 0 || cntxt->wlc->stop <= 1 ||  cntxt->wlc_kind == WLC_QUERY )
