@@ -1061,6 +1061,10 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Dec 18 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.9-20191218
+- Rebuilt.
+- BZ#6804: DNS resolution of 0.0.0.0 fails on recent Ubuntus
+
 * Tue Dec 17 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.7-20191217
 - Rebuilt.
 
