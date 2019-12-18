@@ -228,12 +228,9 @@ MOSprepareEstimate(MOStask task) {
 
 #define do_estimate(NAME, TPE, NAME_TAG)\
 {\
-	if (task->filter[NAME_TAG]) {\
-		str msg = MOSestimate_##NAME##_##TPE(task, &estimations[NAME_TAG], previous);\
-		if (msg != MAL_SUCCEED) return msg;\
-	}\
+	str msg = MOSestimate_##NAME##_##TPE(task, &estimations[NAME_TAG], previous);\
+	if (msg != MAL_SUCCEED) return msg;\
 }
-
 
 #define do_postEstimate(NAME, TPE, DUMMY_ARGUMENT) MOSpostEstimate_##NAME##_##TPE(task);
 
@@ -257,14 +254,30 @@ static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, cons
 	}\
 \
 	/* select candidate amongst those*/\
-	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, runlength,	TPE, MOSAIC_RLE);\
-	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, delta,		TPE, MOSAIC_DELTA);\
-	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, linear,		TPE, MOSAIC_LINEAR);\
-	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, frame,		TPE, MOSAIC_FRAME);\
-	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, prefix,		TPE, MOSAIC_PREFIX);\
-	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, capped,		TPE, MOSAIC_CAPPED);\
-	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, var,			TPE, MOSAIC_VAR);\
-	DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, raw,			TPE, MOSAIC_RAW);\
+	if (task->filter[MOSAIC_RLE]) {\
+		DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, runlength,	TPE, MOSAIC_RLE);\
+	}\
+	if (task->filter[MOSAIC_DELTA]) {\
+		DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, delta,	TPE, MOSAIC_DELTA);\
+	}\
+	if (task->filter[MOSAIC_LINEAR]) {\
+		DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, linear,	TPE, MOSAIC_LINEAR);\
+	}\
+	if (task->filter[MOSAIC_FRAME]) {\
+		DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, frame,	TPE, MOSAIC_FRAME);\
+	}\
+	if (task->filter[MOSAIC_PREFIX]) {\
+		DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, prefix,	TPE, MOSAIC_PREFIX);\
+	}\
+	if (task->filter[MOSAIC_CAPPED]) {\
+		DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, capped,	TPE, MOSAIC_CAPPED);\
+	}\
+	if (task->filter[MOSAIC_VAR]) {\
+		DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, var,	TPE, MOSAIC_VAR);\
+	}\
+	if (task->filter[MOSAIC_RAW]) {\
+		DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, raw,	TPE, MOSAIC_RAW);\
+	}\
 \
 	flt best_factor = 0.0;\
 	current->is_applicable = false;\
