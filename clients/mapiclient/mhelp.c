@@ -1105,20 +1105,13 @@ sql_help(const char *pattern, stream *toConsole, int pagewidth)
 			}
 		return;
 	}
+
 	// collect the major topics
 	for (i = 0; sqlhelp1[i].command; i++) {
 		total++;
 		if ((len = strlen(sqlhelp1[i].command)) > maxlen)
 			maxlen = len;
 	}
-	if (*pattern == '*') {
-		for (i = 0; sqlhelp2[i].command; i++) {
-			total++;
-			if ((len = strlen(sqlhelp2[i].command)) > maxlen)
-				maxlen = len;
-		}
-	}
-
 	// provide summary of all major topics  (=search terms)
 	ncolumns = (int) maxlen > pagewidth ? 1 : (int) (pagewidth / maxlen);
 	if (ncolumns > 1 && ncolumns * (int) maxlen + ncolumns - 1 > pagewidth)
