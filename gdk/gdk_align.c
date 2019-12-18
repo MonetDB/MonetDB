@@ -164,8 +164,7 @@ BATmaterialize(BAT *b)
 	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
-	TRC_DEBUG(ALGO, "BATmaterialize(" ALGOBATFMT ")\n",
-			  	ALGOBATPAR(b)); 
+	TRC_DEBUG(ALGO, "BATmaterialize(" ALGOBATFMT ")\n", ALGOBATPAR(b)); 
 
 	if (tt != TYPE_void) {
 		/* no voids */

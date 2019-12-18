@@ -42,7 +42,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	TRC_DEBUG(MAL_OPT_CONSTANTS, "CONSTANTS optimizer enter\n");
 
 	if ( alias == NULL || cst == NULL || index == NULL){
-		msg = createException(MAL,"optimizer.constants", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL,"optimizer.constants", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 

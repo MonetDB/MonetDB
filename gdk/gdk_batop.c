@@ -161,7 +161,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 				 * shared when memory mapped */
 				if (HEAPextend(b->tvheap, toff + n->tvheap->size, force) != GDK_SUCCEED) {
 					toff = ~(size_t) 0;
-					goto bunins_failed;
+					return GDK_FAIL;
 				}
 				memcpy(b->tvheap->base + toff, n->tvheap->base, n->tvheap->free);
 				b->tvheap->free = toff + n->tvheap->free;
@@ -187,7 +187,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 				 * widen offset heap */
 				if (GDKupgradevarheap(b, (var_t) b->tvheap->size, false, force) != GDK_SUCCEED) {
 					toff = ~(size_t) 0;
-					goto bunins_failed;
+					return GDK_FAIL;
 				}
 			}
 		}
@@ -314,7 +314,8 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			cnt--;
 			p = canditer_next(&ci) - hseq;
 			tp = BUNtvar(ni, p);
-			bunfastappVAR(b, tp);
+			if (bunfastappVAR(b, tp) != GDK_SUCCEED)
+				goto bunins_failed;
 			HASHins(b, r, tp);
 			r++;
 		}
@@ -374,7 +375,8 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 				}
 				b->batCount++;
 			} else {
-				bunfastappVAR(b, tp);
+				if (bunfastappVAR(b, tp) != GDK_SUCCEED)
+					goto bunins_failed;
 			}
 			HASHins(b, r, tp);
 			r++;
@@ -470,15 +472,13 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 		cnt--;
 		BUN p = canditer_next(&ci) - hseq;
 		const void *t = BUNtvar(ni, p);
-		bunfastapp_nocheckVAR(b, r, t, Tsize(b));
+		if (bunfastapp_nocheckVAR(b, r, t, Tsize(b)) != GDK_SUCCEED)
+			return GDK_FAIL;
 		HASHins(b, r, t);
 		r++;
 	}
 	b->theap.dirty = true;
 	return GDK_SUCCEED;
-
-      bunins_failed:
-	return GDK_FAIL;
 }
 
 /* Append the contents of BAT n (subject to the optional candidate
@@ -599,7 +599,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		/* we need to materialize b; allocate enough capacity */
 		b->batCapacity = BATcount(b) + cnt;
 		if (BATmaterialize(b) != GDK_SUCCEED)
-			goto bunins_failed;
+			return GDK_FAIL;
 	} else if (cnt > BATcapacity(b) - BATcount(b)) {
 		/* if needed space exceeds a normal growth extend just
 		 * with what's needed */
@@ -609,7 +609,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		if (ncap > grows)
 			grows = ncap;
 		if (BATextend(b, grows) != GDK_SUCCEED)
-			goto bunins_failed;
+			return GDK_FAIL;
 	}
 
 	/* if growing too much, remove the hash, else we maintain it */
@@ -707,7 +707,8 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 				cnt--;
 				BUN p = canditer_next(&ci) - hseq;
 				const void *t = BUNtail(ni, p);
-				bunfastapp_nocheck(b, r, t, Tsize(b));
+				if (bunfastapp_nocheck(b, r, t, Tsize(b)) != GDK_SUCCEED)
+					return GDK_FAIL;
 				HASHins(b, r, t);
 				r++;
 			}
@@ -715,9 +716,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		b->theap.dirty = true;
 	}
 	return GDK_SUCCEED;
-
-      bunins_failed:
-	return GDK_FAIL;
 }
 
 gdk_return
@@ -968,12 +966,13 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 				break;
 #endif
 			}
-			ATOMreplaceVAR(b->ttype, b->tvheap, &d, new);
+			if (ATOMreplaceVAR(b->ttype, b->tvheap, &d, new) != GDK_SUCCEED)
+				return GDK_FAIL;
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
 				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, d, false, b->batRestricted == BAT_READ) != GDK_SUCCEED)
-					goto bunins_failed;
+					return GDK_FAIL;
 			}
 			switch (b->twidth) {
 			case 1:
@@ -1169,9 +1168,6 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			  ALGOBATPAR(b), ALGOBATPAR(p), ALGOBATPAR(n),
 			  GDKusec() - t0);
 	return GDK_SUCCEED;
-
-  bunins_failed:
-	return GDK_FAIL;
 }
 
 
@@ -1247,7 +1243,10 @@ BATslice(BAT *b, BUN l, BUN h)
 			BATsetcount(bn, h - l);
 		} else {
 			for (; p < q; p++) {
-				bunfastapp(bn, BUNtail(bi, p));
+				if (bunfastapp(bn, BUNtail(bi, p)) != GDK_SUCCEED) {
+					BBPreclaim(bn);
+					return NULL;
+				}
 			}
 		}
 		bn->theap.dirty = true;
@@ -1303,9 +1302,6 @@ BATslice(BAT *b, BUN l, BUN h)
 			  	"=" ALGOBATFMT "\n",
 			  	ALGOBATPAR(b), l, h, ALGOBATPAR(bn));
 	return bn;
-      bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
 }
 
 /* Return whether the BAT has all unique values or not.  It we don't
@@ -2141,7 +2137,10 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 #endif
 		default:
 			for (i = 0, n += i; i < n; i++)
-				tfastins_nocheck(bn, i, v, Tsize(bn));
+				if (tfastins_nocheck(bn, i, v, Tsize(bn)) != GDK_SUCCEED) {
+					BBPreclaim(bn);
+					return NULL;
+				}
 			break;
 		}
 		bn->theap.dirty = true;
@@ -2157,10 +2156,6 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 				__func__,
 				ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
-
-  bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
 }
 
 /*

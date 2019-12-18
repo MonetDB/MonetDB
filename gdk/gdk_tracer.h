@@ -196,6 +196,7 @@ typedef enum {
         COMP( GDK_POSIX )             \
         COMP( GDK_SYSTEM )            \
         COMP( GDK_IMPRINTS )          \
+        COMP( GDK_HASH )              \
                                       \
         COMP( COMPONENTS_COUNT )      \
 
@@ -295,19 +296,29 @@ extern LOG_LEVEL LVL_PER_COMPONENT[];
 
 
 #define TRC_CRITICAL_ENDIF(COMP, MSG, ...)                                \
-    GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)            \
-
+    do {                                                                  \
+        GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)        \
+    } while (0)                                                           \
+    
 #define TRC_ERROR_ENDIF(COMP, MSG, ...)                                   \
-    GDK_TRACER_LOG_BODY(M_ERROR, COMP, MSG, ## __VA_ARGS__)               \
+    do {                                                                  \
+        GDK_TRACER_LOG_BODY(M_ERROR, COMP, MSG, ## __VA_ARGS__)           \
+    } while (0)                                                           \
 
 #define TRC_WARNING_ENDIF(COMP, MSG, ...)                                 \
-    GDK_TRACER_LOG_BODY(M_WARNING, COMP, MSG, ## __VA_ARGS__)             \
+    do {                                                                  \
+        GDK_TRACER_LOG_BODY(M_WARNING, COMP, MSG, ## __VA_ARGS__)         \
+    } while (0)                                                           \
 
 #define TRC_INFO_ENDIF(COMP, MSG, ...)                                    \
-    GDK_TRACER_LOG_BODY(M_INFO, COMP, MSG, ## __VA_ARGS__)                \
+    do {                                                                  \
+        GDK_TRACER_LOG_BODY(M_INFO, COMP, MSG, ## __VA_ARGS__)            \
+    } while (0)                                                           \
 
 #define TRC_DEBUG_ENDIF(COMP, MSG, ...)                                   \
-    GDK_TRACER_LOG_BODY(M_DEBUG, COMP, MSG, ## __VA_ARGS__)               \
+    do {                                                                  \
+        GDK_TRACER_LOG_BODY(M_DEBUG, COMP, MSG, ## __VA_ARGS__)           \
+    } while (0)                                                           \
 
 
 

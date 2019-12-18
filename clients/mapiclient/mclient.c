@@ -2452,7 +2452,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 				break;
 			case 'e':
 			case 'E':
-				/* a bit of a hack for prepare/exec/dealloc
+				/* a bit of a hack for prepare/exec/deallocate
 				 * tests: replace "exec[ute] **" with the
 				 * ID of the last prepared statement */
 				if (mode == SQL && formatter == TESTformatter) {
@@ -2470,17 +2470,12 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 				break;
 			case 'd':
 			case 'D':
-				/* a bit of a hack for prepare/exec/dealloc
-				 * tests: replace "dealloc[ate] **" with the
+				/* a bit of a hack for prepare/exec/deallocate
+				 * tests: replace "deallocate **" with the
 				 * ID of the last prepared statement */
-				if (mode == SQL && formatter == TESTformatter) {
-					if (strncasecmp(line, "dealloc **", 10) == 0) {
-						line[8] = prepno < 10 ? ' ' : prepno / 10 + '0';
-						line[9] = prepno % 10 + '0';
-					} else if (strncasecmp(line, "deallocate **", 13) == 0) {
-						line[11] = prepno < 10 ? ' ' : prepno / 10 + '0';
-						line[12] = prepno % 10 + '0';
-					}
+				if (mode == SQL && formatter == TESTformatter && strncasecmp(line, "deallocate **", 13) == 0) {
+					line[11] = prepno < 10 ? ' ' : prepno / 10 + '0';
+					line[12] = prepno % 10 + '0';
 				}
 				break;
 			case 'q':

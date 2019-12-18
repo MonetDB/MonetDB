@@ -31,25 +31,18 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
-	char *used;
 
 	(void) pci;
 	(void) stk;
 	if ( mb->inlineProp)
 		return 0;
-	
-	TRC_DEBUG(MAL_OPT_GC, "GARBAGECOLLECTOR optimizer enter\n");
-
-	used = (char*) GDKzalloc(sizeof(char) * mb->vtop);
-	if ( used == NULL)
-		throw(MAL, "optimizer.garbagecollector", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	limit = mb->stop;
 
 	/* variables get their name from the position */
-	/* rename all temporaries used for ease of variable table interpretation */
+	/* rename all temporaries for ease of variable table interpretation */
 	/* this code should not be necessary is variables always keep their position */
- 	for( i = 0; i < mb->vtop; i++){
+	for( i = 0; i < mb->vtop; i++) {
 		//strcpy(buf, getVarName(mb,i));
 		if (getVarName(mb,i)[0] == 'X' && getVarName(mb,i)[1] == '_')
 			snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
@@ -91,23 +84,23 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
-	GDKfree(used);
-
-	/* CHECK */
-	// From here
-	int k;
-	TRC_DEBUG(MAL_OPT_GC, "Garbage collected BAT variables\n");
-	for ( k =0; k < mb->vtop; k++)
-	TRC_DEBUG(MAL_OPT_GC, "%10s eolife %3d begin %3d lastupd %3d end %3d\n",
-					getVarName(mb,k), getVarEolife(mb,k),
-					getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
-	chkFlow(mb);
-	if ( mb->errors != MAL_SUCCEED ){
-		TRC_DEBUG(MAL_OPT_GC, "%s\n", mb->errors);
-		freeException(mb->errors);
-		mb->errors = MAL_SUCCEED;
-	}
-	// To here is in DEBUG MAL_OPT_GC
+	TRC_DEBUG_IF(MAL_OPT_GC)
+    {
+		int k;
+		TRC_DEBUG_ENDIF(MAL_OPT_GC, "Garbage collected BAT variables \n");
+		for ( k =0; k < mb->vtop; k++)
+		TRC_DEBUG_ENDIF(MAL_OPT_GC, "%10s eolife %3d begin %3d lastupd %3d end %3d\n",
+			getVarName(mb,k), getVarEolife(mb,k),
+			getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
+		chkFlow(mb);
+		if ( mb->errors != MAL_SUCCEED ){
+			TRC_DEBUG_ENDIF(MAL_OPT_GC, "%s\n", mb->errors);
+			freeException(mb->errors);
+			mb->errors = MAL_SUCCEED;
+		}
+		debugFunction(MAL_OPT_GC, mb, 0, LIST_MAL_ALL);
+		TRC_DEBUG_ENDIF(MAL_OPT_GC, "End of GCoptimizer\n");
+    }
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);

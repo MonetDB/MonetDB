@@ -556,11 +556,11 @@ INEThost(str *retval, const inet *val)
 	if (is_inet_nil(val)) {
 		*retval = GDKstrdup(str_nil);
 		if( *retval == NULL)
-			throw(MAL,"INEThost", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		ip = GDKmalloc(sizeof(char) * 16);
 		if( ip == NULL)
-			throw(MAL,"INEThost", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		sprintf(ip, "%d.%d.%d.%d", val->q1, val->q2, val->q3, val->q4);
 		*retval = ip;
 	}
@@ -703,11 +703,11 @@ INETtext(str *retval, const inet *val)
 	if (is_inet_nil(val)) {
 		*retval = GDKstrdup(str_nil);
 		if( *retval == NULL)
-			throw(MAL,"INETtext", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"INETtext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		ip = GDKmalloc(sizeof(char) * 20);
 		if( ip == NULL)
-			throw(MAL,"INETtext", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"INETtext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 		snprintf(ip, sizeof(char) * 20, "%d.%d.%d.%d/%d",
 				val->q1, val->q2, val->q3, val->q4, val->mask);
@@ -728,7 +728,7 @@ INETabbrev(str *retval, const inet *val)
 	if (is_inet_nil(val)) {
 		*retval = GDKstrdup(str_nil);
 		if (*retval == NULL)
-			throw(MAL, "inet.abbrev", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "inet.abbrev", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		unsigned int msk;
 		unsigned char m[4];
@@ -763,7 +763,7 @@ INETabbrev(str *retval, const inet *val)
 
 		ip = GDKmalloc(sizeof(char) * 20);
 		if (ip == NULL)
-			throw(MAL, "inet.abbrev", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "inet.abbrev", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 		if (msk > 24) {
 			snprintf(ip, sizeof(char) * 20, "%d.%d.%d.%d/%d",

@@ -123,10 +123,5 @@ logging.resetadapter();
 
 
 
-# log & flush
-logging.log();
-logging.flush();
-
-
 # Show log levels etc
 logging.showinfo();

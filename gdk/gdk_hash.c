@@ -152,7 +152,7 @@ HASHcollisions(BAT *b, Hash *h)
 				max = cnt;
 			total += cnt;
 		}
-	TRC_DEBUG(ACCEL, "Statistics (" BUNFMT ", entries " LLFMT ", mask " BUNFMT ", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->mask, max, entries == 0 ? 0 : total / entries);
+	TRC_DEBUG(GDK_HASH, "Statistics (" BUNFMT ", entries " LLFMT ", mask " BUNFMT ", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->mask, max, entries == 0 ? 0 : total / entries);
 }
 
 /* Return TRUE if we have a hash on the tail, even if we need to read
@@ -253,7 +253,7 @@ BATcheckhash(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->thash != NULL;
-	TRC_DEBUG(ACCEL, "Already has hash %s, waited " LLFMT " usec\n", BATgetId(b), t);
+	TRC_DEBUG_IF(ACCEL) if (ret) TRC_DEBUG_ENDIF(ACCEL, "Already has hash %s, waited " LLFMT " usec\n", BATgetId(b), t);
 	return ret;
 }
 
@@ -371,10 +371,9 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	BATiter bi = bat_iterator(b);
 	PROPrec *prop;
 
-	/* CHECK */
-	// This is in ACCELDEBUG
-	t0 = GDKusec();
-	TRC_DEBUG(ACCEL, "Create hash(" ALGOBATFMT ");\n", ALGOBATPAR(b));
+	TRC_DEBUG_IF(ACCEL) t0 = GDKusec();
+	TRC_DEBUG_IF(ACCEL) TRC_DEBUG_ENDIF(ACCEL, "Create hash(" ALGOBATFMT ");\n", ALGOBATPAR(b));
+
 	if (b->ttype == TYPE_void) {
 		if (is_oid_nil(b->tseqbase)) {
 			TRC_DEBUG(ACCEL, "Cannot create hash-table on void-NIL column.\n");
@@ -488,12 +487,10 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 			}
 			break;
 		}
-		/* CHECK */
-		// The if statement is in DEBUGACCEL
-		if (p < cnt1)
-			TRC_DEBUG(ACCEL, "BAThash(%s): abort starthash with "
-						"mask " BUNFMT " at " BUNFMT "\n", BATgetId(b),
-						mask, p);
+		TRC_DEBUG_IF(ACCEL) if (p < cnt1)
+			TRC_DEBUG_ENDIF(ACCEL, "Abort starthash with mask " BUNFMT 
+							" at " BUNFMT "\n", MT_thread_getname(), BATgetId(b),
+							mask, p);
 		if (p == cnt1 || mask == maxmask)
 			break;
 		mask <<= 2;
@@ -556,12 +553,10 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		b->tkey = true;
 		b->batDirtydesc = true;
 	}
-	
-	/* CHECK */
-	// HASHcollisions is also in DEBUG ACCEL
-	TRC_DEBUG(ACCEL, "Hash construction " LLFMT " usec\n", GDKusec() - t0);
-	HASHcollisions(b, h);
-	
+	TRC_DEBUG_IF(ACCEL) {
+		TRC_DEBUG_ENDIF(ACCEL, "Hash construction " LLFMT " usec\n", GDKusec() - t0);
+		HASHcollisions(b, h);
+	}
 	return h;
 }
 
@@ -664,10 +659,8 @@ HASHdestroy(BAT *b)
 				hp = BBP_cache(p);
 
 			if (!hp || hs != hp->thash) {
-				/* CHECK */
-				// If statement is in ACCELDEBUG
-				if (*(size_t *) hs->heap.base & (1 << 24))
-					TRC_DEBUG(ACCEL, "Removing persisted hash %d\n", b->batCacheid);
+				TRC_DEBUG_IF(ACCEL) if (*(size_t *) hs->heap.base & (1 << 24))
+					TRC_DEBUG_ENDIF(ACCEL, "Removing persisted hash %d\n", b->batCacheid);
 				HEAPfree(&hs->heap, true);
 				GDKfree(hs);
 			}

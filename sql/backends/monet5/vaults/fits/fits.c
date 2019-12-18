@@ -224,7 +224,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (colname == NULL || tform == NULL) {
 		GDKfree(colname);
 		GDKfree(tform);
-		throw(MAL, "fits.exporttable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "fits.exporttable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	TRC_DEBUG(FITS, "Number of columns: %d\n", columns);
@@ -581,7 +581,7 @@ str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		while ((ep = readdir(dp)) != NULL && !msg) {
 			char *filename = SQLescapeString(ep->d_name);
 			if (!filename) {
-				msg = createException(MAL, "fits.listdir", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "fits.listdir", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			}
 
@@ -636,7 +636,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		snprintf(fname, BUFSIZ, "%s", globbuf.gl_pathv[j]);
 		filename = SQLescapeString(fname);
 		if (!filename) {
-			throw(MAL, "fits.listdirpat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "fits.listdirpat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		status = 0;
 		fits_open_file(&fptr, filename, READONLY, &status);
@@ -836,18 +836,18 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* escape the various strings to avoid SQL injection attacks */
 			esc_cname = SQLescapeString(cname);
 			if (!esc_cname) {
-				throw(MAL, "fits.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			esc_tform = SQLescapeString(tform);
 			if (!esc_tform) {
 				GDKfree(esc_cname);
-				throw(MAL, "fits.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			esc_tunit = SQLescapeString(tunit);
 			if (!esc_tform) {
 				GDKfree(esc_tform);
 				GDKfree(esc_cname);
-				throw(MAL, "fits.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "fits.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			snprintf(stmt, BUFSIZ, FITS_INS_COL, (int)cid, esc_cname, esc_tform, esc_tunit, j, (int)tid);
 			GDKfree(esc_tunit);
@@ -988,7 +988,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(rep);
 			GDKfree(wid);
 			GDKfree(cname);
-			throw(MAL,"fits.load", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"fits.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (mtype == TYPE_blob) {
 			long i;
@@ -1003,7 +1003,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDKfree(rep);
 				GDKfree(wid);
 				GDKfree(cname);
-				throw(MAL,"fits.load", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL,"fits.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 
 			for(i = 0; i < rows; i++) {
@@ -1018,14 +1018,14 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						GDKfree(v[k]);
 					}
 					GDKfree(v);
-					throw(MAL,"fits.load", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(MAL,"fits.load", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				fits_read_col(fptr, tpcode[j - 1], j, i + 1, 1, rep[j - 1], (void *)nilptr,
 					      (void *)v[i]->data, &anynull, &status);
 				v[i]->nitems = nbytes;
 				if (BUNappend(tmp, v[i], false) != GDK_SUCCEED) {
 					BBPreclaim(tmp);
-					msg = createException(MAL, "fits.loadtable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL, "fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					GDKfree(tpcode);
 					GDKfree(rep);
 					GDKfree(wid);
@@ -1060,7 +1060,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				for(k = 0; k < batch ; k++)
 					if (BUNappend(tmp, v[k], false) != GDK_SUCCEED) {
 						BBPreclaim(tmp);
-						msg = createException(MAL, "fits.loadtable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						msg = createException(MAL, "fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						goto bailout;
 					}
 				tattachtm += GDKms() - tm0;
@@ -1087,7 +1087,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		TRC_INFO(FITS, "#Column %s loaded for %d ms\t", cname[j-1], GDKms() - time0);
 		if (store_funcs.append_col(m->session->tr, col, tmp, TYPE_bat) != LOG_OK) {
 			BBPunfix(tmp->batCacheid);
-			msg = createException(MAL, "fits.loadtable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			msg = createException(MAL, "fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			break;
 		}
 

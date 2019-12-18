@@ -190,10 +190,11 @@ project_any(BAT *bn, BAT *l, struct canditer *restrict ci, BAT *r, bool nilcheck
 			oid o = canditer_next(ci);
 			if (o < rseq || o >= rend) {
 				GDKerror("BATproject: does not match always\n");
-				goto bunins_failed;
+				return GDK_FAIL;
 			}
 			v = BUNtail(ri, o - rseq);
-			tfastins_nocheck(bn, lo, v, Tsize(bn));
+			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED)
+				return GDK_FAIL;
 			if (nilcheck && bn->tnonil && cmp(v, nil) == 0) {
 				bn->tnonil = false;
 				bn->tnil = true;
@@ -204,15 +205,17 @@ project_any(BAT *bn, BAT *l, struct canditer *restrict ci, BAT *r, bool nilcheck
 
 		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
 			if (is_oid_nil(o[lo])) {
-				tfastins_nocheck(bn, lo, nil, Tsize(bn));
+				if (tfastins_nocheck(bn, lo, nil, Tsize(bn)) != GDK_SUCCEED)
+					return GDK_FAIL;
 				bn->tnonil = false;
 				bn->tnil = true;
 			} else if (o[lo] < rseq || o[lo] >= rend) {
 				GDKerror("BATproject: does not match always\n");
-				goto bunins_failed;
+				return GDK_FAIL;
 			} else {
 				v = BUNtail(ri, o[lo] - rseq);
-				tfastins_nocheck(bn, lo, v, Tsize(bn));
+				if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED)
+					return GDK_FAIL;
 				if (nilcheck && bn->tnonil && cmp(v, nil) == 0) {
 					bn->tnonil = false;
 					bn->tnil = true;
@@ -223,8 +226,6 @@ project_any(BAT *bn, BAT *l, struct canditer *restrict ci, BAT *r, bool nilcheck
 	BATsetcount(bn, lo);
 	bn->theap.dirty = true;
 	return GDK_SUCCEED;
-bunins_failed:
-	return GDK_FAIL;
 }
 
 BAT *
@@ -563,7 +564,8 @@ BATprojectchain(BAT **bats)
 				o -= ba[i].hlo;
 				o = ba[i].ci.s ? canditer_idx(&ba[i].ci, o) : ba[i].t[o];
 			}
-			bunfastappTYPE(oid, bn, &o);
+			if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
+				goto bunins_failed;
 			ATOMputFIX(bn->ttype, d, &o);
 			d++;
 		}
@@ -649,7 +651,8 @@ BATprojectchain(BAT **bats)
 				o -= ba[n].hlo;
 				v = BUNtail(bi, o);
 			}
-			bunfastapp(bn, v);
+			if (bunfastapp(bn, v) != GDK_SUCCEED)
+				goto bunins_failed;
 		}
 		n++;		/* undo for debug print */
 	}

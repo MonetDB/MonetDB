@@ -1,3 +1,16 @@
+monetdb (11.35.9) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6804: DNS resolution of 0.0.0.0 fails on recent Ubuntus
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 18 Dec 2019 11:02:41 +0100
+
+monetdb (11.35.7) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 17 Dec 2019 10:03:07 +0100
+
 monetdb (11.35.5) unstable; urgency=low
 
   * Rebuilt.

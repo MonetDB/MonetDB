@@ -69,6 +69,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		}
 	}
+
 	/* Defense line against incorrect plans */
 	if( actions ){
 		//chkTypes(cntxt->usermodule, mb, FALSE);

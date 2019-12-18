@@ -35,14 +35,13 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
-    if ( mb->inlineProp )
-        return MAL_SUCCEED;
+	if ( mb->inlineProp )
+		return MAL_SUCCEED;
 
-	TRC_DEBUG(MAL_OPT_VOLCANO, "VOLCANO optimizer enter\n");
+	limit= mb->stop;
+	if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
+		throw(MAL,"optimizer.volcano", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-    limit= mb->stop;
-    if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
-		throw(MAL,"optimizer.volcano", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 

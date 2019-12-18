@@ -2896,11 +2896,13 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				if (!skip_nils && !b->tnonil)
 					nils += (*atomcmp)(v, dnil) == 0;
 			}
-			bunfastapp_nocheck(bn, BUNlast(bn), v, Tsize(bn));
+			if (bunfastapp_nocheck(bn, BUNlast(bn), v, Tsize(bn)) != GDK_SUCCEED)
+				goto bunins_failed;
 		}
 		nils += ngrp - BATcount(bn);
 		while (BATcount(bn) < ngrp) {
-			bunfastapp_nocheck(bn, BUNlast(bn), dnil, Tsize(bn));
+			if (bunfastapp_nocheck(bn, BUNlast(bn), dnil, Tsize(bn)) != GDK_SUCCEED)
+				goto bunins_failed;
 		}
 		bn->theap.dirty = true;
 		BBPunfix(g->batCacheid);

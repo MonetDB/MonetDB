@@ -76,7 +76,7 @@ stdout of test 'date_trunc_bulk` in directory 'sql/test/BugTracker-2019` itself:
 % 26 # length
 [ 2119-02-17 02:00:00.000000	]
 [ NULL	]
-[ 1999-12-31 23:36:00.000000	]
+[ 1999-12-31 23:00:00.000000	]
 #select date_trunc('day', t) from dt_tmp;
 % . # table_name
 % %1 # name
@@ -108,7 +108,7 @@ stdout of test 'date_trunc_bulk` in directory 'sql/test/BugTracker-2019` itself:
 % 26 # length
 [ 2119-01-01 00:00:00.000000	]
 [ NULL	]
-[ 1999-04-01 00:00:00.000000	]
+[ 1999-10-01 00:00:00.000000	]
 #select date_trunc('year', t) from dt_tmp;
 % . # table_name
 % %1 # name

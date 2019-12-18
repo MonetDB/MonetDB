@@ -115,7 +115,7 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 		/* override errors when the underlying error is memory
 		 * exhaustion, but include whatever it is that the GDK level
 		 * reported */
-		ret = createException(type, fcn, SQLSTATE(HY001) MAL_MALLOC_FAIL ": %s", GDKerrbuf);
+		ret = createException(type, fcn, SQLSTATE(HY013) MAL_MALLOC_FAIL ": %s", GDKerrbuf);
 		GDKclrerr();
 		return ret;
 	}

@@ -107,7 +107,8 @@ typedef struct{
 				msg = (*mut->pci->fcn)(&y, __VA_ARGS__);				\
 				if (msg)												\
 					break;												\
-				bunfastapp(mut->args[0].b, (void*) y);					\
+				if (bunfastapp(mut->args[0].b, (void*) y) != GDK_SUCCEED) \
+					goto bunins_failed;									\
 				GDKfree(y); y = NULL;									\
 				if (++oo == olimit)										\
 					break;												\
@@ -151,7 +152,7 @@ MANIFOLDjob(MULTItask *mut)
 
 	args = (char**) GDKzalloc(sizeof(char*) * mut->pci->argc);
 	if( args == NULL)
-		throw(MAL,"mal.manifold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	
 	// the mod.fcn arguments are ignored from the call
 	for( i = mut->pci->retc+2; i< mut->pci->argc; i++) {
@@ -269,7 +270,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	mat = (MULTIarg *) GDKzalloc(sizeof(MULTIarg) * pci->argc);
 	if( mat == NULL)
-		throw(MAL, "mal.manifold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	
 	// mr-job structure preparation
 	mut.fvar = mut.lvar = 0;
@@ -284,7 +285,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		if ( isaBatType(getArgType(mb,pci,i)) ){
 			mat[i].b = BATdescriptor( *getArgReference_bat(stk,pci,i));
 			if ( mat[i].b == NULL){
-				msg = createException(MAL,"mal.manifold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
 			mat[i].type = tpe = getBatType(getArgType(mb,pci,i));
@@ -326,7 +327,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	// prepare result variable
 	mat[0].b =COLnew(mat[mut.fvar].b->hseqbase, getBatType(getArgType(mb,pci,0)), cnt, TRANSIENT);
 	if ( mat[0].b == NULL){
-		msg= createException(MAL,"mal.manifold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg= createException(MAL,"mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 	mat[0].b->tnonil=false;
@@ -338,7 +339,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	mut.pci = copyInstruction(pci);
 	if ( mut.pci == NULL){
-		msg= createException(MAL,"mal.manifold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg= createException(MAL,"mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 	mut.pci->fcn = fcn;

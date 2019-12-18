@@ -230,7 +230,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 		case 0:
 			break;
 		case -1:
-			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			break;
 		case -2:
 			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
@@ -249,13 +249,13 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 			} else {
 				atomtostr = BATatoms[tp1].atomToStr;
 				if (atomtostr(&conflict_err_min, &length, err->part.range.minvalue, true) < 0) {
-					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&conflict_err_max, &length, err->part.range.maxvalue, true) < 0) {
-					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&err_min, &length, min, true) < 0) {
-					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&err_max, &length, max, true) < 0) {
-					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else {
 					sql_table *errt = mvc_bind_table(sql, mt->s, err->base.name);
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
@@ -441,10 +441,10 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 
 		sql->sa = sa_create();
 		if (!sql->sa)
-			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		buf = sa_strdup(sql->sa, query);
 		if (!buf)
-			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0);
@@ -478,7 +478,7 @@ drop_trigger(mvc *sql, char *sname, char *tname, int if_exists)
 		throw(SQL,"sql.drop_trigger", SQLSTATE(3F000) "DROP TRIGGER: unknown trigger %s\n", tname);
 	}
 	if (mvc_drop_trigger(sql, s, tri))
-		throw(SQL,"sql.drop_trigger", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL,"sql.drop_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -583,7 +583,7 @@ drop_key(mvc *sql, char *sname, char *kname, int drop_action)
 	if (!drop_action && mvc_check_dependency(sql, key->base.id, KEY_DEPENDENCY, NULL))
 		throw(SQL,"sql.drop_key", SQLSTATE(42000) "ALTER TABLE: cannot drop constraint '%s': there are database objects which depend on it", key->base.name);
 	if (mvc_drop_key(sql, ss, key, drop_action))
-		throw(SQL,"sql.drop_key", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL,"sql.drop_key", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -618,7 +618,7 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 			}
 		}
 		if (mvc_drop_idx(sql, s, i))
-			throw(SQL,"sql.drop_index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL,"sql.drop_index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	return NULL;
 }
@@ -733,7 +733,7 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 
 			if (mvc_drop_func(sql, s, func, action))
-				throw(SQL,"sql.drop_func", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(SQL,"sql.drop_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	} else if (fid == -2) { //if exists option
 		return MAL_SUCCEED;
@@ -757,7 +757,7 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 		res = mvc_drop_all_func(sql, s, list_func, action);
 		list_destroy(list_func);
 		if (res)
-			throw(SQL,"sql.drop_func", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL,"sql.drop_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	return MAL_SUCCEED;
 }
@@ -794,9 +794,9 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 
 		assert(nf->query);
 		if (!(sql->sa = sa_create()))
-			throw(SQL, "sql.catalog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (!(buf = sa_strdup(sql->sa, nf->query)))
-			throw(SQL, "sql.catalog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0);
@@ -866,7 +866,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			sql_column *c = n->data;
 			sql_column *nc = mvc_bind_column(sql, nt, c->base.name);
 			if (mvc_drop_column(sql, nt, nc, c->drop_action))
-				throw(SQL,"sql.alter_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	/* check for changes on current cols */
 	for (n = t->columns.set->h; n != t->columns.nelm; n = n->next) {
@@ -921,7 +921,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				sql_idx *i = n->data;
 				sql_idx *ni = mvc_bind_idx(sql, s, i->base.name);
 				if (mvc_drop_idx(sql, s, ni))
-					throw(SQL,"sql.alter_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		/* alter add index */
 		for (n = t->idxs.nelm; n; n = n->next) {
@@ -959,7 +959,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				sql_key *nk = mvc_bind_key(sql, s, k->base.name);
 				if (nk) {
 					if (mvc_drop_key(sql, s, nk, k->drop_action))
-						throw(SQL,"sql.alter_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
 		/* alter add key */
@@ -1073,7 +1073,7 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);
 	} else {
 		if (mvc_drop_schema(sql, s, action))
-			throw(SQL,"sql.drop_schema", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL,"sql.drop_schema", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	return msg;
 }
@@ -1621,10 +1621,10 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
 
 	if (!sql_trans_rename_schema(sql->session->tr, s->base.id, new_name))
-		throw(SQL, "sql.rename_schema",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.rename_schema",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (s == cur_schema(sql))
 		if (!mvc_set_schema(sql, new_name))
-			throw(SQL, "sql.rename_schema",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.rename_schema",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;
 }
 
@@ -1659,7 +1659,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", ntable_name, oschema_name);
 
 		if (!sql_trans_rename_table(sql->session->tr, s, t->base.id, ntable_name))
-			throw(SQL, "sql.rename_table",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.rename_table",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else { //changing the schema of the table
 		assert(strcmp(otable_name, ntable_name) == 0);
 
@@ -1689,7 +1689,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: table '%s' on schema '%s' already exists", otable_name, nschema_name);
 
 		if (!sql_trans_set_table_schema(sql->session->tr, t->base.id, o, s))
-			throw(SQL, "sql.rename_table",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.rename_table",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	return msg;
@@ -1729,6 +1729,6 @@ SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: there is a column named '%s' in table '%s'", new_name, table_name);
 
 	if (!sql_trans_rename_column(sql->session->tr, t, old_name, new_name))
-		throw(SQL, "sql.rename_column",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.rename_column",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;
 }

@@ -118,6 +118,8 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSv sys.geometry_columns
 \dSv sys.ids
 \dSv sys.optimizers
+\dSv sys.prepared_statements
+\dSv sys.prepared_statements_args
 \dSv sys.querylog_calls
 \dSv sys.querylog_catalog
 \dSv sys.querylog_history
@@ -217,6 +219,8 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSf sys."optimizers"
 \dSf sys."password_hash"
 \dSf sys."pause"
+\dSf sys."prepared_statements"
+\dSf sys."prepared_statements_args"
 \dSf sys."quantile"
 \dSf sys."quantile_avg"
 \dSf sys."querycache"
@@ -438,6 +442,8 @@ SYSTEM VIEW  sys.environment
 SYSTEM VIEW  sys.geometry_columns
 SYSTEM VIEW  sys.ids
 SYSTEM VIEW  sys.optimizers
+SYSTEM VIEW  sys.prepared_statements
+SYSTEM VIEW  sys.prepared_statements_args
 SYSTEM VIEW  sys.querylog_calls
 SYSTEM VIEW  sys.querylog_catalog
 SYSTEM VIEW  sys.querylog_history
@@ -662,6 +668,8 @@ SYSTEM PROCEDURE        sys.pause
 SYSTEM FUNCTION         sys.percent_rank
 SYSTEM FUNCTION         sys.pi
 SYSTEM FUNCTION         sys.power
+SYSTEM FUNCTION         sys.prepared_statements
+SYSTEM FUNCTION         sys.prepared_statements_args
 SYSTEM AGGREGATE        sys.prod
 SYSTEM FUNCTION         sys.prod
 SYSTEM FUNCTION         sys.qgramnormalize
@@ -954,6 +962,8 @@ create view sys.environment as select * from sys.env();
 create view sys.geometry_columns as select cast(null as varchar(1)) as f_table_catalog, s.name as f_table_schema, t.name as f_table_name, c.name as f_geometry_column, cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension, c.type_scale as srid, get_type(c.type_digits, 0) as type from sys.columns c, sys.tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));
 create view sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table) as select id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' as obj_type, 'sys.auths' as sys_table from sys.auths union all select id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'schema', 'sys.schemas' from sys.schemas union all select id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'sys._tables' from sys._tables union all select id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'tmp._tables' from tmp._tables union all select c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'sys._columns' from sys._columns c join sys._tables t on c.table_id = t.id union all select c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns' from tmp._columns c join tmp._tables t on c.table_id = t.id union all select k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'sys.keys' from sys.keys k join sys._tables t on k.table_id = t.id union all select k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys' from tmp.keys k join tmp._tables t on k.table_id = t.id union all select i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'sys.idxs' from sys.idxs i join sys._tables t on i.table_id = t.id union all select i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'tmp.idxs' from tmp.idxs i join tmp._tables t on i.table_id = t.id union all select g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'sys.triggers' from sys.triggers g join sys._tables t on g.table_id = t.id union all select g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers' from tmp.triggers g join tmp._tables t on g.table_id = t.id union all select id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when type = 2 then 'procedure' else 'function' end, 'sys.functions' from sys.functions union all select a.id, a.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when f.type = 2 then 'procedure arg' else 'function arg' end, 'sys.args' from sys.args a join sys.functions f on a.func_id = f.id union all select id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences' from sys.sequences union all select id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types' from sys.types where id > 2000 order by id;
 create view sys.optimizers as select * from sys.optimizers();
+create view sys.prepared_statements as select * from sys.prepared_statements();
+create view sys.prepared_statements_args as select * from sys.prepared_statements_args();
 create view sys.querylog_calls as select * from sys.querylog_calls();
 create view sys.querylog_catalog as select * from sys.querylog_catalog();
 create view sys.querylog_history as select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io from sys.querylog_catalog() qd, sys.querylog_calls() ql where qd.id = ql.id and qd.owner = user;
@@ -1104,6 +1114,8 @@ create procedure sys.pause(tag bigint) external name sql.sysmon_pause;
 create procedure sys.pause(tag int) external name sql.sysmon_pause;
 create procedure sys.pause(tag smallint) external name sql.sysmon_pause;
 create procedure sys.pause(tag tinyint) external name sql.sysmon_pause;
+create function sys.prepared_statements() returns table("sessionid" int, "username" string, "statementid" int, "statement" string, "created" timestamp) external name sql.prepared_statements;
+create function sys.prepared_statements_args() returns table("statementid" int, "type" string, "type_digits" int, "type_scale" int, "inout" tinyint, "number" int, "schema" string, "table" string, "column" string) external name sql.prepared_statements_args;
 create aggregate quantile(val bigint, q double) returns bigint external name "aggr"."quantile";
 create aggregate quantile(val date, q double) returns date external name "aggr"."quantile";
 create aggregate quantile(val decimal, q double) returns decimal external name "aggr"."quantile";
@@ -1487,6 +1499,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"netcdf_vars",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"objects",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"optimizers",	"create view sys.optimizers as select * from sys.optimizers();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys",	"prepared_statements",	"create view sys.prepared_statements as select * from sys.prepared_statements();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys",	"prepared_statements_args",	"create view sys.prepared_statements_args as select * from sys.prepared_statements_args();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"privilege_codes",	NULL,	"TABLE",	true,	"COMMIT",	"READONLY"	]
 [ "sys",	"privileges",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"querylog_calls",	"create view sys.querylog_calls as select * from sys.querylog_calls();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
@@ -1897,6 +1911,20 @@ drop function pcre_replace(string, string, string, string);
 [ "pg",	"cl",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
 [ "pg",	"pp",	"clob",	0,	0,	NULL,	true,	4,	NULL	]
 [ "pg",	"vn",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
+[ "prepared_statements",	"sessionid",	"int",	32,	0,	NULL,	true,	0,	NULL	]
+[ "prepared_statements",	"username",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
+[ "prepared_statements",	"statementid",	"int",	32,	0,	NULL,	true,	2,	NULL	]
+[ "prepared_statements",	"statement",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
+[ "prepared_statements",	"created",	"timestamp",	7,	0,	NULL,	true,	4,	NULL	]
+[ "prepared_statements_args",	"statementid",	"int",	32,	0,	NULL,	true,	0,	NULL	]
+[ "prepared_statements_args",	"type",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
+[ "prepared_statements_args",	"type_digits",	"int",	32,	0,	NULL,	true,	2,	NULL	]
+[ "prepared_statements_args",	"type_scale",	"int",	32,	0,	NULL,	true,	3,	NULL	]
+[ "prepared_statements_args",	"inout",	"tinyint",	8,	0,	NULL,	true,	4,	NULL	]
+[ "prepared_statements_args",	"number",	"int",	32,	0,	NULL,	true,	5,	NULL	]
+[ "prepared_statements_args",	"schema",	"clob",	0,	0,	NULL,	true,	6,	NULL	]
+[ "prepared_statements_args",	"table",	"clob",	0,	0,	NULL,	true,	7,	NULL	]
+[ "prepared_statements_args",	"column",	"clob",	0,	0,	NULL,	true,	8,	NULL	]
 [ "privilege_codes",	"privilege_code_id",	"int",	32,	0,	NULL,	false,	0,	NULL	]
 [ "privilege_codes",	"privilege_code_name",	"varchar",	40,	0,	NULL,	false,	1,	NULL	]
 [ "privileges",	"obj_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
@@ -1939,7 +1967,7 @@ drop function pcre_replace(string, string, string, string);
 [ "querylog_history",	"io",	"int",	32,	0,	NULL,	true,	15,	NULL	]
 [ "queue",	"qtag",	"bigint",	64,	0,	NULL,	true,	0,	NULL	]
 [ "queue",	"sessionid",	"int",	32,	0,	NULL,	true,	1,	NULL	]
-[ "queue",	"user",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
+[ "queue",	"username",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
 [ "queue",	"started",	"timestamp",	7,	0,	NULL,	true,	3,	NULL	]
 [ "queue",	"estimate",	"timestamp",	7,	0,	NULL,	true,	4,	NULL	]
 [ "queue",	"progress",	"int",	32,	0,	NULL,	true,	5,	NULL	]
@@ -1993,7 +2021,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sequences",	"cacheinc",	"bigint",	64,	0,	NULL,	true,	7,	NULL	]
 [ "sequences",	"cycle",	"boolean",	1,	0,	NULL,	true,	8,	NULL	]
 [ "sessions",	"sessionid",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "sessions",	"user",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
+[ "sessions",	"username",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "sessions",	"login",	"timestamp",	7,	0,	NULL,	true,	2,	NULL	]
 [ "sessions",	"sessiontimeout",	"bigint",	64,	0,	NULL,	true,	3,	NULL	]
 [ "sessions",	"lastcommand",	"timestamp",	7,	0,	NULL,	true,	4,	NULL	]
@@ -4017,12 +4045,14 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.f1,	sys.s2,	sys.t2,	.dt # table_name
 % name,	name,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
-% 3,	16,	3,	17,	4 # length
+% 3,	24,	3,	24,	4 # length
 [ "sys",	"env",	"sys",	"environment",	"VIEW"	]
 [ "sys",	"get_type",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"has_m",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"has_z",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"optimizers",	"sys",	"optimizers",	"VIEW"	]
+[ "sys",	"prepared_statements",	"sys",	"prepared_statements",	"VIEW"	]
+[ "sys",	"prepared_statements_args",	"sys",	"prepared_statements_args",	"VIEW"	]
 [ "sys",	"querylog_calls",	"sys",	"querylog_calls",	"VIEW"	]
 [ "sys",	"querylog_catalog",	"sys",	"querylog_catalog",	"VIEW"	]
 [ "sys",	"querylog_calls",	"sys",	"querylog_history",	"VIEW"	]
@@ -4833,6 +4863,8 @@ drop function pcre_replace(string, string, string, string);
 [ "netcdf_vars",	"public",	"SELECT",	"monetdb",	0	]
 [ "objects",	"public",	"SELECT",	NULL,	0	]
 [ "pg",	"public",	"SELECT",	"monetdb",	0	]
+[ "prepared_statements",	"public",	"SELECT",	"monetdb",	0	]
+[ "prepared_statements_args",	"public",	"SELECT",	"monetdb",	0	]
 [ "privilege_codes",	"public",	"SELECT",	"monetdb",	0	]
 [ "privileges",	"public",	"SELECT",	NULL,	0	]
 [ "queue",	"public",	"SELECT",	"monetdb",	0	]
@@ -4861,7 +4893,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.f,	sys.a,	.pc,	.g,	.p # table_name
 % name,	name,	privilege_code_name,	name,	grantable # name
 % varchar,	varchar,	varchar,	varchar,	int # type
-% 20,	6,	7,	7,	1 # length
+% 24,	6,	7,	7,	1 # length
 [ "abbrev",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "alpha",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "bam_drop_file",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -4964,6 +4996,8 @@ drop function pcre_replace(string, string, string, string);
 [ "newurl",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "number",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "output",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "prepared_statements",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "prepared_statements_args",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "quantile",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "quantile",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "quantile",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -5243,11 +5277,14 @@ drop function pcre_replace(string, string, string, string);
 [ "ALL"	]
 [ "ALTER"	]
 [ "ALWAYS"	]
+[ "ANALYZE"	]
 [ "AND"	]
 [ "ANY"	]
 [ "ASC"	]
 [ "ASYMMETRIC"	]
+[ "AT"	]
 [ "ATOMIC"	]
+[ "AUTHORIZATION"	]
 [ "AUTO_INCREMENT"	]
 [ "BEFORE"	]
 [ "BEGIN"	]
@@ -5258,16 +5295,20 @@ drop function pcre_replace(string, string, string, string);
 [ "BINARY"	]
 [ "BLOB"	]
 [ "BY"	]
+[ "CACHE"	]
 [ "CALL"	]
 [ "CASCADE"	]
 [ "CASE"	]
 [ "CAST"	]
+[ "CENTURY"	]
 [ "CHAIN"	]
 [ "CHAR"	]
 [ "CHARACTER"	]
 [ "CHECK"	]
+[ "CLIENT"	]
 [ "CLOB"	]
 [ "COALESCE"	]
+[ "COLUMN"	]
 [ "COMMENT"	]
 [ "COMMIT"	]
 [ "COMMITTED"	]
@@ -5285,16 +5326,26 @@ drop function pcre_replace(string, string, string, string);
 [ "CURRENT_TIME"	]
 [ "CURRENT_TIMESTAMP"	]
 [ "CURRENT_USER"	]
+[ "CYCLE"	]
+[ "DATA"	]
+[ "DATE"	]
 [ "DAY"	]
+[ "DEALLOCATE"	]
+[ "DEBUG"	]
 [ "DEC"	]
+[ "DECADE"	]
 [ "DECIMAL"	]
 [ "DECLARE"	]
 [ "DEFAULT"	]
 [ "DELETE"	]
 [ "DELIMITERS"	]
 [ "DESC"	]
+[ "DIAGNOSTICS"	]
+[ "DISTINCT"	]
 [ "DO"	]
 [ "DOUBLE"	]
+[ "DOW"	]
+[ "DOY"	]
 [ "DROP"	]
 [ "EACH"	]
 [ "EFFORT"	]
@@ -5306,10 +5357,14 @@ drop function pcre_replace(string, string, string, string);
 [ "EVERY"	]
 [ "EXCEPT"	]
 [ "EXCLUDE"	]
+[ "EXEC"	]
+[ "EXECUTE"	]
 [ "EXISTS"	]
+[ "EXPLAIN"	]
 [ "EXTERNAL"	]
 [ "EXTRACT"	]
 [ "FALSE"	]
+[ "FIRST"	]
 [ "FLOAT"	]
 [ "FOLLOWING"	]
 [ "FOR"	]
@@ -5317,11 +5372,13 @@ drop function pcre_replace(string, string, string, string);
 [ "FROM"	]
 [ "FULL"	]
 [ "FUNCTION"	]
+[ "FWF"	]
 [ "GENERATED"	]
 [ "GLOBAL"	]
 [ "GRANT"	]
 [ "GROUP"	]
 [ "GROUPING"	]
+[ "GROUPS"	]
 [ "HAVING"	]
 [ "HOUR"	]
 [ "HUGEINT"	]
@@ -5329,44 +5386,59 @@ drop function pcre_replace(string, string, string, string);
 [ "IF"	]
 [ "ILIKE"	]
 [ "IN"	]
+[ "INCREMENT"	]
 [ "INDEX"	]
 [ "INNER"	]
 [ "INSERT"	]
 [ "INT"	]
 [ "INTEGER"	]
 [ "INTERSECT"	]
+[ "INTERVAL"	]
 [ "INTO"	]
 [ "IS"	]
 [ "ISOLATION"	]
 [ "JOIN"	]
+[ "KEY"	]
+[ "LANGUAGE"	]
+[ "LARGE"	]
+[ "LAST"	]
+[ "LATERAL"	]
 [ "LEFT"	]
+[ "LEVEL"	]
 [ "LIKE"	]
 [ "LIMIT"	]
+[ "LOADER"	]
 [ "LOCAL"	]
 [ "LOCALTIME"	]
 [ "LOCALTIMESTAMP"	]
 [ "LOCKED"	]
+[ "MATCH"	]
+[ "MATCHED"	]
+[ "MAXVALUE"	]
 [ "MEDIUMINT"	]
 [ "MERGE"	]
 [ "MINUTE"	]
+[ "MINVALUE"	]
 [ "MONTH"	]
+[ "NAME"	]
 [ "NATURAL"	]
 [ "NEW"	]
 [ "NEXT"	]
-[ "NOCYCLE"	]
-[ "NOMAXVALUE"	]
-[ "NOMINVALUE"	]
+[ "NO"	]
 [ "NOT"	]
 [ "NOW"	]
 [ "NULL"	]
 [ "NULLIF"	]
+[ "NULLS"	]
 [ "NUMERIC"	]
+[ "OBJECT"	]
 [ "OF"	]
 [ "OFFSET"	]
 [ "OLD"	]
 [ "ON"	]
 [ "ONLY"	]
 [ "OPTION"	]
+[ "OPTIONS"	]
 [ "OR"	]
 [ "ORDER"	]
 [ "OTHERS"	]
@@ -5374,22 +5446,30 @@ drop function pcre_replace(string, string, string, string);
 [ "OVER"	]
 [ "PARTIAL"	]
 [ "PARTITION"	]
+[ "PASSWORD"	]
+[ "PLAN"	]
 [ "POSITION"	]
 [ "PRECEDING"	]
+[ "PRECISION"	]
+[ "PREP"	]
+[ "PREPARE"	]
 [ "PRESERVE"	]
 [ "PRIMARY"	]
 [ "PRIVILEGES"	]
 [ "PROCEDURE"	]
 [ "PUBLIC"	]
+[ "QUARTER"	]
 [ "RANGE"	]
 [ "READ"	]
 [ "REAL"	]
 [ "RECORDS"	]
 [ "REFERENCES"	]
 [ "REFERENCING"	]
+[ "RELEASE"	]
 [ "REMOTE"	]
 [ "RENAME"	]
 [ "REPEATABLE"	]
+[ "REPLACE"	]
 [ "REPLICA"	]
 [ "RESTART"	]
 [ "RESTRICT"	]
@@ -5402,19 +5482,25 @@ drop function pcre_replace(string, string, string, string);
 [ "ROWS"	]
 [ "SAMPLE"	]
 [ "SAVEPOINT"	]
+[ "SCHEMA"	]
 [ "SECOND"	]
+[ "SEED"	]
 [ "SELECT"	]
 [ "SEQUENCE"	]
 [ "SERIAL"	]
 [ "SERIALIZABLE"	]
+[ "SERVER"	]
+[ "SESSION"	]
 [ "SESSION_USER"	]
 [ "SET"	]
 [ "SETS"	]
 [ "SIMPLE"	]
+[ "SIZE"	]
 [ "SMALLINT"	]
 [ "SOME"	]
 [ "SPLIT_PART"	]
 [ "START"	]
+[ "STATEMENT"	]
 [ "STDIN"	]
 [ "STDOUT"	]
 [ "STORAGE"	]
@@ -5422,18 +5508,27 @@ drop function pcre_replace(string, string, string, string);
 [ "STRING"	]
 [ "SUBSTRING"	]
 [ "SYMMETRIC"	]
+[ "TABLE"	]
+[ "TEMP"	]
+[ "TEMPORARY"	]
+[ "TEXT"	]
 [ "THEN"	]
 [ "TIES"	]
+[ "TIME"	]
+[ "TIMESTAMP"	]
 [ "TINYINT"	]
 [ "TO"	]
+[ "TRACE"	]
 [ "TRANSACTION"	]
 [ "TRIGGER"	]
 [ "TRUE"	]
 [ "TRUNCATE"	]
+[ "TYPE"	]
 [ "UNBOUNDED"	]
 [ "UNCOMMITTED"	]
 [ "UNENCRYPTED"	]
 [ "UNION"	]
+[ "UNIONJOIN"	]
 [ "UNIQUE"	]
 [ "UPDATE"	]
 [ "USER"	]
@@ -5442,6 +5537,7 @@ drop function pcre_replace(string, string, string, string);
 [ "VARCHAR"	]
 [ "VARYING"	]
 [ "VIEW"	]
+[ "WEEK"	]
 [ "WHEN"	]
 [ "WHERE"	]
 [ "WHILE"	]
@@ -5463,6 +5559,8 @@ drop function pcre_replace(string, string, string, string);
 [ "XMLSCHEMA"	]
 [ "XMLTEXT"	]
 [ "XMLVALIDATE"	]
+[ "YEAR"	]
+[ "ZONE"	]
 #select table_type_id, table_type_name from sys.table_types order by table_type_id, table_type_name;
 % sys.table_types,	sys.table_types # table_name
 % table_type_id,	table_type_name # name

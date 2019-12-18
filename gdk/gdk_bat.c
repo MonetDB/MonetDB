@@ -763,7 +763,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			BATloop(b, p, q) {
 				const void *t = BUNtail(bi, p);
 
-				bunfastapp_nocheck(bn, r, t, Tsize(bn));
+				if (bunfastapp_nocheck(bn, r, t, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
 				r++;
 			}
 			bn->theap.dirty |= bunstocopy > 0;
@@ -1067,7 +1068,8 @@ BUNappend(BAT *b, const void *t, bool force)
 	setcolprops(b, t);
 
 	if (b->ttype != TYPE_void) {
-		bunfastapp(b, t);
+		if (bunfastapp(b, t) != GDK_SUCCEED)
+			return GDK_FAIL;
 		b->theap.dirty = true;
 	} else {
 		BATsetcount(b, b->batCount + 1);
@@ -1094,8 +1096,6 @@ BUNappend(BAT *b, const void *t, bool force)
 			HEAPwarm(b->tvheap);
 	}
 	return GDK_SUCCEED;
-      bunins_failed:
-	return GDK_FAIL;
 }
 
 gdk_return
@@ -1283,12 +1283,13 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 			break;
 #endif
 		}
-		ATOMreplaceVAR(b->ttype, b->tvheap, &_d, t);
+		if (ATOMreplaceVAR(b->ttype, b->tvheap, &_d, t) != GDK_SUCCEED)
+			return GDK_FAIL;
 		if (b->twidth < SIZEOF_VAR_T &&
 		    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * b->twidth))) {
 			/* doesn't fit in current heap, upgrade it */
 			if (GDKupgradevarheap(b, _d, false, b->batRestricted == BAT_READ) != GDK_SUCCEED)
-				goto bunins_failed;
+				return GDK_FAIL;
 		}
 		_ptr = BUNtloc(bi, p);
 		switch (b->twidth) {
@@ -1387,9 +1388,6 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		b->tvheap->dirty = true;
 
 	return GDK_SUCCEED;
-
-  bunins_failed:
-	return GDK_FAIL;
 }
 
 /* very much like void_inplace, except this materializes a void tail

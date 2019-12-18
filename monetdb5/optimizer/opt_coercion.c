@@ -106,7 +106,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	TRC_DEBUG(MAL_OPT_COERCION, "COERCION optimizer enter\n");
 	
 	if( coerce == NULL)
-		throw(MAL,"optimizer.coercion", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.coercion", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */

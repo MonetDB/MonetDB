@@ -115,7 +115,7 @@ SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if(msg)
 		return msg;
 	else if(ret < 0)
-		throw(SQL, "sql.trans", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -144,6 +144,6 @@ SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if(msg)
 		return msg;
 	else if(ret < 0)
-		throw(SQL, "sql.trans", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

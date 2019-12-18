@@ -267,9 +267,7 @@ BATcheckimprints(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->timprints != NULL;
-	/* CHECK */
-	// If is in ACCELDEBUG
-	if (ret) TRC_DEBUG(ACCEL, "BATcheckimprints(" ALGOBATFMT "): already has imprints\n", ALGOBATPAR(b));
+	TRC_DEBUG_IF(ACCEL) if (ret) TRC_DEBUG_ENDIF(ACCEL, "BATcheckimprints(" ALGOBATFMT "): already has imprints\n", ALGOBATPAR(b));
 	return ret;
 }
 
@@ -390,13 +388,14 @@ BATimprints(BAT *b)
 
 		MT_lock_unset(&b->batIdxLock);
 
-		if (s2) {
-			TRC_DEBUG(ACCEL, "BATimprints(b=" ALGOBATFMT
+		TRC_DEBUG_IF(ACCEL) {
+			if (s2)
+				TRC_DEBUG_ENDIF(ACCEL, "BATimprints(b=" ALGOBATFMT
 						"): creating imprints on parent "
 						ALGOBATFMT "\n",
 						ALGOBATPAR(s2), ALGOBATPAR(b));
-		} else {
-			TRC_DEBUG(ACCEL, "BATimprints(b=" ALGOBATFMT
+			else
+				TRC_DEBUG_ENDIF(ACCEL, "BATimprints(b=" ALGOBATFMT
 						"): creating imprints\n",
 						ALGOBATPAR(b));
 		}

@@ -470,7 +470,7 @@ SERVERlistenThread(SOCKET *Sock)
 		data = GDKmalloc(sizeof(*data));
 		if( data == NULL){
 			closesocket(msgsock);
-			TRC_CRITICAL(MAL_SERVER, SQLSTATE(HY001) MAL_MALLOC_FAIL "\n");
+			TRC_CRITICAL(MAL_SERVER, SQLSTATE(HY013) MAL_MALLOC_FAIL "\n");
 			continue;
 		}
 		data->in = socket_rstream(msgsock, "Server read");
@@ -563,7 +563,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 
 	psock = GDKmalloc(sizeof(SOCKET) * 2);
 	if (psock == NULL)
-		throw(MAL,"mal_mapi.listen", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"mal_mapi.listen", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if (usockfile == NULL || strcmp(usockfile, str_nil) == 0) {
 		usockfile = NULL;
@@ -1068,14 +1068,14 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 	/* in embedded mode we allow just one client */
 	data = GDKmalloc(sizeof(*data));
 	if( data == NULL)
-		throw(MAL, "mapi.SERVERclient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mapi.SERVERclient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	data->in = block_stream(*In);
 	data->out = block_stream(*Out);
 	if (data->in == NULL || data->out == NULL) {
 		mnstr_destroy(data->in);
 		mnstr_destroy(data->out);
 		GDKfree(data);
-		throw(MAL, "mapi.SERVERclient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mapi.SERVERclient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	char name[16];
 	snprintf(name, sizeof(name), "client%d",
@@ -1136,7 +1136,7 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 																		\
 			l = 2 * strlen(err) + 8192;									\
 			newerr = (str) GDKmalloc(l);								\
-			if(newerr == NULL) { err = SQLSTATE(HY001) MAL_MALLOC_FAIL; break;}	\
+			if(newerr == NULL) { err = SQLSTATE(HY013) MAL_MALLOC_FAIL; break;}	\
 																		\
 			f = newerr;													\
 			/* I think this code tries to deal with multiple errors, this \
@@ -1355,7 +1355,7 @@ SERVERsetAlias(void *ret, int *key, str *dbalias){
 	accessTest(*key, "setAlias");
 	SERVERsessions[i].dbalias= GDKstrdup(*dbalias);
 	if(SERVERsessions[i].dbalias == NULL)
-		throw(MAL, "mapi.set_alias", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mapi.set_alias", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	(void) ret;
 	return MAL_SUCCEED;
 }
@@ -1547,7 +1547,7 @@ SERVERfetch_field_str(str *ret, int *key, int *fnr){
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= GDKstrdup(fld? fld: str_nil);
 	if(*ret == NULL)
-		throw(MAL, "mapi.fetch_field_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mapi.fetch_field_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if( mapi_error(mid) )
 		throw(MAL, "mapi.fetch_field_str", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
@@ -1666,7 +1666,7 @@ SERVERfetch_line(str *ret, int *key){
 			mapi_result_error(SERVERsessions[i].hdl));
 	*ret= GDKstrdup(fld? fld:str_nil);
 	if(*ret == NULL)
-		throw(MAL, "mapi.fetch_line", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mapi.fetch_line", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -1706,7 +1706,7 @@ SERVERfetch_field_bat(bat *bid, int *key){
 	accessTest(*key, "rpc");
 	b= COLnew(0,TYPE_str,256, TRANSIENT);
 	if( b == NULL)
-		throw(MAL,"mapi.fetch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"mapi.fetch", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	cnt= mapi_get_field_count(SERVERsessions[i].hdl);
 	for(j=0; j< cnt; j++){
 		fld= mapi_fetch_field(SERVERsessions[i].hdl,j);
@@ -1717,7 +1717,7 @@ SERVERfetch_field_bat(bat *bid, int *key){
 		}
 		if (BUNappend(b,fld, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
-			throw(MAL, "mapi.fetch_field_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mapi.fetch_field_bat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	*bid = b->batCacheid;
@@ -1741,7 +1741,7 @@ SERVERgetError(str *ret, int *key){
 	accessTest(*key, "getError");
 	*ret= GDKstrdup(mapi_error_str(mid));
 	if(*ret == NULL)
-		throw(MAL, "mapi.get_error", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mapi.get_error", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -1753,7 +1753,7 @@ SERVERexplain(str *ret, int *key){
 	accessTest(*key, "explain");
 	*ret= GDKstrdup(mapi_error_str(mid));
 	if(*ret == NULL)
-		throw(MAL, "mapi.explain", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mapi.explain", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 /*
@@ -1862,12 +1862,12 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if( qry == 0) {
 			qry= GDKstrdup(fld);
 			if ( qry == NULL)
-				throw(MAL, "mapi.rpc",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mapi.rpc",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
 			s= (char*) GDKmalloc(strlen(qry)+strlen(fld)+1);
 			if ( s == NULL) {
 				GDKfree(qry);
-				throw(MAL, "mapi.rpc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			strcpy(s,qry);
 			strcat(s,fld);
@@ -1901,7 +1901,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			case TYPE_dbl:
 			case TYPE_str:
 				if(SERVERfieldAnalysis(fld,getVarType(mb,getArg(pci,j)),&stk->stk[pci->argv[j]]) < 0)
-					throw(MAL, "mapi.rpc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			default:
 				throw(MAL, "mapi.rpc",
@@ -1944,16 +1944,16 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	b= COLnew(0,tt,256, TRANSIENT);
 	if ( b == NULL)
-		throw(MAL,"mapi.rpc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	while( mapi_fetch_row(hdl)){
 		fld2= mapi_fetch_field(hdl,1);
 		if(SERVERfieldAnalysis(fld2, tt, &tval) < 0) {
 			BBPreclaim(b);
-			throw(MAL, "mapi.rpc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (BUNappend(b,VALptr(&tval), false) != GDK_SUCCEED) {
 			BBPreclaim(b);
-			throw(MAL, "mapi.rpc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	*ret = b->batCacheid;
@@ -2013,7 +2013,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		break;
 	default:
 		if ((w = ATOMformat(tpe,val)) == NULL)
-			throw(MAL, "mapi.put", SQLSTATE(HY001) GDK_EXCEPTION);
+			throw(MAL, "mapi.put", SQLSTATE(HY013) GDK_EXCEPTION);
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
 		GDKfree(w);
 		if( SERVERsessions[i].hdl)
@@ -2045,14 +2045,14 @@ SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		break;
 	default:
 		if ((w = ATOMformat(tpe,val)) == NULL)
-			throw(MAL, "mapi.glue", SQLSTATE(HY001) GDK_EXCEPTION);
+			throw(MAL, "mapi.glue", SQLSTATE(HY013) GDK_EXCEPTION);
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
 		GDKfree(w);
 		break;
 	}
 	*ret= GDKstrdup(buf);
 	if(*ret == NULL)
-		throw(MAL, "mapi.glue", SQLSTATE(HY001) GDK_EXCEPTION);
+		throw(MAL, "mapi.glue", SQLSTATE(HY013) GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 

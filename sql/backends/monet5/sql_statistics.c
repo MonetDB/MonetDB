@@ -201,7 +201,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							maxval = GDKmalloc(4);
 							if (maxval == NULL) {
 								GDKfree(minval);
-								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+								throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							}
 							maxlen = 4;
 						}
@@ -210,7 +210,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							minval = GDKmalloc(4);
 							if (minval == NULL){
 								GDKfree(maxval);
-								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+								throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							}
 							minlen = 4;
 						}

@@ -180,7 +180,7 @@ UUIDgenerateUuid(uuid **retval)
 	int i = 0, r = 0;
 
 	if (*retval == NULL && (*retval = GDKmalloc(UUID_SIZE)) == NULL)
-		throw(MAL, "uuid.new", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "uuid.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	u = *retval;
 #ifdef HAVE_UUID
 	uuid_generate(u->u);
