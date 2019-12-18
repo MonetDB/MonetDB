@@ -177,6 +177,7 @@ MOSdecompress_SIGNATURE(raw, TPE)\
 	for(i = 0; i < lim; i++) {\
 	dst[i] = val[i]; \
 	}\
+	task->src += i * sizeof(TPE);\
 }
 
 MOSdecompress_DEF(bte)
