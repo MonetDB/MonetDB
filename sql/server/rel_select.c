@@ -1259,7 +1259,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, 
 		type = sql_bind_localtype("dbl");
 
 	if ((rel_exp->type == e_atom || rel_exp->type == e_column) && (rel_exp->l || rel_exp->r || rel_exp->f)) {
-		/* it's not a parameter set possible parameters bellow */
+		/* it's not a parameter set possible parameters below */
 		const char *relname = exp_relname(rel_exp), *expname = exp_name(rel_exp);
 		return rel_set_type_recurse(sql, type, rel, &relname, &expname);
 	} else if (set_type_param(sql, type, rel_exp->flag) == 0) {

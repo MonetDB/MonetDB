@@ -366,6 +366,7 @@ mvc_trans(mvc *m)
 			}
 		} else { /* clean all but the prepared statements */
 			qc_clean(m->qc, false);
+			stack_pop_until(m, NR_GLOBAL_VARS);
 		}
 	}
 	store_unlock();
@@ -492,6 +493,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
 build up the hash (not copied in the trans dup)) */
 			qc_clean(m->qc, false);
+		stack_pop_until(m, NR_GLOBAL_VARS);
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		if (mvc_debug)
 			fprintf(stderr, "#mvc_commit %s done\n", name);
@@ -620,6 +622,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	store_lock();
 	if (m->qc) 
 		qc_clean(m->qc, false);
+	stack_pop_until(m, NR_GLOBAL_VARS);
 	if (name && name[0] != '\0') {
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
@@ -800,7 +803,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 }
 
 int
-mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
+mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 {
 	int i, res = 1;
 	sql_trans *tr;
@@ -829,7 +832,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 
 	m->params = NULL;
 	/* reset topvars to the set of global variables */
-	stack_pop_until(m, globalvars);
+	stack_pop_until(m, NR_GLOBAL_VARS);
 	m->frame = 1;
 	m->argc = 0;
 	m->sym = NULL;

@@ -85,8 +85,8 @@ QUERY = insert into event_metadata (
                 'artist1' );
 ERROR = !INSERT INTO: UNIQUE constraint 'event_metadata.unq_metadata' violated
 CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = set id_event = add_event('event 4', '2009-06-24', 'artist4', 'location4', 'description4');
+MAPI  = (monetdb) /var/tmp/mtest-233155/.s.monetdb.30221
+QUERY = set id_event3 = add_event('event 4', '2009-06-24', 'artist4', 'location4', 'description4');
 ERROR = !INSERT INTO: UNIQUE constraint 'event.unq_event_name' violated
 CODE  = M0M29
 
