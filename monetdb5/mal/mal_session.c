@@ -101,10 +101,6 @@ MSresetClientPrg(Client cntxt, str mod, str fcn)
 	p->argc = 1;
 	p->argv[0] = 0;
 
-	/* CHECK */
-	// nme variable is missing?
-	
-
 	setModuleId(p, mod);
 	setFunctionId(p, fcn);
 	if( findVariable(mb,fcn) < 0)
