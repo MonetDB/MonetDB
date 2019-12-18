@@ -235,7 +235,7 @@ stdout of test 'check_PrimaryKey_uniqueness` in directory 'sql/test/sys-schema` 
 % 1,	0 # length
 #SELECT COUNT(*) AS duplicates, "user", login FROM sys.sessions GROUP BY "user", login HAVING COUNT(*) > 1;  -- is this really always unique?
 % .,	.sessions,	.sessions # table_name
-% duplicates,	user,	login # name
+% duplicates,	username,	login # name
 % bigint,	clob,	timestamp # type
 % 1,	0,	26 # length
 #SELECT COUNT(*) AS duplicates, column_id FROM sys.statistics GROUP BY column_id HAVING COUNT(*) > 1;

@@ -1114,8 +1114,8 @@ create procedure sys.pause(tag bigint) external name sql.sysmon_pause;
 create procedure sys.pause(tag int) external name sql.sysmon_pause;
 create procedure sys.pause(tag smallint) external name sql.sysmon_pause;
 create procedure sys.pause(tag tinyint) external name sql.sysmon_pause;
-create function sys.prepared_statements() returns table("sessionid" int, "user" string, "statementid" int, "statement" string, "created" timestamp) external name sql.prepared_statements;
-create function sys.prepared_statements_args() returns table("statementid" int, "parameter" boolean, "type" string, "digits" int, "scale" int, "schema" string, "table" string, "column" string) external name sql.prepared_statements_args;
+create function sys.prepared_statements() returns table("sessionid" int, "username" string, "statementid" int, "statement" string, "created" timestamp) external name sql.prepared_statements;
+create function sys.prepared_statements_args() returns table("statementid" int, "type" string, "type_digits" int, "type_scale" int, "inout" tinyint, "number" int, "schema" string, "table" string, "column" string) external name sql.prepared_statements_args;
 create aggregate quantile(val bigint, q double) returns bigint external name "aggr"."quantile";
 create aggregate quantile(val date, q double) returns date external name "aggr"."quantile";
 create aggregate quantile(val decimal, q double) returns decimal external name "aggr"."quantile";
@@ -1912,18 +1912,19 @@ drop function pcre_replace(string, string, string, string);
 [ "pg",	"pp",	"clob",	0,	0,	NULL,	true,	4,	NULL	]
 [ "pg",	"vn",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
 [ "prepared_statements",	"sessionid",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "prepared_statements",	"user",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
+[ "prepared_statements",	"username",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "prepared_statements",	"statementid",	"int",	32,	0,	NULL,	true,	2,	NULL	]
 [ "prepared_statements",	"statement",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
 [ "prepared_statements",	"created",	"timestamp",	7,	0,	NULL,	true,	4,	NULL	]
 [ "prepared_statements_args",	"statementid",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "prepared_statements_args",	"parameter",	"boolean",	1,	0,	NULL,	true,	1,	NULL	]
-[ "prepared_statements_args",	"type",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
-[ "prepared_statements_args",	"digits",	"int",	32,	0,	NULL,	true,	3,	NULL	]
-[ "prepared_statements_args",	"scale",	"int",	32,	0,	NULL,	true,	4,	NULL	]
-[ "prepared_statements_args",	"schema",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
-[ "prepared_statements_args",	"table",	"clob",	0,	0,	NULL,	true,	6,	NULL	]
-[ "prepared_statements_args",	"column",	"clob",	0,	0,	NULL,	true,	7,	NULL	]
+[ "prepared_statements_args",	"type",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
+[ "prepared_statements_args",	"type_digits",	"int",	32,	0,	NULL,	true,	2,	NULL	]
+[ "prepared_statements_args",	"type_scale",	"int",	32,	0,	NULL,	true,	3,	NULL	]
+[ "prepared_statements_args",	"inout",	"tinyint",	8,	0,	NULL,	true,	4,	NULL	]
+[ "prepared_statements_args",	"number",	"int",	32,	0,	NULL,	true,	5,	NULL	]
+[ "prepared_statements_args",	"schema",	"clob",	0,	0,	NULL,	true,	6,	NULL	]
+[ "prepared_statements_args",	"table",	"clob",	0,	0,	NULL,	true,	7,	NULL	]
+[ "prepared_statements_args",	"column",	"clob",	0,	0,	NULL,	true,	8,	NULL	]
 [ "privilege_codes",	"privilege_code_id",	"int",	32,	0,	NULL,	false,	0,	NULL	]
 [ "privilege_codes",	"privilege_code_name",	"varchar",	40,	0,	NULL,	false,	1,	NULL	]
 [ "privileges",	"obj_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
@@ -1966,7 +1967,7 @@ drop function pcre_replace(string, string, string, string);
 [ "querylog_history",	"io",	"int",	32,	0,	NULL,	true,	15,	NULL	]
 [ "queue",	"qtag",	"bigint",	64,	0,	NULL,	true,	0,	NULL	]
 [ "queue",	"sessionid",	"int",	32,	0,	NULL,	true,	1,	NULL	]
-[ "queue",	"user",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
+[ "queue",	"username",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
 [ "queue",	"started",	"timestamp",	7,	0,	NULL,	true,	3,	NULL	]
 [ "queue",	"estimate",	"timestamp",	7,	0,	NULL,	true,	4,	NULL	]
 [ "queue",	"progress",	"int",	32,	0,	NULL,	true,	5,	NULL	]
@@ -2020,7 +2021,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sequences",	"cacheinc",	"bigint",	64,	0,	NULL,	true,	7,	NULL	]
 [ "sequences",	"cycle",	"boolean",	1,	0,	NULL,	true,	8,	NULL	]
 [ "sessions",	"sessionid",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "sessions",	"user",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
+[ "sessions",	"username",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "sessions",	"login",	"timestamp",	7,	0,	NULL,	true,	2,	NULL	]
 [ "sessions",	"sessiontimeout",	"bigint",	64,	0,	NULL,	true,	3,	NULL	]
 [ "sessions",	"lastcommand",	"timestamp",	7,	0,	NULL,	true,	4,	NULL	]
