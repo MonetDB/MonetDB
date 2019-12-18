@@ -2360,7 +2360,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_default", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
@@ -2531,6 +2531,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'queue';\n");
 
+	/* 51_sys_schema_extensions */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"ALTER TABLE sys.keywords SET READ WRITE;\n"
 			"DELETE FROM sys.keywords where \"keyword\" IN ('NOCYCLE','NOMAXVALUE','NOMINVALUE');\n"
