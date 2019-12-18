@@ -191,7 +191,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			}
 
 			TRC_DEBUG(MAL_OPT_PROJECTIONPATH, "Before\n");
-			debugInstruction(MAL_OPT_PROJECTIONPATH, mb, 0, p, LIST_MAL_ALL);
+			debugInstruction(MAL_OPT_PROJECTIONPATH, mb, 0, p, i, LIST_MAL_ALL);
 		
 			q->argc=p->retc;
 			for(j=p->retc; j<p->argc; j++){

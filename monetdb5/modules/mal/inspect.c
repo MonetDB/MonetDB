@@ -281,7 +281,7 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str ps;
 
 		for (i = 0; i < s->def->stop; i++) {
-			if((ps = instruction2str(s->def,0, getInstrPtr(s->def, i), 0)) == NULL)
+			if((ps = instruction2str(s->def,0, getInstrPtr(s->def, i), i, 0)) == NULL)
 				goto bailout;
 			if (BUNappend(b, ps + 1, false) != GDK_SUCCEED) {
 				GDKfree(ps);
@@ -320,9 +320,10 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
+			InstrPtr p = getSignature(s);
 			char *c, *w;
 
-			ps = instruction2str(s->def, 0, getSignature(s), 0);
+			ps = instruction2str(s->def, 0, p, getPC(s->def,p), 0);
 			if (ps == 0) {
 				continue;
 			}
@@ -373,9 +374,10 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
+			InstrPtr p = getSignature(s);
 			char *c,*w;
 
-			ps = instruction2str(s->def, 0, getSignature(s), 0);
+			ps = instruction2str(s->def, 0, p, getPC(s->def,p), 0);
 			if(ps == NULL)
 				continue;
 			c = strchr(ps, '(');
@@ -466,7 +468,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str ps;
 
 		for (i = 0; i < s->def->stop; i++) {
-			if((ps = instruction2str(s->def, 0, getInstrPtr(s->def, i), LIST_MAL_NAME )) == NULL) {
+			if((ps = instruction2str(s->def, 0, getInstrPtr(s->def, i), i, LIST_MAL_NAME )) == NULL) {
 				GDKfree(buf);
 				throw(MAL, "inspect.getSource", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}

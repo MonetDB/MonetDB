@@ -206,7 +206,7 @@ void chkFlow(MalBlkPtr mb)
 				if( p->token == REMsymbol){
 					/* do nothing */
 				} else if( i) {
-					str msg=instruction2str(mb,0,p,TRUE);
+					str msg=instruction2str(mb,0,p,i,TRUE);
 					mb->errors = createMalException( mb,i,MAL, "signature misplaced\n!%s",msg);
 					GDKfree(msg);
 				}
@@ -272,7 +272,7 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	TRC_DEBUG(MAL_FCN, "Replace type '_%d' by type '%s'\n", v, getTypeName(t));
 	for(j=0; j<mb->stop; j++){
 	    p= getInstrPtr(mb,j);
-		debugInstruction(MAL_FCN, mb, 0, p, LIST_MAL_ALL);
+		debugInstruction(MAL_FCN, mb, 0, p, j, LIST_MAL_ALL);
 		
 	if( p->polymorphic)
 	for(i=0;i<p->argc; i++)
@@ -299,7 +299,7 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 			TRC_DEBUG(MAL_FCN, "Non x= %s %d\n", getTypeName(x), getTypeIndex(x));
 		}
 	}
-		debugInstruction(MAL_FCN, mb, 0, p, LIST_MAL_ALL);
+		debugInstruction(MAL_FCN, mb, 0, p, j, LIST_MAL_ALL);
 	}
 }
 
@@ -354,7 +354,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	InstrPtr pp;
 
 	TRC_DEBUG(MAL_FCN, "Clone function '%s' to scope '%s'\n", proc->name,scope->name);
-	debugInstruction(MAL_FCN, mb, 0, p, LIST_MAL_ALL);
+	debugInstruction(MAL_FCN, mb, 0, p, getPC(mb, p), LIST_MAL_ALL);
 
 	new = newFunction(scope->name, proc->name, getSignature(proc)->token);
 	if( new == NULL){
@@ -440,7 +440,7 @@ snprintFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int
 		return;
 
 	for (i = first; i < first +step && i < mb->stop; i++){
-		ps = instruction2str(mb, stk, (p=getInstrPtr(mb, i)), flg);
+		ps = instruction2str(mb, stk, (p=getInstrPtr(mb, i)), i, flg);
 		if (ps) {
 			if (p->token == REMsymbol)
 				mnstr_printf(fd,"%-40s\n",ps);
@@ -483,7 +483,7 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 		mnstr_printf(fd, "%% mal # name\n");
 		mnstr_printf(fd, "%% clob # type\n");
 		for (i = first; i < first +size && i < mb->stop; i++) {
-			ps = instruction2str(mb, stk, getInstrPtr(mb, i), flg);
+			ps = instruction2str(mb, stk, getInstrPtr(mb, i), i, flg);
 			if (ps) {
 				size_t l = strlen(ps);
 				if (l > len)
@@ -494,7 +494,7 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 		mnstr_printf(fd, "%% %zu # length\n", len);
 	}
 	for (i = first; i < first +size && i < mb->stop; i++)
-		printInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
+		printInstruction(fd, mb, stk, getInstrPtr(mb, i), i, flg);
 }
 
 void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
@@ -531,7 +531,7 @@ void debugFunction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, int flg)
 				setVarUsed(mb, getArg(p,j));
 	}
 	for (i = 0; i < mb->stop; i++)
-		debugInstruction(comp, mb, stk, getInstrPtr(mb, i), flg);
+		debugInstruction(comp, mb, stk, getInstrPtr(mb, i), i, flg);
 }
 
 /* initialize the static scope boundaries for all variables */

@@ -243,7 +243,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 		char *truncated;
 
 		/* generate actual call statement */
-		stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
+		stmt = instruction2str(mb, stk, pci, getPC(mb, pci), LIST_MAL_ALL);
 		if (stmt) {
 			c = stmt;
 
@@ -762,7 +762,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return;
 
 	/* generate actual call statement */
-	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
+	stmt = instruction2str(mb, stk, pci, getPC(mb, pci), LIST_MAL_ALL);
 	c = stmt;
 
 	while (c && *c && (isspace((unsigned char)*c) || *c == '!'))

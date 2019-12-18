@@ -795,7 +795,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* temporary NOOP instruction */
 				break;
 			}
-			w= instruction2str(mb, 0, pci, FALSE);
+			w= instruction2str(mb, 0, pci, stkpc, FALSE);
 			if(w) {
 				ret = createException(MAL,"interpreter", "unkown operation:%s", w);
 				GDKfree(w);

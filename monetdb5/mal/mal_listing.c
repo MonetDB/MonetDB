@@ -292,7 +292,7 @@ operatorName(int i)
 }
 
 str
-instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
+instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int idx, int flg)
 {
 	int i,j;
 	str base, t;
@@ -446,7 +446,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		char extra[256];
 		if (p->token == REMsymbol){
 		} else{
-			snprintf(extra, 256, "\t#[%d] ("BUNFMT") %s ", getPC(mb,p), getRowCnt(mb,getArg(p,0)), (p->blk? p->blk->binding:""));
+			snprintf(extra, 256, "\t#[%d] ("BUNFMT") %s ", idx, getRowCnt(mb,getArg(p,0)), (p->blk? p->blk->binding:""));
 			if (!copystring(&t, extra, &len))
 				return base;
 			for(j =0; j < p->retc; j++){
@@ -635,9 +635,9 @@ mal2str(MalBlkPtr mb, int first, int last)
 	}
 	for (i = first; i < last; i++) {
 		if( i == 0)
-			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_NAME | LIST_MAL_TYPE  | LIST_MAL_PROPS);
+			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), i, LIST_MAL_NAME | LIST_MAL_TYPE  | LIST_MAL_PROPS);
 		else
-			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_CALL | LIST_MAL_PROPS | LIST_MAL_REMOTE);
+			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), i, LIST_MAL_CALL | LIST_MAL_PROPS | LIST_MAL_REMOTE);
 
 		if ( txt[i])
 			totlen += len[i] = strlen(txt[i]);
@@ -676,13 +676,13 @@ mal2str(MalBlkPtr mb, int first, int last)
 }
 
 void
-printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
+printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 {
 	str ps;
 
 	if (fd == 0)
 		return;
-	ps = instruction2str(mb, stk, p, flg);
+	ps = instruction2str(mb, stk, p, idx, flg);
 	/* ps[strlen(ps)-1] = 0; remove '\n' */
 	if ( ps ){
 		mnstr_printf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
@@ -694,11 +694,11 @@ printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 }
 
 void
-debugInstruction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
+debugInstruction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 {
 	str ps;
 
-	ps = instruction2str(mb, stk, p, flg);
+	ps = instruction2str(mb, stk, p, idx, flg);
 	/* ps[strlen(ps)-1] = 0; remove '\n' */
 	if ( ps ){
 		TRC_DEBUG(comp, "%s%s\n", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
@@ -742,7 +742,7 @@ void showMalBlkHistory(stream *out, MalBlkPtr mb)
 	while(m){
 		p= getInstrPtr(m,m->stop-1);
 		if( p->token == REMsymbol){
-			msg= instruction2str(m, 0, p, FALSE);
+			msg= instruction2str(m, 0, p, m->stop-1, FALSE);
 			if (msg ) {
 				mnstr_printf(out,"%s.%s[%2d] %s\n", 
 					getModuleId(sig), getFunctionId(sig),j++,msg+3);

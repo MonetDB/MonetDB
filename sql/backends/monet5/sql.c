@@ -4367,7 +4367,7 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	ret = getArgReference_str(stk, pci, 0);
-	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_ALL);
+	s = instruction2str(mb, stk, getInstrPtr(mb, 0), 0, LIST_MAL_ALL);
 	if(s == NULL)
 		throw(SQL, "sql.argRecord", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	t = strchr(s, ' ');

@@ -180,7 +180,7 @@ static void
 printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
-	msg = instruction2str(mb, stk, getInstrPtr(mb, pc), LIST_MAL_CALL);
+	msg = instruction2str(mb, stk, getInstrPtr(mb, pc), pc, LIST_MAL_CALL);
 	mnstr_printf(cntxt->fdout, "#%s at %s.%s[%d]\n", (msg?msg:"failed instruction2str()") ,
 			getModuleId(getInstrPtr(mb, 0)),
 			getFunctionId(getInstrPtr(mb, 0)), pc);
@@ -486,7 +486,7 @@ printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 	InstrPtr p;
 
 	p = getInstrPtr(mb, pc);
-	msg = instruction2str(mb, stk, p, flags);
+	msg = instruction2str(mb, stk, p, pc, flags);
 	mnstr_printf(out, "#%s%s\n", (mb->errors != MAL_SUCCEED ? "!" : ""), msg?msg:"failed instruction2str()");
 	GDKfree(msg);
 }
@@ -1181,7 +1181,7 @@ mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	mnstr_printf(cntxt->fdout, "#trapped %s.%s[%d]\n",
 			getModuleId(mb->stmt[0]), getFunctionId(mb->stmt[0]), pc);
-	printInstruction(cntxt->fdout, mb, stk, p, LIST_MAL_DEBUG);
+	printInstruction(cntxt->fdout, mb, stk, p, pc, LIST_MAL_DEBUG);
 	cntxt->itrace = 'W';
 	return MAL_SUCCEED;
 }

@@ -124,7 +124,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		h = hashInstruction(mb, p);
 		TRC_DEBUG(MAL_OPT_COMMONTERMS, "Candidate[%d] look at list[%d] => %d\n",
 										i, h, hash[h]);
-		debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, p, LIST_MAL_ALL);
+		debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, p, i, LIST_MAL_ALL);
 		
 		if( h < 0){
 			pushInstruction(mb,p);
@@ -145,7 +145,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					!isUnsafeFunction(q),
 					!isUpdateInstruction(q),
 					isLinearFlow(q));
-				debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, q, LIST_MAL_ALL);
+				debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, q, j, LIST_MAL_ALL);
 
 				/*
 				 * Simple assignments are not replaced either. They should be
@@ -173,7 +173,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					}
 
 					TRC_DEBUG(MAL_OPT_COMMONTERMS, "Modified expression %d -> %d ", getArg(p,0), getArg(p,1));
-					debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, p, LIST_MAL_ALL);
+					debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, p, i, LIST_MAL_ALL);
 
 					actions++;
 					break; /* end of search */
@@ -182,7 +182,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 			else if(isUpdateInstruction(p)){
 				TRC_DEBUG(MAL_OPT_COMMONTERMS, "Skipped: %d %d\n", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
-				debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, q, LIST_MAL_ALL);
+				debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, q, j, LIST_MAL_ALL);
 			}
 
 		if (duplicate){
@@ -192,7 +192,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		/* update the hash structure with another candidate for re-use */
 		TRC_DEBUG(MAL_OPT_COMMONTERMS, "Update hash[%d] - look at arg '%d' hash '%d' list '%d'\n",
 										i, getArg(p,p->argc-1), h, hash[h]);
-		debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, p, LIST_MAL_ALL);
+		debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, p, i, LIST_MAL_ALL);
 
 		if ( !mayhaveSideEffects(cntxt, mb, p, TRUE) && p->argc != p->retc &&  isLinearFlow(p) && !isUnsafeFunction(p) && !isUpdateInstruction(p)){
 			list[i] = hash[h];
