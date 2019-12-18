@@ -15,7 +15,6 @@ Usage: mserver5.exe [options]
     --set <option>=<value>    Set configuration option
     --help                    Print this list of options
     --version                 Print version and compile time info
-    --verbose[=value]         Set or increase verbosity level
 The debug, testing & trace options:
      --threads
      --memory
@@ -26,7 +25,6 @@ The debug, testing & trace options:
      --modules
      --algorithms
      --performance
-     --optimizers
      --forcemito
      --debug=<bitmask>
 
