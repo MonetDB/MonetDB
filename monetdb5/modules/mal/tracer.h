@@ -6,7 +6,6 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  * 
  * All the functions correspond one by one to the API calls in gdk_tracer.h
- * Except TRACERlog which is exposed only in the MAL layer for testing.
  * 
  */
 
@@ -17,18 +16,16 @@
 #include "mal_interpreter.h"
 
 
-mal_export str TRACERflush_buffer(void);
+mal_export str TRACERflush_buffer(void *ret);
 mal_export str TRACERset_component_level(void *ret, int *comp_id, int *lvl_id);
 mal_export str TRACERreset_component_level(void *ret, int *comp_id);
 mal_export str TRACERset_layer_level(void *ret, int *layer_id, int *lvl_id);
 mal_export str TRACERreset_layer_level(void *ret, int *layer_id);
 mal_export str TRACERset_flush_level(void *ret, int *lvl_id);
-mal_export str TRACERreset_flush_level(void);
+mal_export str TRACERreset_flush_level(void *ret);
 mal_export str TRACERset_adapter(void *ret, int *adapter_id);
-mal_export str TRACERreset_adapter(void);
-mal_export str TRACERshow_info(void);
+mal_export str TRACERreset_adapter(void *ret);
+mal_export str TRACERshow_info(void *ret);
 
-// Exposed only in MAL layer - for testing
-mal_export str TRACERlog(void);
 
 #endif /* _TRACER_H */

@@ -46,8 +46,3 @@ command showinfo()
 address TRACERshow_info
 comment "Dumps to the console all the available logging levels, layers and the components
 along with their current logging level being set";
-
-# Exposed only in MAL layer - for testing
-command log()
-address TRACERlog
-comment "Create a log message";

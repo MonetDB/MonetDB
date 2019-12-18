@@ -6,13 +6,9 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  * 
  * 
- * GDKtracer exposes routines where an occuring failure should not reach the client but 
- * should be made known only to the DBA. On the other hand, there are exposed routines
- * where the failure must also reach the client. 
- * 
- * For both cases the failures are being logged to the active adapter, or to the fallback
- * mechanism (mserver5). To cover the needs of the second category, an exception is thrown. 
- * Exceptions apart from being logged by GDKtracer are also percolating up to the client. 
+ * GDKtracer exposes routines where an occuring failure should reach the 
+ * client immediately. For that reason, GDKtracer reports those errors 
+ * directly to the stream.
  * 
  */
 
@@ -23,8 +19,9 @@
 int GDK_result = 0;
 
 str 
-TRACERflush_buffer(void)
+TRACERflush_buffer(void *ret)
 {
+    (void) ret;
     GDKtracer_flush_buffer();
     return MAL_SUCCEED;
 }
@@ -91,8 +88,9 @@ TRACERset_flush_level(void *ret, int *lvl_id)
 
 
 str
-TRACERreset_flush_level(void)
+TRACERreset_flush_level(void *ret)
 {
+    (void) ret;
     GDK_result = GDKtracer_reset_flush_level();
     if(GDK_result == GDK_FAIL)
         GDK_TRACER_REPORT_EXCEPTION("[%s] " _OPERATION_FAILED"\n", __FUNCTION__);
@@ -114,8 +112,9 @@ TRACERset_adapter(void *ret, int *adapter_id)
 
 
 str
-TRACERreset_adapter(void)
+TRACERreset_adapter(void *ret)
 {
+    (void) ret;
     GDK_result = GDKtracer_reset_adapter();
     if(GDK_result == GDK_FAIL)
         GDK_TRACER_REPORT_EXCEPTION("[%s] " _OPERATION_FAILED"\n", __FUNCTION__);
@@ -125,19 +124,9 @@ TRACERreset_adapter(void)
 
 
 str
-TRACERshow_info(void)
+TRACERshow_info(void *ret)
 {
+    (void) ret;
     GDKtracer_show_info();
-    return MAL_SUCCEED;
-}
-
-
-// Exposed only in MAL layer - for testing
-str
-TRACERlog(void)
-{
-    TRC_CRITICAL(SQL_BAT, "A CRITICAL message\n");
-    TRC_INFO(MAL_DATAFLOW, "An INFO message\n");
-    
     return MAL_SUCCEED;
 }
