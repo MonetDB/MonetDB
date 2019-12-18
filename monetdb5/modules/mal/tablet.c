@@ -973,7 +973,6 @@ SQLload_parse_line(READERtask *task, int idx)
 	bool error = false;
 	str errline = 0;
 
-	char *s;
 	TRC_DEBUG(MAL_TABLET, "SQL break line id %d  state %d\n%s", task->id, idx, line);
 
 	assert(idx < task->top[task->cur]);
@@ -986,11 +985,12 @@ SQLload_parse_line(READERtask *task, int idx)
 			task->fields[i][idx] = line;
 			/* recognize fields starting with a quote, keep them */
 			if (*line && *line == task->quote) {
+				char *l = NULL;
 				quote = true;
-				TRC_DEBUG(MAL_TABLET, "Before #1: %s\n", s = line);
+				TRC_DEBUG(MAL_TABLET, "Before #1: %s\n", l = line);
 				task->fields[i][idx] = line + 1;
 				line = tablet_skip_string(line + 1, task->quote);
-				TRC_DEBUG(MAL_TABLET, "After #1: %s\n", s);
+				TRC_DEBUG(MAL_TABLET, "After #1: %s\n", l);
 
 				if (!line) {
 					errline = SQLload_error(task, idx, i+1);
@@ -1250,7 +1250,7 @@ SQLproducer(void *p)
 	bool blocked[MAXBUFFERS] = { false };
 	bool ateof[MAXBUFFERS] = { false };
 	BUN cnt = 0, bufcnt[MAXBUFFERS] = { 0 };
-	char *end, *e, *s, *base;
+	char *end, *e, *s = NULL, *base;
 	const char *rsep = task->rsep;
 	size_t rseplen = strlen(rsep), partial = 0;
 	char quote = task->quote;
