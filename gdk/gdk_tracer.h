@@ -102,6 +102,13 @@ typedef enum {
 
 
 
+
+/*
+ *
+ * NOTE: Adding/Removing components will affect the test tracer00.mal
+ * See the test file for more details.
+ * 
+ */
 // COMPONENTS
 #define FOREACH_COMP(COMP)            \
         COMP( ALLOC )                 \

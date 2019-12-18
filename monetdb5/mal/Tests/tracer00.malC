@@ -8,7 +8,7 @@
 # In some test cases (marked with #WARNING) the argument used is supposed to be 
 # an enum entry used to count the number of elements (e.g: COMPONENTS_COUNT in 
 # gdk_tracer.h). Thus, in those cases an error should be raised. However, adding 
-# new entries to the enum will affect the marked test cases and they won't fail.
+# or removing entries will affect the marked test cases and they won't fail.
 
 
 # logging.setcomplevel(...)
@@ -27,11 +27,11 @@ logging.setcomplevel(1, 5);     # Should raise an error
                                 # The last level is used for enum count
 
 # WARNING
-logging.setcomplevel(98, 3);    # Should raise an error
+logging.setcomplevel(89, 3);    # Should raise an error
                                 # The last component is used for enum count
 
 # WARNING
-logging.setcomplevel(98, 5);    # Should raise an error
+logging.setcomplevel(89, 5);    # Should raise an error
                                 # The last component is used for enum count
                                 # The last level is used for enum count
 
@@ -44,7 +44,7 @@ logging.resetcomplevel(-1);     # Should raise an error
                                 # Component -1 does not exist
 
 # WARNING
-logging.resetcomplevel(98);     # Should raise an error
+logging.resetcomplevel(89);     # Should raise an error
                                 # The last component is used for enum count
 
 logging.resetcomplevel(1);      # OK
