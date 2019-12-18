@@ -1785,7 +1785,7 @@ AS_VAR_IF([enable_py3integration], [no], [],
 				 enable_py3integration=no
 				 why_not_py3integration="(numpy/arrayobject.h not found)"])],
 			[libpy3_CFLAGS=`$PYTHON3 -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
-			 libpy3_LIBS=`$PY3CONFIG --ldflags`
+			 libpy3_LIBS=`$PY3CONFIG --embed --ldflags` || libpy3_LIBS=`$PY3CONFIG --ldflags`
 			 HAVEPYTHONHEADER=`$PYTHON3 -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
 			 AS_VAR_IF([HAVEPYTHONHEADER], [True],
 				[have_libpy3=yes
