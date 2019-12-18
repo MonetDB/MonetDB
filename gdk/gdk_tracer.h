@@ -25,6 +25,7 @@
  * in case GDKtracer fails to log for whatever reason.
  * - Struct buffer with allocated space etc.
  * - Flush buffer sends the messages to the selected adapter
+ * - Write about the log structure (e.g: MT_thread_get_name + datetime + blah blah)
  */
 
 #ifndef _GDK_TRACER_H_

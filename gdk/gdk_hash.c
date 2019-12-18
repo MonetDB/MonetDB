@@ -488,9 +488,8 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 			break;
 		}
 		TRC_DEBUG_IF(ACCEL) if (p < cnt1)
-			TRC_DEBUG_ENDIF(ACCEL, "Abort starthash with mask " BUNFMT 
-							" at " BUNFMT "\n", MT_thread_getname(), BATgetId(b),
-							mask, p);
+			TRC_DEBUG_ENDIF(ACCEL, "BAThash(%s): Abort starthash with mask " BUNFMT 
+							" at " BUNFMT "\n", BATgetId(b), mask, p);
 		if (p == cnt1 || mask == maxmask)
 			break;
 		mask <<= 2;

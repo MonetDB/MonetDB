@@ -608,7 +608,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "trivial case: 1 element per group\n", MT_thread_getname(),
+				  "trivial case: 1 element per group\n",
 				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
@@ -660,7 +660,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "trivial case: single output group\n", MT_thread_getname(),
+				  "trivial case: single output group\n",
 				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
@@ -698,7 +698,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "trivial case: copy input groups\n", MT_thread_getname(),
+				  "trivial case: copy input groups\n",
 				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
@@ -801,7 +801,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "compare consecutive values\n", MT_thread_getname(),
+				  "compare consecutive values\n",
 				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
@@ -859,7 +859,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "subscan old groups\n", MT_thread_getname(),
+				  "subscan old groups\n",
 				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
@@ -996,7 +996,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "use existing hash table\n", MT_thread_getname(),
+				  "use existing hash table\n",
 				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
@@ -1062,7 +1062,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "create partial hash table%s\n", MT_thread_getname(),
+				  "create partial hash table%s\n",
 				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
