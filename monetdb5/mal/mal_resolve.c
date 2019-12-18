@@ -31,7 +31,7 @@ static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
  * Beware that polymorphic functions may produce type-incorrect clones.
  * This piece of code may be shared by the separate binder
  */
-#define bindFunction(s, p, mb)									\
+#define bindFunction(s, p, idx, mb)									\
 	do {															\
 		if (p->token == ASSIGNsymbol) {								\
 			switch (getSignature(s)->token) {						\
@@ -39,7 +39,7 @@ static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 				p->token = CMDcall;									\
 				p->fcn = getSignature(s)->fcn;      /* C implementation mandatory */ \
 				if (p->fcn == NULL) {								\
-					if(!silent)  mb->errors = createMalException(mb, getPC(mb, p), TYPE, \
+					if(!silent)  mb->errors = createMalException(mb, idx, TYPE, \
 										"object code for command %s.%s missing", \
 										p->modname, p->fcnname);	\
 					p->typechk = TYPE_UNKNOWN;						\
@@ -60,7 +60,7 @@ static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 					p->fcn = getSignature(s)->fcn;     /* C implementation optional */ \
 				break;												\
 			default: {												\
-					if(!silent) mb->errors = createMalException(mb, getPC(mb, p), MAL, \
+					if(!silent) mb->errors = createMalException(mb, idx, MAL, \
 										"MALresolve: unexpected token type"); \
 				goto wrapup;										\
 			}														\
@@ -86,7 +86,7 @@ static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 	} while (0)
 
 static malType
-findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
+findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 {
 	Module m;
 	Symbol s;
@@ -358,13 +358,13 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		 * Also mark all variables that are subject to garbage control.
 		 * Beware, this is not yet effectuated in the interpreter.
 		 */
-		debugInstruction(MAL_RESOLVE, mb, 0, p, getPC(mb, p), LIST_MAL_DEBUG);
+		debugInstruction(MAL_RESOLVE, mb, 0, p, idx, LIST_MAL_DEBUG);
 
 		p->typechk = TYPE_RESOLVED;
 		for (i = 0; i < p->retc; i++) {
 			int ts = returntype[i];
 			if (isVarConstant(mb, getArg(p, i))) {
-					if(!silent) { mb->errors = createMalException(mb, getPC(mb, p), TYPE, "Assignment to constant"); }
+					if(!silent) { mb->errors = createMalException(mb, idx, TYPE, "Assignment to constant"); }
 				p->typechk = TYPE_UNKNOWN;
 				goto wrapup;
 			}
@@ -423,7 +423,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 			goto wrapup;
 		}															\
 		 */
-		bindFunction(s, p, mb);
+		bindFunction(s, p, idx, mb);
 
 		if (returntype != returns)
 			GDKfree(returntype);
@@ -480,7 +480,7 @@ resolveType(int dsttype, int srctype)
  * because they may be resolved as part of the calling sequence.
  */
 static void
-typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs, int silent)
+typeMismatch(MalBlkPtr mb, InstrPtr p, int idx, int lhs, int rhs, int silent)
 {
 	str n1;
 	str n2;
@@ -488,7 +488,7 @@ typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs, int silent)
 	if (!silent) {
 		n1 = getTypeName(lhs);
 		n2 = getTypeName(rhs);
-		mb->errors = createMalException(mb, getPC(mb, p), TYPE, "type mismatch %s := %s", n1, n2);
+		mb->errors = createMalException(mb, idx, TYPE, "type mismatch %s := %s", n1, n2);
 		GDKfree(n1);
 		GDKfree(n2);
 	}
@@ -508,7 +508,7 @@ typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs, int silent)
  * to assignment.
  */
 void
-typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
+typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 {
 	int s1 = -1, i, k;
 	Module m = 0;
@@ -533,7 +533,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	}
 	if (getFunctionId(p) && getModuleId(p)) {
 		m = findModule(scope, getModuleId(p));
-		s1 = findFunctionType(m, mb, p, silent);
+		s1 = findFunctionType(m, mb, p, idx, silent);
 
 		if (s1 >= 0)
 			return;
@@ -553,14 +553,14 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 			if (!silent) {
 				char *errsig;
 				if (!malLibraryEnabled(p->modname)) {
-					mb->errors = createMalException(mb, getPC(mb, p), TYPE,
+					mb->errors = createMalException(mb, idx, TYPE,
 										"'%s%s%s' library error in: %s",
 										(getModuleId(p) ? getModuleId(p) : ""),
 										(getModuleId(p) ? "." : ""),
 										getFunctionId(p), malLibraryHowToEnable(p->modname));
 				} else {
-					errsig = instruction2str(mb,0,p, getPC(mb, p), (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
-					mb->errors = createMalException(mb, getPC(mb, p), TYPE,
+					errsig = instruction2str(mb,0,p, idx, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
+					mb->errors = createMalException(mb, idx, TYPE,
 										"'%s%s%s' undefined in: %s",
 										(getModuleId(p) ? getModuleId(p) : ""),
 										(getModuleId(p) ? "." : ""),
@@ -584,7 +584,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	}
 	if (p->retc >= 1 && p->argc > p->retc && p->argc != 2 * p->retc) {
 		if (!silent){
-			mb->errors  = createMalException(mb, getPC(mb, p), TYPE, "Multiple assignment mismatch");
+			mb->errors  = createMalException(mb, idx, TYPE, "Multiple assignment mismatch");
 		}
 		p->typechk = TYPE_RESOLVED;
 	} else
@@ -596,7 +596,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		if (rhs != TYPE_void) {
 			s1 = resolveType(lhs, rhs);
 			if (s1 == -1) {
-				typeMismatch(mb, p, lhs, rhs, silent);
+				typeMismatch(mb, p, idx, lhs, rhs, silent);
 				return;
 			}
 		} else {
@@ -660,7 +660,7 @@ chkTypes(Module s, MalBlkPtr mb, int silent)
 		p = getInstrPtr(mb, i);
 		assert (p != NULL);
 		if (p->typechk != TYPE_RESOLVED)
-			typeChecker(s, mb, p, silent);
+			typeChecker(s, mb, p, i, silent);
 		if (mb->errors)
 			return;
 	}
@@ -675,7 +675,7 @@ chkInstruction(Module s, MalBlkPtr mb, InstrPtr p)
 {
 	if( mb->errors == MAL_SUCCEED){
 		p->typechk = TYPE_UNKNOWN;
-		typeChecker(s, mb, p, TRUE);
+		typeChecker(s, mb, p, getPC(mb, p), TRUE);
 	}
 	return mb->errors != MAL_SUCCEED;
 }

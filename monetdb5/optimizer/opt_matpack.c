@@ -51,7 +51,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			v = getArg(q,0);
 			q = pushInt(mb,q, p->argc - p->retc);
 			pushInstruction(mb,q);
-			typeChecker(cntxt->usermodule,mb,q,TRUE);
+			typeChecker(cntxt->usermodule,mb,q, mb->stop-1, TRUE);
 
 			for ( j = 2; j < p->argc; j++) {
 				q = newInstruction(0, matRef, packIncrementRef);
@@ -60,7 +60,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				setDestVar(q, newTmpVariable(mb, getVarType(mb,v)));
 				v = getArg(q,0);
 				pushInstruction(mb,q);
-				typeChecker(cntxt->usermodule,mb,q,TRUE);
+				typeChecker(cntxt->usermodule,mb,q, mb->stop-1, TRUE);
 			}
 			getArg(q,0) = getArg(p,0);
 			freeInstruction(p);

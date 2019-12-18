@@ -233,7 +233,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 	debugInstruction(MAL_MANIFOLD, nmb, 0, q, getPC(nmb, q), LIST_MAL_ALL);
 
 	// Localize the underlying scalar operator
-	typeChecker(cntxt->usermodule, nmb, q, TRUE);
+	typeChecker(cntxt->usermodule, nmb, q, getPC(nmb, q), TRUE);
 	if (nmb->errors || q->fcn == NULL || q->token != CMDcall ||
 		(checkprops && q->blk && q->blk->unsafeProp) )
 		fcn = NULL;
