@@ -142,7 +142,7 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 		return(newErr("failed setting socket to listen: %s", strerror(errno)));
 	}
 
-	Mfprintf(log, "accepting connections on TCP socket %s:%u\n", bindaddr, port);
+	Mfprintf(log, "accepting connections on TCP socket %s:%hu\n", bindaddr, port);
 
 	*ret = sock;
 	return(NO_ERR);
