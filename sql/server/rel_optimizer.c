@@ -5294,7 +5294,7 @@ typedef struct {
 static void
 rel_find_joins(mvc *sql, sql_rel *parent, sql_rel *rel, list *l, int depth)
 {
-	if (!rel || depth == 5) /* limit to 5 relations bellow in the tree */
+	if (!rel || depth == 5) /* limit to 5 relations below in the tree */
 		return;
 
 	switch (rel->op) {
