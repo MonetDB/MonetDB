@@ -5967,7 +5967,7 @@ drop function sys.sessions;
 create function sys.sessions()
 returns table(
 "sessionid" int,
-"user" string,
+"username" string,
 "login" timestamp,
 "idle" timestamp,
 "optimizer" string,
@@ -6002,7 +6002,7 @@ create procedure sys.stopsession("sessionid" int)
 create function sys.prepared_statements()
 returns table(
 "sessionid" int,
-"user" string,
+"username" string,
 "statementid" int,
 "statement" string,
 "created" timestamp)
@@ -6011,10 +6011,11 @@ create view sys.prepared_statements as select * from sys.prepared_statements();
 create function sys.prepared_statements_args()
 returns table(
 "statementid" int,
-"parameter" boolean,
 "type" string,
-"digits" int,
-"scale" int,
+"type_digits" int,
+"type_scale" int,
+"inout" tinyint,
+"number" int,
 "schema" string,
 "table" string,
 "column" string)
@@ -6033,17 +6034,16 @@ drop view sys.queue;
 drop function sys.queue;
 create function sys.queue()
 returns table(
- tag bigint,
- sessionid int,
-	"user" string,
- started timestamp,
- status string,
- query string,
- progress int,
- workers int,
- memory int
-)
-external name sql.sysmon_queue;
+"tag" bigint,
+"sessionid" int,
+"username" string,
+"started" timestamp,
+"status" string,
+"query" string,
+"progress" int,
+"workers" int,
+"memory" int)
+ external name sql.sysmon_queue;
 grant execute on function sys.queue to public;
 create view sys.queue as select * from sys.queue();
 grant select on sys.queue to public;
