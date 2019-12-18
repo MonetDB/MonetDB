@@ -354,7 +354,7 @@ WLRprocessBatch(void *arg)
 					sql->session->ac_on_commit = 1;
 					sql->session->level = 0;
 					if(mvc_trans(sql) < 0) {
-						TRC_CRITICAL(SQL_WLR, "Allocation failure while starting the transaction\n");
+						TRC_ERROR(SQL_WLR, "Allocation failure while starting the transaction\n");
 					} else {
 						TRC_DEBUG(SQL_WLR, "Process a transaction\n");
 						debugFunction(SQL_WLR, mb, 0, LIST_MAL_DEBUG | LIST_MAL_MAPI );
@@ -375,7 +375,7 @@ WLRprocessBatch(void *arg)
 						if( msg != MAL_SUCCEED){
 							// they should always succeed
 							msg =createException(MAL,"wlr.process", "batch %d:"LLFMT" :%s\n", i, tag, msg);
-							debugFunction(SQL_WLR, mb, 0, LIST_MAL_DEBUG );
+							//debugFunction(SQL_WLR, mb, 0, LIST_MAL_DEBUG );
 							if((other = mvc_rollback(sql,0,NULL, false)) != MAL_SUCCEED) //an error was already established
 								GDKfree(other);
 						} else
@@ -388,8 +388,8 @@ WLRprocessBatch(void *arg)
 					char line[FILENAME_MAX];
 					snprintf(line, FILENAME_MAX,"#wlr.process:typechecking failed '%s':\n",path);
 					snprintf(wlr_error, FILENAME_MAX, "%s", line);
-					TRC_INFO(SQL_WLR, "%s\n", line);
-					debugFunction(SQL_WLR, mb, 0, LIST_MAL_DEBUG );
+					//TRC_INFO(SQL_WLR, "%s\n", line);
+					//debugFunction(SQL_WLR, mb, 0, LIST_MAL_DEBUG );
 				}
 				cleanup();
 				if ( wlr_tag + 1 == wlc_tag || tag == wlr_limit)
@@ -974,7 +974,6 @@ cleanup:
 #define WLRvalue(TPE)                                                   \
 	{	TPE val = *getArgReference_##TPE(stk,pci,5);                    \
 			if (BUNappend(upd, (void*) &val, false) != GDK_SUCCEED) {   \
-				TRC_ERROR(SQL_WLR, "BUNappend failed\n");                     \
 				goto cleanup;                                           \
 		}                                                               \
 	}
