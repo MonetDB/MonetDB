@@ -43,21 +43,6 @@ typedef struct {
 
 SQLhelp sqlhelp1[] = {
 	// major commands
-	{"ALTER TABLE",
-	 "",
-	 "ALTER TABLE [ IF EXISTS ] qname ADD [ COLUMN ] { column_def | table_constraint }\n"
-	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident SET DEFAULT value\n"
-	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident SET [NOT] NULL\n"
-	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident DROP DEFAULT\n"
-	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident SET STORAGE {string | NULL}\n"
-	 "ALTER TABLE [ IF EXISTS ] qname RENAME [ COLUMN ] ident TO ident\n"
-	 "ALTER TABLE [ IF EXISTS ] qname DROP [ COLUMN ] ident [ RESTRICT | CASCADE ]\n"
-	 "ALTER TABLE [ IF EXISTS ] qname DROP CONSTRAINT ident [ RESTRICT | CASCADE ]\n"
-	 "ALTER TABLE [ IF EXISTS ] qname RENAME TO ident\n"
-	 "ALTER TABLE [ IF EXISTS ] qname SET { { READ | INSERT } ONLY | READ WRITE }\n"
-	 "ALTER TABLE [ IF EXISTS ] qname SET SCHEMA ident",
-	 "qname,column_def,table_constraint,ident",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/Alter"},
 	{"ALTER MERGE TABLE",
 	 "",
 	 "ALTER TABLE [ IF EXISTS ] qname ADD TABLE qname [ AS PARTITION partition_spec ]\n"
@@ -76,6 +61,22 @@ SQLhelp sqlhelp1[] = {
 	 "[MINVALUE intval | NO MINVALUE] [MAXVALUE intval | NO MAXVALUE] [CACHE intval] [[NO] CYCLE]",
 	 "int_datatype,intval",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
+	{"ALTER TABLE",
+	 "",
+	 "ALTER TABLE [ IF EXISTS ] qname ADD [ COLUMN ] column_def\n"
+	 "ALTER TABLE [ IF EXISTS ] qname ADD table_constraint\n"
+	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident SET DEFAULT value\n"
+	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident SET [NOT] NULL\n"
+	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident DROP DEFAULT\n"
+	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident SET STORAGE {string | NULL}\n"
+	 "ALTER TABLE [ IF EXISTS ] qname DROP [ COLUMN ] ident [ RESTRICT | CASCADE ]\n"
+	 "ALTER TABLE [ IF EXISTS ] qname DROP CONSTRAINT ident [ RESTRICT | CASCADE ]\n"
+	 "ALTER TABLE [ IF EXISTS ] qname RENAME [ COLUMN ] ident TO ident\n"
+	 "ALTER TABLE [ IF EXISTS ] qname RENAME TO ident\n"
+	 "ALTER TABLE [ IF EXISTS ] qname SET { INSERT ONLY | READ ONLY | READ WRITE }\n"
+	 "ALTER TABLE [ IF EXISTS ] qname SET SCHEMA ident",
+	 "qname,column_def,table_constraint,ident",
+	 "See also https://www.monetdb.org/Documentation/SQLreference/Alter"},
 	{"ALTER USER",
 	 "Change a user's login name or password or default schema",
 	 "ALTER USER ident RENAME TO ident\n"
@@ -90,13 +91,8 @@ SQLhelp sqlhelp1[] = {
 	 "ident,column_list",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/statistics"},
 	{"CALL",
-	 "",
+	 "Call a stored procedure",
 	 "CALL qname '(' [ scalar_expression [',' ...] ] ')' | CALL ident '.' ident",
-	 NULL,
-	 NULL},
-	{"CASE",
-	 "Case statement for procedures/functions",
-	 "CASE scalar_expression [ when_statement ...]  [ELSE procedure_statement ... ] END CASE",
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
 	{"COMMENT",
@@ -167,6 +163,12 @@ SQLhelp sqlhelp1[] = {
 	 "CREATE [ UNIQUE | ORDERED | IMPRINTS ] INDEX ident ON qname '(' ident_list ')'",
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Indices"},
+	{"CREATE LOADER",
+	 "Create a custom (external) data loader function. The body is defined in Python language",
+	 "CREATE [ OR REPLACE ] LOADER qname '(' [ param [',' ...]] ')'\n"
+	 "    LANGUAGE PYTHON external_code",
+	 "qname,param,external_code",
+	 "See also https://www.monetdb.org/blog/monetdbpython-loader-functions"},
 	{"CREATE PROCEDURE",
 	 "Create a user-defined procedure",
 	 "CREATE [ OR REPLACE ] PROCEDURE qname '(' { '*' | [ param [',' ...]] } ')'\n"
@@ -175,12 +177,6 @@ SQLhelp sqlhelp1[] = {
 	 "    EXTERNAL NAME ident ',' ident",
 	 "qname,param,procedure_statement,ident",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Procedures"},
-	{"CREATE LOADER",
-	 "Create a custom (external) data loader function. The body is defined in Python language",
-	 "CREATE [ OR REPLACE ] LOADER qname '(' [ param [',' ...]] ')'\n"
-	 "    LANGUAGE PYTHON external_code",
-	 "qname,param,external_code",
-	 "See also https://www.monetdb.org/blog/monetdbpython-loader-functions"},
 	{"CREATE MERGE TABLE",
 	 "",
 	 "CREATE MERGE TABLE [ IF NOT EXISTS ] qname table_source [ partition_by ]",
@@ -278,33 +274,18 @@ SQLhelp sqlhelp1[] = {
 	 "CURRENT_USER | USER",
 	 NULL,
 	 NULL},
-	{"EXPLAIN",
-	 "Give execution plan details",
-	 "EXPLAIN statement",
+	{"DEBUG",
+	 "Debug a SQL statement using MAL debugger",
+	 "DEBUG statement",
 	 NULL,
-	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Explain"},
-	{"LOCALTIME",
-	 "Pseudo column or function to get the current client time excluding timezone",
-	 "LOCALTIME [ '(' ')' ]",
-	 NULL,
-	 NULL},
-	{"LOCALTIMESTAMP",
-	 "Pseudo column or function to get the current client timestamp excluding timezone",
-	 "LOCALTIMESTAMP [ '(' ')' ]",
-	 NULL,
-	 NULL},
-	{"EXTRACT",
-	 "Built-in function",
-	 "EXTRACT '(' { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | CENTURY | DECADE | QUARTER | WEEK | DOW | DOY } FROM scalar_expression ')'",
-	 NULL,
-	 NULL},
+	 "https://www.monetdb.org/Documentation/Manuals/SQLreference/Debug"},
 	{"DECLARE",
 	 "Define a local variable",
 	 "DECLARE ident_list data_type",
 	 "ident_list,data_type",
 	 NULL},
 	{"DELETE",
-	 "",
+	 "Remove data rows from a table",
 	 "[ WITH cte_list ] DELETE FROM qname [ [AS] ident ] [ WHERE search_condition ]",
 	 "cte_list,search_condition",
 	 NULL},
@@ -377,16 +358,25 @@ SQLhelp sqlhelp1[] = {
 	 "DROP VIEW [ IF EXISTS ] qname [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
-	{"IF",
-	 "",
-	 "IF search_condition THEN procedure_statement ...\n"
-	 "[ELSE IF search_condition THEN procedure_statement ... ]...\n"
-	 "[ ELSE procedure_statement ... ] END IF",
-	 "search_condition,procedure_statement",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
+	{"EXECUTE",
+	 "Execute a prepared SQL statement with supplied parameter values",
+	 "EXECUTE {intnr | **} '(' [ value [, ...] ] ')'",
+	 NULL,
+	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/PrepareExec"},
+	{"EXPLAIN",
+	 "Give MAL execution plan for the SQL statement",
+	 "EXPLAIN statement",
+	 NULL,
+	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Explain"},
+	{"EXTRACT",
+	 "Built-in function",
+	 "EXTRACT '(' { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | CENTURY | DECADE | QUARTER | WEEK | DOW | DOY } FROM scalar_expression ')'",
+	 NULL,
+	 NULL},
 	{"INSERT",
-	 "",
-	 "[ WITH cte_list ] INSERT INTO qname [ column_list ] [ { DEFAULT VALUES | VALUES row_values | query_expression } ]",
+	 "Add data rows to a table",
+	 "[ WITH cte_list ] INSERT INTO qname [ column_list ]\n"
+	 " [ { DEFAULT VALUES | VALUES row_values | query_expression } ]",
 	 "cte_list,column_list,row_values,query_expression",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Updates"},
 	{"GRANT",
@@ -395,20 +385,35 @@ SQLhelp sqlhelp1[] = {
 	 "GRANT role [',' ...] TO grantee [',' ...] [ WITH ADMIN OPTION]",
 	 "privileges,table_privileges,global_privileges,role,grantee",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Permissions"},
+	{"LOCALTIME",
+	 "Pseudo column or function to get the current client time excluding timezone",
+	 "LOCALTIME [ '(' ')' ]",
+	 NULL,
+	 NULL},
+	{"LOCALTIMESTAMP",
+	 "Pseudo column or function to get the current client timestamp excluding timezone",
+	 "LOCALTIMESTAMP [ '(' ')' ]",
+	 NULL,
+	 NULL},
 	{"MERGE",
 	 "",
 	 "[ WITH cte_list ] MERGE INTO qname [ [AS] ident ] USING table_ref [ [AS] ident ] ON search_condition merge_list",
 	 "cte_list,table_ref,search_condition,merge_list",
 	 "See also: https://www.monetdb.org/blog/sql2003_merge_statements_now_supported"},
+	{"PLAN",
+	 "Give relational execution plan for the SQL statement",
+	 "PLAN statement",
+	 NULL,
+	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/PlanSQL"},
+	{"PREPARE",
+	 "Prepare a SQL DML statement with optional question-mark parameter markers",
+	 "PREPARE statement",
+	 NULL,
+	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/PrepareExec"},
 	{"RELEASE SAVEPOINT",
 	 "",
 	 "RELEASE SAVEPOINT ident",
 	 NULL,
-	 NULL},
-	{"RETURN",
-	 "",
-	 "RETURN { query_expression | search_condition | TABLE '(' query_expression ')'",
-	 "query_expression,search_condition",
 	 NULL},
 	{"REVOKE",
 	 "Remove some privileges",
@@ -454,12 +459,12 @@ SQLhelp sqlhelp1[] = {
 	 "transactionmode,isolevel",
 	 "DIAGNOSTICS is not yet supported"},
 	{"SET ROLE",
-	 "",
+	 "Change current role",
 	 "SET ROLE ident",
 	 NULL,
 	 NULL},
 	{"SET SCHEMA",
-	 "",
+	 "Change current schema",
 	 "SET SCHEMA ident",
 	 NULL,
 	 NULL},
@@ -483,16 +488,16 @@ SQLhelp sqlhelp1[] = {
 	 "SET TRANSACTION transactionmode",
 	 "transactionmode,isolevel",
 	 "DIAGNOSTICS is not yet supported"},
-	{"START TRANSACTION",
-	 "",
-	 "START TRANSACTION transactionmode",
-	 "transactionmode,isolevel",
-	 "DIAGNOSTICS is not yet supported"},
 	{"SET USER",
-	 "",
+	 "Change current user",
 	 "SET USER '=' ident",
 	 NULL,
 	 NULL},
+	{"START TRANSACTION",
+	 "Change transaction mode from auto-commit to user controlled commit/rollback",
+	 "START TRANSACTION transactionmode",
+	 "transactionmode,isolevel",
+	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Transactions"},
 	{"TABLE JOINS",
 	 "",
 	 "'(' joined_table ') |\n"
@@ -503,30 +508,26 @@ SQLhelp sqlhelp1[] = {
 	 "table_ref,search_condition,column_list",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/TableExpressions"},
 	{"TRACE",
-	 "Give execution trace",
+	 "Give execution trace for the SQL statement",
 	 "TRACE statement",
 	 NULL,
-	 NULL},
+	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Trace"},
 	{"TRUNCATE",
-	 "",
+	 "Remove all rows from a table",
 	 "TRUNCATE [ TABLE ] qname [ CONTINUE IDENTITY | RESTART IDENTITY ] [ CASCADE | RESTRICT ]",
 	 "",
 	 NULL},
 	{"UPDATE",
-	 "",
-	 "[ WITH cte_list ] UPDATE qname [ [AS] ident ] SET assignment_list [ FROM from_item ] [ WHERE search_condition ]",
+	 "Change data in a table",
+	 "[ WITH cte_list ] UPDATE qname [ [AS] ident ] SET assignment_list\n"
+	 " [ FROM from_item ] [ WHERE search_condition ]",
 	 "cte_list,assignment_list,search_condition",
 	 NULL},
 	{"VALUES",
-	 "",
+	 "Specify a list of row values",
 	 "VALUES row_values",
 	 "row_values",
 	 NULL},
-	{"WHILE",
-	 "",
-	 "[ident ':'] WHILE search_condition DO procedure_statement ... END WHILE [ident]",
-	 "search_condition,procedure_statement",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
 	{"WINDOW FUNCTIONS",
 	 "",
 	 "{ window_aggregate_function | window_rank_function } OVER { ident | '(' window_specification ')' }",
@@ -534,8 +535,14 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/WindowFunctions"},
 	{NULL, NULL, NULL, NULL, NULL}	/* End of list marker */
 };
+
 SQLhelp sqlhelp2[] = {
 // The subgrammar rules
+	{"and_exp",
+	 NULL,
+	 "{ and_exp AND pred_exp | pred_exp }",
+	 "pred_exp",
+	 NULL},
 	{"assignment_list",
 	 NULL,
 	 "column '=' DEFAULT | column '=' search_condition | '(' column [',' ...] ')' '=' subquery",
@@ -546,6 +553,11 @@ SQLhelp sqlhelp2[] = {
 	 "restricted ident",
 	 NULL,
 	 NULL},
+	{"case_statement",
+	 "Case statement for procedures/functions",
+	 "CASE scalar_expression [ when_statement ...]  [ELSE procedure_statement ... ] END CASE",
+	 NULL,
+	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
 	{"column_def",
 	 NULL,
 	 "ident { data_type [ column_option ... ] | SERIAL | BIGSERIAL }",
@@ -575,8 +587,8 @@ SQLhelp sqlhelp2[] = {
 	{"control_statement",
 	 NULL,
 	 "call_procedure | while_statement | if_statement | case_statement | return_statement",
-	 "call_procedure | while_statement | if_statement | case_statement | return_statement",
-	 NULL},
+	 "call_procedure,while_statement,if_statement,case_statement,return_statement",
+	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
 	{"datetime_type",
 	 NULL,
 	 "DATE | TIME [ time_precision ] [ WITH TIME ZONE ] |\n"
@@ -652,6 +664,13 @@ SQLhelp sqlhelp2[] = {
 	 "ident [',' ...]",
 	 "ident",
 	 NULL},
+	{"if_statement",
+	 NULL,
+	 "IF search_condition THEN procedure_statement ...\n"
+	 "[ELSE IF search_condition THEN procedure_statement ... ]...\n"
+	 "[ ELSE procedure_statement ... ] END IF",
+	 "search_condition,procedure_statement",
+	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
 	{"int_datatype",
 	 NULL,
 	 "BIGINT | INTEGER | INT | SMALLINT | TINYINT",
@@ -699,7 +718,7 @@ SQLhelp sqlhelp2[] = {
 	 "column_list,row_values,assignment_list",
 	 NULL},
 	{"nrofrecords",
-	 "",
+	 NULL,
 	 "OFFSET integer | integer RECORDS | integer OFFSET integer RECORDS | integer RECORDS OFFSET integer",
 	 NULL,
 	 NULL},
@@ -739,6 +758,16 @@ SQLhelp sqlhelp2[] = {
 	 NULL,
 	 "{ RANGE MAXVALUE | query_expression }",
 	 "query_expression",
+	 NULL},
+	{"pred_exp",
+	 NULL,
+	 "{ NOT pred_exp | predicate }",
+	 "predicate",
+	 NULL},
+	{"predicate",
+	 NULL,
+	 "comparison_predicate | between_predicate | like_predicate | test_for_null | in_predicate | all_or_any_predicate | existence_test | filter_exp | scalar_exp",
+	 NULL,
 	 NULL},
 	{"privileges",
 	 NULL,
@@ -783,6 +812,11 @@ SQLhelp sqlhelp2[] = {
 	 "ON { UPDATE | DELETE } { NO ACTION | CASCADE | RESTRICT | SET NULL | SET DEFAULT }",
 	 NULL,
 	 NULL},
+	{"return_statement",
+	 "",
+	 "RETURN { query_expression | search_condition | TABLE '(' query_expression ')' | NULL }",
+	 "query_expression,search_condition",
+	 NULL},
 	{"row_values",
 	 NULL,
 	 "'(' atom [ ',' atom ]... ')' [ ',' row_values ] ...",
@@ -797,6 +831,11 @@ SQLhelp sqlhelp2[] = {
 	 NULL,
 	 "grant | revoke | create_statement | drop_statement | alter_statement",
 	 NULL,
+	 NULL},
+	{"search_condition",
+	 NULL,
+	 "{ search_condition OR and_exp | and_exp }",
+	 "and_exp",
 	 NULL},
 	{"separators",
 	 NULL,
@@ -888,6 +927,11 @@ SQLhelp sqlhelp2[] = {
 	 "WHEN scalar_expression THEN procedure_statement ...",
 	 "procedure_statement",
 	 NULL},
+	{"while_statement",
+	 NULL,
+	 "[ident ':'] WHILE search_condition DO procedure_statement ... END WHILE [ident]",
+	 "search_condition,procedure_statement",
+	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
 	{"window_aggregate_function",
 	 NULL,
 	 "{ AVG '(' query_expression ')' | COUNT '(' { '*' | query_expression } ')' | MAX '(' query_expression ')'\n"
@@ -1046,20 +1090,13 @@ sql_help(const char *pattern, stream *toConsole, int pagewidth)
 			}
 		return;
 	}
+
 	// collect the major topics
 	for (i = 0; sqlhelp1[i].command; i++) {
 		total++;
 		if ((len = strlen(sqlhelp1[i].command)) > maxlen)
 			maxlen = len;
 	}
-	if (*pattern == '*') {
-		for (i = 0; sqlhelp2[i].command; i++) {
-			total++;
-			if ((len = strlen(sqlhelp2[i].command)) > maxlen)
-				maxlen = len;
-		}
-	}
-
 	// provide summary of all major topics  (=search terms)
 	ncolumns = (int) maxlen > pagewidth ? 1 : (int) (pagewidth / maxlen);
 	if (ncolumns > 1 && ncolumns * (int) maxlen + ncolumns - 1 > pagewidth)
