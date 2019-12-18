@@ -3459,7 +3459,6 @@ rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf, int mod
 static sql_idx *
 rollforward_create_idx(sql_trans *tr, sql_idx * i, int mode)
 {
-
 	if (isTable(i->t) && idx_has_column(i->type)) {
 		int p = (tr->parent == gtrans && !isTempTable(i->t));
 
@@ -3577,7 +3576,7 @@ rollforward_create_table(sql_trans *tr, sql_table *t, int mode)
 			else if (mode == R_APPLY)
 				store_funcs.create_del(tr, t);
 		}
-	
+
 		if (ok == LOG_OK)
 			ok = rollforward_changeset_creates(tr, &t->members, (rfcfunc) &rollforward_create_part, mode);
 		if (ok == LOG_OK)
@@ -3654,7 +3653,7 @@ rollforward_drop_key(sql_trans *tr, sql_key *k, int mode)
 
 		if (uk->keys)
 			for (n = uk->keys->h; n; n= n->next) {
-	       	         	fk = (sql_fkey *) n->data;
+				fk = (sql_fkey *) n->data;
 				fk->rkey = NULL;
 			}
 	}
@@ -3796,7 +3795,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 	if (isTempTable(ft))
 		return ok;
 
-	ok = rollforward_changeset_updates(tr, &ft->columns, &tt->columns, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_column, (rfdfunc) &rollforward_drop_column, (dupfunc) &column_dup, mode);
+	if (ok == LOG_OK)
+		ok = rollforward_changeset_updates(tr, &ft->columns, &tt->columns, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_column, (rfdfunc) &rollforward_drop_column, (dupfunc) &column_dup, mode);
 	if (ok == LOG_OK)
 		ok = rollforward_changeset_updates(tr, &ft->idxs, &tt->idxs, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_idx, (rfdfunc) &rollforward_drop_idx, (dupfunc) &idx_dup, mode);
 	if (ok == LOG_OK)
@@ -4167,7 +4167,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 	if (ft->base.rtime || ft->base.wtime || tr->stime < pft->base.wtime) {
 		int ok = LOG_OK;
 
-		if (isTable(ft)) 
+		if (isTable(ft) && !isTempTable(ft)) 
 			store_funcs.destroy_del(NULL, ft);
 
 		ft->cleared = 0;
@@ -4192,7 +4192,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 			ok = reset_changeset( tr, &ft->triggers, &pft->triggers, &ft->base, (resetf) NULL, (dupfunc) &trigger_dup);
 
 		if (isTempTable(ft))
-			return LOG_OK;
+			return ok;
 
 		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->columns, &pft->columns, &ft->base, (resetf) &reset_column, (dupfunc) &column_dup);
