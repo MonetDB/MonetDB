@@ -216,49 +216,42 @@ SQLepilogue(void *ret)
 	return MAL_SUCCEED;
 }
 
-#define SQLglobal(name, val, failure)                                                                             \
-	if(!stack_push_var(sql, name, &ctype) || !stack_set_var(sql, name, VALset(&src, ctype.type->localtype, (char*)(val)))) \
+#define SQLglobal(name, val) \
+	if (!stack_push_var(sql, name, &ctype) || !stack_set_var(sql, name, VALset(&src, ctype.type->localtype, (char*)(val)))) \
 		failure--;
 
-#define NR_GLOBAL_VARS 9
-/* NR_GLOBAL_VAR should match exactly the number of variables created
-   in global_variables */
+/* NR_GLOBAL_VAR should match exactly the number of variables created in global_variables */
 /* initialize the global variable, ie make mvc point to these */
 static int
 global_variables(mvc *sql, const char *user, const char *schema)
 {
 	sql_subtype ctype;
-	const char *typename;
 	lng sec = 0;
 	ValRecord src;
 	const char *opt;
 	int failure = 0;
 
-	typename = "int";
-	sql_find_subtype(&ctype, typename, 0, 0);
-	SQLglobal("debug", &sql->debug, failure);
-	SQLglobal("cache", &sql->cache, failure);
+	sql_find_subtype(&ctype, "int", 0, 0);
+	SQLglobal("debug", &sql->debug);
+	SQLglobal("cache", &sql->cache);
 
-	typename = "varchar";
-	sql_find_subtype(&ctype, typename, 1024, 0);
-	SQLglobal("current_schema", schema, failure);
-	SQLglobal("current_user", user, failure);
-	SQLglobal("current_role", user, failure);
+	sql_find_subtype(&ctype,  "varchar", 1024, 0);
+	SQLglobal("current_schema", schema);
+	SQLglobal("current_user", user);
+	SQLglobal("current_role", user);
 
 	/* inherit the optimizer from the server */
 	opt = GDKgetenv("sql_optimizer");
 	if (!opt)
 		opt = "default_pipe";
-	SQLglobal("optimizer", opt, failure);
+	SQLglobal("optimizer", opt);
 
-	typename = "sec_interval";
-	sql_find_subtype(&ctype, typename, inttype2digits(ihour, isec), 0);
-	SQLglobal("current_timezone", &sec, failure);
+	sql_find_subtype(&ctype, "sec_interval", inttype2digits(ihour, isec), 0);
+	SQLglobal("current_timezone", &sec);
 
-	typename = "bigint";
-	sql_find_subtype(&ctype, typename, 0, 0);
-	SQLglobal("last_id", &sql->last_id, failure);
-	SQLglobal("rowcnt", &sql->rowcnt, failure);
+	sql_find_subtype(&ctype, "bigint", 0, 0);
+	SQLglobal("last_id", &sql->last_id);
+	SQLglobal("rowcnt", &sql->rowcnt);
 	return failure;
 }
 
@@ -309,7 +302,7 @@ SQLprepareClient(Client c, int login)
 		if(m->session->tr->active) {
 			return NULL;
 		}
-		if(mvc_reset(m, c->fdin, c->fdout, SQLdebug, NR_GLOBAL_VARS) < 0) {
+		if(mvc_reset(m, c->fdin, c->fdout, SQLdebug) < 0) {
 			throw(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		backend_reset(be);

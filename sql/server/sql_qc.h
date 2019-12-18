@@ -44,7 +44,7 @@ typedef struct qc {
 
 extern qc *qc_create(int clientid, int seqnr);
 extern void qc_destroy(qc *cache);
-extern void qc_clean(qc *cache);
+extern void qc_clean(qc *cache, bool prepared);
 extern cq *qc_find(qc *cache, int id);
 extern cq *qc_match(qc *cache, mvc *sql, symbol *s, atom **params, int plen, int key);
 extern cq *qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, sql_query_t type, char *codedstr, int no_mitosis, int prepared);

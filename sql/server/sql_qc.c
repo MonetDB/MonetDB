@@ -92,12 +92,12 @@ qc_delete(qc *cache, cq *q)
 }
 
 void
-qc_clean(qc *cache)
+qc_clean(qc *cache, bool prepared)
 {
 	cq *n, *q, *p = NULL;
 
 	for (q = cache->q; q; ) {
-		if (!q->prepared) {
+		if (q->prepared == prepared) {
 			n = q->next;
 			if (p) 
 				p->next = n;

@@ -26,12 +26,6 @@ stdout of test 'file_s05` in directory 'sql/test/Via-m` itself:
 #declare video_sets_id1 integer;
 #set video_sets_id1 = -1234567890;
 #set video_sets_id1 = get_video_sets_id('fabchannel2007');
-#select video_sets_id1;
-% .L2 # table_name
-% L2 # name
-% int # type
-% 1 # length
-[ 1	]
 
 # 10:49:48 >  
 # 10:49:48 >  "Done."

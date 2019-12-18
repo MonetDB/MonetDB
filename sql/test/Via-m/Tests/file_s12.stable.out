@@ -25,12 +25,6 @@ stdout of test 'file_s12` in directory 'sql/test/Via-m` itself:
 
 #declare return_id integer;
 #set return_id = -1;
-#select return_id;
-% .L2 # table_name
-% L2 # name
-% int # type
-% 2 # length
-[ -1	]
 
 # 10:49:50 >  
 # 10:49:50 >  "Done."

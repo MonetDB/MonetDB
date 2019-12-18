@@ -25,12 +25,6 @@ stdout of test 'media_s16` in directory 'sql/test/Via-m` itself:
 
 #declare id_media_description integer;
 #set id_media_description = -1234567890;
-#select id_media_description;
-% .L2 # table_name
-% L2 # name
-% int # type
-% 11 # length
-[ -1234567890	]
 
 # 10:49:45 >  
 # 10:49:45 >  "Done."

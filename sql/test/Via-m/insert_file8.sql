@@ -12,5 +12,3 @@ set return_id = i_add_video_file_event('fabchannel2007',
                                        125,
                                        'codec 1',
                                        2000);
-
-select return_id;

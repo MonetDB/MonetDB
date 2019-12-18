@@ -753,7 +753,7 @@ SQLengineIntern(Client c, backend *be)
 
 cleanup_engine:
 	if (m->type == Q_SCHEMA && m->qc != NULL)
-		qc_clean(m->qc);
+		qc_clean(m->qc, false);
 	if (msg) {
 		/* don't print exception decoration, just the message */
 /*
@@ -786,8 +786,10 @@ cleanup_engine:
 	return msg;
 }
 
-void SQLdestroyResult(res_table *destroy) {
-   res_table_destroy(destroy);
+void
+SQLdestroyResult(res_table *destroy)
+{
+	res_table_destroy(destroy);
 }
 
 /* a hook is provided to execute relational algebra expressions */

@@ -25,25 +25,9 @@ stdout of test 'event_s11` in directory 'sql/test/Via-m` itself:
 
 #declare id_event integer;
 #set id_event = -1;
-#select id_event;
-% .L2 # table_name
-% L2 # name
-% int # type
-% 2 # length
-[ -1	]
-#set id_event = add_event('event 4', '2009-06-23', NULL, NULL, 'description3');
-#select id_event;
-% .L2 # table_name
-% L2 # name
-% int # type
-% 1 # length
-[ 5	]
-#select id_event; 
-% .L2 # table_name
-% L2 # name
-% int # type
-% 1 # length
-[ 5	]
+#declare id_event2 integer;
+#set id_event2 = add_event('event 4', '2009-06-23', NULL, NULL, 'description3');
+#declare id_event3 integer;
 
 # 10:49:40 >  
 # 10:49:40 >  "Done."
