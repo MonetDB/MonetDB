@@ -81,8 +81,20 @@ returns table(
 "created" timestamp)
  external name sql.prepared_statements;
 create view sys.prepared_statements as select * from sys.prepared_statements();
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('sessions', 'prepared_statements') and type = 5;
-update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('sessions', 'prepared_statements');
+create function sys.prepared_statements_args()
+returns table(
+"statementid" int,
+"parameter" boolean,
+"type" string,
+"digits" int,
+"scale" int,
+"schema" string,
+"table" string,
+"column" string)
+ external name sql.prepared_statements_args;
+create view sys.prepared_statements_args as select * from sys.prepared_statements_args();
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('sessions', 'prepared_statements', 'prepared_statements_args') and type = 5;
+update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('sessions', 'prepared_statements', 'prepared_statements_args');
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = 2;
 create function sys.debug(flag string) returns integer
  external name mdb."setDebug";
