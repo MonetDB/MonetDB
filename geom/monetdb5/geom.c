@@ -5256,13 +5256,13 @@ mbrTOSTR(char **dst, size_t *len, const mbr *atom, bool external)
 		dstStrLen = strlen(tempWkt);
 	}
 
-	if (*len < dstStrLen + 3 || *dst == NULL) {
+	if (*len < dstStrLen + 4 || *dst == NULL) {
 		GDKfree(*dst);
-		if ((*dst = GDKmalloc(*len = dstStrLen + 3)) == NULL)
+		if ((*dst = GDKmalloc(*len = dstStrLen + 4)) == NULL)
 			return -1;
 	}
 
-	if (dstStrLen > 3) {
+	if (dstStrLen > 4) {
 		if (external) {
 			snprintf(*dst, *len, "\"%s\"", tempWkt);
 			dstStrLen += 2;
