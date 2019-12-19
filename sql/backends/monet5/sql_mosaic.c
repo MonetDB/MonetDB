@@ -226,9 +226,17 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							continue;
 						// perform the analysis
 						bn = store_funcs.bind_col(m->session->tr, c, 0);
-						MOSAnalysis(bn, btech, boutput, bfactor, bcompress, bdecompress, compressions);
+						msg = MOSAnalysis(bn, btech, boutput, bfactor, bcompress, bdecompress, compressions);
 						BBPunfix(bn->batCacheid);
 						(void) c;
+
+						if(msg != MAL_SUCCEED){
+							BBPunfix(btech->batCacheid);
+							BBPunfix(boutput->batCacheid);
+							BBPunfix(bfactor->batCacheid);
+							BBPunfix(bcompress->batCacheid);
+							return msg;
+						}
 					}
 			}
 	}

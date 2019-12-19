@@ -1412,7 +1412,7 @@ struct PAT{
 	lng clk1, clk2;
 }pat[CANDIDATES];
 
-void
+str
 MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *bdecompress, str compressions)
 {
 	int i,j,cases, bit=1, bid= b->batCacheid;
@@ -1420,6 +1420,7 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 	int antipattern[CANDIDATES];
 	int antipatternSize = 0;
 	char buf[1024]={0}, *t;
+	str msg = MAL_SUCCEED;
 
 	int filter[MOSAIC_METHODS];
 
@@ -1475,10 +1476,14 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 		}
 
 		const char* compressions = buf;
-		MOScompressInternal( b, compressions);
+		msg = MOScompressInternal( b, compressions);
+
 		pat[i].clk1 = GDKms()- pat[i].clk1;
 
-		if(b->tmosaic == NULL){
+		if(msg != MAL_SUCCEED || b->tmosaic == NULL){
+			if (msg != MAL_SUCCEED) {
+				GDKfree(msg);
+			}
 			// aborted compression experiment
 			MOSdestroy(BBPdescriptor(bid));
 
@@ -1522,7 +1527,7 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 
 		BAT* decompressed;
 		pat[i].clk2 = GDKms();
-		MOSdecompressInternal( &decompressed, b);
+		msg = MOSdecompressInternal( &decompressed, b);
 		pat[i].clk2 = GDKms()- pat[i].clk2;
 		MOSdestroy(decompressed);
 		BBPunfix(decompressed->batCacheid);
@@ -1539,6 +1544,8 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 		}
 
 		MOSunsetLock(b);
+
+		if(msg != MAL_SUCCEED) return msg; // Probably a malloc failure.
 	}
 
 	// Collect the results in a table
@@ -1548,16 +1555,18 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 			// round down to three decimals.
 			pat[i].xf = ((dbl) (int) (pat[i].xf * 1000)) / 1000;
 
-			if( BUNappend(boutput,&pat[i].xsize,false) != GDK_SUCCEED ||
+			if(msg == MAL_SUCCEED && (BUNappend(boutput,&pat[i].xsize,false) != GDK_SUCCEED ||
 				BUNappend(btech,pat[i].technique,false) != GDK_SUCCEED ||
 				BUNappend(bratio,&pat[i].xf,false) != GDK_SUCCEED ||
 				BUNappend(bcompress,&pat[i].clk1,false) != GDK_SUCCEED ||
-				BUNappend(bdecompress,&pat[i].clk2,false) != GDK_SUCCEED )
-					return;
+				BUNappend(bdecompress,&pat[i].clk2,false) != GDK_SUCCEED ))
+				msg = createException(MAL, "mosaic.analysis", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 
 		GDKfree(pat[i].technique);
 	}
+
+	return msg;
 }
 
 /* slice a fixed size atom into thin bte-wide columns, used for experiments */

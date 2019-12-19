@@ -1,5 +1,5 @@
 ####technical depth####
-Check MOSanalysis and its test.
+Fix estimation. Use a differential approach?
 Fix/check/test MOSlayout.
 Add negative values to tests
 Add test for huge

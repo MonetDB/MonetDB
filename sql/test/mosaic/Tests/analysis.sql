@@ -1,12 +1,14 @@
-create table tmp4 (i int);
+START TRANSACTION;
+
+create table if not exists tmp4 (i int);
+
+truncate TABLE tmp4;
 
 insert into tmp4 select * from generate_series(0, 10000000);
 
 -- tmp4 is currently uncompressed
 
 select technique, factor from mosaic.analysis('sys', 'tmp4', 'i') order by factor desc, technique;
-
-select technique, factor from mosaic.analysis('sys', 'tmp4', 'i', 'capped, runlength') order by factor desc, technique;
 
 -- should be materialized as the graph of a cutoff function.
 
@@ -20,8 +22,12 @@ select technique, factor from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runle
 
 set optimizer='mosaic_pipe';
 
-alter table tmp4 alter column i set storage 'capped';
+alter table tmp4 alter column i set storage 'var';
+
+select technique, factor from mosaic.analysis('sys', 'tmp4', 'i') order by factor desc, technique;
 
 select technique, factor from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runlength') order by factor desc, technique;
 
 drop table tmp4;
+
+ROLLBACK;

@@ -1511,7 +1511,7 @@ str MKEYconstbulk_rotate_xor_hash(bat *ret, const lng *h, const int *nbits, cons
 str MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str MKEYrotate(lng *ret, const lng *v, const int *nbits);
 str MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-void MOSAnalysis(BAT *b, BAT *btech, BAT *output, BAT *factor, BAT *compress, BAT *decompress, str compressions);
+str MOSAnalysis(BAT *b, BAT *btech, BAT *output, BAT *factor, BAT *compress, BAT *decompress, str compressions);
 void MOSblk(MosaicBlk blk);
 str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MOScompressInternal(BAT *bsrc, const char *compressions);
