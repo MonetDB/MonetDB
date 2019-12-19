@@ -3,12 +3,12 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 
 /*
- * 2014-2016 author Martin Kersten
+ * authors Martin Kersten, A. Koning
  * Global dictionary encoding
  * Index value zero is not used to easy detection of filler values
  * The dictionary index size is derived from the number of entries covered.

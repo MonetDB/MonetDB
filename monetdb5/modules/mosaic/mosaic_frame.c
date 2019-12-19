@@ -3,11 +3,11 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
- *2014-2016 author Martin Kersten
+ * authors Martin Kersten, Aris Koning
  * Frame of reference compression with dictionary
  * A codevector chunk is beheaded by a reference value F from the column. The elements V in the
  * chunk are replaced by an index into a global dictionary of V-F offsets.
