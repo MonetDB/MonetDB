@@ -854,7 +854,7 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	oid rid = oid_nil, frid = oid_nil, tid = oid_nil;
 	int fid, i;
-	int time0;
+	int time0 = 0;
 	int *tpcode = NULL;
 	long *rep = NULL, *wid = NULL, rows;
 	LASReaderH reader = NULL;
