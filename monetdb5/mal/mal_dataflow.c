@@ -695,8 +695,11 @@ static void showFlowEvent(DataFlow flow, int pc)
 	TRC_DEBUG(MAL_DATAFLOW, "End of data flow '%d' done '%d'\n", pc, flow->stop - flow->start);
 	for (i = 0; i < flow->stop - flow->start; i++)
 		if (fe[i].state != DFLOWwrapup && fe[i].pc >= 0) {
-			TRC_DEBUG(MAL_DATAFLOW, "Missed pc %d status %d %d blocks %d\n", fe[i].state, i, fe[i].pc, fe[i].blocks);
-			debugInstruction(MAL_DATAFLOW, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), fe[i].pc, LIST_MAL_MAPI);
+			TRC_DEBUG_IF(MAL_DATAFLOW)
+			{
+				TRC_DEBUG_ENDIF(MAL_DATAFLOW, "Missed pc %d status %d %d blocks %d\n", fe[i].state, i, fe[i].pc, fe[i].blocks);
+				debugInstruction(MAL_DATAFLOW, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), fe[i].pc, LIST_MAL_MAPI);
+			}
 		}
 }
 */

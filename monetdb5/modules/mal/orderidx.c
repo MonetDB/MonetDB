@@ -186,7 +186,8 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		freeStack(newstk);
 	}
 
-	debugFunction(MAL_OIDX, smb, 0, LIST_MAL_ALL);
+	TRC_DEBUG_IF(MAL_OIDX)
+		debugFunction(MAL_OIDX, smb, 0, LIST_MAL_ALL);
 
 	/* get rid of temporary MAL block */
 bailout:

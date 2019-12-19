@@ -486,7 +486,8 @@ compileOptimizer(Client cntxt, const char *name)
 						compiled = findSymbol(cntxt->usermodule,getName("optimizer"), getName(pipes[j].name));
 						if( compiled){
 							pipes[j].mb = compiled->def;
-							debugFunction(MAL_OPT_PIPES, pipes[j].mb, 0, LIST_MAL_ALL);
+							TRC_DEBUG_IF(MAL_OPT_PIPES)
+								debugFunction(MAL_OPT_PIPES, pipes[j].mb, 0, LIST_MAL_ALL);
 						}
 					}
 				}

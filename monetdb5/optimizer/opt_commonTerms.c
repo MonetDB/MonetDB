@@ -122,10 +122,14 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		/* from here we have a candidate to look for a match */
 
 		h = hashInstruction(mb, p);
-		TRC_DEBUG(MAL_OPT_COMMONTERMS, "Candidate[%d] look at list[%d] => %d\n",
-										i, h, hash[h]);
-		debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, p, i, LIST_MAL_ALL);
-		
+
+		TRC_DEBUG_IF(MAL_OPT_COMMONTERMS)
+		{
+			TRC_DEBUG_ENDIF(MAL_OPT_COMMONTERMS, "Candidate[%d] look at list[%d] => %d\n",
+												i, h, hash[h]);
+			debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, p, i, LIST_MAL_ALL);
+		}
+
 		if( h < 0){
 			pushInstruction(mb,p);
 			continue;
@@ -135,17 +139,20 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		/* Look into the hash structure for matching instructions */
 		for (j = hash[h];  j > 0 && bailout-- > 0  ; j = list[j]) 
 			if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
-				TRC_DEBUG(MAL_OPT_COMMONTERMS, "Candidate[%d->%d] %d %d :%d %d %d=%d %d %d %d\n",
-					j, list[j], 
-					hasSameSignature(mb, p, q), 
-					hasSameArguments(mb, p, q),
-					q->token != ASSIGNsymbol ,
-					list[getArg(q,q->argc-1)],i,
-					!hasCommonResults(p, q), 
-					!isUnsafeFunction(q),
-					!isUpdateInstruction(q),
-					isLinearFlow(q));
-				debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, q, j, LIST_MAL_ALL);
+				TRC_DEBUG_IF(MAL_OPT_COMMONTERMS)
+				{
+					TRC_DEBUG_ENDIF(MAL_OPT_COMMONTERMS, "Candidate[%d->%d] %d %d :%d %d %d=%d %d %d %d\n",
+						j, list[j], 
+						hasSameSignature(mb, p, q), 
+						hasSameArguments(mb, p, q),
+						q->token != ASSIGNsymbol ,
+						list[getArg(q,q->argc-1)],i,
+						!hasCommonResults(p, q), 
+						!isUnsafeFunction(q),
+						!isUpdateInstruction(q),
+						isLinearFlow(q));
+					debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, q, j, LIST_MAL_ALL);
+				}
 
 				/*
 				 * Simple assignments are not replaced either. They should be
@@ -172,8 +179,11 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 						p= addArgument(mb,p, getArg(q,k));
 					}
 
-					TRC_DEBUG(MAL_OPT_COMMONTERMS, "Modified expression %d -> %d ", getArg(p,0), getArg(p,1));
-					debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, p, i, LIST_MAL_ALL);
+					TRC_DEBUG_IF(MAL_OPT_COMMONTERMS)
+					{
+						TRC_DEBUG_ENDIF(MAL_OPT_COMMONTERMS, "Modified expression %d -> %d ", getArg(p,0), getArg(p,1));
+						debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, p, i, LIST_MAL_ALL);
+					}
 
 					actions++;
 					break; /* end of search */
@@ -181,8 +191,11 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			}
 
 			else if(isUpdateInstruction(p)){
-				TRC_DEBUG(MAL_OPT_COMMONTERMS, "Skipped: %d %d\n", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
-				debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, q, j, LIST_MAL_ALL);
+				TRC_DEBUG_IF(MAL_OPT_COMMONTERMS)
+				{
+					TRC_DEBUG_ENDIF(MAL_OPT_COMMONTERMS, "Skipped: %d %d\n", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
+					debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, q, j, LIST_MAL_ALL);
+				}
 			}
 
 		if (duplicate){
@@ -190,9 +203,12 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			continue;
 		} 
 		/* update the hash structure with another candidate for re-use */
-		TRC_DEBUG(MAL_OPT_COMMONTERMS, "Update hash[%d] - look at arg '%d' hash '%d' list '%d'\n",
-										i, getArg(p,p->argc-1), h, hash[h]);
-		debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, p, i, LIST_MAL_ALL);
+		TRC_DEBUG_IF(MAL_OPT_COMMONTERMS)
+		{
+			TRC_DEBUG_ENDIF(MAL_OPT_COMMONTERMS, "Update hash[%d] - look at arg '%d' hash '%d' list '%d'\n",
+												i, getArg(p,p->argc-1), h, hash[h]);
+			debugInstruction(MAL_OPT_COMMONTERMS, mb, 0, p, i, LIST_MAL_ALL);
+		}
 
 		if ( !mayhaveSideEffects(cntxt, mb, p, TRUE) && p->argc != p->retc &&  isLinearFlow(p) && !isUnsafeFunction(p) && !isUpdateInstruction(p)){
 			list[i] = hash[h];

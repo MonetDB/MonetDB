@@ -217,7 +217,8 @@ void chkFlow(MalBlkPtr mb)
 	if(msg == MAL_SUCCEED && lastInstruction < mb->stop-1 ){
 		mb->errors = createMalException( mb,lastInstruction,SYNTAX,
 			"instructions after END");
-		debugFunction(MAL_FCN, mb, 0, LIST_MAL_ALL);
+		TRC_DEBUG_IF(MAL_FCN)
+			debugFunction(MAL_FCN, mb, 0, LIST_MAL_ALL);
 	}
 	if( endseen)
 	for(btop--; btop>=0;btop--){
@@ -272,7 +273,8 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	TRC_DEBUG(MAL_FCN, "Replace type '_%d' by type '%s'\n", v, getTypeName(t));
 	for(j=0; j<mb->stop; j++){
 	    p= getInstrPtr(mb,j);
-		debugInstruction(MAL_FCN, mb, 0, p, j, LIST_MAL_ALL);
+		TRC_DEBUG_IF(MAL_FCN)
+			debugInstruction(MAL_FCN, mb, 0, p, j, LIST_MAL_ALL);
 		
 	if( p->polymorphic)
 	for(i=0;i<p->argc; i++)
@@ -299,7 +301,8 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 			TRC_DEBUG(MAL_FCN, "Non x= %s %d\n", getTypeName(x), getTypeIndex(x));
 		}
 	}
-		debugInstruction(MAL_FCN, mb, 0, p, j, LIST_MAL_ALL);
+		TRC_DEBUG_IF(MAL_FCN)
+			debugInstruction(MAL_FCN, mb, 0, p, j, LIST_MAL_ALL);
 	}
 }
 
@@ -353,8 +356,11 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	int i,v;
 	InstrPtr pp;
 
-	TRC_DEBUG(MAL_FCN, "Clone function '%s' to scope '%s'\n", proc->name,scope->name);
-	debugInstruction(MAL_FCN, mb, 0, p, getPC(mb, p), LIST_MAL_ALL);
+	TRC_DEBUG_IF(MAL_FCN)
+	{
+		TRC_DEBUG_ENDIF(MAL_FCN, "Clone function '%s' to scope '%s'\n", proc->name,scope->name);
+		debugInstruction(MAL_FCN, mb, 0, p, getPC(mb, p), LIST_MAL_ALL);
+	}
 
 	new = newFunction(scope->name, proc->name, getSignature(proc)->token);
 	if( new == NULL){
@@ -368,8 +374,11 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 		return NULL;
 	}
 	/* now change the definition of the original proc */
-	TRC_DEBUG(MAL_FCN, "Cloned version\n");
-	debugFunction(MAL_FCN, new->def, 0, LIST_MAL_ALL);
+	TRC_DEBUG_IF(MAL_FCN)
+	{
+		TRC_DEBUG_ENDIF(MAL_FCN, "Cloned version\n");
+		debugFunction(MAL_FCN, new->def, 0, LIST_MAL_ALL);
+	}
 
 	/* check for errors after fixation , TODO*/
 	pp = getSignature(new);
@@ -399,8 +408,11 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	for (i = 0; i < new->def->vtop; i++)
 		clrVarFixed(new->def, i);
 
-	TRC_DEBUG(MAL_FCN, "Function to be checked\n");
-	debugFunction(MAL_FCN, new->def, 0, LIST_MAL_ALL);
+	TRC_DEBUG_IF(MAL_FCN)
+	{
+		TRC_DEBUG_ENDIF(MAL_FCN, "Function to be checked\n");
+		debugFunction(MAL_FCN, new->def, 0, LIST_MAL_ALL);
+	}
 
 	/* check for errors after fixation , TODO*/
 	/* beware, we should now ignore any cloning */
@@ -411,12 +423,16 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 			mb->errors = new->def->errors;
 			mb->errors = createMalException(mb,0,TYPE,"Error in cloned function");
 			new->def->errors = 0;
-			debugFunction(MAL_FCN, new->def, 0, LIST_MAL_ALL);
+			TRC_DEBUG_IF(MAL_FCN)
+				debugFunction(MAL_FCN, new->def, 0, LIST_MAL_ALL);
 		}
 	}
 
-	TRC_DEBUG(MAL_FCN, "Newly cloned function added to: %s %d\n", scope->name, i);
-	debugFunction(MAL_FCN, new->def, 0, LIST_MAL_ALL);
+	TRC_DEBUG_IF(MAL_FCN)
+	{
+		TRC_DEBUG_ENDIF(MAL_FCN, "Newly cloned function added to: %s %d\n", scope->name, i);
+		debugFunction(MAL_FCN, new->def, 0, LIST_MAL_ALL);
+	}
 	return new;
 }
 

@@ -595,7 +595,9 @@ WLCpreparewrite(Client cntxt)
 		cntxt->wlc_kind = WLC_QUERY;
 	} else
 			throw(MAL,"wlc.write","WLC log path missing ");
-	debugFunction(MAL_WLC, cntxt->wlc, 0, LIST_MAL_ALL );
+			
+	TRC_DEBUG_IF(MAL_WLC)
+		debugFunction(MAL_WLC, cntxt->wlc, 0, LIST_MAL_ALL );
 
 	if( wlc_state == WLC_STOP)
 		throw(MAL,"wlc.write","Logging for this snapshot has been stopped. Use a new snapshot to continue logging.");

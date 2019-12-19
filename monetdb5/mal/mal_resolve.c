@@ -358,7 +358,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * Also mark all variables that are subject to garbage control.
 		 * Beware, this is not yet effectuated in the interpreter.
 		 */
-		debugInstruction(MAL_RESOLVE, mb, 0, p, idx, LIST_MAL_DEBUG);
+		TRC_DEBUG_IF(MAL_RESOLVE)
+			debugInstruction(MAL_RESOLVE, mb, 0, p, idx, LIST_MAL_DEBUG);
 
 		p->typechk = TYPE_RESOLVED;
 		for (i = 0; i < p->retc; i++) {

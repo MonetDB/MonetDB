@@ -190,8 +190,11 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				goto wrapupall;
 			}
 
-			TRC_DEBUG(MAL_OPT_PROJECTIONPATH, "Before\n");
-			debugInstruction(MAL_OPT_PROJECTIONPATH, mb, 0, p, i, LIST_MAL_ALL);
+			TRC_DEBUG_IF(MAL_OPT_PROJECTIONPATH)
+			{
+				TRC_DEBUG_ENDIF(MAL_OPT_PROJECTIONPATH, "Before\n");
+				debugInstruction(MAL_OPT_PROJECTIONPATH, mb, 0, p, i, LIST_MAL_ALL);
+			}
 		
 			q->argc=p->retc;
 			for(j=p->retc; j<p->argc; j++){

@@ -189,9 +189,11 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	propagateNonTarget(mb, pc + 1);
 
-	TRC_DEBUG(MAL_MEMO, "Cost choice selected: %s %ld\n", getVarName(mb, target), (long) mincost);
-	debugFunction(MAL_MEMO, mb, stk, 1);
-
+	TRC_DEBUG_IF(MAL_MEMO)
+	{
+		TRC_DEBUG_ENDIF(MAL_MEMO, "Cost choice selected: %s %ld\n", getVarName(mb, target), (long) mincost);
+		debugFunction(MAL_MEMO, mb, stk, 1);
+	}
 
 	return MAL_SUCCEED;
 }
