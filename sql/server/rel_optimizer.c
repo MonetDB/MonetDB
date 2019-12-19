@@ -8978,10 +8978,14 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	gp = (global_props) {.cnt = {0},};
 	rel_properties(sql, &gp, rel);
 
-	int i;
-	for (i = 0; i < ddl_maxops; i++) {
-		if (gp.cnt[i]> 0)
-			TRC_DEBUG(SQL_OPTIMIZER, "%s %d\n", op2string((operator_type)i), gp.cnt[i]);
+	/* CHECK */
+	TRC_DEBUG_IF(SQL_OPTIMIZER)
+	{
+		int i;
+		for (i = 0; i < ddl_maxops; i++) {
+			if (gp.cnt[i]> 0)
+				TRC_DEBUG_ENDIF(SQL_OPTIMIZER, "%s %d\n", op2string((operator_type)i), gp.cnt[i]);
+		}
 	}
 
 	if (level <= 0 && gp.cnt[op_select]) 

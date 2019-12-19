@@ -857,7 +857,7 @@ HEAP_printstatus(Heap *heap)
 	size_t block, cur_free = hheader->head;
 	CHUNK *blockp;
 
-	TRC_DEBUG(TRACE, "HEAP has head %zu and alignment %d and size %zu\n",
+	TRC_DEBUG_ENDIF(TRACE, "HEAP has head %zu and alignment %d and size %zu\n",
 				hheader->head, hheader->alignment, heap->free);
 
 	/* Walk the blocklist */
@@ -867,7 +867,7 @@ HEAP_printstatus(Heap *heap)
 		blockp = HEAP_index(heap, block, CHUNK);
 
 		if (block == cur_free) {
-			TRC_DEBUG(TRACE, "Free block at %p has size %zu and next %zu\n",
+			TRC_DEBUG_ENDIF(TRACE, "Free block at %p has size %zu and next %zu\n",
 						(void *)block,
 						blockp->size, blockp->next);
 
@@ -876,7 +876,7 @@ HEAP_printstatus(Heap *heap)
 		} else {
 			size_t size = blocksize(hheader, blockp);
 
-			TRC_DEBUG(TRACE, "Block at %zu with size %zu\n",
+			TRC_DEBUG_ENDIF(TRACE, "Block at %zu with size %zu\n",
 						block, size);
 			block += size;
 		}

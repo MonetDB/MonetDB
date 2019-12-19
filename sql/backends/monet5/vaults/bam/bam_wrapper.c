@@ -1325,12 +1325,15 @@ check_alignment_buffers(bam_wrapper *bw, alignment * alig, int qname_size,
 		alig->qual = tmp;
 	}
 
-	if (resized[0])
-		TRC_DEBUG(BAM_, "Increased size of qname buffer to: %d characters\n", alig->qname_size);
-	if (resized[1])
-		TRC_DEBUG(BAM_, "Increased size of cigar buffer to: %d characters\n", alig->cigar_size);
-	if (resized[2])
-		TRC_DEBUG(BAM_, "Increased size of seq and qual buffers to: %d characters\n", alig->seq_size);
+	TRC_DEBUG_IF(BAM_)
+	{
+		if (resized[0])
+			TRC_DEBUG_ENDIF(BAM_, "Increased size of qname buffer to: %d characters\n", alig->qname_size);
+		if (resized[1])
+			TRC_DEBUG_ENDIF(BAM_, "Increased size of cigar buffer to: %d characters\n", alig->cigar_size);
+		if (resized[2])
+			TRC_DEBUG_ENDIF(BAM_, "Increased size of seq and qual buffers to: %d characters\n", alig->seq_size);
+	}
 
 	return (alig->cigar != NULL && alig->seq != NULL
 		&& alig->qual != NULL);

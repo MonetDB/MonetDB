@@ -2114,11 +2114,14 @@ flusher_should_run(void)
 
 	bool do_it = (reason_to && !reason_not_to);
 
-	if (reason_to != flusher.reason_to || reason_not_to != flusher.reason_not_to) {
-		TRC_DEBUG(SQL_STORE, "Store flusher: %s, reason to flush: %s, reason not to: %s\n",
-			do_it ? "flushing" : "not flushing",
-			reason_to ? reason_to : "none",
-			reason_not_to ? reason_not_to : "none");
+	TRC_DEBUG_IF(SQL_STORE)
+	{
+		if (reason_to != flusher.reason_to || reason_not_to != flusher.reason_not_to) {
+			TRC_DEBUG_ENDIF(SQL_STORE, "Store flusher: %s, reason to flush: %s, reason not to: %s\n",
+										do_it ? "flushing" : "not flushing",
+										reason_to ? reason_to : "none",
+										reason_not_to ? reason_not_to : "none");
+		}
 	}
 
 	flusher.reason_to = reason_to;
@@ -4370,8 +4373,12 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 			} else if (fb->id < pfb->id) {  
 				node *t = n->next;
 
-				sql_base *b = n->data;
-				TRC_DEBUG(SQL_STORE, "Free: %s\n", (b->name) ? b->name : "help");
+				TRC_DEBUG_IF(SQL_STORE)
+				{
+					sql_base *b = n->data;
+					TRC_DEBUG_ENDIF(SQL_STORE, "Free: %s\n", (b->name) ? b->name : "help");
+				}
+
 				cs_remove_node(fs, n);
 				n = t;
 			} else { /* a new id */
@@ -4391,8 +4398,12 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 		}
 		while ( ok == LOG_OK && n) { /* remove remaining old stuff */
 			node *t = n->next;
-			sql_base *b = n->data;
-			TRC_DEBUG(SQL_STORE, "Free: %s\n", (b->name) ? b->name : "help");
+			
+			TRC_DEBUG_IF(SQL_STORE)
+			{
+				sql_base *b = n->data;
+				TRC_DEBUG_ENDIF(SQL_STORE, "Free: %s\n", (b->name) ? b->name : "help");
+			}
 
 			cs_remove_node(fs, n);
 			n = t;

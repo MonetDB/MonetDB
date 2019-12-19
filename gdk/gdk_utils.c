@@ -931,7 +931,7 @@ GDKreset(int status)
 		}
 
 #ifdef LOCK_STATS
-		GDKlockstatistics(1);
+		TRC_DEBUG_IF(TEM) GDKlockstatistics(1);
 #endif
 		GDKdebug = 0;
 		GDK_mmap_minsize_persistent = MMAP_MINSIZE_PERSISTENT;

@@ -951,8 +951,11 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	col = mvc_bind_column(m, lidar_tbl, "PointRecordsCount");
 	rows = *(int*)table_funcs.column_find_value(m->session->tr, col, rid);
 
-	TRC_DEBUG(LIDAR, "Loading '%ld' rows in table '%s'\n", rows, tname);
-	time0 = GDKms();
+	TRC_DEBUG_IF(LIDAR)
+	{
+		TRC_DEBUG_ENDIF(LIDAR, "Loading '%ld' rows in table '%s'\n", rows, tname);
+		time0 = GDKms();
+	}
 
 	colx = mvc_bind_column(m, tbl, "x");
 	coly = mvc_bind_column(m, tbl, "y");

@@ -701,10 +701,10 @@ debugInstruction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int id
 	ps = instruction2str(mb, stk, p, idx, flg);
 	/* ps[strlen(ps)-1] = 0; remove '\n' */
 	if ( ps ){
-		TRC_DEBUG(comp, "%s%s\n", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
+		TRC_DEBUG_ENDIF(comp, "%s%s\n", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
 		GDKfree(ps);
 	} else {
-		TRC_DEBUG(comp, "Failed instruction2str()\n");
+		TRC_DEBUG_ENDIF(comp, "Failed instruction2str()\n");
 	}
 
 	/* compiler complains about unused parameter */

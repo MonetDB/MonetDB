@@ -307,15 +307,19 @@ WLRprocessBatch(void *arg)
 				snprintf(line, FILENAME_MAX,"#wlr.process:failed further parsing '%s':",path);
 				snprintf(wlr_error, FILENAME_MAX, "%.*s", FILENAME_MAX, line);
 				TRC_INFO(SQL_WLR, "%s\n", line);
-				debugFunction(SQL_WLR, mb, 0, LIST_MAL_DEBUG );
+				TRC_DEBUG_IF(SQL_WLR)
+					debugFunction(SQL_WLR, mb, 0, LIST_MAL_DEBUG );
 				cleanup();
 				TRC_DEBUG(SQL_WLR, "Redo transaction error\n");
 				continue;
 			}
 			q= getInstrPtr(mb, mb->stop - 1);
 			if( getModuleId(q) != wlrRef){
-				TRC_DEBUG(SQL_WLR, "Unexpected instruction");
-				debugInstruction(SQL_WLR, mb, 0, q, mb->stop-1, LIST_MAL_ALL);
+				TRC_DEBUG_IF(SQL_WLR)
+				{
+					TRC_DEBUG_ENDIF(SQL_WLR, "Unexpected instruction");
+					debugInstruction(SQL_WLR, mb, 0, q, mb->stop-1, LIST_MAL_ALL);
+				}
 				
 				cleanup();
 				break;
@@ -356,8 +360,11 @@ WLRprocessBatch(void *arg)
 					if(mvc_trans(sql) < 0) {
 						TRC_ERROR(SQL_WLR, "Allocation failure while starting the transaction\n");
 					} else {
-						TRC_DEBUG(SQL_WLR, "Process a transaction\n");
-						debugFunction(SQL_WLR, mb, 0, LIST_MAL_DEBUG | LIST_MAL_MAPI );
+						TRC_DEBUG_IF(SQL_WLR)
+						{
+							TRC_DEBUG_ENDIF(SQL_WLR, "Process a transaction\n");
+							debugFunction(SQL_WLR, mb, 0, LIST_MAL_DEBUG | LIST_MAL_MAPI );
+						}
 
 						wlr_tag =  tag; // remember which transaction we executed
 						snprintf(wlr_read, sizeof(wlr_read), "%s", tag_read);
@@ -375,7 +382,6 @@ WLRprocessBatch(void *arg)
 						if( msg != MAL_SUCCEED){
 							// they should always succeed
 							msg =createException(MAL,"wlr.process", "batch %d:"LLFMT" :%s\n", i, tag, msg);
-							//debugFunction(SQL_WLR, mb, 0, LIST_MAL_DEBUG );
 							if((other = mvc_rollback(sql,0,NULL, false)) != MAL_SUCCEED) //an error was already established
 								GDKfree(other);
 						} else
@@ -388,8 +394,6 @@ WLRprocessBatch(void *arg)
 					char line[FILENAME_MAX];
 					snprintf(line, FILENAME_MAX,"#wlr.process:typechecking failed '%s':\n",path);
 					snprintf(wlr_error, FILENAME_MAX, "%s", line);
-					//TRC_INFO(SQL_WLR, "%s\n", line);
-					//debugFunction(SQL_WLR, mb, 0, LIST_MAL_DEBUG );
 				}
 				cleanup();
 				if ( wlr_tag + 1 == wlc_tag || tag == wlr_limit)
