@@ -2352,12 +2352,17 @@ sql_update_nov2019_sp1_hugeint(Client c, mvc *sql, const char *prev_schema, bool
 #endif
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema)
+sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	sql_table *t;
 	size_t bufsize = 8192, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
+
+	if (!*systabfixed &&
+	    (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+		return err;
+	*systabfixed = true;
 
 	if (buf == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2448,7 +2453,9 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"\"statement\" string,\n"
 			"\"created\" timestamp)\n"
 			" external name sql.prepared_statements;\n"
+			"grant execute on function sys.prepared_statements to public;\n"
 			"create view sys.prepared_statements as select * from sys.prepared_statements();\n"
+			"grant select on sys.prepared_statements to public;\n"
 			"create function sys.prepared_statements_args()\n"
 			"returns table(\n"
 			"\"statementid\" int,\n"
@@ -2461,7 +2468,9 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 			"\"table\" string,\n"
 			"\"column\" string)\n"
 			" external name sql.prepared_statements_args;\n"
-			"create view sys.prepared_statements_args as select * from sys.prepared_statements_args();\n");
+			"grant execute on function sys.prepared_statements_args to public;\n"
+			"create view sys.prepared_statements_args as select * from sys.prepared_statements_args();\n"
+			"grant select on sys.prepared_statements_args to public;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
@@ -2848,7 +2857,7 @@ SQLupgrades(Client c, mvc *m)
 #endif
 
 	if (!res && !sql_bind_func(m->sa, s, "suspend_log_flushing", NULL, NULL, F_PROC)) {
-		if ((err = sql_update_default(c, m, prev_schema)) != NULL) {
+		if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 			res = -1;
