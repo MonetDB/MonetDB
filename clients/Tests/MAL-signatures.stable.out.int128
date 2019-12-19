@@ -15645,7 +15645,6 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "lidar",	"export",	"pattern lidar.export(tablename:str, fname:str, type:str):void ",	"LIDARexportTable;",	"Exporta LIDAR table to a LAS/LAZ file"	]
 [ "lidar",	"load",	"pattern lidar.load(tablename:str):void ",	"LIDARloadTable;",	"Load a LIDAR table from an attached file"	]
 [ "logging",	"flush",	"command logging.flush():void ",	"TRACERflush_buffer;",	"Flush the buffer"	]
-[ "logging",	"log",	"command logging.log():void ",	"TRACERlog;",	"Create a log message"	]
 [ "logging",	"resetadapter",	"command logging.resetadapter():void ",	"TRACERreset_adapter;",	"Resets the adapter back to the default"	]
 [ "logging",	"resetcomplevel",	"command logging.resetcomplevel(comp:int):void ",	"TRACERreset_component_level;",	"Resets the log level for a specific component back to the default"	]
 [ "logging",	"resetflushlevel",	"command logging.resetflushlevel():void ",	"TRACERreset_flush_level;",	"Resets the flush level back to the default"	]

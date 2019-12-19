@@ -554,7 +554,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		} else if (e->flag & PSM_REL) {
 			sql_rel *rel = e->l;
 			stmt *r = rel_bin(be, rel);
-			
+
 			if (!r)
 				return NULL;
 			if (is_modify(rel->op) || is_ddl(rel->op)) 
@@ -749,7 +749,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			assert(s);
 			return NULL;
 		}
-	 }	break;
+	}	break;
 	case e_cmp: {
 		stmt *l = NULL, *r = NULL, *r2 = NULL;
 		int swapped = 0, is_select = 0;
@@ -1389,7 +1389,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 	if (!t && c)
 		t = c->t;
 
-    dels = stmt_tid(be, t, rel->flag == REL_PARTITION);
+	dels = stmt_tid(be, t, rel->flag == REL_PARTITION);
 
 	/* add aliases */
 	assert(rel->exps);
@@ -1949,7 +1949,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			}
 			rel->exps = jexps;
 		}
-		
+
 		/* generate a relational join */
 		if (join)
 			en = rel->exps->h;
