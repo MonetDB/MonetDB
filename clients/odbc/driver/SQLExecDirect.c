@@ -130,6 +130,8 @@ MNDBExecDirect(ODBCStmt *stmt,
 	fixODBCstring(StatementText, TextLength, SQLINTEGER,
 		      addStmtError, stmt, return SQL_ERROR);
 	for (i = 0; i < TextLength; i++)
+		/* TODO FIX: only when the statement starts with PREPARE the
+		   questions marks have a special meaning */
 		if (StatementText[i] == '?') {
 			/* query may have parameters, take the long route */
 			ret = MNDBPrepare(stmt, StatementText, TextLength);
