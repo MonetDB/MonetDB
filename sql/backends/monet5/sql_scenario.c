@@ -696,10 +696,6 @@ SQLinitClient(Client c)
 {
 	str msg = MAL_SUCCEED;
 
-#ifdef _SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#SQLinitClient\n");
-#endif
-
 	MT_lock_set(&sql_contextLock);
 	if (SQLinitialized == 0) {// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		MT_lock_unset(&sql_contextLock);
@@ -741,10 +737,6 @@ str
 SQLexitClient(Client c)
 {
 	str err;
-
-#ifdef _SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#SQLexitClient\n");
-#endif
 
 	MT_lock_set(&sql_contextLock);
 	if (SQLinitialized == FALSE) {
@@ -852,7 +844,6 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * the duration of these calls.
  */
 
-/* #define _SQL_READER_DEBUG */
 str
 SQLreader(Client c)
 {
@@ -876,15 +867,9 @@ SQLreader(Client c)
 		return MAL_SUCCEED;
 	}
 	if (!be || c->mode <= FINISHCLIENT) {
-#ifdef _SQL_READER_DEBUG
-		fprintf(stderr, "#SQL client finished\n");
-#endif
 		c->mode = FINISHCLIENT;
 		return MAL_SUCCEED;
 	}
-#ifdef _SQL_READER_DEBUG
-	fprintf(stderr, "#SQLparser: start reading SQL %s\n", (blocked ? "Blocked read" : ""));
-#endif
 	language = be->language;	/* 'S' for SQL, 'D' from debugger */
 	m = be->mvc;
 	m->errstr[0] = 0;
@@ -892,9 +877,6 @@ SQLreader(Client c)
 	 * Continue processing any left-over input from the previous round.
 	 */
 
-#ifdef _SQL_READER_DEBUG
-	fprintf(stderr, "#pos %d len %d eof %d \n", in->pos, in->len, in->eof);
-#endif
 	while (more) {
 		more = false;
 
@@ -916,9 +898,6 @@ SQLreader(Client c)
 			ssize_t rd;
 
 			if (c->bak) {
-#ifdef _SQL_READER_DEBUG
-				fprintf(stderr, "#Switch to backup stream\n");
-#endif
 				in = c->fdin;
 				blocked = isa_block_stream(in->s);
 				m->scanner.rs = c->fdin;
@@ -947,9 +926,6 @@ SQLreader(Client c)
 				more = false;
 				go = false;
 			} else if (go && (rd = bstream_next(in)) <= 0) {
-#ifdef _SQL_READER_DEBUG
-				fprintf(stderr, "#rd %d  language %d eof %d\n", rd, language, in->eof);
-#endif
 				if (be->language == 'D' && !in->eof) {
 					in->pos++;// skip 's' or 'S'
 					return msg;
@@ -978,9 +954,6 @@ SQLreader(Client c)
 			} else if (go && language == 'D' && !in->eof) {
 				in->pos++;// skip 's' or 'S'
 			}
-#ifdef _SQL_READER_DEBUG
-			fprintf(stderr, "#SQL blk:%s\n", in->buf + in->pos);
-#endif
 		}
 	}
 	if ( (c->sessiontimeout && (GDKusec() - c->session) > c->sessiontimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
@@ -1057,10 +1030,6 @@ SQLparser(Client c)
 	oldvtop = c->curprg->def->vtop;
 	oldstop = c->curprg->def->stop;
 	be->vtop = oldvtop;
-#ifdef _SQL_PARSER_DEBUG
-	fprintf(stderr, "#SQL compilation \n");
-	fprintf(stderr,"debugger? %d(%d)\n", (int) be->mvc->emode, (int) be->mvc->emod);
-#endif
 	m = be->mvc;
 	m->type = Q_PARSE;
 	/* clean up old stuff */
