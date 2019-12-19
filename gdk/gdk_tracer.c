@@ -66,7 +66,7 @@ _GDKtracer_init_basic_adptr(void)
 
     if(!output_file)
     {
-        GDK_TRACER_REPORT_EXCEPTION("Failed to initialize BASIC adapter. Could not open file: %s\n", file_name);
+        GDK_TRACER_EXCEPTION("Failed to initialize BASIC adapter. Could not open file: %s\n", file_name);
         return GDK_FAIL;
     }
 
@@ -145,7 +145,7 @@ _GDKtracer_fill_tracer(gdk_tracer *sel_tracer, char *fmt, va_list va)
         if(!tmp)
         {
             // Let GDKtracer_log to know about the failure
-            GDK_TRACER_REPORT_EXCEPTION("Memory allocation failed\n");
+            GDK_TRACER_EXCEPTION("Memory allocation failed\n");
             return -1;
         }
         else

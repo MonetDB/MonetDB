@@ -345,22 +345,22 @@ gdk_tracer;
  * GDKtracer Stream Macros
  */
 // Exception
-#define GDK_TRACER_REPORT_EXCEPTION(MSG, ...)                               \
+#define GDK_TRACER_EXCEPTION(MSG, ...)                                      \
     mnstr_printf(GDKstdout,                                                 \
-                           "[%s] "                                          \
-                           "%-"MXW"s "                                      \
-                           "%"MXW"s:%d "                                    \
-                           "%"MXW"s "                                       \
-                           "%-"MXW"s "                                      \
-                           "%-"MXW"s # "MSG,                                \
-                            GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S"),   \
-                            __FILENAME__,                                   \
-                            __FUNCTION__,                                   \
-                            __LINE__,                                       \
-                            STR(M_CRITICAL),                                \
-                            STR(GDK_TRACER),                                \
-                            MT_thread_getname(),                            \
-                            ## __VA_ARGS__);                                \
+                "[%s] "                                                     \
+                "%-"MXW"s "                                                 \
+                "%"MXW"s:%d "                                               \
+                "%"MXW"s "                                                  \
+                "%-"MXW"s "                                                 \
+                "%-"MXW"s # "MSG,                                           \
+                GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S"),               \
+                __FILENAME__,                                               \
+                __FUNCTION__,                                               \
+                __LINE__,                                                   \
+                STR(M_CRITICAL),                                            \
+                STR(GDK_TRACER),                                            \
+                MT_thread_getname(),                                        \
+                ## __VA_ARGS__);                                            \
 
 
 #define GDK_TRACER_OSTREAM(MSG, ...)                                        \
