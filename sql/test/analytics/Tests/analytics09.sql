@@ -115,4 +115,6 @@ select 1 from analytics order by sum(sum(aa)) over ();
 
 select 1 from analytics having sum(aa) over (); --error, window function not allowed in having clause
 
+select sum(avg(aa) over ()) over () from analytics; --error, window functions inside aggregate
+
 drop table analytics;
