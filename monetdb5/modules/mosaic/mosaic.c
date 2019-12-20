@@ -203,6 +203,15 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 			MOSsetCnt(TASK->blk,0);\
 			TASK->dst = MOScodevector(TASK);
 
+static inline BUN get_normalized_compression(MosaicEstimation* current, const MosaicEstimation* previous) {
+	BUN old = previous->compressed_size;
+	BUN new = current->compressed_size;
+	BUN cnt = current->compression_strategy.cnt;
+	BUN normalized_cnt = *current->max_compression_length;
+	assert (new >= old);
+	return (((new - old) * normalized_cnt) / cnt);
+}
+
 #define getFactor(ESTIMATION) ((flt) (ESTIMATION).uncompressed_size / (ESTIMATION).compressed_size)
 
 
@@ -279,15 +288,17 @@ static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, cons
 		DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, raw,	TPE, MOSAIC_RAW);\
 	}\
 \
-	flt best_factor = 0.0;\
+	BUN best_normalized_compression = (BUN) (-1);\
 	current->is_applicable = false;\
 \
 	for (int i = 0; i < size; i++) {\
-		flt factor = getFactor(estimations[i]);\
+		if (estimations[i].is_applicable) {\
+			BUN normalized_compression = get_normalized_compression(&(estimations[i]), previous);\
 \
-		if (estimations[i].is_applicable && best_factor < factor) {\
-			*current = estimations[i];\
-			best_factor = factor;\
+			if (estimations[i].is_applicable && normalized_compression < best_normalized_compression ) {\
+				*current = estimations[i];\
+				best_normalized_compression = normalized_compression;\
+			}\
 		}\
 	}\
 \
