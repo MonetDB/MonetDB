@@ -3,12 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
- * authors Martin Kersten, Aris Koning
- * The header block contains the mapping from OIDs to chunks
+ *  authors Martin Kersten, Aris Koning
+ * The header block contains the mapping from OIDs to chunks, which should become
+ * the basis for processing mitosis over a mosaic file.
  */
 
 #include "monetdb_config.h"
@@ -24,7 +25,7 @@ MOSupdateHeader(MOStask task)
     hdr->blks[MOSgetTag(task->blk)]++;
     hdr->elms[MOSgetTag(task->blk)] += MOSgetCnt(task->blk);
 
-	if( hdr->top < MOSAICINDEX-1 ){
+	if( hdr->top < MOSAIC_METHODS-1 ){
 		if( hdr->top == 0){
 			hdr->top++;
 		}

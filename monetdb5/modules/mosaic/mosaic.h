@@ -40,9 +40,7 @@
 #define MOSAIC_PREFIX	7		// prefix/postfix bitwise compression
 #define MOSAIC_EOL	8		// marker for the last block
 
-//Compression should have a significant reduction to apply.
-#define COMPRESS_THRESHOLD 50   //percent
-#define MOSAICINDEX 8  //> 2 elements
+#define METHOD_NOT_AVAILABLE -1
 
 /*
  * The header is reserved for meta information, e.g. oid indices.
@@ -50,11 +48,11 @@
  */
 typedef Heap *mosaic;	// compressed data is stored on a heap.
 
-#define METHOD_NOT_AVAILABLE -1
 
 #define IS_NIL(TPE, VAL) is_##TPE##_nil(VAL)
 #define ARE_EQUAL(v, w, HAS_NIL, TPE) ((v == w || (HAS_NIL && IS_NIL(TPE, v) && IS_NIL(TPE, w)) ) )
 
+/* For compression techniques based on value differences, we need the storage type */
 #define Deltabte uint8_t
 #define Deltasht uint16_t
 #define Deltaint uint32_t
@@ -72,7 +70,7 @@ typedef Heap *mosaic;	// compressed data is stored on a heap.
 #define GET_DELTA(TPE, x, y)  ((DeltaTpe(TPE)) x - (DeltaTpe(TPE)) y)
 #define ADD_DELTA(TPE, x, d)  (TPE) ((DeltaTpe(TPE)) x + (DeltaTpe(TPE)) d)
 
-// types for safe Integer Promotion for the bitwise operations in getSuffixMask
+// Storage types for safe Integer Promotion for the bitwise operations in getSuffixMask
 #define IPbte uint32_t
 #define IPsht uint32_t
 #define IPint uint32_t
@@ -87,9 +85,9 @@ typedef Heap *mosaic;	// compressed data is stored on a heap.
 #define IPTpe(TPE) IP##TPE
 
 typedef struct MOSAICHEADER{
-	int version;
-	int top; // TODO: rename to e.g. nblocks because it is the number of blocks
-	flt ratio;	//compresion ratio
+	int version;		// to recognize the underlying implementation used.
+	int top; 			// TODO: rename to e.g. nblocks because it is the number of blocks
+	flt ratio;			// Compresion ratio achieved
 	/* Collect compression statistics for the particular task
 	 * A value of METHOD_NOT_AVAILABLE in blks or elms indicates that the corresponding method wasn't considered as candidate.
 	 */
@@ -105,6 +103,10 @@ typedef struct MOSAICHEADER{
 	BUN pos_capped;
 	BUN length_capped;
 } * MosaicHdr;
+
+/* Each compressed block comes with a small header.
+ * It contains the compression type and the number of elements it covers
+ */
 
 #define CNT_BITS 24
 #define MOSAICMAXCNT ((1 << CNT_BITS) - 1)
@@ -171,6 +173,10 @@ typedef struct MOSTASK{
 
 } *MOStask;
 
+/* The compressor is built around a two phase process
+ * where in the first phase we collect the structure of
+ * the final mosaic file
+ */
 typedef struct _MosaicEstimation {
 	BUN compressed_size;
 	BUN uncompressed_size;

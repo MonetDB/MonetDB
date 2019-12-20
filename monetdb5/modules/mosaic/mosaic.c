@@ -238,7 +238,7 @@ MOSprepareEstimate(MOStask task) {
 static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous) {\
 \
 	BUN max_compression_length = 0;\
-	MosaicEstimation estimations[MOSAICINDEX];\
+	MosaicEstimation estimations[MOSAIC_METHODS];\
 	const int size = sizeof(estimations) / sizeof(MosaicEstimation);\
 	for (int i = 0; i < size; i++) {\
 		estimations[i].uncompressed_size = previous->uncompressed_size;\
