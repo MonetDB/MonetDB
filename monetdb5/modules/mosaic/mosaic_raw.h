@@ -23,7 +23,8 @@ mal_export void MOSlayout_raw(MOStask task, BAT *btech, BAT *bcount, BAT *binput
 
 #define MosaicBlkHeader_DEF_raw(TPE)\
 typedef struct {\
-	MosaicBlkHdrGeneric base;\
+	MosaicBlkRec rec;\
+	char padding;\
     TPE init;\
 } MOSBlockHeader_raw_##TPE;
 

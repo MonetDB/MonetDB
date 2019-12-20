@@ -23,7 +23,8 @@ mal_export void MOSlayout_runlength(MOStask task, BAT *btech, BAT *bcount, BAT *
 
 #define MosaicBlkHeader_DEF_runlength(TPE)\
 typedef struct {\
-	MosaicBlkHdrGeneric base;\
+	MosaicBlkRec rec;\
+	char padding;\
 	TPE val;\
 } MOSBlockHeader_runlength_##TPE;
 

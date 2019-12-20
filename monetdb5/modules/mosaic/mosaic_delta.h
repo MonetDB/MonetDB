@@ -24,8 +24,9 @@ mal_export void MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binp
 
 #define MosaicBlkHeader_DEF_delta(TPE)\
 typedef struct {\
-	MosaicBlkHdrGeneric base;\
+	MosaicBlkRec rec;\
 	char bits;\
+	char padding;\
 	TPE init;\
 	BitVectorChunk bitvector; /*First chunk of bitvector to force correct alignment.*/\
 } MOSBlockHeader_delta_##TPE;

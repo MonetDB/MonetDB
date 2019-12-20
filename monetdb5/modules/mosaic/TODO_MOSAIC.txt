@@ -1,7 +1,6 @@
 ####technical depth####
 Add raw to technique overview in analysis
 Rename 'capped' and 'var' to 'dict256' and 'dict' respectively.
-Make header smaller: add padding to outer struct
 Fix/check/test MOSlayout.
 Add negative values to tests
 Add test for huge

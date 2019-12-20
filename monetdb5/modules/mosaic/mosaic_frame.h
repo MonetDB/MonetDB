@@ -25,8 +25,9 @@ mal_export void MOSlayout_frame(MOStask task, BAT *btech, BAT *bcount, BAT *binp
 
 #define MosaicBlkHeader_DEF_frame(TPE)\
 typedef struct {\
-	MosaicBlkHdrGeneric base;\
+	MosaicBlkRec rec;\
 	char bits;\
+	char padding;\
 	TPE min;\
 	BitVectorChunk bitvector; /*First chunk of bitvector to force correct alignment.*/\
 } MOSBlockHeader_frame_##TPE;

@@ -115,10 +115,9 @@ typedef struct MOSAICBLK {
 	unsigned int tag:((sizeof(unsigned int) * CHAR_BIT) - CNT_BITS), cnt:CNT_BITS;
 } MosaicBlkRec, *MosaicBlk;
 
-typedef struct {
-	MosaicBlkRec rec;
-	char padding;
-} MosaicBlkHdrGeneric;
+#define MOSAIC_BLK_HEADER_BASE_FIELDS()\
+MosaicBlkRec rec;\
+char padding;
 
 #define MOSgetTag(Blk) (Blk->tag)
 #define MOSsetTag(Blk,Tag)  (Blk)->tag = Tag
@@ -190,7 +189,7 @@ typedef struct _MosaicEstimation {
 	BUN* max_compression_length;
 } MosaicEstimation;
 
-#define GET_PADDING(blk, NAME, TPE) (((MOSBlockHeaderTpe(NAME, TPE)*) (blk))->base.padding)
+#define GET_PADDING(blk, NAME, TPE) (((MOSBlockHeaderTpe(NAME, TPE)*) (blk))->padding)
 
 #define ALIGN_BLOCK_HEADER(task, NAME, TPE)\
 {\

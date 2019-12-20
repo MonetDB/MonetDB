@@ -23,7 +23,8 @@ mal_export void MOSlayout_linear(MOStask task, BAT *btech, BAT *bcount, BAT *bin
 
 #define MosaicBlkHeader_DEF_linear(TPE)\
 typedef struct {\
-	MosaicBlkHdrGeneric base;\
+	MosaicBlkRec rec;\
+	char padding;\
 	DeltaTpe(TPE) offset;\
 	DeltaTpe(TPE) step;\
 } MOSBlockHeader_linear_##TPE;

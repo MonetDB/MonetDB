@@ -128,7 +128,7 @@ do {\
 	}\
 	(PARAMETERS).min = min;\
 	(PARAMETERS).bits = bits;\
-	(PARAMETERS).base.rec.cnt = i;\
+	(PARAMETERS).rec.cnt = i;\
 } while(0)
 
 #define MOSestimate_frame_DEF(TPE) \
@@ -141,13 +141,13 @@ MOSestimate_SIGNATURE(frame, TPE)\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	MOSBlockHeaderTpe(frame, TPE) parameters;\
 	determineFrameParameters(parameters, src, limit, TPE);\
-	assert(parameters.base.rec.cnt > 0);/*Should always compress.*/\
-	current->uncompressed_size += (BUN) (parameters.base.rec.cnt * sizeof(TPE));\
-	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(frame, TPE)) + wordaligned((parameters.base.rec.cnt * parameters.bits) / CHAR_BIT, lng);\
-	current->compression_strategy.cnt = (unsigned int) parameters.base.rec.cnt;\
+	assert(parameters.rec.cnt > 0);/*Should always compress.*/\
+	current->uncompressed_size += (BUN) (parameters.rec.cnt * sizeof(TPE));\
+	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(frame, TPE)) + wordaligned((parameters.rec.cnt * parameters.bits) / CHAR_BIT, lng);\
+	current->compression_strategy.cnt = (unsigned int) parameters.rec.cnt;\
 \
-	if (parameters.base.rec.cnt > *current->max_compression_length ) {\
-		*current->max_compression_length = parameters.base.rec.cnt;\
+	if (parameters.rec.cnt > *current->max_compression_length ) {\
+		*current->max_compression_length = parameters.rec.cnt;\
 	}\
 \
 	return MAL_SUCCEED;\

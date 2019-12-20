@@ -179,7 +179,8 @@ decompress_dictionary_##TPE(TPE* dict, bte bits, BitVector base, BUN limit, TPE*
 
 #define MosaicBlkHeader_DEF_dictionary(NAME, TPE)\
 typedef struct {\
-	MosaicBlkHdrGeneric base;\
+	MosaicBlkRec rec;\
+	char padding;\
 	BitVectorChunk bitvector; /*First chunk of bitvector to force correct alignment.*/\
 } MOSBlockHeader_##NAME##_##TPE;
 

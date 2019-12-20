@@ -170,7 +170,7 @@ do {\
 		assert( (prefix | (getSuffixMask(suffix_bits, TPE) & (*val))) == *val);\
 	}\
 \
-	(PARAMETERS).base.rec.cnt = (unsigned int) i;\
+	(PARAMETERS).rec.cnt = (unsigned int) i;\
 	(PARAMETERS).suffix_bits = suffix_bits;\
 	(PARAMETERS).prefix = prefix;\
 } while(0)
@@ -185,11 +185,11 @@ MOSestimate_SIGNATURE(prefix, TPE)\
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
 	MOSBlockHeaderTpe(prefix, TPE) parameters;\
 	determinePrefixParameters(parameters, src, limit, TPE);\
-	assert(parameters.base.rec.cnt > 0);/*Should always compress.*/\
+	assert(parameters.rec.cnt > 0);/*Should always compress.*/\
 \
 	BUN store;\
 	int bits;\
-	int i = parameters.base.rec.cnt;\
+	int i = parameters.rec.cnt;\
 	bits = i * parameters.suffix_bits;\
 	store = 2 * sizeof(MOSBlockHeaderTpe(prefix, TPE));\
 	store += wordaligned(bits/CHAR_BIT + ((bits % CHAR_BIT) > 0), lng);\
@@ -198,10 +198,10 @@ MOSestimate_SIGNATURE(prefix, TPE)\
 \
 	current->uncompressed_size += (BUN) (i * sizeof(TPE));\
 	current->compressed_size += store;\
-	current->compression_strategy.cnt = (unsigned int) parameters.base.rec.cnt;\
+	current->compression_strategy.cnt = (unsigned int) parameters.rec.cnt;\
 \
-	if (parameters.base.rec.cnt > *current->max_compression_length ) {\
-		*current->max_compression_length = parameters.base.rec.cnt;\
+	if (parameters.rec.cnt > *current->max_compression_length ) {\
+		*current->max_compression_length = parameters.rec.cnt;\
 	}\
 \
 	return MAL_SUCCEED;\

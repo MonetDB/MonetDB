@@ -39,8 +39,9 @@ mal_export void MOSlayout_prefix(MOStask task, BAT *btech, BAT *bcount, BAT *bin
 
 #define MosaicBlkHeader_DEF_prefix(TPE)\
 typedef struct {\
-	MosaicBlkHdrGeneric base;\
-	int suffix_bits;\
+	MosaicBlkRec rec;\
+	char suffix_bits;\
+	char padding;\
 	PrefixTpe(TPE) prefix;\
 	BitVectorChunk bitvector; /*First chunk of bitvector to force correct alignment.*/\
 } MOSBlockHeader_prefix_##TPE;
