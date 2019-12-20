@@ -3,7 +3,7 @@ insert into analytics values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2),
 
 select cast(sum(1) over () as bigint), rank() over (), nth_value(1, 1) over ();
 
-select avg(sum(aa) over ()) from analytics;
+select avg(sum(aa) over ()) from analytics; --error, window functions not allowed inside aggregates
 
 select cast(sum(1) * count(*) over () as bigint);
 
@@ -115,6 +115,6 @@ select 1 from analytics order by sum(sum(aa)) over ();
 
 select 1 from analytics having sum(aa) over (); --error, window function not allowed in having clause
 
-select sum(avg(aa) over ()) over () from analytics; --error, window functions inside aggregate
+select sum(avg(aa) over ()) from analytics; --error, window functions not allowed inside aggregates
 
 drop table analytics;
