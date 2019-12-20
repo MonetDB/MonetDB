@@ -32,12 +32,6 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 % bigint,	int,	tinyint # type
 % 1,	1,	1 # length
 [ 1,	1,	1	]
-#select avg(sum(aa) over ()) from analytics;
-% sys.L6 # table_name
-% L6 # name
-% double # type
-% 24 # length
-[ 46	]
 #select cast(sum(1) * count(*) over () as bigint);
 % .L7 # table_name
 % L7 # name

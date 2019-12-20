@@ -5251,6 +5251,13 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		if (uaname)
 			GDKfree(uaname);
 		return NULL;
+	} else if (is_sql_aggr(f)) {
+		char *uaname = GDKmalloc(strlen(aname) + 1);
+		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window functions not allowed inside aggregation functions",
+						 uaname ? toUpperCopy(uaname, aname) : aname);
+		if (uaname)
+			GDKfree(uaname);
+		return NULL;
 	} else if (is_sql_window(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
 		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window functions cannot be nested",
