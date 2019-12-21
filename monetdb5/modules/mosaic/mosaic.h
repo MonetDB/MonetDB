@@ -115,9 +115,6 @@ typedef struct MOSAICBLK {
 	unsigned int tag:((sizeof(unsigned int) * CHAR_BIT) - CNT_BITS), cnt:CNT_BITS;
 } MosaicBlkRec, *MosaicBlk;
 
-#define MOSAIC_BLK_HEADER_BASE_FIELDS()\
-MosaicBlkRec rec;\
-char padding;
 
 #define MOSgetTag(Blk) (Blk->tag)
 #define MOSsetTag(Blk,Tag)  (Blk)->tag = Tag
