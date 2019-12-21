@@ -17,6 +17,7 @@ consider packing mosaic_block_header's more efficiently.
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
 DO nil checking more efficient similar to gdk_select
 Timing in the context of MOSanalysis
+Add the compression on OID heap for string valued columns too.
 
 ####code issues####
 # Improve macro code style: remove do_ from do_OPERATION-like macro's, NAME -> TECHNIQUE, small caps technique identifier -> CAPITAL CAPS technique identifier.
