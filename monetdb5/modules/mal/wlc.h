@@ -34,9 +34,6 @@
 #ifndef F_OK
 #define F_OK 0
 #endif
-#ifdef _MSC_VER
-#define access(f, m)    _access(f, m)
-#endif
 
 mal_export MT_Lock wlc_lock;
 mal_export char wlc_dir[FILENAME_MAX];

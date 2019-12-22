@@ -163,6 +163,10 @@
 #include "mal_builder.h"
 #include "wlc.h"
 
+#ifdef _MSC_VER
+#define access(f, m)    _access(f, m)
+#endif
+
 #undef _WLC_DEBUG_
 
 MT_Lock     wlc_lock = MT_LOCK_INITIALIZER("wlc_lock");
