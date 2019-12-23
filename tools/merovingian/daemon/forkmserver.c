@@ -222,7 +222,9 @@ forkMserver(char *database, sabdb** stats, bool force)
 	char *argv[MAX_NR_ARGS+1];	/* for the exec arguments */
 	char property_other[1024];
 	int c = 0;
+	int freec = 0;				/* from where to free entries in argv */
 	unsigned int mport;
+	char *set = "--set";
 
 	er = msab_getStatus(stats, database);
 	if (er != NULL) {
@@ -551,14 +553,14 @@ forkMserver(char *database, sabdb** stats, bool force)
 			 _mero_hostname, mport, database);
 	argv[c++] = _mero_mserver;
 	argv[c++] = dbpath;
-	argv[c++] = "--set"; argv[c++] = muri;
+	argv[c++] = set; argv[c++] = muri;
 	if (dbextra != NULL) {
 		snprintf(dbextra_path, sizeof(dbextra_path),
 				 "--dbextra=%s", dbextra);
 		argv[c++] = dbextra_path;
 	}
 	if (mydoproxy) {
-		argv[c++] = "--set"; argv[c++] = "mapi_open=false";
+		argv[c++] = set; argv[c++] = "mapi_open=false";
 		/* we "proxy", so we can just solely use UNIX domain sockets
 		 * internally.  Before we hit our head, check if we can
 		 * actually use a UNIX socket (due to pathlength) */
@@ -567,18 +569,18 @@ forkMserver(char *database, sabdb** stats, bool force)
 			snprintf(usock, sizeof(usock), "mapi_usock=%s/.mapi.sock",
 					 (*stats)->path);
 		} else {
-			argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
+			argv[c++] = set; argv[c++] = "mapi_autosense=true";
 			/* for logic here, see comment below */
 			snprintf(port, sizeof(port), "mapi_port=%u", mport + 1);
 			snprintf(usock, sizeof(usock), "mapi_usock=");
 		}
 	} else {
 		if (listenaddr[0] != '\0') {
-			argv[c++] = "--set"; argv[c++] = listenaddr;
+			argv[c++] = set; argv[c++] = listenaddr;
 		} else {
-			argv[c++] = "--set"; argv[c++] = "mapi_open=true";
+			argv[c++] = set; argv[c++] = "mapi_open=true";
 		}
-		argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
+		argv[c++] = set; argv[c++] = "mapi_autosense=true";
 		/* avoid this mserver binding to the same port as merovingian
 		 * but on another interface, (INADDR_ANY ... sigh) causing
 		 * endless redirects since 0.0.0.0 is not a valid address to
@@ -586,42 +588,43 @@ forkMserver(char *database, sabdb** stats, bool force)
 		snprintf(port, sizeof(port), "mapi_port=%u", mport + 1);
 		snprintf(usock, sizeof(usock), "mapi_usock=");
 	}
-	argv[c++] = "--set"; argv[c++] = ipv6;
-	argv[c++] = "--set"; argv[c++] = port;
-	argv[c++] = "--set"; argv[c++] = usock;
-	argv[c++] = "--set"; argv[c++] = vaultkey;
+	argv[c++] = set; argv[c++] = ipv6;
+	argv[c++] = set; argv[c++] = port;
+	argv[c++] = set; argv[c++] = usock;
+	argv[c++] = set; argv[c++] = vaultkey;
 	if (nthreads[0] != '\0') {
-		argv[c++] = "--set"; argv[c++] = nthreads;
+		argv[c++] = set; argv[c++] = nthreads;
 	}
 	if (nclients[0] != '\0') {
-		argv[c++] = "--set"; argv[c++] = nclients;
+		argv[c++] = set; argv[c++] = nclients;
 	}
 	if (pipeline[0] != '\0') {
-		argv[c++] = "--set"; argv[c++] = pipeline;
+		argv[c++] = set; argv[c++] = pipeline;
 	}
 	if (memmaxsize[0] != '\0') {
-		argv[c++] = "--set"; argv[c++] = memmaxsize;
+		argv[c++] = set; argv[c++] = memmaxsize;
 	}
 	if (vmmaxsize[0] != '\0') {
-		argv[c++] = "--set"; argv[c++] = vmmaxsize;
+		argv[c++] = set; argv[c++] = vmmaxsize;
 	}
 	if (embeddedr != NULL) {
-		argv[c++] = "--set"; argv[c++] = embeddedr;
+		argv[c++] = set; argv[c++] = embeddedr;
 	}
 	if (embeddedpy != NULL) {
-		argv[c++] = "--set"; argv[c++] = embeddedpy;
+		argv[c++] = set; argv[c++] = embeddedpy;
 	}
 	if (embeddedc != NULL) {
-		argv[c++] = "--set"; argv[c++] = embeddedc;
+		argv[c++] = set; argv[c++] = embeddedc;
 	}
 	if (readonly != NULL) {
 		argv[c++] = readonly;
 	}
 	/* get the rest (non-default) mserver props set in the conf file */
 	list = ckv;
+	freec = c;					/* following entries to be freed if != set */
 	while (list->key != NULL) {
 		if (list->val != NULL && !defaultProperty(list->key)) {
-			argv[c++] = "--set";
+			argv[c++] = set;
 			snprintf(property_other, sizeof(property_other), "%s=%s", list->key, list->val);
 			argv[c++] = strdup(property_other);
 		}
@@ -630,8 +633,19 @@ forkMserver(char *database, sabdb** stats, bool force)
 
 	/* Let's get extra mserver5 args from the environment */
 	mserver5_extra = getenv("MSERVER5_EXTRA_ARGS");
-	while (c < MAX_NR_ARGS && (mserver5_extra_token = strsep(&mserver5_extra, " ")))
-		argv[c++] = mserver5_extra_token;
+	if (mserver5_extra != NULL) {
+		/* work on copy of the environment value since strtok_r changes it */
+		mserver5_extra = strdup(mserver5_extra);
+		if (mserver5_extra != NULL) {
+			char *sp = NULL;
+			mserver5_extra_token = strtok_r(mserver5_extra, " ", &sp);
+			while (c < MAX_NR_ARGS && mserver5_extra_token != NULL) {
+				argv[c++] = strdup(mserver5_extra_token);
+				mserver5_extra_token = strtok_r(NULL, " ", &sp);
+			}
+			free(mserver5_extra);
+		}
+	}
 
 	argv[c++] = NULL;
 
@@ -693,6 +707,12 @@ forkMserver(char *database, sabdb** stats, bool force)
 		dp->pid = pid;
 		dp->dbname = strdup(database);
 		dp->flag = 0;
+
+		while (argv[freec] != NULL) {
+			if (argv[freec] != set)
+				free(argv[freec]);
+			freec++;
+		}
 
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
