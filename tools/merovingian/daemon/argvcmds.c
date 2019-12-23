@@ -209,7 +209,8 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 	}
 
 	printf("   property            value\n");
-	while ((p = strtok(property, ",")) != NULL) {
+	char *sp;
+	while ((p = strtok_r(property, ",", &sp)) != NULL) {
 		property = NULL;
 		if (strcmp(p, "dbfarm") == 0) {
 			value = dbfarm;
