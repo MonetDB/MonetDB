@@ -204,7 +204,8 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 			TASK->dst = MOScodevector(TASK);
 
 static inline BUN get_normalized_compression(MosaicEstimation* current, const MosaicEstimation* previous) {
-	BUN old = previous->compressed_size;
+	(void) previous;
+	BUN old = current->previous_compressed_size;
 	BUN new = current->compressed_size;
 	BUN cnt = current->compression_strategy.cnt;
 	BUN normalized_cnt = *current->max_compression_length;
@@ -250,6 +251,7 @@ static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, cons
 	MosaicEstimation estimations[MOSAIC_METHODS];\
 	const int size = sizeof(estimations) / sizeof(MosaicEstimation);\
 	for (int i = 0; i < size; i++) {\
+		estimations[i].previous_compressed_size = previous->compressed_size;\
 		estimations[i].uncompressed_size = previous->uncompressed_size;\
 		estimations[i].compressed_size = previous->compressed_size;\
 		estimations[i].compression_strategy = previous->compression_strategy;\
@@ -257,6 +259,7 @@ static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, cons
 		estimations[i].nr_var_encoded_elements = previous->nr_var_encoded_elements;\
 		estimations[i].nr_capped_encoded_elements = previous->nr_capped_encoded_elements;\
 		estimations[i].nr_capped_encoded_blocks = previous->nr_capped_encoded_blocks;\
+		estimations[i].var_limit = previous->var_limit;\
 		estimations[i].must_be_merged_with_previous = false;\
 		estimations[i].is_applicable = false;\
 		estimations[i].max_compression_length = &max_compression_length;\
@@ -318,12 +321,16 @@ static str MOSestimate_##TPE(MOStask task, BAT* estimates, size_t* compressed_si
 \
 	*compressed_size = 0;\
 \
+\
+	BUN var_limit = 0;\
 	MosaicEstimation previous = {\
 		.is_applicable = false,\
 		.uncompressed_size = 0,\
+		.previous_compressed_size = 0,\
 		.compressed_size = 0,\
 		.nr_var_encoded_elements = 0,\
 		.nr_var_encoded_blocks = 0,\
+		.var_limit = &var_limit,\
 		.nr_capped_encoded_elements = 0,\
 		.nr_capped_encoded_blocks = 0,\
 		.compression_strategy = {.tag = MOSAIC_EOL, .cnt = 0},\
@@ -334,6 +341,7 @@ static str MOSestimate_##TPE(MOStask task, BAT* estimates, size_t* compressed_si
 	MosaicBlkRec* cursor = Tloc(estimates,0);\
 \
 	while(task->start < task->stop ){\
+\
 		/* default is to extend the non-compressed block with a single element*/\
 		if ( (result = MOSestimate_inner_##TPE(task, &current, &previous)) ) {\
 			return result;\
@@ -682,38 +690,7 @@ MOSdecompressInternal_DEF(bte)
 MOSdecompressInternal_DEF(sht)
 MOSdecompressInternal_DEF(int)
 MOSdecompressInternal_DEF(lng)
-static void MOSdecompressInternal_flt(MOStask task)
-{
-	while(MOSgetTag(task->blk) != MOSAIC_EOL){
-		switch(MOSgetTag(task->blk)){
-		case MOSAIC_RAW:
-			DO_OPERATION_IF_ALLOWED(decompress, raw, flt);
-			break;
-		case MOSAIC_RLE:
-			DO_OPERATION_IF_ALLOWED(decompress, runlength, flt);
-			break;
-		case MOSAIC_CAPPED:
-			DO_OPERATION_IF_ALLOWED(decompress, capped, flt);
-			break;
-		case MOSAIC_VAR:
-			DO_OPERATION_IF_ALLOWED(decompress, var, flt);
-			break;
-		case MOSAIC_DELTA:
-			DO_OPERATION_IF_ALLOWED(decompress, delta, flt);
-			break;
-		case MOSAIC_LINEAR:
-			DO_OPERATION_IF_ALLOWED(decompress, linear, flt);
-			break;
-		case MOSAIC_FRAME:
-			DO_OPERATION_IF_ALLOWED(decompress, frame, flt);
-			break;
-		case MOSAIC_PREFIX:
-			DO_OPERATION_IF_ALLOWED(decompress, prefix, flt);
-			break;
-		default: assert(0);
-		}
-	}
-}
+MOSdecompressInternal_DEF(flt)
 MOSdecompressInternal_DEF(dbl)
 #ifdef HAVE_HGE
 MOSdecompressInternal_DEF(hge)
@@ -1381,7 +1358,7 @@ makepatterns(int *patterns, int size, str compressions, BAT* b)
 		patterns[k]=0;
 		idx =i;
 		while(idx > 0) {
-			if( idx % step && candidate[ idx % step]) 
+			if(candidate[ idx % step]) 
 					patterns[k] |= 1 <<(idx % step);
 			idx /= step;
 		}
@@ -1513,26 +1490,25 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 		pat[i].xf= ((MosaicHdr)  b->tmosaic->base)->ratio;
 
 		// analyse result block distribution to exclude complicated compression combination that (probably) won't improve compression rate.
-		if ( i < MOSAIC_METHODS-1 && pat[i].xf >= 0 && pat[i].xf < 1.0) {
-				bool keep = false;
-				for(j=0, bit=1; j < MOSAIC_METHODS-1; j++, bit<<=1){
-					if (pattern[i] == bit ) {
-						/* We'll keep it if is a singleton compression strategy.
-						 * It might still compress well in combination with another compressor.
-						 */
-						keep = true;
-					}
+		if ( i < MOSAIC_METHODS-1 && pat[i].xf >= 0 && pat[i].xf < 1.0) {;
+			bool keep = false;
+			for(j=0, bit=1; j < MOSAIC_METHODS-1; j++, bit<<=1){
+				if (pattern[i] == bit ) {
+					/* We'll keep it if is a singleton compression strategy.
+						* It might still compress well in combination with another compressor.
+						*/
+					keep = true;
 				}
-				if (!keep) {
-					antipattern[antipatternSize++] = pattern[i];
-				}
+			}
+			if (!keep) {
+				antipattern[antipatternSize++] = pattern[i];
+			}
 		}
-		else {
-			for(j=1; j < MOSAIC_METHODS-1; j++){
-				if ( ((MosaicHdr)  b->tmosaic->base)->blks[j] == 0) {
-					antipattern[antipatternSize++] = pattern[i];
-					pat[i].include = false;
-				}
+
+		for(j=0; j < MOSAIC_METHODS-1; j++){
+			if ( ((MosaicHdr)  b->tmosaic->base)->blks[j] == 0) {
+				antipattern[antipatternSize++] = pattern[i];
+				pat[i].include = false;
 			}
 		}
 
@@ -1562,7 +1538,6 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 	// Collect the results in a table
 	for(i=0;i< CANDIDATES; i++){
 		if(pat[i].include) {
-
 			// round down to three decimals.
 			pat[i].xf = ((dbl) (int) (pat[i].xf * 1000)) / 1000;
 

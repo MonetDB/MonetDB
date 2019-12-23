@@ -174,6 +174,7 @@ typedef struct MOSTASK{
  * the final mosaic file
  */
 typedef struct _MosaicEstimation {
+	BUN previous_compressed_size;
 	BUN compressed_size;
 	BUN uncompressed_size;
 	MosaicBlkRec compression_strategy;
@@ -181,6 +182,7 @@ typedef struct _MosaicEstimation {
 	bool must_be_merged_with_previous;
 	BUN nr_var_encoded_elements;
 	BUN nr_var_encoded_blocks;
+	BUN* var_limit;
 	BUN nr_capped_encoded_elements;
 	BUN nr_capped_encoded_blocks;
 	BUN* max_compression_length;

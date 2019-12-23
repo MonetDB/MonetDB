@@ -100,6 +100,7 @@ MOSestimate_SIGNATURE(raw, TPE)\
 	if (previous->compression_strategy.tag == MOSAIC_RAW && (cnt + 1 < MOSAICMAXCNT)) {\
 		current->must_be_merged_with_previous = true;\
 		cnt++;\
+		current->previous_compressed_size = previous->previous_compressed_size;\
 		current->compressed_size += sizeof(TPE);\
 	}\
 	else {\
