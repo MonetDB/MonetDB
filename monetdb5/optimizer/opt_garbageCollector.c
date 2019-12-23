@@ -40,8 +40,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	limit = mb->stop;
 	
 
-	limit = mb->stop;
-
 	/* variables get their name from the position */
 	/* rename all temporaries for ease of variable table interpretation */
 	/* this code should not be necessary is variables always keep their position */

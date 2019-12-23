@@ -75,7 +75,7 @@ PYTHON2LIB=python27.lib
 PYTHON3BASE=C:\Python32
 !ENDIF
 !IFNDEF PYTHON3LIB
-PYTHON3LIB=python32.lib
+PYTHON3LIB=python37.lib
 !ENDIF
 
 PYTHON_LIBDIR=share\MonetDB\python
@@ -176,12 +176,12 @@ R.lib: "$(libr_DLL)"
 !ENDIF
 
 !IFDEF HAVE_LIBPY2
-libpy2_LIBS = "$(PYTHON2DIR)\libs\python27.lib"
+libpy2_LIBS = "$(PYTHON2DIR)\libs\$(PYTHON2LIB)"
 libpy2_CFLAGS = -DHAVE_LIBPY2 "-I$(PYTHON2DIR)\include" "-I$(PYTHON2DIR)\Lib\site-packages\numpy\core\include"
 !ENDIF
 
 !IFDEF HAVE_LIBPY3
-libpy3_LIBS = "$(PYTHON3DIR)\libs\python37.lib"
+libpy3_LIBS = "$(PYTHON3DIR)\libs\$(PYTHON3LIB)"
 libpy3_CFLAGS = -DHAVE_LIBPY3 "-I$(PYTHON3DIR)\include" "-I$(PYTHON3DIR)\Lib\site-packages\numpy\core\include"
 !ENDIF
 

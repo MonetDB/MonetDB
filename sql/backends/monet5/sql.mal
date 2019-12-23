@@ -607,8 +607,8 @@ pattern prepared_statements()(sessionid:bat[:int], user:bat[:str], statementid:b
 address SQLsession_prepared_statements
 comment "Available prepared statements in the current session";
 
-pattern prepared_statements_args()(statementid:bat[:int], parameter:bat[:bit], type:bat[:str], digits:bat[:int], scale:bat[:int], 
-schema:bat[:str], table:bat[:str], column:bat[:str])
+pattern prepared_statements_args()(statementid:bat[:int], type:bat[:str], digits:bat[:int], scale:bat[:int], inout:bat[:bte], 
+number:bat[:int], schema:bat[:str], table:bat[:str], column:bat[:str])
 address SQLsession_prepared_statements_args
 comment "Available prepared statements' arguments in the current session";
 
