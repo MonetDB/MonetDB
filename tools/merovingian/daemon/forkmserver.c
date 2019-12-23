@@ -624,8 +624,12 @@ forkMserver(char *database, sabdb** stats, bool force)
 	freec = c;					/* following entries to be freed if != set */
 	while (list->key != NULL) {
 		if (list->val != NULL && !defaultProperty(list->key)) {
-			argv[c++] = set;
-			snprintf(property_other, sizeof(property_other), "%s=%s", list->key, list->val);
+			if (strcmp(list->key, "gdk_debug") == 0) {
+				snprintf(property_other, sizeof(property_other), "-d%s", list->val);
+			} else {
+				argv[c++] = set;
+				snprintf(property_other, sizeof(property_other), "%s=%s", list->key, list->val);
+			}
 			argv[c++] = strdup(property_other);
 		}
 		list++;
