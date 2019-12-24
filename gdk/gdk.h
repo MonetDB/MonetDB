@@ -974,19 +974,6 @@ typedef var_t stridx_t;
 #define SIZEOF_STRIDX_T SIZEOF_VAR_T
 #define GDK_VARALIGN SIZEOF_STRIDX_T
 
-#if SIZEOF_VAR_T == 8
-#define VarHeapValRaw(b,p,w)						\
-	((w) == 1 ? (var_t) ((uint8_t *) (b))[p] + GDK_VAROFFSET :	\
-	 (w) == 2 ? (var_t) ((uint16_t *) (b))[p] + GDK_VAROFFSET :	\
-	 (w) == 4 ? (var_t) ((uint32_t *) (b))[p] :			\
-	 ((var_t *) (b))[p])
-#else
-#define VarHeapValRaw(b,p,w)						\
-	((w) == 1 ? (var_t) ((uint8_t *) (b))[p] + GDK_VAROFFSET :	\
-	 (w) == 2 ? (var_t) ((uint16_t *) (b))[p] + GDK_VAROFFSET :	\
-	 ((var_t *) (b))[p])
-#endif
-#define VarHeapVal(b,p,w) ((size_t) VarHeapValRaw(b,p,w))
 #define BUNtvaroff(bi,p) VarHeapVal((bi).b->theap.base, (p), (bi).b->twidth)
 
 #define BUNtloc(bi,p)	Tloc((bi).b,p)
@@ -2596,15 +2583,6 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  */
 #define BATloop(r, p, q)			\
 	for (q = BUNlast(r), p = 0; p < q; p++)
-
-/*
- * @- hash-table supported loop over BUNs
- * The first parameter `b' is a BAT, the second (`h') should point to
- * `b->thash', and `v' a pointer to an atomic value (corresponding
- * to the head column of `b'). The 'hb' is an integer index, pointing
- * out the `hb'-th BUN.
- */
-#define GDK_STREQ(l,r) (*(char*) (l) == *(char*) (r) && !strcmp(l,r))
 
 /*
  * @+ Common BAT Operations

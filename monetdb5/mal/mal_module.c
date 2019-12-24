@@ -82,7 +82,7 @@ mal_module_reset(void)
 }
 
 static int getModuleIndex(str name) {
-	return (int) (strHash(name) % MODULE_HASH_SIZE);
+	return (int) (GDK_STRHASH(name) % MODULE_HASH_SIZE);
 }
 
 static void clrModuleIndex(Module cur){

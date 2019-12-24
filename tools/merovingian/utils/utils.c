@@ -96,10 +96,11 @@ readConfFileFull(confkeyval *list, FILE *cnf) {
 	while (fgets(buf, sizeof(buf), cnf) != NULL) {
 		if (strlen(buf) > 1 && buf[0] != '#') {
 			/* tokenize */
-			key = strtok(buf, separator);
-			val = strtok(NULL, separator);
+			char *sp;
+			key = strtok_r(buf, separator, &sp);
+			val = strtok_r(NULL, separator, &sp);
 			/* strip trailing newline */
-			val = strtok(val, "\n");
+			val = strtok_r(val, "\n", &sp);
 			if ((err = setConfValForKey(t, key, val)) != NULL) {
 				if (strstr(err, "is not recognized") != NULL) {
 					/* If we already have PROPLENGTH entries in the list, ignore

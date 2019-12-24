@@ -149,7 +149,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 				if (off < b->tvheap->free &&
 				    strcmp(b->tvheap->base + off, n->tvheap->base + off) == 0 &&
 				    (!b->tvheap->hashash ||
-				     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) (n->tvheap->base + off))[-1] : strHash(n->tvheap->base + off))))
+				     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) (n->tvheap->base + off))[-1] : GDK_STRHASH(n->tvheap->base + off))))
 					match++;
 				len += (strlen(n->tvheap->base + off) + 8) & ~7;
 			}
@@ -335,7 +335,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			if (off < b->tvheap->free &&
 			    strcmp(b->tvheap->base + off, tp) == 0 &&
 			    (!b->tvheap->hashash ||
-			     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) tp)[-1] : strHash(tp)))) {
+			     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) tp)[-1] : GDK_STRHASH(tp)))) {
 				/* we found the string at the same
 				 * offset in b's string heap as it was
 				 * in n's string heap, so we don't
