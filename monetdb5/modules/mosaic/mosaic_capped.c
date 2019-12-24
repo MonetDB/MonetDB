@@ -187,7 +187,7 @@ MOSprepareEstimate_capped(MOStask task)
 	BBPunfix(ngid->batCacheid);
 
 	BAT *cand_capped_dict;
-	if (BATfirstn(&cand_capped_dict, NULL, freq, NULL, NULL, CAPPEDDICT, true, true, false) != GDK_SUCCEED) {
+	if (BATfirstn(&cand_capped_dict, NULL, freq, NULL, NULL, CAPPEDDICT, false, true, false) != GDK_SUCCEED) {
 		BBPunfix(next->batCacheid);
 		BBPunfix(freq->batCacheid);
 		error = createException(MAL, "mosaic.capped.BATfirstn_unique", GDK_EXCEPTION);
