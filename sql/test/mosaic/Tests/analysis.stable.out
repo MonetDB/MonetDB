@@ -31,12 +31,11 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 % .%4,	.%4 # table_name
 % technique,	factor # name
 % clob,	double # type
-% 11,	24 # length
+% 10,	24 # length
 [ "linear ",	175438.593	]
 [ "delta ",	15.998	]
 [ "frame ",	2.132	]
 [ "prefix ",	2.132	]
-[ "capped var ",	0.571	]
 [ "var ",	0.571	]
 [ "runlength ",	0.333	]
 #insert into tmp4 select 10000000 from tmp4;
@@ -49,13 +48,17 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 [ "runlength linear ",	333333.343	]
 [ "linear ",	327868.843	]
 [ "runlength delta ",	19.072	]
+[ "capped delta ",	17.401	]
 [ "delta frame ",	17.401	]
 [ "delta prefix ",	17.401	]
 [ "var delta ",	17.401	]
 [ "delta ",	15.999	]
 [ "frame ",	2.285	]
 [ "prefix ",	2.285	]
-[ "capped var ",	0.8	]
+[ "raw runlength ",	1.999	]
+[ "raw capped ",	1.184	]
+[ "raw var ",	1.184	]
+[ "capped var ",	0.881	]
 [ "var ",	0.799	]
 [ "runlength ",	0.666	]
 #select technique, factor from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runlength') order by factor desc, technique;
@@ -76,13 +79,17 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 [ "runlength linear ",	333333.343	]
 [ "linear ",	327868.843	]
 [ "runlength delta ",	19.072	]
+[ "capped delta ",	17.401	]
 [ "delta frame ",	17.401	]
 [ "delta prefix ",	17.401	]
 [ "var delta ",	17.401	]
 [ "delta ",	15.999	]
 [ "frame ",	2.285	]
 [ "prefix ",	2.285	]
-[ "capped var ",	0.8	]
+[ "raw runlength ",	1.999	]
+[ "raw capped ",	1.184	]
+[ "raw var ",	1.184	]
+[ "capped var ",	0.881	]
 [ "var ",	0.799	]
 [ "runlength ",	0.666	]
 #select technique, factor from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runlength') order by factor desc, technique;

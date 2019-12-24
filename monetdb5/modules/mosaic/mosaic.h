@@ -183,6 +183,7 @@ typedef struct _MosaicEstimation {
 	BUN nr_var_encoded_elements;
 	BUN nr_var_encoded_blocks;
 	BUN* var_limit;
+	BUN* capped_limit;
 	BUN nr_capped_encoded_elements;
 	BUN nr_capped_encoded_blocks;
 	BUN* max_compression_length;

@@ -106,7 +106,7 @@ MOSestimate_SIGNATURE(raw, TPE)\
 	else {\
 		current->must_be_merged_with_previous = false;\
 		cnt = 1;\
-		current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(raw, TPE));\
+		current->compressed_size += sizeof(TPE);\
 	}\
 	current->compression_strategy.cnt = cnt;\
 \

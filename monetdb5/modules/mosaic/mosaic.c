@@ -208,7 +208,7 @@ static inline BUN get_normalized_compression(MosaicEstimation* current, const Mo
 	BUN old = current->previous_compressed_size;
 	BUN new = current->compressed_size;
 	BUN cnt = current->compression_strategy.cnt;
-	BUN normalized_cnt = *current->max_compression_length;
+	BUN normalized_cnt = *current->max_compression_length ? *current->max_compression_length: 100;
 	assert (new >= old);
 	return (((new - old) * normalized_cnt) / cnt);
 }
@@ -260,6 +260,7 @@ static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, cons
 		estimations[i].nr_capped_encoded_elements = previous->nr_capped_encoded_elements;\
 		estimations[i].nr_capped_encoded_blocks = previous->nr_capped_encoded_blocks;\
 		estimations[i].var_limit = previous->var_limit;\
+		estimations[i].capped_limit = previous->capped_limit;\
 		estimations[i].must_be_merged_with_previous = false;\
 		estimations[i].is_applicable = false;\
 		estimations[i].max_compression_length = &max_compression_length;\
@@ -323,6 +324,7 @@ static str MOSestimate_##TPE(MOStask task, BAT* estimates, size_t* compressed_si
 \
 \
 	BUN var_limit = 0;\
+	BUN capped_limit = 0;\
 	MosaicEstimation previous = {\
 		.is_applicable = false,\
 		.uncompressed_size = 0,\
@@ -330,6 +332,7 @@ static str MOSestimate_##TPE(MOStask task, BAT* estimates, size_t* compressed_si
 		.compressed_size = 0,\
 		.nr_var_encoded_elements = 0,\
 		.nr_var_encoded_blocks = 0,\
+		.capped_limit = &capped_limit,\
 		.var_limit = &var_limit,\
 		.nr_capped_encoded_elements = 0,\
 		.nr_capped_encoded_blocks = 0,\

@@ -239,11 +239,18 @@ MOSestimate_SIGNATURE(capped, TPE)\
 {\
 	(void) previous;\
 	GlobalCappedInfo* info = task->capped_info;\
+	if (task->start < *(current)->capped_limit) {\
+		/*Dictionary estimation is expensive. So only allow it on disjoint regions.*/\
+		current->is_applicable = false;\
+		return MAL_SUCCEED;\
+	}\
 	BUN limit = (BUN) (task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start);\
 \
 	if (*current->max_compression_length != 0 &&  *current->max_compression_length < limit) {\
 		limit = *current->max_compression_length;\
 	}\
+\
+	*(current)->capped_limit = task->start + limit;\
 \
 	TPE* val = getSrc(TPE, task);\
 	BUN delta_count;\
