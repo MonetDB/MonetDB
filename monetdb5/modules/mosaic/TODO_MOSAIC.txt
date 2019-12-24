@@ -1,5 +1,4 @@
 ####technical depth####
-Add raw to technique overview in analysis
 Rename 'capped' and 'var' to 'dict256' and 'dict' respectively.
 Fix/check/test MOSlayout.
 Add negative values to tests
@@ -18,6 +17,8 @@ Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng 
 DO nil checking more efficient similar to gdk_select
 Timing in the context of MOSanalysis
 Add the compression on OID heap for string valued columns too.
+Find a more 'generic' model to estimate and explore compression space perhaps Monte Carlo based.
+Create a plug-in estimation model framework.
 
 ####code issues####
 # Improve macro code style: remove do_ from do_OPERATION-like macro's, NAME -> TECHNIQUE, small caps technique identifier -> CAPITAL CAPS technique identifier.
