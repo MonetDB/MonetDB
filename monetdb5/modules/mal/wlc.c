@@ -553,10 +553,7 @@ static str
 WLCpreparewrite(Client cntxt)
 {	str msg = MAL_SUCCEED;
 	// save the wlc record on a file 
-	/* CHECK */
-	// The whole if is in MAL_WLC DEBUG
-	TRC_DEBUG_IF(MAL_WLC)
-	{
+	TRC_DEBUG_IF(MAL_WLC) {
 		if( cntxt->wlc){
 			TRC_DEBUG_ENDIF(MAL_WLC, "Prepare for writing: %d %d\n", cntxt->wlc->stop , cntxt->wlc_kind);
 			debugFunction(MAL_WLC, cntxt->wlc, 0, LIST_MAL_DEBUG );

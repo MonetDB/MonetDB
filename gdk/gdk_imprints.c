@@ -251,7 +251,7 @@ BATcheckimprints(BAT *b)
 						close(fd);
 						imprints->imprints.parentid = b->batCacheid;
 						b->timprints = imprints;
-						TRC_DEBUG(ACCEL, "BATcheckimprints(" ALGOBATFMT "): reusing persisted imprints\n", ALGOBATPAR(b));
+						TRC_DEBUG(ACCELERATOR, "BATcheckimprints(" ALGOBATFMT "): reusing persisted imprints\n", ALGOBATPAR(b));
 						MT_lock_unset(&b->batIdxLock);
 
 						return true;
@@ -267,7 +267,7 @@ BATcheckimprints(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->timprints != NULL;
-	TRC_DEBUG_IF(ACCEL) if (ret) TRC_DEBUG_ENDIF(ACCEL, "BATcheckimprints(" ALGOBATFMT "): already has imprints\n", ALGOBATPAR(b));
+	TRC_DEBUG_IF(ACCELERATOR) if (ret) TRC_DEBUG_ENDIF(ACCELERATOR, "BATcheckimprints(" ALGOBATFMT "): already has imprints\n", ALGOBATPAR(b));
 	return ret;
 }
 
@@ -280,9 +280,7 @@ BATimpsync(void *arg)
 	lng t0 = 0;
 	const char *failed = " failed";
 
-	/* CHECK */
-	// This is defined in ACCELDEBUG
-	TRC_DEBUG_IF(ACCEL) t0 = GDKusec();
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	MT_lock_set(&b->batIdxLock);
 	if ((imprints = b->timprints) != NULL) {
@@ -326,7 +324,7 @@ BATimpsync(void *arg)
 					failed = ""; /* not failed */
 				}
 			}
-			TRC_DEBUG(ACCEL, "BATimpsync(" ALGOBATFMT "): "
+			TRC_DEBUG(ACCELERATOR, "BATimpsync(" ALGOBATFMT "): "
 						"imprints persisted "
 						"(" LLFMT " usec)%s\n", ALGOBATPAR(b),
 						GDKusec() - t0, failed);
@@ -379,7 +377,7 @@ BATimprints(BAT *b)
 
 	/* CHECK */
 	// This is defined in ACCELDEBUG
-	TRC_DEBUG_IF(ACCEL) t0 = GDKusec();
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	if (b->timprints == NULL) {
 		BUN cnt;
@@ -388,14 +386,14 @@ BATimprints(BAT *b)
 
 		MT_lock_unset(&b->batIdxLock);
 
-		TRC_DEBUG_IF(ACCEL) {
+		TRC_DEBUG_IF(ACCELERATOR) {
 			if (s2)
-				TRC_DEBUG_ENDIF(ACCEL, "BATimprints(b=" ALGOBATFMT
+				TRC_DEBUG_ENDIF(ACCELERATOR, "BATimprints(b=" ALGOBATFMT
 						"): creating imprints on parent "
 						ALGOBATFMT "\n",
 						ALGOBATPAR(s2), ALGOBATPAR(b));
 			else
-				TRC_DEBUG_ENDIF(ACCEL, "BATimprints(b=" ALGOBATFMT
+				TRC_DEBUG_ENDIF(ACCELERATOR, "BATimprints(b=" ALGOBATFMT
 						"): creating imprints\n",
 						ALGOBATPAR(b));
 		}
@@ -555,7 +553,7 @@ BATimprints(BAT *b)
 		}
 	}
 
-	TRC_DEBUG(ACCEL, "BATimprints(%s): imprints construction " LLFMT " usec\n", BATgetId(b), GDKusec() - t0);
+	TRC_DEBUG(ACCELERATOR, "BATimprints(%s): imprints construction " LLFMT " usec\n", BATgetId(b), GDKusec() - t0);
 	MT_lock_unset(&b->batIdxLock);
 
 	/* BBPUnfix tries to get the imprints lock which might lead to

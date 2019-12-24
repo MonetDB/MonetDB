@@ -22,9 +22,7 @@ BATidxsync(void *arg)
 	lng t0 = 0;
 	const char *failed = " failed";
 
-	/* CHECK */
-	// This is in ACCEL DEBUG
-	TRC_DEBUG_IF(ACCEL) t0 = GDKusec();
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	MT_lock_set(&b->batIdxLock);
 	if ((hp = b->torderidx) != NULL) {
@@ -59,7 +57,7 @@ BATidxsync(void *arg)
 					failed = ""; /* not failed */
 				}
 			}
-			TRC_DEBUG(ACCEL, "BATidxsync(%s): orderidx persisted"
+			TRC_DEBUG(ACCELERATOR, "BATidxsync(%s): orderidx persisted"
 						" (" LLFMT " usec)%s\n",
 						BATgetId(b), GDKusec() - t0, failed);
 		}
@@ -79,9 +77,7 @@ BATcheckorderidx(BAT *b)
 
 	if (b == NULL)
 		return false;
-	/* CHECK */
-	// This is in DEBUG ACCEL
-	TRC_DEBUG_IF(ACCEL) t = GDKusec();
+	TRC_DEBUG_IF(ACCELERATOR) t = GDKusec();
 	assert(b->batCacheid > 0);
 	/* we don't need the lock just to read the value b->torderidx */
 	if (b->torderidx == (Heap *) 1) {
@@ -118,7 +114,7 @@ BATcheckorderidx(BAT *b)
 					    HEAPload(hp, nme, "torderidx", false) == GDK_SUCCEED) {
 						close(fd);
 						b->torderidx = hp;
-						TRC_DEBUG(ACCEL, "BATcheckorderidx(" ALGOBATFMT "): reusing persisted orderidx\n", ALGOBATPAR(b));
+						TRC_DEBUG(ACCELERATOR, "BATcheckorderidx(" ALGOBATFMT "): reusing persisted orderidx\n", ALGOBATPAR(b));
 						MT_lock_unset(&b->batIdxLock);
 						return true;
 					}
@@ -133,9 +129,7 @@ BATcheckorderidx(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->torderidx != NULL;
-	/* CHECK */
-	// The if statement in in ACCEL DEBUG
-	TRC_DEBUG_IF(ACCEL) if (ret) TRC_DEBUG_ENDIF(ACCEL, "BATcheckorderidx(" ALGOBATFMT "): already has orderidx, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
+	TRC_DEBUG_IF(ACCELERATOR) if (ret) TRC_DEBUG_ENDIF(ACCELERATOR, "BATcheckorderidx(" ALGOBATFMT "): already has orderidx, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
 	return ret;
 }
 
@@ -182,7 +176,7 @@ persistOIDX(BAT *b)
 				     MT_THR_DETACHED, name) < 0)
 			BBPunfix(b->batCacheid);
 	} else
-		TRC_DEBUG(ACCEL, "persistOIDX(" ALGOBATFMT "): NOT persisting order index\n", ALGOBATPAR(b));
+		TRC_DEBUG(ACCELERATOR, "persistOIDX(" ALGOBATFMT "): NOT persisting order index\n", ALGOBATPAR(b));
 #else
 	(void) b;
 #endif
@@ -195,7 +189,7 @@ BATorderidx(BAT *b, bool stable)
 		return GDK_SUCCEED;
 	if (!BATtdense(b)) {
 		BAT *on;
-		TRC_DEBUG(ACCEL, "BATorderidx(" ALGOBATFMT ",%d) create index\n", ALGOBATPAR(b), stable);
+		TRC_DEBUG(ACCELERATOR, "BATorderidx(" ALGOBATFMT ",%d) create index\n", ALGOBATPAR(b), stable);
 		if (BATsort(NULL, &on, NULL, b, NULL, NULL, false, false, stable) != GDK_SUCCEED)
 			return GDK_FAIL;
 		assert(BATcount(b) == BATcount(on));
@@ -365,7 +359,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			 ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
-	TRC_DEBUG(ACCEL, "GDKmergeidx(" ALGOBATFMT ") create index\n", ALGOBATPAR(b));
+	TRC_DEBUG(ACCELERATOR, "GDKmergeidx(" ALGOBATFMT ") create index\n", ALGOBATPAR(b));
 	MT_lock_set(&b->batIdxLock);
 	if (b->torderidx) {
 		MT_lock_unset(&b->batIdxLock);
@@ -493,7 +487,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 				     MT_THR_DETACHED, name) < 0)
 			BBPunfix(b->batCacheid);
 	} else
-		TRC_DEBUG(ACCEL, "GDKmergeidx(%s): NOT persisting index\n", BATgetId(b));
+		TRC_DEBUG(ACCELERATOR, "GDKmergeidx(%s): NOT persisting index\n", BATgetId(b));
 #endif
 
 	b->batDirtydesc = true;

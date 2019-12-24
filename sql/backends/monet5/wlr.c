@@ -360,8 +360,7 @@ WLRprocessBatch(void *arg)
 					if(mvc_trans(sql) < 0) {
 						TRC_ERROR(SQL_WLR, "Allocation failure while starting the transaction\n");
 					} else {
-						TRC_DEBUG_IF(SQL_WLR)
-						{
+						TRC_DEBUG_IF(SQL_WLR) {
 							TRC_DEBUG_ENDIF(SQL_WLR, "Process a transaction\n");
 							debugFunction(SQL_WLR, mb, 0, LIST_MAL_DEBUG | LIST_MAL_MAPI );
 						}

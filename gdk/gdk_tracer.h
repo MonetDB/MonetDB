@@ -119,7 +119,7 @@ typedef enum {
         COMP( TEM )                   \
         COMP( HEAP )                  \
         COMP( BAT_ )                  \
-        COMP( ACCEL )                 \
+        COMP( ACCELERATOR )           \
         COMP( TRACE )                 \
         COMP( CHECK_ )                \
         COMP( THRD )                  \

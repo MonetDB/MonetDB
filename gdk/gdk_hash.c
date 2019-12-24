@@ -127,7 +127,7 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count)
 	((size_t *) h->heap.base)[3] = width;
 	((size_t *) h->heap.base)[4] = count;
 	((size_t *) h->heap.base)[5] = 0; /* # filled slots (chain heads) */
-	TRC_DEBUG(ACCEL, "Create hash(size " BUNFMT ", mask " BUNFMT ", width %d, total " BUNFMT " bytes);\n", size, mask, width, (size + mask) * width);
+	TRC_DEBUG(ACCELERATOR, "Create hash(size " BUNFMT ", mask " BUNFMT ", width %d, total " BUNFMT " bytes);\n", size, mask, width, (size + mask) * width);
 	return GDK_SUCCEED;
 }
 
@@ -172,13 +172,9 @@ BATcheckhash(BAT *b)
 	/* we don't need the lock just to read the value b->thash */
 	if (b->thash == (Hash *) 1) {
 		/* but when we want to change it, we need the lock */
-		/* CHECK */
-		// This is in ACCELDEBUG
-		TRC_DEBUG_IF(ACCEL) t = GDKusec();
+		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec();
 		MT_lock_set(&b->batIdxLock);
-		/* CHECK */
-		// This is in ACCELDEBUG
-		TRC_DEBUG_IF(ACCEL) t = GDKusec() - t;
+		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec() - t;
 		/* if still 1 now that we have the lock, we can update */
 		if (b->thash == (Hash *) 1) {
 			Hash *h;
@@ -238,7 +234,7 @@ BATcheckhash(BAT *b)
 							TYPE_oid,
 							&(oid){h->mask + 1});
 						b->thash = h;
-						TRC_DEBUG(ACCEL, "Reusing persisted hash %s\n", BATgetId(b));
+						TRC_DEBUG(ACCELERATOR, "Reusing persisted hash %s\n", BATgetId(b));
 						MT_lock_unset(&b->batIdxLock);
 						return true;
 					}
@@ -253,7 +249,7 @@ BATcheckhash(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->thash != NULL;
-	TRC_DEBUG_IF(ACCEL) if (ret) TRC_DEBUG_ENDIF(ACCEL, "Already has hash %s, waited " LLFMT " usec\n", BATgetId(b), t);
+	TRC_DEBUG_IF(ACCELERATOR) if (ret) TRC_DEBUG_ENDIF(ACCELERATOR, "Already has hash %s, waited " LLFMT " usec\n", BATgetId(b), t);
 	return ret;
 }
 
@@ -266,9 +262,7 @@ BAThashsync(void *arg)
 	lng t0 = 0;
 	const char *failed = " failed";
 
-	/* CHECK */
-	// This is in ACCELDEBUG
-	TRC_DEBUG_IF(ACCEL) t0 = GDKusec();
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	/* we could check whether b->thash == NULL before getting the
 	 * lock, and only lock if it isn't; however, it's very
@@ -311,7 +305,7 @@ BAThashsync(void *arg)
 					failed = ""; /* not failed */
 				}
 			}
-			TRC_DEBUG(ACCEL, "Persisting hash %s (" LLFMT " usec)%s\n", hp->filename, GDKusec() - t0, failed);
+			TRC_DEBUG(ACCELERATOR, "Persisting hash %s (" LLFMT " usec)%s\n", hp->filename, GDKusec() - t0, failed);
 		}
 	}
 	MT_lock_unset(&b->batIdxLock);
@@ -371,16 +365,16 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	BATiter bi = bat_iterator(b);
 	PROPrec *prop;
 
-	TRC_DEBUG_IF(ACCEL) t0 = GDKusec();
-	TRC_DEBUG_IF(ACCEL) TRC_DEBUG_ENDIF(ACCEL, "Create hash(" ALGOBATFMT ");\n", ALGOBATPAR(b));
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
+	TRC_DEBUG_IF(ACCELERATOR) TRC_DEBUG_ENDIF(ACCELERATOR, "Create hash(" ALGOBATFMT ");\n", ALGOBATPAR(b));
 
 	if (b->ttype == TYPE_void) {
 		if (is_oid_nil(b->tseqbase)) {
-			TRC_DEBUG(ACCEL, "Cannot create hash-table on void-NIL column.\n");
+			TRC_DEBUG(ACCELERATOR, "Cannot create hash-table on void-NIL column.\n");
 			GDKerror("BAThash: no hash on void/nil column\n");
 			return NULL;
 		}
-		TRC_DEBUG(ACCEL, "Creating hash-table on void column..\n");
+		TRC_DEBUG(ACCELERATOR, "Creating hash-table on void column..\n");
 
 		tpe = TYPE_void;
 	}
@@ -487,8 +481,8 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 			}
 			break;
 		}
-		TRC_DEBUG_IF(ACCEL) if (p < cnt1)
-			TRC_DEBUG_ENDIF(ACCEL, "BAThash(%s): Abort starthash with mask " BUNFMT 
+		TRC_DEBUG_IF(ACCELERATOR) if (p < cnt1)
+			TRC_DEBUG_ENDIF(ACCELERATOR, "BAThash(%s): Abort starthash with mask " BUNFMT 
 							" at " BUNFMT "\n", BATgetId(b), mask, p);
 		if (p == cnt1 || mask == maxmask)
 			break;
@@ -552,8 +546,8 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		b->tkey = true;
 		b->batDirtydesc = true;
 	}
-	TRC_DEBUG_IF(ACCEL) {
-		TRC_DEBUG_ENDIF(ACCEL, "Hash construction " LLFMT " usec\n", GDKusec() - t0);
+	TRC_DEBUG_IF(ACCELERATOR) {
+		TRC_DEBUG_ENDIF(ACCELERATOR, "Hash construction " LLFMT " usec\n", GDKusec() - t0);
 		HASHcollisions(b, h);
 	}
 	return h;
@@ -587,7 +581,7 @@ BAThash(BAT *b)
 			}
 			return GDK_SUCCEED;
 		} else
-			TRC_DEBUG(ACCEL, "NOT persisting hash %d\n", b->batCacheid);
+			TRC_DEBUG(ACCELERATOR, "NOT persisting hash %d\n", b->batCacheid);
 #endif
 	}
 	MT_lock_unset(&b->batIdxLock);
@@ -658,8 +652,8 @@ HASHdestroy(BAT *b)
 				hp = BBP_cache(p);
 
 			if (!hp || hs != hp->thash) {
-				TRC_DEBUG_IF(ACCEL) if (*(size_t *) hs->heap.base & (1 << 24))
-					TRC_DEBUG_ENDIF(ACCEL, "Removing persisted hash %d\n", b->batCacheid);
+				TRC_DEBUG_IF(ACCELERATOR) if (*(size_t *) hs->heap.base & (1 << 24))
+					TRC_DEBUG_ENDIF(ACCELERATOR, "Removing persisted hash %d\n", b->batCacheid);
 				HEAPfree(&hs->heap, true);
 				GDKfree(hs);
 			}
