@@ -149,7 +149,7 @@ gdk_export const ptr ptr_nil;
 #define is_oid_nil(v)	((v) == oid_nil)
 #define is_flt_nil(v)	isnan(v)
 #define is_dbl_nil(v)	isnan(v)
-#define is_bat_nil(v)	((v) == bat_nil || (v) == 0)
+#define is_bat_nil(v)	(((v) & 0x7FFFFFFF) == 0) /* v == bat_nil || v == 0 */
 
 #include <math.h>
 
