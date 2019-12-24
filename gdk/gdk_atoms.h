@@ -323,12 +323,33 @@ ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
  * though we have to take corrective action to ensure that str(nil) is
  * the smallest value of the domain.
  */
-#define GDK_STRNIL(s)    ((s) == NULL || *(const char*) (s) == '\200')
-#define GDK_STRLEN(s)    ((GDK_STRNIL(s)?1:strlen(s))+1)
-#define GDK_STRCMP(l,r)  (GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
-			  (*(const unsigned char*)(l) < *(const unsigned char*)(r))?-1: \
-			  (*(const unsigned char*)(l) > *(const unsigned char*)(r))?1: \
-			  strCmpNoNil((const unsigned char*)(l),(const unsigned char*)(r)))
+#define GDK_STREQ(l,r)	(strcmp(l,r) == 0)
+#define GDK_STRNIL(s)	((s) == NULL || *(const char*) (s) == '\200')
+#define GDK_STRLEN(s)	((GDK_STRNIL(s)?1:strlen(s))+1)
+#define GDK_STRCMP(l,r)	(GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
+			 (*(const unsigned char*)(l) < *(const unsigned char*)(r))?-1: \
+			 (*(const unsigned char*)(l) > *(const unsigned char*)(r))?1: \
+			 strCmpNoNil((const unsigned char*)(l),(const unsigned char*)(r)))
+
+static inline var_t
+VarHeapValRaw(const void *b, BUN p, int w)
+{
+	switch (w) {
+	case 1:
+		return (var_t) ((const uint8_t *) b)[p] + GDK_VAROFFSET;
+	case 2:
+		return (var_t) ((const uint16_t *) b)[p] + GDK_VAROFFSET;
+#if SIZEOF_VAR_T == 8
+	case 4:
+		return (var_t) ((const uint32_t *) b)[p];
+#endif
+	default:
+		return ((const var_t *) b)[p];
+	}
+}
+
+#define VarHeapVal(b,p,w)	((size_t) VarHeapValRaw(b,p,w))
+
 /*
  * @- Hash Function
  * The string hash function is a very simple hash function that xors
@@ -336,18 +357,20 @@ ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
  * characters at a time (adding 16-bits to the hash value each
  * iteration).
  */
-#define GDK_STRHASH(x,y)				\
-	do {						\
-		const char *_key = (const char *) (x);	\
-		BUN _i;					\
-		for (_i = y = 0; _key[_i]; _i++) {	\
-		    y += _key[_i];			\
-		    y += (y << 10);			\
-		    y ^= (y >> 6);			\
-		}					\
-		y += (y << 3);				\
-		y ^= (y >> 11);				\
-		y += (y << 15);				\
-	} while (0)
+static inline BUN
+GDK_STRHASH(const char *key)
+{
+	BUN y = 0;
+
+	for (BUN i = 0; key[i]; i++) {
+		y += key[i];
+		y += (y << 10);
+		y ^= (y >> 6);
+	}
+	y += (y << 3);
+	y ^= (y >> 11);
+	y += (y << 15);
+	return y;
+}
 
 #endif /* _GDK_ATOMS_H_ */
