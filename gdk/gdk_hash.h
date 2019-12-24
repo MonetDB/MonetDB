@@ -239,11 +239,11 @@ HASHgetlink(Hash *h, BUN i)
 #define HASHfnd_dbl(x,y,z)	HASHfnd_TYPE(x,y,z,dbl)
 
 /*
- * @- hash-table supported loop over BUNs
- * The first parameter `b' is a BAT, the second (`h') should point to
- * `b->thash', and `v' a pointer to an atomic value (corresponding
- * to the head column of `b'). The 'hb' is an integer index, pointing
- * out the `hb'-th BUN.
+ * @- hash-table supported loop over BUNs The first parameter `bi' is
+ * a BAT iterator, the second (`h') should point to the Hash
+ * structure, and `v' a pointer to an atomic value (corresponding to
+ * the head column of `b'). The 'hb' is an BUN index, pointing out the
+ * `hb'-th BUN.
  */
 #define HASHloop(bi, h, hb, v)					\
 	for (hb = HASHget(h, HASHprobe(h, v));			\
