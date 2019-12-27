@@ -294,7 +294,8 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 			y= newBatType(tail);
 			setTypeIndex(y,tx);
 			setArgType(mb,p,i,y);
-			TRC_DEBUG_IF(MAL_FCN) {
+			TRC_DEBUG_IF(MAL_FCN) 
+			{
 				char *xnme = getTypeName(x), *ynme = getTypeName(y);
 				TRC_DEBUG_ENDIF(MAL_FCN, "%d replaced %s -> %s\n", i, xnme, ynme);
 				GDKfree(xnme);
@@ -306,6 +307,7 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 				char *xnme = getTypeName(x);
 				TRC_DEBUG_ENDIF(MAL_FCN, "Replace x= %s polymorphic\n", xnme);
 				GDKfree(xnme);
+			}
 			setArgType(mb,p,i,t);
 		}
 		else {
