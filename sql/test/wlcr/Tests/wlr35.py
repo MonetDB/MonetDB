@@ -30,12 +30,10 @@ slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = proce
 
 c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
-# Generate a wrong master record
 cout, cerr = c.communicate('''\
-call wlr.master('%s');
-call wlr.replicate();
+call wlr.replicate(9);
 select * from tmp;
-''' % dbname )
+''' )
 
 sout, serr = slave.communicate()
 #mout, merr = master.communicate()
@@ -63,6 +61,6 @@ def listfiles(path):
             except IOError:
                 sys.stderr.write('Failure to read file ' + file + '\n')
 
-#listfiles(os.path.join(dbfarm, tstdb))
-#listfiles(os.path.join(dbfarm, tstdb, 'wlc_logs'))
+# listfiles(os.path.join(dbfarm, tstdb))
+# listfiles(os.path.join(dbfarm, tstdb, 'wlc_logs'))
 listfiles(os.path.join(dbfarm, tstdb + 'clone'))

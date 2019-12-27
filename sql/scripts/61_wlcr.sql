@@ -16,6 +16,7 @@ external name wlr.master;
 create procedure wlr.stop()
 external name wlr.stop;
 
+-- accept the error reported an skip the record
 create procedure wlr.accept()
 external name wlr.accept;
 

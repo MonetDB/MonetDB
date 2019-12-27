@@ -163,9 +163,6 @@
 #include "mal_builder.h"
 #include "wlc.h"
 
-#ifdef _MSC_VER
-#define access(f, m)    _access(f, m)
-#endif
 MT_Lock     wlc_lock = MT_LOCK_INITIALIZER("wlc_lock");
 
 static char wlc_snapshot[FILENAME_MAX]; // The location of the snapshot against which the logs work
@@ -540,7 +537,7 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str fcn)
 #else
 	ctm = *localtime(&clk);
 #endif
-	strftime(wlc_time, sizeof(wlc_time), "%Y-%m-%dT%H:%M:%S.000",&ctm);
+	strftime(wlc_time, sizeof(wlc_time), "%Y-%m-%d %H:%M:%S.000",&ctm);
 	if (pushStr(cntxt->wlc, p, wlc_time) == NULL)
 		throw(MAL, fcn, MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -583,7 +580,7 @@ WLCpreparewrite(Client cntxt)
 		}
 		
 		MT_lock_set(&wlc_lock);
-		printFunction(wlc_fd, cntxt->wlc, 0, LIST_MAL_DEBUG );
+		printFunction(wlc_fd, cntxt->wlc, 0, LIST_MAL_CALL );
 		(void) mnstr_flush(wlc_fd);
 		// close file if no delay is allowed
 		if( wlc_beat == 0 )
@@ -901,7 +898,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		last = o + BATcount(b);
 		if( b->ttype == TYPE_void){
 			for( ; o < last; o++, k++){
-				if( k%32 == 31){
+				if( k % 32 == 31){
 					p = newStmt(cntxt->wlc, "wlr","delete");
 					p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 					p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
@@ -911,7 +908,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			ol = (oid*) Tloc(b,0);
 			for( ; o < last; o++, k++, ol++){
-				if( k%32 == 31){
+				if( k % 32 == 31){
 					p = newStmt(cntxt->wlc, "wlr","delete");
 					p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 					p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
