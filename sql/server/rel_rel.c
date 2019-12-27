@@ -2048,6 +2048,11 @@ rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter)
 	if (!rel)
 		return rel;
 
+	if (rel->exps && (rel->exps = exps_rel_visitor(sql, rel->exps, rel_rewriter)) == NULL)
+		return NULL;
+	if ((is_groupby(rel->op) || is_simple_project(rel->op)) && rel->r && (rel->r = exps_rel_visitor(sql, rel->r, rel_rewriter)) == NULL)
+		return NULL;
+
 	switch(rel->op){
 	case op_basetable:
 	case op_table:

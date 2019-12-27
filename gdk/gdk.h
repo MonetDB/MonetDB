@@ -1000,19 +1000,6 @@ typedef var_t stridx_t;
 #define SIZEOF_STRIDX_T SIZEOF_VAR_T
 #define GDK_VARALIGN SIZEOF_STRIDX_T
 
-#if SIZEOF_VAR_T == 8
-#define VarHeapValRaw(b,p,w)						\
-	((w) == 1 ? (var_t) ((uint8_t *) (b))[p] + GDK_VAROFFSET :	\
-	 (w) == 2 ? (var_t) ((uint16_t *) (b))[p] + GDK_VAROFFSET :	\
-	 (w) == 4 ? (var_t) ((uint32_t *) (b))[p] :			\
-	 ((var_t *) (b))[p])
-#else
-#define VarHeapValRaw(b,p,w)						\
-	((w) == 1 ? (var_t) ((uint8_t *) (b))[p] + GDK_VAROFFSET :	\
-	 (w) == 2 ? (var_t) ((uint16_t *) (b))[p] + GDK_VAROFFSET :	\
-	 ((var_t *) (b))[p])
-#endif
-#define VarHeapVal(b,p,w) ((size_t) VarHeapValRaw(b,p,w))
 #define BUNtvaroff(bi,p) VarHeapVal((bi).b->theap.base, (p), (bi).b->twidth)
 
 #define BUNtloc(bi,p)	Tloc((bi).b,p)
@@ -2581,8 +2568,6 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * to the head column of `b'). The 'hb' is an integer index, pointing
  * out the `hb'-th BUN.
  */
-#define GDK_STREQ(l,r) (*(char*) (l) == *(char*) (r) && !strcmp(l,r))
-
 #define HASHloop(bi, h, hb, v)					\
 	for (hb = HASHget(h, HASHprobe((h), v));		\
 	     hb != HASHnil(h);					\
@@ -2594,7 +2579,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 	     hb = HASHgetlink(h,hb))				\
 		if (GDK_STREQ(v, BUNtvar(bi, hb)))
 #define HASHloop_str(bi, h, hb, v)			\
-	for (hb = HASHget((h),strHash(v)&(h)->mask);	\
+	for (hb = HASHget((h),GDK_STRHASH(v)&(h)->mask);	\
 	     hb != HASHnil(h);				\
 	     hb = HASHgetlink(h,hb))			\
 		if (GDK_STREQ(v, BUNtvar(bi, hb)))

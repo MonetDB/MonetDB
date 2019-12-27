@@ -60,7 +60,7 @@ monet5_freestack(int clientid, backend_stack stk)
 	(void) clientid;
 	if (p != NULL)
 		freeStack(p);
-	
+
 	TRC_DEBUG(SQL_SCENARIO, "Enter monet5_freestack\n");
 }
 
@@ -691,8 +691,6 @@ SQLinitClient(Client c)
 {
 	str msg = MAL_SUCCEED;
 
-	TRC_DEBUG(SQL_SCENARIO, "Enter SQLinitClient\n");
-
 	MT_lock_set(&sql_contextLock);
 	if (SQLinitialized == 0) {// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		MT_lock_unset(&sql_contextLock);
@@ -1027,9 +1025,6 @@ SQLparser(Client c)
 	oldvtop = c->curprg->def->vtop;
 	oldstop = c->curprg->def->stop;
 	be->vtop = oldvtop;
-
-	TRC_DEBUG(SQL_SCENARIO, "SQL compilation - debugger? %d(%d)\n", (int) be->mvc->emode, (int) be->mvc->emod);
-
 	m = be->mvc;
 	m->type = Q_PARSE;
 	/* clean up old stuff */

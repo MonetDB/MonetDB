@@ -39,7 +39,7 @@ stdout of test 'limit.Bug-6322` in directory 'sql/test/BugTracker-2017` itself:
 #where (true)
 #  or ((select pc from sys.tracelog)
 #       is not NULL);
-% . # table_name
+% sys. # table_name
 % c2 # name
 % int # type
 % 2 # length

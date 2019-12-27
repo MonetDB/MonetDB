@@ -269,8 +269,11 @@ int getBarrierEnvelop(MalBlkPtr mb){
 
 static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	int j,i,x,y;
-
-	TRC_DEBUG(MAL_FCN, "Replace type '_%d' by type '%s'\n", v, getTypeName(t));
+	TRC_DEBUG_IF(MAL_FCN) {
+		char *tpenme = getTypeName(t);
+		TRC_DEBUG_ENDIF(MAL_FCN, "Replace type '_%d' by type '%s'\n", v, tpenme);
+		GDKfree(tpenme);
+	}
 	for(j=0; j<mb->stop; j++){
 	    p= getInstrPtr(mb,j);
 		TRC_DEBUG_IF(MAL_FCN)
@@ -291,14 +294,26 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 			y= newBatType(tail);
 			setTypeIndex(y,tx);
 			setArgType(mb,p,i,y);
-			TRC_DEBUG(MAL_FCN, "%d replaced %s -> %s\n", i, getTypeName(x), getTypeName(y));
+			TRC_DEBUG_IF(MAL_FCN) {
+				char *xnme = getTypeName(x), *ynme = getTypeName(y);
+				TRC_DEBUG_ENDIF(MAL_FCN, "%d replaced %s -> %s\n", i, xnme, ynme);
+				GDKfree(xnme);
+				GDKfree(ynme);
+			}
 		} else
 		if(getTypeIndex(x) == v){
-			TRC_DEBUG(MAL_FCN, "Replace x= %s polymorphic\n", getTypeName(x));
+			TRC_DEBUG_IF(MAL_FCN) {
+				char *xnme = getTypeName(x);
+				TRC_DEBUG_ENDIF(MAL_FCN, "Replace x= %s polymorphic\n", xnme);
+				GDKfree(xnme);
 			setArgType(mb,p,i,t);
 		}
 		else {
-			TRC_DEBUG(MAL_FCN, "Non x= %s %d\n", getTypeName(x), getTypeIndex(x));
+			TRC_DEBUG_IF(MAL_FCN) {
+				char *xnme = getTypeName(x);
+				TRC_DEBUG_ENDIF(MAL_FCN, "Non x= %s %d\n", xnme, getTypeIndex(x));
+				GDKfree(xnme);
+			}
 		}
 	}
 		TRC_DEBUG_IF(MAL_FCN)
@@ -394,7 +409,11 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 			} else
 				replaceTypeVar(new->def, pp, getTypeIndex(v), t);
 		} else {
-			TRC_DEBUG(MAL_FCN, "%d remains %s\n", i, getTypeName(v));
+			TRC_DEBUG_IF(MAL_FCN) {
+				char *tpenme = getTypeName(v);
+				TRC_DEBUG_ENDIF(MAL_FCN, "%d remains %s\n", i, tpenme);
+				GDKfree(tpenme);
+			}
 		}
 	/* include the function at the proper place in the scope */
 	insertSymbolBefore(scope, new, proc);
@@ -482,6 +501,8 @@ void
 listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size)
 {
 	int i;
+	int sample = 256;
+
 	if (mb == NULL) {
 		mnstr_printf(fd, "# function definition missing\n");
 		return;
@@ -498,7 +519,7 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 		mnstr_printf(fd, "%% .explain # table_name\n");
 		mnstr_printf(fd, "%% mal # name\n");
 		mnstr_printf(fd, "%% clob # type\n");
-		for (i = first; i < first +size && i < mb->stop; i++) {
+		for (i = first; i < first +size && i < mb->stop && sample-- > 0; i++) {
 			ps = instruction2str(mb, stk, getInstrPtr(mb, i), i, flg);
 			if (ps) {
 				size_t l = strlen(ps);

@@ -794,8 +794,10 @@ cleanup_engine:
 	return msg;
 }
 
-void SQLdestroyResult(res_table *destroy) {
-   res_table_destroy(destroy);
+void
+SQLdestroyResult(res_table *destroy)
+{
+	res_table_destroy(destroy);
 }
 
 /* a hook is provided to execute relational algebra expressions */

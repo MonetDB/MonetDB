@@ -323,6 +323,10 @@ SELECT
 FROM integers i1; --The sum at group by is a correlation from the outer query, so it's allowed inside the GROUP BY at this case
 	-- 1
 
+SELECT
+    (SELECT 1 FROM integers i2 GROUP BY SUM(i2.i))
+FROM integers i1; --error, aggregates not allowed in group by clause
+
 SELECT 
     (SELECT SUM(SUM(i1.i) + i2.i) FROM integers i2 GROUP BY i2.i)
 FROM integers i1; --SUM(i1.i) is a correlation from the outer query, so the sum aggregates can be nested at this case
@@ -331,6 +335,10 @@ FROM integers i1; --SUM(i1.i) is a correlation from the outer query, so the sum 
 SELECT 
     (SELECT SUM(SUM(i1.i)) FROM integers i2 GROUP BY i2.i)
 FROM integers i1; --error, more than one row returned by a subquery used as an expression
+
+SELECT 
+    (SELECT SUM(SUM(i2.i)) FROM integers i2 GROUP BY i2.i)
+FROM integers i1; --error, aggregation functions cannot be nested
 
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;

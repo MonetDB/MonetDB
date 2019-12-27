@@ -126,15 +126,13 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 	if ( memorypool > argclaim || stk->workers == 0 ) {
 		/* If we are low on memory resources, limit the user if he exceeds his memory budget 
 		 * but make sure there is at least one worker thread active */
-		/* on hold until after experiments
-		if ( 0 &&  cntxt->memorylimit) {
+		if ( cntxt->memorylimit) {
 			if (argclaim + stk->memory > (lng) cntxt->memorylimit * LL_CONSTANT(1048576)){
 				MT_lock_unset(&admissionLock);
 				return -1;
 			}
 			stk->memory += argclaim;
 		}
-		*/
 		memorypool -= argclaim;
 		stk->workers++;
 		MT_lock_unset(&admissionLock);
@@ -155,11 +153,9 @@ MALadmission_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, ln
 		return;
 
 	MT_lock_set(&admissionLock);
-	/* on hold until after experiments
-	if ( 0 && cntxt->memorylimit) {
+	if ( cntxt->memorylimit) {
 		stk->memory -= argclaim;
 	}
-	*/
 	memorypool += argclaim;
 	if ( memorypool > (lng) MEMORY_THRESHOLD ){
 		memorypool = (lng) MEMORY_THRESHOLD;

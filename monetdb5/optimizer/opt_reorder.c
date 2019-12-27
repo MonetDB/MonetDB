@@ -303,7 +303,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		if( p->token == ENDsymbol)
 			break;
-		if( hasSideEffects(mb, p,FALSE) || isUnsafeFunction(p) || p->barrier ){
+		if( hasSideEffects(mb, p,FALSE) || p->barrier ){
 			if (OPTbreadthfirst(cntxt, mb, i, i, old, dep, uselist) < 0)
 				break;
 			/* remove last instruction and keep for later */

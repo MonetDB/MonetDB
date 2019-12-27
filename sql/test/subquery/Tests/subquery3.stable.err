@@ -124,7 +124,13 @@ QUERY = SELECT
         GROUP BY t1.col7, t1.col6; --error, subquery uses ungrouped column "t1.col2" from outer query
 ERROR = !SELECT: cannot use non GROUP BY column 't1.col5' in query results without an aggregate function
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-122062/.s.monetdb.38594
+MAPI  = (monetdb) /var/tmp/mtest-22911/.s.monetdb.35494
+QUERY = SELECT
+            (SELECT 1 FROM integers i2 GROUP BY SUM(i2.i))
+        FROM integers i1; --error, aggregates not allowed in group by clause
+ERROR = !SUM: aggregate function 'sum' not allowed in GROUP BY clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-22911/.s.monetdb.35494
 QUERY = SELECT 
             (SELECT SUM(SUM(i1.i) + i2.i) FROM integers i2 GROUP BY i2.i)
         FROM integers i1; --SUM(i1.i) is a correlation from the outer query, so the sum aggregates can be nested at this case
@@ -136,6 +142,12 @@ QUERY = SELECT
         FROM integers i1; --error, more than one row returned by a subquery used as an expression
 ERROR = !zero_or_one: cardinality violation, scalar expression expected
 CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-22911/.s.monetdb.35494
+QUERY = SELECT 
+            (SELECT SUM(SUM(i2.i)) FROM integers i2 GROUP BY i2.i)
+        FROM integers i1; --error, aggregation functions cannot be nested
+ERROR = !SUM: aggregate functions cannot be nested
+CODE  = 42000
 
 # 17:40:41 >  
 # 17:40:41 >  "Done."
