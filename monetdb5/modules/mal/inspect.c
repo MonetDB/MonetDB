@@ -323,7 +323,7 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			InstrPtr p = getSignature(s);
 			char *c, *w;
 
-			ps = instruction2str(s->def, 0, p, getPC(s->def,p), 0);
+			ps = instruction2str(s->def, 0, p, 0, 0);
 			if (ps == 0) {
 				continue;
 			}
@@ -377,7 +377,7 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			InstrPtr p = getSignature(s);
 			char *c,*w;
 
-			ps = instruction2str(s->def, 0, p, getPC(s->def,p), 0);
+			ps = instruction2str(s->def, 0, p, 0, 0);
 			if(ps == NULL)
 				continue;
 			c = strchr(ps, '(');
