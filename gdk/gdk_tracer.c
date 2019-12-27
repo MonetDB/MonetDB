@@ -35,7 +35,7 @@ MT_Lock lock = MT_LOCK_INITIALIZER("GDKtracer_1");
 static FILE *output_file;
 static bool USE_STREAM = true;
 
-static ATOMIC_TYPE CUR_ADAPTER;
+static ATOMIC_TYPE CUR_ADAPTER = ATOMIC_VAR_INIT(DEFAULT_ADAPTER);
 
 static LOG_LEVEL CUR_FLUSH_LEVEL = DEFAULT_FLUSH_LEVEL;
 static bool GDK_TRACER_STOP = false;
@@ -248,7 +248,6 @@ GDKtracer_get_timestamp(char* fmt)
 gdk_return
 GDKtracer_init(void)
 {
-    ATOMIC_SET(&CUR_ADAPTER, DEFAULT_ADAPTER);
     return _GDKtracer_init_basic_adptr();
 }
 
