@@ -15,7 +15,6 @@
 #include <sql_mvc.h>
 #include <sql_qc.h>
 
-sql5_export str WLRinit(void);
 sql5_export str WLRstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str WLRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str WLRstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

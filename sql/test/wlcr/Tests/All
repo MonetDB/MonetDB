@@ -24,6 +24,7 @@ wlr30
 
 #delete some tupples
 wlc40
+wlr35
 wlr40
 
 #clear the complete table
@@ -38,3 +39,4 @@ wlr70
 #stop the master
 wlc100
 wlr100
+wlr110
