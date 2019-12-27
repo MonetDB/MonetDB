@@ -12,8 +12,7 @@ INCLUDES = ../../common/stream ../../common/utils \
 lib_mapi = {
 	VERSION = $(MAPI_VERSION)
 	SOURCES = mapi.c mapi.rc
-	LIBS = ../../common/options/libmoptions \
-		../../common/utils/libmcrypt \
+	LIBS = ../../common/utils/libmcrypt \
 		WIN32?../../common/stream/libstream \
 		WIN32?../../common/utils/libmutils \
 		WIN32?$(SOCKET_LIBS) \
