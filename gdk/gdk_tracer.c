@@ -35,7 +35,7 @@ MT_Lock lock = MT_LOCK_INITIALIZER("GDKtracer_1");
 static FILE *output_file;
 static bool USE_STREAM = true;
 
-static ATOMIC_TYPE CUR_ADAPTER = DEFAULT_ADAPTER;
+static ATOMIC_TYPE CUR_ADAPTER;
 
 static LOG_LEVEL CUR_FLUSH_LEVEL = DEFAULT_FLUSH_LEVEL;
 static bool GDK_TRACER_STOP = false;
@@ -248,6 +248,7 @@ GDKtracer_get_timestamp(char* fmt)
 gdk_return
 GDKtracer_init(void)
 {
+    ATOMIC_SET(&CUR_ADAPTER, DEFAULT_ADAPTER);
     return _GDKtracer_init_basic_adptr();
 }
 
@@ -531,14 +532,13 @@ gdk_return
 GDKtracer_show_info(void)
 {
     int i = 0;
-    int max_width = 0;
+    size_t max_width = 0;
     int space = 0;
-    int comp_width = 0;
 
     // Find max width from components
     for(i = 0; i < COMPONENTS_COUNT; i++)
     {
-        comp_width = strlen(COMPONENT_STR[i]);
+        size_t comp_width = strlen(COMPONENT_STR[i]);
         if(comp_width > max_width)
             max_width = comp_width;
     }
@@ -559,7 +559,7 @@ GDKtracer_show_info(void)
     GDK_TRACER_OSTREAM("\n# LOG level per component\n");
     for(i = 0; i < COMPONENTS_COUNT; i++)
     {
-        space = (int) (max_width - strlen(COMPONENT_STR[i]) + 30);
+        space = (int)(max_width - strlen(COMPONENT_STR[i]) + 30);
         if(i < 10)
             GDK_TRACER_OSTREAM("# (%d)  %s %*s\n", i, COMPONENT_STR[i], space, LEVEL_STR[LVL_PER_COMPONENT[i]]);
         else
