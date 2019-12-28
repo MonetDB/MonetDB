@@ -266,20 +266,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 				int actual = getArgType(mb, p, i);
 				int formal = getArgType(s->def, sig, i);
 				if (resolveType(formal, actual) == -1) {
-					/* CHECK */
-					// IMPORTANT
-					//
-					// This was like that below. If not using GDKfree() is an issue
-					// let me know, because there other cases like this one!
-					// 
-					// #ifdef DEBUG_MAL_RESOLVE
-					//	char *ftpe = getTypeName(formal);
-				    //	char *atpe = getTypeName(actual);
-					//	fprintf(stderr, "#unmatched %d formal %s actual %s\n",
-					//				 i, ftpe, atpe);
-					//	GDKfree(ftpe);
-					//	GDKfree(atpe);
-					// #endif
 					unmatched = i;
 					break;
 				}
