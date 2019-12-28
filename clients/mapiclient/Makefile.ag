@@ -18,6 +18,7 @@ bin_mclient = {
 		../mapilib/libmapi \
 		../../common/stream/libstream \
 		../../common/utils/libmutils \
+		WIN32?../../common/options/libmoptions \
 		$(READLINE_LIBS) \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
@@ -28,6 +29,7 @@ bin_msqldump = {
 		../mapilib/libmapi \
 		../../common/stream/libstream \
 		../../common/utils/libmutils \
+		WIN32?../../common/options/libmoptions \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
@@ -37,6 +39,7 @@ bin_stethoscope = {
 		../mapilib/libmapi \
 		../../common/stream/libstream \
 		../../common/utils/libmutils \
+		WIN32?../../common/options/libmoptions \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
@@ -46,6 +49,7 @@ bin_tachograph = {
 		../mapilib/libmapi \
 		../../common/stream/libstream \
 		../../common/utils/libmutils \
+		WIN32?../../common/options/libmoptions \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
@@ -55,6 +59,7 @@ bin_tomograph = {
 		../../common/utils/libmutils \
 		../mapilib/libmapi \
 		../../common/stream/libstream \
+		WIN32?../../common/options/libmoptions \
 		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 

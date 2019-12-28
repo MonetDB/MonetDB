@@ -17,7 +17,7 @@ if not tstdb or not dbfarm:
 
 cmd = "monetdb status"
 
-response = subprocess.check_output(cmd)
+response = subprocess.check_output(cmd, shell=True)
 
 sys.stdout.write(response.decode("utf-8"))
 sys.stderr.write(serr)

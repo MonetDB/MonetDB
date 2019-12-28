@@ -214,7 +214,7 @@ sql_trans_destroy(sql_trans *t, bool try_spare)
 
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", t);
 
-	if (res == gtrans && spares < MAX_SPARES && !t->name && try_spare) {
+	if (res == gtrans && spares < ((GDKdebug & FORCEMITOMASK) ? 2 : MAX_SPARES) && !t->name && try_spare) {
 		TRC_DEBUG(SQL_STORE, "Spared '%d' transactions '%p'\n", spares, t);
 		trans_drop_tmp(t);
 		spare_trans[spares++] = t;
@@ -236,7 +236,7 @@ destroy_spare_transactions(void)
 {
 	int i, s = spares;
 
-	spares = MAX_SPARES; /* ie now there not spared anymore */
+	spares = (GDKdebug & FORCEMITOMASK)? 2 : MAX_SPARES; /* ie now there not spared anymore */
 	for (i = 0; i < s; i++) {
 		sql_trans_destroy(spare_trans[i], false);
 	}
