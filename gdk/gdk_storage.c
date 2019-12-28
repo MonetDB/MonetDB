@@ -302,11 +302,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 {
 	char *path1;
 	char *path2;
-	int ret, t0 = 0;
-
-	/* CHECK */
-	// This is declared only if IODEBUG
-	TRC_DEBUG_IF(IO_) t0 = GDKms();
+	int ret, t0 = GDKms();
 
 	if ((nme1 == NULL) || (*nme1 == 0)) {
 		GDKerror("GDKmove: no file specified\n");
@@ -333,7 +329,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 {
 	struct stat stb;
 	int rt = 0;
-	int t0 = 0;
+	int t0 = GDKms();
 
 	assert(!GDKinmemory());
 #ifdef STATIC_CODE_ANALYSIS
@@ -346,9 +342,6 @@ GDKextendf(int fd, size_t size, const char *fn)
 		return GDK_FAIL;
 	}
 	/* if necessary, extend the underlying file */
-	/* CHECK */
-	// This is declared only if IODEBUG
-	TRC_DEBUG_IF(IO_) t0 = GDKms();
 	if (stb.st_size < (off_t) size) {
 #ifdef HAVE_FALLOCATE
 		if ((rt = fallocate(fd, 0, stb.st_size, (off_t) size - stb.st_size)) < 0 &&

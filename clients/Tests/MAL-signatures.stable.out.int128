@@ -16613,6 +16613,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "wlr",	"drop_user",	"pattern wlr.drop_user(sname:str, action:int):void ",	"WLRgeneric;",	"Catalog operation drop_user"	]
 [ "wlr",	"drop_user",	"pattern wlr.drop_user(sname:str, auth:str, action:int):void ",	"WLRgeneric;",	"Catalog operation drop_user"	]
 [ "wlr",	"drop_view",	"pattern wlr.drop_view(sname:str, name:str, action:int, ifexists:int):void ",	"WLRgeneric;",	"Catalog operation drop_view"	]
+[ "wlr",	"getMaster",	"pattern wlr.getMaster():str ",	"WLRgetmaster;",	"What is the current master database"	]
 [ "wlr",	"getclock",	"pattern wlr.getclock():str ",	"WLRgetclock;",	"Timestamp of last replicated transaction."	]
 [ "wlr",	"gettick",	"pattern wlr.gettick():lng ",	"WLRgettick;",	"Transaction identifier of the last replicated transaction."	]
 [ "wlr",	"grant",	"pattern wlr.grant(sname:str, tbl:str, grantee:str, privs:int, cname:str, gr:int, grantor:int):void ",	"WLRgeneric;",	"Catalog operation grant"	]

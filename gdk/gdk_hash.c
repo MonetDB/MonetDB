@@ -167,14 +167,13 @@ bool
 BATcheckhash(BAT *b)
 {
 	bool ret;
-	lng t = 0;
+	lng t = GDKusec();
 
 	/* we don't need the lock just to read the value b->thash */
 	if (b->thash == (Hash *) 1) {
 		/* but when we want to change it, we need the lock */
-		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec();
 		MT_lock_set(&b->batIdxLock);
-		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec() - t;
+		t = GDKusec() - t;
 		/* if still 1 now that we have the lock, we can update */
 		if (b->thash == (Hash *) 1) {
 			Hash *h;
@@ -249,7 +248,8 @@ BATcheckhash(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->thash != NULL;
-	TRC_DEBUG_IF(ACCELERATOR) if (ret) TRC_DEBUG_ENDIF(ACCELERATOR, "Already has hash %s, waited " LLFMT " usec\n", BATgetId(b), t);
+	if( ret)
+		TRC_DEBUG(ACCELERATOR, "Already has hash %s, waited " LLFMT " usec\n", BATgetId(b), t);
 	return ret;
 }
 
@@ -259,10 +259,9 @@ BAThashsync(void *arg)
 {
 	BAT *b = arg;
 	int fd;
-	lng t0 = 0;
+	lng t0 = GDKusec();
 	const char *failed = " failed";
 
-	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	/* we could check whether b->thash == NULL before getting the
 	 * lock, and only lock if it isn't; however, it's very
@@ -351,7 +350,7 @@ BAThashsync(void *arg)
 Hash *
 BAThash_impl(BAT *b, BAT *s, const char *ext)
 {
-	lng t0 = 0;
+	lng t0 = GDKusec();
 	unsigned int tpe = ATOMbasetype(b->ttype);
 	BUN cnt, cnt1;
 	struct canditer ci;
@@ -365,8 +364,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	BATiter bi = bat_iterator(b);
 	PROPrec *prop;
 
-	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
-	TRC_DEBUG_IF(ACCELERATOR) TRC_DEBUG_ENDIF(ACCELERATOR, "Create hash(" ALGOBATFMT ");\n", ALGOBATPAR(b));
+	TRC_DEBUG(ACCELERATOR, "Create hash(" ALGOBATFMT ");\n", ALGOBATPAR(b));
 
 	if (b->ttype == TYPE_void) {
 		if (is_oid_nil(b->tseqbase)) {

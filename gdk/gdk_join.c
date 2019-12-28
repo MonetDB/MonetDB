@@ -3526,7 +3526,7 @@ gdk_return
 BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, bool nil_matches, BUN estimate)
 {
 	int opcode = 0;
-	lng t0 = 0;
+	lng t0 = GDKusec();
 
 	/* encode operator as a bit mask into opcode */
 	switch (op) {
@@ -3552,10 +3552,6 @@ BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, boo
 		return GDK_FAIL;
 	}
 
-	/* CHECK */
-	// This is in ALGODEBUG
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-
 	*r1p = NULL;
 	if (r2p) {
 		*r2p = NULL;
@@ -3578,12 +3574,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	bool swap;
 	bat parent;
 	size_t mem_size;
-	lng t0 = 0;
+	lng t0 = GDKusec();
 	const char *reason = "";
-
-	/* CHECK */
-	// This is in ALGODEBUG
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((parent = VIEWtparent(l)) != 0) {
 		BAT *b = BBPdescriptor(parent);
@@ -3761,11 +3753,7 @@ gdk_return
 BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	    const void *c1, const void *c2, bool li, bool hi, BUN estimate)
 {
-	lng t0 = 0;
-
-	/* CHECK */
-	// This is in ALGODEBUG
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	lng t0 = GDKusec();
 
 	TRC_DEBUG(ALGO, "BATbandjoin("
 			  	"l=" ALGOBATFMT ",r=" ALGOBATFMT ","
@@ -3790,11 +3778,7 @@ BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 	struct canditer lci, rci;
 	BAT *r1, *r2;
 	BUN maxsize;
-	lng t0 = 0;
-
-	/* CHECK */
-	// This is in ALGODEBUG
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	lng t0 = GDKusec();
 
 	*r1p = NULL;
 	if (r2p) {

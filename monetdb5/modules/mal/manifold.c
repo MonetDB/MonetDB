@@ -228,12 +228,9 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 		setVarUDFtype(nmb,k);
 	}
 
-	TRC_DEBUG_IF(MAL_MANIFOLD)
-	{
-		TRC_DEBUG_ENDIF(MAL_MANIFOLD, "Manifold operation\n");
-		traceInstruction(MAL_MANIFOLD, mb, 0, pci, LIST_MAL_ALL);
-		traceInstruction(MAL_MANIFOLD, nmb, 0, q, LIST_MAL_ALL);
-	}
+	TRC_DEBUG(MAL_MANIFOLD, "Manifold operation\n");
+	traceInstruction(MAL_MANIFOLD, mb, 0, pci, LIST_MAL_ALL);
+	traceInstruction(MAL_MANIFOLD, nmb, 0, q, LIST_MAL_ALL);
 
 	// Localize the underlying scalar operator
 	typeChecker(cntxt->usermodule, nmb, q, getPC(nmb, q), TRUE);
@@ -247,11 +244,8 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 			setVarType( mb, getArg(pci,0), newBatType(getArgType(nmb,q,0)) );
 	}
 
-	TRC_DEBUG_IF(MAL_MANIFOLD)
-	{
-		TRC_DEBUG_ENDIF(MAL_MANIFOLD, "Success? %s\n", (fcn == NULL? "no":"yes"));
-		traceInstruction(MAL_MANIFOLD, nmb, 0, q, LIST_MAL_ALL);
-	}
+	TRC_DEBUG(MAL_MANIFOLD, "Success? %s\n", (fcn == NULL? "no":"yes"));
+	traceInstruction(MAL_MANIFOLD, nmb, 0, q, LIST_MAL_ALL);
 
 	freeMalBlk(nmb);
 	return fcn;

@@ -173,11 +173,7 @@ OLTPrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_set(&mal_oltpLock);
 	clk = GDKusec();
 
-	TRC_DEBUG_IF(MAL_OLTP)
-	{
-		TRC_DEBUG_ENDIF(MAL_OLTP, "%6d release the locks: %d", GDKms(), cntxt->idx);
-		traceInstruction(MAL_OLTP, mb, stk, pci, LIST_MAL_ALL);
-	}
+	TRC_DEBUG(MAL_OLTP, "%6d release the locks: %d", GDKms(), cntxt->idx);
 
 	for( i=1; i< pci->argc; i++){
 		lck= getVarConstant(mb, getArg(pci,i)).val.ival;

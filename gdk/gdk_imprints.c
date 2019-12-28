@@ -267,7 +267,8 @@ BATcheckimprints(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->timprints != NULL;
-	TRC_DEBUG_IF(ACCELERATOR) if (ret) TRC_DEBUG_ENDIF(ACCELERATOR, "BATcheckimprints(" ALGOBATFMT "): already has imprints\n", ALGOBATPAR(b));
+	if( ret)
+		TRC_DEBUG(ACCELERATOR, "BATcheckimprints(" ALGOBATFMT "): already has imprints\n", ALGOBATPAR(b));
 	return ret;
 }
 
@@ -277,10 +278,8 @@ BATimpsync(void *arg)
 	BAT *b = arg;
 	Imprints *imprints;
 	int fd;
-	lng t0 = 0;
+	lng t0 = GDKusec();
 	const char *failed = " failed";
-
-	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	MT_lock_set(&b->batIdxLock);
 	if ((imprints = b->timprints) != NULL) {
@@ -339,7 +338,7 @@ BATimprints(BAT *b)
 {
 	BAT *s1 = NULL, *s2 = NULL, *s3 = NULL, *s4 = NULL;
 	Imprints *imprints;
-	lng t0 = 0;
+	lng t0 = GDKusec();
 
 	/* we only create imprints for types that look like types we know */
 	switch (ATOMbasetype(b->ttype)) {
@@ -375,9 +374,6 @@ BATimprints(BAT *b)
 	}
 	MT_lock_set(&b->batIdxLock);
 
-	/* CHECK */
-	// This is defined in ACCELDEBUG
-	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	if (b->timprints == NULL) {
 		BUN cnt;
@@ -386,17 +382,15 @@ BATimprints(BAT *b)
 
 		MT_lock_unset(&b->batIdxLock);
 
-		TRC_DEBUG_IF(ACCELERATOR) {
-			if (s2)
-				TRC_DEBUG_ENDIF(ACCELERATOR, "BATimprints(b=" ALGOBATFMT
-						"): creating imprints on parent "
-						ALGOBATFMT "\n",
-						ALGOBATPAR(s2), ALGOBATPAR(b));
-			else
-				TRC_DEBUG_ENDIF(ACCELERATOR, "BATimprints(b=" ALGOBATFMT
-						"): creating imprints\n",
-						ALGOBATPAR(b));
-		}
+		if (s2)
+			TRC_DEBUG(ACCELERATOR, "BATimprints(b=" ALGOBATFMT
+					"): creating imprints on parent "
+					ALGOBATFMT "\n",
+					ALGOBATPAR(s2), ALGOBATPAR(b));
+		else
+			TRC_DEBUG(ACCELERATOR, "BATimprints(b=" ALGOBATFMT
+					"): creating imprints\n",
+					ALGOBATPAR(b));
 
 		s2 = NULL;
 

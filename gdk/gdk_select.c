@@ -1006,11 +1006,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		dbl v_dbl;
 		oid v_oid;
 	} vl, vh;
-	lng t0 = 0;
-
-	/* CHECK */
-	// This is in ALGODEBUG
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	lng t0 = GDKusec();
 
 	BATcheck(b, "BATselect", NULL);
 	BATcheck(tl, "BATselect: tl value required", NULL);
@@ -1327,9 +1323,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			b = view;
 			view = NULL;
 		}
-		/* CHECK */
-		// This if is in ALGODEBUG
-		TRC_DEBUG_IF(ALGO) if (view) TRC_DEBUG_ENDIF(ALGO, "Switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " hseq " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
+		if( view)
+			TRC_DEBUG(ALGO, "Switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " hseq " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
 	}
 
 	if (b->tsorted || b->trevsorted || use_orderidx) {
