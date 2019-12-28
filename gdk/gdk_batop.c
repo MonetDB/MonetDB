@@ -506,16 +506,11 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		return GDK_FAIL;
 	}
 
-	/* CHECK */
-	// The whole if statement is in DEBUG CHECK_
-	TRC_DEBUG_IF(CHECK_)
-	{
-		if (BATttype(b) != BATttype(n) &&
+	if (BATttype(b) != BATttype(n) &&
 		ATOMtype(b->ttype) != ATOMtype(n->ttype)) {
-			TRC_DEBUG_ENDIF(CHECK_, "Interpreting %s as %s.\n",
+			TRC_DEBUG(CHECK_, "Interpreting %s as %s.\n",
 									ATOMname(BATttype(n)), ATOMname(BATttype(b)));
 		}
-	}
 
 	cnt = canditer_init(&ci, n, s);
 	if (cnt == 0) {
@@ -1447,11 +1442,10 @@ BATkeyed(BAT *b)
 bool
 BATordered(BAT *b)
 {
-	lng t0 = 0;
+	lng t0 = GDKusec();
 
 	/* CHECK */
 	// This is in DEBUGALGO
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if (b->ttype == TYPE_void)
 		return true;
@@ -1537,11 +1531,7 @@ BATordered(BAT *b)
 bool
 BATordered_rev(BAT *b)
 {
-	lng t0 = 0;
-
-	/* CHECK */
-	// This is in DEBUGALGO
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	lng t0 = GDKusec();
 
 	if (b == NULL)
 		return false;
@@ -1635,12 +1625,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	BAT *bn = NULL, *on = NULL, *gn = NULL, *pb = NULL;
 	oid *restrict grps, *restrict ords, prev;
 	BUN p, q, r;
-	lng t0 = 0;
+	lng t0 = GDKusec();
 	bool mkorderidx, orderidxlock = false;
-
-	/* CHECK */
-	// This is in DEBUGALGO
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	/* we haven't implemented NILs as largest value for stable
 	 * sort, so NILs come first for ascending and last for
@@ -2096,11 +2082,10 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 	BAT *bn;
 	void *restrict p;
 	BUN i;
-	lng t0 = 0;
+	lng t0 = GDKusec();
 
 	/* CHECK */
 	// This is in DEBUGALGO
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if (v == NULL)
 		return NULL;

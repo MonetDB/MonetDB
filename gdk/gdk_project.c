@@ -238,11 +238,7 @@ BATproject(BAT *l, BAT *r)
 	bool nilcheck = true, stringtrick = false;
 	BUN lcount = BATcount(l), rcount = BATcount(r);
 	struct canditer ci, *lci = NULL;
-	lng t0 = 0;
-
-	/* CHECK */
-	// This is in ALGODEBUG
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	lng t0 = GDKusec();
 
 	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT "," 
 				"r=" ALGOBATFMT ")\n",
@@ -474,11 +470,7 @@ BATprojectchain(BAT **bats)
 	bool stringtrick = false;
 	const void *nil;
 	int tpe;
-	lng t0 = 0;
-
-	/* CHECK */
-	// This is in ALGODEBUG
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	lng t0 = GDKusec();
 
 	/* count number of participating BATs and allocate some
 	 * temporary work space */

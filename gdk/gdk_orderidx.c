@@ -19,10 +19,9 @@ BATidxsync(void *arg)
 	BAT *b = arg;
 	Heap *hp;
 	int fd;
-	lng t0 = 0;
+	lng t0  = GDKusec();
 	const char *failed = " failed";
 
-	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	MT_lock_set(&b->batIdxLock);
 	if ((hp = b->torderidx) != NULL) {
@@ -73,11 +72,10 @@ bool
 BATcheckorderidx(BAT *b)
 {
 	bool ret;
-	lng t = 0;
+	lng t = GDKusec();
 
 	if (b == NULL)
 		return false;
-	TRC_DEBUG_IF(ACCELERATOR) t = GDKusec();
 	assert(b->batCacheid > 0);
 	/* we don't need the lock just to read the value b->torderidx */
 	if (b->torderidx == (Heap *) 1) {
@@ -129,7 +127,8 @@ BATcheckorderidx(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->torderidx != NULL;
-	TRC_DEBUG_IF(ACCELERATOR) if (ret) TRC_DEBUG_ENDIF(ACCELERATOR, "BATcheckorderidx(" ALGOBATFMT "): already has orderidx, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
+	if(ret)
+		TRC_DEBUG(ACCELERATOR, "BATcheckorderidx(" ALGOBATFMT "): already has orderidx, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
 	return ret;
 }
 
