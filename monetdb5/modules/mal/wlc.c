@@ -532,7 +532,7 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str fcn)
 #ifdef HAVE_LOCALTIME_R
 	(void) gmtime_r(&clk, &ctm);
 #else
-	ctm = gmtime(&clk);
+	ctm = *gmtime(&clk);
 #endif
 	strftime(wlc_time, sizeof(wlc_time), "%Y-%m-%d %H:%M:%S.000",&ctm);
 	if (pushStr(cntxt->wlc, p, wlc_time) == NULL)
