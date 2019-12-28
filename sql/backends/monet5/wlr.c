@@ -517,7 +517,8 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 	if( getArgType(mb, pci, 1) == TYPE_timestamp){
 		timestamp_tostr(&slimit, &size, (timestamp*) getArgReference(stk, pci, 1), TRUE);
-		strncpy(wlr_timelimit, slimit, sizeof(wlr_timelimit));
+		strncpy(wlr_timelimit, slimit, sizeof(wlr_timelimit)-1);
+		wlr_timelimit[sizeof(wlr_timelimit)-1] = 0;
 		GDKfree(slimit);
 	} else
 	if( getArgType(mb, pci, 1) == TYPE_bte)
