@@ -99,7 +99,7 @@ WLRgetConfig(void){
 		if( strncmp("beat=", line, 5) == 0)
 			wlr_beat = atoi(line+ 5);
 		else
-		if( strncmp("time=", line, 5) == 0)
+		if( strncmp("read=", line, 5) == 0)
 			strcpy(wlr_read, line + 5);
 		else
 		if( strncmp("error=", line, 6) == 0) {
@@ -139,7 +139,7 @@ WLRputConfig(void){
 	mnstr_printf(fd,"tag="LLFMT"\n", wlr_tag);
 	mnstr_printf(fd,"beat=%d\n", wlr_beat);
 	if( wlr_timelimit[0])
-		mnstr_printf(fd,"time=%s\n", wlr_read);
+		mnstr_printf(fd,"read=%s\n", wlr_read);
 	if( wlr_error[0])
 		mnstr_printf(fd,"error=%s", wlr_error);
 	close_stream(fd);
@@ -498,8 +498,8 @@ WLRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	str timelimit  = wlr_timelimit;
-	//size_t size = sizeof(wlr_timelimit);
+{	str timelimit = wlr_timelimit, slimit= 0;
+	size_t size = 0;
 	lng limit = INT64_MAX;
 	str msg;
 
@@ -516,8 +516,9 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		wlr_limit = INT64_MAX;
 	else
 	if( getArgType(mb, pci, 1) == TYPE_timestamp){
-	/* CHECK */
-		strftime(timelimit, sizeof(timelimit), "%Y-%m-%d %H:%M:%S.000", (void*) getArgReference(stk, pci, 1));
+		timestamp_tostr(&slimit, &size, (timestamp*) getArgReference(stk, pci, 1), TRUE);
+		strncpy(wlr_timelimit, slimit, sizeof(wlr_timelimit));
+		GDKfree(slimit);
 	} else
 	if( getArgType(mb, pci, 1) == TYPE_bte)
 		limit = getVarConstant(mb,getArg(pci,1)).val.btval;
@@ -533,8 +534,11 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	if ( limit < 0 && timelimit[0] == 0)
 		throw(MAL, "sql.replicate", "Stop tag limit should be positive or timestamp should be set");
-	if( wlc_tag == 0)
-		throw(MAL, "sql.replicate", "Perhaps a missing wlr.master() call. ");
+	if( wlc_tag == 0) {
+		WLRgetMaster();
+		if( wlc_tag == 0)
+			throw(MAL, "sql.replicate", "Perhaps a missing wlr.master() call. ");
+	}
 	if (limit < INT64_MAX && limit >= wlc_tag)
 		throw(MAL, "sql.replicate", "Stop tag limit "LLFMT" be less than wlc_tag "LLFMT, limit, wlc_tag);
 	if ( limit >= 0)

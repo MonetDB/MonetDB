@@ -18,9 +18,6 @@ stderr of test 'wlr35` in directory 'sql/test/wlcr` itself:
 # cmdline opt 	mapi_port = 34591
 # cmdline opt 	mapi_usock = /var/tmp/mtest-16185/.s.monetdb.34591
 # cmdline opt 	gdk_dbpath = /export/scratch1/mk/branches/tracer//Linux/var/MonetDB/mTests_sql_test_wlcrclone
-MAPI  = (monetdb) /var/tmp/mtest-16185/.s.monetdb.34591
-QUERY = call wlr.replicate(9);
-ERROR = !Perhaps a missing wlr.master() call. 
 
 
 

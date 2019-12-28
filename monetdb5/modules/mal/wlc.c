@@ -530,9 +530,9 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str fcn)
 		throw(MAL, fcn, "Unable to retrieve current time");
 	clk = clock.tv_sec;
 #ifdef HAVE_LOCALTIME_R
-	(void) localtime_r(&clk, &ctm);
+	(void) gmtime_r(&clk, &ctm);
 #else
-	ctm = *localtime(&clk);
+	ctm = gmtime(&clk);
 #endif
 	strftime(wlc_time, sizeof(wlc_time), "%Y-%m-%d %H:%M:%S.000",&ctm);
 	if (pushStr(cntxt->wlc, p, wlc_time) == NULL)
