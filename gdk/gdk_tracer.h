@@ -382,4 +382,4 @@ gdk_export gdk_return GDKtracer_flush_buffer(void);
 
 gdk_export gdk_return GDKtracer_show_info(void);
 
-#endif
+#endif /* _GDK_TRACER_H_ */
