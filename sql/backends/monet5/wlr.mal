@@ -42,6 +42,10 @@ pattern replicate(id:lng)
 address WLRreplicate
 comment "Roll the snapshot forward to a specific transaction id";
 
+pattern getMaster():str
+address WLRgetmaster
+comment "What is the current master database";
+
 pattern setbeat(dur:int)
 address WLRsetbeat
 comment "Threshold (in seconds) for re-running queries";

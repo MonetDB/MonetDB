@@ -489,7 +489,7 @@ WLRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	len = snprintf(wlr_master, IDLENGTH, "%s", *getArgReference_str(stk, pci, 1));
 	if (len == -1 || len >= IDLENGTH)
-		throw(MAL, "wlr.replicate", SQLSTATE(42000) "Input value is too large for wlr_master buffer");
+		throw(MAL, "wlr.master", SQLSTATE(42000) "Input value is too large for wlr_master buffer");
 	WLRgetMaster();
 	WLRgetConfig();
 	WLRputConfig();
@@ -618,6 +618,23 @@ WLRstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+WLRgetmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *ret = getArgReference_str(stk,pci,0);
+	str msg = MAL_SUCCEED;
+
+	(void) cntxt;
+	(void) mb;
+
+	msg = WLRgetConfig();
+	if( wlr_master[0])
+		*ret= GDKstrdup(wlr_master);
+	else
+		throw(MAL, "wlr.getmaster", "Master not found");
+	return msg;
+}
+
+str
 WLRgetclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *ret = getArgReference_str(stk,pci,0);
@@ -633,7 +650,7 @@ WLRgetclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*ret= GDKstrdup(wlr_read);
 	else *ret= GDKstrdup(str_nil);
 	if (*ret == NULL)
-		throw(MAL, "wlr.getreplicaclock", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "wlr.getclock", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;
 }
 
@@ -663,7 +680,7 @@ WLRsetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	new = *getArgReference_int(stk,pci,1);
 	if ( new < wlc_beat || new < 1)
-		throw(SQL,"replicatebeat",SQLSTATE(42000) "Cycle time should be larger then master or >= 1 second");
+		throw(SQL,"setbeat",SQLSTATE(42000) "Cycle time should be larger then master or >= 1 second");
 	wlr_beat = new;
 	return MAL_SUCCEED;
 }
