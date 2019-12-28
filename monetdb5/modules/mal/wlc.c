@@ -379,6 +379,14 @@ WLClogger(void *arg)
  * The existence of the master directory should be checked upon server restart.
  * Then the master record information should be set and the WLClogger started.
  */
+
+#ifndef F_OK
+#define F_OK 0
+#endif
+#ifdef _MSC_VER
+#define access(f, m)	_access(f, m)
+#endif
+
 str 
 WLCinit(void)
 {
@@ -390,7 +398,7 @@ WLCinit(void)
 		if((conf = GDKfilepath(0,0,"wlc.config",0)) == NULL)
 			throw(MAL,"wlc.init","Could not access wlc.config\n");
 
-		if( access(conf,F_OK) ){
+		if(access(conf, F_OK) ){
 			GDKfree(conf);
 			return MAL_SUCCEED;
 		}
