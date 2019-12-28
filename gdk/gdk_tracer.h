@@ -148,57 +148,20 @@ typedef enum {
         COMP( SQL_STATEMENT )         \
         COMP( SQL_BAT )               \
                                       \
-        COMP( MAL_MEMO )              \
         COMP( MAL_INTERPRETER )       \
-        COMP( MAL_SCHEDULER )         \
         COMP( MAL_WLC )               \
-        COMP( MAL_CLIENT )            \
-        COMP( MAL_OIDX )              \
         COMP( MAL_REMOTE )            \
-        COMP( MAL_INET )              \
-        COMP( MAL_GROUPBY )           \
+        COMP( MAL_ATOMS )              \
         COMP( MAL_TABLET )            \
         COMP( MAL_OLTP )              \
-        COMP( MAL_MANIFOLD )          \
-        COMP( MAL_RESOLVE )           \
-        COMP( MAL_FCN )               \
+        COMP( MAL_MAPI )              \
+        COMP( MAL_SERVER )              \
         COMP( MAL_DATAFLOW )          \
-        COMP( MAL_SERVER )            \
+        COMP( MAL_MANIFOLD )          \
         COMP( MAL_EXCEPTION )         \
-        COMP( MAL_NAMESPACE )         \
-        COMP( MAL_PROFILER )          \
         COMP( MAL_MAL )               \
                                       \
-        COMP( MAL_OPT_ALIASES )       \
-        COMP( MAL_OPT_CANDIDATES )    \
-        COMP( MAL_OPT_COERCION )      \
-        COMP( MAL_OPT_COMMONTERMS )   \
-        COMP( MAL_OPT_PIPES )         \
-        COMP( MAL_OPT_REMAP )         \
-        COMP( MAL_OPT_DATAFLOW )      \
-        COMP( MAL_OPT_EVALUATE )      \
-        COMP( MAL_OPT_INLINE )        \
-        COMP( MAL_OPT_MULTIPLEX )     \
-        COMP( MAL_OPT_REORDER )       \
-        COMP( MAL_OPT_PROJECTIONPATH )\
-        COMP( MAL_OPT_WLC )           \
-        COMP( MAL_OPT_CONSTANTS )     \
-        COMP( MAL_OPT_COSTMODEL )     \
-        COMP( MAL_OPT_DEADCODE )      \
-        COMP( MAL_OPT_EMPTYBIND )     \
-        COMP( MAL_OPT_GENERATOR )     \
-        COMP( MAL_OPT_JSON )          \
-        COMP( MAL_OPT_MATPACK )       \
-        COMP( MAL_OPT_GC )            \
-        COMP( MAL_OPT_MERGETABLE )    \
-        COMP( MAL_OPT_PUSHSELECT )    \
-        COMP( MAL_OPT_QUERYLOG )      \
-        COMP( MAL_OPT_OLTP )          \
-        COMP( MAL_OPT_PROFILER )      \
-        COMP( MAL_OPT_REDUCE )        \
-        COMP( MAL_OPT_REMOTE )        \
-        COMP( MAL_OPT_VOLCANO )       \
-        COMP( MAL_OPT_MACRO )         \
+        COMP( MAL_OPTIMIZER )      	  \
                                       \
         COMP( GDK_TM )                \
         COMP( GDK_UTILS )             \

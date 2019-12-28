@@ -358,8 +358,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * Also mark all variables that are subject to garbage control.
 		 * Beware, this is not yet effectuated in the interpreter.
 		 */
-		TRC_DEBUG_IF(MAL_RESOLVE)
-			debugInstruction(MAL_RESOLVE, mb, 0, p, idx, LIST_MAL_DEBUG);
+		traceInstruction(MAL_MAL, mb, 0, p, LIST_MAL_DEBUG);
 
 		p->typechk = TYPE_RESOLVED;
 		for (i = 0; i < p->retc; i++) {
@@ -560,7 +559,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 										(getModuleId(p) ? "." : ""),
 										getFunctionId(p), malLibraryHowToEnable(p->modname));
 				} else {
-					errsig = instruction2str(mb,0,p, idx, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
+					errsig = instruction2str(mb,0,p, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
 					mb->errors = createMalException(mb, idx, TYPE,
 										"'%s%s%s' undefined in: %s",
 										(getModuleId(p) ? getModuleId(p) : ""),

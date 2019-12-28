@@ -149,7 +149,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	*/
 	if( !start && pci->calls > HIGHWATERMARK){
 		if( pci->calls == 10000 || pci->calls == 100000 || pci->calls == 1000000 || pci->calls == 10000000)
-			TRC_ERROR(MAL_PROFILER, "Too many calls: %d\n", pci->calls);
+			TRC_WARNING(MAL_MAL, "Too many calls: %d\n", pci->calls);
 		return;
 	}
 
@@ -243,7 +243,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 		char *truncated;
 
 		/* generate actual call statement */
-		stmt = instruction2str(mb, stk, pci, getPC(mb, pci), LIST_MAL_ALL);
+		stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
 		if (stmt) {
 			c = stmt;
 
@@ -762,7 +762,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return;
 
 	/* generate actual call statement */
-	stmt = instruction2str(mb, stk, pci, getPC(mb, pci), LIST_MAL_ALL);
+	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
 	c = stmt;
 
 	while (c && *c && (isspace((unsigned char)*c) || *c == '!'))

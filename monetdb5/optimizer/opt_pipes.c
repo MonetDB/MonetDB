@@ -484,11 +484,8 @@ compileOptimizer(Client cntxt, const char *name)
 					msg = compileString(&fcn,cntxt, buf);
 					if( msg == MAL_SUCCEED){
 						compiled = findSymbol(cntxt->usermodule,getName("optimizer"), getName(pipes[j].name));
-						if( compiled){
+						if( compiled)
 							pipes[j].mb = compiled->def;
-							TRC_DEBUG_IF(MAL_OPT_PIPES)
-								debugFunction(MAL_OPT_PIPES, pipes[j].mb, 0, LIST_MAL_ALL);
-						}
 					}
 				}
 			}

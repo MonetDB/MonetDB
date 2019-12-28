@@ -39,8 +39,6 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	cst= (VarPtr*) GDKzalloc(sizeof(VarPtr) * mb->vtop);
 	index= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 
-	TRC_DEBUG(MAL_OPT_CONSTANTS, "CONSTANTS optimizer enter\n");
-
 	if ( alias == NULL || cst == NULL || index == NULL){
 		msg = createException(MAL,"optimizer.constants", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
@@ -63,7 +61,6 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					 x->rowcnt == y->rowcnt &&
 					 x->value.vtype == y->value.vtype &&
 					ATOMcmp(x->value.vtype, VALptr(&x->value), VALptr(&y->value)) == 0){
-					TRC_DEBUG(MAL_OPT_CONSTANTS, "Matching elements '%s': %d %d\n", getVarName(mb, i), i, k);
 
 					/* re-use a constant */
 					alias[i]= index[k];
@@ -73,7 +70,6 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				}
 			}
 			if ( fnd == 0){
-				TRC_DEBUG(MAL_OPT_CONSTANTS, "Switch elements: %d %d\n", i, n);
 				cst[n]= x;
 				index[n]= i;
 				n++;

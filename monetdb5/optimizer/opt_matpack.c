@@ -29,8 +29,6 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
-	TRC_DEBUG(MAL_OPT_MATPACK, "MATPACK optimizer enter\n");
-	
 	for( i = 1; i < mb->stop; i++)
 		if( getModuleId(getInstrPtr(mb,i)) == matRef  && getFunctionId(getInstrPtr(mb,i)) == packRef && isaBatType(getArgType(mb,getInstrPtr(mb,i),1))) 
 			break;

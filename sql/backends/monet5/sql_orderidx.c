@@ -39,8 +39,6 @@ sql_createorderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tbl = *getArgReference_str(stk, pci, 2);
 	col = *getArgReference_str(stk, pci, 3);
 
-	TRC_DEBUG(SQL_ORDERIDX, "Layout %s.%s.%s\n", sch, tbl, col);
-
 	s = mvc_bind_schema(m, sch);
 	if (s == NULL)
 		throw(SQL, "sql.createorderindex", SQLSTATE(42000) "Unknown schema %s", sch);
@@ -78,8 +76,6 @@ sql_droporderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sch = *getArgReference_str(stk, pci, 1);
 	tbl = *getArgReference_str(stk, pci, 2);
 	col = *getArgReference_str(stk, pci, 3);
-
-	TRC_DEBUG(SQL_ORDERIDX, "Layout %s.%s.%s\n", sch, tbl, col);
 
 	s = mvc_bind_schema(m, sch);
 	if (s == NULL)

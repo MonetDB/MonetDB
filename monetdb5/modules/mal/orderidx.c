@@ -92,9 +92,6 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		pieces = 1;
 	}
 
-	TRC_DEBUG(MAL_OIDX, "Pieces: %d\n", pieces);
-	TRC_DEBUG(MAL_OIDX, "oidx ttype: %s - bat: %s\n", ATOMname(b->ttype), ATOMname(tpe));
-
 	/* create a temporary MAL function to sort the BAT in parallel */
 	snprintf(name, IDLENGTH, "sort%d", rand()%1000);
 	snew = newFunction(putName("user"), putName(name),
@@ -185,9 +182,6 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
 		freeStack(newstk);
 	}
-
-	TRC_DEBUG_IF(MAL_OIDX)
-		debugFunction(MAL_OIDX, smb, 0, LIST_MAL_ALL);
 
 	/* get rid of temporary MAL block */
 bailout:

@@ -31,8 +31,6 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) stk;
 	(void) cntxt;
 
-	TRC_DEBUG(MAL_OPT_ALIASES, "ALIASES optimizer enter\n");
-	
 	limit = mb->stop;
 	for (i = 1; i < limit; i++){
 		p= getInstrPtr(mb,i);

@@ -1785,8 +1785,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
-	TRC_DEBUG(MAL_OPT_MERGETABLE, "MERGETABLE optimizer enter\n");
-
 	//if( optimizerIsApplied(mb, "mergetable") || !optimizerIsApplied(mb,"mitosis"))
 		//return 0;
 	old = mb->stmt;
@@ -1830,7 +1828,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int input = getArg(p, p->retc); /* argument one is first input */
 
 			if (group_input[input]) {
-				TRC_ERROR(MAL_OPT_MERGETABLE, "Mergetable bailout on group input reuse in group statement\n");
+				TRC_ERROR(MAL_OPTIMIZER, "Mergetable bailout on group input reuse in group statement\n");
 				bailout = 1;
 			}
 
@@ -1838,7 +1836,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		if (getModuleId(p) == algebraRef && 
 		    getFunctionId(p) == selectNotNilRef ) {
-			TRC_ERROR(MAL_OPT_MERGETABLE, "Mergetable bailout not nil ref\n");
+			TRC_ERROR(MAL_OPTIMIZER, "Mergetable bailout not nil ref\n");
 			bailout = 1;
 		}
 		if (isSample(p)) {
@@ -2241,7 +2239,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * All other instructions should be checked for remaining MAT dependencies.
 		 * It requires MAT materialization.
 		 */
-		TRC_DEBUG(MAL_OPT_MERGETABLE, "%s.%s %d\n", getModuleId(p), getFunctionId(p), match);
 
 		for (k = p->retc; k<p->argc; k++) {
 			if((m=is_a_mat(getArg(p,k), &ml)) >= 0){
@@ -2260,18 +2257,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	chkTypes(cntxt->usermodule,mb, TRUE);
 	if( mb->errors != MAL_SUCCEED)
 		goto cleanup;
-
-	/* CHECK */
-	// From here
-	TRC_DEBUG_IF(MAL_OPT_MERGETABLE)
-	{
-		TRC_DEBUG_ENDIF(MAL_OPT_MERGETABLE, "Result of multi table optimizer\n");
-		chkTypes(cntxt->usermodule, mb, FALSE);
-		chkFlow(mb);
-		chkDeclarations(mb);
-		debugFunction(MAL_OPT_MERGETABLE, mb, 0, LIST_MAL_ALL);
-	}
-	// To here - its in DEBUG MAL_OPT_MERGETABLE
 
 	if ( mb->errors == MAL_SUCCEED) {
 		for(i=0; i<slimit; i++)

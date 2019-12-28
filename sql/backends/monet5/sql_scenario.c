@@ -60,8 +60,6 @@ monet5_freestack(int clientid, backend_stack stk)
 	(void) clientid;
 	if (p != NULL)
 		freeStack(p);
-
-	TRC_DEBUG(SQL_SCENARIO, "Enter monet5_freestack\n");
 }
 
 static void
@@ -76,8 +74,6 @@ monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char
 	msg = SQLCacheRemove(MCgetClient(clientid), name);
 	if (msg)
 		freeException(msg);	/* do something with error? */
-
-	TRC_DEBUG(SQL_SCENARIO, "Enter monet5_free: %d\n", nr);
 }
 
 static str SQLinit(Client c);
@@ -177,8 +173,6 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLexit(Client c)
 {
-	TRC_DEBUG(SQL_SCENARIO, "Enter SQLexit\n");
-
 	(void) c;		/* not used */
 	MT_lock_set(&sql_contextLock);
 	if (SQLinitialized) {
@@ -369,8 +363,6 @@ SQLinit(Client c)
 	static int maybeupgrade = 1;
 	backend *be = NULL;
 	mvc *m = NULL;
-
-	TRC_DEBUG(SQL_SCENARIO, "Enter SQLinit\n");
 
 	MT_lock_set(&sql_contextLock);
 

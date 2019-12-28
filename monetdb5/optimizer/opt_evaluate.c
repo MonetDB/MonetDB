@@ -132,8 +132,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if ( mb->inlineProp )
 		return MAL_SUCCEED;
 
-	TRC_DEBUG(MAL_OPT_EVALUATE, "EVALUATE optimizer enter\n");
-	
 	cntxt->itrace = 0;
 
 	assigned = (int*) GDKzalloc(sizeof(int) * mb->vtop);

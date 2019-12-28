@@ -14,9 +14,9 @@
 #include "mal_instruction.h"
 
 mal_export str fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len);
-mal_export void printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int p_idx, int flg);
-mal_export void debugInstruction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int p_idx, int flg);
-mal_export str instruction2str(MalBlkPtr mb, MalStkPtr stl, InstrPtr p, int p_idx, int hidden);
+mal_export void printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg);
+mal_export void traceInstruction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg);
+mal_export str instruction2str(MalBlkPtr mb, MalStkPtr stl, InstrPtr p, int hidden);
 mal_export str shortStmtRendering(MalBlkPtr mb, MalStkPtr stl, InstrPtr p);
 mal_export str mal2str(MalBlkPtr mb, int first, int last);
 mal_export void showMalBlkHistory(stream *out, MalBlkPtr mb);

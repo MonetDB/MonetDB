@@ -108,14 +108,6 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		a->size = BATcount(b);
 	}
 
-	/* CHECK */
-	// The for-loop is in DEBUG MAL_GROUPBY
-	TRC_DEBUG_IF(MAL_GROUPBY)
-	{
-		for(i=0; i<a->last; i++)
-			TRC_DEBUG_ENDIF(MAL_GROUPBY, "Group '%d' unique "BUNFMT "\n", i, a->unique[i]);
-	}
-
 	return a;
 }
 

@@ -26,8 +26,6 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
-	TRC_DEBUG(MAL_OPT_CANDIDATES, "CANDIDATES optimizer enter\n");
-
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb,i);
 		if( p->token == ASSIGNsymbol) {

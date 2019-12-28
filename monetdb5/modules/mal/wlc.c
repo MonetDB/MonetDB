@@ -293,7 +293,6 @@ WLCsetlogger(void)
 	wlc_fd = open_wastream(path);
 	if( wlc_fd == 0){
 		MT_lock_unset(&wlc_lock);
-		TRC_ERROR(MAL_WLC, "Cloud not create: %s\n", path);
 		throw(MAL,"wlc.logger","Could not create %s\n",path);
 	}
 
@@ -383,7 +382,7 @@ WLClogger(void *arg)
 str 
 WLCinit(void)
 {
-	str conf, msg= MAL_SUCCEED;
+	str conf;
 	int len;
 
 	if( wlc_state == WLC_STARTUP){
@@ -401,9 +400,7 @@ WLCinit(void)
 		if (len == -1 || len >= IDLENGTH)
 			throw(MAL, "wlc.init", "gdk_dbname variable is too large");
 
-		msg =  WLCgetConfig();
-		if( msg)
-			TRC_INFO(MAL_WLC, "%s\n", msg);
+		WLCgetConfig();
 		if (MT_create_thread(&wlc_logger, WLClogger , (void*) 0,
 							 MT_THR_DETACHED, "WLClogger") < 0) {
 			TRC_ERROR(MAL_WLC, "Thread could not be spawned\n");
@@ -553,18 +550,11 @@ static str
 WLCpreparewrite(Client cntxt)
 {	str msg = MAL_SUCCEED;
 	// save the wlc record on a file 
-	TRC_DEBUG_IF(MAL_WLC) {
-		if( cntxt->wlc){
-			TRC_DEBUG_ENDIF(MAL_WLC, "Prepare for writing: %d %d\n", cntxt->wlc->stop , cntxt->wlc_kind);
-			debugFunction(MAL_WLC, cntxt->wlc, 0, LIST_MAL_DEBUG );
-		}
-	}
 
 	if( cntxt->wlc == 0 || cntxt->wlc->stop <= 1 ||  cntxt->wlc_kind == WLC_QUERY )
 		return MAL_SUCCEED;
 
 	if( wlc_state != WLC_RUN){
-		TRC_DEBUG(MAL_WLC, "State: %d\n", wlc_state);
 		trimMalVariables(cntxt->wlc, NULL);
 		resetMalBlk(cntxt->wlc, 0);
 		cntxt->wlc_kind = WLC_QUERY;
@@ -574,7 +564,6 @@ WLCpreparewrite(Client cntxt)
 		if (wlc_fd == NULL){
 			msg = WLCsetlogger();
 			if( msg) {
-				TRC_DEBUG(MAL_WLC, "Set logger: %s\n", msg);
 				return msg;
 			}
 		}
@@ -593,9 +582,6 @@ WLCpreparewrite(Client cntxt)
 	} else
 			throw(MAL,"wlc.write","WLC log path missing ");
 			
-	TRC_DEBUG_IF(MAL_WLC)
-		debugFunction(MAL_WLC, cntxt->wlc, 0, LIST_MAL_ALL );
-
 	if( wlc_state == WLC_STOP)
 		throw(MAL,"wlc.write","Logging for this snapshot has been stopped. Use a new snapshot to continue logging.");
 	return msg;

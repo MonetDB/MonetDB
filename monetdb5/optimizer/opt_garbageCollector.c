@@ -49,8 +49,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		else
 		if (getVarName(mb,i)[0] == 'C' && getVarName(mb,i)[1] == '_')
 			snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
-		//if(strcmp(buf, getVarName(mb,i)) )
-			//TRC_ERROR(MAL_OPT_GC, "Non-matching name/entry: %s %s\n", buf, getVarName(mb,i));
 	}
 
 	// move SQL query definition to the front for event profiling tools
@@ -84,23 +82,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
-	TRC_DEBUG_IF(MAL_OPT_GC)
-    {
-		int k;
-		TRC_DEBUG_ENDIF(MAL_OPT_GC, "Garbage collected BAT variables \n");
-		for ( k =0; k < mb->vtop; k++)
-		TRC_DEBUG_ENDIF(MAL_OPT_GC, "%10s eolife %3d begin %3d lastupd %3d end %3d\n",
-			getVarName(mb,k), getVarEolife(mb,k),
-			getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
-		chkFlow(mb);
-		if ( mb->errors != MAL_SUCCEED ){
-			TRC_DEBUG_ENDIF(MAL_OPT_GC, "%s\n", mb->errors);
-			freeException(mb->errors);
-			mb->errors = MAL_SUCCEED;
-		}
-		debugFunction(MAL_OPT_GC, mb, 0, LIST_MAL_ALL);
-		TRC_DEBUG_ENDIF(MAL_OPT_GC, "End of GCoptimizer\n");
-    }
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);

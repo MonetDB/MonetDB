@@ -33,8 +33,6 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (varused == NULL)
 		return MAL_SUCCEED;
 
-	TRC_DEBUG(MAL_OPT_DEADCODE, "DEADCODE optimizer enter\n");
-	
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {

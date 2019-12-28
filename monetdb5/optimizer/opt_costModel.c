@@ -47,8 +47,6 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if ( mb->inlineProp )
 		return MAL_SUCCEED;
 
-	TRC_DEBUG(MAL_OPT_COSTMODEL, "COSTMODEL optimizer enter\n");
-    
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if (getModuleId(p)==algebraRef) {

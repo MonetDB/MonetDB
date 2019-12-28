@@ -282,8 +282,6 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( dep == NULL)
 		return MAL_SUCCEED;
 
-	TRC_DEBUG(MAL_OPT_REORDER, "REORDER optimizer enter\n");
-	
 	limit= mb->stop;
 	slimit= mb->ssize;
 	old = mb->stmt;

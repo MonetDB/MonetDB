@@ -291,7 +291,7 @@ WLRprocessBatch(Client cntxt)
 			}
 			q= getInstrPtr(mb, mb->stop - 1);
 			if( getModuleId(q) != wlrRef){
-				msg =createException(MAL,"wlr.process", "batch %d:improper wlr instruction: %s\n", i, instruction2str(mb,0, q, q->pc, LIST_MAL_CALL));
+				msg =createException(MAL,"wlr.process", "batch %d:improper wlr instruction: %s\n", i, instruction2str(mb,0, q, LIST_MAL_CALL));
 				cleanup();
 				break;
 			}

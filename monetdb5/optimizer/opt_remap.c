@@ -335,8 +335,6 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) pci;
 
-	TRC_DEBUG(MAL_OPT_REMAP, "REMAP optimizer enter\n");
-
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;

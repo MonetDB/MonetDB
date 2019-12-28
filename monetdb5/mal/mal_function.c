@@ -206,7 +206,7 @@ void chkFlow(MalBlkPtr mb)
 				if( p->token == REMsymbol){
 					/* do nothing */
 				} else if( i) {
-					str msg=instruction2str(mb,0,p,i,TRUE);
+					str msg=instruction2str(mb,0,p,TRUE);
 					mb->errors = createMalException( mb,i,MAL, "signature misplaced\n!%s",msg);
 					GDKfree(msg);
 				}
@@ -217,8 +217,6 @@ void chkFlow(MalBlkPtr mb)
 	if(msg == MAL_SUCCEED && lastInstruction < mb->stop-1 ){
 		mb->errors = createMalException( mb,lastInstruction,SYNTAX,
 			"instructions after END");
-		TRC_DEBUG_IF(MAL_FCN)
-			debugFunction(MAL_FCN, mb, 0, LIST_MAL_ALL);
 	}
 	if( endseen)
 	for(btop--; btop>=0;btop--){
@@ -269,16 +267,9 @@ int getBarrierEnvelop(MalBlkPtr mb){
 
 static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	int j,i,x,y;
-	TRC_DEBUG_IF(MAL_FCN) {
-		char *tpenme = getTypeName(t);
-		TRC_DEBUG_ENDIF(MAL_FCN, "Replace type '_%d' by type '%s'\n", v, tpenme);
-		GDKfree(tpenme);
-	}
+
 	for(j=0; j<mb->stop; j++){
 	    p= getInstrPtr(mb,j);
-		TRC_DEBUG_IF(MAL_FCN)
-			debugInstruction(MAL_FCN, mb, 0, p, j, LIST_MAL_ALL);
-		
 	if( p->polymorphic)
 	for(i=0;i<p->argc; i++)
 	if( isPolymorphic(x= getArgType(mb,p,i))) {
@@ -294,32 +285,13 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 			y= newBatType(tail);
 			setTypeIndex(y,tx);
 			setArgType(mb,p,i,y);
-			TRC_DEBUG_IF(MAL_FCN) 
-			{
-				char *xnme = getTypeName(x), *ynme = getTypeName(y);
-				TRC_DEBUG_ENDIF(MAL_FCN, "%d replaced %s -> %s\n", i, xnme, ynme);
-				GDKfree(xnme);
-				GDKfree(ynme);
-			}
 		} else
 		if(getTypeIndex(x) == v){
-			TRC_DEBUG_IF(MAL_FCN) {
-				char *xnme = getTypeName(x);
-				TRC_DEBUG_ENDIF(MAL_FCN, "Replace x= %s polymorphic\n", xnme);
-				GDKfree(xnme);
-			}
 			setArgType(mb,p,i,t);
 		}
 		else {
-			TRC_DEBUG_IF(MAL_FCN) {
-				char *xnme = getTypeName(x);
-				TRC_DEBUG_ENDIF(MAL_FCN, "Non x= %s %d\n", xnme, getTypeIndex(x));
-				GDKfree(xnme);
-			}
 		}
 	}
-		TRC_DEBUG_IF(MAL_FCN)
-			debugInstruction(MAL_FCN, mb, 0, p, j, LIST_MAL_ALL);
 	}
 }
 
@@ -373,30 +345,16 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	int i,v;
 	InstrPtr pp;
 
-	TRC_DEBUG_IF(MAL_FCN)
-	{
-		TRC_DEBUG_ENDIF(MAL_FCN, "Clone function '%s' to scope '%s'\n", proc->name,scope->name);
-		debugInstruction(MAL_FCN, mb, 0, p, getPC(mb, p), LIST_MAL_ALL);
-	}
-
 	new = newFunction(scope->name, proc->name, getSignature(proc)->token);
 	if( new == NULL){
-		TRC_ERROR(MAL_FCN, "Failed to clone function\n");
 		return NULL;
 	}
 	freeMalBlk(new->def);
 	if((new->def = copyMalBlk(proc->def)) == NULL) {
 		freeSymbol(new);
-		TRC_ERROR(MAL_FCN, "Failed to clone function\n");
 		return NULL;
 	}
 	/* now change the definition of the original proc */
-	TRC_DEBUG_IF(MAL_FCN)
-	{
-		TRC_DEBUG_ENDIF(MAL_FCN, "Cloned version\n");
-		debugFunction(MAL_FCN, new->def, 0, LIST_MAL_ALL);
-	}
-
 	/* check for errors after fixation , TODO*/
 	pp = getSignature(new);
 	for (i = 0; i < pp->argc; i++)
@@ -410,12 +368,6 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 					replaceTypeVar(new->def, pp, getTypeIndex(v), getBatType(t));
 			} else
 				replaceTypeVar(new->def, pp, getTypeIndex(v), t);
-		} else {
-			TRC_DEBUG_IF(MAL_FCN) {
-				char *tpenme = getTypeName(v);
-				TRC_DEBUG_ENDIF(MAL_FCN, "%d remains %s\n", i, tpenme);
-				GDKfree(tpenme);
-			}
 		}
 	/* include the function at the proper place in the scope */
 	insertSymbolBefore(scope, new, proc);
@@ -429,11 +381,6 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	for (i = 0; i < new->def->vtop; i++)
 		clrVarFixed(new->def, i);
 
-	TRC_DEBUG_IF(MAL_FCN)
-	{
-		TRC_DEBUG_ENDIF(MAL_FCN, "Function to be checked\n");
-		debugFunction(MAL_FCN, new->def, 0, LIST_MAL_ALL);
-	}
 
 	/* check for errors after fixation , TODO*/
 	/* beware, we should now ignore any cloning */
@@ -444,16 +391,9 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 			mb->errors = new->def->errors;
 			mb->errors = createMalException(mb,0,TYPE,"Error in cloned function");
 			new->def->errors = 0;
-			TRC_DEBUG_IF(MAL_FCN)
-				debugFunction(MAL_FCN, new->def, 0, LIST_MAL_ALL);
 		}
 	}
 
-	TRC_DEBUG_IF(MAL_FCN)
-	{
-		TRC_DEBUG_ENDIF(MAL_FCN, "Newly cloned function added to: %s %d\n", scope->name, i);
-		debugFunction(MAL_FCN, new->def, 0, LIST_MAL_ALL);
-	}
 	return new;
 }
 
@@ -463,7 +403,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
  * is returned.
  */
 void
-snprintFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int step)
+debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int step)
 {
 	int i,j;
 	str ps;
@@ -477,18 +417,20 @@ snprintFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int
 		return;
 
 	for (i = first; i < first +step && i < mb->stop; i++){
-		ps = instruction2str(mb, stk, (p=getInstrPtr(mb, i)), i, flg);
+		ps = instruction2str(mb, stk, (p=getInstrPtr(mb, i)), flg);
 		if (ps) {
 			if (p->token == REMsymbol)
 				mnstr_printf(fd,"%-40s\n",ps);
 			else {
 				mnstr_printf(fd,"%-40s\t#[%d] ("BUNFMT") %s ",ps, i, getRowCnt(mb,getArg(p,0)), (p->blk? p->blk->binding:""));
-				for(j =0; j < p->retc; j++)
-					mnstr_printf(fd,"%d ",getArg(p,j));
-				if( p->argc - p->retc > 0)
-					mnstr_printf(fd,"<- ");
-				for(; j < p->argc; j++)
-					mnstr_printf(fd,"%d ",getArg(p,j));
+				if( flg & LIST_MAL_FLOW){
+					for(j =0; j < p->retc; j++)
+						mnstr_printf(fd,"%d ",getArg(p,j));
+					if( p->argc - p->retc > 0)
+						mnstr_printf(fd,"<- ");
+					for(; j < p->argc; j++)
+						mnstr_printf(fd,"%d ",getArg(p,j));
+				}
 				// also show type check property
 				if( p->typechk == TYPE_UNKNOWN)
 					mnstr_printf(fd," type check needed ");
@@ -522,7 +464,7 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 		mnstr_printf(fd, "%% mal # name\n");
 		mnstr_printf(fd, "%% clob # type\n");
 		for (i = first; i < first +size && i < mb->stop && sample-- > 0; i++) {
-			ps = instruction2str(mb, stk, getInstrPtr(mb, i), i, flg);
+			ps = instruction2str(mb, stk, getInstrPtr(mb, i), flg);
 			if (ps) {
 				size_t l = strlen(ps);
 				if (l > len)
@@ -533,7 +475,7 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 		mnstr_printf(fd, "%% %zu # length\n", len);
 	}
 	for (i = first; i < first +size && i < mb->stop; i++)
-		printInstruction(fd, mb, stk, getInstrPtr(mb, i), i, flg);
+		printInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
 }
 
 void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
@@ -554,7 +496,7 @@ void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 	listFunction(fd,mb,stk,flg,0,mb->stop);
 }
 
-void debugFunction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, int flg)
+void traceFunction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, int flg)
 {
 	int i,j;
 	InstrPtr p;
@@ -570,7 +512,7 @@ void debugFunction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, int flg)
 				setVarUsed(mb, getArg(p,j));
 	}
 	for (i = 0; i < mb->stop; i++)
-		debugInstruction(comp, mb, stk, getInstrPtr(mb, i), i, flg);
+		traceInstruction(comp, mb, stk, getInstrPtr(mb, i), flg);
 }
 
 /* initialize the static scope boundaries for all variables */
@@ -809,7 +751,6 @@ void chkDeclarations(MalBlkPtr mb){
 					setVarScope(mb, l, blks[0]);
 				else
 					setVarScope(mb, l, blks[top]);
-				TRC_DEBUG(MAL_FCN, "Defined '%s' in block '%d'\n", getVarName(mb,l), getVarScope(mb,l));
 			}
 			if( blockCntrl(p) || blockStart(p) )
 				setVarUsed(mb, l);
@@ -828,10 +769,8 @@ void chkDeclarations(MalBlkPtr mb){
 					dflow= blkId;
 				} 
 				blks[++top]= blkId;
-				TRC_DEBUG(MAL_FCN, "New block '%d' at top '%d'\n", blks[top], top);
 			}
 			if( blockExit(p) && top > 0 ){
-				TRC_DEBUG(MAL_FCN, "Leave block '%d' at top '%d'\n", blks[top], top);
 				if( dflow == blkId){
 					dflow = -1;
 				} else

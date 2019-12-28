@@ -61,8 +61,6 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) p;
 	(void)stk;
 	
-	TRC_DEBUG(MAL_OPT_INLINE, "INLINE optimizer enter\n");
-
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
 		if( q->blk ){

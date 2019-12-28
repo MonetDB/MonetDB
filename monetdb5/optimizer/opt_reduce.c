@@ -20,8 +20,6 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void)stk;
 	(void) p;
 
-	TRC_DEBUG(MAL_OPT_REDUCE, "REDUCE optimizer enter\n");
-
 	actions = mb->vtop;
 	trimMalVariables(mb,0);
 	actions = actions - mb->vtop;

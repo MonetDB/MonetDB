@@ -54,7 +54,6 @@ OLTPreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	
 	MT_lock_set(&mal_oltpLock);
-	TRC_DEBUG(MAL_OLTP, "Reset locktable: %6d\n", GDKms());
 
 	for( i=0; i<MAXOLTPLOCKS; i++){
 		oltp_locks[i].locked = 0;
@@ -75,7 +74,6 @@ OLTPenable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	(void) cntxt;
 
-	TRC_DEBUG(MAL_OLTP, "Enabled: %6d\n", GDKms());
 	oltp_delay = TRUE;
 	return MAL_SUCCEED;
 }
@@ -85,7 +83,6 @@ OLTPdisable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	OLTPreset(cntxt, mb, stk,pci);
 	oltp_delay = FALSE;
-	TRC_DEBUG(MAL_OLTP, "Disabled: %6d\n", GDKms());
 	(void) cntxt;
 	return MAL_SUCCEED;
 }
@@ -113,11 +110,7 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( oltp_delay == FALSE )
 		return MAL_SUCCEED;
 
-	TRC_DEBUG_IF(MAL_OLTP)
-	{
-		TRC_DEBUG_ENDIF(MAL_OLTP, "%6d lock request for client: %d", GDKms(), cntxt->idx);
-		debugInstruction(MAL_OLTP, mb, stk, pci, getPC(mb, pci), LIST_MAL_ALL);
-	}
+	TRC_DEBUG(MAL_OLTP, "%6d lock request for client: %d, pc %d", GDKms(), cntxt->idx, pci->pc);
 
 	do{
 		MT_lock_set(&mal_oltpLock);
@@ -183,7 +176,7 @@ OLTPrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	TRC_DEBUG_IF(MAL_OLTP)
 	{
 		TRC_DEBUG_ENDIF(MAL_OLTP, "%6d release the locks: %d", GDKms(), cntxt->idx);
-		debugInstruction(MAL_OLTP, mb, stk, pci, getPC(mb, pci), LIST_MAL_ALL);
+		traceInstruction(MAL_OLTP, mb, stk, pci, LIST_MAL_ALL);
 	}
 
 	for( i=1; i< pci->argc; i++){

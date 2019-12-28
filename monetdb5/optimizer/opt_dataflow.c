@@ -106,7 +106,7 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 	*/
 	for(j=0; j<p->retc; j++)
 		if ( getState(states,p,j) & (VARWRITE | VARREAD | VARBLOCK)){
-			TRC_DEBUG(MAL_OPT_DATAFLOW, "Breakpoint on argument '%s' state '%d'\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
+			TRC_DEBUG(MAL_OPTIMIZER, "Breakpoint on argument '%s' state '%d'\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
 			return 1;
 		}
 
@@ -121,28 +121,28 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 			return 1;
 
 		/* CHECK */
-		// If is in DEBUG MAL_OPT_DATAFLOW
-		TRC_DEBUG_IF(MAL_OPT_DATAFLOW)
+		// If is in DEBUG MAL_OPTIMIZER
+		TRC_DEBUG_IF(MAL_OPTIMIZER)
 			if( getState(states,p,1) & (VARREAD | VARBLOCK))
-				TRC_DEBUG_ENDIF(MAL_OPT_DATAFLOW, "Breakpoint on update '%s' state '%d'\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
+				TRC_DEBUG_ENDIF(MAL_OPTIMIZER, "Breakpoint on update '%s' state '%d'\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
 		return getState(states,p,p->retc) & (VARREAD | VARBLOCK);
 	}
 
 	for(j=p->retc; j < p->argc; j++){
 		if ( getState(states,p,j) & VARBLOCK){
 			/* CHECK */
-			// If is in DEBUG MAL_OPT_DATAFLOW
-			TRC_DEBUG_IF(MAL_OPT_DATAFLOW)
+			// If is in DEBUG MAL_OPTIMIZER
+			TRC_DEBUG_IF(MAL_OPTIMIZER)
 				if( getState(states,p,j) & VARREAD)
-					TRC_DEBUG_ENDIF(MAL_OPT_DATAFLOW, "Breakpoint on blocked var '%s' state '%d'\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
+					TRC_DEBUG_ENDIF(MAL_OPTIMIZER, "Breakpoint on blocked var '%s' state '%d'\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
 			return 1;
 		}
 
 		/* CHECK */
-		// If is in DEBUG MAL_OPT_DATAFLOW
-		TRC_DEBUG_IF(MAL_OPT_DATAFLOW)
+		// If is in DEBUG MAL_OPTIMIZER
+		TRC_DEBUG_IF(MAL_OPTIMIZER)
 			if( hasSideEffects(mb,p,FALSE))
-				TRC_DEBUG_ENDIF(MAL_OPT_DATAFLOW, "Breakpoint on side-effect var '%s' '%s.%s'\n", getVarName(mb,getArg(p,j)), getModuleId(p), getFunctionId(p));
+				TRC_DEBUG_ENDIF(MAL_OPTIMIZER, "Breakpoint on side-effect var '%s' '%s.%s'\n", getVarName(mb,getArg(p,j)), getModuleId(p), getFunctionId(p));
 	}
 	return hasSideEffects(mb,p,FALSE);
 }
@@ -222,7 +222,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* close previous flow block */
 			simple = simpleFlow(old,start,i);
 			
-			TRC_DEBUG(MAL_OPT_DATAFLOW, "Breakpoint pc: %d %s\n", i, (simple?"simple":""));
+			TRC_DEBUG(MAL_OPTIMIZER, "Breakpoint pc: %d %s\n", i, (simple?"simple":""));
 			
 			if ( !simple){
 				flowblock = newTmpVariable(mb,TYPE_bit);

@@ -31,8 +31,6 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) stk;		/* to fool compilers */
 	(void) cntxt;
 
-	TRC_DEBUG(MAL_OPT_QUERYLOG, "QUERYLOG optimizer enter\n");
-
 	/* gather information */
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb,i);

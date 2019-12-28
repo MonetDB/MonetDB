@@ -547,7 +547,6 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with flow == NULL");
 	if (mb == NULL)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with mb == NULL");
-	TRC_DEBUG(MAL_DATAFLOW, "Initialize dflow block\n");
 	assign = (int *) GDKzalloc(mb->vtop * sizeof(int));
 	if (assign == NULL)
 		throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -615,7 +614,6 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 				l = getEndScope(mb, getArg(p, j));
 				if (l != pc && l < flow->stop && l > flow->start) {
 					/* add edge to the target instruction for wakeup call */
-					TRC_DEBUG(MAL_DATAFLOW, "Endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p, j)), n + flow->start, l);
 					assert(pc < l); /* only dependencies on earlier instructions */
 					l -= flow->start;
 					if (flow->nodes[n]) {
@@ -658,22 +656,6 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 	}
 	GDKfree(assign);
 
-	/* CHECK 
-	{ char buf[8192];
-	  int len = 8192;
-
-		// only use in debugging mode compilations 
-		for (n = 0; n < flow->stop - flow->start; n++) {
-			for (j = n; flow->edges[j]; j = flow->edges[j]) {
-				len -= snprintf(buf + strlen(buf), len, "%d\n", flow->start + flow->nodes[j]);
-				if (flow->edges[j] == -1)
-					break;
-			}
-			TRC_DEBUG(MAL_DATAFLOW, "[%d] %d dependents block count %d wakeup, %s\n", flow->start + n, n, flow->status[n].blocks, buf);
-		}
-	}
-*/
-
 	return MAL_SUCCEED;
 }
 
@@ -695,10 +677,9 @@ static void showFlowEvent(DataFlow flow, int pc)
 	TRC_DEBUG(MAL_DATAFLOW, "End of data flow '%d' done '%d'\n", pc, flow->stop - flow->start);
 	for (i = 0; i < flow->stop - flow->start; i++)
 		if (fe[i].state != DFLOWwrapup && fe[i].pc >= 0) {
-			TRC_DEBUG_IF(MAL_DATAFLOW)
 			{
-				TRC_DEBUG_ENDIF(MAL_DATAFLOW, "Missed pc %d status %d %d blocks %d\n", fe[i].state, i, fe[i].pc, fe[i].blocks);
-				debugInstruction(MAL_DATAFLOW, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), fe[i].pc, LIST_MAL_MAPI);
+				TRC_DEBUG(MAL_DATAFLOW, "Missed pc %d status %d %d blocks %d\n", fe[i].state, i, fe[i].pc, fe[i].blocks);
+				traceInstruction(MAL_DATAFLOW, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc),  LIST_MAL_MAPI);
 			}
 		}
 }

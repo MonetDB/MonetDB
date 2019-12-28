@@ -32,8 +32,6 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
-	TRC_DEBUG(MAL_OPT_JSON, "JSON optimizer enter\n");
-
 	old= mb->stmt;
 	limit= mb->stop;
 	slimit = mb->ssize;

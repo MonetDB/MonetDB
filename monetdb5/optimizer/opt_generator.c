@@ -75,7 +75,6 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) stk;
 	(void) pci;
 
-	TRC_DEBUG(MAL_OPT_GENERATOR, "GENERATOR optimizer enter\n");
 
 	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
 	if(series == NULL)

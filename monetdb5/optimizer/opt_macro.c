@@ -393,8 +393,6 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	(void) stk;
 
-	TRC_DEBUG(MAL_OPT_MACRO, "MACRO optimizer enter\n");
-
 	if( p->argc == 3){
 		mod= getArgDefault(mb,p,1);
 		fcn= getArgDefault(mb,p,2);
@@ -445,8 +443,6 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	(void) stk;
 
-	TRC_DEBUG(MAL_OPT_MACRO, "ORCAM optimizer enter\n");
-
 	if( p->argc == 3){
 		mod= getArgDefault(mb,p,1);
 		fcn= getArgDefault(mb,p,2);
@@ -482,8 +478,6 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng clk= GDKusec();
 	char buf[256];
 	lng usec = GDKusec();
-
-	TRC_DEBUG(MAL_OPT_MACRO, "MACRO optimizer enter\n");
 
 	if( p ==NULL )
 		return 0;
@@ -532,8 +526,6 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 	
-	TRC_DEBUG(MAL_OPT_MACRO, "ORCAM optimizer enter\n");
-
 	if( p ==NULL )
 		return 0;
 	removeInstruction(mb, p);

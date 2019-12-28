@@ -28,8 +28,6 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) stk;
 	(void) cntxt;
 
-	TRC_DEBUG(MAL_OPT_PROFILER, "PROFILER optimizer enter\n");
-	
 	for( i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		if( p == NULL)

@@ -74,7 +74,7 @@ MCinit(void)
 	MAL_MAXCLIENTS = /* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 	if( mal_clients == NULL){
-		TRC_CRITICAL(MAL_CLIENT, "Initialization failed: " MAL_MALLOC_FAIL "\n");
+		TRC_CRITICAL(MAL_MAL, "Initialization failed: " MAL_MALLOC_FAIL "\n");
 		return false;
 	}
 	for (int i = 0; i < MAL_MAXCLIENTS; i++){
@@ -142,7 +142,6 @@ MCnewClient(void)
 	if (c == mal_clients + MAL_MAXCLIENTS)
 		return NULL;
 	c->idx = (int) (c - mal_clients);
-	TRC_DEBUG(MAL_CLIENT, "New client created: %d\n", (int) (c - mal_clients));
 	return c;
 }
 
@@ -183,7 +182,6 @@ MCresetProfiler(stream *fdout)
 void
 MCexitClient(Client c)
 {
-	TRC_DEBUG(MAL_CLIENT, "Exit client: %d\n", c->idx);
 	finishSessionProfiler(c);
 	MCresetProfiler(c->fdout);
 	if (c->father == NULL) { /* normal client */
@@ -217,7 +215,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->fdin = fin ? fin : bstream_create(GDKstdin, 0);
 	if ( c->fdin == NULL){
 		c->mode = FREECLIENT;
-		TRC_ERROR(MAL_CLIENT, "No stdin channel available\n");
+		TRC_ERROR(MAL_MAL, "No stdin channel available\n");
 		return NULL;
 	}
 	c->yycur = 0;
@@ -252,7 +250,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 			bstream_destroy(c->fdin);
 			c->mode = FREECLIENT;
 		}
-		TRC_ERROR(MAL_CLIENT, "Client prompt undefined\n");
 		return NULL;
 	}
 	c->promptlength = strlen(prompt);
@@ -513,7 +510,6 @@ MCactiveClients(void)
 void
 MCcloseClient(Client c)
 {
-	TRC_DEBUG(MAL_CLIENT, "Close client: %d " OIDFMT "\n", (int) (c - mal_clients), c->user);
 	/* free resources of a single thread */
 	MCfreeClient(c);
 }
@@ -563,7 +559,6 @@ MCreadClient(Client c)
 {
 	bstream *in = c->fdin;
 
-	TRC_DEBUG(MAL_CLIENT, "Stream client: %d %d\n", c->idx, isa_block_stream(in->s));
 	while (in->pos < in->len &&
 		   (isspace((unsigned char) (in->buf[in->pos])) ||
 			in->buf[in->pos] == ';' || !in->buf[in->pos]))
@@ -595,11 +590,9 @@ MCreadClient(Client c)
 			if (p != in->buf + in->len - 1)
 				in->len++;
 		}
-		TRC_DEBUG(MAL_CLIENT, "Received simple stream: %d - sum %zu\n", c->idx, sum);
 	}
 	if (in->pos >= in->len) {
 		/* end of stream reached */
-		TRC_DEBUG(MAL_CLIENT, "End of received stream: %d %d\n", c->idx, c->bak == 0);
 		if (c->bak) {
 			MCpopClientInput(c);
 			if (c->fdin == NULL)
@@ -608,8 +601,6 @@ MCreadClient(Client c)
 		}
 		return 0;
 	}
-	TRC_DEBUG(MAL_CLIENT, "Finished reading stream: %d %d\n", (int) in->pos, (int) in->len);
-	TRC_DEBUG(MAL_CLIENT, "%s\n", in->buf);
 	return 1;
 }
 

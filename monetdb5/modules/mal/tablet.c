@@ -483,12 +483,6 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 			return res;
 		}
 		i++;
-
-		/* CHECK */
-		// If is in DEBUG MAL_TABLET
-		TRC_DEBUG_IF(MAL_TABLET)
-			if ((i % 1000000) == 0)
-				TRC_DEBUG_ENDIF(MAL_TABLET, "Dumped " BUNFMT " lines\n", i);
 	}
 	GDKfree(localbuf);
 	GDKfree(buf);
@@ -515,12 +509,6 @@ output_file_dense(Tablet *as, stream *fd)
 			GDKfree(localbuf);
 			return res;
 		}
-
-		/* CHECK */
-		// If is in DEBUG MAL_TABLET
-		TRC_DEBUG_IF(MAL_TABLET)
-			if ((i % 1000000) == 0)
-				TRC_DEBUG_ENDIF(MAL_TABLET, "Dumped " BUNFMT " lines\n", i);
 	}
 	GDKfree(localbuf);
 	GDKfree(buf);
@@ -546,12 +534,6 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd)
 			GDKfree(buf);
 			return res;
 		}
-
-		/* CHECK */
-		// If is in DEBUG MAL_TABLET
-		TRC_DEBUG_IF(MAL_TABLET)
-			if ((i % 1000000) == 0)
-				TRC_DEBUG_ENDIF(MAL_TABLET, "Dumped " BUNFMT " lines\n", i);
 	}
 	GDKfree(buf);
 	return res;
@@ -976,8 +958,6 @@ SQLload_parse_line(READERtask *task, int idx)
 	bool error = false;
 	str errline = 0;
 
-	TRC_DEBUG(MAL_TABLET, "SQL break line id %d  state %d\n%s", task->id, idx, line);
-
 	assert(idx < task->top[task->cur]);
 	assert(line);
 	errmsg[0] = 0;
@@ -988,12 +968,9 @@ SQLload_parse_line(READERtask *task, int idx)
 			task->fields[i][idx] = line;
 			/* recognize fields starting with a quote, keep them */
 			if (*line && *line == task->quote) {
-				char *l = NULL;
 				quote = true;
-				TRC_DEBUG(MAL_TABLET, "Before #1: %s\n", l = line);
 				task->fields[i][idx] = line + 1;
 				line = tablet_skip_string(line + 1, task->quote);
-				TRC_DEBUG(MAL_TABLET, "After #1: %s\n", l);
 
 				if (!line) {
 					errline = SQLload_error(task, idx, i+1);
@@ -1040,7 +1017,6 @@ SQLload_parse_line(READERtask *task, int idx)
 		assert(task->seplen == 1);
 		for (i = 0; i < as->nr_attrs; i++) {
 			task->fields[i][idx] = line;
-			TRC_DEBUG(MAL_TABLET, "Before #2: %s\n", line);
 
 			/* eat away the column separator */
 			for (; *line; line++)
@@ -1052,8 +1028,6 @@ SQLload_parse_line(READERtask *task, int idx)
 					line++;
 					goto endoffield2;
 				}
-
-			TRC_DEBUG(MAL_TABLET, "After #2: %s\n", line);
 
 			/* not enough fields */
 			if (i < as->nr_attrs - 1) {
@@ -1098,7 +1072,6 @@ SQLworker(void *arg)
 	GDKsetbuf(GDKzalloc(GDKMAXERRLEN));	/* where to leave errors */
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
-	TRC_DEBUG(MAL_TABLET, "SQLworker %d started\n", task->id);
 
 	while (task->top[task->cur] >= 0) {
 		MT_sema_down(&task->sema);
@@ -1109,10 +1082,6 @@ SQLworker(void *arg)
 		case BREAKLINE:
 			t0 = GDKusec();
 			piece = (task->top[task->cur] + task->workers) / task->workers;
-			TRC_DEBUG(MAL_TABLET,
-				"SQLworker id %d %d - piece %d-%d\n", 
-				task->id, task->top[task->cur], piece * task->id,
-				(task->id +1) *piece);
 			
 			for (j = piece * task->id; j < task->top[task->cur] && j < piece * (task->id +1); j++)
 				if (task->lines[task->cur][j]) {
@@ -1154,12 +1123,10 @@ SQLworker(void *arg)
 			break;
 		case ENDOFCOPY:
 			MT_sema_up(&task->reply);
-			TRC_DEBUG(MAL_TABLET, "SQLworker terminated\n");
 			goto do_return;
 		}
 		MT_sema_up(&task->reply);
 	}
-	TRC_DEBUG(MAL_TABLET, "SQLworker exits\n");
 	MT_sema_up(&task->reply);
 
   do_return:
@@ -1283,13 +1250,6 @@ SQLproducer(void *p)
 	}
 	for (;;) {
 		ateof[cur] = !tablet_read_more(task->b, task->out, task->b->size);
-		/* CHECK */
-		// If is in DEBUG MAL_TABLET
-		TRC_DEBUG_IF(MAL_TABLET)
-			if (!ateof[cur])
-				TRC_DEBUG_ENDIF(MAL_TABLET, 
-					"Read '%zu' bytes - pos=%zu eof=%d offset=" LLFMT " \n",
-					task->b->len, task->b->pos, task->b->eof, (lng) (s - task->input[cur]));
 				
 		// we may be reading from standard input and may be out of input
 		// warn the consumers
@@ -1311,11 +1271,6 @@ SQLproducer(void *p)
 		}
 
 	  parseSTDIN:
-		/* CHECK */
-		// If is in DEBUG MAL_TABLET
-		TRC_DEBUG_IF(MAL_TABLET)
-			if (!ateof[cur])
-				TRC_DEBUG_ENDIF(MAL_TABLET, "Parse input: %.63s\n", task->b->buf + task->b->pos);
 
 		/* copy the stream buffer into the input buffer, which is guaranteed larger, but still limited */
 		partial = 0;
@@ -1494,21 +1449,10 @@ SQLproducer(void *p)
 		}
 		/* consumers ask us to stop? */
 		if (task->state == ENDOFCOPY) {
-			/* CHECK */
-			// If is in DEBUG MAL_TABLET
-			TRC_DEBUG_IF(MAL_TABLET)
-				if (!ateof[cur])
-					TRC_DEBUG_ENDIF(MAL_TABLET, "SQL producer early exit %.63s\n", task->b->buf + task->b->pos);
 			GDKfree(rdfa);
 			return;
 		}
 		bufcnt[cur] = cnt;
-		/* CHECK */
-		// If is in DEBUG MAL_TABLET
-		TRC_DEBUG_IF(MAL_TABLET)
-			if (!ateof[cur])
-				TRC_DEBUG_ENDIF(MAL_TABLET, "Shuffle %zu: %.63s\n", strlen(s), s);
-		
 		/* move the non-parsed correct row data to the head of the next buffer */
 		end = s = task->input[cur];
 	}
@@ -1875,21 +1819,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	TRC_DEBUG(MAL_TABLET, "End of block stream eof=%d - res=%d\n", task.ateof, res);
 
 	cnt = BATcount(task.as->format[firstcol].c);
-
-	/* CHECK */
-	// if (GDKdebug & GRPalgorithms) {
-	TRC_DEBUG_IF(MAL_TABLET)
-	{
-		TRC_DEBUG_ENDIF(MAL_TABLET, "COPY reader time " LLFMT " line break " LLFMT " io " LLFMT "\n",
-								total, lio, iototal);
-
-		for (i = 0; i < as->nr_attrs; i++)
-			TRC_DEBUG_ENDIF(MAL_TABLET, LLFMT "\n", task.time[i]);
-
-		for (j = 0; j < threads; j++)
-			TRC_DEBUG_ENDIF(MAL_TABLET, "COPY thread time " LLFMT "\n", ptask[j].wtime);	
-	}
-	// }
 
 	task.ateof = true;
 	task.state = ENDOFCOPY;

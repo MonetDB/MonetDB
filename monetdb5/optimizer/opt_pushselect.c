@@ -142,8 +142,6 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if( mb->errors)
 		return MAL_SUCCEED;
 
-	TRC_DEBUG(MAL_OPT_PUSHSELECT, "PUSHSELECT optimizer enter\n");
-	
 	(void) stk;
 	(void) pci;
 	vars= (int*) GDKzalloc(sizeof(int)* mb->vtop);

@@ -160,8 +160,6 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	(void) stk;
 	(void) pci;
 
-	TRC_DEBUG(MAL_OPT_REMOTE, "REMOTEQUERIES optimizer enter\n");
-
 	limit = mb->stop;
 	slimit = mb->ssize;
 	old = mb->stmt;

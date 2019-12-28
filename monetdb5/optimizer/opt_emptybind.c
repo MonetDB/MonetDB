@@ -60,8 +60,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) cntxt;
 	(void) pci;
 
-	TRC_DEBUG(MAL_OPT_EMPTYBIND, "EMPTYBIND optimizer enter\n");
-
 	//if ( optimizerIsApplied(mb,"emptybind") )
 		//return 0;
 	// use an instruction reference table to keep
