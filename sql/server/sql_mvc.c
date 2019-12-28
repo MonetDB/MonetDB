@@ -544,23 +544,8 @@ build up the hash (not copied in the trans dup)) */
 		return msg;
 	}
 
-	/*
-	while (tr->schema_updates && ATOMIC_GET(&store_nr_active) > 1) {
-		store_unlock();
-		MT_sleep_ms(100);
-		wait += 100;
-		if (wait > 1000) {
-			(void)sql_error(m, 010, SQLSTATE(40000) "COMMIT: transaction is aborted because of DDL concurrency conflicts, will ROLLBACK instead");
-			mvc_rollback(m, chain, name, false);
-			return -1;
-		}
-		store_lock();
-	}
-	 * */
 	/* validation phase */
 	int valide = sql_trans_validate(tr);
-
-
 	if (valide) {
 		store_unlock();
 		if (sql_save_snapshots(tr) != SQL_OK) {
